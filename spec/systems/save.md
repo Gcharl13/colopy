@@ -134,7 +134,23 @@ resolves §6.1–6.3.
   `fwrite`** (`0xD1D:0x60C`). Verbatim dump in, verbatim dump out ⇒ **no compression**. **B.**
 
 ## 4. UI
-Save/Load menu with 10 user slots + 2 autosave slots (manual). Layout `TBD`.
+Save/Load menu with 10 user slots + 2 autosave slots (manual).
+
+**Layout is data-driven, not coded — RESOLVED-AS-TEMPLATE 2026-06-25.** The picker is *not*
+laid out by code immediates; it is built from a **`GAME.TXT` dialog template** (section
+`@SAVEGAME` / `@LOADGAME`) parsed at runtime. Traced chain (page 0x1A → 0x17/0x18, see
+`notes/ATTRIBUTION_OVERLAY.md`): the prompt orchestrators `func_072F7A` (save) /
+`func_073158` (load) call the **slot-list builder `func_072CC2`**, which creates the window
+(window-create thunk `0x191F:0x182` → `func_06F0F4`, the **generic dialog-template
+interpreter**), enumerates `COLONY*.SAV` slots, and appends one list item per slot
+(`'(EMPTY)'` when the file is absent) via the add-row primitive (`0x191F:0x176` →
+`func_06C850`). The modal pump `func_06E3D0` (run-picker thunk `0x191F:0x16a`) draws the
+linked-list rows and hit-tests the mouse; teardown frees the window (`0x191F:0x1a8` →
+`func_0789FA`). The `@SAVEGAME`/`@LOADGAME` templates specify essentially only the prompt +
+width; **x / y / row line-height are omitted, so the window is auto-centered and per-row Y is
+computed at render time inside `func_06E3D0` — these absolute pixel positions are therefore
+runtime-derived (TBD), not byte-immediates.** (The exact template keyword offsets in
+`func_06F0F4` are pending re-verification — an automated proposal over-specified two of them.)
 
 ## 5. Evidence
 - `docs/SAVE_FORMAT_CROSSREF.md` — DGROUP↔SAV record cross-reference; reorder caveat. **B/R**

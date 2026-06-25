@@ -38,6 +38,31 @@ The F-key dispatcher lives inside the large function **`func_0x2b743`**
 Citation: `code/VICEROY/disasm/orphans_overlay.asm`
 lines 13818..13898 (file offset 0x2BDEA..0x2BECF).
 
+> **CORRECTION (2026-06-25, byte-verified):** the "Paint func file offset"
+> column above is WRONG — it resolved the `0x191F:0x3xx` thunks against
+> overlay **page_02**'s code base. The thunks are type-A (page-directory
+> patched) and their trailer carries **page_id = 0x05**. Resolved with the
+> documented formula `target = page.code_offset + (ljmp_seg<<4) + jmpf_off`
+> (`typeA_thunk_targets.json`), with page_05 `code_offset = 0x37340`
+> (`disasm_overlay_reseg/page_05.asm` header), the REAL paint functions are:
+>
+> | F-key | Thunk | jmpf_off | Real paint func (page_05) |
+> |-------|-------|----------|---------------------------|
+> | F2 | 0x191F:0x40C | 0x0618 | **func_037958** (184 B) |
+> | F3 | 0x191F:0x3FE | 0x06D0 | **func_037A10** (1646 B) |
+> | F4 | 0x191F:0x3F0 | 0x10D8 | **func_038418** (864 B) |
+> | F5 | 0x191F:0x3E2 | 0x1710 | **func_038A50** (1155 B) |
+> | F6 | 0x191F:0x3D4 | 0x1ED8 | **func_039218** (475 B) |
+> | F7 | 0x191F:0x3C6 | 0x220C | **func_03954C** (827 B) |
+> | F8 | 0x191F:0x3B8 | 0x2548 | **func_039888** (1551 B) |
+> | F9 | 0x191F:0x41A | 0x010A | **func_03744A** (1294 B) |
+>
+> All eight are EXACT function-entry hits. F8 lands on **func_039888**, the
+> very function the F8 section below already cites for its prereq check —
+> independent confirmation that page_05 is correct. Verified by
+> `tools/rtlink/xref.py callers 0x037958` (reaches func_037958 only via
+> 0x191F:0x40C from the three dispatchers 0x2385D / 0x2BDFB / 0x355AE).
+
 The F-key handler pushes the **current player power_idx** (from
 `word ptr [0x8542]` byte `+0x1a`) as the sole argument to each paint
 function. So the paint function knows whose data to display.
@@ -154,31 +179,72 @@ REPORT8↔F8 is `# GUESS — needs visual verification by running each
 paint function and matching the loaded PIK`. The renderer artwork
 visually matches each advisor's domain.
 
+**PARTIAL byte-verification (2026-06-25):** each paint function in page_05
+reaches `load_report_pik` (func_037340) via the near-trampoline at reseg
+IP `0x34C3` (= `0x191F:0xF4A`) and pushes a **literal report number** just
+before it. Those literals are now read directly from the code:
+- **F2 func_037958** pushes **2** (`page_05.asm:581`) => **REPORT2.PIK** ✓
+- **F5 func_038A50** pushes **5** (`page_05.asm:2058`) => **REPORT5.PIK** ✓
+- **F9 func_03744A** pushes **1** (`page_05.asm:109`) => **REPORT1.PIK** ✓
+  (resolves the prior "REPORT1 or REPORT9" ambiguity: F9 uses REPORT1).
+The remaining reports' literals can be read the same way at their
+`push <n> / call 0x34C3` sites.
+
 ---
 
 ## Per-report details
 
-### F2 — Religious Adviser Report
+### F2 — Religious Adviser Report  — **BYTE-CITED (upgraded 2026-06-25)**
 
-- **paint_func**: file `0x025F18`..end of orphan range `0x026021` (~265 bytes)
-- **F-key**: F2 (scan 0x13C)  
-- **menu-letter**: 'A'
-- **background**: REPORT2.PIK (`# GUESS — render & visually confirm`)
-- **title text**: LABELS.TXT @MISC[45] = "RELIGIOUS ADVISER REPORT"
-- **title font/color**: FONTTINY in dark sepia (per `UI_RENDER_MAP.md`
-  TEXT_DARK=(40,24,16))
-- **title position**: x=center, y=4 (`# GUESS — based on existing render_report.py`)
-- **body structure**: per-colony grid showing crosses + colonist
-  counts (per `SESSION_UI_CATALOG.md`)
-- **data source**: 
-  - For each colony C (iterate via `LCALL 0x181F:0x09E6 = set_current_colony`):
-    - ColonyRecord +0x1F (size) 
-    - ColonyRecord +0x70 + N (per-citizen profession byte) — check for missionary skill
-    - PowerRecord per-colony bell rate
-- **footer**: typically "OK" button (LABELS.TXT @MISC[61] = "OK") or "(press any key)"
-- **TBD**: the body row template — needs deeper trace of file 0x025F18 code.
-  The code calls `LCALL 0x181F:0x09E6` (set_current_colony) which means
-  it iterates colonies. Row layout for each colony unconfirmed.
+This is the simplest report and is now fully traced through the 0x191F
+overlay. **Paint function = `func_037958`** in overlay page_05
+(`disasm_overlay_reseg/page_05.asm` lines 576..643, file
+`0x037958..0x037A0F`, 184 bytes, reseg IP 0x0FC8). Reached ONLY via thunk
+`0x191F:0x40C` from the three dispatchers (confirmed by
+`xref.py callers 0x037958`). The whole function decompiles to:
+
+```c
+void paint_F2_religious(int power_idx) {        // [bp+6] = power_idx
+    set_current_power(power_idx);               // lcall 0x181F:0x582 -> func_030550
+    load_report_pik(2);                         // call 0x34C3 -> 0x191F:0xF4A -> func_037340 ; "REPORT"+2 => REPORT2.PIK
+    pik_blit(handle[0x2DF6], 0,0x140,5,0x90);    // lcall 0x181F:0x100 -> func_002BC8 (full-screen 320-wide blit)
+    bx = pwr->f2e; dx = pwr->f30;                // [0x84FC]+0x2E, +0x30
+    blit_sprite(/*idx*/0x39, bx, dx, 1,0,0,0x12C); // lcall 0x181F:0x236 -> func_002EE4 (sprite #57 = progress graphic)
+    if (g_5383 & 0x20) {                         // test byte [0x5383],0x20
+        sprintf(buf, "(%d of %d)", pwr->f2e, pwr->f30);   // 0x11A9 via lcall 0xD1D:0xB48
+        draw_text(buf, /*x*/0x0A, /*y*/0x19, /*color*/0x0F); // lcall 0x181F:0x13C -> func_002B38
+    }
+    paint_okbar(-1,-2);                          // call 0x34A0 -> 0x191F:0xEE8 -> func_0373CA
+    lcall 0x181F:0xE2; lcall 0x181F:0x3C0;       // present / flush page
+}
+```
+
+- **F-key**: F2 (scan 0x13C); **menu-letter**: 'A'
+- **background**: **REPORT2.PIK** — now **byte-cited** (was GUESS). `load_report_pik`
+  (func_037340) concatenates the data-segment string at `0x11A2` = `"REPORT"`
+  (overlay data base = file `0x1D9A0`, so `0x11A2` -> file `0x1EB42`) with the
+  literal arg **2** pushed at `page_05.asm:581`, giving `"REPORT2"`.
+- **title text**: LABELS.TXT @MISC[45] = "RELIGIOUS ADVISER REPORT". NOTE:
+  func_037958 does **not** call the title-bar painter (`0x191F:0x8B2`) that the
+  other reports use — the F2 heading is supplied by the REPORT2.PIK artwork /
+  an as-yet-unisolated callee (see TBD in Open work).
+- **body element (byte-cited position/font/color)**: when `byte [0x5383] & 0x20`
+  is set, the report draws the format string **`"(%d of %d)"`** (overlay data
+  offset `0x11A9` -> file `0x1EB49`) at **x=10 (`0x0A`), y=25 (`0x19`),
+  color index 15 (`0x0F`)** via `lcall 0x181F:0x13C` = func_002B38
+  (set-color `0xC28:0xA` + draw-text `0xC11:0xC`). The two `%d` args are
+  `PowerRecord +0x2E` and `+0x30` (immigration crosses progress; exact field
+  semantics are a data-model TBD).
+- **domain graphic**: sprite index **`0x39` (57)** blitted via
+  `lcall 0x181F:0x236` = func_002EE4 (sheet ptr `[0x83E]/[0x840]`), positioned
+  from `PowerRecord +0x2E/+0x30` (runtime-driven extent — TBD exact rect).
+- **footer**: drawn by **func_0373CA** (the `0x191F:0xEE8` teardown/OK bar),
+  called with (-1,-2) which the routine remaps to (0x91,0x11E); it draws a box
+  (`0x181F:0xCE`) + an icon (`0x181F:0x100`). Final y derives from a runtime
+  sheet-height byte (`es:[0x89E]>>1`) so the exact bar rect is runtime TBD.
+- **PowerRecord access confirmed**: `set_current_power` (func_030550) sets
+  `[0x84FC] = power_idx*0x13C + 0x8808`, byte-verifying stride **0x13C (316)**
+  and base **DGROUP:0x8808**.
 
 ---
 

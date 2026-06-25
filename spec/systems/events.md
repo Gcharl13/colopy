@@ -204,7 +204,22 @@ BYTE_VERIFIED entry points). Concrete layout `TBD`.
      feature (the generator's `0xA0`) makes `0x5DF0` return ≥0, so `func_006188`'s
      `jge`-fail `@0x61C5` **suppresses** a rumor on those two tiles rather than marking one.
      (The two fixed `0xA0` tiles are a distinct stored feature, not a rumor placement; its
-     nibble-`0xA` meaning is the only open leaf — see §6.4.)
+     nibble-`0xA` meaning is the only open leaf — TBD, no consuming read of a `0xA` high-nibble
+     feature has been pinned.)
+
+     - **0x10-set site — PROVEN ABSENT (re-verified 2026-06-25).** The Track-1 blocker ("where
+       is the `0x10` bit added between mapgen's `0xA0` and a `==0xB0` trigger?") is closed: the
+       site **does not exist**. Independent re-scan of all 494,910 bytes of `VICEROY.EXE`:
+       (a) the ONLY grp1-imm writes to the tile pointer `es:[bx]` in the whole image are the two
+       `26 80 0f a0` (`or es:[bx],0xa0`) at `0x65C0D`/`0x65C21` — there is **no**
+       `or/and es:[bx],0x10` and **no** `…,0xb0` (byte- or word-form `26 81/83 0f …` are all
+       `cmp`, never OR/AND, and none use `0x10`/`0xA0`/`0xB0`); (b) the only genuine
+       `cmp <reg>,0xb0` in the image is `cmp bl,0xb0 @0x13425` (an unrelated routine, not a tile
+       read; the other apparent `0xb0` bytes are `[bx+disp]`/`[bp-disp]` displacements, not
+       immediates); (c) the handler `func_061454` contains no `cmp al,0xa0`/`0xb0`. So nothing
+       sets the `0x10` bit and nothing reads `==0xB0` — the `0xA0`→`0xB0` model has no instruction
+       behind it. Presence is procedural (`func_006188`, above): the stored `0xA` high-nibble even
+       *suppresses* a rumor via `func_005DF0`'s `0xF`→−1 sentinel + the `jge`-fail `@0x61C5`.
 2. ~~Outcome bias cascade — exact per-gate probabilities.~~ **Done 2026-06-20.** The
    outcome index is `[bp-6] = max(anti_streak_floor, random_int(1,9))` (`@0x614F6..0x6151A`),
    where the **anti-streak floor** = `min(prev_floor+1, 3)` rises by 1 each rumor (stored

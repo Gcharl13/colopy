@@ -129,9 +129,39 @@ These match `viceroy_source/src/mapgen/climate.c` exactly.
 - Polar-ice boundary: top/bottom rows = Arctic `0x18` (P5). **B** (was R).
 - Sea-lane on right edge: id 26 (`0x1A`), **right two columns** (P5). **B** (CLAUDE.md hard rule 2).
 
-## 4. UI
-Setup-menu options surfaced in the opening/new-game flow. Strings likely in
-`OPENING_sections.json` / `MENU_sections.json`; concrete catalog `TBD`.
+## 4. UI — top-level new-game setup menu — **BYTE_VERIFIED (2026-06-25)**
+The host screen is **`@BEGINMENU`** (`GAME_sections.json`), NOT `OPENING`/`MENU`:
+title `"{COLONIZATION} Version %STRING0 -- %STRING1"` + **5 selectable rows**:
+1. *Start a Game in NEW WORLD*, 2. *Start a Game in AMERICA*, 3. *CUSTOMIZE New
+World*, 4. *LOAD Game*, 5. *View Hall of Fame*.
+
+**Menu-builder / host = `func_0759E8`** (file `0x0759E8..0x075F86`, ~1438 B, ENTER
+`0x3F4`, RETF, overlay page **0x1A**) — the "open-menu framework" (already tagged
+OPENMENU/MAPTOLOAD). It loads the `@BEGINMENU` section-key address
+(`@0x75C60 lea bx,[0x2345]`; the key string `"BEGINMENU"` is at file `0x1FCE5`,
+DGROUP base `0x1D9A0` → imm `0x2345`) and runs the menu via the **run-named-menu
+primitive `lcall 0x181f:0x3fe`** (`@0x75C64`; bx = key addr, returns the **1-based
+selected row in `ax`**, 0 = cancel). The selection is stored in the stack local
+**`[bp-0xe0]`** (`@0x75C69`); the persistent cursor *global* for this primitive is
+`TBD` (not the `[0xa60a]` used by the customize builder — see §6).
+
+**Row dispatch** (dec-chain `@0x75C6D..0x75C83`): sel 0 → `0x4afd` (cancel); sel
+**1/2/3** → `0x47f6` (shared world-build setup loop); sel **4** (*LOAD Game*) →
+`0x495a`; sel **5** (*View Hall of Fame*) → `0x4a20`. Two rows insert sub-dialogs
+inside the shared path:
+- **Row 2 *AMERICA*** — `@0x75CDE cmp [bp-0xe0],2; jne` then `@0x75CE5 lea
+  bx,[0x234f]` (key `"AMERICA"`, file `0x1FCEF`) + `lcall 0x181f:0x3fe` = the
+  **`@AMERICA`** sub-menu *"Original Americas / Map Editor"* (map-editor file picker
+  uses `*.MP` imm `0x2357` / `MAPTOLOAD` imm `0x235c`).
+- **Row 3 *CUSTOMIZE New World*** — `@0x75CC4 cmp [bp-0xe0],3; jne 0x484a` then
+  **`@0x75CCB lcall 0x1a1f:0xbe4` → `func_070060`** (the Customize sub-menu, §6 Q3).
+  Thunk `0x1A1F:0xBE4` (byte sig `9a e4 0b 1f 1a`, thunk record file `0x1D1D4`)
+  resolves to `func_070060` and `func_0759E8 @0x75CCB` is its **only** caller
+  (`tools/rtlink/xref.py callers 0x070060`).
+
+String-key→DGROUP-immediate binding is byte-verified (base `0x1D9A0`: CUSTOMIZ
+`0x1F9C2`→`0x2022`, DIFFICUL→`0x202d`, NATIONS→`0x2043`, OPENMENU `0x1FCDC`→`0x233c`,
+BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
 
 ## 5. Evidence
 - `func_064A10` (file `0x064A10`, overlay page 0x14) — the procedural generator: RNG seed `@0x64A1B`, arg gate `@0x64A2C`, ocean fill `@0x64A4B`, landmass `@0x64AAD`, climate dispatch `@0x64CF6`/`@0x65048` (inline tables `0x64CFC`/`0x6504E`, cs-base `0x64150` → N `{5,4,1,3,2,2}` / S `{2,3,3,4,6,7}`), smoothing `@0x653F8`, sea-lane borders `@0x65941`, Arctic `@0x6582A`, starts `@0x65C9C`; wired from new-game `func_0755CC @0x7579E` (dims `@0x75702`). **B** (verified vs EXE; the C-recon climate values are confirmed — they are inline jump-table cases, not a data array).

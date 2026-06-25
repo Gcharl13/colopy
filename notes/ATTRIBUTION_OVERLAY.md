@@ -193,3 +193,161 @@ the resolved field semantics live in the spec files.
 
 **Evidence:** @0x5DA3 imul [0x853a]; @0x5DA9 add [0x164]; @0x5DAD mov es,[0x166]; @0x5DB4 mov al,es:[bx]. @0x5E01 shr al,4; @0x5E09 cmp ax,0xf/je -> @0x5E0E mov [bp-2],0xffff.
 
+
+
+---
+
+## Track 2b additions (2026-06-25) — overlay dialog/report/menu functions
+
+Note: the save/load *picker geometry* proposal was rejected in adversarial verify for two
+over-specific (fabricated) keyword-offset citations; the FUNCTION CHAIN below is the trace
+result and is structurally sound, but treat individual DGROUP keyword offsets as pending
+re-verification. The setup-menu, advisor-report, and Lost-City items WERE verified.
+
+### func_072F7A — 0x1A (resident-overlay; file 0x072F7A..0x073158, 478 bytes)  [saveload-picker]
+**Purpose:** SAVEGAME prompt orchestrator. Builds the slot-list and runs the modal picker, then dispatches save. Gated by 'SAVEGAME' key @0x72F80.
+
+**Callers:** SAVEGAME menu action
+
+**Evidence:** Calls the string-list builder via near-thunk CALL 0x7326b @0x72F84 (which is a JMPF trampoline EA E8 0C 1F 1A = 0x1A1F:0x0CE8 -> func_072CC2, raw bytes @file 0x7326B verified). Runs the modal dialog via LCALL 0x191F:0x16a @0x72F9B; tears it down via LCALL 0x191F:0x1a8 @0x72FB1 and again @0x73151. Disasm comments use the OLD thunk formula; corrected via typeA_thunk_targets.json.
+
+### func_073158 — 0x1A (file 0x073158..0x073266, 270 bytes)  [saveload-picker]
+**Purpose:** LOADGAME prompt orchestrator. Mirror of func_072F7A for the load side; builds the slot list and runs the same picker, then dispatches load via func_073BB0 path.
+
+**Callers:** LOADGAME menu action
+
+**Evidence:** CALL 0x7326b @0x73167 with key 'LOADGAME' @0x73163; LCALL 0x191F:0x16a @0x7317E (run picker), LCALL 0x191F:0x1a8 @0x731A0 (teardown). Same two 0x191F thunks as the save side.
+
+### func_072CC2 — 0x1A (file 0x072CC2..0x072F7A, 696 bytes; entry of the 0x7326b/0x1A1F:0x0CE8 thunk)  [saveload-picker]
+**Purpose:** THE SAVE/LOAD SLOT-LIST BUILDER. Creates the picker window, enumerates the COLONY*.SAV slots, and appends one list item per slot (slot display name, or '(EMPTY)' when the file is absent).
+
+**Callers:** func_072F7A @0x7326b, func_073158 @0x73167
+
+**Evidence:** Window-create LCALL 0x191F:0x182 @0x72CF8 with bx=[0x87c] (template-file name ptr) and ax=[bp+6] (section/title key 'SAVEGAME'/'LOADGAME'); returns the window handle into [bp-0x116:bp-0x114]. Per-slot loop: builds the row text via 0xd1d:0x7e4 (strcpy), tests existence via LCALL 0x1A1F:0xd04 -> func_073AB0 @0x72EFD, on absent writes '(EMPTY)' @file 0x20EE @0x72F0C, then APPENDS the list item via LCALL 0x191F:0x176 @0x72EA1 (handle, ss:[bp-0x112] text, index [bp-0x11c]+1). NO explicit per-row x/y/line-height is passed -- the item carries only its text + index.
+
+### func_06F0F4 — 0x17 (file 0x06F0F4..0x06F519, 1061 bytes; target of window-create thunk 0x191F:0x182 -- corrected to 0x06F0F4 via typeA_thunk_targets.json, NOT the disasm-comment 0x028BA4)  [saveload-picker]
+**Purpose:** GENERIC DIALOG-TEMPLATE INTERPRETER. Parses a text dialog template (section-keyed) and fills the window geometry/flags from keyword lines. This is where ALL picker geometry actually comes from -- it is DATA-DRIVEN from GAME.TXT, not from code immediates.
+
+**Callers:** func_072CC2 @0x72CF8 (window-create thunk 0x191F:0x182)
+
+**Evidence:** Opens the template via LCALL 0x191F:0x928 @0x06F126 (-> func_06F8FA), reads lines via 0x191F:0x91c @0x06F174, and for each line strcmp's the leading token against the keyword strings at DGROUP: 'OPTIONS' @0x1FC7, 'PROMPT' @0x1FCF, 'TEXT' @0x1FD6, 'SMALLFONT' @0x1FDB, 'Y' @0x1FE5, 'X' @0x1FE7, 'WIDTH' @0x1FE9, 'LENGTH' @0x1FEF, plus 'COLOR'@0x1FF6 / 'HELP'@0x1FFF. Numeric args parsed by atoi 0xd1d:0x8f6 and written into the window struct: X->[handle+0x0c] @0x06F2A6, Y->[handle+0x0e] @0x06F25E, WIDTH-> sizing call cs:0x3d12 @0x06F2F6, LENGTH->[0xa5b6] @0x06F347, SMALLFONT-> pos fields [handle+0x80/+0x82] from [0x89e/0x8a0] @0x06F211. (DGROUP file base = 0x1D9A0, derived from 'SAVEGAME' literal @file 0x1FA96 = DGROUP 0x20F6.)
+
+### func_06F8FA — 0x18 (file 0x06F8FA..0x06FAB9, 447 bytes; target of 0x191F:0x928)  [saveload-picker]
+**Purpose:** Dialog-template section opener. Opens the template TEXT file and seeks to the '@<section>' header, so subsequent line reads return that section's keyword lines.
+
+**Callers:** func_06F0F4 @0x06F126
+
+**Evidence:** Builds search token '@'+section: [bp-0x52] pre-set to 0x40 ('@'),0 @0x06F90A then strcat of [bp+8] via 0xd1d:0x7a4 @0x06F919. Builds the filename from [bp+6] (= [0x87c] -> 'GAME', verified: [0x87c] init bytes spell 'GAME' @file 0x1D9A0+0x87C+? region) with format 'TXT' @0x2016 and mode 'rt' @0x201a, fopen via 0x181F:0xe86 into handle [0x2014]. Reads 0x50(80)-byte lines via 0xd1d:0x9ca into [0x833c], strstr's for the '@section' header via 0xd1d:0x816. => template = GAME.TXT, section @SAVEGAME / @LOADGAME.
+
+### func_06C850 — 0x17 (file 0x06C850..0x06CA38, 488 bytes; target of add-item thunk 0x191F:0x176 -- corrected to 0x06C850, NOT disasm-comment 0x026300)  [saveload-picker]
+**Purpose:** List-item allocator/linker (the 'add row' primitive). Appends a 0x18-byte node to the window's item linked-list, measures the row text width, and allocates the row's draw buffer. Stores the caller-supplied item INDEX at node+4. Does NOT assign an absolute screen Y -- rows are a linked list, positioned at render time.
+
+**Callers:** func_072CC2 @0x72EA1 (per slot), func_073270 @ multiple
+
+**Evidence:** Walks tail via window [handle+0x54/+0x56] @0x06C858; allocs 0x18-byte node via 0x181F:0x2c @0x06C8A1; links it (node+0x10/+0x14 prev/next); measures text width via 0xd1d:0x113c @0x06C956; stores index [bp+0xe] -> node+4 @0x06C9B8; flags empty rows (node|=1) when text[0]==0 @0x06C9AE. No x/y immediates.
+
+### func_06E3D0 — 0x17 (file 0x06E3D0..0x06EED4, 2820 bytes; target of run-modal thunk 0x191F:0x16a -- corrected to 0x06E3D0, NOT disasm-comment 0x027E80)  [saveload-picker]
+**Purpose:** Modal dialog message pump / RUN-PICKER. Draws the window + its item list, hit-tests the mouse against rows, processes keyboard, and returns the chosen slot index+1 (caller does DEC ax). This is where the linked-list rows are actually laid out and drawn, using the window rect + a per-row line-height -- i.e. the row Y positions are computed HERE at runtime, not stored.
+
+**Callers:** func_072F7A @0x72F9B, func_073158 @0x7317E, func_073270 @0x733F6
+
+**Evidence:** Operates on the window struct at [bp+6]; window rect fields [bx+0x10..0x16] (x,y,w,h) @0x06E5BE..; iterates child controls and mouse-region tests against [0x7e8]/[0x7ea] (mouse x/y); keyboard via 0x181F:0x3e0 @0x06E2... ; returns selection. Row line-height is applied inside this loop (runtime), so per-row Y is not a byte immediate.
+
+### func_0789FA — 0x1F (file 0x0789FA..0x078A4A, 80 bytes; target of teardown thunk 0x191F:0x1a8 -- corrected to 0x0789FA)  [saveload-picker]
+**Purpose:** Dialog teardown / far-block free. Frees the picker window's allocated memory.
+
+**Callers:** func_072F7A @0x72FB1/@0x73151, func_073158 @0x731A0, func_072CC2 @0x72F37
+
+**Evidence:** Compares the segment [bp+8] to 0xA000 @0x078A04; for normal blocks issues INT 21h AH=49h (DOS Free Memory Block) @0x078A2B with es=[bp+6]. Paired with the window-create alloc.
+
+### func_0759E8 — page 0x1A (file 0x0759E8..0x075F86, ~1438 bytes, ENTER 0x3F4, terminal RETF)  [setup-menu-host]
+**Purpose:** New-game open-menu host. Builds/runs the top-level @BEGINMENU menu (NEW WORLD / AMERICA / CUSTOMIZE New World / LOAD Game / View Hall of Fame), reads the player's selection, and dispatches each row. Also hosts the earlier @OPENMENU splash menu and the @AMERICA sub-dialog. Already tagged OPENMENU/MAPTOLOAD in disasm/func_0759E8_unknown.asm.
+
+**Callers:** Reached via the boot/open sequence (no RTLink-thunk caller: xref.py callers 0x0759E8 returns empty); near/far-called within the open flow.
+
+**Evidence:** BEGINMENU key string at file 0x1FCE5 (verified raw bytes b'BEGINMENU\x00'); its DGROUP immediate 0x2345 is loaded by `075C60: lea bx,[0x2345]` then run via `075C64: lcall 0x181f,0x3fe` (menu-run primitive: bx=section-key addr, returns 1-based selection in ax). Selection stored `075C69: mov [bp-0xe0],ax`. Dispatch dec-chain at 075C6D..075C83: sel 0 -> 0x4afd (cancel); sel 1/2/3 -> 0x47f6 (shared world-build setup loop); sel 4 -> 0x495a (LOAD); sel 5 -> 0x4a20 (Hall of Fame). Row2 AMERICA branch `075CDE: cmp [bp-0xe0],2; jne` then `075CE5: lea bx,[0x234f]` (AMERICA key, file 0x1FCEF) + `lcall 0x181f,0x3fe` = the @AMERICA 'Original Americas / Map Editor' sub-dialog (with *.MP imm 0x2357 / MAPTOLOAD imm 0x235c). Row3 CUSTOMIZE branch `075CC4: cmp [bp-0xe0],3; jne 0x484a` then `075CCB: lcall 0x1a1f,0xbe4` -> func_070060.
+
+### func_070060 — page 0x19 (file 0x070060..0x07020F, 431 bytes, ENTER 0x312)  [setup-menu-host]
+**Purpose:** Customize-New-World sub-menu (4-row 3-way enums @CLAND/@CCONT/@CTEMP/@CCLIM writing the DGROUP:0x1E7E parameter array). Already decoded; confirmed here as the dispatch target of @BEGINMENU row 3.
+
+**Callers:** func_0759E8 @0x75CCB (only)
+
+**Evidence:** Sole caller is func_0759E8 at file 0x75CCB via thunk 0x1A1F:0xBE4 (byte sig 9a e4 0b 1f 1a, thunk record file 0x1D1D4), resolved by tools/rtlink/xref.py callers 0x070060. func_070060 itself pushes its own key 'CUSTOMIZ' (imm 0x2022, file 0x1F9C2) to menu builder thunk 0x181f:0x44e at 0x070088.
+
+### menu primitive thunk 0x181F:0x3FE — thunk record file 0x1A9EE (type A, window 0x181F)  [setup-menu-host]
+**Purpose:** Run-named-menu primitive: input bx = far/near address of an 8-char GAME.TXT section key (e.g. BEGINMENU/AMERICA); returns the 1-based selected row in ax (0 = cancelled). Distinct from the lower-level 0x181F:0x44E menu builder that func_070060/OPENMENU use with explicit x/y/string args.
+
+**Callers:** func_0759E8 @0x75C64, @0x75CE9
+
+**Evidence:** Used twice in func_0759E8: 075C64 (BEGINMENU) and 075CE9 (AMERICA); each immediately preceded by a `lea bx,[<key DGROUP imm>]` and followed by storing ax into a local selection var.
+
+### func_037958 — page_05 (record 4), file 0x037958..0x037A0F (184 bytes), reseg IP 0x0FC8  [advisor-report-fields]
+**Purpose:** F2 Religious Adviser report PAINT function. Entry confirmed via xref: reached only through thunk 0x191F:0x40C from the three dispatchers at file 0x2385D (menu-letter 'A'), 0x2BDFB (F-key F2), 0x355AE (top-menu). Resolves to page_05 code_offset 0x37340 + ljmp_off 0x618 = 0x37958 (EXACT function entry). NOTE: this CORRECTS the audit's prior claim that F2 paint = file 0x025F18 in page_02 — that offset used the wrong overlay code base. All eight F2-F9 paint functions live in overlay page_05 (code_offset 0x37340), not page_02.
+
+**Callers:** 0x2385D, 0x2BDFB, 0x355AE (all via lcall 0x191F:0x40C)
+
+**Evidence:** reseg page_05.asm line 576 '; ---- func_037958 size=184 ...'; thunk resolution: overlay_thunks.json trailer page_id=0x05, ljmp_off=0x618, page_05 code_offset=0x37340 => 0x37958; xref.py callers 0x037958 lists the 3 dispatchers via 0x191F:0x40C
+
+### func_037340 (load_report_pik) — page_05, file 0x037340..0x0373C8 (137 bytes), reseg IP 0x09B0  [advisor-report-fields]
+**Purpose:** PIK background loader. Pushes data-string 0x11A2 = 'REPORT' (overlay data segment base = file 0x1D9A0, so 0x11A2 -> file 0x1EB42 = "REPORT"), strcat via lcall 0xD1D:0x7E4, appends the report-number arg [bp+6] via lcall 0x181F:0x182 (sprintf), then loads the PIK via lcall 0x181F:0x44E. Reached intra-overlay as 0x191F:0xF4A through the near-trampoline at reseg IP 0x34C3. F2 calls it with arg 2 => REPORT2.PIK (was GUESS, now byte-cited).
+
+**Callers:** all 8 report paint funcs via call 0x34C3 -> 0x191F:0xF4A
+
+**Evidence:** page_05.asm lines 12-58; 'push 0x11a2' then 'lcall 0xd1d,0x7e4'; F2 site page_05.asm line 581-583 'push 2 / push cs / call 0x34c3' and IP 0x34C3 = 'ljmp 0x191f:0xf4a' (page_05.asm line 3842) resolving to 0x37340
+
+### func_0373CA (report teardown / OK-bar painter) — page_05, file 0x0373CA..0x037449 (128 bytes), reseg IP 0x0A3A  [advisor-report-fields]
+**Purpose:** Bottom-bar / cleanup painter invoked after body draw. Reached as 0x191F:0xEE8 via near-trampoline at reseg IP 0x34A0. F2 calls it with (-1,-2); func_0373CA remaps -1->0x91 and -2->0x11E, then draws a box via lcall 0x181F:0xCE and an icon/sprite via lcall 0x181F:0x100.
+
+**Callers:** F2..F9 paint funcs via call 0x34A0 -> 0x191F:0xEE8
+
+**Evidence:** page_05.asm lines 60-103; F2 site lines 629-633 'push -1 / push -2 / push cs / call 0x34a0', IP 0x34A0 = 'ljmp 0x191f:0xee8' (page_05.asm line 3835) -> 0x373CA
+
+### func_030550 (set_current_power) — page_04, file 0x030550..0x030564 (21 bytes), reseg IP 0x0A60  [advisor-report-fields]
+**Purpose:** Every report paint func calls this FIRST with the power_idx [bp+6] via lcall 0x181F:0x582 (type-A, page_id 0x04, resolves to 0x30550). It stores power_idx at [0x9E12], computes power_idx*0x13C + 0x8808, and stores the result at [0x84FC] (active PowerRecord pointer). BYTE-VERIFIES PowerRecord stride = 0x13C (316) and base = DGROUP:0x8808 — values the audit previously asserted from 'project memory'.
+
+**Callers:** all F2-F9 paint funcs (first lcall 0x181F:0x582)
+
+**Evidence:** page_04.asm lines 12-20: 'mov ax,[bp+6]; mov [0x9e12],ax; imul ax,ax,0x13c; add ax,0x8808; mov [0x84fc],ax'
+
+### func_002B38 (set-color + draw-text primitive) — resident load_image, file 0x002B38..0x002B71 (58 bytes)  [advisor-report-fields]
+**Purpose:** The combined text primitive behind lcall 0x181F:0x13C. Sets text color via lcall 0xC28:0xA (the palette-color setter) then draws the string via lcall 0xC11:0xC (text-draw-with-rect, using region globals [0x89E]/[0x8A0]). Call convention at F2 site: push color, push y, push x, push ss:strptr. F2 draws the formatted body string with color=0xF(15), y=0x19(25), x=0x0A(10).
+
+**Callers:** F2 (0x181F:0x13C), F5, F9 and most report bodies
+
+**Evidence:** func_002B38_unknown.asm lines 13-37: lcall 0xc28,0xa then lcall 0xc11,0xc; F2 call site page_05.asm lines 621-628 'push 0xf / push 0x19 / push 0xa / lea [bp-0x28] / push ss / push ax / lcall 0x181f,0x13c'
+
+### func_002EE4 (sprite/bitmap blit) — resident load_image, file 0x002EE4..0x00304A (358 bytes)  [advisor-report-fields]
+**Purpose:** The sprite-sheet blit primitive behind lcall 0x181F:0x236. Uses the far sheet pointer [0x83E]/[0x840] with per-row shift/clip and lcall 0xC36:0xA. NOT a string draw. F2 invokes it with sprite index ax=0x39 (57) and two PowerRecord-derived params (bx=[0x84FC+0x2E], dx=[0x84FC+0x30]) to draw the religious progress graphic.
+
+**Callers:** F2 paint (0x181F:0x236)
+
+**Evidence:** func_002EE4_unknown.asm lines 62-70 push [0x840]/[0x83e] + lcall 0xc36,0xa; F2 site page_05.asm lines 602-610 'push 0x12c/push 0/push 0/push 1/ mov bx,[0x84fc]+0x2e / mov dx,[+0x30] / mov ax,0x39 / lcall 0x181f,0x236'
+
+### func_064A10 — overlay page 0x14 (code/VICEROY/disasm_overlay_reseg/page_14.asm line 1644)  [lostcity-0x10-bit]
+**Purpose:** Map generator / scenario seeder. Prologue ENTER 0x3C,0 @0x64A10. First act @0x64A23 stores random_int(0,0x7fff) (lcall 0x181f:0x4d4) into word [0x190] — the global map seed func_006188 hashes. Two fixed-coordinate tile-feature writes: @0x65C0D coords (1,0x15) and @0x65C21 coords (0x44,0x2b), each `26 80 0f a0` = or byte ptr es:[bx],0xa0, pointer from tile helper lcall 0x181f:0x70e (@0x65C01/@0x65C15).
+
+**Callers:** map-load/scenario-gen path (cmp [bp+6],0 generator-mode gate near 0x64A2C; cmp [0x2174] map-loaded flag per prior spec note)
+
+**Evidence:** page_14.asm lines 1645-1653 (enter+seed init), 3177-3194 (the two or es:[bx],0xa0 writes with their 0x181f:0x70e tile-pointer setups and the immediately-following lcall 0xd1d:0xdae). Raw bytes at file 0x65C0D and 0x65C21 = 26 80 0f a0.
+
+### func_006188 — resident (code/VICEROY/disasm/func_006188_unknown.asm), file 0x6188..0x61E3 (91 bytes)  [lostcity-0x10-bit]
+**Purpose:** Rumor-presence predicate, called per tile entry. Returns presence procedurally — NO stored 0xA0/0xB0 marker read. Gates: seed [0x190]!=0 (@0x6191); terrain via lcall 0x3e4:0x3a rejecting 0x18/0x19/0x1a arctic/ocean/sealane (@0x61A6-0x61B3); feature high-nibble via call 0x5df0 then cwde/or ax,ax/jge-fail @0x61C5 (requires nibble==0xF, i.e. reader returned -1); then coordinate hash ((x>>2)*0x13 + (y>>2)*0x11 + ...) @0x61C7+. Contains no cmp to 0xA0 or 0xB0.
+
+**Callers:** per-tile-entry rumor check (per prior spec note @0x30822)
+
+**Evidence:** func_006188_unknown.asm lines 13-46: ENTER 8,0; CMP [0x190],0/JE; terrain lcall + CMP ax,0x19/0x1a/0x18 each JE-suppress; CALL 0x5df0; CWDE; OR ax,ax; JGE 0x61ff (suppress); then AND ax,3 / SAR/IMUL hash. No 0xB0/0xA0 immediate present.
+
+### func_005DF0 — resident, file 0x5DF0 (~0x2E bytes)  [lostcity-0x10-bit]
+**Purpose:** Tile feature HIGH-nibble reader. Reads tile byte (call inner 0x5d9c-region via lcall), shr al,4, sub ah,ah, then cmp ax,0x0f; jne; if nibble==0xF returns -1 (the 'none' sentinel func_006188 requires). The generator's stored 0xA high-nibble makes this return >=0, so func_006188's jge-fail SUPPRESSES a rumor on the two 0xA0 tiles.
+
+**Callers:** func_006188 @0x61BC
+
+**Evidence:** raw bytes @0x5DF0: c8020000 ff7608 ff7606 0e e89eff 83c404 c0e804(shr al,4) 2ae4(sub ah,ah) 8946fe 3d0f00(cmp ax,0xf) 7505 c746feffff(mov [bp-2],-1) ... cbcb. Confirms shr-4 high-nibble extraction and 0xF->-1.
+
+### func_061454 — resident, file 0x61454  [lostcity-0x10-bit]
+**Purpose:** Lost-City outcome HANDLER (consumer), invoked AFTER func_006188 signals presence. Does NOT read or compare any stored tile marker: an immediate scan of its body (0x61454..0x61D00) for cmp al,0xa0 (3c a0) and cmp al,0xb0 (3c b0) returns zero matches. Builds LOSTCITY+digit and rolls outcomes per existing §2/§3.
+
+**Callers:** rumor-entry path
+
+**Evidence:** byte scan of 0x61454..0x61D00: zero `3c a0` and zero `3c b0`. Consistent: no marker comparison; presence already decided procedurally upstream.
+

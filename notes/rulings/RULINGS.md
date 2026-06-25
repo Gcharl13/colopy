@@ -4698,3 +4698,38 @@ the pattern-3 mask (`[0xA8A6] & 0xDD == 0x1C`) is ever satisfied for a real coas
 runtime (latent bug vs unreachable branch). Full frame-count table for all 205 decodable
 .SS sheets recorded in `data_extracted/SPRITE_SHEET_FRAMES.md` (decoder: tools/ssdec.py).
 Notable counts: TERRAIN.SS=12, ICONS.SS=131, PHYS0.SS=154, BUILDING.SS=48, BDARK.SS=46.
+
+## 2026-06-25 — Dialogs are GAME.TXT-template-driven; Save/Load "Layout TBD" explained (Track 2b)
+
+The Save/Load picker geometry was "Layout TBD" because there is NO coded layout: dialogs are
+**data-driven from GAME.TXT templates**. Traced chain (notes/ATTRIBUTION_OVERLAY.md): prompt
+orchestrators func_072F7A (save) / func_073158 (load) → slot-list builder func_072CC2 →
+window-create thunk 0x191F:0x182 = **func_06F0F4, a generic dialog-template interpreter** that
+parses the `@SAVEGAME`/`@LOADGAME` section of GAME.TXT (keyword lines: X/Y/WIDTH/LENGTH/
+SMALLFONT/COLOR). Add-row primitive 0x191F:0x176 = func_06C850 (linked-list item alloc, no
+x/y immediates); modal pump 0x191F:0x16a = func_06E3D0 (lays out rows at render time);
+teardown 0x191F:0x1a8 = func_0789FA (DOS free). The templates omit x/y/length ⇒ window
+auto-centered, per-row Y computed at runtime ⇒ those pixel positions are legitimately TBD
+(runtime), not missing work. This generalizes: the 0x191F overlay is the shared dialog engine,
+so other "0x191F TBD" UI items are likely template/runtime-driven too. (One auto-proposal was
+REJECTED for fabricated keyword-offset cites; the function chain stands, exact keyword offsets
+pending re-verification.)
+
+## 2026-06-25 — Advisor-report (F2–F9) renderer located: func_037958 (page 0x05) (Track 2b)
+
+The advisor reports' field layout was the standing "trace the 0x191F overlay" remaining work.
+Located the renderer: **func_037958 (page 0x05)** is the report screen, fed by the F-key
+dispatch (F2 push 2 @page_05.asm:581 / F5 push 5 / F9 push 1) and the .PIK loader func_037340
+(load_report_pik); report chrome strings "REPORT"/"(%d of %d)" at file 0x1EB42/0x1EB49
+(data base 0x1D9A0). Per-report numeric FIELD positions remain TBD (live game-state + the
+0x191F template path), but the renderer + dispatch are now byte-cited (B), upgrading the
+reports from drag-to-measure.
+
+## 2026-06-25 — Lost-City: no 0xB0 immediate exists; trigger masks, not equals (Track 2b)
+
+Exhaustive scan of all 494,910 EXE bytes (grp1-imm byte/word forms on es:[bx] + reg-imm
+cmp/mov 0xB0) found ZERO 0xB0 immediate. The generator ORs 0xA0 into the tile feature byte
+(@0x65C0D/@0x65C21 = `26 80 0f a0`). So the Lost-City trigger cannot compare ==0xB0 against a
+literal; it masks the feature byte (the 0x10 bit is a separate rumor/explored flag tested
+independently, or the read is (feat & 0xA0)). The "==0xB0" model in events.md §6.1 is a recon
+gloss, not a byte literal — corrected to a masked-read model.
