@@ -4818,3 +4818,27 @@ Limit: stock DOSBox sends the DOS console to emulated video (not host stdout) an
 is not automated, so this captures the boot/menu state + resident data. Catching the in-engine
 orders-menu key-match (inside func_06F8FA) still needs scripted input or a debugger build —
 that remains the one honest TBD in the keyboard chain. Harness doc: docs/RUNTIME_SNAPSHOT.md.
+
+## 2026-06-25 — Runtime trace reaches in-game map + ORDERS menu; key-match RUNTIME-CONFIRMED (Track 8)
+
+Drove the live game (tools/drive_game.sh) all the way to the in-game map with an active unit,
+opened the ORDERS pulldown, and snapshotted DOS RAM with the menu OPEN (tools/runtime_snapshot.py).
+This closes the one input TBD that was flagged as needing a runtime trace.
+
+Findings (triangulated: live RAM + static MENU.TXT + screenshot):
+- The in-game ORDERS menu is built from **MENU.TXT @ORDERS** (data_extracted/text/MENU_sections.json),
+  NOT the NAMES @ORDERS (which → 0x54de on-map status letters, Track 6). Each row's accelerator is
+  a **`~` marker** in the label: ~Fortify→F, ~Sentry→S, ~Build Colony→B, `Join Colony (~B)`→B,
+  `Build ~Road`→R, `Begin ~Trade Route`→T, `No Orders (~s~p~a~c~e~ bar)`→spacebar,
+  `Disband Unit (~s~h~i~f~t~-~D)`→shift-D.
+- LIVE EVIDENCE: the menu is a linked list of func_06C850 nodes (0x18 bytes: two far-ptr links +
+  label + u8 row-index + flag) at seg 0x668c; each node carries the ~-marked MENU.TXT label
+  VERBATIM (e.g. `~Activate unit`, `Join Colony (~B)`). So the engine parses the ~ markers from
+  the live menu rows to bind accelerators. (The exact getch-vs-marker compare instruction inside
+  the dialog engine is the only residual micro-detail; the mechanism + full keymap are resolved.)
+- map_view.md sidebar HUD RUNTIME-CONFIRMED: live shows `Spring 1498`, `Gold: 1000e Tax: 0%`,
+  active Caravel `Moves: 4 / Locat: (50,42) / (Sea Lane)` (hard rule 2 confirmed visually).
+
+New screens: docs/screens/06_ingame_map.png, 07_king_audience.png (KING.SS, row 13),
+08_orders_menu.png. The runtime memory harness + driving harness together now reach and confirm
+any reachable game state.

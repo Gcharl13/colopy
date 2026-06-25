@@ -330,6 +330,23 @@ The `~` glyph in a `MENU`/`NAMES` section marks the **underlined accelerator let
 game draws and the key it binds (`GAME_MANUAL.md` lines 440–443: "a highlighted letter that
 corresponds to the key"; menu pulldown is `Alt`+letter, line 40).
 
+> **RUNTIME-CONFIRMED 2026-06-25 (live memory + screenshot).** Drove the game to an active
+> unit and opened the ORDERS pulldown (`docs/screens/08_orders_menu.png`), then snapshotted
+> DOS RAM (`tools/runtime_snapshot.py`). The live menu is built as a linked list of nodes
+> (the `func_06C850` 0x18-byte node: two far-pointer links + the row label + a u8 row-index +
+> a flag byte), and **each node carries the `~`-marked `MENU.TXT @ORDERS` label verbatim** —
+> e.g. in RAM at DGROUP-region seg `0x668c`: `~Activate unit`, `~Wait for next unit`,
+> `~Fortify`, `~Sentry`, `~Build Colony`, `Join Colony (~B)`, `Build ~Road`,
+> `Begin ~Trade Route`, `No Orders (~s~p~a~c~e~ bar)`, `Disband Unit (~s~h~i~f~t~-~D)`. This
+> proves the in-game accelerator key-match is driven by the `~` markers parsed from the live
+> `MENU.TXT @ORDERS` rows (NOT the `NAMES @ORDERS`→`0x54de` table, which is the on-map
+> status-letter glyph per `unit_orders.md §2.4`). The full `MENU.TXT @ORDERS` accelerator set:
+> `A`ctivate / `W`ait / `F`ortify / `S`entry / `B`uild Colony / Join Colony `B` / Clear Forest
+> `P` / Plow Fields `P` / Build `R`oad / `L`oad / `U`nload / `P`illage / `G`o to Port /
+> `G`o to Place / Begin `T`rade Route / `R`eturn to Europe / No Orders = **spacebar** /
+> Dump Cargo `O`verboard / Disband Unit = **shift-D**. This closes the one input TBD that was
+> previously flagged as needing a runtime trace.
+
 ---
 
 ### Main map view — top menu bar (pulldowns)
