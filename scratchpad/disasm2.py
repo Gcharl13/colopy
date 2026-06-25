@@ -1,14 +1,14 @@
 import capstone
-with open('/home/user/colopy/raw/COLONIZE/VICEROY.EXE','rb') as f:
-    data = f.read()
+EXE = "/home/user/colopy/raw/COLONIZE/VICEROY.EXE"
+data = open(EXE, "rb").read()
 md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
 
-def dump(start, end, label=""):
-    print(f"=== {label} 0x{start:X}..0x{end:X} ===")
-    off = start
-    code = data[start:end]
-    for ins in md.disasm(code, start):
-        print(f"{ins.address:06X}  {ins.bytes.hex():<14} {ins.mnemonic} {ins.op_str}")
-
-# The squared+x2 heading penalty region and where it lands
-dump(0x051712, 0x051766, "heading penalty + accumulator")
+# Disassemble at FILE offset 0xCDAD (where patterns matched), resident = 0xCDAD-0x2400 = 0xA9AD
+fo = 0xCDAD
+res = fo - 0x2400
+chunk = data[fo:fo+0x40]
+print(f"FILE offset 0x{fo:X} (resident 0x{res:X})")
+for insn in md.disasm(chunk, res):
+    print(f"res:{insn.address:06x}  {insn.bytes.hex():<12} {insn.mnemonic} {insn.op_str}")
+    if insn.address - res > 0x35:
+        break

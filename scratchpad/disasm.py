@@ -1,16 +1,22 @@
 import capstone
-with open('/home/user/colopy/raw/COLONIZE/VICEROY.EXE','rb') as f:
-    data = f.read()
+
+EXE = "/home/user/colopy/raw/COLONIZE/VICEROY.EXE"
+data = open(EXE, "rb").read()
+
+# resident addr = seg*16+off ; file_off = 0x2400 + resident
+def file_off(resident):
+    return 0x2400 + resident
+
 md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
-md.detail = False
 
-def dump(file_off, n=24, label=""):
-    print(f"--- {label} file_off=0x{file_off:X} ---")
-    code = data[file_off:file_off+n]
-    print("raw:", code.hex())
-    for ins in md.disasm(code, file_off):
-        print(f"{ins.address:06X}  {ins.bytes.hex():<14} {ins.mnemonic} {ins.op_str}")
-
-for off,lbl in [(0x05170A,"@0x05170A"),(0x051759,"@0x051759 cmp"),(0x051760,"@0x051760"),
-                (0x051712,"@0x051712"),(0x0516C5,"@0x0516C5 gate"),(0x0516CC,"@0x0516CC gate")]:
-    dump(off, 24, lbl)
+# Disassemble around cb_hide_draw @0xCDAD and blit_setup @0xCDD6
+start_res = 0xCDAD
+start_fo = file_off(start_res)
+chunk = data[start_fo:start_fo+0x40]
+print(f"resident 0x{start_res:X} -> file_off 0x{start_fo:X}")
+print("raw bytes:", chunk[:0x30].hex())
+print()
+for insn in md.disasm(chunk, start_res):
+    print(f"{insn.address:06x}  {insn.bytes.hex():<14} {insn.mnemonic} {insn.op_str}")
+    if insn.address >= 0xCDE0:
+        break
