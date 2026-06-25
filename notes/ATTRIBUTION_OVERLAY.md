@@ -430,3 +430,89 @@ re-verification. The setup-menu, advisor-report, and Lost-City items WERE verifi
 
 **Evidence:** Already byte-cited in spec §1/§2 (0xCD2E int 0x33 AX=3; 0xCD47 returns buttons in AX). 0xD122 'A3 E6 07' stores that AX to 0x7E6.
 
+
+
+---
+
+## Track 5 additions (2026-06-25) — order dispatch + menu engine
+
+### func_0235D6 @file 0x0235D6 (overlay page 0x01; reseg page_01.asm line 3358, full size=2374B/818 insns; resident .asm stub func_0235D6_unknown.asm is truncated to first 107B and is stale) — 0x01
+**Purpose:** In-game command dispatcher. It is a switch on an ALREADY-NORMALIZED command id in [bp+6] — NOT a key-reader and NOT an accelerator-letter matcher. It never calls getch and never scans @ORDERS rows. Prologue enter 0x1e,0 (c8 1e 00 00). Entry: mov ax,[bp+6] @0x235E2 / cmp ax,0x1a (3d 1a 00) @0x235E5 / je+jle+dec-ax ladder for ids 1..26 @0x235EF-0x235FB. F-key/report branch is an explicit per-id cmp ladder: cmp [bp+6],0x48 @0x23843, 0x41 @0x23854, 0x42 @0x23865, 0x43 @0x23876, 0x44 @0x23887, 0x45 @0x23898, 0x46 @0x238A9, 0x47 @0x238BA, 0x49 @0x238CB, each dispatching to a 0x191F: report thunk. So [bp+6] is the DECODED command id, produced upstream.
+
+**Evidence:** page_01.asm: 0235E2 8b4606 mov ax,[bp+6]; 0235E5 3d1a00 cmp ax,0x1a; 0235EF 48 dec ax (ladder); 023843 837e0648 cmp word [bp+6],0x48 -> lcall 0x191f,0x41a; 0238CB 837e0649 cmp word [bp+6],0x49. byte_sig of its thunk 0x181F:0x0F78 = 9a 78 0f 1f 18 (thunks_resolved.json @file 0x1B568, page_relative 0x26F6).
+
+### func_06E3D0 @file 0x06E3D0 (reseg page_17) — 0x17
+**Purpose:** Menu-dropdown draw/run loop: sets row state from a far menu struct at [bp+6] (LES bx,[bp+6]; tests es:[bx+0xa] flag bits 0x10/0x04; iterates rows up to es:[bx+2] calling per-row draw func_06F83A @0x6F83A), and polls input by repeatedly LCALL 0x181F:0xf6 (kbhit/wait helper @0xD286-family) looping while AX!=0 (or ax,ax / jne 0x6e414 @0x6E41E-0x6E420). It draws/highlights rows but the visible body does NOT contain the accelerator-letter-to-row char compare; that match site was not located.
+
+**Evidence:** 06E3F3 C45E06 les bx,[bp+6]; 06E3F6 26F6470A10 test es:[bx+0xa],0x10; 06E454 26394702 cmp es:[bx+2],ax (row count); 06E419 9af6001f18 lcall 0x181f,0xf6 (input poll); 06E41E 0bc0 / 06E420 75f2 jne 0x6e414 (loop while AX!=0).
+
+### func_051D56 / dispatcher @0x051DCE (reseg page_0D line 7813/7857) — 0x0D
+**Purpose:** Unit-ORDER EXECUTION dispatcher, NOT a key matcher. Reads the unit's stored order byte [bx+0x314c] (8a874c31 @0x51DCE), normalizes (sub ah,ah), sub ax,7 @0x51E0A, range-checks cmp ax,5 / ja @0x51E0D-0x51E10, then jmp word cs:[bx+0x5c2a] @0x51E15 (jump table). Confirms the order code is already an integer by the time it reaches dispatch — the key->order-code translation is upstream in the order-menu UI, not here.
+
+**Evidence:** 051DCE 8a874c31 mov al,[bx+0x314c]; 051E0A 2d0700 sub ax,7; 051E0D 3d0500 cmp ax,5; 051E15 2effa72a5c jmp word cs:[bx+0x5c2a].
+
+### func_072090 @file 0x072090 (top_menu_bar_init) — resident/overlay
+**Purpose:** Builds the TOP menu bar (GAME/VIEW/ORDERS/REPORTS/TRADE/PEDIA) by pushing pos globals [0x8a0]/[0x89e] + const 0xfa0 and LCALL 0x1a1f,0x2d2 to the bar-render overlay. It is an INIT/render call, not an accelerator engine — it does not read keys or match accel chars.
+
+**Evidence:** 072090 enter 4,0; 072099 push [0x8a0]; 07209D push [0x89e]; 0720A1 push 0xfa0; 0720A4 9a d2 02 1f 1a lcall 0x1a1f,0x2d2.
+
+### @ORDERS NAMES section (data_extracted/text/NAMES_sections.json) + EXE section-name string @file 0x1FBFD — data
+**Purpose:** Holds the accelerator letters. Each row is 'Label, X' where X after the comma is the accel letter: Sentry,S / Trade Route,T / Go To,G / Live In Village,L / Fortify,F / Build Colony,B / Clear/Plow,P / Build Road,R (No Orders,'-'). The EXE references the literal 'ORDERS' only once, at file 0x1FBFD, as a section-NAME lookup key (...IT\0ORDERS\0ACTIONS...), i.e. the accel letters are loaded string-table DATA, not EXE code/tables. Whether the runtime parses the char-after-comma or builds a parallel accel array was NOT byte-resolved.
+
+**Evidence:** NAMES_sections.json @ORDERS = 'No Orders, -\nSentry, S\nTrade Route, T\nGo To, G\nLive In Village, L\nFortify, F\n...Build Colony, B\nClear/Plow, P\nBuild Road, R...'; EXE bytes @0x1FBFD = 4F 52 44 45 52 53 00 ('ORDERS\0').
+
+### orphans_overlay.asm @0x249CB (active-unit per-turn order dispatcher) — code/VICEROY/disasm/orphans_overlay.asm:4993
+**Purpose:** Per-turn standing-order executor for the ACTIVE unit. Reads order code from UnitRecord 0x314C and dispatches to the per-order handler.
+
+**Evidence:** 0x249C6 IMUL bx,[0x5392],0x1c (active-unit idx * 28); 0x249CB MOV al,[bx+0x314c]; 0x249CF SUB ah,ah; 0x24A28 DEC ax/DEC ax (code-2); 0x24A2A CMP ax,7 / JA 0x24A22 (range 2..9 else default); 0x24A2F SHL ax,1; 0x24A32 JMP word cs:[bx+0x3b58]. 8-entry word table at file 0x24A38 = {0x3b26,0x3b0e,0x3b42,0x3b36,0x3b42,0x3b1a,0x3af4,0x3b02} for codes 2..9; cs_base 0x20EE0 -> handler stubs file 0x24A06,0x249EE,0x24A22,0x24A16,0x24A22,0x249FA,0x249D4,0x249E2.
+
+### orphans_overlay.asm @0x051DCE (second order dispatcher, sel=[0x314c]-7) — code/VICEROY/disasm/orphans_overlay.asm:64185
+**Purpose:** Second dispatcher (operates on unit at [bp+6], not [0x5392]); handles order codes 7..12.
+
+**Evidence:** 0x51DCA IMUL bx,[bp+6],0x1c; 0x51DCE MOV al,[bx+0x314c]; 0x51E0A SUB ax,7; 0x51E0D CMP ax,5 / JA default; 0x51E15 JMP word cs:[bx+0x5c2a]. 6-entry table at file 0x51E1A = {0x5bfc,0x5be6,0x5bf2,0x5c10,0x5c06,0x5c06}; cs_base 0x4C1F0 -> stubs 0x51DEC(7),0x51DD6(8),0x51DE2(9),0x51E00(10),0x51DF6(11),0x51DF6(12). Stubs LCALL the SAME thunks as the @0x249CB stubs for 7/8/9 (0x191f:0x1fa, 0x191f:0x1c2, 0x191f:0x216), cross-confirming the code->handler binding.
+
+### func_040656 (Clear/Plow per-turn executor) — code/VICEROY/disasm/func_040656_unknown.asm:13
+**Purpose:** Per-turn handler for order code 8 (Clear/Plow). Dispatcher stub 0x249D4 LCALL 0x191f:0x1c2 -> thunk file 0x1B7B2 -> func 0x40656.
+
+**Evidence:** 0x40656 ENTER 0x2a,0. Thunk resolution via tools/rtlink (resolve_thunk). Matches spec terrain_improvement.md clear/plow executor func_040656.
+
+### func_0409D6 (Build Road per-turn executor) — code/VICEROY/disasm/func_0409D6_unknown.asm:13
+**Purpose:** Per-turn handler for order code 9 (Build Road). Stub 0x249E2 LCALL 0x191f:0x216 -> thunk 0x1B806 -> func 0x409D6.
+
+**Evidence:** 0x409D6 ENTER 0x1c,0. Matches spec terrain_improvement.md road executor func_0409D6.
+
+### func_040C1E (Build Colony per-turn executor) — code/VICEROY/disasm/func_040C1E_unknown.asm:13
+**Purpose:** Per-turn handler for order code 7 (Build Colony). Stub 0x249FA LCALL 0x191f:0x1fa -> thunk 0x1B7EA -> func 0x40C1E.
+
+**Evidence:** 0x40C1E ENTER 0x66,0.
+
+### func_040E22 (Go To per-turn executor) — code/VICEROY/disasm/func_040E22_unknown.asm:13
+**Purpose:** Per-turn handler for order code 3 (Go To). Stub 0x249EE LCALL 0x191f:0x4ba -> thunk 0x1BAAA -> func 0x40E22.
+
+**Evidence:** 0x40E22 ENTER 4,0.
+
+### func_04101C (Fortify per-turn executor; promotes 5->6) — code/VICEROY/disasm/func_04101C_unknown.asm:13
+**Purpose:** Per-turn handler for order code 5 (Fortify, in-progress). Stub 0x24A16 LCALL 0x191f:0x4ac -> thunk 0x1BA9C -> func 0x4101C. On entry it WRITES order code 6 (Fortified) at 0x41024, byte-proving the Fortify(5)->Fortified(6) next-turn transition.
+
+**Evidence:** 0x4101C ENTER 0x12,0; 0x41024 C6 87 4C 31 06 MOV byte ptr [bx+0x314c],6. Matches spec's existing '6 Fortified @0x41024' citation.
+
+### func_041080 (Trade Route per-turn executor) — code/VICEROY/disasm/func_041080_unknown.asm:13
+**Purpose:** Per-turn handler for order code 2 (Trade Route). Stub 0x24A06 PUSH 0/PUSH [0x5392]/LCALL 0x191f:0x2b2 -> thunk 0x1B8A2 -> func 0x41080.
+
+**Evidence:** 0x41080 ENTER 0x42,0.
+
+### func_021FF2 (Fortify order-INIT; writes code 5) — code/VICEROY/disasm/func_021FF2_unknown.asm:106
+**Purpose:** Order-initiation routine that validates and stores order code 5 (Fortify) into UnitRecord 0x314C. Distinct from the per-turn executor func_04101C.
+
+**Evidence:** 0x22105 C6 87 4C 31 05 MOV byte ptr [bx+0x314c],5.
+
+### orphans_overlay.asm order-INIT writers (codes 1,2,3,7,8,9) — code/VICEROY/disasm/orphans_overlay.asm:2417,3284,3221,2909,2563,2701
+**Purpose:** Order-initiation routines that store the order code into 0x314C: 0x21FEB->1 Sentry, 0x22E05->2 Trade Route, 0x22D2D->3 Go To, 0x2279E->7 Build Colony, 0x22324->8 Clear/Plow, 0x2250E->9 Build Road. These prove row-index == stored order code for every byte-verified row.
+
+**Evidence:** C6 87 4C 31 NN MOV byte ptr [bx+0x314c],NN at each cited offset; active unit fetched via IMUL bx,[0x5392],0x1c (stride 28).
+
+### func_072090 (top_menu_bar_init) — code/VICEROY/disasm/func_072090_unknown.asm:20
+**Purpose:** Checked as a candidate for the @ORDERS menu-open site. It only draws the top menu BAR titles (GAME/VIEW/ORDERS/REPORTS/TRADE/COLONIZOPEDIA), NOT the @ORDERS pulldown population or row->code translation. Does not pass the @ORDERS NAMES section to a list/menu routine.
+
+**Evidence:** 0x720A1 PUSH 0xfa0; 0x720A4 LCALL 0x1a1f:0x2d2 (draw bar); no @ORDERS section index loaded.
+

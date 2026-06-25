@@ -4757,3 +4757,28 @@ new-game menu (batch-4: cursor mod4 @0x70158, params @CLAND/CCONT/CTEMP/CCLIM, w
 map-GEN param array [0x1e7e]). The cmp-cascade bytes are real but they are the Customize
 menu's navigation, NOT the in-game map. The genuine in-game active-unit command keymap
 (B/F/C/W…) remains menu-accelerator-driven (func_0235D6) — carried open blocker, still TBD.
+
+## 2026-06-25 — Active-unit order keymap: code→handler RESOLVED; key-read step honestly TBD (Track 5)
+
+Premise correction + a real win. **func_0235D6 is NOT the accelerator engine** — it is a
+downstream command DISPATCHER that receives an already-decoded command id in [bp+6] (switch
+mov ax,[bp+6] @0x235E2; F-key report ladder cmp 0x48/0x41.. @0x23843 → 0x191F report thunks,
+consistent with Track 2b). It never reads a key and never scans @ORDERS. Do not cite it as the
+key→order translator.
+
+RESOLVED (byte-verified): the @ORDERS order-code → per-turn handler map, via the dispatcher
+@0x249CB (imul idx×0x1c; al=[bx+0x314c]; code−2; cmp ≤7; jmp word cs:[bx+0x3b58]; table @file
+0x24A38). Codes→executors: 2 TradeRoute→func_041080, 3 GoTo→func_040E22, 5 Fortify→func_04101C
+(which WRITES code 6 @0x41024, byte-proving Fortify→Fortified promotion), 6 Fortified→passive,
+7 BuildColony→func_040C1E, 8 Clear/Plow→func_040656, 9 BuildRoad→func_0409D6. The 2nd
+dispatcher @0x051DCE (codes 7..12, table @file 0x51E1A) LCALLs the SAME thunks for 7/8/9,
+cross-confirming. Handlers 8/9 match terrain_improvement.md. Row index == stored order code
+for all proven rows. Command letters S/T/G/L/F/B/P/R are canonical from NAMES @ORDERS.
+
+HONEST TBD (overlay-paged, not statically traceable): the KEY-READ step — where a pressed
+accelerator letter is matched to a menu row and decoded into the command id. The match loop is
+inside the overlay menu engine around func_06E3D0 @0x6E3D0 (polls input via LCALL 0x181F:0xf6
+@0x6E419 → getch 0xD286). getch and func_0235D6 have no static callers (xref empty; overlay
+function-pointer table patched at runtime), so the letter→id translation needs a runtime trace
+or the overlay dispatch table resolved. Next site: callees of func_06E3D0's poll loop + per-row
+draw func_06F83A @0x6F83A + the consumer of the 'ORDERS' section-name lookup @file 0x1FBFD.
