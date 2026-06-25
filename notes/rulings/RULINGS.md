@@ -4733,3 +4733,27 @@ cmp/mov 0xB0) found ZERO 0xB0 immediate. The generator ORs 0xA0 into the tile fe
 literal; it masks the feature byte (the 0x10 bit is a separate rumor/explored flag tested
 independently, or the read is (feat & 0xA0)). The "==0xB0" model in events.md §6.1 is a recon
 gloss, not a byte literal — corrected to a masked-read model.
+
+## 2026-06-25 — Track 4: button-bit 0x7E4, colony/europe hit-test tables; map-dispatch mislabel rejected
+
+Three input/UI resolutions landed; one proposal rejected on repo-fact grounds.
+
+- **Mouse 0x7E4 = right-button flag (complement of bit0), RESOLVED.** func_00D106 @0xD1A2-
+  0xD1AE: `mov al,bl / and ax,1 / cmp ax,1 / sbb ax,ax / neg ax / mov [0x7E4],ax` ⇒
+  [0x7E4]=0 on a left click (bit0 set), =1 on a right click. The Track-3 `(bl&1)` gloss was
+  INVERTED; corrected. Written only on a fresh press down-edge; sole writer (A3 E4 07 once);
+  readers test ==0 @0x2438A/0x29C91/0x6ECBC/0x2A038.
+- **Colony click-region table = func @0x299A0** (10 rects, point-in-rect 0x181F:0x3CA=
+  func_004B16): ids 0xA top bar / 2 main scene / 1 field panel / 0 plaza / 8 minimap(121,130,
+  84,48) / 4 SoL panel / 3 flag / 5 stockpile strip / 9 gold readout(305,179) / 0x14 default.
+  Matches colony_screen.md paint rects 1:1. id→action dispatch still TBD (overlay caller switch).
+- **Europe click-region entry = func @0x3200A** (default id 0xF); the older cite 0x032034 is
+  the id-5 (recruit-pool) block BODY, not the entry — corrected.
+
+REJECTED (not landed): the map-key-dispatch agent labeled **func_070060** as the "in-game
+map viewport/region picker" and asserted its getch cmp-cascade (Space/ESC/arrows/Enter) as
+the in-game map key dispatch. **Refuted by committed facts**: func_070060 IS the Customize
+new-game menu (batch-4: cursor mod4 @0x70158, params @CLAND/CCONT/CTEMP/CCLIM, writes the
+map-GEN param array [0x1e7e]). The cmp-cascade bytes are real but they are the Customize
+menu's navigation, NOT the in-game map. The genuine in-game active-unit command keymap
+(B/F/C/W…) remains menu-accelerator-driven (func_0235D6) — carried open blocker, still TBD.

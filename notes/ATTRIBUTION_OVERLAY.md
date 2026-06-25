@@ -351,3 +351,82 @@ re-verification. The setup-menu, advisor-report, and Lost-City items WERE verifi
 
 **Evidence:** byte scan of 0x61454..0x61D00: zero `3c a0` and zero `3c b0`. Consistent: no marker comparison; presence already decided procedurally upstream.
 
+
+
+---
+
+## Track 4 additions (2026-06-25) — input dispatch, hit-tests, report renderer
+
+(The map-key-dispatch target is intentionally EXCLUDED: its agent mislabeled func_070060
+— the Customize new-game menu — as an in-game map picker. See RULINGS 2026-06-25.)
+
+### func_004B16 (point-in-rect, thunk 0x181F:0x3CA → ljmp 0x0262:0x00F6) — @0x4B16  [click-region-ownership]
+**Purpose:** THE consumer of mouse globals 0x7E8/0x7EA. Tests a rect against current mouse pos: [bp+6]=x cmp [0x7E8], right edge = x+[bp+0xA]-1; [bp+8]=y cmp [0x7EA], bottom = y+[bp+0xC]-1. Returns AX=1 if inside, 0 if not. Stack arg order (cdecl): [bp+6]=x,[bp+8]=y,[bp+0xA]=w,[bp+0xC]=h → callers push h,w,y,x (reverse).
+
+**Callers:** per-screen hit-test rect tables func @0x299A0 (colony), func @0x3200A (europe), and the runtime list-hit at @0x691F9
+
+**Evidence:** @0x4B1C mov dx,[0x7e8]; @0x4B20 cmp bx,dx; @0x4B24 add bx,[bp+0xa]; dec bx; @0x4B2C mov dx,[0x7ea]; @0x4B30 mov bx,[bp+8]; @0x4B37 add bx,[bp+0xc]; thunk record @0x1A9BA = 9a 91 0d 0d 11 ea f6 00 62 02 → file 0x4B16
+
+### colony-screen click hit-test (per-screen rect table) — func @0x299A0 (enter 2,0 @0x299A0; default id 0x14)  [click-region-ownership]
+**Purpose:** Maps a click to a colony-screen region id by testing 9 static rects via func_004B16 (0x181F:0x3CA). Rects match colony_screen.md paint rects 1:1 (flag panel 303,132,17,45; SoL/cargo panel 211,130,91,48; surrounding-tile minimap 121,130,84,48; colonist plaza 0,130,120,48; stockpile strip 0,179,305,21; warehouse readout 305,179,15,21; top title bar 0,0,320,7).
+
+**Callers:** reached via overlay/colony-screen input loop (overlay-resident; not a static lcall) — TBD caller
+
+**Evidence:** @0x299A4 mov [bp-2],0x14 (default); 9 push-blocks: @0x299A9 (200,8,120,120)->1; @0x299D2 (305,179,15,21)->9; @0x299F1 (0,130,120,48)->0; @0x29A11 (0,8,199,120)->2; @0x29A32 (303,132,17,45)->3; @0x29A52 (0,179,305,21)->5; @0x29A70 (211,130,91,48)->4; @0x29A8D (121,130,84,48)->8; @0x29AA9 (0,0,320,7)->0xA. Each block: push h,push w,push y,push x; lcall 0x181f,0x3ca; or ax,ax; je next; mov [bp-2],id
+
+### europe-screen click hit-test (per-screen rect table) — func @0x3200A (enter 2,0 @0x3200A; default id 0xF)  [click-region-ownership]
+**Purpose:** Maps a click to a Europe-screen region id by testing 7 static rects via func_004B16 (0x181F:0x3CA). Confirms and supersedes the prior europe_screen.md §4 table; the previously-cited offset 0x032034 is the body of the SECOND rect block (id 5), not the function entry — the function starts at 0x3200A.
+
+**Callers:** overlay-resident Europe input loop (not a static lcall) — TBD caller
+
+**Evidence:** @0x32013 mov [bp-2],0xf (default); 7 push-blocks: @0x3201D (305,179,15,21)->0xB; @0x3203D (281,89,37,32)->5; @0x3205E (0,179,305,21)->0; @0x3207D (143,118,81,60)->1; @0x3209C (72,118,70,48)->2; @0x320BA (1,118,70,51)->3; @0x320D7 (224,120,96,59)->4
+
+### map-view runtime list hit-test — @0x691F9 (rect computed at runtime)  [click-region-ownership]
+**Purpose:** Iterates a live list (count [0xA5AA]); per item computes screen x/y via call 0x6B6AB into [bp-2]/[bp-4], then point-in-rect with fixed w=0x64(100), h=7. Top branch tests mouse-X vs 0xA0 (160) to pick a side ([bp-8]=-2 left / -3 right). This is RUNTIME-driven, not a static rect table.
+
+**Callers:** map-view overlay
+
+**Evidence:** @0x691B4 cmp word [0x7e8],0xa0; @0x691E3 call 0x6b6ab; @0x691EF push 7;push 0x64;push [bp-4];push [bp-2]; @0x691F9 lcall 0x181f,0x3ca
+
+### func_037958 (page_05, file 0x037958..0x037A0F, reseg IP 0x0FC8, 184 bytes) — 0x05  [report-field-layout]
+**Purpose:** F2 Religious Adviser report paint function — the renderer named in the task. Read all 67 instructions. It: (1) lcall 0x181f:0x582 set_current_power([bp+6]=power_idx); (2) push 2 / call 0x34c3 -> load_report_pik(2) => REPORT2.PIK; (3) full-screen PIK blit via lcall 0x181f:0x100; (4) sprite blit idx 0x39 via lcall 0x181f:0x236 at (bx=[0x84fc]+0x2e, dx=[0x84fc]+0x30); (5) IF test byte[0x5383]&0x20: sprintf '(%d of %d)' into [bp-0x28] then draw it via lcall 0x181f:0x13c with pushed args 0xf,0x19,0xa; (6) OK bar via call 0x34a0; (7) present/flush. NO title-bar painter call exists in the function — the heading is REPORT2.PIK artwork.
+
+**Callers:** reached ONLY via thunk 0x191F:0x40C from dispatchers 0x2385D / 0x2BDFB / 0x355AE, confirmed by tools/rtlink/xref.py callers 0x037958.
+
+**Evidence:** page_05.asm lines 577-643: line 581 'push 2'; lines 611-612 'test byte ptr [0x5383],0x20 / je 0x105c'; line 616 'push 0x11a9'; lines 621-627 'push 0xf / push 0x19 / push 0xa / lea ax,[bp-0x28] / push ss / push ax / lcall 0x181f,0x13c'; lines 606-610 sprite at [0x84fc]+0x2e/+0x30, ax=0x39, lcall 0x181f,0x236.
+
+### func_002B38 (resident, file 0x002B38..0x002B72, 58 bytes) — resident  [report-field-layout]
+**Purpose:** The text-draw primitive invoked by func_037958's body line. Confirmed = the target of thunk 0x181F:0x013C (thunks_resolved.json: type B, target_file_offset 0x002B38, resident). Decoded its arg order to prove the (%d of %d) pen position: di=[bp+0xa]=x, dx=[bp+0xc]=y, si=[bp+0xe]=color, far string ptr at [bp+6]/[bp+8]. Internally it sets text color via lcall 0xC28:0xA (ax=0xffff, color in stack) then draws text via lcall 0xC11:0xC using globals [0x89e]/[0x8a0] and region ptr [0x2da8]. Matching the call site pushes (0xf,0x19,0xa,ss,buf) gives x=10, y=25, color=15.
+
+**Callers:** func_037958 @ page_05.asm line 627 (lcall 0x181f,0x13c).
+
+**Evidence:** func_002B38_unknown.asm lines 17-32: 'MOV di,[bp+0xa]' / 'MOV si,[bp+0xe]' / 'LCALL 0xc28,0xa' (set color) / 'MOV dx,[bp+0xc]' / 'LCALL 0xc11,0xc' (draw text). thunks_resolved.json key 0x181F:0x013C -> target_file_offset 0x002B38.
+
+### func_002EE4 (resident, file 0x002EE4..0x00304A) — resident  [report-field-layout]
+**Purpose:** The sprite-blit primitive = target of thunk 0x181F:0x0236 (thunks_resolved.json type B -> 0x002EE4). func_037958 calls it with ax=0x39 (sprite index 57) and pen from PowerRecord +0x2E/+0x30. Blits from sheet ptr globals [0x83e]/[0x840]. Confirms the F2 'domain graphic' is sprite 57 at a runtime-driven position.
+
+**Callers:** func_037958 @ page_05.asm line 610.
+
+**Evidence:** func_002EE4_unknown.asm lines 62-63 'PUSH [0x840] / PUSH [0x83e]' (sheet ptr). thunks_resolved.json key 0x181F:0x0236 -> 0x002EE4.
+
+### func_037340 (load_report_pik, page_05) — 0x05  [report-field-layout]
+**Purpose:** PIK background loader. Concatenates data-segment string 'REPORT' (overlay offset 0x11A2) with the literal report number and loads the .PIK. For F2 the literal is 2 (page_05.asm line 581) => REPORT2.PIK. Used to confirm the background string offsets resolve to real EXE bytes.
+
+**Callers:** func_037958 via near-call 0x34c3 (= 0x191F:0xF4A).
+
+**Evidence:** raw/COLONIZE/VICEROY.EXE @0x1EB42 = bytes 'REPORT\0' (overlay data base 0x1D9A0 + 0x11A2 = 0x1EB42); @0x1EB49 = '(%d of %d)\0' (0x1D9A0 + 0x11A9 = 0x1EB49). Both read directly from the EXE.
+
+### func_00D106 (mouse poll / edge-detector) @0xD106 — resident (code/VICEROY/disasm/func_00D106_unknown.asm + raw VICEROY.EXE)  [button-bit-0x7E4]
+**Purpose:** Central mouse poll/edge-detector. Latches get_pos() result into the input-global block (0x7E4..0x7FA): snapshots prev x/y (0x7F8/0x7FA), calls get_pos (LCALL 0xA58:0x38B @0xD11B), stores raw buttons AX->0x7E6 (@0xD122), computes press/release/down edges, and on a fresh press down-edge writes the left/right discriminator to 0x7E4 (@0xD1AE).
+
+**Callers:** 0xD106 is the central poll; its callers are the per-screen UI loops (not enumerated here). Only writer of 0x7E4 is 0xD1AE (verified: 'A3 E4 07' occurs exactly once in the image). Readers all test [0x7e4]==0 vs nonzero: e.g. @0x2438A,0x29C91,0x6ECBC,0x2A038 (cmp word [0x7e4],0).
+
+**Evidence:** Disasm of 0xD1A2-0xD1AE re-verified from raw bytes (capstone CS_MODE_16): 0xD1A2 8A C3 mov al,bl ; 0xD1A4 25 01 00 and ax,1 ; 0xD1A7 3D 01 00 cmp ax,1 ; 0xD1AA 1B C0 sbb ax,ax ; 0xD1AC F7 D8 neg ax ; 0xD1AE A3 E4 07 mov [0x7e4],ax. BX was loaded from [0x7E6] at 0xD131 (8B 1E E6 07). The whole 0xD19C-0xD1AE block is gated by 'or dx,dx / je 0xd1b1' at 0xD198 (dx = fresh-press down-edge, set =1 at 0xD159 when bx!=0 and prev buttons [0x7EE]==0).
+
+### get_pos @0xCD0B — resident segment 0xA58 module_off 0x38B  [button-bit-0x7E4]
+**Purpose:** Public mouse poll; returns buttons in AX (driver int 0x33 AX=3 returns BX bitmask bit0=left, bit1=right). 0xD106 latches this AX into 0x7E6 at 0xD122, so bl&1 = left-button bit.
+
+**Callers:** (n/a)
+
+**Evidence:** Already byte-cited in spec §1/§2 (0xCD2E int 0x33 AX=3; 0xCD47 returns buttons in AX). 0xD122 'A3 E6 07' stores that AX to 0x7E6.
+

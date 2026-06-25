@@ -228,13 +228,31 @@ void paint_F2_religious(int power_idx) {        // [bp+6] = power_idx
   func_037958 does **not** call the title-bar painter (`0x191F:0x8B2`) that the
   other reports use — the F2 heading is supplied by the REPORT2.PIK artwork /
   an as-yet-unisolated callee (see TBD in Open work).
-- **body element (byte-cited position/font/color)**: when `byte [0x5383] & 0x20`
-  is set, the report draws the format string **`"(%d of %d)"`** (overlay data
-  offset `0x11A9` -> file `0x1EB49`) at **x=10 (`0x0A`), y=25 (`0x19`),
-  color index 15 (`0x0F`)** via `lcall 0x181F:0x13C` = func_002B38
-  (set-color `0xC28:0xA` + draw-text `0xC11:0xC`). The two `%d` args are
-  `PowerRecord +0x2E` and `+0x30` (immigration crosses progress; exact field
-  semantics are a data-model TBD).
+- **body element (FULL STATIC FIELD LAYOUT, byte-verified 2026-06-25)**: this is
+  the ONLY text field func_037958 draws (it makes no title-bar-painter call — the
+  "RELIGIOUS ADVISER REPORT" heading is baked into REPORT2.PIK artwork). When the
+  live flag `byte [0x5383] & 0x20` is set (`test byte ptr [0x5383],0x20 / je`,
+  page_05.asm lines 611-612) the report sprintf's the format string
+  **`"(%d of %d)"`** (overlay data offset `0x11A9` -> file `0x1EB49`; the EXE bytes
+  at 0x1EB49 read `(%d of %d)\0`, directly verified) into the stack buffer
+  `[bp-0x28]`, then draws it via `lcall 0x181F:0x13C`.
+  - **Draw primitive (byte-cited):** thunk `0x181F:0x013C` resolves (type-B,
+    `thunks_resolved.json`) to resident **func_002B38** (file 0x002B38). Its arg
+    order is decoded from func_002B38_unknown.asm: `di=[bp+0xa]`=x, `[bp+0xc]`=y,
+    `si=[bp+0xe]`=color, far string ptr at `[bp+6]/[bp+8]`. It sets ink color via
+    `lcall 0xC28:0xA` then draws text via `lcall 0xC11:0xC` (using globals
+    `[0x89e]`/`[0x8a0]` and the text-region pointer `[0x2da8]`).
+  - **Pen position / color (byte-cited STATIC win):** the call site pushes
+    `0xf, 0x19, 0xa` then `ss:[bp-0x28]` (page_05.asm lines 621-627), so mapping
+    to func_002B38's args gives **x = 10 (`0x0A`), y = 25 (`0x19`),
+    ink color index = 15 (`0x0F`)**. No font-id is passed — the primitive uses the
+    renderer's current/default font (font selection is not an argument here; TBD
+    which font global it reads).
+  - **LIVE figures (TBD — runtime):** the two `%d` args are
+    `word [0x84fc]+0x2E` and `word [0x84fc]+0x30` (page_05.asm lines 613-615);
+    `[0x84fc] = power_idx*0x13C + 0x8808`, i.e. **PowerRecord +0x2E / +0x30**
+    (immigration-cross progress / threshold). Values exist only at runtime — a
+    port reads those two PowerRecord words. Exact field semantics: data-model TBD.
 - **domain graphic**: sprite index **`0x39` (57)** blitted via
   `lcall 0x181F:0x236` = func_002EE4 (sheet ptr `[0x83E]/[0x840]`), positioned
   from `PowerRecord +0x2E/+0x30` (runtime-driven extent — TBD exact rect).

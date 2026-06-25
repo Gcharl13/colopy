@@ -17,8 +17,12 @@
 > - The two seed call sites `0x109E2` / `0x5A9F0` are **NOT** `int 0x33` — they are a
 >   `CD 33` byte pair inside an unrelated instruction and inside an overlay far-pointer
 >   data table, respectively (false positives; verified).
-> - The mouse **left/right button discriminator** (claimed `(bl&1) -> 0x7E4`) did **not**
->   survive independent re-disassembly — it is marked **TBD** below, not asserted.
+> - The mouse **left/right button discriminator** at `0x7E4` is **RESOLVED (2026-06-25)**:
+>   it is `!(buttons & 1)`, not `(bl&1)`. Byte-exact at `0xD1A2-0xD1AE`
+>   (`mov al,bl / and ax,1 / cmp ax,1 / sbb ax,ax / neg ax / mov [0x7E4],ax`):
+>   `[0x7E4]=0` on a **left** click (bit0 set), `=1` on a **right** click (bit0 clear),
+>   written only on a fresh press down-edge (gated by `or dx,dx / je` @`0xD198`). The
+>   earlier `(bl&1)` claim was inverted; see the `func @0xD106` table below.
 > - Menu-accelerator rows (`@ORDERS`/`@REPORTS`/`@CUP` etc.) are **string-table sourced**
 >   (`data_extracted/text/*.json`, committed decoded data), not EXE-offset claims; the
 >   key→action *labels* are byte-true from those tables, the *dispatch sites* are cited
@@ -88,7 +92,7 @@ poll/edge-detector is `func @0xD106`:
 | `0x7F4` | `0xD140`/`0xD148` | "button just released" edge |
 | `0x7F2` | `0xD19C`/`0xD168` | press latch |
 | `0x7EC` | `0xD194` | down edge (this poll) |
-| `0x7E4` | `0xD1AE` | which button (left vs right) — **TBD**: the `(bl & 1)` decoding did not survive independent re-disassembly; the global is written at `0xD1AE` but the exact bit/value mapping is unconfirmed |
+| `0x7E4` | `0xD1AE` | which button (left vs right), written **only on a fresh press down-edge** (block gated by `or dx,dx / je 0xd1b1` @`0xD198`). **RESOLVED 2026-06-25:** value = `!(buttons & 1)` i.e. `[0x7E4]=0` when the **left** button bit is set (left click), `=1` otherwise (**right** click). Byte-exact: `0xD1A2 8A C3 mov al,bl` (bl = low byte of raw buttons latched from `[0x7E6]` @`0xD131`) → `0xD1A4 25 01 00 and ax,1` (isolate left-button bit0) → `0xD1A7 3D 01 00 cmp ax,1` → `0xD1AA 1B C0 sbb ax,ax` (AX=0xFFFF if left bit clear, 0 if set) → `0xD1AC F7 D8 neg ax` (AX=1 if left clear, 0 if left set) → `0xD1AE A3 E4 07 mov [0x7E4],ax`. So the prior `(bl & 1)` claim was inverted: the stored value is the **complement** of bit0 (a right-button flag). Sole writer (`A3 E4 07` appears exactly once); all readers test `[0x7E4]==0` vs nonzero (e.g. `cmp word [0x7e4],0` @`0x2438A`,`0x29C91`,`0x6ECBC`,`0x2A038`). |
 | `0x7F0` | `0xD188`/`0xD18E` | "state changed since last poll" |
 | `0x7F6` | `0xD1BB`/`0xD1C2` | any-button-currently-down |
 | `0x7F8`/`0x7FA` | `0xD10C`/`0xD112` | X/Y snapshot at poll start (for movement test) |
@@ -474,12 +478,27 @@ handler is not a static per-letter `cmp` (the keys drive the Multi-function disp
 | `F1` | Get info about selected item | M | `GAME_MANUAL.md` L133 |
 | `ESC` | Exit and return to Map | M | `GAME_MANUAL.md` L134 |
 
-**Click regions** (byte-cited paint/hit rects from `colony_screen.md`):
+**Click regions** — byte-cited from the colony-screen hit-test routine **`func @0x299A0`**
+(`enter 2,0`; default region id `0x14`), which tests these rects against the mouse globals
+via point-in-rect `0x181F:0x3CA` (`func_004B16` @0x4B16; see §4). Each row is
+`push h; push w; push y; push x; lcall 0x181F:0x3CA; or ax,ax; je next; mov [bp-2],<id>`. The
+rects match the `colony_screen.md` paint rects 1:1 (RESOLVED 2026-06-25).
 
-| Region | Action | Tier | Citation |
-|---|---|---|---|
-| Surrounding-tile minimap (121,130,84,48) | (work-tile area) | B (rect) | `func_027DB2 @0x027DB7` |
-| Warehouse / gold readout (306,179) | trade-readout (heap string `[0x2F5E]`, NOT gold) | B (rect) | `@0x0283F1` |
+| Rect (x,y,w,h) | Region-id | Region / action | Tier | Citation |
+|---|---|---|---|---|
+| (0,0,320,7) | 0xA | top title bar | B | `func @0x299A0` `@0x29AA9` |
+| (0,8,199,120) | 2 | main scene / work-area left | B | `@0x29A11` |
+| (200,8,120,120) | 1 | field-production / right scene panel | B | `@0x299A9` |
+| (0,130,120,48) | 0 | colonist plaza row (`func_0270D0`) | B | `@0x299F1` |
+| (121,130,84,48) | 8 | surrounding-tile minimap (`func_027DB2`) | B | `@0x29A8D` |
+| (211,130,91,48) | 4 | SoL / cargo / message panel (`func_02814C`) | B | `@0x29A70` |
+| (303,132,17,45) | 3 | nation flag panel (`func_028540`) | B | `@0x29A32` |
+| (0,179,305,21) | 5 | 16-commodity stockpile strip (`func_0281D6`) | B | `@0x29A52` |
+| (305,179,15,21) | 9 | warehouse / gold readout (heap string `[0x2F5E]`, NOT gold) | B | `@0x299D2`; draw `@0x0283F1` |
+| (anywhere else) | 0x14 | no region (default) | B | `@0x299A4 mov [bp-2],0x14` |
+
+> The id→action dispatch is performed by the (overlay-resident) caller's `switch` on the
+> `AX` return of `func @0x299A0` — **TBD** (see Open blockers).
 
 ---
 
@@ -507,8 +526,11 @@ close (`europe_screen.md §4`, RESOLVED 2026-06-23).
 | `F1` | Get info about selected item | M | `GAME_MANUAL.md` L182 |
 | `ESC` or `E` | Exit and return to map | B (`x`/ESC) / M (`E`) | `@EUROLABEL` `"x"` token (`europe_screen.md §4`); `GAME_MANUAL.md` L183 |
 
-**Click hit-test rects** — byte-cited from the Europe hit-test routine `@0x032034`
-(point-in-rect `0x181F:0x3CA`), `europe_screen.md §4`:
+**Click hit-test rects** — byte-cited from the Europe hit-test routine **`func @0x3200A`**
+(`enter 2,0`; default region id `0xF`), point-in-rect `0x181F:0x3CA` (= `func_004B16` @0x4B16;
+see §4), `europe_screen.md §4`. **Note (corrected 2026-06-25):** the function ENTRY is `0x3200A`,
+not `0x032034` — `0x032034` is the body of the *second* rect block (the id-5 recruit pool). Each
+row is `push h; push w; push y; push x; lcall 0x181F:0x3CA`:
 
 | Rect (x,y,w,h) | Click-id | Action | Tier | Citation |
 |---|---|---|---|---|
