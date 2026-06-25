@@ -4,7 +4,8 @@
 
 **Overall confidence:** order set + **executors (`func_040656` clear/plow,
 `func_0409D6` road) + work-counter + completion + tile-bits + lumber grant
-`BYTE_VERIFIED`** (2026-06-20); the 20-tool debit is in an overlay handler (TBD).
+`BYTE_VERIFIED`** (2026-06-20); the 20-tool debit is **BYTE_VERIFIED** in `func_040608`
+(`@0x4060F sub byte[bx+0x3159],0x14`, §3 "Tool cost").
 **Canonical primary:** `func_040656`/`func_0409D6`; `data_extracted/text/NAMES_sections.json`
 (@ORDERS), `docs/GAME_MANUAL.md`.
 
@@ -85,11 +86,26 @@ Orders box shows `P` / `R` while in progress. Layout `TBD`.
 ## 6. Open questions (TBD)
 1. ~~Locate the order-execution function.~~ **Done 2026-06-20** — `func_040656`
    (clear/plow) / `func_0409D6` (road), dispatched from `@0x051D56` (§3). The
-   **20-tool cost** is in the `0x1A1F` overlay (thunks `0x04181D`/`0x041822`) — still
-   byte-TBD.
+   **20-tool cost** resolves to **`func_040608`** (`@0x4060F sub byte[bx+0x3159],0x14`
+   = −20 tools at UnitRecord+0x15; reverts Pioneer→Colonist when remaining <20, emits
+   `USEDUPTOOLS`) — **BYTE_VERIFIED** (§3 "Tool cost"). The completion sites that reach it
+   are the near-calls `0x04181D`/`0x041822` in the road executor (`func_0409D6 @0x40BA5`
+   / `@0x40AF4`), which trampoline via `ljmp 0x1A1F:0x1D8`/`0x1A1F:0x1E6`; the exact
+   ljmp→file mapping is runtime-patched, but the debit logic itself is byte-proven in
+   `func_040608`.
 2. ~~Per-improvement completion time.~~ **Done** — work counter `UnitRecord +0x16`
    ≥ `@TERRAIN[t·16+0x2F78](+2 clear/plow)`, Hardy-Pioneer halved (§3). **B.**
-   **Yield deltas** from plow/road/clear (the production effect of the `0x40`/`0x08`
-   tile bits) — trace where `compute_terrain_yield` consults the plow/road bits.
+   **Yield deltas** from plow/road — **BYTE_VERIFIED**: `func_009B9C` (compute_terrain_yield)
+   reads the **feature/overlay layer** byte (map layer #2, base DGROUP:`[0x160]/[0x162]`,
+   via `func_005D32` = thunk `0x37F:0x142` = `0x181F:0x754`) — the *same* layer the executor
+   writes the road bit `0x08` / plow bit `0x40` into (`func_0409D6 @0x40AEC or es:[bx],8`,
+   pointer from `func_005D1A`=`0x37F:0x12A`). In the improvement-bonus block: **road** bit
+   (`TEST al,0xa` `@0x9F01`) adds `bonus` to the per-good yield iff the good index
+   (`[bp-0x12]`) **> 3** (`@0x9F05 JLE`, `@0x9F0B/@0x9F0E ADD`) — i.e. ore/fur/timber;
+   **plow** bit (`TEST al,0x40` `@0x9F1F`) adds `bonus` iff the good index **≤ 3**
+   (`@0x9F23 JG`, `@0x9F29/@0x9F2C ADD`) — i.e. crops/food. `bonus` (`[bp-0xa]`) = **1**,
+   or **2** for good index 5 / river-adjacent (`@0x9EC6/@0x9EDD`); the bonus is folded
+   into the yield accumulator `[bp-0x24]` at `@0x9F4C`. **B.**
+   (Clear's yield effect is the forest-id−8 base-terrain swap, already §3.)
 3. ~~Where cleared/plowed/road state is stored.~~ **Done** — **plow = tile bit
    `0x40`, road = tile bit `0x08`, clear = forest id −8** (§3 "Per-tile bits"). **B.**

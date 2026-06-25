@@ -85,7 +85,7 @@ Layout `TBD`.
 
 ## 5. Evidence
 - `docs/GAME_MANUAL.md` — fog/discovery, permanent reveal, scout abilities. **R**
-- `formats/MP_FORMAT.md` — tile-byte bit 7 (unconfirmed discovered flag). **TBD**
+- `formats/MP_FORMAT.md` — tile-byte bit 7 is **NOT** the discovered/explored flag (byte-disproven: the explored flag lives in the separate visibility layer, §2). The renderer's fog test reads a *separate* per-tile byte `[0xa8a0]` (`test [0xa8a0],al`, `al=1<<(player+4)`, `func_0681A8 @0x681EA`), distinct from the terrain feature byte `[0xa8a1]` whose high bits 6–7 it extracts as overlay bits (`and ax,0xc0`, `@0x68206`). So .MP tile-byte bit 7 is a feature/overlay bit, not exploration state. **B** (resolved: not the discovered flag).
 - `data_extracted/text/GAME_sections.json` — @LOSTOURSCOUTS/@SCOUTCOLONY. **B** (strings).
 - `func_05A20E` (file `0x5A20E`) — scout infiltrate-colony: `@SCOUTCOLONY` **4-option** dialog (Meet Mayor / Infiltrate / Attack / Nothing); Meet Mayor blocked post-independence (`@NOMAYORSDURINGREV`); Infiltrate roll `random_int(1,36)≤(X+6)·2` (Seasoned-halved); Attack → `func_05A40E` (de Witt gate `@0x5A469`). **B** (option semantics resolved §3).
 - `func_006608` (file `0x6608`) — sight-radius selector (R=1 default, R=2 scout/big

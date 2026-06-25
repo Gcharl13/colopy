@@ -4,8 +4,10 @@
 
 **Overall confidence:** **fully implemented + byte-traced (2026-06-20)** — order
 field + dispatch, route-definition structure, per-turn automation, and load/unload
-primitives all `BYTE_VERIFIED`; a few sub-details (`load`-vs-`unload` nibble split,
-the Europe-array write offset) `TBD`. **Canonical primary:** `func_041080`
+primitives all `BYTE_VERIFIED`. The two prior sub-detail `TBD`s — the `load`-vs-`unload`
+nibble split (now: low nibble = UNLOAD `+0x06..+0x08`, high nibble = LOAD `+0x03..+0x05`,
+`func_060D8C @0x60E83`) and the Europe-array write (scalar-only in the `func_032914`
+subtree, `@0x32A92`/`@0x32A9C`) — are resolved 2026-06-25. **Canonical primary:** `func_041080`
 (automation), `func_05FE60` (route selector/editor), `data_extracted/text/NAMES_sections.json`
 `@ORDERS`; `GAME_sections.json` `@TRADE*` keys.
 
@@ -41,7 +43,7 @@ A trade route automates a ship or wagon train: the player defines a sequence of 
   | off | field | tier |
   |-----|-------|------|
   | `+0x00` (word) | destination = **colony id**, or **`0x3E7`(999)=Europe**, `0x3E8`(1000)=none; colony via `dest·0xCA + 0x5D46` (ColonyRecord) `@0x05FEE1` | **B** |
-  | `+0x02` (byte) | packed good-list counts: **low nibble = list-0 count, high nibble = list-1 count** (load vs unload — split TBD); `get_stop_field @0x060382` | **B** |
+  | `+0x02` (byte) | packed good-list counts: **low nibble = UNLOAD count (lane bytes `+0x06..+0x08`), high nibble = LOAD count (lane bytes `+0x03..+0x05`)** — resolved 2026-06-25, see §3; `get_stop_field @0x060382` (arg 0 → `&0x0F` low nibble `@0x603A2`, arg 1 → `>>4` high nibble `@0x60394`) | **B** |
   | `+0x03..+0x09` | **nibble-packed good ids** (two 4-bit goods/byte); `get_nth_good @0x603DA → addr_of_good_byte @0x060350` | **B** |
 - **Unit→route binding — `UnitRecord +0x17` (abs `0x315B`), split into two nibbles
   for a route-carrying unit:**

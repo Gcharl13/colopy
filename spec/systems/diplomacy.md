@@ -59,8 +59,20 @@ Runs when two powers meet and exchange treaty / peace / tribute / war. Structure
     attitude/demand component `+= (diff−2)·meeting_val` (`@0x58580`).
   - **AI action probability** gate `random_int(1000) < 200·diff + 100` (10%…90%)
     (`@0x58315`). See `spec/systems/difficulty.md` §3.
-  The remaining **non-difficulty** AI willingness thresholds (attitude/relationship
-  cutoffs that decide *whether* to offer peace vs war) are still **TBD**.
+  - **AI willingness thresholds — BYTE_VERIFIED (re-verified vs EXE 2026-06-25).**
+    Attitude is a per-power byte at `DGROUP:0x940C` (displacement `[bx-0x6BF4]`,
+    indexed by the power arg). (a) **No-action gate** `func_057F4E @0x58C24`: the AI
+    declines to act when `(attitude>>2) > demand_score` **and** (`demand_score <= 0xC`
+    **OR** `random_int(0,4) != 0`) — i.e. it only proceeds past the gate when
+    `(attitude>>2) <= demand_score`, or when `demand_score > 0xC` and the
+    `random_int(0,4)` roll hits 0 (`shr al,2` `@0x58C2B`; `cmp [bp-6],0xC` `@0x58C35`;
+    `lcall 0x181f,0x4d4 (random)` `@0x58C42`). (b) **Final accept/affordability gate**
+    `@0x58E1F`: struct ptr `[0x84FC]`, demand value (`[bp-0x66]`, sign-extended via
+    `cdq`) is compared against the 32-bit gold field at `+0x2A/+0x2C` (`cmp [bx+0x2C],dx`
+    `@0x58E1F`, `cmp [bx+0x2A],ax` `@0x58E29`). (c) **Target eligibility** `@0x57B1A`:
+    requires turn `>= 0x28` (`cmp [0x538E],0x28` `@0x57B10`) **and** at least one of the
+    two powers' attitude `>= 8` (`cmp byte ptr [bx-0x6BF4],8` `@0x57B1A`/`@0x57B24`).
+    Plus the difficulty-scaled demand terms above.
 - Privateer attribution, blockade: **TBD**.
 
 > Corroborated by `viceroy_source/src/diplomacy/{meeting,relations,treaty}.c`

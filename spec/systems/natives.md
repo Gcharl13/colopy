@@ -50,9 +50,14 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   - **Doubler RESOLVED 2026-06-20:** `cl = byte[[0x8D4A]+5]` of the **missionary
     unit record** (`@0x572DE`). Its **low nibble = owning power** (`& 0xF`, compared to
     `[bp+6]` `@0x572EA`); **bit `0x10` doubles the convert chance** (`test cl,0x10;
-    shl ax,1` `@0x57300`). So the doubler is a **per-missionary attribute flag**
-    (high nibble of unit+5) — almost certainly the **expert/Jesuit missionary** bit
-    (the mechanism is byte-verified; the exact bit *label* stays TBD).
+    shl ax,1` `@0x57300`). **Bit `0x10` LABEL RESOLVED 2026-06-25 (B):** the same
+    `byte[[0x8D4A]+5]` is given bit `0x10` by `or [bx+5],0x10` @`0x48C81` (with
+    `bx = [0x8D4A]`), gated by `has_father(0x16, power)` — thunk `0x181F:0x7B4`
+    with arg `0x16` and `[bp+8]` @`0x48C71`, taken only when the call returns
+    nonzero (`or ax,ax; je` @`0x48C79`). Founding father `0x16` = **Jean de
+    Brebeuf** (`@FATHERS` row 0x16, Religious category — a Jesuit). So the doubler
+    is the **Jean de Brebeuf founding-father bonus**, set on the active
+    convert-context record `[0x8D4A]`, NOT a per-missionary profession bit.
 - **Native raid on colony** — `func_05BE84` (file `0x5BE84`). **BYTE_VERIFIED:** the
   6 raid outcomes are the message keys `RAIDWREAK` (`@0x5C1DE`), `RAIDSTORES`
   (`@0x5C3CC`), `RAIDBURN` (`@0x5C50B`), `RAIDSHIP` (`@0x5C57B`), `RAIDGOLD`
@@ -196,8 +201,11 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
    settlement; emits `@EXTORTSTUFF` (gold) / `@EXTORTPOOR` / `@EXTORTLAUGH` / `@EXTORTNO`
    by outcome. **B** (bounds). The raw pre-clamp demand derives from the settlement's
    stock. ✓ All native `§6` items resolved.
-4. ~~Mission conversion `cl&0x10` doubler.~~ **Done** (expert/Jesuit missionary bit;
-   mechanism **B** §3); exact bit *label* still TBD.
+4. ~~Mission conversion `cl&0x10` doubler.~~ **Done — label RESOLVED 2026-06-25 (B):**
+   the `[0x8D4A]+5` bit `0x10` is set by `or [bx+5],0x10` @`0x48C81` gated by
+   `has_father(0x16, power)` (@`0x48C71`); FF `0x16` = **Jean de Brebeuf** (`@FATHERS`
+   row 0x16, Religious/Jesuit). So the doubler is the **Jean de Brebeuf** founding-father
+   bonus, not a per-missionary profession bit. Mechanism + label both **B** (§3).
 5. **[Resolved — B]** **TribeData `+0x46+power·2`** = per-power native **alarm/attitude seed**
    (`func_065D26 @0x65DA6`): `random_int(0,14) + (2·difficulty` **iff the power is
    human**, `controller==0` `@0x65DC7`; AI gets +0), saturating at 20. So the human
