@@ -26,12 +26,19 @@ which is exactly why running it is worth it.)
    → `raw/COLONIZE/COLONIZE.EXE` (455,137 bytes).
 2. Ghidra → **`File → Import File`** → `raw/COLONIZE/COLONIZE.EXE`. Accept the **MZ / x86
    16-bit real mode** language the loader offers. Let **Auto-Analyze** run.
-3. Find the painter. File offset `0x1EFA3` maps to a `seg:off` address after import, so the
-   reliable way is **`Search → Memory…`** for the prologue bytes **`C8 82 00 00 56`**
-   (`ENTER 0x82,0; PUSH si`) → that hit is the F5-cluster painter. (Other report painters share
-   the `C8 ?? 00 00 56` shape with different frame sizes.) Click it, `D` to disassemble if
-   needed, open the **Decompiler**. You should see real C — a `load_PIK` call, a 320×200 rect
-   fill, and a loop over a record list — **not** `halt_baddata()`.
+3. Find the painter by its bytes (file offset `0x1EFA3` becomes a `seg:off` address after
+   import, so search bytes instead). In the CodeBrowser:
+   - **`Search` menu → `Memory…`** (keyboard shortcut **`S`**).
+   - In the *Search Memory* dialog, set **Format = `Hex`** (NOT String — String finds nothing).
+   - Enter **`c8 82 00 00 56`** (`ENTER 0x82,0; PUSH si`; spaces optional).
+   - Click **`Search All`** → exactly **one** result (this pattern is unique in COLONIZE.EXE).
+     Double-click it to jump there.
+   - If it shows as raw bytes, press **`D`** to disassemble, then open the **Decompiler**
+     (`Window → Decompiler`). You should see real C — a `load_PIK` call, a 320×200 rect fill,
+     and a loop over a record list — **not** `halt_baddata()`.
+   - (The other report painters share the `C8 ?? 00 00 56` shape with different frame sizes.)
+   - *If `Search All` finds nothing:* confirm Format is `Hex` and that Auto-Analyze has finished
+     (the search only covers loaded bytes).
 4. Export the C: **`File → Export Program → C/C++`** → save as
    `ghidra_export/COLONIZE_reports.c`. (Exporting the whole program is fine.) Commit + push:
    ```
