@@ -30,6 +30,15 @@ port) are game state.
 > `@EUROLABEL` (grep-verified below); `@EUROLABEL` holds only RECRUIT/PURCHASE/TRAIN.
 
 ## 1. Purpose
+> **RUNTIME-CONFIRMED 2026-06-25** (`docs/screens/10_europe_screen.png`, `09_europe_arriving.png`):
+> drove a Caravel back to Europe ("Return to Europe" order) and captured the live screen. Confirms
+> the header `London, England. Spring, 1500. Tax: 0% Gold: 1000e`, the three dock-zone captions
+> `Expected Soon` / `Bound For New England` / `Loading: Caravel`, the `RECRUIT`/`PURCHASE`/`TRAIN`
+> button panel (top-right), the 16-commodity bid/ask price strip along the bottom (same prices as
+> the F5 Economic report — single market model), and the `Exit` button with its red `E` accelerator
+> (bottom-right). First arrival shows a tutorial help overlay (the "European Status Screen" text).
+> Validates the Track-4 `func @0x3200A` hit-test rects and the §-cited paint origins.
+
 The home-nation harbor where the player sells/buys cargo, recruits/purchases/trains
 units, and dispatches ships. The dock panel tracks ship traffic (Expected Soon /
 Bound For / Loading via per-ship sail-state). The bottom strip shows the 16

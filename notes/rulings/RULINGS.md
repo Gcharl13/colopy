@@ -4863,3 +4863,13 @@ Live field values confirmed (not just layout):
 
 UX facts: reports close via the OK button (bottom-right), NOT Esc (Esc quits from the map); an
 F-key pressed inside a report pages THAT report's sub-views, it doesn't switch reports.
+
+## 2026-06-25 — Europe screen captured live (Track 10)
+
+Drove a Caravel back to Europe ("Return to Europe" order, ~2 turns) and captured the European
+Status Screen live (docs/screens/10_europe_screen.png + 09_europe_arriving.png). Confirms
+europe_screen.md: header "London, England. Spring, 1500. Tax: 0% Gold: 1000e"; the three dock
+zones Expected Soon / Bound For New England / Loading: Caravel (captions from @MISC); the
+RECRUIT/PURCHASE/TRAIN panel (@EUROLABEL); the 16-commodity bid/ask price strip (same prices as
+the F5 Economic report -> single market model); and the Exit button with red 'E' accelerator.
+First arrival shows a tutorial help overlay. Validates the Track-4 func @0x3200A hit-test rects.

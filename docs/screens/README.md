@@ -15,6 +15,9 @@ is 1024×768 (game letterboxed/centered).
 | `07_king_audience.png` | Audience with the King | UI_AUDIT_TRACKER row 13 (`func_075352`, `KING.SS`): "we dub thee Viceroy of the New World", scroll text + throne portrait + dog. |
 | `06_ingame_map.png` | **In-game map view** | `spec/ui/map_view.md` (was PARTIAL): top menu bar GAME/VIEW/ORDERS/REPORTS/TRADE/COLONIZOPEDIA; minimap top-right; **sidebar HUD confirms the TBD text — "Spring 1498", "Gold: 1000e Tax: 0%"**, active Caravel ("Moves: 4", "Loca: (50,42)", "Eng. Caravel", "No Orders", **"(Sea Lane)"** — CLAUDE.md hard rule 2), cargo "Veteran / 100 Tools". |
 | `08_orders_menu.png` | **ORDERS pulldown (active unit)** | The live in-game orders menu: Activate unit / Wait for next unit / Fortify / Sentry / (greyed land orders) / Go to Port / Begin Trade Route / Return to Europe / No Orders (space bar) / Disband Unit (shift-D). Confirms `MENU.TXT @ORDERS` + the `~`-accelerator key-match (`input.md`). |
+| `09_europe_arriving.png` | Europe — first arrival | "English Caravel Now Arriving In London" + the tutorial help overlay (European Status Screen explainer). |
+| `10_europe_screen.png` | **Europe (European Status Screen)** | `spec/ui/europe_screen.md`: header `London, England. Spring, 1500. Tax: 0% Gold: 1000e`; dock zones Expected Soon / Bound For New England / Loading: Caravel; RECRUIT/PURCHASE/TRAIN panel; 16-commodity bid/ask price strip; Exit `(E)`. Confirms Track-4 `func @0x3200A` hit-test rects. |
+| `reports/` | **Advisor reports F1–F10** | Full gallery + README — see `docs/screens/reports/`. |
 
 ## How they were produced
 Headless DOSBox 0.74 in `Xvfb :99`, driven with `xdotool` and captured with `scrot`. The
