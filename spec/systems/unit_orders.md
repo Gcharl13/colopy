@@ -86,7 +86,7 @@ at **`0x54de`**:
   **13 rows** = the 13 `@ORDERS` rows). Per row: skip spaces (`@0x074F7E`
   `cmp byte es:[bx],0x20`), take first non-space (`@0x074F90` `mov al,es:[bx]`), store
   (`@0x074F96` `mov bx,[bp-8]; mov byte[bx+0x54de],al`).
-- Result: **`0x54de[row] = {'-','S','T','G','L','F','F','B','P','R','-','-','-'}`** (NAMES
+- Result: **`0x54de[row] = {'-','S','T','G','L','F','F','B','P','R','-','-','-'}`** — **runtime-confirmed 2026-06-25** (this exact 13-byte sequence occurs once in live DOS RAM at DGROUP `0x54de`, seg `0x1cfd`; `tools/runtime_snapshot.py`, `docs/RUNTIME_SNAPSHOT.md`). (NAMES
   `@ORDERS`, 13 rows). **Row index == order code** (matches §2/§2.1). After the loop the
   same builder opens `@ACTIONS` (`@0x074FC4` `push 0x2264 = file 0x1FC04 = "ACTIONS\0"`)
   for a sibling table — confirming this is a general menu-letter builder.

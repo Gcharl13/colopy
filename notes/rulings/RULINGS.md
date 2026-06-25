@@ -4800,3 +4800,21 @@ key against 0x54de — accelerator matching is engine-internal to the dialog/sec
 func_06F8FA, matching the @ORDERS text directly. The in-engine key-match site stays the one
 honest TBD (overlay-internal). Adversarial verify caught my initial renderer mis-citation
 (func_038F2C @0x038F2C) and it was corrected to func @0x0386A before landing.
+
+## 2026-06-25 — Runtime snapshot harness: live DGROUP seg 0x1CFD; 0x54de table confirmed (Track 7)
+
+Built tools/runtime_snapshot.py: boots VICEROY headless under stock DOSBox 0.74 and snapshots
+the emulated DOS RAM out of the DOSBox process via /proc/<pid>/mem (no debugger build/symbols
+needed; DOSBox's emulated RAM is the 16MB anon mmap carrying the MADSPACK+ORDERS signatures;
+DOS phys P = region offset P). First runtime cross-check of static RE in this project.
+
+Verified: live DGROUP base = segment 0x1CFD (phys 0x1CFD0), auto-anchored on the section-name
+table UNIT\0ORDERS\0ACTIONS\0 @DGROUP:0x2258. DGROUP offsets are preserved from the static EXE
+image, so spec DGROUP:0xNNNN citations read live at phys 0x1CFD0+0xNNNN. RUNTIME-CONFIRMED the
+Track-6 0x54de table: DGROUP:0x54de[13]='-STGLFFBPR---' occurs exactly once in 16MB. Anchors
+0x225d='ORDERS', 0x2258='UNIT', 0x2264='ACTIONS' all exact.
+
+Limit: stock DOSBox sends the DOS console to emulated video (not host stdout) and gameplay input
+is not automated, so this captures the boot/menu state + resident data. Catching the in-engine
+orders-menu key-match (inside func_06F8FA) still needs scripted input or a debugger build —
+that remains the one honest TBD in the keyboard chain. Harness doc: docs/RUNTIME_SNAPSHOT.md.
