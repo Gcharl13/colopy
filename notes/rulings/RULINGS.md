@@ -4624,3 +4624,42 @@ While seeding the lab's Screens tab with byte-verified element positions:
   different EXE/offset space). Only each report's TITLE index is byte-cited (MISC[44..129]).
   The lab seeds report fields as **TBD** (drag-to-measure), NOT fabricated — per the prime
   directive. Tracing the 0x191F overlay is the remaining work to upgrade them to B.
+
+## 2026-06-25 — Autonomous spec/systems decode loop (4 batches): headline rulings
+
+Ran a decode→adversarially-verify loop over all 30 `spec/systems/*.md` files in 4
+batches (commits 3e8b4b5, 16b2b32, dbdcb3e and one earlier). Each candidate fact was
+independently re-derived from committed `raw/COLONIZE/VICEROY.EXE` bytes and landed ONLY
+on definitive confirmation; hard items were kept TBD with the blocker named. The
+durable rulings (full byte trails in the commit messages):
+
+- **Mission-conversion `cl&0x10` doubler = Jean de Brebeuf founding-father bonus.**
+  Bit `0x10` on the active convert record `[0x8D4A]+5` is set by `or [bx+5],0x10`
+  `@0x48C81`, gated by `has_father(0x16, power)` `@0x48C71` (thunk `0x181F:0x7B4`,
+  file `0xBC10`). `@FATHERS` row `0x16` = de Brebeuf (Religious/Jesuit). Read/doubled at
+  `@0x57300` (`test cl,0x10; shl ax,1`). A second setter `@0x3BEA2` sits in the FF-0x16
+  effect dispatcher — corroborates, not refutes. Closes the natives §3 mechanism note +
+  §6 open-q together. (Previously: mechanism-known, label-TBD.)
+
+- **`@UNIT` stat-table column map is byte-verified** (was hedged "TBD/unmapped" in one
+  spot): `func_074EC3 @0x074EF9..0x074F59` parses 23 rows into base `0x5230` stride 14;
+  movement (col1) stored ×3 `@0x5234`. Matches the §3 BYTE_VERIFIED table.
+
+- **GAME save/load is raw fixed-record fread/fwrite, no compression** (`func_073BB0` /
+  `func_0734F8`): 0x4F0 map block + 43× colony records.
+
+- **Customize new-game menu fully decoded** (`func_070060`): 4 player-facing params are
+  3-way enums (cursor `mod 4 @0x70158`, value `mod 3 @0x701AA/0x701AD`) — `@CLAND`
+  land-mass, `@CCONT` land-form, `@CTEMP` temperature, `@CCLIM` climate (strings in
+  `GAME_sections.json`). The 5-word param array at `DGROUP:0x1E7E` is mapped slot-by-slot;
+  slot 4 (`0x1E86`) is a generator-internal smoothing budget `(p_iter+1)·0x320 @0x6538D`,
+  NOT menu-reachable.
+
+Honest blocks recorded (stay TBD, not invented): UnitRecord fields
+`0x314F/0x3156/0x3158/0x3148` and the full move-cost table live in unattributed
+orphan-overlay routines; Save/Load and setup-menu dialog *geometry* is inside overlay
+file-picker thunks not in the committed disasm; `map_system` pattern-3 frame `0x9A`
+"out of bounds" depends on the `PHYS0.SS` frame count (MADSPACK sheet, not the EXE);
+the `0x5B1C` tension-row columns 4..38 are never accessed in committed disasm; the
+events Lost-City trigger read `0xB0` vs the generator write `0xA0` is a cross-file
+ruling needing the trigger function traced.
