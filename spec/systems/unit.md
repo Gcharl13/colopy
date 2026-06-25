@@ -40,7 +40,7 @@ convention is ambiguous, so offsets are given absolute):
 
 (`0x3158`, and the exact bit meanings of `0x3148`/`0x314B`, remain TBD.)
 
-`@UNIT` rows (NAMES, **BYTE_VERIFIED present**): Colonists, Soldiers, Pioneers, Missionaries, Dragoons, Scouts, Regulars, Cont. Cav., Cavalry, Cont. Army, Treasure, Artillery, Wagon Train, Caravel, Merchantman, Galleon, Privateer, Frigate, Man-O-War, Braves, Armed Braves, … (24 rows). Each row carries `name, sprite_id, <8 numeric cols>, <8-bit flag string>`. **Column semantics: TBD** (sprite id is col 1; movement/attack/defense/cargo unmapped).
+`@UNIT` rows (NAMES, **BYTE_VERIFIED present**): Colonists, Soldiers, Pioneers, Missionaries, Dragoons, Scouts, Regulars, Cont. Cav., Cavalry, Cont. Army, Treasure, Artillery, Wagon Train, Caravel, Merchantman, Galleon, Privateer, Frigate, Man-O-War, Braves, Armed Braves, … (24 rows). Each row carries `name, sprite_id, <8 numeric cols>, <8-bit flag string>`. **Column semantics: BYTE_VERIFIED** — the `@UNIT` loader at `@0x074EC3` parses each row into the runtime stat table (base `0x5230`, stride 14) per the column map in §3 (movement=col1 stored ×3 @`0x5234`, attack=col2 @`0x5236`, defense=col3 @`0x5235`, cargo=col4 @`0x5237`, then move-class/hull/size/guns/ai-value @`0x5238..0x523C`, flags @`0x523D`). The per-column parse+store sequence is byte-verified at `func_074EC3 @0x074EF9..0x074F59` (sprite store @`0x074EF9`; movement ×3 via `SHL al,1 / ADD al,cl` @`0x074F04`).
 
 `@CLASS` (8 colonist classes w/ a number, BYTE_VERIFIED present): Petty Criminals 300, Indentured Servants 400, Peasant Farmers 600, Skilled Craftsmen 800, Hardy Pioneers 1450, Town Merchants 1500, Trained Mercenaries 1900, Educated Elite 2000.
 

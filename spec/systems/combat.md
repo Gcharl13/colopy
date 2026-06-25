@@ -102,8 +102,27 @@ the prize destroys it instead.
 
 ## 4. UI layout
 Combat-result popups (win/lose/demote/capture) use the shared dialog framework
-(`docs/UI_DIALOGS.md`, `docs/POPUP_TEMPLATE_AUDIT.md`). Specific message keys
-`TBD` (verify against `GAME_sections.json`).
+(`docs/UI_DIALOGS.md`, `docs/POPUP_TEMPLATE_AUDIT.md`). **Message keys now
+BYTE_VERIFIED** — `func_05B2C2` pushes the GAME.TXT section name as the single
+argument to the message routine `lcall 0x181f:0x652` (= thunk `0x0000:0x37A2`,
+the same routine that emits `"HALF"` in `func_05CA7E @0x05CB83`). The DGROUP
+file base is `0x1D9A0` (verified: `"HALF"` @file `0x1F5A6` = `push 0x1C06`;
+`"Bad defense"` @file `0x1F681` = `push 0x1CE1`). The keys, with the exact push
+site in `func_05B2C2` and the loser-type / branch that selects each, all
+confirmed present in `data_extracted/text/GAME_sections.json`:
+
+| GAME.TXT key | push site | branch / selecting condition |
+|--------------|-----------|------------------------------|
+| `@LOOTCAPTURE` | `@0x05B544` (`push 0x1B13`) | loser type `== 0xA` Treasure (`sub al,0xA; jne`, `@0x05B53E`) |
+| `@WAGONCAPTURE` | `@0x05B566` (`push 0x1B1F`) | loser type `== 0xC` Wagon Train (`cmp ax,0xC; je`, `@0x05B533`) |
+| `@COLONISTCAPTURE2` | `@0x05B57E` (`push 0x1B2C`) | loser type `== 0` Colonists **and** prof byte `[bx+0x315B]==0x15` (`@0x05B570`; rewritten to `0x1C`) |
+| `@COLONISTCAPTURE` | `@0x05B586` (`push 0x1B3D`) | loser type `== 0` Colonists, else branch |
+| `@DEMOTE` | `@0x05B679` (`push 0x1B4D`) | demotion-ladder outcome |
+| `@ARTILLERY` | `@0x05B6E7` (`push 0x1B54`) | sets `[bx+0x3148] |= 0x80` (`@0x05B6F6`) |
+| `@ARTILLERY2` | `@0x05B740` (`push 0x1B5E`) | ship-type guard (`cmp [bx+0x3146],0xD`, `@0x05B74B`) |
+| `@CARGOCAPTURE` | `@0x05B98C` (`push 0x1B69`) | cargo seizure |
+| `@SHIPDAMAGE` | `@0x05BC79` (`push 0x1B76`) | ship roll (raw `0x523B/0x523C`, `@0x05B819`) |
+| `@SHIPSUNK` | `@0x05BD0F` (`push 0x1B81`) | ship roll, tests `[bx+0x3148]&0x40` (`@0x05BD1E`) |
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@UNIT` stat columns (demotion target names). **B**
@@ -129,7 +148,15 @@ Combat-result popups (win/lose/demote/capture) use the shared dialog framework
   `−diff`) minus a class penalty (Criminal `0x1A` −10, Indentured `0x19` −5); the
   **Washington** gate `@0x5C74A` (`has_father(11)`) **skips the roll → automatic**.
   Soldiers(1)→Cont.Army(9) on promotion. **B** (form; numeric P is strength-data-dependent).
-- **TBD:** naval/bombardment specifics; result message keys. (The fort/stockade/fortress
+- **B (added 2026-06-25):** combat-result **message keys** — `func_05B2C2` emits
+  `@LOOTCAPTURE` / `@WAGONCAPTURE` / `@COLONISTCAPTURE` / `@COLONISTCAPTURE2` /
+  `@DEMOTE` / `@ARTILLERY` / `@ARTILLERY2` / `@CARGOCAPTURE` / `@SHIPDAMAGE` /
+  `@SHIPSUNK` via the message routine `lcall 0x181f:0x652` (push sites `@0x05B544`..
+  `@0x05BD0F`; full table + branch conditions in §4). All keys present in
+  `GAME_sections.json`.
+- **TBD:** naval/bombardment **roll specifics** (the ship-pair `0x523B/0x523C`
+  formula and the `[bx+0x3148]` 0x40/0x80 flag semantics — message emission is now
+  located, but the numeric roll is not yet fully decoded). (The fort/stockade/fortress
   defense bonus is **not** `@BUILDING` data — that table has only
   `cost/tools/size/min_colony/upkeep`, no defense column — it is the **hardcoded
   `func_007D3E`** colony `+2` / fortified-building `+4` / `×2` chain, §7.1.)

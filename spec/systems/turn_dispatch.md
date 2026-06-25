@@ -4,7 +4,11 @@
 
 **Overall confidence:** **main turn loop `func_005760`, power iteration order, and
 turn/year cadence `BYTE_VERIFIED`** (2026-06-20); the per-power phase *ordering*
-(inside the two per-power processors `func_03E664`/`func_024A48`) `TBD`.
+(the five `func_005760` phases — King `func_03E664` → Orders `func_024A48` →
+Production `func_02F052` → Diplomacy `func_052F7E` → Periodic `func_02F3A2`) is now
+also `BYTE_VERIFIED` — see §3 and Open Question #3 (resolved 2026-06-20); each phase
+thunk (`0x181F:0x668/0x62c/0x644/0x638/0x61e`) resolves to its named processor and the
+call sites fire in that order inside the loop body (`@0x58E2`/`@0x58E7`/`@0x59EA`/`@0x5A37`/`@0x5AE5`).
 **Canonical primary:** `func_005760` (the loop); `docs/ARCHITECTURE.md`;
 `data_extracted/text/NAMES_sections.json` (@NATIONALITY).
 

@@ -52,7 +52,7 @@ gate, no `[0x53D0]` read). See `spanish_succession.md`. Tory population fraction
 
 ## 3. Formulas & rules
 - REF growth over the game: spend rule (driven by `PowerRecord +0x22`, +18/turn, per `spec/systems/king.md`) → REF globals: **TBD** (trace the writer of `0x53DA..0x53E0`).
-- Declare eligibility (SoL% threshold), intervention-force trigger, Tory uprising odds: **TBD**.
+- Declare eligibility (SoL% threshold), intervention-force trigger, Tory uprising odds: **RESOLVED.** (1) Declare eligibility = SoL meter `[0x53D0] ≥ 50` (`cmp [0x53D0],0x32; jge` `@0x3E99E`, §2/§6.1). (2) **Intervention-force arrival** = `func_03D510`: weighted colony pick `random_int(1, Σ weights)` (`lcall 0x181f,0x4d4` `@0x3D57E`), per `tory_uprising.md` §3 / §6.3. (3) **Tory-uprising odds** = `func_03CAC6`: rolls `random_int(0, [0x53a6]+1)` (`@0x3CADD`); uprising fires when result ≠ 0 (`or ax,ax; jne` `@0x3CAE5`), i.e. probability `(diff+1)/(diff+2)` (§6.3). **B.**
 - "No wars during revolution" rule: present as `@NOWARSDURINGREV` key. **BYTE_VERIFIED present** (logic TBD).
 
 ## 4. UI

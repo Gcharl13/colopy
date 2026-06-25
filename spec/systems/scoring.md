@@ -53,21 +53,30 @@ score  = score >> 1                   # @0x3AA6A (halved)
   binding for `0x19/0x1A/0x1B/0x1C` follows from `@CLASS`; the score gates are
   byte-exact regardless.)
 
-  Mapping the remaining weights (5 father / 16 / 24 / 97 post-independence) to
-  their labelled lines requires following each line's `@SCORE*` text-framework
-  label; the count globals (`[0x830]`, `[0x831]`) have no xrefs to confirm them
-  yet — so the **treasury / sentiment / razed-penalty / revolution** enumeration
-  is the remaining `RECONSTRUCTED`→`B` step (now reachable, not blocked).
+  **The component enumeration is now BYTE_VERIFIED** at the grand-total
+  summation `@0x3A896–@0x3A8AB`, which sums exactly seven subtotal locals into
+  the returned `base` (stored `[bp-0x74]`):
+  `[bp-0x64]` revolution bonus + `[bp-0x58]` founding fathers + `[bp-0x6c]`
+  Indian-destruction penalty + `[bp-0x60]` (a flag-2-gated %-derived term) +
+  `[bp-0x5a]` (`[0x53d0]`, capped 100) + `[bp-2]` treasury + `[bp-0x6e]`
+  population. Per-line weights proven: **+5 per founding father** (loop
+  `[bp-0x66]`=0..0x18 over 25 fathers, ownership test `lcall 0x181f,0x7b4`,
+  `add [bp-0x58],5` `@0x3A2BE`); **gold/1000** (`[0x84fc]+0x2A/+0x2C` ÷ `0x3E8`
+  via `lcall 0xd1d,0xec6` `@0x3A3F2–@0x3A402`, → `[bp-2]`); **razed × −(diff+1)**
+  (`[0x84fc]+0x18` × `(0xFFFF − [0x53A6])` `@0x3A4B1–@0x3A4C5`, → `[bp-0x6c]`).
+  The bytes `[0x830]`/`[0x831]` are NOT component counts — they are persisted
+  savegame bytes (deserialized in sequence `@0x751A7`/`@0x751AF`) passed as a
+  render-style argument to the per-line draw thunk `lcall 0x181f,0x13c`. **B.**
 - A Hall-of-Fame **rank 0..23** is derived from the score (largest `n` with
   `n²/3 < score`, capped at 23). **B** (`@0x3AA41..0x3AA79`).
 - Score accumulator global `[0x372]` (zeroed at entry, written during scoring). **B**
 
 ### Component schedule — manual (RECONSTRUCTED; byte-verify each behind `0x191F:0x3AA`)
 - **Population:** +1 per petty criminal / indentured servant; +2 per free colonist; +4 per skilled colonist. **— now BYTE_VERIFIED** (profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4`; see §3 population component).
-- **Continental Congress:** +5 per Founding Father in Congress.
-- **Treasury:** +1 per 1000 gold.
+- **Continental Congress:** +5 per Founding Father in Congress. **— BYTE_VERIFIED** (`func_039EE2`: loop index `[bp-0x66]` over 0..0x18 = 25 fathers, ownership via `lcall 0x181f,0x7b4(idx,player)`, `add [bp-0x58],5` `@0x3A2BE`; subtotal `[bp-0x58]` enters the grand total `@0x3A899`).
+- **Treasury:** +1 per 1000 gold. **— BYTE_VERIFIED** (`func_039EE2 @0x3A3F2–@0x3A402`: 32-bit treasury `[0x84fc]+0x2A` (low) / `+0x2C` (high) divided by `0x3E8`=1000 via `lcall 0xd1d,0xec6`, result → `[bp-2]`, which enters the grand total `@0x3A8A5`).
 - **Rebel Sentiment:** +1 per point of rebel sentiment.
-- **Indian Destruction Penalty:** −(difficulty + 1) per native settlement destroyed.
+- **Indian Destruction Penalty:** −(difficulty + 1) per native settlement destroyed. **— BYTE_VERIFIED** (`func_039EE2 @0x3A4B1–@0x3A4C5`: razed count `[0x84fc]+0x18` (`al`) × `cx = 0xFFFF − [0x53A6]` = −(difficulty+1), `imul cx` → `[bp-0x6c]`, which enters the grand total `@0x3A89C`).
 - **Revolution Bonus (multiplier):** ×2.0 if first to independence; ×1.5 if one other power declared first; ×1.25 if two did. **+1 per liberty bell produced after foreign intervention.** Pre-1780 declaration adds an extra bonus (sooner = larger).
 - **Difficulty factor:** ~~derived from difficulty~~ — **byte-verified** as `[4,5,6,8,10]`/100, see §3 scaling.
 
@@ -85,7 +94,7 @@ F10 "Current Colonization Score" (manual menu map). End-game score sequence + Ha
 
 ## 6. Open questions (TBD)
 1. ~~Locate the score-computation function + accumulator.~~ **Done 2026-06-19** — `func_03A9C0`, accumulator `[0x372]`; scaling/rank now **B**.
-2. ~~Byte-verify the population weights (1/2/4).~~ **Done 2026-06-19** — profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4` at `@0x3A09A..0x3A117` (**B**). Remaining component weights (+5 father, /1000 gold, +1 sentiment, −(diff+1) razed) still behind the paged thunk `0x191F:0x3AA` (`func_03B36A`) — reachable, label-binding pending.
+2. ~~Byte-verify the population weights (1/2/4).~~ **Done 2026-06-19** — profession-byte gates `{0x19,0x1A,0x1B}→+1`, `0x1C→+2`, else `+4` at `@0x3A09A..0x3A117` (**B**). **+5 father, /1000 gold, −(diff+1) razed now also BYTE_VERIFIED** in `func_039EE2` (father loop `@0x3A2BE`; gold÷1000 `@0x3A3F2–@0x3A402`; razed×−(diff+1) `@0x3A4B1–@0x3A4C5`); the 7-term grand-total summation is `@0x3A896–@0x3A8AB`. **Still TBD:** the `+1 sentiment` weight — the corresponding subtotal `[bp-0x5a]` is read ×1 from global `[0x53d0]` (incremented by 0x14 and capped at 100 `@0x3BE64`), but `[0x53d0]` is not yet byte-bound to "rebel sentiment" (spec §2 cites `PowerRecord +0x02`, a different source), and the flag-2-gated `[bp-0x60]` term (`[0x84fc]+0xC ÷ 100`, capped 100, `@0x3A70F`) is unlabeled.
 3. ~~Byte-verify the revolution multipliers (2.0/1.5/1.25).~~ **RESOLVED 2026-06-20 — the
    bonus is ADDITIVE, not a multiplier** (the manual's "1×/0.5×/0.25×" framing is wrong;
    EXE wins). In `func_039EE2` (reached from the accumulator `func_03A9C0` `@0x3B340`),

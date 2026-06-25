@@ -109,10 +109,14 @@ resolves §6.1–6.3.
   the `SAVEGAME` dialog), **slot 10 = the rolling autosave**.
 - Corroborated by `viceroy_source/src/save/{save_serializer,load_deserializer}.c`
   (other branch); the offsets/strides above are re-verified against this branch's EXE.
-- **Remaining `TBD`:** the per-field *byte order within* a PowerRecord on disk (the
-  `SAVE_FORMAT_CROSSREF` "reordered vs runtime" claim is **not** supported by
-  `func_0734F8`, which writes the raw `0x13C` block — re-confirm whether any
-  reordering happens elsewhere); compression (none seen).
+- **PowerRecord per-field reordering — RESOLVED (no reordering).** The load path
+  `func_073BB0` reads the PowerRecord region as a single raw `fread(0x8808, 1, 0x4f0, FILE)`
+  (`@0x73D54..0x73D5F`, `0xD1D:0x528`), the exact mirror of the writer's raw
+  `fwrite(0x8808, 1, 0x4f0, FILE)` (`@0x735EE..0x735F7`, `0xD1D:0x60C`). The whole `0x4F0`
+  block goes DGROUP→disk→DGROUP verbatim with no intervening transform call, so the
+  `SAVE_FORMAT_CROSSREF` "reordered vs runtime" claim is **refuted**: within a PowerRecord,
+  disk byte order = runtime byte order. (Symmetry is total: the serializer issues **43×**
+  `fwrite` `0xD1D:0x60C`, the loader **43×** `fread` `0xD1D:0x528`, one per DGROUP block.) **B.**
 - **HALLFAME.DAT format — BYTE_VERIFIED** (`func_03ADA6`, file `0x3ADA6`): the
   file is **5 records × 42 bytes (`0x2A`) = 210 bytes (`0xD2`)** — confirmed by the
   `fread` length `@0x3ADCF` (C runtime `fopen`/`fread`/`fclose` =
@@ -122,7 +126,12 @@ resolves §6.1–6.3.
   slot, keeps the top 5, and writes back `@0x3AE04..0x3AE43`. (Corrects
   `docs/DATA_MODEL.md`'s "1362 bytes" — that is the *function* size, not the file
   size.) The per-word score fields' meanings are **TBD**.
-- Any compression on the save: **TBD**.
+- Any compression on the save: **RESOLVED — none.** The loader `func_073BB0` is a 1:1
+  mirror of the writer: it makes exactly **43× raw `fread`** (`0xD1D:0x528`), one per DGROUP
+  block, with no decompression/transform pass (the only other stream calls are a single
+  `fopen` `0xD1D:0x4DA` and the map-dimension `memcpy` `0xD1D:0xD82`). Each block is read
+  back into its original DGROUP base at its full stride, matching the writer's **43× raw
+  `fwrite`** (`0xD1D:0x60C`). Verbatim dump in, verbatim dump out ⇒ **no compression**. **B.**
 
 ## 4. UI
 Save/Load menu with 10 user slots + 2 autosave slots (manual). Layout `TBD`.

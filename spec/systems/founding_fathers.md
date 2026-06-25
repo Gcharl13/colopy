@@ -79,8 +79,13 @@ for ff in offerable:                              # @0x03C035
 ```
 So selection is era-weighted random (not difficulty-scaled; difficulty affects
 the *cost* curve only). The per-category candidate scorer `ff_cat_candidate`
-(overlay thunk `0x1A1F:0x0054`) is still **TBD** (call site verified; body
-overlay-resident).
+(overlay thunk `0x1A1F:0x0054`) is **RESOLVED** (2026-06-20, see §6.2): the thunk
+resolves to `func_03B980` (committed `code/VICEROY/typeA_thunk_targets.json` @ thunk
+file-offset `0x01C644`: `lcall_seg_off 0x1A1F:0x0054` → `target_file_offset 0x03B980`,
+`"resolved": true`). The body is disassembled in `code/VICEROY/disasm/func_03B980_unknown.asm`
+(`enter 4`; loop counter `[bp-2]`; acquired-test `0x181F:0x7B4(id,power)` @`0x3B996`;
+category arg loaded `[bp+8]` @`0x3B9A2`), and decoded in §6.2 (Σ weight of a category's
+un-acquired fathers via `func_03C41A`). **B** (structure); per-id table values runtime-BSS.
 
 - Per-father **immediate (one-time) effects** — **BYTE_VERIFIED** (`func_03BC42`,
   file `0x03BC42..0x03BFD0`, ENTER 0x60; the acquire+effect dispatch — on `[bp+8] =
