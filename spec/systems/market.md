@@ -5,7 +5,7 @@
 
 **Overall confidence:** commodity set + price-storage location + **per-turn drift
 formula (`func_0305A8`: decay by `(base+Σtrade)/256`) `BYTE_VERIFIED`**; the
-turn-loop *driver* + the `+0xFC` increment site remain `TBD`. **Last updated:** 2026-06-19.
+turn-loop *driver* + the `+0xFC` increment site **RESOLVED 2026-06-20** (driver: `func_33C96 @0x367FC` + per-good `func_0324F2`/`func_032914`, §3; `+0xFC` increment: SELL updater `func_03234a @0x323bc` `add [bx+0xfc],ax`, §3.1). **Last updated:** 2026-06-25.
 **Primary evidence:** `data_extracted/text/NAMES_sections.json` (@CARGO),
 `docs/DATA_MODEL.md` (price storage).
 
@@ -166,8 +166,10 @@ fastest) **> Rum −12 > Cigars −11**. (Coats match Cigars at −11.)
 **Buy/sell tax interaction:** the King's tax is taken from European sale proceeds
 — **King tax = sale×tax%/100 → REF fund +0x22 (B)**, see [`king.md`](king.md).
 
-**Boycotts:** a Tea Party boycotts one good; field/bitmask `TBD` (cross-ref
-`king.md` §7).
+**Boycotts:** a Tea Party boycotts one good; tested as a **per-power bitmask at
+`PowerRecord +0x20` (word), bit index = good** — `func_030B38 @0x30B47` computes
+`(1 << good) & [bx+0x20]` (`bx = [0x84fc]`). **B.** (set/lift sites + Jakob-Fugger
+clear-all per `boycotts.md` §3; cross-ref `king.md` §7).
 
 ## 4. UI layout
 Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
@@ -196,5 +198,5 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1. ~~the drift driver/call site.~~ **Done 2026-06-20** — `func_33C96 @0x367FC` (all-goods) + `func_0324F2`/`func_032914` (per-good); the `0x368bd` "table" was a JMP-FAR trampoline misread (§3).
-2. Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.
+2. ~~Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.~~ **Done 2026-06-25 — B.** `+0x4C` is a **per-good byte array indexed by `good`** (base `[0x84fc]`, `byte ptr [bx + good + 0x4c]`), confirmed by four accessors that all index identically: **READ** `func_030566 @0x30583` (`price = CARGO_row[good][0] (stride-9 @[bx-0x6900]) + [+0x4C+good]`, clamp ≥0) and `func_030590 @0x3059c` (`[+0x4C+good] − 1`, clamp ≥0); **WRITE** `func_032262 @0x32272` (`[+0x4C+good] += 1` — price step up) and `func_032278 @0x3228d` (`[+0x4C+good] −= 1`, clamp ≥0 — price step down). The byte index is `good` (1-byte stride, 16 entries), so it is **per-good[16], not per-player[4]**. `0x53EA` is separately indexed `good*2` (16 words) at `func_0305A8 @0x305B8` — distinct array, reconciled.
 3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.

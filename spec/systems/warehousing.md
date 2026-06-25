@@ -33,7 +33,11 @@ Hammers, Crosses, Liberty Bells, Flags (no CSV — accumulators, not warehouse s
   bit `0x40` being set; it is **not** a warehouse capacity base. (The 100-unit cap is
   `(+0x95+1)·100` via `func_008D00`, §3.)
 - Per-commodity on-hand stock array in ColonyRecord (the 16-slot stockpile):
-  offset **TBD** — confirm at read site (`spec/systems/colony.md`).
+  **offset `+0x9A`** (good `i` at `+0x9A + i·2`), BYTE_VERIFIED at the read/write
+  sites in `func_02D658`: read `@0x2D6BB` (`MOV ax, [bx+0x9a]`); per-good indexed
+  access `@0x2D6F1` (`si = i<<1`) → `@0x2D6F7` (`CMP [bx+si+0x9a], 0x64`) and the
+  production bank `@0x2D96E` (`ADD [bx+si+0x9a], ax`), all inside the 16-good loop
+  (`CMP [bp-0xb4], 0x10` `@0x2D8E8`). **B.**
 - Warehouse / Warehouse Expansion buildings exist in `@BUILDING` (`NAMES`): rows
   "Warehouse" and "Warehouse Expansion". **B** (building entries).
 
@@ -57,7 +61,12 @@ Expansion → **300**). Confirms the manual's "base 100 / +100 per upgrade". **B
 ## 4. UI
 **Warehouse view** — horizontal strip along the bottom of the colony screen
 showing each storable good and its on-hand count; `[Tab]` selects the strip
-(manual keyboard ref). 16 commodity slots (`spec/systems/colony.md`). Layout details `TBD`.
+(manual keyboard ref). 16 commodity slots (`spec/systems/colony.md`). **Layout BYTE_VERIFIED** in
+`spec/ui/colony_screen.md` §3.9 via `func_0281D6 @0x0281DB`: backing rect
+**(0,179,320,21)** (`PUSH 0x15`=21 h, `0x140`=320 w, `0xb3`=179 y, x=0 `@0x0281DB`),
+**16 cells** (`CMP [bp-0x7e], 0x10` `@0x028231`) at **pitch 19** (`ADD [bp-0x6e], 0x13`
+`@0x02822A`), icon Y **181** (`[bp-0x72]=0xb5` `@0x0281F1`), icon index = **good+0x17**
+(`ADD ax, 0x17` `@0x028253`). **B.**
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@CARGO` (16 goods + tallies); `@BUILDING` (Warehouse, Warehouse Expansion). **B**

@@ -59,9 +59,17 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
 
 ## 4. UI
 
-Tea-Party result message (`@TEAPARTY`) after refusing the tax dialog. Boycotted
-goods are flagged in the Europe trade screen (visual marker) — exact treatment
-`TBD`. **R**.
+Tea-Party result message (`@TEAPARTY`) after refusing the tax dialog. There is
+no passive per-good "boycott marker" tested in any trade-screen render path: the
+boycott-bit test `func_030B38` (thunk `0x191F:0xCD8`) has exactly **two** call
+sites in the whole image and **both are sell logic, not display** — the auto-sell
+loop `@0x41210` and the interactive sell handler `@0x415A6` (`lcall 0x191F,0xCD8`
+`@0x415A6`; if set it falls through to the lift/back-tax dialog `lcall 0x191F,0xC06`
+`@0x415B5`, GAME.TXT string id `0x1033` ≈ `@KISSUP`). So the trade-screen
+"treatment" of a boycotted good is the click → back-tax (`@KISSUP`) pay-or-abort
+dialog, not a passive glyph. Whether the per-good list also draws a distinct
+colour/glyph for boycotted goods is **TBD** — not byte-verifiable, since no
+render function consults the boycott bit (`PowerRecord +0x20`). **R**.
 
 ## 5. Evidence
 

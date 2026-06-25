@@ -208,7 +208,9 @@ the cap; surplus production is dropped (spoilage).
 **Food is the exception — base capacity 200** (user-confirmed; manual). Food is not a
 warehouse-limited trade good but the **population-growth store**: it accumulates to
 its cap and then a colonist is born. The growth path is byte-traced —
-`func_00929A` evaluates the food/population balance, and the grow branch
+the grow branch lives in `func_009318` (file `0x009318..0x009626`) — reached when the
+`func_00929A` bound-classifier (called `@0x009412`, dispatched on its 0..3 return
+`@0x00941B..0x009429`) takes the case-3 path to `@0x00942E`; the grow branch
 (`@0x009432`) fires only while `population (+0x1F) < 0x20` (32, the max colony size),
 then `population++` (`@0x009464`), bumps the SoL divisor `+0xC6 += 100` (`@0x009453`),
 and posts `@NEWCOLONIST`. The exact **200** food threshold constant is **TBD** (the

@@ -25,7 +25,14 @@ Sentiment / uprising keys confirmed present in
 | `@REBELMAJORITY` | 394 | Rebel-majority status string | **B** |
 | `@REBELUNANIMOUS` | 395 | full Rebel support string | **B** |
 
-(Values empty in extracted section — markers; prose binding `TBD`.)
+(Prose binding **BYTE_VERIFIED** from `data_extracted/text/GAME_sections.json` — the
+five keys are **not** empty; each carries full message text and names the per-state
+production effect: `@REBELUNANIMOUS` = SoL up to 100%, **+2** base production + faster
+education; `@REBELMAJORITY` = SoL up to ≥50% majority, **+1** base production;
+`@TORYMINORITY` = SoL down *from* 100%, colonists now gain **only +1**;
+`@TORYMAJORITY` = SoL down <50%, **no** production bonus; `@TORYUPRISING` = `"Tory
+uprising near %STRING0!  Parliament arms Tory Militia!"`. The `%STRING0`/`%STRING1`/
+`%NUMBER0` fields bind the colony name, mother-country name, and the new SoL%. **B.**)
 
 The **rebel fraction** that drives these states is byte-grounded: `ColonyRecord
 +0xC2` = `rebel_dividend` (Sons of Liberty numerator), `+0xC6` = denominator —

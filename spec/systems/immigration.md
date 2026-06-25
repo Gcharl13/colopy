@@ -33,12 +33,22 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
   stride **`0xCA`**) **adds the per-colony cross byte `+0x05`** (`@0x35DBD..0x35DC2`)
   when that colony's owner byte `+0x00 == player` (`@0x35DB7`). A field-unit loop
   (count `[0x539C]`, `UnitRecord` owner nibble `+0x01 &0xF == player`, plus a
-  PowerRecord flag `&0x40` gate `@0x35E18`) can override the delta to `-2`
-  (`0xFFFE` `@0x35E27`). The caller `func_0363A2` adds this delta to `+0x2E`
+  PowerRecord flag `+0x00 &0x40` gate `@0x35E18`) can override the delta to `-2`
+  (`0xFFFE` `@0x35E27`). **Full override gate is now byte-decoded** (`@0x35DE7..0x35E2B`):
+  a unit qualifies for the override only when (a) owner nibble `UnitRecord +0x03 &0xF
+  == player` (`@0x35DEA`: `[bx+0x3147]`, base `0x3144`), (b) `(s8)(UnitRecord +0x00 -
+  player) == 0xEC` (`@0x35DFB..0x35E04`), (c) the resident helper `0x181F:0x0B78` (now
+  decodable, file `0x008BB2`) returns `>= 0` (`@0x35E0F`: `or ax,ax; jl`), where that
+  helper computes `(s8)table[0x30E + UnitRecord +0x02]` (`@0x008BB5..0x008BC4`), and (d)
+  PowerRecord `+0x00 &0x40` set (`@0x35E18`); when all hold and `*out > 0` the delta is
+  forced to `-2` (`@0x35E27`), else `*out -= 2` per qualifying unit (`@0x35DD8`). The
+  caller `func_0363A2` adds this delta to `+0x2E`
   (`@0x363F5`) and **spawns an immigrant when `accumulated > threshold`**
   (`@0x36404`: `cmp cx, ax; jg`), then resets `+0x2E := 0`. **B.** (Base `+2`/turn +
-  per-colony church/cathedral cross output; the unit-loop `-2` override semantics —
-  likely a cross-consuming unit/father — remain `TBD`.)
+  per-colony church/cathedral cross output. The override *mechanism/fields* are
+  byte-verified; the *semantic* meaning — what the `DGROUP:0x30E` attribute table and
+  the PowerRecord `&0x40` flag represent, hence which unit/father consumes crosses —
+  remains `TBD` because neither is labeled in committed evidence.)
 - **Artillery recruit cost** = `base + artillery_bought_count*100`, then counter++ (NOT `base<<count`). **BYTE_VERIFIED** (`DATA_MODEL.md`).
 - Immigrant **type** selection — **BYTE_VERIFIED** (`func_0363A2 @0x36456..0x3649E`):
   1. **Pick a dock slot:** `random_int(0,2)` (`@0x36462`) chooses one of **3 dock
@@ -74,7 +84,7 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
    William Brewster FF effect which rewrites criminals/servants (`0x19`/`0x1A`) → free
    colonist (`0x1C`) at exactly `+0x02..+0x04` (`func_03BC42 @0x3BF85`, see
    `founding_fathers.md`). **Selector RESOLVED 2026-06-20:** `random_int(0,2)` picks the slot, `func_034C24` refills it (difficulty-weighted; Brewster→top class).
-2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override semantics; exact immigrant-placement handler.
+2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override *semantics* (the gate mechanism is now byte-decoded — see §3; only the meaning of the `0x30E` attribute table and the PowerRecord `&0x40` flag stays `TBD`). **Immigrant-placement handler RESOLVED 2026-06-25:** the spawned colonist's UnitRecord is created by `func_030C68` (file `0x030C68`, reached from `func_0363A2 @0x3649B` via thunk `0x36831 → 0x191F:0x0B26`): it maps the dock-pool type to a category (`0x14→2`, `0x18→3`, `0x16→5`, `0x15→1`, with a `random_int(0,lvl+4)==0 → 4` upgrade, `@0x030C71..0x030CD4`) then calls the unit-record allocator `0x181F:0x095C` (resident, file `0x006D24`) which appends a UnitRecord at index `[0x539C]` (`mov si,[0x539C]; inc [0x539C]` `@0x006D64`, stride `0x1C`, base `0x3144`), and on success writes the alive flag `+0x08:=1` (`@0x030CFA`), type `+0x17:=type` (`@0x030D02`), and for category 2 the field `+0x15:=0x64` (`@0x030D0C`). **B.**
 3. ~~Map recruit-pool slot full layout (type, cost, count) and non-artillery cost.~~
    **Done 2026-06-20.** The recruit pool is **`DGROUP:0x978C`, stride 6** (6-byte slots),
    built by the setter **`func_074688`** (`@0x74698..0x746B3`): `+0x00` = recruit/unit

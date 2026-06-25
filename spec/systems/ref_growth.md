@@ -134,7 +134,17 @@ labels `TBD`. **R**.
    `DGROUP:0x925E` is the 3rd byte of a **0x13-stride per-power REF count record**
    (`0x925C/0x925D/0x925E`), used arithmetically as troop strength (`@0x5B99E`), not
    an active/surrendered flag (`func_03CDA2 @0x3CDE8` accrues only if count-C==0). Its
-   write/init path (indirect copy) is the residual.
+   write/init path is **not present in the committed image (verified-negative,
+   2026-06-25):** every access to the record bytes `0x925C/0x925D/0x925E` (reached
+   via `IMUL bx,[0x53D2],0x13` then `[bx-0x6DA4/-0x6DA3/-0x6DA2]`) across all
+   disassembled code is a **read or compare** — `func_03CDA2 @0x3CDED` (cmp -0x6DA2);
+   `func_051EF4 @0x52042/@0x5204B` (mov), `@0x520BE/@0x520CA` (cmp -0x6DA3),
+   `@0x52132/@0x5213E` (cmp -0x6DA4); `@0x5B99E/@0x5B9D5` (mov), `@0x5B8C7/@0x5BA4B`
+   (cmp); plus orphan reads `@0x2F29B,@0x39A9F,@0x39AA5,@0x3DF31,@0x3DF37,@0x4E7E3,@0x4E85A,@0x55E19,@0x55E3F,@0x58ABC`.
+   **No MOV-destination / INC / DEC to these bytes exists** (write opcodes 0x88/0xC6/0xFE
+   against `5C 92`/`5D 92`/`5E 92` return zero matches), and no code loads `0x925C` as an
+   immediate base. The writer is therefore in an **undisassembled overlay** (or a block
+   BSS-init) and remains **BLOCKED** — the per-power record is read-only in committed evidence.
 5. ~~`PowerRecord +0xE` per-type value + `+0x32` strength rating.~~ **Resolved
    2026-06-20** — `+0x32` is **`home_x`** (spawn coord), not a strength rating (no
    aggregate exists; RULINGS). The `+0xE` value (`@0x3E283 add [bx+0xE],[idx−0x6BF8]`
