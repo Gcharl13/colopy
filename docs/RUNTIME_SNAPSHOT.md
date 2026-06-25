@@ -38,3 +38,22 @@ is resident then (resident code, DGROUP, boot-loaded NAMES/GAME data, loaded she
 specific in-game state (e.g. an open orders menu, to catch the in-engine accelerator key-match)
 still needs scripted input or a debugger build. The dump (`dosmem.bin`, ~16MB) is regenerable and
 is **not committed**.
+
+## Interactive driving (Xvfb + xdotool + scrot)
+
+`tools/drive_game.sh` extends the harness from boot-snapshot to **drive-the-game + screenshot
+any state**. It runs DOSBox inside `Xvfb :99`, sends synthetic keyboard/mouse via `xdotool`,
+and captures with `scrot`. This was used to capture `docs/screens/` — the first visual
+ground-truth confirming the byte-documented setup screens (BEGINMENU menu, difficulty select,
+nation select, name entry, opening cinematic) against the live game.
+
+Proven input specifics (they matter):
+- **Keyboard** works via `xdotool key --window <id> <key>`. **Escape QUITS** Colonization — use
+  Space/click to advance cinematics, never Esc.
+- **Mouse motion** must use **absolute** screen coords (`xdotool mousemove X Y`); DOSBox maps
+  them 1:1. Window-relative warps land in the wrong place.
+- **Mouse click**: an instant `click 1` is dropped (too fast for DOSBox mouse polling); use
+  `mousedown 1` + ~0.3s hold + `mouseup 1`.
+
+Sandbox caveat: a single long script that backgrounds DOSBox and drives xdotool may be killed
+(exit 144); if so, issue the steps as separate short foreground commands.
