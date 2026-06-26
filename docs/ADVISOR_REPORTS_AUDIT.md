@@ -344,9 +344,13 @@ function call chain is the new finding.
     - Tons/Gold header: x=0x90 (144) — `0x038B19`..`0x038B47` (right-justified via 0x181f:0x204)
     - Bid header: x=0xaa (170) — `0x038B5E`..`0x038B74`
     - Ask header: x=0xdc (220) — `0x038B8B`..`0x038BA2`
-    (header label TEXT = GAME-string indices [0x2e2e]=385,[0x2e30]=386,
-    [0x2f50]=530,[0x2f52]=531 via fmt helper 0x181f:0x16e — indices oracle-read,
-    literal words TBD; see Open work.)
+    (header label TEXT = **LABELS string-blob indices** [0x2e2e]=385,[0x2e30]=386,
+    [0x2f50]=530,[0x2f52]=531 → **"Tons"/"Gold"/"Bid Price"/"Ask Price"** —
+    RESOLVED 2026-06-26: the global string resolver `func_002462` (`0x181F:0x22`) walks a
+    contiguous null-separated string blob at far-ptr `[0x2d42:0x2d44]` (live base phys
+    `0x4c050`) `repne scasb` to the index-th string; these four indices land on the
+    Tons/Gold/Bid Price/Ask Price strings in that blob (oracle-confirmed present;
+    ±1 index-base nuance in reconstruction). The literals exist in `LABELS @MISC`.)
   - **Per-row draws** (commodity name + 4 numbers; func_002B38 arg order =
     push color,y,x,ss,&str — decoded from `0x002B3D mov di,[bp+0xa]` etc.):
     1. **Name**: left x=`[bp-0x58]`=2, color 0x92, y=row+2; string from pointer
