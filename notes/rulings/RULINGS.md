@@ -5109,3 +5109,42 @@ site + BSS table); the EXEs supply centering + schedule math (B). Plus CLOSING r
 and the LCALL 0x24a,2 clock-helper body (overlay seg 2). This completes the L1 (Presentation) layer:
 every screen — in-VICEROY and the two separate cinematic binaries — is byte-decoded to the
 data-file/runtime boundary.
+
+## 2026-06-26 — L4 AI per-unit engine decoded (state machine, dispatch, heading, budget)
+
+Decode-verify workflow over the orphan-overlay AI cluster (80 byte-verified findings, adversarially
+re-checked via capstone; bodies in page_0C/0D/0F/13). New canonical doc spec/systems/ai.md.
+
+Two AI movement engines:
+- func_04E2D6 @0x04E2D6 (page 0x0D, ~15KB) = per-unit order/mission processor. Pipeline: entry gate
+  on owner+order 0x314C (continue only if order in {0,5,6} or >=0xa, else exit 0x051C68) → validity
+  gate 0x181F:0x302 (0 → state '@', exit) → reachability/colony context (0x952/0x614/0x722) →
+  active-move flag → inline 8-dir scorer (delta tables [bx+0xb4]/[bx+0xbe]) → budget check (remaining
+  = 0x181F:0x90C − [0x3149], <3 → stay + state '9') → write heading 0x314F → sentry toggle 5<->6 on
+  bit 0x3148.2 → else step+goto (order 0x314C=0x0C, write 0x314D/0x314E @0x051C53) → tail-normalize
+  @0x051C68. NO jump table (cmp-ladder).
+- func_046FFA @0x046FFA (page 0x0C, ENTER 0xA2) = tactical heading evaluator. 9 candidates (8 dirs +
+  stay); base score 200; reject Ocean(0x19)/SeaLane(0x1a)/Arctic(0x18); +4 same-heading / turn-cost
+  via 0x181F:0x384; enemy-on-tile reject; colony proximity +0x28(40)/+0x14(20); target-distance ×3;
+  frontier 0x181F:0x984 (reject if 0); early-era terrain +0x32(50); resource yield +0x10(16);
+  COLONY-SITE +0x1F4(500) via 0x181F:0x7BE/0x9E6; RNG jitter 0x181F:0x4D4(1,5) (R); clamp >=0; pick
+  strict-max; write 0x314F @0x047FA0 (8=no-move). The +500 colony-site term is what walks AI settlers
+  to good spots.
+
+0x314B AI state-char alphabet RESOLVED (~30 states, each assign site cited): X=cleared, -=dead slot,
+0=idle/sentry, 1=target-selected, t/i=goal-class 1/7, ?=goal-lost, @=dropped, 9=out-of-budget,
+A=colony-task, G=garrisoned, E=en-route, R=routed, V=arrived, L=routing-in, ==absorbed, U=on-target,
+C=work-done, B/e=terrain-build, F=region-match; plus mission-dispatch tags 2/3/4/5/8/D/J/N/P/W via
+func_04E2B6 (sets state=DL, order=0x0B AI-goto). The plan-map goal-type codes (1->'t',7->'i') and the
+human mission name for each dispatch char are TBD (written by the earlier strategic-AI plan pass).
+
+0x3149 RESOLVED (was AI-GATED): = AI move-credits SPENT this turn (points-per-action accumulator), NOT
+enable/eval-passes. Reset 0 for all units at turn start @0x005872 + on spawn/re-task; charge +3/step
+@0x05CAE2, +0x32/+2 heading-move @0x059F20/@0x059F3C. Act while allowance−[0x3149]>=3 (@0x03EE95); out
+of moves once >=allowance (@0x007A08). Allowance = per-type byte from table 0x5234 (stride 14,
+@0x006CEE) +3 ships. cmp [0x3149],0 gates select already-acted units (func_051D56 @0x051D5D).
+
+This is the first real L4 decode — converts the AI-GATED unit fields (0x3149, 0x314B) to named, and
+gives the rewrite the AI's per-unit decision pipeline + the tactical score formula. Residual L4 =
+the strategic plan-map pass (mission assignment, the -0x674e goal-type table) + per-type stat tables
+0x5234/0x5236/0x5237/0x523d + resident 0x181F helper identities.
