@@ -107,6 +107,14 @@ sol_pct = min(sol_pct, 100)
 **Per-turn accumulator update — BYTE_VERIFIED** (`func_02D658 @0x2DA1C..0x2DAD8`).
 Both `+0xC2` (dividend `A`) and `+0xC6` (divisor `B`) are **32-bit exponential
 moving averages** with a fixed decay of **1/64** per turn (six `sar/rcr` pairs):
+
+> **RUNTIME-CONFIRMED founding-init values 2026-06-26** (`colony_jamestown.bin`, a
+> just-founded pop-1 colony with all per-turn accumulators still 0): `B(+0xC6) = 200`,
+> `A(+0xC2) = 0` → `sol_pct = 0%` (matches the live Score screen "Continental Congress +0").
+> Other freshly-initialized fields: `build_target(+0x94) = 6`, `food-accum(+0xC8) = 0`,
+> `hammers(+0x92) = 0`, `build-progress(+0xB6) = 0`, `warehouse_level(+0x95) = 0`,
+> stockpile `Muskets(+0xB8) = 50`. So a rewrite seeds a new colony with **rebel_divisor B = 200,
+> dividend A = 0**; the EMA then decays B toward its `128·pop` steady state from there.
 ```
 new_bells = bells produced this turn (after the modifiers below)
 pop       = colony size (ColonyRecord +0x1F)
