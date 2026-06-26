@@ -172,12 +172,20 @@ dump or a runtime trace (do not invent it). Full breakdown:
 - Branches on `[0x337]` to one of three sub-renderers (`call 0x2C9B0 / 0x2CA50 / 0x2CAA0`
   `@0x028166/0x02816C/0x028172`) — the SoL-bar vs cargo vs message variants. **B**
 - Trailing `[bp+6]≠0`: `0x181F:0xE2 @0x028197` outlines (211,130,91,48). **B**
-- **Mode text source = TBD.** No colony-screen-render call cites a literal "Sons of Liberty" /
-  "No Ships" string; those words appear only in **GAME `@COLONYOPTIONS`** (a report-options dialog)
-  and the GAME advisor messages (`@SONSUP`/`@REBELMAJORITY`/`@TORYMAJORITY`), and **LABELS `@MISC`**
-  has "No Ships In Port" — none is tied by a cited offset to this panel. Treat the panel-label text
-  as **TBD** until a sub-renderer (`0x2C9B0`/`0x2CA50`/`0x2CAA0`) is decoded. (Corrects the prior
-  spec's asserted literals.)
+- **Sub-renderer locations RESOLVED 2026-06-26** (thunk chain): the three `call 0x2C9B0/0x2CA50/
+  0x2CAA0` are RTLink thunk-table entries → `ljmp 0x191F:0x558/0x6D8/0x798` → overlay **page 0x02**
+  IPs `0x1CCE/0x1E46/0x22B6` → **file `0x268BE` (SoL) / `0x26A36` (cargo) / `0x26EA6` (message)**
+  (page_02 `file = 0x024BF0 + IP`; typeA_thunk_targets.json). So the sub-renderers are now
+  byte-located.
+- **Mode text source = STILL PARTIAL (honest).** Decoding the located sub-renderers did NOT yield
+  a clean string→panel binding: `0x268BE` is a small frame-outline helper (`lcall 0x181F:0xE2`),
+  and the panel text is assembled across helpers using **runtime `LABELS` `@MISC` lookups by
+  index** (not static string offsets) — which is why no literal is tied by a cited offset. The
+  live colony snapshot (2026-06-26) had the panel in mode `[0x337]=0` showing the `@MISC`
+  "No Ships In Port" literal (present in the loaded image at DGROUP `0x2FF1A`), so the SoL-mode
+  text path was not active to verify. The exact `@MISC` index → panel string map remains **TBD**
+  pending a trace of the index lookup (and a snapshot with the panel in SoL mode). NOT asserting
+  the literals — per the prime directive, an honest TBD beats a plausible guess.
 
 ### 3.7 Buildings loop — `func_02701C @0x02701C`
 - Scene backdrop: `0x181F:0xCE` glyph-row `(0xC7,7,…) @0x02703F`; `0x181F:0x4FC` strip blit
