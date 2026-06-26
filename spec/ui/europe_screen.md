@@ -251,9 +251,20 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
 5. ✅ **Market bid/ask** — byte-traced (§3). **B.**
 6. ✅ **Transaction sub-panel** (steps 6–7) — two parchment strips at
    `@0x317CC`/`@0x318D2` (§7). **B.**
-7. **TBD — banner pixel origin.** `func_030F76` builds x/y from formatted-string
-   metrics, not a literal push; the `0x181F:0xB0 @0x0310AD` paint origin is not
-   statically pinned (drawlist §1.2 marks it `[P]`). No B source exists.
+7. **BLOCKED — banner pixel origin (runtime-centered + BSS text-box).**
+   `func_030F76 @0x0310AD` paints via `lcall 0x181F:0xB0` with **no coordinate
+   push** (verified: only `push ss; push &[bp-0x50]; push [bp+4]=mode`), so the
+   origin comes from a **runtime text-box** (`EUROPE_SCREEN_VICEROY_DECODE.md`:
+   globals `[0x2CC6..0x2CCC]`, tier R), and the banner text is **horizontally
+   CENTERED**. **Oracle-confirmed** (`dbx/eu5.png`, scale 2.0 origin (192,184)):
+   the title band ("English Caravel in London") spans game **x≈117–201,
+   x-center=159.25 ≈ screen-centre 160**, **y≈1–7**; the snapshot text-box globals
+   `[0x2CC6..0x2CCC]=(320,7,0,0)` are consistent with a full-width top band at
+   y≈0–7. **Resolved (B+oracle):** painter = `func_030F76` → `0x181F:0xB0`
+   @0x0310AD; placement = **centred in the top title band, y≈1–7**. **Still TBD:**
+   the literal x/y origin — the X is center-justified at runtime and the band geom
+   lives in mutable BSS (`[0x2CC6..0x2CCC]`), not an EXE immediate; no static B
+   source exists.
 8. **TBD — dock caption string-id ↔ sail-state mapping.** The captions are in
    `@MISC` (B that they exist) and the per-state Y is byte-pinned (B), but which
    `@MISC` string is selected for each state, plus the empty-dock caption pointer

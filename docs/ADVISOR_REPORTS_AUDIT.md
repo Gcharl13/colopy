@@ -323,20 +323,64 @@ function call chain is the new finding.
 - **menu-letter**: 'D'
 - **background**: REPORT5.PIK (`# GUESS`) — scales+currency artwork
 - **title text**: LABELS.TXT @MISC[65] = "ECONOMIC ADVISER REPORT"
-- **layout (per `fullscreen_advisor_lower.png`)**: x=0, y=124, w=244, h=68 (lower table)
-  + top body area for currency display
-- **body structure**:
-  - Treasury gold display (PowerRecord +0x2A)
-  - Tax rate (PowerRecord +0x01) — LABELS.TXT @MISC `Tax:` (@CTITLE Tax)
-  - Per-commodity sale prices + market pool
-  - "TOTAL UPKEEP" line (LABELS.TXT @MISC[107])
-  - "(Building Upkeep)" line (LABELS.TXT @MISC[106])
-- **data source**:
-  - PowerRecord +0x4C+i (per-good market price, i=0..15)
-  - PowerRecord +0x5C + i*2 (per-good market pool)
-  - PowerRecord +0x2A (gold)
-- **footer**: "OK"
-- **TBD**: precise row count and (x,y) — needs deeper code trace
+- **REAL paint function (byte-verified 2026-06-26)**: **`func_038A50`** in overlay
+  page_05 (`disasm_overlay_reseg/page_05.asm` reseg IP 0x20C0, file
+  `0x038A50..0x038ED2`, 1155 B; IP = file − 0x036990 per page_05 header
+  code_offset 0x037340). This is the page_05 target the F5 thunk resolves to
+  (already in the F-key table above); the old `file 0x027010` was the pre-reseg
+  overlay-base mis-resolution. It pushes report-PIK literal **5** at `0x038A60`
+  (`push 5 / call 0x34c3` => REPORT5.PIK) and calls `set_current_power`
+  (`0x181f:0x582`) with `[bp+6]=power_idx`.
+
+- **16-COMMODITY TABLE (Tons / Gold / Bid Price / Ask Price), byte-verified +
+  oracle-confirmed 2026-06-26 against `dbx/rep_economic.bin`:**
+  - **Row loop bound = 16.** Counter `[bp-0x84]` runs 0..15; loop guard at
+    `0x038E3B`: `cmp word ptr [bp-0x84],0x10 / jge 0x2514` (file 0x038E40).
+    Start y `[bp-0x5a]=0x21` (33) set at `0x038BE2`.
+  - **Row y-stride = 8 px.** At loop tail `0x038E33`: `add word ptr [bp-0x5a],8`.
+  - **Column header row** (drawn once, before the loop, all at y=0x19=25,
+    color index 0x92=146, via text primitive `0x181f:0x13c` = func_002B38):
+    - Name/Commodity col: x-anchor 0x4c(76), right-justified to 0x90 — `0x038AE8`..`0x038B02`
+    - Tons/Gold header: x=0x90 (144) — `0x038B19`..`0x038B47` (right-justified via 0x181f:0x204)
+    - Bid header: x=0xaa (170) — `0x038B5E`..`0x038B74`
+    - Ask header: x=0xdc (220) — `0x038B8B`..`0x038BA2`
+    (header label TEXT = GAME-string indices [0x2e2e]=385,[0x2e30]=386,
+    [0x2f50]=530,[0x2f52]=531 via fmt helper 0x181f:0x16e — indices oracle-read,
+    literal words TBD; see Open work.)
+  - **Per-row draws** (commodity name + 4 numbers; func_002B38 arg order =
+    push color,y,x,ss,&str — decoded from `0x002B3D mov di,[bp+0xa]` etc.):
+    1. **Name**: left x=`[bp-0x58]`=2, color 0x92, y=row+2; string from pointer
+       table `[bx-0x6840]` (DGROUP +0x97c0), bx=commodity<<1 — `0x038E4C`.
+    2. **Tons**  (col 1 number): DWORD table `[bx-0x773c]` (DGROUP +0x88c4),
+       bx=(power_idx*0x4f + commodity)*4 — `0x038E7B`..`0x038E8E`; right-justified
+       to anchor `[bp-0x86]` (starts 0x46).
+    3. **Gold**  (col 2 number): DWORD table `[bx-0x777c]` (DGROUP +0x8884),
+       same index — `0x038C9A`..`0x038CB0`.
+    4. **Bid Price**: `lcall 0x191f:0x9ea` => **func_030590** at `0x038D83`,
+       right-justified, column anchor `[bp-0x86]` advanced to 0xaa(170).
+    5. **Ask Price**: `lcall 0x191f:0xc3e` => **func_030566** at `0x038DE1`,
+       anchor advanced +0x32 to 0xdc(220).
+
+- **BID/ASK DATA SOURCE = the European market price array PowerRecord +0x4C+i
+  (byte, i=0..15), byte-verified AND oracle-confirmed:**
+  - **Bid = func_030590** (`0x191f:0x9ea`, file 0x030590): `al = byte
+    [0x84fc]+0x4c+commodity; al -= 1; if <0 -> 0`  (`0x03059C` / `0x0305A0` dec /
+    `0x0305A1` jns;sub ax,ax).
+  - **Ask = func_030566** (`0x191f:0xc3e`, file 0x030566): `al = byte
+    [0x84fc]+0x4c+commodity + byte spread_const[commodity*9]`, clamp >=0; spread
+    table at DGROUP -0x6900 (=+0x9700), stride 9  (`0x030575 mov al,[bx-0x6900]`
+    bx=commodity*9; `0x030583 mov al,[bx+si+0x4c]`; `0x030587 add ax,cx`).
+  - **Oracle check (live `rep_economic.bin`, [0x84fc]=0x8808):** computing
+    `bid = PowerRecord[+0x4c+i]-1` and `ask = PowerRecord[+0x4c+i]+spread[i*9]`
+    reproduces the rendered report EXACTLY: Food 0/8 (base 1,spread 7), Sugar 5/7
+    (base 6,spread 1), Silver 19/20 (base 20,spread 0), Muskets 2/3 (base 3,
+    spread 0). All four anchor values match.
+
+- **footer**: "OK" bar via `call 0x34a0` (`0x191f:0xee8` teardown) at `0x038EA8`.
+- **TBD**: literal header words for indices 385/386/530/531; Tons-vs-Gold table
+  identity (both DWORD tables read 0 in this snapshot); exact per-value left x
+  (numbers are right-justified, so left x is glyph-width/runtime — right edges
+  are byte-cited above).
 
 ---
 

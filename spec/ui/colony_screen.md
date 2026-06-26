@@ -112,10 +112,32 @@ Paint origin is the per-screen text-box globals `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` 
 separate from the **top menu bar** (command table `@0x02BDEA`, registration `@0x02BE00`;
 `docs/COLONY_SCREEN_VICEROY_DECODE.md` §10), which carries the dropdown commands and the
 **gold** readout (treasury `PowerRecord+0x2A`).
-**The call sequence + which fields feed the string are B; the literal rendered words are
-TBD/R** — the `0x16E`/`0x22` appends read from the runtime string heap (`[0x2D42:0x2D44]`,
-per-colony word tables at `-0x6840`/`-0x6800`), so the exact text needs a string-section
-dump or a runtime trace (do not invent it). Full breakdown:
+**Field assembly RESOLVED 2026-06-26** (full body re-disassembled `@0x0268CE..0x026AB0`;
+verified against the live "Jamestown. Spring, 1504. Gold: 1000e" snapshot `colony_jamestown.bin`).
+The top guard selects the branch: `mov bx,[0x8542]; cmp [bx+0x1a],4` (owner<4 = European),
+`imul bx,owner,0x34; cmp [bx+0x543f],ah` — on the own/normal-colony case (`==0`) it `jmp 0x269f8`,
+the **name+date+gold** assembler (the `0x26902` branch is the *foreign/owner-descriptor* case). The
+`0x269f8` branch appends, in order, into `[bp-0x50]`:
+1. **Colony name** `@0x269F8`: `mov ax,[0x8542]; inc ax; inc ax` (⇒ **ColonyRecord+0x2**) → `lcall
+   0xd1d:0x7e4` (string copy). **B + oracle:** `*(0x8542)=0x606e`, bytes at `+0x2`=`Jamestown\0`.
+2. separator `@0x26A0E` `0x181F:0x1dc`.
+3. **Season** `@0x26A22`: `bx=[0x538C]; shl bx,1; push word[bx-0x6800]` → `0x181F:0x16E` (append
+   string-from-table). **B + oracle:** `[0x538C]=0` ⇒ `@SEASONS` index 0 = `Spring`.
+4. separator `@0x26A3C` `0x181F:0x1b4`.
+5. **Year** `@0x26A44`: `push word[0x538A]` → `0x181F:0x182` (append decimal). **B + oracle:**
+   `[0x538A]=1504`.
+6. separator `@0x26A55` `0x181F:0x1dc`.
+7. **Gold** `@0x26A61`: `push word[0x93A0]` (a sequential format/msg id, oracle `=0x231`) →
+   `0x181F:0x22` (getter `0:0x62`) returns the value in `dx:ax` → `lcall 0xd1d:0x11b4` (money
+   formatter, which supplies the `Gold:` label `@CTITLE`[1] + the `e`/currency suffix). **B chain;
+   the rendered NUMBER is oracle-confirmed = PowerRecord+0x2a (treasury):** `[0x84FC]`=PowerRecord
+   `0x8808`, `PowerRecord+0x2a=1000` (matches `1000e`), while `PowerRecord+0x2=7181` does **not**
+   match — so the title gold is the **treasury at `PowerRecord+0x2A`**, same field as the menu-bar
+   gold. The `0:0x62` id→field internal byte-trace is the one un-pinned link (see §8). Owner
+   descriptor/colour is merged from `colony+0x1A` via `0x181F:0xB1E` `@0x026A96` before the paint.
+**All five fields (name/season/year/gold + owner colour) and their sources are now B (oracle-
+confirmed for name+season+year+gold); only the inter-field punctuation glyphs from the `0x1dc`/
+`0x1b4` separator helpers and the paint origin (§8.1) remain unliteralized.** Full breakdown:
 `docs/COLONY_SCREEN_VICEROY_DECODE.md` §9.
 
 ### 3.2 Field-production panel — `func_0264A8 @0x0264A8`
@@ -172,20 +194,38 @@ dump or a runtime trace (do not invent it). Full breakdown:
 - Branches on `[0x337]` to one of three sub-renderers (`call 0x2C9B0 / 0x2CA50 / 0x2CAA0`
   `@0x028166/0x02816C/0x028172`) — the SoL-bar vs cargo vs message variants. **B**
 - Trailing `[bp+6]≠0`: `0x181F:0xE2 @0x028197` outlines (211,130,91,48). **B**
-- **Sub-renderer locations RESOLVED 2026-06-26** (thunk chain): the three `call 0x2C9B0/0x2CA50/
-  0x2CAA0` are RTLink thunk-table entries → `ljmp 0x191F:0x558/0x6D8/0x798` → overlay **page 0x02**
-  IPs `0x1CCE/0x1E46/0x22B6` → **file `0x268BE` (SoL) / `0x26A36` (cargo) / `0x26EA6` (message)**
-  (page_02 `file = 0x024BF0 + IP`; typeA_thunk_targets.json). So the sub-renderers are now
-  byte-located.
-- **Mode text source = STILL PARTIAL (honest).** Decoding the located sub-renderers did NOT yield
-  a clean string→panel binding: `0x268BE` is a small frame-outline helper (`lcall 0x181F:0xE2`),
-  and the panel text is assembled across helpers using **runtime `LABELS` `@MISC` lookups by
-  index** (not static string offsets) — which is why no literal is tied by a cited offset. The
-  live colony snapshot (2026-06-26) had the panel in mode `[0x337]=0` showing the `@MISC`
-  "No Ships In Port" literal (present in the loaded image at DGROUP `0x2FF1A`), so the SoL-mode
-  text path was not active to verify. The exact `@MISC` index → panel string map remains **TBD**
-  pending a trace of the index lookup (and a snapshot with the panel in SoL mode). NOT asserting
-  the literals — per the prime directive, an honest TBD beats a plausible guess.
+- **Sub-renderer locations RESOLVED 2026-06-26, CORRECTED 2026-06-26** (thunk chain): the three
+  `call 0x2C9B0/0x2CA50/0x2CAA0` are RTLink near-stubs `ljmp 0x191F:0x558/0x6D8/0x798`. Resolved with
+  the correct RTLink formula `file = code_offset + (ljmp_seg<<4) + jmpf_off`
+  (`tools/follow_thunk.py`; `typeA_thunk_targets.json` `_doc`/`formula`) → **file `0x0275CE` (case 0
+  = SoL/garrison bar) / `0x027746` (case 1 = cargo) / `0x027BB6` (case 2 = message)**. The earlier
+  `0x268BE/0x26A36/0x26EA6` figures were **wrong** — they came from the naive `0x024BF0 + IP` that
+  omitted the `(ljmp_seg<<4)` term, and `0x26A36` actually lands inside the title-builder body, not
+  the cargo panel. **B** (thunk-resolved). Behaviours read this pass: case 0 `0x0275CE` paints the
+  SoL/garrison **icon-bar** rows (table `[bx−0x7238]` via `0x181F:0x222`) — **no @MISC string fetch**;
+  case 1 `0x027746` reads cargo holds `colony+0x94` (`0x181F:0xAC4/0xD4E`) and, when `[0xB98]==0`,
+  draws a centered caption from **string-index `[0x939A]`** via `0x181F:0x22`+`0x100`.
+- **@MISC index → string mechanism RESOLVED + ORACLE-CONFIRMED 2026-06-26.** The panel/minimap
+  captions resolve a **global string index** through **`0x181F:0x22` = `func_002462 @0x002462`**: it
+  loads the string-heap far ptr from **`[0x2D42:0x2D44]`**, then walks N NUL-terminated strings
+  (`repne scasb`, `dec dx` per string, arg N = `[bp+6]`) and returns the far ptr to string #N.
+  **B** (`func_002462_find_char_in_buffer.asm`; `follow_thunk 0x181f 0x22`).
+  - **"No Ships In Port" = global string index `0x153` (339) = `LABELS @MISC` local index `11`**,
+    living at **DGROUP `0x2FF1A`**. **ORACLE-CONFIRMED:** live heap base `[0x2D42:0x2D44]` = `0x4C05:0`
+    (phys `0x4C050`); walking exactly `0x153` strings from there lands on file `0x4CEEA` = DGROUP
+    `0x2FF1A` = `"No Ships In Port"`. The `@MISC` global-index table at DGROUP **`0x2DC0`** holds the
+    contiguous ids (`0x2DC0`=`0x14A`=`@MISC[2]`, so `@MISC[N]` global = `0x148+N`); slot **`[0x2DD2]`**
+    = `0x153` = "No Ships In Port" (`[0x2DD0]` = `0x152` = "Bound For"). **B (index→string, oracle-verified).**
+  - **Which renderer pushed `0x153` at render = BLOCKED (honest).** On the live screen
+    (`docs/screens/11_colony_screen.png`, same frame: Jamestown/Spring/1504) "No Ships In Port"
+    appears in the **minimap rect (121,130,84,48)** (`func_027DB2`, `[0x33C]==0` caption path), whose
+    text push is the **static-looking `push word[0x2DD0]`**. But the oracle reads `[0x2DD0]=0x152`
+    ("Bound For"), **not** `0x153` — and the `0x2DC0` table is **runtime-built** (the `0x14A,0x14B,…`
+    pattern is absent from `VICEROY.EXE`, so these slots are scratch and can be rewritten after a
+    paint). So the snapshot value contradicts the rendered output and I **cannot** snapshot-confirm
+    that `[0x2DD0]` held `0x153` when `func_027DB2` ran. Per the prime directive the exact
+    renderer→slot binding stays **BLOCKED**; the string identity + lookup mechanism above are
+    confirmed, the render-time index push is not.
 
 ### 3.7 Buildings loop — `func_02701C @0x02701C`
 - Scene backdrop: `0x181F:0xCE` glyph-row `(0xC7,7,…) @0x02703F`; `0x181F:0x4FC` strip blit
@@ -306,10 +346,14 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
     the minimap owner-dot / hilite slots `0x830..0x839`). **B**
   - **NAMES `@COLONYNAME`** + per-nation lists **COLONY `@DUTCH`/`@ENGLISH`/`@FRENCH`/`@SPANISH`**
     (the colony name pool the title draws from). **B**
-- **NOT a colony-screen text key (TBD):** there is **no** colony-render-cited "Sons of Liberty" /
-  "No Ships" string. "Sons of Liberty" occurs only in GAME `@COLONYOPTIONS` and advisor messages
-  (`@SONSUP`, `@REBELMAJORITY`, `@TORYMAJORITY`, `@SONSDOWN`); LABELS `@MISC` has "No Ships In Port".
-  The SoL-panel label text source stays **TBD** (§3.6).
+- **"No Ships In Port" text source RESOLVED (index) 2026-06-26:** it is **`LABELS @MISC` local index
+  11 = global string index `0x153`**, resolved at runtime by the by-index resolver `0x181F:0x22`
+  (`func_002462`) over the heap at `[0x2D42:0x2D44]`, landing on **DGROUP `0x2FF1A`** —
+  **oracle-confirmed** against `colony_jamestown.bin` (§3.6). The colony screen renders it in the
+  **minimap rect** via `func_027DB2`'s `[0x33C]==0` caption path; the exact render-time index slot is
+  BLOCKED (snapshot `[0x2DD0]`=0x152 ≠ rendered 0x153, §3.6). "Sons of Liberty" remains a non-colony-
+  render key (GAME `@COLONYOPTIONS`, advisor `@SONSUP`/`@REBELMAJORITY`/`@TORYMAJORITY`/`@SONSDOWN`);
+  the SoL-mode (case 0) panel paints an **icon bar**, not a labelled string (§3.6).
 
 ## 6. Interactions
 - Click own colony tile → this screen (entry chain §1). **B**

@@ -4928,3 +4928,36 @@ claim into a checkable one.
 
 Residual (non-static BY DESIGN): the exact plot a building lands in depends on the per-colony
 RNG seed + shuffle order; replayable from seed 0x181F:0xD62 but not a fixed table.
+
+## 2026-06-26 — UI-residue trace+oracle pass: 6 verified, 2 rejected, 9 honest blocks (Track 13)
+
+Workflow fanned 4 tracers over the remaining tangled UI TBDs, each verified against a live
+snapshot oracle. Landed only byte-traced AND oracle-confirmed facts.
+
+ECONOMIC REPORT (docs/ADVISOR_REPORTS_AUDIT) — the F5 table fully decoded:
+- Real paint fn = func_038A50 (page_05, file 0x038A50; the old 0x027010 was a pre-reseg
+  mis-resolution). 16-row loop (cmp [bp-0x84],0x10 @0x038E3B), y-stride 8 (@0x038E33), start
+  y=0x21. Columns drawn via text primitive 0x181f:0x13c = func_002B38 (arg order color,y,x,ss,&str).
+- BID = func_030590 (0x191f:0x9ea): PowerRecord[+0x4c+commodity] − 1, clamp ≥0.
+- ASK = func_030566 (0x191f:0xc3e): PowerRecord[+0x4c+commodity] + spread_const[commodity*9]
+  (DGROUP +0x9700, stride 9), clamp ≥0. Both oracle-confirmed against rep_economic.bin.
+  Blocks (honest): per-value left x is runtime font-metric right-justification (column RIGHT
+  anchors ARE byte-cited: name→0x90, Gold 0x90, Bid 0xaa, Ask 0xdc); header label literals are
+  GAME-string indices [0x2e2e/0x2e30/0x2f50/0x2f52]=385/386/530/531 (not mapped to text);
+  Tons/Gold dword tables (+0x88c4/+0x8884) both 0 in snapshot (no trades) so not distinguishable.
+
+COLONY PANEL (§3.6): the [0x337] 3-way dispatch is func_02814C; case-0=SoL func@0x0275CE,
+case-1=cargo func@0x027746, case-2=msg. "No Ships In Port" = LABELS @MISC[11] via resolver
+func_002462 (0x181F:0x22), oracle-confirmed at DGROUP 0x2FF1A. SoL/cargo-mode literals stay
+TBD (need a snapshot in those modes).
+
+EUROPE (§3): banner = func_030F76 (lcall 0x181F:0xB0, NO coord push → pixel origin from string
+metrics, runtime). Banner pixel origin + Exit-button paint origin remain TBD. REJECTED: a
+"corrected" click-rect mapping was byte-wrong (verifier refuted).
+
+COLONY TITLE (§3.1): func_0268CE assembles "Jamestown. Spring, 1504. Gold: 1000e" — name branch
+@0x269F8, season @0x26A22, year @0x26A44, gold @0x26A61 (via 0x181F:0x22). REJECTED: one row
+mis-attributed the gold draw to func_0268CE. Pitch-packing loop (line 145) stays TBD.
+
+Method note: 2 rejections (europe click-rect, colony gold) + 9 honest blocks vs 6 clean lands —
+the oracle requirement (must match live snapshot) is doing exactly what it should.
