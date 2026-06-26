@@ -127,8 +127,17 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   (`[bp-0x86]`) + bitmask. The thunk only **reads** the `0x5B1C` tension table; its
   **writer/applier is `func_045DF2`** (below, range `[0,100]`). The per-action delta
   *magnitudes* are still TBD, but the applier + its French/Pocahontas halving gates
-  are now **B**. (The 39-word row stride — only the first 4 columns = the powers are
-  used here — remains **TBD**.)
+  are now **B**. **39-word row stride — columns 4..38 RESOLVED-as-unused (2026-06-26).**
+  `dgroup_xrefs.json` shows exactly **3** references to the `0x5B1C` base — getter read
+  `@0x0082AC`, applier read `@0x045E57`, applier write `@0x045E6C` — and **every** one of
+  the getter/applier call sites passes the column as a **European-power id `0..3`** (raid
+  scan loop bounds `col < 4` `@0x047365`; a scan of all callers found **0** column
+  constants `> 3`). So only **columns 0..3 = the 4 powers** are ever read or written;
+  **columns 4..38 are never accessed by any committed code path — not even an
+  orphan-overlay AI func** (so this is *not* AI-GATED — there is no consumer at all). The
+  oracle confirms the region past col 3 holds unrelated/overlapping DGROUP bytes (65535
+  runs, not a `[0,100]` meter), so the 39-word stride is an **over-allocation**: the live
+  tension table is effectively `[settlement-row][power 0..3]`.
 - **Tension-raise APPLIER — `func_045DF2` BYTE_VERIFIED (2026-06-20).** This is the
   function that applies a tension **delta** to the `0x5B1C` table:
   `tension[row·39 + power] += delta` (delta = arg `[bp+0xa]`), then **clamped to
@@ -184,8 +193,12 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 
 ## 6. Open questions (TBD)
 1. ~~Fill the 18-byte NativeSettlement record.~~ **Mostly done 2026-06-20** —
-   `+0x00/+0x01` pos, `+0x02` owner tribe, **`+0x03` flags (bit `0x04`=mission
-   present, `0x08`=visited/greeted, `0x40`=event-eligible)**, `+0x04` population,
+   `+0x00/+0x01` pos, `+0x02` owner tribe, **`+0x03` flags — bit `0x04` = **Capital**
+   (RESOLVED 2026-06-26; SET `@0x66225`, consumed `@0x43DC4`/`@0x07DCA`/`@0x46E05`, oracle:
+   1 per tribe), bit `0x01` = unit-removal marker (write-only `@0x06EDA`, consumer TBD).
+   The earlier `0x04`=mission-present / `0x08`=visited / `0x40`=event-eligible labels were
+   **unverified and are withdrawn** — no code sets or tests `0x54EF` bits `0x08`/`0x40`**,
+   `+0x04` population,
    **`+0x05` resident-missionary profession byte** (feeds the `cl&0x10` doubler),
    **`+0x07` trespass/escalation counter** (set `0xFE` on trespass `@0x4A337`, bumped
    on trade `@0x5C3F2`), `+0x08` last_bought, **`+0x0A+power·2` per-power alarm word**

@@ -167,7 +167,36 @@ dispatcher `func_06E3D0` @0x06E3D0 fires whichever channels are `≥ 0`:
 | KING / tribe | `[0x1F5C]` | `func_06BE92` @0x06BE92 | `0..7` → `IND<n>A<pose>.SS`; `> 7` → `KING<n>.SS` (the `CMP 7 / JLE` split @0x06BE96) |
 | advisor | `[0x1F5E]` | `func_06BF12` @0x06BF12 | `0..5` → `MSS0..MSS5.SS` |
 | missionary | `[0x1F60]` | `func_06BF3C` @0x06BF3C | `0..3` → `MYR0..MYR3.SS` |
-| (blitter) | — | `func_06BF66` @0x06BF66 | positions + blits the loaded sheet above the popup |
+| (blitter) | — | `func_06BF66` @0x06BF66 | makes a cel from the loaded sheet handle + blits it; **no box-relative x/y math** (see §2.7.1) |
+
+### 2.7.1 Speaker/special-sprite POSITION math — **RESOLVED (B): no box-relative formula**
+
+The four channel functions take **only the popup-descriptor far-pointer** (`[bp+4]/[bp+6]`,
+from dispatcher `func_06E3D0` @0x06E4AB `call 0x466`) — **never an explicit x/y**. There is
+**no `sprite_x = popup.x − sprite_w` / `sprite_y = popup.y − sprite_h` arithmetic anywhere**
+in `func_06BF66`/`06BE92`/`06BF12`/`06BF3C` (full bodies decoded). Placement is:
+
+1. **`func_06BE50`** @0x06BE50 loads the sheet **by name** (`lcall 0x181f:0x2c` @0x06BE6D)
+   and stores the **sheet handle** at `es:[desc+0x6c]/[desc+0x6e]` (@0x06BE75). No position.
+2. **`func_06BF66`** allocates a 0x14-byte cel (`lcall 0x181f:0x2c` @0x06BF9F), **copies the
+   sheet handle** into a local cel descriptor `[bp-0x80]` (`lcall 0xd1d:0x117e` =
+   `func_01074E strcpy_far` @0x06BFFE), then **blits** it (`lcall 0x1a1f:0x372` @0x06C043)
+   to the **fixed full-screen back-buffer 0xA000:0xFC00** (`[0x23f2]=0xfc00`/`[0x23f4]=0xa000`,
+   @0x06C032/@0x06C038), storing the result position into the cel's `es:[bx+0xc]/[bx+0xe]`.
+   The cel's `es:[bx+0x10]/[bx+0x12]` words are **next-cel link pointers** (set to a 2nd
+   alloc'd object or 0 @0x06BFC1/@0x06BFE6), **not** coordinates.
+3. **Clip only:** the sole rect input is the popup rect globals `[0x839e..0x83a4]`, applied
+   as a clip by the dispatcher (`lcall 0x181f:0x444` @0x06E518) and the per-cel callback
+   `func_06C18C` @0x06C18C (pushes `[0x839e..0x83a4]` @0x06C1A4-B0).
+
+So the **landing pixel = the SS cel's intrinsic anchor** (an asset datum carried in the
+handle/descriptor) transformed by the **pageid-27 blit overlay** (`0x1a1f:0x372` → file
+`0x764d2`, the swappable graphics overlay) — **runtime/AI-GATED, not a coordinate literal**.
+The `+0xf0` added in `func_06BE92`'s KING branch (@0x06BEBA → `[0xa5b0/a5b2]`) is an
+**animation-timer seed** (stepped by `inc [0xa5ae]` in `func_06E9F4` @0x06EA26), **not** a
+screen y. **B (negative + mechanism).** *(Earlier draft's `popup.x/y − sprite_w/h` guess is
+byte-refuted; the pixel value itself is a TBD that needs an SS-cel-header read + a pageid-27
+blitter trace, not these functions.)*
 
 The builders mutate the template string in place: `func_06BE92` pushes `"KING"`
 (file 0x1F72) on the `> 7` branch and `"IND0A0"` (file 0x1F77) on the else branch,
@@ -443,10 +472,17 @@ warpath key prefixes are `@INDIAN…`. All struck.)*
 2. **WOODPANL-vs-WOODPAN2 background per popup — TBD.** No per-call frame-index
    dispatch is byte-cited; INFERRED WOODPAN2 = king-audience + a few "darker"
    popups, everything else WOODPANL. **TBD.**
-3. **`func_06BF66` sprite-blit POSITION math — partial.** The builder positions the
-   speaker sheet above the popup (centered), but only the first ~30 bytes
-   (KING/IND flag split @0x6BF7C) are decoded; the exact `sprite_x/sprite_y =
-   popup.x/y − sprite_w/h` math is **TBD**.
+3. **`func_06BF66` sprite-blit POSITION math — RESOLVED (B, see §2.7.1).** The full
+   550-byte body is now decoded: **there is NO box-relative x/y arithmetic** (the prior
+   `sprite_x/sprite_y = popup.x/y − sprite_w/h` guess is **byte-refuted**). `func_06BF66`
+   copies the sheet handle into a cel descriptor (`lcall 0xd1d:0x117e` strcpy @0x06BFFE)
+   and blits it (`lcall 0x1a1f:0x372` @0x06C043) to the **fixed back-buffer 0xA000:0xFC00**;
+   the only rect input is the **clip** rect `[0x839e..0x83a4]`. The channel funcs receive
+   **only** the descriptor far-ptr (no x/y). The literal landing pixel = the **SS cel's
+   intrinsic anchor** put through the **pageid-27 blit overlay** (`0x1a1f:0x372` → file
+   `0x764d2`) — **runtime / AI-GATED**, needing an SS-cel-header read + a blitter trace,
+   NOT a coordinate literal in these functions. **B (negative + mechanism) / pixel value TBD
+   (asset+overlay, not formula).**
 4. **Food-shortage trigger function — TBD.** Keys (`@FOODLOW`/`@STARVE*`/`@SPOIL*`)
    are present; the colony-update fn that fires them is not yet pinned. **TBD.**
 5. **Option-highlight RGB / button SS index — not needed / TBD.** `@DEFAULT` stores

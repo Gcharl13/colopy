@@ -45,6 +45,41 @@ the canonical full field map; the offsets confirmed there include:
 > `docs/DATA_MODEL.md` remains the canonical full field map; the offsets above are
 > the ones confirmed at a cited read site this pass.
 
+### PowerRecord field tail (per-nation economy/diplomacy) — **BYTE_VERIFIED**
+
+The per-nation **PowerRecord** is a **316-byte (`0x13C`) stride** array based at
+`DGROUP:0x8808` (12 entries: 0..3 European powers, 4..11 native tribes). The
+**active power** is reached via the near pointer `[DGROUP:0x84fc]`, which the
+selector `func_030550` (`@0x30559`) sets to `0x8808 + power_idx·0x13C` (and writes
+the index to `[0x9e12]`). Accesses are `bx = [0x84fc]; …[bx + 0xNN]`. Already-named
+fields (`+0x01` tax, `+0x02` rebel%, `+0x07` FF mask, `+0x0C/0x0E` bells, `+0x14` FF
+count, `+0x20` boycott, `+0x2A` gold u32, `+0x4C+i` price_level[16], `+0x5C+i·2`
+vol_accum[16]) are documented in `docs/DATA_MODEL.md` §PowerRecord and
+`national_powers.md`. The previously-unnamed tail offsets resolved this pass:
+
+| Offset | Type | Field | Tier | Evidence |
+|-------|------|-------|------|----------|
+| `+0x20` | u16 | `boycott_bitfield` — bit `i` = good `i` boycotted by the King | **BYTE_VERIFIED** | test accessor `func_030B38 @0x30B47` (`ax = (1<<good) & [bx+0x20]`); cleared on lift `func_03334E @0x33423` (`[bx+0x20] &= ~(1<<good)`) |
+| `+0x22` | s32 (`+0x22` lo / `+0x24` hi) | `royal_money` — King's REF-budget / tax-revenue accumulator; **grows** from the per-turn sales-tax skim and from boycott-lift tribute | **BYTE_VERIFIED** | per-turn `func_02D658 @0x2D785/@0x2D788` (`add [bx+0x22],ax; adc [bx+0x24],dx` — `ax`= net sale proceeds after the `[+0x01]` tax mul `@0x2D73B`); boycott-lift `func_03334E @0x33413` (`[+0x22] += cost`) |
+| `+0x26` | s32 (`+0x26` lo / `+0x28` hi) | second per-turn sales accumulator (gross/pre-tax amount paired with `+0x22`) | **BYTE_VERIFIED** | `func_02D658 @0x2D78B/@0x2D78E` (`add [bx+0x26],si; adc [bx+0x28],di`, in the same per-power sales loop gated by `[idx·0x34+0x543f]`) |
+| `+0x2A` | u32 (`+0x2A` lo / `+0x2C` hi) | `gold` (treasury) | **BYTE_VERIFIED** | debited on buy/boycott-lift `func_03334E @0x3340D` (`sub [bx+0x2a],ax; sbb [bx+0x2c],dx`), credited on treasure cash-in `func_04E2D6 @0x50954` (`+= 100·unit_value`); oracle = 1000 (`rep_economic.bin`/`rep_europe.bin`, active power 0) ↔ in-game "Gold 1000" |
+| `+0x2E` / `+0x30` | u16 ×2 | Europe-screen progress pair, formatted as the `"(%d of %d)"` template (`[0x11a9]`); **NOT a treasury** (gold is `+0x2A`) | **BYTE_VERIFIED (read site)** | `func_037958 @0x379AB` (`dx=[bx+0x30]; bx=[bx+0x2e]`) then `@0x379C4` re-pushes both under `"(%d of %d)"` when `[0x5383]&0x20`; oracle `+0x2e=0,+0x30=10`. Writer/exact semantics (current/target of an immigration or recruit pool) **TBD** |
+| `+0x32` / `+0x33` | byte ×2 | per-power **default unit destination tile** (`map_x` / `map_y`) — copied into a newly-created unit's goto-target | **BYTE_VERIFIED** | page_0D `@0x51E9B` (`al=[bx+0x32]` → `[si+0x314d]`) / `@0x51EA6` (`al=[bx+0x33]` → `[si+0x314e]`), where `0x314d/0x314e` = UnitRecord goto-target. **Supersedes** the `docs/DATA_MODEL.md` "ref_strength word `+0x32`" guess (the authoritative REF counts are the `DGROUP:0x53DA..0x53E1` globals, per RULINGS 2026-06-19) |
+| `+0x49` | byte | per-power pending-action countdown (decremented to 0) | **BYTE_VERIFIED (site)** | recruit/immigration overlay `func_04E2D6 @0x52658` (`cmp byte[bx+0x49],0`) / `@0x52688` (`dec byte[bx+0x49]`); exact trigger **TBD** |
+| `+0x4A` | u16 | per-power **crosses/recruit point pool**, drained in fixed `0x32` (50) chunks | **BYTE_VERIFIED (site)** | `func_04E2D6 @0x5276F` (`cmp word[bx+0x4a],0x32`) / `@0x5279F` (`sub word[bx+0x4a],0x32` when ≥50); the `·0x32` immigrant-cost wiring sits beside it (`@0x52765 imul ax,0x32`) |
+| `+0x4C+i` | u8[16] | `price_level[good]` — per-good current market price index (good order = `0=Food …15=Muskets`) | **BYTE_VERIFIED** | ask `func_030566 @0x30583` (`al=[bx+si+0x4c]`+base, clamp ≥0), bid `func_030590 @0x3059C` (`al=[bx+si+0x4c]−1`, clamp ≥0), recomputed `func_0305A8 @0x306F3` (`[bx+si+0x4c]=al`); oracle `[1,6,5,5,5,2,6,20,3,10,11,12,15,2,2,3]` (Silver=20 highest) |
+| `+0x5C+i·2` | s16[16] | `vol_accum[good]` — per-good signed supply/demand volume accumulator feeding the price recompute | **BYTE_VERIFIED** | accumulated in `func_0305A8 @0x30707/@0x30806/@0x3094F` (`add [bx+si+0x5c],ax`) and drawn down `@0x30A3B/@0x30AB8` (`sub [bx+si+0x5c],ax`); oracle differs between the two snapshots (live accumulator) |
+
+**Classification of the remaining tail.** The `+0x26/+0x28` and `+0x22/+0x24`
+accumulators, `+0x2E/+0x30`, `+0x49`, and `+0x4A` are read by the **player-facing**
+turn driver (`func_02D658`), the Europe/recruit overlay (`func_04E2D6`,
+`func_037958`) and the market funcs — they are **not AI-overlay-only**. The bulk of
+the record interior (`+0x33`-tail bytes through `+0x48`, and `+0x60..0x13B` outside
+the byte-cited `vol_accum` window) is touched only by the js-dos-schema market arrays
+in `docs/DATA_MODEL.md` (`market_pool`/`market_traded_volume`/`market_eu_supply`/
+`market_base_values`, RECONSTRUCTED, not byte-cited here) and is left **TBD** rather
+than asserted — no read/write site was traced this pass.
+
 Production inputs are primary game data:
 - **`@BUILDING`** (buildings + production modifiers), **`@JOB`** (professions),
   **`@UNFORESTED`/`@FORESTED`** (terrain yields) — all in

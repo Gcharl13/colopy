@@ -345,18 +345,27 @@ function call chain is the new finding.
     - Bid header: x=0xaa (170) — `0x038B5E`..`0x038B74`
     - Ask header: x=0xdc (220) — `0x038B8B`..`0x038BA2`
     (header label TEXT = **global LABELS string-blob entries** —
-    RESOLVED 2026-06-26, mechanism + indices, with a self-correction: the resolver
-    `func_002462` (`0x181F:0x22`) walks a contiguous null-separated string blob at far-ptr
-    `[0x2d42:0x2d44]` (live base phys `0x4c050`) `repne scasb` to the index-th string, and the
-    mapping is **DIRECT: `string = blob[index]`** (no offset). VALIDATED on two independent
-    known strings: global `0x153`=339 → `blob[339]="No Ships In Port"`; europe `[0x2DD0]`=338 →
+    RESOLVED 2026-06-26, mechanism + loader + indices: the resolver
+    `func_002462` (`0x181F:0x22` → `0:0x62`, file 0x002462) walks a contiguous null-separated
+    string blob at far-ptr `[0x2d42:0x2d44]` (live base phys `0x4c050`), `repne scasb` skipping
+    `index` NUL-terminators, and the mapping is **DIRECT: `string = blob[index]`** (no offset).
+    The header **LOADER** is `common_call_270x` = **`func_002992`** (`0x181F:0x16e`, file 0x002992):
+    it pushes the source-index arg `[bp+8]` into `LCALL 0:0x62` (= func_002462) to get a far
+    string ptr, then strcpy's it into the dest buffer via `LCALL 0xd1d:0x11b4` — so every header
+    cell goes index → func_002462 (DIRECT) → buffer → draw. VALIDATED on two independent known
+    strings: global `0x153`=339 → `blob[339]="No Ships In Port"`; europe `[0x2DD0]`=338 →
     `blob[338]="Bound For"`. In this blob the four header labels are **`blob[386]="Tons"`,
-    `[387]="Gold"`, `[531]="Bid Price"`, `[532]="Ask Price"`** (both snapshots identical/aligned).
-    **CORRECTION:** an earlier same-day note claimed the source globals `[0x2e2e]=385`…`[0x2f52]=531`
-    with a "+1" rule — that was wrong (`blob[385]="K"`, not a header). The label IDENTITY is
-    confirmed (screenshot + blob), but the exact DGROUP globals feeding the four header indices
-    are **not cleanly re-identified** (the values I read don't land on 386/387/531/532 directly)
-    → that mapping is **TBD**; the *labels* and the *direct blob mechanism* are solid.)
+    `[387]="Gold"`, `[531]="Bid Price"`, `[532]="Ask Price"`** (DIRECT-read from `rep_economic.bin`,
+    matching the rF5 screenshot headers exactly). The **four header source globals are now named**
+    (page_05 `func_038A50`): `[0x2e2e]` (commodity/name col, x-anchor 0x4c, @0x038AD8), `[0x2e30]`
+    (Tons, x=0x90, @0x038B09), `[0x2f50]` (Bid, x=0xaa, @0x038B4E), `[0x2f52]` (Ask, x=0xdc, @0x038B7B).
+    **CORRECTION + residual TBD:** the snapshot global *values* do not all map DIRECT to the
+    displayed string: `[0x2e30]`=386→`blob[386]="Tons"` is exact, but `[0x2f50]`=530 while the
+    displayed Bid header is `blob[531]`, and `[0x2f52]`=531 while the displayed Ask header is
+    `blob[532]` (i.e. Bid/Ask read as glob+1, Tons as glob+0; `[0x2e2e]`=385→`blob[385]="K"`).
+    The label IDENTITY, the DIRECT mechanism, the loader (func_002992), and the source globals are
+    **solid**; the exact global→index rule (why Bid/Ask are +1) is **TBD** — needs an F5-mode trace
+    reading the live `[bp+8]` into func_002462, or the writer that sets these four globals.)
   - **Per-row draws** (commodity name + 4 numbers; func_002B38 arg order =
     push color,y,x,ss,&str — decoded from `0x002B3D mov di,[bp+0xa]` etc.):
     1. **Name**: left x=`[bp-0x58]`=2, color 0x92, y=row+2; string from pointer

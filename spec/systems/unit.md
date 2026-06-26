@@ -23,7 +23,7 @@ convention is ambiguous, so offsets are given absolute):
 | `0x3146` | u8 | **unit_type** (`@UNIT` row 0..23; ×stat-table index) | **BYTE_VERIFIED** | dispatcher `@0x51D6B`; 694 refs |
 | `0x3147` | u8 | **owner/power nibble** (`&0xF` = power 0..11) + state hi-nibble | **BYTE_VERIFIED** | `set_unit_owner @0x738E`; `@0x51D88` |
 | `0x3148` | u8 | **transient per-unit flag/scratch register** (bits set & cleared *within* individual processing passes, not a stable persistent attribute; bit `0x08` = tile-dirty/redraw **BYTE_VERIFIED**, bit `0x80` = draw-time/active marker) | **A** | full site map below; 0x08 set→test→clear→redraw `func_046FFA @0x0481B0/@0x0481EA`; 0x80 set/draw/clear `func_0696C6 @0x069923/@0x069942`, renderer test `@0x037AD`/`@0x079EF` |
-| `0x3149` | u8 | active / AI-enable flag | **A** | dispatcher gate `@0x51D5D` |
+| `0x3149` | u8 | **AI per-unit enable/budget counter — AI-GATED.** Tested as a turn-dispatch enable (`cmp [0x3149],0 / je skip`) at the AI gate `func_051D56 @0x51D5D`, and read as a numeric accumulator subtracted from a per-turn budget (`ax = allowance − [0x3149]; cmp ax,3`) by the AI evaluator `func_03ECF0 @0x03EE95` and the resident AI-only predicate `func_0079A0 @0x007A08` (both gated on PowerRecord controller `[0x543f]`/active power `[0x5394]`). Incremented by the heading-AI `func_059B90` (`add [0x3149],0x32`/`,2`/`,al` @0x059F20/@0x059F3C/@0x059DD7). **Every consumer is in the orphan-overlay AI cluster** (`func_04E2D6`/`func_051D56`/`func_03ECF0`/`func_059B90`/`func_0079A0`); no render/economy/UI code reads it. Exact English unit (move-credits vs evaluation-passes-used) is the **AI-GATED** ceiling. Oracle: player units = 0, native braves carry distinct nonzero values (6,6,8,3,3,9). | **AI-GATED** | enable-gate `@0x51D5D` (`func_051D56`); budget-sub `@0x03EE95` (`func_03ECF0`), `@0x007A08` (`func_0079A0`); incr `@0x059F20`/`@0x059F3C`/`@0x059DD7` (`func_059B90`); all orphan-overlay (xref: 0 static lcall callers / AI-cluster thunks) |
 | `0x314A` | u8 | countdown timer (init `0xFF`, `dec`) | **A** | `@0x2EF17`, init `@0x06DBA` |
 | `0x314B` | u8 | state/mode char (ASCII `'X'`/`'-'`/`'E'`/`'A'`/`'G'`) | **A** | `@0x06D84`, `@0x51DAB` |
 | `0x314C` | u8 | **order code** (0..0x0C) | **BYTE_VERIFIED** | dispatchers `@0x249CB`/`@0x51DCE` |
@@ -40,7 +40,13 @@ convention is ambiguous, so offsets are given absolute):
 | `0x315B` | u8 | **class/profession** (0x13..0x1C); route units: lo nib=route, hi=stop | **BYTE_VERIFIED** | combat `@0x5B60E`, write `@0x09548` |
 | `0x315C`/`0x315E` | u16×2 | per-tile occupancy back/next links (unit idx) | **BYTE_VERIFIED** | placer `@0x06976`/`@0x06968` |
 
-(`0x3158`, and the exact bit meanings of `0x314B`, remain TBD.)
+(`0x3158`, `0x314B`, `0x3149`, and the minor `0x3148` bits are pushed to their L2
+ceiling = **AI-GATED**: their only meaning-bearing consumers are the orphan-overlay AI
+routines `func_04E2D6`/`func_051D56`/`func_04CC50`/`func_02F052`/`func_03ECF0`/`func_059B90`
+(+ resident AI predicate `func_0079A0`). The remaining ambiguity is the exact English
+label of each — recoverable only by a runtime trace of the AI move/order pass, which is
+out of L2 scope. See the per-field rows and the `0x3148` bit table for the named gating
+sites.)
 
 **`0x3148` bit register — byte-verified site inventory (set/clear/test).** Exhaustive
 scan of VICEROY.EXE finds 46 instructions referencing `[..+0x3148]`. The byte is a
