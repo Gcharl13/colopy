@@ -344,13 +344,19 @@ function call chain is the new finding.
     - Tons/Gold header: x=0x90 (144) — `0x038B19`..`0x038B47` (right-justified via 0x181f:0x204)
     - Bid header: x=0xaa (170) — `0x038B5E`..`0x038B74`
     - Ask header: x=0xdc (220) — `0x038B8B`..`0x038BA2`
-    (header label TEXT = **LABELS string-blob indices** [0x2e2e]=385,[0x2e30]=386,
-    [0x2f50]=530,[0x2f52]=531 → **"Tons"/"Gold"/"Bid Price"/"Ask Price"** —
-    RESOLVED 2026-06-26: the global string resolver `func_002462` (`0x181F:0x22`) walks a
-    contiguous null-separated string blob at far-ptr `[0x2d42:0x2d44]` (live base phys
-    `0x4c050`) `repne scasb` to the index-th string; these four indices land on the
-    Tons/Gold/Bid Price/Ask Price strings in that blob (oracle-confirmed present;
-    ±1 index-base nuance in reconstruction). The literals exist in `LABELS @MISC`.)
+    (header label TEXT = **global LABELS string-blob entries** —
+    RESOLVED 2026-06-26, mechanism + indices, with a self-correction: the resolver
+    `func_002462` (`0x181F:0x22`) walks a contiguous null-separated string blob at far-ptr
+    `[0x2d42:0x2d44]` (live base phys `0x4c050`) `repne scasb` to the index-th string, and the
+    mapping is **DIRECT: `string = blob[index]`** (no offset). VALIDATED on two independent
+    known strings: global `0x153`=339 → `blob[339]="No Ships In Port"`; europe `[0x2DD0]`=338 →
+    `blob[338]="Bound For"`. In this blob the four header labels are **`blob[386]="Tons"`,
+    `[387]="Gold"`, `[531]="Bid Price"`, `[532]="Ask Price"`** (both snapshots identical/aligned).
+    **CORRECTION:** an earlier same-day note claimed the source globals `[0x2e2e]=385`…`[0x2f52]=531`
+    with a "+1" rule — that was wrong (`blob[385]="K"`, not a header). The label IDENTITY is
+    confirmed (screenshot + blob), but the exact DGROUP globals feeding the four header indices
+    are **not cleanly re-identified** (the values I read don't land on 386/387/531/532 directly)
+    → that mapping is **TBD**; the *labels* and the *direct blob mechanism* are solid.)
   - **Per-row draws** (commodity name + 4 numbers; func_002B38 arg order =
     push color,y,x,ss,&str — decoded from `0x002B3D mov di,[bp+0xa]` etc.):
     1. **Name**: left x=`[bp-0x58]`=2, color 0x92, y=row+2; string from pointer

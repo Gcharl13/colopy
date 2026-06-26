@@ -4961,3 +4961,25 @@ mis-attributed the gold draw to func_0268CE. Pitch-packing loop (line 145) stays
 
 Method note: 2 rejections (europe click-rect, colony gold) + 9 honest blocks vs 6 clean lands —
 the oracle requirement (must match live snapshot) is doing exactly what it should.
+
+## 2026-06-26 — String-blob resolver is DIRECT (corrects a same-day +1 error) (Track 14)
+
+Self-correction. Commit a3f8948 claimed the LABELS string-blob resolver func_002462 (0x181F:0x22)
+maps the Economic header indices with a "+1" (stored 385 → blob[386]="Tons"). That was WRONG.
+
+VALIDATED rule: the resolver walks the contiguous null-separated blob at far-ptr [0x2d42:0x2d44]
+(live base 0x4c050) and the mapping is DIRECT — string = blob[index], no offset:
+- global 0x153=339 → blob[339]="No Ships In Port" (the known colony @MISC[11] string) ✓
+- europe [0x2DD0]=338 → blob[338]="Bound For" ✓
+- blob[386]="Tons", [387]="Gold", [531]="Bid Price", [532]="Ask Price" (both snapshots identical).
+
+So the Economic header LABELS are at blob[386/387/531/532] (direct); the source DGROUP globals I
+earlier read (385/386/530/531) do NOT land on them, so the exact header-index globals are TBD
+(label identity stays confirmed via screenshot + blob). The "+1" framing in a3f8948 is retracted.
+
+LESSON for the cheap sweep: the index globals ([0x2F5E], [0x939A], [0x2DD0], …) hold
+context/MODE-TRANSIENT values — e.g. europe [0x2F5E]=537="Sons of Liberty" is clearly leftover,
+not the field's purpose. So resolving a field's SEMANTIC via the blob requires the snapshot to be
+in that field's active mode; absent that, the blob gives the current (possibly stale) string, not
+the meaning. Mass-applying the mechanism to these globals would re-introduce plausible-but-wrong
+literals — so only the mechanism (direct) + the two validated anchors are landed.
