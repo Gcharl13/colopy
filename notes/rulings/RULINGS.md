@@ -5020,3 +5020,42 @@ spoilage is now PARTIALLY resolved (cap + detection byte-verified; the write lea
 Note: confirms colony production is more complete than the mid-session layer-3 estimate implied —
 the core formulas (per-tile yield, SoL EMA, consumption, capacity) are byte-verified from code,
 not reconstructed; runtime deltas would only confirm them.
+
+## 2026-06-26 — PowerRecord field tail + Unit/native AI-boundary classification (L1/L2 Phase 1)
+
+PowerRecord (per-nation economy/diplomacy, 316-byte/0x13C stride @DGROUP:0x8808, 12 entries;
+active reached via near ptr [0x84fc], set by func_030550 @0x30559). Tail offsets resolved this
+pass, each disasm-cited via capstone on VICEROY.EXE AND oracle-checked against rep_economic.bin /
+rep_europe.bin (active power 0):
+- +0x20 u16 boycott_bitfield (and ax,[bx+0x20] func_030B38 @0x30B47; clear func_03334E @0x33423). oracle 0.
+- +0x22/+0x24 s32 royal_money accumulator (add [bx+0x22],ax; adc [bx+0x24],dx func_02D658 @0x2D785;
+  boycott-lift adds @0x33413). oracle grows 70->80 between the two snapshots (live).
+- +0x26/+0x28 s32 gross/pre-tax accumulator paired with +0x22 (@0x2D78B). oracle 0.
+- +0x2A/+0x2C u32 gold treasury (sub [bx+0x2a],ax; sbb [bx+0x2c],dx func_03334E @0x3340D;
+  treasure credit func_04E2D6 @0x50954). oracle = 1000 <-> in-game "Gold 1000". KEY OACLE MATCH.
+- +0x2E/+0x30 u16 pair, Europe "(%d of %d)" progress (func_037958 @0x379AB mov dx,[bx+0x30];
+  mov bx,[bx+0x2e]). oracle 0/10. writer semantics TBD.
+- +0x32/+0x33 byte pair = default unit destination map_x/map_y (page_0D @0x51E9B al=[bx+0x32]->
+  [si+0x314d]; @0x51EA6 al=[bx+0x33]->[si+0x314e]). SUPERSEDES the DATA_MODEL.md "ref_strength
+  word +0x32" guess (byte reads, not word; authoritative REF = 0x53DA..0x53E1 per 2026-06-19).
+- +0x49 byte countdown (cmp/dec func_04E2D6 @0x52658/@0x52688). +0x4A u16 crosses pool drained in
+  0x32 chunks (@0x5276F/@0x5279F).
+- +0x4C+i u8[16] price_level (ask func_030566 @0x30583; bid @0x3059C; recompute @0x306F3). oracle
+  [1,6,5,5,5,2,6,20,3,10,11,12,15,2,2,3] (Silver=20). +0x5C+i*2 s16[16] vol_accum (func_0305A8
+  @0x30707 etc.). oracle differs between snapshots (live accumulator).
+Record interior with no traced read/write site (mostly the js-dos-schema market arrays) left TBD,
+not asserted.
+
+Unit fields 0x3149 / 0x3148 / 0x314B / 0x3158 pushed to their L2 ceiling = AI-GATED. 0x3149 is an
+AI per-unit enable/budget counter: turn-dispatch enable (func_051D56 @0x51D5D), budget-sub
+(func_03ECF0 @0x03EE95, func_0079A0 @0x007A08), incr (func_059B90 @0x059F20/etc). EVERY consumer
+is orphan-overlay AI; no render/economy/UI reads it. Oracle: player units 0, native braves nonzero
+(6,6,8,3,3,9). Exact English (move-credits vs eval-passes) is the AI-GATED ceiling.
+
+Native tension table 0x5B1C (39-word stride): columns 4..38 RESOLVED-as-unused. dgroup_xrefs.json
+= exactly 3 refs (getter @0x0082AC, applier read @0x045E57, write @0x045E6C); all callers pass a
+power id 0..3 (raid scan col<4 @0x047365; 0 column constants >3). So only cols 0..3 = the 4 powers
+are ever touched, by ANY committed path (not even orphan AI) -> NOT AI-GATED, simply over-allocated.
+NativeSettlement +0x03 bit 0x04 = Capital (set @0x66225, consumed @0x43DC4/@0x07DCA/@0x46E05;
+oracle 1/tribe). WITHDREW the earlier unverified 0x04=mission / 0x08=visited / 0x40=event flags
+(no code sets/tests those bits).
