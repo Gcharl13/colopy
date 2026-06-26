@@ -162,9 +162,22 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
   h=48)**. **B**
 - Count = `colony+0x1F` + `[0x8D72]` `@0x0270E6`. **B**
 - **Row x-origin = 0x8F = 143** (`mov [bp-0x60],0x8F @0x0270FA`); the row walks **LEFT**
-  (`dec [bp-0x60] @0x027178`) and wraps when a row's packed width exceeds 0x60=96
-  (`cmp ax,0x60 @0x027170`). Per-colonist sprite width from `[0x83E]:[si+0x3E]` (ICONS). **x-origin
-  143 is byte-exact (B); per-colonist pitch is a data-driven packing loop = TBD.**
+  (`dec [bp-0x60] @0x027178`), y = `0x0A` (10). Per-colonist sprite from the far-ptr table
+  `[0x83E]:[0x840]`, **stride 12**: `+0x3E` = sprite width, `+0x40` = x/anchor.
+- **Per-colonist pitch — RESOLVED 2026-06-26 (code-derived + snapshot-confirmed; was TBD).**
+  It is an **adaptive fit-to-span pack**, not a fixed pitch:
+  1. **Pass 1** (`@0x02710A..0x027141`) sums every colonist's sprite width into `[bp-0x7E]`
+     (`total_width`), looping `count = colony+0x1F + [0x8D72]` times (live: 1+1 = 2).
+  2. **Gap solve** (`@0x027160..0x027173`): `gap = [0xA890]` (init **2**); while
+     `gap·(count−1) + [bp-0x5A](=4, or 0 if [0x8D72]==0) + total_width ≥ 0x60 (96)`, **decrement
+     the gap** (`@0x02715C`) and retry — i.e. the inter-colonist gap shrinks from 2 down until the
+     row fits the **96-px budget**.
+  3. **Pass 2** (`@0x027186..`): draws each colonist (sprite blit `0x181F:0xCE`) at the running
+     x `[bp-0x60]` (from 143, advanced left by `sprite_width + gap` per colonist), y = 10.
+  So **pitch = per-colonist `sprite_width(+0x3E)` + adaptive `gap` (2→0, fit-to-96px)**. The
+  width table `[0x83E]` (stride 12) and `[0xA890]=2` are oracle-confirmed in `colony_jamestown.bin`
+  (a real colonist row carries `+0x3E`=15 width). **B.** (Per-colonist *index* comes from the
+  colony enumerator `0x181F:0xA74`.)
 - Scene-row marker sprite via `0x181F:0xC0E`/`0xA74` lookups. **B**
 
 ### 3.4 Flag panel — `func_02853C @0x02853C`

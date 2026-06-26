@@ -4983,3 +4983,19 @@ not the field's purpose. So resolving a field's SEMANTIC via the blob requires t
 in that field's active mode; absent that, the blob gives the current (possibly stale) string, not
 the meaning. Mass-applying the mechanism to these globals would re-introduce plausible-but-wrong
 literals — so only the mechanism (direct) + the two validated anchors are landed.
+
+## 2026-06-26 — Colony §3.3 colonist-row pitch RESOLVED (code + existing snapshot, no re-drive) (Track 15)
+
+The "per-colonist pitch = data-driven packing loop = TBD" turned out to be cheap (code-derivable
++ confirmable from the colony snapshot already on disk), NOT requiring the expensive re-drive.
+
+func_0270D0 @0x0270D0 colonist plaza row: count = colony+0x1F + [0x8D72] (live 1+1=2). Pass 1
+(@0x02710A) sums each colonist sprite width (table [0x83E]:[0x840], stride 12, +0x3E=width) into
+total_width. Gap solve (@0x027160): gap=[0xA890] init 2; while gap*(count-1)+4+total_width >= 0x60
+(96), decrement gap and retry — adaptive shrink to fit the 96-px budget. Pass 2 (@0x027186) blits
+each colonist (0x181F:0xCE) at running x [bp-0x60] (from 143, advanced left by sprite_width+gap),
+y=10. So pitch = sprite_width(+0x3E) + adaptive gap (2->0). Table structure + [0xA890]=2
+oracle-confirmed in colony_jamestown.bin (real colonist +0x3E=15).
+
+Note: this extends the "cheap tier" — a TBD labeled "needs a multi-colonist re-drive" was actually
+a code-derivable formula whose data structure the existing single-colonist snapshot confirms.
