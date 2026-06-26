@@ -4999,3 +4999,24 @@ oracle-confirmed in colony_jamestown.bin (real colonist +0x3E=15).
 
 Note: this extends the "cheap tier" — a TBD labeled "needs a multi-colonist re-drive" was actually
 a code-derivable formula whose data structure the existing single-colonist snapshot confirms.
+
+## 2026-06-26 — Colony per-turn driver sequence + food consumption + warehouse capacity (Track 16)
+
+Traced colony_turn_update @0xA222..0xA6A1 (the per-turn colony pipeline a rewrite needs as
+control flow). Ordered: (1) setup lcalls; (2) tile production loop over 20 goods via
+compute_terrain_yield (call 0x9B9C @0xA42A) into produced table [good*2+0x8DC8]; (3) 5 raw→
+finished chains (call 0x8E84 ×5 @0xA660..0xA68C); (4) food consumption; (5) warehouse cap;
+(6) display-delta bookkeeping.
+
+BYTE-VERIFIED formulas:
+- Food consumption = 2*pop (@0xA5F2 shl ax,1 on ColonyRecord+0x1F); net_food = max(produced − 2*pop, 0).
+- Warehouse capacity = (warehouse_level[+0x95] + 1) * 100 (func_008D00: base 100, *(level+1)).
+
+Warehouse spoilage (was TBD): capacity formula nailed + the over-cap detection (func_008E02
+computes room = cap − stock − produced); but the exact CLAMP/discard write to the +0x9A stockpile
+is in the 0x8E84 commit chains, not func_008E02 (which is colony-screen display bookkeeping). So
+spoilage is now PARTIALLY resolved (cap + detection byte-verified; the write leaf remains).
+
+Note: confirms colony production is more complete than the mid-session layer-3 estimate implied —
+the core formulas (per-tile yield, SoL EMA, consumption, capacity) are byte-verified from code,
+not reconstructed; runtime deltas would only confirm them.

@@ -80,6 +80,35 @@ operand bytes. The per-turn driver `colony_turn_update` (file `0xA222..0xA6A1`)
 zeroes the 20-good accumulator, runs the 3×3 ring through `compute_terrain_yield`,
 then applies the 5 raw→finished chains (Ore→Tools, etc.).
 
+### Per-turn driver sequence — `colony_turn_update @0xA222` (traced 2026-06-26)
+The ordered per-turn colony pipeline (call sites byte-read):
+1. Setup `lcall 0x3E4:0x3A @0xA23C`, then three `lcall 0x37F:{0x142,0x4B0,0x10E}`
+   (`@0xA2B9/0xA2D6/0xA2F3`) — accumulator/context init.
+2. **Tile production**: loop over the 3×3 ring / goods (bounds `cmp [bp-0x1c],0x14`=20
+   `@0xA3E8`), `call 0x9AAA` (feature bonus) + **`call 0x9B9C` = `compute_terrain_yield`**
+   `@0xA42A`, accumulating per-good into the produced table `[good·2 + 0x8DC8]`.
+3. **Raw→finished chains**: **`call 0x8E84` ×5** (`@0xA660..0xA68C`) — the 5 manufacturing
+   conversions (Ore→Tools, Cotton→Cloth, Sugar→Rum, Tobacco→Cigars, Furs→Coats); each
+   updates the stockpile via building-chain gates (`call 0x863E`).
+4. **Food consumption — BYTE_VERIFIED: `eaten = 2·pop`** (`@0xA5F2` `mov al,[bx+0x1F]; shl
+   ax,1`); `net_food = max(food_produced[0x8DC8] − 2·pop, 0)` (`@0xA5F7 sub/neg`, clamp
+   `@0xA5FD`). Net feeds the `+0xC8` growth accumulator (the `+200` growth threshold is
+   added at `@0x2E098`, §2).
+5. **Warehouse capacity — BYTE_VERIFIED: `cap = (warehouse_level[+0x95] + 1)·100`**
+   (`func_008D00`: base `0x64`=100 `@0x8D04`, `(+0x95+1)·0x64` `@0x8D1A` when `+0x95≠0`).
+6. **Display-delta bookkeeping** `func_008E02` (via `func_008E46 @0xA648/0xA655/0xA699`):
+   per good, computes produced/room/overflow into the colony-screen summary tables at
+   DGROUP `0x8E0A`/`0x8E32`/`0x8E5A` (indexed `good·2`); Tools(0xE) gets a special subtract
+   of `[0x8E66]` `@0x8E61`.
+
+**Warehouse spoilage (was TBD) — PARTIALLY TRACED:** the capacity is `(level+1)·100` (above,
+exact) and the over-capacity case is detected (`func_008E02` computes `room = cap − stock −
+produced` when `stock+produced < cap`). The exact CLAMP that caps the committed `+0x9A`
+stockpile to `cap` (and discards the overflow as spoilage) lives in the stockpile-commit path
+inside the `0x8E84` chains, not in `func_008E02` (which is the display side). So: capacity
+formula + consumption + sequence are byte-verified; the precise spoilage *write* is the
+remaining leaf. **B (sequence + cap + consumption) / partial (spoilage write site).**
+
 ### Building presence & factory tier — **BYTE_VERIFIED** (`ColonyRecord +0x8A` bitmap)
 Each colony tracks which buildings it has in the per-colony bit-array at
 `ColonyRecord +0x8A` (one bit per building id; `building_bit(n)` above is a read of
