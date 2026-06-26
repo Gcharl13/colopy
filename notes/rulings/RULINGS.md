@@ -5059,3 +5059,53 @@ are ever touched, by ANY committed path (not even orphan AI) -> NOT AI-GATED, si
 NativeSettlement +0x03 bit 0x04 = Capital (set @0x66225, consumed @0x43DC4/@0x07DCA/@0x46E05;
 oracle 1/tribe). WITHDREW the earlier unverified 0x04=mission / 0x08=visited / 0x40=event flags
 (no code sets/tests those bits).
+
+## 2026-06-26 — OPENING.EXE / CLOSING.EXE cinematic deep decode (L1 Phase 2)
+
+Decode-verify workflow over the two separate cinematic binaries (committed disasm
+code/{OPENING,CLOSING}/disasm/*.asm + capstone on raw/COLONIZE/{OPENING,CLOSING}.EXE; all anchors
+re-checked by hand). OPENING.EXE carries a C symbol-name table (file 0x11900+) decoded against the
+symtab encoding — _opening/_open_loop/_load_ship_path/_load_anims/_do_ship/_do_anims/_do_logo etc.
+
+OPENING.EXE (all B unless noted):
+- Asset-load ORDER, one pass through _opening @file 0x1AAC..0x1EC2: PATH.DAT (_load_ship_path @0xCEA),
+  CREDITS (_load_credits @0xD52), anim table (_load_anims @0xDD2 → _anim[] @0x4de8, 6 words/rec),
+  #SOUND.COL/MPSLOGO/MPSNAME, OPENING.PIK (_picture_load_2 seg 0x181:4 @0x1c94), OPENBORD (as a .PIK
+  via seg 0x1b4:8 @0x1d10), OPENSHIP .SS @0x1d90, OPENCRD0-2 (loop @0x1dcc), then OPENWND1/OPENSUN/
+  OPENMON1/OPENWND2/OPENMON2/OPENMON3/OPENFISH/OPENGUY/OPENLOGO/OPENBONK .SS @0x1e0e..0x1ebe.
+  Loaders: .SS=seg 0x3b1:0xa (file 0x471A, name ptr in BX); .PIK=seg 0x1b4:8; fullscreen .PIK=0x181:4.
+  CONFIG.COL/MEMORY*.TXT are config/diagnostic, not assets.
+- Blit routine seg 0x392:0 = file 0x4520 (enter 0x28,0 verified): AX=frame index, bit15=H-flip
+  (and ax,0x7fff @0x4546 verified), BX=dest surface descriptor (lea [0x3910]), DX=X, [bp+6]=Y,
+  [bp+8]:[bp+0xA]=sheet-handle far ptr. Per-frame record stride 12, header 0x36, bbox +0x3a x-anchor/
+  +0x3c y1/+0x3e width/+0x40 y-extent; sheet dims +0x4a/+0x4c.
+- Placement = TABLE-DRIVEN, not literal pushes for animated elements: _do_anims @0x102C iterates
+  _anim[] (count [0x46]); record field0 indexes _animsprite @0xa2; X = -((width>>1)-x_anchor)+rec[+6]
+  -_pan_x; Y = -(rec[+0x40]-rec[+0x3c])+1. Literal-centered exceptions: credit @0xFB6 centered x=160
+  (sub ax,0xa0 @0x1001 verified) y=183 (sub cx,0xb7 @0x1008 verified); logo _do_logo @0x1700 bbox+
+  literal offsets +0x17/-8/+0x10.
+- Pan: _pan_x [0x4aca] init 0x280(640) @0x16af, dec 1/tick in _pan @0x113e, subtracted from every X.
+- Ship path from PATH.DAT: _load_ship_path @0xCEA → _ship[] @0x4f0c (stride4 X,Y), _do_ship @0xF6E
+  indexes by _ship_at, frame=_ship_wave, stepped by master clock _ship_move @0x119A.
+- Frame cascade on [0x82] (thresholds 0x87/0x99/0xAD/0xC3/0xDC/0xEC/0xFC/0x1FB) sets frame 1..7.
+
+CLOSING.EXE (all B unless noted):
+- Per-frame loop func_000E4C @0xE4C (verified entry); 32-bit master clock [0x488c]:[0x488e] via
+  LCALL 0x24a,2; stepper CALL 0xC0C (interval [0x54], runtime/live-adjustable INC/DEC @0xE2A/0xE30;
+  INC step-counter [0x6a]); present CALL 0xAC2; SENTINEL EXIT cmp word [0x6c],0 / jne 0xe59 @0xE71-76
+  (verified); [0x6c] cleared @0xD70 (path done) / @0xE07 (quit). No immediate-threshold cascade.
+- Assets: CLOS-BKG via seg 0xbe:0xa @0x1084; FONTINTR once @0xff6; 7 CLOS-* sheets via 0x2db:0xe
+  @0x110E..0x1185 into flat handle table base 0x72.
+- Placement = table-driven actor structs, stride 0x0E=14B, base 0x4b96 (+0 sheet idx, +2 tick 0x4b98,
+  +6 Y-base 0x4b9c), loaded by func_000A00 @0xA00 from the CLOSING sequence file. MIL (sheet idx 4,
+  cmp ax,4 @0xC84 verified) fires special event lcall 0x69b,0xe (ax=0x59/0x5a).
+- TEXT (important): the cinematic loop draws ONLY a debug step-counter at pen (5,5)/FONTINTR. There is
+  NO scrolling-credits text render — the "credits" are the CLOS-* sprite actors. _text_close/_text_search
+  (@0x1bd8/@0x19ea) parse CLOSING.TXT @CLOSING lines into 0x5382, driving actor timing not on-screen text.
+
+Residual TBD for both = DATA-FILE CONTENTS only: per-element literal X/Y/frame timelines live in the
+external OPENING anim file / PATH.DAT waypoint stream / CLOSING sequence file (each named with load
+site + BSS table); the EXEs supply centering + schedule math (B). Plus CLOSING runtime interval [0x54]
+and the LCALL 0x24a,2 clock-helper body (overlay seg 2). This completes the L1 (Presentation) layer:
+every screen — in-VICEROY and the two separate cinematic binaries — is byte-decoded to the
+data-file/runtime boundary.

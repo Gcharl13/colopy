@@ -5,18 +5,22 @@
 > Substantive: the three in-VICEROY painters are **B** — king-defeats `func_075352`
 > (argument matrix + FONTKING context, re-disassembled 2026-06-21), score `func_03A9C0`
 > (+ component sum `func_039EE2`), Declaration `func_03DA2A` (cross-ref `declaration_independence.md`).
-> The OPENING.EXE / CLOSING.EXE per-frame timing is **byte-grounded** (real-time `[0x82]`/`[0x6c]`
-> clock + frame-select cascade — `docs/CINEMATIC_TIMING_AUDIT.md`); cinematic asset *identification*
-> is **A**. KING2.SS and DECLARAT.PIK are proven absent (**B**, negative). AMERICA.MOV is decoded
-> (A/R). Residuals (resident draw routines, CLOSING outer-driver clock, glyph→palette text RGB) are
-> **A/TBD** and listed in §7.
+> The OPENING.EXE / CLOSING.EXE cinematics are now **deeply byte-decoded** (2026-06-26): real-time
+> clock, frame cascade, the **blit routine + calling convention**, the **asset-load order**, the
+> **placement model** (table-driven + literal-centered exceptions), the ship-path PATH.DAT pipeline,
+> and the CLOSING actor-schedule loop + sentinel exit (§6/§7). The only residual is **data-file
+> contents** — the per-element literal X/Y/frame timelines live in the external OPENING anim file /
+> PATH.DAT / CLOSING sequence file (each named with its load site + BSS table). KING2.SS and
+> DECLARAT.PIK are proven absent (**B**, negative). AMERICA.MOV is decoded (A/R).
 
 **Overall confidence:** in-VICEROY painters **B** (`func_075352`, `func_03A9C0`+`func_039EE2`,
-`func_03DA2A` — all re-disassembled 2026-06-21); per-frame animation timing in OPENING.EXE/CLOSING.EXE
-**B** (playback loops in `code/OPENING|CLOSING/disasm/orphans_load_image.asm`); asset identification
-**A**; AMERICA.MOV **A/R**. · **Canonical primary:** `docs/KING_AND_CINEMATIC_AUDIT.md` §3/§5,
-`viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` §B6, `docs/CINEMATIC_TIMING_AUDIT.md`,
-`data_extracted/text/{GAME,LABELS,OPENING,CLOSING}_sections.json`. · **Last updated:** 2026-06-23.
+`func_03DA2A` — all re-disassembled 2026-06-21); OPENING.EXE/CLOSING.EXE playback **B** (loops, blit
+convention, asset-load order, placement model — `code/OPENING|CLOSING/disasm/orphans_load_image.asm`
++ capstone, decode-verify 2026-06-26); asset identification **A**; per-element literal coordinates
+**TBD (data-file, site-named)**; AMERICA.MOV **A/R**. · **Canonical primary:**
+`docs/KING_AND_CINEMATIC_AUDIT.md` §3/§5, `viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md`
+§B6, `docs/CINEMATIC_TIMING_AUDIT.md`, `data_extracted/text/{GAME,LABELS,OPENING,CLOSING}_sections.json`.
+· **Last updated:** 2026-06-26.
 
 ---
 
@@ -170,52 +174,109 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - **Tier:** see `declaration_independence.md` (DECOIND painter + signature layout **B**, DECLARAT
   orphan **B** negative). Not duplicated here.
 
-## 6. Opening cinematic (OPENING.PIK) — OPENING.EXE
+## 6. Opening cinematic (OPENING.PIK) — OPENING.EXE — **B** (deep decode 2026-06-26)
 
 - **Purpose:** title screen / boot demo — old-style world map with sea monsters, ship landing,
   opening logo. **A.**
-- **Engine:** OPENING.EXE (separate exe; Mechanism A background + Mechanism B sequencer). Loads
-  `AMERICA.MOV` script. **A** (`docs/KING_AND_CINEMATIC_AUDIT.md` §5).
-- **Script (B):** `OPENING_sections.json @OPENING` — CSV of
-  **`(sprite_idx, activation_time, layer, pan_width)`** rows, verified verbatim and commented
-  Wind1/Wind1/Sun/Monster1/Wind2/Monster2/Monster3/Fish/"Bonk into land"/"Guy getting out"/"Opening
-  logo"/`-1`="END OF DEMO" (END at time 891). `@CREDITS` = credit-roll timing rows; `@MESSAGES` also
-  present. **B** (table present verbatim; col-4 pan-extent identification **A**).
-- **Frame timing (B mechanism) — RESOLVED 2026-06-21:** the demo is a **real-time master clock**, not
-  a fixed delay. The loop in `code/OPENING/disasm/orphans_load_image.asm` spins on the BIOS 18.2 Hz
-  tick (`SUB cx,[0x6c]` @file `0x1335`) and advances demo clock `[0x82]` (`INC [0x82]` @`0x134D`); a
-  `CMP [0x82],imm` cascade (offsets `0x106A`…`0x10B8`,`0x117E`; thresholds 135/153/173/195/220/236/
-  252/507) selects the active frame; draw `LCALL 0x392,0` @`0x111E`; loop exits on row count `[0x46]`
-  (count-based, not a sentinel). Element X-pan over the wide `OPENING.PIK` panorama uses
-  `_pan_x`/`_scr_map`/`_update_*_map_area` + `_ship_path`/`_load_ship_path`. Delay quantum ≈ one
-  tick (55 ms)/clock step. Full trace: **`docs/CINEMATIC_TIMING_AUDIT.md` §1**. **B** (loop/clock/
-  draw); panning subsystem symbol-names **A**.
-- **Assets (A):** `OPENING.PIK` bg + `OPEN*` sprites (OPENLOGO, OPENBORD, OPENGUY, OPENSHIP,
-  OPENFISH, OPENSUN, OPENMON1-3, OPENWND1-2, OPENCRD1-3, OPENTILE, OPENBONK) per
-  `docs/SESSION_UI_CATALOG.md`. **A.**
-- **Tier:** script **B**; frame-timing mechanism **B**; asset identification **A**.
+- **Engine:** OPENING.EXE (separate exe; Mechanism A background + Mechanism B sequencer). The binary
+  carries a **C symbol-name table** (file `0x11900+`): `_opening`, `_open_loop`, `_load_ship_path`,
+  `_load_anims`, `_load_credits`, `_do_ship`, `_do_anims`, `_do_logo`, `_pan_x`, `_anim_frame`, …,
+  decoded against the symtab encoding. **B.**
+- **Boot / asset-load order — `_opening` @file `0x1AAC`..`0x1EC2` (B, 2026-06-26):** a single init
+  pass loads, in this exact order, each at a cited push+loader site:
+  1. **PATH.DAT** — ship-path waypoints, `_load_ship_path` @`0xCEA` (`push 0xd8`=DGROUP name → file
+     `0xbfe8` `"PATH.DAT"`; `lcall 0x1bf,0x24` open @`0xCF6`).
+  2. **CREDITS** rows — `_load_credits` @`0xD52` (`_text_open(0xe9="OPENING",0xe1="CREDITS")` @`0xD5E`).
+  3. **anim table** — `_load_anims` @`0xDD2` (`_text_open(0xf9,0xf1="OPENING")` @`0xDDE`; `rep movsw`
+     6 words/record into `_anim[]` @`0x4de8`, count `[0x46]`).
+  4. **#SOUND.COL** (`lea [0x11b]`/`lcall 0x1a2,0x40` @`0x1bbb`), **MPSLOGO** (`0x126` @`0x1bec`),
+     **MPSNAME** (`0x12e` @`0x1c06`) as `.SS` sheets.
+  5. **OPENING.PIK** bg — `_picture_load_2` (`seg 0x181:4`) @`0x1c94`.
+  6. **OPENBORD** — `_picture_load` (`seg 0x1b4:8`) as a **`.PIK`, not a `.SS`** @`0x1d10`.
+  7. **OPENSHIP** `.SS` @`0x1d90` → handle `[0x92]`; **OPENCRD0/1/2** built in a 3-iter loop
+     @`0x1dcc`..`0x1e0e`; then **OPENWND1, OPENSUN, OPENMON1, OPENWND2, OPENMON2, OPENMON3,
+     OPENFISH, OPENGUY, OPENLOGO, OPENBONK** as `.SS` in that order @`0x1e0e`..`0x1ebe`, each into a
+     fixed DGROUP handle slot (`[0xa2]`,`[0xa6]`,…). CONFIG.COL/MEMORY.TXT/MEMORY2.TXT are **config/
+     diagnostic**, not cinematic assets (`_config_read` @`0x227E`; MEMORY*.TXT `lea [0x391]/[0x3b6]`).
+  - **Loaders (B):** `.SS` = `seg 0x3b1:0xa` (file `0x471A`), bare-name ptr in `BX`, returns a handle
+    far-ptr; `.PIK` = `seg 0x1b4:8`; `.PIK` (fullscreen) = `seg 0x181:4`.
+- **Frame timing (B) — real-time master clock:** loop top `_do_anims`/`_open_loop` region; BIOS 18.2 Hz
+  tick (`SUB cx,[0x6c]` @file `0x1335`); advances animation-phase counter `_anim_frame` `[0x82]`
+  (`INC [0x82]` @`0x134D`); `CMP [0x82],imm` cascade (offsets `0x106A`…`0x10B8`,`0x117E`; thresholds
+  135/153/173/195/220/236/252/507 = `0x87/0x99/0xAD/0xC3/0xDC/0xEC/0xFC/0x1FB`) sets the element frame
+  index `[bp-2]`=1..7. Per-subsystem last-tick latches `_pan_clock`[0x60]/`_ship_clock`[0x64]/
+  `_credit_clock`[0x68]/`_anim_clock`[0x6c]/`_logo_clock`[0x70]/`_fade_clock`[0x74] vs intervals
+  `_*_timing` [0x48]..[0x50]; `_game_clock` latch `[0x4ade]:[0x4ae0]` refreshed by `lcall 0x31b,6`
+  @`0x16bf`. Loop exits on row count `[0x46]` (count-based, not a sentinel).
+- **Blit routine — `seg 0x392:0` = file `0x4520` (B):** `enter 0x28,0`; calling convention
+  **AX** = frame index (**bit15 = horizontal-flip flag**, low 15 bits = frame; masked `& 0x7fff`
+  @`0x4546`); **BX** = destination surface descriptor (always `lea bx,[0x3910]`); **DX** = X dest;
+  **`[bp+6]`** = Y dest; **`[bp+8]:[bp+0xA]`** = far ptr to the sprite-sheet handle. Per-frame sprite
+  record stride = **12 bytes** (`frame*3<<2`), header `0x36` then records at `+0x36`; bbox fields
+  `+0x3A` x-anchor, `+0x3C` y1, `+0x3E` width, `+0x40` y-extent; sheet dims `+0x4A`/`+0x4C`.
+- **Placement model (B) — table-driven, NOT literal pushes for the animated elements:**
+  `_do_anims` @file `0x102C` iterates `_anim[]` (count `[0x46]`, 12-byte records @`0x4de8`); each
+  record's field0 indexes the sheet-handle table `_animsprite` @`0xa2` (`les bx,[fld0*4+0xa2]`
+  @`0x10d1`). Per-element X = `-((width[+0x3e]>>1) − x-anchor[+0x3a]) + record[+6] − _pan_x[0x4aca]`
+  (@`0x10e7`); Y/extent = `-(rec[+0x40] − rec[+0x3c]) + 1` (@`0x10eb`). So which sheet draws where is
+  **read from the runtime anim data file**, not hard-coded.
+  - **Literal-placed exceptions (B):** the **credit** plate (`_do_credit` @`0xFB6`, blit @`0x101b`)
+    is centered **x=160 / y=183** (`-((w>>1)−0xa0)` / `-((h>>1)−0xb7)`); the **logo/name**
+    (`_do_logo` @`0x1700`) is bbox-centered plus literal offsets **+0x17, −8, +0x10**.
+- **Panorama pan (B):** `_pan_x` `[0x4aca]` init **0x280 (640)** (`mov [0x4aca],0x280` @`0x16af`),
+  **decremented 1 px/tick** in `_pan` @`0x113e` (gated by `_pan_timing` [0x48]); subtracted from every
+  element X (anims @`0x110e`, ship @`0xfa3`) so the scene scrolls right→left as `_pan_x` counts 640→0.
+- **Ship path (B):** read from **PATH.DAT** — `_load_ship_path` @`0xCEA` parses word-pairs (X,Y) into
+  `_ship[]` @`0x4f0c` (stride 4), count `[0x42]`, terminating on a 0 X-word. `_do_ship` @`0xF6E`:
+  X(DX) = `ship_X − (sheet.width[+0x4a]>>2) − _pan_x`; Y = `-((sheet.height[+0x4c]>>1) − ship_Y)`;
+  frame = `_ship_wave` [0x7a]. `_ship_move` @`0x119A` steps `_ship_at` [0x78] (clamped to `[0x42]-1`)
+  and cycles `_ship_wave` on the master clock.
+- **Assets (A):** `OPENING.PIK` bg + `OPEN*` sprites (per load order above) + MPSLOGO/MPSNAME.
+- **Tier:** asset-load order **B**; frame-timing + blit convention + placement model **B**; per-element
+  **literal** X/Y for the anim-table elements is **TBD** — those coordinates live in the external
+  OPENING anim data file (`_load_anims` @`0xdd2` → `_anim[]` @`0x4de8`) and the PATH.DAT waypoint
+  stream (`_ship[]` @`0x4f0c`); a port reads those files, the EXE only supplies the centering math.
 
-## 7. Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS) — CLOSING.EXE
+## 7. Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS) — CLOSING.EXE — **B** (deep decode 2026-06-26)
 
-- **Purpose:** end credits / retirement celebration (Liberty Bell, fireworks). **A.**
-- **Engine:** CLOSING.EXE (separate exe; references only `CONFIG.COL` from the COLONIZE/ tree —
-  everything else is its own bundled assets). Mechanism A background + Mechanism B sequencer. **A**
-  (`docs/KING_AND_CINEMATIC_AUDIT.md` §5).
-- **Script (B):** `CLOSING_sections.json @CLOSING` — CSV rows verified verbatim, commented
-  Fireworks / Liberty Bell / Rock / Hat / Lady / Man / Military / `-1`="End of closing" (END at time
-  390). `@MESSAGES` also present. **B.**
-- **Frame timing (B mechanism; outer clock TBD) — RESOLVED 2026-06-21:** the per-element composite
-  loop in `code/CLOSING/disasm/orphans_load_image.asm` (`@0xB16`) walks a **stride-7 element table**
-  (type `0x4B96` / active `0x4BA0` / sprite `0x4BA2`), draws via `LCALL 0x2BC,4` @`0xB91`
-  (fade effect `LCALL 0x69B,0xE`, `ax=0x5A`=90 @`0xBAA`), loops to active-element count `[0x52]`;
-  companion erase/redraw pass @`0xC57`. Per-element times live in the stride-7 table; the
-  outer-driver real-time pacer (CLOSING's analogue of OPENING's `[0x82]`/`[0x6c]`) is **TBD**. Full
-  trace: **`docs/CINEMATIC_TIMING_AUDIT.md` §2**.
-- **Assets (A):** bg `CLOS-BKG.PIK`; sprites `CLOS-BEL.SS` (22f Liberty Bell), `CLOS-FWK.SS`
-  (67f fireworks), `CLOS-HAT.SS` (23f), `CLOS-LDY.SS` (22f), `CLOS-MAN.SS` (15f), `CLOS-MIL.SS`
-  (21f), `CLOS-ROC.SS` (23f) per `docs/SESSION_UI_CATALOG.md` / `docs/KING_AND_CINEMATIC_AUDIT.md`
-  §5. **A.**
-- **Tier:** script **B**; per-frame loop **B**; outer-driver clock **TBD**; asset identification **A**.
+- **Purpose:** end credits / retirement celebration (Liberty Bell, fireworks). The "credits" are a
+  **sprite-actor pageant**, not a scrolling text roll (see TEXT note below). **A** intent / **B** mechanism.
+- **Engine:** CLOSING.EXE (separate exe; references only `CONFIG.COL` from the COLONIZE/ tree by name).
+  Carries symbols `_closing`, `_text_close`, `_env_get_path`, `_env_special_path`. DS para `0xa5d`
+  (DS-rel `N` → file `0xafd0+N`). **B.**
+- **Asset load — `_closing` (B):** **CLOS-BKG** background via far loader `seg 0xbe:0xa` (4 dword
+  params `[0x36c2..0x36c8]`, off-screen target seg `0xfc00`) @`0x1084`; **FONTINTR** once
+  (`lea [0x9a]`="FONTINTR" / `lcall 0x275,6`) @`0xff6`; the **7 CLOS-* sheets** (HAT/LDY/MAN/MIL/FWK/
+  ROC/BEL) loaded uniformly (`lea bx,[DSoff]`/`sub ax,ax`/`lcall 0x2db,0xe`) @`0x110E`..`0x1185` into a
+  flat far-ptr handle table at base `0x72` (handle `k` = `[0x72+k*4]`).
+- **Per-frame loop — `func_000E4C` @file `0xE4C` (B):** loop top `0xE59`. **32-bit master clock**
+  `[0x488c]:[0x488e]` latched via `LCALL 0x24a,2` @`0xE59`; frame gate in stepper `CALL 0xC0C` @`0xE66`
+  (interval `[0x54]` — runtime, live-adjustable by `INC/DEC [0x54]` @`0xE2A`/`0xE30`; on
+  elapsed `INC` step-counter `[0x6a]` @`0xC35`); present `CALL 0xAC2` @`0xE6A` (copies fb
+  `0xA000:0xFC00` + palette); input `@0xE6E`. **Exit is sentinel-based:** `CMP word [0x6c],0` @`0xE71` /
+  `JNE 0xe59` @`0xE76` — runs while `[0x6c]≠0`; `[0x6c]` cleared at `0xD70` (path complete) and `0xE07`
+  (quit). (Unlike OPENING there is **no immediate-threshold frame cascade** — selection is the
+  schedule loop in `0xC0C`.)
+- **Placement model (B) — table-driven actor list:** scheduler `func_000C0C` walks BSS actor structs
+  (**stride `0x0E` = 14 bytes**, base `0x4b96`; fields `+0` sheet index, `+2` activation tick `0x4b98`,
+  `+6` Y-base `0x4b9c`) populated at load by `func_000A00` @`0xA00` from the **`CLOSING` sequence file**
+  (open `lcall 0xfd:0x1a`, number parse `0xfd:0x198`). Per-tile X/Y are computed from the frame-header
+  bbox + the table Y-base — **no literal sprite coordinates**. Special-event hook: an actor with
+  sheet-index **4 (= CLOS-MIL)** at a trigger-frame set fires sound/event `lcall 0x69b,0xe`
+  (`ax=0x59` @`0xca0`, `ax=0x5a` @`0xba7`).
+- **Text (B — important correction):** the only text the cinematic loop draws is a **debug
+  step-counter** at pen **(5,5)** with FONTINTR (`0xbbd`..`0xc01`; `0x12f8`..`0x1303`). There is **no
+  scrolling-credits render in the CLOSING loop.** The `_text_close`/`_text_search` path (@`0x1bd8`/
+  @`0x19ea`: builds `"@"+key`, `_env_special_path`, opens a handle, parses `0x50`-byte lines into
+  `0x5382`) reads `CLOSING.TXT @CLOSING`/`@MESSAGES` rows — those drive the **sequence/actor timing**,
+  not an on-screen text scroll.
+- **Script (B):** `CLOSING_sections.json @CLOSING` rows verified verbatim
+  (Fireworks/Bell/Rock/Hat/Lady/Man/Military/`-1`="End of closing", END at time 390).
+- **Assets (A):** bg `CLOS-BKG.PIK`; `CLOS-BEL/FWK/HAT/LDY/MAN/MIL/ROC.SS`.
+- **Tier:** asset load + loop + exit + placement-model + text-mechanism **B**; per-actor **literal**
+  frame/coordinate timeline is **TBD** — it lives in the external CLOSING sequence file (`func_000A00`
+  @`0xA00` → actor structs @`0x4b96`) and the runtime interval `[0x54]`; a port reads those, the EXE
+  supplies the centering + schedule math.
 
 ## 8. Sprite-role reference (KINGWIN / KINGLOSE / KING1 / KING2)
 
@@ -270,11 +331,18 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 
 1. ✅ **Score plate→category mapping — RESOLVED 2026-06-21 (B).** Plates are rating-tier art selected
    by `func_03A9C0`'s `i·i/3 ≥ scaled` loop (§4), not per-category lines.
-2. ✅ **OPENING/CLOSING frame timing & sequencing — RESOLVED 2026-06-21 (B mechanism).** Real-time
-   master clock: BIOS-tick spin advances `[0x82]`, a `CMP [0x82],threshold` cascade selects the
-   active frame, loop exit count-based (`CINEMATIC_TIMING_AUDIT.md` §1–§2). **Residual TBD:** the
-   resident draw routines (`LCALL 0x392`/`0x2BC`), the OPENING outer keypress early-out, and CLOSING's
-   outer clock offset (that doc §5).
+2. ✅ **OPENING/CLOSING frame timing, sequencing, blit + placement — RESOLVED (B, deepened
+   2026-06-26).** OPENING: real-time clock `[0x82]` + threshold cascade (§6); the **blit routine
+   `seg 0x392:0`=file `0x4520` is fully decoded** (AX frame+flip / BX surface / DX,X / [bp+6],Y /
+   [bp+8:0xA] handle); placement is **table-driven** (anim table `_anim[]` @`0x4de8` + pan `_pan_x`
+   @`0x4aca`), with literal-centered credit (x160/y183) and logo exceptions; ship path is **PATH.DAT**
+   (`_ship[]` @`0x4f0c`). CLOSING: loop `func_000E4C` @`0xE4C`, 32-bit clock `[0x488c]`, **sentinel
+   exit** `[0x6c]≠0`, table-driven actors (stride-14 @`0x4b96`, loaded by `func_000A00` from the
+   `CLOSING` sequence file). **Residual TBD = data-file contents only:** the per-element *literal*
+   X/Y/frame timelines live in the external OPENING anim file / PATH.DAT / CLOSING sequence file (each
+   named with its load site + BSS table); the EXE supplies the centering + schedule math, which is B.
+   The runtime interval `[0x54]` (CLOSING) and the `LCALL 0x24a,2` clock helper body (overlay seg 2)
+   are the only code-side TBDs.
 3. ✅ **AMERICA.MOV demo-script — PARTLY RESOLVED (A/R).** The `.MOV` blob
    (`data_extracted/data/AMERICA_MOV.json`) is a 1-bpp coastline/depth bitmap + ship-path waypoint
    list (`_load_ship_path`/`_increments`/`_scr_depth`, `CINEMATIC_TIMING_AUDIT.md` §3). Any non-bitmap
