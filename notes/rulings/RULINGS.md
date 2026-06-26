@@ -4896,3 +4896,35 @@ Exit (E). With the runtime harness, every major in-game screen is now captured +
 UX note for founding: colonists made landfall sit on the water-edge tile and must be MOVED onto
 land (Rain Forest here) before Build Colony works ("colonies cannot be built at sea"); sentried
 units are woken by clicking their tile once no unit is active.
+
+## 2026-06-26 — Colony §12 RNG building placement RESOLVED (static trace + snapshot oracle) (Track 12)
+
+The 2026-06-24 "burned" incident (colony screen marked COMPLETE while func_025D34 RNG placement
+was unresolved) is now genuinely resolved — traced statically AND verified against the live
+Jamestown snapshot.
+
+func_025D34 @0x025D34..0x025EAF, full algorithm:
+1. RNG seed per colony: lcall 0x181F:0xD62 @0x025D3A.
+2. Category-per-plot table 0x8D62 = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4], built from counts
+   0x224=[7,4,2,1,1] + starts 0x22A=[0,7,11,13,14] (deterministic, recomputed each open).
+3. Within-category random shuffle (random_int(0,count-1)+start[cat] via lcall 0x181F:0x4D4,
+   retry if occupied) -> plot→building-slot at 0x8E92 (=[bx−0x716E]).
+4. 42 building-defs (stride-12 records based 0x8F88) mapped to category-slots; for each building
+   the colony HAS (query lcall 0x181F:0x9FC) write present-gate 0x8E82[plot]=building-def-id
+   (else 0xFF) @0x025E9F.
+5. Frame = word[id*2−0x7238] = [id*2+0x8DC8] (func_026CC2).
+Consumer render loop 0x027067: position 0x266[slot*4], category 0x8D62[slot] (stride 1),
+present-gate 0x8E82[slot] (stride 1, skip if <0/0xFF), draw via 0x2CA23(category,y,x,def-id).
+
+ADDRESSING NOTE: the disasm's negative offsets are 16-bit wraps: −0x729E=+0x8D62, −0x717E=+0x8E82,
+−0x716E=+0x8E92, −0x7238=+0x8DC8, −0x7078=+0x8F88.
+
+SNAPSHOT VERIFICATION (the key methodological point): live Jamestown 0x8E82 (stride 1) = 8
+buildings at plots {2,3,4,5,6,10,12,13}, def-ids {0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00},
+matching the trace. A first naive stride-4 read had falsely reported "13 buildings" — the
+snapshot oracle is exactly what caught and corrected the bad decode before it could land. This
+is the runtime harness doing its job: not auto-decoding, but turning an unverifiable static
+claim into a checkable one.
+
+Residual (non-static BY DESIGN): the exact plot a building lands in depends on the per-colony
+RNG seed + shuffle order; replayable from seed 0x181F:0xD62 but not a fixed table.

@@ -182,16 +182,35 @@ dump or a runtime trace (do not invent it). Full breakdown:
 ### 3.7 Buildings loop — `func_02701C @0x02701C`
 - Scene backdrop: `0x181F:0xCE` glyph-row `(0xC7,7,…) @0x02703F`; `0x181F:0x4FC` strip blit
   `(7,0x78,0xC7,8,0) @0x02705F`. **B**
-- **15-slot loop** `@0x027067..0x0270B1` (`cmp 0xF @0x02707B`): per slot `bx = slot·4`
-  (`shl bx,2`), then **x = `[bx+0x266]`**, **y = `[bx+0x268] + 8`** `@0x027087/0x02708B`. Building
-  TYPE from `[bx−0x729E]`, present-gate from `[bx−0x717E]` (skip if `<0`). Blit `call 0x2CA23`. **B**
-- ⇒ the 15 plot **positions** are TABLE-POSITIONED (DGROUP `0x266` stride 4). But **which
-  building occupies which plot is RNG-driven** (`func_025D34`: random_int within 5 category
-  plot-ranges `0x224=[7,4,2,1,1]`/`0x22A=[0,7,11,13,14]`, RNG seeded per colony at `0x181F:0xD62`).
-  So the type/level tables `0x8D62`/`0x8E82` are **runtime, not static** — see
-  `docs/COLONY_SCREEN_VICEROY_DECODE.md` §12. The final BUILDING.SS frame per (type,level) is
-  also a runtime lookup `word[idx*2−0x7238]` in `func_026CC2` (§4d) — **not** simply type+1, and
-  **R/TBD until the RNG+seed+frame-table are ported**. **B (positions) / TBD (placement+frame)**
+- **15-slot loop** `@0x027067..0x0270B1` (`cmp 0xF @0x02707B`): per slot, **position** from
+  `bx = slot·4` → **x = `[bx+0x266]`**, **y = `[bx+0x268] + 8`** `@0x027087/0x02708B`; then
+  `bx = slot` (stride 1) → **category = `[bx−0x729E]`** (= `[bx+0x8D62]`), **present-gate =
+  `[bx−0x717E]`** (= `[bx+0x8E82]`), **skip if `<0`** (`0xFF` = empty plot). Blit `call 0x2CA23`
+  with (category, y, x, building-def-id). **B**
+
+- **§12 placement algorithm — FULLY TRACED + SNAPSHOT-VERIFIED 2026-06-26** (`func_025D34`
+  `@0x025D34..0x025EAF`; verified against the live "Jamestown" colony, `colony_jamestown.bin`):
+  1. **RNG seed** per colony: `lcall 0x181F:0xD62` `@0x025D3A`.
+  2. **Category-per-plot table `0x8D62`** built from counts `0x224=[7,4,2,1,1]` + starts
+     `0x22A=[0,7,11,13,14]`: `0x8D62[p]` = the category of plot `p` = **`[0,0,0,0,0,0,0,1,1,1,1,2,2,3,4]`**
+     (deterministic — recomputed each open, not random). `@0x025D7B..0x025DB8`.
+  3. **Within-category random shuffle** `@0x025DBF..0x025E07`: for each slot, `plot =
+     random_int(0,count[cat]-1) + start[cat]` (`lcall 0x181F:0x4D4`), retry if occupied →
+     plot→building-slot map at **`0x8E92`** (`[bx−0x716E]`).
+  4. **42 building-defs** (stride-12 records based at `0x8F88`/`[bx−0x7078]`) each mapped to a
+     category-slot `@0x025E0E..0x025E5A`; then for every building the colony actually HAS
+     (`lcall 0x181F:0x9FC` query `@0x025E64`), the **present-gate `0x8E82[plot]` = building-def
+     id** is written `@0x025E9F`, else stays `0xFF`.
+  5. **Frame**: `func_026CC2` (§4d) looks up `word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`).
+  - **Live verification (Jamestown, snapshot):** `0x8E82` (stride-1) = 8 buildings at plots
+    `{2,3,4,5,6,10,12,13}` with def-ids `{0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00}` — matches the
+    traced structure exactly. (An earlier naive *stride-4* read of `0x8E82` falsely reported "13
+    buildings"; the snapshot is what caught it — the consumer loop reads stride-1 by plot.)
+  - **What is genuinely non-static (by design):** *which* plot a given building lands in depends
+    on the per-colony RNG seed + shuffle order, so the exact plot→building map varies per colony
+    and cannot be a fixed table — but the **mechanism, the table semantics, the building set, and
+    the frame-lookup path are all resolved**. **B (positions + algorithm + frame path) / per-colony
+    shuffle output = RNG (replayable from the seed, verified against live state).**
 
 ### 3.8 Terrain scene — `func_026374 @0x026374`
 - Colony cell from `[0x8542]:[bx+0]` (X→`[0x17C]`) / `+1` (Y→`[0x17E]`) `@0x026381`. **B**
