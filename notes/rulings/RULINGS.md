@@ -4873,3 +4873,26 @@ zones Expected Soon / Bound For New England / Loading: Caravel (captions from @M
 RECRUIT/PURCHASE/TRAIN panel (@EUROLABEL); the 16-commodity bid/ask price strip (same prices as
 the F5 Economic report -> single market model); and the Exit button with red 'E' accelerator.
 First arrival shows a tutorial help overlay. Validates the Track-4 func @0x3200A hit-test rects.
+
+## 2026-06-26 — Colony screen captured live; ColonyRecord + hard rule 8 runtime-confirmed (Track 11)
+
+Drove the full New-World arrival sequence live to found a colony and capture the colony screen
+(the big colony_screen.md PARTIAL surface): sail back from Europe -> "Discovery of the New World"
+-> Make Landfall -> a LOST CITY RUMOR ("You find nothing but rumors" = a live @LOSTCITY outcome)
+-> "Meeting the Natives" / Arawak diplomacy ("a glorious nation of 11 Villages", land-gift, peace)
+-> Build Colony -> name "Jamestown" -> "Building a Colony" -> colony screen. Live @TUTORIAL hints
+also fired (Caravel hint). Screens in docs/screens/ (11_colony_screen.png + 12..15).
+
+RUNTIME CONFIRMATION of the colony data structures (CLAUDE.md hard rule 8): snapshot with the
+colony screen open (colony_jamestown.bin), DGROUP seg 0x1CFD. *(0x8542) = 0x606e. And
+0x606e = 0x5D46 + 4*0xCA EXACTLY -> confirms ColonyRecord base 0x5D46 + stride 0xCA (Jamestown =
+table index 4). Record @0x606e: +0 cx=0x2e(46), +1 cy=0x29(41), +2 name "Jamestown\0". Validates
+the [0x8542] near-ptr + the +0/+1 cx/cy field map in colony_screen.md.
+
+The colony screen visually confirms: RNG-placed buildings layout (func_025D34 §12), surrounding-
+tiles work map, SoL/pop "100% (1)", production panels, 16-commodity warehouse strip (Tools: 50),
+Exit (E). With the runtime harness, every major in-game screen is now captured + cross-checked.
+
+UX note for founding: colonists made landfall sit on the water-edge tile and must be MOVED onto
+land (Rain Forest here) before Build Colony works ("colonies cannot be built at sea"); sentried
+units are woken by clicking their tile once no unit is active.

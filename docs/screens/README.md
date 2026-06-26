@@ -17,7 +17,17 @@ is 1024×768 (game letterboxed/centered).
 | `08_orders_menu.png` | **ORDERS pulldown (active unit)** | The live in-game orders menu: Activate unit / Wait for next unit / Fortify / Sentry / (greyed land orders) / Go to Port / Begin Trade Route / Return to Europe / No Orders (space bar) / Disband Unit (shift-D). Confirms `MENU.TXT @ORDERS` + the `~`-accelerator key-match (`input.md`). |
 | `09_europe_arriving.png` | Europe — first arrival | "English Caravel Now Arriving In London" + the tutorial help overlay (European Status Screen explainer). |
 | `10_europe_screen.png` | **Europe (European Status Screen)** | `spec/ui/europe_screen.md`: header `London, England. Spring, 1500. Tax: 0% Gold: 1000e`; dock zones Expected Soon / Bound For New England / Loading: Caravel; RECRUIT/PURCHASE/TRAIN panel; 16-commodity bid/ask price strip; Exit `(E)`. Confirms Track-4 `func @0x3200A` hit-test rects. |
+| `12_discovery_cinematic.png` | "Discovery of the New World" | `cinematics.md` — lookout sighting land. |
+| `13_meeting_natives.png` | "Meeting the Natives" | `cinematics.md` — colonists rowing ashore. |
+| `14_native_diplomacy.png` | Native diplomacy (Arawak) | `natives.md` — "The Arawak tribe welcomes you... a glorious nation of 11 Villages... accept our treaty?" (tribe greeting + land-gift + peace). |
+| `15_building_colony.png` | "Building a Colony" | `cinematics.md` — colonist felling trees (founding sequence). |
+| `11_colony_screen.png` | **Colony screen (Jamestown)** | `spec/ui/colony_screen.md` (PARTIAL): title "Jamestown. Spring, 1504. Gold: 1000e"; RNG-placed buildings layout (top-left, `func_025D34` §12); surrounding-tiles work map (top-right); SoL/pop "100% (1)"; production panels; 16-commodity warehouse strip (Tools: 50); Exit `(E)`. **Live memory confirmed CLAUDE.md hard rule 8**: `*(0x8542)` = colony ptr `0x606e`; ColonyRecord = x@+0 (`0x2e`=46), y@+1 (`0x29`=41), name@+2 ("Jamestown"). |
 | `reports/` | **Advisor reports F1–F10** | Full gallery + README — see `docs/screens/reports/`. |
+
+The full New-World-arrival sequence was driven live to reach the colony screen: sail back from
+Europe → **Discovery of the New World** → Make Landfall → a **Lost City Rumor** ("You find nothing
+but rumors" — live `@LOSTCITY` outcome) → **Meeting the Natives** / Arawak diplomacy → Build Colony
+→ name "Jamestown" → the colony screen. Plus live `@TUTORIAL` hints fired (e.g. the Caravel hint).
 
 ## How they were produced
 Headless DOSBox 0.74 in `Xvfb :99`, driven with `xdotool` and captured with `scrot`. The

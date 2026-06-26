@@ -44,6 +44,12 @@ index): `set_active_colony` does `imul bx,idx,0xCA; add bx,0x5D46; mov [0x8542],
 |-------|---------|------|----------|
 | `[0x8542]` | active `ColonyRecord` near ptr; `+0`=cx, `+1`=cy | B | `set_active_colony @0x830B`; read by `func_026381` (`[0x8542]:[bx+0]`/`+1`) |
 | `ColonyRecord` base `DGROUP:0x5D46`, stride `0xCA` | colony table | B | `@0x8307` (`add bx,0x5D46` after `imul *0xCA`) |
+
+> **RUNTIME-CONFIRMED 2026-06-26** (founded "Jamestown" live; snapshot via `tools/runtime_snapshot.py`;
+> screen `docs/screens/11_colony_screen.png`). Live DGROUP seg `0x1CFD`: `*(0x8542)` = `0x606e`, and
+> `0x606e = 0x5D46 + 4·0xCA` **exactly** — confirming the ColonyRecord base `0x5D46` + stride `0xCA`
+> (this colony is table index 4). The record at `0x606e` decodes `+0`=cx=`0x2e`(46), `+1`=cy=`0x29`(41),
+> and **`+2` = the colony name** "Jamestown\0". Validates CLAUDE.md hard rule 8 and the `+0/+1` field map.
 | `[0x539E]` (u16) | num_colonies, current player, max 48 (0x30) | B | `cmp [0x539e],0x30 @0x2EB82` |
 | `[0x848]+0x266` (word, stride 4, ×15) | building screen-pos: x@`+0`, y@`+2`(+8) | B | `func_02701C @0x027087`/`@0x02708B` |
 | `[bx−0x729E]` (byte ×15) | building-type per slot | B | `func_02701C @0x027095` |
