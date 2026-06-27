@@ -5536,3 +5536,19 @@ REMAINING:
   committed (no-fabrication).
 - Minor: red-X warehouse count, "100%/No Ships" text x-position, parchment texture variation,
   stockpile green-highlight box exactness.
+
+## 2026-06-27 — Minimap render FORMULA decoded (func_026374); terrain-frame helper is the blocker
+
+Decoded the colony surrounding-tile minimap render loop (`func_026374 @0x26412..0x264a2`):
+- **3×3 grid of tiles around the colony**, 24px spacing. Per tile, delta tables `[idx+0xde]` (row)
+  / `[idx+0xc8]` (col): **screen Y = 24·rowδ + 0x3C(60)**, **screen X = 24·colδ + 0xFC(252)**.
+- **frame = helper(tileX,tileY) + 0x5A**, where helper = `lcall 0x181F:0x718` (returns a per-tile
+  terrain RENDER index, NOT the raw board id). Blit `0x181F:0x254` from sheet descriptor **`[0x839E]`**.
+- Map board confirmed at live file off **0x665710**, stride 58, raw id = `byte & 0x1F`.
+
+BLOCKER (next session): rendering `PHYS0` frame `(rawid+0x5A)` gives small OVERLAY sprites
+(birds/clouds), not ground tiles — so `0x181F:0x718` maps the raw id through a terrain-render LUT
+before +0x5A, and the sheet `[0x839E]` is not plain PHYS0/TERRAIN (both ruled out by pixel match).
+Need: resolve `0x181F:0x718`'s LUT + identify the sheet loaded into `[0x839E]` (loaded by index, no
+name string). Until then the minimap stays unrendered (no fabrication). It is the only colony-screen
+element not pixel-verified; everything else is MSE-measured DONE (full screen MSE 971).
