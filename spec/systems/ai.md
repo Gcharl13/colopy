@@ -316,7 +316,10 @@ per-target scoring loops.
 - **Per-unit driver** `func_051D56` (`@0x51D56`): gate `cmp [unit+0x3149],0`/`je` (already-acted) and
   `cmp [unit+0x314c],0x0B`/`jne` (only AI-goto units); calls the action dispatcher `func_04E2D6` via
   the far-jump **island** at `0x534F8` (`ljmp 0x1A1F:0x4F4`). A secondary order-7..12 jump table
-  `jmp word cs:[bx+0x5c2a]` `@0x51E15` post-processes the result (entries CS-relative — **TBD**).
+  `jmp word cs:[bx+0x5c2a]` `@0x051E15` post-processes the result; the 6 entries are byte-decoded
+  (inline table @file `0x051E1A`, §8 item 6): order7→func_040C1E, 8→func_040656, 9→func_0409D6,
+  10/default→func_007BCE (`0x181F:0x934` post-turn refresh), 11/12→func_040E22 — all page-08 order
+  handlers called with `[bp+6]`=unit.
 - **Unit enumeration** is a flat index loop `i < [0x539c]` (the global unit count) filtered by owner,
   **not** the per-tile occupancy links `0x315C/0x315E`.
 
@@ -356,11 +359,34 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    reads/writes are in `func_04CC50` (`[bp+6]`=power); BSS layout proves it (table `0x98B0..0x9CB0`,
    next global cluster at `0x9CB0`; unit-indexed would overflow the 64 KB segment). The prior
    "unit-indexed" reading was a function-boundary mis-attribution.
-5. **Full plan-map goal_type enumeration** — only `1`/`4`/`7` byte-confirmed as distinct consumed
-   codes; the complete code→mission table is written by the (resident, behind `0x181F:0x952`) planner
-   helper whose body is outside the committed pages. Site: setter `func_04C3A2`, reader
-   `func_04E05C @0x04E05C`/`@0x04E07E`.
-6. **Order-7..12 secondary jump table** `jmp word cs:[bx+0x5c2a]` (`func_051D56 @0x51E15`) and the
-   far-jump **island** slots at `0x534BC..0x53539` — CS(runtime)-relative; only slot `0x4F4`
-   (→`func_04E2D6`) is pinned. Per-case targets TBD.
+5. ✅ **Plan-map goal_type semantics — RESOLVED 2026-06-27 (multibranch decode).** goal_type is **not**
+   an opaque mission enum and there is **no** separate writer behind `0x181F:0x952` — that thunk resolves
+   to the reachability helper `func_00723E` (`0x181F:0x952`→`func_00723E`), unrelated to the plan field.
+   The *only* writer of plan field `[bx−0x674e]` is the local naked setter `func_04C3A2 @0x04C3F6`
+   (`mov [bx−0x674e],al`, al = caller-frame goal_type arg `[bp+0xc]`); the clearer writes `0xFF`
+   (`func_04C1F0 @0x04C1FF`). Reader `func_04CC50 @0x04DFFB` decodes goal_type **as a bit index into the
+   per-unit-type capability bitfield** UnitTypeStats `+0x523d` (§5a): `cl=goal_type; ax=1<<cl;
+   dl=[type·14+0x523d]; test ax,dx` — a plan slot of goal_type G is matchable only if `(1<<G)&capbits`
+   is set, so **goal_type ∈ 0..7 = the capbit position**, the same bitfield the build states B/e test
+   (§5a: Colonist 0x40, Soldier 0x1c, Caravel 0xA2). Three values carry extra reader behaviour:
+   `==1` → state `'1'`→`'t'` (`@0x04E16E`/`@0x04E175`) plus unit-flag `0x3148&4` gate (`@0x04E05C`);
+   `==7` → `'t'`→`'i'` (`@0x04E188`/`@0x04E194`) plus `0x3148&8` gate (`@0x04E07E`); `==4` → consumed
+   but **excluded** from the per-class tally (`cmp [si−0x674e],4; je skip-increment` `@0x04E1BF`). The
+   downstream *mission* a matched unit then runs is chosen by the §6.2 dispatch (`func_04E2B6` char
+   table), not by a goal_type→mission table. Setter `func_04C3A2`, readers `func_04CC50
+   @0x04DFFB`/`@0x04E05C`/`@0x04E07E`/`@0x04E16E`/`@0x04E188`/`@0x04E1BF`.
+6. **Order-7..12 secondary jump table — table RESOLVED 2026-06-27 (binary decode); island slot-labels
+   still partial.** `func_051D56 @0x051E0A`: `ax=order−7; cmp ax,5; ja default; shl ax,1; jmp
+   word cs:[bx+0x5c2a]`. The 6-word table is inline right after the jmp (file `0x051E1A`, bytes
+   `fc 5b e6 5b f2 5b 10 5c 06 5c 06 5c`); runtime-CS offsets = file-local−0x7A0), decoded to:
+   **order7→`@0x051DEC` `lcall 0x191F:0x1FA`=func_040C1E (pg8); order8→`@0x051DD6` `0x191F:0x1C2`=func_040656 (pg8);
+   order9→`@0x051DE2` `0x191F:0x216`=func_0409D6 (pg8); order10/default→`@0x051E00` `0x181F:0x934`=func_007BCE
+   (resident post-turn refresh); order11→`@0x051DF6` `0x191F:0x4BA`=func_040E22 (pg8); order12→`@0x051DF6`
+   = same func_040E22.** Each passes `[bp+6]`=unit; these are the page-08 order-execution handlers (the
+   `'E'`/goto-dispatch band, §4 `@0x041B6D`). The far-jump **island** `0x534BC..0x53539` is byte-decoded
+   as **26 `ljmp 0x1A1F:OFF` slots** (5-byte ljmp, OFF=0x464+slot·0xC up to 0x590; target base
+   0x04DDE2 ⇒ files 0x04E246..0x04E372 in the `func_04CC50`/`func_04E2D6` band). Slot 12
+   (`0x534F8`→`0x1A1F:0x4F4`→file 0x04E2D6 = `enter 0xee,0`) is the confirmed `func_04E2D6` entry; the
+   other 25 targets are **interior labels** of that giant function reached by computed dispatch, so each
+   slot's individual mission is the residual still-blocked item.
 7. **RNG jitter** `0x181F:0x4D4(1,5)` per-candidate score noise — runtime, non-static (R).

@@ -1,6 +1,6 @@
 # Turn Dispatch & Phases
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Core BYTE_VERIFIED: turn loop `func_005760`, European power order 0..3, the five-phase per-power ordering (§3), and turn/year cadence (§3, §6 — all Open Questions resolved 2026-06-20). Sole residual = §4 end-of-turn prompt/announcement message-box element coordinates (overlay page 0x17).
 
 **Overall confidence:** **main turn loop `func_005760`, power iteration order, and
 turn/year cadence `BYTE_VERIFIED`** (2026-06-20); the per-power phase *ordering*
@@ -119,8 +119,21 @@ block (§ "Turn / year advance"). **B.**
   paths (`@0x5B1F` inc `[0x150]` cap `0x19`=25; `@0x5B54` REF/sea-lane edge spawn).
 
 ## 4. UI
-End-of-turn redraw via render chain `func_O514 → O513 → O512`; HUD update; "next
-unit needing orders" prompt loop (manual). Layout `TBD`.
+End-of-turn redraw via the tile render chain `func_O514 → O513 → O512` (per
+CLAUDE.md hard rule 7) plus a full-screen viewport re-blit emitted at the resident
+loop tail (`func_005760 @0x5954` `lcall 0xb70,0x3a` pushing `0x140`=320 / `0xc8`=200).
+The **HUD itself is the shared screen-view HUD** whose layout is **byte-cited `B`** in
+`spec/ui/map_view.md` — composer `func_067700` (thunk `0x181F:0xE1C`), sidebar
+x-origin `[0x8550]=240` (`func_070FF8 @0x071039 mov [0x8550],0xF0`), FONTTINY white
+`0x0F`, blocks (240,72,80,64)/(240,136,80,64); the "next unit needing orders" pump is
+the Orders phase `func_024A48` (§3). The **only residual** is the per-element x/y of
+the end-of-turn announcement / prompt **message boxes**, which are overlay-resident
+on page `0x17` (record 22, disk `0x06BB00`, `code/VICEROY/disasm_overlay_reseg/page_17.asm`):
+the resident loop reaches them via draw/msg thunks `0x181F:0x3FE/0x438/0x652` that
+resolve into that page — no element coordinates are readable from the resident
+segment. Porting those boxes requires measuring the named draw entries in page `0x17`
+or a running-game capture. **B** (redraw path + HUD layout via map_view.md); box
+element coords `TBD` (overlay page 0x17).
 
 ## 5. Evidence
 - `func_005760` (file `0x5760`) — main turn loop: per-turn top `@0x5836`, continue-gate `[0x53C2]` `@0x5BED`, power loop `[bp-0x14]` 0..3, inline end-of-turn/year-advance `0x5A9D`. **B**

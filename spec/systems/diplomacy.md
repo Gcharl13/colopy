@@ -1,6 +1,6 @@
 # European Diplomacy
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Body fully populated: meeting/parley dispatcher (`func_057F4E`), SIGNTREATY handler (`func_057DC0`), both relation matrices (`+0x34` war / `+0x40` treaty), AI willingness thresholds, cooldown, and privateer attribution are all BYTE_VERIFIED; the numbered open questions in §6 are resolved.
 
 **Overall confidence:** **meeting handler `func_057F4E` + SIGNTREATY handler `func_057DC0` + both relation matrices (`+0x34` war / `+0x40` treaty, bit meanings incl. `0x08`=grievance / `0x80`=privateer) + AI willingness thresholds (attitude table `DGROUP:0x940C`, no-action cutoff `(attitude>>2) > demand` `@0x58C24`) + cooldown `BYTE_VERIFIED`** (2026-06-20). **Canonical primary:** `func_057F4E`/`func_057DC0`; `data_extracted/text/GAME_sections.json` treaty/war keys; `docs/GAME_MANUAL.md`.
 

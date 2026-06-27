@@ -207,8 +207,18 @@ BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
    - **Resource / land-value layer** `func_063F3C` (`@0x757BA`): per-tile value byte
      write (`0x181F:0x736`). **A.**
    - **Lost-City rumour features**: inside the generator tail `@0x65BFD..0x65C21`,
-     `or byte es:[bx], 0xA0` into the **features plane** `[0x15C]`. ⚠ **0xA0 vs 0xB0:**
-     the generator writes mask **`0xA0`** (byte-verified `@0x65C0D`), while
-     `events.md` cites the Lost-City *trigger* read as features `== 0xB0`
-     (runtime-verified) — reconcile (the 0x10 difference may be a second feature bit
-     set elsewhere or a trigger-side mask; **flagged, not yet ruled**). **B** (write).
+     `or byte es:[bx], 0xA0` into the **features plane** `[0x15C]` at **two FIXED tile
+     coordinates** — `(1,0x15)` (`@0x65C0D`) and `(0x44,0x2b)` (`@0x65C21`), each
+     `26 80 0f a0` = `or byte ptr es:[bx],0xa0` (pointer from tile helper `0x181F:0x70E`),
+     both gated by `cmp [bp+6],0` and `cmp [0x2174],0/jne`. **0xA0 vs 0xB0 — RULED CLOSED
+     (events.md §6.1, byte proof 2026-06-25; supersedes RULINGS.md line 38's stale
+     `0xB0`-marker gloss per TRUTH_HIERARCHY EXE-bytes-win).** An exhaustive scan of all
+     494,910 bytes of `VICEROY.EXE` for every tile-byte grp1-imm form (`26 80 0f a0` /
+     `26 80 0f b0` / `26 80 0f 10`) returns **only** the two `0xA0` writes above — **zero**
+     `0xB0` writes and **zero** `0x10` sets anywhere; the `==0xB0` trigger-read function
+     **does not exist** (re-verified independently here). So no instruction ever turns
+     `0xA0` into `0xB0`. The two `0xA0` tiles are NOT rumour placement: Lost-City rumour
+     *presence* is **procedural** (coordinate-hash predicate `func_006188 @0x6188`,
+     `events.md` §6.1), and the stored `0xA` high-nibble at these two fixed tiles actually
+     *suppresses* a rumour there via `func_005DF0`'s sentinel + `jge`-fail `@0x61C5`. **B**
+     (write byte-verified; reconcile ruled — the `0x10` bit is set by no instruction).

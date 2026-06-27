@@ -1,6 +1,6 @@
 # Exploration / Visibility (Fog of War)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tier vocabulary: B (byte-verified) / A (oracle/runtime-confirmed) / R (manual-reconstructed). Body §2–§6 is byte-verified or explicitly attributed; the §6 open-questions list is fully resolved (all four items closed, see §6).
 
 **Overall confidence:** behavior `RECONSTRUCTED` from manual; **per-tile fog encoding
 `BYTE_VERIFIED`** (separate per-power visibility layer, bit `player+4`); **sight

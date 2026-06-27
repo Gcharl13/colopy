@@ -1,6 +1,6 @@
 # Scoring
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Confidence tiers used below: **B** = byte-verified (cited func/offset), **A** = oracle/live-read, **R** = reconstructed (manual/recon, EXE wins). The scoring core (scaling, difficulty multiplier, rank, accumulator, and all seven base-component subtotals incl. population weights) is byte-verified in `func_03A9C0` / `func_039EE2`; remaining manual-only weights are flagged **R** inline.
 
 **Overall confidence:** **score scaling formula + difficulty multiplier + rank + accumulator + population-component weights `BYTE_VERIFIED`** (`func_03A9C0`; population gates in paged `0x191F:0x3AA`→`0x39EE2`); **revolution bonus = additive `(1780−decl_year)×2`** `BYTE_VERIFIED` (2026-06-20, §6.3); remaining component weights (father/gold/sentiment/razed) `RECONSTRUCTED` (manual; reachable in the same paged function). **Canonical primary:** `func_03A9C0`; `docs/GAME_MANUAL.md` §"Colonization scoring"; `data_extracted/text/GAME_sections.json` `@SCORE`.
 
@@ -46,12 +46,24 @@ score  = score >> 1                   # @0x3AA6A (halved)
   - profession `== 0x1C` → **+2** (`@0x3A10D..0x3A113`);
   - any other profession → **+4** (`@0x3A0D6`).
 
-  This **byte-confirms the manual's population tiers** (+1 petty criminal /
-  indentured servant, +2 free colonist, +4 skilled colonist) with the exact
+  This **byte-confirms the manual's population tiers** with the exact
   profession-byte gates; the subtotal accrues in `[bp-0x6E]` and is rendered as
-  the population score line `@0x3A261`. **B.** (The exact profession-name ↔ value
-  binding for `0x19/0x1A/0x1B/0x1C` follows from `@CLASS`; the score gates are
-  byte-exact regardless.)
+  the population score line `@0x3A261`. **B.**
+
+  **Profession-byte ↔ name binding (BYTE-bound via `NAMES.TXT @JOB`).** The
+  profession byte (`UnitRecord +0x17`, abs `0x315B`, stored `[bp-0x70]`) indexes
+  `NAMES.TXT @JOB` (confirmed: a colonist job byte `0x0d` = `@JOB[13]` = Carpenter,
+  `docs/DATA_MODEL.md` +0x40 array; `data_extracted/text/NAMES_sections.json @JOB`).
+  The +1 gate values therefore resolve to `0x19`=`@JOB[25]` **Indentured Servant**,
+  `0x1A`=`@JOB[26]` **Petty Criminal**, `0x1B`=`@JOB[27]` **Indian Convert**. The
+  +2 gate value `0x1C` (=28) is **one past `@JOB`'s last index** (`@JOB` runs
+  `0x00..0x1B`); it is the generic free-colonist sentinel (the "no expert
+  profession" value — `+0x17` is initialized `0..0x1C` per `docs/DATA_MODEL.md`
+  line 90, and the manual's +2 tier is the free colonist), so it has **no `@JOB`
+  string entry** of its own. (Note: the manual's "+1 petty criminal / indentured
+  servant" gloss is incomplete — the +1 gate also covers Indian Converts `0x1B`;
+  the byte gates above are authoritative.) **B** (`@JOB` lookup + gates
+  `@0x3A0BE..0x3A117`).
 
   **The component enumeration is now BYTE_VERIFIED** at the grand-total
   summation `@0x3A896–@0x3A8AB`, which sums exactly seven subtotal locals into

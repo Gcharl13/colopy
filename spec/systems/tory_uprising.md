@@ -1,6 +1,6 @@
 # Tory Uprising (Internal Dissent During Independence)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD (TBD reserved for genuinely-unresolved items). Core mechanics are **byte-verified** (`func_03CAC6`/`func_02D658`, 2026-06-20/27); the sole open item is the WoI-loop **call cadence** for `func_03CAC6` (§6 — overlay page-06, no static caller anchor).
 
 **Overall confidence:** **uprising emitter + per-call probability gate + SoL-status (50/95/100%) cutoffs + target selection + Militia spawn (≤8 adjacent tiles) `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`/`func_02D658`). Only the WoI-loop call frequency for `func_03CAC6` is unpinned. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
 
@@ -132,7 +132,7 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
 - `docs/DATA_MODEL.md` — `ColonyRecord +0xC2/+0xC6` rebel fraction. **B/runtime**
 - `docs/GAME_MANUAL.md` — Tory/Rebel sentiment & dissent during independence. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions — all resolved except WoI-loop call cadence (TBD)
 
 1. ~~**Uprising trigger** — byte-trace the condition firing `@TORYUPRISING`.~~
    **Done 2026-06-20** — emitter `func_03CAC6` `@0x3CD94`; per-call gate

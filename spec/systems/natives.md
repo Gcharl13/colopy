@@ -174,10 +174,20 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   | `@0x57267` | +(computed) | 0 | **mission destroyed / missionary expelled** |
   | `@0x61B84` | **+100** | 0 | **burial-ground desecration** vs `[0x5394]` (see `events.md`) |
   The **4th arg `category` ([bp+0xc])** is a **news/advisor message class** routed
-  through `func_045DF2`'s tail (`jmp 0x46000` `@0x45F03`): **3 = relations cooling**
-  (paired with −1), **5 = heating** (paired with +1), **0 = silent/generic**. The
-  exact category enum at the `0x46000` emitter tail and the upstream computation of
-  the mission/incite *variable* deltas remain the residual.
+  by caller convention (−1 push paired with cat 3 `@0x48574`, +1 push paired with
+  cat 5 `@0x4859E`): **3 = relations cooling**, **5 = heating**, **0 = silent/generic**.
+  **CORRECTED 2026-06-27 (B, reseg):** there is **no `0x46000` emitter tail.** The
+  committed disasm of func_045DF2 truncated at 0x45F16; re-capstoning the full body
+  `0x45DF2..0x46002` shows `jmp 0x46000` `@0x45F03` is an **intra-function jump to
+  func_045DF2's own epilogue** (`0x46000: POP si; LEAVE; RETF`), not a call into an
+  emitter. A full disasm of the entire function confirms **`[bp+0xc]` is never read
+  by any instruction** (0 accesses in `0x45DF2..0x46002`) — so the `category` 4th arg
+  is **pushed by all 33 callers but dropped (dead) by func_045DF2**. The cooling/
+  heating/silent meaning is purely a **caller-side label**, carried in the push
+  literal, with no consumer in this applier. (The 0x45F16..0x45FFF tail instead does
+  alarm-array propagation: it clamps neighbour settlements' `[bx+0x54f6]` words to
+  0x20/0x60 and scans by owner `[bx+0x54ee]`.) The upstream computation of the
+  mission/incite *variable* deltas (the few non-literal pushes) is the only residual.
 - **Native trade pricing — BYTE_VERIFIED (2026-06-20).** Buy price (`@0x5C976`):
   `floor = 5·difficulty + 50`; the offer is `max(floor, 2·PowerRecord.tax_pct)`
   (`@0x5C985`) then **capped at 90 (`0x5A`)** (`@0x5C9A3`); the floor applies only
@@ -201,14 +211,28 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 1. ~~Fill the 18-byte NativeSettlement record.~~ **Mostly done 2026-06-20** —
    `+0x00/+0x01` pos, `+0x02` owner tribe, **`+0x03` flags — bit `0x04` = **Capital**
    (RESOLVED 2026-06-26; SET `@0x66225`, consumed `@0x43DC4`/`@0x07DCA`/`@0x46E05`, oracle:
-   1 per tribe), bit `0x01` = unit-removal marker (write-only `@0x06EDA`, consumer TBD).
+   1 per tribe), bit `0x01` = unit-removal marker — **write-only, NO CONSUMER anywhere
+   in VICEROY.EXE (RESOLVED-static 2026-06-27, B).** A full-image opcode scan for every
+   instruction touching disp16 `0x54ef` finds exactly **7 sites**: bit `0x01` is SET only
+   at `@0x06EDA` (`OR [bx+0x54ef],1`, func_006E94 = UnitRecord array-compaction/removal,
+   stride 0x1c REP MOVSW, where `bx = unit[+0x314a]·0x12` = the removed unit's settlement
+   index); bit `0x04` is set `@0x66225`, init-zeroed `@0x46EA7`, and TESTed `@0x04051`/
+   `@0x07DCA`/`@0x43DC4`/`@0x46E05`. **Bit `0x01` is never read or TESTed by any
+   instruction in the whole image** — so its runtime effect (if any) is unrecoverable
+   statically; a running-game watch would be needed to observe behaviour.
    The earlier `0x04`=mission-present / `0x08`=visited / `0x40`=event-eligible labels were
    **unverified and are withdrawn** — no code sets or tests `0x54EF` bits `0x08`/`0x40`**,
    `+0x04` population,
    **`+0x05` resident-missionary profession byte** (feeds the `cl&0x10` doubler),
    **`+0x07` trespass/escalation counter** (set `0xFE` on trespass `@0x4A337`, bumped
    on trade `@0x5C3F2`), `+0x08` last_bought, **`+0x0A+power·2` per-power alarm word**
-   (raid ≥128 / hostile ≥75), `+0x1A` a coord/index. Remaining interior bytes **TBD**.
+   (raid ≥128 / hostile ≥75), `+0x1A` a coord/index. **Remaining interior bytes RESOLVED-static 2026-06-27 (B):**
+   full-image opcode scans show **+0x06 (0x54F2) is NEVER accessed by any instruction**
+   (dead/padding), and **+0x09 (0x54F5) is write-only** — set to 0xFF once in the
+   settlement initializer (`mov [bx+0x54f5],al`, al=0xFF `@0x46EB6`, alongside +0x07/+0x08
+   `@0x46EAE`/`@0x46EB2`) and read by no instruction. So those interior bytes have no
+   readable consumer in the static image; the remaining word-fields are the alarm array
+   `+0x0A..+0x11` already documented in §3.
 2. ~~CHIEFKILL treasure roll + roll→gold.~~ **Done** — the `random_int(0,40·scout+100)`
    roll is the village-escape check; the **raze gold** = `(Σ3×random(1,10−diff)) ×
    random(1,6) × 4 × (tribe_id+1)` → `+0x2A` (`@0x4AAD0..0x4AB66`, **B**, §3).

@@ -113,9 +113,34 @@ surfaced as the announcement **`GAME.TXT @KINGBUY`** — "King increases militar
 spending. {%STRING0} added to royal expeditionary force. Colonial leaders express
 alarm." (`data_extracted/text/GAME.full.json` `@KINGBUY`), which is the
 post-independence "announce the add" branch of the driver (`func_03E162 @0x3E28A`,
-per §3). **B.** Exact screen function + the per-count row coordinates/font remain
-`TBD` — the report draw is overlay-resident and indexes labels via a computed
-(non-literal) index, so no static literal `PUSH 85`/`@MISC`-fetch site anchors it.
+per §3). **B.** **Report screen function = `func_037A10` (overlay page 5, file
+`0x037A10..0x03807D`, 1646 bytes; reseg `disasm_overlay_reseg/page_05.asm`).** It is
+the only overlay draw fn that reads all four counts `0x53DA/0x53DC/0x53DE/0x53E0`
+and is invoked from the report dispatcher (`func_0235D6` p1 / `func_02BC72` p2 via
+thunk `0x191F:0x03FE`). Layout, all BYTE_VERIFIED: full-screen panel `(x=0, y=0,
+w=0x140=320, h=0xC8=200)` opened `@0x038049` (`push 0; push 0x140; push 0xC8`). Text
+cursor = local `[bp-0x56]` X-anchor `=4` (`@0x037A49`) and `[bp-0x5A]` running-Y
+`=0x19=25` (`@0x037A4E`), advanced per row by the active-font cell height
+`es:[ [0x89E] ]` (font descriptor far-ptr) plus block metrics `es:[ [0x83E]+0x610 ]`.
+The four counts are drawn as **one centred icon+value row**: enqueued by
+`func_0033F2` (thunk `0x181F:0x222`, role 'ENQUEUE row item' — stores value→`[0x2CCE+]`,
+icon/colour→`[0x2CF4+]`) at `@0x037E1C..0x037E57` in order **Regulars `[0x53DA]`,
+Cavalry `[0x53DC]`, Artillery `[0x53E0]`, Man-O-War `[0x53DE]`** with per-unit-type
+palette/icon bytes from globals `[0x5286]/[0x52A2]/[0x52CC]/[0x532E]`, then flushed
+centred by `func_003104` (thunk `0x181F:0x22C`, role 'FLUSH centred icon+value row')
+at `x=[bp-0x56]=4, width=bx=0x12C=300, y=[bp-0x5A]` (`@0x037E62`); icon sprite
+widths read from the metrics table `es:[ [0x83E]+si+0x3E ]` for the centring math.
+Unit-type **labels** come from the DGROUP table at `0x9652` (stride 6, 4 entries:
+`[i*6 - 0x69AE]`, `@0x037FE7`) appended via `func_002992` (thunk `0x181F:0x16E`,
+'string fetched from a table'); the heading uses the same overlay text builder, not a
+literal `PUSH 85`. **The four count VALUES are live game state:** read from globals
+`[0x53DA/0x53DC/0x53DE/0x53E0]`, rendered by `func_037A10 @0x037E1C..0x037E72` as a
+centred icon+value row at the (x=4,w=300,y-cursor) above in the active UI font
+(descriptor `[0x89E]`) — per-game state, not a static constant; the source globals,
+renderer, format, and placement are now fully byte-cited. The only residual
+runtime-only datum is the exact centred pixel-X (computed at flush time from the
+summed icon/value widths via `func_003104`) and the literal font face — both fully
+specified by the cited code/globals. **B.**
 
 ## 5. Evidence
 

@@ -76,7 +76,7 @@ showing each storable good and its on-hand count; `[Tab]` selects the strip
 - `docs/DATA_MODEL.md` — ColonyRecord `+0x1C` const 0x40. **A**
 - `docs/GAME_MANUAL.md` — capacities (100/+100), food cap 199, 200-food colonist. **R**
 
-## 6. Open questions (TBD)
+## 6. Resolved questions (items 1–4 closed; only the Food-200 manual number remains tier R — see §3)
 1. ~~Confirm `+0x1C` (0x40) role.~~ **Done 2026-06-20** — `+0x1C` is a per-colony
    **status/warning flags byte** (bits `0x02/0x04/0x08/0x40/0x80`, `func_02D658`), not
    a capacity base; stockpile array is `+0x9A` (good `i` at `+0x9A+i·2`). **B.**

@@ -132,9 +132,34 @@ up `(level+4)%5` @0x070692, down `(level+1)%5` @0x0706C8, arrow scancodes matche
 selection (`cmp ax,[bp+6]` @0x07037D), draws a 1-px hollow-rectangle highlight outline
 (`0x181F:0xCE` = `func_00E0A2` @0x0703AB) in a per-level ink color selected by the index switch
 @0x07034A: **level 0=0x0A** (@0x07035C), **1=0x09** (@0x070362), **2=0x0E** (@0x070368),
-**3=0x0D** (@0x07036E), **4=0x0C** (@0x070374). Residual `TBD`: the title-text position (drawn by
-the overlay draw-all `func_070C64`→`0x1A1F:0xBF2`, overlay-resident) and the cell **font id** (BSS
-render struct `[0x87C]`) are runtime/overlay-resident — not statically pinned here.
+**3=0x0D** (@0x07036E), **4=0x0C** (@0x070374).
+
+**Cell-text source — resolved as state (B).** The 5 level-name strings the cells render are NOT
+static in this screen's code; they are the 5 lines of the `@DIFFICULTY` section, parsed once at
+setup into BSS line-pointer table `DS:0x8394` (5 words, base `[bx-0x7c6c]` = `[bx+0x8394]`). The
+fill loop is `@0x074C99…@0x074CAE` (page 1A): the section is selected by `push 0x222b`
+(="DIFFICULTY", snapshot-confirmed; `@0x074C87` → section-open thunk `0x191F:0x928` =
+`func_06F8FA`), then for `idx = 0..4` (`cmp [bp-8],5` @0x074CAA) the per-line pointer returned by
+section-reader thunk `0x1A1F:0xB16` (→ `func_06F8FA`) is stored `mov [bx-0x7c6c],ax` with
+`bx=idx*2` (`shl bx,1` @0x074CA1, `@0x074CA3`). So slot `i` = pointer to `@DIFFICULTY` line `i` =
+level name `i` (0=Discoverer…4=Viceroy). The literal names are already **B** from `@DIFFICULTY`;
+the table holds per-game heap addresses bound at setup-parse — live state, not static constants.
+The `[0x87C]` referenced earlier is **not a font byte**: it is read only as `LEA bx,[0x87c]`
+(@0x0705B4, and ~13 other setup screens), i.e. the **menu/widget descriptor-struct base**
+passed to the list-menu builder `0x181F:0x998` (@0x0705BE) for the text-fallback menu; the font is
+a field set inside that builder, not an immediate in `func_070302`/`func_070580`. The clip/screen
+rect globals `[0x839E..0x83A4]` and `[0x2DA8..0x2DAE]` carry the **full-screen 320×200 clip**
+(live snapshot: `[0x839E]=0xC8`=200, `[0x83A0]=0x140`=320, `[0x83A2]=0`=x, `[0x83A4]`=raster ptr;
+`[0x2DA8..]` the mirror set) — these are the active-surface clip descriptor set by the fill at
+`@0x070608` (`push 0xC8; mov bx,0x140`)/blit, not cell-specific immediates. **B (sources cited).**
+
+Residual `TBD` (needs a difficulty-screen RAM capture): the title-text *position* (x,y), font, and
+string-pick are drawn by `func_070C64` (@0x070C64), which is a pure call-gate stub — it `LJMP`s to
+the **unresolved** tertiary-overlay thunk `0x1A1F:0xBF2` (the loader patches this at runtime to a
+resident tertiary-overlay body; `thunk_resolve.json` has no static entry for `0xBF2`, and no
+snapshot here holds the difficulty screen resident). The title *string* is the `@DIFFICULTY`
+header ("Select a Difficulty Level", `GAME_sections.json`); its draw coordinates remain
+overlay-resident and are not statically pinnable from the substrate.
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@DIFFICULTY` (5 names). **B**

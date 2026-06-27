@@ -80,7 +80,14 @@ the record interior (`+0x33`-tail bytes through `+0x48`, and `+0x60..0x13B` outs
 the byte-cited `vol_accum` window) is touched only by the js-dos-schema market arrays
 in `docs/DATA_MODEL.md` (`market_pool`/`market_traded_volume`/`market_eu_supply`/
 `market_base_values`, RECONSTRUCTED, not byte-cited here) and is left **TBD** rather
-than asserted — no read/write site was traced this pass.
+than asserted. **Narrowed 2026-06-27:** a full reseg of the **market-recompute**
+`func_0305A8` (page_04, 1424 bytes / 524 insns) shows it reads/writes **only** PowerRecord
+`+0x4c` (price_level[16], 12 sites) and `+0x5c` (vol_accum[16], 9 sites) plus the globals
+`[0x53ea]`/`[0x543f]` — it **never** touches the `+0x33..+0x48` or `+0x60..0x13B` interior. So
+those ranges are **not** part of the price-recompute path; they remain RECONSTRUCTED (js-dos
+schema) with no byte-cited read/write site — closing them needs a per-site base-register
+provenance trace across the trade-execution overlays (where `bx=[0x84fc]` vs `bx=[0x8542]` is
+ambiguous in the same pages) or a live PowerRecord diff against a known trade.
 
 Production inputs are primary game data:
 - **`@BUILDING`** (buildings + production modifiers), **`@JOB`** (professions),
@@ -136,8 +143,13 @@ The ordered per-turn colony pipeline (call sites byte-read):
    tools-from-horses offset `[0x8E66]` (`@0x8E61`). Commit `func_008E46`→`func_008E02`. **B.**
 4. **Food consumption — BYTE_VERIFIED: `eaten = 2·pop`** (`@0xA5F2` `mov al,[bx+0x1F]; shl
    ax,1`); `net_food = max(food_produced[0x8DC8] − 2·pop, 0)` (`@0xA5F7 sub/neg`, clamp
-   `@0xA5FD`). Net feeds the `+0xC8` growth accumulator (the `+200` growth threshold is
-   added at `@0x2E098`, §2).
+   `@0xA5FD`). Net food feeds the **`+0xAA` food-growth store** (read `@0xA5D6`/`@0xA61F`;
+   half-of-surplus toward growth, §3) — **not** `+0xC8` (`+0xC8` is the SoL `rebel_divisor`
+   high word, written only by the EMA `func_02D658 @0x2DA1C`, §2). **CORRECTED 2026-06-27:**
+   the earlier "`+0xC8` accumulator / `+200` threshold @`0x2E098`" gloss was a misread — a
+   reseg of `0x2E088..0x2E0A1` shows `@0x2E098 add [bp-0x60],0xc8` writes the **message-quantity
+   local `[bp-0x60]`** (pushed into the `lcall 0x181f:0x4d4` notification at `@0x2E0A1`), never
+   `ColonyRecord+0xC8`.
 5. **Warehouse capacity — BYTE_VERIFIED: `cap = (warehouse_level[+0x95] + 1)·100`**
    (`func_008D00`: base `0x64`=100 `@0x8D04`, `(+0x95+1)·0x64` `@0x8D1A` when `+0x95≠0`).
 6. **Display-delta bookkeeping** `func_008E02` (via `func_008E46 @0xA648/0xA655/0xA699`):
@@ -325,13 +337,31 @@ or ax,ax; jne` keeps 25 when the Stable is present, else `@0xA5CD mov [bp-0x1e],
 wording was wrong — the toggle is the **Stable building**, not a difficulty flag. The
 **born-colonist** write is `func_009318` (`INC [+0x1F]`, above); the **starvation** write is
 `func_008FB4 @0x902E` (`DEC [+0x1F]`, shifting the colonist job arrays `+0x20/+0x21/+0x40/+0x41` and
-the 0x14-entry work-tile table `+0x70` down to fill the vacated slot). The exact **deficit→remove**
-*trigger* (where `2·pop > producedFood` with empty stored food calls `func_008FB4`) and the per-turn
-`+0xAA` increment site are still **TBD** — the `0xA5D0..0xA640` block is the colony-screen
-**forecast/display**, not the mutation; the mutation funcs are byte-confirmed but their call gate is
-not yet pinned. *(NB: the older "+0xC8 growth accumulator" gloss (§ driver step 4) and this `+0xAA`
-need a runtime cross-check to confirm which is the live store.)* **B (funcs + surplus rule) / TBD
-(trigger + accumulator-field reconciliation).**
+the 0x14-entry work-tile table `+0x70` down to fill the vacated slot). **Starvation-WARNING emitter
+byte-verified 2026-06-27** (reseg `func_02D658 @0x2E1A7..0x2E2BA`): the resident turn driver only
+*posts the messages* — `[bp-0x12c]` is a **food-OK boolean** (`mov [bp-0x12c],1` `@0x2E1A7`, cleared
+`@0x2E1B3`/`@0x2E1E0` from the `lcall 0x181f:0x4ca`/`0x4d4` overlay food-state queries), and the
+`cmp [+0x1f],[bp-0x12c]` test `@0x2E242` (pop vs the flag) selects which template fires: `0xe3b`/`0xe41`
+(=@FOOD1/@FOOD2 "food stores depleted"), `0xe47` (=@VANISH "colony vanished… starved"), `0xe4e`/`0xe56`
+(=@STARVE1/@STARVE2 / @FOODLOW) — all via `call 0x2ef5f` `@0x2E2B4` (templates in
+`GAME_sections.json`). **The actual colonist-removal (`func_008FB4` DEC-pop) and the per-turn `+0xAA`
+increment are NOT in the resident image** — an exhaustive write scan of the resident image **and all 31
+resegmented overlay pages** finds only **two** writers of `ColonyRecord+0xAA`: `mov [bx+0xaa],2` (floor,
+page_0E `@0x5627D`, gold-buyout path) and `add [bx+0xaa],0x64` (scout-colony +100, page_0F `@0x5A3CA`) —
+**no per-turn additive `+= surplus/2`**. (The `lcall 0x181f:0x4ca`/`0x4d4` calls in this block resolve
+to the resident notification helpers `func_00C30A`/sibling — message formatters, not the mutator.) The
+per-turn `+0xAA` increment and the `func_008FB4` deficit-removal call are thus **not reachable from any
+statically-resolvable site** in `func_02D658`'s resident body or the 31 reseg pages; they require a
+two-turn live `ColonyRecord+0xAA`/`+0x1F` capture (or a deeper RTLink thunk trace) to pin the exact
+write — still **TBD (runtime)**. *(Field reconciliation RESOLVED 2026-06-27 by oracle RAM read: in both founding snapshots
+`colony_jamestown.bin` and `colony_live_1505.bin` (pop 1, `[0x8542]`→colptr `0x606e`),
+`ColonyRecord+0xAA = 0` AND `+0xC8 = 0`. An image-wide write scan settles the roles: `+0xC8`
+is written **only** by the SoL 32-bit EMA (`func_02D658 @0x2DA1C`, `sub/add [bx+0xc6]/[bx+0xc8]`,
+§2) — it is the `rebel_divisor` high word, NOT a food store; `+0xAA` is the food-growth store
+(the §3 forecast reads it at `@0xA5D6`/`@0xA61F`). The "+0xC8 growth accumulator" gloss in driver
+step 4 was stale and is now corrected there. **A (oracle) / B (write-scan).**)* **B (funcs +
+surplus rule + field reconciliation) / TBD (per-turn `+0xAA` increment site + starvation-removal
+count — both overlay-side, see below).**
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,
@@ -369,11 +399,25 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
 - **RESOLVED 2026-06-27:** end-of-turn "spoilage" of an overfull stock — there is **no per-good
   spoilage clamp**; over-100 tradeables are **auto-exported to Europe** (→50, sold; wasted if
   independence declared) in `func_02D658 @0x2D6F7..0x2D785` (see §3 "Warehouse spoilage — CORRECTED").
-- **TBD (still open):** building prerequisite gating **beyond** the bit-6 manufacturing gate — i.e.
-  whether/where build-menu constructability requires a predecessor building (the `@BUILDING`
-  tier/category columns + the chain table `DS:0x8F86`). The manufacturing gate (`building_bit(6)`) and
-  the factory-tier `chain count > 2` gate (`func_00864E`) are byte-verified (§3); the full
-  predecessor-prerequisite table walk for the **build menu** was not traced this pass.
+- **Building prerequisite gating — SUBSTRATE BYTE-VERIFIED 2026-06-27, build-menu *consumer* TBD.**
+  The predecessor structure and its walkers are now byte-traced. **Chain "next-link" table =
+  `DGROUP:0x8F86`**, stride **12 (0xC)**, signed byte per record (negative = end of chain) — accessed as
+  `byte[idx·12 + 0x8F86]` (resident funcs encode it `[bx-0x707a]`, bx=idx·12; `0x10000−0x707a=0x8F86`).
+  **Four chain-walk helpers** (reseg `0x864E..0x871F`): `func_00864E` = count links whose colony bit is
+  set (bit test `call 0x863e`), `func_008686` = same scoped to a colony (`call 0x860e`), `func_0086C0` =
+  walk chain to its end, `func_0086E4` = return the **first** present link (else `0xFFFF`). The
+  **`@BUILDING` parser** `func_074D18` lays the 42-record table at base **`DGROUP:0x8F82`** stride 12
+  (loop `@0x74D01..0x74D4C`, `bx=idx·3<<2`): `+0x00` word cost (`@0x74D12`), then five `lcall 0x1a1f:0x88a`
+  byte/word reads → `+0x0A` word (`[si-0x7074]`), `+0x07` (`[si-0x7077]`), `+0x05` (`[si-0x7079]`),
+  `+0x08` (`[si-0x7076]`), `+0x09` (`[si-0x7075]`); the chain-link byte `+0x04` (`0x8F86`) is populated
+  separately. **Verified consumers of the walk = production only**, not the build menu: `func_008E84`
+  (`@0x8EA3`, the ×2/3 factory throttle) and `func_009FFC` (`@0xA19B`, the factory-tier yield ×1.5/×2).
+  **Still TBD (overlay/UI):** the build-menu *constructability* function that would call
+  `func_0086E4`/`func_008686` to require a predecessor (Stockade→Fort etc.). The only near callers of the
+  walkers are the production path (`func_0086E4` ← `func_009FFC @0xA0D1`, factory-tier yield); `func_0086C0`
+  and `func_008686` have **no near caller** in the resident image or any of the 31 reseg pages, so the
+  build-menu predecessor check is reached via a far thunk from an untraced colony-UI overlay; not pinned
+  this pass.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE

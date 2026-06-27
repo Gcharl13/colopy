@@ -225,5 +225,21 @@ The demand surfaces as the **King speech-bubble dialog**:
      **1 (Jakob Fugger, @FATHERS row 1)** then @0x03BD45 `mov word ptr [bx+0x20],0`
      wipes the entire boycott mask. (`func_03334E` also has a clear-all early-out
      @0x03336E `mov word [bx+0x20],0` for the AI/controller `[bx+0x543f]!=0` path.)
-   The back-tax *count* source (`0x36890` is an overlay ljmp-thunk table) is overlay-
-   resident — the ×500 multiplier and all bit ops are byte-verified resident. **B.**
+   **Back-tax *count* source — RESOLVED 2026-06-27 (BYTE_VERIFIED).** `call 0x36890`
+   (`e8 e4 34` near-call) lands on the far-jump thunk table at file 0x3680e..0x36976
+   (each slot `ea XX XX 1f 19` = `ljmp 0x191f:0xCxx`); slot @0x36890 is `ljmp 0x191f:0xc3e`,
+   which `thunk_resolve.json[191F:0C3E]` resolves to **`func_030566`** (overlay page 4).
+   Decoding `func_030566` (full bytes capstoned from VICEROY.EXE 0x030566..0x03058f,
+   committed disasm truncated at 10 bytes) gives, for `good = [bp+6]`:
+   `count = max(0,  PowerRecord[+0x4c + good]  +  table9[DGROUP:0x9700 + good*9])`
+   — i.e. @0x030575 `al = byte[good*9 - 0x6900]` (per-good base from the stride-9 table
+   at DGROUP:0x9700), @0x030583 `al = byte[bx + good + 0x4c]` with `bx=[0x84fc]` (active
+   PowerRecord), @0x030587 `add`, @0x030589 `jns`/`sub ax,ax` (clamp ≥0). So the counted
+   quantity is the **per-good accumulator `PowerRecord +0x4c + good`** (NOT current cargo):
+   a u8 counter incremented by `func_032262` (@0x032271 `inc [bx+si+0x4c]`) and
+   decremented-with-clamp by `func_032278` (@0x032288 `dec`/`jns`), both with `bx=[0x84fc]`,
+   `si=good` — plus a small per-good base from the read-only stride-9 table at DGROUP:0x9700
+   (live values @colony_live_1505.bin: table9[0..7]=[7,1,1,1,1,4,2,0], PowerRecord+0x4c[0..7]=
+   [1,6,5,5,5,2,6,20]). That sum ×0x1f4 (500) yields the back-tax gold shown in the dialog.
+   **B** (reseg + thunk_resolve 191F:0C3E→func_030566 + accessor_trace func_032262/032278;
+   layout cross-checked against the RAM snapshot).

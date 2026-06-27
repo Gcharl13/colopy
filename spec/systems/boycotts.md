@@ -1,6 +1,6 @@
 # Commodity Boycotts (Tea Party / Parliamentary)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD (tier vocabulary). Status: §§2–6 byte-verified; the §6 open-questions list is fully resolved (all four items Done/B). The only non-byte residue is the §4 RUNTIME pixel observation (whether the Europe trade list paints a distinct colour/glyph for a boycotted good), which is not byte-decidable because no render function reads the boycott bit (`PowerRecord +0x20`; sole accessor `func_030B38` has exactly two callers, both sell logic — see §4).
 
 **Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/back-tax-lift/Jakob-Fugger-clear-all) `BYTE_VERIFIED`**; **back-tax amount `BYTE_VERIFIED`** (price×500). · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
 
@@ -69,7 +69,7 @@ loop `@0x41210` and the interactive sell handler `@0x415A6` (`lcall 0x191F,0xCD8
 "treatment" of a boycotted good is the click → back-tax (`@KISSUP`) pay-or-abort
 dialog, not a passive glyph. Whether the per-good list also draws a distinct
 colour/glyph for boycotted goods is **TBD** — not byte-verifiable, since no
-render function consults the boycott bit (`PowerRecord +0x20`). **R**.
+render function consults the boycott bit (`PowerRecord +0x20`). Byte-decidable half — **closed, negative**: the only accessor of `PowerRecord +0x20` reachable via the boycott-test thunk is `func_030B38` (thunk `0x191F:0xCD8`), and that function has **exactly two callers in the entire image** — `func_041080` (overlay page 8, auto-sell loop `@0x41210`) and `func_041410` (overlay page 8, interactive sell `@0x415A6`) — **neither a render/glyph function** (both feed only the sell-gate / back-tax path; no sprite or text-draw call is keyed on the bit). Therefore **no boycott-bit-driven glyph or colour can exist** in the trade screen. The only residue is the purely observational confirmation (run the game, Tea-Party a good, inspect the per-good list pixels), which is not byte-decidable; the byte evidence predicts no visual distinction. **R** (byte half closed; pixel-only confirmation outstanding).
 
 ## 5. Evidence
 

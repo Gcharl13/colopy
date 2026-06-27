@@ -154,7 +154,20 @@ per-index meaning is the GAME.TXT body of `@LOSTCITY<n>` (all bodies present in
 ## 4. UI
 Outcome surfaced via the dialog/text-template framework (`func_06EEEC` text
 template parser, `func_06F0F4` dialog framework — `docs/ARCHITECTURE.md`,
-BYTE_VERIFIED entry points). Concrete layout `TBD`.
+BYTE_VERIFIED entry points). **Concrete box geometry is dialog-framework runtime
+state, not a constant in the rumor handler — RESOLVED-AS-STATE (2026-06-27).** The
+box x/y/size is held in three DGROUP dialog-state globals `[0x1f9e]`, `[0x1fa0]`,
+`[0x1fa2]`, **written** by the geometry setter `func_06EED4` (file `0x06EED4`) from
+its three args — `[0x1f9e]=[bp+6] @0x6EEDD`, `[0x1fa0]=[bp+8] @0x6EEE0`,
+`[0x1fa2]=[bp+0xA] @0x6EEE7` — and **read/rendered** by the framework root
+`func_06F0F4`, which pushes all three to the box renderer `@0x6F135` (`PUSH [0x1fa0]`),
+`@0x6F139` (`PUSH [0x1f9e]`), `@0x6F13D` (`PUSH [0x1fa2]`). `func_06EED4` is invoked by
+the dialog-opening callers (`func_060CE0`, `func_072CC2`, `func_075FB6`), **not** by the
+rumor handler `func_061454` — which contains no write to `[0x1f9e..0x1fa2]` and sets no
+box constant; it only builds the message string and hands it to the generic template
+framework. So the on-screen pixel geometry of the Lost-City outcome dialog is live
+dialog state set per-invocation in `[0x1f9e]/[0x1fa0]/[0x1fa2]` and rendered by
+`func_06F0F4 @0x6F135`; it is not a static constant anywhere in the rumor path. **B.**
 
 ## 5. Evidence
 - `data_extracted/text/GAME_sections.json` — @LOSTCITY0..9, @BURIAL1..3, @VANISH, @CASHTREASURE. **B** (strings).
