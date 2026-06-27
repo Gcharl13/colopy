@@ -144,15 +144,97 @@ an enable flag and **not** evaluation-passes-used (B, `func_0079A0 @0x007A08`).
   `cmp [0x3149],0` gates (`func_051D56 @0x051D5D`, page-13 `@0x062F5C`) select units that have
   **already acted** this turn (spent ≠ 0), not an enable bit.
 
-## 6. Cross-references / fields this names
+## 6. The strategic plan-map + per-turn invocation (B, L4 Phase 2)
+
+### 6.1 Plan-record table (B, with one flagged ambiguity)
+
+A family of small **far accessor** functions (`0x04C1F0`..`0x04C3FD`) maintains a fixed BSS table of
+4-byte plan records at **`DS:0x98B0`** (addressed `[bx−0x6750]`…`[bx−0x674d]`, byte-address
+`= ((idx<<6)+slot)<<2`, **slot 0..0x3F = 64 entries per idx**):
+
+| Field | Offset | Meaning |
+|-------|--------|---------|
+| `field0` | `−0x6750` (`DS:0x98B0`) | candidate-target **X** (copied to UnitRecord `0x314D` on goto commit) |
+| `v1` | `−0x674f` | candidate-target **Y** (→ `0x314E`) |
+| `goal_type` | `−0x674e` | **mission-type selector**; `0xFF` = empty slot. `==1`→unit state `'1'→'t'`; `==7`→`'t'→'i'`; `==4` special (skip). |
+| `v3` | `−0x674d` | **priority/weight** — the setter inserts into a priority-ordered slot |
+
+Accessors (all far, page 0x0D): **clearer** `func_04C1F0` (reset one slot to `goal_type=0xFF,v3=0`);
+**setter** `func_04C3A2` (naked, reuses caller frame; scans 64 slots for the first free
+`goal_type==0xFF` whose `v3` ranks the new entry, calls priority-insert thunk `0x534F3→0x1A1F:0x4E8`,
+then writes the 4 fields from caller-frame slots `[bp+8/0xA/0xC/0xE]`); **query** `func_04C306`
+(returns max `v3` among slots matching `field0/v1/goal_type`).
+
+> **⚠ Unresolved outer-index identity (TBD, recorded 2026-06-27).** The outer index is `[bp+6]` in
+> **both** the producer `func_04CC50` and the consumer `func_04E2D6`. In `func_04E2D6` `[bp+6]` is
+> byte-confirmed the **unit index** (`imul bx,[bp+6],0x1c` at entry `@0x04E2EF`), which argues a
+> **per-unit** 64-slot goal list. But a flat *unit×64×4* table = `300·64·4 = 0x12C00` bytes would
+> **overflow the 64 KB data segment** at base `0x98B0`, and the per-power turn loop (§6.3) calls the
+> strategic pass once per power (0..3). So whether `idx` is **unit** or **power** is **not resolved**
+> from the committed bytes — the two workflow reads conflicted and each only verified its own
+> citation. **Blocker:** need the table's allocated byte-size (a `memset`/alloc of `0x98B0` — not
+> found in the committed pages) or the real cardinality of `func_04CC50`'s `[bp+6]` argument at its
+> (dispatch-island) caller. Do **not** assert "64 per unit" or "per power" as fact until resolved.
+
+### 6.2 Mission-dispatch chars → missions (B)
+
+All mission dispatches route through `func_04E2B6` (sets `0x314B=dl`, order `0x314C=0x0B`,
+goto `0x314D=bl`/`0x314E=[bp+4]`) via the shared tail `@0x04E9DB` (`jmp 0x2f95`). Each `mov dl,imm`
+site's branch names the mission:
+
+| Char | Site | Mission |
+|------|------|---------|
+| `2` | `@0x04F030` | **Scout explore** — type-5 unit to a runtime-scored frontier tile (best of a desirability loop). Re-entry `@0x04E664` (type 5 + state `'2'`). |
+| `3` | `@0x04F1FD` | **move-to-colony** — scores own colonies (count `[0x539e]`) by distance + size `[+0x1f]`, best → `[0x8542]`. |
+| `4` | `@0x0508AB` | **go-to-native-village** — scores native settlements (count `[0x539a]`, stride 0x12) → `[0x8d4a]`. |
+| `5` | `@0x050768` | **move-to-current-colony** (`[0x8542]`). |
+| `8` | `@0x050D58` | **explore-wander** — multi-step random walk; step counter `0x3156` = `rand(1,0x14)`, displacement table `[bx+0xc8]/[bx+0xde]`. Re-entry `@0x050C9D`. |
+| `D` | `@0x05107C` | **long-range explore** (variant of `8`; distance `0x181F:0x37A ≥ 8`, sets unit bit `0x3148.10`). |
+| `J` | `@0x050BD8` | **go-to-native-village, capital-preferring** (scores `NativeSettlement+0x03 & 0x04` = Capital, distance + capital bonus). |
+| `N` | `@0x050C3B` | **Scout/Pioneer → colony** (type 5 or 2). |
+| `P` | `@0x0504D2` | **move-to-best-colony** ranked by colony field `+0xAA`. |
+| `V` | `@0x04E9E2` | **fallback move-to-colony** for non-Pioneer land units with a colony but no active goal. |
+| `W` | `@0x050E18` | **move-to-colony with a pending need** (colony flag `[0x8542]+0x1b & 0x04`; clears it + decrements `+0x1e` on arrival). |
+
+So the AI's unit missions are: **explore** (`2`/`8`/`D`), **return-to-colony** (`3`/`5`/`N`/`P`/`V`/`W`),
+and **visit-natives** (`4`/`J`) — selection driven by the plan-map `goal_type` upstream (§6.1) and the
+per-target scoring loops.
+
+### 6.3 Per-turn AI invocation (B)
+
+- **Main turn loop** `func_005760` (body `@0x5836`): resets `0x3149=0` for every unit (`@0x5872`,
+  bound `[0x539c]`), then a **per-power loop** index `[bp-0x14]` = 0..3 (`@0x5907`), setting active
+  power `[0x5394]` (`@0x5920`).
+- **Controller gate** (skips the human): `imul bx,[bp-0x14],0x34; cmp byte[bx+0x543f],0; jne skip`
+  (`@0x58A6`) — `[idx·0x34+0x543f]` is the controller byte (0 = this power runs King+Orders; the AI
+  sub-handlers re-test it `@0x4C9D3`/`@0x5148A`). (`AIPersonality[idx]` is the parallel `idx·0x34+0x540E`.)
+- **Orders/movement phase** `func_024A48` (`lcall 0x181F:0x62C @0x58E7`): branches on mode word
+  `[0x5390]` — `==0` interactive (BIOS-tick poll, viewport scroll), `≠0` AI/fast path (skips the wait).
+- **Strategic pass** `func_04CC50` (`@0x4CC50`, `ENTER 0x1E4`): reads the plan map and assigns goals —
+  iterates units (`[bp-0x152]` < `[0x539c]`, filtered to this power via `0x3147&0xf`), matches them to
+  plan slots, writes the mission char to `0x314B` + order `0x314C=0x0B` + goto coords (`@0x04E199`).
+- **Per-unit driver** `func_051D56` (`@0x51D56`): gate `cmp [unit+0x3149],0`/`je` (already-acted) and
+  `cmp [unit+0x314c],0x0B`/`jne` (only AI-goto units); calls the action dispatcher `func_04E2D6` via
+  the far-jump **island** at `0x534F8` (`ljmp 0x1A1F:0x4F4`). A secondary order-7..12 jump table
+  `jmp word cs:[bx+0x5c2a]` `@0x51E15` post-processes the result (entries CS-relative — **TBD**).
+- **Unit enumeration** is a flat index loop `i < [0x539c]` (the global unit count) filtered by owner,
+  **not** the per-tile occupancy links `0x315C/0x315E`.
+
+Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`) → per-unit dispatch
+(`func_051D56` → `func_04E2D6`) → execute/step.**
+
+## 7. Cross-references / fields this names
 
 - `spec/systems/unit.md`: `0x3149` (now named here), `0x314B` (full alphabet here), `0x314F`
   (heading written by `func_046FFA`/`func_04E2D6`), `0x314D/0x314E` goto-target (written only by
-  `func_04E2D6 @0x051C53`), `0x315A` work-counter (ship blockade/build counter, `'C'` at ≥10−cost).
-- `spec/systems/turn_dispatch.md`: `func_04E2D6` is the "AI orders" phase invoked per power.
+  `func_04E2D6 @0x051C53`, copied from plan `field0/v1` §6.1), `0x315A` work-counter.
+- `spec/systems/turn_dispatch.md`: `func_04E2D6` is the "AI orders" phase; §6.3 here gives the
+  full per-power invocation (`func_005760`→`func_024A48`→`func_04CC50`→`func_051D56`→`func_04E2D6`).
+- `spec/systems/national_powers.md`: controller byte `[idx·0x34+0x543f]`, `AIPersonality`
+  `[idx·0x34+0x540E]`.
 - `notes/ATTRIBUTION_OVERLAY.md`: function offsets + overlay pages.
 
-## 7. Open questions (TBD — each with its site)
+## 8. Open questions (TBD — each with its site)
 
 1. **Compass delta tables** `[bx+0xb4]` (dx) / `[bx+0xbe]` (dy), 9 entries — DS/BSS-relative,
    contents runtime-set; exact deltas not in the instruction stream. Site: `func_046FFA @0x047399`,
@@ -164,8 +246,14 @@ an enable flag and **not** evaluation-passes-used (B, `func_0079A0 @0x007A08`).
    (validity), `0x322`/`0x6dc`/`0x682`/`0x6be`/`0x754`/`0x78c` (terrain/zone), `0x614`/`0x37a`/`0x370`
    (reachability/distance), `0x952`/`0x722`/`0x8bc`/`0x984`/`0x7be`/`0x9e6` (colony/site), `0x4d4`
    (RNG). Bodies live in resident segments not in these pages; identities are A/TBD.
-4. **Plan-map goal-type codes** `1`→`'t'`, `7`→`'i'` (the `[…·4−0x674e]` per-(unit,tile) table) and
-   the human-readable **mission name** for each dispatch char (`2 3 4 5 8 D J N P W`) — these are
-   written by the earlier strategic AI pass that fills the plan map; that producer is the next L4
-   target. Site: `func_04E2D6 @0x04E16E` (read), plan map `[…−0x674e]` (BSS).
-5. **RNG jitter** `0x181F:0x4D4(1,5)` per-candidate score noise — runtime, non-static (R).
+4. **Plan-map outer-index identity (unit vs power)** — §6.1's flagged conflict. Blocker: the
+   allocated byte-size of the `DS:0x98B0` table (no `memset`/alloc found in committed pages) or the
+   real cardinality of `func_04CC50`'s `[bp+6]` at its dispatch-island caller.
+5. **Full plan-map goal_type enumeration** — only `1`/`4`/`7` byte-confirmed as distinct consumed
+   codes; the complete code→mission table is written by the (resident, behind `0x181F:0x952`) planner
+   helper whose body is outside the committed pages. Site: setter `func_04C3A2`, reader
+   `func_04E05C @0x04E05C`/`@0x04E07E`.
+6. **Order-7..12 secondary jump table** `jmp word cs:[bx+0x5c2a]` (`func_051D56 @0x51E15`) and the
+   far-jump **island** slots at `0x534BC..0x53539` — CS(runtime)-relative; only slot `0x4F4`
+   (→`func_04E2D6`) is pinned. Per-case targets TBD.
+7. **RNG jitter** `0x181F:0x4D4(1,5)` per-candidate score noise — runtime, non-static (R).

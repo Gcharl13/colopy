@@ -5148,3 +5148,41 @@ This is the first real L4 decode — converts the AI-GATED unit fields (0x3149, 
 gives the rewrite the AI's per-unit decision pipeline + the tactical score formula. Residual L4 =
 the strategic plan-map pass (mission assignment, the -0x674e goal-type table) + per-type stat tables
 0x5234/0x5236/0x5237/0x523d + resident 0x181F helper identities.
+
+## 2026-06-27 — L4 Phase 2: strategic plan-map planner, mission semantics, per-turn AI flow
+
+Decode-verify workflow over the strategic AI layer (47 byte-verified findings, adversarially checked).
+Extends spec/systems/ai.md §6.
+
+PLAN-MAP (DS:0x98B0, 4-byte records, addr ((idx<<6)+slot)<<2, 64 slots/idx): fields field0/-0x6750 =
+target X, v1/-0x674f = target Y (both copied to UnitRecord 0x314d/0x314e on goto commit @0x04E1AF),
+goal_type/-0x674e = mission selector (0xFF=empty; 1->'t', 7->'i', 4 special), v3/-0x674d = priority/
+weight. Accessors (far, page 0x0D): clearer func_04C1F0, setter func_04C3A2 (naked; priority-insert
+via thunk 0x534F3->0x1A1F:0x4E8), query func_04C306.
+
+CONFLICT FLAGGED (not resolved — recorded per hard rule, NOT guessed): the plan-map OUTER INDEX is
+[bp+6] in both producer func_04CC50 and consumer func_04E2D6. In func_04E2D6 [bp+6] is byte-confirmed
+the UNIT index (imul bx,[bp+6],0x1c @0x04E2EF) -> argues per-unit 64-slot list. BUT a flat unit*64*4 =
+0x12C00 table at base 0x98B0 OVERFLOWS the 64KB data segment, and the per-power turn loop calls the
+strategic pass once per power (0..3). So unit-vs-power outer index is UNRESOLVED. Two workflow targets
+gave opposite "CONFIRMED" answers (each verified only its own citation). Blocker: need the 0x98B0
+table's allocated size (no memset found in committed pages) or func_04CC50's [bp+6] cardinality at its
+dispatch-island caller. ai.md §6.1 carries the warning; do not assert either reading as fact.
+
+MISSION-DISPATCH CHARS (all via func_04E2B6 -> 0x314B=char, order 0x314C=0x0B): '2'=scout-explore
+(@0x4F030, type5 to scored frontier tile), '3'=move-to-colony (@0x4F1FD, score own colonies),
+'4'=go-to-native-village (@0x508AB), '5'=move-to-current-colony (@0x50768), '8'=explore-wander
+(@0x50D58, rand step counter 0x3156), 'D'=long-range explore (@0x5107C), 'J'=go-to-native-village
+capital-preferring (@0x50BD8, reads NativeSettlement+0x03&0x04 Capital), 'N'=Scout/Pioneer->colony
+(@0x50C3B), 'P'=move-to-best-colony by +0xAA (@0x504D2), 'V'=fallback move-to-colony (@0x4E9E2),
+'W'=move-to-colony-with-need (@0x50E18, colony flag +0x1b&0x04). AI unit missions = explore /
+return-to-colony / visit-natives, selected by plan goal_type + per-target scoring.
+
+PER-TURN AI FLOW: main loop func_005760 (body @0x5836) resets 0x3149=0 for all units @0x5872, then
+per-power loop [bp-0x14]=0..3 setting active power [0x5394] @0x5920. Controller gate
+imul bx,idx,0x34; cmp byte[bx+0x543f],0; jne skip @0x58A6 (0=this power runs King+Orders; skips human).
+Orders phase func_024A48 (lcall 0x181F:0x62C) branches on mode [0x5390] (0=interactive, !=0 AI-fast).
+Strategic pass func_04CC50 (ENTER 0x1E4) reads plan map, assigns goals to units @0x04E199. Per-unit
+driver func_051D56 gates on 0x3149!=0 (acted) AND order==0x0B, calls func_04E2D6 via far-jump island
+0x534F8 (ljmp 0x1A1F:0x4F4). Units enumerated by flat i<[0x539c] owner-filtered loop, NOT tile links.
+Controller byte [idx*0x34+0x543f]; AIPersonality [idx*0x34+0x540E].
