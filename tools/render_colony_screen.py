@@ -74,6 +74,7 @@ for yy in range(8, 128, pt.height):
 
 # plot grid: buildings + empty-plot terrain (frames verified MSE-0)
 bld = load_sheet(f'{RAW}/BUILDING.SS')
+icons = load_sheet(f'{RAW}/ICONS.SS')
 for i, (x, y, d) in enumerate(plots):
     if d < 0:
         f = tframe[cat[i]] - 1
@@ -85,6 +86,21 @@ for i, (x, y, d) in enumerate(plots):
 
 # COLONY.PIK bottom band (SoL/colonist/warehouse + stockpile bg) at y=128
 C.paste(pik_rgb('COLONY'), (0, 128))
+
+# Band overlays — ICONS frames EMPIRICALLY MSE-0 matched against the live capture for this
+# Jamestown state (colonists/production/SoL% are state-dependent; crown + tool buttons static).
+# (frame, x, y):
+band_overlays = [
+    (81, 2, 142), (102, 16, 142),       # colonist figures (SoL panel)
+    (22, 2, 163), (56, 40, 163), (62, 52, 163),  # production: Food + cross + bell/tombstone
+    (124, 104, 132),                    # SoL crown
+    (122, 127, 165),                    # ships panel marker
+    (23, 213, 134), (55, 213, 162),     # production-arrows panel
+    (67, 304, 133), (68, 303, 147), (69, 303, 162), (54, 306, 162),  # right tool buttons + Exit-E
+]
+for k, ox, oy in band_overlays:
+    fr = sheet_frame_rgba(icons, k)
+    if fr: C.alpha_composite(fr, (ox, oy))
 
 # stockpile commodity icons: ICONS.SS frame 0x16+good (Food=22), cell pitch 19, icon y = 181.
 # EMPIRICALLY MSE-0 verified against the matched live capture for all 16 goods — frame 0x16+good,
@@ -115,6 +131,9 @@ def text(s, x, y, rgb=(92, 172, 60)):
         solid = Image.new('RGBA', g.size, rgb + (255,)); C.paste(solid, (cx, y), g)
         cx += g.size[0] + 1
 text(f"{cname}.  (pop {cpop})", 70, 1)
+# band text (positions measured from the live capture; values are runtime — see notes)
+text("100% (I)", 64, 132, (255, 255, 255))          # SoL panel % (source field TBD, see RULINGS)
+text("No Ships In Port", 130, 132, (80, 110, 170))   # ships=0 in fixture -> faithful
 # stockpile quantities under each cell (faithful: from the fixture's stock[])
 for i in range(16):
     text(str(stock[i]), 2 + i*19 + 4, 193, (255, 255, 255))
