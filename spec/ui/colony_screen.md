@@ -23,6 +23,114 @@ exact reason. · **Canonical primary:** `viceroy_source/docs/drawlist/EUROPE_COL
 > only from the low-trust C reconstruction (e.g. the "3×3 work grid" cell formula), it is now tagged
 > **R** and reconciled against the drawlist in §6.
 
+## 0. AS-BUILT LAB BASELINE (2026-06-27) — cross-checked vs RAM dump + NAMES
+
+This section is the **frozen starting point** for the lab's colony render (`lab/js/sim/screens.js`
+`SCREENS.colony`). It is the authoritative description of *what the lab draws today* and *how each
+element was verified*. Do not regress past the mistakes listed at the end. Everything below was
+**re-cross-checked this date** against three independent sources:
+
+- **Live screenshot** `docs/screens/colony_live_1505.png` (native 320×200, the founded "Jamestown").
+- **RAM dump** `scratchpad/dbx/colony_live_1505.bin` (regenerable; DGROUP base **0x61ffd0**, located
+  via the `UNIT\0ORDERS\0ACTIONS\0` signature − 0x2258; `*(0x8542)` = **0x606e**, confirming
+  ColonyRecord base 0x5D46 + 4·0xCA, table index 4).
+- **Original game data** `data_extracted/text/NAMES_sections.json` `@BUILDING`.
+
+### 0.1 Colony state read from the RAM dump (ground truth for this capture)
+| Datum | RAM source | Value | Matches render? |
+|-------|-----------|-------|-----------------|
+| Colony name | record `+2` (DGROUP 0x6070) | `"Jamestown"` | ✓ title text |
+| Map cx,cy | record `+0`,`+1` | 46, 41 | (not drawn) |
+| Population | record `+0x1F` | **1** | ✓ (fresh 1-colonist colony) |
+| Stockpile (16×u16) | record `+0x9A` | **all 0** | ✓ all 16 qty = "0" |
+| Gold (treasury) | global `[0x8832]` | **1000** | ✓ title "Gold: 1000" |
+| Plot def_ids | `byte[0x8E82+i]`, i=0..14 | `[255,255,32,27,39,24,21,255,255,255,35,255,9,0,255]` (255 = empty) | ✓ frames below |
+| Plot categories | `byte[0x8D62+i]` | `[0,0,0,0,0,0,0,1,1,1,1,2,2,3,4]` | ✓ empty-plot frames |
+| Empty-plot terrain table | `DS:0x260[cat]` | `[45,44,43,0,46,0,56,0]` | ✓ (`−1` ⇒ frame) |
+
+### 0.2 Building plots — positions + def_ids RAM-verified; per-plot frames pixel-matched
+15 plots, positions from the `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn at **y+8**), painter
+`func_02701C`. **What is verified vs what is empirical:**
+- **B (RAM-verified):** the **positions**, the **def_id per plot** (`byte[0x8E82+i]`), the **category
+  per plot** (`byte[0x8D62+i]`), the **empty/occupied gate** (`def_id==255` ⇒ empty), and the
+  **empty-plot frame = `DS:0x260[category] − 1`** (also byte-cited at §3.7 item 5, empty-plot painter
+  `func_026FF2`).
+- **Empirical (B vs the *image*, not a proven formula):** for each **occupied** plot the lab draws
+  **BUILDING bundle frame = def_id** (special case **def_id 0 → frame 16**), which is **MSE-0** vs the
+  live capture. This reproduces the pixels but is **NOT** the EXE's general frame formula.
+- **Still R/TBD (do not over-claim):** the EXE selects the building frame through `func_026CC2`'s
+  **multi-branch** logic (default `def_id + 1` in *EXE-sheet* space, special cases id `0x11/0x13/0x14`);
+  it does not reduce to one table (§3.7 item 5). The lab's "frame = def_id" works because the bundle
+  `.SS` decoder is the **same off-by-one** as the stockpile (bundle`[def_id]` = EXE`[def_id+1]`); the
+  def_id-0→16 case is one of `func_026CC2`'s special branches. The **general** mapping needs a runtime
+  trace of the AX frame at the `0x181F:0x254` blit — until then, treat the per-plot frames below as
+  *matched-to-this-capture*, not a universal rule.
+
+| Plot | x,y(+8) | def_id (RAM) | cat | Frame drawn | NAMES `@BUILDING` |
+|------|---------|--------------|-----|-------------|-------------------|
+| 0 | 56,13 | 255 (empty) | 0 | 44 (=45−1) | — |
+| 1 | 145,15 | 255 (empty) | 0 | 44 | — |
+| 2 | 173,18 | 32 | 0 | 32 | Fur Trader's House |
+| 3 | 8,41 | 27 | 0 | 27 | Rum Distiller's House |
+| 4 | 37,45 | 39 | 0 | 39 | Blacksmith's House |
+| 5 | 67,54 | 24 | 0 | 24 | Tobacconist's House |
+| 6 | 96,53 | 21 | 0 | 21 | Weaver's House |
+| 7 | 6,14 | 255 (empty) | 1 | 43 (=44−1) | — |
+| 8 | 128,53 | 255 (empty) | 1 | 43 | — |
+| 9 | 10,76 | 255 (empty) | 1 | 43 | — |
+| 10 | 15,102 | **35** | 1 | **35** | **Carpenter's Shop** |
+| 11 | 87,11 | 255 (empty) | 2 | 42 (=43−1) | — |
+| 12 | 66,87 | 9 | 2 | 9 | Town Hall |
+| 13 | 123,106 | 0 | 3 | **16** (def_id 0→16) | Stockade |
+| 14 | 123,55 | 255 (empty) | 4 | 45 (=46−1) | — |
+
+All 15 plots' **def_ids and positions** match the RAM dump; the **drawn frames** match the live
+capture pixel-for-pixel (MSE-0). The prior "type+1" framing in §4/§5/§8.5 is superseded (the EXE
+default is `def_id+1` in EXE-sheet space, not `category+1`), but the **general** frame formula stays
+R/TBD per §3.7 item 5 — see §8.5.
+
+### 0.3 Stockpile bar (bottom strip)
+16 cells, icon row **y=181**, good order **Food, Sugar, Tobacco, Cotton, Furs, Lumber, Ore, Silver,
+Horses, Rum, Cigars, Cloth, Coats, Trade Goods, Tools, Muskets** (Food **FIRST**). The lab indexes
+the icon as **ssdec frame `0x16 + good`** (ICONS 22=Food … 37=Muskets). The EXE literal is
+`good+0x17` (`add ax,0x17`); the lab's `.SS` decoder is **off-by-one** (`ssdec[K] = game[K+1]`), so
+`0x16 + good` in lab space == `0x17 + good` in EXE space — **the same icon**. Applying `0x17` to the
+lab/ssdec frames re-introduces the "starts with Sugar" bug (see §0.6). Per-cell qty centered under
+each cell, dark navy `#181c7d`; all 16 = "0" this capture (RAM stockpile all-zero).
+
+### 0.4 Carpenter's shop, working colonist, hammer-production overlay
+Plot 10 (def_id 35) is the **Carpenter's Shop** (NAMES-confirmed). The lab draws, in the element
+layer **on top of** the building plots: the **working colonist** (ICONS frame **81** @ (42,111),
+MSE-0 vs capture) inside a **green selection box** (`#55ff55`, bbox x39..50 y112..127), and the
+**hammer-production overlay** = the hammer commodity icon (ICONS frame **54**) blitted ×3 in a row
+under the shop roof at **x={15,21,27} y103** (pitch 6, best-fit vs capture). NOTE: the tool the
+colonist *holds* is part of his sprite — the **three hammers under the roof** are the production
+indicator. The **count 3** is what this capture shows; the count-as-a-function-of-output **formula
+is TBD** (runtime production state, not a decoded constant).
+
+### 0.5 Text + band/SoL overlays (matched to the capture; underlying counts runtime-derived)
+- Title `"Jamestown.  Spring, 1505.  Gold: 1000"` (green FONTTINY, x90 y1). Name/gold RAM-verified;
+  "Spring, 1505" is the displayed string (season from `@SEASONS`, year derived from the turn
+  counter — exact formula not re-decoded here, value matches the capture).
+- `"100% (1)"` SoL line (x75 y133, white) — a **digit 1** in parens, NOT a letter I.
+- `"No Ships In Port"` (x118 y130) and `"Exit"` (white, x306 y179, above the red **E** button).
+- Band/SoL panel sprites (2 colonists, 4 corn, cross, liberty bell, SoL crown, 2 warehouse-top
+  goods, the **Lumber(27)+Hammers(54) build-shortage** goods with **red ✗ (ICONS 55)** over each,
+  3 tool buttons): every sprite frame/position is **MSE-matched to the capture (B vs the image)**,
+  but the underlying *production counts* (why 4 corn, why a 3-Lumber/3-Hammer shortage) are
+  **runtime-derived (TBD formula)**.
+
+### 0.6 DO NOT REGRESS (burned before — keep these fixed)
+1. Stockpile starts with **Food**, not Sugar. Lab icon = ssdec **0x16**+good (not 0x17). 
+2. Palette is **VICEROY.PAL stride-3 RGB** (not stride-4); COLONY.PIK sky is **blue** (106,139,196),
+   not yellow.
+3. The carpenter shortage good is **Hammers (ICONS 54)**, not Tools (ICONS 36).
+4. SoL reads **"(1)"** (digit), not "(I)".
+5. `TERRAIN.SS` is the **base ground sheet** (loaded at boot + map-enter), **not** an orphan.
+6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`), the
+   minimap window/scale + work-tile markers (`func_026374`/`func_027DB2`) and the SoL/production
+   *count formulas* are still TBD. This baseline is recognizable + RAM-cross-checked, not finished.
+
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with
 the colony's surrounding tiles and colonists-on-tiles, table-positioned buildings, a colonist plaza
@@ -324,7 +432,7 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Flag panel | (303,132,17,45) | **ICONS sprite 0x44 (68)** at +3, frame=`[0x337]`/`[0x339]` | — | — | `func_02853C @0x028540` | B |
 | Surrounding-tile minimap | (121,130,84,48) | **6× ICONS sprite 0x7B (123)** tiles (or centered caption if `[0x33C]==0`) | — | per-tile | `func_027DB2 @0x027DB7` | B |
 | SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]` (3 cases) | FONTTINY | — | `func_02814C @0x02814F` | B (text TBD) |
-| Buildings (15 slots) | **each BUILDING.SS frame's own baked (x,y)** (the `0x266` table is filled FROM the frame coords) | **BUILDING.SS** frame from (type,level); type=`byte[0x8D62+i]`, level=`byte[0x8E82+i]` (`<0`=empty); dummy frames 10/11/17/30/31 = level-fallback markers (skip) | — | — | `func_02701C @0x027067` / `SPRITE_CATALOG.md` | B |
+| Buildings (15 slots) | `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn y+8) | **BUILDING.SS** frame per **§0.2 RAM-verified rule**: occupied ⇒ `def_id`(`byte[0x8E82+i]`), def_id 0→16; empty (`byte[0x8E82+i]==255`) ⇒ `DS:0x260[byte[0x8D62+i]]−1` | — | — | `func_02701C @0x02701C` | B |
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
 | Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F`, **red `0x0C` when over warehouse cap** (`0x181F:0xD3A`) | `func_0281D6 @0x0281DB` | B |
@@ -346,7 +454,7 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
 > COLONY". **B**
 
 ## 5. Assets & text
-- **Sheets:** **BUILDING.SS** (buildings, index type+1), **ICONS.SS** (`[0x83E]`: commodity 0x17..0x26,
+- **Sheets:** **BUILDING.SS** (buildings, frame per §0.2 RAM-verified rule), **ICONS.SS** (`[0x83E]`: commodity 0x17..0x26,
   colonist, flag 0x44, surrounding-tile 0x7B), terrain/scene sheet `[0x2DA8]`, scene-unit sheet
   `[0x839E]`. Backdrop **COLONY.PIK** (key 0x0BA0) — **a 320×72 *scene strip*, NOT a full-screen
   background** (build-verified 2026-06-23 from the decoded bundle: `COLONY.png` is 320×72). The lower
@@ -401,7 +509,7 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
   + "PORT FIXES / COLONY". **B**
 - `viceroy_source/docs/SCREEN_LAYOUTS.md` §3 — `[V]`-cited element table: stockpile bar 16 cells,
   ICONS 23..38, pitch 19, fill `@0x0281DB`; flag (303,132,17,45) sprite 0x44; minimap (121,130,84,48);
-  SoL panel (211,130,91,48); buildings 15 slots `cmp 0xF @0x02707B`, BUILDING.SS type+1. **B**
+  SoL panel (211,130,91,48); buildings 15 slots `cmp 0xF @0x02707B`, BUILDING.SS frame per §0.2. **B**
 - `docs/COLONY_RENDER_CHAIN.md` §1/§2 — `[0x8542]` near-ptr; ColonyRecord base `0x5D46` stride `0xCA`;
   entry chain `func_L187 @0x07D3E → set_active_colony @0x82DC → lcall 0x191f:0x1de`. **B**
 - `viceroy_source/docs/COLONY_SYSTEM.md` — colony-record field meanings for the live data. Marked
@@ -429,9 +537,14 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
    the primary sources mined this pass. **Downgraded to R/TBD** until re-confirmed against a
    `func_XXXXXX @0xNNNNN` (the colony's SoL math lives in overlay 0x191F, not yet extracted —
    `COLONY_RENDER_CHAIN.md` §6d).
-5. **Building per-type/level frame map — R.** Index = **type+1** is **B** (`@0x027087`); the exact
-   BUILDING.SS frame for each level (switch 0x0F/0x11/0x13/0x14/0x2F/0x30) is recol-xref only
-   (`COLONY_RENDERER_DECODED.md` §2), VICEROY offset not pinned → **R**.
+5. **Building per-slot frame map — partly resolved; general formula still R/TBD (see §0.2 + §3.7).**
+   The earlier "index = type+1" (category+1) framing is **wrong and dropped**. What is now nailed:
+   def_ids/categories/positions per plot are **RAM-verified (B)**, and **empty-plot frame =
+   `DS:0x260[category]−1` (B)**. For **occupied** plots the lab draws bundle frame = `def_id`
+   (def_id 0→16), **MSE-0 vs the capture** — but that is the bundle/ssdec off-by-one of the EXE's
+   real selector `func_026CC2` (default `def_id+1` EXE-space, multi-branch special cases), which does
+   **not** reduce to one table. So the **general** occupied-frame formula remains **R/TBD** pending a
+   runtime trace of the AX frame at the `0x181F:0x254` blit (§3.7 item 5). Do not mark this "done".
 6. **"Work grid" vs surrounding-tile scene — RECONCILED to the drawlist (B).** Earlier revisions
    described a **3×3 work grid** at cell `(col·0x18+0xC8, r·0x18+8)` and separately a **28×19**
    surround minimap, both from the low-trust C reconstruction / removed geometry docs. The
