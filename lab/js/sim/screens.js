@@ -30,14 +30,18 @@ const COLONY_PLOTS = [
 // icon row y=181; icon = good + 0x16 ⇒ ICONS frame 22 (Food) … 37 (Muskets).
 const STOCKPILE_GOODS = ['Food', 'Sugar', 'Tobacco', 'Cotton', 'Furs', 'Lumber', 'Ore', 'Silver',
   'Horses', 'Rum', 'Cigars', 'Cloth', 'Coats', 'Trade Goods', 'Tools', 'Muskets'];
+// Icon x = each icon CENTERED in its 19px cell (cell left = 2+i·19). These exact left
+// edges were MSE-0 matched against the live capture (RULINGS 2026-06-27) — the icons have
+// varying widths, so a flat 2+i·19 left-aligns them; these center them.
+const STOCKPILE_X = [7, 25, 44, 62, 82, 100, 119, 138, 156, 178, 196, 215, 234, 253, 272, 292];
 const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
   id: `stock${i}`, label: `stockpile: ${g}`, type: 'sprite', sheet: 'ICONS',
-  frame: 0x16 + i, x: 2 + i * 19, y: 181,
-  tier: 'B', cite: `colony_screen.cpp §6: x=2+${i}·19, icon y=181; icon=good+0x16 (ICONS ${0x16 + i}); MSE-0 verified vs live capture (RULINGS 2026-06-27)`,
+  frame: 0x16 + i, x: STOCKPILE_X[i], y: 181,
+  tier: 'B', cite: `colony_screen.cpp §6: icon y=181, centered in cell 2+${i}·19; icon=good+0x16 (ICONS ${0x16 + i}); MSE-0 vs live capture (RULINGS 2026-06-27)`,
 }));
-// stockpile quantity numbers (Jamestown live capture: all 0). White FONTTINY under each cell.
+// stockpile quantity numbers (Jamestown live capture: all 0), centered under each cell.
 const STOCKPILE_QTY = STOCKPILE_GOODS.map((g, i) => ({
-  id: `qty${i}`, label: `qty: ${g}`, type: 'text', value: '0', x: 6 + i * 19, y: 192,
+  id: `qty${i}`, label: `qty: ${g}`, type: 'text', value: '0', x: 9 + i * 19, y: 192,
   color: 'white', tier: 'B', cite: 'colony stockpile qty (live capture, all 0)',
 }));
 // COLONY.PIK band overlays — ICONS frames MSE-0 matched to the live Jamestown capture
