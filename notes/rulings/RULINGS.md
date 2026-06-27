@@ -5368,3 +5368,31 @@ NET: every UI screen's structure (rects, fonts, colours, sprite blits, string+va
 chains, hit-rects, the text-box mechanism) is byte-verified; the residual across the whole UI is the
 consistent "live game-state value + a few runtime-dispatched per-line text y" class, each bounded by a
 byte-verified rect and pixel-confirmed in the captures. The UI is rewrite-ready.
+
+## 2026-06-27 — PALETTE BUG: VICEROY.PAL is stride-3 RGB, not stride-4 RGBA (found via render test)
+
+The "ultimate test" (render the colony screen + compare to the live DOS capture) surfaced a real,
+load-bearing pipeline bug that no amount of disasm review had caught: ALL extracted asset colours
+were wrong.
+
+Root cause: tools/extract_pal.py read VICEROY.PAL as 256 entries x 4 bytes (RGBA 6-bit), but the file
+is 256 entries x **3 bytes (RGB 6-bit)** = the first 768 bytes (the remaining 256 are trailing/unused).
+PROOF (ground truth = pixels, top of trust hierarchy): the live colony capture renders index 54 as
+blue (104,136,192); stride-4 gives (186,186,64) yellow, stride-3 gives (105,138,195) — a near-exact
+match; the 6-bit blue (26,34,48) sits at byte offset 162 = 54*3. Stride-3 also reproduces the smooth
+blue sky ramp at indices 49..58 (consecutive gradient), which a stride-4 read scrambles.
+
+Impact: data_extracted/palette.json and EVERY lab/assets PNG (which baked a wrong/EGA palette) had
+wrong colours. The prior "render looks right" claim was WRONG (the user correctly flagged it).
+
+Fix: extract_pal.py stride 4->3; data_extracted/palette.json regenerated (idx54 #698ac3 ~ real
+#6888c0). tools/render_colony_screen.py now applies the correct stride-3 palette to each asset's index
+plane (which IS correct — verified: raw COLONY.PIK index == lab index == 54) and honours each PNG's
+own transparent index (253, not 0). With the fix the colony bottom band matches in colour (sky/grass/
+panel); residual differences are (a) placeholder building identities (the building-id -> BUILDING.SS
+frame map is still TBD; positions are byte-correct via DS:0x266) and (b) dynamic overlays drawn over
+COLONY.PIK (colonist sprites, "No Ships In Port", SoL crown).
+
+Follow-ups: re-extract/re-palette lab/assets with the corrected palette; decode building-id ->
+BUILDING.SS frame mapping; wire the dynamic panel state. Also: PALETTE_AND_CYCLING.md / formats/PAL.md
+say "256x4" — those docs are wrong and need correcting.

@@ -19,15 +19,18 @@ COLONIZE = ROOT / "raw" / "COLONIZE"
 def extract(pal_path: Path, out_dir: Path):
     out_dir.mkdir(parents=True, exist_ok=True)
     data = pal_path.read_bytes()
-    if len(data) != 1024:
-        print(f"WARN: expected 1024 bytes, got {len(data)}", file=sys.stderr)
+    if len(data) < 768:
+        print(f"WARN: expected >=768 palette bytes, got {len(data)}", file=sys.stderr)
 
     entries = []
     for i in range(256):
-        r = data[i * 4 + 0]
-        g = data[i * 4 + 1]
-        b = data[i * 4 + 2]
-        pad = data[i * 4 + 3]
+        # VICEROY.PAL = 256 RGB triples (3 bytes/entry, 6-bit). The first 768 bytes are
+        # the palette; verified by rendering COLONY.PIK vs the live DOS capture (sky idx54 ->
+        # (104,136,192)). The old 4-byte stride produced wrong colours across every asset.
+        r = data[i * 3 + 0]
+        g = data[i * 3 + 1]
+        b = data[i * 3 + 2]
+        pad = 0
         # Scale 6-bit -> 8-bit
         r8 = (r * 255 + 31) // 63
         g8 = (g * 255 + 31) // 63

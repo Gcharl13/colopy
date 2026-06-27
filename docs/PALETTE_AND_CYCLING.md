@@ -8,7 +8,7 @@ water shimmer, lava glow, and similar effects.
 
 ## VICEROY.PAL — base palette
 
-**File**: `COLONIZE/VICEROY.PAL`. 1,024 bytes (256 entries × 4 bytes).
+**File**: `COLONIZE/VICEROY.PAL`. 1,024 bytes (256 entries × 3 bytes RGB (768 bytes; +256 trailing/unused) — CORRECTED 2026-06-27, was wrongly "×4").
 **Format spec**: [`formats/PAL.md`](../formats/PAL.md).
 
 Each entry is `(R, G, B, padding)` with R/G/B in 0..63 (VGA 6-bit). To
