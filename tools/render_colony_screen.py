@@ -86,12 +86,14 @@ for i, (x, y, d) in enumerate(plots):
 # COLONY.PIK bottom band (SoL/colonist/warehouse + stockpile bg) at y=128
 C.paste(pik_rgb('COLONY'), (0, 128))
 
-# stockpile commodity icons: ICONS.SS frame 0x17+good, x = 1 + i*19, icon y = 181
+# stockpile commodity icons: ICONS.SS frame 0x16+good (Food=22), cell pitch 19, icon y = 181.
+# EMPIRICALLY MSE-0 verified against the matched live capture for all 16 goods — frame 0x16+good,
+# NOT 0x17 (the 0x17 "correction" was wrong and shifted Food->Sugar).
 icons = load_sheet(f'{RAW}/ICONS.SS')
 for i in range(16):
-    fr = sheet_frame_rgba(icons, 0x17 + i)
+    fr = sheet_frame_rgba(icons, 0x16 + i)
     if fr:
-        cx = 1 + i*19 + (18 - fr.width)//2
+        cx = 2 + i*19 + (18 - fr.width)//2
         C.alpha_composite(fr, (cx, 181))
 
 # title + stockpile qty numbers (FONTTINY from the cpp bundle)
@@ -115,7 +117,7 @@ def text(s, x, y, rgb=(92, 172, 60)):
 text(f"{cname}.  (pop {cpop})", 70, 1)
 # stockpile quantities under each cell (faithful: from the fixture's stock[])
 for i in range(16):
-    text(str(stock[i]), 1 + i*19 + 2, 193, (255, 255, 255))
+    text(str(stock[i]), 2 + i*19 + 4, 193, (255, 255, 255))
 
 C.convert('RGB').save('/tmp/mine_final.png')
 C.resize((960, 600), Image.NEAREST).convert('RGB').save('docs/screens/colony_RENDERED.png')

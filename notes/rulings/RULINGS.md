@@ -5482,3 +5482,17 @@ full-screen MSE 3625 -> 2525. Committed a 36 KB reproducible fixture
 data_extracted/colony_jamestown_fixture.bin (DGROUP slice, base 0x200) so the render no longer
 depends on the 22 MB RAM dump. Remaining render gaps: the surrounding-tile minimap, the dynamic
 COLONY.PIK panel overlays (SoL text, colonists, boycott marks, dividers), and stockpile qty numbers.
+
+## 2026-06-27 — Stockpile icon frame fixed to ssdec 0x16+good (ROOT CAUSE: ssdec off-by-one)
+
+The renderer drew stockpile commodity icons at ssdec frame **0x17+good**, which shifted every cell
+by one so cell 0 showed **Sugar instead of Food** (user-reported, repeatedly). EMPIRICAL pixel match
+against the matched live capture (docs/screens/colony_live_1505.png) is unambiguous: **all 16 cells
+match at MSE 0 with ssdec frame = 0x16+good** (Food=ssdec 22, …, Muskets=ssdec 37), cell pitch 19,
+icon y=181, x = 2 + i·19 + (18−w)/2.
+
+Root cause (durable): **ssdec.py is off by one vs the EXE — `ssdec_frame[K] = game_frame[K+1]`.** The
+spec's byte-cite `add ax,0x17` is the GAME frame and is correct; the ssdec renderer must use game−1 =
+0x16. Same mechanism fixed the building frames (game `def_id+1` → ssdec `def_id`) and empty-plot
+terrain (ssdec `table[cat]−1`). Documented in SETTLED.md so it stops churning. The 2026-06-27
+prereq-1 "correction" to 0x17 is retracted. Stockpile band MSE 2697 → 1316; full screen 2525 → 2393.

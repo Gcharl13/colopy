@@ -23,7 +23,9 @@ These are honest, recomputed numbers — not an eyeball judgement.
 - **Title bar** "Jamestown. …" — green FONTTINY via the documented shared header. MSE 803.
 - **Composite backdrop** — WOODTILE chrome + PARCH scene inset + COLONY.PIK band at y=128.
 - **Bottom production band** — essentially pixel-accurate (it IS COLONY.PIK). MSE 1585.
-- **16-cell stockpile bar** — `x=1+i·19`, icon `y=181`, **ICONS.SS frame `0x17+good`** (corrected
+- **16-cell stockpile bar** — `x=2+i·19`, icon `y=181`, **ssdec ICONS frame `0x16+good`** (=game
+  `0x17+good` minus the ssdec off-by-one; Food=22, MSE-0 verified all 16) (was wrongly `0x17+good`,
+  which shifted Food→Sugar) (corrected
   this pass: lab assets had wrong frame numbering; raw `ssdec` decode gives the right commodity icons).
 - **Building plots** — the 15 `DS:0x266` plots (`func_02701C`), def-id = signed `byte[0x8E82+i]`
   (`<0`=empty), drawn from BUILDING.SS at Jamestown's exact 8-building layout. Positions + presence

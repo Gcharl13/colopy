@@ -23,6 +23,13 @@ does **not** spawn a new ruling or a parallel decode doc.
   sprites **150–153** + water-tile beach halo *(hard rule 4; ruling 2026-06-22)*.
 - Tile draw chain: `func_O514 → func_O513 → func_O512` *(hard rule 7)*.
 - Active map-view palette = **PHYS0's embedded PLTE** (`main.cpp:225`; differs from VICEROY.PAL).
+- **`tools/ssdec.py` frame index is OFF BY ONE vs the EXE: `ssdec_frame[K] = game_frame[K+1]`.**
+  The disasm/spec cite **game** frame numbers (e.g. stockpile icon `add ax,0x17`; building `def_id+1`);
+  the **renderer (ssdec) must subtract 1** (stockpile icon = `0x16+good`, Food=ssdec 22; building =
+  `def_id`, def0→16; empty-plot terrain = `table[cat]−1`). **EMPIRICALLY MSE-0 verified** for all 16
+  commodity icons + all colony buildings/terrain against the matched live capture (2026-06-27). This
+  off-by-one was the root of the recurring "stockpile starts with Sugar not Food" / building-frame
+  churn — the spec's game-frame cites were right; the ssdec mapping just needs −1. *(ruling 2026-06-27)*
 - **VICEROY.PAL = 256 × stride-3 RGB** (first 768 bytes; 6-bit→8-bit via `(v<<2)|(v>>4)`), **NOT
   stride-4 RGBA** *(ruling 2026-06-27; proof: idx54 sky = stride-3 (105,138,195) ≈ real #6888c0 vs
   stride-4 yellow (186,186,64); fixed `tools/extract_pal.py`, regenerated `data_extracted/palette.json`)*.
