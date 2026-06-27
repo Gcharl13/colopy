@@ -23,6 +23,13 @@ does **not** spawn a new ruling or a parallel decode doc.
   sprites **150–153** + water-tile beach halo *(hard rule 4; ruling 2026-06-22)*.
 - Tile draw chain: `func_O514 → func_O513 → func_O512` *(hard rule 7)*.
 - Active map-view palette = **PHYS0's embedded PLTE** (`main.cpp:225`; differs from VICEROY.PAL).
+- **VICEROY.PAL = 256 × stride-3 RGB** (first 768 bytes; 6-bit→8-bit via `(v<<2)|(v>>4)`), **NOT
+  stride-4 RGBA** *(ruling 2026-06-27; proof: idx54 sky = stride-3 (105,138,195) ≈ real #6888c0 vs
+  stride-4 yellow (186,186,64); fixed `tools/extract_pal.py`, regenerated `data_extracted/palette.json`)*.
+- **Per-asset palette precedence:** a `.SS`/`.PIK` with an embedded palette section uses **its own**
+  palette; only fall back to VICEROY.PAL when none is embedded. SS transparent index = **0xFD (253)**
+  *(`tools/ssdec.py`)*. The `lab/assets/*.png` extracts are **mis-baked** (wrong palette + frame
+  numbering) — decode raw `.SS`/`.PIK` via `tools/ssdec.py` instead *(ruling 2026-06-27)*.
 
 ## Sprites
 - **TERRAIN.SS = base-ground sheet** (loaded boot + map-enter), composited UNDER **PHYS0 overlays**
