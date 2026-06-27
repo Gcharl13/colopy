@@ -46,39 +46,40 @@ These are honest, recomputed numbers — not an eyeball judgement.
   sprites, boycott "✗" marks, right-column commodity icons — all runtime game-state (spec §6 R/TBD).
 - **Colony minimap** (top-right) — separate composited element; rect known, content is live tiles.
 
-## ⚠ The snapshot and `11_colony_screen.png` are DIFFERENT game states (root cause)
-Proven from the byte-correct snapshot fields:
-- snapshot `colony+0x02` name = **"Jamestown"**, `+0x1F` **pop = 1**, stockpile = **only Muskets 50**,
-  bells `+0x0C/0x0E = 0`, SoL `+0xC2/+0xC6 = 0/200` ⇒ **SoL = 0%** — a *freshly-founded* colony.
-- `11_colony_screen.png` shows **"100% (I)"** (100% Sons-of-Liberty, rebel rank I) and a full
-  colonist plaza row. **A pop-1 colony cannot display 100% SoL or a multi-colonist plaza.**
+## ✓ Matched pair captured — the snapshot DID match the screenshot (prior section retracted)
+An earlier revision of this doc claimed the snapshot and `11_colony_screen.png` were *different
+states* (fresh vs developed). **That was wrong** — see RULINGS 2026-06-27 (CORRECTION). I drove the
+live game under DOSBox (loaded COLONY09.SAV → founded Jamestown → opened the colony screen) and
+captured a matched pair:
+- `docs/screens/colony_live_1505.png` (native 320×200 screenshot) + `scratchpad/dbx/colony_live_1505.bin`
+  (RAM dump, regenerable).
+- The live screen matches `11_colony_screen.png` at **MSE 312** (essentially identical — one turn
+  apart, 1504 vs 1505).
+- The live RAM is byte-equivalent to `colony_jamestown.bin`: same `cp=0x606E`, "Jamestown", pop 1,
+  same `0x266` plot table, same `0x8E82` def-ids, same `DS:0x260=[45,44,43,0,46,0]`.
 
-So the snapshot is the *founding* moment of Jamestown; the screenshot is a *developed* Jamestown.
-There is **no colony-screen capture matching the snapshot** (`15_building_colony.png` is the
-"BUILDING A COLONY" cinematic, not the management screen). The renderer's earlier title
-"Jamestown. Spring, 1504. Gold: 1000e" was **hardcoded**, not read from the snapshot — that masked
-the mismatch. The title now reads the real name+pop from the snapshot and labels it a founding snapshot.
+So the original snapshot + screenshot were **the same state** all along (a fresh pop-1 Jamestown).
+The mistake: reading the on-screen **"100% (I)"** as Sons-of-Liberty membership. Byte-trace of
+`sol_membership_pct @0x8524` gives `100·A/divisor` (A=u32@+0xC2, divisor=u32@+0xC6/+0xC8, +20 if
+human-owned, cap 100) ⇒ **0%** for this colony — so "100%" is *not* SoL membership; its source is a
+separate open item.
 
-**Consequence:** no faithful render of *this* snapshot will ever match `11_colony_screen.png` — the
-states differ. The MSE numbers below compare two different colony states and are therefore a *ceiling
-artifact*, not a decode-quality signal. To truly recreate `11_colony_screen.png`, capture a RAM
-snapshot **at that screenshot's moment** (developed Jamestown) and render from it.
+**Consequence:** the render's MSE gap is **decode quality** (building frames + dynamic overlays),
+not state mismatch — and is now directly validatable against the matched live pair. The game's own
+render of this exact RAM is MSE 312 from the reference; my from-scratch render is MSE ~3600, and that
+whole gap is mine to close.
 
-## Why the scene band cannot pixel-match this capture (the real ceiling)
-The snapshot's plot table (`0x266`) places buildings in **different positions** than the screenshot,
-despite identical turn (Spring 1504), gold (1000), and stockpile (muskets 50) — i.e. it is the same
-colony at the same turn but a **different open**. Per spec §12, the plot→building assignment is
-**RNG-driven and recomputed on every colony-open** (`func_025D34`, seed `0x181F:0xD62`), so two
-captures of the same colony legitimately differ in layout. Confirmed empirically: rendering with
-`frame=def_id` (oracle scene-MSE 6191) vs the byte-traced `def_id+1` (7050) — neither aligns,
-because the **positions** differ, not the frames. **The pixel oracle cannot adjudicate the building
-frame from this snapshot/screenshot pair**; doing so requires a snapshot captured at the *same open*
-as the screenshot (or rendering from the screenshot's own RAM).
+## Remaining decode gaps (now measurable against the matched pair)
+- **Exact building→frame map** — `def_id` is not the frame index; spec's old `word[id*2+0x8DC8]`
+  formula reads out-of-range vs the snapshot. Real frame is `func_026DD4`/`func_026CC2` multi-branch
+  (default `def_id+1`, special-cases). Resolvable now by tracing AX at the `0x181F:0x254` blit in the
+  live process.
+- **Dynamic COLONY.PIK overlays** — the "100% (I)" panel value, "No Ships In Port", colonist row,
+  boycott "✗" marks, right commodity column — runtime game-state, present in the matched RAM.
 
 ## Verdict
-The static + per-open-data layer is byte-true: palette (stride-3), stockpile icons (ICONS.SS
-`0x17+good`), plot positions, and empty-plot terrain all land (full-screen MSE 6387 → 3606), and the
-side-by-side reads as Jamestown. The scene band's residual is **bounded by RNG re-placement between
-captures**, not by decode quality — plus the dynamic COLONY.PIK overlay layer (runtime game-state).
-Both are named and non-fabricated. The exact building→frame map (`def_id+1` per `func_026DD4` vs the
-spec's refuted `0x8DC8` formula) stays **TBD pending a same-open runtime trace**.
+The static + per-colony-data layer is byte-true: palette (stride-3), stockpile icons
+(ICONS.SS `0x17+good`), plot positions, and empty-plot terrain all land. With a **matched
+screenshot+RAM pair** now in hand (game-own render = MSE 312 from the reference), the remaining
+~3600 MSE is entirely my decode imperfection (building frames + dynamic overlays) — measurable and
+non-fabricated, no longer confounded by any state question.

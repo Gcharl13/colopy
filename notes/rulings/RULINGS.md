@@ -5437,3 +5437,29 @@ The scene-band MSE is a ceiling artifact (two different states), not a decode-qu
 (4) 15_building_colony.png is the "BUILDING A COLONY" cinematic, not a colony-screen capture — no
 same-state reference exists in-repo. To pixel-validate the developed screen, capture RAM at that
 screenshot's moment. This ends the pixel-match churn: the decodes are correct; the reference was wrong.
+
+## 2026-06-27 — CORRECTION: snapshot DID match the screenshot (prior ruling was wrong)
+
+The 2026-06-27 ruling "Colony render reference mismatch: snapshot ≠ 11_colony_screen.png" is
+**RETRACTED.** I drove the live game (DOSBox, loaded COLONY09.SAV, founded Jamestown, opened the
+colony screen) and captured a matched screenshot + RAM pair (`scratchpad/dbx/colony_live_1505.bin`
++ `docs/screens/colony_live_1505.png`). Results:
+- The live colony screen matches `11_colony_screen.png` at **MSE 312** (essentially identical, one
+  turn apart: 1504 vs 1505).
+- The live RAM is byte-equivalent to the original `colony_jamestown.bin`: same active-colony ptr
+  `cp=0x606E`, name "Jamestown", pop 1, same `0x266` plot table, same `0x8E82` def-ids, same
+  `DS:0x260=[45,44,43,0,46,0]` terrain table. (Only diff: the original had Muskets=50 garrisoned.)
+- So `colony_jamestown.bin` and `11_colony_screen.png` were **the same state all along** — a fresh
+  pop-1 Jamestown. My "fresh vs developed" claim was wrong.
+
+Root cause of the wrong ruling: I misread the on-screen **"100% (I)"** as Sons-of-Liberty membership.
+Byte-traced `sol_membership_pct @0x8524`: returns `100·A / divisor` capped at 100, where
+**A = u32 at colony+0xC2/+0xC4** and **divisor = u32 at colony+0xC6/+0xC8** (32-bit, not just +0xC6),
+plus **+20 if the colony's owner is human** (`[bx+0x1a]` power < 4 and controller-gate
+`[idx·0x34+0x543F]==0`). For this colony A=0, divisor=200 ⇒ **SoL membership = 0%** (or 20% with the
+human bonus) — NOT 100%. Therefore the "100%" panel value is **not** sol_membership_pct; its exact
+source (likely the Tory/complement or a different label) is a separate open item. The SoL formula
+itself is confirmed; the spec should note the 32-bit divisor (+0xC6/+0xC8) and the +20 human bonus.
+
+Consequence: the render's MSE-3625 gap vs the screenshot is **decode quality** (building frames +
+dynamic overlays), not state mismatch — and is now validatable against the matched live pair.
