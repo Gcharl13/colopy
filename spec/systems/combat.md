@@ -154,12 +154,24 @@ confirmed present in `data_extracted/text/GAME_sections.json`:
   `@SHIPSUNK` via the message routine `lcall 0x181f:0x652` (push sites `@0x05B544`..
   `@0x05BD0F`; full table + branch conditions in §4). All keys present in
   `GAME_sections.json`.
-- **TBD:** naval/bombardment **roll specifics** (the ship-pair `0x523B/0x523C`
-  formula and the `[bx+0x3148]` 0x40/0x80 flag semantics — message emission is now
-  located, but the numeric roll is not yet fully decoded). (The fort/stockade/fortress
-  defense bonus is **not** `@BUILDING` data — that table has only
-  `cost/tools/size/min_colony/upkeep`, no defense column — it is the **hardcoded
-  `func_007D3E`** colony `+2` / fortified-building `+4` / `×2` chain, §7.1.)
+- **Naval combat roll — RESOLVED 2026-06-27 (B).** The general resolver `func_05B2C2`
+  (`@0x05B2C2`, `ENTER 0x3a`; args `[bp+6]`=attacker, `[bp+8]`=defender unit idx) handles land
+  **and** naval. For ships (type `0x0D..0x12`): the two strengths come from **UnitTypeStats** fields
+  `0x523B`/`0x523C` = the **`+0x0B`/`+0x0C` bytes of the 14-byte record at `DS:0x5230`** (i.e. a per-
+  type attack/defense stat, loaded once `func_074ED5`; *not* per-engagement accumulators). Roll
+  (`@0x05B844`): `A = stat[atk_type·14+0x523B]`, `D = stat[def_type·14+0x523C]`, **`roll =
+  random_int(1, A+D)`** (`func_00C322` via `0x181F:0x4D4`); the attacker-win flag `[bp-0x3A]` is kept
+  when `roll ≤ D`-threshold (`cmp ax,[bp-0x1c]`), with independence-war special cases clearing it
+  (`test [0x5382],1 @0x05B87D/@0x05BA2D`, REF/intervention comparisons `[0x53d2]`/`[0x5398]`). Loser
+  fate branches at `@0x05BAA3` to the capture/cargo/sink path. A **separate land roll** uses
+  `random_int(3,6)` + terrain at `@0x05BA0B` (`0x181F:0x35C`). **B.**
+- **`func_05CA7E` (combat.md residual) — RESOLVED: it is a PRE-COMBAT / combat-UI setup** routine
+  (reads the unit array `+0x3146/+0x3147/+0x3149/+0x314a`, sets the ship-range flag for types
+  `0x0D..0x12`), **not** the roll. **B (negative).**
+- **TBD (narrow):** the exact damage-vs-sink threshold for the losing ship, and **bombardment**
+  (fort/stockade shore-fire on ships) — message-driven (`GAME.TXT @FORTFIRE`/`@SHIPSUNK`), the roll
+  not yet pinned. (The fort/stockade/fortress defense bonus is the hardcoded `func_007D3E` colony
+  `+2` / fortified-building `+4` / `×2` chain, §7.1.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. Terrain/fortification defense bonus — **mechanism BYTE_VERIFIED (2026-06-19),

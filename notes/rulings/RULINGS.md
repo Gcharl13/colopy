@@ -5304,3 +5304,30 @@ food growth reserve (cap-[+0xAA] @0xA61F), NOT goods. (warehousing.md §6.4 alre
 model right; colony.md §5/§warehouse "surplus dropped (spoilage)" was wrong and is corrected.) The
 verified bytes overturn the prior "goods spoil at (level+1)*100" claim, per the hard rule that EXE
 bytes win.
+
+## 2026-06-27 — L3 Phase 4: endgame (REF re-confirm, naval combat, Tory uprising)
+
+Decode-verify workflow (39 byte-verified findings; REF 13/13, naval 10/12, tory 16/17).
+
+REF (re-confirmed; ref_growth.md already had this): INIT func_0755CC, difficulty d=[0x53A6]:
+Regulars[0x53DA]=8d+15, Cavalry[0x53DC]=5d+5, Man-O-War[0x53DE]=3d+2, Artillery[0x53E0]=6d+2 (4-type
+array stride 2; parallel 0x53E2 deployed-count). GROWTH func_03E162 (King phase, pre-independence):
+royal_money(PowerRecord+0x22) += (8d+10)*2^(eras at year 1600/1700/1750); at +0x22>=1800 buy 1 unit
+inc[0x53DA+slot*2], -=1800. Budget-paced, player-only. revolution.md line 54 stale-TBD fixed.
+
+NAVAL COMBAT (combat.md, was TBD): resolver func_05B2C2 (land+naval; [bp+6]=attacker,[bp+8]=defender).
+Ships type 0x0D..0x12. Naval strengths from UnitTypeStats fields 0x523B/0x523C = the +0x0B/+0x0C bytes
+of the 14-byte record at DS:0x5230 (per-type stats, loaded func_074ED5, NOT per-engagement). Roll
+@0x05B844: A=stat[atk*14+0x523B], D=stat[def*14+0x523C], roll=random_int(1,A+D) (func_00C322); attacker
+-win flag [bp-0x3A] kept when roll<=threshold[bp-0x1c]=D; independence-war special cases clear it
+(test[0x5382],1). Loser fate @0x05BAA3 capture/cargo/sink. Separate land roll random_int(3,6)+terrain
+@0x05BA0B. func_05CA7E = PRE-COMBAT/UI setup (ship-range flag), NOT the roll (resolves that TBD).
+Damage-vs-sink threshold + bombardment (FORTFIRE) remain narrow TBD.
+
+TORY UPRISING (tory_uprising.md, resolves the TBD "fraction"): func_03CAC6 @0x3CAC6. NO standalone
+SoL threshold (negative-answered). Per-call gate random_int(0,diff+1) @0x3CAD0 -> fires if !=0 (prob
+(diff+1)/(diff+2)). Targets the rebel power's colony with MAX tory_strength = pop[+0x1F]*(100-SoL%)*2
+/100 + diff + 1 (SoL% via 0x181F:0xC86), reduced by defending rebel units, requiring >=1 free adjacent
+tile. SoL enters ONLY via magnitude (lower SoL -> more militia), not fire/no-fire. Spawns Tory-Militia
+(type [0x53D2]) on free tiles, count = strength countdown (not fixed 8); marks colony [+0x1C]|=1 (no
+re-fire); suppresses silently if no free tile. Caller cadence + numeric militia type id remain TBD.

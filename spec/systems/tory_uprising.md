@@ -37,8 +37,22 @@ uprising near %STRING0!  Parliament arms Tory Militia!"`. The `%STRING0`/`%STRIN
 The **rebel fraction** that drives these states is byte-grounded: `ColonyRecord
 +0xC2` = `rebel_dividend` (Sons of Liberty numerator), `+0xC6` = denominator —
 e.g. 66/617 = 10.7% Sons of Liberty, RUNTIME-VERIFIED per `docs/DATA_MODEL.md`.
-The Tory share is the complement. The specific **uprising-trigger threshold** on
-this fraction is **TBD**.
+The Tory share is the complement.
+
+**Uprising trigger — RESOLVED 2026-06-27 (`func_03CAC6 @0x3CAC6`, `ENTER 0x18`).** There is **no
+standalone SoL-percent threshold** ("if SoL < X → uprising") — that earlier TBD is **answered
+negative**. Instead: (1) a **per-call probability gate** `random_int(0, diff+1)` (`@0x3CAD0`,
+`diff=[0x53A6]`); if the roll is `0` the function returns (so it fires with prob `(diff+1)/(diff+2)`
+— more likely on harder levels). (2) It then scans the rebel power's colonies (`[0x539E]` count) and
+picks the one with **maximum Tory strength**, where **`tory_strength = pop[+0x1F]·(100−SoL%)·2/100 +
+diff + 1`** (`@0x3CBE6`; SoL% via `0x181F:0xC86`), **reduced by defending rebel units** on/around it
+and requiring ≥1 free adjacent tile. So the Sons-of-Liberty fraction enters **only through the
+magnitude** (lower SoL → more militia), not a fire/no-fire threshold. (3) Spawns **Tory-Militia**
+(unit type `[0x53D2]`) on free adjacent tiles, **count = the strength value counted down** (not a
+fixed 8), with two random per-militia upgrade gates; marks the colony `[+0x1C]|=1` so it cannot
+re-fire, and **suppresses silently** if no tile was free. **B** (per-call gate + strength formula +
+spawn); the **caller cadence** (how often the WoI loop invokes `func_03CAC6`) and the numeric
+`[0x53D2]` militia type id remain **TBD**.
 
 ## 3. Formulas & rules
 
