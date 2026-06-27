@@ -90,8 +90,8 @@ const SCENE_COLONIST = [
 // render in the ELEMENT layer (over the building plots), like the scene colonist.
 const SCENE_PRODUCTION = [15, 21, 27].map((x, i) => ({
   id: `prod_hammer${i}`, label: `production hammer ${i + 1}`, type: 'sprite', sheet: 'ICONS',
-  frame: 54, x, y: 106, tier: 'B',
-  cite: 'carpenter-shop hammer-production overlay: ICONS 54 ×3 @ x={15,21,27} y106 (pitch 6), best-fit vs live capture (RULINGS 2026-06-27)',
+  frame: 54, x, y: 103, tier: 'B',
+  cite: 'carpenter-shop hammer-production overlay: ICONS 54 ×3 @ x={15,21,27} y103 (pitch 6), best-fit vs live capture (RULINGS 2026-06-27)',
 }));
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
