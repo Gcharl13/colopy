@@ -29,7 +29,7 @@ Beyond NAMES.TXT (the data taxonomy — see `spec/data/names_sections.md`), the 
 - `docs/PEDIA_TXT_CATALOG.md` — 1,784 lines / 163 entries / 6 categories. **B**
 - `formats/TXT.md` — `.TXT` section-based format. **B**
 
-## 4. Open questions (TBD)
+## 4. Resolved questions (all closed 2026-06-20, tier B)
 
 1. ~~MENU.TXT submenu structure.~~ **Done 2026-06-20** — MENU.TXT is **flat**: 8
    top-level sections (`@GAME @VIEW @ORDERS @REPORTS @TRADE @CUP(=cheat) @PEDIA @END`),

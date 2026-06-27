@@ -226,12 +226,18 @@ value-fill placeholder):
   §3 (key codes 0x41–0x49 for F1–F9; F10 via the score path). **B.**
 - VIEW zoom levels map to viewport tile counts 120×96 / 60×48 / 30×24 / 15×12 — the four `[0x184]`
   zoom states (`map_view.md` §6.2; `render_frame_setup` @0x06787C). **B.**
-- **Note:** `MENU_sections.json` gives the verified item **text + ordering**; the per-item
-  **action handler** (the command-id → game function each row invokes) routes through the
-  dispatcher `func_0235D6` @0x0235D6 (27-case switch on `[bp+6]` event/screen id) and the
-  begin_game/report-grid id tables (§6.1). The exact id→item binding for the non-report rows is
-  **TBD** at B (data-driven in the `game menu` section; not statically pinned per row). **B (text/order)
-  / TBD (per-row command-id binding)**.
+- **Note (binding mechanism RESOLVED; per-row handler is runtime state):** `MENU_sections.json`
+  gives the verified item **text + ordering**. The "command id" each row carries is the **sequential
+  `game menu` section-record index** read by `func_072090`'s loop (`0x191F:0x928` open → `0x191F:0x91C`
+  record-reader `func_06F9E6` @0x06F9E6, per id 0x29,0x2A,0x2B… — `CHROME_AND_DISPATCH_INDEX.md` §B10);
+  it is **the row ordinal into the data section, not a hand-coded handler pointer**. At click, the menu
+  engine `func_06E3D0` @0x06E3D0 returns the **1-based selected ordinal** (`0x191F:0x16A`), which the
+  map-screen input loop switch-dispatches through the event router `func_0235D6` @0x0235D6 (router on
+  `[bp+6]` event/screen id). So the binding is fully mechanistically B (ordinal → section index →
+  engine result → screen switch); the concrete **ordinal→game-function map for the non-report rows is
+  a runtime dispatch** scattered across the screen input switch, not a single static table — enumerating
+  it requires a live trace of `func_06E3D0`'s result feeding the map-input switch per pulldown.
+  **B (text/order + binding mechanism) / runtime-state (per-row ordinal→handler, needs live trace)**.
 
 ---
 
@@ -319,8 +325,13 @@ These two modal pickers are twins on page 0x1A (same engine, different grid), en
   Land Form Archipelago/Continents (label "Normal/Continents"); Temperature Cool/Temperate/Warm;
   Climate Arid/Normal/Wet. In-popup help keys `GAME @CLAND @CCONT @CTEMP @CCLIM` (bodies present —
   e.g. `@CLAND` = "LAND MASS / Small / Normal / Large"). **B.**
-- **Control geometry:** the click hit-rects are drawn by overlay handlers (`191F:087A` Customize)
-  not in the export → not byte-derivable. See §10 for the pixel-measured **R** fallback. **TBD (B)**.
+- **Control geometry:** the click hit-rects are computed inside the overlay-resident Customize input
+  loop, not in any exported page-0x1A body → not byte-derivable. (Correction: `0x191F:0x87A` is **NOT**
+  the Customize hit-rect handler — it resolves to `func_076AEC` @0x076AEC = **`load_PIK(0,x0,y0,x1,y1,
+  key)`**, the named-PIK backdrop loader, confirmed in `thunk_resolve.json` and three overlay sources;
+  it only paints the CUSTOMIZ.PIK background.) The per-axis widget rects therefore stay **R** — see §10
+  for the pixel-measured CUSTOMIZ.PIK fallback. **R (per-axis rects) / B (`0x191F:0x87A` = load_PIK, not
+  the rect handler)**.
 
 ---
 
@@ -367,7 +378,12 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
   **FONTINTR** for the boot menu/pickers/dropdowns (dialog ctx `[0x268A]`). **B.**
 - **OK/Cancel buttons** = FONTTINY text rows (the `@OPTIONS` list), NOT sprites; the modal
   "wait for OK / keypress" loop is `0x181F:0x3C0` (`func_004A80`) which **draws nothing** (the box
-  + label are painted by the builder first). The OK button SS art index is **TBD**. **B / TBD (art idx)**.
+  + label are painted by the builder first). **There is NO OK/Cancel button SS sprite:** the modal
+  wait `func_004A80` @0x004A80 (`0x181F:0x3C0`) was disassembled in full (0x004A80..0x004AF8, RETF)
+  and contains **only** input-poll lcalls — `0xC0C:6` (mouse), `0x29F:0xF6` (kbhit), `0xACB:0x30/0x56/
+  0x11A` + `0xAE7:2/0x16` (event/key) — and **no blit verb** (`0x181F:0xE2/0x254/0x444`) and no text
+  verb. The OK/Cancel affordance is the `@OPTIONS` FONTTINY text rows painted by the panel builder
+  beforehand; a button SS art index does not exist. **B (no-sprite, byte-proven `func_004A80`)**.
 
 ### 11.1 Resident draw-verb library (`0x181F:NNN`) cited above — **B** (`UI_PRIMITIVES.md`)
 

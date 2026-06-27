@@ -95,7 +95,7 @@ unless noted.
 | Field | Type | Meaning | Tier | Evidence |
 |-------|------|---------|------|----------|
 | PowerRecord `+0x2A` | u32 | treasury gold (dword) | B | `sub [bx+0x2a],ax; sbb [bx+0x2c],dx` @0x3340D |
-| `DG16(0x2F5E)` | u16 | **string-heap index** drawn at (306,179) via `0x181F:0x22`→`0x13C` — **semantic TBD-runtime, NOT gold** (corrected 2026-06-23: never written as a treasury value; gold = `PowerRecord+0x2A`). Verified: pushed at `func_0314DC @0x031264` with `push 0xf` (ink), `push 0xb3` (y=179), `push 0x132` (x=306); `[0x2F5E]` has **zero static `mov` writers** across the disasm (grep), i.e. it is a runtime heap-string slot set by the screen framework — defer to a live RAM trace. Was mislabeled "displayed gold mirror." | B draw / TBD-runtime semantic | `func_0314DC @0x031264` |
+| `DG16(0x2F5E)` | u16 | **string-heap index = 537 → "Sons of Liberty"** drawn at (306,179) via `0x181F:0x22`→`0x13C` (NOT gold; gold = `PowerRecord+0x2A`). `[0x2F5E]` has **zero static absolute writers** (byte-searched A3/C7-06/89-xx encodings across the whole EXE → none); it is a boot-resolved @LABELS caption pointer. **RESOLVED 2026-06-27 (ram_read):** snapshot `rep_europe.bin` (& `colony_live_1505.bin`) both read `[0x2f5e]=0x219`=537; the heap (far ptr `[0x2d42]`) index 537 = **"Sons of Liberty"**. | B draw / A semantic (oracle) | `func_0314DC @0x031264`; snapshot [0x2f5e]=537='Sons of Liberty' |
 | PowerRecord `+0x01` | u8 | tax rate 0..100 | B | banner uses it (`func_030F76`, `SCREEN_LAYOUTS.md` §2 ord 2) |
 | PowerRecord `+0x20` | u16 | **boycott bitmask** (`1<<good`), one bit/good | B | `and ax,[bx+0x20]` @0x30B47; clear `and [bx+0x20],ax` @0x33423 |
 | PowerRecord `+0x22` | u32 | cumulative spent | B | `add [bx+0x22]; adc [bx+0x24]` @0x33413 |
@@ -158,14 +158,14 @@ screen-latched (A, per `fonts_and_colors.md`).
 | Element | Rect (x,y,w,h) | Sprite / text | Font | Color → RGB | Tier |
 |---------|----------------|---------------|------|-------------|------|
 | Play-area fill | (0, 8, 320, 192) | frame-helper fill `func_030D86` | — | — | B (`push 0xC0,0x140,8,0; call 0x368CC` @0x031E4C) |
-| Header/backdrop band | full-width top band; banner text-box = (x=320,y=7,w=0,h=0) | trampoline sub-renderer | — | — | B-called; band y=0..7 **B** (`push cs; call 0x368A4` @0x031E5D → `ljmp 0x191F:0xC76`, no rect at call site; the banner top-band rect `(320,7,0,0)` is set by `set_text_box` @0x035B2D / func_035B06). **TBD-geom** only for the step-2 backdrop sub-renderer's own fill rect (overlay-resident behind the far-jump) |
+| Header/backdrop band | full-width top band; banner text-box = (x=320,y=7,w=0,h=0) | trampoline STATE-SETUP (no rect) | — | — | B-called; band y=0..7 **B** (`push cs; call 0x368A4` @0x031E5D → `ljmp 0x191F:0xC76` = **func_030D6C @0x030D6C**; the banner top-band rect `(320,7,0,0)` is set by `set_text_box` @0x035B2D / func_035B06). **RESOLVED-B 2026-06-27:** the step-2 target draws no fill — `func_030D6C` only sets `[0xFA2]`=ship-count + zeroes `[0x9E20]/[0x9E1C]` then calls `func_030D16` (recruit-pool counter). No own fill rect exists. |
 | Market banner ("Selling …") | top title band **y=0..7** (`set_text_box`), text X center-justified at runtime | `@CMESSAGE` formatted line | FONTTINY | — | B-mech + B-band-y (`func_030F76` builds; paint `0x181F:0xB0`=`func_00275C` @0x0310AD reads box `[0x2cc6..0x2ccc]`=(320,7,0,0) set by `set_text_box`=`func_00273E` @0x035B2D in func_035B06); X is runtime-centered |
 | Market bar fill (16-good) | (0, 179, 320, 21) | frame-helper fill | — | — | B (`push 0x15,0x140,0xB3,0; call 0x368CC` @0x0310B9) |
 | Market-bar icons (16) | x=1, **stride 19**, icon row in bar | ICONS.SS `good+0x17` (23..38) | — | — | B (`add ax,0x17` @0x0310F2; pitch via `[0x83E]:[si+0x152]` half-width @0x031101) |
 | Market-bar prices (16) | **cell-centered**, y=**194** | bid-price `"%d"` | FONTTINY | `0x2F` (price ink) | B (centering @0x031191; `0x181F:0x13C` @0x0311AE) |
-| Warehouse-bar right readout | x=**306**, y=**179** | heap **string #`[0x2F5E]`** (caption; **NOT gold** — corrected 2026-06-23) | FONTTINY | `0x0F`→white | B draw / TBD semantic (`push 0x132` @0x031261) |
+| Warehouse-bar right readout | x=**306**, y=**179** | heap **string #`[0x2F5E]`** = idx **537** = **"Sons of Liberty"** (NOT gold) | FONTTINY | `0x0F`→white | B draw (`push 0xf;push 0xb3;push 0x132;push [0x2f5e]; lcall 0x181F:0x22 fetch; lcall 0x181F:0x13c draw` @0x031261). **Semantic RESOLVED 2026-06-27 (ram_read):** live snapshot `rep_europe.bin` → `[0x2f5e]=0x219`=537; string-heap (far ptr `[0x2d42:0x2d44]`, walked by FETCH `func_002462`) index 537 = **"Sons of Liberty"** (also =537 in the colony snapshot — a load-time @LABELS caption pointer, stable). |
 | Dock fill | (143, 118, 81, 60) | frame-helper fill | — | — | B (`push 0x3C,0x51,0x76,0x8F; call 0x368CC` @0x0314E1) |
-| Empty-dock caption box | (143, 81, 120, 69) | FILL + **CENTERED** caption `[0x2DD0]` | FONTTINY | — | B (`push 0x45,0x78,0x51,0x8F; 0x181F:0x22 then 0x181F:0x100` @0x0314F8) |
+| Empty-dock caption box | (143, 81, 120, 69) | FILL + **CENTERED** caption `[0x2DD0]` = idx **338** = **"Bound For"** | FONTTINY | — | B (`push 0x45,0x78,0x51,0x8F; push [0x2dd0]; 0x181F:0x22 then 0x181F:0x100` @0x0314F8, gated by `cmp [0xfa2],0; jne` @0x0314F1). **`[0x2DD0]` RESOLVED 2026-06-27 (ram_read):** snapshot → 338 = **"Bound For"** (heap idx 338). |
 | In-port ship-name list | (143, 81, 120, 69) | **CENTERED** ship-name rows | FONTTINY | — | B (`0x181F:0x100` @0x0315C9; 2nd line @0x031621) |
 | Docked ships (6 slots) | **x=147+slot·12** (147,159,171,183,195,207), **y=165**, **10×12** | ICONS.SS sprite **0x7B (123)** | — | — | B (`func_0314AE`: x @0x0314BD, y=0xA5 @0x0314C8, w=0xA @0x0314CF, h=0xC @0x0314D6; sprite `mov ax,0x7B` @0x03154F) |
 | Ship status row (per in-port ship) | x=`state·tile+base`, **y=146/137/132** by state 1/2/3 | sail-progress bar (`0x181F:0x2BC`) + type ICON `@UNIT[type]+0x5232` | FONTTINY | — | B (`func_031366`/`func_031298`; bar width `0x64>>state` @0x0313A4) |
@@ -190,9 +190,9 @@ the authoritative paint sequence; later steps composite over earlier ones.
 | # | call site | callee | draws | rect / key |
 |---|-----------|--------|-------|-----------|
 | 1 | @0x031E4C | `func_030D86` (frame helper) | play-area fill below header | (0, 8, 320, 192) |
-| 2 | @0x031E5D | `0x368A4` trampoline (`ljmp 0x191F:0xC76`) | header/backdrop sub-renderer | full-width top band; banner text-box rect = **(320,7,0,0)** B (set_text_box @0x035B2D, func_035B06); step-2 sub-renderer's own fill rect TBD (overlay-resident) |
+| 2 | @0x031E5D | `0x368A4` trampoline (`ljmp 0x191F:0xC76`) | header **STATE SETUP** (no rect) | full-width top band; banner text-box rect = **(320,7,0,0)** B (set_text_box @0x035B2D, func_035B06). **RESOLVED 2026-06-27 (multibranch, no TBD):** `0x191F:0xC76` = **func_030D6C @0x030D6C**, disassembled in full — it draws **NOTHING**: `push 0xFA4; call func_030B4C; mov [0xFA2],ax` (ship count), `mov [0x9E20],0; mov [0x9E1C],0`, then `call 0x36872`→**func_030D16 @0x030D16** (recruit-pool counter: zeroes `[0x9E2A]`, loops unit-type 0x0D–0x12), `retf`. Neither function emits a fill/blit/rect; the play-area backdrop is step-1 `func_030D86` (0,8,320,192) over EUROPE.PIK. Step-2 has **no own fill rect** — the prior "TBD (overlay-resident)" was a phantom. |
 | 3 | @0x031E63 | **`func_0310B4`** (arg 0) | 16-good market PRICE bar | bar (0,179,320,21); icons+prices |
-| 4 | @0x031E6B | **`func_030F76`** (arg 0) | "Selling …" market banner | header band (origin TBD) |
+| 4 | @0x031E6B | **`func_030F76`** (arg 0) | "Selling …" market banner | header band y=0..7; X = runtime-centered. **RESOLVED-as-state 2026-06-27:** painter `func_00275C @0x00275C` reads box `[0x2cc6]=x=320,[0x2cca]=w=0,[0x2ccc]=h=0` and centers the live formatted line via `lcall 0xb9e:0xa @0x002823` (args `[0x2cca]=w,[0x2ccc]=h,[0x2cc6]=x`). Band geom is static-B (320,7,0,0); the literal text X is computed per-paint from the live string width — per-game state, not a static constant. |
 | 5 | @0x031E73 | **`func_0314DC`** (arg 0) | dock + 6 ships + in-port list | dock (143,118,81,60) |
 | 6 | @0x031E7C | `0x36863` trampoline | sub-renderer (`ov_draw_extra_a`) | transaction parchment top strip (see §7) |
 | 7 | @0x031E85 | `0x36926` trampoline | sub-renderer (`ov_draw_extra_b`) | transaction parchment bottom strip (see §7) |
@@ -323,11 +323,16 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
    @0x035B24 (func_035B06). **Residual (runtime, not TBD-static):** the literal text X is
    center-justified at runtime against the live string width (the band is fixed at
    y=0..7).
-8. **TBD — dock caption string-id ↔ sail-state mapping.** The captions are in
-   `@MISC` (B that they exist) and the per-state Y is byte-pinned (B), but which
-   `@MISC` string is selected for each state, plus the empty-dock caption pointer
-   `[0x2DD0]`, are not literal pushes in `func_0314DC` (drawlist §1.3/§1.4 mark the
-   captions `[P]`). No B source for the id↔state map.
+8. ✅ **RESOLVED 2026-06-27 (ram_read) — dock caption pointer block.** The dock
+   captions are a contiguous boot-resolved @LABELS-index array in DGROUP (string-heap
+   indices fetched by `func_002462` from far ptr `[0x2d42]`). Live snapshot `rep_europe.bin`
+   (identical in `colony_live_1505.bin`): `[0x2dcc]=336`="Docks At" (Loading panel
+   `func_0318D2`, hit-id 3), `[0x2dce]=337`="Expected Soon" (Bound-For panel `func_0317CC`,
+   hit-id 2), `[0x2dd0]=338`="Bound For" (empty-dock caption `func_0314DC` @0x031501),
+   `[0x2dd2]=339`="No Ships In Port", `[0x2de8]=350`="No cargo on board!". The per-ship
+   in-port loop in `func_0314DC` @0x031671 selects only a *color* (`[bp-0x68]`=0xA/0xF),
+   not a caption index, so the visible state caption comes from these fixed panel pushes,
+   not a runtime sail-state→@MISC computation. **A (oracle slot→string map).**
 9. **TBD — Exit-button paint origin.** Only a click-rect exists (`@0x032034`); the
    composer body paints no Exit button. Likely emitted by the `func_036863`/
    `func_036926` sub-renderers (steps 6–7) but not byte-pinned (drawlist §1.6).

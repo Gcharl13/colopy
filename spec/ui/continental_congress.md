@@ -57,7 +57,15 @@ removed; the overlay source survives as `SESSION_UI_CATALOG.md` §3 frame 131012
 - **Colors** (resolved via **CCBKGD.PIK** palette): **title `0x90`→(255,255,190)** pale-yellow;
   **all body/row text `0x92`→(255,243,93)** bright-yellow (B — the trailing color arg to each
   `0x181F:0x13C`/`0x100` text draw). Layout latches: left margin **x=4**, running **y seed 0x19=25**,
-  advanced by `[0x89E]` glyph-height+2 per line.
+  advanced by `[0x89E]` glyph-height+2 per line. **Pitch byte-derived (B):** the per-line advance code at
+  `func_037A20 @0x037BD1` does `les bx,[0x89E]` → `mov al,es:[bx]` (FONTTINY descriptor byte 0 = glyph cell
+  height) → `inc ax; inc ax` (`@0x037BDA/DB`, +2) → `add [bp-0x5a],ax`. Decompressing `raw/COLONIZE/FONTTINY.FF`
+  (MADSPACK 2.0, 914-byte payload per formats/FF.md) gives **height H = 6** (payload[0]), so the text-line
+  pitch is **H+2 = 8 px**. With the byte-cited y-seed `0x19=25` (`mov [bp-0x5a],0x19 @0x037A4E`) and x-seed
+  `4` (`mov [bp-0x56],4 @0x037A49`), the first body lines sit at y=25, 33, 41, … (+8 each). The bell-row
+  advance differs: it adds the bell sprite-sheet cel height `es:[bx+0x334]` from `[0x83E]` +2 (`@0x037BFD`),
+  a separate runtime sprite descriptor. The absolute §2 band *rects* remain luma-A overlay geometry, but the
+  text-line y-progression is now fully byte-derived.
 - **Correction (sprite-vs-color trap):** the *only* colors in the body are `0x90`/`0x92`.
   `0x3F`/`0x38` and the REF-row icons (from `[0x5286]/[0x52A2]/…`) are **ICONS.SS sprite ids**
   (`0x39` filled / `0x38` empty are the game's **discrete** indicator sprites — *not* a continuous
@@ -139,8 +147,14 @@ loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the 
    0x181f,0x236` @0x037BF5 (`func_002EE4`, span `0x12c`=300), so **bell sprite = `0x3F` filled /
    `0x38` empty** (`func_002EE4 @0x002FA5`), drawn in-body, not a separate overlay path. The body
    has **no generic sprite blit** (`0x181F:0x254`/`0x2BC`) and **no US-flag immediate** anywhere in
-   `0x037A10..0x3807D` — so the **US flag is genuinely absent from this F3 report** (stays TBD; the
-   `push 0x44 @0x65C11` flag index is the *colony* renderer, not congress).
+   `0x037A10..0x3807D` — so the **US flag is genuinely absent from this F3 report**. **Closed as a negative
+   (B):** the *other* congress code path, the FF-reveal popup `congress_screen_render`/`func_03BB4A` in
+   overlay page_06 (`@0x03BB4A..0x03BC40`, loads CCBKGD id 0x1253 `@0x03BB6A`, full-screen blit `0x181F:0x444`
+   `@0x03BBB5`, portrait calls `0x1090/0x1095`, present `0x181F:0xe2`, ESC-wait `0x181F:0x3c0 @0x03BC14`),
+   ALSO contains **no sprite-blit verb** (`0x181F:0x254`/`0x2BC`) and **no flag immediate** — the nearest
+   `0x254` blit is at `0x03DD3A`, in an unrelated function. There is therefore **no US-flag draw in either
+   congress routine**; the §3 "US flag from ICONS.SS" asset note is unsupported by code. (The `push 0x44`
+   flag index belongs to the *colony* renderer, not congress.) **No new capture needed — resolved negative.**
 2. ~~FF "next session" selection logic + DGROUP:0xE7AC threshold table.~~ **Mostly resolved
    2026-06-21.** Selection logic is **B** in the export: `ff_is_available` (25425) = not-owned
    AND all lower-index same-category fathers owned (category-gated walk over the 25-entry
@@ -154,8 +168,16 @@ loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the 
    `[0x52B0]/[0x5294]/[0x52CC]/[0x532E]` with counts `[0x53E2]/[0x53E4]/[0x53E8]/[0x53E6]`. Each row is
    opened by `0x181F:0x218` (`func_003193`) and flushed by `0x181F:0x22c` (`func_003104`, `push 4` =
    **4 columns**, span `bx=0x12c`=300) — so geometry is a 4-column proportional badge layout, **B**. The
-   icon-id globals (`0x5286`…) are DGROUP **≥0x2CC6 = BSS** (past MZ image end file `0x20665`), so the
-   actual ICONS.SS index VALUES are runtime/loaded data → **STATE** (not statically in the EXE image).
+   icon-id globals (`0x5286`…) are DGROUP **≥0x2CC6 = BSS** (past MZ image end file `0x20665`); they hold
+   no static immediate (no `A2/A3/C6 06/C7 06` store to any of `0x5286/0x52A2/0x52CC/0x532E/0x52B0/0x5294`
+   exists anywhere in VICEROY.EXE), so the ICONS.SS index VALUES are runtime/loaded → **STATE**. **Live
+   oracle (B):** read from the COLONY-live snapshot `scratchpad/dbx/colony_live_1505.bin` (DGROUP base
+   validated by anchor reads 0x2F5E=0x219/0x2DD0=0x152/0x33C=0): land-group icons `[0x5286]=0x7E (126)`,
+   `[0x52A2]=0x7F (127)`, `[0x52CC]=0x0A (10)`, `[0x532E]=0x80 (128)`; naval-group icons `[0x52B0]=0x81 (129)`,
+   `[0x5294]=0x82 (130)`, `[0x52CC]=0x0A`, `[0x532E]=0x80` — these are the per-game ICONS.SS sprite ids the
+   `0x181F:0x222` count-badge verb draws (a second snapshot taken before REF-init shows all-zero, confirming
+   runtime population). Source = BSS globals `[0x52xx]`, renderer `func_0033F2` (`0x181F:0x222`), 4-column
+   proportional layout; per-game STATE, not a static constant.
 4. CC-NN FF-acquisition reveal popup chrome — **RESOLVED (B): there is no frame/title/OK chrome.**
    The resident popup `func_03BB4A @0x03BB4A` (string `'CCBKGD'`) loads CCBKGD.PIK full-screen
    (`0x181F:0x44e` @0x03BB6D), blits the whole 320×200 image (`0x181F:0x444` @0x03BBB5), draws the

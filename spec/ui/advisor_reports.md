@@ -206,10 +206,18 @@ RTLink-resolved (`REPORTS.md` §1):
   sprites, `0x222`×2→`0x22C`): rebel sprite **0x7C** ×rebel-count, tory **0x7D**
   ×tory-count, span 0x12C at x=4 (@0x37D43–0x37D68). **REF row** + **2nd-force row**
   (`0x222`×4→`0x22C`): icon=runtime DGROUP cells `[DS:0x5286/52A2/52CC/532E]` + counts
-  `[DS:0x53DA/DC/E0/DE]`, label `@MISC 85` (@0x37E1C–0x37E6D). **FF grid**: idx 0..0x18,
+  `[DS:0x53DA/DC/E0/DE]`, label `@MISC 85` (@0x37E1C–0x37E6D). **Icon-id cells RESOLVED
+  via oracle DGROUP read (snapshot `colony_live_1505.bin`, find_dgroup, validated against
+  pre-read [0x2F5E]=537/[0x2DD0]=338): REF row sprites `[0x5286]=126(0x7E)` /
+  `[0x52A2]=127(0x7F)` / `[0x52CC]=10(0x0A)` / `[0x532E]=128(0x80)`; 2nd-force
+  `[0x52B0]=129(0x81)` / `[0x5294]=130(0x82)` — VICEROY ICONS.SS runtime indices.** Port
+  png idx = runtime−1 ⇒ 125/126/9/127 (REPORTS.md §A/B), which **confirms** the port's
+  hardcoded REF quartet. These cells are REF-composition game state (no static EXE
+  write-site; filled at game init, persist across screens). **FF grid**: idx 0..0x18,
   has-FF (`0x181F:0x7B4`) → name `[DS:0x9632+idx·6]` via `0x13C` **color 0x61** (push
   0x61 @0x37FF7) at cols **{4,82,160,238}** (start 4 @0x37A49, **step 0x4E** @0x3800C),
-  4/row, Y-step font+2. **B (layout) / R (counts) / TBD (REF icon-id cells).**
+  4/row, Y-step font+2. **B (layout) / R (counts) / A (REF icon-id cells: oracle DGROUP
+  read — 126/127/10/128, 2nd-force 129/130; port-png 125/126/9/127 confirmed).**
 - **F4 Labor** (`func_38418`, retf @0x38777, N=4 → `@MISC 49`). Occupation matrix —
   per occupation 0..0x1C: NAME via `0x13C` **color 0x92** at name x=**2** (`[bp-0x11c]+1`,
   @0x3889F), y-base **0x2A=42** (@0x388A4), row pitch **8** (@0x389C2); COUNT via `0x182`
@@ -361,14 +369,18 @@ RTLink-resolved (`REPORTS.md` §1):
    N → `@MISC 29/30/37/49/50/51/52/93`, all verified), and F3/F7 column/REF labels are
    pinned; the exact `@MISC` index for some **F4/F5/F6/F8 section-label slots** is
    best-effort until the loader is identified. **TBD** (`REPORTS.md` §13.1).
-4. **F3 REF / 2nd-force icon-id cells `[DS:0x5286/52A2/52CC/532E]` (and 2nd-force
-   `0x52B0/5294/…`) — runtime, not static.** The rows ARE sprite rows (`0x222`
-   enqueue×4 → `0x22C` flush, byte-verified), but the numeric icon **indices** are read
-   from these DGROUP cells at runtime (the current REF composition) and are **not**
-   statically resolvable. The port's hardcoded 125/126/9/127 are **unverified** — pin via
-   the icon-id loader or a runtime dump. **R/TBD** (`REPORTS.md` §13.5). (The static
-   gauge/strip tiles ARE pinned: F2 0x39, F3 0x3F, both empty 0x38; rebel 0x7C, tory
-   0x7D; F7 empty-cargo 0x17, full-stack 0x27.) **B (static tiles) / TBD (runtime cells).**
+4. ✅ **F3 REF / 2nd-force icon-id cells — RESOLVED 2026-06-27 (A, oracle DGROUP read).**
+   The rows ARE sprite rows (`0x222` enqueue×4 → `0x22C` flush, byte-verified), and the icon
+   indices are read from DGROUP cells at runtime (REF composition; no static EXE write-site,
+   confirmed by a full store-scan). A live DGROUP read (snapshot `colony_live_1505.bin`,
+   validated [0x2F5E]=537/[0x2DD0]=338/[0x33C]=0) pins them: REF `[0x5286]=126(0x7E)` /
+   `[0x52A2]=127(0x7F)` / `[0x52CC]=10(0x0A)` / `[0x532E]=128(0x80)`; 2nd-force
+   `[0x52B0]=129(0x81)` / `[0x5294]=130(0x82)`. Port png idx = runtime−1 ⇒ **125/126/9/127**,
+   which **confirms** the port's hardcoded REF quartet (`REPORTS.md` §A/B). These are
+   REF-composition game state (set at game init, persist across screens), so the colony
+   snapshot read is valid. (Static gauge/strip tiles also pinned: F2 0x39, F3 0x3F, empty
+   0x38; rebel 0x7C, tory 0x7D; F7 empty-cargo 0x17, full-stack 0x27.) **A (runtime cells) /
+   B (static tiles).**
 5. **Live per-row values** (counts, gold, prices, score figures, per-tribe relations)
    are game-state computed in each body's tally loop — structural, **R**, never a layout
    constant to fabricate.

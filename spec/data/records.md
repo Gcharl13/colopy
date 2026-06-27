@@ -33,7 +33,20 @@ Power index ordering (0..3 = Dutch/English/French/Spanish per NAMES `@COUNTRY`; 
    `+0xC2`/`+0xC6` (B, `colony.md`); `+0x1C` = per-colony **status-flags** byte (not
    const 0x40); `+0x92`/`+0xB6` hammers; `+0x84` constructed mask; `+0x95` warehouse
    level (`warehousing.md`); `+0x9A` 16-slot stockpile (good `i` at `+0x9A+i·2`); `+0x1A`
-   owner; `+0xA4` Lumber slot. **B** (load-bearing fields); deep interior bytes TBD.
+   owner; `+0xA4` Lumber slot. **B** (load-bearing fields). Deep-interior pass
+   2026-06-27 (all sites confirmed colony-pointer-relative, `bx`/`si` from `[0x8542]`):
+   `+0x1D` = flags byte, bit `0x80` only (`test [bx+0x1d],0x80` `@page_0E 0x551D8`,
+   set `or …,0x80 @0x55C20`, clear `and …,0x7f @0x55A2F`) — distinct from the `+0x1C`
+   status byte; `+0x1E` = byte countdown counter gated by `+0x8E` (`cmp [bx+0x1e],0`
+   then `dec [bx+0x1e]` `@page_0D 0x4D9C7`, 14 sites); `+0x96` = byte counter with
+   inc/dec (`inc [bx+0x96] @page_02 0x2C244`, `dec @page_10 0x5C474`, read
+   `@page_0E 0x557ED`); `+0xBA` **CONFLICT RESOLVED** — it is a **4-entry per-power
+   byte flag array (idx 0..3) init to 1**, paired with `+0xBE` (init 0), in the
+   colony-reset loop `@page_03 0x2ED7A` (`add bx,[0x8542]; mov byte [bx+0xba],1`) and
+   conditional `@0x2EDAD` (`mov byte [bx+si+0xba],1`) — **not** the hammers field, so
+   the dump's "hammers@+0xBA" label is wrong (build uses `+0x92`/`+0xB6` per
+   `colony.md`). **B**. Still unmapped via `[0x8542]` (no colony-relative site found
+   2026-06-27): `+0x24`, `+0x99`, `+0xBC` — TBD.
 2. ~~UnitRecord `+0x02..+0x1B` semantics.~~ **Done 2026-06-20** — base `0x3144`,
    near-complete field map in `spec/systems/unit.md` §2 (RULINGS; position `0x3144`,
    type `0x3146`, owner `0x3147`, order `0x314C`, goto `0x314D/E`, cargo `0x3150..`,

@@ -731,10 +731,11 @@ _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory re
 | +0x07 | byte | **`map_x`** | Verified — Caravel at (55,49) matches expected ship pos |
 | +0x08 | byte | **`map_y`** | Verified |
 | +0x09 | byte | possibly ship size or movement-spec | varies per unit type |
-| +0x0A..+0x0B | bytes | varies | TBD |
+| +0x0A | byte | **`goto_dest_y`** (paired with +0x09 = `goto_dest_x`; the "Go To"/path target tile). RESOLVED-AS-STATE (per-unit runtime): written from a source unit in `func_0418AA` @0x041919 (`mov [bx+0x314e],al`), read together with +0x09 as an (x,y) pair by the path-scan loop `func_041CBE` @0x041CDA (`mov al,[bx+0x314e]` → [bp-0xa]) which differences it against +0x09 and feeds tile-lookup `0x4211b`. **B** (writer/reader byte-cited) |
+| +0x0B | byte | **`step_dir`** — small index (0..7, 8 = none/sentinel). RESOLVED-AS-STATE (per-unit runtime): set to the sentinel 8 in the AI path state-machine `page_0D` @0x051A95 (`mov [bx+0x314f],al`, al=8); range-gated `cmp [bx+0x314f],0 / cmp …,8 / jge skip` @0x0516E9..0x0516F5 then used in a ring-of-8 minimal-distance calc (`cmp ax,4 / sub ax,8 / neg`) @0x0516FF..0x051731 — i.e. treated as a compass direction. **B** (byte-cited) |
 | +0x0C..+0x0F | 4 bytes | mostly 0; ships have non-zero (cargo or destination?) | Caravel: `00 00 14 0F`, Brave: zeros |
 | +0x10..+0x11 | bytes | usually `0xFF 0x00` sentinel | "no target" marker |
-| +0x12..+0x13 | bytes | varies | TBD |
+| +0x12..+0x13 | word | **`spawn_turn_stamp`** — 16-bit turn-counter snapshot at unit creation. RESOLVED-AS-STATE (per-unit runtime): in spawn fn `func_006D24`, low byte first cleared to 0xFF @0x006DA3 (`mov byte [bx+0x3156],0xff`), then for units whose power index ≥ 4 (natives/REF; `cmp di,4 / jl` @0x006DA8) the **word** is set to the main turn counter `[0x538e]` @0x006DB3 (`mov ax,[0x538e]; mov word [bx+0x3156],ax`). EU-power units leave it at the 0xFF/0xFFFF "unset" marker. (0x538e = "turn counter (main)" per symbols.json.) **B** (writer byte-cited) |
 | +0x14..+0x17 | bytes | per-unit state | TBD |
 | +0x18..+0x1B | bytes | tail bytes — often varying small values | possibly `unique_id` / generation counter |
 | -2 | byte | (chain link to prev record — uses last 2 bytes of preceding record's slot) |  |

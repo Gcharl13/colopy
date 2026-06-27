@@ -105,20 +105,32 @@ MSE-0 vs capture) inside a **green selection box** (`#55ff55`, bbox x39..50 y112
 **hammer-production overlay** = the hammer commodity icon (ICONS frame **54**) blitted ×3 in a row
 under the shop roof at **x={15,21,27} y103** (pitch 6, best-fit vs capture). NOTE: the tool the
 colonist *holds* is part of his sprite — the **three hammers under the roof** are the production
-indicator. The **count 3** is what this capture shows; the count-as-a-function-of-output **formula
-is TBD** (runtime production state, not a decoded constant).
+indicator. The **count 3** is what this capture shows; the building-strip count is **live per-turn
+production state** rendered by `func_026DD4`'s strip blit `0x181F:0x236 @0x026EF7` (count carried in
+`dx=[bp-4]` from the building-production query `0x181F:0xACE`/`0xBAA`). The *value* (3) is computed by
+the colony economy sim in overlay `0x191F` (not yet extracted); the **render path is byte-cited (B)**,
+the **count-derivation formula remains TBD** (needs the overlay-`0x191F` extraction).
 
 ### 0.5 Text + band/SoL overlays (matched to the capture; underlying counts runtime-derived)
 - Title `"Jamestown.  Spring, 1505.  Gold: 1000"` (green FONTTINY, x90 y1). Name/gold RAM-verified;
   "Spring, 1505" is the displayed string (season from `@SEASONS`, year derived from the turn
   counter — exact formula not re-decoded here, value matches the capture).
 - `"100% (1)"` SoL line (x75 y133, white) — a **digit 1** in parens, NOT a letter I.
-- `"No Ships In Port"` (x118 y130) and `"Exit"` (white, x306 y179, above the red **E** button).
+- `"No Ships In Port"` (x118 y130). The white string at **(306,179)** is the warehouse-bar caption
+  **"Sons of Liberty"** — byte-proven: `func_0281D6 @0x0283F1` blits heap string `[0x2F5E]=0x219`
+  (oracle-resolved 2026-06-27, §4 line 439), **not** an "Exit" label (the earlier "Exit" gloss here
+  was unverified).
 - Band/SoL panel sprites (2 colonists, 4 corn, cross, liberty bell, SoL crown, 2 warehouse-top
   goods, the **Lumber(27)+Hammers(54) build-shortage** goods with **red ✗ (ICONS 55)** over each,
-  3 tool buttons): every sprite frame/position is **MSE-matched to the capture (B vs the image)**,
-  but the underlying *production counts* (why 4 corn, why a 3-Lumber/3-Hammer shortage) are
-  **runtime-derived (TBD formula)**.
+  3 tool buttons): every sprite frame/position is **MSE-matched to the capture (B vs the image)**.
+  The field-production "**4 corn**" count is now **render-source-cited (B):** `func_0264A8 @0x026652`
+  reads row-1 count from **global `[0xA891]`** (snapshot `colony_live_1505.bin` reads `[0xA891]=4`,
+  matching the rendered 4) and blits the proportional strip via `0x181F:0x236 @0x02665D` with food icon
+  `0x17`; row-2 good=`[0xA893]` (=1), count=`[0xA894]` (=2), blit `@0x02668A`. So the **count is live
+  state read from `[0xA891]`/`[0xA894]`**, rendered by `func_0264A8` via the `0x181F:0x236` proportional
+  strip — per-game economy state, not a static constant. The *formula* that fills `[0xA891]` lives in
+  overlay `0x191F` (not yet extracted); the **render source + globals are byte-cited (B)**, the
+  fill-formula is the only remaining TBD.
 
 ### 0.6 DO NOT REGRESS (burned before — keep these fixed)
 1. Stockpile starts with **Food**, not Sugar. Lab icon = ssdec **0x16**+good (not 0x17). 
@@ -370,15 +382,17 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
      category-slot `@0x025E0E..0x025E5A`; then for every building the colony actually HAS
      (`lcall 0x181F:0x9FC` query `@0x025E64`), the **present-gate `0x8E82[plot]` = building-def
      id** is written `@0x025E9F`, else stays `0xFF`.
-  5. **Frame** — **R/TBD (formula does NOT verify against the snapshot, 2026-06-27).** The earlier
-     one-line claim "`func_026CC2` looks up `word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`)" reads
-     **out-of-range / non-distinct** values from the byte-correct Jamestown snapshot (def `0x1B`→`0x1010`,
-     `0x18`→`0x1000`; most defs collapse to frame 0/16) — so it is **not** the building-sprite frame
-     source. The real painter `func_026DD4` (behind thunk `0x2CA23`, blit `0x181F:0x254`, frame in AX)
-     resolves the frame through `func_026CC2`'s **multi-branch** logic (special-cases id `0x11/0x13/0x14`,
-     reads `[0x8DD8]`/`[0xA892]`, default `def_id+1`) — it does **not** reduce to a single
-     snapshot-readable table. Exact mapping needs a runtime trace capturing the AX frame at the
-     `0x181F:0x254` blit per building. **`def_id` is NOT the frame index.**
+  5. **Frame — RESOLVED 2026-06-27 (reseg of `func_026DD4 @0x026DD4..0x026FF1`).** The earlier
+     `func_026CC2`/`word[id*2 − 0x7238]` claim was **wrong**: that path computes the *production/garrison
+     strip* (blit `0x181F:0x236 @0x026EF7`), **not** the building sprite. The building-sprite blit is
+     **`0x181F:0x254 @0x026E4E`**, frame = local `[bp-0x58]` set at **`@0x026DE5..0x026DE9` to
+     `def_id + 1`** (`mov ax,[bp+6]; inc ax; mov [bp-0x58],ax`, EXE-sheet space). Special cases, all
+     byte-read: **(a)** `def_id==0` AND build-query `0x181F:0x9FC(0)==0` (`@0x026DEC..0x026E00`) ⇒ frame
+     `0x11`; **(b)** `def_id==0xF`/`0x11` with garrison queries (`@0x026E05..0x026E34`) ⇒ frame
+     `0x2F`/`0x30`. Otherwise **frame = def_id+1** (EXE) = **def_id** in the lab's off-by-one bundle.
+     **Live-verified** (Jamestown): plot 2 `0x20`→0x21/bundle 32 ✓, plot 12 `0x09`→0x0A/bundle 9 ✓,
+     plot 13 `0x00`→`0x11`/bundle 16 ✓ (the `def_id==0` special case). So **`def_id+1` IS the frame**
+     (EXE-sheet), reducible to a static rule — no runtime AX trace needed. **B (reseg + live-verified).**
      - **Empty plots** (`def_id < 0`): the painter is `func_026FF2 @0x26FF2` (thunk `0x2CA1`→`0x191F:0x834`),
        which draws a terrain decoration = **BUILDING.SS frame `[0x260 + category]`** (category =
        `byte[0x8D62+plot]`, 0..4), **skipped when the table byte is 0**. Snapshot table
@@ -432,12 +446,12 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Flag panel | (303,132,17,45) | **ICONS sprite 0x44 (68)** at +3, frame=`[0x337]`/`[0x339]` | — | — | `func_02853C @0x028540` | B |
 | Surrounding-tile minimap | (121,130,84,48) | **6× ICONS sprite 0x7B (123)** tiles (or centered caption if `[0x33C]==0`) | — | per-tile | `func_027DB2 @0x027DB7` | B |
 | SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]`: 0=SoL/garrison icon bar (`func_0275CE`, no string), 1=cargo+caption `[0x939A]` (`func_027746`), 2=cargo+caption+hammer strip (`func_027BB6`) | FONTTINY | — | `func_02814C @0x02814F` (cases @0x0275CE/0x027746/0x027BB6) | B |
-| Buildings (15 slots) | `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn y+8) | **BUILDING.SS** frame per **§0.2 RAM-verified rule**: occupied ⇒ `def_id`(`byte[0x8E82+i]`), def_id 0→16; empty (`byte[0x8E82+i]==255`) ⇒ `DS:0x260[byte[0x8D62+i]]−1` | — | — | `func_02701C @0x02701C` | B |
+| Buildings (15 slots) | `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn y+8) | **BUILDING.SS** frame (`func_026DD4 @0x026E4E` blit, reseg 2026-06-27): occupied ⇒ **`def_id+1` EXE-sheet** (`=def_id` in lab bundle), special: `def_id 0`+query0==0→`0x11`(bundle 16), `def_id 0xF`/`0x11`→`0x2F`/`0x30`; empty (`byte[0x8E82+i]==255`) ⇒ `DS:0x260[byte[0x8D62+i]]−1` | — | — | `func_02701C @0x02701C` → `func_026DD4 @0x026DD4` | B |
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
 | Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F`, **red `0x0C` when over warehouse cap** (`0x181F:0xD3A`) | `func_0281D6 @0x0281DB` | B |
-| Warehouse-bar right readout | (306,179) | heap **string #`[0x2F5E]`** (caption; **NOT gold** — corrected 2026-06-23) | FONTTINY | white `0x0F` | `@0x0283F1` | B draw / TBD semantic |
-| **Gold (treasury)** | **top menu header** (x/y TBD) | `PowerRecord+0x2A` via `[0x84FC]` (mirror `+0x9CB0`) | menu-bar font | — | menu chrome (`[0x9CD2]`, `@0x072FE1`); colony recompute `@0x02B80E` | B field / TBD blit |
+| Warehouse-bar right readout | (306,179) | heap **string #`[0x2F5E]` = `0x219` (537) = "Sons of Liberty"** (oracle-resolved 2026-06-27; **NOT gold**) | FONTTINY | white `0x0F` | `@0x0283F1` (`push 0xf,0xb3,0x132,[0x2f5e]→0x181F:0x22`) | B |
+| **Gold (treasury)** | **rendered as part of the TITLE** (§3.1 field 7), not a separate colony-composer blit | `PowerRecord+0x2A` via `[0x84FC]`, formatted into title buffer by `0xd1d:0x11b4` `@0x026A61` | FONTTINY (title) | green title latch | title `func_0268CE @0x026A61` (paint `0x181F:0xB0 @0x026AA6`) | B |
 | Panel outlines | each panel (single colour) | 1-px frame | — | — | `0x181F:0xE2` | B |
 | Screen-bottom rule | (0,200,320) | 1-px rule | — | — | `func_028592 @0x028607` | B |
 
@@ -487,9 +501,14 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
   (`func_002462`) over the heap at `[0x2D42:0x2D44]`, landing on **DGROUP `0x2FF1A`** —
   **oracle-confirmed** against `colony_jamestown.bin` (§3.6). The colony screen renders it in the
   **minimap rect** via `func_027DB2`'s `[0x33C]==0` caption path; the exact render-time index slot is
-  BLOCKED (snapshot `[0x2DD0]`=0x152 ≠ rendered 0x153, §3.6). "Sons of Liberty" remains a non-colony-
-  render key (GAME `@COLONYOPTIONS`, advisor `@SONSUP`/`@REBELMAJORITY`/`@TORYMAJORITY`/`@SONSDOWN`);
-  the SoL-mode (case 0) panel paints an **icon bar**, not a labelled string (§3.6).
+  BLOCKED (snapshot `[0x2DD0]`=0x152 ≠ rendered 0x153, §3.6).
+- **"Sons of Liberty" IS colony-rendered — RESOLVED 2026-06-27.** The warehouse-bar right readout at
+  (306,179) (`func_0281D6 @0x0283F1`, `push 0xf,0xb3,0x132,[0x2f5e]→0x181F:0x22`) draws **heap string
+  index `[0x2F5E]` = `0x219` (537) = "Sons of Liberty"** — oracle-confirmed by walking exactly `0x219`
+  NUL-terminated strings from the live heap base `[0x2D42:0x2D44]` in `colony_live_1505.bin` (both
+  snapshots read `[0x2F5E]=0x219`). So the SoL caption label IS on the colony screen — as the warehouse
+  strip's right caption — even though the SoL-*mode* (case 0) panel itself paints an **icon bar**, not
+  a labelled string (§3.6). **B (index→string, oracle-verified).**
 
 ## 6. Interactions
 - Click own colony tile → this screen (entry chain §1). **B**
@@ -556,22 +575,25 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
    `0x181F:0x22`+`0x100` at (211,130,…) (`func_027746 @0x0277AC..0x0277C4`); **case 2 `func_027BB6`**
    reads cargo (`0xAC4`/`0xD4E` `@0x027BCC`/`@0x027BE1`), draws a centered caption via `0x181F:0x100`
    (`@0x027C13`) and a hammer production strip `0x181F:0x236` sprite 0x37=55 (`func_027BB6 @0x027CC6`).
-   No colony-render-cited "Sons of Liberty" literal exists (§5) — the SoL/garrison mode (case 0)
-   is an icon bar, not a labelled string. **B (sub-renderers byte-decoded).**
+   The SoL/garrison mode (case 0) panel is an icon bar, not a labelled string; the "Sons of Liberty"
+   *caption* is rendered elsewhere — as the warehouse-bar right readout `[0x2F5E]=0x219` (§5, §4 line
+   439, oracle-resolved 2026-06-27). **B (sub-renderers byte-decoded).**
 4. **SoL% formula — R, not B.** The prior spec gave `sol = (colony[+0xC2]·100)/colony[+0xC6]` +20
    human-latch, clamp 100, and a tory-threshold text-colour rule. Those traced to overlay-`0x181F`
    helpers and the **RECONSTRUCTED** `COLONY_SYSTEM.md`; neither survives as a byte-cited offset in
    the primary sources mined this pass. **Downgraded to R/TBD** until re-confirmed against a
    `func_XXXXXX @0xNNNNN` (the colony's SoL math lives in overlay 0x191F, not yet extracted —
    `COLONY_RENDER_CHAIN.md` §6d).
-5. **Building per-slot frame map — partly resolved; general formula still R/TBD (see §0.2 + §3.7).**
-   The earlier "index = type+1" (category+1) framing is **wrong and dropped**. What is now nailed:
-   def_ids/categories/positions per plot are **RAM-verified (B)**, and **empty-plot frame =
-   `DS:0x260[category]−1` (B)**. For **occupied** plots the lab draws bundle frame = `def_id`
-   (def_id 0→16), **MSE-0 vs the capture** — but that is the bundle/ssdec off-by-one of the EXE's
-   real selector `func_026CC2` (default `def_id+1` EXE-space, multi-branch special cases), which does
-   **not** reduce to one table. So the **general** occupied-frame formula remains **R/TBD** pending a
-   runtime trace of the AX frame at the `0x181F:0x254` blit (§3.7 item 5). Do not mark this "done".
+5. **Building per-slot frame map — RESOLVED (B), 2026-06-27 (see §0.2 + §3.7).**
+   The earlier "index = type+1" (category+1) framing is **wrong and dropped**; the `func_026CC2`/
+   `word[id*2−0x7238]` attribution was also wrong (that path is the production strip). The real painter
+   is **`func_026DD4 @0x026DD4`** (reseg'd from VICEROY.EXE): building blit `0x181F:0x254 @0x026E4E`,
+   **frame = `def_id + 1`** (EXE-sheet, `[bp-0x58]` set `@0x026DE5..0x026DE9`), special cases
+   `def_id==0`+query0==0 ⇒ `0x11` (`@0x026DEC`), `def_id==0xF`/`0x11` garrison ⇒ `0x2F`/`0x30`
+   (`@0x026E05`). In the lab's off-by-one bundle this is **frame = def_id** (def_id 0→16 via the
+   special case). **Live-verified** against the Jamestown capture for every occupied plot (plots
+   2/12/13 etc.). Empty-plot frame = `DS:0x260[category]−1` (B). No runtime AX trace needed — the rule
+   is static. **B (reseg + live-verified).**
 6. **"Work grid" vs surrounding-tile scene — RECONCILED to the drawlist (B).** Earlier revisions
    described a **3×3 work grid** at cell `(col·0x18+0xC8, r·0x18+8)` and separately a **28×19**
    surround minimap, both from the low-trust C reconstruction / removed geometry docs. The
