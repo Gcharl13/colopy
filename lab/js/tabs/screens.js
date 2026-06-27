@@ -141,6 +141,10 @@ export async function render(host, ctx) {
       } else if (step.op === 'rect') {            // solid fill (e.g. black area separators)
         g.fillStyle = step.color || '#000';
         g.fillRect(step.x, step.y, step.w, step.h);
+      } else if (step.op === 'sprite') {          // a single sheet frame drawn onto the backdrop
+        const { frames, img } = await atlas(step.sheet);
+        const f = frames.frames.find((x) => x.i === step.frame);
+        if (f && f.w > 0 && img.naturalWidth) g.drawImage(img, f.ax, f.ay, f.w, f.h, step.x, step.y, f.w, f.h);
       } else if (step.op === 'text') {            // crisp FONTTINY bitmap text (tinted)
         const font = await fonttiny();
         drawBitmapText(g, font, step.value, step.x, step.y, step.color || '#18293f');
