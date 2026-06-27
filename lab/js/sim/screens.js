@@ -42,10 +42,12 @@ const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
 // stockpile quantity numbers + band text are drawn as CRISP FONTTINY bitmap text on the
 // backdrop canvas (op:'text'), NOT blurry CSS <div>s. Colours measured from the live capture:
 // qty digits are dark navy (24,41,64), not white.
+// Text positions MEASURED from the live capture (RULINGS 2026-06-27): qty "0" top at y194,
+// centered under each cell (x=8+i·19); "100% (I)" at x75 y133; "No Ships In Port" at x118 y130.
 const COLONY_TEXT_OPS = [
-  ...STOCKPILE_GOODS.map((g, i) => ({ op: 'text', value: '0', x: 8 + i * 19, y: 192, color: '#18293f' })),
-  { op: 'text', value: '100% (I)', x: 64, y: 132, color: '#ffffff' },
-  { op: 'text', value: 'No Ships In Port', x: 130, y: 132, color: '#5a7ab0' },
+  ...STOCKPILE_GOODS.map((g, i) => ({ op: 'text', value: '0', x: 8 + i * 19, y: 194, color: '#181c7d' })),
+  { op: 'text', value: '100% (I)', x: 75, y: 133, color: '#ffffff' },
+  { op: 'text', value: 'No Ships In Port', x: 118, y: 130, color: '#6888c0' },
 ];
 // COLONY.PIK band overlays — ICONS frames MSE-0 matched to the live Jamestown capture
 // (RULINGS 2026-06-27). colonists/production/SoL are state-specific (this colony); editable.
