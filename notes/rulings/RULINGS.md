@@ -5421,27 +5421,14 @@ scene-band residual (~4800) is dominated by the unresolved exact building frames
 COLONY.PIK panel overlays (SoL "100% (I)", "No Ships In Port", colonist sprites, boycott Xs) which
 are runtime game-state, not static layout.
 
-## 2026-06-27 — Colony render reference mismatch: snapshot ≠ 11_colony_screen.png
+## 2026-06-27 — Colony snapshot DID match the screenshot (matched RAM+screenshot pair)
 
-The "ultimate test" (recreate 11_colony_screen.png from colony_jamestown.bin) was **mis-framed**:
-the two are different game states. Byte-proof from the snapshot's active colony record (DS:0x606E):
-name(+0x02)="Jamestown", pop(+0x1F)=1, stockpile = only Muskets=50, bells(+0x0C/0x0E)=0,
-SoL(+0xC2/+0xC6)=0/200 ⇒ **SoL 0%** — a freshly-FOUNDED colony. The screenshot shows "100% (I)"
-(100% SoL, rebel rank I) + a full colonist plaza, which a pop-1 colony cannot display. Therefore no
-faithful render of this snapshot can match that screenshot.
+> _An earlier same-day ruling claimed `colony_jamestown.bin` and `11_colony_screen.png` were
+> "different game states" that no render could match — based on misreading the on-screen "100% (I)"
+> as 100% Sons-of-Liberty. That ruling was **wrong** and has been **removed** to avoid leaving
+> conflicting information; this entry is the corrected record._
 
-Corollaries: (1) the SoL formula (spec/systems/colony.md §"Sons of Liberty %") is VALIDATED — it
-yields 0% for A=0/B=200, correct for a fresh colony. (2) The renderer's title was hardcoded
-("Spring, 1504, Gold 1000e"), which masked the mismatch; now read from the snapshot (name+pop). (3)
-The scene-band MSE is a ceiling artifact (two different states), not a decode-quality signal.
-(4) 15_building_colony.png is the "BUILDING A COLONY" cinematic, not a colony-screen capture — no
-same-state reference exists in-repo. To pixel-validate the developed screen, capture RAM at that
-screenshot's moment. This ends the pixel-match churn: the decodes are correct; the reference was wrong.
-
-## 2026-06-27 — CORRECTION: snapshot DID match the screenshot (prior ruling was wrong)
-
-The 2026-06-27 ruling "Colony render reference mismatch: snapshot ≠ 11_colony_screen.png" is
-**RETRACTED.** I drove the live game (DOSBox, loaded COLONY09.SAV, founded Jamestown, opened the
+I drove the live game (DOSBox, loaded COLONY09.SAV, founded Jamestown, opened the
 colony screen) and captured a matched screenshot + RAM pair (`scratchpad/dbx/colony_live_1505.bin`
 + `docs/screens/colony_live_1505.png`). Results:
 - The live colony screen matches `11_colony_screen.png` at **MSE 312** (essentially identical, one
