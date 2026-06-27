@@ -44,6 +44,8 @@ dg=snap.find(b'UNIT\x00ORDERS\x00ACTIONS\x00')-0x2258
 u16=lambda o: struct.unpack_from('<H',snap,dg+o)[0]
 s8 =lambda o: snap[dg+o]-256 if snap[dg+o]>=128 else snap[dg+o]
 plots=[(u16(0x266+i*4),u16(0x268+i*4),s8(0x8E82+i)) for i in range(15)]
+cat =[snap[dg+0x8D62+i] for i in range(15)]                 # per-plot category (func_02701C @0x027095)
+featframe=[snap[dg+0x260+i] for i in range(6)]              # DS:0x260 cat->terrain-frame table (func_026FF2)
 cp=u16(0x8542); stock=[struct.unpack_from('<H',snap,dg+cp+0x9a+i*2)[0] for i in range(16)]
 
 C=Image.new('RGBA',(320,200),(0,0,0,255))
@@ -55,10 +57,17 @@ for yy in range(0,200,wt.height):
 par=load_sheet(f'{RAW}/PARCH.SS'); pt=ss_frame(par,0)
 for yy in range(8,128,pt.height):
     for xx in range(0,200,pt.width): C.alpha_composite(pt,(xx,yy))
-# buildings: BUILDING.SS frame=def_id at (x, y+8)
+# plot grid (func_02701C): empty plots draw a terrain decoration from the DS:0x260[cat]
+# frame table (func_026FF2, skip when 0); occupied plots draw the building (func_026DD4).
+# Both blit BUILDING.SS frames at (plotX, plotY+8).
 bld=load_sheet(f'{RAW}/BUILDING.SS')
-for (x,y,defid) in plots:
-    if defid>=0 and defid<bld['nframes']:
+for i,(x,y,defid) in enumerate(plots):
+    if defid<0:
+        f=featframe[cat[i]]                    # empty plot: terrain frame = table[category]
+        if f and f<bld['nframes']:
+            fr=ss_frame(bld,f)
+            if fr: C.alpha_composite(fr,(x,y+8))
+    elif defid<bld['nframes']:                  # occupied plot: building
         fr=ss_frame(bld,defid)
         if fr: C.alpha_composite(fr,(x,y+8))
 # COLONY.PIK bottom band at y=128

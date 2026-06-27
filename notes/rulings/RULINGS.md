@@ -5396,3 +5396,27 @@ COLONY.PIK (colonist sprites, "No Ships In Port", SoL crown).
 Follow-ups: re-extract/re-palette lab/assets with the corrected palette; decode building-id ->
 BUILDING.SS frame mapping; wire the dynamic panel state. Also: PALETTE_AND_CYCLING.md / formats/PAL.md
 say "256x4" — those docs are wrong and need correcting.
+
+## 2026-06-27 — Colony empty-plot terrain decoded; building-frame formula REFUTED vs snapshot
+
+Decoded (B): The colony plot grid (`func_02701C @0x2701C`) draws BOTH buildings and empty-plot
+terrain from the **same active sheet descriptor `[0x2DA8]`** = **BUILDING.SS**, both blitting at
+`(plotX, plotY+8)` via `0x181F:0x254` (frame in AX).
+- **Empty plots** (`def_id = byte[0x8E82+plot] < 0`): painter `func_026FF2 @0x26FF2` draws terrain
+  frame = `byte[0x260 + category]`, category = `byte[0x8D62+plot]` (0..4), **skipped when the table
+  byte is 0**. Live Jamestown snapshot: `DS:0x260 = [45,44,43,0,46,0]` → categories 0/1/2/4 map to
+  BUILDING.SS frames 45/44/43/46 (the end-of-sheet terrain tiles); category 3 → no decoration.
+
+Refuted (corrects spec §3.7 line 265): the prior one-line claim "building frame =
+`word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`)" **does not verify** against the byte-correct snapshot —
+it returns out-of-range / non-distinct values (def `0x1B`→`0x1010`, `0x18`→`0x1000`; most defs
+collapse to 0/16). `def_id` is also NOT the frame index. The real building painter `func_026DD4`
+(thunk `0x2CA23`) resolves frames through `func_026CC2`'s multi-branch logic (special-cases id
+`0x11/0x13/0x14`, reads `[0x8DD8]`/`[0xA892]`, default `def_id+1`) which does not reduce to a
+snapshot table. Exact building→frame mapping = **TBD pending a runtime trace** capturing AX at the
+`0x181F:0x254` blit. Spec §3.7(5) downgraded to R/TBD with this reason.
+
+Render (tools/render_colony_screen.py): added empty-plot terrain; full-screen MSE 3625→3606. The
+scene-band residual (~4800) is dominated by the unresolved exact building frames + the dynamic
+COLONY.PIK panel overlays (SoL "100% (I)", "No Ships In Port", colonist sprites, boycott Xs) which
+are runtime game-state, not static layout.

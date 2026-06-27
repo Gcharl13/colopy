@@ -262,7 +262,20 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
      category-slot `@0x025E0E..0x025E5A`; then for every building the colony actually HAS
      (`lcall 0x181F:0x9FC` query `@0x025E64`), the **present-gate `0x8E82[plot]` = building-def
      id** is written `@0x025E9F`, else stays `0xFF`.
-  5. **Frame**: `func_026CC2` (§4d) looks up `word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`).
+  5. **Frame** — **R/TBD (formula does NOT verify against the snapshot, 2026-06-27).** The earlier
+     one-line claim "`func_026CC2` looks up `word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`)" reads
+     **out-of-range / non-distinct** values from the byte-correct Jamestown snapshot (def `0x1B`→`0x1010`,
+     `0x18`→`0x1000`; most defs collapse to frame 0/16) — so it is **not** the building-sprite frame
+     source. The real painter `func_026DD4` (behind thunk `0x2CA23`, blit `0x181F:0x254`, frame in AX)
+     resolves the frame through `func_026CC2`'s **multi-branch** logic (special-cases id `0x11/0x13/0x14`,
+     reads `[0x8DD8]`/`[0xA892]`, default `def_id+1`) — it does **not** reduce to a single
+     snapshot-readable table. Exact mapping needs a runtime trace capturing the AX frame at the
+     `0x181F:0x254` blit per building. **`def_id` is NOT the frame index.**
+     - **Empty plots** (`def_id < 0`): the painter is `func_026FF2 @0x26FF2` (thunk `0x2CA1`→`0x191F:0x834`),
+       which draws a terrain decoration = **BUILDING.SS frame `[0x260 + category]`** (category =
+       `byte[0x8D62+plot]`, 0..4), **skipped when the table byte is 0**. Snapshot table
+       `DS:0x260 = [45,44,43,0,46,0]` ⇒ categories 0/1/2/4 → frames 45/44/43/46, category 3 → none. **B**
+       (byte-verified + snapshot-read). Both painters blit at `(plotX, plotY+8)`.
   - **Live verification (Jamestown, snapshot):** `0x8E82` (stride-1) = 8 buildings at plots
     `{2,3,4,5,6,10,12,13}` with def-ids `{0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00}` — matches the
     traced structure exactly. (An earlier naive *stride-4* read of `0x8E82` falsely reported "13

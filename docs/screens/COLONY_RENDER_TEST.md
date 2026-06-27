@@ -29,19 +29,26 @@ These are honest, recomputed numbers — not an eyeball judgement.
   (`<0`=empty), drawn from BUILDING.SS at Jamestown's exact 8-building layout. Positions + presence
   are byte-true; the per-category frame index follows the spec's `func_026CC2`/`func_026DD4` chain.
 
+## Resolved this pass
+- **`[0x2DA8]` = BUILDING.SS** for the plot grid: both painters (`func_02701C`) blit from the same
+  active sheet at `(plotX, plotY+8)`.
+- **Empty-plot terrain** = BUILDING.SS frame `byte[0x260 + category]`, category = `byte[0x8D62+i]`,
+  skipped when 0. Snapshot `DS:0x260 = [45,44,43,0,46,0]` → frames 45/44/43/46. Added to the render.
+
 ## Known gaps (load-bearing unknown named, not hidden)
-- **Empty-plot terrain fill** — the dominant scene-region error. Empty plots draw from the **active
-  sprite-sheet descriptor `[0x2DA8]`** (`func_026FF2 @0x26FF2`, gated by `byte[feat+0x260]`,
-  `feat = byte[0x8D62+i]`). `[0x2DA8]` is a **general "current sheet" global** lea'd 100+ times,
-  loaded by **index** (no name string) in colony-screen setup → its exact identity + the terrain
-  frame are **TBD pending the setup loader trace**. This is why the scene band is MSE 4863. **Not
-  fabricated.**
+- **Exact building→frame mapping** — the scene-band's dominant remaining error. `def_id` is NOT the
+  frame index, and the spec's old `word[id*2+0x8DC8]` formula returns out-of-range/non-distinct
+  values against the byte-correct snapshot (see RULINGS 2026-06-27). The real frame comes from
+  `func_026CC2`'s multi-branch logic inside painter `func_026DD4` — **TBD pending a runtime trace**
+  of AX at the `0x181F:0x254` blit. The render approximates with `frame≈def_id` (recognizable, not
+  exact).
+- **Dynamic COLONY.PIK overlays** — live SoL% "100% (I)", "No Ships In Port", worked-tile colonist
+  sprites, boycott "✗" marks, right-column commodity icons — all runtime game-state (spec §6 R/TBD).
 - **Colony minimap** (top-right) — separate composited element; rect known, content is live tiles.
-- **Dynamic panel overlays** — live SoL% "100% (I)", "No Ships In Port", worked-tile colonist
-  sprites — all runtime game-state (spec §6 R/TBD).
 
 ## Verdict
-The spec drives a recognizable from-scratch colony screen and the palette/icon/building decodes are
-now byte-true (MSE 6387 → 3625). The residual is concentrated in the **empty-plot terrain fill**
-(active-sheet `[0x2DA8]` identity) and the documented runtime/RNG panel layer — each named with its
-specific blocker rather than papered over.
+The static layer is byte-true: palette (stride-3), stockpile icons (ICONS.SS `0x17+good`), plot
+positions, and empty-plot terrain all land (full-screen MSE 6387 → 3606, and the side-by-side reads
+as Jamestown). The residual is concentrated in two **named, non-fabricated** blockers — the exact
+building-sprite frame (needs a runtime trace; `def_id≠frame` proven) and the dynamic panel/runtime
+overlay layer — rather than papered over with a guess.
