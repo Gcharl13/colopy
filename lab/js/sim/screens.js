@@ -11,15 +11,19 @@
 // Colony building plots — BYTE-VERIFIED positions. The 15 (x, table_y) pairs are the
 // DS:0x266 plot table; the painter func_02701C @0x02701C reads [bx+0x266]/[bx+0x268]
 // over 15 entries (CMP [bp-8],0xf) and draws at y = table_y + 8 (ADD cx,8 @0x02708F).
-// ⚠ Position is B; WHICH building fills each plot is RNG-driven (func_025D34) → the
-// sprite FRAME is a placeholder (TBD), so leave frame editable.
+// Position is B (DS:0x266). The FRAME is seeded from the live Jamestown capture
+// (colony_live_1505.bin, RULINGS 2026-06-27): occupied plot frame = building def_id
+// (byte[0x8E82+i], def_id 0→16); empty plot draws BUILDING terrain frame = DS:0x260[cat]−1
+// (cat = byte[0x8D62+i]). All MSE-0 verified vs the capture. Editable (per-colony RNG).
+//                 x    y   frame  (negative def_id ⇒ empty plot → terrain frame)
 const COLONY_PLOTS = [
-  [56, 5], [145, 7], [173, 10], [8, 33], [37, 37], [67, 46], [96, 45], [6, 6],
-  [128, 45], [10, 68], [15, 94], [87, 3], [66, 79], [123, 98], [123, 47],
-].map(([x, y], i) => ({
+  [56, 5, 44], [145, 7, 44], [173, 10, 32], [8, 33, 27], [37, 37, 39],
+  [67, 46, 24], [96, 45, 21], [6, 6, 43], [128, 45, 43], [10, 68, 43],
+  [15, 94, 35], [87, 3, 42], [66, 79, 9], [123, 98, 16], [123, 47, 45],
+].map(([x, y, frame], i) => ({
   id: `plot${i}`, label: `building plot ${i}`, type: 'sprite', sheet: 'BUILDING',
-  frame: i, x, y: y + 8,
-  tier: 'B', cite: `DS:0x266 plot[${i}], render y=table_y+8 (func_02701C @0x02708F) — POSITION B; building→frame is RNG (func_025D34), so frame=TBD`,
+  frame, x, y: y + 8,
+  tier: 'B', cite: `DS:0x266 plot[${i}], y=table_y+8 (func_02701C); frame=BUILDING ${frame} — Jamestown live capture, MSE-0 (RULINGS 2026-06-27); editable (per-colony RNG)`,
 }));
 
 // Stockpile bar — BYTE-VERIFIED (colony_screen.cpp §6): 16 cells, pitch 19, x0=1,
