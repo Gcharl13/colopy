@@ -92,6 +92,11 @@ for i, (x, y, d) in enumerate(plots):
     fr = sheet_frame_rgba(bld, f)
     if fr: C.alpha_composite(fr, (x, y + 8))
 
+# Minimap (surrounding-terrain scene): rendered by the EXISTING map compositor in
+# lab/js/sim/mapview.js (terrainCompose) — NOT reimplemented here. See RULINGS 2026-06-27:
+# func_026374 window/scale + work-tile/native-marker overlays are the open piece. Left blank
+# in this standalone tool to avoid duplicating the lab's renderer.
+
 # COLONY.PIK bottom band (SoL/colonist/warehouse + stockpile bg) at y=128
 C.paste(pik_rgb('COLONY'), (0, 128))
 
