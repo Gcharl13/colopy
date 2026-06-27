@@ -34,6 +34,37 @@ port) are game state.
 > band captions ("Expected Soon / Bound For / Loading") come from **`@MISC`**, not
 > `@EUROLABEL` (grep-verified below); `@EUROLABEL` holds only RECRUIT/PURCHASE/TRAIN.
 
+## 0. AS-BUILT RENDER STATUS (2026-06-27)
+
+A standalone composite of this screen was built (the browser lab was removed this date, so the
+renderer is now `tools/render_europe.py` — a small Python compositor; reference output committed at
+`docs/screens/europe_render.png`). It composites the byte-cited static layer + the structural
+overlays and is matched against the live capture `docs/screens/10_europe_screen.png` (London,
+Spring 1500, Gold 1000e). **The renderer depends on the regenerable, git-ignored
+`viceroy_cpp/build/bundle/` assets** (rebuild via `tools/extract_visuals.py`); the committed record
+is this section + the reference PNG.
+
+### 0.1 What is rendered, and at what confidence
+| Element | Placement used | Source / tier |
+|---------|----------------|---------------|
+| Harbor background | `EUROPE.png` (320×200, blue sky — palette correct, NOT the stride-4 bug) | bundle background, **B** scene |
+| Wood menu bar | WOODTILE tiled **y0..6 (7px only)** + black separator at **y7** | measured from capture, **A** |
+| Title (green) | FONTTINY `(71,1)` "London, England.  Spring, 1500.  Tax: 0%  Gold: 1000e" | string = this capture's live state; banner mechanism `func_030F76` is **B**, pixel origin **A** |
+| Market bar | **NO fill box** — 16 ICONS on the harbor bg, centered in 19px cells (`x=1+i·19`, icon y=180) | **B** geometry (`func_0310B4`); icon = bundle frame **`0x16+good`** = EXE `0x17+good` (ssdec off-by-one) |
+| Bid/ask prices | **BLACK** FONTTINY, cell-centered, **y=194** | **B** y/centering; price values read from capture |
+| RECRUIT/PURCHASE/TRAIN | beveled buttons, panel ≈ `(280,88)` rows at pitch 11; **INVERTED bevel** (shadow TL, highlight BR); white text + **yellow accelerator first letter** | panel rect (281,89,37,32) **B**; bevel/colors **A** (measured) |
+| Dock captions (green) | **y=120**: "Expected Soon" `(16,120)`; "Bound For"`(87,120)`/"New England"`(87,127)`; "Loading:"`(150,120)`/"Caravel"`(186,120)` | strings = `@MISC` keys (**B**); x/y measured from capture (**A**) |
+| Exit | white "Exit" `(306,179)` + red "E" `(308,187)` | measured from capture (**A**); matches spec `x=306,y=179` |
+
+### 0.2 NOT rendered (honest gaps — need a matched RAM snapshot, which does NOT exist for Europe)
+- The **dynamic harbor contents**: the Caravel (Loading) and the colonists in their green
+  selection boxes on the piers, and the pier **crates**. These are live game state (ships in port,
+  units, cargo). Unlike the colony screen, **no matched RAM snapshot was captured for this Europe
+  screenshot**, so their positions/sprites cannot be byte-verified — they are intentionally omitted
+  rather than guessed.
+- Market **prices** and the **title** string are the *displayed* values of this specific capture
+  (read from the screenshot), not a decoded snapshot.
+
 ## 1. Purpose
 > **RUNTIME-CONFIRMED 2026-06-25** (`docs/screens/10_europe_screen.png`, `09_europe_arriving.png`):
 > drove a Caravel back to Europe ("Return to Europe" order) and captured the live screen. Confirms
