@@ -27,7 +27,7 @@ Index counts and the exact per-cargo parameter table (Name, Start1/2, Low, High,
 - `data_extracted/text/PEDIA_sections.json` — `@KEY` entries. **B**
 - CLAUDE.md hard rules 3/6 — terrain id & renderer sprite-index anchors. **B**
 
-## 4. Open questions (TBD)
+## 4. Resolved questions (all closed)
 
 1. **Sprite-frame indices — RESOLVED 2026-06-20** (per `notes/SPRITE_CATALOG.md`, the
    authoritative catalog): a **global ICONS.SS off-by-one** holds — `port_png_index =

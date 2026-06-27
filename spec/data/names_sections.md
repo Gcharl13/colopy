@@ -38,7 +38,7 @@ All 31 sections present in `data_extracted/text/NAMES_sections.json`. (Of the ta
 - `docs/GAME_INDEX_TABLES.md` — per-section numeric params (`@CARGO` 9 params). **B**
 - `formats/TXT.md` — `.TXT` section format. **B**
 
-## 4. Open questions (TBD)
+## 4. Resolved questions (all closed)
 
 1. ~~Per-row layouts for `@BUILDING`/`@JOB`/`@UNIT`/`@RESOURCE`.~~ **Done 2026-06-20**
    (loader byte-traces): `@BUILDING` = name,cost,tools×10,size,min_colony,upkeep
