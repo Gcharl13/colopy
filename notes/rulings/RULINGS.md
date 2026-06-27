@@ -5215,3 +5215,22 @@ field map (oracle ingame_orders.bin + @UNIT cross-check):
 
 Resolves ai.md open-question #2 (per-type stat tables): they are @UNIT primary data, not a separate
 TBD decode. A rewrite drives AI combat/move/build straight from @UNIT (×3 the move column).
+
+## 2026-06-27 — L4 Phase 3b: AI scoring helpers resolved to resident functions
+
+The 0x181F:xxxx scoring helpers the AI calls are Type-B RESIDENT functions in the load image
+(resolved via tools/follow_thunk.py: each thunk's LJMP target = file 0x2400+S*16+O, all <0x20665).
+Two cross-validate prior anchors (proving the map): 0x90c->func_006CCA = the UnitTypeStats reader
+(§5a); 0x4d4->func_00C322 = the Track-12 colony-placement LCG random_int.
+
+Map: 0x302->func_005BFA (tile in-bounds: returns 1 iff 1<=x<[0x853a]-1 AND 1<=y<[0x853c]-1, so
+[0x853a]=MAP WIDTH, [0x853c]=MAP HEIGHT); 0x37a->func_00493C (tile distance: abs dx/abs dy via
+not;inc); 0x614->func_0083F2 (reachability, signed, <0=unreachable); 0x90c->func_006CCA (allowance,
+UnitTypeStats); 0x4d4->func_00C322 (random_int LCG); 0x9e6->func_0082DC (select colony -> [0x8542]);
+0xa4c->func_0081F2 (select native -> [0x8d4a]); 0x7be->func_008D26 (colony-site validity, feeds +500
+term); 0x78c->func_00627A (tile terrain id, get_terrain_id family); 0x7e0->func_0066CC (units-on-tile
+enumerator); 0x322->func_00860E (terrain-feature query, feeds +0x14/0x28 bonus).
+
+Resolves ai.md open-question #3: the AI's evaluation primitives are named, load-image-resident, and
+decodable — no longer behind opaque overlay thunks. By-product: map dims [0x853a]=W, [0x853c]=H.
+Remaining leaf = the internal terrain-quality math of 0x614/0x7be/0x322 (small resident funcs).

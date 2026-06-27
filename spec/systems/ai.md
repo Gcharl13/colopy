@@ -90,6 +90,30 @@ the loop, write `0x314F = best dir` `@0x047FA0` (8 ⇒ no move). The **+500 colo
 makes AI settlers walk toward good colony spots; **base 200** keeps scores positive so the RNG
 jitter and small terrain terms break ties.
 
+### 3a. AI scoring helpers — resolved to resident functions (B, 2026-06-27)
+
+The `0x181F:xxxx` scoring helpers the AI calls are **Type-B resident** functions in the load image
+(resolved via `tools/follow_thunk.py` — each thunk's `LJMP` lands at `file = 0x2400 + S·16 + O`,
+all `< 0x20665`, so they disassemble directly). Two cross-validate against prior anchors, confirming
+the whole map:
+
+| Thunk | Resident fn | Role | Notes |
+|-------|-------------|------|-------|
+| `0x181F:0x302` | `func_005BFA` | **tile in-bounds / valid** | returns 1 iff `1 ≤ x < [0x853a]−1` ∧ `1 ≤ y < [0x853c]−1` → `[0x853a]`=**map width**, `[0x853c]`=**map height** |
+| `0x181F:0x37A` | `func_00493C` | **tile distance** | `abs(dx)`,`abs(dy)` (two's-comp `not;inc`) |
+| `0x181F:0x614` | `func_0083F2` | reachability/terrain (ENTER 0xC) | signed; `<0` = unreachable |
+| `0x181F:0x4D4` | `func_00C322` | **random_int(lo,hi)** | the documented LCG `lo+((rand·range)>>15)` (✓ = the Track-12 colony-placement RNG) |
+| `0x181F:0x90C` | `func_006CCA` | **move allowance** | reads UnitTypeStats `0x5234` (✓ = §5a; `+3` ships) |
+| `0x181F:0x9E6` | `func_0082DC` | **select colony** → sets `[0x8542]` | |
+| `0x181F:0xA4C` | `func_0081F2` | **select native settlement** → sets `[0x8d4a]` | |
+| `0x181F:0x7BE` | `func_008D26` | **colony-site validity** | feeds the `+500` site term (§3) |
+| `0x181F:0x78C` | `func_00627A` | **tile terrain id** | the `get_terrain_id` family (near `func_006204`) |
+| `0x181F:0x7E0` | `func_0066CC` | **units-on-tile** enumerator | |
+| `0x181F:0x322` | `func_00860E` | **terrain-feature** query | feeds `+0x14/0x28` feature bonus |
+
+So the AI's evaluation primitives are **named, load-image-resident, and decodable** — no longer
+"behind opaque overlay thunks." `[0x853a]`/`[0x853c]` (map W/H) are a useful by-product.
+
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 
 `0x314B` is the **persistent per-unit AI mode**: the previous turn writes a letter, the next turn's
@@ -268,10 +292,13 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    **fields of one 14-byte UnitTypeStats record** (`DS:0x5234`, stride ×14 proven at `@0x006CEE`,
    not ×6) = the loaded **`@UNIT` CSV** with moves×3. Values are the `@UNIT` primary data (no longer
    TBD); only the exact labels of the middle ship/cargo fields `+0x04..+0x08` stay soft.
-3. **Resident scoring/path helpers** behind window seg `0x181F`/`0x1A1F` thunks — `0x302`
-   (validity), `0x322`/`0x6dc`/`0x682`/`0x6be`/`0x754`/`0x78c` (terrain/zone), `0x614`/`0x37a`/`0x370`
-   (reachability/distance), `0x952`/`0x722`/`0x8bc`/`0x984`/`0x7be`/`0x9e6` (colony/site), `0x4d4`
-   (RNG). Bodies live in resident segments not in these pages; identities are A/TBD.
+3. ◑ **Resident scoring/path helpers — MAPPED 2026-06-27 (§3a).** The `0x181F:xxxx` helpers are now
+   resolved to named load-image-resident functions (`0x302`→`func_005BFA` in-bounds, `0x37a`→
+   `func_00493C` distance, `0x614`→`func_0083F2` reachability, `0x4d4`→`func_00C322` RNG, `0x90c`→
+   `func_006CCA` allowance, `0x9e6`/`0xa4c`/`0x7be` colony/native/site, `0x78c` terrain-id,
+   `0x322` terrain-feature). The in-bounds + distance + RNG + allowance bodies are decoded; the exact
+   internal math of `0x614`/`0x7be`/`0x322`/`0x982`-family terrain-quality scorers is the remaining
+   leaf (each a small resident function, now decodable from the load image).
 4. **Plan-map outer-index identity (unit vs power)** — §6.1's flagged conflict. Blocker: the
    allocated byte-size of the `DS:0x98B0` table (no `memset`/alloc found in committed pages) or the
    real cardinality of `func_04CC50`'s `[bp+6]` at its dispatch-island caller.
