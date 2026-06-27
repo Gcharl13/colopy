@@ -5463,3 +5463,22 @@ itself is confirmed; the spec should note the 32-bit divisor (+0xC6/+0xC8) and t
 
 Consequence: the render's MSE-3625 gap vs the screenshot is **decode quality** (building frames +
 dynamic overlays), not state mismatch — and is now validatable against the matched live pair.
+
+## 2026-06-27 — Colony plot frames EMPIRICALLY verified (MSE 0) from the matched pair
+
+Using the matched RAM+screenshot pair (colony_live_1505.bin + docs/screens/colony_live_1505.png),
+each plot's rendered sprite was matched against every BUILDING.SS frame by minimising pixel MSE.
+Result (ssdec frame K = game frame K+1, reconciling func_026DD4's def_id+1):
+- **Buildings**: ssdec frame = **def_id** (byte[0x8E82+i]); plots def 21/24/27/32/39 matched at
+  **MSE 0**. Special case **def_id 0 -> frame 16** (MSE-best). def 9 -> 9, def 35 -> 35 (small MSE
+  from neighbour occlusion).
+- **Empty plots**: ssdec frame = **table[cat] - 1** (table=DS:0x260=[45,44,43,0,46,0],
+  cat=byte[0x8D62+i]); matched at MSE 0 (cat 0/1/2/4 -> frames 44/43/42/45). Skip when table byte=0.
+- Both blit at (x=word[0x266+i*4], y=word[0x268+i*4]+8).
+
+This corrects the renderer (was using table[cat] for terrain -> off-by-one wrong sprite; missing the
+def0->16 special). With the fix the building/terrain scene matches the real screen sprite-for-sprite;
+full-screen MSE 3625 -> 2525. Committed a 36 KB reproducible fixture
+data_extracted/colony_jamestown_fixture.bin (DGROUP slice, base 0x200) so the render no longer
+depends on the 22 MB RAM dump. Remaining render gaps: the surrounding-tile minimap, the dynamic
+COLONY.PIK panel overlays (SoL text, colonists, boycott marks, dividers), and stockpile qty numbers.
