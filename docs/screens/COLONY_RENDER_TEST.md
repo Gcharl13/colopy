@@ -46,9 +46,21 @@ These are honest, recomputed numbers — not an eyeball judgement.
   sprites, boycott "✗" marks, right-column commodity icons — all runtime game-state (spec §6 R/TBD).
 - **Colony minimap** (top-right) — separate composited element; rect known, content is live tiles.
 
+## Why the scene band cannot pixel-match this capture (the real ceiling)
+The snapshot's plot table (`0x266`) places buildings in **different positions** than the screenshot,
+despite identical turn (Spring 1504), gold (1000), and stockpile (muskets 50) — i.e. it is the same
+colony at the same turn but a **different open**. Per spec §12, the plot→building assignment is
+**RNG-driven and recomputed on every colony-open** (`func_025D34`, seed `0x181F:0xD62`), so two
+captures of the same colony legitimately differ in layout. Confirmed empirically: rendering with
+`frame=def_id` (oracle scene-MSE 6191) vs the byte-traced `def_id+1` (7050) — neither aligns,
+because the **positions** differ, not the frames. **The pixel oracle cannot adjudicate the building
+frame from this snapshot/screenshot pair**; doing so requires a snapshot captured at the *same open*
+as the screenshot (or rendering from the screenshot's own RAM).
+
 ## Verdict
-The static layer is byte-true: palette (stride-3), stockpile icons (ICONS.SS `0x17+good`), plot
-positions, and empty-plot terrain all land (full-screen MSE 6387 → 3606, and the side-by-side reads
-as Jamestown). The residual is concentrated in two **named, non-fabricated** blockers — the exact
-building-sprite frame (needs a runtime trace; `def_id≠frame` proven) and the dynamic panel/runtime
-overlay layer — rather than papered over with a guess.
+The static + per-open-data layer is byte-true: palette (stride-3), stockpile icons (ICONS.SS
+`0x17+good`), plot positions, and empty-plot terrain all land (full-screen MSE 6387 → 3606), and the
+side-by-side reads as Jamestown. The scene band's residual is **bounded by RNG re-placement between
+captures**, not by decode quality — plus the dynamic COLONY.PIK overlay layer (runtime game-state).
+Both are named and non-fabricated. The exact building→frame map (`def_id+1` per `func_026DD4` vs the
+spec's refuted `0x8DC8` formula) stays **TBD pending a same-open runtime trace**.
