@@ -5511,3 +5511,28 @@ missing. Measured from the matched live capture (docs/screens/colony_live_1505.p
 
 Clipping the parchment + drawing the 3 black lines dropped full-screen MSE 2252 → 971 (the over-wide
 parchment had been overprinting the woodgrain minimap panel). Scene 3006→1094, band 1099→671.
+
+## 2026-06-27 — Colony screen: per-element pixel-verification status + map board located
+
+Systematic per-element verification against the matched live pair (colony_live_1505.png + RAM).
+Each "fixed" item is MSE-measured, not eyeballed. Full-screen MSE 3625 → 971.
+
+DONE (pixel-verified):
+- Buildings/trees/terrain — ssdec frame=def_id (def0→16) / terrain=table[cat]−1; MSE 0 per sprite.
+- Stockpile — all 16 icons ssdec frame 0x16+good (Food first), x=2+i·19, y=181; MSE 0. + qty numbers.
+- COLONY.PIK band overlays — colonists (ICONS 81/102), crown (124), production (22/56/62),
+  tool buttons (67/68/69/54); MSE-0 placement.
+- Layout — parchment scene = x0..198 y8..127 (was over-wide to x223); black separators x=199 / y=7 /
+  y=128 (band dividers are green, part of COLONY.PIK, not black).
+- Title — "<name>.  <Season>, <year>.  Gold: <gold>e" from season@0x538C / year@0x538A / gold@0x8832.
+
+REMAINING:
+- **Minimap (surrounding-terrain scene, `func_026374`)** — the dominant remaining error. Map board
+  LOCATED: live RAM file off **0x665710**, row-major **stride 58 (=mapW)**, terrain id = `byte & 0x1F`
+  (verified: colony island = land 0x0B/0x0F at cols44–46/rows41–42 in ocean 0x19, sealane 0x1A right
+  edge). Window origin globals `[0x9CCC]=1` / `[0x9CCA]=22`. NOT yet rendered: the exact tile-window +
+  scale, the TERRAIN.SS frame per terrain id, and the worked-tile/unit-dot/selection-box overlay
+  composite. An approximate flat-colour fill did NOT match the real textured view, so it was not
+  committed (no-fabrication).
+- Minor: red-X warehouse count, "100%/No Ships" text x-position, parchment texture variation,
+  stockpile green-highlight box exactness.
