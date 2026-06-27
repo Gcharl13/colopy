@@ -15,7 +15,7 @@ Native tribes occupy settlements the player can trade with, send missionaries to
 | +0x00 | u8 | `map_x` | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md`: matches dispersal templates |
 | +0x01 | u8 | `map_y` | **BYTE_VERIFIED** (runtime) | `docs/DATA_MODEL.md` |
 | +0x02 | u8 | **owner tribe / nation id** | **BYTE_VERIFIED** | `[bx+0x54EE]` owner-match scans `@0x37638`/`@0x45D11`/`@0x46078` |
-| +0x03 | u8 | **flags** (bit `0x04` in active use; capital/special marker, exact label TBD) | **BYTE_VERIFIED (field)** | set `@0x66225` `or [bx+0x54EF],4`; test `@0x43DC4`/`@0x46E05`; init 0 `@0x46EA7` |
+| +0x03 | u8 | **flags** — bit `0x04` = **Capital** marker (set once per tribe during settlement generation; doubles/boosts a per-settlement metric), bit `0x01` = unit-removal marker (write-only, no consumer) | **BYTE_VERIFIED** | bit `0x04` SET `@0x66225` `or [bx+0x54EF],4` (preceded by `imul bx,ax,0x12` settlement stride, gated `[bp-0xd0]` reset after each set → 1 per tribe; oracle confirms 1/tribe — see §6.1); TESTed `@0x07DCA` (func_007D3E: `imul bx,[bp-0x10],0x12; test [bx+0x54ef],4` then **doubles** value `shl [bp-0x18],1` + sets `[0x8d02]` bit 0x20 = capital defense/value bonus), `@0x46E05` (func_046DE0: adds `level+1` bonus when set), `@0x43DC4`, `@0x04051`; init 0 `@0x46EA7` |
 | +0x04 | u8 | `population` (size byte, feeds CHIEFKILL) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` §CHIEFKILL: size_byte from `NativeSettlement[+0x04]` |
 | +0x08 | u8 | per-nation `last_bought` | **ANCHOR_VERIFIED** | `docs/DATA_MODEL.md` |
 

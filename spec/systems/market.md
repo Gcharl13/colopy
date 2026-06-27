@@ -193,8 +193,27 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
   randomized recompute) + `func_0324F2`/`func_032914` (single-good post-transaction);
   reached via the JMP-FAR trampoline `0x368bd`. Price movement is trade-screen +
   transaction driven, not a headless turn phase.
-- **TBD:** buy/sell display spread; spoilage. (Boycott bookkeeping **B** — `+0x20`,
-  see `boycotts.md`.)
+- **Buy/sell display spread — RESOLVED 2026-06-27 (B).** The Europe price strip draws
+  two numbers per good in a 16-good loop (`@0x38D40..0x38E3B`, `[bp-0x84]`=good, `cmp
+  ...,0x10`): the **sell** price via `func_030590` (thunk `0x191F:0x09EA`, `@0x38D83`)
+  and the **buy** price via `func_030566` (thunk `0x191F:0x0C3E`, `@0x38DE1`), each
+  CWDE'd, int-formatted (`0x181F:0xD8`), and blitted (`0x181F:0x204`). From the reseg'd
+  accessors: **buy** = `CARGO_row[good].field0 + sens[+0x4C+good]` (`@0x30575` `mov al,
+  [bx-0x6900]` with `bx=good*9`; `@0x30587` `add ax,cx`; clamp ≥0) and **sell** =
+  `sens[+0x4C+good] − 1` (`func_030590 @0x3059C..0x305A0`, clamp ≥0). So the on-screen
+  **display spread = buy − sell = CARGO_row[good].field0 + 1** (per-good constant: field0
+  = `@CARGO` col-1 `start_low` = Food 1, Sugar 4, Tobacco 3, Cotton 2, Furs 4, Lumber 2,
+  Ore 3, Silver 20, Horses 2, Rum/Cigars/Cloth/Coats 11, Trade Goods/Tools 2, Muskets 3).
+  (The `@CARGO` "spread" *column*, field 4 = `[bx-0x68fc]`, is a **different** thing — a
+  per-good left-shift exponent on qty in the pool updaters `func@0x322d0 @0x322EA` /
+  `func@0x3234a @0x32360`: `mov cl,[bx-0x68fc]; shl dx,cl` — not the display spread.) **B.**
+- **Spoilage — out of scope here; owned by `warehousing.md` (B).** Spoilage is **colony
+  warehouse-capacity overflow**, not a European-market mechanic: goods over the warehouse
+  cap are auto-disposed (`func_02D658 @0x02D6F7`, over-100→50 export) and the player is
+  warned via `@WAREHOUSEFULL` / `@SPOIL1..@SPOIL4` (GAME.TXT). See
+  [`warehousing.md`](warehousing.md) §3/§6.4 and `spec/ui/popups.md`. No market-side
+  spoilage exists.
+- (Boycott bookkeeping **B** — `+0x20`, see `boycotts.md`.)
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1. ~~the drift driver/call site.~~ **Done 2026-06-20** — `func_33C96 @0x367FC` (all-goods) + `func_0324F2`/`func_032914` (per-good); the `0x368bd` "table" was a JMP-FAR trampoline misread (§3).

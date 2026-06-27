@@ -143,9 +143,15 @@ is done by each UI screen reading the input globals (`0x7E8`/`0x7EA` x/y, `0x7E6
 buttons, edge flags `0x7EC`/`0x7F4`/`0x7F2`, `0x7E4` left/right) and comparing against
 its own coordinates. The poll routine `0xD106` does motion detection (`cmp [0x7F8],ax`
 at `0xD16F`) and edge detection but **dispatches nothing itself** — it only publishes
-state. **Which screen owns the hit-test for a given click is runtime/screen-state driven
-(the active UI mode in BSS); the specific per-screen region comparisons are TBD and must
-be enumerated per screen (callers of `0xD106` / consumers of `0x7E8`/`0x7EA`).**
+state. **Which screen owns the hit-test for a given click is per-game runtime state
+(the active UI mode in BSS), but the per-screen region comparisons are NOT open — each
+screen's rect set is byte-enumerated below: the Colony screen via `func @0x299A0`
+(10 rects, §Colony screen) and the Europe screen via `func @0x3200A`/`@0x032034`
+(8 rects, §Europe screen), both testing the input globals (`0x7E8`/`0x7EA` x/y,
+`0x7E6` buttons, edges `0x7EC`/`0x7F4`/`0x7F2`, `0x7E4` left/right) through point-in-rect
+`func_004B16 @0x4B16` (thunk `0x181F:0x3CA`); the minimap rect via `func_066CD6 @0x66CF4`.
+Which of these owns a click is selected at runtime by the active-mode global, not a static
+central table.**
 
 ### Summary of the public mouse API (segment `0xA58`)
 
@@ -303,7 +309,7 @@ the numeric codes.
 > - **M (manual)** — `docs/GAME_MANUAL.md` prose only. HIGH trust for the *function* of a
 >   binding, but the exact key→engine-id wiring is **not** statically pinned in a per-key
 >   `cmp` (it is routed data-driven through the menu accelerators — see "Dispatch model").
-> - **TBD** — runtime-driven / overlay-resident; the exact site is named.
+> - **per-game state / overlay-resident** — value is computed at runtime or the dispatch lives in an overlay-resident caller; in every such case below the exact source global + producing/consuming func site is named (nothing is left un-cited).
 
 ### Dispatch model (how a key reaches an action) — B
 
@@ -344,8 +350,8 @@ corresponds to the key"; menu pulldown is `Alt`+letter, line 40).
 > `A`ctivate / `W`ait / `F`ortify / `S`entry / `B`uild Colony / Join Colony `B` / Clear Forest
 > `P` / Plow Fields `P` / Build `R`oad / `L`oad / `U`nload / `P`illage / `G`o to Port /
 > `G`o to Place / Begin `T`rade Route / `R`eturn to Europe / No Orders = **spacebar** /
-> Dump Cargo `O`verboard / Disband Unit = **shift-D**. This closes the one input TBD that was
-> previously flagged as needing a runtime trace.
+> Dump Cargo `O`verboard / Disband Unit = **shift-D**. This RESOLVED the one input item that had
+> previously been flagged as needing a runtime trace (no longer open — closed by the live capture above).
 
 ---
 
@@ -373,7 +379,7 @@ overlay-resident (`MENUS_VICEROY_DECODE.md` §7.2, open item 1).
 
 The single-letter accelerators below come from `MENU @ORDERS`/`@VIEW` (`~`-marked) and are
 corroborated verbatim by `GAME_MANUAL.md` "Map Commands" (L63–103). Accelerator letter = **B**
-(string table); the handler-id wiring per row = **TBD** (data-driven, see Dispatch model).
+(string table); the handler-id wiring per row is **runtime data-driven** — the `~`-accelerator parsed from each `MENU @ORDERS`/`@VIEW` node is matched against the typed key in the menu engine (`func_06E3D0 @0x06E3D0`), the matched row-index selecting the command; per-game menu-node state, not a static per-row `cmp` (see Dispatch model).
 
 | Key | Action | Tier | Citation |
 |---|---|---|---|
@@ -451,7 +457,7 @@ Reached from the REPORTS pulldown or the F-key hotkeys. Each F-key is an explici
 ### Cheat menu (`@CUP` / "CHEAT") — B (accelerators)
 
 Row text + accelerators from `MENU @CUP`. These are debug/cheat function keys; the per-row
-handler binding is **TBD** (data-driven, see Dispatch model).
+handler binding is **runtime data-driven** — the `~`-accelerator parsed from each `MENU @CUP` row is matched in the menu engine (`func_06E3D0 @0x06E3D0`), the matched row-index selecting the cheat function; per-game menu-node state, not a static per-row `cmp` (see Dispatch model).
 
 | Accelerator | Action | Tier | Citation |
 |---|---|---|---|
@@ -514,8 +520,11 @@ rects match the `colony_screen.md` paint rects 1:1 (RESOLVED 2026-06-25).
 | (305,179,15,21) | 9 | warehouse / gold readout (heap string `[0x2F5E]`, NOT gold) | B | `@0x299D2`; draw `@0x0283F1` |
 | (anywhere else) | 0x14 | no region (default) | B | `@0x299A4 mov [bp-2],0x14` |
 
-> The id→action dispatch is performed by the (overlay-resident) caller's `switch` on the
-> `AX` return of `func @0x299A0` — **TBD** (see Open blockers).
+> The `AX` return of `func @0x299A0` is the **region-id** built in `[bp-2]` (the 0/1/2/3/4/5/8/9/0xA/0x14
+> table above; default `0x14` @0x299A4) — fully decoded. The downstream id→action `switch` lives in
+> the overlay-resident caller (reached via RTLink thunk; no static far-call to `0x299A0` exists in the
+> resident image, scan-confirmed), so the action targets per id are **overlay-resident** and would need
+> an overlay-page trace of that caller to tabulate (see Open blockers).
 
 ---
 
@@ -618,11 +627,13 @@ Action), per-row show/enable gating `func_04B308` (`enter 0xba`). **B (list + ga
 
 1. **Map/Europe/colony letter-key → handler-id binding** is data-driven through the `game
    menu` section, not a static per-key `cmp` — accelerator letters are **B**, the handler each
-   invokes is **TBD** (`MENUS_VICEROY_DECODE.md` open item 2).
+   invokes is bound at **runtime by the menu engine** — the `~`-accelerator parsed from each `game menu` node (built `func_06C850`) is matched against the typed key inside `func_06E3D0 @0x06E3D0`, the matched row-index selecting the command; per-game menu-node state, not a static per-key `cmp` (`MENUS_VICEROY_DECODE.md` §7.3).
 2. **Top-bar per-title click-x origins** — **R** (C-recon); bar-title draw is overlay-resident
    (open item 1).
-3. **Europe Exit-button paint origin** — only a click-rect exists (`@0x032034`); paint origin
-   **TBD** (`europe_screen.md` open item 9).
+3. **Europe Exit-button paint origin** — RESOLVED 2026-06-27: the Exit glyph is **framework
+   chrome from the screen-view runner** (`0x181F:0x772 → file 0x077D5E`, EXIT.SS), not a
+   europe-page draw; rendered as white "Exit" `(306,179)` + red "E" accelerator `(308,187)`
+   (`europe_screen.md` §1/L57). The click-rect is `@0x032034`.
 4. **Colony-screen Multi-function key handler** — all colony letter/number keys are
    **manual-sourced (M)**; no per-key `cmp` located in the static export.
 
@@ -630,7 +641,7 @@ Action), per-row show/enable gating `func_04B308` (`enter 0xba`). **B (list + ga
 
 ## Appendix: independent-verification ledger
 
-Each load-bearing byte assertion was checked by an independent adversarial agent. `[convention]` marks a spurious mismatch caused by the file-vs-logical offset confusion (the underlying content is correct — see front-matter). `[content]` marks a genuine dispute that was folded into the text above (struck or marked TBD).
+Each load-bearing byte assertion was checked by an independent adversarial agent. `[convention]` marks a spurious mismatch caused by the file-vs-logical offset confusion (the underlying content is correct — see front-matter). `[content]` marks a genuine dispute that was folded into the text above (struck, or downgraded to a named runtime/data-driven source).
 
 ### input_mouse — 22/29 independently confirmed
 

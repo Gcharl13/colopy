@@ -20,8 +20,17 @@ table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mec
 > reconciling the "text-only Activities / portraits in popup" split (now **B** mechanism).
 > (b) The portrait-id table `DG8(0x123A+i)`, the owned-FF bitmap (stride `0x13C`, base
 > `−0x77F1`), and the REF array base `0x53DA` are byte-confirmed. (c) The `DGROUP:0xE7AC`
-> FF-threshold table is **unsupported** (zero raw immediate hits) — the threshold is
-> *computed* by `func_03C282`; demoted to TBD (see §6).
+> FF-threshold table is **unsupported** (zero raw immediate hits) — there is no threshold
+> *table*; the threshold is **fully computed** by `func_03C282 @0x03C282` (160 bytes, complete
+> disasm). **Closed (B, multibranch decode):** F3 body `func_037A10` pushes the power index and
+> calls it (`push [bp+6]; lcall 0x191F:0xF66 @0x037B08`), storing the return in `[bp-0x54]`; the
+> result is the bell threshold rendered as `MM` in the "(NN in MM)" subtitle (§2). Algorithm:
+> `base = (power<4 && PowerRecord[power] flag [bx+0x543F]==0) ? (difficulty[0x53A6]+3)*2 :
+> (14 − difficulty[0x53A6])`; `t = base<<3`; then +50% (`SAR 1; ADD`) for each year-band reached in
+> `[0x538A]` ≥ **0x640/0x672/0x6A4/0x6D6 = 1600/1650/1700/1750**; `cnt = owned-FF byte [bx−0x77E4]`
+> (bx = power*0x13C); `t = (cnt+1)*t + 1`, halved if `cnt==0`; if endgame `[0x5382]&1` set,
+> overridden to `difficulty*0x5DC + 0x7D0`. The sample "129" is one runtime evaluation of this
+> formula. `0xE7AC` struck as speculative.
 
 ## 1. Purpose
 The Continental Congress Activities screen (also reachable as advisor report F3). Shows progress toward the next Founding Father, Rebel/Tory sentiment, bells/turn, the King's Expeditionary Force (REF) by unit type, and the list of acquired Founding Fathers. Surfaces as an overlay on CCBKGD.PIK. **A** (`SESSION_UI_CATALOG.md` §3).

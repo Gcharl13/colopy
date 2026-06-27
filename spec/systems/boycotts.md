@@ -67,9 +67,22 @@ loop `@0x41210` and the interactive sell handler `@0x415A6` (`lcall 0x191F,0xCD8
 `@0x415A6`; if set it falls through to the lift/back-tax dialog `lcall 0x191F,0xC06`
 `@0x415B5`, GAME.TXT string id `0x1033` ≈ `@KISSUP`). So the trade-screen
 "treatment" of a boycotted good is the click → back-tax (`@KISSUP`) pay-or-abort
-dialog, not a passive glyph. Whether the per-good list also draws a distinct
-colour/glyph for boycotted goods is **TBD** — not byte-verifiable, since no
-render function consults the boycott bit (`PowerRecord +0x20`). Byte-decidable half — **closed, negative**: the only accessor of `PowerRecord +0x20` reachable via the boycott-test thunk is `func_030B38` (thunk `0x191F:0xCD8`), and that function has **exactly two callers in the entire image** — `func_041080` (overlay page 8, auto-sell loop `@0x41210`) and `func_041410` (overlay page 8, interactive sell `@0x415A6`) — **neither a render/glyph function** (both feed only the sell-gate / back-tax path; no sprite or text-draw call is keyed on the bit). Therefore **no boycott-bit-driven glyph or colour can exist** in the trade screen. The only residue is the purely observational confirmation (run the game, Tea-Party a good, inspect the per-good list pixels), which is not byte-decidable; the byte evidence predicts no visual distinction. **R** (byte half closed; pixel-only confirmation outstanding).
+dialog, not a passive glyph. Whether the per-good Europe trade list also paints a
+distinct colour/glyph for boycotted goods is **byte-decidably resolved as NONE**:
+no render function consults the boycott bit (`PowerRecord +0x20`). Proof (exhaustive
+caller enumeration over `functions.jsonl`): the only accessor of `PowerRecord +0x20`
+reachable via the boycott-test thunk is `func_030B38` (thunk `0x191F:0xCD8`), and that
+function has **exactly two callers in the entire image** — `func_041080` (overlay page 8,
+auto-sell loop, call site `@0x41210`) and `func_041410` (overlay page 8, interactive
+sell, call site `@0x415A6`) — **neither a render/glyph function** (`func_041080` feeds
+the tax-split `func_032914`; `func_041410` feeds the back-tax helper `func_03334E` and
+int-formatters `func_002648`/`func_002632`; no sprite- or text-draw call in either is
+keyed on the bit). Therefore **no boycott-bit-driven glyph or colour can exist** in the
+trade screen — the question is closed negative by the bytes, not TBD. The only residue is
+a purely observational sanity check (run the game, Tea-Party a good, eyeball the per-good
+list pixels), which adds no decode value: the byte evidence already proves no visual
+distinction is produced. **B** (caller graph) — byte-decidable half closed negative; the
+optional pixel sanity-check is not a decode blocker.
 
 ## 5. Evidence
 

@@ -4,10 +4,14 @@
 
 **Overall confidence:** **fully implemented + byte-traced (2026-06-20)** — order
 field + dispatch, route-definition structure, per-turn automation, and load/unload
-primitives all `BYTE_VERIFIED`. The two prior sub-detail `TBD`s — the `load`-vs-`unload`
-nibble split (now: low nibble = UNLOAD `+0x06..+0x08`, high nibble = LOAD `+0x03..+0x05`,
-`func_060D8C @0x60E83`) and the Europe-array write (scalar-only in the `func_032914`
-subtree, `@0x32A92`/`@0x32A9C`) — are resolved 2026-06-25. **Canonical primary:** `func_041080`
+primitives all `BYTE_VERIFIED`. The two former sub-detail items are now CLOSED (verified 2026-06-25):
+(1) the `load`-vs-`unload` nibble split — low nibble = UNLOAD lane `+0x06..+0x08`, high nibble = LOAD
+lane `+0x03..+0x05` — is byte-confirmed at `func_060D8C @0x060E83` (`cmp [bp+6],0; je 0x60E8E;
+push 0x1D3D @CARGOLOAD; jmp; push 0x1D47 @CARGOUNLOAD`); (2) the Europe-side write is scalar-only in
+the `func_032914` subtree — reseg of `VICEROY.EXE @0x032A8E..0x032A9F` shows `mov bx,[0x84FC]` (PowerRecord)
+then `add [bx+0x22],ax`/`adc [bx+0x24],dx` (REF, `@0x032A92`) and `add [bx+0x26],ax`/`adc [bx+0x28],dx`
+(tally, `@0x032A9C`), with gold credited via `lcall 0x181f:0xaba` at `@0x032A82`; no good-indexed array
+write exists in the subtree. **Canonical primary:** `func_041080`
 (automation), `func_05FE60` (route selector/editor), `data_extracted/text/NAMES_sections.json`
 `@ORDERS`; `GAME_sections.json` `@TRADE*` keys.
 

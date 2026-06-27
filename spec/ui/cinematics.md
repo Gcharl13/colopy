@@ -332,7 +332,9 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   (load @0x0754F2, `[0x1F9E]/[0x1FA0]` @0x075511, metric overrides @0x075526/0x07552C, @-menu
   @0x075540) + sprite-name builder `func_06BE92` @0x06BE92; spot-checks PASS. **B**.
 - `docs/CINEMATIC_TIMING_AUDIT.md` §1–§5 — OPENING/CLOSING per-frame loops, master clock, AMERICA.MOV
-  decode, KING2 negative, residual TBDs. **B/A**.
+  decode (1-bpp coastline bitmap + waypoint list: `count=8`, deltas `3,9,3,3,2,2,2,3,2` at the blob tail,
+  per `AMERICA_MOV.json`), KING2 negative. **B/A**. (Sole residual = the AMERICA.MOV leading 4-byte
+  header `0c 00 00 0e`, §11.6, and the engine-resident text RGB, §11.6.)
 - `code/VICEROY/disasm/{func_075352,func_03A9C0,func_039EE2,func_03DA2A}_unknown.asm` — painter
   disasm files (all present in tree). **B**.
 - `data_extracted/text/GAME_sections.json` — `@KINGLOSE`, `@KINGWIN`, `@EXPLOITS`, `@SCORE`,
@@ -363,7 +365,7 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
    @`0xA00`: `lcall 0xfd:0x198` ×5 → 7-word actor record `rep movsw cx=7` @`0xA7E`, stride 14 @`0x4b96`
    = col1 sheet-index `+0`, col2 activation tick `+2`, col5 position `+8`); the EXE supplies the
    centering + schedule math, which is B. (Only the runtime sprite-bbox Y and PATH.DAT waypoints remain external/asset-derived.)
-   **Both former code-side TBDs are now decoded (B):** the CLOSING frame interval `[0x54]` is a
+   **Both former code-side items are now decoded (B):** the CLOSING frame interval `[0x54]` is a
    **BSS-default-0** word with no immediate initializer — its only writers are `inc [0x54]` @`0xE2A`
    (`+`/0x2B key) and `dec [0x54]` @`0xE30` (`-`/0x2D key); the stepper `func_000C0C` reads it
    (`mov ax,[0x54]` @`0xC11`) and advances the schedule only when `(clock − lasttick) ≥ [0x54]`

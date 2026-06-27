@@ -47,9 +47,14 @@ above `@UNFORESTED`, `raw/COLONIZE/NAMES.TXT`): each row is
 `Name, Movement, Defensive, Improvement, Value, <9 yields>` where the 9 yields are
 **Farmer→Food, Planter(s)→Sugar, Planter(t)→Tobacco, Planter(c)→Cotton,
 Trapper→Furs, Lumberjack→Lumber, Ore-Miner→Ore, Silver-Miner→Silver,
-Fisherman→Fish/Food**. (This resolves the prior "columns TBD".) The DGROUP terrain
-table is `terrain·16`-strided; the 9 yields are read as `[terrain·16 + 0x2F7B + good]`
-(`compute_terrain_yield`), and the **Defensive** value feeds land combat
+Fisherman→Fish/Food**. (Column legend byte-verified from the NAMES.TXT header at
+`raw/COLONIZE/NAMES.TXT:17-20`: "a) Name; b) Movement, Defensive, Improvement, Value;
+c) Yield (Farmer, Planter(s), Planter(t), Planter(c), Trapper, Lumberjack, Ore Miner,
+Silver Miner, Fisherman)" — the 14-column CSV rows in `@UNFORESTED` match exactly.) The
+DGROUP terrain table is `terrain·16`-strided; the 9 yields are read as
+`[terrain·16 + 0x2F7B + good]` (`compute_terrain_yield` = `func_009B9C @0x9C15`:
+`SHL si,4` = terrain·16, `bx` = good index, `MOV al,[bx+si+0x2f7b]`), and the
+**Defensive** value feeds land combat
 (`func_007D3E`, see `combat.md`). **B** (legend) — the in-memory column order matches
 the CSV order.
 

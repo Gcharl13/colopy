@@ -79,15 +79,23 @@ turn driver (`func_02D658`), the Europe/recruit overlay (`func_04E2D6`,
 the record interior (`+0x33`-tail bytes through `+0x48`, and `+0x60..0x13B` outside
 the byte-cited `vol_accum` window) is touched only by the js-dos-schema market arrays
 in `docs/DATA_MODEL.md` (`market_pool`/`market_traded_volume`/`market_eu_supply`/
-`market_base_values`, RECONSTRUCTED, not byte-cited here) and is left **TBD** rather
-than asserted. **Narrowed 2026-06-27:** a full reseg of the **market-recompute**
-`func_0305A8` (page_04, 1424 bytes / 524 insns) shows it reads/writes **only** PowerRecord
-`+0x4c` (price_level[16], 12 sites) and `+0x5c` (vol_accum[16], 9 sites) plus the globals
-`[0x53ea]`/`[0x543f]` — it **never** touches the `+0x33..+0x48` or `+0x60..0x13B` interior. So
-those ranges are **not** part of the price-recompute path; they remain RECONSTRUCTED (js-dos
-schema) with no byte-cited read/write site — closing them needs a per-site base-register
-provenance trace across the trade-execution overlays (where `bx=[0x84fc]` vs `bx=[0x8542]` is
-ambiguous in the same pages) or a live PowerRecord diff against a known trade.
+`market_base_values`, RECONSTRUCTED). **Mostly RESOLVED 2026-06-27 by base-register
+provenance trace** — the bulk of the `+0x60..0x13B` interior is now byte-cited as **three
+parallel per-good s32[16] European-market accumulator arrays** based on the *active-power*
+pointer `bx=[0x84fc]`, indexed `bx += good·4`: **`+0x7c`** (`+0x7c..+0xBB`), **`+0xbc`**
+(`+0xbc..+0xFB`), **`+0xfc`** (`+0xfc..+0x13B`, exactly filling to the `0x13C` stride end).
+All three are **zeroed at game-init** in one 16-good loop (`func@0x366E7`: `bx=[0x84fc]; bx+=good·4;
+mov [bx+0x7c]/[bx+0x7e]/[bx+0xbc]/[bx+0xbe]/[bx+0xfc]/[bx+0xfe],0`), **decremented on a BUY**
+(`func_0322D0` via thunk `191F:0C14`: `bx=[0x84fc]+good·4; sub [bx+0xbc],ax; sbb [bx+0xbe],dx;
+sub [bx+0xfc],ax; sbb [bx+0xfe],dx` `@0x32318..0x32328`, plus `sub [bx+si+0x7c],ax` `@0x32340`),
+**incremented on a SELL** (`func_03234A` via thunk `191F:0A2E`: `add [bx+0xbc]/[bx+0xfc]…`
+`@0x323B0..0x323C0` — called by the per-turn auto-export at `func_02D658 @0x2D774`), and
+**read by the economic report** (`func_034318 @0x343C1`: `push [bx+di+0xbc]` over 16 goods,
+`bx=[0x84fc]`, `di=good·4`). So the price-recompute `func_0305A8` (which touches only `+0x4c`
+price_level and `+0x5c` vol_accum) is a *separate* path; the `+0x7c/+0xbc/+0xfc` trade-stat
+arrays are written by the buy/sell handlers instead. **The only PowerRecord interior still
+with no byte-cited site = `+0x33..+0x48`** (RECONSTRUCTED, js-dos schema); a live diff is still
+the path for that narrow window.
 
 Production inputs are primary game data:
 - **`@BUILDING`** (buildings + production modifiers), **`@JOB`** (professions),
@@ -410,14 +418,23 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   (loop `@0x74D01..0x74D4C`, `bx=idx·3<<2`): `+0x00` word cost (`@0x74D12`), then five `lcall 0x1a1f:0x88a`
   byte/word reads → `+0x0A` word (`[si-0x7074]`), `+0x07` (`[si-0x7077]`), `+0x05` (`[si-0x7079]`),
   `+0x08` (`[si-0x7076]`), `+0x09` (`[si-0x7075]`); the chain-link byte `+0x04` (`0x8F86`) is populated
-  separately. **Verified consumers of the walk = production only**, not the build menu: `func_008E84`
-  (`@0x8EA3`, the ×2/3 factory throttle) and `func_009FFC` (`@0xA19B`, the factory-tier yield ×1.5/×2).
-  **Still TBD (overlay/UI):** the build-menu *constructability* function that would call
-  `func_0086E4`/`func_008686` to require a predecessor (Stockade→Fort etc.). The only near callers of the
-  walkers are the production path (`func_0086E4` ← `func_009FFC @0xA0D1`, factory-tier yield); `func_0086C0`
-  and `func_008686` have **no near caller** in the resident image or any of the 31 reseg pages, so the
-  build-menu predecessor check is reached via a far thunk from an untraced colony-UI overlay; not pinned
-  this pass.
+  separately.   **Production consumers of the walk:** `func_008E84` (`@0x8EA3`, the ×2/3 factory throttle) and
+  `func_009FFC` (`@0xA19B`, the factory-tier yield ×1.5/×2).
+  **Build-menu / construction consumer — PINNED 2026-06-27 (overlay/UI).** The walkers are reached from
+  the colony-screen UI via **far thunks** (the prior pass only checked *near* callers, hence the false
+  "no caller"). The thunk map: `func_0086C0`=`181F:0BA0`, `func_008686`=`181F:0B14`, `func_00863E`
+  (bit-test)=`181F:09FC` (`thunk_resolve.json`). The **build-menu constructability gate** is inside the
+  monolithic colony-screen handler **`func_053B7E`** (page_0E, 10025 bytes) — it walks a 6-entry
+  build-category list (`al=byte[bx+0x864]`, bx=slot·4, slots 5..0) and for each calls the predecessor
+  walker **`func_0086C0` `@0x055ED1`** (`lcall 0x181f,0xba0`) plus the building-bit test **`func_00863E`
+  `@0x055DE9`/`@0x055EF7`** (`lcall 0x181f,0x9fc`, e.g. `push 8`), gating on `@BUILDING` requirement
+  fields (`[bx-0x6bf0]`/`[bx-0x6d68]`/`[bx-0x6bec]`/`[bx-0x6da3]`/`[bx-0x6bdc]`) and the colony pop
+  `[0x8542]+0x1f` — emitting the "can't build" reason codes (`push 0x0f/0x10/0x11/0x08/0x0b` →
+  `jmp 0x269e`) and on success writing the build target `[0x8542]+0x94` (`@0x055F62`). The **colony-scoped**
+  count walker `func_008686` is also reached far, via `func_02EB1C @0x2EB37` (`lcall 0x181f,0xb14`,
+  page_03), which precomputes a per-colony chain-count into `[idx·0xCA+0x5e04]`. So the build-menu
+  predecessor check **is** byte-pinned (`func_053B7E @0x055ED1`); the "untraced colony-UI overlay" is
+  page_0E.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE

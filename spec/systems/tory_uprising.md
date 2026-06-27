@@ -40,8 +40,9 @@ e.g. 66/617 = 10.7% Sons of Liberty, RUNTIME-VERIFIED per `docs/DATA_MODEL.md`.
 The Tory share is the complement.
 
 **Uprising trigger — RESOLVED 2026-06-27 (`func_03CAC6 @0x3CAC6`, `ENTER 0x18`).** There is **no
-standalone SoL-percent threshold** ("if SoL < X → uprising") — that earlier TBD is **answered
-negative**. Instead: (1) a **per-call probability gate** `random_int(0, diff+1)` (`@0x3CAD0`,
+standalone SoL-percent threshold** ("if SoL < X → uprising"): the byte-trace of `func_03CAC6`
+finds **no** such fire/no-fire cutoff (no `cmp SoL,imm` gate exists on the trigger path; the only
+gate is the probability roll at `@0x3CAD0`/`@0x3CAE5`) — **resolved negative**. Instead: (1) a **per-call probability gate** `random_int(0, diff+1)` (`@0x3CAD0`,
 `diff=[0x53A6]`); if the roll is `0` the function returns (so it fires with prob `(diff+1)/(diff+2)`
 — more likely on harder levels). (2) It then scans the rebel power's colonies (`[0x539E]` count) and
 picks the one with **maximum Tory strength**, where **`tory_strength = pop[+0x1F]·(100−SoL%)·2/100 +

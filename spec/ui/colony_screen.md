@@ -9,10 +9,14 @@
 byte-transcribed** from the colony composer `func_028592 @0x028592` (tier **B** — the 12 ordered
 calls and each sub-renderer's background-fill rect were re-read PUSH-for-PUSH); the active-colony
 pointer, building-slot table, stockpile bar, and flag/minimap/SoL panel rects are
-**raw-EXE-verified** (**B**). The remaining soft spots — the **title paint origin**, the
-**colonist-row per-unit pitch**, the **work-grid vs 6-slot surrounding scene** discrepancy, and the
-**SoL/cargo/msg panel's mode text source** — are honestly **R/TBD**, each called out in §6 with the
-exact reason. · **Canonical primary:** `viceroy_source/docs/drawlist/EUROPE_COLONY.md` PART 2
+**raw-EXE-verified** (**B**). The **colonist-row per-unit pitch** (adaptive fit-to-96px pack,
+`func_0270D0 @0x02710A..0x027173`, §8.2) and the **SoL/cargo/msg panel's mode text source** (3-way
+`[0x337]` dispatch → `func_0275CE`/`func_027746`/`func_027BB6`, all byte-decoded, §8.3) are now
+**B-resolved**. The one remaining genuinely-runtime soft spot is the **title paint origin** — `func_00275C`
+byte-reads x=`[0x2CC6]`/y=`[0x2CC8]` and the context init seeds no literal, so it needs a runtime trace
+(§8.1); the **work-grid vs 6-slot surrounding scene** discrepancy is reconciled to the byte-cited scene
+loop in §6 item 6 (the 3×3 grid was low-trust C-recon, superseded). · **Canonical primary:**
+`viceroy_source/docs/drawlist/EUROPE_COLONY.md` PART 2
 (composer + sub-renderers), `viceroy_source/docs/SCREEN_LAYOUTS.md` §3, `docs/COLONY_RENDER_CHAIN.md`
 (entry chain + data globals), `raw/COLONIZE/VICEROY.EXE`.
 
@@ -58,13 +62,14 @@ element was verified*. Do not regress past the mistakes listed at the end. Every
 - **Empirical (B vs the *image*, not a proven formula):** for each **occupied** plot the lab draws
   **BUILDING bundle frame = def_id** (special case **def_id 0 → frame 16**), which is **MSE-0** vs the
   live capture. This reproduces the pixels but is **NOT** the EXE's general frame formula.
-- **Still R/TBD (do not over-claim):** the EXE selects the building frame through `func_026CC2`'s
-  **multi-branch** logic (default `def_id + 1` in *EXE-sheet* space, special cases id `0x11/0x13/0x14`);
-  it does not reduce to one table (§3.7 item 5). The lab's "frame = def_id" works because the bundle
-  `.SS` decoder is the **same off-by-one** as the stockpile (bundle`[def_id]` = EXE`[def_id+1]`); the
-  def_id-0→16 case is one of `func_026CC2`'s special branches. The **general** mapping needs a runtime
-  trace of the AX frame at the `0x181F:0x254` blit — until then, treat the per-plot frames below as
-  *matched-to-this-capture*, not a universal rule.
+- **RESOLVED 2026-06-27 (reseg, was R/TBD):** the building-frame selector is **`func_026DD4 @0x026DD4`**
+  (NOT `func_026CC2` — that path computes the production/garrison strip). The frame is `[bp-0x58]`,
+  set to **`def_id + 1`** in EXE-sheet space `@0x026DE5..0x026DE9`, with byte-read special cases:
+  `def_id==0` & build-query0==0 ⇒ `0x11` (`@0x026DEC`); `def_id==0xF`/`0x11` garrison ⇒ `0x2F`/`0x30`
+  (`@0x026E05`). The building blit is `0x181F:0x254 @0x026E4E`. The lab's "frame = def_id" works because
+  the bundle `.SS` decoder is the **same off-by-one** as the stockpile (bundle`[def_id]` = EXE`[def_id+1]`),
+  and def_id-0→16 is the `def_id==0` special branch. So `def_id+1` (EXE) IS the static rule — **no runtime
+  AX trace is needed** (live-verified against the Jamestown capture, plots 2/12/13). See §3.7 item 5 / §8.5.
 
 | Plot | x,y(+8) | def_id (RAM) | cat | Frame drawn | NAMES `@BUILDING` |
 |------|---------|--------------|-----|-------------|-------------------|
@@ -86,8 +91,9 @@ element was verified*. Do not regress past the mistakes listed at the end. Every
 
 All 15 plots' **def_ids and positions** match the RAM dump; the **drawn frames** match the live
 capture pixel-for-pixel (MSE-0). The prior "type+1" framing in §4/§5/§8.5 is superseded (the EXE
-default is `def_id+1` in EXE-sheet space, not `category+1`), but the **general** frame formula stays
-R/TBD per §3.7 item 5 — see §8.5.
+default is `def_id+1` in EXE-sheet space, not `category+1`); the **general** frame formula is now
+**RESOLVED (B)** — `func_026DD4 @0x026E4E` blits `0x181F:0x254` with frame `[bp-0x58]=def_id+1`
+(special cases at `@0x026DEC`/`@0x026E05`), a static rule needing no runtime trace (§3.7 item 5, §8.5).
 
 ### 0.3 Stockpile bar (bottom strip)
 16 cells, icon row **y=181**, good order **Food, Sugar, Tobacco, Cotton, Furs, Lumber, Ore, Silver,
@@ -109,7 +115,7 @@ indicator. The **count 3** is what this capture shows; the building-strip count 
 production state** rendered by `func_026DD4`'s strip blit `0x181F:0x236 @0x026EF7` (count carried in
 `dx=[bp-4]` from the building-production query `0x181F:0xACE`/`0xBAA`). The *value* (3) is computed by
 the colony economy sim in overlay `0x191F` (not yet extracted); the **render path is byte-cited (B)**,
-the **count-derivation formula remains TBD** (needs the overlay-`0x191F` extraction).
+the **count-derivation formula is RESOLVED 2026-06-27** — it is **NOT** in overlay `0x191F`: the field-production counts `[0xA891]`/`[0xA893]`/`[0xA894]` are written by the **resident** `func_00A222 @0x00A222` (`compute_colony_center_yields`, called from the turn-update path `func_038F2C @0x0390B4` / `func_053B7E`). It reads the colony-center terrain band via `lcall 0x3e4:0x3a @0x00A23C` → base food `[0xA891]`=0/1/2/3 (`@0x00A24C..0x00A290`), then adds difficulty `[0x53A6]` (`@0x00A29C`/`@0x00A2A8`), resource/river flags (`lcall 0x37f:0x142`/`0x4b0`/`0x10e`), and ColonyRecord `+0x1c` bit-flags (`@0x00A32F`/`@0x00A339`); the row-2 good `[0xA893]`+count `[0xA894]` are picked by the `@0x00A34D..0x00A3D1` loop. **B (writer-traced + snapshot-confirmed `[0xA891]=4`).** The per-turn building-strip *hammer* count (`dx=[bp-4]` at the `0x181F:0x236 @0x026EF7` strip blit) is separately a runtime building-production value returned by the near helper `0x2ca46 @0x026EB3` over the overlay build-queries `0x181F:0xACE`/`0xBAA` — genuine per-turn state, render path byte-cited.
 
 ### 0.5 Text + band/SoL overlays (matched to the capture; underlying counts runtime-derived)
 - Title `"Jamestown.  Spring, 1505.  Gold: 1000"` (green FONTTINY, x90 y1). Name/gold RAM-verified;
@@ -130,7 +136,12 @@ the **count-derivation formula remains TBD** (needs the overlay-`0x191F` extract
   state read from `[0xA891]`/`[0xA894]`**, rendered by `func_0264A8` via the `0x181F:0x236` proportional
   strip — per-game economy state, not a static constant. The *formula* that fills `[0xA891]` lives in
   overlay `0x191F` (not yet extracted); the **render source + globals are byte-cited (B)**, the
-  fill-formula is the only remaining TBD.
+  fill-formula is RESOLVED (2026-06-27): the values `[0xA891]`/`[0xA893]`/`[0xA894]` are written by the
+  **resident** `func_00A222 @0x00A222` (`compute_colony_center_yields`), **not** by an un-extracted
+  overlay-`0x191F` routine. It derives the center-tile food band (`[0xA891]`=0..3, `@0x00A24C..0x00A290`)
+  from the colony-cell terrain (`lcall 0x3e4:0x3a`), then adds difficulty `[0x53A6]`, resource/river
+  flags, and ColonyRecord `+0x1c` bits; row-2 good/count come from the `@0x00A34D..0x00A3D1` loop. Called
+  each turn from `func_038F2C @0x0390B4` / `func_053B7E`. **B (writer-traced + snapshot-confirmed).**
 
 ### 0.6 DO NOT REGRESS (burned before — keep these fixed)
 1. Stockpile starts with **Food**, not Sugar. Lab icon = ssdec **0x16**+good (not 0x17). 
@@ -139,9 +150,12 @@ the **count-derivation formula remains TBD** (needs the overlay-`0x191F` extract
 3. The carpenter shortage good is **Hammers (ICONS 54)**, not Tools (ICONS 36).
 4. SoL reads **"(1)"** (digit), not "(I)".
 5. `TERRAIN.SS` is the **base ground sheet** (loaded at boot + map-enter), **not** an orphan.
-6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`), the
-   minimap window/scale + work-tile markers (`func_026374`/`func_027DB2`) and the SoL/production
-   *count formulas* are still TBD. This baseline is recognizable + RAM-cross-checked, not finished.
+6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`), and the
+   minimap window/scale + work-tile markers (`func_026374`/`func_027DB2`) still need a runtime origin
+   trace. The **field-production count formula is now resolved** (resident `func_00A222 @0x00A222`,
+   writer of `[0xA891]`/`[0xA893]`/`[0xA894]`, §0.5/§3.2). The **SoL% formula remains R/TBD** (lives in
+   the un-decoded colony-economy overlay 0x191F; §8 item 4). This baseline is recognizable +
+   RAM-cross-checked, not finished.
 
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with

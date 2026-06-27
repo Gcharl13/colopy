@@ -121,8 +121,7 @@ A full-binary scan finds **exactly two** code references to `0x54de`: the writer
 (`mov bx/si/di,0x54de`, `lea [..],0x54de`). Therefore the on-map orders **menu** does NOT
 select a row by scanning a pressed key against `0x54de[]`; accelerator matching happens
 **inside the section/dialog engine `func_06F8FA`** from the `@ORDERS` text itself. `0x54de`
-serves only the on-map status glyph (§2.3). The exact in-engine key-match site is **TBD**
-(inside `func_06F8FA`; not byte-located here). Do not fabricate a `0x54de` key-scan loop.
+serves only the on-map status glyph (§2.3). **Resolved 2026-06-27 (byte_decode):** the `0x54de` array is never key-scanned, and `func_06F8FA` is **not** a key-match site — it is the NAMES/TXT **section-text accessor** (open/read-row), proven by its three thunk entries open=`0x06F8FA` (191F:0928), read-row=`0x06F9E6` (191F:091C), `0x06FA3E` (191F:0FC4), whose body (`func_06F8FA @0x06F8FA`) only opens a section by string-id (`[bp+8]`), reads via file thunks `0xd1d:0x7a4`/`0xd1d:0xd64`, and stores the buffer handle to `[0x2014]` — it issues no `getch` and touches no order-code state. A whole-EXE operand scan confirms `0x54de` (`de 54`) appears **exactly twice** in `raw/COLONIZE/VICEROY.EXE`: file `0x391f` preceded by `8a 87` = `MOV al,[bx+0x54de]` (renderer reader @0x0391D, §2.3) and file `0x74f98` preceded by `88 87` = `MOV [bx+0x54de],al` (builder writer @0x074F96, §2.2); **zero** register-constant loads (`BB/BE/BF de 54`). On-map orders are therefore **direct single-key map commands** (each command's keypress calls its order-init writer in §2.1, not a popup-menu accelerator scan against `0x54de[]`). The earlier "matching happens inside func_06F8FA" guess is withdrawn as unverified. Do not fabricate a `0x54de` key-scan loop.
 
 > Note the two states "Fortify" (in progress) vs "Fortified" (active) — distinct rows, matching the manual's "not gain the effects until the following turn."
 

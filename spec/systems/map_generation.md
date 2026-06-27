@@ -109,8 +109,8 @@ sweeps each dispatch a 6-entry inline jump table (cs-base file `0x64150`) to loc
   also apply a moisture `−2`).
 These match `viceroy_source/src/mapgen/climate.c` exactly.
 
-> **Self-correction (2026-06-20, supersedes the earlier "P2 = TBD" note).** The
-> values were briefly downgraded to TBD after a search found the literal byte
+> **Self-correction (2026-06-20, supersedes the earlier "P2 unresolved" note).** The
+> values were briefly second-guessed (marked unresolved) after a search found the literal byte
 > sequence `05 04 01 03 02 02` absent from the EXE. That was a false negative: the
 > values are not stored as a data array — they are **inline switch cases** reached
 > through the jump tables above. Decoded at the correct table location/cs-base, the
@@ -145,7 +145,7 @@ DGROUP base `0x1D9A0` → imm `0x2345`) and runs the menu via the **run-named-me
 primitive `lcall 0x181f:0x3fe`** (`@0x75C64`; bx = key addr, returns the **1-based
 selected row in `ax`**, 0 = cancel). The selection is stored in the stack local
 **`[bp-0xe0]`** (`@0x75C69`); the persistent cursor *global* for this primitive is
-`TBD` (not the `[0xa60a]` used by the customize builder — see §6).
+the menu-state structure based at **`DGROUP:0x87C`** — the run-named-menu primitive `0x181f:0x3fe` resolves (`thunk_resolve.json` `181F:03FE`) to wrapper `func_06F594`, which does `mov ax,bx` (ax=key addr) then **`lea bx,[0x87c]`** (`@0x6F596`, bytes `8d 1e 7c 08`) before `call 0x6f7ef` into the menu core, i.e. it hands the core the persistent menu/cursor state block at `[0x87c]`. This is distinct from the `[0xa60a]` cursor the customize builder keeps for itself (see §6). **B** (`func_06F594 @0x6F596` byte-verified).
 
 **Row dispatch** (dec-chain `@0x75C6D..0x75C83`): sel 0 → `0x4afd` (cancel); sel
 **1/2/3** → `0x47f6` (shared world-build setup loop); sel **4** (*LOAD Game*) →

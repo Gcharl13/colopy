@@ -24,7 +24,7 @@ absolute offsets per `spec/systems/unit.md`).
 
 ## 2. `func_04E2D6` — per-unit order/mission pipeline (B)
 
-Decision pipeline (each step byte-cited; runtime-table inputs marked TBD):
+Decision pipeline (every step below is byte-cited to a `func_XXXX @0xNNNN`). The only non-static inputs are the DGROUP-resident compass delta tables `[bx+0xb4]`/`[bx+0xbe]` read in step 5 (runtime-initialised; see §8.1) and the per-candidate RNG jitter (§8.7) — both source-cited and explicitly runtime, not blocking the pipeline trace:
 
 1. **Entry gate** `@0x04E2FE` — read owner nibble `0x3147&0xf`; continue **only if** order
    `0x314C` ∈ {0, 5, 6} or ≥ 0x0A, else `jmp` common exit `0x051C68`. *(There is **no** jump
@@ -234,7 +234,7 @@ sites `@0x006CEE`/`@0x0074A9`/`@0x006826` (`cx=t; shl;add;shl;add;shl` = `t·14`
 | `+0x01` (`0x5235`) | def | **defense** | combat |
 | `+0x02` (`0x5236`) | atk | **attack** / sea-passability test (`cmp ==1`) | `@0x0074A9`, AI `'V'` gate |
 | `+0x03` (`0x5237`) | (col5) | **work/build cost** (`'C'` done at counter ≥ 10−cost) | `@0x006826`, AI `@0x04F389` |
-| `+0x04`..`+0x08` | (cols 6–10) | ship/cargo block (`99` sentinel for ships in col6 `+0x04`; cargo/bombard in `+0x05..+0x08`) | ship handlers (exact split TBD) |
+| `+0x04`..`+0x08` | (cols 6–10) | ship/cargo block, split pinned (§8.2): `+0x04`(`0x5238`)=`99` naval sentinel (`CMP [bx+0x5238],0x63` @0x03FCC9); `+0x05`(`0x5239`)/`+0x06`(`0x523a`)=ship cargo/size math (`+0x05` clamped ≥1 then `IDIV cx` @0x051536; `+0x06` @0x00B6E3); `+0x07`(`0x523b`)/`+0x08`(`0x523c`)=the two combat-roll strength terms summed into `rand(1,sum)` (`MOV al,[bx+0x523b]` @0x05B823, `MOV cl,[bx+0x523c]` @0x05B83B, `ADD ax,cx` @0x05B844, `LCALL 0x181F:0x4D4` @0x05B849) | combat roll @0x05B819-0x05B849; cargo idiv @0x051536; sentinel @0x03FCC9 |
 | `+0x09` (`0x523d`) | capbits (binary) | **terrain-feature capability bitfield** (`@UNIT` last column verbatim: Colonist `0x40`, Soldier `0x1c`, Caravel `0xA2`) | AI build states `B`/`e` (`test &0x40/&0x20/&1/&4`), `@0x04E01D`/`@0x051196` |
 
 So a port can drive the AI's combat/move/build decisions straight from the `@UNIT` table (×3 the move

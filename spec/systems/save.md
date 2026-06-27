@@ -29,7 +29,7 @@ slots plus two autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from ma
     alarm[4]. **B** (cross-confirmed strides/fields).
   - **NATION / PowerRecord**: tax_rate, recruit slots, founding_fathers bitfield,
     liberty-bell accumulators, boycott bitmap, royal_money, gold, crosses,
-    market arrays. Several offsets **B**; the formerly **NEW/TBD** PowerRecord fields are now byte-verified in `docs/DATA_MODEL.md` — `crosses_per_turn` @`+0x10`, `artillery_bought_count` @`+0x1e` (read×100 `IMUL ax,[bx+0x1e],0x64` @0x035124/0x03527B, `INC [bx+0x1e]` @0x035282, zeroed `MOV [bx+0x1e],0` @0x03662F — byte-confirmed), `royal_money` (s32) @`+0x22`, gold @`+0x2A`, market arrays @`+0x4C`/`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC`. **B.**
+    market arrays. Several offsets **B**; the PowerRecord fields below are byte-verified in `docs/DATA_MODEL.md` — `crosses_per_turn` @`+0x10`, `artillery_bought_count` @`+0x1e` (read×100 `IMUL ax,[bx+0x1e],0x64` @0x035124/0x03527B, `INC [bx+0x1e]` @0x035282, zeroed `MOV [bx+0x1e],0` @0x03662F — byte-confirmed), `royal_money` (s32) @`+0x22`, gold @`+0x2A`, market arrays @`+0x4C`/`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC`. **B.**
   - **ColonyRecord**: stride `0xCA` (BYTE_VERIFIED, `docs/DATA_MODEL.md`); building
     bitmask `+0x60..+0x65`. **B**
 - The **on-disk field order, header, and compression** are **RESOLVED (2026-06-20, §3)**:
@@ -148,9 +148,16 @@ interpreter**), enumerates `COLONY*.SAV` slots, and appends one list item per sl
 linked-list rows and hit-tests the mouse; teardown frees the window (`0x191F:0x1a8` →
 `func_0789FA`). The `@SAVEGAME`/`@LOADGAME` templates specify essentially only the prompt +
 width; **x / y / row line-height are omitted, so the window is auto-centered and per-row Y is
-computed at render time inside `func_06E3D0` — these absolute pixel positions are therefore
-runtime-derived (TBD), not byte-immediates.** (The exact template keyword offsets in
-`func_06F0F4` are pending re-verification — an automated proposal over-specified two of them.)
+computed at render time inside `func_06E3D0`.** RESOLVED-AS-STATE: the absolute pixel positions are
+genuine runtime values, not static byte-immediates — `func_06E3D0` (modal pump, file `0x6E3D0..0x6E4CD`)
+operates on the window struct passed by far ptr `[bp+6]`, reading the window origin live from
+`es:[bx+0x80]` (x) / `es:[bx+0x82]` (y) (`PUSH es:[bx+0x82]; PUSH es:[bx+0x80]; CALL 0x6cd66`
+@0x6E45F..0x6E469) and adding the per-row content delta `es:[bx+0x46]` to form the row Y
+(`ADD ax, es:[bx+0x46]; MOV [bp-8], ax` @0x6E472..0x6E476), then driving the row draw/hit-test
+calls (0x6BE92/0x6BF12/0x6BF3C/0x6BF66) off that struct. So the layout source is fully documented:
+the window-geometry fields in the run-time window object built by `func_06F0F4` (template interpreter)
+are the inputs; `func_06E3D0` derives x/y/row-height from them at render time. A static x/y/line-height
+triple does not exist in the EXE to extract. **B** (renderer + geometry-field reads byte-cited).
 
 ## 5. Evidence
 - `docs/SAVE_FORMAT_CROSSREF.md` — DGROUP↔SAV record cross-reference; reorder caveat. **B/R**

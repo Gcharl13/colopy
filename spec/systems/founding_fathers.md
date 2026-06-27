@@ -32,7 +32,7 @@ The 25-entry in-memory FF table is at `DGROUP:0x9652`, stride 6 (populated at st
 Per-father concrete **effect bindings** (what each father changes in-engine): **RESOLVED — 25/25
 BYTE_VERIFIED** (see §3 "Complete per-father effect audit"). Effects are hardcoded in EXE logic (9
 immediate via `func_03BC42`, 16 continuous via the `func_00BC10` has-father gate), not in `NAMES.TXT`.
-*(This line previously read "still TBD" — stale; the audit completed 2026-06-20.)*
+*(Audit complete 2026-06-20: all 25/25 per-father effects are BYTE_VERIFIED in §3's "Complete per-father effect audit" — 9 immediate via `func_03BC42`, 16 continuous via the `func_00BC10` has-father gate. This note records the closure; nothing here remains open.)*
 
 ## 3. Formulas & rules
 
@@ -172,7 +172,7 @@ al=[bx+0x1A]; push ax; lcall 0x981:0` (owner = ColonyRecord `+0x1A`; unit-owner 
 `+0x3147 & 0xF` for Drake). **Lesson:** scan *both* call forms for `func_00BC10`.
 
 ## 4. UI
-F7 Continental Congress report (manual menu map). Father portraits via `FATHER*.SS` plates (asset attribution TBD). See `docs/ADVISOR_REPORTS_AUDIT.md`.
+F3 Continental Congress report (REPORTS menu / letter 'B'; the manual's "F7" menu-map label is superseded by the byte-verified live order F3 = Continental Congress, `docs/ADVISOR_REPORTS_AUDIT.md`). Father portraits are the **`CC-00.SS`..`CC-24.SS`** plates (25 files on disk, indices 1:1 with NAMES `@FATHERS` order — NOT `FATHER*.SS`, which does not exist). `congress_portraits_draw` (`func_03BAA6`/`func_03BB4A`) reads portrait id `DG8(0x123A+i)` (the `0x123A` immediate is unique in the image @ file 0x3BABA), builds the `"CC-NN"` path from the `CC-` string literal @ file 0x1EBD4, and blits each owned portrait at the sprite's own baked `frames[0].x/.y` (`es:[bx+0x46/0x48]`). Full mechanism in `spec/ui/continental_congress.md` §2/§3. See `docs/ADVISOR_REPORTS_AUDIT.md`.
 
 ## 5. Evidence
 - `func_03C282` (file `0x03C282..0x03C322`, 160 B) — `ff_bell_cost_curve`; the §3 formula is read directly from the disassembly. **B**

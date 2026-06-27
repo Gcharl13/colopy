@@ -76,8 +76,23 @@ the substitution slots are registered immediately before the emit via `func_06C2
 -name `%STRING0` is registered at `func_02C5D4 @0x2C7A7` (`push ds; push [0x8542]+2;
 push 0; lcall 0x181f,0x416`) just before `push 5; push 0xd47; lcall 0x181f,0x652`
 (`@0x2C7B1`). Dismissed with `{ESC}` (referenced in-prose, GAME_sections.json:475). **B**
-(framework call chain + substitution wiring byte-cited; pixel geometry of the shared
-dialog frame still TBD per the shared-dialog spec).
+(framework call chain + substitution wiring byte-cited). **Pixel geometry RESOLVED**
+(2026-06-27): the tutorial dialog is rendered by the *shared* centered-dialog FRAME
+engine, whose geometry is byte-cited in `spec/ui/popups.md` §2.3 and
+`spec/ui/context_dialogs.md` §2 — `panel_finalize_geometry func_06D316 @0x06D316`:
+`content_w = max(80, longest_line_px+10, @width)` (@0x06D392),
+`box_w = content_w + border(3) + pad`, `box_h = line_count·2 + border(3) (+title/options)`
+(@0x06D363/0x06D509/0x06D606), `X = (@x==-1)?(320-box_w)/2:@x` (@0x06D522),
+`Y = (@y==-1)?(200-box_h)/2:@y` (@0x06D53B), clamp to (0x140,0xC8) (@0x06D563/0x06D571);
+frame blit `lcall 0x181F:0x510` (WOODFRAM) @0x0263D6. The tutorial path provably reaches
+this engine: `func_06F5F2` (the `0x181f:0x652` emit wrapper) tail-calls `func_06F7EF`
+(= `LJMP 0x181F:0x998`, render-popup-body — `popups.md` §2.4, the `func_06F5B0..0x6F64C`
+body-dispatch wrappers all funnel here). **No `@TUTORIALn` key carries an `@width`/`@x`/`@y`
+directive** (verified — `GAME_sections.json` TUTORIAL1..19 are plain bodies), so each
+tutorial popup uses the **default centered formula with the 80px content-width floor**;
+box dimensions are a per-message function of the wrapped prose line count (live render
+input, computed by `func_06C850`/`func_06D316`), not a static rectangle. **B**
+(geometry engine + tutorial→engine routing byte-cited).
 
 ## 5. Evidence
 

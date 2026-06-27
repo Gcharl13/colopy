@@ -38,8 +38,10 @@ font by pushing the font far-ptr to the render call: colony/Europe/advisor-repor
 **FONTTINY** (`push [0x8A0];push [0x89E]` @0x25F62/0x30EDE/0x3860C…); the Hall of Fame and menus
 push **FONTINTR** (`push [0x268C];push [0x268A]` @0x22ABE/0x23C06). The only genuine FONTKING load
 is king-defeats (`func_075352`). **Colors, by contrast, are per-draw `push`-args → exact RGB
-(B) wherever the draw is in the extracted image; in the popup framework the body color push is
-overlay-resident (A/TBD).**
+(B) wherever the draw is in the extracted image; in the popup framework the body color is **not a
+`push`-arg at all** — it is *resolved-as-state*: the body renderer `func_00E51C` reads its pen from
+the glyph color-map global `[0x269E..0x26A1]` (set by `func_00E68A` @0x00E68A), which the section-init
+setter `func_06C296` populates from caller args — see §3 "Popup body" (fully resolved, no TBD).**
 
 ## 2. Colors — palette-index args, resolved to exact RGB (fully static — tier B)
 

@@ -57,10 +57,19 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
   the unit's `UnitRecord +0x17` class code, range `0x13..0x1C`); cross-confirmed at
   `func_033BE4 @0x33C44..0x33C5B` which gates on the same helper then reads `[si+0x315b]`
   (UnitRecord `+0x17` profession). **B** (table image + @JOB/@UNIT + `+0x17` cross-use). Only the
-  PowerRecord `+0x00 &0x40` flag's *meaning* stays `TBD` — that bit is tested at `@0x35E18`
-  but has **no resident write site** (`grep` of `[bx-0x77f8]`/`[0x8808]` finds only a `&0xFB`
-  clear of bit `0x04` `@0x03E158`, never a `0x40` set), so it is loaded from the save image or
-  set via a computed-mask/block op — name a save-field or runtime write trace to close it.)
+  PowerRecord `+0x00 &0x40` flag is the **"immigrant arrived on this power's docks" latch**
+  (RESOLVED, byte-verified). It is **SET in `func_0363A2 @0x036528`** (`8b1efc84 mov bx,[0x84fc];
+  800f40 or byte ptr [bx],0x40`) in the crosses loop, on the immigrant-arrival path right after
+  the placement helper `call 0x36831` (→ `func_030C68`) returns success and the arrival message
+  is emitted. It is read **only** at `func_035D9A @0x35E18` (`f6870888 40 test byte ptr
+  [bx-0x77f8],0x40`, `bx = player*0x13c`) to gate the field-unit `-2` cross override. It is
+  **sticky** — a full byte-pattern scan of VICEROY.EXE finds the only `&0x40`-set on the
+  PowerRecord `+0x00` accessor at `0x036528` (the other `or [bx],0x40` @`0x0408a0` is an
+  `es:[bx]` far-ptr to a different struct) and **no `&0xBF` (0x40) clear anywhere**; the only
+  PowerRecord-base byte-clear is `&0xFB` (bit `0x04`) `@0x03E158`. The earlier "no resident
+  write site" claim missed it because the grep searched the `[bx-0x77f8]`/`[0x8808]` accessor
+  forms, whereas the setter uses the `[bx]` accessor after loading `bx` from the `[0x84fc]`
+  current-power far-ptr. **B** (set `@0x036528`, test `@0x35E18`, sticky by exhaustive byte scan).)
   > **⚠ Cross-doc reconciliation (2026-06-27):** the per-colony cross byte read here is
   > `[colony·0xCA + 0x5D65]` = **`ColonyRecord +0x1F`** (the `0x5D60` base = `0x5D46 + 0x1A`
   > owner field, so "+0x05" from it = `+0x1F`). `colony.md` labels `+0x1F` = **population**.

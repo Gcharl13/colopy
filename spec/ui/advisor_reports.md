@@ -109,7 +109,7 @@ Roles byte-verified from usage + prologue (`REPORTS.md` §2.2):
   y `bx=row·8+0x2A`, **color `push 0x77`** @0x3886F; F8 sep @0x39908 x-start `ax=0`,
   **x-end `dx=0x13F`=319**, color `push 0x77`. **`0x77`→(134,0,0) dark-red** (resolved
   via REPORT4/REPORT8.PIK `#860000`) — a solid dark-red horizontal rule. (RULING
-  2026-06-21; the earlier "16-bit color-run, TBD" guess was wrong.) **B.**
+  2026-06-21; this supersedes the earlier "16-bit color-run" guess, now disproven.) **B.**
 - F6's `0x8BC` @0x39372 is a **different** thunk (→0x0427:0x0D38, a production-quantity
   helper), NOT the line-fill. **B.**
 

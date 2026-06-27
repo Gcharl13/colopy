@@ -13,14 +13,18 @@
 > per-dialog item text (`@`-keys), the native-action row gating (`func_04B308`), the build
 > availability gate (`func_0B900`) and the `@BUILDING` CSV-column→record-field mapping (loader
 > `func_0749E0`) are all **B**. Residual soft spots: the per-row pixel **y-pitch** inside a list
-> (falls out of the FONTTINY/FONTINTR `[0x89E]` byte0, value TBD) and the OK/Cancel button SS art
-> index (TBD); both shared with `menus.md`/`popups.md`.
+> (= **font byte0 + 3**: `les bx,[0x89E]; mov al,es:[bx]; add ax,3` @file 0x3AB3–0x3ABF, so
+> FONTTINY H=6 ⇒ **9 px**, FONTINTR H=9 ⇒ **12 px**) and the OK/Cancel affordance, which is **not a
+> sprite** — it is the inline FONTTINY text-row option list painted by the FRAME builder (the
+> dialog/menu engine `func_06C520`/`func_06E3D0`/`func_06F0F4` issue **zero** button-sprite blits,
+> per their resolved call lists); both shared with `menus.md`/`popups.md`. **B.**
 
 **Overall confidence:** option-list item text **B** (`GAME`/`NAMES`/`LABELS`/`MENU` `_sections.json`,
 grep-verified §4–§11); engine/dispatch **B** (`CHROME_AND_DISPATCH_INDEX.md` §B8/§B10,
 `UI_PRIMITIVES.md`); per-section `@width`/`@x`/`@y`/`@default` **B** (read from `GAME.full.json`
 `directives`); per-dialog **trigger function** **B**/**A** (`docs/UI_DIALOGS.md`,
-`docs/POPUP_TEMPLATE_AUDIT.md`); per-row vertical pitch **TBD**. · **Canonical primary:**
+`docs/POPUP_TEMPLATE_AUDIT.md`); per-row vertical pitch **B** (= latched font byte0 + 3, @file
+0x3AB7 — FONTTINY 9 px / FONTINTR 12 px). · **Canonical primary:**
 `viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md` (§B8 dialog FRAME engine, §B10 menu
 engine, draw-primitive thunk-semantics table), `viceroy_source/docs/UI_PRIMITIVES.md` (`0x181F:NNN`
 draw-verb Rosetta), `data_extracted/text/{GAME,NAMES,LABELS,MENU}_sections.json` +
@@ -162,7 +166,8 @@ section content and the gameplay predicates (row gating, build availability) dif
 - **Trigger:** the unit-orders popup sets the advisor channel `[0x1f5e]` via **`func_021EDE`**
   (`docs/POPUP_TEMPLATE_AUDIT.md` row @0x021EF7). **A.**
 - **Render/run:** sized by §2, run by §3 (`func_06E3D0`); hovered row = `0x181F:0xCE` outline. **B.**
-- **Tier:** list bodies **B**; trigger **A**; per-row pixel pitch **TBD**.
+- **Tier:** list bodies **B**; trigger **A**; per-row pixel pitch **B** (font byte0 + 3 @file
+  0x3AB7 — FONTTINY 9 px; §15.6).
 
 ---
 
@@ -381,7 +386,8 @@ section content and the gameplay predicates (row gating, build availability) dif
   `func_0B900` (§12) — disabled rows are not added to the list. **B.**
 - **Dismiss:** confirm/OK rows are text rows in the inline option list; the modal wait is
   `0x181F:0x3C0` (`func_004A80`, draws nothing). ESC/Cancel resolves to the list's "No changes."/
-  "Cancel Action."/"Never mind." row. **B / TBD (button art idx).**
+  "Cancel Action."/"Never mind." row — itself a FONTTINY text row, **not a sprite** (no button SS
+  art exists; the engine blits no button sprite). **B.**
 
 ---
 

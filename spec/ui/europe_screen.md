@@ -4,7 +4,7 @@
 > **B** = byte-cited (a `func_XXXXXX @0xNNNNN` immediate or a verified text key),
 > **A** = overlay/pixel-verified geometry (not byte-cited),
 > **R** = single-frame approximate / low-trust,
-> **TBD** = unknown, no surviving evidence.
+> **TBD** = (tier-vocabulary term) unknown / awaiting a new oracle capture or user decision — used only where a value is genuinely runtime-undecidable from the static EXE; this file's residual TBD is the Exit-button paint origin (§9.9).
 
 **Overall confidence:** the composer draw ORDER + every panel rect is now
 **byte-cited B** from the overlay-resolved draw-list (`func_031E4C @0x031E4C`,
@@ -214,14 +214,14 @@ is emitted by `func_031366 @0x031417` within the same in-port path.
   includes **`Selling`**, **`Buying`**, **`at`**, **`. Price:`**, **`% Tax:`**,
   **`. Net:`**, **`bought for`**, **`sold for`**, **`Loading`**, **`Unloading`**.
   These feed the `func_030F76` banner and the transaction parchment (§7). **B
-  (keys) / TBD (banner pixel origin)**
+  (keys) / B (banner band geometry — RESOLVED §9.7: text-box `(x=320,y=7,w=0,h=0)` set by `set_text_box`=`func_00273E` @0x035B24 in func_035B06; painter `func_00275C` @0x0310AD center-justifies the live line within the y=0..7 band — only the text X is runtime string-width centering, not a missing static origin)**
 - **Dock band captions** (`LABELS_sections.json @MISC`, grep-verified — **corrected
   source**): value includes **`Expected Soon`**, **`Bound For`**, **`No Ships In
   Port`**, **`Awaiting Passage`**, **`Sailing For`**, **`Inbound From`**,
   **`Now Arriving In`**, **`Docks At`**, plus `Loading`/`Unloading`. These are the
   per-state dock captions; the per-state Y (146/137/132) is byte-pinned (§3), the
   exact caption-string-id↔state mapping and the empty-dock caption pointer `[0x2DD0]`
-  resolution stay **TBD-runtime** (the captions are not literal pushes in `func_0314DC`;
+  resolution are **RESOLVED 2026-06-27 (ram_read, §9.8)** (the captions are not literal pushes in `func_0314DC`;
   verified — the only text `func_0314DC` draws is the empty-dock caption `[0x2dd0]`
   @0x031501 and the in-port ship-type name `[bx+0x5230]` via `0x181F:0x16e` @0x0315C1,
   with the per-ship status loop at @0x031671..0x0316A1 selecting only a *color* `[bp-0x68]`=
@@ -231,8 +231,7 @@ is emitted by `func_031366 @0x031417` within the same in-port path.
   Port`, 12=`Awaiting Passage` — but the index↔sail-state SELECTION is computed by a renderer
   outside the four statically-decodable Europe page-4 functions (`func_0314DC`/`func_031366`/
   `func_0317CC`/`func_0318D2`), and `[0x2dd0]`/`[0x2de8]` are runtime heap indices never written
-  by any disassembled `mov` (grep: zero writers). **B (keys + @MISC ordinals) / TBD-runtime
-  (id↔state map; needs a live RAM/heap trace)**
+  by any disassembled `mov` (byte-search of VICEROY.EXE for `A3 d0 2d`/`C7 06 d0 2d` = **0 static writers** → boot-resolved heap pointers). **B (keys + @MISC ordinals) / RESOLVED 2026-06-27 (ram_read, §9.8): the id↔state map IS the per-panel fixed caption pushes — live snapshot `rep_europe.bin` reads `[0x2dcc]=336`(Docks At/Loading panel), `[0x2dce]=337`(Expected Soon/Bound-For panel), `[0x2dd0]=338`(Bound For/empty-dock), `[0x2dd2]=339`(No Ships In Port); the in-port loop selects only a color, so the visible caption is the fixed panel push, not a runtime sail-state→@MISC computation**
 - **16-commodity order + Burden** from NAMES `@CARGO` (grep-verified, e.g.
   `Food, 1, 3, 1, 6, 7, 3, 2, -1, 0`). Drives icon order (ICONS 23..38) and the
   `ask = bid + Burden + 1` rule. **B**
@@ -320,9 +319,11 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
    the page-2 site @0x02C5F1, so the banner band is `(x=320,y=7,w=0,h=0)` = a
    **full-width top title band y=0..7** for the whole page-4 screen family. **Resolved
    (B):** painter `func_00275C` @0x0310AD; band geom `(320,7,0,0)` from `set_text_box`
-   @0x035B24 (func_035B06). **Residual (runtime, not TBD-static):** the literal text X is
-   center-justified at runtime against the live string width (the band is fixed at
-   y=0..7).
+   @0x035B24 (func_035B06). **CLOSED as resolved-as-state:** the only non-static input is the
+   literal text X, computed per-paint by `func_00275C` @0x0310AD as a horizontal center of the
+   live `@CMESSAGE` formatted line within the byte-fixed box `(x=320,w=0)` (i.e. `x = 320/2 −
+   textW/2`); the band Y is fixed at y=0..7. This is per-game string-width state, not a missing
+   static constant — every render input (band rect, painter, justification mode) is byte-cited.
 8. ✅ **RESOLVED 2026-06-27 (ram_read) — dock caption pointer block.** The dock
    captions are a contiguous boot-resolved @LABELS-index array in DGROUP (string-heap
    indices fetched by `func_002462` from far ptr `[0x2d42]`). Live snapshot `rep_europe.bin`
