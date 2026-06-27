@@ -7,6 +7,22 @@ import { el, section, fireRendered } from '../ui.js';
 import { badge } from '../provenance.js';
 import { loadSheetFrames, sheetImageURL, backgroundImageURL } from '../data/loaders.js';
 import { SCREENS, ALL_BACKGROUNDS } from '../sim/screens.js';
+import { loadSheet } from '../sim/sheet.js';
+import { compositeRegion } from '../sim/compose.js';
+import { isWater } from '../sim/mapview.js';
+
+// Pick a coastal cols×rows window (land + water) from the map, for the colony minimap demo.
+function coastalWindow(map, cols, rows) {
+  for (let y = 0; y + rows < map.height; y += 2)
+    for (let x = 0; x + cols < map.width; x += 2) {
+      let land = 0, water = 0;
+      for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++)
+          (isWater(map.tiles[(y + r) * map.width + (x + c)] & 0x1F) ? water++ : land++);
+      if (land >= rows * cols * 0.3 && water >= rows * cols * 0.3) return { x, y };
+    }
+  return { x: 0, y: 0 };
+}
 
 const TIER_CLS = { B: 'tier-b', A: 'tier-a', R: 'tier-r', TBD: 'tier-tbd' };
 
@@ -97,6 +113,15 @@ export async function render(host, ctx) {
       } else if (step.op === 'rect') {            // solid fill (e.g. black area separators)
         g.fillStyle = step.color || '#000';
         g.fillRect(step.x, step.y, step.w, step.h);
+      } else if (step.op === 'minimap') {         // surrounding-terrain via the shared mapview.js
+        try {
+          const map = await ctx.mapData();
+          const [terr, phys] = await Promise.all([loadSheet('TERRAIN'), loadSheet('PHYS0')]);
+          const cols = step.cols || 5, rows = step.rows || 5;
+          const win = coastalWindow(map, cols, rows);
+          const region = compositeRegion(map, terr, phys, win.x, win.y, cols, rows);
+          g.drawImage(region, 0, 0, region.width, region.height, step.x, step.y, step.w, step.h);
+        } catch (e) { /* map/sheets unavailable: leave the panel woodgrain */ }
       }
     }
   }

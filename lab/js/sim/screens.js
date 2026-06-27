@@ -73,6 +73,11 @@ export const SCREENS = {
       { op: 'rect', color: '#000', x: 199, y: 7, w: 1, h: 122 },   // scene | minimap panel
       { op: 'rect', color: '#000', x: 0, y: 7, w: 320, h: 1 },     // title | scene
       { op: 'rect', color: '#000', x: 0, y: 128, w: 320, h: 1 },   // scene | COLONY.PIK band
+      // surrounding-tile minimap — rendered by the shared lab/js/sim/mapview.js compositor
+      // (NOT a parallel renderer). Box x223..296 y17..92 measured from the live capture; a
+      // coastal sample window stands in for the colony's own surroundings (inspector demo).
+      { op: 'rect', color: '#000', x: 222, y: 16, w: 75, h: 77 },  // black box frame
+      { op: 'minimap', x: 223, y: 17, w: 73, h: 75, cols: 5, rows: 5 },
     ],
     note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH x0..198 y8..127, measured) + COLONY.PIK band at y=128 + black area separators (x199 / y7 / y128, measured). BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C; a plot FRAME = building def_id byte[0x8E82+i], def_id 0→frame 16 — RULINGS 2026-06-27) and the 16-cell stockpile bar (x=2+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so per-plot def_id is editable. The surrounding-tile minimap reuses lab/js/sim/mapview.js (terrainCompose); its window/scale + work-tile/marker overlays are TBD (func_026374). Panel text not seeded.',
     elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
