@@ -131,9 +131,12 @@ mission; the next pass re-tests it (e.g. `'2'` re-checked `@0x04E66B` for scout-
 **`0x3149` = move-credits SPENT this turn** (a points-per-action accumulator) — decisively **not**
 an enable flag and **not** evaluation-passes-used (B, `func_0079A0 @0x007A08`).
 
-- **Allowance** = per-unit-type byte from data table **`0x5234`** (stride 14, indexed by unit_type
-  `0x3146`; helper `@0x006CEE`), **+3** for ships (type 0x0D..0x12) when a per-power trait passes
-  (`lcall 0x981:0` `@0x006D01`). *(Table contents are runtime data — exact per-type allowances TBD.)*
+- **Allowance** = the `+0x00` field of the **UnitTypeStats** record (`DS:0x5234`, 14-byte stride,
+  indexed by unit_type `0x3146`; helper `@0x006CEE` computes `bx = type·14` via `cx=t;shl;add;shl;
+  add;shl`), **+3** for ships (type 0x0D..0x12) when a per-power trait passes (`lcall 0x981:0`
+  `@0x006D01`). The stored allowance = **`@UNIT` moves × 3** (Colonist 1→3, Scout/ship 4→12,
+  Frigate 6→18, Privateer 8→24) — so **one move = 3 budget**, which is exactly the +3 step charge.
+  See the UnitTypeStats layout in §5a.
 - **Reset to 0**: at turn start for **every** unit (`@0x005872`, loop over `[0x539C]` units after
   `0x181F:0x550`); on spawn (`@0x006D7F`, `@0x02D583`); and on re-tasking inside the processor
   (`@0x04FD92`).
@@ -143,6 +146,28 @@ an enable flag and **not** evaluation-passes-used (B, `func_0079A0 @0x007A08`).
   `func_059B90 @0x059E69`); it is "out of moves" once `[0x3149] ≥ allowance` (`@0x007A08`). The
   `cmp [0x3149],0` gates (`func_051D56 @0x051D5D`, page-13 `@0x062F5C`) select units that have
   **already acted** this turn (spent ≠ 0), not an enable bit.
+
+### 5a. UnitTypeStats — `DS:0x5234`, 14-byte record per unit type (B, RESOLVED 2026-06-27)
+
+The per-type combat/move table the AI reads is a **14-byte record at `DS:0x5234`**, one per `@UNIT`
+row (24 types). It is the **loaded `@UNIT` CSV** (`data_extracted/text/NAMES_sections.json @UNIT` —
+primary game data, HIGH trust) with the move field scaled ×3. Stride proven ×14 at the resident
+sites `@0x006CEE`/`@0x0074A9`/`@0x006826` (`cx=t; shl;add;shl;add;shl` = `t·14`). Field map
+(byte-confirmed fields + the `@UNIT` column each loads from):
+
+| Field | `@UNIT` col | Meaning | Read by |
+|-------|------------|---------|---------|
+| `+0x00` (`0x5234`) | moves×3 | **move allowance** (budget; 1 move = 3) | allowance helper `@0x006CEE`; §5 |
+| `+0x01` (`0x5235`) | def | **defense** | combat |
+| `+0x02` (`0x5236`) | atk | **attack** / sea-passability test (`cmp ==1`) | `@0x0074A9`, AI `'V'` gate |
+| `+0x03` (`0x5237`) | (col5) | **work/build cost** (`'C'` done at counter ≥ 10−cost) | `@0x006826`, AI `@0x04F389` |
+| `+0x04`..`+0x08` | (cols 6–10) | ship/cargo block (`99` sentinel for ships in col6 `+0x04`; cargo/bombard in `+0x05..+0x08`) | ship handlers (exact split TBD) |
+| `+0x09` (`0x523d`) | capbits (binary) | **terrain-feature capability bitfield** (`@UNIT` last column verbatim: Colonist `0x40`, Soldier `0x1c`, Caravel `0xA2`) | AI build states `B`/`e` (`test &0x40/&0x20/&1/&4`), `@0x04E01D`/`@0x051196` |
+
+So a port can drive the AI's combat/move/build decisions straight from the `@UNIT` table (×3 the move
+column); no separate decode of the stat values is needed. *(The middle ship/cargo fields `+0x04..+0x08`
+map to `@UNIT` cols 6–10 but their exact game labels — cargo slots vs bombard — are not individually
+pinned; the bytes are the `@UNIT` data verbatim.)*
 
 ## 6. The strategic plan-map + per-turn invocation (B, L4 Phase 2)
 
@@ -239,9 +264,10 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
 1. **Compass delta tables** `[bx+0xb4]` (dx) / `[bx+0xbe]` (dy), 9 entries — DS/BSS-relative,
    contents runtime-set; exact deltas not in the instruction stream. Site: `func_046FFA @0x047399`,
    `func_04E2D6 @0x051846`.
-2. **Per-type stat tables** `0x5234` (move allowance), `0x5236` (sea/land passability), `0x5237`
-   (work cost), `0x523D` (terrain-feature capability bits), `0x5236+type·6` — static-ish data loaded
-   at runtime; values TBD (drive `B`/`e`/`C` states and the budget allowance).
+2. ✅ **Per-type stat tables — RESOLVED 2026-06-27 (§5a).** `0x5234`/`0x5236`/`0x5237`/`0x523d` are
+   **fields of one 14-byte UnitTypeStats record** (`DS:0x5234`, stride ×14 proven at `@0x006CEE`,
+   not ×6) = the loaded **`@UNIT` CSV** with moves×3. Values are the `@UNIT` primary data (no longer
+   TBD); only the exact labels of the middle ship/cargo fields `+0x04..+0x08` stay soft.
 3. **Resident scoring/path helpers** behind window seg `0x181F`/`0x1A1F` thunks — `0x302`
    (validity), `0x322`/`0x6dc`/`0x682`/`0x6be`/`0x754`/`0x78c` (terrain/zone), `0x614`/`0x37a`/`0x370`
    (reachability/distance), `0x952`/`0x722`/`0x8bc`/`0x984`/`0x7be`/`0x9e6` (colony/site), `0x4d4`

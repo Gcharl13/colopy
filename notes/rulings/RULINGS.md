@@ -5186,3 +5186,32 @@ Strategic pass func_04CC50 (ENTER 0x1E4) reads plan map, assigns goals to units 
 driver func_051D56 gates on 0x3149!=0 (acted) AND order==0x0B, calls func_04E2D6 via far-jump island
 0x534F8 (ljmp 0x1A1F:0x4F4). Units enumerated by flat i<[0x539c] owner-filtered loop, NOT tile links.
 Controller byte [idx*0x34+0x543f]; AIPersonality [idx*0x34+0x540E].
+
+## 2026-06-27 — L4 Phase 3a: UnitTypeStats table = loaded @UNIT CSV (14-byte record @0x5234)
+
+The per-type AI stat fields 0x5234/0x5236/0x5237/0x523d are NOT separate tables with different strides
+— they are FIELDS of a single 14-byte UnitTypeStats record at DS:0x5234, one per @UNIT row (24 types).
+Stride proven ×14 at the resident sites: @0x006CEE/@0x0074A9/@0x006826 all use the chain
+`cx=t; shl bx,1; add bx,cx; shl bx,1; add bx,cx; shl bx,1` = t·14 (=((3t)*2+t)*2=14t).
+
+CORRECTION (hard-rule record): the L4 Phase-1 workflow findings that wrote "[type*6+0x523d]" and
+"[type*6+0x5236]" (stride 6) for the AI 'B'/'e'/'V' capability gates were a STRIDE ERROR. The base
+0x5236/0x523d is shared with the ×14 resident accesses, so the stride must be ×14; the AI-overlay
+sites disassemble with the same ×14 chain (naive linear capstone mis-aligns them — read page_0D.asm
+for true boundaries). ai.md §5a/§8 corrected; do not cite ×6.
+
+The record IS the loaded @UNIT CSV (data_extracted/text/NAMES_sections.json @UNIT, primary data),
+field map (oracle ingame_orders.bin + @UNIT cross-check):
+ +0x00 = @UNIT moves × 3  (move allowance / budget; 1 move = 3 budget = the +3 step charge — closes
+         the loop with the 0x3149 move-credits model). Colonist 1->3, Scout/Caravel 4->12, Frigate
+         6->18, Privateer 8->24, Man-O-War 5->15.
+ +0x01 = defense ; +0x02 = attack (stored def,atk; note CSV lists atk,def — order swapped in memory).
+         Artillery oracle +01=5/+02=7 vs @UNIT atk7/def5 confirms +01=def,+02=atk.
+ +0x03 = work/build cost (used in 'C' state: done when work-counter 0x315a >= 10 - cost).
+ +0x04..+0x08 = ship/cargo block (col6 '99' sentinel for all ships @+0x04; cargo/bombard +0x05..+0x08
+         = @UNIT cols 6-10 verbatim; exact per-field labels soft).
+ +0x09 = terrain-feature capability bitfield = @UNIT last (binary) column verbatim: Colonist
+         01000000=0x40, Soldier 00011100=0x1c, Caravel 10100010=0xA2. Read by AI build states B/e.
+
+Resolves ai.md open-question #2 (per-type stat tables): they are @UNIT primary data, not a separate
+TBD decode. A rewrite drives AI combat/move/build straight from @UNIT (×3 the move column).
