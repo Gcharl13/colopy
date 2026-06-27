@@ -29,7 +29,10 @@ Liberty bells produced in colonies accumulate toward the **Continental Congress*
 
 The 25-entry in-memory FF table is at `DGROUP:0x9652`, stride 6 (populated at startup from `@FATHERS` by the NAMES loader `func_0749E0`; per `congress.c`). The Congress offers the next father when the pool `+0x0C` reaches the cost computed in §3.
 
-Per-father concrete **effect bindings** (what each father changes in-engine): still **TBD** — hardcoded in EXE logic, not in `NAMES.TXT`.
+Per-father concrete **effect bindings** (what each father changes in-engine): **RESOLVED — 25/25
+BYTE_VERIFIED** (see §3 "Complete per-father effect audit"). Effects are hardcoded in EXE logic (9
+immediate via `func_03BC42`, 16 continuous via the `func_00BC10` has-father gate), not in `NAMES.TXT`.
+*(This line previously read "still TBD" — stale; the audit completed 2026-06-20.)*
 
 ## 3. Formulas & rules
 
