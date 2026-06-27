@@ -67,10 +67,14 @@ wood = load_sheet(f'{RAW}/WOODTILE.SS'); wt = sheet_frame_rgba(wood, 0)
 for yy in range(0, 200, wt.height):
     for xx in range(0, 320, wt.width): C.alpha_composite(wt, (xx, yy))
 
-# parchment scene background (tiled), scene rect x0..200 y8..127
+# parchment scene background — clipped to the measured scene rect x0..198, y8..127
+# (a black separator column sits at x=199; the woodgrain minimap panel is x200+).
 par = load_sheet(f'{RAW}/PARCH.SS'); pt = sheet_frame_rgba(par, 0)
+SCENE_R = 199  # exclusive right edge of parchment (black line at x=199)
 for yy in range(8, 128, pt.height):
-    for xx in range(0, 201, pt.width): C.alpha_composite(pt, (xx, yy))
+    for xx in range(0, SCENE_R, pt.width):
+        w = min(pt.width, SCENE_R - xx)
+        C.alpha_composite(pt.crop((0, 0, w, pt.height)), (xx, yy))
 
 # plot grid: buildings + empty-plot terrain (frames verified MSE-0)
 bld = load_sheet(f'{RAW}/BUILDING.SS')
@@ -137,6 +141,13 @@ text("No Ships In Port", 130, 132, (80, 110, 170))   # ships=0 in fixture -> fai
 # stockpile quantities under each cell (faithful: from the fixture's stock[])
 for i in range(16):
     text(str(stock[i]), 2 + i*19 + 4, 193, (255, 255, 255))
+
+# Black separator lines (measured: vertical x=199 over the scene; horizontals y=7, y=128).
+from PIL import ImageDraw
+dr = ImageDraw.Draw(C)
+dr.line([(199, 7), (199, 128)], fill=(0, 0, 0, 255))   # scene | minimap panel
+dr.line([(0, 7), (319, 7)], fill=(0, 0, 0, 255))        # title | scene
+dr.line([(0, 128), (319, 128)], fill=(0, 0, 0, 255))    # scene | COLONY.PIK band
 
 C.convert('RGB').save('/tmp/mine_final.png')
 C.resize((960, 600), Image.NEAREST).convert('RGB').save('docs/screens/colony_RENDERED.png')

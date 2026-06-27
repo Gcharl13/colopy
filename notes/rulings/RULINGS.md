@@ -5496,3 +5496,18 @@ spec's byte-cite `add ax,0x17` is the GAME frame and is correct; the ssdec rende
 0x16. Same mechanism fixed the building frames (game `def_id+1` → ssdec `def_id`) and empty-plot
 terrain (ssdec `table[cat]−1`). Documented in SETTLED.md so it stops churning. The 2026-06-27
 prereq-1 "correction" to 0x17 is retracted. Stockpile band MSE 2697 → 1316; full screen 2525 → 2393.
+
+## 2026-06-27 — Colony screen layout: parchment width + black separator lines (measured)
+
+User-reported (3x): the rendered parchment was too wide and the black area-separator lines were
+missing. Measured from the matched live capture (docs/screens/colony_live_1505.png):
+- **Parchment scene rect = x 0..198, y 8..127** (NOT to x223 — the renderer tiled PARCH 32px past
+  the edge, overprinting the minimap panel). Clipped to x<199.
+- **Black separator lines: vertical x=199 (y7..128); horizontal y=7 (title|scene) and y=128
+  (scene|COLONY.PIK band).** These are pure black (RGB<30) and are the only black separators — the
+  band's inter-panel dividers are GREEN (part of COLONY.PIK), not black.
+- Minimap box frame: black border at x=223 (left) / x=296 (right), y≈16..95 (content = the
+  func_026374 surrounding-terrain render, still TBD — needs the seg-0x37f map board).
+
+Clipping the parchment + drawing the 3 black lines dropped full-screen MSE 2252 → 971 (the over-wide
+parchment had been overprinting the woodgrain minimap panel). Scene 3006→1094, band 1099→671.
