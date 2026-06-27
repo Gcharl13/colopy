@@ -48,7 +48,7 @@ const COLONY_TEXT_OPS = [
   // title bar: green FONTTINY on the woodgrain top strip (x90, y1; live capture)
   { op: 'text', value: 'Jamestown.  Spring, 1505.  Gold: 1000', x: 90, y: 1, color: '#569834' },
   ...STOCKPILE_GOODS.map((g, i) => ({ op: 'text', value: '0', x: 8 + i * 19, y: 194, color: '#181c7d' })),
-  { op: 'text', value: '100% (I)', x: 75, y: 133, color: '#ffffff' },
+  { op: 'text', value: '100% (1)', x: 75, y: 133, color: '#ffffff' },
   { op: 'text', value: 'No Ships In Port', x: 118, y: 130, color: '#6888c0' },
 ];
 // COLONY.PIK band overlays — every ICONS frame MSE-0 matched to the live Jamestown capture
@@ -59,7 +59,11 @@ const BAND_SPRITES = [
   [56, 40, 163], [62, 52, 163],                               // cross + liberty bell
   [124, 104, 132],                                            // SoL crown
   [23, 213, 134], [23, 222, 134],                             // 2 production goods (warehouse top)
-  [55, 213, 162], [55, 224, 162], [55, 235, 162],             // warehouse red ✗ (frame 55) ×6
+  // warehouse SHORTAGE goods (drawn first, then the red ✗ over each): 3 Lumber (good 5,
+  // ICONS 27) + 3 Tools (good 14, ICONS 36) — a production shortage of lumber & tools.
+  [27, 213, 162], [27, 224, 162], [27, 235, 162],
+  [36, 249, 162], [36, 258, 162], [36, 267, 162],
+  [55, 213, 162], [55, 224, 162], [55, 235, 162],             // red ✗ (frame 55) over each good
   [55, 249, 162], [55, 258, 162], [55, 267, 162],
   [67, 304, 133], [68, 303, 147], [69, 303, 162],             // right tool buttons
 ].map(([frame, x, y]) => ({ op: 'sprite', sheet: 'ICONS', frame, x, y }));
