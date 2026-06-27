@@ -94,7 +94,7 @@ for i in range(16):
         cx = 1 + i*19 + (18 - fr.width)//2
         C.alpha_composite(fr, (cx, 181))
 
-# title (FONTTINY from the cpp bundle)
+# title + stockpile qty numbers (FONTTINY from the cpp bundle)
 import json
 def tfont():
     im = Image.open('viceroy_cpp/build/bundle/fonts/FONTTINY.png')
@@ -113,6 +113,9 @@ def text(s, x, y, rgb=(92, 172, 60)):
         solid = Image.new('RGBA', g.size, rgb + (255,)); C.paste(solid, (cx, y), g)
         cx += g.size[0] + 1
 text(f"{cname}.  (pop {cpop})", 70, 1)
+# stockpile quantities under each cell (faithful: from the fixture's stock[])
+for i in range(16):
+    text(str(stock[i]), 1 + i*19 + 2, 193, (255, 255, 255))
 
 C.convert('RGB').save('/tmp/mine_final.png')
 C.resize((960, 600), Image.NEAREST).convert('RGB').save('docs/screens/colony_RENDERED.png')
