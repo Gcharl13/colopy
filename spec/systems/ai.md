@@ -131,6 +131,34 @@ So the AI scoring stack terminates in the **already-specified** map (`formats/MP
 `map_system.md`) and colony (`colony.md`) data layers — there is no further AI-only black box beneath
 the helper map above.
 
+### 3b. Colony-site VALUE — "Show Colony Sites" (CHEAT F9) — LIVE-CAPTURED (2026-06-27)
+
+The cheat menu's **F9 "Show Colony Sites"** (`MENU @CUP`) overlays a per-tile **colony-site value**
+on the map. Static decode did NOT pin the handler/formula (two deep passes mis-resolved to Reveal-Map
+`func_06892E` and a generic message drawer `func_038418`; the value routine is overlay-resident with no
+clean dispatch anchor — TBD). So it was **captured from the running game** (the oracle).
+
+**Live-capture method (reproducible):** launch VICEROY under DOSBox (`scratchpad/dbx/db.conf`,
+`autolock=false`); load a save to reach the map (e.g. `COLONY00.SAV`); type the cheat code **Alt+W+I+N**
+(the `CHEAT` title then appears in the menu bar); CHEAT → **Reveal Map → Complete Map**; CHEAT →
+**F9 Show Colony Sites**. Reference capture: `docs/screens/colony_sites_live.png` (England, AMER2/Original
+Americas, Spring 1490).
+
+**Confirmed facts (B, oracle):**
+- The value is printed on **every** tile (white digits in a black box). **Ocean/sea-lane tiles = 0**
+  (cannot found a colony there).
+- **Coastal land tiles carry the score** — observed values on one coast stretch: **9, 11, 12, 13, 13**
+  (the `13` spots are the best sites; one sat on a special-resource tile). Range seen so far ≈ 0–24.
+- The per-tile value is **computed at draw time, NOT stored as a map array**: an FFT/ocean-zero search
+  of a 16 MB live RAM snapshot (`tools/runtime_snapshot.py`) found **no** 58×72 array whose zero-pattern
+  matches the ocean mask with colony-site-range land values — only false hits (row-0-only arrays). So
+  reversing the exact formula requires reading the displayed values across the map and correlating each
+  `(x,y)` with its AMER2 terrain/features/neighbours.
+
+**Still TBD:** the exact arithmetic (which yields/bonuses/adjacency sum to the printed number) and the
+handler function offset. Next step = systematic screenshot value-read + terrain correlation (the inputs
+are all known: AMER2 terrain `data_extracted/map/AMER2_tiles.json`, yields, coastal/resource bonuses).
+
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 
 `0x314B` is the **persistent per-unit AI mode**: the previous turn writes a letter, the next turn's
