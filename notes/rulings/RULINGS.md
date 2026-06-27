@@ -5552,3 +5552,19 @@ before +0x5A, and the sheet `[0x839E]` is not plain PHYS0/TERRAIN (both ruled ou
 Need: resolve `0x181F:0x718`'s LUT + identify the sheet loaded into `[0x839E]` (loaded by index, no
 name string). Until then the minimap stays unrendered (no fabrication). It is the only colony-screen
 element not pixel-verified; everything else is MSE-measured DONE (full screen MSE 971).
+
+## 2026-06-27 — Minimap is a COMPOSITE map render (definitive), not a single-sprite blit
+
+Exhaustive pixel match of the minimap centre tile against EVERY frame of EVERY .SS sheet (each with
+its own palette, position window) found NO clean match (best MSE 10272, PHYS0 f149). Conclusion:
+each minimap tile is a **composite** — TERRAIN.SS base-ground sprite UNDER a PHYS0 overlay (forest/
+hill/coast/river), i.e. the colony minimap reuses the full **in-game map-render chain**
+(`func_O514→O513→O512`, hard rules 5/7), not a flat terrain sprite. That is why `0x181F:0x718`
+returns a processed render index and `[0x839E]` is the active map sheet, and why frame=id+0x5A on a
+single sheet fails. Rendering it faithfully = reimplementing the map-render composite (TERRAIN base +
+PHYS0 overlay + auto-forest/river/coast logic) at the 3×3 / 24px minimap scale — a large separate
+subsystem (spec/systems/map_system.md), not a colony-screen leaf. Left unrendered (no fabrication).
+
+NET colony-screen status: every element EXCEPT this minimap composite is pixel-verified against the
+matched live capture; full-screen MSE 3625 → 971. The minimap is the one element whose faithful
+render depends on the in-game map renderer.
