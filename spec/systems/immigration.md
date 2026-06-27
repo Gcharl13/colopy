@@ -49,6 +49,12 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
   byte-verified; the *semantic* meaning — what the `DGROUP:0x30E` attribute table and
   the PowerRecord `&0x40` flag represent, hence which unit/father consumes crosses —
   remains `TBD` because neither is labeled in committed evidence.)
+  > **⚠ Cross-doc reconciliation (2026-06-27):** the per-colony cross byte read here is
+  > `[colony·0xCA + 0x5D65]` = **`ColonyRecord +0x1F`** (the `0x5D60` base = `0x5D46 + 0x1A`
+  > owner field, so "+0x05" from it = `+0x1F`). `colony.md` labels `+0x1F` = **population**.
+  > So either base immigration **scales with colonist count** (crosses += Σ colony population), or
+  > one label is off — needs a runtime spot-check (set a colony's pop vs its cross output). Both
+  > docs cite the same byte; this is a labeling reconcile, not a missing mechanic.
 - **Artillery recruit cost** = `base + artillery_bought_count*100`, then counter++ (NOT `base<<count`). **BYTE_VERIFIED** (`DATA_MODEL.md`).
 - Immigrant **type** selection — **BYTE_VERIFIED** (`func_0363A2 @0x36456..0x3649E`):
   1. **Pick a dock slot:** `random_int(0,2)` (`@0x36462`) chooses one of **3 dock
