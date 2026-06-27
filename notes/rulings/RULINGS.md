@@ -5234,3 +5234,22 @@ enumerator); 0x322->func_00860E (terrain-feature query, feeds +0x14/0x28 bonus).
 Resolves ai.md open-question #3: the AI's evaluation primitives are named, load-image-resident, and
 decodable — no longer behind opaque overlay thunks. By-product: map dims [0x853a]=W, [0x853c]=H.
 Remaining leaf = the internal terrain-quality math of 0x614/0x7be/0x322 (small resident funcs).
+
+## 2026-06-27 — L4 Phase 3c: AI scorer internals bottom out at the shared map/colony layer
+
+Decoded the resident scorer bodies. They call the engine's MAP-ACCESS segment 0x37f — same primitives
+the rest of the engine uses, not an AI-private map:
+- 0x37f:0xa = tile in-bounds; 0x37f:0x10e = raw map byte; 0x37f:0x314 = unit-index at tile;
+  0x37f:0x358 = tile terrain/owner.
+- func_00627A (tile-id helper 0x78c) -> 0x37f:0x10e raw byte -> func_00624E = the
+  get_terrain_id_from_raw chain (CLAUDE.md hard-rule 3); returns terrain 0..26, default Ocean off-map.
+- func_0066CC (units-on-tile 0x7e0) -> 0x37f:0x314; returns occupying unit idx or 0xffff.
+- func_008D26 (colony-at-tile 0x7be) iterates ColonyRecord[0x5d46] stride 0xCA (count [0x539e]),
+  matching record +0x00=x/+0x01=y; returns colony idx or 0xffff. RE-CONFIRMS the documented colony
+  layout (colony.md base 0x5D46 stride 0xCA). Oracle (colony_jamestown.bin): count=5, colony[0]=(48,30),
+  active [0x8542]=0x606e = 0x5d46 + 4*0xCA exactly.
+- func_005BFA (validity 0x302): in-bounds gate -> map dims [0x853a]=W, [0x853c]=H.
+
+Closes ai.md open-question #3: the AI scoring stack terminates in the already-specified map/colony
+data layers; no further AI-only black box beneath the named helper map. Remaining soft spot = the
+exact weighting math inside func_0083F2 (reachability), a small decodable resident function.

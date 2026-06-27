@@ -114,6 +114,22 @@ the whole map:
 So the AI's evaluation primitives are **named, load-image-resident, and decodable** — no longer
 "behind opaque overlay thunks." `[0x853a]`/`[0x853c]` (map W/H) are a useful by-product.
 
+**Internals — the scorers bottom out at the shared map/colony data layer (B, 2026-06-27).** Decoding
+the bodies shows they call the engine's **map-access segment `0x37f`** — `0x37f:0xA` (tile in-bounds),
+`0x37f:0x10E` (raw map byte), `0x37f:0x314` (unit-index at tile), `0x37f:0x358` (tile terrain/owner) —
+i.e. the *same* primitives the rest of the engine uses, not an AI-private map:
+- `func_00627A` (tile-id) → `0x37f:0x10E` raw byte → `func_00624E` = the `get_terrain_id_from_raw`
+  chain (CLAUDE.md hard-rule 3); returns terrain 0..26, default **Ocean** off-map.
+- `func_0066CC` (units-on-tile) → `0x37f:0x314`; returns the occupying unit index or `0xFFFF`.
+- `func_008D26` (colony-at-tile) iterates `ColonyRecord[0x5d46]` stride `0xCA` (count `[0x539e]`),
+  matching record `+0x00`=x / `+0x01`=y; returns colony index or `0xFFFF`. *(Re-confirms the
+  already-documented colony layout, `spec/systems/colony.md` — base `0x5D46`, stride `0xCA`; oracle:
+  active colony `[0x8542]=0x606e = 0x5d46 + 4·0xCA`.)*
+
+So the AI scoring stack terminates in the **already-specified** map (`formats/MP_FORMAT.md`,
+`map_system.md`) and colony (`colony.md`) data layers — there is no further AI-only black box beneath
+the helper map above.
+
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 
 `0x314B` is the **persistent per-unit AI mode**: the previous turn writes a letter, the next turn's
@@ -292,13 +308,12 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    **fields of one 14-byte UnitTypeStats record** (`DS:0x5234`, stride ×14 proven at `@0x006CEE`,
    not ×6) = the loaded **`@UNIT` CSV** with moves×3. Values are the `@UNIT` primary data (no longer
    TBD); only the exact labels of the middle ship/cargo fields `+0x04..+0x08` stay soft.
-3. ◑ **Resident scoring/path helpers — MAPPED 2026-06-27 (§3a).** The `0x181F:xxxx` helpers are now
-   resolved to named load-image-resident functions (`0x302`→`func_005BFA` in-bounds, `0x37a`→
-   `func_00493C` distance, `0x614`→`func_0083F2` reachability, `0x4d4`→`func_00C322` RNG, `0x90c`→
-   `func_006CCA` allowance, `0x9e6`/`0xa4c`/`0x7be` colony/native/site, `0x78c` terrain-id,
-   `0x322` terrain-feature). The in-bounds + distance + RNG + allowance bodies are decoded; the exact
-   internal math of `0x614`/`0x7be`/`0x322`/`0x982`-family terrain-quality scorers is the remaining
-   leaf (each a small resident function, now decodable from the load image).
+3. ✅ **Resident scoring/path helpers — RESOLVED 2026-06-27 (§3a).** The `0x181F:xxxx` helpers are
+   named load-image-resident functions; their bodies bottom out at the engine's shared **map-access
+   layer `0x37f`** (tile-valid / raw-byte / unit-at-tile / terrain) and the already-specified
+   map (`MP_FORMAT.md`) + colony (`colony.md`, stride `0xCA`@`0x5d46`) data. No AI-only black box
+   remains beneath the helper map. The only soft spot is the exact arithmetic *weighting* inside
+   `func_0083F2` (reachability) — a small resident function, fully decodable but not yet line-traced.
 4. **Plan-map outer-index identity (unit vs power)** — §6.1's flagged conflict. Blocker: the
    allocated byte-size of the `DS:0x98B0` table (no `memset`/alloc found in committed pages) or the
    real cardinality of `func_04CC50`'s `[bp+6]` at its dispatch-island caller.
