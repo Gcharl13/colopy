@@ -85,11 +85,25 @@ does **not** spawn a new ruling or a parallel decode doc.
 - **Per-turn flow:** `func_005760` main loop → per-power 0..3, controller gate `[idx·0x34+0x543f]`
   (0 = run; skips human) → orders `func_024A48` → `func_04CC50` plan → `func_051D56` → `func_04E2D6`.
 
+## Colony economy (L3, `spec/systems/colony.md` / `warehousing.md`, 2026-06-27)
+- **Manufacturing = 1:1** (`func_008E84`): 1 finished per 1 raw, **×2/3 throttle** when the finished
+  good's building-chain count > 2 (`func_00864E > 2`); Tools(14) −`[0x8E66]` (horses offset).
+  Chains: Ore→Tools, Tobacco→Cigars, Cotton→Cloth, Furs→Coats, Sugar→Rum.
+- **Food/growth:** consumption = 2·pop; surplus = max(0, producedFood−2·pop); half (`ceil/2`) accrues
+  to colony `+0xAA`; born at threshold 25 (50 on difficulty) via `func_009318` (`INC +0x1F`); starve
+  via `func_008FB4` (`DEC +0x1F`). The deficit→remove trigger + per-turn `+0xAA` write are TBD.
+- **No warehouse spoilage clamp:** `+0x9A` stockpile banks with a floor at 0, **no ceiling**. Over-100
+  tradeable goods are **auto-exported to Europe** (`func_02D658`: flat 100→50, excess sold → treasury
+  `PowerRecord+0x22`; **wasted** if independence declared `[0x5382]&1`). `(level+1)·100`
+  (`func_008D00`) bounds **only the food growth reserve**, not goods. *(Corrected the prior
+  "goods dropped at (level+1)·100 cap" reading.)*
+
 ## Known-open (the honest TBD frontier — not settled)
 - **AI runtime/leaf items:** the compass dx/dy delta tables (`[bx+0xb4/0xbe]`, BSS), the full
   `goal_type` code enumeration (1/4/7 known), the order-7..12 secondary jump table
   (`func_051D56 @0x51E15`, CS-relative), and the exact weighting inside `func_0083F2` (reachability).
-- Colony worked-tiles grid / panel text placement; raw→finished conversion ratios; starvation rule;
-  WoI bells halving cadence; the `.MP`-file → runtime-board feature-bit remap.
+- Colony: worked-tiles grid / panel text placement; the food-deficit starvation *trigger* site +
+  `+0xAA`/`+0xC8` growth-accumulator reconciliation; WoI bells halving cadence; the `.MP`-file →
+  runtime-board feature-bit remap.
 - *(The F2–F9 report painters + OPENING/CLOSING cinematics are now decoded — see
   `docs/ADVISOR_REPORTS_AUDIT.md` and `spec/ui/cinematics.md`; no longer open.)*

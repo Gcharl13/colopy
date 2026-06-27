@@ -49,12 +49,15 @@ cap = ([ColonyRecord +0x95] == 0) ? 100 : ([ColonyRecord +0x95] + 1) · 100
 i.e. **`(warehouse_level + 1) · 100`** per good, where `+0x95` is the warehouse
 building level (`0` = none → **100**, `1` = Warehouse → **200**, `2` = Warehouse
 Expansion → **300**). Confirms the manual's "base 100 / +100 per upgrade". **B.**
-- **Applied per-good in the colony processor `func_02D658`** (cap fetched
-  `@0x2D6AF`/`@0x2E6AF`, thunk `0x181F:0xD3A`) against the **16-slot stockpile array
-  `ColonyRecord +0x9A`** (good `i` at `+0x9A + i·2`): stock above `cap` is the
-  **overflow** (`stock − cap` computed `@0x2E6FB`) and is removed end-of-turn
-  ("spoilage"). **B** (cap + per-good application); the exact wastage-vs-sale ordering
-  inside the production loop is the narrow residual.
+- **The `(level+1)·100` cap is NOT a per-good goods clamp (CORRECTED 2026-06-27).** A full scan of
+  the `+0x9A` write sites shows the stockpile is banked with **only a floor at 0, no ceiling**
+  (`func_02D658 @0x2D96E` `add [bx+si+0x9a],ax`; clamp ≥0 `@0x2D972`). The over-100 disposal is the
+  **auto-export-to-Europe** step (§6.4): the threshold is a **flat `0x64`=100 → reduce to `0x32`=50**
+  (`cmp [+0x9a],0x64 @0x2D6F7`, `sub [+0x9a], stock−0x32 @0x2D70B`), **not** `(level+1)·100`; the
+  `func_008D00` value bounds only the **food growth reserve** in `colony_turn_update` (`@0xA61F`).
+  `0x181F:0xD3A` `@0x2D6AF` is the warehouse-level lookup feeding the export step. Goods over 100 are
+  **sold** (treasury credit `PowerRecord+0x22`), or **wasted** if independence is declared
+  (`[0x5382]&1`) — see §6.4. **B (corrected).**
 - **Food exception:** up to **199** food may be kept; at **200+ food a new colonist
   is created** and 200 food removed (`docs/GAME_MANUAL.md`). **R** (numbers).
 

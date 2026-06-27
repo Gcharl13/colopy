@@ -5274,3 +5274,33 @@ Consequence: the 0x314B alphabet splits by writer — planning states 1/t/i/? wr
 (strategic, per-power), execution states (@/V/L/=/C/U/R/9/G/B/e/F/0 + mission-dispatch chars) by
 func_04E2D6 (per-unit). ai.md §1/§4/§6.1 + open-question #4 updated. This closes the last flagged
 conflict in the AI spec.
+
+## 2026-06-27 — L3 Phase 1: colony per-turn economy (conversion ratio, growth, warehouse correction)
+
+Decode-verify workflow (29 byte-verified findings; adversarially checked; 5 corrected arg-labels).
+
+MANUFACTURING (func_008E84): ratio = 1:1 (1 finished per 1 raw the tile loop gathered), with a
+×2/3 throttle when the finished good's building-chain count > 2 (func_00864E result; the chain table
+DS:0x8F86 + link ids byte[good+0x2F4], owned-test via building bitfield ColonyRecord+0x84/func_00860E
+imul colony,0xCA + [si+(b>>3)+0x5DCA] bit b&7). Tools(14) subtract per-turn [0x8E66]. Commit
+func_008E46->func_008E02 (bookkeeping tables 0x8E0A produced-ref / 0x8E32 leftover-raw / 0x8E5A
+overflow-surplus, surplus rescaled x3/2 when throttle fired). Chains @0xA660..0xA68C:
+Ore6->Tools14, Tobacco2->Cigars10, Cotton3->Cloth11, Furs4->Coats12, Sugar1->Rum9.
+
+FOOD/GROWTH: consumption=2*pop (@0xA5F2); surplus=max(0, producedFood[0x8DC8]-2*pop) (@0xA5F7);
+half (ceil(surplus/2) @0xA606) accrues to colony +0xAA; threshold 25 normal / 50 difficulty (gate
+@0xA5B4); colonist born func_009318 INC[+0x1F] @0x9464; starve func_008FB4 @0x902E DEC[+0x1F]
+(shifts job arrays +0x20/+0x21/+0x40/+0x41 + work-tile table +0x70). The 0xA5D0..0xA640 block is the
+colony-screen FORECAST/display, not the mutation; the deficit->remove trigger + per-turn +0xAA write
+remain TBD. (Also: +0xAA here vs the older +0xC8 growth-accumulator gloss need a runtime reconcile.)
+
+WAREHOUSE CORRECTION (overturns a settled reading): there is NO per-good spoilage clamp. The +0x9A
+stockpile banks with a floor at 0 and NO ceiling (func_02D658 @0x2D96E add, @0x2D972 clamp>=0). The
+over-100 disposal is the auto-export-to-Europe step: flat threshold 0x64=100 -> reduce to 0x32=50
+(@0x2D6F7/@0x2D70B), excess SOLD (net=excess*price-tax credited to PowerRecord+0x22 @0x2D785), gated
+by tradeable filter func_02EF55 and the independence flag [0x5382]&1 (@0x2D728; if independent the
+excess is WASTED not sold). func_008D00 (level+1)*100 is fetched once @0xA615 and bounds ONLY the
+food growth reserve (cap-[+0xAA] @0xA61F), NOT goods. (warehousing.md §6.4 already had the sell/waste
+model right; colony.md §5/§warehouse "surplus dropped (spoilage)" was wrong and is corrected.) The
+verified bytes overturn the prior "goods spoil at (level+1)*100" claim, per the hard rule that EXE
+bytes win.

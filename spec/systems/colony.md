@@ -122,9 +122,16 @@ The ordered per-turn colony pipeline (call sites byte-read):
 2. **Tile production**: loop over the 3×3 ring / goods (bounds `cmp [bp-0x1c],0x14`=20
    `@0xA3E8`), `call 0x9AAA` (feature bonus) + **`call 0x9B9C` = `compute_terrain_yield`**
    `@0xA42A`, accumulating per-good into the produced table `[good·2 + 0x8DC8]`.
-3. **Raw→finished chains**: **`call 0x8E84` ×5** (`@0xA660..0xA68C`) — the 5 manufacturing
-   conversions (Ore→Tools, Cotton→Cloth, Sugar→Rum, Tobacco→Cigars, Furs→Coats); each
-   updates the stockpile via building-chain gates (`call 0x863E`).
+3. **Raw→finished chains**: **`call 0x8E84` ×5** (`@0xA660..0xA68C`, args `(finished, raw)`):
+   Ore6→Tools14, Tobacco2→Cigars10, Cotton3→Cloth11, Furs4→Coats12, Sugar1→Rum9.
+   **Conversion ratio = 1:1 (BYTE_VERIFIED 2026-06-27)** — `func_008E84` takes the raw the tile
+   loop gathered (`produced[finished]`) and converts it unchanged, **except a ×2/3 throttle** when
+   the finished good's **building-chain count > 2**: `if func_00864E(finished) > 2: amount =
+   amount·2/3` (`shl;mov cx,3;idiv` `@0x8EB1`). The gate counts how many buildings in the finished
+   good's requirement chain (chain table `DS:0x8F86`; link ids `byte[good+0x2F4]`) the colony owns,
+   via the building bitfield `ColonyRecord+0x84` (`func_00860E`: `imul si,colony,0xCA;
+   al=[si+(b>>3)+0x5DCA]; bit b&7`). **Tools (14)** additionally subtract the per-turn
+   tools-from-horses offset `[0x8E66]` (`@0x8E61`). Commit `func_008E46`→`func_008E02`. **B.**
 4. **Food consumption — BYTE_VERIFIED: `eaten = 2·pop`** (`@0xA5F2` `mov al,[bx+0x1F]; shl
    ax,1`); `net_food = max(food_produced[0x8DC8] − 2·pop, 0)` (`@0xA5F7 sub/neg`, clamp
    `@0xA5FD`). Net feeds the `+0xC8` growth accumulator (the `+200` growth threshold is
@@ -136,13 +143,21 @@ The ordered per-turn colony pipeline (call sites byte-read):
    DGROUP `0x8E0A`/`0x8E32`/`0x8E5A` (indexed `good·2`); Tools(0xE) gets a special subtract
    of `[0x8E66]` `@0x8E61`.
 
-**Warehouse spoilage (was TBD) — PARTIALLY TRACED:** the capacity is `(level+1)·100` (above,
-exact) and the over-capacity case is detected (`func_008E02` computes `room = cap − stock −
-produced` when `stock+produced < cap`). The exact CLAMP that caps the committed `+0x9A`
-stockpile to `cap` (and discards the overflow as spoilage) lives in the stockpile-commit path
-inside the `0x8E84` chains, not in `func_008E02` (which is the display side). So: capacity
-formula + consumption + sequence are byte-verified; the precise spoilage *write* is the
-remaining leaf. **B (sequence + cap + consumption) / partial (spoilage write site).**
+**Warehouse "spoilage" — CORRECTED 2026-06-27 (there is no per-good spoilage clamp).** A full
+scan of every `+0x9A` write site shows the stockpile is **banked with only a floor at 0, no
+ceiling** (`func_02D658 @0x2D96E` `add [bx+si+0x9a],ax` then `@0x2D972` `or/jge/sub` clamp ≥0).
+The over-capacity disposal is **not spoilage** — it is the **auto-export-to-Europe** path
+(`func_02D658 @0x2D6F7`): for each tradeable good (filter `func_02EF55 @0x2D6DD`) with
+`stock ≥ 100` (`cmp [+0x9a],0x64`), the stock is reduced to **50** (`sub [+0x9a], stock−0x32`
+`@0x2D70B`) and the **excess is sold** — `net = excess·price − tax` credited to the treasury
+`PowerRecord+0x22` (`@0x2D785`, the `[0x84fc]` player record) — **unless independence is declared**
+(`[0x5382]&1` `@0x2D728`), in which case the excess is **wasted, not sold**. So `func_02D658`'s
+100→50 is the Custom-House/auto-export step (canonical: `warehousing.md §6.4`), **not** a
+`(level+1)·100` cap. The `func_008D00` `(level+1)·100` value is fetched once `@0xA615` and used
+**only** to bound the **food growth reserve** (`cap − [+0xAA]` `@0xA61F`), not per-good goods.
+**B (corrected).** *(Open: whether a true over-warehouse-cap spoilage exists for non-tradeable
+goods — none was found; `0x181F:0xD3A` cap query `@0x2D6AF` is the warehouse-level lookup feeding
+the export step.)*
 
 ### Building presence & factory tier — **BYTE_VERIFIED** (`ColonyRecord +0x8A` bitmap)
 Each colony tracks which buildings it has in the per-colony bit-array at
@@ -273,9 +288,12 @@ the §state table and the §6 residual; the 16-vs-20 array width is unresolved.
 Per-good storage cap for the **regular (tradable) goods** = **`(ColonyRecord +0x95 +
 1) · 100`**, default **100** when `+0x95 == 0` (`@0x008D04` `bp-2=0x64`; `@0x008D14`
 `(+0x95)+1; ×0x64`). So **100 / 200 / 300** for warehouse level **0 (none) / 1
-(Warehouse) / 2 (+Expansion)**. `colony_turn_update` calls it (`@0x00A615`) and limits
-a good's gain to `cap − current_amount` (`@0x00A61F`, clamp ≥0). Goods cannot exceed
-the cap; surplus production is dropped (spoilage).
+(Warehouse) / 2 (+Expansion)**. **CORRECTED 2026-06-27:** `colony_turn_update`'s single
+`func_008D00` call (`@0x00A615`) bounds **only the food growth reserve** (`cap − [+0xAA]`
+`@0x00A61F`), **not** per-good goods. Goods are **not** clamped/spoiled at this cap — over-100
+tradeable goods are **auto-exported to Europe** (→50, sold; wasted if independence declared) in
+`func_02D658`; see the "Warehouse spoilage — CORRECTED" note above and `warehousing.md §6.4`. The
+prior "surplus production is dropped (spoilage)" wording was wrong.
 
 **Food is the exception — base capacity 200** (user-confirmed; manual). Food is not a
 warehouse-limited trade good but the **population-growth store**: it accumulates to
@@ -287,7 +305,21 @@ the grow branch lives in `func_009318` (file `0x009318..0x009626`) — reached w
 then `population++` (`@0x009464`), bumps the SoL divisor `+0xC6 += 100` (`@0x009453`),
 and posts `@NEWCOLONIST`. The exact **200** food threshold constant is **TBD** (the
 evaluator compares population against a food-derived argument rather than a literal).
-Likewise the end-of-turn spoilage of an *already-overfull* regular stock is `TBD`.
+
+**Growth & starvation mechanism — refined 2026-06-27 (B mechanism; trigger TBD).** Per turn the
+food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**
+(`ceil(surplus/2)` = `inc;sar ax,1` `@0xA606`, capped) accrues toward growth, accumulated against
+the colony food-growth field **`+0xAA`** (read `@0xA5D6`/`@0xA61F`; growth fires once `+0xAA` ≥ the
+threshold **25 normally / 50** on the difficulty flag, `cmp [+0xAA],2` gate `@0xA5B4`). The
+**born-colonist** write is `func_009318` (`INC [+0x1F]`, above); the **starvation** write is
+`func_008FB4 @0x902E` (`DEC [+0x1F]`, shifting the colonist job arrays `+0x20/+0x21/+0x40/+0x41` and
+the 0x14-entry work-tile table `+0x70` down to fill the vacated slot). The exact **deficit→remove**
+*trigger* (where `2·pop > producedFood` with empty stored food calls `func_008FB4`) and the per-turn
+`+0xAA` increment site are still **TBD** — the `0xA5D0..0xA640` block is the colony-screen
+**forecast/display**, not the mutation; the mutation funcs are byte-confirmed but their call gate is
+not yet pinned. *(NB: the older "+0xC8 growth accumulator" gloss (§ driver step 4) and this `+0xAA`
+need a runtime cross-check to confirm which is the live store.)* **B (funcs + surplus rule) / TBD
+(trigger + accumulator-field reconciliation).**
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,
