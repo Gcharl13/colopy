@@ -96,7 +96,12 @@ for i in range(16):
         cx=1+i*19+(18-fr.width)//2; C.alpha_composite(fr,(cx,181))
     # quantity number under icon (y~? the real shows number below icon). draw qty
     text(str(stock[i]),1+i*19+2,191,(255,255,255))
-text("Jamestown.  Spring, 1504.  Gold: 1000e",70,1)
+# Title from the SNAPSHOT (not hardcoded): colony name @ record+0x02, pop @ +0x1F.
+# NOTE: this snapshot is a freshly-founded pop-1 colony (SoL 0%), which is NOT the same
+# game-state as docs/screens/11_colony_screen.png (a developed colony, SoL "100% (I)").
+cname=snap[dg+cp+0x02:snap.find(b'\x00',dg+cp+0x02)].decode('latin1','replace')
+cpop=snap[dg+cp+0x1f]
+text(f"{cname}  (pop {cpop}, founding snapshot)",70,1)
 C.convert('RGB').save('/tmp/mine_final.png')
 C.resize((960,600),Image.NEAREST).convert('RGB').save('docs/screens/colony_RENDERED.png')
 print("wrote colony_RENDERED.png")

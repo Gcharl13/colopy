@@ -46,6 +46,24 @@ These are honest, recomputed numbers — not an eyeball judgement.
   sprites, boycott "✗" marks, right-column commodity icons — all runtime game-state (spec §6 R/TBD).
 - **Colony minimap** (top-right) — separate composited element; rect known, content is live tiles.
 
+## ⚠ The snapshot and `11_colony_screen.png` are DIFFERENT game states (root cause)
+Proven from the byte-correct snapshot fields:
+- snapshot `colony+0x02` name = **"Jamestown"**, `+0x1F` **pop = 1**, stockpile = **only Muskets 50**,
+  bells `+0x0C/0x0E = 0`, SoL `+0xC2/+0xC6 = 0/200` ⇒ **SoL = 0%** — a *freshly-founded* colony.
+- `11_colony_screen.png` shows **"100% (I)"** (100% Sons-of-Liberty, rebel rank I) and a full
+  colonist plaza row. **A pop-1 colony cannot display 100% SoL or a multi-colonist plaza.**
+
+So the snapshot is the *founding* moment of Jamestown; the screenshot is a *developed* Jamestown.
+There is **no colony-screen capture matching the snapshot** (`15_building_colony.png` is the
+"BUILDING A COLONY" cinematic, not the management screen). The renderer's earlier title
+"Jamestown. Spring, 1504. Gold: 1000e" was **hardcoded**, not read from the snapshot — that masked
+the mismatch. The title now reads the real name+pop from the snapshot and labels it a founding snapshot.
+
+**Consequence:** no faithful render of *this* snapshot will ever match `11_colony_screen.png` — the
+states differ. The MSE numbers below compare two different colony states and are therefore a *ceiling
+artifact*, not a decode-quality signal. To truly recreate `11_colony_screen.png`, capture a RAM
+snapshot **at that screenshot's moment** (developed Jamestown) and render from it.
+
 ## Why the scene band cannot pixel-match this capture (the real ceiling)
 The snapshot's plot table (`0x266`) places buildings in **different positions** than the screenshot,
 despite identical turn (Spring 1504), gold (1000), and stockpile (muskets 50) — i.e. it is the same
