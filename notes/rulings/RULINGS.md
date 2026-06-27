@@ -5253,3 +5253,24 @@ the rest of the engine uses, not an AI-private map:
 Closes ai.md open-question #3: the AI scoring stack terminates in the already-specified map/colony
 data layers; no further AI-only black box beneath the named helper map. Remaining soft spot = the
 exact weighting math inside func_0083F2 (reachability), a small decodable resident function.
+
+## 2026-06-27 — L4 plan-map outer-index conflict RESOLVED: power-indexed (4×64)
+
+The Phase-2 flagged conflict (plan map unit- vs power-indexed) is resolved in favor of POWER-indexed
+(4 powers × 64 slots), by two independent proofs:
+1. Function boundary: there is NO function prologue (enter/push-bp after retf) between func_04CC50
+   (0x4cc50, ENTER 0x1e4) and func_04E2D6 (0x4e2d6). So func_04CC50 is one function spanning
+   0x4cc50..0x4e2d5, and ALL plan reads/writes (0x4dff4, 0x4e05c, 0x4e07e, 0x4e16e, 0x4e199) are
+   inside it, where [bp+6] = func_04CC50's POWER argument (per-power turn loop calls it once/power).
+   The earlier "func_04E2D6 reads goal_type by unit index" was a FUNCTION-BOUNDARY MIS-ATTRIBUTION —
+   those sites are the tail of func_04CC50, before func_04E2D6's entry. func_04E2D6 (per-unit, [bp+6]
+   =unit) does NOT re-read the plan map by unit; it acts on the 0x314B/0x314C/0x314D-E that func_04CC50
+   already wrote.
+2. BSS layout: power-indexed table = 4*64*4 = 0x400 bytes, spans DS:0x98B0..0x9CB0; the next live
+   global cluster begins EXACTLY at 0x9CB0. A unit-indexed table (300*64*4 = 0x12C00) is impossible:
+   it overflows the 64KB DGROUP and the live globals from 0x9A00 up.
+
+Consequence: the 0x314B alphabet splits by writer — planning states 1/t/i/? written by func_04CC50
+(strategic, per-power), execution states (@/V/L/=/C/U/R/9/G/B/e/F/0 + mission-dispatch chars) by
+func_04E2D6 (per-unit). ai.md §1/§4/§6.1 + open-question #4 updated. This closes the last flagged
+conflict in the AI spec.

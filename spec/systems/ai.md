@@ -14,7 +14,8 @@
 
 | Engine | Function | Role |
 |--------|----------|------|
-| **Order/mission processor** | `func_04E2D6` @file `0x04E2D6` (~15 KB, `ENTER 0xEE`) — overlay page 0x0D | Per-unit turn driver: gate → validate → score mission/target → write order/state/goto/heading/budget. The 30-letter state machine lives here. |
+| **Strategic planner** | `func_04CC50` @file `0x04CC50` (`0x04CC50..0x04E2D5`, `ENTER 0x1E4`) — overlay page 0x0D | Per-**power** pass (`[bp+6]`=power): reads the plan map (§6) and assigns each unit a mission, writing the planning states `1`/`t`/`i`/`?` + order `0x0B` + goto coords. |
+| **Order/mission processor** | `func_04E2D6` @file `0x04E2D6` (~15 KB, `ENTER 0xEE`) — overlay page 0x0D | Per-**unit** turn driver (`[bp+6]`=unit): gate → validate → score → write order/state/goto/heading/budget; writes the execution states. |
 | **Tactical heading evaluator** | `func_046FFA` @file `0x046FFA` (4835 B, `ENTER 0xA2`) — overlay page 0x0C | Scores the 8 compass directions (+ "stay") for one unit and writes the winning compass dir to `0x314F`. The rich terrain/enemy/colony score formula is here. |
 | Heading propagator | `func_059B90` @file `0x059B90` — overlay page 0x0F | Copies/min-merges a heading onto a **neighbour** unit (escort/column behaviour); uses the same `0xb4`/`0xbe` compass tables. Not a per-unit mover. |
 
@@ -133,8 +134,12 @@ the helper map above.
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 
 `0x314B` is the **persistent per-unit AI mode**: the previous turn writes a letter, the next turn's
-dispatch reads it to decide which mission/handler resumes. Full decoded alphabet (assign site →
-meaning):
+dispatch reads it to decide which mission/handler resumes. The alphabet splits by writer (both in
+overlay page 0x0D): the **planning** states `1`/`t`/`i`/`?` are written by the strategic pass
+`func_04CC50` (`0x04CC50..0x04E2D5`, sites `0x04E15D`/`0x04E175`/`0x04E194`/`0x04E202` — all *before*
+`func_04E2D6`'s entry, see §6.1); the **execution** states (`@`,`V`,`L`,`=`,`C`,`U`,`R`,`9`,`G`,`B`,
+`e`,`F`,`0`, mission chars) are written by the per-unit consumer `func_04E2D6` (`≥0x04E2D6`). Full
+decoded alphabet (assign site → meaning):
 
 | Char | Hex | Assigned | Meaning |
 |------|-----|----------|---------|
@@ -230,16 +235,18 @@ Accessors (all far, page 0x0D): **clearer** `func_04C1F0` (reset one slot to `go
 then writes the 4 fields from caller-frame slots `[bp+8/0xA/0xC/0xE]`); **query** `func_04C306`
 (returns max `v3` among slots matching `field0/v1/goal_type`).
 
-> **⚠ Unresolved outer-index identity (TBD, recorded 2026-06-27).** The outer index is `[bp+6]` in
-> **both** the producer `func_04CC50` and the consumer `func_04E2D6`. In `func_04E2D6` `[bp+6]` is
-> byte-confirmed the **unit index** (`imul bx,[bp+6],0x1c` at entry `@0x04E2EF`), which argues a
-> **per-unit** 64-slot goal list. But a flat *unit×64×4* table = `300·64·4 = 0x12C00` bytes would
-> **overflow the 64 KB data segment** at base `0x98B0`, and the per-power turn loop (§6.3) calls the
-> strategic pass once per power (0..3). So whether `idx` is **unit** or **power** is **not resolved**
-> from the committed bytes — the two workflow reads conflicted and each only verified its own
-> citation. **Blocker:** need the table's allocated byte-size (a `memset`/alloc of `0x98B0` — not
-> found in the committed pages) or the real cardinality of `func_04CC50`'s `[bp+6]` argument at its
-> (dispatch-island) caller. Do **not** assert "64 per unit" or "per power" as fact until resolved.
+> **Outer index = POWER (RESOLVED 2026-06-27).** The plan map is indexed by **power (0..3), 64 slots
+> each** — `idx = power` in `((power<<6)+slot)<<2`. Two independent proofs:
+> 1. **All** plan reads/writes (`@0x04DFF4`, `@0x04E05C`, `@0x04E07E`, `@0x04E16E`, `@0x04E199`) sit
+>    **inside `func_04CC50`** (one large function `0x04CC50..0x04E2D5` — verified no intervening
+>    prologue-after-`retf`), where `[bp+6]` is the function's **power** argument (the per-power turn
+>    loop §6.3 calls it once per power). The earlier "`func_04E2D6` reads it by unit index" was a
+>    **function-boundary mis-attribution** — those sites are the *tail of `func_04CC50`*, before
+>    `func_04E2D6`'s entry at `0x04E2D6`. The consumer `func_04E2D6` does **not** re-read the plan map
+>    by unit index; it acts on the `0x314B`/`0x314C`/`0x314D/E` that `func_04CC50` already wrote.
+> 2. **BSS layout:** a power-indexed table spans `0x98B0..0x9CB0` (`4·64·4 = 0x400` bytes) and the
+>    next live global cluster begins **exactly at `0x9CB0`**. A *unit*-indexed table (`300·64·4 =
+>    0x12C00`) is impossible — it overflows the 64 KB segment and the live globals from `0x9A00` up.
 
 ### 6.2 Mission-dispatch chars → missions (B)
 
@@ -314,9 +321,10 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    map (`MP_FORMAT.md`) + colony (`colony.md`, stride `0xCA`@`0x5d46`) data. No AI-only black box
    remains beneath the helper map. The only soft spot is the exact arithmetic *weighting* inside
    `func_0083F2` (reachability) — a small resident function, fully decodable but not yet line-traced.
-4. **Plan-map outer-index identity (unit vs power)** — §6.1's flagged conflict. Blocker: the
-   allocated byte-size of the `DS:0x98B0` table (no `memset`/alloc found in committed pages) or the
-   real cardinality of `func_04CC50`'s `[bp+6]` at its dispatch-island caller.
+4. ✅ **Plan-map outer-index — RESOLVED 2026-06-27 (§6.1): POWER-indexed (4×64).** All plan
+   reads/writes are in `func_04CC50` (`[bp+6]`=power); BSS layout proves it (table `0x98B0..0x9CB0`,
+   next global cluster at `0x9CB0`; unit-indexed would overflow the 64 KB segment). The prior
+   "unit-indexed" reading was a function-boundary mis-attribution.
 5. **Full plan-map goal_type enumeration** — only `1`/`4`/`7` byte-confirmed as distinct consumed
    codes; the complete code→mission table is written by the (resident, behind `0x181F:0x952`) planner
    helper whose body is outside the committed pages. Site: setter `func_04C3A2`, reader
