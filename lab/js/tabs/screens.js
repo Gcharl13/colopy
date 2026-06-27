@@ -94,6 +94,9 @@ export async function render(host, ctx) {
             const dw = Math.min(f.w, step.x + step.w - x), dh = Math.min(f.h, step.y + step.h - y);
             g.drawImage(img, f.ax, f.ay, dw, dh, x, y, dw, dh);
           }
+      } else if (step.op === 'rect') {            // solid fill (e.g. black area separators)
+        g.fillStyle = step.color || '#000';
+        g.fillRect(step.x, step.y, step.w, step.h);
       }
     }
   }

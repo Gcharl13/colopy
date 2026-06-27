@@ -28,8 +28,8 @@ const STOCKPILE_GOODS = ['Food', 'Sugar', 'Tobacco', 'Cotton', 'Furs', 'Lumber',
   'Horses', 'Rum', 'Cigars', 'Cloth', 'Coats', 'Trade Goods', 'Tools', 'Muskets'];
 const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
   id: `stock${i}`, label: `stockpile: ${g}`, type: 'sprite', sheet: 'ICONS',
-  frame: 0x16 + i, x: 1 + i * 19, y: 181,
-  tier: 'B', cite: `colony_screen.cpp §6: x=1+${i}·19, icon y=181; icon=good+0x16 (ICONS ${0x16 + i})`,
+  frame: 0x16 + i, x: 2 + i * 19, y: 181,
+  tier: 'B', cite: `colony_screen.cpp §6: x=2+${i}·19, icon y=181; icon=good+0x16 (ICONS ${0x16 + i}); MSE-0 verified vs live capture (RULINGS 2026-06-27)`,
 }));
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
@@ -62,16 +62,19 @@ export const SCREENS = {
   },
   colony: {
     name: 'Colony screen — plots + stockpile', w: 320, h: 200, scale: 2,
-    // Composited backdrop (matches colony_screen.cpp): wood-grain chrome (WOODTILE
-    // tiled) → parchment scene inset (PARCH tiled, SCENE 4,8,204,120) → COLONY.PIK
-    // bottom band at y=128. NOT a single image — that's why the plain-image version
-    // looked broken (black void above the band).
+    // Composited backdrop. Parchment scene rect + black separators MEASURED from the
+    // matched live capture (docs/screens/colony_live_1505.png, RULINGS 2026-06-27):
+    // parchment = x0..198 y8..127; black separators at x=199 (scene|minimap), y=7
+    // (title|scene), y=128 (scene|band). (Was PARCH 4,8,204,120 with no separators.)
     backdrop: [
       { op: 'tile', sheet: 'WOODTILE', x: 0, y: 0, w: 320, h: 200 },
-      { op: 'tile', sheet: 'PARCH', x: 4, y: 8, w: 204, h: 120 },
+      { op: 'tile', sheet: 'PARCH', x: 0, y: 8, w: 199, h: 120 },
       { op: 'image', bg: 'COLONY', x: 0, y: 128 },
+      { op: 'rect', color: '#000', x: 199, y: 7, w: 1, h: 122 },   // scene | minimap panel
+      { op: 'rect', color: '#000', x: 0, y: 7, w: 320, h: 1 },     // title | scene
+      { op: 'rect', color: '#000', x: 0, y: 128, w: 320, h: 1 },   // scene | COLONY.PIK band
     ],
-    note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH, 4,8,204,120) + COLONY.PIK band at y=128. BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C) and the 16-cell stockpile bar (x=1+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so a plot’s FRAME is TBD (editable). The 3×3 worked-tiles grid + panel text aren’t seeded yet.',
+    note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH x0..198 y8..127, measured) + COLONY.PIK band at y=128 + black area separators (x199 / y7 / y128, measured). BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C; a plot FRAME = building def_id byte[0x8E82+i], def_id 0→frame 16 — RULINGS 2026-06-27) and the 16-cell stockpile bar (x=2+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so per-plot def_id is editable. The surrounding-tile minimap reuses lab/js/sim/mapview.js (terrainCompose); its window/scale + work-tile/marker overlays are TBD (func_026374). Panel text not seeded.',
     elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
   },
   colonyReport: {
