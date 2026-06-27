@@ -59,10 +59,10 @@ const BAND_SPRITES = [
   [56, 40, 163], [62, 52, 163],                               // cross + liberty bell
   [124, 104, 132],                                            // SoL crown
   [23, 213, 134], [23, 222, 134],                             // 2 production goods (warehouse top)
-  // warehouse SHORTAGE goods (drawn first, then the red ✗ over each): 3 Lumber (good 5,
-  // ICONS 27) + 3 Tools (good 14, ICONS 36) — a production shortage of lumber & tools.
+  // warehouse SHORTAGE goods (drawn first, then the red ✗ over each): 3 Lumber (ICONS 27)
+  // + 3 Hammers (the construction resource, ICONS 54 — NOT Tools/36) — a build shortage.
   [27, 213, 162], [27, 224, 162], [27, 235, 162],
-  [36, 249, 162], [36, 258, 162], [36, 267, 162],
+  [54, 249, 162], [54, 258, 162], [54, 267, 162],
   [55, 213, 162], [55, 224, 162], [55, 235, 162],             // red ✗ (frame 55) over each good
   [55, 249, 162], [55, 258, 162], [55, 267, 162],
   [67, 304, 133], [68, 303, 147], [69, 303, 162],             // right tool buttons
