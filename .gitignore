@@ -33,3 +33,7 @@ reverse_engineered/
 
 # regenerable visualization (rebuilt by tools/build_coverage_map.py)
 coverage_map.html
+
+# DOSBox capture working tree (RAM dumps, logs, driving screenshots) — regenerable,
+# matched outputs are committed under docs/screens/ (colony_live_1505.png etc.)
+scratchpad/dbx/
