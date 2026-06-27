@@ -5331,3 +5331,40 @@ SoL threshold (negative-answered). Per-call gate random_int(0,diff+1) @0x3CAD0 -
 tile. SoL enters ONLY via magnitude (lower SoL -> more militia), not fire/no-fire. Spawns Tory-Militia
 (type [0x53D2]) on free tiles, count = strength countdown (not fixed 8); marks colony [+0x1C]|=1 (no
 re-fire); suppresses silently if no free tile. Caller cadence + numeric militia type id remain TBD.
+
+## 2026-06-27 — UI closeout: 3 PARTIAL screens resolved; HUD blit mechanism byte-verified
+
+Thorough adversarial UI workflow (4 targets, ~35/46 confirmed) + hand-verification + pixel
+cross-check against docs/screens/*.png. The "overlay-resident, not statically resolvable" label on
+the HUD text was the prior cop-out; the mechanism IS resolvable. All 21 UI tracker rows now DONE.
+
+SHARED TEXT MECHANISM (byte-verified): set_text_box(w,h,x,y) @file 0x2740 writes BSS rect
+[0x2cca]=w/[0x2ccc]=h/[0x2cc6]=x/[0x2cc8]=y; the painter @file 0x275C (thunk 0x181F:0xB0, ENTER 0x54)
+reads that rect. Per-screen title/header positions = the set_text_box call args. Centered text =
+verb 0x181F:0x100. String resolver = func_002462 (0x181F:0x22, DIRECT-index blob[idx]).
+
+MAP SIDEBAR (row 1 -> DONE): composer func_067700 (via 0x181F:0xE1C); x-origin [0x8550]=240
+(func_070FF8 @0x071039); FONTTINY white 0x0F (func_076C70 @0x076C85); rect (240,72,80,64); values
+gold=PowerRecord+0x2A, tax=+0x01, season=(year[0x538a]-1500)/50; strings @MISC/@INFO/@SEASONS; unit
+panel func_0672C8 (sprite +0x3144/45 via 0x181F:0x7BE). The ONLY runtime leaf = per-line y within the
+rect, emitted via a runtime-installed print vector [0xa644]=0x1a1f:0x0f10 (func_0772FA @0x07730C);
+authoritative layout = pixel-measured from docs/screens/06_ingame_map.png (FONTTINY 8px stack
+[season+year, "Gold:N", "Tax:N%"]). No hidden gap.
+
+EUROPE (row 3 -> DONE): header strip func_030F76 (composer step 4 @0x031E6B) via painter 0x181F:0xB0
+(file 0x275C) reading the set_text_box rect; dock empty caption rect (69,120,81,143) string [0x2dd0]
+@0x0314F8; ship names @UNIT[type] (func_0314DC @0x031642); gold PowerRecord+0x2A. Residual = the
+per-screen set_text_box title-origin args + live heap-string slot contents (runtime).
+
+CONTINENTAL CONGRESS (row 5 -> DONE, all byte-cited): title x=0/y=5/w=320/0x90 (0x181F:0x100 @0x37A29);
+body x=4/y-seed=25/+FONTTINY-height[0x89E]; "Next Session" line (label [0x2E9A] + FF name); sentiment
+x=4/0x92 (Rebel% [0x53D4]/0x181F:0x9A4, Tory% [0x2E9C]); bell strip proportional sprite 0x3F filled/
+empty; REF rows count-badge verb 0x181F:0x222 (icons [0x52xx]); FF list loop i=0..0x18 owned-bit
+0x181F:0x7B4; FF portraits @0x3BAA6 blit at coords baked into CC-NN.SS frame-0 descriptor
+(es:[bx+0x46/0x48]) — asset-internal, the correct answer; OK/dismiss 0x191F:0xF74. Residual = live
+counts only (runtime).
+
+NET: every UI screen's structure (rects, fonts, colours, sprite blits, string+value sources, paint
+chains, hit-rects, the text-box mechanism) is byte-verified; the residual across the whole UI is the
+consistent "live game-state value + a few runtime-dispatched per-line text y" class, each bounded by a
+byte-verified rect and pixel-confirmed in the captures. The UI is rewrite-ready.

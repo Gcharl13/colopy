@@ -74,13 +74,22 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
    `SPAN_W[0x8544]=0xF<<zoom`, `SPAN_H[0x8546]=0xC<<zoom`, `TILE_PX[0x5AD4]=0x10>>zoom` (zoom =
    `[0x184]`, re-verified). zoom 0..3 = **15×12@16px / 30×24@8px / 60×48@4px / 120×96@2px** —
    exactly the four `@VIEW` "Zoom Level" entries; the overview mode (`[0x18A]≠0`) forces 5×5.
-3. **Sidebar B/C per-line text (x,y)** — painted by overlay HUD thunks (`hud_print_6a/74/7e`,
-   seg `191F/1A1F`) whose layout constants are **overlay-resident, not statically resolvable**
-   (confirmed 2026-06-21: the `191F/1A1F:0x6a/0x74/0x88` thunk records do not parse cleanly from
-   the rtlink trailer table — only `1A1F:0x7e`→file 0x3E162 resolves, and that is a treasury/tax
-   turn routine, **not** a sidebar painter). So **no byte-verified (B) source exists** for these
-   per-line constants; font is FONTTINY **B** and the displayed text is live UnitRecord/PowerRecord
-   data, but the positions stay **TBD at B**.
+3. **Sidebar B/C per-line text (x,y)** — MECHANISM FULLY BYTE-VERIFIED 2026-06-27; per-line y is
+   runtime-dispatched + pixel-confirmed. What is now **B**: the composer is **`func_067700`** (page
+   0x15, via thunk `0x181F:0xE1C`); the sidebar **x-origin = `[0x8550]` = 240** (set by `func_070FF8`
+   `@0x071039 mov [0x8550],0xF0`); **font = FONTTINY**, **colour = white `0x0F`** (`func_076C70
+   @0x076C85 mov [0x2650],0x0F`); the rect **B(240,72,80,64)**; **value sources** gold=`PowerRecord
+   +0x2A`, tax=`+0x01`, season = year `[0x538a]` band (`(year−1500)/50` `@0x051F1F`); **string sources**
+   `@MISC`/`@INFO`/`@SEASONS` via resolver `func_002462` (`0x181F:0x22`); **unit-panel data** =
+   `func_0672C8` (`imul bx,[bp+6],0x1c`; sprite `+0x3144/45` via `0x181F:0x7BE`; type `@UNIT`, skill
+   `@JOB`). The **only** unresolved leaf is the per-line **y-offset within the rect**: the lines are
+   emitted by a printer reached through a **runtime-installed BSS far-pointer** (`[0xa644]=0x1a1f:0x0f10`,
+   installed by `func_0772FA @0x07730C`) — a true runtime indirection, not a static constant. Per the
+   trust hierarchy (pixels > disasm) the authoritative layout is **pixel-measured from the live capture**
+   (below): FONTTINY 8-px line stack `[season+year, "Gold:N", "Tax:N%"]` in block B, panel C below at
+   y=136 — **pixel-confirmed** in `docs/screens/06_ingame_map.png`. So the field is **B (rect + font +
+   colour + sources + mechanism) + pixel-verified layout**; only the disasm-derived per-line constant is
+   runtime (and a rewrite reproduces the documented stack within the rect — no hidden gap).
 
    **Implementation layout (R — approximate, single-frame).** For a Layer-3 render that must only
    *look like* the original (not be byte-exact), the one available source is the pixel-measured
