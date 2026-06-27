@@ -63,14 +63,28 @@ from the manual / observed strings; trigger wiring not byte-traced).
 
 ## 4. UI
 
-Standard help/message dialog (shared popup framework). Body text from the
-matched `@TUTORIALn`/`@y=N` string with `%STRINGn` substitutions (e.g. colony
-name). Dismissed with `{ESC}`. Geometry per the shared dialog framework. **R**.
+Standard help/message dialog (shared popup framework). Each step's emit site is
+`push <arg2>; push <handle>; lcall 0x181f,0x652` (= `func_06F5F2`, page 23 — e.g.
+TUTORIAL1 `push 0; push 0x8b3; lcall 0x181f,0x652` at `func_020F50 @0x20FF0`); the
+wrapper stashes `[bp+8]` into `[0x1f5e]` and tail-calls the message-dialog renderer
+`func_06F51A` via `func_06F7EF` (`ljmp 0x181f:0x998`). Body text is the matched
+`@TUTORIALn` prose **directly** (no `@y=N` continuation exists — grep `@y=` → 0 in
+GAME_sections.json, see §2) with `%STRINGn`/`%NUMBERn` substitutions — byte-real: the
+prose literally carries `%STRING0..2`/`%NUMBER0..1` (GAME_sections.json 464–482) and
+the substitution slots are registered immediately before the emit via `func_06C220`
+(thunk `0x181f:0x416`) / `func_06C23C` (thunk `0x181f:0x438`). E.g. TUTORIAL12's colony
+-name `%STRING0` is registered at `func_02C5D4 @0x2C7A7` (`push ds; push [0x8542]+2;
+push 0; lcall 0x181f,0x416`) just before `push 5; push 0xd47; lcall 0x181f,0x652`
+(`@0x2C7B1`). Dismissed with `{ESC}` (referenced in-prose, GAME_sections.json:475). **B**
+(framework call chain + substitution wiring byte-cited; pixel geometry of the shared
+dialog frame still TBD per the shared-dialog spec).
 
 ## 5. Evidence
 
-- `data_extracted/text/GAME_sections.json` — `@TUTORIAL1..19` (489–512),
-  `@y=5` sample prose (503), `@TUTNOLUMBER`/`@TUTNOSPACES` (513–514). **B**
+- `data_extracted/text/GAME_sections.json` — `@TUTORIAL1..19` (464–482, prose
+  bound directly to each key; no `@y=N` continuations — grep `@y=` → 0 matches),
+  `@TUTNOLUMBER`/`@TUTNOSPACES` (483–484). (Prior "489–512 / `@y=5` (503) / 513–514"
+  citations were a stale-extraction artifact, corrected to the verified offsets.) **B**
 - `docs/GAME_MANUAL.md` — tutorial function (opening lessons). **R**
 
 ## 6. Open questions (TBD)

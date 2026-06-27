@@ -1,6 +1,6 @@
 # Resource Management / Warehousing
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. No longer a breadth-pass stub: the storable-goods roster + ColonyRecord stockpile layout (§2), warehouse-capacity formula + over-100 surplus-disposal (§3/§6.4), and the warehouse-strip UI geometry (§4) are all BYTE_VERIFIED — capacity `func_008D00 @0x008D00`, stockpile bank/clamp `func_02D658 @0x02D96E`/`@0x02D972`, over-100→50 export `func_02D658 @0x02D6F7`/`@0x02D70B`, treasury credit `@0x02D785`, independence-waste gate `[0x5382]&1 @0x02D728`, food growth reserve `colony_turn_update @0x00A61F`, UI strip `func_0281D6 @0x0281DB`. The only remaining non-byte item is the **Food-200/199 + new-colonist numbers**, still `R` (manual; not located in any resident function — see §6).
 
 **Overall confidence:** cargo roster + **`@CARGO` column legend + warehouse capacity
 formula `(level+1)·100` (`func_008D00`) + per-good overflow application** `BYTE_VERIFIED`

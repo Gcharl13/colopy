@@ -48,11 +48,17 @@ picks the one with **maximum Tory strength**, where **`tory_strength = pop[+0x1F
 diff + 1`** (`@0x3CBE6`; SoL% via `0x181F:0xC86`), **reduced by defending rebel units** on/around it
 and requiring ≥1 free adjacent tile. So the Sons-of-Liberty fraction enters **only through the
 magnitude** (lower SoL → more militia), not a fire/no-fire threshold. (3) Spawns **Tory-Militia**
-(unit type `[0x53D2]`) on free adjacent tiles, **count = the strength value counted down** (not a
-fixed 8), with two random per-militia upgrade gates; marks the colony `[+0x1C]|=1` so it cannot
-re-fire, and **suppresses silently** if no tile was free. **B** (per-call gate + strength formula +
-spawn); the **caller cadence** (how often the WoI loop invokes `func_03CAC6`) and the numeric
-`[0x53D2]` militia type id remain **TBD**.
+as **unit type `1` = "Soldiers"** — the literal `push 1` (`6A 01`) that is the LAST `spawn_unit` arg
+(`@0x3CCCD`); `spawn_unit`=`func_006D24` writes that 4th arg to UnitRecord `+0x2` (`[bx+0x3146]`, the
+unit-type field) — `[0x53D2]` is **not** the type but the **owning power** (3rd arg, `@0x3CCC9`,
+symbols.json `0x53D2`="self power"; cross-checked by `func_006D24 @0x6D75`/`@0x6D7B` storing arg4→type,
+arg3→owner `+0x3`). One of the two random upgrade gates promotes the spawn to **type `4` = "Dragoons"**
+(`@0x3CD31 mov byte [bx+0x3146],4`). Spawned on free adjacent tiles, **count = the strength value
+counted down** (not a fixed 8), with two random per-militia upgrade gates; marks the colony
+`[+0x1C]|=1` so it cannot re-fire, and **suppresses silently** if no tile was free. **B** (per-call
+gate + strength formula + spawn + type id `1`/`@UNIT` row 1). Only the **caller cadence** (how often
+the WoI loop invokes `func_03CAC6`) remains **TBD** (overlay page-06, `reachable:false`, dispatched
+through the rtlink overlay manager — no static caller anchor).
 
 ## 3. Formulas & rules
 
@@ -89,8 +95,11 @@ spawn); the **caller cadence** (how often the WoI loop invokes `func_03CAC6`) an
   **valid empty tiles adjacent to the target colony**: the loop `[bp-0xA]` 0..7 walks the
   **8 neighbours** (delta tables `[bx+0xBE]`/`[bx+0xB4]`), and for each tile that is
   passable (`0x181F:0x768`), in-bounds (`0x181F:0x6BE`), and **not occupied by a rebel
-  unit** (`0x181F:0x682`), it calls **`spawn_unit(col,row,[0x53D2],1)`** (`0x181F:0x95C`
-  `@0x3CCCF`). So **up to 8 militia** arm (one per free adjacent tile); `[bp-8]` is the
+  unit** (`0x181F:0x682`), it calls **`spawn_unit(col, row, owner=[0x53D2], type=1)`** (`0x181F:0x95C`
+  `@0x3CCCF`) — arg order verified against `spawn_unit`=`func_006D24`: the **4th/last arg `1` is the
+  unit type** (→UnitRecord `+0x2` `[bx+0x3146]`, `@0x6D75`) = **`@UNIT` row 1 "Soldiers"**, and the
+  3rd arg `[0x53D2]` is the **owning power** (→`+0x3`, `@0x6D7B`), NOT the type (func_006D24 @0x6D75).
+  So **up to 8 militia** arm (one per free adjacent tile); `[bp-8]` is the
   *spawned-any* flag — if **no** adjacent tile is free, the uprising is **suppressed**
   (clear `+0x1C` bit 0, return — no message/units, `@0x3CD59`). Otherwise the colony
   coords (`+0/+1`) + name (`+0x02`, `%STRING0`) are bound and `@TORYUPRISING` emitted

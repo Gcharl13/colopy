@@ -342,7 +342,10 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
 2. ✅ **Per-type stat tables — RESOLVED 2026-06-27 (§5a).** `0x5234`/`0x5236`/`0x5237`/`0x523d` are
    **fields of one 14-byte UnitTypeStats record** (`DS:0x5234`, stride ×14 proven at `@0x006CEE`,
    not ×6) = the loaded **`@UNIT` CSV** with moves×3. Values are the `@UNIT` primary data (no longer
-   TBD); only the exact labels of the middle ship/cargo fields `+0x04..+0x08` stay soft.
+   TBD); the middle ship/combat fields `+0x04..+0x08` are now reader-pinned (RESOLVED 2026-06-27,
+   §5a): `+0x04`(`0x5238`)=`99` naval sentinel (`@0x03FCC9`), `+0x07`/`+0x08`(`0x523b`/`0x523c`)=the
+   two combat-roll strength terms summed into `rand(1,sum)` (`@0x05B844`), `+0x05`/`+0x06`
+   (`0x5239`/`0x523a`)=ship cargo/size math (`idiv` divisor `@0x051536`, ×32 extent `@0x00B6B1`).
 3. ✅ **Resident scoring/path helpers — RESOLVED 2026-06-27 (§3a).** The `0x181F:xxxx` helpers are
    named load-image-resident functions; their bodies bottom out at the engine's shared **map-access
    layer `0x37f`** (tile-valid / raw-byte / unit-at-tile / terrain) and the already-specified

@@ -53,7 +53,7 @@ loop tail** (`0x5A9D..0x5BF9`), run once per turn after all powers.
 
 ## 3. Formulas & rules
 
-### Per-power phase structure — BYTE_VERIFIED (call graph) / TBD (intra-order)
+### Per-power phase structure — BYTE_VERIFIED (call graph + intra-order)
 `func_005760` issues, per power, a set of direct calls (thunks resolved); the big
 system functions are **not** called from the top loop — they are reached
 *transitively* from the two per-power processors, so the fine phase ordering lives

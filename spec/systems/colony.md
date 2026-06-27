@@ -5,7 +5,9 @@
 
 **Overall confidence:** record stride + fields + **per-tile production formula**
 + **Sons-of-Liberty %** + **hammers/build-progress field** `BYTE_VERIFIED`;
-building-completion check + warehouse spoilage `TBD`. **Last updated:** 2026-06-20.
+building-completion check **BYTE_VERIFIED** (`func_02D658`→`func_02D0E4`→`func_0092E0`, 2026-06-20);
+warehouse "spoilage" **CORRECTED 2026-06-27** (no per-good spoilage clamp — over-cap tradeables are
+auto-exported to Europe, §3). **Last updated:** 2026-06-27.
 **Primary evidence:** `docs/DATA_MODEL.md` (ColonyRecord, runtime-verified),
 `viceroy_source/src/colony/{turn_update,production_support,sol_tory}.c`
 (full byte-traced bodies), `data_extracted/text/NAMES_sections.json`.
@@ -27,7 +29,7 @@ the canonical full field map; the offsets confirmed there include:
 | `+0x1A` | `owner_power_idx` (0..3) | **BYTE_VERIFIED** | colony-burn trace |
 | `+0x1B` | foreign-colony status (0 = player-owned) | **BYTE_VERIFIED** | cross-colony inspection |
 | `+0x1C` | per-colony **status/warning flags** byte (bits `0x02`/`0x04`/`0x08`/`0x40`/`0x80` test/set/cleared each turn — shortage/surplus/build warnings) | **BYTE_VERIFIED** | `func_02D658` `@0x2DB34`/`@0x2DB67`/`@0x2E57A`/`@0x2EDF4` (the earlier "constant 0x40" was just bit `0x40` being set) |
-| `+0xC8` | food-growth accumulator (read/written in the per-turn food accounting; the `200` growth constant is added at `@0x2E098`) | **ANCHOR_VERIFIED** | `func_02D658` `@0x2DA20..0x2DACC`, `+200` `@0x2E098` |
+| `+0xC8` | **high word of the 32-bit SoL `rebel_divisor`** (`+0xC6` lo / `+0xC8` hi) — **CORRECTED 2026-06-27**, this is NOT a food-growth accumulator (the food store is `+0xAA`, §3) | **BYTE_VERIFIED** | per-turn 32-bit EMA `func_02D658 @0x2DA1C..0x2DA6F` (`mov dx,[bx+0xc8]` … `sar dx;rcr ax` ×6 … `sub [bx+0xc6],ax; sbb [bx+0xc8],dx` … `add [bx+0xc6],ax; adc [bx+0xc8],dx`); birth `func_009318 @0x9453/@0x9458` (`add [bx+0xc6],0x64; adc [bx+0xc8],0`); death `func_008FB4 @0x9031/@0x9036` (`sub [bx+0xc6],0x64; sbb [bx+0xc8],0`). (The prior `@0x2E098 "+200"` was a misread — it adds `0xC8`=200 to the message-quantity local `[bp-0x60]`, not to `ColonyRecord+0xC8`.) |
 | `+0x1F` | size / population factor (used in colony-burn loot) | **BYTE_VERIFIED** | trace @ file `0x05DE1E` |
 | `+0x40..` | `colonist_job_skills[]` (1 byte/colonist; profession id) | **BYTE_VERIFIED** | read in `compute_terrain_yield` (profession-match) |
 | `+0x84` | **persistent** `buildings_constructed[]` bit-array (48 bits; set on build-completion) | **BYTE_VERIFIED** | setter `func_0092E0` `*(0x8542)+0x84+n/8`, `or 1<<(n&7)` `@0x9308`; guard `func@0x860E` (`0x5D46+0x84`) |
@@ -63,9 +65,9 @@ vol_accum[16]) are documented in `docs/DATA_MODEL.md` §PowerRecord and
 | `+0x22` | s32 (`+0x22` lo / `+0x24` hi) | `royal_money` — King's REF-budget / tax-revenue accumulator; **grows** from the per-turn sales-tax skim and from boycott-lift tribute | **BYTE_VERIFIED** | per-turn `func_02D658 @0x2D785/@0x2D788` (`add [bx+0x22],ax; adc [bx+0x24],dx` — `ax`= net sale proceeds after the `[+0x01]` tax mul `@0x2D73B`); boycott-lift `func_03334E @0x33413` (`[+0x22] += cost`) |
 | `+0x26` | s32 (`+0x26` lo / `+0x28` hi) | second per-turn sales accumulator (gross/pre-tax amount paired with `+0x22`) | **BYTE_VERIFIED** | `func_02D658 @0x2D78B/@0x2D78E` (`add [bx+0x26],si; adc [bx+0x28],di`, in the same per-power sales loop gated by `[idx·0x34+0x543f]`) |
 | `+0x2A` | u32 (`+0x2A` lo / `+0x2C` hi) | `gold` (treasury) | **BYTE_VERIFIED** | debited on buy/boycott-lift `func_03334E @0x3340D` (`sub [bx+0x2a],ax; sbb [bx+0x2c],dx`), credited on treasure cash-in `func_04E2D6 @0x50954` (`+= 100·unit_value`); oracle = 1000 (`rep_economic.bin`/`rep_europe.bin`, active power 0) ↔ in-game "Gold 1000" |
-| `+0x2E` / `+0x30` | u16 ×2 | Europe-screen progress pair, formatted as the `"(%d of %d)"` template (`[0x11a9]`); **NOT a treasury** (gold is `+0x2A`) | **BYTE_VERIFIED (read site)** | `func_037958 @0x379AB` (`dx=[bx+0x30]; bx=[bx+0x2e]`) then `@0x379C4` re-pushes both under `"(%d of %d)"` when `[0x5383]&0x20`; oracle `+0x2e=0,+0x30=10`. Writer/exact semantics (current/target of an immigration or recruit pool) **TBD** |
+| `+0x2E` / `+0x30` | u16 ×2 | **religious-immigration progress** pair: `+0x2E` = accumulated points so far (current), `+0x30` = next-immigrant cost/target; reaching `+0x2E ≥ +0x30` drops a new immigrant on the Europe dock and **resets `+0x2E` to 0**. Formatted as the `"(%d of %d)"` template (`[0x11a9]`); **NOT a treasury** (gold is `+0x2A`) | **BYTE_VERIFIED** | read `func_037958 @0x379AB` (`dx=[bx+0x30]; bx=[bx+0x2e]`), `@0x379C4` re-pushes both under `"(%d of %d)"` when `[0x5383]&0x20`; **writer `func_0363A2`** (`bx=[0x84fc]`): target `@0x363EF` (`mov [bx+0x30],ax`), inflow `@0x363F5` (`add [bx+0x2e],cx`, `cx=[bp-0xa]`), clamp ≥0 `@0x363FB`, reach-test `@0x36404` (`cmp [bx+0x2e],[bx+0x30]; jg`→arrival `call 0x368e5`), reset `@0x3645E` (`mov [bx+0x2e],0`); init `@0x365CA` (`mov [bx+0x2e],0`). oracle `+0x2e=0,+0x30=10` |
 | `+0x32` / `+0x33` | byte ×2 | per-power **default unit destination tile** (`map_x` / `map_y`) — copied into a newly-created unit's goto-target | **BYTE_VERIFIED** | page_0D `@0x51E9B` (`al=[bx+0x32]` → `[si+0x314d]`) / `@0x51EA6` (`al=[bx+0x33]` → `[si+0x314e]`), where `0x314d/0x314e` = UnitRecord goto-target. **Supersedes** the `docs/DATA_MODEL.md` "ref_strength word `+0x32`" guess (the authoritative REF counts are the `DGROUP:0x53DA..0x53E1` globals, per RULINGS 2026-06-19) |
-| `+0x49` | byte | per-power pending-action countdown (decremented to 0) | **BYTE_VERIFIED (site)** | recruit/immigration overlay `func_04E2D6 @0x52658` (`cmp byte[bx+0x49],0`) / `@0x52688` (`dec byte[bx+0x49]`); exact trigger **TBD** |
+| `+0x49` | byte | per-power **free-immigrant queue count** — number of pre-earned (religious-unrest) recruits waiting on the Europe dock that can be hired for **0 cost**. **Incremented** when the crosses pool `+0x4A` fills (`func_051EF4 @0x529B1` `inc byte[bx+0x49]`, after `@0x529AE sub [bx+0x4a],cx`, gated `[0x538e]>0x50`); **decremented** when one is recruited free (`func_051EF4 @0x52688` `dec byte[bx+0x49]`, taken when `@0x52682 cmp byte[bx+0x49],0` is nonzero, which also zeroes the recruit cost `@0x52658/@0x5265E` and skips the `0x32`-cross payment `@0x5268E`) | **BYTE_VERIFIED** | `func_051EF4 @0x52658/@0x52682/@0x52688/@0x529B1`; init `@0x365D6` (`mov byte[bx+0x49],0`) |
 | `+0x4A` | u16 | per-power **crosses/recruit point pool**, drained in fixed `0x32` (50) chunks | **BYTE_VERIFIED (site)** | `func_04E2D6 @0x5276F` (`cmp word[bx+0x4a],0x32`) / `@0x5279F` (`sub word[bx+0x4a],0x32` when ≥50); the `·0x32` immigrant-cost wiring sits beside it (`@0x52765 imul ax,0x32`) |
 | `+0x4C+i` | u8[16] | `price_level[good]` — per-good current market price index (good order = `0=Food …15=Muskets`) | **BYTE_VERIFIED** | ask `func_030566 @0x30583` (`al=[bx+si+0x4c]`+base, clamp ≥0), bid `func_030590 @0x3059C` (`al=[bx+si+0x4c]−1`, clamp ≥0), recomputed `func_0305A8 @0x306F3` (`[bx+si+0x4c]=al`); oracle `[1,6,5,5,5,2,6,20,3,10,11,12,15,2,2,3]` (Silver=20 highest) |
 | `+0x5C+i·2` | s16[16] | `vol_accum[good]` — per-good signed supply/demand volume accumulator feeding the price recompute | **BYTE_VERIFIED** | accumulated in `func_0305A8 @0x30707/@0x30806/@0x3094F` (`add [bx+si+0x5c],ax`) and drawn down `@0x30A3B/@0x30AB8` (`sub [bx+si+0x5c],ax`); oracle differs between the two snapshots (live accumulator) |
@@ -223,7 +225,7 @@ Crossing thresholds fires the `REBELMAJORITY` (≥50%, `@0x2DB29`) / `REBELUNANI
 (≥100%, `@0x2DB6E`) / `TORYMINORITY` (<95%) / `TORYMAJORITY` (<50%) / `SONSUP`/
 `SONSDOWN` messages and feeds the per-nation `PowerRecord +0x02 rebel_sentiment_pct`.
 
-### Hammers / build progress — field **BYTE_VERIFIED**, completion site **TBD**
+### Hammers / build progress — field **BYTE_VERIFIED**, completion site **BYTE_VERIFIED** (`func_02D658`→`func_02D0E4`→`func_0092E0`, RESOLVED 2026-06-20; see "Completion" below)
 Building progress is a slot in the **per-good colony amount array at `ColonyRecord
 +0x9A`** (u16, stride 2) — *not* a standalone field. The array holds **20 goods
 (0..0x13)**: the 16 `@CARGO` tradables (0..0xF) followed by the 4 internal goods
@@ -303,14 +305,24 @@ the grow branch lives in `func_009318` (file `0x009318..0x009626`) — reached w
 `@0x00941B..0x009429`) takes the case-3 path to `@0x00942E`; the grow branch
 (`@0x009432`) fires only while `population (+0x1F) < 0x20` (32, the max colony size),
 then `population++` (`@0x009464`), bumps the SoL divisor `+0xC6 += 100` (`@0x009453`),
-and posts `@NEWCOLONIST`. The exact **200** food threshold constant is **TBD** (the
-evaluator compares population against a food-derived argument rather than a literal).
+and posts `@NEWCOLONIST`. **CORRECTED 2026-06-27:** there is **no "200" food threshold** here —
+`func_009318` is the **generic add-colonist routine** (it `INC`s pop `+0x1F` and bumps the SoL
+divisor `+0xC6/+0xC8 += 100` whenever population grows, regardless of cause), and `func_00929A` is a
+**job-assignment bound classifier** (it compares the job-slot index `[bp+6]` against the colony's
+population count `+0x1F` and the secondary index `[bp+8]` against `0x13`=19 — confirmed
+`func_00929A @0x929A..0x92DF`), **not** a food evaluator. The real food-growth gate is the **`+0xAA`
+accumulator vs the 25/50 threshold** in `func_00A3E1` (next paragraph); the 200 figure was a
+mis-attribution.
 
 **Growth & starvation mechanism — refined 2026-06-27 (B mechanism; trigger TBD).** Per turn the
 food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**
 (`ceil(surplus/2)` = `inc;sar ax,1` `@0xA606`, capped) accrues toward growth, accumulated against
 the colony food-growth field **`+0xAA`** (read `@0xA5D6`/`@0xA61F`; growth fires once `+0xAA` ≥ the
-threshold **25 normally / 50** on the difficulty flag, `cmp [+0xAA],2` gate `@0xA5B4`). The
+threshold, which is **25 with a Stable (building `0x11`) / 50 without** — `func_00A3E1 @0xA5BB`
+seeds `[bp-0x1e]=0x19`(25), `@0xA5C0` queries Stable via `push 0x11; call 0x863e`, and `@0xA5C9
+or ax,ax; jne` keeps 25 when the Stable is present, else `@0xA5CD mov [bp-0x1e],0x32`(50); the
+`cmp [+0xAA],2` skip-gate is `@0xA5B4`). The earlier "25 normally / 50 on the difficulty flag"
+wording was wrong — the toggle is the **Stable building**, not a difficulty flag. The
 **born-colonist** write is `func_009318` (`INC [+0x1F]`, above); the **starvation** write is
 `func_008FB4 @0x902E` (`DEC [+0x1F]`, shifting the colonist job arrays `+0x20/+0x21/+0x40/+0x41` and
 the 0x14-entry work-tile table `+0x70` down to fill the vacated slot). The exact **deficit→remove**
@@ -354,8 +366,14 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   displayed/debited copy ("X of Y", surplus carried). (`+0xB6` is **not** a tools bank
   — there is no separate tool-cost lookup.) Full lockstep would need a runtime dump to
   100%-confirm, hence **A** not B.
-- **TBD:** end-of-turn spoilage of an overfull stock; building prerequisite gating
-  beyond the bit-6 manufacturing gate.
+- **RESOLVED 2026-06-27:** end-of-turn "spoilage" of an overfull stock — there is **no per-good
+  spoilage clamp**; over-100 tradeables are **auto-exported to Europe** (→50, sold; wasted if
+  independence declared) in `func_02D658 @0x2D6F7..0x2D785` (see §3 "Warehouse spoilage — CORRECTED").
+- **TBD (still open):** building prerequisite gating **beyond** the bit-6 manufacturing gate — i.e.
+  whether/where build-menu constructability requires a predecessor building (the `@BUILDING`
+  tier/category columns + the chain table `DS:0x8F86`). The manufacturing gate (`building_bit(6)`) and
+  the factory-tier `chain count > 2` gate (`func_00864E`) are byte-verified (§3); the full
+  predecessor-prerequisite table walk for the **build menu** was not traced this pass.
 
 ## 7. Open questions (TBD) → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE
@@ -365,10 +383,15 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
    (§3). **Correction:** the build code uses `+0x92`/`+0xB6` (not the dump-labeled
    `+0xBA`) and `+0x84`/`+0x94` (not `+0x60`/`+0x10`) — RULINGS 2026-06-20. Residual:
    `+0x92` vs `+0xB6` bank roles; `+0xBA`'s real meaning.
-2. ~~**Warehouse** capacity thresholds~~ **Mostly done 2026-06-20** — regular goods
-   `cap=(+0x95+1)·100` (100/200/300), `func_008D00`, applied `@0x00A615`. Remaining:
-   the **food** base-200 growth-store threshold constant (`func_00929A`; user-confirmed
-   value, byte-site TBD) and end-of-turn spoilage of an already-overfull stock.
+2. ~~**Warehouse** capacity thresholds~~ **Done** — regular goods `cap=(+0x95+1)·100`
+   (100/200/300), `func_008D00`, applied `@0x00A615` (2026-06-20). **Spoilage RESOLVED
+   2026-06-27:** no per-good spoilage clamp; over-cap tradeables auto-export to Europe
+   (`func_02D658`, §3). **Food growth-store CORRECTED 2026-06-27:** the food accumulator is
+   `ColonyRecord +0xAA` (not a "base-200" constant, and **not** in `func_00929A` — that func is the
+   job-slot bound classifier); the per-turn growth-conversion **threshold is 25 (Stable present, bldg
+   `0x11`) / 50 (no Stable)** per `func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD`. Remaining: the per-turn
+   **`+0xAA` increment** site and the **birth/starvation call gate** (overlay/runtime — both route
+   through `func_02D658` overlay thunks; no resident write site).
 3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
    — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
    `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** Remaining: the

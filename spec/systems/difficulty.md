@@ -112,8 +112,29 @@ and more aggressive/expensive AI diplomacy. **B** (the rows above).
   `spec/systems/tory_uprising.md`, `spec/systems/colony.md` (SoL production).
 
 ## 4. UI
-Selected on the difficulty-selection setup screen (manual). Strings in the
-opening/menu catalogs; layout `TBD`.
+Selected on the difficulty-selection setup screen, decoded as `func_070580 @0x070580`
+(loads the **DIFFICUL.PIK** background by name: `push 0x202D ("DIFFICUL")` @0x0705A5 →
+setup-PIK loader `0x181F:0x44E` @0x0705A8; if the PIK load fails it falls back to the
+`@DIFFICULTY` text list-menu `lea ax,[0x2036]("DIFFICULTY")` → `0x181F:0x998` @0x0705B4,
+storing `[0x53A6] = result-1` @0x0705D2). Strings = `@DIFFICULTY` (5 level names) in both
+`NAMES_sections.json` and `GAME_sections.json` ("Select a Difficulty Level" header + the 5).
+**Layout BYTE_VERIFIED (B):** screen is 320×200 (fill `(0,0,320,200)` @0x070611, blit
+DIFFICUL.PIK @0x070623). The 5 level cells are laid out on a 3-column grid by rect helper
+`func_0702C0`: for `idx = level+1`, `x = (idx mod 3)·105 + 23` (`imul ax,dx,0x69; add ax,0x17`
+@0x0702DA/@0x0702DD) and `y = (idx div 3)·96 + 7` (`imul cx,bx,0x60; add ax,7` @0x0702F2/@0x0702F7,
+with a `−1` row adjust when row>1 @0x0702E5); each cell is **w=90 (0x5A), h=68 (0x44)** (draw-cell
+`func_070302` @0x07033A/@0x070342). Each cell is a clickable hit-rect (90×68) tested against the
+mouse `[0x7E8](x)/[0x7EA](y)` by point-in-rect helper `func_004B16 @0x004B16` (call @0x070707 with
+`push 0x5A; push 0x44`), which on hit sets `[0x53A6] = i`; the commit/exit zone is `click &&
+mouseY<103 (0x67) && mouseX<128 (0x80)` (`func_070580 @0x07073A`). Keyboard nav wraps **mod 5**:
+up `(level+4)%5` @0x070692, down `(level+1)%5` @0x0706C8, arrow scancodes matched @0x0706CC; ESC
+(0x1B) exits @0x07065C. Draw-cell `func_070302` fills the cell then, when the cell is the current
+selection (`cmp ax,[bp+6]` @0x07037D), draws a 1-px hollow-rectangle highlight outline
+(`0x181F:0xCE` = `func_00E0A2` @0x0703AB) in a per-level ink color selected by the index switch
+@0x07034A: **level 0=0x0A** (@0x07035C), **1=0x09** (@0x070362), **2=0x0E** (@0x070368),
+**3=0x0D** (@0x07036E), **4=0x0C** (@0x070374). Residual `TBD`: the title-text position (drawn by
+the overlay draw-all `func_070C64`→`0x1A1F:0xBF2`, overlay-resident) and the cell **font id** (BSS
+render struct `[0x87C]`) are runtime/overlay-resident — not statically pinned here.
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@DIFFICULTY` (5 names). **B**

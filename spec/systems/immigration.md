@@ -46,15 +46,30 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
   (`@0x363F5`) and **spawns an immigrant when `accumulated > threshold`**
   (`@0x36404`: `cmp cx, ax; jg`), then resets `+0x2E := 0`. **B.** (Base `+2`/turn +
   per-colony church/cathedral cross output. The override *mechanism/fields* are
-  byte-verified; the *semantic* meaning — what the `DGROUP:0x30E` attribute table and
-  the PowerRecord `&0x40` flag represent, hence which unit/father consumes crosses —
-  remains `TBD` because neither is labeled in committed evidence.)
+  byte-verified; the `DGROUP:0x30E` attribute table is now **decoded**: it is a
+  **24-byte unit_type → `@JOB` profession-index map** (file `0x1DCAE` = DGROUP `0x30E`,
+  read by helper `func_008BB2 @0x008BBF`: `mov bl,[bx+0x3146]` (UnitRecord `+0x02`=unit_type)
+  → `mov al,[bx+0x30e]`). Bytes: Colonists→`0x13`(@JOB Colonist), Soldiers→`0x15`(Soldier),
+  Pioneers→`0x14`(Pioneer), Missionaries→`0x18`(Missionary), Dragoons/Cont.Cav→`0x17`(Dragoon),
+  Scouts→`0x16`(Scout), Cont.Army→`0x15`(Soldier); all hardware/ships/treasure/King's-Regulars
+  (ut 6,8)/Cavalry/natives = **`0xFF`** = no colonist. The gate (`(s8)val >= 0`) therefore selects
+  **field units that carry a player colonist** (the value IS that colonist's `@JOB` profession =
+  the unit's `UnitRecord +0x17` class code, range `0x13..0x1C`); cross-confirmed at
+  `func_033BE4 @0x33C44..0x33C5B` which gates on the same helper then reads `[si+0x315b]`
+  (UnitRecord `+0x17` profession). **B** (table image + @JOB/@UNIT + `+0x17` cross-use). Only the
+  PowerRecord `+0x00 &0x40` flag's *meaning* stays `TBD` — that bit is tested at `@0x35E18`
+  but has **no resident write site** (`grep` of `[bx-0x77f8]`/`[0x8808]` finds only a `&0xFB`
+  clear of bit `0x04` `@0x03E158`, never a `0x40` set), so it is loaded from the save image or
+  set via a computed-mask/block op — name a save-field or runtime write trace to close it.)
   > **⚠ Cross-doc reconciliation (2026-06-27):** the per-colony cross byte read here is
   > `[colony·0xCA + 0x5D65]` = **`ColonyRecord +0x1F`** (the `0x5D60` base = `0x5D46 + 0x1A`
   > owner field, so "+0x05" from it = `+0x1F`). `colony.md` labels `+0x1F` = **population**.
-  > So either base immigration **scales with colonist count** (crosses += Σ colony population), or
-  > one label is off — needs a runtime spot-check (set a colony's pop vs its cross output). Both
-  > docs cite the same byte; this is a labeling reconcile, not a missing mechanic.
+  > **Resolved (byte, no runtime needed):** `+0x1F` IS population — independently byte-verified at
+  > `@0x00A5EE` (`mov al,[bx+0x1f]; cwde; shl ax,1` = food `eaten = 2·pop`) and the colonist-growth
+  > `inc byte ptr [bx+0x1f]` (`func_009318 @0x009464`) / starvation `dec [+0x1f]` (`func_008FB4 @0x902E`).
+  > `func_035D9A @0x35DBD` reads the SAME byte (`0x5D65 = 0x5D46+0x1F`), so **base immigration
+  > scales with colonist count: per-turn crosses += Σ (player colony population)** plus the base `+2`.
+  > Both docs cite the same physical byte and that byte is population; no label is wrong.
 - **Artillery recruit cost** = `base + artillery_bought_count*100`, then counter++ (NOT `base<<count`). **BYTE_VERIFIED** (`DATA_MODEL.md`).
 - Immigrant **type** selection — **BYTE_VERIFIED** (`func_0363A2 @0x36456..0x3649E`):
   1. **Pick a dock slot:** `random_int(0,2)` (`@0x36462`) chooses one of **3 dock
@@ -90,7 +105,7 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
    William Brewster FF effect which rewrites criminals/servants (`0x19`/`0x1A`) → free
    colonist (`0x1C`) at exactly `+0x02..+0x04` (`func_03BC42 @0x3BF85`, see
    `founding_fathers.md`). **Selector RESOLVED 2026-06-20:** `random_int(0,2)` picks the slot, `func_034C24` refills it (difficulty-weighted; Brewster→top class).
-2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override *semantics* (the gate mechanism is now byte-decoded — see §3; only the meaning of the `0x30E` attribute table and the PowerRecord `&0x40` flag stays `TBD`). **Immigrant-placement handler RESOLVED 2026-06-25:** the spawned colonist's UnitRecord is created by `func_030C68` (file `0x030C68`, reached from `func_0363A2 @0x3649B` via thunk `0x36831 → 0x191F:0x0B26`): it maps the dock-pool type to a category (`0x14→2`, `0x18→3`, `0x16→5`, `0x15→1`, with a `random_int(0,lvl+4)==0 → 4` upgrade, `@0x030C71..0x030CD4`) then calls the unit-record allocator `0x181F:0x095C` (resident, file `0x006D24`) which appends a UnitRecord at index `[0x539C]` (`mov si,[0x539C]; inc [0x539C]` `@0x006D64`, stride `0x1C`, base `0x3144`), and on success writes the alive flag `+0x08:=1` (`@0x030CFA`), type `+0x17:=type` (`@0x030D02`), and for category 2 the field `+0x15:=0x64` (`@0x030D0C`). **B.**
+2. ~~Byte-verify per-turn crosses increment source~~ **Done 2026-06-19** — `func_035D9A` out-param: base `2` + per-colony cross byte `+0x05` (table `DGROUP:0x5D60` stride `0xCA`); spawn when `+0x2E > +0x30` (`@0x36404`), reset `+0x2E:=0` (**B**). Remaining: the field-unit `-2` override *semantics* (the gate mechanism is now byte-decoded — see §3; the `0x30E` table is now decoded as the **unit_type → @JOB-profession-index map** (`0xFF`=no colonist; file `0x1DCAE`, `func_008BB2 @0x008BBF`; the gate `>=0` ⇒ unit carries a player colonist — see §3); only the PowerRecord `+0x00 &0x40` flag's meaning stays `TBD` (tested `@0x35E18`, no resident write site)). **Immigrant-placement handler RESOLVED 2026-06-25:** the spawned colonist's UnitRecord is created by `func_030C68` (file `0x030C68`, reached from `func_0363A2 @0x3649B` via thunk `0x36831 → 0x191F:0x0B26`): it maps the dock-pool type to a category (`0x14→2`, `0x18→3`, `0x16→5`, `0x15→1`, with a `random_int(0,lvl+4)==0 → 4` upgrade, `@0x030C71..0x030CD4`) then calls the unit-record allocator `0x181F:0x095C` (resident, file `0x006D24`) which appends a UnitRecord at index `[0x539C]` (`mov si,[0x539C]; inc [0x539C]` `@0x006D64`, stride `0x1C`, base `0x3144`), and on success writes the alive flag `+0x08:=1` (`@0x030CFA`), type `+0x17:=type` (`@0x030D02`), and for category 2 the field `+0x15:=0x64` (`@0x030D0C`). **B.**
 3. ~~Map recruit-pool slot full layout (type, cost, count) and non-artillery cost.~~
    **Done 2026-06-20.** The recruit pool is **`DGROUP:0x978C`, stride 6** (6-byte slots),
    built by the setter **`func_074688`** (`@0x74698..0x746B3`): `+0x00` = recruit/unit

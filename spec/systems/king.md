@@ -165,7 +165,14 @@ The demand surfaces as the **King speech-bubble dialog**:
 - **Runtime/Reconstructed:** the `KING.SS` portrait attribution. (The `+0x22`
   "REF budget" meaning is no longer inferred — it is BYTE_VERIFIED as the Royal/REF
   fund: `func_03E162` accrues to it and spends it at the 0x708 threshold.)
-- **TBD:** Tea-Party boycott bookkeeping (per-good boycott field + lift mechanism).
+- **Solid (B):** Tea-Party boycott bookkeeping — the per-good boycott field is
+  **`PowerRecord +0x20` (u16 bitmask, bit i = good i boycotted)**; set on a Tea
+  Party by `or [bx+0x20], (1<<good)` (func_034318 @0x034717), tested by
+  `(1<<good) & [bx+0x20]` (func_030B38 @0x030B47), cleared per-good on back-tax
+  payment by `and [bx+0x20], ~(1<<good)` (func_03334E @0x033423), and cleared in
+  full when Jakob Fugger (Founding Father id 1) is acquired via
+  `mov word [bx+0x20], 0` (func_03BC42 @0x03BD45). All `bx = [0x84fc]` (active
+  PowerRecord). **BYTE_VERIFIED — see §3 and Open-Question 5.**
   (The tax-revenue loop, REF-growth spend threshold `func_03E162`, and pretext
   selection `func_036138` are now BYTE_VERIFIED — see §3 and Open-Questions 2/3/4.)
 
@@ -192,5 +199,31 @@ The demand surfaces as the **King speech-bubble dialog**:
    `@KINGWAR`, `< 0x44C` `@KINGNAVACT` +`random(3,4)`, else `@KINGSTAMPACT` +`random(5,8)`);
    magnitude → `PowerRecord +0x10`. The re-trace independently confirms `[0x53D0]` in the
    score = rebel-sentiment/SoL (cross-ref `revolution.md`). **B.**
-5. **Tea-Party boycott.** Which field holds the per-good boycott bitmask; how
-   back-tax payment / Jakob Fugger clears it.
+5. ~~**Tea-Party boycott.** Which field holds the per-good boycott bitmask; how
+   back-tax payment / Jakob Fugger clears it.~~ **Resolved 2026-06-27 — BYTE_VERIFIED.**
+   The per-good boycott bitmask is **`PowerRecord +0x20` (u16; bit `i` set = good
+   `i` boycotted by Parliament/King)** — confirmed by every site loading the active
+   record `bx = [0x84fc]` before touching `[bx+0x20]`.
+   - **Set (refuse → Tea Party):** `func_034318` @0x034700 pushes the `@TEAPARTY`
+     announcement (string id `0x106a`) + nation name, then @0x034713 `mov bx,[0x84fc]`
+     / @0x034717 `or word ptr [bx+0x20],ax` where `ax = 1 << good_index` ([bp-2]) —
+     SETS the boycott bit for the dumped good.
+   - **Test (sell/unload check):** `func_030B38` @0x030B3E `mov cl,[bp+6]` (good)
+     / `shl ax,cl` / @0x030B43 `mov bx,[0x84fc]` / @0x030B47 `and ax,[bx+0x20]` —
+     returns nonzero iff that good is boycotted (drives `@SOMEBOYCOTT`).
+   - **Lift via back-tax payment:** `func_03334E` (file 0x03334E..0x03342A) is the
+     pay-back-tax handler. @0x0333A9 `call 0x36890` (overlay thunk → per-good
+     boycotted-count) ×@0x0333AF `imul ax,ax,0x1f4` = **count × 500 gold**; @0x0333C5
+     prompts (`@KISSUP`-style string `0x1033`, yes/no `0x181f:0x652`); if accepted and
+     `gold (+0x2A, 32-bit) >= back_tax` (@0x0333DD), then @0x03340D `sub [bx+0x2a]`/
+     `sbb [bx+0x2c]` (gold -= back_tax), @0x033413 `add [bx+0x22]`/`adc [bx+0x24]`
+     (royal/REF fund += back_tax), @0x033419..0x033421 `ax = ~(1<<good)`, @0x033423
+     `and word ptr [bx+0x20],ax` — CLEARS just that good's bit. (Insufficient gold →
+     `0x103a` message, no lift.)
+   - **Clear-all via Jakob Fugger:** `func_03BC42` (FF-acquisition handler) @0x03BD37
+     `inc [bx+0x14]` (FF count), @0x03BD3F `cmp [bp+8],1` → if the acquired FF id is
+     **1 (Jakob Fugger, @FATHERS row 1)** then @0x03BD45 `mov word ptr [bx+0x20],0`
+     wipes the entire boycott mask. (`func_03334E` also has a clear-all early-out
+     @0x03336E `mov word [bx+0x20],0` for the AI/controller `[bx+0x543f]!=0` path.)
+   The back-tax *count* source (`0x36890` is an overlay ljmp-thunk table) is overlay-
+   resident — the ×500 multiplier and all bit ops are byte-verified resident. **B.**

@@ -29,7 +29,7 @@ slots plus two autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from ma
     alarm[4]. **B** (cross-confirmed strides/fields).
   - **NATION / PowerRecord**: tax_rate, recruit slots, founding_fathers bitfield,
     liberty-bell accumulators, boycott bitmap, royal_money, gold, crosses,
-    market arrays. Several offsets **B**, several **NEW/TBD** (see doc).
+    market arrays. Several offsets **B**; the formerly **NEW/TBD** PowerRecord fields are now byte-verified in `docs/DATA_MODEL.md` — `crosses_per_turn` @`+0x10`, `artillery_bought_count` @`+0x1e` (read×100 `IMUL ax,[bx+0x1e],0x64` @0x035124/0x03527B, `INC [bx+0x1e]` @0x035282, zeroed `MOV [bx+0x1e],0` @0x03662F — byte-confirmed), `royal_money` (s32) @`+0x22`, gold @`+0x2A`, market arrays @`+0x4C`/`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC`. **B.**
   - **ColonyRecord**: stride `0xCA` (BYTE_VERIFIED, `docs/DATA_MODEL.md`); building
     bitmask `+0x60..+0x65`. **B**
 - The **on-disk field order, header, and compression** are **RESOLVED (2026-06-20, §3)**:
@@ -125,7 +125,7 @@ resolves §6.1–6.3.
   writer reads the 5 existing records, inserts the new candidate as a 6th in-memory
   slot, keeps the top 5, and writes back `@0x3AE04..0x3AE43`. (Corrects
   `docs/DATA_MODEL.md`'s "1362 bytes" — that is the *function* size, not the file
-  size.) The per-word score fields' meanings are **TBD**.
+  size.) The per-word score fields' meanings are **RESOLVED (see §6.5)**: the writer `func_03ADA6` treats exactly ONE word as the ranking score — the signed `int16` at record `+0x26` (`MOV ax,[bx+0x26]; CMP [bp+si-0xda],ax; JL` insertion-sort @0x3AECD..0x3AEDC, where stack base `[bp-0x100]`+0x26 = `[bp+si-0xda]`); every other field is display metadata, NOT a score term: name string @`+0x00`, validity/empty sentinel @`+0x18` (init 0xffff, `CMP[bp+si-0xe8],0;JL` empty-test), independence/SCORED flags @`+0x1a`/`+0x1c`, nation index @`+0x22` (`SHL 1` → power-name table `[bx-0x7c6c]` = DGROUP 0x8394, @0x3B16E), year @`+0x24`. So the only scoring field is the composite at `+0x26` (func_03ADA6 @0x3AED0).
 - Any compression on the save: **RESOLVED — none.** The loader `func_073BB0` is a 1:1
   mirror of the writer: it makes exactly **43× raw `fread`** (`0xD1D:0x528`), one per DGROUP
   block, with no decompression/transform pass (the only other stream calls are a single

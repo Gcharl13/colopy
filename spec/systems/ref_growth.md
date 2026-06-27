@@ -103,8 +103,19 @@ do not treat it as the authoritative REF. (RULINGS 2026-06-19.)
 ## 4. UI
 
 REF composition is shown in the King / independence-readiness reports (the four
-counts surface in-game — that is how they were USER-VERIFIED). Exact screen and
-labels `TBD`. **R**.
+counts surface in-game — that is how they were USER-VERIFIED). **Heading label
+byte-cited:** the in-game string is **"Expeditionary Force"** — `LABELS.TXT`
+`@MISC` body index **85** (`data_extracted/text/LABELS.full.json` `@MISC`, between
+`84="Artillery In Open"` and `86="Rebels"`/`87="Tories"`; the cluster also holds
+`93="FOREIGN AFFAIRS REPORT"`, `98="Military Power"`, `99="Naval Power"`,
+`100="Merchant Marine"`, `111="Intervention Force"`). Per-unit REF growth is also
+surfaced as the announcement **`GAME.TXT @KINGBUY`** — "King increases military
+spending. {%STRING0} added to royal expeditionary force. Colonial leaders express
+alarm." (`data_extracted/text/GAME.full.json` `@KINGBUY`), which is the
+post-independence "announce the add" branch of the driver (`func_03E162 @0x3E28A`,
+per §3). **B.** Exact screen function + the per-count row coordinates/font remain
+`TBD` — the report draw is overlay-resident and indexes labels via a computed
+(non-literal) index, so no static literal `PUSH 85`/`@MISC`-fetch site anchors it.
 
 ## 5. Evidence
 

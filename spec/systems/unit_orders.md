@@ -64,7 +64,7 @@ order code for all proven rows.
 | 1 | Sentry | `S` | 1 | `@0x21FEB` (set 1) | — (skip; pre-existing spec cites init `@0x078CF`, unreconciled) | **B** |
 | 2 | Trade Route | `T` | 2 | `@0x22E05` | **`func_041080`** | **B** |
 | 3 | Go To | `G` | 3 | `@0x22D2D` | **`func_040E22`** | **B** |
-| 4 | Live In Village | `L` | 4 | TBD (write site not byte-located) | default stub `0x24A22` (passive) | **B** (row) / handler **B** |
+| 4 | Live In Village | `L` | 4 | **No store site exists in VICEROY.EXE** — exhaustive scan of every write to `0x314c` (immediate `C6 87 4C 31 imm8` and register `88 87/84 4C 31`) yields codes {0,1,2,3,5,6,7,8,9,0xA,0xB,0xC} but **never 4**; the one parameterized bulk-setter `func_007936 @0x7952` is fed code 1 by its sole caller `func_03ECF0 @0x3F56C` (`push 1`), and all register writes store `al=0` (order-clear). Code 4 is a menu/`@ORDERS` row with no persisted standing order. | default stub `0x24A22` (passive) — dispatcher table `@0x24A38` code-4 entry `0x3b42` = the `ja default` target `0x24A22`, same as Fortified(6), i.e. no dedicated executor | **B** (row) / handler **B** |
 | 5 | Fortify | `F` | 5 | `@0x22105` (`func_021FF2`) | **`func_04101C`** → promotes to 6 | **B** |
 | 6 | Fortified | `F` | 6 | `@0x41024` (set by `func_04101C`) | default stub `0x24A22` (passive, +50% def) | **B** |
 | 7 | Build Colony | `B` | 7 | `@0x2279E` | **`func_040C1E`** | **B** |

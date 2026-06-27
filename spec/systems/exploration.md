@@ -81,7 +81,7 @@ RECONSTRUCTED: persistent reveal (no re-fogging), per-tile "discovered" state.
 ## 4. UI
 Hidden tiles render as "Unexplored" (`@OTHER_NAMES` last entry, NAMES — **B** that
 the label exists). Viewport redraw via map render chain `func_O514 → O513 → O512`.
-Layout `TBD`.
+Layout **B**: the world is drawn into the map viewport rect **(0, 8, 240, 192)** (15×12 tiles @16px at zoom 0; span/scroll setup `func_06787C @0x06787C`: `SPAN_W[0x8544]=0xF<<zoom @0x67889`, `SPAN_H[0x8546]=0xC<<zoom @0x67891`, `TILE_PX[0x5AD4]=0x10>>zoom @0x678B3`), with the woodgrain sidebar + 1px/tile minimap panel **(241, 8, 79, 41)** to its right (`func_066CD6 @0x66CF4` pushes 0xF1/8/0x4F/0x29 = 241,8,79,41). Fog is applied per-tile inside this viewport during the tile chain (the `fog_byte & (1<<(player+4))==0` test, §2). See `spec/ui/map_view.md` §2/§6.2 for the full HUD geometry table (byte-cited `[V]` per `viceroy_source/docs/SCREEN_LAYOUTS.md` §1).
 
 ## 5. Evidence
 - `docs/GAME_MANUAL.md` — fog/discovery, permanent reveal, scout abilities. **R**

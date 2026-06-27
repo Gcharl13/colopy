@@ -89,8 +89,16 @@ serve native trade — see `spec/systems/natives.md`). **B (present).**
 - **Europe side:** when dest `== 0x3E7` (`@0x4119A`) the trade routes through the
   generic Europe load/unload subtree (`func_0324F2`/`func_032914`, the same sell/buy
   path as `market.md §3.1`); the boycott/"wants" mask is `PowerRecord +0x20`
-  (`1<<good & [bx+0x20]`, `func_030B38`). The exact Europe-array (PowerRecord) write
-  offset inside that subtree is **TBD**.
+  (`1<<good & [bx+0x20]`, `func_030B38`). **Resolved (no good-indexed PowerRecord array
+  write exists in the subtree)** — a full disasm of `func_032914`/`func_0324F2` shows the
+  *only* PowerRecord (`[0x84FC]`) writes are the two scalar dwords: `add word[bx+0x22],ax`
+  / `adc word[bx+0x24],dx` (REF accumulator) at `func_032914 @0x032A92`, and
+  `add word[bx+0x26],ax` / `adc word[bx+0x28],dx` (tally) at `func_032914 @0x032A9C`.
+  Gold is credited separately via `func_008806 @0x032A82` (`lcall 0x181f:0xaba`) into the
+  per-power treasury pool `[0x8832 + power·0x13C]`, clamped to `0xF423F` (=999,999); the
+  buy path `func_0324F2 @0x03274C` only *reads* the gold dword `[bx+0x2A]/[bx+0x2C]` for
+  display. So the trade-route Europe sale credits gold + REF + tally scalars only — the
+  good-volume market arrays are untouched here (`func_0322D0`/`func_03234A` per §6.4). **B.**
 
 **Limits & naming:** max **12 routes** (`[0x53A0]` cap `0xC`), **4 stops/route**,
 **up to ~14 goods/stop** (nibble-packed `+0x03..+0x09`); route names are
@@ -136,8 +144,14 @@ See `docs/SESSION_UI_CATALOG.md`, `docs/UI_DIALOGS.md`.
      `0x1D47`); the other = stop bytes **`+0x03..+0x05`** (count = `+0x02` high nibble,
      string `0x1D3D`). Which lane is **load vs unload** is set by the cargo-selector's
      arg (`func_060D8C [bp+6]` 0/1) under `@CARGOLOAD`/`@CARGOUNLOAD`; the manual puts
-     **unload = center, load = rightmost column**. The exact arg→`@CARGOLOAD` binding
-     (via fn-ptr table `@0x61428` / selector thunk file `0x1CD36`) is the **residual**.
+     **unload = center, load = rightmost column**. **arg→string binding RESOLVED** —
+     `func_060D8C @0x060E83`: `cmp word[bp+6],0; je 0x60E8E; push 0x1D3D (@CARGOLOAD);
+     jmp; @0x60E8E: push 0x1D47 (@CARGOUNLOAD)`. So **`[bp+6]==0` → `@CARGOUNLOAD`**
+     (string `0x1D47`, the `+0x06..+0x08` / low-nibble lane) and **`[bp+6]!=0` →
+     `@CARGOLOAD`** (string `0x1D3D`, the `+0x03..+0x05` / high-nibble lane); the lane
+     byte-offset is set in parallel at `@0x060DA9` (`cmp [bp+6],1; cmc; sbb ax,ax;
+     and ax,6` ⇒ `[bp-8]=0` for arg 0, `6` for arg 1). This matches §2 (low nibble =
+     UNLOAD, high nibble = LOAD). **B.**
    - **Europe-array write — CORRECTED:** the good-indexed market arrays
      (`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC` + pool `0x8864`) are **not** written inside the
      `func_0324F2`/`func_032914` subtree — that subtree writes only the **scalar**

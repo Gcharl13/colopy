@@ -65,7 +65,18 @@ nationality** — every national-power effect is a literal `power_index == N` te
 - **`@COUNTRY` trailing number — BYTE_VERIFIED (location):** one byte per nation
   at **`DGROUP:0x848`**, read at **`@0x70813`** (`al=byte[bx+0x848]`). It is the
   nation's index/id used by the country-selection setup path (12/9/14/13 in the
-  table below); not a gameplay modifier. Its full downstream use is **TBD**.
+  table below); not a gameplay modifier. **Downstream use BYTE_VERIFIED: it is a
+  graphic/flag frame index for display, never a gameplay multiplier.** The byte is
+  read per-power and passed to draw routines: `func_02F052 @0x02F060` loads
+  `byte[[0x5394]+0x848]` (zero-extends it) and hands it to `func_00BCEA`
+  (`@0x02F067` lcall `0x181f:0x590`→`func_00BCEA`), which blits a graphic at screen
+  (315,197) using that number as the sprite frame (`func_00BCEA @0x00BCFF`: `al=[bp+6];
+  push ax; mov ax,0x13b; mov dx,0xc5; lcall 0xb9e:0xa`). It is also read in the
+  per-power display-setup `func_0707B6 @0x070813` (stored to `[bp-0x58]`, drawn only
+  for the current human player `[0x5398]`) and in the nation panel `func_03744A
+  @0x03748F` (with a `bx==10 → use 12` remap at `@0x03749B`). The array is filled at
+  data-load time by the NAMES `$COUNTRY` parser loop `func_0749E0 @0x074B45`
+  (`mov byte[idx+0x848],al` for idx<4, string "COUNTRY" @0x21e3). **B.**
 - Owning-power index stored in records as `owner_power_idx` (e.g. ColonyRecord
   `+0x1A`, BYTE_VERIFIED — `docs/DATA_MODEL.md`, `spec/systems/colony.md`).
 

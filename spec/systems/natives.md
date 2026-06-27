@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
 
-**Overall confidence:** NativeSettlement base/stride + a few offsets + **mission-conversion mechanism (incl. RNG bound 0..15) + CHIEFKILL treasure roll + native-raid dispatch** `BYTE_VERIFIED`; **attitude bands (−5/0/10 → Content/Uneasy/Restless/Angry; War=alarm≥128) + alarm storage `BYTE_VERIFIED`**; **mission-doubler (missionary unit+5 bit0x10) + CHIEFKILL roll→gold (→ `+0x2A`) + settlement `+0x02`/`+0x03` fields `BYTE_VERIFIED`**; trade logic + per-action alarm-raise deltas (in thunk `0x181F:0x30C`) `TBD`. **Canonical primary:** `docs/DATA_MODEL.md` NativeSettlement; `data_extracted/text/NAMES_sections.json` `@TRIBES`/`@ATTITUDE`/`@ATTITUDINAL`/`@LEVELS`/`@MISSION`; `data_extracted/text/GAME_sections.json` native keys.
+**Overall confidence:** NativeSettlement base/stride + a few offsets + **mission-conversion mechanism (incl. RNG bound 0..15) + CHIEFKILL treasure roll + native-raid dispatch** `BYTE_VERIFIED`; **attitude bands (−5/0/10 → Content/Uneasy/Restless/Angry; War=alarm≥128) + alarm storage `BYTE_VERIFIED`**; **mission-doubler (missionary unit+5 bit0x10) + CHIEFKILL roll→gold (→ `+0x2A`) + settlement `+0x02`/`+0x03` fields `BYTE_VERIFIED`**; **trade pricing (`max(5·diff+50, 2·tax)` cap 90, func_05C878 @0x5C976) + per-action tension deltas (applier func_045DF2 via thunk `0x181F:0xD6C`, delta table §3) `BYTE_VERIFIED` (RESOLVED — see §3)**. **Canonical primary:** `docs/DATA_MODEL.md` NativeSettlement; `data_extracted/text/NAMES_sections.json` `@TRIBES`/`@ATTITUDE`/`@ATTITUDINAL`/`@LEVELS`/`@MISSION`; `data_extracted/text/GAME_sections.json` native keys.
 
 ## 1. Purpose & behavior
 Native tribes occupy settlements the player can trade with, send missionaries to, learn skills from, demand tribute from, or attack. Tribe attitude escalates Content → Uneasy → Restless → Angry → War as the colonial presence grows, unless soothed by trade and tribute. Razing a settlement (CHIEFKILL) can yield treasure scaled by its population. **RECONSTRUCTED** (manual §"Indian Lore" + byte-cited CHIEFKILL).
@@ -126,8 +126,11 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   the very next block `@0x4734E`). Both raise a per-power hostility tally
   (`[bp-0x86]`) + bitmask. The thunk only **reads** the `0x5B1C` tension table; its
   **writer/applier is `func_045DF2`** (below, range `[0,100]`). The per-action delta
-  *magnitudes* are still TBD, but the applier + its French/Pocahontas halving gates
-  are now **B**. **39-word row stride — columns 4..38 RESOLVED-as-unused (2026-06-26).**
+  *magnitudes* are now **BYTE_VERIFIED** (RESOLVED): every call site pushes the literal
+  `delta` as the 2nd thunk arg to `0x181F:0xD6C → func_045DF2` (e.g. `PUSH -1`/`PUSH +1`
+  @0x48574/@0x4859E, `PUSH -4` @0x5C414), enumerated in the per-action-events table
+  below (func_045DF2 @0x045DF2); the applier + its French/Pocahontas halving gates
+  are **B**. **39-word row stride — columns 4..38 RESOLVED-as-unused (2026-06-26).**
   `dgroup_xrefs.json` shows exactly **3** references to the `0x5B1C` base — getter read
   `@0x0082AC`, applier read `@0x045E57`, applier write `@0x045E6C` — and **every** one of
   the getter/applier call sites passes the column as a **European-power id `0..3`** (raid
@@ -180,7 +183,10 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   (`@0x5C985`) then **capped at 90 (`0x5A`)** (`@0x5C9A3`); the floor applies only
   when the per-power attribute bit `(0x0A, power) == 0` (`@0x5C96A`). A successful
   trade lowers tension by 4 (`@0x5C41E`) and bumps the settlement's wealth/goodwill
-  bytes `+0x07`/`+0x08`/`+0x0A` (`@0x5C3E4`). Tribute-gold *amount* table still **TBD**.
+  bytes `+0x07`/`+0x08`/`+0x0A` (`@0x5C3E4`). **Tribute-gold *amount* RESOLVED (see §6.3):**
+  the demand (Demand Tribute, func_04AC00) is `raw = [bp-2] − colony_stock[good]` then
+  clamped to `[10, min(3·tribe_wealth[0x9E96]+10, 100)]` (func_04AC00 @0x4AE95..@0x4AEB8:
+  ceiling 100 @0x4AEA2, floor 10 @0x4AEB0). **B.**
 
 ## 4. UI
 Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys (e.g. `@CHIEFHOWDY @CHIEFGIFT @CHIEFKILL @VILLAGEHAPPY @INDIANTREATY`). Action menu from `@ACTIONS`. See `docs/SESSION_UI_CATALOG.md`.

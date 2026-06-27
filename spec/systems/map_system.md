@@ -126,8 +126,16 @@ helpers, role inferred from call context).
   (`emit_terrain_sprite`).
 - So **coasts are a render-time composition** on the *visible-land* side: shore base `0x96` +
   directional edges `0x97..0x99` chosen by the land/water connection bitmap. The exact
-  pattern→`0x97..0x99` enumeration (`[0xA8A6]` cases above) is **TBD-precise** but the entry points
-  are byte-cited. **B** (chain + frame roles); pattern table **R** (located, not fully enumerated).
+  pattern→`0x97+pattern` enumeration is now **fully byte-cited** (`func_0681A8 @0x68474..0x6850D`):
+  default `[bp-6]=0xFFFF`, then four clean-edge tests assign `[bp-6]` and the draw is
+  `0x97 + [bp-6]` (`@0x6850A mov ax,[bp-6]` / `@0x6850D add ax,0x97`):
+  **P0 `[0xA8A6]&0xDD==0xC1`→0x97**, **P1 `&0x77==0x07`→0x98**, **P2 `&0x77==0x70`→0x99**,
+  **P3 `&0xDD==0x1C`→0x9A** (`@0x68479/0x68487/0x68495/0x684A3`). `[0xA8A6]` bit `d` = land in
+  8-dir order **0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW** (byte-verified from the 8-dir tables at
+  DGROUP `0xB4`=dx`[0,1,1,1,0,-1,-1,-1]` / `0xBE`=dy`[-1,-1,0,1,1,1,0,-1]`, file `0x1DA54`/`0x1DA5E`,
+  DGROUP base file `0x1D9A0`), so the four patterns are the **NW / NE / SW / SE land-corner edges**.
+  (P3→0x9A is the one-past-end frame; see §3 item 7.) **B** (full chain + frame roles + pattern
+  table byte-enumerated).
 
 **Per-tile layer dispatch (`func_0681A8` = O513) — BYTE_VERIFIED order.** O513 first
 loads the tile + neighbours from the three layer far-ptrs `[0xA594]`/`[0xA598]`/`[0xA59C]`
@@ -182,8 +190,15 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
      land `|=2`, the two flanking cardinals `|=4`/`|=1`). The reachable frames are
      **`0x6D..0x8B` (109..139), all 8×8** (pixel-confirmed) — drawn at the quadrant sub-cell
      offset (TL/TR/BR/BL via `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces tile the 16×16 cell — the
-     **fine-grained complex-coastline** path. (The extreme `table[q]=7,q=3` combo would index
-     `0x8C`=140, a 16×16 frame — an all-land-corner edge case, flagged TBD.)
+     **fine-grained complex-coastline** path. (The extreme `table[q]=7,q=3` combo indexes
+     `0x6D+7·4+3` = `0x8C`=140 — **a valid in-bounds frame** (PHYS0.SS has 154 frames, `0..0x99`,
+     so 140 ≤ 153) that is **pixel-measured 16×16** (frame tuple `(196,173,16,16)`, 256 px via
+     `tools/ssdec.py`), unlike the 8×8 `0x6D..0x8B` band — an all-land-corner case. `table[q]=7` IS
+     reachable: `analyse_connections` ORs a quadrant byte with `|=2` (diagonal land), `|=4`/`|=1`
+     (flanking cardinals), max `1|2|4=7` (`func_067A24 @0x67ABD..0x67AEF`). The only residual is the
+     **runtime geometry** that lands `table[q]=7,q=3` while escaping all four clean patterns, and
+     that a 16×16 frame is then drawn at an 8×8 sub-cell offset (`[0x1EA4]/[0x1EA5]`, `@0x684C7`) —
+     a **RUNTIME**-trace question, not a static one. **A** (frame index/size byte+pixel-verified).)
    **There is no road draw in this chain** — the `0x6D` band is the 8×8 coast sub-tile
    set, gated by water terrain id + the land-neighbour bitmap, not a road bit (matches
    the user ground-truth "no roads in new maps"). **B** (chain + frame roles, sizes

@@ -5,7 +5,7 @@
 **Overall confidence:** **random-map generator located + passes P0–P6 (incl. the
 P2 climate→terrain tables) `BYTE_VERIFIED`** (`func_064A10`: entry/gate/seed/dims,
 landmass, climate `{5,4,1,3,2,2}`N/`{2,3,3,4,6,7}`S, borders, flag bits); scenario
-presets `BYTE_VERIFIED` data; Customize parameter encodings `TBD`.
+presets `BYTE_VERIFIED` data; Customize parameter encodings `BYTE_VERIFIED` — the 4 player-facing picks are a 5-word global array at `DGROUP:0x1E7E` written by the Customize dialog `func_070060` (`@0x701AD mov [bx+0x1e7e],dx`, value mod-3 → 0..2) and read by the generator: landmass `(p1+p2+1)·0x140` (`func_064A10 @0x64AAD mov ax,[0x1e80]; @0x64AB0 add ax,[0x1e7e]; inc ax; imul ax,ax,0x140`), temperature `@0x64CA0 sub ax,[0x1e82]`, climate/moisture `@0x64DFE mov cx,[0x1e84]`, smoothing iters `@0x6538D mov ax,[0x1e86]; inc ax; imul ax,ax,0x320` (see §6 Q3).
 **Canonical primary:** `data_extracted/text/NAMES_sections.json` (@SCENARIO),
 `docs/GAME_MANUAL.md` (NEW WORLD / AMERICA / Customize New World).
 
@@ -16,7 +16,7 @@ At new-game setup the player chooses how the world is built (`docs/GAME_MANUAL.m
   canonical scenario; AMER2.MP is the standard-game world, `formats/MP_FORMAT.md`).
 - **Customize New World** — adjustable parameters: average **land-mass size**,
   **moisture**, and **climate** (temperate / cold / tropical), "and so on."
-  (RECONSTRUCTED — function from manual; parameter encodings `TBD`.)
+  (RECONSTRUCTED — function from manual; parameter encodings **BYTE_VERIFIED**: the 3 menu-exposed picks plus land-form are the 3-way enums (0..2) stored at `DGROUP:0x1E7E/0x1E80/0x1E82/0x1E84`, written by `func_070060 @0x701AD` and consumed by the generator — landmass `(p1+p2+1)·0x140` `func_064A10 @0x64AAD`, temperature `@0x64CA0 sub ax,[0x1e82]`, climate/moisture `@0x64DFE mov cx,[0x1e84]`; see §6 Q3.)
 
 ## 2. State & data
 `@SCENARIO` (`NAMES_sections.json`, **BYTE_VERIFIED** data present) lists named
@@ -30,8 +30,10 @@ The columns **are documented** by the `@SCENARIO` legend (and used by
 `map_file, start, end, x0, y0, x1, y1, x2, y2, x3, y3` — i.e. a map filename, the
 scenario's **start/end year bounds**, and the **(x,y) starting tile** for each
 European power. **BYTE_VERIFIED** (legend + `spec/data/tables.md` `@SCENARIO`).
-Only the *random*-map generator (separate from these fixed-scenario starts)
-remains `TBD`.
+The *random*-map generator (separate from these fixed-scenario starts) is
+**located + BYTE_VERIFIED**: `func_064A10` (file `0x064A10`, overlay page 0x14),
+wired from new-game `func_0755CC @0x7579E` via `lcall 0x1a1f:0x83e` (resolves to
+`func_064A10`, thunk_resolve.json), passes P0–P6 per §3 (see §6 Q2).
 
 ## 3. Formulas & rules
 
@@ -73,7 +75,7 @@ they reconcile the generator (fill 0x19=Ocean → grow land → poles 0x18=Arcti
 right edge 0x1A=Sea Lane) with the coast renderer (`@0x67FD0 cmp al,0x18`). The
 generator builds **only the terrain layer + European starts** — native settlements,
 prime resources, and Lost-City rumours are placed by separate (largely data-driven)
-new-game passes (`TBD`).
+new-game passes — **BYTE_VERIFIED entry functions** (§6 Q4): native settlements `func_065D26` (`func_0755CC @0x7596A lcall 0x1a1f:0x87c`), resource/land-value layer `func_063F3C` (`@0x757BA lcall 0x1a1f:0x7f8`), and Lost-City rumour features written inline in the generator tail (`func_064A10 @0x65C0D/@0x65C21 or byte es:[bx],0xa0`).
 
 ### Starting units per power — **BYTE_VERIFIED (2026-06-20)**
 After the generator returns, the new-game setup `func_0755CC` loops each power

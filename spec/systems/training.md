@@ -1,6 +1,6 @@
 # Colonist Training & Promotion
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Detail pass complete: every §3 formula is byte-verified and all four §6 open questions are resolved (school teaching rate at func_02D658 @0x02DDB4 [`mov word ptr [bp-0xb2],4`] verified against EXE bytes; turns-to-graduate 4/6/8 at @0x02DDB4 / @0x02DE98 / @0x02DE8E, skill-class table read `[bx-0x715a]` = DGROUP `0x8EA6` @0x02DE75).
 
 **Overall confidence:** job/profession roster `BYTE_VERIFIED` (present); **expertise
 field + `@JOB` columns + native-learn (grant+roll) + school rulesets + combat

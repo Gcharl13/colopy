@@ -93,18 +93,30 @@ loader (`@0x074EC3`/`@0x074EEE`) parses 23 rows into a per-type table at base
 | 9 | `0x523C` | **AI value / build weight** |
 | flags | `0x523D` | 8-bit role/flag string (bit-tested `@0x51D7D` etc.) |
 ("tools" is not an @UNIT column — it is the runtime UnitRecord field `0x3159`.)
-- Carry/embark, ZoC, movement-point costs: movement is stored ×3 (`0x5234`),
-  road = 1/3 cost; full move-cost table **TBD**.
+- Carry/embark, ZoC, movement-point costs: a unit's movement *budget* is stored ×3
+  (`0x5234`, `@UNIT` col 1), road = 1/3 cost. **Per-terrain move COST = the NAMES.TXT
+  `Movement` column × 3 — RESOLVED 2026-06-27.** The `Movement` field of each terrain
+  row (`@UNFORESTED`/`@FORESTED`/`@OTHER` in `data_extracted/tables/names_tables.json`)
+  is loaded by `func_0745F0 @0x074612` into the runtime terrain table at
+  `terrain·16 + 0x2F76` (stride 16; +0x2F76 Movement, +0x2F77 Defensive, +0x2F78
+  Improvement, +0x2F79 Value, +0x2F7B.. the 9 yields), and charged as `Movement·3` at
+  `func_04E2D6 @0x051125..0x051131` (`mov al,[terrain·16+0x2F76]; al·3; SUB [bp-0x26],ax`).
+  Byte values (NAMES, **B**): open land (Tundra/Desert/Plains/Prairie/Grassland/Scrub)=1,
+  forested (Boreal/Mixed/Broadleaf/Conifer)=2, Hills=2, Arctic=2, Mountains=3,
+  Ocean/Sea Lane=1.
 - **AI move/destination scoring (`func_04E2D6`, page 0x0D, byte-verified).** The AI
-  evaluates candidate moves into a word accumulator `[bp-0x26]` using **inline flat
-  immediate weights**, NOT a per-terrain cost table (no table indexing — the
-  deductions are literal immediates). Examples: `SUB [bp-0x26],0x3e7` (999, an
-  "infeasible"/out-of-ship-type-range penalty, `@0x05170A`), `SUB [bp-0x26],0xa` (10,
-  charged when a neighbour unit has nonzero attack `0x5236`, `@0x051760`), plus
-  `−0x14`/`−0x2d`/`−0xf`/`+0x10` and squared-distance terms elsewhere in the loop.
-  Ships (type `0x0d..0x12`) add a heading penalty `≈ angular_dist(0x314F,target)²·2`
-  (`@0x051712..0x051737`). So the §3 "full move-cost table" remains TBD for *terrain*
-  costs; these constants are **AI evaluation weights**, separate from terrain move cost.
+  evaluates candidate moves into a word accumulator `[bp-0x26]`. It **DOES read the
+  per-terrain `Movement` table** — `SUB [bp-0x26], [terrain·16+0x2F76]·3` at
+  `@0x051125..0x051131` (the same terrain-cost table the engine uses for real movement;
+  corrected 2026-06-27 — the prior "NOT a per-terrain cost table" claim was wrong) — and
+  then layers **additional inline flat immediate AI penalties** on top. Examples:
+  `SUB [bp-0x26],0x3e7` (999, an "infeasible"/out-of-ship-type-range penalty, `@0x05170A`),
+  `SUB [bp-0x26],0xa` (10, charged when a neighbour unit has nonzero attack `0x5236`,
+  `@0x051760`), plus `−0x14`/`−0x2d`/`−0xf`/`+0x10` and squared-distance terms elsewhere
+  in the loop. Ships (type `0x0d..0x12`) add a heading penalty
+  `≈ angular_dist(0x314F,target)²·2` (`@0x051712..0x051737`). So the §3 "full move-cost
+  table" is now **RESOLVED** (terrain `Movement`·3, see the bullet above); the immediate
+  constants here are **extra AI evaluation weights** layered on the real terrain cost.
 
 ## 4. UI
 Active-unit orders box and map cursor. See `docs/UI_RENDER_MAP.md`, `notes/SPRITE_CATALOG.md` (renderer sprite indices per CLAUDE.md hard rule 6).
