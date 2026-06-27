@@ -11,6 +11,34 @@ import { loadSheet } from '../sim/sheet.js';
 import { compositeRegion } from '../sim/compose.js';
 import { isWater } from '../sim/mapview.js';
 
+// FONTTINY bitmap font (ASCII-indexed) — crisp small text drawn onto the backdrop canvas,
+// instead of blurry CSS <div> text. Tinted to any colour via source-in compositing.
+let _fonttiny = null;
+async function fonttiny() {
+  if (_fonttiny) return _fonttiny;
+  const [img, meta] = await Promise.all([
+    new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = './assets/fonts/FONTTINY.png'; }),
+    fetch('./assets/fonts/FONTTINY.json').then((r) => r.json()),
+  ]);
+  return (_fonttiny = { img, frames: meta.frames });
+}
+function drawBitmapText(g, font, str, x, y, color) {
+  const tmp = document.createElement('canvas'); const tg = tmp.getContext('2d');
+  let cx = x;
+  for (const ch of String(str)) {
+    const f = font.frames[ch.charCodeAt(0)];
+    if (!f || f.w <= 0) { cx += 4; continue; }
+    tmp.width = f.w; tmp.height = f.h; tg.imageSmoothingEnabled = false;
+    tg.clearRect(0, 0, f.w, f.h);
+    tg.globalCompositeOperation = 'source-over';
+    tg.drawImage(font.img, f.ax, f.ay, f.w, f.h, 0, 0, f.w, f.h);
+    tg.globalCompositeOperation = 'source-in';
+    tg.fillStyle = color; tg.fillRect(0, 0, f.w, f.h);
+    g.drawImage(tmp, cx, y);
+    cx += f.w + 1;
+  }
+}
+
 // Pick a coastal cols×rows window (land + water) from the map, for the colony minimap demo.
 function coastalWindow(map, cols, rows) {
   for (let y = 0; y + rows < map.height; y += 2)
@@ -113,6 +141,9 @@ export async function render(host, ctx) {
       } else if (step.op === 'rect') {            // solid fill (e.g. black area separators)
         g.fillStyle = step.color || '#000';
         g.fillRect(step.x, step.y, step.w, step.h);
+      } else if (step.op === 'text') {            // crisp FONTTINY bitmap text (tinted)
+        const font = await fonttiny();
+        drawBitmapText(g, font, step.value, step.x, step.y, step.color || '#18293f');
       } else if (step.op === 'minimap') {         // surrounding-terrain via the shared mapview.js
         try {
           const map = await ctx.mapData();
