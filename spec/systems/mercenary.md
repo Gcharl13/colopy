@@ -33,8 +33,12 @@ The player declines or pays. The mercenaries then **arrive in a colony**.
   returns with no offer. So a foreign power makes no offer on its first eligible
   call and only from the second onward (bit `0x08` of `PowerRecord+0x00`). **B**
   The init side-effect run on that first call (`@0x03E4C3` `call 0x3EA2E →
-  0x1A1F:0xC4`) is in an **undisassembled overlay**, so the bit's full semantics
-  (what else it initializes) remain **TBD**.
+  0x1A1F:0xC4`) **RESOLVED 2026-06-27** to Type-A overlay **`func_03E2EA`** (`@0x3E2EA`, `ENTER 0xC`;
+  `0x3EA2E` is a `ljmp` dispatch island). It iterates the unit list (`0x181F:0x2E4` unit-iterator)
+  and operates on **unit types 1/4/7** (Soldiers / Dragoons / Continental), setting `UnitRecord+0x3146
+  = 7` on matches — i.e. an **intervention/force-conversion** pass. The function is now named and
+  disassemblable; the exact conversion effect (intervention-force spawn vs unit upgrade) is the
+  narrowed residual. **B (located) / TBD (exact effect).**
 
 **Corrections from the basis (do not reuse the old anchors):**
 - `@MERCENARY` is **NOT** the mercenary offer — its body is *"The {%STRING0}

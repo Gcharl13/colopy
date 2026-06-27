@@ -98,12 +98,26 @@ does **not** spawn a new ruling or a parallel decode doc.
   (`func_008D00`) bounds **only the food growth reserve**, not goods. *(Corrected the prior
   "goods dropped at (level+1)·100 cap" reading.)*
 
+## Endgame / combat (L3, 2026-06-27)
+- **REF** (`ref_growth.md`): init `func_0755CC` difficulty-scaled (Regulars `8d+15`, Cavalry `5d+5`,
+  Man-O-War `3d+2`, Artillery `6d+2`; 4-type array `DGROUP:0x53DA` stride 2). Growth `func_03E162`:
+  `royal_money(PowerRecord+0x22) += (8d+10)·2^era` (eras at 1600/1700/1750); buy 1 unit at `≥1800`.
+- **Naval combat** (`combat.md`): `func_05B2C2` roll = `random_int(1, A+D)`, A/D = UnitTypeStats
+  `+0x0B/+0x0C` (`0x523B/0x523C`); attacker wins when `roll ≤ D`; loser → capture/cargo/sink.
+  `func_05CA7E` = pre-combat UI setup, not the roll. Land roll = `random_int(3,6)+terrain`.
+- **Tory uprising** (`tory_uprising.md`): `func_03CAC6` — **no SoL threshold**; per-call gate
+  `random_int(0,diff+1)`; targets the rebel colony with max `tory_strength = pop·(100−SoL)·2/100 +
+  diff + 1`; spawns Tory-Militia (count = strength countdown). SoL enters only via magnitude.
+
 ## Known-open (the honest TBD frontier — not settled)
 - **AI runtime/leaf items:** the compass dx/dy delta tables (`[bx+0xb4/0xbe]`, BSS), the full
   `goal_type` code enumeration (1/4/7 known), the order-7..12 secondary jump table
   (`func_051D56 @0x51E15`, CS-relative), and the exact weighting inside `func_0083F2` (reachability).
-- Colony: worked-tiles grid / panel text placement; the food-deficit starvation *trigger* site +
-  `+0xAA`/`+0xC8` growth-accumulator reconciliation; WoI bells halving cadence; the `.MP`-file →
-  runtime-board feature-bit remap.
+- **L3 inherent/runtime residuals** (not undecoded mechanics — the honest frontier): colony
+  food-deficit starvation *trigger* site + `+0xAA`/`+0xC8` growth-accumulator reconcile; immigration
+  `+0x1F` per-colony-cross-vs-population reconcile; WoI bells halving cadence; Tory caller cadence +
+  militia type id `[0x53D2]`; naval damage-vs-sink threshold + bombardment roll; mercenary
+  intervention exact effect (`func_03E2EA`); boycott goods glyph colour (no palette arg — UI-inherent);
+  the `.MP`-file → runtime-board feature-bit remap.
 - *(The F2–F9 report painters + OPENING/CLOSING cinematics are now decoded — see
   `docs/ADVISOR_REPORTS_AUDIT.md` and `spec/ui/cinematics.md`; no longer open.)*
