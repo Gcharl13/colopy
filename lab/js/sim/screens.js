@@ -35,6 +35,29 @@ const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
   frame: 0x16 + i, x: 2 + i * 19, y: 181,
   tier: 'B', cite: `colony_screen.cpp §6: x=2+${i}·19, icon y=181; icon=good+0x16 (ICONS ${0x16 + i}); MSE-0 verified vs live capture (RULINGS 2026-06-27)`,
 }));
+// stockpile quantity numbers (Jamestown live capture: all 0). White FONTTINY under each cell.
+const STOCKPILE_QTY = STOCKPILE_GOODS.map((g, i) => ({
+  id: `qty${i}`, label: `qty: ${g}`, type: 'text', value: '0', x: 6 + i * 19, y: 192,
+  color: 'white', tier: 'B', cite: 'colony stockpile qty (live capture, all 0)',
+}));
+// COLONY.PIK band overlays — ICONS frames MSE-0 matched to the live Jamestown capture
+// (RULINGS 2026-06-27). colonists/production/SoL are state-specific (this colony); editable.
+const BAND_OVERLAYS = [
+  [81, 2, 142], [102, 16, 142],            // colonist figures (SoL panel)
+  [22, 2, 163], [56, 40, 163], [62, 52, 163], // production: Food + cross + bell
+  [124, 104, 132],                          // SoL crown
+  [23, 213, 134], [55, 213, 162],           // production-arrows panel
+  [67, 304, 133], [68, 303, 147], [69, 303, 162], [54, 306, 162], // right tool buttons / Exit
+].map(([frame, x, y], i) => ({
+  id: `band${i}`, label: `band overlay ${i} (ICONS ${frame})`, type: 'sprite', sheet: 'ICONS',
+  frame, x, y, tier: 'B', cite: `COLONY.PIK band overlay, ICONS ${frame} — MSE-0 vs live capture (RULINGS 2026-06-27); state-specific`,
+}));
+const BAND_TEXT = [
+  { id: 'sol', label: 'SoL %', type: 'text', value: '100% (I)', x: 64, y: 132, color: 'white',
+    tier: 'R', cite: 'SoL panel value — on-screen 100%; source field TBD (sol_membership_pct @0x8524 = 0% here), RULINGS 2026-06-27' },
+  { id: 'ships', label: 'ships', type: 'text', value: 'No Ships In Port', x: 130, y: 132, color: '#5a7ab0',
+    tier: 'B', cite: 'ships=0 in the live capture' },
+];
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
 // modeled (R/TBD) until measured — drag it onto the backdrop.
@@ -78,13 +101,14 @@ export const SCREENS = {
       { op: 'rect', color: '#000', x: 0, y: 7, w: 320, h: 1 },     // title | scene
       { op: 'rect', color: '#000', x: 0, y: 128, w: 320, h: 1 },   // scene | COLONY.PIK band
       // surrounding-tile minimap — rendered by the shared lab/js/sim/mapview.js compositor
-      // (NOT a parallel renderer). Box x223..296 y17..92 measured from the live capture; a
-      // coastal sample window stands in for the colony's own surroundings (inspector demo).
-      { op: 'rect', color: '#000', x: 222, y: 16, w: 75, h: 77 },  // black box frame
-      { op: 'minimap', x: 223, y: 17, w: 73, h: 75, cols: 5, rows: 5 },
+      // (NOT a parallel renderer). Box x223..296 y31..104 MEASURED from the live capture
+      // (vertically centered in the y8..127 panel). A coastal sample window stands in for the
+      // colony's own surroundings (inspector demo).
+      { op: 'rect', color: '#000', x: 222, y: 30, w: 75, h: 76 },  // black box frame
+      { op: 'minimap', x: 223, y: 31, w: 73, h: 73, cols: 5, rows: 5 },
     ],
     note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH x0..198 y8..127, measured) + COLONY.PIK band at y=128 + black area separators (x199 / y7 / y128, measured). BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C; a plot FRAME = building def_id byte[0x8E82+i], def_id 0→frame 16 — RULINGS 2026-06-27) and the 16-cell stockpile bar (x=2+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so per-plot def_id is editable. The surrounding-tile minimap reuses lab/js/sim/mapview.js (terrainCompose); its window/scale + work-tile/marker overlays are TBD (func_026374). Panel text not seeded.',
-    elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
+    elements: [...COLONY_PLOTS, ...BAND_OVERLAYS, ...BAND_TEXT, ...STOCKPILE_BAR, ...STOCKPILE_QTY],
   },
   colonyReport: {
     name: 'Colony Adviser (F6)', bg: 'REPORT4', w: 320, h: 200, scale: 2,
