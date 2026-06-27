@@ -100,7 +100,7 @@ table.data tbody tr{cursor:pointer}
 .screen-stage{position:relative;image-rendering:pixelated;border:1px solid var(--line);user-select:none}
 .screen-bg{position:absolute;left:0;top:0;display:block;image-rendering:pixelated;pointer-events:none}
 .screen-stage{background:#0b0d11}
-.screen-el{position:absolute;cursor:grab;outline:1px dotted rgba(255,255,255,.35)}
+.screen-el{position:absolute;cursor:grab}
 .screen-el:hover{outline:1px solid var(--accent)}
 .screen-el.sel{outline:2px solid var(--accent);background:rgba(93,176,255,.18)}
 .screen-el.text{white-space:nowrap;font-family:ui-monospace,monospace;line-height:1;padding:1px 2px;text-shadow:0 0 2px #000,0 0 2px #000}

@@ -83,6 +83,17 @@ const SCENE_COLONIST = [
     cite: 'green selection box (#55ff55) bbox x39..50 y112..127, live capture (RULINGS 2026-06-27)' },
 ];
 
+// PRODUCTION OVERLAY — the carpenter's shop is producing hammers, so the game blits the
+// hammer commodity icon (ICONS frame 54, gray head + brown handle — same sprite as the
+// warehouse hammers) once per unit produced, hanging in a row under the shop roof. Jamestown
+// shows THREE hammers at x={15,21,27} y106 (pitch 6), best-fit vs the live capture. These
+// render in the ELEMENT layer (over the building plots), like the scene colonist.
+const SCENE_PRODUCTION = [15, 21, 27].map((x, i) => ({
+  id: `prod_hammer${i}`, label: `production hammer ${i + 1}`, type: 'sprite', sheet: 'ICONS',
+  frame: 54, x, y: 106, tier: 'B',
+  cite: 'carpenter-shop hammer-production overlay: ICONS 54 ×3 @ x={15,21,27} y106 (pitch 6), best-fit vs live capture (RULINGS 2026-06-27)',
+}));
+
 // A report data field = a label + an editable test VALUE, rendered as text. Position
 // modeled (R/TBD) until measured — drag it onto the backdrop.
 const field = (id, label, value, x, y, opts = {}) => ({
@@ -134,7 +145,7 @@ export const SCREENS = {
       ...COLONY_TEXT_OPS,                                          // crisp FONTTINY text (qty + band)
     ],
     note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH x0..198 y8..127, measured) + COLONY.PIK band at y=128 + black area separators (x199 / y7 / y128, measured). BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C; a plot FRAME = building def_id byte[0x8E82+i], def_id 0→frame 16 — RULINGS 2026-06-27) and the 16-cell stockpile bar (x=2+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so per-plot def_id is editable. The surrounding-tile minimap reuses lab/js/sim/mapview.js (terrainCompose); its window/scale + work-tile/marker overlays are TBD (func_026374). Panel text not seeded.',
-    elements: [...COLONY_PLOTS, ...SCENE_COLONIST, ...STOCKPILE_BAR],
+    elements: [...COLONY_PLOTS, ...SCENE_PRODUCTION, ...SCENE_COLONIST, ...STOCKPILE_BAR],
   },
   colonyReport: {
     name: 'Colony Adviser (F6)', bg: 'REPORT4', w: 320, h: 200, scale: 2,
