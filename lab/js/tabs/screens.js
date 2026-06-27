@@ -27,7 +27,7 @@ function drawBitmapText(g, font, str, x, y, color) {
   let cx = x;
   for (const ch of String(str)) {
     const f = font.frames[ch.charCodeAt(0)];
-    if (!f || f.w <= 0) { cx += 4; continue; }
+    if (!f || f.w <= 0) { cx += 3; continue; }
     tmp.width = f.w; tmp.height = f.h; tg.imageSmoothingEnabled = false;
     tg.clearRect(0, 0, f.w, f.h);
     tg.globalCompositeOperation = 'source-over';
@@ -35,7 +35,7 @@ function drawBitmapText(g, font, str, x, y, color) {
     tg.globalCompositeOperation = 'source-in';
     tg.fillStyle = color; tg.fillRect(0, 0, f.w, f.h);
     g.drawImage(tmp, cx, y);
-    cx += f.w + 1;
+    cx += f.w;
   }
 }
 

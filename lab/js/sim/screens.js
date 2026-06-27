@@ -50,6 +50,8 @@ const COLONY_TEXT_OPS = [
   ...STOCKPILE_GOODS.map((g, i) => ({ op: 'text', value: '0', x: 8 + i * 19, y: 194, color: '#181c7d' })),
   { op: 'text', value: '100% (1)', x: 75, y: 133, color: '#ffffff' },
   { op: 'text', value: 'No Ships In Port', x: 118, y: 130, color: '#6888c0' },
+  // white "Exit" label above the red E button in the lower-right (bbox x306..317 y179..184, live capture)
+  { op: 'text', value: 'Exit', x: 306, y: 179, color: '#ffffff' },
 ];
 // COLONY.PIK band overlays — every ICONS frame MSE-0 matched to the live Jamestown capture
 // (RULINGS 2026-06-27), drawn as backdrop sprites so they always render. (frame, x, y):
@@ -66,6 +68,9 @@ const BAND_SPRITES = [
   [55, 213, 162], [55, 224, 162], [55, 235, 162],             // red ✗ (frame 55) over each good
   [55, 249, 162], [55, 258, 162], [55, 267, 162],
   [67, 304, 133], [68, 303, 147], [69, 303, 162],             // right tool buttons
+  // scene colonist working at the carpenter's shop (farmer w/ hammer), inside the green
+  // selection box at (42,111) — ICONS frame 81, 8×16 (live capture, RULINGS 2026-06-27)
+  [81, 42, 111],
 ].map(([frame, x, y]) => ({ op: 'sprite', sheet: 'ICONS', frame, x, y }));
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
@@ -115,6 +120,13 @@ export const SCREENS = {
       // colony's own surroundings (inspector demo).
       { op: 'rect', color: '#000', x: 222, y: 30, w: 75, h: 76 },  // black box frame
       { op: 'minimap', x: 223, y: 31, w: 73, h: 73, cols: 5, rows: 5 },
+      // green selection box around the working colonist at the carpenter's shop
+      // (#55ff55, bbox x39..50 y112..127, live capture RULINGS 2026-06-27) — drawn
+      // before BAND_SPRITES so the farmer sprite (frame 81) sits inside it.
+      { op: 'rect', color: '#55ff55', x: 39, y: 112, w: 12, h: 1 },
+      { op: 'rect', color: '#55ff55', x: 39, y: 127, w: 12, h: 1 },
+      { op: 'rect', color: '#55ff55', x: 39, y: 112, w: 1, h: 16 },
+      { op: 'rect', color: '#55ff55', x: 50, y: 112, w: 1, h: 16 },
       ...BAND_SPRITES,                                             // colonists/production/warehouse-✗
       ...COLONY_TEXT_OPS,                                          // crisp FONTTINY text (qty + band)
     ],
