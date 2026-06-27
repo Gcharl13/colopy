@@ -38,6 +38,10 @@ tframe = [b(0x260+i) for i in range(6)]            # cat -> terrain frame table
 stock = [cu16(0x9A + i*2) for i in range(16)]
 cname = DG[CP-FXBASE+2: DG.find(b'\x00', CP-FXBASE+2)].decode('latin1')
 cpop  = b(CP + 0x1F)
+# title fields: season index @0x538c (0=Spring,1=Autumn), year @0x538a, gold @0x8832
+SEASON = ['Spring', 'Autumn', 'Spring', 'Autumn'][u16(0x538C) & 3]
+YEAR   = u16(0x538A)
+GOLD   = u16(0x8832)
 
 # ---- sprite helpers ----
 def sheet_frame_rgba(sheet, k):
@@ -134,7 +138,8 @@ def text(s, x, y, rgb=(92, 172, 60)):
         g = fimg.crop((f['x'], f['y'], f['x']+f['w'], f['y']+f['h']))
         solid = Image.new('RGBA', g.size, rgb + (255,)); C.paste(solid, (cx, y), g)
         cx += g.size[0] + 1
-text(f"{cname}.  (pop {cpop})", 70, 1)
+# title bar: "<name>.  <Season>, <year>.  Gold: <gold>e"  (e = currency glyph, ASCII 0x9E)
+text(f"{cname}.  {SEASON}, {YEAR}.  Gold: {GOLD}\x9e", 70, 1)
 # band text (positions measured from the live capture; values are runtime — see notes)
 text("100% (I)", 64, 132, (255, 255, 255))          # SoL panel % (source field TBD, see RULINGS)
 text("No Ships In Port", 130, 132, (80, 110, 170))   # ships=0 in fixture -> faithful
