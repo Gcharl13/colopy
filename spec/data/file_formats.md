@@ -34,8 +34,23 @@ The original *Colonization* data directory uses a handful of MicroProse/MADS con
 - `viceroy_source/formats/*.md` — parallel decode-notes; **SECONDARY**, pointers only.
 - CLAUDE.md hard rules 2/4/5 — `.MP` sea-lane & terrain, `.SS` orphan sheets / skip indices 0,16,100.
 
-## 4. Open questions (TBD)
+## 4. Resolution notes (closed)
 
-1. Per-format confidence tiers vary — see each spec; not all byte-verified.
-2. `viceroy_source/formats/` notes may diverge from `formats/`; on conflict primary (`formats/`) + bytes win (Remove-bad-data).
-3. RTLINK overlay segment map vs `formats/EXE_MZ.md` linkage — completeness TBD.
+1. **Per-format confidence tiers vary — by design, not a gap.** Each `formats/*.md` carries
+   its own per-field tier (B/A/R); this index does not re-assert a single global tier. Read each
+   format's own spec for the byte-level confidence of any field. **Resolved (policy):** the
+   per-spec tier IS the authority; every field is tiered in its own sheet.
+2. **`viceroy_source/formats/` vs `formats/` divergence — resolved by the truth hierarchy.** On
+   any conflict the primary (`formats/`) + the raw bytes win (`notes/TRUTH_HIERARCHY.md`,
+   Remove-bad-data). The `viceroy_source/` notes are secondary pointers only (CLAUDE.md path
+   convention); they never override a byte-cited primary. **Resolved (policy).**
+3. **RTLINK overlay segment→file directory — byte-decoded; complete.** The 31-page overlay
+   directory is decoded deterministically from the on-disk **32-byte segment-descriptor table at
+   file `0x0192F0`** (`vp_segment_descriptor_table`; `image_para = [DGROUP:0x3999](=0x16EB)+4 =
+   0x16EF → file 0x2400 + 0x16EF·16 = 0x192F0`, self-checked `record0.disk == 0x20670`). The full
+   page→`file_offset`/`code_offset`/`size_paragraphs`/`reloc_count`/`flags` map is committed in
+   **`code/VICEROY/overlay_pages.json`** (31 records, `record_size 32`), which **supersedes** the
+   "partial decode" note in `formats/RTLINK.md §"VICEROY segment directory"`. The overlay image
+   begins at file `0x020670` (= MZ load-image end `0x20665` rounded up to the next paragraph; see
+   `formats/EXE_MZ.md` §"overlay"). **B** — `code/VICEROY/overlay_pages.json` /
+   `tools/decode_overlay_pages_v2.py`.
