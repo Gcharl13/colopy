@@ -68,10 +68,20 @@ const BAND_SPRITES = [
   [55, 213, 162], [55, 224, 162], [55, 235, 162],             // red ✗ (frame 55) over each good
   [55, 249, 162], [55, 258, 162], [55, 267, 162],
   [67, 304, 133], [68, 303, 147], [69, 303, 162],             // right tool buttons
-  // scene colonist working at the carpenter's shop (farmer w/ hammer), inside the green
-  // selection box at (42,111) — ICONS frame 81, 8×16 (live capture, RULINGS 2026-06-27)
-  [81, 42, 111],
 ].map(([frame, x, y]) => ({ op: 'sprite', sheet: 'ICONS', frame, x, y }));
+
+// The scene colonist working at the carpenter's shop (ICONS frame 81 at 42,111, 8×16;
+// live capture MSE-0) and the green selection box around him (#55ff55, bbox x39..50
+// y112..127). These render in the ELEMENT layer (ON TOP of the building plots) so the
+// colonist sits in front of the carpenter's-shop sprite instead of being clipped behind it.
+const SCENE_COLONIST = [
+  { id: 'colonist0', label: 'carpenter (working colonist)', type: 'sprite', sheet: 'ICONS',
+    frame: 81, x: 42, y: 111, tier: 'B',
+    cite: 'scene worker at carpenter shop: ICONS frame 81 @ (42,111), MSE-0 vs live capture (RULINGS 2026-06-27); drawn over the building plots' },
+  { id: 'colonist0box', label: 'selection box', type: 'box', color: '#55ff55',
+    x: 39, y: 112, w: 12, h: 16, tier: 'B',
+    cite: 'green selection box (#55ff55) bbox x39..50 y112..127, live capture (RULINGS 2026-06-27)' },
+];
 
 // A report data field = a label + an editable test VALUE, rendered as text. Position
 // modeled (R/TBD) until measured — drag it onto the backdrop.
@@ -120,18 +130,11 @@ export const SCREENS = {
       // colony's own surroundings (inspector demo).
       { op: 'rect', color: '#000', x: 222, y: 30, w: 75, h: 76 },  // black box frame
       { op: 'minimap', x: 223, y: 31, w: 73, h: 73, cols: 5, rows: 5 },
-      // green selection box around the working colonist at the carpenter's shop
-      // (#55ff55, bbox x39..50 y112..127, live capture RULINGS 2026-06-27) — drawn
-      // before BAND_SPRITES so the farmer sprite (frame 81) sits inside it.
-      { op: 'rect', color: '#55ff55', x: 39, y: 112, w: 12, h: 1 },
-      { op: 'rect', color: '#55ff55', x: 39, y: 127, w: 12, h: 1 },
-      { op: 'rect', color: '#55ff55', x: 39, y: 112, w: 1, h: 16 },
-      { op: 'rect', color: '#55ff55', x: 50, y: 112, w: 1, h: 16 },
       ...BAND_SPRITES,                                             // colonists/production/warehouse-✗
       ...COLONY_TEXT_OPS,                                          // crisp FONTTINY text (qty + band)
     ],
     note: 'Composited like the real screen: wood chrome (WOODTILE) + parchment scene inset (PARCH x0..198 y8..127, measured) + COLONY.PIK band at y=128 + black area separators (x199 / y7 / y128, measured). BYTE-CITED (B): the 15 building plots (DS:0x266, func_02701C; a plot FRAME = building def_id byte[0x8E82+i], def_id 0→frame 16 — RULINGS 2026-06-27) and the 16-cell stockpile bar (x=2+i·19, icon y=181, ICONS 22+good — colony_screen.cpp §6). WHICH building fills each plot is RNG-driven (func_025D34) so per-plot def_id is editable. The surrounding-tile minimap reuses lab/js/sim/mapview.js (terrainCompose); its window/scale + work-tile/marker overlays are TBD (func_026374). Panel text not seeded.',
-    elements: [...COLONY_PLOTS, ...STOCKPILE_BAR],
+    elements: [...COLONY_PLOTS, ...SCENE_COLONIST, ...STOCKPILE_BAR],
   },
   colonyReport: {
     name: 'Colony Adviser (F6)', bg: 'REPORT4', w: 320, h: 200, scale: 2,

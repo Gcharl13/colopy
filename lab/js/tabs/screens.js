@@ -176,6 +176,12 @@ export async function render(host, ctx) {
       const cv = el('canvas', { class: 'screen-sprite' });
       d.append(cv);
       paintSprite(cv, e);
+    } else if (e.type === 'box') {            // selection-box outline (e.g. the colonist marker)
+      d.style.width = (e.w * scale) + 'px';
+      d.style.height = (e.h * scale) + 'px';
+      d.style.border = `${scale}px solid ${e.color || '#55ff55'}`;
+      d.style.boxSizing = 'border-box';
+      d.style.pointerEvents = 'none';
     }
     d._el = e;
     if (e.id === selected) d.classList.add('sel');
@@ -227,7 +233,9 @@ export async function render(host, ctx) {
     const xIn = numInput(e.x, (v) => { e.x = v; positionDiv(e); });
     const yIn = numInput(e.y, (v) => { e.y = v; positionDiv(e); });
     let valCell;
-    if (e.type === 'text') {
+    if (e.type === 'box') {
+      valCell = el('span', { class: 'val' }, `${e.w}×${e.h}`);
+    } else if (e.type === 'text') {
       valCell = el('input', { class: 'val-input txt', value: e.value });
       valCell.addEventListener('input', () => { e.value = valCell.value; const d = divFor(e); if (d) d.textContent = e.value; });
     } else {
