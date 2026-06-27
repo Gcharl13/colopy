@@ -45,9 +45,13 @@ const STOCKPILE_BAR = STOCKPILE_GOODS.map((g, i) => ({
 // Text positions MEASURED from the live capture (RULINGS 2026-06-27): qty "0" top at y194,
 // centered under each cell (x=8+i·19); "100% (I)" at x75 y133; "No Ships In Port" at x118 y130.
 const COLONY_TEXT_OPS = [
+  // title bar: green FONTTINY on the woodgrain top strip (x90, y1; live capture)
+  { op: 'text', value: 'Jamestown.  Spring, 1505.  Gold: 1000', x: 90, y: 1, color: '#569834' },
   ...STOCKPILE_GOODS.map((g, i) => ({ op: 'text', value: '0', x: 8 + i * 19, y: 194, color: '#181c7d' })),
   { op: 'text', value: '100% (I)', x: 75, y: 133, color: '#ffffff' },
   { op: 'text', value: 'No Ships In Port', x: 118, y: 130, color: '#6888c0' },
+  // warehouse "✗" marks (6 red, over the empty barrels) — XXX XXX at the measured x's, y164
+  ...[213, 224, 235, 249, 258, 267].map((x) => ({ op: 'text', value: 'X', x, y: 164, color: '#c00000' })),
 ];
 // COLONY.PIK band overlays — ICONS frames MSE-0 matched to the live Jamestown capture
 // (RULINGS 2026-06-27). colonists/production/SoL are state-specific (this colony); editable.
