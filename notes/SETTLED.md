@@ -64,8 +64,32 @@ does **not** spawn a new ruling or a parallel decode doc.
 - Customize params = 5-word array `DGROUP:0x1E7E`, written mod-3 by `func_070060 @0x701AD`; menu
   strings `@CLAND` (LAND MASS) / `@CCONT` (LAND FORM) / `@CTEMP` (TEMPERATURE) / `@CCLIM` (CLIMATE).
 
+## AI (Layer 4) — `spec/systems/ai.md` (decoded 2026-06-26/27)
+- **Two engines:** strategic planner `func_04CC50` (per-**power**, `[bp+6]`=power 0..3) fills/reads
+  the plan map and assigns missions; per-unit order processor `func_04E2D6` (per-**unit**) executes.
+  Tactical heading evaluator `func_046FFA` scores 8 dirs+stay (base 200; +500 colony-site, ±4 heading
+  continuity, +50 frontier, +40/20 colony, +16 yield, RNG jitter, clamp≥0, pick-max → `0x314F`).
+- **Plan map** = `DS:0x98B0`, 4-byte records `((power<<6)+slot)<<2`, **POWER-indexed, 64 slots/power**
+  (proven: all access in `func_04CC50`; BSS table `0x98B0..0x9CB0`, next global at `0x9CB0`). Fields:
+  `+0` target X, `+1` target Y, `+2` goal_type (0xFF empty), `+3` priority. Setter `func_04C3A2`.
+- **`0x314B` AI state alphabet** (~30 letters): planning `1/t/i/?` (`func_04CC50`); execution
+  `@`,`V`,`L`,`=`,`C`,`U`,`R`,`9`,`G`,`B`,`e`,`F`,`0` + mission chars `2 3 4 5 8 D J N P W` via
+  `func_04E2B6`. Missions = explore (`2/8/D`) / return-to-colony (`3/5/N/P/V/W`) / visit-natives (`4/J`).
+- **`0x3149` = move-credits spent** (reset turn-start `@0x5872`; step −3; allowance = UnitTypeStats).
+- **UnitTypeStats** = `DS:0x5234`, 14-byte record/type = loaded **`@UNIT` CSV** with **moves×3**;
+  `+0` allowance, `+1` def, `+2` atk, `+3` work-cost, `+9` capability bits (= `@UNIT` binary column).
+- **Scoring helpers** (resident, via `tools/follow_thunk.py`): `0x302`→`func_005BFA` in-bounds
+  (⇒ map dims `[0x853a]`W/`[0x853c]`H), `0x37a`→`func_00493C` distance, `0x4d4`→`func_00C322` RNG,
+  `0x90c`→`func_006CCA` allowance, `0x78c`→`func_00627A` terrain-id, `0x7be`→`func_008D26`
+  colony-at-tile. They bottom out at the shared map-access seg `0x37f` + colony layer (`0x5d46`/`0xCA`).
+- **Per-turn flow:** `func_005760` main loop → per-power 0..3, controller gate `[idx·0x34+0x543f]`
+  (0 = run; skips human) → orders `func_024A48` → `func_04CC50` plan → `func_051D56` → `func_04E2D6`.
+
 ## Known-open (the honest TBD frontier — not settled)
-- **F2–F9 report field positions** render in overlay `0x191F` (raw asm in
-  `code/VICEROY/disasm/orphans_overlay.asm`); decompile pending (`docs/GHIDRA_PHASE2_RUNBOOK.md`).
+- **AI runtime/leaf items:** the compass dx/dy delta tables (`[bx+0xb4/0xbe]`, BSS), the full
+  `goal_type` code enumeration (1/4/7 known), the order-7..12 secondary jump table
+  (`func_051D56 @0x51E15`, CS-relative), and the exact weighting inside `func_0083F2` (reachability).
 - Colony worked-tiles grid / panel text placement; raw→finished conversion ratios; starvation rule;
   WoI bells halving cadence; the `.MP`-file → runtime-board feature-bit remap.
+- *(The F2–F9 report painters + OPENING/CLOSING cinematics are now decoded — see
+  `docs/ADVISOR_REPORTS_AUDIT.md` and `spec/ui/cinematics.md`; no longer open.)*
