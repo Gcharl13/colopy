@@ -91,7 +91,7 @@ The authoritative per-element table is in each screen's own spec; collected here
 | Boot-menu plaque (BEGINMENU) | latched (FONTINTR/FONTTINY) — `@smallfont` loads no distinct font | green (82,138,49) / gold (227,170,40) selected — via `mr_color_for` direct-RGB | A (font) / B (color) |
 | Hall of Fame table | **FONTINTR** (`push [0x268A]` @0x23C06 — *not* FONTKING) | gold `0xFC`→(199,162,32) via **WOODPAN2.PIK** | B |
 | King-defeats text (the **sole FONTKING user**) | **FONTKING** (`func_075352` @0x754F2, pen (x=242,y=47), glyph engine `0x181F:0x3FE`) | no per-call palette arg → glyph-engine mapping (`[0x1F5C]` is the **speaker-portrait selector** channel, *not* text color — RULING) | B (font/pos) / A (RGB) |
-| Popup body | FONTTINY (latch; `SMALLFONT` just copies it) | white `0x0F` default (push is overlay-resident → A/TBD); no `TEXTCOLR` override exists | A |
+| Popup body | FONTTINY (latch; `SMALLFONT` just copies it) | white `0x0F` default (actual color push is overlay-resident → A/TBD); **no `TEXTCOLR` override exists — byte-confirmed: the dialog parser `func_06F0F4` @0x6F0F4 dispatches exactly 8 directives (OPTIONS/PROMPT/TEXT/SMALLFONT/WIDTH/LENGTH/CHECKBOX/DEFAULT) via the `lcall 0xd1d:0x816` strcmp chain @0x6F1A4–0x6F376 and never compares the `TEXTCOLR` string (file 0x1F9AA / DGROUP off 0x200A; zero code-xref)** | B (no-override) / A (body push) |
 | Speaker name-plate | FONT-NP (loaded with WOODFRAM/NAMEPLAT) | overlay-resident → TBD | A |
 
 ## 4. Residual — none (font/color is fully static)

@@ -257,7 +257,7 @@ RTLink-resolved (`REPORTS.md` §1):
   (@0x399C7/@0x39A13/@0x39B13). War/peace `@MISC 101/102`; recognition `[DS:0x2F38/2F36]`.
   Per-power column **horizontal lines** via `0x191F:0x8BC` (x-end `0x13F`=319, color 0x77).
   One cell color state-driven (`cmp [bp-0x70],1; …; +0xF` @0x39BE9). **B (gate + columns)
-  / R (values) / TBD (the "View Whose Report?" picker — §6.1).**
+  / R (values) / R (the "View Whose Report?" picker is byte-resolved — §6.1/Open-Q1, **B**: picker block @0x23810 seeds `[DS:0x5396]` (`mov ax,[0x5396]` func_0235D6 @0x023810), runs the TXT-menu builder (`lcall 0x181F:0x998`→func_06F51A @0x02382E), `dec ax`→power 0..3 @0x023836, SETVIEW commit writes `[0x5398]/[0x5394]/[0x5396]` @0x023D52 (func_0235D6 @0x023D52); only the per-key sub-handler copy is residual **R**).**
 - **F9 Indian** (`func_39EE2`, multi-page via paginator `func_039E98`, N=29 → `@MISC 29`).
   Per-tribe rows from NativeSettlement table **`[DS:0x54EC]` stride 18** (+0x02 owner,
   +0x04 pop, +0x05 mission flag); tribe names NAMES `@TRIBES`. Status/mission column

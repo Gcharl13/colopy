@@ -797,10 +797,10 @@ _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory re
 |---|---|---|---|
 | +0x00..+0x17 | char[24] | `leader_name` (NUL-terminated) | "Walter Raleigh" |
 | +0x18..+0x2F | char[24] | `country_name` | "New England" |
-| +0x30 | byte | TBD | English=0xC0 |
+| +0x30 | byte | per-power one-time-event flag bitfield (test-and-set; bit 0x40 = a one-time event, set on first occurrence) (page_12 @0x061870 `test byte ptr [bx+0x543e],0x40` / @0x061877 `or byte ptr [bx+0x543e],0x40`, bx=power·0x34; 0x543e=0x540E+0x30) | English=0xC0 (bits 0x80\|0x40 set) |
 | +0x31 | byte | `is_active` (game-state flag) | English=0 |
-| +0x32 | byte | TBD | English=0x03 |
-| +0x33 | byte | TBD | English=0x00 |
+| +0x32 | word | **`colony_name_seq`** (per-power default-colony naming counter; incremented after each auto-named colony, zeroed at new-game init) (func_0404B0 @0x04056E `INC word ptr [bx+0x5440]`; init reset @0x075930 `mov word ptr [bx+0x5440],0`; bx=power·0x34; 0x5440=0x540E+0x32) | English=0x03 (3 colonies auto-named) |
+| +0x33 | byte | high byte of the `colony_name_seq` WORD at +0x32 (func_0404B0 @0x04056E / init reset @0x075930 access [0x5440] as a word) | English=0x00 (high byte of the +0x32 counter, value 3) |
 
 #### PowerRecord — base `DGROUP:0x8808`, stride `0x13C`, count 4
 > source: docs/DATA_MODEL.md :: PowerRecord — per-European-power state (4 entries) · value_source: runtime (BSS; loaded from NAMES.TXT/save) -- verified vs DOSBox memory dump, not static EXE bytes
@@ -836,7 +836,7 @@ _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory re
 | 0x01 | byte | map_y | Tile row (0..70) |
 | 0x02..0x19 | 24 bytes | name | NUL-terminated colony name (max 23 chars per COLONY.TXT spec) |
 | 0x1A | byte | owner_nation | 0=England, 1=France, 2=Spain, 3=Netherlands |
-| 0x1B | byte | unknown | TBD |
+| 0x1B | byte | colony flags/status byte — low 2 bits tested (`& 3`) to gate per-power logic in func_02D658 @0x02D995 (`TEST byte ptr [bx+0x1b],3`, bx=*(0x8542)=current colony) | TBD (low 2 bits significant; full semantics runtime) |
 | 0x20 | word | flags? | Observed value 0x1002 |
 | 0x90 | word | field_a | Observed Jamestown=272 |
 | 0x9A | word | field_b | Observed 1 (read by func_02D658 line 02D6BB) |
@@ -865,12 +865,12 @@ _Generated from `docs/DATA_MODEL.md` (byte-verified). These are the in-memory re
 | `0x84FC` | far ptr | -> PowerRecord[active_power] (was: "king/payer record") | Game-state globals (DGROUP scalars) | gold at +0x2A matches in-game UI |
 | `[0x174]` | word | cursor_x | 2026-05-03 update — Dialog/popup state globals | 0x0765AC (`MOV [0x174], AX` short form) |
 | `[0x176]` | word | cursor_y | 2026-05-03 update — Dialog/popup state globals | 0x0765AF (`MOV [0x176], DX`) |
-| `[0x186]` | word | dialog_state flag (>=0x64 enables popup) | 2026-05-03 update — Dialog/popup state globals | TBD |
+| `[0x186]` | word | dialog_state flag (>=0x64 enables popup) | 2026-05-03 update — Dialog/popup state globals | func_067DC8 @0x067DDA `CMP word ptr [0x186],0x64` then @0x067DDF `JL` skips the popup-rect setter (so value >= 0x64 enables the popup) |
 | `[0x1EA4]` | byte | char_width_cols (parsed from GAME.TXT @width) | 2026-05-03 update — Dialog/popup state globals | 0x0684CC, 0x0684FC, 0x068507 |
 | `[0x1EA5]` | byte | char_height_rows | 2026-05-03 update — Dialog/popup state globals | 0x0684D7, 0x0684F9, 0x068504 |
 | `[0xA5A4]` | word | font_cell_width | 2026-05-03 update — Dialog/popup state globals | 0x068771 (`MOV [0xA5A4], CX`) |
 | `[0xA5A6]` | word | font_cell_height | 2026-05-03 update — Dialog/popup state globals | 0x06872C (`MOV [0xA5A6], AX`) |
-| `[0x839E]` | word | dialog_rect.field0 (computed) | 2026-05-03 update — Dialog/popup state globals | overlay 0x0C36:0x000A (TBD file offset) |
+| `[0x839E]` | word | dialog_rect.field0 (computed) | 2026-05-03 update — Dialog/popup state globals | setter file offset resolved: func_067DC8 @0x067E02 `LCALL 0x181f,0x254` → thunk 181F:0254 → file **0x00E76A** (`func_00E76A`, reads struct via BX=`&[0x839E]`) per thunk_resolve.json |
 | `[0x83A0]` | word | dialog_rect.field1 (computed) | 2026-05-03 update — Dialog/popup state globals | same setter |
 | `[0x83A2]` | word | dialog_rect.field2 (cursor_x) | 2026-05-03 update — Dialog/popup state globals | same setter |
 | `[0x83A4]` | word | dialog_rect.field3 (cursor_y) | 2026-05-03 update — Dialog/popup state globals | same setter |

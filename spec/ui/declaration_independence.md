@@ -53,7 +53,8 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\*/DEC-SQIG 
 
 ## 4. Interactions
 - Triggered from GAME menu → "DECLARE INDEPENDENCE" (MENU `@GAME`, verified) → `@PICKINDEPENDENCE` confirmation → Declaration cinematic. **B**
-- Final OK / continue to dismiss (per cinematic convention). **R**
+- During the signature typewriter, a keypress skips the per-glyph animation: the paint loop polls `kbhit` (func_00D272 `lcall 0x181F:0xF6` @0x3DD7A) and, if a key is pending, consumes it with `getch` (func_00D286 `lcall 0x181F:0x3E0` @0x3DD83) and sets the skip flag `[bp-0x51A]=1` (@0x3DD88); that flag zeroes `dx` (`cmp [bp-0x51A],1; sbb dx,dx; neg dx` @0x3DD8E) so the per-glyph tick delay func_00D1CA (`lcall 0x181F:0x45C` @0x3DD99) returns immediately, drawing the rest of the signature instantly. Each glyph otherwise waits a class-based delay of 0xA or 7 ticks (`mov [bp-0x51E],0xA/7` @0x3DC96/0x3DCCB/0x3DCF2). **B** (func_03DA2A-continuation @0x3DD7A–0x3DD99)
+- Final OK / continue to dismiss the whole screen is handled by the caller event handler `func_03DE46` after the signature completes (`func_03DA2A` returns at @0x3DE44 once y≥0xDC); the exact final-wait input site is not pinned to a single instruction here. **R**
 
 ## 5. Evidence
 - `docs/KING_AND_CINEMATIC_AUDIT.md` §5 — DECOIND vs DECLARAT distinction, `func_03DA2A` byte trace, DEC-\* letter sprites, signature seed at 0x540E. **B**

@@ -233,9 +233,16 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   and cycles `_ship_wave` on the master clock.
 - **Assets (A):** `OPENING.PIK` bg + `OPEN*` sprites (per load order above) + MPSLOGO/MPSNAME.
 - **Tier:** asset-load order **B**; frame-timing + blit convention + placement model **B**; per-element
-  **literal** X/Y for the anim-table elements is **TBD** — those coordinates live in the external
-  OPENING anim data file (`_load_anims` @`0xdd2` → `_anim[]` @`0x4de8`) and the PATH.DAT waypoint
-  stream (`_ship[]` @`0x4f0c`); a port reads those files, the EXE only supplies the centering math.
+  **literal** X/Y for the anim-table elements is now **partly resolved (B)** — the anim file is the
+  **committed** `data_extracted/text/OPENING_sections.json @OPENING` table, parsed by `_load_anims`
+  @`0xDD2`: it reads 4 CSV columns (`lcall 0x1bf:0x1a2` ×4 @`0xDFD..0xE15`) into the 6-word `_anim[]`
+  record (`rep movsw cx=6` @`0xE4B`, stride 12 @`0x4de8`) = **col1 sheet-index** (→ `_animsprite`
+  table), **col2 activation tick**, **col3** (unused by the X/Y math), **col4 X-base** (640 or 320,
+  stored at record `+6`=`0x4dee` and added to X @`0x110A` before subtracting `_pan_x`), words 5–6 = 0
+  (runtime frame/active flags). So the **X-base, activation-tick and sheet are committed data**
+  (decodable now); only the per-frame **Y** is runtime — derived from the sprite-sheet frame bbox
+  `-(rec[+0x40]−rec[+0x3c])+1` @`0x10EB` (a `.SS` asset value, **A**, not in the table). Ship X/Y
+  likewise reads PATH.DAT waypoints `_ship[]` @`0x4f0c` (func_001522 not involved; `_load_anims` @0xDD2). Residual: per-frame Y (sprite-bbox, **A**) + PATH.DAT waypoint stream (external).
 
 ## 7. Closing cinematic (CLOS-BKG.PIK / CLOS-*.SS) — CLOSING.EXE — **B** (deep decode 2026-06-26)
 
@@ -298,11 +305,22 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   runs the @-menu @0x075540). **B** (painter); dismiss convention **R**.
 - **Declaration** is triggered from the GAME menu → "DECLARE INDEPENDENCE" (verified in MENU `@GAME`)
   → `@PICKINDEPENDENCE` confirmation → DECOIND cinematic. See `declaration_independence.md` §4. **B.**
-- **Opening** runs at boot from OPENING.EXE; the demo loop early-outs on a keypress (the outer
-  keypress driver is part of the CINEMATIC_TIMING_AUDIT residual). **B** mechanism; keypress early-out
-  **TBD** (`CINEMATIC_TIMING_AUDIT.md` §5).
+- **Opening** runs at boot from OPENING.EXE; the demo loop early-outs on a keypress. **Resolved (B):**
+  the input handler `func_001522` @`0x1522` polls **BIOS kbhit** via `lcall 0x24f:2` (= file `0x30F2`:
+  `mov ah,1; int 0x16; jne; xor ax,ax` — `b4 01 cd 16`) @`0x152E`; if a key is pending
+  (`or ax,ax; je` @`0x1533`) it reads the key with **BIOS getch** `lcall 0x24f:0x16` (= file `0x3106`:
+  `mov ah,0; int 0x16` — `b4 00 cd 16`) @`0x1537` into `[bp-0xa]` (`+`/`-`=0x2B/0x2D tune timing
+  `[0x48]/[0x50]`, ESC/click forces `0x1B`); the exit path clears the loop flag `[0x8c]=0` @`0x15C8`/
+  `0x15D4`, and the outer driver `func_0016AC` (`_open_loop`, pan init `[0x4aca]=0x280` @`0x16AF`)
+  runs while `[0x8c]≠0` (`cmp [0x8c],0; jne 0x16bf` — `83 3e 8c 00 00 75 c2` @`0x16F6`) (func_001522 @0x1522, func_0016AC @0x16AC). **B** mechanism + keypress early-out.
 - **Closing** runs from CLOSING.EXE on retirement; advances by its internal element timetable to the
-  `-1` "End of closing" sentinel at time 390. **B** (script); outer pacer **TBD**.
+  `-1` "End of closing" sentinel at time 390. **B** (script). **Outer pacer resolved (B):** the pacer is
+  the per-frame loop `func_000E4C` @`0xE4C` — it latches the 32-bit master clock via `lcall 0x24a:2`
+  into `[0x488c]:[0x488e]` @`0xE59`, runs the frame-gated scheduler `func_000C0C` @`0xC0C` (advances
+  only when `(clock − lasttick[0x66:0x68]) ≥ interval [0x54]`, `cmp` @`0xC25`), presents the frame
+  (`call 0xac2` @`0xE6A`), polls input (`call 0xd98` @`0xE6E`), and loops while the sentinel `[0x6c]≠0`
+  (`cmp [0x6c],0; jne 0xe59` @`0xE71`) — `[0x6c]` is cleared on quit/path-complete @`0xE07`/`0xD70`
+  (func_000E4C @0xE4C, func_000C0C @0xC0C). **B** (script + pacer).
 
 ## 10. Evidence
 
@@ -339,10 +357,24 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
    (`_ship[]` @`0x4f0c`). CLOSING: loop `func_000E4C` @`0xE4C`, 32-bit clock `[0x488c]`, **sentinel
    exit** `[0x6c]≠0`, table-driven actors (stride-14 @`0x4b96`, loaded by `func_000A00` from the
    `CLOSING` sequence file). **Residual TBD = data-file contents only:** the per-element *literal*
-   X/Y/frame timelines live in the external OPENING anim file / PATH.DAT / CLOSING sequence file (each
-   named with its load site + BSS table); the EXE supplies the centering + schedule math, which is B.
-   The runtime interval `[0x54]` (CLOSING) and the `LCALL 0x24a,2` clock helper body (overlay seg 2)
-   are the only code-side TBDs.
+   X/Y/frame timelines live in the **committed** OPENING anim table (`OPENING_sections.json @OPENING`,
+   parsed by `_load_anims` @`0xDD2` — col1 sheet / col2 tick / col4 X-base, §6) + PATH.DAT + the
+   **committed** CLOSING sequence table (`CLOSING_sections.json @CLOSING`, parsed by `func_000A00`
+   @`0xA00`: `lcall 0xfd:0x198` ×5 → 7-word actor record `rep movsw cx=7` @`0xA7E`, stride 14 @`0x4b96`
+   = col1 sheet-index `+0`, col2 activation tick `+2`, col5 position `+8`); the EXE supplies the
+   centering + schedule math, which is B. (Only the runtime sprite-bbox Y and PATH.DAT waypoints remain external/asset-derived.)
+   **Both former code-side TBDs are now decoded (B):** the CLOSING frame interval `[0x54]` is a
+   **BSS-default-0** word with no immediate initializer — its only writers are `inc [0x54]` @`0xE2A`
+   (`+`/0x2B key) and `dec [0x54]` @`0xE30` (`-`/0x2D key); the stepper `func_000C0C` reads it
+   (`mov ax,[0x54]` @`0xC11`) and advances the schedule only when `(clock − lasttick) ≥ [0x54]`
+   (@`0xC25`), so default 0 = advance every loop, live-tunable by the player. The `LCALL 0x24a,2`
+   clock helper body is at file `0x2EA2`: `les bx,[0x340]; mov ax,es:[bx]; mov dx,es:[bx+2]; retf`
+   (`c4 1e 40 03 / 26 8b 07 / 26 8b 57 02 / cb`) — it dereferences the 32-bit tick far-ptr
+   `[0x342]:[0x340]`, which the timer install/uninstall routine sets to the game's software counter
+   `0xa5d:0x4f4c` while the custom INT 8 ISR is hooked (`mov ax,0xa5d;[0x342] / mov ax,0x4f4c;[0x340]`
+   @`0x30BC`) and restores to the **BIOS 18.2 Hz tick `0040:006c`** on uninstall
+   (`mov ax,0x40;[0x342] / mov ax,0x6c;[0x340]` @`0x30FA`) (clock helper @0x2EA2, installer @0x30BC).
+   The only residual is the **live value** of `[0x54]` (STATE — player-driven, default 0).
 3. ✅ **AMERICA.MOV demo-script — PARTLY RESOLVED (A/R).** The `.MOV` blob
    (`data_extracted/data/AMERICA_MOV.json`) is a 1-bpp coastline/depth bitmap + ship-path waypoint
    list (`_load_ship_path`/`_increments`/`_scr_depth`, `CINEMATIC_TIMING_AUDIT.md` §3). Any non-bitmap

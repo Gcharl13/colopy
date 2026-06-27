@@ -35,7 +35,7 @@ removed; the overlay source survives as `SESSION_UI_CATALOG.md` §3 frame 131012
 | Title | (0, 0, 320, 10) | A | "CONTINENTAL CONGRESS ACTIVITIES" |
 | Session subtitle | (0, 10, 320, 20) | A | "Next Continental Congress Session: (\<FF\>) (NN in MM)" — the **progress is this text, not a bar** |
 | Sentiment strip | (0, 36, 320, 8) | A | "Rebel Sentiment: X%   Tory Sentiment: Y%" |
-| Bell icons row | (0, 44, 320, 32) | A/TBD | **discrete** bell sprites (one per bells/turn) — *not in the F3 text body* (§6.1); luma-observed only, may be a separate overlay path |
+| Bell icons row | (0, 44, 320, 32) | A/B | **discrete** bell sprites (one per bells/turn) drawn **IN the F3 body** at `func_037A20 @0x037BF5` (`mov ax,0x3f; lcall 0x181f,0x236` = `func_002EE4`, span `0x12c`=300) — *not* a separate overlay path (the §6.1 "not in the F3 body" claim rested on a 140-byte-truncated disasm; the full `0x037A10..0x3807D` body draws it). Sprite `0x3F` filled / `0x38` empty (`func_002EE4 @0x002FA5`). Band rect still luma-A. |
 | REF / FF list | (0, 76, 320, 40) | A | 4 REF unit groups w/ count badges |
 | Founding Fathers list | (0, 116, 320, 60) | A | acquired FF names (plain green text, not portraits) |
 | OK button | (290, 184, 26, 14) | A | bottom-right |
@@ -89,7 +89,12 @@ immediate occurs exactly once), tests the per-power owned bitmap (`lcall 0x181F:
 `0x13C`, base `−0x77F1`, bit `1<<(ff&7)`), builds the `"CC-NN"` path, and **blits each owned
 portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x,frame.y)`
 25574) — i.e. screen positions come from inside each CC-NN.SS, not a code-side grid. **B
-(mechanism)**; popup chrome (frame/title/OK) **TBD** (no frame capture).
+(mechanism)**. **Popup chrome RESOLVED (B):** the resident reveal popup is `func_03BB4A @0x03BB4A`
+(string `'CCBKGD'`; = `congress_screen_render`). It has **no decorative frame/title/OK widget** — it
+loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the whole 320×200 image
+(`0x181F:0x444` @0x03BBB5, `bx=0x140`/`0xc8`), draws the portraits (`call 0x3C410`) and presents
+(`0x181F:0xe2` @0x03BBE6) for both reveal phases; dismissal is a **key/ESC wait** `0x181F:0x3c0`
+(`func_004A80`, role "ESC") @0x03BC14 — the full-screen CCBKGD image IS the popup, no boxed frame.
 
 ## 3. Assets & text
 - **Background:** CCBKGD.PIK full-screen (scribe at desk). REF unit icons + bell + US flag from ICONS.SS. FF portraits: CC-00..CC-24.SS (1 per FF, indices = `@FATHERS` order). **A/B**
@@ -128,19 +133,33 @@ portrait at the sprite's own baked `frames[0].x/.y`** (`ss_blit(&sheet,0,frame.x
 - `data_extracted/text/{LABELS,NAMES}_sections.json` — `@MISC`, `@FATHERS` (verified). **B**
 
 ## 6. Open questions (TBD)
-1. Bell sprite + US-flag ICONS.SS indices — **legitimately TBD (confirmed 2026-06-21).** The
-   F3 paint body (`@file 0x37A10`, fully disassembled) is **text/box only** — it contains **no
-   sprite blits** (`0x181F:0x254`/`0x2BC`) and no bell/flag immediate. So the bell row and US
-   flag are **not** drawn in the F3 report; they live on the (separate) Activities/overlay path
-   or are absent from this text report. The only byte-cited flag index **0x44** is the *colony*
-   renderer's player flag (`push 0x44 @0x65C11`), **not** congress. Stays **TBD** for this screen.
+1. Bell sprite **RESOLVED (B); US-flag still TBD.** The earlier "F3 body is text/box only, no
+   sprite blits" finding was based on a **truncated** disasm (the asm file ended at 0x37A9C, 140
+   bytes); the **full** body `0x037A10..0x3807D` DOES draw the bell row — `mov ax,0x3f; lcall
+   0x181f,0x236` @0x037BF5 (`func_002EE4`, span `0x12c`=300), so **bell sprite = `0x3F` filled /
+   `0x38` empty** (`func_002EE4 @0x002FA5`), drawn in-body, not a separate overlay path. The body
+   has **no generic sprite blit** (`0x181F:0x254`/`0x2BC`) and **no US-flag immediate** anywhere in
+   `0x037A10..0x3807D` — so the **US flag is genuinely absent from this F3 report** (stays TBD; the
+   `push 0x44 @0x65C11` flag index is the *colony* renderer, not congress).
 2. ~~FF "next session" selection logic + DGROUP:0xE7AC threshold table.~~ **Mostly resolved
    2026-06-21.** Selection logic is **B** in the export: `ff_is_available` (25425) = not-owned
    AND all lower-index same-category fathers owned (category-gated walk over the 25-entry
    `FF_TABLE`), weighted by era band (`ff_weight_for_year` 25413; bands at 1600/1700). The
    **threshold ("129") is computed** by `func_03C282` (bell-cost curve, entry @0x03C282), **not**
    a static table — `0xE7AC` has **zero** raw immediate hits and is struck as speculative.
-3. REF group sprite indices + count-badge geometry — sprites **R** (candidate ICONS indices
-   Regulars/Cavalry/Man-O-War/Artillery not tied to this screen); geometry **A** (v3 bands).
-4. CC-NN FF-acquisition reveal popup chrome (frame/title/OK) — **TBD** (mechanism byte-grounded
-   in §2; only the popup decoration lacks a frame capture).
+3. REF group sprite indices + count-badge geometry — **source RESOLVED (B); icon VALUES = STATE.**
+   The F3 body draws TWO REF count-badge rows via `0x181F:0x222` (=`func_0033F2`, count-badge queue):
+   land group @0x037E1C uses icon ids `[0x5286]/[0x52A2]/[0x52CC]/[0x532E]` with counts
+   `[0x53DA]/[0x53DC]/[0x53E0]/[0x53DE]`; naval group @0x037EFE uses icons
+   `[0x52B0]/[0x5294]/[0x52CC]/[0x532E]` with counts `[0x53E2]/[0x53E4]/[0x53E8]/[0x53E6]`. Each row is
+   opened by `0x181F:0x218` (`func_003193`) and flushed by `0x181F:0x22c` (`func_003104`, `push 4` =
+   **4 columns**, span `bx=0x12c`=300) — so geometry is a 4-column proportional badge layout, **B**. The
+   icon-id globals (`0x5286`…) are DGROUP **≥0x2CC6 = BSS** (past MZ image end file `0x20665`), so the
+   actual ICONS.SS index VALUES are runtime/loaded data → **STATE** (not statically in the EXE image).
+4. CC-NN FF-acquisition reveal popup chrome — **RESOLVED (B): there is no frame/title/OK chrome.**
+   The resident popup `func_03BB4A @0x03BB4A` (string `'CCBKGD'`) loads CCBKGD.PIK full-screen
+   (`0x181F:0x44e` @0x03BB6D), blits the whole 320×200 image (`0x181F:0x444` @0x03BBB5), draws the
+   owned portraits at their baked CC-NN.SS coords and `vid_present()`s twice (the two-phase
+   light-up), then **waits for a key/ESC to dismiss** (`0x181F:0x3c0` = `func_004A80` role "ESC"
+   @0x03BC14). No boxed dialog, no title bar, no OK widget is drawn — the full CCBKGD screen IS the
+   popup; it matches decompiled `congress_screen_render` (25583).

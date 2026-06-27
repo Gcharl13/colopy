@@ -426,12 +426,12 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Element | Rect (x,y,w,h) | Sprite / text | Font | Color | Fn @offset | Tier |
 |---------|----------------|---------------|------|-------|------------|------|
 | Full-screen region fill | (0,0,320,200) | flat patterned fill | — | panel fill | `func_02633E` (`0x181F:0x444`) | B |
-| Title strip ("menu bar above") | origin **R** (DOS-centered, y≈5) | per-colony fields + table strings (literal text **TBD**, §3.1) | FONTTINY¹ | nation/screen-latched¹ | `func_0268CE @0x0268CE` (paint `0x181F:0xB0`) | B chain / TBD text |
+| Title strip ("menu bar above") | origin **R** (DOS-centered, y≈5) | name + season + year + gold (all **B**-resolved §3.1; only the inter-field separator glyph `0xd1d:0x7a4(0x58/0x52)` is unliteralized) | FONTTINY¹ | nation/screen-latched¹ | `func_0268CE @0x0268CE` (paint `0x181F:0xB0` @0x026AA6) | B chain |
 | Field-production panel | (224,32,72,72) | commodity icons ICONS `good+0x17` | FONTTINY | per-icon | `func_0264A8 @0x0264E9` | B |
-| Colonist plaza row | (0,130,120,48) | colonist sprites; **x-origin 143, walks left** | — | — | `func_0270D0 @0x0270D6` | B (pitch TBD) |
+| Colonist plaza row | (0,130,120,48) | colonist sprites; **x-origin 143, walks left**; pitch = `sprite_width(+0x3E)` + adaptive `gap` (`[0xA890]`=2→0, fit-to-96px) | — | — | `func_0270D0 @0x0270D6` (pitch @0x027160) | B |
 | Flag panel | (303,132,17,45) | **ICONS sprite 0x44 (68)** at +3, frame=`[0x337]`/`[0x339]` | — | — | `func_02853C @0x028540` | B |
 | Surrounding-tile minimap | (121,130,84,48) | **6× ICONS sprite 0x7B (123)** tiles (or centered caption if `[0x33C]==0`) | — | per-tile | `func_027DB2 @0x027DB7` | B |
-| SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]` (3 cases) | FONTTINY | — | `func_02814C @0x02814F` | B (text TBD) |
+| SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]`: 0=SoL/garrison icon bar (`func_0275CE`, no string), 1=cargo+caption `[0x939A]` (`func_027746`), 2=cargo+caption+hammer strip (`func_027BB6`) | FONTTINY | — | `func_02814C @0x02814F` (cases @0x0275CE/0x027746/0x027BB6) | B |
 | Buildings (15 slots) | `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn y+8) | **BUILDING.SS** frame per **§0.2 RAM-verified rule**: occupied ⇒ `def_id`(`byte[0x8E82+i]`), def_id 0→16; empty (`byte[0x8E82+i]==255`) ⇒ `DS:0x260[byte[0x8D62+i]]−1` | — | — | `func_02701C @0x02701C` | B |
 | Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
 | Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
@@ -444,7 +444,9 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 ¹ Title font/colour: the EXE emits the green UI colour `(0x52,0x8A,0x31)` via the screen-latched
 handle (the same latch the map-view title strip uses); the per-blit handle is **not** a per-draw
 push, so title-as-rendered is **A**, and a prior pixel capture read it as yellow (218,178,0) — a
-noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD** (§3.1).
+noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **RUNTIME**: `func_00275C`
+byte-reads x=`[0x2CC6]`/y=`[0x2CC8]` (`@0x00278F`/`@0x002782`) and the context init `func_00BC06` sets
+no literal for them, so the live origin needs a runtime trace (§8 item 1).
 
 > **Stripped fabrications (do NOT render these — they are not in `func_028592`):** two-tone HI/LO
 > bevel edges on any panel; a (0,130,130,25) "field panel" with "Bells:"/"Food:" readouts (the
@@ -498,7 +500,10 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
   `@BUILDING[+0x94]` and gates the two hammer banks (`+0x92`/`+0xB6`); it holds no cost table.
   Stockade 64H, Docks 52H, Armory 52H all byte-confirmed against `@BUILDING`. **B**
 - The SoL/cargo/msg panel switches content on `[0x337]` (3 modes); the per-mode behaviour is in
-  sub-renderers `0x2C9B0`/`0x2CA50`/`0x2CAA0`, not yet decoded. **B** (switch) / **TBD** (modes).
+  sub-renderers `0x2C9B0`/`0x2CA50`/`0x2CAA0` → file `0x0275CE`/`0x027746`/`0x027BB6`, **now byte-decoded**
+  (`func_0275CE`/`func_027746`/`func_027BB6`): case 0 = SoL/garrison **icon bar** (`0x181F:0x222` loop, no
+  string), case 1 = cargo holds + `[0x939A]` caption, case 2 = cargo + caption + hammer strip
+  (§3.6, §8 item 3). **B** (switch + all 3 modes).
 
 ## 7. Evidence
 - `viceroy_source/docs/drawlist/EUROPE_COLONY.md` PART 2 — composer `func_028592 @0x028592` 12-step
@@ -520,17 +525,39 @@ noted discrepancy (`fonts_and_colors.md`). The title **paint origin** is **TBD**
   present this pass). **B**
 
 ## 8. Open questions
-1. **Title paint origin/centering — TBD (paint routine now identified).** The terminal paint in
-   `func_0268CE` is `0x181F:0xB0` (`func_00275C`) at `@0x026AA6` with `mode=0` (§3.1); the call chain
-   and string sources are **B**. The x/y are the per-screen text-box globals `[0x2CC6/0x2CC8/0x2CCA/
-   0x2CCC]` (runtime state from the `0x181F:0xC22` context init), so centred `y≈5` stays **R** — do not
-   invent a literal origin.
-2. **Colonist-row per-unit pitch — TBD.** `func_0270D0` x-origin 143 walking left is **B**; the pitch
-   is a data-driven width-accumulate/wrap loop (wrap at packed width >96) with no static literal.
-3. **SoL / cargo / msg panel mode text — TBD.** Panel rect (211,130,91,48) and the 3-way `[0x337]`
-   switch are **B**; the per-mode strings are in sub-renderers `0x2C9B0`/`0x2CA50`/`0x2CAA0` (not
-   decoded). No colony-render-cited "Sons of Liberty"/"No Ships" key exists (§5) — earlier revisions
-   asserting those literals were **overcommitted**; corrected to TBD here.
+1. **Title paint origin/centering — RUNTIME (paint routine + global reads byte-confirmed; literal x/y
+   is runtime state).** The terminal paint in `func_0268CE` is `0x181F:0xB0` → `func_00275C @0x00275C`
+   at `@0x026AA6`, pushing **only** `(ss, &buf[bp-0x50], mode=[bp+6])` — **no x/y argument**
+   (`@0x026A9E..0x026AA6`). `func_00275C` then byte-reads the per-screen text-box globals directly:
+   **x=`[0x2CC6]`** (`@0x00278F`), **y=`[0x2CC8]`** (`@0x002782`/`@0x002810`), width=`[0x2CCA]`
+   (`@0x00278C`), line-height=`[0x2CCC]` (`@0x002785`). These are **runtime state**: the context init
+   `0x181F:0xC22` (→ `func_00BC06 @0x00BC06` = `call 0xBBE0; call 0xBBFC`) does **not** write
+   `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` with any literal, so the centred `y≈5` cannot be byte-literalized
+   here. **Next action: a runtime trace (or the screen-table that seeds `[0x2CC6..]` for screen 0x2C)
+   to capture the live origin.** Do not invent a literal.
+2. **Colonist-row per-unit pitch — RESOLVED (B), 2026-06-26** (was TBD; full decode in §3.3).
+   `func_0270D0` x-origin 143 walking left is **B**; the pitch is an **adaptive fit-to-span pack**:
+   pass 1 sums each colonist's sprite width `+0x3E` into `total_width` (`@0x02710A..0x027141`); the
+   gap solve starts `gap=[0xA890]` (init 2) and decrements it while
+   `gap·(count−1) + [bp-0x5A] + total_width ≥ 0x60 (96)` (`@0x02715C..0x027173`); pass 2 draws each
+   colonist at the running x, advanced left by `sprite_width + gap` (`@0x027186..`, blit `0x181F:0xCE`).
+   So **pitch = per-colonist `sprite_width(+0x3E)` + adaptive `gap` (2→0, fit-to-96px)** — data-driven,
+   no single static literal, but the mechanism + the `[0xA890]=2` seed are **B** (oracle-confirmed,
+   §3.3).
+3. **SoL / cargo / msg panel mode text — RESOLVED (B), 2026-06-27** (was TBD; reconciles §8 with the
+   §3.6 decode). Panel rect (211,130,91,48) and the 3-way `[0x337]` dispatch are **B**
+   (`func_02814C @0x02815F..0x028180`: `al=[0x337]`; `0→call 0x2c9b0`, `1→call 0x2ca50`,
+   `2→call 0x2caa0`). The three near-stubs thunk-resolve to file `0x0275CE`/`0x027746`/`0x027BB6`
+   (§3.6), and all three bodies are now byte-read: **case 0 `func_0275CE`** paints the SoL/garrison
+   **icon bar** (loops `0x181F:0x222` = `func_0033F2` icon-strip queue over table `[bx−0x7238]`;
+   `@0x0275EF..0x027738`) — **NO string fetch** (`func_0275CE @0x027612`/`@0x027688`); **case 1
+   `func_027746`** reads cargo holds `colony+0x94` (`0x181F:0xAC4`/`0xD4E` `@0x027763`/`@0x027778`)
+   and, when `[0xB98]==0`, draws a CENTERED caption from string-index `[0x939A]` via
+   `0x181F:0x22`+`0x100` at (211,130,…) (`func_027746 @0x0277AC..0x0277C4`); **case 2 `func_027BB6`**
+   reads cargo (`0xAC4`/`0xD4E` `@0x027BCC`/`@0x027BE1`), draws a centered caption via `0x181F:0x100`
+   (`@0x027C13`) and a hammer production strip `0x181F:0x236` sprite 0x37=55 (`func_027BB6 @0x027CC6`).
+   No colony-render-cited "Sons of Liberty" literal exists (§5) — the SoL/garrison mode (case 0)
+   is an icon bar, not a labelled string. **B (sub-renderers byte-decoded).**
 4. **SoL% formula — R, not B.** The prior spec gave `sol = (colony[+0xC2]·100)/colony[+0xC6]` +20
    human-latch, clamp 100, and a tory-threshold text-colour rule. Those traced to overlay-`0x181F`
    helpers and the **RECONSTRUCTED** `COLONY_SYSTEM.md`; neither survives as a byte-cited offset in

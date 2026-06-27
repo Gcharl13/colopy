@@ -95,7 +95,7 @@ unless noted.
 | Field | Type | Meaning | Tier | Evidence |
 |-------|------|---------|------|----------|
 | PowerRecord `+0x2A` | u32 | treasury gold (dword) | B | `sub [bx+0x2a],ax; sbb [bx+0x2c],dx` @0x3340D |
-| `DG16(0x2F5E)` | u16 | **string-heap index** drawn at (306,179) via `0x181F:0x22`→`0x13C` — **semantic TBD, NOT gold** (corrected 2026-06-23: never written as a treasury value; gold = `PowerRecord+0x2A`). Was mislabeled "displayed gold mirror." | B draw / TBD | render line 21856 |
+| `DG16(0x2F5E)` | u16 | **string-heap index** drawn at (306,179) via `0x181F:0x22`→`0x13C` — **semantic TBD-runtime, NOT gold** (corrected 2026-06-23: never written as a treasury value; gold = `PowerRecord+0x2A`). Verified: pushed at `func_0314DC @0x031264` with `push 0xf` (ink), `push 0xb3` (y=179), `push 0x132` (x=306); `[0x2F5E]` has **zero static `mov` writers** across the disasm (grep), i.e. it is a runtime heap-string slot set by the screen framework — defer to a live RAM trace. Was mislabeled "displayed gold mirror." | B draw / TBD-runtime semantic | `func_0314DC @0x031264` |
 | PowerRecord `+0x01` | u8 | tax rate 0..100 | B | banner uses it (`func_030F76`, `SCREEN_LAYOUTS.md` §2 ord 2) |
 | PowerRecord `+0x20` | u16 | **boycott bitmask** (`1<<good`), one bit/good | B | `and ax,[bx+0x20]` @0x30B47; clear `and [bx+0x20],ax` @0x33423 |
 | PowerRecord `+0x22` | u32 | cumulative spent | B | `add [bx+0x22]; adc [bx+0x24]` @0x33413 |
@@ -117,9 +117,14 @@ unless noted.
   `[bp-0x50]`, then paints via `lcall 0x181F:0xB0 @0x0310AD`. Composer passes
   arg 0 (`@0x031E6B`), so the banner sits in the **header band**. The string is the
   **`@CMESSAGE` "Selling … at … "** family (see §5). Source words: `good=[0x9E12]`,
-  `year=[0x538A]`, `tax=PowerRecord+0x01`. **B (mechanism + source words) / TBD (pixel
-  origin)** — the x/y are built from formatted-string metrics, not a literal push
-  (`func_030F76`, drawlist §1.2).
+  `year=[0x538A]`, `tax=PowerRecord+0x01`. **B (mechanism + source words) / B (band y) /
+  runtime (text X)** — the paint call `0x181F:0xB0`=`func_00275C @0x00275C` pushes **no
+  coordinate** (only `ss`, `&[bp-0x50]`, `mode`); `func_00275C` reads the BSS text-box
+  `[0x2cc6..0x2ccc]` and **center-justifies** the formatted line within it. That box is a
+  **static EXE immediate** `(x=320, y=7, w=0, h=0)` written by `set_text_box`
+  (`func_00273E @0x00273E`, `0x181F:0xA6`) from `func_035B06 @0x035B24` (`push 7; push
+  0x140; push 0; push 0`) → full-width top band **y=0..7**; the literal X is the only
+  runtime-derived part (string-width centering).
 - **Market price — bid/ask, B (traced 2026-06-21, `0x181F:0xAEC → bid_get
   @0x0B2A2`):** per-good market record stride `0x1C`, base DGROUP `0x3150`;
   `level = [good·0x1C + 0x3150]`; **bid = nibble of `[good·0x1C + 0x3151 + level/2]`**
@@ -153,8 +158,8 @@ screen-latched (A, per `fonts_and_colors.md`).
 | Element | Rect (x,y,w,h) | Sprite / text | Font | Color → RGB | Tier |
 |---------|----------------|---------------|------|-------------|------|
 | Play-area fill | (0, 8, 320, 192) | frame-helper fill `func_030D86` | — | — | B (`push 0xC0,0x140,8,0; call 0x368CC` @0x031E4C) |
-| Header/backdrop band | full-width top band | trampoline sub-renderer | — | — | B-called / TBD-geom (`push cs; call 0x368A4` @0x031E5D) |
-| Market banner ("Selling …") | header band, x/y **TBD** | `@CMESSAGE` formatted line | FONTTINY | — | B-mech / TBD-origin (`func_030F76`, paint `0x181F:0xB0` @0x0310AD) |
+| Header/backdrop band | full-width top band; banner text-box = (x=320,y=7,w=0,h=0) | trampoline sub-renderer | — | — | B-called; band y=0..7 **B** (`push cs; call 0x368A4` @0x031E5D → `ljmp 0x191F:0xC76`, no rect at call site; the banner top-band rect `(320,7,0,0)` is set by `set_text_box` @0x035B2D / func_035B06). **TBD-geom** only for the step-2 backdrop sub-renderer's own fill rect (overlay-resident behind the far-jump) |
+| Market banner ("Selling …") | top title band **y=0..7** (`set_text_box`), text X center-justified at runtime | `@CMESSAGE` formatted line | FONTTINY | — | B-mech + B-band-y (`func_030F76` builds; paint `0x181F:0xB0`=`func_00275C` @0x0310AD reads box `[0x2cc6..0x2ccc]`=(320,7,0,0) set by `set_text_box`=`func_00273E` @0x035B2D in func_035B06); X is runtime-centered |
 | Market bar fill (16-good) | (0, 179, 320, 21) | frame-helper fill | — | — | B (`push 0x15,0x140,0xB3,0; call 0x368CC` @0x0310B9) |
 | Market-bar icons (16) | x=1, **stride 19**, icon row in bar | ICONS.SS `good+0x17` (23..38) | — | — | B (`add ax,0x17` @0x0310F2; pitch via `[0x83E]:[si+0x152]` half-width @0x031101) |
 | Market-bar prices (16) | **cell-centered**, y=**194** | bid-price `"%d"` | FONTTINY | `0x2F` (price ink) | B (centering @0x031191; `0x181F:0x13C` @0x0311AE) |
@@ -185,7 +190,7 @@ the authoritative paint sequence; later steps composite over earlier ones.
 | # | call site | callee | draws | rect / key |
 |---|-----------|--------|-------|-----------|
 | 1 | @0x031E4C | `func_030D86` (frame helper) | play-area fill below header | (0, 8, 320, 192) |
-| 2 | @0x031E5D | `0x368A4` trampoline | header/backdrop sub-renderer | full-width top band (geom TBD) |
+| 2 | @0x031E5D | `0x368A4` trampoline (`ljmp 0x191F:0xC76`) | header/backdrop sub-renderer | full-width top band; banner text-box rect = **(320,7,0,0)** B (set_text_box @0x035B2D, func_035B06); step-2 sub-renderer's own fill rect TBD (overlay-resident) |
 | 3 | @0x031E63 | **`func_0310B4`** (arg 0) | 16-good market PRICE bar | bar (0,179,320,21); icons+prices |
 | 4 | @0x031E6B | **`func_030F76`** (arg 0) | "Selling …" market banner | header band (origin TBD) |
 | 5 | @0x031E73 | **`func_0314DC`** (arg 0) | dock + 6 ships + in-port list | dock (143,118,81,60) |
@@ -216,8 +221,18 @@ is emitted by `func_031366 @0x031417` within the same in-port path.
   **`Now Arriving In`**, **`Docks At`**, plus `Loading`/`Unloading`. These are the
   per-state dock captions; the per-state Y (146/137/132) is byte-pinned (§3), the
   exact caption-string-id↔state mapping and the empty-dock caption pointer `[0x2DD0]`
-  resolution stay **TBD** (the captions are not literal pushes in `func_0314DC`).
-  **B (keys present) / TBD (id↔state map)**
+  resolution stay **TBD-runtime** (the captions are not literal pushes in `func_0314DC`;
+  verified — the only text `func_0314DC` draws is the empty-dock caption `[0x2dd0]`
+  @0x031501 and the in-port ship-type name `[bx+0x5230]` via `0x181F:0x16e` @0x0315C1,
+  with the per-ship status loop at @0x031671..0x0316A1 selecting only a *color* `[bp-0x68]`=
+  0xA/0xF, NOT an `@MISC` caption index). The `@MISC` dock-state captions form a contiguous
+  block — ordinals (0-based within `@MISC`): 5=`Sailing For`, 6=`Inbound From`,
+  7=`Now Arriving In`, 8=`Docks At`, 9=`Expected Soon`, 10=`Bound For`, 11=`No Ships In
+  Port`, 12=`Awaiting Passage` — but the index↔sail-state SELECTION is computed by a renderer
+  outside the four statically-decodable Europe page-4 functions (`func_0314DC`/`func_031366`/
+  `func_0317CC`/`func_0318D2`), and `[0x2dd0]`/`[0x2de8]` are runtime heap indices never written
+  by any disassembled `mov` (grep: zero writers). **B (keys + @MISC ordinals) / TBD-runtime
+  (id↔state map; needs a live RAM/heap trace)**
 - **16-commodity order + Burden** from NAMES `@CARGO` (grep-verified, e.g.
   `Food, 1, 3, 1, 6, 7, 3, 2, -1, 0`). Drives icon order (ICONS 23..38) and the
   `ask = bid + Burden + 1` rule. **B**
@@ -287,20 +302,27 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
 5. ✅ **Market bid/ask** — byte-traced (§3). **B.**
 6. ✅ **Transaction sub-panel** (steps 6–7) — two parchment strips at
    `@0x317CC`/`@0x318D2` (§7). **B.**
-7. **BLOCKED — banner pixel origin (runtime-centered + BSS text-box).**
-   `func_030F76 @0x0310AD` paints via `lcall 0x181F:0xB0` with **no coordinate
-   push** (verified: only `push ss; push &[bp-0x50]; push [bp+4]=mode`), so the
-   origin comes from a **runtime text-box** (`EUROPE_SCREEN_VICEROY_DECODE.md`:
-   globals `[0x2CC6..0x2CCC]`, tier R), and the banner text is **horizontally
-   CENTERED**. **Oracle-confirmed** (`dbx/eu5.png`, scale 2.0 origin (192,184)):
-   the title band ("English Caravel in London") spans game **x≈117–201,
-   x-center=159.25 ≈ screen-centre 160**, **y≈1–7**; the snapshot text-box globals
-   `[0x2CC6..0x2CCC]=(320,7,0,0)` are consistent with a full-width top band at
-   y≈0–7. **Resolved (B+oracle):** painter = `func_030F76` → `0x181F:0xB0`
-   @0x0310AD; placement = **centred in the top title band, y≈1–7**. **Still TBD:**
-   the literal x/y origin — the X is center-justified at runtime and the band geom
-   lives in mutable BSS (`[0x2CC6..0x2CCC]`), not an EXE immediate; no static B
-   source exists.
+7. ✅ **RESOLVED-B (2026-06-27) — banner band geometry is a static EXE immediate, not runtime-only.**
+   `func_030F76 @0x0310AD` paints via `lcall 0x181F:0xB0` (= `func_00275C @0x00275C`,
+   thunk_resolve `181F:00B0`) with **no coordinate push** (verified: only
+   `push ss; push &[bp-0x50]; push [bp+4]=mode` @0x0310A5..0x0310AD), so the origin
+   comes from the BSS text-box `[0x2CC6..0x2CCC]`. **The painter `func_00275C` reads
+   that box** (`mov ax,[0x2cca]=w; mov bx,[0x2cc6]=x; add bx,ax` @0x002782..0x002793;
+   `mov ax,[0x2cca]; mov dx,[0x2ccc]; mov bx,[0x2cc6]; lcall 0xb9e:0xa` @0x002818..0x002823)
+   and **horizontally CENTERS** the formatted line within it. **The box is SET by a
+   static EXE immediate, refuting the old "no static B source" claim:** the page-4
+   screen-init `func_035B06 @0x035B24..0x035B2D` does `push 7; push 0x140; push 0; push 0;
+   lcall 0x181F:0xA6` where `0x181F:0xA6` = `set_text_box func_00273E @0x00273E`
+   (`[0x2cca]=w=arg[bp+6]`, `[0x2ccc]=h=arg[bp+8]`, `[0x2cc6]=x=arg[bp+0xa]`,
+   `[0x2cc8]=y=arg[bp+0xc]` — byte-verified @0x002741..0x00275A). cdecl arg order makes
+   `[0x2cc6]=0x140=320, [0x2cc8]=7, [0x2cca]=0, [0x2ccc]=0` — exactly the oracle
+   snapshot `(320,7,0,0)`, now **byte-sourced**. The identical immediates are also at
+   the page-2 site @0x02C5F1, so the banner band is `(x=320,y=7,w=0,h=0)` = a
+   **full-width top title band y=0..7** for the whole page-4 screen family. **Resolved
+   (B):** painter `func_00275C` @0x0310AD; band geom `(320,7,0,0)` from `set_text_box`
+   @0x035B24 (func_035B06). **Residual (runtime, not TBD-static):** the literal text X is
+   center-justified at runtime against the live string width (the band is fixed at
+   y=0..7).
 8. **TBD — dock caption string-id ↔ sail-state mapping.** The captions are in
    `@MISC` (B that they exist) and the per-state Y is byte-pinned (B), but which
    `@MISC` string is selected for each state, plus the empty-dock caption pointer

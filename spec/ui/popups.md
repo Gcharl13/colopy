@@ -127,8 +127,15 @@ whole-sprite carved-wood frame, **not** an indexed corner set. **B** (engine /
 call site). Background fill = tiled **WOODPANL.PIK** (some `WOODPAN2.PIK`) +
 **NAMEPLAT.SS** speaker title strip; these asset *roles* are **A**
 (`POPUP_TEMPLATE_AUDIT.md` "Frame & body rendering"), and the per-popup
-WOODPANL-vs-WOODPAN2 choice is a minor **TBD** (no per-call dispatch byte-cited;
-INFERRED WOODPAN2 = king-audience + a few "darker" popups).
+WOODPANL-vs-WOODPAN2 choice is **RESOLVED (B, negative): gameplay popups never
+use WOODPAN2.** `WOODPAN2` is referenced **exactly once** in the whole EXE — at
+file **0x3AAFF** in `func_03A9C0` (the score / hall-of-fame screen; string
+`"WOODPAN2"` @file 0x1EB77 sits next to `"EXPLOITS"`/`"HALLFAME.DAT"` @0x1EB92,
+and the push feeds the full-screen PIK verb `lcall 0x181f:0x44e` @0x3AB02). The
+popup frame engine (`func_06C520` family, 0x6BE50..0x6D800) pushes **no**
+WOODPANL/WOODPAN2/WOODFRAM/NAMEPLAT string offset at all (byte-scan: 0 hits), so
+the earlier "WOODPAN2 = king-audience" inference is byte-refuted — every gameplay
+popup uses the WOODPANL/WOODFRAM/NAMEPLAT roles. **B (negative)** (func_03A9C0 @0x3AAFF).
 
 ### 2.6 The 10 live `@`-directives — **B**
 
@@ -408,8 +415,10 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
   inline options / `@LANDFALL`) stack the option rows below the body, left-aligned
   to the body margin; the `@DEFAULT=N` row is the highlighted index (handler
   @0x6F374), **not** a color. Selection is read by the show-and-wait thunk
-  `0x191F:0x16A`. **B (mechanism) / TBD (highlight RGB capture not needed — resolves
-  via PIK palette).**
+  `0x191F:0x16A`. **B (mechanism).** Highlight RGB capture is **not needed** — it
+  resolves via the loaded PIK palette (`fonts_and_colors.md`), and there is no
+  dedicated OK/Cancel/button sprite (the modal wait loop `func_004A80` @0x4A80
+  blits nothing; no `"OK"`/`"Cancel"` string exists in the EXE — see §22.5). **B.**
 - **Speaker portrait:** drawn above the popup by `func_06BF66` from the active
   channel sheet (§2.7); reset to `0xFFFF` on close (@0x06EE6B). **B.**
 - **Channel reset:** the dispatcher clears all three channels after close so the
@@ -467,11 +476,29 @@ warpath key prefixes are `@INDIAN…`. All struck.)*
    `@`-directive lines**, so `data_extracted/text/GAME_sections.json` does **not**
    carry `@width`/`@x`/`@y` (only 2 stray `@width=200` captures survive in
    `GAME.full.json`). To re-confirm specific per-popup values, read raw
-   `GAME.TXT` / the EXE, not the sections JSON. **B (engine + KINGTAX) / TBD
-   (per-section values from JSON).**
-2. **WOODPANL-vs-WOODPAN2 background per popup — TBD.** No per-call frame-index
-   dispatch is byte-cited; INFERRED WOODPAN2 = king-audience + a few "darker"
-   popups, everything else WOODPANL. **TBD.**
+   `GAME.TXT` / the EXE, not the sections JSON. **RESOLVED (B): the literal
+   per-popup values ARE recoverable from the committed `raw/COLONIZE/GAME.TXT`**
+   (the `@width=`/`@y=`/`@x=` directive lines are intact there). Confirmed values
+   for the §3–§18 gameplay popups (all centered — no `@x`/`@y`): `@KINGTAX`,
+   `@KINGRAISE`, `@KINGLOWER`, `@RAIDWREAK`, `@LOSTCITY0..9`, `@FOODLOW`,
+   `@STARVE1`, `@SPOIL1`, `@SHIPCOMBAT`, `@LANDFALL`, `@HERESY0`, `@REBELUP`,
+   `@VILLAGEHAPPY`, `@INDIANGOLD`, `@BURNED`, `@CAPTURED`, `@DECLARE`,
+   `@KINGNEWWAR`, `@INVASION`, `@SEIZURE` all = **`@width=190`**; the wider king/
+   treasure/intervention popups `@TEAPARTY`, `@CASHTREASURE`, `@INTERVENTION`,
+   `@INDEPENDENCE`, `@SONSUP`, `@SMITEINDIANS` = **`@width=220`**. Across all of
+   GAME.TXT the width histogram is {190:336, 220:99, 300:11, 310:10, 160:8, …};
+   only 21 sections carry an `@x`/`@y` (menus, tutorials, `@VICEROY` x=232/y=21,
+   `@KINGLOSE` x=232/y=31, `@KINGWIN` x=202/y=125 — none of them §3–§18 gameplay
+   popups). **B (raw GAME.TXT — `raw/COLONIZE/GAME.TXT`).**
+2. **WOODPANL-vs-WOODPAN2 background per popup — RESOLVED (B, negative).**
+   `WOODPAN2` occurs **once** in the EXE (string @file 0x1EB77, DGROUP 0x11D7),
+   pushed **only** at file 0x3AAFF in `func_03A9C0` — the **score / hall-of-fame**
+   screen (adjacent strings `EXPLOITS`/`HALLFAME.DAT` @0x1EB92; push feeds the
+   full-screen PIK verb `lcall 0x181f:0x44e` @0x3AB02). The shared popup frame
+   engine (`func_06C520` family, 0x6BE50..0x6D800) pushes **no** WOODPANL/WOODPAN2/
+   WOODFRAM/NAMEPLAT offset (byte-scan = 0 hits). So there is **no per-popup
+   WOODPAN2 path** — every gameplay popup uses WOODPANL; the king-audience
+   inference is byte-refuted. **B (negative)** (func_03A9C0 @0x3AAFF).
 3. **`func_06BF66` sprite-blit POSITION math — RESOLVED (B, see §2.7.1).** The full
    550-byte body is now decoded: **there is NO box-relative x/y arithmetic** (the prior
    `sprite_x/sprite_y = popup.x/y − sprite_w/h` guess is **byte-refuted**). `func_06BF66`
@@ -485,11 +512,18 @@ warpath key prefixes are `@INDIAN…`. All struck.)*
    (asset+overlay, not formula).**
 4. **Food-shortage trigger function — TBD.** Keys (`@FOODLOW`/`@STARVE*`/`@SPOIL*`)
    are present; the colony-update fn that fires them is not yet pinned. **TBD.**
-5. **Option-highlight RGB / button SS index — not needed / TBD.** `@DEFAULT` stores
-   a row index, not a color; the highlight resolves via the loaded PIK palette
-   (`fonts_and_colors.md`) — no capture needed. The OK/Cancel button SS sprite
-   index (if any; the wait loop `0x3C0` draws nothing) is a carried-forward **TBD**
-   (`CHROME_AND_DISPATCH_INDEX.md` §B8 open items).
+5. **Option-highlight RGB / button SS index — RESOLVED (B, negative): there is no
+   OK/Cancel button sprite.** `@DEFAULT` stores a row index, not a color; the
+   highlight resolves via the loaded PIK palette (`fonts_and_colors.md`) — no
+   capture needed. The gameplay popups have **no OK/Cancel button SS sprite**: the
+   strings `"OK"`/`"Okay"`/`"Cancel"` do **not** exist anywhere in the EXE (the only
+   `CANCEL` hits @0x1ED6B/0x1F238 are GAME.TXT keys `CANCELPEACE`/`CANCELTREATY`,
+   not button labels), and the wait loop `func_004A80` @0x4A80 is a pure input-poll
+   (timer `lcall 0xc0c:6`, keyboard `lcall 0xae7:2`/`0x16`, 0x78=120-tick timeout
+   @0x4ADD) that **blits nothing** and returns the keypress in `di`. Dismissal is
+   any keypress/click; inline choices (`@LANDFALL`/`@TAXOPTIONS`) are GAME.TXT
+   option *text* rows (center-text verb `0x100`), not sprites. **B (negative)**
+   (func_004A80 @0x4A80; no OK/Cancel string in EXE).
 
 *No runtime residual remains for popups* — the live **values** substituted into a
 popup body (gold, names, counts via `{%NUMBER}`/`{%STRING}`) are game state, but the
