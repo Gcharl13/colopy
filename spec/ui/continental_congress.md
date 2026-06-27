@@ -3,7 +3,11 @@
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
 > Substantive: state→display map, FF-acquisition reveal mechanism, and F3-body fonts/colors are
 > **B**; band geometry **A**. **No graphical progress bar** (RULING 2026-06-21). Residuals:
-> bell/US-flag/REF sprite IDs (A/TBD — absent from the F3 text body) and reveal-popup chrome (TBD).
+> bell/US-flag/REF sprite IDs and reveal-popup chrome — **RESOLVED 2026-06-27** (UI closeout): bell
+> strip = proportional sprite **0x3F** filled/empty; REF rows = count-badge verb **0x181F:0x222**
+> (icons `[0x52xx]`); FF portraits at coords baked into the **CC-NN.SS frame-0 descriptor**
+> (`es:[bx+0x46/0x48]`); OK/dismiss **0x191F:0xF74**. Title `(0,5,320,c=0x90)`; body `x=4,y=25,
+> +FONTTINY-height`. Tracker row 5 = **DONE**; only live counts are runtime.
 
 **Overall confidence:** band geometry **A**; state→display memory map **B** (REF base, portrait
 table, owned-FF bitmap now raw-EXE-verified); FF-acquisition portrait-reveal mechanism **B**. ·

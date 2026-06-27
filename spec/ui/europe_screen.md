@@ -12,8 +12,13 @@ sub-renderers `func_0310B4`/`func_030F76`/`func_0314DC`/`func_031298`/`func_0313
 `func_031DC8`); load-bearing state fields **B** (raw-EXE-verified); the market
 bid/ask formula **B**; the dock-ship slot geometry **B** (now refined from the
 old "stride 20 y=122" R guess to the byte-exact `x=147+slot·12, y=165` of
-`func_0314AE`). Two paint origins remain **TBD** (banner pixel origin, Exit-button
-paint) — honestly flagged. **No runtime residual** — every element is static
+`func_0314AE`). Two paint origins — **RESOLVED-mechanism 2026-06-27** (UI closeout): the **banner** is `func_030F76`
+(composer step 4 @0x031E6B) via painter **`0x181F:0xB0` (file 0x275C)** reading the text-box rect from
+BSS `[0x2cc6..0x2ccc]` set per-screen by **`set_text_box` @0x2740** (`w,h,x,y`) — so the banner origin
+= that screen's `set_text_box` args; the **Exit `E`** glyph is framework chrome from the screen-view
+runner (`0x181F:0x772 → file 0x077D5E`, EXIT.SS), not a europe-page draw. Tracker row 3 = **DONE**;
+the residual is the per-screen `set_text_box` arg trace + live heap-string slot contents. **No runtime
+residual** — every element is static
 geometry; only the live values (gold, prices, which goods are boycotted, ships in
 port) are game state.
 
