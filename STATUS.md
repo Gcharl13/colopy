@@ -30,6 +30,14 @@ hand-decoded to clean C (rewrite planned, see `mapedit_source/REWRITE_PLAN.md`) 
 PAL+MP assets round-trip byte-perfect · OPENING/CLOSING = RAW stubs + sigmatch
 helpers.
 
+> **Spec-depth reconciliation (2026-06-27).** `spec/README.md` and `spec/BACKLOG.md` previously
+> carried a "certification" that *every mechanic is byte-grounded / nothing needed a runtime trace*.
+> That was **over-claimed and is corrected** in those files. The honest residual: the **formula
+> table below is still the open queue** (combat damage, market price drift, FF acquisition, LCR
+> distribution, REF growth, score details, map generation), there are **~372 `TBD` markers in
+> `spec/`**, and the colony-site value needed a live capture (`spec/systems/ai.md §3b`). Each spec
+> sheet's §6/§8 + `TBD` markers are the source of truth, not any summary header.
+
 ---
 
 ## Verification gates

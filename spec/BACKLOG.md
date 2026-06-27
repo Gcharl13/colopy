@@ -88,6 +88,16 @@ secondary mechanics.
 
 ## ★ Authoritative Residual Ledger (2026-06-20 certification)
 
+> **CORRECTION (2026-06-27).** The "all four categories empty / no runtime trace was needed"
+> claim below is **over-stated and is NOT the current residual queue.** It was true only for the
+> specific items listed (those were genuinely resolved statically — kept as the audit trail). It is
+> contradicted by `STATUS.md`'s still-open formula table (combat damage, market price drift, FF
+> acquisition, LCR distribution, REF growth, score details, map generation), by the ~372 `TBD`
+> markers still in `spec/`, and by two items that this session showed **do** need work — the colony
+> **building-frame selector** (`func_026CC2`, R/TBD) and the **colony-site value** (Show Colony Sites)
+> which **required a live runtime capture** (`spec/systems/ai.md §3b`). The authoritative "what is
+> left" is each sheet's §6/§8 + its `TBD` markers, not this 2026-06-20/21 certification banner.
+
 The single source of truth for **what is left**. Every game system's *byte layer* is
 `BYTE_VERIFIED` (`spec/README.md`). **As of 2026-06-21 Categories R, O, S and F are all
 empty** — every item below has been resolved by byte-readable code (no memory dump or

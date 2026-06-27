@@ -12,26 +12,31 @@ primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
 from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
 deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
-**Certification (2026-06-21, updated):** every game system's **byte layer is
-`BYTE_VERIFIED`** (the `B` in each tier cell below), and the
-**[Authoritative Residual Ledger](BACKLOG.md#-authoritative-residual-ledger-2026-06-20-certification)**
-is now **empty of code/value residuals across all four categories (R/O/S/F)** — **no game
-mechanic, function, or constant is left un-byte-grounded, and nothing required a memory dump
-or runtime trace.** The last three "needs-a-trace" items were all found statically on
-2026-06-21: the **school teaching rate** (`func_02D658`: 4/6/8 turns by skill class), the
-**FF effect bindings** (`ov_power_flag` op_id ≡ `@FATHERS` index — Hudson ×2 furs, Jefferson
-+50% bells, Paine bells+tax%, Bolívar +20% SoL, Penn +50% crosses), and the **Lost-City
-marker** (dissolved — rumor presence is procedural via `func_006188` + map seed `[0x190]`,
-not a stored `0xB0` byte; RULING 2026-06-21). **Categories S (static depth-queue) and O (the
-`.SS` sprite codec) are also empty** — the SAV format,
-warehousing, tutorial, immigration recruit-pool, `@JOB`/`@RESOURCE` legends, exploration
-fog, the data-table loaders, and the revolution score bonus (additive `(1780−year)×2`,
-*not* a multiplier — a manual correction) are all byte-verified this pass; and the `.SS`
-codec is **solved** (standard **FAB**, recovered statically into [`tools/ssdec.py`](../tools/ssdec.py),
-decoding all 28 sheets to exact `unpacked` sizes — CC-NN = the 25 `@FATHERS` portraits,
-BUILDING.SS = 48 building frames; see `formats/SS.md`). Only narrow runtime/soft residuals
-remain. No game *mechanic* is left un-byte-grounded — `tools/linkcheck.py` is clean
-(`INVALID: 0`).
+**Status of depth (honest — revised 2026-06-27).** A prior "Certification (2026-06-21)" here
+claimed *"every game system's byte layer is BYTE_VERIFIED … no game mechanic, function, or
+constant is left un-byte-grounded, and nothing required a memory dump or runtime trace."* That
+is **over-claimed and retracted** — it contradicts both `STATUS.md`'s own TBD-formula table and
+the ~372 `TBD` markers still in `spec/`, and a colony-site value **did** need a live runtime
+capture this session (`ai.md §3b`). The honest picture is two layers:
+
+- **Solidly byte-verified (the structural layer + many discrete facts):** the data tables
+  (NAMES/GAME/TRIBE CSVs, verbatim), memory-record layouts, the `.MP/.PAL/.SS/.PIK` formats
+  (byte-perfect round-trip), the RNG, and a large set of specific mechanics found statically —
+  e.g. the **school teaching rate** (`func_02D658`: 4/6/8 turns by skill class), the **FF effect
+  bindings** (`ov_power_flag` op_id ≡ `@FATHERS` index — Hudson ×2 furs, Jefferson +50% bells,
+  Paine bells+tax%, Bolívar +20% SoL, Penn +50% crosses), the **Lost-City marker** (procedural via
+  `func_006188` + map seed `[0x190]`; RULING 2026-06-21), the **revolution score bonus** (additive
+  `(1780−year)×2`), and the **.SS codec** (FAB, `tools/ssdec.py`, all 28 sheets to exact sizes;
+  BUILDING.SS = 48 frames). Where a sheet cites **B**, trust it.
+
+- **NOT closed (the real residual queue):** the **game formulas** `STATUS.md` still lists as
+  ⏳ TBD — combat damage roll, market price drift, Founding-Father acquisition, Lost-City-Rumor
+  outcome distribution, REF growth rate, score-formula details, map generation — plus two this
+  session surfaced: the **colony building-frame selector** (`func_026CC2`, R/TBD —
+  `ui/colony_screen.md §0.2/§8.5`) and the **colony-site value** (`ai.md §3b`, runtime-captured,
+  formula still being fit). **The authoritative residual for any sheet is its own §6/§8 "Open
+  questions" + its `TBD` markers — not a summary header.** Do not mark a sheet "COMPLETE" while a
+  load-bearing input under it is `TBD`.
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
 
@@ -61,45 +66,40 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 "What is drawn where." Full-screen views get their own file; report/popup/menu/
 context families are grouped (one file, a section per screen).
 
-**UI certification (2026-06-21):** the full UI sweep is complete. Every screen's **draw-code
-semantics that exist in VICEROY.EXE are byte-grounded** — the render functions
-(`colony_screen_render`, `europe_screen_render`, `congress_screen_render`, the F2–F10 report
-bodies, the popup framework `func_06F0F4`, `title_screen_render`/menu framework,
-`hall_of_fame_render`, the king-defeats/score/DECOIND painters) are decompiled and/or
-re-disassembled at cited offsets. The pervasive stale rationale "per-element draw code lives in
-un-extracted overlay 0x191F → TBD" was **false** (the overlay is `0x181F`, and the bodies are
-in the export). Residuals are honestly tiered. A follow-up pass (2026-06-21) then **traced the remaining
-"located-but-untraced" functions statically** — the colony overlay-`0x181F` helpers (SoL%,
-per-cell good→sprite, unit iterator, build frame-select), the Europe transaction panel +
-market-price LUT, the F8 power-picker, native-action gating (`func_04B308`), and
-build-availability (`func_0B900`) are now **B**; and DECLARAT.PIK was shown to be an **orphan
-asset** (the engine uses DECOIND.PIK). A **"runtime" re-evaluation (2026-06-21)** then showed
-that nearly everything previously tagged *runtime* is in fact **static**: **colors** resolve to
-exact RGB from the decodable PIK palette (index + palette, both byte-readable — not a capture);
-**popup/dialog placement** is `@x`/`@y` from GAME.TXT or a centered formula (not the cursor);
-**pixel layout coords** are constants in the render functions. The **only** genuine runtime
-dependency is the displayed **values** themselves (gold, year, SoL%, which units/colonies exist)
-— which are live game *state*, documented by layout/format, not spec gaps. The
-`OPENING.EXE`/`CLOSING.EXE` cinematic per-frame timing — once deferred as out-of-scope — was
-**byte-grounded 2026-06-21** (scope expansion): the playback loops, real-time `[0x82]`/`[0x6c]`
-clock, frame-select cascade and panning subsystem are traced in `docs/CINEMATIC_TIMING_AUDIT.md`
-(**B**); only the resident draw routine + outer-driver clock remain narrow TBDs. **No missing
-function or un-resolvable constant remains in VICEROY.EXE.**
+**UI status (2026-06-21, revised 2026-06-27).** The UI sweep **located and decompiled/re-disassembled
+every screen's render functions at cited offsets** (`colony_screen_render`, `europe_screen_render`,
+`congress_screen_render`, the F2–F10 report bodies, the popup framework `func_06F0F4`,
+`title_screen_render`/menu framework, `hall_of_fame_render`, the king-defeats/score/DECOIND painters),
+disproving the old "draw code lives in un-extracted overlay 0x191F → TBD" rationale (the overlay is
+`0x181F`, bodies are in the export). And a **"runtime" re-evaluation showed most placement/color is
+static, not captured**: colors resolve to exact RGB from the decodable PIK palette; popup/dialog
+placement is `@x`/`@y` from GAME.TXT or a centered formula; pixel coords are constants in the render
+functions. The cinematic per-frame timing (`[0x82]`/`[0x6c]` clock) is traced in
+`docs/CINEMATIC_TIMING_AUDIT.md`. **All of that is real and stands.**
+
+**What is over-claimed and retracted:** the prior "the full UI sweep is complete … the only genuine
+runtime dependency is the displayed values … no missing function or un-resolvable constant remains in
+VICEROY.EXE." That is **not** true. Several sheets still carry real residuals — `colony_screen` (23
+TBD), `menus` (17), `europe_screen` (15), `input` (14), `cinematics`/`colony`/`unit`/`context_dialogs`/
+`popups`/`advisor_reports` (12–13 each). Many are runtime *values* (documented by layout, fine), but
+some are **genuine undecoded logic**, e.g. the colony **building-frame selector** (`func_026CC2`,
+R/TBD — `ui/colony_screen.md §0.2/§8.5`) and the **colony-site value** (`ai.md §3b`). **Each sheet's
+own §6/§8 "Open questions" + `TBD` markers are the authoritative residual — not this header.**
 Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor-measured;
 **R** = reconstructed-from-asset; **TBD** = un-annotated separate binary or a live game-state value.
 
 | Spec file | Covers | Layout / draw-code | Honest residual |
 |-----------|--------|--------------------|-----------------|
 | [`ui/map_view.md`](ui/map_view.md) | main gameplay screen | **B** tile chain (`O514→O513→O512`, `0x6204`); minimap dot colors = `NAMES.TXT @COLORS` (9 bytes via `@0x751A7`) / **A** bands | sidebar B/C per-line coords overlay-resident → **R** approx from frame 1310262984 (no B source) |
-| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, 4 overlay-`0x181F` helpers, SoL faces `0x7C/0x7D` + nation flag `0x44` byte-cited) | none (live values only) |
-| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed) | live values only (gold/prices) |
+| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, 4 overlay-`0x181F` helpers, SoL faces `0x7C/0x7D` + nation flag `0x44` byte-cited); RAM-cross-checked §0 | **building-frame selector `func_026CC2` R/TBD** (§0.2/§8.5); minimap window/scale + work-tile markers (§8); SoL/production count formulas — see the sheet's §8 (23 TBD) |
+| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed); render status §0 | dynamic harbor contents (ships/units in green boxes, pier crates) need a matched RAM snapshot — unrendered; banner pixel origin; per-state dock caption↔id map (§0.2, §9: 15 TBD) |
 | [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism; F3 body FONTTINY, title `0x90`/body `0x92` (CCBKGD) / **A** bands; **no progress bar** (RULING) | bell/flag sprites absent from the F3 text body (overlay) |
 | [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter + **signature glyph layout byte-verified** (pen (0x94,0x7E), glyph-width advance) | none (DECLARAT orphan; geometry closed) |
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`; F4/F8 separators dark-red `0x77`→311/319; per-report static x-columns + y-start byte-cited; F10 font FONTTINY+FONTINTR) | per-row y = FONTTINY flow (state); F9 color = `[0x830]` `@COLORS` |
 | [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework: 10 live directives, speaker-portrait selector globals `[0x1F5C/5E/60]`, Lost-City map, raid=6, `@width`/`@x`/`@y`; FONTTINY latch) | body text color = glyph-engine mapping (A; no per-popup override) |
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count (overlay); setup-widget rects **R** (pixel-measured from PIKs); LEVN grid (no asset) |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) + **OPENING/CLOSING per-frame timing byte-grounded** (`[0x82]`/`[0x6c]` clock, `docs/CINEMATIC_TIMING_AUDIT.md`); KING2.SS proven absent | resident draw routine + outer-driver clock (narrow TBD, that doc §5); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
-| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | none (mapping closed, B) |
+| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | framework B; remaining per-dialog items in the sheet's §6 (13 TBD) |
 | [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (4 loaded `.FF` fonts + FONTSMAL orphan; FONTKING = king-defeats only; palette-index color args → exact RGB) | **B** (font loads, color push-args, RGB via decoded PIK palette) | none (only palette *cycling* is animation) |
 
 **Fonts & colors** are captured in [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md): the **four
