@@ -335,7 +335,7 @@ accumulator vs the 25/50 threshold** in `func_00A3E1` (next paragraph); the 200 
 mis-attribution.
 
 **Growth & starvation mechanism — refined 2026-06-27 (B mechanism + B warning-trigger + B
-starvation-removal site `func_02D658 @0x2E2DE`; only the per-turn `+0xAA` additive write is TBD-runtime).** Per turn the
+starvation-removal site `func_02D658 @0x2E2DE`; the per-turn `+0xAA` write was found NOT to exist — write-census closed **B**, see foot of section).** Per turn the
 food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**
 (`ceil(surplus/2)` = `inc;sar ax,1` `@0xA606`, capped) accrues toward growth, accumulated against
 the colony food-growth field **`+0xAA`** (read `@0xA5D6`/`@0xA61F`; growth fires once `+0xAA` ≥ the
@@ -379,8 +379,13 @@ is written **only** by the SoL 32-bit EMA (`func_02D658 @0x2DA1C`, `sub/add [bx+
 (the §3 forecast reads it at `@0xA5D6`/`@0xA61F`). The "+0xC8 growth accumulator" gloss in driver
 step 4 was stale and is now corrected there. **A (oracle) / B (write-scan).**)* **B (funcs +
 surplus rule + field reconciliation + starvation-removal site `func_02D658 @0x2E2DE`, reseg page_03) /
-TBD-runtime (only the per-turn `+0xAA` additive `+= surplus/2` write — no static writer in the resident
-image or any of the 31 reseg pages; needs a two-turn live `+0xAA`/`+0x1F` capture).**
+CLOSED — write-census (B, 2026-06-28): an exhaustive image-wide scan (resident + all 31 reseg pages,
+including ES-prefixed and register-indexed forms) finds **no** per-turn `+= surplus/2` write to `+0xAA`
+at all. The *only* two writers image-wide are init `=2` (`page_0E @0x5627D`, after a −10 treasury debit)
+and event `+=0x64` (`page_0F @0x5A3CA`). The per-turn food surplus is accumulated in the **DGROUP
+globals** `[0x8dc8]/[0x8dd8]/[0x8e6a]` (`func_00A3E1 @0x00A5F7`/`@0x00A635`), **not** in `+0xAA`; the
+growth forecast only *reads* `+0xAA` `@0x00A5D6`. So the earlier "`+0xAA += surplus/2` per turn" model
+was a misattribution — corrected. **B.**)**
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,

@@ -9,7 +9,7 @@
 > **in-game menu-bar build + dropdown engine + per-item dispatch**, the two new-game pickers
 > (nation/difficulty grids + selection-box rects), Hall-of-Fame layout + record I/O, and
 > screen→background names are now **B** (func@offset byte-cited). Residuals: save/load slot
-> count (R/TBD — overlay file-list, no `MAX_SAVE` constant), the per-axis setup-widget /
+> count (dynamic file-list — no fixed `MAX_SAVE`, closed B §15.6), the per-axis setup-widget /
 > LEVN-thumbnail hit-rects (R, pixel-measured from committed PIK PNGs — §10), and the
 > menu-bar **per-label x** (R — falls out of one centered string, not per-label immediates — §6.4).
 
