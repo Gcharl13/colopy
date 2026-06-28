@@ -45,7 +45,7 @@ CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
-                          const RandFn& rng);
+                          const RandFn& rng, bool defender_fortified = false);
 CombatResult resolve_land(const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,

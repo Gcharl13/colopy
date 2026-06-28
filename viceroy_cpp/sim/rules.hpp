@@ -47,6 +47,8 @@ struct Config {
     int expert_mfg_mult       = 2;    // expert on a manufactured good: *mult
     // --- market (sim/market.cpp) ---
     int price_drift_shift     = 8;    // price drift = acc >> shift  (/256)
+    // --- combat (sim/combat.cpp) ---
+    int fortify_def_num = 3, fortify_def_den = 2;  // fortified unit: DEF *3/2 (+50%, spec combat.md)
     // --- founding fathers (sim/founding_fathers.cpp) ---
     int ff_human_scale = 16, ff_human_offset = 3;     // human base = (diff+off)*scale
     int ff_ai_scale    = 8,  ff_ai_offset    = 14;    // ai base    = (off-diff)*scale

@@ -47,6 +47,9 @@ InvariantReport check_rules(const RuleData& rd) {
     // --- market ---
     need(r, shift_ok(cfg.price_drift_shift), "price_drift_shift out of [0,30]");
 
+    // --- combat ---
+    need(r, cfg.fortify_def_den > 0, "fortify_def_den must be > 0");
+
     // --- founding fathers ---
     need(r, shift_ok(cfg.ff_compounding_shift), "ff_compounding_shift out of [0,30]");
     need(r, shift_ok(cfg.ff_first_father_shift), "ff_first_father_shift out of [0,30]");

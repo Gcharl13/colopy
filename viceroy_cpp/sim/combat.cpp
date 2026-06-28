@@ -43,7 +43,7 @@ CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
-                          const RandFn& rng) {
+                          const RandFn& rng, bool defender_fortified) {
     CombatResult res;
     res.atk_str = unit_stats(rd, attacker.type).attack;
     res.def_str = unit_stats(rd, defender.type).defense + terrain_defense + fort_bonus;
@@ -51,6 +51,8 @@ CombatResult resolve_land(const RuleData& rd,
     if (defender_human) res.def_str += difficulty_bonus(difficulty);
     if (res.atk_str < 0) res.atk_str = 0;
     if (res.def_str < 0) res.def_str = 0;
+    if (defender_fortified)                            // fortified: +50% DEF (spec combat.md)
+        res.def_str = res.def_str * rd.cfg.fortify_def_num / rd.cfg.fortify_def_den;
 
     int total = res.atk_str + res.def_str;
     int roll  = total > 0 ? rng(1, total) : 1;

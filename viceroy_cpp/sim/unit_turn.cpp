@@ -30,7 +30,8 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
     Unit& atk = w.units[ai];
     Unit& def = w.units[di];
     CombatResult res = resolve_land(rd, atk, def, /*terrain*/0, /*fort*/0, g.difficulty,
-                                    atk.owner == HUMAN_OWNER, def.owner == HUMAN_OWNER, rng);
+                                    atk.owner == HUMAN_OWNER, def.owner == HUMAN_OWNER, rng,
+                                    /*defender_fortified*/ def.order == ORDER_FORTIFY);
     Unit& loser = res.attacker_won ? def : atk;
     if (res.captured) {
         loser.owner = res.attacker_won ? atk.owner : def.owner;  // changes hands intact

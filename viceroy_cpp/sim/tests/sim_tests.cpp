@@ -192,6 +192,12 @@ static void test_combat() {
     Unit treasure; treasure.type = TREASURE;
     r = resolve_land(atk, treasure, 0, 0, 4, false, false, win);
     CHECK(r.attacker_won && r.captured && r.loser_outcome == TREASURE, "treasure captured");
+
+    // fortified defender: +50% DEF (Soldiers def 2 -> 3).
+    r = resolve_land(default_rules(), atk, def, 0, 0, 4, false, false, win, /*fortified*/true);
+    CHECK(r.def_str == 3, "fortified Soldiers def 2 -> %d (expect 3)", r.def_str);
+    r = resolve_land(default_rules(), atk, def, 0, 0, 4, false, false, win, /*fortified*/false);
+    CHECK(r.def_str == 2, "unfortified Soldiers def -> %d (expect 2)", r.def_str);
 }
 
 // --- RuleData seam: the modded-data invariant suite (seed). Proves the sim reads
