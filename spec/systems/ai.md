@@ -149,11 +149,22 @@ Americas, Spring 1490).
   (cannot found a colony there).
 - **Coastal land tiles carry the score** — observed values on one coast stretch: **9, 11, 12, 13, 13**
   (the `13` spots are the best sites; one sat on a special-resource tile). Range seen so far ≈ 0–24.
-- The per-tile value is **computed at draw time, NOT stored as a map array**: an FFT/ocean-zero search
-  of a 16 MB live RAM snapshot (`tools/runtime_snapshot.py`) found **no** 58×72 array whose zero-pattern
-  matches the ocean mask with colony-site-range land values — only false hits (row-0-only arrays). So
-  reversing the exact formula requires reading the displayed values across the map and correlating each
-  `(x,y)` with its AMER2 terrain/features/neighbours.
+- The per-tile value is **computed at draw time, NOT stored as a map array** — re-confirmed 2026-06-28 by
+  a **vectorised full-snapshot scan**: for every offset in the 16 MB live snapshot, test the 4176-byte
+  window against the exact AMER2 land/water mask (`data_extracted/map/AMER2_tiles.json`, water=`{25,26}`,
+  land must be `1..40`) → **zero candidates** (byte-array and the relaxed forms). So the value is genuinely
+  not cached anywhere; reversing it needs reading the displayed values and correlating each `(x,y)` with
+  its terrain.
+- **Static search for the scorer FUNCTION — exhausted (2026-06-28), the surrounding machinery ruled out:**
+  the AI colony-siting helpers are **validity/selection, not a desirability score** — `0x181F:0x7BE` =
+  `func_008D26` (distance-from-existing-colonies + passable-land *validity*), `0x181F:0x9E6` = `func_0082DC`
+  (**select-colony-by-index**, sets `[0x8dc6]`/`[0x8542]`). The AI's only colony-site weight is the flat
+  **`+500`** term in `func_046FFA @0x047D84` (fires on validity, not a graded value). The 9-neighbour
+  compass-delta-table readers (`[bx+0xbe]`/`[bx+0xb4]`) are all pathfinding (`page_0E` flood-walk) or
+  map-generation (`page_14`), none a yield-summer. The CHEAT **@CUP F9** dispatch that triggers the display
+  is reached through a **runtime-patched type-A thunk** with no static anchor (two deep passes mis-resolved
+  it). **Conclusion: the graded 0–24 scorer is not statically locatable from the committed image** — it is a
+  draw-time cheat-overlay computation behind the patched dispatch.
 
 **Value characterised (A, oracle):** range 0–24; ocean/sea-lane = 0; coastal land carries the score;
 special-resource tiles highest (observed coast run 9 / 11 / 12 / 13 / 13). **Formula + handler offset are
