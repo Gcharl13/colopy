@@ -443,10 +443,12 @@ section content and the gameplay predicates (row gating, build availability) dif
    `func_0749E0`; prereq/supersede engine-coded by `func_07464C` (§12).
 5. ✅ **`@LIVE` citation — CORRECTED.** No `@LIVE` section exists; Live-Among outcomes use
    `@LEARN*`/`@CHIEF*` (§6). Struck.
-6. **Per-row vertical pitch (the y-step between list rows) — TBD.** Falls out of the latched
-   `[0x89E]` (FONTTINY) / `[0x268A]` (FONTINTR) font byte0; `func_06D316` uses `line_count·2 + …`
-   for the box height (§2) but the per-glyph-row line-pitch value is the font-FF byte and is
-   **TBD** (same residual as `menus.md` §15.4 / `popups.md`). **TBD.**
+6. ✅ **Per-row vertical pitch (the y-step between list rows) — RESOLVED (B).** Byte-verified at
+   file **0x3AB3–0x3ABF**: `les bx,[0x89E]; mov al,es:[bx]; sub ah,ah; add ax,3` — the per-row pitch
+   is the **latched-font byte0 (glyph height) + 3**. With FONTTINY (`[0x89E]`, on-disk height byte = 6)
+   ⇒ **9 px**; FONTINTR (dialog ctx `[0x268A]`, height 9) ⇒ **12 px**. `func_06D316` separately uses
+   `line_count·2 + …` only for the box *height* allocation (§2); the per-row line-pitch is this
+   font-byte0+3 value, not an unknown. (Same byte site backing `menus.md` §15.4 / `popups.md`.) **B.**
 7. **OK/Cancel/confirm button SS art index — TBD.** The buttons are FONTTINY **text rows** (the
    inline option list), not sprites, so there is no button-sprite art; if a future capture shows a
    distinct sprite, its SS index is **TBD** (shared with `menus.md` §11). **B (text rows) / TBD

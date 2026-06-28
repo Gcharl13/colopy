@@ -153,13 +153,32 @@ rect globals `[0x839E..0x83A4]` and `[0x2DA8..0x2DAE]` carry the **full-screen 3
 `[0x2DA8..]` the mirror set) — these are the active-surface clip descriptor set by the fill at
 `@0x070608` (`push 0xC8; mov bx,0x140`)/blit, not cell-specific immediates. **B (sources cited).**
 
-Residual `TBD` (needs a difficulty-screen RAM capture): the title-text *position* (x,y), font, and
-string-pick are drawn by `func_070C64` (@0x070C64), which is a pure call-gate stub — it `LJMP`s to
-the **unresolved** tertiary-overlay thunk `0x1A1F:0xBF2` (the loader patches this at runtime to a
-resident tertiary-overlay body; `thunk_resolve.json` has no static entry for `0xBF2`, and no
-snapshot here holds the difficulty screen resident). The title *string* is the `@DIFFICULTY`
-header ("Select a Difficulty Level", `GAME_sections.json`); its draw coordinates remain
-overlay-resident and are not statically pinnable from the substrate.
+**Title/header draw — now byte-resolved (2026-06-27, binary_decode of the overlay thunk).** The
+difficulty main `func_070580` calls `func_070C64` (`CALL 0x70c64` @0x070629, right after the
+DIFFICUL.PIK blit @0x070623). `func_070C64` is a pure call-gate stub `LJMP 0x1a1f:0xbf2`
+(@0x070C64, bytes `EA F2 0B 1F 1A`). Although `thunk_resolve.json` lacks a `1A1F:0BF2` entry, the
+target is deterministic from the on-disk RTLink thunk: at file offset `0x1D1E2`
+(= 0x2400 + 0x1A1F·16 + 0xBF2) the 14-byte type-A thunk is
+`9A AB 0D 0D 11  EA A4 06 00 00  19 00 00 00` = `LCALL 110D:0DAB` (type-A runtime) then
+`LJMP 0000:06A4` with trailer dword `0x19` (=overlay **page 25**, the difficulty/setup page). The
+LJMP seg word is a load-time-patched placeholder; the page-25 code base is file `0x06FDF0`
+(`overlay_pages.json` page `0x19` code_offset) — cross-checked against three KNOWN sibling thunks in
+the same LJMP block (`1A1F:0B66`→`func_070580`@0x70580, `1A1F:0BE4`→`func_070060`@0x70060,
+`1A1F:0B74`→`func_070A1A`@0x70A1A all imply base 0x06FDF0). Hence `0x06FDF0 + 0x06A4` =
+**`func_070494` @0x070494** (the 236-byte header drawer immediately preceding `func_070580`). Inside
+`func_070494`: the title string is the far pointer `[0x268a:0x268c]` (`LES bx,[0x268a]`@0x070498),
+an `@LABELS`/`@MISC` heap pointer bound by `func_075FB6` (`MOV [0x268a],ax`@0x0760CB after a
+section lookup `LEA bx,[0x2389]`); its first byte is the Pascal length, and **horizontal centering**
+is computed `x_col = 0x14 − len/2` (`SHR al,1; SUB ax,0x14; NEG ax` @0x0704A1/@0x0704A5/@0x0704A8).
+The two header lines are drawn by the centre-text-in-box helper `func_002CE0` (`0x181F:0x1C8`,
+@0x0704E8/@0x07050B) with literal box anchors **x=0x17 (23)** and **w=0x44 (68)**, fed strings
+fetched by `string FETCH func_002462` (`0x181F:0x22`) from string-id globals `[0x2efe]`@0x0704DA
+and `[0x2f00]`@0x0704FD; the per-cell name text is drawn by `func_002BC8` (`0x181F:0x100`,
+"centre-text-in-box", @0x07054D, box `(x=0x17,y=0x44,w=0x51)`). The glyph font is the default set
+inside the leaf text-draw (`0x2c4a`/`0x2b38`, called from `func_002CE0`/`func_002BC8`), not an
+immediate in `func_070494`. **B (binary_decode + accessor_trace; the title draw is fully pinned —
+no RAM capture needed).** The title *string itself* is the `@DIFFICULTY` header ("Select a
+Difficulty Level", `GAME_sections.json`) / `@MISC` "Difficulty Level" labels, already **B**.
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@DIFFICULTY` (5 names). **B**

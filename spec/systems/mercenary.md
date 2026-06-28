@@ -33,12 +33,23 @@ The player declines or pays. The mercenaries then **arrive in a colony**.
   returns with no offer. So a foreign power makes no offer on its first eligible
   call and only from the second onward (bit `0x08` of `PowerRecord+0x00`). **B**
   The init side-effect run on that first call (`@0x03E4C3` `call 0x3EA2E →
-  0x1A1F:0xC4`) **RESOLVED 2026-06-27** to Type-A overlay **`func_03E2EA`** (`@0x3E2EA`, `ENTER 0xC`;
-  `0x3EA2E` is a `ljmp` dispatch island). It iterates the unit list (`0x181F:0x2E4` unit-iterator)
-  and operates on **unit types 1/4/7** (Soldiers / Dragoons / Continental), setting `UnitRecord+0x3146
-  = 7` on matches — i.e. an **intervention/force-conversion** pass. The function is now named and
-  disassemblable; the exact conversion effect (intervention-force spawn vs unit upgrade) is the
-  narrowed residual. **B (located) / TBD (exact effect).**
+  0x1A1F:0xC4`) **RESOLVED 2026-06-27** to overlay **`func_03E2EA`** (page 6, `@0x3E2EA`, `ENTER 0xC`;
+  `0x3EA2E` is a `ljmp` dispatch island). **Effect fully decoded (overlay page_06.asm `0x3E2EA..0x3E440`):**
+  it is the **Declaration-of-Independence Continental-promotion pass**. Outer loop over all colonies
+  (`[0x539E]` num_colonies, `func_0082DC` select-colony @0x03E3D5) whose owner matches the power arg
+  (`cmp [colony+0x1a],[bp+6]` @0x03E3E4) **and** whose Sons-of-Liberty % `≥ 50` (`func_008524`→colony
+  `+0xC2`, `cmp ax,0x32; jl skip` @0x03E3F1). A per-colony promotion budget `[bp-2]` is scaled from
+  SoL% and colony size `+0x1F` (`((SoL−50)·(size/2))/50`, clamped `≥1`, @0x03E3F6..0x03E425). It then
+  walks the colony's unit stack (`func_0066CC` units-on-tile @0x03E436, `func_0066BA` next-unit
+  @0x03E311) and, for each **Veteran** unit (`UnitRecord+0x315b vet_type == 0x15`, @0x03E337) of
+  **type 1 Soldiers** or **type 4 Dragoons** (`cmp [bx+0x3146],1 / ,4` @0x03E326/0x03E32D), decrements
+  the budget and **promotes** it: **type 1 → type 9 Continental Army** (`mov [si+0x3146],9` @0x03E37B),
+  **type 4 → type 7 Continental Cavalry** (`mov [si+0x3146],7` @0x03E306). A per-colony message is
+  emitted (`func_06C23C` with the new type's `@UNIT` name pointer `[bx+0x5230]`, stride 14, @0x03E366;
+  message ids `0x132d`/`0x1336` via `func_06F5F2`/`0x181F:0x652` @0x03E3BF). It is **not** a force
+  spawn — no units are created; it upgrades existing veterans in-place. (Type ids: `viceroy_source/data/
+  unit_classes.c` `@UNIT` — 1=Soldiers, 4=Dragoons, 7=Cont. Cav., 9=Cont. Army; field meanings
+  `viceroy_source/include/unit.h` `+0x02`=type(0x3146)/`+0x17`=vet_type(0x315b).) **BYTE_VERIFIED (B).**
 
 **Corrections from the basis (do not reuse the old anchors):**
 - `@MERCENARY` is **NOT** the mercenary offer — its body is *"The {%STRING0}

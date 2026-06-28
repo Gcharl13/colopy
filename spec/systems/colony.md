@@ -334,7 +334,8 @@ population count `+0x1F` and the secondary index `[bp+8]` against `0x13`=19 — 
 accumulator vs the 25/50 threshold** in `func_00A3E1` (next paragraph); the 200 figure was a
 mis-attribution.
 
-**Growth & starvation mechanism — refined 2026-06-27 (B mechanism; trigger TBD).** Per turn the
+**Growth & starvation mechanism — refined 2026-06-27 (B mechanism + B warning-trigger + B
+starvation-removal site `func_02D658 @0x2E2DE`; only the per-turn `+0xAA` additive write is TBD-runtime).** Per turn the
 food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**
 (`ceil(surplus/2)` = `inc;sar ax,1` `@0xA606`, capped) accrues toward growth, accumulated against
 the colony food-growth field **`+0xAA`** (read `@0xA5D6`/`@0xA61F`; growth fires once `+0xAA` ≥ the
@@ -352,24 +353,34 @@ byte-verified 2026-06-27** (reseg `func_02D658 @0x2E1A7..0x2E2BA`): the resident
 `cmp [+0x1f],[bp-0x12c]` test `@0x2E242` (pop vs the flag) selects which template fires: `0xe3b`/`0xe41`
 (=@FOOD1/@FOOD2 "food stores depleted"), `0xe47` (=@VANISH "colony vanished… starved"), `0xe4e`/`0xe56`
 (=@STARVE1/@STARVE2 / @FOODLOW) — all via `call 0x2ef5f` `@0x2E2B4` (templates in
-`GAME_sections.json`). **The actual colonist-removal (`func_008FB4` DEC-pop) and the per-turn `+0xAA`
-increment are NOT in the resident image** — an exhaustive write scan of the resident image **and all 31
-resegmented overlay pages** finds only **two** writers of `ColonyRecord+0xAA`: `mov [bx+0xaa],2` (floor,
-page_0E `@0x5627D`, gold-buyout path) and `add [bx+0xaa],0x64` (scout-colony +100, page_0F `@0x5A3CA`) —
-**no per-turn additive `+= surplus/2`**. (The `lcall 0x181f:0x4ca`/`0x4d4` calls in this block resolve
-to the resident notification helpers `func_00C30A`/sibling — message formatters, not the mutator.) The
-per-turn `+0xAA` increment and the `func_008FB4` deficit-removal call are thus **not reachable from any
-statically-resolvable site** in `func_02D658`'s resident body or the 31 reseg pages; they require a
-two-turn live `ColonyRecord+0xAA`/`+0x1F` capture (or a deeper RTLink thunk trace) to pin the exact
-write — still **TBD (runtime)**. *(Field reconciliation RESOLVED 2026-06-27 by oracle RAM read: in both founding snapshots
+`GAME_sections.json`). **Starvation-removal call site PINNED 2026-06-27 (overlay_deep, reseg page_03):**
+the `func_008FB4` DEC-pop *is* reachable statically — it is **`func_02D658 @0x2E2DE`** (`push [bp-0x76];
+lcall 0x181f,0xa9c` → thunk `181F:0A9C`=`func_008FB4`), inside the food-depletion block that fires the
+@FOOD/@VANISH/@STARVE templates. It runs in a loop `@0x2E2C6..0x2E2F2` bounded by the colonist-index
+counter `[bp-0xb4]` vs the food-state word `[bp-0x12c]` (`@0x2E2EE cmp [bp-0x12c],ax; jg 0x2c6`), each
+iteration pushing the colonist slot `[bp-0x76]` (loaded from the `lcall 0x181f,0x4d4` food-state query
+`@0x2E2D2`) and calling `func_008FB4` to remove that colonist; the whole-colony case (`@0x2E242 cmp
+[+0x1f],[bp-0x12c]`) instead pushes the @VANISH template `0xe47` `@0x2E265`. So the per-turn starvation
+removal is **B (byte-pinned, reseg `func_02D658 @0x2E2DE`)**, not runtime. (The resident-image view of
+`func_02D658` truncates before this block — the body lives in reseg page_03 `@0x2E1A7..0x2E2F4`, the
+overlay copy.) **The per-turn `+0xAA` increment remains the only unresolved site:** an exhaustive write
+scan of the resident image **and all 31 resegmented overlay pages** finds only **two** writers of
+`ColonyRecord+0xAA` — `mov [bx+0xaa],2` (floor, page_0E `@0x5627D`, gold-buyout path) and
+`add [bx+0xaa],0x64` (scout-colony +100, page_0F `@0x5A3CA`) — **no per-turn additive `+= surplus/2`**.
+(The `lcall 0x181f:0x4ca`/`0x4d4` calls in this block resolve to the resident notification helpers
+`func_00C30A`/`func_00C322` — leaf message formatters with no globals/calls, not the mutator.) The
+per-turn `+0xAA` accumulation is thus the lone write with **no statically-resolvable site** in
+`func_02D658`'s resident body or the 31 reseg pages; pinning it requires a two-turn live
+`ColonyRecord+0xAA`/`+0x1F` capture (or a deeper RTLink thunk trace) — still **TBD (runtime)**. *(Field reconciliation RESOLVED 2026-06-27 by oracle RAM read: in both founding snapshots
 `colony_jamestown.bin` and `colony_live_1505.bin` (pop 1, `[0x8542]`→colptr `0x606e`),
 `ColonyRecord+0xAA = 0` AND `+0xC8 = 0`. An image-wide write scan settles the roles: `+0xC8`
 is written **only** by the SoL 32-bit EMA (`func_02D658 @0x2DA1C`, `sub/add [bx+0xc6]/[bx+0xc8]`,
 §2) — it is the `rebel_divisor` high word, NOT a food store; `+0xAA` is the food-growth store
 (the §3 forecast reads it at `@0xA5D6`/`@0xA61F`). The "+0xC8 growth accumulator" gloss in driver
 step 4 was stale and is now corrected there. **A (oracle) / B (write-scan).**)* **B (funcs +
-surplus rule + field reconciliation) / TBD (per-turn `+0xAA` increment site + starvation-removal
-count — both overlay-side, see below).**
+surplus rule + field reconciliation + starvation-removal site `func_02D658 @0x2E2DE`, reseg page_03) /
+TBD-runtime (only the per-turn `+0xAA` additive `+= surplus/2` write — no static writer in the resident
+image or any of the 31 reseg pages; needs a two-turn live `+0xAA`/`+0x1F` capture).**
 
 ## 4. UI layout
 The **Colony screen** (`docs/COLONY_RENDER_CHAIN.md`) shows the building grid,
@@ -407,8 +418,11 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
 - **RESOLVED 2026-06-27:** end-of-turn "spoilage" of an overfull stock — there is **no per-good
   spoilage clamp**; over-100 tradeables are **auto-exported to Europe** (→50, sold; wasted if
   independence declared) in `func_02D658 @0x2D6F7..0x2D785` (see §3 "Warehouse spoilage — CORRECTED").
-- **Building prerequisite gating — SUBSTRATE BYTE-VERIFIED 2026-06-27, build-menu *consumer* TBD.**
-  The predecessor structure and its walkers are now byte-traced. **Chain "next-link" table =
+- **Building prerequisite gating — BYTE_VERIFIED 2026-06-27 (substrate + build-menu consumer both pinned).**
+  The predecessor structure, its walkers, AND the build-menu consumer that calls them are now byte-traced —
+  the consumer is the colony-screen handler **`func_053B7E`** (page_0E): walker call `func_0086C0`
+  `@0x055ED1` (`lcall 0x181f,0xba0`) + bit-test `func_00863E` `@0x055DE9`/`@0x055EF7` (`lcall 0x181f,0x9fc`),
+  detailed at the end of this entry. **Chain "next-link" table =
   `DGROUP:0x8F86`**, stride **12 (0xC)**, signed byte per record (negative = end of chain) — accessed as
   `byte[idx·12 + 0x8F86]` (resident funcs encode it `[bx-0x707a]`, bx=idx·12; `0x10000−0x707a=0x8F86`).
   **Four chain-walk helpers** (reseg `0x864E..0x871F`): `func_00864E` = count links whose colony bit is

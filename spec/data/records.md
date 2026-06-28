@@ -45,8 +45,27 @@ Power index ordering (0..3 = Dutch/English/French/Spanish per NAMES `@COUNTRY`; 
    colony-reset loop `@page_03 0x2ED7A` (`add bx,[0x8542]; mov byte [bx+0xba],1`) and
    conditional `@0x2EDAD` (`mov byte [bx+si+0xba],1`) — **not** the hammers field, so
    the dump's "hammers@+0xBA" label is wrong (build uses `+0x92`/`+0xB6` per
-   `colony.md`). **B**. Still unmapped via `[0x8542]` (no colony-relative site found
-   2026-06-27): `+0x24`, `+0x99`, `+0xBC` — TBD.
+   `colony.md`). **B**. Residual fields (exhaustive accessor sweep 2026-06-27, both
+   resident `disasm/` and all 31 overlay pages, colony-pointer taint-tracked from
+   every `mov/add bx|si|di,[0x8542]`):
+   - `+0xBC` = **element [2] of the `+0xBA` 4-byte per-power flag array** (NOT a
+     separate field). The reset loop `@page_03 0x2ED73` runs `[bp-6]` 0..3 with
+     `bx=[bp-6]+[0x8542]` and stores `mov byte [bx+0xba],1` `@0x2ED7A` (and the
+     paired `mov byte [bx+0xbe],0` `@0x2ED7F`), so bytes `+0xBA/+0xBB/+0xBC/+0xBD`
+     are all written = 1; the conditional `mov byte [bx+si+0xba],1 @0x2EDAD` (si=0..3)
+     re-asserts per index. Live snapshot `colony_live_1505.bin` confirms
+     `+0xBA..+0xBD = 01 01 01 01` for every active colony (00 in empty slots).
+     **B** (writer-traced) / **A** (oracle-confirmed) — the dump's "hammers@+0xBA"
+     label was already corrected above; `+0xBC` is simply array slot 2.
+   - `+0x24` (u16) and `+0x99` (byte): **no static reader or writer exists** via the
+     colony pointer anywhere in VICEROY.EXE (zero colony-relative `[0x8542]`-tainted
+     hits; the `[bx+0x24]` / `[bx+0xbc]` arithmetic sites in pages 03/04/06/17 are all
+     based on `[0x84fc]` = active-PowerRecord, not ColonyRecord — different struct).
+     Live read (`colony_live_1505.bin`, ColonyRecord_base `0x5D46`, stride `0xCA`):
+     both = 0 across all 5 active colonies AND all empty slots — apparent unused/zero
+     padding in this mid-game capture. No EXE byte left to decode; a future write-path
+     (none found) or a game-state where they go non-zero would be needed to assign
+     meaning. **A** (oracle: constant-zero, no accessor).
 2. ~~UnitRecord `+0x02..+0x1B` semantics.~~ **Done 2026-06-20** — base `0x3144`,
    near-complete field map in `spec/systems/unit.md` §2 (RULINGS; position `0x3144`,
    type `0x3146`, owner `0x3147`, order `0x314C`, goto `0x314D/E`, cargo `0x3150..`,

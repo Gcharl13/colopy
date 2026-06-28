@@ -202,8 +202,19 @@ handle/descriptor) transformed by the **pageid-27 blit overlay** (`0x1a1f:0x372`
 The `+0xf0` added in `func_06BE92`'s KING branch (@0x06BEBA → `[0xa5b0/a5b2]`) is an
 **animation-timer seed** (stepped by `inc [0xa5ae]` in `func_06E9F4` @0x06EA26), **not** a
 screen y. **B (negative + mechanism).** *(Earlier draft's `popup.x/y − sprite_w/h` guess is
-byte-refuted; the pixel value itself is a TBD that needs an SS-cel-header read + a pageid-27
-blitter trace, not these functions.)*
+byte-refuted.)* **Landing pixel — RESOLVED (B, runtime/asset-state):** there is **no static
+x/y** anywhere — `func_06BF66` calls the blitter `lcall 0x1a1f:0x372` (= `func_076642`, page-27
+overlay @file 0x76642) with `bx=[bp-0x80]` (the local cel descriptor) and `ax=0`, pushing **no**
+coordinate immediate (`9a 72 03 1f 1a` @0x06C043); the destination is the fixed back-buffer
+`[0x23f2]=0xfc00`/`[0x23f4]=0xa000` (0xA000:0xFC00 @0x06C032/@0x06C038). The blitter
+**computes the landing position internally and RETURNS it in ax/dx**, which `func_06BF66` stores
+back into the cel's `es:[bx+0xc]`=x / `es:[bx+0xe]`=y (@0x06C04C/@0x06C050). `formats/SS.md`
+confirms the .SS directory carries **no per-cel screen-anchor field** (entries are only
+flag/mode/unpacked_len/packed_len). So the on-screen pixel is a **per-cel runtime value produced
+by `func_076642` from the loaded sheet handle + the back-buffer config**, clipped to popup rect
+`[0x839e..0x83a4]`; it is per-asset/per-frame runtime state, **not a static EXE coordinate
+literal**. The literal number for any one speaker frame would need a running-game capture of
+`es:[bx+0xc]/[bx+0xe]` after the blit (no popup-speaker snapshot exists today).
 
 The builders mutate the template string in place: `func_06BE92` pushes `"KING"`
 (file 0x1F72) on the `> 7` branch and `"IND0A0"` (file 0x1F77) on the else branch,
@@ -352,7 +363,17 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **Purpose:** warn of low food / a colonist starving.
 - **Keys (B):** `@FOODLOW`, `@STARVE1`, `@STARVE2`, `@FOOD1`, `@FOOD2`; spoilage
   `@SPOIL1..@SPOIL4`; `@WAREHOUSEFULL`, `@NOMOREWAREHOUSE`.
-- **Tier:** keys **B**; trigger fn **TBD**.
+- **Trigger fn — RESOLVED (B):** `func_02D658` @0x02D658 (colony-turn food/production update;
+  reads the current-colony anchor `[0x8542]`). It builds & posts each food message by pushing the
+  GAME.TXT key's DGROUP offset and calling the section-show helper `func_02EF5F` (= ljmp
+  `0x191f:0x9dc`) via the `push <args>; push cs; call 0x2ef5f; add sp,0xe` idiom: `@FOOD1`
+  (push 0xe3b @0x2E219), `@FOOD2` (0xe41 @0x2E234), `@STARVE1` (0xe4e @0x2E296), `@STARVE2`
+  (0xe56 @0x2E2B0), `@FOODLOW` (0xe5e @0x2E362), `@SPOIL<n>` (built from 0xead @0x2E8B8). The
+  template is selected by `cmp [bx+0x1f],[bp-0x12c]` (pop vs food-OK flag, bx=[0x8542]) @0x2E242;
+  a once-per-turn `[0xa898]` shown-flag gates repeats (`cmp byte [0xa898],1` before each push,
+  `or [0xa898],al` after the call). (Cross-checked: `spec/systems/colony.md` already cites
+  `func_02D658` as the food-message poster.)
+- **Tier:** keys **B**; trigger fn **B** (`func_02D658` @0x02D658).
 
 ## 14. Colony burn / capture
 - **Purpose:** a colony is razed or captured (by natives or a rival power).
@@ -508,10 +529,24 @@ warpath key prefixes are `@INDIAN…`. All struck.)*
    **only** the descriptor far-ptr (no x/y). The literal landing pixel = the **SS cel's
    intrinsic anchor** put through the **pageid-27 blit overlay** (`0x1a1f:0x372` → file
    `0x764d2`) — **runtime / AI-GATED**, needing an SS-cel-header read + a blitter trace,
-   NOT a coordinate literal in these functions. **B (negative + mechanism) / pixel value TBD
-   (asset+overlay, not formula).**
-4. **Food-shortage trigger function — TBD.** Keys (`@FOODLOW`/`@STARVE*`/`@SPOIL*`)
-   are present; the colony-update fn that fires them is not yet pinned. **TBD.**
+      NOT a coordinate literal in these functions. **RESOLVED (B, runtime/asset-state, see §2.7.1):**
+the blitter `lcall 0x1a1f:0x372` (= `func_076642` @file 0x76642, page 27) is called @0x06C043 with
+**no x/y immediate** (only the cel-descriptor ptr `bx=[bp-0x80]`, `ax=0`); it **computes and returns**
+the landing position, which `func_06BF66` writes back to the cel's `es:[bx+0xc]`=x/`es:[bx+0xe]`=y
+(@0x06C04C/@0x06C050), and `formats/SS.md` confirms the .SS directory has **no per-cel anchor
+field**. So the on-screen pixel is a **per-frame runtime value produced by the page-27 blitter**
+(clipped to `[0x839e..0x83a4]`), not a static EXE literal — a specific frame's number needs a
+running-game capture of the post-blit `es:[bx+0xc]/[bx+0xe]`. **B (negative + mechanism;
+position = blitter-returned runtime state).**
+4. **Food-shortage trigger function — RESOLVED (B):** `func_02D658` @0x02D658, the colony-turn
+   food/production update (reads the colony anchor `[0x8542]`). It posts the food messages by
+   pushing each GAME.TXT key's DGROUP offset and calling the section-show helper `func_02EF5F`
+   (= ljmp `0x191f:0x9dc`): `@FOOD1` 0xe3b @0x2E219, `@FOOD2` 0xe41 @0x2E234, `@STARVE1` 0xe4e
+   @0x2E296, `@STARVE2` 0xe56 @0x2E2B0, `@FOODLOW` 0xe5e @0x2E362, `@SPOIL<n>` 0xead @0x2E8B8
+   (the food-key string offsets are file 0x1E7DB..0x1E84D; DGROUP→file delta 0x1D9A0). Template
+   choice = `cmp [bx+0x1f],[bp-0x12c]` @0x2E242 (colony pop vs food-OK flag); a `[0xa898]`
+   once-per-turn flag gates repeats. **B (func_02D658 @0x02D658; cross-confirmed in
+   `spec/systems/colony.md`).**
 5. **Option-highlight RGB / button SS index — RESOLVED (B, negative): there is no
    OK/Cancel button sprite.** `@DEFAULT` stores a row index, not a color; the
    highlight resolves via the loaded PIK palette (`fonts_and_colors.md`) — no

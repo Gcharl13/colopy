@@ -153,9 +153,17 @@ the **count-derivation formula is RESOLVED 2026-06-27** — it is **NOT** in ove
 6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`), and the
    minimap window/scale + work-tile markers (`func_026374`/`func_027DB2`) still need a runtime origin
    trace. The **field-production count formula is now resolved** (resident `func_00A222 @0x00A222`,
-   writer of `[0xA891]`/`[0xA893]`/`[0xA894]`, §0.5/§3.2). The **SoL% formula remains R/TBD** (lives in
-   the un-decoded colony-economy overlay 0x191F; §8 item 4). This baseline is recognizable +
-   RAM-cross-checked, not finished.
+   writer of `[0xA891]`/`[0xA893]`/`[0xA894]`, §0.5/§3.2). The **SoL% formula is now RESOLVED (B,
+   2026-06-27, reseg + writer-trace):** it is NOT in an un-extracted overlay — the percent is computed by the
+   resident **`func_008524 @0x008524`** (= thunk `0x181F:0xC86`, role "SoL%/rebel-sentiment compute"):
+   `SoL% = (colony+0xC2·100)/colony+0xC6` (32-bit, mul `0xd1d:0xf60 @0x008557` + div `0xd1d:0xec6 @0x00855E`;
+   0 if denom≤0 `@0x008542`), then **+20 human latch** (`add ax,0x14 @0x00859F`, gated `colony+0x1A<4` &
+   `[bx+0x543f]==0` & flag `0x981:0(0x12)`), **clamp 100** (`cmp ax,0x64;mov ax,0x64 @0x0085A8..0x0085AD`).
+   The bell-pool source fields are written each turn by the **resident-overlay `func_02D658 @0x02D658`**
+   (page_03): numerator `+0xC2` accumulated and clamped to cap `+0xC6` (`@0x02DAC6..0x02DAD4`), cap
+   `+0xC6` rebuilt = decay + population·2 (`@0x02DA1C..0x02DA6F`); founding init `+0xC6=100`,`+0xC2=0`
+   (`@0x02EC26`). The display (SoL% + member count + tory text-colour) is at page_02 `@0x0273DC` (§8 item 4).
+   This baseline is recognizable + RAM-cross-checked, not finished.
 
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with
@@ -592,12 +600,26 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
    The SoL/garrison mode (case 0) panel is an icon bar, not a labelled string; the "Sons of Liberty"
    *caption* is rendered elsewhere — as the warehouse-bar right readout `[0x2F5E]=0x219` (§5, §4 line
    439, oracle-resolved 2026-06-27). **B (sub-renderers byte-decoded).**
-4. **SoL% formula — R, not B.** The prior spec gave `sol = (colony[+0xC2]·100)/colony[+0xC6]` +20
-   human-latch, clamp 100, and a tory-threshold text-colour rule. Those traced to overlay-`0x181F`
-   helpers and the **RECONSTRUCTED** `COLONY_SYSTEM.md`; neither survives as a byte-cited offset in
-   the primary sources mined this pass. **Downgraded to R/TBD** until re-confirmed against a
-   `func_XXXXXX @0xNNNNN` (the colony's SoL math lives in overlay 0x191F, not yet extracted —
-   `COLONY_RENDER_CHAIN.md` §6d).
+4. **SoL% formula — RESOLVED (B), 2026-06-27 (reseg + writer-trace).** The prior reconstruction
+   `sol = (colony[+0xC2]·100)/colony[+0xC6]` + 20 human-latch + clamp-100 + tory text-colour rule is now
+   **fully byte-cited** — it does NOT live in an un-extracted overlay. **Compute:** resident
+   `func_008524 @0x008524` (= thunk `0x181F:0xC86`, role "SoL%/rebel-sentiment compute"; reseg'd from
+   VICEROY.EXE 0x008524..0x0085B1): loads colony (`[0x8542]`) `+0xC2:+0xC4` (32-bit bell-pool numerator)
+   and `+0xC6:+0xC8` (32-bit cap); if cap≤0 returns 0 (`@0x008539..0x008547`); else pushes `0x64`(100) +
+   numerator and calls `0xd1d:0xf60` (32-bit mul ×100) `@0x008557` then `0xd1d:0xec6` (32-bit div by cap)
+   `@0x00855E` ⇒ `base = (+0xC2·100)/+0xC6`; **+20 human latch** `add ax,0x14 @0x00859F` (gated
+   `colony+0x1A<4` & `[bx+0x543f]==0` & flag check `lcall 0x981:0(0x12,owner) @0x008578`); **clamp 100**
+   `cmp ax,0x64; mov ax,0x64 @0x0085A8..0x0085AD`; return AX. **Source fields:** written each colony-turn
+   by `func_02D658 @0x02D658` (page_03) — numerator `+0xC2` accumulated then clamped to cap `+0xC6`
+   (`@0x02DAC6..0x02DAD4`), cap `+0xC6` = decay(`-(+0xC6>>6)`) + population·2 (`@0x02DA1C..0x02DA6F`);
+   colony founding sets `+0xC6=0x64`,`+0xC2=0` (`@0x02EC26..0x02EC38`). **Display:** the SoL line
+   ("100% (1)") is rendered at page_02 `@0x0273DC`: `lcall 0x181F:0xC86 → [bp-0x70]` = SoL%, `0x64-SoL%`
+   = tory%, `member_count = population(colony+0x1F) − round(tory%·pop/100)` (`@0x0273F4..0x02740E`),
+   and the tory-threshold **text-colour** `[bp-0x7c]` = `0x0F`(white) default → `0x04`/`0x0C` when the
+   tory threshold (`[bp-0x62]`, from difficulty `[0x53A6]` `@0x027416`) exceeds the rebel count
+   (`@0x027441..0x02745D`). So every piece of the prior recon is now B (`COLONY_RENDER_CHAIN.md` §6d's
+   "overlay 0x191F, not extracted" note is superseded — the math is resident `func_008524` fed by
+   `func_02D658`).
 5. **Building per-slot frame map — RESOLVED (B), 2026-06-27 (see §0.2 + §3.7).**
    The earlier "index = type+1" (category+1) framing is **wrong and dropped**; the `func_026CC2`/
    `word[id*2−0x7238]` attribution was also wrong (that path is the production strip). The real painter

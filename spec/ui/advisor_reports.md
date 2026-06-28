@@ -7,11 +7,15 @@
 > **B** (raw-EXE-verified, byte-cited per step). The residual soft spots — the
 > per-row y *flow* (a FONTTINY line-height accumulator, not a literal gap), the live
 > counts/gold/prices, the runtime DGROUP icon-id cells, and the exact @MISC index per
-> `[DS:0x2Dxx]` label slot — are honestly **R/TBD**, each called out with its source.
+> `[DS:0x2Dxx]` label slot — are honestly **R**, each called out with its source. (The
+> label-slot→`@MISC` binding is now **B**: the LABELS bulk loader @file 0x75226–0x7523C
+> fills the word table `[bx+0x2DBA]` for idx 0..220 from `LABELS.TXT` section `@MISC`, so
+> any slot at DGROUP offset O holds `@MISC index = (O − 0x2DBA)/2`.)
 
 **Overall confidence:** dispatcher + body offsets + draw chain **B** (byte-cited);
-per-report static layout immediates **B**; per-row flow y + live values **R**; a few
-label-slot→@MISC bindings **TBD**. · **Canonical primary:**
+per-report static layout immediates **B**; per-row flow y + live values **R**; the
+label-slot→@MISC bindings are now **B** (loader identified: `[bx+0x2DBA]` fill @file
+0x75226, so `@MISC idx = (slot_off−0x2DBA)/2`). · **Canonical primary:**
 `raw/COLONIZE/VICEROY.EXE`, `viceroy_source/docs/drawlist/REPORTS.md` (the complete
 byte-cited draw list, RTLink-resolver-validated 2026-05-31), `viceroy_source/docs/SCREEN_LAYOUTS.md` §4.
 
@@ -309,10 +313,20 @@ RTLink-resolved (`REPORTS.md` §1):
 - **NAMES tables** (verified present in `NAMES_sections.json`): F4 occupations `@JOB`;
   F9 tribes `@TRIBES`; F9/title text-color slots `@COLORS` (`68, 149, 8, …` — same nine
   bytes as the minimap decode, `map_view.md` §6.1). **B.**
-- **Note:** the per-slot binding of the runtime label pointers `[DS:0x2DE0..0x2F5C]` to
-  exact `@MISC` indices is **TBD** for some F4/F5/F6/F8 section labels — the report-label
-  loader is not yet identified (`REPORTS.md` §13.1). Titles + F3/F7 column/REF labels are
-  unambiguous. **TBD (some section-label slots).**
+- **Note (RESOLVED 2026-06-27):** the per-slot binding of the runtime label pointers
+  `[DS:0x2DE0..0x2F5C]` to exact `@MISC` indices is now **B**. The report-label loader IS
+  identified: it is the LABELS.TXT bulk game-text loader in overlay (orphan body file
+  0x074C39..0x075352, immediately after the NAMES loader func_0749E0), which opens file
+  "LABELS" (`push 0x888` @0x751ED) and reads section "MISC" (`push 0x22b3` @0x75214 →
+  `0x191F:0x928`), then loops idx 0..220 storing each interned pointer with
+  `MOV [bx+0x2DBA],ax` (`shl bx,1`) @0x75226–0x7523C (bound `cmp 0xDD`=221 @0x75237).
+  Therefore **every label slot at DGROUP offset O holds `@MISC index = (O − 0x2DBA)/2`** —
+  e.g. F8 strength `[0x2E78]`→95 'Colonies', `[0x2E7A]`→96 'Population', `[0x2E7C]`→97
+  'Average Colony', `[0x2E7E]`→98 'Military Power', `[0x2E80]`→99 'Naval Power', `[0x2E82]`→100
+  'Merchant Marine'; F7 headers `[0x2E34..0x2E3A]`→61/62/63/64 Ship/Cargo/Location/Destination;
+  F5 `[0x2F50/0x2F52]`→203 'Bid Price'/204 'Ask Price'; F3 REF `[0x2E64]`→85; F1 captions
+  `[0x2DF0/0x2DF2/0x2E14]`→27/28/45. Cross-checked against `LABELS_sections.json @MISC`
+  (221 entries). **B.**
 
 ## 6. Interactions
 - **Hotkeys / REPORTS pulldown** (verified `MENU_sections.json @REPORTS`): F1 Terrain
@@ -362,13 +376,21 @@ RTLink-resolved (`REPORTS.md` §1):
    The **per-row y is a FONTTINY line-height flow accumulator** (`add y,[0x89E].h`) and
    F9's text color is the runtime `[0x830]` `@COLORS` slot — both computed/state, not
    layout gaps (**R**). Font (FONTTINY) + colors resolved (§2.3). **B (static) / R (flow).**
-3. **`@MISC` title-label loader — partially open (TBD for some section labels).** Each
-   `[DS:0x2Dxx]` slot is filled in bulk at game-text load by a LABELS.TXT section loader
-   (NOT `func_0749E0`, which is the NAMES.TXT name-table loader and stops at DS:0x2DB0 —
-   `viceroy_source/docs/NAMES_LOADER.md`). Report **titles** are unambiguous (template `0x11A2` index
-   N → `@MISC 29/30/37/49/50/51/52/93`, all verified), and F3/F7 column/REF labels are
-   pinned; the exact `@MISC` index for some **F4/F5/F6/F8 section-label slots** is
-   best-effort until the loader is identified. **TBD** (`REPORTS.md` §13.1).
+3. ✅ **`@MISC` title-label loader — RESOLVED 2026-06-27 (B).** Each `[DS:0x2Dxx]` slot is
+   filled in bulk at game-text load by the **LABELS.TXT bulk section loader** (overlay orphan
+   body file 0x074C39..0x075352, directly after the NAMES loader `func_0749E0` which stops at
+   DS:0x2DB0 — `viceroy_source/docs/NAMES_LOADER.md`). That loader opens file "LABELS"
+   (`push 0x888` @0x751ED, dgroup string 'LABELS' = EXE file 0x1e228 − base 0x1d9a0) and reads
+   its section `@MISC` (`push 0x22b3` @0x75214 → select `0x191F:0x928` @0x75219), then for
+   idx 0..220 (`cmp 0xDD` @0x75237) interns each entry (`0x1A1F:0xB16`) and stores the pointer
+   `MOV [bx+0x2DBA],ax` (`shl bx,1`) @0x75226–0x7523C. So the slot→index map is the closed
+   formula **`@MISC index = (slot_off − 0x2DBA)/2`**, not a guess. Report **titles** confirm it
+   (template `0x11A2` index N → `@MISC 29/30/37/49/50/51/52/93`); the F4/F5/F6/F8 section labels
+   resolve too: F7 headers `[0x2E34..0x2E3A]`→61/62/63/64, F5 `[0x2F50/0x2F52]`→203/204
+   (Bid/Ask Price), F8 strength `[0x2E78..0x2E82]`→95..100. The same loader also fills the
+   `@COLORS` byte slots `[0x830..0x839]` (@0x751A2–0x751E7), confirming F9's `[0x830]`/`[0x831]`
+   text colors. Cross-checked vs `LABELS_sections.json @MISC` (221 entries). **B** (`REPORTS.md`
+   §13.1 superseded).
 4. ✅ **F3 REF / 2nd-force icon-id cells — RESOLVED 2026-06-27 (A, oracle DGROUP read).**
    The rows ARE sprite rows (`0x222` enqueue×4 → `0x22C` flush, byte-verified), and the icon
    indices are read from DGROUP cells at runtime (REF composition; no static EXE write-site,

@@ -17,7 +17,7 @@
 `func_03DA2A` — all re-disassembled 2026-06-21); OPENING.EXE/CLOSING.EXE playback **B** (loops, blit
 convention, asset-load order, placement model — `code/OPENING|CLOSING/disasm/orphans_load_image.asm`
 + capstone, decode-verify 2026-06-26); asset identification **A**; per-element literal coordinates
-**TBD (data-file, site-named)**; AMERICA.MOV **A/R**. · **Canonical primary:**
+**resolved to committed data-files (B)** — the per-element literal X/Y/frame timelines are the committed CSV tables `data_extracted/text/OPENING_sections.json @OPENING` (anim: col1 sheet-idx / col2 activation-tick / col4 X-base 640|320, parsed by `_load_anims` @`0xDD2`) and `data_extracted/text/CLOSING_sections.json @CLOSING` (actors: col1 sheet-idx / col2 count / col5 Y-position, parsed by `func_000A00` @`0xA00`) plus PATH.DAT waypoints (`_ship[]` @`0x4f0c`); only the per-frame sprite-bbox Y is asset-derived (**A**). AMERICA.MOV **A/R** (`data_extracted/data/AMERICA_MOV.json`, structure decoded §11.3). · **Canonical primary:**
 `docs/KING_AND_CINEMATIC_AUDIT.md` §3/§5, `viceroy_source/docs/drawlist/CHROME_AND_DISPATCH_INDEX.md`
 §B6, `docs/CINEMATIC_TIMING_AUDIT.md`, `data_extracted/text/{GAME,LABELS,OPENING,CLOSING}_sections.json`.
 · **Last updated:** 2026-06-26.
@@ -380,7 +380,7 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 3. ✅ **AMERICA.MOV demo-script — PARTLY RESOLVED (A/R).** The `.MOV` blob
    (`data_extracted/data/AMERICA_MOV.json`) is a 1-bpp coastline/depth bitmap + ship-path waypoint
    list (`_load_ship_path`/`_increments`/`_scr_depth`, `CINEMATIC_TIMING_AUDIT.md` §3). Any non-bitmap
-   header opcode grammar stays **TBD**.
+   header is the 8-byte leader `0c 00 00 0e 00 00 00 00` (word0=12, word1=0x0E00; verbatim in `AMERICA_MOV.json`), preceding the 1-bpp coastline bitmap; the bitmap is followed by the waypoint stream at file +0x220 marked `f5 01 08 00` = (`0x01f5`=501, `count=8`) then deltas `3,9,3,3,2,2,2,3,2` then `00 00` terminator — all bytes decoded (`binary_decode`). The semantic *grammar* of the 4 header bytes has **no EXE reader to trace**: the "AMERICA.MOV" string appears only in VICEROY.EXE @`0x1f7f0` in **write** context (adjacent `wb\0` mode flag, map-editor record path) — it is **not** referenced by name in OPENING.EXE/CLOSING.EXE, so the cinematic engine reads PATH.DAT, not this blob. The blob is thus a data-only artifact; the byte structure is documented, no further EXE byte exists to decode.
 4. ✅ **`KING2.SS` loader — RESOLVED (B, negative).** "KING2" absent from VICEROY + OPENING.EXE +
    CLOSING.EXE (`CINEMATIC_TIMING_AUDIT.md` §4); orphan asset.
 5. ✅ **`DECLARAT.PIK` loader — RESOLVED (B, negative).** Orphan; the engine draws DECOIND.PIK

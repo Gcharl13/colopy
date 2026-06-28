@@ -567,7 +567,7 @@ row is `push h; push w; push y; push x; lcall 0x181F:0x3CA`:
 | (224,120,96,59) | 4 | "Expected" panel | B | `@0x032034` |
 | (0,179,305,21) | 0 | Market price row (buy/sell cell; sell handler @0x32914) | B | `@0x032034`; `europe_screen.md §6` |
 | (306,179,15,21) | 0xB | Stockpile/gold readout zone | B | `@0x032034` |
-| (Exit) | — | leave Europe | B (clickable) / TBD (paint) | click-rect @0x032034; paint origin TBD (`europe_screen.md §4`, open item 9) |
+| (Exit) | — | leave Europe | B (clickable) / B (paint mechanism) / A (pixel) | click-rect @0x032034; paint = framework chrome from the generic screen-view runner `func_077D5E` (region load_image), reached via `0x181F:0x772` (screen-view id 0x2B) — NOT a Europe-page draw, so the Europe composer paints no Exit button (RESOLVED 2026-06-27, `europe_screen.md` §0 lines 15-19). On-screen position white "Exit" `(306,179)` + red "E" `(308,187)`, measured from live capture `docs/screens/10_europe_screen.png` (A) |
 
 ---
 

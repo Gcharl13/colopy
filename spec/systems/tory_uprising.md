@@ -58,8 +58,7 @@ arg3→owner `+0x3`). One of the two random upgrade gates promotes the spawn to 
 counted down** (not a fixed 8), with two random per-militia upgrade gates; marks the colony
 `[+0x1C]|=1` so it cannot re-fire, and **suppresses silently** if no tile was free. **B** (per-call
 gate + strength formula + spawn + type id `1`/`@UNIT` row 1). Only the **caller cadence** (how often
-the WoI loop invokes `func_03CAC6`) remains **TBD** (overlay page-06, `reachable:false`, dispatched
-through the rtlink overlay manager — no static caller anchor).
+the WoI loop invokes `func_03CAC6`) remains **TBD** — and is confirmed to have **no static caller anchor anywhere in `VICEROY.EXE`**: a full byte-scan of the page-06 code image (file `0x3B900..0x3EA60`, IP base = file − `0x3B380`, so this fn = IP `0x1746`) finds **zero** near-`call`/`jmp` (E8/E9) targeting IP `0x1746`, **zero** far-`lcall` (9A) to any overlay thunk seg (`0x181F`/`0x191F`/`0x0D1D`) `:0x1746` across the entire EXE, **no** thunk-table entry resolving to `func_03CAC6` in `code/VICEROY/flat/thunk_resolve.json` (contrast its page-06 sibling `func_03D948`=`191F:0348`, which DOES have one), and **no** far-pointer dispatch-table word `0x1746`+overlay-seg (the sole `0x1746` word in the file, @`0x4E978`, is a `push 0x1746` data argument to `lcall 181F:077E`, not a call target). The fn is therefore reached only via the RTLink overlay manager's load-time-patched dispatch (`reachable:false`); pinning the per-turn invocation frequency requires a **live War-of-Independence turn-loop trace** (breakpoint at file `0x3CAC6`), not a static byte. (Byte-scan of `raw/COLONIZE/VICEROY.EXE` + `thunk_resolve.json` + page_06.asm, 2026-06-27.)
 
 ## 3. Formulas & rules
 

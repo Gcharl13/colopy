@@ -73,7 +73,7 @@ Runs when two powers meet and exchange treaty / peace / tribute / war. Structure
     requires turn `>= 0x28` (`cmp [0x538E],0x28` `@0x57B10`) **and** at least one of the
     two powers' attitude `>= 8` (`cmp byte ptr [bx-0x6BF4],8` `@0x57B1A`/`@0x57B24`).
     Plus the difficulty-scaled demand terms above.
-- Privateer attribution, blockade: **TBD**.
+- **Privateer attribution** (BYTE_VERIFIED, see §2 / §6.3): in the war-declaration resolver `func_03ECF0`, a unit-type guard `cmp byte ptr [bx+0x3146],0x10` (`@0x3F092`, type `0x10` = Privateer) routes a privateer attack to `or byte ptr [bx+si-0x77C4],0x80` (`@0x3F0A1`, `-0x77C4 = 0x883C` war-matrix) — setting the **hidden-attribution bit `0x80`** *instead of* the war bit `0x02`, so the aggression is not openly imputed to the controlling power (cleared/revealed `@0x58BE1`). **Blockade:** no naval-blockade mechanic exists (0 `blockad*` strings in `data_extracted/text/`); the nearest analogue is land-adjacency **SIEGE**, which restricts a besieged colony's production to military units. **B.**
 
 > Corroborated by `viceroy_source/src/diplomacy/{meeting,relations,treaty}.c`
 > (other branch); the offsets above are re-verified against this branch's EXE.
