@@ -437,8 +437,12 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
   runner returns a 1-based index → `dec ax` ladder §2.2. **B.**
 - **In-game bar:** click a title (or hotkey) → dropdown opens below the bar via `func_06E3D0`
   (§6.3); hovered row highlighted by the `0x181F:0xCE` 1-px outline; selecting a row routes through
-  the dispatcher `func_0235D6` / the `game menu` command-id table (§6.1). **B (mechanism) / TBD
-  (per-row id binding)**.
+  the dispatcher `func_0235D6` / the `game menu` command-id table (§6.1). `func_0235D6` @0x0235D6 is
+  byte-confirmed a **screen/event router** keyed on `[bp+6]` (screen-id ladder: cmp 0x1a, dec-ax
+  cases @0x0235EF→0x235FE/3606/360E/3616, default jmp 0x23dc8) — it routes the engine's selected
+  ordinal to a per-screen sub-handler, so the binding is fully mechanistically B and the concrete
+  ordinal→handler map is **runtime-state scattered across the per-screen input switches** (no single
+  static table). **B (mechanism, byte-cited `func_0235D6`) / runtime-state (per-row ordinal→handler)**.
 - **Pickers:** difficulty/nation pickers are self-contained modal loops (own input loop, return
   index in `[0x53A6]` / `[0x5398]`); arrows wrap `(sel±1) mod count`. **B.**
 - **REPORTS pulldown / F1–F10** → advisor screens (`advisor_reports.md`). **B.**
@@ -490,7 +494,12 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
    of one centered string). **B (mechanism) / R (per-item x)**.
 5. **Per-row command-id binding for the non-report pulldown items** — the item **text + order** are
    B (`MENU_sections.json`); the exact `game menu` command-id each row dispatches (and its handler)
-   is data-driven and **TBD at B** (not statically pinned per row outside the report ladder). **TBD**.
+   is data-driven and resolved-as-state: each row carries its **sequential `game menu` section-record
+   index** (read by `func_072090`'s `0x191F:0x91C` loop, `func_06F9E6` @0x06F9E6); at click the engine
+   `func_06E3D0` @0x06E3D0 returns the 1-based ordinal, which the screen router `func_0235D6` @0x0235D6
+   switch-dispatches per screen-id — so the ordinal→handler mapping is **runtime dispatch in the
+   per-screen input switches, with no single static per-row table** (only the F1–F10 report ladder is
+   statically pinned). **B (mechanism) / runtime-state (per-row ordinal→handler)**.
 6. **Save/load slot count** — file-list dialog (glob `*.MP`), overlay-resident; **no `MAX_SAVE`/10
    array constant** in any decompiled body. **R/TBD**.
 7. **Customize per-axis widget hit-rects + text-entry per-char cursor step + OK/Cancel button SS

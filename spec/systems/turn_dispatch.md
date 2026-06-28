@@ -129,11 +129,21 @@ x-origin `[0x8550]=240` (`func_070FF8 @0x071039 mov [0x8550],0xF0`), FONTTINY wh
 the Orders phase `func_024A48` (§3). The **only residual** is the per-element x/y of
 the end-of-turn announcement / prompt **message boxes**, which are overlay-resident
 on page `0x17` (record 22, disk `0x06BB00`, `code/VICEROY/disasm_overlay_reseg/page_17.asm`):
-the resident loop reaches them via draw/msg thunks `0x181F:0x3FE/0x438/0x652` that
-resolve into that page — no element coordinates are readable from the resident
-segment. Porting those boxes requires measuring the named draw entries in page `0x17`
-or a running-game capture. **B** (redraw path + HUD layout via map_view.md); box
-element coords `TBD` (overlay page 0x17).
+the resident loop reaches them via draw/msg thunks `0x181F:0x3FE/0x438/0x652`
+(→ page-0x17 `func_06F594`/`func_06C23C`/`func_06F5F2`, thin text-state wrappers that
+set dialog-state words `[0x1f5c]/[0x1f5e]/[0x1f60]` and forward to the resident
+string/font primitives `0x191F:0x1A8`=`func_0789FA` / `0xD1D:0x117E`). **The box
+position is not a static literal** — it is per-message runtime state: BSS globals
+`[0x1f9e]`=X, `[0x1fa0]`=Y, `[0x1fa2]`=extent, **set from caller-supplied args by the
+setter `func_06EED4 @0x06EED4`** (args bp+6=X `→[0x1f9e]`, bp+8=Y `→[0x1fa0]`,
+bp+0xa=extent `→[0x1fa2]`) and **read & blitted by the message-box renderer
+`func_06EEEC @0x06F135`**, which pushes `[0x1fa0]/[0x1f9e]/[0x1fa2]` into the box-draw
+trampoline `0x3d08 → 0x191F:0x23C`=`func_06C520`, with the window fill via
+`0x191F:0x928`=`func_06F8FA`. **B** (redraw path + HUD layout via map_view.md;
+box-coord source globals + setter + renderer all byte-cited). Box element x/y is a
+live per-game/per-message value: read from `[0x1f9e]/[0x1fa0]` (extent `[0x1fa2]`),
+rendered by `func_06EEEC @0x06F135` via `0x191F:0x23C`; supplied by the calling
+context's centering math, **not a static constant** (overlay page 0x17).
 
 ## 5. Evidence
 - `func_005760` (file `0x5760`) — main turn loop: per-turn top `@0x5836`, continue-gate `[0x53C2]` `@0x5BED`, power loop `[bp-0x14]` 0..3, inline end-of-turn/year-advance `0x5A9D`. **B**

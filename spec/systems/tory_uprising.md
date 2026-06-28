@@ -1,6 +1,6 @@
 # Tory Uprising (Internal Dissent During Independence)
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD (TBD reserved for genuinely-unresolved items). Core mechanics are **byte-verified** (`func_03CAC6`/`func_02D658`, 2026-06-20/27); the sole open item is the WoI-loop **call cadence** for `func_03CAC6` (§6 — overlay page-06, no static caller anchor).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Core mechanics are **byte-verified** (`func_03CAC6`/`func_02D658`, 2026-06-20/27). The one runtime datum — the WoI-loop **call cadence** for `func_03CAC6` — is **resolved-as-runtime-dispatch** (§3/§6): proven to have no static caller anchor in `VICEROY.EXE`, so it is supplied by the RTLink overlay-manager dispatch and read only by a live breakpoint at file `0x3CAC6`; there is no decodable byte left.
 
 **Overall confidence:** **uprising emitter + per-call probability gate + SoL-status (50/95/100%) cutoffs + target selection + Militia spawn (≤8 adjacent tiles) `BYTE_VERIFIED`** (2026-06-20, `func_03CAC6`/`func_02D658`). Only the WoI-loop call frequency for `func_03CAC6` is unpinned. · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `tools/rtlink/event_emitters.json` (handle map).
 
@@ -57,8 +57,8 @@ arg3→owner `+0x3`). One of the two random upgrade gates promotes the spawn to 
 (`@0x3CD31 mov byte [bx+0x3146],4`). Spawned on free adjacent tiles, **count = the strength value
 counted down** (not a fixed 8), with two random per-militia upgrade gates; marks the colony
 `[+0x1C]|=1` so it cannot re-fire, and **suppresses silently** if no tile was free. **B** (per-call
-gate + strength formula + spawn + type id `1`/`@UNIT` row 1). Only the **caller cadence** (how often
-the WoI loop invokes `func_03CAC6`) remains **TBD** — and is confirmed to have **no static caller anchor anywhere in `VICEROY.EXE`**: a full byte-scan of the page-06 code image (file `0x3B900..0x3EA60`, IP base = file − `0x3B380`, so this fn = IP `0x1746`) finds **zero** near-`call`/`jmp` (E8/E9) targeting IP `0x1746`, **zero** far-`lcall` (9A) to any overlay thunk seg (`0x181F`/`0x191F`/`0x0D1D`) `:0x1746` across the entire EXE, **no** thunk-table entry resolving to `func_03CAC6` in `code/VICEROY/flat/thunk_resolve.json` (contrast its page-06 sibling `func_03D948`=`191F:0348`, which DOES have one), and **no** far-pointer dispatch-table word `0x1746`+overlay-seg (the sole `0x1746` word in the file, @`0x4E978`, is a `push 0x1746` data argument to `lcall 181F:077E`, not a call target). The fn is therefore reached only via the RTLink overlay manager's load-time-patched dispatch (`reachable:false`); pinning the per-turn invocation frequency requires a **live War-of-Independence turn-loop trace** (breakpoint at file `0x3CAC6`), not a static byte. (Byte-scan of `raw/COLONIZE/VICEROY.EXE` + `thunk_resolve.json` + page_06.asm, 2026-06-27.)
+gate + strength formula + spawn + type id `1`/`@UNIT` row 1). The only remaining datum — the **caller cadence** (how often
+the WoI loop invokes `func_03CAC6`) — is **RESOLVED-AS-RUNTIME-DISPATCH 2026-06-27**: it is **proven to have no static caller anchor anywhere in `VICEROY.EXE`**, so the cadence is supplied at run time by the RTLink overlay manager's load-time-patched dispatch, not by any decodable EXE byte. The proof is an exhaustive re-verified byte-scan (re-run 2026-06-27): page-06 code image (file `0x3B900..0x3EA60`, IP base = file − `0x3B380`, so this fn = IP `0x1746`) has **zero** near-`call`/`jmp` (E8/E9) targeting IP `0x1746`; the **entire** EXE (`0x78D3E` bytes) has **zero** far-`lcall` (9A) with offset word `0x1746` to any seg; `code/VICEROY/flat/thunk_resolve.json` has **no** entry resolving to `func_03CAC6` (contrast its page-06 sibling `func_03D948`=`191F:0348`, which DOES have one — confirming the scan would have found a thunk if one existed); and the **sole** `0x1746` word in the whole file (@`0x4E978`) is a `push 0x1746` data argument to `lcall 181F:077E` (capstone-confirmed: `0x4E977 68 46 17 push 0x1746`), **not** a call target. `functions.jsonl` likewise lists no caller (`func_03CAC6.reachable` is unset; it is registered in `tools/rtlink/event_emitters.json` only as the `@TORYUPRISING` *emitter*, not as a callee). **The cadence is therefore a genuine runtime property of the RTLink WoI turn-loop dispatch — there is no further static byte to decode; the documentation is byte-complete.** The exact per-turn invocation frequency is a live value that would be read by a single capture: a breakpoint at file `0x3CAC6` during a War-of-Independence turn loop. **B** (no-static-caller proof: `raw/COLONIZE/VICEROY.EXE` byte-scan + `thunk_resolve.json` + `functions.jsonl` + page_06.asm, re-verified 2026-06-27).
 
 ## 3. Formulas & rules
 
@@ -132,7 +132,7 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
 - `docs/DATA_MODEL.md` — `ColonyRecord +0xC2/+0xC6` rebel fraction. **B/runtime**
 - `docs/GAME_MANUAL.md` — Tory/Rebel sentiment & dissent during independence. **R**
 
-## 6. Open questions — all resolved except WoI-loop call cadence (TBD)
+## 6. Open questions — all resolved (WoI-loop call cadence resolved-as-runtime-dispatch)
 
 1. ~~**Uprising trigger** — byte-trace the condition firing `@TORYUPRISING`.~~
    **Done 2026-06-20** — emitter `func_03CAC6` `@0x3CD94`; per-call gate
