@@ -8,6 +8,7 @@
 #include "../ref.hpp"
 #include "../immigration.hpp"
 #include "../game.hpp"
+#include "../rules.hpp"
 #include "../unit.hpp"
 #include "../combat.hpp"
 #include "../natives.hpp"
@@ -191,6 +192,41 @@ static void test_combat() {
     CHECK(r.attacker_won && r.captured && r.loser_outcome == TREASURE, "treasure captured");
 }
 
+// --- RuleData seam: the modded-data invariant suite (seed). Proves the sim reads
+// its balance numbers from an injected RuleData and that the default is the
+// value-identical historical table. ---
+static void test_rules() {
+    std::printf("RuleData seam (data-driven stats):\n");
+    const RuleData& def = default_rules();
+
+    // (a) default ruleset is value-identical to the historical literals.
+    CHECK(def.units[SOLDIERS].attack == 2 && def.units[SOLDIERS].defense == 2, "default Soldiers");
+    CHECK(def.units[MAN_O_WAR].attack == 24 && def.units[MAN_O_WAR].defense == 24, "default Man-O-War");
+    CHECK(def.units[ARTILLERY].cargo == 0 && def.units[GALLEON].cargo == 6, "default cargo");
+    CHECK(def.terrain_defense[27] == 6 && def.terrain_defense[28] == 4 &&
+          def.terrain_defense[15] == 3 && def.terrain_defense[10] == 2, "default terrain defense");
+    // free-function fallbacks read the default ruleset.
+    CHECK(unit_stats(SOLDIERS).attack == 2 && terrain_defense_value(27) == 6, "fallbacks == default");
+
+    // (b) a modded ruleset changes sim output; the shared default is untouched.
+    RuleData mod = make_default_rules();
+    mod.units[SOLDIERS].attack = 4;          // buff Soldiers
+    mod.terrain_defense[28]   = 9;           // buff Hills
+    CHECK(unit_stats(mod, SOLDIERS).attack == 4, "modded unit_stats");
+    CHECK(terrain_defense_value(mod, 28) == 9, "modded terrain_defense");
+    CHECK(unit_stats(SOLDIERS).attack == 2 && terrain_defense_value(28) == 4,
+          "default isolated from mod");
+
+    // (c) the mod flows through combat strength resolution.
+    Unit atk; atk.type = SOLDIERS;
+    Unit def_u; def_u.type = SOLDIERS;
+    auto win = [](int, int) { return 1; };
+    CombatResult r = resolve_land(mod, atk, def_u, /*td*/0, 0, /*diff*/4, false, false, win);
+    CHECK(r.atk_str == 4, "modded attack folds into combat -> %d", r.atk_str);
+    r = resolve_land(atk, def_u, 0, 0, 4, false, false, win);
+    CHECK(r.atk_str == 2, "default combat unchanged -> %d", r.atk_str);
+}
+
 static void test_natives() {
     std::printf("natives:\n");
     CHECK(mission_threshold(1, false) == 3, "level1 threshold 3");
@@ -271,6 +307,7 @@ int main() {
     test_turn_loop();
     test_units();
     test_combat();
+    test_rules();
     test_natives();
     test_diplomacy();
     test_founding_fathers();

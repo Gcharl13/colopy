@@ -1,5 +1,6 @@
 // sim/combat.cpp -- see combat.hpp.
 #include "combat.hpp"
+#include "rules.hpp"
 
 namespace vc::sim {
 
@@ -8,22 +9,16 @@ double combat_odds(int atk_str, int def_str) {
     return total > 0 ? (double)atk_str / total : 0.0;
 }
 
+int terrain_defense_value(const RuleData& rd, int terrain_id) {
+    // The per-id "Defensive" values (incl. the forest 8..23 normalization where
+    // canonical Rain Forest id 15 / its duplicate 23 -> 3) are baked into
+    // rd.terrain_defense by make_default_rules(). Out-of-range -> 0.
+    if (terrain_id < 0 || terrain_id >= NTERRAIN) return 0;
+    return rd.terrain_defense[terrain_id];
+}
+
 int terrain_defense_value(int terrain_id) {
-    // terrain ids: 0..7 open/wetland base, 8..23 forest variants, 24..28 special.
-    switch (terrain_id) {
-        case 6: case 7: return 1;          // Marsh, Swamp
-        case 27: return 6;                  // Mountains
-        case 28: return 4;                  // Hills
-    }
-    if (terrain_id >= 8 && terrain_id <= 23) {
-        // func_006204 (@0x6204) normalizes raw forest ids 8..23 -> canonical 8..15
-        // via (id&7)|8 (16..23 are a duplicate encoding). Rain Forest = canonical
-        // id 15 (Defensive=3 per @TERRAIN, B); every other forest = 2.
-        // (Was wrongly keyed to id 23, so normalized Rain id 15 got 2 instead of 3.)
-        int canon = (terrain_id & 7) | 8;
-        return canon == 15 ? 3 : 2;
-    }
-    return 0;                               // open land / ocean / arctic / sea-lane
+    return terrain_defense_value(default_rules(), terrain_id);
 }
 
 int demote(int loser_type, int profession) {
@@ -44,13 +39,14 @@ bool is_capturable(int loser_type) {
     return loser_type == COLONISTS || loser_type == TREASURE || loser_type == WAGON_TRAIN;
 }
 
-CombatResult resolve_land(const Unit& attacker, const Unit& defender,
+CombatResult resolve_land(const RuleData& rd,
+                          const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
                           const RandFn& rng) {
     CombatResult res;
-    res.atk_str = unit_stats(attacker.type).attack;
-    res.def_str = unit_stats(defender.type).defense + terrain_defense + fort_bonus;
+    res.atk_str = unit_stats(rd, attacker.type).attack;
+    res.def_str = unit_stats(rd, defender.type).defense + terrain_defense + fort_bonus;
     if (attacker_human) res.atk_str += difficulty_bonus(difficulty);
     if (defender_human) res.def_str += difficulty_bonus(difficulty);
     if (res.atk_str < 0) res.atk_str = 0;
@@ -69,6 +65,14 @@ CombatResult resolve_land(const Unit& attacker, const Unit& defender,
         res.loser_outcome = demote(loser.type, loser.profession);
     }
     return res;
+}
+
+CombatResult resolve_land(const Unit& attacker, const Unit& defender,
+                          int terrain_defense, int fort_bonus, int difficulty,
+                          bool attacker_human, bool defender_human,
+                          const RandFn& rng) {
+    return resolve_land(default_rules(), attacker, defender, terrain_defense,
+                        fort_bonus, difficulty, attacker_human, defender_human, rng);
 }
 
 } // namespace vc::sim

@@ -25,7 +25,12 @@ struct UnitStats {
     int move_class;   // 99 = naval/free
 };
 
+struct RuleData;   // sim/rules.hpp -- the injected, data-driven parameter set.
+
 // Stats for a unit type (0..23); out-of-range -> a zeroed entry.
+//   unit_stats(rd, type)  reads from the injected ruleset (preferred).
+//   unit_stats(type)      falls back to default_rules() (value-identical).
+const UnitStats& unit_stats(const RuleData& rd, int type);
 const UnitStats& unit_stats(int type);
 
 struct Unit {

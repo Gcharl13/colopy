@@ -19,6 +19,7 @@ add_library(viceroy_sim STATIC
   sim/ref.cpp
   sim/immigration.cpp
   sim/game.cpp
+  sim/rules.cpp
   sim/unit.cpp
   sim/combat.cpp
   sim/natives.cpp
