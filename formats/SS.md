@@ -13,20 +13,69 @@ for the per-file role catalog.
 ## High-level structure
 
 ```
-[MADSPACK 2.0 header — 14 bytes]
-[per-section directory: N entries × 4 bytes]
-[per-section data — variable, FAB-compressed or raw]
+offset  size  field
+0       12    magic = "MADSPACK 2.0"   (loader checks first 8 bytes "MADSPACK")
+12       2    0x1A 0x00   (end-of-magic)
+14       2    section_count (u16, LE)  -- = 4 for a typical .SS
+16    10*N    directory: N entries, 10 bytes each
+B0    ...     section data -- FIXED START = 16 + 0xA0 reserved block (NOT 16+10*N);
+              sections concatenated in directory order, each `packed` bytes.
 ```
 
-The MADSPACK container holds **4 sections** for a typical .SS:
-- Section 0: sprite header (count, dimensions metadata)
-- Section 1: per-sprite descriptor table (offset, w, h, hotspot per sprite)
-- Section 2: palette (optional; some sheets reuse VICEROY.PAL)
-- Section 3: pixel data (color-keyed, indexed-color)
+> ⚠ **The section data starts at offset `0xB0` (`16 + 0xA0`)** — a 160-byte reserved
+> block follows the directory. (This is the single fact I missed for a long time:
+> reading from `16+10*N=56` instead made the directory padding look like "x86 code"
+> and hid the `FAB` magic that sits at `0xB0`.)
 
-Each section is independently FAB-compressed (LZ-style with bit-packed
-literals + back-references) or stored raw, depending on a per-section
-flag in the directory.
+**Directory entry layout — BYTE_VERIFIED 2026-06-20** (10 bytes each):
+```
+byte 0    flag    0 = stored RAW,  1 = COMPRESSED
+byte 1    mode    compression id (observed = 4 for every .SS section)
+byte 2..5 u32     unpacked_len (decompressed size)
+byte 6..9 u32     packed_len   (bytes of section data on disk)
+```
+Example (`BUILDING.SS`, verified): 4 entries —
+`(1,4,152,39) (1,4,768,502) (1,4,768,437) (1,4,35670,19836)`; data begins at
+offset 56 and the four sections are concatenated in order. `CC-00.SS`/`CC-12.SS` share
+identical sections 0–2 `(1,4,152,39)(0,4,16,16)(1,4,768,745)` (a common sprite header),
+differing only in section 3 (pixels) — confirming these are genuine sprite sheets.
+
+The **4 sections** of a typical .SS:
+- Section 0: sprite header (152 B; identical across sheets)
+- Section 1: per-sprite descriptor table (16 B raw on CC sheets, `flag=0`)
+- Section 2: **palette — 768 B = 256 RGB triples** (decompressed)
+- Section 3: pixel data (color-keyed, indexed-color; the bulk)
+
+✅ **Compression IS standard FAB — SOLVED 2026-06-20, working decoder in
+[`tools/ssdec.py`](../tools/ssdec.py).** Each `flag=1` section (at/after `0xB0`) is a
+**FAB stream** beginning with the magic `"FAB"` + a shift byte (observed **0x0C** = 12).
+My earlier "no FAB magic / mode-4 mystery" conclusion was **wrong** — it came entirely
+from reading sections at the wrong offset (`56` instead of `0xB0`); the `FAB\x0C` magic
+is right there at `0xB0`. `tools/ssdec.py` (ported verbatim from the byte-verified
+`fab_decompress`/`madspack_load` in `ghidra_export/VICEROY_decompiled.named.c`)
+**decodes all 28 `.SS` sheets, every section to its exact `unpacked` size**, the palette
+to 768 B, and renders correct sprites (CC-NN = the 25 `@FATHERS` portraits; BUILDING.SS
+= 48 building frames). FAB = an LZ77 bitstream (LSB-first 16-bit refill): a `1` bit = one
+literal byte; a `0` bit = a back-reference (short: 2 more bits → len 2–5, 1-byte offset;
+long: 2-byte offset/len with a `len==0` escape). The `mode` byte (`=4`) is *not* a codec
+selector — `flag` alone picks RAW(0) vs FAB(1).
+
+<details><summary>Superseded "not FAB / not locatable" notes (kept for history)</summary>
+
+> Earlier passes claimed the codec was a MADSPACK-internal `mode=4` scheme with "no FAB
+> magic", and that the loader was "overlay-resident, not statically locatable / needs a
+> dump". **All wrong**, for two compounding reasons: (1) the section data starts at
+> `0xB0`, not `56`, so the real `FAB`-prefixed bytes were never examined; (2) the
+> `MADSPACK` string lives in the loader overlay's *own* data segment (`DS:0x240A`), so a
+> resident-DGROUP xref search found nothing. The strings below have no DGROUP `imm` xref</details>
+
+Original investigation notes (retained): the resident-DGROUP strings `MADSPACK`
+`@0x1FDAA`, `BUILDING` `@0x1F891`, `phys0` `@0x1FD70`, `.SS` `@0x1EE64` have **no direct
+`imm` xref** (`0xFDAA`/`0xEE64`/`0xFD70` — verified
+2026-06-20), so the loader reaches them **indirectly via overlay pointer tables**;
+locating the decompressor therefore needs **RTLink overlay/pointer-table tracing**
+(`tools/follow_thunk.py` / `tools/find_callers.py`), the deep path this project uses
+elsewhere. `flag=0` sections (e.g. CC sheet section 1) are readable raw today.
 
 **Color key**: palette index 0 is transparent. Pixels reading 0 during
 blit are skipped.
@@ -34,6 +83,17 @@ blit are skipped.
 ---
 
 ## Reference implementation
+
+> ⚠ **TOOLING ABSENT (verified 2026-06-20):** the `mpskit` decoder referenced below
+> (`tools/mpskit/ss.py`, `madspack.py`, `fab.py`) **is not present in this repo**, and
+> the **FAB (LZ-variant) bitstream is not documented** here. The MADSPACK container is
+> parseable (14-byte `MADSPACK 2.0\x1A` header → `04 00` = 4 sections → per-section
+> `flag(1) mode(1) unpacked_len(u32) packed_len(u32)` + data), but **every `.SS` section
+> is FAB-compressed (flag `01`)**, so the descriptor table and pixels stay unreadable
+> until a FAB decoder is implemented (RE the codec from the `.SS` loader in `VICEROY.EXE`,
+> still TBD below). `tools/extract_visuals.py` shells out to the missing `mpskit` and so
+> silently emits **0 frames**. This blocks the BUILDING.SS / CC-NN pixel catalog
+> (`notes/SPRITE_CATALOG.md`).
 
 The byte-level format is implemented in
 [`mpskit/ss.py`](../../tools/mpskit/ss.py) and uses
@@ -62,9 +122,32 @@ The .SS loader function reads a filename string, calls fopen/fread,
 decompresses each section, and stores sprite descriptors in a
 SpriteSheet record at a DGROUP location.
 
-**Loader function**: TBD (Phase D — find via PUSH "phys0" / PUSH
-"icons" sites in VICEROY's startup code; the `func_0749E0` scenario
-loader pushes these names).
+**Loader function: LOCATED — `func_076E50_stream_open` (file `0x076E50`, 2026-06-20).**
+(My earlier "not statically locatable / needs a dump" claim was **wrong** — corrected.)
+The loader is in the overlay `0x0745F0..0x077A6A` (reconstructed in
+`viceroy_source/src/overlay/overlay_0745F0_077A6A.c`), and the reason the DGROUP
+string-search failed is now clear: **the `"MADSPACK 2.0\x1A"` magic lives in that
+overlay's *own* data segment at `DS:0x240A`/`0x2418`, not in the resident DGROUP** — so
+there is no `0xFDAA` xref to find. The whole MADSPACK stream subsystem is byte-verified:
+- **`func_076E50_stream_open`** — opens the archive: `sprintf` the path, `open`
+  (`0x181F:0xE86`) → handle at `obj+0x06`; reads the 16-byte header, **verifies the
+  magic via `0x0D1D:0x1084` (`@0x076F26`)**, binds the **entry table (stride `0xA`,
+  count at `obj+0x28`)** and sums each entry's size into `obj+0x14` (dword total). This
+  confirms the on-disk directory layout in §"High-level structure".
+- **`func_0775EC_stream_read_chunked`** (file `0x0775EC`) — buffered chunked transfer:
+  primes the section buffer via **`0x0D1D:0xB1C`** (`→ func_0100EC`, the C-runtime
+  buffered-stream refill) and copies out via `0x0D1D:0xE9D`, clamping chunks to
+  `0xF000`.
+- **`func_0776F4_stream_pump`** / **`func_077772_stream_op_dispatch`** drive a
+  per-record **callback vtable** (read cb `[0xA644]`, seek cb `[0xA63A]`, table
+  `[0x26CA..0x26E0]`); the actual **per-section decode transform** is one of those
+  vtable handlers inside the `0x0D1D` library segment.
+
+**Remaining (bounded library RE, no dump needed):** read the exact byte/bit transform
+in the `0x0D1D` decode vtable handler to write the codec. The codec is the **MADSPACK-2
+`mode=4`** scheme (NOT standalone FAB). **Do not guess it** — a candidate decoder is
+valid only if it expands every section to exactly its directory `unpacked_len` across
+all 26 sheets. The loader/stream layer above is fully byte-verified.
 
 ---
 

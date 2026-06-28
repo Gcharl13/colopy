@@ -155,7 +155,7 @@ The mapedit.c reconstruction (low trust) defines:
 - `FEATURE_NONE = 0x00`
 - `FEATURE_RIVER = 0x01` (from NAMES.TXT @OTHER_NAMES)
 - `FEATURE_ROAD = 0x02`
-- `FEATURE_LOST_CITY = 0xB0` (from COLONIZATION_TECHNICAL_REFERENCE.md memory map analysis)
+- `FEATURE_LOST_CITY = 0xB0` (UNVERIFIED — no primary source)
 
 **These values are speculative — they have not been confirmed against a non-zero feature layer in any of the four test maps.** The feature layer is populated only during gameplay, not in the shipped map files.
 

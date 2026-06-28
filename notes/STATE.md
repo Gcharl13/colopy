@@ -139,7 +139,6 @@ clean/
 ├── CLAUDE.md                            agent prime directive + roster
 ├── STATE.md                             ← this file
 ├── PROJECT_BOARD.md                     ordered backlog
-├── COLONIZATION_TECHNICAL_REFERENCE.md  accumulated team knowledge
 ├── SPRITE_CATALOG.md                    every sprite's role (sprite-cataloger)
 ├── MAP_FORMAT.md                        .MP byte format (map-format-decoder)
 ├── FUNCTIONS_INVENTORY.md               VICEROY.EXE functions (dos-disassembler)
@@ -355,8 +354,7 @@ When evidence conflicts, the higher-tier source wins. Documented in
 3. Extracted artifacts in `extracted/` (PNG / JSON conversions, byte-verified
    from sources 1-2).
 4. DOSBox reference screenshots in `reference/dos/` (visual ground truth).
-5. Reverse-engineered narrative docs (FUNCTIONS_INVENTORY.md, SPRITE_CATALOG.md,
-   COLONIZATION_TECHNICAL_REFERENCE.md, MAP_FORMAT.md).
+5. Reverse-engineered narrative docs (FUNCTIONS_INVENTORY.md, SPRITE_CATALOG.md, MAP_FORMAT.md).
 6. Project rulings (`docs/RULINGS.md`).
 7. The Python port (`colonize_sdl/`) — DERIVED, not authoritative.
 
@@ -392,8 +390,7 @@ When you resolve a cross-source conflict:
 1. Open `docs/RULINGS.md`.
 2. Add a dated entry: which sources disagreed, which one wins, why.
 3. If the ruling invalidates a fact in one of the catalog MDs
-   (SPRITE_CATALOG, MAP_FORMAT, FUNCTIONS_INVENTORY,
-   COLONIZATION_TECHNICAL_REFERENCE), edit those too.
+   (SPRITE_CATALOG, MAP_FORMAT, FUNCTIONS_INVENTORY), edit those too.
 4. If the ruling reverses something this STATE.md asserts, edit STATE.md.
 5. Move any artifact the ruling demoted into `_archive/` with a manifest
    entry.
@@ -407,8 +404,7 @@ When you resolve a cross-source conflict:
 - Does `PROJECT_BOARD.md` reflect what was completed / newly started?
 - If a conflict was resolved, is it written in `docs/RULINGS.md`?
 - If a new fact was verified, is it in `SPRITE_CATALOG.md` /
-  `MAP_FORMAT.md` / `FUNCTIONS_INVENTORY.md` /
-  `COLONIZATION_TECHNICAL_REFERENCE.md`?
+  `MAP_FORMAT.md` / `FUNCTIONS_INVENTORY.md`?
 - If the layout of `clean/` changed, did STATE.md keep up?
 
 If the answer to any of these is no, the work isn't done.

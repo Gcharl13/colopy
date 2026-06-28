@@ -12,7 +12,7 @@ once at game-start and pushed to the VGA hardware via I/O ports
 ## Layout
 
 ```
-[256 entries × 4 bytes each = 1024 bytes total]
+[256 entries × 3 bytes RGB (768 bytes; +256 trailing/unused) — CORRECTED 2026-06-27, was wrongly "×4" each = 1024 bytes total]
   Each entry:
     byte 0: red component   (0..63, VGA 6-bit)
     byte 1: green component (0..63)

@@ -1,5 +1,12 @@
 # C Reconstruction Completion Plan (autonomous engine)
 
+> **⚠️ SUPERSEDED 2026-06-18 by `/METHODOLOGY.md`.** This plan's premise — "the C
+> source is THE product" — is retired. Under the three-layer model, this C is
+> **Layer-1 evidence** feeding the **specification** (`/spec/`), and the modern
+> port is built from the spec. The priority-queue and per-target method below are
+> still useful as an *evidence-decoding* guide, but the goal is to feed
+> `spec/`, not to "finish" this tree. See `viceroy_source/ROLE.md`.
+
 **The C source under `viceroy_source/` is THE product.**
 Python (`colonize_sdl/`) and Godot (`colonization_godot/`) are deprioritized
 test harnesses — do NOT work on them under this plan.

@@ -25,7 +25,6 @@
  * @ref ../load_image/load_image_00AB2E_00C0D0.c   (SS loader chain)
  * @ref ../load_image/load_image_010B26_012A83.c   (TXT/MP loader)
  * @ref ../docs/ASSET_ROLES.md
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1.Assets
  * ============================================================================ */
 #include "viceroy_types.h"
 #include "iolib.h"

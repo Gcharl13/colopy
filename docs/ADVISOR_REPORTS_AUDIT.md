@@ -5,6 +5,15 @@ the VICEROY.EXE disassembly to its paint function, background image,
 title string, and data sources. Renderers can use this to produce
 pixel-faithful versions.
 
+> **Live visual ground-truth added 2026-06-25:** all 10 reports (F1–F10) captured from the
+> running game — see `docs/screens/reports/` + its README. The real `REPORTS` menu order is
+> F1 Terrain / F2 Religious / F3 Continental Congress / F4 Labor / F5 Economic / F6 Colony /
+> F7 Naval / F8 Foreign Affairs / F9 Indian / F10 Score. Data-rich captures confirm live field
+> values: **F5 Economic** (Tons/Gold/Bid/Ask × 16 commodities), **F8 Foreign Affairs** (4
+> leaders + Rebels/Tories), **F10 Score** (Citizens +6 / Congress +0 / Gold +1 / Total 7).
+> Reports close via the **OK** button (not Esc); an F-key inside a report pages that report's
+> sub-views (e.g. Economic "European Trade" → "Cargo in Port"). Captured via `tools/drive_game.sh`.
+
 **Source files searched**
 - `code/VICEROY/disasm/` (1,243 .asm files)
 - `code/COLONIZE/disasm/` (1,245 .asm files, recol overlay)
@@ -37,6 +46,31 @@ The F-key dispatcher lives inside the large function **`func_0x2b743`**
 
 Citation: `code/VICEROY/disasm/orphans_overlay.asm`
 lines 13818..13898 (file offset 0x2BDEA..0x2BECF).
+
+> **CORRECTION (2026-06-25, byte-verified):** the "Paint func file offset"
+> column above is WRONG — it resolved the `0x191F:0x3xx` thunks against
+> overlay **page_02**'s code base. The thunks are type-A (page-directory
+> patched) and their trailer carries **page_id = 0x05**. Resolved with the
+> documented formula `target = page.code_offset + (ljmp_seg<<4) + jmpf_off`
+> (`typeA_thunk_targets.json`), with page_05 `code_offset = 0x37340`
+> (`disasm_overlay_reseg/page_05.asm` header), the REAL paint functions are:
+>
+> | F-key | Thunk | jmpf_off | Real paint func (page_05) |
+> |-------|-------|----------|---------------------------|
+> | F2 | 0x191F:0x40C | 0x0618 | **func_037958** (184 B) |
+> | F3 | 0x191F:0x3FE | 0x06D0 | **func_037A10** (1646 B) |
+> | F4 | 0x191F:0x3F0 | 0x10D8 | **func_038418** (864 B) |
+> | F5 | 0x191F:0x3E2 | 0x1710 | **func_038A50** (1155 B) |
+> | F6 | 0x191F:0x3D4 | 0x1ED8 | **func_039218** (475 B) |
+> | F7 | 0x191F:0x3C6 | 0x220C | **func_03954C** (827 B) |
+> | F8 | 0x191F:0x3B8 | 0x2548 | **func_039888** (1551 B) |
+> | F9 | 0x191F:0x41A | 0x010A | **func_03744A** (1294 B) |
+>
+> All eight are EXACT function-entry hits. F8 lands on **func_039888**, the
+> very function the F8 section below already cites for its prereq check —
+> independent confirmation that page_05 is correct. Verified by
+> `tools/rtlink/xref.py callers 0x037958` (reaches func_037958 only via
+> 0x191F:0x40C from the three dispatchers 0x2385D / 0x2BDFB / 0x355AE).
 
 The F-key handler pushes the **current player power_idx** (from
 `word ptr [0x8542]` byte `+0x1a`) as the sole argument to each paint
@@ -154,31 +188,90 @@ REPORT8↔F8 is `# GUESS — needs visual verification by running each
 paint function and matching the loaded PIK`. The renderer artwork
 visually matches each advisor's domain.
 
+**PARTIAL byte-verification (2026-06-25):** each paint function in page_05
+reaches `load_report_pik` (func_037340) via the near-trampoline at reseg
+IP `0x34C3` (= `0x191F:0xF4A`) and pushes a **literal report number** just
+before it. Those literals are now read directly from the code:
+- **F2 func_037958** pushes **2** (`page_05.asm:581`) => **REPORT2.PIK** ✓
+- **F5 func_038A50** pushes **5** (`page_05.asm:2058`) => **REPORT5.PIK** ✓
+- **F9 func_03744A** pushes **1** (`page_05.asm:109`) => **REPORT1.PIK** ✓
+  (resolves the prior "REPORT1 or REPORT9" ambiguity: F9 uses REPORT1).
+The remaining reports' literals can be read the same way at their
+`push <n> / call 0x34C3` sites.
+
 ---
 
 ## Per-report details
 
-### F2 — Religious Adviser Report
+### F2 — Religious Adviser Report  — **BYTE-CITED (upgraded 2026-06-25)**
 
-- **paint_func**: file `0x025F18`..end of orphan range `0x026021` (~265 bytes)
-- **F-key**: F2 (scan 0x13C)  
-- **menu-letter**: 'A'
-- **background**: REPORT2.PIK (`# GUESS — render & visually confirm`)
-- **title text**: LABELS.TXT @MISC[45] = "RELIGIOUS ADVISER REPORT"
-- **title font/color**: FONTTINY in dark sepia (per `UI_RENDER_MAP.md`
-  TEXT_DARK=(40,24,16))
-- **title position**: x=center, y=4 (`# GUESS — based on existing render_report.py`)
-- **body structure**: per-colony grid showing crosses + colonist
-  counts (per `SESSION_UI_CATALOG.md`)
-- **data source**: 
-  - For each colony C (iterate via `LCALL 0x181F:0x09E6 = set_current_colony`):
-    - ColonyRecord +0x1F (size) 
-    - ColonyRecord +0x70 + N (per-citizen profession byte) — check for missionary skill
-    - PowerRecord per-colony bell rate
-- **footer**: typically "OK" button (LABELS.TXT @MISC[61] = "OK") or "(press any key)"
-- **TBD**: the body row template — needs deeper trace of file 0x025F18 code.
-  The code calls `LCALL 0x181F:0x09E6` (set_current_colony) which means
-  it iterates colonies. Row layout for each colony unconfirmed.
+This is the simplest report and is now fully traced through the 0x191F
+overlay. **Paint function = `func_037958`** in overlay page_05
+(`disasm_overlay_reseg/page_05.asm` lines 576..643, file
+`0x037958..0x037A0F`, 184 bytes, reseg IP 0x0FC8). Reached ONLY via thunk
+`0x191F:0x40C` from the three dispatchers (confirmed by
+`xref.py callers 0x037958`). The whole function decompiles to:
+
+```c
+void paint_F2_religious(int power_idx) {        // [bp+6] = power_idx
+    set_current_power(power_idx);               // lcall 0x181F:0x582 -> func_030550
+    load_report_pik(2);                         // call 0x34C3 -> 0x191F:0xF4A -> func_037340 ; "REPORT"+2 => REPORT2.PIK
+    pik_blit(handle[0x2DF6], 0,0x140,5,0x90);    // lcall 0x181F:0x100 -> func_002BC8 (full-screen 320-wide blit)
+    bx = pwr->f2e; dx = pwr->f30;                // [0x84FC]+0x2E, +0x30
+    blit_sprite(/*idx*/0x39, bx, dx, 1,0,0,0x12C); // lcall 0x181F:0x236 -> func_002EE4 (sprite #57 = progress graphic)
+    if (g_5383 & 0x20) {                         // test byte [0x5383],0x20
+        sprintf(buf, "(%d of %d)", pwr->f2e, pwr->f30);   // 0x11A9 via lcall 0xD1D:0xB48
+        draw_text(buf, /*x*/0x0A, /*y*/0x19, /*color*/0x0F); // lcall 0x181F:0x13C -> func_002B38
+    }
+    paint_okbar(-1,-2);                          // call 0x34A0 -> 0x191F:0xEE8 -> func_0373CA
+    lcall 0x181F:0xE2; lcall 0x181F:0x3C0;       // present / flush page
+}
+```
+
+- **F-key**: F2 (scan 0x13C); **menu-letter**: 'A'
+- **background**: **REPORT2.PIK** — now **byte-cited** (was GUESS). `load_report_pik`
+  (func_037340) concatenates the data-segment string at `0x11A2` = `"REPORT"`
+  (overlay data base = file `0x1D9A0`, so `0x11A2` -> file `0x1EB42`) with the
+  literal arg **2** pushed at `page_05.asm:581`, giving `"REPORT2"`.
+- **title text**: LABELS.TXT @MISC[45] = "RELIGIOUS ADVISER REPORT". NOTE:
+  func_037958 does **not** call the title-bar painter (`0x191F:0x8B2`) that the
+  other reports use — the F2 heading is supplied by the REPORT2.PIK artwork /
+  an as-yet-unisolated callee (see TBD in Open work).
+- **body element (FULL STATIC FIELD LAYOUT, byte-verified 2026-06-25)**: this is
+  the ONLY text field func_037958 draws (it makes no title-bar-painter call — the
+  "RELIGIOUS ADVISER REPORT" heading is baked into REPORT2.PIK artwork). When the
+  live flag `byte [0x5383] & 0x20` is set (`test byte ptr [0x5383],0x20 / je`,
+  page_05.asm lines 611-612) the report sprintf's the format string
+  **`"(%d of %d)"`** (overlay data offset `0x11A9` -> file `0x1EB49`; the EXE bytes
+  at 0x1EB49 read `(%d of %d)\0`, directly verified) into the stack buffer
+  `[bp-0x28]`, then draws it via `lcall 0x181F:0x13C`.
+  - **Draw primitive (byte-cited):** thunk `0x181F:0x013C` resolves (type-B,
+    `thunks_resolved.json`) to resident **func_002B38** (file 0x002B38). Its arg
+    order is decoded from func_002B38_unknown.asm: `di=[bp+0xa]`=x, `[bp+0xc]`=y,
+    `si=[bp+0xe]`=color, far string ptr at `[bp+6]/[bp+8]`. It sets ink color via
+    `lcall 0xC28:0xA` then draws text via `lcall 0xC11:0xC` (using globals
+    `[0x89e]`/`[0x8a0]` and the text-region pointer `[0x2da8]`).
+  - **Pen position / color (byte-cited STATIC win):** the call site pushes
+    `0xf, 0x19, 0xa` then `ss:[bp-0x28]` (page_05.asm lines 621-627), so mapping
+    to func_002B38's args gives **x = 10 (`0x0A`), y = 25 (`0x19`),
+    ink color index = 15 (`0x0F`)**. No font-id is passed — the primitive uses the
+    renderer's current/default font (font selection is not an argument here; TBD
+    which font global it reads).
+  - **LIVE figures (TBD — runtime):** the two `%d` args are
+    `word [0x84fc]+0x2E` and `word [0x84fc]+0x30` (page_05.asm lines 613-615);
+    `[0x84fc] = power_idx*0x13C + 0x8808`, i.e. **PowerRecord +0x2E / +0x30**
+    (immigration-cross progress / threshold). Values exist only at runtime — a
+    port reads those two PowerRecord words. Exact field semantics: data-model TBD.
+- **domain graphic**: sprite index **`0x39` (57)** blitted via
+  `lcall 0x181F:0x236` = func_002EE4 (sheet ptr `[0x83E]/[0x840]`), positioned
+  from `PowerRecord +0x2E/+0x30` (runtime-driven extent — TBD exact rect).
+- **footer**: drawn by **func_0373CA** (the `0x191F:0xEE8` teardown/OK bar),
+  called with (-1,-2) which the routine remaps to (0x91,0x11E); it draws a box
+  (`0x181F:0xCE`) + an icon (`0x181F:0x100`). Final y derives from a runtime
+  sheet-height byte (`es:[0x89E]>>1`) so the exact bar rect is runtime TBD.
+- **PowerRecord access confirmed**: `set_current_power` (func_030550) sets
+  `[0x84FC] = power_idx*0x13C + 0x8808`, byte-verifying stride **0x13C (316)**
+  and base **DGROUP:0x8808**.
 
 ---
 
@@ -230,20 +323,83 @@ function call chain is the new finding.
 - **menu-letter**: 'D'
 - **background**: REPORT5.PIK (`# GUESS`) — scales+currency artwork
 - **title text**: LABELS.TXT @MISC[65] = "ECONOMIC ADVISER REPORT"
-- **layout (per `fullscreen_advisor_lower.png`)**: x=0, y=124, w=244, h=68 (lower table)
-  + top body area for currency display
-- **body structure**:
-  - Treasury gold display (PowerRecord +0x2A)
-  - Tax rate (PowerRecord +0x01) — LABELS.TXT @MISC `Tax:` (@CTITLE Tax)
-  - Per-commodity sale prices + market pool
-  - "TOTAL UPKEEP" line (LABELS.TXT @MISC[107])
-  - "(Building Upkeep)" line (LABELS.TXT @MISC[106])
-- **data source**:
-  - PowerRecord +0x4C+i (per-good market price, i=0..15)
-  - PowerRecord +0x5C + i*2 (per-good market pool)
-  - PowerRecord +0x2A (gold)
-- **footer**: "OK"
-- **TBD**: precise row count and (x,y) — needs deeper code trace
+- **REAL paint function (byte-verified 2026-06-26)**: **`func_038A50`** in overlay
+  page_05 (`disasm_overlay_reseg/page_05.asm` reseg IP 0x20C0, file
+  `0x038A50..0x038ED2`, 1155 B; IP = file − 0x036990 per page_05 header
+  code_offset 0x037340). This is the page_05 target the F5 thunk resolves to
+  (already in the F-key table above); the old `file 0x027010` was the pre-reseg
+  overlay-base mis-resolution. It pushes report-PIK literal **5** at `0x038A60`
+  (`push 5 / call 0x34c3` => REPORT5.PIK) and calls `set_current_power`
+  (`0x181f:0x582`) with `[bp+6]=power_idx`.
+
+- **16-COMMODITY TABLE (Tons / Gold / Bid Price / Ask Price), byte-verified +
+  oracle-confirmed 2026-06-26 against `dbx/rep_economic.bin`:**
+  - **Row loop bound = 16.** Counter `[bp-0x84]` runs 0..15; loop guard at
+    `0x038E3B`: `cmp word ptr [bp-0x84],0x10 / jge 0x2514` (file 0x038E40).
+    Start y `[bp-0x5a]=0x21` (33) set at `0x038BE2`.
+  - **Row y-stride = 8 px.** At loop tail `0x038E33`: `add word ptr [bp-0x5a],8`.
+  - **Column header row** (drawn once, before the loop, all at y=0x19=25,
+    color index 0x92=146, via text primitive `0x181f:0x13c` = func_002B38):
+    - Name/Commodity col: x-anchor 0x4c(76), right-justified to 0x90 — `0x038AE8`..`0x038B02`
+    - Tons/Gold header: x=0x90 (144) — `0x038B19`..`0x038B47` (right-justified via 0x181f:0x204)
+    - Bid header: x=0xaa (170) — `0x038B5E`..`0x038B74`
+    - Ask header: x=0xdc (220) — `0x038B8B`..`0x038BA2`
+    (header label TEXT = **global LABELS string-blob entries** —
+    RESOLVED 2026-06-26, mechanism + loader + indices: the resolver
+    `func_002462` (`0x181F:0x22` → `0:0x62`, file 0x002462) walks a contiguous null-separated
+    string blob at far-ptr `[0x2d42:0x2d44]` (live base phys `0x4c050`), `repne scasb` skipping
+    `index` NUL-terminators, and the mapping is **DIRECT: `string = blob[index]`** (no offset).
+    The header **LOADER** is `common_call_270x` = **`func_002992`** (`0x181F:0x16e`, file 0x002992):
+    it pushes the source-index arg `[bp+8]` into `LCALL 0:0x62` (= func_002462) to get a far
+    string ptr, then strcpy's it into the dest buffer via `LCALL 0xd1d:0x11b4` — so every header
+    cell goes index → func_002462 (DIRECT) → buffer → draw. VALIDATED on two independent known
+    strings: global `0x153`=339 → `blob[339]="No Ships In Port"`; europe `[0x2DD0]`=338 →
+    `blob[338]="Bound For"`. In this blob the four header labels are **`blob[386]="Tons"`,
+    `[387]="Gold"`, `[531]="Bid Price"`, `[532]="Ask Price"`** (DIRECT-read from `rep_economic.bin`,
+    matching the rF5 screenshot headers exactly). The **four header source globals are now named**
+    (page_05 `func_038A50`): `[0x2e2e]` (commodity/name col, x-anchor 0x4c, @0x038AD8), `[0x2e30]`
+    (Tons, x=0x90, @0x038B09), `[0x2f50]` (Bid, x=0xaa, @0x038B4E), `[0x2f52]` (Ask, x=0xdc, @0x038B7B).
+    **CORRECTION + residual TBD:** the snapshot global *values* do not all map DIRECT to the
+    displayed string: `[0x2e30]`=386→`blob[386]="Tons"` is exact, but `[0x2f50]`=530 while the
+    displayed Bid header is `blob[531]`, and `[0x2f52]`=531 while the displayed Ask header is
+    `blob[532]` (i.e. Bid/Ask read as glob+1, Tons as glob+0; `[0x2e2e]`=385→`blob[385]="K"`).
+    The label IDENTITY, the DIRECT mechanism, the loader (func_002992), and the source globals are
+    **solid**; the exact global→index rule (why Bid/Ask are +1) is **TBD** — needs an F5-mode trace
+    reading the live `[bp+8]` into func_002462, or the writer that sets these four globals.)
+  - **Per-row draws** (commodity name + 4 numbers; func_002B38 arg order =
+    push color,y,x,ss,&str — decoded from `0x002B3D mov di,[bp+0xa]` etc.):
+    1. **Name**: left x=`[bp-0x58]`=2, color 0x92, y=row+2; string from pointer
+       table `[bx-0x6840]` (DGROUP +0x97c0), bx=commodity<<1 — `0x038E4C`.
+    2. **Tons**  (col 1 number): DWORD table `[bx-0x773c]` (DGROUP +0x88c4),
+       bx=(power_idx*0x4f + commodity)*4 — `0x038E7B`..`0x038E8E`; right-justified
+       to anchor `[bp-0x86]` (starts 0x46).
+    3. **Gold**  (col 2 number): DWORD table `[bx-0x777c]` (DGROUP +0x8884),
+       same index — `0x038C9A`..`0x038CB0`.
+    4. **Bid Price**: `lcall 0x191f:0x9ea` => **func_030590** at `0x038D83`,
+       right-justified, column anchor `[bp-0x86]` advanced to 0xaa(170).
+    5. **Ask Price**: `lcall 0x191f:0xc3e` => **func_030566** at `0x038DE1`,
+       anchor advanced +0x32 to 0xdc(220).
+
+- **BID/ASK DATA SOURCE = the European market price array PowerRecord +0x4C+i
+  (byte, i=0..15), byte-verified AND oracle-confirmed:**
+  - **Bid = func_030590** (`0x191f:0x9ea`, file 0x030590): `al = byte
+    [0x84fc]+0x4c+commodity; al -= 1; if <0 -> 0`  (`0x03059C` / `0x0305A0` dec /
+    `0x0305A1` jns;sub ax,ax).
+  - **Ask = func_030566** (`0x191f:0xc3e`, file 0x030566): `al = byte
+    [0x84fc]+0x4c+commodity + byte spread_const[commodity*9]`, clamp >=0; spread
+    table at DGROUP -0x6900 (=+0x9700), stride 9  (`0x030575 mov al,[bx-0x6900]`
+    bx=commodity*9; `0x030583 mov al,[bx+si+0x4c]`; `0x030587 add ax,cx`).
+  - **Oracle check (live `rep_economic.bin`, [0x84fc]=0x8808):** computing
+    `bid = PowerRecord[+0x4c+i]-1` and `ask = PowerRecord[+0x4c+i]+spread[i*9]`
+    reproduces the rendered report EXACTLY: Food 0/8 (base 1,spread 7), Sugar 5/7
+    (base 6,spread 1), Silver 19/20 (base 20,spread 0), Muskets 2/3 (base 3,
+    spread 0). All four anchor values match.
+
+- **footer**: "OK" bar via `call 0x34a0` (`0x191f:0xee8` teardown) at `0x038EA8`.
+- **TBD**: literal header words for indices 385/386/530/531; Tons-vs-Gold table
+  identity (both DWORD tables read 0 in this snapshot); exact per-value left x
+  (numbers are right-justified, so left x is glyph-width/runtime — right edges
+  are byte-cited above).
 
 ---
 

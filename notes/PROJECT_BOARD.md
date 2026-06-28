@@ -166,7 +166,13 @@ themselves:
   documents 42 buildings with upgrade chains. Build-menu cost
   table verified for 15 first-tier buildings from session frame
   1310206750. Sprite index → PEDIA index alignment documented in
-  `GAME_INDEX_TABLES.md`.
+  `GAME_INDEX_TABLES.md`. **BLOCKER identified 2026-06-20:** the remaining
+  per-sprite→building mapping needs the **decoded BUILDING.SS pixels**, but the
+  `mpskit` FAB/MADSPACK decoder (`tools/mpskit/*`) is **absent from the repo** and the
+  FAB codec is **undocumented** — every `.SS` section is FAB-compressed, so the sheet
+  can't be unpacked without first **implementing a decoder** (RE the codec from the
+  `.SS` loader in `VICEROY.EXE`). Verified the container is genuine (MADSPACK 2.0,
+  4 sections, SHA matches `MANIFEST.md`). This is a decoder-build task, not inspection.
 - **SPRITE-C**: Nation-tinting palette-index range for CC-NN not known.
   (CC-NN are FF portraits — nation-tinting probably applies to
   per-power flag sprites ENGLND1/FRANCE1/SPAIN1/DUTCH1 instead.)
@@ -211,7 +217,9 @@ Asset library full identification 2026-05-05:
 - ICONS commodity range (slots 12-27 for 16 goods)
 - ICONS slot 043 = boycott red-X overlay marker
 
-Renderer geometry spec consolidated in `RENDERER_GEOMETRY.md`.
+Renderer geometry now lives byte-cited in `viceroy_source/docs/SCREEN_LAYOUTS.md` +
+the per-screen `spec/ui/*.md` (the older overlay-measured `RENDERER_GEOMETRY.md` was
+removed in the 2026-06-22 cleanup).
 
 - **AMB-7** (SPRITE_CATALOG): PHYS0 sprite indices 0, 16, 100 are 1×1 placeholders
   in the current extraction. Investigate whether mpskit has options to recover

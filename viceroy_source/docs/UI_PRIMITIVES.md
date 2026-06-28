@@ -17,6 +17,59 @@
 
 ---
 
+## 0a. Shared WIDGETS — cross-screen "recognize once" index (2026-06-23)
+
+Several `0x181F:NNN` verbs are not one-screen helpers but **reusable UI widgets**: the
+same routine renders the "same kind of thing" on many screens. Recognise these once and
+**cite the verb** instead of re-deriving a per-screen mechanism (this is the lesson from the
+"is the bell row a fill bar?" trap — it is the shared `0x236` indicator, not CC-specific).
+
+| verb | widget | screens / call sites that use it |
+|------|--------|----------------------------------|
+| **0x236** `func_002EE4` | **proportional filled/empty icon strip** (count fitted to a fixed span; pitch `(span−w)/(count−1)` clamped `[1,w+1]`; overlaps when count large) — §0x236 | colony field-production yields (`@0x02665D/8A/0x026700`), colony building indicator (`@0x026EF7`), colony bottom panel (`@0x027CCC`), **F2 Religious crosses** (`@0x0379B4`, filled `0x39`), **F3 CC bells** (`@0x037BF5`, filled `0x3F`) — **7 sites** |
+| **0x2BC** `func_00386A` | **per-unit info panel** (UnitRecord-indexed: icon + colour-span stat bars + text) — §0x2BC | Europe ship-status row (`@0x0313C2`) + in-port unit (`@0x031A6E`), colony field/plaza/SoL panels (`@0x026639/0x02794A/0x028058`), **F6 Colony** (`@0x039297`) + **F7 Naval** (`@0x039586`), popup/menu engine (`@0x06DF9E`) — **20 sites** |
+| **0x222 + 0x22C** `func_0033F2`/`func_003104` | **enqueue row item → flush a centred icon+value+colour row** (the three parallel accumulators `[0x2CCE]/[0x2CE2]/[0x2CF4]`) — §0x222/§0x22C | colony panels (`@0x0273D7/0x02762B/0x0276A1/0x027738`) **and F3 CC** rebel/tory + REF + FF-list rows (`@0x037D68/0x037E6D/0x037F4F`) — **7 sites** |
+| **0x100** `func_002BC8` | **centre text in a box** | menu-bar label line, dialog OPTION rows, **report titles**, colony minimap & Europe dock **empty-panel captions**, and 70+ more sites |
+| **0x13C** `func_002B38` | **draw text at explicit (x,y)** | every screen's body/number text |
+| **`[0x2DD0]` caption** | **shared "empty panel" caption string** (fetched `0x22`→centred `0x100`) | colony surrounding-minimap empty state (`@0x027DD7`) **and** Europe dock "No Ships In Port" (`@0x031501`) — same DGROUP string id on both screens |
+
+> **Rule for screen specs:** when a screen draws "a count as a row of icons", "a unit
+> info panel", "a centred row", or "an empty-panel caption", reference the verb above and
+> link here — do **not** invent a screen-local bar/grid. The game has **no continuous
+> fill bars anywhere**; every "how much" indicator resolves to `0x236`/`0x2BC`/`0x22C`,
+> all of which bottom out in the single-sprite blit `0xC36:0x0A` (= `0x254`).
+
+> **Common verb-misread traps (do not repeat across screens):**
+> - **`0x181F:0x22` is NOT a fill_rect** — it is `func_002462`, a packed-string **fetch**
+>   (skip-N-strings, no draw). When you see `push <id>; lcall 0x22; push dx; push ax;
+>   lcall 0x100`, that is **fetch report/label string → centre it**, not a filled bar.
+> - **`0x181F:0xE2` is NOT a 1-px rule/frame** — it is `func_00DB3A`, a **clipped sprite
+>   blit** (sheet `[0x2DA8]`). "Screen outer rule" / "panel frame" pushes are compositing a
+>   **sprite strip**, not drawing a line. The real **line/divider** verb is `0x181F:0xCE`
+>   (37 sites; colony field dividers, F4/F8 separators) or overlay `0x191F:0x8BC`.
+> - **The real rectangle fill is `0x181F:0x444`** (`func_00DCF6`, 25 sites — colony
+>   `func_02633E`, Europe `func_030D86`); the solid colour-span fill is `0x181F:0x484`.
+> - **WOODFRAM frame `0x181F:0x510` has ONE caller** (colony scene `func_026374` @0x0263D6);
+>   popups/panels do **not** use it — their frame is the WOODFRAM/WOODPANL composite via the
+>   popup engine. So "0x510 frame" is colony-scene-specific, not shared chrome.
+
+> **`0xE2` / `0xCE` full call-site audit (2026-06-23) — both are shared, used on every screen.**
+> Counted from the disassembly (`lcall 0x181F:NNN`):
+>
+> | verb | what it does | total | colony | europe | reports | map/HUD | title/menu | popup | other |
+> |------|--------------|------|--------|--------|---------|---------|-----------|-------|-------|
+> | **0xE2** | clipped **sprite** blit (edge/strip composite) | **87** | 13 | 8 | 17 | 12 | 15 | 7 | 15 |
+> | **0xCE** | **line/rule** draw (ordered endpoints → plot) | **49** | 23 | 3 | 1 | 6 | 2 | 5 | 9 |
+>
+> Takeaways: `0xE2` is the universal "composite a frame/edge **sprite**" verb (every screen,
+> heaviest in reports + title screens); `0xCE` is the universal **line/divider** verb,
+> heaviest by far on the **colony screen** (23 dividers/edges). Neither is a per-screen
+> invention. A spec that says "panel outline / separator / bottom rule" should resolve to
+> `0xE2` (sprite) or `0xCE` (drawn line) — and the colony composer is flat fills + `0xCE`
+> lines + `0xE2` edge sprites, **no bevels**.
+
+---
+
 ## 0. How `0x181F:NNN` resolves (the addressing model)
 
 `0x181F` is the **first of three overlapping link-time windows onto the single
@@ -69,7 +122,7 @@ disassembly `func_01A5F0_rtlink_overlay_thunk_table.asm`.
 | 0x181F off | Function (file) | Role | Stack signature (caller pushes, far/Pascal order) | Align / sheet / colour |
 |---|---|---|---|---|
 | **0x022** | `func_002462` | **String scan (`memchr`/`strlen`-helper)** — *NOT a fill-rect* | `[bp+6]` = max count; buffer at `[0x2D42:0x2D44]`; `REPNE SCASB` | — (no draw) |
-| **0x0CE** | `func_00E0A2` | **min/order-2 clamp helper** — *NOT a glyph draw* | regs `ax`,`bx`; returns ordered low/high | — (no draw) |
+| **0x0CE** | `func_00E0A2` | **LINE / rule draw** (orders the two endpoints `ax↔bx`, `[bp+8]↔[bp-4]`, then **plots pixels via `0xBBC:0xC` ×2**) — **CORRECTED 2026-06-23: it DOES draw** (earlier "no-draw clamp" read only the min/max prologue; the helper `0xBBC:0xC` does `mul bx`→row offset, `mov es:[di],al`) | `ax/bx`=x0/x1, `[bp+8]/[bp-4]`=y0/y1, color `[bp+6]`, sheet `[bp+0xA..0x10]` | line/edge into the framebuffer |
 | **0x0E2** | `func_00DB3A` | **Clipped sprite blit** (cursor-hidden) — *NOT a horizontal rule* | `[bp+6],[bp+8],[bp+0xA]` coords/idx; `dx`→`di`; sheet `[0x2DA8]`; `RETF 6` | sprite, sheet `[0x2DA8]` |
 | **0x100** | `func_002BC8` | **CENTER text in box** (horizontal) | `[bp+6]`=surface, `[bp+8]`=string, `[bp+0xA]`=box_x, `[bp+0xC]`=boxW, `[bp+0xE]`,`[bp+0x10]`=font/colour | **H-centred**; FONTTINY |
 | **0x114** | `func_002AC6` | **Measure string width** (returns width−1) | `[bp+6]`=string, `[bp+8]`=?, `[0x89E]/[0x8A0]`=font | FONTTINY |
@@ -80,7 +133,7 @@ disassembly `func_01A5F0_rtlink_overlay_thunk_table.asm`.
 | **0x1C8** | `func_002CE0` | **CENTER text in box** (style variant of 0x100, more font args) | `[bp+6]`=surface, `[bp+8]`=string, `[bp+0xA]`=box_x, `[bp+0xC]`=boxW, `[bp+0xE..0x12]`=font/style | **H-centred** — *NOT a title sprite tiler* |
 | **0x222** | `func_0033F2` | **ENQUEUE (sprite,value,colour)** into row arrays (no draw) | `ax`=value→`[0x2CF4]`, `[bp-4]`=sprite→`[0x2CCE]`, `[bp-2]`=colour→`[0x2CE2]`, INC `[0x2CE0]` | — |
 | **0x22C** | `func_003104` | **FLUSH row**: measure each sprite (sheet `[0x83E]`+0x3E), lay out + **centre** the row | drains `[0x2CE0]` items; widths from `[0x83E]+si*12+0x3E` | **H-centred row**; sheet `[0x83E]` |
-| **0x236** | `func_002EE4` | **Sprite-strip GAUGE**: tile filled-sprite then empty-sprite `0x38` along x | `ax/bx/dx`(in)=fill-sprite/count/max; `[bp+0xE]`=x, `[bp+0x10]`=y | sprite strip, sheet `[0x83E]`/`[0x2DA8]`; filled idx = arg, empty idx = **0x38 (56)** |
+| **0x236** | `func_002EE4` | **Proportional sprite-strip indicator** (shared, 7 sites): `count` filled/empty icons fitted to a fixed span at pitch `(span−w)/(count−1)` clamped `[1, w+1]` (overlap when count large) — NOT a fill bar. See detail below. | `ax/bx/dx`(in)=fill-sprite/count/max; `[bp+0xE]`=x, `[bp+0x10]`=y, width arg `[bp+0xC]` | filled idx = arg, empty idx = **0x38 (56)**; used by colony field/building panels, CC bells, reports |
 | **0x254** | `func_00E76A` | **Blit ONE sprite** (with H-mirror via high bit) | `bx`=sprite-record ptr (`[bx]`=w−1,`[bx+2]`=h−1); `[bp-0x2E]`=index (bit15=mirror) | sprite; mirror flag = index bit 15 |
 | **0x290** | `func_00C8E8` | **Pixel-address calc** (x,y → far ptr) — helper, not a draw | `ax`=x, `dx`=y, `bx`=surface desc(`+2`pitch,`+4`base,`+6`seg) | — |
 | **0x2BC** | `func_00386A` | **Per-unit info panel** (icon + filled stat spans + text) — *composite, NOT a plain bar* | `ax`=unit index (→`[0x3146]`, stride 0x1C); large frame | sprites + colour spans + FONTTINY |
@@ -226,6 +279,31 @@ count `[bp-0x1C]`, max `[bp-0x1E]`). The fill loop (`@0x2F66`):
 `0x38` for the empty portion, segment by segment, via the single-sprite blit.**
 Cite: `func_002EE4_unknown.asm` lines 62–112.
 
+> **Proportional, clamped pitch — the defining behaviour (byte-verified 2026-06-23,
+> helper `func_002D74`).** The segments are NOT packed at a fixed sprite width: the
+> `count` sprites are fitted into a fixed **span** (the caller's width arg, e.g.
+> `0x12C`=300) at pitch **`stride = (span − sprite_w)/(count − 1)`** (`idiv` @0x002DC6),
+> **clamped to `[1, sprite_w+1]`** (cap @0x002DCD, floor @0x002DD7). Consequences:
+> small `count` → `stride = sprite_w+1` (icons just touching); large `count` → `stride`
+> floors at **1 px so the icons OVERLAP / almost stack**. So this is the engine's
+> universal **"show a count as a proportional row of filled/empty icons across a fixed
+> width"** verb — fullness is conveyed by filled (caller sprite) vs empty (`0x38`)
+> segments, never by a rectangle fill. (This is why none of the screens have graphical
+> fill bars.)
+
+> **Call-site map (all 7 — this is shared chrome, recognise it everywhere):**
+> | site | screen / panel | what it counts |
+> |------|----------------|----------------|
+> | `@0x02665D` / `@0x02668A` / `@0x026700` | colony **field-production panel** (`func_0264A8`) | per-field production yield icons |
+> | `@0x026EF7` | colony **building draw** (`func_026DD4` region) | building-level / capacity indicator |
+> | `@0x027CCC` | colony **bottom panel** (`func_027xxx`) | a per-colony count strip |
+> | `@0x037BF5` | **F3 Continental Congress** body (`func_037A20`) | bells-toward-next-FF (filled `0x3F`/`0x39` vs empty `0x38`) |
+> | `@0x0379B4` | advisor **report** sub-renderer (`func_037958`) | a report count strip |
+>
+> Any spec that shows "a row of N icons for a count" should cite `0x181F:0x236`
+> rather than re-deriving it: `spec/ui/continental_congress.md` (bells),
+> `spec/ui/colony_screen.md` §3.2 (field yields), and the advisor reports.
+
 ### 0x254 → `func_00E76A` — **Blit ONE sprite** (signature pinned)
 File `0x00E76A..` (the load-image sprite blitter). `bx` = pointer to a sprite
 record: `[bx]` = width, `[bx+2]` = height (both `DEC`'d → w−1/h−1). The index arg
@@ -319,11 +397,19 @@ is read inline from `[0x83E]+0x3E` by `0x22C`/`0x236`.) Cite:
 `func_00B2A2_unit_cargo_slot_kind_or_neg1.asm` lines 15–24; memory
 `project_unit_table_correction` (base 0x3144, stride 0x1C).
 
-### 0x0CE → `func_00E0A2` — **min / order-2 helper** (NOT glyph draw) — **corrected**
-File `0x00E0A2..0x00E0B0+` (14 b head). `CMP bx,ax; if bx<ax swap (dx=ax, ax=bx)`
-— returns the two inputs in low/high order (a clamp/min used for clip bounds).
-**Not a glyph or short-string draw.** Cite: `func_00E0A2_unknown.asm`
-lines 17–22.
+### 0x0CE → `func_00E0A2` — **LINE / rule draw** — **re-corrected 2026-06-23**
+File `0x00E0A2..`. The 14-byte head `CMP bx,ax; if bx<ax swap` only **orders the
+endpoints** (`ax`/`bx` = x0/x1 low→high; same for `[bp+8]`/`[bp-4]` = y0/y1). It then
+**falls through to two draw calls**: `lcall 0xBBC:0xC` at `@0x00E0E2` and `@0x00E100`,
+passing the ordered coords + color `[bp+6]` + the sheet/clip words `[bp+0xA..0x10]`.
+`0xBBC:0xC` (file `0x00DFCC`) is a **clipped horizontal pixel-run (HLINE)**: it clamps the
+x-range (`[bp-0xC]`≥0 left, `[bp-0xA]`≤width−1 right), computes `di = y·rowstride + x_left`
+(`mul bx`), sets `cx = x_right−x_left+1`, then `mov es:[di],al; inc di; loopne` — a solid
+horizontal run of colour `al`. So **`0xCE` draws a 2-pass horizontal rule** (two `0xBBC:0xC`
+HLINEs = the rule's top+bottom edge, i.e. a 2-px divider) — it is **not** a no-draw clamp;
+the earlier verdict stopped at the prologue and missed the pixel writes. This is the screen
+**line/divider** verb (colony field-panel dividers `@0x026517`/`@0x026539`, etc.).
+Cite: `func_00E0A2` head + `func_00DFCC` (`0xBBC:0xC`) HLINE loop @0x00E02A.
 
 ---
 
@@ -342,7 +428,7 @@ lines 17–22.
 | `0x444 → func_00DCD4` | `0x444` thunk → `func_00DCF6` (**rect block-fill/copy**); `func_00DCD4` is `0x484`. |
 | `0x484 / func_00DCD4` = composited title string | **Horizontal solid-colour span fill** (`REP STOSW` via `func_00DDEA`). |
 | `0xBE6 / func_00B2A2` = sprite-width query | **UnitRecord field predicate** (`unit[i]@+0x50 > arg ? −1`). Not a width query. |
-| `0xCE / func_00E0A2` = glyph/short string | **min / order-2 clamp** helper. No draw. |
+| `0xCE / func_00E0A2` = glyph/short string | **LINE / rule draw** (orders endpoints, then plots pixels via `0xBBC:0xC` ×2). **CORRECTED 2026-06-23 — it DOES draw** (the prior "no-draw clamp" missed the helper's `mov es:[di],al`). This is the screen line/divider verb. |
 
 ---
 

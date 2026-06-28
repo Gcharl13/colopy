@@ -20,7 +20,6 @@
  * (Stockade, Fort, Town Hall, Carpenter's Shop, ..., Cathedral).
  * Buildings are identified by NAMES.TXT @BUILDING.
  *
- * @ref ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §5 Building System
  * ============================================================================ */
 #ifndef VICEROY_BUILDING_H
 #define VICEROY_BUILDING_H

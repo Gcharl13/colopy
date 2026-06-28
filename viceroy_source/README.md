@@ -1,5 +1,12 @@
 # VICEROY.EXE — Reconstructed C Source
 
+> **⚠️ Reclassified 2026-06-18 — this tree is Layer-1 EVIDENCE, not the product.**
+> Under the three-layer model (`/METHODOLOGY.md`) the source of truth is the
+> specification (`/spec/`); the runnable port (Layer 3) is built from the spec,
+> not from this C. This tree is a line-for-line `@asm`-cited disasm transcript —
+> byte-verified decode-notes that **feed** the spec, not a runnable program.
+> See [`ROLE.md`](ROLE.md). The "final-form product" framing below is historical.
+
 This is the **final-form C source** for VICEROY.EXE (Sid Meier's
 Colonization, MicroProse 1994). The goal is reconstruction at the level
 where, given a period-correct compiler (Microsoft C 6.0 / Borland C++ 3.x)

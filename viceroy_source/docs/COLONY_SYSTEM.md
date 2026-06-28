@@ -205,8 +205,7 @@ void church_tick(ColonyRecord *c, PowerRecord *p) {
 }
 ```
 
-@ref `../src/colony/turn_update.c`,
-     `COLONIZATION_TECHNICAL_REFERENCE.md` §5 (Building System)
+@ref@ref `../src/colony/turn_update.c`
 
 ## Custom House
 
@@ -237,7 +236,7 @@ buildings transfer.
 
 ## Cross-referenced sources
 
-- ColonyRecord layout: [DATA_MODEL.md](DATA_MODEL.md) §2
+- ColonyRecord layout: [DATA_MODEL.md](../../docs/DATA_MODEL.md) §2
 - Building enum: [../include/building.h](../include/building.h)
-- Production formulas: `COLONIZATION_TECHNICAL_REFERENCE.md` §6
+- Production formulas: `data_extracted/text/NAMES_sections.json` (@BUILDING/@JOB/@TERRAIN) + TBD
 - Colony screen UI: [RENDER_CHAIN.md](RENDER_CHAIN.md)

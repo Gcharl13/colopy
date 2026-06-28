@@ -1,0 +1,3 @@
+Data & table specs (Layer 2). Canonical memory-record layout is docs/DATA_MODEL.md
+(runtime-verified); canonical index tables are docs/GAME_INDEX_TABLES.md.
+Author derived/normalized data docs here from ../_TEMPLATE.md as needed.

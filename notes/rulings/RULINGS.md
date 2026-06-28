@@ -26,6 +26,60 @@ Format:
 
 ---
 
+## 2026-06-19 — Runtime memory dump (`colonization-memory-map (1).md`) reconciled against the static disasm
+
+**Conflict**: a runtime-verified PowerRecord field map (observed in js-dos/DOSBox,
+several fields **write-verified**) disagrees with the static-disasm field labels on
+three offsets, and corroborates many others.
+
+**Source A** — runtime dump (`colonization-memory-map (1).md`, top of TRUTH_HIERARCHY:
+"Running DOS game"). PowerRecord stride `0x13C`. Write-verified: `+0x2A` gold,
+`+0x01` tax, `+0x44/+0x45/+0x46` REF counts (dragoons/regulars/artillery — "zeroing
+removes the REF"), features-layer `0xB0` = Lost-City marker (plant/remove verified).
+Read-verified: market arrays `+0x4C` sensitivity u8[16], `+0x5C` pool s16[16], `+0x7C`
+traded-volume s32[16], `+0xBC` EU-supply s32[16], `+0xFC` base s32[16]; `+0x0C`
+congress-progress, `+0x0E` bells, `+0x10` crosses/turn, `+0x14` FF-count, `+0x30`
+"recruit cost", `+0x32` REF-strength.
+
+**Source B** — static disasm (this branch). `func_0305A8` reads `+0xFC` as the
+**drift accumulator**; `func_0363A2` writes the **crosses threshold** to `+0x30`;
+`func_03E162` increments REF **globals** `0x53DA[4]` (regulars/cavalry/manowar/arty).
+
+**Ruling** (per TRUTH_HIERARCHY "Running DOS game > EXE disasm; but EXE bytes win for
+exact numbers/operations"):
+1. **`+0x4C` is market *sensitivity* (u8[16]), NOT a price array** — the old
+   `market.md`/`DATA_MODEL` "+0x4C[16] price-level" label is **superseded**; adopt the
+   runtime array map (`+0x4C/+0x5C/+0x7C/+0xBC/+0xFC`). The runtime is authoritative
+   for the *layout*.
+2. **`+0xFC`**: runtime *labels* it "base values (initial)"; the disasm *proves*
+   `func_0305A8` sums it across players and drives drift. Same bytes — the dynamic
+   role (drift input) is disasm-verified; the "base/initial" label is a turn-1
+   observation. Keep the disasm operation; note `+0x7C` (volume) is the semantically
+   "long-term trend" array and may also feed drift (untraced).
+3. **`+0x44/45/46`**: the **disasm is decisive** — `func_03E162`/`func_03CDA2`/
+   `func_051EF4` read/write the globals `0x53DA..0x53E1`, so those are the
+   authoritative REF counts. The two runtime dumps **disagree** on `+0x44/45/46`:
+   this dump write-verified them as the REF; `docs/DATA_MODEL.md`'s session found
+   them ≠ the UI (with `0x53DA` matching). So `+0x44/45/46` role is **unresolved**
+   (a later "both real, different roles" reading was over-confident — corrected
+   2026-06-19 consolidation). Needs a fresh dump to settle.
+4. **`+0x30`**: disasm proves `func_0363A2` writes the crosses threshold here; the
+   runtime "recruit cost" label was **not** write-verified (inference from the recruit
+   menu). Keep the byte-verified meaning (threshold); flag for runtime re-check.
+
+**Action taken**:
+- Imported the dump to `colonization-memory-map (1).md` (same root path as `main`).
+- `spec/systems/market.md` — corrected `+0x4C`; added the runtime 16-good array map.
+- `spec/systems/ref_growth.md` — `+0x44/45/46` runtime counts reconciled with `0x53DA`.
+- `spec/systems/events.md` + `spec/systems/map_system.md` — Lost-City trigger = features `0xB0` (runtime).
+- `spec/systems/immigration.md` — `+0x30` conflict noted.
+
+**Follow-up**: runtime-confirm whether `+0x30` is dual-use (threshold vs recruit
+cost); trace whether `+0x7C` volume also feeds `func_0305A8`'s sibling drift; locate
+the King `royal_money +0x22` and boycott `+0x20` in a dump (neither identified yet).
+
+---
+
 ## 2026-05-30 — Game manual added as behavioral source; confirms combat-modifier model (reconciles wave-6 "+50% refuted")
 
 User provided the original Colonization manual / Technical Supplement →
@@ -3629,3 +3683,1913 @@ term → correct for the 501 zero-seg thunks but WRONG for 157 nonzero-seg thunk
 (e.g. load_PIK: artifact 0x764DC=garbage vs correct 0x76AEC). Authoritative
 resolver: tools/rtlink/rtlink_decode.py + viceroy_rtlink_map.json (RTLINK_V2.md
 §7.3). Re-resolve the 157 affected thunks.
+
+---
+
+## 2026-06-20 — Terrain ids 24–28: @OTHER ordering resolves MP_FORMAT.md conflict
+
+**Conflict.** Two byte-tier sources disagreed on the high terrain ids:
+- `formats/MP_FORMAT.md` id table: **24=Mountains, 25=Hills, 26=Ocean, 27=Lake**,
+  and (line ~60) **16=Arctic** "(auto-forest base 16)".
+- `spec/systems/map_system.md` @OTHER (tier **B**, present in NAMES) + the coast
+  renderer trace `@0x67FD0 cmp al,0x18`: **0x18/0x19/0x1A = Arctic / Ocean /
+  Sea-Lane**.
+
+**Evidence (this branch's `raw/COLONIZE/VICEROY.EXE` + NAMES data):**
+- `@OTHER` (NAMES_sections.json) byte-verified **order** = `Arctic, Ocean,
+  Sea Lane, Mountains, Hills` (5 rows, in that sequence).
+- **Hard rule 2** (CLAUDE.md): the sea-lane base terrain id = **26 (Ocean-class)**.
+  Sea Lane is the **3rd** @OTHER row (index 2) ⇒ @OTHER base = `26 − 2 = 24`.
+- Therefore: **24 (0x18)=Arctic, 25 (0x19)=Ocean, 26 (0x1A)=Sea Lane,
+  27 (0x1B)=Mountains, 28 (0x1C)=Hills.**
+- **Corroboration from the random-map generator `func_064A10`** (independently
+  byte-traced): P0 fills the interior with **0x19 (=Ocean)** then grows landmass;
+  P5 writes **0x18 (=Arctic)** to the top/bottom rows (polar caps — geographically
+  correct) and **0x1A (=Sea Lane)** to the right two columns. All three immediates
+  are exactly consistent with Arctic=24/Ocean=25/Sea-Lane=26.
+- **MP_FORMAT.md is the outlier and is wrong:** its "16=Arctic" places Arctic
+  *inside* the auto-forest range **8..23** (hard rule 3), which is impossible; and
+  its 24=Mountains would put Mountains at the map's polar rows. It also collapsed
+  Ocean and Sea Lane into a single id 26, whereas @OTHER lists them separately
+  (Ocean=25, Sea Lane=26).
+
+**Resolution (per TRUTH_HIERARCHY — running-game/renderer byte-trace + @OTHER B
++ hard rule 2 outrank a preprocessed format table):** adopt
+**24=Arctic, 25=Ocean, 26=Sea Lane, 27=Mountains, 28=Hills.** `MP_FORMAT.md`'s
+terrain-id table corrected accordingly. The map-generation agent's proposed
+"0x19 ≠ Ocean" correction (which relied on the erroneous MP_FORMAT table) is
+**rejected**; the generator's `0x19=Ocean` label stands.
+
+**Unaffected / still open:** the structure of the auto-forest range 8..23 (why 16
+slots for ~8 forested variants) is a separate question.
+
+**Follow-up (2026-06-20) — P2 climate table IS byte-verified.** A first pass held
+that the C-recon "5,4,1,3,2,2" climate list was not byte-grounded (the literal
+byte sequence is absent from the EXE). That was a false negative: the values are
+**inline switch cases**, not a data array. The N dispatch `@0x64CF6 jmp word ptr
+cs:[bx+0xBAC]` reads a table at file **`0x64CFC`** (cs-base file **`0x64150`**, not
+`0x6442c`) whose 6 words point exactly to local `mov [bp-0x2e],N` cases →
+**`{5,4,1,3,2,2}`**; the S dispatch `@0x65048 cs:[bx+0xEFE]` (table `0x6504E`) →
+`mov [bp-0x12],N` cases → **`{2,3,3,4,6,7}`** (Marsh case 50%-gated, Swamp/Marsh
+moisture −2). Both match `viceroy_source/src/mapgen/climate.c` exactly. The earlier
+"scattered targets `0x66605/…`" were an artifact of decoding the table at the wrong
+offset/segment base. **map_generation.md §3 P2 = BYTE_VERIFIED.**
+
+---
+
+## 2026-06-20 — Colony build-completion field offsets (byte-trace vs dump labels)
+
+**Context.** `spec/systems/colony.md` carried dump-derived ("RUNTIME-VERIFIED" /
+DATA_MODEL) labels: build target `+0x10`, constructed bitmask `+0x60..0x65`,
+hammers `+0xBA` (good 0x10 in the `+0x9A` array). A static byte-trace of the
+**actual per-turn completion code** (`func_02D658` → `func_02D0E4` → `func_0092E0`)
+disagrees and is internally complete.
+
+**Byte-verified completion mechanism (all sites confirmed this branch's EXE):**
+- **Hammer accrual bank = ColonyRecord `+0x92`** (u16): `@0x2E50F add [bx+0x92],ax`
+  (ax = hammers-produced from good-0x10 query `lcall 0x181f:0xb50` → file `0x8DBC`,
+  which reads a **global** per-good table `DGROUP:0x8E5A`, *not* a colony field),
+  clamped ≥0 `@0x2E517`.
+- **Build target id = ColonyRecord `+0x94`**: `@0x2E529 mov al,[bx+0x94]`; cost
+  lookup `lcall 0x181f:0xac4` → `func_00B65A @0xB688` reads `@BUILDING[idx].cost`
+  from table **`DGROUP:0x8F8C`** (stride **12**, 42 entries; written by parser
+  `func_074D18 @0x74D1D`); gate `@0x2E53B cmp ax,[bx+0x92]; jle`; no-target guard
+  `@0x2E544 cmp byte[bx+0x94],0; jge`.
+- **Second hammer bank `+0xB6`** (cost-debited, **surplus carried**): `@0x2E6A1
+  cmp [bx+0xb6],ax; jl`; `@0x2E6A7 sub [bx+0xb6],ax` → `call 0x2EF4B` trampoline →
+  `func_02D0E4`.
+- **Persistent constructed mask = ColonyRecord `+0x84..0x89`** (48 bits): setter
+  `func_0092E0`: `cx = [0x8542] + (id>>3) + 0x84; or [bx], 1<<(id&7)` `@0x9308`.
+  The **`+0x8A` bit-array is the DISPLAY copy** — its setter `func_0085D6` is a
+  byte-for-byte twin of `func_0092E0` differing only in the `+0x8A`/`+0x84`
+  constant. The "already-built?" guard tests `+0x84` (`func_0086 3E/0x860E` reads
+  `[colony_idx·0xCA + 0x5DCA]`, `0x5DCA = 0x5D46 + 0x84`).
+- **Build target is NOT auto-reset** to 0xFF on completion (no write to `+0x94`
+  in either function); re-completion is blocked by the `+0x84` guard + `@ALREADYHAVE`.
+
+**Resolution.** For the **build system**, the byte-traced offsets are authoritative
+(they are the code that actually accrues hammers, checks cost, and flips the
+constructed bit): **hammers `+0x92`/`+0xB6`, build target `+0x94`, constructed mask
+`+0x84` (display copy `+0x8A`), cost table `DGROUP:0x8F8C`**. The dump labels
+`+0x10`/`+0x60`/`+0xBA` are **not referenced** by the completion path; they are
+flagged in `colony.md` as conflicting and pending re-examination (a dump label can
+be a mis-attributed offset even when the bytes are real). The `+0x8A` =
+buildings-present display array remains correct (now paired with its `+0x84`
+persistent twin). **Open:** the exact roles of the two hammer banks `+0x92` vs
+`+0xB6` (which is the UI-displayed/save-persisted total).
+
+---
+
+## 2026-06-20 — PowerRecord +0x32 is home_x (spawn coord), NOT a REF strength rating
+
+**Conflict.** `spec/systems/ref_growth.md §2` labeled `PowerRecord +0x32` (u16) as
+`ref_strength_rating` (RUNTIME-VERIFIED, from a memory dump). A static byte-trace
+(Campaign C4) shows otherwise.
+
+**Evidence (this branch's EXE):** `@0x58D72 mov al,[bx-0x77c6]` (`bx=power·0x13C`;
+`-0x77c6 = 0x883A = PowerRecord +0x32`) reads it as a **byte**, then `@0x58D7A mov
+[si+0x314d],al` writes it to a spawned UnitRecord's map-x. Sibling writers
+(`@0x418D0`/`@0x65CCB`/`@0x74D74`) all `mov byte[bx-0x77c6],al` while looping the 4
+powers with spawn coordinates. So **`+0x32 = home_x`, `+0x33 = home_y`** (the power's
+European-arrival / starting spawn coordinate bytes), not a u16 strength.
+
+**Resolution (disasm at a cited offset > a runtime-dump *label*):** adopt
+**`+0x32`/`+0x33` = home (x,y) spawn coordinates** (byte each). **There is no stored
+aggregate REF-strength field** — the four REF counts `[0x53DA..0x53E0]` are summed on
+demand at UI/Congress display. The dump's "ref_strength_rating" was a mis-labeled
+offset (the bytes were real, the interpretation wrong). `ref_growth.md` corrected.
+
+**Related C4 findings (recorded for completeness):**
+- The REF `+0xE` per-type value table `DGROUP:0x9408` is **BSS (runtime-zero in the
+  static image)** — its per-type values can't be byte-read from the EXE; the count
+  increment is `@0x3E238 inc word[bx+0x53da]`.
+- The "REF per-power gate byte `[power·0x13 − 0x6DA2]`" (`DGROUP:0x925E`) is **not** an
+  active/surrendered flag — it is the 3rd byte of a 0x13-stride per-power REF count
+  record (`0x925C/0x925D/0x925E`), used arithmetically as troop strength (`@0x5B99E`).
+
+---
+
+## 2026-06-20 — UnitRecord base = 0x3144; map position vs goto-target offsets
+
+**Conflict.** `docs/DATA_MODEL.md` / `spec/systems/unit.md` use UnitRecord base
+**0x3146** and label **map_x = +0x07 (abs 0x314D)**, map_y = +0x08 (abs 0x314E).
+Campaign C5's static trace shows those abs offsets are the **goto-target**, not the
+unit's position.
+
+**Evidence (byte-verified, absolute offsets — base-independent):**
+- **Renderer** `@0x03A63 mov al,[bx+0x3144]` (x) / `@0x03A5E [bx+0x3145]` (y) — reads
+  the unit's drawn **position** from **abs 0x3144/0x3145**.
+- **Placer** `@0x06958 mov [bx+0x3144],al` (x) / `@0x0695E [bx+0x3145],al` (y).
+- **GoTo writer** `@0x22D38 mov [bx+0x314D],colony.x` / `@0x22D3F [bx+0x314E]` — the
+  **goto target** is at abs 0x314D/0x314E.
+
+**Resolution:** UnitRecord **base = 0x3144**, stride 0x1C. Map position =
+**abs 0x3144 (x) / 0x3145 (y)**; unit_type = 0x3146; owner nibble = 0x3147; order =
+0x314C; **goto-target = 0x314D/0x314E**; tools = 0x3159; work-counter = 0x315A; class
+= 0x315B. The DATA_MODEL "map_x=+0x07" mislabeled the goto-target as the position
+(its runtime "Caravel (55,49)" read the wrong offsets). Spec uses **absolute offsets**
+going forward to avoid the base-convention ambiguity. (PowerRecord FF acquired-bitmask
+is likewise at **+0x07 / abs 0x880F**, not +0x06 — C5.)
+
+---
+
+## 2026-06-20 — `[0x53D0]`/`[0x53D2]` + `func_03C638` are Spanish-succession, NOT revolution SoL
+
+**Conflict (self-correction).** Mid-session, after compaction, a trace of the
+`[0x53D0] ≥ 0x32 (50)` compare `@0x3E8BD` and `[0x53D0] ≥ 0x4B (75)` compare `@0x2391C`
+was provisionally written into `spec/systems/revolution.md` as "the SoL declare
+threshold (50%)" with `func_03C638` (`0x191F:0x364`) labelled "the revolution-trigger
+handler" (commit `a81ba25`). This **directly contradicted** the already-correct
+`spec/systems/spanish_succession.md`, which had earlier byte-verified the same
+function as the **War of Spanish Succession** handler and explicitly recorded it is
+**not SoL-driven**.
+
+**Evidence (decisive):**
+- `func_03C638` emits message handle **`0x128C`** `@0x3C76A`, which is GAME.TXT
+  **`@SUCCESSION`**: *"War of the Spanish Succession ends in Europe! {%STRING0},
+  ravaged by war, agrees to **cede** %STRING1 to the {%STRING2}…"* — verified directly
+  in `data_extracted/text/GAME_sections.json`.
+- The handler body literally cedes assets: it ranks the 4 powers, then rewrites
+  map-tile / unit (`+0x3147`) / colony (`+0x1A`) owner nibbles loser→winner and sets
+  the loser's controller `+0x543F := 2` (eliminated) — an inter-European annexation,
+  not a colonist revolt against the Crown.
+- Single-player gate `@0x3C63D` (`test [0x5381],0x80`) — succession only fires in
+  single-player; a revolution declaration has no such gate.
+
+**Resolution:** `[0x53D0]` (0..100 meter, +20/cap-100 on Bolívar `@0x3BE64`),
+`[0x53D2]` (eliminated-power latch), and `func_03C638` belong to
+**`spec/systems/spanish_succession.md`** (per `notes/TRUTH_HIERARCHY.md`, the
+byte-traced `@SUCCESSION` string wins). `revolution.md` reverted to its prior state:
+**the SoL% declare threshold is still genuinely TBD** — the `≥50/75` gates are not it.
+Lesson: re-verify a provisional finding against the *existing* spec before committing;
+the mandated re-verification caught this one cross-file.
+
+**Follow-up / final resolution (same day).** The revert above was itself an
+*over-correction*. The SoL declare threshold **is 50%**, proven by the cleaner,
+more-direct **declare-independence command handler `func_03E984`**: it emits
+**`@TOOTORY`** (*"Only N%% of the colonists support the independence movement"*) when
+**`[0x53D0] < 0x32` (50)** (`@0x3E99E`), and otherwise runs the `@DECLARE` confirm →
+**`func_03DE46`** WoI declaration (`@INDEPENDENCE`). So `[0x53D0]` **is** the national
+SoL meter (0..100, Bolívar `+20`), and **50% is the byte-verified declare floor**
+(`revolution.md`). The subtlety that caused the confusion: the **War of Spanish
+Succession** (`func_03C638`/`@SUCCESSION`) *also* auto-fires once when the leading
+power's `[0x53D0]` crosses 50 (latch `[0x53D2] < 0`, `func_03E844`) — two distinct
+events sharing the same SoL meter. Net: the `[0x53D0]` *identity* (SoL) and the *50%*
+threshold are correct (original instinct); only the claim that `func_03C638` was the
+*revolution* handler was wrong — that one is succession. `revolution.md` B/TBD restored.
+
+---
+
+## 2026-06-21 — Lost-City rumor presence is PROCEDURAL, not a stored `0xB0` feature byte
+
+**Conflict.** `spec/systems/events.md` §6.1 (following the runtime memory-map doc
+`colonization-memory-map (1).md`) anchored the Lost-City tile marker at feature byte
+**`0xB0`**, with the residual being "`0xA0` vs `0xB0`, a one-byte runtime read."
+
+**Disassembly (this branch's `raw/COLONIZE/VICEROY.EXE`, capstone 16-bit).** The
+rumor-presence predicate `func_006188` (`@0x6188`, called `@0x30822`) does **not** read a
+stored lost-city value. It **computes** presence from a coordinate hash against the global
+map seed `[0x190]` (`@0x61C7..0x61F8`), gated by terrain ≠ `0x18/0x19/0x1A` and by the
+tile's **feature high-nibble == `0xF`** ("none"), read via `0x5DF0`→`0x5D9C` (`shr al,4`,
+`0xF`→−1; the predicate requires that −1). The map is one byte/tile (far array
+`[0x164]:[0x166]`, index `y·[0x853A]+x`): **low nibble = terrain/owner, high nibble =
+feature**.
+
+**Resolution.** A tile whose feature nibble is `0xA`/`0xB` would **suppress** a rumor
+(nibble ≠ `0xF`), so `0xB0` is **not** a placement marker — the memory-map "`0xB0` = lost
+city, cleared on entry" is the **consumed/feature state**. Per `notes/TRUTH_HIERARCHY.md`
+(EXE disasm at a cited offset > memory-map note), the `0xA0`-vs-`0xB0` question is
+**dissolved**: rumor placement is procedural (`func_006188` + seed `[0x190]`), not a stored
+constant. `events.md` §6.1 closed. No dump/trace needed.
+
+---
+
+## 2026-06-21 — Advisor-report (F2–F10) paint-function offsets: AUDIT doc was wrong
+
+**Conflict.** `docs/ADVISOR_REPORTS_AUDIT.md` (and `spec/ui/advisor_reports.md`, which copied
+it) gave the F2–F10 paint-function file offsets as `0x025F18` (F2) / `0x025FD0` (F3) /
+`0x0269D8` (F4) / `0x027010` (F5) / `0x0277D8` (F6) / `0x027B0C` (F7) / `0x027E48` (F8) /
+`0x025A0A` (F9). `viceroy_source/docs/drawlist/REPORTS.md` instead places the real bodies at
+`0x37958`/`0x37A10`/`0x38418`/`0x38A50`/`0x39218`/`0x3954C`/`0x39888`/`0x39EE2`.
+
+**Disassembly (raw VICEROY.EXE, capstone 16-bit, re-verified by the orchestrator).**
+- `0x37958` = `enter 0x2c; … push 2` (F2, REPORT title N=2); `0x38418` = `enter 0x120; …
+  push 4; call 0x39e53` (F4, N=4) — clean painter prologues with the title-N `push`.
+- `0x025F18` disassembles to `les ax,[bp+si]; or ax,ax; je …` — **mid-instruction garbage**,
+  not a function. The audit's offsets are **broken-thunk artifacts**: the dispatcher does
+  `lcall 0x191F:0x3xx`; each thunk does `lcall 0x110d:0xdab; ljmp 0:OFF`, and the audit
+  resolved `OFF` against the wrong overlay base (≈0x25900) instead of the page-5 code base
+  (file `0x37340`; F9 needs `ljmp_seg=0x2B1`).
+- `func_037340` (`enter 0x352; push 0x11A2 ["REPORT"]; strcat; push [bp+6] [N]; sprintf;
+  load_PIK`) — so the loaded art is **REPORT\<N\>.PIK with N = the title number** (F2→REPORT2,
+  F3→REPORT3, F4→REPORT4, F5→REPORT5, F6→REPORT7, F8→REPORT8), **not** the audit's visual
+  guess (F4→REPORT3 etc.). Strings REPORT@0x11A2 / SCORE@0x11CF / WOODPAN2@0x11D7 confirmed
+  at DGROUP base 0x1D9A0.
+
+**Resolution.** Per `notes/TRUTH_HIERARCHY.md` (raw disasm at a cited offset > team docs), the
+**REPORTS.md offsets win and the AUDIT doc offsets are struck.** Although `viceroy_source/` is
+low-trust by default, here its offsets are raw-byte-confirmed and the audit's are
+raw-byte-disproven. `spec/ui/advisor_reports.md` rewritten to the real bodies + the
+title-N→PIK mapping. Also corrected: F8 gate polarity (FOREIGNNOTAVAIL fires when
+`[0x5382]&1` is **set**, i.e. once WoI is declared); F10 `func_03A9C0` is a **score-band
+plate selector** (`panel = largest i in 1..24 with i·i/3 ≥ scaled_score`, draws
+`SCORE(panel+1).SS` over WOODPAN2), not a per-line panel map. Residual TBD: the F8
+nested power-picker function offset.
+
+---
+
+## 2026-06-21 — FONTSMAL.FF is never loaded; SMALLFONT copies the latched font
+
+**Conflict.** Two UI agents disagreed: one said the popup/menu `SMALLFONT`/`@smallfont`
+directive selects a distinct small font **FONTSMAL.FF**; another said FONTSMAL is never loaded
+and the directive just copies the active font latch.
+
+**Disassembly (raw VICEROY.EXE).**
+- The strings **`FONTSMAL`/`fontsmal` are ABSENT from the entire image** (`find` = −1, both
+  cases). Only `fonttiny`@0x1FD32, `fontintr`@0x1FD29 (lowercase, load path) and `FONTKING`
+  @0x1FCCB, `FONT-NP`@0x1F8AF (uppercase) appear. So **FONTSMAL.FF is an orphan on disk — VICEROY.EXE
+  never `load_font`s it.**
+- The popup framework's **SMALLFONT handler @0x6F207** is `mov ax,[0x89E]; mov dx,[0x8A0]; les
+  bx,[bp-0xC]; mov es:[bx+0x80],ax; mov es:[bx+0x82],dx` — it **snapshots the currently-latched
+  active-font far pointer** `[0x89E]/[0x8A0]` into the section struct. No font is loaded; it does
+  not switch to a smaller font.
+
+**Resolution.** There are **4 fonts actually loaded** by VICEROY.EXE: FONTTINY (the boot default
+latch `[0x89E]`), FONTINTR, FONTKING, FONT-NP. **FONTSMAL.FF is unloaded (orphan).** The
+`SMALLFONT` / `@smallfont` directive copies the latch — it is effectively a no-op font-wise in
+shipped data, **not** a small-font selector. This **corrects** (a) `fonts_and_colors.md` (the
+"5 fonts / FONTSMAL via SMALLFONT" model), (b) `popups.md` item 6, and (c) the
+2026-06-21 menus commit's "boot-menu body = FONTSMAL" claim — the boot menu renders in the
+**latched font** (FONTINTR/FONTTINY), and the `@smallfont` flag loads no distinct font.
+Also: the popup framework compares **10** live directives (OPTIONS..DEFAULT); **TEXTCOLR is a
+vestigial table entry, never compared** (`push 0x200A` appears nowhere as a directive) — there
+is **no per-popup text-color override** directive.
+
+---
+
+## 2026-06-21 — FONTKING.FF is used by exactly ONE screen (king-defeats); not colony/Europe/score/HoF/menus
+
+**Conflict.** The W1 screen-render cluster (from the Ghidra named export) attributed **FONTKING**
+to many screens: colony title / SoL% / SoL-panel, Europe title, the Score screen, advisor F10,
+the Hall of Fame, and menu render. A later pass also inferred `[0x268A]` = FONTKING "by usage."
+Both are **wrong** against the raw EXE.
+
+**Disassembly (raw VICEROY.EXE, capstone 16-bit; trust order: EXE bytes win over the export).**
+- The string **`FONTKING` (DGROUP `0x232b`) is referenced exactly once in the whole image** —
+  `lea bx,[0x232b]` @**0x754F2**, inside `func_075352` (the **king-defeats** screen). It loads
+  via `lcall 0x1A1F:0xA86` into a **local** (`[bp-0xC]`), falls back to `[0x89E]` (FONTTINY) on
+  failure, and promotes the result to the **active-font global `[0x1F9E]/[0x1FA0]`** @0x75511.
+  FONTKING is **never stored to a persistent global**, so no other code path can select it.
+- The **active-font global `[0x1F9E]`** is written at only 5 sites: from FONTTINY `[0x89E]`
+  (@0x692DE), from FONTINTR `[0x268A]` (@0x692FA and the king-defeats *restore* @0x7557D), from a
+  caller-supplied ptr (the `set_active_font` helper @0x6EED4), and the king-defeats FONTKING set
+  @0x75511. So the only fonts ever made active are **FONTTINY, FONTINTR, and (king-defeats only)
+  FONTKING**.
+- **Font-far-ptr render pushes** confirm each screen's font: `push [0x8A0];push [0x89E]`
+  (**FONTTINY**) at colony render 0x25F62/0x26000/…/0x282A9 and Europe render
+  0x30EDE/0x30F53/0x31179 and advisor report bodies 0x3860C…0x38DFC; `push [0x268C];push [0x268A]`
+  (**FONTINTR**) at the Hall-of-Fame/menu region 0x22ABE/0x23C06. The Score painter `func_03A9C0`
+  reads `[0x89E]` (FONTTINY, @0x3ABF4/0x3AC25) for labels and `[0x268A]` (FONTINTR, @0x3B054/
+  0x3B0E6) for the big-figure glyph metrics — **no FONTKING**.
+
+**`[0x268A]` identity (resolves the prior "by usage A/R").** `[0x268A]/[0x268C]` is written
+@0x760CB from loading the string **`fontintr`** (`lea bx,[0x2389]="fontintr"`; `lcall 0x1A1F:0xA86`)
+in the engine-init `func_075FB6`. **`[0x268A]` = FONTINTR.FF**, byte-verified — NOT FONTKING.
+
+**Resolution.** **FONTKING.FF is used by exactly one screen: king-defeats (`func_075352`),
+pen seed (x=0xF2=242, y=0x2F=47).** Corrected font attributions (all byte-verified):
+- **Colony** title / SoL% / SoL-panel → **FONTTINY** (`[0x89E]`).
+- **Europe** title → **FONTTINY**.
+- **Score** screen (cinematic `func_03A9C0` = advisor F10) → **FONTTINY** labels + **FONTINTR**
+  figure metrics.
+- **Hall of Fame** / **menus** → **FONTINTR** (`[0x268A]`).
+- **king-defeats** → **FONTKING** (unchanged; the sole user).
+This corrects `fonts_and_colors.md` §1/§3, `colony_screen.md`, `europe_screen.md`,
+`advisor_reports.md` (F10 + the `[0x268A]`=FONTKING identity), `cinematics.md` (score),
+`menus.md`, and `continental_congress.md` (the `[0x268A]` parenthetical).
+
+---
+
+## 2026-06-21 — `[0x1F5C]` is the speaker-portrait selector channel, NOT the cinematic/popup text color
+
+**Conflict.** The cinematics integration (king-defeats) claimed the on-screen text color is the
+"engine persistent foreground global `[0x1F5C]`" (default 8). The popup-template audit
+(`docs/POPUP_TEMPLATE_AUDIT.md`) and `docs/KING_AND_CINEMATIC_AUDIT.md` instead identify `[0x1F5C]`
+as a **speaker channel** (the 4 wrappers `@0x6F5B0..0x6F64C` set `[0x1F5C]`/`[0x1F5E]`/`[0x1F60]`
+for the tribe/advisor/missionary speaker portraits).
+
+**Disassembly (raw VICEROY.EXE) + cited audit.** `[0x1F5C]` is the **speaker-portrait selector**:
+the dispatcher `func_06E3D0` reads it (`cmp [0x1F5C],0` @0x6E480) and `func_06BE92` branches on its
+value (`cmp [0x1F5C],7; jle → IND<n>` @0x6BE96), so **value ≤7 ⇒ `IND<tribe>` portrait, =8 ⇒ KING**
+(`docs/KING_AND_CINEMATIC_AUDIT.md`). The render path at **0x6E319** is
+`cmp [0x1F5C],0; jl skip; push es; push bx; call 0x6F82B` where `es:bx` is a **sprite struct whose
++0x10/+0x12/+0x14/+0x16 fields are x/y/w/h** (loaded @0x6E2FD..0x6E316), then the selected speaker
+sprite is blitted via `0x6F81C`. So `[0x1F5C]` **selects + renders the speaker portrait**, not text.
+The popup wrappers set it accordingly (KING hard-codes `[0x1F5C]=8` @0x6F5DD; tribe `=arg` @0x6F5B6).
+The king-defeats **text** is drawn by the glyph engine `lcall 0x181F:0x3FE` @0x75540 with **no
+`[0x1F5C]` (or other explicit palette) argument** at the call site.
+
+**Resolution.** `[0x1F5C]` (and siblings `[0x1F5E]`/`[0x1F60]`) = **speaker-portrait selector
+channel** (the audit is correct; ≤7→IND, 8→KING via `func_06E3D0`/`func_06BE92`). The cinematic
+king-text and popup body-text **color** is the glyph engine's own glyph→palette mapping
+(FONTKING/FONTTINY foreground pixel), with no byte-pinnable per-call palette index at the draw site
+→ honest **A/TBD**. Corrects `cinematics.md` (king-defeats font+color), `fonts_and_colors.md`
+(king-defeats row), and clarifies `popups.md` §6 (the channel globals are speaker selectors;
+TEXTCOLR remains vestigial so there is still **no per-popup text-color override**). The font
+identities (FONTKING king-defeats, FONTTINY popup body) and pen geometry are unaffected and stay
+**B**.
+
+---
+
+## 2026-06-21 — .FF font glyph format is NOT yet cracked (do not guess a decoder)
+
+**Context.** While bundling assets for the C++ reimplementation, two RE passes (on-disk bytes +
+the VICEROY.EXE loader/blitter) tried to decode the `.FF` bitmap-font glyph layout. The format is
+**not yet byte-verified**, so no decoder was written (prime directive: never guess).
+
+**Byte-verified facts.** `.FF` = MADSPACK 2.0; one FAB section is the font payload (decompressed
+sizes FONTTINY 914 / FONT-NP 914 / FONTKING 1219 / FONTINTR 1898). **Font struct byte 0 = glyph
+height** (`mov al,es:[bx]; add ax,3` @0x3AB7). Loader = `lcall 0x1A1F:0xA86` (file ~0x6FC74; sites
+@0x760C6/0x760E8/0x754F6/0x6B7AF); glyph blitter `0x181F:0x3FE`/`:0x998`; glyphs are **2-bpp**
+(transparent/highlight/base/shadow). FONTKING/FONT-NP are variable-height.
+
+**Disproven hypotheses (this pass).** Interleaved `[w][h][bitmap]` from offset 33 desyncs
+immediately (~165 of 914 bytes consumed) under both `ceil(w*h*2/8)` and row-aligned
+`h*ceil(w*2/8)` sizing; a fixed-height width-table + bitmap block gives no clean file-length
+landing for any height. The real parser is **overlay-resident** (the recurring RTLink-overlay
+ceiling).
+
+**Ruling.** `.FF` glyph decode stays **TBD**. Finishing it requires either disassembling the
+overlay loader at ~0x6FC74, or a render-validation pass (decode glyphs, render `A–Z 0–9`, confirm
+they form correct letters — a font is self-validating). Corrects `formats/FF.md` (the stale
+`tools/mpskit/ff.py` reference — that file does not exist). The 4 fonts are therefore **not yet
+bundled** in `viceroy_cpp` (all 204 `.SS` + 35 `.PIK` are).
+
+---
+
+## 2026-06-21 — .FF font glyph format CRACKED (supersedes the earlier "not cracked" ruling)
+
+The `.FF` bitmap-font format is now fully decoded and render-validated (all 4 fonts decode to
+readable A–Z / 0–9 / a–z). Supersedes the earlier same-day "not yet cracked" ruling.
+
+**Format** (MADSPACK/FAB payload): `[0]`=glyph height H, `[1]`=max width; `[2..130)` = 128-byte
+width table; `[130..386)` = 128×u16-LE offset table; `[386..)` = glyph bitmaps. Glyph for char
+`c` = `payload[offset[c-1] : offset[c]]` (the tables are offset by one — **table entry t holds the
+glyph for char t+1**, found via render-validation: index-0 mapping rendered every letter shifted
++1). Bitmap = **2 bits/pixel, MSB-first, row-major**, H rows × `ceil(width*2/8)` bytes; 4 levels
+(0=transparent, 1/2/3 = ink shades). Bitmap region always starts at 386 (=130+256). Validated:
+387+Σ glyph sizes = file length exactly; 87/87 width↔offset-delta match.
+
+**Disproven en route:** interleaved `[w][h][bitmap]`, planar 1-bit-plane, LSB-first, fixed-height
+block — all scramble. **Decoder:** `viceroy_cpp/include/ff.hpp` + `src/ff.cpp`; bundled via
+`viceroy_cpp import-font` / `import-all` (fonts → paletted glyph atlas + metrics JSON). The 4
+loaded fonts (FONTTINY/FONTINTR/FONTKING/FONT-NP) are now bundled; FONTSMAL stays orphan. This
+**unblocks P4 text rendering** in the rewrite. Updates `formats/FF.md`.
+
+---
+
+## 2026-06-21 — No graphical progress/fill bars exist anywhere in the game
+
+**Conflict**: `spec/ui/continental_congress.md` (and its source `docs/RENDERER_GEOMETRY.md`)
+claimed a graphical **"Progress bar (0,30,320,6) — yellow fill = bells_current / threshold"** on
+the Continental Congress screen, tagged tier **A**; the user states there are **no progress bars
+anywhere in the game**, and the screen's own decompiled paint body is text/box-only.
+
+**Source A** — `docs/RENDERER_GEOMETRY.md` (team doc, luma/anchor measurement of frame
+1310124562) asserted a yellow-fill progress bar in three places (v2 line 240, v3 line 221,
+detail table lines 347–348: "Bar fill color yellow (200,160,24)"). Tier **A** (luma-guessed,
+not byte-cited).
+
+**Source B** — (1) the **running game** (user, top of `TRUTH_HIERARCHY.md`): "there are no
+progress bars anywhere in the game." (2) The **F3 paint body** `0x37A10..0x3807D` (fully
+disassembled, tier **B**) is **text + box-rule only** — it contains no sprite blits
+(`0x181F:0x254/0x2BC`) and no fill-bar draw; a text/box routine cannot paint a fill bar
+(`spec/ui/continental_congress.md` §6.1).
+
+**Ruling**: **no graphical progress/fill bars exist in the game** — both the running-game
+observation (rank 1) and the disassembled paint body (rank 3) outrank the luma guess (team doc,
+rank 5) per `TRUTH_HIERARCHY.md`. Progress toward the next Founding Father is conveyed by the
+**"(NN in MM)" text** in the session subtitle (`NN = threshold − bells_current`, `MM =
+threshold`), not a bar. The game's progress/quantity UI idiom is **discrete filled/empty
+sprite-icon rows** (e.g. crosses/bells, ICONS.SS `0x39` filled / `0x38` empty — one sprite per
+unit counted), which is **not** a continuous bar.
+
+**Action taken**:
+- `spec/ui/continental_congress.md`: deleted the "Progress bar" layout row; added a "No progress
+  bar" note; reconciled the §"Fonts & colors" `0x3F/0x38` wording (discrete indicator sprites,
+  not a bar); re-tiered the bell row as A/TBD (not in the F3 body).
+- `spec/ui/advisor_reports.md`, `spec/ui/fonts_and_colors.md`: clarified the `0x39/0x38` "gauge"
+  wording as **discrete** filled/empty indicator sprites, explicitly "*not* a continuous bar."
+
+**Follow-up**: the Continental Congress **bell-icon row** is luma-observed but absent from the F3
+text body — whether it is drawn by a separate Activities/overlay path or was itself a luma misread
+stays A/TBD until that path is traced or a frame is re-measured.
+
+---
+
+## 2026-06-22 — TERRAIN.SS is the base-ground sheet, NOT an orphan (overturns hard rule #5)
+
+**Conflict**: CLAUDE.md hard rule #5 says "never load TERRAIN.SS or BDARK.SS (orphan assets, not
+used by the renderer)"; byte evidence shows TERRAIN.SS is the **base-terrain ground sheet** the
+in-game renderer composites PHYS0 overlays on top of.
+
+**Source A** — CLAUDE.md hard rule #5 (team-doc rule), citing `BUILD.md`, `docs/ASSET_ROLES.md`,
+`tools/render_map.py`. Claim: TERRAIN.SS unused/orphan.
+
+**Source B** — `ghidra_export/VICEROY_decompiled.named.c` (byte-grounded decompile, rank 3 in
+`TRUTH_HIERARCHY.md`): (1) `BOOT_ASSETS[]` loads `"TERRAIN.SS" -> g_sprite_sheet[3]` as a core
+gameplay startup asset (@~53999–54002), alongside ICONS/PHYS0/BUILDING/WOODFRAM/WOODTILE;
+(2) `emit_ground_sprite(idx) = emit(sheet_at(G_SHEET_TERRAIN), terrain_cell_transform(idx))`
+(@18201) — the BASE ground layer is drawn from the TERRAIN sheet, while `draw_tile_marker`/
+`emit_sprite_alt` use `G_SHEET_PHYS` for OVERLAYS (@18192–18193); (3) `enter_map()` hard-requires
+TERRAIN.SS to enter the map view (@~50249, registers it via `viceroy_set_sheet_terrain`).
+Corroborated by `spec/systems/map_system.md` §3 ("Base terrain -> `emit_ground_sprite`").
+
+**Ruling**: **TERRAIN.SS is the base-ground sheet** (loaded at boot + on map-enter; the source of
+`emit_ground_sprite`), composited UNDER the PHYS0 overlays (forest/mountain/hill/river/road/coast/
+resource). It is **not** an orphan. **BDARK.SS remains the orphan** (no load path). Placeholder
+indices 0/16/100 are still skipped. Per `TRUTH_HIERARCHY.md` byte-grounded disasm at a cited offset
+outranks a team-doc rule; the user explicitly confirmed "TERRAIN is valuable, BDARK is not" and
+granted sign-off to amend the hard rule.
+
+**Action taken**:
+- Amend **CLAUDE.md hard rule #5**: orphan = **BDARK.SS only**; TERRAIN.SS = base-ground sheet.
+- Correct stale "TERRAIN.SS orphan" wording in its citations where it survives.
+- `viceroy_cpp` `import-all` stops skipping TERRAIN.SS (bundles it); the map-view viewport moves
+  from the naive PHYS0-only blit to layered TERRAIN.SS base + PHYS0 overlays (Phase C).
+
+**Follow-up**: `terrain_cell_transform` (code 0x11/0x09->8; code>=8 -> code-0xF; else code) maps
+terrain ids to TERRAIN.SS frame indices — exact per-terrain frame mapping to be pinned in Phase C
+from TERRAIN.SS frame inspection. The `0x70`-band / `0x1F884` coast sub-cell table stays TBD.
+
+---
+
+## 2026-06-22 — Sprite 0x95 is the FOG/unexplored tile, NOT "base coast" (map_system.md §3/§1b wrong)
+
+**Conflict**: `spec/systems/map_system.md` §3 + §1b (tagged BYTE_VERIFIED) describe the coast as
+"base coast sprite `0x95` + per-direction overlays `0x69..0x6C`." Implementing that put a striped
+"plow"-looking sprite all over the coast (user: "you have the plow sprite on the coast"), and the
+`0x69..0x6C` frames turned out to be selection-box/padding sprites, not coast.
+
+**Source A** — `spec/systems/map_system.md` §3 (line ~75) / §1b (line ~154): "base beach/coast
+sprite `0x95` (`mov ax,0x95; call 0x67dc8 @0x68212`)" + "per-direction overlay `0x69+direction`".
+Tagged BYTE_VERIFIED.
+
+**Source B** — capstone disasm of `func_0681A8` (O513) vs `raw/COLONIZE/VICEROY.EXE` (rank-3
+byte-grounded): the single `mov ax,0x95` @`0x68212` is gated by **`[bp-8]` = the fog/hidden flag**
+(`@0x6820c cmp [bp-8],0; je 0x6824e`). `[bp-8]` is set from the **fog mask `[0xA89E]`** and the
+tile fog byte `[0xA8A0]` in the prologue (`@0x681E0..0x681FE`) — `[bp-8]=1` ⇒ tile **unexplored**.
+The same branch then calls O512 (`func_067F50`), whose per-direction draws (`0x69+dir` +
+`emit_terrain_sprite`) are the **fog-edge blend** for hidden tiles. The spec itself documents
+`[0xA89E]` = `1<<(player+4)` fog mask (§3, line 133). The **visible-tile coast** is a *different*
+code path: shore base `0x96` (drawn when terrain byte `[0xA89F]&0x40` @`0x68356`) + directional
+edges `0x97+pattern` (151..153, from the connection bitmap `[0xA8A6]` @`0x6850D`).
+
+**Ruling**: **`0x95` (PHYS0 frame 149) is the fog-of-war / unexplored-tile sprite** (its vertical
+striped hatching resembles plow furrows — hence the "plow" appearance when wrongly drawn on
+coasts), **not** a coast base. §1b's "coast = `0x95` + `0x69..0x6C`" actually documents the
+**fog-of-war renderer**, mislabeled. The **real coast** = `0x96` shore base (terrain bit `0x40`) +
+`0x97..0x99` directional edges (connection-bitmap pattern), in the visible-land path. The
+BYTE_VERIFIED tag on the old coast description was unjustified. Byte-disasm (rank 3) + user
+ground-truth (rank 1) outrank the team-doc claim.
+
+**Action taken**:
+- `map_system.md` §3 + §1b: relabel `0x95`/`0x69..0x6C` as the fog-of-war path; document the real
+  coast (`0x96` + `0x97+pattern`); retier.
+- `notes/SPRITE_CATALOG.md` row 0x90: frame 149 "sandy dune" → **fog/unexplored tile** (striped).
+- `viceroy_cpp` map-view: the coast must use the visible-path `0x96`/`0x97+pattern`, not `0x95`.
+
+**Follow-up**: the exact `0x97+pattern` connection-bitmap → edge-variant mapping (`[0xA8A6]`
+patterns `0xC1`/`0x07`/`0x70`/`0x1C` @`0x68479..0x684A8`) for the directional coast edges still
+needs enumerating before a faithful coast implementation.
+
+---
+
+## 2026-06-22 — The `0x6D..0x8B` band = 8×8 coast sub-tiles, NOT roads (map_system.md "roads = 0x6D" wrong)
+
+**Conflict**: `spec/systems/map_system.md` §3 listed **"`0x6D` roads"** and described item 6 as
+"Roads & rivers (connectivity-based)" with the road sprite = `0x6D + connectivity_mask`. The
+project also has explicit user ground-truth that **"there are no roads in new maps."** The open
+`SPRITE_CATALOG` question — whether the row-0x70 8×8 frames are the true DOS coast sub-tiles — was
+unresolved.
+
+**Source A** — `spec/systems/map_system.md` §3 band list + item 6 ("roads = `0x6D`"), citing the
+low-trust C reconstruction `src/render/terrain.c`.
+
+**Source B** — capstone disasm of `func_0681A8` (O513) + `func_067A24` (`analyse_connections`) vs
+`raw/COLONIZE/VICEROY.EXE` (rank-3 byte-grounded), cross-checked with PHYS0 frame pixels via
+`tools/ssdec.py` (rank-2):
+- `analyse_connections` (`func_067A24`) is called **only for water tiles** — gated `@0x68256`
+  `cmp [0xA8A2],0x19 (Ocean) / 0x1A (Sea-Lane)`. It builds `[0xA8A6]` = the **8-direction
+  LAND-neighbour bitmap**: for each neighbour it reads the terrain id and `cmp al,0x19 / 0x1A;
+  je skip` (`@0x67AA6`) — **water neighbours are skipped**, so a bit is set only where a neighbour
+  is land. It also fills a 4-entry per-quadrant table at `[0x2D24]` from diagonal/cardinal land bits.
+- The coast draw (`@0x6846B` onward, gated `cmp [bp-4],0` where `[bp-4]=1` ⇒ water tile): shore
+  base `0x96` (`@0x68356`, bit `[0xA89F]&0x40`); if `[0xA8A6]` matches a clean pattern
+  (`&0xDD==0xC1`/`&0x77==0x07`/`&0x77==0x70`/`&0xDD==0x1C`) draw one 16×16 edge `0x97+pattern`
+  (`@0x6850D`); **else** the loop `@0x684BC..0x684F5` draws, for `q=0..3`, frame
+  **`0x6D + table[q]·4 + q`** (`table[q]`∈0..7, reachable 109..139) at TL/TR/BR/BL **8×8**
+  sub-cell offsets (`[0x1EA4]/[0x1EA5]`).
+- Pixel check (`tools/ssdec.py`): frames `0x6D..0x8B` (109..139) are all **8×8** with water
+  palette indices 55–58; frames `0x96..0x99` (150..153) are **16×16** water+sand coast pieces.
+  PHYS0 has **154 frames (0..153)** — so `0x97+pattern=3` (→154) and the extreme `table[q]=7,q=3`
+  combo (→`0x8C`=140, a 16×16 frame) are out-of-band edge cases, flagged TBD.
+
+**Ruling**: **The `0x6D..0x8B` band (109..139) is the 8×8 per-quadrant complex-coast sub-tile set**
+— the fallback drawn on water tiles whose land-neighbour bitmap matches no clean 16×16 edge
+pattern. **There are no roads in this render chain**; the "roads = `0x6D`" label (from the low-trust
+`terrain.c`) is wrong, consistent with the user ground-truth that new maps have no roads. The full
+coast = shore base `0x96` + (16×16 edges `0x97..0x99` for clean cases) OR (4× 8×8 `0x6D` quadrants
+for complex cases), all keyed by the water-tile land-neighbour bitmap `[0xA8A6]`. Byte-disasm
+(rank 3) + pixel inspection (rank 2) + user ground-truth (rank 1) outrank the C-reconstruction
+label.
+
+**Action taken**:
+- `map_system.md` §3: item 6 split into rivers (`0x51..0x5E`) + item 7 coast (water-tile,
+  `0x96`/`0x97+pattern`/`0x6D` 8×8 fallback); band list "roads = `0x6D`" → "8×8 coast sub-tiles";
+  §6 1b extended with the 8×8 resolution.
+- `notes/SPRITE_CATALOG.md`: row 0x6D–0x8B section + follow-up #1 resolved (true coast sub-tiles).
+- `spec/ui/map_view.md` §3: overlay list — coast composition spelled out, "no road overlay".
+
+**Follow-up (still TBD)**: the exact `[0xA8A6]`→`0x97..0x99` pattern enumeration and the
+pattern-3→frame-154 (out-of-range) edge case, before the faithful coast implementation. The coast
+IMPLEMENTATION in `viceroy_cpp` must use this water-tile path (`0x96` + `0x97+pattern` + `0x6D` 8×8
+quadrant fallback), never `0x95`/`0x69`.
+
+---
+
+## 2026-06-22 — River band is `0x01/0x11` (BLUE), `0x51..0x5E` is the ROAD layer (correcting same-day "river = 0x51..0x5E")
+
+**Conflict**: a same-day edit to `spec/systems/map_system.md` §3 item 6 + band list (commits
+`c9e7d32`/`43fa99b`) labelled **"river = `0x51..0x5E`"**, derived from the disasm connectivity
+block at `@0x6842B` (base `0x51`). The `viceroy_cpp` map-view, built on that, drew `0x51`/`0x52+dir`
+for river-bit tiles and produced a **brown diagonal lattice** over the land — clearly not rivers.
+This also contradicts **CLAUDE.md hard rule #4** (rivers = PHYS0 rows `0x01`/`0x11`).
+
+**Source A** — the same-day spec edit "river = `0x51..0x5E`" (`@0x6842B` block, base `0x51`).
+
+**Source B** — pixel inspection (`tools/ssdec.py`, rank 2) + disasm of `func_0681A8` (rank 3) vs
+`raw/COLONIZE/VICEROY.EXE`:
+- **Pixels**: PHYS0 `0x01–0x0F` / `0x11–0x1F` are **BLUE water + GREEN banks** (idx 57/58 blue,
+  69/70 green) = rivers. PHYS0 `0x51–0x58` are **BROWN** road segments (idx 85/132,
+  RGB ~(134,81,28)). `SPRITE_CATALOG` already labels row 0x00/0x10 = rivers and row 0x50 = roads.
+- **Disasm**: the **river** draw is a *different* block at **`@0x6838A`** — gated by feature-layer
+  bit `0x40` (`[0xA8A1]`), base **`0x01`** (feature bit `0x80` set, `@0x6839E`) or **`0x11`**
+  (clear, `@0x683A6`), plus a **4-cardinal** river-neighbour mask (`func_067B84` `ax=0x40,dx=3`;
+  bit order N=8/S=4/W=2/E=1; isolated → `0xf`, `@0x683BB`), drawn `base+mask` via `func_067DC8`.
+  The **`@0x6842B`** block (base `0x51` + 8-dir `func_067D54` `ax=0xa`, gated `[0x18E]==0`) is the
+  **ROAD** layer — empty on new maps ("no roads in new maps", user ground-truth rank 1).
+
+**Ruling**: **Rivers = PHYS0 `0x01..0x1F`** (base `0x01`/`0x11` + 4-cardinal connectivity, BLUE),
+exactly as CLAUDE.md hard rule #4 always stated. **`0x51..0x5E` = the ROAD layer** (BROWN, separate
+connectivity block, drawn only when road-feature tiles exist). The same-day "river = `0x51..0x5E`"
+edit conflated the road block with rivers; reverted. Pixel inspection (rank 2) + disasm (rank 3) +
+hard rule #4 outrank the mistaken same-day edit.
+
+**Action taken**:
+- `viceroy_cpp/src/mapview.cpp`: river overlay now draws `base + 4-card mask` from the `0x01/0x11`
+  blue band (base via forested-id proxy, R), removing the `0x51`/8-dir road draw. The brown lattice
+  is gone; rivers render as blue channels (verified vs AMER2 render).
+- `map_system.md` §3 item 6 rewritten (river `@0x6838A` `0x01/0x11`; road `@0x6842B` `0x51`); band
+  list `0x51..0x5E river` → `0x51..0x5E roads`, added `0x01..0x1F river`; corrections block updated.
+
+**Follow-up (R/TBD)**: river major/minor base (`0x01` vs `0x11`) is selected by feature-plane bit
+`0x80` in the EXE; the C++ `Map` loads only the terrain plane, so the port approximates it from the
+forested terrain id. Loading the feature plane would make it exact.
+
+---
+
+## 2026-06-22 — O512 (func_067F50) is the dithered terrain-edge BLEND composer (coast is one case)
+
+**User directive**: "stop with all the guessing. and go a full code deep dive on the coasts. it is
+not just 4-6 sprites. there is a whole set of functions."
+
+**Finding** (full byte-trace of `func_067F50` 0x67F50..0x681A7 + its call sites in `func_0681A8`):
+O512 is not "the coast sprites" — it is the engine that **dithers every tile edge into its 4 cardinal
+neighbours**, of which the coast is one case.
+- 4-cardinal loop (N,E,S,W via DGROUP 4-dir tables `0xA8`/`0xAE`). For each neighbour: in-bounds
+  (`lcall 0x181F:0x302`), read terrain (layer `[0xA598]`, `&0x1F`, fold forest), `classify_terrain`
+  (`lcall 0x181F:0x6AA`), fog flag from `[0xA59C]`&`[0xA89E]`.
+- **8-ring walk** for water neighbours (`@0x6809A`, gated `[bp+6]==0`): walks the neighbour's own
+  N/E/S/W (even 8-dir indices) for the first land cell → its class becomes the blend class. This is
+  the **land-side coast**.
+- **Draw** (`@0x68189`): `draw_subcell(0x69+dir)` writes the **dither stencil** (`0x69..0x6C`, sparse
+  index-0 dot patterns, pixel-confirmed) into **mask buffer `0x839E`**; `emit_terrain_sprite(nb_class)`
+  (`func_067EEC`) **masked-blits** the neighbour terrain through `0x839E` (`lcall 0x181F:0x268`).
+- Call sites: fog path `O512(1,centre_water,0)` (`@0x68244`); main path `O512(0,[bp-4],0)` (`@0x68315`)
+  — ring-walk **enabled for land centres** (land-side coast), disabled for water (O513 does the
+  water-side: shore `0x96` + `0x97+pattern` + `0x6D` 8×8 quadrants).
+
+**Ruling**: the complete coast/terrain transition = **O513 water-side + O512 land-side dither
++ O512 biome-edge dithering**. Prior renderer attempts drew only O513's 4–6 water sprites and omitted
+O512 entirely → hard tile edges instead of Col1's dithered biome/coast transitions ("all wrong").
+Documented in `spec/systems/map_system.md` §3 (O512 deep-dive subsection). `classify_terrain`/
+`is_xy_in_bounds`/`read_terrain`/masked-blit are overlay `0x181F` helpers; roles inferred from call
+context (the only non-byte-pinned part). Byte-disasm (rank 3) + user directive (rank 1).
+
+**Action**: implement the O512 dithered-edge blend in `viceroy_cpp/src/mapview.cpp` (4-cardinal +
+water ring-walk on land tiles + dither stencil `0x69+dir`); self-verify the render then user-verify.
+
+---
+
+## 2026-06-23 — Terrain id 26 label fix: 26 = Sea Lane, NOT Ocean (housekeeping)
+
+**Context**: spec-vs-implementation audit. Three docs glossed terrain id **26** as
+"Ocean" — `CLAUDE.md` hard rule #2, `spec/systems/map_system.md` §57, and
+`formats/MP_FORMAT.md`. This contradicts the already-settled **2026-06-20 ruling**
+(this file) and the byte-verified `@OTHER` ordering: **24=Arctic, 25=Ocean,
+26=Sea Lane, 27=Mountains, 28=Hills**.
+
+**Evidence** (unchanged, already top-of-hierarchy):
+- Generator immediates (`spec/systems/map_generation.md`, B): ocean fill `0x19`(25)
+  `@0x64A4B`; right-two-columns → Sea Lane `0x1A`(26) `@0x65941`; poles → Arctic
+  `0x18`(24) `@0x6582A`.
+- `@OTHER` order in `spec/data/names_sections.md`: Arctic, Ocean, Sea Lane → 24/25/26.
+- Empirical `.MP` tile counts (`notes/MAP_FORMAT.md`): id 25 = 2139 tiles (Ocean),
+  id 26 = 810 tiles (Sea Lane).
+- Implementation `viceroy_cpp/src/mapview.cpp`: `is_water` = `0x19 || 0x1A`
+  (Ocean / Sea-lane) — already correct.
+
+**Ruling**: the **number 26 was always right** (the sea-lane column IS id 26); only
+the parenthetical **name** was wrong. Corrected "(Ocean)" → "(Sea Lane)" in the
+three docs above. No behavior change; this only removes a stale label that
+disagreed with the 2026-06-20 ruling. Implementation needed no change. Rank: EXE
+bytes (top) + prior recorded ruling.
+
+---
+
+## 2026-06-23 — spec cross-consistency audit (4-cluster): fixes + 2 open conflicts
+
+Read-only audit of spec/systems for cross-spec/internal contradictions. Most shared
+constants were consistent (REF globals, royal_money +0x22/1800, [0x53D0] identity,
+50% declare floor, ColonyRecord 0xCA, terrain ids 24..28, NativeSettlement 0x54EC/18,
+diplomacy +0x34/+0x40, @UNIT stat columns, difficulty 4-diff). Defects fixed:
+
+**Fixed (stale value contradicting a recorded ruling + the spec's own corrected text):**
+- `spec/data/records.md` UnitRecord base `0x3146`→**`0x3144`** (RULINGS 2026-05-28; the
+  file's own §4 already said 0x3144). `+0x07 map_x`→`+0x00 map_x`; `0x3146`=type at +0x02;
+  `0x314D/0x314E`=goto-target (not map_x/y).
+- `spec/systems/combat.md` profession byte `+0x15`→**`+0x17`** (abs 0x315B; matched its own
+  §3 prose `cmp [bx+0x315B],0x18`).
+- `spec/systems/ref_growth.md` Evidence list `+0x32 "strength rating"`→**home_x/home_y**
+  (RULINGS 2026-06-20; the §state table already had it right).
+- `spec/systems/events.md` header: Lost-City trigger `0xB0 RUNTIME-VERIFIED`→**PROCEDURAL
+  `func_006188`** (aligned to the file's own §6.1 2026-06-21 resolution).
+- `spec/systems/colony.md`: softened "`+0xBA` Hammers label is correct" → **DISPUTED**
+  (aligned to the file's own `+0xBA` CONFLICT row + §6 residual).
+- `spec/systems/map_system.md`: flagged the stale "`0xB0`=Lost-City trigger marker,
+  planted/cleared" model as SUPERSEDED by events.md §6.1 (procedural).
+
+**OPEN — need a targeted disasm pass to reconcile (do NOT guess):**
+1. **War-of-Spanish-Succession `[0x53D0]` trigger direction.** `revolution.md` + the
+   2026-06-20 ruling say succession "auto-fires when `[0x53D0]` **crosses 50**"
+   (`func_03E844 @0x3E8BD`); `spanish_succession.md` (dedicated call-graph analysis)
+   says the succession branch is the **low-`[0x53D0]` / `[0x53D2]<0` state**, dispatcher
+   `@0x02391C` **clamps `[0x53D0]` to 75**, and the handler body has *no* 50-compare.
+   The two cite different functions. Reconcile by disassembling the dispatcher at
+   `@0x02391C/@0x02392A` and `func_03C638` vs `func_03E844`.
+2. **River overlay bit in the procedural generator.** `map_generation.md:58` (P4) writes
+   river as "**bit 6 `0x40`**", but the `.MP` format authority (`MP_FORMAT.md`,
+   `map_system.md:21`) says packed river = **bit 5 `0x20`** (bit 6/`0x40` = forest), while
+   the runtime render trace (`map_system.md:152`) gates the river *draw* on feature-plane
+   `0x40`. Plane ambiguity — confirm which bit the generator actually `or`s at the P4 site
+   (`@0x64xxx`) and disambiguate the .MP-packed bit (0x20) from the runtime feature-plane
+   bit (0x40) in both specs.
+
+Both are conflicts between byte-cited claims; recorded here per the prime directive
+rather than resolved by guesswork.
+
+---
+
+## 2026-06-23 — RESOLVED: the 2 open conflicts from the cross-consistency audit (disasm pass)
+
+Both conflicts recorded earlier today were resolved by disassembling the raw EXE
+(`raw/COLONIZE/VICEROY.EXE`, capstone 16-bit).
+
+**1. War-of-Spanish-Succession `[0x53D0]` trigger — RESOLVED in favor of
+`spanish_succession.md` (revolution.md was wrong).** The end-game dispatcher
+`func_0235D6 @0x2391C` reads:
+```
+0x2391C  cmp  [0x53d0], 0x4b     ; threshold = 75 (0x4B), NOT 50
+0x23921  jl   0x2392a            ; if [0x53D0] < 75:
+0x2392A  mov  [0x53d0], 0x4b     ;   clamp to 75
+0x23930  cmp  [0x53d2], 0
+0x23935  jl   0x2393a            ;   and [0x53D2] < 0 (no secession yet):
+0x2393A  lcall 0x191f, 0x364     ;   -> SUCCESSION handler (func_03C638)
+0x23942  test [0x5382], 1        ; the >=75 path feeds the REVOLUTION handlers
+```
+So succession fires in the **low-meter (`[0x53D0] < 75`) + no-secession (`[0x53D2] < 0`)**
+state; the high (`≥75`) state feeds revolution. `revolution.md`'s "auto-fires when
+`[0x53D0]` crosses 50, `func_03E844 @0x3E8BD`" was wrong on BOTH counts: the threshold
+is **75** (not 50), and `func_03E844` is **`sons_of_liberty_active_check`** (the SoL
+display gate for REBELUP/REBELDOWN; reads `[0x5398]/[0x5382]/[0x53D2]`, **no `[0x53D0]`
+read**). The "50" came from conflating the *separate* declare-independence floor
+(`cmp [0x53D0],0x32` `@0x3E99E` in `func_03E984` — that one IS 50, and is correct).
+Fixed `revolution.md`; `spanish_succession.md` was already accurate.
+
+**2. Generator river overlay bit — RESOLVED (runtime-vs-.MP distinction).** Scanning the
+whole generator `func_064A10` (0x64A10..0x65D26) for flag-bit `or`-immediates: the only
+direct ones are **hills `or …,0x20` @0x64D19** and **forest `or …,0x80` @0x64D23**.
+There is **no `or …,0x40`** anywhere — the river feature is spread via thunk
+`0x181F:0x718` (@0x65BC2), and river therefore occupies the one remaining **runtime-board
+flag bit `0x40`** (consistent with the render trace `map_system.md` §3). `map_generation.md`'s
+"river `0x40`" is correct **for the runtime board**; `MP_FORMAT.md`'s "bit 5 `0x20` = river,
+bit 6 `0x40` = forest" describes the **`.MP` file format** — a different representation.
+Both specs annotated; the `.MP`→board remap in the `.MP` loader is the remaining residual.
+
+---
+
+## 2026-06-23 — Colony composer step 8 = stockpile bar; no colony menu bar
+
+**Conflict**: `docs/COLONY_SCREEN_VICEROY_DECODE.md` §2 and `spec/ui/colony_screen.md`
+§2.0 left composer step 8 (`call 0x2CA19`) as "role TBD" and asserted the stockpile
+bar `func_0281D6` was a *separate* per-page sub-renderer "not one of the 12 head
+calls." Separately, the user asked what is in the colony screen's "menu bar above."
+
+**Source A** — prior decode/spec said: step 8 role unknown; stockpile bar drawn
+outside the 12-step composer; colony title paint routine = `0x181F:0x178`.
+
+**Source B** — VICEROY disasm this pass (`tools/follow_thunk.py`) said: `call 0x2CA19`
+→ `ljmp 0x191F:0x654` → file `0x0281D6` = `func_0281D6` (fills `(0,179,320,21)`, 16
+cells × pitch 0x13). The title painter is `0x181F:0xB0` (`func_00275C`), not `0x178`
+(`func_0028B0` = strlen). All twelve `0x191F` step targets resolve to named
+sub-renderers; none is a File/Orders menu bar.
+
+**Ruling**: step 8 **is** the stockpile bar; the "menu bar above" is just the title/
+status strip (composer step 5 `func_0268CE`, painted centred near `y≈5` by
+`func_00275C`). The colony screen has **no dropdown menu bar** — that is the map
+view's `func_072090` (`spec/ui/menus.md` §173). Decided per TRUTH_HIERARCHY: byte
+evidence (the resolved `ljmp`) outranks the earlier drawlist gap and the recon note.
+
+**Action taken**:
+- `docs/COLONY_SCREEN_VICEROY_DECODE.md`: §2 table step 8 → `func_0281D6`; replaced
+  the "separate sub-renderer" note with the resolution; added §9 (top bar / title);
+  updated §8 status.
+- `spec/ui/colony_screen.md`: §2.0 step 8 row + stockpile note; §3.1 paint routine
+  (`0x181F:0xB0`) + "menu bar above" framing; open-items 1, 6, 7 updated.
+
+**Follow-up**: the title text-box origin is runtime state (`[0x2CC6/8/A/C]` from the
+`0x181F:0xC22` init), so the literal title x/y remains **R** (`y≈5`).
+
+---
+
+## 2026-06-23 — Colony gold is in the TOP MENU HEADER, not the warehouse bar; (306,179) ≠ gold
+
+**Conflict**: I documented the colony/Europe warehouse bar's `(306,179)` `"$%d"` of
+`DG16(0x2F5E)` as the player gold, and claimed the colony screen has "no menu bar." The
+user (running DOS game) stated gold is shown in the **top menu header only**.
+
+**Source A** (my disasm read): `func_0281D6 @0x0283F1` draws `[0x2F5E]` at (306,179);
+`europe_screen.md` had it labeled "displayed gold mirror `$%d`".
+
+**Source B** (running game = top of `TRUTH_HIERARCHY`; corroborated by disasm on re-check):
+gold is in the top menu header. Re-check shows: (1) the colony screen DOES have a menu bar
+— command table `cmp [bp+6],0x13C..0x142 @0x02BDEA`, registration `lcall 0x191F:0x3xx
+@0x02BE00`; (2) `0x2F5E` is a **string-heap index** consumed by `0x181F:0x22` (fetch
+string #N), **never written** as a treasury value (`grep`: only 2 read sites, no `mov
+[0x2F5E]`); (3) the real treasury is `PowerRecord+0x2A` via `[0x84FC]` (BYTE_VERIFIED,
+`DATA_MODEL.md`), mirror DGROUP `+0x9CB0` recomputed in the colony page `@0x02B80E`.
+
+**Ruling**: gold renders in the **top menu header** (field `PowerRecord+0x2A` / mirror
+`0x9CB0`), NOT on the warehouse bar. The `(306,179)` `[0x2F5E]` readout is a heap caption,
+semantic **TBD**. The colony screen **has** a menu bar. Running game outranks the static
+over-read.
+
+**Action taken**:
+- `docs/COLONY_SCREEN_VICEROY_DECODE.md`: §6 relabel (306,179) as heap caption / not gold;
+  §8 status; §9 retract "no menu bar"; new **§10** (menu bar + header gold).
+- `spec/ui/colony_screen.md`: §3.1 + §4 table rows (warehouse readout + gold-in-header).
+- `spec/ui/europe_screen.md`: `DG16(0x2F5E)` relabeled NOT-gold (same byte-identical code).
+
+**Follow-up**: pin the exact x/y/font of the header gold blit — the menu chrome draws the
+formatted string buffer `[0x9CD2]` (`@0x072FE1`/`@0x0731D0`); the literal draw site in the
+menu renderer is the next trace. And identify what heap string `[0x2F5E]` actually is.
+
+---
+
+## 2026-06-23 — Fill/frame verb traps synced across screen specs (0x22, 0xE2)
+
+**Conflict**: `viceroy_source/docs/UI_PRIMITIVES.md` byte-verifies `0x181F:0x22` =
+string-fetch (`func_002462`, no draw) and `0x181F:0xE2` = clipped sprite blit
+(`func_00DB3A`), but several screen specs still labeled them as `fill_rect` and a
+"1-px rule/frame/outline".
+
+**Source A** (screen specs): `advisor_reports.md` "Title bar fill via `0x181F:0x22`",
+"Footer rule via `0x181F:0xE2`"; `colony_screen.md`/decode + `europe` decode "screen
+outer rule" / "1-px frame" via `0x181F:0xE2`.
+
+**Source B** (central primitive doc, byte-verified): `0x22` = packed-string fetch
+(skip-N, `REPNE SCASB`, no draw) — the F2 title is `fetch [0x2DF6] → centre via 0x100`
+(`@0x37970`); `0xE2` = clipped sprite blit (sheet `[0x2DA8]`, `RETF 6`). The real
+rectangle fill is `0x444`, the real line/divider is `0xCE`/`0x191F:0x8BC`.
+
+**Ruling**: the byte-verified primitive catalogue wins (TRUTH_HIERARCHY: disasm at a
+cited offset > drawlist interpretation). `0x22` is a fetch, `0xE2` is a sprite blit;
+"fill"/"rule"/"frame" labels for them are corrected to "centred text"/"sprite strip".
+
+**Action taken**:
+- `advisor_reports.md`: title row + footer row corrected.
+- `colony_screen.md` + colony/europe decode docs: `0xE2` labels corrected (sprite, not line).
+- `UI_PRIMITIVES.md §0a`: added a "common verb-misread traps" block (0x22, 0xE2, the real
+  fill 0x444, and that WOODFRAM 0x510 has a single caller = colony-scene-only).
+
+**Follow-up**: a full audit of the 85 `0xE2` sites + 37 `0xCE` sites to confirm which
+panels use which is open (the corrections above cover the screen-composer call sites).
+
+---
+
+## 2026-06-23 — `0x181F:0xCE` IS a line/rule draw (overturns "no-draw clamp")
+
+**Conflict**: `UI_PRIMITIVES.md` classified `0x181F:0xCE` (`func_00E0A2`) as a "min/order-2
+clamp helper, NO draw", but the colony field panel calls it with line coordinates
+(`@0x026517`/`@0x026539`) as "divider lines", and the `0xE2`-sweep depended on knowing the
+real line verb.
+
+**Source A** (prior central-doc verdict): `func_00E0A2` head is `CMP bx,ax; swap` → "returns
+ordered low/high, not a draw."
+
+**Source B** (full disasm this pass): the ordering head **falls through to two draw calls**
+`lcall 0xBBC:0xC` (`@0x00E0E2`/`@0x00E100`) with the ordered coords + color `[bp+6]`;
+`0xBBC:0xC` (file `0x00DFCC`) does `mul bx` (y·width) then **`mov byte es:[di],al`**
+(@0x00E02A) — it plots pixels. So `0xCE` draws a line/edge (two passes), it only *orders*
+the endpoints first.
+
+**Ruling**: `0x181F:0xCE` = **line/rule draw** (the screen line/divider verb). The prior
+"no-draw clamp" entry is overturned — it stopped at the prologue and missed the helper's
+pixel writes. Byte evidence (the `es:[di]` store) wins.
+
+**Action taken**:
+- `UI_PRIMITIVES.md`: 0xCE table row (line 110), detail §0x0CE, and the summary row all
+  corrected to "line/rule draw"; added the `0xE2`/`0xCE` full call-site audit (87/49 sites).
+- Confirms the colony field-panel "divider lines via 0x181F:0xCE" labeling is correct.
+
+**Follow-up**: whether `0xBBC:0xC` is exclusively horizontal runs or general lines is not
+fully pinned (the two-pass call suggests top+bottom edges of a separator).
+
+## 2026-06-24 — Colony building placement: far-ptr dispatch traced, §12 blocker resolved
+Traced `func_07464C` (the supposed per-type→category setter): reached via thunk `0x1A1F:0xD2E`
+(stub file `0x1D31E`), which has **0 static lcall sites** — the call goes through the `ljmp`
+trampoline at `0x76384` (jump table; entry 0 = `ljmp 0x1a1f:0xd2e`), invoked 42× from the
+registration block at `0x0746BC`. The `0x8F88` (+6) column it writes = `floor(id/3)` (chain
+group), used by the produced-good pass, **not** plot placement. Plot placement (`func_025D34`)
+uses only the static `0x224`/`0x22A` config (`[7,4,2,1,1]`/`[0,7,11,13,14]`) + a random
+permutation within each category block. RULING: the "per-type category table" blocker in
+`docs/COLONY_SCREEN_VICEROY_DECODE.md` §12 was a misdiagnosis; placement is byte-portable given
+only the `rand()` LCG. Full trace recorded in the decode §12 note.
+
+## 2026-06-24 — OPEN CONFLICT (unresolved): ICONS index 100 — skip vs foot-unit
+Surfaced while building the lab Sprites tab (M1). `CLAUDE.md` hard rule 5 lists **100**
+among the placeholder indices to **skip** (0, 16, 100); hard rule 6 lists foot units as
+**100–105**. Index 100 is therefore claimed by both rules. Not resolved here — the lab
+renders ICONS #100 as a **TBD "CONFLICT"** role (rather than silently picking one) per the
+prime directive (never invent; record conflicts). A ruling is needed: is 100 a dead
+placeholder slot with foot units actually at 101–105 (+109), or is the rule-5 "100" a
+typo/overlap? Resolution likely needs the ICONS.SS pixel check at index 100. Until then the
+lab's role map (`lab/js/data/sprite_roles.js`) keeps 100 = TBD-conflict, 101–105 = foot unit.
+
+## 2026-06-24 — RESOLVED: the rule-5 skip set {0,16,100} is PHYS0-SCOPED; ICONS #100 is a real foot unit
+Resolves the OPEN CONFLICT directly above. There is **no conflict** — the two rules name
+different sheets:
+- **PHYS0** frames **0, 16, 100** are each a **1×1 transparent** stub (palette idx 253) —
+  corrupted MADSPACK extraction artifacts, "NOT usable sprites, should never be indexed"
+  (`notes/SPRITE_CATALOG.md` "Known extraction artifacts"; RULINGS A3). Byte-verified in the
+  bundle: `PHYS0.json` frames 0/16/100 are all `w=1,h=1`. THIS is what hard rule 5 skips.
+- **ICONS** is **contiguous 0–130, no gaps** (`notes/STATE.md:254`). `ICONS.json` #100 is a
+  real **6×16** sprite, the first of the foot-unit run 100–106 (src y=20). So hard rule 6's
+  "foot units 100–105 + 109" stands; #100 is a foot unit, not a placeholder.
+**Determination**: hard rule 5's "skip 0, 16, 100" applies to **PHYS0 only** (and those frames
+are 1×1, so a geometric "1×1 = placeholder" test already isolates them on any sheet). The M1
+lab bug was applying {0,16,100} to *every* sheet, which wrongly flagged ICONS #100.
+**Action taken**: `lab/js/data/sprite_roles.js` — renamed the set to `PHYS0_PLACEHOLDER_INDICES`,
+made `isPlaceholder(frame, sheet)` geometric + PHYS0-scoped, and set ICONS #100 = foot unit (B).
+**Suggested CLAUDE.md clarification (needs user sign-off)**: reword hard rule 5 to "skip the
+PHYS0 placeholder indices 0, 16, 100 (1×1 artifacts)" so the scope is explicit in the rule.
+
+## 2026-06-24 — Colony-screen layout decoded for the lab Screens tab; F2–F9 report fields are blocked
+While seeding the lab's Screens tab with byte-verified element positions:
+- **Colony building plots — B.** `func_02701C` (@0x02701C, VICEROY) is the plot painter:
+  loops 15 entries (`CMP [bp-8],0xf` @0x02707B), reads `x=[bx+0x266]`, `y_table=[bx+0x268]`,
+  draws at `y = y_table + 8` (`ADD cx,8` @0x02708F); a per-plot gate byte `[bx-0x717e]` (`JL`
+  skip = empty plot → tree frames 42/43/44) and a frame-type byte `[bx-0x729e]`. Confirms the
+  DS:0x266 plot table in `colony_screen.cpp`. **Position is B; WHICH building fills a plot is
+  RNG-driven (`func_025D34`) so the per-plot frame is TBD.**
+- **Colony stockpile bar — B** (`colony_screen.cpp` §6): 16 cells, x=1+i·19, icon row y=181,
+  quantity y=193; icon = good+0x16 ⇒ ICONS frame 22 (Food)…37 (Muskets). Visually validated —
+  the icons land exactly in COLONY.PIK's blue cells.
+- **F2–F9 report field positions — TBD (blocker named).** The report painters (F-key dispatch
+  `LCALL 0x191F:0x3xx`) render in **overlay 0x191F / the orphan code** (`orphans_load_image.asm`,
+  ~118k lines); field positions are loop/table-driven and not yet traced. The COLONIZE/VICEROY
+  per-func disasm offsets in `ADVISOR_REPORTS_AUDIT.md` (e.g. "file 0x027010") do NOT correspond
+  to the committed per-function `.asm` (0x02701C there is the VICEROY colony-plot painter, a
+  different EXE/offset space). Only each report's TITLE index is byte-cited (MISC[44..129]).
+  The lab seeds report fields as **TBD** (drag-to-measure), NOT fabricated — per the prime
+  directive. Tracing the 0x191F overlay is the remaining work to upgrade them to B.
+
+## 2026-06-25 — Autonomous spec/systems decode loop (4 batches): headline rulings
+
+Ran a decode→adversarially-verify loop over all 30 `spec/systems/*.md` files in 4
+batches (commits 3e8b4b5, 16b2b32, dbdcb3e and one earlier). Each candidate fact was
+independently re-derived from committed `raw/COLONIZE/VICEROY.EXE` bytes and landed ONLY
+on definitive confirmation; hard items were kept TBD with the blocker named. The
+durable rulings (full byte trails in the commit messages):
+
+- **Mission-conversion `cl&0x10` doubler = Jean de Brebeuf founding-father bonus.**
+  Bit `0x10` on the active convert record `[0x8D4A]+5` is set by `or [bx+5],0x10`
+  `@0x48C81`, gated by `has_father(0x16, power)` `@0x48C71` (thunk `0x181F:0x7B4`,
+  file `0xBC10`). `@FATHERS` row `0x16` = de Brebeuf (Religious/Jesuit). Read/doubled at
+  `@0x57300` (`test cl,0x10; shl ax,1`). A second setter `@0x3BEA2` sits in the FF-0x16
+  effect dispatcher — corroborates, not refutes. Closes the natives §3 mechanism note +
+  §6 open-q together. (Previously: mechanism-known, label-TBD.)
+
+- **`@UNIT` stat-table column map is byte-verified** (was hedged "TBD/unmapped" in one
+  spot): `func_074EC3 @0x074EF9..0x074F59` parses 23 rows into base `0x5230` stride 14;
+  movement (col1) stored ×3 `@0x5234`. Matches the §3 BYTE_VERIFIED table.
+
+- **GAME save/load is raw fixed-record fread/fwrite, no compression** (`func_073BB0` /
+  `func_0734F8`): 0x4F0 map block + 43× colony records.
+
+- **Customize new-game menu fully decoded** (`func_070060`): 4 player-facing params are
+  3-way enums (cursor `mod 4 @0x70158`, value `mod 3 @0x701AA/0x701AD`) — `@CLAND`
+  land-mass, `@CCONT` land-form, `@CTEMP` temperature, `@CCLIM` climate (strings in
+  `GAME_sections.json`). The 5-word param array at `DGROUP:0x1E7E` is mapped slot-by-slot;
+  slot 4 (`0x1E86`) is a generator-internal smoothing budget `(p_iter+1)·0x320 @0x6538D`,
+  NOT menu-reachable.
+
+Honest blocks recorded (stay TBD, not invented): UnitRecord fields
+`0x314F/0x3156/0x3158/0x3148` and the full move-cost table live in unattributed
+orphan-overlay routines; Save/Load and setup-menu dialog *geometry* is inside overlay
+file-picker thunks not in the committed disasm; `map_system` pattern-3 frame `0x9A`
+"out of bounds" depends on the `PHYS0.SS` frame count (MADSPACK sheet, not the EXE);
+the `0x5B1C` tension-row columns 4..38 are never accessed in committed disasm; the
+events Lost-City trigger read `0xB0` vs the generator write `0xA0` is a cross-file
+ruling needing the trigger function traced.
+
+## 2026-06-25 — UnitRecord 0x314F = facing/heading (8-way compass), NOT "europe/recruit state"
+
+Track-1 orphan-overlay attribution. The spec previously glossed UnitRecord +0x314F as
+"europe/recruit state (cmp ==8)". **Overturned by bytes:** 0x314F is the unit's 8-way
+compass HEADING (values 0..7; 8 = invalid/none sentinel). Proven independently on three
+overlay pages by the `xor al,4` reverse-direction test (8-way compass reverse): page 0x0C
+`@0x047AA8`, page 0x13 `@0x062F7C`; the angular-distance momentum score
+`d=0x314F−target; if d>4 d=8−d; score−=d²·2` `@0x051712..0x051737`; and the `cmp
+[bx+0x314f],8; jge` invalid-bound `@0x0516F0`. Written by AI move routines
+`func_04E2D6`(page 0x0D)/`func_059B90`(page 0x0F) — confirming it is AI heading state, not
+europe/recruit code. The enclosing AI order/move processor `func_04E2D6` (page 0x0D,
+0x04E2D6..0x051D55) is now attributed (see notes/ATTRIBUTION_OVERLAY.md).
+
+Also this pass: 0x3156 = overloaded per-unit TIMER field (word snapshot of progress
+counter [0x538e] for owner≥4; byte 0xFF→rand for owner<4) — NOT cost/sale/treasure;
+0x3158 = u8 per-turn land-unit boolean (set after cargo-load LCALL func_00B368, tested
+only for Wagon Trains); 0x3148 = transient bit-scratch register, bit 0x08 = tile-dirty/
+redraw (byte-verified), other bits context-overloaded and per-bit meaning kept TBD.
+
+REJECTED by adversarial verify (NOT landed): a 0x314B per-letter alphabet proposal (byte
+encoding errors — claimed BX-form writes were SI-form, phantom letters); and a native
+0x5B1C column-padding claim. Honest TBDs, not invented.
+
+## 2026-06-25 — PHYS0.SS = 154 frames; map pattern-3 frame 0x9A IS out of bounds (Track 2a)
+
+The map_system coast-edge renderer computes `0x97 + pattern`; pattern 3 yields frame
+`0x9A` (154). Whether that overruns PHYS0.SS was a standing TBD because the frame count
+is NOT in VICEROY.EXE — it lives in the MADSPACK-packed sheet. **Byte-decoded the sheet:**
+PHYS0.SS section-0 header `nframes @0x26` = **154**, so valid indices are `0..153`
+(`0..0x99`) and frame `0x9A` is one past the end. Resolved. The only residual is whether
+the pattern-3 mask (`[0xA8A6] & 0xDD == 0x1C`) is ever satisfied for a real coast tile at
+runtime (latent bug vs unreachable branch). Full frame-count table for all 205 decodable
+.SS sheets recorded in `data_extracted/SPRITE_SHEET_FRAMES.md` (decoder: tools/ssdec.py).
+Notable counts: TERRAIN.SS=12, ICONS.SS=131, PHYS0.SS=154, BUILDING.SS=48, BDARK.SS=46.
+
+## 2026-06-25 — Dialogs are GAME.TXT-template-driven; Save/Load "Layout TBD" explained (Track 2b)
+
+The Save/Load picker geometry was "Layout TBD" because there is NO coded layout: dialogs are
+**data-driven from GAME.TXT templates**. Traced chain (notes/ATTRIBUTION_OVERLAY.md): prompt
+orchestrators func_072F7A (save) / func_073158 (load) → slot-list builder func_072CC2 →
+window-create thunk 0x191F:0x182 = **func_06F0F4, a generic dialog-template interpreter** that
+parses the `@SAVEGAME`/`@LOADGAME` section of GAME.TXT (keyword lines: X/Y/WIDTH/LENGTH/
+SMALLFONT/COLOR). Add-row primitive 0x191F:0x176 = func_06C850 (linked-list item alloc, no
+x/y immediates); modal pump 0x191F:0x16a = func_06E3D0 (lays out rows at render time);
+teardown 0x191F:0x1a8 = func_0789FA (DOS free). The templates omit x/y/length ⇒ window
+auto-centered, per-row Y computed at runtime ⇒ those pixel positions are legitimately TBD
+(runtime), not missing work. This generalizes: the 0x191F overlay is the shared dialog engine,
+so other "0x191F TBD" UI items are likely template/runtime-driven too. (One auto-proposal was
+REJECTED for fabricated keyword-offset cites; the function chain stands, exact keyword offsets
+pending re-verification.)
+
+## 2026-06-25 — Advisor-report (F2–F9) renderer located: func_037958 (page 0x05) (Track 2b)
+
+The advisor reports' field layout was the standing "trace the 0x191F overlay" remaining work.
+Located the renderer: **func_037958 (page 0x05)** is the report screen, fed by the F-key
+dispatch (F2 push 2 @page_05.asm:581 / F5 push 5 / F9 push 1) and the .PIK loader func_037340
+(load_report_pik); report chrome strings "REPORT"/"(%d of %d)" at file 0x1EB42/0x1EB49
+(data base 0x1D9A0). Per-report numeric FIELD positions remain TBD (live game-state + the
+0x191F template path), but the renderer + dispatch are now byte-cited (B), upgrading the
+reports from drag-to-measure.
+
+## 2026-06-25 — Lost-City: no 0xB0 immediate exists; trigger masks, not equals (Track 2b)
+
+Exhaustive scan of all 494,910 EXE bytes (grp1-imm byte/word forms on es:[bx] + reg-imm
+cmp/mov 0xB0) found ZERO 0xB0 immediate. The generator ORs 0xA0 into the tile feature byte
+(@0x65C0D/@0x65C21 = `26 80 0f a0`). So the Lost-City trigger cannot compare ==0xB0 against a
+literal; it masks the feature byte (the 0x10 bit is a separate rumor/explored flag tested
+independently, or the read is (feat & 0xA0)). The "==0xB0" model in events.md §6.1 is a recon
+gloss, not a byte literal — corrected to a masked-read model.
+
+## 2026-06-25 — Track 4: button-bit 0x7E4, colony/europe hit-test tables; map-dispatch mislabel rejected
+
+Three input/UI resolutions landed; one proposal rejected on repo-fact grounds.
+
+- **Mouse 0x7E4 = right-button flag (complement of bit0), RESOLVED.** func_00D106 @0xD1A2-
+  0xD1AE: `mov al,bl / and ax,1 / cmp ax,1 / sbb ax,ax / neg ax / mov [0x7E4],ax` ⇒
+  [0x7E4]=0 on a left click (bit0 set), =1 on a right click. The Track-3 `(bl&1)` gloss was
+  INVERTED; corrected. Written only on a fresh press down-edge; sole writer (A3 E4 07 once);
+  readers test ==0 @0x2438A/0x29C91/0x6ECBC/0x2A038.
+- **Colony click-region table = func @0x299A0** (10 rects, point-in-rect 0x181F:0x3CA=
+  func_004B16): ids 0xA top bar / 2 main scene / 1 field panel / 0 plaza / 8 minimap(121,130,
+  84,48) / 4 SoL panel / 3 flag / 5 stockpile strip / 9 gold readout(305,179) / 0x14 default.
+  Matches colony_screen.md paint rects 1:1. id→action dispatch still TBD (overlay caller switch).
+- **Europe click-region entry = func @0x3200A** (default id 0xF); the older cite 0x032034 is
+  the id-5 (recruit-pool) block BODY, not the entry — corrected.
+
+REJECTED (not landed): the map-key-dispatch agent labeled **func_070060** as the "in-game
+map viewport/region picker" and asserted its getch cmp-cascade (Space/ESC/arrows/Enter) as
+the in-game map key dispatch. **Refuted by committed facts**: func_070060 IS the Customize
+new-game menu (batch-4: cursor mod4 @0x70158, params @CLAND/CCONT/CTEMP/CCLIM, writes the
+map-GEN param array [0x1e7e]). The cmp-cascade bytes are real but they are the Customize
+menu's navigation, NOT the in-game map. The genuine in-game active-unit command keymap
+(B/F/C/W…) remains menu-accelerator-driven (func_0235D6) — carried open blocker, still TBD.
+
+## 2026-06-25 — Active-unit order keymap: code→handler RESOLVED; key-read step honestly TBD (Track 5)
+
+Premise correction + a real win. **func_0235D6 is NOT the accelerator engine** — it is a
+downstream command DISPATCHER that receives an already-decoded command id in [bp+6] (switch
+mov ax,[bp+6] @0x235E2; F-key report ladder cmp 0x48/0x41.. @0x23843 → 0x191F report thunks,
+consistent with Track 2b). It never reads a key and never scans @ORDERS. Do not cite it as the
+key→order translator.
+
+RESOLVED (byte-verified): the @ORDERS order-code → per-turn handler map, via the dispatcher
+@0x249CB (imul idx×0x1c; al=[bx+0x314c]; code−2; cmp ≤7; jmp word cs:[bx+0x3b58]; table @file
+0x24A38). Codes→executors: 2 TradeRoute→func_041080, 3 GoTo→func_040E22, 5 Fortify→func_04101C
+(which WRITES code 6 @0x41024, byte-proving Fortify→Fortified promotion), 6 Fortified→passive,
+7 BuildColony→func_040C1E, 8 Clear/Plow→func_040656, 9 BuildRoad→func_0409D6. The 2nd
+dispatcher @0x051DCE (codes 7..12, table @file 0x51E1A) LCALLs the SAME thunks for 7/8/9,
+cross-confirming. Handlers 8/9 match terrain_improvement.md. Row index == stored order code
+for all proven rows. Command letters S/T/G/L/F/B/P/R are canonical from NAMES @ORDERS.
+
+HONEST TBD (overlay-paged, not statically traceable): the KEY-READ step — where a pressed
+accelerator letter is matched to a menu row and decoded into the command id. The match loop is
+inside the overlay menu engine around func_06E3D0 @0x6E3D0 (polls input via LCALL 0x181F:0xf6
+@0x6E419 → getch 0xD286). getch and func_0235D6 have no static callers (xref empty; overlay
+function-pointer table patched at runtime), so the letter→id translation needs a runtime trace
+or the overlay dispatch table resolved. Next site: callees of func_06E3D0's poll loop + per-row
+draw func_06F83A @0x6F83A + the consumer of the 'ORDERS' section-name lookup @file 0x1FBFD.
+
+## 2026-06-25 — 0x54de = @ORDERS status-letter table (NOT the menu key-match); renderer func @0x0386A (Track 6)
+
+Extended Track 5. DGROUP byte array 0x54de[13] is built by a NAMES-section table-builder
+(loader body file 0x074E70..0x074FE0) that parses the @ORDERS accelerator column into
+0x54de[row] = {'-','S','T','G','L','F','F','B','P','R','-','-','-'}, indexed by order code
+(@0x074F96 mov [bx+0x54de],al; 13-row loop). It is consumed ONLY by the on-map unit
+STATUS-LETTER renderer func @0x0386A (NOT func_038F2C — that linear-sweep label is a different
+function; renderer prologue enter 0x46,0 @0x0386A): default glyph = 0x54de[0x314c order code],
+with overrides for ship cargo digit, 'X', and the 0x314b AI-state char (→'E' when >=0x80) —
+cross-linking Track 1's 0x314B.
+
+PROVEN (full-binary scan): exactly TWO code refs to 0x54de (writer 0x74F96, reader 0x391D),
+zero register-constant loads. So the orders MENU does NOT select a row by scanning a pressed
+key against 0x54de — accelerator matching is engine-internal to the dialog/section opener
+func_06F8FA, matching the @ORDERS text directly. The in-engine key-match site stays the one
+honest TBD (overlay-internal). Adversarial verify caught my initial renderer mis-citation
+(func_038F2C @0x038F2C) and it was corrected to func @0x0386A before landing.
+
+## 2026-06-25 — Runtime snapshot harness: live DGROUP seg 0x1CFD; 0x54de table confirmed (Track 7)
+
+Built tools/runtime_snapshot.py: boots VICEROY headless under stock DOSBox 0.74 and snapshots
+the emulated DOS RAM out of the DOSBox process via /proc/<pid>/mem (no debugger build/symbols
+needed; DOSBox's emulated RAM is the 16MB anon mmap carrying the MADSPACK+ORDERS signatures;
+DOS phys P = region offset P). First runtime cross-check of static RE in this project.
+
+Verified: live DGROUP base = segment 0x1CFD (phys 0x1CFD0), auto-anchored on the section-name
+table UNIT\0ORDERS\0ACTIONS\0 @DGROUP:0x2258. DGROUP offsets are preserved from the static EXE
+image, so spec DGROUP:0xNNNN citations read live at phys 0x1CFD0+0xNNNN. RUNTIME-CONFIRMED the
+Track-6 0x54de table: DGROUP:0x54de[13]='-STGLFFBPR---' occurs exactly once in 16MB. Anchors
+0x225d='ORDERS', 0x2258='UNIT', 0x2264='ACTIONS' all exact.
+
+Limit: stock DOSBox sends the DOS console to emulated video (not host stdout) and gameplay input
+is not automated, so this captures the boot/menu state + resident data. Catching the in-engine
+orders-menu key-match (inside func_06F8FA) still needs scripted input or a debugger build —
+that remains the one honest TBD in the keyboard chain. Harness doc: docs/RUNTIME_SNAPSHOT.md.
+
+## 2026-06-25 — Runtime trace reaches in-game map + ORDERS menu; key-match RUNTIME-CONFIRMED (Track 8)
+
+Drove the live game (tools/drive_game.sh) all the way to the in-game map with an active unit,
+opened the ORDERS pulldown, and snapshotted DOS RAM with the menu OPEN (tools/runtime_snapshot.py).
+This closes the one input TBD that was flagged as needing a runtime trace.
+
+Findings (triangulated: live RAM + static MENU.TXT + screenshot):
+- The in-game ORDERS menu is built from **MENU.TXT @ORDERS** (data_extracted/text/MENU_sections.json),
+  NOT the NAMES @ORDERS (which → 0x54de on-map status letters, Track 6). Each row's accelerator is
+  a **`~` marker** in the label: ~Fortify→F, ~Sentry→S, ~Build Colony→B, `Join Colony (~B)`→B,
+  `Build ~Road`→R, `Begin ~Trade Route`→T, `No Orders (~s~p~a~c~e~ bar)`→spacebar,
+  `Disband Unit (~s~h~i~f~t~-~D)`→shift-D.
+- LIVE EVIDENCE: the menu is a linked list of func_06C850 nodes (0x18 bytes: two far-ptr links +
+  label + u8 row-index + flag) at seg 0x668c; each node carries the ~-marked MENU.TXT label
+  VERBATIM (e.g. `~Activate unit`, `Join Colony (~B)`). So the engine parses the ~ markers from
+  the live menu rows to bind accelerators. (The exact getch-vs-marker compare instruction inside
+  the dialog engine is the only residual micro-detail; the mechanism + full keymap are resolved.)
+- map_view.md sidebar HUD RUNTIME-CONFIRMED: live shows `Spring 1498`, `Gold: 1000e Tax: 0%`,
+  active Caravel `Moves: 4 / Locat: (50,42) / (Sea Lane)` (hard rule 2 confirmed visually).
+
+New screens: docs/screens/06_ingame_map.png, 07_king_audience.png (KING.SS, row 13),
+08_orders_menu.png. The runtime memory harness + driving harness together now reach and confirm
+any reachable game state.
+
+## 2026-06-25 — All 10 advisor reports captured live (F1–F10) (Track 9)
+
+Drove the running game to an in-game state and opened every report from the REPORTS pulldown.
+Visual ground-truth for the advisor-report subsystem (renderer func_037958, Track 2b) now lives
+in docs/screens/reports/ (+README). Confirmed REPORTS menu order: F1 Terrain / F2 Religious /
+F3 Continental Congress / F4 Labor / F5 Economic / F6 Colony / F7 Naval / F8 Foreign Affairs /
+F9 Indian / F10 Score.
+
+Live field values confirmed (not just layout):
+- F5 Economic = "European Trade" table, cols Tons/Gold/Bid Price/Ask Price × 16 commodities
+  (live bid/ask: Food 0/8, Sugar 5/7, Silver 19/20, Rum 9/10, Muskets 2/3, ...); pages to
+  "Cargo in Port" sub-view. Confirms the market bid/ask model (market.md).
+- F8 Foreign Affairs = 4 European leaders by name (Walter Raleigh/English, Jacques Cartier/
+  French, Christopher Columbus/Spanish, Michiel De Ruyter/Dutch), each Rebels/Tories (revolution.md).
+- F10 Score = func_03A9C0: "Discoverer Walter Raleigh of the English: Spring 1498"; English
+  Citizens +6 / Continental Congress +0 / Gold (1000e) +1 / Total Score: 7 (scoring.md terms).
+- F1 Terrain = Colonopedia popup for the tile ("Sea Lane" — hard rule 2).
+
+UX facts: reports close via the OK button (bottom-right), NOT Esc (Esc quits from the map); an
+F-key pressed inside a report pages THAT report's sub-views, it doesn't switch reports.
+
+## 2026-06-25 — Europe screen captured live (Track 10)
+
+Drove a Caravel back to Europe ("Return to Europe" order, ~2 turns) and captured the European
+Status Screen live (docs/screens/10_europe_screen.png + 09_europe_arriving.png). Confirms
+europe_screen.md: header "London, England. Spring, 1500. Tax: 0% Gold: 1000e"; the three dock
+zones Expected Soon / Bound For New England / Loading: Caravel (captions from @MISC); the
+RECRUIT/PURCHASE/TRAIN panel (@EUROLABEL); the 16-commodity bid/ask price strip (same prices as
+the F5 Economic report -> single market model); and the Exit button with red 'E' accelerator.
+First arrival shows a tutorial help overlay. Validates the Track-4 func @0x3200A hit-test rects.
+
+## 2026-06-26 — Colony screen captured live; ColonyRecord + hard rule 8 runtime-confirmed (Track 11)
+
+Drove the full New-World arrival sequence live to found a colony and capture the colony screen
+(the big colony_screen.md PARTIAL surface): sail back from Europe -> "Discovery of the New World"
+-> Make Landfall -> a LOST CITY RUMOR ("You find nothing but rumors" = a live @LOSTCITY outcome)
+-> "Meeting the Natives" / Arawak diplomacy ("a glorious nation of 11 Villages", land-gift, peace)
+-> Build Colony -> name "Jamestown" -> "Building a Colony" -> colony screen. Live @TUTORIAL hints
+also fired (Caravel hint). Screens in docs/screens/ (11_colony_screen.png + 12..15).
+
+RUNTIME CONFIRMATION of the colony data structures (CLAUDE.md hard rule 8): snapshot with the
+colony screen open (colony_jamestown.bin), DGROUP seg 0x1CFD. *(0x8542) = 0x606e. And
+0x606e = 0x5D46 + 4*0xCA EXACTLY -> confirms ColonyRecord base 0x5D46 + stride 0xCA (Jamestown =
+table index 4). Record @0x606e: +0 cx=0x2e(46), +1 cy=0x29(41), +2 name "Jamestown\0". Validates
+the [0x8542] near-ptr + the +0/+1 cx/cy field map in colony_screen.md.
+
+The colony screen visually confirms: RNG-placed buildings layout (func_025D34 §12), surrounding-
+tiles work map, SoL/pop "100% (1)", production panels, 16-commodity warehouse strip (Tools: 50),
+Exit (E). With the runtime harness, every major in-game screen is now captured + cross-checked.
+
+UX note for founding: colonists made landfall sit on the water-edge tile and must be MOVED onto
+land (Rain Forest here) before Build Colony works ("colonies cannot be built at sea"); sentried
+units are woken by clicking their tile once no unit is active.
+
+## 2026-06-26 — Colony §12 RNG building placement RESOLVED (static trace + snapshot oracle) (Track 12)
+
+The 2026-06-24 "burned" incident (colony screen marked COMPLETE while func_025D34 RNG placement
+was unresolved) is now genuinely resolved — traced statically AND verified against the live
+Jamestown snapshot.
+
+func_025D34 @0x025D34..0x025EAF, full algorithm:
+1. RNG seed per colony: lcall 0x181F:0xD62 @0x025D3A.
+2. Category-per-plot table 0x8D62 = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4], built from counts
+   0x224=[7,4,2,1,1] + starts 0x22A=[0,7,11,13,14] (deterministic, recomputed each open).
+3. Within-category random shuffle (random_int(0,count-1)+start[cat] via lcall 0x181F:0x4D4,
+   retry if occupied) -> plot→building-slot at 0x8E92 (=[bx−0x716E]).
+4. 42 building-defs (stride-12 records based 0x8F88) mapped to category-slots; for each building
+   the colony HAS (query lcall 0x181F:0x9FC) write present-gate 0x8E82[plot]=building-def-id
+   (else 0xFF) @0x025E9F.
+5. Frame = word[id*2−0x7238] = [id*2+0x8DC8] (func_026CC2).
+Consumer render loop 0x027067: position 0x266[slot*4], category 0x8D62[slot] (stride 1),
+present-gate 0x8E82[slot] (stride 1, skip if <0/0xFF), draw via 0x2CA23(category,y,x,def-id).
+
+ADDRESSING NOTE: the disasm's negative offsets are 16-bit wraps: −0x729E=+0x8D62, −0x717E=+0x8E82,
+−0x716E=+0x8E92, −0x7238=+0x8DC8, −0x7078=+0x8F88.
+
+SNAPSHOT VERIFICATION (the key methodological point): live Jamestown 0x8E82 (stride 1) = 8
+buildings at plots {2,3,4,5,6,10,12,13}, def-ids {0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00},
+matching the trace. A first naive stride-4 read had falsely reported "13 buildings" — the
+snapshot oracle is exactly what caught and corrected the bad decode before it could land. This
+is the runtime harness doing its job: not auto-decoding, but turning an unverifiable static
+claim into a checkable one.
+
+Residual (non-static BY DESIGN): the exact plot a building lands in depends on the per-colony
+RNG seed + shuffle order; replayable from seed 0x181F:0xD62 but not a fixed table.
+
+## 2026-06-26 — UI-residue trace+oracle pass: 6 verified, 2 rejected, 9 honest blocks (Track 13)
+
+Workflow fanned 4 tracers over the remaining tangled UI TBDs, each verified against a live
+snapshot oracle. Landed only byte-traced AND oracle-confirmed facts.
+
+ECONOMIC REPORT (docs/ADVISOR_REPORTS_AUDIT) — the F5 table fully decoded:
+- Real paint fn = func_038A50 (page_05, file 0x038A50; the old 0x027010 was a pre-reseg
+  mis-resolution). 16-row loop (cmp [bp-0x84],0x10 @0x038E3B), y-stride 8 (@0x038E33), start
+  y=0x21. Columns drawn via text primitive 0x181f:0x13c = func_002B38 (arg order color,y,x,ss,&str).
+- BID = func_030590 (0x191f:0x9ea): PowerRecord[+0x4c+commodity] − 1, clamp ≥0.
+- ASK = func_030566 (0x191f:0xc3e): PowerRecord[+0x4c+commodity] + spread_const[commodity*9]
+  (DGROUP +0x9700, stride 9), clamp ≥0. Both oracle-confirmed against rep_economic.bin.
+  Blocks (honest): per-value left x is runtime font-metric right-justification (column RIGHT
+  anchors ARE byte-cited: name→0x90, Gold 0x90, Bid 0xaa, Ask 0xdc); header label literals are
+  GAME-string indices [0x2e2e/0x2e30/0x2f50/0x2f52]=385/386/530/531 (not mapped to text);
+  Tons/Gold dword tables (+0x88c4/+0x8884) both 0 in snapshot (no trades) so not distinguishable.
+
+COLONY PANEL (§3.6): the [0x337] 3-way dispatch is func_02814C; case-0=SoL func@0x0275CE,
+case-1=cargo func@0x027746, case-2=msg. "No Ships In Port" = LABELS @MISC[11] via resolver
+func_002462 (0x181F:0x22), oracle-confirmed at DGROUP 0x2FF1A. SoL/cargo-mode literals stay
+TBD (need a snapshot in those modes).
+
+EUROPE (§3): banner = func_030F76 (lcall 0x181F:0xB0, NO coord push → pixel origin from string
+metrics, runtime). Banner pixel origin + Exit-button paint origin remain TBD. REJECTED: a
+"corrected" click-rect mapping was byte-wrong (verifier refuted).
+
+COLONY TITLE (§3.1): func_0268CE assembles "Jamestown. Spring, 1504. Gold: 1000e" — name branch
+@0x269F8, season @0x26A22, year @0x26A44, gold @0x26A61 (via 0x181F:0x22). REJECTED: one row
+mis-attributed the gold draw to func_0268CE. Pitch-packing loop (line 145) stays TBD.
+
+Method note: 2 rejections (europe click-rect, colony gold) + 9 honest blocks vs 6 clean lands —
+the oracle requirement (must match live snapshot) is doing exactly what it should.
+
+## 2026-06-26 — String-blob resolver is DIRECT (corrects a same-day +1 error) (Track 14)
+
+Self-correction. Commit a3f8948 claimed the LABELS string-blob resolver func_002462 (0x181F:0x22)
+maps the Economic header indices with a "+1" (stored 385 → blob[386]="Tons"). That was WRONG.
+
+VALIDATED rule: the resolver walks the contiguous null-separated blob at far-ptr [0x2d42:0x2d44]
+(live base 0x4c050) and the mapping is DIRECT — string = blob[index], no offset:
+- global 0x153=339 → blob[339]="No Ships In Port" (the known colony @MISC[11] string) ✓
+- europe [0x2DD0]=338 → blob[338]="Bound For" ✓
+- blob[386]="Tons", [387]="Gold", [531]="Bid Price", [532]="Ask Price" (both snapshots identical).
+
+So the Economic header LABELS are at blob[386/387/531/532] (direct); the source DGROUP globals I
+earlier read (385/386/530/531) do NOT land on them, so the exact header-index globals are TBD
+(label identity stays confirmed via screenshot + blob). The "+1" framing in a3f8948 is retracted.
+
+LESSON for the cheap sweep: the index globals ([0x2F5E], [0x939A], [0x2DD0], …) hold
+context/MODE-TRANSIENT values — e.g. europe [0x2F5E]=537="Sons of Liberty" is clearly leftover,
+not the field's purpose. So resolving a field's SEMANTIC via the blob requires the snapshot to be
+in that field's active mode; absent that, the blob gives the current (possibly stale) string, not
+the meaning. Mass-applying the mechanism to these globals would re-introduce plausible-but-wrong
+literals — so only the mechanism (direct) + the two validated anchors are landed.
+
+## 2026-06-26 — Colony §3.3 colonist-row pitch RESOLVED (code + existing snapshot, no re-drive) (Track 15)
+
+The "per-colonist pitch = data-driven packing loop = TBD" turned out to be cheap (code-derivable
++ confirmable from the colony snapshot already on disk), NOT requiring the expensive re-drive.
+
+func_0270D0 @0x0270D0 colonist plaza row: count = colony+0x1F + [0x8D72] (live 1+1=2). Pass 1
+(@0x02710A) sums each colonist sprite width (table [0x83E]:[0x840], stride 12, +0x3E=width) into
+total_width. Gap solve (@0x027160): gap=[0xA890] init 2; while gap*(count-1)+4+total_width >= 0x60
+(96), decrement gap and retry — adaptive shrink to fit the 96-px budget. Pass 2 (@0x027186) blits
+each colonist (0x181F:0xCE) at running x [bp-0x60] (from 143, advanced left by sprite_width+gap),
+y=10. So pitch = sprite_width(+0x3E) + adaptive gap (2->0). Table structure + [0xA890]=2
+oracle-confirmed in colony_jamestown.bin (real colonist +0x3E=15).
+
+Note: this extends the "cheap tier" — a TBD labeled "needs a multi-colonist re-drive" was actually
+a code-derivable formula whose data structure the existing single-colonist snapshot confirms.
+
+## 2026-06-26 — Colony per-turn driver sequence + food consumption + warehouse capacity (Track 16)
+
+Traced colony_turn_update @0xA222..0xA6A1 (the per-turn colony pipeline a rewrite needs as
+control flow). Ordered: (1) setup lcalls; (2) tile production loop over 20 goods via
+compute_terrain_yield (call 0x9B9C @0xA42A) into produced table [good*2+0x8DC8]; (3) 5 raw→
+finished chains (call 0x8E84 ×5 @0xA660..0xA68C); (4) food consumption; (5) warehouse cap;
+(6) display-delta bookkeeping.
+
+BYTE-VERIFIED formulas:
+- Food consumption = 2*pop (@0xA5F2 shl ax,1 on ColonyRecord+0x1F); net_food = max(produced − 2*pop, 0).
+- Warehouse capacity = (warehouse_level[+0x95] + 1) * 100 (func_008D00: base 100, *(level+1)).
+
+Warehouse spoilage (was TBD): capacity formula nailed + the over-cap detection (func_008E02
+computes room = cap − stock − produced); but the exact CLAMP/discard write to the +0x9A stockpile
+is in the 0x8E84 commit chains, not func_008E02 (which is colony-screen display bookkeeping). So
+spoilage is now PARTIALLY resolved (cap + detection byte-verified; the write leaf remains).
+
+Note: confirms colony production is more complete than the mid-session layer-3 estimate implied —
+the core formulas (per-tile yield, SoL EMA, consumption, capacity) are byte-verified from code,
+not reconstructed; runtime deltas would only confirm them.
+
+## 2026-06-26 — PowerRecord field tail + Unit/native AI-boundary classification (L1/L2 Phase 1)
+
+PowerRecord (per-nation economy/diplomacy, 316-byte/0x13C stride @DGROUP:0x8808, 12 entries;
+active reached via near ptr [0x84fc], set by func_030550 @0x30559). Tail offsets resolved this
+pass, each disasm-cited via capstone on VICEROY.EXE AND oracle-checked against rep_economic.bin /
+rep_europe.bin (active power 0):
+- +0x20 u16 boycott_bitfield (and ax,[bx+0x20] func_030B38 @0x30B47; clear func_03334E @0x33423). oracle 0.
+- +0x22/+0x24 s32 royal_money accumulator (add [bx+0x22],ax; adc [bx+0x24],dx func_02D658 @0x2D785;
+  boycott-lift adds @0x33413). oracle grows 70->80 between the two snapshots (live).
+- +0x26/+0x28 s32 gross/pre-tax accumulator paired with +0x22 (@0x2D78B). oracle 0.
+- +0x2A/+0x2C u32 gold treasury (sub [bx+0x2a],ax; sbb [bx+0x2c],dx func_03334E @0x3340D;
+  treasure credit func_04E2D6 @0x50954). oracle = 1000 <-> in-game "Gold 1000". KEY OACLE MATCH.
+- +0x2E/+0x30 u16 pair, Europe "(%d of %d)" progress (func_037958 @0x379AB mov dx,[bx+0x30];
+  mov bx,[bx+0x2e]). oracle 0/10. writer semantics TBD.
+- +0x32/+0x33 byte pair = default unit destination map_x/map_y (page_0D @0x51E9B al=[bx+0x32]->
+  [si+0x314d]; @0x51EA6 al=[bx+0x33]->[si+0x314e]). SUPERSEDES the DATA_MODEL.md "ref_strength
+  word +0x32" guess (byte reads, not word; authoritative REF = 0x53DA..0x53E1 per 2026-06-19).
+- +0x49 byte countdown (cmp/dec func_04E2D6 @0x52658/@0x52688). +0x4A u16 crosses pool drained in
+  0x32 chunks (@0x5276F/@0x5279F).
+- +0x4C+i u8[16] price_level (ask func_030566 @0x30583; bid @0x3059C; recompute @0x306F3). oracle
+  [1,6,5,5,5,2,6,20,3,10,11,12,15,2,2,3] (Silver=20). +0x5C+i*2 s16[16] vol_accum (func_0305A8
+  @0x30707 etc.). oracle differs between snapshots (live accumulator).
+Record interior with no traced read/write site (mostly the js-dos-schema market arrays) left TBD,
+not asserted.
+
+Unit fields 0x3149 / 0x3148 / 0x314B / 0x3158 pushed to their L2 ceiling = AI-GATED. 0x3149 is an
+AI per-unit enable/budget counter: turn-dispatch enable (func_051D56 @0x51D5D), budget-sub
+(func_03ECF0 @0x03EE95, func_0079A0 @0x007A08), incr (func_059B90 @0x059F20/etc). EVERY consumer
+is orphan-overlay AI; no render/economy/UI reads it. Oracle: player units 0, native braves nonzero
+(6,6,8,3,3,9). Exact English (move-credits vs eval-passes) is the AI-GATED ceiling.
+
+Native tension table 0x5B1C (39-word stride): columns 4..38 RESOLVED-as-unused. dgroup_xrefs.json
+= exactly 3 refs (getter @0x0082AC, applier read @0x045E57, write @0x045E6C); all callers pass a
+power id 0..3 (raid scan col<4 @0x047365; 0 column constants >3). So only cols 0..3 = the 4 powers
+are ever touched, by ANY committed path (not even orphan AI) -> NOT AI-GATED, simply over-allocated.
+NativeSettlement +0x03 bit 0x04 = Capital (set @0x66225, consumed @0x43DC4/@0x07DCA/@0x46E05;
+oracle 1/tribe). WITHDREW the earlier unverified 0x04=mission / 0x08=visited / 0x40=event flags
+(no code sets/tests those bits).
+
+## 2026-06-26 — OPENING.EXE / CLOSING.EXE cinematic deep decode (L1 Phase 2)
+
+Decode-verify workflow over the two separate cinematic binaries (committed disasm
+code/{OPENING,CLOSING}/disasm/*.asm + capstone on raw/COLONIZE/{OPENING,CLOSING}.EXE; all anchors
+re-checked by hand). OPENING.EXE carries a C symbol-name table (file 0x11900+) decoded against the
+symtab encoding — _opening/_open_loop/_load_ship_path/_load_anims/_do_ship/_do_anims/_do_logo etc.
+
+OPENING.EXE (all B unless noted):
+- Asset-load ORDER, one pass through _opening @file 0x1AAC..0x1EC2: PATH.DAT (_load_ship_path @0xCEA),
+  CREDITS (_load_credits @0xD52), anim table (_load_anims @0xDD2 → _anim[] @0x4de8, 6 words/rec),
+  #SOUND.COL/MPSLOGO/MPSNAME, OPENING.PIK (_picture_load_2 seg 0x181:4 @0x1c94), OPENBORD (as a .PIK
+  via seg 0x1b4:8 @0x1d10), OPENSHIP .SS @0x1d90, OPENCRD0-2 (loop @0x1dcc), then OPENWND1/OPENSUN/
+  OPENMON1/OPENWND2/OPENMON2/OPENMON3/OPENFISH/OPENGUY/OPENLOGO/OPENBONK .SS @0x1e0e..0x1ebe.
+  Loaders: .SS=seg 0x3b1:0xa (file 0x471A, name ptr in BX); .PIK=seg 0x1b4:8; fullscreen .PIK=0x181:4.
+  CONFIG.COL/MEMORY*.TXT are config/diagnostic, not assets.
+- Blit routine seg 0x392:0 = file 0x4520 (enter 0x28,0 verified): AX=frame index, bit15=H-flip
+  (and ax,0x7fff @0x4546 verified), BX=dest surface descriptor (lea [0x3910]), DX=X, [bp+6]=Y,
+  [bp+8]:[bp+0xA]=sheet-handle far ptr. Per-frame record stride 12, header 0x36, bbox +0x3a x-anchor/
+  +0x3c y1/+0x3e width/+0x40 y-extent; sheet dims +0x4a/+0x4c.
+- Placement = TABLE-DRIVEN, not literal pushes for animated elements: _do_anims @0x102C iterates
+  _anim[] (count [0x46]); record field0 indexes _animsprite @0xa2; X = -((width>>1)-x_anchor)+rec[+6]
+  -_pan_x; Y = -(rec[+0x40]-rec[+0x3c])+1. Literal-centered exceptions: credit @0xFB6 centered x=160
+  (sub ax,0xa0 @0x1001 verified) y=183 (sub cx,0xb7 @0x1008 verified); logo _do_logo @0x1700 bbox+
+  literal offsets +0x17/-8/+0x10.
+- Pan: _pan_x [0x4aca] init 0x280(640) @0x16af, dec 1/tick in _pan @0x113e, subtracted from every X.
+- Ship path from PATH.DAT: _load_ship_path @0xCEA → _ship[] @0x4f0c (stride4 X,Y), _do_ship @0xF6E
+  indexes by _ship_at, frame=_ship_wave, stepped by master clock _ship_move @0x119A.
+- Frame cascade on [0x82] (thresholds 0x87/0x99/0xAD/0xC3/0xDC/0xEC/0xFC/0x1FB) sets frame 1..7.
+
+CLOSING.EXE (all B unless noted):
+- Per-frame loop func_000E4C @0xE4C (verified entry); 32-bit master clock [0x488c]:[0x488e] via
+  LCALL 0x24a,2; stepper CALL 0xC0C (interval [0x54], runtime/live-adjustable INC/DEC @0xE2A/0xE30;
+  INC step-counter [0x6a]); present CALL 0xAC2; SENTINEL EXIT cmp word [0x6c],0 / jne 0xe59 @0xE71-76
+  (verified); [0x6c] cleared @0xD70 (path done) / @0xE07 (quit). No immediate-threshold cascade.
+- Assets: CLOS-BKG via seg 0xbe:0xa @0x1084; FONTINTR once @0xff6; 7 CLOS-* sheets via 0x2db:0xe
+  @0x110E..0x1185 into flat handle table base 0x72.
+- Placement = table-driven actor structs, stride 0x0E=14B, base 0x4b96 (+0 sheet idx, +2 tick 0x4b98,
+  +6 Y-base 0x4b9c), loaded by func_000A00 @0xA00 from the CLOSING sequence file. MIL (sheet idx 4,
+  cmp ax,4 @0xC84 verified) fires special event lcall 0x69b,0xe (ax=0x59/0x5a).
+- TEXT (important): the cinematic loop draws ONLY a debug step-counter at pen (5,5)/FONTINTR. There is
+  NO scrolling-credits text render — the "credits" are the CLOS-* sprite actors. _text_close/_text_search
+  (@0x1bd8/@0x19ea) parse CLOSING.TXT @CLOSING lines into 0x5382, driving actor timing not on-screen text.
+
+Residual TBD for both = DATA-FILE CONTENTS only: per-element literal X/Y/frame timelines live in the
+external OPENING anim file / PATH.DAT waypoint stream / CLOSING sequence file (each named with load
+site + BSS table); the EXEs supply centering + schedule math (B). Plus CLOSING runtime interval [0x54]
+and the LCALL 0x24a,2 clock-helper body (overlay seg 2). This completes the L1 (Presentation) layer:
+every screen — in-VICEROY and the two separate cinematic binaries — is byte-decoded to the
+data-file/runtime boundary.
+
+## 2026-06-26 — L4 AI per-unit engine decoded (state machine, dispatch, heading, budget)
+
+Decode-verify workflow over the orphan-overlay AI cluster (80 byte-verified findings, adversarially
+re-checked via capstone; bodies in page_0C/0D/0F/13). New canonical doc spec/systems/ai.md.
+
+Two AI movement engines:
+- func_04E2D6 @0x04E2D6 (page 0x0D, ~15KB) = per-unit order/mission processor. Pipeline: entry gate
+  on owner+order 0x314C (continue only if order in {0,5,6} or >=0xa, else exit 0x051C68) → validity
+  gate 0x181F:0x302 (0 → state '@', exit) → reachability/colony context (0x952/0x614/0x722) →
+  active-move flag → inline 8-dir scorer (delta tables [bx+0xb4]/[bx+0xbe]) → budget check (remaining
+  = 0x181F:0x90C − [0x3149], <3 → stay + state '9') → write heading 0x314F → sentry toggle 5<->6 on
+  bit 0x3148.2 → else step+goto (order 0x314C=0x0C, write 0x314D/0x314E @0x051C53) → tail-normalize
+  @0x051C68. NO jump table (cmp-ladder).
+- func_046FFA @0x046FFA (page 0x0C, ENTER 0xA2) = tactical heading evaluator. 9 candidates (8 dirs +
+  stay); base score 200; reject Ocean(0x19)/SeaLane(0x1a)/Arctic(0x18); +4 same-heading / turn-cost
+  via 0x181F:0x384; enemy-on-tile reject; colony proximity +0x28(40)/+0x14(20); target-distance ×3;
+  frontier 0x181F:0x984 (reject if 0); early-era terrain +0x32(50); resource yield +0x10(16);
+  COLONY-SITE +0x1F4(500) via 0x181F:0x7BE/0x9E6; RNG jitter 0x181F:0x4D4(1,5) (R); clamp >=0; pick
+  strict-max; write 0x314F @0x047FA0 (8=no-move). The +500 colony-site term is what walks AI settlers
+  to good spots.
+
+0x314B AI state-char alphabet RESOLVED (~30 states, each assign site cited): X=cleared, -=dead slot,
+0=idle/sentry, 1=target-selected, t/i=goal-class 1/7, ?=goal-lost, @=dropped, 9=out-of-budget,
+A=colony-task, G=garrisoned, E=en-route, R=routed, V=arrived, L=routing-in, ==absorbed, U=on-target,
+C=work-done, B/e=terrain-build, F=region-match; plus mission-dispatch tags 2/3/4/5/8/D/J/N/P/W via
+func_04E2B6 (sets state=DL, order=0x0B AI-goto). The plan-map goal-type codes (1->'t',7->'i') and the
+human mission name for each dispatch char are TBD (written by the earlier strategic-AI plan pass).
+
+0x3149 RESOLVED (was AI-GATED): = AI move-credits SPENT this turn (points-per-action accumulator), NOT
+enable/eval-passes. Reset 0 for all units at turn start @0x005872 + on spawn/re-task; charge +3/step
+@0x05CAE2, +0x32/+2 heading-move @0x059F20/@0x059F3C. Act while allowance−[0x3149]>=3 (@0x03EE95); out
+of moves once >=allowance (@0x007A08). Allowance = per-type byte from table 0x5234 (stride 14,
+@0x006CEE) +3 ships. cmp [0x3149],0 gates select already-acted units (func_051D56 @0x051D5D).
+
+This is the first real L4 decode — converts the AI-GATED unit fields (0x3149, 0x314B) to named, and
+gives the rewrite the AI's per-unit decision pipeline + the tactical score formula. Residual L4 =
+the strategic plan-map pass (mission assignment, the -0x674e goal-type table) + per-type stat tables
+0x5234/0x5236/0x5237/0x523d + resident 0x181F helper identities.
+
+## 2026-06-27 — L4 Phase 2: strategic plan-map planner, mission semantics, per-turn AI flow
+
+Decode-verify workflow over the strategic AI layer (47 byte-verified findings, adversarially checked).
+Extends spec/systems/ai.md §6.
+
+PLAN-MAP (DS:0x98B0, 4-byte records, addr ((idx<<6)+slot)<<2, 64 slots/idx): fields field0/-0x6750 =
+target X, v1/-0x674f = target Y (both copied to UnitRecord 0x314d/0x314e on goto commit @0x04E1AF),
+goal_type/-0x674e = mission selector (0xFF=empty; 1->'t', 7->'i', 4 special), v3/-0x674d = priority/
+weight. Accessors (far, page 0x0D): clearer func_04C1F0, setter func_04C3A2 (naked; priority-insert
+via thunk 0x534F3->0x1A1F:0x4E8), query func_04C306.
+
+CONFLICT FLAGGED (not resolved — recorded per hard rule, NOT guessed): the plan-map OUTER INDEX is
+[bp+6] in both producer func_04CC50 and consumer func_04E2D6. In func_04E2D6 [bp+6] is byte-confirmed
+the UNIT index (imul bx,[bp+6],0x1c @0x04E2EF) -> argues per-unit 64-slot list. BUT a flat unit*64*4 =
+0x12C00 table at base 0x98B0 OVERFLOWS the 64KB data segment, and the per-power turn loop calls the
+strategic pass once per power (0..3). So unit-vs-power outer index is UNRESOLVED. Two workflow targets
+gave opposite "CONFIRMED" answers (each verified only its own citation). Blocker: need the 0x98B0
+table's allocated size (no memset found in committed pages) or func_04CC50's [bp+6] cardinality at its
+dispatch-island caller. ai.md §6.1 carries the warning; do not assert either reading as fact.
+
+MISSION-DISPATCH CHARS (all via func_04E2B6 -> 0x314B=char, order 0x314C=0x0B): '2'=scout-explore
+(@0x4F030, type5 to scored frontier tile), '3'=move-to-colony (@0x4F1FD, score own colonies),
+'4'=go-to-native-village (@0x508AB), '5'=move-to-current-colony (@0x50768), '8'=explore-wander
+(@0x50D58, rand step counter 0x3156), 'D'=long-range explore (@0x5107C), 'J'=go-to-native-village
+capital-preferring (@0x50BD8, reads NativeSettlement+0x03&0x04 Capital), 'N'=Scout/Pioneer->colony
+(@0x50C3B), 'P'=move-to-best-colony by +0xAA (@0x504D2), 'V'=fallback move-to-colony (@0x4E9E2),
+'W'=move-to-colony-with-need (@0x50E18, colony flag +0x1b&0x04). AI unit missions = explore /
+return-to-colony / visit-natives, selected by plan goal_type + per-target scoring.
+
+PER-TURN AI FLOW: main loop func_005760 (body @0x5836) resets 0x3149=0 for all units @0x5872, then
+per-power loop [bp-0x14]=0..3 setting active power [0x5394] @0x5920. Controller gate
+imul bx,idx,0x34; cmp byte[bx+0x543f],0; jne skip @0x58A6 (0=this power runs King+Orders; skips human).
+Orders phase func_024A48 (lcall 0x181F:0x62C) branches on mode [0x5390] (0=interactive, !=0 AI-fast).
+Strategic pass func_04CC50 (ENTER 0x1E4) reads plan map, assigns goals to units @0x04E199. Per-unit
+driver func_051D56 gates on 0x3149!=0 (acted) AND order==0x0B, calls func_04E2D6 via far-jump island
+0x534F8 (ljmp 0x1A1F:0x4F4). Units enumerated by flat i<[0x539c] owner-filtered loop, NOT tile links.
+Controller byte [idx*0x34+0x543f]; AIPersonality [idx*0x34+0x540E].
+
+## 2026-06-27 — L4 Phase 3a: UnitTypeStats table = loaded @UNIT CSV (14-byte record @0x5234)
+
+The per-type AI stat fields 0x5234/0x5236/0x5237/0x523d are NOT separate tables with different strides
+— they are FIELDS of a single 14-byte UnitTypeStats record at DS:0x5234, one per @UNIT row (24 types).
+Stride proven ×14 at the resident sites: @0x006CEE/@0x0074A9/@0x006826 all use the chain
+`cx=t; shl bx,1; add bx,cx; shl bx,1; add bx,cx; shl bx,1` = t·14 (=((3t)*2+t)*2=14t).
+
+CORRECTION (hard-rule record): the L4 Phase-1 workflow findings that wrote "[type*6+0x523d]" and
+"[type*6+0x5236]" (stride 6) for the AI 'B'/'e'/'V' capability gates were a STRIDE ERROR. The base
+0x5236/0x523d is shared with the ×14 resident accesses, so the stride must be ×14; the AI-overlay
+sites disassemble with the same ×14 chain (naive linear capstone mis-aligns them — read page_0D.asm
+for true boundaries). ai.md §5a/§8 corrected; do not cite ×6.
+
+The record IS the loaded @UNIT CSV (data_extracted/text/NAMES_sections.json @UNIT, primary data),
+field map (oracle ingame_orders.bin + @UNIT cross-check):
+ +0x00 = @UNIT moves × 3  (move allowance / budget; 1 move = 3 budget = the +3 step charge — closes
+         the loop with the 0x3149 move-credits model). Colonist 1->3, Scout/Caravel 4->12, Frigate
+         6->18, Privateer 8->24, Man-O-War 5->15.
+ +0x01 = defense ; +0x02 = attack (stored def,atk; note CSV lists atk,def — order swapped in memory).
+         Artillery oracle +01=5/+02=7 vs @UNIT atk7/def5 confirms +01=def,+02=atk.
+ +0x03 = work/build cost (used in 'C' state: done when work-counter 0x315a >= 10 - cost).
+ +0x04..+0x08 = ship/cargo block (col6 '99' sentinel for all ships @+0x04; cargo/bombard +0x05..+0x08
+         = @UNIT cols 6-10 verbatim; exact per-field labels soft).
+ +0x09 = terrain-feature capability bitfield = @UNIT last (binary) column verbatim: Colonist
+         01000000=0x40, Soldier 00011100=0x1c, Caravel 10100010=0xA2. Read by AI build states B/e.
+
+Resolves ai.md open-question #2 (per-type stat tables): they are @UNIT primary data, not a separate
+TBD decode. A rewrite drives AI combat/move/build straight from @UNIT (×3 the move column).
+
+## 2026-06-27 — L4 Phase 3b: AI scoring helpers resolved to resident functions
+
+The 0x181F:xxxx scoring helpers the AI calls are Type-B RESIDENT functions in the load image
+(resolved via tools/follow_thunk.py: each thunk's LJMP target = file 0x2400+S*16+O, all <0x20665).
+Two cross-validate prior anchors (proving the map): 0x90c->func_006CCA = the UnitTypeStats reader
+(§5a); 0x4d4->func_00C322 = the Track-12 colony-placement LCG random_int.
+
+Map: 0x302->func_005BFA (tile in-bounds: returns 1 iff 1<=x<[0x853a]-1 AND 1<=y<[0x853c]-1, so
+[0x853a]=MAP WIDTH, [0x853c]=MAP HEIGHT); 0x37a->func_00493C (tile distance: abs dx/abs dy via
+not;inc); 0x614->func_0083F2 (reachability, signed, <0=unreachable); 0x90c->func_006CCA (allowance,
+UnitTypeStats); 0x4d4->func_00C322 (random_int LCG); 0x9e6->func_0082DC (select colony -> [0x8542]);
+0xa4c->func_0081F2 (select native -> [0x8d4a]); 0x7be->func_008D26 (colony-site validity, feeds +500
+term); 0x78c->func_00627A (tile terrain id, get_terrain_id family); 0x7e0->func_0066CC (units-on-tile
+enumerator); 0x322->func_00860E (terrain-feature query, feeds +0x14/0x28 bonus).
+
+Resolves ai.md open-question #3: the AI's evaluation primitives are named, load-image-resident, and
+decodable — no longer behind opaque overlay thunks. By-product: map dims [0x853a]=W, [0x853c]=H.
+Remaining leaf = the internal terrain-quality math of 0x614/0x7be/0x322 (small resident funcs).
+
+## 2026-06-27 — L4 Phase 3c: AI scorer internals bottom out at the shared map/colony layer
+
+Decoded the resident scorer bodies. They call the engine's MAP-ACCESS segment 0x37f — same primitives
+the rest of the engine uses, not an AI-private map:
+- 0x37f:0xa = tile in-bounds; 0x37f:0x10e = raw map byte; 0x37f:0x314 = unit-index at tile;
+  0x37f:0x358 = tile terrain/owner.
+- func_00627A (tile-id helper 0x78c) -> 0x37f:0x10e raw byte -> func_00624E = the
+  get_terrain_id_from_raw chain (CLAUDE.md hard-rule 3); returns terrain 0..26, default Ocean off-map.
+- func_0066CC (units-on-tile 0x7e0) -> 0x37f:0x314; returns occupying unit idx or 0xffff.
+- func_008D26 (colony-at-tile 0x7be) iterates ColonyRecord[0x5d46] stride 0xCA (count [0x539e]),
+  matching record +0x00=x/+0x01=y; returns colony idx or 0xffff. RE-CONFIRMS the documented colony
+  layout (colony.md base 0x5D46 stride 0xCA). Oracle (colony_jamestown.bin): count=5, colony[0]=(48,30),
+  active [0x8542]=0x606e = 0x5d46 + 4*0xCA exactly.
+- func_005BFA (validity 0x302): in-bounds gate -> map dims [0x853a]=W, [0x853c]=H.
+
+Closes ai.md open-question #3: the AI scoring stack terminates in the already-specified map/colony
+data layers; no further AI-only black box beneath the named helper map. Remaining soft spot = the
+exact weighting math inside func_0083F2 (reachability), a small decodable resident function.
+
+## 2026-06-27 — L4 plan-map outer-index conflict RESOLVED: power-indexed (4×64)
+
+The Phase-2 flagged conflict (plan map unit- vs power-indexed) is resolved in favor of POWER-indexed
+(4 powers × 64 slots), by two independent proofs:
+1. Function boundary: there is NO function prologue (enter/push-bp after retf) between func_04CC50
+   (0x4cc50, ENTER 0x1e4) and func_04E2D6 (0x4e2d6). So func_04CC50 is one function spanning
+   0x4cc50..0x4e2d5, and ALL plan reads/writes (0x4dff4, 0x4e05c, 0x4e07e, 0x4e16e, 0x4e199) are
+   inside it, where [bp+6] = func_04CC50's POWER argument (per-power turn loop calls it once/power).
+   The earlier "func_04E2D6 reads goal_type by unit index" was a FUNCTION-BOUNDARY MIS-ATTRIBUTION —
+   those sites are the tail of func_04CC50, before func_04E2D6's entry. func_04E2D6 (per-unit, [bp+6]
+   =unit) does NOT re-read the plan map by unit; it acts on the 0x314B/0x314C/0x314D-E that func_04CC50
+   already wrote.
+2. BSS layout: power-indexed table = 4*64*4 = 0x400 bytes, spans DS:0x98B0..0x9CB0; the next live
+   global cluster begins EXACTLY at 0x9CB0. A unit-indexed table (300*64*4 = 0x12C00) is impossible:
+   it overflows the 64KB DGROUP and the live globals from 0x9A00 up.
+
+Consequence: the 0x314B alphabet splits by writer — planning states 1/t/i/? written by func_04CC50
+(strategic, per-power), execution states (@/V/L/=/C/U/R/9/G/B/e/F/0 + mission-dispatch chars) by
+func_04E2D6 (per-unit). ai.md §1/§4/§6.1 + open-question #4 updated. This closes the last flagged
+conflict in the AI spec.
+
+## 2026-06-27 — L3 Phase 1: colony per-turn economy (conversion ratio, growth, warehouse correction)
+
+Decode-verify workflow (29 byte-verified findings; adversarially checked; 5 corrected arg-labels).
+
+MANUFACTURING (func_008E84): ratio = 1:1 (1 finished per 1 raw the tile loop gathered), with a
+×2/3 throttle when the finished good's building-chain count > 2 (func_00864E result; the chain table
+DS:0x8F86 + link ids byte[good+0x2F4], owned-test via building bitfield ColonyRecord+0x84/func_00860E
+imul colony,0xCA + [si+(b>>3)+0x5DCA] bit b&7). Tools(14) subtract per-turn [0x8E66]. Commit
+func_008E46->func_008E02 (bookkeeping tables 0x8E0A produced-ref / 0x8E32 leftover-raw / 0x8E5A
+overflow-surplus, surplus rescaled x3/2 when throttle fired). Chains @0xA660..0xA68C:
+Ore6->Tools14, Tobacco2->Cigars10, Cotton3->Cloth11, Furs4->Coats12, Sugar1->Rum9.
+
+FOOD/GROWTH: consumption=2*pop (@0xA5F2); surplus=max(0, producedFood[0x8DC8]-2*pop) (@0xA5F7);
+half (ceil(surplus/2) @0xA606) accrues to colony +0xAA; threshold 25 normal / 50 difficulty (gate
+@0xA5B4); colonist born func_009318 INC[+0x1F] @0x9464; starve func_008FB4 @0x902E DEC[+0x1F]
+(shifts job arrays +0x20/+0x21/+0x40/+0x41 + work-tile table +0x70). The 0xA5D0..0xA640 block is the
+colony-screen FORECAST/display, not the mutation; the deficit->remove trigger + per-turn +0xAA write
+remain TBD. (Also: +0xAA here vs the older +0xC8 growth-accumulator gloss need a runtime reconcile.)
+
+WAREHOUSE CORRECTION (overturns a settled reading): there is NO per-good spoilage clamp. The +0x9A
+stockpile banks with a floor at 0 and NO ceiling (func_02D658 @0x2D96E add, @0x2D972 clamp>=0). The
+over-100 disposal is the auto-export-to-Europe step: flat threshold 0x64=100 -> reduce to 0x32=50
+(@0x2D6F7/@0x2D70B), excess SOLD (net=excess*price-tax credited to PowerRecord+0x22 @0x2D785), gated
+by tradeable filter func_02EF55 and the independence flag [0x5382]&1 (@0x2D728; if independent the
+excess is WASTED not sold). func_008D00 (level+1)*100 is fetched once @0xA615 and bounds ONLY the
+food growth reserve (cap-[+0xAA] @0xA61F), NOT goods. (warehousing.md §6.4 already had the sell/waste
+model right; colony.md §5/§warehouse "surplus dropped (spoilage)" was wrong and is corrected.) The
+verified bytes overturn the prior "goods spoil at (level+1)*100" claim, per the hard rule that EXE
+bytes win.
+
+## 2026-06-27 — L3 Phase 4: endgame (REF re-confirm, naval combat, Tory uprising)
+
+Decode-verify workflow (39 byte-verified findings; REF 13/13, naval 10/12, tory 16/17).
+
+REF (re-confirmed; ref_growth.md already had this): INIT func_0755CC, difficulty d=[0x53A6]:
+Regulars[0x53DA]=8d+15, Cavalry[0x53DC]=5d+5, Man-O-War[0x53DE]=3d+2, Artillery[0x53E0]=6d+2 (4-type
+array stride 2; parallel 0x53E2 deployed-count). GROWTH func_03E162 (King phase, pre-independence):
+royal_money(PowerRecord+0x22) += (8d+10)*2^(eras at year 1600/1700/1750); at +0x22>=1800 buy 1 unit
+inc[0x53DA+slot*2], -=1800. Budget-paced, player-only. revolution.md line 54 stale-TBD fixed.
+
+NAVAL COMBAT (combat.md, was TBD): resolver func_05B2C2 (land+naval; [bp+6]=attacker,[bp+8]=defender).
+Ships type 0x0D..0x12. Naval strengths from UnitTypeStats fields 0x523B/0x523C = the +0x0B/+0x0C bytes
+of the 14-byte record at DS:0x5230 (per-type stats, loaded func_074ED5, NOT per-engagement). Roll
+@0x05B844: A=stat[atk*14+0x523B], D=stat[def*14+0x523C], roll=random_int(1,A+D) (func_00C322); attacker
+-win flag [bp-0x3A] kept when roll<=threshold[bp-0x1c]=D; independence-war special cases clear it
+(test[0x5382],1). Loser fate @0x05BAA3 capture/cargo/sink. Separate land roll random_int(3,6)+terrain
+@0x05BA0B. func_05CA7E = PRE-COMBAT/UI setup (ship-range flag), NOT the roll (resolves that TBD).
+Damage-vs-sink threshold + bombardment (FORTFIRE) remain narrow TBD.
+
+TORY UPRISING (tory_uprising.md, resolves the TBD "fraction"): func_03CAC6 @0x3CAC6. NO standalone
+SoL threshold (negative-answered). Per-call gate random_int(0,diff+1) @0x3CAD0 -> fires if !=0 (prob
+(diff+1)/(diff+2)). Targets the rebel power's colony with MAX tory_strength = pop[+0x1F]*(100-SoL%)*2
+/100 + diff + 1 (SoL% via 0x181F:0xC86), reduced by defending rebel units, requiring >=1 free adjacent
+tile. SoL enters ONLY via magnitude (lower SoL -> more militia), not fire/no-fire. Spawns Tory-Militia
+(type [0x53D2]) on free tiles, count = strength countdown (not fixed 8); marks colony [+0x1C]|=1 (no
+re-fire); suppresses silently if no free tile. Caller cadence + numeric militia type id remain TBD.
+
+## 2026-06-27 — UI closeout: 3 PARTIAL screens resolved; HUD blit mechanism byte-verified
+
+Thorough adversarial UI workflow (4 targets, ~35/46 confirmed) + hand-verification + pixel
+cross-check against docs/screens/*.png. The "overlay-resident, not statically resolvable" label on
+the HUD text was the prior cop-out; the mechanism IS resolvable. All 21 UI tracker rows now DONE.
+
+SHARED TEXT MECHANISM (byte-verified): set_text_box(w,h,x,y) @file 0x2740 writes BSS rect
+[0x2cca]=w/[0x2ccc]=h/[0x2cc6]=x/[0x2cc8]=y; the painter @file 0x275C (thunk 0x181F:0xB0, ENTER 0x54)
+reads that rect. Per-screen title/header positions = the set_text_box call args. Centered text =
+verb 0x181F:0x100. String resolver = func_002462 (0x181F:0x22, DIRECT-index blob[idx]).
+
+MAP SIDEBAR (row 1 -> DONE): composer func_067700 (via 0x181F:0xE1C); x-origin [0x8550]=240
+(func_070FF8 @0x071039); FONTTINY white 0x0F (func_076C70 @0x076C85); rect (240,72,80,64); values
+gold=PowerRecord+0x2A, tax=+0x01, season=(year[0x538a]-1500)/50; strings @MISC/@INFO/@SEASONS; unit
+panel func_0672C8 (sprite +0x3144/45 via 0x181F:0x7BE). The ONLY runtime leaf = per-line y within the
+rect, emitted via a runtime-installed print vector [0xa644]=0x1a1f:0x0f10 (func_0772FA @0x07730C);
+authoritative layout = pixel-measured from docs/screens/06_ingame_map.png (FONTTINY 8px stack
+[season+year, "Gold:N", "Tax:N%"]). No hidden gap.
+
+EUROPE (row 3 -> DONE): header strip func_030F76 (composer step 4 @0x031E6B) via painter 0x181F:0xB0
+(file 0x275C) reading the set_text_box rect; dock empty caption rect (69,120,81,143) string [0x2dd0]
+@0x0314F8; ship names @UNIT[type] (func_0314DC @0x031642); gold PowerRecord+0x2A. Residual = the
+per-screen set_text_box title-origin args + live heap-string slot contents (runtime).
+
+CONTINENTAL CONGRESS (row 5 -> DONE, all byte-cited): title x=0/y=5/w=320/0x90 (0x181F:0x100 @0x37A29);
+body x=4/y-seed=25/+FONTTINY-height[0x89E]; "Next Session" line (label [0x2E9A] + FF name); sentiment
+x=4/0x92 (Rebel% [0x53D4]/0x181F:0x9A4, Tory% [0x2E9C]); bell strip proportional sprite 0x3F filled/
+empty; REF rows count-badge verb 0x181F:0x222 (icons [0x52xx]); FF list loop i=0..0x18 owned-bit
+0x181F:0x7B4; FF portraits @0x3BAA6 blit at coords baked into CC-NN.SS frame-0 descriptor
+(es:[bx+0x46/0x48]) — asset-internal, the correct answer; OK/dismiss 0x191F:0xF74. Residual = live
+counts only (runtime).
+
+NET: every UI screen's structure (rects, fonts, colours, sprite blits, string+value sources, paint
+chains, hit-rects, the text-box mechanism) is byte-verified; the residual across the whole UI is the
+consistent "live game-state value + a few runtime-dispatched per-line text y" class, each bounded by a
+byte-verified rect and pixel-confirmed in the captures. The UI is rewrite-ready.
+
+## 2026-06-27 — PALETTE BUG: VICEROY.PAL is stride-3 RGB, not stride-4 RGBA (found via render test)
+
+The "ultimate test" (render the colony screen + compare to the live DOS capture) surfaced a real,
+load-bearing pipeline bug that no amount of disasm review had caught: ALL extracted asset colours
+were wrong.
+
+Root cause: tools/extract_pal.py read VICEROY.PAL as 256 entries x 4 bytes (RGBA 6-bit), but the file
+is 256 entries x **3 bytes (RGB 6-bit)** = the first 768 bytes (the remaining 256 are trailing/unused).
+PROOF (ground truth = pixels, top of trust hierarchy): the live colony capture renders index 54 as
+blue (104,136,192); stride-4 gives (186,186,64) yellow, stride-3 gives (105,138,195) — a near-exact
+match; the 6-bit blue (26,34,48) sits at byte offset 162 = 54*3. Stride-3 also reproduces the smooth
+blue sky ramp at indices 49..58 (consecutive gradient), which a stride-4 read scrambles.
+
+Impact: data_extracted/palette.json and EVERY lab/assets PNG (which baked a wrong/EGA palette) had
+wrong colours. The prior "render looks right" claim was WRONG (the user correctly flagged it).
+
+Fix: extract_pal.py stride 4->3; data_extracted/palette.json regenerated (idx54 #698ac3 ~ real
+#6888c0). tools/render_colony_screen.py now applies the correct stride-3 palette to each asset's index
+plane (which IS correct — verified: raw COLONY.PIK index == lab index == 54) and honours each PNG's
+own transparent index (253, not 0). With the fix the colony bottom band matches in colour (sky/grass/
+panel); residual differences are (a) placeholder building identities (the building-id -> BUILDING.SS
+frame map is still TBD; positions are byte-correct via DS:0x266) and (b) dynamic overlays drawn over
+COLONY.PIK (colonist sprites, "No Ships In Port", SoL crown).
+
+Follow-ups: re-extract/re-palette lab/assets with the corrected palette; decode building-id ->
+BUILDING.SS frame mapping; wire the dynamic panel state. Also: PALETTE_AND_CYCLING.md / formats/PAL.md
+say "256x4" — those docs are wrong and need correcting.
+
+## 2026-06-27 — Colony empty-plot terrain decoded; building-frame formula REFUTED vs snapshot
+
+Decoded (B): The colony plot grid (`func_02701C @0x2701C`) draws BOTH buildings and empty-plot
+terrain from the **same active sheet descriptor `[0x2DA8]`** = **BUILDING.SS**, both blitting at
+`(plotX, plotY+8)` via `0x181F:0x254` (frame in AX).
+- **Empty plots** (`def_id = byte[0x8E82+plot] < 0`): painter `func_026FF2 @0x26FF2` draws terrain
+  frame = `byte[0x260 + category]`, category = `byte[0x8D62+plot]` (0..4), **skipped when the table
+  byte is 0**. Live Jamestown snapshot: `DS:0x260 = [45,44,43,0,46,0]` → categories 0/1/2/4 map to
+  BUILDING.SS frames 45/44/43/46 (the end-of-sheet terrain tiles); category 3 → no decoration.
+
+Refuted (corrects spec §3.7 line 265): the prior one-line claim "building frame =
+`word[id*2 − 0x7238]` (= `[id*2 + 0x8DC8]`)" **does not verify** against the byte-correct snapshot —
+it returns out-of-range / non-distinct values (def `0x1B`→`0x1010`, `0x18`→`0x1000`; most defs
+collapse to 0/16). `def_id` is also NOT the frame index. The real building painter `func_026DD4`
+(thunk `0x2CA23`) resolves frames through `func_026CC2`'s multi-branch logic (special-cases id
+`0x11/0x13/0x14`, reads `[0x8DD8]`/`[0xA892]`, default `def_id+1`) which does not reduce to a
+snapshot table. Exact building→frame mapping = **TBD pending a runtime trace** capturing AX at the
+`0x181F:0x254` blit. Spec §3.7(5) downgraded to R/TBD with this reason.
+
+Render (tools/render_colony_screen.py): added empty-plot terrain; full-screen MSE 3625→3606. The
+scene-band residual (~4800) is dominated by the unresolved exact building frames + the dynamic
+COLONY.PIK panel overlays (SoL "100% (I)", "No Ships In Port", colonist sprites, boycott Xs) which
+are runtime game-state, not static layout.
+
+## 2026-06-27 — Colony snapshot DID match the screenshot (matched RAM+screenshot pair)
+
+> _An earlier same-day ruling claimed `colony_jamestown.bin` and `11_colony_screen.png` were
+> "different game states" that no render could match — based on misreading the on-screen "100% (I)"
+> as 100% Sons-of-Liberty. That ruling was **wrong** and has been **removed** to avoid leaving
+> conflicting information; this entry is the corrected record._
+
+I drove the live game (DOSBox, loaded COLONY09.SAV, founded Jamestown, opened the
+colony screen) and captured a matched screenshot + RAM pair (`scratchpad/dbx/colony_live_1505.bin`
++ `docs/screens/colony_live_1505.png`). Results:
+- The live colony screen matches `11_colony_screen.png` at **MSE 312** (essentially identical, one
+  turn apart: 1504 vs 1505).
+- The live RAM is byte-equivalent to the original `colony_jamestown.bin`: same active-colony ptr
+  `cp=0x606E`, name "Jamestown", pop 1, same `0x266` plot table, same `0x8E82` def-ids, same
+  `DS:0x260=[45,44,43,0,46,0]` terrain table. (Only diff: the original had Muskets=50 garrisoned.)
+- So `colony_jamestown.bin` and `11_colony_screen.png` were **the same state all along** — a fresh
+  pop-1 Jamestown. My "fresh vs developed" claim was wrong.
+
+Root cause of the wrong ruling: I misread the on-screen **"100% (I)"** as Sons-of-Liberty membership.
+Byte-traced `sol_membership_pct @0x8524`: returns `100·A / divisor` capped at 100, where
+**A = u32 at colony+0xC2/+0xC4** and **divisor = u32 at colony+0xC6/+0xC8** (32-bit, not just +0xC6),
+plus **+20 if the colony's owner is human** (`[bx+0x1a]` power < 4 and controller-gate
+`[idx·0x34+0x543F]==0`). For this colony A=0, divisor=200 ⇒ **SoL membership = 0%** (or 20% with the
+human bonus) — NOT 100%. Therefore the "100%" panel value is **not** sol_membership_pct; its exact
+source (likely the Tory/complement or a different label) is a separate open item. The SoL formula
+itself is confirmed; the spec should note the 32-bit divisor (+0xC6/+0xC8) and the +20 human bonus.
+
+Consequence: the render's MSE-3625 gap vs the screenshot is **decode quality** (building frames +
+dynamic overlays), not state mismatch — and is now validatable against the matched live pair.
+
+## 2026-06-27 — Colony plot frames EMPIRICALLY verified (MSE 0) from the matched pair
+
+Using the matched RAM+screenshot pair (colony_live_1505.bin + docs/screens/colony_live_1505.png),
+each plot's rendered sprite was matched against every BUILDING.SS frame by minimising pixel MSE.
+Result (ssdec frame K = game frame K+1, reconciling func_026DD4's def_id+1):
+- **Buildings**: ssdec frame = **def_id** (byte[0x8E82+i]); plots def 21/24/27/32/39 matched at
+  **MSE 0**. Special case **def_id 0 -> frame 16** (MSE-best). def 9 -> 9, def 35 -> 35 (small MSE
+  from neighbour occlusion).
+- **Empty plots**: ssdec frame = **table[cat] - 1** (table=DS:0x260=[45,44,43,0,46,0],
+  cat=byte[0x8D62+i]); matched at MSE 0 (cat 0/1/2/4 -> frames 44/43/42/45). Skip when table byte=0.
+- Both blit at (x=word[0x266+i*4], y=word[0x268+i*4]+8).
+
+This corrects the renderer (was using table[cat] for terrain -> off-by-one wrong sprite; missing the
+def0->16 special). With the fix the building/terrain scene matches the real screen sprite-for-sprite;
+full-screen MSE 3625 -> 2525. Committed a 36 KB reproducible fixture
+data_extracted/colony_jamestown_fixture.bin (DGROUP slice, base 0x200) so the render no longer
+depends on the 22 MB RAM dump. Remaining render gaps: the surrounding-tile minimap, the dynamic
+COLONY.PIK panel overlays (SoL text, colonists, boycott marks, dividers), and stockpile qty numbers.
+
+## 2026-06-27 — Stockpile icon frame fixed to ssdec 0x16+good (ROOT CAUSE: ssdec off-by-one)
+
+The renderer drew stockpile commodity icons at ssdec frame **0x17+good**, which shifted every cell
+by one so cell 0 showed **Sugar instead of Food** (user-reported, repeatedly). EMPIRICAL pixel match
+against the matched live capture (docs/screens/colony_live_1505.png) is unambiguous: **all 16 cells
+match at MSE 0 with ssdec frame = 0x16+good** (Food=ssdec 22, …, Muskets=ssdec 37), cell pitch 19,
+icon y=181, x = 2 + i·19 + (18−w)/2.
+
+Root cause (durable): **ssdec.py is off by one vs the EXE — `ssdec_frame[K] = game_frame[K+1]`.** The
+spec's byte-cite `add ax,0x17` is the GAME frame and is correct; the ssdec renderer must use game−1 =
+0x16. Same mechanism fixed the building frames (game `def_id+1` → ssdec `def_id`) and empty-plot
+terrain (ssdec `table[cat]−1`). Documented in SETTLED.md so it stops churning. The 2026-06-27
+prereq-1 "correction" to 0x17 is retracted. Stockpile band MSE 2697 → 1316; full screen 2525 → 2393.
+
+## 2026-06-27 — Colony screen layout: parchment width + black separator lines (measured)
+
+User-reported (3x): the rendered parchment was too wide and the black area-separator lines were
+missing. Measured from the matched live capture (docs/screens/colony_live_1505.png):
+- **Parchment scene rect = x 0..198, y 8..127** (NOT to x223 — the renderer tiled PARCH 32px past
+  the edge, overprinting the minimap panel). Clipped to x<199.
+- **Black separator lines: vertical x=199 (y7..128); horizontal y=7 (title|scene) and y=128
+  (scene|COLONY.PIK band).** These are pure black (RGB<30) and are the only black separators — the
+  band's inter-panel dividers are GREEN (part of COLONY.PIK), not black.
+- Minimap box frame: black border at x=223 (left) / x=296 (right), y≈16..95 (content = the
+  func_026374 surrounding-terrain render, still TBD — needs the seg-0x37f map board).
+
+Clipping the parchment + drawing the 3 black lines dropped full-screen MSE 2252 → 971 (the over-wide
+parchment had been overprinting the woodgrain minimap panel). Scene 3006→1094, band 1099→671.
+
+## 2026-06-27 — Colony screen: per-element pixel-verification status + map board located
+
+Systematic per-element verification against the matched live pair (colony_live_1505.png + RAM).
+Each "fixed" item is MSE-measured, not eyeballed. Full-screen MSE 3625 → 971.
+
+DONE (pixel-verified):
+- Buildings/trees/terrain — ssdec frame=def_id (def0→16) / terrain=table[cat]−1; MSE 0 per sprite.
+- Stockpile — all 16 icons ssdec frame 0x16+good (Food first), x=2+i·19, y=181; MSE 0. + qty numbers.
+- COLONY.PIK band overlays — colonists (ICONS 81/102), crown (124), production (22/56/62),
+  tool buttons (67/68/69/54); MSE-0 placement.
+- Layout — parchment scene = x0..198 y8..127 (was over-wide to x223); black separators x=199 / y=7 /
+  y=128 (band dividers are green, part of COLONY.PIK, not black).
+- Title — "<name>.  <Season>, <year>.  Gold: <gold>e" from season@0x538C / year@0x538A / gold@0x8832.
+
+REMAINING:
+- **Minimap (surrounding-terrain scene, `func_026374`)** — the dominant remaining error. Map board
+  LOCATED: live RAM file off **0x665710**, row-major **stride 58 (=mapW)**, terrain id = `byte & 0x1F`
+  (verified: colony island = land 0x0B/0x0F at cols44–46/rows41–42 in ocean 0x19, sealane 0x1A right
+  edge). Window origin globals `[0x9CCC]=1` / `[0x9CCA]=22`. NOT yet rendered: the exact tile-window +
+  scale, the TERRAIN.SS frame per terrain id, and the worked-tile/unit-dot/selection-box overlay
+  composite. An approximate flat-colour fill did NOT match the real textured view, so it was not
+  committed (no-fabrication).
+- Minor: red-X warehouse count, "100%/No Ships" text x-position, parchment texture variation,
+  stockpile green-highlight box exactness.
+
+## 2026-06-27 — Minimap render FORMULA decoded (func_026374); terrain-frame helper is the blocker
+
+Decoded the colony surrounding-tile minimap render loop (`func_026374 @0x26412..0x264a2`):
+- **3×3 grid of tiles around the colony**, 24px spacing. Per tile, delta tables `[idx+0xde]` (row)
+  / `[idx+0xc8]` (col): **screen Y = 24·rowδ + 0x3C(60)**, **screen X = 24·colδ + 0xFC(252)**.
+- **frame = helper(tileX,tileY) + 0x5A**, where helper = `lcall 0x181F:0x718` (returns a per-tile
+  terrain RENDER index, NOT the raw board id). Blit `0x181F:0x254` from sheet descriptor **`[0x839E]`**.
+- Map board confirmed at live file off **0x665710**, stride 58, raw id = `byte & 0x1F`.
+
+BLOCKER (next session): rendering `PHYS0` frame `(rawid+0x5A)` gives small OVERLAY sprites
+(birds/clouds), not ground tiles — so `0x181F:0x718` maps the raw id through a terrain-render LUT
+before +0x5A, and the sheet `[0x839E]` is not plain PHYS0/TERRAIN (both ruled out by pixel match).
+Need: resolve `0x181F:0x718`'s LUT + identify the sheet loaded into `[0x839E]` (loaded by index, no
+name string). Until then the minimap stays unrendered (no fabrication). It is the only colony-screen
+element not pixel-verified; everything else is MSE-measured DONE (full screen MSE 971).
+
+## 2026-06-27 — Minimap is a COMPOSITE map render (definitive), not a single-sprite blit
+
+Exhaustive pixel match of the minimap centre tile against EVERY frame of EVERY .SS sheet (each with
+its own palette, position window) found NO clean match (best MSE 10272, PHYS0 f149). Conclusion:
+each minimap tile is a **composite** — TERRAIN.SS base-ground sprite UNDER a PHYS0 overlay (forest/
+hill/coast/river), i.e. the colony minimap reuses the full **in-game map-render chain**
+(`func_O514→O513→O512`, hard rules 5/7), not a flat terrain sprite. That is why `0x181F:0x718`
+returns a processed render index and `[0x839E]` is the active map sheet, and why frame=id+0x5A on a
+single sheet fails. Rendering it faithfully = reimplementing the map-render composite (TERRAIN base +
+PHYS0 overlay + auto-forest/river/coast logic) at the 3×3 / 24px minimap scale — a large separate
+subsystem (spec/systems/map_system.md), not a colony-screen leaf. Left unrendered (no fabrication).
+
+NET colony-screen status: every element EXCEPT this minimap composite is pixel-verified against the
+matched live capture; full-screen MSE 3625 → 971. The minimap is the one element whose faithful
+render depends on the in-game map renderer.
+
+## 2026-06-28 — Colony-site value ("Show Colony Sites" cheat) is a cached map-layer nibble, formula byte-traced
+
+**Conflict**: `ai.md §3b` (2026-06-27) concluded the F9 "Show Colony Sites" 0–24 value was
+draw-time-computed, NOT cached, and the scorer "not statically locatable" (overlay-resident behind a
+runtime-patched type-A thunk). This blocked the last open spec TBD.
+
+**Resolution (B, 2026-06-28)**: All three claims were wrong. (1) **Cached**: the value is the **low
+nibble of map-layer #4** (`[0x168]/[0x16a]`, the 4th of four w×h byte planes malloc'd at `func_070FE8`).
+The 2026-06-27 snapshot scan was a false negative because it searched for the *terrain* land/water mask,
+which this packed-nibble plane does not match. (2) **Range 0–15, not 0–24**: the F9 handler `func_021602`
+masks `& 0x0F` (clamp ceiling 15; observed coast max 13). (3) **Statically locatable**: the writer is
+**`func_063F3C`** (file `0x063F3C`, page_14), a new-game map-gen pass (already documented in
+`map_generation.md` as the "resource/land-value layer" writer, A) — store `@0x064130` via `func_005ED0`.
+Formula: per land tile, ring-weighted sum over the ~21-tile catchment of per-terrain Improvement stat
+`[terrain·16+0x2F79]` / special-resource bonus / ocean coastal-adjacency, near-colony-halved,
+Mountains→0/Hills→½, then `clamp(score/10, 0, 15)`; water/oob ⇒ 0. Dispatch: cmd id `0x6C` →
+jump-table `0x023DE8` → `func_021602`. Pinned via the dispatcher jump-table structure (the F09 thunk
+pointer is runtime-patched). Independently re-derived by two passes (decode + adversarial verify);
+oracle-consistent (ocean=0, coast 9/11/12/13/13). **Supersedes the §3b "open/TBD" status — last spec
+formula now closed.**
+
+**Authority**: `func_021602`/`func_005EE8`/`func_063F3C`/`func_005ED0`/`func_0048CC` byte offsets;
+`spec/systems/ai.md §3b`; cross-ref `spec/systems/map_generation.md`.
+
+## 2026-06-28 — European price-drift IS a per-turn end-of-turn phase (driver func_036574), not trade-screen-only
+
+**Conflict**: `market.md` (2026-06-20) claimed the all-goods price drift runs only inside the
+interactive trade screen ("not a separate headless turn phase"), attributing it to `func_33C96`.
+
+**Resolution (B)**: The driver is **`func_036574`** (body `0x036574..0x03680D`), called from the
+**end-of-turn processor `func_0755CC @0x0757B0`** (`lcall 0x191F:0x0B6C`; `func_0755CC` carries the
+`AMER2.MP` string + the `0x5380..0x53E0` per-power turn block). `func_036574` clears the per-power
+16-good accumulators then runs a 4-power loop calling `func_0305A8` via `@0x367FC`. So drift happens
+**per-turn** (end-of-turn) AND per-transaction (`func_0324F2`/`func_032914`). The `func_33C96` name was
+a mislabel (`func_033C96` is the unrelated ARMOPTIONS fn); `@0x367FC` is the internal call site within
+`func_036574`. Supersedes the "trade-screen-only / no turn phase" claim. **Authority**: `func_036574`,
+`func_0755CC`, `func_0305A8` byte offsets; `spec/systems/market.md` §3.

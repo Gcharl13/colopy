@@ -52,7 +52,6 @@ PSOUND.COL alone).
 ## Citations
 
 - @asm_file  TBD
-- @ref       ../../../COLONIZATION_TECHNICAL_REFERENCE.md  §1
 - @python    The Python port currently uses pre-generated WAV samples;
              a future BIN extractor would write per-sample WAVs from the
              original COLDIG.BIN.

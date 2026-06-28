@@ -1,0 +1,288 @@
+{
+ "_doc": "Per-PAGE overlay memory blocks for Ghidra Tier 2 (VICEROY-only overlay code). Add each as an initialized block from VICEROY.EXE [file_offset, +length) at `base`. Function bodies + literal operands decompile; cross-page far-calls (type-A, runtime-paged) may stay unresolved. The report painters do NOT need this \u2014 they are resident in COLONIZE.EXE (Tier 1, plain import).",
+ "exe": "raw/COLONIZE/VICEROY.EXE",
+ "source": "code/VICEROY/overlay_pages.json",
+ "block_count": 31,
+ "total_bytes": 326896,
+ "blocks": [
+  {
+   "name": "page_01",
+   "page_id": "0x01",
+   "file_offset": "0x020670",
+   "length": 15632,
+   "base": "0x020670",
+   "code_offset": "0x020ee0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_02",
+   "page_id": "0x02",
+   "file_offset": "0x024bf0",
+   "length": 29184,
+   "base": "0x024bf0",
+   "code_offset": "0x025900",
+   "confidence": "high"
+  },
+  {
+   "name": "page_03",
+   "page_id": "0x03",
+   "file_offset": "0x02cb00",
+   "length": 11040,
+   "base": "0x02cb00",
+   "code_offset": "0x02cfd0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_04",
+   "page_id": "0x04",
+   "file_offset": "0x02faf0",
+   "length": 25664,
+   "base": "0x02faf0",
+   "code_offset": "0x030550",
+   "confidence": "high"
+  },
+  {
+   "name": "page_05",
+   "page_id": "0x05",
+   "file_offset": "0x036990",
+   "length": 16448,
+   "base": "0x036990",
+   "code_offset": "0x037340",
+   "confidence": "high"
+  },
+  {
+   "name": "page_06",
+   "page_id": "0x06",
+   "file_offset": "0x03b380",
+   "length": 12640,
+   "base": "0x03b380",
+   "code_offset": "0x03b900",
+   "confidence": "high"
+  },
+  {
+   "name": "page_07",
+   "page_id": "0x07",
+   "file_offset": "0x03ea60",
+   "length": 5120,
+   "base": "0x03ea60",
+   "code_offset": "0x03ecf0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_08",
+   "page_id": "0x08",
+   "file_offset": "0x0400f0",
+   "length": 9248,
+   "base": "0x0400f0",
+   "code_offset": "0x0404b0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_09",
+   "page_id": "0x09",
+   "file_offset": "0x0428d0",
+   "length": 6064,
+   "base": "0x0428d0",
+   "code_offset": "0x042c50",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0a",
+   "page_id": "0x0A",
+   "file_offset": "0x044400",
+   "length": 5856,
+   "base": "0x044400",
+   "code_offset": "0x044540",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0b",
+   "page_id": "0x0B",
+   "file_offset": "0x045c20",
+   "length": 2304,
+   "base": "0x045c20",
+   "code_offset": "0x045d00",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0c",
+   "page_id": "0x0C",
+   "file_offset": "0x046600",
+   "length": 19568,
+   "base": "0x046600",
+   "code_offset": "0x046de0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0d",
+   "page_id": "0x0D",
+   "file_offset": "0x04ba50",
+   "length": 29520,
+   "base": "0x04ba50",
+   "code_offset": "0x04c1f0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0e",
+   "page_id": "0x0E",
+   "file_offset": "0x053540",
+   "length": 10896,
+   "base": "0x053540",
+   "code_offset": "0x053820",
+   "confidence": "high"
+  },
+  {
+   "name": "page_0f",
+   "page_id": "0x0F",
+   "file_offset": "0x0562b0",
+   "length": 16192,
+   "base": "0x0562b0",
+   "code_offset": "0x056a10",
+   "confidence": "high"
+  },
+  {
+   "name": "page_10",
+   "page_id": "0x10",
+   "file_offset": "0x05a950",
+   "length": 14288,
+   "base": "0x05a950",
+   "code_offset": "0x05af70",
+   "confidence": "high"
+  },
+  {
+   "name": "page_11",
+   "page_id": "0x11",
+   "file_offset": "0x05e740",
+   "length": 4384,
+   "base": "0x05e740",
+   "code_offset": "0x05e9b0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_12",
+   "page_id": "0x12",
+   "file_offset": "0x05fad0",
+   "length": 7744,
+   "base": "0x05fad0",
+   "code_offset": "0x05fe60",
+   "confidence": "high"
+  },
+  {
+   "name": "page_13",
+   "page_id": "0x13",
+   "file_offset": "0x061ca0",
+   "length": 5584,
+   "base": "0x061ca0",
+   "code_offset": "0x061e10",
+   "confidence": "high"
+  },
+  {
+   "name": "page_14",
+   "page_id": "0x14",
+   "file_offset": "0x0633e0",
+   "length": 11776,
+   "base": "0x0633e0",
+   "code_offset": "0x063880",
+   "confidence": "high"
+  },
+  {
+   "name": "page_15",
+   "page_id": "0x15",
+   "file_offset": "0x066680",
+   "length": 8496,
+   "base": "0x066680",
+   "code_offset": "0x066850",
+   "confidence": "high"
+  },
+  {
+   "name": "page_16",
+   "page_id": "0x16",
+   "file_offset": "0x068980",
+   "length": 11296,
+   "base": "0x068980",
+   "code_offset": "0x068ee0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_17",
+   "page_id": "0x17",
+   "file_offset": "0x06bb00",
+   "length": 14848,
+   "base": "0x06bb00",
+   "code_offset": "0x06be50",
+   "confidence": "high"
+  },
+  {
+   "name": "page_18",
+   "page_id": "0x18",
+   "file_offset": "0x06f850",
+   "length": 608,
+   "base": "0x06f850",
+   "code_offset": "0x06f8e0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_19",
+   "page_id": "0x19",
+   "file_offset": "0x06fb40",
+   "length": 5792,
+   "base": "0x06fb40",
+   "code_offset": "0x06fdf0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1a",
+   "page_id": "0x1A",
+   "file_offset": "0x071490",
+   "length": 17216,
+   "base": "0x071490",
+   "code_offset": "0x072090",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1b",
+   "page_id": "0x1B",
+   "file_offset": "0x0763d0",
+   "length": 2208,
+   "base": "0x0763d0",
+   "code_offset": "0x0764d0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1c",
+   "page_id": "0x1C",
+   "file_offset": "0x076d70",
+   "length": 2608,
+   "base": "0x076d70",
+   "code_offset": "0x076e50",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1d",
+   "page_id": "0x1D",
+   "file_offset": "0x077880",
+   "length": 1136,
+   "base": "0x077880",
+   "code_offset": "0x077990",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1e",
+   "page_id": "0x1E",
+   "file_offset": "0x077e00",
+   "length": 1744,
+   "base": "0x077e00",
+   "code_offset": "0x077ed0",
+   "confidence": "high"
+  },
+  {
+   "name": "page_1f",
+   "page_id": "0x1F",
+   "file_offset": "0x0785a0",
+   "length": 1792,
+   "base": "0x0785a0",
+   "code_offset": "0x078640",
+   "confidence": "high"
+  }
+ ]
+}

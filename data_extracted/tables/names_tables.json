@@ -1,0 +1,2883 @@
+{
+  "@SEASONS": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [
+      "COLONIZATION Game Data",
+      "Copyright (c) 1994 by MicroProse Software",
+      "Altering the contents of this file may cause the game to",
+      "malfunction."
+    ],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 2,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Spring"
+      },
+      {
+        "id": "1",
+        "name": "Autumn"
+      }
+    ]
+  },
+  "@UNFORESTED": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Terrain Squares",
+      "a) Name",
+      "b) Movement, Defensive, Improvement, Value",
+      "c) Yield (Farmer, Planter(s), Planter(t), Planter(c),",
+      "Trapper, Lumberjack, Ore Miner, Silver Miner,",
+      "Fisherman)"
+    ],
+    "columns": [
+      "name",
+      "movement",
+      "defensive",
+      "improvement",
+      "value",
+      "y_farmer",
+      "y_planter_sugar",
+      "y_planter_tobacco",
+      "y_planter_cotton",
+      "y_trapper",
+      "y_lumberjack",
+      "y_ore",
+      "y_silver",
+      "y_fisherman"
+    ],
+    "columns_named": true,
+    "byte_anchors": "terrain ids 0..; auto-forest range 8..23 via func_006204 (file 0x6204) [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 8,
+    "rows": [
+      {
+        "name": "Tundra",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "4",
+        "value": "2",
+        "y_farmer": "2",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "2",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Desert",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "3",
+        "value": "2",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "1",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "2",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Plains",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "3",
+        "value": "4",
+        "y_farmer": "4",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "2",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "1",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Prairie",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "3",
+        "value": "4",
+        "y_farmer": "2",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "3",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Grassland",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "3",
+        "value": "4",
+        "y_farmer": "2",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "3",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Savannah",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "3",
+        "value": "4",
+        "y_farmer": "3",
+        "y_planter_sugar": "3",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Marsh",
+        "movement": "2",
+        "defensive": "1",
+        "improvement": "5",
+        "value": "2",
+        "y_farmer": "2",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "2",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "2",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Swamp",
+        "movement": "2",
+        "defensive": "1",
+        "improvement": "7",
+        "value": "2",
+        "y_farmer": "2",
+        "y_planter_sugar": "2",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "2",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      }
+    ]
+  },
+  "@FORESTED": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "name",
+      "movement",
+      "defensive",
+      "improvement",
+      "value",
+      "y_farmer",
+      "y_planter_sugar",
+      "y_planter_tobacco",
+      "y_planter_cotton",
+      "y_trapper",
+      "y_lumberjack",
+      "y_ore",
+      "y_silver",
+      "y_fisherman"
+    ],
+    "columns_named": true,
+    "byte_anchors": "forested variants of @UNFORESTED; func_006204 [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 8,
+    "rows": [
+      {
+        "name": "Boreal",
+        "movement": "2",
+        "defensive": "2",
+        "improvement": "4",
+        "value": "3",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "3",
+        "y_lumberjack": "2",
+        "y_ore": "1",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Scrub",
+        "movement": "1",
+        "defensive": "2",
+        "improvement": "4",
+        "value": "1",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "1",
+        "y_trapper": "2",
+        "y_lumberjack": "1",
+        "y_ore": "1",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Mixed",
+        "movement": "2",
+        "defensive": "2",
+        "improvement": "4",
+        "value": "3",
+        "y_farmer": "2",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "1",
+        "y_trapper": "3",
+        "y_lumberjack": "3",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Broadleaf",
+        "movement": "2",
+        "defensive": "2",
+        "improvement": "4",
+        "value": "3",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "1",
+        "y_trapper": "2",
+        "y_lumberjack": "2",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Conifer",
+        "movement": "2",
+        "defensive": "2",
+        "improvement": "4",
+        "value": "3",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "1",
+        "y_planter_cotton": "0",
+        "y_trapper": "2",
+        "y_lumberjack": "3",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Tropical",
+        "movement": "2",
+        "defensive": "2",
+        "improvement": "6",
+        "value": "3",
+        "y_farmer": "2",
+        "y_planter_sugar": "1",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "2",
+        "y_lumberjack": "2",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Wetland",
+        "movement": "3",
+        "defensive": "2",
+        "improvement": "6",
+        "value": "1",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "1",
+        "y_planter_cotton": "0",
+        "y_trapper": "2",
+        "y_lumberjack": "2",
+        "y_ore": "1",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Rain",
+        "movement": "3",
+        "defensive": "3",
+        "improvement": "7",
+        "value": "1",
+        "y_farmer": "1",
+        "y_planter_sugar": "1",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "1",
+        "y_lumberjack": "2",
+        "y_ore": "1",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      }
+    ]
+  },
+  "@OTHER": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "name",
+      "movement",
+      "defensive",
+      "improvement",
+      "value",
+      "y_farmer",
+      "y_planter_sugar",
+      "y_planter_tobacco",
+      "y_planter_cotton",
+      "y_trapper",
+      "y_lumberjack",
+      "y_ore",
+      "y_silver",
+      "y_fisherman"
+    ],
+    "columns_named": true,
+    "byte_anchors": "other/misc terrain (Arctic/Ocean/Sea Lane/Mountains...); Sea Lane = base id 26 (hard rule 2); func_006204 [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 5,
+    "rows": [
+      {
+        "name": "Arctic",
+        "movement": "2",
+        "defensive": "0",
+        "improvement": "4",
+        "value": "0",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Ocean",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "2",
+        "value": "3",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "3"
+      },
+      {
+        "name": "Sea Lane",
+        "movement": "1",
+        "defensive": "0",
+        "improvement": "2",
+        "value": "0",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "0",
+        "y_silver": "0",
+        "y_fisherman": "3"
+      },
+      {
+        "name": "Mountains",
+        "movement": "3",
+        "defensive": "6",
+        "improvement": "7",
+        "value": "2",
+        "y_farmer": "0",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "4",
+        "y_silver": "1",
+        "y_fisherman": "0"
+      },
+      {
+        "name": "Hills",
+        "movement": "2",
+        "defensive": "4",
+        "improvement": "4",
+        "value": "2",
+        "y_farmer": "1",
+        "y_planter_sugar": "0",
+        "y_planter_tobacco": "0",
+        "y_planter_cotton": "0",
+        "y_trapper": "0",
+        "y_lumberjack": "0",
+        "y_ore": "4",
+        "y_silver": "0",
+        "y_fisherman": "0"
+      }
+    ]
+  },
+  "@OTHER_NAMES": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Forest"
+      },
+      {
+        "id": "1",
+        "name": "River"
+      },
+      {
+        "id": "2",
+        "name": "Major River"
+      },
+      {
+        "id": "3",
+        "name": "Minor River"
+      },
+      {
+        "id": "4",
+        "name": "Unexplored"
+      }
+    ]
+  },
+  "@RESOURCE": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Special resource squares & values."
+    ],
+    "columns": [
+      "name",
+      "value"
+    ],
+    "columns_named": true,
+    "byte_anchors": "special-resource squares; legend 'Special resource squares & values' [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 14,
+    "rows": [
+      {
+        "name": "Depleted Mine",
+        "value": "6"
+      },
+      {
+        "name": "Oasis",
+        "value": "3"
+      },
+      {
+        "name": "Wheat",
+        "value": "4"
+      },
+      {
+        "name": "Prime Cotton",
+        "value": "6"
+      },
+      {
+        "name": "Prime Tobacco",
+        "value": "6"
+      },
+      {
+        "name": "Prime Sugar",
+        "value": "7"
+      },
+      {
+        "name": "Minerals",
+        "value": "4"
+      },
+      {
+        "name": "Fishery",
+        "value": "5"
+      },
+      {
+        "name": "Beaver",
+        "value": "6"
+      },
+      {
+        "name": "Game",
+        "value": "6"
+      },
+      {
+        "name": "Prime Timber",
+        "value": "6"
+      },
+      {
+        "name": "Prime Timber",
+        "value": "6"
+      },
+      {
+        "name": "Silver Deposit",
+        "value": "12"
+      },
+      {
+        "name": "Ore Deposit",
+        "value": "6"
+      }
+    ]
+  },
+  "@COUNTRY": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Country names (color => must be 9-15)"
+    ],
+    "columns": [
+      "name",
+      "color"
+    ],
+    "columns_named": true,
+    "byte_anchors": "EU powers idx 0..3 = PowerRecord index (DGROUP:0x8808 stride 316) [B]; legend 'color => must be 9-15' [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 4,
+    "rows": [
+      {
+        "name": "England",
+        "color": "12"
+      },
+      {
+        "name": "France",
+        "color": "9"
+      },
+      {
+        "name": "Spain",
+        "color": "14"
+      },
+      {
+        "name": "Netherlands",
+        "color": "13"
+      }
+    ]
+  },
+  "@NATIONALITY": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "English"
+      },
+      {
+        "id": "1",
+        "name": "French"
+      },
+      {
+        "id": "2",
+        "name": "Spanish"
+      },
+      {
+        "id": "3",
+        "name": "Dutch"
+      }
+    ]
+  },
+  "@NATIONABBREV": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Eng."
+      },
+      {
+        "id": "1",
+        "name": "Fr."
+      },
+      {
+        "id": "2",
+        "name": "Span."
+      },
+      {
+        "id": "3",
+        "name": "Dutch"
+      }
+    ]
+  },
+  "@HOMEPORT": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "London"
+      },
+      {
+        "id": "1",
+        "name": "La Rochelle"
+      },
+      {
+        "id": "2",
+        "name": "Seville"
+      },
+      {
+        "id": "3",
+        "name": "Amsterdam"
+      }
+    ]
+  },
+  "@COLONYNAME": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "New England"
+      },
+      {
+        "id": "1",
+        "name": "New France"
+      },
+      {
+        "id": "2",
+        "name": "New Spain"
+      },
+      {
+        "id": "3",
+        "name": "New Netherlands"
+      }
+    ]
+  },
+  "@INDEPENDENT": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "United States of America"
+      },
+      {
+        "id": "1",
+        "name": "Republic of Quebec"
+      },
+      {
+        "id": "2",
+        "name": "Republic of Mexico"
+      },
+      {
+        "id": "3",
+        "name": "Republic of Surinam"
+      }
+    ]
+  },
+  "@LEADERNAME": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Leaders",
+      "a) aggressive/friendly",
+      "b) expansionist/perfectionist",
+      "c) civilize/militaristic"
+    ],
+    "columns": [
+      "name",
+      "aggressive_friendly",
+      "expansionist_perfectionist",
+      "civilize_militaristic"
+    ],
+    "columns_named": true,
+    "byte_anchors": "AIPersonality leader_name DGROUP:0x540E+0x00 (4 EU powers) [B]; legend a/b/c personality axes [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 4,
+    "rows": [
+      {
+        "name": "Walter Raleigh",
+        "aggressive_friendly": "1",
+        "expansionist_perfectionist": "-1",
+        "civilize_militaristic": "0"
+      },
+      {
+        "name": "Jacques Cartier",
+        "aggressive_friendly": "0",
+        "expansionist_perfectionist": "1",
+        "civilize_militaristic": "0"
+      },
+      {
+        "name": "Christopher Columbus",
+        "aggressive_friendly": "1",
+        "expansionist_perfectionist": "0",
+        "civilize_militaristic": "-1"
+      },
+      {
+        "name": "Michiel De Ruyter",
+        "aggressive_friendly": "-1",
+        "expansionist_perfectionist": "0",
+        "civilize_militaristic": "1"
+      }
+    ]
+  },
+  "@MISSION": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Church of"
+      },
+      {
+        "id": "1",
+        "name": "Sainte Marie de"
+      },
+      {
+        "id": "2",
+        "name": "Santa Maria del"
+      },
+      {
+        "id": "3",
+        "name": "Church of"
+      }
+    ]
+  },
+  "@DIFFICULTY": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Discoverer"
+      },
+      {
+        "id": "1",
+        "name": "Explorer"
+      },
+      {
+        "id": "2",
+        "name": "Conquistador"
+      },
+      {
+        "id": "3",
+        "name": "Governor"
+      },
+      {
+        "id": "4",
+        "name": "Viceroy"
+      }
+    ]
+  },
+  "@CLASS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "European classes",
+      "Name, transportation costs"
+    ],
+    "columns": [
+      "name",
+      "transport_cost"
+    ],
+    "columns_named": true,
+    "byte_anchors": "European classes; legend 'Name, transportation costs' [B legend]; @CLASS DGROUP:0x9602 stride 4 loaded @0x074CB0 (RESIDUAL §) [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 8,
+    "rows": [
+      {
+        "name": "Petty Criminals",
+        "transport_cost": "300"
+      },
+      {
+        "name": "Indentured Servants",
+        "transport_cost": "400"
+      },
+      {
+        "name": "Peasant Farmers",
+        "transport_cost": "600"
+      },
+      {
+        "name": "Skilled Craftsmen",
+        "transport_cost": "800"
+      },
+      {
+        "name": "Hardy Pioneers",
+        "transport_cost": "1450"
+      },
+      {
+        "name": "Town Merchants",
+        "transport_cost": "1500"
+      },
+      {
+        "name": "Trained Mercenaries",
+        "transport_cost": "1900"
+      },
+      {
+        "name": "Educated Elite",
+        "transport_cost": "2000"
+      }
+    ]
+  },
+  "@BUILDING": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Buildings in Colonies",
+      "name, cost, tools(*10), size, min_colony, upkeep",
+      "(Cost guidelines: If <= 52, should be divisible by 13.  Otherwise,",
+      "should be divisible by 8)."
+    ],
+    "columns": [
+      "name",
+      "cost",
+      "tools_x10",
+      "size",
+      "min_colony",
+      "upkeep"
+    ],
+    "columns_named": true,
+    "byte_anchors": "loader func_074D18 (5-field parse 0x074D18..0x074D3C, lcall 0x1A1F:0x88A x5) [B]; cols per legend",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 42,
+    "rows": [
+      {
+        "name": "Stockade",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "3",
+        "min_colony": "3",
+        "upkeep": "0"
+      },
+      {
+        "name": "Fort",
+        "cost": "120",
+        "tools_x10": "10",
+        "size": "3",
+        "min_colony": "3",
+        "upkeep": "10"
+      },
+      {
+        "name": "Fortress",
+        "cost": "320",
+        "tools_x10": "20",
+        "size": "3",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Armory",
+        "cost": "52",
+        "tools_x10": "0",
+        "size": "1",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Magazine",
+        "cost": "120",
+        "tools_x10": "5",
+        "size": "1",
+        "min_colony": "8",
+        "upkeep": "10"
+      },
+      {
+        "name": "Arsenal",
+        "cost": "240",
+        "tools_x10": "10",
+        "size": "1",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Docks",
+        "cost": "52",
+        "tools_x10": "0",
+        "size": "4",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Drydock",
+        "cost": "80",
+        "tools_x10": "5",
+        "size": "4",
+        "min_colony": "4",
+        "upkeep": "10"
+      },
+      {
+        "name": "Shipyard",
+        "cost": "240",
+        "tools_x10": "10",
+        "size": "4",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Town Hall",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "2",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Town Hall",
+        "cost": "64",
+        "tools_x10": "5",
+        "size": "2",
+        "min_colony": "4",
+        "upkeep": "10"
+      },
+      {
+        "name": "Town Hall",
+        "cost": "120",
+        "tools_x10": "10",
+        "size": "2",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Schoolhouse",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "1",
+        "min_colony": "4",
+        "upkeep": "5"
+      },
+      {
+        "name": "College",
+        "cost": "160",
+        "tools_x10": "5",
+        "size": "1",
+        "min_colony": "8",
+        "upkeep": "10"
+      },
+      {
+        "name": "University",
+        "cost": "200",
+        "tools_x10": "10",
+        "size": "1",
+        "min_colony": "10",
+        "upkeep": "15"
+      },
+      {
+        "name": "Warehouse",
+        "cost": "80",
+        "tools_x10": "0",
+        "size": "1",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Warehouse Expansion",
+        "cost": "80",
+        "tools_x10": "2",
+        "size": "1",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Stable",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Custom House",
+        "cost": "160",
+        "tools_x10": "5",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "15"
+      },
+      {
+        "name": "Printing Press",
+        "cost": "52",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Newspaper",
+        "cost": "120",
+        "tools_x10": "5",
+        "size": "0",
+        "min_colony": "4",
+        "upkeep": "10"
+      },
+      {
+        "name": "Weaver's House",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Weaver's Shop",
+        "cost": "64",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Textile Mill",
+        "cost": "160",
+        "tools_x10": "10",
+        "size": "0",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Tobacconist's House",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Tobacconist's Shop",
+        "cost": "64",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Cigar Factory",
+        "cost": "160",
+        "tools_x10": "10",
+        "size": "0",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Rum Distiller's House",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Rum Distillery",
+        "cost": "64",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Rum Factory",
+        "cost": "160",
+        "tools_x10": "10",
+        "size": "0",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Capitol",
+        "cost": "400",
+        "tools_x10": "10",
+        "size": "2",
+        "min_colony": "16",
+        "upkeep": "20"
+      },
+      {
+        "name": "Capitol Expansion",
+        "cost": "400",
+        "tools_x10": "10",
+        "size": "2",
+        "min_colony": "16",
+        "upkeep": "10"
+      },
+      {
+        "name": "Fur Trader's House",
+        "cost": "56",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Fur Trading Post",
+        "cost": "56",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Fur Factory",
+        "cost": "160",
+        "tools_x10": "10",
+        "size": "0",
+        "min_colony": "6",
+        "upkeep": "15"
+      },
+      {
+        "name": "Carpenter's Shop",
+        "cost": "39",
+        "tools_x10": "0",
+        "size": "1",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Lumber Mill",
+        "cost": "52",
+        "tools_x10": "0",
+        "size": "1",
+        "min_colony": "3",
+        "upkeep": "10"
+      },
+      {
+        "name": "Church",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "2",
+        "min_colony": "3",
+        "upkeep": "5"
+      },
+      {
+        "name": "Cathedral",
+        "cost": "176",
+        "tools_x10": "10",
+        "size": "2",
+        "min_colony": "8",
+        "upkeep": "15"
+      },
+      {
+        "name": "Blacksmith's House",
+        "cost": "64",
+        "tools_x10": "0",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "0"
+      },
+      {
+        "name": "Blacksmith's Shop",
+        "cost": "64",
+        "tools_x10": "2",
+        "size": "0",
+        "min_colony": "1",
+        "upkeep": "5"
+      },
+      {
+        "name": "Iron Works",
+        "cost": "240",
+        "tools_x10": "10",
+        "size": "0",
+        "min_colony": "8",
+        "upkeep": "15"
+      }
+    ]
+  },
+  "@SCENARIO": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Scenarios",
+      "map file (do not change), start, end, x0, y0, x1, y1, x2, y2, x3, y3"
+    ],
+    "columns": [
+      "map_file",
+      "start",
+      "end",
+      "x0",
+      "y0",
+      "x1",
+      "y1",
+      "x2",
+      "y2",
+      "x3",
+      "y3"
+    ],
+    "columns_named": true,
+    "byte_anchors": "scenario bounds; legend 'map file, start, end, x0..y3' [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 2,
+    "rows": [
+      {
+        "map_file": "AMER2",
+        "start": "34",
+        "end": "20",
+        "x0": "39",
+        "y0": "10",
+        "x1": "47",
+        "y1": "61",
+        "x2": "50",
+        "y2": "33",
+        "x3": "",
+        "y3": ""
+      },
+      {
+        "map_file": "AMERICA",
+        "start": "56",
+        "end": "27",
+        "x0": "67",
+        "y0": "12",
+        "x1": "66",
+        "y1": "42",
+        "x2": "84",
+        "y2": "65",
+        "x3": "",
+        "y3": ""
+      }
+    ]
+  },
+  "@JOB": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Colonist professions",
+      "name, student level (4 = unlearnable), cost in europe"
+    ],
+    "columns": [
+      "name",
+      "expert_name",
+      "school_tier",
+      "europe_value"
+    ],
+    "columns_named": true,
+    "byte_anchors": "expertise = UnitRecord +0x17 (vet/profession 0x13..0x1C) [B]; school_tier = min teaching building (1=Schoolhouse/2=College/3=University/4=base) [B, manual chart]; europe_value -1 = n/a",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 28,
+    "rows": [
+      {
+        "name": "Farmer",
+        "expert_name": "Expert Farmers",
+        "school_tier": "1",
+        "europe_value": "1100"
+      },
+      {
+        "name": "Sugar Planter",
+        "expert_name": "Master Sugar Planters",
+        "school_tier": "2",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Tobacco Planter",
+        "expert_name": "Master Tobacco Planters",
+        "school_tier": "2",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Cotton Planter",
+        "expert_name": "Master Cotton Planters",
+        "school_tier": "2",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Fur Trapper",
+        "expert_name": "Expert Fur Trappers",
+        "school_tier": "1",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Lumberjack",
+        "expert_name": "Expert Lumberjacks",
+        "school_tier": "1",
+        "europe_value": "700"
+      },
+      {
+        "name": "Ore Miner",
+        "expert_name": "Expert Ore Miners",
+        "school_tier": "1",
+        "europe_value": "600"
+      },
+      {
+        "name": "Silver Miner",
+        "expert_name": "Expert Silver Miners",
+        "school_tier": "1",
+        "europe_value": "900"
+      },
+      {
+        "name": "Fisherman",
+        "expert_name": "Expert Fishermen",
+        "school_tier": "1",
+        "europe_value": "1000"
+      },
+      {
+        "name": "Distiller",
+        "expert_name": "Master Distiller",
+        "school_tier": "2",
+        "europe_value": "1100"
+      },
+      {
+        "name": "Tobacconist",
+        "expert_name": "Master Tobacconists",
+        "school_tier": "2",
+        "europe_value": "1200"
+      },
+      {
+        "name": "Weaver",
+        "expert_name": "Master Weavers",
+        "school_tier": "2",
+        "europe_value": "1300"
+      },
+      {
+        "name": "Fur Trader",
+        "expert_name": "Master Fur Traders",
+        "school_tier": "2",
+        "europe_value": "950"
+      },
+      {
+        "name": "Carpenter",
+        "expert_name": "Master Carpenters",
+        "school_tier": "1",
+        "europe_value": "1000"
+      },
+      {
+        "name": "Blacksmith",
+        "expert_name": "Master Blacksmiths",
+        "school_tier": "2",
+        "europe_value": "1050"
+      },
+      {
+        "name": "Gunsmith",
+        "expert_name": "Master Gunsmiths",
+        "school_tier": "2",
+        "europe_value": "850"
+      },
+      {
+        "name": "Preacher",
+        "expert_name": "Firebrand Preachers",
+        "school_tier": "3",
+        "europe_value": "1500"
+      },
+      {
+        "name": "Statesman",
+        "expert_name": "Elder Statesmen",
+        "school_tier": "3",
+        "europe_value": "1900"
+      },
+      {
+        "name": "Teacher",
+        "expert_name": "Expert Teachers",
+        "school_tier": "4",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Colonist",
+        "expert_name": "Free Colonists",
+        "school_tier": "4",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Pioneer",
+        "expert_name": "Hardy Pioneers",
+        "school_tier": "1",
+        "europe_value": "1200"
+      },
+      {
+        "name": "Soldier",
+        "expert_name": "Veteran Soldiers",
+        "school_tier": "2",
+        "europe_value": "2000"
+      },
+      {
+        "name": "Scout",
+        "expert_name": "Seasoned Scouts",
+        "school_tier": "1",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Dragoon",
+        "expert_name": "Veteran Dragoons",
+        "school_tier": "2",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Missionary",
+        "expert_name": "Jesuit Missionaries",
+        "school_tier": "3",
+        "europe_value": "1400"
+      },
+      {
+        "name": "Ind. Servant",
+        "expert_name": "Indentured Servants",
+        "school_tier": "4",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Criminal",
+        "expert_name": "Petty Criminals",
+        "school_tier": "4",
+        "europe_value": "-1"
+      },
+      {
+        "name": "Convert",
+        "expert_name": "Indian Converts",
+        "school_tier": "4",
+        "europe_value": "-1"
+      }
+    ]
+  },
+  "@CARGO": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Cargo types & economic model",
+      "Economy: start1, 2, low, high, burden, rise, fall, attrition, volatility",
+      "Start 1, 2      = Starting cargo price (lowest/highest)",
+      "Low             = Lowest possible drift",
+      "High            = Highest possible drift",
+      "Burden          = Extra difference between ask & bid prices",
+      "(0 means ask is 1 higher than bid)",
+      "Rise            = Price rises at this traffic indicator",
+      "Fall            = Price falls at this traffic indicator",
+      "Attrition       = Amount added to traffic volume each turn",
+      "(represents ability of price to recover)",
+      "Volatility      = Shift value for traffic volume"
+    ],
+    "columns": [
+      "name",
+      "price_start1",
+      "price_start2",
+      "drift_low",
+      "drift_high",
+      "burden",
+      "rise",
+      "fall",
+      "attrition",
+      "volatility"
+    ],
+    "columns_named": true,
+    "byte_anchors": "loader func_074DEC (9-field parse @0x074E05, lcall 0x1A1F:0x88A x9) -> DGROUP 0x96FC stride 9 [B]; per-turn drift func_0305A8 [B]; goods index = PowerRecord market arrays order [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 20,
+    "rows": [
+      {
+        "name": "Food",
+        "price_start1": "1",
+        "price_start2": "3",
+        "drift_low": "1",
+        "drift_high": "6",
+        "burden": "7",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "-1",
+        "volatility": "0"
+      },
+      {
+        "name": "Sugar",
+        "price_start1": "4",
+        "price_start2": "7",
+        "drift_low": "3",
+        "drift_high": "7",
+        "burden": "1",
+        "rise": "4",
+        "fall": "6",
+        "attrition": "-8",
+        "volatility": "1"
+      },
+      {
+        "name": "Tobacco",
+        "price_start1": "3",
+        "price_start2": "5",
+        "drift_low": "2",
+        "drift_high": "5",
+        "burden": "1",
+        "rise": "4",
+        "fall": "8",
+        "attrition": "-10",
+        "volatility": "1"
+      },
+      {
+        "name": "Cotton",
+        "price_start1": "2",
+        "price_start2": "5",
+        "drift_low": "2",
+        "drift_high": "5",
+        "burden": "1",
+        "rise": "4",
+        "fall": "6",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Furs",
+        "price_start1": "4",
+        "price_start2": "6",
+        "drift_low": "2",
+        "drift_high": "6",
+        "burden": "1",
+        "rise": "4",
+        "fall": "20",
+        "attrition": "-13",
+        "volatility": "1"
+      },
+      {
+        "name": "Lumber",
+        "price_start1": "2",
+        "price_start2": "2",
+        "drift_low": "2",
+        "drift_high": "2",
+        "burden": "4",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "0",
+        "volatility": "0"
+      },
+      {
+        "name": "Ore",
+        "price_start1": "3",
+        "price_start2": "6",
+        "drift_low": "2",
+        "drift_high": "6",
+        "burden": "2",
+        "rise": "2",
+        "fall": "4",
+        "attrition": "-7",
+        "volatility": "0"
+      },
+      {
+        "name": "Silver",
+        "price_start1": "20",
+        "price_start2": "20",
+        "drift_low": "2",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "8",
+        "fall": "1",
+        "attrition": "-8",
+        "volatility": "2"
+      },
+      {
+        "name": "Horses",
+        "price_start1": "2",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "11",
+        "burden": "0",
+        "rise": "3",
+        "fall": "2",
+        "attrition": "-3",
+        "volatility": "0"
+      },
+      {
+        "name": "Rum",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-12",
+        "volatility": "1"
+      },
+      {
+        "name": "Cigars",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Cloth",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-13",
+        "volatility": "1"
+      },
+      {
+        "name": "Coats",
+        "price_start1": "11",
+        "price_start2": "13",
+        "drift_low": "1",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "4",
+        "fall": "4",
+        "attrition": "-11",
+        "volatility": "1"
+      },
+      {
+        "name": "Trade Goods",
+        "price_start1": "2",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "12",
+        "burden": "0",
+        "rise": "2",
+        "fall": "3",
+        "attrition": "4",
+        "volatility": "0"
+      },
+      {
+        "name": "Tools",
+        "price_start1": "2",
+        "price_start2": "2",
+        "drift_low": "2",
+        "drift_high": "9",
+        "burden": "0",
+        "rise": "2",
+        "fall": "2",
+        "attrition": "5",
+        "volatility": "0"
+      },
+      {
+        "name": "Muskets",
+        "price_start1": "3",
+        "price_start2": "3",
+        "drift_low": "2",
+        "drift_high": "20",
+        "burden": "0",
+        "rise": "2",
+        "fall": "2",
+        "attrition": "6",
+        "volatility": "0"
+      },
+      {
+        "name": "Hammers",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Crosses",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Liberty Bells",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      },
+      {
+        "name": "Flags",
+        "price_start1": "",
+        "price_start2": "",
+        "drift_low": "",
+        "drift_high": "",
+        "burden": "",
+        "rise": "",
+        "fall": "",
+        "attrition": "",
+        "volatility": ""
+      }
+    ]
+  },
+  "@UNIT": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Unit types",
+      "icon, movement, attack, combat, cargo, size, cost, tools, guns, hull, role",
+      "AI Role(binary) => Invade Settle Explore Attack Defend Escort Transp Naval"
+    ],
+    "columns": [
+      "name",
+      "icon",
+      "movement",
+      "attack",
+      "combat",
+      "cargo",
+      "size",
+      "cost",
+      "tools",
+      "guns",
+      "hull",
+      "ai_role_bits"
+    ],
+    "columns_named": true,
+    "byte_anchors": "loader @0x74EC3 maps cols -> runtime stat tables: attack->0x5236, combat/DEFENSE->0x5235 (LAND, accessor x8), guns->0x523B, ->0x523C (ship). ai_role_bits = AI Role binary (Invade/Settle/Explore/Attack/Defend/Escort/Transp/Naval). [B, RULINGS wave-10]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 23,
+    "rows": [
+      {
+        "name": "Colonists",
+        "icon": "101",
+        "movement": "1",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01000000"
+      },
+      {
+        "name": "Soldiers",
+        "icon": "103",
+        "movement": "1",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Pioneers",
+        "icon": "102",
+        "movement": "1",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01000000"
+      },
+      {
+        "name": "Missionaries",
+        "icon": "106",
+        "movement": "2",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00100000"
+      },
+      {
+        "name": "Dragoons",
+        "icon": "105",
+        "movement": "4",
+        "attack": "3",
+        "combat": "3",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111100"
+      },
+      {
+        "name": "Scouts",
+        "icon": "104",
+        "movement": "4",
+        "attack": "1",
+        "combat": "1",
+        "cargo": "0",
+        "size": "1",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "01100100"
+      },
+      {
+        "name": "Regulars",
+        "icon": "126",
+        "movement": "1",
+        "attack": "5",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cont. Cav.",
+        "icon": "130",
+        "movement": "4",
+        "attack": "5",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cavalry",
+        "icon": "127",
+        "movement": "4",
+        "attack": "6",
+        "combat": "6",
+        "cargo": "0",
+        "size": "1",
+        "cost": "4",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Cont. Army",
+        "icon": "129",
+        "movement": "1",
+        "attack": "4",
+        "combat": "4",
+        "cargo": "0",
+        "size": "1",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011100"
+      },
+      {
+        "name": "Treasure",
+        "icon": "17",
+        "movement": "1",
+        "attack": "0",
+        "combat": "0",
+        "cargo": "0",
+        "size": "6",
+        "cost": "4",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00000000"
+      },
+      {
+        "name": "Artillery",
+        "icon": "10",
+        "movement": "1",
+        "attack": "7",
+        "combat": "5",
+        "cargo": "0",
+        "size": "1",
+        "cost": "6",
+        "tools": "4",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00011000"
+      },
+      {
+        "name": "Wagon Train",
+        "icon": "9",
+        "movement": "2",
+        "attack": "0",
+        "combat": "1",
+        "cargo": "2",
+        "size": "99",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00000000"
+      },
+      {
+        "name": "Caravel",
+        "icon": "6",
+        "movement": "4",
+        "attack": "0",
+        "combat": "2",
+        "cargo": "2",
+        "size": "99",
+        "cost": "4",
+        "tools": "4",
+        "guns": "0",
+        "hull": "4",
+        "ai_role_bits": "10100010"
+      },
+      {
+        "name": "Merchantman",
+        "icon": "7",
+        "movement": "5",
+        "attack": "0",
+        "combat": "6",
+        "cargo": "4",
+        "size": "99",
+        "cost": "6",
+        "tools": "8",
+        "guns": "1",
+        "hull": "8",
+        "ai_role_bits": "10000010"
+      },
+      {
+        "name": "Galleon",
+        "icon": "8",
+        "movement": "6",
+        "attack": "0",
+        "combat": "10",
+        "cargo": "6",
+        "size": "99",
+        "cost": "10",
+        "tools": "10",
+        "guns": "4",
+        "hull": "20",
+        "ai_role_bits": "10000010"
+      },
+      {
+        "name": "Privateer",
+        "icon": "15",
+        "movement": "8",
+        "attack": "8",
+        "combat": "8",
+        "cargo": "2",
+        "size": "99",
+        "cost": "8",
+        "tools": "12",
+        "guns": "4",
+        "hull": "12",
+        "ai_role_bits": "00000001"
+      },
+      {
+        "name": "Frigate",
+        "icon": "16",
+        "movement": "6",
+        "attack": "16",
+        "combat": "16",
+        "cargo": "4",
+        "size": "99",
+        "cost": "16",
+        "tools": "20",
+        "guns": "12",
+        "hull": "32",
+        "ai_role_bits": "10000001"
+      },
+      {
+        "name": "Man-O-War",
+        "icon": "128",
+        "movement": "5",
+        "attack": "24",
+        "combat": "24",
+        "cargo": "6",
+        "size": "99",
+        "cost": "32",
+        "tools": "90",
+        "guns": "32",
+        "hull": "64",
+        "ai_role_bits": "10000001"
+      },
+      {
+        "name": "Braves",
+        "icon": "110",
+        "movement": "1",
+        "attack": "1",
+        "combat": "1",
+        "cargo": "0",
+        "size": "0",
+        "cost": "1",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Armed Braves",
+        "icon": "111",
+        "movement": "1",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "0",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Mtd. Braves",
+        "icon": "112",
+        "movement": "4",
+        "attack": "2",
+        "combat": "2",
+        "cargo": "0",
+        "size": "0",
+        "cost": "2",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      },
+      {
+        "name": "Mtd. Warriors",
+        "icon": "113",
+        "movement": "4",
+        "attack": "3",
+        "combat": "3",
+        "cargo": "0",
+        "size": "0",
+        "cost": "3",
+        "tools": "0",
+        "guns": "0",
+        "hull": "0",
+        "ai_role_bits": "00111000"
+      }
+    ]
+  },
+  "@ORDERS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "name",
+      "key"
+    ],
+    "columns_named": true,
+    "byte_anchors": "unit order index; key = 1-char status letter (-/S/T/G/L/F/B/P/R); rows 10-12 reserved (No Orders) [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 13,
+    "rows": [
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "Sentry",
+        "key": "S"
+      },
+      {
+        "name": "Trade Route",
+        "key": "T"
+      },
+      {
+        "name": "Go To",
+        "key": "G"
+      },
+      {
+        "name": "Live In Village",
+        "key": "L"
+      },
+      {
+        "name": "Fortify",
+        "key": "F"
+      },
+      {
+        "name": "Fortified",
+        "key": "F"
+      },
+      {
+        "name": "Build Colony",
+        "key": "B"
+      },
+      {
+        "name": "Clear/Plow",
+        "key": "P"
+      },
+      {
+        "name": "Build Road",
+        "key": "R"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      },
+      {
+        "name": "No Orders",
+        "key": "-"
+      }
+    ]
+  },
+  "@ACTIONS": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 10,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Trade With Village"
+      },
+      {
+        "id": "1",
+        "name": "Enter Hostile Village"
+      },
+      {
+        "id": "2",
+        "name": "Establish Mission"
+      },
+      {
+        "id": "3",
+        "name": "Denounce Heresy of %Fs Mission"
+      },
+      {
+        "id": "4",
+        "name": "Live Among The Natives"
+      },
+      {
+        "id": "5",
+        "name": "Ask to Speak With Chief"
+      },
+      {
+        "id": "6",
+        "name": "Incite Indians"
+      },
+      {
+        "id": "7",
+        "name": "Demand Tribute"
+      },
+      {
+        "id": "8",
+        "name": "Attack Village"
+      },
+      {
+        "id": "9",
+        "name": "Cancel Action"
+      }
+    ]
+  },
+  "@VALUES": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 4,
+    "rows": [
+      {
+        "id": "0",
+        "name": "low quality"
+      },
+      {
+        "id": "1",
+        "name": "good"
+      },
+      {
+        "id": "2",
+        "name": "fine"
+      },
+      {
+        "id": "3",
+        "name": "excellent"
+      }
+    ]
+  },
+  "@ATTITUDE": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Content"
+      },
+      {
+        "id": "1",
+        "name": "Uneasy"
+      },
+      {
+        "id": "2",
+        "name": "Restless"
+      },
+      {
+        "id": "3",
+        "name": "Angry"
+      },
+      {
+        "id": "4",
+        "name": "War"
+      }
+    ]
+  },
+  "@ATTITUDINAL": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 5,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Extremely"
+      },
+      {
+        "id": "1",
+        "name": "Very"
+      },
+      {
+        "id": "2",
+        "name": "Rather"
+      },
+      {
+        "id": "3",
+        "name": "Somewhat"
+      },
+      {
+        "id": "4",
+        "name": "Slightly"
+      }
+    ]
+  },
+  "@LEVELS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [],
+    "columns": [
+      "tech_name",
+      "settlement_singular",
+      "settlement_plural"
+    ],
+    "columns_named": true,
+    "byte_anchors": "native settlement size tiers (Camp/Village/City/...); indexed by @TRIBES level col [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 5,
+    "rows": [
+      {
+        "tech_name": "Semi-Nomadic",
+        "settlement_singular": "Camp",
+        "settlement_plural": "Camps"
+      },
+      {
+        "tech_name": "Agrarian",
+        "settlement_singular": "Village",
+        "settlement_plural": "Villages"
+      },
+      {
+        "tech_name": "Advanced",
+        "settlement_singular": "City",
+        "settlement_plural": "Cities"
+      },
+      {
+        "tech_name": "Civilized",
+        "settlement_singular": "City",
+        "settlement_plural": "Cities"
+      },
+      {
+        "tech_name": "<Any>",
+        "settlement_singular": "Capital",
+        "settlement_plural": "Capitals"
+      }
+    ]
+  },
+  "@TRIBES": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Indian tribe info",
+      "tech-level, color"
+    ],
+    "columns": [
+      "name",
+      "singular",
+      "treasure",
+      "level",
+      "value"
+    ],
+    "columns_named": true,
+    "byte_anchors": "native tribes; order = PowerRecord idx 4..11 [B]; level col = @LEVELS settlement-tier idx (Inca/Aztec 3/2 -> City, nomads 0 -> Camp) [B]; value col = capital-raze treasure base (Aztec=149, Inca=97) DATA_MODEL [B]; rows 9-26 = name-only extra tribe pool",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 26,
+    "rows": [
+      {
+        "name": "Incas",
+        "singular": "Inca",
+        "treasure": "Jewelled Relics",
+        "level": "3",
+        "value": "97"
+      },
+      {
+        "name": "Aztecs",
+        "singular": "Aztec",
+        "treasure": "Gold Bars",
+        "level": "2",
+        "value": "149"
+      },
+      {
+        "name": "Arawaks",
+        "singular": "Arawak",
+        "treasure": "Bone Jewelry",
+        "level": "1",
+        "value": "54"
+      },
+      {
+        "name": "Iroquois",
+        "singular": "Iroquois",
+        "treasure": "Wood Carvings",
+        "level": "1",
+        "value": "87"
+      },
+      {
+        "name": "Cherokee",
+        "singular": "Cherokee",
+        "treasure": "Turquoise",
+        "level": "1",
+        "value": "67"
+      },
+      {
+        "name": "Apache",
+        "singular": "Apache",
+        "treasure": "Beads",
+        "level": "0",
+        "value": "111"
+      },
+      {
+        "name": "Sioux",
+        "singular": "Sioux",
+        "treasure": "Beads",
+        "level": "0",
+        "value": "118"
+      },
+      {
+        "name": "Tupi",
+        "singular": "Tupi",
+        "treasure": "Gems",
+        "level": "0",
+        "value": "71"
+      },
+      {
+        "name": "Maya",
+        "singular": "Maya",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Toltecs",
+        "singular": "Toltec",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Kiowa",
+        "singular": "Kiowa",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Hurons",
+        "singular": "Huron",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Hopi",
+        "singular": "Hopi",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Navajo",
+        "singular": "Navajo",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Cheyenne",
+        "singular": "Cheyenne",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Cree",
+        "singular": "Cree",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Algonquin",
+        "singular": "Algonquin",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Powhatan",
+        "singular": "Powhatan",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Delaware",
+        "singular": "Delaware",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Shawnee",
+        "singular": "Shawnee",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Illinois",
+        "singular": "Illinois",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Chickasaw",
+        "singular": "Chickasaw",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Choctaw",
+        "singular": "Choctaw",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Seminole",
+        "singular": "Seminole",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Mohicans",
+        "singular": "Mohican",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      },
+      {
+        "name": "Zapotec",
+        "singular": "Zapotec",
+        "treasure": "",
+        "level": "",
+        "value": ""
+      }
+    ]
+  },
+  "@FOUNDING": {
+    "kind": "list",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Extra tribe names",
+      "Founding father types."
+    ],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "row index = runtime id [B per CLAUDE.md hard rule]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 6,
+    "rows": [
+      {
+        "id": "0",
+        "name": "Trade"
+      },
+      {
+        "id": "1",
+        "name": "Exploration"
+      },
+      {
+        "id": "2",
+        "name": "Military"
+      },
+      {
+        "id": "3",
+        "name": "Political"
+      },
+      {
+        "id": "4",
+        "name": "Religious"
+      },
+      {
+        "id": "5",
+        "name": "Independence"
+      }
+    ]
+  },
+  "@FATHERS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Founding Fathers",
+      "type, weight 1500-1600, weight 1600-1700, weight 1700+",
+      "Father of higher level will not appear until at least one",
+      "father of next lower level (of same type) has joined the Congress."
+    ],
+    "columns": [
+      "name",
+      "type",
+      "weight_1500_1600",
+      "weight_1600_1700",
+      "weight_1700plus"
+    ],
+    "columns_named": true,
+    "byte_anchors": "Congress acquisition weights by era; PowerRecord +0x07 acquired bitmask [B]; selection func_03BFD2 [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 25,
+    "rows": [
+      {
+        "name": "Adam Smith",
+        "type": "0",
+        "weight_1500_1600": "2",
+        "weight_1600_1700": "8",
+        "weight_1700plus": "6"
+      },
+      {
+        "name": "Jakob Fugger",
+        "type": "0",
+        "weight_1500_1600": "0",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "8"
+      },
+      {
+        "name": "Peter Minuit",
+        "type": "0",
+        "weight_1500_1600": "9",
+        "weight_1600_1700": "1",
+        "weight_1700plus": "0"
+      },
+      {
+        "name": "Peter Stuyvesant",
+        "type": "0",
+        "weight_1500_1600": "2",
+        "weight_1600_1700": "4",
+        "weight_1700plus": "8"
+      },
+      {
+        "name": "Jan de Witt",
+        "type": "0",
+        "weight_1500_1600": "2",
+        "weight_1600_1700": "6",
+        "weight_1700plus": "10"
+      },
+      {
+        "name": "Ferdinand Magellan",
+        "type": "1",
+        "weight_1500_1600": "2",
+        "weight_1600_1700": "10",
+        "weight_1700plus": "10"
+      },
+      {
+        "name": "Francisco Coronado",
+        "type": "1",
+        "weight_1500_1600": "3",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "7"
+      },
+      {
+        "name": "Hernando de Soto",
+        "type": "1",
+        "weight_1500_1600": "5",
+        "weight_1600_1700": "10",
+        "weight_1700plus": "5"
+      },
+      {
+        "name": "Henry Hudson",
+        "type": "1",
+        "weight_1500_1600": "10",
+        "weight_1600_1700": "1",
+        "weight_1700plus": "0"
+      },
+      {
+        "name": "Sieur De La Salle",
+        "type": "1",
+        "weight_1500_1600": "7",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "3"
+      },
+      {
+        "name": "Hernan Cortes",
+        "type": "2",
+        "weight_1500_1600": "6",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "1"
+      },
+      {
+        "name": "George Washington",
+        "type": "2",
+        "weight_1500_1600": "0",
+        "weight_1600_1700": "4",
+        "weight_1700plus": "10"
+      },
+      {
+        "name": "Paul Revere",
+        "type": "2",
+        "weight_1500_1600": "10",
+        "weight_1600_1700": "2",
+        "weight_1700plus": "1"
+      },
+      {
+        "name": "Francis Drake",
+        "type": "2",
+        "weight_1500_1600": "4",
+        "weight_1600_1700": "8",
+        "weight_1700plus": "6"
+      },
+      {
+        "name": "John Paul Jones",
+        "type": "2",
+        "weight_1500_1600": "0",
+        "weight_1600_1700": "6",
+        "weight_1700plus": "7"
+      },
+      {
+        "name": "Thomas Jefferson",
+        "type": "3",
+        "weight_1500_1600": "4",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "6"
+      },
+      {
+        "name": "Pocahontas",
+        "type": "3",
+        "weight_1500_1600": "7",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "3"
+      },
+      {
+        "name": "Thomas Paine",
+        "type": "3",
+        "weight_1500_1600": "1",
+        "weight_1600_1700": "2",
+        "weight_1700plus": "8"
+      },
+      {
+        "name": "Simon Bolivar",
+        "type": "3",
+        "weight_1500_1600": "0",
+        "weight_1600_1700": "4",
+        "weight_1700plus": "6"
+      },
+      {
+        "name": "Benjamin Franklin",
+        "type": "3",
+        "weight_1500_1600": "5",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "5"
+      },
+      {
+        "name": "William Brewster",
+        "type": "4",
+        "weight_1500_1600": "7",
+        "weight_1600_1700": "4",
+        "weight_1700plus": "1"
+      },
+      {
+        "name": "William Penn",
+        "type": "4",
+        "weight_1500_1600": "8",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "2"
+      },
+      {
+        "name": "Jean de Brebeuf",
+        "type": "4",
+        "weight_1500_1600": "6",
+        "weight_1600_1700": "6",
+        "weight_1700plus": "1"
+      },
+      {
+        "name": "Juan de Sepulveda",
+        "type": "4",
+        "weight_1500_1600": "3",
+        "weight_1600_1700": "8",
+        "weight_1700plus": "3"
+      },
+      {
+        "name": "Bartolome de las Casas",
+        "type": "4",
+        "weight_1500_1600": "0",
+        "weight_1600_1700": "5",
+        "weight_1700plus": "10"
+      }
+    ]
+  },
+  "@COLORS": {
+    "kind": "csv",
+    "source": "NAMES.TXT",
+    "legend": [
+      "Text Colors",
+      "basic, hilite, grey, enhance, shadow, select, border 0, 1, 2"
+    ],
+    "columns": [
+      "basic",
+      "hilite",
+      "grey",
+      "enhance",
+      "shadow",
+      "select",
+      "border0",
+      "border1",
+      "border2"
+    ],
+    "columns_named": true,
+    "byte_anchors": "text palette indices; legend names all 9 cols [B legend]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 1,
+    "rows": [
+      {
+        "basic": "68",
+        "hilite": "149",
+        "grey": "8",
+        "enhance": "128",
+        "shadow": "47",
+        "select": "138",
+        "border0": "134",
+        "border1": "128",
+        "border2": "138"
+      }
+    ]
+  }
+}

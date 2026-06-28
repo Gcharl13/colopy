@@ -50,7 +50,6 @@ int compute_final_score(PowerRecord *p) {
 }
 ```
 
-@ref `COLONIZATION_TECHNICAL_REFERENCE.md` §13 (Scoring)
 
 ## Difficulty multipliers
 

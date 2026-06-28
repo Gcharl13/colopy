@@ -4,6 +4,13 @@ Authoritative catalog of every sprite sheet referenced by the in-game
 renderer. Maintained by the `sprite-cataloger` agent (and the main thread
 when the agent is unable to complete).
 
+> **Visual atlas:** run `python3 tools/sprite_atlas.py ICONS.SS PHYS0.SS BUILDING.SS`
+> (or `--all`) to render a labeled contact sheet (each cell tagged `decimal/0xHEX`,
+> the index the specs cite) to the git-ignored, regenerable `extracted/sprite_atlas/`.
+> Requires the sheet in `raw/COLONIZE/` (unzip from `col.zip`); decode via
+> `tools/ssdec.py`. The atlas PNGs are **not committed** (binaries stay regenerable,
+> per CLAUDE.md path convention).
+
 All sprites are extracted from MADSPACK-compressed `.SS` files and live
 under `extracted/assets/sprites/<SHEET>/<SHEET>.SS.NNN.png`. Palette
 index 253 is the transparency key in PHYS0. Other sheets use a standard
@@ -104,17 +111,30 @@ Confirmed via agent pixel inspection + verification:
 the .MP file selects which of 96–103 to draw on that tile. See
 `MAP_FORMAT.md` for the resource-byte layout (pending).
 
-### Row 0x70 (indices 112–127) — 8×8 coast sub-tile strips
+### Row 0x6D–0x8B (indices 109–139) — 8×8 coast sub-tile quadrants — **RESOLVED 2026-06-22**
 
-**High-value re-investigation opportunity.** These are 8×8 (not 16×16)
-blue/green sub-tile fragments — potentially the TRUE DOS coast sprites
-rendered via 4-sub-tile composition on water tiles. Current renderer
-uses sprites 150–153 as bulk coast overlays; this row may offer finer-
-grained per-sub-tile coast rendering that matches DOS more precisely.
+**Confirmed the TRUE complex-coast path** (byte-verified vs `func_0681A8`,
+capstone `0x684b1..0x684f7`; pixels via `tools/ssdec.py`). These frames are
+**8×8** (every other PHYS0 frame is 16×16) with water palette indices 55–58 —
+they are the **per-quadrant coast sub-tiles** drawn on **water** tiles when the
+land-neighbour bitmap does NOT match a clean 16×16 edge pattern. The renderer:
 
-**Action**: before shipping further coast refinements, have
-`dos-disassembler` locate where func_O512 references sprite indices in
-this range and confirm the composition rule.
+- For a water tile (terrain `0x19` Ocean / `0x1a` Sea-Lane), `analyse_connections`
+  (`func_067A24`) builds `[0xA8A6]` = the 8-direction **land**-neighbour bitmap
+  (water neighbours skipped, `@0x67aa6`) plus a 4-entry per-quadrant diagonal/cardinal
+  table at `[0x2D24]`.
+- If `[0xA8A6]` matches a clean pattern → one 16×16 edge `0x97+pattern` (151–153).
+- **Else** → 4-quadrant loop (`@0x684bc`): for quadrant `q=0..3`, draw frame
+  **`0x6D + table[q]·4 + q`** (`table[q]`∈0..7; reachable frames **109–139, all 8×8**)
+  at the 8×8 sub-cell offset for that quadrant (TL/TR/BR/BL, set into
+  `[0x1EA4]/[0x1EA5]`). Four 8×8 pieces tile the 16×16 cell. (The extreme
+  `table[q]=7,q=3` combo indexes 140 = a 16×16 frame — all-land-corner edge case.)
+
+**This is NOT the road layer.** `map_system.md`'s old "`0x6D` = roads" label is a
+mislabel: the `0x6D` band is gated entirely by **water terrain id + land-neighbour
+bitmap** — there is no road bit and no road draw in this chain (consistent with the
+user ground-truth "there are no roads in new maps"). See `map_system.md` §3 and
+RULINGS 2026-06-22.
 
 ### Row 0x80 (indices 128–143) — More river / water variants
 
@@ -127,7 +147,7 @@ for different river widths or for river-meets-coast transitions.
 |-------|---------|
 | 144–147 | Small blue water / fish-swirl fragments (smaller than 8×8?) |
 | 148 | **Deep dithered ocean** — pure 16×16 opaque, palette indices (24,28,125) / (32,44,137) / (16,16,117). Used as full water-tile base fill. |
-| 149 | **Sandy dune** — vertical stripes of desert, 4 columns of tan (117,97,68)(133,113,80)(101,80,52)(153,129,93). |
+| 149 | **FOG / unexplored-tile sprite** (`0x95`) — vertical tan-striped hatching (resembles plow furrows). **CORRECTED 2026-06-22:** `func_0681A8` draws `0x95` ONLY on hidden/unexplored tiles (gated by the fog flag `[bp-8]` from fog mask `[0xA89E]`, `@0x68212`), NOT as a coast base. (Prior "Sandy dune"/"base coast" label was wrong — see `map_system.md` §3 + RULINGS 2026-06-22.) |
 | 150 | Ocean with sand at NW corner (2-edge). Used for water tiles with land to NW. |
 | 151 | Ocean with sand at corresponding corner (see below). |
 | 152 | Ocean with wider sand on SE/S+E. |
@@ -137,58 +157,113 @@ for different river widths or for river-meets-coast transitions.
 4-bit cardinal land-neighbor mask → sprite + flip. Verified in the current
 coast render of ONE.MP / AMER2.MP.
 
-## CC-00 through CC-24 — Unit / colonist sheets
+## CC-00 through CC-24 — Founding Father portrait sheets
 
-25 sheets, each containing all frames/orientations of one unit or colonist
-type. Per-nation color variants are produced at runtime via palette swap
-(indices TBD — needs disassembly).
+**CORRECTED 2026-06-20.** These 25 sheets are **Founding Father portraits**
+(`NAMES.TXT @FATHERS` by index — 25 entries = 25 sheets), per the **SPRITE-A
+resolution** in `notes/PROJECT_BOARD.md` ("FULLY RESOLVED 2026-05-05"). The **prior
+"unit/colonist sheet" hypothesis is SUPERSEDED and wrong** — unit/colonist sprites
+live in **ICONS.SS** (byte-cited from `@UNIT` column 1 "Icon": Colonists 101, Soldiers
+103, Caravel 6, …, Cont. Cav. 130; see `GAME_INDEX_TABLES.md`), not in CC-NN.
 
-**Action: needs per-sheet cataloging**. Each sheet has ~16–32 sprites in
-it (idle / walk / attack / etc. per direction). The mapping of unit type
-→ sheet number requires opening one representative frame from each sheet.
+**DECODED & VISUALLY CONFIRMED 2026-06-20** via `tools/ssdec.py` (FAB codec solved). Each
+`CC-NN.SS` holds **exactly one frame** — a tall portrait (~54–68 × 124–136 px) — and the
+rendered pixels match the `@FATHERS` order one-for-one:
 
-Placeholder table (to be filled in by a follow-up sprite-cataloger run or
-by manual inspection):
+| Sheet | Founding Father (`@FATHERS[N]`) | Sheet | Founding Father |
+|---|---|---|---|
+| CC-00 | Adam Smith (ledger) | CC-13 | Francis Drake (treasure chest) |
+| CC-01 | Jakob Fugger (coin bags) | CC-14 | John Paul Jones (naval) |
+| CC-02 | Peter Minuit (wampum) | CC-15 | Thomas Jefferson |
+| CC-03 | Peter Stuyvesant (peg-leg) | CC-16 | Pocahontas (buckskin) |
+| CC-04 | Jan de Witt (plumed hat) | CC-17 | Thomas Paine |
+| CC-05 | Ferdinand Magellan (red cape) | CC-18 | Simón Bolívar |
+| CC-06 | Francisco Coronado (helm) | CC-19 | Benjamin Franklin (seated) |
+| CC-07 | Hernando de Soto | CC-20 | William Brewster |
+| CC-08 | Henry Hudson | CC-21 | William Penn |
+| CC-09 | Sieur de La Salle (parrot) | CC-22 | Jean de Brébeuf |
+| CC-10 | Hernán Cortés (armor) | CC-23 | Juan de Sepúlveda |
+| CC-11 | George Washington (blue) | CC-24 | Bartolomé de las Casas |
+| CC-12 | Paul Revere | | |
 
-| Sheet | Unit type (hypothesis) |
-|-------|------------------------|
-| CC-00 | Free Colonist |
-| CC-01 | Indentured Servant |
-| CC-02 | Petty Criminal |
-| CC-03 | Expert Farmer |
-| CC-04 | Expert Fisherman |
-| CC-05 | Expert Fur Trapper |
-| CC-06 | Expert Lumberjack |
-| CC-07 | Expert Ore Miner |
-| CC-08 | Expert Silver Miner |
-| CC-09 | Master Carpenter |
-| CC-10 | Master Distiller |
-| CC-11 | Master Tobacconist |
-| CC-12 | Master Weaver |
-| CC-13 | Master Fur Trader |
-| CC-14 | Master Blacksmith |
-| CC-15 | Master Gunsmith |
-| CC-16 | Elder Statesman |
-| CC-17 | Firebrand Preacher |
-| CC-18 | Veteran Soldier |
-| CC-19 | Hardy Pioneer |
-| CC-20 | Seasoned Scout |
-| CC-21 | Jesuit Missionary |
-| CC-22 | Naval unit (caravel/merchantman) |
-| CC-23 | Naval unit (galleon/frigate) |
-| CC-24 | Naval unit (man-o-war) or treasure train |
+So CC-22/23/24 are the **religious** fathers (not "naval units" as the old hypothesis
+guessed). Container facts (all byte-verified, `formats/SS.md`): MADSPACK + 10-byte
+directory; sections at `0xB0`; **FAB**-compressed; section roles header(`nframes`@+38) /
+16-byte descriptor / 768-B 6-bit palette / RLE pixels (`0xFD`=transparent). Per-nation
+tinting **not applicable** (FF portraits are fixed-palette). Regenerate via
+`python3 tools/ssdec.py raw/COLONIZE/CC-NN.SS` (pixels git-ignored).
 
-**Status**: HYPOTHESIS. Verify by opening one frame from each sheet.
+<details><summary>SUPERSEDED unit-sheet hypothesis (kept for history — do not cite)</summary>
+
+> An older note treated CC-00..CC-24 as unit/colonist sheets (CC-00=Free Colonist …
+> CC-24=naval). **Refuted** — units are in ICONS.SS; CC-NN render as the 25 FF portraits.
+
+</details>
 
 ## BUILDING.SS — Colony buildings
 
-Sprites for colony buildings (carpenter, blacksmith, stable, fortress,
-warehouse, stockade, docks, armory, church, newspaper, distillery,
-tobacconist, weaver, fur trader, rum distillery, cigar maker, etc.) plus
-their higher-tier upgrades.
+**DECODED & RENDERED 2026-06-21** via `tools/ssdec.py` — **48 frames**, all decode and
+render correctly (each section to its exact directory `unpacked` size). Container: MADSPACK
++ FAB, sections at `0xB0`, 16-byte descriptors (`off,size,x,y,w,h`), SHA
+`e91784542982216a…` matches `MANIFEST.md`. **Each frame carries its own colony-screen blit
+coordinate `(x,y)`** — the renderer just blits `frame[k]` at the frame's own `(x,y)`.
 
-**Status**: NOT YET CATALOGED. Expand this section after opening the
-sheet PNGs.
+### Render mechanism — BYTE_VERIFIED (`colony_paint_buildings`)
+From `ghidra_export/VICEROY_decompiled.named.c` (`colony_paint_buildings`, the
+BUILDING.SS = `g_sprite_sheet[2]` consumer): the colony panel loops **15 building slots**
+`i = 0..0x0E`:
+- screen pos `(x,y)` = `DGROUP[0x0266 + i·4]` / `DGROUP[0x0268 + i·4] + 8` (stride-4 table),
+- building **type** = `DGROUP byte[0x8D62 + i]`, **level** = `DGROUP byte[0x8E82 + i]`
+  (both offsets present as immediates in the EXE, verified),
+- frame index derives from (type, level); **if `blvl < 0` the slot is empty (not drawn)**,
+- **placeholder walk-back:** while the chosen frame is a **`≤2×2` dummy**, the renderer
+  decrements the index to fall back to the lower tier's art, then blits via `ss_blit_remap`.
+
+This walk-back is **corroborated by the pixels**: frames **10, 11, 17, 30, 31** are exactly
+the `1×1`/`2×2` dummies the code skips — they are *level-fallback markers*, not buildings.
+
+### Visual catalog — HIGH trust (rendered pixels; `/tmp/building_montage.png`)
+| Frame(s) | Dim | Depicts | PEDIA |
+|----------|-----|---------|-------|
+| 0 | 73×18 | wooden-post **palisade** wall | `@BUILDING0` STOCKADE |
+| 1 | 73×18 | taller solid **wooden** wall | `@BUILDING1` FORT |
+| 2 | 73×18 | **stone** wall + arched gate | `@BUILDING2` FORTRESS |
+| 16, 46 | 73×18 / 44×22 | low fence / no-wall baseline art | (wall slot, un-upgraded) |
+| 6 | 75×48 | pier/jetty on water | `@BUILDING6` DOCKS |
+| 7 | 75×48 | dock + crane gantry | `@BUILDING7` DRYDOCKS |
+| 8 | 75×48 | dock + ship under construction | `@BUILDING8` SHIPYARD |
+| 45 | 75×48 | open coast, no structure | empty waterfront (no docks) |
+| 9 | 53×37 | building w/ central cupola | `@BUILDING9/10` TOWN HALL |
+| 19, 20 | 23×27 | civic bldg w/ red-white-blue bunting | TOWN HALL/ASSEMBLY/`@BUILDING11` |
+| 12 | 44×22 | white chapel + steeple + picket fence | `@BUILDING37` CHURCH (small) |
+| 37 | 53×37 | church w/ tall bell-steeple | `@BUILDING37` CHURCH |
+| 38 | 53×37 | **twin-tower cathedral** | `@BUILDING38` CATHEDRAL |
+| 13 | 44×22 | grand columned hall | `@BUILDING13` COLLEGE |
+| 14 | 44×22 | grand hall w/ central portico | `@BUILDING14` UNIVERSITY |
+| 15, 47 | 44×22 | barn, yellow/thatch roof | `@BUILDING15/16` WAREHOUSE (+expansion) |
+| 35 | 44×22 | **open-post pavilion** | `@BUILDING17` STABLES |
+| 36 | 44×22 | house w/ side lean-to | carpenter/fur-trader house |
+| 39 | 23×27 | forge interior | `@BUILDING39` BLACKSMITH'S HOUSE |
+| 40, 41 | 23×27 | forge + **grindstone wheel** | `@BUILDING40/41` BLACKSMITH'S SHOP / IRON WORKS |
+| 18 | 23×27 | shop w/ red awning + barrels/goods | a goods shop (rum/tobacco tier) |
+| 21–29, 32–34, 3–5 | 23×27 / 44×22 | craftsman **house→shop→factory** silhouettes (height grows by tier; tall multi-storey blue-window frames 28/29/34 = the factory tier) | weaver/tobacconist/rum/fur/cigar/coat chains |
+| 42, 43, 44 | 53×37 / 44×22 / 23×27 | forest, **no building** | empty land lot (un-built slot art) |
+| 10, 11, 17, 30, 31 | 1×1 / 2×2 | **placeholder dummies** | level-fallback markers (skipped) |
+
+### 48-vs-42 resolution
+The count gap is **not** a simple "42 buildings + 6 extras." It decomposes as: **5 placeholder
+dummies** (10/11/17/30/31, skipped by the renderer), **~4 empty-lot / open-waterfront
+background frames** (42/43/44/45 + the un-upgraded wall baseline), and **shared production
+art** — the goods-production chains (weaver, tobacconist, rum distiller, fur trader, cigar,
+coat) reuse the **same house→shop→factory silhouettes**, differentiated at runtime by an
+**overlaid goods icon from ICONS.SS**, not by distinct BUILDING.SS frames. So several PEDIA
+buildings legitimately map to one shared frame. The wall (0–2), dock (6–8), civic (9),
+church/cathedral (37/38), education (13/14), warehouse (15), stable (35) and blacksmith
+(39–41) frames are **1:1 and unambiguous**; the craftsman-chain frames (3–5, 18, 21–34) are
+**shared by goods**, so their exact per-PEDIA-index binding is set by the runtime goods
+overlay, not the sheet — recorded here at category granularity (HIGH-trust pixels), with the
+exact `frame_index(type, level)` arithmetic ANCHORED to `colony_paint_buildings`
+(`0x8D62`/`0x8E82`/`0x0266` slot tables) — the only arithmetic the Ghidra export simplifies.
 
 ## ICONS.SS — Goods and HUD icons
 
@@ -404,14 +479,21 @@ indices, first investigate mpskit extraction options or inspect the source
 
 ## Known ambiguities / follow-up
 
-1. **Row 0x70 (112–127)**: are these the true DOS coast sprites? Needs
-   disassembly verification of func_O512's sprite-index arithmetic.
+1. **Row 0x6D–0x8B (109–139)**: ~~are these the true DOS coast sprites?~~
+   **RESOLVED 2026-06-22** — yes: the **8×8 per-quadrant complex-coast sub-tiles**
+   (`0x6D + table[q]·4 + q`, the no-clean-edge fallback in `func_0681A8`
+   `@0x684bc`). NOT roads. See the Row 0x6D–0x7C section above + RULINGS 2026-06-22.
 2. **Row 0x80 (128–143)**: distinction from row 0x00 rivers unknown.
-3. **CC-NN sheet → unit type mapping**: table above is hypothesis only.
-   Verify by opening one frame from each sheet.
+3. **CC-NN sheets**: ~~hypothesised as unit sheets~~ **DECODED 2026-06-20 — the 25
+   Founding Father portraits** (`tools/ssdec.py`; render-confirmed vs `@FATHERS`, §CC-00..CC-24).
 4. **Nation-tinting palette indices for CC-NN sprites**: unknown.
    Needs disassembly to find the palette-remap function.
-5. **BUILDING.SS index → building name mapping**: not yet cataloged.
+5. **BUILDING.SS index → building name mapping**: **RESOLVED 2026-06-21** (`tools/ssdec.py`,
+   48 frames rendered + catalogued; render mechanism byte-verified via `colony_paint_buildings`
+   — see §BUILDING.SS). Wall/dock/civic/church/education/warehouse/stable/blacksmith frames
+   are 1:1; craftsman-chain frames are **shared by goods** (runtime ICONS.SS overlay), which
+   resolves the 48-vs-42 gap. Only the exact `frame_index(type,level)` arithmetic is ANCHORED
+   (Ghidra export simplifies it; slot tables `0x8D62`/`0x8E82`/`0x0266` confirmed in-EXE).
 6. **ICONS.SS indices 16+**: not yet cataloged.
 7. **CLOS-BEL, CLOS-FWK, CLOS-HAT directory contents**: not yet inspected.
 8. **Sprite 101**: silver nugget or stone? Similar visuals — disambiguate

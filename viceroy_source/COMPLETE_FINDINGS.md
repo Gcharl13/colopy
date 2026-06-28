@@ -241,8 +241,7 @@ verifying terrain ID semantics.
 ## .MP map format (inferred from MAPEDIT bytes)
 
 The .MP file is read/written by MAPEDIT and consumed by VICEROY.
-Per [`COLONIZATION_TECHNICAL_REFERENCE.md`](../../COLONIZATION_TECHNICAL_REFERENCE.md)
-in the parent project, the format is:
+Per [`formats/MP_FORMAT.md`](../formats/MP_FORMAT.md), the format is:
 
 ```
 [header: width(word), height(word)]

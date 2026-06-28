@@ -4,6 +4,15 @@ When evidence from different sources conflicts, the higher-numbered source wins.
 This document exists because **the same factual disputes have been re-litigated
 multiple times in this project.** Write rulings down; don't re-fight them.
 
+> **Path note (2026-06-18):** some sources below cite `extracted/…` (e.g.
+> `extracted/assets/sprites/`), and elsewhere the repo references
+> `colonize_src_v3/`, `viceroy_overlay_full.asm`, `function_index.json`. These
+> are **regenerable, git-ignored** working artifacts (produced by
+> `tools/extract_visuals.py` and the disasm drivers), **not committed**.
+> Committed decoded data lives in **`data_extracted/`**. A citation to
+> `extracted/…` means "regenerate it, then inspect" — it is not a dead link.
+> See `CLAUDE.md` → "Path convention".
+
 ## The hierarchy
 
 | # | Source | Why it ranks here |
@@ -12,7 +21,7 @@ multiple times in this project.** Write rulings down; don't re-fight them.
 | 2 | Pixel inspection of extracted sprites (`extracted/assets/sprites/`) | What's literally on disk. Cannot be wrong about itself. |
 | 3 | `VICEROY.EXE` disassembly at a cited offset | What the binary executes. May not be fully decoded yet. |
 | 4 | Pre-processed disassembly (`viceroy_overlay_full.asm`, `function_index.json`) | One hop from #3. Trust unless #3 directly contradicts. |
-| 5 | `COLONIZATION_TECHNICAL_REFERENCE.md` and other team docs | Accumulated knowledge. Can be stale; update when overruled. |
+| 5 | Team docs (`docs/`, `notes/`) | Accumulated knowledge. Can be stale; update when overruled. |
 | 6 | C reconstruction (`mapedit.c`, `src/*.c`, `colonize_src_v3/`) | **Low trust.** Has been wrong about terrain ordering, sprite roles, etc. Never wins unless higher sources are silent *and* multiple C files agree. |
 | 7 | AI agent speculation (any Claude session — including the current one) | Lowest trust. Always requires corroboration from levels 1–6. |
 
