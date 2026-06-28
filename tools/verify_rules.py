@@ -9,9 +9,10 @@ seam is honest: the C++ default table (kDefaultUnits in rules.cpp) reproduces th
 the data file is the true source of truth.
 
 Mapping (verified):
-    UnitStats.attack  <- @UNIT.attack
-    UnitStats.defense <- @UNIT.combat
-    UnitStats.cargo   <- @UNIT.cargo
+    UnitStats.attack   <- @UNIT.attack
+    UnitStats.defense  <- @UNIT.combat
+    UnitStats.cargo    <- @UNIT.cargo
+    UnitStats.movement <- @UNIT.movement
 Code-side (NOT in @UNIT, intentionally not compared):
     UnitStats.name        -- display string (@UNIT has abbreviations)
     UnitStats.move_class  -- structural class (1 land / 99 naval / 6 treasure / 0 native)
@@ -27,13 +28,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TABLES = os.path.join(ROOT, "data_extracted", "tables", "names_tables.json")
 RULES_CPP = os.path.join(ROOT, "viceroy_cpp", "sim", "rules.cpp")
 
-# A kDefaultUnits row:  {"Name ...", attack, defense, cargo, move_class},
+# A kDefaultUnits row:  {"Name ...", attack, defense, cargo, move_class, movement},
 ROW_RE = re.compile(r'\{\s*"((?:[^"\\]|\\.)*)"\s*,\s*'
-                    r'(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}')
+                    r'(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}')
 
 
 def parse_cpp_units(path):
-    """Extract the kDefaultUnits[] initializer rows -> list of (name,atk,def,cargo,mv)."""
+    """Extract kDefaultUnits[] rows -> list of (name,atk,def,cargo,move_class,movement)."""
     with open(path, encoding="utf-8") as f:
         text = f.read()
     m = re.search(r'kDefaultUnits\[NUNITTYPES\]\s*=\s*\{(.*?)\n\};', text, re.S)
@@ -42,8 +43,8 @@ def parse_cpp_units(path):
     body = m.group(1)
     rows = []
     for r in ROW_RE.finditer(body):
-        name, atk, dfn, cargo, mv = r.groups()
-        rows.append((name, int(atk), int(dfn), int(cargo), int(mv)))
+        name, atk, dfn, cargo, mclass, mv = r.groups()
+        rows.append((name, int(atk), int(dfn), int(cargo), int(mclass), int(mv)))
     return rows
 
 
@@ -57,24 +58,25 @@ def main():
 
     mism = []
     for i, row in enumerate(units):
-        j_atk, j_def, j_cargo = int(row["attack"]), int(row["combat"]), int(row["cargo"])
-        _, c_atk, c_def, c_cargo, _ = cpp[i]
-        if (c_atk, c_def, c_cargo) != (j_atk, j_def, j_cargo):
-            mism.append("  row %2d %-17s  JSON(a%d d%d c%d) != C++(a%d d%d c%d)" % (
-                i, row["name"], j_atk, j_def, j_cargo, c_atk, c_def, c_cargo))
+        j = (int(row["attack"]), int(row["combat"]), int(row["cargo"]), int(row["movement"]))
+        _, c_atk, c_def, c_cargo, _mclass, c_mv = cpp[i]
+        c = (c_atk, c_def, c_cargo, c_mv)
+        if c != j:
+            mism.append("  row %2d %-17s  JSON(a%d d%d c%d mv%d) != C++(a%d d%d c%d mv%d)" % (
+                i, row["name"], j[0], j[1], j[2], j[3], c[0], c[1], c[2], c[3]))
 
     # The padded C++ rows beyond the JSON (the unused 23rd unit) must be zeroed.
     for i in range(len(units), len(cpp)):
-        _, c_atk, c_def, c_cargo, _ = cpp[i]
-        if (c_atk, c_def, c_cargo) != (0, 0, 0):
-            mism.append("  row %2d (padding) expected zeros, got (a%d d%d c%d)" % (
-                i, c_atk, c_def, c_cargo))
+        _, c_atk, c_def, c_cargo, _mclass, c_mv = cpp[i]
+        if (c_atk, c_def, c_cargo, c_mv) != (0, 0, 0, 0):
+            mism.append("  row %2d (padding) expected zeros, got (a%d d%d c%d mv%d)" % (
+                i, c_atk, c_def, c_cargo, c_mv))
 
     if mism:
         print("PARITY FAIL: @UNIT vs default RuleData")
         print("\n".join(mism))
         return 1
-    print("PARITY OK: default RuleData == @UNIT for attack/defense(combat)/cargo "
+    print("PARITY OK: default RuleData == @UNIT for attack/defense(combat)/cargo/movement "
           "across %d rows (+%d zeroed padding)" % (len(units), len(cpp) - len(units)))
     return 0
 

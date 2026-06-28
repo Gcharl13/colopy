@@ -4,6 +4,7 @@
 #include "market.hpp"
 #include "ref.hpp"
 #include "turn.hpp"
+#include "unit_turn.hpp"
 
 namespace vc::sim {
 
@@ -26,7 +27,11 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 
-    // 5. End of turn: advance year/season.
+    // 5. Units: refresh move points and execute standing orders (all owners).
+    refresh_moves(w, rd);
+    apply_orders(g, w, rng, rd);
+
+    // 6. End of turn: advance year/season.
     advance_cadence(g);
 }
 

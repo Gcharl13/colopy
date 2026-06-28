@@ -22,6 +22,7 @@ add_library(viceroy_sim STATIC
   sim/rules.cpp
   sim/rules_invariants.cpp
   sim/unit.cpp
+  sim/unit_turn.cpp
   sim/combat.cpp
   sim/natives.cpp
   sim/diplomacy.cpp
@@ -60,6 +61,7 @@ add_executable(forge
   forge/main.cpp
   forge/json.cpp
   forge/rules_json.cpp
+  forge/mapedit.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE viceroy_sim)
@@ -68,3 +70,4 @@ enable_testing()
 add_executable(sim_tests sim/tests/sim_tests.cpp)
 target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
+add_test(NAME forge_map COMMAND forge map selftest)

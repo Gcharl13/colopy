@@ -1,6 +1,7 @@
 // sim/game.hpp -- the per-turn orchestration (spec/systems/turn_dispatch.md).
 #pragma once
 #include "types.hpp"
+#include "unit.hpp"          // Unit
 #include "immigration.hpp"   // RandFn
 #include "rules.hpp"         // RuleData / default_rules()
 #include <vector>
@@ -9,7 +10,8 @@ namespace vc::sim {
 
 struct World {
     std::vector<Colony> colonies;
-    // units[] arrive with P2 (combat/movement)
+    std::vector<Unit>   units;     // on-map units (the unit/turn spine)
+    int map_w = 0, map_h = 0;      // map bounds for movement clamping (0 = unbounded)
 };
 
 // One full turn, in the byte-verified phase order (func_005760):

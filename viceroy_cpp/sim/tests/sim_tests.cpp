@@ -11,6 +11,7 @@
 #include "../rules.hpp"
 #include "../rules_invariants.hpp"
 #include "../unit.hpp"
+#include "../unit_turn.hpp"
 #include "../combat.hpp"
 #include "../natives.hpp"
 #include "../diplomacy.hpp"
@@ -228,6 +229,91 @@ static void test_rules() {
     CHECK(r.atk_str == 2, "default combat unchanged -> %d", r.atk_str);
 }
 
+// --- the unit/turn spine: movement, orders, combat-on-contact ---
+static void test_unit_turn() {
+    std::printf("unit/turn spine (movement + orders + combat):\n");
+    auto win = [](int, int) { return 1; };          // roll 1 -> attacker wins
+    auto mk = [](int type, int owner, int x, int y) {
+        Unit u; u.type = type; u.owner = owner; u.x = x; u.y = y; return u;
+    };
+
+    // movement: Dragoons (4 moves) step 4 tiles toward a far target, not arrived.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit d = mk(DRAGOONS, 0, 0, 0);
+        d.order = ORDER_GOTO; d.target_x = 10; d.target_y = 0;
+        w.units.push_back(d);
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 4 && w.units[0].y == 0, "dragoons at %d,%d", w.units[0].x, w.units[0].y);
+        CHECK(w.units[0].moves_left == 0 && w.units[0].order == ORDER_GOTO, "moves spent, still en route");
+    }
+    // arrival clears the order; leftover moves remain.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit s = mk(SCOUTS, 0, 0, 0);
+        s.order = ORDER_GOTO; s.target_x = 3; s.target_y = 0;
+        w.units.push_back(s);
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 3 && w.units[0].order == ORDER_NONE, "scout arrived, order cleared");
+        CHECK(w.units[0].moves_left == 1, "leftover moves -> %d", w.units[0].moves_left);
+    }
+    // combat: win vs Soldiers -> demoted in place; attacker does NOT advance.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit a = mk(SOLDIERS, 0, 0, 0); a.order = ORDER_GOTO; a.target_x = 1; a.target_y = 0;
+        w.units.push_back(a);
+        w.units.push_back(mk(SOLDIERS, 1, 1, 0));
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[1].type == COLONISTS && w.units[1].alive, "defender demoted to colonist");
+        CHECK(w.units[0].x == 0 && w.units[0].moves_left == 0, "attacker held, move spent");
+    }
+    // combat: win vs Regulars -> destroyed; attacker advances into the tile.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit a = mk(SOLDIERS, 0, 0, 0); a.order = ORDER_GOTO; a.target_x = 1; a.target_y = 0;
+        w.units.push_back(a);
+        w.units.push_back(mk(REGULARS, 1, 1, 0));
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(!w.units[1].alive, "regular destroyed");
+        CHECK(w.units[0].x == 1 && w.units[0].y == 0, "attacker advanced to vacated tile");
+    }
+    // combat: win vs Treasure -> captured (changes hands); attacker holds.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit a = mk(SOLDIERS, 0, 0, 0); a.order = ORDER_GOTO; a.target_x = 1; a.target_y = 0;
+        w.units.push_back(a);
+        w.units.push_back(mk(TREASURE, 1, 1, 0));
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[1].owner == 0 && w.units[1].alive && w.units[1].type == TREASURE, "treasure captured");
+        CHECK(w.units[0].x == 0, "attacker held after capture");
+    }
+    // friendly occupant blocks (no stacking, no combat).
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit a = mk(SOLDIERS, 0, 0, 0); a.order = ORDER_GOTO; a.target_x = 1; a.target_y = 0;
+        w.units.push_back(a);
+        w.units.push_back(mk(SOLDIERS, 0, 1, 0));   // same owner
+        GameState g; g.difficulty = 4;
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 0 && w.units[1].type == SOLDIERS, "blocked by friendly, no combat");
+    }
+    // integration: step_turn refreshes + moves the unit.
+    {
+        World w; w.map_w = 20; w.map_h = 20;
+        Unit d = mk(DRAGOONS, 0, 0, 0); d.order = ORDER_GOTO; d.target_x = 9; d.target_y = 0;
+        w.units.push_back(d);
+        GameState g; g.difficulty = 4;
+        auto rng = [](int, int) { return 0; };
+        step_turn(g, w, rng);
+        CHECK(w.units[0].x == 4, "step_turn moved dragoons to x=%d", w.units[0].x);
+    }
+}
+
 // --- modded-data invariant suite: cfg scalars are injected, and check_rules()
 // guards arbitrary rulesets. ---
 static void test_rules_invariants() {
@@ -347,6 +433,7 @@ int main() {
     test_turn_loop();
     test_units();
     test_combat();
+    test_unit_turn();
     test_rules();
     test_rules_invariants();
     test_natives();

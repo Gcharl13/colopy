@@ -21,7 +21,7 @@ InvariantReport check_rules(const RuleData& rd) {
     // --- unit table: non-negative stats; structural move_class ---
     for (int i = 0; i < NUNITTYPES; ++i) {
         const UnitStats& u = rd.units[i];
-        need(r, u.attack >= 0 && u.defense >= 0 && u.cargo >= 0,
+        need(r, u.attack >= 0 && u.defense >= 0 && u.cargo >= 0 && u.movement >= 0,
              "unit " + std::to_string(i) + ": negative stat");
         int mc = u.move_class;
         need(r, mc == 0 || mc == 1 || mc == 6 || mc == 99,
