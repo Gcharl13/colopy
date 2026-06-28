@@ -32,11 +32,13 @@ helpers.
 
 > **Spec-depth reconciliation (2026-06-27).** `spec/README.md` and `spec/BACKLOG.md` previously
 > carried a "certification" that *every mechanic is byte-grounded / nothing needed a runtime trace*.
-> That was **over-claimed and is corrected** in those files. The honest residual: the **formula
-> table below is still the open queue** (combat damage, market price drift, FF acquisition, LCR
-> distribution, REF growth, score details, map generation), there are **~372 `TBD` markers in
-> `spec/`**, and the colony-site value needed a live capture (`spec/systems/ai.md §3b`). Each spec
-> sheet's §6/§8 + `TBD` markers are the source of truth, not any summary header.
+> That was **over-claimed and is corrected** in those files. **Update 2026-06-28:** the formula
+> table below is now **byte-closed** (combat damage, market drift, FF acquisition, LCR distribution,
+> REF growth, score details, map generation — all ✅), and a 213-TBD close-out pass cut the `spec/`
+> open-TBD lines from **~317 → ~76** (the remainder are tier-vocabulary legends + ~17 genuinely
+> runtime-only values, each with source byte-cited + the exact oracle capture named). The colony-site
+> value still needs a multi-capture regression (`spec/systems/ai.md §3b`). Each spec sheet's §6/§8 is
+> the source of truth, not any summary header.
 
 ---
 
@@ -83,13 +85,13 @@ helpers.
 | Treasure transport (King's Galleon) | ✅ |
 | Universal RNG (rand + random_int) | ✅ |
 | Universal helpers (clamp, __aFlmul, __aFldiv, etc.) | ✅ |
-| Combat damage roll | ⏳ TBD |
-| Market price drift formula | ⏳ TBD |
-| Founding Father acquisition | ⏳ TBD |
-| LCR outcome distribution | ⏳ TBD |
-| REF growth rate | ⏳ TBD |
-| Score formula details | ⏳ TBD |
-| Map generation | ⏳ TBD |
+| Combat damage roll | ✅ (`func_05CA7E` odds + `+50%`/SoL/difficulty chain; shore bombardment `func_02D3C6` deterministic) |
+| Market price drift formula | ✅ (`func_0305A8` decay `(base+Σtrade)/256`; display spread = Burden) |
+| Founding Father acquisition | ✅ (threshold `func_03C282`; bells `PowerRecord +0x0C`) |
+| LCR outcome distribution | ✅ (`func_061454` `random_int(1,9)`→`@LOSTCITY<n>` + reward magnitudes) |
+| REF growth rate | ✅ (`ref_growth.md`, B) |
+| Score formula details | ✅ (`func_03A9C0`/`func_039EE2`, 7-term grand total byte-bound) |
+| Map generation | ✅ (`map_generation.md` post-gen pass order + customize params, B) |
 
 ### Format specs (12 documented)
 
@@ -183,7 +185,7 @@ helpers.
 | C-VISUAL CV3 | All 35 PIK backgrounds | ✅ DONE |
 | C-VISUAL CV4 | All 5 FF fonts | ✅ DONE |
 | C-VISUAL CV5 | AMER2.MP visual rendering | ✅ DONE (Americas continents + tile decoration via render_map_v2) |
-| C-VISUAL CV6 | AMERICA.MOV decode | ⏳ TBD (gated by OPENING.EXE Phase E) |
+| C-VISUAL CV6 | AMERICA.MOV decode | ✅ (1-bpp coastline bitmap + 8-waypoint stream, data_extracted/data/AMERICA_MOV.json) |
 | C-VISUAL CV7 | Sprite role catalog | ✅ partial (~50%; SPRITE_INDEX.md has all commodities BYTE_VERIFIED, ships 5/6/7/14/15 BYTE_VERIFIED) |
 | C-VISUAL CV8 | map render chain (`docs/INGAME_MAP_RENDER_TRACE.md`) | ✅ byte-verified |
 | C-VISUAL CV9 | UI_DIALOGS.md | ✅ |
