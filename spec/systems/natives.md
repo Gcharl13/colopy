@@ -1,6 +1,6 @@
 # Native Relations
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** NativeSettlement base/stride + a few offsets + **mission-conversion mechanism (incl. RNG bound 0..15) + CHIEFKILL treasure roll + native-raid dispatch** `BYTE_VERIFIED`; **attitude bands (−5/0/10 → Content/Uneasy/Restless/Angry; War=alarm≥128) + alarm storage `BYTE_VERIFIED`**; **mission-doubler (missionary unit+5 bit0x10) + CHIEFKILL roll→gold (→ `+0x2A`) + settlement `+0x02`/`+0x03` fields `BYTE_VERIFIED`**; **trade pricing (`max(5·diff+50, 2·tax)` cap 90, func_05C878 @0x5C976) + per-action tension deltas (applier func_045DF2 via thunk `0x181F:0xD6C`, delta table §3) `BYTE_VERIFIED` (RESOLVED — see §3)**. **Canonical primary:** `docs/DATA_MODEL.md` NativeSettlement; `data_extracted/text/NAMES_sections.json` `@TRIBES`/`@ATTITUDE`/`@ATTITUDINAL`/`@LEVELS`/`@MISSION`; `data_extracted/text/GAME_sections.json` native keys.
 
@@ -207,7 +207,7 @@ Native dialogs use `@CHIEF*` / `@VILLAGE*` / `@INDIAN*` / `@MISSION*` GAME keys 
 - `data_extracted/text/GAME_sections.json` — native dialog keys present. **B**
 - `func_0572E6` (file `0x572E6`) — mission conversion: roll-gated success, convert-unit creation at the colony, `UnitRecord +0x17 = 0x1B` (abs `0x315B`), `@INDIANSCONVERT` popup. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Fill the 18-byte NativeSettlement record.~~ **Mostly done 2026-06-20** —
    `+0x00/+0x01` pos, `+0x02` owner tribe, **`+0x03` flags — bit `0x04` = **Capital**
    (RESOLVED 2026-06-26; SET `@0x66225`, consumed `@0x43DC4`/`@0x07DCA`/`@0x46E05`, oracle:

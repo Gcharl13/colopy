@@ -1,6 +1,6 @@
 # National Powers / Abilities
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** nation roster + leaders `BYTE_VERIFIED`; **all four ability
 effects fully `BYTE_VERIFIED`** (English immigration ×2/3 crosses, French
@@ -133,7 +133,7 @@ Chosen on the "Choose Your Nationality" setup screen with ability descriptions
   French native peace, Spanish +50% vs natives, Dutch stable prices + start ship). **R**
 - `docs/DATA_MODEL.md` — `owner_power_idx` in records; native alarm array `0x54F6`. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~**French (1):** native-alarm increment site scaling by `power==1`.~~ **Done
    2026-06-20** — `func_045DF2 @0x45E21` halves the native tension-raise delta for
    power 1 (tension array `DGROUP:0x5B1C`, range `[0,100]`). **B.**

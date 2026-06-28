@@ -1,6 +1,6 @@
 # Immigration & Recruitment
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Immigration & recruitment mechanics are byte-resolved (crosses loop, threshold, per-turn increment, type selection, refill, recruit pool, placement, `0x30E` profession map, `+0x1F` population, and the `+0x00 &0x40` dock-immigrant latch).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Immigration & recruitment mechanics are byte-resolved (crosses loop, threshold, per-turn increment, type selection, refill, recruit pool, placement, `0x30E` profession map, `+0x1F` population, and the `+0x00 &0x40` dock-immigrant latch).
 
 **Overall confidence:** crosses loop control-flow + threshold shape + **per-turn cross increment (base 2 + per-colony `+0x05`)** `BYTE_VERIFIED`; immigrant-type selection **`BYTE_VERIFIED`** (`random_int(0,2)` slot pick + `func_034C24` difficulty-weighted refill); (dock pool confirmed at `+0x02..+0x04`). **Canonical primary:** `docs/IMMIGRATION_RECRUIT_FINDINGS.md` (byte-cited), `docs/DATA_MODEL.md`; `data_extracted/text/NAMES_sections.json` `@CLASS`; `data_extracted/text/GAME_sections.json` `@RECRUIT*`.
 
@@ -108,7 +108,7 @@ F2 Religious Adviser renders `(%d of %d)` from `+0x2E`/`+0x30` (`func_037958`, g
 - `docs/DATA_MODEL.md` — `+0x2E/+0x30/+0x1E`, recruit-pool `0x978C` slot `+0x04`. **B**
 - `data_extracted/text/NAMES_sections.json` `@CLASS`; `GAME_sections.json` `@RECRUIT*`. **B (present)**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Resolve the `+0x02` dock-pool conflict.~~ **Resolved 2026-06-19** — the dock-pool
    unit-type bytes are **`PowerRecord +0x02..+0x04`** (3 slots), byte-confirmed by the
    William Brewster FF effect which rewrites criminals/servants (`0x19`/`0x1A`) → free

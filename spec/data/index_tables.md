@@ -1,6 +1,6 @@
 # Index Tables — Sprite & Text Cross-Reference
 
-> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 
 **Canonical primary:** `docs/GAME_INDEX_TABLES.md` (master mapping reference — CANONICAL). This stub summarizes the mappings it holds and points to it; it does **not** copy the index tables.
 

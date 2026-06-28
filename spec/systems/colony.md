@@ -450,7 +450,7 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
   predecessor check **is** byte-pinned (`func_053B7E @0x055ED1`); the "untraced colony-UI overlay" is
   page_0E.
 
-## 7. Open questions (TBD) → `spec/BACKLOG.md`
+## 7. Open questions → `spec/BACKLOG.md`
 1. ~~Byte-trace the per-turn hammers accumulation + build completion.~~ **DONE
    2026-06-20** — completion is `func_02D658`→`func_02D0E4`→`func_0092E0` (**B**):
    hammer banks `+0x92`/`+0xB6`, target `+0x94`, cost table `DGROUP:0x8F8C`,

@@ -1,6 +1,6 @@
 # Random Events / Lost City Rumors
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** event strings `BYTE_VERIFIED`; **Lost-City rumor: trigger
 PROCEDURAL (`func_006188` coordinate-hash `@0x6188` — corrects the earlier
@@ -176,7 +176,7 @@ dialog state set per-invocation in `[0x1f9e]/[0x1fa0]/[0x1fa2]` and rendered by
 - `docs/ARCHITECTURE.md` — `func_05A20E` scout interactions; `func_05C878` treasure transport. **B** (entry points).
 - `func_05BE84` — native **raid** outcome dispatch (RAID* keys) — see `natives.md` §3. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. **Trigger feature byte — RESOLVED 2026-06-21: rumor presence is PROCEDURAL, not a
    stored `0xA0`/`0xB0` marker** (corrects the earlier "runtime-`0xB0`" reconcile; the
    `0xA0`-vs-`0xB0` question is dissolved). The rumor-presence predicate is **`func_006188`**

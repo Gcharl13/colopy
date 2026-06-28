@@ -1,6 +1,6 @@
 # Mercenary Hiring
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Re-grounded 2026-06-18 from the **real key bodies** (the breadth stub guessed
 > from empty keys and mis-anchored on `@MERCENARY`).
 
@@ -171,7 +171,7 @@ two options *No thank you* / *Pay {%NUMBER0$}*; arrival via `@MERCS`. See
   (`+0x17 vet_type`). **B**
 - `docs/GAME_MANUAL.md` — King sells mercenaries for gold. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Resolve the `%STRING1` unit-type label pointers.~~ **Done 2026-06-20** — they are
    **entries in the `@UNIT` stat table** (base `DGROUP:0x5230`, stride 14, word[0] =
    name-string pointer), init by the `@UNIT` loader (`@0x074EEE mov [bx+0x5230],ax`):

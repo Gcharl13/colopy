@@ -1,6 +1,6 @@
 # REF Growth (Royal Expeditionary Force)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** REF count globals `USER-VERIFIED`; **the budget→force driver
 `func_03E162` `BYTE_VERIFIED`** — accrual rate `(8·diff+10)·2^era`, **threshold 1800**,
@@ -157,7 +157,7 @@ specified by the cited code/globals. **B.**
   reproduces the 23/10/5/8 in-game counts at `diff=1`. **B**
 - `docs/GAME_MANUAL.md` — REF grows over the game, deployed on independence. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 
 1. ~~Trace the writer of `0x53DA..0x53E0`.~~ **Done 2026-06-19** — `func_03CDA2`,
    `func_051EF4`, and the **driver `func_03E162`** (accrual + 1800-threshold spend +

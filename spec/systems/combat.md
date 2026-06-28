@@ -1,7 +1,7 @@
 # Combat
 
 > **Layer 2 — Specification.** PRIMARY data only (`/METHODOLOGY.md`). Tiers:
-> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
+> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED`.
 
 **Overall confidence:** unit stats + land-odds form + **demotion ladder**
 `BYTE_VERIFIED`; **terrain defense bonus values now `BYTE_VERIFIED`** (`$TERRAIN`
@@ -170,7 +170,7 @@ confirmed present in `data_extracted/text/GAME_sections.json`:
   `0x0D..0x12`), **not** the roll. **B (negative).**
 - **Shore-bombardment (fort/stockade/fortress fire on adjacent ships) — RESOLVED 2026-06-27 (B).** Site = `func_02D3C6` (overlay page 03, file `0x02D3C6`, ENTER 0x1A), located via @FORTFIRE's DGROUP key blob: the key string `FORTFIRE\0` lives at DGROUP off `0x0D7F` (file `0x1D9A0+0x0D7F = 0x1E71F`), pushed as `push 0xd7f` (`68 7f 0d`) at `@0x02D5D9`, sole occurrence. Mechanics: the colony at `*(0x8542)` accumulates a fire **strength** `[bp-0xe] = artillery_count · fort_level · 4` — `[bp-0x10]` starts 1 and is +1 per **Artillery** unit (type `0xB`, `@UNIT` 11) in the colony (`@0x02D432`); `[bp-0xa]` is the fortification-building level (0 none / +1 stockade `0x181F:0x9FC(1)` / +1 fort `0x181F:0x9FC(2)`, `@0x02D3D6`/`@0x02D3EE`). If strength `== 0` (no fort building) the routine **returns without firing** (`@0x02D44D` `jne` else `jmp 0xb02 retf`) — so only stockade/fort/fortress colonies fire, matching the manual. It scans the 8 neighbor tiles (dx/dy arrays `[bx+0xbe]`/`[bx+0xb4]`, `[bp-0xc]` 0..7) for an enemy ship (type `0xD..0x12`), at war (`0x181F:0xA38 → func_007F34`, `test al,0x40` `@0x02D4E3`), different owner (`@0x02D4D2`), with a Privateer (`0x10`) special-case (`@0x02D4EB`), selecting the target into `[bp-0x18]`. **There is NO random roll** — fire is deterministic given a fort building + an eligible adjacent enemy ship (grep of the function for `0x181F:0x4D4`/`0x35C`/`0x4C0` random thunks: none). Damage-vs-sink is the **owner-bit test** `[si+0x3147] & (0x10<<[0x5396])` `@0x02D530..02D541` → `[bp-6]` (1=sink,0=damage). It spawns the cannon-effect unit via `0x191F:0xA20 → func_04002C` (a new type-0x17 unit at `[0x539c]++`, `@0x04002C`) and emits **@FORTFIRE** at `@0x02D5D9`. **B.** (Note: the @SHIPSUNK in `func_05B2C2` is the *unit-vs-unit* naval-loss path; this shore-fire path is separate, as suspected.) The remaining **TBD (narrow)** is the exact damage-vs-sink wording/threshold inside the `[bp-6]` owner-bit branch and any per-ship survivability beyond the owner test. (The fort/stockade/fortress *defense bonus* for land attack is the hardcoded `func_007D3E` colony `+2` / fortified-building `+4` / `×2` chain, §7.1.)
 
-## 7. Open questions (TBD) → `spec/BACKLOG.md`
+## 7. Open questions → `spec/BACKLOG.md`
 1. Terrain/fortification defense bonus — **mechanism BYTE_VERIFIED (2026-06-19),
    per-terrain *values* in `@TERRAIN` data.** The filler is `func_007D3E`: it zeroes
    `[0x8D04]`/`[0x8D02]`, then accumulates a defense bonus in `[bp-0x18]` with a

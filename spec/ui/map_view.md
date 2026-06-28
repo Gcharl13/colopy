@@ -1,6 +1,6 @@
 # Map View (main gameplay screen)
 
-> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Substantive: outer geometry + minimap + tile chain + menu/label keys are A/B-grounded;
 > the residual soft spots (sidebar per-line text x,y; menu per-item hit-rects) are honestly
 > **R** — single-frame/low-trust, called out in §6.3/§6.4 with the exact source.

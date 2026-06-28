@@ -1,6 +1,6 @@
 # Map System & Terrain
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** terrain tables + `.MP` layout + auto-forest rule + **`$TERRAIN`
 column legend + the tile-render chain & coast/beach-halo composer** `BYTE_VERIFIED`;
@@ -261,7 +261,7 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
 - `func_064A10` (`map_generate_new_world`) — procedural generator (see `map_generation.md`). **B**
 - `docs/GAME_MANUAL.md` — terrain function, improvements, polar-ice bounds. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Decode the per-terrain CSV columns.~~ **Done 2026-06-19** — `Movement, Defensive, Improvement, Value` + 9 yields (§2).
 1b. **Coast vs fog rendering — CORRECTED 2026-06-22 (the 2026-06-21 "coast" entry was wrong; it
    described the FOG-OF-WAR path).** Re-traced vs EXE (capstone `func_0681A8`/`func_067F50`):

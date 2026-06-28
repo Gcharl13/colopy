@@ -145,7 +145,7 @@ Orders shown as a single key letter in the active-unit orders box; commands via 
 - `data_extracted/text/NAMES_sections.json` — `@ORDERS` (13 rows w/ key letters), `@ACTIONS`. **B**
 - `docs/GAME_MANUAL.md` — fortify/sentry/clear-plow/trade-route function. **R (function HIGH; numbers EXE-win)**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Find the `UnitRecord` offset storing the order code and the work-progress counter.~~
    **Done 2026-06-20** — order code = `UnitRecord 0x314C`, work-progress counter =
    `0x315A` (§2; cross-ref `unit.md` §2, `terrain_improvement.md`). **B.**

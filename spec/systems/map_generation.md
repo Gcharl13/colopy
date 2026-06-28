@@ -1,6 +1,6 @@
 # Map Generation
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** **random-map generator located + passes P0–P6 (incl. the
 P2 climate→terrain tables) `BYTE_VERIFIED`** (`func_064A10`: entry/gate/seed/dims,
@@ -172,7 +172,7 @@ BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
 - `docs/GAME_MANUAL.md` — NEW WORLD / AMERICA / Customize options. **R** (function).
 - `formats/MP_FORMAT.md` — AMER2.MP is the standard-game world. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Decode the 8 `@SCENARIO` columns.~~ **Done 2026-06-20 (legend CORRECTED)** — the
    loader `func_0749E0 @0x74D6A` reads, after the map-file token (`AMER2`), a loop
    `i=0..3` of **2 ints each → `PowerRecord[i]` start_x `[bx−0x77C6]` / start_y

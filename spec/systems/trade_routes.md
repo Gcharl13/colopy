@@ -1,6 +1,6 @@
 # Trade Routes
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Mostly TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. breadth-pass baseline (populated).
 
 **Overall confidence:** **fully implemented + byte-traced (2026-06-20)** — order
 field + dispatch, route-definition structure, per-turn automation, and load/unload
@@ -133,7 +133,7 @@ See `docs/SESSION_UI_CATALOG.md`, `docs/UI_DIALOGS.md`.
 - `data_extracted/text/GAME_sections.json` — `@TRADE*` dialog keys present (ids 0xEA–0xF6). **B**
 - `docs/GAME_MANUAL.md` §"Trade Routes" — function/columns. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Locate the route-definition structure.~~ **Done 2026-06-20** — seg `0x1B22`,
    stride `0x4A`, 4 stops × nibble-packed goods (§2). **B.**
 2. ~~Byte-trace the per-turn automation.~~ **Done 2026-06-20** — `func_041080` +

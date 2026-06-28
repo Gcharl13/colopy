@@ -1,6 +1,6 @@
 # Founding Fathers / Continental Congress
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** roster + per-father data row + bell pool + bell-cost curve +
 era-band selection weighting + **25/25 per-father effects** `BYTE_VERIFIED` (9 immediate via `func_03BC42` + 16 continuous via the has-father test, incl. the direct-call form `lcall 0x981:0`). **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@FATHERS`/`@FOUNDING`; `viceroy_source/src/founding_fathers/congress.c`; `docs/DATA_MODEL.md`; `docs/GAME_MANUAL.md`.
@@ -184,7 +184,7 @@ F3 Continental Congress report (REPORTS menu / letter 'B'; the manual's "F7" men
 - `data_extracted/text/GAME_sections.json` — `@SCORE` "+5 per father" cross-ref (see scoring). **B**
 - `docs/GAME_MANUAL.md` §"Founding Fathers", scoring "+5 per Founding Father". **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. Map each father to its concrete in-engine effect. **Mechanism located 2026-06-21
    (not a runtime table; no dump needed).** Father (and national-advantage) effects are
    per-**power** flags tested by **`ov_power_flag(power, op_id)`** — file `0xBC10`, which

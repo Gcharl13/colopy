@@ -1,6 +1,6 @@
 # In-Game Tutorial
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** key set + **trigger wiring + step-shown bitmask `[0x5386]/[0x5387]` + event-driven (non-sequential) model `BYTE_VERIFIED`** (2026-06-20). · **Canonical primary:** `data_extracted/text/GAME_sections.json` (`@TUTORIAL1..19`); `tools/rtlink/event_emitters.json`.
 
@@ -102,7 +102,7 @@ input, computed by `func_06C850`/`func_06D316`), not a static rectangle. **B**
   citations were a stale-extraction artifact, corrected to the verified offsets.) **B**
 - `docs/GAME_MANUAL.md` — tutorial function (opening lessons). **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 
 1. ~~Bind each `@TUTORIALn` to its triggering event.~~ **Done 2026-06-20** — each step
    is emitted inline at its event function, guarded by a `[0x5386]/[0x5387]` bit (§3

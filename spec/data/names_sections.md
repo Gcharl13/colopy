@@ -1,6 +1,6 @@
 # NAMES.TXT Sections — Game-Data Taxonomy Backbone
 
-> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 
 **Canonical primary:** `data_extracted/text/NAMES_sections.json` (the extracted NAMES.TXT `@`-sections — CANONICAL for the data). §1–4 below are the curated role summary; the **complete verbatim body of every section** is enumerated in the generated block at the end of this file (rendered by `tools/build_spec_data.py` from `NAMES.full.json`). Typed/numeric renderings of these sections live in [`tables.md`](tables.md).
 

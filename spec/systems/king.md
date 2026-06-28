@@ -2,7 +2,7 @@
 
 > **Layer 2 — Specification.** Built from PRIMARY data only (see `/METHODOLOGY.md`
 > → "Primary data is the decider"). Tiers: `BYTE_VERIFIED` / `ANCHOR_VERIFIED` /
-> `RECONSTRUCTED` / `TBD`. **Worked-example spec** — copy its shape and its
+> `RECONSTRUCTED`. **Worked-example spec** — copy its shape and its
 > discipline (every number read from the bytes, not from a secondary doc).
 
 **Overall confidence:** state layout + tax-change formula + **tax-pretext selection**
@@ -176,7 +176,7 @@ The demand surfaces as the **King speech-bubble dialog**:
   (The tax-revenue loop, REF-growth spend threshold `func_03E162`, and pretext
   selection `func_036138` are now BYTE_VERIFIED — see §3 and Open-Questions 2/3/4.)
 
-## 7. Open questions (TBD) → feeds `spec/BACKLOG.md`
+## 7. Open questions → feeds `spec/BACKLOG.md`
 
 1. ~~**60 vs hard cap.**~~ **Resolved 2026-06-18:** `tax_pct` is hard-clamped to
    **75** (`0x4B`) at `func_034318` `0x03434F`; `0x3C`=60 (`func_0349F4`) is a

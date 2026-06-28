@@ -1,6 +1,6 @@
 # Independence / Revolution
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Status: revolution/REF/declare/end-game subsystems are BYTE_VERIFIED or RESOLVED (§2-§3, §6); the `@NOWARSDURINGREV` enforcement site is now byte-located at `func_05A862 @0x5A912` (§3, 2026-06-27). Sole remaining reconstruction: the Tory population fraction (§2, RECONSTRUCTED — manual-derived, no byte anchor yet).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Status: revolution/REF/declare/end-game subsystems are BYTE_VERIFIED or RESOLVED (§2-§3, §6); the `@NOWARSDURINGREV` enforcement site is now byte-located at `func_05A862 @0x5A912` (§3, 2026-06-27). Sole remaining reconstruction: the Tory population fraction (§2, RECONSTRUCTED — manual-derived, no byte anchor yet).
 
 **Overall confidence:** REF globals `USER-VERIFIED`; **SoL ≥ 50% declare threshold + declaration handler `func_03E984`→`func_03DE46` `BYTE_VERIFIED`** (2026-06-20); Tory mechanics `RECONSTRUCTED`. **Canonical primary:** `docs/DATA_MODEL.md` (REF globals); `data_extracted/text/GAME_sections.json` independence/Tory keys; `tools/rtlink/event_emitters.json` (handle map); `docs/GAME_MANUAL.md`; `spec/systems/king.md`. ⚠ The `func_03C638` annexation handler (and the `[0x53D0]≥75` ceiling gate) are the **War of Spanish Succession**, which shares the `[0x53D0]` SoL meter but is a *separate* event — see `spec/systems/spanish_succession.md` and `notes/rulings/RULINGS.md` (2026-06-20).
 
@@ -71,7 +71,7 @@ Declaration flow uses `@PICKINDEPENDENCE`, `@INDEPENDENCE`, `@ALREADYREVOLUTION`
 - `tools/rtlink/event_emitters.json` — handle map: `@TOOTORY=0x1386`, `@ALREADYREVOLUTION=0x1374`, `@DECLARE=0x1397`, `@INDEPENDENCE=0x130B`. **B**
 - **Cross-corroboration:** the king tax-demand driver `func_036138` reads `[0x53D0]` as `rebel_sentiment` in its severity score (`spec/systems/king.md` §3, `@0x361F9`) — an independent code path confirming `[0x53D0]` = national SoL meter. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Byte-trace the SoL% declare threshold (is it 50%?).~~ **Resolved 2026-06-20 — yes,
    50%.** Declare handler `func_03E984` rejects with `@TOOTORY` when `[0x53D0] < 0x32`
    (`@0x3E99E`) and proceeds to the `@DECLARE` confirm → WoI declaration `func_03DE46`

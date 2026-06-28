@@ -1,11 +1,11 @@
 # Difficulty Levels
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** 5 level names + global byte `BYTE_VERIFIED`; **a broad set
 of per-level modifier formulas `BYTE_VERIFIED`** (REF size, combat handicap,
 native attitude, diplomacy demands — see §3); some economy/king touch points still
-`R`/`TBD`.
+`R`.
 **Canonical primary:** `data_extracted/text/NAMES_sections.json` (@DIFFICULTY),
 `docs/DATA_MODEL.md` (DGROUP `0x53A6`).
 
@@ -190,7 +190,7 @@ Difficulty Level", `GAME_sections.json`) / `@MISC` "Difficulty Level" labels, al
 - `VICEROY.EXE` diplomacy `@0x58374`/`@0x583A0`/`@0x5842B`/`@0x58315` — AI grace/demand/prob. **B**
 - `docs/GAME_MANUAL.md` — level descriptions; Indian penalty. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Byte-trace per-level modifier table.~~ **Done 2026-06-20** — REF size, combat
    handicap, native attitude, diplomacy demands, action probability all **B** (§3).
    Residual: instruction-level confirm of the §3 "touch points" subset

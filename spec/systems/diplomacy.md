@@ -1,6 +1,6 @@
 # European Diplomacy
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Body fully populated: meeting/parley dispatcher (`func_057F4E`), SIGNTREATY handler (`func_057DC0`), both relation matrices (`+0x34` war / `+0x40` treaty), AI willingness thresholds, cooldown, and privateer attribution are all BYTE_VERIFIED; the numbered open questions in §6 are resolved.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Body fully populated: meeting/parley dispatcher (`func_057F4E`), SIGNTREATY handler (`func_057DC0`), both relation matrices (`+0x34` war / `+0x40` treaty), AI willingness thresholds, cooldown, and privateer attribution are all BYTE_VERIFIED; the numbered open questions in §6 are resolved.
 
 **Overall confidence:** **meeting handler `func_057F4E` + SIGNTREATY handler `func_057DC0` + both relation matrices (`+0x34` war / `+0x40` treaty, bit meanings incl. `0x08`=grievance / `0x80`=privateer) + AI willingness thresholds (attitude table `DGROUP:0x940C`, no-action cutoff `(attitude>>2) > demand` `@0x58C24`) + cooldown `BYTE_VERIFIED`** (2026-06-20). **Canonical primary:** `func_057F4E`/`func_057DC0`; `data_extracted/text/GAME_sections.json` treaty/war keys; `docs/GAME_MANUAL.md`.
 
@@ -88,7 +88,7 @@ Diplomatic dialogs use GAME.TXT keys: `@SIGNTREATY @HAVETREATY @DECLAREWAR @CANC
 - `data_extracted/text/GAME_sections.json` — treaty/war/peace dialog keys present. **B**
 - `docs/GAME_MANUAL.md` — diplomacy function (rivals, treaties, war). **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 0. ~~The `0x883C` matrix "has no code xrefs".~~ **CORRECTED 2026-06-19** — it does: the
    accessor uses `[bx+si-0x77C4]` (displacement form of `0x883C`), in `func_057F4E`.
    The prior grep searched the literal and missed it.

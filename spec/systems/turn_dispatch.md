@@ -1,6 +1,6 @@
 # Turn Dispatch & Phases
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Core BYTE_VERIFIED: turn loop `func_005760`, European power order 0..3, the five-phase per-power ordering (§3), and turn/year cadence (§3, §6 — all Open Questions resolved 2026-06-20). Sole residual = §4 end-of-turn prompt/announcement message-box element coordinates (overlay page 0x17).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Core BYTE_VERIFIED: turn loop `func_005760`, European power order 0..3, the five-phase per-power ordering (§3), and turn/year cadence (§3, §6 — all Open Questions resolved 2026-06-20). Sole residual = §4 end-of-turn prompt/announcement message-box element coordinates (overlay page 0x17).
 
 **Overall confidence:** **main turn loop `func_005760`, power iteration order, and
 turn/year cadence `BYTE_VERIFIED`** (2026-06-20); the per-power phase *ordering*
@@ -152,7 +152,7 @@ context's centering math, **not a static constant** (overlay page 0x17).
 - `docs/ARCHITECTURE.md` — per-turn loop framing. **B/R** (power "4..11" framing superseded — natives not a separate pass)
 - `docs/GAME_MANUAL.md` — per-unit orders prompt; end-of-turn flow. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Identify the top-level turn/phase dispatcher (~27 cases).~~ **Resolved
    2026-06-20** — there is **no single dispatcher**; the loop is `func_005760` with a
    straight-line set of per-power calls (§2/§3). The `func_33C96` 12-case switch and

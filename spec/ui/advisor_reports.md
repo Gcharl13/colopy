@@ -1,6 +1,6 @@
 # Advisor Reports (F1–F10)
 
-> **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Substantive: the dispatch ladder, the 9 real body offsets, the title-N→PIK/@MISC
 > mapping, the F8 gate polarity, the F9 dispatch gate, the F10 score-band selector,
 > the shared draw primitives, and every report's static x-columns + y-start are now

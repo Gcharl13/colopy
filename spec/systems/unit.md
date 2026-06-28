@@ -1,6 +1,6 @@
 # Unit System
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** **UnitRecord base `0x3144` + near-complete field map +
 `@UNIT` stat-column→runtime mapping `BYTE_VERIFIED`** (2026-06-20). **Canonical
@@ -128,7 +128,7 @@ Active-unit orders box and map cursor. See `docs/UI_RENDER_MAP.md`, `notes/SPRIT
 - `docs/DATA_MODEL.md` — UnitRecord (base `0x3146`/+0x07 pos labels **superseded**, RULINGS 2026-06-20). **A→corrected**
 - `data_extracted/text/NAMES_sections.json` — `@UNIT` (24 rows), `@CLASS` (8), `@ORDERS`. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Map every `@UNIT` numeric column.~~ **Done 2026-06-20** — table `0x5230` stride 14
    (§3): movement `0x5234`(×3) / attack `0x5236` / defense `0x5235` / cargo `0x5237` /
    move-class `0x5238` / hull `0x5239` / size `0x523A` / guns `0x523B` / ai-value

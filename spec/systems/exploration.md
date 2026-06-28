@@ -92,7 +92,7 @@ Layout **B**: the world is drawn into the map viewport rect **(0, 8, 240, 192)**
   ships/ability-#7 naval); `func_006468` (`0x6468`) `(2R+1)²` reveal loop; `func_00631A`
   (`0x631A`) single-tile fog OR `1<<(player+4)`. **B**.
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Confirm the per-tile discovered flag location.~~ **Done** — separate
    visibility layer (far-ptr `[0x168]`), bit `player+4` (§2). **B.**
 2. ~~Sight radius by unit type; whether terrain extends sight; de Soto's reach.~~

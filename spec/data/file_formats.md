@@ -1,6 +1,6 @@
 # On-Disk File Formats — Index
 
-> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 
 **Canonical primary:** the per-format specs in `formats/` (committed) and `viceroy_source/formats/` (decode-notes, secondary pointer). This stub is a one-line index pointing to each format's own spec; read those for byte layouts.
 

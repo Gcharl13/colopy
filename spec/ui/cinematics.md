@@ -347,7 +347,7 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - `docs/SESSION_UI_CATALOG.md` — `SCORE01..24`, `OPEN*`, `CLOS-*`, `KINGLSS1/2`, `DEC-*` visual
   identification. **A**.
 
-## 11. Open questions (TBD)
+## 11. Open questions
 
 1. ✅ **Score plate→category mapping — RESOLVED 2026-06-21 (B).** Plates are rating-tier art selected
    by `func_03A9C0`'s `i·i/3 ≥ scaled` loop (§4), not per-category lines.

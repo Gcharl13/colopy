@@ -1,6 +1,6 @@
 # Continental Congress
 
-> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Substantive: state→display map, FF-acquisition reveal mechanism, and F3-body fonts/colors are
 > **B**; band geometry **A**. **No graphical progress bar** (RULING 2026-06-21). Residuals:
 > bell/US-flag/REF sprite IDs and reveal-popup chrome — **RESOLVED 2026-06-27** (UI closeout): bell
@@ -149,7 +149,7 @@ loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the 
   (note the *screen* draws Artillery before Man-O-War); USER-VERIFIED values (23,10,5,8). **B**
 - `data_extracted/text/{LABELS,NAMES}_sections.json` — `@MISC`, `@FATHERS` (verified). **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. Bell sprite **RESOLVED (B); US-flag still TBD.** The earlier "F3 body is text/box only, no
    sprite blits" finding was based on a **truncated** disasm (the asm file ended at 0x37A9C, 140
    bytes); the **full** body `0x037A10..0x3807D` DOES draw the bell row — `mov ax,0x3f; lcall

@@ -1,6 +1,6 @@
 # Save / Load
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** **full SAV format `BYTE_VERIFIED`** (2026-06-20) — orchestrator
 `func_072F7A`, serializer `func_0734F8` (the **43-block on-disk sequence**, §3), loader
@@ -165,7 +165,7 @@ triple does not exist in the EXE to extract. **B** (renderer + geometry-field re
 - `docs/COLONY_RENDER_CHAIN.md:263` — COLONY.SAV filename builder at 0x1FA82. **B**
 - `docs/DATA_MODEL.md` — ColonyRecord/PowerRecord/UnitRecord runtime layouts. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Locate the SAV write/read function and decode the file header + field order.~~
    **Done 2026-06-20** — serializer `func_0734F8`, loader `func_073BB0`; header =
    `"COLONIZE"`+`0x1A`; field order = the **43-block sequence** in §3. **B.**

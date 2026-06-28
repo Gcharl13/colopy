@@ -1,6 +1,6 @@
 # Terrain Improvement (Roads / Clearing / Plowing)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Details TBD — breadth pass.
+> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
 
 **Overall confidence:** order set + **executors (`func_040656` clear/plow,
 `func_0409D6` road) + work-counter + completion + tile-bits + lumber grant
@@ -83,7 +83,7 @@ Orders box shows `P` / `R` while in progress. Layout `TBD`.
 - `docs/GAME_MANUAL.md` — clear/plow/road effects; 20-tool cost; keys. **R**
 - `formats/MP_FORMAT.md` — tile-byte overlay bits. **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Locate the order-execution function.~~ **Done 2026-06-20** — `func_040656`
    (clear/plow) / `func_0409D6` (road), dispatched from `@0x051D56` (§3). The
    **20-tool cost** resolves to **`func_040608`** (`@0x4060F sub byte[bx+0x3159],0x14`

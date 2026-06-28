@@ -27,7 +27,7 @@ Power index ordering (0..3 = Dutch/English/French/Spanish per NAMES `@COUNTRY`; 
 - Active-colony pointer `[0x8542]` (102 refs per anchor_map). **B/A**
 - `spec/systems/colony.md` — consuming spec for ColonyRecord. **B/R**
 
-## 4. Open questions (TBD)
+## 4. Open questions
 
 1. ~~ColonyRecord field map.~~ **Mostly resolved 2026-06-20** — SoL dividend/divisor
    `+0xC2`/`+0xC6` (B, `colony.md`); `+0x1C` = per-colony **status-flags** byte (not

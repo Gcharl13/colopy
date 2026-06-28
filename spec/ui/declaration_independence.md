@@ -1,6 +1,6 @@
 # Declaration of Independence Screen
 
-> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Complete: asset attribution & cinematic split **B**; signature glyph layout **B** (pen seed +
 > per-glyph advance byte-verified inline in `func_03DA2A`, §2). DECLARAT.PIK is an **orphan** (the
 > engine draws DECOIND.PIK). **No open questions remain** (§6).
@@ -62,7 +62,7 @@ then the signature is composed glyph-by-glyph from DEC-UPP\*/DEC-LOW\*/DEC-SQIG 
 - `docs/UI_DIALOGS.md` — "Independence declaration" row: `func_03DE46` + `func_03E984` guard, DECLARAT.PIK + DEC-LOW*/UPP*. **B**
 - `data_extracted/text/{GAME,MENU}_sections.json` — `@DECLARE`, `@INDEPENDENCE`, `@PICKINDEPENDENCE`, `@DECLAREWAR`, MENU `@GAME` "DECLARE INDEPENDENCE" (all verified as keys). **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 *(Resolved 2026-06-21: DECLARAT.PIK is an **orphan** never loaded — the engine uses DECOIND.PIK
 (`func_03DA2A` → `func_076B9E`), so items 2 and 4 are moot. `@DECLARE`/`@INDEPENDENCE` bodies are
 now **present in `data_extracted/text/GAME_sections.json`** (the extractor was fixed — see

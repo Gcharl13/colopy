@@ -1,6 +1,6 @@
 # Text Resources — all `.TXT` text files (GAME / PEDIA / LABELS / MENU / COLONY / MAPEDIT / MAPMENU / DEBUG / OPENING / CLOSING / WOODCUT)
 
-> **Layer 2 — Data Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Data Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 
 **Canonical primary:** `data_extracted/text/*.json` (extracted sections) + the per-file catalogs `docs/GAME_TXT_CATALOG.md`, `docs/LABELS_TXT_CATALOG.md`, `docs/PEDIA_TXT_CATALOG.md`. §1–4 below index counts and the shared `.TXT` format; the **complete verbatim body of every `@`-key** across all these text files is enumerated in the generated block at the end of this file (rendered by `tools/build_spec_data.py`). NAMES.TXT → [`names_sections.md`](names_sections.md); TRIBE.TXT (coordinate data) → [`tables.md`](tables.md).
 

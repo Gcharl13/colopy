@@ -1,6 +1,6 @@
 # War of the Spanish Succession (rival power withdrawal)
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 > Re-grounded 2026-06-18 from the **real `@SUCCESSION` body** (the prior
 > `heir_succession.md` invented a "king's heir" mechanic from an empty key).
 
@@ -85,7 +85,7 @@ shared popup framework (`spec/ui/popups.md`). The removed power renders as
 - `data_extracted/text/GAME_sections.json` — `@SUCCESSION` full body. **B**
 - `data_extracted/text/LABELS_sections.json` — `@MISC` "(Withdrawn from New World)". **B**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Trigger condition / timing.~~ **LOCATED 2026-06-20** — end-game dispatcher `@0x02393A`, gated on `[0x53D0]` (Bolívar SoL meter, init `func_0755CC` `mov [0x53d0],ax` `@0x075620`, +20/cap100 `add [0x53d0],0x14`/`cmp 0x64`/`mov 0x64` `@0x03BE64`) and `[0x53D2]<0`; not SoL/date. **Refined 2026-06-27:** the gate sits in the **master event-id dispatcher `func_0235D6`** (role *per-row id→handler*); the succession arm is **event id `0x68`** — `[bp+6]` event id `@0x0235E2`, big-switch `@0x023DC8` (`cmp ax,0x300`) → `sub ax,0x1b; cmp ax,0x5c; jbe; shl ax,1` `@0x023DD5` → `jmp word cs:[bx+0x2f08]` `@0x023DE3`, table entry idx `0x4d` (id `0x68`) → gate `@0x02391C`. **Residual (HARD):** the firing-probability/odds gate that *enqueues* event id `0x68` into `func_0235D6` is still not isolated — `func_0235D6` is an overlay entry with **no readable caller / no thunk in the static substrate** (overlay scheduler/loader call-graph unresolved; the page-0x06 segment is mis-segmented). Next action: run the overlay call-graph resolver (`tools/find_callers.py`) on the `func_0235D6` entry to find the scheduler that pushes `0x68`, or a runtime trace of the event queue.
 2. ~~Power-selection: which rival cedes, which receives.~~ **Resolved 2026-06-20** — weakest eligible AI cedes / strongest receives, ranked `3·[0x9418]+2·[0x9298]+[0x9410]` (sorted `@0x3C68E`); see §2/§3. **B.**
 3. ~~Colony-transfer + power-removal mechanics in the data model.~~ **Resolved 2026-06-20** — map-tile/unit (`+0x3147`)/colony (`+0x1A`) owner-nibble rewrites + controller `+0x543F:=2`; see §3. **B.**

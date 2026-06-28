@@ -1,6 +1,6 @@
 # Colonist Training & Promotion
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. Detail pass complete: every §3 formula is byte-verified and all four §6 open questions are resolved (school teaching rate at func_02D658 @0x02DDB4 [`mov word ptr [bp-0xb2],4`] verified against EXE bytes; turns-to-graduate 4/6/8 at @0x02DDB4 / @0x02DE98 / @0x02DE8E, skill-class table read `[bx-0x715a]` = DGROUP `0x8EA6` @0x02DE75).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Detail pass complete: every §3 formula is byte-verified and all four §6 open questions are resolved (school teaching rate at func_02D658 @0x02DDB4 [`mov word ptr [bp-0xb2],4`] verified against EXE bytes; turns-to-graduate 4/6/8 at @0x02DDB4 / @0x02DE98 / @0x02DE8E, skill-class table read `[bx-0x715a]` = DGROUP `0x8EA6` @0x02DE75).
 
 **Overall confidence:** job/profession roster `BYTE_VERIFIED` (present); **expertise
 field + `@JOB` columns + native-learn (grant+roll) + school rulesets + combat
@@ -162,7 +162,7 @@ Surfaces in the colony screen (assign job) and education building tooltips. See 
 - `docs/GAME_MANUAL.md` — player-aid skill chart (col-3 school tiers S/C/U, `*` =
   Indian-learnable), §"Education", "Indian Lore". **B/R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 1. ~~Byte-trace the **human-side per-turn school teaching rate** (turns-to-graduate;
    who-teaches-whom selection).~~ **DONE 2026-06-21 — it WAS statically located** (the
    earlier "UI-driven / not in the disasm" conclusion was wrong; I had searched the

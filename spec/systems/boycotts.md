@@ -1,6 +1,6 @@
 # Commodity Boycotts (Tea Party / Parliamentary)
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD (tier vocabulary). Status: §§2–6 byte-verified; the §6 open-questions list is fully resolved (all four items Done/B). The only non-byte residue is the §4 RUNTIME pixel observation (whether the Europe trade list paints a distinct colour/glyph for a boycotted good), which is not byte-decidable because no render function reads the boycott bit (`PowerRecord +0x20`; sole accessor `func_030B38` has exactly two callers, both sell logic — see §4).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R (tier vocabulary). Status: §§2–6 byte-verified; the §6 open-questions list is fully resolved (all four items Done/B). The only non-byte residue is the §4 RUNTIME pixel observation (whether the Europe trade list paints a distinct colour/glyph for a boycotted good), which is not byte-decidable because no render function reads the boycott bit (`PowerRecord +0x20`; sole accessor `func_030B38` has exactly two callers, both sell logic — see §4).
 
 **Overall confidence:** `@TEAPARTY` key + **boycott bitmask `PowerRecord +0x20` (test/set/back-tax-lift/Jakob-Fugger-clear-all) `BYTE_VERIFIED`**; **back-tax amount `BYTE_VERIFIED`** (price×500). · **Canonical primary:** `data_extracted/text/GAME_sections.json`; `func_030B38` (test), `@0x34717` (set), `@0x3340C` (lift). Cross-ref `spec/systems/king.md` §3 (Tea-Party path), `spec/systems/ref_growth.md` (back-tax → `+0x22`).
 
@@ -91,7 +91,7 @@ optional pixel sanity-check is not a decode blocker.
 - `docs/GAME_MANUAL.md` — boycott effect; Jakob Fugger clears all boycotts;
   back-tax payment to lift. **R**
 
-## 6. Open questions (TBD)
+## 6. Open questions
 
 1. ~~**Boycott bitmask** — which field holds the per-good flags.~~ **Done 2026-06-19**
    — `PowerRecord +0x20` (u16); test `func_030B38`, set `@0x34717`, lift `@0x33423` (**B**).

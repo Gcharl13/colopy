@@ -1,7 +1,7 @@
 # Market & Prices
 
 > **Layer 2 — Specification.** PRIMARY data only (`/METHODOLOGY.md`). Tiers:
-> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
+> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED`.
 
 **Overall confidence:** commodity set + price-storage location + **per-turn drift
 formula (`func_0305A8`: decay by `(base+Σtrade)/256`) `BYTE_VERIFIED`**; the
@@ -215,7 +215,7 @@ Prices surface on the **Europe screen** (`docs/SESSION_UI_CATALOG.md`) and the
   spoilage exists.
 - (Boycott bookkeeping **B** — `+0x20`, see `boycotts.md`.)
 
-## 7. Open questions (TBD) → `spec/BACKLOG.md`
+## 7. Open questions → `spec/BACKLOG.md`
 1. ~~Byte-trace the **price-drift** formula.~~ **Done 2026-06-19** — `func_0305A8` (**B**); decay `(base+Σtrade)/256`. ~~the `+0xFC` increment (buy/sell) site.~~ **Done 2026-06-20** — buy/sell transaction §3.1. ~~the drift driver/call site.~~ **Done 2026-06-20** — `func_33C96 @0x367FC` (all-goods) + `func_0324F2`/`func_032914` (per-good); the `0x368bd` "table" was a JMP-FAR trampoline misread (§3).
 2. ~~Confirm the read/write sites for `PowerRecord +0x4C[16]` and reconcile `0x53EA` (per-good[16], per `func_0305A8`) vs the old per-player[4] label.~~ **Done 2026-06-25 — B.** `+0x4C` is a **per-good byte array indexed by `good`** (base `[0x84fc]`, `byte ptr [bx + good + 0x4c]`), confirmed by four accessors that all index identically: **READ** `func_030566 @0x30583` (`price = CARGO_row[good][0] (stride-9 @[bx-0x6900]) + [+0x4C+good]`, clamp ≥0) and `func_030590 @0x3059c` (`[+0x4C+good] − 1`, clamp ≥0); **WRITE** `func_032262 @0x32272` (`[+0x4C+good] += 1` — price step up) and `func_032278 @0x3228d` (`[+0x4C+good] −= 1`, clamp ≥0 — price step down). The byte index is `good` (1-byte stride, 16 entries), so it is **per-good[16], not per-player[4]**. `0x53EA` is separately indexed `good*2` (16 words) at `func_0305A8 @0x305B8` — distinct array, reconciled.
 3. ~~Locate the **boycott** bitmask field.~~ **Done 2026-06-19** — `PowerRecord +0x20` (test `func_030B38`, set `@0x34717`, lift `@0x33423`); see `spec/systems/boycotts.md` §3. Remaining: the Jakob-Fugger clear-all.
