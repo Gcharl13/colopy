@@ -1,0 +1,95 @@
+{
+  "file": "LABELS.TXT",
+  "section_count": 7,
+  "sections": {
+    "@INFO": {
+      "legend": [
+        "COLONIZATION Label Messages",
+        "Copyright (c) 1994 by MicroProse Software",
+        "Altering the contents of this file may cause the game to",
+        "malfunction."
+      ],
+      "directives": {},
+      "body": "Moves:\nLocat:\nWith:\nWith:"
+    },
+    "@MISC": {
+      "legend": [],
+      "directives": {},
+      "body": "a\nan\nEnd of Turn\nNone\nExpert\nSailing For\nInbound From\nNow Arriving In\nDocks At\nExpected Soon\nBound For\nNo Ships In Port\nAwaiting Passage\n(Cost:\n)\nLost City Rumor\n.5\nWilderness\nLand\nof the\nNo cargo ready for transport!\nNo cargo holds available!\nNo cargo on board!\nLoading\nUnloading\nonto\nin\nMission\nMissions\nINDIAN ADVISER REPORT\nRELIGIOUS ADVISER REPORT\nRoad\nNothing\nonly\nContinue turn.\nZoom to colony.\nThe\nCONTINENTAL CONGRESS ACTIVITIES\nNow debating:\nAlarmed by\nLake\nwagons\nholds\nRequires\n(CLEAR SPECIALTY)\nHorse Herds\nOK\nsells\nfor\nLABOR ADVISER REPORT\nECONOMIC ADVISER REPORT\nCOLONY ADVISER REPORT\nNAVAL ADVISER REPORT\nOff Mapboard (Europe)\nOn Mapboard\nIn Colonies\n(Click on item to zoom)\nK\nTons\nGold\nHigh Seas\nShip\nCargo\nLocation\nDestination\nVeteran\nSeasoned\nLearned\nAsk:\nRebel\nTory\nSentiment\nKing's Popularity\ndefeat\ndefeats\nCOMBAT ANALYSIS\nFatigue\nAttack Bonus\nAmbush\nTerrain\nColony\nFortified\nSpain Bonus\nPlowed\nArtillery In Open\nExpeditionary Force\nRebels\nTories\nMatters\nFounding Fathers\nDrake\n(Building Upkeep)\nTOTAL UPKEEP\nFOREIGN AFFAIRS REPORT\n's\nColonies\nPopulation\nAverage Colony\nMilitary Power\nNaval Power\nMerchant Marine\nWar\nPeace\nAdviser\nBombard\n+ More +\nand\npast\nENCYCLOPEDIA OF COLONIZATION\n(More)\n(Exit)\nIntervention Force\nNext Continental Congress Session\nIntervention\nCOLONIZATION SCORE\nCitizens\nIndependence\nVillages Burned\nDeclared\nAchieved\nForeign Recognition\nTotal Score\nTrees\n(Outside Colony)\nAsking\nBidding\nSCORING COMPLETE\nCOMPLETE\narrives in\nArtillery Vs. Raid\nExtinct\nBoycott\nTory Unrest\nRebel Unrest\nContinental Congress\nSold\nBought\nat\n$/ton\nPrice\n% Tax\nNet\nEarly Revolution\nprior nations\nLand Mass\nLand Form\nTemperature\nClimate\nSmall\nModerate\nLarge\nArchipelago\nNormal\nContinents\nCool\nTemperate\nWarm\nArid\nNormal\nWet\nCUSTOMIZE NEW WORLD\nClick Here When Finished\nChoose\nDifficulty Level\nLevel\nEasiest\nEasy\nModerate\nTough\nToughest\nSelect\nEuropean Power\nPower\nImmigration\nCooperation\nConquest\nTrade\nFish\nWith\nCombat\nAttack\nCargo Holds\nMoves\nPlow\nRiver\nCoast\nMove Cost\nDefense or Ambush Bonus\nPrerequisite\n(F1 for Help)\n(Withdrawn from New World)\nFree\nCOLONIZATION HALL OF FAME\nto\nA.D.\nPresident\nGeneral, Continental Army\nLeader\nScore\nColonization_Rating\nPrime\nDamaged\nPress\nBid Price\nAsk Price\nZoom to Europe.\nEuropean Trade\nCargo in Port\nMilitary Garrisons\nSons of Liberty\nExit\n211\n212\n213\n214\n215\n216\n217\n218\n219\n220"
+    },
+    "@ROUTE": {
+      "legend": [],
+      "directives": {},
+      "body": "EDIT TRADE ROUTE\nRoute Name:\nRoute Type:\nSea\nLand\nDestination\nUnload Cargo\nLoad Cargo\n(Delete Destination)"
+    },
+    "@CMISC": {
+      "legend": [],
+      "directives": {},
+      "body": "Harvest / Resources\nUnits Present\nMake"
+    },
+    "@CTITLE": {
+      "legend": [],
+      "directives": {},
+      "body": "Pop:\nGold:\nBUY\nCHANGE\nSelect An Item To Build\n(No Production)\n(More)\nTurns)\nSelect a Profession for\nTax:"
+    },
+    "@CMESSAGE": {
+      "legend": [],
+      "directives": {},
+      "body": "bought for\nsold for\nmoved to\n. Price:\nNo room for\nNothing to transport\nNot enough\nto fill cargo hold!\ntoo expensive!\nNo\nin cargo hold!\nNothing to transfer!\nat\nBuying\nSelling\nLoading\nUnloading\n% Tax:\n. Net:"
+    },
+    "@EUROLABEL": {
+      "legend": [],
+      "directives": {},
+      "body": "RECRUIT\nPURCHASE\nTRAIN\nx"
+    }
+  },
+  "sections_ordered": [
+    {
+      "key": "@INFO",
+      "legend": [
+        "COLONIZATION Label Messages",
+        "Copyright (c) 1994 by MicroProse Software",
+        "Altering the contents of this file may cause the game to",
+        "malfunction."
+      ],
+      "directives": {},
+      "body": "Moves:\nLocat:\nWith:\nWith:"
+    },
+    {
+      "key": "@MISC",
+      "legend": [],
+      "directives": {},
+      "body": "a\nan\nEnd of Turn\nNone\nExpert\nSailing For\nInbound From\nNow Arriving In\nDocks At\nExpected Soon\nBound For\nNo Ships In Port\nAwaiting Passage\n(Cost:\n)\nLost City Rumor\n.5\nWilderness\nLand\nof the\nNo cargo ready for transport!\nNo cargo holds available!\nNo cargo on board!\nLoading\nUnloading\nonto\nin\nMission\nMissions\nINDIAN ADVISER REPORT\nRELIGIOUS ADVISER REPORT\nRoad\nNothing\nonly\nContinue turn.\nZoom to colony.\nThe\nCONTINENTAL CONGRESS ACTIVITIES\nNow debating:\nAlarmed by\nLake\nwagons\nholds\nRequires\n(CLEAR SPECIALTY)\nHorse Herds\nOK\nsells\nfor\nLABOR ADVISER REPORT\nECONOMIC ADVISER REPORT\nCOLONY ADVISER REPORT\nNAVAL ADVISER REPORT\nOff Mapboard (Europe)\nOn Mapboard\nIn Colonies\n(Click on item to zoom)\nK\nTons\nGold\nHigh Seas\nShip\nCargo\nLocation\nDestination\nVeteran\nSeasoned\nLearned\nAsk:\nRebel\nTory\nSentiment\nKing's Popularity\ndefeat\ndefeats\nCOMBAT ANALYSIS\nFatigue\nAttack Bonus\nAmbush\nTerrain\nColony\nFortified\nSpain Bonus\nPlowed\nArtillery In Open\nExpeditionary Force\nRebels\nTories\nMatters\nFounding Fathers\nDrake\n(Building Upkeep)\nTOTAL UPKEEP\nFOREIGN AFFAIRS REPORT\n's\nColonies\nPopulation\nAverage Colony\nMilitary Power\nNaval Power\nMerchant Marine\nWar\nPeace\nAdviser\nBombard\n+ More +\nand\npast\nENCYCLOPEDIA OF COLONIZATION\n(More)\n(Exit)\nIntervention Force\nNext Continental Congress Session\nIntervention\nCOLONIZATION SCORE\nCitizens\nIndependence\nVillages Burned\nDeclared\nAchieved\nForeign Recognition\nTotal Score\nTrees\n(Outside Colony)\nAsking\nBidding\nSCORING COMPLETE\nCOMPLETE\narrives in\nArtillery Vs. Raid\nExtinct\nBoycott\nTory Unrest\nRebel Unrest\nContinental Congress\nSold\nBought\nat\n$/ton\nPrice\n% Tax\nNet\nEarly Revolution\nprior nations\nLand Mass\nLand Form\nTemperature\nClimate\nSmall\nModerate\nLarge\nArchipelago\nNormal\nContinents\nCool\nTemperate\nWarm\nArid\nNormal\nWet\nCUSTOMIZE NEW WORLD\nClick Here When Finished\nChoose\nDifficulty Level\nLevel\nEasiest\nEasy\nModerate\nTough\nToughest\nSelect\nEuropean Power\nPower\nImmigration\nCooperation\nConquest\nTrade\nFish\nWith\nCombat\nAttack\nCargo Holds\nMoves\nPlow\nRiver\nCoast\nMove Cost\nDefense or Ambush Bonus\nPrerequisite\n(F1 for Help)\n(Withdrawn from New World)\nFree\nCOLONIZATION HALL OF FAME\nto\nA.D.\nPresident\nGeneral, Continental Army\nLeader\nScore\nColonization_Rating\nPrime\nDamaged\nPress\nBid Price\nAsk Price\nZoom to Europe.\nEuropean Trade\nCargo in Port\nMilitary Garrisons\nSons of Liberty\nExit\n211\n212\n213\n214\n215\n216\n217\n218\n219\n220"
+    },
+    {
+      "key": "@ROUTE",
+      "legend": [],
+      "directives": {},
+      "body": "EDIT TRADE ROUTE\nRoute Name:\nRoute Type:\nSea\nLand\nDestination\nUnload Cargo\nLoad Cargo\n(Delete Destination)"
+    },
+    {
+      "key": "@CMISC",
+      "legend": [],
+      "directives": {},
+      "body": "Harvest / Resources\nUnits Present\nMake"
+    },
+    {
+      "key": "@CTITLE",
+      "legend": [],
+      "directives": {},
+      "body": "Pop:\nGold:\nBUY\nCHANGE\nSelect An Item To Build\n(No Production)\n(More)\nTurns)\nSelect a Profession for\nTax:"
+    },
+    {
+      "key": "@CMESSAGE",
+      "legend": [],
+      "directives": {},
+      "body": "bought for\nsold for\nmoved to\n. Price:\nNo room for\nNothing to transport\nNot enough\nto fill cargo hold!\ntoo expensive!\nNo\nin cargo hold!\nNothing to transfer!\nat\nBuying\nSelling\nLoading\nUnloading\n% Tax:\n. Net:"
+    },
+    {
+      "key": "@EUROLABEL",
+      "legend": [],
+      "directives": {},
+      "body": "RECRUIT\nPURCHASE\nTRAIN\nx"
+    }
+  ]
+}

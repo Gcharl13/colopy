@@ -1,0 +1,24 @@
+# reconstituted original game files (rebuilt locally from bin/*.b64) — never commit
+raw/
+*.exe
+*.EXE
+*.dll
+*.com
+
+# regenerable extractor output
+extracted/
+
+# C++ build dirs
+viceroy_cpp/build/
+build/
+*.o
+*.obj
+
+# python
+__pycache__/
+*.pyc
+
+# os/editor cruft
+.DS_Store
+Thumbs.db
+*.swp

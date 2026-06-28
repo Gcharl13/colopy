@@ -1,0 +1,4 @@
+{
+  "@CLOSING": "4,   1, -1,  0,  0                       ; Fireworks\n6,   1, -1,  0,  0                       ; Liberty Bell\n5,   1, -1,  0,  100                     ; Rock\n0,   1, -1,  0,  16                      ; Hat\n1,   1, -1,  0,  0                       ; Lady\n2,   1, -1,  0,  0                       ; Man\n3,   1, -1,  0,  0                       ; Military\n-1,390,  0,  0,  0                       ; End of closing\n0,   0,  0,  0,  0",
+  "@MESSAGES": "Loading Game..."
+}

@@ -1,0 +1,378 @@
+{
+  "@IROQUOIS": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [
+      "COLONIZATION Tribe Dispersal Chart",
+      "Copyright (c) 1994 by MicroProse Software",
+      "Historical dispersal of tribes for use in creating American maps.",
+      "Altering the contents of this file may cause the game to",
+      "malfunction."
+    ],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 11,
+    "rows": [
+      {
+        "map_x": "27",
+        "map_y": "15"
+      },
+      {
+        "map_x": "30",
+        "map_y": "11"
+      },
+      {
+        "map_x": "23",
+        "map_y": "15"
+      },
+      {
+        "map_x": "19",
+        "map_y": "14"
+      },
+      {
+        "map_x": "25",
+        "map_y": "10"
+      },
+      {
+        "map_x": "16",
+        "map_y": "10"
+      },
+      {
+        "map_x": "15",
+        "map_y": "6"
+      },
+      {
+        "map_x": "20",
+        "map_y": "8"
+      },
+      {
+        "map_x": "25",
+        "map_y": "6"
+      },
+      {
+        "map_x": "29",
+        "map_y": "6"
+      },
+      {
+        "map_x": "36",
+        "map_y": "6"
+      }
+    ]
+  },
+  "@STOP": {
+    "kind": "list",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "id",
+      "name"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "names verbatim from game data file; index = position (runtime id)",
+    "row_count": 0,
+    "rows": []
+  },
+  "@CHEROKEE": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 4,
+    "rows": [
+      {
+        "map_x": "25",
+        "map_y": "20"
+      },
+      {
+        "map_x": "28",
+        "map_y": "23"
+      },
+      {
+        "map_x": "22",
+        "map_y": "18"
+      },
+      {
+        "map_x": "21",
+        "map_y": "21"
+      }
+    ]
+  },
+  "@ARAWAK": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 5,
+    "rows": [
+      {
+        "map_x": "37",
+        "map_y": "29"
+      },
+      {
+        "map_x": "32",
+        "map_y": "25"
+      },
+      {
+        "map_x": "31",
+        "map_y": "27"
+      },
+      {
+        "map_x": "45",
+        "map_y": "30"
+      },
+      {
+        "map_x": "46",
+        "map_y": "35"
+      }
+    ]
+  },
+  "@INCA": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 5,
+    "rows": [
+      {
+        "map_x": "36",
+        "map_y": "52"
+      },
+      {
+        "map_x": "35",
+        "map_y": "66"
+      },
+      {
+        "map_x": "35",
+        "map_y": "60"
+      },
+      {
+        "map_x": "37",
+        "map_y": "56"
+      },
+      {
+        "map_x": "27",
+        "map_y": "43"
+      }
+    ]
+  },
+  "@SIOUX": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 7,
+    "rows": [
+      {
+        "map_x": "10",
+        "map_y": "8"
+      },
+      {
+        "map_x": "13",
+        "map_y": "3"
+      },
+      {
+        "map_x": "8",
+        "map_y": "4"
+      },
+      {
+        "map_x": "3",
+        "map_y": "1"
+      },
+      {
+        "map_x": "4",
+        "map_y": "8"
+      },
+      {
+        "map_x": "13",
+        "map_y": "12"
+      },
+      {
+        "map_x": "4",
+        "map_y": "13"
+      }
+    ]
+  },
+  "@APACHE": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 7,
+    "rows": [
+      {
+        "map_x": "16",
+        "map_y": "15"
+      },
+      {
+        "map_x": "4",
+        "map_y": "17"
+      },
+      {
+        "map_x": "7",
+        "map_y": "15"
+      },
+      {
+        "map_x": "12",
+        "map_y": "16"
+      },
+      {
+        "map_x": "17",
+        "map_y": "19"
+      },
+      {
+        "map_x": "13",
+        "map_y": "20"
+      },
+      {
+        "map_x": "17",
+        "map_y": "23"
+      }
+    ]
+  },
+  "@AZTEC": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 4,
+    "rows": [
+      {
+        "map_x": "17",
+        "map_y": "27"
+      },
+      {
+        "map_x": "12",
+        "map_y": "24"
+      },
+      {
+        "map_x": "24",
+        "map_y": "28"
+      },
+      {
+        "map_x": "26",
+        "map_y": "34"
+      }
+    ]
+  },
+  "@TUPI": {
+    "kind": "csv",
+    "source": "TRIBE.TXT",
+    "legend": [],
+    "columns": [
+      "map_x",
+      "map_y"
+    ],
+    "columns_named": true,
+    "byte_anchors": "tribe dispersal template; loaded by func_0749E0; matched to NativeSettlement (DGROUP:0x54EC) at init [B]",
+    "provenance": "values verbatim from game data file (primary); columns from file legend",
+    "row_count": 16,
+    "rows": [
+      {
+        "map_x": "47",
+        "map_y": "45"
+      },
+      {
+        "map_x": "41",
+        "map_y": "59"
+      },
+      {
+        "map_x": "26",
+        "map_y": "34"
+      },
+      {
+        "map_x": "44",
+        "map_y": "56"
+      },
+      {
+        "map_x": "48",
+        "map_y": "52"
+      },
+      {
+        "map_x": "50",
+        "map_y": "48"
+      },
+      {
+        "map_x": "31",
+        "map_y": "35"
+      },
+      {
+        "map_x": "34",
+        "map_y": "39"
+      },
+      {
+        "map_x": "37",
+        "map_y": "36"
+      },
+      {
+        "map_x": "42",
+        "map_y": "38"
+      },
+      {
+        "map_x": "46",
+        "map_y": "41"
+      },
+      {
+        "map_x": "52",
+        "map_y": "44"
+      },
+      {
+        "map_x": "44",
+        "map_y": "52"
+      },
+      {
+        "map_x": "39",
+        "map_y": "42"
+      },
+      {
+        "map_x": "45",
+        "map_y": "48"
+      },
+      {
+        "map_x": "42",
+        "map_y": "45"
+      }
+    ]
+  }
+}
