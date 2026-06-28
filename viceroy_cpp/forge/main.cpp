@@ -11,6 +11,7 @@
 #include "economy.hpp"
 #include "market.hpp"
 #include "ref.hpp"
+#include "inspect.hpp"
 #include "mapedit.hpp"
 #include "rules.hpp"
 #include "rules_invariants.hpp"
@@ -25,57 +26,14 @@
 
 using namespace vc::sim;
 
-static int sol_steady(int bells, int pop, const RuleData& rd) {
-    Colony c;
-    for (int i = 0; i < 3000; ++i) sol_update(c, bells, pop, rd);
-    return sol_pct(c);
-}
-
-static int price_after(int turns, const RuleData& rd) {
-    GameState g;
-    g.price_base[SUGAR] = 800;
-    g.powers[0].trade[SUGAR] = 100;             // player 0 selling Sugar
-    for (int i = 0; i < turns; ++i) price_drift(g, rd);
-    return g.price_base[SUGAR];
-}
-
-// Print a value with its delta vs the baseline (blank delta if unchanged).
-static void row(const char* label, long base, long cur) {
-    long delta = cur - base;
-    if (delta) std::printf("    %-26s %8ld   (%+ld vs base)\n", label, cur, delta);
-    else       std::printf("    %-26s %8ld\n", label, cur);
-}
-
+// Print the shared balance curves (forge/inspect.hpp), grouped by section, with
+// a delta column vs the baseline.
 static void print_curves(const RuleData& base, const RuleData& cur) {
-    std::printf("\n  Market: Sugar price (start 800, player 0 selling 100/turn)\n");
-    for (int t = 1; t <= 5; ++t) {
-        char lbl[32]; std::snprintf(lbl, sizeof lbl, "after turn %d", t);
-        row(lbl, price_after(t, base), price_after(t, cur));
-    }
-
-    std::printf("\n  Sons of Liberty: steady-state %% (pop 10)\n");
-    for (int bells : {1, 2, 4}) {
-        char lbl[32]; std::snprintf(lbl, sizeof lbl, "bells %d", bells);
-        row(lbl, sol_steady(bells, 10, base), sol_steady(bells, 10, cur));
-    }
-
-    std::printf("\n  REF: starting force (difficulty 1)\n");
-    Ref rb = ref_start(1, base), rc = ref_start(1, cur);
-    row("regulars",  rb.regulars,  rc.regulars);
-    row("cavalry",   rb.cavalry,   rc.cavalry);
-    row("man-o-war", rb.manowar,   rc.manowar);
-    row("artillery", rb.artillery, rc.artillery);
-
-    std::printf("\n  REF: accrual rate (difficulty 1) by year\n");
-    for (int year : {1492, 1600, 1700, 1750}) {
-        char lbl[32]; std::snprintf(lbl, sizeof lbl, "year %d", year);
-        row(lbl, ref_accrue_rate(1, year, base), ref_accrue_rate(1, year, cur));
-    }
-
-    std::printf("\n  Founding Fathers: bell cost (human, difficulty 1, year 1599)\n");
-    for (int n = 0; n < 4; ++n) {
-        char lbl[32]; std::snprintf(lbl, sizeof lbl, "father #%d", n + 1);
-        row(lbl, ff_cost(1, 1599, n, true, false, base), ff_cost(1, 1599, n, true, false, cur));
+    std::string section;
+    for (const auto& r : forge::balance_curves(base, cur)) {
+        if (r.section != section) { section = r.section; std::printf("\n  %s\n", section.c_str()); }
+        if (r.delta()) std::printf("    %-26s %8ld   (%+ld vs base)\n", r.label.c_str(), r.cur, r.delta());
+        else           std::printf("    %-26s %8ld\n", r.label.c_str(), r.cur);
     }
 }
 

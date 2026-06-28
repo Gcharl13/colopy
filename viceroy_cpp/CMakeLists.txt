@@ -71,3 +71,46 @@ add_executable(sim_tests sim/tests/sim_tests.cpp)
 target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
 add_test(NAME forge_map COMMAND forge map selftest)
+
+# --- Optional Dear ImGui desktop GUI (forge/gui). OFF by default: it needs network
+#     (FetchContent) + an OpenGL/GLFW dev environment, so the normal build and CI
+#     stay dependency-light. Enable locally with: cmake -DFORGE_GUI=ON ...
+#     The GUI reuses the tested forge backend; only its ImGui glue is GUI-only. ---
+option(FORGE_GUI "Build the Dear ImGui desktop tool (needs network + OpenGL/GLFW)" OFF)
+if(FORGE_GUI)
+  include(FetchContent)
+  find_package(OpenGL REQUIRED)
+
+  set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+  set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4)
+  FetchContent_MakeAvailable(glfw)
+
+  # Dear ImGui ships no CMakeLists -- populate and add its sources directly.
+  FetchContent_Declare(imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.91.5)
+  FetchContent_GetProperties(imgui)
+  if(NOT imgui_POPULATED)
+    FetchContent_Populate(imgui)
+  endif()
+
+  add_executable(forge_gui
+    forge/gui/forge_gui.cpp
+    forge/json.cpp
+    forge/rules_json.cpp
+    forge/mapedit.cpp
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+  )
+  target_include_directories(forge_gui PRIVATE
+    forge sim ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+  target_link_libraries(forge_gui PRIVATE viceroy_sim glfw OpenGL::GL)
+endif()

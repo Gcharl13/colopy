@@ -30,9 +30,12 @@ InvariantReport check_rules(const RuleData& rd) {
 
     // --- terrain defense: sized, non-negative ---
     need(r, (int)rd.terrain_defense.size() == NTERRAIN, "terrain_defense wrong size");
-    for (int id = 0; id < NTERRAIN; ++id)
+    for (int id = 0; id < NTERRAIN; ++id) {
         need(r, rd.terrain_defense[id] >= 0,
              "terrain " + std::to_string(id) + ": negative defense");
+        need(r, rd.terrain_move[id] >= 1,   // 0 would stall movement
+             "terrain " + std::to_string(id) + ": move cost < 1");
+    }
 
     // --- economy ---
     need(r, cfg.warehouse_cap_base > 0, "warehouse_cap_base must be > 0");

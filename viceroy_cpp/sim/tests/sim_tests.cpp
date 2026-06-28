@@ -312,6 +312,45 @@ static void test_unit_turn() {
         step_turn(g, w, rng);
         CHECK(w.units[0].x == 4, "step_turn moved dragoons to x=%d", w.units[0].x);
     }
+
+    // --- terrain-aware movement (entry cost + land/naval passability) ---
+    GameState g; g.difficulty = 4;
+    auto make_terrain = [](World& w, int fill) {
+        w.terrain.assign((size_t)w.map_w * w.map_h, (uint8_t)fill);
+    };
+    // Hills (id 28, cost 2): Dragoons (4 moves) cross only 2 tiles.
+    {
+        World w; w.map_w = 12; w.map_h = 3; make_terrain(w, 28);
+        Unit d = mk(DRAGOONS, 0, 0, 1); d.order = ORDER_GOTO; d.target_x = 10; d.target_y = 1;
+        w.units.push_back(d);
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 2, "dragoons over hills -> x=%d (expect 2)", w.units[0].x);
+    }
+    // Plains (cost 1): same Dragoons cross 4 tiles.
+    {
+        World w; w.map_w = 12; w.map_h = 3; make_terrain(w, /*Plains*/2);
+        Unit d = mk(DRAGOONS, 0, 0, 1); d.order = ORDER_GOTO; d.target_x = 10; d.target_y = 1;
+        w.units.push_back(d);
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 4, "dragoons over plains -> x=%d (expect 4)", w.units[0].x);
+    }
+    // "always move one tile": a 1-move Colonist still enters cost-3 Mountains (id 27).
+    {
+        World w; w.map_w = 6; w.map_h = 3; make_terrain(w, /*Mountains*/27);
+        Unit c = mk(COLONISTS, 0, 0, 1); c.order = ORDER_GOTO; c.target_x = 5; c.target_y = 1;
+        w.units.push_back(c);
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 1 && w.units[0].moves_left == 0, "colonist 1 step into mountains");
+    }
+    // passability: a land unit cannot enter Ocean (id 25).
+    {
+        World w; w.map_w = 6; w.map_h = 3; make_terrain(w, /*Plains*/2);
+        for (int y = 0; y < 3; ++y) w.terrain[(size_t)y * w.map_w + 1] = 25;   // column x=1 Ocean
+        Unit s = mk(SOLDIERS, 0, 0, 1); s.order = ORDER_GOTO; s.target_x = 5; s.target_y = 1;
+        w.units.push_back(s);
+        refresh_moves(w); apply_orders(g, w, win);
+        CHECK(w.units[0].x == 0, "land unit blocked by ocean at x=1 -> x=%d", w.units[0].x);
+    }
 }
 
 // --- modded-data invariant suite: cfg scalars are injected, and check_rules()

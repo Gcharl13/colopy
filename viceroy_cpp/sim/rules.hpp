@@ -77,6 +77,7 @@ struct Config {
 struct RuleData {
     std::array<UnitStats, NUNITTYPES> units{};
     std::array<int, NTERRAIN> terrain_defense{};   // "Defensive" value by terrain id
+    std::array<int, NTERRAIN> terrain_move{};      // move-points to ENTER, by terrain id
     Config cfg{};                                  // scalar balance constants
 };
 

@@ -47,6 +47,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd)
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
         if (!u.alive || u.order != ORDER_GOTO) continue;
+        const bool naval = unit_stats(rd, u.type).move_class == 99;
 
         while (u.alive && u.moves_left > 0 && (u.x != u.target_x || u.y != u.target_y)) {
             int nx = u.x + sgn(u.target_x - u.x);
@@ -62,8 +63,19 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd)
                 } // friendly occupant: blocked this turn (no stacking)
                 break;                                              // combat or block ends the move
             }
+
+            // Terrain-aware step (only when the world carries a terrain plane).
+            int tid = w.terrain_id(nx, ny);
+            int cost = 1;
+            if (tid >= 0) {
+                bool water = (tid == 25 || tid == 26);   // Ocean / Sea Lane
+                if (naval != water) break;               // land can't enter water; ships can't beach
+                if (tid < NTERRAIN) cost = rd.terrain_move[tid];
+                if (cost < 1) cost = 1;
+            }
             u.x = nx; u.y = ny;                                     // step into empty tile
-            u.moves_left -= 1;
+            // "always move at least one tile": entering costs `cost`, floored at 0.
+            u.moves_left = (u.moves_left > cost) ? (u.moves_left - cost) : 0;
         }
         if (u.alive && u.x == u.target_x && u.y == u.target_y)
             u.order = ORDER_NONE;                                   // arrived

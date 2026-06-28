@@ -52,10 +52,32 @@ static int default_terrain_defense(int terrain_id) {
     return 0;                               // open land / ocean / arctic / sea-lane
 }
 
+// Per-terrain move-points to ENTER (@UNFORESTED/@FORESTED/@OTHER "movement"):
+// open land 1, marsh/swamp 2; forested 8..15 {Boreal2,Scrub1,Mixed2,Broadleaf2,
+// Conifer2,Tropical2,Wetland3,Rain3}; 16..23 duplicate 8..15 via (id&7)|8;
+// Arctic 2, Ocean 1, Sea Lane 1, Mountains 3, Hills 2.
+static int default_terrain_move(int terrain_id) {
+    static const int land[8]   = {1, 1, 1, 1, 1, 1, 2, 2};       // ids 0..7
+    static const int forest[8] = {2, 1, 2, 2, 2, 2, 3, 3};       // ids 8..15
+    if (terrain_id >= 0 && terrain_id <= 7)  return land[terrain_id];
+    if (terrain_id >= 8 && terrain_id <= 23) return forest[((terrain_id & 7) | 8) - 8];
+    switch (terrain_id) {
+        case 24: return 2;   // Arctic
+        case 25: return 1;   // Ocean
+        case 26: return 1;   // Sea Lane
+        case 27: return 3;   // Mountains
+        case 28: return 2;   // Hills
+    }
+    return 1;
+}
+
 RuleData make_default_rules() {
     RuleData rd;
     for (int i = 0; i < NUNITTYPES; ++i) rd.units[i] = kDefaultUnits[i];
-    for (int id = 0; id < NTERRAIN; ++id) rd.terrain_defense[id] = default_terrain_defense(id);
+    for (int id = 0; id < NTERRAIN; ++id) {
+        rd.terrain_defense[id] = default_terrain_defense(id);
+        rd.terrain_move[id]    = default_terrain_move(id);
+    }
     return rd;
 }
 

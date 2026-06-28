@@ -10,8 +10,16 @@ namespace vc::sim {
 
 struct World {
     std::vector<Colony> colonies;
-    std::vector<Unit>   units;     // on-map units (the unit/turn spine)
-    int map_w = 0, map_h = 0;      // map bounds for movement clamping (0 = unbounded)
+    std::vector<Unit>   units;        // on-map units (the unit/turn spine)
+    int map_w = 0, map_h = 0;         // map bounds for movement clamping (0 = unbounded)
+    std::vector<uint8_t> terrain;     // optional L1 terrain plane (map_w*map_h); empty = flat
+
+    // Terrain id at (x,y) (low 5 bits); -1 if no terrain plane / out of range.
+    int terrain_id(int x, int y) const {
+        if (terrain.empty() || map_w <= 0) return -1;
+        if (x < 0 || x >= map_w || y < 0 || y >= map_h) return -1;
+        return terrain[(size_t)y * map_w + x] & 0x1F;
+    }
 };
 
 // One full turn, in the byte-verified phase order (func_005760):
