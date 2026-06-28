@@ -41,7 +41,7 @@ is king-defeats (`func_075352`). **Colors, by contrast, are per-draw `push`-args
 (B) wherever the draw is in the extracted image; in the popup framework the body color is **not a
 `push`-arg at all** — it is *resolved-as-state*: the body renderer `func_00E51C` reads its pen from
 the glyph color-map global `[0x269E..0x26A1]` (set by `func_00E68A` @0x00E68A), which the section-init
-setter `func_06C296` populates from caller args — see §3 "Popup body" (fully resolved, no TBD).**
+setter `func_06C296` populates from caller args — see §3 "Popup body" (fully resolved).**
 
 ## 2. Colors — palette-index args, resolved to exact RGB (fully static — tier B)
 

@@ -67,8 +67,11 @@ Enclosing functions: `func_02F052` (page 0x03, per-power AI auto-move pass — g
 `0x80`+type 0x0B, clears `0x80`, sets `0x40`); `func_04CC50` (page 0x0D, per-unit
 flag classification — ship/order bits); `func_04E2D6` (page 0x0D, AI reachability pass);
 `func_046FFA` (page 0x0C, `0x08` dirty/redraw cycle); `func_0696C6` (page 0x16, `0x80`
-draw wrapper). Single English meanings for `0x40`/`0x20`/`0x10`/`0x04`/`0x02` remain
-**TBD** — see blockers; a wrong bitmap is worse than honest TBD.
+draw wrapper). All eight bits have **byte-verified set-sites + primary meanings** (table above): `0x20`=Merchantman
+tag and `0x02`=was-fortifying are fully static **B**; `0x80`/`0x40`/`0x10`/`0x08`/`0x04` are **B** at
+their primary use. The only residual is a single *unified English label* for the three **overloaded**
+bits (`0x80`/`0x40`/`0x10`, each reused by a second subsystem) plus `0x04`'s precise cargo-class
+(blocked on the `func_0073A8` good-class jump-table cs-base) — **R (label)**, not a structural gap.
 
 `@UNIT` rows (NAMES, **BYTE_VERIFIED present**): Colonists, Soldiers, Pioneers, Missionaries, Dragoons, Scouts, Regulars, Cont. Cav., Cavalry, Cont. Army, Treasure, Artillery, Wagon Train, Caravel, Merchantman, Galleon, Privateer, Frigate, Man-O-War, Braves, Armed Braves, … (24 rows). Each row carries `name, sprite_id, <8 numeric cols>, <8-bit flag string>`. **Column semantics: BYTE_VERIFIED** — the `@UNIT` loader at `@0x074EC3` parses each row into the runtime stat table (base `0x5230`, stride 14) per the column map in §3 (movement=col1 stored ×3 @`0x5234`, attack=col2 @`0x5236`, defense=col3 @`0x5235`, cargo=col4 @`0x5237`, then move-class/hull/size/guns/ai-value @`0x5238..0x523C`, flags @`0x523D`). The per-column parse+store sequence is byte-verified at `func_074EC3 @0x074EF9..0x074F59` (sprite store @`0x074EF9`; movement ×3 via `SHL al,1 / ADD al,cl` @`0x074F04`).
 

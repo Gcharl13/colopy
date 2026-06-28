@@ -342,7 +342,7 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
   `[idx·0x34+0x540E]`.
 - `notes/ATTRIBUTION_OVERLAY.md`: function offsets + overlay pages.
 
-## 8. Open questions (TBD — each with its site)
+## 8. Open questions (each with its site)
 
 1. **Compass delta tables** `[bx+0xb4]` (dx) / `[bx+0xbe]` (dy), 9 entries — DS/BSS-relative,
    contents runtime-set; exact deltas not in the instruction stream. Site: `func_046FFA @0x047399`,

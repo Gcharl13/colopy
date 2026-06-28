@@ -62,7 +62,7 @@ element was verified*. Do not regress past the mistakes listed at the end. Every
 - **Empirical (B vs the *image*, not a proven formula):** for each **occupied** plot the lab draws
   **BUILDING bundle frame = def_id** (special case **def_id 0 → frame 16**), which is **MSE-0** vs the
   live capture. This reproduces the pixels but is **NOT** the EXE's general frame formula.
-- **RESOLVED 2026-06-27 (reseg, was R/TBD):** the building-frame selector is **`func_026DD4 @0x026DD4`**
+- **RESOLVED 2026-06-27 (reseg, was R/open):** the building-frame selector is **`func_026DD4 @0x026DD4`**
   (NOT `func_026CC2` — that path computes the production/garrison strip). The frame is `[bp-0x58]`,
   set to **`def_id + 1`** in EXE-sheet space `@0x026DE5..0x026DE9`, with byte-read special cases:
   `def_id==0` & build-query0==0 ⇒ `0x11` (`@0x026DEC`); `def_id==0xF`/`0x11` garrison ⇒ `0x2F`/`0x30`
