@@ -166,6 +166,19 @@ Americas, Spring 1490).
   it). **Conclusion: the graded 0–24 scorer is not statically locatable from the committed image** — it is a
   draw-time cheat-overlay computation behind the patched dispatch.
 
+**DOS re-run 2026-06-28 (live, full reproduction).** Reproduced the exact path end-to-end under headless
+DOSBox: LOAD `COLONY00.SAV` → in-game → cheat **Alt+W+I+N** → `CHEAT` menu (appears between TRADE and
+COLONIZOPEDIA) → **F04 Reveal Map → Complete Map** → **F09 Show Colony Sites**. The per-tile values
+render and **match the committed capture exactly** (left-coast strip **9 / 11 / 12 / 13 / 13**;
+ocean/sea-lane = 0). New reference: `docs/screens/colony_sites_live_2026-06-28.png`. **Two hard walls block
+a *verified* formula even with DOS:** (1) the save is **sea-locked** — the active unit is a Caravel at
+`(37,14)` and the view re-centres on it, so only a ~6–8-tile coastal strip of land is ever visible, and
+the overlay **clears on every navigation action**; mapping enough varied land to fit a 9-neighbour formula
+needs extensive unit-driving across the continent. (2) Any result is an **unverifiable regression** — the
+fit cannot be checked against the scorer function (not statically locatable, §above), so a fitted formula
+would be a guess, not a byte/citation-backed fact. Per the prime directive it is left **A (value
+confirmed) / formula open**, not fabricated.
+
 **Value characterised (A, oracle):** range 0–24; ocean/sea-lane = 0; coastal land carries the score;
 special-resource tiles highest (observed coast run 9 / 11 / 12 / 13 / 13). **Formula + handler offset are
 the single open reconstruction (TBD):** the scorer is overlay-resident with **no static dispatch anchor**
