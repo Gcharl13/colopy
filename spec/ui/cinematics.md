@@ -139,7 +139,7 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
 - **Painter (B):** `func_03A9C0` (`@file 0x03A9C0`; the leading 73 bytes 0x3A9C0..0x3AA09 are the
   score-formula head, the screen-paint continues into the adjacent overlay range re-disassembled
   2026-06-21). Disasm `code/VICEROY/disasm/func_03A9C0_unknown.asm`. **B.**
-- **Plate selection (B) — RESOLVED (was "per-category TBD"):** the 24 `SCORE*` plates are
+- **Plate selection (B) — RESOLVED (was "per-category open"):** the 24 `SCORE*` plates are
   **rating-tier art**, not per-category lines. `func_03A9C0` computes
   `scaled = rawscore·(diff+4(+1 if diff≥3)(+1 if diff≥4))/100 >> 1`, then loops `i=1..0x18`, choosing
   the largest `i` with `i·i/3 ≥ scaled`; `panel = i−1` clamped `[0,0x17]`. Filename =

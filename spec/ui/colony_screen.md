@@ -306,7 +306,7 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
 - **Row x-origin = 0x8F = 143** (`mov [bp-0x60],0x8F @0x0270FA`); the row walks **LEFT**
   (`dec [bp-0x60] @0x027178`), y = `0x0A` (10). Per-colonist sprite from the far-ptr table
   `[0x83E]:[0x840]`, **stride 12**: `+0x3E` = sprite width, `+0x40` = x/anchor.
-- **Per-colonist pitch — RESOLVED 2026-06-26 (code-derived + snapshot-confirmed; was TBD).**
+- **Per-colonist pitch — RESOLVED 2026-06-26 (code-derived + snapshot-confirmed; was open).**
   It is an **adaptive fit-to-span pack**, not a fixed pitch:
   1. **Pass 1** (`@0x02710A..0x027141`) sums every colonist's sprite width into `[bp-0x7E]`
      (`total_width`), looping `count = colony+0x1F + [0x8D72]` times (live: 1+1 = 2).
@@ -576,7 +576,7 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
    `[0x2CC6/0x2CC8/0x2CCA/0x2CCC]` with any literal, so the centred `y≈5` cannot be byte-literalized
    here. **Next action: a runtime trace (or the screen-table that seeds `[0x2CC6..]` for screen 0x2C)
    to capture the live origin.** Do not invent a literal.
-2. **Colonist-row per-unit pitch — RESOLVED (B), 2026-06-26** (was TBD; full decode in §3.3).
+2. **Colonist-row per-unit pitch — RESOLVED (B), 2026-06-26** (was open; full decode in §3.3).
    `func_0270D0` x-origin 143 walking left is **B**; the pitch is an **adaptive fit-to-span pack**:
    pass 1 sums each colonist's sprite width `+0x3E` into `total_width` (`@0x02710A..0x027141`); the
    gap solve starts `gap=[0xA890]` (init 2) and decrements it while
@@ -585,7 +585,7 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
    So **pitch = per-colonist `sprite_width(+0x3E)` + adaptive `gap` (2→0, fit-to-96px)** — data-driven,
    no single static literal, but the mechanism + the `[0xA890]=2` seed are **B** (oracle-confirmed,
    §3.3).
-3. **SoL / cargo / msg panel mode text — RESOLVED (B), 2026-06-27** (was TBD; reconciles §8 with the
+3. **SoL / cargo / msg panel mode text — RESOLVED (B), 2026-06-27** (was open; reconciles §8 with the
    §3.6 decode). Panel rect (211,130,91,48) and the 3-way `[0x337]` dispatch are **B**
    (`func_02814C @0x02815F..0x028180`: `al=[0x337]`; `0→call 0x2c9b0`, `1→call 0x2ca50`,
    `2→call 0x2caa0`). The three near-stubs thunk-resolve to file `0x0275CE`/`0x027746`/`0x027BB6`

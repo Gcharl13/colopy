@@ -4,7 +4,7 @@
 > **B** = byte-cited (a `func_XXXXXX @0xNNNNN` immediate or a verified text key),
 > **A** = overlay/pixel-verified geometry (not byte-cited),
 > **R** = single-frame approximate / low-trust,
-> **TBD** = (tier-vocabulary term) unknown / awaiting a new oracle capture or user decision — used only where a value is genuinely runtime-undecidable from the static EXE; this file's residual TBD is the Exit-button paint origin (§9.9).
+(Runtime values, if any, are named inline with their exact source + capture spec. This file has none open — the Exit-button paint origin is now pixel-measured, §9.)
 
 **Overall confidence:** the composer draw ORDER + every panel rect is now
 **byte-cited B** from the overlay-resolved draw-list (`func_031E4C @0x031E4C`,

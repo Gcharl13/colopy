@@ -371,7 +371,7 @@ scan of the resident image **and all 31 resegmented overlay pages** finds only *
 `func_00C30A`/`func_00C322` — leaf message formatters with no globals/calls, not the mutator.) The
 per-turn `+0xAA` accumulation is thus the lone write with **no statically-resolvable site** in
 `func_02D658`'s resident body or the 31 reseg pages; pinning it requires a two-turn live
-`ColonyRecord+0xAA`/`+0x1F` capture (or a deeper RTLink thunk trace) — still **TBD (runtime)**. *(Field reconciliation RESOLVED 2026-06-27 by oracle RAM read: in both founding snapshots
+`ColonyRecord+0xAA`/`+0x1F` — now **CLOSED by the write-census (B)**: no per-turn `+0xAA` write exists (see foot of section). *(Field reconciliation RESOLVED 2026-06-27 by oracle RAM read: in both founding snapshots
 `colony_jamestown.bin` and `colony_live_1505.bin` (pop 1, `[0x8542]`→colptr `0x606e`),
 `ColonyRecord+0xAA = 0` AND `+0xC8 = 0`. An image-wide write scan settles the roles: `+0xC8`
 is written **only** by the SoL 32-bit EMA (`func_02D658 @0x2DA1C`, `sub/add [bx+0xc6]/[bx+0xc8]`,

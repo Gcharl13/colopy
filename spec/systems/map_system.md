@@ -188,7 +188,7 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
      `nframes @0x26` via `tools/ssdec.py`; see `data_extracted/SPRITE_SHEET_FRAMES.md`.
      So `0x97+3` overruns the sheet by one. The residual question is only whether the
      pattern-3 mask (`&0xDD==0x1C`) is ever satisfied for a real coast tile at runtime;
-     the frame-count itself is no longer TBD) `@0x6850D`;
+     the frame-count itself is now resolved) `@0x6850D`;
    - **else** (no clean pattern) → a **4-quadrant 8×8 sub-tile loop** (`@0x684BC..0x684F5`):
      for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** where `table[q]` (0..7) is the
      per-quadrant land bitmask built in `analyse_connections` (`@0x67AC7..0x67AEF`: diagonal

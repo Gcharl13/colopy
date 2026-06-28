@@ -78,7 +78,7 @@ sell, call site `@0x415A6`) — **neither a render/glyph function** (`func_04108
 the tax-split `func_032914`; `func_041410` feeds the back-tax helper `func_03334E` and
 int-formatters `func_002648`/`func_002632`; no sprite- or text-draw call in either is
 keyed on the bit). Therefore **no boycott-bit-driven glyph or colour can exist** in the
-trade screen — the question is closed negative by the bytes, not TBD. The only residue is
+trade screen — the question is closed negative by the bytes, not a gap. The only residue is
 a purely observational sanity check (run the game, Tea-Party a good, eyeball the per-good
 list pixels), which adds no decode value: the byte evidence already proves no visual
 distinction is produced. **B** (caller graph) — byte-decidable half closed negative; the
