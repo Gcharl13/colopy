@@ -2,7 +2,7 @@
 
 > **Layer 4 — Simulation/AI.** Canonical AI spec (this file is the one canonical AI doc; the
 > durable function index is `notes/ATTRIBUTION_OVERLAY.md`, decisions in `notes/rulings/RULINGS.md`).
-> Tiers: B (`BYTE_VERIFIED` at a cited `func_XXXX @0xNNNN`) / A (anchor) / R (reconstructed) / TBD.
+> Tiers: B (`BYTE_VERIFIED` at a cited `func_XXXX @0xNNNN`) / A (anchor) / R (reconstructed) / open.
 > **Scope:** the AI that drives every non-player unit each turn. Decoded 2026-06-26 via the
 > decode→verify workflow (80 byte-verified findings, adversarially re-checked against
 > `raw/COLONIZE/VICEROY.EXE` with capstone). The bodies live in the orphan **overlay** pages

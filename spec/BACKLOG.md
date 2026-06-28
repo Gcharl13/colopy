@@ -1,7 +1,7 @@
 # Specification Backlog — Layer-1 work that closes spec gaps
 
 Each item is a unit of **evidence work** (disassemble + decode) that upgrades a
-**spec** section from `RECONSTRUCTED`/`TBD` → `BYTE_VERIFIED`. Entry points were
+**spec** section from `RECONSTRUCTED`/open → `BYTE_VERIFIED`. Entry points were
 identified during the 2026-06-18 inventory. Work top-down; record findings in the
 relevant `spec/` doc and any conflict in `notes/rulings/RULINGS.md`.
 
@@ -13,7 +13,7 @@ secondary mechanics.
 > residual). The King galleon **fee** is the byte-verified Crown-cut formula (Cortés/tax/difficulty,
 > `func_05C878`) — **not** a table and **not** dump-blocked. `DGROUP:0x8394` (once
 > mislabeled "the fee table") is just the per-difficulty king-salutation string
-> pointers (`%STRING0` rank: Discoverer…Viceroy), resolved 2026-06-20. The remaining `TBD`s are either **fuzzy AI logic**
+> pointers (`%STRING0` rank: Discoverer…Viceroy), resolved 2026-06-20. The remaining gaps are either **fuzzy AI logic**
 > (diplomacy willingness thresholds; war-matrix `0x08`/`0x80` bits) or **runtime-state
 > magnitudes** with a known formula (per-Lost-City reward rolls). Item 9 (random
 > map generator) is the one whole system still **unlocated**. The cross-branch
@@ -28,7 +28,7 @@ secondary mechanics.
 > inline not overlay, UnitRecord base `0x3144`/position, `@UNIT` stride 14,
 > `func_03E664`=mercenary not intervention, …). **6 RULINGS** recorded (terrain ids
 > 24–28, P2 climate, alarm-thunk, `+0x32`=home_x, UnitRecord base, …). Closed: most
-> static items + the previously all-TBD **terrain_improvement** system, near-complete
+> static items + the previously all-open **terrain_improvement** system, near-complete
 > **UnitRecord** map, diplomacy bits, intra-turn phase order, map-gen customize/scenario/
 > post-passes, and the data-catalog legends. **Remaining residual** (genuinely
 > unfound or runtime-only): `0x9408` REF value table + `0x9654` FF candidate table
@@ -58,7 +58,7 @@ secondary mechanics.
 > `0x181F:0x7E0`). (c) **Revolution SoL declare threshold = 50%** — `func_03E984`
 > rejects with `@TOOTORY` when `[0x53D0] < 0x32` `@0x3E99E`, else `@DECLARE`→`func_03DE46`
 > (`@INDEPENDENCE`); `[0x53D0]`=SoL meter, `[0x5398]`=rebel power; `revolution.md`
-> R/TBD→**B/TBD**. (d) **Per-turn Tory-uprising** `func_03CAC6` (gate
+> R/open→**B** (some fields still open). (d) **Per-turn Tory-uprising** `func_03CAC6` (gate
 > `random_int(0,diff+1)≠0`) + **intervention-arrival** `func_03D510` (weighted colony
 > pick) byte-verified (`tory_uprising.md`). (e) **Spanish-succession** `func_03C638`
 > fully verified (power select / asset transfer / `@SUCCESSION`). The succession shares
@@ -74,7 +74,7 @@ secondary mechanics.
 > reliable.
 
 > **UI sweep (2026-06-21).** Byte-grounded all 10 `spec/ui/*.md` to the systems-spec standard
-> (5 commits). The pervasive "per-element draw code lives in un-extracted overlay 0x191F → TBD"
+> (5 commits). The pervasive "per-element draw code lives in un-extracted overlay 0x191F → unknowable"
 > rationale was **stale** — the render functions are decompiled in the Ghidra export (overlay is
 > `0x181F`), and the load-bearing offsets are raw-EXE-verified. Notable corrections recorded as
 > RULINGS: (a) the advisor-report paint offsets in `docs/ADVISOR_REPORTS_AUDIT.md` are
@@ -89,13 +89,13 @@ secondary mechanics.
 ## ★ Authoritative Residual Ledger (2026-06-20 certification)
 
 > **UPDATE (2026-06-28).** The 2026-06-27 correction below (which flagged the open formula table +
-> "~372 TBD markers") has itself been largely **closed out**: a 213-TBD decode→adversarial-verify
+> "~372 open markers") has itself been largely **closed out**: a 213-item decode→adversarial-verify
 > pass byte-closed `STATUS.md`'s formula table (combat, market drift, FF acquisition, LCR
 > distribution, REF growth, score details, map generation — all ✅) and corrected the two flagged
 > items — the **building-frame selector** is now `func_026DD4` (frame=`def_id+1`, live-verified) and
 > the **colony-site value** formula is now **closed (B) 2026-06-28** (`ai.md §3b`: `func_063F3C` fills
 > map-layer-4 low nibble = `clamp(land-value/10, 0, 15)`, displayed by F09 `func_021602`).
-> `spec/` open-TBD lines fell **~317 → ~20** (no genuine open formula left); the remainder is
+> `spec/` open-gap lines fell **~317 → ~20** (no genuine open formula left); the remainder is
 > tier-vocabulary legends + ~17 genuinely runtime-only values, each with source byte-cited and the
 > exact oracle capture named. The authoritative "what is left" is each sheet's §6/§8, not this banner.
 
@@ -216,7 +216,7 @@ per-player fog (no shared sight); **revolution score bonus = additive `(1780−y
 | 6 | Immigration / cross rate | crosses loop `func_0363A2`; threshold/production `func_035D9A` | `systems/immigration.md` | **RESOLVED 2026-06-19:** crosses loop + threshold shape **B**; **per-turn cross increment B** (base 2 + per-colony `+0x05`, spawn when `+0x2E>+0x30`); dock pool `+0x02..+0x04` confirmed (Brewster). Remaining: the per-slot immigrant-type selector RNG. |
 | 7 | Diplomacy outcomes | **`func_057F4E`** (meeting) + **`func_057DC0`** (SIGNTREATY) | `systems/diplomacy.md` | **RESOLVED 2026-06-19:** handlers byte-verified (the "no xrefs" was a grep error — `[bx+si-0x77C4]` displacement). War matrix `+0x34` (bit `0x02`=war), treaty matrix `+0x40` (`0x02`/`0x20`/`0x40` bits), cooldown `[0x53C8+pw*2]=turn+0x10`, symmetric writes. Remaining: AI willingness thresholds + war-matrix `0x08`/`0x80` bits (fuzzy). |
 | 8 | Native conversion / raid | `func_0572E6` (conversion); `func_05BE84` (raid); `func_04A7CA` (CHIEFKILL) | `systems/natives.md` | **RESOLVED 2026-06-19:** conversion RNG `random(0,15)`, `P=(TribeData[+2]+2)/15` **B**; CHIEFKILL roll `random(0,40·scout+100)` **B**; raid outcome→key wiring **B** (1 STORES/2 WREAK/3 GOLD/4 BURN-SHIP/0 NOTHING). Remaining: attitude-escalation thresholds; CHIEFKILL roll→gold conversion. |
-| 9 | Map generation | ✅ decoded (post-gen pass order + customize params, B) | `systems/map_generation.md` | Noise seeding sketched; code TBD. |
+| 9 | Map generation | ✅ decoded (post-gen pass order + customize params, B) | `systems/map_generation.md` | Noise seeding sketched; code not yet line-traced (open). |
 | 10 | Event triggers & timing | Lost-City `func_061454`; raid `func_05BE84`; trigger = features `0xB0` | `systems/events.md` | **RESOLVED 2026-06-19:** Lost-City trigger (features-layer `0xB0`, runtime-verified) + all 9 `@LOSTCITY<n>` outcomes + FoY=8 immigrants **B**; raid outcome→key wiring **B**. **Magnitudes RESOLVED 2026-06-20:** n=3 gold `10·3d8`, n=7 gift `2·4d10`, n=2 Cibola treasure `100·(10·(scout+2)+1d20)` (`func_061454 @0x6166A/@0x61776/@0x617C6`), scout/difficulty-scaled. Residual: n=2 treasure-unit ×100 + burial rolls. |
 | 11 | Save / load codec | SAVE orchestrator `func_072F7A` → serializer **`func_0734F8`** (B); loader `func_073BB0`; HALLFAME.DAT `func_03ADA6` (B) | `systems/save.md` | **SAV format now B** (2026-06-19, verified vs EXE): magic `"COLONIZE"`+`0x1A`, file `COLONY<slot>.SAV`, then 4 tables at full stride (Colony·0xCA / Unit·0x1C / Power 4·0x13C / Native·0x12). HALLFAME.DAT B. Remaining: per-field order within a saved PowerRecord. |
 | 12 | Scoring weights | scaler **`func_03A9C0`** (B); component sum `func_039EE2` (resolved) | `systems/scoring.md` | **Scaling + population component B** (2026-06-19): difficulty mult `[4,5,6,8,10]`, `score=(mult*base)/100>>1`, rank, accumulator `[0x372]`; population gates `{0x19,0x1A,0x1B}→+1`/`0x1C→+2`/else `+4`. Remaining: father(+5)/gold/sentiment/razed/revolution per-line weights (label-binding in `func_039EE2`). |
@@ -262,7 +262,7 @@ The text/table basis is now complete (`tools/extract_txt_sections.py`,
 | Align variable-length `@UNIT`/`@CARGO` special rows | `data_extracted/tables/names_tables.json` | `spec/data/tables.md` |
 | Reconcile `viceroy_source/data/*.c` vs `data_extracted/tables/` | per-table compare | data tables |
 | Reproduce DGROUP record **values** (not just layout) | `tools/analyze_session_mem.py` against a DOSBox memory dump; the layout catalog (`dgroup_tables.json`) gives offset/stride/count | `spec/data/tables.md` §C, `spec/data/records.md` |
-| Name remaining raw/`TBD` table columns from loaders | `@ORDERS` key letters, `@TRIBES` extras, `@LEVELS`; legends in `NAMES.full.json` | `spec/data/tables.md` |
+| Name remaining raw/unlabeled table columns from loaders | `@ORDERS` key letters, `@TRIBES` extras, `@LEVELS`; legends in `NAMES.full.json` | `spec/data/tables.md` |
 | Spanish-Succession **trigger** (handler `func_03C638` now B: unit+colony transfer) | find the dispatcher that fires `func_03C638` | `systems/spanish_succession.md` |
 | ~~Mercenary price (`%NUMBER0`) + offer trigger~~ | **RESOLVED 2026-06-20:** price **B** — `((diff+K)*2 + rand(0,6))*100 * ((catA+catC)*2 + count)`, K=3 wartime (`func_03E442 @0x03E512`) / K=4 peacetime (`func_03E664 @0x03E707`); triggers **B** (1/3 wartime, 1/21 peacetime). **Force composition RESOLVED 2026-06-20:** `func_03EA42→func_03D510` lands a **Man-O-War** at a pop-weighted coastal colony carrying per-category counts from the offer package `[0x9E46/48/4C]`; types via `func_03C4A2` (war: Cont.Army(9)+Cont.Cav(7)+Artillery(11); peace: Dragoons(4)+Artillery), all stamped Veteran (`+0x17 vet_type=0x15`). **B**. | `systems/mercenary.md` |
 

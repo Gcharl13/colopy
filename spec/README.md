@@ -8,15 +8,15 @@ secondary data is deleted, not bannered).
 
 **Status (2026-06-18):** the taxonomy is **fully populated** — every system, UI
 family, and data topic has a spec sheet. These are **breadth-first stubs**:
-primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
+primary-grounded where the bytes are known, honest **open** markers elsewhere. Depth comes
 from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
 deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
 **Status of depth (honest — revised 2026-06-28).** A close-out pass this session resolved
-**213 open TBDs** via a decode → adversarial-verify workflow (every closure byte-cited **B** or
+**213 open items** via a decode → adversarial-verify workflow (every closure byte-cited **B** or
 oracle/pixel-measured **A**, independently re-derived before landing; ~110 over-reaching proposals
-were *rejected* by the verifier). Open-TBD lines fell **317 → ~20** (the last genuine open item — the colony-site value formula — was **closed (B) 2026-06-28**, see below), of which the rest are
-now tier-vocabulary legends, section headings, and historical "was-TBD" notes — **not** open gaps.
+were *rejected* by the verifier). Open-gap lines fell **317 → ~20** (the last genuine open item — the colony-site value formula — was **closed (B) 2026-06-28**, see below), of which the rest are
+now tier-vocabulary legends, section headings, and historical notes — **not** open gaps.
 The honest picture:
 
 - **Byte/oracle-verified (the structural layer + the game formulas):** the data tables
@@ -38,7 +38,7 @@ The honest picture:
   capture. **The authoritative residual for any sheet is its own §6/§8 "Open questions" — not this
   header.** Do not mark a sheet "COMPLETE" while a load-bearing runtime input under it is unresolved.
 
-Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
+Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `open`.
 
 ## Game systems (30)
 
@@ -70,7 +70,7 @@ context families are grouped (one file, a section per screen).
 every screen's render functions at cited offsets** (`colony_screen_render`, `europe_screen_render`,
 `congress_screen_render`, the F2–F10 report bodies, the popup framework `func_06F0F4`,
 `title_screen_render`/menu framework, `hall_of_fame_render`, the king-defeats/score/DECOIND painters),
-disproving the old "draw code lives in un-extracted overlay 0x191F → TBD" rationale (the overlay is
+disproving the old "draw code lives in un-extracted overlay 0x191F → unknowable" rationale (the overlay is
 `0x181F`, bodies are in the export). And a **"runtime" re-evaluation showed most placement/color is
 static, not captured**: colors resolve to exact RGB from the decodable PIK palette; popup/dialog
 placement is `@x`/`@y` from GAME.TXT or a centered formula; pixel coords are constants in the render
@@ -88,7 +88,7 @@ colony-site value *arithmetic* — long the last open formula — was **closed (
 it). **Each sheet's own §6/§8 "Open questions" is the authoritative
 residual — not this header.**
 Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor/pixel-measured;
-**R** = reconstructed-from-asset; **TBD** = a live game-state value awaiting an oracle capture.
+**R** = reconstructed-from-asset; **open** = a live game-state value awaiting an oracle capture.
 
 | Spec file | Covers | Layout / draw-code | Honest residual |
 |-----------|--------|--------------------|-----------------|
@@ -100,7 +100,7 @@ Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = l
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`; F4/F8 separators dark-red `0x77`→311/319; per-report static x-columns + y-start byte-cited; F10 font FONTTINY+FONTINTR) | per-row y = FONTTINY flow (state); F9 color = `[0x830]` `@COLORS` |
 | [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework: 10 live directives, speaker-portrait selector globals `[0x1F5C/5E/60]`, Lost-City map, raid=6, `@width`/`@x`/`@y`; FONTTINY latch) | body text color = glyph-engine mapping (A; no per-popup override) |
 | [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count + Customize widget geometry + LEVN grid = live captures (runtime, source named) |
-| [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) + **OPENING/CLOSING per-frame timing byte-grounded** (`[0x82]`/`[0x6c]` clock, `docs/CINEMATIC_TIMING_AUDIT.md`); KING2.SS proven absent | resident draw routine + outer-driver clock (narrow TBD, that doc §5); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
+| [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) + **OPENING/CLOSING per-frame timing byte-grounded** (`[0x82]`/`[0x6c]` clock, `docs/CINEMATIC_TIMING_AUDIT.md`); KING2.SS proven absent | resident draw routine + outer-driver clock (narrow residual, that doc §5); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
 | [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | framework B; per-dialog residuals closed; OK/Cancel = no-sprite (func_004A80), row-pitch = font-byte0+3 (B) |
 | [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (4 loaded `.FF` fonts + FONTSMAL orphan; FONTKING = king-defeats only; palette-index color args → exact RGB) | **B** (font loads, color push-args, RGB via decoded PIK palette) | none (only palette *cycling* is animation) |
 

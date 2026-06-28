@@ -3,7 +3,7 @@
 > **Layer 2 — Specification.** Built from evidence (Layer 1), consumed by the
 > implementation (Layer 3). See `/METHODOLOGY.md`. Every claim below is tagged
 > with a confidence tier: `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED`
-> / `TBD`. Do not assert anything ungrounded — an honest `TBD` over a guess.
+> / `open`. Do not assert anything ungrounded — an honest **open** marker over a guess.
 
 **Overall confidence:** <tier> · **Last updated:** <date> ·
 **Canonical evidence:** <key files / offsets>
@@ -41,7 +41,7 @@ Bulleted list mapping each claim to its source:
 ## 6. Confidence summary
 Per-claim tier rollup; what is solid vs reconstructed.
 
-## 7. Open questions (TBD)
+## 7. Open questions
 Explicit list of what is NOT known, each with the Layer-1 entry point that would
 resolve it (so it can move to `spec/BACKLOG.md`). Cross-source conflicts noted
 here and ruled in `notes/rulings/RULINGS.md`.
