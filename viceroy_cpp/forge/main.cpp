@@ -17,7 +17,9 @@
 #include "rules.hpp"
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
+#include "savegame.hpp"
 #include "types.hpp"
+#include "unit_turn.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -277,12 +279,67 @@ static int do_mod(int argc, char** argv) {
     return 2;
 }
 
+// --- save/load (game serialization) -------------------------------------------
+
+static int save_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* msg) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", msg); } };
+
+    // set up a small scenario and play it forward a few turns (exercises the loop).
+    GameState g; g.difficulty = 2;
+    g.price_base[SUGAR] = 800; g.powers[0].trade[SUGAR] = 100;
+    g.powers[0].gold = 1234;
+    World w; w.map_w = 20; w.map_h = 12;
+    w.terrain.assign((size_t)w.map_w * w.map_h, (uint8_t)2);   // Plains
+    Colony c; c.owner_power = 0; c.population = 3; c.hammers_per_turn = 10;
+    c.build_target = 0; c.build_cost = 64; c.food_per_turn = 60; c.crosses_output = 3;
+    w.colonies.push_back(c);
+    Unit u; u.type = DRAGOONS; u.owner = 0; u.x = 0; u.y = 6;
+    u.order = ORDER_GOTO; u.target_x = 15; u.target_y = 6;
+    w.units.push_back(u);
+    auto rng = [](int, int) { return 0; };
+    for (int i = 0; i < 6; ++i) step_turn(g, w, rng, 0);
+
+    // round-trip: dump -> parse -> re-dump must be identical, and key fields match.
+    std::string d1 = forge::dump_game(g, w);
+    forge::LoadedGame lg = forge::parse_game(d1);
+    std::string d2 = forge::dump_game(lg.g, lg.w);
+    check(d1 == d2, "in-memory save round-trip is idempotent");
+    check(lg.g.year == g.year && lg.g.turn == g.turn, "year/turn preserved");
+    check(lg.g.powers[0].gold == 1234, "power gold preserved");
+    check(lg.w.colonies.size() == 1 && lg.w.colonies[0].population == w.colonies[0].population,
+          "colony population preserved");
+    check(lg.w.units.size() == 1 && lg.w.units[0].x == w.units[0].x &&
+          lg.w.units[0].order == w.units[0].order, "unit position/order preserved");
+    check(lg.w.terrain == w.terrain, "terrain plane preserved");
+
+    // file round-trip, then continue playing and confirm the loaded game advances.
+    std::filesystem::path tmp = std::filesystem::temp_directory_path() / "forge_save.json";
+    forge::save_game(tmp.string(), g, w);
+    forge::LoadedGame fl = forge::load_game(tmp.string());
+    std::filesystem::remove(tmp);
+    int year_before = fl.g.year;
+    step_turn(fl.g, fl.w, rng, 0);
+    check(fl.g.year == year_before + 1 || fl.g.season != g.season, "loaded game continues to advance");
+
+    std::printf("save selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
+static int do_save(int argc, char** argv) {
+    std::string sub = argc >= 3 ? argv[2] : "";
+    if (sub == "selftest") return save_selftest();
+    std::printf("usage: forge save selftest\n");
+    return 2;
+}
+
 int main(int argc, char** argv) {
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
     if (cmd == "rules")   return do_rules(argc, argv);
     if (cmd == "map")     return do_map(argc, argv);
     if (cmd == "mod")     return do_mod(argc, argv);
+    if (cmd == "save")    return do_save(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
                 "usage:\n"
@@ -293,6 +350,7 @@ int main(int argc, char** argv) {
                 "  forge map validate FILE.mp     check a map against the load-bearing invariants\n"
                 "  forge map roundtrip FILE.mp    confirm load->save->load is byte-identical\n"
                 "  forge mod selftest             write/load/validate a mod package (self-test)\n"
-                "  forge mod validate DIR         validate a mod directory\n");
+                "  forge mod validate DIR         validate a mod directory\n"
+                "  forge save selftest            game save/load round-trip self-test\n");
     return 0;
 }
