@@ -12,31 +12,32 @@ primary-grounded where the bytes are known, honest `TBD` elsewhere. Depth comes
 from each sheet's §6 "Open questions" and [`BACKLOG.md`](BACKLOG.md). Author/
 deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 
-**Status of depth (honest — revised 2026-06-27).** A prior "Certification (2026-06-21)" here
-claimed *"every game system's byte layer is BYTE_VERIFIED … no game mechanic, function, or
-constant is left un-byte-grounded, and nothing required a memory dump or runtime trace."* That
-is **over-claimed and retracted** — it contradicts both `STATUS.md`'s own TBD-formula table and
-the ~372 `TBD` markers still in `spec/`, and a colony-site value **did** need a live runtime
-capture this session (`ai.md §3b`). The honest picture is two layers:
+**Status of depth (honest — revised 2026-06-28).** A close-out pass this session resolved
+**213 open TBDs** via a decode → adversarial-verify workflow (every closure byte-cited **B** or
+oracle/pixel-measured **A**, independently re-derived before landing; ~110 over-reaching proposals
+were *rejected* by the verifier). Open-TBD lines fell **317 → ~96**, of which the large majority are
+now tier-vocabulary legends, section headings, and historical "was-TBD" notes — **not** open gaps.
+The honest picture:
 
-- **Solidly byte-verified (the structural layer + many discrete facts):** the data tables
+- **Byte/oracle-verified (the structural layer + the game formulas):** the data tables
   (NAMES/GAME/TRIBE CSVs, verbatim), memory-record layouts, the `.MP/.PAL/.SS/.PIK` formats
-  (byte-perfect round-trip), the RNG, and a large set of specific mechanics found statically —
-  e.g. the **school teaching rate** (`func_02D658`: 4/6/8 turns by skill class), the **FF effect
-  bindings** (`ov_power_flag` op_id ≡ `@FATHERS` index — Hudson ×2 furs, Jefferson +50% bells,
-  Paine bells+tax%, Bolívar +20% SoL, Penn +50% crosses), the **Lost-City marker** (procedural via
-  `func_006188` + map seed `[0x190]`; RULING 2026-06-21), the **revolution score bonus** (additive
-  `(1780−year)×2`), and the **.SS codec** (FAB, `tools/ssdec.py`, all 28 sheets to exact sizes;
-  BUILDING.SS = 48 frames). Where a sheet cites **B**, trust it.
+  (byte-perfect round-trip), the RNG, **and the once-open mechanics** — combat odds + the **+50%
+  / SoL / difficulty modifier chain** (`func_05CA7E`), **shore bombardment** (`func_02D3C6`,
+  deterministic), market price drift + display spread, **Founding-Father threshold** (`func_03C282`),
+  Lost-City-Rumor outcome table + reward magnitudes (`func_061454`), REF/scoring/map-gen formulas,
+  AI compass/goal/order tables, the **@MISC report-label loader** (`[bx+0x2DBA]`), and the **colony
+  building-frame selector** — corrected to `func_026DD4` (frame = `def_id+1`), live-verified.
+  Where a sheet cites **B**/**A**, trust it.
 
-- **NOT closed (the real residual queue):** the **game formulas** `STATUS.md` still lists as
-  ⏳ TBD — combat damage roll, market price drift, Founding-Father acquisition, Lost-City-Rumor
-  outcome distribution, REF growth rate, score-formula details, map generation — plus two this
-  session surfaced: the **colony building-frame selector** (`func_026CC2`, R/TBD —
-  `ui/colony_screen.md §0.2/§8.5`) and the **colony-site value** (`ai.md §3b`, runtime-captured,
-  formula still being fit). **The authoritative residual for any sheet is its own §6/§8 "Open
-  questions" + its `TBD` markers — not a summary header.** Do not mark a sheet "COMPLETE" while a
-  load-bearing input under it is `TBD`.
+- **The real residual (~17 genuinely runtime-only items):** values that are computed at paint-time
+  or per-turn with no static constant, each with its **source byte-cited and the exact capture
+  named** — e.g. the colony per-turn `+0xAA` growth-accumulator write (needs a two-turn live
+  capture; the *only* two image-wide writers are init=2 / event+100), the colony-site value
+  *arithmetic* (`ai.md §3b`, needs multi-capture regression), Customize-screen widget geometry,
+  save-slot count, end-game score/king text RGB (engine-resident palette). These are **not "blocked
+  unknowns"** — the mechanism and source are fully documented; only the live value awaits an oracle
+  capture. **The authoritative residual for any sheet is its own §6/§8 "Open questions" — not this
+  header.** Do not mark a sheet "COMPLETE" while a load-bearing runtime input under it is unresolved.
 
 Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `TBD`.
 
@@ -44,22 +45,22 @@ Tiers: `BYTE_VERIFIED` (B) · `ANCHOR_VERIFIED` (A) · `RECONSTRUCTED` (R) · `T
 
 | System | Spec | Tier | System | Spec | Tier |
 |--------|------|------|--------|------|------|
-| King & taxation | [`systems/king.md`](systems/king.md) | B/TBD | Difficulty | [`systems/difficulty.md`](systems/difficulty.md) | B/R |
-| Combat | [`systems/combat.md`](systems/combat.md) | B/TBD | National powers | [`systems/national_powers.md`](systems/national_powers.md) | B/R |
-| Market & prices | [`systems/market.md`](systems/market.md) | B/TBD | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B/TBD |
+| King & taxation | [`systems/king.md`](systems/king.md) | B | Difficulty | [`systems/difficulty.md`](systems/difficulty.md) | B/R |
+| Combat | [`systems/combat.md`](systems/combat.md) | B | National powers | [`systems/national_powers.md`](systems/national_powers.md) | B/R |
+| Market & prices | [`systems/market.md`](systems/market.md) | B | Turn dispatch | [`systems/turn_dispatch.md`](systems/turn_dispatch.md) | B |
 | Colony & production | [`systems/colony.md`](systems/colony.md) | B/R | Save / load | [`systems/save.md`](systems/save.md) | B |
 | Unit system | [`systems/unit.md`](systems/unit.md) | B | Warehousing | [`systems/warehousing.md`](systems/warehousing.md) | B |
 | Unit orders | [`systems/unit_orders.md`](systems/unit_orders.md) | B | Tutorial | [`systems/tutorial.md`](systems/tutorial.md) | B |
-| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B/TBD | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B/TBD |
-| Immigration | [`systems/immigration.md`](systems/immigration.md) | B/TBD | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
-| Training / promotion | [`systems/training.md`](systems/training.md) | B | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B/TBD |
-| Native relations | [`systems/natives.md`](systems/natives.md) | B/TBD | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B |
-| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B/TBD |
+| Trade routes | [`systems/trade_routes.md`](systems/trade_routes.md) | B | REF growth | [`systems/ref_growth.md`](systems/ref_growth.md) | B |
+| Immigration | [`systems/immigration.md`](systems/immigration.md) | B | Mercenary hiring | [`systems/mercenary.md`](systems/mercenary.md) | B |
+| Training / promotion | [`systems/training.md`](systems/training.md) | B | Boycotts | [`systems/boycotts.md`](systems/boycotts.md) | B |
+| Native relations | [`systems/natives.md`](systems/natives.md) | B | Tory uprising | [`systems/tory_uprising.md`](systems/tory_uprising.md) | B |
+| Founding Fathers | [`systems/founding_fathers.md`](systems/founding_fathers.md) | B | War of Spanish Succession | [`systems/spanish_succession.md`](systems/spanish_succession.md) | B |
 | Revolution | [`systems/revolution.md`](systems/revolution.md) | B | | | |
 | Diplomacy (European) | [`systems/diplomacy.md`](systems/diplomacy.md) | B | Events / Lost City | [`systems/events.md`](systems/events.md) | B |
-| Scoring | [`systems/scoring.md`](systems/scoring.md) | B/TBD | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
-| Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B/TBD | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | B/TBD |
-| Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | B/TBD | | | |
+| Scoring | [`systems/scoring.md`](systems/scoring.md) | B | Map system & terrain | [`systems/map_system.md`](systems/map_system.md) | B/R |
+| Map generation | [`systems/map_generation.md`](systems/map_generation.md) | B | Exploration / fog | [`systems/exploration.md`](systems/exploration.md) | B |
+| Terrain improvement | [`systems/terrain_improvement.md`](systems/terrain_improvement.md) | B | | | |
 
 ## UI screens & dialogs (52 entries → 10 spec files)
 
@@ -77,29 +78,29 @@ placement is `@x`/`@y` from GAME.TXT or a centered formula; pixel coords are con
 functions. The cinematic per-frame timing (`[0x82]`/`[0x6c]` clock) is traced in
 `docs/CINEMATIC_TIMING_AUDIT.md`. **All of that is real and stands.**
 
-**What is over-claimed and retracted:** the prior "the full UI sweep is complete … the only genuine
-runtime dependency is the displayed values … no missing function or un-resolvable constant remains in
-VICEROY.EXE." That is **not** true. Several sheets still carry real residuals — `colony_screen` (23
-TBD), `menus` (17), `europe_screen` (15), `input` (14), `cinematics`/`colony`/`unit`/`context_dialogs`/
-`popups`/`advisor_reports` (12–13 each). Many are runtime *values* (documented by layout, fine), but
-some are **genuine undecoded logic**, e.g. the colony **building-frame selector** (`func_026CC2`,
-R/TBD — `ui/colony_screen.md §0.2/§8.5`) and the **colony-site value** (`ai.md §3b`). **Each sheet's
-own §6/§8 "Open questions" + `TBD` markers are the authoritative residual — not this header.**
-Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor-measured;
-**R** = reconstructed-from-asset; **TBD** = un-annotated separate binary or a live game-state value.
+**Residual after the 2026-06-28 close-out:** the per-sheet residuals that were open in mid-June are
+now **almost entirely closed** — including the items previously called out as "genuine undecoded
+logic": the colony **building-frame selector** (corrected to **`func_026DD4`**, frame = `def_id+1`,
+live-verified) and the Europe **Exit-button paint origin** (pixel-measured, **A**). What remains UI-side
+is a short list of genuinely runtime-only values, each with its source byte-cited and the exact capture
+named (Customize-screen widget geometry, save-slot count, LEVN scenario grid, end-game text RGB, the
+colony-site value *arithmetic*). **Each sheet's own §6/§8 "Open questions" is the authoritative
+residual — not this header.**
+Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor/pixel-measured;
+**R** = reconstructed-from-asset; **TBD** = a live game-state value awaiting an oracle capture.
 
 | Spec file | Covers | Layout / draw-code | Honest residual |
 |-----------|--------|--------------------|-----------------|
 | [`ui/map_view.md`](ui/map_view.md) | main gameplay screen | **B** tile chain (`O514→O513→O512`, `0x6204`); minimap dot colors = `NAMES.TXT @COLORS` (9 bytes via `@0x751A7`) / **A** bands | sidebar B/C per-line coords overlay-resident → **R** approx from frame 1310262984 (no B source) |
-| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, 4 overlay-`0x181F` helpers, SoL faces `0x7C/0x7D` + nation flag `0x44` byte-cited); RAM-cross-checked §0 | **building-frame selector `func_026CC2` R/TBD** (§0.2/§8.5); minimap window/scale + work-tile markers (§8); SoL/production count formulas — see the sheet's §8 (23 TBD) |
-| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed); render status §0 | dynamic harbor contents (ships/units in green boxes, pier crates) need a matched RAM snapshot — unrendered; banner pixel origin; per-state dock caption↔id map (§0.2, §9: 15 TBD) |
+| [`ui/colony_screen.md`](ui/colony_screen.md) | colony screen | **B** (composition, placement tables, 4 overlay-`0x181F` helpers, SoL faces `0x7C/0x7D` + nation flag `0x44` byte-cited); RAM-cross-checked §0 | building-frame selector **RESOLVED** (`func_026DD4`, frame=`def_id+1`, live-verified, §0.2/§3.7); residual: SoL/production *count values* are live per-turn state (overlay 0x191F), source byte-cited |
+| [`ui/europe_screen.md`](ui/europe_screen.md) | Europe harbor | **B** (literal coords; transaction panel `0x317CC`/`0x318D2`; market bid/ask LUT; boycott sprite good-indexed); render status §0 | Exit-button paint origin **pixel-measured (A, §9)**; dock caption↔id map resolved (A); residual: dynamic harbor contents are live game-state (documented by layout) |
 | [`ui/continental_congress.md`](ui/continental_congress.md) | Continental Congress | **B** FF-reveal mechanism; F3 body FONTTINY, title `0x90`/body `0x92` (CCBKGD) / **A** bands; **no progress bar** (RULING) | bell/flag sprites absent from the F3 text body (overlay) |
 | [`ui/declaration_independence.md`](ui/declaration_independence.md) | Declaration | **B** DECOIND painter + **signature glyph layout byte-verified** (pen (0x94,0x7E), glyph-width advance) | none (DECLARAT orphan; geometry closed) |
 | [`ui/advisor_reports.md`](ui/advisor_reports.md) | reports F2–F10 | **B** (real bodies `0x37958`…`0x39EE2`; F8 picker `0x23810`; F4/F8 separators dark-red `0x77`→311/319; per-report static x-columns + y-start byte-cited; F10 font FONTTINY+FONTINTR) | per-row y = FONTTINY flow (state); F9 color = `[0x830]` `@COLORS` |
 | [`ui/popups.md`](ui/popups.md) | ~24 popups | **B** (framework: 10 live directives, speaker-portrait selector globals `[0x1F5C/5E/60]`, Lost-City map, raid=6, `@width`/`@x`/`@y`; FONTTINY latch) | body text color = glyph-engine mapping (A; no per-popup override) |
-| [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count (overlay); setup-widget rects **R** (pixel-measured from PIKs); LEVN grid (no asset) |
+| [`ui/menus.md`](ui/menus.md) | menus / setup / Hall of Fame | **B** (boot items `@BEGINMENU`, plaque geom, HoF) | save-slot count + Customize widget geometry + LEVN grid = live captures (runtime, source named) |
 | [`ui/cinematics.md`](ui/cinematics.md) | cinematics / score | **B** in-VICEROY painters (king-defeats = sole FONTKING user, pen (242,47); score FONTTINY+FONTINTR; DECOIND) + **OPENING/CLOSING per-frame timing byte-grounded** (`[0x82]`/`[0x6c]` clock, `docs/CINEMATIC_TIMING_AUDIT.md`); KING2.SS proven absent | resident draw routine + outer-driver clock (narrow TBD, that doc §5); king/popup text RGB = glyph-engine mapping (A); `[0x1F5C]`=speaker selector |
-| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | framework B; remaining per-dialog items in the sheet's §6 (13 TBD) |
+| [`ui/context_dialogs.md`](ui/context_dialogs.md) | order/trade/village/diplomacy/build menus | **B** (framework, `@width`, native gating `func_04B308`, build-avail `func_0B900`; `@BUILDING` 12-byte BSS record + CSV-column→field map traced to loader `func_0749E0`) | framework B; per-dialog residuals closed; OK/Cancel = no-sprite (func_004A80), row-pitch = font-byte0+3 (B) |
 | [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md) | **shared font + color model** (4 loaded `.FF` fonts + FONTSMAL orphan; FONTKING = king-defeats only; palette-index color args → exact RGB) | **B** (font loads, color push-args, RGB via decoded PIK palette) | none (only palette *cycling* is animation) |
 
 **Fonts & colors** are captured in [`ui/fonts_and_colors.md`](ui/fonts_and_colors.md): the **four
