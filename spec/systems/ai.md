@@ -386,7 +386,7 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    layer `0x37f`** (tile-valid / raw-byte / unit-at-tile / terrain) and the already-specified
    map (`MP_FORMAT.md`) + colony (`colony.md`, stride `0xCA`@`0x5d46`) data. No AI-only black box
    remains beneath the helper map. The only soft spot is the exact arithmetic *weighting* inside
-   `func_0083F2` (reachability) — a small resident function, fully decodable but not yet line-traced.
+   `func_0083F2` — **RESOLVED 2026-06-28 (B).** It is the *nearest-matching-colony* scan (loop over `num_colonies` `[0x539E]`, ColonyRecord stride `0xCA` @`0x5D46`, filters on `+0x5D60`/region/`+0x5D62&0x40`), and its per-step **weighting is the octile distance** `cost = max(|dx|,|dy|) + (min(|dx|,|dy|)>>1)` computed in helper **`func_004900`** (`lcall 0x24C:0x40 @0x008491`); best kept by `cost<=best`, result via `func_0082DC`. Fully static — no AI black box remains.
 4. ✅ **Plan-map outer-index — RESOLVED 2026-06-27 (§6.1): POWER-indexed (4×64).** All plan
    reads/writes are in `func_04CC50` (`[bp+6]`=power); BSS layout proves it (table `0x98B0..0x9CB0`,
    next global cluster at `0x9CB0`; unit-indexed would overflow the 64 KB segment). The prior

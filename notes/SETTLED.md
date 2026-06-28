@@ -146,3 +146,16 @@ does **not** spawn a new ruling or a parallel decode doc.
   +1 feature-bit; near-colony halves; Mountains→0, Hills→½; then **`clamp(score/10, 0, 15)`**
   (`func_0048CC`/`181F:0x35c`). Water/oob ⇒ 0. Was the last open spec formula. (Corrects the
   2026-06-27 "draw-time, no cached array, not statically locatable" finding — it IS a cached nibble.)
+
+- **Static-residual closeout — 2026-06-28 (decode→adversarial-verify, 10 closed B / 1 runtime-terminal / 1 rejected).**
+  - **market** drift driver = `func_036574` (end-of-turn via `func_0755CC @0x0757B0`); `+0xFC` BUY `func_03234A @0x323BC` / SELL `func_0322D0 @0x32324` (corrects `func_33C96` mislabel + RULING).
+  - **ai** `func_0083F2` = nearest-colony scan; weighting = octile distance `max(|dx|,|dy|)+(min>>1)` in `func_004900`.
+  - **colony** SoL new_bells pressure = `new_bells/(−20)` (`@0x2DA12`); `+0xAA` food accumulator has **no static per-turn write** (write-census: only `+100`@0x05A3CA / `=2`@0x05627D) → runtime-terminal **A**.
+  - **combat** `+0x17==0x18` demotion = type-0 + profession `[unit+0x315B]==0x18` → unit type 3 (offset is record-rel **+0x15**, not +0x17).
+  - **scoring** all 7 component weights B (`func_039EE2`): pop +1/+2/+4, FF +5, sentiment ×1, razed ×−(1+diff), gold min(/100,100), bells /1000, revolution (1780−turn)·2; × ((8>>n)+8)/8 diff mult.
+  - **founding_fathers** Smith(0)/Stuyvesant(3)/Drake(13)/Penn(21) gated by `func_00BC10` via direct `lcall 0x981:0` (not thunk 0x181F:0x7B4) → all 25 fathers **B**.
+  - **map_generation** landmass = iterative random blob-stamping (`func_064A10`/`func_0643F8`) to target `(p1+p2+1)·0x140`.
+  - **immigration** per-slot type = 3-tier difficulty-weighted RNG ladder `func_034C24` (Brewster→Elite 0x1C).
+  - **events** burial `@BURIAL3` treasure `2·(1d8+2·(scout+5))` ×100.
+  - **difficulty** Indian-destruction penalty = `razed_count × −(1+difficulty)` (`@0x3A4C3`); native `+0x46` = per-power alarm seed (resolved, not a difficulty field).
+  - **REJECTED**: a re-derivation of `func_05B2C2`'s naval win-condition (inverted compare) — the 2026-06-27 resolved naval/bombardment version stands.

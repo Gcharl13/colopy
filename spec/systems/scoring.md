@@ -50,6 +50,26 @@ score  = score >> 1                   # @0x3AA6A (halved)
   profession-byte gates; the subtotal accrues in `[bp-0x6E]` and is rendered as
   the population score line `@0x3A261`. **B.**
 
+  **All 7 component weights — BYTE_VERIFIED 2026-06-28 (`func_039EE2`, accumulators
+  init `@0x039EF9`, grand total `@0x03A896`):**
+  1. **Population** `[bp-0x6E]` — per-colonist `+1`/`+2`/`+4` as above.
+  2. **Founding Fathers** `[bp-0x58]` — **`+5` each** (loop 0..0x18, `has_father` via
+     `0x181F:0x7B4`; `add [bp-0x58],5 @0x03A2BE`).
+  3. **Sentiment/rebel** `[bp-0x5A]` — `= word[0x53D0]` ×1 (`@0x03A561`).
+  4. **Razed-colony penalty** `[bp-0x6C]` — `razed_count(byte[PowerRecord+0x18]) ×
+     −(1+difficulty)` (`imul @0x03A4C3`), negative & difficulty-scaled.
+  5. **Gold** `[bp-0x60]` — `min(gold/100, 100)` (gated `[0x5382]&2` & gold≥100,
+     `@0x03A704`).
+  6. **Liberty/bells** `[bp-2]` — `bells32(PowerRecord+0x2A:+0x2C)/1000` (gated,
+     `@0x03A3DD` via `0xD1D:0xEC6`).
+  7. **Revolution bonus** `[bp-0x64]` — `(0x6F4 − year_metric)·2 = (1780 − turn_metric)·2`
+     (gated `[0x5382]&8`, `@0x03A5F5`; `year_metric = byte[0x53A8] + 0x64·byte[0x53A7]`).
+
+  Grand total `[bp-0x74] = Σ(1..7)` `@0x03A896`, then the **difficulty multiplier**
+  `total = (total · ((8>>n)+8)) / 8` (`@0x03A8AE`, `n` = qualifying-player count). The F10
+  bar prints `[bp-0x74]>>2`. (`func_03A9C0` is a separate FONTTINY display routine, not the
+  scaler.) **B.**
+
   **Profession-byte ↔ name binding (BYTE-bound via `NAMES.TXT @JOB`).** The
   profession byte (`UnitRecord +0x17`, abs `0x315B`, stored `[bp-0x70]`) indexes
   `NAMES.TXT @JOB` (confirmed: a colonist job byte `0x0d` = `@JOB[13]` = Carpenter,

@@ -202,6 +202,14 @@ confirmed present in `data_extracted/text/GAME_sections.json`:
    the unit's owner nibble is reassigned via `set_unit_owner` (`0x181F:0x894 → @0x738E`,
    `@0x5B4C7`); a ship victor without transport room destroys it instead. (The prior
    "no capture branch" note was wrong; the `func_03C638` reassign is the *separate*
-   succession transfer.) The `+0x17==0x18`→type-3 demotion override still warrants a
-   runtime spot-check.
-3. Naval combat & bombardment specifics (ship pair `0x523B/0x523C`, roll in `func_05B2C2`).
+   succession transfer.) The demotion override is **RESOLVED 2026-06-28 (B):** in `func_05B2C2`, when the
+   demotion ladder yields type 0 (Colonists) **and** the loser's profession byte `[unit+0x315B]==0x18`
+   (Missionary, @JOB 24), it is forced to unit **type 3 (Missionaries)** (`cmp [bx+0x315b],0x18 @0x5B60E`;
+   `mov [bp-0x22],3 @0x5B615`; gated on demoted==0 `@0x5B608`). *(Offset note: the byte is at absolute
+   `0x315B` = record-relative **+0x15**, not the `+0x17` the earlier note states — `0x3146+0x17=0x315D`.)*
+3. ~~Naval combat & bombardment specifics.~~ **RESOLVED 2026-06-27 (B)** — unit-vs-unit naval roll in
+   `func_05B2C2` (ship strengths `0x523B/0x523C`) and deterministic **shore bombardment** `func_02D3C6`
+   (`strength = artillery_count·fort_level·4`, no random roll; damage-vs-sink = owner-bit test) are both
+   byte-verified (see the §7 "Naval combat roll" / "Shore-bombardment" notes). *(A 2026-06-28 re-derivation
+   attempt of the func_05B2C2 win-condition was rejected by adversarial verify for an inverted compare; the
+   2026-06-27 resolved version stands.)*

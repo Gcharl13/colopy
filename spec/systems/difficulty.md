@@ -194,7 +194,9 @@ Difficulty Level", `GAME_sections.json`) / `@MISC` "Difficulty Level" labels, al
 1. ~~Byte-trace per-level modifier table.~~ **Done 2026-06-20** — REF size, combat
    handicap, native attitude, diplomacy demands, action probability all **B** (§3).
    Residual: instruction-level confirm of the §3 "touch points" subset
-   (economy/king clusters) and the native field `+0x46` label.
+   (economy/king clusters). The native field `+0x46` label is **RESOLVED** (§3): it is the
+   **per-power native-alarm seed** `tribe[+0x46 + power·2] = rand(0..13) + 2·diff` (`func_065D26
+   @0x65DCE`, human-only gate `[bx+0x543F]==0`), not a difficulty field.
 2. ~~Resolve the `0x53A6` dual role (difficulty vs current player) at read sites.~~
    **Resolved 2026-06-20 — `[0x53A6]` is the *difficulty level* (0..4), NOT current
    player.** All ~150 read sites treat it as a 0..4 value: compared against `4`
@@ -204,4 +206,7 @@ Difficulty Level", `GAME_sections.json`) / `@MISC` "Difficulty Level" labels, al
    index — the **current power index is the separate global `[0x5394]`**. The "dual
    role" label in `docs/DATA_MODEL.md`/`turn_dispatch.md` is superseded. **B.**
 3. ~~Confirm the score difficulty factor.~~ **Done** — `diff+4 (+1 if≥3, +1 if≥4)`
-   `@0x3AA0A` (**B**, see scoring). Indian-destruction penalty still **R**.
+   `@0x3AA0A` (**B**, see scoring). **Indian-destruction penalty RESOLVED 2026-06-28 (B):**
+   score line-item = `razed_native_count × −(1+difficulty)` (razed count = `byte[PowerRecord+0x18]`
+   `@0x3A4B1`; `cx = 0xFFFF − [0x53A6]` `@0x3A4B6/@0x3A4BF`; `imul` `@0x3A4C3`; magnitudes −1 Discoverer … −5
+   Viceroy), summed into the 7-term grand total `@0x3A896` (`func_039EE2`).

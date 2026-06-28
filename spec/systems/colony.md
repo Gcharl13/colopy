@@ -469,10 +469,22 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
    (`func_02D658`, §3). **Food growth-store CORRECTED 2026-06-27:** the food accumulator is
    `ColonyRecord +0xAA` (not a "base-200" constant, and **not** in `func_00929A` — that func is the
    job-slot bound classifier); the per-turn growth-conversion **threshold is 25 (Stable present, bldg
-   `0x11`) / 50 (no Stable)** per `func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD`. Remaining: the per-turn
-   **`+0xAA` increment** site and the **birth/starvation call gate** (overlay/runtime — both route
-   through `func_02D658` overlay thunks; no resident write site).
+   `0x11`) / 50 (no Stable)** per `func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD`. **RESOLVED 2026-06-28 (write-census, B):**
+   an exhaustive image-wide scan for every WRITE-encoding to `[bx+0xAA]` (all opcode/modrm forms, resident
+   `disasm/` + all 31 overlay pages + `orphans_overlay.asm`) finds **exactly two** writes, both constants:
+   `add [bx+0xaa],0x64` (rush-grant `@page_0F 0x05A3CA`) and `mov [bx+0xaa],2` (gold-buyout floor
+   `@page_0E 0x05627D`) — **no per-turn `+0xAA += surplus` instruction exists in the binary**. The food
+   chain computes net food into globals `[0x8dec]`/`[0x8dc8]`/`[0x8dd8]`/`[0x8e6a]` and only *reads* `+0xAA`
+   (`@0xA5D6`/`@0xA61F`); the surplus→accumulator transfer + birth/starve decrement are applied at
+   **runtime** with no static write site. The call targets ARE resident (`lcall 0x981,0`→func_009818,
+   `func_008D00`, `func_008E46`) but none writes `+0xAA`. Terminal: **A (oracle: `+0xAA`=0 in both
+   founding snapshots; structurally the only writes are the two constants above)** — there is no further EXE
+   byte to decode.
 3. ~~Confirm the per-turn SoL dividend/divisor smoothing constants~~ **Done 2026-06-20**
    — both are 1/64-decay EMAs (`func_02D658 @0x2DA1C`); `B += 2·pop`, `A += new_bells`,
-   `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** Remaining: the
-   `new_bells` downward-pressure scratch operand `[bp-0x8C]` at `@0x2DA0E`.
+   `A` clamped to `[0,B]` ⇒ steady-state `sol% ≈ 50·bells/pop`. **B.** **RESOLVED 2026-06-28 (B):** the
+   `[bp-0x8C]` scratch IS `new_bells` verbatim (stored from the overlay bell-production query
+   `0x181F:0xC86`→`@0x027264` at `@0x2D9DB`); the downward-pressure term added to `A` is
+   `new_bells / (−20)` (`mov cx,0xFFEC; cwd; idiv cx; add [bp-0xB8],ax` `@0x2DA12..0x2DA18`), applied only
+   when `A > byte[colony+0x1F]` (floor gate `@0x2DA08`). The divisor −20 is a byte-verified constant; only
+   `new_bells`'s value is the runtime query return.

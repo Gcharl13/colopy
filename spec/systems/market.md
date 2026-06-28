@@ -5,7 +5,7 @@
 
 **Overall confidence:** commodity set + price-storage location + **per-turn drift
 formula (`func_0305A8`: decay by `(base+Σtrade)/256`) `BYTE_VERIFIED`**; the
-turn-loop *driver* + the `+0xFC` increment site **RESOLVED 2026-06-20** (driver: `func_33C96 @0x367FC` + per-good `func_0324F2`/`func_032914`, §3; `+0xFC` increment: SELL updater `func_03234a @0x323bc` `add [bx+0xfc],ax`, §3.1). **Last updated:** 2026-06-25.
+turn-loop *driver* + the `+0xFC` increment site **RESOLVED** (driver: **`func_036574`** — end-of-turn per-power drift loop calling `func_0305A8` via `@0x367FC`, invoked from `func_0755CC @0x0757B0`, §3 — *corrected 2026-06-28 from the mislabel `func_33C96`*; `+0xFC` increment: **BUY** `func_03234A @0x323BC` `add [bx+0xfc],ax` / **SELL** `func_0322D0 @0x32324` `sub [bx+0xfc],ax`, §3.1). **Last updated:** 2026-06-28.
 **Primary evidence:** `data_extracted/text/NAMES_sections.json` (@CARGO),
 `docs/DATA_MODEL.md` (price storage).
 
@@ -67,17 +67,21 @@ for good in 0..15:                                 # @0x305B3 (loop to 0x10)
 - **Drift driver — RESOLVED 2026-06-20.** `func_0305A8` has exactly **4 call sites**,
   all in page 4, reached via the JMP-FAR trampoline at file `0x368bd`
   (`ljmp 0x191F:0x0CBC → resident stub 0x1C2AC → func_0305A8`):
-  - **`func_33C96 @0x367FC`** — `drift(-1, 1)` inside a per-commodity loop that rolls
-    `random_int` (`lcall 0x181F:0x4D4`) for each good: the **all-16-goods randomized
-    price recompute**. The companion `@0x363D3` does `drift(…, 0)` (all goods, no
-    randomization).
+  - **`func_036574 @0x367FC`** — the **per-turn drift driver** (*corrected 2026-06-28
+    from the mislabel `func_33C96`*; body bounded `RETF @0x036573`/`@0x03680D`). It first
+    zeroes the per-power 16-good accumulators (`mov [bx+0xfc],ax(=0)` loop `@0x03670E`,
+    alongside `+0x5C/+0x7C/+0x7E/+0xBC/+0xBE/+0xFE`), then a **4-power loop** (`bp-6`=0..3)
+    pushes `(-1, 1)` and calls `func_0305A8` via the trampoline `@0x0368BD`
+    (`ljmp 0x191F:0x0CBC → thunk 0x1C2AC → func_0305A8`): the **all-16-goods price
+    recompute**. **It is invoked from the end-of-turn processor `func_0755CC @0x0757B0`**
+    (`lcall 0x191F:0x0B6C`; `func_0755CC` carries the `AMER2.MP` string + the `0x5380..0x53E0`
+    per-power turn block).
   - **`func_0324F2 @0x32902`** and **`func_032914 @0x32D99`** — `drift(good, 0)`, the
     **single-commodity re-drift after a buy/sell** (the SELL/BUY handlers of §3.1).
-  So the European price movement is driven by **the market/Europe trade-screen's
-  economic pass** (`func_33C96`) plus each individual transaction — *not* by a
-  separate headless turn phase. (`func_33C96` is a 12-case economic/unit-command
-  interpreter that runs inside the **interactive trade screen** — mouse hit-test
-  `0x181F:0x3CA`, page-23 UI helpers — not the top-level turn dispatcher.)
+  So European price movement is driven by **a per-turn phase** (`func_036574`, run from the
+  end-of-turn processor `func_0755CC`) **plus** each individual transaction. *(This
+  supersedes the prior "no separate headless turn phase / runs only in the trade screen"
+  claim — RULING 2026-06-28; the per-turn driver is end-of-turn, byte-verified.)*
   > **Correction (supersedes the 2026-06-20 "page-4 dispatch table" note):** the
   > region `0x3680e..0x36976` is **not** a data table — it is a linker **thunk-island
   > of 72 five-byte `JMP FAR seg:off` trampolines** (RTLink near→far shim). The bytes

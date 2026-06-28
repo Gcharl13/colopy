@@ -5579,3 +5579,17 @@ formula now closed.**
 
 **Authority**: `func_021602`/`func_005EE8`/`func_063F3C`/`func_005ED0`/`func_0048CC` byte offsets;
 `spec/systems/ai.md §3b`; cross-ref `spec/systems/map_generation.md`.
+
+## 2026-06-28 — European price-drift IS a per-turn end-of-turn phase (driver func_036574), not trade-screen-only
+
+**Conflict**: `market.md` (2026-06-20) claimed the all-goods price drift runs only inside the
+interactive trade screen ("not a separate headless turn phase"), attributing it to `func_33C96`.
+
+**Resolution (B)**: The driver is **`func_036574`** (body `0x036574..0x03680D`), called from the
+**end-of-turn processor `func_0755CC @0x0757B0`** (`lcall 0x191F:0x0B6C`; `func_0755CC` carries the
+`AMER2.MP` string + the `0x5380..0x53E0` per-power turn block). `func_036574` clears the per-power
+16-good accumulators then runs a 4-power loop calling `func_0305A8` via `@0x367FC`. So drift happens
+**per-turn** (end-of-turn) AND per-transaction (`func_0324F2`/`func_032914`). The `func_33C96` name was
+a mislabel (`func_033C96` is the unrelated ARMOPTIONS fn); `@0x367FC` is the internal call site within
+`func_036574`. Supersedes the "trade-screen-only / no turn phase" claim. **Authority**: `func_036574`,
+`func_0755CC`, `func_0305A8` byte offsets; `spec/systems/market.md` §3.
