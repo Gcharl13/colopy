@@ -13,6 +13,7 @@
 #include "ref.hpp"
 #include "inspect.hpp"
 #include "mapedit.hpp"
+#include "mod.hpp"
 #include "rules.hpp"
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
@@ -147,6 +148,64 @@ static int map_selftest() {
     return fail == 0 ? 0 : 1;
 }
 
+// --- rules overlay write side (diff / round-trip) -----------------------------
+
+static int rules_diff(const char* in_path, const char* out_path) {
+    try {
+        forge::OverlayResult o = forge::load_overlay(in_path, make_default_rules());
+        for (const auto& w : o.warnings) std::printf("  ~ %s\n", w.c_str());
+        forge::JsonValue d = forge::overlay_diff(make_default_rules(), o.rules);
+        std::string text = forge::json_dump(d);
+        if (out_path) { forge::save_overlay(out_path, make_default_rules(), o.rules);
+                        std::printf("wrote sparse overlay -> %s\n", out_path); }
+        else std::printf("%s", text.c_str());
+        return 0;
+    } catch (const std::exception& e) { std::printf("ERROR: %s\n", e.what()); return 2; }
+}
+
+static int rules_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* msg) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", msg); } };
+
+    // a no-op diff is the empty object.
+    RuleData def = make_default_rules();
+    check(forge::overlay_diff(def, def).obj.empty(), "default->default diff is empty");
+
+    // build a modded ruleset across cfg / units / terrain.
+    RuleData mod = def;
+    mod.cfg.warehouse_cap_base = 175;
+    mod.cfg.ref_unit_cost      = 1500;
+    mod.cfg.ff_gate_years      = {1600, 1640, 1680, 1720};
+    mod.units[SOLDIERS].attack = 4;
+    mod.units[ARTILLERY].movement = 2;
+    mod.terrain_defense[28]    = 5;
+    mod.terrain_move[27]       = 4;
+
+    // diff -> dump -> parse -> apply onto default, and confirm round-trip idempotence.
+    std::string dump1 = forge::json_dump(forge::overlay_diff(def, mod));
+    check(dump1.find("warehouse_cap_base") != std::string::npos, "diff captured a cfg change");
+    forge::OverlayResult rt = forge::apply_overlay(forge::json_parse(dump1), make_default_rules());
+    std::string dump2 = forge::json_dump(forge::overlay_diff(def, rt.rules));
+    check(dump1 == dump2, "overlay round-trip is idempotent");
+
+    // spot-check the applied values match the mod.
+    check(rt.rules.cfg.warehouse_cap_base == 175 && rt.rules.cfg.ref_unit_cost == 1500, "cfg applied");
+    check(rt.rules.cfg.ff_gate_years[1] == 1640, "cfg array applied");
+    check(rt.rules.units[SOLDIERS].attack == 4 && rt.rules.units[ARTILLERY].movement == 2, "units applied");
+    check(rt.rules.terrain_defense[28] == 5 && rt.rules.terrain_move[27] == 4, "terrain applied");
+
+    std::printf("rules selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
+static int do_rules(int argc, char** argv) {
+    std::string sub = argc >= 3 ? argv[2] : "";
+    if (sub == "selftest") return rules_selftest();
+    if (sub == "diff" && argc >= 4) return rules_diff(argv[3], argc >= 5 ? argv[4] : nullptr);
+    std::printf("usage: forge rules <selftest | diff IN.json [OUT.json]>\n");
+    return 2;
+}
+
 static int do_map(int argc, char** argv) {
     std::string sub = argc >= 3 ? argv[2] : "";
     if (sub == "selftest") return map_selftest();
@@ -156,16 +215,84 @@ static int do_map(int argc, char** argv) {
     return 2;
 }
 
+// --- mod packaging (write / load / validate) ----------------------------------
+
+static int mod_validate(const char* dir) {
+    forge::ModReport r = forge::load_mod(dir);
+    if (!r.found) { std::printf("not a mod: %s\n", dir); return 2; }
+    std::printf("mod '%s' v%s (spec %d)%s%s\n", r.info.id.c_str(), r.info.version.c_str(),
+                r.info.spec_version, r.has_rules ? " +rules" : "", r.has_map ? " +map" : "");
+    for (const auto& w : r.warnings) std::printf("  ~ %s\n", w.c_str());
+    for (const auto& i : r.issues)   std::printf("  ! %s\n", i.c_str());
+    std::printf("%s\n", r.ok() ? "OK" : "INVALID");
+    return r.ok() ? 0 : 1;
+}
+
+static int mod_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* msg) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", msg); } };
+    std::filesystem::path base = std::filesystem::temp_directory_path();
+
+    // a valid mod: rule changes + a valid map.
+    {
+        RuleData mod = make_default_rules();
+        mod.cfg.warehouse_cap_base = 150;
+        mod.units[SOLDIERS].attack = 4;
+        forge::MpFile m = forge::make_blank(10, 6);
+        forge::fill_terrain(m, 4, 3, /*Plains*/2, 2);
+        forge::ModInfo info{"testmod", "Test Mod", "1.0", "forge", forge::FORGE_SPEC_VERSION};
+        std::string dir = (base / "forge_mod_ok").string();
+        std::filesystem::remove_all(dir);
+        forge::ModWriteResult w = forge::write_mod(dir, info, make_default_rules(), mod, &m);
+        check(w.written.size() == 3, "wrote modinfo + rules + map");
+        forge::ModReport r = forge::load_mod(dir);
+        check(r.found && r.info.id == "testmod", "round-trip modinfo");
+        check(r.has_rules && r.has_map, "detected rules + map");
+        check(r.rules.cfg.warehouse_cap_base == 150 && r.rules.units[SOLDIERS].attack == 4, "rules applied");
+        check(r.ok(), "valid mod passes");
+        std::filesystem::remove_all(dir);
+    }
+    // a broken mod: an invalid rule overlay must be rejected on load.
+    {
+        RuleData mod = make_default_rules();
+        mod.cfg.tory_divisor_base = 0;            // invalid (divide-by-zero risk)
+        forge::ModInfo info{"badmod", "Bad", "0.1", "forge", forge::FORGE_SPEC_VERSION};
+        std::string dir = (base / "forge_mod_bad").string();
+        std::filesystem::remove_all(dir);
+        forge::write_mod(dir, info, make_default_rules(), mod);
+        forge::ModReport r = forge::load_mod(dir);
+        check(!r.ok(), "broken mod rejected");
+        std::filesystem::remove_all(dir);
+    }
+
+    std::printf("mod selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
+static int do_mod(int argc, char** argv) {
+    std::string sub = argc >= 3 ? argv[2] : "";
+    if (sub == "selftest") return mod_selftest();
+    if (sub == "validate" && argc >= 4) return mod_validate(argv[3]);
+    std::printf("usage: forge mod <selftest | validate DIR>\n");
+    return 2;
+}
+
 int main(int argc, char** argv) {
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
+    if (cmd == "rules")   return do_rules(argc, argv);
     if (cmd == "map")     return do_map(argc, argv);
+    if (cmd == "mod")     return do_mod(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
                 "usage:\n"
                 "  forge inspect [overlay.json]   validate + chart a ruleset (vs baseline)\n"
+                "  forge rules diff IN [OUT]      write the sparse overlay diff vs the default\n"
+                "  forge rules selftest           overlay write/round-trip self-test\n"
                 "  forge map selftest             self-contained .MP round-trip + validate test\n"
                 "  forge map validate FILE.mp     check a map against the load-bearing invariants\n"
-                "  forge map roundtrip FILE.mp    confirm load->save->load is byte-identical\n");
+                "  forge map roundtrip FILE.mp    confirm load->save->load is byte-identical\n"
+                "  forge mod selftest             write/load/validate a mod package (self-test)\n"
+                "  forge mod validate DIR         validate a mod directory\n");
     return 0;
 }

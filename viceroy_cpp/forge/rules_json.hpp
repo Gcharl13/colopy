@@ -29,4 +29,14 @@ OverlayResult apply_overlay(const JsonValue& root, vc::sim::RuleData base);
 OverlayResult load_overlay(const std::string& path,
                            vc::sim::RuleData base = vc::sim::make_default_rules());
 
+// Build a SPARSE overlay document capturing only what differs in `cur` vs `base`
+// (changed cfg scalars/arrays, changed unit fields keyed by name, changed
+// terrain_defense/terrain_move ids). Empty object when identical. This is the
+// inverse of apply_overlay: apply_overlay(overlay_diff(base,cur), base) == cur.
+JsonValue overlay_diff(const vc::sim::RuleData& base, const vc::sim::RuleData& cur);
+
+// Write overlay_diff(base, cur) to a rules.json file.
+void save_overlay(const std::string& path,
+                  const vc::sim::RuleData& base, const vc::sim::RuleData& cur);
+
 } // namespace forge

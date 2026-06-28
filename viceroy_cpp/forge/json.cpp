@@ -2,6 +2,7 @@
 #include "json.hpp"
 
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -171,5 +172,83 @@ JsonValue json_parse_file(const std::string& path) {
     ss << f.rdbuf();
     return json_parse(ss.str());
 }
+
+// ---- serialization ----
+namespace {
+
+void dump_string(const std::string& s, std::string& out) {
+    out.push_back('"');
+    for (char c : s) {
+        switch (c) {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n"; break;
+            case '\t': out += "\\t"; break;
+            case '\r': out += "\\r"; break;
+            case '\b': out += "\\b"; break;
+            case '\f': out += "\\f"; break;
+            default:
+                if ((unsigned char)c < 0x20) {
+                    char buf[8];
+                    std::snprintf(buf, sizeof buf, "\\u%04x", (unsigned)(unsigned char)c);
+                    out += buf;
+                } else out.push_back(c);
+        }
+    }
+    out.push_back('"');
+}
+
+void dump_number(double n, std::string& out) {
+    char buf[32];
+    if (n == (double)(long long)n && n < 1e15 && n > -1e15)
+        std::snprintf(buf, sizeof buf, "%lld", (long long)n);
+    else
+        std::snprintf(buf, sizeof buf, "%g", n);
+    out += buf;
+}
+
+void dump(const JsonValue& v, int indent, int depth, std::string& out) {
+    std::string pad(depth * indent, ' ');
+    std::string pad1((depth + 1) * indent, ' ');
+    switch (v.type) {
+        case JsonValue::Null:   out += "null"; break;
+        case JsonValue::Bool:   out += v.b ? "true" : "false"; break;
+        case JsonValue::Number: dump_number(v.num, out); break;
+        case JsonValue::String: dump_string(v.str, out); break;
+        case JsonValue::Array:
+            if (v.arr.empty()) { out += "[]"; break; }
+            out += "[\n";
+            for (size_t i = 0; i < v.arr.size(); ++i) {
+                out += pad1; dump(v.arr[i], indent, depth + 1, out);
+                out += (i + 1 < v.arr.size()) ? ",\n" : "\n";
+            }
+            out += pad; out += "]";
+            break;
+        case JsonValue::Object: {
+            if (v.obj.empty()) { out += "{}"; break; }
+            out += "{\n";
+            size_t i = 0;
+            for (const auto& kv : v.obj) {
+                out += pad1; dump_string(kv.first, out); out += ": ";
+                dump(kv.second, indent, depth + 1, out);
+                out += (++i < v.obj.size()) ? ",\n" : "\n";
+            }
+            out += pad; out += "}";
+            break;
+        }
+    }
+}
+
+}  // namespace
+
+std::string json_dump(const JsonValue& v, int indent) {
+    std::string out;
+    dump(v, indent, 0, out);
+    out.push_back('\n');
+    return out;
+}
+
+JsonValue json_num(double n) { JsonValue v; v.type = JsonValue::Number; v.num = n; return v; }
+JsonValue json_str(const std::string& s) { JsonValue v; v.type = JsonValue::String; v.str = s; return v; }
 
 } // namespace forge

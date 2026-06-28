@@ -43,4 +43,12 @@ JsonValue json_parse(const std::string& text);
 // Parse a JSON file. Throws std::runtime_error if it can't be opened/parsed.
 JsonValue json_parse_file(const std::string& path);
 
+// Serialize to a pretty-printed JSON string (indent spaces per level). Integral
+// numbers print without a decimal point.
+std::string json_dump(const JsonValue& v, int indent = 2);
+
+// Convenience constructors for building documents to serialize.
+JsonValue json_num(double n);
+JsonValue json_str(const std::string& s);
+
 } // namespace forge

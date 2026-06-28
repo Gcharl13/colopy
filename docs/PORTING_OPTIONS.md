@@ -59,6 +59,37 @@ client:
 
 ---
 
+## Implementation status (delivered)
+
+Built and tested on `claude/game-porting-engine-options-v6g088` (CI: `ctest` runs
+`sim_tests`, `forge_map`, `forge_rules`, `forge_mod`; plus `tools/verify_rules.py`).
+
+- **`RuleData` seam** — the sim reads units/terrain/scalars from an injected
+  `RuleData`; defaults are value-identical to the original literals (oracle:
+  `@UNIT` attack/defense/cargo/movement across 23 rows).
+- **Split harness** — the golden vectors are the baseline suite; `check_rules()` is
+  the modded-data invariant suite (ranges, divisors, gate ordering, behavioral).
+- **Unit/turn spine** — units on `World`, per-type move points, **terrain-aware
+  movement** (entry cost + land/naval passability), GOTO/FORTIFY (**+50% DEF**),
+  combat-on-contact (demote / destroy+advance / capture / friendly-block), wired
+  into `step_turn`.
+- **Forge content pipeline (headless "balance laboratory")** — `inspect` (balance
+  curves vs baseline) · `rules diff` (sparse overlay **write** + round-trip) · the
+  **map editor core** (byte-faithful `.MP` read/write/validate — the net-new
+  encoder) · **mod packaging** (`write/load/validate` a `modinfo`+`rules`+`map`
+  bundle, validated through the same engine the clients run).
+- **GUI scaffold** (`forge/gui`, `-DFORGE_GUI=ON`) — a Dear ImGui front-end over
+  the tested backend.
+
+**Deferred (noted):** the ImGui *windowed* build is not compiled in CI/here (no GUI
+libs/network — see `forge/gui/README.md`); wiring the unused `@CARGO`/`@BUILDING`
+data columns (a fidelity *change* needing spec work); multi-power REF/immigration
+orchestration (needs a per-power REF data-model redesign); full pathfinding /
+stacking / zones-of-control and AI order-setting.
+
+Build + test: `cmake -S viceroy_cpp -B viceroy_cpp/build && cmake --build
+viceroy_cpp/build -j && (cd viceroy_cpp/build && ctest) && python3 tools/verify_rules.py`.
+
 ## Comparison at a glance
 
 | | **Forge (modding tool) — LEAD** | **Godot port** | **ESP32-P4 (full game)** |

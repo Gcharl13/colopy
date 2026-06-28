@@ -3,7 +3,9 @@
 
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include <map>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -87,28 +89,32 @@ OverlayResult apply_overlay(const JsonValue& root, RuleData base) {
                 if (const JsonValue* d = u.find("defense"))    out.rules.units[idx].defense = d->as_int(out.rules.units[idx].defense);
                 if (const JsonValue* c = u.find("cargo"))      out.rules.units[idx].cargo = c->as_int(out.rules.units[idx].cargo);
                 if (const JsonValue* m = u.find("move_class")) out.rules.units[idx].move_class = m->as_int(out.rules.units[idx].move_class);
+                if (const JsonValue* v = u.find("movement"))   out.rules.units[idx].movement = v->as_int(out.rules.units[idx].movement);
             }
         } else out.warnings.push_back("units is not an object");
     }
 
-    // --- terrain_defense ---
-    if (const JsonValue* td = root.find("terrain_defense")) {
-        if (td->is_object()) {
-            for (const auto& kv : td->obj) {
-                char* end = nullptr;
-                long id = std::strtol(kv.first.c_str(), &end, 10);
-                if (end && *end == '\0' && id >= 0 && id < NTERRAIN)
-                    out.rules.terrain_defense[(int)id] = kv.second.as_int(out.rules.terrain_defense[(int)id]);
-                else
-                    out.warnings.push_back("bad terrain id: " + kv.first);
-            }
-        } else out.warnings.push_back("terrain_defense is not an object");
-    }
+    // --- terrain_defense / terrain_move (keyed by terrain id) ---
+    auto apply_terrain = [&](const char* key, std::array<int, NTERRAIN>& dst) {
+        const JsonValue* t = root.find(key);
+        if (!t) return;
+        if (!t->is_object()) { out.warnings.push_back(std::string(key) + " is not an object"); return; }
+        for (const auto& kv : t->obj) {
+            char* end = nullptr;
+            long id = std::strtol(kv.first.c_str(), &end, 10);
+            if (end && *end == '\0' && id >= 0 && id < NTERRAIN)
+                dst[(int)id] = kv.second.as_int(dst[(int)id]);
+            else
+                out.warnings.push_back(std::string(key) + ": bad terrain id: " + kv.first);
+        }
+    };
+    apply_terrain("terrain_defense", out.rules.terrain_defense);
+    apply_terrain("terrain_move", out.rules.terrain_move);
 
     // --- unknown top-level keys ---
     for (const auto& kv : root.obj) {
         const std::string& k = kv.first;
-        if (k != "cfg" && k != "units" && k != "terrain_defense")
+        if (k != "cfg" && k != "units" && k != "terrain_defense" && k != "terrain_move")
             out.warnings.push_back("unknown overlay section: " + k);
     }
 
@@ -118,6 +124,81 @@ OverlayResult apply_overlay(const JsonValue& root, RuleData base) {
 OverlayResult load_overlay(const std::string& path, RuleData base) {
     JsonValue root = json_parse_file(path);
     return apply_overlay(root, std::move(base));
+}
+
+// ---- sparse overlay writer (inverse of apply_overlay) ----
+
+JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
+    JsonValue root; root.type = JsonValue::Object;
+
+    // cfg scalars: emit only the ones that changed.
+    JsonValue cfg; cfg.type = JsonValue::Object;
+    const Config& b = base.cfg; const Config& c = cur.cfg;
+#define D(name) if (b.name != c.name) cfg.obj[#name] = json_num(c.name);
+    D(warehouse_cap_base) D(sol_decay_shift) D(sol_inflow_mult) D(sol_birth_bonus)
+    D(food_growth_threshold) D(max_population) D(tory_divisor_base)
+    D(expert_era_bonus) D(expert_mfg_mult)
+    D(price_drift_shift) D(fortify_def_num) D(fortify_def_den)
+    D(ff_human_scale) D(ff_human_offset) D(ff_ai_scale) D(ff_ai_offset)
+    D(ff_post_indep_scale) D(ff_post_indep_offset)
+    D(ff_compounding_shift) D(ff_first_father_shift)
+    D(ref_regulars_scale) D(ref_regulars_offset) D(ref_cavalry_scale) D(ref_cavalry_offset)
+    D(ref_manowar_scale) D(ref_manowar_offset) D(ref_artillery_scale) D(ref_artillery_offset)
+    D(ref_accrue_scale) D(ref_accrue_offset) D(ref_unit_cost)
+    D(ref_cavalry_ratio) D(ref_artillery_ratio) D(ref_naval_ratio)
+    D(imm_threshold_cap) D(imm_sub4k_mult) D(imm_sub4k_offset)
+    D(imm_ai_scale) D(imm_ai_divisor) D(imm_england_num) D(imm_england_den)
+    D(imm_dock_slots) D(imm_base_crosses)
+#undef D
+    auto emit_array = [&](const char* key, const int* bv, const int* cv, size_t n) {
+        bool diff = false;
+        for (size_t i = 0; i < n; ++i) if (bv[i] != cv[i]) diff = true;
+        if (!diff) return;
+        JsonValue a; a.type = JsonValue::Array;
+        for (size_t i = 0; i < n; ++i) a.arr.push_back(json_num(cv[i]));
+        cfg.obj[key] = a;
+    };
+    emit_array("ff_gate_years", b.ff_gate_years.data(), c.ff_gate_years.data(), b.ff_gate_years.size());
+    emit_array("ref_accrue_gate_years", b.ref_accrue_gate_years.data(),
+               c.ref_accrue_gate_years.data(), b.ref_accrue_gate_years.size());
+    if (!cfg.obj.empty()) root.obj["cfg"] = cfg;
+
+    // units: keyed by name, only changed fields.
+    JsonValue units; units.type = JsonValue::Object;
+    for (int i = 0; i < NUNITTYPES; ++i) {
+        const auto& ub = base.units[i]; const auto& uc = cur.units[i];
+        JsonValue u; u.type = JsonValue::Object;
+        if (ub.attack     != uc.attack)     u.obj["attack"]     = json_num(uc.attack);
+        if (ub.defense    != uc.defense)    u.obj["defense"]    = json_num(uc.defense);
+        if (ub.cargo      != uc.cargo)      u.obj["cargo"]      = json_num(uc.cargo);
+        if (ub.move_class != uc.move_class) u.obj["move_class"] = json_num(uc.move_class);
+        if (ub.movement   != uc.movement)   u.obj["movement"]   = json_num(uc.movement);
+        if (!u.obj.empty()) {
+            std::string key = (uc.name && uc.name[0]) ? uc.name : std::to_string(i);
+            units.obj[key] = u;
+        }
+    }
+    if (!units.obj.empty()) root.obj["units"] = units;
+
+    // terrain_defense / terrain_move: keyed by id, only changed.
+    auto emit_terrain = [&](const char* key, const std::array<int, NTERRAIN>& bt,
+                            const std::array<int, NTERRAIN>& ct) {
+        JsonValue t; t.type = JsonValue::Object;
+        for (int id = 0; id < NTERRAIN; ++id)
+            if (bt[id] != ct[id]) t.obj[std::to_string(id)] = json_num(ct[id]);
+        if (!t.obj.empty()) root.obj[key] = t;
+    };
+    emit_terrain("terrain_defense", base.terrain_defense, cur.terrain_defense);
+    emit_terrain("terrain_move", base.terrain_move, cur.terrain_move);
+
+    return root;
+}
+
+void save_overlay(const std::string& path, const RuleData& base, const RuleData& cur) {
+    std::ofstream f(path, std::ios::binary);
+    if (!f) throw std::runtime_error("rules_json: cannot write " + path);
+    f << json_dump(overlay_diff(base, cur));
+    if (!f) throw std::runtime_error("rules_json: write failed for " + path);
 }
 
 } // namespace forge

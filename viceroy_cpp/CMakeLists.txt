@@ -62,6 +62,7 @@ add_executable(forge
   forge/json.cpp
   forge/rules_json.cpp
   forge/mapedit.cpp
+  forge/mod.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE viceroy_sim)
@@ -71,6 +72,8 @@ add_executable(sim_tests sim/tests/sim_tests.cpp)
 target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
 add_test(NAME forge_map COMMAND forge map selftest)
+add_test(NAME forge_rules COMMAND forge rules selftest)
+add_test(NAME forge_mod COMMAND forge mod selftest)
 
 # --- Optional Dear ImGui desktop GUI (forge/gui). OFF by default: it needs network
 #     (FetchContent) + an OpenGL/GLFW dev environment, so the normal build and CI
