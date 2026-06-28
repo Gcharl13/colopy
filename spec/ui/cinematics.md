@@ -386,7 +386,12 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
    CLOSING.EXE (`CINEMATIC_TIMING_AUDIT.md` §4); orphan asset.
 5. ✅ **`DECLARAT.PIK` loader — RESOLVED (B, negative).** Orphan; the engine draws DECOIND.PIK
    (`declaration_independence.md` §3). Closed as a negative.
-6. **King-defeats / score-screen text RGB — A (engine-resident).** The glyph engine `0x181F:0x3FE`
-   takes no per-call palette arg; on-screen color is the FONTKING/FONTTINY glyph→palette mapping —
-   not byte-pinnable at the call site. Tightening to B requires tracing the glyph engine's palette
-   resolve or a DOS-frame pixel sample. **TBD at B.**
+6. **King-defeats / score-screen text RGB — A (closed at anchor tier; B unreachable statically).**
+   Painter `func_075352` decoded: the FONTKING draw sets pen `[0x1f4a]=0xF2`(x=242) / `[0x1f50]=0x2F`(y=47)
+   / `[0x1f52]=0`, style `[0x1f56]|=0x18`, then draws via the **type-A thunk `0x181F:0x3FE`**. That thunk is
+   **runtime-patched**: its static target is the 21-byte style-mask helper `func_06F57E` (`(1<<(n-1)) & [0x1f54]`),
+   **not** the glyph blitter — capstone of the deoverlay-guessed target `0x029044` decodes to unrelated colony
+   code, confirming the real blitter is paged in at run time and its ink-level→palette-index map is **not
+   statically resolvable**. FONTKING is 2-bpp (ink levels 1/2/3, `formats/FF.md`); on-screen RGB = the screen's
+   loaded palette (KINGLSS/SCORE PIK) at those intrinsic ink indices. The three literal RGB triples would need a
+   DOS-frame pixel sample (out of scope here). **Closed at A — not a static-B candidate.**

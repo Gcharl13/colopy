@@ -155,9 +155,14 @@ Americas, Spring 1490).
   reversing the exact formula requires reading the displayed values across the map and correlating each
   `(x,y)` with its AMER2 terrain/features/neighbours.
 
-**Still TBD:** the exact arithmetic (which yields/bonuses/adjacency sum to the printed number) and the
-handler function offset. Next step = systematic screenshot value-read + terrain correlation (the inputs
-are all known: AMER2 terrain `data_extracted/map/AMER2_tiles.json`, yields, coastal/resource bonuses).
+**Value characterised (A, oracle):** range 0–24; ocean/sea-lane = 0; coastal land carries the score;
+special-resource tiles highest (observed coast run 9 / 11 / 12 / 13 / 13). **Formula + handler offset are
+the single open reconstruction (TBD):** the scorer is overlay-resident with **no static dispatch anchor**
+(two deep passes mis-resolved it), and the value is **draw-time-computed** (no stored 58×72 array — an
+FFT/ocean-zero search of the 16 MB live snapshot is negative). A closed form therefore needs either a live
+multi-tile value-read **regression** vs `data_extracted/map/AMER2_tiles.json` (running game) or locating
+the overlay scorer. **This is the one spec item that cannot be closed from static bytes or the existing
+snapshots** — honestly left open rather than guessed.
 
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 
