@@ -357,6 +357,47 @@ static void test_unit_turn() {
         refresh_moves(w); apply_orders(g, w, win);
         CHECK(w.units[0].x == 0, "land unit blocked by ocean at x=1 -> x=%d", w.units[0].x);
     }
+    // obstacle routing: an ocean wall at x=2 with a one-tile gap at the bottom row;
+    // the unit must route around through the gap to reach the far side.
+    {
+        World w; w.map_w = 6; w.map_h = 4; make_terrain(w, /*Plains*/2);
+        for (int y = 0; y < 3; ++y) w.terrain[(size_t)y * w.map_w + 2] = 25;    // wall x=2, rows 0..2
+        // (2,3) stays Plains -> the gap.
+        Unit d = mk(DRAGOONS, 0, 0, 1); d.order = ORDER_GOTO; d.target_x = 5; d.target_y = 1;
+        w.units.push_back(d);
+        bool reached = false;
+        for (int turn = 0; turn < 12 && !reached; ++turn) {
+            refresh_moves(w); apply_orders(g, w, win);
+            reached = (w.units[0].x == 5 && w.units[0].y == 1);
+        }
+        CHECK(reached && w.units[0].order == ORDER_NONE, "routed around wall to target (%d,%d)",
+              w.units[0].x, w.units[0].y);
+    }
+}
+
+// --- multi-power turn: every power's economy + Europe immigration advances ---
+static void test_multipower() {
+    std::printf("multi-power turn (economy + immigration for all powers):\n");
+    GameState g; g.difficulty = 1;
+    World w;
+    Colony c0; c0.owner_power = 0; c0.population = 3; c0.crosses_output = 3; c0.food_per_turn = 60;
+    Colony c1; c1.owner_power = 1; c1.population = 3; c1.crosses_output = 3; c1.food_per_turn = 60;
+    w.colonies.push_back(c0); w.colonies.push_back(c1);
+    auto rng = [](int, int) { return 1; };           // dock slot 1
+    for (int i = 0; i < 5; ++i) step_turn(g, w, rng, /*player*/0);
+
+    // economy runs for both powers' colonies (food -> growth).
+    CHECK(w.colonies[0].population > 3 && w.colonies[1].population > 3,
+          "both colonies grew -> %d / %d", w.colonies[0].population, w.colonies[1].population);
+    // immigration advanced for both powers' Europe docks.
+    auto spawned = [](const Power& p) {
+        for (int s = 0; s < 3; ++s) if (p.dock_pool[s] != -1) return true;
+        return false;
+    };
+    CHECK(spawned(g.powers[0]) && spawned(g.powers[1]), "both powers received immigrants");
+    // human (England, power 0) and AI (power 1) get different thresholds.
+    CHECK(g.powers[0].crosses_threshold != g.powers[1].crosses_threshold,
+          "human %d vs AI %d threshold", g.powers[0].crosses_threshold, g.powers[1].crosses_threshold);
 }
 
 // --- modded-data invariant suite: cfg scalars are injected, and check_rules()
@@ -479,6 +520,7 @@ int main() {
     test_units();
     test_combat();
     test_unit_turn();
+    test_multipower();
     test_rules();
     test_rules_invariants();
     test_natives();

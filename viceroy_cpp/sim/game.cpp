@@ -16,12 +16,16 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     // 2. Market: European price drift (once).
     price_drift(g, rd);
 
-    // 3. Immigration: crosses = base + Σ this power's colony cross output.
-    int workers = 0, crosses = rd.cfg.imm_base_crosses;
-    for (const Colony& c : w.colonies)
-        if (c.owner_power == player_idx) { workers += c.population; crosses += c.crosses_output; }
-    immigration_step(g.powers[player_idx], crosses, workers, /*units*/0,
-                     g.difficulty, /*ai*/false, player_idx, rng, rd);
+    // 3. Immigration: every power advances its own Europe dock. crosses = base +
+    //    Σ that power's colony cross output; the human is player_idx (ai otherwise).
+    //    The England (power 0) bonus + AI scaling live in crosses_threshold.
+    for (int p = 0; p < 4; ++p) {
+        int workers = 0, crosses = rd.cfg.imm_base_crosses;
+        for (const Colony& c : w.colonies)
+            if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
+        immigration_step(g.powers[p], crosses, workers, /*units*/0,
+                         g.difficulty, /*ai*/ p != player_idx, p, rng, rd);
+    }
 
     // 4. REF (King) budget accrual + unit purchase.
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);

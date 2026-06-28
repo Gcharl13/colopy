@@ -12,6 +12,7 @@
 #include "game.hpp"      // World
 #include "rules.hpp"     // RuleData
 #include "immigration.hpp"  // RandFn
+#include <utility>       // std::pair
 
 namespace vc::sim {
 
@@ -29,5 +30,13 @@ void apply_orders(GameState& g, World& w, const RandFn& rng,
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);
+
+// First step of a least-cost route over PASSABLE terrain from (fx,fy) to (tx,ty)
+// for a land/naval unit (8-connected Dijkstra; edge cost = terrain_move; units are
+// ignored — combat/blocking is handled at execution). Returns {-1,-1} if the
+// target is unreachable or there is no terrain plane. Used to route GOTO around
+// impassable terrain (coastlines) when the straight step is blocked.
+std::pair<int, int> find_step(const World& w, const RuleData& rd,
+                              int fx, int fy, int tx, int ty, bool naval);
 
 } // namespace vc::sim
