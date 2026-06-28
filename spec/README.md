@@ -15,7 +15,7 @@ deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 **Status of depth (honest — revised 2026-06-28).** A close-out pass this session resolved
 **213 open TBDs** via a decode → adversarial-verify workflow (every closure byte-cited **B** or
 oracle/pixel-measured **A**, independently re-derived before landing; ~110 over-reaching proposals
-were *rejected* by the verifier). Open-TBD lines fell **317 → ~96**, of which the large majority are
+were *rejected* by the verifier). Open-TBD lines fell **317 → ~21** (only **one** genuine open item remains — see below), of which the rest are
 now tier-vocabulary legends, section headings, and historical "was-TBD" notes — **not** open gaps.
 The honest picture:
 
