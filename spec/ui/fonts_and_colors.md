@@ -1,6 +1,6 @@
 # UI Fonts & Colors — shared reference
 
-> **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R/TBD. This is the shared
+> **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: B/A/R. This is the shared
 > font + color model referenced by every `spec/ui/*.md`. **Canonical primary:** boot asset
 > table `@file 0x1FD20` (font loads), the per-call color push-arg in each render function
 > (`raw/COLONIZE/VICEROY.EXE`), and the per-screen pixel verification in `spec/ui/colony_screen.md`

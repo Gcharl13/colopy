@@ -1,6 +1,6 @@
 # Memory Records — Runtime Record Types
 
-> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R/TBD.
+> **Layer 2 — Data Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R.
 
 **Canonical primary:** `docs/DATA_MODEL.md` (runtime/byte-verified record layouts — CANONICAL for the full field maps). This stub is an index: it pins each record's base/stride and a few byte-verified anchor fields, then points to `docs/DATA_MODEL.md` for everything else. **Do not duplicate the full field tables here** — confirm any offset at its cited read site in `docs/DATA_MODEL.md` before tagging.
 

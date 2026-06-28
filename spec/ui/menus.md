@@ -3,7 +3,7 @@
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
 > **B** (`BYTE_VERIFIED` — func@offset / GAME-NAMES-LABELS-MENU.TXT key / recorded ruling),
 > **A** (`ANCHOR_VERIFIED` — overlay/pixel-measured geometry), **R** (`RECONSTRUCTED` —
-> single-frame / low-trust approximate), **TBD** (unknown — no evidence). Never invented.
+> single-frame / low-trust approximate). Never invented (un-evidenced values are simply omitted).
 >
 > Substantive: boot-menu items + dispatch ladder, plaque/dialog framework geometry, the
 > **in-game menu-bar build + dropdown engine + per-item dispatch**, the two new-game pickers
@@ -479,7 +479,7 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
 
 ---
 
-## 15. Open questions (resolved-with-citation, or honest R/TBD)
+## 15. Open questions (resolved-with-citation)
 
 1. ✅ **In-game menu-bar build + dropdown dispatch — RESOLVED (B).** Build `func_072090`
    @0x072090, draw `func_06083A` @0x06083A (one centered `0x181F:0x100` label line, color 0x0F,

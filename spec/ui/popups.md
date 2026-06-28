@@ -1,7 +1,7 @@
 # Gameplay Popups
 
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
-> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`).
 > Substantive: the **shared centered-dialog FRAME engine** (`func_06C520` /
 > `func_06D316` / `func_06C850`, frame blit `0x181F:0x510`) is the byte-cited
 > backbone; the **10 live `@`-directives**, the **4 speaker-portrait channels**

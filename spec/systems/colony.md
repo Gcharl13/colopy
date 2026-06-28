@@ -1,7 +1,7 @@
 # Colony & Production
 
 > **Layer 2 — Specification.** PRIMARY data only (`/METHODOLOGY.md`). Tiers:
-> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED` / `TBD`.
+> `BYTE_VERIFIED` / `ANCHOR_VERIFIED` / `RECONSTRUCTED`.
 
 **Overall confidence:** record stride + fields + **per-tile production formula**
 + **Sons-of-Liberty %** + **hammers/build-progress field** `BYTE_VERIFIED`;

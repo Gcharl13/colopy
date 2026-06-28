@@ -3,7 +3,7 @@
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
 > **B** (`BYTE_VERIFIED` — func@offset / GAME-NAMES-LABELS-MENU.TXT key / recorded ruling),
 > **A** (`ANCHOR_VERIFIED` — overlay/pixel-measured geometry), **R** (`RECONSTRUCTED` —
-> single-frame / low-trust approximate), **TBD** (unknown — no evidence). Never invented.
+> single-frame / low-trust approximate). Never invented (un-evidenced values are simply omitted).
 >
 > Substantive: every action dialog here is a **menu-LIST** rendered by the shared
 > centered-dialog FRAME engine (`func_06C520`/`func_06D316`/`func_06C850`, §2) and run by the
@@ -426,7 +426,7 @@ section content and the gameplay predicates (row gating, build availability) dif
 
 ---
 
-## 15. Open questions (resolved-with-citation, or honest R/TBD)
+## 15. Open questions (resolved-with-citation)
 
 1. ✅ **Option-list framework + run/highlight — RESOLVED (B).** Shared dialog FRAME engine §2
    (`func_06C520`/`func_06D316`/`func_06C850`), `@`-parser `func_06F0F4` §3, run/hit-test

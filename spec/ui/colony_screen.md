@@ -3,7 +3,7 @@
 > **Layer 2 — UI Specification.** Per `/METHODOLOGY.md`. Tiers: **B** = byte-cited
 > (a `func_XXXXXX @0xNNNNN` file offset, a verified `*.TXT` key, or a recorded ruling);
 > **A** = overlay/pixel-measured geometry (no byte literal); **R** = single-frame /
-> low-trust approximation or a decompiler stub the EXE keys differently; **TBD** = unknown.
+> low-trust approximation or a decompiler stub the EXE keys differently.
 
 **Overall confidence:** the **composer draw ORDER and every panel-paint sub-renderer are
 byte-transcribed** from the colony composer `func_028592 @0x028592` (tier **B** — the 12 ordered

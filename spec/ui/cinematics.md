@@ -1,7 +1,7 @@
 # End-Game & Cinematic Screens
 
 > **Layer 2 — UI Specification.** Primary-only per `/METHODOLOGY.md`. Tiers:
-> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`) / `TBD`.
+> B (`BYTE_VERIFIED`) / A (`ANCHOR_VERIFIED`) / R (`RECONSTRUCTED`).
 > Substantive: the three in-VICEROY painters are **B** — king-defeats `func_075352`
 > (argument matrix + FONTKING context, re-disassembled 2026-06-21), score `func_03A9C0`
 > (+ component sum `func_039EE2`), Declaration `func_03DA2A` (cross-ref `declaration_independence.md`).

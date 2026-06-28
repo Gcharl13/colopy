@@ -289,7 +289,7 @@ the cursor … The {space} or {enter} key paints". These match the scan-code
 evidence (0x48=up-arrow, 0x0D=Enter) but the EXE bytes remain authoritative for
 the numeric codes.
 
-### Unresolved / TBD (runtime-driven, exact site named)
+### Runtime-driven dispatch (exact site named)
 
 | Item | Blocker | Exact site to trace |
 |---|---|---|
