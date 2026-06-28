@@ -246,4 +246,4 @@ dialog state set per-invocation in `[0x1f9e]/[0x1fa0]/[0x1fa2]` and rendered by
    caps:** `[0x1DC6]` (`inc @0x614E6`, gate `@0x6163D cmp,1`) and `[0x1DC7]`
    (`inc @0x616C9`, gate `@0x61644 cmp,7`) limit Fountain/Cibola. **B.**
 3. ~~Numeric effects: which `@LOSTCITY` index = treasure/FoY/burial.~~ **Done 2026-06-19** — full n→meaning table byte-verified (§2): 1 FoY(8 immigrants)/2 Cibola/3 ruins-gold/4 burial/5 vanish/6 nothing/7 gift/8 trespass/9 survivors. Remaining: the per-index reward *magnitude* roll formulas (`[bp-0x10]`/`[bp-0x32]`).
-4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **Found 2026-06-19** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). Remaining: the index→`@LOSTCITYn` mapping + Fountain-of-Youth/burial numerics.
+4. ~~Entry function that consumes @LOSTCITY*/@BURIAL*.~~ **DONE** — `func_061454` (builds `LOSTCITY`+digit; Scout/Seasoned-Scout check **B**). The index→`@LOSTCITYn` mapping (full n→meaning table) and the FoY/burial numerics are byte-verified in **§2 / §6 items 2–3** (n=3 `10·3d8`, n=7 `2·4d10`, n=2 Cibola `100·(10·(scout+2)+1d20)`, `@BURIAL3` `2·(1d8+2·(scout+5))×100`). **B.**

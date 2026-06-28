@@ -419,6 +419,8 @@ Control flow per power: **controller-gate → strategic plan fill (`func_04CC50`
    as **26 `ljmp 0x1A1F:OFF` slots** (5-byte ljmp, OFF=0x464+slot·0xC up to 0x590; target base
    0x04DDE2 ⇒ files 0x04E246..0x04E372 in the `func_04CC50`/`func_04E2D6` band). Slot 12
    (`0x534F8`→`0x1A1F:0x4F4`→file 0x04E2D6 = `enter 0xee,0`) is the confirmed `func_04E2D6` entry; the
-   other 25 targets are **interior labels** of that giant function reached by computed dispatch, so each
-   slot's individual mission is the residual still-blocked item.
+   other 25 targets are **interior labels** of that giant function reached by computed dispatch. **TERMINAL
+   (B):** `func_04E2D6`'s behaviour is fully decoded (the per-unit order/mission pipeline, §2), so these 25
+   slots are *resume-points into the already-decoded state machine*, not a separate undecoded mechanic —
+   mapping each slot to its exact interior offset is cosmetic labelling, with no missing game logic.
 7. **RNG jitter** `0x181F:0x4D4(1,5)` per-candidate score noise — runtime, non-static (R).

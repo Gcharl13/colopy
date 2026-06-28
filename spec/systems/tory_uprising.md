@@ -136,8 +136,7 @@ Status messages (`@TORYMAJORITY`/`@TORYMINORITY`/`@REBELMAJORITY`/
 
 1. ~~**Uprising trigger** — byte-trace the condition firing `@TORYUPRISING`.~~
    **Done 2026-06-20** — emitter `func_03CAC6` `@0x3CD94`; per-call gate
-   `random_int(0,difficulty+1)≠0` (prob `(diff+1)/(diff+2)`) `@0x3CADD`. Residual: the
-   WoI-loop call frequency. **B** (§3).
+   `random_int(0,difficulty+1)≠0` (prob `(diff+1)/(diff+2)`) `@0x3CADD`. The emitter is invoked from the **per-turn revolution processing** (turn dispatch), so the gate is evaluated **once per WoI turn** per power. **B** (§3).
 2. ~~**Majority/minority cutoffs** on the rebel fraction selecting the `@TORY*`/
    `@REBEL*` status strings.~~ **Done 2026-06-20** — hysteresis at 50/95/100%
    (`func_02D658`, latch `ColonyRecord +0x1C` bits `0x04`/`0x02`); see §3 table. **B.**

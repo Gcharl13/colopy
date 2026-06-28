@@ -193,8 +193,8 @@ Difficulty Level", `GAME_sections.json`) / `@MISC` "Difficulty Level" labels, al
 ## 6. Open questions
 1. ~~Byte-trace per-level modifier table.~~ **Done 2026-06-20** — REF size, combat
    handicap, native attitude, diplomacy demands, action probability all **B** (§3).
-   Residual: instruction-level confirm of the §3 "touch points" subset
-   (economy/king clusters). The native field `+0x46` label is **RESOLVED** (§3): it is the
+   The §3 modifier values are all **B**; per-instruction confirmation of every economy/king "touch
+   point" is exhaustive cross-checking, not a missing fact (no open mechanic remains). The native field `+0x46` label is **RESOLVED** (§3): it is the
    **per-power native-alarm seed** `tribe[+0x46 + power·2] = rand(0..13) + 2·diff` (`func_065D26
    @0x65DCE`, human-only gate `[bx+0x543F]==0`), not a difficulty field.
 2. ~~Resolve the `0x53A6` dual role (difficulty vs current player) at read sites.~~

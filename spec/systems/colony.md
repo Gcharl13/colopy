@@ -461,8 +461,7 @@ the **Colony Adviser (F6)** (`docs/ADVISOR_REPORTS_AUDIT.md`).
    hammer banks `+0x92`/`+0xB6`, target `+0x94`, cost table `DGROUP:0x8F8C`,
    persistent mask `+0x84` (display copy `+0x8A`), surplus carried, target not reset
    (§3). **Correction:** the build code uses `+0x92`/`+0xB6` (not the dump-labeled
-   `+0xBA`) and `+0x84`/`+0x94` (not `+0x60`/`+0x10`) — RULINGS 2026-06-20. Residual:
-   `+0x92` vs `+0xB6` bank roles; `+0xBA`'s real meaning.
+   `+0xBA`) and `+0x84`/`+0x94` (not `+0x60`/`+0x10`) — RULINGS 2026-06-20. **RESOLVED:** `+0x92` = hammer **accrual** bank (`@0x2E50F`); `+0xB6` = build-cost **debit**, surplus carried (`@0x2E6A7`) (`BACKLOG.md` #4b); `+0xBA` = element 0 of the 4-entry per-power flag array `+0xBA..+0xBD` (`records.md` §4), not a hammers field. **B.**
 2. ~~**Warehouse** capacity thresholds~~ **Done** — regular goods `cap=(+0x95+1)·100`
    (100/200/300), `func_008D00`, applied `@0x00A615` (2026-06-20). **Spoilage RESOLVED
    2026-06-27:** no per-good spoilage clamp; over-cap tradeables auto-export to Europe
