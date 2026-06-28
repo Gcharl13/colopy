@@ -15,7 +15,7 @@ deepen from [`_TEMPLATE.md`](_TEMPLATE.md).
 **Status of depth (honest — revised 2026-06-28).** A close-out pass this session resolved
 **213 open TBDs** via a decode → adversarial-verify workflow (every closure byte-cited **B** or
 oracle/pixel-measured **A**, independently re-derived before landing; ~110 over-reaching proposals
-were *rejected* by the verifier). Open-TBD lines fell **317 → ~21** (only **one** genuine open item remains — see below), of which the rest are
+were *rejected* by the verifier). Open-TBD lines fell **317 → ~20** (the last genuine open item — the colony-site value formula — was **closed (B) 2026-06-28**, see below), of which the rest are
 now tier-vocabulary legends, section headings, and historical "was-TBD" notes — **not** open gaps.
 The honest picture:
 
@@ -32,8 +32,7 @@ The honest picture:
 - **The real residual (~17 genuinely runtime-only items):** values that are computed at paint-time
   or per-turn with no static constant, each with its **source byte-cited and the exact capture
   named** — e.g. the colony per-turn `+0xAA` growth-accumulator write (needs a two-turn live
-  capture; the *only* two image-wide writers are init=2 / event+100), the colony-site value
-  *arithmetic* (`ai.md §3b`, needs multi-capture regression), Customize-screen widget geometry,
+  capture; the *only* two image-wide writers are init=2 / event+100), Customize-screen widget geometry,
   save-slot count, end-game score/king text RGB (engine-resident palette). These are **not "blocked
   unknowns"** — the mechanism and source are fully documented; only the live value awaits an oracle
   capture. **The authoritative residual for any sheet is its own §6/§8 "Open questions" — not this
@@ -83,8 +82,10 @@ now **almost entirely closed** — including the items previously called out as 
 logic": the colony **building-frame selector** (corrected to **`func_026DD4`**, frame = `def_id+1`,
 live-verified) and the Europe **Exit-button paint origin** (pixel-measured, **A**). What remains UI-side
 is a short list of genuinely runtime-only values, each with its source byte-cited and the exact capture
-named (Customize-screen widget geometry, save-slot count, LEVN scenario grid, end-game text RGB, the
-colony-site value *arithmetic*). **Each sheet's own §6/§8 "Open questions" is the authoritative
+named (Customize-screen widget geometry, save-slot count, LEVN scenario grid, end-game text RGB). The
+colony-site value *arithmetic* — long the last open formula — was **closed (B) 2026-06-28**
+(`ai.md §3b`: `func_063F3C` fills map-layer-4 low nibble = `clamp(land-value/10, 0, 15)`; F09 displays
+it). **Each sheet's own §6/§8 "Open questions" is the authoritative
 residual — not this header.**
 Tiers: **B** = decompiled body / capstone offset / file-decoded value; **A** = luma/anchor/pixel-measured;
 **R** = reconstructed-from-asset; **TBD** = a live game-state value awaiting an oracle capture.

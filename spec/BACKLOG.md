@@ -93,8 +93,9 @@ secondary mechanics.
 > pass byte-closed `STATUS.md`'s formula table (combat, market drift, FF acquisition, LCR
 > distribution, REF growth, score details, map generation — all ✅) and corrected the two flagged
 > items — the **building-frame selector** is now `func_026DD4` (frame=`def_id+1`, live-verified) and
-> the **colony-site value** capture is documented (`ai.md §3b`; only the value *arithmetic* awaits a
-> multi-capture regression). `spec/` open-TBD lines fell **~317 → ~21** (one genuine open item left); the remainder is
+> the **colony-site value** formula is now **closed (B) 2026-06-28** (`ai.md §3b`: `func_063F3C` fills
+> map-layer-4 low nibble = `clamp(land-value/10, 0, 15)`, displayed by F09 `func_021602`).
+> `spec/` open-TBD lines fell **~317 → ~20** (no genuine open formula left); the remainder is
 > tier-vocabulary legends + ~17 genuinely runtime-only values, each with source byte-cited and the
 > exact oracle capture named. The authoritative "what is left" is each sheet's §6/§8, not this banner.
 

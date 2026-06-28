@@ -5555,3 +5555,27 @@ subsystem (spec/systems/map_system.md), not a colony-screen leaf. Left unrendere
 NET colony-screen status: every element EXCEPT this minimap composite is pixel-verified against the
 matched live capture; full-screen MSE 3625 → 971. The minimap is the one element whose faithful
 render depends on the in-game map renderer.
+
+## 2026-06-28 — Colony-site value ("Show Colony Sites" cheat) is a cached map-layer nibble, formula byte-traced
+
+**Conflict**: `ai.md §3b` (2026-06-27) concluded the F9 "Show Colony Sites" 0–24 value was
+draw-time-computed, NOT cached, and the scorer "not statically locatable" (overlay-resident behind a
+runtime-patched type-A thunk). This blocked the last open spec TBD.
+
+**Resolution (B, 2026-06-28)**: All three claims were wrong. (1) **Cached**: the value is the **low
+nibble of map-layer #4** (`[0x168]/[0x16a]`, the 4th of four w×h byte planes malloc'd at `func_070FE8`).
+The 2026-06-27 snapshot scan was a false negative because it searched for the *terrain* land/water mask,
+which this packed-nibble plane does not match. (2) **Range 0–15, not 0–24**: the F9 handler `func_021602`
+masks `& 0x0F` (clamp ceiling 15; observed coast max 13). (3) **Statically locatable**: the writer is
+**`func_063F3C`** (file `0x063F3C`, page_14), a new-game map-gen pass (already documented in
+`map_generation.md` as the "resource/land-value layer" writer, A) — store `@0x064130` via `func_005ED0`.
+Formula: per land tile, ring-weighted sum over the ~21-tile catchment of per-terrain Improvement stat
+`[terrain·16+0x2F79]` / special-resource bonus / ocean coastal-adjacency, near-colony-halved,
+Mountains→0/Hills→½, then `clamp(score/10, 0, 15)`; water/oob ⇒ 0. Dispatch: cmd id `0x6C` →
+jump-table `0x023DE8` → `func_021602`. Pinned via the dispatcher jump-table structure (the F09 thunk
+pointer is runtime-patched). Independently re-derived by two passes (decode + adversarial verify);
+oracle-consistent (ocean=0, coast 9/11/12/13/13). **Supersedes the §3b "open/TBD" status — last spec
+formula now closed.**
+
+**Authority**: `func_021602`/`func_005EE8`/`func_063F3C`/`func_005ED0`/`func_0048CC` byte offsets;
+`spec/systems/ai.md §3b`; cross-ref `spec/systems/map_generation.md`.

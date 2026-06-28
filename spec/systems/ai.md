@@ -131,62 +131,65 @@ So the AI scoring stack terminates in the **already-specified** map (`formats/MP
 `map_system.md`) and colony (`colony.md`) data layers — there is no further AI-only black box beneath
 the helper map above.
 
-### 3b. Colony-site VALUE — "Show Colony Sites" (CHEAT F9) — LIVE-CAPTURED (2026-06-27)
+### 3b. Colony-site VALUE — "Show Colony Sites" (CHEAT F9) — **CLOSED (B, 2026-06-28)**
 
-The cheat menu's **F9 "Show Colony Sites"** (`MENU @CUP`) overlays a per-tile **colony-site value**
-on the map. Static decode did NOT pin the handler/formula (two deep passes mis-resolved to Reveal-Map
-`func_06892E` and a generic message drawer `func_038418`; the value routine is overlay-resident with no
-clean dispatch anchor — not statically pinnable). So it was **captured from the running game** (the oracle).
+The cheat menu's **F9 "Show Colony Sites"** (`MENU @CUP`) overlays a per-tile land-value digit on
+the map. **Fully byte-traced (B) on 2026-06-28** — superseding the 2026-06-27 "not statically
+locatable / draw-time, no cached array" finding, which was wrong on both counts (it searched for a
+scorer next to the cheat handler and scanned the snapshot for the *terrain* mask; the value is a
+**cached nibble** filled by a map-gen pass). Two independent passes (decode + adversarial verify)
+agree.
 
-**Live-capture method (reproducible):** launch VICEROY under DOSBox (`scratchpad/dbx/db.conf`,
-`autolock=false`); load a save to reach the map (e.g. `COLONY00.SAV`); type the cheat code **Alt+W+I+N**
-(the `CHEAT` title then appears in the menu bar); CHEAT → **Reveal Map → Complete Map**; CHEAT →
-**F9 Show Colony Sites**. Reference capture: `docs/screens/colony_sites_live.png` (England, AMER2/Original
-Americas, Spring 1490).
+**Dispatch (B).** `MENU @CUP` row **F09 "Show Colony Sites" = command id 0x6C**. The menu-bar builder
+`func_072090` (page_1A) registers the row with id 0x6C; the cheat dispatcher `func_0235D6` (page_01)
+runs a jump table at file `0x023DE8` whose 0x6C entry trampolines (`cs:0x44C2 → ljmp 0x181F:0xF48`)
+to handler **`func_021602`** (file `0x021602`, page_01). (F08 "Show Strategy" = id 0x6B → `func_02165E`
+confirms the table; the F09 thunk pointer is runtime-patched, so the handler was pinned via the
+jump-table structure, not the pointer.)
 
-**Confirmed facts (B, oracle):**
-- The value is printed on **every** tile (white digits in a black box). **Ocean/sea-lane tiles = 0**
-  (cannot found a colony there).
-- **Coastal land tiles carry the score** — observed values on one coast stretch: **9, 11, 12, 13, 13**
-  (the `13` spots are the best sites; one sat on a special-resource tile). Range seen so far ≈ 0–24.
-- The per-tile value is **computed at draw time, NOT stored as a map array** — re-confirmed 2026-06-28 by
-  a **vectorised full-snapshot scan**: for every offset in the 16 MB live snapshot, test the 4176-byte
-  window against the exact AMER2 land/water mask (`data_extracted/map/AMER2_tiles.json`, water=`{25,26}`,
-  land must be `1..40`) → **zero candidates** (byte-array and the relaxed forms). So the value is genuinely
-  not cached anywhere; reversing it needs reading the displayed values and correlating each `(x,y)` with
-  its terrain.
-- **Static search for the scorer FUNCTION — exhausted (2026-06-28), the surrounding machinery ruled out:**
-  the AI colony-siting helpers are **validity/selection, not a desirability score** — `0x181F:0x7BE` =
-  `func_008D26` (distance-from-existing-colonies + passable-land *validity*), `0x181F:0x9E6` = `func_0082DC`
-  (**select-colony-by-index**, sets `[0x8dc6]`/`[0x8542]`). The AI's only colony-site weight is the flat
-  **`+500`** term in `func_046FFA @0x047D84` (fires on validity, not a graded value). The 9-neighbour
-  compass-delta-table readers (`[bx+0xbe]`/`[bx+0xb4]`) are all pathfinding (`page_0E` flood-walk) or
-  map-generation (`page_14`), none a yield-summer. The CHEAT **@CUP F9** dispatch that triggers the display
-  is reached through a **runtime-patched type-A thunk** with no static anchor (two deep passes mis-resolved
-  it). **Conclusion: the graded 0–24 scorer is not statically locatable from the committed image** — it is a
-  draw-time cheat-overlay computation behind the patched dispatch.
+**Handler = display only (B).** `func_021602` sweeps the visible viewport (rows `[0x8328]..[0x8804]`,
+cols `[0x832e]..[0x8806]`); per tile it fetches a byte from **map-layer #4** via `181F:0x74a`
+(=`func_005EE8`: `es=[0x16a]; bx=[0x168]+y*[0x853a]+x; al=es:[bx]`), **masks `& 0x0F`**, and draws the
+nibble via `191F:0x12c`. So the shown value is the **low nibble of map-layer #4** — range **0–15**
+(the earlier "0–24" was an over-estimate; the clamp ceiling is 15, observed coast max 13).
 
-**DOS re-run 2026-06-28 (live, full reproduction).** Reproduced the exact path end-to-end under headless
-DOSBox: LOAD `COLONY00.SAV` → in-game → cheat **Alt+W+I+N** → `CHEAT` menu (appears between TRADE and
-COLONIZOPEDIA) → **F04 Reveal Map → Complete Map** → **F09 Show Colony Sites**. The per-tile values
-render and **match the committed capture exactly** (left-coast strip **9 / 11 / 12 / 13 / 13**;
-ocean/sea-lane = 0). New reference: `docs/screens/colony_sites_live_2026-06-28.png`. **Two hard walls block
-a *verified* formula even with DOS:** (1) the save is **sea-locked** — the active unit is a Caravel at
-`(37,14)` and the view re-centres on it, so only a ~6–8-tile coastal strip of land is ever visible, and
-the overlay **clears on every navigation action**; mapping enough varied land to fit a 9-neighbour formula
-needs extensive unit-driving across the continent. (2) Any result is an **unverifiable regression** — the
-fit cannot be checked against the scorer function (not statically locatable, §above), so a fitted formula
-would be a guess, not a byte/citation-backed fact. Per the prime directive it is left **A (value
-confirmed) / formula open**, not fabricated.
+**The value IS cached (correction).** Map-layer #4 is the 4th of four `width×height` byte planes
+malloc'd by the layer allocator at `func_070FE8`/`0x710A2` (far ptr `[0x168]/[0x16a]`, stride
+`[0x853a]`=map width). It is **dual-nibble**: high nibble = per-power fog/visibility bits (written by
+the reveal/render path `func_0685DC @0x685F9`, `[0xa89e]`); **low nibble = the colony-site / land-value
+score**. The 2026-06-27 full-snapshot scan was a false negative — it matched the *terrain* land/water
+mask, which this packed-nibble plane does not resemble.
 
-**Value characterised (A, oracle):** range 0–24; ocean/sea-lane = 0; coastal land carries the score;
-special-resource tiles highest (observed coast run 9 / 11 / 12 / 13 / 13). **Formula + handler offset are
-the single open reconstruction (TBD):** the scorer is overlay-resident with **no static dispatch anchor**
-(two deep passes mis-resolved it), and the value is **draw-time-computed** (no stored 58×72 array — an
-FFT/ocean-zero search of the 16 MB live snapshot is negative). A closed form therefore needs either a live
-multi-tile value-read **regression** vs `data_extracted/map/AMER2_tiles.json` (running game) or locating
-the overlay scorer. **This is the one spec item that cannot be closed from static bytes or the existing
-snapshots** — honestly left open rather than guessed.
+**Formula — writer `func_063F3C` (B).** The low nibble is filled tile-by-tile during new-game map
+generation by **`func_063F3C`** (body file `0x063F3C`, page_14; invoked from the new-game chain
+`func_0755CC @0x757BA` via `0x1a1f:0x7f8` — already byte-verified as the "resource/land-value layer"
+writer in `map_generation.md` §… (Q4 / pass list), here connected to the F09 display). Store site:
+`func_005ED0` (`181F:0x736`, address-of layer-4 tile) → `mov es:[bx], al` at file **`0x064130`**
+(page_14.asm:832). Per tile (outer y `0..[0x853c]`, inner x `0..[0x853a]`):
+
+- **Water / out-of-bounds → 0** — in-bounds gate `181F:0x302` (`func_005BFA`); water/occupancy gate
+  `181F:0x768` (`func_0062B4`) non-zero ⇒ skip accumulation, the accumulator stays 0. This is why
+  ocean / sea-lane read 0.
+- **Land:** accumulate a score over the **~21-tile colony catchment** (signed delta tables `[bx+0xc8]`
+  =dx, `[bx+0xde]`=dy; ring index `[bp-0xe]=0..0x14`). Each catchment tile's base contribution:
+  - special-resource present (`181F:0x718`=`func_0060A0` returns id ≠ −1) → bonus from table
+    `[id − 0x684e]`;
+  - else ocean (terrain id 25) → coastal-adjacency bonus `(2 + 2·adjacent-land) >> 2` (8-neighbour
+    deltas `[si+0xb4]`/`[si+0xbe]`, gated by `181F:0x768`);
+  - else → the per-terrain **Improvement** stat `byte[terrain·16 + 0x2F79]` — offset 2 of the 4-byte
+    prefix Movement/Defensive/**Improvement**/Value in the 16-byte terrain record (base `0x2F77`;
+    yields at `+0x2F7B` per `map_system.md`);
+  - plus +1 if the layer-1 feature bit `0x40` is set (`181F:0x72c`=`func_005CFE`).
+  Each contribution is **ring-weighted** (multiplier 5→2, nearer rings higher; thresholds
+  `cmp [bp-0xe], 4/8/0xc/0x14`) as `di = (di·w) >> 1` and summed into `[bp-0x10]`.
+- Post-process: a near-existing-colony test (`181F:0xd12`/`181F:0x6b4` vs `[0x8dba]/[0x8dbc]`) halves
+  the score; centre terrain Mountains (27) → 0, Hills (28) → halved.
+- **Final low nibble = `clamp( score / 10, 0, 15 )`** — `idiv 10` at `0x6410E`, then
+  `181F:0x35c` (`func_0048CC` = clamp(v, lo=0, hi=0xf)).
+
+**Oracle cross-check (A).** The byte formula reproduces the live capture: ocean / sea-lane = 0;
+coastal land carries the score (observed run 9 / 11 / 12 / 13 / 13, `docs/screens/colony_sites_live*.png`);
+range 0–15. Formula and oracle agree. **This was the last open spec item; it is now closed (B).**
 
 ## 4. The AI per-unit state-char alphabet — `UnitRecord+0x314B` (B)
 

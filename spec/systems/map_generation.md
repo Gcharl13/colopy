@@ -204,8 +204,11 @@ BEGINMENU `0x1FCE5`→`0x2345`, AMERICA `0x1FCEF`→`0x234f`). **B.**
    - **Native settlements** `func_065D26` (`@0x7596A`): allocates up to **84** (`0x54`)
      settlement records (stride `0x12` @ `0x54EC`, counter `[0x539A]`; per-tribe data
      `0x5AD6` stride `0x4E`, tribe type byte = `tribe+4` for tribes 4..11). **B.**
-   - **Resource / land-value layer** `func_063F3C` (`@0x757BA`): per-tile value byte
-     write (`0x181F:0x736`). **A.**
+   - **Resource / land-value layer** `func_063F3C` (`@0x757BA`; body `0x063F3C`): per-tile value byte
+     write (`0x181F:0x736` → `func_005ED0`, store `@0x064130`) into **map-layer #4** `[0x168]/[0x16a]`
+     **low nibble** = `clamp(land-value/10, 0, 15)`. This low nibble is exactly what the **"Show Colony
+     Sites" cheat (F9)** displays — full per-tile formula byte-traced in `spec/systems/ai.md §3b`
+     (closed B 2026-06-28). **B.**
    - **Lost-City rumour features**: inside the generator tail `@0x65BFD..0x65C21`,
      `or byte es:[bx], 0xA0` into the **features plane** `[0x15C]` at **two FIXED tile
      coordinates** — `(1,0x15)` (`@0x65C0D`) and `(0x44,0x2b)` (`@0x65C21`), each

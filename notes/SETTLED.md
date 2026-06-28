@@ -135,3 +135,14 @@ does **not** spawn a new ruling or a parallel decode doc.
   the `.MP`-file → runtime-board feature-bit remap.
 - *(The F2–F9 report painters + OPENING/CLOSING cinematics are now decoded — see
   `docs/ADVISOR_REPORTS_AUDIT.md` and `spec/ui/cinematics.md`; no longer open.)*
+
+- **Colony-site VALUE ("Show Colony Sites" cheat F9) — CLOSED B 2026-06-28.** F09 (cmd id `0x6C`,
+  dispatch jump-table `0x023DE8` → `func_021602`) displays the **low nibble of map-layer #4**
+  (`[0x168]/[0x16a]`, read via `func_005EE8`/`181F:0x74a`, masked `& 0x0F` ⇒ range **0–15**, not 0–24).
+  The nibble is filled at map-gen by **`func_063F3C`** (body `0x063F3C`, store `mov es:[bx],al`
+  `@0x064130`, addr via `func_005ED0`/`181F:0x736`): per land tile, sum over the ~21-tile catchment
+  (deltas `[bx+0xc8]`/`[bx+0xde]`, ring-weighted ×5→2) of {special-resource bonus `[id-0x684e]` |
+  ocean coastal-adjacency `(2+2·land)>>2` | base terrain **Improvement** stat `[terrain·16+0x2F79]`}
+  +1 feature-bit; near-colony halves; Mountains→0, Hills→½; then **`clamp(score/10, 0, 15)`**
+  (`func_0048CC`/`181F:0x35c`). Water/oob ⇒ 0. Was the last open spec formula. (Corrects the
+  2026-06-27 "draw-time, no cached array, not statically locatable" finding — it IS a cached nibble.)

@@ -37,8 +37,9 @@ helpers.
 > REF growth, score details, map generation — all ✅), and a 213-TBD close-out pass cut the `spec/`
 > open-TBD lines from **~317 → ~76** (the remainder are tier-vocabulary legends + ~17 genuinely
 > runtime-only values, each with source byte-cited + the exact oracle capture named). The colony-site
-> value still needs a multi-capture regression (`spec/systems/ai.md §3b`). Each spec sheet's §6/§8 is
-> the source of truth, not any summary header.
+> value formula — the last open item — was **closed (B) 2026-06-28** (`spec/systems/ai.md §3b`:
+> `func_063F3C` fills map-layer-4 low nibble = `clamp(land-value/10, 0, 15)`, displayed by F09
+> `func_021602`). Each spec sheet's §6/§8 is the source of truth, not any summary header.
 
 ---
 
