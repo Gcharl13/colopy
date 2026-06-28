@@ -331,8 +331,8 @@ cmp ax,0x1a` @0x235E2; `dec ax` ladder for ids 1..26; an out-of-range branch at 
   `0x1FA38`/`0x1FA3D` = `67 61 6d 65 00 6d 65 6e 75`), whose rows carry the `~`-marked
   accelerator letters (below). The per-row→engine-command-id binding is **data-driven**, so
   the *accelerator letter* is **B** (string table) but the *handler each one invokes* is
-  **TBD (per-row id binding)** — blocker: the binding lives in the `game menu` section, not a
-  static per-row `cmp`. (`docs/MENUS_VICEROY_DECODE.md` §7.3, open item 2.)
+  **runtime-dispatched (per-row id binding via `func_0235D6`)** — blocker: the binding lives in the `game menu` section, not a
+  static per-row `cmp` — it is the runtime `game menu` ordinal → `func_0235D6` screen-router dispatch (no static per-row table; mechanism byte-cited in `menus.md` §15.5). **B (accelerator letter + dispatch mechanism) / runtime (per-row handler binding).** (`docs/MENUS_VICEROY_DECODE.md` §7.3.)
 
 The `~` glyph in a `MENU`/`NAMES` section marks the **underlined accelerator letter** the
 game draws and the key it binds (`GAME_MANUAL.md` lines 440–443: "a highlighted letter that

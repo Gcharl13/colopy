@@ -305,15 +305,16 @@ These two modal pickers are twins on page 0x1A (same engine, different grid), en
 
 - **Save (B keys):** `GAME @SAVEGAME`, `@SAVEGOOD`, `@SAVEERROR` (bodies present in JSON).
   Save-name entry uses the resident file/name dialog `call 0x76375` (@0x075A75). The per-char
-  text-entry cursor x-step is inside that resident helper — **TBD** (not a literal in page 0x1A,
-  `CHROME_AND_DISPATCH_INDEX.md` §B7). **B (keys) / TBD (field geometry)**.
+  text-entry cursor advances by the helper’s **per-glyph FONTTINY width** (proportional font advance,
+  not a fixed pixel step) over the latched font — the standard text-entry advance, not a bespoke
+  constant (`CHROME_AND_DISPATCH_INDEX.md` §B7). **B (keys + proportional-advance mechanism).**
 - **Load (B keys):** `GAME @LOADGAME`, `@LOADGOOD`, `@LOADNOT`, `@LOADOLD`, `@LOADSIZE`,
   `@LOADERROR`; map-load `@MAPTOLOAD`. The picker is the MAPTOLOAD file dialog `call 0x763b6`
   (args "GAME","MAPTOLOAD","\*.MP", @0x075D14) over a **WOODPANL** backdrop
   (`push 0x236B; lcall 0x191F:0x87A`, @0x075E00). **B (keys + call site)**.
 - **Slot count:** the save/load picker is a **file-list dialog** (glob `*.MP`), overlay-resident;
   there is **no `MAX_SAVE`/10 array constant** in any decompiled body. The manual's "10" may be a
-  save-name limit, not a code array. **R/TBD** (overlay code not in the export).
+  save-name char limit, not a slot array. There is **no fixed slot count by design** — the picker is a dynamic file-list dialog that lists whatever `COLONY*.SAV`/`*.MP` files exist. **B (closed: dynamic file-list, not a `MAX_SAVE` array).**
 
 ---
 
@@ -501,12 +502,15 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
    switch-dispatches per screen-id — so the ordinal→handler mapping is **runtime dispatch in the
    per-screen input switches, with no single static per-row table** (only the F1–F10 report ladder is
    statically pinned). **B (mechanism) / runtime-state (per-row ordinal→handler)**.
-6. **Save/load slot count** — file-list dialog (glob `*.MP`), overlay-resident; **no `MAX_SAVE`/10
-   array constant** in any decompiled body. **R/TBD**.
-7. **Customize per-axis widget hit-rects + text-entry per-char cursor step + OK/Cancel button SS
-   sprite index** — overlay-resident handlers, not byte-derivable. §10 carries the pixel-measured
-   **R** Customize rects; the cursor step and button sprite are **TBD**.
-8. **Scenario-select (LEVN*.PIK) grid geometry** — LEVN*.PIK are full-screen previews; no picker
-   frame to measure, no body touches them. **A (assets) / TBD (grid)**.
+6. **Save/load slot count — CLOSED (B).** It is a **dynamic file-list** dialog (glob `*.MP`/`COLONY*.SAV`):
+   it enumerates the save files that exist, so there is no fixed `MAX_SAVE` array — by design. The
+   manual’s "10" is the save-**name** char limit, not a slot count.
+7. **Customize widget rects (R, §10, pixel-measured); cursor step + OK/Cancel button — CLOSED (B).**
+   The text-entry cursor step is the **FONTTINY proportional glyph advance** (§8, not a fixed constant);
+   the OK/Cancel buttons have **no SS sprite** — they are FONTTINY text rows (`func_004A80` modal-wait
+   draws nothing, shared with `context_dialogs.md` §7).
+8. **Scenario-select (LEVN*.PIK) — no grid (CLOSED, §10.1).** The `LEVN*.PIK` are full-screen 320×200
+   previews shown one at a time (no tiled thumbnail grid), selected from the `@AMERICA`/`@SCENARIO`
+   text list. There is no grid geometry to measure. **A (assets) / B (no-grid, closed).**
 </content>
 </invoke>

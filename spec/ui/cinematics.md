@@ -281,9 +281,10 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
   (Fireworks/Bell/Rock/Hat/Lady/Man/Military/`-1`="End of closing", END at time 390).
 - **Assets (A):** bg `CLOS-BKG.PIK`; `CLOS-BEL/FWK/HAT/LDY/MAN/MIL/ROC.SS`.
 - **Tier:** asset load + loop + exit + placement-model + text-mechanism **B**; per-actor **literal**
-  frame/coordinate timeline is **TBD** — it lives in the external CLOSING sequence file (`func_000A00`
-  @`0xA00` → actor structs @`0x4b96`) and the runtime interval `[0x54]`; a port reads those, the EXE
-  supplies the centering + schedule math.
+  frame/coordinate timeline is **external-file data (closed)** — it lives in the committed
+  `CLOSING_sections.json @CLOSING` (parsed by `func_000A00` @`0xA00` → actor structs @`0x4b96`) + the
+  runtime interval `[0x54]`; a port reads those, the EXE supplies the centering + schedule math (**B**).
+  No further EXE byte to decode.
 
 ## 8. Sprite-role reference (KINGWIN / KINGLOSE / KING1 / KING2)
 
@@ -358,7 +359,7 @@ loads the named sheet. Spot-checks: `0x06BE9D 68 72 1f` (push "KING"), `0x06BEE6
    @`0x4aca`), with literal-centered credit (x160/y183) and logo exceptions; ship path is **PATH.DAT**
    (`_ship[]` @`0x4f0c`). CLOSING: loop `func_000E4C` @`0xE4C`, 32-bit clock `[0x488c]`, **sentinel
    exit** `[0x6c]≠0`, table-driven actors (stride-14 @`0x4b96`, loaded by `func_000A00` from the
-   `CLOSING` sequence file). **Residual TBD = data-file contents only:** the per-element *literal*
+   `CLOSING` sequence file). **Residual = committed data-file contents (closed):** the per-element *literal*
    X/Y/frame timelines live in the **committed** OPENING anim table (`OPENING_sections.json @OPENING`,
    parsed by `_load_anims` @`0xDD2` — col1 sheet / col2 tick / col4 X-base, §6) + PATH.DAT + the
    **committed** CLOSING sequence table (`CLOSING_sections.json @CLOSING`, parsed by `func_000A00`
