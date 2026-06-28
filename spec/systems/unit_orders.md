@@ -1,6 +1,6 @@
 # Unit Orders
 
-> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tier vocabulary: **B** byte-verified, **A** oracle/runtime-confirmed, **R** reconstructed/manual, **TBD** unresolved. Core mechanics byte-verified: order-code storage (`0x314C`), per-turn dispatch (§2.1), accelerator/status-letter table builder `0x54de` (§2.2), on-map status renderer `func @0x0386A` (§2.3). One residual TBD: the in-engine accelerator key-match instruction (§2.4).
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tier vocabulary: **B** byte-verified, **A** oracle/runtime-confirmed, **R** reconstructed/manual. Core mechanics byte-verified: order-code storage (`0x314C`), per-turn dispatch (§2.1), accelerator/status-letter table builder `0x54de` (§2.2), on-map status renderer `func @0x0386A` (§2.3). One residual (resolved-as-state, §2.4): the in-engine accelerator key-match is the runtime game-menu dispatch (`func_0235D6`), not a static per-row cmp.
 
 **Overall confidence:** order list + key letters + **order-code storage (`0x314C`) + work counter (`0x315A`) + pioneer durations + fortify `·3/2` mechanism `BYTE_VERIFIED`** (2026-06-20, cross-ref `unit.md`/`terrain_improvement.md`/`combat.md`). **Canonical primary:** `data_extracted/text/NAMES_sections.json` `@ORDERS`/`@ACTIONS`; `docs/GAME_MANUAL.md`.
 
