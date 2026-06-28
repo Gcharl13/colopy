@@ -114,8 +114,10 @@ Byte status of each national-power effect:
   second starting unit gets class `0x14` for power 1/French at `@0x0758B5`.)
 
 ## 4. UI
-Chosen on the "Choose Your Nationality" setup screen with ability descriptions
-(manual). Layout `TBD`.
+Chosen on the "Choose Your Nationality" setup screen with ability descriptions (manual). Layout is
+documented by the live capture `docs/screens/03_nation_select.png` — the four-power list + ability text
+on the new-game setup view; it shares the setup-screen framework (same family as difficulty/customize
+select). **A (captured) / R (per-row geometry not separately byte-pinned).**
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — @COUNTRY/@NATIONALITY/@NATIONABBREV/@HOMEPORT/@COLONYNAME/@INDEPENDENT/@LEADERNAME. **B**

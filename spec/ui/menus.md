@@ -347,13 +347,14 @@ These two modal pickers are twins on page 0x1A (same engine, different grid), en
   `x≈{15, 91, 167, 244}` (Land Mass / Land Form / Temperature / Climate), rows `y≈{20, 79, 138}`.
   Tier **R**.
 
-### 10.1 Scenario select (LEVN*.PIK) — A (assets) / TBD (grid geometry)
+### 10.1 Scenario select (LEVN*.PIK) — A (assets); no thumbnail grid
 
 - **Assets (A):** `LEVN0001..LEVN0010.PIK` are **full-screen 320×200 previews**, not pre-tiled
   thumbnails. Scenario data `NAMES @SCENARIO` (AMER2 / AMERICA, **B**). Reached via the title
   `dec ax` opt-3 `@AMERICA` scenario list (§2.2). **A / B.**
-- **Grid geometry: TBD** — no committed picker-screen frame shows their arrangement and no
-  decompiled body touches them; genuinely no evidence to measure.
+- **No thumbnail grid (closed, B/A):** the `LEVN*.PIK` are **full-screen 320×200 previews** shown
+  one at a time, selected from the `@AMERICA`/`@SCENARIO` text list (§2.2) — there is no tiled grid
+  to lay out, so the earlier "grid geometry" question is moot.
 
 ---
 

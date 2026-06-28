@@ -150,7 +150,7 @@ loads CCBKGD.PIK full-screen (`0x181F:0x44e` @0x03BB6D, id `0x1253`), blits the 
 - `data_extracted/text/{LABELS,NAMES}_sections.json` — `@MISC`, `@FATHERS` (verified). **B**
 
 ## 6. Open questions
-1. Bell sprite **RESOLVED (B); US-flag still TBD.** The earlier "F3 body is text/box only, no
+1. Bell sprite **RESOLVED (B); US-flag closed-negative (B).** The earlier "F3 body is text/box only, no
    sprite blits" finding was based on a **truncated** disasm (the asm file ended at 0x37A9C, 140
    bytes); the **full** body `0x037A10..0x3807D` DOES draw the bell row — `mov ax,0x3f; lcall
    0x181f,0x236` @0x037BF5 (`func_002EE4`, span `0x12c`=300), so **bell sprite = `0x3F` filled /

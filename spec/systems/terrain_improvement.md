@@ -76,7 +76,9 @@ is **byte-confirmed**. **B.**
 
 ## 4. UI
 Active-Pioneer hotkeys (manual keyboard ref): `P` clear/plow, `R` build road.
-Orders box shows `P` / `R` while in progress. Layout `TBD`.
+Orders box shows `P` / `R` while in progress — these are the active-unit **status letters** from the
+`0x54DE` accel/status-letter array (`-STGLFFBPR---`: `P`=Plow, `R`=Road), drawn by the unit-HUD status
+overlay (see `input.md` Track-6 / `spec/systems/unit_orders.md`); no bespoke layout. **B (cross-ref).**
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — `@ORDERS` (Clear/Plow P, Build Road R). **B** (data).

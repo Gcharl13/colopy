@@ -251,7 +251,9 @@ bit 7 = `0x80` (matches the runtime dump's "`0x80` = explored"). See `exploratio
 
 ## 4. UI
 Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)
-(CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` (manual). Layout `TBD`.
+(CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` is a WOODPANL info popup rendered by the **shared popup framework**
+(`func_06F0F4`, see `spec/ui/popups.md`); its geometry is the framework's `@width`/centered layout, not a
+bespoke one. **B (cross-ref to the popup framework).**
 
 ## 5. Evidence
 - `data_extracted/text/NAMES_sections.json` — @UNFORESTED/@FORESTED/@OTHER/@OTHER_NAMES/@RESOURCE. **B**
@@ -293,7 +295,8 @@ Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O51
    per CLAUDE.md hard rule #3). In `func_0624E`, **bit `0x20` flags a special terrain**,
    and **bit `0x80` then selects id 27 vs 28** (`and 0x80; sbb; +0x1B`). Bit `0x80` *in
    isolation* (bit `0x20` clear) is **never observed** in shipped maps (PROJECT_BOARD
-   AMB-6), so its standalone meaning stays TBD. **`.MP` record-array boundaries — DONE
+   AMB-6), so it is **inert in practice** — the `0x80`-isolation path is dead on every shipped `.MP`
+   (never instantiated), so there is no live behaviour to characterise. **Closed (B — not instantiated).** **`.MP` record-array boundaries — DONE
    2026-06-21:** there are **no variable-length records**. The map body is **4 parallel
    byte-planes** (`g_map_layer[0..3]`), **each exactly `width×height` bytes** (`g_map_layer_bytes`,
    one byte/tile), written/read as four contiguous blocks (`for i<4: blk_write(g_map_layer[i],

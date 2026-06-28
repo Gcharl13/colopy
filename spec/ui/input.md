@@ -259,7 +259,9 @@ The key code indexes a **normalization/flag table at DS:0x27ED** (bit 2 = ASCII
 case-fold, `-0x20`) and the action then dispatches through tables at
 `[BX-0x6840]` and `[BX+0x2F7B]` (see the colony building-select handler
 `func @0x2C692` below). Because the action targets are computed from those tables
-at runtime, the **complete map-command → action map is TBD** (see "Unresolved").
+at runtime, the **complete map-command → action map is runtime-composed** (mechanism byte-cited; the
+per-key flag table `DS:0x27ED` and the action-code tables `DS:0x97C0` (command codes `0xAD..0xC0`,
+snapshot-read) / `DS:0x2F7B` are indexed at dispatch — see "Unresolved" for the exact sites). **B (mechanism + table values) / runtime (the live key→action composition).**
 
 **Byte-provable bindings.** The few keys compared by literal are:
 
