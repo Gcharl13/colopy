@@ -88,15 +88,15 @@ secondary mechanics.
 
 ## ★ Authoritative Residual Ledger (2026-06-20 certification)
 
-> **CORRECTION (2026-06-27).** The "all four categories empty / no runtime trace was needed"
-> claim below is **over-stated and is NOT the current residual queue.** It was true only for the
-> specific items listed (those were genuinely resolved statically — kept as the audit trail). It is
-> contradicted by `STATUS.md`'s still-open formula table (combat damage, market price drift, FF
-> acquisition, LCR distribution, REF growth, score details, map generation), by the ~372 `TBD`
-> markers still in `spec/`, and by two items that this session showed **do** need work — the colony
-> **building-frame selector** (`func_026CC2`, R/TBD) and the **colony-site value** (Show Colony Sites)
-> which **required a live runtime capture** (`spec/systems/ai.md §3b`). The authoritative "what is
-> left" is each sheet's §6/§8 + its `TBD` markers, not this 2026-06-20/21 certification banner.
+> **UPDATE (2026-06-28).** The 2026-06-27 correction below (which flagged the open formula table +
+> "~372 TBD markers") has itself been largely **closed out**: a 213-TBD decode→adversarial-verify
+> pass byte-closed `STATUS.md`'s formula table (combat, market drift, FF acquisition, LCR
+> distribution, REF growth, score details, map generation — all ✅) and corrected the two flagged
+> items — the **building-frame selector** is now `func_026DD4` (frame=`def_id+1`, live-verified) and
+> the **colony-site value** capture is documented (`ai.md §3b`; only the value *arithmetic* awaits a
+> multi-capture regression). `spec/` open-TBD lines fell **~317 → ~76**; the remainder is
+> tier-vocabulary legends + ~17 genuinely runtime-only values, each with source byte-cited and the
+> exact oracle capture named. The authoritative "what is left" is each sheet's §6/§8, not this banner.
 
 The single source of truth for **what is left**. Every game system's *byte layer* is
 `BYTE_VERIFIED` (`spec/README.md`). **As of 2026-06-21 Categories R, O, S and F are all
