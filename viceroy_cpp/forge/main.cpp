@@ -11,6 +11,7 @@
 #include "economy.hpp"
 #include "market.hpp"
 #include "ref.hpp"
+#include "datacheck.hpp"
 #include "inspect.hpp"
 #include "mapedit.hpp"
 #include "mod.hpp"
@@ -333,6 +334,64 @@ static int do_save(int argc, char** argv) {
     return 2;
 }
 
+// --- data-table validation ----------------------------------------------------
+
+static void print_data_report(const forge::DataReport& r) {
+    std::printf("  %d sections, %d rows; %s\n", r.sections, r.rows, r.ok() ? "OK" : "ISSUES");
+    for (const auto& w : r.warnings) std::printf("    ~ %s\n", w.c_str());
+    for (const auto& i : r.issues)   std::printf("    ! %s\n", i.c_str());
+}
+
+static int data_check(const char* path) {
+    try {
+        forge::DataReport r = forge::check_data_tables(path);
+        std::printf("Checked %s\n", path);
+        print_data_report(r);
+        return r.ok() ? 0 : 1;
+    } catch (const std::exception& e) { std::printf("ERROR: %s\n", e.what()); return 2; }
+}
+
+static int data_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* msg) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", msg); } };
+
+    // a well-formed table passes.
+    check(forge::check_data(forge::json_parse(
+        R"({"@X":{"columns":["name","v"],"rows":[{"name":"a","v":"1"}],"row_count":1}})")).ok(),
+        "well-formed table passes");
+
+    // a missing declared column is an issue.
+    check(!forge::check_data(forge::json_parse(
+        R"({"@X":{"columns":["name","v"],"rows":[{"name":"a"}]}})")).ok(),
+        "missing column rejected");
+
+    // @UNIT exceeding the enum (NUNITTYPES) is an issue.
+    {
+        std::string rows;
+        for (int i = 0; i < 25; ++i) rows += std::string(i ? "," : "") + R"({"attack":"1"})";
+        std::string doc = R"({"@UNIT":{"columns":["attack"],"rows":[)" + rows + "]}}";
+        check(!forge::check_data(forge::json_parse(doc)).ok(), "25 units > enum rejected");
+    }
+
+    // @FATHERS.type out of @FOUNDING range is an issue.
+    check(!forge::check_data(forge::json_parse(
+        R"({"@FOUNDING":{"columns":["name"],"rows":[{"name":"a"},{"name":"b"}]},
+            "@FATHERS":{"columns":["type"],"rows":[{"type":"5"}]}})")).ok(),
+        "@FATHERS.type out of range rejected");
+
+    std::printf("data selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
+static int do_data(int argc, char** argv) {
+    std::string sub = argc >= 3 ? argv[2] : "";
+    if (sub == "selftest") return data_selftest();
+    if (sub == "check") return data_check(argc >= 4 ? argv[3]
+                                          : "data_extracted/tables/names_tables.json");
+    std::printf("usage: forge data <selftest | check [names_tables.json]>\n");
+    return 2;
+}
+
 int main(int argc, char** argv) {
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
@@ -340,6 +399,7 @@ int main(int argc, char** argv) {
     if (cmd == "map")     return do_map(argc, argv);
     if (cmd == "mod")     return do_mod(argc, argv);
     if (cmd == "save")    return do_save(argc, argv);
+    if (cmd == "data")    return do_data(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
                 "usage:\n"
@@ -351,6 +411,8 @@ int main(int argc, char** argv) {
                 "  forge map roundtrip FILE.mp    confirm load->save->load is byte-identical\n"
                 "  forge mod selftest             write/load/validate a mod package (self-test)\n"
                 "  forge mod validate DIR         validate a mod directory\n"
-                "  forge save selftest            game save/load round-trip self-test\n");
+                "  forge save selftest            game save/load round-trip self-test\n"
+                "  forge data check [FILE]        structural-validate the data tables\n"
+                "  forge data selftest            data-table validator self-test\n");
     return 0;
 }
