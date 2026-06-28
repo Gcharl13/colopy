@@ -252,8 +252,11 @@ is emitted by `func_031366 @0x031417` within the same in-port path.
   → click-id 0) are the trade-readout zones. (The 306,179 readout is heap string
   `[0x2F5E]`, **not gold** — corrected 2026-06-23; player gold is in the top menu
   header, `PowerRecord+0x2A`. See `docs/EUROPE_SCREEN_VICEROY_DECODE.md` §6.) **B**
-- **Exit** — a click-rect exists (`@0x032034`), but the Exit-button paint origin is
-  **TBD** (§4). **B (clickable) / TBD (paint)**
+- **Exit** — click-rect `@0x032034`; **paint origin pixel-measured (A)** from the live
+  capture `docs/screens/10_europe_screen.png`: the red **"E"** button occupies game-space
+  **x≈303–312, y≈170–177** (≈10×7 px, origin **(303,170)**), with the white **"Exit"**
+  caption on the row just above it (baseline ≈ y168). Consistent with the framework
+  screen-view chrome (`EXIT.SS` via `0x181F:0x772`) drawn at the bottom-right. **B (clickable) / A (paint, oracle pixel-measured).**
 
 ## 7. Transaction sub-panel — `ov_draw_extra_a/b` (steps 6–7)
 Resolved 2026-06-21 (kept; consistent with drawlist trampoline targets
@@ -334,9 +337,11 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
    in-port loop in `func_0314DC` @0x031671 selects only a *color* (`[bp-0x68]`=0xA/0xF),
    not a caption index, so the visible state caption comes from these fixed panel pushes,
    not a runtime sail-state→@MISC computation. **A (oracle slot→string map).**
-9. **TBD — Exit-button paint origin.** Only a click-rect exists (`@0x032034`); the
-   composer body paints no Exit button. Likely emitted by the `func_036863`/
-   `func_036926` sub-renderers (steps 6–7) but not byte-pinned (drawlist §1.6).
+9. **Exit-button paint origin — RESOLVED (A, oracle pixel-measured 2026-06-28).** The
+   composer body paints no Exit button (it is framework chrome, `EXIT.SS` via `0x181F:0x772`);
+   its on-screen position is measured from the live capture `docs/screens/10_europe_screen.png`:
+   red **"E"** button at game **x≈303–312, y≈170–177** (origin (303,170)), white **"Exit"**
+   caption on the row above (baseline ≈ y168). Click-rect `@0x032034` covers this. **A.**
 10. **R/A — fonts.** FONTTINY assignment for the bar/recruit/banner text is
     screen-latched per `fonts_and_colors.md` (A); the price-ink palette `0x2F` and
     recruit-row inks `0x0F`/`0x0` are byte-cited (B).
