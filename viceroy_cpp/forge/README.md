@@ -31,7 +31,31 @@ forge mod selftest              write/load/validate a mod package
 forge save selftest             game save/load round-trip self-test
 forge data check [FILE]         structural-validate the data tables (names_tables.json)
 forge data selftest             data-table validator self-test
+forge serve [port]              launch the browser GUI (default port 8099)
 ```
+
+## Browser GUI (`forge serve`)
+
+The graphical front-end is a **local web app** — no OpenGL/GLFW, no extra deps. It is a
+tiny built-in HTTP server (POSIX sockets, bound to `127.0.0.1` only) that serves an
+embedded HTML/JS page and exposes the tested C++ backend over a small JSON API.
+
+```bash
+viceroy_cpp/build/forge serve            # then open http://127.0.0.1:8099 in any browser
+viceroy_cpp/build/forge serve 9000       # custom port
+```
+
+Run it from the repo root so the default data paths resolve. Tabs:
+- **Rules** — paste a sparse `rules.json` overlay (or leave empty for the default),
+  Apply to see invariants PASS/FAIL + the balance curves vs the baseline, and Download
+  the sparse overlay.
+- **Map** — Load a `.MP`, paint terrain on the canvas (palette + river/forest toggles),
+  Validate, and Save (byte-faithful — trailing metadata preserved).
+- **Data** — structural-validate `data_extracted/tables/names_tables.json`.
+
+Notes: the server is **local-only** by design (the API reads/writes files by path), so
+don't expose the port. Windows: build/run under WSL (the server uses POSIX sockets). The
+Dear ImGui desktop app (`-DFORGE_GUI=ON`, see `gui/README.md`) remains an alternative.
 
 ## The content pipeline
 

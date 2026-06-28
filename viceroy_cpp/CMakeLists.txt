@@ -65,6 +65,8 @@ add_executable(forge
   forge/mod.cpp
   forge/savegame.cpp
   forge/datacheck.cpp
+  forge/httpd.cpp
+  forge/web_ui.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE viceroy_sim)

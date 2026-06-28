@@ -12,7 +12,9 @@
 #include "market.hpp"
 #include "ref.hpp"
 #include "datacheck.hpp"
+#include "httpd.hpp"
 #include "inspect.hpp"
+#include "json.hpp"
 #include "mapedit.hpp"
 #include "mod.hpp"
 #include "rules.hpp"
@@ -21,12 +23,15 @@
 #include "savegame.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
+#include "web_ui.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <string>
+#include <vector>
 
 using namespace vc::sim;
 
@@ -392,6 +397,154 @@ static int do_data(int argc, char** argv) {
     return 2;
 }
 
+// --- browser GUI: a localhost HTTP server over the tested backend --------------
+
+static forge::JsonValue jbool(bool b) { forge::JsonValue v; v.type = forge::JsonValue::Bool; v.b = b; return v; }
+static forge::JsonValue jarr() { forge::JsonValue v; v.type = forge::JsonValue::Array; return v; }
+static forge::JsonValue jobj() { forge::JsonValue v; v.type = forge::JsonValue::Object; return v; }
+static forge::JsonValue jstrs(const std::vector<std::string>& xs) {
+    forge::JsonValue a = jarr();
+    for (const auto& s : xs) a.arr.push_back(forge::json_str(s));
+    return a;
+}
+
+static std::string url_decode(const std::string& s) {
+    auto hx = [](char h) { return (h >= '0' && h <= '9') ? h - '0'
+                                : (h >= 'a' && h <= 'f') ? h - 'a' + 10
+                                : (h >= 'A' && h <= 'F') ? h - 'A' + 10 : 0; };
+    std::string o;
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '+') o += ' ';
+        else if (s[i] == '%' && i + 2 < s.size()) { o += (char)(hx(s[i + 1]) * 16 + hx(s[i + 2])); i += 2; }
+        else o += s[i];
+    }
+    return o;
+}
+
+static std::string qparam(const std::string& query, const std::string& key) {
+    size_t i = 0;
+    while (i < query.size()) {
+        size_t amp = query.find('&', i);
+        std::string kv = query.substr(i, amp == std::string::npos ? std::string::npos : amp - i);
+        size_t eq = kv.find('=');
+        if (eq != std::string::npos && kv.substr(0, eq) == key) return url_decode(kv.substr(eq + 1));
+        if (amp == std::string::npos) break;
+        i = amp + 1;
+    }
+    return "";
+}
+
+static forge::JsonValue inv_json(const InvariantReport& r) {
+    forge::JsonValue o = jobj();
+    o.obj["ok"] = jbool(r.ok());
+    o.obj["violations"] = jstrs(r.violations);
+    return o;
+}
+
+static forge::JsonValue curves_json(const RuleData& base, const RuleData& cur) {
+    forge::JsonValue a = jarr();
+    for (const auto& r : forge::balance_curves(base, cur)) {
+        forge::JsonValue o = jobj();
+        o.obj["section"] = forge::json_str(r.section);
+        o.obj["label"]   = forge::json_str(r.label);
+        o.obj["base"]    = forge::json_num((double)r.base);
+        o.obj["cur"]     = forge::json_num((double)r.cur);
+        o.obj["delta"]   = forge::json_num((double)r.delta());
+        a.arr.push_back(o);
+    }
+    return a;
+}
+
+static forge::JsonValue maprep_json(const forge::MapReport& r) {
+    forge::JsonValue o = jobj();
+    o.obj["ok"] = jbool(r.ok());
+    o.obj["land_masses"] = forge::json_num(r.land_masses);
+    o.obj["oceans"] = forge::json_num(r.oceans);
+    o.obj["issues"] = jstrs(r.issues);
+    o.obj["warnings"] = jstrs(r.warnings);
+    return o;
+}
+
+static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
+                                       const std::string& query, const std::string& body) {
+    using forge::HttpResponse;
+    auto J = [](int st, const forge::JsonValue& v) {
+        return HttpResponse{st, "application/json", forge::json_dump(v)};
+    };
+    auto err = [&](int st, const std::string& msg) {
+        forge::JsonValue o = jobj(); o.obj["error"] = forge::json_str(msg); return J(st, o);
+    };
+    try {
+        if (path == "/")
+            return HttpResponse{200, "text/html; charset=utf-8", forge::forge_index_html()};
+
+        if (path == "/api/rules") {
+            RuleData base = make_default_rules(), cur = base;
+            std::vector<std::string> warns;
+            if (method == "POST" && !body.empty()) {
+                forge::OverlayResult o = forge::apply_overlay(forge::json_parse(body), make_default_rules());
+                cur = o.rules; warns = o.warnings;
+            }
+            forge::JsonValue root = jobj();
+            root.obj["invariants"] = inv_json(check_rules(cur));
+            root.obj["curves"]     = curves_json(base, cur);
+            root.obj["warnings"]   = jstrs(warns);
+            root.obj["overlay"]    = forge::overlay_diff(base, cur);
+            return J(200, root);
+        }
+
+        if (path == "/api/data/check") {
+            std::string p = qparam(query, "path");
+            if (p.empty()) p = "data_extracted/tables/names_tables.json";
+            forge::DataReport r = forge::check_data_tables(p);
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(r.ok());
+            o.obj["sections"] = forge::json_num(r.sections);
+            o.obj["rows"] = forge::json_num(r.rows);
+            o.obj["issues"] = jstrs(r.issues);
+            o.obj["warnings"] = jstrs(r.warnings);
+            return J(200, o);
+        }
+
+        if (path == "/api/map") {
+            std::string p = qparam(query, "path");
+            if (p.empty()) return err(400, "missing ?path");
+            forge::MpFile m = forge::load_mp(p);
+            forge::JsonValue o = jobj();
+            o.obj["w"] = forge::json_num(m.w);
+            o.obj["h"] = forge::json_num(m.h);
+            o.obj["rest"] = forge::json_num((double)m.rest.size());
+            forge::JsonValue t = jarr();
+            for (uint8_t b : m.terrain) t.arr.push_back(forge::json_num(b));
+            o.obj["terrain"] = t;
+            o.obj["report"] = maprep_json(forge::validate(m));
+            return J(200, o);
+        }
+
+        if (path == "/api/map/save" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            const forge::JsonValue* pp = b.find("path");
+            const forge::JsonValue* tt = b.find("terrain");
+            if (!pp || !pp->is_string() || !tt || !tt->is_array()) return err(400, "need {path,terrain}");
+            forge::MpFile m = forge::load_mp(pp->str);             // reload to preserve trailing bytes
+            if ((int)tt->arr.size() != m.w * m.h) return err(400, "terrain size != w*h");
+            for (size_t i = 0; i < tt->arr.size(); ++i) m.terrain[i] = (uint8_t)tt->arr[i].as_int();
+            forge::save_mp(pp->str, m);
+            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(true); return J(200, o);
+        }
+
+        return err(404, "not found: " + path);
+    } catch (const std::exception& e) {
+        return err(400, e.what());
+    }
+}
+
+static int do_serve(int argc, char** argv) {
+    int port = (argc >= 3) ? std::atoi(argv[2]) : 8099;
+    if (port <= 0 || port > 65535) port = 8099;
+    return forge::serve_http(port, serve_route);
+}
+
 int main(int argc, char** argv) {
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
@@ -400,6 +553,7 @@ int main(int argc, char** argv) {
     if (cmd == "mod")     return do_mod(argc, argv);
     if (cmd == "save")    return do_save(argc, argv);
     if (cmd == "data")    return do_data(argc, argv);
+    if (cmd == "serve")   return do_serve(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
                 "usage:\n"
@@ -413,6 +567,7 @@ int main(int argc, char** argv) {
                 "  forge mod validate DIR         validate a mod directory\n"
                 "  forge save selftest            game save/load round-trip self-test\n"
                 "  forge data check [FILE]        structural-validate the data tables\n"
-                "  forge data selftest            data-table validator self-test\n");
+                "  forge data selftest            data-table validator self-test\n"
+                "  forge serve [port]             launch the browser GUI (default port 8099)\n");
     return 0;
 }
