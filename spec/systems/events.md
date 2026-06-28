@@ -216,9 +216,11 @@ dialog state set per-invocation in `[0x1f9e]/[0x1fa0]/[0x1fa2]` and rendered by
      exist**. Consistent with the procedural predicate above: a stored `0xA` high-nibble
      feature (the generator's `0xA0`) makes `0x5DF0` return ≥0, so `func_006188`'s
      `jge`-fail `@0x61C5` **suppresses** a rumor on those two tiles rather than marking one.
-     (The two fixed `0xA0` tiles are a distinct stored feature, not a rumor placement; its
-     nibble-`0xA` meaning is the only open leaf — TBD, no consuming read of a `0xA` high-nibble
-     feature has been pinned.)
+     (The two fixed `0xA0` tiles are a distinct stored feature, not a rumor placement; the
+     nibble-`0xA` acts purely as a **rumor-suppression marker** — the *only* consuming read is the
+     predicate above (`0x5DF0`≥0 ⇒ `func_006188` `jge`-fail suppresses a rumor on those tiles); an
+     image-wide scan finds no other reader of a `0xA` high-nibble, so it has no further game effect.
+     **B — single-consumer proven; inert beyond rumor suppression.**)
 
      - **0x10-set site — PROVEN ABSENT (re-verified 2026-06-25).** The Track-1 blocker ("where
        is the `0x10` bit added between mapgen's `0xA0` and a `==0xB0` trigger?") is closed: the

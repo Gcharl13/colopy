@@ -100,8 +100,9 @@ Identical to `menus.md` §11 (do not duplicate-edit). Reproduced as the load-bea
   dialogs/popups; **FONTINTR** for the in-game dropdown rows (dialog ctx `[0x268A]`). **B.**
 - **OK/Cancel / confirm buttons** = FONTTINY **text rows** (the inline option list), NOT sprites;
   the modal "wait for OK / keypress" loop is `0x181F:0x3C0` (`func_004A80`) which **draws nothing**
-  (the box + rows are painted by the builder first). The OK button SS art index is **TBD**. **B /
-  TBD (art idx)**.
+  (the box + rows are painted by the builder first). The OK affordance has **no SS sprite** — it is a
+  FONTTINY text row, not a button graphic, so there is no art index to resolve. **B (no-sprite, proven
+  via `func_004A80` which draws nothing).**
 
 ### 2.1 Resident draw-verb library used by these dialogs — **B** (`UI_PRIMITIVES.md`)
 
@@ -449,10 +450,10 @@ section content and the gameplay predicates (row gating, build availability) dif
    ⇒ **9 px**; FONTINTR (dialog ctx `[0x268A]`, height 9) ⇒ **12 px**. `func_06D316` separately uses
    `line_count·2 + …` only for the box *height* allocation (§2); the per-row line-pitch is this
    font-byte0+3 value, not an unknown. (Same byte site backing `menus.md` §15.4 / `popups.md`.) **B.**
-7. **OK/Cancel/confirm button SS art index — TBD.** The buttons are FONTTINY **text rows** (the
-   inline option list), not sprites, so there is no button-sprite art; if a future capture shows a
-   distinct sprite, its SS index is **TBD** (shared with `menus.md` §11). **B (text rows) / TBD
-   (art idx)**.
+7. **OK/Cancel/confirm buttons — no SS sprite (B).** The buttons are FONTTINY **text rows** (the
+   inline option list), not sprites, so there is no button-sprite art and no SS index exists — the
+   modal-wait `func_004A80` (`0x181F:0x3C0`) provably draws nothing (shared finding with `menus.md`
+   §11). **B (text rows; no button sprite).**
 8. **Per-row outcome command-id binding for the non-report dialogs — A/handler-level.** The chosen
    index routes through each dialog's handler (§4–§12 trigger fns); the exact index→game-action
    binding inside those handlers is documented at the handler level (`docs/UI_DIALOGS.md`) and is

@@ -136,7 +136,7 @@ the helper map above.
 The cheat menu's **F9 "Show Colony Sites"** (`MENU @CUP`) overlays a per-tile **colony-site value**
 on the map. Static decode did NOT pin the handler/formula (two deep passes mis-resolved to Reveal-Map
 `func_06892E` and a generic message drawer `func_038418`; the value routine is overlay-resident with no
-clean dispatch anchor — TBD). So it was **captured from the running game** (the oracle).
+clean dispatch anchor — not statically pinnable). So it was **captured from the running game** (the oracle).
 
 **Live-capture method (reproducible):** launch VICEROY under DOSBox (`scratchpad/dbx/db.conf`,
 `autolock=false`); load a save to reach the map (e.g. `COLONY00.SAV`); type the cheat code **Alt+W+I+N**
