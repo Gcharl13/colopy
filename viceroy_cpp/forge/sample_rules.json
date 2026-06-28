@@ -1,0 +1,17 @@
+{
+  "_comment": "Example Forge mod overlay. Sparse: only the changed values. Run `forge inspect forge/sample_rules.json` to see the balance curves shift and the invariants stay green.",
+  "cfg": {
+    "warehouse_cap_base": 150,
+    "ref_accrue_offset": 20,
+    "ref_unit_cost": 1500,
+    "ff_human_scale": 12,
+    "ff_gate_years": [1600, 1640, 1680, 1720]
+  },
+  "units": {
+    "Soldiers": { "attack": 3, "defense": 3 },
+    "Artillery": { "attack": 8 }
+  },
+  "terrain_defense": {
+    "28": 5
+  }
+}

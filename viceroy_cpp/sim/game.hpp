@@ -2,6 +2,7 @@
 #pragma once
 #include "types.hpp"
 #include "immigration.hpp"   // RandFn
+#include "rules.hpp"         // RuleData / default_rules()
 #include <vector>
 
 namespace vc::sim {
@@ -15,7 +16,9 @@ struct World {
 //   Production (per colony) -> Market price drift -> Immigration ->
 //   REF (King) accrual+purchase -> cadence advance.
 // (Per-power Orders/Diplomacy AI phases are P2+.) `rng` drives immigration's
-// dock-slot pick; `player_idx` is the human power whose immigration/REF advance.
-void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx = 0);
+// dock-slot pick; `player_idx` is the human power whose immigration/REF advance;
+// `rd` is the active ruleset (the Forge drives a whole turn with a modded one).
+void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx = 0,
+               const RuleData& rd = default_rules());
 
 } // namespace vc::sim

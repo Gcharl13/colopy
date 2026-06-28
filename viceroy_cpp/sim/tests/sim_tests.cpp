@@ -9,6 +9,7 @@
 #include "../immigration.hpp"
 #include "../game.hpp"
 #include "../rules.hpp"
+#include "../rules_invariants.hpp"
 #include "../unit.hpp"
 #include "../combat.hpp"
 #include "../natives.hpp"
@@ -227,6 +228,45 @@ static void test_rules() {
     CHECK(r.atk_str == 2, "default combat unchanged -> %d", r.atk_str);
 }
 
+// --- modded-data invariant suite: cfg scalars are injected, and check_rules()
+// guards arbitrary rulesets. ---
+static void test_rules_invariants() {
+    std::printf("RuleData config + invariants:\n");
+
+    // default ruleset is valid.
+    CHECK(check_rules(default_rules()).ok(), "default ruleset valid -> %zu violations",
+          check_rules(default_rules()).violations.size());
+
+    // cfg scalars flow into the sim: bump REF accrual and warehouse cap.
+    RuleData mod = make_default_rules();
+    mod.cfg.warehouse_cap_base = 150;
+    mod.cfg.ref_accrue_offset  = 20;          // base rate 8d+20 instead of 8d+10
+    Colony wc; wc.warehouse_lvl = 1;
+    CHECK(warehouse_cap(wc, mod) == 300 && warehouse_cap(wc) == 200,
+          "modded warehouse cap %d (default %d)", warehouse_cap(wc, mod), warehouse_cap(wc));
+    CHECK(ref_accrue_rate(1, 1492, mod) == 28 && ref_accrue_rate(1, 1492) == 18,
+          "modded accrue %d (default %d)", ref_accrue_rate(1, 1492, mod), ref_accrue_rate(1, 1492));
+    CHECK(check_rules(mod).ok(), "valid mod passes invariants");
+
+    // a full turn under the modded ruleset uses the modded REF rate.
+    GameState g; g.difficulty = 1;
+    World w; Colony c; c.owner_power = 0; c.population = 3; w.colonies.push_back(c);
+    auto rng = [](int, int) { return 0; };
+    for (int i = 0; i < 8; ++i) step_turn(g, w, rng, 0, mod);
+    CHECK(g.powers[0].royal_money == 224, "modded REF accrued 28*8 -> %lld",
+          (long long)g.powers[0].royal_money);
+
+    // broken rulesets fail the right invariants.
+    RuleData bad = make_default_rules();
+    bad.cfg.tory_divisor_base = 0;            // divide-by-zero risk
+    bad.cfg.sol_decay_shift   = 40;           // UB-range shift
+    bad.cfg.ff_gate_years     = {1700, 1600, 1650, 1750};   // not ascending
+    bad.units[1].move_class   = 7;            // not a valid class
+    InvariantReport rep = check_rules(bad);
+    CHECK(!rep.ok() && rep.violations.size() >= 4, "broken ruleset -> %zu violations",
+          rep.violations.size());
+}
+
 static void test_natives() {
     std::printf("natives:\n");
     CHECK(mission_threshold(1, false) == 3, "level1 threshold 3");
@@ -308,6 +348,7 @@ int main() {
     test_units();
     test_combat();
     test_rules();
+    test_rules_invariants();
     test_natives();
     test_diplomacy();
     test_founding_fathers();

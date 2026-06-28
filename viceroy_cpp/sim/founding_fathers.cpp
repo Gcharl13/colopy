@@ -1,16 +1,18 @@
 // sim/founding_fathers.cpp -- see founding_fathers.hpp.
 #include "founding_fathers.hpp"
-#include <initializer_list>
 
 namespace vc::sim {
 
-int ff_cost(int difficulty, int year, int ff_count, bool human, bool post_independence) {
-    if (post_independence) return difficulty * 1500 + 2000;
-    int cost = human ? (difficulty + 3) * 16 : (14 - difficulty) * 8;
-    for (int gate : {1600, 1650, 1700, 1750})
-        if (year >= gate) cost += cost >> 1;       // x1.5 compounding
+int ff_cost(int difficulty, int year, int ff_count, bool human, bool post_independence,
+            const RuleData& rd) {
+    const Config& cfg = rd.cfg;
+    if (post_independence) return difficulty * cfg.ff_post_indep_scale + cfg.ff_post_indep_offset;
+    int cost = human ? (difficulty + cfg.ff_human_offset) * cfg.ff_human_scale
+                     : (cfg.ff_ai_offset - difficulty) * cfg.ff_ai_scale;
+    for (int gate : cfg.ff_gate_years)
+        if (year >= gate) cost += cost >> cfg.ff_compounding_shift;   // x1.5 compounding
     cost = (ff_count + 1) * cost + 1;
-    if (ff_count == 0) cost >>= 1;                  // first father half price
+    if (ff_count == 0) cost >>= cfg.ff_first_father_shift;            // first father half price
     return cost;
 }
 

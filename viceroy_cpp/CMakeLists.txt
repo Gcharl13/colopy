@@ -20,6 +20,7 @@ add_library(viceroy_sim STATIC
   sim/immigration.cpp
   sim/game.cpp
   sim/rules.cpp
+  sim/rules_invariants.cpp
   sim/unit.cpp
   sim/combat.cpp
   sim/natives.cpp
@@ -52,6 +53,16 @@ add_executable(viceroy_cpp
 # `include` for the engine headers, `.` so mapview.cpp resolves "sim/*.hpp".
 target_include_directories(viceroy_cpp PRIVATE include .)
 target_link_libraries(viceroy_cpp PRIVATE PNG::PNG viceroy_sim)
+
+# --- Viceroy Forge: headless balance inspector (F1). Links the sim in-process;
+#     the tiny JSON reader is forge-local so the sim core stays dependency-light. ---
+add_executable(forge
+  forge/main.cpp
+  forge/json.cpp
+  forge/rules_json.cpp
+)
+target_include_directories(forge PRIVATE forge sim)
+target_link_libraries(forge PRIVATE viceroy_sim)
 
 enable_testing()
 add_executable(sim_tests sim/tests/sim_tests.cpp)
