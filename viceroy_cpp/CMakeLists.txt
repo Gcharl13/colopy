@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
-add_compile_options(-Wall -Wextra)
+# GCC/Clang warning flags; MSVC doesn't understand them (it uses /W...).
+if(NOT MSVC)
+  add_compile_options(-Wall -Wextra)
+endif()
 
 # libpng: needed ONLY by the offline asset importer/renderer (the `viceroy_cpp`
 # target). The sim core, `forge` (incl. its browser GUI), and `sim_tests` don't use
