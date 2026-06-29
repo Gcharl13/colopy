@@ -1,39 +1,45 @@
-// forge/httpd.cpp -- see httpd.hpp.
+// forge/httpd.cpp -- see httpd.hpp. One shared HTTP body over a thin socket
+// abstraction, so it compiles natively on both POSIX and Windows (Winsock).
 #include "httpd.hpp"
 
+#include <cctype>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <string>
 
 #ifdef _WIN32
-
-namespace forge {
-int serve_http(int, const HttpHandler&) {
-    std::fprintf(stderr, "forge serve: the built-in HTTP server needs POSIX sockets; "
-                         "run under WSL on Windows.\n");
-    return 1;
-}
-} // namespace forge
-
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+  namespace {
+    using sock_t = SOCKET;
+    const sock_t kInvalidSock = INVALID_SOCKET;
+    bool net_init()  { WSADATA w; return WSAStartup(MAKEWORD(2, 2), &w) == 0; }
+    void net_close(sock_t s) { closesocket(s); }
+  }
 #else
-
-#include <arpa/inet.h>
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <netinet/in.h>
-#include <string>
-#include <sys/socket.h>
-#include <unistd.h>
+  #include <arpa/inet.h>
+  #include <netinet/in.h>
+  #include <sys/socket.h>
+  #include <unistd.h>
+  namespace {
+    using sock_t = int;
+    const sock_t kInvalidSock = -1;
+    bool net_init()  { return true; }
+    void net_close(sock_t s) { close(s); }
+  }
+#endif
 
 namespace forge {
 namespace {
 
 // Read a full request (headers + body honoring Content-Length). false on EOF/error.
-bool recv_request(int fd, std::string& head, std::string& body) {
+bool recv_request(sock_t fd, std::string& head, std::string& body) {
     std::string buf;
     char tmp[4096];
     size_t hend;
     while ((hend = buf.find("\r\n\r\n")) == std::string::npos) {
-        ssize_t n = recv(fd, tmp, sizeof tmp, 0);
+        auto n = recv(fd, tmp, (int)sizeof tmp, 0);
         if (n <= 0) return false;
         buf.append(tmp, (size_t)n);
         if (buf.size() > (8u << 20)) return false;   // 8 MB header cap
@@ -49,17 +55,17 @@ bool recv_request(int fd, std::string& head, std::string& body) {
         content_len = (size_t)std::strtoul(head.c_str() + p + 15, nullptr, 10);
 
     while (body.size() < content_len) {
-        ssize_t n = recv(fd, tmp, sizeof tmp, 0);
+        auto n = recv(fd, tmp, (int)sizeof tmp, 0);
         if (n <= 0) break;
         body.append(tmp, (size_t)n);
     }
     return true;
 }
 
-void send_all(int fd, const std::string& s) {
+void send_all(sock_t fd, const std::string& s) {
     size_t off = 0;
     while (off < s.size()) {
-        ssize_t n = send(fd, s.data() + off, s.size() - off, 0);
+        auto n = send(fd, s.data() + off, (int)(s.size() - off), 0);
         if (n <= 0) break;
         off += (size_t)n;
     }
@@ -68,37 +74,41 @@ void send_all(int fd, const std::string& s) {
 }  // namespace
 
 int serve_http(int port, const HttpHandler& handler) {
-    int srv = socket(AF_INET, SOCK_STREAM, 0);
-    if (srv < 0) { std::perror("socket"); return 1; }
+    if (!net_init()) { std::fprintf(stderr, "forge serve: network init failed\n"); return 1; }
+
+    sock_t srv = socket(AF_INET, SOCK_STREAM, 0);
+    if (srv == kInvalidSock) { std::fprintf(stderr, "forge serve: socket() failed\n"); return 1; }
     int yes = 1;
-    setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
+    setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof yes);
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);   // 127.0.0.1 only
-    addr.sin_port = htons((uint16_t)port);
-    if (bind(srv, (sockaddr*)&addr, sizeof addr) < 0) { std::perror("bind"); close(srv); return 1; }
-    if (listen(srv, 16) < 0) { std::perror("listen"); close(srv); return 1; }
+    addr.sin_port = htons((unsigned short)port);
+    if (bind(srv, (sockaddr*)&addr, sizeof addr) != 0) {
+        std::fprintf(stderr, "forge serve: bind(127.0.0.1:%d) failed\n", port); net_close(srv); return 1;
+    }
+    if (listen(srv, 16) != 0) {
+        std::fprintf(stderr, "forge serve: listen failed\n"); net_close(srv); return 1;
+    }
 
     std::printf("Viceroy Forge GUI: http://127.0.0.1:%d  (Ctrl-C to stop)\n", port);
     std::fflush(stdout);
 
     for (;;) {
-        int c = accept(srv, nullptr, nullptr);
-        if (c < 0) continue;
+        sock_t c = accept(srv, nullptr, nullptr);
+        if (c == kInvalidSock) continue;
         std::string head, body;
         if (recv_request(c, head, body)) {
             // request line: METHOD SP TARGET SP HTTP/x
             std::string method, target;
-            {
-                size_t e = head.find("\r\n");
-                std::string line = head.substr(0, e == std::string::npos ? head.size() : e);
-                size_t s1 = line.find(' ');
-                size_t s2 = (s1 == std::string::npos) ? std::string::npos : line.find(' ', s1 + 1);
-                if (s1 != std::string::npos) {
-                    method = line.substr(0, s1);
-                    target = line.substr(s1 + 1, (s2 == std::string::npos ? line.size() : s2) - s1 - 1);
-                }
+            size_t e = head.find("\r\n");
+            std::string line = head.substr(0, e == std::string::npos ? head.size() : e);
+            size_t s1 = line.find(' ');
+            size_t s2 = (s1 == std::string::npos) ? std::string::npos : line.find(' ', s1 + 1);
+            if (s1 != std::string::npos) {
+                method = line.substr(0, s1);
+                target = line.substr(s1 + 1, (s2 == std::string::npos ? line.size() : s2) - s1 - 1);
             }
             std::string path = target, query;
             size_t q = target.find('?');
@@ -113,10 +123,8 @@ int serve_http(int port, const HttpHandler& handler) {
             out += r.body;
             send_all(c, out);
         }
-        close(c);
+        net_close(c);
     }
 }
 
 } // namespace forge
-
-#endif  // _WIN32

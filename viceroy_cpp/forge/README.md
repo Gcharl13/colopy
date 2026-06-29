@@ -53,9 +53,25 @@ Run it from the repo root so the default data paths resolve. Tabs:
   Validate, and Save (byte-faithful — trailing metadata preserved).
 - **Data** — structural-validate `data_extracted/tables/names_tables.json`.
 
-Notes: the server is **local-only** by design (the API reads/writes files by path), so
-don't expose the port. Windows: build/run under WSL (the server uses POSIX sockets). The
-Dear ImGui desktop app (`-DFORGE_GUI=ON`, see `gui/README.md`) remains an alternative.
+Notes: the server is **local-only** by design (binds `127.0.0.1`; the API reads/writes
+files by path), so don't expose the port. **Windows is supported natively** — the server
+uses Winsock there (CMake links `ws2_32`), so `forge serve` works in PowerShell/cmd; WSL
+also works. The Dear ImGui desktop app (`-DFORGE_GUI=ON`, see `gui/README.md`) remains an
+alternative.
+
+### Zero-dependency build (incl. Windows)
+
+libpng is needed **only** by the asset importer/renderer (`viceroy_cpp`). `forge` and the
+tests don't use it, so it's optional — without libpng, CMake skips the importer and still
+builds the Forge:
+
+```bash
+cmake -S viceroy_cpp -B build -DCMAKE_BUILD_TYPE=Release   # importer auto-skipped if no libpng
+cmake --build build -j --target forge
+```
+
+On a bare Windows toolchain (MSVC/MinGW, no vcpkg) this builds `forge` (CLI + browser GUI)
+with only CMake + a C++17 compiler.
 
 ## The content pipeline
 

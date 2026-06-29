@@ -8,8 +8,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 add_compile_options(-Wall -Wextra)
 
-# libpng: standard image library for the modern asset bundle (not a game codec).
-find_package(PNG REQUIRED)
+# libpng: needed ONLY by the offline asset importer/renderer (the `viceroy_cpp`
+# target). The sim core, `forge` (incl. its browser GUI), and `sim_tests` don't use
+# it -- so it's optional: without libpng the importer is skipped and everything else
+# still builds (handy for a zero-dep Windows build of the Forge).
+find_package(PNG)
 
 # --- headless economic-spine sim core (pure logic, no I/O) + golden tests ---
 add_library(viceroy_sim STATIC
@@ -30,30 +33,35 @@ add_library(viceroy_sim STATIC
 )
 target_include_directories(viceroy_sim PUBLIC sim)
 
-# --- CLI: import-all / import / import-font / render / mapview ---
-add_executable(viceroy_cpp
-  src/main.cpp
-  # importer (offline): original codec
-  src/fab.cpp
-  src/madspack.cpp
-  src/ss.cpp
-  src/pik.cpp
-  src/ff.cpp
-  # bundle + runtime
-  src/bundle.cpp
-  src/png_io.cpp
-  src/mp.cpp
-  src/pal.cpp
-  src/render.cpp
-  src/image_io.cpp
-  # presentation (P4): map-view screen compositor
-  src/surface.cpp
-  src/mapview.cpp
-  src/colony_screen.cpp
-)
-# `include` for the engine headers, `.` so mapview.cpp resolves "sim/*.hpp".
-target_include_directories(viceroy_cpp PRIVATE include .)
-target_link_libraries(viceroy_cpp PRIVATE PNG::PNG viceroy_sim)
+# --- CLI: import-all / import / import-font / render / mapview (needs libpng) ---
+if(PNG_FOUND)
+  add_executable(viceroy_cpp
+    src/main.cpp
+    # importer (offline): original codec
+    src/fab.cpp
+    src/madspack.cpp
+    src/ss.cpp
+    src/pik.cpp
+    src/ff.cpp
+    # bundle + runtime
+    src/bundle.cpp
+    src/png_io.cpp
+    src/mp.cpp
+    src/pal.cpp
+    src/render.cpp
+    src/image_io.cpp
+    # presentation (P4): map-view screen compositor
+    src/surface.cpp
+    src/mapview.cpp
+    src/colony_screen.cpp
+  )
+  # `include` for the engine headers, `.` so mapview.cpp resolves "sim/*.hpp".
+  target_include_directories(viceroy_cpp PRIVATE include .)
+  target_link_libraries(viceroy_cpp PRIVATE PNG::PNG viceroy_sim)
+else()
+  message(STATUS "libpng not found -- skipping the asset importer/renderer "
+                 "(`viceroy_cpp`); `forge` + `sim_tests` still build.")
+endif()
 
 # --- Viceroy Forge: headless balance inspector (F1). Links the sim in-process;
 #     the tiny JSON reader is forge-local so the sim core stays dependency-light. ---
@@ -70,6 +78,9 @@ add_executable(forge
 )
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE viceroy_sim)
+if(WIN32)
+  target_link_libraries(forge PRIVATE ws2_32)   # Winsock for `forge serve`
+endif()
 
 enable_testing()
 add_executable(sim_tests sim/tests/sim_tests.cpp)
