@@ -212,6 +212,11 @@ const char* forge_index_html() {
         around coastline over the following turns). End turn advances the whole world.</span>
     </div>
     <div class="row"><span id="selinfo" class="muted">No unit selected.</span></div>
+    <div class="row">
+      <select id="evpick"></select>
+      <button class="act" onclick="fireEvent()">Fire event</button>
+      <span class="muted">Fire an authored event graph (from the Logic tab) against this live game.</span>
+    </div>
     <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
       <canvas id="gcv" width="640" height="480"></canvas>
       <div id="ghud" style="min-width:250px"></div>
@@ -781,6 +786,9 @@ async function pvFire(graphId){
 }
 document.querySelector('nav button[data-tab=screens]').addEventListener('click',()=>{ if(!SINIT){ SINIT=true; scrInit(); } });
 
+)HTML"
+        // ---- chunk 4d: play ----
+        + R"HTML(
 // ---- Play (the engine loop) ----
 let GAME = null, SEL = -1; const GCELL = 14;
 const GOODS = ['Food','Sugar','Tobacco','Cotton','Furs','Lumber','Ore','Silver',
@@ -794,7 +802,20 @@ async function newGame(){
   SEL=-1;
   try { const r=await fetch('/api/game/new',{method:'POST'}); GAME=await r.json(); }
   catch(e){ $('#ghud').innerHTML='<span class="fail">game unavailable</span>'; return; }
-  drawGame(); showSel(); ui.toast('New game ('+GAME.year+')');
+  drawGame(); showSel(); fillEvents(); ui.toast('New game ('+GAME.year+')');
+}
+async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
+  $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }
+async function refreshGame(){ GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }
+async function fireEvent(){
+  const id=$('#evpick').value; if(!id) return;
+  const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id})})).json();
+  await refreshGame();
+  if((d.effects||[]).length) ui.toast(d.effects.join('; '));
+  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body)+'</p><div id="evch"></div>');
+    (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
+      b.onclick=async()=>{ ui.close(); const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c})})).json();
+        await refreshGame(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); }; $('#evch').appendChild(b); }); }
 }
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
