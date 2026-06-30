@@ -106,9 +106,14 @@ Run it from the repo root so the default data paths resolve. Tabs:
   picked per run, as in the game. The editor autocompletes the `@KEY`s from `/api/text` and
   previews the resolved string. The sim-wired actions read/write the relational state the pure
   economic sim doesn't hold (native tension, founding-father ownership, boycotts, the diplomacy
-  matrix), surfaced as bindings (`natives.tension`, `ff.<id>`/`ff.count`, `boycott.<g>`,
-  `war.<a>.<b>`). The event families ship as graphs (`data_extracted/engine/graphs/`): king's tax,
-  founding father, lost city, native raid + uprising, immigration, declare independence.
+  matrix, the national SoL meter, revolution/succession state), surfaced as bindings. The Logic
+  page **wires the whole game**: ~31 graphs covering the turn loop, king's tax, mercenaries, War of
+  Spanish Succession, revolution/independence, REF mobilization, tory status, founding fathers,
+  immigration, lost-city outcomes, natives (raid/uprising/mission/attitude), combat, colony
+  production, training, terrain/trade/exploration, and scoring. A **`FireEvent`** node lets the
+  **`turn_loop` master graph orchestrate them all** -- one run fires every system in spec phase
+  order. Popups show the real GAME.TXT text + their sprite channels and interpolate live
+  `{bindings}`.
 - **Screens** — the **visual screen designer**: pick/new/save a screen, drag widgets (text /
   button / rect / **sprite** — which blits real art: building frames from `BUILDING.SS`
   (`data_extracted/tileset/buildings.png`) or unit frames from `units.png`, contain-fit + crisp),
