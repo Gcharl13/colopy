@@ -60,6 +60,15 @@ Run it from the repo root so the default data paths resolve. Tabs:
   feed it, and which parts are fixed code logic. The complete ruleset = the editable
   data (Rules tab) **+** this logic. Also available as `forge formulas` (text) and
   `GET /api/formulas` (JSON); a committed copy lives in `FORMULAS.txt`.
+- **Assets** — browse every preloaded asset: all 206 sprite sheets and 35 full-screen
+  images, served from `docs/atlas/` (`GET /api/assets` lists them; `GET /assets/<sub>`
+  serves the bytes). Filter by name; click any tile to view it full size in a popup.
+- **Screens** — pick a full-screen background (colony, Europe, reports…) and compose on
+  top of it: click to drop clickable **hotspot** buttons, each wired to the popup system.
+  A seed for the screen/UI designer, demonstrating the engine's button/popup/event layer.
+
+The popup/toast/button UI layer (`ui.popup` / `ui.toast`, ESC- and click-outside-to-close)
+is reusable across tabs — the interactive shell the full engine builds on.
 
 Notes: the server is **local-only** by design (binds `127.0.0.1`; the API reads/writes
 files by path), so don't expose the port. **Windows is supported natively** — the server

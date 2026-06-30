@@ -1,10 +1,16 @@
-// forge/web_ui.cpp -- see web_ui.hpp. The whole front-end as one embedded string.
+// forge/web_ui.cpp -- the whole front-end, embedded. Assembled from several raw
+// string chunks: a single literal would exceed MSVC's per-literal cap, so we
+// concatenate chunks into one static std::string at first use.
 #include "web_ui.hpp"
+
+#include <string>
 
 namespace forge {
 
 const char* forge_index_html() {
-    return R"HTML(<!doctype html>
+    static const std::string html =
+        // ---- chunk 1: head + styles ----
+        std::string(R"HTML(<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -15,13 +21,14 @@ const char* forge_index_html() {
   body { margin:0; font:14px/1.4 system-ui,sans-serif; background:#16181d; color:#dfe3ea; }
   header { background:#0f1115; padding:10px 16px; border-bottom:1px solid #2a2e37; }
   header b { color:#e8b94b; }
-  nav { display:flex; gap:4px; padding:0 12px; background:#0f1115; border-bottom:1px solid #2a2e37; }
+  nav { display:flex; gap:4px; padding:0 12px; background:#0f1115; border-bottom:1px solid #2a2e37; flex-wrap:wrap; }
   nav button { background:none; border:none; color:#9aa3b2; padding:10px 16px; cursor:pointer; font:inherit; border-bottom:2px solid transparent; }
   nav button.active { color:#fff; border-bottom-color:#e8b94b; }
   main { padding:16px; }
   .tab { display:none; } .tab.active { display:block; }
   textarea { width:100%; min-height:120px; background:#0f1115; color:#dfe3ea; border:1px solid #2a2e37; border-radius:6px; padding:8px; font-family:ui-monospace,monospace; }
-  input[type=text] { background:#0f1115; color:#dfe3ea; border:1px solid #2a2e37; border-radius:6px; padding:6px 8px; width:380px; }
+  input[type=text],select { background:#0f1115; color:#dfe3ea; border:1px solid #2a2e37; border-radius:6px; padding:6px 8px; }
+  input[type=text] { width:380px; }
   button.act { background:#2b3140; color:#fff; border:1px solid #3a4151; border-radius:6px; padding:7px 14px; cursor:pointer; }
   button.act:hover { background:#39415480; }
   table { border-collapse:collapse; width:100%; margin-top:10px; }
@@ -41,15 +48,38 @@ const char* forge_index_html() {
   .fexpr { font-family:ui-monospace,monospace; white-space:pre-wrap; background:#0f1115;
            padding:6px 8px; border-radius:4px; margin:4px 0; color:#bfe3c9; }
   #formulas code { background:#1d2128; padding:1px 5px; border-radius:3px; color:#e8b94b; }
+  .gallery { display:flex; flex-wrap:wrap; gap:10px; }
+  .thumb { margin:0; width:144px; cursor:pointer; background:#0f1115; border:1px solid #2a2e37; border-radius:6px; padding:6px; text-align:center; }
+  .thumb:hover { border-color:#e8b94b; }
+  .thumb img { max-width:130px; max-height:96px; image-rendering:pixelated; background:#000; }
+  .thumb figcaption { font-size:11px; color:#9aa3b2; margin-top:4px; word-break:break-all; }
+  .full { image-rendering:pixelated; max-width:86vw; max-height:78vh; background:#000; }
+  .stage { position:relative; display:inline-block; border:1px solid #2a2e37; background:#000; }
+  .stage .bg { display:block; width:640px; image-rendering:pixelated; }
+  .hotspot { position:absolute; transform:translate(-50%,-50%); background:#e8b94bdd; color:#16181d;
+             border:none; border-radius:4px; padding:3px 8px; font:inherit; font-size:12px; cursor:pointer; box-shadow:0 1px 4px #000a; }
+  #modal { position:fixed; inset:0; background:#000b; display:none; align-items:center; justify-content:center; z-index:50; }
+  #modal.show { display:flex; }
+  .modalbox { background:#16181d; border:1px solid #3a4151; border-radius:8px; max-width:92vw; max-height:92vh; overflow:auto; box-shadow:0 10px 40px #000a; }
+  .modalhead { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:8px 14px; border-bottom:1px solid #2a2e37; background:#0f1115; }
+  .modalhead b { color:#e8b94b; }
+  .modalbody { padding:14px; }
+  .x { cursor:pointer; color:#9aa3b2; font-size:20px; background:none; border:none; line-height:1; }
+  #toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#2b3140; border:1px solid #3a4151; padding:8px 16px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; }
+  #toast.show { opacity:1; }
 </style>
 </head>
-<body>
-<header><b>Viceroy Forge</b> &mdash; balance laboratory &amp; content editor</header>
+)HTML")
+        // ---- chunk 2: body markup ----
+        + R"HTML(<body>
+<header><b>Viceroy Forge</b> &mdash; game-engine workbench (rules, assets, maps, screens)</header>
 <nav>
   <button data-tab="rules" class="active">Rules</button>
   <button data-tab="map">Map</button>
   <button data-tab="data">Data</button>
   <button data-tab="formulas">Formulas</button>
+  <button data-tab="assets">Assets</button>
+  <button data-tab="screens">Screens</button>
 </nav>
 <main>
   <section id="rules" class="tab active">
@@ -62,14 +92,14 @@ const char* forge_index_html() {
     <p class="muted"><b>Load full ruleset</b> dumps every value (all units, terrain, balance
       constants) into the box to view/edit. Or paste a sparse <code>rules.json</code> overlay
       (leave empty for the default ruleset):</p>
-    <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150, "ref_accrue_offset": 20 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea>
+    <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea>
     <div id="rwarn"></div>
     <div id="rcurves"></div>
   </section>
 
   <section id="map" class="tab">
     <div class="row">
-      <input type="text" id="mappath" placeholder="path/to/map.mp">
+      <input type="text" id="mappath" value="data_extracted/map/AMER2.MP" placeholder="path/to/map.mp">
       <button class="act" onclick="loadMap()">Load</button>
       <button class="act" onclick="saveMap()">Save</button>
       <span id="minfo" class="muted"></span>
@@ -95,27 +125,72 @@ const char* forge_index_html() {
   <section id="formulas" class="tab">
     <p class="muted">Every formula the sim computes &mdash; the <b>logic</b> behind the data.
       Tags like <code>warehouse_cap_base</code> are knobs you can edit on the Rules tab;
-      formulas with <span class="muted">(fixed code logic)</span> are structural (the math
-      shape, enums, the demotion/capture ladder) and aren't data-tunable.</p>
+      formulas marked <span class="muted">(fixed code logic)</span> are structural.</p>
     <div id="fout"></div>
   </section>
+
+  <section id="assets" class="tab">
+    <div class="row">
+      <input type="text" id="assetfilter" placeholder="filter: ICONS, CC-, KING, EUROPE, PHYS0..." oninput="renderAssets()">
+      <label><input type="radio" name="atype" value="sprites" checked onchange="renderAssets()"> sprite sheets</label>
+      <label><input type="radio" name="atype" value="backgrounds" onchange="renderAssets()"> backgrounds</label>
+      <span id="ainfo" class="muted"></span>
+    </div>
+    <p class="muted">All 206 sprite sheets + 35 full-screen images, served from the bundle. Click any to view full size.</p>
+    <div id="agallery" class="gallery"></div>
+  </section>
+
+  <section id="screens" class="tab">
+    <div class="row">
+      <select id="screenpick" onchange="loadScreen()"></select>
+      <button class="act" onclick="demoPopup()">Demo: button + popup + toast</button>
+      <button class="act" onclick="clearSpots()">Clear hotspots</button>
+      <span class="muted">Click the screen to drop a clickable hotspot button.</span>
+    </div>
+    <div id="stage" class="stage"></div>
+  </section>
 </main>
-<script>
+
+<div id="modal"><div class="modalbox">
+  <div class="modalhead"><b id="modaltitle"></b><button class="x" onclick="ui.close()">&times;</button></div>
+  <div class="modalbody" id="modalbody"></div>
+</div></div>
+<div id="toast"></div>
+)HTML"
+        // ---- chunk 3: script -- framework, rules, map ----
+        + R"HTML(<script>
 const $ = s => document.querySelector(s);
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ---- tabs ----
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
   b.classList.add('active'); $('#'+b.dataset.tab).classList.add('active');
 });
 
+// ---- UI framework: popups, toasts, event handling ----
+const ui = {
+  _tt:null,
+  popup(title, html){ $('#modaltitle').innerHTML=title; $('#modalbody').innerHTML=html; $('#modal').classList.add('show'); },
+  close(){ $('#modal').classList.remove('show'); },
+  toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(ui._tt); ui._tt=setTimeout(()=>t.classList.remove('show'),1800); }
+};
+$('#modal').addEventListener('click', e=>{ if(e.target===$('#modal')) ui.close(); });
+window.addEventListener('keydown', e=>{ if(e.key==='Escape') ui.close(); });
+function demoPopup(){
+  ui.popup('Popup system', '<p>Buttons, modal popups and toasts are all wired and reusable.</p>'
+    +'<button class="act" id="demobtn">Fire a toast</button>');
+  $('#demobtn').onclick = ()=> ui.toast('Button press handled ✓');
+}
+
 // ---- Rules ----
 let lastOverlay = {};
 async function applyRules() {
   const txt = $('#overlay').value.trim();
   let res;
-  try {
-    res = await fetch('/api/rules', {method:'POST', body: txt});
-  } catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
+  try { res = await fetch('/api/rules', {method:'POST', body: txt}); }
+  catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
   const d = await res.json();
   if (d.error) { $('#rinv').innerHTML = '<span class="fail">'+d.error+'</span>'; return; }
   lastOverlay = d.overlay || {};
@@ -140,13 +215,12 @@ function downloadOverlay() {
 async function loadFullRules() {
   $('#rinv').innerHTML = '<span class="muted">loading...</span>';
   let res;
-  try {
-    res = await fetch('/api/rules/full');
-  } catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
+  try { res = await fetch('/api/rules/full'); }
+  catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
   const d = await res.json();
   if (d.error) { $('#rinv').innerHTML = '<span class="fail">'+d.error+'</span>'; return; }
-  $('#overlay').value = JSON.stringify(d, null, 2);   // the whole real ruleset, editable
-  applyRules();                                       // chart it (all deltas zero until you edit)
+  $('#overlay').value = JSON.stringify(d, null, 2);
+  applyRules();
 }
 
 // ---- Map ----
@@ -213,13 +287,16 @@ async function loadMap() {
   buildPalette(); drawMap(); showRep(d.report);
 }
 async function saveMap() {
-  if (!MAP) return;
+  if (!MAP) { ui.toast('Load a map first'); return; }
   const body = JSON.stringify({path:$('#mappath').value, terrain:MAP.terrain});
   const res = await fetch('/api/map/save', {method:'POST', body});
   const d = await res.json();
   $('#minfo').innerHTML = d.ok ? '<span class="pass">saved</span>' : '<span class="fail">'+(d.error||'save failed')+'</span>';
 }
-
+</script>
+)HTML"
+        // ---- chunk 4: script -- data, formulas, assets, screens, init ----
+        + R"HTML(<script>
 // ---- Data ----
 async function checkData() {
   const p = encodeURIComponent($('#datapath').value);
@@ -232,7 +309,6 @@ async function checkData() {
 }
 
 // ---- Formulas ----
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 async function loadFormulas() {
   let res;
   try { res = await fetch('/api/formulas'); }
@@ -253,12 +329,76 @@ async function loadFormulas() {
   $('#fout').innerHTML = h;
 }
 
+// ---- Assets ----
+let ASSETS = null;
+function assetType(){ const r=document.querySelector('input[name=atype]:checked'); return r?r.value:'sprites'; }
+function assetURL(type, name){ return '/assets/'+(type==='backgrounds'?'pik':'sprites')+'/'+name; }
+async function loadAssets(){
+  try { const r=await fetch('/api/assets'); ASSETS=await r.json(); }
+  catch(e){ $('#ainfo').innerHTML='<span class="fail">assets unavailable (run from repo root)</span>'; return; }
+  fillScreenPicker(); renderAssets();
+}
+function renderAssets(){
+  if(!ASSETS) return;
+  const type=assetType(); const list=ASSETS[type]||[];
+  const f=$('#assetfilter').value.trim().toUpperCase();
+  const shown=list.filter(n=>!f || n.toUpperCase().includes(f));
+  $('#ainfo').textContent=shown.length+' / '+list.length;
+  $('#agallery').innerHTML=shown.map(n=>{
+    const label=esc(n.replace(/^atlas_/,'').replace(/\.png$/,''));
+    const u=assetURL(type,n);
+    return '<figure class="thumb" data-url="'+u+'" data-label="'+label+'">'
+      +'<img loading="lazy" src="'+u+'"><figcaption>'+label+'</figcaption></figure>';
+  }).join('');
+}
+$('#agallery').addEventListener('click', e=>{
+  const fig=e.target.closest('.thumb'); if(!fig) return;
+  ui.popup(fig.dataset.label, '<img class="full" src="'+fig.dataset.url+'">');
+});
+
+// ---- Screens (compositor) ----
+let SCREEN={img:null, spots:[]};
+function fillScreenPicker(){
+  if(!ASSETS) return;
+  $('#screenpick').innerHTML=(ASSETS.backgrounds||[]).map(n=>{
+    const l=n.replace(/\.png$/,''); return '<option value="'+n+'">'+l+'</option>';
+  }).join('');
+  if (ASSETS.backgrounds && ASSETS.backgrounds.length) loadScreen();
+}
+function loadScreen(){
+  const n=$('#screenpick').value; if(!n) return;
+  SCREEN={img:'/assets/pik/'+n, spots:[]}; drawStage();
+}
+function clearSpots(){ SCREEN.spots=[]; drawStage(); }
+function drawStage(){
+  const st=$('#stage');
+  if(!SCREEN.img){ st.innerHTML=''; return; }
+  st.innerHTML='<img class="bg" src="'+SCREEN.img+'">';
+  SCREEN.spots.forEach((s,i)=>{
+    const b=document.createElement('button'); b.className='hotspot'; b.textContent=s.label;
+    b.style.left=s.x+'px'; b.style.top=s.y+'px';
+    b.onclick=ev=>{ ev.stopPropagation(); ui.popup(esc(s.label),'<p>Hotspot '+(i+1)+' &mdash; this is where a screen action would fire.</p>'); };
+    st.appendChild(b);
+  });
+}
+$('#stage').addEventListener('click', e=>{
+  if(!SCREEN.img || e.target.tagName!=='IMG') return;
+  const r=e.target.getBoundingClientRect();
+  const x=Math.round(e.clientX-r.left), y=Math.round(e.clientY-r.top);
+  const label=prompt('Hotspot button label:','Button');
+  if(label===null) return;
+  SCREEN.spots.push({x,y,label}); drawStage(); ui.toast('Hotspot added');
+});
+
+// ---- init ----
 applyRules();
 loadFormulas();
+loadAssets();
 </script>
 </body>
 </html>
 )HTML";
+    return html.c_str();
 }
 
 } // namespace forge

@@ -26,8 +26,11 @@
 #include "unit_turn.hpp"
 #include "web_ui.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -484,6 +487,64 @@ static forge::JsonValue maprep_json(const forge::MapReport& r) {
     return o;
 }
 
+// ---- static asset serving (sprites / backgrounds / palette) ----
+
+// A subpath is safe if it has no "..", no leading slash, and only sane chars.
+static bool safe_asset_subpath(const std::string& s) {
+    if (s.empty() || s.front() == '/' || s.find("..") != std::string::npos) return false;
+    for (char c : s)
+        if (!(std::isalnum((unsigned char)c) || c == '/' || c == '_' || c == '-' || c == '.'))
+            return false;
+    return true;
+}
+
+static const char* asset_content_type(const std::string& p) {
+    auto ends = [&](const char* x) {
+        size_t n = std::strlen(x);
+        return p.size() >= n && p.compare(p.size() - n, n, x) == 0;
+    };
+    if (ends(".png"))  return "image/png";
+    if (ends(".json")) return "application/json";
+    return "application/octet-stream";
+}
+
+// Map a whitelisted /assets/<sub> request to an on-disk file under the committed
+// asset trees, read it, and return it verbatim (binary-safe).
+static forge::HttpResponse serve_asset(const std::string& sub) {
+    if (!safe_asset_subpath(sub))
+        return forge::HttpResponse{400, "text/plain", "bad asset path"};
+    std::string fpath;
+    if (sub.rfind("sprites/", 0) == 0 || sub.rfind("pik/", 0) == 0) fpath = "docs/atlas/" + sub;
+    else if (sub.rfind("screens/", 0) == 0)                         fpath = "docs/" + sub;
+    else if (sub == "palette.json")                                 fpath = "data_extracted/palette.json";
+    else return forge::HttpResponse{404, "text/plain", "unknown asset: " + sub};
+
+    std::ifstream f(fpath, std::ios::binary);
+    if (!f) return forge::HttpResponse{404, "text/plain", "not found: " + fpath};
+    std::string bytes((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    return forge::HttpResponse{200, asset_content_type(sub), std::move(bytes)};
+}
+
+// List the committed sprite sheets + full-screen backgrounds for the Assets tab.
+static forge::JsonValue assets_manifest() {
+    namespace fs = std::filesystem;
+    auto list_dir = [](const std::string& dir) {
+        std::vector<std::string> names;
+        std::error_code ec;
+        for (const auto& e : fs::directory_iterator(dir, ec)) {
+            if (!e.is_regular_file()) continue;
+            std::string fn = e.path().filename().string();
+            if (fn.size() >= 4 && fn.compare(fn.size() - 4, 4, ".png") == 0) names.push_back(fn);
+        }
+        std::sort(names.begin(), names.end());
+        return jstrs(names);
+    };
+    forge::JsonValue o = jobj();
+    o.obj["sprites"]     = list_dir("docs/atlas/sprites");
+    o.obj["backgrounds"] = list_dir("docs/atlas/pik");
+    return o;
+}
+
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
     using forge::HttpResponse;
@@ -521,6 +582,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         if (path == "/api/formulas")
             return J(200, forge::formulas_catalog());
+
+        if (path == "/api/assets")
+            return J(200, assets_manifest());
+
+        if (path.rfind("/assets/", 0) == 0)
+            return serve_asset(path.substr(8));   // strip "/assets/"
 
         if (path == "/api/data/check") {
             std::string p = qparam(query, "path");
