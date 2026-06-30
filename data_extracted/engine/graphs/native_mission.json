@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -130,
+      "y": -110,
       "params": {
-        "text": "Mission founding + conversion (spec/systems/natives.md func_0572E6). The tribe reaction to a new mission follows its attitude band (alarm/tension: Content->curiosity @MISSION0, Uneasy->cautious @MISSION1, Restless->offended @MISSION2, Angry->hostility @MISSION3). Conversion roll: P(convert)=(TribeQuality+2)/15, DOUBLED for an expert (Jesuit) missionary; roll random_int(0,15) succeeds when roll < threshold; a convert (class 0x1B) is created at the colony. FLAGGED: TribeQuality is per-tribe (TribeData+2), modeled as Constant=4."
+        "text": "Mission founding + conversion (spec/systems/natives.md func_0572E6), rebuilt. Reaction follows the tribe's attitude band (@MISSION0 curiosity .. @MISSION3 hostility). Conversion roll: P(convert)=(TribeQuality+2)/15 -- roll(0,15) < threshold; TribeQuality is read live from @TRIBES[tribe].level (here tribe 0 = Incas)."
       }
     },
     {
@@ -28,97 +28,25 @@
       }
     },
     {
-      "id": "tens",
-      "type": "GetState",
+      "id": "band",
+      "type": "Formula",
       "x": 20,
       "y": 230,
       "params": {
-        "path": "natives.tension"
-      }
-    },
-    {
-      "id": "c25",
-      "type": "Constant",
-      "x": 20,
-      "y": 300,
-      "params": {
-        "value": 25
-      }
-    },
-    {
-      "id": "a25",
-      "type": "Compare",
-      "x": 180,
-      "y": 250,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "c50",
-      "type": "Constant",
-      "x": 20,
-      "y": 360,
-      "params": {
-        "value": 50
-      }
-    },
-    {
-      "id": "a50",
-      "type": "Compare",
-      "x": 180,
-      "y": 310,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "c75",
-      "type": "Constant",
-      "x": 20,
-      "y": 420,
-      "params": {
-        "value": 75
-      }
-    },
-    {
-      "id": "a75",
-      "type": "Compare",
-      "x": 180,
-      "y": 370,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "b1",
-      "type": "Math",
-      "x": 340,
-      "y": 280,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "band",
-      "type": "Math",
-      "x": 480,
-      "y": 320,
-      "params": {
-        "op": "+"
+        "expr": "(natives.tension>=25)+(natives.tension>=50)+(natives.tension>=75)"
       }
     },
     {
       "id": "sw",
       "type": "Switch",
-      "x": 660,
+      "x": 220,
       "y": 40,
       "params": {}
     },
     {
       "id": "p0",
       "type": "ShowPopup",
-      "x": 860,
+      "x": 420,
       "y": 20,
       "params": {
         "title": "A New Mission",
@@ -129,8 +57,8 @@
     {
       "id": "p1",
       "type": "ShowPopup",
-      "x": 860,
-      "y": 100,
+      "x": 420,
+      "y": 90,
       "params": {
         "title": "A New Mission",
         "textKey": "@MISSION1",
@@ -140,8 +68,8 @@
     {
       "id": "p2",
       "type": "ShowPopup",
-      "x": 860,
-      "y": 180,
+      "x": 420,
+      "y": 160,
       "params": {
         "title": "A New Mission",
         "textKey": "@MISSION2",
@@ -151,8 +79,8 @@
     {
       "id": "p3",
       "type": "ShowPopup",
-      "x": 860,
-      "y": 260,
+      "x": 420,
+      "y": 230,
       "params": {
         "title": "A New Mission",
         "textKey": "@MISSION3",
@@ -160,62 +88,44 @@
       }
     },
     {
-      "id": "roll",
-      "type": "Roll",
-      "x": 1080,
-      "y": 300,
+      "id": "quality",
+      "type": "TableLookup",
+      "x": 420,
+      "y": 330,
       "params": {
-        "min": 0,
-        "max": 15
+        "section": "@TRIBES",
+        "column": "level"
       }
     },
     {
-      "id": "q",
+      "id": "z",
       "type": "Constant",
-      "x": 1080,
-      "y": 380,
+      "x": 420,
+      "y": 400,
       "params": {
-        "value": 4
+        "value": 0
       }
     },
     {
-      "id": "c2",
-      "type": "Constant",
-      "x": 1080,
-      "y": 440,
+      "id": "conv",
+      "type": "Formula",
+      "x": 620,
+      "y": 330,
       "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "thr",
-      "type": "Math",
-      "x": 1240,
-      "y": 360,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "cmp",
-      "type": "Compare",
-      "x": 1400,
-      "y": 320,
-      "params": {
-        "op": "<"
+        "expr": "roll(0,15) < (a + 2)"
       }
     },
     {
       "id": "cbr",
       "type": "Branch",
-      "x": 1080,
+      "x": 640,
       "y": 40,
       "params": {}
     },
     {
-      "id": "conv",
+      "id": "spawn",
       "type": "SpawnUnit",
-      "x": 1280,
+      "x": 840,
       "y": 40,
       "params": {
         "type": "Colonists",
@@ -225,125 +135,16 @@
     {
       "id": "cpop",
       "type": "ShowPopup",
-      "x": 1480,
+      "x": 1040,
       "y": 40,
       "params": {
         "title": "A Convert!",
         "textKey": "@INDIANSCONVERT",
         "choices": "Welcome, brother."
       }
-    },
-    {
-      "id": "nofaith",
-      "type": "Log",
-      "x": 1280,
-      "y": 200,
-      "params": {
-        "message": "The natives listen politely but none are moved to convert this time."
-      }
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "tens",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a25",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c25",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a25",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "tens",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a50",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c50",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a50",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "tens",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a75",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c75",
-        "pin": "value"
-      },
-      "to": {
-        "node": "a75",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "a25",
-        "pin": "value"
-      },
-      "to": {
-        "node": "b1",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "a50",
-        "pin": "value"
-      },
-      "to": {
-        "node": "b1",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "b1",
-        "pin": "value"
-      },
-      "to": {
-        "node": "band",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "a75",
-        "pin": "value"
-      },
-      "to": {
-        "node": "band",
-        "pin": "b"
-      }
-    },
     {
       "from": {
         "node": "trig",
@@ -486,47 +287,27 @@
     },
     {
       "from": {
-        "node": "q",
+        "node": "z",
         "pin": "value"
       },
       "to": {
-        "node": "thr",
+        "node": "quality",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "quality",
+        "pin": "value"
+      },
+      "to": {
+        "node": "conv",
         "pin": "a"
       }
     },
     {
       "from": {
-        "node": "c2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "thr",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "thr",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmp",
+        "node": "conv",
         "pin": "value"
       },
       "to": {
@@ -540,27 +321,17 @@
         "pin": "true"
       },
       "to": {
-        "node": "conv",
+        "node": "spawn",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "conv",
+        "node": "spawn",
         "pin": "out"
       },
       "to": {
         "node": "cpop",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "cbr",
-        "pin": "false"
-      },
-      "to": {
-        "node": "nofaith",
         "pin": "in"
       }
     }
