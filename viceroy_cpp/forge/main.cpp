@@ -1192,6 +1192,30 @@ static int engine_selftest() {
         check(ok, "Notify emits the real @NEWCOLONIST message with %STRING0 filled");
     }
 
+    // Formula collapses a Constant/Math/Compare chain into one node, mixing literals, live
+    // bindings, table cells, wired pins, and functions.
+    {
+        cx.g.powers[0].gold = 50000; cx.x.national_sol = 100; cx.g.powers[0].tax = 20;
+        forge::JsonValue gf = forge::json_parse(
+            R"({"id":"f","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"c","type":"Constant","params":{"value":7}},)"
+            R"({"id":"fm","type":"Formula","params":{"expr":")"
+            R"((2*revolution.sol - power0.tax)*5 + power0.gold/100 + @CLASS[3].transport_cost/100 + a"})"
+            R"(},)"
+            R"({"id":"d","type":"ShowPopup","params":{"body":"V=%NUMBER0","choices":"ok"}}],)"
+            R"("edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"d","pin":"in"}},)"
+            R"({"from":{"node":"c","pin":"value"},"to":{"node":"fm","pin":"a"}},)"
+            R"({"from":{"node":"fm","pin":"value"},"to":{"node":"d","pin":"num0"}}]})");
+        forge::JsonValue rep = forge::run_graph(gf, cx);
+        const forge::JsonValue* pp = rep.find("popup");
+        std::string body = pp && pp->is_object() && pp->find("body") ? pp->find("body")->str : "";
+        // (2*100-20)*5 + 50000/100 + 800/100 + 7 = 900 + 500 + 8 + 7 = 1415
+        check(body.find("1415") != std::string::npos,
+              "Formula evaluates live bindings + table cell + wired pin (=1415)");
+    }
+
     // @SECTION[row].column resolves a live data-table cell (any added row becomes a variable).
     check(forge::resolve_binding("@BUILDING[name:Fort].cost", cx).as_int() == 120,
           "@BUILDING[name:Fort].cost table-cell binding = 120");

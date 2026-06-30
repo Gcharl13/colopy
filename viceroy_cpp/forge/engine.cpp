@@ -1,5 +1,6 @@
 // forge/engine.cpp -- see engine.hpp. A small visual-scripting VM + binding resolver.
 #include "engine.hpp"
+#include "expr.hpp"             // Formula-node expression evaluator
 
 #include "economy.hpp"          // sol_pct, colony_economic_step
 #include "unit.hpp"             // unit_stats
@@ -243,6 +244,18 @@ JsonValue node_catalog() {
         node_def("GetState", "Get Game State", "Reads a value from the live game.",
                  {pin("value","data","out","number")},
                  {param("path","binding")}),
+        node_def("Formula", "Formula (expression)",
+                 "One node for a whole expression -- collapses long Constant/Math/Compare chains. "
+                 "The `expr` text references the game's variables directly: live state "
+                 "(power0.gold, colony0.hammers, revolution.sol, game.turn) and table cells "
+                 "(@BUILDING[name:Fort].cost, @CLASS[3].transport_cost), plus + - * / %, comparisons "
+                 "(return 1/0), a ternary cond?a:b, min/max/clamp/abs/floor/ceil, and roll(lo,hi). "
+                 "The optional a/b/c/d pins feed wired inputs (referenced as a,b,c,d in the expr). "
+                 "Example: roll(1,1000) + (2*revolution.sol - power0.tax)*5 + power0.gold/100.",
+                 {pin("a","data","in","number"), pin("b","data","in","number"),
+                  pin("c","data","in","number"), pin("d","data","in","number"),
+                  pin("value","data","out","number")},
+                 {param("expr","text")}),
         node_def("Math", "Math", "a (op) b.",
                  {pin("a","data","in","number"), pin("b","data","in","number"),
                   pin("value","data","out","number")},
@@ -722,6 +735,17 @@ struct Runner {
             std::string t = ptype(*n);
             if (t == "Constant")      out = json_num(as_num(pget(*n, "value")));
             else if (t == "GetState") out = resolve_binding(pget(*n, "path").str, cx);
+            else if (t == "Formula") {
+                // identifiers a..d are the wired data pins; everything else is a live binding.
+                auto var = [&](const std::string& name) -> double {
+                    if (name.size() == 1 && name[0] >= 'a' && name[0] <= 'd') {
+                        std::string fn, fp;
+                        return incoming(nodeId, name, fn, fp) ? as_num(eval_out(fn, fp)) : 0.0;
+                    }
+                    return as_num(resolve_binding(name, cx));
+                };
+                out = json_num(eval_expr(pget(*n, "expr").str, var, cx.rng));
+            }
             else if (t == "Roll") {
                 int lo = (int)as_num(eval_in(nodeId, "min", pget(*n, "min")));
                 int hi = (int)as_num(eval_in(nodeId, "max", pget(*n, "max")));

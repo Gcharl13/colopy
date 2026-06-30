@@ -78,6 +78,7 @@ add_executable(forge
   forge/datacheck.cpp
   forge/formulas.cpp
   forge/engine.cpp
+  forge/expr.cpp
   forge/httpd.cpp
   forge/web_ui.cpp
 )
