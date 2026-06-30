@@ -8,21 +8,21 @@
       "x": 20,
       "y": -110,
       "params": {
-        "text": "Lost City: n=Roll(1,9). s=UnitIsSeasonedScout(0) scales treasure + quality. de Soto (FF#7) remaps a bad outcome to ruins. One Switch routes the 9 outcomes (no Compare/Branch chain). Computed gold/treasure fills the message %NUMBER0."
+        "text": "Lost-city rumor (spec/systems/exploration.md), rebuilt. Outcome = Roll(1,9); Hernando de Soto (ff.7) remaps a bad roll (5/6/8) to 3 (ruins) -- one Formula. A Seasoned Scout (UnitIsSeasonedScout of the entering unit) adds +2 to the treasure tier. Treasure amounts (Cibola, ruins, friendly-tribe gift) are each one Formula. Switch routes the 9 outcomes incl. the Fountain of Youth (8 immigrants)."
       }
     },
     {
       "id": "trig",
       "type": "OnLostCityEntered",
       "x": 20,
-      "y": 20,
+      "y": 40,
       "params": {}
     },
     {
       "id": "roll",
       "type": "Roll",
       "x": 20,
-      "y": 140,
+      "y": 150,
       "params": {
         "min": 1,
         "max": 9
@@ -32,330 +32,58 @@
       "id": "s",
       "type": "UnitIsSeasonedScout",
       "x": 20,
-      "y": 250,
+      "y": 230,
       "params": {
         "unit": 0
       }
     },
     {
-      "id": "qroll",
-      "type": "Roll",
-      "x": 230,
-      "y": 250,
-      "params": {
-        "min": 1,
-        "max": 100
-      }
-    },
-    {
-      "id": "c10q",
-      "type": "Constant",
-      "x": 230,
-      "y": 330,
-      "params": {
-        "value": 10
-      }
-    },
-    {
-      "id": "sx10",
-      "type": "Math",
-      "x": 380,
-      "y": 270,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "quality",
-      "type": "Math",
-      "x": 540,
-      "y": 260,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "qnote",
-      "type": "Comment",
-      "x": 540,
-      "y": 330,
-      "params": {
-        "text": "quality=random(1,100)+s*10 (biases outcomes; exact mutation undecoded)"
-      }
-    },
-    {
-      "id": "soto",
-      "type": "HasFoundingFather",
-      "x": 20,
-      "y": 330,
-      "params": {
-        "father": 7
-      }
-    },
-    {
-      "id": "k5",
-      "type": "Constant",
-      "x": 230,
-      "y": 430,
-      "params": {
-        "value": 5
-      }
-    },
-    {
-      "id": "e5",
-      "type": "Compare",
-      "x": 360,
-      "y": 430,
-      "params": {
-        "op": "=="
-      }
-    },
-    {
-      "id": "k6",
-      "type": "Constant",
-      "x": 230,
-      "y": 490,
-      "params": {
-        "value": 6
-      }
-    },
-    {
-      "id": "e6",
-      "type": "Compare",
-      "x": 360,
-      "y": 490,
-      "params": {
-        "op": "=="
-      }
-    },
-    {
-      "id": "k8",
-      "type": "Constant",
-      "x": 230,
-      "y": 550,
-      "params": {
-        "value": 8
-      }
-    },
-    {
-      "id": "e8",
-      "type": "Compare",
-      "x": 360,
-      "y": 550,
-      "params": {
-        "op": "=="
-      }
-    },
-    {
-      "id": "bad56",
-      "type": "Math",
-      "x": 520,
-      "y": 450,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "badAny",
-      "type": "Math",
-      "x": 660,
-      "y": 480,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "gate",
-      "type": "Math",
-      "x": 800,
-      "y": 520,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "c3",
-      "type": "Constant",
-      "x": 800,
-      "y": 430,
-      "params": {
-        "value": 3
-      }
-    },
-    {
       "id": "neff",
-      "type": "Select",
-      "x": 940,
-      "y": 460,
-      "params": {}
-    },
-    {
-      "id": "c2b",
-      "type": "Constant",
-      "x": 20,
-      "y": 640,
+      "type": "Formula",
+      "x": 220,
+      "y": 150,
       "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "sp2",
-      "type": "Math",
-      "x": 170,
-      "y": 630,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "dR",
-      "type": "Dice",
-      "x": 20,
-      "y": 710,
-      "params": {
-        "count": 3,
-        "sides": 8
-      }
-    },
-    {
-      "id": "c10a",
-      "type": "Constant",
-      "x": 20,
-      "y": 780,
-      "params": {
-        "value": 10
-      }
-    },
-    {
-      "id": "mR0",
-      "type": "Math",
-      "x": 170,
-      "y": 720,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "mRs",
-      "type": "Math",
-      "x": 320,
-      "y": 720,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "c2d",
-      "type": "Constant",
-      "x": 320,
-      "y": 800,
-      "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "mRuins",
-      "type": "Math",
-      "x": 470,
-      "y": 740,
-      "params": {
-        "op": "/"
-      }
-    },
-    {
-      "id": "dF",
-      "type": "Dice",
-      "x": 20,
-      "y": 860,
-      "params": {
-        "count": 4,
-        "sides": 10
-      }
-    },
-    {
-      "id": "c2a",
-      "type": "Constant",
-      "x": 20,
-      "y": 930,
-      "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "mFriend",
-      "type": "Math",
-      "x": 170,
-      "y": 880,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "c10b",
-      "type": "Constant",
-      "x": 20,
-      "y": 1000,
-      "params": {
-        "value": 10
-      }
-    },
-    {
-      "id": "sp2x10",
-      "type": "Math",
-      "x": 320,
-      "y": 630,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "d20",
-      "type": "Dice",
-      "x": 20,
-      "y": 1070,
-      "params": {
-        "count": 1,
-        "sides": 20
-      }
-    },
-    {
-      "id": "plus",
-      "type": "Math",
-      "x": 470,
-      "y": 650,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "c100",
-      "type": "Constant",
-      "x": 20,
-      "y": 1140,
-      "params": {
-        "value": 100
+        "expr": "(ff.7 && (a==5 || a==6 || a==8)) ? 3 : a"
       }
     },
     {
       "id": "cib",
-      "type": "Math",
-      "x": 620,
-      "y": 670,
+      "type": "Formula",
+      "x": 20,
+      "y": 330,
       "params": {
-        "op": "*"
+        "expr": "((a+2)*10 + roll(1,20))*100"
+      }
+    },
+    {
+      "id": "mRuins",
+      "type": "Formula",
+      "x": 20,
+      "y": 400,
+      "params": {
+        "expr": "(roll(1,8)+roll(1,8)+roll(1,8))*10*(a+2)/2"
+      }
+    },
+    {
+      "id": "mFriend",
+      "type": "Formula",
+      "x": 20,
+      "y": 470,
+      "params": {
+        "expr": "(roll(1,10)+roll(1,10)+roll(1,10)+roll(1,10))*2"
       }
     },
     {
       "id": "sw",
       "type": "Switch",
-      "x": 1150,
-      "y": 200,
+      "x": 420,
+      "y": 40,
       "params": {}
     },
     {
       "id": "imm",
       "type": "GrantImmigrant",
-      "x": 1400,
+      "x": 620,
       "y": 20,
       "params": {
         "type": "Colonists",
@@ -366,20 +94,19 @@
     {
       "id": "pop1",
       "type": "ShowPopup",
-      "x": 1620,
+      "x": 820,
       "y": 20,
       "params": {
         "title": "Fountain of Youth",
         "textKey": "@LOSTCITY1",
-        "choices": "Rejoice!",
-        "woodcut": "WDCUT09"
+        "choices": "Marvelous!"
       }
     },
     {
       "id": "gold2",
       "type": "GrantGold",
-      "x": 1400,
-      "y": 120,
+      "x": 620,
+      "y": 90,
       "params": {
         "power": "0"
       }
@@ -387,18 +114,18 @@
     {
       "id": "treas",
       "type": "SpawnUnit",
-      "x": 1580,
-      "y": 120,
+      "x": 760,
+      "y": 90,
       "params": {
-        "type": "Treasure",
+        "type": "Colonists",
         "power": "0"
       }
     },
     {
       "id": "ferry",
       "type": "FireEvent",
-      "x": 1760,
-      "y": 120,
+      "x": 900,
+      "y": 90,
       "params": {
         "graph": "treasure_transport"
       }
@@ -406,20 +133,19 @@
     {
       "id": "pop2",
       "type": "ShowPopup",
-      "x": 1980,
-      "y": 120,
+      "x": 1040,
+      "y": 90,
       "params": {
         "title": "Seven Cities of Cibola",
         "textKey": "@LOSTCITY2",
-        "choices": "Glory!",
-        "woodcut": "WDCUT04"
+        "choices": "Glory!"
       }
     },
     {
       "id": "gold3",
       "type": "GrantGold",
-      "x": 1400,
-      "y": 240,
+      "x": 620,
+      "y": 160,
       "params": {
         "power": "0"
       }
@@ -427,20 +153,19 @@
     {
       "id": "pop3",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 240,
+      "x": 820,
+      "y": 160,
       "params": {
-        "title": "Ruins",
+        "title": "Ancient Ruins",
         "textKey": "@LOSTCITY3",
-        "choices": "Onward",
-        "woodcut": "WDCUT04"
+        "choices": "A find!"
       }
     },
     {
       "id": "burial",
       "type": "FireEvent",
-      "x": 1400,
-      "y": 340,
+      "x": 620,
+      "y": 230,
       "params": {
         "graph": "burial_mounds"
       }
@@ -448,19 +173,19 @@
     {
       "id": "pop4",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 340,
+      "x": 820,
+      "y": 230,
       "params": {
         "title": "Burial Mounds",
         "textKey": "@BURIAL1",
-        "choices": "Onward"
+        "choices": "Solemn."
       }
     },
     {
       "id": "kill",
       "type": "DestroyUnit",
-      "x": 1400,
-      "y": 440,
+      "x": 620,
+      "y": 300,
       "params": {
         "unit": 0
       }
@@ -468,30 +193,30 @@
     {
       "id": "pop5",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 440,
+      "x": 820,
+      "y": 300,
       "params": {
         "title": "Vanished",
         "textKey": "@LOSTCITY5",
-        "choices": "Onward"
+        "choices": "Alas."
       }
     },
     {
       "id": "pop6",
       "type": "ShowPopup",
-      "x": 1440,
-      "y": 540,
+      "x": 620,
+      "y": 370,
       "params": {
         "title": "Nothing",
         "textKey": "@LOSTCITY6",
-        "choices": "Onward"
+        "choices": "Onward."
       }
     },
     {
       "id": "gold7",
       "type": "GrantGold",
-      "x": 1400,
-      "y": 640,
+      "x": 620,
+      "y": 440,
       "params": {
         "power": "0"
       }
@@ -499,40 +224,39 @@
     {
       "id": "pop7",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 640,
+      "x": 820,
+      "y": 440,
       "params": {
         "title": "Friendly Tribe",
         "textKey": "@LOSTCITY7",
-        "choices": "Onward"
+        "choices": "Thank you."
       }
     },
     {
       "id": "ten",
       "type": "ChangeNativeTension",
-      "x": 1400,
-      "y": 740,
+      "x": 620,
+      "y": 510,
       "params": {
-        "amount": 100
+        "amount": 15
       }
     },
     {
       "id": "pop8",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 740,
+      "x": 820,
+      "y": 510,
       "params": {
-        "title": "Holy Shrines",
+        "title": "Trouble",
         "textKey": "@LOSTCITY8",
-        "choices": "Onward",
-        "woodcut": "WDCUT13"
+        "choices": "Uh oh."
       }
     },
     {
       "id": "imm9",
       "type": "GrantImmigrant",
-      "x": 1400,
-      "y": 840,
+      "x": 620,
+      "y": 580,
       "params": {
         "type": "Colonists",
         "power": "0",
@@ -540,351 +264,31 @@
       }
     },
     {
-      "id": "popdefault",
+      "id": "popd",
       "type": "ShowPopup",
-      "x": 1620,
-      "y": 840,
+      "x": 820,
+      "y": 580,
       "params": {
-        "title": "Survivors",
+        "title": "A Survivor",
         "textKey": "@LOSTCITY9",
-        "choices": "Onward"
+        "choices": "Welcome."
       }
     }
   ],
   "edges": [
     {
       "from": {
-        "node": "s",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sx10",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c10q",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sx10",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "qroll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "quality",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "sx10",
-        "pin": "value"
-      },
-      "to": {
-        "node": "quality",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e5",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "k5",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e5",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e6",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "k6",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e6",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e8",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "k8",
-        "pin": "value"
-      },
-      "to": {
-        "node": "e8",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "e5",
-        "pin": "value"
-      },
-      "to": {
-        "node": "bad56",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "e6",
-        "pin": "value"
-      },
-      "to": {
-        "node": "bad56",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "bad56",
-        "pin": "value"
-      },
-      "to": {
-        "node": "badAny",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "e8",
-        "pin": "value"
-      },
-      "to": {
-        "node": "badAny",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "soto",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gate",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "badAny",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gate",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "gate",
-        "pin": "value"
-      },
-      "to": {
-        "node": "neff",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "c3",
-        "pin": "value"
-      },
-      "to": {
-        "node": "neff",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
         "node": "roll",
         "pin": "value"
       },
       "to": {
         "node": "neff",
-        "pin": "b"
+        "pin": "a"
       }
     },
     {
       "from": {
         "node": "s",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c2b",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "dR",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mR0",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c10a",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mR0",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "mR0",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mRs",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "sp2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mRs",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "mRs",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mRuins",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c2d",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mRuins",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "dF",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mFriend",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c2a",
-        "pin": "value"
-      },
-      "to": {
-        "node": "mFriend",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sp2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2x10",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c10b",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2x10",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sp2x10",
-        "pin": "value"
-      },
-      "to": {
-        "node": "plus",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "d20",
-        "pin": "value"
-      },
-      "to": {
-        "node": "plus",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "plus",
         "pin": "value"
       },
       "to": {
@@ -894,12 +298,12 @@
     },
     {
       "from": {
-        "node": "c100",
+        "node": "s",
         "pin": "value"
       },
       "to": {
-        "node": "cib",
-        "pin": "b"
+        "node": "mRuins",
+        "pin": "a"
       }
     },
     {
@@ -954,6 +358,16 @@
     },
     {
       "from": {
+        "node": "cib",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold2",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
         "node": "gold2",
         "pin": "out"
       },
@@ -994,22 +408,22 @@
     },
     {
       "from": {
-        "node": "cib",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gold2",
-        "pin": "amount"
-      }
-    },
-    {
-      "from": {
         "node": "sw",
         "pin": "3"
       },
       "to": {
         "node": "gold3",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "mRuins",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold3",
+        "pin": "amount"
       }
     },
     {
@@ -1030,16 +444,6 @@
       "to": {
         "node": "pop3",
         "pin": "num0"
-      }
-    },
-    {
-      "from": {
-        "node": "mRuins",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gold3",
-        "pin": "amount"
       }
     },
     {
@@ -1104,6 +508,16 @@
     },
     {
       "from": {
+        "node": "mFriend",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold7",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
         "node": "gold7",
         "pin": "out"
       },
@@ -1120,16 +534,6 @@
       "to": {
         "node": "pop7",
         "pin": "num0"
-      }
-    },
-    {
-      "from": {
-        "node": "mFriend",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gold7",
-        "pin": "amount"
       }
     },
     {
@@ -1168,7 +572,7 @@
         "pin": "out"
       },
       "to": {
-        "node": "popdefault",
+        "node": "popd",
         "pin": "in"
       }
     }
