@@ -12,6 +12,7 @@
 #include "market.hpp"
 #include "ref.hpp"
 #include "datacheck.hpp"
+#include "engine.hpp"
 #include "formulas.hpp"
 #include "game.hpp"
 #include "httpd.hpp"
@@ -714,6 +715,46 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         if (path == "/api/assets")
             return J(200, assets_manifest());
+
+        // ---- engine: node graphs (the visual logic) ----
+        if (path == "/api/nodes")
+            return J(200, forge::node_catalog());
+        if (path == "/api/graphs") {
+            forge::JsonValue a = jarr();
+            for (const std::string& id : forge::list_graphs()) a.arr.push_back(forge::json_str(id));
+            return J(200, a);
+        }
+        if (path == "/api/graph") {
+            if (method == "POST") {
+                forge::JsonValue b = forge::json_parse(body);
+                const forge::JsonValue* id = b.find("id");
+                if (!id || !id->is_string()) return err(400, "need {id, ...graph}");
+                forge::save_graph(id->str, b);
+                forge::JsonValue o = jobj(); o.obj["ok"] = jbool(true); return J(200, o);
+            }
+            std::string id = qparam(query, "id");
+            if (id.empty()) return err(400, "missing ?id");
+            return J(200, forge::load_graph(id));
+        }
+        if (path == "/api/bind") {
+            if (!g_game_active) game_new();
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::JsonValue o = jobj();
+            o.obj["value"] = forge::resolve_binding(qparam(query, "path"), cx);
+            return J(200, o);
+        }
+        if (path == "/api/graph/run" && method == "POST") {
+            if (!g_game_active) game_new();
+            forge::JsonValue b = forge::json_parse(body);
+            forge::JsonValue graph;
+            if (const forge::JsonValue* g = b.find("graph")) graph = *g;
+            else if (const forge::JsonValue* id = b.find("id")) graph = forge::load_graph(id->str);
+            else return err(400, "need {graph} or {id}");
+            std::string from = b.find("from_node") ? b.find("from_node")->str : "";
+            std::string choice = b.find("choice") ? b.find("choice")->str : "";
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            return J(200, forge::run_graph(graph, cx, from, choice));
+        }
 
         if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }

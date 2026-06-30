@@ -1,0 +1,75 @@
+{
+  "edges": [
+    {
+      "from": {
+        "node": "t",
+        "pin": "out"
+      },
+      "to": {
+        "node": "gold",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "gold",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ],
+  "id": "demo_treasure",
+  "name": "Demo: lost-city treasure reward",
+  "nodes": [
+    {
+      "id": "t",
+      "params": {},
+      "type": "OnTestFire",
+      "x": 40,
+      "y": 60
+    },
+    {
+      "id": "roll",
+      "params": {
+        "max": 240,
+        "min": 30
+      },
+      "type": "Roll",
+      "x": 40,
+      "y": 200
+    },
+    {
+      "id": "gold",
+      "params": {
+        "power": "0"
+      },
+      "type": "GrantGold",
+      "x": 280,
+      "y": 60
+    },
+    {
+      "id": "pop",
+      "params": {
+        "body": "Your explorers uncover the ruins of a lost civilization and recover its gold!",
+        "choices": "Praise be to God,Onward",
+        "title": "Ruins of a Lost Civilization"
+      },
+      "type": "ShowPopup",
+      "x": 520,
+      "y": 60
+    }
+  ]
+}

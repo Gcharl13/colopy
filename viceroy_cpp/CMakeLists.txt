@@ -77,6 +77,7 @@ add_executable(forge
   forge/savegame.cpp
   forge/datacheck.cpp
   forge/formulas.cpp
+  forge/engine.cpp
   forge/httpd.cpp
   forge/web_ui.cpp
 )
