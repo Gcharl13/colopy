@@ -26,6 +26,24 @@ namespace {
 namespace fs = std::filesystem;
 const char* GRAPH_DIR = "data_extracted/engine/graphs";
 
+// Real game message strings (GAME.TXT @sections), loaded once. A ShowPopup with a
+// `textKey` shows the game's own words verbatim instead of authored prose.
+const char* GAME_TEXT_FILE = "data_extracted/text/GAME_sections.json";
+const std::map<std::string, std::string>& game_text_table() {
+    static std::map<std::string, std::string> T; static bool loaded = false;
+    if (!loaded) { loaded = true;
+        try { JsonValue d = json_parse_file(GAME_TEXT_FILE);
+            if (d.type == JsonValue::Object)
+                for (auto& kv : d.obj) if (kv.second.type == JsonValue::String) T[kv.first] = kv.second.str;
+        } catch (...) {}
+    }
+    return T;
+}
+std::string game_text(const std::string& key) {
+    const auto& T = game_text_table(); auto it = T.find(key);
+    return it == T.end() ? std::string() : it->second;
+}
+
 // ---- node catalog helpers ----
 JsonValue pin(const char* name, const char* kind, const char* dir, const char* dtype = "") {
     JsonValue p; p.type = JsonValue::Object;
@@ -167,9 +185,14 @@ JsonValue node_catalog() {
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
     }));
     cats.arr.push_back(category("Dialog", {
-        node_def("ShowPopup", "Show Popup", "Shows a dialog; each choice is an exec output pin.",
+        node_def("ShowPopup", "Show Popup",
+                 "Shows a dialog; each choice is an exec output pin. textKey (e.g. @LOSTCITY3) "
+                 "shows that real GAME.TXT message verbatim; textKeys (a list like "
+                 "@RAIDGOLD,@RAIDSTORES,@RAIDBURN) captures an event's many messages -- one is "
+                 "picked per run, as in the game. Otherwise the body field is used.",
                  {pin("in","exec","in")},
-                 {param("title","text"), param("body","text"), param("choices","text")}),
+                 {param("title","text"), param("body","text"), param("choices","text"),
+                  param("textKey","text"), param("textKeys","text")}),
         node_def("Navigate", "Go To Screen", "Switches the active screen (in preview/play).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("screen","text")}),
     }));
@@ -567,7 +590,20 @@ struct Runner {
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
             popup.obj["title"] = json_str(pget(*n, "title").str);
-            popup.obj["body"]  = json_str(pget(*n, "body").str);
+            std::string key = pget(*n, "textKey").str, body = pget(*n, "body").str;
+            // textKeys = the event's full set of possible messages (comma/newline/space
+            // separated); one is picked per run, so the event varies like the real game.
+            std::string keys = pget(*n, "textKeys").str;
+            if (key.empty() && !keys.empty()) {
+                std::vector<std::string> opts; std::string cur;
+                auto push = [&]{ if (!cur.empty()) { opts.push_back(cur); cur.clear(); } };
+                for (char c : keys) { if (c == '\n' || c == ',' || c == ' ' || c == '\t') push(); else cur += c; }
+                push();
+                if (!opts.empty()) key = opts[cx.rng(0, (int)opts.size() - 1)];
+            }
+            if (!key.empty()) { std::string g = game_text(key);
+                if (!g.empty()) { body = g; popup.obj["textKey"] = json_str(key); } }
+            popup.obj["body"]  = json_str(body);
             popup.obj["node"]  = json_str(nodeId);
             JsonValue ch; ch.type = JsonValue::Array;
             // choices: newline- or comma-separated; each becomes an exec pin

@@ -70,7 +70,8 @@
       "params": {
         "title": "Native Raid!",
         "body": "Braves raid your colony and make off with your gold.",
-        "choices": "We will rebuild"
+        "choices": "We will rebuild",
+        "textKeys": "@RAIDGOLD,@RAIDSTORES,@RAIDBURN,@RAIDNOTHING,@RAIDSCALP,@RAIDSHIP,@RAIDWREAK"
       }
     },
     {

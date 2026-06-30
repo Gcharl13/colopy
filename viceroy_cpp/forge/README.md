@@ -100,7 +100,11 @@ Run it from the repo root so the default data paths resolve. Tabs:
   RandomChance/HasFoundingFather), Actions — economic (GrantGold/SetTax/SetPrice/AddColonyPop/
   AddREF/SpawnUnit/StepTurn) **and sim-wired** (ResolveCombat→`resolve_land`, ChangeNativeTension→
   `apply_tension`, GiveFoundingFather, AddBoycott, DeclareWar→`declare_war`, GrantImmigrant) — and
-  Dialog (ShowPopup/Navigate). The sim-wired actions read/write the relational state the pure
+  Dialog (ShowPopup/Navigate). **Popups use the real game text**: a ShowPopup's `textKey`
+  (e.g. `@LOSTCITY3`) shows that GAME.TXT message verbatim, and `textKeys` (a list like
+  `@RAIDGOLD,@RAIDSTORES,@RAIDBURN`) captures a multi-outcome event's whole message set — one is
+  picked per run, as in the game. The editor autocompletes the `@KEY`s from `/api/text` and
+  previews the resolved string. The sim-wired actions read/write the relational state the pure
   economic sim doesn't hold (native tension, founding-father ownership, boycotts, the diplomacy
   matrix), surfaced as bindings (`natives.tension`, `ff.<id>`/`ff.count`, `boycott.<g>`,
   `war.<a>.<b>`). The event families ship as graphs (`data_extracted/engine/graphs/`): king's tax,

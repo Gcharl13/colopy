@@ -2,30 +2,213 @@
   "id": "lost_city",
   "name": "Lost City Rumor",
   "nodes": [
-    { "id": "trig",  "type": "OnUnitEntersTile", "x": 30,  "y": 40,  "params": { "terrain": "rumor" } },
-    { "id": "rollN", "type": "Roll",     "x": 30,  "y": 150, "params": { "min": 1, "max": 9 } },
-    { "id": "c2",    "type": "Constant", "x": 30,  "y": 280, "params": { "value": 2 } },
-    { "id": "cmp",   "type": "Compare",  "x": 220, "y": 200, "params": { "op": "<=" } },
-    { "id": "br",    "type": "Branch",   "x": 410, "y": 60,  "params": {} },
-    { "id": "rBig",  "type": "Roll",     "x": 410, "y": 250, "params": { "min": 2100, "max": 5000 } },
-    { "id": "gBig",  "type": "GrantGold","x": 600, "y": 40,  "params": { "power": "0" } },
-    { "id": "pCib",  "type": "ShowPopup","x": 800, "y": 40,
-      "params": { "title": "Seven Cities of Cibola", "body": "Your explorers find a fabulous treasure!", "choices": "Glory!" } },
-    { "id": "rSml",  "type": "Roll",     "x": 410, "y": 380, "params": { "min": 30, "max": 240 } },
-    { "id": "gSml",  "type": "GrantGold","x": 600, "y": 200, "params": { "power": "0" } },
-    { "id": "pRuin", "type": "ShowPopup","x": 800, "y": 200,
-      "params": { "title": "Ruins of a Lost Civilization", "body": "You recover gold from the ruins.", "choices": "Onward" } }
+    {
+      "id": "trig",
+      "type": "OnUnitEntersTile",
+      "x": 30,
+      "y": 40,
+      "params": {
+        "terrain": "rumor"
+      }
+    },
+    {
+      "id": "rollN",
+      "type": "Roll",
+      "x": 30,
+      "y": 150,
+      "params": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "c2",
+      "type": "Constant",
+      "x": 30,
+      "y": 280,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "cmp",
+      "type": "Compare",
+      "x": 220,
+      "y": 200,
+      "params": {
+        "op": "<="
+      }
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 410,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "rBig",
+      "type": "Roll",
+      "x": 410,
+      "y": 250,
+      "params": {
+        "min": 2100,
+        "max": 5000
+      }
+    },
+    {
+      "id": "gBig",
+      "type": "GrantGold",
+      "x": 600,
+      "y": 40,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "pCib",
+      "type": "ShowPopup",
+      "x": 800,
+      "y": 40,
+      "params": {
+        "title": "Seven Cities of Cibola",
+        "body": "Your explorers find a fabulous treasure!",
+        "choices": "Glory!",
+        "textKey": "@LOSTCITY2"
+      }
+    },
+    {
+      "id": "rSml",
+      "type": "Roll",
+      "x": 410,
+      "y": 380,
+      "params": {
+        "min": 30,
+        "max": 240
+      }
+    },
+    {
+      "id": "gSml",
+      "type": "GrantGold",
+      "x": 600,
+      "y": 200,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "pRuin",
+      "type": "ShowPopup",
+      "x": 800,
+      "y": 200,
+      "params": {
+        "title": "Ruins of a Lost Civilization",
+        "body": "You recover gold from the ruins.",
+        "choices": "Onward",
+        "textKeys": "@LOSTCITY1,@LOSTCITY2,@LOSTCITY3,@LOSTCITY4,@LOSTCITY5,@LOSTCITY6,@LOSTCITY7,@LOSTCITY9"
+      }
+    }
   ],
   "edges": [
-    { "from": { "node": "trig",  "pin": "out" },   "to": { "node": "br",  "pin": "in" } },
-    { "from": { "node": "rollN", "pin": "value" }, "to": { "node": "cmp", "pin": "a" } },
-    { "from": { "node": "c2",    "pin": "value" }, "to": { "node": "cmp", "pin": "b" } },
-    { "from": { "node": "cmp",   "pin": "value" }, "to": { "node": "br",  "pin": "cond" } },
-    { "from": { "node": "br",    "pin": "true" },  "to": { "node": "gBig","pin": "in" } },
-    { "from": { "node": "rBig",  "pin": "value" }, "to": { "node": "gBig","pin": "amount" } },
-    { "from": { "node": "gBig",  "pin": "out" },   "to": { "node": "pCib","pin": "in" } },
-    { "from": { "node": "br",    "pin": "false" }, "to": { "node": "gSml","pin": "in" } },
-    { "from": { "node": "rSml",  "pin": "value" }, "to": { "node": "gSml","pin": "amount" } },
-    { "from": { "node": "gSml",  "pin": "out" },   "to": { "node": "pRuin","pin": "in" } }
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "rollN",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "gBig",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "rBig",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gBig",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "gBig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pCib",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "gSml",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "rSml",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gSml",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "gSml",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pRuin",
+        "pin": "in"
+      }
+    }
   ]
 }

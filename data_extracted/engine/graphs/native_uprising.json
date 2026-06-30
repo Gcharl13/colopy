@@ -2,28 +2,169 @@
   "id": "native_uprising",
   "name": "Native Uprising",
   "nodes": [
-    { "id": "trig", "type": "OnTurnStart", "x": 30, "y": 40, "params": {} },
-    { "id": "roll", "type": "Roll", "x": 30, "y": 160, "params": { "min": 1, "max": 10 } },
-    { "id": "c8", "type": "Constant", "x": 30, "y": 290, "params": { "value": 8 } },
-    { "id": "cmp", "type": "Compare", "x": 220, "y": 210, "params": { "op": ">=" } },
-    { "id": "br", "type": "Branch", "x": 410, "y": 60, "params": {} },
-    { "id": "tens", "type": "ChangeNativeTension", "x": 600, "y": 40, "params": { "amount": 30 } },
-    { "id": "war", "type": "DeclareWar", "x": 800, "y": 40, "params": { "a": "0", "b": "3" } },
-    { "id": "pop", "type": "ShowPopup", "x": 1000, "y": 40, "params": {
+    {
+      "id": "trig",
+      "type": "OnTurnStart",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "roll",
+      "type": "Roll",
+      "x": 30,
+      "y": 160,
+      "params": {
+        "min": 1,
+        "max": 10
+      }
+    },
+    {
+      "id": "c8",
+      "type": "Constant",
+      "x": 30,
+      "y": 290,
+      "params": {
+        "value": 8
+      }
+    },
+    {
+      "id": "cmp",
+      "type": "Compare",
+      "x": 220,
+      "y": 210,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 410,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "tens",
+      "type": "ChangeNativeTension",
+      "x": 600,
+      "y": 40,
+      "params": {
+        "amount": 30
+      }
+    },
+    {
+      "id": "war",
+      "type": "DeclareWar",
+      "x": 800,
+      "y": 40,
+      "params": {
+        "a": "0",
+        "b": "3"
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 1000,
+      "y": 40,
+      "params": {
         "title": "Native Uprising!",
         "body": "Angered braves take up arms against your colonies.",
-        "choices": "To the walls!" } },
-    { "id": "calm", "type": "Log", "x": 600, "y": 210, "params": {
-        "message": "The tribes watch warily but keep the peace this turn." } }
+        "choices": "To the walls!",
+        "textKeys": "@RAIDBURN,@RAIDSCALP,@RAIDWREAK"
+      }
+    },
+    {
+      "id": "calm",
+      "type": "Log",
+      "x": 600,
+      "y": 210,
+      "params": {
+        "message": "The tribes watch warily but keep the peace this turn."
+      }
+    }
   ],
   "edges": [
-    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "br", "pin": "in" } },
-    { "from": { "node": "roll", "pin": "value" }, "to": { "node": "cmp", "pin": "a" } },
-    { "from": { "node": "c8", "pin": "value" }, "to": { "node": "cmp", "pin": "b" } },
-    { "from": { "node": "cmp", "pin": "value" }, "to": { "node": "br", "pin": "cond" } },
-    { "from": { "node": "br", "pin": "true" }, "to": { "node": "tens", "pin": "in" } },
-    { "from": { "node": "tens", "pin": "out" }, "to": { "node": "war", "pin": "in" } },
-    { "from": { "node": "war", "pin": "out" }, "to": { "node": "pop", "pin": "in" } },
-    { "from": { "node": "br", "pin": "false" }, "to": { "node": "calm", "pin": "in" } }
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "tens",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "out"
+      },
+      "to": {
+        "node": "war",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "war",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "calm",
+        "pin": "in"
+      }
+    }
   ]
 }

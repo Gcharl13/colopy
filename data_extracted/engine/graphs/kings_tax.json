@@ -52,7 +52,8 @@
       "params": {
         "title": "The King Demands Higher Taxes!",
         "body": "The Crown demands the colonial tax rate rise to 25%. Do you submit?",
-        "choices": "Accept,Refuse"
+        "choices": "Accept,Refuse",
+        "textKeys": "@KINGTAX,@KINGRAISE"
       }
     },
     {

@@ -766,6 +766,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, jbool(true));
         }
 
+        if (path == "/api/text") {
+            // Real game strings from data_extracted/text/<FILE>_sections.json (default GAME).
+            std::string file = qparam(query, "file"); if (file.empty()) file = "GAME";
+            for (char c : file) if (!std::isalnum((unsigned char)c) && c != '_') return err(400, "bad file");
+            try { return J(200, forge::json_parse_file("data_extracted/text/" + file + "_sections.json")); }
+            catch (const std::exception& e) { return err(404, e.what()); }
+        }
+
         if (path == "/api/formulas")
             return J(200, forge::formulas_catalog());
 

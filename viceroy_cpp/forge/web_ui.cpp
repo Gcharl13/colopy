@@ -553,6 +553,7 @@ async function gInit(){
   for(const c of CAT) for(const n of c.nodes){ NDEF[n.type]=n; CATOF[n.type]=c.name; }
   if(!$('#bindlist')){ const dl=document.createElement('datalist'); dl.id='bindlist';
     dl.innerHTML=BINDS.map(b=>'<option value="'+b+'">').join(''); document.body.appendChild(dl); }
+  await gLoadGameText();
   buildPalette(); await gLoadList();
   if($('#graphpick').value){ await loadGraph(); } else newGraph();
 }
@@ -560,6 +561,24 @@ function buildPalette(){
   let h=''; for(const c of CAT){ h+='<h4>'+esc(c.name)+'</h4>'; for(const n of c.nodes) h+='<div class="gpitem" data-t="'+n.type+'">'+esc(n.title)+'</div>'; }
   $('#gpalette').innerHTML=h;
   $('#gpalette').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>addNode(el.dataset.t));
+}
+// The real game strings (GAME.TXT) -> a datalist so ShowPopup's textKey/textKeys autocomplete.
+let GAMETEXT={};
+async function gLoadGameText(){
+  try{ GAMETEXT=await (await fetch('/api/text?file=GAME')).json(); }catch(e){ GAMETEXT={}; return; }
+  if(!$('#gametextkeys')){ const dl=document.createElement('datalist'); dl.id='gametextkeys';
+    dl.innerHTML=Object.keys(GAMETEXT).map(k=>'<option value="'+esc(k)+'">'+esc(String(GAMETEXT[k]).replace(/\n/g,' ').slice(0,60))+'</option>').join('');
+    document.body.appendChild(dl); }
+}
+// Preview the real message(s) a textKey/textKeys param resolves to.
+function gameTextPreview(name, val){
+  const keys=String(val||'').split(/[\s,]+/).filter(Boolean);
+  if(!keys.length) return '';
+  const lines=keys.map(k=>{ const s=GAMETEXT[k]; return s
+    ? '<div style="margin:2px 0"><code>'+esc(k)+'</code>: '+esc(s).replace(/\n/g,'<br>')+'</div>'
+    : '<div class="warn">'+esc(k)+' &mdash; not found in GAME.TXT</div>'; });
+  return '<div class="muted" style="border-left:2px solid #3a4151;padding-left:6px;margin:4px 0">'
+    +(name==='textKeys'?'one picked per run:':'real game text:')+lines.join('')+'</div>';
 }
 async function gLoadList(){ const ids=await (await fetch('/api/graphs')).json();
   $('#graphpick').innerHTML=ids.map(i=>'<option'+(i===G.id?' selected':'')+'>'+esc(i)+'</option>').join(''); }
@@ -650,14 +669,20 @@ function gProps(){
   h+='<div class="muted" style="margin:3px 0 6px">'+(def?esc(def.summary):'')+'</div>';
   if(def) for(const p of def.params){ const v=selNode.params[p.name]!==undefined?selNode.params[p.name]:'';
     h+='<label>'+esc(p.name)+'</label>';
-    if(p.kind==='select') h+='<select data-p="'+p.name+'">'+p.options.map(o=>'<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+    if(p.name==='textKey'||p.name==='textKeys'){
+      h+='<input data-p="'+p.name+'" list="gametextkeys" placeholder="@LOSTCITY3'+(p.name==='textKeys'?',@RAIDGOLD,...':'')+'" value="'+esc(String(v))+'">';
+      h+='<div data-prev="'+p.name+'">'+gameTextPreview(p.name,v)+'</div>';
+    }
+    else if(p.kind==='select') h+='<select data-p="'+p.name+'">'+p.options.map(o=>'<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
     else if(p.kind==='text') h+='<textarea data-p="'+p.name+'" rows="2">'+esc(String(v))+'</textarea>';
     else if(p.kind==='binding') h+='<input data-p="'+p.name+'" list="bindlist" value="'+esc(String(v))+'">';
     else h+='<input type="number" data-p="'+p.name+'" value="'+esc(String(v))+'">';
   }
   h+='<button class="act" style="margin-top:10px" onclick="delNode()">Delete node</button>';
   $('#gprops').innerHTML=h;
-  $('#gprops').querySelectorAll('[data-p]').forEach(el=>el.onchange=()=>{ selNode.params[el.dataset.p]=(el.type==='number')?+el.value:el.value; gRender(); });
+  $('#gprops').querySelectorAll('[data-p]').forEach(el=>el.onchange=()=>{ selNode.params[el.dataset.p]=(el.type==='number')?+el.value:el.value;
+    const pv=$('#gprops').querySelector('[data-prev="'+el.dataset.p+'"]'); if(pv) pv.innerHTML=gameTextPreview(el.dataset.p,el.value);
+    gRender(); });
 }
 async function runGraph(){ const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(gClean())})).json(); showRun(d); }
 async function resumeGraph(node,choice){ ui.close();
