@@ -526,6 +526,9 @@ function makeNode(n){
     if(outs[i]){ const s=document.createElement('span'); s.className='gplabel'; s.textContent=outs[i].name; R.appendChild(s); R.appendChild(mkPin(n,outs[i])); }
     row.appendChild(L); row.appendChild(R); body.appendChild(row);
   }
+  if(!ins.length && !outs.length){ const c=document.createElement('div');
+    c.style.cssText='padding:4px 8px;color:#aeb6c2;font-size:11px;white-space:pre-wrap';
+    c.textContent=(n.params&&n.params.text)||'(comment)'; body.appendChild(c); }
   d.appendChild(body); return d;
 }
 function mkPin(n,p){
