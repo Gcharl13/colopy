@@ -1173,6 +1173,31 @@ static int engine_selftest() {
         check(body.find("400") != std::string::npos, "PickNumber fills %NUMBER0 with the index-1 value");
     }
 
+    // Notify emits a real GAME.TXT message (not a hardcoded string) with %STRING fill.
+    {
+        forge::JsonValue gn = forge::json_parse(
+            R"({"id":"n","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"s","type":"PickText","params":{"options":"Jamestown,Plymouth"}},)"
+            R"({"id":"i","type":"Constant","params":{"value":0}},)"
+            R"({"id":"m","type":"Notify","params":{"textKey":"@NEWCOLONIST"}}],)"
+            R"("edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"m","pin":"in"}},)"
+            R"({"from":{"node":"i","pin":"value"},"to":{"node":"s","pin":"index"}},)"
+            R"({"from":{"node":"s","pin":"value"},"to":{"node":"m","pin":"str0"}}]})");
+        forge::JsonValue rep = forge::run_graph(gn, cx);
+        bool ok = false; const forge::JsonValue* ef = rep.find("effects");
+        if (ef) for (const auto& e : ef->arr)
+            if (e.str.find("Jamestown") != std::string::npos && e.str.find("colonist") != std::string::npos) ok = true;
+        check(ok, "Notify emits the real @NEWCOLONIST message with %STRING0 filled");
+    }
+
+    // @SECTION[row].column resolves a live data-table cell (any added row becomes a variable).
+    check(forge::resolve_binding("@BUILDING[name:Fort].cost", cx).as_int() == 120,
+          "@BUILDING[name:Fort].cost table-cell binding = 120");
+    check(forge::resolve_binding("@CLASS[3].transport_cost", cx).as_int() == 800,
+          "@CLASS[3].transport_cost table-cell binding = 800");
+
     // congress.cost reflects the byte-verified bell-cost curve; congress.bells is writable.
     check(forge::resolve_binding("congress.cost", cx).as_int() > 0, "congress.cost computes the FF bell cost");
     forge::set_binding("congress.bells", 42, cx);

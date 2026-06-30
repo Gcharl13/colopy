@@ -96,7 +96,10 @@ add_test(NAME forge_rules COMMAND forge rules selftest)
 add_test(NAME forge_mod COMMAND forge mod selftest)
 add_test(NAME forge_save COMMAND forge save selftest)
 add_test(NAME forge_data COMMAND forge data selftest)
-add_test(NAME forge_engine COMMAND forge engine selftest)
+# forge_engine reads real data (GAME.TXT messages, @-table cells, graphs) under
+# data_extracted/, so run it from the repo root (the parent of this source dir).
+add_test(NAME forge_engine COMMAND forge engine selftest
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # --- Optional Dear ImGui desktop GUI (forge/gui). OFF by default: it needs network
 #     (FetchContent) + an OpenGL/GLFW dev environment, so the normal build and CI

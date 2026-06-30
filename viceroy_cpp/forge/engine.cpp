@@ -407,8 +407,19 @@ JsonValue node_catalog() {
                  {pin("in","exec","in"), pin("out","exec","out")},
                  {param("unit","number"),
                   param("to","select",{"Soldiers","Dragoons","Continental Army","Continental Cavalry","Veteran Soldiers"})}),
-        node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note).",
+        node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note). "
+                 "Prefer Notify, whose output is a real GAME.TXT message instead of a hardcoded string.",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
+        node_def("Notify", "Notify (game message)",
+                 "Emits a real GAME.TXT message as the run's output -- the same text the game shows, "
+                 "not a hand-typed string. textKey (e.g. @NEWCOLONIST) picks one message; textKeys "
+                 "(a comma list) picks one at random per run. Wire num0/num1 to fill %NUMBER0/%NUMBER1 "
+                 "and str0/str1/str2 to fill %STRING0/%STRING1/%STRING2. The `message` param is only a "
+                 "fallback if no key resolves.",
+                 {pin("in","exec","in"), pin("num0","data","in","number"), pin("num1","data","in","number"),
+                  pin("str0","data","in","text"), pin("str1","data","in","text"), pin("str2","data","in","text"),
+                  pin("out","exec","out")},
+                 {param("textKey","text"), param("textKeys","text"), param("message","text")}),
     }));
     cats.arr.push_back(category("Dialog", {
         node_def("ShowPopup", "Show Popup",
@@ -803,6 +814,62 @@ struct Runner {
         if (n) { JsonValue pv = pget(*n, pin.c_str()); if (pv.type != JsonValue::Null) return pv; }
         return def;
     }
+    // ---- message resolution (shared by ShowPopup and Notify) ----
+    // Replace {binding.path} tokens with live values; leave {highlighted terms} that don't
+    // resolve to a binding untouched (the real game text's {Declaration of Independence} stays).
+    std::string interp_bindings(const std::string& s) {
+        std::string out; size_t i = 0;
+        while (i < s.size()) {
+            if (s[i] == '{') { size_t j = s.find('}', i);
+                if (j != std::string::npos) { std::string tok = s.substr(i + 1, j - i - 1);
+                    JsonValue v = resolve_binding(tok, cx);
+                    if (v.type == JsonValue::Number) {
+                        double d = v.num; out += (d == (long)d) ? std::to_string((long)d) : std::to_string(d);
+                        i = j + 1; continue; }
+                    if (v.type == JsonValue::String) { out += v.str; i = j + 1; continue; } } }
+            out += s[i++];
+        }
+        return out;
+    }
+    // Fill %NUMBER0/%NUMBER1 from a wired data pin (keeps the $ / %% percent variants).
+    void fill_num(const std::string& nodeId, std::string& body, const char* pin, const std::string& base) {
+        std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
+        std::string num = std::to_string((long)as_num(eval_out(f, p)));
+        for (const std::string& suf : {base + "$", base + "%%", base}) {
+            std::string rep = num + (suf.size() > base.size() && suf[base.size()] == '%' ? "%" : "");
+            size_t pos; while ((pos = body.find(suf)) != std::string::npos) body.replace(pos, suf.size(), rep);
+        }
+    }
+    // Fill %STRING0/1/2 from a wired pin (e.g. a PickText giving a class/building name).
+    void fill_str(const std::string& nodeId, std::string& body, const char* pin, const std::string& tok) {
+        std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
+        JsonValue v = eval_out(f, p);
+        std::string rep = v.type == JsonValue::String ? v.str
+                        : v.type == JsonValue::Number ? std::to_string((long)v.num) : "";
+        size_t pos; while ((pos = body.find(tok)) != std::string::npos) body.replace(pos, tok.size(), rep);
+    }
+    // Pick the message text for a node: textKey (or one of textKeys, randomly), else the body
+    // param; interpolate {bindings} and fill %NUMBER0/1 + %STRING0/1/2. Sets outKey to the @KEY used.
+    std::string resolve_message(const std::string& nodeId, std::string& outKey) {
+        const JsonValue* n = node(nodeId); if (!n) return "";
+        std::string key = pget(*n, "textKey").str, body = pget(*n, "body").str;
+        std::string keys = pget(*n, "textKeys").str;
+        if (key.empty() && !keys.empty()) {
+            std::vector<std::string> opts; std::string cur;
+            auto push = [&]{ if (!cur.empty()) { opts.push_back(cur); cur.clear(); } };
+            for (char c : keys) { if (c == '\n' || c == ',' || c == ' ' || c == '\t') push(); else cur += c; }
+            push();
+            if (!opts.empty()) key = opts[cx.rng(0, (int)opts.size() - 1)];
+        }
+        if (!key.empty()) { std::string gtx = game_text(key); if (!gtx.empty()) { body = gtx; outKey = key; } }
+        body = interp_bindings(body);
+        fill_num(nodeId, body, "num0", "%NUMBER0");
+        fill_num(nodeId, body, "num1", "%NUMBER1");
+        fill_str(nodeId, body, "str0", "%STRING0");
+        fill_str(nodeId, body, "str1", "%STRING1");
+        fill_str(nodeId, body, "str2", "%STRING2");
+        return body;
+    }
     // Follow the exec edge out of (nodeId,pin) and execute the target.
     JsonValue follow(const std::string& nodeId, const std::string& pin, JsonValue& popup) {
         const JsonValue* es = graph.find("edges"); if (!es) return {};
@@ -1102,66 +1169,18 @@ struct Runner {
         }
         if (t == "Navigate") { gotoScreen = pget(*n, "screen").str; effect("go to screen: " + gotoScreen); return follow(nodeId, "out", popup); }
         if (t == "Log") { effect(pget(*n, "message").str); return follow(nodeId, "out", popup); }
+        if (t == "Notify") {
+            // Like ShowPopup but non-blocking: the run effect IS the resolved GAME.TXT message.
+            std::string key; std::string body = resolve_message(nodeId, key);
+            if (body.empty()) body = pget(*n, "message").str;   // fall back to a literal if no key
+            effect(body);
+            return follow(nodeId, "out", popup);
+        }
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
-            // Replace {binding.path} tokens with live values; leave {highlighted terms}
-            // (which don't resolve to a binding) untouched -- so the real game text's
-            // {Declaration of Independence} stays, but {game.score}/{power0.gold} fill in.
-            auto interp = [&](std::string s) {
-                std::string out; size_t i = 0;
-                while (i < s.size()) {
-                    if (s[i] == '{') { size_t j = s.find('}', i);
-                        if (j != std::string::npos) { std::string tok = s.substr(i + 1, j - i - 1);
-                            JsonValue v = resolve_binding(tok, cx);
-                            if (v.type == JsonValue::Number) {
-                                double d = v.num; out += (d == (long)d) ? std::to_string((long)d) : std::to_string(d);
-                                i = j + 1; continue; }
-                            if (v.type == JsonValue::String) { out += v.str; i = j + 1; continue; }
-                        } }
-                    out += s[i++];
-                }
-                return out;
-            };
-            std::string key = pget(*n, "textKey").str, body = pget(*n, "body").str;
-            // textKeys = the event's full set of possible messages (comma/newline/space
-            // separated); one is picked per run, so the event varies like the real game.
-            std::string keys = pget(*n, "textKeys").str;
-            if (key.empty() && !keys.empty()) {
-                std::vector<std::string> opts; std::string cur;
-                auto push = [&]{ if (!cur.empty()) { opts.push_back(cur); cur.clear(); } };
-                for (char c : keys) { if (c == '\n' || c == ',' || c == ' ' || c == '\t') push(); else cur += c; }
-                push();
-                if (!opts.empty()) key = opts[cx.rng(0, (int)opts.size() - 1)];
-            }
-            if (!key.empty()) { std::string g = game_text(key);
-                if (!g.empty()) { body = g; popup.obj["textKey"] = json_str(key); } }
-            body = interp(body);   // {binding.path} tokens
-            // Fill the game's %NUMBER0/%NUMBER1 message slots from the wired data pins, so the
-            // message shows the value the logic computed (e.g. lost-city gold). $ / %% kept.
-            auto fillNum = [&](const char* pin, const std::string& base) {
-                std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
-                long v = (long)as_num(eval_out(f, p));
-                std::string num = std::to_string(v);
-                for (const std::string& suf : {base + "$", base + "%%", base}) {
-                    std::string rep = num + (suf.size() > base.size() && suf[base.size()] == '%' ? "%" : "");
-                    size_t pos; while ((pos = body.find(suf)) != std::string::npos) body.replace(pos, suf.size(), rep);
-                }
-            };
-            fillNum("num0", "%NUMBER0");
-            fillNum("num1", "%NUMBER1");
-            // Fill %STRING0/%STRING1/%STRING2 from the wired str pins (e.g. PickText giving the
-            // immigrant class name, or a binding string) -- the message's word-slots.
-            auto fillStr = [&](const char* pin, const std::string& tok) {
-                std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
-                JsonValue v = eval_out(f, p);
-                std::string rep = v.type == JsonValue::String ? v.str
-                                : v.type == JsonValue::Number ? std::to_string((long)v.num) : "";
-                size_t pos; while ((pos = body.find(tok)) != std::string::npos) body.replace(pos, tok.size(), rep);
-            };
-            fillStr("str0", "%STRING0");
-            fillStr("str1", "%STRING1");
-            fillStr("str2", "%STRING2");
-            popup.obj["title"] = json_str(interp(pget(*n, "title").str));
+            std::string key; std::string body = resolve_message(nodeId, key);
+            if (!key.empty()) popup.obj["textKey"] = json_str(key);
+            popup.obj["title"] = json_str(interp_bindings(pget(*n, "title").str));
             popup.obj["body"]  = json_str(body);
             // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
             std::string wc = pget(*n, "woodcut").str, sp = pget(*n, "speaker").str;
