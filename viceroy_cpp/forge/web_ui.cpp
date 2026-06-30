@@ -156,10 +156,11 @@ const char* forge_index_html() {
     <div class="row">
       <button class="act" onclick="newGame()">New game</button>
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
-      <span class="muted">A real game on the real map &mdash; the same sim core: colonies grow,
-        immigration &amp; the King's army accrue, prices drift, and the marked colonist marches
-        (auto-routing around coastline) toward the second colony each turn.</span>
+      <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
+      <span class="muted">Click a unit to select it, then click a tile to send it (it routes
+        around coastline over the following turns). End turn advances the whole world.</span>
     </div>
+    <div class="row"><span id="selinfo" class="muted">No unit selected.</span></div>
     <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
       <canvas id="gcv" width="640" height="480"></canvas>
       <div id="ghud" style="min-width:250px"></div>
@@ -433,19 +434,45 @@ $('#stage').addEventListener('click', e=>{
 });
 
 // ---- Play (the engine loop) ----
-let GAME = null; const GCELL = 14;
+let GAME = null, SEL = -1; const GCELL = 14;
 const GOODS = ['Food','Sugar','Tobacco','Cotton','Furs','Lumber','Ore','Silver',
                'Horses','Rum','Cigars','Cloth','Coats','Trade goods','Tools','Muskets'];
 function ownerColor(o){ return ['#d94f4f','#4f7fd9','#56b96a','#d9b84f'][o&3]; }
+// real on-map unit sprites (32px cells, cell t = unit type), cropped from ICONS.SS
+const UNITSET = new Image(); let UNITS_READY = false;
+UNITSET.onload = () => { UNITS_READY = true; if (GAME) drawGame(); };
+UNITSET.src = '/assets/tileset/units.png';
 async function newGame(){
+  SEL=-1;
   try { const r=await fetch('/api/game/new',{method:'POST'}); GAME=await r.json(); }
   catch(e){ $('#ghud').innerHTML='<span class="fail">game unavailable</span>'; return; }
-  drawGame(); ui.toast('New game ('+GAME.year+')');
+  drawGame(); showSel(); ui.toast('New game ('+GAME.year+')');
 }
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
   const r=await fetch('/api/game/step',{method:'POST'}); GAME=await r.json();
-  drawGame(); ui.toast('Year '+GAME.year);
+  drawGame(); showSel(); ui.toast('Year '+GAME.year);
+}
+function selUnit(){ return SEL<0 ? null : (GAME&&GAME.units.find(u=>u.id===SEL)); }
+async function orderMove(tx,ty){
+  const r=await fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,tx,ty})});
+  GAME=await r.json(); drawGame(); showSel(); ui.toast('Order set — end turn to move');
+}
+async function foundColony(){
+  const u=selUnit(); if(!u) return;
+  const r=await fetch('/api/game/found',{method:'POST',body:JSON.stringify({unit:SEL})});
+  const d=await r.json();
+  if(d.error){ ui.toast(d.error); return; }
+  GAME=d; SEL=-1; drawGame(); showSel(); ui.toast('Colony founded');
+}
+function showSel(){
+  const u=selUnit();
+  $('#foundbtn').disabled = !(u && !u.naval);
+  if(!u){ SEL = u===undefined ? -1 : SEL; $('#selinfo').innerHTML='No unit selected. Click a unit to select it.'; return; }
+  const ord=['idle','fortified','sentry','moving'][u.order]||'?';
+  $('#selinfo').innerHTML='Selected: <b>'+u.name+'</b> at ('+u.x+','+u.y+') &middot; moves '+u.moves
+    +' &middot; '+ord+(u.order===3?(' → ('+u.target_x+','+u.target_y+')'):'')
+    +(u.naval?' &middot; <span class="muted">ship</span>':' &middot; click a tile to send it, or Found colony');
 }
 function drawGame(){
   if(!GAME || !GAME.w) return;
@@ -460,22 +487,52 @@ function drawGame(){
       g.moveTo(x*GCELL+GCELL*0.5,y*GCELL+GCELL*0.2); g.lineTo(x*GCELL+GCELL*0.78,y*GCELL+GCELL*0.7);
       g.lineTo(x*GCELL+GCELL*0.22,y*GCELL+GCELL*0.7); g.closePath(); g.fill(); }
   }
+  // colonies (settlement marker: owner-ringed block + population)
   for(const c of GAME.colonies){
     const X=c.x*GCELL, Y=c.y*GCELL;
-    g.fillStyle='#1a1209'; g.fillRect(X,Y,GCELL,GCELL);
-    g.fillStyle=ownerColor(c.owner); g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
-    g.fillStyle='#fff'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,GCELL,GCELL);
+    g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
+    g.fillStyle='#ffe9b0'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
     g.fillText(String(c.population), X+GCELL/2, Y+GCELL/2+1);
   }
-  for(const u of GAME.units){
-    const X=u.x*GCELL+GCELL/2, Y=u.y*GCELL+GCELL/2;
-    g.beginPath(); g.arc(X,Y,GCELL*0.4,0,7); g.fillStyle=ownerColor(u.owner); g.fill();
-    g.lineWidth=1.5; g.strokeStyle = u.order===3 ? '#ffe27a' : '#0009'; g.stroke();
-    g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText((u.name||'?')[0], X, Y+1);
+  // selected unit's GOTO line + target marker
+  const sel=selUnit();
+  if(sel && sel.order===3 && sel.target_x>=0){
+    const SX=sel.x*GCELL+GCELL/2, SY=sel.y*GCELL+GCELL/2;
+    const TX=sel.target_x*GCELL+GCELL/2, TY=sel.target_y*GCELL+GCELL/2;
+    g.strokeStyle='rgba(255,226,122,.55)'; g.lineWidth=1.5;
+    g.beginPath(); g.moveTo(SX,SY); g.lineTo(TX,TY); g.stroke();
+    g.strokeStyle='#ffe27a'; g.lineWidth=2;
+    g.beginPath(); g.moveTo(TX-4,TY-4); g.lineTo(TX+4,TY+4); g.moveTo(TX+4,TY-4); g.lineTo(TX-4,TY+4); g.stroke();
   }
+  // units (real sprites; disc fallback for the unused slot or before load)
+  const DS=Math.round(GCELL*1.7);
+  for(const u of GAME.units){
+    const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
+    if(UNITS_READY && u.type<23){
+      g.drawImage(UNITSET, u.type*32,0,32,32, cx-DS/2, cy-DS/2, DS, DS);
+    } else {
+      g.beginPath(); g.arc(cx,cy,GCELL*0.4,0,7); g.fillStyle=ownerColor(u.owner); g.fill();
+      g.lineWidth=1; g.strokeStyle='#000'; g.stroke();
+      g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText((u.name||'?')[0], cx, cy+1);
+    }
+  }
+  // selection ring on top
+  if(sel){ g.strokeStyle='#ffe27a'; g.lineWidth=2; g.strokeRect(sel.x*GCELL+1, sel.y*GCELL+1, GCELL-2, GCELL-2); }
   drawHud();
 }
+$('#gcv').addEventListener('click', e=>{
+  if(!GAME) return;
+  const r=$('#gcv').getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/GCELL), y=Math.floor((e.clientY-r.top)/GCELL);
+  if(x<0||y<0||x>=GAME.w||y>=GAME.h) return;
+  const here=GAME.units.find(u=>u.x===x&&u.y===y);
+  if(here){ SEL=here.id; drawGame(); showSel(); return; }   // select a unit
+  const col=GAME.colonies.find(c=>c.x===x&&c.y===y);
+  if(col && SEL<0){ ui.popup('Colony', '<p>Population '+col.population+', Sons of Liberty '+col.sol+'%, at ('+col.x+','+col.y+').</p>'); return; }
+  if(SEL>=0){ orderMove(x,y); }                             // send the selected unit here
+});
 function drawHud(){
   let h='<h3 style="margin:0 0 6px">Year '+GAME.year+(GAME.season?' (Autumn)':'')+'</h3>';
   h+='<div>turn '+GAME.turn+' &middot; gold <b>'+GAME.gold+'</b></div>';

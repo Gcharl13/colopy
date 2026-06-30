@@ -653,9 +653,11 @@ static forge::JsonValue game_state_json() {
     }
     o.obj["colonies"] = cols;
     forge::JsonValue us = jarr();
-    for (const Unit& u : g_world.units) {
+    for (int i = 0; i < (int)g_world.units.size(); ++i) {
+        const Unit& u = g_world.units[i];
         if (!u.alive) continue;
         forge::JsonValue uj = jobj();
+        uj.obj["id"] = forge::json_num(i);              // stable index into g_world.units
         uj.obj["x"] = forge::json_num(u.x); uj.obj["y"] = forge::json_num(u.y);
         uj.obj["type"] = forge::json_num(u.type);
         const char* nm = unit_stats(u.type).name;
@@ -663,6 +665,9 @@ static forge::JsonValue game_state_json() {
         uj.obj["owner"] = forge::json_num(u.owner);
         uj.obj["order"] = forge::json_num(u.order);
         uj.obj["moves"] = forge::json_num(u.moves_left);
+        uj.obj["target_x"] = forge::json_num(u.target_x);
+        uj.obj["target_y"] = forge::json_num(u.target_y);
+        uj.obj["naval"] = jbool(unit_stats(u.type).move_class == 99);
         us.arr.push_back(uj);
     }
     o.obj["units"] = us;
@@ -714,6 +719,38 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/state") {
             if (!g_game_active) game_new();
+            return J(200, game_state_json());
+        }
+        if (path == "/api/game/order" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            const forge::JsonValue* pu = b.find("unit");
+            const forge::JsonValue* px = b.find("tx");
+            const forge::JsonValue* py = b.find("ty");
+            if (!pu || !px || !py) return err(400, "need {unit,tx,ty}");
+            int ui = pu->as_int(-1);
+            if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive)
+                return err(400, "bad unit");
+            Unit& u = g_world.units[ui];
+            u.order = ORDER_GOTO; u.target_x = px->as_int(u.x); u.target_y = py->as_int(u.y);
+            return J(200, game_state_json());
+        }
+        if (path == "/api/game/found" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            const forge::JsonValue* pu = b.find("unit");
+            if (!pu) return err(400, "need {unit}");
+            int ui = pu->as_int(-1);
+            if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive)
+                return err(400, "bad unit");
+            Unit& u = g_world.units[ui];
+            if (unit_stats(u.type).move_class == 99) return err(400, "a ship cannot found a colony");
+            int id = g_world.terrain_id(u.x, u.y);
+            if (id < 0 || game_is_water(id)) return err(400, "must found on land");
+            Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
+            c.food_per_turn = 50; c.bells_per_turn = 1; c.hammers_per_turn = 2; c.crosses_output = 1;
+            c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+            g_world.colonies.push_back(c);
+            g_colony_xy.push_back({u.x, u.y});
+            u.alive = false;                            // the colonist becomes the colony
             return J(200, game_state_json());
         }
 
