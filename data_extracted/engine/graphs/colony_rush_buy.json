@@ -1,0 +1,153 @@
+{
+  "id": "colony_rush_buy",
+  "name": "Colony: Rush-Buy",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -110,
+      "params": {
+        "text": "Rush a project to completion with gold (the @BUYME1 dialog). The cost is RECONSTRUCTED (the binary isn't in-repo to byte-decode it; see notes/rulings/RULINGS.md): a Formula over the hammers still needed, here build_remaining*8 gold, editable inline. 'Complete it' debits the treasury and finishes the building; 'Never mind' leaves it building normally."
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnPlayerCommand",
+      "x": 20,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "cost",
+      "type": "Formula",
+      "x": 20,
+      "y": 160,
+      "params": {
+        "expr": "colony0.build_remaining * 8"
+      }
+    },
+    {
+      "id": "dlg",
+      "type": "ShowPopup",
+      "x": 240,
+      "y": 40,
+      "params": {
+        "title": "Rush Construction?",
+        "textKey": "@BUYME1",
+        "choices": "Never mind,Complete it",
+        "speaker": "Governor"
+      }
+    },
+    {
+      "id": "gold",
+      "type": "GetState",
+      "x": 20,
+      "y": 240,
+      "params": {
+        "path": "power0.gold"
+      }
+    },
+    {
+      "id": "bname",
+      "type": "GetState",
+      "x": 20,
+      "y": 320,
+      "params": {
+        "path": "colony0.building_name"
+      }
+    },
+    {
+      "id": "rush",
+      "type": "RushBuild",
+      "x": 460,
+      "y": 20,
+      "params": {
+        "colony": 0
+      }
+    },
+    {
+      "id": "ok",
+      "type": "ShowPopup",
+      "x": 660,
+      "y": 20,
+      "params": {
+        "title": "Project Complete",
+        "body": "{colony0.building_name} stands complete, Your Excellency.",
+        "choices": "Excellent."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cost",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "gold",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "bname",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "dlg",
+        "pin": "Complete it"
+      },
+      "to": {
+        "node": "rush",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cost",
+        "pin": "value"
+      },
+      "to": {
+        "node": "rush",
+        "pin": "cost"
+      }
+    },
+    {
+      "from": {
+        "node": "rush",
+        "pin": "out"
+      },
+      "to": {
+        "node": "ok",
+        "pin": "in"
+      }
+    }
+  ]
+}

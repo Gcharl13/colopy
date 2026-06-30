@@ -1,0 +1,83 @@
+{
+  "id": "colony_build",
+  "name": "Colony: Start Building",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -90,
+      "params": {
+        "text": "Begin construction (spec/ui/context_dialogs.md build menu). Pick a building id from the @BUILDING table; StartBuilding gates on its min_colony and sets the target+cost. Thereafter colony_production's BuildStep accrues hammers until it completes. Here the id is a Constant (designer's choice)."
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnPlayerCommand",
+      "x": 20,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "bid",
+      "type": "Constant",
+      "x": 20,
+      "y": 160,
+      "params": {
+        "value": 1
+      }
+    },
+    {
+      "id": "start",
+      "type": "StartBuilding",
+      "x": 220,
+      "y": 40,
+      "params": {
+        "colony": 0
+      }
+    },
+    {
+      "id": "done",
+      "type": "ShowPopup",
+      "x": 420,
+      "y": 40,
+      "params": {
+        "title": "Construction Begun",
+        "body": "Construction of {colony0.building_name} begins -- {colony0.build_cost} hammers required.",
+        "choices": "Very good."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "start",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "bid",
+        "pin": "value"
+      },
+      "to": {
+        "node": "start",
+        "pin": "building"
+      }
+    },
+    {
+      "from": {
+        "node": "start",
+        "pin": "out"
+      },
+      "to": {
+        "node": "done",
+        "pin": "in"
+      }
+    }
+  ]
+}

@@ -3,30 +3,39 @@
   "name": "Colony Production",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -90,
+      "params": {
+        "text": "Per-turn colony update (spec/systems/colony.md). ColonyStep runs the SoL EMA, food->population growth, production AND build progress (it accrues this turn's hammers toward the @BUILDING target and completes it when the cost is met). The report reads live colony bindings."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnColonyProduction",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
       "id": "step",
       "type": "ColonyStep",
-      "x": 230,
+      "x": 200,
       "y": 40,
       "params": {
         "colony": 0
       }
     },
     {
-      "id": "pop",
+      "id": "rep",
       "type": "ShowPopup",
-      "x": 430,
+      "x": 560,
       "y": 40,
       "params": {
         "title": "Colony Report",
-        "body": "Jamestown produces {colony0.hammers} hammers, {colony0.bells} bells, {colony0.food} food this turn.\nSons of Liberty: {colony0.sol}%.",
-        "choices": "Onward"
+        "body": "The colony makes {colony0.hammers} hammers, {colony0.bells} bells, {colony0.food} food. Building {colony0.building_name}: {colony0.build_bank} of {colony0.build_cost} hammers. Sons of Liberty {colony0.sol}%.",
+        "choices": "Onward."
       }
     }
   ],
@@ -47,7 +56,7 @@
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "rep",
         "pin": "in"
       }
     }

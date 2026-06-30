@@ -672,6 +672,9 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
                 return num((double)(rem < 0 ? 0 : rem));
             }
             if (f == "warehouse")  return num(w.colonies[c].warehouse_lvl);
+            // the in-progress building's @BUILDING name (build_target is a dynamic id)
+            if (f == "building_name") { int bt = w.colonies[c].build_target;
+                return bt < 0 ? JsonValue{} : table_cell("@BUILDING[" + std::to_string(bt) + "].name"); }
             // built.<id> -> 1 if building id is constructed
             if (f.rfind("built.", 0) == 0) {
                 int bid = std::atoi(f.c_str() + 6);
