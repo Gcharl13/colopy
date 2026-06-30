@@ -1,0 +1,8 @@
+{
+  "cell_w": 56,
+  "cell_h": 48,
+  "count": 48,
+  "drawn": 44,
+  "source": "docs/atlas/sprites/atlas_BUILDING.png",
+  "note": "frame = EXE BUILDING.SS index (col+row*16); colony screen uses def_id+1 (spec/ui/colony_screen.md)"
+}

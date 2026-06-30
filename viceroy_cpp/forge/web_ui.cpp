@@ -688,6 +688,29 @@ $('#agallery').addEventListener('click', e=>{
         // ---- chunk 4c: screen designer + play ----
         + R"HTML(
 let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}, selW=null, BINDV={}, SINIT=false; const SS=2;
+// sprite sheets a screen 'sprite' widget can draw (horizontal strips under /assets/tileset).
+const SHEETS={
+  BUILDING:{url:'/assets/tileset/buildings.png',cw:56,ch:48,n:48},
+  UNIT:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24},
+  ICONS:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24}};
+const SHEETIMG={};
+// Render a sprite widget: a canvas drawing frame f of its sheet, contain-fit + centered,
+// crisp (no smoothing). Falls back to the old text placeholder for an unknown sheet/frame.
+function spriteEl(w){
+  const r=w.rect||[0,0,32,32]; const f=w.frame||0;
+  const sh=SHEETS[String(w.sheet||'').toUpperCase()];
+  if(!sh || f<0 || f>=sh.n){ const s=document.createElement('div'); s.className='swspr'; s.textContent=(w.sheet||'?')+' #'+f; return s; }
+  const cv=document.createElement('canvas');
+  cv.width=Math.max(1,Math.round(r[2]*SS)); cv.height=Math.max(1,Math.round(r[3]*SS));
+  cv.style.cssText='width:100%;height:100%;image-rendering:pixelated';
+  const img=SHEETIMG[sh.url]||(SHEETIMG[sh.url]=Object.assign(new Image(),{src:sh.url}));
+  const g=cv.getContext('2d');
+  const draw=()=>{ g.imageSmoothingEnabled=false; g.clearRect(0,0,cv.width,cv.height);
+    const sc=Math.min(cv.width/sh.cw,cv.height/sh.ch),dw=sh.cw*sc,dh=sh.ch*sc;
+    g.drawImage(img,f*sh.cw,0,sh.cw,sh.ch,(cv.width-dw)/2,(cv.height-dh)/2,dw,dh); };
+  if(img.complete&&img.naturalWidth) draw(); else img.addEventListener('load',draw);
+  return cv;
+}
 async function scrInit(){
   if(!$('#graphlist')){ const dl=document.createElement('datalist'); dl.id='graphlist';
     const ids=await (await fetch('/api/graphs')).json(); dl.innerHTML=ids.map(i=>'<option value="'+i+'">').join(''); document.body.appendChild(dl); }
@@ -716,7 +739,7 @@ function scrRender(){
     const r=w.rect||[0,0,40,8]; const d=document.createElement('div'); d.className='swidget'+(w===selW?' sel':'');
     d.style.left=(r[0]*SS)+'px'; d.style.top=(r[1]*SS)+'px'; d.style.width=(r[2]*SS)+'px'; d.style.height=(r[3]*SS)+'px';
     if(w.type==='rect'){ d.style.background='rgb('+(w.color||'0,0,0')+')'; }
-    else if(w.type==='sprite'){ const s=document.createElement('div'); s.className='swspr'; s.textContent=(w.sheet||'?')+' #'+(w.frame||0); d.appendChild(s); }
+    else if(w.type==='sprite'){ d.appendChild(spriteEl(w)); }
     else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2));
       d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px';
       d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
@@ -771,7 +794,7 @@ async function scrPreview(){
     const r=w.rect||[0,0,40,8]; const d=document.createElement('div'); d.className='swidget';
     d.style.cssText='left:'+(r[0]*SS)+'px;top:'+(r[1]*SS)+'px;width:'+(r[2]*SS)+'px;height:'+(r[3]*SS)+'px;cursor:'+((w.type==='button'&&w.onClick)?'pointer':'default');
     if(w.type==='rect') d.style.background='rgb('+(w.color||'0,0,0')+')';
-    else if(w.type==='sprite'){ const s=document.createElement('div'); s.className='swspr'; s.textContent=(w.sheet||'?')+' #'+(w.frame||0); d.appendChild(s); }
+    else if(w.type==='sprite'){ d.appendChild(spriteEl(w)); }
     else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2)); d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px'; d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
     if(w.type==='button'&&w.onClick) d.onclick=()=>pvFire(w.onClick);
     st.appendChild(d);
