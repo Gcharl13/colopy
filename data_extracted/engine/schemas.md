@@ -33,12 +33,40 @@ editor — you don't hand-edit them.
 - *Dialog*: `ShowPopup` (title/body/choices; each choice is an exec output pin → the runtime
   pauses, returns the popup, and resumes down the chosen pin).
 
-## Binding paths (`GET /api/bind?path=`)
+## Variables — one namespace for the logic and the tables (`GET /api/bind?path=`)
 
-Read-only views into the live game, used by `GetState` nodes and (later) screen widgets:
-`game.year`, `game.season`, `game.turn`, `game.difficulty`, `power<N>.gold|tax|royal_money|crosses`,
-`ref.regulars|cavalry|manowar|artillery`, `colonies.count`, `units.count`,
-`colony<N>.population|sol`, `price.<good 0..15>`.
+There is a single variable namespace shared by the logic graphs and the data tables. The full,
+machine-readable catalog is **`variables.json`** (live-state names + every table section/column);
+the sim's functions and their inputs/outputs are in **`functions.json`** (also `GET /api/formulas`).
+
+**Live game state** — resolved by `forge/engine.cpp resolve_binding`; each maps to a real DGROUP
+field. Groups: `game.*` (year/season/turn/difficulty/score), `power<N>.*`
+(gold/tax/royal_money/crosses/mil_strength/econ_strength/colonies/units/strength), `colony<N>.*`
+(population/sol/bells/hammers/food/crosses/owner/build_target/build_cost/build_bank/
+build_remaining/building_name/warehouse/built.<id>), `unit<N>.*`
+(type/owner/profession/x/y/alive/attack/defense/movement/terrain/terraindef), `natives.tension`,
+`congress.*` (bells/cost/era_band/count), `ff.count`/`ff.<id>`, `revolution.*`, `succession.seceded`,
+`colonies.count`/`colonies.population`, `units.count`, `ref.*`, `price.<good>`, `boycott.<good>`,
+`war.<a>.<b>`, `terrain.defense.<id>`. Writable ones (via `POST /api/bind/set`): year/season/turn/
+difficulty, power gold/tax/crosses/mil_strength/econ_strength, colony population, natives.tension,
+revolution.sol, congress.bells, price.<good>.
+
+**Data-table cells** — `@SECTION[<row>].<column>` where `<row>` is an index or `name:VALUE`, e.g.
+`@BUILDING[name:Fort].cost`, `@CLASS[3].transport_cost`, `@UNIT[name:Soldiers].attack`. Resolved
+against the live tables (preferring your Tables-tab edits), so **any row you add is immediately
+usable in any logic function** — no code change. Numeric cells return numbers, text cells strings.
+
+These names work anywhere a value is read: `GetState` paths, `Formula` expressions, `ShowPopup`/
+`Notify` `{binding}` interpolation, and screen-widget text.
+
+### Newer node types (see `GET /api/nodes` for the live catalog)
+- **`Formula`** — one node for a whole expression over the variables above plus `+ - * / %`,
+  comparisons (→1/0), `? :`, `min/max/clamp/abs/floor/ceil`, `roll(lo,hi)`, and the `a..d` pins.
+  Collapses long Constant/Math/Compare chains (e.g. the king's-tax severity score → one node).
+- **`Notify`** — emits a real GAME.TXT message (`textKey`/`textKeys`, with `%NUMBER`/`%STRING`
+  fill) as the run output, replacing hand-typed `Log` strings.
+- **`StartBuilding` / `BuildStep` / `RushBuild`** — the colony construction + manual-purchase loop
+  (cost/min from `@BUILDING`; rush cost is a Formula, RECONSTRUCTED — see `notes/rulings`).
 
 ## Running a graph (`POST /api/graph/run`)
 
