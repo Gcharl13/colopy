@@ -1,29 +1,37 @@
-// forge/gui/forge_gui.cpp -- Viceroy Forge desktop GUI (Dear ImGui).
+// forge/gui/forge_gui.cpp -- Viceroy Forge desktop GUI (Dear ImGui + imnodes).
 //
 // SCAFFOLD. This is the windowed front-end that sits on top of the already-tested
 // forge backend: the balance inspector (forge/inspect.hpp), the rules overlay
-// loader (forge/rules_json.hpp + sim invariants), and the map editor core
-// (forge/mapedit.hpp). All game logic, curves, validation, and .MP I/O are reused
-// verbatim -- this file only renders them with ImGui.
+// loader (forge/rules_json.hpp + sim invariants), the map editor core
+// (forge/mapedit.hpp), AND the data-driven game engine (forge/engine.hpp) -- the
+// same node catalog / graph interpreter / binding resolver the browser IDE uses,
+// here linked IN-PROCESS (no HTTP). All game logic, curves, validation, .MP I/O,
+// and the engine VM are reused verbatim; this file only renders them.
 //
 // It is built ONLY when configured with -DFORGE_GUI=ON, which FetchContent-pulls
-// Dear ImGui + GLFW (needs network + an OpenGL dev environment). It is therefore
-// NOT compiled in the default/CI build and was NOT compiled in the authoring
-// environment (no GUI libs / no network). The GLFW+OpenGL3 boilerplate mirrors the
-// upstream example_glfw_opengl3; the ImGui calls use the stable core API.
+// Dear ImGui + imnodes + GLFW (needs network + an OpenGL dev environment). It is
+// therefore NOT compiled in the default/CI build and is NOT compiled/verified in
+// this authoring environment (no GUI libs / no network) -- the browser engine is
+// the verified twin to diff against. The GLFW+OpenGL3 boilerplate mirrors the
+// upstream example_glfw_opengl3; the ImGui calls use the stable core API; the
+// node editor targets imnodes v0.5 (BeginNodeEditor/BeginNode/Link).
 #include "imgui.h"
+#include "imnodes.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 
+#include "engine.hpp"
 #include "inspect.hpp"
 #include "mapedit.hpp"
+#include "ref.hpp"          // ref_start (King's starting army)
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
 
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace vc::sim;
@@ -55,7 +63,79 @@ struct AppState {
     bool paint_river = false, paint_forest = false;
     forge::MapReport map_report;
     bool map_validated = false;
+
+    // --- in-process engine (the same node-graph VM the browser IDE runs) ---
+    GameState eng_g;
+    World     eng_w;
+    std::vector<std::pair<int,int>> eng_colony_xy;
+    forge::EngineExtra eng_extra;
+    RuleData  eng_rules = make_default_rules();    // edits in Rules window can feed this
+    int       eng_seed  = 0x2BAD1234;
+    forge::JsonValue eng_catalog;                  // node_catalog(), populated on first frame
+    forge::JsonValue eng_graph;                    // currently loaded graph
+    bool      eng_loaded = false, eng_need_layout = false;
+    char      eng_graph_id[128] = "kings_tax";
+    std::vector<std::string> eng_log, eng_effects;
+    std::string eng_status;
 };
+
+// Build an EngineCtx over the AppState's in-process game (refs + a deterministic rng).
+static forge::EngineCtx engine_ctx(AppState& s) {
+    auto rng = [&s](int lo, int hi) {
+        s.eng_seed = s.eng_seed * 1103515245 + 12345;
+        unsigned v = ((unsigned)s.eng_seed >> 16) & 0x7FFF;
+        return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1));
+    };
+    return forge::EngineCtx{s.eng_g, s.eng_w, s.eng_colony_xy, s.eng_extra, s.eng_rules, rng};
+}
+
+// imnodes shares ONE id space across nodes, attributes (pins) and links, so the three
+// must not collide: node ids stay small (0..N-1), attributes live at ATTR_BASE + node*256
+// + pinOrdinal, links at LINK_BASE + edgeIndex.
+static const int ATTR_BASE = 100000;
+static const int LINK_BASE = 1000000;
+
+// The ordered pin list (name,dir) for a node type, read from the node catalog.
+static std::vector<std::pair<std::string,std::string>>
+catalog_pins(const forge::JsonValue& catalog, const std::string& type) {
+    std::vector<std::pair<std::string,std::string>> out;
+    const forge::JsonValue* cats = catalog.find("categories");
+    if (!cats) return out;
+    for (const auto& c : cats->arr) {
+        const forge::JsonValue* ns = c.find("nodes"); if (!ns) continue;
+        for (const auto& n : ns->arr) {
+            const forge::JsonValue* t = n.find("type");
+            if (!t || t->str != type) continue;
+            const forge::JsonValue* ps = n.find("pins"); if (!ps) return out;
+            for (const auto& p : ps->arr) {
+                const forge::JsonValue* nm = p.find("name"); const forge::JsonValue* dr = p.find("dir");
+                if (nm && dr) out.push_back({nm->str, dr->str});
+            }
+            return out;
+        }
+    }
+    return out;
+}
+
+// The FULL pin list for an actual node = its type's catalog pins + any DYNAMIC pins.
+// ShowPopup grows one output pin per choice (comma/newline separated), exactly as the
+// interpreter does -- so the editor draws (and attr_of resolves) the choice branches.
+static std::vector<std::pair<std::string,std::string>>
+node_pins(const forge::JsonValue& node, const forge::JsonValue& catalog) {
+    const forge::JsonValue* tv = node.find("type");
+    auto pins = catalog_pins(catalog, tv ? tv->str : "");
+    if (tv && tv->str == "ShowPopup") {
+        const forge::JsonValue* ps = node.find("params");
+        const forge::JsonValue* ch = ps ? ps->find("choices") : nullptr;
+        if (ch) {
+            std::string cur;
+            auto push = [&]{ if (!cur.empty()) { pins.push_back({cur, "out"}); cur.clear(); } };
+            for (char c : ch->str) { if (c == '\n' || c == ',') push(); else cur += c; }
+            push();
+        }
+    }
+    return pins;
+}
 
 static void draw_rules_window(AppState& s) {
     ImGui::Begin("Rules Inspector");
@@ -180,6 +260,145 @@ static void draw_map_window(AppState& s) {
     ImGui::End();
 }
 
+// imnodes attribute id for (nodeId, pinName): node_index*256 + pin_ordinal (catalog order).
+static int attr_of(AppState& s, const std::string& nodeId, const std::string& pin) {
+    const forge::JsonValue* nodes = s.eng_graph.find("nodes"); if (!nodes) return -1;
+    for (size_t i = 0; i < nodes->arr.size(); ++i) {
+        const forge::JsonValue* idv = nodes->arr[i].find("id");
+        if (!idv || idv->str != nodeId) continue;
+        auto pins = node_pins(nodes->arr[i], s.eng_catalog);
+        for (size_t pi = 0; pi < pins.size(); ++pi)
+            if (pins[pi].first == pin) return ATTR_BASE + (int)i * 256 + (int)pi;
+        return -1;
+    }
+    return -1;
+}
+
+static void engine_reset_game(AppState& s) {
+    s.eng_g = GameState{}; s.eng_w = World{}; s.eng_colony_xy.clear();
+    s.eng_extra = forge::EngineExtra{}; s.eng_seed = 0x2BAD1234;
+    s.eng_g.powers[0].gold = 500;
+    for (int i = 0; i < NGOODS; ++i) s.eng_g.price_base[i] = 800;
+    s.eng_g.ref = ref_start(s.eng_g.difficulty);
+}
+
+// The engine tab: node palette + imnodes graph canvas + Run + bindings, all driven
+// by the same forge::engine API the browser IDE uses (node_catalog/load_graph/run_graph).
+static void draw_engine_window(AppState& s) {
+    if (!s.eng_catalog.find("categories")) s.eng_catalog = forge::node_catalog();
+
+    ImGui::Begin("Engine - Node Graph");
+
+    ImGui::SetNextItemWidth(180);
+    ImGui::InputText("##gid", s.eng_graph_id, sizeof s.eng_graph_id);
+    ImGui::SameLine();
+    if (ImGui::Button("Load")) {
+        try { s.eng_graph = forge::load_graph(s.eng_graph_id);
+              s.eng_loaded = true; s.eng_need_layout = true;
+              s.eng_status = std::string("loaded ") + s.eng_graph_id; }
+        catch (const std::exception& e) { s.eng_status = std::string("load failed: ") + e.what(); }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Run") && s.eng_loaded) {
+        forge::EngineCtx cx = engine_ctx(s);
+        forge::JsonValue rep = forge::run_graph(s.eng_graph, cx);
+        s.eng_log.clear(); s.eng_effects.clear();
+        if (const forge::JsonValue* l = rep.find("log")) for (auto& m : l->arr) s.eng_log.push_back(m.str);
+        if (const forge::JsonValue* e = rep.find("effects")) for (auto& m : e->arr) s.eng_effects.push_back(m.str);
+        const forge::JsonValue* pop = rep.find("popup");
+        s.eng_status = (pop && pop->is_object()) ? "paused at popup" : "ran to completion";
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset game")) engine_reset_game(s);
+    ImGui::SameLine(); ImGui::TextDisabled("%s", s.eng_status.c_str());
+
+    // left: node palette (the catalog the editor offers); right: the graph canvas.
+    ImGui::BeginChild("palette", ImVec2(220, 0), true);
+    ImGui::SeparatorText("Node palette");
+    if (const forge::JsonValue* cats = s.eng_catalog.find("categories"))
+        for (const auto& c : cats->arr) {
+            const forge::JsonValue* cn = c.find("name");
+            if (ImGui::TreeNode(cn ? cn->str.c_str() : "?")) {
+                if (const forge::JsonValue* ns = c.find("nodes"))
+                    for (const auto& n : ns->arr) {
+                        const forge::JsonValue* ti = n.find("title");
+                        ImGui::BulletText("%s", ti ? ti->str.c_str() : "?");
+                        const forge::JsonValue* su = n.find("summary");
+                        if (su && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", su->str.c_str());
+                    }
+                ImGui::TreePop();
+            }
+        }
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChild("canvas", ImVec2(0, -160), true);
+    ImNodes::BeginNodeEditor();
+    if (const forge::JsonValue* nodes = s.eng_graph.find("nodes")) {
+        for (size_t i = 0; i < nodes->arr.size(); ++i) {
+            const forge::JsonValue& nd = nodes->arr[i];
+            const forge::JsonValue* tv = nd.find("type"); if (!tv) continue;
+            int nid = (int)i;
+            if (s.eng_need_layout) {
+                const forge::JsonValue* xv = nd.find("x"); const forge::JsonValue* yv = nd.find("y");
+                ImNodes::SetNodeGridSpacePos(nid, ImVec2(xv ? (float)xv->num : 40.0f * i,
+                                                         yv ? (float)yv->num : 40.0f));
+            }
+            ImNodes::BeginNode(nid);
+            ImNodes::BeginNodeTitleBar(); ImGui::TextUnformatted(tv->str.c_str()); ImNodes::EndNodeTitleBar();
+            auto pins = node_pins(nd, s.eng_catalog);
+            for (size_t pi = 0; pi < pins.size(); ++pi) {
+                int attr = ATTR_BASE + nid * 256 + (int)pi;
+                if (pins[pi].second == "in") {
+                    ImNodes::BeginInputAttribute(attr);
+                    ImGui::TextUnformatted(pins[pi].first.c_str()); ImNodes::EndInputAttribute();
+                } else {
+                    ImNodes::BeginOutputAttribute(attr);
+                    ImGui::TextUnformatted(pins[pi].first.c_str()); ImNodes::EndOutputAttribute();
+                }
+            }
+            ImNodes::EndNode();
+        }
+        if (const forge::JsonValue* edges = s.eng_graph.find("edges"))
+            for (size_t e = 0; e < edges->arr.size(); ++e) {
+                const forge::JsonValue* fr = edges->arr[e].find("from");
+                const forge::JsonValue* to = edges->arr[e].find("to");
+                if (!fr || !to) continue;
+                const forge::JsonValue* fn = fr->find("node"); const forge::JsonValue* fp = fr->find("pin");
+                const forge::JsonValue* tn = to->find("node"); const forge::JsonValue* tp = to->find("pin");
+                if (!fn || !fp || !tn || !tp) continue;
+                int a = attr_of(s, fn->str, fp->str), b = attr_of(s, tn->str, tp->str);
+                if (a >= 0 && b >= 0) ImNodes::Link(LINK_BASE + (int)e, a, b);
+            }
+    }
+    ImNodes::EndNodeEditor();
+    s.eng_need_layout = false;
+    ImGui::EndChild();
+
+    // bottom: live bindings + the last run's log/effects.
+    ImGui::BeginChild("engfoot", ImVec2(0, 0), false);
+    ImGui::Columns(3, "engcols", true);
+    ImGui::SeparatorText("Bindings");
+    {
+        forge::EngineCtx cx = engine_ctx(s);
+        for (const char* p : {"power0.gold", "natives.tension", "ff.count", "units.count", "colonies.count"}) {
+            forge::JsonValue v = forge::resolve_binding(p, cx);
+            if (v.type == forge::JsonValue::Number) ImGui::Text("%s = %ld", p, (long)v.num);
+            else ImGui::Text("%s = -", p);
+        }
+    }
+    ImGui::NextColumn();
+    ImGui::SeparatorText("Effects");
+    for (const auto& m : s.eng_effects) ImGui::TextWrapped("%s", m.c_str());
+    ImGui::NextColumn();
+    ImGui::SeparatorText("Log");
+    for (const auto& m : s.eng_log) ImGui::TextDisabled("%s", m.c_str());
+    ImGui::Columns(1);
+    ImGui::EndChild();
+
+    ImGui::End();
+}
+
 int main(int, char**) {
     if (!glfwInit()) { std::fprintf(stderr, "glfwInit failed\n"); return 1; }
     const char* glsl_version = "#version 130";
@@ -192,11 +411,13 @@ int main(int, char**) {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImNodes::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     AppState state;
+    engine_reset_game(state);
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
@@ -205,6 +426,7 @@ int main(int, char**) {
 
         draw_rules_window(state);
         draw_map_window(state);
+        draw_engine_window(state);
 
         ImGui::Render();
         int dw, dh; glfwGetFramebufferSize(window, &dw, &dh);
@@ -217,6 +439,7 @@ int main(int, char**) {
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+    ImNodes::DestroyContext();
     ImGui::DestroyContext();
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -124,19 +124,30 @@ if(FORGE_GUI)
     FetchContent_Populate(imgui)
   endif()
 
+  # imnodes -- the node-graph canvas widget (also no CMakeLists; add imnodes.cpp).
+  FetchContent_Declare(imnodes
+    GIT_REPOSITORY https://github.com/Nelarius/imnodes.git
+    GIT_TAG v0.5)
+  FetchContent_GetProperties(imnodes)
+  if(NOT imnodes_POPULATED)
+    FetchContent_Populate(imnodes)
+  endif()
+
   add_executable(forge_gui
     forge/gui/forge_gui.cpp
     forge/json.cpp
     forge/rules_json.cpp
     forge/mapedit.cpp
+    forge/engine.cpp            # the in-process node-graph VM (catalog/run_graph/bind)
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${imnodes_SOURCE_DIR}/imnodes.cpp
   )
   target_include_directories(forge_gui PRIVATE
-    forge sim ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+    forge sim ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${imnodes_SOURCE_DIR})
   target_link_libraries(forge_gui PRIVATE viceroy_sim glfw OpenGL::GL)
 endif()
