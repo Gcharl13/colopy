@@ -178,6 +178,7 @@ const char* forge_index_html() {
       <button class="act" onclick="scrNew()">New</button>
       <button class="act" onclick="scrSave()">Save</button>
       <button class="act" onclick="scrRefresh()">Refresh</button>
+      <button class="act" onclick="scrPreview()">&#9654; Preview</button>
       <span class="muted">Click a widget to select, drag to move; edit it on the right. The
         State Inspector tweaks the live game and the screen reacts. <code>{game.year}</code>-style
         tokens in text bind to game state.</span>
@@ -711,6 +712,33 @@ function scrInspector(){
     await fetch('/api/bind/set',{method:'POST',body:JSON.stringify({path:el.dataset.s,value:+el.value})}); scrRefresh(); });
   F.forEach(async f=>{ try{ const v=(await (await fetch('/api/bind?path='+encodeURIComponent(f[0]))).json()).value;
     const el=$('#si_'+f[0].replace(/\W/g,'_')); if(el&&v!==null)el.value=v; }catch(e){} });
+}
+// preview: render the screen read-only with active buttons that fire their graphs
+async function scrPreview(){
+  await scrRefresh();
+  ui.popup('Preview: '+esc(SCR.name), '<div id="pvstage" class="sstage"></div>');
+  const st=$('#pvstage');
+  if(SCR.background){ const img=document.createElement('img'); img.className='bg'; img.src='/assets/pik/'+SCR.background+'.png'; img.onerror=()=>img.style.display='none'; st.appendChild(img); }
+  for(const w of SCR.widgets){
+    const r=w.rect||[0,0,40,8]; const d=document.createElement('div'); d.className='swidget';
+    d.style.cssText='left:'+(r[0]*SS)+'px;top:'+(r[1]*SS)+'px;width:'+(r[2]*SS)+'px;height:'+(r[3]*SS)+'px;cursor:'+((w.type==='button'&&w.onClick)?'pointer':'default');
+    if(w.type==='rect') d.style.background='rgb('+(w.color||'0,0,0')+')';
+    else if(w.type==='sprite'){ const s=document.createElement('div'); s.className='swspr'; s.textContent=(w.sheet||'?')+' #'+(w.frame||0); d.appendChild(s); }
+    else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2)); d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px'; d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
+    if(w.type==='button'&&w.onClick) d.onclick=()=>pvFire(w.onClick);
+    st.appendChild(d);
+  }
+}
+async function pvNav(id){ ui.close(); $('#scrpick').value=id; await scrLoad(); scrPreview(); }
+async function pvFire(graphId){
+  const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId})})).json();
+  if(d.goto){ pvNav(d.goto); return; }
+  if((d.effects||[]).length) ui.toast(d.effects.join('; '));
+  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body)+'</p><div id="pvch"></div>');
+    (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
+      b.onclick=async()=>{ const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c})})).json();
+        if(r.goto){ pvNav(r.goto); } else { ui.close(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); scrPreview(); } };
+      $('#pvch').appendChild(b); }); }
 }
 document.querySelector('nav button[data-tab=screens]').addEventListener('click',()=>{ if(!SINIT){ SINIT=true; scrInit(); } });
 

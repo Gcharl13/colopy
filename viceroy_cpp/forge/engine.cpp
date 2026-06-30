@@ -133,6 +133,8 @@ JsonValue node_catalog() {
         node_def("ShowPopup", "Show Popup", "Shows a dialog; each choice is an exec output pin.",
                  {pin("in","exec","in")},
                  {param("title","text"), param("body","text"), param("choices","text")}),
+        node_def("Navigate", "Go To Screen", "Switches the active screen (in preview/play).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("screen","text")}),
     }));
 
     root.obj["categories"] = cats;
@@ -260,6 +262,7 @@ struct Runner {
     std::map<std::string, const JsonValue*> nodes;          // id -> node
     std::map<std::string, JsonValue> dcache;                // "node|pin" -> data value
     JsonValue log, effects;
+    std::string gotoScreen;
     int steps = 0;
 
     Runner(const JsonValue& gr, EngineCtx& c) : graph(gr), cx(c) {
@@ -418,6 +421,7 @@ struct Runner {
             effect("advanced to year " + std::to_string(cx.g.year));
             return follow(nodeId, "out", popup);
         }
+        if (t == "Navigate") { gotoScreen = pget(*n, "screen").str; effect("go to screen: " + gotoScreen); return follow(nodeId, "out", popup); }
         if (t == "Log") { effect(pget(*n, "message").str); return follow(nodeId, "out", popup); }
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
@@ -462,6 +466,7 @@ JsonValue run_graph(const JsonValue& graph, EngineCtx& cx,
     JsonValue out; out.type = JsonValue::Object;
     out.obj["log"] = r.log; out.obj["effects"] = r.effects;
     out.obj["popup"] = popup.type == JsonValue::Object ? popup : JsonValue{};
+    if (!r.gotoScreen.empty()) out.obj["goto"] = json_str(r.gotoScreen);
     return out;
 }
 

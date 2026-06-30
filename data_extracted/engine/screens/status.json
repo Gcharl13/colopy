@@ -2,13 +2,84 @@
   "id": "status",
   "name": "Colonial Status Report",
   "background": "REPORT1",
-  "size": [320, 200],
+  "size": [
+    320,
+    200
+  ],
   "widgets": [
-    { "id": "title", "type": "text", "rect": [8, 4, 304, 8], "color": "255,255,190", "font": "tiny", "text": "COLONIAL STATUS REPORT" },
-    { "id": "yr",   "type": "text", "rect": [20, 30, 250, 8], "color": "255,255,255", "text": "Year {game.year}   Season {game.season}" },
-    { "id": "gold", "type": "text", "rect": [20, 42, 250, 8], "color": "255,255,255", "text": "Treasury: {power0.gold} gold    Tax: {power0.tax}%" },
-    { "id": "cu",   "type": "text", "rect": [20, 54, 250, 8], "color": "255,255,255", "text": "Colonies: {colonies.count}    Units: {units.count}" },
-    { "id": "ref",  "type": "text", "rect": [20, 70, 290, 8], "color": "255,243,93", "text": "King's Army: {ref.regulars} regulars / {ref.cavalry} cavalry / {ref.manowar} men-o-war / {ref.artillery} artillery" },
-    { "id": "ok",   "type": "button", "rect": [140, 182, 40, 12], "color": "255,255,255", "text": "OK", "onClick": "" }
+    {
+      "id": "title",
+      "type": "text",
+      "rect": [
+        8,
+        4,
+        304,
+        8
+      ],
+      "color": "255,255,190",
+      "font": "tiny",
+      "text": "COLONIAL STATUS REPORT"
+    },
+    {
+      "id": "yr",
+      "type": "text",
+      "rect": [
+        20,
+        30,
+        250,
+        8
+      ],
+      "color": "255,255,255",
+      "text": "Year {game.year}   Season {game.season}"
+    },
+    {
+      "id": "gold",
+      "type": "text",
+      "rect": [
+        20,
+        42,
+        250,
+        8
+      ],
+      "color": "255,255,255",
+      "text": "Treasury: {power0.gold} gold    Tax: {power0.tax}%"
+    },
+    {
+      "id": "cu",
+      "type": "text",
+      "rect": [
+        20,
+        54,
+        250,
+        8
+      ],
+      "color": "255,255,255",
+      "text": "Colonies: {colonies.count}    Units: {units.count}"
+    },
+    {
+      "id": "ref",
+      "type": "text",
+      "rect": [
+        20,
+        70,
+        290,
+        8
+      ],
+      "color": "255,243,93",
+      "text": "King's Army: {ref.regulars} regulars / {ref.cavalry} cavalry / {ref.manowar} men-o-war / {ref.artillery} artillery"
+    },
+    {
+      "id": "ok",
+      "type": "button",
+      "rect": [
+        140,
+        182,
+        40,
+        12
+      ],
+      "color": "255,255,255",
+      "text": "OK",
+      "onClick": "goto_colony"
+    }
   ]
 }
