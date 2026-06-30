@@ -136,6 +136,10 @@ JsonValue node_catalog() {
         node_def("Navigate", "Go To Screen", "Switches the active screen (in preview/play).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("screen","text")}),
     }));
+    cats.arr.push_back(category("Notes", {
+        node_def("Comment", "Comment", "A note on the canvas. Has no effect when the graph runs.",
+                 {}, {param("text","text")}),
+    }));
 
     root.obj["categories"] = cats;
     return root;
