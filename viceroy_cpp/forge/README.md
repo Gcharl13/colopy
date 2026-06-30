@@ -31,6 +31,7 @@ forge mod selftest              write/load/validate a mod package
 forge save selftest             game save/load round-trip self-test
 forge data check [FILE]         structural-validate the data tables (names_tables.json)
 forge data selftest             data-table validator self-test
+forge formulas                  print the complete formula/function catalog (all systems)
 forge serve [port]              launch the browser GUI (default port 8099)
 ```
 
@@ -54,6 +55,11 @@ Run it from the repo root so the default data paths resolve. Tabs:
 - **Map** — Load a `.MP`, paint terrain on the canvas (palette + river/forest toggles),
   Validate, and Save (byte-faithful — trailing metadata preserved).
 - **Data** — structural-validate `data_extracted/tables/names_tables.json`.
+- **Formulas** — a read-only catalog of *every* formula the sim computes (the logic
+  behind the data): each function, the exact expression, the editable `cfg` knobs that
+  feed it, and which parts are fixed code logic. The complete ruleset = the editable
+  data (Rules tab) **+** this logic. Also available as `forge formulas` (text) and
+  `GET /api/formulas` (JSON); a committed copy lives in `FORMULAS.txt`.
 
 Notes: the server is **local-only** by design (binds `127.0.0.1`; the API reads/writes
 files by path), so don't expose the port. **Windows is supported natively** — the server
@@ -103,6 +109,7 @@ data_extracted/tables/*.json ─ data check ─┐
 | `mod.{hpp,cpp}` | mod package write/load/validate (`modinfo.json`) |
 | `savegame.{hpp,cpp}` | full `GameState`+`World` JSON save/load |
 | `datacheck.{hpp,cpp}` | structural validation of the raw data tables |
+| `formulas.{hpp,cpp}` | the complete formula/function catalog (Formulas tab + `forge formulas`) |
 | `main.cpp` | the `forge` CLI |
 | `gui/` | optional Dear ImGui desktop front-end (`-DFORGE_GUI=ON`; see `gui/README.md`) |
 

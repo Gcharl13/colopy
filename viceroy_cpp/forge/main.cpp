@@ -12,6 +12,7 @@
 #include "market.hpp"
 #include "ref.hpp"
 #include "datacheck.hpp"
+#include "formulas.hpp"
 #include "httpd.hpp"
 #include "inspect.hpp"
 #include "json.hpp"
@@ -518,6 +519,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, forge::full_overlay(make_default_rules()));
         }
 
+        if (path == "/api/formulas")
+            return J(200, forge::formulas_catalog());
+
         if (path == "/api/data/check") {
             std::string p = qparam(query, "path");
             if (p.empty()) p = "data_extracted/tables/names_tables.json";
@@ -578,6 +582,7 @@ int main(int argc, char** argv) {
     if (cmd == "mod")     return do_mod(argc, argv);
     if (cmd == "save")    return do_save(argc, argv);
     if (cmd == "data")    return do_data(argc, argv);
+    if (cmd == "formulas") { std::printf("%s\n", forge::formulas_text().c_str()); return 0; }
     if (cmd == "serve")   return do_serve(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
@@ -593,6 +598,7 @@ int main(int argc, char** argv) {
                 "  forge save selftest            game save/load round-trip self-test\n"
                 "  forge data check [FILE]        structural-validate the data tables\n"
                 "  forge data selftest            data-table validator self-test\n"
+                "  forge formulas                 print the complete formula/function catalog\n"
                 "  forge serve [port]             launch the browser GUI (default port 8099)\n");
     return 0;
 }

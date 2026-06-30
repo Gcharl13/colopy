@@ -36,6 +36,11 @@ const char* forge_index_html() {
   canvas { border:1px solid #2a2e37; image-rendering:pixelated; background:#0b0d11; }
   .pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; }
   .ok { background:#13391f; color:#5fd38a; } .bad { background:#3a1414; color:#ff6b6b; }
+  .fcard { border-left:2px solid #2a2e37; padding:4px 10px; margin:8px 0; }
+  .ftitle { font-weight:600; color:#e8b94b; }
+  .fexpr { font-family:ui-monospace,monospace; white-space:pre-wrap; background:#0f1115;
+           padding:6px 8px; border-radius:4px; margin:4px 0; color:#bfe3c9; }
+  #formulas code { background:#1d2128; padding:1px 5px; border-radius:3px; color:#e8b94b; }
 </style>
 </head>
 <body>
@@ -44,6 +49,7 @@ const char* forge_index_html() {
   <button data-tab="rules" class="active">Rules</button>
   <button data-tab="map">Map</button>
   <button data-tab="data">Data</button>
+  <button data-tab="formulas">Formulas</button>
 </nav>
 <main>
   <section id="rules" class="tab active">
@@ -84,6 +90,14 @@ const char* forge_index_html() {
       <span id="dinfo"></span>
     </div>
     <div id="dout"></div>
+  </section>
+
+  <section id="formulas" class="tab">
+    <p class="muted">Every formula the sim computes &mdash; the <b>logic</b> behind the data.
+      Tags like <code>warehouse_cap_base</code> are knobs you can edit on the Rules tab;
+      formulas with <span class="muted">(fixed code logic)</span> are structural (the math
+      shape, enums, the demotion/capture ladder) and aren't data-tunable.</p>
+    <div id="fout"></div>
   </section>
 </main>
 <script>
@@ -217,7 +231,30 @@ async function checkData() {
     + (d.warnings||[]).map(w=>'<div class="warn">~ '+w+'</div>').join('');
 }
 
+// ---- Formulas ----
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function loadFormulas() {
+  let res;
+  try { res = await fetch('/api/formulas'); }
+  catch(e) { $('#fout').innerHTML = '<span class="fail">request failed</span>'; return; }
+  const d = await res.json();
+  let h = '';
+  for (const s of d.systems) {
+    h += '<h3>'+esc(s.name)+' <span class="muted" style="font-weight:400">'+esc(s.source)+'</span></h3>';
+    for (const f of s.formulas) {
+      h += '<div class="fcard"><div class="ftitle">'+esc(f.title)+'</div>';
+      h += '<div class="fexpr">'+esc(f.expr)+'</div>';
+      h += (f.knobs && f.knobs.length)
+        ? '<div>knobs: '+f.knobs.map(k=>'<code>'+esc(k)+'</code>').join(' ')+'</div>'
+        : '<div class="muted">(fixed code logic - not data-tunable)</div>';
+      h += '<div class="muted">'+esc(f.note)+'</div></div>';
+    }
+  }
+  $('#fout').innerHTML = h;
+}
+
 applyRules();
+loadFormulas();
 </script>
 </body>
 </html>
