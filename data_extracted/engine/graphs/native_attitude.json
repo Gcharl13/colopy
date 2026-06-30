@@ -1,0 +1,231 @@
+{
+  "id": "native_attitude",
+  "name": "Native Attitude",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnNativeAttitude",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "get",
+      "type": "GetState",
+      "x": 30,
+      "y": 180,
+      "params": {
+        "path": "natives.tension"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 30,
+      "y": 260,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "c75",
+      "type": "Constant",
+      "x": 30,
+      "y": 320,
+      "params": {
+        "value": 75
+      }
+    },
+    {
+      "id": "cmpW",
+      "type": "Compare",
+      "x": 230,
+      "y": 120,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "brW",
+      "type": "Branch",
+      "x": 430,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "war",
+      "type": "DeclareWar",
+      "x": 630,
+      "y": 40,
+      "params": {
+        "a": "3",
+        "b": "0"
+      }
+    },
+    {
+      "id": "popW",
+      "type": "Log",
+      "x": 830,
+      "y": 40,
+      "params": {
+        "message": "War! Tension at 100 -- the tribe takes up arms."
+      }
+    },
+    {
+      "id": "cmpH",
+      "type": "Compare",
+      "x": 230,
+      "y": 260,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "brH",
+      "type": "Branch",
+      "x": 430,
+      "y": 200,
+      "params": {}
+    },
+    {
+      "id": "hostile",
+      "type": "Log",
+      "x": 630,
+      "y": 200,
+      "params": {
+        "message": "Hostile: tension >= 75 -- the tribe is angry."
+      }
+    },
+    {
+      "id": "calm",
+      "type": "Log",
+      "x": 630,
+      "y": 320,
+      "params": {
+        "message": "The tribe remains content."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "brW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpW",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpW",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpW",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brW",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brW",
+        "pin": "true"
+      },
+      "to": {
+        "node": "war",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "war",
+        "pin": "out"
+      },
+      "to": {
+        "node": "popW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brW",
+        "pin": "false"
+      },
+      "to": {
+        "node": "brH",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpH",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpH",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpH",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brH",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brH",
+        "pin": "true"
+      },
+      "to": {
+        "node": "hostile",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brH",
+        "pin": "false"
+      },
+      "to": {
+        "node": "calm",
+        "pin": "in"
+      }
+    }
+  ]
+}

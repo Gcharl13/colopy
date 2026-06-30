@@ -1,0 +1,53 @@
+{
+  "id": "scoring",
+  "name": "Game Over & Score",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnGameOver",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "score",
+      "type": "ScoreGame",
+      "x": 210,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 400,
+      "y": 40,
+      "params": {
+        "title": "The Game is Over",
+        "body": "The age of colonization comes to a close.\nYour final score: {game.score}.",
+        "choices": "View Hall of Fame"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "score",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "score",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

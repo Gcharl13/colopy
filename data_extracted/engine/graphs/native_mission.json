@@ -1,0 +1,150 @@
+{
+  "id": "native_mission",
+  "name": "Mission Conversion",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnMissionAttempt",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "roll",
+      "type": "Roll",
+      "x": 30,
+      "y": 180,
+      "params": {
+        "min": 0,
+        "max": 15
+      }
+    },
+    {
+      "id": "thr",
+      "type": "Constant",
+      "x": 30,
+      "y": 300,
+      "params": {
+        "value": 8
+      }
+    },
+    {
+      "id": "cmp",
+      "type": "Compare",
+      "x": 230,
+      "y": 200,
+      "params": {
+        "op": "<"
+      }
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 430,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "tens",
+      "type": "ChangeNativeTension",
+      "x": 630,
+      "y": 40,
+      "params": {
+        "amount": -10
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 830,
+      "y": 40,
+      "params": {
+        "title": "A Convert!",
+        "textKey": "@INDIANSCONVERT",
+        "speaker": "Native Chief",
+        "choices": "Welcome, brother"
+      }
+    },
+    {
+      "id": "fail",
+      "type": "Log",
+      "x": 630,
+      "y": 200,
+      "params": {
+        "message": "The natives are unmoved by the missionary's words."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "thr",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "tens",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "fail",
+        "pin": "in"
+      }
+    }
+  ]
+}

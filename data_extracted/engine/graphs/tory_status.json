@@ -1,0 +1,220 @@
+{
+  "id": "tory_status",
+  "name": "Sons of Liberty Status",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnSoLThreshold",
+      "x": 30,
+      "y": 40,
+      "params": {
+        "percent": 50
+      }
+    },
+    {
+      "id": "get",
+      "type": "GetState",
+      "x": 30,
+      "y": 180,
+      "params": {
+        "path": "revolution.sol"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 30,
+      "y": 260,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "c50",
+      "type": "Constant",
+      "x": 30,
+      "y": 320,
+      "params": {
+        "value": 50
+      }
+    },
+    {
+      "id": "cmpU",
+      "type": "Compare",
+      "x": 230,
+      "y": 120,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "brU",
+      "type": "Branch",
+      "x": 430,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "popU",
+      "type": "ShowPopup",
+      "x": 630,
+      "y": 40,
+      "params": {
+        "title": "Sons of Liberty",
+        "textKey": "@REBELUNANIMOUS",
+        "choices": "Huzzah!"
+      }
+    },
+    {
+      "id": "cmpM",
+      "type": "Compare",
+      "x": 230,
+      "y": 260,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "brM",
+      "type": "Branch",
+      "x": 430,
+      "y": 200,
+      "params": {}
+    },
+    {
+      "id": "popM",
+      "type": "ShowPopup",
+      "x": 630,
+      "y": 180,
+      "params": {
+        "title": "Sons of Liberty",
+        "textKey": "@REBELMAJORITY",
+        "choices": "Liberty!"
+      }
+    },
+    {
+      "id": "popT",
+      "type": "ShowPopup",
+      "x": 630,
+      "y": 320,
+      "params": {
+        "title": "Tory Sentiment",
+        "textKey": "@TORYMAJORITY",
+        "speaker": "King",
+        "choices": "We must do better"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "brU",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpU",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpU",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpU",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brU",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brU",
+        "pin": "true"
+      },
+      "to": {
+        "node": "popU",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brU",
+        "pin": "false"
+      },
+      "to": {
+        "node": "brM",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "get",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpM",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c50",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmpM",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmpM",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brM",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brM",
+        "pin": "true"
+      },
+      "to": {
+        "node": "popM",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brM",
+        "pin": "false"
+      },
+      "to": {
+        "node": "popT",
+        "pin": "in"
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "id": "combat",
+  "name": "Combat Resolution",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnTestFire",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "s1",
+      "type": "SpawnUnit",
+      "x": 210,
+      "y": 40,
+      "params": {
+        "type": "Soldiers",
+        "power": "0"
+      }
+    },
+    {
+      "id": "s2",
+      "type": "SpawnUnit",
+      "x": 400,
+      "y": 40,
+      "params": {
+        "type": "Braves",
+        "power": "3"
+      }
+    },
+    {
+      "id": "fight",
+      "type": "ResolveCombat",
+      "x": 590,
+      "y": 40,
+      "params": {
+        "attacker": 0,
+        "defender": 1
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 780,
+      "y": 40,
+      "params": {
+        "title": "Battle!",
+        "body": "The clash of arms at the frontier!\nSee the run effects for who won.",
+        "woodcut": "WDCUT10",
+        "choices": "Onward"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "s1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "s1",
+        "pin": "out"
+      },
+      "to": {
+        "node": "s2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "s2",
+        "pin": "out"
+      },
+      "to": {
+        "node": "fight",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fight",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

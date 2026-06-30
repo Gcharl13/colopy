@@ -766,7 +766,24 @@ struct Runner {
         if (t == "Log") { effect(pget(*n, "message").str); return follow(nodeId, "out", popup); }
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
-            popup.obj["title"] = json_str(pget(*n, "title").str);
+            // Replace {binding.path} tokens with live values; leave {highlighted terms}
+            // (which don't resolve to a binding) untouched -- so the real game text's
+            // {Declaration of Independence} stays, but {game.score}/{power0.gold} fill in.
+            auto interp = [&](std::string s) {
+                std::string out; size_t i = 0;
+                while (i < s.size()) {
+                    if (s[i] == '{') { size_t j = s.find('}', i);
+                        if (j != std::string::npos) { std::string tok = s.substr(i + 1, j - i - 1);
+                            JsonValue v = resolve_binding(tok, cx);
+                            if (v.type == JsonValue::Number) {
+                                double d = v.num; out += (d == (long)d) ? std::to_string((long)d) : std::to_string(d);
+                                i = j + 1; continue; }
+                            if (v.type == JsonValue::String) { out += v.str; i = j + 1; continue; }
+                        } }
+                    out += s[i++];
+                }
+                return out;
+            };
             std::string key = pget(*n, "textKey").str, body = pget(*n, "body").str;
             // textKeys = the event's full set of possible messages (comma/newline/space
             // separated); one is picked per run, so the event varies like the real game.
@@ -780,7 +797,8 @@ struct Runner {
             }
             if (!key.empty()) { std::string g = game_text(key);
                 if (!g.empty()) { body = g; popup.obj["textKey"] = json_str(key); } }
-            popup.obj["body"]  = json_str(body);
+            popup.obj["title"] = json_str(interp(pget(*n, "title").str));
+            popup.obj["body"]  = json_str(interp(body));
             // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
             std::string wc = pget(*n, "woodcut").str, sp = pget(*n, "speaker").str;
             if (!wc.empty()) popup.obj["woodcut"] = json_str(wc);
