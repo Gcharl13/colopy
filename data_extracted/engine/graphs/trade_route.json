@@ -1,0 +1,93 @@
+{
+  "id": "trade_route",
+  "name": "Trade Route",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnTurnStart",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "haul",
+      "type": "Log",
+      "x": 230,
+      "y": 40,
+      "params": {
+        "message": "A wagon train hauls goods from the colony to the port."
+      }
+    },
+    {
+      "id": "sell",
+      "type": "GrantGold",
+      "x": 430,
+      "y": 40,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "amt",
+      "type": "Constant",
+      "x": 430,
+      "y": 170,
+      "params": {
+        "value": 50
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 630,
+      "y": 40,
+      "params": {
+        "title": "Trade Route",
+        "body": "Goods reach Europe and sell for {power0.gold} total treasury.",
+        "choices": "Good"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "haul",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "haul",
+        "pin": "out"
+      },
+      "to": {
+        "node": "sell",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "amt",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sell",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "sell",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

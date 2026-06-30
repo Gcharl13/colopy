@@ -1,0 +1,149 @@
+{
+  "id": "exploration",
+  "name": "Exploration & Fog",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnUnitEntersTile",
+      "x": 30,
+      "y": 40,
+      "params": {
+        "terrain": ""
+      }
+    },
+    {
+      "id": "reveal",
+      "type": "Log",
+      "x": 230,
+      "y": 40,
+      "params": {
+        "message": "The scout reveals the surrounding tiles (line of sight 1-2)."
+      }
+    },
+    {
+      "id": "roll",
+      "type": "Roll",
+      "x": 230,
+      "y": 170,
+      "params": {
+        "min": 1,
+        "max": 10
+      }
+    },
+    {
+      "id": "c9",
+      "type": "Constant",
+      "x": 230,
+      "y": 290,
+      "params": {
+        "value": 9
+      }
+    },
+    {
+      "id": "cmp",
+      "type": "Compare",
+      "x": 430,
+      "y": 200,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 620,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "rumor",
+      "type": "FireEvent",
+      "x": 820,
+      "y": 40,
+      "params": {
+        "graph": "lost_city"
+      }
+    },
+    {
+      "id": "none",
+      "type": "Log",
+      "x": 820,
+      "y": 200,
+      "params": {
+        "message": "Nothing of note on the horizon."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "reveal",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "reveal",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c9",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "rumor",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "none",
+        "pin": "in"
+      }
+    }
+  ]
+}

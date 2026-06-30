@@ -1,0 +1,77 @@
+{
+  "id": "training",
+  "name": "Veteran Promotion",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnTestFire",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "spawn",
+      "type": "SpawnUnit",
+      "x": 210,
+      "y": 40,
+      "params": {
+        "type": "Soldiers",
+        "power": "0"
+      }
+    },
+    {
+      "id": "promo",
+      "type": "PromoteUnit",
+      "x": 400,
+      "y": 40,
+      "params": {
+        "unit": 0,
+        "to": "Continental Army"
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 600,
+      "y": 40,
+      "params": {
+        "title": "Promotion!",
+        "body": "Your soldiers distinguish themselves and are promoted to the {Continental Army}!",
+        "speaker": "Continental Congress",
+        "choices": "Huzzah!"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "spawn",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "spawn",
+        "pin": "out"
+      },
+      "to": {
+        "node": "promo",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "promo",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

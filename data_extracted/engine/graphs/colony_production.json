@@ -1,0 +1,55 @@
+{
+  "id": "colony_production",
+  "name": "Colony Production",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnColonyProduction",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "step",
+      "type": "ColonyStep",
+      "x": 230,
+      "y": 40,
+      "params": {
+        "colony": 0
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 430,
+      "y": 40,
+      "params": {
+        "title": "Colony Report",
+        "body": "Jamestown produces {colony0.hammers} hammers, {colony0.bells} bells, {colony0.food} food this turn.\nSons of Liberty: {colony0.sol}%.",
+        "choices": "Onward"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "step",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "step",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

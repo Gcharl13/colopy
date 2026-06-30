@@ -1,0 +1,95 @@
+{
+  "id": "terrain_improvement",
+  "name": "Terrain Improvement",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnUnitEntersTile",
+      "x": 30,
+      "y": 40,
+      "params": {
+        "terrain": ""
+      }
+    },
+    {
+      "id": "clear",
+      "type": "Log",
+      "x": 230,
+      "y": 40,
+      "params": {
+        "message": "Pioneers clear the forest (lumber yielded; movement improves)."
+      }
+    },
+    {
+      "id": "road",
+      "type": "Log",
+      "x": 430,
+      "y": 40,
+      "params": {
+        "message": "Pioneers build a road (movement cost drops to 1/3)."
+      }
+    },
+    {
+      "id": "plow",
+      "type": "Log",
+      "x": 630,
+      "y": 40,
+      "params": {
+        "message": "Pioneers plow the fields (+1 farmed-good yield)."
+      }
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 830,
+      "y": 40,
+      "params": {
+        "title": "Improvement Complete",
+        "body": "The land is improved, Your Excellency.",
+        "choices": "Onward"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "clear",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "clear",
+        "pin": "out"
+      },
+      "to": {
+        "node": "road",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "road",
+        "pin": "out"
+      },
+      "to": {
+        "node": "plow",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "plow",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}

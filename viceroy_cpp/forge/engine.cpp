@@ -272,6 +272,15 @@ JsonValue node_catalog() {
         node_def("ScoreGame", "Tally Score",
                  "Computes the final game score (scoring.hpp) into game.score.",
                  {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("ColonyStep", "Run Colony Production",
+                 "Runs one per-turn economic step for a colony (economy.hpp colony_economic_step).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
+        node_def("PromoteUnit", "Promote / Train Unit",
+                 "Upgrades an on-map unit (by index) to a trained type, e.g. Soldiers -> "
+                 "Continental Army (training.md).",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("unit","number"),
+                  param("to","select",{"Soldiers","Dragoons","Continental Army","Continental Cavalry","Veteran Soldiers"})}),
         node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
     }));
@@ -434,6 +443,10 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             std::string f = path.substr(dot + 1);
             if (f == "population") return num(w.colonies[c].population);
             if (f == "sol")        return num(vc::sim::sol_pct(w.colonies[c]));
+            if (f == "bells")      return num(w.colonies[c].bells_per_turn);
+            if (f == "hammers")    return num(w.colonies[c].hammers_per_turn);
+            if (f == "food")       return num(w.colonies[c].food_per_turn);
+            if (f == "crosses")    return num(w.colonies[c].crosses_output);
         }
     }
     // price.<good index>
@@ -754,6 +767,29 @@ struct Runner {
         if (t == "DriftPrices") {
             vc::sim::price_drift(cx.g, cx.rd);
             effect("European market prices drifted");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ColonyStep") {
+            int c = (int)as_num(pget(*n, "colony"));
+            if (c >= 0 && c < (int)cx.w.colonies.size()) {
+                vc::sim::colony_economic_step(cx.w.colonies[c], cx.g.difficulty, cx.rd);
+                effect("colony " + std::to_string(c) + " production: pop " +
+                       std::to_string(cx.w.colonies[c].population) + ", bells " +
+                       std::to_string(cx.w.colonies[c].bells_per_turn) + ", hammers " +
+                       std::to_string(cx.w.colonies[c].hammers_per_turn));
+            } else effect("ColonyStep: no colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "PromoteUnit") {
+            static const char* PN[5] = {"Soldiers","Dragoons","Continental Army","Continental Cavalry","Veteran Soldiers"};
+            static const int   PT[5] = {1, 4, 9, 7, 1};
+            int ui = (int)as_num(pget(*n, "unit"));
+            std::string nm = pget(*n, "to").str; int ty = 1;
+            for (int i = 0; i < 5; ++i) if (nm == PN[i]) ty = PT[i];
+            if (ui >= 0 && ui < (int)cx.w.units.size() && cx.w.units[ui].alive) {
+                cx.w.units[ui].type = ty;
+                effect("unit " + std::to_string(ui) + " promoted to " + nm);
+            } else effect("PromoteUnit: no unit " + std::to_string(ui));
             return follow(nodeId, "out", popup);
         }
         if (t == "ScoreGame") {
