@@ -1,0 +1,7 @@
+{ "id":"europe", "name":"Europe (Harbor)", "background":"EUROPE", "size":[320,200],
+  "widgets":[
+    {"id":"title","type":"text","rect":[71,1,240,8],"color":"82,138,49","text":"London, England.  Year {game.year}.  Tax: {power0.tax}%  Gold: {power0.gold}"},
+    {"id":"soon","type":"text","rect":[16,118,90,8],"color":"56,200,90","text":"Expected Soon"},
+    {"id":"bound","type":"text","rect":[150,118,90,8],"color":"56,200,90","text":"Loading:"},
+    {"id":"mkt","type":"text","rect":[8,168,300,8],"color":"255,255,255","text":"Market open -- 16 goods traded here"},
+    {"id":"exit","type":"button","rect":[284,182,32,12],"color":"255,255,255","text":"Exit","onClick":"goto_status"} ] }

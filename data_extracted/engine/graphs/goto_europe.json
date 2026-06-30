@@ -1,4 +1,4 @@
-{ "id":"goto_colony", "name":"Go to colony",
+{ "id":"goto_europe", "name":"Go to europe",
   "nodes":[ {"id":"t","type":"OnTestFire","x":40,"y":60,"params":{}},
-            {"id":"nav","type":"Navigate","x":240,"y":60,"params":{"screen":"colony"}} ],
+            {"id":"nav","type":"Navigate","x":240,"y":60,"params":{"screen":"europe"}} ],
   "edges":[ {"from":{"node":"t","pin":"out"},"to":{"node":"nav","pin":"in"}} ] }

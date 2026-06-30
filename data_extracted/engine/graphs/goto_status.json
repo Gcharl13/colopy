@@ -1,4 +1,4 @@
-{ "id":"goto_status", "name":"Go to Status screen",
+{ "id":"goto_status", "name":"Go to status",
   "nodes":[ {"id":"t","type":"OnTestFire","x":40,"y":60,"params":{}},
             {"id":"nav","type":"Navigate","x":240,"y":60,"params":{"screen":"status"}} ],
   "edges":[ {"from":{"node":"t","pin":"out"},"to":{"node":"nav","pin":"in"}} ] }
