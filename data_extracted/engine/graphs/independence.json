@@ -3,26 +3,35 @@
   "name": "Declare Independence",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -90,
+      "params": {
+        "text": "Declare Independence (spec/systems/revolution.md func_03E984). Hard floor: national SoL >= 50% (cmp [0x53D0],0x32; jge @0x3E99E) -- below 50 the Crown rejects with @TOOTORY. At >=50 the @DECLARE confirm fires; declaring mobilizes the Royal Expeditionary Force. Earlier declaration scores higher."
+      }
+    },
+    {
       "id": "trig",
-      "type": "OnTestFire",
-      "x": 30,
+      "type": "OnTurnStart",
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "get",
+      "id": "sol",
       "type": "GetState",
-      "x": 30,
-      "y": 150,
+      "x": 20,
+      "y": 160,
       "params": {
-        "path": "colony0.sol"
+        "path": "revolution.sol"
       }
     },
     {
       "id": "c50",
       "type": "Constant",
-      "x": 30,
-      "y": 280,
+      "x": 20,
+      "y": 240,
       "params": {
         "value": 50
       }
@@ -30,8 +39,8 @@
     {
       "id": "cmp",
       "type": "Compare",
-      "x": 220,
-      "y": 200,
+      "x": 200,
+      "y": 180,
       "params": {
         "op": ">="
       }
@@ -39,76 +48,71 @@
     {
       "id": "br",
       "type": "Branch",
-      "x": 410,
-      "y": 60,
+      "x": 380,
+      "y": 40,
       "params": {}
     },
     {
-      "id": "pop",
+      "id": "tootory",
       "type": "ShowPopup",
-      "x": 600,
+      "x": 380,
+      "y": 260,
+      "params": {
+        "title": "Too Few Patriots",
+        "textKey": "@TOOTORY",
+        "choices": "We shall build more bells."
+      }
+    },
+    {
+      "id": "confirm",
+      "type": "ShowPopup",
+      "x": 560,
       "y": 40,
       "params": {
         "title": "Declare Independence?",
-        "body": "The Sons of Liberty are strong. Shall we throw off the Crown and declare independence?",
-        "choices": "Sign the Declaration,Not yet",
         "textKey": "@DECLARE",
-        "speaker": "King"
+        "choices": "Declare independence!,Not yet"
       }
     },
     {
-      "id": "ref",
-      "type": "AddREF",
-      "x": 820,
+      "id": "decl",
+      "type": "DeclareIndependence",
+      "x": 760,
       "y": 40,
-      "params": {
-        "kind": "regulars"
-      }
+      "params": {}
     },
     {
-      "id": "c20",
-      "type": "Constant",
-      "x": 820,
-      "y": 250,
-      "params": {
-        "value": 20
-      }
-    },
-    {
-      "id": "war",
-      "type": "Log",
-      "x": 1040,
+      "id": "mob",
+      "type": "MobilizeREF",
+      "x": 940,
       "y": 40,
-      "params": {
-        "message": "The War of Independence begins! The King dispatches his Expeditionary Force."
-      }
+      "params": {}
     },
     {
-      "id": "weak",
+      "id": "ann",
       "type": "ShowPopup",
-      "x": 600,
-      "y": 220,
+      "x": 1120,
+      "y": 40,
       "params": {
-        "title": "Not Yet",
-        "body": "Independence requires 50% Sons of Liberty. Build more bells first.",
-        "choices": "Understood"
+        "title": "The War of Independence",
+        "textKey": "@INDEPENDENCE",
+        "choices": "Liberty or death!"
+      }
+    },
+    {
+      "id": "wait",
+      "type": "Log",
+      "x": 760,
+      "y": 200,
+      "params": {
+        "message": "Independence is postponed; the Sons of Liberty keep gathering."
       }
     }
   ],
   "edges": [
     {
       "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "br",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "get",
+        "node": "sol",
         "pin": "value"
       },
       "to": {
@@ -128,6 +132,16 @@
     },
     {
       "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
         "node": "cmp",
         "pin": "value"
       },
@@ -139,50 +153,60 @@
     {
       "from": {
         "node": "br",
-        "pin": "true"
+        "pin": "false"
       },
       "to": {
-        "node": "pop",
+        "node": "tootory",
         "pin": "in"
       }
     },
     {
       "from": {
         "node": "br",
-        "pin": "false"
+        "pin": "true"
       },
       "to": {
-        "node": "weak",
+        "node": "confirm",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "pop",
-        "pin": "Sign the Declaration"
+        "node": "confirm",
+        "pin": "Declare independence!"
       },
       "to": {
-        "node": "ref",
+        "node": "decl",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "c20",
-        "pin": "value"
-      },
-      "to": {
-        "node": "ref",
-        "pin": "amount"
-      }
-    },
-    {
-      "from": {
-        "node": "ref",
+        "node": "decl",
         "pin": "out"
       },
       "to": {
-        "node": "war",
+        "node": "mob",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "mob",
+        "pin": "out"
+      },
+      "to": {
+        "node": "ann",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "confirm",
+        "pin": "Not yet"
+      },
+      "to": {
+        "node": "wait",
         "pin": "in"
       }
     }

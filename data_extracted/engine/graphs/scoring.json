@@ -1,20 +1,119 @@
 {
   "id": "scoring",
-  "name": "Game Over & Score",
+  "name": "Final Score",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -110,
+      "params": {
+        "text": "End-game scoring (spec/systems/scoring.md func_03A9C0). base = population (+1 criminal/servant/convert, +2 free colonist, +4 specialist) + 5*founding_fathers + rebel sentiment - razed*(1+diff). difficulty multiplier = diff+4 +1@diff>=3 +1@diff>=4 = {4,5,6,8,10}. score=(mult*base)/100, halved. ScoreGame computes the live score; the breakdown shows via %NUMBER0=score, %NUMBER1=difficulty multiplier."
+      }
+    },
     {
       "id": "trig",
       "type": "OnGameOver",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
       "id": "score",
       "type": "ScoreGame",
-      "x": 210,
+      "x": 200,
       "y": 40,
       "params": {}
+    },
+    {
+      "id": "fscore",
+      "type": "GetState",
+      "x": 20,
+      "y": 150,
+      "params": {
+        "path": "game.score"
+      }
+    },
+    {
+      "id": "diff",
+      "type": "GetState",
+      "x": 20,
+      "y": 230,
+      "params": {
+        "path": "game.difficulty"
+      }
+    },
+    {
+      "id": "c4",
+      "type": "Constant",
+      "x": 20,
+      "y": 300,
+      "params": {
+        "value": 4
+      }
+    },
+    {
+      "id": "m1",
+      "type": "Math",
+      "x": 200,
+      "y": 230,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c3",
+      "type": "Constant",
+      "x": 20,
+      "y": 360,
+      "params": {
+        "value": 3
+      }
+    },
+    {
+      "id": "ge3",
+      "type": "Compare",
+      "x": 200,
+      "y": 330,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "m2",
+      "type": "Math",
+      "x": 360,
+      "y": 260,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c4b",
+      "type": "Constant",
+      "x": 20,
+      "y": 420,
+      "params": {
+        "value": 4
+      }
+    },
+    {
+      "id": "ge4",
+      "type": "Compare",
+      "x": 200,
+      "y": 400,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "mult",
+      "type": "Math",
+      "x": 520,
+      "y": 300,
+      "params": {
+        "op": "+"
+      }
     },
     {
       "id": "pop",
@@ -22,9 +121,9 @@
       "x": 400,
       "y": 40,
       "params": {
-        "title": "The Game is Over",
-        "body": "The age of colonization comes to a close.\nYour final score: {game.score}.",
-        "choices": "View Hall of Fame"
+        "title": "The Hall of Fame",
+        "body": "The age of colonization closes. Final score: {%NUMBER0} points at a difficulty multiplier of x{%NUMBER1}, with {ff.count} Founding Fathers and {colonies.population} colonists tallied.",
+        "choices": "So be it."
       }
     }
   ],
@@ -41,12 +140,132 @@
     },
     {
       "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "m1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "m1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge3",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge3",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "m1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "m2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "ge3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "m2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge4",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c4b",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge4",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "m2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mult",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "ge4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mult",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
         "node": "score",
         "pin": "out"
       },
       "to": {
         "node": "pop",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "fscore",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "mult",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "num1"
       }
     }
   ]

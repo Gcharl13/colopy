@@ -1,89 +1,507 @@
 {
   "id": "native_mission",
-  "name": "Mission Conversion",
+  "name": "Native Mission",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -130,
+      "params": {
+        "text": "Mission founding + conversion (spec/systems/natives.md func_0572E6). The tribe reaction to a new mission follows its attitude band (alarm/tension: Content->curiosity @MISSION0, Uneasy->cautious @MISSION1, Restless->offended @MISSION2, Angry->hostility @MISSION3). Conversion roll: P(convert)=(TribeQuality+2)/15, DOUBLED for an expert (Jesuit) missionary; roll random_int(0,15) succeeds when roll < threshold; a convert (class 0x1B) is created at the colony. FLAGGED: TribeQuality is per-tribe (TribeData+2), modeled as Constant=4."
+      }
+    },
     {
       "id": "trig",
       "type": "OnMissionAttempt",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
+      "id": "year",
+      "type": "GetState",
+      "x": 20,
+      "y": 150,
+      "params": {
+        "path": "game.year"
+      }
+    },
+    {
+      "id": "tens",
+      "type": "GetState",
+      "x": 20,
+      "y": 230,
+      "params": {
+        "path": "natives.tension"
+      }
+    },
+    {
+      "id": "c25",
+      "type": "Constant",
+      "x": 20,
+      "y": 300,
+      "params": {
+        "value": 25
+      }
+    },
+    {
+      "id": "a25",
+      "type": "Compare",
+      "x": 180,
+      "y": 250,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c50",
+      "type": "Constant",
+      "x": 20,
+      "y": 360,
+      "params": {
+        "value": 50
+      }
+    },
+    {
+      "id": "a50",
+      "type": "Compare",
+      "x": 180,
+      "y": 310,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c75",
+      "type": "Constant",
+      "x": 20,
+      "y": 420,
+      "params": {
+        "value": 75
+      }
+    },
+    {
+      "id": "a75",
+      "type": "Compare",
+      "x": 180,
+      "y": 370,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "b1",
+      "type": "Math",
+      "x": 340,
+      "y": 280,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "band",
+      "type": "Math",
+      "x": 480,
+      "y": 320,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "sw",
+      "type": "Switch",
+      "x": 660,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "p0",
+      "type": "ShowPopup",
+      "x": 860,
+      "y": 20,
+      "params": {
+        "title": "A New Mission",
+        "textKey": "@MISSION0",
+        "choices": "Preach the Word"
+      }
+    },
+    {
+      "id": "p1",
+      "type": "ShowPopup",
+      "x": 860,
+      "y": 100,
+      "params": {
+        "title": "A New Mission",
+        "textKey": "@MISSION1",
+        "choices": "Preach the Word"
+      }
+    },
+    {
+      "id": "p2",
+      "type": "ShowPopup",
+      "x": 860,
+      "y": 180,
+      "params": {
+        "title": "A New Mission",
+        "textKey": "@MISSION2",
+        "choices": "Preach the Word"
+      }
+    },
+    {
+      "id": "p3",
+      "type": "ShowPopup",
+      "x": 860,
+      "y": 260,
+      "params": {
+        "title": "A New Mission",
+        "textKey": "@MISSION3",
+        "choices": "Preach the Word"
+      }
+    },
+    {
       "id": "roll",
       "type": "Roll",
-      "x": 30,
-      "y": 180,
+      "x": 1080,
+      "y": 300,
       "params": {
         "min": 0,
         "max": 15
       }
     },
     {
-      "id": "thr",
+      "id": "q",
       "type": "Constant",
-      "x": 30,
-      "y": 300,
+      "x": 1080,
+      "y": 380,
       "params": {
-        "value": 8
+        "value": 4
+      }
+    },
+    {
+      "id": "c2",
+      "type": "Constant",
+      "x": 1080,
+      "y": 440,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "thr",
+      "type": "Math",
+      "x": 1240,
+      "y": 360,
+      "params": {
+        "op": "+"
       }
     },
     {
       "id": "cmp",
       "type": "Compare",
-      "x": 230,
-      "y": 200,
+      "x": 1400,
+      "y": 320,
       "params": {
         "op": "<"
       }
     },
     {
-      "id": "br",
+      "id": "cbr",
       "type": "Branch",
-      "x": 430,
-      "y": 60,
+      "x": 1080,
+      "y": 40,
       "params": {}
     },
     {
-      "id": "tens",
-      "type": "ChangeNativeTension",
-      "x": 630,
+      "id": "conv",
+      "type": "SpawnUnit",
+      "x": 1280,
       "y": 40,
       "params": {
-        "amount": -10
+        "type": "Colonists",
+        "power": "0"
       }
     },
     {
-      "id": "pop",
+      "id": "cpop",
       "type": "ShowPopup",
-      "x": 830,
+      "x": 1480,
       "y": 40,
       "params": {
         "title": "A Convert!",
         "textKey": "@INDIANSCONVERT",
-        "speaker": "Native Chief",
-        "choices": "Welcome, brother"
+        "choices": "Welcome, brother."
       }
     },
     {
-      "id": "fail",
+      "id": "nofaith",
       "type": "Log",
-      "x": 630,
+      "x": 1280,
       "y": 200,
       "params": {
-        "message": "The natives are unmoved by the missionary's words."
+        "message": "The natives listen politely but none are moved to convert this time."
       }
     }
   ],
   "edges": [
     {
       "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a25",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c25",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a25",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a50",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c50",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a50",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a75",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a75",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "a25",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "a50",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "b1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "band",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "a75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "band",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
         "node": "trig",
         "pin": "out"
       },
       "to": {
-        "node": "br",
+        "node": "sw",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "band",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sw",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "p0",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "p0",
+        "pin": "Preach the Word"
+      },
+      "to": {
+        "node": "cbr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "p1",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "p1",
+        "pin": "Preach the Word"
+      },
+      "to": {
+        "node": "cbr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "p2",
+        "pin": "Preach the Word"
+      },
+      "to": {
+        "node": "cbr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "p3",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "p3",
+        "pin": "Preach the Word"
+      },
+      "to": {
+        "node": "cbr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "default"
+      },
+      "to": {
+        "node": "p0",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "p1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "3"
+      },
+      "to": {
+        "node": "p3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "q",
+        "pin": "value"
+      },
+      "to": {
+        "node": "thr",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "thr",
+        "pin": "b"
       }
     },
     {
@@ -112,37 +530,37 @@
         "pin": "value"
       },
       "to": {
-        "node": "br",
+        "node": "cbr",
         "pin": "cond"
       }
     },
     {
       "from": {
-        "node": "br",
+        "node": "cbr",
         "pin": "true"
       },
       "to": {
-        "node": "tens",
+        "node": "conv",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "tens",
+        "node": "conv",
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "cpop",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "br",
+        "node": "cbr",
         "pin": "false"
       },
       "to": {
-        "node": "fail",
+        "node": "nofaith",
         "pin": "in"
       }
     }

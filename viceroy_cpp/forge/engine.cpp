@@ -474,8 +474,16 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     if (path == "ref.manowar")  return num(g.ref.manowar);
     if (path == "ref.artillery")return num(g.ref.artillery);
     if (path == "colonies.count") return num((double)w.colonies.size());
+    if (path == "colonies.population") {            // total colonists across all colonies
+        long p = 0; for (const auto& c : w.colonies) p += c.population; return num((double)p);
+    }
     if (path == "units.count")    return num((double)w.units.size());
     if (path == "natives.tension") return num(cx.x.tension);
+    // price.<good index> -> current European base price
+    if (path.rfind("price.", 0) == 0) {
+        int gi = std::atoi(path.c_str() + 6);
+        if (gi >= 0 && gi < NGOODS) return num(g.price_base[gi]);
+    }
     if (path == "revolution.sol")      return num(cx.x.national_sol);
     if (path == "revolution.declared") return num(cx.x.woi_declared ? 1 : 0);
     if (path == "revolution.rebel")    return num(cx.x.rebel_power);

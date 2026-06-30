@@ -1,43 +1,135 @@
 {
   "id": "training",
-  "name": "Veteran Promotion",
+  "name": "Colonist Training",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -130,
+      "params": {
+        "text": "Colonist training (spec/systems/training.md). Three routes to expertise, here as a Switch on method: 0=NATIVE LEARNING (live in a village): a free colonist/indentured servant becomes a master of the local skill (@LEARNDONE); a petty criminal is too unskilled (@LEARNSLOW); an already-skilled colonist is refused (@LEARNMASTER). 1=SCHOOL: a master teaches an unskilled colonist over 4/6/8 turns by skill tier (Schoolhouse/College/University). 2=VETERAN: a combat winner is promoted (Washington auto-promotes; else random_int(1,S) <= winner strength). PromoteUnit applies the class change."
+      }
+    },
     {
       "id": "trig",
       "type": "OnTestFire",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "spawn",
-      "type": "SpawnUnit",
-      "x": 210,
-      "y": 40,
+      "id": "method",
+      "type": "Constant",
+      "x": 20,
+      "y": 160,
       "params": {
-        "type": "Soldiers",
-        "power": "0"
+        "value": 0
       }
     },
     {
-      "id": "promo",
-      "type": "PromoteUnit",
-      "x": 400,
+      "id": "sw",
+      "type": "Switch",
+      "x": 220,
       "y": 40,
+      "params": {}
+    },
+    {
+      "id": "pupil",
+      "type": "Constant",
+      "x": 20,
+      "y": 260,
+      "params": {
+        "value": 1
+      }
+    },
+    {
+      "id": "psw",
+      "type": "Switch",
+      "x": 420,
+      "y": 260,
+      "params": {}
+    },
+    {
+      "id": "lcrim",
+      "type": "ShowPopup",
+      "x": 640,
+      "y": 360,
+      "params": {
+        "title": "Too Unskilled",
+        "textKey": "@LEARNSLOW",
+        "choices": "We shall return."
+      }
+    },
+    {
+      "id": "learn",
+      "type": "PromoteUnit",
+      "x": 640,
+      "y": 180,
+      "params": {
+        "unit": 0
+      }
+    },
+    {
+      "id": "ldone",
+      "type": "ShowPopup",
+      "x": 840,
+      "y": 180,
+      "params": {
+        "title": "A Skill Learned",
+        "textKey": "@LEARNDONE",
+        "choices": "We are grateful."
+      }
+    },
+    {
+      "id": "lmaster",
+      "type": "ShowPopup",
+      "x": 640,
+      "y": 460,
+      "params": {
+        "title": "Already a Master",
+        "textKey": "@LEARNMASTER",
+        "choices": "Of course."
+      }
+    },
+    {
+      "id": "school",
+      "type": "PromoteUnit",
+      "x": 420,
+      "y": 40,
+      "params": {
+        "unit": 0
+      }
+    },
+    {
+      "id": "pschool",
+      "type": "ShowPopup",
+      "x": 620,
+      "y": 40,
+      "params": {
+        "title": "Schooling Complete",
+        "body": "A master colonist has taught an apprentice his trade (4/6/8 turns by tier in the Schoolhouse/College/University).",
+        "choices": "Well taught."
+      }
+    },
+    {
+      "id": "vet",
+      "type": "PromoteUnit",
+      "x": 420,
+      "y": 120,
       "params": {
         "unit": 0,
-        "to": "Continental Army"
+        "to": "Veteran Soldiers"
       }
     },
     {
-      "id": "pop",
+      "id": "pvet",
       "type": "ShowPopup",
-      "x": 600,
-      "y": 40,
+      "x": 620,
+      "y": 120,
       "params": {
-        "title": "Promotion!",
-        "body": "Your soldiers distinguish themselves and are promoted to the {Continental Army}!",
-        "speaker": "Continental Congress",
+        "title": "Veteran Status",
+        "body": "Your soldiers distinguish themselves in battle and are promoted to Veterans (Washington auto-promotes; otherwise random_int(1,strength) <= the winner's strength).",
         "choices": "Huzzah!"
       }
     }
@@ -49,27 +141,117 @@
         "pin": "out"
       },
       "to": {
-        "node": "spawn",
+        "node": "sw",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "spawn",
-        "pin": "out"
+        "node": "method",
+        "pin": "value"
       },
       "to": {
-        "node": "promo",
+        "node": "sw",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "default"
+      },
+      "to": {
+        "node": "psw",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "promo",
+        "node": "pupil",
+        "pin": "value"
+      },
+      "to": {
+        "node": "psw",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "psw",
+        "pin": "default"
+      },
+      "to": {
+        "node": "lcrim",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "psw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "learn",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "learn",
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "ldone",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "psw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "lmaster",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "school",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "school",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pschool",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "vet",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "vet",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pvet",
         "pin": "in"
       }
     }

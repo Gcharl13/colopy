@@ -3,52 +3,204 @@
   "name": "Trade Route",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -110,
+      "params": {
+        "text": "Trade route automation (spec/systems/trade_routes.md func_041080/032914). A ship/wagon ferries cargo to Europe; on sale gross = qty * price, tax = gross*tax%/100 goes to the King's REF fund (PowerRecord+0x22), net = gross - tax credited to gold. Modeled: deliver qty (Constant) of a good at price.<good> with the live tax rate. FLAGGED: qty here is a Constant=100 stand-in for the route's loaded cargo."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "haul",
-      "type": "Log",
-      "x": 230,
-      "y": 40,
+      "id": "qty",
+      "type": "Constant",
+      "x": 20,
+      "y": 160,
       "params": {
-        "message": "A wagon train hauls goods from the colony to the port."
+        "value": 100
       }
     },
     {
-      "id": "sell",
+      "id": "price",
+      "type": "GetState",
+      "x": 20,
+      "y": 240,
+      "params": {
+        "path": "price.10"
+      }
+    },
+    {
+      "id": "gross",
+      "type": "Math",
+      "x": 220,
+      "y": 200,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "tax",
+      "type": "GetState",
+      "x": 20,
+      "y": 320,
+      "params": {
+        "path": "power0.tax"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 20,
+      "y": 380,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "taxg",
+      "type": "Math",
+      "x": 220,
+      "y": 300,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "taxc",
+      "type": "Math",
+      "x": 380,
+      "y": 300,
+      "params": {
+        "op": "/"
+      }
+    },
+    {
+      "id": "net",
+      "type": "Math",
+      "x": 540,
+      "y": 220,
+      "params": {
+        "op": "-"
+      }
+    },
+    {
+      "id": "haul",
+      "type": "Log",
+      "x": 220,
+      "y": 40,
+      "params": {
+        "message": "The trade route ferries its cargo from the colony to the European market."
+      }
+    },
+    {
+      "id": "credit",
       "type": "GrantGold",
-      "x": 430,
+      "x": 420,
       "y": 40,
       "params": {
         "power": "0"
       }
     },
     {
-      "id": "amt",
-      "type": "Constant",
-      "x": 430,
-      "y": 170,
-      "params": {
-        "value": 50
-      }
-    },
-    {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 630,
+      "x": 620,
       "y": 40,
       "params": {
-        "title": "Trade Route",
-        "body": "Goods reach Europe and sell for {power0.gold} total treasury.",
-        "choices": "Good"
+        "title": "Goods Sold in Europe",
+        "body": "The cargo sells for {%NUMBER0} gold after the Crown takes {%NUMBER1} in tax.",
+        "choices": "Good trade."
       }
     }
   ],
   "edges": [
+    {
+      "from": {
+        "node": "qty",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gross",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "price",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gross",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "gross",
+        "pin": "value"
+      },
+      "to": {
+        "node": "taxg",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "tax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "taxg",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "taxg",
+        "pin": "value"
+      },
+      "to": {
+        "node": "taxc",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "taxc",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "gross",
+        "pin": "value"
+      },
+      "to": {
+        "node": "net",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "taxc",
+        "pin": "value"
+      },
+      "to": {
+        "node": "net",
+        "pin": "b"
+      }
+    },
     {
       "from": {
         "node": "trig",
@@ -65,28 +217,48 @@
         "pin": "out"
       },
       "to": {
-        "node": "sell",
+        "node": "credit",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "amt",
+        "node": "net",
         "pin": "value"
       },
       "to": {
-        "node": "sell",
+        "node": "credit",
         "pin": "amount"
       }
     },
     {
       "from": {
-        "node": "sell",
+        "node": "credit",
         "pin": "out"
       },
       "to": {
         "node": "pop",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "net",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "taxc",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "num1"
       }
     }
   ]
