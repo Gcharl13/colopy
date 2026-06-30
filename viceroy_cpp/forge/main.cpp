@@ -825,6 +825,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path.rfind("/assets/", 0) == 0)
             return serve_asset(path.substr(8));   // strip "/assets/"
 
+        if (path == "/api/tables") {
+            std::string p = qparam(query, "path");
+            if (p.empty()) p = "data_extracted/tables/names_tables.json";
+            return J(200, forge::json_parse_file(p));
+        }
+
         if (path == "/api/data/check") {
             std::string p = qparam(query, "path");
             if (p.empty()) p = "data_extracted/tables/names_tables.json";

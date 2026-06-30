@@ -106,6 +106,7 @@ const char* forge_index_html() {
   <button data-tab="rules" class="active">Rules</button>
   <button data-tab="map">Map</button>
   <button data-tab="data">Data</button>
+  <button data-tab="tables">Tables</button>
   <button data-tab="formulas">Formulas</button>
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
@@ -152,6 +153,15 @@ const char* forge_index_html() {
       <span id="dinfo"></span>
     </div>
     <div id="dout"></div>
+  </section>
+
+  <section id="tables" class="tab">
+    <div class="row"><span id="tinfo" class="muted">Loading the game tables&hellip;</span>
+      <input type="text" id="tfilter" placeholder="filter rows" oninput="tShow(TCUR)"></div>
+    <div style="display:flex; gap:12px; align-items:flex-start">
+      <div class="gpalette" id="tlist" style="width:200px; max-height:72vh"></div>
+      <div id="tgrid" style="flex:1; overflow:auto; max-height:72vh"></div>
+    </div>
   </section>
 
   <section id="formulas" class="tab">
@@ -589,6 +599,31 @@ async function checkData() {
   $('#dout').innerHTML = (d.issues||[]).map(i=>'<div class="fail">! '+i+'</div>').join('')
     + (d.warnings||[]).map(w=>'<div class="warn">~ '+w+'</div>').join('');
 }
+
+// ---- Tables (browse every @section of the game data) ----
+let TABLES=null, TCUR=null;
+async function tInit(){
+  try { TABLES=await (await fetch('/api/tables')).json(); }
+  catch(e){ $('#tinfo').innerHTML='<span class="fail">tables unavailable</span>'; return; }
+  const keys=Object.keys(TABLES).filter(k=>TABLES[k]&&typeof TABLES[k]==='object');
+  $('#tinfo').textContent=keys.length+' tables (NAMES.TXT)';
+  $('#tlist').innerHTML=keys.map(k=>{ const rc=TABLES[k].row_count!==undefined?TABLES[k].row_count:(TABLES[k].rows?TABLES[k].rows.length:0);
+    return '<div class="gpitem" data-k="'+esc(k)+'">'+esc(k)+' <span class="muted">'+rc+'</span></div>'; }).join('');
+  $('#tlist').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>tShow(el.dataset.k));
+  if(keys.length) tShow(keys[0]);
+}
+function tShow(k){
+  if(!k||!TABLES||!TABLES[k]) return; TCUR=k; const s=TABLES[k];
+  const rows=s.rows||[]; const cols=s.columns||(rows[0]?Object.keys(rows[0]):[]);
+  const f=($('#tfilter').value||'').toLowerCase();
+  const show=f?rows.filter(r=>cols.some(c=>String(r[c]).toLowerCase().includes(f))):rows;
+  let h='<h3>'+esc(k)+' <span class="muted" style="font-weight:400">'+esc(s.source||'')+' &middot; '+show.length+'/'+rows.length+' rows</span></h3>';
+  if(s.legend) h+='<div class="muted" style="margin-bottom:6px">'+esc([].concat(s.legend).join(' ')).slice(0,160)+'</div>';
+  h+='<table><tr><th>#</th>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
+  show.forEach((r,i)=>{ h+='<tr><td class="muted">'+i+'</td>'+cols.map(c=>'<td>'+esc(String(r[c]!==undefined&&r[c]!==null?r[c]:''))+'</td>').join('')+'</tr>'; });
+  $('#tgrid').innerHTML=h+'</table>';
+}
+document.querySelector('nav button[data-tab=tables]').addEventListener('click',()=>{ if(!window._tinit){ window._tinit=true; tInit(); } });
 
 // ---- Formulas ----
 async function loadFormulas() {
