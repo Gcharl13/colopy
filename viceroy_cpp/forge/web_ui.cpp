@@ -158,11 +158,21 @@ const char* forge_index_html() {
   </section>
 
   <section id="tables" class="tab">
-    <div class="row"><span id="tinfo" class="muted">Loading the game tables&hellip;</span>
-      <input type="text" id="tfilter" placeholder="filter rows" oninput="tShow(TCUR)"></div>
+    <div class="row">
+      <select id="tfile" onchange="tLoadFile(this.value)">
+        <option value="names">NAMES.TXT</option>
+        <option value="dgroup">DGROUP (memory map)</option>
+        <option value="tribe">TRIBE.TXT</option>
+      </select>
+      <button class="act" onclick="tSave()">Save edits</button>
+      <button class="act" onclick="tReset()">Revert to original</button>
+      <span id="tinfo" class="muted">Loading the game tables&hellip;</span>
+      <input type="text" id="tfilter" placeholder="filter rows" oninput="tRender()"></div>
+    <p class="muted">Every game-data table. Edit any cell; <b>Save edits</b> persists them as an
+      overlay (the original extraction is kept pristine), <b>Revert</b> restores it.</p>
     <div style="display:flex; gap:12px; align-items:flex-start">
-      <div class="gpalette" id="tlist" style="width:200px; max-height:72vh"></div>
-      <div id="tgrid" style="flex:1; overflow:auto; max-height:72vh"></div>
+      <div class="gpalette" id="tlist" style="width:220px; max-height:70vh"></div>
+      <div id="tgrid" style="flex:1; overflow:auto; max-height:70vh"></div>
     </div>
   </section>
 
@@ -631,28 +641,69 @@ async function checkData() {
     + (d.warnings||[]).map(w=>'<div class="warn">~ '+w+'</div>').join('');
 }
 
-// ---- Tables (browse every @section of the game data) ----
-let TABLES=null, TCUR=null;
-async function tInit(){
-  try { TABLES=await (await fetch('/api/tables')).json(); }
+// ---- Tables (browse + EDIT every game-data table; edits persist as an overlay) ----
+let TBL={file:'names', data:null, grids:[], cur:0};
+async function tInit(){ await tLoadFile(($('#tfile')&&$('#tfile').value)||'names'); }
+async function tLoadFile(file){
+  TBL.file=file; TBL.cur=0;
+  try{ TBL.data=await (await fetch('/api/tables?file='+file)).json(); }
   catch(e){ $('#tinfo').innerHTML='<span class="fail">tables unavailable</span>'; return; }
-  const keys=Object.keys(TABLES).filter(k=>TABLES[k]&&typeof TABLES[k]==='object');
-  $('#tinfo').textContent=keys.length+' tables (NAMES.TXT)';
-  $('#tlist').innerHTML=keys.map(k=>{ const rc=TABLES[k].row_count!==undefined?TABLES[k].row_count:(TABLES[k].rows?TABLES[k].rows.length:0);
-    return '<div class="gpitem" data-k="'+esc(k)+'">'+esc(k)+' <span class="muted">'+rc+'</span></div>'; }).join('');
-  $('#tlist').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>tShow(el.dataset.k));
-  if(keys.length) tShow(keys[0]);
+  TBL.grids=tDecompose(file, TBL.data);
+  $('#tlist').innerHTML=TBL.grids.map((g,i)=>'<div class="gpitem" data-i="'+i+'">'+esc(g.name)+' <span class="muted">'+g.rows.length+'</span></div>').join('');
+  $('#tlist').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>tShowGrid(+el.dataset.i));
+  await tStatus();
+  if(TBL.grids.length) tShowGrid(0); else $('#tgrid').innerHTML='<span class="muted">no rows</span>';
 }
-function tShow(k){
-  if(!k||!TABLES||!TABLES[k]) return; TCUR=k; const s=TABLES[k];
-  const rows=s.rows||[]; const cols=s.columns||(rows[0]?Object.keys(rows[0]):[]);
-  const f=($('#tfilter').value||'').toLowerCase();
-  const show=f?rows.filter(r=>cols.some(c=>String(r[c]).toLowerCase().includes(f))):rows;
-  let h='<h3>'+esc(k)+' <span class="muted" style="font-weight:400">'+esc(s.source||'')+' &middot; '+show.length+'/'+rows.length+' rows</span></h3>';
-  if(s.legend) h+='<div class="muted" style="margin-bottom:6px">'+esc([].concat(s.legend).join(' ')).slice(0,160)+'</div>';
+// Break a table file into named editable grids. names/tribe = one grid per @section
+// (its rows); dgroup = the scalars table + one grid per record (its memory-layout fields).
+function tDecompose(file, F){
+  const grids=[];
+  if(file==='dgroup'){
+    if(F&&Array.isArray(F.scalars)) grids.push({name:'scalars', rows:F.scalars.map(s=>(s&&s.row)?s.row:s)});
+    if(F&&Array.isArray(F.records)) F.records.forEach(rec=>{ if(Array.isArray(rec.fields))
+      grids.push({name:String(rec.record||'record').slice(0,42), rows:rec.fields, cols:rec.header}); });
+  } else if(F&&typeof F==='object'){
+    for(const k of Object.keys(F)){ const s=F[k];
+      if(s&&typeof s==='object'&&Array.isArray(s.rows)) grids.push({name:k, rows:s.rows, cols:s.columns, meta:s}); }
+  }
+  return grids;
+}
+function tCols(g){ if(g.cols&&g.cols.length) return g.cols;
+  const set=[]; for(const r of g.rows) if(r&&typeof r==='object') for(const k of Object.keys(r)) if(!set.includes(k)) set.push(k); return set; }
+function tShowGrid(i){ TBL.cur=i;
+  $('#tlist').querySelectorAll('.gpitem').forEach(el=>el.classList.toggle('sel', +el.dataset.i===i)); tRender(); }
+function tRender(){
+  const g=TBL.grids[TBL.cur]; if(!g){ $('#tgrid').innerHTML=''; return; }
+  const cols=tCols(g); const f=($('#tfilter').value||'').toLowerCase();
+  let h='<h3>'+esc(g.name)+' <span class="muted" style="font-weight:400">'+g.rows.length+' rows &middot; click a cell to edit</span></h3>';
+  if(g.meta&&g.meta.legend) h+='<div class="muted" style="margin-bottom:6px">'+esc([].concat(g.meta.legend).join(' ')).slice(0,160)+'</div>';
   h+='<table><tr><th>#</th>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
-  show.forEach((r,i)=>{ h+='<tr><td class="muted">'+i+'</td>'+cols.map(c=>'<td>'+esc(String(r[c]!==undefined&&r[c]!==null?r[c]:''))+'</td>').join('')+'</tr>'; });
+  g.rows.forEach((r,ri)=>{
+    if(!r||typeof r!=='object') return;
+    if(f && !cols.some(c=>String(r[c]==null?'':r[c]).toLowerCase().includes(f))) return;
+    h+='<tr><td class="muted">'+ri+'</td>'+cols.map(c=>{ const v=r[c];
+      return (v!=null && typeof v==='object')
+        ? '<td class="muted">'+esc(JSON.stringify(v)).slice(0,40)+'</td>'
+        : '<td><input class="tcell" data-ri="'+ri+'" data-c="'+esc(c)+'" value="'+esc(v==null?'':String(v))+'"></td>';
+    }).join('')+'</tr>';
+  });
   $('#tgrid').innerHTML=h+'</table>';
+  $('#tgrid').querySelectorAll('.tcell').forEach(el=>el.onchange=()=>{ g.rows[+el.dataset.ri][el.dataset.c]=el.value; });
+}
+async function tStatus(){
+  try{ const list=await (await fetch('/api/tables/list')).json(); const e=list.find(x=>x.file===TBL.file);
+    $('#tinfo').innerHTML=(e&&e.edited?'<span class="pill ok">edited</span> ':'')+TBL.grids.length+' tables in '+TBL.file;
+  }catch(e){}
+}
+async function tSave(){
+  try{ const r=await (await fetch('/api/tables/save?file='+TBL.file,{method:'POST',body:JSON.stringify(TBL.data)})).json();
+    if(r.error){ ui.toast('save failed: '+r.error); return; } ui.toast('Saved edits to '+TBL.file); tStatus();
+  }catch(e){ ui.toast('save failed'); }
+}
+async function tReset(){
+  if(!confirm('Revert all edits to '+TBL.file+' back to the original extraction?')) return;
+  await fetch('/api/tables/reset?file='+TBL.file,{method:'POST',body:'{}'});
+  ui.toast('Reverted '+TBL.file); tLoadFile(TBL.file);
 }
 document.querySelector('nav button[data-tab=tables]').addEventListener('click',()=>{ if(!window._tinit){ window._tinit=true; tInit(); } });
 )HTML"

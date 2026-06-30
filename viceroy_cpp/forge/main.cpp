@@ -431,6 +431,17 @@ static forge::JsonValue jstrs(const std::vector<std::string>& xs) {
     for (const auto& s : xs) a.arr.push_back(forge::json_str(s));
     return a;
 }
+static forge::JsonValue jstr(const std::string& s) { return forge::json_str(s); }
+
+// Map a table-file id to its canonical (pristine) path + the user-edit overlay path.
+static bool table_paths(const std::string& file, std::string& canon, std::string& user) {
+    if (file == "names")       canon = "data_extracted/tables/names_tables.json";
+    else if (file == "dgroup") canon = "data_extracted/tables/dgroup_tables.json";
+    else if (file == "tribe")  canon = "data_extracted/tables/tribe_tables.json";
+    else return false;
+    user = "data_extracted/engine/tables_user/" + file + ".json";
+    return true;
+}
 
 static std::string url_decode(const std::string& s) {
     auto hx = [](char h) { return (h >= '0' && h <= '9') ? h - '0'
@@ -898,9 +909,57 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return serve_asset(path.substr(8));   // strip "/assets/"
 
         if (path == "/api/tables") {
-            std::string p = qparam(query, "path");
-            if (p.empty()) p = "data_extracted/tables/names_tables.json";
-            return J(200, forge::json_parse_file(p));
+            // ?file=names|dgroup|tribe (default names). User edits are kept in a separate
+            // overlay file so the pristine extraction (the verify_rules oracle) stays intact.
+            std::string file = qparam(query, "file");
+            std::string p = qparam(query, "path");          // legacy explicit path still honored
+            std::string canon, user;
+            if (!p.empty()) return J(200, forge::json_parse_file(p));
+            if (file.empty()) file = "names";
+            if (!table_paths(file, canon, user)) return err(400, "unknown table file: " + file);
+            return J(200, forge::json_parse_file(std::filesystem::exists(user) ? user : canon));
+        }
+
+        if (path == "/api/tables/list") {
+            // The available table files + their section/grid counts (for the picker).
+            forge::JsonValue o = jarr();
+            for (const char* file : {"names", "dgroup", "tribe"}) {
+                std::string canon, user; table_paths(file, canon, user);
+                bool edited = std::filesystem::exists(user);
+                forge::JsonValue e = jobj();
+                e.obj["file"] = jstr(file);
+                e.obj["edited"] = jbool(edited);
+                try {
+                    forge::JsonValue d = forge::json_parse_file(edited ? user : canon);
+                    int grids = 0;
+                    if (file == std::string("dgroup")) {
+                        if (const forge::JsonValue* r = d.find("records")) grids += (int)r->arr.size();
+                        if (d.find("scalars")) grids += 1;
+                    } else for (auto& kv : d.obj) if (kv.second.is_object() && kv.second.find("rows")) ++grids;
+                    e.obj["grids"] = forge::json_num(grids);
+                } catch (...) { e.obj["grids"] = forge::json_num(0); }
+                o.arr.push_back(e);
+            }
+            return J(200, o);
+        }
+
+        if (path == "/api/tables/save" && method == "POST") {
+            std::string file = qparam(query, "file"), canon, user;
+            if (!table_paths(file, canon, user)) return err(400, "unknown table file: " + file);
+            forge::JsonValue doc;
+            try { doc = forge::json_parse(body); } catch (const std::exception& e) { return err(400, std::string("bad JSON: ") + e.what()); }
+            std::error_code ec; std::filesystem::create_directories("data_extracted/engine/tables_user", ec);
+            std::ofstream f(user, std::ios::binary);
+            if (!f) return err(500, "cannot write " + user);
+            f << forge::json_dump(doc);
+            return J(200, jbool(true));
+        }
+
+        if (path == "/api/tables/reset" && method == "POST") {
+            std::string file = qparam(query, "file"), canon, user;
+            if (!table_paths(file, canon, user)) return err(400, "unknown table file: " + file);
+            std::error_code ec; std::filesystem::remove(user, ec);
+            return J(200, jbool(true));
         }
 
         if (path == "/api/data/check") {

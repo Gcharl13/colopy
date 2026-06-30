@@ -82,8 +82,11 @@ Run it from the repo root so the default data paths resolve. Tabs:
   **End turn** runs `step_turn` once (colonies grow, immigration & the King's army accrue,
   prices drift). Backed by `POST /api/game/{new,step,order,found}`, `GET /api/game/state`.
 
-- **Tables** — browse every `@`-section of the game data (NAMES.TXT) as a filterable grid
-  (`GET /api/tables`). The table content the rest of the engine is driven by.
+- **Tables** — browse **and edit** every game-data table as a filterable grid: NAMES.TXT
+  (`@UNIT`, `@TERRAIN`, …), the DGROUP memory map (records + scalars), and TRIBE.TXT. Any cell is
+  editable; **Save edits** persists them as an overlay under `data_extracted/engine/tables_user/`
+  so the original extraction (the `verify_rules` oracle) stays pristine, **Revert** restores it.
+  (`/api/tables?file=`, `/api/tables/{list,save,reset}`.)
 - **Rules** — edit the ruleset (load the full dump or paste a sparse overlay) and see balance
   curves shift live. **Save as active mod** persists the sparse overlay to
   `data_extracted/engine/rules.json` (rejected if it fails `check_rules`) and applies it to **both
