@@ -3,85 +3,193 @@
   "name": "Native Raid on Colony",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -70,
+      "params": {
+        "text": "Trigger: settlement alarm >= 128 hostile (modeled as natives.tension >= 75 = sim TENSION_HOSTILE). Outcome = Roll(0,4) -> Switch: 0 nothing, 1 stores, 2 wreak, 3 gold (%NUMBER0 plundered), 4 burn."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "roll",
-      "type": "Roll",
-      "x": 30,
+      "id": "tens",
+      "type": "GetState",
+      "x": 20,
       "y": 150,
       "params": {
-        "min": 1,
-        "max": 10
+        "path": "natives.tension"
       }
     },
     {
-      "id": "c3",
+      "id": "c75",
       "type": "Constant",
-      "x": 30,
-      "y": 280,
+      "x": 20,
+      "y": 230,
       "params": {
-        "value": 9
+        "value": 75
       }
     },
     {
-      "id": "cmp",
+      "id": "hostile",
       "type": "Compare",
-      "x": 220,
-      "y": 200,
+      "x": 200,
+      "y": 150,
       "params": {
         "op": ">="
       }
     },
     {
-      "id": "br",
+      "id": "brG",
       "type": "Branch",
-      "x": 410,
-      "y": 60,
+      "x": 380,
+      "y": 40,
       "params": {}
     },
     {
-      "id": "loss",
-      "type": "Constant",
-      "x": 410,
-      "y": 250,
+      "id": "calm",
+      "type": "Log",
+      "x": 560,
+      "y": 200,
       "params": {
-        "value": -200
+        "message": "The natives are not yet hostile (alarm < 128); no raid."
       }
     },
     {
-      "id": "gold",
-      "type": "GrantGold",
-      "x": 600,
+      "id": "roll",
+      "type": "Roll",
+      "x": 560,
       "y": 40,
+      "params": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "sw",
+      "type": "Switch",
+      "x": 740,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "dG",
+      "type": "Dice",
+      "x": 560,
+      "y": 300,
+      "params": {
+        "count": 2,
+        "sides": 6
+      }
+    },
+    {
+      "id": "c25",
+      "type": "Constant",
+      "x": 560,
+      "y": 370,
+      "params": {
+        "value": 25
+      }
+    },
+    {
+      "id": "amt",
+      "type": "Math",
+      "x": 720,
+      "y": 320,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "cm1",
+      "type": "Constant",
+      "x": 560,
+      "y": 440,
+      "params": {
+        "value": -1
+      }
+    },
+    {
+      "id": "neg",
+      "type": "Math",
+      "x": 880,
+      "y": 360,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "p0",
+      "type": "ShowPopup",
+      "x": 980,
+      "y": 20,
+      "params": {
+        "title": "Raid Repelled",
+        "textKey": "@RAIDNOTHING",
+        "choices": "Jubilant!"
+      }
+    },
+    {
+      "id": "p1",
+      "type": "ShowPopup",
+      "x": 980,
+      "y": 90,
+      "params": {
+        "title": "Stores Raided",
+        "textKey": "@RAIDSTORES",
+        "woodcut": "WDCUT12",
+        "choices": "Outrage!"
+      }
+    },
+    {
+      "id": "p2",
+      "type": "ShowPopup",
+      "x": 980,
+      "y": 160,
+      "params": {
+        "title": "Havoc",
+        "textKey": "@RAIDWREAK",
+        "woodcut": "WDCUT12",
+        "choices": "Vengeance!"
+      }
+    },
+    {
+      "id": "g3",
+      "type": "GrantGold",
+      "x": 980,
+      "y": 300,
       "params": {
         "power": "0"
       }
     },
     {
-      "id": "pop",
+      "id": "p3",
       "type": "ShowPopup",
-      "x": 800,
-      "y": 40,
+      "x": 1180,
+      "y": 300,
       "params": {
-        "title": "Native Raid!",
-        "body": "Braves raid your colony and make off with your gold.",
-        "choices": "We will rebuild",
-        "textKeys": "@RAIDGOLD,@RAIDSTORES,@RAIDBURN,@RAIDNOTHING,@RAIDSCALP,@RAIDSHIP,@RAIDWREAK",
-        "woodcut": "WDCUT12"
+        "title": "Strongboxes Seized",
+        "textKey": "@RAIDGOLD",
+        "woodcut": "WDCUT12",
+        "choices": "Enraged!"
       }
     },
     {
-      "id": "calm",
-      "type": "Log",
-      "x": 600,
-      "y": 200,
+      "id": "p4",
+      "type": "ShowPopup",
+      "x": 980,
+      "y": 450,
       "params": {
-        "message": "The natives grumble but do not raid this turn."
+        "title": "Buildings Burn",
+        "textKey": "@RAIDBURN",
+        "woodcut": "WDCUT12",
+        "choices": "Rebuild"
       }
     }
   ],
@@ -92,7 +200,57 @@
         "pin": "out"
       },
       "to": {
-        "node": "br",
+        "node": "brG",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hostile",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hostile",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "hostile",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brG",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brG",
+        "pin": "false"
+      },
+      "to": {
+        "node": "calm",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brG",
+        "pin": "true"
+      },
+      "to": {
+        "node": "sw",
         "pin": "in"
       }
     },
@@ -102,67 +260,127 @@
         "pin": "value"
       },
       "to": {
-        "node": "cmp",
+        "node": "sw",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "dG",
+        "pin": "value"
+      },
+      "to": {
+        "node": "amt",
         "pin": "a"
       }
     },
     {
       "from": {
-        "node": "c3",
+        "node": "c25",
         "pin": "value"
       },
       "to": {
-        "node": "cmp",
+        "node": "amt",
         "pin": "b"
       }
     },
     {
       "from": {
-        "node": "cmp",
+        "node": "amt",
         "pin": "value"
       },
       "to": {
-        "node": "br",
-        "pin": "cond"
+        "node": "neg",
+        "pin": "a"
       }
     },
     {
       "from": {
-        "node": "br",
-        "pin": "true"
+        "node": "cm1",
+        "pin": "value"
       },
       "to": {
-        "node": "gold",
+        "node": "neg",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "p1",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "loss",
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "3"
+      },
+      "to": {
+        "node": "g3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "neg",
         "pin": "value"
       },
       "to": {
-        "node": "gold",
+        "node": "g3",
         "pin": "amount"
       }
     },
     {
       "from": {
-        "node": "gold",
+        "node": "g3",
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "p3",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "br",
-        "pin": "false"
+        "node": "amt",
+        "pin": "value"
       },
       "to": {
-        "node": "calm",
+        "node": "p3",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "4"
+      },
+      "to": {
+        "node": "p4",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "default"
+      },
+      "to": {
+        "node": "p0",
         "pin": "in"
       }
     }
