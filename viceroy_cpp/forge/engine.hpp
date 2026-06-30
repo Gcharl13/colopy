@@ -12,7 +12,9 @@
 #pragma once
 
 #include "json.hpp"
-#include "game.hpp"      // vc::sim::GameState, World
+#include "game.hpp"        // vc::sim::GameState, World
+#include "diplomacy.hpp"   // vc::sim::Diplomacy
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <utility>
@@ -20,13 +22,24 @@
 
 namespace forge {
 
+// Game state the action nodes need that the pure sim GameState/World don't carry
+// (the sim core is economic; these are the relational fields the events touch).
+// Lives Forge-side and persists across requests, like colony_xy.
+struct EngineExtra {
+    int      tension  = 0;        // native tension 0..100 (sim/natives.hpp scale)
+    uint32_t ff_owned = 0;        // bit i set = founding father i acquired
+    uint16_t boycotts = 0;        // bit g set = good g boycotted in Europe
+    vc::sim::Diplomacy diplo;     // inter-power war/treaty matrices
+};
+
 // The live game the engine binds to / mutates. Colony map positions live Forge-side
 // (the sim's economic Colony has no coords), mirroring main.cpp's g_colony_xy.
 struct EngineCtx {
     vc::sim::GameState& g;
     vc::sim::World&     w;
     std::vector<std::pair<int,int>>& colony_xy;
-    std::function<int(int,int)> rng;      // deterministic [lo,hi]
+    EngineExtra&        x;                 // relational state the actions touch
+    std::function<int(int,int)> rng;       // deterministic [lo,hi]
 };
 
 // The Node Catalog: every node type the palette offers and the interpreter runs.

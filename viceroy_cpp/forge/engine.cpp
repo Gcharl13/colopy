@@ -1,10 +1,15 @@
 // forge/engine.cpp -- see engine.hpp. A small visual-scripting VM + binding resolver.
 #include "engine.hpp"
 
-#include "economy.hpp"   // sol_pct
-#include "unit.hpp"      // unit_stats
+#include "economy.hpp"          // sol_pct
+#include "unit.hpp"             // unit_stats
+#include "combat.hpp"           // resolve_land
+#include "natives.hpp"          // apply_tension
+#include "founding_fathers.hpp" // ff_available
+#include "diplomacy.hpp"        // declare_war / at_war
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -101,6 +106,11 @@ JsonValue node_catalog() {
                  {pin("a","data","in","number"), pin("b","data","in","number"),
                   pin("value","data","out","bool")},
                  {param("op","select",{">",">=","<","<=","==","!="})}),
+        node_def("RandomChance", "Random Chance", "True with the given percent probability.",
+                 {pin("value","data","out","bool")}, {param("percent","number")}),
+        node_def("HasFoundingFather", "Has Founding Father",
+                 "True if power 0's Congress holds the given Founding Father (id 0..24).",
+                 {pin("value","data","out","bool")}, {param("father","number")}),
     }));
     cats.arr.push_back(category("Actions", {
         node_def("GrantGold", "Grant Gold", "Adds gold to a power's treasury.",
@@ -126,6 +136,33 @@ JsonValue node_catalog() {
                   param("power","select",{"0","1","2","3"})}),
         node_def("StepTurn", "Advance Turn", "Runs one full game turn (the sim step).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("ResolveCombat", "Resolve Combat",
+                 "Resolves a land attack between two on-map units (by index) via the sim "
+                 "combat model; the loser is demoted/captured/destroyed.",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("attacker","number"), param("defender","number")}),
+        node_def("ChangeNativeTension", "Change Native Tension",
+                 "Applies a tension delta via the sim rule (Pocahontas halves increases); "
+                 "clamped to 0..100.",
+                 {pin("in","exec","in"), pin("amount","data","in","number"), pin("out","exec","out")},
+                 {param("amount","number")}),
+        node_def("GiveFoundingFather", "Give Founding Father",
+                 "Grants a Founding Father (by id 0..24; Pocahontas is 16) to power 0's Congress.",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("father","number")}),
+        node_def("AddBoycott", "Boycott Good",
+                 "Marks a good as boycotted in Europe (it can no longer be sold).",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("good","select",{"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore",
+                  "Silver","Horses","Rum","Cigars","Cloth","Coats","Trade goods","Tools","Muskets"})}),
+        node_def("DeclareWar", "Declare War",
+                 "Sets two powers at war (symmetric) in the diplomacy matrix.",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("a","select",{"0","1","2","3"}), param("b","select",{"0","1","2","3"})}),
+        node_def("GrantImmigrant", "Grant Immigrant",
+                 "Places a colonist type into a power's first free emigration dock slot.",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("type","select",{"Colonists","Soldiers","Pioneers","Scouts"}),
+                  param("power","select",{"0","1","2","3"})}),
         node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
     }));
@@ -195,6 +232,9 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     GameState& g = cx.g; World& w = cx.w;
     if (path == "game.year")   { g.year = (int)value; return true; }
     if (path == "game.season") { g.season = (int)value; return true; }
+    if (path == "natives.tension") {
+        int t = (int)value; cx.x.tension = t < 0 ? 0 : t > 100 ? 100 : t; return true;
+    }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {
@@ -229,6 +269,27 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     if (path == "ref.artillery")return num(g.ref.artillery);
     if (path == "colonies.count") return num((double)w.colonies.size());
     if (path == "units.count")    return num((double)w.units.size());
+    if (path == "natives.tension") return num(cx.x.tension);
+    if (path == "ff.count") {                       // popcount of acquired fathers
+        int c = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++c; return num(c);
+    }
+    // ff.<id> -> 1 if that founding father is held, else 0
+    if (path.rfind("ff.", 0) == 0) {
+        int id = std::atoi(path.c_str() + 3);
+        if (id >= 0 && id < 32) return num((cx.x.ff_owned >> id) & 1u);
+    }
+    // boycott.<good index> -> 1 if boycotted
+    if (path.rfind("boycott.", 0) == 0) {
+        int gi = std::atoi(path.c_str() + 8);
+        if (gi >= 0 && gi < 16) return num((cx.x.boycotts >> gi) & 1u);
+    }
+    // war.<a>.<b> -> 1 if powers a,b are at war
+    if (path.rfind("war.", 0) == 0) {
+        int a = -1, b = -1;
+        if (std::sscanf(path.c_str() + 4, "%d.%d", &a, &b) == 2 &&
+            a >= 0 && a < 4 && b >= 0 && b < 4)
+            return num(vc::sim::at_war(cx.x.diplo, a, b) ? 1 : 0);
+    }
     // power<N>.<field>
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
@@ -331,6 +392,13 @@ struct Runner {
                 else if (op == "<") r = a < b; else if (op == "<=") r = a <= b;
                 else if (op == "==") r = a == b; else if (op == "!=") r = a != b;
                 JsonValue bv; bv.type = JsonValue::Bool; bv.b = r; out = bv;
+            } else if (t == "RandomChance") {
+                int pct = (int)as_num(pget(*n, "percent"));
+                JsonValue bv; bv.type = JsonValue::Bool; bv.b = cx.rng(1, 100) <= pct; out = bv;
+            } else if (t == "HasFoundingFather") {
+                int id = (int)as_num(pget(*n, "father"));
+                JsonValue bv; bv.type = JsonValue::Bool;
+                bv.b = id >= 0 && id < 32 && ((cx.x.ff_owned >> id) & 1u); out = bv;
             }
         }
         dcache[key] = out; return out;
@@ -423,6 +491,75 @@ struct Runner {
         if (t == "StepTurn") {
             vc::sim::step_turn(cx.g, cx.w, cx.rng, 0);
             effect("advanced to year " + std::to_string(cx.g.year));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ResolveCombat") {
+            int ai = (int)as_num(pget(*n, "attacker")), di = (int)as_num(pget(*n, "defender"));
+            auto& U = cx.w.units;
+            if (ai >= 0 && ai < (int)U.size() && di >= 0 && di < (int)U.size() && ai != di &&
+                U[ai].alive && U[di].alive) {
+                int tid = cx.w.terrain_id(U[di].x, U[di].y);
+                int tdef = vc::sim::terrain_defense_value(tid < 0 ? 0 : tid);
+                vc::sim::CombatResult cr = vc::sim::resolve_land(
+                    U[ai], U[di], tdef, 0, cx.g.difficulty,
+                    U[ai].owner == 0, U[di].owner == 0, cx.rng);
+                int li = cr.attacker_won ? di : ai;     // loser
+                int wi = cr.attacker_won ? ai : di;     // winner
+                if (cr.loser_outcome < 0) { U[li].alive = false;
+                    effect("unit " + std::to_string(li) + " destroyed"); }
+                else { U[li].type = cr.loser_outcome; if (cr.captured) U[li].owner = U[wi].owner;
+                    effect("unit " + std::to_string(li) + (cr.captured ? " captured" : " demoted")); }
+                effect(std::string("combat: ") + (cr.attacker_won ? "attacker" : "defender") +
+                       " won (" + std::to_string(cr.atk_str) + " vs " + std::to_string(cr.def_str) + ")");
+            } else effect("ResolveCombat: invalid unit indices");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ChangeNativeTension") {
+            int delta = (int)as_num(eval_in(nodeId, "amount"));
+            bool poca = (cx.x.ff_owned >> 16) & 1u;
+            cx.x.tension = vc::sim::apply_tension(cx.x.tension, delta, false, poca);
+            effect("native tension = " + std::to_string(cx.x.tension));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "GiveFoundingFather") {
+            int id = (int)as_num(pget(*n, "father"));
+            if (id >= 0 && id < 32) {
+                if (vc::sim::ff_available(cx.x.ff_owned, id)) {
+                    cx.x.ff_owned |= (1u << id);
+                    effect("founding father " + std::to_string(id) + " joined Congress");
+                } else effect("founding father " + std::to_string(id) + " already held");
+            }
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "AddBoycott") {
+            static const char* G[16] = {"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore",
+                "Silver","Horses","Rum","Cigars","Cloth","Coats","Trade goods","Tools","Muskets"};
+            std::string gn = pget(*n, "good").str; int gi = -1;
+            for (int i = 0; i < 16; ++i) if (gn == G[i]) gi = i;
+            if (gi >= 0) { cx.x.boycotts |= (uint16_t)(1u << gi); effect(gn + " is now boycotted"); }
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "DeclareWar") {
+            int a = std::atoi(pget(*n, "a").str.c_str()), b = std::atoi(pget(*n, "b").str.c_str());
+            if (a >= 0 && a < 4 && b >= 0 && b < 4 && a != b) {
+                vc::sim::declare_war(cx.x.diplo, a, b);
+                effect("power " + std::to_string(a) + " declares war on power " + std::to_string(b));
+            }
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "GrantImmigrant") {
+            static const char* IN[4] = {"Colonists","Soldiers","Pioneers","Scouts"};
+            static const int   IT[4] = {0, 1, 2, 5};
+            std::string nm = pget(*n, "type").str; int type = 0;
+            for (int i = 0; i < 4; ++i) if (nm == IN[i]) type = IT[i];
+            int p = std::atoi(pget(*n, "power").str.c_str());
+            if (p >= 0 && p < 4) {
+                auto& dp = cx.g.powers[p].dock_pool; bool placed = false;
+                for (int s = 0; s < 3; ++s) if (dp[s] < 0) { dp[s] = type; placed = true;
+                    effect(nm + " waits on power " + std::to_string(p) + "'s dock (slot " +
+                           std::to_string(s) + ")"); break; }
+                if (!placed) effect("power " + std::to_string(p) + "'s dock is full");
+            }
             return follow(nodeId, "out", popup);
         }
         if (t == "Navigate") { gotoScreen = pget(*n, "screen").str; effect("go to screen: " + gotoScreen); return follow(nodeId, "out", popup); }

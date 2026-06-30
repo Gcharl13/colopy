@@ -446,7 +446,8 @@ let selNode=null, wiring=null, GINIT=false; const PAN={x:30,y:30}; let ZOOM=1;
 const NW=152, HEAD=24, ROW=18;
 const BINDS=['game.year','game.season','game.turn','game.difficulty','power0.gold','power0.tax',
   'power0.royal_money','power0.crosses','ref.regulars','ref.cavalry','ref.manowar','ref.artillery',
-  'colonies.count','units.count','colony0.population','colony0.sol','price.1'];
+  'colonies.count','units.count','colony0.population','colony0.sol','price.1',
+  'natives.tension','ff.count','ff.16','boycott.2','war.0.1'];
 const SVGNS='http://www.w3.org/2000/svg';
 function catClass(c){return c==='Triggers'?'trig':c==='Actions'?'act':c==='Flow'?'flow':c==='Data'?'data':c==='Dialog'?'dlg':'';}
 function nodeById(id){return G.nodes.find(n=>n.id===id);}
@@ -752,7 +753,7 @@ function scrAdd(type){ const w={id:'w'+(Date.now()%100000),type,rect:[20,20,90,1
   if(type==='sprite'){ w.sheet='BUILDING'; w.frame=1; }
   SCR.widgets.push(w); selW=w; scrProps(); scrRefresh(); }
 function scrInspector(){
-  const F=[['game.year','Year'],['game.season','Season'],['power0.gold','Gold'],['power0.tax','Tax %'],['colony0.population','Colony pop']];
+  const F=[['game.year','Year'],['game.season','Season'],['power0.gold','Gold'],['power0.tax','Tax %'],['colony0.population','Colony pop'],['natives.tension','Native tension']];
   $('#sinspect').innerHTML='<b>State Inspector</b><div class="muted" style="margin:3px 0">Tweak the live game &mdash; the screen reacts.</div>'
     + F.map(f=>'<label>'+f[1]+'</label><input type="number" data-s="'+f[0]+'" id="si_'+f[0].replace(/\W/g,'_')+'">').join('');
   $('#sinspect').querySelectorAll('[data-s]').forEach(el=>el.onchange=async()=>{

@@ -553,6 +553,7 @@ static forge::JsonValue assets_manifest() {
 static GameState g_game;
 static World     g_world;
 static std::vector<std::pair<int,int>> g_colony_xy;   // colony map positions (Forge-side)
+static forge::EngineExtra g_engine_extra;             // relational state the action nodes touch
 static bool g_game_active = false;
 
 static int g_rng = 0x2BAD1234;
@@ -576,7 +577,8 @@ static std::pair<int,int> game_find_land(int tx, int ty) {
 }
 
 static void game_new() {
-    g_game = GameState{}; g_world = World{}; g_colony_xy.clear(); g_rng = 0x2BAD1234;
+    g_game = GameState{}; g_world = World{}; g_colony_xy.clear();
+    g_engine_extra = forge::EngineExtra{}; g_rng = 0x2BAD1234;
     try {
         forge::MpFile m = forge::load_mp("data_extracted/map/AMER2.MP");
         g_world.map_w = m.w; g_world.map_h = m.h; g_world.terrain = m.terrain;
@@ -738,7 +740,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
         if (path == "/api/bind") {
             if (!g_game_active) game_new();
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
             forge::JsonValue o = jobj();
             o.obj["value"] = forge::resolve_binding(qparam(query, "path"), cx);
             return J(200, o);
@@ -748,7 +750,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* p = b.find("path"); const forge::JsonValue* v = b.find("value");
             if (!p || !v) return err(400, "need {path,value}");
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
             forge::JsonValue o = jobj();
             o.obj["ok"] = jbool(forge::set_binding(p->str, v->as_double(), cx));
             return J(200, o);
@@ -779,7 +781,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             else return err(400, "need {graph} or {id}");
             std::string from = b.find("from_node") ? b.find("from_node")->str : "";
             std::string choice = b.find("choice") ? b.find("choice")->str : "";
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
             return J(200, forge::run_graph(graph, cx, from, choice));
         }
 
@@ -787,7 +789,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/turn" && method == "POST") {
             game_step();                                    // advance the turn
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
             forge::JsonValue events = jarr();
             for (const std::string& id : forge::list_graphs()) {
                 forge::JsonValue gr;
@@ -911,12 +913,12 @@ static int engine_selftest() {
     forge::JsonValue cat = forge::node_catalog();
     check(cat.find("categories") && !cat.find("categories")->arr.empty(), "node catalog non-empty");
 
-    GameState g; World w; std::vector<std::pair<int,int>> cxy;
+    GameState g; World w; std::vector<std::pair<int,int>> cxy; forge::EngineExtra ex;
     g.powers[0].gold = 100;
     int seed = 0x1234;
     auto rng = [&](int lo, int hi) { seed = seed * 1103515245 + 12345;
         unsigned v = ((unsigned)seed >> 16) & 0x7FFF; return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1)); };
-    forge::EngineCtx cx{g, w, cxy, rng};
+    forge::EngineCtx cx{g, w, cxy, ex, rng};
 
     check(forge::resolve_binding("power0.gold", cx).as_int() == 100, "resolve_binding power0.gold");
 
@@ -951,6 +953,60 @@ static int engine_selftest() {
 
     // set_binding writes; resolve reads it back.
     check(forge::set_binding("power0.gold", 777, cx) && g.powers[0].gold == 777, "set_binding writes gold");
+
+    // --- F1: richer sim-wired nodes ---
+    // GiveFoundingFather sets the bit; HasFoundingFather + ff.<id> binding read it.
+    forge::JsonValue gff = forge::json_parse(
+        R"({"id":"f","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"g","type":"GiveFoundingFather","params":{"father":16}}],)"
+        R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"g","pin":"in"}}]})");
+    forge::run_graph(gff, cx);
+    check(ex.ff_owned == (1u << 16), "GiveFoundingFather sets Pocahontas (16)");
+    check(forge::resolve_binding("ff.16", cx).as_int() == 1, "ff.16 binding reads 1");
+    check(forge::resolve_binding("ff.count", cx).as_int() == 1, "ff.count is 1");
+
+    // Pocahontas (granted above) halves every increase: two +40 deltas -> +20 each = 40.
+    forge::JsonValue gt = forge::json_parse(
+        R"({"id":"x","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"a","type":"ChangeNativeTension","params":{"amount":40}},)"
+        R"({"id":"b","type":"ChangeNativeTension","params":{"amount":40}}],"edges":[)"
+        R"({"from":{"node":"t","pin":"out"},"to":{"node":"a","pin":"in"}},)"
+        R"({"from":{"node":"a","pin":"out"},"to":{"node":"b","pin":"in"}}]})");
+    forge::run_graph(gt, cx);
+    check(ex.tension == 40, "tension: two +40 halved by Pocahontas = 40");
+    check(forge::resolve_binding("natives.tension", cx).as_int() == 40, "natives.tension binding");
+
+    // AddBoycott(Tobacco=index 2) flips boycott.2.
+    forge::JsonValue gb = forge::json_parse(
+        R"({"id":"y","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"a","type":"AddBoycott","params":{"good":"Tobacco"}}],)"
+        R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"a","pin":"in"}}]})");
+    forge::run_graph(gb, cx);
+    check(forge::resolve_binding("boycott.2", cx).as_int() == 1, "AddBoycott flips boycott.2");
+
+    // DeclareWar(0,1) -> war.0.1 binding true.
+    forge::JsonValue gw = forge::json_parse(
+        R"({"id":"z","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"a","type":"DeclareWar","params":{"a":"0","b":"1"}}],)"
+        R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"a","pin":"in"}}]})");
+    forge::run_graph(gw, cx);
+    check(forge::resolve_binding("war.0.1", cx).as_int() == 1, "DeclareWar sets war.0.1");
+
+    // ResolveCombat between two spawned units leaves exactly one alive-or-demoted outcome.
+    {
+        vc::sim::Unit ua; ua.type = 1; ua.owner = 0; ua.alive = true; ua.x = 5; ua.y = 5;   // Soldiers
+        vc::sim::Unit ud; ud.type = 0; ud.owner = 1; ud.alive = true; ud.x = 5; ud.y = 5;   // Colonists
+        w.units.push_back(ua); w.units.push_back(ud);
+        forge::JsonValue gc = forge::json_parse(
+            R"({"id":"c","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"a","type":"ResolveCombat","params":{"attacker":0,"defender":1}}],)"
+            R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"a","pin":"in"}}]})");
+        forge::JsonValue repc = forge::run_graph(gc, cx);
+        const forge::JsonValue* ef = repc.find("effects");
+        bool reported = false;
+        if (ef) for (const auto& s : ef->arr) if (s.str.rfind("combat:", 0) == 0) reported = true;
+        check(reported, "ResolveCombat reports a combat outcome");
+    }
 
     std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;
