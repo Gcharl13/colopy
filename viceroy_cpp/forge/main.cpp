@@ -202,6 +202,21 @@ static int rules_selftest() {
     check(rt.rules.units[SOLDIERS].attack == 4 && rt.rules.units[ARTILLERY].movement == 2, "units applied");
     check(rt.rules.terrain_defense[28] == 5 && rt.rules.terrain_move[27] == 4, "terrain applied");
 
+    // full_overlay: the COMPLETE dump must (a) list every value and (b) reproduce
+    // the source exactly when applied onto any base -- so its diff vs source is empty.
+    forge::JsonValue full = forge::full_overlay(def);
+    check(full.find("cfg") && full.find("units") && full.find("terrain_defense") &&
+          full.find("terrain_move"), "full_overlay has every section");
+    check(full.find("units")->obj.size() == (size_t)NUNITTYPES, "full_overlay lists every unit");
+    check(full.find("terrain_defense")->obj.size() == (size_t)NTERRAIN &&
+          full.find("terrain_move")->obj.size() == (size_t)NTERRAIN, "full_overlay lists every terrain id");
+    forge::OverlayResult fr = forge::apply_overlay(full, make_default_rules());
+    check(fr.warnings.empty(), "full_overlay applies with no warnings");
+    check(forge::overlay_diff(def, fr.rules).obj.empty(), "full_overlay reproduces the default exactly");
+    // applying the full dump of a MOD also reproduces that mod (onto an unrelated base).
+    forge::OverlayResult fm = forge::apply_overlay(forge::full_overlay(mod), make_default_rules());
+    check(forge::overlay_diff(mod, fm.rules).obj.empty(), "full_overlay(mod) reproduces the mod");
+
     std::printf("rules selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;
 }
@@ -491,6 +506,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             root.obj["warnings"]   = jstrs(warns);
             root.obj["overlay"]    = forge::overlay_diff(base, cur);
             return J(200, root);
+        }
+
+        if (path == "/api/rules/full") {
+            // The COMPLETE real ruleset as an overlay: every cfg scalar/array,
+            // every unit, every terrain id. Posting it back to /api/rules
+            // reproduces the default exactly (all curve deltas zero).
+            return J(200, forge::full_overlay(make_default_rules()));
         }
 
         if (path == "/api/data/check") {

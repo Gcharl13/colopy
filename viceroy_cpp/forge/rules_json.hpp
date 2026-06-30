@@ -35,6 +35,12 @@ OverlayResult load_overlay(const std::string& path,
 // inverse of apply_overlay: apply_overlay(overlay_diff(base,cur), base) == cur.
 JsonValue overlay_diff(const vc::sim::RuleData& base, const vc::sim::RuleData& cur);
 
+// Build a COMPLETE overlay document listing EVERY value in `rd` (all cfg scalars
+// + arrays, every unit's full stats by name, every terrain_defense/terrain_move
+// id). Applying it onto any base reproduces `rd` exactly. Used to load the whole
+// real ruleset into the editor.
+JsonValue full_overlay(const vc::sim::RuleData& rd);
+
 // Write overlay_diff(base, cur) to a rules.json file.
 void save_overlay(const std::string& path,
                   const vc::sim::RuleData& base, const vc::sim::RuleData& cur);

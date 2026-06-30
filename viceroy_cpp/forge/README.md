@@ -46,9 +46,11 @@ viceroy_cpp/build/forge serve 9000       # custom port
 ```
 
 Run it from the repo root so the default data paths resolve. Tabs:
-- **Rules** — paste a sparse `rules.json` overlay (or leave empty for the default),
-  Apply to see invariants PASS/FAIL + the balance curves vs the baseline, and Download
-  the sparse overlay.
+- **Rules** — click **Load full ruleset** to dump the *entire* real ruleset (every unit,
+  terrain id, and balance constant) into the editor, or paste a sparse `rules.json` overlay
+  (or leave empty for the default). Apply to see invariants PASS/FAIL + the balance curves
+  vs the baseline; Download writes the **sparse** overlay (only your edits) even if you
+  started from the full dump. (Endpoint: `GET /api/rules/full`.)
 - **Map** — Load a `.MP`, paint terrain on the canvas (palette + river/forest toggles),
   Validate, and Save (byte-faithful — trailing metadata preserved).
 - **Data** — structural-validate `data_extracted/tables/names_tables.json`.

@@ -23,7 +23,7 @@ bool set_cfg_scalar(Config& c, const std::string& k, const JsonValue& v) {
     F(warehouse_cap_base) F(sol_decay_shift) F(sol_inflow_mult) F(sol_birth_bonus)
     F(food_growth_threshold) F(max_population) F(tory_divisor_base)
     F(expert_era_bonus) F(expert_mfg_mult)
-    F(price_drift_shift)
+    F(price_drift_shift) F(fortify_def_num) F(fortify_def_den)
     F(ff_human_scale) F(ff_human_offset) F(ff_ai_scale) F(ff_ai_offset)
     F(ff_post_indep_scale) F(ff_post_indep_offset)
     F(ff_compounding_shift) F(ff_first_father_shift)
@@ -190,6 +190,70 @@ JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
     };
     emit_terrain("terrain_defense", base.terrain_defense, cur.terrain_defense);
     emit_terrain("terrain_move", base.terrain_move, cur.terrain_move);
+
+    return root;
+}
+
+// ---- complete overlay writer (every value, unconditional) ----
+
+JsonValue full_overlay(const RuleData& rd) {
+    JsonValue root; root.type = JsonValue::Object;
+
+    // cfg: emit EVERY scalar + the two arrays (same field list as overlay_diff,
+    // unconditional). apply_overlay(full_overlay(rd), anything) reproduces rd.cfg.
+    JsonValue cfg; cfg.type = JsonValue::Object;
+    const Config& c = rd.cfg;
+#define E(name) cfg.obj[#name] = json_num(c.name);
+    E(warehouse_cap_base) E(sol_decay_shift) E(sol_inflow_mult) E(sol_birth_bonus)
+    E(food_growth_threshold) E(max_population) E(tory_divisor_base)
+    E(expert_era_bonus) E(expert_mfg_mult)
+    E(price_drift_shift) E(fortify_def_num) E(fortify_def_den)
+    E(ff_human_scale) E(ff_human_offset) E(ff_ai_scale) E(ff_ai_offset)
+    E(ff_post_indep_scale) E(ff_post_indep_offset)
+    E(ff_compounding_shift) E(ff_first_father_shift)
+    E(ref_regulars_scale) E(ref_regulars_offset) E(ref_cavalry_scale) E(ref_cavalry_offset)
+    E(ref_manowar_scale) E(ref_manowar_offset) E(ref_artillery_scale) E(ref_artillery_offset)
+    E(ref_accrue_scale) E(ref_accrue_offset) E(ref_unit_cost)
+    E(ref_cavalry_ratio) E(ref_artillery_ratio) E(ref_naval_ratio)
+    E(imm_threshold_cap) E(imm_sub4k_mult) E(imm_sub4k_offset)
+    E(imm_ai_scale) E(imm_ai_divisor) E(imm_england_num) E(imm_england_den)
+    E(imm_dock_slots) E(imm_base_crosses)
+#undef E
+    auto emit_array = [&](const char* key, const int* cv, size_t n) {
+        JsonValue a; a.type = JsonValue::Array;
+        for (size_t i = 0; i < n; ++i) a.arr.push_back(json_num(cv[i]));
+        cfg.obj[key] = a;
+    };
+    emit_array("ff_gate_years", c.ff_gate_years.data(), c.ff_gate_years.size());
+    emit_array("ref_accrue_gate_years", c.ref_accrue_gate_years.data(),
+               c.ref_accrue_gate_years.size());
+    root.obj["cfg"] = cfg;
+
+    // units: every unit keyed by display name (numeric fallback for the unused
+    // slot), all five fields.
+    JsonValue units; units.type = JsonValue::Object;
+    for (int i = 0; i < NUNITTYPES; ++i) {
+        const auto& u = rd.units[i];
+        JsonValue uj; uj.type = JsonValue::Object;
+        uj.obj["attack"]     = json_num(u.attack);
+        uj.obj["defense"]    = json_num(u.defense);
+        uj.obj["cargo"]      = json_num(u.cargo);
+        uj.obj["move_class"] = json_num(u.move_class);
+        uj.obj["movement"]   = json_num(u.movement);
+        std::string key = (u.name && u.name[0]) ? u.name : std::to_string(i);
+        units.obj[key] = uj;
+    }
+    root.obj["units"] = units;
+
+    // terrain_defense / terrain_move: every id.
+    auto emit_terrain = [&](const char* key, const std::array<int, NTERRAIN>& t) {
+        JsonValue tj; tj.type = JsonValue::Object;
+        for (int id = 0; id < NTERRAIN; ++id)
+            tj.obj[std::to_string(id)] = json_num(t[id]);
+        root.obj[key] = tj;
+    };
+    emit_terrain("terrain_defense", rd.terrain_defense);
+    emit_terrain("terrain_move", rd.terrain_move);
 
     return root;
 }

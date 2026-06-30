@@ -48,11 +48,14 @@ const char* forge_index_html() {
 <main>
   <section id="rules" class="tab active">
     <div class="row">
+      <button class="act" onclick="loadFullRules()">Load full ruleset</button>
       <button class="act" onclick="applyRules()">Apply &amp; inspect</button>
       <button class="act" onclick="downloadOverlay()">Download overlay</button>
       <span id="rinv"></span>
     </div>
-    <p class="muted">Paste a sparse <code>rules.json</code> overlay (leave empty for the default ruleset):</p>
+    <p class="muted"><b>Load full ruleset</b> dumps every value (all units, terrain, balance
+      constants) into the box to view/edit. Or paste a sparse <code>rules.json</code> overlay
+      (leave empty for the default ruleset):</p>
     <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150, "ref_accrue_offset": 20 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea>
     <div id="rwarn"></div>
     <div id="rcurves"></div>
@@ -119,6 +122,17 @@ async function applyRules() {
 function downloadOverlay() {
   const blob = new Blob([JSON.stringify(lastOverlay, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rules.json'; a.click();
+}
+async function loadFullRules() {
+  $('#rinv').innerHTML = '<span class="muted">loading...</span>';
+  let res;
+  try {
+    res = await fetch('/api/rules/full');
+  } catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
+  const d = await res.json();
+  if (d.error) { $('#rinv').innerHTML = '<span class="fail">'+d.error+'</span>'; return; }
+  $('#overlay').value = JSON.stringify(d, null, 2);   // the whole real ruleset, editable
+  applyRules();                                       // chart it (all deltas zero until you edit)
 }
 
 // ---- Map ----

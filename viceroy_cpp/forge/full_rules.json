@@ -1,0 +1,290 @@
+{
+  "cfg": {
+    "expert_era_bonus": 2,
+    "expert_mfg_mult": 2,
+    "ff_ai_offset": 14,
+    "ff_ai_scale": 8,
+    "ff_compounding_shift": 1,
+    "ff_first_father_shift": 1,
+    "ff_gate_years": [
+      1600,
+      1650,
+      1700,
+      1750
+    ],
+    "ff_human_offset": 3,
+    "ff_human_scale": 16,
+    "ff_post_indep_offset": 2000,
+    "ff_post_indep_scale": 1500,
+    "food_growth_threshold": 200,
+    "fortify_def_den": 2,
+    "fortify_def_num": 3,
+    "imm_ai_divisor": 8,
+    "imm_ai_scale": 8,
+    "imm_base_crosses": 2,
+    "imm_dock_slots": 3,
+    "imm_england_den": 3,
+    "imm_england_num": 2,
+    "imm_sub4k_mult": 2,
+    "imm_sub4k_offset": 8,
+    "imm_threshold_cap": 4000,
+    "max_population": 32,
+    "price_drift_shift": 8,
+    "ref_accrue_gate_years": [
+      1600,
+      1700,
+      1750
+    ],
+    "ref_accrue_offset": 10,
+    "ref_accrue_scale": 8,
+    "ref_artillery_offset": 2,
+    "ref_artillery_ratio": 4,
+    "ref_artillery_scale": 6,
+    "ref_cavalry_offset": 5,
+    "ref_cavalry_ratio": 3,
+    "ref_cavalry_scale": 5,
+    "ref_manowar_offset": 2,
+    "ref_manowar_scale": 3,
+    "ref_naval_ratio": 10,
+    "ref_regulars_offset": 15,
+    "ref_regulars_scale": 8,
+    "ref_unit_cost": 1800,
+    "sol_birth_bonus": 100,
+    "sol_decay_shift": 6,
+    "sol_inflow_mult": 2,
+    "tory_divisor_base": 10,
+    "warehouse_cap_base": 100
+  },
+  "terrain_defense": {
+    "0": 0,
+    "1": 0,
+    "10": 2,
+    "11": 2,
+    "12": 2,
+    "13": 2,
+    "14": 2,
+    "15": 3,
+    "16": 2,
+    "17": 2,
+    "18": 2,
+    "19": 2,
+    "2": 0,
+    "20": 2,
+    "21": 2,
+    "22": 2,
+    "23": 3,
+    "24": 0,
+    "25": 0,
+    "26": 0,
+    "27": 6,
+    "28": 4,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 1,
+    "7": 1,
+    "8": 2,
+    "9": 2
+  },
+  "terrain_move": {
+    "0": 1,
+    "1": 1,
+    "10": 2,
+    "11": 2,
+    "12": 2,
+    "13": 2,
+    "14": 3,
+    "15": 3,
+    "16": 2,
+    "17": 1,
+    "18": 2,
+    "19": 2,
+    "2": 1,
+    "20": 2,
+    "21": 2,
+    "22": 3,
+    "23": 3,
+    "24": 2,
+    "25": 1,
+    "26": 1,
+    "27": 3,
+    "28": 2,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+    "6": 2,
+    "7": 2,
+    "8": 2,
+    "9": 1
+  },
+  "units": {
+    "23": {
+      "attack": 0,
+      "cargo": 0,
+      "defense": 0,
+      "move_class": 0,
+      "movement": 0
+    },
+    "Armed Braves": {
+      "attack": 2,
+      "cargo": 0,
+      "defense": 2,
+      "move_class": 0,
+      "movement": 1
+    },
+    "Artillery": {
+      "attack": 7,
+      "cargo": 0,
+      "defense": 5,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Braves": {
+      "attack": 1,
+      "cargo": 0,
+      "defense": 1,
+      "move_class": 0,
+      "movement": 1
+    },
+    "Caravel": {
+      "attack": 0,
+      "cargo": 2,
+      "defense": 2,
+      "move_class": 99,
+      "movement": 4
+    },
+    "Cavalry": {
+      "attack": 6,
+      "cargo": 0,
+      "defense": 6,
+      "move_class": 1,
+      "movement": 4
+    },
+    "Colonists": {
+      "attack": 0,
+      "cargo": 0,
+      "defense": 1,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Continental Army": {
+      "attack": 4,
+      "cargo": 0,
+      "defense": 4,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Continental Cavalry": {
+      "attack": 5,
+      "cargo": 0,
+      "defense": 5,
+      "move_class": 1,
+      "movement": 4
+    },
+    "Dragoons": {
+      "attack": 3,
+      "cargo": 0,
+      "defense": 3,
+      "move_class": 1,
+      "movement": 4
+    },
+    "Frigate": {
+      "attack": 16,
+      "cargo": 4,
+      "defense": 16,
+      "move_class": 99,
+      "movement": 6
+    },
+    "Galleon": {
+      "attack": 0,
+      "cargo": 6,
+      "defense": 10,
+      "move_class": 99,
+      "movement": 6
+    },
+    "Man-O-War": {
+      "attack": 24,
+      "cargo": 6,
+      "defense": 24,
+      "move_class": 99,
+      "movement": 5
+    },
+    "Merchantman": {
+      "attack": 0,
+      "cargo": 4,
+      "defense": 6,
+      "move_class": 99,
+      "movement": 5
+    },
+    "Missionaries": {
+      "attack": 0,
+      "cargo": 0,
+      "defense": 1,
+      "move_class": 1,
+      "movement": 2
+    },
+    "Mounted Braves": {
+      "attack": 2,
+      "cargo": 0,
+      "defense": 2,
+      "move_class": 0,
+      "movement": 4
+    },
+    "Mounted Warriors": {
+      "attack": 3,
+      "cargo": 0,
+      "defense": 3,
+      "move_class": 0,
+      "movement": 4
+    },
+    "Pioneers": {
+      "attack": 0,
+      "cargo": 0,
+      "defense": 1,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Privateer": {
+      "attack": 8,
+      "cargo": 2,
+      "defense": 8,
+      "move_class": 99,
+      "movement": 8
+    },
+    "Regulars": {
+      "attack": 5,
+      "cargo": 0,
+      "defense": 5,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Scouts": {
+      "attack": 1,
+      "cargo": 0,
+      "defense": 1,
+      "move_class": 1,
+      "movement": 4
+    },
+    "Soldiers": {
+      "attack": 2,
+      "cargo": 0,
+      "defense": 2,
+      "move_class": 1,
+      "movement": 1
+    },
+    "Treasure": {
+      "attack": 0,
+      "cargo": 0,
+      "defense": 0,
+      "move_class": 6,
+      "movement": 1
+    },
+    "Wagon Train": {
+      "attack": 0,
+      "cargo": 2,
+      "defense": 1,
+      "move_class": 99,
+      "movement": 2
+    }
+  }
+}
