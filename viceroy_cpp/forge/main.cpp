@@ -13,6 +13,7 @@
 #include "ref.hpp"
 #include "datacheck.hpp"
 #include "formulas.hpp"
+#include "game.hpp"
 #include "httpd.hpp"
 #include "inspect.hpp"
 #include "json.hpp"
@@ -546,6 +547,128 @@ static forge::JsonValue assets_manifest() {
     return o;
 }
 
+// ---- in-browser playable game: the engine loop over the real sim ----
+
+static GameState g_game;
+static World     g_world;
+static std::vector<std::pair<int,int>> g_colony_xy;   // colony map positions (Forge-side)
+static bool g_game_active = false;
+
+static int g_rng = 0x2BAD1234;
+static int game_rng(int lo, int hi) {                  // deterministic LCG in [lo,hi]
+    g_rng = g_rng * 1103515245 + 12345;
+    unsigned v = ((unsigned)g_rng >> 16) & 0x7FFF;
+    return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1));
+}
+
+static bool game_is_water(int id) { return id == 25 || id == 26; }
+
+// Nearest land (non-water) tile to (tx,ty) by expanding-ring scan.
+static std::pair<int,int> game_find_land(int tx, int ty) {
+    for (int r = 0; r < 220; ++r)
+        for (int dy = -r; dy <= r; ++dy)
+            for (int dx = -r; dx <= r; ++dx) {
+                int x = tx + dx, y = ty + dy, id = g_world.terrain_id(x, y);
+                if (id >= 0 && !game_is_water(id)) return {x, y};
+            }
+    return {tx, ty};
+}
+
+static void game_new() {
+    g_game = GameState{}; g_world = World{}; g_colony_xy.clear(); g_rng = 0x2BAD1234;
+    try {
+        forge::MpFile m = forge::load_mp("data_extracted/map/AMER2.MP");
+        g_world.map_w = m.w; g_world.map_h = m.h; g_world.terrain = m.terrain;
+    } catch (...) { g_world.map_w = g_world.map_h = 0; }
+
+    g_game.difficulty = 1; g_game.year = 1492; g_game.season = 0; g_game.turn = 0;
+    g_game.powers[0].gold = 500;
+    for (int i = 0; i < NGOODS; ++i) g_game.price_base[i] = 800;
+    g_game.ref = ref_start(g_game.difficulty);          // the King starts with an army
+
+    auto add_colony = [&](int tx, int ty, int pop, int bells, int hammers, int food, int crosses) {
+        auto xy = game_find_land(tx, ty);
+        Colony c; c.owner_power = 0; c.human = true; c.population = pop;
+        c.bells_per_turn = bells; c.hammers_per_turn = hammers;
+        c.food_per_turn = food; c.crosses_output = crosses;
+        c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+        g_world.colonies.push_back(c); g_colony_xy.push_back(xy);
+        return xy;
+    };
+    auto a = add_colony(20, 22, 3, 3, 4, 60, 2);
+    auto b = add_colony(34, 42, 2, 1, 2, 45, 1);
+
+    auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1) {
+        Unit u; u.type = type; u.owner = 0; u.x = x; u.y = y;
+        u.order = order; u.target_x = txx; u.target_y = tyy; u.alive = true;
+        g_world.units.push_back(u);
+    };
+    add_unit(SOLDIERS,  a.first, a.second);
+    add_unit(PIONEERS,  a.first + 1, a.second);
+    add_unit(COLONISTS, a.first, a.second + 1, ORDER_GOTO, b.first, b.second);  // marches each turn
+    const int dx[8] = {1,-1,0,0,1,1,-1,-1}, dy[8] = {0,0,1,-1,1,-1,1,-1};
+    for (int k = 0; k < 8; ++k) {                       // a ship on adjacent water
+        int x = a.first + dx[k], y = a.second + dy[k];
+        if (game_is_water(g_world.terrain_id(x, y))) { add_unit(CARAVEL, x, y); break; }
+    }
+    g_game_active = true;
+}
+
+static void game_step() {
+    if (g_game_active) step_turn(g_game, g_world, game_rng, 0, default_rules());
+}
+
+static forge::JsonValue game_state_json() {
+    forge::JsonValue o = jobj();
+    o.obj["active"] = jbool(g_game_active);
+    o.obj["w"] = forge::json_num(g_world.map_w);
+    o.obj["h"] = forge::json_num(g_world.map_h);
+    forge::JsonValue terr = jarr();
+    for (uint8_t b : g_world.terrain) terr.arr.push_back(forge::json_num(b));
+    o.obj["terrain"] = terr;
+    o.obj["year"] = forge::json_num(g_game.year);
+    o.obj["season"] = forge::json_num(g_game.season);
+    o.obj["turn"] = forge::json_num((double)g_game.turn);
+    o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
+    o.obj["royal_money"] = forge::json_num((double)g_game.powers[0].royal_money);
+    forge::JsonValue ref = jobj();
+    ref.obj["regulars"] = forge::json_num(g_game.ref.regulars);
+    ref.obj["cavalry"]  = forge::json_num(g_game.ref.cavalry);
+    ref.obj["manowar"]  = forge::json_num(g_game.ref.manowar);
+    ref.obj["artillery"]= forge::json_num(g_game.ref.artillery);
+    o.obj["ref"] = ref;
+    forge::JsonValue prices = jarr();
+    for (int i = 0; i < NGOODS; ++i) prices.arr.push_back(forge::json_num(g_game.price_base[i]));
+    o.obj["prices"] = prices;
+    forge::JsonValue cols = jarr();
+    for (size_t i = 0; i < g_world.colonies.size(); ++i) {
+        const Colony& c = g_world.colonies[i];
+        forge::JsonValue cj = jobj();
+        cj.obj["x"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].first : 0);
+        cj.obj["y"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].second : 0);
+        cj.obj["owner"] = forge::json_num(c.owner_power);
+        cj.obj["population"] = forge::json_num(c.population);
+        cj.obj["sol"] = forge::json_num(sol_pct(c));
+        cols.arr.push_back(cj);
+    }
+    o.obj["colonies"] = cols;
+    forge::JsonValue us = jarr();
+    for (const Unit& u : g_world.units) {
+        if (!u.alive) continue;
+        forge::JsonValue uj = jobj();
+        uj.obj["x"] = forge::json_num(u.x); uj.obj["y"] = forge::json_num(u.y);
+        uj.obj["type"] = forge::json_num(u.type);
+        const char* nm = unit_stats(u.type).name;
+        uj.obj["name"] = forge::json_str(nm ? nm : "?");
+        uj.obj["owner"] = forge::json_num(u.owner);
+        uj.obj["order"] = forge::json_num(u.order);
+        uj.obj["moves"] = forge::json_num(u.moves_left);
+        us.arr.push_back(uj);
+    }
+    o.obj["units"] = us;
+    return o;
+}
+
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
     using forge::HttpResponse;
@@ -586,6 +709,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         if (path == "/api/assets")
             return J(200, assets_manifest());
+
+        if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
+        if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
+        if (path == "/api/game/state") {
+            if (!g_game_active) game_new();
+            return J(200, game_state_json());
+        }
 
         if (path.rfind("/assets/", 0) == 0)
             return serve_asset(path.substr(8));   // strip "/assets/"

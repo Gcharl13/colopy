@@ -69,6 +69,12 @@ Run it from the repo root so the default data paths resolve. Tabs:
   top of it: click to drop clickable **hotspot** buttons, each wired to the popup system.
   A seed for the screen/UI designer, demonstrating the engine's button/popup/event layer.
 
+- **Play** — the **engine loop**: a real game on the real Americas map driven by the same
+  headless sim. **New game** seeds colonies + units on `AMER2.MP`; **End turn** calls
+  `step_turn` once and re-renders. Colonies grow, immigration and the King's army accrue,
+  prices drift, and a GOTO colonist auto-routes around the coastline toward the second
+  colony each turn. Backed by `POST /api/game/new`, `POST /api/game/step`, `GET /api/game/state`.
+
 The popup/toast/button UI layer (`ui.popup` / `ui.toast`, ESC- and click-outside-to-close)
 is reusable across tabs — the interactive shell the full engine builds on.
 

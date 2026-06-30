@@ -80,6 +80,7 @@ const char* forge_index_html() {
   <button data-tab="formulas">Formulas</button>
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
+  <button data-tab="play">Play</button>
 </nav>
 <main>
   <section id="rules" class="tab active">
@@ -149,6 +150,20 @@ const char* forge_index_html() {
       <span class="muted">Click the screen to drop a clickable hotspot button.</span>
     </div>
     <div id="stage" class="stage"></div>
+  </section>
+
+  <section id="play" class="tab">
+    <div class="row">
+      <button class="act" onclick="newGame()">New game</button>
+      <button class="act" onclick="stepGame()">End turn &#9654;</button>
+      <span class="muted">A real game on the real map &mdash; the same sim core: colonies grow,
+        immigration &amp; the King's army accrue, prices drift, and the marked colonist marches
+        (auto-routing around coastline) toward the second colony each turn.</span>
+    </div>
+    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
+      <canvas id="gcv" width="640" height="480"></canvas>
+      <div id="ghud" style="min-width:250px"></div>
+    </div>
   </section>
 </main>
 
@@ -228,7 +243,7 @@ async function loadFullRules() {
 let MAP = null; const CELL = 16;
 // real terrain tileset (16x16 strip, frame i at x=i*16) cropped from TERRAIN.SS
 const TILESET = new Image(); let TILES_READY = false;
-TILESET.onload = () => { TILES_READY = true; if (MAP) drawMap(); };
+TILESET.onload = () => { TILES_READY = true; if (MAP) drawMap(); if (typeof GAME!=='undefined' && GAME) drawGame(); };
 TILESET.src = '/assets/tileset/terrain16.png';
 // our terrain id (0..28) -> TERRAIN.SS base-ground frame (0..11)
 function terrFrame(id) {
@@ -417,10 +432,68 @@ $('#stage').addEventListener('click', e=>{
   SCREEN.spots.push({x,y,label}); drawStage(); ui.toast('Hotspot added');
 });
 
+// ---- Play (the engine loop) ----
+let GAME = null; const GCELL = 14;
+const GOODS = ['Food','Sugar','Tobacco','Cotton','Furs','Lumber','Ore','Silver',
+               'Horses','Rum','Cigars','Cloth','Coats','Trade goods','Tools','Muskets'];
+function ownerColor(o){ return ['#d94f4f','#4f7fd9','#56b96a','#d9b84f'][o&3]; }
+async function newGame(){
+  try { const r=await fetch('/api/game/new',{method:'POST'}); GAME=await r.json(); }
+  catch(e){ $('#ghud').innerHTML='<span class="fail">game unavailable</span>'; return; }
+  drawGame(); ui.toast('New game ('+GAME.year+')');
+}
+async function stepGame(){
+  if(!GAME){ await newGame(); return; }
+  const r=await fetch('/api/game/step',{method:'POST'}); GAME=await r.json();
+  drawGame(); ui.toast('Year '+GAME.year);
+}
+function drawGame(){
+  if(!GAME || !GAME.w) return;
+  const cv=$('#gcv'); cv.width=GAME.w*GCELL; cv.height=GAME.h*GCELL;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  const tiles=TILES_READY;
+  for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++){
+    const b=GAME.terrain[y*GAME.w+x], id=b&0x1F;
+    if(tiles) g.drawImage(TILESET, terrFrame(id)*16,0,16,16, x*GCELL,y*GCELL,GCELL,GCELL);
+    else { g.fillStyle=terrColor(id); g.fillRect(x*GCELL,y*GCELL,GCELL,GCELL); }
+    if(id>=8&&id<=23){ g.fillStyle='rgba(8,46,20,.5)'; g.beginPath();
+      g.moveTo(x*GCELL+GCELL*0.5,y*GCELL+GCELL*0.2); g.lineTo(x*GCELL+GCELL*0.78,y*GCELL+GCELL*0.7);
+      g.lineTo(x*GCELL+GCELL*0.22,y*GCELL+GCELL*0.7); g.closePath(); g.fill(); }
+  }
+  for(const c of GAME.colonies){
+    const X=c.x*GCELL, Y=c.y*GCELL;
+    g.fillStyle='#1a1209'; g.fillRect(X,Y,GCELL,GCELL);
+    g.fillStyle=ownerColor(c.owner); g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
+    g.fillStyle='#fff'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(String(c.population), X+GCELL/2, Y+GCELL/2+1);
+  }
+  for(const u of GAME.units){
+    const X=u.x*GCELL+GCELL/2, Y=u.y*GCELL+GCELL/2;
+    g.beginPath(); g.arc(X,Y,GCELL*0.4,0,7); g.fillStyle=ownerColor(u.owner); g.fill();
+    g.lineWidth=1.5; g.strokeStyle = u.order===3 ? '#ffe27a' : '#0009'; g.stroke();
+    g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText((u.name||'?')[0], X, Y+1);
+  }
+  drawHud();
+}
+function drawHud(){
+  let h='<h3 style="margin:0 0 6px">Year '+GAME.year+(GAME.season?' (Autumn)':'')+'</h3>';
+  h+='<div>turn '+GAME.turn+' &middot; gold <b>'+GAME.gold+'</b></div>';
+  h+='<div class="muted">King\'s army: '+GAME.ref.regulars+' reg / '+GAME.ref.cavalry+' cav / '
+     +GAME.ref.manowar+' man-o-war / '+GAME.ref.artillery+' art &middot; treasury '+GAME.royal_money+'</div>';
+  h+='<table><tr><th>colony</th><th>pop</th><th>SoL%</th></tr>';
+  GAME.colonies.forEach((c,i)=>{ h+='<tr><td>#'+(i+1)+' ('+c.x+','+c.y+')</td><td>'+c.population+'</td><td>'+c.sol+'</td></tr>'; });
+  h+='</table><table><tr><th>good</th><th>price</th></tr>';
+  GAME.prices.forEach((p,i)=>{ h+='<tr><td>'+GOODS[i]+'</td><td>'+p+'</td></tr>'; });
+  h+='</table>';
+  $('#ghud').innerHTML=h;
+}
+
 // ---- init ----
 applyRules();
 loadFormulas();
 loadAssets();
+newGame();
 </script>
 </body>
 </html>
