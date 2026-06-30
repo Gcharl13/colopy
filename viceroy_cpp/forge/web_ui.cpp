@@ -536,7 +536,8 @@ const BINDS=['game.year','game.season','game.turn','game.difficulty','power0.gol
   'natives.tension','ff.count','ff.16','boycott.2','war.0.1',
   'power0.colonies','power0.units','power0.strength','power1.strength','power2.strength','power3.strength',
   'power1.mil_strength','power1.econ_strength','power2.mil_strength','power2.econ_strength','power3.mil_strength','power3.econ_strength',
-  'unit0.attack','unit0.defense','unit0.terraindef','unit0.profession','revolution.sol','game.score'];
+  'unit0.attack','unit0.defense','unit0.terraindef','unit0.profession','revolution.sol','game.score',
+  'congress.bells','congress.cost','congress.era_band','congress.count'];
 const SVGNS='http://www.w3.org/2000/svg';
 function catClass(c){return c==='Triggers'?'trig':c==='Actions'?'act':c==='Flow'?'flow':c==='Data'?'data':c==='Dialog'?'dlg':'';}
 function nodeById(id){return G.nodes.find(n=>n.id===id);}
@@ -951,7 +952,7 @@ function scrAdd(type){ const w={id:'w'+(Date.now()%100000),type,rect:[20,20,90,1
   if(type==='sprite'){ w.sheet='BUILDING'; w.frame=1; }
   SCR.widgets.push(w); selW=w; scrProps(); scrRefresh(); }
 function scrInspector(){
-  const F=[['game.year','Year'],['game.season','Season'],['game.turn','Turn'],['game.difficulty','Difficulty'],['power0.gold','Gold'],['power0.tax','Tax %'],['colony0.population','Colony pop'],['natives.tension','Native tension'],['revolution.sol','Sons of Liberty'],
+  const F=[['game.year','Year'],['game.season','Season'],['game.turn','Turn'],['game.difficulty','Difficulty'],['power0.gold','Gold'],['power0.tax','Tax %'],['colony0.population','Colony pop'],['natives.tension','Native tension'],['revolution.sol','Sons of Liberty'],['congress.bells','Congress bells'],
     ['power1.mil_strength','P1 military'],['power1.econ_strength','P1 economy'],['power2.mil_strength','P2 military'],['power2.econ_strength','P2 economy'],['power3.mil_strength','P3 military'],['power3.econ_strength','P3 economy']];
   $('#sinspect').innerHTML='<b>State Inspector</b><div class="muted" style="margin:3px 0">Tweak the live game &mdash; the screen reacts.</div>'
     + F.map(f=>'<label>'+f[1]+'</label><input type="number" data-s="'+f[0]+'" id="si_'+f[0].replace(/\W/g,'_')+'">').join('');

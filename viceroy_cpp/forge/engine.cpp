@@ -274,8 +274,11 @@ JsonValue node_catalog() {
                  {pin("in","exec","in"), pin("amount","data","in","number"), pin("out","exec","out")},
                  {param("amount","number")}),
         node_def("GiveFoundingFather", "Give Founding Father",
-                 "Grants a Founding Father (by id 0..24; Pocahontas is 16) to power 0's Congress.",
-                 {pin("in","exec","in"), pin("out","exec","out")}, {param("father","number")}),
+                 "Grants a Founding Father (by id 0..24; Pocahontas is 16) to power 0's Congress and "
+                 "resets the bell pool (the byte-verified +0x0C reset). Wire `father` to a computed id "
+                 "(e.g. the era-weighted selection) or set it as a param.",
+                 {pin("in","exec","in"), pin("father","data","in","number"), pin("out","exec","out")},
+                 {param("father","number")}),
         node_def("AddBoycott", "Boycott Good",
                  "Marks a good as boycotted in Europe (it can no longer be sold).",
                  {pin("in","exec","in"), pin("out","exec","out")},
@@ -434,6 +437,7 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     if (path == "revolution.sol") {
         int t = (int)value; cx.x.national_sol = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }
+    if (path == "congress.bells") { cx.x.congress_bells = (int)value; return true; }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {
@@ -479,6 +483,16 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     if (path == "game.score")          return num((double)cx.x.score);
     if (path == "ff.count") {                       // popcount of acquired fathers
         int c = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++c; return num(c);
+    }
+    // congress.* -- Continental Congress / Founding Father bindings
+    if (path == "congress.bells")    return num(cx.x.congress_bells);
+    if (path == "congress.era_band") return num(vc::sim::ff_era_band(g.year));
+    if (path == "congress.count") {
+        int c = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++c; return num(c);
+    }
+    if (path == "congress.cost") {
+        int c = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++c;
+        return num(vc::sim::ff_cost(g.difficulty, g.year, c, true, cx.x.woi_declared, cx.rd));
     }
     // ff.<id> -> 1 if that founding father is held, else 0
     if (path.rfind("ff.", 0) == 0) {
@@ -837,10 +851,11 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "GiveFoundingFather") {
-            int id = (int)as_num(pget(*n, "father"));
+            int id = (int)as_num(eval_in(nodeId, "father", pget(*n, "father")));
             if (id >= 0 && id < 32) {
                 if (vc::sim::ff_available(cx.x.ff_owned, id)) {
                     cx.x.ff_owned |= (1u << id);
+                    cx.x.congress_bells = 0;     // bell pool resets on acquisition (+0x0C)
                     effect("founding father " + std::to_string(id) + " joined Congress");
                 } else effect("founding father " + std::to_string(id) + " already held");
             }

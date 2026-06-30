@@ -41,6 +41,7 @@ struct EngineExtra {
     // colony_count is computed live, mil/econ proxy the undecoded 0x9418/0x9410 arrays).
     int  power_mil[4]  = {0, 0, 0, 0};
     int  power_econ[4] = {0, 0, 0, 0};
+    int  congress_bells = 0;      // bell pool toward the next Founding Father ([0x0C], resets on acquire)
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side
