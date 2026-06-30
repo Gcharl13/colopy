@@ -164,6 +164,18 @@ JsonValue node_catalog() {
                  "Sum of `count` dice each with `sides` faces (e.g. 3d8 for the lost-city ruins "
                  "reward 10*(3d8)). Rolled once per run.",
                  {pin("value","data","out","number")}, {param("count","number"), param("sides","number")}),
+        node_def("Switch", "Switch (route by value)",
+                 "Routes execution to the output pin matching the integer value (1..9), else "
+                 "'default'. One node replaces a whole Constant+Compare+Branch chain.",
+                 {pin("in","exec","in"), pin("value","data","in","number"),
+                  pin("1","exec","out"), pin("2","exec","out"), pin("3","exec","out"),
+                  pin("4","exec","out"), pin("5","exec","out"), pin("6","exec","out"),
+                  pin("7","exec","out"), pin("8","exec","out"), pin("9","exec","out"),
+                  pin("default","exec","out")}, {}),
+        node_def("Chance", "Chance (1 in N)",
+                 "True with probability 1/N -- the game's '1-in-21' style trigger gates (e.g. a "
+                 "peacetime mercenary offer is 1-in-21). Rolled once per run.",
+                 {pin("value","data","out","bool")}, {param("oneIn","number")}),
     }));
     cats.arr.push_back(category("Data", {
         node_def("Constant", "Constant", "A fixed number.",
@@ -331,8 +343,9 @@ JsonValue node_catalog() {
                  "@RAIDGOLD,@RAIDSTORES,@RAIDBURN) captures an event's many messages -- one is "
                  "picked per run, as in the game. woodcut/speaker are the popup's sprite channels "
                  "(spec/ui/popups.md): woodcut = the scene illustration (e.g. WDCUT04 / Colony "
-                 "Burning), speaker = the portrait (e.g. King, Native Chief).",
-                 {pin("in","exec","in")},
+                 "Burning), speaker = the portrait (e.g. King, Native Chief). Wire num0/num1 to "
+                 "fill the message's %NUMBER0/%NUMBER1 with the value the logic computed.",
+                 {pin("in","exec","in"), pin("num0","data","in","number"), pin("num1","data","in","number")},
                  {param("title","text"), param("body","text"), param("choices","text"),
                   param("textKey","text"), param("textKeys","text"),
                   param("woodcut","text"), param("speaker","text")}),
@@ -642,6 +655,9 @@ struct Runner {
                 if (cnt < 0) cnt = 0;
                 int sum = 0; for (int i = 0; i < cnt; ++i) sum += cx.rng(1, sides);
                 out = json_num(sum);
+            } else if (t == "Chance") {
+                int n2 = (int)as_num(pget(*n, "oneIn")); if (n2 < 1) n2 = 1;
+                JsonValue bv; bv.type = JsonValue::Bool; bv.b = cx.rng(1, n2) == 1; out = bv;
             } else if (t == "WeakestPower" || t == "StrongestPower") {
                 std::string m = pget(*n, "metric").str;
                 auto metric = [&](int p) -> long {
@@ -695,6 +711,17 @@ struct Runner {
         if (t == "Branch") {
             bool c = as_num(eval_in(nodeId, "cond")) != 0;
             return follow(nodeId, c ? "true" : "false", popup);
+        }
+        if (t == "Switch") {
+            int v = (int)as_num(eval_in(nodeId, "value"));
+            std::string pin = std::to_string(v);
+            bool has = false;
+            if (const JsonValue* es = graph.find("edges"))
+                for (const auto& e : es->arr) { const JsonValue* fr = e.find("from"); if (!fr) continue;
+                    const JsonValue* fnp = fr->find("node"); const JsonValue* fpp = fr->find("pin");
+                    if (fnp && fpp && fnp->str == nodeId && fpp->str == pin) { has = true; break; } }
+            effect("switch value " + pin + " -> " + (has ? pin : std::string("default")));
+            return follow(nodeId, has ? pin : "default", popup);
         }
         if (t == "GrantGold") {
             int p = std::atoi(pget(*n, "power").str.c_str());
@@ -990,8 +1017,22 @@ struct Runner {
             }
             if (!key.empty()) { std::string g = game_text(key);
                 if (!g.empty()) { body = g; popup.obj["textKey"] = json_str(key); } }
+            body = interp(body);   // {binding.path} tokens
+            // Fill the game's %NUMBER0/%NUMBER1 message slots from the wired data pins, so the
+            // message shows the value the logic computed (e.g. lost-city gold). $ / %% kept.
+            auto fillNum = [&](const char* pin, const std::string& base) {
+                std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
+                long v = (long)as_num(eval_out(f, p));
+                std::string num = std::to_string(v);
+                for (const std::string& suf : {base + "$", base + "%%", base}) {
+                    std::string rep = num + (suf.size() > base.size() && suf[base.size()] == '%' ? "%" : "");
+                    size_t pos; while ((pos = body.find(suf)) != std::string::npos) body.replace(pos, suf.size(), rep);
+                }
+            };
+            fillNum("num0", "%NUMBER0");
+            fillNum("num1", "%NUMBER1");
             popup.obj["title"] = json_str(interp(pget(*n, "title").str));
-            popup.obj["body"]  = json_str(interp(body));
+            popup.obj["body"]  = json_str(body);
             // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
             std::string wc = pget(*n, "woodcut").str, sp = pget(*n, "speaker").str;
             if (!wc.empty()) popup.obj["woodcut"] = json_str(wc);

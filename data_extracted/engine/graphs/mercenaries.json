@@ -3,53 +3,162 @@
   "name": "Mercenary Offer",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -70,
+      "params": {
+        "text": "Trigger (mercenary.md): rolled each turn. During the War of Independence -> 1-in-3 King's intervention offer; otherwise -> 1-in-21 foreign offer. Accept hires a veteran stack."
+      }
+    },
+    {
       "id": "trig",
-      "type": "OnMercenaryOffer",
-      "x": 30,
+      "type": "OnTurnStart",
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "pop",
-      "type": "ShowPopup",
-      "x": 230,
-      "y": 40,
+      "id": "decl",
+      "type": "GetState",
+      "x": 20,
+      "y": 150,
       "params": {
-        "title": "Mercenaries for Hire",
-        "textKey": "@MERCENARIES",
-        "choices": "Accept,Refuse",
-        "speaker": "King"
+        "path": "revolution.declared"
       }
     },
     {
-      "id": "hire",
-      "type": "HireMercenaries",
-      "x": 470,
+      "id": "br",
+      "type": "Branch",
+      "x": 230,
       "y": 40,
+      "params": {}
+    },
+    {
+      "id": "cWar",
+      "type": "Chance",
+      "x": 430,
+      "y": 40,
+      "params": {
+        "oneIn": 3
+      }
+    },
+    {
+      "id": "brWar",
+      "type": "Branch",
+      "x": 600,
+      "y": 20,
+      "params": {}
+    },
+    {
+      "id": "popW",
+      "type": "ShowPopup",
+      "x": 790,
+      "y": 20,
+      "params": {
+        "title": "Mercenaries (Wartime)",
+        "textKey": "@MERCENARIES",
+        "speaker": "King",
+        "choices": "Accept,Refuse"
+      }
+    },
+    {
+      "id": "hireW",
+      "type": "HireMercenaries",
+      "x": 1010,
+      "y": 20,
       "params": {
         "power": "0",
         "kind": "Wartime"
       }
     },
     {
-      "id": "arr",
+      "id": "arrW",
       "type": "ShowPopup",
-      "x": 690,
-      "y": 40,
+      "x": 1210,
+      "y": 20,
       "params": {
         "title": "Mercenaries Arrive",
         "textKey": "@MERCS",
-        "choices": "Welcome",
-        "woodcut": "WDCUT10"
+        "woodcut": "WDCUT10",
+        "choices": "Welcome"
       }
     },
     {
-      "id": "no",
+      "id": "noW",
       "type": "Log",
-      "x": 470,
+      "x": 1010,
+      "y": 140,
+      "params": {
+        "message": "We decline the King's wartime mercenaries."
+      }
+    },
+    {
+      "id": "cPeace",
+      "type": "Chance",
+      "x": 430,
+      "y": 210,
+      "params": {
+        "oneIn": 21
+      }
+    },
+    {
+      "id": "brPeace",
+      "type": "Branch",
+      "x": 600,
+      "y": 200,
+      "params": {}
+    },
+    {
+      "id": "popP",
+      "type": "ShowPopup",
+      "x": 790,
       "y": 200,
       "params": {
-        "message": "We decline the King's mercenaries."
+        "title": "Mercenaries (Peacetime)",
+        "textKey": "@MERCENARIES",
+        "speaker": "Foreign Power",
+        "choices": "Accept,Refuse"
+      }
+    },
+    {
+      "id": "hireP",
+      "type": "HireMercenaries",
+      "x": 1010,
+      "y": 200,
+      "params": {
+        "power": "0",
+        "kind": "Peacetime"
+      }
+    },
+    {
+      "id": "arrP",
+      "type": "ShowPopup",
+      "x": 1210,
+      "y": 200,
+      "params": {
+        "title": "Mercenaries Arrive",
+        "textKey": "@MERCS",
+        "woodcut": "WDCUT10",
+        "choices": "Welcome"
+      }
+    },
+    {
+      "id": "noP",
+      "type": "Log",
+      "x": 1010,
+      "y": 320,
+      "params": {
+        "message": "We decline the foreign mercenaries."
+      }
+    },
+    {
+      "id": "calm",
+      "type": "Log",
+      "x": 600,
+      "y": 380,
+      "params": {
+        "message": "No mercenary offer this turn."
       }
     }
   ],
@@ -60,37 +169,157 @@
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "br",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "pop",
+        "node": "decl",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "brWar",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cWar",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brWar",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brWar",
+        "pin": "true"
+      },
+      "to": {
+        "node": "popW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brWar",
+        "pin": "false"
+      },
+      "to": {
+        "node": "calm",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "popW",
         "pin": "Accept"
       },
       "to": {
-        "node": "hire",
+        "node": "hireW",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "hire",
+        "node": "hireW",
         "pin": "out"
       },
       "to": {
-        "node": "arr",
+        "node": "arrW",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "pop",
+        "node": "popW",
         "pin": "Refuse"
       },
       "to": {
-        "node": "no",
+        "node": "noW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "brPeace",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cPeace",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brPeace",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brPeace",
+        "pin": "true"
+      },
+      "to": {
+        "node": "popP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brPeace",
+        "pin": "false"
+      },
+      "to": {
+        "node": "calm",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "popP",
+        "pin": "Accept"
+      },
+      "to": {
+        "node": "hireP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "hireP",
+        "pin": "out"
+      },
+      "to": {
+        "node": "arrP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "popP",
+        "pin": "Refuse"
+      },
+      "to": {
+        "node": "noP",
         "pin": "in"
       }
     }
