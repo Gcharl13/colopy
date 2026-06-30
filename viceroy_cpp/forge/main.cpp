@@ -516,6 +516,7 @@ static forge::HttpResponse serve_asset(const std::string& sub) {
     std::string fpath;
     if (sub.rfind("sprites/", 0) == 0 || sub.rfind("pik/", 0) == 0) fpath = "docs/atlas/" + sub;
     else if (sub.rfind("screens/", 0) == 0)                         fpath = "docs/" + sub;
+    else if (sub.rfind("tileset/", 0) == 0)                         fpath = "data_extracted/" + sub;
     else if (sub == "palette.json")                                 fpath = "data_extracted/palette.json";
     else return forge::HttpResponse{404, "text/plain", "unknown asset: " + sub};
 

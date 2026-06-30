@@ -1,0 +1,19 @@
+{
+  "tile": 16,
+  "count": 12,
+  "source": "docs/atlas/sprites/atlas_TERRAIN.png",
+  "names": [
+    "Tundra",
+    "Desert",
+    "Plains",
+    "Prairie",
+    "Grassland",
+    "Savanna",
+    "Marsh",
+    "Swamp",
+    "Forest/Hill ground",
+    "Arctic",
+    "Ocean",
+    "Sea Lane"
+  ]
+}

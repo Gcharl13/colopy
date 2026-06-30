@@ -105,8 +105,9 @@ const char* forge_index_html() {
       <span id="minfo" class="muted"></span>
     </div>
     <div class="row">
-      <label><input type="checkbox" id="river"> river</label>
-      <label><input type="checkbox" id="forest"> forest</label>
+      <label><input type="checkbox" id="realtiles" checked onchange="drawMap()"> real tiles</label>
+      <label><input type="checkbox" id="river"> paint river</label>
+      <label><input type="checkbox" id="forest"> paint forest</label>
       <span id="mrep"></span>
     </div>
     <div class="pal" id="palette"></div>
@@ -224,7 +225,22 @@ async function loadFullRules() {
 }
 
 // ---- Map ----
-let MAP = null; const CELL = 10;
+let MAP = null; const CELL = 16;
+// real terrain tileset (16x16 strip, frame i at x=i*16) cropped from TERRAIN.SS
+const TILESET = new Image(); let TILES_READY = false;
+TILESET.onload = () => { TILES_READY = true; if (MAP) drawMap(); };
+TILESET.src = '/assets/tileset/terrain16.png';
+// our terrain id (0..28) -> TERRAIN.SS base-ground frame (0..11)
+function terrFrame(id) {
+  if (id <= 7)  return id;            // 8 base terrains, 1:1
+  if (id <= 23) return id & 7;        // forest variant -> its ground tile
+  if (id === 24) return 9;            // arctic
+  if (id === 25) return 10;           // ocean
+  if (id === 26) return 11;           // sea lane
+  if (id === 27) return 8;            // mountains (ground stand-in)
+  if (id === 28) return 4;            // hills (ground stand-in)
+  return 2;
+}
 function terrColor(id) {
   if (id===25||id===26) return '#285aaa';
   if (id===24) return '#e6ebf5';
@@ -249,13 +265,24 @@ function selId() { const s = document.querySelector('.sw.sel'); return s ? +s.da
 function drawMap() {
   if (!MAP) return;
   const cv = $('#cv'); cv.width = MAP.w*CELL; cv.height = MAP.h*CELL;
-  const g = cv.getContext('2d');
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  const useTiles = TILES_READY && $('#realtiles') && $('#realtiles').checked;
   for (let y=0;y<MAP.h;y++) for (let x=0;x<MAP.w;x++) {
-    const b = MAP.terrain[y*MAP.w+x];
-    g.fillStyle = terrColor(b & 0x1F);
-    g.fillRect(x*CELL, y*CELL, CELL-1, CELL-1);
-    if (b & 0x20) { g.strokeStyle='#6cf'; g.beginPath(); g.moveTo(x*CELL,y*CELL); g.lineTo(x*CELL+CELL-1,y*CELL+CELL-1); g.stroke(); }
-    if (b & 0x40) { g.strokeStyle='#063'; g.strokeRect(x*CELL+0.5,y*CELL+0.5,CELL-2,CELL-2); }
+    const b = MAP.terrain[y*MAP.w+x], id = b & 0x1F;
+    if (useTiles) {
+      g.drawImage(TILESET, terrFrame(id)*16, 0, 16, 16, x*CELL, y*CELL, CELL, CELL);
+    } else {
+      g.fillStyle = terrColor(id); g.fillRect(x*CELL, y*CELL, CELL-1, CELL-1);
+    }
+    // forest cue (id 8..23 = a forest variant, or the painted forest bit 0x40)
+    if ((id>=8 && id<=23) || (b & 0x40)) {
+      g.fillStyle = 'rgba(8,46,20,.5)';
+      g.beginPath(); g.moveTo(x*CELL+CELL*0.5, y*CELL+CELL*0.2);
+      g.lineTo(x*CELL+CELL*0.78, y*CELL+CELL*0.7); g.lineTo(x*CELL+CELL*0.22, y*CELL+CELL*0.7);
+      g.closePath(); g.fill();
+    }
+    if (b & 0x20) { g.strokeStyle='#7cdcff'; g.lineWidth=2; g.beginPath();
+      g.moveTo(x*CELL, y*CELL+CELL/2); g.lineTo(x*CELL+CELL, y*CELL+CELL/2); g.stroke(); }
   }
 }
 function paintAt(ev) {

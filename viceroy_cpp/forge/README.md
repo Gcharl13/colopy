@@ -52,8 +52,10 @@ Run it from the repo root so the default data paths resolve. Tabs:
   (or leave empty for the default). Apply to see invariants PASS/FAIL + the balance curves
   vs the baseline; Download writes the **sparse** overlay (only your edits) even if you
   started from the full dump. (Endpoint: `GET /api/rules/full`.)
-- **Map** — Load a `.MP`, paint terrain on the canvas (palette + river/forest toggles),
-  Validate, and Save (byte-faithful — trailing metadata preserved).
+- **Map** — Load a `.MP` and see it drawn with the **real terrain tiles** (cropped from
+  `TERRAIN.SS` into `data_extracted/tileset/terrain16.png`); `AMER2.MP` renders as a
+  recognizable Americas. Toggle "real tiles" off for flat colors. Paint terrain (palette +
+  river/forest), Validate, and Save (byte-faithful — trailing metadata preserved).
 - **Data** — structural-validate `data_extracted/tables/names_tables.json`.
 - **Formulas** — a read-only catalog of *every* formula the sim computes (the logic
   behind the data): each function, the exact expression, the editable `cfg` knobs that
