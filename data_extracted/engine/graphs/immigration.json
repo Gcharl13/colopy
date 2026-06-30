@@ -3,35 +3,152 @@
   "name": "Religious Immigration",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -130,
+      "params": {
+        "text": "Religious immigration (spec/systems/immigration.md, func_0363A2/035D9A/034C24). Per-turn crosses increment = base 2 + Sum(player colony populations = church/cathedral cross output); modeled here as 2 + colony0.population. A colonist arrives when the accumulator (+0x2E) crosses the needed threshold (+0x30 = baseNeed * (8-diff)/8, England x2/3). Arriving class is the byte-verified difficulty-weighted refill: roll(1,15) split by a difficulty cut into low-tier (criminals/servants/farmers) vs high-tier (Trained Mercenaries, or Educated Elite with William Brewster, FF 20). FLAGGED undecoded: baseNeed (func_035D9A table sum) and the split cut constant K in (diff+K)/2 -- here baseNeed=30, K=18 as placeholders."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "get",
-      "type": "GetState",
-      "x": 30,
+      "id": "c2",
+      "type": "Constant",
+      "x": 20,
       "y": 150,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "cpop",
+      "type": "GetState",
+      "x": 20,
+      "y": 230,
+      "params": {
+        "path": "colony0.population"
+      }
+    },
+    {
+      "id": "delta",
+      "type": "Math",
+      "x": 200,
+      "y": 180,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "accum0",
+      "type": "GetState",
+      "x": 20,
+      "y": 330,
       "params": {
         "path": "power0.crosses"
       }
     },
     {
-      "id": "c12",
-      "type": "Constant",
-      "x": 30,
-      "y": 280,
+      "id": "accum",
+      "type": "Math",
+      "x": 380,
+      "y": 300,
       "params": {
-        "value": 12
+        "op": "+"
+      }
+    },
+    {
+      "id": "baseNeed",
+      "type": "Constant",
+      "x": 20,
+      "y": 430,
+      "params": {
+        "value": 30
+      }
+    },
+    {
+      "id": "c8",
+      "type": "Constant",
+      "x": 20,
+      "y": 500,
+      "params": {
+        "value": 8
+      }
+    },
+    {
+      "id": "diff",
+      "type": "GetState",
+      "x": 20,
+      "y": 570,
+      "params": {
+        "path": "game.difficulty"
+      }
+    },
+    {
+      "id": "dsub",
+      "type": "Math",
+      "x": 200,
+      "y": 540,
+      "params": {
+        "op": "-"
+      }
+    },
+    {
+      "id": "t1",
+      "type": "Math",
+      "x": 360,
+      "y": 470,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "t2",
+      "type": "Math",
+      "x": 500,
+      "y": 470,
+      "params": {
+        "op": "/"
+      }
+    },
+    {
+      "id": "c3",
+      "type": "Constant",
+      "x": 360,
+      "y": 560,
+      "params": {
+        "value": 3
+      }
+    },
+    {
+      "id": "t3",
+      "type": "Math",
+      "x": 640,
+      "y": 470,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "thresh",
+      "type": "Math",
+      "x": 780,
+      "y": 470,
+      "params": {
+        "op": "/"
       }
     },
     {
       "id": "cmp",
       "type": "Compare",
-      "x": 220,
-      "y": 200,
+      "x": 560,
+      "y": 300,
       "params": {
         "op": ">="
       }
@@ -39,14 +156,138 @@
     {
       "id": "br",
       "type": "Branch",
-      "x": 410,
-      "y": 60,
+      "x": 740,
+      "y": 40,
       "params": {}
+    },
+    {
+      "id": "waiting",
+      "type": "Log",
+      "x": 740,
+      "y": 700,
+      "params": {
+        "message": "Crosses still accumulating; no new colonist on the docks this turn."
+      }
+    },
+    {
+      "id": "brew",
+      "type": "HasFoundingFather",
+      "x": 940,
+      "y": 560,
+      "params": {
+        "father": 20
+      }
+    },
+    {
+      "id": "rTier",
+      "type": "Roll",
+      "x": 940,
+      "y": 650,
+      "params": {
+        "min": 1,
+        "max": 15
+      }
+    },
+    {
+      "id": "k8",
+      "type": "Constant",
+      "x": 940,
+      "y": 730,
+      "params": {
+        "value": 18
+      }
+    },
+    {
+      "id": "dsum",
+      "type": "Math",
+      "x": 1100,
+      "y": 690,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "cut",
+      "type": "Math",
+      "x": 1240,
+      "y": 690,
+      "params": {
+        "op": "/"
+      }
+    },
+    {
+      "id": "loCmp",
+      "type": "Compare",
+      "x": 1400,
+      "y": 650,
+      "params": {
+        "op": "<="
+      }
+    },
+    {
+      "id": "loIdx",
+      "type": "Roll",
+      "x": 1400,
+      "y": 560,
+      "params": {
+        "min": 0,
+        "max": 2
+      }
+    },
+    {
+      "id": "hiIdx",
+      "type": "Select",
+      "x": 1240,
+      "y": 470,
+      "params": {}
+    },
+    {
+      "id": "c7",
+      "type": "Constant",
+      "x": 1100,
+      "y": 420,
+      "params": {
+        "value": 7
+      }
+    },
+    {
+      "id": "c6",
+      "type": "Constant",
+      "x": 1100,
+      "y": 500,
+      "params": {
+        "value": 6
+      }
+    },
+    {
+      "id": "classIdx",
+      "type": "Select",
+      "x": 1560,
+      "y": 520,
+      "params": {}
+    },
+    {
+      "id": "name",
+      "type": "PickText",
+      "x": 1720,
+      "y": 470,
+      "params": {
+        "options": "Petty Criminals,Indentured Servants,Peasant Farmers,Skilled Craftsmen,Hardy Pioneers,Town Merchants,Trained Mercenaries,Educated Elite"
+      }
+    },
+    {
+      "id": "cost",
+      "type": "PickNumber",
+      "x": 1720,
+      "y": 560,
+      "params": {
+        "values": "300,400,600,800,1450,1500,1900,2000"
+      }
     },
     {
       "id": "spawn",
       "type": "SpawnUnit",
-      "x": 600,
+      "x": 940,
       "y": 40,
       "params": {
         "type": "Colonists",
@@ -54,19 +295,236 @@
       }
     },
     {
-      "id": "pop",
+      "id": "pop1",
       "type": "ShowPopup",
-      "x": 800,
+      "x": 1140,
       "y": 40,
       "params": {
         "title": "Religious Unrest",
-        "body": "A new colonist, fleeing persecution, arrives on the docks in Europe!",
-        "choices": "Welcome them",
-        "textKey": "@UNREST"
+        "textKey": "@UNREST",
+        "choices": "Visit the docks",
+        "woodcut": "WDCUT04"
+      }
+    },
+    {
+      "id": "pop2",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 40,
+      "params": {
+        "title": "Recruit a Colonist",
+        "textKey": "@RECRUIT",
+        "choices": "Pay their passage,Leave them waiting",
+        "speaker": "Recruiter"
+      }
+    },
+    {
+      "id": "negCost",
+      "type": "Math",
+      "x": 1380,
+      "y": 200,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "cm1",
+      "type": "Constant",
+      "x": 1380,
+      "y": 270,
+      "params": {
+        "value": -1
+      }
+    },
+    {
+      "id": "pay",
+      "type": "GrantGold",
+      "x": 1620,
+      "y": 80,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "paid",
+      "type": "Log",
+      "x": 1820,
+      "y": 80,
+      "params": {
+        "message": "Passage paid; the colonist boards for the New World."
+      }
+    },
+    {
+      "id": "wait2",
+      "type": "Log",
+      "x": 1620,
+      "y": 200,
+      "params": {
+        "message": "The colonist remains on the docks until recruited or religious unrest sends them on."
       }
     }
   ],
   "edges": [
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "delta",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cpop",
+        "pin": "value"
+      },
+      "to": {
+        "node": "delta",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "accum0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "accum",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "delta",
+        "pin": "value"
+      },
+      "to": {
+        "node": "accum",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "c8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dsub",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dsub",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "baseNeed",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "dsub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "t1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "t2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t3",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "t3",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "t3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "thresh",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "thresh",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "accum",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "thresh",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
     {
       "from": {
         "node": "trig",
@@ -79,32 +537,162 @@
     },
     {
       "from": {
-        "node": "get",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c12",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
         "node": "cmp",
         "pin": "value"
       },
       "to": {
         "node": "br",
         "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "waiting",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dsum",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dsum",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "dsum",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cut",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cut",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "rTier",
+        "pin": "value"
+      },
+      "to": {
+        "node": "loCmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cut",
+        "pin": "value"
+      },
+      "to": {
+        "node": "loCmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "brew",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hiIdx",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "c7",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hiIdx",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hiIdx",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "loCmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "classIdx",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "loIdx",
+        "pin": "value"
+      },
+      "to": {
+        "node": "classIdx",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "hiIdx",
+        "pin": "value"
+      },
+      "to": {
+        "node": "classIdx",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "classIdx",
+        "pin": "value"
+      },
+      "to": {
+        "node": "name",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
+        "node": "classIdx",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cost",
+        "pin": "index"
       }
     },
     {
@@ -123,7 +711,97 @@
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "pop1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "name",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop1",
+        "pin": "str1"
+      }
+    },
+    {
+      "from": {
+        "node": "pop1",
+        "pin": "Visit the docks"
+      },
+      "to": {
+        "node": "pop2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cost",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop2",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "cost",
+        "pin": "value"
+      },
+      "to": {
+        "node": "negCost",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "cm1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "negCost",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "pop2",
+        "pin": "Pay their passage"
+      },
+      "to": {
+        "node": "pay",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "negCost",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pay",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "pay",
+        "pin": "out"
+      },
+      "to": {
+        "node": "paid",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pop2",
+        "pin": "Leave them waiting"
+      },
+      "to": {
+        "node": "wait2",
         "pin": "in"
       }
     }

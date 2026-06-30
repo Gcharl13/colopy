@@ -199,6 +199,17 @@ JsonValue node_catalog() {
                  {pin("cond","data","in","number"), pin("a","data","in","number"),
                   pin("b","data","in","number"), pin("value","data","out","number")},
                  {param("a","number"), param("b","number")}),
+        node_def("PickText", "Pick Text (by index)",
+                 "Outputs the index-th entry of a comma-separated list -- e.g. the immigrant "
+                 "class name for a rolled class index. Wire its output to a ShowPopup str0/str1/str2 "
+                 "pin to fill a message's %STRING slot.",
+                 {pin("index","data","in","number"), pin("value","data","out","text")},
+                 {param("options","text")}),
+        node_def("PickNumber", "Pick Number (by index)",
+                 "Outputs the index-th number of a comma-separated list -- e.g. the recruit gold "
+                 "cost for a rolled immigrant class. Wire its output to a ShowPopup num0/num1 pin.",
+                 {pin("index","data","in","number"), pin("value","data","out","number")},
+                 {param("values","text")}),
         node_def("HasFoundingFather", "Has Founding Father",
                  "True if power 0's Congress holds the given Founding Father (id 0..24).",
                  {pin("value","data","out","bool")}, {param("father","number")}),
@@ -344,8 +355,10 @@ JsonValue node_catalog() {
                  "picked per run, as in the game. woodcut/speaker are the popup's sprite channels "
                  "(spec/ui/popups.md): woodcut = the scene illustration (e.g. WDCUT04 / Colony "
                  "Burning), speaker = the portrait (e.g. King, Native Chief). Wire num0/num1 to "
-                 "fill the message's %NUMBER0/%NUMBER1 with the value the logic computed.",
-                 {pin("in","exec","in"), pin("num0","data","in","number"), pin("num1","data","in","number")},
+                 "fill the message's %NUMBER0/%NUMBER1, and str0/str1/str2 (from a PickText/binding) "
+                 "to fill its %STRING0/%STRING1/%STRING2 -- with the values the logic computed.",
+                 {pin("in","exec","in"), pin("num0","data","in","number"), pin("num1","data","in","number"),
+                  pin("str0","data","in","text"), pin("str1","data","in","text"), pin("str2","data","in","text")},
                  {param("title","text"), param("body","text"), param("choices","text"),
                   param("textKey","text"), param("textKeys","text"),
                   param("woodcut","text"), param("speaker","text")}),
@@ -427,6 +440,7 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
             std::string f = path.substr(dot + 1);
             if (f == "gold") { g.powers[p].gold = (long)value; return true; }
             if (f == "tax")  { g.powers[p].tax = (int)value; return true; }
+            if (f == "crosses") { g.powers[p].crosses_accum = (int)value; return true; }
             if (f == "mil_strength")  { cx.x.power_mil[p]  = (int)value; return true; }
             if (f == "econ_strength") { cx.x.power_econ[p] = (int)value; return true; }
         }
@@ -653,6 +667,17 @@ struct Runner {
             } else if (t == "Select") {
                 double c = as_num(eval_in(nodeId, "cond"));
                 out = json_num(c != 0 ? as_num(eval_in(nodeId, "a")) : as_num(eval_in(nodeId, "b")));
+            } else if (t == "PickText" || t == "PickNumber") {
+                int idx = (int)as_num(eval_in(nodeId, "index"));
+                std::string raw = pget(*n, t == "PickText" ? "options" : "values").str;
+                std::vector<std::string> opts; std::string cur;
+                for (char c : raw) { if (c == ',') { opts.push_back(cur); cur.clear(); } else cur += c; }
+                opts.push_back(cur);
+                std::string sel = (idx >= 0 && idx < (int)opts.size()) ? opts[idx] : "";
+                // trim surrounding whitespace
+                size_t a = sel.find_first_not_of(" \t"), z = sel.find_last_not_of(" \t");
+                sel = (a == std::string::npos) ? "" : sel.substr(a, z - a + 1);
+                out = (t == "PickText") ? json_str(sel) : json_num(std::atof(sel.c_str()));
             } else if (t == "Dice") {
                 int cnt = (int)as_num(pget(*n, "count")), sides = (int)as_num(pget(*n, "sides"));
                 if (sides < 1) sides = 1;
@@ -1035,6 +1060,18 @@ struct Runner {
             };
             fillNum("num0", "%NUMBER0");
             fillNum("num1", "%NUMBER1");
+            // Fill %STRING0/%STRING1/%STRING2 from the wired str pins (e.g. PickText giving the
+            // immigrant class name, or a binding string) -- the message's word-slots.
+            auto fillStr = [&](const char* pin, const std::string& tok) {
+                std::string f, p; if (!incoming(nodeId, pin, f, p)) return;
+                JsonValue v = eval_out(f, p);
+                std::string rep = v.type == JsonValue::String ? v.str
+                                : v.type == JsonValue::Number ? std::to_string((long)v.num) : "";
+                size_t pos; while ((pos = body.find(tok)) != std::string::npos) body.replace(pos, tok.size(), rep);
+            };
+            fillStr("str0", "%STRING0");
+            fillStr("str1", "%STRING1");
+            fillStr("str2", "%STRING2");
             popup.obj["title"] = json_str(interp(pget(*n, "title").str));
             popup.obj["body"]  = json_str(body);
             // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
