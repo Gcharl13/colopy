@@ -160,6 +160,10 @@ JsonValue node_catalog() {
                  "Runs another graph by id against the same game (its effects are collected). "
                  "This is how the turn loop wires the whole game together -- it fires the event graphs.",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("graph","text")}),
+        node_def("Dice", "Dice (NdM)",
+                 "Sum of `count` dice each with `sides` faces (e.g. 3d8 for the lost-city ruins "
+                 "reward 10*(3d8)). Rolled once per run.",
+                 {pin("value","data","out","number")}, {param("count","number"), param("sides","number")}),
     }));
     cats.arr.push_back(category("Data", {
         node_def("Constant", "Constant", "A fixed number.",
@@ -191,6 +195,16 @@ JsonValue node_catalog() {
                  {pin("atk","data","in","number"), pin("def","data","in","number"),
                   pin("value","data","out","number")},
                  {param("atk","number"), param("def","number")}),
+        node_def("WeakestPower", "Weakest Power",
+                 "Index (0..3) of the power with the lowest metric -- e.g. who cedes in the "
+                 "Spanish Succession (strength = 3*units + 2*colonies + gold/100).",
+                 {pin("value","data","out","number")},
+                 {param("metric","select",{"strength","colonies","units","gold"})}),
+        node_def("StrongestPower", "Strongest Power",
+                 "Index (0..3) of the power with the highest metric -- e.g. who receives the "
+                 "ceded colonies in the Spanish Succession.",
+                 {pin("value","data","out","number")},
+                 {param("metric","select",{"strength","colonies","units","gold"})}),
     }));
     cats.arr.push_back(category("Actions", {
         node_def("GrantGold", "Grant Gold", "Adds gold to a power's treasury.",
@@ -239,10 +253,26 @@ JsonValue node_catalog() {
                  {pin("in","exec","in"), pin("out","exec","out")},
                  {param("a","select",{"0","1","2","3"}), param("b","select",{"0","1","2","3"})}),
         node_def("GrantImmigrant", "Grant Immigrant",
-                 "Places a colonist type into a power's first free emigration dock slot.",
-                 {pin("in","exec","in"), pin("out","exec","out")},
+                 "Adds `count` colonists of a type to a power's emigration pool (Fountain of "
+                 "Youth grants 8). Fills the dock slots, then a waiting count.",
+                 {pin("in","exec","in"), pin("count","data","in","number"), pin("out","exec","out")},
                  {param("type","select",{"Colonists","Soldiers","Pioneers","Scouts"}),
-                  param("power","select",{"0","1","2","3"})}),
+                  param("power","select",{"0","1","2","3"}), param("count","number")}),
+        node_def("TransferColonies", "Transfer Colonies",
+                 "Reassigns every colony owned by one power to another -- the Spanish Succession "
+                 "asset transfer (spec/systems/spanish_succession.md).",
+                 {pin("in","exec","in"), pin("from","data","in","number"),
+                  pin("to","data","in","number"), pin("out","exec","out")},
+                 {param("from","number"), param("to","number")}),
+        node_def("DestroyUnit", "Destroy Unit",
+                 "Removes an on-map unit by index (a vanished expedition, a sunk ship, a combat loss).",
+                 {pin("in","exec","in"), pin("unit","data","in","number"), pin("out","exec","out")},
+                 {param("unit","number")}),
+        node_def("DemoteUnit", "Demote Unit",
+                 "Demotes a defeated unit one step down the combat ladder (combat.hpp demote); "
+                 "destroyed if it has no demotion (e.g. Soldiers -> Colonists -> destroyed).",
+                 {pin("in","exec","in"), pin("unit","data","in","number"), pin("out","exec","out")},
+                 {param("unit","number")}),
         node_def("AdvanceCadence", "Advance Cadence", "Advances the turn/season/year (turn.hpp advance_cadence).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {}),
         node_def("SetNationalSoL", "Set National Sons of Liberty", "Sets the national SoL meter 0..100 (the Bolivar meter).",
@@ -433,6 +463,16 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             if (f == "tax")  return num(g.powers[p].tax);
             if (f == "royal_money") return num((double)g.powers[p].royal_money);
             if (f == "crosses") return num(g.powers[p].crosses_accum);
+            if (f == "colonies" || f == "units" || f == "strength") {
+                int nc = 0, nu = 0;
+                for (const auto& col : w.colonies) if (col.owner_power == p) ++nc;
+                for (const auto& un : w.units) if (un.alive && un.owner == p) ++nu;
+                if (f == "colonies") return num(nc);
+                if (f == "units")    return num(nu);
+                // spec succession rank: 3*[strength] + 2*[colony count] + 1*[strength];
+                // the exact DGROUP strength fields aren't in the sim, so units+gold proxy them.
+                return num(3 * nu + 2 * nc + (int)(g.powers[p].gold / 100));
+            }
         }
     }
     // colony<N>.<field>
@@ -447,7 +487,32 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             if (f == "hammers")    return num(w.colonies[c].hammers_per_turn);
             if (f == "food")       return num(w.colonies[c].food_per_turn);
             if (f == "crosses")    return num(w.colonies[c].crosses_output);
+            if (f == "owner")      return num(w.colonies[c].owner_power);
         }
+    }
+    // unit<N>.<field> -- per-unit state + derived stats from its type (combat reads these)
+    if (path.rfind("unit", 0) == 0 && path.size() > 4 && (path[4] >= '0' && path[4] <= '9')) {
+        size_t dot = path.find('.'); int u = std::atoi(path.c_str() + 4);
+        if (dot != std::string::npos && u >= 0 && u < (int)w.units.size()) {
+            const vc::sim::Unit& un = w.units[u]; std::string f = path.substr(dot + 1);
+            if (f == "type")  return num(un.type);
+            if (f == "owner") return num(un.owner);
+            if (f == "x")     return num(un.x);
+            if (f == "y")     return num(un.y);
+            if (f == "alive") return num(un.alive ? 1 : 0);
+            const vc::sim::UnitStats& st = vc::sim::unit_stats(cx.rd, un.type);
+            if (f == "attack")   return num(st.attack);
+            if (f == "defense")  return num(st.defense);
+            if (f == "movement") return num(st.movement);
+            int tid = w.terrain_id(un.x, un.y);
+            if (f == "terrain")    return num(tid < 0 ? 0 : tid);
+            if (f == "terraindef") return num(vc::sim::terrain_defense_value(cx.rd, tid < 0 ? 0 : tid));
+        }
+    }
+    // terrain.defense.<id> -- the @TERRAIN "Defensive" value for a terrain id
+    if (path.rfind("terrain.defense.", 0) == 0) {
+        int tid = std::atoi(path.c_str() + 16);
+        return num(vc::sim::terrain_defense_value(cx.rd, tid));
     }
     // price.<good index>
     if (path.rfind("price", 0) == 0) {
@@ -546,6 +611,27 @@ struct Runner {
             } else if (t == "CombatOdds") {
                 int a = (int)as_num(eval_in(nodeId, "atk")), b = (int)as_num(eval_in(nodeId, "def"));
                 out = json_num((int)(vc::sim::combat_odds(a, b) * 100));
+            } else if (t == "Dice") {
+                int cnt = (int)as_num(pget(*n, "count")), sides = (int)as_num(pget(*n, "sides"));
+                if (sides < 1) sides = 1;
+                if (cnt < 0) cnt = 0;
+                int sum = 0; for (int i = 0; i < cnt; ++i) sum += cx.rng(1, sides);
+                out = json_num(sum);
+            } else if (t == "WeakestPower" || t == "StrongestPower") {
+                std::string m = pget(*n, "metric").str;
+                auto metric = [&](int p) -> long {
+                    int nc = 0, nu = 0;
+                    for (const auto& col : cx.w.colonies) if (col.owner_power == p) ++nc;
+                    for (const auto& un : cx.w.units) if (un.alive && un.owner == p) ++nu;
+                    if (m == "colonies") return nc;
+                    if (m == "units")    return nu;
+                    if (m == "gold")     return (long)cx.g.powers[p].gold;
+                    return 3L * nu + 2L * nc + cx.g.powers[p].gold / 100;
+                };
+                int best = 0; long bv = metric(0);
+                for (int p = 1; p < 4; ++p) { long v = metric(p);
+                    if ((t == "WeakestPower" && v < bv) || (t == "StrongestPower" && v > bv)) { bv = v; best = p; } }
+                out = json_num(best);
             }
         }
         dcache[key] = out; return out;
@@ -700,13 +786,40 @@ struct Runner {
             std::string nm = pget(*n, "type").str; int type = 0;
             for (int i = 0; i < 4; ++i) if (nm == IN[i]) type = IT[i];
             int p = std::atoi(pget(*n, "power").str.c_str());
+            int count = (int)as_num(eval_in(nodeId, "count")); if (count < 1) count = 1;
             if (p >= 0 && p < 4) {
-                auto& dp = cx.g.powers[p].dock_pool; bool placed = false;
-                for (int s = 0; s < 3; ++s) if (dp[s] < 0) { dp[s] = type; placed = true;
-                    effect(nm + " waits on power " + std::to_string(p) + "'s dock (slot " +
-                           std::to_string(s) + ")"); break; }
-                if (!placed) effect("power " + std::to_string(p) + "'s dock is full");
+                auto& dp = cx.g.powers[p].dock_pool; int placed = 0;
+                for (int c = 0; c < count; ++c)
+                    for (int s = 0; s < 3; ++s) if (dp[s] < 0) { dp[s] = type; ++placed; break; }
+                effect(std::to_string(count) + " " + nm + " emigrate to power " + std::to_string(p) +
+                       " (" + std::to_string(placed) + " waiting at the docks)");
             }
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "TransferColonies") {
+            int from = (int)as_num(eval_in(nodeId, "from")), to = (int)as_num(eval_in(nodeId, "to"));
+            int moved = 0;
+            for (auto& col : cx.w.colonies) if (col.owner_power == from) { col.owner_power = to; ++moved; }
+            effect("transferred " + std::to_string(moved) + " colonies from power " +
+                   std::to_string(from) + " to power " + std::to_string(to));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "DestroyUnit") {
+            int u = (int)as_num(eval_in(nodeId, "unit"));
+            if (u >= 0 && u < (int)cx.w.units.size() && cx.w.units[u].alive) {
+                cx.w.units[u].alive = false; effect("unit " + std::to_string(u) + " destroyed");
+            } else effect("DestroyUnit: no live unit " + std::to_string(u));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "DemoteUnit") {
+            int u = (int)as_num(eval_in(nodeId, "unit"));
+            if (u >= 0 && u < (int)cx.w.units.size() && cx.w.units[u].alive) {
+                int dt = vc::sim::demote(cx.w.units[u].type, 0);
+                if (dt < 0) { cx.w.units[u].alive = false;
+                    effect("unit " + std::to_string(u) + " destroyed (no demotion)"); }
+                else { cx.w.units[u].type = dt;
+                    effect("unit " + std::to_string(u) + " demoted to type " + std::to_string(dt)); }
+            } else effect("DemoteUnit: no live unit " + std::to_string(u));
             return follow(nodeId, "out", popup);
         }
         if (t == "AdvanceCadence") {

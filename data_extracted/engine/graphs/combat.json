@@ -12,8 +12,8 @@
     {
       "id": "s1",
       "type": "SpawnUnit",
-      "x": 210,
-      "y": 40,
+      "x": 30,
+      "y": 140,
       "params": {
         "type": "Soldiers",
         "power": "0"
@@ -22,33 +22,130 @@
     {
       "id": "s2",
       "type": "SpawnUnit",
-      "x": 400,
-      "y": 40,
+      "x": 30,
+      "y": 230,
       "params": {
         "type": "Braves",
         "power": "3"
       }
     },
     {
-      "id": "fight",
-      "type": "ResolveCombat",
-      "x": 590,
-      "y": 40,
+      "id": "atk",
+      "type": "GetState",
+      "x": 260,
+      "y": 140,
       "params": {
-        "attacker": 0,
-        "defender": 1
+        "path": "unit0.attack"
       }
     },
     {
-      "id": "pop",
-      "type": "ShowPopup",
-      "x": 780,
+      "id": "def0",
+      "type": "GetState",
+      "x": 260,
+      "y": 230,
+      "params": {
+        "path": "unit1.defense"
+      }
+    },
+    {
+      "id": "tdef",
+      "type": "GetState",
+      "x": 260,
+      "y": 320,
+      "params": {
+        "path": "unit1.terraindef"
+      }
+    },
+    {
+      "id": "def",
+      "type": "Math",
+      "x": 460,
+      "y": 275,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "total",
+      "type": "Math",
+      "x": 660,
+      "y": 200,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "roll",
+      "type": "Roll",
+      "x": 460,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "c1",
+      "type": "Constant",
+      "x": 260,
       "y": 40,
       "params": {
-        "title": "Battle!",
-        "body": "The clash of arms at the frontier!\nSee the run effects for who won.",
+        "value": 1
+      }
+    },
+    {
+      "id": "cmp",
+      "type": "Compare",
+      "x": 860,
+      "y": 120,
+      "params": {
+        "op": "<="
+      }
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 1060,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "loseD",
+      "type": "DemoteUnit",
+      "x": 1260,
+      "y": 40,
+      "params": {
+        "unit": 1
+      }
+    },
+    {
+      "id": "loseA",
+      "type": "DemoteUnit",
+      "x": 1260,
+      "y": 200,
+      "params": {
+        "unit": 0
+      }
+    },
+    {
+      "id": "popW",
+      "type": "ShowPopup",
+      "x": 1460,
+      "y": 40,
+      "params": {
+        "title": "Victory!",
+        "body": "The attacker carries the field! (roll <= {unit0.attack})",
         "woodcut": "WDCUT10",
-        "choices": "Onward"
+        "choices": "Huzzah!"
+      }
+    },
+    {
+      "id": "popL",
+      "type": "ShowPopup",
+      "x": 1460,
+      "y": 200,
+      "params": {
+        "title": "Defeat",
+        "body": "The attack is thrown back.",
+        "woodcut": "WDCUT10",
+        "choices": "Regroup"
       }
     }
   ],
@@ -79,17 +176,137 @@
         "pin": "out"
       },
       "to": {
-        "node": "fight",
+        "node": "br",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "fight",
+        "node": "def0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "def",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "tdef",
+        "pin": "value"
+      },
+      "to": {
+        "node": "def",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "atk",
+        "pin": "value"
+      },
+      "to": {
+        "node": "total",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "def",
+        "pin": "value"
+      },
+      "to": {
+        "node": "total",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "c1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "roll",
+        "pin": "min"
+      }
+    },
+    {
+      "from": {
+        "node": "total",
+        "pin": "value"
+      },
+      "to": {
+        "node": "roll",
+        "pin": "max"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "atk",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "loseD",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "loseD",
         "pin": "out"
       },
       "to": {
-        "node": "pop",
+        "node": "popW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "loseA",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "loseA",
+        "pin": "out"
+      },
+      "to": {
+        "node": "popL",
         "pin": "in"
       }
     }

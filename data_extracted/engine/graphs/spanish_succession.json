@@ -10,22 +10,40 @@
       "params": {}
     },
     {
-      "id": "wage",
-      "type": "WageSpanishSuccession",
-      "x": 230,
+      "id": "weak",
+      "type": "WeakestPower",
+      "x": 30,
+      "y": 170,
+      "params": {
+        "metric": "strength"
+      }
+    },
+    {
+      "id": "strong",
+      "type": "StrongestPower",
+      "x": 30,
+      "y": 260,
+      "params": {
+        "metric": "strength"
+      }
+    },
+    {
+      "id": "xfer",
+      "type": "TransferColonies",
+      "x": 260,
       "y": 40,
       "params": {}
     },
     {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 450,
+      "x": 470,
       "y": 40,
       "params": {
         "title": "The Spanish Succession",
         "textKey": "@SUCCESSION",
-        "choices": "Continue",
-        "speaker": "King"
+        "speaker": "King",
+        "choices": "Continue"
       }
     }
   ],
@@ -36,13 +54,33 @@
         "pin": "out"
       },
       "to": {
-        "node": "wage",
+        "node": "xfer",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "wage",
+        "node": "weak",
+        "pin": "value"
+      },
+      "to": {
+        "node": "xfer",
+        "pin": "from"
+      }
+    },
+    {
+      "from": {
+        "node": "strong",
+        "pin": "value"
+      },
+      "to": {
+        "node": "xfer",
+        "pin": "to"
+      }
+    },
+    {
+      "from": {
+        "node": "xfer",
         "pin": "out"
       },
       "to": {

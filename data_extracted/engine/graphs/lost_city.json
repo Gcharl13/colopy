@@ -5,152 +5,428 @@
     {
       "id": "trig",
       "type": "OnLostCityEntered",
-      "x": 30,
-      "y": 40,
+      "x": 20,
+      "y": 20,
       "params": {}
     },
     {
       "id": "roll",
       "type": "Roll",
-      "x": 30,
-      "y": 180,
+      "x": 20,
+      "y": 140,
       "params": {
         "min": 1,
         "max": 9
       }
     },
     {
-      "id": "c2",
+      "id": "s",
       "type": "Constant",
-      "x": 30,
-      "y": 300,
+      "x": 20,
+      "y": 250,
+      "params": {
+        "value": 0
+      }
+    },
+    {
+      "id": "dR",
+      "type": "Dice",
+      "x": 20,
+      "y": 330,
+      "params": {
+        "count": 3,
+        "sides": 8
+      }
+    },
+    {
+      "id": "c10a",
+      "type": "Constant",
+      "x": 20,
+      "y": 400,
+      "params": {
+        "value": 10
+      }
+    },
+    {
+      "id": "mRuins",
+      "type": "Math",
+      "x": 170,
+      "y": 360,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "dF",
+      "type": "Dice",
+      "x": 20,
+      "y": 470,
+      "params": {
+        "count": 4,
+        "sides": 10
+      }
+    },
+    {
+      "id": "c2a",
+      "type": "Constant",
+      "x": 20,
+      "y": 540,
       "params": {
         "value": 2
       }
     },
     {
-      "id": "c4",
-      "type": "Constant",
-      "x": 30,
-      "y": 360,
+      "id": "mFriend",
+      "type": "Math",
+      "x": 170,
+      "y": 500,
       "params": {
-        "value": 4
+        "op": "*"
       }
     },
     {
-      "id": "c6",
+      "id": "c2b",
       "type": "Constant",
-      "x": 30,
-      "y": 420,
+      "x": 20,
+      "y": 610,
       "params": {
-        "value": 6
+        "value": 2
       }
     },
     {
-      "id": "c200",
-      "type": "Constant",
-      "x": 30,
-      "y": 480,
+      "id": "sp2",
+      "type": "Math",
+      "x": 170,
+      "y": 590,
       "params": {
-        "value": 200
+        "op": "+"
+      }
+    },
+    {
+      "id": "c10b",
+      "type": "Constant",
+      "x": 20,
+      "y": 680,
+      "params": {
+        "value": 10
+      }
+    },
+    {
+      "id": "sp2x10",
+      "type": "Math",
+      "x": 320,
+      "y": 600,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "d20",
+      "type": "Dice",
+      "x": 20,
+      "y": 750,
+      "params": {
+        "count": 1,
+        "sides": 20
+      }
+    },
+    {
+      "id": "plus",
+      "type": "Math",
+      "x": 470,
+      "y": 620,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 20,
+      "y": 820,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "cib",
+      "type": "Math",
+      "x": 620,
+      "y": 640,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "k1",
+      "type": "Constant",
+      "x": 720,
+      "y": 60,
+      "params": {
+        "value": 1
       }
     },
     {
       "id": "cmp1",
       "type": "Compare",
-      "x": 230,
-      "y": 200,
+      "x": 870,
+      "y": 20,
       "params": {
-        "op": "<="
+        "op": "=="
       }
     },
     {
       "id": "br1",
       "type": "Branch",
-      "x": 420,
-      "y": 60,
-      "params": {}
-    },
-    {
-      "id": "gold",
-      "type": "GrantGold",
-      "x": 620,
-      "y": 40,
-      "params": {
-        "power": "0"
-      }
-    },
-    {
-      "id": "popT",
-      "type": "ShowPopup",
-      "x": 820,
-      "y": 40,
-      "params": {
-        "title": "Treasure!",
-        "textKeys": "@LOSTCITY2,@LOSTCITY3",
-        "woodcut": "WDCUT04",
-        "choices": "Praise be to God,Onward"
-      }
-    },
-    {
-      "id": "cmp2",
-      "type": "Compare",
-      "x": 230,
-      "y": 320,
-      "params": {
-        "op": "<="
-      }
-    },
-    {
-      "id": "br2",
-      "type": "Branch",
-      "x": 420,
-      "y": 220,
+      "x": 1020,
+      "y": 20,
       "params": {}
     },
     {
       "id": "imm",
       "type": "GrantImmigrant",
-      "x": 620,
-      "y": 220,
+      "x": 1160,
+      "y": 20,
       "params": {
         "type": "Colonists",
+        "power": "0",
+        "count": 8
+      }
+    },
+    {
+      "id": "pop1",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 20,
+      "params": {
+        "title": "Fountain of Youth",
+        "textKey": "@LOSTCITY1",
+        "choices": "Onward",
+        "woodcut": "WDCUT09"
+      }
+    },
+    {
+      "id": "k2",
+      "type": "Constant",
+      "x": 720,
+      "y": 155,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "cmp2",
+      "type": "Compare",
+      "x": 870,
+      "y": 115,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "br2",
+      "type": "Branch",
+      "x": 1020,
+      "y": 115,
+      "params": {}
+    },
+    {
+      "id": "gold2",
+      "type": "GrantGold",
+      "x": 1160,
+      "y": 115,
+      "params": {
         "power": "0"
       }
     },
     {
-      "id": "popF",
-      "type": "ShowPopup",
-      "x": 820,
-      "y": 220,
+      "id": "treas",
+      "type": "SpawnUnit",
+      "x": 1160,
+      "y": 115,
       "params": {
-        "title": "Fountain of Youth",
-        "textKey": "@LOSTCITY1",
-        "woodcut": "WDCUT09",
-        "choices": "Rejoice!"
+        "type": "Treasure",
+        "power": "0"
+      }
+    },
+    {
+      "id": "pop2",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 115,
+      "params": {
+        "title": "Seven Cities of Cibola",
+        "textKey": "@LOSTCITY2",
+        "choices": "Onward",
+        "woodcut": "WDCUT04"
+      }
+    },
+    {
+      "id": "k3",
+      "type": "Constant",
+      "x": 720,
+      "y": 250,
+      "params": {
+        "value": 3
       }
     },
     {
       "id": "cmp3",
       "type": "Compare",
-      "x": 230,
-      "y": 440,
+      "x": 870,
+      "y": 210,
       "params": {
-        "op": "<="
+        "op": "=="
       }
     },
     {
       "id": "br3",
       "type": "Branch",
-      "x": 420,
-      "y": 380,
+      "x": 1020,
+      "y": 210,
       "params": {}
     },
     {
-      "id": "popN",
+      "id": "gold3",
+      "type": "GrantGold",
+      "x": 1160,
+      "y": 210,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "pop3",
       "type": "ShowPopup",
-      "x": 620,
-      "y": 380,
+      "x": 1380,
+      "y": 210,
+      "params": {
+        "title": "Ruins",
+        "textKey": "@LOSTCITY3",
+        "choices": "Onward",
+        "woodcut": "WDCUT04"
+      }
+    },
+    {
+      "id": "k4",
+      "type": "Constant",
+      "x": 720,
+      "y": 345,
+      "params": {
+        "value": 4
+      }
+    },
+    {
+      "id": "cmp4",
+      "type": "Compare",
+      "x": 870,
+      "y": 305,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "br4",
+      "type": "Branch",
+      "x": 1020,
+      "y": 305,
+      "params": {}
+    },
+    {
+      "id": "gold4",
+      "type": "GrantGold",
+      "x": 1160,
+      "y": 305,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "pop4",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 305,
+      "params": {
+        "title": "Burial Mounds",
+        "textKey": "@BURIAL2",
+        "choices": "Onward"
+      }
+    },
+    {
+      "id": "k5",
+      "type": "Constant",
+      "x": 720,
+      "y": 440,
+      "params": {
+        "value": 5
+      }
+    },
+    {
+      "id": "cmp5",
+      "type": "Compare",
+      "x": 870,
+      "y": 400,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "br5",
+      "type": "Branch",
+      "x": 1020,
+      "y": 400,
+      "params": {}
+    },
+    {
+      "id": "kill",
+      "type": "DestroyUnit",
+      "x": 1160,
+      "y": 400,
+      "params": {
+        "unit": 0
+      }
+    },
+    {
+      "id": "pop5",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 400,
+      "params": {
+        "title": "Vanished",
+        "textKey": "@LOSTCITY5",
+        "choices": "Onward"
+      }
+    },
+    {
+      "id": "k6",
+      "type": "Constant",
+      "x": 720,
+      "y": 535,
+      "params": {
+        "value": 6
+      }
+    },
+    {
+      "id": "cmp6",
+      "type": "Compare",
+      "x": 870,
+      "y": 495,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "br6",
+      "type": "Branch",
+      "x": 1020,
+      "y": 495,
+      "params": {}
+    },
+    {
+      "id": "pop6",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 495,
       "params": {
         "title": "Nothing",
         "textKey": "@LOSTCITY6",
@@ -158,27 +434,270 @@
       }
     },
     {
-      "id": "tens",
-      "type": "ChangeNativeTension",
-      "x": 620,
-      "y": 520,
+      "id": "k7",
+      "type": "Constant",
+      "x": 720,
+      "y": 630,
       "params": {
-        "amount": 50
+        "value": 7
       }
     },
     {
-      "id": "popB",
-      "type": "ShowPopup",
-      "x": 820,
-      "y": 520,
+      "id": "cmp7",
+      "type": "Compare",
+      "x": 870,
+      "y": 590,
       "params": {
-        "title": "Misfortune",
-        "textKeys": "@LOSTCITY5,@LOSTCITY8,@SCREWED",
-        "choices": "Flee!"
+        "op": "=="
+      }
+    },
+    {
+      "id": "br7",
+      "type": "Branch",
+      "x": 1020,
+      "y": 590,
+      "params": {}
+    },
+    {
+      "id": "gold7",
+      "type": "GrantGold",
+      "x": 1160,
+      "y": 590,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "pop7",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 590,
+      "params": {
+        "title": "Friendly Tribe",
+        "textKey": "@LOSTCITY7",
+        "choices": "Onward"
+      }
+    },
+    {
+      "id": "k8",
+      "type": "Constant",
+      "x": 720,
+      "y": 725,
+      "params": {
+        "value": 8
+      }
+    },
+    {
+      "id": "cmp8",
+      "type": "Compare",
+      "x": 870,
+      "y": 685,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "br8",
+      "type": "Branch",
+      "x": 1020,
+      "y": 685,
+      "params": {}
+    },
+    {
+      "id": "ten",
+      "type": "ChangeNativeTension",
+      "x": 1160,
+      "y": 685,
+      "params": {
+        "amount": 100
+      }
+    },
+    {
+      "id": "pop8",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 685,
+      "params": {
+        "title": "Holy Shrines",
+        "textKey": "@LOSTCITY8",
+        "choices": "Onward",
+        "woodcut": "WDCUT13"
+      }
+    },
+    {
+      "id": "imm9",
+      "type": "GrantImmigrant",
+      "x": 1160,
+      "y": 780,
+      "params": {
+        "type": "Colonists",
+        "power": "0",
+        "count": 1
+      }
+    },
+    {
+      "id": "pop9",
+      "type": "ShowPopup",
+      "x": 1380,
+      "y": 780,
+      "params": {
+        "title": "Survivors",
+        "textKey": "@LOSTCITY9",
+        "choices": "Onward"
       }
     }
   ],
   "edges": [
+    {
+      "from": {
+        "node": "dR",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mRuins",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c10a",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mRuins",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "dF",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mFriend",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2a",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mFriend",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "s",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2b",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sp2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2x10",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c10b",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2x10",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sp2x10",
+        "pin": "value"
+      },
+      "to": {
+        "node": "plus",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "d20",
+        "pin": "value"
+      },
+      "to": {
+        "node": "plus",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "plus",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cib",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cib",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br1",
+        "pin": "cond"
+      }
+    },
     {
       "from": {
         "node": "trig",
@@ -191,136 +710,106 @@
     },
     {
       "from": {
+        "node": "br1",
+        "pin": "true"
+      },
+      "to": {
+        "node": "imm",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "imm",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
         "node": "roll",
         "pin": "value"
       },
       "to": {
-        "node": "cmp1",
+        "node": "cmp2",
         "pin": "a"
       }
     },
     {
       "from": {
-        "node": "c2",
+        "node": "k2",
         "pin": "value"
       },
       "to": {
-        "node": "cmp1",
+        "node": "cmp2",
         "pin": "b"
       }
     },
     {
       "from": {
-        "node": "cmp1",
+        "node": "cmp2",
         "pin": "value"
       },
       "to": {
-        "node": "br1",
+        "node": "br2",
         "pin": "cond"
       }
     },
     {
       "from": {
         "node": "br1",
-        "pin": "true"
+        "pin": "false"
       },
       "to": {
-        "node": "gold",
+        "node": "br2",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "c200",
+        "node": "br2",
+        "pin": "true"
+      },
+      "to": {
+        "node": "gold2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gold2",
+        "pin": "out"
+      },
+      "to": {
+        "node": "treas",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "treas",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "cib",
         "pin": "value"
       },
       "to": {
-        "node": "gold",
+        "node": "gold2",
         "pin": "amount"
       }
     },
     {
       "from": {
-        "node": "gold",
-        "pin": "out"
-      },
-      "to": {
-        "node": "popT",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "br1",
-        "pin": "false"
-      },
-      "to": {
-        "node": "br2",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp2",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c4",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp2",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmp2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "br2",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "br2",
-        "pin": "true"
-      },
-      "to": {
-        "node": "imm",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "imm",
-        "pin": "out"
-      },
-      "to": {
-        "node": "popF",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "br2",
-        "pin": "false"
-      },
-      "to": {
-        "node": "br3",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
         "node": "roll",
         "pin": "value"
       },
@@ -331,7 +820,7 @@
     },
     {
       "from": {
-        "node": "c6",
+        "node": "k3",
         "pin": "value"
       },
       "to": {
@@ -351,12 +840,72 @@
     },
     {
       "from": {
+        "node": "br2",
+        "pin": "false"
+      },
+      "to": {
+        "node": "br3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
         "node": "br3",
         "pin": "true"
       },
       "to": {
-        "node": "popN",
+        "node": "gold3",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gold3",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "mRuins",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold3",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp4",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp4",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br4",
+        "pin": "cond"
       }
     },
     {
@@ -365,17 +914,297 @@
         "pin": "false"
       },
       "to": {
-        "node": "tens",
+        "node": "br4",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "tens",
+        "node": "br4",
+        "pin": "true"
+      },
+      "to": {
+        "node": "gold4",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gold4",
         "pin": "out"
       },
       "to": {
-        "node": "popB",
+        "node": "pop4",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "mRuins",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold4",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp5",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp5",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br5",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br4",
+        "pin": "false"
+      },
+      "to": {
+        "node": "br5",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br5",
+        "pin": "true"
+      },
+      "to": {
+        "node": "kill",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "kill",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop5",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp6",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp6",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br6",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br5",
+        "pin": "false"
+      },
+      "to": {
+        "node": "br6",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br6",
+        "pin": "true"
+      },
+      "to": {
+        "node": "pop6",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp7",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k7",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp7",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp7",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br7",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br6",
+        "pin": "false"
+      },
+      "to": {
+        "node": "br7",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br7",
+        "pin": "true"
+      },
+      "to": {
+        "node": "gold7",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gold7",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop7",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "mFriend",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gold7",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp8",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "cmp8",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "cmp8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br8",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br7",
+        "pin": "false"
+      },
+      "to": {
+        "node": "br8",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br8",
+        "pin": "true"
+      },
+      "to": {
+        "node": "ten",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "ten",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop8",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br8",
+        "pin": "false"
+      },
+      "to": {
+        "node": "imm9",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "imm9",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop9",
         "pin": "in"
       }
     }
