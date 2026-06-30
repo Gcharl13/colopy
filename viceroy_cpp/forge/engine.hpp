@@ -79,8 +79,13 @@ void      save_screen(const std::string& id, const JsonValue& screen);
 bool set_binding(const std::string& path, double value, EngineCtx& cx);
 
 // Resolve a binding path (e.g. "game.year", "power0.gold", "ref.regulars",
-// "colony0.population") against the live game. Returns a JSON number/string, or Null.
+// "colony0.population", or a data-table cell "@BUILDING[name:Fort].cost" /
+// "@CLASS[3].transport_cost") against the live game. Returns a JSON number/string, or Null.
 JsonValue resolve_binding(const std::string& path, const EngineCtx& cx);
+
+// Drop the cached data tables (call after the Tables tab saves so a newly added row /
+// edited cell is picked up by the next @SECTION[...] binding lookup without a restart).
+void invalidate_tables();
 
 // Run a node graph against the game. Executes exec flow from the entry (Trigger) node,
 // evaluating data pins on demand, applying Action nodes to the sim. Returns a report:

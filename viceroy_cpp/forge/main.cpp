@@ -960,6 +960,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             std::ofstream f(user, std::ios::binary);
             if (!f) return err(500, "cannot write " + user);
             f << forge::json_dump(doc);
+            forge::invalidate_tables();   // a newly added row resolves at once in @SECTION[...] bindings
             return J(200, jbool(true));
         }
 
@@ -967,6 +968,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             std::string file = qparam(query, "file"), canon, user;
             if (!table_paths(file, canon, user)) return err(400, "unknown table file: " + file);
             std::error_code ec; std::filesystem::remove(user, ec);
+            forge::invalidate_tables();
             return J(200, jbool(true));
         }
 

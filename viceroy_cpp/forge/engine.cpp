@@ -49,6 +49,66 @@ std::string game_text(const std::string& key) {
     return it == T.end() ? std::string() : it->second;
 }
 
+// ---- data-table cells as variables ----
+// A binding like "@BUILDING[name:Fort].cost" or "@CLASS[3].transport_cost" reads a real
+// cell from the game's data tables, so any row added in the Tables tab is immediately usable
+// by the logic. Overlay-aware: prefers the Tables-tab user edits over the canonical extraction
+// (same precedence as main.cpp's table_paths()). Loaded + cached once.
+JsonValue load_table_file(const char* file) {
+    std::string canon = std::string("data_extracted/tables/") + file + "_tables.json";
+    std::string user  = std::string("data_extracted/engine/tables_user/") + file + ".json";
+    try { return json_parse_file(fs::exists(user) ? user : canon); } catch (...) { return JsonValue{}; }
+}
+struct TableStore { std::map<std::string, JsonValue> docs; bool loaded = false; };
+TableStore& table_store() { static TableStore s; return s; }
+const JsonValue* find_table_section(const std::string& section) {
+    TableStore& st = table_store();
+    if (!st.loaded) { st.loaded = true;
+        st.docs["names"] = load_table_file("names"); st.docs["tribe"] = load_table_file("tribe"); }
+    for (const char* f : {"names", "tribe"}) {
+        auto it = st.docs.find(f); if (it == st.docs.end()) continue;
+        if (const JsonValue* s = it->second.find(section)) return s;
+    }
+    return nullptr;
+}
+// Resolve "@SECTION[rowsel].column": rowsel = integer index or "name:VALUE".
+JsonValue table_cell(const std::string& path) {
+    size_t lb = path.find('[');
+    if (lb == std::string::npos) return {};
+    size_t rb = path.find(']', lb);
+    if (rb == std::string::npos) return {};
+    size_t dot = path.find('.', rb);
+    if (dot == std::string::npos) return {};
+    std::string section = path.substr(0, lb);             // "@BUILDING"
+    std::string rowsel  = path.substr(lb + 1, rb - lb - 1); // "3" or "name:Fort"
+    std::string column  = path.substr(dot + 1);            // "cost"
+    const JsonValue* sec = find_table_section(section);
+    if (!sec) return {};
+    const JsonValue* rows = sec->find("rows");
+    if (!rows || rows->type != JsonValue::Array) return {};
+    const JsonValue* row = nullptr;
+    if (rowsel.rfind("name:", 0) == 0) {
+        std::string want = rowsel.substr(5);
+        for (const JsonValue& r : rows->arr) {
+            const JsonValue* nm = r.find("name");
+            if (nm && nm->str == want) { row = &r; break; }
+        }
+    } else {
+        int idx = std::atoi(rowsel.c_str());
+        if (idx >= 0 && idx < (int)rows->arr.size()) row = &rows->arr[idx];
+    }
+    if (!row) return {};
+    const JsonValue* cell = row->find(column);
+    if (!cell) return {};
+    if (cell->type == JsonValue::String) {              // cells are stored as strings
+        const std::string& s = cell->str;
+        if (!s.empty()) { char* end = nullptr; double d = std::strtod(s.c_str(), &end);
+            if (end && *end == '\0') return json_num(d); }  // numeric string -> number
+        return json_str(s);
+    }
+    return *cell;
+}
+
 // ---- node catalog helpers ----
 JsonValue pin(const char* name, const char* kind, const char* dir, const char* dtype = "") {
     JsonValue p; p.type = JsonValue::Object;
@@ -461,10 +521,16 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     return false;
 }
 
+// Drop the cached data tables so the next @SECTION[...] lookup re-reads them (called
+// when the Tables tab saves an edit, so a freshly added row resolves immediately).
+void invalidate_tables() { table_store().docs.clear(); table_store().loaded = false; }
+
 // ---- binding resolver ----
 JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     const GameState& g = cx.g; const World& w = cx.w;
     auto num = [](double v) { return json_num(v); };
+    // "@SECTION[row].column" -> a live data-table cell (any added row is usable at once).
+    if (!path.empty() && path[0] == '@') return table_cell(path);
     if (path == "game.year")    return num(g.year);
     if (path == "game.season")  return num(g.season);
     if (path == "game.turn")    return num((double)g.turn);
