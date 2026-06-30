@@ -116,19 +116,23 @@ const char* forge_index_html() {
 <main>
   <section id="rules" class="tab active">
     <div class="row">
-      <button class="act" onclick="loadFullRules()">Load full ruleset</button>
-      <button class="act" onclick="applyRules()">Apply &amp; inspect</button>
+      <button class="act" onclick="loadFullRules()">Reload values</button>
+      <button class="act" onclick="applyRules()">Apply raw overlay</button>
       <button class="act" onclick="saveActiveMod()">Save as active mod</button>
       <button class="act" onclick="resetActiveMod()">Reset to default</button>
       <button class="act" onclick="downloadOverlay()">Download overlay</button>
       <span id="rinv"></span> <span id="ractive" class="muted"></span>
     </div>
-    <p class="muted"><b>Load full ruleset</b> dumps every value (all units, terrain, balance
-      constants) into the box to view/edit. Or paste a sparse <code>rules.json</code> overlay
-      (leave empty for the default ruleset):</p>
-    <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea>
+    <p class="muted">Edit any value in the grid below &mdash; changes apply live and
+      <b>Save as active mod</b> makes them bite the Play game + events. Overridden cells are
+      highlighted; the raw overlay is mirrored in the box (paste a sparse <code>rules.json</code>
+      there too).</p>
+    <div id="rgrid"></div>
+    <details style="margin:8px 0"><summary class="muted">raw overlay JSON</summary>
+      <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea></details>
     <div id="rwarn"></div>
-    <div id="rcurves"></div>
+    <details style="margin-top:6px"><summary class="muted">balance curves &mdash; live preview of what your edits do</summary>
+      <div id="rcurves"></div></details>
   </section>
 
   <section id="map" class="tab">
@@ -331,20 +335,70 @@ async function applyRules() {
     h += '<tr><td></td><td>'+c.label+'</td><td>'+c.cur+'</td><td>'+dl+'</td></tr>';
   }
   $('#rcurves').innerHTML = h + '</table>';
+  if (RULES_FULL) rulesGrid();   // keep the editable grid in sync with the overlay
 }
 function downloadOverlay() {
   const blob = new Blob([JSON.stringify(lastOverlay, null, 2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rules.json'; a.click();
 }
+
+// ---- editable ruleset grid: shows every value (default ∪ your overlay), edits write a sparse overlay ----
+let RULES_FULL=null, RULES_SEC='cfg';
+function rulesOverlay(){ try{ return JSON.parse($('#overlay').value||'{}')||{}; }catch(e){ return null; } }
+async function rulesInitGrid(){
+  try{ RULES_FULL=await (await fetch('/api/rules/full')).json(); }catch(e){ return; }
+  rulesGrid(RULES_SEC);
+}
+function rulesGrid(section){
+  if(!RULES_FULL){ rulesInitGrid(); return; }
+  RULES_SEC=section||RULES_SEC;
+  const ov=rulesOverlay();
+  if(ov===null){ $('#rgrid').innerHTML='<span class="fail">overlay JSON is invalid &mdash; fix the raw box</span>'; return; }
+  const tabs=[['cfg','Config'],['units','Units'],['terrain','Terrain']];
+  let h='<div class="row" style="margin:4px 0">'+tabs.map(t=>'<button class="act'+(t[0]===RULES_SEC?'':' ')+'" style="'+(t[0]===RULES_SEC?'border-color:#e8b94b':'')+'" onclick="rulesGrid(\''+t[0]+'\')">'+t[1]+'</button>').join('')+'</div>';
+  const cell=(p,k,c,def,cur)=>{ const over=cur!==undefined&&cur!==def;
+    return '<td'+(over?' style="background:#3a3520"':'')+'><input class="rcell" data-p="'+p+'" data-k="'+esc(String(k))+'"'+(c?' data-c="'+c+'"':'')+' value="'+esc(cur!==undefined?cur:def)+'"></td>'; };
+  if(RULES_SEC==='cfg'){
+    h+='<table><tr><th>config scalar</th><th>value</th></tr>';
+    for(const k of Object.keys(RULES_FULL.cfg||{}).sort()){ const def=RULES_FULL.cfg[k];
+      const cur=(ov.cfg&&k in ov.cfg)?ov.cfg[k]:undefined;
+      const dv=Array.isArray(def)?def.join(','):def, cv=cur===undefined?undefined:(Array.isArray(cur)?cur.join(','):cur);
+      h+='<tr><td>'+esc(k)+'</td>'+cell('cfg',k,'',dv,cv)+'</tr>'; }
+    h+='</table>';
+  } else if(RULES_SEC==='units'){
+    const cols=['attack','defense','movement','cargo','move_class'];
+    h+='<table><tr><th>unit</th>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+    for(const k of Object.keys(RULES_FULL.units||{})){ const u=RULES_FULL.units[k]||{};
+      h+='<tr><td>'+esc(k)+'</td>'+cols.map(c=>{ const cur=(ov.units&&ov.units[k]&&c in ov.units[k])?ov.units[k][c]:undefined;
+        return cell('units',k,c,u[c]!=null?u[c]:0,cur); }).join('')+'</tr>'; }
+    h+='</table>';
+  } else {
+    const ids=Object.keys(RULES_FULL.terrain_defense||{}).sort((a,b)=>(+a)-(+b));
+    h+='<table><tr><th>terrain id</th><th>defense</th><th>move cost</th></tr>';
+    for(const id of ids){ const cd=(ov.terrain_defense&&id in ov.terrain_defense)?ov.terrain_defense[id]:undefined;
+      const cm=(ov.terrain_move&&id in ov.terrain_move)?ov.terrain_move[id]:undefined;
+      h+='<tr><td>'+id+'</td>'+cell('terrain_defense',id,'',RULES_FULL.terrain_defense[id],cd)
+        +cell('terrain_move',id,'',RULES_FULL.terrain_move[id],cm)+'</tr>'; }
+    h+='</table>';
+  }
+  $('#rgrid').innerHTML=h;
+  $('#rgrid').querySelectorAll('.rcell').forEach(el=>el.onchange=()=>rulesCellEdit(el));
+}
+function rulesParse(v){ v=String(v).trim(); if(v==='') return 0;
+  if(v.includes(',')) return v.split(',').map(x=>+x.trim()); return isNaN(+v)?v:+v; }
+function rulesCellEdit(el){
+  const ov=rulesOverlay(); if(ov===null) return;
+  const p=el.dataset.p, k=el.dataset.k, c=el.dataset.c, val=rulesParse(el.value);
+  if(p==='cfg'){ ov.cfg=ov.cfg||{}; ov.cfg[k]=val; }
+  else if(p==='units'){ ov.units=ov.units||{}; ov.units[k]=ov.units[k]||{}; ov.units[k][c]=val; }
+  else { ov[p]=ov[p]||{}; ov[p][k]=val; }
+  $('#overlay').value=JSON.stringify(ov,null,2);
+  applyRules();        // refresh invariants + curves + re-render grid (highlights overrides)
+}
+// "Show all values" -- (re)load the editable grid of every default value. The grid always
+// shows default ∪ overlay, so this just (re)fetches defaults; the overlay box stays sparse.
 async function loadFullRules() {
-  $('#rinv').innerHTML = '<span class="muted">loading...</span>';
-  let res;
-  try { res = await fetch('/api/rules/full'); }
-  catch(e) { $('#rinv').innerHTML = '<span class="fail">request failed</span>'; return; }
-  const d = await res.json();
-  if (d.error) { $('#rinv').innerHTML = '<span class="fail">'+d.error+'</span>'; return; }
-  $('#overlay').value = JSON.stringify(d, null, 2);
-  applyRules();
+  RULES_FULL = null; await rulesInitGrid(); applyRules();
 }
 
 // ---- Map ----
@@ -1020,6 +1074,7 @@ function drawHud(){
 // ---- init ----
 applyRules();
 refreshActive();
+rulesInitGrid();
 loadFormulas();
 loadAssets();
 newGame();
