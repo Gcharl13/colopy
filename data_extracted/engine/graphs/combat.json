@@ -3,6 +3,15 @@
   "name": "Combat Resolution",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 30,
+      "y": -130,
+      "params": {
+        "text": "Land combat (spec/systems/combat.md func_05CA7E land decider + func_05B2C2 consequence applier). odds = ATK/(ATK+DEF); act-mode roll = random_int(1, ATK+DEF) <= ATK => attacker wins. DEF folds in the terrain/fort defense bonus ($TERRAIN Defensive: forests 2 / Hills 4 / Mountains 6, BYTE_VERIFIED). Loser walks down the demotion ladder (Soldiers->Colonist, Dragoons->Soldiers, ...) or is destroyed if it has no demotion. Demo resolves unit0 (attacker) attacking unit1 (defender); CombatOdds shows the win %."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTestFire",
       "x": 30,
@@ -10,30 +19,10 @@
       "params": {}
     },
     {
-      "id": "s1",
-      "type": "SpawnUnit",
-      "x": 30,
-      "y": 140,
-      "params": {
-        "type": "Soldiers",
-        "power": "0"
-      }
-    },
-    {
-      "id": "s2",
-      "type": "SpawnUnit",
-      "x": 30,
-      "y": 230,
-      "params": {
-        "type": "Braves",
-        "power": "3"
-      }
-    },
-    {
       "id": "atk",
       "type": "GetState",
-      "x": 260,
-      "y": 140,
+      "x": 30,
+      "y": 150,
       "params": {
         "path": "unit0.attack"
       }
@@ -41,7 +30,7 @@
     {
       "id": "def0",
       "type": "GetState",
-      "x": 260,
+      "x": 30,
       "y": 230,
       "params": {
         "path": "unit1.defense"
@@ -50,8 +39,8 @@
     {
       "id": "tdef",
       "type": "GetState",
-      "x": 260,
-      "y": 320,
+      "x": 30,
+      "y": 310,
       "params": {
         "path": "unit1.terraindef"
       }
@@ -59,8 +48,8 @@
     {
       "id": "def",
       "type": "Math",
-      "x": 460,
-      "y": 275,
+      "x": 220,
+      "y": 270,
       "params": {
         "op": "+"
       }
@@ -68,32 +57,39 @@
     {
       "id": "total",
       "type": "Math",
-      "x": 660,
+      "x": 420,
       "y": 200,
       "params": {
         "op": "+"
       }
     },
     {
-      "id": "roll",
-      "type": "Roll",
-      "x": 460,
+      "id": "odds",
+      "type": "CombatOdds",
+      "x": 420,
       "y": 40,
       "params": {}
     },
     {
       "id": "c1",
       "type": "Constant",
-      "x": 260,
-      "y": 40,
+      "x": 420,
+      "y": 300,
       "params": {
         "value": 1
       }
     },
     {
+      "id": "roll",
+      "type": "Roll",
+      "x": 600,
+      "y": 120,
+      "params": {}
+    },
+    {
       "id": "cmp",
       "type": "Compare",
-      "x": 860,
+      "x": 780,
       "y": 120,
       "params": {
         "op": "<="
@@ -102,14 +98,14 @@
     {
       "id": "br",
       "type": "Branch",
-      "x": 1060,
+      "x": 960,
       "y": 40,
       "params": {}
     },
     {
       "id": "loseD",
       "type": "DemoteUnit",
-      "x": 1260,
+      "x": 1160,
       "y": 40,
       "params": {
         "unit": 1
@@ -118,8 +114,8 @@
     {
       "id": "loseA",
       "type": "DemoteUnit",
-      "x": 1260,
-      "y": 200,
+      "x": 1160,
+      "y": 220,
       "params": {
         "unit": 0
       }
@@ -127,59 +123,29 @@
     {
       "id": "popW",
       "type": "ShowPopup",
-      "x": 1460,
+      "x": 1380,
       "y": 40,
       "params": {
         "title": "Victory!",
-        "body": "The attacker carries the field! (roll <= {unit0.attack})",
         "woodcut": "WDCUT10",
-        "choices": "Huzzah!"
+        "choices": "Huzzah!",
+        "body": "The attacker carries the field! (a {%NUMBER0%%} win chance vs {unit1.defense}+{unit1.terraindef} terrain defense)"
       }
     },
     {
       "id": "popL",
       "type": "ShowPopup",
-      "x": 1460,
-      "y": 200,
+      "x": 1380,
+      "y": 220,
       "params": {
         "title": "Defeat",
-        "body": "The attack is thrown back.",
         "woodcut": "WDCUT10",
-        "choices": "Regroup"
+        "choices": "Regroup",
+        "body": "The attack is thrown back -- the attacker had only a {%NUMBER0%%} chance."
       }
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "s1",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "s1",
-        "pin": "out"
-      },
-      "to": {
-        "node": "s2",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "s2",
-        "pin": "out"
-      },
-      "to": {
-        "node": "br",
-        "pin": "in"
-      }
-    },
     {
       "from": {
         "node": "def0",
@@ -218,6 +184,26 @@
       "to": {
         "node": "total",
         "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "atk",
+        "pin": "value"
+      },
+      "to": {
+        "node": "odds",
+        "pin": "atk"
+      }
+    },
+    {
+      "from": {
+        "node": "def",
+        "pin": "value"
+      },
+      "to": {
+        "node": "odds",
+        "pin": "def"
       }
     },
     {
@@ -262,6 +248,16 @@
     },
     {
       "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
         "node": "cmp",
         "pin": "value"
       },
@@ -282,16 +278,6 @@
     },
     {
       "from": {
-        "node": "loseD",
-        "pin": "out"
-      },
-      "to": {
-        "node": "popW",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
         "node": "br",
         "pin": "false"
       },
@@ -302,12 +288,42 @@
     },
     {
       "from": {
+        "node": "loseD",
+        "pin": "out"
+      },
+      "to": {
+        "node": "popW",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "odds",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popW",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
         "node": "loseA",
         "pin": "out"
       },
       "to": {
         "node": "popL",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "odds",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popL",
+        "pin": "num0"
       }
     }
   ]
