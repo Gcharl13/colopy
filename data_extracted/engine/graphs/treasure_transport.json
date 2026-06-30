@@ -1,14 +1,14 @@
 {
   "id": "treasure_transport",
-  "name": "Treasure Transport (King's galleon cut)",
+  "name": "Treasure Transport",
   "nodes": [
     {
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -80,
+      "y": -90,
       "params": {
-        "text": "Cibola/Burial treasure needs a Galleon. Pre-independence the King ships it for a cut: cut%% = Cortes(FF#10) ? tax : min(90, max(5*diff+50, 2*tax)). kingCut = treasure*cut%%/100; you keep the rest. Refuse -> sell to foreign agents (@CASHTREASURE)."
+        "text": "Treasure transport to Europe -- the King's cut (spec/systems/natives.md func_05C878). Cut% = Hernan Cortes (ff.10) ? tax : min(max(5*diff+50, 2*tax), 90). One Formula computes what you keep = treasure - treasure*cut/100; the rest is the Crown's. (treasure proxied by the treasury here.)"
       }
     },
     {
@@ -19,170 +19,19 @@
       "params": {}
     },
     {
-      "id": "treas",
-      "type": "GetState",
+      "id": "keep",
+      "type": "Formula",
       "x": 20,
       "y": 150,
       "params": {
-        "path": "power0.gold"
-      }
-    },
-    {
-      "id": "diff",
-      "type": "GetState",
-      "x": 20,
-      "y": 230,
-      "params": {
-        "path": "game.difficulty"
-      }
-    },
-    {
-      "id": "tax",
-      "type": "GetState",
-      "x": 20,
-      "y": 310,
-      "params": {
-        "path": "power0.tax"
-      }
-    },
-    {
-      "id": "cortes",
-      "type": "HasFoundingFather",
-      "x": 20,
-      "y": 390,
-      "params": {
-        "father": 10
-      }
-    },
-    {
-      "id": "c5",
-      "type": "Constant",
-      "x": 260,
-      "y": 210,
-      "params": {
-        "value": 5
-      }
-    },
-    {
-      "id": "m1",
-      "type": "Math",
-      "x": 400,
-      "y": 210,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "c50",
-      "type": "Constant",
-      "x": 260,
-      "y": 280,
-      "params": {
-        "value": 50
-      }
-    },
-    {
-      "id": "m2",
-      "type": "Math",
-      "x": 560,
-      "y": 230,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "c2",
-      "type": "Constant",
-      "x": 260,
-      "y": 360,
-      "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "m3",
-      "type": "Math",
-      "x": 400,
-      "y": 360,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "base",
-      "type": "Math",
-      "x": 720,
-      "y": 290,
-      "params": {
-        "op": "max"
-      }
-    },
-    {
-      "id": "c90",
-      "type": "Constant",
-      "x": 260,
-      "y": 440,
-      "params": {
-        "value": 90
-      }
-    },
-    {
-      "id": "capped",
-      "type": "Math",
-      "x": 880,
-      "y": 330,
-      "params": {
-        "op": "min"
-      }
-    },
-    {
-      "id": "cut",
-      "type": "Select",
-      "x": 1040,
-      "y": 360,
-      "params": {}
-    },
-    {
-      "id": "kc0",
-      "type": "Math",
-      "x": 1200,
-      "y": 300,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "c100",
-      "type": "Constant",
-      "x": 1040,
-      "y": 470,
-      "params": {
-        "value": 100
-      }
-    },
-    {
-      "id": "kingCut",
-      "type": "Math",
-      "x": 1360,
-      "y": 330,
-      "params": {
-        "op": "/"
-      }
-    },
-    {
-      "id": "keep",
-      "type": "Math",
-      "x": 1360,
-      "y": 200,
-      "params": {
-        "op": "-"
+        "expr": "power0.gold - power0.gold * (ff.10 ? power0.tax : min(max(5*game.difficulty+50, 2*power0.tax), 90)) / 100"
       }
     },
     {
       "id": "grant",
       "type": "GrantGold",
-      "x": 1540,
-      "y": 150,
+      "x": 220,
+      "y": 40,
       "params": {
         "power": "0"
       }
@@ -190,13 +39,12 @@
     {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 1720,
-      "y": 150,
+      "x": 420,
+      "y": 40,
       "params": {
-        "title": "The King's Galleon",
+        "title": "The Galleon Arrives",
         "textKey": "@KINGGALLEON2",
-        "speaker": "King",
-        "choices": "Pay the Crown's share"
+        "choices": "So be it."
       }
     }
   ],
@@ -209,196 +57,6 @@
       "to": {
         "node": "grant",
         "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "diff",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m1",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c5",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m1",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "m1",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m2",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c50",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m2",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "tax",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m3",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "m3",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "m2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "base",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "m3",
-        "pin": "value"
-      },
-      "to": {
-        "node": "base",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "base",
-        "pin": "value"
-      },
-      "to": {
-        "node": "capped",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c90",
-        "pin": "value"
-      },
-      "to": {
-        "node": "capped",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cortes",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cut",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "tax",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cut",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "capped",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cut",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "treas",
-        "pin": "value"
-      },
-      "to": {
-        "node": "kc0",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "cut",
-        "pin": "value"
-      },
-      "to": {
-        "node": "kc0",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "kc0",
-        "pin": "value"
-      },
-      "to": {
-        "node": "kingCut",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c100",
-        "pin": "value"
-      },
-      "to": {
-        "node": "kingCut",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "treas",
-        "pin": "value"
-      },
-      "to": {
-        "node": "keep",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "kingCut",
-        "pin": "value"
-      },
-      "to": {
-        "node": "keep",
-        "pin": "b"
       }
     },
     {

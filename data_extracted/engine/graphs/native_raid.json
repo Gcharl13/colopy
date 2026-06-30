@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -70,
+      "y": -90,
       "params": {
-        "text": "Trigger: settlement alarm >= 128 hostile (modeled as natives.tension >= 75 = sim TENSION_HOSTILE). Outcome = Roll(0,4) -> Switch: 0 nothing, 1 stores, 2 wreak, 3 gold (%NUMBER0 plundered), 4 burn."
+        "text": "Native raid (spec/systems/natives.md), rebuilt. Gate: alarm >= 128 (tension>=75). Outcome = Roll(0,4) -> Switch: 0/default nothing, 1 stores, 2 wreak, 3 gold, 4 burn. Plundered gold = 2d6*25 (one Formula), wired to @RAIDGOLD %NUMBER0 and granted (negated)."
       }
     },
     {
@@ -19,52 +19,25 @@
       "params": {}
     },
     {
-      "id": "tens",
-      "type": "GetState",
+      "id": "gate",
+      "type": "Formula",
       "x": 20,
       "y": 150,
       "params": {
-        "path": "natives.tension"
-      }
-    },
-    {
-      "id": "c75",
-      "type": "Constant",
-      "x": 20,
-      "y": 230,
-      "params": {
-        "value": 75
-      }
-    },
-    {
-      "id": "hostile",
-      "type": "Compare",
-      "x": 200,
-      "y": 150,
-      "params": {
-        "op": ">="
+        "expr": "natives.tension >= 75"
       }
     },
     {
       "id": "brG",
       "type": "Branch",
-      "x": 380,
+      "x": 220,
       "y": 40,
       "params": {}
     },
     {
-      "id": "calm",
-      "type": "Log",
-      "x": 560,
-      "y": 200,
-      "params": {
-        "message": "The natives are not yet hostile (alarm < 128); no raid."
-      }
-    },
-    {
       "id": "roll",
       "type": "Roll",
-      "x": 560,
+      "x": 420,
       "y": 40,
       "params": {
         "min": 0,
@@ -74,60 +47,32 @@
     {
       "id": "sw",
       "type": "Switch",
-      "x": 740,
+      "x": 600,
       "y": 40,
       "params": {}
     },
     {
-      "id": "dG",
-      "type": "Dice",
-      "x": 560,
-      "y": 300,
-      "params": {
-        "count": 2,
-        "sides": 6
-      }
-    },
-    {
-      "id": "c25",
-      "type": "Constant",
-      "x": 560,
-      "y": 370,
-      "params": {
-        "value": 25
-      }
-    },
-    {
       "id": "amt",
-      "type": "Math",
-      "x": 720,
-      "y": 320,
+      "type": "Formula",
+      "x": 420,
+      "y": 150,
       "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "cm1",
-      "type": "Constant",
-      "x": 560,
-      "y": 440,
-      "params": {
-        "value": -1
+        "expr": "(roll(1,6)+roll(1,6))*25"
       }
     },
     {
       "id": "neg",
-      "type": "Math",
-      "x": 880,
-      "y": 360,
+      "type": "Formula",
+      "x": 420,
+      "y": 220,
       "params": {
-        "op": "*"
+        "expr": "-a"
       }
     },
     {
       "id": "p0",
       "type": "ShowPopup",
-      "x": 980,
+      "x": 820,
       "y": 20,
       "params": {
         "title": "Raid Repelled",
@@ -138,7 +83,7 @@
     {
       "id": "p1",
       "type": "ShowPopup",
-      "x": 980,
+      "x": 820,
       "y": 90,
       "params": {
         "title": "Stores Raided",
@@ -150,7 +95,7 @@
     {
       "id": "p2",
       "type": "ShowPopup",
-      "x": 980,
+      "x": 820,
       "y": 160,
       "params": {
         "title": "Havoc",
@@ -162,8 +107,8 @@
     {
       "id": "g3",
       "type": "GrantGold",
-      "x": 980,
-      "y": 300,
+      "x": 820,
+      "y": 260,
       "params": {
         "power": "0"
       }
@@ -171,8 +116,8 @@
     {
       "id": "p3",
       "type": "ShowPopup",
-      "x": 1180,
-      "y": 300,
+      "x": 1020,
+      "y": 260,
       "params": {
         "title": "Strongboxes Seized",
         "textKey": "@RAIDGOLD",
@@ -183,8 +128,8 @@
     {
       "id": "p4",
       "type": "ShowPopup",
-      "x": 980,
-      "y": 450,
+      "x": 820,
+      "y": 330,
       "params": {
         "title": "Buildings Burn",
         "textKey": "@RAIDBURN",
@@ -206,42 +151,12 @@
     },
     {
       "from": {
-        "node": "tens",
-        "pin": "value"
-      },
-      "to": {
-        "node": "hostile",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c75",
-        "pin": "value"
-      },
-      "to": {
-        "node": "hostile",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "hostile",
+        "node": "gate",
         "pin": "value"
       },
       "to": {
         "node": "brG",
         "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "brG",
-        "pin": "false"
-      },
-      "to": {
-        "node": "calm",
-        "pin": "in"
       }
     },
     {
@@ -266,62 +181,12 @@
     },
     {
       "from": {
-        "node": "dG",
-        "pin": "value"
-      },
-      "to": {
-        "node": "amt",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c25",
-        "pin": "value"
-      },
-      "to": {
-        "node": "amt",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
         "node": "amt",
         "pin": "value"
       },
       "to": {
         "node": "neg",
         "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "cm1",
-        "pin": "value"
-      },
-      "to": {
-        "node": "neg",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sw",
-        "pin": "1"
-      },
-      "to": {
-        "node": "p1",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "sw",
-        "pin": "2"
-      },
-      "to": {
-        "node": "p2",
-        "pin": "in"
       }
     },
     {
@@ -367,20 +232,40 @@
     {
       "from": {
         "node": "sw",
-        "pin": "4"
+        "pin": "default"
       },
       "to": {
-        "node": "p4",
+        "node": "p0",
         "pin": "in"
       }
     },
     {
       "from": {
         "node": "sw",
-        "pin": "default"
+        "pin": "1"
       },
       "to": {
-        "node": "p0",
+        "node": "p1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "4"
+      },
+      "to": {
+        "node": "p4",
         "pin": "in"
       }
     }
