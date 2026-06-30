@@ -1,76 +1,46 @@
 {
   "id": "exploration",
-  "name": "Exploration & Fog",
+  "name": "Exploration / Scouting",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -80,
+      "params": {
+        "text": "Scouting (spec/systems/exploration.md): entering an unexplored tile reveals it; ~1-in-5 (roll(1,10)>=9) a lost-city rumor fires the lost_city event. Otherwise nothing of note (silent)."
+      }
+    },
     {
       "id": "trig",
       "type": "OnUnitEntersTile",
-      "x": 30,
+      "x": 20,
       "y": 40,
-      "params": {
-        "terrain": ""
-      }
+      "params": {}
     },
     {
-      "id": "reveal",
-      "type": "Log",
-      "x": 230,
-      "y": 40,
+      "id": "rumor_gate",
+      "type": "Formula",
+      "x": 20,
+      "y": 150,
       "params": {
-        "message": "The scout reveals the surrounding tiles (line of sight 1-2)."
-      }
-    },
-    {
-      "id": "roll",
-      "type": "Roll",
-      "x": 230,
-      "y": 170,
-      "params": {
-        "min": 1,
-        "max": 10
-      }
-    },
-    {
-      "id": "c9",
-      "type": "Constant",
-      "x": 230,
-      "y": 290,
-      "params": {
-        "value": 9
-      }
-    },
-    {
-      "id": "cmp",
-      "type": "Compare",
-      "x": 430,
-      "y": 200,
-      "params": {
-        "op": ">="
+        "expr": "roll(1,10) >= 9"
       }
     },
     {
       "id": "br",
       "type": "Branch",
-      "x": 620,
-      "y": 60,
+      "x": 220,
+      "y": 40,
       "params": {}
     },
     {
       "id": "rumor",
       "type": "FireEvent",
-      "x": 820,
+      "x": 420,
       "y": 40,
       "params": {
         "graph": "lost_city"
-      }
-    },
-    {
-      "id": "none",
-      "type": "Log",
-      "x": 820,
-      "y": 200,
-      "params": {
-        "message": "Nothing of note on the horizon."
       }
     }
   ],
@@ -81,43 +51,13 @@
         "pin": "out"
       },
       "to": {
-        "node": "reveal",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "reveal",
-        "pin": "out"
-      },
-      "to": {
         "node": "br",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c9",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmp",
+        "node": "rumor_gate",
         "pin": "value"
       },
       "to": {
@@ -132,16 +72,6 @@
       },
       "to": {
         "node": "rumor",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "br",
-        "pin": "false"
-      },
-      "to": {
-        "node": "none",
         "pin": "in"
       }
     }

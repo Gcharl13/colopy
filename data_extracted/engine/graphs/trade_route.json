@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -110,
+      "y": -90,
       "params": {
-        "text": "Trade route automation (spec/systems/trade_routes.md func_041080/032914). A ship/wagon ferries cargo to Europe; on sale gross = qty * price, tax = gross*tax%/100 goes to the King's REF fund (PowerRecord+0x22), net = gross - tax credited to gold. Modeled: deliver qty (Constant) of a good at price.<good> with the live tax rate. FLAGGED: qty here is a Constant=100 stand-in for the route's loaded cargo."
+        "text": "Trade route to Europe (spec/systems/trade_routes.md): gross = qty*price, the Crown takes tax%, the net is credited. net = 100*price.10 - 100*price.10*tax/100 in one Formula. %NUMBER0=net, %NUMBER1=tax taken."
       }
     },
     {
@@ -19,90 +19,27 @@
       "params": {}
     },
     {
-      "id": "qty",
-      "type": "Constant",
-      "x": 20,
-      "y": 160,
-      "params": {
-        "value": 100
-      }
-    },
-    {
-      "id": "price",
-      "type": "GetState",
-      "x": 20,
-      "y": 240,
-      "params": {
-        "path": "price.10"
-      }
-    },
-    {
-      "id": "gross",
-      "type": "Math",
-      "x": 220,
-      "y": 200,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "tax",
-      "type": "GetState",
-      "x": 20,
-      "y": 320,
-      "params": {
-        "path": "power0.tax"
-      }
-    },
-    {
-      "id": "c100",
-      "type": "Constant",
-      "x": 20,
-      "y": 380,
-      "params": {
-        "value": 100
-      }
-    },
-    {
-      "id": "taxg",
-      "type": "Math",
-      "x": 220,
-      "y": 300,
-      "params": {
-        "op": "*"
-      }
-    },
-    {
-      "id": "taxc",
-      "type": "Math",
-      "x": 380,
-      "y": 300,
-      "params": {
-        "op": "/"
-      }
-    },
-    {
       "id": "net",
-      "type": "Math",
-      "x": 540,
+      "type": "Formula",
+      "x": 20,
+      "y": 150,
+      "params": {
+        "expr": "100*price.10 - 100*price.10*power0.tax/100"
+      }
+    },
+    {
+      "id": "taxtaken",
+      "type": "Formula",
+      "x": 20,
       "y": 220,
       "params": {
-        "op": "-"
-      }
-    },
-    {
-      "id": "haul",
-      "type": "Log",
-      "x": 220,
-      "y": 40,
-      "params": {
-        "message": "The trade route ferries its cargo from the colony to the European market."
+        "expr": "100*price.10*power0.tax/100"
       }
     },
     {
       "id": "credit",
       "type": "GrantGold",
-      "x": 420,
+      "x": 220,
       "y": 40,
       "params": {
         "power": "0"
@@ -111,7 +48,7 @@
     {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 620,
+      "x": 420,
       "y": 40,
       "params": {
         "title": "Goods Sold in Europe",
@@ -123,97 +60,7 @@
   "edges": [
     {
       "from": {
-        "node": "qty",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gross",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "price",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gross",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "gross",
-        "pin": "value"
-      },
-      "to": {
-        "node": "taxg",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "tax",
-        "pin": "value"
-      },
-      "to": {
-        "node": "taxg",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "taxg",
-        "pin": "value"
-      },
-      "to": {
-        "node": "taxc",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c100",
-        "pin": "value"
-      },
-      "to": {
-        "node": "taxc",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "gross",
-        "pin": "value"
-      },
-      "to": {
-        "node": "net",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "taxc",
-        "pin": "value"
-      },
-      "to": {
-        "node": "net",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
         "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "haul",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "haul",
         "pin": "out"
       },
       "to": {
@@ -253,7 +100,7 @@
     },
     {
       "from": {
-        "node": "taxc",
+        "node": "taxtaken",
         "pin": "value"
       },
       "to": {

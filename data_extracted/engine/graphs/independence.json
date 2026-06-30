@@ -8,7 +8,7 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Declare Independence (spec/systems/revolution.md func_03E984). Hard floor: national SoL >= 50% (cmp [0x53D0],0x32; jge @0x3E99E) -- below 50 the Crown rejects with @TOOTORY. At >=50 the @DECLARE confirm fires; declaring mobilizes the Royal Expeditionary Force. Earlier declaration scores higher."
+        "text": "Declare Independence (spec/systems/revolution.md func_03E984). Hard floor: national SoL >= 50% -- below that the Crown rejects (@TOOTORY); at/above, the @DECLARE confirm fires and declaring mobilizes the REF."
       }
     },
     {
@@ -19,44 +19,26 @@
       "params": {}
     },
     {
-      "id": "sol",
-      "type": "GetState",
+      "id": "gate",
+      "type": "Formula",
       "x": 20,
-      "y": 160,
+      "y": 150,
       "params": {
-        "path": "revolution.sol"
-      }
-    },
-    {
-      "id": "c50",
-      "type": "Constant",
-      "x": 20,
-      "y": 240,
-      "params": {
-        "value": 50
-      }
-    },
-    {
-      "id": "cmp",
-      "type": "Compare",
-      "x": 200,
-      "y": 180,
-      "params": {
-        "op": ">="
+        "expr": "revolution.sol >= 50"
       }
     },
     {
       "id": "br",
       "type": "Branch",
-      "x": 380,
+      "x": 220,
       "y": 40,
       "params": {}
     },
     {
       "id": "tootory",
       "type": "ShowPopup",
-      "x": 380,
-      "y": 260,
+      "x": 220,
+      "y": 200,
       "params": {
         "title": "Too Few Patriots",
         "textKey": "@TOOTORY",
@@ -66,7 +48,7 @@
     {
       "id": "confirm",
       "type": "ShowPopup",
-      "x": 560,
+      "x": 420,
       "y": 40,
       "params": {
         "title": "Declare Independence?",
@@ -77,59 +59,30 @@
     {
       "id": "decl",
       "type": "DeclareIndependence",
-      "x": 760,
+      "x": 620,
       "y": 40,
       "params": {}
     },
     {
       "id": "mob",
       "type": "MobilizeREF",
-      "x": 940,
+      "x": 800,
       "y": 40,
       "params": {}
     },
     {
       "id": "ann",
       "type": "ShowPopup",
-      "x": 1120,
+      "x": 980,
       "y": 40,
       "params": {
         "title": "The War of Independence",
         "textKey": "@INDEPENDENCE",
         "choices": "Liberty or death!"
       }
-    },
-    {
-      "id": "wait",
-      "type": "Log",
-      "x": 760,
-      "y": 200,
-      "params": {
-        "message": "Independence is postponed; the Sons of Liberty keep gathering."
-      }
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "sol",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c50",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
     {
       "from": {
         "node": "trig",
@@ -142,7 +95,7 @@
     },
     {
       "from": {
-        "node": "cmp",
+        "node": "gate",
         "pin": "value"
       },
       "to": {
@@ -197,16 +150,6 @@
       },
       "to": {
         "node": "ann",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "confirm",
-        "pin": "Not yet"
-      },
-      "to": {
-        "node": "wait",
         "pin": "in"
       }
     }

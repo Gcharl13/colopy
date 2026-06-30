@@ -547,6 +547,7 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
         int t = (int)value; cx.x.national_sol = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }
     if (path == "congress.bells") { cx.x.congress_bells = (int)value; return true; }
+    if (path == "revolution.declared") { cx.x.woi_declared = value != 0; return true; }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {

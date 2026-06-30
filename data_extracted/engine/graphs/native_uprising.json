@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -110,
+      "y": -90,
       "params": {
-        "text": "Native uprising (spec/systems/natives.md). A tribe rises to open war only when its alarm toward the player reaches the war threshold (alarm >= 128, modeled as natives.tension >= 80). On uprising the alarm spikes further, the tribe is set at war, and braves assault the colonies (one of @RAIDBURN/@RAIDSCALP/@RAIDWREAK)."
+        "text": "Native uprising (spec/systems/natives.md). A tribe rises to open war when its alarm reaches the war threshold (alarm>=128, modeled tension>=80): spike the alarm, set war, braves assault (one of @RAIDBURN/SCALP/WREAK)."
       }
     },
     {
@@ -19,52 +19,25 @@
       "params": {}
     },
     {
-      "id": "tens",
-      "type": "GetState",
+      "id": "gate",
+      "type": "Formula",
       "x": 20,
       "y": 150,
       "params": {
-        "path": "natives.tension"
-      }
-    },
-    {
-      "id": "c80",
-      "type": "Constant",
-      "x": 20,
-      "y": 230,
-      "params": {
-        "value": 80
-      }
-    },
-    {
-      "id": "atwar",
-      "type": "Compare",
-      "x": 200,
-      "y": 180,
-      "params": {
-        "op": ">="
+        "expr": "natives.tension >= 80"
       }
     },
     {
       "id": "br",
       "type": "Branch",
-      "x": 380,
+      "x": 220,
       "y": 40,
       "params": {}
     },
     {
-      "id": "calm",
-      "type": "Log",
-      "x": 380,
-      "y": 260,
-      "params": {
-        "message": "The tribes are uneasy but their alarm is below the war threshold (alarm < 128); no uprising."
-      }
-    },
-    {
       "id": "spike",
       "type": "ChangeNativeTension",
-      "x": 560,
+      "x": 420,
       "y": 40,
       "params": {
         "amount": 20
@@ -73,7 +46,7 @@
     {
       "id": "war",
       "type": "DeclareWar",
-      "x": 740,
+      "x": 600,
       "y": 40,
       "params": {
         "a": "0",
@@ -83,7 +56,7 @@
     {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 920,
+      "x": 780,
       "y": 40,
       "params": {
         "title": "Native Uprising!",
@@ -96,26 +69,6 @@
   "edges": [
     {
       "from": {
-        "node": "tens",
-        "pin": "value"
-      },
-      "to": {
-        "node": "atwar",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c80",
-        "pin": "value"
-      },
-      "to": {
-        "node": "atwar",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
         "node": "trig",
         "pin": "out"
       },
@@ -126,22 +79,12 @@
     },
     {
       "from": {
-        "node": "atwar",
+        "node": "gate",
         "pin": "value"
       },
       "to": {
         "node": "br",
         "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "br",
-        "pin": "false"
-      },
-      "to": {
-        "node": "calm",
-        "pin": "in"
       }
     },
     {

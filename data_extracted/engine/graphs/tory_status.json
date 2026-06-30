@@ -1,107 +1,70 @@
 {
   "id": "tory_status",
-  "name": "Sons of Liberty Status",
+  "name": "Tory / Rebel Status",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -80,
+      "params": {
+        "text": "Tory/rebel status (spec/systems/revolution.md). bucket = (sol>=50)+(sol>=100): 2 unanimous, 1 majority, else Tory majority. One Formula + Switch over the real @REBEL*/@TORYMAJORITY messages."
+      }
+    },
     {
       "id": "trig",
       "type": "OnSoLThreshold",
-      "x": 30,
+      "x": 20,
       "y": 40,
+      "params": {}
+    },
+    {
+      "id": "bucket",
+      "type": "Formula",
+      "x": 20,
+      "y": 150,
       "params": {
-        "percent": 50
+        "expr": "(revolution.sol>=50)+(revolution.sol>=100)"
       }
     },
     {
-      "id": "get",
-      "type": "GetState",
-      "x": 30,
-      "y": 180,
-      "params": {
-        "path": "revolution.sol"
-      }
-    },
-    {
-      "id": "c100",
-      "type": "Constant",
-      "x": 30,
-      "y": 260,
-      "params": {
-        "value": 100
-      }
-    },
-    {
-      "id": "c50",
-      "type": "Constant",
-      "x": 30,
-      "y": 320,
-      "params": {
-        "value": 50
-      }
-    },
-    {
-      "id": "cmpU",
-      "type": "Compare",
-      "x": 230,
-      "y": 120,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "brU",
-      "type": "Branch",
-      "x": 430,
-      "y": 60,
+      "id": "sw",
+      "type": "Switch",
+      "x": 220,
+      "y": 40,
       "params": {}
     },
     {
       "id": "popU",
       "type": "ShowPopup",
-      "x": 630,
-      "y": 40,
+      "x": 420,
+      "y": 20,
       "params": {
-        "title": "Sons of Liberty",
+        "title": "Rebels Unanimous",
         "textKey": "@REBELUNANIMOUS",
-        "choices": "Huzzah!"
+        "choices": "Liberty!"
       }
-    },
-    {
-      "id": "cmpM",
-      "type": "Compare",
-      "x": 230,
-      "y": 260,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "brM",
-      "type": "Branch",
-      "x": 430,
-      "y": 200,
-      "params": {}
     },
     {
       "id": "popM",
       "type": "ShowPopup",
-      "x": 630,
-      "y": 180,
+      "x": 420,
+      "y": 90,
       "params": {
-        "title": "Sons of Liberty",
+        "title": "Rebel Majority",
         "textKey": "@REBELMAJORITY",
-        "choices": "Liberty!"
+        "choices": "Onward."
       }
     },
     {
       "id": "popT",
       "type": "ShowPopup",
-      "x": 630,
-      "y": 320,
+      "x": 420,
+      "y": 160,
       "params": {
-        "title": "Tory Sentiment",
+        "title": "Tory Majority",
         "textKey": "@TORYMAJORITY",
-        "speaker": "King",
-        "choices": "We must do better"
+        "choices": "Hmph."
       }
     }
   ],
@@ -112,44 +75,24 @@
         "pin": "out"
       },
       "to": {
-        "node": "brU",
+        "node": "sw",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "get",
+        "node": "bucket",
         "pin": "value"
       },
       "to": {
-        "node": "cmpU",
-        "pin": "a"
+        "node": "sw",
+        "pin": "value"
       }
     },
     {
       "from": {
-        "node": "c100",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmpU",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmpU",
-        "pin": "value"
-      },
-      "to": {
-        "node": "brU",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "brU",
-        "pin": "true"
+        "node": "sw",
+        "pin": "2"
       },
       "to": {
         "node": "popU",
@@ -158,48 +101,8 @@
     },
     {
       "from": {
-        "node": "brU",
-        "pin": "false"
-      },
-      "to": {
-        "node": "brM",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "get",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmpM",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c50",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmpM",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmpM",
-        "pin": "value"
-      },
-      "to": {
-        "node": "brM",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "brM",
-        "pin": "true"
+        "node": "sw",
+        "pin": "1"
       },
       "to": {
         "node": "popM",
@@ -208,8 +111,8 @@
     },
     {
       "from": {
-        "node": "brM",
-        "pin": "false"
+        "node": "sw",
+        "pin": "default"
       },
       "to": {
         "node": "popT",

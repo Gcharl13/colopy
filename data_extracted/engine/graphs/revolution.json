@@ -1,65 +1,60 @@
 {
   "id": "revolution",
-  "name": "Revolution & War of Independence",
+  "name": "Revolution",
   "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -80,
+      "params": {
+        "text": "Revolution trigger (spec/systems/revolution.md): when the national SoL allows it (can_declare_independence, >=50%), declare independence and mobilize the King's Expeditionary Force; below the floor it is silent."
+      }
+    },
     {
       "id": "trig",
       "type": "OnSoLThreshold",
-      "x": 30,
+      "x": 20,
       "y": 40,
-      "params": {
-        "percent": 50
-      }
+      "params": {}
     },
     {
       "id": "can",
       "type": "CanDeclareIndependence",
-      "x": 30,
-      "y": 200,
+      "x": 20,
+      "y": 150,
       "params": {}
     },
     {
       "id": "br",
       "type": "Branch",
-      "x": 260,
-      "y": 60,
+      "x": 220,
+      "y": 40,
       "params": {}
     },
     {
       "id": "decl",
       "type": "DeclareIndependence",
-      "x": 470,
+      "x": 420,
       "y": 40,
-      "params": {
-        "power": "0"
-      }
+      "params": {}
     },
     {
       "id": "ref",
       "type": "MobilizeREF",
-      "x": 680,
+      "x": 600,
       "y": 40,
       "params": {}
     },
     {
       "id": "popI",
       "type": "ShowPopup",
-      "x": 890,
+      "x": 780,
       "y": 40,
       "params": {
         "title": "Independence!",
         "textKey": "@INDEPENDENCE",
-        "choices": "We hold these truths to be self-evident",
-        "speaker": "Continental Congress"
-      }
-    },
-    {
-      "id": "notyet",
-      "type": "Log",
-      "x": 470,
-      "y": 200,
-      "params": {
-        "message": "Sons of Liberty below 50% -- build more Liberty Bells first."
+        "choices": "Liberty or death!"
       }
     }
   ],
@@ -111,16 +106,6 @@
       },
       "to": {
         "node": "popI",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "br",
-        "pin": "false"
-      },
-      "to": {
-        "node": "notyet",
         "pin": "in"
       }
     }
