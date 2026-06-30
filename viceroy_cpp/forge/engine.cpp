@@ -411,6 +411,10 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     GameState& g = cx.g; World& w = cx.w;
     if (path == "game.year")   { g.year = (int)value; return true; }
     if (path == "game.season") { g.season = (int)value; return true; }
+    if (path == "game.turn")   { g.turn = (long)value; return true; }
+    if (path == "game.difficulty") {
+        int d = (int)value; g.difficulty = d < 0 ? 0 : d > 4 ? 4 : d; return true;
+    }
     if (path == "natives.tension") {
         int t = (int)value; cx.x.tension = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }

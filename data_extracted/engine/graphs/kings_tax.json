@@ -3,166 +3,1611 @@
   "name": "King's Tax Demand",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -120,
+      "params": {
+        "text": "King's tax demand (spec/systems/king.md func_036138). Cadence: nothing before turn 30; then a demand fires only when turn % interval == 0, interval shrinks 18->15->12->9 as the year passes 1600/1700/1750; skipped once tax>85. Raise delta=((diff&0xFE)<<1)+4, new rate=min(tax+delta,75) (hard cap 0x4B). Pretext by severity score: <650 wedding, <950 war, <1100 Navigation Act, else Stamp Act."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "roll",
-      "type": "Roll",
-      "x": 30,
+      "id": "turn",
+      "type": "GetState",
+      "x": 20,
       "y": 150,
+      "params": {
+        "path": "game.turn"
+      }
+    },
+    {
+      "id": "c30",
+      "type": "Constant",
+      "x": 20,
+      "y": 250,
+      "params": {
+        "value": 30
+      }
+    },
+    {
+      "id": "year",
+      "type": "GetState",
+      "x": 20,
+      "y": 360,
+      "params": {
+        "path": "game.year"
+      }
+    },
+    {
+      "id": "tax",
+      "type": "GetState",
+      "x": 20,
+      "y": 470,
+      "params": {
+        "path": "power0.tax"
+      }
+    },
+    {
+      "id": "c2",
+      "type": "Constant",
+      "x": 20,
+      "y": 560,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "geT",
+      "type": "Compare",
+      "x": 200,
+      "y": 150,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "brT",
+      "type": "Branch",
+      "x": 360,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "early",
+      "type": "Log",
+      "x": 360,
+      "y": 640,
+      "params": {
+        "message": "Before turn 30 the Crown leaves the colonies be (no tax demand this turn)."
+      }
+    },
+    {
+      "id": "c1600",
+      "type": "Constant",
+      "x": 200,
+      "y": 300,
+      "params": {
+        "value": 1600
+      }
+    },
+    {
+      "id": "ge16",
+      "type": "Compare",
+      "x": 340,
+      "y": 330,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c1700",
+      "type": "Constant",
+      "x": 200,
+      "y": 380,
+      "params": {
+        "value": 1700
+      }
+    },
+    {
+      "id": "ge17",
+      "type": "Compare",
+      "x": 340,
+      "y": 410,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c1750",
+      "type": "Constant",
+      "x": 200,
+      "y": 460,
+      "params": {
+        "value": 1750
+      }
+    },
+    {
+      "id": "ge75",
+      "type": "Compare",
+      "x": 340,
+      "y": 490,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "i18",
+      "type": "Constant",
+      "x": 200,
+      "y": 560,
+      "params": {
+        "value": 18
+      }
+    },
+    {
+      "id": "i15",
+      "type": "Constant",
+      "x": 200,
+      "y": 600,
+      "params": {
+        "value": 15
+      }
+    },
+    {
+      "id": "i12",
+      "type": "Constant",
+      "x": 200,
+      "y": 640,
+      "params": {
+        "value": 12
+      }
+    },
+    {
+      "id": "i9",
+      "type": "Constant",
+      "x": 200,
+      "y": 680,
+      "params": {
+        "value": 9
+      }
+    },
+    {
+      "id": "s16",
+      "type": "Select",
+      "x": 500,
+      "y": 360,
+      "params": {}
+    },
+    {
+      "id": "s17",
+      "type": "Select",
+      "x": 640,
+      "y": 420,
+      "params": {}
+    },
+    {
+      "id": "iv",
+      "type": "Select",
+      "x": 780,
+      "y": 480,
+      "params": {}
+    },
+    {
+      "id": "mod",
+      "type": "Math",
+      "x": 940,
+      "y": 300,
+      "params": {
+        "op": "%"
+      }
+    },
+    {
+      "id": "c0",
+      "type": "Constant",
+      "x": 940,
+      "y": 250,
+      "params": {
+        "value": 0
+      }
+    },
+    {
+      "id": "eq0",
+      "type": "Compare",
+      "x": 1080,
+      "y": 300,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "brM",
+      "type": "Branch",
+      "x": 1240,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "notdue",
+      "type": "Log",
+      "x": 1240,
+      "y": 640,
+      "params": {
+        "message": "Not a tax-demand turn (turn is not a multiple of the current %d-turn interval)."
+      }
+    },
+    {
+      "id": "c85",
+      "type": "Constant",
+      "x": 1240,
+      "y": 260,
+      "params": {
+        "value": 85
+      }
+    },
+    {
+      "id": "le85",
+      "type": "Compare",
+      "x": 1380,
+      "y": 300,
+      "params": {
+        "op": "<="
+      }
+    },
+    {
+      "id": "brC",
+      "type": "Branch",
+      "x": 1540,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "maxed",
+      "type": "Log",
+      "x": 1540,
+      "y": 640,
+      "params": {
+        "message": "Tax already above 85%; the Crown makes no further demand."
+      }
+    },
+    {
+      "id": "diff",
+      "type": "GetState",
+      "x": 1700,
+      "y": 520,
+      "params": {
+        "path": "game.difficulty"
+      }
+    },
+    {
+      "id": "dmod",
+      "type": "Math",
+      "x": 1840,
+      "y": 520,
+      "params": {
+        "op": "%"
+      }
+    },
+    {
+      "id": "deven",
+      "type": "Math",
+      "x": 1980,
+      "y": 520,
+      "params": {
+        "op": "-"
+      }
+    },
+    {
+      "id": "dx2",
+      "type": "Math",
+      "x": 2120,
+      "y": 520,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "c4",
+      "type": "Constant",
+      "x": 1840,
+      "y": 600,
+      "params": {
+        "value": 4
+      }
+    },
+    {
+      "id": "delta",
+      "type": "Math",
+      "x": 2260,
+      "y": 520,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "newRaw",
+      "type": "Math",
+      "x": 2420,
+      "y": 520,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c75",
+      "type": "Constant",
+      "x": 2420,
+      "y": 600,
+      "params": {
+        "value": 75
+      }
+    },
+    {
+      "id": "newTax",
+      "type": "Math",
+      "x": 2560,
+      "y": 520,
+      "params": {
+        "op": "min"
+      }
+    },
+    {
+      "id": "sol",
+      "type": "GetState",
+      "x": 1700,
+      "y": 760,
+      "params": {
+        "path": "revolution.sol"
+      }
+    },
+    {
+      "id": "sol2",
+      "type": "Math",
+      "x": 1840,
+      "y": 760,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "solSub",
+      "type": "Math",
+      "x": 1980,
+      "y": 760,
+      "params": {
+        "op": "-"
+      }
+    },
+    {
+      "id": "c5",
+      "type": "Constant",
+      "x": 1840,
+      "y": 840,
+      "params": {
+        "value": 5
+      }
+    },
+    {
+      "id": "solT",
+      "type": "Math",
+      "x": 2120,
+      "y": 760,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "gold",
+      "type": "GetState",
+      "x": 1700,
+      "y": 900,
+      "params": {
+        "path": "power0.gold"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 1700,
+      "y": 960,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "goldT",
+      "type": "Math",
+      "x": 1840,
+      "y": 900,
+      "params": {
+        "op": "/"
+      }
+    },
+    {
+      "id": "econ",
+      "type": "GetState",
+      "x": 1700,
+      "y": 1020,
+      "params": {
+        "path": "power0.econ_strength"
+      }
+    },
+    {
+      "id": "turnT",
+      "type": "Math",
+      "x": 1840,
+      "y": 1080,
+      "params": {
+        "op": "/"
+      }
+    },
+    {
+      "id": "r",
+      "type": "Roll",
+      "x": 1700,
+      "y": 1160,
       "params": {
         "min": 1,
         "max": 1000
       }
     },
     {
-      "id": "c500",
-      "type": "Constant",
-      "x": 30,
-      "y": 280,
+      "id": "sv1",
+      "type": "Math",
+      "x": 2260,
+      "y": 800,
       "params": {
-        "value": 880
+        "op": "+"
       }
     },
     {
-      "id": "cmp",
+      "id": "sv2",
+      "type": "Math",
+      "x": 2400,
+      "y": 840,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "sv3",
+      "type": "Math",
+      "x": 2540,
+      "y": 880,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "sev",
+      "type": "Math",
+      "x": 2680,
+      "y": 920,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c650",
+      "type": "Constant",
+      "x": 2820,
+      "y": 840,
+      "params": {
+        "value": 650
+      }
+    },
+    {
+      "id": "b650",
       "type": "Compare",
-      "x": 230,
-      "y": 200,
+      "x": 2960,
+      "y": 860,
       "params": {
         "op": ">="
       }
     },
     {
-      "id": "br",
-      "type": "Branch",
-      "x": 420,
-      "y": 60,
+      "id": "c950",
+      "type": "Constant",
+      "x": 2820,
+      "y": 920,
+      "params": {
+        "value": 950
+      }
+    },
+    {
+      "id": "b950",
+      "type": "Compare",
+      "x": 2960,
+      "y": 940,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c1100",
+      "type": "Constant",
+      "x": 2820,
+      "y": 1000,
+      "params": {
+        "value": 1100
+      }
+    },
+    {
+      "id": "b1100",
+      "type": "Compare",
+      "x": 2960,
+      "y": 1020,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "bk1",
+      "type": "Math",
+      "x": 3120,
+      "y": 900,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "bucket",
+      "type": "Math",
+      "x": 3260,
+      "y": 940,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "sw",
+      "type": "Switch",
+      "x": 1700,
+      "y": 40,
       "params": {}
     },
     {
-      "id": "pop",
+      "id": "pWife",
       "type": "ShowPopup",
-      "x": 610,
-      "y": 40,
+      "x": 1900,
+      "y": 20,
       "params": {
-        "title": "The King Demands Higher Taxes!",
-        "body": "The Crown demands the colonial tax rate rise to 25%. Do you submit?",
-        "choices": "Accept,Refuse",
-        "textKeys": "@KINGTAX,@KINGRAISE",
+        "title": "A Royal Wedding",
+        "textKey": "@KINGWIFE",
+        "choices": "Kiss the royal pinky ring,Hold a Party",
         "speaker": "King"
       }
     },
     {
-      "id": "c25",
-      "type": "Constant",
-      "x": 610,
-      "y": 250,
+      "id": "pWar",
+      "type": "ShowPopup",
+      "x": 1900,
+      "y": 120,
       "params": {
-        "value": 25
+        "title": "The Crown's War",
+        "textKey": "@KINGWAR",
+        "choices": "Kiss the royal pinky ring,Hold a Party",
+        "speaker": "King"
       }
     },
     {
-      "id": "tax",
+      "id": "pNav",
+      "type": "ShowPopup",
+      "x": 1900,
+      "y": 220,
+      "params": {
+        "title": "A Navigation Act",
+        "textKey": "@KINGNAVACT",
+        "choices": "Kiss the royal pinky ring,Hold a Party",
+        "speaker": "King"
+      }
+    },
+    {
+      "id": "pStamp",
+      "type": "ShowPopup",
+      "x": 1900,
+      "y": 320,
+      "params": {
+        "title": "A Stamp Act",
+        "textKey": "@KINGSTAMPACT",
+        "choices": "Kiss the royal pinky ring,Hold a Party",
+        "speaker": "King"
+      }
+    },
+    {
+      "id": "settax",
       "type": "SetTax",
-      "x": 820,
-      "y": 60,
+      "x": 2300,
+      "y": 140,
       "params": {
         "power": "0"
       }
     },
     {
-      "id": "party",
-      "type": "Log",
-      "x": 820,
-      "y": 200,
+      "id": "boycott",
+      "type": "AddBoycott",
+      "x": 2300,
+      "y": 300,
       "params": {
-        "message": "Tea Party! A good is boycotted instead of paying the tax."
+        "good": "Tobacco"
+      }
+    },
+    {
+      "id": "teaparty",
+      "type": "ShowPopup",
+      "x": 2500,
+      "y": 300,
+      "params": {
+        "title": "A Colonial Party!",
+        "textKey": "@TEAPARTY",
+        "choices": "No taxation without representation!"
       }
     }
   ],
   "edges": [
     {
       "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "br",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "roll",
+        "node": "turn",
         "pin": "value"
       },
       "to": {
-        "node": "cmp",
+        "node": "geT",
         "pin": "a"
       }
     },
     {
       "from": {
-        "node": "c500",
+        "node": "c30",
         "pin": "value"
       },
       "to": {
-        "node": "cmp",
+        "node": "geT",
         "pin": "b"
       }
     },
     {
       "from": {
-        "node": "cmp",
+        "node": "geT",
         "pin": "value"
       },
       "to": {
-        "node": "br",
+        "node": "brT",
         "pin": "cond"
       }
     },
     {
       "from": {
-        "node": "br",
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "brT",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brT",
+        "pin": "false"
+      },
+      "to": {
+        "node": "early",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge16",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c1600",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge16",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge17",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c1700",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge17",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "year",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge75",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c1750",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ge75",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "ge16",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s16",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "i15",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s16",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "i18",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s16",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "ge17",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s17",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "i12",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s17",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "s16",
+        "pin": "value"
+      },
+      "to": {
+        "node": "s17",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "ge75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "iv",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "i9",
+        "pin": "value"
+      },
+      "to": {
+        "node": "iv",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "s17",
+        "pin": "value"
+      },
+      "to": {
+        "node": "iv",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "turn",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mod",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "iv",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mod",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "mod",
+        "pin": "value"
+      },
+      "to": {
+        "node": "eq0",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "eq0",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "eq0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brM",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brT",
         "pin": "true"
       },
       "to": {
-        "node": "pop",
+        "node": "brM",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "pop",
-        "pin": "Accept"
+        "node": "brM",
+        "pin": "false"
       },
       "to": {
-        "node": "tax",
+        "node": "notdue",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "c25",
+        "node": "tax",
         "pin": "value"
       },
       "to": {
+        "node": "le85",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c85",
+        "pin": "value"
+      },
+      "to": {
+        "node": "le85",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "le85",
+        "pin": "value"
+      },
+      "to": {
+        "node": "brC",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "brM",
+        "pin": "true"
+      },
+      "to": {
+        "node": "brC",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "brC",
+        "pin": "false"
+      },
+      "to": {
+        "node": "maxed",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dmod",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dmod",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "diff",
+        "pin": "value"
+      },
+      "to": {
+        "node": "deven",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "dmod",
+        "pin": "value"
+      },
+      "to": {
+        "node": "deven",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "deven",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dx2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dx2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "dx2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "delta",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c4",
+        "pin": "value"
+      },
+      "to": {
+        "node": "delta",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
         "node": "tax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "newRaw",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "delta",
+        "pin": "value"
+      },
+      "to": {
+        "node": "newRaw",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "newRaw",
+        "pin": "value"
+      },
+      "to": {
+        "node": "newTax",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c75",
+        "pin": "value"
+      },
+      "to": {
+        "node": "newTax",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sol",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sol2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sol2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sol2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "solSub",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "tax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "solSub",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "solSub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "solT",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "solT",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "gold",
+        "pin": "value"
+      },
+      "to": {
+        "node": "goldT",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "goldT",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "turn",
+        "pin": "value"
+      },
+      "to": {
+        "node": "turnT",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c30",
+        "pin": "value"
+      },
+      "to": {
+        "node": "turnT",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "r",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "solT",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sv1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "goldT",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sv2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv3",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "econ",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sv3",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sv3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sev",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "turnT",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sev",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sev",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b650",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c650",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b650",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sev",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b950",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c950",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b950",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sev",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1100",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c1100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1100",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "b650",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bk1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "b950",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bk1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "bk1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bucket",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "b1100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bucket",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "brC",
+        "pin": "true"
+      },
+      "to": {
+        "node": "sw",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "bucket",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sw",
         "pin": "value"
       }
     },
     {
       "from": {
-        "node": "pop",
-        "pin": "Refuse"
+        "node": "delta",
+        "pin": "value"
       },
       "to": {
-        "node": "party",
+        "node": "pWife",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "newTax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pWife",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "pWife",
+        "pin": "Kiss the royal pinky ring"
+      },
+      "to": {
+        "node": "settax",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pWife",
+        "pin": "Hold a Party"
+      },
+      "to": {
+        "node": "boycott",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "delta",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pWar",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "newTax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pWar",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "pWar",
+        "pin": "Kiss the royal pinky ring"
+      },
+      "to": {
+        "node": "settax",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pWar",
+        "pin": "Hold a Party"
+      },
+      "to": {
+        "node": "boycott",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "delta",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pNav",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "newTax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pNav",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "pNav",
+        "pin": "Kiss the royal pinky ring"
+      },
+      "to": {
+        "node": "settax",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pNav",
+        "pin": "Hold a Party"
+      },
+      "to": {
+        "node": "boycott",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "delta",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pStamp",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "newTax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pStamp",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "pStamp",
+        "pin": "Kiss the royal pinky ring"
+      },
+      "to": {
+        "node": "settax",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pStamp",
+        "pin": "Hold a Party"
+      },
+      "to": {
+        "node": "boycott",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "default"
+      },
+      "to": {
+        "node": "pWife",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "pWar",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "pNav",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "3"
+      },
+      "to": {
+        "node": "pStamp",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "newTax",
+        "pin": "value"
+      },
+      "to": {
+        "node": "settax",
+        "pin": "value"
+      }
+    },
+    {
+      "from": {
+        "node": "boycott",
+        "pin": "out"
+      },
+      "to": {
+        "node": "teaparty",
         "pin": "in"
       }
     }
