@@ -15,80 +15,136 @@
       "x": 210,
       "y": 40,
       "params": {
-        "message": "Phase 1: King's tax & mercenary offers"
+        "message": "-- Phase 1: King's tax & mercenary offers --"
+      }
+    },
+    {
+      "id": "tax",
+      "type": "FireEvent",
+      "x": 210,
+      "y": 130,
+      "params": {
+        "graph": "kings_tax"
+      }
+    },
+    {
+      "id": "merc",
+      "type": "FireEvent",
+      "x": 210,
+      "y": 220,
+      "params": {
+        "graph": "mercenaries"
       }
     },
     {
       "id": "p2",
       "type": "Log",
-      "x": 390,
+      "x": 430,
       "y": 40,
       "params": {
-        "message": "Phase 2: Orders & movement (REF accrual rides here)"
+        "message": "-- Phase 2: Orders & movement (REF accrual) --"
       }
     },
     {
       "id": "ref",
       "type": "MobilizeREF",
-      "x": 570,
-      "y": 40,
+      "x": 430,
+      "y": 130,
       "params": {}
     },
     {
       "id": "p3",
       "type": "Log",
-      "x": 750,
+      "x": 650,
       "y": 40,
       "params": {
-        "message": "Phase 3: Production & immigration"
+        "message": "-- Phase 3: Production & immigration --"
       }
     },
     {
       "id": "prices",
       "type": "DriftPrices",
-      "x": 930,
-      "y": 40,
+      "x": 650,
+      "y": 130,
       "params": {}
+    },
+    {
+      "id": "imm",
+      "type": "FireEvent",
+      "x": 650,
+      "y": 220,
+      "params": {
+        "graph": "immigration"
+      }
     },
     {
       "id": "p4",
       "type": "Log",
-      "x": 1110,
+      "x": 870,
       "y": 40,
       "params": {
-        "message": "Phase 4: Diplomacy & the King's tax event"
+        "message": "-- Phase 4: Diplomacy, natives & random events --"
+      }
+    },
+    {
+      "id": "raid",
+      "type": "FireEvent",
+      "x": 870,
+      "y": 130,
+      "params": {
+        "graph": "native_raid"
+      }
+    },
+    {
+      "id": "lost",
+      "type": "FireEvent",
+      "x": 870,
+      "y": 220,
+      "params": {
+        "graph": "lost_city"
       }
     },
     {
       "id": "p5",
       "type": "Log",
-      "x": 1290,
+      "x": 1090,
       "y": 40,
       "params": {
-        "message": "Phase 5: Periodic / Continental Congress"
+        "message": "-- Phase 5: Continental Congress & revolution --"
       }
     },
     {
       "id": "ff",
-      "type": "OfferFoundingFather",
-      "x": 1470,
-      "y": 40,
-      "params": {}
+      "type": "FireEvent",
+      "x": 1090,
+      "y": 130,
+      "params": {
+        "graph": "founding_father"
+      }
+    },
+    {
+      "id": "rev",
+      "type": "FireEvent",
+      "x": 1090,
+      "y": 220,
+      "params": {
+        "graph": "revolution"
+      }
     },
     {
       "id": "end",
       "type": "AdvanceCadence",
-      "x": 1650,
+      "x": 1310,
       "y": 40,
       "params": {}
     },
     {
       "id": "done",
       "type": "Log",
-      "x": 1830,
-      "y": 40,
+      "x": 1310,
+      "y": 130,
       "params": {
-        "message": "Turn complete -- next power / next turn"
+        "message": "-- Turn complete --"
       }
     }
   ],
@@ -109,6 +165,26 @@
         "pin": "out"
       },
       "to": {
+        "node": "tax",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tax",
+        "pin": "out"
+      },
+      "to": {
+        "node": "merc",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "merc",
+        "pin": "out"
+      },
+      "to": {
         "node": "p2",
         "pin": "in"
       }
@@ -149,6 +225,16 @@
         "pin": "out"
       },
       "to": {
+        "node": "imm",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "imm",
+        "pin": "out"
+      },
+      "to": {
         "node": "p4",
         "pin": "in"
       }
@@ -156,6 +242,26 @@
     {
       "from": {
         "node": "p4",
+        "pin": "out"
+      },
+      "to": {
+        "node": "raid",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "raid",
+        "pin": "out"
+      },
+      "to": {
+        "node": "lost",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "lost",
         "pin": "out"
       },
       "to": {
@@ -176,6 +282,16 @@
     {
       "from": {
         "node": "ff",
+        "pin": "out"
+      },
+      "to": {
+        "node": "rev",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "rev",
         "pin": "out"
       },
       "to": {

@@ -156,6 +156,10 @@ JsonValue node_catalog() {
                  {pin("min","data","in","number"), pin("max","data","in","number"),
                   pin("value","data","out","number")},
                  {param("min","number"), param("max","number")}),
+        node_def("FireEvent", "Fire Event Graph",
+                 "Runs another graph by id against the same game (its effects are collected). "
+                 "This is how the turn loop wires the whole game together -- it fires the event graphs.",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("graph","text")}),
     }));
     cats.arr.push_back(category("Data", {
         node_def("Constant", "Constant", "A fixed number.",
@@ -760,6 +764,20 @@ struct Runner {
             if (cx.x.woi_declared) base += vc::sim::revolution_bonus(cx.g.year);
             cx.x.score = base * mult;
             effect("final score = " + std::to_string(cx.x.score) + " (x" + std::to_string(mult) + " difficulty)");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "FireEvent") {
+            std::string gid = pget(*n, "graph").str;
+            try {
+                JsonValue sub = load_graph(gid);
+                JsonValue rep = run_graph(sub, cx);          // same cx -> same live game
+                if (const JsonValue* ef = rep.find("effects"))
+                    for (const auto& e : ef->arr) effect("[" + gid + "] " + e.str);
+                const JsonValue* pp = rep.find("popup");
+                if (pp && pp->is_object()) { const JsonValue* ti = pp->find("title");
+                    effect("[" + gid + "] popup: " + (ti ? ti->str : "")); }
+                else effect("fired event: " + gid);
+            } catch (const std::exception&) { effect("FireEvent: cannot load graph '" + gid + "'"); }
             return follow(nodeId, "out", popup);
         }
         if (t == "Navigate") { gotoScreen = pget(*n, "screen").str; effect("go to screen: " + gotoScreen); return follow(nodeId, "out", popup); }
