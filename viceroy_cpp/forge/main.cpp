@@ -877,6 +877,58 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
     }
 }
 
+static int engine_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* m) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", m); } };
+
+    forge::JsonValue cat = forge::node_catalog();
+    check(cat.find("categories") && !cat.find("categories")->arr.empty(), "node catalog non-empty");
+
+    GameState g; World w; std::vector<std::pair<int,int>> cxy;
+    g.powers[0].gold = 100;
+    int seed = 0x1234;
+    auto rng = [&](int lo, int hi) { seed = seed * 1103515245 + 12345;
+        unsigned v = ((unsigned)seed >> 16) & 0x7FFF; return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1)); };
+    forge::EngineCtx cx{g, w, cxy, rng};
+
+    check(forge::resolve_binding("power0.gold", cx).as_int() == 100, "resolve_binding power0.gold");
+
+    // OnTestFire -> GrantGold(Constant 50) onto power 0.
+    forge::JsonValue gr = forge::json_parse(
+        R"({"id":"t","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"c","type":"Constant","params":{"value":50}},)"
+        R"({"id":"g","type":"GrantGold","params":{"power":"0"}}],"edges":[)"
+        R"({"from":{"node":"t","pin":"out"},"to":{"node":"g","pin":"in"}},)"
+        R"({"from":{"node":"c","pin":"value"},"to":{"node":"g","pin":"amount"}}]})");
+    forge::JsonValue rep = forge::run_graph(gr, cx);
+    check(g.powers[0].gold == 150, "graph GrantGold applied (100+50)");
+    check(rep.find("log") && !rep.find("log")->arr.empty(), "run log non-empty");
+
+    // ShowPopup pauses and returns a popup with choices.
+    forge::JsonValue gp = forge::json_parse(
+        R"({"id":"p","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"p","type":"ShowPopup","params":{"title":"Hi","body":"x","choices":"A,B"}}],)"
+        R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"p","pin":"in"}}]})");
+    forge::JsonValue rep2 = forge::run_graph(gp, cx);
+    const forge::JsonValue* pop = rep2.find("popup");
+    check(pop && pop->is_object() && pop->find("choices") && pop->find("choices")->arr.size() == 2,
+          "ShowPopup returns a popup with 2 choices");
+
+    // Navigate sets the goto.
+    forge::JsonValue gn = forge::json_parse(
+        R"({"id":"n","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+        R"({"id":"n","type":"Navigate","params":{"screen":"europe"}}],)"
+        R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"n","pin":"in"}}]})");
+    forge::JsonValue rep3 = forge::run_graph(gn, cx);
+    check(rep3.find("goto") && rep3.find("goto")->str == "europe", "Navigate sets goto");
+
+    // set_binding writes; resolve reads it back.
+    check(forge::set_binding("power0.gold", 777, cx) && g.powers[0].gold == 777, "set_binding writes gold");
+
+    std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
 static int do_serve(int argc, char** argv) {
     int port = (argc >= 3) ? std::atoi(argv[2]) : 8099;
     if (port <= 0 || port > 65535) port = 8099;
@@ -892,6 +944,7 @@ int main(int argc, char** argv) {
     if (cmd == "save")    return do_save(argc, argv);
     if (cmd == "data")    return do_data(argc, argv);
     if (cmd == "formulas") { std::printf("%s\n", forge::formulas_text().c_str()); return 0; }
+    if (cmd == "engine" && argc >= 3 && std::string(argv[2]) == "selftest") return engine_selftest();
     if (cmd == "serve")   return do_serve(argc, argv);
 
     std::printf("Viceroy Forge -- headless modding tool\n"
