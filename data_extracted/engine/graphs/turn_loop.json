@@ -3,6 +3,15 @@
   "name": "Turn Loop (master)",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 30,
+      "y": -70,
+      "params": {
+        "text": "Turn loop master (spec/systems/turn_dispatch.md): fires every system graph in spec phase order. The phase headers are Comments (canvas labels), not runtime Log strings. Each FireEvent's own effects narrate what happened."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
       "x": 30,
@@ -10,19 +19,55 @@
       "params": {}
     },
     {
-      "id": "p1",
-      "type": "Log",
+      "id": "c1",
+      "type": "Comment",
       "x": 210,
-      "y": 40,
+      "y": -10,
       "params": {
-        "message": "-- Phase 1: King's tax & mercenary offers --"
+        "text": "Phase 1: King's tax & mercenary offers"
+      }
+    },
+    {
+      "id": "c2",
+      "type": "Comment",
+      "x": 430,
+      "y": -10,
+      "params": {
+        "text": "Phase 2: Orders & movement (REF accrual)"
+      }
+    },
+    {
+      "id": "c3",
+      "type": "Comment",
+      "x": 650,
+      "y": -10,
+      "params": {
+        "text": "Phase 3: Production & immigration"
+      }
+    },
+    {
+      "id": "c4",
+      "type": "Comment",
+      "x": 870,
+      "y": -10,
+      "params": {
+        "text": "Phase 4: Diplomacy, natives & random events"
+      }
+    },
+    {
+      "id": "c5",
+      "type": "Comment",
+      "x": 1090,
+      "y": -10,
+      "params": {
+        "text": "Phase 5: Continental Congress & revolution"
       }
     },
     {
       "id": "tax",
       "type": "FireEvent",
       "x": 210,
-      "y": 130,
+      "y": 40,
       "params": {
         "graph": "kings_tax"
       }
@@ -31,66 +76,39 @@
       "id": "merc",
       "type": "FireEvent",
       "x": 210,
-      "y": 220,
+      "y": 130,
       "params": {
         "graph": "mercenaries"
-      }
-    },
-    {
-      "id": "p2",
-      "type": "Log",
-      "x": 430,
-      "y": 40,
-      "params": {
-        "message": "-- Phase 2: Orders & movement (REF accrual) --"
       }
     },
     {
       "id": "ref",
       "type": "MobilizeREF",
       "x": 430,
-      "y": 130,
-      "params": {}
-    },
-    {
-      "id": "p3",
-      "type": "Log",
-      "x": 650,
       "y": 40,
-      "params": {
-        "message": "-- Phase 3: Production & immigration --"
-      }
+      "params": {}
     },
     {
       "id": "prices",
       "type": "DriftPrices",
       "x": 650,
-      "y": 130,
+      "y": 40,
       "params": {}
     },
     {
       "id": "imm",
       "type": "FireEvent",
       "x": 650,
-      "y": 220,
+      "y": 130,
       "params": {
         "graph": "immigration"
-      }
-    },
-    {
-      "id": "p4",
-      "type": "Log",
-      "x": 870,
-      "y": 40,
-      "params": {
-        "message": "-- Phase 4: Diplomacy, natives & random events --"
       }
     },
     {
       "id": "raid",
       "type": "FireEvent",
       "x": 870,
-      "y": 130,
+      "y": 40,
       "params": {
         "graph": "native_raid"
       }
@@ -99,25 +117,16 @@
       "id": "lost",
       "type": "FireEvent",
       "x": 870,
-      "y": 220,
+      "y": 130,
       "params": {
         "graph": "lost_city"
-      }
-    },
-    {
-      "id": "p5",
-      "type": "Log",
-      "x": 1090,
-      "y": 40,
-      "params": {
-        "message": "-- Phase 5: Continental Congress & revolution --"
       }
     },
     {
       "id": "ff",
       "type": "FireEvent",
       "x": 1090,
-      "y": 130,
+      "y": 40,
       "params": {
         "graph": "founding_father"
       }
@@ -126,7 +135,7 @@
       "id": "rev",
       "type": "FireEvent",
       "x": 1090,
-      "y": 220,
+      "y": 130,
       "params": {
         "graph": "revolution"
       }
@@ -137,15 +146,6 @@
       "x": 1310,
       "y": 40,
       "params": {}
-    },
-    {
-      "id": "done",
-      "type": "Log",
-      "x": 1310,
-      "y": 130,
-      "params": {
-        "message": "-- Turn complete --"
-      }
     }
   ],
   "edges": [
@@ -155,16 +155,6 @@
         "pin": "out"
       },
       "to": {
-        "node": "p1",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "p1",
-        "pin": "out"
-      },
-      "to": {
         "node": "tax",
         "pin": "in"
       }
@@ -185,16 +175,6 @@
         "pin": "out"
       },
       "to": {
-        "node": "p2",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "p2",
-        "pin": "out"
-      },
-      "to": {
         "node": "ref",
         "pin": "in"
       }
@@ -202,16 +182,6 @@
     {
       "from": {
         "node": "ref",
-        "pin": "out"
-      },
-      "to": {
-        "node": "p3",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "p3",
         "pin": "out"
       },
       "to": {
@@ -235,16 +205,6 @@
         "pin": "out"
       },
       "to": {
-        "node": "p4",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "p4",
-        "pin": "out"
-      },
-      "to": {
         "node": "raid",
         "pin": "in"
       }
@@ -262,16 +222,6 @@
     {
       "from": {
         "node": "lost",
-        "pin": "out"
-      },
-      "to": {
-        "node": "p5",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "p5",
         "pin": "out"
       },
       "to": {
@@ -296,16 +246,6 @@
       },
       "to": {
         "node": "end",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "end",
-        "pin": "out"
-      },
-      "to": {
-        "node": "done",
         "pin": "in"
       }
     }
