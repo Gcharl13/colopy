@@ -3,36 +3,44 @@
   "name": "Native Uprising",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -110,
+      "params": {
+        "text": "Native uprising (spec/systems/natives.md). A tribe rises to open war only when its alarm toward the player reaches the war threshold (alarm >= 128, modeled as natives.tension >= 80). On uprising the alarm spikes further, the tribe is set at war, and braves assault the colonies (one of @RAIDBURN/@RAIDSCALP/@RAIDWREAK)."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnTurnStart",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "roll",
-      "type": "Roll",
-      "x": 30,
-      "y": 160,
+      "id": "tens",
+      "type": "GetState",
+      "x": 20,
+      "y": 150,
       "params": {
-        "min": 1,
-        "max": 10
+        "path": "natives.tension"
       }
     },
     {
-      "id": "c8",
+      "id": "c80",
       "type": "Constant",
-      "x": 30,
-      "y": 290,
+      "x": 20,
+      "y": 230,
       "params": {
-        "value": 8
+        "value": 80
       }
     },
     {
-      "id": "cmp",
+      "id": "atwar",
       "type": "Compare",
-      "x": 220,
-      "y": 210,
+      "x": 200,
+      "y": 180,
       "params": {
         "op": ">="
       }
@@ -40,23 +48,32 @@
     {
       "id": "br",
       "type": "Branch",
-      "x": 410,
-      "y": 60,
+      "x": 380,
+      "y": 40,
       "params": {}
     },
     {
-      "id": "tens",
+      "id": "calm",
+      "type": "Log",
+      "x": 380,
+      "y": 260,
+      "params": {
+        "message": "The tribes are uneasy but their alarm is below the war threshold (alarm < 128); no uprising."
+      }
+    },
+    {
+      "id": "spike",
       "type": "ChangeNativeTension",
-      "x": 600,
+      "x": 560,
       "y": 40,
       "params": {
-        "amount": 30
+        "amount": 20
       }
     },
     {
       "id": "war",
       "type": "DeclareWar",
-      "x": 800,
+      "x": 740,
       "y": 40,
       "params": {
         "a": "0",
@@ -66,27 +83,37 @@
     {
       "id": "pop",
       "type": "ShowPopup",
-      "x": 1000,
+      "x": 920,
       "y": 40,
       "params": {
         "title": "Native Uprising!",
-        "body": "Angered braves take up arms against your colonies.",
-        "choices": "To the walls!",
         "textKeys": "@RAIDBURN,@RAIDSCALP,@RAIDWREAK",
-        "woodcut": "WDCUT13"
-      }
-    },
-    {
-      "id": "calm",
-      "type": "Log",
-      "x": 600,
-      "y": 210,
-      "params": {
-        "message": "The tribes watch warily but keep the peace this turn."
+        "woodcut": "WDCUT13",
+        "choices": "To the walls!"
       }
     }
   ],
   "edges": [
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "atwar",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c80",
+        "pin": "value"
+      },
+      "to": {
+        "node": "atwar",
+        "pin": "b"
+      }
+    },
     {
       "from": {
         "node": "trig",
@@ -99,27 +126,7 @@
     },
     {
       "from": {
-        "node": "roll",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c8",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmp",
+        "node": "atwar",
         "pin": "value"
       },
       "to": {
@@ -130,16 +137,26 @@
     {
       "from": {
         "node": "br",
-        "pin": "true"
+        "pin": "false"
       },
       "to": {
-        "node": "tens",
+        "node": "calm",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "tens",
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "spike",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "spike",
         "pin": "out"
       },
       "to": {
@@ -154,16 +171,6 @@
       },
       "to": {
         "node": "pop",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "br",
-        "pin": "false"
-      },
-      "to": {
-        "node": "calm",
         "pin": "in"
       }
     }

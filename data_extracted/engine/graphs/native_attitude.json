@@ -3,154 +3,404 @@
   "name": "Native Attitude",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -120,
+      "params": {
+        "text": "Native attitude (spec/systems/natives.md @0x048B62). A per-settlement colonial-presence score (8*X-5 from colony proximity + conversion) is banded at cutoffs -5/0/10 into Content/Uneasy/Restless/Angry, and the 5th level War is the separate alarm>=128 state. Modeled from natives.tension (alarm proxy): bucket = (t>=20)+(t>=40)+(t>=60)+(t>=80) -> @ATTITUDE band; band 4 (War) declares war on the tribe."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnNativeAttitude",
-      "x": 30,
+      "x": 20,
       "y": 40,
       "params": {}
     },
     {
-      "id": "get",
+      "id": "tens",
       "type": "GetState",
-      "x": 30,
-      "y": 180,
+      "x": 20,
+      "y": 150,
       "params": {
         "path": "natives.tension"
       }
     },
     {
-      "id": "c100",
+      "id": "c20",
       "type": "Constant",
-      "x": 30,
-      "y": 260,
+      "x": 20,
+      "y": 230,
       "params": {
-        "value": 100
+        "value": 20
       }
     },
     {
-      "id": "c75",
-      "type": "Constant",
-      "x": 30,
-      "y": 320,
-      "params": {
-        "value": 75
-      }
-    },
-    {
-      "id": "cmpW",
+      "id": "a20",
       "type": "Compare",
-      "x": 230,
-      "y": 120,
+      "x": 180,
+      "y": 210,
       "params": {
         "op": ">="
       }
     },
     {
-      "id": "brW",
-      "type": "Branch",
-      "x": 430,
-      "y": 60,
+      "id": "c40",
+      "type": "Constant",
+      "x": 20,
+      "y": 290,
+      "params": {
+        "value": 40
+      }
+    },
+    {
+      "id": "a40",
+      "type": "Compare",
+      "x": 180,
+      "y": 270,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c60",
+      "type": "Constant",
+      "x": 20,
+      "y": 350,
+      "params": {
+        "value": 60
+      }
+    },
+    {
+      "id": "a60",
+      "type": "Compare",
+      "x": 180,
+      "y": 330,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "c80",
+      "type": "Constant",
+      "x": 20,
+      "y": 410,
+      "params": {
+        "value": 80
+      }
+    },
+    {
+      "id": "a80",
+      "type": "Compare",
+      "x": 180,
+      "y": 390,
+      "params": {
+        "op": ">="
+      }
+    },
+    {
+      "id": "b1",
+      "type": "Math",
+      "x": 340,
+      "y": 260,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "b2",
+      "type": "Math",
+      "x": 480,
+      "y": 300,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "bucket",
+      "type": "Math",
+      "x": 620,
+      "y": 340,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "name",
+      "type": "PickText",
+      "x": 620,
+      "y": 420,
+      "params": {
+        "options": "Content,Uneasy,Restless,Angry,War"
+      }
+    },
+    {
+      "id": "sw",
+      "type": "Switch",
+      "x": 800,
+      "y": 40,
       "params": {}
+    },
+    {
+      "id": "attP",
+      "type": "ShowPopup",
+      "x": 1000,
+      "y": 40,
+      "params": {
+        "title": "Tribal Relations",
+        "body": "Our scouts report the natives' mood toward our colonies: %STRING0.",
+        "choices": "Noted."
+      }
     },
     {
       "id": "war",
       "type": "DeclareWar",
-      "x": 630,
-      "y": 40,
+      "x": 1000,
+      "y": 240,
       "params": {
-        "a": "3",
-        "b": "0"
+        "a": "0",
+        "b": "3"
       }
     },
     {
-      "id": "popW",
-      "type": "Log",
-      "x": 830,
-      "y": 40,
+      "id": "warP",
+      "type": "ShowPopup",
+      "x": 1200,
+      "y": 240,
       "params": {
-        "message": "War! Tension at 100 -- the tribe takes up arms."
-      }
-    },
-    {
-      "id": "cmpH",
-      "type": "Compare",
-      "x": 230,
-      "y": 260,
-      "params": {
-        "op": ">="
-      }
-    },
-    {
-      "id": "brH",
-      "type": "Branch",
-      "x": 430,
-      "y": 200,
-      "params": {}
-    },
-    {
-      "id": "hostile",
-      "type": "Log",
-      "x": 630,
-      "y": 200,
-      "params": {
-        "message": "Hostile: tension >= 75 -- the tribe is angry."
-      }
-    },
-    {
-      "id": "calm",
-      "type": "Log",
-      "x": 630,
-      "y": 320,
-      "params": {
-        "message": "The tribe remains content."
+        "title": "War!",
+        "body": "The natives have reached open %STRING0 -- braves take up arms against our colonies!",
+        "choices": "To the walls!",
+        "woodcut": "WDCUT13"
       }
     }
   ],
   "edges": [
     {
       "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a20",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c20",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a20",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a40",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c40",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a40",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a60",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c60",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a60",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "tens",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a80",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c80",
+        "pin": "value"
+      },
+      "to": {
+        "node": "a80",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "a20",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "a40",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "b1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "a60",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "b2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bucket",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "a80",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bucket",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "bucket",
+        "pin": "value"
+      },
+      "to": {
+        "node": "name",
+        "pin": "index"
+      }
+    },
+    {
+      "from": {
         "node": "trig",
         "pin": "out"
       },
       "to": {
-        "node": "brW",
+        "node": "sw",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "get",
+        "node": "bucket",
         "pin": "value"
       },
       "to": {
-        "node": "cmpW",
-        "pin": "a"
+        "node": "sw",
+        "pin": "value"
       }
     },
     {
       "from": {
-        "node": "c100",
+        "node": "name",
         "pin": "value"
       },
       "to": {
-        "node": "cmpW",
-        "pin": "b"
+        "node": "attP",
+        "pin": "str0"
       }
     },
     {
       "from": {
-        "node": "cmpW",
-        "pin": "value"
+        "node": "sw",
+        "pin": "default"
       },
       "to": {
-        "node": "brW",
-        "pin": "cond"
+        "node": "attP",
+        "pin": "in"
       }
     },
     {
       "from": {
-        "node": "brW",
-        "pin": "true"
+        "node": "sw",
+        "pin": "1"
+      },
+      "to": {
+        "node": "attP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "2"
+      },
+      "to": {
+        "node": "attP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "3"
+      },
+      "to": {
+        "node": "attP",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sw",
+        "pin": "4"
       },
       "to": {
         "node": "war",
@@ -163,68 +413,18 @@
         "pin": "out"
       },
       "to": {
-        "node": "popW",
+        "node": "warP",
         "pin": "in"
       }
     },
     {
       "from": {
-        "node": "brW",
-        "pin": "false"
-      },
-      "to": {
-        "node": "brH",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "get",
+        "node": "name",
         "pin": "value"
       },
       "to": {
-        "node": "cmpH",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c75",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmpH",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "cmpH",
-        "pin": "value"
-      },
-      "to": {
-        "node": "brH",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "brH",
-        "pin": "true"
-      },
-      "to": {
-        "node": "hostile",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "brH",
-        "pin": "false"
-      },
-      "to": {
-        "node": "calm",
-        "pin": "in"
+        "node": "warP",
+        "pin": "str0"
       }
     }
   ]
