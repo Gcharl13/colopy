@@ -276,10 +276,13 @@ JsonValue node_catalog() {
                  "Shows a dialog; each choice is an exec output pin. textKey (e.g. @LOSTCITY3) "
                  "shows that real GAME.TXT message verbatim; textKeys (a list like "
                  "@RAIDGOLD,@RAIDSTORES,@RAIDBURN) captures an event's many messages -- one is "
-                 "picked per run, as in the game. Otherwise the body field is used.",
+                 "picked per run, as in the game. woodcut/speaker are the popup's sprite channels "
+                 "(spec/ui/popups.md): woodcut = the scene illustration (e.g. WDCUT04 / Colony "
+                 "Burning), speaker = the portrait (e.g. King, Native Chief).",
                  {pin("in","exec","in")},
                  {param("title","text"), param("body","text"), param("choices","text"),
-                  param("textKey","text"), param("textKeys","text")}),
+                  param("textKey","text"), param("textKeys","text"),
+                  param("woodcut","text"), param("speaker","text")}),
         node_def("Navigate", "Go To Screen", "Switches the active screen (in preview/play).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("screen","text")}),
     }));
@@ -778,6 +781,10 @@ struct Runner {
             if (!key.empty()) { std::string g = game_text(key);
                 if (!g.empty()) { body = g; popup.obj["textKey"] = json_str(key); } }
             popup.obj["body"]  = json_str(body);
+            // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
+            std::string wc = pget(*n, "woodcut").str, sp = pget(*n, "speaker").str;
+            if (!wc.empty()) popup.obj["woodcut"] = json_str(wc);
+            if (!sp.empty()) popup.obj["speaker"] = json_str(sp);
             popup.obj["node"]  = json_str(nodeId);
             JsonValue ch; ch.type = JsonValue::Array;
             // choices: newline- or comma-separated; each becomes an exec pin

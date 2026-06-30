@@ -72,7 +72,8 @@
         "title": "Native Uprising!",
         "body": "Angered braves take up arms against your colonies.",
         "choices": "To the walls!",
-        "textKeys": "@RAIDBURN,@RAIDSCALP,@RAIDWREAK"
+        "textKeys": "@RAIDBURN,@RAIDSCALP,@RAIDWREAK",
+        "woodcut": "WDCUT13"
       }
     },
     {

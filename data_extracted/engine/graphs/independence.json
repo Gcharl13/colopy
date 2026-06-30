@@ -52,7 +52,8 @@
         "title": "Declare Independence?",
         "body": "The Sons of Liberty are strong. Shall we throw off the Crown and declare independence?",
         "choices": "Sign the Declaration,Not yet",
-        "textKey": "@DECLARE"
+        "textKey": "@DECLARE",
+        "speaker": "King"
       }
     },
     {

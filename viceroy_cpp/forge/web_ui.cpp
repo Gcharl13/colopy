@@ -569,6 +569,14 @@ async function gLoadGameText(){
   if(!$('#gametextkeys')){ const dl=document.createElement('datalist'); dl.id='gametextkeys';
     dl.innerHTML=Object.keys(GAMETEXT).map(k=>'<option value="'+esc(k)+'">'+esc(String(GAMETEXT[k]).replace(/\n/g,' ').slice(0,60))+'</option>').join('');
     document.body.appendChild(dl); }
+  // woodcut scene names (WOODCUT.TXT) + a small speaker-portrait list, for the popup sprite channels.
+  if(!$('#woodcutlist')){ let names=[];
+    try{ const w=await (await fetch('/api/text?file=WOODCUT')).json(); names=String(w['@WOODCUT']||'').split('\n').filter(Boolean); }catch(e){}
+    const wd=document.createElement('datalist'); wd.id='woodcutlist';
+    const wdcut=Array.from({length:14},(_,i)=>'WDCUT'+String(i).padStart(2,'0'));
+    wd.innerHTML=wdcut.concat(names).map(n=>'<option value="'+esc(n)+'">').join(''); document.body.appendChild(wd);
+    const sp=document.createElement('datalist'); sp.id='speakerlist';
+    sp.innerHTML=['King','Native Chief','Continental Congress','Tax Man','Foreign Power'].map(n=>'<option value="'+esc(n)+'">').join(''); document.body.appendChild(sp); }
 }
 // Preview the real message(s) a textKey/textKeys param resolves to.
 function gameTextPreview(name, val){
@@ -673,6 +681,8 @@ function gProps(){
       h+='<input data-p="'+p.name+'" list="gametextkeys" placeholder="@LOSTCITY3'+(p.name==='textKeys'?',@RAIDGOLD,...':'')+'" value="'+esc(String(v))+'">';
       h+='<div data-prev="'+p.name+'">'+gameTextPreview(p.name,v)+'</div>';
     }
+    else if(p.name==='woodcut') h+='<input data-p="woodcut" list="woodcutlist" placeholder="WDCUT04 / Colony Burning" value="'+esc(String(v))+'">';
+    else if(p.name==='speaker') h+='<input data-p="speaker" list="speakerlist" placeholder="King / Native Chief" value="'+esc(String(v))+'">';
     else if(p.kind==='select') h+='<select data-p="'+p.name+'">'+p.options.map(o=>'<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
     else if(p.kind==='text') h+='<textarea data-p="'+p.name+'" rows="2">'+esc(String(v))+'</textarea>';
     else if(p.kind==='binding') h+='<input data-p="'+p.name+'" list="bindlist" value="'+esc(String(v))+'">';
@@ -691,8 +701,15 @@ function showRun(d){
   let h='<b>log:</b> '+((d.log||[]).map(esc).join(' &rarr; ')||'(nothing ran)');
   if(d.effects&&d.effects.length) h+='<br><b>effects:</b> '+d.effects.map(esc).join('; ');
   $('#grun').innerHTML=h;
-  if(d.popup){ const p=d.popup; ui.popup(esc(p.title), '<p>'+esc(p.body)+'</p><div id="pchoices"></div>');
+  if(d.popup){ const p=d.popup; ui.popup(esc(p.title), '<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pchoices"></div>');
     const box=$('#pchoices'); (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resumeGraph(p.node,c); box.appendChild(b); }); }
+}
+// Show the sprite channels a popup carries (spec/ui/popups.md): woodcut scene + speaker portrait.
+function popupSprites(p){
+  if(!p.woodcut&&!p.speaker) return '';
+  return '<div class="muted" style="margin:6px 0;border-top:1px solid #2a2f3a;padding-top:5px">sprites: '
+    +(p.woodcut?'<span title="scene woodcut">&#x1F5BC; woodcut <code>'+esc(p.woodcut)+'</code></span> ':'')
+    +(p.speaker?'<span title="speaker portrait">&#x1F464; speaker <code>'+esc(p.speaker)+'</code></span>':'')+'</div>';
 }
 addEventListener('keydown',e=>{ const t=document.activeElement&&document.activeElement.tagName;
   if((e.key==='Delete'||e.key==='Backspace')&&selNode&&t!=='INPUT'&&t!=='TEXTAREA'&&t!=='SELECT'){ delNode(); } });
@@ -957,7 +974,7 @@ async function pvFire(graphId){
   const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId})})).json();
   if(d.goto){ pvNav(d.goto); return; }
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
-  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body)+'</p><div id="pvch"></div>');
+  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pvch"></div>');
     (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
       b.onclick=async()=>{ const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c})})).json();
         if(r.goto){ pvNav(r.goto); } else { ui.close(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); scrPreview(); } };

@@ -24,7 +24,8 @@
       "params": {
         "title": "The Spanish Succession",
         "textKey": "@SUCCESSION",
-        "choices": "Continue"
+        "choices": "Continue",
+        "speaker": "King"
       }
     }
   ],

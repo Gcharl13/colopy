@@ -74,7 +74,8 @@
         "title": "Seven Cities of Cibola",
         "body": "Your explorers find a fabulous treasure!",
         "choices": "Glory!",
-        "textKey": "@LOSTCITY2"
+        "textKey": "@LOSTCITY2",
+        "woodcut": "WDCUT04"
       }
     },
     {
@@ -105,7 +106,8 @@
         "title": "Ruins of a Lost Civilization",
         "body": "You recover gold from the ruins.",
         "choices": "Onward",
-        "textKeys": "@LOSTCITY1,@LOSTCITY2,@LOSTCITY3,@LOSTCITY4,@LOSTCITY5,@LOSTCITY6,@LOSTCITY7,@LOSTCITY9"
+        "textKeys": "@LOSTCITY1,@LOSTCITY2,@LOSTCITY3,@LOSTCITY4,@LOSTCITY5,@LOSTCITY6,@LOSTCITY7,@LOSTCITY9",
+        "woodcut": "WDCUT04"
       }
     }
   ],

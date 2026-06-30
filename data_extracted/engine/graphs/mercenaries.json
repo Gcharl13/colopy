@@ -17,7 +17,8 @@
       "params": {
         "title": "Mercenaries for Hire",
         "textKey": "@MERCENARIES",
-        "choices": "Accept,Refuse"
+        "choices": "Accept,Refuse",
+        "speaker": "King"
       }
     },
     {
@@ -38,7 +39,8 @@
       "params": {
         "title": "Mercenaries Arrive",
         "textKey": "@MERCS",
-        "choices": "Welcome"
+        "choices": "Welcome",
+        "woodcut": "WDCUT10"
       }
     },
     {

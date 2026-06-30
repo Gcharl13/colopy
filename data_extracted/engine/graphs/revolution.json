@@ -49,7 +49,8 @@
       "params": {
         "title": "Independence!",
         "textKey": "@INDEPENDENCE",
-        "choices": "We hold these truths to be self-evident"
+        "choices": "We hold these truths to be self-evident",
+        "speaker": "Continental Congress"
       }
     },
     {
