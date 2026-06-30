@@ -67,6 +67,29 @@ const char* forge_index_html() {
   .x { cursor:pointer; color:#9aa3b2; font-size:20px; background:none; border:none; line-height:1; }
   #toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#2b3140; border:1px solid #3a4151; padding:8px 16px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; }
   #toast.show { opacity:1; }
+  /* node-graph editor */
+  .glayout { display:flex; gap:8px; height:72vh; }
+  .gpalette { width:170px; overflow:auto; background:#0f1115; border:1px solid #2a2e37; border-radius:6px; padding:6px; flex:none; }
+  .gpalette h4 { margin:8px 4px 4px; color:#9aa3b2; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  .gpitem { padding:5px 8px; margin:2px 0; background:#1c2026; border:1px solid #2a2e37; border-radius:4px; cursor:grab; font-size:12px; }
+  .gpitem:hover { border-color:#e8b94b; }
+  .gcanvas { flex:1; position:relative; overflow:hidden; background:#101216; border:1px solid #2a2e37; border-radius:6px; }
+  #gworld { position:absolute; left:0; top:0; transform-origin:0 0; }
+  #gwires { position:absolute; left:0; top:0; width:4000px; height:3000px; pointer-events:none; overflow:visible; }
+  .gnode { position:absolute; min-width:128px; background:#1b1f27; border:1px solid #3a4151; border-radius:6px; box-shadow:0 2px 8px #0007; font-size:12px; user-select:none; }
+  .gnode.sel { border-color:#e8b94b; }
+  .gnhdr { padding:4px 8px; background:#262c38; border-radius:6px 6px 0 0; cursor:grab; font-weight:600; color:#e8b94b; }
+  .gnhdr.trig { color:#7ad08a; } .gnhdr.act { color:#7ab8ff; } .gnhdr.flow { color:#e8b94b; } .gnhdr.data { color:#c9a6ff; } .gnhdr.dlg { color:#ff9bb0; }
+  .gnbody { padding:4px 2px; }
+  .gprow { display:flex; justify-content:space-between; align-items:center; gap:6px; padding:1px 4px; min-height:16px; }
+  .gpin { width:11px; height:11px; border-radius:50%; border:2px solid #6b7280; background:#11141a; cursor:crosshair; flex:none; }
+  .gpin.exec { border-radius:2px; border-color:#cdd3df; }
+  .gpin.hot { border-color:#e8b94b; background:#e8b94b; }
+  .gplabel { color:#aeb6c2; font-size:11px; }
+  .gprops { width:210px; background:#0f1115; border:1px solid #2a2e37; border-radius:6px; padding:8px; flex:none; overflow:auto; }
+  .gprops label { display:block; font-size:11px; color:#9aa3b2; margin:6px 0 2px; }
+  .gprops input,.gprops select,.gprops textarea { width:100%; box-sizing:border-box; background:#0f1115; color:#dfe3ea; border:1px solid #2a2e37; border-radius:4px; padding:4px; font:inherit; }
+  .wire { stroke:#cdd3df; stroke-width:2; fill:none; } .wire.data { stroke:#c9a6ff; }
 </style>
 </head>
 )HTML")
@@ -80,6 +103,7 @@ const char* forge_index_html() {
   <button data-tab="formulas">Formulas</button>
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
+  <button data-tab="logic">Logic</button>
   <button data-tab="play">Play</button>
 </nav>
 <main>
@@ -165,6 +189,25 @@ const char* forge_index_html() {
       <canvas id="gcv" width="640" height="480"></canvas>
       <div id="ghud" style="min-width:250px"></div>
     </div>
+  </section>
+
+  <section id="logic" class="tab">
+    <div class="row">
+      <select id="graphpick" onchange="loadGraph()"></select>
+      <button class="act" onclick="newGraph()">New</button>
+      <button class="act" onclick="saveGraph()">Save</button>
+      <button class="act" onclick="runGraph()">&#9654; Run</button>
+      <span class="muted">Drag a node from the palette; drag pin&rarr;pin to wire. Click a node to edit it.</span>
+      <span id="ginfo" class="muted"></span>
+    </div>
+    <div class="glayout">
+      <div class="gpalette" id="gpalette"></div>
+      <div class="gcanvas" id="gcanvas">
+        <div id="gworld"><svg id="gwires"></svg></div>
+      </div>
+      <div class="gprops" id="gprops"><span class="muted">No node selected.</span></div>
+    </div>
+    <div id="grun" class="muted" style="margin-top:8px"></div>
   </section>
 </main>
 
@@ -361,6 +404,160 @@ async function saveMap() {
   const d = await res.json();
   $('#minfo').innerHTML = d.ok ? '<span class="pass">saved</span>' : '<span class="fail">'+(d.error||'save failed')+'</span>';
 }
+</script>
+)HTML"
+        // ---- chunk 3b: script -- node-graph editor (Logic tab) ----
+        + R"HTML(<script>
+// ===== Node-graph editor (Blueprint-inspired) =====
+let CAT=[], NDEF={}, CATOF={}, G={id:'untitled',name:'Untitled',nodes:[],edges:[]};
+let selNode=null, wiring=null, GINIT=false; const PAN={x:30,y:30}; let ZOOM=1;
+const NW=152, HEAD=24, ROW=18;
+const BINDS=['game.year','game.season','game.turn','game.difficulty','power0.gold','power0.tax',
+  'power0.royal_money','power0.crosses','ref.regulars','ref.cavalry','ref.manowar','ref.artillery',
+  'colonies.count','units.count','colony0.population','colony0.sol','price.1'];
+const SVGNS='http://www.w3.org/2000/svg';
+function catClass(c){return c==='Triggers'?'trig':c==='Actions'?'act':c==='Flow'?'flow':c==='Data'?'data':c==='Dialog'?'dlg':'';}
+function nodeById(id){return G.nodes.find(n=>n.id===id);}
+function isExec(type,pin){const d=NDEF[type];if(!d)return false;const p=d.pins.find(x=>x.name===pin);return p&&p.kind==='exec';}
+function worldXform(){$('#gworld').style.transform='translate('+PAN.x+'px,'+PAN.y+'px) scale('+ZOOM+')';}
+function toWorld(ev){const r=$('#gcanvas').getBoundingClientRect();return {x:(ev.clientX-r.left-PAN.x)/ZOOM,y:(ev.clientY-r.top-PAN.y)/ZOOM};}
+function toWorldCenter(){const r=$('#gcanvas').getBoundingClientRect();return {x:(r.width/2-PAN.x)/ZOOM,y:(r.height/2-PAN.y)/ZOOM};}
+function pinPos(node,pinName){
+  const def=NDEF[node.type]; if(!def) return {x:node.x,y:node.y};
+  const ins=def.pins.filter(p=>p.dir==='in'), outs=def.pins.filter(p=>p.dir==='out');
+  let ii=ins.findIndex(p=>p.name===pinName); if(ii>=0) return {x:node.x, y:node.y+HEAD+ii*ROW+ROW/2};
+  let oi=outs.findIndex(p=>p.name===pinName); if(oi>=0) return {x:node.x+NW, y:node.y+HEAD+oi*ROW+ROW/2};
+  return {x:node.x,y:node.y};
+}
+async function gInit(){
+  const r=await fetch('/api/nodes'); CAT=(await r.json()).categories; NDEF={}; CATOF={};
+  for(const c of CAT) for(const n of c.nodes){ NDEF[n.type]=n; CATOF[n.type]=c.name; }
+  if(!$('#bindlist')){ const dl=document.createElement('datalist'); dl.id='bindlist';
+    dl.innerHTML=BINDS.map(b=>'<option value="'+b+'">').join(''); document.body.appendChild(dl); }
+  buildPalette(); await gLoadList();
+  if($('#graphpick').value){ await loadGraph(); } else newGraph();
+}
+function buildPalette(){
+  let h=''; for(const c of CAT){ h+='<h4>'+esc(c.name)+'</h4>'; for(const n of c.nodes) h+='<div class="gpitem" data-t="'+n.type+'">'+esc(n.title)+'</div>'; }
+  $('#gpalette').innerHTML=h;
+  $('#gpalette').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>addNode(el.dataset.t));
+}
+async function gLoadList(){ const ids=await (await fetch('/api/graphs')).json();
+  $('#graphpick').innerHTML=ids.map(i=>'<option'+(i===G.id?' selected':'')+'>'+esc(i)+'</option>').join(''); }
+async function loadGraph(){ const id=$('#graphpick').value; if(!id)return;
+  G=await (await fetch('/api/graph?id='+encodeURIComponent(id))).json(); G.nodes=G.nodes||[]; G.edges=G.edges||[];
+  selNode=null; gProps(); gRender(); $('#ginfo').textContent=G.nodes.length+' nodes'; }
+function newGraph(){ G={id:'untitled',name:'Untitled',nodes:[],edges:[]}; selNode=null; gProps(); gRender(); }
+function gClean(){ return {id:G.id,name:G.name,nodes:G.nodes.map(n=>({id:n.id,type:n.type,x:n.x,y:n.y,params:n.params||{}})),edges:G.edges}; }
+async function saveGraph(){
+  if(!G.id||G.id==='untitled'){ const id=prompt('Graph id (filename):','my_graph'); if(!id)return; G.id=id; if(G.name==='Untitled')G.name=id; }
+  const d=await (await fetch('/api/graph',{method:'POST',body:JSON.stringify(gClean())})).json();
+  if(d.ok){ ui.toast('Saved '+G.id); gLoadList(); } else ui.toast('Save failed');
+}
+function addNode(type){
+  const def=NDEF[type]; const params={};
+  if(def) for(const p of def.params) params[p.name]= p.kind==='number'?0:(p.options?p.options[0]:'');
+  const w=toWorldCenter();
+  const n={id:'n'+(Date.now()%100000)+Math.floor(Math.random()*99), type, x:Math.round(w.x), y:Math.round(w.y), params};
+  G.nodes.push(n); selNode=n; gProps(); gRender();
+}
+function delNode(){ if(!selNode)return; const id=selNode.id;
+  G.edges=G.edges.filter(e=>e.from.node!==id&&e.to.node!==id); G.nodes=G.nodes.filter(n=>n!==selNode); selNode=null; gProps(); gRender(); }
+function gRender(){
+  const world=$('#gworld'); [...world.querySelectorAll('.gnode')].forEach(e=>e.remove());
+  const svg=$('#gwires'); svg.innerHTML='';
+  for(const e of G.edges){
+    const fn=nodeById(e.from.node), tn=nodeById(e.to.node); if(!fn||!tn) continue;
+    const a=pinPos(fn,e.from.pin), b=pinPos(tn,e.to.pin), data=!isExec(fn.type,e.from.pin);
+    const p=document.createElementNS(SVGNS,'path'); p.setAttribute('class','wire'+(data?' data':''));
+    p.setAttribute('d','M'+a.x+','+a.y+' C'+(a.x+60)+','+a.y+' '+(b.x-60)+','+b.y+' '+b.x+','+b.y);
+    p.style.pointerEvents='stroke'; p.style.cursor='pointer'; p.onclick=()=>{ G.edges=G.edges.filter(x=>x!==e); gRender(); };
+    svg.appendChild(p);
+  }
+  for(const n of G.nodes) world.appendChild(makeNode(n));
+  worldXform();
+}
+function makeNode(n){
+  const def=NDEF[n.type]||{pins:[],title:n.type,params:[]};
+  const d=document.createElement('div'); d.className='gnode'+(n===selNode?' sel':'');
+  d.style.left=n.x+'px'; d.style.top=n.y+'px'; d.style.width=NW+'px';
+  const hdr=document.createElement('div'); hdr.className='gnhdr '+catClass(CATOF[n.type]); hdr.textContent=def.title||n.type;
+  hdr.onmousedown=ev=>startDragNode(ev,n); d.appendChild(hdr);
+  d.onclick=ev=>{ if(ev.target!==hdr){ selNode=n; gProps(); gRender(); } };
+  const body=document.createElement('div'); body.className='gnbody';
+  const ins=def.pins.filter(p=>p.dir==='in'), outs=def.pins.filter(p=>p.dir==='out');
+  for(let i=0;i<Math.max(ins.length,outs.length);i++){
+    const row=document.createElement('div'); row.className='gprow';
+    const L=document.createElement('div'); L.style.cssText='display:flex;align-items:center;gap:4px';
+    if(ins[i]){ L.appendChild(mkPin(n,ins[i])); const s=document.createElement('span'); s.className='gplabel'; s.textContent=ins[i].name; L.appendChild(s); }
+    const R=document.createElement('div'); R.style.cssText='display:flex;align-items:center;gap:4px';
+    if(outs[i]){ const s=document.createElement('span'); s.className='gplabel'; s.textContent=outs[i].name; R.appendChild(s); R.appendChild(mkPin(n,outs[i])); }
+    row.appendChild(L); row.appendChild(R); body.appendChild(row);
+  }
+  d.appendChild(body); return d;
+}
+function mkPin(n,p){
+  const e=document.createElement('div'); e.className='gpin'+(p.kind==='exec'?' exec':''); e.title=p.kind+' '+p.name;
+  e.onmousedown=ev=>{ ev.stopPropagation(); wiring={node:n,pin:p}; document.onmousemove=wireMove; document.onmouseup=wireCancel; };
+  e.onmouseup=ev=>{ ev.stopPropagation(); endWire(n,p); };
+  return e;
+}
+function wireMove(ev){ if(!wiring)return; const a=pinPos(wiring.node,wiring.pin.name), w=toWorld(ev);
+  let p=$('#gtemp'); if(!p){ p=document.createElementNS(SVGNS,'path'); p.id='gtemp'; $('#gwires').appendChild(p); }
+  p.setAttribute('class','wire'+(wiring.pin.kind==='data'?' data':''));
+  p.setAttribute('d','M'+a.x+','+a.y+' C'+(a.x+60)+','+a.y+' '+(w.x-60)+','+w.y+' '+w.x+','+w.y); }
+function wireCancel(){ document.onmousemove=null; document.onmouseup=null; const t=$('#gtemp'); if(t)t.remove(); wiring=null; }
+function endWire(n2,p2){
+  if(!wiring){ return; } const a=wiring;
+  let out,inp;
+  if(a.pin.dir==='out'&&p2.dir==='in'){ out=a; inp={node:n2,pin:p2}; }
+  else if(a.pin.dir==='in'&&p2.dir==='out'){ out={node:n2,pin:p2}; inp=a; }
+  if(out&&inp&&out.pin.kind===inp.pin.kind&&out.node!==inp.node){
+    G.edges=G.edges.filter(e=>!(e.to.node===inp.node.id&&e.to.pin===inp.pin.name));
+    G.edges.push({from:{node:out.node.id,pin:out.pin.name},to:{node:inp.node.id,pin:inp.pin.name}});
+  }
+  wireCancel(); gRender();
+}
+function startDragNode(ev,n){ ev.preventDefault(); selNode=n; gProps();
+  const s=toWorld(ev), ox=n.x-s.x, oy=n.y-s.y;
+  document.onmousemove=e=>{ const w=toWorld(e); n.x=Math.round(w.x+ox); n.y=Math.round(w.y+oy); gRender(); };
+  document.onmouseup=()=>{ document.onmousemove=null; document.onmouseup=null; }; }
+function gProps(){
+  if(!selNode){ $('#gprops').innerHTML='<span class="muted">No node selected. Click a node, or a palette item to add one.</span>'; return; }
+  const def=NDEF[selNode.type]; let h='<b>'+(def?esc(def.title):esc(selNode.type))+'</b>';
+  h+='<div class="muted" style="margin:3px 0 6px">'+(def?esc(def.summary):'')+'</div>';
+  if(def) for(const p of def.params){ const v=selNode.params[p.name]!==undefined?selNode.params[p.name]:'';
+    h+='<label>'+esc(p.name)+'</label>';
+    if(p.kind==='select') h+='<select data-p="'+p.name+'">'+p.options.map(o=>'<option'+(String(o)===String(v)?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+    else if(p.kind==='text') h+='<textarea data-p="'+p.name+'" rows="2">'+esc(String(v))+'</textarea>';
+    else if(p.kind==='binding') h+='<input data-p="'+p.name+'" list="bindlist" value="'+esc(String(v))+'">';
+    else h+='<input type="number" data-p="'+p.name+'" value="'+esc(String(v))+'">';
+  }
+  h+='<button class="act" style="margin-top:10px" onclick="delNode()">Delete node</button>';
+  $('#gprops').innerHTML=h;
+  $('#gprops').querySelectorAll('[data-p]').forEach(el=>el.onchange=()=>{ selNode.params[el.dataset.p]=(el.type==='number')?+el.value:el.value; gRender(); });
+}
+async function runGraph(){ const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(gClean())})).json(); showRun(d); }
+async function resumeGraph(node,choice){ ui.close();
+  const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(Object.assign(gClean(),{from_node:node,choice}))})).json(); showRun(d); }
+function showRun(d){
+  let h='<b>log:</b> '+((d.log||[]).map(esc).join(' &rarr; ')||'(nothing ran)');
+  if(d.effects&&d.effects.length) h+='<br><b>effects:</b> '+d.effects.map(esc).join('; ');
+  $('#grun').innerHTML=h;
+  if(d.popup){ const p=d.popup; ui.popup(esc(p.title), '<p>'+esc(p.body)+'</p><div id="pchoices"></div>');
+    const box=$('#pchoices'); (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resumeGraph(p.node,c); box.appendChild(b); }); }
+}
+addEventListener('keydown',e=>{ const t=document.activeElement&&document.activeElement.tagName;
+  if((e.key==='Delete'||e.key==='Backspace')&&selNode&&t!=='INPUT'&&t!=='TEXTAREA'&&t!=='SELECT'){ delNode(); } });
+function gPanWheelSetup(){
+  const cv=$('#gcanvas');
+  cv.addEventListener('mousedown',ev=>{ if(!['gcanvas','gworld','gwires'].includes(ev.target.id))return;
+    const sx=ev.clientX-PAN.x, sy=ev.clientY-PAN.y;
+    document.onmousemove=e=>{ PAN.x=e.clientX-sx; PAN.y=e.clientY-sy; worldXform(); };
+    document.onmouseup=()=>{ document.onmousemove=null; document.onmouseup=null; }; });
+  cv.addEventListener('wheel',ev=>{ ev.preventDefault(); ZOOM=Math.min(2,Math.max(0.4,ZOOM*(ev.deltaY<0?1.1:0.9))); worldXform(); },{passive:false});
+}
+document.querySelector('nav button[data-tab=logic]').addEventListener('click',()=>{ if(!GINIT){ GINIT=true; gPanWheelSetup(); gInit(); } });
 </script>
 )HTML"
         // ---- chunk 4: script -- data, formulas, assets, screens, init ----
