@@ -118,8 +118,10 @@ const char* forge_index_html() {
     <div class="row">
       <button class="act" onclick="loadFullRules()">Load full ruleset</button>
       <button class="act" onclick="applyRules()">Apply &amp; inspect</button>
+      <button class="act" onclick="saveActiveMod()">Save as active mod</button>
+      <button class="act" onclick="resetActiveMod()">Reset to default</button>
       <button class="act" onclick="downloadOverlay()">Download overlay</button>
-      <span id="rinv"></span>
+      <span id="rinv"></span> <span id="ractive" class="muted"></span>
     </div>
     <p class="muted"><b>Load full ruleset</b> dumps every value (all units, terrain, balance
       constants) into the box to view/edit. Or paste a sparse <code>rules.json</code> overlay
@@ -278,6 +280,26 @@ function demoPopup(){
 
 // ---- Rules ----
 let lastOverlay = {};
+// Persist the textarea overlay as the ACTIVE mod -- the Play game + event graphs run on it.
+async function saveActiveMod(){
+  const txt=$('#overlay').value.trim();
+  let res; try{ res=await fetch('/api/rules/save',{method:'POST',body:txt||'{}'}); }
+  catch(e){ ui.toast('save failed'); return; }
+  const d=await res.json();
+  if(d.saved){ ui.toast('Active mod saved — Play game + events now use it'); applyRules(); refreshActive(); }
+  else { $('#rinv').innerHTML='<span class="pill bad">invalid ruleset — not saved</span>';
+    $('#rwarn').innerHTML=((d.invariants&&d.invariants.violations)||[]).map(v=>'<div class="fail">! '+v+'</div>').join(''); }
+}
+async function resetActiveMod(){
+  try{ await fetch('/api/rules/reset',{method:'POST',body:'{}'}); }catch(e){ ui.toast('reset failed'); return; }
+  ui.toast('Reset to the default ruleset'); refreshActive();
+}
+async function refreshActive(){
+  try{ const d=await (await fetch('/api/rules/active')).json();
+    const n=Object.keys(d.overlay||{}).length;
+    $('#ractive').textContent=n?('active mod: applied ('+n+' section'+(n>1?'s':'')+')'):'active mod: none (default ruleset)';
+  }catch(e){}
+}
 async function applyRules() {
   const txt = $('#overlay').value.trim();
   let res;
@@ -946,6 +968,7 @@ function drawHud(){
 
 // ---- init ----
 applyRules();
+refreshActive();
 loadFormulas();
 loadAssets();
 newGame();

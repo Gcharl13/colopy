@@ -84,15 +84,28 @@ Run it from the repo root so the default data paths resolve. Tabs:
 
 - **Tables** — browse every `@`-section of the game data (NAMES.TXT) as a filterable grid
   (`GET /api/tables`). The table content the rest of the engine is driven by.
+- **Rules** — edit the ruleset (load the full dump or paste a sparse overlay) and see balance
+  curves shift live. **Save as active mod** persists the sparse overlay to
+  `data_extracted/engine/rules.json` (rejected if it fails `check_rules`) and applies it to **both
+  the Play game *and* the event-graph engine** — a modded unit stat actually changes
+  `ResolveCombat`/`StepTurn` outcomes; the mod reloads on the next `forge serve`. **Reset** reverts
+  to the default ruleset. (`/api/rules/{active,save,reset}`.)
 - **Logic** — the **visual node-graph editor** (Blueprint-inspired): drag nodes from the palette,
   wire pin→pin (exec = control flow, data = values), edit a node's params, and **Run** to fire the
   graph against the live game. Logic is built by connecting nodes, not by writing code. Node
-  categories: Triggers, Flow (Branch/Roll/Sequence), Data (GetState/Math/Compare/Constant), Actions
-  (GrantGold/SetTax/SetPrice/AddREF/SpawnUnit/StepTurn/…), Dialog (ShowPopup/Navigate). The six
-  major event families ship as graphs (`data_extracted/engine/graphs/`): king's tax, founding
-  father, lost city, native raid, immigration, declare independence.
+  categories: Triggers, Flow (Branch/Roll/Sequence), Data (GetState/Math/Compare/Constant/
+  RandomChance/HasFoundingFather), Actions — economic (GrantGold/SetTax/SetPrice/AddColonyPop/
+  AddREF/SpawnUnit/StepTurn) **and sim-wired** (ResolveCombat→`resolve_land`, ChangeNativeTension→
+  `apply_tension`, GiveFoundingFather, AddBoycott, DeclareWar→`declare_war`, GrantImmigrant) — and
+  Dialog (ShowPopup/Navigate). The sim-wired actions read/write the relational state the pure
+  economic sim doesn't hold (native tension, founding-father ownership, boycotts, the diplomacy
+  matrix), surfaced as bindings (`natives.tension`, `ff.<id>`/`ff.count`, `boycott.<g>`,
+  `war.<a>.<b>`). The event families ship as graphs (`data_extracted/engine/graphs/`): king's tax,
+  founding father, lost city, native raid + uprising, immigration, declare independence.
 - **Screens** — the **visual screen designer**: pick/new/save a screen, drag widgets (text /
-  button / rect / sprite), edit them in the property panel, and a **State Inspector** that writes
+  button / rect / **sprite** — which blits real art: building frames from `BUILDING.SS`
+  (`data_extracted/tileset/buildings.png`) or unit frames from `units.png`, contain-fit + crisp),
+  edit them in the property panel, and a **State Inspector** that writes
   live game values (year/gold/tax/…) so the screen reacts. Text widgets interpolate `{binding}`
   tokens. **Preview** runs the screen with live buttons that fire their `onClick` node graph —
   which can mutate the game, pop a dialog, or **Navigate** to another screen.

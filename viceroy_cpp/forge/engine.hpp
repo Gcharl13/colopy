@@ -39,6 +39,7 @@ struct EngineCtx {
     vc::sim::World&     w;
     std::vector<std::pair<int,int>>& colony_xy;
     EngineExtra&        x;                 // relational state the actions touch
+    const vc::sim::RuleData& rd;           // active (possibly modded) ruleset
     std::function<int(int,int)> rng;       // deterministic [lo,hi]
 };
 

@@ -489,7 +489,7 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "StepTurn") {
-            vc::sim::step_turn(cx.g, cx.w, cx.rng, 0);
+            vc::sim::step_turn(cx.g, cx.w, cx.rng, 0, cx.rd);
             effect("advanced to year " + std::to_string(cx.g.year));
             return follow(nodeId, "out", popup);
         }
@@ -499,9 +499,9 @@ struct Runner {
             if (ai >= 0 && ai < (int)U.size() && di >= 0 && di < (int)U.size() && ai != di &&
                 U[ai].alive && U[di].alive) {
                 int tid = cx.w.terrain_id(U[di].x, U[di].y);
-                int tdef = vc::sim::terrain_defense_value(tid < 0 ? 0 : tid);
+                int tdef = vc::sim::terrain_defense_value(cx.rd, tid < 0 ? 0 : tid);
                 vc::sim::CombatResult cr = vc::sim::resolve_land(
-                    U[ai], U[di], tdef, 0, cx.g.difficulty,
+                    cx.rd, U[ai], U[di], tdef, 0, cx.g.difficulty,
                     U[ai].owner == 0, U[di].owner == 0, cx.rng);
                 int li = cr.attacker_won ? di : ai;     // loser
                 int wi = cr.attacker_won ? ai : di;     // winner

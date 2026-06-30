@@ -556,6 +556,11 @@ static std::vector<std::pair<int,int>> g_colony_xy;   // colony map positions (F
 static forge::EngineExtra g_engine_extra;             // relational state the action nodes touch
 static bool g_game_active = false;
 
+// The active (possibly modded) ruleset the Play game + engine VM run on. Persisted as a
+// sparse overlay on disk; edits in the Rules editor are saved here and bite the sim.
+static const char* ACTIVE_RULES_PATH = "data_extracted/engine/rules.json";
+static RuleData g_active_rules = make_default_rules();
+
 static int g_rng = 0x2BAD1234;
 static int game_rng(int lo, int hi) {                  // deterministic LCG in [lo,hi]
     g_rng = g_rng * 1103515245 + 12345;
@@ -618,7 +623,7 @@ static void game_new() {
 }
 
 static void game_step() {
-    if (g_game_active) step_turn(g_game, g_world, game_rng, 0, default_rules());
+    if (g_game_active) step_turn(g_game, g_world, game_rng, 0, g_active_rules);
 }
 
 static forge::JsonValue game_state_json() {
@@ -712,6 +717,44 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, forge::full_overlay(make_default_rules()));
         }
 
+        if (path == "/api/rules/active") {
+            // The sparse overlay currently APPLIED to the Play game + engine VM.
+            RuleData base = make_default_rules();
+            forge::JsonValue root = jobj();
+            root.obj["overlay"]    = forge::overlay_diff(base, g_active_rules);
+            root.obj["invariants"] = inv_json(check_rules(g_active_rules));
+            root.obj["curves"]     = curves_json(base, g_active_rules);
+            return J(200, root);
+        }
+
+        if (path == "/api/rules/save" && method == "POST") {
+            // Persist the posted overlay as the active mod -- but only if it is a
+            // valid ruleset; an invalid edit is rejected (the sim never runs on it).
+            RuleData base = make_default_rules();
+            forge::OverlayResult o = forge::apply_overlay(forge::json_parse(body), base);
+            InvariantReport rep = check_rules(o.rules);
+            forge::JsonValue root = jobj();
+            root.obj["invariants"] = inv_json(rep);
+            root.obj["warnings"]   = jstrs(o.warnings);
+            if (rep.ok()) {
+                g_active_rules = o.rules;
+                try { forge::save_overlay(ACTIVE_RULES_PATH, base, g_active_rules); }
+                catch (const std::exception& e) { return err(500, std::string("write failed: ") + e.what()); }
+                root.obj["saved"]   = jbool(true);
+                root.obj["overlay"] = forge::overlay_diff(base, g_active_rules);
+            } else {
+                root.obj["saved"] = jbool(false);   // invalid: not applied, not written
+            }
+            return J(200, root);
+        }
+
+        if (path == "/api/rules/reset" && method == "POST") {
+            // Revert to the un-modded ruleset and remove the on-disk overlay.
+            g_active_rules = make_default_rules();
+            std::error_code ec; std::filesystem::remove(ACTIVE_RULES_PATH, ec);
+            return J(200, jbool(true));
+        }
+
         if (path == "/api/formulas")
             return J(200, forge::formulas_catalog());
 
@@ -740,7 +783,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
         if (path == "/api/bind") {
             if (!g_game_active) game_new();
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue o = jobj();
             o.obj["value"] = forge::resolve_binding(qparam(query, "path"), cx);
             return J(200, o);
@@ -750,7 +793,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* p = b.find("path"); const forge::JsonValue* v = b.find("value");
             if (!p || !v) return err(400, "need {path,value}");
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue o = jobj();
             o.obj["ok"] = jbool(forge::set_binding(p->str, v->as_double(), cx));
             return J(200, o);
@@ -781,7 +824,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             else return err(400, "need {graph} or {id}");
             std::string from = b.find("from_node") ? b.find("from_node")->str : "";
             std::string choice = b.find("choice") ? b.find("choice")->str : "";
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             return J(200, forge::run_graph(graph, cx, from, choice));
         }
 
@@ -789,7 +832,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/turn" && method == "POST") {
             game_step();                                    // advance the turn
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, game_rng};
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue events = jarr();
             for (const std::string& id : forge::list_graphs()) {
                 forge::JsonValue gr;
@@ -914,11 +957,12 @@ static int engine_selftest() {
     check(cat.find("categories") && !cat.find("categories")->arr.empty(), "node catalog non-empty");
 
     GameState g; World w; std::vector<std::pair<int,int>> cxy; forge::EngineExtra ex;
+    RuleData rd = make_default_rules();
     g.powers[0].gold = 100;
     int seed = 0x1234;
     auto rng = [&](int lo, int hi) { seed = seed * 1103515245 + 12345;
         unsigned v = ((unsigned)seed >> 16) & 0x7FFF; return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1)); };
-    forge::EngineCtx cx{g, w, cxy, ex, rng};
+    forge::EngineCtx cx{g, w, cxy, ex, rd, rng};
 
     check(forge::resolve_binding("power0.gold", cx).as_int() == 100, "resolve_binding power0.gold");
 
@@ -1008,6 +1052,34 @@ static int engine_selftest() {
         check(reported, "ResolveCombat reports a combat outcome");
     }
 
+    // --- F3: the engine VM runs on the CTX ruleset -- a modded unit stat bites combat.
+    // Pull the attacker strength out of "combat: ... won (A vs B)" under default vs modded rules.
+    auto combat_atk = [&](const RuleData& rdx) -> int {
+        GameState g2; World w2; std::vector<std::pair<int,int>> cxy2; forge::EngineExtra ex2;
+        forge::EngineCtx cxx{g2, w2, cxy2, ex2, rdx, rng};
+        vc::sim::Unit ua; ua.type = 1; ua.owner = 0; ua.alive = true;   // Soldiers (human attacker)
+        vc::sim::Unit ud; ud.type = 0; ud.owner = 1; ud.alive = true;   // Colonists
+        w2.units.push_back(ua); w2.units.push_back(ud);
+        forge::JsonValue gc = forge::json_parse(
+            R"({"id":"c","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"a","type":"ResolveCombat","params":{"attacker":0,"defender":1}}],)"
+            R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"a","pin":"in"}}]})");
+        forge::JsonValue rep = forge::run_graph(gc, cxx);
+        const forge::JsonValue* ef = rep.find("effects");
+        if (ef) for (const auto& s : ef->arr) {
+            size_t lp = s.str.find('('); size_t vs = s.str.find(" vs ");
+            if (s.str.rfind("combat:", 0) == 0 && lp != std::string::npos && vs != std::string::npos)
+                return std::atoi(s.str.c_str() + lp + 1);
+        }
+        return -1;
+    };
+    forge::OverlayResult om = forge::apply_overlay(
+        forge::json_parse(R"({"units":{"Soldiers":{"attack":20}}})"), make_default_rules());
+    int atk_def = combat_atk(make_default_rules());
+    int atk_mod = combat_atk(om.rules);
+    check(atk_def > 0 && atk_mod > atk_def && atk_mod >= 20,
+          "modded Soldiers attack raises ResolveCombat attacker strength");
+
     std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;
 }
@@ -1015,6 +1087,17 @@ static int engine_selftest() {
 static int do_serve(int argc, char** argv) {
     int port = (argc >= 3) ? std::atoi(argv[2]) : 8099;
     if (port <= 0 || port > 65535) port = 8099;
+    // Load the persisted active mod (if any) so the Play game starts on the saved ruleset.
+    if (std::filesystem::exists(ACTIVE_RULES_PATH)) {
+        try {
+            forge::OverlayResult o = forge::load_overlay(ACTIVE_RULES_PATH, make_default_rules());
+            if (check_rules(o.rules).ok()) { g_active_rules = o.rules;
+                std::printf("loaded active mod from %s\n", ACTIVE_RULES_PATH); }
+            else std::printf("active mod %s is invalid -- ignoring\n", ACTIVE_RULES_PATH);
+        } catch (const std::exception& e) {
+            std::printf("could not load %s: %s\n", ACTIVE_RULES_PATH, e.what());
+        }
+    }
     return forge::serve_http(port, serve_route);
 }
 
