@@ -272,6 +272,13 @@ JsonValue node_catalog() {
                  {pin("cond","data","in","number"), pin("a","data","in","number"),
                   pin("b","data","in","number"), pin("value","data","out","number")},
                  {param("a","number"), param("b","number")}),
+        node_def("TableLookup", "Table Lookup (row by index)",
+                 "Reads @<section>[index].<column> from a data table by a COMPUTED row index -- the "
+                 "table-driven replacement for a hardcoded PickText/PickNumber list. E.g. section "
+                 "@CLASS, column transport_cost, index = a rolled class -> that class's recruit cost. "
+                 "Any row you add to the table is picked up automatically.",
+                 {pin("index","data","in","number"), pin("value","data","out","number")},
+                 {param("section","text"), param("column","text")}),
         node_def("PickText", "Pick Text (by index)",
                  "Outputs the index-th entry of a comma-separated list -- e.g. the immigrant "
                  "class name for a rolled class index. Wire its output to a ShowPopup str0/str1/str2 "
@@ -770,6 +777,12 @@ struct Runner {
             std::string t = ptype(*n);
             if (t == "Constant")      out = json_num(as_num(pget(*n, "value")));
             else if (t == "GetState") out = resolve_binding(pget(*n, "path").str, cx);
+            else if (t == "TableLookup") {
+                int idx = (int)as_num(eval_in(nodeId, "index"));
+                std::string sec = pget(*n, "section").str, col = pget(*n, "column").str;
+                if (!sec.empty() && sec[0] != '@') sec = "@" + sec;
+                out = table_cell(sec + "[" + std::to_string(idx) + "]." + col);
+            }
             else if (t == "Formula") {
                 // identifiers a..d are the wired data pins; everything else is a live binding.
                 auto var = [&](const std::string& name) -> double {
