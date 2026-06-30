@@ -82,6 +82,28 @@ Run it from the repo root so the default data paths resolve. Tabs:
   **End turn** runs `step_turn` once (colonies grow, immigration & the King's army accrue,
   prices drift). Backed by `POST /api/game/{new,step,order,found}`, `GET /api/game/state`.
 
+- **Tables** — browse every `@`-section of the game data (NAMES.TXT) as a filterable grid
+  (`GET /api/tables`). The table content the rest of the engine is driven by.
+- **Logic** — the **visual node-graph editor** (Blueprint-inspired): drag nodes from the palette,
+  wire pin→pin (exec = control flow, data = values), edit a node's params, and **Run** to fire the
+  graph against the live game. Logic is built by connecting nodes, not by writing code. Node
+  categories: Triggers, Flow (Branch/Roll/Sequence), Data (GetState/Math/Compare/Constant), Actions
+  (GrantGold/SetTax/SetPrice/AddREF/SpawnUnit/StepTurn/…), Dialog (ShowPopup/Navigate). The six
+  major event families ship as graphs (`data_extracted/engine/graphs/`): king's tax, founding
+  father, lost city, native raid, immigration, declare independence.
+- **Screens** — the **visual screen designer**: pick/new/save a screen, drag widgets (text /
+  button / rect / sprite), edit them in the property panel, and a **State Inspector** that writes
+  live game values (year/gold/tax/…) so the screen reacts. Text widgets interpolate `{binding}`
+  tokens. **Preview** runs the screen with live buttons that fire their `onClick` node graph —
+  which can mutate the game, pop a dialog, or **Navigate** to another screen.
+
+These three tabs are the **game-development engine**: the game is data — node graphs (logic/events)
+and screen definitions under `data_extracted/engine/` — that `forge.exe` both *runs* (the graph
+interpreter + screen runtime + the sim) and *authors* (the editors). See
+`data_extracted/engine/schemas.md`. Backed by `/api/{nodes,graphs,graph,graph/run,bind,bind/set,
+screens,screen}`. (The browser UI is the verified host now; a native-GUI port reuses the same
+C++ engine + JSON backend.)
+
 The popup/toast/button UI layer (`ui.popup` / `ui.toast`, ESC- and click-outside-to-close)
 is reusable across tabs — the interactive shell the full engine builds on.
 
