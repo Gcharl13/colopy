@@ -90,6 +90,12 @@ const char* forge_index_html() {
   .gprops label { display:block; font-size:11px; color:#9aa3b2; margin:6px 0 2px; }
   .gprops input,.gprops select,.gprops textarea { width:100%; box-sizing:border-box; background:#0f1115; color:#dfe3ea; border:1px solid #2a2e37; border-radius:4px; padding:4px; font:inherit; }
   .wire { stroke:#cdd3df; stroke-width:2; fill:none; } .wire.data { stroke:#c9a6ff; }
+  /* screen designer */
+  .sstage { position:relative; width:640px; height:400px; background:#000; border:1px solid #2a2e37; image-rendering:pixelated; flex:none; }
+  .sstage img.bg { position:absolute; left:0; top:0; width:640px; height:400px; image-rendering:pixelated; }
+  .swidget { position:absolute; box-sizing:border-box; cursor:move; white-space:pre; overflow:hidden; }
+  .swidget.sel { outline:1px solid #e8b94b; outline-offset:0; z-index:5; }
+  .swspr { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:9px; color:#e8b94b; border:1px dashed #e8b94b80; background:#0008; }
 </style>
 </head>
 )HTML")
@@ -168,12 +174,22 @@ const char* forge_index_html() {
 
   <section id="screens" class="tab">
     <div class="row">
-      <select id="screenpick" onchange="loadScreen()"></select>
-      <button class="act" onclick="demoPopup()">Demo: button + popup + toast</button>
-      <button class="act" onclick="clearSpots()">Clear hotspots</button>
-      <span class="muted">Click the screen to drop a clickable hotspot button.</span>
+      <select id="scrpick" onchange="scrLoad()"></select>
+      <button class="act" onclick="scrNew()">New</button>
+      <button class="act" onclick="scrSave()">Save</button>
+      <button class="act" onclick="scrRefresh()">Refresh</button>
+      <span class="muted">Click a widget to select, drag to move; edit it on the right. The
+        State Inspector tweaks the live game and the screen reacts. <code>{game.year}</code>-style
+        tokens in text bind to game state.</span>
     </div>
-    <div id="stage" class="stage"></div>
+    <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap">
+      <div id="sstage" class="sstage"></div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div class="gprops" id="sprops" style="width:224px"><span class="muted">No widget selected.</span></div>
+        <div class="gprops" id="sinspect" style="width:224px"></div>
+      </div>
+      <div class="gpalette" id="spalette" style="width:120px"></div>
+    </div>
   </section>
 
   <section id="play" class="tab">
@@ -601,7 +617,7 @@ function assetURL(type, name){ return '/assets/'+(type==='backgrounds'?'pik':'sp
 async function loadAssets(){
   try { const r=await fetch('/api/assets'); ASSETS=await r.json(); }
   catch(e){ $('#ainfo').innerHTML='<span class="fail">assets unavailable (run from repo root)</span>'; return; }
-  fillScreenPicker(); renderAssets();
+  renderAssets();
 }
 function renderAssets(){
   if(!ASSETS) return;
@@ -621,39 +637,82 @@ $('#agallery').addEventListener('click', e=>{
   ui.popup(fig.dataset.label, '<img class="full" src="'+fig.dataset.url+'">');
 });
 
-// ---- Screens (compositor) ----
-let SCREEN={img:null, spots:[]};
-function fillScreenPicker(){
-  if(!ASSETS) return;
-  $('#screenpick').innerHTML=(ASSETS.backgrounds||[]).map(n=>{
-    const l=n.replace(/\.png$/,''); return '<option value="'+n+'">'+l+'</option>';
-  }).join('');
-  if (ASSETS.backgrounds && ASSETS.backgrounds.length) loadScreen();
+// ---- Screen designer + runtime ----
+let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}, selW=null, BINDV={}, SINIT=false; const SS=2;
+async function scrInit(){
+  if(!$('#graphlist')){ const dl=document.createElement('datalist'); dl.id='graphlist';
+    const ids=await (await fetch('/api/graphs')).json(); dl.innerHTML=ids.map(i=>'<option value="'+i+'">').join(''); document.body.appendChild(dl); }
+  scrPalette(); scrInspector(); await scrList(); if($('#scrpick').value) scrLoad(); else scrRender();
 }
-function loadScreen(){
-  const n=$('#screenpick').value; if(!n) return;
-  SCREEN={img:'/assets/pik/'+n, spots:[]}; drawStage();
+async function scrList(){ const ids=await (await fetch('/api/screens')).json();
+  $('#scrpick').innerHTML=ids.map(i=>'<option'+(i===SCR.id?' selected':'')+'>'+esc(i)+'</option>').join(''); }
+async function scrLoad(){ const id=$('#scrpick').value; if(!id)return;
+  SCR=await (await fetch('/api/screen?id='+encodeURIComponent(id))).json(); SCR.widgets=SCR.widgets||[]; selW=null; scrProps(); await scrRefresh(); }
+function scrNew(){ SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}; selW=null; scrProps(); scrRender(); }
+async function scrSave(){ if(!SCR.id||SCR.id==='untitled'){ const id=prompt('Screen id:','my_screen'); if(!id)return; SCR.id=id; if(SCR.name==='Untitled')SCR.name=id; }
+  const d=await (await fetch('/api/screen',{method:'POST',body:JSON.stringify(SCR)})).json();
+  if(d.ok){ ui.toast('Saved '+SCR.id); scrList(); } else ui.toast('Save failed'); }
+async function scrRefresh(){
+  const paths=new Set();
+  for(const w of SCR.widgets){ (String(w.text||'').match(/\{[^}]+\}/g)||[]).forEach(m=>paths.add(m.slice(1,-1))); }
+  BINDV={};
+  await Promise.all([...paths].map(async p=>{ try{ BINDV[p]=(await (await fetch('/api/bind?path='+encodeURIComponent(p))).json()).value; }catch(e){} }));
+  scrRender();
 }
-function clearSpots(){ SCREEN.spots=[]; drawStage(); }
-function drawStage(){
-  const st=$('#stage');
-  if(!SCREEN.img){ st.innerHTML=''; return; }
-  st.innerHTML='<img class="bg" src="'+SCREEN.img+'">';
-  SCREEN.spots.forEach((s,i)=>{
-    const b=document.createElement('button'); b.className='hotspot'; b.textContent=s.label;
-    b.style.left=s.x+'px'; b.style.top=s.y+'px';
-    b.onclick=ev=>{ ev.stopPropagation(); ui.popup(esc(s.label),'<p>Hotspot '+(i+1)+' &mdash; this is where a screen action would fire.</p>'); };
-    st.appendChild(b);
-  });
+function interp(t){ return String(t||'').replace(/\{([^}]+)\}/g,(m,p)=> (BINDV[p]!==undefined&&BINDV[p]!==null)?BINDV[p]:m); }
+function scrRender(){
+  const st=$('#sstage'); st.innerHTML='';
+  if(SCR.background){ const img=document.createElement('img'); img.className='bg'; img.src='/assets/pik/'+SCR.background+'.png'; img.onerror=()=>img.style.display='none'; st.appendChild(img); }
+  for(const w of SCR.widgets){
+    const r=w.rect||[0,0,40,8]; const d=document.createElement('div'); d.className='swidget'+(w===selW?' sel':'');
+    d.style.left=(r[0]*SS)+'px'; d.style.top=(r[1]*SS)+'px'; d.style.width=(r[2]*SS)+'px'; d.style.height=(r[3]*SS)+'px';
+    if(w.type==='rect'){ d.style.background='rgb('+(w.color||'0,0,0')+')'; }
+    else if(w.type==='sprite'){ const s=document.createElement('div'); s.className='swspr'; s.textContent=(w.sheet||'?')+' #'+(w.frame||0); d.appendChild(s); }
+    else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2));
+      d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px';
+      d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
+    d.onmousedown=ev=>scrDrag(ev,w);
+    st.appendChild(d);
+  }
 }
-$('#stage').addEventListener('click', e=>{
-  if(!SCREEN.img || e.target.tagName!=='IMG') return;
-  const r=e.target.getBoundingClientRect();
-  const x=Math.round(e.clientX-r.left), y=Math.round(e.clientY-r.top);
-  const label=prompt('Hotspot button label:','Button');
-  if(label===null) return;
-  SCREEN.spots.push({x,y,label}); drawStage(); ui.toast('Hotspot added');
-});
+function scrDrag(ev,w){ ev.preventDefault(); selW=w; scrProps();
+  const st=$('#sstage').getBoundingClientRect(), ox=w.rect[0]-(ev.clientX-st.left)/SS, oy=w.rect[1]-(ev.clientY-st.top)/SS;
+  document.onmousemove=e=>{ w.rect[0]=Math.max(0,Math.round((e.clientX-st.left)/SS+ox)); w.rect[1]=Math.max(0,Math.round((e.clientY-st.top)/SS+oy)); scrRender(); };
+  document.onmouseup=()=>{ document.onmousemove=null; document.onmouseup=null; }; scrRender();
+}
+function scrProps(){
+  if(!selW){ $('#sprops').innerHTML='<span class="muted">No widget selected. Add one from the palette &rarr;</span>'; return; }
+  const w=selW; let h='<b>Widget</b> <span class="muted">'+esc(w.type)+'</span>';
+  h+='<label>type</label><select data-w="type">'+['text','button','rect','sprite'].map(t=>'<option'+(t===w.type?' selected':'')+'>'+t+'</option>').join('')+'</select>';
+  h+='<label>rect (x,y,w,h)</label><input data-w="rect" value="'+(w.rect||[]).join(',')+'">';
+  h+='<label>color (r,g,b)</label><input data-w="color" value="'+esc(w.color||'255,255,255')+'">';
+  if(w.type==='text'||w.type==='button') h+='<label>text (use {binding})</label><textarea data-w="text" rows="2">'+esc(w.text||'')+'</textarea>';
+  if(w.type==='sprite'){ h+='<label>sheet</label><input data-w="sheet" value="'+esc(w.sheet||'ICONS')+'"><label>frame</label><input type="number" data-w="frame" value="'+(w.frame||0)+'">'; }
+  if(w.type==='button') h+='<label>onClick &rarr; graph</label><input data-w="onClick" list="graphlist" value="'+esc(w.onClick||'')+'">';
+  h+='<button class="act" style="margin-top:8px" onclick="scrDel()">Delete widget</button>';
+  $('#sprops').innerHTML=h;
+  $('#sprops').querySelectorAll('[data-w]').forEach(el=>el.onchange=()=>{ const k=el.dataset.w; let v=el.value;
+    if(k==='rect') v=v.split(',').map(x=>+x.trim()); else if(k==='frame') v=+v;
+    selW[k]=v; if(k==='type') scrProps(); scrRefresh(); });
+}
+function scrDel(){ if(!selW)return; SCR.widgets=SCR.widgets.filter(x=>x!==selW); selW=null; scrProps(); scrRender(); }
+function scrPalette(){ const t=[['text','Text'],['button','Button'],['rect','Rect'],['sprite','Sprite']];
+  $('#spalette').innerHTML='<h4>Add widget</h4>'+t.map(x=>'<div class="gpitem" data-t="'+x[0]+'">'+x[1]+'</div>').join('');
+  $('#spalette').querySelectorAll('.gpitem').forEach(el=>el.onclick=()=>scrAdd(el.dataset.t)); }
+function scrAdd(type){ const w={id:'w'+(Date.now()%100000),type,rect:[20,20,90,10],color:'255,255,255'};
+  if(type==='text'||type==='button') w.text=(type==='button')?'OK':'New text {game.year}';
+  if(type==='sprite'){ w.sheet='BUILDING'; w.frame=1; }
+  SCR.widgets.push(w); selW=w; scrProps(); scrRefresh(); }
+function scrInspector(){
+  const F=[['game.year','Year'],['game.season','Season'],['power0.gold','Gold'],['power0.tax','Tax %'],['colony0.population','Colony pop']];
+  $('#sinspect').innerHTML='<b>State Inspector</b><div class="muted" style="margin:3px 0">Tweak the live game &mdash; the screen reacts.</div>'
+    + F.map(f=>'<label>'+f[1]+'</label><input type="number" data-s="'+f[0]+'" id="si_'+f[0].replace(/\W/g,'_')+'">').join('');
+  $('#sinspect').querySelectorAll('[data-s]').forEach(el=>el.onchange=async()=>{
+    await fetch('/api/bind/set',{method:'POST',body:JSON.stringify({path:el.dataset.s,value:+el.value})}); scrRefresh(); });
+  F.forEach(async f=>{ try{ const v=(await (await fetch('/api/bind?path='+encodeURIComponent(f[0]))).json()).value;
+    const el=$('#si_'+f[0].replace(/\W/g,'_')); if(el&&v!==null)el.value=v; }catch(e){} });
+}
+document.querySelector('nav button[data-tab=screens]').addEventListener('click',()=>{ if(!SINIT){ SINIT=true; scrInit(); } });
 
 // ---- Play (the engine loop) ----
 let GAME = null, SEL = -1; const GCELL = 14;

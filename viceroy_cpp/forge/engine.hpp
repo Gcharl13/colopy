@@ -42,6 +42,16 @@ std::vector<std::string> list_graphs();
 JsonValue load_graph(const std::string& id);            // throws std::runtime_error if missing
 void      save_graph(const std::string& id, const JsonValue& graph);
 
+// Screen definitions live under data_extracted/engine/screens/<id>.json (phase E4).
+std::vector<std::string> list_screens();
+JsonValue load_screen(const std::string& id);
+void      save_screen(const std::string& id, const JsonValue& screen);
+
+// Write a few editable binding paths (the State Inspector "manipulate the I/O").
+// Returns false if the path is not writable. Writable: game.year/season,
+// power<N>.gold/tax, colony<N>.population, price.<good>.
+bool set_binding(const std::string& path, double value, EngineCtx& cx);
+
 // Resolve a binding path (e.g. "game.year", "power0.gold", "ref.regulars",
 // "colony0.population") against the live game. Returns a JSON number/string, or Null.
 JsonValue resolve_binding(const std::string& path, const EngineCtx& cx);

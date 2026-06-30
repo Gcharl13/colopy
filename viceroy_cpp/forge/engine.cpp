@@ -161,6 +161,54 @@ void save_graph(const std::string& id, const JsonValue& graph) {
     f << json_dump(graph);
 }
 
+// ---- screen CRUD (same shape as graphs) ----
+namespace { const char* SCREEN_DIR = "data_extracted/engine/screens"; }
+std::vector<std::string> list_screens() {
+    std::vector<std::string> ids; std::error_code ec;
+    for (const auto& e : fs::directory_iterator(SCREEN_DIR, ec)) {
+        if (!e.is_regular_file()) continue;
+        std::string fn = e.path().filename().string();
+        if (fn.size() > 5 && fn.compare(fn.size() - 5, 5, ".json") == 0)
+            ids.push_back(fn.substr(0, fn.size() - 5));
+    }
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+JsonValue load_screen(const std::string& id) {
+    return json_parse_file(std::string(SCREEN_DIR) + "/" + id + ".json");
+}
+void save_screen(const std::string& id, const JsonValue& screen) {
+    std::error_code ec; fs::create_directories(SCREEN_DIR, ec);
+    std::ofstream f(std::string(SCREEN_DIR) + "/" + id + ".json", std::ios::binary);
+    if (!f) throw std::runtime_error("engine: cannot write screen " + id);
+    f << json_dump(screen);
+}
+
+// ---- writable bindings (State Inspector) ----
+bool set_binding(const std::string& path, double value, EngineCtx& cx) {
+    GameState& g = cx.g; World& w = cx.w;
+    if (path == "game.year")   { g.year = (int)value; return true; }
+    if (path == "game.season") { g.season = (int)value; return true; }
+    if (path.rfind("power", 0) == 0) {
+        int p = path[5] - '0'; size_t dot = path.find('.');
+        if (p >= 0 && p < 4 && dot != std::string::npos) {
+            std::string f = path.substr(dot + 1);
+            if (f == "gold") { g.powers[p].gold = (long)value; return true; }
+            if (f == "tax")  { g.powers[p].tax = (int)value; return true; }
+        }
+    }
+    if (path.rfind("colony", 0) == 0) {
+        size_t dot = path.find('.'); int c = std::atoi(path.c_str() + 6);
+        if (dot != std::string::npos && c >= 0 && c < (int)w.colonies.size() &&
+            path.substr(dot + 1) == "population") { w.colonies[c].population = (int)value; return true; }
+    }
+    if (path.rfind("price", 0) == 0) {
+        int gi = std::atoi(path.c_str() + 6);
+        if (gi >= 0 && gi < NGOODS) { g.price_base[gi] = (int)value; return true; }
+    }
+    return false;
+}
+
 // ---- binding resolver ----
 JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     const GameState& g = cx.g; const World& w = cx.w;

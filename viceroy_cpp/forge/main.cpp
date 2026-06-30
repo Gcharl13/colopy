@@ -743,6 +743,33 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             o.obj["value"] = forge::resolve_binding(qparam(query, "path"), cx);
             return J(200, o);
         }
+        if (path == "/api/bind/set" && method == "POST") {
+            if (!g_game_active) game_new();
+            forge::JsonValue b = forge::json_parse(body);
+            const forge::JsonValue* p = b.find("path"); const forge::JsonValue* v = b.find("value");
+            if (!p || !v) return err(400, "need {path,value}");
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(forge::set_binding(p->str, v->as_double(), cx));
+            return J(200, o);
+        }
+        if (path == "/api/screens") {
+            forge::JsonValue a = jarr();
+            for (const std::string& id : forge::list_screens()) a.arr.push_back(forge::json_str(id));
+            return J(200, a);
+        }
+        if (path == "/api/screen") {
+            if (method == "POST") {
+                forge::JsonValue b = forge::json_parse(body);
+                const forge::JsonValue* id = b.find("id");
+                if (!id || !id->is_string()) return err(400, "need {id, ...screen}");
+                forge::save_screen(id->str, b);
+                forge::JsonValue o = jobj(); o.obj["ok"] = jbool(true); return J(200, o);
+            }
+            std::string id = qparam(query, "id");
+            if (id.empty()) return err(400, "missing ?id");
+            return J(200, forge::load_screen(id));
+        }
         if (path == "/api/graph/run" && method == "POST") {
             if (!g_game_active) game_new();
             forge::JsonValue b = forge::json_parse(body);
