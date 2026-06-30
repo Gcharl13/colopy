@@ -624,7 +624,9 @@ function tShow(k){
   $('#tgrid').innerHTML=h+'</table>';
 }
 document.querySelector('nav button[data-tab=tables]').addEventListener('click',()=>{ if(!window._tinit){ window._tinit=true; tInit(); } });
-
+)HTML"
+        // ---- chunk 4b ----
+        + R"HTML(
 // ---- Formulas ----
 async function loadFormulas() {
   let res;
@@ -673,7 +675,9 @@ $('#agallery').addEventListener('click', e=>{
   ui.popup(fig.dataset.label, '<img class="full" src="'+fig.dataset.url+'">');
 });
 
-// ---- Screen designer + runtime ----
+)HTML"
+        // ---- chunk 4c: screen designer + play ----
+        + R"HTML(
 let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}, selW=null, BINDV={}, SINIT=false; const SS=2;
 async function scrInit(){
   if(!$('#graphlist')){ const dl=document.createElement('datalist'); dl.id='graphlist';
