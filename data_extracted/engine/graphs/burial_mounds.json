@@ -1,0 +1,534 @@
+{
+  "id": "burial_mounds",
+  "name": "Burial Mounds (sub-dispatch)",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -70,
+      "params": {
+        "text": "Lost-city n=4 burial sub-dispatch. sub=Roll(1,3): 1 empty, 2 trinkets 10*(3d8), 3 treasure 2*(1d8+2*(s+5))*100. @SCREWED appended if a human desecrates."
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnTestFire",
+      "x": 20,
+      "y": 30,
+      "params": {}
+    },
+    {
+      "id": "sub",
+      "type": "Roll",
+      "x": 20,
+      "y": 140,
+      "params": {
+        "min": 1,
+        "max": 3
+      }
+    },
+    {
+      "id": "s",
+      "type": "Constant",
+      "x": 20,
+      "y": 250,
+      "params": {
+        "value": 0
+      }
+    },
+    {
+      "id": "d3",
+      "type": "Dice",
+      "x": 20,
+      "y": 330,
+      "params": {
+        "count": 3,
+        "sides": 8
+      }
+    },
+    {
+      "id": "c10",
+      "type": "Constant",
+      "x": 20,
+      "y": 400,
+      "params": {
+        "value": 10
+      }
+    },
+    {
+      "id": "trink",
+      "type": "Math",
+      "x": 170,
+      "y": 350,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "d8",
+      "type": "Dice",
+      "x": 20,
+      "y": 470,
+      "params": {
+        "count": 1,
+        "sides": 8
+      }
+    },
+    {
+      "id": "c5",
+      "type": "Constant",
+      "x": 20,
+      "y": 540,
+      "params": {
+        "value": 5
+      }
+    },
+    {
+      "id": "sp5",
+      "type": "Math",
+      "x": 170,
+      "y": 520,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c2t",
+      "type": "Constant",
+      "x": 20,
+      "y": 610,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "sp5x2",
+      "type": "Math",
+      "x": 330,
+      "y": 540,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "inner",
+      "type": "Math",
+      "x": 490,
+      "y": 500,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "c2u",
+      "type": "Constant",
+      "x": 20,
+      "y": 680,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "times2",
+      "type": "Math",
+      "x": 650,
+      "y": 520,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "c100",
+      "type": "Constant",
+      "x": 20,
+      "y": 750,
+      "params": {
+        "value": 100
+      }
+    },
+    {
+      "id": "treasV",
+      "type": "Math",
+      "x": 810,
+      "y": 540,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "k1",
+      "type": "Constant",
+      "x": 760,
+      "y": 40,
+      "params": {
+        "value": 1
+      }
+    },
+    {
+      "id": "e1",
+      "type": "Compare",
+      "x": 900,
+      "y": 20,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "b1",
+      "type": "Branch",
+      "x": 1040,
+      "y": 20,
+      "params": {}
+    },
+    {
+      "id": "p1",
+      "type": "ShowPopup",
+      "x": 1240,
+      "y": 20,
+      "params": {
+        "title": "Empty Mounds",
+        "textKey": "@BURIAL1",
+        "choices": "Onward"
+      }
+    },
+    {
+      "id": "k2",
+      "type": "Constant",
+      "x": 760,
+      "y": 180,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "e2",
+      "type": "Compare",
+      "x": 900,
+      "y": 160,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "b2",
+      "type": "Branch",
+      "x": 1040,
+      "y": 160,
+      "params": {}
+    },
+    {
+      "id": "g2",
+      "type": "GrantGold",
+      "x": 1240,
+      "y": 160,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "p2",
+      "type": "ShowPopup",
+      "x": 1420,
+      "y": 160,
+      "params": {
+        "title": "Trinkets",
+        "textKey": "@BURIAL2",
+        "choices": "Onward"
+      }
+    },
+    {
+      "id": "g3",
+      "type": "GrantGold",
+      "x": 1240,
+      "y": 300,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "p3",
+      "type": "ShowPopup",
+      "x": 1420,
+      "y": 300,
+      "params": {
+        "title": "Treasure!",
+        "textKey": "@BURIAL3",
+        "woodcut": "WDCUT04",
+        "choices": "Glory!"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "d3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "trink",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c10",
+        "pin": "value"
+      },
+      "to": {
+        "node": "trink",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "s",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp5",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp5",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sp5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp5x2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2t",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp5x2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "d8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "inner",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "sp5x2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "inner",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "inner",
+        "pin": "value"
+      },
+      "to": {
+        "node": "times2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2u",
+        "pin": "value"
+      },
+      "to": {
+        "node": "times2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "times2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "treasV",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c100",
+        "pin": "value"
+      },
+      "to": {
+        "node": "treasV",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "sub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e1",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e1",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "e1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b1",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "b1",
+        "pin": "true"
+      },
+      "to": {
+        "node": "p1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "b1",
+        "pin": "false"
+      },
+      "to": {
+        "node": "b2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "sub",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "e2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "b2",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "b2",
+        "pin": "true"
+      },
+      "to": {
+        "node": "g2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "trink",
+        "pin": "value"
+      },
+      "to": {
+        "node": "g2",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "g2",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "b2",
+        "pin": "false"
+      },
+      "to": {
+        "node": "g3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "treasV",
+        "pin": "value"
+      },
+      "to": {
+        "node": "g3",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "g3",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p3",
+        "pin": "in"
+      }
+    }
+  ]
+}

@@ -174,7 +174,7 @@ JsonValue node_catalog() {
         node_def("Math", "Math", "a (op) b.",
                  {pin("a","data","in","number"), pin("b","data","in","number"),
                   pin("value","data","out","number")},
-                 {param("op","select",{"+","-","*","/","%"})}),
+                 {param("op","select",{"+","-","*","/","%","min","max"})}),
         node_def("Compare", "Compare", "a (op) b -> bool.",
                  {pin("a","data","in","number"), pin("b","data","in","number"),
                   pin("value","data","out","bool")},
@@ -190,6 +190,10 @@ JsonValue node_catalog() {
         node_def("HasFoundingFather", "Has Founding Father",
                  "True if power 0's Congress holds the given Founding Father (id 0..24).",
                  {pin("value","data","out","bool")}, {param("father","number")}),
+        node_def("UnitIsSeasonedScout", "Unit Is Seasoned Scout",
+                 "1 if the unit (by index) is a Seasoned Scout (type 5 + profession 0x16) -- the "
+                 "lost-city scout bonus s; else 0. Wire it to the unit that triggered the rumor.",
+                 {pin("value","data","out","number")}, {param("unit","number")}),
         node_def("CanDeclareIndependence", "Can Declare Independence",
                  "True when the national Sons-of-Liberty meter reaches 50% (revolution.hpp).",
                  {pin("value","data","out","bool")}, {}),
@@ -507,6 +511,7 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             const vc::sim::Unit& un = w.units[u]; std::string f = path.substr(dot + 1);
             if (f == "type")  return num(un.type);
             if (f == "owner") return num(un.owner);
+            if (f == "profession") return num(un.profession);
             if (f == "x")     return num(un.x);
             if (f == "y")     return num(un.y);
             if (f == "alive") return num(un.alive ? 1 : 0);
@@ -597,6 +602,8 @@ struct Runner {
                 if (op == "+") r = a + b; else if (op == "-") r = a - b;
                 else if (op == "*") r = a * b; else if (op == "/") r = b ? a / b : 0;
                 else if (op == "%") r = b ? (double)((long)a % (long)b) : 0;
+                else if (op == "min") r = a < b ? a : b;
+                else if (op == "max") r = a > b ? a : b;
                 out = json_num(r);
             } else if (t == "Compare") {
                 double a = as_num(eval_in(nodeId, "a")), b = as_num(eval_in(nodeId, "b"));
@@ -621,6 +628,11 @@ struct Runner {
             } else if (t == "CombatOdds") {
                 int a = (int)as_num(eval_in(nodeId, "atk")), b = (int)as_num(eval_in(nodeId, "def"));
                 out = json_num((int)(vc::sim::combat_odds(a, b) * 100));
+            } else if (t == "UnitIsSeasonedScout") {
+                int u = (int)as_num(pget(*n, "unit")); int v = 0;
+                if (u >= 0 && u < (int)cx.w.units.size() && cx.w.units[u].alive &&
+                    cx.w.units[u].type == 5 && cx.w.units[u].profession == 0x16) v = 1;
+                out = json_num(v);
             } else if (t == "Select") {
                 double c = as_num(eval_in(nodeId, "cond"));
                 out = json_num(c != 0 ? as_num(eval_in(nodeId, "a")) : as_num(eval_in(nodeId, "b")));
