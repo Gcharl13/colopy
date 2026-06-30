@@ -99,7 +99,17 @@ JsonValue table_cell(const std::string& path) {
         if (idx >= 0 && idx < (int)rows->arr.size()) row = &rows->arr[idx];
     }
     if (!row) return {};
-    const JsonValue* cell = row->find(column);
+    // a numeric column = index into the section's "columns" (lets logic pick a column dynamically,
+    // e.g. the era-band weight column of @FATHERS).
+    const JsonValue* cell = nullptr;
+    if (!column.empty() && column.find_first_not_of("0123456789") == std::string::npos) {
+        const JsonValue* cols = sec->find("columns");
+        int ci = std::atoi(column.c_str());
+        if (cols && cols->type == JsonValue::Array && ci >= 0 && ci < (int)cols->arr.size())
+            cell = row->find(cols->arr[ci].str);
+    } else {
+        cell = row->find(column);
+    }
     if (!cell) return {};
     if (cell->type == JsonValue::String) {              // cells are stored as strings
         const std::string& s = cell->str;
@@ -250,10 +260,12 @@ JsonValue node_catalog() {
                  "(power0.gold, colony0.hammers, revolution.sol, game.turn) and table cells "
                  "(@BUILDING[name:Fort].cost, @CLASS[3].transport_cost), plus + - * / %, comparisons "
                  "(return 1/0), a ternary cond?a:b, min/max/clamp/abs/floor/ceil, and roll(lo,hi). "
-                 "The optional a/b/c/d pins feed wired inputs (referenced as a,b,c,d in the expr). "
+                 "The optional a..h pins feed wired inputs (referenced as a,b,..,h in the expr). "
                  "Example: roll(1,1000) + (2*revolution.sol - power0.tax)*5 + power0.gold/100.",
                  {pin("a","data","in","number"), pin("b","data","in","number"),
                   pin("c","data","in","number"), pin("d","data","in","number"),
+                  pin("e","data","in","number"), pin("f","data","in","number"),
+                  pin("g","data","in","number"), pin("h","data","in","number"),
                   pin("value","data","out","number")},
                  {param("expr","text")}),
         node_def("Math", "Math", "a (op) b.",
@@ -276,8 +288,10 @@ JsonValue node_catalog() {
                  "Reads @<section>[index].<column> from a data table by a COMPUTED row index -- the "
                  "table-driven replacement for a hardcoded PickText/PickNumber list. E.g. section "
                  "@CLASS, column transport_cost, index = a rolled class -> that class's recruit cost. "
-                 "Any row you add to the table is picked up automatically.",
-                 {pin("index","data","in","number"), pin("value","data","out","number")},
+                 "Any row you add to the table is picked up automatically. Wire `col` for a COMPUTED "
+                 "column index (e.g. @FATHERS era-band weight = column 2 + era_band).",
+                 {pin("index","data","in","number"), pin("col","data","in","number"),
+                  pin("value","data","out","number")},
                  {param("section","text"), param("column","text")}),
         node_def("PickText", "Pick Text (by index)",
                  "Outputs the index-th entry of a comma-separated list -- e.g. the immigrant "
@@ -781,13 +795,15 @@ struct Runner {
             else if (t == "TableLookup") {
                 int idx = (int)as_num(eval_in(nodeId, "index"));
                 std::string sec = pget(*n, "section").str, col = pget(*n, "column").str;
+                std::string cf, cp;          // a wired `col` pin overrides the column param (by index)
+                if (incoming(nodeId, "col", cf, cp)) col = std::to_string((int)as_num(eval_out(cf, cp)));
                 if (!sec.empty() && sec[0] != '@') sec = "@" + sec;
                 out = table_cell(sec + "[" + std::to_string(idx) + "]." + col);
             }
             else if (t == "Formula") {
                 // identifiers a..d are the wired data pins; everything else is a live binding.
                 auto var = [&](const std::string& name) -> double {
-                    if (name.size() == 1 && name[0] >= 'a' && name[0] <= 'd') {
+                    if (name.size() == 1 && name[0] >= 'a' && name[0] <= 'h') {
                         std::string fn, fp;
                         return incoming(nodeId, name, fn, fp) ? as_num(eval_out(fn, fp)) : 0.0;
                     }

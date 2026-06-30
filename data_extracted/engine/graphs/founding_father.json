@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -150,
+      "y": -120,
       "params": {
-        "text": "Continental Congress (spec/systems/founding_fathers.md func_03C282 cost + func_03BFD2 selection). Trigger: bell pool (+0x0C) >= ff_cost(diff,year,count): base (diff+3)*16 human / (14-diff)*8 AI, +50% per era gate 1600/1650/1700/1750, *(count+1)+1, first father half. Selection = era-weighted RANDOM over un-acquired fathers; the 3 @FATHERS columns are era-band weights (<1600 / 1600-99 / >=1700). Modeled here over one representative father per category (Smith/Magellan/Washington/Jefferson/Penn) with their REAL @FATHERS weights; the full game weights all 25 un-owned fathers (weight values are runtime-BSS)."
+        "text": "Continental Congress (spec/systems/founding_fathers.md), rebuilt table-driven. Trigger: congress.bells >= congress.cost (the byte-verified bell curve). Selection = era-weighted random over un-owned fathers; the 3 @FATHERS weight columns ARE the era bands, read live by TableLookup with col = 2 + era_band -- edit a father's weights in the Tables tab and the offer odds change. Modeled over one representative father per category (rows 0/5/11/15/21)."
       }
     },
     {
@@ -19,322 +19,167 @@
       "params": {}
     },
     {
-      "id": "bells",
-      "type": "GetState",
+      "id": "gate",
+      "type": "Formula",
       "x": 20,
       "y": 150,
       "params": {
-        "path": "congress.bells"
-      }
-    },
-    {
-      "id": "cost",
-      "type": "FoundingFatherCost",
-      "x": 20,
-      "y": 230,
-      "params": {}
-    },
-    {
-      "id": "cmp",
-      "type": "Compare",
-      "x": 200,
-      "y": 180,
-      "params": {
-        "op": ">="
+        "expr": "congress.bells >= congress.cost"
       }
     },
     {
       "id": "br",
       "type": "Branch",
-      "x": 380,
+      "x": 220,
       "y": 40,
       "params": {}
     },
     {
-      "id": "accum",
-      "type": "Log",
-      "x": 380,
-      "y": 320,
+      "id": "bandcol",
+      "type": "Formula",
+      "x": 20,
+      "y": 250,
       "params": {
-        "message": "Liberty bells still accumulating toward the next Founding Father; Congress has no candidate this turn."
+        "expr": "2 + congress.era_band"
       }
     },
     {
-      "id": "band",
-      "type": "GetState",
-      "x": 560,
-      "y": 560,
+      "id": "w0",
+      "type": "TableLookup",
+      "x": 220,
+      "y": 250,
       "params": {
-        "path": "congress.era_band"
+        "section": "@FATHERS",
+        "column": "2"
       }
     },
     {
-      "id": "b0",
+      "id": "w0r",
       "type": "Constant",
-      "x": 560,
-      "y": 620,
+      "x": 20,
+      "y": 330,
       "params": {
         "value": 0
       }
     },
     {
-      "id": "i0",
-      "type": "Math",
-      "x": 700,
-      "y": 620,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "w0",
-      "type": "PickNumber",
-      "x": 860,
-      "y": 620,
-      "params": {
-        "values": "2,8,6,2,10,10,0,4,10,4,5,6,8,5,2"
-      }
-    },
-    {
-      "id": "b1",
-      "type": "Constant",
-      "x": 560,
-      "y": 660,
-      "params": {
-        "value": 3
-      }
-    },
-    {
-      "id": "i1",
-      "type": "Math",
-      "x": 700,
-      "y": 660,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
       "id": "w1",
-      "type": "PickNumber",
-      "x": 860,
-      "y": 660,
+      "type": "TableLookup",
+      "x": 220,
+      "y": 305,
       "params": {
-        "values": "2,8,6,2,10,10,0,4,10,4,5,6,8,5,2"
+        "section": "@FATHERS",
+        "column": "2"
       }
     },
     {
-      "id": "b2",
+      "id": "w1r",
       "type": "Constant",
-      "x": 560,
-      "y": 700,
+      "x": 20,
+      "y": 370,
       "params": {
-        "value": 6
-      }
-    },
-    {
-      "id": "i2",
-      "type": "Math",
-      "x": 700,
-      "y": 700,
-      "params": {
-        "op": "+"
+        "value": 5
       }
     },
     {
       "id": "w2",
-      "type": "PickNumber",
-      "x": 860,
-      "y": 700,
+      "type": "TableLookup",
+      "x": 220,
+      "y": 360,
       "params": {
-        "values": "2,8,6,2,10,10,0,4,10,4,5,6,8,5,2"
+        "section": "@FATHERS",
+        "column": "2"
       }
     },
     {
-      "id": "b3",
+      "id": "w2r",
       "type": "Constant",
-      "x": 560,
-      "y": 740,
+      "x": 20,
+      "y": 410,
       "params": {
-        "value": 9
-      }
-    },
-    {
-      "id": "i3",
-      "type": "Math",
-      "x": 700,
-      "y": 740,
-      "params": {
-        "op": "+"
+        "value": 11
       }
     },
     {
       "id": "w3",
-      "type": "PickNumber",
-      "x": 860,
-      "y": 740,
+      "type": "TableLookup",
+      "x": 220,
+      "y": 415,
       "params": {
-        "values": "2,8,6,2,10,10,0,4,10,4,5,6,8,5,2"
+        "section": "@FATHERS",
+        "column": "2"
       }
     },
     {
-      "id": "b4",
+      "id": "w3r",
       "type": "Constant",
-      "x": 560,
-      "y": 780,
+      "x": 20,
+      "y": 450,
       "params": {
-        "value": 12
-      }
-    },
-    {
-      "id": "i4",
-      "type": "Math",
-      "x": 700,
-      "y": 780,
-      "params": {
-        "op": "+"
+        "value": 15
       }
     },
     {
       "id": "w4",
-      "type": "PickNumber",
-      "x": 860,
-      "y": 780,
+      "type": "TableLookup",
+      "x": 220,
+      "y": 470,
       "params": {
-        "values": "2,8,6,2,10,10,0,4,10,4,5,6,8,5,2"
+        "section": "@FATHERS",
+        "column": "2"
       }
     },
     {
-      "id": "sumA",
-      "type": "Math",
-      "x": 1020,
-      "y": 620,
+      "id": "w4r",
+      "type": "Constant",
+      "x": 20,
+      "y": 490,
       "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "sumB",
-      "type": "Math",
-      "x": 1020,
-      "y": 680,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "sumC",
-      "type": "Math",
-      "x": 1020,
-      "y": 740,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "sum",
-      "type": "Math",
-      "x": 1020,
-      "y": 800,
-      "params": {
-        "op": "+"
+        "value": 21
       }
     },
     {
       "id": "budget",
-      "type": "Roll",
-      "x": 1180,
-      "y": 760,
+      "type": "Formula",
+      "x": 420,
+      "y": 250,
       "params": {
-        "min": 1,
-        "max": 1
-      }
-    },
-    {
-      "id": "gt0",
-      "type": "Compare",
-      "x": 1340,
-      "y": 560,
-      "params": {
-        "op": ">"
-      }
-    },
-    {
-      "id": "gt1",
-      "type": "Compare",
-      "x": 1340,
-      "y": 620,
-      "params": {
-        "op": ">"
-      }
-    },
-    {
-      "id": "gt2",
-      "type": "Compare",
-      "x": 1340,
-      "y": 680,
-      "params": {
-        "op": ">"
-      }
-    },
-    {
-      "id": "gt3",
-      "type": "Compare",
-      "x": 1340,
-      "y": 740,
-      "params": {
-        "op": ">"
-      }
-    },
-    {
-      "id": "p01",
-      "type": "Math",
-      "x": 1500,
-      "y": 580,
-      "params": {
-        "op": "+"
-      }
-    },
-    {
-      "id": "p23",
-      "type": "Math",
-      "x": 1500,
-      "y": 700,
-      "params": {
-        "op": "+"
+        "expr": "roll(1, a+b+c+d+e)"
       }
     },
     {
       "id": "pick",
-      "type": "Math",
-      "x": 1640,
-      "y": 640,
+      "type": "Formula",
+      "x": 620,
+      "y": 250,
       "params": {
-        "op": "+"
+        "expr": "(f>a)+(f>a+b)+(f>a+b+c)+(f>a+b+c+d)"
       }
     },
     {
       "id": "fid",
       "type": "PickNumber",
-      "x": 1800,
-      "y": 560,
+      "x": 820,
+      "y": 250,
       "params": {
         "values": "0,5,11,15,21"
       }
     },
     {
       "id": "fname",
-      "type": "PickText",
-      "x": 1800,
-      "y": 620,
+      "type": "TableLookup",
+      "x": 820,
+      "y": 310,
       "params": {
-        "options": "Adam Smith,Ferdinand Magellan,George Washington,Thomas Jefferson,William Penn"
+        "section": "@FATHERS",
+        "column": "name"
       }
     },
     {
       "id": "fcat",
       "type": "PickText",
-      "x": 1800,
-      "y": 680,
+      "x": 820,
+      "y": 370,
       "params": {
         "options": "Trade,Exploration,Military,Political,Religious"
       }
@@ -342,8 +187,8 @@
     {
       "id": "feff",
       "type": "PickText",
-      "x": 1800,
-      "y": 740,
+      "x": 820,
+      "y": 430,
       "params": {
         "options": "enables factory-tier buildings,speeds the Atlantic crossing to a single turn,auto-promotes your combat winners,doubles your liberty-bell output,raises colony crosses output by half"
       }
@@ -351,7 +196,7 @@
     {
       "id": "offer",
       "type": "ShowPopup",
-      "x": 560,
+      "x": 420,
       "y": 40,
       "params": {
         "title": "The Continental Congress",
@@ -361,54 +206,34 @@
       }
     },
     {
+      "id": "cost",
+      "type": "GetState",
+      "x": 420,
+      "y": 150,
+      "params": {
+        "path": "congress.cost"
+      }
+    },
+    {
       "id": "grant",
       "type": "GiveFoundingFather",
-      "x": 780,
+      "x": 640,
       "y": 40,
       "params": {}
     },
     {
-      "id": "announce",
+      "id": "ann",
       "type": "ShowPopup",
-      "x": 980,
+      "x": 840,
       "y": 40,
       "params": {
         "title": "A New Founding Father",
         "textKey": "@FREEDOM",
         "choices": "Huzzah!"
       }
-    },
-    {
-      "id": "decline",
-      "type": "Log",
-      "x": 780,
-      "y": 200,
-      "params": {
-        "message": "The candidate is declined; liberty bells keep accumulating."
-      }
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "bells",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "cost",
-        "pin": "value"
-      },
-      "to": {
-        "node": "cmp",
-        "pin": "b"
-      }
-    },
     {
       "from": {
         "node": "trig",
@@ -421,7 +246,7 @@
     },
     {
       "from": {
-        "node": "cmp",
+        "node": "gate",
         "pin": "value"
       },
       "to": {
@@ -431,37 +256,7 @@
     },
     {
       "from": {
-        "node": "br",
-        "pin": "false"
-      },
-      "to": {
-        "node": "accum",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "b0",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i0",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "band",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i0",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "i0",
+        "node": "w0r",
         "pin": "value"
       },
       "to": {
@@ -471,27 +266,17 @@
     },
     {
       "from": {
-        "node": "b1",
+        "node": "bandcol",
         "pin": "value"
       },
       "to": {
-        "node": "i1",
-        "pin": "a"
+        "node": "w0",
+        "pin": "col"
       }
     },
     {
       "from": {
-        "node": "band",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i1",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "i1",
+        "node": "w1r",
         "pin": "value"
       },
       "to": {
@@ -501,27 +286,17 @@
     },
     {
       "from": {
-        "node": "b2",
+        "node": "bandcol",
         "pin": "value"
       },
       "to": {
-        "node": "i2",
-        "pin": "a"
+        "node": "w1",
+        "pin": "col"
       }
     },
     {
       "from": {
-        "node": "band",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i2",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "i2",
+        "node": "w2r",
         "pin": "value"
       },
       "to": {
@@ -531,27 +306,17 @@
     },
     {
       "from": {
-        "node": "b3",
+        "node": "bandcol",
         "pin": "value"
       },
       "to": {
-        "node": "i3",
-        "pin": "a"
+        "node": "w2",
+        "pin": "col"
       }
     },
     {
       "from": {
-        "node": "band",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i3",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "i3",
+        "node": "w3r",
         "pin": "value"
       },
       "to": {
@@ -561,27 +326,17 @@
     },
     {
       "from": {
-        "node": "b4",
+        "node": "bandcol",
         "pin": "value"
       },
       "to": {
-        "node": "i4",
-        "pin": "a"
+        "node": "w3",
+        "pin": "col"
       }
     },
     {
       "from": {
-        "node": "band",
-        "pin": "value"
-      },
-      "to": {
-        "node": "i4",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "i4",
+        "node": "w4r",
         "pin": "value"
       },
       "to": {
@@ -591,11 +346,21 @@
     },
     {
       "from": {
+        "node": "bandcol",
+        "pin": "value"
+      },
+      "to": {
+        "node": "w4",
+        "pin": "col"
+      }
+    },
+    {
+      "from": {
         "node": "w0",
         "pin": "value"
       },
       "to": {
-        "node": "sumA",
+        "node": "budget",
         "pin": "a"
       }
     },
@@ -605,18 +370,8 @@
         "pin": "value"
       },
       "to": {
-        "node": "sumA",
+        "node": "budget",
         "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sumA",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sumB",
-        "pin": "a"
       }
     },
     {
@@ -625,18 +380,8 @@
         "pin": "value"
       },
       "to": {
-        "node": "sumB",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sumB",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sumC",
-        "pin": "a"
+        "node": "budget",
+        "pin": "c"
       }
     },
     {
@@ -645,18 +390,8 @@
         "pin": "value"
       },
       "to": {
-        "node": "sumC",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sumC",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sum",
-        "pin": "a"
+        "node": "budget",
+        "pin": "d"
       }
     },
     {
@@ -665,28 +400,8 @@
         "pin": "value"
       },
       "to": {
-        "node": "sum",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "sum",
-        "pin": "value"
-      },
-      "to": {
         "node": "budget",
-        "pin": "max"
-      }
-    },
-    {
-      "from": {
-        "node": "budget",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt0",
-        "pin": "a"
+        "pin": "e"
       }
     },
     {
@@ -695,128 +410,48 @@
         "pin": "value"
       },
       "to": {
-        "node": "gt0",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "budget",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt1",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "sumA",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt1",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "budget",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt2",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "sumB",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt2",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "budget",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt3",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "sumC",
-        "pin": "value"
-      },
-      "to": {
-        "node": "gt3",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "gt0",
-        "pin": "value"
-      },
-      "to": {
-        "node": "p01",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "gt1",
-        "pin": "value"
-      },
-      "to": {
-        "node": "p01",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "gt2",
-        "pin": "value"
-      },
-      "to": {
-        "node": "p23",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "gt3",
-        "pin": "value"
-      },
-      "to": {
-        "node": "p23",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "p01",
-        "pin": "value"
-      },
-      "to": {
         "node": "pick",
         "pin": "a"
       }
     },
     {
       "from": {
-        "node": "p23",
+        "node": "w1",
         "pin": "value"
       },
       "to": {
         "node": "pick",
         "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "w2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pick",
+        "pin": "c"
+      }
+    },
+    {
+      "from": {
+        "node": "w3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pick",
+        "pin": "d"
+      }
+    },
+    {
+      "from": {
+        "node": "budget",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pick",
+        "pin": "f"
       }
     },
     {
@@ -831,7 +466,7 @@
     },
     {
       "from": {
-        "node": "pick",
+        "node": "fid",
         "pin": "value"
       },
       "to": {
@@ -925,7 +560,7 @@
         "pin": "out"
       },
       "to": {
-        "node": "announce",
+        "node": "ann",
         "pin": "in"
       }
     },
@@ -935,7 +570,7 @@
         "pin": "value"
       },
       "to": {
-        "node": "announce",
+        "node": "ann",
         "pin": "str0"
       }
     },
@@ -945,18 +580,8 @@
         "pin": "value"
       },
       "to": {
-        "node": "announce",
+        "node": "ann",
         "pin": "str1"
-      }
-    },
-    {
-      "from": {
-        "node": "offer",
-        "pin": "Decline"
-      },
-      "to": {
-        "node": "decline",
-        "pin": "in"
       }
     }
   ]
