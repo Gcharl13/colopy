@@ -533,7 +533,9 @@ const NW=152, HEAD=24, ROW=18;
 const BINDS=['game.year','game.season','game.turn','game.difficulty','power0.gold','power0.tax',
   'power0.royal_money','power0.crosses','ref.regulars','ref.cavalry','ref.manowar','ref.artillery',
   'colonies.count','units.count','colony0.population','colony0.sol','price.1',
-  'natives.tension','ff.count','ff.16','boycott.2','war.0.1'];
+  'natives.tension','ff.count','ff.16','boycott.2','war.0.1',
+  'power0.colonies','power0.units','power0.strength','power1.strength','power2.strength','power3.strength',
+  'unit0.attack','unit0.defense','unit0.terraindef','revolution.sol','game.score'];
 const SVGNS='http://www.w3.org/2000/svg';
 function catClass(c){return c==='Triggers'?'trig':c==='Actions'?'act':c==='Flow'?'flow':c==='Data'?'data':c==='Dialog'?'dlg':'';}
 function nodeById(id){return G.nodes.find(n=>n.id===id);}
