@@ -1147,6 +1147,35 @@ static int engine_selftest() {
     check(atk_def > 0 && atk_mod > atk_def && atk_mod >= 20,
           "modded Soldiers attack raises ResolveCombat attacker strength");
 
+    // PickText/PickNumber feed a popup's %STRING0/%NUMBER0 slots from a computed index.
+    {
+        forge::JsonValue gp = forge::json_parse(
+            R"({"id":"p","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"i","type":"Constant","params":{"value":1}},)"
+            R"({"id":"s","type":"PickText","params":{"options":"Petty Criminals,Indentured Servants,Educated Elite"}},)"
+            R"({"id":"n","type":"PickNumber","params":{"values":"300,400,2000"}},)"
+            R"({"id":"d","type":"ShowPopup","params":{"body":"Class %STRING0 costs %NUMBER0 gold.","choices":"OK"}}],)"
+            R"("edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"d","pin":"in"}},)"
+            R"({"from":{"node":"i","pin":"value"},"to":{"node":"s","pin":"index"}},)"
+            R"({"from":{"node":"i","pin":"value"},"to":{"node":"n","pin":"index"}},)"
+            R"({"from":{"node":"s","pin":"value"},"to":{"node":"d","pin":"str0"}},)"
+            R"({"from":{"node":"n","pin":"value"},"to":{"node":"d","pin":"num0"}}]})");
+        forge::JsonValue rep = forge::run_graph(gp, cx);
+        const forge::JsonValue* pp = rep.find("popup");
+        std::string body = pp && pp->is_object() && pp->find("body") ? pp->find("body")->str : "";
+        check(body.find("Indented Servants") != std::string::npos ||
+              body.find("Indentured Servants") != std::string::npos,
+              "PickText fills %STRING0 with the index-1 entry");
+        check(body.find("400") != std::string::npos, "PickNumber fills %NUMBER0 with the index-1 value");
+    }
+
+    // congress.cost reflects the byte-verified bell-cost curve; congress.bells is writable.
+    check(forge::resolve_binding("congress.cost", cx).as_int() > 0, "congress.cost computes the FF bell cost");
+    forge::set_binding("congress.bells", 42, cx);
+    check(forge::resolve_binding("congress.bells", cx).as_int() == 42, "congress.bells is writable");
+
     std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;
 }

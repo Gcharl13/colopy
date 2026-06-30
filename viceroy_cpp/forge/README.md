@@ -96,18 +96,28 @@ Run it from the repo root so the default data paths resolve. Tabs:
 - **Logic** — the **visual node-graph editor** (Blueprint-inspired): drag nodes from the palette,
   wire pin→pin (exec = control flow, data = values), edit a node's params, and **Run** to fire the
   graph against the live game. Logic is built by connecting nodes, not by writing code. Node
-  categories: Triggers, Flow (Branch/Roll/Sequence), Data (GetState/Math/Compare/Constant/
-  RandomChance/HasFoundingFather), Actions — economic (GrantGold/SetTax/SetPrice/AddColonyPop/
+  categories: Triggers, Flow (Branch/Switch/Roll/Dice/Sequence), Data (GetState/Math/Compare/
+  Constant/Select/RandomChance/Chance/HasFoundingFather/FoundingFatherCost/CombatOdds/**PickText**/
+  **PickNumber**), Actions — economic (GrantGold/SetTax/SetPrice/AddColonyPop/
   AddREF/SpawnUnit/StepTurn) **and sim-wired** (ResolveCombat→`resolve_land`, ChangeNativeTension→
   `apply_tension`, GiveFoundingFather, AddBoycott, DeclareWar→`declare_war`, GrantImmigrant) — and
   Dialog (ShowPopup/Navigate). **Popups use the real game text**: a ShowPopup's `textKey`
   (e.g. `@LOSTCITY3`) shows that GAME.TXT message verbatim, and `textKeys` (a list like
   `@RAIDGOLD,@RAIDSTORES,@RAIDBURN`) captures a multi-outcome event's whole message set — one is
   picked per run, as in the game. The editor autocompletes the `@KEY`s from `/api/text` and
-  previews the resolved string. The sim-wired actions read/write the relational state the pure
+  previews the resolved string. A popup's **`%NUMBER0/%NUMBER1`** slots fill from its `num0/num1`
+  data pins and its **`%STRING0/%STRING1/%STRING2`** slots from `str0/str1/str2` (e.g. a `PickText`
+  giving the immigrant class or the Founding Father's name), so the message shows the values the
+  logic actually computed (lost-city gold, the King's new tax rate, the arriving colonist class…). The sim-wired actions read/write the relational state the pure
   economic sim doesn't hold (native tension, founding-father ownership, boycotts, the diplomacy
-  matrix, the national SoL meter, revolution/succession state), surfaced as bindings. The Logic
-  page **wires the whole game**: ~31 graphs covering the turn loop, king's tax, mercenaries, War of
+  matrix, the national SoL meter, the Congress bell pool, revolution/succession state), surfaced as
+  bindings (`congress.bells/cost/era_band`, `colonies.population`, `price.<good>`, settable
+  `game.turn/difficulty` for testing turn-gated logic). The Logic page **wires the whole game** with
+  the byte-verified **trigger conditions and formulas**, not placeholders: king's tax fires on its
+  real cadence (turn≥30, year-shrinking interval, severity-scored pretext); immigration on the
+  crosses-vs-threshold cross with the difficulty-weighted class roll; founding fathers on the
+  bell-cost curve with era-weighted selection; independence on the SoL≥50% floor; native raid/uprising
+  on the alarm threshold. ~33 graphs cover the turn loop, king's tax, mercenaries, War of
   Spanish Succession, revolution/independence, REF mobilization, tory status, founding fathers,
   immigration, lost-city outcomes, natives (raid/uprising/mission/attitude), combat, colony
   production, training, terrain/trade/exploration, and scoring. A **`FireEvent`** node lets the
