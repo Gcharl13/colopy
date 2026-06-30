@@ -1,0 +1,35 @@
+{
+  "frame": 16,
+  "count": 154,
+  "source": "docs/atlas/sprites/atlas_PHYS0.png",
+  "bands": {
+    "river": [
+      0,
+      31
+    ],
+    "mountains": [
+      32,
+      47
+    ],
+    "hills": [
+      48,
+      63
+    ],
+    "forest": [
+      64,
+      79
+    ],
+    "stencils": [
+      104,
+      107
+    ],
+    "coast_subtiles": [
+      108,
+      139
+    ],
+    "beaches": [
+      150,
+      153
+    ]
+  }
+}

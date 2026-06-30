@@ -246,6 +246,47 @@ let MAP = null; const CELL = 16;
 const TILESET = new Image(); let TILES_READY = false;
 TILESET.onload = () => { TILES_READY = true; if (MAP) drawMap(); if (typeof GAME!=='undefined' && GAME) drawGame(); };
 TILESET.src = '/assets/tileset/terrain16.png';
+// PHYS0 overlays (forest canopy, coast beaches, rivers) composited OVER the ground,
+// selected per a tile's neighbours -- ported from viceroy_cpp/src/mapview.cpp.
+const PHYS = new Image(); let PHYS_READY = false;
+PHYS.onload = () => { PHYS_READY = true; if (MAP) drawMap(); if (typeof GAME!=='undefined' && GAME) drawGame(); };
+PHYS.src = '/assets/tileset/phys0.png';
+const CDX8=[0,1,1,1,0,-1,-1,-1], CDY8=[-1,-1,0,1,1,1,0,-1];   // N,NE,E,SE,S,SW,W,NW
+function baseFrame(i){ return i<=7?i : (i<=23?((i&7)===1?8:(i&7)) : (i===24?9:i===25?10:i===26?11:2)); }
+// Compose the whole terrain plane: TERRAIN.SS base ground + PHYS0 forest/coast/river.
+function composeMap(g, terr, w, h, cell, useTiles){
+  g.imageSmoothingEnabled=false;
+  const bAt=(x,y)=> (x<0||y<0||x>=w||y>=h)?26:terr[y*w+x];
+  const tid=(x,y)=> bAt(x,y)&0x1F;
+  const water=i=>i===25||i===26;
+  const overlay = useTiles && TILES_READY && PHYS_READY;
+  const fnb=(x,y)=>{ const b=tid(x,y); return (b>=8&&b<=23&&(b&7)!==1) || ((bAt(x,y)&0x40)&&!water(b)); };
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const b=bAt(x,y), i=b&0x1F;
+    if(useTiles && TILES_READY) g.drawImage(TILESET, baseFrame(i)*16,0,16,16, x*cell,y*cell,cell,cell);
+    else { g.fillStyle=terrColor(i); g.fillRect(x*cell,y*cell,cell,cell); }
+    if(!overlay) continue;
+    if(water(i)){                                     // coastline: beaches / shore sub-tiles
+      let cfg=[0,0,0,0], conn=0;
+      for(let dr=0;dr<8;dr++){ if(water(tid(x+CDX8[dr],y+CDY8[dr]))) continue; conn|=(1<<dr);
+        if(dr&1) cfg[((dr+1)&6)>>1]|=2; else { cfg[dr>>1]|=4; cfg[((dr>>1)+1)&3]|=1; } }
+      if(!conn) continue;
+      let pat=-1;
+      if((conn&0xDD)===0xC1)pat=0; if((conn&0x77)===0x07)pat=1; if((conn&0x77)===0x70)pat=2; if((conn&0xDD)===0x1C)pat=3;
+      const frames = pat>=0 ? [0x96+pat] : [0,1,2,3].map(q=>0x6C+cfg[q]*4+q);
+      for(const f of frames) g.drawImage(PHYS, f*16,0,16,16, x*cell,y*cell,cell,cell);
+    } else {
+      if((i>=8&&i<=23&&(i&7)!==1) || (b&0x40)){       // forest canopy (id band or painted bit)
+        let k=0; if(fnb(x,y-1))k|=8; if(fnb(x,y+1))k|=4; if(fnb(x-1,y))k|=2; if(fnb(x+1,y))k|=1;
+        g.drawImage(PHYS, (0x40+k)*16,0,16,16, x*cell,y*cell,cell,cell);
+      }
+      if(b&0x20){                                     // river band
+        let k=0; if(bAt(x,y-1)&0x20)k|=8; if(bAt(x,y+1)&0x20)k|=4; if(bAt(x-1,y)&0x20)k|=2; if(bAt(x+1,y)&0x20)k|=1;
+        g.drawImage(PHYS, (0x10+(k||0xF))*16,0,16,16, x*cell,y*cell,cell,cell);
+      }
+    }
+  }
+}
 // our terrain id (0..28) -> TERRAIN.SS base-ground frame (0..11)
 function terrFrame(id) {
   if (id <= 7)  return id;            // 8 base terrains, 1:1
@@ -281,25 +322,9 @@ function selId() { const s = document.querySelector('.sw.sel'); return s ? +s.da
 function drawMap() {
   if (!MAP) return;
   const cv = $('#cv'); cv.width = MAP.w*CELL; cv.height = MAP.h*CELL;
-  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
-  const useTiles = TILES_READY && $('#realtiles') && $('#realtiles').checked;
-  for (let y=0;y<MAP.h;y++) for (let x=0;x<MAP.w;x++) {
-    const b = MAP.terrain[y*MAP.w+x], id = b & 0x1F;
-    if (useTiles) {
-      g.drawImage(TILESET, terrFrame(id)*16, 0, 16, 16, x*CELL, y*CELL, CELL, CELL);
-    } else {
-      g.fillStyle = terrColor(id); g.fillRect(x*CELL, y*CELL, CELL-1, CELL-1);
-    }
-    // forest cue (id 8..23 = a forest variant, or the painted forest bit 0x40)
-    if ((id>=8 && id<=23) || (b & 0x40)) {
-      g.fillStyle = 'rgba(8,46,20,.5)';
-      g.beginPath(); g.moveTo(x*CELL+CELL*0.5, y*CELL+CELL*0.2);
-      g.lineTo(x*CELL+CELL*0.78, y*CELL+CELL*0.7); g.lineTo(x*CELL+CELL*0.22, y*CELL+CELL*0.7);
-      g.closePath(); g.fill();
-    }
-    if (b & 0x20) { g.strokeStyle='#7cdcff'; g.lineWidth=2; g.beginPath();
-      g.moveTo(x*CELL, y*CELL+CELL/2); g.lineTo(x*CELL+CELL, y*CELL+CELL/2); g.stroke(); }
-  }
+  const g = cv.getContext('2d');
+  const useTiles = !($('#realtiles') && !$('#realtiles').checked);
+  composeMap(g, MAP.terrain, MAP.w, MAP.h, CELL, useTiles);
 }
 function paintAt(ev) {
   if (!MAP) return;
@@ -477,16 +502,8 @@ function showSel(){
 function drawGame(){
   if(!GAME || !GAME.w) return;
   const cv=$('#gcv'); cv.width=GAME.w*GCELL; cv.height=GAME.h*GCELL;
-  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
-  const tiles=TILES_READY;
-  for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++){
-    const b=GAME.terrain[y*GAME.w+x], id=b&0x1F;
-    if(tiles) g.drawImage(TILESET, terrFrame(id)*16,0,16,16, x*GCELL,y*GCELL,GCELL,GCELL);
-    else { g.fillStyle=terrColor(id); g.fillRect(x*GCELL,y*GCELL,GCELL,GCELL); }
-    if(id>=8&&id<=23){ g.fillStyle='rgba(8,46,20,.5)'; g.beginPath();
-      g.moveTo(x*GCELL+GCELL*0.5,y*GCELL+GCELL*0.2); g.lineTo(x*GCELL+GCELL*0.78,y*GCELL+GCELL*0.7);
-      g.lineTo(x*GCELL+GCELL*0.22,y*GCELL+GCELL*0.7); g.closePath(); g.fill(); }
-  }
+  const g=cv.getContext('2d');
+  composeMap(g, GAME.terrain, GAME.w, GAME.h, GCELL, true);   // base ground + forest/coast overlays
   // colonies (settlement marker: owner-ringed block + population)
   for(const c of GAME.colonies){
     const X=c.x*GCELL, Y=c.y*GCELL;
