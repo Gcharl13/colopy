@@ -142,15 +142,18 @@ static int map_selftest() {
     std::filesystem::remove(tmp);
     std::filesystem::remove(tmp.string() + ".2");
 
-    // validator catches a broken right-edge column.
+    // validator catches LAND on the right-edge column (Ocean/Sea-Lane are both OK
+    // there -- the polar rows of the real AMER2 carry Ocean).
     forge::MpFile bad = forge::make_blank(10, 6);
-    forge::set_terrain(bad, 9, 0, forge::MP_OCEAN);    // break the Sea Lane edge
-    check(!forge::validate(bad).ok(), "broken Sea Lane edge should fail");
+    forge::set_terrain(bad, 9, 0, /*Plains*/2);        // land on the edge
+    check(!forge::validate(bad).ok(), "land on the right-edge column should fail");
 
-    // validator catches forest overlay on water.
+    // validator catches forest overlay where it is meaningless (ice/peaks). On
+    // water bit 6 is the legitimate "special" marker (MP_FORMAT.md), so that's allowed.
     forge::MpFile bad2 = forge::make_blank(10, 6);
-    forge::set_forest(bad2, 0, 0, true);               // forest on Ocean
-    check(!forge::validate(bad2).ok(), "forest on water should fail");
+    forge::set_terrain(bad2, 3, 3, forge::MP_MOUNTAINS);
+    forge::set_forest(bad2, 3, 3, true);               // forest on Mountains
+    check(!forge::validate(bad2).ok(), "forest on mountains should fail");
 
     std::printf("map selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;

@@ -118,9 +118,10 @@ MapReport validate(const MpFile& m) {
             if (id > MP_MAX_TERRAIN_ID)
                 issue("tile (" + std::to_string(x) + "," + std::to_string(y) +
                       "): terrain id " + std::to_string(id) + " > 28");
-            // forest/river overlays only make sense on land
-            if (m.has_forest(x, y) && (id == MP_ARCTIC || id == MP_OCEAN ||
-                                       id == MP_SEA_LANE || id == MP_MOUNTAINS))
+            // bit 6 is "forest" on land but a "special" marker on water (fishing
+            // grounds etc.) per MP_FORMAT.md, so only flag it where it is truly
+            // meaningless: polar ice and bare mountain peaks.
+            if (m.has_forest(x, y) && (id == MP_ARCTIC || id == MP_MOUNTAINS))
                 issue("tile (" + std::to_string(x) + "," + std::to_string(y) +
                       "): forest overlay on non-land terrain");
             if (m.has_river(x, y) && is_water(id))
@@ -128,12 +129,17 @@ MapReport validate(const MpFile& m) {
                       "): river overlay on water");
         }
     }
-    // hard rule 2: right-edge column is the Sea Lane.
-    for (int y = 0; y < m.h; ++y)
-        if (m.terrain_id(m.w - 1, y) != MP_SEA_LANE) {
-            issue("right-edge column is not Sea Lane (26) at row " + std::to_string(y));
+    // hard rule 2: the right-edge column is the sea lane. CLAUDE.md's rule is
+    // "never desert/land" there; the canonical AMER2 carries Ocean (not Sea Lane)
+    // on the top/bottom polar rows, so accept Ocean at the edge too.
+    for (int y = 0; y < m.h; ++y) {
+        int id = m.terrain_id(m.w - 1, y);
+        if (id != MP_SEA_LANE && id != MP_OCEAN) {
+            issue("right-edge column is land (id " + std::to_string(id) +
+                  ") at row " + std::to_string(y) + " -- must be Sea Lane/Ocean");
             break;
         }
+    }
 
     count_masses(m, r.land_masses, r.oceans);
     if (r.land_masses > 15) r.warnings.push_back("more than 15 land masses (" +
