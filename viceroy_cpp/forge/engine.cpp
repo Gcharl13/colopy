@@ -406,6 +406,8 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
             std::string f = path.substr(dot + 1);
             if (f == "gold") { g.powers[p].gold = (long)value; return true; }
             if (f == "tax")  { g.powers[p].tax = (int)value; return true; }
+            if (f == "mil_strength")  { cx.x.power_mil[p]  = (int)value; return true; }
+            if (f == "econ_strength") { cx.x.power_econ[p] = (int)value; return true; }
         }
     }
     if (path.rfind("colony", 0) == 0) {
@@ -469,15 +471,17 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             if (f == "tax")  return num(g.powers[p].tax);
             if (f == "royal_money") return num((double)g.powers[p].royal_money);
             if (f == "crosses") return num(g.powers[p].crosses_accum);
+            if (f == "mil_strength")  return num(cx.x.power_mil[p]);
+            if (f == "econ_strength") return num(cx.x.power_econ[p]);
             if (f == "colonies" || f == "units" || f == "strength") {
                 int nc = 0, nu = 0;
                 for (const auto& col : w.colonies) if (col.owner_power == p) ++nc;
                 for (const auto& un : w.units) if (un.alive && un.owner == p) ++nu;
                 if (f == "colonies") return num(nc);
                 if (f == "units")    return num(nu);
-                // spec succession rank: 3*[strength] + 2*[colony count] + 1*[strength];
-                // the exact DGROUP strength fields aren't in the sim, so units+gold proxy them.
-                return num(3 * nu + 2 * nc + (int)(g.powers[p].gold / 100));
+                // spec succession rank: 3*[0x9418] + 2*[0x9298] + 1*[0x9410]
+                //   = 3*mil_strength + 2*colony_count + 1*econ_strength (real editable fields).
+                return num(3 * cx.x.power_mil[p] + 2 * nc + cx.x.power_econ[p]);
             }
         }
     }
@@ -635,7 +639,8 @@ struct Runner {
                     if (m == "colonies") return nc;
                     if (m == "units")    return nu;
                     if (m == "gold")     return (long)cx.g.powers[p].gold;
-                    return 3L * nu + 2L * nc + cx.g.powers[p].gold / 100;
+                    // strength = 3*mil + 2*colony_count + 1*econ (the real editable stat fields)
+                    return 3L * cx.x.power_mil[p] + 2L * nc + cx.x.power_econ[p];
                 };
                 int best = 0; long bv = metric(0);
                 for (int p = 1; p < 4; ++p) { long v = metric(p);

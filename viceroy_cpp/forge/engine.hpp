@@ -36,6 +36,11 @@ struct EngineExtra {
     int  rebel_power   = -1;      // power that declared independence ([0x5398])
     int  seceded_power = -1;      // power withdrawn by War of Spanish Succession ([0x53D2])
     long score         = 0;       // last computed game score
+    // Per-power stat arrays the Spanish-Succession rank reads (real, editable data):
+    // score = 3*mil + 2*colony_count + 1*econ  (spec 3*[0x9418]+2*[0x9298]+1*[0x9410];
+    // colony_count is computed live, mil/econ proxy the undecoded 0x9418/0x9410 arrays).
+    int  power_mil[4]  = {0, 0, 0, 0};
+    int  power_econ[4] = {0, 0, 0, 0};
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side

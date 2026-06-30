@@ -52,7 +52,7 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Victim selection (spec/systems/spanish_succession.md): rank powers by 3*[0x9418]+2*[0x9298]+1*[0x9410]. 0x9298 = colony count (real, from live colonies). 0x9418/0x9410 = per-power AI/economy word arrays -- runtime/BSS, NOT decoded and NOT in the extracted tables. WeakestPower/StrongestPower(strength) proxies them as 3*power.units + 2*power.colonies + gold/100 over REAL live values. Weakest cedes, strongest receives."
+        "text": "Victim selection (spec: rank by 3*[0x9418]+2*[0x9298]+1*[0x9410]). Now reads REAL editable per-power fields: power<N>.strength = 3*mil_strength + 2*colony_count + 1*econ_strength. colony_count is live (the decoded 0x9298); mil_strength/econ_strength are editable in the State Inspector (proxy the undecoded 0x9418/0x9410 arrays). WeakestPower cedes to StrongestPower."
       }
     }
   ],
