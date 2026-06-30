@@ -31,8 +31,11 @@ JsonValue pin(const char* name, const char* kind, const char* dir, const char* d
 JsonValue param(const char* name, const char* kind, std::vector<const char*> options = {}) {
     JsonValue p; p.type = JsonValue::Object;
     p.obj["name"] = json_str(name); p.obj["kind"] = json_str(kind);
-    if (!options.empty()) { JsonValue o; o.type = JsonValue::Array;
-        for (auto s : options) o.arr.push_back(json_str(s)); p.obj["options"] = o; }
+    if (!options.empty()) {
+        JsonValue o; o.type = JsonValue::Array;
+        for (auto s : options) o.arr.push_back(json_str(s));
+        p.obj["options"] = o;
+    }
     return p;
 }
 JsonValue node_def(const char* type, const char* title, const char* summary,
@@ -64,6 +67,12 @@ JsonValue node_catalog() {
         node_def("OnTurnStart", "On Turn Start", "Fires at the start of every turn.",
                  {pin("out","exec","out")}, {}),
         node_def("OnTestFire", "On Test Fire", "Manual entry point used by the editor's Run button.",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnColonyFounded", "On Colony Founded", "Fires when a colony is founded.",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnUnitEntersTile", "On Unit Enters Tile", "Fires when a unit enters a tile (e.g. a rumor).",
+                 {pin("out","exec","out")}, {param("terrain","text")}),
+        node_def("OnBellsThreshold", "On Bells Threshold", "Fires when liberty bells reach a founding-father cost.",
                  {pin("out","exec","out")}, {}),
     }));
     cats.arr.push_back(category("Flow", {
@@ -107,7 +116,17 @@ JsonValue node_catalog() {
         node_def("AddColonyPop", "Add Colony Population", "Adds population to a colony (by index).",
                  {pin("in","exec","in"), pin("amount","data","in","number"), pin("out","exec","out")},
                  {param("colony","number")}),
-        node_def("Log", "Log Message", "Appends a message to the run log.",
+        node_def("AddREF", "Add to King's Army", "Adds units to the Royal Expeditionary Force.",
+                 {pin("in","exec","in"), pin("amount","data","in","number"), pin("out","exec","out")},
+                 {param("kind","select",{"regulars","cavalry","manowar","artillery"})}),
+        node_def("SpawnUnit", "Spawn Unit", "Creates a unit at the first colony for a power.",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("type","select",{"Colonists","Soldiers","Pioneers","Dragoons","Scouts",
+                  "Treasure","Artillery","Wagon Train","Caravel","Galleon","Frigate","Man-O-War"}),
+                  param("power","select",{"0","1","2","3"})}),
+        node_def("StepTurn", "Advance Turn", "Runs one full game turn (the sim step).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
     }));
     cats.arr.push_back(category("Dialog", {
@@ -289,10 +308,8 @@ struct Runner {
         const JsonValue* n = node(nodeId); if (!n) return {};
         std::string t = ptype(*n);
         logmsg("exec " + t + " (" + nodeId + ")");
-        if (t == "OnTurnStart" || t == "OnTestFire" || t == "Sequence") {
-            if (t == "Sequence") { follow(nodeId, "0", popup); follow(nodeId, "1", popup); return follow(nodeId, "2", popup); }
-            return follow(nodeId, "out", popup);
-        }
+        if (t == "Sequence") { follow(nodeId, "0", popup); follow(nodeId, "1", popup); return follow(nodeId, "2", popup); }
+        if (t.rfind("On", 0) == 0) return follow(nodeId, "out", popup);   // any trigger = entry passthrough
         if (t == "Branch") {
             bool c = as_num(eval_in(nodeId, "cond")) != 0;
             return follow(nodeId, c ? "true" : "false", popup);
@@ -328,6 +345,31 @@ struct Runner {
                 effect("colony" + std::to_string(c) + ".population += " + std::to_string(amt)); }
             return follow(nodeId, "out", popup);
         }
+        if (t == "AddREF") {
+            std::string k = pget(*n, "kind").str; int a = (int)as_num(eval_in(nodeId, "amount"));
+            if (k == "regulars") cx.g.ref.regulars += a; else if (k == "cavalry") cx.g.ref.cavalry += a;
+            else if (k == "manowar") cx.g.ref.manowar += a; else if (k == "artillery") cx.g.ref.artillery += a;
+            effect("REF " + k + " += " + std::to_string(a));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "SpawnUnit") {
+            static const char* UN[12] = {"Colonists","Soldiers","Pioneers","Dragoons","Scouts",
+                "Treasure","Artillery","Wagon Train","Caravel","Galleon","Frigate","Man-O-War"};
+            static const int UT[12] = {0,1,2,4,5,10,11,12,13,15,17,18};
+            std::string nm = pget(*n, "type").str; int type = 0;
+            for (int i = 0; i < 12; ++i) if (nm == UN[i]) type = UT[i];
+            int p = std::atoi(pget(*n, "power").str.c_str());
+            vc::sim::Unit u; u.type = type; u.owner = p; u.alive = true;
+            if (!cx.colony_xy.empty()) { u.x = cx.colony_xy[0].first; u.y = cx.colony_xy[0].second; }
+            cx.w.units.push_back(u);
+            effect("spawned " + nm + " for power " + std::to_string(p));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "StepTurn") {
+            vc::sim::step_turn(cx.g, cx.w, cx.rng, 0);
+            effect("advanced to year " + std::to_string(cx.g.year));
+            return follow(nodeId, "out", popup);
+        }
         if (t == "Log") { effect(pget(*n, "message").str); return follow(nodeId, "out", popup); }
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
@@ -360,7 +402,7 @@ JsonValue run_graph(const JsonValue& graph, EngineCtx& cx,
         if (const JsonValue* ns = graph.find("nodes")) {
             for (const JsonValue& n : ns->arr) {
                 const JsonValue* t = n.find("type");
-                if (t && (t->str == "OnTurnStart" || t->str == "OnTestFire")) {
+                if (t && t->str.rfind("On", 0) == 0) {           // any trigger node is an entry
                     if (const JsonValue* id = n.find("id")) { entry = id->str; break; }
                 }
             }

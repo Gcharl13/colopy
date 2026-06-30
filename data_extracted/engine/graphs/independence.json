@@ -1,0 +1,31 @@
+{
+  "id": "independence",
+  "name": "Declare Independence",
+  "nodes": [
+    { "id": "trig", "type": "OnTestFire", "x": 30,  "y": 40,  "params": {} },
+    { "id": "get",  "type": "GetState",  "x": 30,  "y": 150, "params": { "path": "colony0.sol" } },
+    { "id": "c50",  "type": "Constant",  "x": 30,  "y": 280, "params": { "value": 50 } },
+    { "id": "cmp",  "type": "Compare",   "x": 220, "y": 200, "params": { "op": ">=" } },
+    { "id": "br",   "type": "Branch",    "x": 410, "y": 60,  "params": {} },
+    { "id": "pop",  "type": "ShowPopup", "x": 600, "y": 40,
+      "params": { "title": "Declare Independence?",
+                  "body": "The Sons of Liberty are strong. Shall we throw off the Crown and declare independence?",
+                  "choices": "Sign the Declaration,Not yet" } },
+    { "id": "ref",  "type": "AddREF",    "x": 820, "y": 40,  "params": { "kind": "regulars" } },
+    { "id": "c20",  "type": "Constant",  "x": 820, "y": 250, "params": { "value": 20 } },
+    { "id": "war",  "type": "Log",       "x": 1040,"y": 40,  "params": { "message": "The War of Independence begins! The King dispatches his Expeditionary Force." } },
+    { "id": "weak", "type": "ShowPopup", "x": 600, "y": 220,
+      "params": { "title": "Not Yet", "body": "Independence requires 50% Sons of Liberty. Build more bells first.", "choices": "Understood" } }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" },               "to": { "node": "br",  "pin": "in" } },
+    { "from": { "node": "get",  "pin": "value" },             "to": { "node": "cmp", "pin": "a" } },
+    { "from": { "node": "c50",  "pin": "value" },             "to": { "node": "cmp", "pin": "b" } },
+    { "from": { "node": "cmp",  "pin": "value" },             "to": { "node": "br",  "pin": "cond" } },
+    { "from": { "node": "br",   "pin": "true" },              "to": { "node": "pop", "pin": "in" } },
+    { "from": { "node": "br",   "pin": "false" },             "to": { "node": "weak","pin": "in" } },
+    { "from": { "node": "pop",  "pin": "Sign the Declaration" }, "to": { "node": "ref", "pin": "in" } },
+    { "from": { "node": "c20",  "pin": "value" },             "to": { "node": "ref", "pin": "amount" } },
+    { "from": { "node": "ref",  "pin": "out" },               "to": { "node": "war", "pin": "in" } }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "kings_tax",
+  "name": "King's Tax Demand",
+  "nodes": [
+    { "id": "trig", "type": "OnTurnStart", "x": 30,  "y": 40,  "params": {} },
+    { "id": "roll", "type": "Roll",        "x": 30,  "y": 150, "params": { "min": 1, "max": 1000 } },
+    { "id": "c500", "type": "Constant",    "x": 30,  "y": 280, "params": { "value": 500 } },
+    { "id": "cmp",  "type": "Compare",     "x": 230, "y": 200, "params": { "op": ">=" } },
+    { "id": "br",   "type": "Branch",      "x": 420, "y": 60,  "params": {} },
+    { "id": "pop",  "type": "ShowPopup",   "x": 610, "y": 40,
+      "params": { "title": "The King Demands Higher Taxes!",
+                  "body": "The Crown demands the colonial tax rate rise to 25%. Do you submit?",
+                  "choices": "Accept,Refuse" } },
+    { "id": "c25",  "type": "Constant",    "x": 610, "y": 250, "params": { "value": 25 } },
+    { "id": "tax",  "type": "SetTax",      "x": 820, "y": 60,  "params": { "power": "0" } },
+    { "id": "party","type": "Log",         "x": 820, "y": 200, "params": { "message": "Tea Party! A good is boycotted instead of paying the tax." } }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" },    "to": { "node": "br",  "pin": "in" } },
+    { "from": { "node": "roll", "pin": "value" },  "to": { "node": "cmp", "pin": "a" } },
+    { "from": { "node": "c500", "pin": "value" },  "to": { "node": "cmp", "pin": "b" } },
+    { "from": { "node": "cmp",  "pin": "value" },  "to": { "node": "br",  "pin": "cond" } },
+    { "from": { "node": "br",   "pin": "true" },   "to": { "node": "pop", "pin": "in" } },
+    { "from": { "node": "pop",  "pin": "Accept" }, "to": { "node": "tax", "pin": "in" } },
+    { "from": { "node": "c25",  "pin": "value" },  "to": { "node": "tax", "pin": "value" } },
+    { "from": { "node": "pop",  "pin": "Refuse" }, "to": { "node": "party", "pin": "in" } }
+  ]
+}

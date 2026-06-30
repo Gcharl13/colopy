@@ -1,0 +1,19 @@
+{
+  "id": "founding_father",
+  "name": "Founding Father Offer",
+  "nodes": [
+    { "id": "trig", "type": "OnBellsThreshold", "x": 30,  "y": 60, "params": {} },
+    { "id": "pop",  "type": "ShowPopup", "x": 240, "y": 60,
+      "params": { "title": "The Continental Congress",
+                  "body": "Adam Smith offers to join the Continental Congress. Welcome him?",
+                  "choices": "Welcome,Decline" } },
+    { "id": "join", "type": "Log", "x": 470, "y": 40,
+      "params": { "message": "Adam Smith joins -- factory buildings (Arsenal, Textile Mill, Cigar Factory) are now buildable." } },
+    { "id": "dec",  "type": "Log", "x": 470, "y": 160, "params": { "message": "Father declined; bells continue to accumulate." } }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" },     "to": { "node": "pop",  "pin": "in" } },
+    { "from": { "node": "pop",  "pin": "Welcome" }, "to": { "node": "join", "pin": "in" } },
+    { "from": { "node": "pop",  "pin": "Decline" }, "to": { "node": "dec",  "pin": "in" } }
+  ]
+}

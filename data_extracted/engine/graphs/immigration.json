@@ -1,0 +1,22 @@
+{
+  "id": "immigration",
+  "name": "Religious Immigration",
+  "nodes": [
+    { "id": "trig", "type": "OnTurnStart", "x": 30,  "y": 40,  "params": {} },
+    { "id": "get",  "type": "GetState",  "x": 30,  "y": 150, "params": { "path": "power0.crosses" } },
+    { "id": "c12",  "type": "Constant",  "x": 30,  "y": 280, "params": { "value": 12 } },
+    { "id": "cmp",  "type": "Compare",   "x": 220, "y": 200, "params": { "op": ">=" } },
+    { "id": "br",   "type": "Branch",    "x": 410, "y": 60,  "params": {} },
+    { "id": "spawn","type": "SpawnUnit", "x": 600, "y": 40,  "params": { "type": "Colonists", "power": "0" } },
+    { "id": "pop",  "type": "ShowPopup", "x": 800, "y": 40,
+      "params": { "title": "Religious Unrest", "body": "A new colonist, fleeing persecution, arrives on the docks in Europe!", "choices": "Welcome them" } }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" },   "to": { "node": "br",   "pin": "in" } },
+    { "from": { "node": "get",  "pin": "value" }, "to": { "node": "cmp",  "pin": "a" } },
+    { "from": { "node": "c12",  "pin": "value" }, "to": { "node": "cmp",  "pin": "b" } },
+    { "from": { "node": "cmp",  "pin": "value" }, "to": { "node": "br",   "pin": "cond" } },
+    { "from": { "node": "br",   "pin": "true" },  "to": { "node": "spawn","pin": "in" } },
+    { "from": { "node": "spawn","pin": "out" },   "to": { "node": "pop",  "pin": "in" } }
+  ]
+}
