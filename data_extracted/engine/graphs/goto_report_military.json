@@ -1,0 +1,4 @@
+{ "id":"goto_report_military", "name":"Go to report_military",
+  "nodes":[ {"id":"t","type":"OnTestFire","x":40,"y":60,"params":{}},
+            {"id":"nav","type":"Navigate","x":240,"y":60,"params":{"screen":"report_military"}} ],
+  "edges":[ {"from":{"node":"t","pin":"out"},"to":{"node":"nav","pin":"in"}} ] }
