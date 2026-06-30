@@ -3,6 +3,15 @@
   "name": "Lost City Rumor",
   "nodes": [
     {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -70,
+      "params": {
+        "text": "Lost City: n=Roll(1,9). Seasoned Scout s scales Cibola/ruins treasure; de Soto (FF #7) forces a positive outcome (no vanish/nothing/shrines)."
+      }
+    },
+    {
       "id": "trig",
       "type": "OnLostCityEntered",
       "x": 20,
@@ -29,10 +38,134 @@
       }
     },
     {
+      "id": "soto",
+      "type": "HasFoundingFather",
+      "x": 20,
+      "y": 330,
+      "params": {
+        "father": 7
+      }
+    },
+    {
+      "id": "k5",
+      "type": "Constant",
+      "x": 230,
+      "y": 300,
+      "params": {
+        "value": 5
+      }
+    },
+    {
+      "id": "e5",
+      "type": "Compare",
+      "x": 380,
+      "y": 300,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "k6",
+      "type": "Constant",
+      "x": 230,
+      "y": 360,
+      "params": {
+        "value": 6
+      }
+    },
+    {
+      "id": "e6",
+      "type": "Compare",
+      "x": 380,
+      "y": 360,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "k8",
+      "type": "Constant",
+      "x": 230,
+      "y": 420,
+      "params": {
+        "value": 8
+      }
+    },
+    {
+      "id": "e8",
+      "type": "Compare",
+      "x": 380,
+      "y": 420,
+      "params": {
+        "op": "=="
+      }
+    },
+    {
+      "id": "bad56",
+      "type": "Math",
+      "x": 560,
+      "y": 330,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "badAny",
+      "type": "Math",
+      "x": 710,
+      "y": 360,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
+      "id": "gate",
+      "type": "Math",
+      "x": 860,
+      "y": 400,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "c3",
+      "type": "Constant",
+      "x": 860,
+      "y": 300,
+      "params": {
+        "value": 3
+      }
+    },
+    {
+      "id": "neff",
+      "type": "Select",
+      "x": 1010,
+      "y": 340,
+      "params": {}
+    },
+    {
+      "id": "c2b",
+      "type": "Constant",
+      "x": 20,
+      "y": 470,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "sp2",
+      "type": "Math",
+      "x": 170,
+      "y": 460,
+      "params": {
+        "op": "+"
+      }
+    },
+    {
       "id": "dR",
       "type": "Dice",
       "x": 20,
-      "y": 330,
+      "y": 540,
       "params": {
         "count": 3,
         "sides": 8
@@ -42,25 +175,52 @@
       "id": "c10a",
       "type": "Constant",
       "x": 20,
-      "y": 400,
+      "y": 610,
       "params": {
         "value": 10
       }
     },
     {
-      "id": "mRuins",
+      "id": "mR0",
       "type": "Math",
       "x": 170,
-      "y": 360,
+      "y": 560,
       "params": {
         "op": "*"
+      }
+    },
+    {
+      "id": "mRs",
+      "type": "Math",
+      "x": 330,
+      "y": 560,
+      "params": {
+        "op": "*"
+      }
+    },
+    {
+      "id": "c2d",
+      "type": "Constant",
+      "x": 330,
+      "y": 650,
+      "params": {
+        "value": 2
+      }
+    },
+    {
+      "id": "mRuins",
+      "type": "Math",
+      "x": 490,
+      "y": 580,
+      "params": {
+        "op": "/"
       }
     },
     {
       "id": "dF",
       "type": "Dice",
       "x": 20,
-      "y": 470,
+      "y": 700,
       "params": {
         "count": 4,
         "sides": 10
@@ -70,7 +230,7 @@
       "id": "c2a",
       "type": "Constant",
       "x": 20,
-      "y": 540,
+      "y": 770,
       "params": {
         "value": 2
       }
@@ -79,34 +239,16 @@
       "id": "mFriend",
       "type": "Math",
       "x": 170,
-      "y": 500,
+      "y": 720,
       "params": {
         "op": "*"
-      }
-    },
-    {
-      "id": "c2b",
-      "type": "Constant",
-      "x": 20,
-      "y": 610,
-      "params": {
-        "value": 2
-      }
-    },
-    {
-      "id": "sp2",
-      "type": "Math",
-      "x": 170,
-      "y": 590,
-      "params": {
-        "op": "+"
       }
     },
     {
       "id": "c10b",
       "type": "Constant",
       "x": 20,
-      "y": 680,
+      "y": 840,
       "params": {
         "value": 10
       }
@@ -114,8 +256,8 @@
     {
       "id": "sp2x10",
       "type": "Math",
-      "x": 320,
-      "y": 600,
+      "x": 330,
+      "y": 460,
       "params": {
         "op": "*"
       }
@@ -124,7 +266,7 @@
       "id": "d20",
       "type": "Dice",
       "x": 20,
-      "y": 750,
+      "y": 910,
       "params": {
         "count": 1,
         "sides": 20
@@ -133,8 +275,8 @@
     {
       "id": "plus",
       "type": "Math",
-      "x": 470,
-      "y": 620,
+      "x": 490,
+      "y": 480,
       "params": {
         "op": "+"
       }
@@ -143,7 +285,7 @@
       "id": "c100",
       "type": "Constant",
       "x": 20,
-      "y": 820,
+      "y": 980,
       "params": {
         "value": 100
       }
@@ -151,8 +293,8 @@
     {
       "id": "cib",
       "type": "Math",
-      "x": 620,
-      "y": 640,
+      "x": 650,
+      "y": 500,
       "params": {
         "op": "*"
       }
@@ -160,7 +302,7 @@
     {
       "id": "k1",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 60,
       "params": {
         "value": 1
@@ -169,7 +311,7 @@
     {
       "id": "cmp1",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 20,
       "params": {
         "op": "=="
@@ -178,14 +320,14 @@
     {
       "id": "br1",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 20,
       "params": {}
     },
     {
       "id": "imm",
       "type": "GrantImmigrant",
-      "x": 1160,
+      "x": 1510,
       "y": 20,
       "params": {
         "type": "Colonists",
@@ -196,7 +338,7 @@
     {
       "id": "pop1",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 20,
       "params": {
         "title": "Fountain of Youth",
@@ -208,7 +350,7 @@
     {
       "id": "k2",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 155,
       "params": {
         "value": 2
@@ -217,7 +359,7 @@
     {
       "id": "cmp2",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 115,
       "params": {
         "op": "=="
@@ -226,14 +368,14 @@
     {
       "id": "br2",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 115,
       "params": {}
     },
     {
       "id": "gold2",
       "type": "GrantGold",
-      "x": 1160,
+      "x": 1510,
       "y": 115,
       "params": {
         "power": "0"
@@ -242,7 +384,7 @@
     {
       "id": "treas",
       "type": "SpawnUnit",
-      "x": 1160,
+      "x": 1510,
       "y": 115,
       "params": {
         "type": "Treasure",
@@ -252,7 +394,7 @@
     {
       "id": "pop2",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 115,
       "params": {
         "title": "Seven Cities of Cibola",
@@ -264,7 +406,7 @@
     {
       "id": "k3",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 250,
       "params": {
         "value": 3
@@ -273,7 +415,7 @@
     {
       "id": "cmp3",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 210,
       "params": {
         "op": "=="
@@ -282,14 +424,14 @@
     {
       "id": "br3",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 210,
       "params": {}
     },
     {
       "id": "gold3",
       "type": "GrantGold",
-      "x": 1160,
+      "x": 1510,
       "y": 210,
       "params": {
         "power": "0"
@@ -298,7 +440,7 @@
     {
       "id": "pop3",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 210,
       "params": {
         "title": "Ruins",
@@ -310,7 +452,7 @@
     {
       "id": "k4",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 345,
       "params": {
         "value": 4
@@ -319,7 +461,7 @@
     {
       "id": "cmp4",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 305,
       "params": {
         "op": "=="
@@ -328,14 +470,14 @@
     {
       "id": "br4",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 305,
       "params": {}
     },
     {
       "id": "gold4",
       "type": "GrantGold",
-      "x": 1160,
+      "x": 1510,
       "y": 305,
       "params": {
         "power": "0"
@@ -344,7 +486,7 @@
     {
       "id": "pop4",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 305,
       "params": {
         "title": "Burial Mounds",
@@ -355,7 +497,7 @@
     {
       "id": "k5",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 440,
       "params": {
         "value": 5
@@ -364,7 +506,7 @@
     {
       "id": "cmp5",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 400,
       "params": {
         "op": "=="
@@ -373,14 +515,14 @@
     {
       "id": "br5",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 400,
       "params": {}
     },
     {
       "id": "kill",
       "type": "DestroyUnit",
-      "x": 1160,
+      "x": 1510,
       "y": 400,
       "params": {
         "unit": 0
@@ -389,7 +531,7 @@
     {
       "id": "pop5",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 400,
       "params": {
         "title": "Vanished",
@@ -400,7 +542,7 @@
     {
       "id": "k6",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 535,
       "params": {
         "value": 6
@@ -409,7 +551,7 @@
     {
       "id": "cmp6",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 495,
       "params": {
         "op": "=="
@@ -418,14 +560,14 @@
     {
       "id": "br6",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 495,
       "params": {}
     },
     {
       "id": "pop6",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 495,
       "params": {
         "title": "Nothing",
@@ -436,7 +578,7 @@
     {
       "id": "k7",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 630,
       "params": {
         "value": 7
@@ -445,7 +587,7 @@
     {
       "id": "cmp7",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 590,
       "params": {
         "op": "=="
@@ -454,14 +596,14 @@
     {
       "id": "br7",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 590,
       "params": {}
     },
     {
       "id": "gold7",
       "type": "GrantGold",
-      "x": 1160,
+      "x": 1510,
       "y": 590,
       "params": {
         "power": "0"
@@ -470,7 +612,7 @@
     {
       "id": "pop7",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 590,
       "params": {
         "title": "Friendly Tribe",
@@ -481,7 +623,7 @@
     {
       "id": "k8",
       "type": "Constant",
-      "x": 720,
+      "x": 1070,
       "y": 725,
       "params": {
         "value": 8
@@ -490,7 +632,7 @@
     {
       "id": "cmp8",
       "type": "Compare",
-      "x": 870,
+      "x": 1220,
       "y": 685,
       "params": {
         "op": "=="
@@ -499,14 +641,14 @@
     {
       "id": "br8",
       "type": "Branch",
-      "x": 1020,
+      "x": 1370,
       "y": 685,
       "params": {}
     },
     {
       "id": "ten",
       "type": "ChangeNativeTension",
-      "x": 1160,
+      "x": 1510,
       "y": 685,
       "params": {
         "amount": 100
@@ -515,7 +657,7 @@
     {
       "id": "pop8",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 685,
       "params": {
         "title": "Holy Shrines",
@@ -527,7 +669,7 @@
     {
       "id": "imm9",
       "type": "GrantImmigrant",
-      "x": 1160,
+      "x": 1510,
       "y": 780,
       "params": {
         "type": "Colonists",
@@ -538,7 +680,7 @@
     {
       "id": "pop9",
       "type": "ShowPopup",
-      "x": 1380,
+      "x": 1730,
       "y": 780,
       "params": {
         "title": "Survivors",
@@ -550,7 +692,217 @@
   "edges": [
     {
       "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e5",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e5",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e6",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e6",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e8",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "k8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "e8",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "e5",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bad56",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "e6",
+        "pin": "value"
+      },
+      "to": {
+        "node": "bad56",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "bad56",
+        "pin": "value"
+      },
+      "to": {
+        "node": "badAny",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "e8",
+        "pin": "value"
+      },
+      "to": {
+        "node": "badAny",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "soto",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gate",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "badAny",
+        "pin": "value"
+      },
+      "to": {
+        "node": "gate",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "gate",
+        "pin": "value"
+      },
+      "to": {
+        "node": "neff",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "c3",
+        "pin": "value"
+      },
+      "to": {
+        "node": "neff",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "roll",
+        "pin": "value"
+      },
+      "to": {
+        "node": "neff",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "s",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c2b",
+        "pin": "value"
+      },
+      "to": {
+        "node": "sp2",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
         "node": "dR",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mR0",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "c10a",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mR0",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "mR0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mRs",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "sp2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "mRs",
+        "pin": "b"
+      }
+    },
+    {
+      "from": {
+        "node": "mRs",
         "pin": "value"
       },
       "to": {
@@ -560,7 +912,7 @@
     },
     {
       "from": {
-        "node": "c10a",
+        "node": "c2d",
         "pin": "value"
       },
       "to": {
@@ -585,26 +937,6 @@
       },
       "to": {
         "node": "mFriend",
-        "pin": "b"
-      }
-    },
-    {
-      "from": {
-        "node": "s",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2",
-        "pin": "a"
-      }
-    },
-    {
-      "from": {
-        "node": "c2b",
-        "pin": "value"
-      },
-      "to": {
-        "node": "sp2",
         "pin": "b"
       }
     },
@@ -670,7 +1002,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -730,7 +1062,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -810,7 +1142,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -880,7 +1212,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -950,7 +1282,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -1010,7 +1342,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -1060,7 +1392,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {
@@ -1130,7 +1462,7 @@
     },
     {
       "from": {
-        "node": "roll",
+        "node": "neff",
         "pin": "value"
       },
       "to": {

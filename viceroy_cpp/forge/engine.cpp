@@ -181,6 +181,12 @@ JsonValue node_catalog() {
                  {param("op","select",{">",">=","<","<=","==","!="})}),
         node_def("RandomChance", "Random Chance", "True with the given percent probability.",
                  {pin("value","data","out","bool")}, {param("percent","number")}),
+        node_def("Select", "Select (cond ? a : b)",
+                 "Outputs a when cond is non-zero (true), else b -- e.g. de Soto remapping a bad "
+                 "lost-city outcome to a good one.",
+                 {pin("cond","data","in","number"), pin("a","data","in","number"),
+                  pin("b","data","in","number"), pin("value","data","out","number")},
+                 {param("a","number"), param("b","number")}),
         node_def("HasFoundingFather", "Has Founding Father",
                  "True if power 0's Congress holds the given Founding Father (id 0..24).",
                  {pin("value","data","out","bool")}, {param("father","number")}),
@@ -611,6 +617,9 @@ struct Runner {
             } else if (t == "CombatOdds") {
                 int a = (int)as_num(eval_in(nodeId, "atk")), b = (int)as_num(eval_in(nodeId, "def"));
                 out = json_num((int)(vc::sim::combat_odds(a, b) * 100));
+            } else if (t == "Select") {
+                double c = as_num(eval_in(nodeId, "cond"));
+                out = json_num(c != 0 ? as_num(eval_in(nodeId, "a")) : as_num(eval_in(nodeId, "b")));
             } else if (t == "Dice") {
                 int cnt = (int)as_num(pget(*n, "count")), sides = (int)as_num(pget(*n, "sides"));
                 if (sides < 1) sides = 1;
