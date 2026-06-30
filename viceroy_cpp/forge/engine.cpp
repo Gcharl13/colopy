@@ -1,12 +1,17 @@
 // forge/engine.cpp -- see engine.hpp. A small visual-scripting VM + binding resolver.
 #include "engine.hpp"
 
-#include "economy.hpp"          // sol_pct
+#include "economy.hpp"          // sol_pct, colony_economic_step
 #include "unit.hpp"             // unit_stats
-#include "combat.hpp"           // resolve_land
+#include "combat.hpp"           // resolve_land, combat_odds
 #include "natives.hpp"          // apply_tension
-#include "founding_fathers.hpp" // ff_available
+#include "founding_fathers.hpp" // ff_available, ff_cost
 #include "diplomacy.hpp"        // declare_war / at_war
+#include "revolution.hpp"       // can_declare_independence, tory_uprising
+#include "turn.hpp"             // advance_cadence, game_over
+#include "market.hpp"           // price_drift
+#include "ref.hpp"              // ref_accrue_rate
+#include "scoring.hpp"          // score_difficulty_mult
 
 #include <algorithm>
 #include <cstdio>
@@ -98,6 +103,48 @@ JsonValue node_catalog() {
         node_def("OnBellsThreshold", "On Bells Threshold", "Fires when liberty bells reach a founding-father cost.",
                  {pin("out","exec","out")}, {}),
     }));
+    // The whole game's event surface -- one trigger per spec system (spec/systems/*.md).
+    // Every trigger is an entry passthrough; wire it into that system's logic.
+    cats.arr.push_back(category("Game Events", {
+        node_def("OnTurnEnd", "On Turn End", "End of a turn, after all powers act (cadence advance).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnNewYear", "On New Year", "Fires when the year advances (turn_dispatch cadence).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnTaxDemand", "On King's Tax Check", "The King's periodic tax-raise attempt (king.md, turn>=30).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnMercenaryOffer", "On Mercenary Offer", "A mercenary force is offered for gold (mercenary.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnSoLThreshold", "On Sons-of-Liberty Threshold", "National SoL meter crosses a % (revolution.md).",
+                 {pin("out","exec","out")}, {param("percent","number")}),
+        node_def("OnIndependenceDeclared", "On Independence Declared", "The colonies declare the War of Independence.",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnREFArrival", "On REF Arrival", "The Royal Expeditionary Force lands (SoL>=75).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnInterventionForce", "On Intervention Force", "A foreign power intervenes on the rebel side.",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnToryUprising", "On Tory Uprising", "Loyalist militia rise during the WoI (tory_uprising.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnSpanishSuccession", "On War of Spanish Succession", "Weakest rival withdraws (spanish_succession.md, SoL<75).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnFoundingFatherOffered", "On Founding Father Offered", "Congress offers the next Father (founding_fathers.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnImmigrantArrives", "On Immigrant Arrives", "Crosses fill the threshold; an emigrant waits at the docks.",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnLostCityEntered", "On Lost City Entered", "A unit enters a lost-city rumor tile (events.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnNativeRaid", "On Native Raid", "A settlement's alarm triggers a raid (natives.md, alarm>=128).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnNativeAttitude", "On Native Attitude Change", "A tribe's attitude band shifts (Content..War).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnMissionAttempt", "On Mission Attempt", "A missionary attempts a conversion (natives.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnPriceDrift", "On Market Price Drift", "Per-turn European price drift (market.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnColonyProduction", "On Colony Production", "A colony's per-turn economic step (colony.md).",
+                 {pin("out","exec","out")}, {}),
+        node_def("OnGameOver", "On Game Over", "The game ends (year>=1725 or independence resolved); score is tallied.",
+                 {pin("out","exec","out")}, {}),
+    }));
     cats.arr.push_back(category("Flow", {
         node_def("Branch", "Branch (if)", "Routes flow by a boolean condition.",
                  {pin("in","exec","in"), pin("cond","data","in","bool"),
@@ -129,6 +176,17 @@ JsonValue node_catalog() {
         node_def("HasFoundingFather", "Has Founding Father",
                  "True if power 0's Congress holds the given Founding Father (id 0..24).",
                  {pin("value","data","out","bool")}, {param("father","number")}),
+        node_def("CanDeclareIndependence", "Can Declare Independence",
+                 "True when the national Sons-of-Liberty meter reaches 50% (revolution.hpp).",
+                 {pin("value","data","out","bool")}, {}),
+        node_def("FoundingFatherCost", "Founding Father Cost",
+                 "The bell cost of the next Founding Father at the current year (ff_cost).",
+                 {pin("value","data","out","number")}, {}),
+        node_def("CombatOdds", "Combat Odds %",
+                 "Attacker win chance ATK/(ATK+DEF) as a percent (combat.hpp combat_odds).",
+                 {pin("atk","data","in","number"), pin("def","data","in","number"),
+                  pin("value","data","out","number")},
+                 {param("atk","number"), param("def","number")}),
     }));
     cats.arr.push_back(category("Actions", {
         node_def("GrantGold", "Grant Gold", "Adds gold to a power's treasury.",
@@ -181,6 +239,35 @@ JsonValue node_catalog() {
                  {pin("in","exec","in"), pin("out","exec","out")},
                  {param("type","select",{"Colonists","Soldiers","Pioneers","Scouts"}),
                   param("power","select",{"0","1","2","3"})}),
+        node_def("AdvanceCadence", "Advance Cadence", "Advances the turn/season/year (turn.hpp advance_cadence).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("SetNationalSoL", "Set National Sons of Liberty", "Sets the national SoL meter 0..100 (the Bolivar meter).",
+                 {pin("in","exec","in"), pin("value","data","in","number"), pin("out","exec","out")},
+                 {param("value","number")}),
+        node_def("DeclareIndependence", "Declare Independence",
+                 "Declares the War of Independence for a power (sets the WoI flag + rebel power).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("power","select",{"0","1","2","3"})}),
+        node_def("MobilizeREF", "Mobilize the King's Army",
+                 "Grows the Royal Expeditionary Force by its accrual rate (ref.hpp).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("HireMercenaries", "Hire Mercenaries",
+                 "Spawns a veteran mercenary stack for a power at its first colony (mercenary.md).",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("power","select",{"0","1","2","3"}), param("kind","select",{"Wartime","Peacetime"})}),
+        node_def("WageSpanishSuccession", "War of Spanish Succession",
+                 "Withdraws the weakest rival power; its colonies pass to the strongest (spanish_succession.md).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("SpawnToryMilitia", "Spawn Tory Militia",
+                 "Spawns loyalist Soldiers near a colony during the WoI (tory_uprising.md).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
+        node_def("OfferFoundingFather", "Offer Founding Father",
+                 "Logs the next Father's bell cost from the curve (founding_fathers.hpp ff_cost).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("DriftPrices", "Drift Market Prices", "Runs one per-turn European price drift (market.hpp).",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("ScoreGame", "Tally Score",
+                 "Computes the final game score (scoring.hpp) into game.score.",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {}),
         node_def("Log", "Log Message", "Appends a message to the run log (player-facing effect note).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("message","text")}),
     }));
@@ -258,6 +345,9 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     if (path == "natives.tension") {
         int t = (int)value; cx.x.tension = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }
+    if (path == "revolution.sol") {
+        int t = (int)value; cx.x.national_sol = t < 0 ? 0 : t > 100 ? 100 : t; return true;
+    }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {
@@ -293,6 +383,11 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     if (path == "colonies.count") return num((double)w.colonies.size());
     if (path == "units.count")    return num((double)w.units.size());
     if (path == "natives.tension") return num(cx.x.tension);
+    if (path == "revolution.sol")      return num(cx.x.national_sol);
+    if (path == "revolution.declared") return num(cx.x.woi_declared ? 1 : 0);
+    if (path == "revolution.rebel")    return num(cx.x.rebel_power);
+    if (path == "succession.seceded")  return num(cx.x.seceded_power);
+    if (path == "game.score")          return num((double)cx.x.score);
     if (path == "ff.count") {                       // popcount of acquired fathers
         int c = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++c; return num(c);
     }
@@ -422,6 +517,15 @@ struct Runner {
                 int id = (int)as_num(pget(*n, "father"));
                 JsonValue bv; bv.type = JsonValue::Bool;
                 bv.b = id >= 0 && id < 32 && ((cx.x.ff_owned >> id) & 1u); out = bv;
+            } else if (t == "CanDeclareIndependence") {
+                JsonValue bv; bv.type = JsonValue::Bool;
+                bv.b = vc::sim::can_declare_independence(cx.x.national_sol); out = bv;
+            } else if (t == "FoundingFatherCost") {
+                int cnt = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++cnt;
+                out = json_num(vc::sim::ff_cost(cx.g.difficulty, cx.g.year, cnt, true, cx.x.woi_declared, cx.rd));
+            } else if (t == "CombatOdds") {
+                int a = (int)as_num(eval_in(nodeId, "atk")), b = (int)as_num(eval_in(nodeId, "def"));
+                out = json_num((int)(vc::sim::combat_odds(a, b) * 100));
             }
         }
         dcache[key] = out; return out;
@@ -583,6 +687,76 @@ struct Runner {
                            std::to_string(s) + ")"); break; }
                 if (!placed) effect("power " + std::to_string(p) + "'s dock is full");
             }
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "AdvanceCadence") {
+            vc::sim::advance_cadence(cx.g);
+            effect("cadence -> year " + std::to_string(cx.g.year) + " season " + std::to_string(cx.g.season));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "SetNationalSoL") {
+            int v = (int)as_num(eval_in(nodeId, "value"));
+            cx.x.national_sol = v < 0 ? 0 : v > 100 ? 100 : v;
+            effect("national Sons of Liberty = " + std::to_string(cx.x.national_sol));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "DeclareIndependence") {
+            int p = std::atoi(pget(*n, "power").str.c_str());
+            cx.x.woi_declared = true; cx.x.rebel_power = (p >= 0 && p < 4) ? p : 0;
+            effect("power " + std::to_string(cx.x.rebel_power) + " declares the War of Independence!");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "MobilizeREF") {
+            int r = vc::sim::ref_accrue_rate(cx.g.difficulty, cx.g.year, cx.rd);
+            cx.g.ref.regulars += r;
+            effect("King's Army mobilizes: +" + std::to_string(r) + " regulars");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "HireMercenaries") {
+            int p = std::atoi(pget(*n, "power").str.c_str());
+            bool wartime = pget(*n, "kind").str == "Wartime";
+            std::vector<int> types = wartime ? std::vector<int>{9, 7, 11} : std::vector<int>{4, 11};
+            for (int ty : types) { vc::sim::Unit u; u.type = ty; u.owner = (p >= 0 && p < 4) ? p : 0; u.alive = true;
+                if (!cx.colony_xy.empty()) { u.x = cx.colony_xy[0].first; u.y = cx.colony_xy[0].second; }
+                cx.w.units.push_back(u); }
+            effect(std::string(wartime ? "wartime" : "peacetime") + " mercenaries hired (" +
+                   std::to_string(types.size()) + " veterans)");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "WageSpanishSuccession") {
+            int weak = -1; long best = 0;
+            for (int p = 1; p < 4; ++p) { long s = cx.g.powers[p].gold; if (weak < 0 || s < best) { weak = p; best = s; } }
+            cx.x.seceded_power = weak;
+            effect("War of Spanish Succession: power " + std::to_string(weak) + " withdraws from the New World");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "SpawnToryMilitia") {
+            int c = (int)as_num(pget(*n, "colony"));
+            vc::sim::Unit u; u.type = 1; u.owner = 0; u.alive = true;
+            if (c >= 0 && c < (int)cx.colony_xy.size()) { u.x = cx.colony_xy[c].first; u.y = cx.colony_xy[c].second; }
+            cx.w.units.push_back(u);
+            effect("Tory militia (Soldiers) rise near colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "OfferFoundingFather") {
+            int cnt = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++cnt;
+            int cost = vc::sim::ff_cost(cx.g.difficulty, cx.g.year, cnt, true, cx.x.woi_declared, cx.rd);
+            effect("Continental Congress: next Father costs " + std::to_string(cost) + " liberty bells");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "DriftPrices") {
+            vc::sim::price_drift(cx.g, cx.rd);
+            effect("European market prices drifted");
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ScoreGame") {
+            int mult = vc::sim::score_difficulty_mult(cx.g.difficulty);
+            long pop = 0; for (auto& c : cx.w.colonies) pop += c.population;
+            int ffc = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++ffc;
+            long base = pop * 2 + ffc * 5;
+            if (cx.x.woi_declared) base += vc::sim::revolution_bonus(cx.g.year);
+            cx.x.score = base * mult;
+            effect("final score = " + std::to_string(cx.x.score) + " (x" + std::to_string(mult) + " difficulty)");
             return follow(nodeId, "out", popup);
         }
         if (t == "Navigate") { gotoScreen = pget(*n, "screen").str; effect("go to screen: " + gotoScreen); return follow(nodeId, "out", popup); }

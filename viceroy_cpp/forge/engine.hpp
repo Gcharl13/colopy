@@ -30,6 +30,12 @@ struct EngineExtra {
     uint32_t ff_owned = 0;        // bit i set = founding father i acquired
     uint16_t boycotts = 0;        // bit g set = good g boycotted in Europe
     vc::sim::Diplomacy diplo;     // inter-power war/treaty matrices
+    // Revolution / late-game state the spec systems drive (DGROUP 0x53D0.. in the original).
+    int  national_sol  = 0;       // national Sons of Liberty meter 0..100 ([0x53D0])
+    bool woi_declared  = false;   // War of Independence declared ([0x5382] bit 0)
+    int  rebel_power   = -1;      // power that declared independence ([0x5398])
+    int  seceded_power = -1;      // power withdrawn by War of Spanish Succession ([0x53D2])
+    long score         = 0;       // last computed game score
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side

@@ -1,0 +1,197 @@
+{
+  "id": "turn_loop",
+  "name": "Turn Loop (master)",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnTurnStart",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "p1",
+      "type": "Log",
+      "x": 210,
+      "y": 40,
+      "params": {
+        "message": "Phase 1: King's tax & mercenary offers"
+      }
+    },
+    {
+      "id": "p2",
+      "type": "Log",
+      "x": 390,
+      "y": 40,
+      "params": {
+        "message": "Phase 2: Orders & movement (REF accrual rides here)"
+      }
+    },
+    {
+      "id": "ref",
+      "type": "MobilizeREF",
+      "x": 570,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "p3",
+      "type": "Log",
+      "x": 750,
+      "y": 40,
+      "params": {
+        "message": "Phase 3: Production & immigration"
+      }
+    },
+    {
+      "id": "prices",
+      "type": "DriftPrices",
+      "x": 930,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "p4",
+      "type": "Log",
+      "x": 1110,
+      "y": 40,
+      "params": {
+        "message": "Phase 4: Diplomacy & the King's tax event"
+      }
+    },
+    {
+      "id": "p5",
+      "type": "Log",
+      "x": 1290,
+      "y": 40,
+      "params": {
+        "message": "Phase 5: Periodic / Continental Congress"
+      }
+    },
+    {
+      "id": "ff",
+      "type": "OfferFoundingFather",
+      "x": 1470,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "end",
+      "type": "AdvanceCadence",
+      "x": 1650,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "done",
+      "type": "Log",
+      "x": 1830,
+      "y": 40,
+      "params": {
+        "message": "Turn complete -- next power / next turn"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p1",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "p1",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p2",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "p2",
+        "pin": "out"
+      },
+      "to": {
+        "node": "ref",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "ref",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p3",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "p3",
+        "pin": "out"
+      },
+      "to": {
+        "node": "prices",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "prices",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p4",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "p4",
+        "pin": "out"
+      },
+      "to": {
+        "node": "p5",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "p5",
+        "pin": "out"
+      },
+      "to": {
+        "node": "ff",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "ff",
+        "pin": "out"
+      },
+      "to": {
+        "node": "end",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "end",
+        "pin": "out"
+      },
+      "to": {
+        "node": "done",
+        "pin": "in"
+      }
+    }
+  ]
+}

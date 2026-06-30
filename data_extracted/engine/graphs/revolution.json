@@ -1,0 +1,127 @@
+{
+  "id": "revolution",
+  "name": "Revolution & War of Independence",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnSoLThreshold",
+      "x": 30,
+      "y": 40,
+      "params": {
+        "percent": 50
+      }
+    },
+    {
+      "id": "can",
+      "type": "CanDeclareIndependence",
+      "x": 30,
+      "y": 200,
+      "params": {}
+    },
+    {
+      "id": "br",
+      "type": "Branch",
+      "x": 260,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "decl",
+      "type": "DeclareIndependence",
+      "x": 470,
+      "y": 40,
+      "params": {
+        "power": "0"
+      }
+    },
+    {
+      "id": "ref",
+      "type": "MobilizeREF",
+      "x": 680,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "popI",
+      "type": "ShowPopup",
+      "x": 890,
+      "y": 40,
+      "params": {
+        "title": "Independence!",
+        "textKey": "@INDEPENDENCE",
+        "choices": "We hold these truths to be self-evident"
+      }
+    },
+    {
+      "id": "notyet",
+      "type": "Log",
+      "x": 470,
+      "y": 200,
+      "params": {
+        "message": "Sons of Liberty below 50% -- build more Liberty Bells first."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "br",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "can",
+        "pin": "value"
+      },
+      "to": {
+        "node": "br",
+        "pin": "cond"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "true"
+      },
+      "to": {
+        "node": "decl",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "decl",
+        "pin": "out"
+      },
+      "to": {
+        "node": "ref",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "ref",
+        "pin": "out"
+      },
+      "to": {
+        "node": "popI",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "br",
+        "pin": "false"
+      },
+      "to": {
+        "node": "notyet",
+        "pin": "in"
+      }
+    }
+  ]
+}

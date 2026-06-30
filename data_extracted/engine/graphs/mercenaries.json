@@ -1,0 +1,96 @@
+{
+  "id": "mercenaries",
+  "name": "Mercenary Offer",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnMercenaryOffer",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 230,
+      "y": 40,
+      "params": {
+        "title": "Mercenaries for Hire",
+        "textKey": "@MERCENARIES",
+        "choices": "Accept,Refuse"
+      }
+    },
+    {
+      "id": "hire",
+      "type": "HireMercenaries",
+      "x": 470,
+      "y": 40,
+      "params": {
+        "power": "0",
+        "kind": "Wartime"
+      }
+    },
+    {
+      "id": "arr",
+      "type": "ShowPopup",
+      "x": 690,
+      "y": 40,
+      "params": {
+        "title": "Mercenaries Arrive",
+        "textKey": "@MERCS",
+        "choices": "Welcome"
+      }
+    },
+    {
+      "id": "no",
+      "type": "Log",
+      "x": 470,
+      "y": 200,
+      "params": {
+        "message": "We decline the King's mercenaries."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pop",
+        "pin": "Accept"
+      },
+      "to": {
+        "node": "hire",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "hire",
+        "pin": "out"
+      },
+      "to": {
+        "node": "arr",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pop",
+        "pin": "Refuse"
+      },
+      "to": {
+        "node": "no",
+        "pin": "in"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "spanish_succession",
+  "name": "War of Spanish Succession",
+  "nodes": [
+    {
+      "id": "trig",
+      "type": "OnSpanishSuccession",
+      "x": 30,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "wage",
+      "type": "WageSpanishSuccession",
+      "x": 230,
+      "y": 40,
+      "params": {}
+    },
+    {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 450,
+      "y": 40,
+      "params": {
+        "title": "The Spanish Succession",
+        "textKey": "@SUCCESSION",
+        "choices": "Continue"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "wage",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "wage",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    }
+  ]
+}
