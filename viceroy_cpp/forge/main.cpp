@@ -785,6 +785,33 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
+        if (path == "/api/game/turn" && method == "POST") {
+            game_step();                                    // advance the turn
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, game_rng};
+            forge::JsonValue events = jarr();
+            for (const std::string& id : forge::list_graphs()) {
+                forge::JsonValue gr;
+                try { gr = forge::load_graph(id); } catch (...) { continue; }
+                bool turn_trig = false;                     // only graphs whose entry is OnTurnStart
+                if (const forge::JsonValue* ns = gr.find("nodes"))
+                    for (const auto& n : ns->arr) {
+                        const forge::JsonValue* t = n.find("type");
+                        if (t && t->str == "OnTurnStart") { turn_trig = true; break; }
+                    }
+                if (!turn_trig) continue;
+                forge::JsonValue rep = forge::run_graph(gr, cx);
+                const forge::JsonValue* pop = rep.find("popup");
+                const forge::JsonValue* eff = rep.find("effects");
+                if ((pop && pop->is_object()) || (eff && !eff->arr.empty())) {
+                    forge::JsonValue e = jobj();
+                    e.obj["graph"] = forge::json_str(id); e.obj["report"] = rep;
+                    events.arr.push_back(e);
+                }
+            }
+            forge::JsonValue out = game_state_json();
+            out.obj["events"] = events;
+            return J(200, out);
+        }
         if (path == "/api/game/state") {
             if (!g_game_active) game_new();
             return J(200, game_state_json());

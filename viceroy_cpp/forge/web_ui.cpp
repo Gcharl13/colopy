@@ -819,8 +819,18 @@ async function fireEvent(){
 }
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
-  const r=await fetch('/api/game/step',{method:'POST'}); GAME=await r.json();
+  const r=await fetch('/api/game/turn',{method:'POST'}); GAME=await r.json();
   drawGame(); showSel(); ui.toast('Year '+GAME.year);
+  if(GAME.events && GAME.events.length) eventQueue(GAME.events.slice());
+}
+function eventQueue(q){
+  if(!q.length) return; const e=q.shift(), p=e.report.popup;
+  if(!p){ eventQueue(q); return; }
+  ui.popup(esc(p.title), '<p>'+esc(p.body)+'</p><div id="eqch"></div>');
+  const box=$('#eqch'), ch=p.choices||[];
+  if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.textContent='Continue'; b.onclick=()=>{ ui.close(); refreshGame(); eventQueue(q); }; box.appendChild(b); return; }
+  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
+    b.onclick=async()=>{ await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:e.graph,from_node:p.node,choice:c})}); ui.close(); await refreshGame(); eventQueue(q); }; box.appendChild(b); });
 }
 function selUnit(){ return SEL<0 ? null : (GAME&&GAME.units.find(u=>u.id===SEL)); }
 async function orderMove(tx,ty){
