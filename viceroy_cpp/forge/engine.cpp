@@ -414,6 +414,24 @@ JsonValue node_catalog() {
         node_def("ColonyStep", "Run Colony Production",
                  "Runs one per-turn economic step for a colony (economy.hpp colony_economic_step).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
+        node_def("StartBuilding", "Start Building",
+                 "Begins constructing a building in a colony (cost + min colony size read from the "
+                 "@BUILDING table by id). Refuses if the colony is too small or already has it; "
+                 "sets colony<N>.build_target/build_cost.",
+                 {pin("in","exec","in"), pin("building","data","in","number"), pin("out","exec","out")},
+                 {param("colony","number"), param("building","number")}),
+        node_def("BuildStep", "Build Step (accrue hammers)",
+                 "Adds hammers toward the colony's current building and completes it when the cost is "
+                 "met (build_step). Wire `hammers` for the amount produced this turn (else the colony's "
+                 "hammers_per_turn).",
+                 {pin("in","exec","in"), pin("hammers","data","in","number"), pin("out","exec","out")},
+                 {param("colony","number")}),
+        node_def("RushBuild", "Rush Build (pay gold)",
+                 "Pays gold to finish the colony's current building at once (the @BUYME1 'Complete it' "
+                 "path). Wire `cost` to the gold price (a Formula -- the rush-cost curve is "
+                 "RECONSTRUCTED). Debits the owner and sets the built bit if affordable.",
+                 {pin("in","exec","in"), pin("cost","data","in","number"), pin("out","exec","out")},
+                 {param("colony","number")}),
         node_def("PromoteUnit", "Promote / Train Unit",
                  "Upgrades an on-map unit (by index) to a trained type, e.g. Soldiers -> "
                  "Continental Army (training.md).",
@@ -645,6 +663,20 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
             if (f == "food")       return num(w.colonies[c].food_per_turn);
             if (f == "crosses")    return num(w.colonies[c].crosses_output);
             if (f == "owner")      return num(w.colonies[c].owner_power);
+            // build/buy workflow state
+            if (f == "build_target") return num(w.colonies[c].build_target);
+            if (f == "build_cost")   return num(w.colonies[c].build_cost);
+            if (f == "build_bank")   return num((double)w.colonies[c].build_bank);
+            if (f == "build_remaining") {
+                long rem = (long)w.colonies[c].build_cost - (long)w.colonies[c].build_bank;
+                return num((double)(rem < 0 ? 0 : rem));
+            }
+            if (f == "warehouse")  return num(w.colonies[c].warehouse_lvl);
+            // built.<id> -> 1 if building id is constructed
+            if (f.rfind("built.", 0) == 0) {
+                int bid = std::atoi(f.c_str() + 6);
+                return num((bid >= 0 && bid < 64 && (w.colonies[c].built_mask >> bid) & 1ull) ? 1 : 0);
+            }
         }
     }
     // unit<N>.<field> -- per-unit state + derived stats from its type (combat reads these)
@@ -1153,6 +1185,47 @@ struct Runner {
                        std::to_string(cx.w.colonies[c].bells_per_turn) + ", hammers " +
                        std::to_string(cx.w.colonies[c].hammers_per_turn));
             } else effect("ColonyStep: no colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "StartBuilding") {
+            int c = (int)as_num(pget(*n, "colony"));
+            int bid = (int)as_num(eval_in(nodeId, "building", pget(*n, "building")));
+            if (c >= 0 && c < (int)cx.w.colonies.size()) {
+                int cost = (int)as_num(resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx));
+                int minc = (int)as_num(resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx));
+                std::string name = resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
+                if (vc::sim::start_building(cx.w.colonies[c], bid, cost, minc))
+                    effect("colony " + std::to_string(c) + " starts building " +
+                           (name.empty() ? ("#" + std::to_string(bid)) : name) +
+                           " (" + std::to_string(cost) + " hammers)");
+                else effect("colony " + std::to_string(c) + " cannot build #" + std::to_string(bid) +
+                            " (too small or already built)");
+            } else effect("StartBuilding: no colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "BuildStep") {
+            int c = (int)as_num(pget(*n, "colony"));
+            if (c >= 0 && c < (int)cx.w.colonies.size()) {
+                vc::sim::Colony& col = cx.w.colonies[c];
+                int hammers = (int)as_num(eval_in(nodeId, "hammers", json_num(col.hammers_per_turn)));
+                bool done = vc::sim::build_step(col, hammers, col.build_cost);
+                effect("colony " + std::to_string(c) + " build +" + std::to_string(hammers) +
+                       " hammers (" + std::to_string((long)col.build_bank) + "/" +
+                       std::to_string(col.build_cost) + ")" + (done ? " -- COMPLETE" : ""));
+            } else effect("BuildStep: no colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "RushBuild") {
+            int c = (int)as_num(pget(*n, "colony"));
+            if (c >= 0 && c < (int)cx.w.colonies.size()) {
+                vc::sim::Colony& col = cx.w.colonies[c];
+                long cost = (long)as_num(eval_in(nodeId, "cost"));
+                int p = col.owner_power;
+                if (p >= 0 && p < 4 && vc::sim::rush_build(col, cx.g.powers[p], cost))
+                    effect("colony " + std::to_string(c) + " rush-built for " + std::to_string(cost) +
+                           " gold (treasury now " + std::to_string((long)cx.g.powers[p].gold) + ")");
+                else effect("colony " + std::to_string(c) + " rush failed (no target or not enough gold)");
+            } else effect("RushBuild: no colony " + std::to_string(c));
             return follow(nodeId, "out", popup);
         }
         if (t == "PromoteUnit") {

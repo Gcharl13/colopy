@@ -82,6 +82,19 @@ static void test_build() {
     CHECK(build_step(c, 10, 64), "70 completes");
     CHECK(c.build_bank == 6, "surplus carried -> %u", c.build_bank);
     CHECK((c.built_mask & 1ull) != 0, "built bit set");
+
+    // start_building gates on colony size + already-built; rush_build pays gold to finish.
+    Colony c2; c2.population = 2;
+    CHECK(!start_building(c2, 1, 120, 3), "Fort refused at pop 2 (min 3)");
+    c2.population = 4;
+    CHECK(start_building(c2, 1, 120, 3), "Fort starts at pop 4");
+    CHECK(c2.build_target == 1 && c2.build_cost == 120, "target/cost set");
+    Power owner; owner.gold = 500;
+    CHECK(!rush_build(c2, owner, 600), "rush refused when gold < cost");
+    CHECK(rush_build(c2, owner, 300), "rush completes when affordable");
+    CHECK(owner.gold == 200, "gold debited -> %lld", (long long)owner.gold);
+    CHECK((c2.built_mask & (1ull << 1)) != 0 && c2.build_target == -1, "Fort built, target cleared");
+    CHECK(!start_building(c2, 1, 120, 3), "Fort refused (already built)");
 }
 
 static void test_price_drift() {

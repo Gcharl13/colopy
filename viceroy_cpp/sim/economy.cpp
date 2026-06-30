@@ -70,4 +70,23 @@ bool build_step(Colony& c, int hammers_produced, int build_cost) {
     return false;
 }
 
+bool start_building(Colony& c, int building_id, int build_cost, int min_colony) {
+    if (building_id < 0 || building_id >= 48) return false;
+    if (c.population < min_colony) return false;                 // colony too small
+    if (c.built_mask & (1ull << building_id)) return false;      // already built
+    c.build_target = building_id;
+    c.build_cost   = build_cost;
+    return true;
+}
+
+bool rush_build(Colony& c, Power& owner, long gold_cost) {
+    if (c.build_target < 0) return false;
+    if (gold_cost < 0 || owner.gold < gold_cost) return false;   // can't afford
+    owner.gold -= gold_cost;
+    c.built_mask |= (1ull << c.build_target);
+    c.build_bank = 0;
+    c.build_target = -1;                                         // project done
+    return true;
+}
+
 } // namespace vc::sim

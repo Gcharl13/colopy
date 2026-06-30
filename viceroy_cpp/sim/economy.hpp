@@ -32,6 +32,17 @@ int tory_expert_adjust(int base_yield, int population, int sol_percent,
 // (surplus carried); set the built bit. Returns true on completion.
 bool build_step(Colony& c, int hammers_produced, int build_cost);
 
+// Begin constructing building `id` (cost + min_colony come from @BUILDING, supplied by the
+// caller so the sim stays table-I/O-free). Rejects if the colony is below min_colony or already
+// has the building; otherwise sets build_target/build_cost. Returns false if rejected.
+bool start_building(Colony& c, int building_id, int build_cost, int min_colony);
+
+// Pay gold to finish the current build immediately (the @BUYME1 "Complete it" path). Debits
+// `gold_cost` from the owner if affordable, sets the built bit, clears the target. Returns false
+// if there's no target or not enough gold. The gold_cost itself is computed by the caller
+// (a Formula node) -- the rush-cost curve is RECONSTRUCTED, see notes/rulings.
+bool rush_build(Colony& c, Power& owner, long gold_cost);
+
 // One colony's per-turn economic update (the Production phase, per colony):
 // SoL EMA from bells, build progress from hammers, and food->population growth
 // (accumulate food_per_turn; +1 pop at threshold, surplus carried, max @0x009432).
