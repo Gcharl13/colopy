@@ -24,6 +24,7 @@
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
 #include "savegame.hpp"
+#include "store.hpp"
 #include "turnpipe.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
@@ -1021,21 +1022,23 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (id.empty()) return err(400, "missing ?id");
             return J(200, forge::load_graph(id));
         }
-        if (path == "/api/bind") {
+        // /api/bind + /api/cell: the unified cell accessor (A2) over the one path grammar --
+        // reference (@...), state (game/power/colony/unit/...), and config (cfg.*).
+        if (path == "/api/bind" || path == "/api/cell") {
             if (!g_game_active) game_new();
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue o = jobj();
-            o.obj["value"] = forge::resolve_binding(qparam(query, "path"), cx);
+            o.obj["value"] = forge::cell_get(qparam(query, "path"), cx);
             return J(200, o);
         }
-        if (path == "/api/bind/set" && method == "POST") {
+        if ((path == "/api/bind/set" || path == "/api/cell/set") && method == "POST") {
             if (!g_game_active) game_new();
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* p = b.find("path"); const forge::JsonValue* v = b.find("value");
             if (!p || !v) return err(400, "need {path,value}");
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue o = jobj();
-            o.obj["ok"] = jbool(forge::set_binding(p->str, v->as_double(), cx));
+            o.obj["ok"] = jbool(forge::cell_set(p->str, v->as_double(), cx));
             return J(200, o);
         }
         if (path == "/api/screens") {
@@ -1803,6 +1806,29 @@ static int engine_selftest() {
                     refp.second.units[0].x == pipe.second.units[0].x &&
                     refp.second.units[0].y == pipe.second.units[0].y;
         check(same, "A3 turn.json pipeline == sim::step_turn (golden-master, 8 turns)");
+    }
+
+    // A2 unified store: cell_get resolves reference + state + config through one grammar.
+    {
+        GameState gg; World ww; std::vector<std::pair<int,int>> cxy2; forge::EngineExtra ex2;
+        RuleData rd3 = make_default_rules(); gg.year = 1543; gg.powers[0].gold = 321;
+        auto det = [](int lo, int) { return lo; };
+        forge::EngineCtx cs{gg, ww, cxy2, ex2, rd3, det};
+        // state cells agree with the byte-verified resolver
+        check(forge::cell_get("game.year", cs).as_int() == 1543, "cell_get state (game.year)");
+        check(forge::cell_get("power0.gold", cs).as_int() ==
+              forge::resolve_binding("power0.gold", cs).as_int(), "cell_get == resolve_binding (state)");
+        // config cells (the third table kind) are now addressable
+        check(forge::cell_get("cfg.max_population", cs).as_int() == 32, "cell_get config (cfg.max_population)");
+        check(forge::cell_get("cfg.imm_base_crosses", cs).as_int() == 2, "cell_get config (cfg.imm_base_crosses)");
+        // every scalar Config field resolves through cfg.* (no orphan config cell)
+        bool all_cfg = true;
+        for (const std::string& n : forge::cfg_field_names())
+            if (forge::cell_get("cfg." + n, cs).type == forge::JsonValue::Null) all_cfg = false;
+        check(all_cfg, "every cfg.<name> resolves (config fully addressable)");
+        // state writes go through cell_set
+        check(forge::cell_set("power0.gold", 999, cs) && gg.powers[0].gold == 999, "cell_set state (power0.gold)");
+        check(!forge::cell_set("cfg.max_population", 40, cs), "cell_set cfg is read-only via the store");
     }
 
     std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");

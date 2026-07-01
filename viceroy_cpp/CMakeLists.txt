@@ -79,6 +79,7 @@ add_executable(forge
   forge/formulas.cpp
   forge/engine.cpp
   forge/turnpipe.cpp
+  forge/store.cpp
   forge/expr.cpp
   forge/httpd.cpp
   forge/web_ui.cpp
