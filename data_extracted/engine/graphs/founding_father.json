@@ -176,12 +176,12 @@
       }
     },
     {
-      "id": "fcat",
-      "type": "PickText",
+      "id": "natadj",
+      "type": "GetState",
       "x": 820,
-      "y": 370,
+      "y": 100,
       "params": {
-        "options": "Trade,Exploration,Military,Political,Religious"
+        "path": "@NATIONALITY[0].name"
       }
     },
     {
@@ -480,16 +480,6 @@
         "pin": "value"
       },
       "to": {
-        "node": "fcat",
-        "pin": "index"
-      }
-    },
-    {
-      "from": {
-        "node": "pick",
-        "pin": "value"
-      },
-      "to": {
         "node": "feff",
         "pin": "index"
       }
@@ -576,7 +566,7 @@
     },
     {
       "from": {
-        "node": "fcat",
+        "node": "natadj",
         "pin": "value"
       },
       "to": {

@@ -52,7 +52,34 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Victim selection (spec: rank by 3*[0x9418]+2*[0x9298]+1*[0x9410]). Now reads REAL editable per-power fields: power<N>.strength = 3*mil_strength + 2*colony_count + 1*econ_strength. colony_count is live (the decoded 0x9298); mil_strength/econ_strength are editable in the State Inspector (proxy the undecoded 0x9418/0x9410 arrays). WeakestPower cedes to StrongestPower."
+        "text": "Victim selection (spec: rank by 3*[0x9418]+2*[0x9298]+1*[0x9410]). Now reads REAL editable per-power fields: power<N>.strength = 3*mil_strength + 2*colony_count + 1*econ_strength. colony_count is live (the decoded 0x9298); mil_strength/econ_strength are editable in the State Inspector (proxy the undecoded 0x9418/0x9410 arrays). WeakestPower cedes to StrongestPower. NOTE: @SUCCESSION also has a %STRING3 slot, but the engine only fills str0/str1/str2 and num0/num1 on ShowPopup -- there is no str3, so %STRING3 is left unsupported and unfilled."
+      }
+    },
+    {
+      "id": "gs_ceder",
+      "type": "GetState",
+      "x": 260,
+      "y": 170,
+      "params": {
+        "path": "@NATIONALITY[2].name"
+      }
+    },
+    {
+      "id": "pt_cede",
+      "type": "PickText",
+      "x": 260,
+      "y": 260,
+      "params": {
+        "options": "its New World possessions"
+      }
+    },
+    {
+      "id": "gs_benef",
+      "type": "GetState",
+      "x": 260,
+      "y": 350,
+      "params": {
+        "path": "@NATIONALITY[0].name"
       }
     }
   ],
@@ -95,6 +122,36 @@
       "to": {
         "node": "pop",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gs_ceder",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "pt_cede",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "str1"
+      }
+    },
+    {
+      "from": {
+        "node": "gs_benef",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "str2"
       }
     }
   ]

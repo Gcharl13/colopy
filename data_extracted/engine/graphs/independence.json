@@ -80,6 +80,33 @@
         "textKey": "@INDEPENDENCE",
         "choices": "Liberty or death!"
       }
+    },
+    {
+      "id": "tootory_num0",
+      "type": "GetState",
+      "x": 220,
+      "y": 320,
+      "params": {
+        "path": "revolution.sol"
+      }
+    },
+    {
+      "id": "confirm_str0",
+      "type": "GetState",
+      "x": 420,
+      "y": 160,
+      "params": {
+        "path": "@COUNTRY[0].name"
+      }
+    },
+    {
+      "id": "ann_str0",
+      "type": "PickText",
+      "x": 980,
+      "y": 160,
+      "params": {
+        "options": "Washington"
+      }
     }
   ],
   "edges": [
@@ -151,6 +178,36 @@
       "to": {
         "node": "ann",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "tootory_num0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "tootory",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "confirm_str0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "confirm",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "ann_str0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "ann",
+        "pin": "str0"
       }
     }
   ]

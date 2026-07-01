@@ -63,6 +63,15 @@
       }
     },
     {
+      "id": "gsColony",
+      "type": "GetState",
+      "x": 220,
+      "y": 300,
+      "params": {
+        "path": "@COLONYNAME[0].name"
+      }
+    },
+    {
       "id": "pClear",
       "type": "ShowPopup",
       "x": 440,
@@ -155,6 +164,16 @@
       "to": {
         "node": "pClear",
         "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "gsColony",
+        "pin": "value"
+      },
+      "to": {
+        "node": "pClear",
+        "pin": "str0"
       }
     },
     {

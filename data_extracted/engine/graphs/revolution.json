@@ -56,6 +56,15 @@
         "textKey": "@INDEPENDENCE",
         "choices": "Liberty or death!"
       }
+    },
+    {
+      "id": "genName",
+      "type": "PickText",
+      "x": 780,
+      "y": 180,
+      "params": {
+        "options": "Washington"
+      }
     }
   ],
   "edges": [
@@ -107,6 +116,16 @@
       "to": {
         "node": "popI",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "genName",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popI",
+        "pin": "str0"
       }
     }
   ]

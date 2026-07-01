@@ -66,6 +66,33 @@
         "textKey": "@TORYMAJORITY",
         "choices": "Hmph."
       }
+    },
+    {
+      "id": "gsM_num0",
+      "type": "GetState",
+      "x": 620,
+      "y": 70,
+      "params": {
+        "path": "revolution.sol"
+      }
+    },
+    {
+      "id": "gsM_str0",
+      "type": "GetState",
+      "x": 620,
+      "y": 110,
+      "params": {
+        "path": "@COLONYNAME[0].name"
+      }
+    },
+    {
+      "id": "gsM_str1",
+      "type": "GetState",
+      "x": 620,
+      "y": 150,
+      "params": {
+        "path": "@COUNTRY[0].name"
+      }
     }
   ],
   "edges": [
@@ -117,6 +144,36 @@
       "to": {
         "node": "popT",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "gsM_num0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popM",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "gsM_str0",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popM",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "gsM_str1",
+        "pin": "value"
+      },
+      "to": {
+        "node": "popM",
+        "pin": "str1"
       }
     }
   ]

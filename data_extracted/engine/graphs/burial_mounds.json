@@ -50,7 +50,16 @@
       "x": 20,
       "y": 300,
       "params": {
-        "expr": "(roll(1,8)+10)*200"
+        "expr": "(roll(1,8)+2*a+10)*200"
+      }
+    },
+    {
+      "id": "s",
+      "type": "UnitIsSeasonedScout",
+      "x": 20,
+      "y": 370,
+      "params": {
+        "unit": 0
       }
     },
     {
@@ -214,6 +223,16 @@
       "to": {
         "node": "p1",
         "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "s",
+        "pin": "value"
+      },
+      "to": {
+        "node": "treasV",
+        "pin": "a"
       }
     }
   ]
