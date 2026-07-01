@@ -1284,6 +1284,7 @@ static int engine_selftest() {
     // Raw->finished conversion + NO per-good stockpile ceiling (colony.md §3 / CORRECTED warehouse).
     {
         vc::sim::Colony col; col.population = 1; col.rebel_A = 1; col.rebel_B = 1;  // sol=100 -> no tory penalty
+        col.built_mask = (1ull << 27);   // owns the Rum Distiller's House (@BUILDING 27) -> Rum gate open
         w.colonies.push_back(col);   // colony 1
         forge::set_binding("colony1.stockpile.6", 98, cx);   // pre-bank 98 Ore (cap would be 100)
         forge::JsonValue gc = forge::json_parse(
@@ -1311,6 +1312,26 @@ static int engine_selftest() {
               "ColonyProduce: 3 Sugar -> 3 Rum via conversion; 2nd distiller makes 0 (no raw)");
         check(forge::resolve_binding("colony1.stockpile.1", cx).as_int() == 0,
               "ColonyProduce: conversion consumed the raw Sugar (stockpile Sugar = 0)");
+    }
+
+    // Building gate: a distiller with NO Rum Distiller's House produces 0 Rum (the raw Sugar stays).
+    {
+        vc::sim::Colony col; col.population = 1; col.rebel_A = 1; col.rebel_B = 1;  // built_mask = 0 (no buildings)
+        w.colonies.push_back(col);   // colony 2
+        forge::JsonValue gg = forge::json_parse(
+            R"({"id":"g","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"s","type":"AssignWorker","params":{"colony":"2","terrain":5,"good":"Sugar","expert":"0"}},)"
+            R"({"id":"d","type":"AssignWorker","params":{"colony":"2","terrain":0,"good":"Rum","expert":"0"}},)"
+            R"({"id":"pr","type":"ColonyProduce","params":{"colony":"2"}}],"edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"s","pin":"in"}},)"
+            R"({"from":{"node":"s","pin":"out"},"to":{"node":"d","pin":"in"}},)"
+            R"({"from":{"node":"d","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
+        forge::run_graph(gg, cx);
+        check(forge::resolve_binding("colony2.stockpile.9", cx).as_int() == 0,
+              "Building gate: no Rum Distiller's House -> distiller makes 0 Rum");
+        check(forge::resolve_binding("colony2.stockpile.1", cx).as_int() == 3,
+              "Building gate: ungated Sugar still banked (3), just not converted");
     }
 
     // Sequence must HALT at a popup: a ShowPopup wired to pin0 has to pause the whole Sequence,

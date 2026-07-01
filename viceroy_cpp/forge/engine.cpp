@@ -1369,10 +1369,26 @@ struct Runner {
                     -1,                            // 13 Trade goods (not colony-produced)
                     6,                             // 14 Tools  <- Ore
                     -1 };                          // 15 Muskets (from Tools via the Armory, 2nd order)
+                // Building gate: a finished good needs the colony to own its manufacturing building
+                // (spec/systems/colony.md §3 gate "g>=8 & not building_bit"). The @BUILDING "House"
+                // that first enables each good (row id); -1 = no gate building in @BUILDING (ungated).
+                // RECONSTRUCTED: the exact ColonyRecord+0x84 bit order isn't byte-pinned, so we gate on
+                // our built_mask (set to the @BUILDING id by start_building/rush_build) -- self-consistent.
+                static const int GATE_BLD[vc::sim::NGOODS] = {
+                    -1,-1,-1,-1,-1,-1,-1,-1,-1,
+                    27,                            // 9  Rum    -> Rum Distiller's House
+                    24,                            // 10 Cigars -> Tobacconist's House
+                    21,                            // 11 Cloth  -> Weaver's House
+                    32,                            // 12 Coats  -> Fur Trader's House
+                    -1,                            // 13 Trade goods
+                    -1,                            // 14 Tools  (no blacksmith row in @BUILDING -> ungated, flagged)
+                    -1 };
                 for (const auto& wk : col.workers) {
                     int g = wk.good;
                     if (g < 8 || g >= vc::sim::NGOODS) continue;
                     int raw = RAW_OF[g]; if (raw < 0) continue;
+                    int gate = GATE_BLD[g];        // no manufacturing building -> no finished good
+                    if (gate >= 0 && !(col.built_mask & (1ull << gate))) continue;
                     int capacity = wk.expert ? 6 : 3;
                     int amt = prod[raw] < capacity ? prod[raw] : capacity;   // limited by raw available
                     if (amt <= 0) continue;                                  // no raw -> no finished (not "from nothing")
