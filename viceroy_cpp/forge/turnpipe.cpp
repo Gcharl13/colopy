@@ -28,10 +28,14 @@ const std::vector<std::string>& default_phases() {
     return P;
 }
 
+// Cached enabled-phase order (resettable so the turn editor's save takes effect live).
+struct PhaseCache { std::vector<std::string> ids; bool loaded = false; };
+PhaseCache& phase_cache() { static PhaseCache c; return c; }
+
 // The enabled phase ids in order, cached. Falls back to default_phases().
 const std::vector<std::string>& turn_phases() {
-    static std::vector<std::string> P; static bool loaded = false;
-    if (!loaded) { loaded = true;
+    PhaseCache& c = phase_cache();
+    if (!c.loaded) { c.loaded = true;
         try {
             JsonValue d = json_parse_file(TURN_FILE);
             const JsonValue* ph = d.find("phases");
@@ -40,13 +44,13 @@ const std::vector<std::string>& turn_phases() {
                     const JsonValue* id = p.find("id"); if (!id) continue;
                     const JsonValue* en = p.find("enabled");
                     if (en && en->type == JsonValue::Bool && !en->b) continue;   // disabled
-                    P.push_back(id->str);
+                    c.ids.push_back(id->str);
                 }
             }
         } catch (...) {}
-        if (P.empty()) P = default_phases();
+        if (c.ids.empty()) c.ids = default_phases();
     }
-    return P;
+    return c.ids;
 }
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
@@ -76,11 +80,8 @@ void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); 
 
 } // namespace
 
-void invalidate_turn_pipeline() {
-    // force turn_phases() to reload by rebuilding the static -- simplest: not trivially
-    // resettable with a function-local static, so callers rebuild by restart; the editor
-    // save path can call this once we move the cache to a struct. For now, a no-op stub
-    // keeps the API; the cache reloads on process start.
+void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads turn.json
+    phase_cache() = PhaseCache{};
 }
 
 void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {

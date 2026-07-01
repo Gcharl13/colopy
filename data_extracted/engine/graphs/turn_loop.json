@@ -1,6 +1,6 @@
 {
   "id": "turn_loop",
-  "name": "Turn Loop (master)",
+  "name": "Turn Loop (events)",
   "nodes": [
     {
       "id": "note",
@@ -8,7 +8,7 @@
       "x": 30,
       "y": -70,
       "params": {
-        "text": "Turn loop master (spec/systems/turn_dispatch.md): fires every system graph in spec phase order. The phase headers are Comments (canvas labels), not runtime Log strings. Each FireEvent's own effects narrate what happened."
+        "text": "Turn loop EVENT layer (spec/systems/turn_dispatch.md): fires the per-turn event graphs in spec phase order. The SIM MECHANICS (production, price drift, immigration accrual, REF accrual, cadence) are owned by the data-driven turn pipeline (turn.json / run_turn) and are NOT duplicated here -- doing both double-advanced the turn. This graph is the events only."
       }
     },
     {
@@ -28,21 +28,12 @@
       }
     },
     {
-      "id": "c2",
-      "type": "Comment",
-      "x": 430,
-      "y": -10,
-      "params": {
-        "text": "Phase 2: Orders & movement (REF accrual)"
-      }
-    },
-    {
       "id": "c3",
       "type": "Comment",
       "x": 650,
       "y": -10,
       "params": {
-        "text": "Phase 3: Production & immigration"
+        "text": "Phase 3: Immigration event (docks/recruit)"
       }
     },
     {
@@ -82,24 +73,10 @@
       }
     },
     {
-      "id": "ref",
-      "type": "MobilizeREF",
-      "x": 430,
-      "y": 40,
-      "params": {}
-    },
-    {
-      "id": "prices",
-      "type": "DriftPrices",
-      "x": 650,
-      "y": 40,
-      "params": {}
-    },
-    {
       "id": "imm",
       "type": "FireEvent",
       "x": 650,
-      "y": 130,
+      "y": 40,
       "params": {
         "graph": "immigration"
       }
@@ -139,115 +116,15 @@
       "params": {
         "graph": "revolution"
       }
-    },
-    {
-      "id": "end",
-      "type": "AdvanceCadence",
-      "x": 1310,
-      "y": 40,
-      "params": {}
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "tax",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "tax",
-        "pin": "out"
-      },
-      "to": {
-        "node": "merc",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "merc",
-        "pin": "out"
-      },
-      "to": {
-        "node": "ref",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "ref",
-        "pin": "out"
-      },
-      "to": {
-        "node": "prices",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "prices",
-        "pin": "out"
-      },
-      "to": {
-        "node": "imm",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "imm",
-        "pin": "out"
-      },
-      "to": {
-        "node": "raid",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "raid",
-        "pin": "out"
-      },
-      "to": {
-        "node": "lost",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "lost",
-        "pin": "out"
-      },
-      "to": {
-        "node": "ff",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "ff",
-        "pin": "out"
-      },
-      "to": {
-        "node": "rev",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "rev",
-        "pin": "out"
-      },
-      "to": {
-        "node": "end",
-        "pin": "in"
-      }
-    }
+    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "tax",  "pin": "in" } },
+    { "from": { "node": "tax",  "pin": "out" }, "to": { "node": "merc", "pin": "in" } },
+    { "from": { "node": "merc", "pin": "out" }, "to": { "node": "imm",  "pin": "in" } },
+    { "from": { "node": "imm",  "pin": "out" }, "to": { "node": "raid", "pin": "in" } },
+    { "from": { "node": "raid", "pin": "out" }, "to": { "node": "lost", "pin": "in" } },
+    { "from": { "node": "lost", "pin": "out" }, "to": { "node": "ff",   "pin": "in" } },
+    { "from": { "node": "ff",   "pin": "out" }, "to": { "node": "rev",  "pin": "in" } }
   ]
 }

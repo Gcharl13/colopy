@@ -112,6 +112,7 @@ const char* forge_index_html() {
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
   <button data-tab="logic">Logic</button>
+  <button data-tab="turn">Turn</button>
   <button data-tab="sandbox">Sandbox</button>
   <button data-tab="play">Play</button>
 </nav>
@@ -236,6 +237,17 @@ const char* forge_index_html() {
       </div>
       <div class="gpalette" id="spalette" style="width:120px"></div>
     </div>
+  </section>
+
+  <section id="turn" class="tab">
+    <div class="row">
+      <button class="act" onclick="turnSave()">Save pipeline</button>
+      <button class="act" onclick="turnLoad()">Reload</button>
+      <span class="muted">The turn loop is data (turn.json). Toggle a phase off to skip it,
+        drag order with &#9650;/&#9660;; the next End turn uses the edited pipeline. run_turn
+        iterates this; a golden-master test proves the default order == the reference sim.</span>
+    </div>
+    <div id="turnlist" style="max-width:760px"></div>
   </section>
 
   <section id="sandbox" class="tab">
@@ -1257,6 +1269,34 @@ function sbRender(){
     +row('Ore stock','colony0.stockpile.6',(SB.stockpile||[])[6]||0);
 }
 document.querySelector('nav button[data-tab=sandbox]').addEventListener('click',()=>{ sbInit(); });
+
+// ---- Turn tab (B5): edit the data-driven turn pipeline (turn.json) ----
+let TURN=null;
+async function turnLoad(){ TURN=await (await fetch('/api/turn')).json(); TURN.phases=TURN.phases||[]; turnRender(); }
+function turnRender(){
+  if(!TURN){ $('#turnlist').innerHTML='<span class="muted">loading…</span>'; return; }
+  let h='<table style="width:100%"><tr><th></th><th>Phase</th><th>Function</th><th>Scope</th><th>Reads &rarr; Writes</th><th></th></tr>';
+  TURN.phases.forEach((p,i)=>{
+    const en=p.enabled!==false;
+    h+='<tr style="opacity:'+(en?1:.45)+'">'
+      +'<td><input type="checkbox" '+(en?'checked':'')+' onchange="turnToggle('+i+',this.checked)"></td>'
+      +'<td><b>'+esc(p.id||'')+'</b></td>'
+      +'<td><code style="font-size:11px">'+esc(p.function||'')+'</code></td>'
+      +'<td>'+esc(p.scope||'')+'</td>'
+      +'<td class="muted" style="font-size:10px">'+esc((p.reads||[]).length)+' &rarr; '+esc((p.writes||[]).length)+'</td>'
+      +'<td><button class="act" onclick="turnMove('+i+',-1)">&#9650;</button>'
+      +'<button class="act" onclick="turnMove('+i+',1)">&#9660;</button></td></tr>';
+    if(p.note) h+='<tr style="opacity:'+(en?1:.45)+'"><td></td><td colspan="5" class="muted" style="font-size:10px">'+esc(p.note)+'</td></tr>';
+  });
+  h+='</table>';
+  $('#turnlist').innerHTML=h;
+}
+function turnToggle(i,on){ TURN.phases[i].enabled=on; turnRender(); }
+function turnMove(i,d){ const j=i+d; if(j<0||j>=TURN.phases.length) return;
+  const a=TURN.phases; [a[i],a[j]]=[a[j],a[i]]; turnRender(); }
+async function turnSave(){ const d=await (await fetch('/api/turn',{method:'POST',body:JSON.stringify(TURN)})).json();
+  ui.toast(d.saved?'Turn pipeline saved — next End turn uses it':(d.error||'save failed')); }
+document.querySelector('nav button[data-tab=turn]').addEventListener('click',()=>{ if(!TURN) turnLoad(); });
 async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
   $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }
 async function refreshGame(){ GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }

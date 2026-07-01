@@ -1083,9 +1083,17 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             game_new(nat, diff); g_history.clear(); history_snapshot();
             return J(200, game_state_json());
         }
-        if (path == "/api/turn") {          // the data-driven turn pipeline (turn.json)
+        if (path == "/api/turn" && method != "POST") {   // read the turn pipeline (turn.json)
             try { return J(200, forge::json_parse_file("data_extracted/engine/turn.json")); }
             catch (...) { return err(404, "turn.json not found"); }
+        }
+        if (path == "/api/turn" && method == "POST") {   // save the edited pipeline (B5)
+            forge::JsonValue b = forge::json_parse(body);
+            if (!b.find("phases")) return err(400, "need {phases:[...]}");
+            std::ofstream f("data_extracted/engine/turn.json", std::ios::binary);
+            f << forge::json_dump(b);
+            forge::invalidate_turn_pipeline();           // next turn uses the edited order
+            forge::JsonValue o = jobj(); o.obj["saved"] = jbool((bool)f); return J(200, o);
         }
         if (path == "/api/game/history") {
             forge::JsonValue a = jarr();
