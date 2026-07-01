@@ -27,3 +27,4 @@ Thumbs.db
 node_modules/
 package.json
 package-lock.json
+data_extracted/engine/savegame.json
