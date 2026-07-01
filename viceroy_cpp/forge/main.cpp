@@ -766,7 +766,9 @@ static const char* GOOD_NAME[16] = {"Food","Sugar","Tobacco","Cotton","Furs","Lu
     "Horses","Rum","Cigars","Cloth","Coats","Trade Goods","Tools","Muskets"};
 static std::string good_display(int g) {
     if (g >= 0 && g < 16) return GOOD_NAME[g];
-    if (g == 16) return "Hammers"; if (g == 17) return "Crosses"; if (g == 18) return "Bells";
+    if (g == 16) return "Hammers";
+    if (g == 17) return "Crosses";
+    if (g == 18) return "Bells";
     return "?";
 }
 
@@ -1981,7 +1983,7 @@ static int engine_selftest() {
             return std::make_pair(gg, ww);
         };
         auto refp = mkworld(); auto pipe = mkworld();
-        auto det = [](int lo, int hi) { return lo; };            // deterministic: same rolls both sides
+        auto det = [](int lo, int) { return lo; };               // deterministic: same rolls both sides
         RuleData rd2 = make_default_rules();
         for (int i = 0; i < 8; ++i) {
             // The pipeline's production phase now runs colony_compute_production before the
