@@ -668,22 +668,47 @@ static void game_new(int nation = 0, int difficulty = 1) {
     g_game.ref = ref_start(g_game.difficulty);          // the King starts with an army
 
     std::vector<std::pair<int,int>> cxy;                // colony coords, indexed as authored
-    auto add_colony = [&](int tx, int ty, int pop, int bells, int hammers, int food, int crosses) {
-        auto xy = game_find_land(tx, ty);
-        Colony c; c.owner_power = 0; c.human = true; c.population = pop;
-        c.bells_per_turn = bells; c.hammers_per_turn = hammers;
-        c.food_per_turn = food; c.crosses_output = crosses;
-        c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+    const int rdx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};     // surrounding ring: 0=NW..7=SE
+    const int rdy[8] = {-1,-1,-1,  0, 0,  1, 1, 1};
+    // Seed one colony from its scenario record: built buildings + a colonist roster. A tile
+    // worker's terrain is DERIVED from the map at its ring tile, so yields reflect the real map.
+    auto add_colony_json = [&](const forge::JsonValue& cj) {
+        auto gi = [&](const char* k, int d) { const forge::JsonValue* v = cj.find(k); return v ? (int)v->num : d; };
+        auto xy = game_find_land(gi("x", 20), gi("y", 22));
+        Colony c; c.owner_power = 0; c.human = true; c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+        c.center_food = gi("center_food", 3);           // town-square auto-food (center tile)
+        if (const forge::JsonValue* bs = cj.find("buildings"))
+            for (const forge::JsonValue& b : bs->arr) { int id = (int)b.num; if (id >= 0 && id < 48) c.built_mask |= (1ull << id); }
+        if (const forge::JsonValue* ws = cj.find("workers"))
+            for (const forge::JsonValue& w : ws->arr) {
+                Colony::Worker wk;
+                wk.profession = w.find("profession") ? (int)w.find("profession")->num : 19;
+                wk.tile = w.find("tile") ? (int)w.find("tile")->num : -1;
+                wk.good = w.find("good") ? (int)w.find("good")->num : 0;
+                const forge::JsonValue* ev = w.find("expert");
+                wk.expert = ev ? (ev->type == forge::JsonValue::Bool ? ev->b : ev->num != 0) : false;
+                if (const forge::JsonValue* tv = w.find("terrain")) {
+                    wk.terrain = (int)tv->num;              // authored terrain (deterministic yield)
+                } else if (wk.tile >= 0 && wk.tile < 8) {   // else derive from the map at the ring tile
+                    int tid = g_world.terrain_id(xy.first + rdx[wk.tile], xy.second + rdy[wk.tile]);
+                    wk.terrain = tid < 0 ? 2 : (tid & 0x1F);
+                } else wk.terrain = 0;                       // building worker (hammers/bells/crosses)
+                c.workers.push_back(wk);
+            }
+        c.population = gi("pop", (int)c.workers.size()); if (c.population < 1) c.population = 1;
+        forge::colony_compute_production(c, g_game.difficulty, g_active_rules);   // populate turn-0 output
         g_world.colonies.push_back(c); g_colony_xy.push_back(xy); cxy.push_back(xy);
         return xy;
     };
     if (const forge::JsonValue* cols = scn("colonies"))
-        for (const forge::JsonValue& c : cols->arr) {
-            auto gi = [&](const char* k, int d) { const forge::JsonValue* v = c.find(k); return v ? (int)v->num : d; };
-            add_colony(gi("x", 20), gi("y", 22), gi("pop", 1), gi("bells", 0),
-                       gi("hammers", 0), gi("food", 0), gi("crosses", 0));
-        }
-    if (g_world.colonies.empty()) { add_colony(20, 22, 3, 3, 4, 60, 2); add_colony(34, 42, 2, 1, 2, 45, 1); }
+        for (const forge::JsonValue& c : cols->arr) add_colony_json(c);
+    if (g_world.colonies.empty()) {                     // fallback: two colonies with a Farmer each
+        const char* fb = R"([{"x":20,"y":22,"buildings":[13,27],"workers":[
+            {"profession":0,"good":0,"tile":0},{"profession":13,"good":16,"tile":-1}]},
+            {"x":34,"y":42,"buildings":[13],"workers":[{"profession":0,"good":0,"tile":0}]}])";
+        forge::JsonValue fbj = forge::json_parse(fb);
+        for (const forge::JsonValue& c : fbj.arr) add_colony_json(c);
+    }
 
     auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1) {
         Unit u; u.type = type; u.owner = 0; u.x = x; u.y = y;
@@ -735,6 +760,75 @@ static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
     // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
     if (g_game_active) { forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
+}
+
+static const char* GOOD_NAME[16] = {"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore","Silver",
+    "Horses","Rum","Cigars","Cloth","Coats","Trade Goods","Tools","Muskets"};
+static std::string good_display(int g) {
+    if (g >= 0 && g < 16) return GOOD_NAME[g];
+    if (g == 16) return "Hammers"; if (g == 17) return "Crosses"; if (g == 18) return "Bells";
+    return "?";
+}
+
+// The full detail a colony screen needs: buildings built, the colonist roster (each with its
+// @JOB profession + specialty + what/where it works), the production breakdown, the 16-good
+// warehouse, and the build project. Served by /api/colony/detail and folded into the state.
+static forge::JsonValue colony_detail_json(int ci) {
+    forge::JsonValue o = jobj();
+    if (ci < 0 || ci >= (int)g_world.colonies.size()) { o.obj["error"] = forge::json_str("no colony"); return o; }
+    const Colony& c = g_world.colonies[ci];
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    o.obj["index"] = forge::json_num(ci);
+    o.obj["x"] = forge::json_num(ci < (int)g_colony_xy.size() ? g_colony_xy[ci].first : 0);
+    o.obj["y"] = forge::json_num(ci < (int)g_colony_xy.size() ? g_colony_xy[ci].second : 0);
+    o.obj["population"] = forge::json_num(c.population);
+    o.obj["sol"] = forge::json_num(sol_pct(c));
+    o.obj["warehouse"] = forge::json_num(c.warehouse_lvl);
+    o.obj["food_accum"] = forge::json_num((double)c.food_accum);
+    forge::JsonValue prod = jobj();                               // per-turn production breakdown
+    prod.obj["food"] = forge::json_num(c.food_per_turn);
+    prod.obj["bells"] = forge::json_num(c.bells_per_turn);
+    prod.obj["hammers"] = forge::json_num(c.hammers_per_turn);
+    prod.obj["crosses"] = forge::json_num(c.crosses_output);
+    o.obj["production"] = prod;
+    forge::JsonValue built = jarr();                             // which buildings are constructed
+    for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) {
+        forge::JsonValue bo = jobj(); bo.obj["id"] = forge::json_num(b);
+        bo.obj["name"] = forge::resolve_binding("@BUILDING[" + std::to_string(b) + "].name", cx);
+        built.arr.push_back(bo);
+    }
+    o.obj["built"] = built;
+    forge::JsonValue colonists = jarr();                         // the roster: who, specialty, where
+    for (const auto& wk : c.workers) {
+        forge::JsonValue w = jobj();
+        w.obj["profession"] = forge::json_num(wk.profession);
+        w.obj["name"] = forge::json_str(forge::job_name(wk.profession, wk.expert));
+        w.obj["expert"] = jbool(wk.expert);
+        w.obj["good"] = forge::json_num(wk.good);
+        w.obj["good_name"] = forge::json_str(good_display(wk.good));
+        w.obj["tile"] = forge::json_num(wk.tile);
+        w.obj["where"] = forge::json_str(wk.tile >= 0
+            ? (good_display(wk.good) + " (field tile " + std::to_string(wk.tile) + ")")
+            : (good_display(wk.good) + " (building)"));
+        colonists.arr.push_back(w);
+    }
+    o.obj["colonists"] = colonists;
+    forge::JsonValue stock = jarr();                            // 16-good warehouse
+    for (int g = 0; g < NGOODS; ++g) {
+        forge::JsonValue s = jobj(); s.obj["good"] = forge::json_str(good_display(g));
+        s.obj["qty"] = forge::json_num(c.stockpile[g]); stock.arr.push_back(s);
+    }
+    o.obj["stockpile"] = stock;
+    forge::JsonValue build = jobj();                           // current construction
+    build.obj["target"] = forge::json_num(c.build_target);
+    build.obj["name"] = c.build_target < 0 ? forge::json_str("") :
+        forge::resolve_binding("@BUILDING[" + std::to_string(c.build_target) + "].name", cx);
+    build.obj["cost"] = forge::json_num(c.build_cost);
+    build.obj["bank"] = forge::json_num((double)c.build_bank);
+    long rem = (long)c.build_cost - (long)c.build_bank; if (rem < 0) rem = 0;
+    build.obj["remaining"] = forge::json_num((double)rem);
+    o.obj["build"] = build;
+    return o;
 }
 
 // End-game score (spec/systems/scoring.md, simplified): difficulty multiplier times
@@ -802,6 +896,14 @@ static forge::JsonValue game_state_json() {
         cj.obj["owner"] = forge::json_num(c.owner_power);
         cj.obj["population"] = forge::json_num(c.population);
         cj.obj["sol"] = forge::json_num(sol_pct(c));
+        // production summary + counts so the map HUD has them; /api/colony/detail has the rest.
+        forge::JsonValue prod = jobj();
+        prod.obj["food"] = forge::json_num(c.food_per_turn); prod.obj["bells"] = forge::json_num(c.bells_per_turn);
+        prod.obj["hammers"] = forge::json_num(c.hammers_per_turn); prod.obj["crosses"] = forge::json_num(c.crosses_output);
+        cj.obj["production"] = prod;
+        int nb = 0; for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) ++nb;
+        cj.obj["buildings"] = forge::json_num(nb);
+        cj.obj["colonists"] = forge::json_num((double)c.workers.size());
         cols.arr.push_back(cj);
     }
     o.obj["colonies"] = cols;
@@ -1239,6 +1341,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
             return J(200, game_state_json());
+        }
+
+        // Full colony detail: buildings built, colonist roster (profession/specialty/where),
+        // production breakdown, 16-good warehouse, build project. The colony screen's source.
+        if (path == "/api/colony/detail") {
+            if (!g_game_active) game_new();
+            int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
+            return J(200, colony_detail_json(ci));
         }
 
         // Start constructing a specific building in a colony (the interactive build menu).

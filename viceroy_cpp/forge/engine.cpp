@@ -222,7 +222,7 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
     using vc::sim::NGOODS;
     int sol = vc::sim::sol_pct(col);
     std::array<int, NGOODS> prod{};
-    int food = 0, bells = 0, hammers = 0, crosses = 0;
+    int food = col.center_food, bells = 0, hammers = 0, crosses = 0;   // town-square auto-food
     for (const auto& wk : col.workers) {
         int g = wk.good;
         if (g >= 0 && g < 8) {
