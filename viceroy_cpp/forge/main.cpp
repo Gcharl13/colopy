@@ -316,13 +316,16 @@ static int save_selftest() {
     auto check = [&](bool ok, const char* msg) { if (!ok) { ++fail; std::printf("  FAIL: %s\n", msg); } };
 
     // set up a small scenario and play it forward a few turns (exercises the loop).
-    GameState g; g.difficulty = 2;
+    GameState g; g.difficulty = 2; g.nation = 3;
     g.price_base[SUGAR] = 800; g.powers[0].trade[SUGAR] = 100;
     g.powers[0].gold = 1234;
     World w; w.map_w = 20; w.map_h = 12;
     w.terrain.assign((size_t)w.map_w * w.map_h, (uint8_t)2);   // Plains
     Colony c; c.owner_power = 0; c.population = 3; c.hammers_per_turn = 10;
     c.build_target = 0; c.build_cost = 64; c.food_per_turn = 60; c.crosses_output = 3;
+    c.stockpile[SUGAR] = 77; c.stockpile[ORE] = 12;            // previously dropped (#2)
+    c.workers.push_back(Colony::Worker{2, SUGAR, true});
+    c.workers.push_back(Colony::Worker{0, 0, false});
     w.colonies.push_back(c);
     Unit u; u.type = DRAGOONS; u.owner = 0; u.x = 0; u.y = 6;
     u.order = ORDER_GOTO; u.target_x = 15; u.target_y = 6;
@@ -336,9 +339,14 @@ static int save_selftest() {
     std::string d2 = forge::dump_game(lg.g, lg.w);
     check(d1 == d2, "in-memory save round-trip is idempotent");
     check(lg.g.year == g.year && lg.g.turn == g.turn, "year/turn preserved");
+    check(lg.g.nation == 3, "game nation preserved");
     check(lg.g.powers[0].gold == 1234, "power gold preserved");
     check(lg.w.colonies.size() == 1 && lg.w.colonies[0].population == w.colonies[0].population,
           "colony population preserved");
+    check(lg.w.colonies[0].stockpile[SUGAR] == 77 && lg.w.colonies[0].stockpile[ORE] == 12,
+          "colony stockpile preserved (#2)");
+    check(lg.w.colonies[0].workers.size() == 2 && lg.w.colonies[0].workers[0].good == SUGAR &&
+          lg.w.colonies[0].workers[0].expert, "colony workers preserved (#2)");
     check(lg.w.units.size() == 1 && lg.w.units[0].x == w.units[0].x &&
           lg.w.units[0].order == w.units[0].order, "unit position/order preserved");
     check(lg.w.terrain == w.terrain, "terrain plane preserved");
@@ -823,6 +831,58 @@ static forge::JsonValue sandbox_state_json() {
     return o;
 }
 
+// EngineExtra (the relational/Forge-side state) + colony_xy round-trip -- these were
+// dropped by the (GameState,World)-only save (fidelity backlog #2/#3). Serialized here
+// because they live Forge-side; the sim save stays pure.
+static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
+    forge::JsonValue o = jobj();
+    o.obj["tension"] = forge::json_num(x.tension);
+    o.obj["ff_owned"] = forge::json_num((double)x.ff_owned);
+    o.obj["boycotts"] = forge::json_num((double)x.boycotts);
+    o.obj["national_sol"] = forge::json_num(x.national_sol);
+    o.obj["woi_declared"] = jbool(x.woi_declared);
+    o.obj["rebel_power"] = forge::json_num(x.rebel_power);
+    o.obj["seceded_power"] = forge::json_num(x.seceded_power);
+    o.obj["score"] = forge::json_num((double)x.score);
+    o.obj["congress_bells"] = forge::json_num(x.congress_bells);
+    forge::JsonValue mil = jarr(), econ = jarr();
+    for (int i = 0; i < 4; ++i) { mil.arr.push_back(forge::json_num(x.power_mil[i]));
+        econ.arr.push_back(forge::json_num(x.power_econ[i])); }
+    o.obj["power_mil"] = mil; o.obj["power_econ"] = econ;
+    forge::JsonValue war = jarr(), rel = jarr(), cd = jarr();
+    for (int a = 0; a < 4; ++a) for (int b = 0; b < 4; ++b) {
+        war.arr.push_back(forge::json_num(x.diplo.war[a][b]));
+        rel.arr.push_back(forge::json_num(x.diplo.rel[a][b])); }
+    for (int a = 0; a < 4; ++a) cd.arr.push_back(forge::json_num(x.diplo.cooldown[a]));
+    o.obj["diplo_war"] = war; o.obj["diplo_rel"] = rel; o.obj["diplo_cooldown"] = cd;
+    return o;
+}
+static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
+    if (!o) return;
+    auto gi = [&](const char* k, int d) { const forge::JsonValue* v = o->find(k); return v ? v->as_int(d) : d; };
+    x.tension = gi("tension", 0);
+    if (const forge::JsonValue* v = o->find("ff_owned")) x.ff_owned = (uint32_t)v->num;
+    if (const forge::JsonValue* v = o->find("boycotts")) x.boycotts = (uint16_t)v->num;
+    x.national_sol = gi("national_sol", 0);
+    if (const forge::JsonValue* v = o->find("woi_declared")) x.woi_declared = v->type == forge::JsonValue::Bool ? v->b : false;
+    x.rebel_power = gi("rebel_power", -1);
+    x.seceded_power = gi("seceded_power", -1);
+    if (const forge::JsonValue* v = o->find("score")) x.score = (long)v->num;
+    x.congress_bells = gi("congress_bells", 0);
+    if (const forge::JsonValue* m = o->find("power_mil"))
+        for (int i = 0; i < 4 && i < (int)m->arr.size(); ++i) x.power_mil[i] = m->arr[i].as_int();
+    if (const forge::JsonValue* e = o->find("power_econ"))
+        for (int i = 0; i < 4 && i < (int)e->arr.size(); ++i) x.power_econ[i] = e->arr[i].as_int();
+    if (const forge::JsonValue* w = o->find("diplo_war"))
+        for (int a = 0; a < 4; ++a) for (int b = 0; b < 4; ++b) { int k = a * 4 + b;
+            if (k < (int)w->arr.size()) x.diplo.war[a][b] = (uint8_t)w->arr[k].as_int(); }
+    if (const forge::JsonValue* r = o->find("diplo_rel"))
+        for (int a = 0; a < 4; ++a) for (int b = 0; b < 4; ++b) { int k = a * 4 + b;
+            if (k < (int)r->arr.size()) x.diplo.rel[a][b] = (uint8_t)r->arr[k].as_int(); }
+    if (const forge::JsonValue* c = o->find("diplo_cooldown"))
+        for (int a = 0; a < 4 && a < (int)c->arr.size(); ++a) x.diplo.cooldown[a] = c->arr[a].as_int();
+}
+
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
     using forge::HttpResponse;
@@ -1035,6 +1095,35 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
         if (path == "/api/game/state") {
             if (!g_game_active) game_new();
+            return J(200, game_state_json());
+        }
+        // Full-state save/load: the sim (GameState+World, incl. colony stockpile/workers +
+        // nation) plus the Forge-side colony_xy + EngineExtra -- nothing dropped (backlog #2/#3).
+        if (path == "/api/game/save" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue root = forge::json_parse(forge::dump_game(g_game, g_world));
+            forge::JsonValue cxy = jarr();
+            for (auto& p : g_colony_xy) { forge::JsonValue e = jarr();
+                e.arr.push_back(forge::json_num(p.first)); e.arr.push_back(forge::json_num(p.second));
+                cxy.arr.push_back(e); }
+            root.obj["colony_xy"] = cxy;
+            root.obj["engine_extra"] = dump_extra(g_engine_extra);
+            std::ofstream f("data_extracted/engine/savegame.json", std::ios::binary);
+            f << forge::json_dump(root);
+            forge::JsonValue o = jobj(); o.obj["saved"] = jbool((bool)f); return J(200, o);
+        }
+        if (path == "/api/game/load" && method == "POST") {
+            forge::JsonValue root;
+            try { root = forge::json_parse_file("data_extracted/engine/savegame.json"); }
+            catch (...) { return err(400, "no saved game"); }
+            forge::LoadedGame lg = forge::parse_game(forge::json_dump(root));
+            g_game = lg.g; g_world = lg.w; g_colony_xy.clear();
+            if (const forge::JsonValue* cxy = root.find("colony_xy"))
+                for (const auto& e : cxy->arr) if (e.arr.size() >= 2)
+                    g_colony_xy.push_back({(int)e.arr[0].num, (int)e.arr[1].num});
+            g_engine_extra = forge::EngineExtra{};
+            read_extra(root.find("engine_extra"), g_engine_extra);
+            g_game_active = true;
             return J(200, game_state_json());
         }
         if (path == "/api/game/order" && method == "POST") {

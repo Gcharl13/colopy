@@ -50,6 +50,19 @@ JsonValue dump_colony(const Colony& c) {
     o.obj["hammers_per_turn"]= json_num(c.hammers_per_turn);
     o.obj["food_per_turn"]   = json_num(c.food_per_turn);
     o.obj["crosses_output"]  = json_num(c.crosses_output);
+    // stockpile + workers -- previously dropped on save (fidelity backlog #2).
+    JsonValue sp = arr();
+    for (int i = 0; i < NGOODS; ++i) sp.arr.push_back(json_num(c.stockpile[i]));
+    o.obj["stockpile"] = sp;
+    JsonValue wk = arr();
+    for (const Colony::Worker& wkr : c.workers) {
+        JsonValue wo = obj();
+        wo.obj["terrain"] = json_num(wkr.terrain);
+        wo.obj["good"]    = json_num(wkr.good);
+        wo.obj["expert"]  = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = wkr.expert; return v; }();
+        wk.arr.push_back(wo);
+    }
+    o.obj["workers"] = wk;
     return o;
 }
 
@@ -103,6 +116,16 @@ Colony read_colony(const JsonValue& o) {
     c.hammers_per_turn = gi(o, "hammers_per_turn");
     c.food_per_turn    = gi(o, "food_per_turn");
     c.crosses_output   = gi(o, "crosses_output");
+    if (const JsonValue* sp = o.find("stockpile"))
+        for (int i = 0; i < NGOODS && i < (int)sp->arr.size(); ++i) c.stockpile[i] = sp->arr[i].as_int();
+    if (const JsonValue* wk = o.find("workers"))
+        for (const JsonValue& wo : wk->arr) {
+            Colony::Worker wkr;
+            wkr.terrain = gi(wo, "terrain");
+            wkr.good    = gi(wo, "good");
+            wkr.expert  = gb(wo, "expert");
+            c.workers.push_back(wkr);
+        }
     return c;
 }
 
@@ -132,6 +155,7 @@ std::string dump_game(const GameState& g, const World& w) {
     gs.obj["season"] = json_num(g.season);
     gs.obj["turn"] = json_num((double)g.turn);
     gs.obj["difficulty"] = json_num(g.difficulty);
+    gs.obj["nation"] = json_num(g.nation);
     JsonValue powers = arr();
     for (int i = 0; i < 4; ++i) powers.arr.push_back(dump_power(g.powers[i]));
     gs.obj["powers"] = powers;
@@ -172,6 +196,7 @@ LoadedGame parse_game(const std::string& json) {
     lg.g.season     = gi(*gs, "season");
     lg.g.turn       = (long)gd(*gs, "turn");
     lg.g.difficulty = gi(*gs, "difficulty", 1);
+    lg.g.nation     = gi(*gs, "nation", 0);
     if (const JsonValue* pw = gs->find("powers"))
         for (int i = 0; i < 4 && i < (int)pw->arr.size(); ++i) read_power(pw->arr[i], lg.g.powers[i]);
     if (const JsonValue* pb = gs->find("price_base"))

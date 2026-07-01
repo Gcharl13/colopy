@@ -265,6 +265,8 @@ const char* forge_index_html() {
       <button class="act" onclick="newGameSetup()">New game&hellip;</button>
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
+      <button class="act" onclick="saveGame()">Save</button>
+      <button class="act" onclick="loadGame()">Load</button>
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
         around coastline over the following turns). End turn advances the whole world.</span>
     </div>
@@ -1272,6 +1274,16 @@ function playPopup(id, p){
     else if((r.effects||[]).length) ui.toast(r.effects.join('; ')); };
   if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent='Continue'; b.onclick=()=>ui.close(); box.appendChild(b); return; }
   ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
+}
+async function saveGame(){
+  if(!GAME){ ui.toast('No active game'); return; }
+  const d=await (await fetch('/api/game/save',{method:'POST',body:'{}'})).json();
+  ui.toast(d.saved?'Game saved':(d.error||'save failed'));
+}
+async function loadGame(){
+  const d=await (await fetch('/api/game/load',{method:'POST',body:'{}'})).json();
+  if(d.error){ ui.toast(d.error); return; }
+  GAME=d; SEL=-1; drawGame(); showSel(); fillEvents(); ui.toast('Game loaded ('+GAME.year+')');
 }
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
