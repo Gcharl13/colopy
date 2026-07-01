@@ -127,6 +127,18 @@ static void test_price_drift() {
     CHECK(g.price_base[SUGAR] == 794, "turn2 -> %d", g.price_base[SUGAR]);
 }
 
+static void test_score_game() {
+    std::printf("score_game (scoring.md components + func_03A9C0 scaling):\n");
+    // diff 1 (mult 5): pop 40 + FF 25 + sentiment 60 - razed 2*(1+1)=4 + gold 5 + bells 3
+    //   + revolution (1780-1776)*2 = 8 -> base 137; (5*137)/100 = 6; >>1 = 3
+    long s = score_game(1, 40, 5, 60, 2, 5000, 300, 1776, true);
+    CHECK(s == 3, "score -> %ld", s);
+    // post-intervention bells cap at 100 (20000/100 -> capped 100, same as 10000/100)
+    long capped = score_game(1, 0, 0, 0, 0, 0, 20000, 0, false);
+    long at_cap = score_game(1, 0, 0, 0, 0, 0, 10000, 0, false);
+    CHECK(capped == at_cap, "bells/100 capped at 100");
+}
+
 static void test_market_model() {
     std::printf("market: published prices from the pooled supply (market.md):\n");
     const RuleData& rd = default_rules();
@@ -603,6 +615,7 @@ int main() {
     test_build();
     test_price_drift();
     test_market_model();
+    test_score_game();
     test_ref();
     test_food_growth();
     test_immigration();

@@ -1442,6 +1442,7 @@ struct Runner {
         if (t == "DeclareIndependence") {
             int p = std::atoi(pget(*n, "power").str.c_str());
             cx.x.woi_declared = true; cx.x.rebel_power = (p >= 0 && p < 4) ? p : 0;
+            if (cx.x.declaration_year == 0) cx.x.declaration_year = cx.g.year;   // revolution bonus
             effect("power " + std::to_string(cx.x.rebel_power) + " declares the War of Independence!");
             return follow(nodeId, "out", popup);
         }
@@ -1639,13 +1640,28 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "ScoreGame") {
-            int mult = vc::sim::score_difficulty_mult(cx.g.difficulty);
-            long pop = 0; for (auto& c : cx.w.colonies) pop += c.population;
+            // The full scoring.md base: per-colonist profession weights, FF x5, rebel sentiment %,
+            // -razed x (diff+1), gold/1000, post-declaration bells/100 (cap 100), revolution bonus;
+            // then the byte-verified final scaling (mult*base)/100 >> 1 (func_03A9C0).
+            // Per-colonist weights (scoring.md: criminal/servant/convert +1, free colonist +2,
+            // skilled +4). Our colony roster models job + expert flag (criminals/servants exist
+            // only as dock types), so: expert colonist -> +4 (skilled), else +2 (free colonist).
+            long pop_score = 0;
+            for (auto& c : cx.w.colonies)
+                for (auto& w : c.workers)
+                    pop_score += w.expert ? 4 : 2;
             int ffc = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++ffc;
-            long base = pop * 2 + ffc * 5;
-            if (cx.x.woi_declared) base += vc::sim::revolution_bonus(cx.g.year);
-            cx.x.score = base * mult;
-            effect("final score = " + std::to_string(cx.x.score) + " (x" + std::to_string(mult) + " difficulty)");
+            cx.x.score = vc::sim::score_game(cx.g.difficulty, pop_score, ffc,
+                                             cx.x.national_sol, cx.x.razed_settlements,
+                                             (long)cx.g.powers[0].gold,
+                                             cx.x.bells_since_declaration,
+                                             cx.x.declaration_year,
+                                             /*won_war*/ cx.x.woi_declared);
+            effect("final score = " + std::to_string(cx.x.score) +
+                   " (pop " + std::to_string(pop_score) + " + FF " + std::to_string(ffc * 5) +
+                   " + sentiment " + std::to_string(cx.x.national_sol) +
+                   " + gold/1000, x" + std::to_string(vc::sim::score_difficulty_mult(cx.g.difficulty)) +
+                   "/100 >>1)");
             return follow(nodeId, "out", popup);
         }
         if (t == "FireEvent") {

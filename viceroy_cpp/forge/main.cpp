@@ -1017,6 +1017,9 @@ static void game_step() {
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         // (the per-turn market phase -- drift + republish + volume reset -- runs inside run_turn)
+        if (g_engine_extra.woi_declared)                // scoring component 6 (RECONSTRUCTED gate)
+            for (const Colony& c : g_world.colonies)
+                if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
@@ -1844,6 +1847,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 return err(400, "national Sons of Liberty must reach 50% to declare (now " +
                                 std::to_string(g_engine_extra.national_sol) + "%)");
             g_engine_extra.woi_declared = true; g_engine_extra.rebel_power = 0;
+            if (g_engine_extra.declaration_year == 0) g_engine_extra.declaration_year = g_game.year;
             forge::JsonValue o = game_state_json(); o.obj["declared"] = jbool(true); return J(200, o);
         }
         if (path == "/api/game/history") {

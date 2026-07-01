@@ -58,6 +58,12 @@ struct EngineExtra {
     int  congress_bells = 0;      // bell pool toward the next Founding Father ([0x0C], resets on acquire)
     int  last_ff        = -1;     // most recently acquired father id (drives the Congress reveal), -1 = none
     int  offered_ff     = -1;     // father the Congress is currently offering ([0x12]), -1 = none/unpicked
+    // Scoring inputs (spec/systems/scoring.md components):
+    int  declaration_year = 0;    // year independence was declared (revolution bonus), 0 = never
+    int  razed_settlements = 0;   // native settlements this power destroyed (-(diff+1) each)
+    long bells_since_declaration = 0;  // bells produced after the declaration (component 6;
+                                       // spec gates on the intervention flag [0x5382]&2 --
+                                       // gating on the declaration is RECONSTRUCTED)
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side
