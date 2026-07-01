@@ -1313,18 +1313,32 @@ function sbRender(){
   h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
   (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
   h+='</tr></table>';
-  // Europe market: with a Custom House the colony auto-sells surplus each turn; without one, over-cap
-  // goods spoil and you must ship goods to Europe to sell (the manual sell below).
-  const pr=SB.prices||[];
+  // Europe market: a live horizontal price strip (bid, drifting within each good's band) + the data
+  // that drives it. With a Custom House the colony auto-sells each turn; without one you ship & sell.
+  const mk=SB.market||[]; const pr=SB.prices||[];
   h+='<h4 style="margin:10px 0 2px">Europe market</h4>';
   h+='<div class="'+(SB.custom_house?'':'muted')+'" style="font-size:11px">'
-    +(SB.custom_house?'&#10003; Custom House: surplus auto-sells to Europe each turn (no ship needed).'
-      :'No Custom House &mdash; over-cap goods spoil. Build a Custom House (needs Peter Stuyvesant) or ship &amp; sell below.')
-    +' <span class="muted">tax '+(SB.tax||0)+'%</span></div>';
+    +(SB.custom_house?'&#10003; Custom House: surplus auto-sells to Europe each turn.'
+      :'No Custom House &mdash; over-cap goods spoil; ship &amp; sell below.')
+    +' <span class="muted">tax '+(SB.tax||0)+'% &middot; selling drives a price down, demand recovers it over turns</span></div>';
+  // horizontal price strip: one cell per tradeable good; bar height = where the bid sits in [low,high].
+  h+='<div style="display:flex;gap:2px;align-items:flex-end;height:60px;margin:4px 0;border-bottom:1px solid #555">';
+  mk.forEach((m,i)=>{ if(i<1) return; const lo=m.low||0,hi=m.high||1; const frac=Math.max(0.06,Math.min(1,(m.bid-lo)/Math.max(1,hi-lo)));
+    const up=m.bid>m.start_bid, dn=m.bid<m.start_bid; const col=up?'#4caf50':(dn?'#e57373':'#8ab');
+    h+='<div title="'+GOODS[i]+' bid '+m.bid+' / ask '+m.ask+' (band '+lo+'-'+hi+', trade '+m.trade+')" style="flex:1;text-align:center;font-size:9px">'
+      +'<div style="height:'+Math.round(frac*44)+'px;background:'+col+';margin:0 1px" ></div>'
+      +'<div><b>'+m.bid+'</b></div><div class="muted">'+GOODS[i].slice(0,3)+'</div></div>'; });
+  h+='</div>';
   h+='<div class="row" style="margin:3px 0;gap:4px"><span style="font-size:11px">Ship &amp; sell</span>'
     +'<select id="sbsellgood">'+GOODS.map((g,i)=> i>=1?('<option value="'+i+'">'+g+' @'+(pr[i]||0)+'g</option>'):'').join('')+'</select>'
     +'<input id="sbsellqty" type="number" placeholder="qty (all)" style="width:80px">'
     +'<button class="act" onclick="sbSell()">Sell to Europe</button></div>';
+  // the numbers that drive each price (spec @CARGO drift model)
+  h+='<details style="margin-top:2px"><summary style="font-size:11px;cursor:pointer">price drivers (bid / ask / band / trade accum / rise / fall / attrition / volatility)</summary>'
+    +'<table style="width:100%;font-size:10px"><tr><th>Good</th><th>bid</th><th>ask</th><th>band</th><th>trade</th><th>rise</th><th>fall</th><th>attr</th><th>vol</th></tr>';
+  mk.forEach((m,i)=>{ if(i<1) return;
+    h+='<tr><td>'+GOODS[i]+'</td><td><b>'+m.bid+'</b></td><td>'+m.ask+'</td><td>'+m.low+'-'+m.high+'</td><td>'+m.trade+'</td><td>'+m.rise+'</td><td>'+m.fall+'</td><td>'+m.attrition+'</td><td>'+m.volatility+'</td></tr>'; });
+  h+='</table></details>';
   // Founding fathers -- toggle any to see its effect. The production ones (bold) change output live.
   const owned=new Set(SB.fathers||[]);
   h+='<h4 style="margin:10px 0 2px">Founding Fathers</h4>'

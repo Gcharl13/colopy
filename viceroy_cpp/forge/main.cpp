@@ -936,6 +936,50 @@ static void tory_uprising_step() {
         ")! Parliament arms " + std::to_string(spawned) + " Tory Militia against the rebellion.");
 }
 
+// ---- Europe market: a live, drifting price per good (spec/systems/market.md) ------------------
+// Each good's price floats in [drift_low, drift_high] around its @CARGO start. The per-power trade
+// accumulator (power.trade[good]: selling subtracts, buying adds, spec +0xFC) pushes the price DOWN
+// as you flood the market (rate `fall`) and UP as you buy it out (rate `rise`); each turn the
+// accumulator relaxes back toward 0 (demand recovery, rate from `attrition`) with a small
+// `volatility` random walk, so prices "naturally rise and fall" over the turns.
+static int cargo_i(const forge::EngineCtx& cx, int g, const char* col, int dflt) {
+    forge::JsonValue v = forge::resolve_binding("@CARGO[" + std::to_string(g) + "]." + col, cx);
+    return v.type == forge::JsonValue::Null ? dflt : (int)v.as_int(dflt);
+}
+static int market_bid(const forge::EngineCtx& cx, const GameState& gs, int good) {
+    int start = cargo_i(cx, good, "price_start1", 1);
+    int lo = cargo_i(cx, good, "drift_low", start), hi = cargo_i(cx, good, "drift_high", start);
+    int rise = cargo_i(cx, good, "rise", 4), fall = cargo_i(cx, good, "fall", 4);
+    int tr = gs.powers[0].trade[good];                       // net accumulator (sell -, buy +)
+    // ~4*fall units sold move the bid one point down; ~4*rise bought move it one point up.
+    int adj = tr < 0 ? tr / (4 * (fall > 0 ? fall : 1)) : tr / (4 * (rise > 0 ? rise : 1));
+    int p = start + adj;
+    if (p < lo) p = lo; if (p > hi) p = hi;
+    return p;
+}
+static int market_ask(const forge::EngineCtx& cx, const GameState& gs, int good) {
+    int spread = cargo_i(cx, good, "price_start2", 1) - cargo_i(cx, good, "price_start1", 1);
+    if (spread < 0) spread = 0;
+    return market_bid(cx, gs, good) + spread;                // ask tracks the bid, keeping the start spread
+}
+// Per-turn market relaxation: the trade accumulator decays toward 0 (attrition = demand recovery)
+// plus a small volatility random walk. Prices are derived from the accumulator, so they drift.
+static void market_step(GameState& gs, const forge::EngineCtx& cx, const std::function<int(int,int)>& rng) {
+    for (int good = 1; good < NGOODS; ++good) {
+        int attrition = cargo_i(cx, good, "attrition", -8);  // negative in @CARGO
+        int volatility = cargo_i(cx, good, "volatility", 0);
+        int mag = attrition < 0 ? -attrition : attrition;
+        int32_t& tr = gs.powers[0].trade[good];
+        // Demand recovery: the accumulator decays back toward 0 PROPORTIONALLY (larger imbalance
+        // recovers faster, then eases) at ~|attrition|% per turn, so prices visibly relax over turns.
+        int amag = tr < 0 ? -tr : tr;
+        int recover = amag * mag / 100; if (recover < 2) recover = 2;
+        if (tr > 0) tr = (tr - recover < 0) ? 0 : tr - recover;
+        else if (tr < 0) tr = (tr + recover > 0) ? 0 : tr + recover;
+        if (volatility > 0) tr += rng(-volatility * 3, volatility * 3);   // natural wiggle around baseline
+    }
+}
+
 // Auto-export: each turn every colony ships its over-cap tradeables (>100 -> keep 50) to Europe,
 // crediting the owner's gold at the SAME @CARGO market bid + tax the manual sell route uses (so
 // auto-selling and hand-selling price identically), skipping boycotted goods and Food (which feeds
@@ -956,10 +1000,11 @@ static void auto_export_step() {
                 // Custom House sells surplus directly to Europe -- no ship needed (Peter Stuyvesant).
                 if ((g_engine_extra.boycotts >> gd) & 1u) continue;       // boycotted -> can't sell
                 int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;  // keep the lower band
-                int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+                int bid = market_bid(cx, g_game, gd);                     // current drifting Europe price
                 long net = (long)excess * bid * (100 - g_game.powers[owner].tax) / 100;
                 if (net < 0) net = 0;
                 g_game.powers[owner].gold += net; total += net;
+                g_game.powers[owner].trade[gd] -= excess;                 // flooding the market drives the price down
             } else if (c.stockpile[gd] > cap) {
                 // No Custom House: goods above the warehouse cap SPOIL. To sell, ship them to the
                 // Europe market (/api/europe/sell) or build a Custom House (needs Stuyvesant).
@@ -988,6 +1033,8 @@ static void game_step() {
         forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
+        { forge::EngineCtx mcx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+          market_step(g_game, mcx, game_rng); }          // Europe prices relax toward baseline each turn
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
@@ -1287,9 +1334,30 @@ static forge::JsonValue sandbox_state_json() {
     // Europe bid price -- so the screen can offer a "ship & sell" action and show the auto-sell state.
     o.obj["custom_house"] = jbool((c.built_mask >> 18) & 1ull);
     o.obj["tax"] = forge::json_num(g_sb_game.powers[0].tax);
+    // Live market: per-good bid/ask (drift from the @CARGO baseline), the trade accumulator that
+    // drives them, and the drift parameters (band, rise/fall, attrition, volatility) so the strip
+    // shows exactly what moves the price.
+    forge::JsonValue market = jarr();
+    for (int gd = 0; gd < NGOODS; ++gd) {
+        forge::JsonValue m = jobj();
+        m.obj["good"] = forge::json_str(good_display(gd));
+        m.obj["bid"] = forge::json_num(market_bid(cx, g_sb_game, gd));
+        m.obj["ask"] = forge::json_num(market_ask(cx, g_sb_game, gd));
+        m.obj["start_bid"] = forge::json_num(cargo_i(cx, gd, "price_start1", 0));
+        m.obj["trade"] = forge::json_num(g_sb_game.powers[0].trade[gd]);   // net accumulator (sell -, buy +)
+        m.obj["low"] = forge::json_num(cargo_i(cx, gd, "drift_low", 0));
+        m.obj["high"] = forge::json_num(cargo_i(cx, gd, "drift_high", 0));
+        m.obj["rise"] = forge::json_num(cargo_i(cx, gd, "rise", 0));
+        m.obj["fall"] = forge::json_num(cargo_i(cx, gd, "fall", 0));
+        m.obj["attrition"] = forge::json_num(cargo_i(cx, gd, "attrition", 0));
+        m.obj["volatility"] = forge::json_num(cargo_i(cx, gd, "volatility", 0));
+        m.obj["boycott"] = jbool((g_sb_extra.boycotts >> gd) & 1u);
+        market.arr.push_back(m);
+    }
+    o.obj["market"] = market;
+    // keep a flat bid array for the older price dropdown
     forge::JsonValue pr = jarr();
-    for (int gd = 0; gd < NGOODS; ++gd)
-        pr.arr.push_back(forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx));
+    for (int gd = 0; gd < NGOODS; ++gd) pr.arr.push_back(forge::json_num(market_bid(cx, g_sb_game, gd)));
     o.obj["prices"] = pr;
     return o;
 }
@@ -2044,12 +2112,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (qty <= 0 || qty > col.stockpile[gd]) qty = col.stockpile[gd];
             if (qty <= 0) return err(400, "nothing to sell");
             forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
-            int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+            int bid = market_bid(cx, g_sb_game, gd);           // current drifting Europe price
             long proceeds = (long)qty * bid * (100 - g_sb_game.powers[0].tax) / 100; if (proceeds < 0) proceeds = 0;
             col.stockpile[gd] -= qty; g_sb_game.powers[0].gold += proceeds;
+            g_sb_game.powers[0].trade[gd] -= qty;              // selling floods the market -> price falls
             forge::JsonValue o = sandbox_state_json();
             o.obj["msg"] = forge::json_str("Shipped " + std::to_string(qty) + " " + good_display(gd) +
-                                           " to Europe for " + std::to_string(proceeds) + " gold");
+                                           " to Europe for " + std::to_string(proceeds) + " gold (bid " + std::to_string(bid) + ")");
             return J(200, o);
         }
         if (path == "/api/sandbox/rush" && method == "POST") {
@@ -2067,11 +2136,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue b = forge::json_parse(body);
             if (!g_sb_active) sandbox_new(3);
             int n = b.find("n") ? b.find("n")->as_int(1) : 1; if (n < 1) n = 1; if (n > 50) n = 50;
+            forge::EngineCtx mcx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
             for (int i = 0; i < n; ++i) {
                 // Recompute production from the colonist roster (as the real turn pipeline's
                 // production phase does), THEN run the economic step off those fresh numbers.
                 forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
                 step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
+                market_step(g_sb_game, mcx, sb_rng);           // Europe prices drift toward baseline
             }
             return J(200, sandbox_state_json());
         }
