@@ -112,6 +112,7 @@ const char* forge_index_html() {
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
   <button data-tab="logic">Logic</button>
+  <button data-tab="sandbox">Sandbox</button>
   <button data-tab="play">Play</button>
 </nav>
 <main>
@@ -234,6 +235,28 @@ const char* forge_index_html() {
         <div class="gprops" id="sinspect" style="width:224px"></div>
       </div>
       <div class="gpalette" id="spalette" style="width:120px"></div>
+    </div>
+  </section>
+
+  <section id="sandbox" class="tab">
+    <div class="row">
+      <button class="act" onclick="sbNew()">Fresh colony</button>
+      <button class="act" onclick="sbAddPop()">+ Colonist</button>
+      <button class="act" onclick="sbStep(1)">Run 1 turn &#9654;</button>
+      <button class="act" onclick="sbStep(5)">Run 5 turns &#9654;&#9654;</button>
+      <span class="muted">An isolated colony: grow it, build in it, run turns, and edit every
+        outside variable &mdash; nothing here touches the Play game.</span>
+    </div>
+    <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap">
+      <div id="sbcol" style="min-width:340px"></div>
+      <div style="min-width:280px">
+        <h4 style="margin:4px 0">Outside variables</h4>
+        <div id="sbvars"></div>
+        <h4 style="margin:12px 0 4px">Build</h4>
+        <div class="row"><select id="sbbuild"></select>
+          <button class="act" onclick="sbBuild()">Start</button>
+          <button class="act" onclick="sbRush()">Rush (gold)</button></div>
+      </div>
     </div>
   </section>
 
@@ -1183,6 +1206,49 @@ async function beginGame(){
   const nn=(SETUP.country[SETUP.nation]||{}).name||'?', dn=(SETUP.diff[SETUP.difficulty]||{}).name||'?';
   ui.toast('New game — '+nn+', '+dn+' ('+GAME.year+')');
 }
+
+// ---- #67 isolated colony sandbox: a self-contained colony over the real sim ----
+let SB=null, SBBUILDINGS=[];
+async function sbInit(){
+  if(!SBBUILDINGS.length){ try{ const names=await (await fetch('/api/tables?file=names')).json();
+    SBBUILDINGS=(names['@BUILDING']&&names['@BUILDING'].rows)||[]; }catch(e){}
+    $('#sbbuild').innerHTML=SBBUILDINGS.map((r,i)=>'<option value="'+i+'">'+esc(r.name)+' ('+r.cost+'h, min '+r.min_colony+')</option>').join(''); }
+  if(!SB) await sbLoad();
+}
+async function sbLoad(){ SB=await (await fetch('/api/sandbox/state')).json(); sbRender(); }
+async function sbNew(){ SB=await (await fetch('/api/sandbox/new',{method:'POST',body:JSON.stringify({pop:3})})).json(); sbRender(); ui.toast('Fresh colony (pop 3)'); }
+async function sbAddPop(){ SB=await (await fetch('/api/sandbox/addpop',{method:'POST',body:'{}'})).json(); sbRender(); }
+async function sbStep(n){ SB=await (await fetch('/api/sandbox/step',{method:'POST',body:JSON.stringify({n})})).json(); sbRender(); ui.toast('Year '+SB.year); }
+async function sbSet(path,value){ SB=await (await fetch('/api/sandbox/set',{method:'POST',body:JSON.stringify({path,value:+value})})).json(); sbRender(); }
+async function sbBuild(){ const bid=+$('#sbbuild').value;
+  const r=await (await fetch('/api/sandbox/build',{method:'POST',body:JSON.stringify({building:bid})})).json(); SB=r; sbRender(); ui.toast(r.msg||''); }
+async function sbRush(){ const r=await (await fetch('/api/sandbox/rush',{method:'POST',body:'{}'})).json();
+  if(r.error){ ui.toast(r.error); return; } SB=r; sbRender(); ui.toast(r.msg||''); }
+function sbRender(){
+  if(!SB) return;
+  const built=(SB.built||[]).map(b=>esc((SBBUILDINGS[b]||{}).name||('#'+b))).join(', ')||'&mdash;';
+  let h='<h3 style="margin:2px 0">Colony &middot; '+SB.year+'</h3>';
+  h+='<table><tr><td>Population</td><td><b>'+SB.population+'</b></td></tr>';
+  h+='<tr><td>Sons of Liberty</td><td>'+SB.sol+'%</td></tr>';
+  h+='<tr><td>Bells / Hammers / Food / Crosses</td><td>'+SB.bells+' / '+SB.hammers+' / '+SB.food+' / '+SB.crosses+'</td></tr>';
+  const bn=SB.building_name||'';
+  h+='<tr><td>Building</td><td>'+(SB.build_target<0?'<span class="muted">idle</span>':(esc(bn)+' &mdash; '+SB.build_bank+' of '+SB.build_cost+' hammers ('+SB.build_remaining+' left)'))+'</td></tr>';
+  h+='<tr><td>Built</td><td>'+built+'</td></tr></table>';
+  h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
+  (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
+  h+='</tr></table>';
+  $('#sbcol').innerHTML=h;
+  // outside variables (each writes a real binding on the sandbox store)
+  const row=(label,path,val)=>'<div class="row" style="margin:2px 0"><span style="display:inline-block;width:90px">'+label+'</span>'
+    +'<input type="number" value="'+val+'" style="width:90px" onchange="sbSet(\''+path+'\',this.value)"></div>';
+  $('#sbvars').innerHTML=
+     row('Gold','power0.gold',SB.gold)
+    +row('Tax %','power0.tax',SB.tax)
+    +row('Population','colony0.population',SB.population)
+    +row('Sugar stock','colony0.stockpile.1',(SB.stockpile||[])[1]||0)
+    +row('Ore stock','colony0.stockpile.6',(SB.stockpile||[])[6]||0);
+}
+document.querySelector('nav button[data-tab=sandbox]').addEventListener('click',()=>{ sbInit(); });
 async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
   $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }
 async function refreshGame(){ GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }

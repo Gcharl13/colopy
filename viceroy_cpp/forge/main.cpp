@@ -764,6 +764,65 @@ static forge::JsonValue game_state_json() {
     return o;
 }
 
+// ---- isolated colony sandbox (#67): a second, self-contained world -------------------
+// A fresh single colony you can grow, build in, and step -- with every outside variable
+// (gold, tax, population, stockpile, price) directly editable -- without touching the
+// real Play game. Reuses the same sim (colony_economic_step via step_turn, start_building,
+// rush_build) so behavior matches the game exactly.
+static GameState g_sb_game; static World g_sb_world;
+static std::vector<std::pair<int,int>> g_sb_colony_xy;
+static forge::EngineExtra g_sb_extra;
+static bool g_sb_active = false;
+static int g_sb_rng = 0x51EDF00D;
+static int sb_rng(int lo, int hi) {
+    g_sb_rng = g_sb_rng * 1103515245 + 12345;
+    unsigned v = ((unsigned)g_sb_rng >> 16) & 0x7FFF;
+    return hi <= lo ? lo : lo + (int)(v % (unsigned)(hi - lo + 1));
+}
+static void sandbox_new(int pop) {
+    g_sb_game = GameState{}; g_sb_world = World{}; g_sb_colony_xy.clear();
+    g_sb_extra = forge::EngineExtra{}; g_sb_rng = 0x51EDF00D;
+    g_sb_game.difficulty = 1; g_sb_game.year = 1600; g_sb_game.season = 0;
+    g_sb_game.powers[0].gold = 1000; g_sb_game.powers[0].tax = 0;
+    for (int i = 0; i < NGOODS; ++i) g_sb_game.price_base[i] = 800;
+    Colony c; c.owner_power = 0; c.human = true; c.population = pop < 1 ? 1 : pop > 32 ? 32 : pop;
+    c.bells_per_turn = 2; c.hammers_per_turn = 3; c.food_per_turn = 4; c.crosses_output = 1;
+    c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+    g_sb_world.colonies.push_back(c); g_sb_colony_xy.push_back({0, 0});
+    g_sb_active = true;
+}
+static forge::JsonValue sandbox_state_json() {
+    if (!g_sb_active) sandbox_new(3);
+    forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
+    const Colony& c = g_sb_world.colonies[0];
+    forge::JsonValue o = jobj();
+    o.obj["year"] = forge::json_num(g_sb_game.year);
+    o.obj["season"] = forge::json_num(g_sb_game.season);
+    o.obj["turn"] = forge::json_num((double)g_sb_game.turn);
+    o.obj["gold"] = forge::json_num((double)g_sb_game.powers[0].gold);
+    o.obj["tax"] = forge::json_num(g_sb_game.powers[0].tax);
+    o.obj["population"] = forge::json_num(c.population);
+    o.obj["sol"] = forge::json_num(sol_pct(c));
+    o.obj["bells"] = forge::json_num(c.bells_per_turn);
+    o.obj["hammers"] = forge::json_num(c.hammers_per_turn);
+    o.obj["food"] = forge::json_num(c.food_per_turn);
+    o.obj["crosses"] = forge::json_num(c.crosses_output);
+    o.obj["build_target"] = forge::json_num(c.build_target);
+    o.obj["build_cost"] = forge::json_num(c.build_cost);
+    o.obj["build_bank"] = forge::json_num((double)c.build_bank);
+    long rem = (long)c.build_cost - (long)c.build_bank; if (rem < 0) rem = 0;
+    o.obj["build_remaining"] = forge::json_num((double)rem);
+    o.obj["building_name"] = c.build_target < 0 ? forge::json_str("") :
+        forge::resolve_binding("@BUILDING[" + std::to_string(c.build_target) + "].name", cx);
+    forge::JsonValue sp = jarr();
+    for (int i = 0; i < NGOODS; ++i) sp.arr.push_back(forge::json_num(c.stockpile[i]));
+    o.obj["stockpile"] = sp;
+    forge::JsonValue built = jarr();
+    for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) built.arr.push_back(forge::json_num(b));
+    o.obj["built"] = built;
+    return o;
+}
+
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
     using forge::HttpResponse;
@@ -1047,6 +1106,61 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok); o.obj["cost"] = forge::json_num((double)gold_cost);
             o.obj["msg"] = forge::json_str(ok ? "Construction complete" : "Not enough gold");
             return J(200, o);
+        }
+
+        // ---- isolated colony sandbox (#67) ----
+        if (path == "/api/sandbox/state") return J(200, sandbox_state_json());
+        if (path == "/api/sandbox/new" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int pop = b.find("pop") ? b.find("pop")->as_int(3) : 3;
+            sandbox_new(pop); return J(200, sandbox_state_json());
+        }
+        if (path == "/api/sandbox/set" && method == "POST") {   // edit any outside variable
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            std::string bp = b.find("path") ? b.find("path")->str : "";
+            double val = b.find("value") ? b.find("value")->num : 0;
+            forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
+            bool ok = forge::set_binding(bp, val, cx);
+            forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(ok); return J(200, o);
+        }
+        if (path == "/api/sandbox/addpop" && method == "POST") {
+            if (!g_sb_active) sandbox_new(3);
+            Colony& c = g_sb_world.colonies[0]; if (c.population < 32) c.population += 1;
+            return J(200, sandbox_state_json());
+        }
+        if (path == "/api/sandbox/build" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            int bid = b.find("building") ? b.find("building")->as_int(-1) : -1;
+            if (bid < 0) return err(400, "bad building");
+            forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
+            int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
+            int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx).as_int();
+            std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
+            bool ok = start_building(g_sb_world.colonies[0], bid, cost, minc);
+            forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(ok);
+            o.obj["msg"] = forge::json_str(ok ? ("Started " + name + " (" + std::to_string(cost) + " hammers)")
+                                              : (name + " unavailable (too small or already built)"));
+            return J(200, o);
+        }
+        if (path == "/api/sandbox/rush" && method == "POST") {
+            if (!g_sb_active) sandbox_new(3);
+            Colony& col = g_sb_world.colonies[0];
+            if (col.build_target < 0) return err(400, "nothing under construction");
+            long rem = (long)col.build_cost - (long)col.build_bank; if (rem < 0) rem = 0;
+            long gold_cost = rem * 8;
+            bool ok = rush_build(col, g_sb_game.powers[0], gold_cost);
+            forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(ok);
+            o.obj["msg"] = forge::json_str(ok ? "Construction complete" : "Not enough gold");
+            return J(200, o);
+        }
+        if (path == "/api/sandbox/step" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            int n = b.find("n") ? b.find("n")->as_int(1) : 1; if (n < 1) n = 1; if (n > 50) n = 50;
+            for (int i = 0; i < n; ++i) step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
+            return J(200, sandbox_state_json());
         }
 
         if (path.rfind("/assets/", 0) == 0)
