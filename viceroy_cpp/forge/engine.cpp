@@ -723,7 +723,14 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
         int t = (int)value; cx.x.national_sol = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }
     if (path == "congress.bells") { cx.x.congress_bells = (int)value; return true; }
+    // REF counts + revolution flags (writable for the inspector/sandbox + war setup) -- closes the
+    // set_binding vs resolve_binding gap (#18) for the King's-army + revolution paths.
+    if (path == "ref.regulars")  { g.ref.regulars  = (int)value; return true; }
+    if (path == "ref.cavalry")   { g.ref.cavalry   = (int)value; return true; }
+    if (path == "ref.manowar")   { g.ref.manowar   = (int)value; return true; }
+    if (path == "ref.artillery") { g.ref.artillery = (int)value; return true; }
     if (path == "revolution.declared") { cx.x.woi_declared = value != 0; return true; }
+    if (path == "revolution.rebel")    { cx.x.rebel_power = (int)value; return true; }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {
@@ -1073,8 +1080,12 @@ struct Runner {
                 JsonValue bv; bv.type = JsonValue::Bool;
                 bv.b = id >= 0 && id < 32 && ((cx.x.ff_owned >> id) & 1u); out = bv;
             } else if (t == "CanDeclareIndependence") {
+                // Eligible only if SoL clears the bar AND we are not already at war --
+                // once independence is declared you cannot declare it again, so the
+                // revolution graph stops re-firing DeclareIndependence/MobilizeREF each turn.
                 JsonValue bv; bv.type = JsonValue::Bool;
-                bv.b = vc::sim::can_declare_independence(cx.x.national_sol); out = bv;
+                bv.b = vc::sim::can_declare_independence(cx.x.national_sol) && !cx.x.woi_declared;
+                out = bv;
             } else if (t == "FoundingFatherCost") {
                 int cnt = 0; for (uint32_t b = cx.x.ff_owned; b; b &= b - 1) ++cnt;
                 out = json_num(vc::sim::ff_cost(cx.g.difficulty, cx.g.year, cnt, true, cx.x.woi_declared, cx.rd));

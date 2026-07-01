@@ -785,10 +785,61 @@ static void history_snapshot() {
     if (g_history.size() > 400) g_history.erase(g_history.begin());
 }
 
+// Rebel land strength: player land-combat units (attack+defense) + a per-colony defensive bump.
+static long rebel_strength(int* weakest_unit = nullptr) {
+    long str = 0; int weakest = -1; long weakest_str = 0;
+    for (int i = 0; i < (int)g_world.units.size(); ++i) {
+        const Unit& u = g_world.units[i];
+        if (!u.alive || u.owner != 0) continue;
+        const UnitStats& st = unit_stats(u.type);
+        if (st.move_class == 99) continue;              // ships hold no ground
+        long s = st.attack + st.defense; if (s <= 0) continue;
+        str += s; if (weakest < 0 || s < weakest_str) { weakest = i; weakest_str = s; }
+    }
+    str += (long)g_world.colonies.size() * 2;           // colonies contribute walls/militia
+    if (weakest_unit) *weakest_unit = weakest;
+    return str;
+}
+static long ref_land_strength() {                       // Man-o-War is naval, weighted low for land assault
+    return (long)g_game.ref.regulars * 4 + g_game.ref.cavalry * 5 + g_game.ref.artillery * 7 + g_game.ref.manowar;
+}
+// War of Independence, resolved per turn while declared: one engagement between the rebel army and
+// the King's expeditionary force. Rebels win -> REF attrition; REF wins -> a rebel unit falls, or a
+// colony is captured if undefended. The endgame fires when the REF is destroyed (win) or the last
+// colony is lost (lose). Abstract strength model (RECONSTRUCTED; the real WoI runs unit-level battles).
+static void war_resolution_step() {
+    if (!g_engine_extra.woi_declared) return;
+    long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
+    if (ref_total <= 0 || g_world.colonies.empty()) return;   // already decided; endgame_json reports it
+    int weakest = -1; long reb = rebel_strength(&weakest), king = ref_land_strength();
+    long total = reb + king; if (total <= 0) return;
+    if (game_rng(1, (int)total) <= reb) {               // rebels repel the assault -> REF attrition
+        int loss = game_rng(1, 4);
+        for (int k = 0; k < loss; ++k) {
+            if (g_game.ref.regulars > 0) --g_game.ref.regulars;
+            else if (g_game.ref.cavalry > 0) --g_game.ref.cavalry;
+            else if (g_game.ref.artillery > 0) --g_game.ref.artillery;
+            else if (g_game.ref.manowar > 0) --g_game.ref.manowar;
+        }
+    } else {                                            // REF prevails: destroy a rebel unit, else take a colony
+        if (weakest >= 0) g_world.units[weakest].alive = false;
+        else { g_world.colonies.pop_back(); if (!g_colony_xy.empty()) g_colony_xy.pop_back(); }
+    }
+}
+
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
     // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
-    if (g_game_active) { forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
+    if (g_game_active) {
+        // Once independence is declared the King's expeditionary force is COMMITTED: it fights and
+        // depletes, it does not keep building. Freeze the peacetime REF buildup (run_turn's
+        // ref_purchase) during the war so the conflict is winnable; war_resolution_step depletes it.
+        Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
+        forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules);
+        if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
+        war_resolution_step();                          // resolve the War of Independence if declared
+        history_snapshot();
+    }
 }
 
 static const char* GOOD_NAME[16] = {"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore","Silver",
@@ -897,6 +948,13 @@ static forge::JsonValue game_state_json() {
     forge::JsonValue o = jobj();
     o.obj["active"] = jbool(g_game_active);
     o.obj["endgame"] = endgame_json();
+    { forge::JsonValue war = jobj();          // War of Independence status
+      war.obj["declared"] = jbool(g_engine_extra.woi_declared);
+      war.obj["national_sol"] = forge::json_num(g_engine_extra.national_sol);
+      war.obj["rebel_strength"] = forge::json_num((double)rebel_strength());
+      war.obj["ref_strength"] = forge::json_num((double)ref_land_strength());
+      war.obj["ref_total"] = forge::json_num((double)(g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery));
+      o.obj["war"] = war; }
     o.obj["w"] = forge::json_num(g_world.map_w);
     o.obj["h"] = forge::json_num(g_world.map_h);
     forge::JsonValue terr = jarr();
@@ -1303,6 +1361,17 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             f << forge::json_dump(b);
             forge::invalidate_turn_pipeline();           // next turn uses the edited order
             forge::JsonValue o = jobj(); o.obj["saved"] = jbool((bool)f); return J(200, o);
+        }
+        // Declare the War of Independence (player command). Requires national Sons of Liberty >= 50
+        // (spec revolution gate); sets the war flag so war_resolution_step() runs each turn.
+        if (path == "/api/game/declare" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            if (g_engine_extra.woi_declared) return err(400, "independence already declared");
+            if (g_engine_extra.national_sol < 50)
+                return err(400, "national Sons of Liberty must reach 50% to declare (now " +
+                                std::to_string(g_engine_extra.national_sol) + "%)");
+            g_engine_extra.woi_declared = true; g_engine_extra.rebel_power = 0;
+            forge::JsonValue o = game_state_json(); o.obj["declared"] = jbool(true); return J(200, o);
         }
         if (path == "/api/game/history") {
             forge::JsonValue a = jarr();
