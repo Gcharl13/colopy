@@ -1435,6 +1435,90 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, o);
         }
 
+        // ---- Europe market (player-command trade): buy/sell goods for gold, recruit/train colonists ----
+        // Prices from @CARGO (price_start1 = bid/sell, price_start2 = ask/buy, ~1..20); tax on sales.
+        if (path == "/api/europe") {
+            if (!g_game_active) game_new();
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            forge::JsonValue o = jobj();
+            o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
+            o.obj["tax"] = forge::json_num(g_game.powers[0].tax);
+            forge::JsonValue pr = jarr();
+            for (int gd = 0; gd < NGOODS; ++gd) {
+                forge::JsonValue pj = jobj(); pj.obj["good"] = forge::json_str(good_display(gd));
+                pj.obj["bid"] = forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx);
+                pj.obj["ask"] = forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start2", cx);
+                pj.obj["boycott"] = jbool((g_engine_extra.boycotts >> gd) & 1u);
+                pr.arr.push_back(pj);
+            }
+            o.obj["prices"] = pr;
+            forge::JsonValue dk = jarr();
+            for (int s = 0; s < 3; ++s) dk.arr.push_back(forge::json_num(g_game.powers[0].dock_pool[s]));
+            o.obj["dock"] = dk;
+            return J(200, o);
+        }
+        if (path == "/api/europe/sell" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
+            int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
+            int qty = b.find("qty") ? b.find("qty")->as_int(0) : 0;
+            if (ci < 0 || ci >= (int)g_world.colonies.size() || gd < 0 || gd >= NGOODS || qty <= 0)
+                return err(400, "need {colony,good 0..15,qty>0}");
+            if ((g_engine_extra.boycotts >> gd) & 1u) return err(400, good_display(gd) + " is boycotted in Europe");
+            Colony& c = g_world.colonies[ci];
+            if (c.stockpile[gd] < qty) qty = c.stockpile[gd];
+            if (qty <= 0) return err(400, "colony has none of that good");
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+            long proceeds = (long)qty * bid * (100 - g_game.powers[0].tax) / 100;
+            c.stockpile[gd] -= qty; g_game.powers[0].gold += proceeds;
+            forge::JsonValue o = jobj(); o.obj["sold"] = forge::json_num(qty); o.obj["gold_gained"] = forge::json_num((double)proceeds);
+            o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold); return J(200, o);
+        }
+        if (path == "/api/europe/buy" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
+            int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
+            int qty = b.find("qty") ? b.find("qty")->as_int(0) : 0;
+            if (ci < 0 || ci >= (int)g_world.colonies.size() || gd < 0 || gd >= NGOODS || qty <= 0)
+                return err(400, "need {colony,good 0..15,qty>0}");
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            int ask = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start2", cx).as_int();
+            long cost = (long)qty * ask;
+            if (g_game.powers[0].gold < cost) return err(400, "not enough gold");
+            g_game.powers[0].gold -= cost; g_world.colonies[ci].stockpile[gd] += qty;
+            forge::JsonValue o = jobj(); o.obj["bought"] = forge::json_num(qty); o.obj["gold_spent"] = forge::json_num((double)cost);
+            o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold); return J(200, o);
+        }
+        if (path == "/api/europe/recruit" && method == "POST") {   // take a waiting dock immigrant (free)
+            forge::JsonValue b = forge::json_parse(body);
+            int slot = b.find("slot") ? b.find("slot")->as_int(-1) : -1;
+            int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
+            if (slot < 0 || slot >= 3) return err(400, "slot 0..2");
+            int type = g_game.powers[0].dock_pool[slot];
+            if (type < 0) return err(400, "no immigrant waiting in that slot");
+            Unit u; u.type = type < NUNITTYPES ? type : COLONISTS; u.owner = 0; u.alive = true;
+            if (ci >= 0 && ci < (int)g_colony_xy.size()) { u.x = g_colony_xy[ci].first; u.y = g_colony_xy[ci].second; }
+            g_world.units.push_back(u);
+            g_game.powers[0].dock_pool[slot] = -1;
+            return J(200, game_state_json());
+        }
+        if (path == "/api/europe/train" && method == "POST") {     // pay gold for a trained specialist
+            forge::JsonValue b = forge::json_parse(body);
+            int prof = b.find("profession") ? b.find("profession")->as_int(-1) : -1;
+            int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
+            if (prof < 0) return err(400, "need {profession}");
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            int cost = (int)forge::resolve_binding("@JOB[" + std::to_string(prof) + "].europe_value", cx).as_int();
+            if (cost <= 0) return err(400, "that profession cannot be trained in Europe");
+            if (g_game.powers[0].gold < cost) return err(400, "not enough gold");
+            g_game.powers[0].gold -= cost;
+            Unit u; u.type = COLONISTS; u.owner = 0; u.profession = prof; u.alive = true;
+            if (ci >= 0 && ci < (int)g_colony_xy.size()) { u.x = g_colony_xy[ci].first; u.y = g_colony_xy[ci].second; }
+            g_world.units.push_back(u);
+            forge::JsonValue o = game_state_json(); o.obj["trained_cost"] = forge::json_num(cost); return J(200, o);
+        }
+
         // Full colony detail: buildings built, colonist roster (profession/specialty/where),
         // production breakdown, 16-good warehouse, build project. The colony screen's source.
         if (path == "/api/colony/detail") {
