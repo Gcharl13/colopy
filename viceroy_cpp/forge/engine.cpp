@@ -1315,7 +1315,8 @@ struct Runner {
                 wk.terrain = (int)as_num(pget(*n, "terrain"));
                 std::string gs = pget(*n, "good").str; wk.good = std::atoi(gs.c_str());
                 for (int i = 0; i < 19; ++i) if (gs == GN[i]) { wk.good = i; break; }
-                wk.expert = as_num(pget(*n, "expert")) != 0;
+                JsonValue ev = pget(*n, "expert");   // select param -> string "0"/"1" (or a wired number)
+                wk.expert = ev.type == JsonValue::Number ? ev.num != 0 : (ev.str == "1" || ev.str == "true");
                 cx.w.colonies[ci].workers.push_back(wk);
                 effect("colony " + std::to_string(ci) + " assigns a colonist to " +
                        (wk.good >= 0 && wk.good < 19 ? GN[wk.good] : gs) +

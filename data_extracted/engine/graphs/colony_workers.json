@@ -1,0 +1,100 @@
+{
+  "id": "colony_workers",
+  "name": "Colony Workers -> Stockpile",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -120,
+      "params": {
+        "text": "The worker/stockpile side of production (spec/systems/colony.md §3). Each AssignWorker puts a colonist on a terrain tile (a raw good, yield read LIVE from @UNFORESTED/@FORESTED/@OTHER by terrain id) or in a building (Hammers/Crosses/Bells). ColonyProduce then runs them all: tile yields pass through the tory/expert adjust, building workers use the base rate, and the result accrues into colony0.stockpile.<good> (capped by the warehouse) plus net food/bells/hammers/crosses. Edit a terrain's yield in the Tables tab and the numbers here change with no code."
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnColonyProduction",
+      "x": 20,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "farmer",
+      "type": "AssignWorker",
+      "x": 220,
+      "y": 60,
+      "params": {
+        "colony": 0,
+        "terrain": 2,
+        "good": "Food",
+        "expert": "0"
+      }
+    },
+    {
+      "id": "planter",
+      "type": "AssignWorker",
+      "x": 420,
+      "y": 60,
+      "params": {
+        "colony": 0,
+        "terrain": 3,
+        "good": "Cotton",
+        "expert": "1"
+      }
+    },
+    {
+      "id": "statesman",
+      "type": "AssignWorker",
+      "x": 620,
+      "y": 60,
+      "params": {
+        "colony": 0,
+        "terrain": 0,
+        "good": "Bells",
+        "expert": "0"
+      }
+    },
+    {
+      "id": "produce",
+      "type": "ColonyProduce",
+      "x": 820,
+      "y": 60,
+      "params": {
+        "colony": 0
+      }
+    },
+    {
+      "id": "rep",
+      "type": "ShowPopup",
+      "x": 1020,
+      "y": 60,
+      "params": {
+        "title": "Colony Report",
+        "body": "{colony0.workers} colonists at work. Warehouse: Cotton {colony0.stockpile.3}, Food {colony0.stockpile.0}. Net food {colony0.food}, bells {colony0.bells}.",
+        "choices": "Onward."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": { "node": "trig", "pin": "out" },
+      "to": { "node": "farmer", "pin": "in" }
+    },
+    {
+      "from": { "node": "farmer", "pin": "out" },
+      "to": { "node": "planter", "pin": "in" }
+    },
+    {
+      "from": { "node": "planter", "pin": "out" },
+      "to": { "node": "statesman", "pin": "in" }
+    },
+    {
+      "from": { "node": "statesman", "pin": "out" },
+      "to": { "node": "produce", "pin": "in" }
+    },
+    {
+      "from": { "node": "produce", "pin": "out" },
+      "to": { "node": "rep", "pin": "in" }
+    }
+  ]
+}

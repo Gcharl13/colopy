@@ -188,6 +188,18 @@
       "text": "Min size {@BUILDING[1].min_colony} for a Fort; upkeep {@BUILDING[1].upkeep}/turn."
     },
     {
+      "id": "stock",
+      "type": "text",
+      "rect": [
+        10,
+        108,
+        300,
+        8
+      ],
+      "color": "210,190,120",
+      "text": "Warehouse -- Food {colony0.stockpile.0}  Sugar {colony0.stockpile.1}  Cotton {colony0.stockpile.3}  Furs {colony0.stockpile.4}  Lumber {colony0.stockpile.5}  Ore {colony0.stockpile.6}   Colonists {colony0.workers}"
+    },
+    {
       "id": "build",
       "type": "button",
       "rect": [

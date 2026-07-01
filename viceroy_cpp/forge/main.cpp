@@ -1262,16 +1262,19 @@ static int engine_selftest() {
             R"({"id":"a1","type":"AssignWorker","params":{"colony":"0","terrain":3,"good":"Cotton","expert":"0"}},)"
             R"({"id":"a2","type":"AssignWorker","params":{"colony":"0","terrain":2,"good":"Food","expert":"0"}},)"
             R"({"id":"a3","type":"AssignWorker","params":{"colony":"0","terrain":0,"good":"Bells","expert":"0"}},)"
+            R"({"id":"a4","type":"AssignWorker","params":{"colony":"0","terrain":3,"good":"Cotton","expert":"1"}},)"
             R"({"id":"pr","type":"ColonyProduce","params":{"colony":"0"}}],"edges":[)"
             R"({"from":{"node":"t","pin":"out"},"to":{"node":"a1","pin":"in"}},)"
             R"({"from":{"node":"a1","pin":"out"},"to":{"node":"a2","pin":"in"}},)"
             R"({"from":{"node":"a2","pin":"out"},"to":{"node":"a3","pin":"in"}},)"
-            R"({"from":{"node":"a3","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
+            R"({"from":{"node":"a3","pin":"out"},"to":{"node":"a4","pin":"in"}},)"
+            R"({"from":{"node":"a4","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
         forge::run_graph(gw, cx);
-        check(forge::resolve_binding("colony0.workers", cx).as_int() == 3, "AssignWorker pushed 3 colonists");
-        // Prairie(3) y_planter_cotton = 3, sol=100 -> tory 0 -> stockpile Cotton(3) = 3
-        check(forge::resolve_binding("colony0.stockpile.3", cx).as_int() == 3,
-              "ColonyProduce: Prairie cotton worker -> stockpile Cotton = 3");
+        check(forge::resolve_binding("colony0.workers", cx).as_int() == 4, "AssignWorker pushed 4 colonists");
+        // Prairie(3) y_planter_cotton = 3, sol=100 -> tory 0. Plain worker = 3; expert (Cotton is
+        // manufactured, not era) doubles -> 6. Stockpile Cotton = 3 + 6 = 9.
+        check(forge::resolve_binding("colony0.stockpile.3", cx).as_int() == 9,
+              "ColonyProduce: cotton (plain 3 + expert x2 = 6) -> stockpile Cotton = 9");
         // Plains(2) y_farmer = 4; food_per_turn = 4 - 2*pop(3) = -2
         check(w.colonies[0].food_per_turn == -2, "ColonyProduce: net food = tile yield 4 - 2*pop = -2");
         // building Bells worker base rate = 3
