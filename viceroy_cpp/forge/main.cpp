@@ -780,6 +780,16 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/formulas")
             return J(200, forge::formulas_catalog());
 
+        // ---- the game database schema (the DDL): reference + state + config tables ----
+        if (path == "/api/schema") {
+            try { return J(200, forge::json_parse_file("data_extracted/engine/schema.json")); }
+            catch (...) { return err(404, "schema.json not found (run tools/build_schema.py)"); }
+        }
+        if (path == "/api/functions") {
+            try { return J(200, forge::json_parse_file("data_extracted/engine/functions.json")); }
+            catch (...) { return err(404, "functions.json not found"); }
+        }
+
         if (path == "/api/assets")
             return J(200, assets_manifest());
 

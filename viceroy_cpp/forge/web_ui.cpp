@@ -104,6 +104,7 @@ const char* forge_index_html() {
 <header><b>Viceroy Forge</b> &mdash; game-engine workbench (rules, assets, maps, screens)</header>
 <nav>
   <button data-tab="rules" class="active">Rules</button>
+  <button data-tab="schema">Schema</button>
   <button data-tab="map">Map</button>
   <button data-tab="data">Data</button>
   <button data-tab="tables">Tables</button>
@@ -133,6 +134,21 @@ const char* forge_index_html() {
     <div id="rwarn"></div>
     <details style="margin-top:6px"><summary class="muted">balance curves &mdash; live preview of what your edits do</summary>
       <div id="rcurves"></div></details>
+  </section>
+
+  <section id="schema" class="tab">
+    <div class="row">
+      <button class="act" onclick="schemaInit(true)">Reload schema</button>
+      <input type="text" id="schfilter" placeholder="filter tables/columns..." oninput="schemaRender()" style="min-width:220px">
+      <span id="schsummary" class="muted"></span>
+    </div>
+    <p class="muted">The game is a <b>database</b>. This is the authoritative schema (DDL) the whole engine
+      runs on: <b>reference</b> tables (rules data), <b>state</b> tables (dynamic per-turn records), and
+      <b>config</b> scalars. Every column is addressable by the one path grammar
+      (<code>game.turn</code>, <code>power&lt;N&gt;.gold</code>, <code>colony&lt;N&gt;.stockpile.&lt;good&gt;</code>,
+      <code>@SECTION[row].col</code>, <code>cfg.&lt;name&gt;</code>). Functions update columns each turn; the
+      reverse index (column &rarr; which functions write it) is shown per column.</p>
+    <div id="schbody"></div>
   </section>
 
   <section id="map" class="tab">
@@ -1028,6 +1044,50 @@ function pvPopup(graphId, p){
   ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
 }
 document.querySelector('nav button[data-tab=screens]').addEventListener('click',()=>{ if(!SINIT){ SINIT=true; scrInit(); } });
+
+// ---- Schema tab: browse the game database (reference/state/config tables + the reverse index) ----
+let SCHEMA=null, SCHREV={};
+async function schemaInit(force){
+  if(SCHEMA && !force){ schemaRender(); return; }
+  try{
+    SCHEMA=await (await fetch('/api/schema')).json();
+    const fn=await (await fetch('/api/functions')).json(); SCHREV=fn.reverse_index||{};
+  }catch(e){ $('#schbody').innerHTML='<span class="fail">schema unavailable</span>'; return; }
+  schemaRender();
+}
+function schemaRender(){
+  if(!SCHEMA) return;
+  const q=($('#schfilter').value||'').toLowerCase();
+  const tabs=SCHEMA.tables||{}; const kc=SCHEMA.kind_counts||{};
+  $('#schsummary').textContent=Object.keys(tabs).length+' tables ('+(kc.reference||0)+' reference, '+(kc.state||0)+' state, '+(kc.config||0)+' config)';
+  const order={state:0,config:1,reference:2};
+  const names=Object.keys(tabs).sort((a,b)=>(order[tabs[a].kind]-order[tabs[b].kind])||a.localeCompare(b));
+  let h='';
+  for(const name of names){
+    const t=tabs[name]; const cols=t.columns||[];
+    const hit=name.toLowerCase().includes(q)||cols.some(c=>c.name.toLowerCase().includes(q));
+    if(q && !hit) continue;
+    const badge={state:'#8ad',config:'#da8',reference:'#8d8'}[t.kind]||'#999';
+    h+='<details style="margin:4px 0;border:1px solid #2a2f3a;border-radius:6px;padding:4px 8px"'+(q?' open':'')+'>';
+    h+='<summary><b>'+esc(name)+'</b> <span style="color:'+badge+'">'+t.kind+'</span> '
+      +'<span class="muted">'+(t.cardinality||'')+(t.index?' &middot; '+esc(t.index):'')+' &middot; '+cols.length+' cols</span></summary>';
+    h+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin:4px 0">';
+    h+='<tr class="muted"><td>column</td><td>type</td><td>rw</td><td>tier</td><td>meaning</td><td>updated by</td></tr>';
+    for(const c of cols){
+      // path form for the reverse index (state tables use the index prefix)
+      let key=c.name;
+      if(t.kind==='state'&&t.index&&t.index!==''&&!c.name.includes('.')) key=t.index+'.'+c.name;
+      else if(t.kind==='state'&&t.index) { const cn=c.name; key=(t.index?t.index+'.':'')+cn; }
+      const writers=SCHREV[key]||SCHREV[c.name]||[];
+      h+='<tr><td><code>'+esc(c.name)+'</code></td><td>'+esc(c.type||'')+'</td><td>'+esc(c.rw||'')
+        +'</td><td>'+esc(c.tier||'')+'</td><td class="muted">'+esc(c.meaning||'')+'</td>'
+        +'<td class="muted">'+(writers.length?esc(writers.join(', ')):'')+'</td></tr>';
+    }
+    h+='</table></details>';
+  }
+  $('#schbody').innerHTML=h||'<span class="muted">no tables match</span>';
+}
+document.querySelector('nav button[data-tab=schema]').addEventListener('click',()=>schemaInit());
 
 )HTML"
         // ---- chunk 4d: play ----
