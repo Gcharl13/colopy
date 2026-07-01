@@ -1,0 +1,64 @@
+{
+  "id": "market_prices",
+  "name": "Market Price Drift",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -140,
+      "params": {
+        "text": "European price drift (spec/systems/market.md, func_0305A8 BYTE_VERIFIED). Each turn every good's price base relaxes by (base + sum over the 4 powers of max(trade,0)) >> 8 -- heavy SELLING (a large per-good trade accumulator) pushes the price down harder, buys are ignored. DriftPrices runs that sim step; the report reads the drifted price.<good> back and names the good + port straight from the @CARGO / @HOMEPORT tables, so editing a table row changes the message with no code."
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnPriceDrift",
+      "x": 20,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "drift",
+      "type": "DriftPrices",
+      "x": 210,
+      "y": 60,
+      "params": {}
+    },
+    {
+      "id": "good",
+      "type": "GetState",
+      "x": 210,
+      "y": 170,
+      "params": { "path": "@CARGO[9].name" }
+    },
+    {
+      "id": "port",
+      "type": "GetState",
+      "x": 210,
+      "y": 250,
+      "params": { "path": "@HOMEPORT[0].name" }
+    },
+    {
+      "id": "price",
+      "type": "GetState",
+      "x": 210,
+      "y": 330,
+      "params": { "path": "price.9" }
+    },
+    {
+      "id": "msg",
+      "type": "Notify",
+      "x": 470,
+      "y": 60,
+      "params": { "textKey": "@PRICEDOWN" }
+    }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "drift", "pin": "in" } },
+    { "from": { "node": "drift", "pin": "out" }, "to": { "node": "msg", "pin": "in" } },
+    { "from": { "node": "good", "pin": "value" }, "to": { "node": "msg", "pin": "str0" } },
+    { "from": { "node": "port", "pin": "value" }, "to": { "node": "msg", "pin": "str1" } },
+    { "from": { "node": "price", "pin": "value" }, "to": { "node": "msg", "pin": "num0" } }
+  ]
+}
