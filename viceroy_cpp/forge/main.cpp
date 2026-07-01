@@ -843,8 +843,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             else return err(400, "need {graph} or {id}");
             std::string from = b.find("from_node") ? b.find("from_node")->str : "";
             std::string choice = b.find("choice") ? b.find("choice")->str : "";
+            forge::JsonValue cache = b.find("cache") ? *b.find("cache") : forge::JsonValue{};
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
-            return J(200, forge::run_graph(graph, cx, from, choice));
+            return J(200, forge::run_graph(graph, cx, from, choice, cache));
         }
 
         if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
@@ -1221,6 +1222,34 @@ static int engine_selftest() {
           "@BUILDING[name:Fort].cost table-cell binding = 120");
     check(forge::resolve_binding("@CLASS[3].transport_cost", cx).as_int() == 800,
           "@CLASS[3].transport_cost table-cell binding = 800");
+
+    // Pause/resume value cache: a roll() feeding both the popup and a post-choice action stays
+    // stable across the resume when the popup's _cache is echoed back (offered == applied).
+    {
+        const char* GSRC = R"J({
+            "id":"c","nodes":[
+              {"id":"t","type":"OnTestFire","params":{}},
+              {"id":"f","type":"Formula","params":{"expr":"roll(1,1000000)"}},
+              {"id":"p","type":"ShowPopup","params":{"body":"V=%NUMBER0","choices":"ok"}},
+              {"id":"g","type":"GrantGold","params":{"power":"0"}}],
+            "edges":[
+              {"from":{"node":"t","pin":"out"},"to":{"node":"p","pin":"in"}},
+              {"from":{"node":"f","pin":"value"},"to":{"node":"p","pin":"num0"}},
+              {"from":{"node":"p","pin":"ok"},"to":{"node":"g","pin":"in"}},
+              {"from":{"node":"f","pin":"value"},"to":{"node":"g","pin":"amount"}}]})J";
+        forge::JsonValue gc = forge::json_parse(GSRC);
+        forge::JsonValue rep = forge::run_graph(gc, cx);
+        const forge::JsonValue* pp = rep.find("popup");
+        std::string body = pp && pp->find("body") ? pp->find("body")->str : "";
+        long shown = std::atol(body.c_str() + body.find('=') + 1);
+        forge::JsonValue cache = pp && pp->find("_cache") ? *pp->find("_cache") : forge::JsonValue{};
+        // resume WITH the cache -> the granted amount matches the shown roll
+        forge::JsonValue r2 = forge::run_graph(gc, cx, "p", "ok", cache);
+        long applied = 0; if (const forge::JsonValue* ef = r2.find("effects"))
+            for (const auto& e : ef->arr) { size_t k = e.str.rfind("+= ");
+                if (k != std::string::npos) applied = std::atol(e.str.c_str() + k + 3); }
+        check(shown > 0 && applied == shown, "pause/resume cache keeps the rolled value stable (offered==applied)");
+    }
 
     // congress.cost reflects the byte-verified bell-cost curve; congress.bells is writable.
     check(forge::resolve_binding("congress.cost", cx).as_int() > 0, "congress.cost computes the FF bell cost");

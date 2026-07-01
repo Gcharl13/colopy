@@ -92,8 +92,11 @@ void invalidate_tables();
 //   { "log":[strings], "effects":[strings], "popup": {title,body,choices:[...]} | null,
 //     "paused_at": nodeId | null }
 // When the flow reaches a ShowPopup node it returns the popup and pauses; call again with
-// `from_node` = that node id and `choice` = the chosen pin to resume down that branch.
+// `from_node` = that node id and `choice` = the chosen pin to resume down that branch. The
+// popup carries a `_cache` of the data values computed so far; echo it back as `cache` on the
+// resume call so rolled/computed values (the offered outcome) stay stable through the choice.
 JsonValue run_graph(const JsonValue& graph, EngineCtx& cx,
-                    const std::string& from_node = "", const std::string& choice = "");
+                    const std::string& from_node = "", const std::string& choice = "",
+                    const JsonValue& cache = JsonValue{});
 
 } // namespace forge

@@ -1332,8 +1332,15 @@ struct Runner {
 } // namespace
 
 JsonValue run_graph(const JsonValue& graph, EngineCtx& cx,
-                    const std::string& from_node, const std::string& choice) {
+                    const std::string& from_node, const std::string& choice,
+                    const JsonValue& cache) {
     Runner r(graph, cx);
+    // Seed the memoized data cache from a prior pause so values already computed before a
+    // ShowPopup (e.g. the roll that picked the OFFERED Founding Father, or the immigrant class
+    // shown at the docks) stay stable when we resume down the chosen pin -- the offered outcome
+    // and the applied outcome then agree instead of re-rolling.
+    if (cache.type == JsonValue::Object)
+        for (const auto& kv : cache.obj) r.dcache[kv.first] = kv.second;
     JsonValue popup;   // filled if a ShowPopup is hit
     if (!from_node.empty()) {
         r.follow(from_node, choice, popup);            // resume down the chosen pin
@@ -1351,6 +1358,13 @@ JsonValue run_graph(const JsonValue& graph, EngineCtx& cx,
                 if (const JsonValue* id = ns->arr[0].find("id")) entry = id->str;
         }
         if (!entry.empty()) r.exec(entry, popup);
+    }
+    // If we paused at a popup, hand the whole data cache back on the popup so the client can
+    // echo it when it resumes down a choice -- carrying forward across further pauses too.
+    if (popup.type == JsonValue::Object) {
+        JsonValue c; c.type = JsonValue::Object;
+        for (const auto& kv : r.dcache) c.obj[kv.first] = kv.second;
+        popup.obj["_cache"] = c;
     }
     JsonValue out; out.type = JsonValue::Object;
     out.obj["log"] = r.log; out.obj["effects"] = r.effects;

@@ -702,14 +702,14 @@ function gProps(){
     gRender(); });
 }
 async function runGraph(){ const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(gClean())})).json(); showRun(d); }
-async function resumeGraph(node,choice){ ui.close();
-  const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(Object.assign(gClean(),{from_node:node,choice}))})).json(); showRun(d); }
+async function resumeGraph(node,choice,cache){ ui.close();
+  const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify(Object.assign(gClean(),{from_node:node,choice,cache}))})).json(); showRun(d); }
 function showRun(d){
   let h='<b>log:</b> '+((d.log||[]).map(esc).join(' &rarr; ')||'(nothing ran)');
   if(d.effects&&d.effects.length) h+='<br><b>effects:</b> '+d.effects.map(esc).join('; ');
   $('#grun').innerHTML=h;
   if(d.popup){ const p=d.popup; ui.popup(esc(p.title), '<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pchoices"></div>');
-    const box=$('#pchoices'); (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resumeGraph(p.node,c); box.appendChild(b); }); }
+    const box=$('#pchoices'); (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resumeGraph(p.node,c,p._cache); box.appendChild(b); }); }
 }
 // Show the sprite channels a popup carries (spec/ui/popups.md): woodcut scene + speaker portrait.
 function popupSprites(p){
@@ -984,7 +984,7 @@ async function pvFire(graphId){
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
   if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pvch"></div>');
     (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-      b.onclick=async()=>{ const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c})})).json();
+      b.onclick=async()=>{ const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c,cache:p._cache})})).json();
         if(r.goto){ pvNav(r.goto); } else { ui.close(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); scrPreview(); } };
       $('#pvch').appendChild(b); }); }
 }
@@ -1018,7 +1018,7 @@ async function fireEvent(){
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
   if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body)+'</p><div id="evch"></div>');
     (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-      b.onclick=async()=>{ ui.close(); const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c})})).json();
+      b.onclick=async()=>{ ui.close(); const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
         await refreshGame(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); }; $('#evch').appendChild(b); }); }
 }
 async function stepGame(){
@@ -1034,7 +1034,7 @@ function eventQueue(q){
   const box=$('#eqch'), ch=p.choices||[];
   if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.textContent='Continue'; b.onclick=()=>{ ui.close(); refreshGame(); eventQueue(q); }; box.appendChild(b); return; }
   ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-    b.onclick=async()=>{ await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:e.graph,from_node:p.node,choice:c})}); ui.close(); await refreshGame(); eventQueue(q); }; box.appendChild(b); });
+    b.onclick=async()=>{ await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:e.graph,from_node:p.node,choice:c,cache:p._cache})}); ui.close(); await refreshGame(); eventQueue(q); }; box.appendChild(b); });
 }
 function selUnit(){ return SEL<0 ? null : (GAME&&GAME.units.find(u=>u.id===SEL)); }
 async function orderMove(tx,ty){
