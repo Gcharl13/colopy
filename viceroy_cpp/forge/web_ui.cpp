@@ -1381,91 +1381,123 @@ function sbRender(){
     +row('Ore stock','colony0.stockpile.6',(SB.stockpile||[])[6]||0);
 }
 
-// ---- Continental Congress: the two-screen report flow ----
-// Like the game's F-key cycle: open -> screen 1 (the Activities report: bells + King's Expeditionary
-// Force + rebel/tory sentiment + acquired-father list) -> click -> screen 2 (the portrait view, the 25
-// fathers in their fixed slots, each revealed as acquired) -> click -> back to the map/colony.
+// ---- Continental Congress: the two-screen report flow, drawn to the spec layout ----
+// The game's F report cycles map -> screen 1 (the Activities report) -> screen 2 (the portrait view)
+// -> map. Both are drawn at the native 320x200 over the CCBKGD.PIK hall backdrop, with widgets at the
+// byte-verified band coordinates and colours in spec/ui/continental_congress.md §2 / "Fonts & colors":
+// title 0x90 = (255,255,190) pale-yellow, all body text 0x92 = (255,243,93) bright-yellow, FONTTINY.
 const SBCATS=['Trade','Exploration','Military','Political','Religious'];
 const SBCATCOL=['#c9a227','#3d9bd6','#c0504d','#8064a2','#4f9d69'];  // one accent per category row
 let CONGRESS_VIEW=0;   // 0 closed, 1 Activities, 2 portrait view
 function congressById(){ const m={}; SBFATHERS.forEach(f=>m[f.id]=f); return m; }
+// Advisor-screen chrome (the baseline for every F-report): a native 320x200 stage over its PIK
+// background, into which widgets are placed at native (x,y). CC_SC scales the whole 320x200 up.
+const CC_SC=2.4, CC_TITLE='#FFFFBE', CC_BODY='#FFF35D';
+function ccScreen(bg,inner){
+  return '<div style="position:relative;width:'+(320*CC_SC)+'px;height:'+(200*CC_SC)+'px;'
+    +'background:#101014 url(/assets/'+bg+') top left / '+(320*CC_SC)+'px '+(200*CC_SC)+'px no-repeat;'
+    +'image-rendering:pixelated;font-family:monospace;overflow:hidden;user-select:none">'+inner+'</div>';
+}
+// text at native (x,y). opts: col, size(native px, default 6=FONTTINY), w(native), center, bold, wrap
+function ccT(x,y,html,opts){ opts=opts||{};
+  const col=opts.col||CC_BODY, sz=(opts.size||6)*CC_SC;
+  const w=opts.w!=null?('width:'+(opts.w*CC_SC)+'px;'):'';
+  return '<div style="position:absolute;left:'+(x*CC_SC)+'px;top:'+(y*CC_SC)+'px;'+w
+    +(opts.center?'text-align:center;':'')+(opts.bold?'font-weight:bold;':'')
+    +(opts.wrap?'white-space:normal;':'white-space:nowrap;')
+    +'color:'+col+';font-size:'+sz+'px;line-height:1.2;text-shadow:1px 1px 0 #000,0 0 3px #000">'+html+'</div>';
+}
+// the OK button at its spec rect (290,184,26,14); a click advances the cycle
+function ccOK(){
+  return '<div onclick="event.stopPropagation();congressAdvance()" style="position:absolute;'
+    +'left:'+(289*CC_SC)+'px;top:'+(183*CC_SC)+'px;width:'+(27*CC_SC)+'px;height:'+(14*CC_SC)+'px;'
+    +'border:1px solid '+CC_BODY+';color:'+CC_BODY+';font-size:'+(6*CC_SC)+'px;font-weight:bold;'
+    +'display:flex;align-items:center;justify-content:center;cursor:pointer;background:#000a;'
+    +'text-shadow:1px 1px 0 #000">OK</div>';
+}
 
-// Screen 1 -- the Continental Congress Activities report (spec/ui/continental_congress.md §2).
+// The verbatim @MISC label (pulled by the backend from LABELS.TXT), with a fallback.
+function ccLbl(k,fb){ const L=(SB.congress||{}).labels||{}; return (L[k]||fb); }
+
+// Screen 1 -- the Continental Congress Activities report (spec §2 bands, native coords).
 function congressActivities(){
   const c=SB.congress||{}, byId=congressById();
   const off=(c.offered!=null?c.offered:-1), offName=(off>=0&&byId[off])?byId[off].name:'—';
   const sol=Math.max(0,Math.min(100,c.national_sol||0));
   const ref=c.ref||{regulars:0,cavalry:0,manowar:0,artillery:0};
-  let h='<div style="font-size:11px;line-height:1.5">';
-  // session subtitle -- progress is TEXT, not a bar (spec RULING: no graphical progress bar)
-  h+= c.ff_count>=25
-    ? '<div>All 25 founding fathers have joined the Congress.</div>'
-    : '<div>Next Continental Congress session: <b>'+esc(offName)+'</b> '
-      +'<span class="muted">('+(c.remaining||0)+' bells needed, of '+(c.threshold||0)+')</span></div>';
-  // bells row: one discrete bell glyph per bell/turn (spec: discrete bell sprites, not a gauge)
   const bpt=c.bells_per_turn||0;
-  h+='<div style="margin:6px 0"><span class="muted">Liberty Bells / turn ('+bpt+'):</span><br>'
-    +'<span style="font-size:15px;letter-spacing:1px">'+(bpt>0?'&#128276;'.repeat(Math.min(bpt,40)):'&mdash;')+'</span></div>';
-  // sentiment strip
-  h+='<div>Rebel Sentiment: <b style="color:#7ec37e">'+sol+'%</b>'
-    +' &nbsp;&nbsp; Tory Sentiment: <b style="color:#e0a0a0">'+(100-sol)+'%</b></div>';
-  // King's Expeditionary Force by unit type (count badges, spec §5 order)
-  h+='<div style="margin:6px 0"><span class="muted">Royal Expeditionary Force:</span>'
-    +'<table style="width:100%;font-size:11px;margin-top:2px">'
-    +'<tr><td>Regulars</td><td style="text-align:right"><b>'+ref.regulars+'</b></td>'
-    +'<td style="padding-left:14px">Cavalry</td><td style="text-align:right"><b>'+ref.cavalry+'</b></td></tr>'
-    +'<tr><td>Artillery</td><td style="text-align:right"><b>'+ref.artillery+'</b></td>'
-    +'<td style="padding-left:14px">Man-O-War</td><td style="text-align:right"><b>'+ref.manowar+'</b></td></tr>'
-    +'</table></div>';
-  // acquired founding fathers -- plain text list (the Activities screen shows names, not portraits)
   const owned=(SB.fathers||[]).slice().sort((a,b)=>a-b);
-  h+='<div><span class="muted">Founding Fathers ('+owned.length+'/25):</span><br>'
-    + (owned.length? owned.map(id=>'<span style="color:#7ec37e">'+esc((byId[id]||{}).name||('#'+id))+'</span>').join(', ')
-                   : '<span class="muted">none yet</span>')+'</div>';
-  h+='</div>';
-  return h;
+  let h='';
+  // Title band (0,0,320,10): centred, pale-yellow -- @MISC[37]
+  h+=ccT(0,2,esc(ccLbl('title','CONTINENTAL CONGRESS ACTIVITIES')),{col:CC_TITLE,w:320,center:true,bold:true});
+  // Session subtitle band (0,10,320,20): "@MISC[112]: (<FF>) (NN in MM)" -- progress is TEXT, not a bar
+  h+=ccT(4,14, c.ff_count>=25 ? 'All 25 '+esc(ccLbl('fathers','Founding Fathers'))+' have joined.'
+      : esc(ccLbl('session','Next Continental Congress Session'))+': '+esc(offName)
+        +'   ('+(c.remaining||0)+' in '+(c.threshold||0)+')', {w:312});
+  // Sentiment strip band (0,36,320,8): "@MISC Rebel Sentiment / Tory Sentiment"
+  const sen=esc(ccLbl('sentiment','Sentiment'));
+  h+=ccT(4,36,esc(ccLbl('rebel','Rebel'))+' '+sen+': '+sol+'%      '+esc(ccLbl('tory','Tory'))+' '+sen+': '+(100-sol)+'%');
+  // Bell icons row band (0,44,320,32): one discrete bell per bell/turn (spec: discrete sprites)
+  h+=ccT(4,46,'Liberty Bells / turn: '+bpt);
+  h+=ccT(4,55,(bpt>0?'&#128276;'.repeat(Math.min(bpt,30)):'&mdash;'),{size:8});
+  // REF band (0,76,320,40): "@MISC[85] Expeditionary Force", four unit groups (spec §5 order)
+  h+=ccT(4,72,esc(ccLbl('ref','Expeditionary Force'))+':');
+  const badge=(x,label,n)=>ccT(x,84,label+'<br><span style="font-size:'+(9*CC_SC)+'px;font-weight:bold">'+n+'</span>',{w:76,center:true});
+  h+=badge(6,'Regulars',ref.regulars)+badge(84,'Cavalry',ref.cavalry)
+    +badge(162,'Artillery',ref.artillery)+badge(240,'Man-O-War',ref.manowar);
+  // Founding Fathers list band (0,116,320,60): "@MISC[89]", acquired names as text (not portraits)
+  h+=ccT(4,112,esc(ccLbl('fathers','Founding Fathers'))+' ('+owned.length+'/25):');
+  h+=ccT(4,122,(owned.length? owned.map(id=>esc((byId[id]||{}).name||('#'+id))).join(',  ') : 'none yet'),
+        {w:312,wrap:true,size:5});
+  h+=ccOK();
+  return ccScreen('pik/CCBKGD.png',h);
 }
 
-// Screen 2 -- the portrait view: the 25 fathers in their fixed 5x5 mapped slots, each revealed
-// (portrait lit from greyed to colour) once acquired. Clicking a slot grants/revokes it live.
+// The founding fathers' fixed positions in the CCBKGD congress hall (native 320x200 coords, portrait
+// top-left), authored to reproduce the game's group-portrait crowd: they stand shoulder-to-shoulder in
+// three depth rows (drawn back-to-front), Franklin seated centre-front, Cortes (silver armour) centre-
+// back, Washington & the naval officers to the right, Pocahontas far right. Each father appears in HIS
+// spot as acquired -- the hall fills up. (The original bakes these coords in each CC-NN.SS; not in repo.)
+const CC_POS=[
+  // {id, x, y}  -- back row (higher up), then middle, then front (nearer, drawn on top)
+  {id:20,x:4,y:24},{id:2,x:36,y:22},{id:6,x:70,y:20},{id:5,x:104,y:20},{id:10,x:140,y:16},
+  {id:18,x:176,y:20},{id:4,x:210,y:20},{id:23,x:244,y:22},{id:22,x:278,y:24},
+  {id:9,x:16,y:54},{id:1,x:52,y:56},{id:7,x:88,y:54},{id:15,x:124,y:54},{id:11,x:162,y:52},
+  {id:14,x:198,y:52},{id:12,x:234,y:54},{id:3,x:270,y:56},
+  {id:0,x:2,y:90},{id:8,x:40,y:92},{id:17,x:80,y:92},{id:19,x:120,y:96},{id:13,x:160,y:92},
+  {id:16,x:198,y:92},{id:21,x:236,y:90},{id:24,x:274,y:92}
+];
+// Screen 2 -- the Continental Congress portrait view: the founding fathers gathered as a CROWD in the
+// hall (not a grid), each revealed in his fixed spot once acquired. Click a father to grant/revoke.
 function congressPortraits(){
   const c=SB.congress||{}, owned=new Set(SB.fathers||[]), byId=congressById();
   const offered=(c.offered!=null?c.offered:-1), last=(c.last_ff!=null?c.last_ff:-1);
-  let h='';
-  if(last>=0&&byId[last]) h+='<div style="font-size:12px;color:#ffe27a;margin-bottom:4px">&#9733; '
-    +esc(byId[last].name)+' has joined the Continental Congress!</div>';
-  h+='<div style="display:grid;grid-template-columns:78px repeat(5,1fr);gap:3px">';
-  for(let cat=0;cat<5;cat++){
-    h+='<div style="align-self:center;font-size:11px;font-weight:bold;color:'+SBCATCOL[cat]+'">'+SBCATS[cat]+'</div>';
-    for(let slot=0;slot<5;slot++){
-      const id=cat*5+slot, f=byId[id]; if(!f){ h+='<div></div>'; continue; }
-      const on=owned.has(id), isOff=(id===offered), isNew=(id===last);
-      const filt=on?'':'filter:grayscale(1) brightness(.32) contrast(.9)';
-      const ring=isNew?'box-shadow:0 0 0 2px #ffe27a,0 0 8px #ffe27a':(isOff?'box-shadow:0 0 0 2px #6cf':'');
-      const tip=esc(f.name)+' — '+esc(f.category)+(f.production?' [affects production]':'')+'\n'+esc(f.effect)
-        +(on?'':(isOff?'\n(the Congress is working toward this father)':'\n(not yet acquired)'));
-      h+='<figure title="'+tip+'" onclick="event.stopPropagation();congressFather('+id+','+(on?'false':'true')+')" '
-        +'style="margin:0;cursor:pointer;text-align:center;background:#0d0f14;border-radius:3px;padding:2px 1px;'+ring+'">'
-        +'<img src="/assets/'+f.portrait+'" loading="lazy" style="height:58px;width:auto;max-width:100%;'
-        +'image-rendering:pixelated;display:block;margin:0 auto;'+filt+'">'
-        +'<figcaption style="font-size:8px;line-height:1.05;margin-top:1px;'
-        +(on?('color:'+SBCATCOL[cat]+';font-weight:bold'):'color:#667')+'">'+esc(f.name)+'</figcaption></figure>';
-    }
+  let h=ccT(0,2,esc(ccLbl('congress','Continental Congress')).toUpperCase(),{col:CC_TITLE,w:320,center:true,bold:true});
+  if(last>=0&&byId[last]) h+=ccT(0,11,'&#9733; '+esc(byId[last].name)+' has joined!',{w:320,center:true,size:5});
+  // the crowd: absolutely-positioned portraits at their baked spots, drawn back-to-front (CC_POS order)
+  for(const p of CC_POS){
+    const f=byId[p.id]; if(!f) continue;
+    const on=owned.has(p.id), isOff=(p.id===offered), isNew=(p.id===last);
+    // acquired = full colour; not-yet = a dim shadow standing in his spot (lights up on acquire)
+    const filt=on?'':'filter:grayscale(1) brightness(.22);opacity:.5';
+    const ring=isNew?'outline:2px solid #ffe27a;box-shadow:0 0 8px 2px #ffe27a':(isOff?'outline:2px solid #6cf':'');
+    const tip=esc(f.name)+' — '+esc(f.category)+(f.production?' [affects production]':'')+'\n'+esc(f.effect)
+      +(on?'':(isOff?'\n(the Congress is working toward this father)':'\n(not yet acquired)'));
+    h+='<img src="/assets/'+f.portrait+'" title="'+tip+'" loading="lazy" '
+      +'onclick="event.stopPropagation();congressFather('+p.id+','+(on?'false':'true')+')" '
+      +'style="position:absolute;left:'+(p.x*CC_SC)+'px;top:'+(p.y*CC_SC)+'px;height:'+(84*CC_SC)+'px;'
+      +'width:auto;image-rendering:pixelated;cursor:pointer;'+filt+';'+ring+'">';
   }
-  h+='</div>';
-  h+='<div class="muted" style="font-size:9px;margin-top:4px">Colour = acquired &middot; '
-    +'<span style="color:#6cf">blue ring</span> = next offered &middot; '
-    +'<span style="color:#ffe27a">gold ring</span> = just joined. Click a portrait to grant/revoke.</div>';
-  return h;
+  h+=ccOK();
+  return ccScreen('pik/CCBKGD.png',h);
 }
 
-// The F-key cycle: closed -> Activities -> portraits -> closed.
+// The F-key cycle: closed -> Activities -> portraits -> closed. Each screen is a self-contained
+// 320x200 stage; clicking anywhere (or OK) advances.
 function congressRender(){
-  const foot='<div class="muted" style="text-align:center;font-size:10px;margin-top:8px;'
-    +'border-top:1px solid #444;padding-top:4px">click to continue &raquo;</div>';
-  const title=CONGRESS_VIEW===1?'CONTINENTAL CONGRESS ACTIVITIES':'CONTINENTAL CONGRESS';
   const inner=CONGRESS_VIEW===1?congressActivities():congressPortraits();
-  ui.popup(title,'<div onclick="congressAdvance()" style="cursor:pointer;min-width:420px">'+inner+foot+'</div>');
+  ui.popup('Continental Congress (F) — click to continue',
+    '<div onclick="congressAdvance()" style="cursor:pointer">'+inner+'</div>');
 }
 function congressOpen(){ if(!SB) return; CONGRESS_VIEW=1; congressRender(); }
 function congressAdvance(){ if(CONGRESS_VIEW===1){ CONGRESS_VIEW=2; congressRender(); } else congressClose(); }

@@ -1346,6 +1346,28 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
     }
 }
 
+// An exact UI label from LABELS.TXT @MISC (line index). The Continental Congress spec cites these
+// verbatim (title @MISC[37], "Next Continental Congress Session" [112], Rebel/Tory/Sentiment
+// [69/70/71], "Expeditionary Force" [85], "Founding Fathers" [89], "OK" [46]) -- so the screen text
+// is pulled from the data, not invented. Parsed once from the newline-joined @MISC string.
+static const std::string& misc_label(int idx) {
+    static std::vector<std::string> lines;
+    static const std::string empty;
+    if (lines.empty()) {
+        try {
+            forge::JsonValue d = forge::json_parse_file("data_extracted/text/LABELS_sections.json");
+            const forge::JsonValue* m = d.find("@MISC");
+            if (m && m->type == forge::JsonValue::String) {
+                std::string cur;
+                for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
+                lines.push_back(cur);
+            }
+        } catch (...) {}
+        if (lines.empty()) lines.push_back("");   // parsed (even if empty) -- don't retry every call
+    }
+    return (idx >= 0 && idx < (int)lines.size()) ? lines[idx] : empty;
+}
+
 static forge::JsonValue sandbox_state_json() {
     if (!g_sb_active) sandbox_new(3);
     forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
@@ -1423,6 +1445,19 @@ static forge::JsonValue sandbox_state_json() {
     ref.obj["manowar"]   = forge::json_num(g_sb_game.ref.manowar);
     ref.obj["artillery"] = forge::json_num(g_sb_game.ref.artillery);
     cong.obj["ref"] = ref;
+    // Verbatim UI label strings pulled from LABELS.TXT @MISC (spec §3), so the screen text is the
+    // game's own, not invented.
+    forge::JsonValue lab = jobj();
+    lab.obj["title"]     = forge::json_str(misc_label(37));    // CONTINENTAL CONGRESS ACTIVITIES
+    lab.obj["congress"]  = forge::json_str(misc_label(134));   // Continental Congress
+    lab.obj["session"]   = forge::json_str(misc_label(112));   // Next Continental Congress Session
+    lab.obj["rebel"]     = forge::json_str(misc_label(69));     // Rebel
+    lab.obj["tory"]      = forge::json_str(misc_label(70));     // Tory
+    lab.obj["sentiment"] = forge::json_str(misc_label(71));     // Sentiment
+    lab.obj["ref"]       = forge::json_str(misc_label(85));     // Expeditionary Force
+    lab.obj["fathers"]   = forge::json_str(misc_label(89));     // Founding Fathers
+    lab.obj["ok"]        = forge::json_str(misc_label(46));      // OK
+    cong.obj["labels"] = lab;
     o.obj["congress"] = cong;
     // Market: whether the colony has a Custom House (auto-sell to Europe), the tax, and the per-good
     // Europe bid price -- so the screen can offer a "ship & sell" action and show the auto-sell state.
