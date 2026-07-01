@@ -155,14 +155,14 @@ static void test_food_growth() {
 
 static void test_immigration() {
     std::printf("immigration (England, 3 workers, 0 units, diff 0):\n");
-    CHECK(crosses_threshold(3, 0, 0, false, 0) == 9, "threshold -> %d",
-          crosses_threshold(3, 0, 0, false, 0));
+    CHECK(crosses_threshold(3, 0, 0, false, /*is_england*/true) == 9, "threshold -> %d",
+          crosses_threshold(3, 0, 0, false, /*is_england*/true));
     Power p;
     auto rng = [](int, int) { return 1; };       // dock slot 1
     bool spawned = false;
     int turns = 0;
-    for (; turns < 10 && !spawned; ++turns)       // 2 crosses/turn, threshold 9
-        spawned = immigration_step(p, 2, 3, 0, 0, false, 0, rng).spawned;
+    for (; turns < 10 && !spawned; ++turns)       // 2 crosses/turn, England threshold 9
+        spawned = immigration_step(p, 2, 3, 0, /*diff*/0, /*ai*/false, /*is_england*/true, rng).spawned;
     CHECK(turns == 5, "spawned on turn %d", turns);
     CHECK(p.dock_pool[1] == 0x1C && p.crosses_accum == 0, "dock %d acc %d",
           p.dock_pool[1], p.crosses_accum);

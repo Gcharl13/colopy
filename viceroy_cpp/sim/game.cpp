@@ -23,8 +23,11 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
         int workers = 0, crosses = rd.cfg.imm_base_crosses;
         for (const Colony& c : w.colonies)
             if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
+        // England (@COUNTRY 0) gets the *2/3 bonus; the human's nation is g.nation, AI
+        // powers' nations aren't modeled so only the human power can be England here.
+        bool is_england = (p == player_idx) && (g.nation == 0);
         immigration_step(g.powers[p], crosses, workers, /*units*/0,
-                         g.difficulty, /*ai*/ p != player_idx, p, rng, rd);
+                         g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd);
     }
 
     // 4. REF (King) budget accrual + unit purchase.

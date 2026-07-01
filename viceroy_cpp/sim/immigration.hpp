@@ -11,9 +11,11 @@ using RandFn = std::function<int(int /*lo*/, int /*hi*/)>;
 
 // Crosses spawn threshold (func_035D9A): from empire size (Σ colony pop +
 // unit count). accum = workers+units; if <cap -> accum*mult+off; clamp cap;
-// AI scales *(8-diff)/8; England (player 0) gets *2/3. (scalars from cfg.)
+// AI scales *(8-diff)/8; England gets *2/3. `is_england` keys on the power's
+// nation (@COUNTRY 0), not its slot index -- so the bonus follows the chosen
+// nation, not always power 0. (scalars from cfg.)
 int crosses_threshold(int total_workers, int unit_count,
-                      int difficulty, bool ai, int player_idx,
+                      int difficulty, bool ai, bool is_england,
                       const RuleData& rd = default_rules());
 
 struct ImmigrationResult { bool spawned = false; int type = -1; int slot = -1; };
@@ -24,7 +26,7 @@ struct ImmigrationResult { bool spawned = false; int type = -1; int slot = -1; }
 // (P1 spawns a Free Colonist; the full turn&3 type-distribution RNG is P2.)
 ImmigrationResult immigration_step(Power& p, int crosses_gained,
                                    int total_workers, int unit_count,
-                                   int difficulty, bool ai, int player_idx,
+                                   int difficulty, bool ai, bool is_england,
                                    const RandFn& rng,
                                    const RuleData& rd = default_rules());
 
