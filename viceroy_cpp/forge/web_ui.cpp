@@ -278,7 +278,13 @@ const char* forge_index_html() {
     </div>
     <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
       <canvas id="gcv" width="640" height="480"></canvas>
-      <div id="ghud" style="min-width:250px"></div>
+      <div style="min-width:250px">
+        <div id="ghud"></div>
+        <h4 style="margin:10px 0 2px">History</h4>
+        <canvas id="ghist" width="250" height="90" style="background:#0f1520;border:1px solid #333"></canvas>
+        <div class="muted" style="font-size:11px"><span style="color:#e2c14a">&#9632;</span> gold
+          &nbsp;<span style="color:#6cc06c">&#9632;</span> Sons of Liberty</div>
+      </div>
     </div>
   </section>
 
@@ -1288,8 +1294,18 @@ async function loadGame(){
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
   const r=await fetch('/api/game/turn',{method:'POST'}); GAME=await r.json();
-  drawGame(); showSel(); ui.toast('Year '+GAME.year);
+  drawGame(); showSel(); drawHistory(); ui.toast('Year '+GAME.year);
   if(GAME.events && GAME.events.length) eventQueue(GAME.events.slice());
+}
+async function drawHistory(){
+  let h=[]; try{ h=await (await fetch('/api/game/history')).json(); }catch(e){ return; }
+  const cv=$('#ghist'); if(!cv) return; const g=cv.getContext('2d'); const W=cv.width, H=cv.height;
+  g.clearRect(0,0,W,H); if(h.length<2) return;
+  const line=(key,color)=>{ const vals=h.map(p=>p[key]); const mn=Math.min(...vals), mx=Math.max(...vals);
+    const rng=(mx-mn)||1; g.strokeStyle=color; g.beginPath();
+    h.forEach((p,i)=>{ const x=i/(h.length-1)*(W-4)+2, y=H-2-((p[key]-mn)/rng)*(H-4);
+      i?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke(); };
+  line('gold','#e2c14a'); line('sol','#6cc06c');
 }
 function eventQueue(q){
   if(!q.length) return; const e=q.shift(), p=e.report.popup;

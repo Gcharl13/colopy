@@ -710,8 +710,18 @@ static void game_new(int nation = 0, int difficulty = 1) {
     g_game_active = true;
 }
 
+// Per-turn history (A4): a time series snapshotted each turn -> the history charts.
+struct HistPoint { long turn; int year; long gold; int sol; long population; };
+static std::vector<HistPoint> g_history;
+static void history_snapshot() {
+    long pop = 0; for (const auto& c : g_world.colonies) pop += c.population;
+    g_history.push_back(HistPoint{(long)g_game.turn, g_game.year,
+        (long)g_game.powers[0].gold, g_engine_extra.national_sol, pop});
+    if (g_history.size() > 400) g_history.erase(g_history.begin());
+}
+
 static void game_step() {
-    if (g_game_active) step_turn(g_game, g_world, game_rng, 0, g_active_rules);
+    if (g_game_active) { step_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
 }
 
 static forge::JsonValue game_state_json() {
@@ -1056,14 +1066,27 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, forge::run_graph(graph, cx, from, choice, cache));
         }
 
-        if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
+        if (path == "/api/game/new"  && method == "POST") {
+            game_new(); g_history.clear(); history_snapshot(); return J(200, game_state_json());
+        }
         // New game from the setup screen: {nation 0..3, difficulty 0..4} seed the scenario.
         if (path == "/api/game/setup" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             int nat  = b.find("nation")     ? b.find("nation")->as_int(0)     : 0;
             int diff = b.find("difficulty") ? b.find("difficulty")->as_int(1) : 1;
-            game_new(nat, diff);
+            game_new(nat, diff); g_history.clear(); history_snapshot();
             return J(200, game_state_json());
+        }
+        if (path == "/api/game/history") {
+            forge::JsonValue a = jarr();
+            for (const HistPoint& h : g_history) {
+                forge::JsonValue o = jobj();
+                o.obj["turn"] = forge::json_num((double)h.turn); o.obj["year"] = forge::json_num(h.year);
+                o.obj["gold"] = forge::json_num((double)h.gold); o.obj["sol"] = forge::json_num(h.sol);
+                o.obj["population"] = forge::json_num((double)h.population);
+                a.arr.push_back(o);
+            }
+            return J(200, a);
         }
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/turn" && method == "POST") {
