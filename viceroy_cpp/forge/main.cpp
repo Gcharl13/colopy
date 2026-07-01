@@ -1257,6 +1257,7 @@ static void sandbox_new(int pop) {
     g_sb_extra = forge::EngineExtra{}; g_sb_rng = 0x51EDF00D;
     g_sb_game.difficulty = 1; g_sb_game.year = 1600; g_sb_game.season = 0;
     g_sb_game.powers[0].gold = 1000; g_sb_game.powers[0].tax = 0;
+    g_sb_game.ref = vc::sim::ref_start(g_sb_game.difficulty);   // the King's Expeditionary Force (grows each turn)
     for (int i = 0; i < NGOODS; ++i) g_sb_game.price_base[i] = 800;
     Colony c; c.owner_power = 0; c.human = true;
     c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
@@ -1414,6 +1415,14 @@ static forge::JsonValue sandbox_state_json() {
     cong.obj["offered"]        = forge::json_num(nextff);   // -1 when all 25 are owned
     cong.obj["last_ff"]        = forge::json_num(g_sb_extra.last_ff);
     cong.obj["national_sol"]   = forge::json_num(g_sb_extra.national_sol);
+    // The King's Expeditionary Force (REF) by unit type -- shown on the Activities screen. Order
+    // matches the DGROUP array (spec/ui/continental_congress.md §5): Regulars/Cavalry/Man-O-War/Artillery.
+    forge::JsonValue ref = jobj();
+    ref.obj["regulars"]  = forge::json_num(g_sb_game.ref.regulars);
+    ref.obj["cavalry"]   = forge::json_num(g_sb_game.ref.cavalry);
+    ref.obj["manowar"]   = forge::json_num(g_sb_game.ref.manowar);
+    ref.obj["artillery"] = forge::json_num(g_sb_game.ref.artillery);
+    cong.obj["ref"] = ref;
     o.obj["congress"] = cong;
     // Market: whether the colony has a Custom House (auto-sell to Europe), the tax, and the per-good
     // Europe bid price -- so the screen can offer a "ship & sell" action and show the auto-sell state.
