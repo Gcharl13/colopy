@@ -13,8 +13,9 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     for (Colony& c : w.colonies)
         colony_economic_step(c, g.difficulty, rd);
 
-    // 2. Market: European price drift (once).
-    price_drift(g, rd);
+    // 2. Market: drift the supply bases with this turn's trade volume, republish the
+    //    pooled price levels, reset the per-turn volumes (market.hpp model).
+    market_turn(g, rd);
 
     // 3. Immigration: every power advances its own Europe dock. crosses = base +
     //    Σ that power's colony cross output; the human is player_idx (ai otherwise).

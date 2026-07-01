@@ -1352,31 +1352,37 @@ function sbRender(){
   h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
   (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
   h+='</tr></table>';
-  // Europe market: a live horizontal price strip (bid, drifting within each good's band) + the data
-  // that drives it. With a Custom House the colony auto-sells each turn; without one you ship & sell.
+  // Europe market (the byte-verified model): each good has a HIDDEN SUPPLY VOLUME -- the seeded
+  // base (price_base 600..1000) plus this turn's sell volume (trade +0xFC). Selling builds it,
+  // buying drains it; the published price level derives from it (the four finished goods price
+  // off the pooled S_pair), clamped to the @CARGO band; bid = level-1, ask = bid+burden+1.
   const mk=SB.market||[]; const pr=SB.prices||[];
   h+='<h4 style="margin:10px 0 2px">Europe market</h4>';
   h+='<div class="'+(SB.custom_house?'':'muted')+'" style="font-size:11px">'
     +(SB.custom_house?'&#10003; Custom House: surplus auto-sells to Europe each turn.'
       :'No Custom House &mdash; over-cap goods spoil; ship &amp; sell below.')
-    +' <span class="muted">tax '+(SB.tax||0)+'% &middot; selling drives a price down, demand recovers it over turns</span></div>';
-  // horizontal price strip: one cell per tradeable good; bar height = where the bid sits in [low,high].
+    +' <span class="muted">tax '+(SB.tax||0)+'% (the King\'s cut funds the REF) &middot; selling floods the hidden supply &rarr; price falls</span></div>';
+  // horizontal price strip: one cell per tradeable good; bar height = where the bid sits in the
+  // good's @CARGO band; the tooltip carries the hidden volume behind it.
   h+='<div style="display:flex;gap:2px;align-items:flex-end;height:60px;margin:4px 0;border-bottom:1px solid #555">';
   mk.forEach((m,i)=>{ if(i<1) return; const lo=m.low||0,hi=m.high||1; const frac=Math.max(0.06,Math.min(1,(m.bid-lo)/Math.max(1,hi-lo)));
-    const up=m.bid>m.start_bid, dn=m.bid<m.start_bid; const col=up?'#4caf50':(dn?'#e57373':'#8ab');
-    h+='<div title="'+GOODS[i]+' bid '+m.bid+' / ask '+m.ask+' (band '+lo+'-'+hi+', trade '+m.trade+')" style="flex:1;text-align:center;font-size:9px">'
-      +'<div style="height:'+Math.round(frac*44)+'px;background:'+col+';margin:0 1px" ></div>'
+    h+='<div title="'+GOODS[i]+' bid '+m.bid+' / ask '+m.ask+' (level '+m.level+', band '+lo+'-'+hi+', supply '+m.supply+' = base '+m.base+' + trade '+m.trade+')" style="flex:1;text-align:center;font-size:9px">'
+      +'<div style="height:'+Math.round(frac*44)+'px;background:#8ab;margin:0 1px"></div>'
       +'<div><b>'+m.bid+'</b></div><div class="muted">'+GOODS[i].slice(0,3)+'</div></div>'; });
   h+='</div>';
   h+='<div class="row" style="margin:3px 0;gap:4px"><span style="font-size:11px">Ship &amp; sell</span>'
     +'<select id="sbsellgood">'+GOODS.map((g,i)=> i>=1?('<option value="'+i+'">'+g+' @'+(pr[i]||0)+'g</option>'):'').join('')+'</select>'
     +'<input id="sbsellqty" type="number" placeholder="qty (all)" style="width:80px">'
     +'<button class="act" onclick="sbSell()">Sell to Europe</button></div>';
-  // the numbers that drive each price (spec @CARGO drift model)
-  h+='<details style="margin-top:2px"><summary style="font-size:11px;cursor:pointer">price drivers (bid / ask / band / trade accum / rise / fall / attrition / volatility)</summary>'
-    +'<table style="width:100%;font-size:10px"><tr><th>Good</th><th>bid</th><th>ask</th><th>band</th><th>trade</th><th>rise</th><th>fall</th><th>attr</th><th>vol</th></tr>';
+  // the model's actual drivers per good: the hidden volume and how it becomes the published price
+  h+='<details style="margin-top:2px"><summary style="font-size:11px;cursor:pointer">price drivers &mdash; hidden volume &rarr; published price (base | trade | supply | pool share | level | band | bid | ask)</summary>'
+    +'<div class="muted" style="font-size:10px;margin:2px 0">supply = base + this turn\'s sold volume; the finished goods (Rum/Cigars/Cloth/Coats) price off the pooled S<sub>pair</sub>='+(SB.s_pair||0)+' as level = S<sub>pair</sub>&times;3 / supply, clamped to the band; bid = level&minus;1; ask = bid + burden + 1</div>'
+    +'<table style="width:100%;font-size:10px"><tr><th>Good</th><th>base</th><th>trade</th><th>supply</th><th>share</th><th>level</th><th>band</th><th>burden</th><th>bid</th><th>ask</th></tr>';
+  const spair=SB.s_pair||1;
   mk.forEach((m,i)=>{ if(i<1) return;
-    h+='<tr><td>'+GOODS[i]+'</td><td><b>'+m.bid+'</b></td><td>'+m.ask+'</td><td>'+m.low+'-'+m.high+'</td><td>'+m.trade+'</td><td>'+m.rise+'</td><td>'+m.fall+'</td><td>'+m.attrition+'</td><td>'+m.volatility+'</td></tr>'; });
+    const pool=(i>=9&&i<=12)||(i>=1&&i<=4);
+    const share=pool?Math.round(100*m.supply/Math.max(1,spair))+'%':'&mdash;';
+    h+='<tr'+(m.boycott?' style="opacity:.4"':'')+'><td>'+GOODS[i]+(m.boycott?' (boycott)':'')+'</td><td>'+m.base+'</td><td>'+m.trade+'</td><td><b>'+m.supply+'</b></td><td>'+share+'</td><td>'+m.level+'</td><td>'+m.low+'-'+m.high+'</td><td>'+m.burden+'</td><td><b>'+m.bid+'</b></td><td>'+m.ask+'</td></tr>'; });
   h+='</table></details>';
   // Continental Congress: a compact status line + a button that opens the two-screen report flow
   // (Activities -> portrait view -> back), mirroring the game's F-key cycle.

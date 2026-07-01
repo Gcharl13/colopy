@@ -26,6 +26,9 @@ JsonValue dump_power(const Power& p) {
     JsonValue tr = arr();
     for (int i = 0; i < NGOODS; ++i) tr.arr.push_back(json_num(p.trade[i]));
     o.obj["trade"] = tr;
+    JsonValue pl = arr();
+    for (int i = 0; i < NGOODS; ++i) pl.arr.push_back(json_num(p.price_level[i]));
+    o.obj["price_level"] = pl;                      // published market level (+0x4C)
     JsonValue dk = arr();
     for (int i = 0; i < 3; ++i) dk.arr.push_back(json_num(p.dock_pool[i]));
     o.obj["dock_pool"] = dk;
@@ -99,6 +102,8 @@ void read_power(const JsonValue& o, Power& p) {
     p.crosses_threshold = gi(o, "crosses_threshold");
     if (const JsonValue* tr = o.find("trade"))
         for (int i = 0; i < NGOODS && i < (int)tr->arr.size(); ++i) p.trade[i] = tr->arr[i].as_int();
+    if (const JsonValue* pl = o.find("price_level"))   // absent in old saves -> stays 0 (re-seeded)
+        for (int i = 0; i < NGOODS && i < (int)pl->arr.size(); ++i) p.price_level[i] = pl->arr[i].as_int();
     if (const JsonValue* dk = o.find("dock_pool"))
         for (int i = 0; i < 3 && i < (int)dk->arr.size(); ++i) p.dock_pool[i] = dk->arr[i].as_int();
 }

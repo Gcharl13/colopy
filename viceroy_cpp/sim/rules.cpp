@@ -71,6 +71,28 @@ static int default_terrain_move(int terrain_id) {
     return 1;
 }
 
+// NAMES @CARGO market columns per good: {price_start1, price_start2, drift_low, drift_high,
+// burden}. Value-identical to data_extracted/tables/names_tables.json @CARGO (asserted by the
+// tools/verify_rules.py oracle, same as @UNIT). Order = the Good enum (Food..Muskets).
+static const CargoStats kDefaultCargo[NGOODS] = {
+    {1, 3, 1, 6, 7},      // Food
+    {4, 7, 3, 7, 1},      // Sugar
+    {3, 5, 2, 5, 1},      // Tobacco
+    {2, 5, 2, 5, 1},      // Cotton
+    {4, 6, 2, 6, 1},      // Furs
+    {2, 2, 2, 2, 4},      // Lumber
+    {3, 6, 2, 6, 2},      // Ore
+    {20, 20, 2, 20, 0},   // Silver
+    {2, 3, 2, 11, 0},     // Horses
+    {11, 13, 1, 20, 0},   // Rum
+    {11, 13, 1, 20, 0},   // Cigars
+    {11, 13, 1, 20, 0},   // Cloth
+    {11, 13, 1, 20, 0},   // Coats
+    {2, 3, 2, 12, 0},     // Trade Goods
+    {2, 2, 2, 9, 0},      // Tools
+    {3, 3, 2, 20, 0},     // Muskets
+};
+
 RuleData make_default_rules() {
     RuleData rd;
     for (int i = 0; i < NUNITTYPES; ++i) rd.units[i] = kDefaultUnits[i];
@@ -78,6 +100,7 @@ RuleData make_default_rules() {
         rd.terrain_defense[id] = default_terrain_defense(id);
         rd.terrain_move[id]    = default_terrain_move(id);
     }
+    for (int g = 0; g < NGOODS; ++g) rd.cargo[g] = kDefaultCargo[g];
     return rd;
 }
 

@@ -120,11 +120,64 @@ static void test_price_drift() {
     std::printf("price drift (base 800, player0 sells 100 Sugar):\n");
     GameState g;
     g.price_base[SUGAR] = 800;
-    g.powers[0].trade[SUGAR] = 100;       // cumulative trade accumulator
+    g.powers[0].trade[SUGAR] = 100;       // this turn's sell volume
     price_drift(g);
     CHECK(g.price_base[SUGAR] == 797, "turn1 -> %d", g.price_base[SUGAR]);
     price_drift(g);
     CHECK(g.price_base[SUGAR] == 794, "turn2 -> %d", g.price_base[SUGAR]);
+}
+
+static void test_market_model() {
+    std::printf("market: published prices from the pooled supply (market.md):\n");
+    const RuleData& rd = default_rules();
+    GameState g; g.year = 1750;                 // no Furs year bumps
+    for (int i = 0; i < NGOODS; ++i) g.price_base[i] = 800;   // equal supply everywhere
+    market_recompute(g, rd);
+    // S_pair = 4*800; Rum target = 3200*3/800 = 12 (inside its 1..20 band)
+    CHECK(g.powers[0].price_level[RUM] == 12, "Rum level -> %d", g.powers[0].price_level[RUM]);
+    CHECK(market_bid(g, 0, RUM) == 11, "Rum bid = level-1 -> %d", market_bid(g, 0, RUM));
+    // ask = bid + burden + 1 (Rum burden 0 -> spread 1; Food burden 7 -> spread 8)
+    CHECK(market_ask(g, 0, RUM, rd) == 12, "Rum ask -> %d", market_ask(g, 0, RUM, rd));
+    g.powers[0].price_level[FOOD] = 3;
+    CHECK(market_ask(g, 0, FOOD, rd) == 2 + 7 + 1, "Food ask = bid+burden+1 -> %d",
+          market_ask(g, 0, FOOD, rd));
+    // raw inputs clamp to their @CARGO band (Sugar target 12 clamps to hi=7)
+    CHECK(g.powers[0].price_level[SUGAR] == 7, "Sugar level clamped -> %d",
+          g.powers[0].price_level[SUGAR]);
+
+    std::printf("market: selling floods the pool (Rum falls, other luxuries rise):\n");
+    int rum_before = g.powers[0].price_level[RUM];
+    int cig_before = g.powers[0].price_level[CIGARS];
+    g.powers[0].tax = 10; g.powers[0].gold = 0; g.powers[0].royal_money = 0;
+    long net = market_sell(g, 0, RUM, 300, rd);
+    // gross = 11*300 = 3300; tax 10% = 330 -> net 2970, tax to the REF fund
+    CHECK(net == 2970, "sell net (taxed) -> %ld", net);
+    CHECK(g.powers[0].gold == 2970, "gold += net -> %lld", (long long)g.powers[0].gold);
+    CHECK(g.powers[0].royal_money == 330, "tax -> royal_money (REF fund) -> %lld",
+          (long long)g.powers[0].royal_money);
+    CHECK(g.powers[0].trade[RUM] == 300, "SELL adds volume -> %d", g.powers[0].trade[RUM]);
+    CHECK(g.powers[0].price_level[RUM] < rum_before, "Rum level fell -> %d",
+          g.powers[0].price_level[RUM]);
+    CHECK(g.powers[0].price_level[CIGARS] > cig_before, "Cigars level rose (pool) -> %d",
+          g.powers[0].price_level[CIGARS]);
+
+    std::printf("market: buying is untaxed; non-pool goods use the +/-1 steppers:\n");
+    g.powers[0].gold = 1000; g.powers[0].royal_money = 0;
+    g.powers[0].price_level[MUSKETS] = 10;
+    long cost = market_buy(g, 0, MUSKETS, 5, rd);   // ask = 9+0+1 = 10 -> cost 50
+    CHECK(cost == 50, "buy cost -> %ld", cost);
+    CHECK(g.powers[0].gold == 950, "gold -= cost, untaxed -> %lld", (long long)g.powers[0].gold);
+    CHECK(g.powers[0].royal_money == 0, "no tax on buys");
+    CHECK(g.powers[0].price_level[MUSKETS] == 11, "buy steps a non-pool level +1 -> %d",
+          g.powers[0].price_level[MUSKETS]);
+    market_sell(g, 0, MUSKETS, 5, rd);
+    CHECK(g.powers[0].price_level[MUSKETS] == 10, "sell steps it back -1 -> %d",
+          g.powers[0].price_level[MUSKETS]);
+
+    std::printf("market: the turn phase resets the per-turn volumes:\n");
+    market_turn(g, rd);
+    CHECK(g.powers[0].trade[RUM] == 0 && g.powers[0].trade[MUSKETS] == 0,
+          "trade volumes zeroed at the turn boundary");
 }
 
 static void test_ref() {
@@ -547,6 +600,7 @@ int main() {
     test_export();
     test_build();
     test_price_drift();
+    test_market_model();
     test_ref();
     test_food_growth();
     test_immigration();

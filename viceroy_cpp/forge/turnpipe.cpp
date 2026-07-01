@@ -61,7 +61,7 @@ void phase_production(GameState& g, World& w, const RuleData& rd, uint32_t ff_ow
         colony_economic_step(c, g.difficulty, rd);                  // then SoL / build / growth off those
     }
 }
-void phase_market(GameState& g, World&, const RuleData& rd) { price_drift(g, rd); }
+void phase_market(GameState& g, World&, const RuleData& rd) { market_turn(g, rd); }
 void phase_immigration(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
     for (int p = 0; p < 4; ++p) {
         int workers = 0, crosses = rd.cfg.imm_base_crosses;

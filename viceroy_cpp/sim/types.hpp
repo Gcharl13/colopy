@@ -64,10 +64,14 @@ struct Colony {
 };
 
 struct Power {
-    int64_t royal_money = 0;         // PowerRecord +0x22 (REF budget)
+    int64_t royal_money = 0;         // PowerRecord +0x22 (REF budget; SALES TAX accrues here, king.md:92)
     int64_t gold        = 0;         // +0x2A
     int     tax         = 0;         // +0x01
-    std::array<int32_t, NGOODS> trade{};  // +0xFC cumulative trade accumulator
+    std::array<int32_t, NGOODS> trade{};  // +0xFC per-turn trade volume: SELL += qty, BUY -= qty
+                                          // (market.md @0x323BC/@0x32324); reset by the turn drift
+    std::array<int32_t, NGOODS> price_level{};  // +0x4C published per-good price level: the market
+                                          // pays bid = max(level-1, 0); you pay ask = bid+burden+1
+                                          // (market.md @0x30566/@0x30590 + @CARGO.burden, USER RULING)
 
     int crosses_accum     = 0;       // +0x2E  accumulated crosses
     int crosses_threshold = 0;       // +0x30  spawn threshold (recomputed each turn)

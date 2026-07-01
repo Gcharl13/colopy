@@ -1614,7 +1614,11 @@ struct Runner {
                 vc::sim::Colony& col = cx.w.colonies[ci];
                 int owner = col.owner_power;
                 if (owner >= 0 && owner < 4) {
-                    long g = vc::sim::export_overflow(col, cx.g.powers[owner], cx.g.price_base,
+                    // price at the PUBLISHED market bid (level-1), not the hidden supply base
+                    std::array<int32_t, vc::sim::NGOODS> bids{};
+                    for (int gd = 0; gd < vc::sim::NGOODS; ++gd)
+                        bids[gd] = vc::sim::market_bid(cx.g, owner, gd);
+                    long g = vc::sim::export_overflow(col, cx.g.powers[owner], bids,
                                                       cx.g.powers[owner].tax, cx.x.woi_declared);
                     effect("colony " + std::to_string(ci) + " auto-exports surplus for " +
                            std::to_string(g) + " gold" + (cx.x.woi_declared ? " (wasted: independence)" : ""));

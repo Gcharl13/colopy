@@ -21,6 +21,7 @@
 #pragma once
 
 #include "unit.hpp"
+#include "types.hpp"   // NGOODS (the @CARGO market columns are per-good)
 #include <array>
 
 namespace vc::sim {
@@ -79,10 +80,18 @@ struct Config {
     int imm_base_crosses = 2;         // per-turn base crosses before colony output
 };
 
+// One @CARGO row's market columns (NAMES.TXT @CARGO; value-identity asserted against
+// data_extracted/tables/names_tables.json by tools/verify_rules.py, same oracle as @UNIT).
+// start1/start2 = the "start" pair (price_level seeds in [start1,start2]); lo/hi = the
+// drift_low/drift_high clamp band on price_level; burden = the per-good bid->ask spread - 1
+// (ask = bid + burden + 1, USER RULING: "its in the names.txt table portion").
+struct CargoStats { int start1 = 0, start2 = 0, lo = 0, hi = 0, burden = 0; };
+
 struct RuleData {
     std::array<UnitStats, NUNITTYPES> units{};
     std::array<int, NTERRAIN> terrain_defense{};   // "Defensive" value by terrain id
     std::array<int, NTERRAIN> terrain_move{};      // move-points to ENTER, by terrain id
+    std::array<CargoStats, NGOODS> cargo{};        // @CARGO market columns per good
     Config cfg{};                                  // scalar balance constants
 };
 

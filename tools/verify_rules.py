@@ -48,8 +48,42 @@ def parse_cpp_units(path):
     return rows
 
 
+# A kDefaultCargo row: {start1, start2, lo, hi, burden},   // Name
+CARGO_ROW_RE = re.compile(r'\{\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}\s*,?\s*//\s*(.+)')
+
+
+def parse_cpp_cargo(path):
+    """Extract kDefaultCargo[] rows -> list of (start1,start2,lo,hi,burden,name)."""
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    m = re.search(r'kDefaultCargo\[NGOODS\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    if not m:
+        sys.exit("verify_rules: could not find kDefaultCargo[] in %s" % path)
+    rows = []
+    for r in CARGO_ROW_RE.finditer(m.group(1)):
+        s1, s2, lo, hi, bd, name = r.groups()
+        rows.append((int(s1), int(s2), int(lo), int(hi), int(bd), name.strip()))
+    return rows
+
+
+def check_cargo(names, mism):
+    """@CARGO parity: the C++ kDefaultCargo market columns == the extracted table."""
+    cargo = names["@CARGO"]["rows"][:16]          # rows 16+ are the Hammers/Crosses placeholders
+    cpp = parse_cpp_cargo(RULES_CPP)
+    if len(cpp) != len(cargo):
+        mism.append("  @CARGO: C++ has %d rows, JSON has %d" % (len(cpp), len(cargo)))
+        return
+    for i, row in enumerate(cargo):
+        j = (int(row["price_start1"]), int(row["price_start2"]),
+             int(row["drift_low"]), int(row["drift_high"]), int(row["burden"]))
+        c = cpp[i][:5]
+        if c != j:
+            mism.append("  @CARGO row %2d %-12s JSON%s != C++%s" % (i, row["name"], j, c))
+
+
 def main():
-    units = json.load(open(TABLES, encoding="utf-8"))["@UNIT"]["rows"]
+    names = json.load(open(TABLES, encoding="utf-8"))
+    units = names["@UNIT"]["rows"]
     cpp = parse_cpp_units(RULES_CPP)
 
     # The JSON ships 23 rows (0..22); the C++ table pads a 24th unused/zeroed row.
@@ -72,12 +106,15 @@ def main():
             mism.append("  row %2d (padding) expected zeros, got (a%d d%d c%d mv%d)" % (
                 i, c_atk, c_def, c_cargo, c_mv))
 
+    check_cargo(names, mism)
+
     if mism:
-        print("PARITY FAIL: @UNIT vs default RuleData")
+        print("PARITY FAIL: @UNIT/@CARGO vs default RuleData")
         print("\n".join(mism))
         return 1
     print("PARITY OK: default RuleData == @UNIT for attack/defense(combat)/cargo/movement "
-          "across %d rows (+%d zeroed padding)" % (len(units), len(cpp) - len(units)))
+          "across %d rows (+%d zeroed padding); == @CARGO for start1/start2/lo/hi/burden "
+          "across 16 goods" % (len(units), len(cpp) - len(units)))
     return 0
 
 
