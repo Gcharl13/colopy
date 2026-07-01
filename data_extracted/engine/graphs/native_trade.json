@@ -23,35 +23,45 @@
       "type": "Formula",
       "x": 250,
       "y": 210,
-      "params": { "expr": "min(max(5*game.difficulty + 50, 2*power0.tax), 90)" }
+      "params": {
+        "expr": "min(max(5*game.difficulty + 50, 2*power0.tax), 90)"
+      }
     },
     {
       "id": "offer",
       "type": "Formula",
       "x": 470,
       "y": 210,
-      "params": { "expr": "price.12 * 100 * a / 100" }
+      "params": {
+        "expr": "@CARGO[12].price_start1 * 100 * a / 100"
+      }
     },
     {
       "id": "offer2",
       "type": "Formula",
       "x": 470,
       "y": 290,
-      "params": { "expr": "a * 110 / 100" }
+      "params": {
+        "expr": "a * 110 / 100"
+      }
     },
     {
       "id": "qty",
       "type": "PickText",
       "x": 250,
       "y": 320,
-      "params": { "options": "100 units of" }
+      "params": {
+        "options": "100 units of"
+      }
     },
     {
       "id": "gname",
       "type": "GetState",
       "x": 250,
       "y": 390,
-      "params": { "path": "@CARGO[12].name" }
+      "params": {
+        "path": "@CARGO[12].name"
+      }
     },
     {
       "id": "dlg",
@@ -69,26 +79,120 @@
       "type": "GrantGold",
       "x": 720,
       "y": 40,
-      "params": { "power": "0" }
+      "params": {
+        "power": "0"
+      }
     },
     {
       "id": "relief",
       "type": "ChangeNativeTension",
       "x": 940,
       "y": 40,
-      "params": { "amount": -4 }
+      "params": {
+        "amount": -4
+      }
     }
   ],
   "edges": [
-    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "dlg", "pin": "in" } },
-    { "from": { "node": "pct", "pin": "value" }, "to": { "node": "offer", "pin": "a" } },
-    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "dlg", "pin": "num0" } },
-    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "offer2", "pin": "a" } },
-    { "from": { "node": "offer2", "pin": "value" }, "to": { "node": "dlg", "pin": "num1" } },
-    { "from": { "node": "qty", "pin": "value" }, "to": { "node": "dlg", "pin": "str0" } },
-    { "from": { "node": "gname", "pin": "value" }, "to": { "node": "dlg", "pin": "str1" } },
-    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "accept", "pin": "amount" } },
-    { "from": { "node": "dlg", "pin": "Accept" }, "to": { "node": "accept", "pin": "in" } },
-    { "from": { "node": "accept", "pin": "out" }, "to": { "node": "relief", "pin": "in" } }
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pct",
+        "pin": "value"
+      },
+      "to": {
+        "node": "offer",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "offer",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "num0"
+      }
+    },
+    {
+      "from": {
+        "node": "offer",
+        "pin": "value"
+      },
+      "to": {
+        "node": "offer2",
+        "pin": "a"
+      }
+    },
+    {
+      "from": {
+        "node": "offer2",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "num1"
+      }
+    },
+    {
+      "from": {
+        "node": "qty",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "gname",
+        "pin": "value"
+      },
+      "to": {
+        "node": "dlg",
+        "pin": "str1"
+      }
+    },
+    {
+      "from": {
+        "node": "offer",
+        "pin": "value"
+      },
+      "to": {
+        "node": "accept",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "dlg",
+        "pin": "Accept"
+      },
+      "to": {
+        "node": "accept",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "accept",
+        "pin": "out"
+      },
+      "to": {
+        "node": "relief",
+        "pin": "in"
+      }
+    }
   ]
 }

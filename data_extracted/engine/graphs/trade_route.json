@@ -24,7 +24,7 @@
       "x": 20,
       "y": 150,
       "params": {
-        "expr": "100*price.10 - 100*price.10*power0.tax/100"
+        "expr": "100*@CARGO[10].price_start1 - 100*@CARGO[10].price_start1*power0.tax/100"
       }
     },
     {
@@ -33,7 +33,7 @@
       "x": 20,
       "y": 220,
       "params": {
-        "expr": "100*price.10*power0.tax/100"
+        "expr": "100*@CARGO[10].price_start1*power0.tax/100"
       }
     },
     {

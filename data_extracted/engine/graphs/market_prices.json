@@ -30,35 +30,88 @@
       "type": "GetState",
       "x": 210,
       "y": 170,
-      "params": { "path": "@CARGO[9].name" }
+      "params": {
+        "path": "@CARGO[9].name"
+      }
     },
     {
       "id": "port",
       "type": "GetState",
       "x": 210,
       "y": 250,
-      "params": { "path": "@HOMEPORT[0].name" }
+      "params": {
+        "path": "@HOMEPORT[0].name"
+      }
     },
     {
       "id": "price",
       "type": "GetState",
       "x": 210,
       "y": 330,
-      "params": { "path": "price.9" }
+      "params": {
+        "path": "@CARGO[9].price_start1"
+      }
     },
     {
       "id": "msg",
       "type": "Notify",
       "x": 470,
       "y": 60,
-      "params": { "textKey": "@PRICEDOWN" }
+      "params": {
+        "textKey": "@PRICEDOWN"
+      }
     }
   ],
   "edges": [
-    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "drift", "pin": "in" } },
-    { "from": { "node": "drift", "pin": "out" }, "to": { "node": "msg", "pin": "in" } },
-    { "from": { "node": "good", "pin": "value" }, "to": { "node": "msg", "pin": "str0" } },
-    { "from": { "node": "port", "pin": "value" }, "to": { "node": "msg", "pin": "str1" } },
-    { "from": { "node": "price", "pin": "value" }, "to": { "node": "msg", "pin": "num0" } }
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "drift",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "drift",
+        "pin": "out"
+      },
+      "to": {
+        "node": "msg",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "good",
+        "pin": "value"
+      },
+      "to": {
+        "node": "msg",
+        "pin": "str0"
+      }
+    },
+    {
+      "from": {
+        "node": "port",
+        "pin": "value"
+      },
+      "to": {
+        "node": "msg",
+        "pin": "str1"
+      }
+    },
+    {
+      "from": {
+        "node": "price",
+        "pin": "value"
+      },
+      "to": {
+        "node": "msg",
+        "pin": "num0"
+      }
+    }
   ]
 }

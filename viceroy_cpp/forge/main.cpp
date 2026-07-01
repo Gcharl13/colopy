@@ -602,7 +602,10 @@ static void game_new() {
 
     g_game.difficulty = 1; g_game.year = 1492; g_game.season = 0; g_game.turn = 0;
     g_game.powers[0].gold = 500;
-    for (int i = 0; i < NGOODS; ++i) g_game.price_base[i] = 800;
+    // price_base = the internal supply accumulator (DGROUP 0x53EA), random-seeded per good in
+    // [600,1000] (func_07561C, BYTE_VERIFIED market.md). It drives the drift; it is NOT the gold
+    // price -- the player-facing buy/sell gold per unit comes from @CARGO (price_start1/2, ~1..20).
+    for (int i = 0; i < NGOODS; ++i) g_game.price_base[i] = game_rng(600, 1000);
     g_game.ref = ref_start(g_game.difficulty);          // the King starts with an army
 
     auto add_colony = [&](int tx, int ty, int pop, int bells, int hammers, int food, int crosses) {
