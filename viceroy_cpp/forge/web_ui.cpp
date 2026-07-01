@@ -1258,6 +1258,9 @@ async function sbAssign(){ const j=SBJOBS[+$('#sbjob').value]||SBJOBS[0]; const 
   sbRender(); ui.toast('Assigned '+j.label); }
 async function sbUnassign(i){ SB=await (await fetch('/api/sandbox/unassign',{method:'POST',body:JSON.stringify({worker:i})})).json(); sbRender(); }
 async function sbFather(id,on){ SB=await (await fetch('/api/sandbox/father',{method:'POST',body:JSON.stringify({id,on})})).json(); sbRender(); }
+async function sbSell(){ const gd=+$('#sbsellgood').value; const qty=+($('#sbsellqty').value||0);
+  const r=await (await fetch('/api/sandbox/sell',{method:'POST',body:JSON.stringify({good:gd,qty})})).json();
+  if(r.error){ ui.toast(r.error); return; } SB=r; sbRender(); ui.toast(r.msg||'sold'); }
 async function sbNew(){ SB=await (await fetch('/api/sandbox/new',{method:'POST',body:JSON.stringify({pop:3})})).json(); sbRender(); ui.toast('Fresh colony (pop 3)'); }
 async function sbAddPop(){ SB=await (await fetch('/api/sandbox/addpop',{method:'POST',body:'{}'})).json(); sbRender(); }
 async function sbStep(n){ SB=await (await fetch('/api/sandbox/step',{method:'POST',body:JSON.stringify({n})})).json(); sbRender(); ui.toast('Year '+SB.year); }
@@ -1269,7 +1272,8 @@ async function sbRush(){ const r=await (await fetch('/api/sandbox/rush',{method:
 // what a building does, for the ones that drive production (shown in the Buildings table).
 const BLD_ROLE={9:'Statesmen &rarr; Bells',35:'Carpenters &rarr; Hammers (from Lumber)',37:'Preachers &rarr; Crosses',
   27:'Rum &larr; Sugar',24:'Cigars &larr; Tobacco',21:'Cloth &larr; Cotton',32:'Coats &larr; Furs',
-  39:'Tools &larr; Ore',3:'Muskets &larr; Tools',17:'Horses &larr; Food surplus'};
+  39:'Tools &larr; Ore',3:'Muskets &larr; Tools',17:'Horses &larr; Food surplus',
+  18:'Custom House &rarr; auto-sell surplus to Europe (needs Peter Stuyvesant)'};
 function sbRender(){
   if(!SB) return;
   let h='<h3 style="margin:2px 0">Colony &middot; '+SB.year+'</h3>';
@@ -1309,6 +1313,18 @@ function sbRender(){
   h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
   (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
   h+='</tr></table>';
+  // Europe market: with a Custom House the colony auto-sells surplus each turn; without one, over-cap
+  // goods spoil and you must ship goods to Europe to sell (the manual sell below).
+  const pr=SB.prices||[];
+  h+='<h4 style="margin:10px 0 2px">Europe market</h4>';
+  h+='<div class="'+(SB.custom_house?'':'muted')+'" style="font-size:11px">'
+    +(SB.custom_house?'&#10003; Custom House: surplus auto-sells to Europe each turn (no ship needed).'
+      :'No Custom House &mdash; over-cap goods spoil. Build a Custom House (needs Peter Stuyvesant) or ship &amp; sell below.')
+    +' <span class="muted">tax '+(SB.tax||0)+'%</span></div>';
+  h+='<div class="row" style="margin:3px 0;gap:4px"><span style="font-size:11px">Ship &amp; sell</span>'
+    +'<select id="sbsellgood">'+GOODS.map((g,i)=> i>=1?('<option value="'+i+'">'+g+' @'+(pr[i]||0)+'g</option>'):'').join('')+'</select>'
+    +'<input id="sbsellqty" type="number" placeholder="qty (all)" style="width:80px">'
+    +'<button class="act" onclick="sbSell()">Sell to Europe</button></div>';
   // Founding fathers -- toggle any to see its effect. The production ones (bold) change output live.
   const owned=new Set(SB.fathers||[]);
   h+='<h4 style="margin:10px 0 2px">Founding Fathers</h4>'

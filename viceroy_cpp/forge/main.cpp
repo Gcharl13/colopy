@@ -944,22 +944,37 @@ static void tory_uprising_step() {
 static void auto_export_step() {
     if (g_engine_extra.woi_declared) return;            // no European market while at war with the Crown
     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
-    long total = 0; int goods_sold = 0;
+    long total = 0; int sold_from = 0, spoiled_from = 0;
     for (Colony& c : g_world.colonies) {
         int owner = c.owner_power; if (owner < 0 || owner >= 4) continue;
-        for (int gd = 1; gd < NGOODS; ++gd) {           // Food(0) is never auto-sold
-            if (c.stockpile[gd] < 100) continue;        // over-cap threshold (0x64)
-            if ((g_engine_extra.boycotts >> gd) & 1u) continue;   // boycotted -> can't sell
-            int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;   // keep the lower band (0x32)
-            int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
-            long net = (long)excess * bid * (100 - g_game.powers[owner].tax) / 100;
-            if (net < 0) net = 0;
-            g_game.powers[owner].gold += net; total += net; ++goods_sold;
+        bool custom_house = (c.built_mask >> 18) & 1ull;                  // building 18 = Custom House
+        int cap = (c.warehouse_lvl + 1) * g_active_rules.cfg.warehouse_cap_base;   // 100 / 200 / 300
+        bool spoiled = false;
+        for (int gd = 1; gd < NGOODS; ++gd) {           // Food(0) is the growth store, never here
+            if (c.stockpile[gd] <= 100) continue;       // only surplus above the base warehouse
+            if (custom_house) {
+                // Custom House sells surplus directly to Europe -- no ship needed (Peter Stuyvesant).
+                if ((g_engine_extra.boycotts >> gd) & 1u) continue;       // boycotted -> can't sell
+                int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;  // keep the lower band
+                int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+                long net = (long)excess * bid * (100 - g_game.powers[owner].tax) / 100;
+                if (net < 0) net = 0;
+                g_game.powers[owner].gold += net; total += net;
+            } else if (c.stockpile[gd] > cap) {
+                // No Custom House: goods above the warehouse cap SPOIL. To sell, ship them to the
+                // Europe market (/api/europe/sell) or build a Custom House (needs Stuyvesant).
+                c.stockpile[gd] = cap; spoiled = true;
+            }
         }
+        if (custom_house && total > 0) ++sold_from;   // (approximate per-colony flag)
+        if (spoiled) ++spoiled_from;
     }
-    if (goods_sold > 0)
-        g_turn_notices.push_back("Auto-export: shipped surplus from " + std::to_string(goods_sold) +
-                                 " warehouse(s) to Europe for " + std::to_string(total) + " gold.");
+    if (total > 0)
+        g_turn_notices.push_back("Custom House: auto-sold colony surplus to Europe for " +
+                                 std::to_string(total) + " gold.");
+    if (spoiled_from > 0)
+        g_turn_notices.push_back("Warehouse overflow: surplus goods spoiled in " + std::to_string(spoiled_from) +
+                                 " colony(ies) -- build a Custom House (needs Peter Stuyvesant) or ship goods to Europe to sell them.");
 }
 
 static void game_step() {
@@ -1268,6 +1283,14 @@ static forge::JsonValue sandbox_state_json() {
     forge::JsonValue ffa = jarr();
     for (int i = 0; i < 32; ++i) if ((g_sb_extra.ff_owned >> i) & 1u) ffa.arr.push_back(forge::json_num(i));
     o.obj["fathers"] = ffa;
+    // Market: whether the colony has a Custom House (auto-sell to Europe), the tax, and the per-good
+    // Europe bid price -- so the screen can offer a "ship & sell" action and show the auto-sell state.
+    o.obj["custom_house"] = jbool((c.built_mask >> 18) & 1ull);
+    o.obj["tax"] = forge::json_num(g_sb_game.powers[0].tax);
+    forge::JsonValue pr = jarr();
+    for (int gd = 0; gd < NGOODS; ++gd)
+        pr.arr.push_back(forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx));
+    o.obj["prices"] = pr;
     return o;
 }
 
@@ -1393,6 +1416,16 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
 }
 
 static forge::JsonValue build_game_bundle();   // B13: full-game data bundle (defined below)
+
+// Some buildings need a founding father before they can be built (spec/systems/founding_fathers.md):
+// the Custom House (18) needs Peter Stuyvesant (#3); factory-tier buildings (5/23/26/29/34/41) need
+// Adam Smith (#0). Returns a reason string if the owner lacks the required father, else nullptr.
+static const char* building_ff_requirement(int bid, uint32_t ff_owned) {
+    if (bid == 18 && !((ff_owned >> 3) & 1u)) return "requires Peter Stuyvesant";
+    if ((bid == 5 || bid == 23 || bid == 26 || bid == 29 || bid == 34 || bid == 41) &&
+        !((ff_owned >> 0) & 1u)) return "requires Adam Smith";
+    return nullptr;
+}
 
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
@@ -1886,6 +1919,10 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
             int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx).as_int();
             std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
+            if (const char* req = building_ff_requirement(bid, g_engine_extra.ff_owned)) {
+                forge::JsonValue o = jobj(); o.obj["ok"] = jbool(false);
+                o.obj["msg"] = forge::json_str(name + " " + req); return J(200, o);
+            }
             bool ok = start_building(g_world.colonies[ci], bid, cost, minc);
             forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok);
             o.obj["building"] = forge::json_str(name); o.obj["cost"] = forge::json_num(cost);
@@ -1942,6 +1979,10 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
             int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx).as_int();
             std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
+            if (const char* req = building_ff_requirement(bid, g_sb_extra.ff_owned)) {
+                forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(false);
+                o.obj["msg"] = forge::json_str(name + " " + req + " (grant it below)"); return J(200, o);
+            }
             bool ok = start_building(g_sb_world.colonies[0], bid, cost, minc);
             forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(ok);
             o.obj["msg"] = forge::json_str(ok ? ("Started " + name + " (" + std::to_string(cost) + " hammers)")
@@ -1989,6 +2030,27 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (id >= 0 && id < 32) { if (on) g_sb_extra.ff_owned |= (1u << id); else g_sb_extra.ff_owned &= ~(1u << id); }
             forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
             return J(200, sandbox_state_json());
+        }
+        // Sandbox: ship a good to the Europe market and sell it (the path when you have NO Custom
+        // House) -- proceeds = qty * @CARGO bid * (100 - tax)/100, the same price the Custom House gets.
+        if (path == "/api/sandbox/sell" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            Colony& col = g_sb_world.colonies[0];
+            int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
+            int qty = b.find("qty") ? b.find("qty")->as_int(0) : 0;
+            if (gd < 1 || gd >= NGOODS) return err(400, "bad good");
+            if ((g_sb_extra.boycotts >> gd) & 1u) return err(400, good_display(gd) + " is boycotted in Europe");
+            if (qty <= 0 || qty > col.stockpile[gd]) qty = col.stockpile[gd];
+            if (qty <= 0) return err(400, "nothing to sell");
+            forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
+            int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+            long proceeds = (long)qty * bid * (100 - g_sb_game.powers[0].tax) / 100; if (proceeds < 0) proceeds = 0;
+            col.stockpile[gd] -= qty; g_sb_game.powers[0].gold += proceeds;
+            forge::JsonValue o = sandbox_state_json();
+            o.obj["msg"] = forge::json_str("Shipped " + std::to_string(qty) + " " + good_display(gd) +
+                                           " to Europe for " + std::to_string(proceeds) + " gold");
+            return J(200, o);
         }
         if (path == "/api/sandbox/rush" && method == "POST") {
             if (!g_sb_active) sandbox_new(3);
