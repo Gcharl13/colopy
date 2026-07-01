@@ -117,7 +117,7 @@
       "x": 760,
       "y": 90,
       "params": {
-        "type": "Colonists",
+        "type": "Treasure",
         "power": "0"
       }
     },
@@ -273,9 +273,25 @@
         "textKey": "@LOSTCITY9",
         "choices": "Welcome."
       }
+    },
+    {
+      "id": "trb",
+      "type": "GetState",
+      "x": 620,
+      "y": 510,
+      "params": { "path": "@TRIBES[0].singular" }
+    },
+    {
+      "id": "nat",
+      "type": "GetState",
+      "x": 620,
+      "y": 650,
+      "params": { "path": "@COUNTRY[0].name" }
     }
   ],
   "edges": [
+    { "from": { "node": "trb", "pin": "value" }, "to": { "node": "pop8", "pin": "str0" } },
+    { "from": { "node": "nat", "pin": "value" }, "to": { "node": "popd", "pin": "str0" } },
     {
       "from": {
         "node": "roll",

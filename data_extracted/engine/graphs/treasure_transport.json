@@ -6,9 +6,9 @@
       "id": "note",
       "type": "Comment",
       "x": 20,
-      "y": -90,
+      "y": -110,
       "params": {
-        "text": "Treasure transport to Europe -- the King's cut (spec/systems/natives.md func_05C878). Cut% = Hernan Cortes (ff.10) ? tax : min(max(5*diff+50, 2*tax), 90). One Formula computes what you keep = treasure - treasure*cut/100; the rest is the Crown's. (treasure proxied by the treasury here.)"
+        "text": "Treasure transport to Europe -- the King's cut (spec/systems/natives.md func_05C878). @KINGGALLEON2 is an OFFER: with no galleon of your own, the Crown proposes to ship the treasure and take a cut. Cut% = Hernan Cortes (ff.10) ? tax : min(max(5*diff+50, 2*tax), 90). You KEEP treasure - treasure*cut/100 -- but only if you accept; declining ships nothing and grants nothing (the treasure stays in the New World). One Formula computes the kept amount; the grant is gated behind the accept choice. (treasure proxied by the treasury here.)"
       }
     },
     {
@@ -22,62 +22,60 @@
       "id": "keep",
       "type": "Formula",
       "x": 20,
-      "y": 150,
+      "y": 170,
       "params": {
         "expr": "power0.gold - power0.gold * (ff.10 ? power0.tax : min(max(5*game.difficulty+50, 2*power0.tax), 90)) / 100"
       }
     },
     {
+      "id": "pop",
+      "type": "ShowPopup",
+      "x": 240,
+      "y": 40,
+      "params": {
+        "title": "The Crown's Galleon",
+        "textKey": "@KINGGALLEON2",
+        "speaker": "King",
+        "choices": "Let the Crown ship it,Keep it in the New World"
+      }
+    },
+    {
       "id": "grant",
       "type": "GrantGold",
-      "x": 220,
-      "y": 40,
+      "x": 470,
+      "y": 10,
       "params": {
         "power": "0"
       }
     },
     {
-      "id": "pop",
+      "id": "done",
       "type": "ShowPopup",
-      "x": 420,
-      "y": 40,
+      "x": 690,
+      "y": 10,
       "params": {
-        "title": "The Galleon Arrives",
-        "textKey": "@KINGGALLEON2",
-        "choices": "So be it."
+        "title": "Treasure Delivered",
+        "body": "The Crown's galleon delivers your treasure to Europe, less its cut. You now hold {power0.gold} gold.",
+        "choices": "Very well."
+      }
+    },
+    {
+      "id": "kept",
+      "type": "ShowPopup",
+      "x": 470,
+      "y": 110,
+      "params": {
+        "title": "Treasure Kept",
+        "body": "You keep the treasure in the New World, awaiting a galleon of your own to ship it.",
+        "choices": "As you wish."
       }
     }
   ],
   "edges": [
-    {
-      "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "grant",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "keep",
-        "pin": "value"
-      },
-      "to": {
-        "node": "grant",
-        "pin": "amount"
-      }
-    },
-    {
-      "from": {
-        "node": "grant",
-        "pin": "out"
-      },
-      "to": {
-        "node": "pop",
-        "pin": "in"
-      }
-    }
+    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "pop", "pin": "in" } },
+    { "from": { "node": "pop", "pin": "Let the Crown ship it" }, "to": { "node": "grant", "pin": "in" } },
+    { "from": { "node": "keep", "pin": "value" }, "to": { "node": "grant", "pin": "amount" } },
+    { "from": { "node": "grant", "pin": "out" }, "to": { "node": "done", "pin": "in" } },
+    { "from": { "node": "pop", "pin": "Keep it in the New World" }, "to": { "node": "kept", "pin": "in" } }
   ]
 }

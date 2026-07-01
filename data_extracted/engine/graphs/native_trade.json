@@ -76,7 +76,7 @@
       "type": "ChangeNativeTension",
       "x": 940,
       "y": 40,
-      "params": { "amount": -6 }
+      "params": { "amount": -4 }
     }
   ],
   "edges": [

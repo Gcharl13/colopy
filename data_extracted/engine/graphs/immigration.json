@@ -8,7 +8,7 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Religious immigration (spec/systems/immigration.md), rebuilt with Formula + TableLookup. Trigger: crosses accumulator (base 2 + colony pop) crosses the threshold baseNeed*(8-diff)/8, England x2/3. Arriving class = difficulty-weighted refill roll: roll(1,15) <= (diff+K)/2 picks a low tier (criminals/servants/farmers, @CLASS rows 0-2) else high tier (Trained Mercenaries 6, or Educated Elite 7 with William Brewster ff.20). Class name + recruit cost read live from @CLASS by index. FLAGGED: baseNeed + K."
+        "text": "Religious immigration (spec/systems/immigration.md), rebuilt with Formula + TableLookup. Trigger: the accumulated crosses (power0.crosses) pass the byte-verified crosses_threshold -- base a = total colonists + units, then min(a*2+8, 4000), scaled by difficulty (8-diff)/8 and England x2/3; the spawn fires when crosses STRICTLY exceed it (jg). Arriving class = difficulty-weighted refill roll: roll(1,15) <= (diff+18)/2 picks a low tier (criminals/servants/farmers, @CLASS rows 0-2) else high tier (Trained Mercenaries 6, or Educated Elite 7 with William Brewster ff.20). Class name + recruit cost read live from @CLASS by index."
       }
     },
     {
@@ -24,7 +24,7 @@
       "x": 200,
       "y": 150,
       "params": {
-        "expr": "(power0.crosses + 2 + colony0.population) >= (30*(8-game.difficulty)/8*2/3)"
+        "expr": "power0.crosses > min((colonies.population + power0.units)*2 + 8, 4000)*(8-game.difficulty)/8*2/3"
       }
     },
     {

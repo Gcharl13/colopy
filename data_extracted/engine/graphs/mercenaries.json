@@ -8,7 +8,7 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Mercenary offer (spec/systems/mercenary.md): odds are wartime 1-in-3 (after independence) vs peacetime 1-in-21, in one Formula. On an offer the King presents @MERCENARIES; Hire -> a veteran stack arrives (@MERCS); declining is silent."
+        "text": "Mercenary offer (spec/systems/mercenary.md): odds are wartime 1-in-3 (after independence) vs peacetime 1-in-21, in one Formula. On an offer the King presents @MERCENARIES; Hire -> a veteran stack arrives (@MERCS); declining is silent. The FORCE depends on the state: wartime spawns Continental Army/Cavalry + Artillery, peacetime spawns Veteran Dragoons + Artillery -- so the hire branches on revolution.declared."
       }
     },
     {
@@ -47,19 +47,43 @@
       }
     },
     {
-      "id": "hire",
-      "type": "HireMercenaries",
+      "id": "wdecl",
+      "type": "Formula",
+      "x": 620,
+      "y": 170,
+      "params": { "expr": "revolution.declared" }
+    },
+    {
+      "id": "hbr",
+      "type": "Branch",
       "x": 620,
       "y": 40,
+      "params": {}
+    },
+    {
+      "id": "hire",
+      "type": "HireMercenaries",
+      "x": 820,
+      "y": 10,
       "params": {
         "power": "0",
         "kind": "Wartime"
       }
     },
     {
+      "id": "hpeace",
+      "type": "HireMercenaries",
+      "x": 820,
+      "y": 90,
+      "params": {
+        "power": "0",
+        "kind": "Peacetime"
+      }
+    },
+    {
       "id": "arr",
       "type": "ShowPopup",
-      "x": 820,
+      "x": 1040,
       "y": 40,
       "params": {
         "title": "Mercenaries Arrive",
@@ -100,24 +124,28 @@
       }
     },
     {
-      "from": {
-        "node": "pop",
-        "pin": "Hire them"
-      },
-      "to": {
-        "node": "hire",
-        "pin": "in"
-      }
+      "from": { "node": "pop", "pin": "Hire them" },
+      "to": { "node": "hbr", "pin": "in" }
     },
     {
-      "from": {
-        "node": "hire",
-        "pin": "out"
-      },
-      "to": {
-        "node": "arr",
-        "pin": "in"
-      }
+      "from": { "node": "wdecl", "pin": "value" },
+      "to": { "node": "hbr", "pin": "cond" }
+    },
+    {
+      "from": { "node": "hbr", "pin": "true" },
+      "to": { "node": "hire", "pin": "in" }
+    },
+    {
+      "from": { "node": "hbr", "pin": "false" },
+      "to": { "node": "hpeace", "pin": "in" }
+    },
+    {
+      "from": { "node": "hire", "pin": "out" },
+      "to": { "node": "arr", "pin": "in" }
+    },
+    {
+      "from": { "node": "hpeace", "pin": "out" },
+      "to": { "node": "arr", "pin": "in" }
     }
   ]
 }
