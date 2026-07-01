@@ -37,7 +37,9 @@ struct Colony {
     int      build_cost    = 0;  // cost of build_target (from @BUILDING)
     int      warehouse_lvl = 0;  // +0x95  0/1/2
     uint64_t built_mask    = 0;  // +0x84  constructed-building bits (0..47)
-    uint32_t food_accum    = 0;  // +0xC8  food accumulator (grow at 200)
+    uint32_t food_accum    = 0;  // +0xAA  food-growth store (spec/systems/colony.md §3; threshold
+                                 //        25 with Stable / 50 without). NOT +0xC8 -- that offset is
+                                 //        the rebel_divisor high word of the SoL EMA (colony.md q2).
 
     // Per-turn production inputs (fed by the colonist/profession model, P1+):
     int bells_per_turn   = 0;    // statesmen -> good 0x12

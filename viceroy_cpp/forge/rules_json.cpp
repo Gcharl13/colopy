@@ -21,7 +21,7 @@ namespace {
 bool set_cfg_scalar(Config& c, const std::string& k, const JsonValue& v) {
 #define F(name) if (k == #name) { c.name = v.as_int(c.name); return true; }
     F(warehouse_cap_base) F(sol_decay_shift) F(sol_inflow_mult) F(sol_birth_bonus)
-    F(food_growth_threshold) F(food_growth_threshold_stable) F(max_population) F(tory_divisor_base)
+    F(food_growth_threshold) F(food_growth_threshold_stable) F(max_population) F(rush_gold_per_hammer) F(tory_divisor_base)
     F(expert_era_bonus) F(expert_mfg_mult)
     F(price_drift_shift) F(fortify_def_num) F(fortify_def_den)
     F(ff_human_scale) F(ff_human_offset) F(ff_ai_scale) F(ff_ai_offset)
@@ -136,7 +136,7 @@ JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
     const Config& b = base.cfg; const Config& c = cur.cfg;
 #define D(name) if (b.name != c.name) cfg.obj[#name] = json_num(c.name);
     D(warehouse_cap_base) D(sol_decay_shift) D(sol_inflow_mult) D(sol_birth_bonus)
-    D(food_growth_threshold) D(food_growth_threshold_stable) D(max_population) D(tory_divisor_base)
+    D(food_growth_threshold) D(food_growth_threshold_stable) D(max_population) D(rush_gold_per_hammer) D(tory_divisor_base)
     D(expert_era_bonus) D(expert_mfg_mult)
     D(price_drift_shift) D(fortify_def_num) D(fortify_def_den)
     D(ff_human_scale) D(ff_human_offset) D(ff_ai_scale) D(ff_ai_offset)
@@ -205,7 +205,7 @@ JsonValue full_overlay(const RuleData& rd) {
     const Config& c = rd.cfg;
 #define E(name) cfg.obj[#name] = json_num(c.name);
     E(warehouse_cap_base) E(sol_decay_shift) E(sol_inflow_mult) E(sol_birth_bonus)
-    E(food_growth_threshold) E(food_growth_threshold_stable) E(max_population) E(tory_divisor_base)
+    E(food_growth_threshold) E(food_growth_threshold_stable) E(max_population) E(rush_gold_per_hammer) E(tory_divisor_base)
     E(expert_era_bonus) E(expert_mfg_mult)
     E(price_drift_shift) E(fortify_def_num) E(fortify_def_den)
     E(ff_human_scale) E(ff_human_offset) E(ff_ai_scale) E(ff_ai_offset)

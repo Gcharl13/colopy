@@ -10,7 +10,7 @@ namespace {
 // (the array fields ff_gate_years / ref_accrue_gate_years are edited via the Rules overlay).
 #define CFG_FIELDS(X) \
     X(warehouse_cap_base) X(sol_decay_shift) X(sol_inflow_mult) X(sol_birth_bonus) \
-    X(food_growth_threshold) X(food_growth_threshold_stable) X(max_population) X(tory_divisor_base) \
+    X(food_growth_threshold) X(food_growth_threshold_stable) X(max_population) X(rush_gold_per_hammer) X(tory_divisor_base) \
     X(expert_era_bonus) X(expert_mfg_mult) \
     X(price_drift_shift) X(fortify_def_num) X(fortify_def_den) \
     X(ff_human_scale) X(ff_human_offset) X(ff_ai_scale) X(ff_ai_offset) \

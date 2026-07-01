@@ -1785,7 +1785,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (col.build_target < 0) return err(400, "nothing under construction");
             long remaining = (long)col.build_cost - (long)col.build_bank;
             if (remaining < 0) remaining = 0;
-            long gold_cost = remaining * 8;                       // RECONSTRUCTED rush curve
+            long gold_cost = remaining * g_active_rules.cfg.rush_gold_per_hammer;   // editable knob (cfg)
             int owner = col.owner_power;
             bool ok = (owner >= 0 && owner < 4) && rush_build(col, g_game.powers[owner], gold_cost);
             forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok); o.obj["cost"] = forge::json_num((double)gold_cost);
@@ -1834,7 +1834,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             Colony& col = g_sb_world.colonies[0];
             if (col.build_target < 0) return err(400, "nothing under construction");
             long rem = (long)col.build_cost - (long)col.build_bank; if (rem < 0) rem = 0;
-            long gold_cost = rem * 8;
+            long gold_cost = rem * g_active_rules.cfg.rush_gold_per_hammer;   // editable knob (cfg)
             bool ok = rush_build(col, g_sb_game.powers[0], gold_cost);
             forge::JsonValue o = sandbox_state_json(); o.obj["ok"] = jbool(ok);
             o.obj["msg"] = forge::json_str(ok ? "Construction complete" : "Not enough gold");

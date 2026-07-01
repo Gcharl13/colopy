@@ -737,6 +737,7 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
         if (p >= 0 && p < 4 && dot != std::string::npos) {
             std::string f = path.substr(dot + 1);
             if (f == "gold") { g.powers[p].gold = (long)value; return true; }
+            if (f == "royal_money") { g.powers[p].royal_money = (int64_t)value; return true; }
             if (f == "tax")  { g.powers[p].tax = (int)value; return true; }
             if (f == "crosses") { g.powers[p].crosses_accum = (int)value; return true; }
             if (f == "mil_strength")  { cx.x.power_mil[p]  = (int)value; return true; }
@@ -748,6 +749,9 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
         if (dot != std::string::npos && c >= 0 && c < (int)w.colonies.size()) {
             std::string f = path.substr(dot + 1);
             if (f == "population") { w.colonies[c].population = (int)value; return true; }
+            if (f == "warehouse")  { w.colonies[c].warehouse_lvl = (int)value; return true; }
+            // Per-turn derived fields (bells/hammers/food/crosses) are intentionally read-only:
+            // colony_compute_production overwrites them each turn, so a write would not persist.
             if (f.rfind("stockpile.", 0) == 0) { int gi = std::atoi(f.c_str() + 10);
                 if (gi >= 0 && gi < NGOODS) { w.colonies[c].stockpile[gi] = (int)value; return true; } }
         }

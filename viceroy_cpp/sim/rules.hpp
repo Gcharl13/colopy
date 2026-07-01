@@ -43,6 +43,8 @@ struct Config {
     int food_growth_threshold = 50;   // +0xAA food store to add +1 pop, no Stable (spec colony.md, func_00A3E1 @0xA5CD)
     int food_growth_threshold_stable = 25; // ... with a Stable (building 0x11=17) present (@0xA5BB seeds 0x19)
     int max_population        = 32;   // colony population cap
+    int rush_gold_per_hammer  = 8;    // RECONSTRUCTED: gold to rush-buy one remaining hammer (no
+                                      // byte-verified buyout curve in the spec; editable knob)
     int tory_divisor_base     = 10;   // tory penalty divisor (human: base-diff; ai: base)
     int expert_era_bonus      = 2;    // expert on an era good: +bonus
     int expert_mfg_mult       = 2;    // expert on a manufactured good: *mult
