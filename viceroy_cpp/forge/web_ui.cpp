@@ -1228,14 +1228,36 @@ async function beginGame(){
 }
 
 // ---- #67 isolated colony sandbox: a self-contained colony over the real sim ----
-let SB=null, SBBUILDINGS=[];
+let SB=null, SBBUILDINGS=[], SBFATHERS=[];
+// assignable jobs: a colonist can work a ring tile (raw good, on the given terrain) or a building.
+const SBJOBS=[
+  {label:'Farmer → Food (Plains)',      prof:0,  good:0,  tile:0, terrain:2},
+  {label:'Fisherman → Food (Ocean)',    prof:8,  good:0,  tile:1, terrain:25},
+  {label:'Lumberjack → Lumber (Forest)',prof:5,  good:5,  tile:2, terrain:8},
+  {label:'Ore Miner → Ore (Hills)',     prof:6,  good:6,  tile:3, terrain:28},
+  {label:'Fur Trapper → Furs (Forest)', prof:4,  good:4,  tile:4, terrain:8},
+  {label:'Sugar Planter → Sugar',       prof:1,  good:1,  tile:5, terrain:5},
+  {label:'Cotton Planter → Cotton',     prof:3,  good:3,  tile:6, terrain:3},
+  {label:'Tobacco Planter → Tobacco',   prof:2,  good:2,  tile:7, terrain:4},
+  {label:'Statesman → Bells (Town Hall)',prof:17, good:18, tile:-1},
+  {label:'Carpenter → Hammers (from Lumber)',prof:13,good:16,tile:-1},
+  {label:'Preacher → Crosses (Church)', prof:16, good:17, tile:-1},
+  {label:'Distiller → Rum (from Sugar)',prof:9,  good:9,  tile:-1},
+  {label:'Blacksmith → Tools (from Ore)',prof:14,good:14, tile:-1},
+];
 async function sbInit(){
   if(!SBBUILDINGS.length){ try{ const names=await (await fetch('/api/tables?file=names')).json();
     SBBUILDINGS=(names['@BUILDING']&&names['@BUILDING'].rows)||[]; }catch(e){}
     $('#sbbuild').innerHTML=SBBUILDINGS.map((r,i)=>'<option value="'+i+'">'+esc(r.name)+' ('+r.cost+'h, min '+r.min_colony+')</option>').join(''); }
+  if(!SBFATHERS.length){ try{ SBFATHERS=await (await fetch('/api/fathers')).json(); }catch(e){} }
   if(!SB) await sbLoad();
 }
 async function sbLoad(){ SB=await (await fetch('/api/sandbox/state')).json(); sbRender(); }
+async function sbAssign(){ const j=SBJOBS[+$('#sbjob').value]||SBJOBS[0]; const expert=$('#sbexpert').checked?1:0;
+  SB=await (await fetch('/api/sandbox/assign',{method:'POST',body:JSON.stringify({profession:j.prof,good:j.good,tile:j.tile,terrain:j.terrain||0,expert})})).json();
+  sbRender(); ui.toast('Assigned '+j.label); }
+async function sbUnassign(i){ SB=await (await fetch('/api/sandbox/unassign',{method:'POST',body:JSON.stringify({worker:i})})).json(); sbRender(); }
+async function sbFather(id,on){ SB=await (await fetch('/api/sandbox/father',{method:'POST',body:JSON.stringify({id,on})})).json(); sbRender(); }
 async function sbNew(){ SB=await (await fetch('/api/sandbox/new',{method:'POST',body:JSON.stringify({pop:3})})).json(); sbRender(); ui.toast('Fresh colony (pop 3)'); }
 async function sbAddPop(){ SB=await (await fetch('/api/sandbox/addpop',{method:'POST',body:'{}'})).json(); sbRender(); }
 async function sbStep(n){ SB=await (await fetch('/api/sandbox/step',{method:'POST',body:JSON.stringify({n})})).json(); sbRender(); ui.toast('Year '+SB.year); }
@@ -1244,16 +1266,19 @@ async function sbBuild(){ const bid=+$('#sbbuild').value;
   const r=await (await fetch('/api/sandbox/build',{method:'POST',body:JSON.stringify({building:bid})})).json(); SB=r; sbRender(); ui.toast(r.msg||''); }
 async function sbRush(){ const r=await (await fetch('/api/sandbox/rush',{method:'POST',body:'{}'})).json();
   if(r.error){ ui.toast(r.error); return; } SB=r; sbRender(); ui.toast(r.msg||''); }
+// what a building does, for the ones that drive production (shown in the Buildings table).
+const BLD_ROLE={9:'Statesmen &rarr; Bells',35:'Carpenters &rarr; Hammers (from Lumber)',37:'Preachers &rarr; Crosses',
+  27:'Rum &larr; Sugar',24:'Cigars &larr; Tobacco',21:'Cloth &larr; Cotton',32:'Coats &larr; Furs',
+  39:'Tools &larr; Ore',3:'Muskets &larr; Tools',17:'Horses &larr; Food surplus'};
 function sbRender(){
   if(!SB) return;
-  const built=(SB.built||[]).map(b=>esc((SBBUILDINGS[b]||{}).name||('#'+b))).join(', ')||'&mdash;';
   let h='<h3 style="margin:2px 0">Colony &middot; '+SB.year+'</h3>';
   h+='<table><tr><td>Population</td><td><b>'+SB.population+'</b></td></tr>';
-  h+='<tr><td>Sons of Liberty</td><td>'+SB.sol+'%</td></tr>';
+  const solb=SB.sol_bonus||0;
+  h+='<tr><td>Sons of Liberty</td><td>'+SB.sol+'% <span class="muted">'+(solb?'(+'+solb+'/colonist production bonus)':'(no production bonus below 50%)')+'</span></td></tr>';
   h+='<tr><td>Bells / Hammers / Food / Crosses</td><td>'+SB.bells+' / '+SB.hammers+' / '+SB.food+' / '+SB.crosses+'</td></tr>';
   const bn=SB.building_name||'';
-  h+='<tr><td>Building</td><td>'+(SB.build_target<0?'<span class="muted">idle</span>':(esc(bn)+' &mdash; '+SB.build_bank+' of '+SB.build_cost+' hammers ('+SB.build_remaining+' left)'))+'</td></tr>';
-  h+='<tr><td>Built</td><td>'+built+'</td></tr>';
+  h+='<tr><td>Under construction</td><td>'+(SB.build_target<0?'<span class="muted">idle</span>':(esc(bn)+' &mdash; '+SB.build_bank+' of '+SB.build_cost+' hammers ('+SB.build_remaining+' left)'))+'</td></tr>';
   // food-growth progress: accumulator toward the next colonist (25 with a Stable, else 50)
   if(SB.food_threshold){ const fa=SB.food_accum||0, thr=SB.food_threshold, half=Math.max(1,Math.ceil((SB.food+1)/2));
     const left=Math.max(0,Math.ceil((thr-fa)/half));
@@ -1263,13 +1288,37 @@ function sbRender(){
   const cols=SB.colonists||[];
   h+='<h4 style="margin:10px 0 2px">Colonists ('+cols.length+')</h4>';
   if(!cols.length){ h+='<div class="muted">no colonists</div>'; }
-  else{ h+='<table style="width:100%"><tr><th>#</th><th>Colonist</th><th>Working</th><th>Produces</th><th>Expert</th></tr>';
+  else{ h+='<table style="width:100%"><tr><th>#</th><th>Colonist</th><th>Working</th><th>Produces</th><th>Expert</th><th></th></tr>';
     cols.forEach((w,i)=>{ h+='<tr><td>'+(i+1)+'</td><td><b>'+esc(w.name)+'</b></td><td>'+esc(w.where)
-      +'</td><td>'+esc(w.produces)+'</td><td style="text-align:center">'+(w.expert?'&#10003;':'')+'</td></tr>'; });
+      +'</td><td>'+esc(w.produces)+'</td><td style="text-align:center">'+(w.expert?'&#10003;':'')
+      +'</td><td><button class="act" title="unassign" onclick="sbUnassign('+i+')">&times;</button></td></tr>'; });
+    h+='</table>'; }
+  // assign a new colonist (tile or building) and watch production recompute
+  h+='<div class="row" style="margin:4px 0;gap:4px"><select id="sbjob" style="max-width:230px">'
+    +SBJOBS.map((j,i)=>'<option value="'+i+'">'+esc(j.label)+'</option>').join('')+'</select>'
+    +'<label style="font-size:11px"><input type="checkbox" id="sbexpert"> expert</label>'
+    +'<button class="act" onclick="sbAssign()">Assign colonist</button></div>';
+  // buildings constructed in this colony (the "which buildings have been built" view)
+  const blt=SB.built||[];
+  h+='<h4 style="margin:10px 0 2px">Buildings built ('+blt.length+')</h4>';
+  if(!blt.length){ h+='<div class="muted">none built</div>'; }
+  else{ h+='<table style="width:100%"><tr><th>#</th><th>Building</th><th>Effect</th></tr>';
+    blt.forEach(b=>{ const nm=(SBBUILDINGS[b]||{}).name||('building #'+b);
+      h+='<tr><td>'+b+'</td><td><b>'+esc(nm)+'</b></td><td class="muted">'+(BLD_ROLE[b]||'')+'</td></tr>'; });
     h+='</table>'; }
   h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
   (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
   h+='</tr></table>';
+  // Founding fathers -- toggle any to see its effect. The production ones (bold) change output live.
+  const owned=new Set(SB.fathers||[]);
+  h+='<h4 style="margin:10px 0 2px">Founding Fathers</h4>'
+    +'<div class="muted" style="font-size:10px;margin-bottom:2px">check to grant; <b>bold</b> = affects colony production</div>'
+    +'<table style="width:100%">';
+  SBFATHERS.forEach(f=>{ const on=owned.has(f.id);
+    h+='<tr><td style="width:16px"><input type="checkbox" '+(on?'checked':'')+' onchange="sbFather('+f.id+',this.checked)"></td>'
+      +'<td'+(f.production?' style="font-weight:bold"':'')+'>'+esc(f.name)+'</td>'
+      +'<td class="muted" style="font-size:10px">'+f.effect+'</td></tr>'; });
+  h+='</table>';
   $('#sbcol').innerHTML=h;
   // outside variables (each writes a real binding on the sandbox store)
   const row=(label,path,val)=>'<div class="row" style="margin:2px 0"><span style="display:inline-block;width:90px">'+label+'</span>'

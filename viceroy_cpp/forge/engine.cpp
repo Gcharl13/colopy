@@ -218,9 +218,18 @@ int terrain_good_yield(int terrain, int good) {
 // Shared by the turn pipeline (phase_production) AND the ColonyProduce editor node -- one source.
 // NOTE (flagged, not modeled): second-order goods (Muskets<-Tools, Horses) and the >2-building x2/3
 // factory throttle are reconstructed/ambiguous and intentionally left out rather than guessed.
-void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd) {
+void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
+                               uint32_t ff_owned) {
     using vc::sim::NGOODS;
     int sol = vc::sim::sol_pct(col);
+    // Sons-of-Liberty production bonus (spec @REBELMAJORITY/@REBELUNANIMOUS): each producing colonist
+    // gains +1 at a rebel majority (SoL >= 50%) and +2 when unanimous (100%).
+    int sol_bonus = sol >= 100 ? 2 : (sol >= 50 ? 1 : 0);
+    // Byte-verified founding-father production effects (spec/systems/founding_fathers.md).
+    bool ff_hudson    = (ff_owned >> 8)  & 1u;   // #8  Henry Hudson    -> furs (good 4) x2
+    bool ff_jefferson = (ff_owned >> 15) & 1u;   // #15 Thomas Jefferson -> bells +50%
+    bool ff_penn      = (ff_owned >> 21) & 1u;   // #21 William Penn     -> crosses +50%
+    bool ff_smith     = (ff_owned >> 0)  & 1u;   // #0  Adam Smith       -> factory tier un-throttled
     std::array<int, NGOODS> prod{};
     // The center (town-square) tile auto-produces its own food -- the 3x3 ring includes the center
     // (spec colony.md step 2). Use the colony's real tile terrain, with the authored center_food as
@@ -234,11 +243,13 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         if (g >= 0 && g < 8) {               // tile worker -> raw good from the terrain-yield table
             int y = terrain_good_yield(wk.terrain, g);
             y = vc::sim::tory_expert_adjust(y, col.population, sol, difficulty, col.human, wk.expert, g, rd);
+            if (y > 0) y += sol_bonus;                      // Sons-of-Liberty +1/+2 per producing colonist
+            if (g == 4 && ff_hudson) y *= 2;                // Henry Hudson (#8): furs (good 4) x2
             if (g == 0) food += y; else prod[g] += y;
-        } else if (g == 17) crosses += wk.expert ? 6 : 3;   // Preacher  -> Crosses (no raw input)
-        else if (g == 18)   bells   += wk.expert ? 6 : 3;   // Statesman -> Bells   (no raw input)
-        else if ((g >= 9 && g < NGOODS) || g == 16)         // artisan: Rum..Muskets, or Carpenter (Hammers)
-            cap[g] += wk.expert ? 6 : 3;
+        } else if (g == 17) crosses += (wk.expert ? 6 : 3) + sol_bonus;   // Preacher  -> Crosses
+        else if (g == 18)   bells   += (wk.expert ? 6 : 3) + sol_bonus;   // Statesman -> Bells
+        else if ((g >= 9 && g < NGOODS) || g == 16)                       // artisan: Rum..Muskets / Carpenter
+            cap[g] += (wk.expert ? 6 : 3) + sol_bonus;
     }
     // Manufacturing (spec colony.md §3 / func_008E84; "Carpenter Lumber->Hammers", line 266): each
     // artisan converts its input raw 1:1 into a finished good, up to throughput, gated on the base
@@ -267,7 +278,7 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         int owned = 0;                                                     // >2 chain buildings -> x2/3 throttle
         if (g < NGOODS)                                                    // Hammers(16) has no factory chain
             for (int k = 0; k < 3; ++k) { int b = CHAIN[g][k]; if (b >= 0 && (col.built_mask & (1ull << b))) ++owned; }
-        if (owned > 2) made = made * 2 / 3;
+        if (owned > 2 && !ff_smith) made = made * 2 / 3;                   // Adam Smith (#0): factory tier un-throttled
         if (made <= 0) return 0;
         int fromProd = made < prod[raw] ? made : prod[raw]; if (fromProd < 0) fromProd = 0;
         prod[raw] -= fromProd;                                            // consume this turn's raw,
@@ -290,6 +301,8 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
             if (breed > 0) col.stockpile[8] += breed;
             break;
         }
+    if (ff_jefferson) bells  += bells  / 2;   // Thomas Jefferson (#15): bell production +50%
+    if (ff_penn)      crosses += crosses / 2; // William Penn      (#21): crosses production +50%
     col.bells_per_turn = bells; col.hammers_per_turn = hammers; col.crosses_output = crosses;
 }
 
@@ -1586,7 +1599,7 @@ struct Runner {
             int ci = (int)as_num(pget(*n, "colony"));
             if (ci >= 0 && ci < (int)cx.w.colonies.size()) {
                 vc::sim::Colony& col = cx.w.colonies[ci];
-                colony_compute_production(col, cx.g.difficulty, cx.rd);   // shared with the turn pipeline
+                colony_compute_production(col, cx.g.difficulty, cx.rd, cx.x.ff_owned);   // shared with the turn pipeline
                 effect("colony " + std::to_string(ci) + " production from " +
                        std::to_string(col.workers.size()) + " workers: food " +
                        std::to_string(col.food_per_turn) + ", bells " + std::to_string(col.bells_per_turn) +

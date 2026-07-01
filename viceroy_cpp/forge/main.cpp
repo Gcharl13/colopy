@@ -724,7 +724,7 @@ static void game_new(int nation = 0, int difficulty = 1) {
                 c.workers.push_back(wk);
             }
         c.population = gi("pop", (int)c.workers.size()); if (c.population < 1) c.population = 1;
-        forge::colony_compute_production(c, g_game.difficulty, g_active_rules);   // populate turn-0 output
+        forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);   // populate turn-0 output
         g_world.colonies.push_back(c); g_colony_xy.push_back(xy); cxy.push_back(xy);
         return xy;
     };
@@ -970,7 +970,7 @@ static void game_step() {
         // depletes, it does not keep building. Freeze the peacetime REF buildup (run_turn's
         // ref_purchase) during the war so the conflict is winnable; war_resolution_step depletes it.
         Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
-        forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules);
+        forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
@@ -1209,7 +1209,7 @@ static void sandbox_new(int pop) {
     c.built_mask = (1ull << 9) | (1ull << 35) | (1ull << 37);   // Town Hall / Carpenter's Shop / Church
     c.population = (int)c.workers.size();
     if (pop > (int)c.workers.size() && pop <= 32) c.population = pop;
-    forge::colony_compute_production(c, g_sb_game.difficulty, g_active_rules);   // roster -> *_per_turn
+    forge::colony_compute_production(c, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);   // roster -> *_per_turn
     g_sb_world.colonies.push_back(c); g_sb_colony_xy.push_back({0, 0});
     g_sb_active = true;
 }
@@ -1260,7 +1260,62 @@ static forge::JsonValue sandbox_state_json() {
     int thr = (c.built_mask & (1ull << 17)) ? g_active_rules.cfg.food_growth_threshold_stable
                                             : g_active_rules.cfg.food_growth_threshold;
     o.obj["food_threshold"] = forge::json_num(thr);
+    // Sons-of-Liberty production bonus (+1 at >=50%, +2 at 100%) + the owned founding fathers, so
+    // the screen can show the multiplier and which fathers are boosting production.
+    int sbsol = sol_pct(c);
+    o.obj["sol_bonus"] = forge::json_num(sbsol >= 100 ? 2 : (sbsol >= 50 ? 1 : 0));
+    o.obj["ff_owned"] = forge::json_num((double)g_sb_extra.ff_owned);
+    forge::JsonValue ffa = jarr();
+    for (int i = 0; i < 32; ++i) if ((g_sb_extra.ff_owned >> i) & 1u) ffa.arr.push_back(forge::json_num(i));
+    o.obj["fathers"] = ffa;
     return o;
+}
+
+// The complete founding-father reference (all 25, spec/systems/founding_fathers.md): id + @FATHERS
+// name + byte-verified effect; `production` marks the ones colony_compute_production actually
+// applies (Adam Smith, Henry Hudson, Thomas Jefferson, William Penn).
+static forge::JsonValue fathers_json() {
+    struct FF { const char* effect; bool prod; };
+    static const FF FX[25] = {
+        {"Enables factory-tier buildings; factory output no longer throttled", true},   // 0  Adam Smith
+        {"Clears all boycotts in Europe", false},                                        // 1  Jakob Fugger
+        {"No payment to natives for land", false},                                       // 2  Peter Minuit
+        {"Enables the Custom House (auto-sell without shipping)", false},                // 3  Peter Stuyvesant
+        {"Reveals foreign colony / scout information", false},                           // 4  Jan de Witt
+        {"Atlantic crossing takes 1 turn instead of 2", false},                          // 5  Ferdinand Magellan
+        {"Reveals all colonies on the map", false},                                      // 6  Francisco Coronado
+        {"Lost-city rumors always positive; +1 naval sight", false},                     // 7  Hernando de Soto
+        {"Doubles fur production (Furs x2)", true},                                      // 8  Henry Hudson
+        {"Free Stockade for colonies of size >= 3", false},                              // 9  Sieur de La Salle
+        {"King's treasure cut capped at the tax rate", false},                           // 10 Hernan Cortes
+        {"Combat winners auto-promote", false},                                          // 11 George Washington
+        {"Undefended colony with muskets defends at strength 75", false},                // 12 Paul Revere
+        {"Privateer combat strength +50%", false},                                       // 13 Sir Francis Drake
+        {"Free Frigate", false},                                                         // 14 John Paul Jones
+        {"Bell production +50%", true},                                                  // 15 Thomas Jefferson
+        {"Resets native attitudes; halves native tension increases", false},             // 16 Pocahontas
+        {"Bell production scales with the tax rate (+tax%)", false},                      // 17 Thomas Paine
+        {"+20% Sons of Liberty", false},                                                 // 18 Simon Bolivar
+        {"Foreign powers offer peace", false},                                           // 19 Benjamin Franklin
+        {"No criminals / servants arrive on the docks", false},                          // 20 William Brewster
+        {"Crosses production +50%", true},                                               // 21 William Penn
+        {"All missionaries become expert", false},                                       // 22 Jean de Brebeuf
+        {"+4 native-conversion strength", false},                                        // 23 Juan de Sepulveda
+        {"Converts become free colonists", false},                                       // 24 Bartolome de las Casas
+    };
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    forge::JsonValue arr = jarr();
+    for (int i = 0; i < 25; ++i) {
+        forge::JsonValue o = jobj();
+        o.obj["id"] = forge::json_num(i);
+        forge::JsonValue nm = forge::resolve_binding("@FATHERS[" + std::to_string(i) + "].name", cx);
+        o.obj["name"] = (nm.type == forge::JsonValue::String && !nm.str.empty()) ? nm
+                        : forge::json_str("Father #" + std::to_string(i));
+        o.obj["effect"] = forge::json_str(FX[i].effect);
+        o.obj["production"] = jbool(FX[i].prod);
+        arr.arr.push_back(o);
+    }
+    return arr;
 }
 
 // EngineExtra (the relational/Forge-side state) + colony_xy round-trip -- these were
@@ -1431,6 +1486,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // B13: export the whole game as one portable data bundle (schema + tables + graphs +
         // screens + scenarios + messages/sprites + rules overlay). "Save this game as a mod."
         if (path == "/api/bundle") return J(200, build_game_bundle());
+        // The 25 founding fathers + their effects (which ones boost colony production).
+        if (path == "/api/fathers") return J(200, fathers_json());
         if (path == "/api/functions") {
             try { return J(200, forge::json_parse_file("data_extracted/engine/functions.json")); }
             catch (...) { return err(404, "functions.json not found"); }
@@ -1661,7 +1718,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food
               int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
               c.workers.push_back(wk); }
-            forge::colony_compute_production(c, g_game.difficulty, g_active_rules);
+            forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
             g_world.colonies.push_back(c);
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
@@ -1801,7 +1858,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             } else wk.terrain = 0;
             col.workers.push_back(wk);
             if ((int)col.workers.size() > col.population) col.population = (int)col.workers.size();
-            forge::colony_compute_production(col, g_game.difficulty, g_active_rules);
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
             return J(200, colony_detail_json(ci));
         }
         // Remove a colonist from a job (back to the plaza); production recomputes.
@@ -1813,7 +1870,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             Colony& col = g_world.colonies[ci];
             if (wi < 0 || wi >= (int)col.workers.size()) return err(400, "bad worker");
             col.workers.erase(col.workers.begin() + wi);
-            forge::colony_compute_production(col, g_game.difficulty, g_active_rules);
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
             return J(200, colony_detail_json(ci));
         }
 
@@ -1891,6 +1948,48 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                                               : (name + " unavailable (too small or already built)"));
             return J(200, o);
         }
+        // Sandbox: assign a colonist to a tile (raw good, with its terrain) or a building slot
+        // (good 16 Hammers / 17 Crosses / 18 Bells, or an artisan good 9..15), then recompute so the
+        // production effect is immediate.
+        if (path == "/api/sandbox/assign" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            Colony& col = g_sb_world.colonies[0];
+            Colony::Worker wk;
+            wk.profession = b.find("profession") ? b.find("profession")->as_int(19) : 19;
+            wk.tile    = b.find("tile")    ? b.find("tile")->as_int(-1) : -1;
+            wk.good    = b.find("good")    ? b.find("good")->as_int(0) : 0;
+            wk.terrain = b.find("terrain") ? b.find("terrain")->as_int(2) : 2;
+            const forge::JsonValue* ev = b.find("expert");
+            wk.expert = ev ? (ev->type == forge::JsonValue::Bool ? ev->b : ev->as_int(0) != 0) : false;
+            col.workers.push_back(wk);
+            if ((int)col.workers.size() > col.population) col.population = (int)col.workers.size();
+            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            return J(200, sandbox_state_json());
+        }
+        if (path == "/api/sandbox/unassign" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            Colony& col = g_sb_world.colonies[0];
+            int idx = b.find("worker") ? b.find("worker")->as_int(-1) : -1;
+            if (idx >= 0 && idx < (int)col.workers.size()) {
+                col.workers.erase(col.workers.begin() + idx);
+                if (col.population > (int)col.workers.size() && col.population > 1) col.population = (int)col.workers.size();
+            }
+            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            return J(200, sandbox_state_json());
+        }
+        // Sandbox: grant/revoke a founding father (a bit in ff_owned) to watch its production effect.
+        if (path == "/api/sandbox/father" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (!g_sb_active) sandbox_new(3);
+            int id = b.find("id") ? b.find("id")->as_int(-1) : -1;
+            const forge::JsonValue* onv = b.find("on");
+            bool on = onv ? (onv->type == forge::JsonValue::Bool ? onv->b : onv->as_int(0) != 0) : true;
+            if (id >= 0 && id < 32) { if (on) g_sb_extra.ff_owned |= (1u << id); else g_sb_extra.ff_owned &= ~(1u << id); }
+            forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            return J(200, sandbox_state_json());
+        }
         if (path == "/api/sandbox/rush" && method == "POST") {
             if (!g_sb_active) sandbox_new(3);
             Colony& col = g_sb_world.colonies[0];
@@ -1909,7 +2008,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             for (int i = 0; i < n; ++i) {
                 // Recompute production from the colonist roster (as the real turn pipeline's
                 // production phase does), THEN run the economic step off those fresh numbers.
-                forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules);
+                forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
                 step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
             }
             return J(200, sandbox_state_json());
@@ -2255,7 +2354,7 @@ static int engine_selftest() {
     // Worker/stockpile production: assign colonists to tiles + a building, run ColonyProduce,
     // and confirm the per-good stockpile + net food/bells match the terrain tables + spec math.
     {
-        vc::sim::Colony col; col.population = 3; col.rebel_A = 1; col.rebel_B = 1;  // sol=100 -> no tory penalty
+        vc::sim::Colony col; col.population = 3; col.rebel_A = 0; col.rebel_B = 1;  // sol=0: tory truncates to 0 for a small colony + no SoL bonus (isolates conversion)
         w.colonies.push_back(col);   // no colonies were pushed to `w` earlier, so this is colony 0
         forge::JsonValue gw = forge::json_parse(
             R"({"id":"w","nodes":[)"
@@ -2284,7 +2383,7 @@ static int engine_selftest() {
 
     // Raw->finished conversion + NO per-good stockpile ceiling (colony.md §3 / CORRECTED warehouse).
     {
-        vc::sim::Colony col; col.population = 1; col.rebel_A = 1; col.rebel_B = 1;  // sol=100 -> no tory penalty
+        vc::sim::Colony col; col.population = 1; col.rebel_A = 0; col.rebel_B = 1;  // sol=0: tory truncates to 0 for a small colony + no SoL bonus (isolates conversion)
         col.built_mask = (1ull << 27);   // owns the Rum Distiller's House (@BUILDING 27) -> Rum gate open
         w.colonies.push_back(col);   // colony 1
         forge::set_binding("colony1.stockpile.6", 98, cx);   // pre-bank 98 Ore (cap would be 100)
@@ -2317,7 +2416,7 @@ static int engine_selftest() {
 
     // Building gate: a distiller with NO Rum Distiller's House produces 0 Rum (the raw Sugar stays).
     {
-        vc::sim::Colony col; col.population = 1; col.rebel_A = 1; col.rebel_B = 1;  // built_mask = 0 (no buildings)
+        vc::sim::Colony col; col.population = 1; col.rebel_A = 0; col.rebel_B = 1;  // built_mask = 0; sol=0 (no bonus)
         w.colonies.push_back(col);   // colony 2
         forge::JsonValue gg = forge::json_parse(
             R"({"id":"g","nodes":[)"
@@ -2476,6 +2575,24 @@ static int engine_selftest() {
         // job_name resolves the @JOB display name (identity is data, not a number).
         check(forge::job_name(0, false) == "Farmer" || !forge::job_name(0, false).empty(),
               "job_name(Farmer) resolves from @JOB");
+        // Sons-of-Liberty production bonus: a Statesman makes 3 bells at SoL<50, 3+1 at a rebel
+        // majority (>=50%), 3+2 when unanimous (100%) -- spec @REBELMAJORITY/@REBELUNANIMOUS.
+        auto bells_at = [&](int a, int bden){ Colony s; s.population = 1; s.rebel_A = a; s.rebel_B = bden;
+            s.workers.push_back(mkw(17, -1, 0, 18)); forge::colony_compute_production(s, 1, rd4); return s.bells_per_turn; };
+        check(bells_at(0, 1)  == 3, "SoL 0%  -> Statesman 3 bells (no bonus)");
+        check(bells_at(1, 1)  == 5, "SoL 100% -> Statesman 3+2 bells (unanimous bonus)");
+        check(bells_at(1, 2)  == 4, "SoL 50%  -> Statesman 3+1 bells (majority bonus)");
+        // Founding-father effect: Thomas Jefferson (#15) -> bells +50%. At SoL 0, base 3 -> 4 (3 + 3/2).
+        Colony jf; jf.population = 1; jf.rebel_A = 0; jf.rebel_B = 1; jf.workers.push_back(mkw(17, -1, 0, 18));
+        forge::colony_compute_production(jf, 1, rd4, /*ff*/ (1u << 15));
+        check(jf.bells_per_turn == 4, "Thomas Jefferson (#15) -> bells +50% (3 -> 4)");
+        // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
+        Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)
+        forge::colony_compute_production(hh, 1, rd4, /*ff*/ 0);
+        int base_furs = hh.stockpile[4];
+        Colony hh2; hh2.population = 1; hh2.rebel_A = 0; hh2.rebel_B = 1; hh2.workers.push_back(mkw(4, 0, 8, 4));  // same fur trapper, with Hudson owned
+        forge::colony_compute_production(hh2, 1, rd4, /*ff*/ (1u << 8));
+        check(base_furs > 0 && hh2.stockpile[4] == base_furs * 2, "Henry Hudson (#8) -> fur production x2");
     }
 
     // A2 unified store: cell_get resolves reference + state + config through one grammar.

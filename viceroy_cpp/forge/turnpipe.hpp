@@ -12,9 +12,10 @@
 namespace forge {
 
 // Run one turn by iterating the data pipeline (turn.json, cached on first use).
-// Behaviorally identical to vc::sim::step_turn for the default pipeline.
+// Behaviorally identical to vc::sim::step_turn for the default pipeline. ff_owned is the human
+// power's founding-father bitmask (production applies the father effects); 0 = none.
 void run_turn(vc::sim::GameState& g, vc::sim::World& w, const vc::sim::RandFn& rng,
-              int player_idx, const vc::sim::RuleData& rd);
+              int player_idx, const vc::sim::RuleData& rd, uint32_t ff_owned = 0);
 
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).

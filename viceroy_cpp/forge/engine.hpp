@@ -105,7 +105,12 @@ void invalidate_tables();
 // tile workers -> raw goods (terrain table + tory/expert), building workers -> Hammers/Crosses/
 // Bells, then a gated raw->finished conversion; banks the stockpile and sets *_per_turn. Shared
 // by the turn pipeline and the ColonyProduce node. Reads @UNFORESTED/@FORESTED/@OTHER + @BUILDING.
-void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd);
+// ff_owned = the owner power's acquired-founding-father bitmask (EngineExtra.ff_owned); production
+// applies the byte-verified father effects (Henry Hudson furs x2, Jefferson +50% bells, Penn +50%
+// crosses, Adam Smith un-throttles factory tier) and the Sons-of-Liberty bonus (+1 at >=50%, +2 at
+// 100%). 0 = no fathers.
+void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
+                               uint32_t ff_owned = 0);
 
 // The @JOB display name for a profession id (the expert_name column for an expert, else name).
 std::string job_name(int profession, bool expert);

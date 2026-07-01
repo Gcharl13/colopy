@@ -55,10 +55,10 @@ const std::vector<std::string>& turn_phases() {
 }
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
-void phase_production(GameState& g, World& w, const RuleData& rd) {
+void phase_production(GameState& g, World& w, const RuleData& rd, uint32_t ff_owned) {
     for (Colony& c : w.colonies) {
-        colony_compute_production(c, g.difficulty, rd);   // colonists -> food/bells/hammers/goods
-        colony_economic_step(c, g.difficulty, rd);        // then SoL / build / growth off those
+        colony_compute_production(c, g.difficulty, rd, ff_owned);   // colonists -> food/bells/hammers/goods
+        colony_economic_step(c, g.difficulty, rd);                  // then SoL / build / growth off those
     }
 }
 void phase_market(GameState& g, World&, const RuleData& rd) { price_drift(g, rd); }
@@ -88,9 +88,9 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
     phase_cache() = PhaseCache{};
 }
 
-void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
+void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd, uint32_t ff_owned) {
     for (const std::string& id : turn_phases()) {
-        if (id == "production")       phase_production(g, w, rd);
+        if (id == "production")       phase_production(g, w, rd, ff_owned);
         else if (id == "market")      phase_market(g, w, rd);
         else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd);
         else if (id == "ref")         phase_ref(g, w, player_idx, rd);
