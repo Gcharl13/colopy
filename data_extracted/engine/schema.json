@@ -7,7 +7,7 @@
     "reference": "@SECTION[<row index or name:VALUE>].<column>  e.g. @BUILDING[name:Fort].cost"
   },
   "kind_counts": {
-    "reference": 41,
+    "reference": 42,
     "state": 13,
     "config": 1
   },
@@ -1672,6 +1672,61 @@
           "meaning": "",
           "tier": "B",
           "source": "data_extracted/engine/sprites.json"
+        }
+      ]
+    },
+    "@MESSAGES": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 499,
+      "columns": [
+        {
+          "name": "key",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "text",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "box_w",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "sprite",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
         }
       ]
     },

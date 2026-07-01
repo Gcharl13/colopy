@@ -793,6 +793,10 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             try { return J(200, forge::json_parse_file("data_extracted/engine/sprites.json")); }
             catch (...) { return err(404, "sprites.json not found (run tools/build_sprites.py)"); }
         }
+        if (path == "/api/messages") {
+            try { return J(200, forge::json_parse_file("data_extracted/engine/messages.json")); }
+            catch (...) { return err(404, "messages.json not found (run tools/build_messages.py)"); }
+        }
 
         if (path == "/api/assets")
             return J(200, assets_manifest());
