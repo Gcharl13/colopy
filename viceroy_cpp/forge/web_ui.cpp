@@ -1358,16 +1358,9 @@ function sbRender(){
   mk.forEach((m,i)=>{ if(i<1) return;
     h+='<tr><td>'+GOODS[i]+'</td><td><b>'+m.bid+'</b></td><td>'+m.ask+'</td><td>'+m.low+'-'+m.high+'</td><td>'+m.trade+'</td><td>'+m.rise+'</td><td>'+m.fall+'</td><td>'+m.attrition+'</td><td>'+m.volatility+'</td></tr>'; });
   h+='</table></details>';
-  // Founding fathers -- toggle any to see its effect. The production ones (bold) change output live.
-  const owned=new Set(SB.fathers||[]);
-  h+='<h4 style="margin:10px 0 2px">Founding Fathers</h4>'
-    +'<div class="muted" style="font-size:10px;margin-bottom:2px">check to grant; <b>bold</b> = affects colony production</div>'
-    +'<table style="width:100%">';
-  SBFATHERS.forEach(f=>{ const on=owned.has(f.id);
-    h+='<tr><td style="width:16px"><input type="checkbox" '+(on?'checked':'')+' onchange="sbFather('+f.id+',this.checked)"></td>'
-      +'<td'+(f.production?' style="font-weight:bold"':'')+'>'+esc(f.name)+'</td>'
-      +'<td class="muted" style="font-size:10px">'+f.effect+'</td></tr>'; });
-  h+='</table>';
+  // Continental Congress: the 25 founding fathers in their predefined mapped slots (5 categories x 5),
+  // each revealed (portrait lit) as it is acquired. Bells accumulate toward the next father each turn.
+  h+=sbCongress();
   $('#sbcol').innerHTML=h;
   // outside variables (each writes a real binding on the sandbox store)
   const row=(label,path,val)=>'<div class="row" style="margin:2px 0"><span style="display:inline-block;width:90px">'+label+'</span>'
@@ -1378,6 +1371,63 @@ function sbRender(){
     +row('Population','colony0.population',SB.population)
     +row('Sugar stock','colony0.stockpile.1',(SB.stockpile||[])[1]||0)
     +row('Ore stock','colony0.stockpile.6',(SB.stockpile||[])[6]||0);
+}
+
+// ---- Continental Congress screen ----
+// The 25 founding fathers occupy fixed, predefined slots -- 5 category rows (Trade / Exploration /
+// Military / Political / Religious) x 5 columns (their @FATHERS order). Each slot shows the father's
+// CC-NN portrait: full-colour once acquired ("revealed in its spot"), greyed + dimmed while locked.
+// Liberty bells accumulate toward the next father each turn (spec bell-cost curve); the offered father
+// is ringed, the just-acquired one glows. Clicking a slot grants/revokes it (to watch effects live).
+const SBCATS=['Trade','Exploration','Military','Political','Religious'];
+const SBCATCOL=['#c9a227','#3d9bd6','#c0504d','#8064a2','#4f9d69'];  // one accent per category row
+function sbCongress(){
+  const c=SB.congress||{}; const owned=new Set(SB.fathers||[]);
+  const byId={}; SBFATHERS.forEach(f=>byId[f.id]=f);
+  const offered=(c.offered!=null?c.offered:-1), last=(c.last_ff!=null?c.last_ff:-1);
+  const offName=(offered>=0&&byId[offered])?byId[offered].name:'—';
+  let h='<h4 style="margin:12px 0 2px">Continental Congress</h4>';
+  // session subtitle: progress toward the next father is TEXT (spec: "(NN in MM)", no progress bar)
+  if(c.ff_count>=25){
+    h+='<div style="font-size:11px">All 25 founding fathers have joined the Congress.</div>';
+  } else {
+    h+='<div style="font-size:11px">Next session: <b>'+esc(offName)+'</b> '
+      +'<span class="muted">('+(c.remaining||0)+' bells needed, of '+(c.threshold||0)+')</span></div>'
+      +'<div class="muted" style="font-size:10px">'+(c.bells_per_turn||0)+' bells/turn &middot; pool '
+      +(c.bells_pool||0)+'/'+(c.threshold||0)+' &middot; '+(c.ff_count||0)+'/25 fathers</div>';
+  }
+  // sentiment strip (Rebel = national Sons of Liberty, Tory = the rest)
+  const sol=Math.max(0,Math.min(100,c.national_sol||0));
+  h+='<div style="font-size:10px;margin:2px 0">Rebel sentiment: <b style="color:#7ec37e">'+sol+'%</b>'
+    +' &nbsp; Tory sentiment: <b style="color:#e0a0a0">'+(100-sol)+'%</b></div>';
+  if(last>=0&&byId[last]) h+='<div style="font-size:11px;color:#ffe27a;margin:2px 0">&#9733; '
+    +esc(byId[last].name)+' has joined the Continental Congress!</div>';
+  // the 5x5 mapped grid: one row per category, each father in its fixed slot
+  h+='<div style="display:grid;grid-template-columns:74px repeat(5,1fr);gap:3px;margin-top:4px">';
+  for(let cat=0;cat<5;cat++){
+    h+='<div style="align-self:center;font-size:10px;font-weight:bold;color:'+SBCATCOL[cat]+'">'+SBCATS[cat]+'</div>';
+    for(let slot=0;slot<5;slot++){
+      const id=cat*5+slot, f=byId[id]; if(!f){ h+='<div></div>'; continue; }
+      const on=owned.has(id), isOff=(id===offered), isNew=(id===last);
+      const url='/assets/'+f.portrait;
+      const filt=on?'':'filter:grayscale(1) brightness(.32) contrast(.9)';
+      const ring=isNew?'box-shadow:0 0 0 2px #ffe27a,0 0 8px #ffe27a':(isOff?'box-shadow:0 0 0 2px #6cf':'');
+      const tip=esc(f.name)+' — '+esc(f.category)+(f.production?' [affects production]':'')+'\n'+esc(f.effect)
+        +(on?'':(isOff?'\n(the Congress is working toward this father)':'\n(not yet acquired)'));
+      h+='<figure title="'+tip+'" onclick="sbFather('+id+','+(on?'false':'true')+')" '
+        +'style="margin:0;cursor:pointer;text-align:center;background:#0d0f14;border-radius:3px;padding:2px 1px;'+ring+'">'
+        +'<img src="'+url+'" loading="lazy" style="height:52px;width:auto;max-width:100%;image-rendering:pixelated;'
+        +'display:block;margin:0 auto;'+filt+'">'
+        +'<figcaption style="font-size:8px;line-height:1.05;margin-top:1px;'
+        +(on?('color:'+SBCATCOL[cat]+';font-weight:bold'):'color:#667')+'">'+esc(f.name)+'</figcaption></figure>';
+    }
+  }
+  h+='</div>';
+  h+='<div class="muted" style="font-size:9px;margin-top:3px">Step turns to earn bells and watch each '
+    +'father get revealed in its slot; click any slot to grant/revoke it and see the effect. '
+    +'Names in colour = acquired; <span style="color:#6cf">blue ring</span> = next offered; '
+    +'<span style="color:#ffe27a">gold ring</span> = just joined.</div>';
+  return h;
 }
 document.querySelector('nav button[data-tab=sandbox]').addEventListener('click',()=>{ sbInit(); });
 

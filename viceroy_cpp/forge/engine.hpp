@@ -56,6 +56,8 @@ struct EngineExtra {
     int  power_mil[4]  = {0, 0, 0, 0};
     int  power_econ[4] = {0, 0, 0, 0};
     int  congress_bells = 0;      // bell pool toward the next Founding Father ([0x0C], resets on acquire)
+    int  last_ff        = -1;     // most recently acquired father id (drives the Congress reveal), -1 = none
+    int  offered_ff     = -1;     // father the Congress is currently offering ([0x12]), -1 = none/unpicked
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side

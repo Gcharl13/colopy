@@ -1276,6 +1276,75 @@ static void sandbox_new(int pop) {
     g_sb_world.colonies.push_back(c); g_sb_colony_xy.push_back({0, 0});
     g_sb_active = true;
 }
+// --- Continental Congress bell economy (spec/systems/founding_fathers.md §3, BYTE_VERIFIED) ---
+// Bells required for the next founding father. Human European power path; compounds x1.5 per era
+// gate reached (1600/1650/1700/1750), grows with #fathers owned, first father is half price.
+static int ff_bells_required(int diff, int year, int ff_count) {
+    long cost = (long)(diff + 3) * 16;                        // human European power
+    for (int gate : {1600, 1650, 1700, 1750}) if (year >= gate) cost += cost >> 1;
+    cost = (long)(ff_count + 1) * cost + 1;
+    if (ff_count == 0) cost >>= 1;
+    return (int)cost;
+}
+// A father is offerable when it is not yet owned AND every lower-index father in its own category
+// is already owned (the category-gated walk, congress.c ff_is_available). Categories are the fixed
+// 5-per contiguous blocks (id/5 = category, id%5 = slot).
+static bool ff_offerable(int id, uint32_t owned) {
+    if ((owned >> id) & 1u) return false;
+    int cat = id / 5;
+    for (int j = cat * 5; j < id; ++j) if (!((owned >> j) & 1u)) return false;
+    return true;
+}
+// Pick the next father the Congress offers: era-weighted random over the offerable fathers
+// (spec §3 father selection). Reads the three @FATHERS weight columns via the binding grammar.
+// The era band (0/1/2 = <1600 / 1600-1699 / >=1700) is vc::sim::ff_era_band.
+static int ff_pick_next(uint32_t owned, int year, std::function<int(int,int)> rng) {
+    forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, rng};
+    int band = vc::sim::ff_era_band(year);
+    const char* col = band == 0 ? "weight_1500_1600"
+                    : band == 1 ? "weight_1600_1700" : "weight_1700plus";
+    int weight[25], total = 0, offer[25], noff = 0;
+    for (int i = 0; i < 25; ++i) {
+        if (!ff_offerable(i, owned)) continue;
+        forge::JsonValue wv = forge::resolve_binding("@FATHERS[" + std::to_string(i) + "]." + col, cx);
+        int w = (wv.type == forge::JsonValue::String) ? std::atoi(wv.str.c_str())
+                : (wv.type == forge::JsonValue::Number ? (int)wv.num : 0);
+        if (w < 1) w = 1;                    // every offerable father must be reachable
+        offer[noff] = i; weight[noff] = w; total += w; ++noff;
+    }
+    if (noff == 0) return -1;
+    int budget = rng(1, total);
+    for (int k = 0; k < noff; ++k) { budget -= weight[k]; if (budget <= 0) return offer[k]; }
+    return offer[noff - 1];
+}
+// Make sure the Congress is offering a valid, still-offerable father (picks one, era-weighted, if
+// the slot is empty or the offered father was already acquired). Stored in EngineExtra so the offer
+// is stable across state reads. Returns the offered id (-1 when all 25 are owned).
+static int congress_ensure_offer(forge::EngineExtra& x, int year, std::function<int(int,int)> rng) {
+    if (x.offered_ff < 0 || !ff_offerable(x.offered_ff, x.ff_owned))
+        x.offered_ff = ff_pick_next(x.ff_owned, year, rng);
+    return x.offered_ff;
+}
+// Accumulate this turn's bells into the pool and, when the pool reaches the threshold, acquire the
+// offered father, reset the pool, record it for the Congress reveal, and offer the next father.
+static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_this_turn,
+                          std::function<int(int,int)> rng) {
+    x.congress_bells += bells_this_turn;
+    int ff_count = 0; for (uint32_t b = x.ff_owned; b; b &= b - 1) ++ff_count;
+    if (ff_count >= 25) { x.offered_ff = -1; return; }
+    int offer = congress_ensure_offer(x, year, rng);
+    if (offer < 0) return;
+    int need = ff_bells_required(diff, year, ff_count);
+    if (x.congress_bells >= need) {
+        x.ff_owned |= (1u << offer);
+        x.last_ff = offer;
+        x.congress_bells -= need;
+        if (x.congress_bells < 0) x.congress_bells = 0;
+        x.offered_ff = -1;                     // Congress offers the next father from now on
+        congress_ensure_offer(x, year, rng);
+    }
+}
+
 static forge::JsonValue sandbox_state_json() {
     if (!g_sb_active) sandbox_new(3);
     forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
@@ -1331,6 +1400,21 @@ static forge::JsonValue sandbox_state_json() {
     forge::JsonValue ffa = jarr();
     for (int i = 0; i < 32; ++i) if ((g_sb_extra.ff_owned >> i) & 1u) ffa.arr.push_back(forge::json_num(i));
     o.obj["fathers"] = ffa;
+    // Continental Congress progress: bells/turn, the bell pool toward the next father, the bell-cost
+    // threshold, the currently-offered father, and the most-recently-acquired father (the reveal).
+    int ff_count = 0; for (uint32_t b = g_sb_extra.ff_owned; b; b &= b - 1) ++ff_count;
+    forge::JsonValue cong = jobj();
+    cong.obj["bells_per_turn"] = forge::json_num(c.bells_per_turn);
+    cong.obj["bells_pool"]     = forge::json_num(g_sb_extra.congress_bells);
+    int need = ff_bells_required(g_sb_game.difficulty, g_sb_game.year, ff_count);
+    cong.obj["threshold"]      = forge::json_num(need);
+    cong.obj["remaining"]      = forge::json_num(need > g_sb_extra.congress_bells ? need - g_sb_extra.congress_bells : 0);
+    cong.obj["ff_count"]       = forge::json_num(ff_count);
+    int nextff = (ff_count >= 25) ? -1 : congress_ensure_offer(g_sb_extra, g_sb_game.year, sb_rng);
+    cong.obj["offered"]        = forge::json_num(nextff);   // -1 when all 25 are owned
+    cong.obj["last_ff"]        = forge::json_num(g_sb_extra.last_ff);
+    cong.obj["national_sol"]   = forge::json_num(g_sb_extra.national_sol);
+    o.obj["congress"] = cong;
     // Market: whether the colony has a Custom House (auto-sell to Europe), the tax, and the per-good
     // Europe bid price -- so the screen can offer a "ship & sell" action and show the auto-sell state.
     o.obj["custom_house"] = jbool((c.built_mask >> 18) & 1ull);
@@ -1395,6 +1479,9 @@ static forge::JsonValue fathers_json() {
         {"+4 native-conversion strength", false},                                        // 23 Juan de Sepulveda
         {"Converts become free colonists", false},                                       // 24 Bartolome de las Casas
     };
+    // @FOUNDING category names (index = @FATHERS.type). Continental Congress groups the 25 fathers
+    // into these 5 categories, 5 each -- the predefined layout every father slots into.
+    static const char* CAT[5] = {"Trade", "Exploration", "Military", "Political", "Religious"};
     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
     forge::JsonValue arr = jarr();
     for (int i = 0; i < 25; ++i) {
@@ -1403,6 +1490,18 @@ static forge::JsonValue fathers_json() {
         forge::JsonValue nm = forge::resolve_binding("@FATHERS[" + std::to_string(i) + "].name", cx);
         o.obj["name"] = (nm.type == forge::JsonValue::String && !nm.str.empty()) ? nm
                         : forge::json_str("Father #" + std::to_string(i));
+        // category (type) from @FATHERS; falls back to i/5 (the fixed 5-per-category layout).
+        forge::JsonValue ty = forge::resolve_binding("@FATHERS[" + std::to_string(i) + "].type", cx);
+        int cat = (ty.type == forge::JsonValue::String) ? std::atoi(ty.str.c_str())
+                  : (ty.type == forge::JsonValue::Number ? (int)ty.num : i / 5);
+        if (cat < 0 || cat > 4) cat = i / 5;
+        o.obj["type"] = forge::json_num(cat);
+        o.obj["category"] = forge::json_str(CAT[cat]);
+        o.obj["slot"] = forge::json_num(i % 5);   // column within the category row
+        // CC-NN portrait (1:1 with @FATHERS order, spec/ui/continental_congress.md §3), cropped
+        // out of the atlas sheet by tools/extract_cc_portraits.py and served via the sliced route.
+        char pf[40]; std::snprintf(pf, sizeof pf, "sliced/fathers/CC-%02d.png", i);
+        o.obj["portrait"] = forge::json_str(pf);
         o.obj["effect"] = forge::json_str(FX[i].effect);
         o.obj["production"] = jbool(FX[i].prod);
         arr.arr.push_back(o);
@@ -2101,7 +2200,11 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int id = b.find("id") ? b.find("id")->as_int(-1) : -1;
             const forge::JsonValue* onv = b.find("on");
             bool on = onv ? (onv->type == forge::JsonValue::Bool ? onv->b : onv->as_int(0) != 0) : true;
-            if (id >= 0 && id < 32) { if (on) g_sb_extra.ff_owned |= (1u << id); else g_sb_extra.ff_owned &= ~(1u << id); }
+            if (id >= 0 && id < 32) {
+                if (on) { g_sb_extra.ff_owned |= (1u << id); g_sb_extra.last_ff = id; }   // reveal it
+                else    { g_sb_extra.ff_owned &= ~(1u << id); if (g_sb_extra.last_ff == id) g_sb_extra.last_ff = -1; }
+                if (g_sb_extra.offered_ff == id) g_sb_extra.offered_ff = -1;               // re-offer next
+            }
             forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
             return J(200, sandbox_state_json());
         }
@@ -2143,11 +2246,16 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_sb_active) sandbox_new(3);
             int n = b.find("n") ? b.find("n")->as_int(1) : 1; if (n < 1) n = 1; if (n > 50) n = 50;
             forge::EngineCtx mcx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
+            g_sb_extra.last_ff = -1;                           // clear stale reveal before stepping
             for (int i = 0; i < n; ++i) {
                 // Recompute production from the colonist roster (as the real turn pipeline's
                 // production phase does), THEN run the economic step off those fresh numbers.
                 forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
                 step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
+                // Continental Congress: liberty bells accumulate toward the next founding father,
+                // who is acquired (and revealed) when the bell pool crosses the cost threshold.
+                congress_step(g_sb_extra, g_sb_game.difficulty, g_sb_game.year,
+                              g_sb_world.colonies[0].bells_per_turn, sb_rng);
                 market_step(g_sb_game, mcx, sb_rng);           // Europe prices drift toward baseline
             }
             return J(200, sandbox_state_json());

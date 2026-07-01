@@ -1,0 +1,156 @@
+{
+ "_note": "founding-father portraits cropped from the CC-NN atlas sheets (tools/extract_cc_portraits.py); index = @FATHERS order.",
+ "count": 25,
+ "portraits": [
+  {
+   "id": 0,
+   "file": "data_extracted/sprites/fathers/CC-00.png",
+   "w": 51,
+   "h": 82
+  },
+  {
+   "id": 1,
+   "file": "data_extracted/sprites/fathers/CC-01.png",
+   "w": 49,
+   "h": 82
+  },
+  {
+   "id": 2,
+   "file": "data_extracted/sprites/fathers/CC-02.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 3,
+   "file": "data_extracted/sprites/fathers/CC-03.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 4,
+   "file": "data_extracted/sprites/fathers/CC-04.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 5,
+   "file": "data_extracted/sprites/fathers/CC-05.png",
+   "w": 58,
+   "h": 82
+  },
+  {
+   "id": 6,
+   "file": "data_extracted/sprites/fathers/CC-06.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 7,
+   "file": "data_extracted/sprites/fathers/CC-07.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 8,
+   "file": "data_extracted/sprites/fathers/CC-08.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 9,
+   "file": "data_extracted/sprites/fathers/CC-09.png",
+   "w": 61,
+   "h": 82
+  },
+  {
+   "id": 10,
+   "file": "data_extracted/sprites/fathers/CC-10.png",
+   "w": 57,
+   "h": 82
+  },
+  {
+   "id": 11,
+   "file": "data_extracted/sprites/fathers/CC-11.png",
+   "w": 97,
+   "h": 82
+  },
+  {
+   "id": 12,
+   "file": "data_extracted/sprites/fathers/CC-12.png",
+   "w": 60,
+   "h": 82
+  },
+  {
+   "id": 13,
+   "file": "data_extracted/sprites/fathers/CC-13.png",
+   "w": 57,
+   "h": 82
+  },
+  {
+   "id": 14,
+   "file": "data_extracted/sprites/fathers/CC-14.png",
+   "w": 41,
+   "h": 82
+  },
+  {
+   "id": 15,
+   "file": "data_extracted/sprites/fathers/CC-15.png",
+   "w": 55,
+   "h": 82
+  },
+  {
+   "id": 16,
+   "file": "data_extracted/sprites/fathers/CC-16.png",
+   "w": 48,
+   "h": 82
+  },
+  {
+   "id": 17,
+   "file": "data_extracted/sprites/fathers/CC-17.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 18,
+   "file": "data_extracted/sprites/fathers/CC-18.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 19,
+   "file": "data_extracted/sprites/fathers/CC-19.png",
+   "w": 60,
+   "h": 82
+  },
+  {
+   "id": 20,
+   "file": "data_extracted/sprites/fathers/CC-20.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 21,
+   "file": "data_extracted/sprites/fathers/CC-21.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 22,
+   "file": "data_extracted/sprites/fathers/CC-22.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 23,
+   "file": "data_extracted/sprites/fathers/CC-23.png",
+   "w": 56,
+   "h": 82
+  },
+  {
+   "id": 24,
+   "file": "data_extracted/sprites/fathers/CC-24.png",
+   "w": 56,
+   "h": 82
+  }
+ ]
+}
