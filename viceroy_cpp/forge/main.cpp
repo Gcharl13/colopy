@@ -540,7 +540,8 @@ static forge::HttpResponse serve_asset(const std::string& sub) {
     if (!safe_asset_subpath(sub))
         return forge::HttpResponse{400, "text/plain", "bad asset path"};
     std::string fpath;
-    if (sub.rfind("sprites/", 0) == 0 || sub.rfind("pik/", 0) == 0) fpath = "docs/atlas/" + sub;
+    if (sub.rfind("sliced/", 0) == 0)                               fpath = "data_extracted/sprites/" + sub.substr(7);
+    else if (sub.rfind("sprites/", 0) == 0 || sub.rfind("pik/", 0) == 0) fpath = "docs/atlas/" + sub;
     else if (sub.rfind("screens/", 0) == 0)                         fpath = "docs/" + sub;
     else if (sub.rfind("tileset/", 0) == 0)                         fpath = "data_extracted/" + sub;
     else if (sub == "palette.json")                                 fpath = "data_extracted/palette.json";
@@ -1596,6 +1597,11 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/sprites") {
             try { return J(200, forge::json_parse_file("data_extracted/engine/sprites.json")); }
             catch (...) { return err(404, "sprites.json not found (run tools/build_sprites.py)"); }
+        }
+        // Individual sprites sliced out of the sheets (each identified by label) -> /assets/sliced/...
+        if (path == "/api/sprites/sliced") {
+            try { return J(200, forge::json_parse_file("data_extracted/sprites/manifest.json")); }
+            catch (...) { return err(404, "run tools/slice_sprites.py to cut the sheets into sprites"); }
         }
         if (path == "/api/messages") {
             try { return J(200, forge::json_parse_file("data_extracted/engine/messages.json")); }

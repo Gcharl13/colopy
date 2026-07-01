@@ -1,0 +1,2148 @@
+{
+ "_note": "individual sprites sliced from the decoded strips by tools/slice_sprites.py",
+ "count": 238,
+ "sprites": [
+  {
+   "file": "data_extracted/sprites/icons/000_colonists.png",
+   "sheet": "ICONS",
+   "index": 0,
+   "label": "Colonists",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/001_soldiers.png",
+   "sheet": "ICONS",
+   "index": 1,
+   "label": "Soldiers",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/002_pioneers.png",
+   "sheet": "ICONS",
+   "index": 2,
+   "label": "Pioneers",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/003_missionaries.png",
+   "sheet": "ICONS",
+   "index": 3,
+   "label": "Missionaries",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/004_dragoons.png",
+   "sheet": "ICONS",
+   "index": 4,
+   "label": "Dragoons",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/005_scouts.png",
+   "sheet": "ICONS",
+   "index": 5,
+   "label": "Scouts",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/006_regulars.png",
+   "sheet": "ICONS",
+   "index": 6,
+   "label": "Regulars",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/007_continental_cavalry.png",
+   "sheet": "ICONS",
+   "index": 7,
+   "label": "Continental Cavalry",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/008_cavalry.png",
+   "sheet": "ICONS",
+   "index": 8,
+   "label": "Cavalry",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/009_continental_army.png",
+   "sheet": "ICONS",
+   "index": 9,
+   "label": "Continental Army",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/010_treasure.png",
+   "sheet": "ICONS",
+   "index": 10,
+   "label": "Treasure",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/011_artillery.png",
+   "sheet": "ICONS",
+   "index": 11,
+   "label": "Artillery",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/012_wagon_train.png",
+   "sheet": "ICONS",
+   "index": 12,
+   "label": "Wagon Train",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/013_caravel.png",
+   "sheet": "ICONS",
+   "index": 13,
+   "label": "Caravel",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/014_merchantman.png",
+   "sheet": "ICONS",
+   "index": 14,
+   "label": "Merchantman",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/015_galleon.png",
+   "sheet": "ICONS",
+   "index": 15,
+   "label": "Galleon",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/016_privateer.png",
+   "sheet": "ICONS",
+   "index": 16,
+   "label": "Privateer",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/017_frigate.png",
+   "sheet": "ICONS",
+   "index": 17,
+   "label": "Frigate",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/018_man_o_war.png",
+   "sheet": "ICONS",
+   "index": 18,
+   "label": "Man-O-War",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/019_braves.png",
+   "sheet": "ICONS",
+   "index": 19,
+   "label": "Braves",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/020_armed_braves.png",
+   "sheet": "ICONS",
+   "index": 20,
+   "label": "Armed Braves",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/021_mounted_braves.png",
+   "sheet": "ICONS",
+   "index": 21,
+   "label": "Mounted Braves",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/022_mounted_warriors.png",
+   "sheet": "ICONS",
+   "index": 22,
+   "label": "Mounted Warriors",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/023_unused.png",
+   "sheet": "ICONS",
+   "index": 23,
+   "label": "(unused)",
+   "w": 32,
+   "h": 32,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/building/000_building_0.png",
+   "sheet": "BUILDING",
+   "index": 0,
+   "label": "Building 0",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/001_stockade.png",
+   "sheet": "BUILDING",
+   "index": 1,
+   "label": "Stockade",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/002_fort.png",
+   "sheet": "BUILDING",
+   "index": 2,
+   "label": "Fort",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/003_fortress.png",
+   "sheet": "BUILDING",
+   "index": 3,
+   "label": "Fortress",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/004_armory.png",
+   "sheet": "BUILDING",
+   "index": 4,
+   "label": "Armory",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/005_magazine.png",
+   "sheet": "BUILDING",
+   "index": 5,
+   "label": "Magazine",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/006_arsenal.png",
+   "sheet": "BUILDING",
+   "index": 6,
+   "label": "Arsenal",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/007_docks.png",
+   "sheet": "BUILDING",
+   "index": 7,
+   "label": "Docks",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/008_drydock.png",
+   "sheet": "BUILDING",
+   "index": 8,
+   "label": "Drydock",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/009_shipyard.png",
+   "sheet": "BUILDING",
+   "index": 9,
+   "label": "Shipyard",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/010_town_hall.png",
+   "sheet": "BUILDING",
+   "index": 10,
+   "label": "Town Hall",
+   "w": 56,
+   "h": 48,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/building/011_town_hall.png",
+   "sheet": "BUILDING",
+   "index": 11,
+   "label": "Town Hall",
+   "w": 56,
+   "h": 48,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/building/012_town_hall.png",
+   "sheet": "BUILDING",
+   "index": 12,
+   "label": "Town Hall",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/013_schoolhouse.png",
+   "sheet": "BUILDING",
+   "index": 13,
+   "label": "Schoolhouse",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/014_college.png",
+   "sheet": "BUILDING",
+   "index": 14,
+   "label": "College",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/015_university.png",
+   "sheet": "BUILDING",
+   "index": 15,
+   "label": "University",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/016_warehouse.png",
+   "sheet": "BUILDING",
+   "index": 16,
+   "label": "Warehouse",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/017_warehouse_expansion.png",
+   "sheet": "BUILDING",
+   "index": 17,
+   "label": "Warehouse Expansion",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/018_stable.png",
+   "sheet": "BUILDING",
+   "index": 18,
+   "label": "Stable",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/019_custom_house.png",
+   "sheet": "BUILDING",
+   "index": 19,
+   "label": "Custom House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/020_printing_press.png",
+   "sheet": "BUILDING",
+   "index": 20,
+   "label": "Printing Press",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/021_newspaper.png",
+   "sheet": "BUILDING",
+   "index": 21,
+   "label": "Newspaper",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/022_weaver_s_house.png",
+   "sheet": "BUILDING",
+   "index": 22,
+   "label": "Weaver's House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/023_weaver_s_shop.png",
+   "sheet": "BUILDING",
+   "index": 23,
+   "label": "Weaver's Shop",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/024_textile_mill.png",
+   "sheet": "BUILDING",
+   "index": 24,
+   "label": "Textile Mill",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/025_tobacconist_s_house.png",
+   "sheet": "BUILDING",
+   "index": 25,
+   "label": "Tobacconist's House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/026_tobacconist_s_shop.png",
+   "sheet": "BUILDING",
+   "index": 26,
+   "label": "Tobacconist's Shop",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/027_cigar_factory.png",
+   "sheet": "BUILDING",
+   "index": 27,
+   "label": "Cigar Factory",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/028_rum_distiller_s_house.png",
+   "sheet": "BUILDING",
+   "index": 28,
+   "label": "Rum Distiller's House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/029_rum_distillery.png",
+   "sheet": "BUILDING",
+   "index": 29,
+   "label": "Rum Distillery",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/030_rum_factory.png",
+   "sheet": "BUILDING",
+   "index": 30,
+   "label": "Rum Factory",
+   "w": 56,
+   "h": 48,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/building/031_capitol.png",
+   "sheet": "BUILDING",
+   "index": 31,
+   "label": "Capitol",
+   "w": 56,
+   "h": 48,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/building/032_capitol_expansion.png",
+   "sheet": "BUILDING",
+   "index": 32,
+   "label": "Capitol Expansion",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/033_fur_trader_s_house.png",
+   "sheet": "BUILDING",
+   "index": 33,
+   "label": "Fur Trader's House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/034_fur_trading_post.png",
+   "sheet": "BUILDING",
+   "index": 34,
+   "label": "Fur Trading Post",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/035_fur_factory.png",
+   "sheet": "BUILDING",
+   "index": 35,
+   "label": "Fur Factory",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/036_carpenter_s_shop.png",
+   "sheet": "BUILDING",
+   "index": 36,
+   "label": "Carpenter's Shop",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/037_lumber_mill.png",
+   "sheet": "BUILDING",
+   "index": 37,
+   "label": "Lumber Mill",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/038_church.png",
+   "sheet": "BUILDING",
+   "index": 38,
+   "label": "Church",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/039_cathedral.png",
+   "sheet": "BUILDING",
+   "index": 39,
+   "label": "Cathedral",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/040_blacksmith_s_house.png",
+   "sheet": "BUILDING",
+   "index": 40,
+   "label": "Blacksmith's House",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/041_blacksmith_s_shop.png",
+   "sheet": "BUILDING",
+   "index": 41,
+   "label": "Blacksmith's Shop",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/042_iron_works.png",
+   "sheet": "BUILDING",
+   "index": 42,
+   "label": "Iron Works",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/043_building_42.png",
+   "sheet": "BUILDING",
+   "index": 43,
+   "label": "building #42",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/044_building_43.png",
+   "sheet": "BUILDING",
+   "index": 44,
+   "label": "building #43",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/045_building_45.png",
+   "sheet": "BUILDING",
+   "index": 45,
+   "label": "Building 45",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/046_building_46.png",
+   "sheet": "BUILDING",
+   "index": 46,
+   "label": "Building 46",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/building/047_building_47.png",
+   "sheet": "BUILDING",
+   "index": 47,
+   "label": "Building 47",
+   "w": 56,
+   "h": 48,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/000_tundra.png",
+   "sheet": "TERRAIN",
+   "index": 0,
+   "label": "Tundra",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/001_desert.png",
+   "sheet": "TERRAIN",
+   "index": 1,
+   "label": "Desert",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/002_plains.png",
+   "sheet": "TERRAIN",
+   "index": 2,
+   "label": "Plains",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/003_prairie.png",
+   "sheet": "TERRAIN",
+   "index": 3,
+   "label": "Prairie",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/004_grassland.png",
+   "sheet": "TERRAIN",
+   "index": 4,
+   "label": "Grassland",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/005_savanna.png",
+   "sheet": "TERRAIN",
+   "index": 5,
+   "label": "Savanna",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/006_marsh.png",
+   "sheet": "TERRAIN",
+   "index": 6,
+   "label": "Marsh",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/007_swamp.png",
+   "sheet": "TERRAIN",
+   "index": 7,
+   "label": "Swamp",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/008_forest_hill_ground.png",
+   "sheet": "TERRAIN",
+   "index": 8,
+   "label": "Forest/Hill ground",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/009_arctic.png",
+   "sheet": "TERRAIN",
+   "index": 9,
+   "label": "Arctic",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/010_ocean.png",
+   "sheet": "TERRAIN",
+   "index": 10,
+   "label": "Ocean",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/terrain/011_sea_lane.png",
+   "sheet": "TERRAIN",
+   "index": 11,
+   "label": "Sea Lane",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/000_river_0.png",
+   "sheet": "PHYS0",
+   "index": 0,
+   "label": "river 0",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/001_river_1.png",
+   "sheet": "PHYS0",
+   "index": 1,
+   "label": "river 1",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/002_river_2.png",
+   "sheet": "PHYS0",
+   "index": 2,
+   "label": "river 2",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/003_river_3.png",
+   "sheet": "PHYS0",
+   "index": 3,
+   "label": "river 3",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/004_river_4.png",
+   "sheet": "PHYS0",
+   "index": 4,
+   "label": "river 4",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/005_river_5.png",
+   "sheet": "PHYS0",
+   "index": 5,
+   "label": "river 5",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/006_river_6.png",
+   "sheet": "PHYS0",
+   "index": 6,
+   "label": "river 6",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/007_river_7.png",
+   "sheet": "PHYS0",
+   "index": 7,
+   "label": "river 7",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/008_river_8.png",
+   "sheet": "PHYS0",
+   "index": 8,
+   "label": "river 8",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/009_river_9.png",
+   "sheet": "PHYS0",
+   "index": 9,
+   "label": "river 9",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/010_river_10.png",
+   "sheet": "PHYS0",
+   "index": 10,
+   "label": "river 10",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/011_river_11.png",
+   "sheet": "PHYS0",
+   "index": 11,
+   "label": "river 11",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/012_river_12.png",
+   "sheet": "PHYS0",
+   "index": 12,
+   "label": "river 12",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/013_river_13.png",
+   "sheet": "PHYS0",
+   "index": 13,
+   "label": "river 13",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/014_river_14.png",
+   "sheet": "PHYS0",
+   "index": 14,
+   "label": "river 14",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/015_river_15.png",
+   "sheet": "PHYS0",
+   "index": 15,
+   "label": "river 15",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/016_river_16.png",
+   "sheet": "PHYS0",
+   "index": 16,
+   "label": "river 16",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/017_river_17.png",
+   "sheet": "PHYS0",
+   "index": 17,
+   "label": "river 17",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/018_river_18.png",
+   "sheet": "PHYS0",
+   "index": 18,
+   "label": "river 18",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/019_river_19.png",
+   "sheet": "PHYS0",
+   "index": 19,
+   "label": "river 19",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/020_river_20.png",
+   "sheet": "PHYS0",
+   "index": 20,
+   "label": "river 20",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/021_river_21.png",
+   "sheet": "PHYS0",
+   "index": 21,
+   "label": "river 21",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/022_river_22.png",
+   "sheet": "PHYS0",
+   "index": 22,
+   "label": "river 22",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/023_river_23.png",
+   "sheet": "PHYS0",
+   "index": 23,
+   "label": "river 23",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/024_river_24.png",
+   "sheet": "PHYS0",
+   "index": 24,
+   "label": "river 24",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/025_river_25.png",
+   "sheet": "PHYS0",
+   "index": 25,
+   "label": "river 25",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/026_river_26.png",
+   "sheet": "PHYS0",
+   "index": 26,
+   "label": "river 26",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/027_river_27.png",
+   "sheet": "PHYS0",
+   "index": 27,
+   "label": "river 27",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/028_river_28.png",
+   "sheet": "PHYS0",
+   "index": 28,
+   "label": "river 28",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/029_river_29.png",
+   "sheet": "PHYS0",
+   "index": 29,
+   "label": "river 29",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/030_river_30.png",
+   "sheet": "PHYS0",
+   "index": 30,
+   "label": "river 30",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/031_river_31.png",
+   "sheet": "PHYS0",
+   "index": 31,
+   "label": "river 31",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/032_mountains_0.png",
+   "sheet": "PHYS0",
+   "index": 32,
+   "label": "mountains 0",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/033_mountains_1.png",
+   "sheet": "PHYS0",
+   "index": 33,
+   "label": "mountains 1",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/034_mountains_2.png",
+   "sheet": "PHYS0",
+   "index": 34,
+   "label": "mountains 2",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/035_mountains_3.png",
+   "sheet": "PHYS0",
+   "index": 35,
+   "label": "mountains 3",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/036_mountains_4.png",
+   "sheet": "PHYS0",
+   "index": 36,
+   "label": "mountains 4",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/037_mountains_5.png",
+   "sheet": "PHYS0",
+   "index": 37,
+   "label": "mountains 5",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/038_mountains_6.png",
+   "sheet": "PHYS0",
+   "index": 38,
+   "label": "mountains 6",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/039_mountains_7.png",
+   "sheet": "PHYS0",
+   "index": 39,
+   "label": "mountains 7",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/040_mountains_8.png",
+   "sheet": "PHYS0",
+   "index": 40,
+   "label": "mountains 8",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/041_mountains_9.png",
+   "sheet": "PHYS0",
+   "index": 41,
+   "label": "mountains 9",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/042_mountains_10.png",
+   "sheet": "PHYS0",
+   "index": 42,
+   "label": "mountains 10",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/043_mountains_11.png",
+   "sheet": "PHYS0",
+   "index": 43,
+   "label": "mountains 11",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/044_mountains_12.png",
+   "sheet": "PHYS0",
+   "index": 44,
+   "label": "mountains 12",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/045_mountains_13.png",
+   "sheet": "PHYS0",
+   "index": 45,
+   "label": "mountains 13",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/046_mountains_14.png",
+   "sheet": "PHYS0",
+   "index": 46,
+   "label": "mountains 14",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/047_mountains_15.png",
+   "sheet": "PHYS0",
+   "index": 47,
+   "label": "mountains 15",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/048_hills_0.png",
+   "sheet": "PHYS0",
+   "index": 48,
+   "label": "hills 0",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/049_hills_1.png",
+   "sheet": "PHYS0",
+   "index": 49,
+   "label": "hills 1",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/050_hills_2.png",
+   "sheet": "PHYS0",
+   "index": 50,
+   "label": "hills 2",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/051_hills_3.png",
+   "sheet": "PHYS0",
+   "index": 51,
+   "label": "hills 3",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/052_hills_4.png",
+   "sheet": "PHYS0",
+   "index": 52,
+   "label": "hills 4",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/053_hills_5.png",
+   "sheet": "PHYS0",
+   "index": 53,
+   "label": "hills 5",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/054_hills_6.png",
+   "sheet": "PHYS0",
+   "index": 54,
+   "label": "hills 6",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/055_hills_7.png",
+   "sheet": "PHYS0",
+   "index": 55,
+   "label": "hills 7",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/056_hills_8.png",
+   "sheet": "PHYS0",
+   "index": 56,
+   "label": "hills 8",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/057_hills_9.png",
+   "sheet": "PHYS0",
+   "index": 57,
+   "label": "hills 9",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/058_hills_10.png",
+   "sheet": "PHYS0",
+   "index": 58,
+   "label": "hills 10",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/059_hills_11.png",
+   "sheet": "PHYS0",
+   "index": 59,
+   "label": "hills 11",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/060_hills_12.png",
+   "sheet": "PHYS0",
+   "index": 60,
+   "label": "hills 12",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/061_hills_13.png",
+   "sheet": "PHYS0",
+   "index": 61,
+   "label": "hills 13",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/062_hills_14.png",
+   "sheet": "PHYS0",
+   "index": 62,
+   "label": "hills 14",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/063_hills_15.png",
+   "sheet": "PHYS0",
+   "index": 63,
+   "label": "hills 15",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/064_forest_0.png",
+   "sheet": "PHYS0",
+   "index": 64,
+   "label": "forest 0",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/065_forest_1.png",
+   "sheet": "PHYS0",
+   "index": 65,
+   "label": "forest 1",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/066_forest_2.png",
+   "sheet": "PHYS0",
+   "index": 66,
+   "label": "forest 2",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/067_forest_3.png",
+   "sheet": "PHYS0",
+   "index": 67,
+   "label": "forest 3",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/068_forest_4.png",
+   "sheet": "PHYS0",
+   "index": 68,
+   "label": "forest 4",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/069_forest_5.png",
+   "sheet": "PHYS0",
+   "index": 69,
+   "label": "forest 5",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/070_forest_6.png",
+   "sheet": "PHYS0",
+   "index": 70,
+   "label": "forest 6",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/071_forest_7.png",
+   "sheet": "PHYS0",
+   "index": 71,
+   "label": "forest 7",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/072_forest_8.png",
+   "sheet": "PHYS0",
+   "index": 72,
+   "label": "forest 8",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/073_forest_9.png",
+   "sheet": "PHYS0",
+   "index": 73,
+   "label": "forest 9",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/074_forest_10.png",
+   "sheet": "PHYS0",
+   "index": 74,
+   "label": "forest 10",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/075_forest_11.png",
+   "sheet": "PHYS0",
+   "index": 75,
+   "label": "forest 11",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/076_forest_12.png",
+   "sheet": "PHYS0",
+   "index": 76,
+   "label": "forest 12",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/077_forest_13.png",
+   "sheet": "PHYS0",
+   "index": 77,
+   "label": "forest 13",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/078_forest_14.png",
+   "sheet": "PHYS0",
+   "index": 78,
+   "label": "forest 14",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/079_forest_15.png",
+   "sheet": "PHYS0",
+   "index": 79,
+   "label": "forest 15",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/080_phys0_frame_80.png",
+   "sheet": "PHYS0",
+   "index": 80,
+   "label": "phys0 frame 80",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/081_phys0_frame_81.png",
+   "sheet": "PHYS0",
+   "index": 81,
+   "label": "phys0 frame 81",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/082_phys0_frame_82.png",
+   "sheet": "PHYS0",
+   "index": 82,
+   "label": "phys0 frame 82",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/083_phys0_frame_83.png",
+   "sheet": "PHYS0",
+   "index": 83,
+   "label": "phys0 frame 83",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/084_phys0_frame_84.png",
+   "sheet": "PHYS0",
+   "index": 84,
+   "label": "phys0 frame 84",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/085_phys0_frame_85.png",
+   "sheet": "PHYS0",
+   "index": 85,
+   "label": "phys0 frame 85",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/086_phys0_frame_86.png",
+   "sheet": "PHYS0",
+   "index": 86,
+   "label": "phys0 frame 86",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/087_phys0_frame_87.png",
+   "sheet": "PHYS0",
+   "index": 87,
+   "label": "phys0 frame 87",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/088_phys0_frame_88.png",
+   "sheet": "PHYS0",
+   "index": 88,
+   "label": "phys0 frame 88",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/089_phys0_frame_89.png",
+   "sheet": "PHYS0",
+   "index": 89,
+   "label": "phys0 frame 89",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/090_phys0_frame_90.png",
+   "sheet": "PHYS0",
+   "index": 90,
+   "label": "phys0 frame 90",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/091_phys0_frame_91.png",
+   "sheet": "PHYS0",
+   "index": 91,
+   "label": "phys0 frame 91",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/092_phys0_frame_92.png",
+   "sheet": "PHYS0",
+   "index": 92,
+   "label": "phys0 frame 92",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/093_phys0_frame_93.png",
+   "sheet": "PHYS0",
+   "index": 93,
+   "label": "phys0 frame 93",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/094_phys0_frame_94.png",
+   "sheet": "PHYS0",
+   "index": 94,
+   "label": "phys0 frame 94",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/095_phys0_frame_95.png",
+   "sheet": "PHYS0",
+   "index": 95,
+   "label": "phys0 frame 95",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/096_phys0_frame_96.png",
+   "sheet": "PHYS0",
+   "index": 96,
+   "label": "phys0 frame 96",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/097_phys0_frame_97.png",
+   "sheet": "PHYS0",
+   "index": 97,
+   "label": "phys0 frame 97",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/098_phys0_frame_98.png",
+   "sheet": "PHYS0",
+   "index": 98,
+   "label": "phys0 frame 98",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/099_phys0_frame_99.png",
+   "sheet": "PHYS0",
+   "index": 99,
+   "label": "phys0 frame 99",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/100_phys0_frame_100.png",
+   "sheet": "PHYS0",
+   "index": 100,
+   "label": "phys0 frame 100",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/101_phys0_frame_101.png",
+   "sheet": "PHYS0",
+   "index": 101,
+   "label": "phys0 frame 101",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/102_phys0_frame_102.png",
+   "sheet": "PHYS0",
+   "index": 102,
+   "label": "phys0 frame 102",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/103_phys0_frame_103.png",
+   "sheet": "PHYS0",
+   "index": 103,
+   "label": "phys0 frame 103",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/104_stencils_0.png",
+   "sheet": "PHYS0",
+   "index": 104,
+   "label": "stencils 0",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/105_stencils_1.png",
+   "sheet": "PHYS0",
+   "index": 105,
+   "label": "stencils 1",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/106_stencils_2.png",
+   "sheet": "PHYS0",
+   "index": 106,
+   "label": "stencils 2",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/107_stencils_3.png",
+   "sheet": "PHYS0",
+   "index": 107,
+   "label": "stencils 3",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/108_coast_subtiles_0.png",
+   "sheet": "PHYS0",
+   "index": 108,
+   "label": "coast_subtiles 0",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/109_coast_subtiles_1.png",
+   "sheet": "PHYS0",
+   "index": 109,
+   "label": "coast_subtiles 1",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/110_coast_subtiles_2.png",
+   "sheet": "PHYS0",
+   "index": 110,
+   "label": "coast_subtiles 2",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/111_coast_subtiles_3.png",
+   "sheet": "PHYS0",
+   "index": 111,
+   "label": "coast_subtiles 3",
+   "w": 16,
+   "h": 16,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/phys0/112_coast_subtiles_4.png",
+   "sheet": "PHYS0",
+   "index": 112,
+   "label": "coast_subtiles 4",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/113_coast_subtiles_5.png",
+   "sheet": "PHYS0",
+   "index": 113,
+   "label": "coast_subtiles 5",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/114_coast_subtiles_6.png",
+   "sheet": "PHYS0",
+   "index": 114,
+   "label": "coast_subtiles 6",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/115_coast_subtiles_7.png",
+   "sheet": "PHYS0",
+   "index": 115,
+   "label": "coast_subtiles 7",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/116_coast_subtiles_8.png",
+   "sheet": "PHYS0",
+   "index": 116,
+   "label": "coast_subtiles 8",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/117_coast_subtiles_9.png",
+   "sheet": "PHYS0",
+   "index": 117,
+   "label": "coast_subtiles 9",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/118_coast_subtiles_10.png",
+   "sheet": "PHYS0",
+   "index": 118,
+   "label": "coast_subtiles 10",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/119_coast_subtiles_11.png",
+   "sheet": "PHYS0",
+   "index": 119,
+   "label": "coast_subtiles 11",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/120_coast_subtiles_12.png",
+   "sheet": "PHYS0",
+   "index": 120,
+   "label": "coast_subtiles 12",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/121_coast_subtiles_13.png",
+   "sheet": "PHYS0",
+   "index": 121,
+   "label": "coast_subtiles 13",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/122_coast_subtiles_14.png",
+   "sheet": "PHYS0",
+   "index": 122,
+   "label": "coast_subtiles 14",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/123_coast_subtiles_15.png",
+   "sheet": "PHYS0",
+   "index": 123,
+   "label": "coast_subtiles 15",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/124_coast_subtiles_16.png",
+   "sheet": "PHYS0",
+   "index": 124,
+   "label": "coast_subtiles 16",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/125_coast_subtiles_17.png",
+   "sheet": "PHYS0",
+   "index": 125,
+   "label": "coast_subtiles 17",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/126_coast_subtiles_18.png",
+   "sheet": "PHYS0",
+   "index": 126,
+   "label": "coast_subtiles 18",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/127_coast_subtiles_19.png",
+   "sheet": "PHYS0",
+   "index": 127,
+   "label": "coast_subtiles 19",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/128_coast_subtiles_20.png",
+   "sheet": "PHYS0",
+   "index": 128,
+   "label": "coast_subtiles 20",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/129_coast_subtiles_21.png",
+   "sheet": "PHYS0",
+   "index": 129,
+   "label": "coast_subtiles 21",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/130_coast_subtiles_22.png",
+   "sheet": "PHYS0",
+   "index": 130,
+   "label": "coast_subtiles 22",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/131_coast_subtiles_23.png",
+   "sheet": "PHYS0",
+   "index": 131,
+   "label": "coast_subtiles 23",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/132_coast_subtiles_24.png",
+   "sheet": "PHYS0",
+   "index": 132,
+   "label": "coast_subtiles 24",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/133_coast_subtiles_25.png",
+   "sheet": "PHYS0",
+   "index": 133,
+   "label": "coast_subtiles 25",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/134_coast_subtiles_26.png",
+   "sheet": "PHYS0",
+   "index": 134,
+   "label": "coast_subtiles 26",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/135_coast_subtiles_27.png",
+   "sheet": "PHYS0",
+   "index": 135,
+   "label": "coast_subtiles 27",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/136_coast_subtiles_28.png",
+   "sheet": "PHYS0",
+   "index": 136,
+   "label": "coast_subtiles 28",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/137_coast_subtiles_29.png",
+   "sheet": "PHYS0",
+   "index": 137,
+   "label": "coast_subtiles 29",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/138_coast_subtiles_30.png",
+   "sheet": "PHYS0",
+   "index": 138,
+   "label": "coast_subtiles 30",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/139_coast_subtiles_31.png",
+   "sheet": "PHYS0",
+   "index": 139,
+   "label": "coast_subtiles 31",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/140_phys0_frame_140.png",
+   "sheet": "PHYS0",
+   "index": 140,
+   "label": "phys0 frame 140",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/141_phys0_frame_141.png",
+   "sheet": "PHYS0",
+   "index": 141,
+   "label": "phys0 frame 141",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/142_phys0_frame_142.png",
+   "sheet": "PHYS0",
+   "index": 142,
+   "label": "phys0 frame 142",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/143_phys0_frame_143.png",
+   "sheet": "PHYS0",
+   "index": 143,
+   "label": "phys0 frame 143",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/144_phys0_frame_144.png",
+   "sheet": "PHYS0",
+   "index": 144,
+   "label": "phys0 frame 144",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/145_phys0_frame_145.png",
+   "sheet": "PHYS0",
+   "index": 145,
+   "label": "phys0 frame 145",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/146_phys0_frame_146.png",
+   "sheet": "PHYS0",
+   "index": 146,
+   "label": "phys0 frame 146",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/147_phys0_frame_147.png",
+   "sheet": "PHYS0",
+   "index": 147,
+   "label": "phys0 frame 147",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/148_phys0_frame_148.png",
+   "sheet": "PHYS0",
+   "index": 148,
+   "label": "phys0 frame 148",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/149_phys0_frame_149.png",
+   "sheet": "PHYS0",
+   "index": 149,
+   "label": "phys0 frame 149",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/150_beaches_0.png",
+   "sheet": "PHYS0",
+   "index": 150,
+   "label": "beaches 0",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/151_beaches_1.png",
+   "sheet": "PHYS0",
+   "index": 151,
+   "label": "beaches 1",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/152_beaches_2.png",
+   "sheet": "PHYS0",
+   "index": 152,
+   "label": "beaches 2",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/phys0/153_beaches_3.png",
+   "sheet": "PHYS0",
+   "index": 153,
+   "label": "beaches 3",
+   "w": 16,
+   "h": 16,
+   "blank": false
+  }
+ ]
+}

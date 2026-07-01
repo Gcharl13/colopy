@@ -208,11 +208,12 @@ const char* forge_index_html() {
   <section id="assets" class="tab">
     <div class="row">
       <input type="text" id="assetfilter" placeholder="filter: ICONS, CC-, KING, EUROPE, PHYS0..." oninput="renderAssets()">
-      <label><input type="radio" name="atype" value="sprites" checked onchange="renderAssets()"> sprite sheets</label>
+      <label><input type="radio" name="atype" value="individual" checked onchange="renderAssets()"> individual sprites</label>
+      <label><input type="radio" name="atype" value="sprites" onchange="renderAssets()"> sprite sheets</label>
       <label><input type="radio" name="atype" value="backgrounds" onchange="renderAssets()"> backgrounds</label>
       <span id="ainfo" class="muted"></span>
     </div>
-    <p class="muted">All 206 sprite sheets + 35 full-screen images, served from the bundle. Click any to view full size.</p>
+    <p class="muted">Every sprite cut out of the sheets and labelled (ICONS units, buildings, terrain, PHYS0 overlays) &mdash; filter by name/sheet. Click any to view full size.</p>
     <div id="agallery" class="gallery"></div>
   </section>
 
@@ -914,18 +915,31 @@ async function loadFormulas() {
 }
 
 // ---- Assets ----
-let ASSETS = null;
-function assetType(){ const r=document.querySelector('input[name=atype]:checked'); return r?r.value:'sprites'; }
+let ASSETS = null, SLICED = null;
+function assetType(){ const r=document.querySelector('input[name=atype]:checked'); return r?r.value:'individual'; }
 function assetURL(type, name){ return '/assets/'+(type==='backgrounds'?'pik':'sprites')+'/'+name; }
 async function loadAssets(){
   try { const r=await fetch('/api/assets'); ASSETS=await r.json(); }
-  catch(e){ $('#ainfo').innerHTML='<span class="fail">assets unavailable (run from repo root)</span>'; return; }
+  catch(e){ $('#ainfo').innerHTML='<span class="fail">assets unavailable (run from repo root)</span>'; }
+  try { SLICED=(await (await fetch('/api/sprites/sliced')).json()).sprites||[]; }catch(e){ SLICED=[]; }
   renderAssets();
 }
 function renderAssets(){
+  const type=assetType(); const f=$('#assetfilter').value.trim().toUpperCase();
+  if(type==='individual'){
+    const list=SLICED||[];
+    const shown=list.filter(s=>!s.blank && (!f || (s.label+' '+s.sheet).toUpperCase().includes(f)));
+    $('#ainfo').textContent=shown.length+' / '+list.length+' sprites';
+    $('#agallery').innerHTML=shown.map(s=>{
+      const u='/assets/sliced/'+s.file.replace('data_extracted/sprites/','');
+      return '<figure class="thumb" data-url="'+u+'" data-label="'+esc(s.sheet+' #'+s.index+' — '+s.label)+'">'
+        +'<img loading="lazy" style="image-rendering:pixelated;width:48px;height:48px;object-fit:contain" src="'+u+'">'
+        +'<figcaption>'+esc(s.label)+'<br><span class="muted" style="font-size:9px">'+s.sheet+' #'+s.index+'</span></figcaption></figure>';
+    }).join('');
+    return;
+  }
   if(!ASSETS) return;
-  const type=assetType(); const list=ASSETS[type]||[];
-  const f=$('#assetfilter').value.trim().toUpperCase();
+  const list=ASSETS[type]||[];
   const shown=list.filter(n=>!f || n.toUpperCase().includes(f));
   $('#ainfo').textContent=shown.length+' / '+list.length;
   $('#agallery').innerHTML=shown.map(n=>{
