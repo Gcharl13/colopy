@@ -104,6 +104,16 @@ add_test(NAME forge_data COMMAND forge data selftest)
 add_test(NAME forge_engine COMMAND forge engine selftest
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+# Data-integrity gates (B12): schema binding resolution + cross-reference validation.
+# Python, data-only; run from the repo root where the JSON data lives.
+find_program(PYTHON3 python3)
+if(PYTHON3)
+  add_test(NAME validate_schema COMMAND ${PYTHON3} tools/validate_schema.py
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  add_test(NAME validate_all COMMAND ${PYTHON3} tools/validate_all.py
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
+
 # --- Optional Dear ImGui desktop GUI (forge/gui). OFF by default: it needs network
 #     (FetchContent) + an OpenGL/GLFW dev environment, so the normal build and CI
 #     stay dependency-light. Enable locally with: cmake -DFORGE_GUI=ON ...
