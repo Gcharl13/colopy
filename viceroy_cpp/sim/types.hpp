@@ -49,8 +49,13 @@ struct Colony {
     // to a tile (raw goods 0..7 from the terrain-yield table) or a building (bells/hammers/
     // crosses); production accumulates into the per-good stockpile (+0x9A, capped by warehouse).
     std::array<int32_t, NGOODS> stockpile{};   // +0x9A  current cargo per good
-    struct Worker { int terrain = 0; int good = 0; bool expert = false; };
-    std::vector<Worker> workers;               // +0x40/+0x70 colonist job + tile assignment
+    // Each Worker is one colonist: a profession (@JOB id, +0x40 colonist_job_skills, the
+    // identity/skill), assigned either to a surrounding ring tile (tile 0..7, +0x70
+    // tile_worker_assignment) producing a raw good (good 0..7), or to a building slot
+    // (tile = -1) producing Hammers(16)/Crosses(17)/Bells(18). expert = the colonist is a
+    // specialist at that good (era good +2, manufactured x2).
+    struct Worker { int profession = 19; int tile = -1; int terrain = 0; int good = 0; bool expert = false; };
+    std::vector<Worker> workers;               // colonist roster (job + tile assignment)
 };
 
 struct Power {

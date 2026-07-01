@@ -57,6 +57,8 @@ JsonValue dump_colony(const Colony& c) {
     JsonValue wk = arr();
     for (const Colony::Worker& wkr : c.workers) {
         JsonValue wo = obj();
+        wo.obj["profession"] = json_num(wkr.profession);
+        wo.obj["tile"]    = json_num(wkr.tile);
         wo.obj["terrain"] = json_num(wkr.terrain);
         wo.obj["good"]    = json_num(wkr.good);
         wo.obj["expert"]  = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = wkr.expert; return v; }();
@@ -121,6 +123,8 @@ Colony read_colony(const JsonValue& o) {
     if (const JsonValue* wk = o.find("workers"))
         for (const JsonValue& wo : wk->arr) {
             Colony::Worker wkr;
+            wkr.profession = gi(wo, "profession", 19);
+            wkr.tile    = gi(wo, "tile", -1);
             wkr.terrain = gi(wo, "terrain");
             wkr.good    = gi(wo, "good");
             wkr.expert  = gb(wo, "expert");

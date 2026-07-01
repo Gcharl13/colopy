@@ -87,6 +87,15 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx);
 // edited cell is picked up by the next @SECTION[...] binding lookup without a restart).
 void invalidate_tables();
 
+// Compute a colony's per-turn production from its colonist roster (spec/systems/colony.md §3):
+// tile workers -> raw goods (terrain table + tory/expert), building workers -> Hammers/Crosses/
+// Bells, then a gated raw->finished conversion; banks the stockpile and sets *_per_turn. Shared
+// by the turn pipeline and the ColonyProduce node. Reads @UNFORESTED/@FORESTED/@OTHER + @BUILDING.
+void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd);
+
+// The @JOB display name for a profession id (the expert_name column for an expert, else name).
+std::string job_name(int profession, bool expert);
+
 // Run a node graph against the game. Executes exec flow from the entry (Trigger) node,
 // evaluating data pins on demand, applying Action nodes to the sim. Returns a report:
 //   { "log":[strings], "effects":[strings], "popup": {title,body,choices:[...]} | null,

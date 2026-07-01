@@ -328,8 +328,8 @@ static int save_selftest() {
     Colony c; c.owner_power = 0; c.population = 3; c.hammers_per_turn = 10;
     c.build_target = 0; c.build_cost = 64; c.food_per_turn = 60; c.crosses_output = 3;
     c.stockpile[SUGAR] = 77; c.stockpile[ORE] = 12;            // previously dropped (#2)
-    c.workers.push_back(Colony::Worker{2, SUGAR, true});
-    c.workers.push_back(Colony::Worker{0, 0, false});
+    { Colony::Worker wk; wk.profession = 1; wk.tile = 0; wk.terrain = 2; wk.good = SUGAR; wk.expert = true;  c.workers.push_back(wk); }
+    { Colony::Worker wk; wk.profession = 19; wk.tile = 1; wk.terrain = 0; wk.good = 0;    wk.expert = false; c.workers.push_back(wk); }
     w.colonies.push_back(c);
     Unit u; u.type = DRAGOONS; u.owner = 0; u.x = 0; u.y = 6;
     u.order = ORDER_GOTO; u.target_x = 15; u.target_y = 6;
@@ -350,7 +350,8 @@ static int save_selftest() {
     check(lg.w.colonies[0].stockpile[SUGAR] == 77 && lg.w.colonies[0].stockpile[ORE] == 12,
           "colony stockpile preserved (#2)");
     check(lg.w.colonies[0].workers.size() == 2 && lg.w.colonies[0].workers[0].good == SUGAR &&
-          lg.w.colonies[0].workers[0].expert, "colony workers preserved (#2)");
+          lg.w.colonies[0].workers[0].expert && lg.w.colonies[0].workers[0].profession == 1 &&
+          lg.w.colonies[0].workers[0].tile == 0, "colony workers preserved (#2, +profession/tile)");
     check(lg.w.units.size() == 1 && lg.w.units[0].x == w.units[0].x &&
           lg.w.units[0].order == w.units[0].order, "unit position/order preserved");
     check(lg.w.terrain == w.terrain, "terrain plane preserved");
@@ -1838,6 +1839,9 @@ static int engine_selftest() {
         auto det = [](int lo, int hi) { return lo; };            // deterministic: same rolls both sides
         RuleData rd2 = make_default_rules();
         for (int i = 0; i < 8; ++i) {
+            // The pipeline's production phase now runs colony_compute_production before the
+            // economic step, so the reference mirrors it per colony (dispatch == direct calls).
+            for (Colony& rc : refp.second.colonies) forge::colony_compute_production(rc, refp.first.difficulty, rd2);
             step_turn(refp.first, refp.second, det, 0, rd2);
             forge::run_turn(pipe.first, pipe.second, det, 0, rd2);
         }
@@ -1854,6 +1858,34 @@ static int engine_selftest() {
                     refp.second.units[0].x == pipe.second.units[0].x &&
                     refp.second.units[0].y == pipe.second.units[0].y;
         check(same, "A3 turn.json pipeline == sim::step_turn (golden-master, 8 turns)");
+    }
+
+    // Colony production from real colonists: a colony with assigned workers computes food/bells/
+    // hammers/crosses/goods from the terrain table + building workers (not flat seed numbers).
+    {
+        RuleData rd4 = make_default_rules();
+        auto mkw = [](int prof, int tile, int terrain, int good) {
+            Colony::Worker w; w.profession = prof; w.tile = tile; w.terrain = terrain; w.good = good; w.expert = false; return w; };
+        // A: one Farmer on Plains (terrain 2), pop 1 -> gross Food 4, net = 4 - 2*1 = 2.
+        Colony a; a.owner_power = 0; a.human = true; a.population = 1; a.rebel_A = 0; a.rebel_B = 1;
+        a.workers.push_back(mkw(0, 0, 2, 0));                         // Farmer, Plains, Food
+        forge::colony_compute_production(a, /*diff*/1, rd4);
+        check(a.food_per_turn == 2, "1 Farmer on Plains -> net food 2 (gross 4 - 2 eaten)");
+        // B: Farmer + Lumberjack(forest) + Carpenter + Statesman + Preacher, pop 5.
+        Colony b; b.owner_power = 0; b.human = true; b.population = 5; b.rebel_A = 0; b.rebel_B = 1;
+        b.workers.push_back(mkw(0, 0, 2, 0));                          // Farmer -> Food
+        b.workers.push_back(mkw(5, 1, 8, 5));                          // Lumberjack, forest -> Lumber(5)
+        b.workers.push_back(mkw(13, -1, 0, 16));                       // Carpenter -> Hammers(16)
+        b.workers.push_back(mkw(17, -1, 0, 18));                       // Statesman -> Bells(18)
+        b.workers.push_back(mkw(16, -1, 0, 17));                       // Preacher  -> Crosses(17)
+        forge::colony_compute_production(b, 1, rd4);
+        check(b.bells_per_turn == 3,   "Statesman -> 3 bells/turn");
+        check(b.hammers_per_turn == 3, "Carpenter -> 3 hammers/turn");
+        check(b.crosses_output == 3,   "Preacher -> 3 crosses/turn");
+        check(b.stockpile[5] > 0,      "Lumberjack on forest banks Lumber into the stockpile");
+        // job_name resolves the @JOB display name (identity is data, not a number).
+        check(forge::job_name(0, false) == "Farmer" || !forge::job_name(0, false).empty(),
+              "job_name(Farmer) resolves from @JOB");
     }
 
     // A2 unified store: cell_get resolves reference + state + config through one grammar.

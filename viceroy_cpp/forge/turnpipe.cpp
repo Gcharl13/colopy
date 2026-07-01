@@ -1,6 +1,7 @@
 // forge/turnpipe.cpp -- see turnpipe.hpp. The data-driven turn iterator.
 #include "turnpipe.hpp"
 #include "json.hpp"
+#include "engine.hpp"     // colony_compute_production (shared worker->production model)
 
 #include "economy.hpp"     // colony_economic_step
 #include "market.hpp"      // price_drift
@@ -55,7 +56,10 @@ const std::vector<std::string>& turn_phases() {
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
 void phase_production(GameState& g, World& w, const RuleData& rd) {
-    for (Colony& c : w.colonies) colony_economic_step(c, g.difficulty, rd);
+    for (Colony& c : w.colonies) {
+        colony_compute_production(c, g.difficulty, rd);   // colonists -> food/bells/hammers/goods
+        colony_economic_step(c, g.difficulty, rd);        // then SoL / build / growth off those
+    }
 }
 void phase_market(GameState& g, World&, const RuleData& rd) { price_drift(g, rd); }
 void phase_immigration(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
