@@ -8,12 +8,12 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Trade route to Europe (spec/systems/trade_routes.md): gross = qty*price, the Crown takes tax%, the net is credited. net = 100*price.10 - 100*price.10*tax/100 in one Formula. %NUMBER0=net, %NUMBER1=tax taken."
+        "text": "Selling goods in Europe is a PLAYER MENU COMMAND (OnPlayerCommand), not an automatic per-turn sale. When invoked it sells the cargo at the European price less the Crown's tax cut and credits the net to the treasury (@ shows the sale)."
       }
     },
     {
       "id": "trig",
-      "type": "OnTurnStart",
+      "type": "OnPlayerCommand",
       "x": 20,
       "y": 40,
       "params": {}

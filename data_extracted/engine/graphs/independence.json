@@ -8,12 +8,12 @@
       "x": 20,
       "y": -90,
       "params": {
-        "text": "Declare Independence (spec/systems/revolution.md func_03E984). Hard floor: national SoL >= 50% -- below that the Crown rejects (@TOOTORY); at/above, the @DECLARE confirm fires and declaring mobilizes the REF."
+        "text": "Declaring independence is a PLAYER MENU COMMAND (OnPlayerCommand), never an automatic per-turn event. When invoked it checks national SoL: below 50%% it shows @TOOTORY and refuses; at/above 50%% it asks @DECLARE, and on confirm fires DeclareIndependence + MobilizeREF + the @INDEPENDENCE announcement."
       }
     },
     {
       "id": "trig",
-      "type": "OnTurnStart",
+      "type": "OnPlayerCommand",
       "x": 20,
       "y": 40,
       "params": {}
