@@ -1,0 +1,11 @@
+{
+  "id": "goto_victory",
+  "name": "Go to Game Over",
+  "nodes": [
+    { "id": "trig", "type": "OnTestFire", "x": 20, "y": 40, "params": {} },
+    { "id": "nav", "type": "Navigate", "x": 220, "y": 40, "params": { "screen": "victory" } }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "nav", "pin": "in" } }
+  ]
+}

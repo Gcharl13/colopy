@@ -1336,6 +1336,12 @@ async function stepGame(){
   const r=await fetch('/api/game/turn',{method:'POST'}); GAME=await r.json();
   drawGame(); showSel(); drawHistory(); ui.toast('Year '+GAME.year);
   if(GAME.events && GAME.events.length) eventQueue(GAME.events.slice());
+  if(GAME.endgame && GAME.endgame.over) showEndgame(GAME.endgame);
+}
+function showEndgame(e){
+  ui.popup(e.won?'Victory':'Defeat',
+    '<p>'+esc(e.reason)+'</p><p>Final score: <b>'+e.score+'</b> (Hall-of-Fame rank '+e.rank+')</p>'
+    +'<div style="margin-top:8px"><button class="act" onclick="ui.close()">Close</button></div>');
 }
 async function drawHistory(){
   let h=[]; try{ h=await (await fetch('/api/game/history')).json(); }catch(e){ return; }

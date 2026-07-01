@@ -23,6 +23,7 @@
 #include "rules.hpp"
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
+#include "scoring.hpp"
 #include "savegame.hpp"
 #include "store.hpp"
 #include "turnpipe.hpp"
@@ -577,6 +578,7 @@ static World     g_world;
 static std::vector<std::pair<int,int>> g_colony_xy;   // colony map positions (Forge-side)
 static forge::EngineExtra g_engine_extra;             // relational state the action nodes touch
 static bool g_game_active = false;
+static int  g_end_year = 1800;                        // retirement year (scenario end_year)
 
 // The active (possibly modded) ruleset the Play game + engine VM run on. Persisted as a
 // sparse overlay on disk; edits in the Rules editor are saved here and bite the sim.
@@ -656,6 +658,7 @@ static void game_new(int nation = 0, int difficulty = 1) {
     g_game.year   = scn("year")   ? (int)scn("year")->num   : 1492;
     g_game.season = scn("season") ? (int)scn("season")->num : 0;
     g_game.turn   = 0;
+    g_end_year    = scn("end_year") ? (int)scn("end_year")->num : 1800;
     g_game.powers[0].gold = scn("start_gold") ? (long)scn("start_gold")->num : 500;
     // price_base = the internal supply accumulator (DGROUP 0x53EA), random-seeded per good in
     // [600,1000] (func_07561C, BYTE_VERIFIED market.md). It drives the drift; it is NOT the gold
@@ -733,9 +736,41 @@ static void game_step() {
     if (g_game_active) { forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
 }
 
+// End-game score (spec/systems/scoring.md, simplified): difficulty multiplier times
+// empire value (colonists + founding fathers + an independence bonus).
+static long compute_score() {
+    long pop = 0; for (const auto& c : g_world.colonies) pop += c.population;
+    int ff = 0; for (uint32_t b = g_engine_extra.ff_owned; b; b &= b - 1) ++ff;
+    long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
+    long base = pop * 2 + ff * 10;
+    if (g_engine_extra.woi_declared && ref_total == 0) base += 100;   // independence won
+    return (long)vc::sim::score_difficulty_mult(g_game.difficulty) * base;
+}
+// Endgame evaluation: independence won (REF destroyed), defeat (all colonies lost),
+// or retirement at the scenario end year -- with the final score + Hall-of-Fame rank.
+static forge::JsonValue endgame_json() {
+    long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
+    bool over = false, won = false; std::string reason;
+    if (g_engine_extra.woi_declared && ref_total == 0) {
+        over = true; won = true; reason = "Independence won -- the King's forces are defeated!";
+    } else if (g_game_active && g_world.colonies.empty()) {
+        over = true; won = false; reason = "All colonies are lost. The venture ends.";
+    } else if (g_game.year >= g_end_year) {
+        over = true; won = true; reason = "You retire to Europe in " + std::to_string(g_game.year) + ".";
+    }
+    long score = compute_score(); g_engine_extra.score = score;
+    forge::JsonValue o = jobj();
+    o.obj["over"] = jbool(over); o.obj["won"] = jbool(won);
+    o.obj["reason"] = forge::json_str(reason);
+    o.obj["score"] = forge::json_num((double)score);
+    o.obj["rank"] = forge::json_num(vc::sim::score_rank((int)score));
+    return o;
+}
+
 static forge::JsonValue game_state_json() {
     forge::JsonValue o = jobj();
     o.obj["active"] = jbool(g_game_active);
+    o.obj["endgame"] = endgame_json();
     o.obj["w"] = forge::json_num(g_world.map_w);
     o.obj["h"] = forge::json_num(g_world.map_h);
     forge::JsonValue terr = jarr();

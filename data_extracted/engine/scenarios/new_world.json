@@ -5,6 +5,7 @@
   "map": "AMER2.MP",
   "year": 1492,
   "season": 0,
+  "end_year": 1800,
   "start_gold": 500,
   "default_nation": 0,
   "default_difficulty": 1,
