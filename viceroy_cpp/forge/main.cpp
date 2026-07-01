@@ -38,6 +38,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -633,7 +634,11 @@ static int scenario_unit_type(const std::string& name) {
 // the new-game screen. Falls back to the classic 2-colony opening if the file is absent.
 static void game_new(int nation = 0, int difficulty = 1) {
     g_game = GameState{}; g_world = World{}; g_colony_xy.clear();
-    g_engine_extra = forge::EngineExtra{}; g_rng = 0x2BAD1234;
+    // Seed the live game from entropy so real play differs each time (fidelity backlog #14).
+    // Tests/selftests inject their own deterministic rng, so they are unaffected; the sandbox
+    // keeps its fixed seed for reproducible experimentation.
+    std::random_device rdv;
+    g_engine_extra = forge::EngineExtra{}; g_rng = (int)(rdv() ^ 0x2BAD1234u);
 
     forge::JsonValue sc;
     try { sc = forge::json_parse_file("data_extracted/engine/scenarios/new_world.json"); } catch (...) {}
