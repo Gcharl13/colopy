@@ -7,7 +7,7 @@
     "reference": "@SECTION[<row index or name:VALUE>].<column>  e.g. @BUILDING[name:Fort].cost"
   },
   "kind_counts": {
-    "reference": 40,
+    "reference": 41,
     "state": 13,
     "config": 1
   },
@@ -1609,6 +1609,69 @@
           "meaning": "",
           "tier": "B",
           "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@SPRITES": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 306,
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "label",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "kind",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "sheet",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "frame",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "w",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
+        },
+        {
+          "name": "h",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/sprites.json"
         }
       ]
     },

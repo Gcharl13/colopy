@@ -47,6 +47,18 @@ def build_schema(names, tribes, dgroup, binds, cfg):
             }
     add_reference(names)
     add_reference(tribes)
+    # --- the sprite catalog + message catalog are reference tables too (if built) ---
+    for fname, tname in (("data_extracted/engine/sprites.json", "@SPRITES"),
+                         ("data_extracted/engine/messages.json", "@MESSAGES")):
+        path = os.path.join(ROOT, fname)
+        if os.path.exists(path):
+            body = json.load(open(path))
+            rows = body.get("sprites") or body.get("messages") or []
+            cols = list(rows[0].keys()) if rows else []
+            tables[tname] = {"kind": "reference", "cardinality": "table", "rows": len(rows),
+                             "columns": [{"name": c, "type": infer_type(rows, c), "rw": "write",
+                                          "meaning": "", "tier": "B", "source": fname}
+                                         for c in cols]}
     # --- state tables (bindings.json) ---
     for tname, body in binds["state_tables"].items():
         tables[tname] = {
