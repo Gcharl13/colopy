@@ -1350,6 +1350,41 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
             return J(200, colony_detail_json(ci));
         }
+        // Assign a colonist to a job: a ring tile (0..7) producing a raw good, or a building
+        // slot (tile -1) producing Hammers(16)/Crosses(17)/Bells(18). Production recomputes.
+        if (path == "/api/colony/assign" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            static const int RDX[8] = {-1,0,1,-1,1,-1,0,1}, RDY[8] = {-1,-1,-1,0,0,1,1,1};
+            Colony& col = g_world.colonies[ci];
+            Colony::Worker wk;
+            wk.profession = b.find("profession") ? b.find("profession")->as_int(19) : 19;
+            wk.tile = b.find("tile") ? b.find("tile")->as_int(-1) : -1;
+            wk.good = b.find("good") ? b.find("good")->as_int(0) : 0;
+            const forge::JsonValue* ev = b.find("expert");
+            wk.expert = ev ? (ev->type == forge::JsonValue::Bool ? ev->b : ev->as_int(0) != 0) : false;
+            if (wk.tile >= 0 && wk.tile < 8 && ci < (int)g_colony_xy.size()) {
+                int tid = g_world.terrain_id(g_colony_xy[ci].first + RDX[wk.tile], g_colony_xy[ci].second + RDY[wk.tile]);
+                wk.terrain = tid < 0 ? 2 : (tid & 0x1F);
+            } else wk.terrain = 0;
+            col.workers.push_back(wk);
+            if ((int)col.workers.size() > col.population) col.population = (int)col.workers.size();
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules);
+            return J(200, colony_detail_json(ci));
+        }
+        // Remove a colonist from a job (back to the plaza); production recomputes.
+        if (path == "/api/colony/unassign" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
+            int wi = b.find("worker") ? b.find("worker")->as_int(-1) : -1;
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            Colony& col = g_world.colonies[ci];
+            if (wi < 0 || wi >= (int)col.workers.size()) return err(400, "bad worker");
+            col.workers.erase(col.workers.begin() + wi);
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules);
+            return J(200, colony_detail_json(ci));
+        }
 
         // Start constructing a specific building in a colony (the interactive build menu).
         // {colony, building} -> start_building with cost/min_colony from @BUILDING.

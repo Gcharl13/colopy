@@ -856,7 +856,21 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
                 return num((double)(rem < 0 ? 0 : rem));
             }
             if (f == "warehouse")  return num(w.colonies[c].warehouse_lvl);
+            if (f == "center_food") return num(w.colonies[c].center_food);
             if (f == "workers")    return num((double)w.colonies[c].workers.size());
+            // worker<M>.<field> -- an individual colonist's profession/good/tile/expert
+            if (f.rfind("worker", 0) == 0) {
+                size_t wd = f.find('.'); int m = std::atoi(f.c_str() + 6);
+                if (wd != std::string::npos && m >= 0 && m < (int)w.colonies[c].workers.size()) {
+                    const vc::sim::Colony::Worker& wk = w.colonies[c].workers[m];
+                    std::string wf = f.substr(wd + 1);
+                    if (wf == "profession") return num(wk.profession);
+                    if (wf == "good")       return num(wk.good);
+                    if (wf == "tile")       return num(wk.tile);
+                    if (wf == "expert")     return num(wk.expert ? 1 : 0);
+                    if (wf == "terrain")    return num(wk.terrain);
+                }
+            }
             // stockpile.<good 0..15> -> stored cargo of that good
             if (f.rfind("stockpile.", 0) == 0) {
                 int gi = std::atoi(f.c_str() + 10);
