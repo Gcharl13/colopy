@@ -197,7 +197,7 @@
         8
       ],
       "color": "210,190,120",
-      "text": "Warehouse -- Food {colony0.stockpile.0}  Sugar {colony0.stockpile.1}  Cotton {colony0.stockpile.3}  Furs {colony0.stockpile.4}  Lumber {colony0.stockpile.5}  Ore {colony0.stockpile.6}   Colonists {colony0.workers}"
+      "text": "Warehouse -- Sugar {colony0.stockpile.1}  Cotton {colony0.stockpile.3}  Furs {colony0.stockpile.4}  Lumber {colony0.stockpile.5}  Ore {colony0.stockpile.6}   Net food/turn {colony0.food}   Colonists {colony0.workers}"
     },
     {
       "id": "build",

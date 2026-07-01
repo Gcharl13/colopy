@@ -982,11 +982,20 @@ async function pvFire(graphId){
   const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId})})).json();
   if(d.goto){ pvNav(d.goto); return; }
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
-  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pvch"></div>');
-    (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-      b.onclick=async()=>{ const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c,cache:p._cache})})).json();
-        if(r.goto){ pvNav(r.goto); } else { ui.close(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); scrPreview(); } };
-      $('#pvch').appendChild(b); }); }
+  if(d.popup) pvPopup(graphId, d.popup);
+}
+// Screen-preview popup: resume re-renders any chained popup (staying on this graph) so a
+// multi-stage screen action isn't truncated; cache:p._cache keeps rolled values stable.
+function pvPopup(graphId, p){
+  ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="pvch"></div>');
+  const box=$('#pvch'), ch=p.choices||[];
+  const resume=async(c)=>{
+    const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:graphId,from_node:p.node,choice:c,cache:p._cache})})).json();
+    if(r.goto){ pvNav(r.goto); return; }
+    if(r.popup){ pvPopup(graphId, r.popup); return; }
+    ui.close(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); scrPreview(); };
+  if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent='Continue'; b.onclick=()=>{ ui.close(); scrPreview(); }; box.appendChild(b); return; }
+  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
 }
 document.querySelector('nav button[data-tab=screens]').addEventListener('click',()=>{ if(!SINIT){ SINIT=true; scrInit(); } });
 
@@ -1016,10 +1025,21 @@ async function fireEvent(){
   const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id})})).json();
   await refreshGame();
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
-  if(d.popup){ const p=d.popup; ui.popup(esc(p.title),'<p>'+esc(p.body)+'</p><div id="evch"></div>');
-    (p.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-      b.onclick=async()=>{ ui.close(); const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
-        await refreshGame(); if((r.effects||[]).length) ui.toast(r.effects.join('; ')); }; $('#evch').appendChild(b); }); }
+  if(d.popup) playPopup(id, d.popup);
+}
+// Render an event popup and, on a choice, resume the graph -- re-rendering ANY further popup the
+// resume returns (a chained ShowPopup) so a multi-stage event is not silently truncated. cache:p._cache
+// keeps rolled/offered values stable across each choice.
+function playPopup(id, p){
+  ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="evch"></div>');
+  const box=$('#evch'), ch=p.choices||[];
+  const resume=async(c)=>{ ui.close();
+    const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
+    await refreshGame();
+    if(r.popup) playPopup(id, r.popup);
+    else if((r.effects||[]).length) ui.toast(r.effects.join('; ')); };
+  if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent='Continue'; b.onclick=()=>ui.close(); box.appendChild(b); return; }
+  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
 }
 async function stepGame(){
   if(!GAME){ await newGame(); return; }
@@ -1030,11 +1050,20 @@ async function stepGame(){
 function eventQueue(q){
   if(!q.length) return; const e=q.shift(), p=e.report.popup;
   if(!p){ eventQueue(q); return; }
-  ui.popup(esc(p.title), '<p>'+esc(p.body)+'</p><div id="eqch"></div>');
+  showEventPopup(e.graph, p, q);
+}
+// Like playPopup, but for the per-turn event batch: a chained popup within one event re-renders
+// (staying on this event's graph); when the chain ends, advance to the next queued event.
+function showEventPopup(id, p, q){
+  ui.popup(esc(p.title), '<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="eqch"></div>');
   const box=$('#eqch'), ch=p.choices||[];
+  const resume=async(c)=>{ ui.close();
+    const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
+    await refreshGame();
+    if(r.popup) showEventPopup(id, r.popup, q);
+    else eventQueue(q); };
   if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.textContent='Continue'; b.onclick=()=>{ ui.close(); refreshGame(); eventQueue(q); }; box.appendChild(b); return; }
-  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c;
-    b.onclick=async()=>{ await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id:e.graph,from_node:p.node,choice:c,cache:p._cache})}); ui.close(); await refreshGame(); eventQueue(q); }; box.appendChild(b); });
+  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
 }
 function selUnit(){ return SEL<0 ? null : (GAME&&GAME.units.find(u=>u.id===SEL)); }
 async function orderMove(tx,ty){

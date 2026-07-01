@@ -1271,14 +1271,70 @@ static int engine_selftest() {
             R"({"from":{"node":"a4","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
         forge::run_graph(gw, cx);
         check(forge::resolve_binding("colony0.workers", cx).as_int() == 4, "AssignWorker pushed 4 colonists");
-        // Prairie(3) y_planter_cotton = 3, sol=100 -> tory 0. Plain worker = 3; expert (Cotton is
-        // manufactured, not era) doubles -> 6. Stockpile Cotton = 3 + 6 = 9.
+        // Prairie(3) y_planter_cotton = 3, sol=100 -> tory 0. Plain worker = 3; expert (Cotton is a
+        // non-era good, so *2 not +2) doubles -> 6. Stockpile Cotton = 3 + 6 = 9 (no per-good cap).
         check(forge::resolve_binding("colony0.stockpile.3", cx).as_int() == 9,
               "ColonyProduce: cotton (plain 3 + expert x2 = 6) -> stockpile Cotton = 9");
-        // Plains(2) y_farmer = 4; food_per_turn = 4 - 2*pop(3) = -2
-        check(w.colonies[0].food_per_turn == -2, "ColonyProduce: net food = tile yield 4 - 2*pop = -2");
+        // Plains(2) y_farmer = 4; net food = max(4 - 2*pop(3), 0) = max(-2,0) = 0 (colony.md floor)
+        check(w.colonies[0].food_per_turn == 0, "ColonyProduce: net food = max(4 - 2*pop, 0) = 0 (floored)");
         // building Bells worker base rate = 3
         check(w.colonies[0].bells_per_turn == 3, "ColonyProduce: building Bells worker = 3 bells");
+    }
+
+    // Raw->finished conversion + NO per-good stockpile ceiling (colony.md §3 / CORRECTED warehouse).
+    {
+        vc::sim::Colony col; col.population = 1; col.rebel_A = 1; col.rebel_B = 1;  // sol=100 -> no tory penalty
+        w.colonies.push_back(col);   // colony 1
+        forge::set_binding("colony1.stockpile.6", 98, cx);   // pre-bank 98 Ore (cap would be 100)
+        forge::JsonValue gc = forge::json_parse(
+            R"({"id":"c","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"o1","type":"AssignWorker","params":{"colony":"1","terrain":0,"good":"Ore","expert":"0"}},)"
+            R"({"id":"o2","type":"AssignWorker","params":{"colony":"1","terrain":0,"good":"Ore","expert":"0"}},)"
+            R"({"id":"s1","type":"AssignWorker","params":{"colony":"1","terrain":5,"good":"Sugar","expert":"0"}},)"
+            R"({"id":"d1","type":"AssignWorker","params":{"colony":"1","terrain":0,"good":"Rum","expert":"0"}},)"
+            R"({"id":"d2","type":"AssignWorker","params":{"colony":"1","terrain":0,"good":"Rum","expert":"0"}},)"
+            R"({"id":"pr","type":"ColonyProduce","params":{"colony":"1"}}],"edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"o1","pin":"in"}},)"
+            R"({"from":{"node":"o1","pin":"out"},"to":{"node":"o2","pin":"in"}},)"
+            R"({"from":{"node":"o2","pin":"out"},"to":{"node":"s1","pin":"in"}},)"
+            R"({"from":{"node":"s1","pin":"out"},"to":{"node":"d1","pin":"in"}},)"
+            R"({"from":{"node":"d1","pin":"out"},"to":{"node":"d2","pin":"in"}},)"
+            R"({"from":{"node":"d2","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
+        forge::run_graph(gc, cx);
+        // Tundra(0) y_ore = 2 x2 workers = 4; 98 + 4 = 102 -- NOT clamped to the old (0+1)*100 cap.
+        check(forge::resolve_binding("colony1.stockpile.6", cx).as_int() == 102,
+              "ColonyProduce: Ore 98+4 = 102, no per-good warehouse ceiling");
+        // Savannah(5) y_planter_sugar = 3 -> 3 Sugar. Distiller 1 converts 3 Sugar -> 3 Rum (1:1);
+        // distiller 2 finds 0 Sugar left -> 0 Rum (NOT 3 from nothing). Rum = 3, Sugar = 0.
+        check(forge::resolve_binding("colony1.stockpile.9", cx).as_int() == 3,
+              "ColonyProduce: 3 Sugar -> 3 Rum via conversion; 2nd distiller makes 0 (no raw)");
+        check(forge::resolve_binding("colony1.stockpile.1", cx).as_int() == 0,
+              "ColonyProduce: conversion consumed the raw Sugar (stockpile Sugar = 0)");
+    }
+
+    // Sequence must HALT at a popup: a ShowPopup wired to pin0 has to pause the whole Sequence,
+    // not let pin1's action fire prematurely (the pause/resume invariant across a fan-out).
+    {
+        GameState gs; World ws; std::vector<std::pair<int,int>> cxys; forge::EngineExtra exs;
+        forge::EngineCtx cxs{gs, ws, cxys, exs, rd, rng};
+        gs.powers[0].gold = 100;
+        forge::JsonValue gq = forge::json_parse(
+            R"({"id":"q","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"sq","type":"Sequence","params":{}},)"
+            R"({"id":"p","type":"ShowPopup","params":{"body":"FIRST","choices":"ok"}},)"
+            R"({"id":"c","type":"Constant","params":{"value":50}},)"
+            R"({"id":"g","type":"GrantGold","params":{"power":"0"}}],"edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"sq","pin":"in"}},)"
+            R"({"from":{"node":"sq","pin":"0"},"to":{"node":"p","pin":"in"}},)"
+            R"({"from":{"node":"sq","pin":"1"},"to":{"node":"g","pin":"in"}},)"
+            R"({"from":{"node":"c","pin":"value"},"to":{"node":"g","pin":"amount"}}]})");
+        forge::JsonValue rq = forge::run_graph(gq, cxs);
+        const forge::JsonValue* pq = rq.find("popup");
+        std::string bd = pq && pq->is_object() && pq->find("body") ? pq->find("body")->str : "";
+        check(bd.find("FIRST") != std::string::npos, "Sequence returns the pin0 popup (paused)");
+        check(gs.powers[0].gold == 100, "Sequence halts at popup: pin1 GrantGold did NOT fire prematurely");
     }
 
     // congress.cost reflects the byte-verified bell-cost curve; congress.bells is writable.

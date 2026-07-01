@@ -70,7 +70,7 @@
       "y": 60,
       "params": {
         "title": "Colony Report",
-        "body": "{colony0.workers} colonists at work. Warehouse: Cotton {colony0.stockpile.3}, Food {colony0.stockpile.0}. Net food {colony0.food}, bells {colony0.bells}.",
+        "body": "{colony0.workers} colonists at work. Warehouse: Cotton {colony0.stockpile.3}. Net food {colony0.food}, bells {colony0.bells}.",
         "choices": "Onward."
       }
     }

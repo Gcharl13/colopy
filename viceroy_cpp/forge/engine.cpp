@@ -153,8 +153,14 @@ JsonValue category(const char* name, std::vector<JsonValue> nodes) {
     c.obj["nodes"] = ns; return c;
 }
 
-double as_num(const JsonValue& v) { return v.type == JsonValue::Number ? v.num
-                                         : v.type == JsonValue::Bool ? (v.b ? 1 : 0) : 0; }
+double as_num(const JsonValue& v) {
+    if (v.type == JsonValue::Number) return v.num;
+    if (v.type == JsonValue::Bool)   return v.b ? 1 : 0;
+    // Tolerate number-like strings: the editor stores number params as JSON numbers, but
+    // hand-authored / select params ("0"/"1") arrive as strings -- parse them instead of 0.
+    if (v.type == JsonValue::String && !v.str.empty()) return std::atof(v.str.c_str());
+    return 0;
+}
 
 // Base terrain yield of raw good g (0..7) on a terrain id, read live from the yield tables
 // (@UNFORESTED 0..7 / @FORESTED 8..23 / @OTHER 24..28) -- so editing a terrain's yield in the
@@ -1023,7 +1029,11 @@ struct Runner {
         const JsonValue* n = node(nodeId); if (!n) return {};
         std::string t = ptype(*n);
         logmsg("exec " + t + " (" + nodeId + ")");
-        if (t == "Sequence") { follow(nodeId, "0", popup); follow(nodeId, "1", popup); return follow(nodeId, "2", popup); }
+        if (t == "Sequence") {   // run pins in order, but HALT if a branch pauses at a popup
+            JsonValue r0 = follow(nodeId, "0", popup); if (popup.type == JsonValue::Object) return r0;
+            JsonValue r1 = follow(nodeId, "1", popup); if (popup.type == JsonValue::Object) return r1;
+            return follow(nodeId, "2", popup);
+        }
         if (t.rfind("On", 0) == 0) return follow(nodeId, "out", popup);   // any trigger = entry passthrough
         if (t == "Branch") {
             bool c = as_num(eval_in(nodeId, "cond")) != 0;
@@ -1329,27 +1339,54 @@ struct Runner {
             if (ci >= 0 && ci < (int)cx.w.colonies.size()) {
                 vc::sim::Colony& col = cx.w.colonies[ci];
                 int sol = vc::sim::sol_pct(col);
-                std::array<int, vc::sim::NGOODS> prod{};
+                std::array<int, vc::sim::NGOODS> prod{};   // raw goods produced this turn (indices 1..7)
                 int food = 0, bells = 0, hammers = 0, crosses = 0;
+                // Pass 1: tile workers (raw goods 0..7 from the terrain table, tory/expert adjust) and
+                // building workers (Hammers/Crosses/Bells at the base rate, x2 for an expert).
                 for (const auto& wk : col.workers) {
-                    int g = wk.good, y;
-                    if (g >= 0 && g < 8) {                       // raw tile good from the terrain table
-                        y = terrain_good_yield(wk.terrain, g);
+                    int g = wk.good;
+                    if (g >= 0 && g < 8) {                       // raw tile good
+                        int y = terrain_good_yield(wk.terrain, g);
                         y = vc::sim::tory_expert_adjust(y, col.population, sol, cx.g.difficulty,
                                                         col.human, wk.expert, g, cx.rd);
-                    } else { y = 3; if (wk.expert) y *= 2; }     // building/manufactured base rate
-                    if (g == 0) food += y;
-                    else if (g == 16) hammers += y;
-                    else if (g == 17) crosses += y;
-                    else if (g == 18) bells += y;
-                    else if (g >= 1 && g < vc::sim::NGOODS) prod[g] += y;
+                        if (g == 0) food += y; else prod[g] += y;
+                    } else if (g == 16) { hammers += wk.expert ? 6 : 3; }
+                    else if (g == 17)   { crosses += wk.expert ? 6 : 3; }
+                    else if (g == 18)   { bells   += wk.expert ? 6 : 3; }
+                    // manufactured goods (8..15) are produced in pass 2 by converting a raw input.
                 }
-                int cap = vc::sim::warehouse_cap(col, cx.rd);
-                for (int g = 0; g < vc::sim::NGOODS; ++g) {
+                // Pass 2: raw->finished conversion (spec/systems/colony.md §3 step 3, BYTE_VERIFIED 1:1):
+                // an artisan converts THIS turn's produced raw into the finished good, capacity 3 (x2 expert).
+                // Rum<-Sugar, Cigars<-Tobacco, Cloth<-Cotton, Coats<-Furs, Tools<-Ore. Goods with no chain
+                // (Horses/Trade goods/Muskets) and the >2-building x2/3 throttle are not modeled -- noted.
+                static const int RAW_OF[vc::sim::NGOODS] = {
+                    -1,-1,-1,-1,-1,-1,-1,-1,      // 0..7 raw (no input)
+                    -1,                            // 8  Horses  (no tile->chain here)
+                    1,                             // 9  Rum   <- Sugar
+                    2,                             // 10 Cigars <- Tobacco
+                    3,                             // 11 Cloth  <- Cotton
+                    4,                             // 12 Coats  <- Furs
+                    -1,                            // 13 Trade goods (not colony-produced)
+                    6,                             // 14 Tools  <- Ore
+                    -1 };                          // 15 Muskets (from Tools via the Armory, 2nd order)
+                for (const auto& wk : col.workers) {
+                    int g = wk.good;
+                    if (g < 8 || g >= vc::sim::NGOODS) continue;
+                    int raw = RAW_OF[g]; if (raw < 0) continue;
+                    int capacity = wk.expert ? 6 : 3;
+                    int amt = prod[raw] < capacity ? prod[raw] : capacity;   // limited by raw available
+                    if (amt <= 0) continue;                                  // no raw -> no finished (not "from nothing")
+                    prod[raw] -= amt; prod[g] += amt;
+                }
+                // Bank into the stockpile -- floor at 0, NO per-good ceiling (colony.md CORRECTED
+                // 2026-06-27: the (level+1)*100 cap bounds only the food-growth reserve; over-cap
+                // tradeables are auto-exported by a separate step, not clamped here). Food is a flow.
+                for (int g = 1; g < vc::sim::NGOODS; ++g) {
                     col.stockpile[g] += prod[g];
-                    if (col.stockpile[g] > cap) col.stockpile[g] = cap;
+                    if (col.stockpile[g] < 0) col.stockpile[g] = 0;
                 }
-                col.food_per_turn = food - 2 * col.population;   // eaten = 2*pop (colony.md)
+                col.food_per_turn = food - 2 * col.population;   // net_food = max(produced - 2*pop, 0)
+                if (col.food_per_turn < 0) col.food_per_turn = 0;
                 col.bells_per_turn = bells; col.hammers_per_turn = hammers; col.crosses_output = crosses;
                 effect("colony " + std::to_string(ci) + " production from " +
                        std::to_string(col.workers.size()) + " workers: food " +
