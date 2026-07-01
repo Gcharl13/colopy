@@ -1,0 +1,94 @@
+{
+  "id": "native_trade",
+  "name": "Native Settlement Trade",
+  "nodes": [
+    {
+      "id": "note",
+      "type": "Comment",
+      "x": 20,
+      "y": -150,
+      "params": {
+        "text": "Trading at a native settlement (spec/systems/natives.md). The price the natives pay is a PERCENT of the European value: native_trade_price = min( max(5*difficulty + 50, 2*tax%), 90 ) -- it rises with difficulty and with your own tax rate, capped at 90% (BYTE_VERIFIED sim/natives.cpp). The offer for 100 units of a good is price.<good> * 100 * pct/100. Accepting pays gold and eases tension; every term is a live binding or an inline constant in a Formula -- no magic-number nodes. (Tribute demands use the sibling formula tribute_gold = clamp(demand, 10, min(3*wealth+10, 100)).)"
+      }
+    },
+    {
+      "id": "trig",
+      "type": "OnTestFire",
+      "x": 20,
+      "y": 70,
+      "params": {}
+    },
+    {
+      "id": "pct",
+      "type": "Formula",
+      "x": 250,
+      "y": 210,
+      "params": { "expr": "min(max(5*game.difficulty + 50, 2*power0.tax), 90)" }
+    },
+    {
+      "id": "offer",
+      "type": "Formula",
+      "x": 470,
+      "y": 210,
+      "params": { "expr": "price.12 * 100 * a / 100" }
+    },
+    {
+      "id": "offer2",
+      "type": "Formula",
+      "x": 470,
+      "y": 290,
+      "params": { "expr": "a * 110 / 100" }
+    },
+    {
+      "id": "qty",
+      "type": "PickText",
+      "x": 250,
+      "y": 320,
+      "params": { "options": "100 units of" }
+    },
+    {
+      "id": "gname",
+      "type": "GetState",
+      "x": 250,
+      "y": 390,
+      "params": { "path": "@CARGO[12].name" }
+    },
+    {
+      "id": "dlg",
+      "type": "ShowPopup",
+      "x": 470,
+      "y": 70,
+      "params": {
+        "textKey": "@TRADE0",
+        "speaker": "Native Chief",
+        "choices": "Accept,Haggle,Decline"
+      }
+    },
+    {
+      "id": "accept",
+      "type": "GrantGold",
+      "x": 720,
+      "y": 40,
+      "params": { "power": "0" }
+    },
+    {
+      "id": "relief",
+      "type": "ChangeNativeTension",
+      "x": 940,
+      "y": 40,
+      "params": { "amount": -6 }
+    }
+  ],
+  "edges": [
+    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "dlg", "pin": "in" } },
+    { "from": { "node": "pct", "pin": "value" }, "to": { "node": "offer", "pin": "a" } },
+    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "dlg", "pin": "num0" } },
+    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "offer2", "pin": "a" } },
+    { "from": { "node": "offer2", "pin": "value" }, "to": { "node": "dlg", "pin": "num1" } },
+    { "from": { "node": "qty", "pin": "value" }, "to": { "node": "dlg", "pin": "str0" } },
+    { "from": { "node": "gname", "pin": "value" }, "to": { "node": "dlg", "pin": "str1" } },
+    { "from": { "node": "offer", "pin": "value" }, "to": { "node": "accept", "pin": "amount" } },
+    { "from": { "node": "dlg", "pin": "Accept" }, "to": { "node": "accept", "pin": "in" } },
+    { "from": { "node": "accept", "pin": "out" }, "to": { "node": "relief", "pin": "in" } }
+  ]
+}
