@@ -1,0 +1,43 @@
+{
+  "_doc": "Effect-composition tables. An action node (HireMercenaries, SpawnUnit, GrantImmigrant, ...) reads its concrete breakdown from here instead of a hardcoded C++ list -- so every effect is named, labeled, editable data, not a black-box verb. Unit names resolve to a type id through the @UNIT reference table (row index == type id). Count rolls are byte-verified (see each _source); the composition (which unit types, carrier, veteran) is the data.",
+  "force_composition": {
+    "mercenary_wartime": {
+      "label": "King's Intervention (wartime mercenaries)",
+      "trigger": "revolution.declared",
+      "carrier": "Man-O-War",
+      "veteran": true,
+      "categories": [
+        { "cat": 0, "unit": "Cont. Army", "count": "roll(2, (4-difficulty)/2 + 2)" },
+        { "cat": 1, "unit": "Cont. Cav.", "count": "coinA (0 or 1)" },
+        { "cat": 3, "unit": "Artillery",  "count": "coinC (0 or 1)" }
+      ],
+      "note": "Exactly ONE of cat1 (Cont. Cav.) / cat3 (Artillery) is set by a coin flip; cat0 count = roll(2,(4-diff)/2+2). Every land unit is a Veteran, delivered by a Man-O-War.",
+      "_source": "spec/systems/mercenary.md -- VICEROY.EXE func_03C4A2 (per-cat type by revolution flag) + func_03D510 (force landing) + func_03E442 (wartime offer). BYTE_VERIFIED."
+    },
+    "mercenary_peacetime": {
+      "label": "Foreign veteran offer (peacetime mercenaries)",
+      "trigger": "!revolution.declared",
+      "carrier": "Man-O-War",
+      "veteran": true,
+      "categories": [
+        { "cat": 0, "unit": "Dragoons",  "count": "roll(1,3), +1 on heads" },
+        { "cat": 3, "unit": "Artillery", "count": "coinC 0..2 (tails only)" }
+      ],
+      "note": "cat0 count = roll(1,3); a coin: heads -> +1 Dragoon and NO artillery; tails -> 1-2 Veteran Artillery (cat3). cat1 (A-flag) is always 0 in peacetime. Every land unit is a Veteran, delivered by a Man-O-War.",
+      "_source": "spec/systems/mercenary.md -- VICEROY.EXE func_03C4A2 + func_03D510 + func_03E664 (peacetime offer, K=4). BYTE_VERIFIED."
+    },
+    "mercenary_intervention": {
+      "label": "Free foreign intervention (AI/default force)",
+      "trigger": "AIPersonality != 0",
+      "carrier": "Man-O-War",
+      "veteran": true,
+      "categories": [
+        { "cat": 0, "unit": "Regulars",  "count": "count word" },
+        { "cat": 1, "unit": "Cavalry",   "count": "A-flag" },
+        { "cat": 3, "unit": "Artillery", "count": "C-flag" }
+      ],
+      "note": "The AI/default per-category types from func_03C4A2 when neither the wartime nor human-foreign branch is taken: Regulars/Cavalry/Artillery.",
+      "_source": "spec/systems/mercenary.md func_03C4A2 (AI/default column). BYTE_VERIFIED."
+    }
+  }
+}

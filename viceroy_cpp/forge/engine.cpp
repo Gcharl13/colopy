@@ -666,6 +666,35 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
 // when the Tables tab saves an edit, so a freshly added row resolves immediately).
 void invalidate_tables() { table_store().docs.clear(); table_store().loaded = false; }
 
+// ---- unit-type resolution (@UNIT is the catalog; row index == type id) ----
+// Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its type id by scanning the
+// @UNIT reference table, so no name->type list is hardcoded in C++. -1 if unknown.
+int unit_type_by_name(const std::string& name) {
+    const JsonValue* sec = find_table_section("@UNIT");
+    if (!sec) return -1;
+    const JsonValue* rows = sec->find("rows");
+    if (!rows || rows->type != JsonValue::Array) return -1;
+    for (size_t i = 0; i < rows->arr.size(); ++i) {
+        const JsonValue* nm = rows->arr[i].find("name");
+        if (nm && nm->str == name) return (int)i;
+    }
+    return -1;
+}
+
+// ---- effect-composition tables (force composition etc.), data-driven ----
+// data_extracted/engine/effects.json describes what each concrete effect spawns, so an
+// action is labeled data (which unit types, carrier, veteran), not a hardcoded roster.
+const JsonValue& effects_doc() {
+    static JsonValue D; static bool loaded = false;
+    if (!loaded) { loaded = true;
+        try { D = json_parse_file("data_extracted/engine/effects.json"); } catch (...) {} }
+    return D;
+}
+const JsonValue* force_composition(const std::string& kind) {
+    const JsonValue* fc = effects_doc().find("force_composition");
+    return fc ? fc->find(kind) : nullptr;
+}
+
 // ---- binding resolver ----
 JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     const GameState& g = cx.g; const World& w = cx.w;
@@ -1122,11 +1151,8 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "SpawnUnit") {
-            static const char* UN[12] = {"Colonists","Soldiers","Pioneers","Dragoons","Scouts",
-                "Treasure","Artillery","Wagon Train","Caravel","Galleon","Frigate","Man-O-War"};
-            static const int UT[12] = {0,1,2,4,5,10,11,12,13,15,17,18};
-            std::string nm = pget(*n, "type").str; int type = 0;
-            for (int i = 0; i < 12; ++i) if (nm == UN[i]) type = UT[i];
+            // type name -> id resolves through @UNIT (row index == type id), not a hardcoded list.
+            std::string nm = pget(*n, "type").str; int type = unit_type_by_name(nm); if (type < 0) type = 0;
             int p = std::atoi(pget(*n, "power").str.c_str());
             vc::sim::Unit u; u.type = type; u.owner = p; u.alive = true;
             if (!cx.colony_xy.empty()) { u.x = cx.colony_xy[0].first; u.y = cx.colony_xy[0].second; }
@@ -1195,10 +1221,8 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "GrantImmigrant") {
-            static const char* IN[4] = {"Colonists","Soldiers","Pioneers","Scouts"};
-            static const int   IT[4] = {0, 1, 2, 5};
-            std::string nm = pget(*n, "type").str; int type = 0;
-            for (int i = 0; i < 4; ++i) if (nm == IN[i]) type = IT[i];
+            // immigrant class name -> type id via @UNIT (row index == type id), not a hardcoded list.
+            std::string nm = pget(*n, "type").str; int type = unit_type_by_name(nm); if (type < 0) type = 0;
             int p = std::atoi(pget(*n, "power").str.c_str());
             int count = (int)as_num(eval_in(nodeId, "count")); if (count < 1) count = 1;
             if (p >= 0 && p < 4) {
@@ -1260,14 +1284,50 @@ struct Runner {
             return follow(nodeId, "out", popup);
         }
         if (t == "HireMercenaries") {
-            int p = std::atoi(pget(*n, "power").str.c_str());
+            // Force composition is DATA (effects.json force_composition.<kind>): which unit
+            // types per category, the carrier, the veteran stamp. Only the per-category COUNT
+            // rolls are byte-verified procedure (spec/systems/mercenary.md func_03E442/03E664).
+            int p = std::atoi(pget(*n, "power").str.c_str()); int owner = (p >= 0 && p < 4) ? p : 0;
             bool wartime = pget(*n, "kind").str == "Wartime";
-            std::vector<int> types = wartime ? std::vector<int>{9, 7, 11} : std::vector<int>{4, 11};
-            for (int ty : types) { vc::sim::Unit u; u.type = ty; u.owner = (p >= 0 && p < 4) ? p : 0; u.alive = true;
-                if (!cx.colony_xy.empty()) { u.x = cx.colony_xy[0].first; u.y = cx.colony_xy[0].second; }
-                cx.w.units.push_back(u); }
-            effect(std::string(wartime ? "wartime" : "peacetime") + " mercenaries hired (" +
-                   std::to_string(types.size()) + " veterans)");
+            const JsonValue* comp = force_composition(wartime ? "mercenary_wartime" : "mercenary_peacetime");
+            int diff = cx.g.difficulty;
+            int catCount[4] = {0, 0, 0, 0};     // per-category unit counts, by the byte-verified rolls
+            if (wartime) {
+                int hi = (4 - diff) / 2 + 2; if (hi < 2) hi = 2;
+                catCount[0] = cx.rng(2, hi);
+                if (cx.rng(0, 1) != 0) catCount[1] = 1; else catCount[3] = 1;   // exactly one category
+            } else {
+                catCount[0] = cx.rng(1, 3);
+                if (cx.rng(0, 1) == 1) catCount[0] += 1;                        // heads: +1, no artillery
+                else { catCount[3] = 1; if (cx.rng(0, 1) == 1) catCount[3] += 1; } // tails: 1-2 artillery
+            }
+            int px = cx.colony_xy.empty() ? 0 : cx.colony_xy[0].first;
+            int py = cx.colony_xy.empty() ? 0 : cx.colony_xy[0].second;
+            std::string breakdown; int total = 0;
+            if (comp) if (const JsonValue* cats = comp->find("categories"))
+                for (const JsonValue& c : cats->arr) {
+                    const JsonValue* catv = c.find("cat"); const JsonValue* uv = c.find("unit");
+                    if (!catv || !uv) continue;
+                    int ci = (int)catv->num; if (ci < 0 || ci > 3) continue;
+                    int cnt = catCount[ci]; if (cnt <= 0) continue;
+                    int ty = unit_type_by_name(uv->str); if (ty < 0) continue;
+                    for (int k = 0; k < cnt; ++k) {
+                        vc::sim::Unit u; u.type = ty; u.owner = owner; u.alive = true;
+                        u.profession = 0x15;               // Veteran (UnitRecord +0x17 vet_type)
+                        u.x = px; u.y = py; cx.w.units.push_back(u);
+                    }
+                    total += cnt;
+                    if (!breakdown.empty()) breakdown += ", ";
+                    breakdown += std::to_string(cnt) + " Veteran " + uv->str;
+                }
+            // the carrier (a Man-O-War lands the stack; spec func_03D510 @0x03D748)
+            std::string carrier = comp ? (comp->find("carrier") ? comp->find("carrier")->str : "") : "";
+            if (!carrier.empty()) { int cty = unit_type_by_name(carrier);
+                if (cty >= 0) { vc::sim::Unit u; u.type = cty; u.owner = owner; u.alive = true;
+                    u.x = px; u.y = py; cx.w.units.push_back(u); } }
+            effect(std::string(wartime ? "wartime" : "peacetime") + " mercenaries hired: " +
+                   (breakdown.empty() ? std::to_string(total) + " veterans" : breakdown) +
+                   (carrier.empty() ? "" : " (carried by " + carrier + ")"));
             return follow(nodeId, "out", popup);
         }
         if (t == "WageSpanishSuccession") {
