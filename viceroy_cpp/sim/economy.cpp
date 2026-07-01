@@ -55,6 +55,21 @@ void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
     }
 }
 
+long export_overflow(Colony& c, Power& owner, const std::array<int32_t, NGOODS>& price,
+                     int tax_pct, bool independence) {
+    long gained = 0;
+    for (int g = 1; g < NGOODS; ++g) {              // Food(0) drives colony growth, never auto-sold
+        if (c.stockpile[g] < 100) continue;         // flat 0x64 threshold (func_02D658 @0x2D6F7)
+        int excess = c.stockpile[g] - 50;           // keep the lower band 0x32=50 (@0x2D70B)
+        c.stockpile[g] = 50;
+        if (independence) continue;                 // [0x5382]&1: no Crown market in rebellion -> wasted
+        long net = (long)excess * price[g] * (100 - tax_pct) / 100;   // taxed sale (price-weighted, RECONSTRUCTED)
+        if (net < 0) net = 0;
+        owner.gold += net; gained += net;           // score_add_money @0x2D785
+    }
+    return gained;
+}
+
 bool build_step(Colony& c, int hammers_produced, int build_cost) {
     if (hammers_produced > 0) {
         c.hammers_accum += (uint32_t)hammers_produced;

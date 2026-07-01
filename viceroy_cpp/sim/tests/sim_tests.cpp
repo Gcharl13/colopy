@@ -74,6 +74,25 @@ static void test_warehouse() {
     c.warehouse_lvl = 2; CHECK(warehouse_cap(c) == 300, "lvl2");
 }
 
+static void test_export() {
+    std::printf("auto-export over-cap goods (100->50):\n");
+    std::array<int32_t, NGOODS> price{}; price[RUM] = 800; price[CIGARS] = 800;
+    Colony c; c.owner_power = 0; c.stockpile[RUM] = 102; c.stockpile[CIGARS] = 130;
+    c.stockpile[FOOD] = 300;                       // Food never auto-sold
+    Power owner; owner.gold = 0;
+    long g = export_overflow(c, owner, price, /*tax*/0, /*independence*/false);
+    CHECK(c.stockpile[RUM] == 50 && c.stockpile[CIGARS] == 50, "over-100 cut to 50");
+    CHECK(c.stockpile[FOOD] == 300, "Food exempt from export");
+    CHECK(g == (52 + 80) * 800 && owner.gold == g, "excess sold @800 no tax -> %ld", g);
+    // taxed: 60 excess @800 with 25% tax -> 60*800*75/100 = 36000
+    Colony c2; c2.owner_power = 0; c2.stockpile[RUM] = 110; Power o2; o2.gold = 0;
+    CHECK(export_overflow(c2, o2, price, 25, false) == 36000, "25%% tax reduces proceeds");
+    // independence: goods still dumped to 50 but nothing credited
+    Colony c3; c3.owner_power = 0; c3.stockpile[RUM] = 150; Power o3; o3.gold = 7;
+    CHECK(export_overflow(c3, o3, price, 0, true) == 0 && c3.stockpile[RUM] == 50 && o3.gold == 7,
+          "independence wastes the excess (no gold)");
+}
+
 static void test_build() {
     std::printf("hammers / build (cost 64):\n");
     Colony c; c.build_target = 0;
@@ -524,6 +543,7 @@ int main() {
     test_sol();
     test_production();
     test_warehouse();
+    test_export();
     test_build();
     test_price_drift();
     test_ref();

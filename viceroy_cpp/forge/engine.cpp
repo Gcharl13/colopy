@@ -493,6 +493,12 @@ JsonValue node_catalog() {
                  "into the per-good stockpile (capped by warehouse) and the colony's "
                  "food/bells/hammers/crosses.",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
+        node_def("ExportOverflow", "Auto-export Over-cap Goods",
+                 "End-of-turn surplus disposal (warehousing.md 6.4): each tradeable good over 100 in "
+                 "the colony's warehouse is cut back to 50 and the excess sold to Europe (taxed) into "
+                 "the owner's gold -- WASTED instead if independence is declared. Food is exempt (it "
+                 "drives growth). Run it after ColonyProduce.",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
         node_def("PromoteUnit", "Promote / Train Unit",
                  "Upgrades an on-map unit (by index) to a trained type, e.g. Soldiers -> "
                  "Continental Army (training.md).",
@@ -1409,6 +1415,20 @@ struct Runner {
                        std::to_string(col.food_per_turn) + ", bells " + std::to_string(bells) +
                        ", hammers " + std::to_string(hammers) + ", crosses " + std::to_string(crosses));
             } else effect("ColonyProduce: no colony " + std::to_string(ci));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ExportOverflow") {
+            int ci = (int)as_num(pget(*n, "colony"));
+            if (ci >= 0 && ci < (int)cx.w.colonies.size()) {
+                vc::sim::Colony& col = cx.w.colonies[ci];
+                int owner = col.owner_power;
+                if (owner >= 0 && owner < 4) {
+                    long g = vc::sim::export_overflow(col, cx.g.powers[owner], cx.g.price_base,
+                                                      cx.g.powers[owner].tax, cx.x.woi_declared);
+                    effect("colony " + std::to_string(ci) + " auto-exports surplus for " +
+                           std::to_string(g) + " gold" + (cx.x.woi_declared ? " (wasted: independence)" : ""));
+                } else effect("ExportOverflow: colony " + std::to_string(ci) + " has no valid owner");
+            } else effect("ExportOverflow: no colony " + std::to_string(ci));
             return follow(nodeId, "out", popup);
         }
         if (t == "PromoteUnit") {

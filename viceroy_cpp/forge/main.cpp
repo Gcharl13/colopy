@@ -1334,6 +1334,43 @@ static int engine_selftest() {
               "Building gate: ungated Sugar still banked (3), just not converted");
     }
 
+    // Auto-export (warehousing.md 6.4): a good over 100 is cut to 50 and the excess sold (taxed)
+    // into the owner's gold -- but wasted, not sold, once independence is declared.
+    {
+        g.price_base[9] = 800; g.price_base[10] = 800; g.powers[0].tax = 0; ex.woi_declared = false;
+        vc::sim::Colony col; col.owner_power = 0;
+        w.colonies.push_back(col);   // colony 3
+        forge::set_binding("colony3.stockpile.9", 102, cx);   // Rum 102
+        forge::set_binding("colony3.stockpile.10", 130, cx);  // Cigars 130
+        long gold_before = g.powers[0].gold;
+        forge::JsonValue ge = forge::json_parse(
+            R"({"id":"e","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"x","type":"ExportOverflow","params":{"colony":"3"}}],)"
+            R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"x","pin":"in"}}]})");
+        forge::run_graph(ge, cx);
+        check(forge::resolve_binding("colony3.stockpile.9", cx).as_int() == 50 &&
+              forge::resolve_binding("colony3.stockpile.10", cx).as_int() == 50,
+              "ExportOverflow: over-100 goods cut back to 50");
+        // excess Rum 52 + excess Cigars 80 = 132 units @800, tax 0 -> +105600 gold
+        check(g.powers[0].gold - gold_before == 105600,
+              "ExportOverflow: excess sold, taxed proceeds credited to gold (+105600)");
+
+        ex.woi_declared = true;
+        vc::sim::Colony col2; col2.owner_power = 0;
+        w.colonies.push_back(col2);  // colony 4
+        forge::set_binding("colony4.stockpile.9", 102, cx);
+        long gold2 = g.powers[0].gold;
+        forge::JsonValue ge2 = forge::json_parse(
+            R"({"id":"e2","nodes":[{"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"x","type":"ExportOverflow","params":{"colony":"4"}}],)"
+            R"("edges":[{"from":{"node":"t","pin":"out"},"to":{"node":"x","pin":"in"}}]})");
+        forge::run_graph(ge2, cx);
+        check(forge::resolve_binding("colony4.stockpile.9", cx).as_int() == 50 &&
+              g.powers[0].gold == gold2,
+              "ExportOverflow: under independence the excess is wasted (cut to 50, no gold)");
+        ex.woi_declared = false;
+    }
+
     // Sequence must HALT at a popup: a ShowPopup wired to pin0 has to pause the whole Sequence,
     // not let pin1's action fire prematurely (the pause/resume invariant across a fan-out).
     {

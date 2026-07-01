@@ -49,4 +49,14 @@ bool rush_build(Colony& c, Power& owner, long gold_cost);
 void colony_economic_step(Colony& c, int difficulty,
                           const RuleData& rd = default_rules());
 
+// End-of-turn surplus disposal (warehousing.md §6.4, func_02D658 @0x2D6F7): after production is
+// banked, each tradeable good (1..15; Food(0) drives growth, excluded) whose stockpile >= 100 is
+// reduced to 50 and the excess auto-exported to Europe. The excess is SOLD -- taxed proceeds credited
+// to the owner's gold -- unless independence is declared, in which case it is WASTED (no Crown market).
+// Returns the total gold gained. NOTE: the taxed-sale amount is net = excess*price*(100-tax)/100;
+// warehousing.md's shorthand omits the *price factor while colony.md keeps it -- price-weighted here
+// (the economically-correct reading), so the exact proceeds are RECONSTRUCTED.
+long export_overflow(Colony& c, Power& owner, const std::array<int32_t, NGOODS>& price,
+                     int tax_pct, bool independence);
+
 } // namespace vc::sim

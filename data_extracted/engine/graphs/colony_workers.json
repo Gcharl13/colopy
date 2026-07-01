@@ -64,9 +64,16 @@
       }
     },
     {
+      "id": "export",
+      "type": "ExportOverflow",
+      "x": 1020,
+      "y": 60,
+      "params": { "colony": 0 }
+    },
+    {
       "id": "rep",
       "type": "ShowPopup",
-      "x": 1020,
+      "x": 1240,
       "y": 60,
       "params": {
         "title": "Colony Report",
@@ -94,6 +101,10 @@
     },
     {
       "from": { "node": "produce", "pin": "out" },
+      "to": { "node": "export", "pin": "in" }
+    },
+    {
+      "from": { "node": "export", "pin": "out" },
       "to": { "node": "rep", "pin": "in" }
     }
   ]
