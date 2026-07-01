@@ -59,6 +59,9 @@ void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
         c.food_accum -= threshold;             // surplus carried
         c.rebel_B += cfg.sol_birth_bonus;      // SoL divisor bump on birth (colony.md:211, @0x009453, B)
     }
+    // Surface the food-growth store (+0xAA) as the colony's warehouse Food (+0x9A[0]) so stored food
+    // is visible and drawn down on a birth -- the same accumulator, just shown in the warehouse row.
+    c.stockpile[FOOD] = (int32_t)c.food_accum;
 }
 
 long export_overflow(Colony& c, Power& owner, const std::array<int32_t, NGOODS>& price,

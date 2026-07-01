@@ -2454,18 +2454,25 @@ static int engine_selftest() {
         a.workers.push_back(mkw(0, 0, 2, 0));                         // Farmer, Plains, Food
         forge::colony_compute_production(a, /*diff*/1, rd4);
         check(a.food_per_turn == 6, "center Plains(4) + 1 Farmer(4) - 2 eaten -> net food 6");
-        // B: Farmer + Lumberjack(forest) + Carpenter + Statesman + Preacher, pop 5.
+        // B: Farmer + Carpenter + Statesman + Preacher, pop 5, with 10 Lumber pre-banked. The
+        //    Carpenter converts Lumber -> Hammers (3/turn), CONSUMING lumber from the stockpile;
+        //    bells/crosses are produced directly (no raw input).
         Colony b; b.owner_power = 0; b.human = true; b.population = 5; b.rebel_A = 0; b.rebel_B = 1;
+        b.stockpile[5] = 10;                                           // 10 Lumber banked
         b.workers.push_back(mkw(0, 0, 2, 0));                          // Farmer -> Food
-        b.workers.push_back(mkw(5, 1, 8, 5));                          // Lumberjack, forest -> Lumber(5)
-        b.workers.push_back(mkw(13, -1, 0, 16));                       // Carpenter -> Hammers(16)
+        b.workers.push_back(mkw(13, -1, 0, 16));                       // Carpenter -> Hammers(16) <- Lumber(5)
         b.workers.push_back(mkw(17, -1, 0, 18));                       // Statesman -> Bells(18)
         b.workers.push_back(mkw(16, -1, 0, 17));                       // Preacher  -> Crosses(17)
         forge::colony_compute_production(b, 1, rd4);
         check(b.bells_per_turn == 3,   "Statesman -> 3 bells/turn");
-        check(b.hammers_per_turn == 3, "Carpenter -> 3 hammers/turn");
+        check(b.hammers_per_turn == 3, "Carpenter converts 3 Lumber -> 3 hammers/turn");
         check(b.crosses_output == 3,   "Preacher -> 3 crosses/turn");
-        check(b.stockpile[5] > 0,      "Lumberjack on forest banks Lumber into the stockpile");
+        check(b.stockpile[5] == 7,     "Carpenter consumed 3 Lumber from the stockpile (10 -> 7)");
+        // C: a Carpenter with NO lumber makes 0 hammers -- lumber is required to build.
+        Colony cc; cc.owner_power = 0; cc.human = true; cc.population = 1; cc.rebel_A = 0; cc.rebel_B = 1;
+        cc.workers.push_back(mkw(13, -1, 0, 16));                      // Carpenter, no lumber available
+        forge::colony_compute_production(cc, 1, rd4);
+        check(cc.hammers_per_turn == 0, "Carpenter with no Lumber -> 0 hammers (lumber required)");
         // job_name resolves the @JOB display name (identity is data, not a number).
         check(forge::job_name(0, false) == "Farmer" || !forge::job_name(0, false).empty(),
               "job_name(Farmer) resolves from @JOB");

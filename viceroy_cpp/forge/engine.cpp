@@ -227,58 +227,66 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
     // a floor (the town square always yields at least its baseline).
     int centerFood = terrain_good_yield(col.center_terrain, 0);
     if (centerFood < col.center_food) centerFood = col.center_food;
-    int food = centerFood, bells = 0, hammers = 0, crosses = 0;
+    int food = centerFood, bells = 0, crosses = 0;
+    int cap[19] = {0};                       // artisan throughput requested per finished good (16 = Hammers)
     for (const auto& wk : col.workers) {
         int g = wk.good;
-        if (g >= 0 && g < 8) {
+        if (g >= 0 && g < 8) {               // tile worker -> raw good from the terrain-yield table
             int y = terrain_good_yield(wk.terrain, g);
             y = vc::sim::tory_expert_adjust(y, col.population, sol, difficulty, col.human, wk.expert, g, rd);
             if (g == 0) food += y; else prod[g] += y;
-        } else if (g == 16) hammers += wk.expert ? 6 : 3;
-        else if (g == 17)   crosses += wk.expert ? 6 : 3;
-        else if (g == 18)   bells   += wk.expert ? 6 : 3;
+        } else if (g == 17) crosses += wk.expert ? 6 : 3;   // Preacher  -> Crosses (no raw input)
+        else if (g == 18)   bells   += wk.expert ? 6 : 3;   // Statesman -> Bells   (no raw input)
+        else if ((g >= 9 && g < NGOODS) || g == 16)         // artisan: Rum..Muskets, or Carpenter (Hammers)
+            cap[g] += wk.expert ? 6 : 3;
     }
-    // Raw->finished conversion (spec colony.md §3 / func_008E84): a finished good is made 1:1 from
-    // its input raw, gated on the base manufacturing building (built_mask), and THROTTLED x2/3 when
-    // the finished good's building-chain count > 2 (factory tier, byte-verified @0x8EB1). An artisan
-    // (a building worker assigned to the finished good) drives it up to its throughput (3, x2 expert).
-    // Input good per finished (Horses(8)<-Food handled below; Muskets(15)<-Tools(14), second-order).
+    // Manufacturing (spec colony.md §3 / func_008E84; "Carpenter Lumber->Hammers", line 266): each
+    // artisan converts its input raw 1:1 into a finished good, up to throughput, gated on the base
+    // building, drawing the raw from BOTH this turn's gather AND the banked stockpile (the real
+    // distillery/carpenter consume stored input too -- closes backlog #16). Factory tier (>2 chain
+    // buildings) throttles output x2/3. Processed in dependency order so a second-order good
+    // (Muskets<-Tools) can consume the Tools produced the same turn.
     static const int RAW_OF[NGOODS]   = { -1,-1,-1,-1,-1,-1,-1,-1, -1, 1, 2, 3, 4, -1, 6, 14 };
-    // Base gate building id: Rum->27, Cigars->24, Cloth->21, Coats->32, Tools->39(Blacksmith #7),
-    // Muskets->3(Armory).
     static const int GATE_BLD[NGOODS] = { -1,-1,-1,-1,-1,-1,-1,-1,-1, 27, 24, 21, 32, -1, 39, 3 };
-    // The upgrade chain (base/shop/factory) per finished good -- >2 owned = factory-tier throttle.
     static const int CHAIN[NGOODS][3] = {
         {-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},
-        {-1,-1,-1},               // 8  Horses (Stable, no chain)
-        {27,28,29},               // 9  Rum
-        {24,25,26},               // 10 Cigars
-        {21,22,23},               // 11 Cloth
-        {32,33,34},               // 12 Coats
+        {-1,-1,-1},               // 8  Horses (Stable, bred from food below)
+        {27,28,29},               // 9  Rum       <- Sugar
+        {24,25,26},               // 10 Cigars    <- Tobacco
+        {21,22,23},               // 11 Cloth     <- Cotton
+        {32,33,34},               // 12 Coats     <- Furs
         {-1,-1,-1},               // 13 Trade goods
-        {39,40,41},               // 14 Tools
-        {3,4,5} };                // 15 Muskets
-    for (const auto& wk : col.workers) {
-        int g = wk.good;
-        if (g < 9 || g >= NGOODS) continue;         // 9..15 are the 1:1 chains (Horses(8) bred below)
-        int raw = RAW_OF[g]; if (raw < 0) continue;
-        int gate = GATE_BLD[g];
-        if (gate >= 0 && !(col.built_mask & (1ull << gate))) continue;
-        int amt = prod[raw] < (wk.expert ? 6 : 3) ? prod[raw] : (wk.expert ? 6 : 3);
-        if (amt <= 0) continue;
-        int owned = 0;                              // factory throttle: >2 chain buildings owned -> x2/3
-        for (int k = 0; k < 3; ++k) { int b = CHAIN[g][k]; if (b >= 0 && (col.built_mask & (1ull << b))) ++owned; }
-        if (owned > 2) amt = amt * 2 / 3;
-        prod[raw] -= amt; prod[g] += amt;
-    }
+        {39,40,41},               // 14 Tools     <- Ore
+        {3,4,5} };                // 15 Muskets   <- Tools
+    // Convert `raw` -> good `g` up to cap[g], consuming this turn's gather first then the stockpile.
+    auto make_from = [&](int g, int raw, int gate) -> int {
+        if (cap[g] <= 0 || raw < 0) return 0;
+        if (gate >= 0 && !(col.built_mask & (1ull << gate))) return 0;    // needs its base building
+        int avail = prod[raw] + col.stockpile[raw]; if (avail < 0) avail = 0;
+        int made = cap[g] < avail ? cap[g] : avail;
+        int owned = 0;                                                     // >2 chain buildings -> x2/3 throttle
+        if (g < NGOODS)                                                    // Hammers(16) has no factory chain
+            for (int k = 0; k < 3; ++k) { int b = CHAIN[g][k]; if (b >= 0 && (col.built_mask & (1ull << b))) ++owned; }
+        if (owned > 2) made = made * 2 / 3;
+        if (made <= 0) return 0;
+        int fromProd = made < prod[raw] ? made : prod[raw]; if (fromProd < 0) fromProd = 0;
+        prod[raw] -= fromProd;                                            // consume this turn's raw,
+        col.stockpile[raw] -= (made - fromProd);                         // then draw down the banked raw
+        if (col.stockpile[raw] < 0) col.stockpile[raw] = 0;
+        return made;
+    };
+    for (int g : {9, 10, 11, 12, 14}) prod[g] += make_from(g, RAW_OF[g], GATE_BLD[g]);  // first-order
+    prod[15] += make_from(15, RAW_OF[15], GATE_BLD[15]);                  // Muskets <- Tools (second-order)
+    int hammers = make_from(16, /*Lumber*/5, /*carpenter's house, ungated*/-1);   // Hammers <- Lumber
+    // Bank the finished/raw goods (Food(0) is the growth store, handled in colony_economic_step).
     for (int g = 1; g < NGOODS; ++g) { col.stockpile[g] += prod[g]; if (col.stockpile[g] < 0) col.stockpile[g] = 0; }
     col.food_per_turn = food - 2 * col.population; if (col.food_per_turn < 0) col.food_per_turn = 0;
     // Horses breed from the net food surplus when a Stable (building 17) + a rancher (good 8) are
     // present -- min(surplus, 3; x2 expert) horses/turn (colony.md; the exact breed curve is RECONSTRUCTED).
     if (col.built_mask & (1ull << 17))
         for (const auto& wk : col.workers) if (wk.good == 8) {
-            int breed = col.food_per_turn, cap = wk.expert ? 6 : 3;
-            if (breed > cap) breed = cap;
+            int breed = col.food_per_turn, capH = wk.expert ? 6 : 3;
+            if (breed > capH) breed = capH;
             if (breed > 0) col.stockpile[8] += breed;
             break;
         }
