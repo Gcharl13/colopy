@@ -103,6 +103,10 @@ add_test(NAME forge_data COMMAND forge data selftest)
 # data_extracted/, so run it from the repo root (the parent of this source dir).
 add_test(NAME forge_engine COMMAND forge engine selftest
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+# forge_bundle exports the whole game (graphs/screens/scenarios/tables) as one data bundle and
+# round-trips it, so it likewise reads data_extracted/ from the repo root (B13).
+add_test(NAME forge_bundle COMMAND forge bundle selftest
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # Data-integrity gates (B12): schema binding resolution + cross-reference validation.
 # Python, data-only; run from the repo root where the JSON data lives.

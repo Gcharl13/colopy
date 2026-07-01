@@ -1307,6 +1307,8 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
         }
 }
 
+static forge::JsonValue build_game_bundle();   // B13: full-game data bundle (defined below)
+
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
     using forge::HttpResponse;
@@ -1396,6 +1398,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             try { return J(200, forge::json_parse_file("data_extracted/engine/schema.json")); }
             catch (...) { return err(404, "schema.json not found (run tools/build_schema.py)"); }
         }
+        // B13: export the whole game as one portable data bundle (schema + tables + graphs +
+        // screens + scenarios + messages/sprites + rules overlay). "Save this game as a mod."
+        if (path == "/api/bundle") return J(200, build_game_bundle());
         if (path == "/api/functions") {
             try { return J(200, forge::json_parse_file("data_extracted/engine/functions.json")); }
             catch (...) { return err(404, "functions.json not found"); }
@@ -2475,12 +2480,179 @@ static int do_serve(int argc, char** argv) {
     return forge::serve_http(port, serve_route);
 }
 
+// ---- B13: the game as a portable data bundle ----------------------------------------------
+// "The engine loads a bundle and IS that game." A bundle is one self-contained JSON capturing every
+// data layer of the data-driven game -- schema (DDL), the turn pipeline, config, the reference
+// tables, every event graph + screen + scenario, the message + sprite catalogs, and the effect/
+// binding/function metadata -- plus the current rules overlay. Exporting a bundle and re-loading it
+// reproduces the game without recompiling; a mod is a bundle with edited sections.
+#ifndef FORGE_SPEC_VERSION
+#define FORGE_SPEC_VERSION 1
+#endif
+static forge::JsonValue build_game_bundle() {
+    namespace fs = std::filesystem;
+    auto tryfile = [](const char* path) -> forge::JsonValue {
+        try { return forge::json_parse_file(path); } catch (...) { return forge::JsonValue{}; }
+    };
+    forge::JsonValue b = jobj();
+
+    // Flat engine data files (schema/pipeline/config/metadata/catalogs), each embedded verbatim.
+    forge::JsonValue data = jobj();
+    const char* files[] = {"schema", "turn", "effects", "functions", "function_writes",
+                           "bindings", "cfg", "variables", "messages", "sprites"};
+    for (const char* f : files) {
+        forge::JsonValue v = tryfile((std::string("data_extracted/engine/") + f + ".json").c_str());
+        if (v.type != forge::JsonValue::Null) data.obj[f] = v;
+    }
+    b.obj["data"] = data;
+
+    // Reference tables (the game's DDL rows: NAMES + TRIBES).
+    forge::JsonValue tables = jobj();
+    { forge::JsonValue v = tryfile("data_extracted/tables/names_tables.json");
+      if (v.type != forge::JsonValue::Null) tables.obj["names"] = v; }
+    { forge::JsonValue v = tryfile("data_extracted/tables/tribe_tables.json");
+      if (v.type != forge::JsonValue::Null) tables.obj["tribes"] = v; }
+    b.obj["tables"] = tables;
+
+    // Every event graph, keyed by id.
+    forge::JsonValue graphs = jobj();
+    for (const std::string& id : forge::list_graphs())
+        try { graphs.obj[id] = forge::load_graph(id); } catch (...) {}
+    b.obj["graphs"] = graphs;
+
+    // Every screen, keyed by id.
+    forge::JsonValue screens = jobj();
+    for (const std::string& id : forge::list_screens())
+        try { screens.obj[id] = forge::load_screen(id); } catch (...) {}
+    b.obj["screens"] = screens;
+
+    // Every scenario (data_extracted/engine/scenarios/*.json), keyed by stem.
+    forge::JsonValue scenarios = jobj();
+    try {
+        for (const auto& e : fs::directory_iterator("data_extracted/engine/scenarios")) {
+            if (e.path().extension() != ".json") continue;
+            forge::JsonValue v = tryfile(e.path().string().c_str());
+            if (v.type != forge::JsonValue::Null) scenarios.obj[e.path().stem().string()] = v;
+        }
+    } catch (...) {}
+    b.obj["scenarios"] = scenarios;
+
+    // The current rules overlay (sparse diff vs the default -- empty for a stock export, populated
+    // for a balance mod). The engine re-applies it over its defaults on load.
+    b.obj["rules_overlay"] = forge::overlay_diff(make_default_rules(), g_active_rules);
+
+    // Manifest last, with section counts so a loader can sanity-check before applying.
+    forge::JsonValue man = jobj();
+    man.obj["name"]         = forge::json_str("Viceroy Forge -- New World");
+    man.obj["version"]      = forge::json_str("1.0");
+    man.obj["spec_version"] = forge::json_num(FORGE_SPEC_VERSION);
+    man.obj["graphs"]       = forge::json_num((double)graphs.obj.size());
+    man.obj["screens"]      = forge::json_num((double)screens.obj.size());
+    man.obj["scenarios"]    = forge::json_num((double)scenarios.obj.size());
+    man.obj["data_files"]   = forge::json_num((double)data.obj.size());
+    b.obj["manifest"] = man;
+    return b;
+}
+
+// Validate a bundle is well-formed + self-consistent: manifest present, section counts match the
+// embedded sections, and every graph a screen references (its "graph" field) resolves in-bundle.
+// Returns the list of problems (empty == OK).
+static std::vector<std::string> verify_bundle(const forge::JsonValue& b) {
+    std::vector<std::string> issues;
+    const forge::JsonValue* man = b.find("manifest");
+    if (!man) { issues.push_back("missing manifest"); return issues; }
+    auto section = [&](const char* k) -> const forge::JsonValue* {
+        const forge::JsonValue* v = b.find(k);
+        if (!v || v->type != forge::JsonValue::Object) { issues.push_back(std::string("missing/!object section: ") + k); return nullptr; }
+        return v;
+    };
+    const forge::JsonValue* graphs = section("graphs");
+    const forge::JsonValue* screens = section("screens");
+    const forge::JsonValue* scenarios = section("scenarios");
+    section("data"); section("tables");
+    auto count = [&](const char* k) { const forge::JsonValue* m = man->find(k); return m ? m->as_int(-1) : -1; };
+    if (graphs && (int)graphs->obj.size() != count("graphs"))
+        issues.push_back("manifest graphs count != embedded graphs");
+    if (screens && (int)screens->obj.size() != count("screens"))
+        issues.push_back("manifest screens count != embedded screens");
+    if (scenarios && (int)scenarios->obj.size() != count("scenarios"))
+        issues.push_back("manifest scenarios count != embedded scenarios");
+    // referential integrity: a screen naming a graph must find it in the bundle.
+    if (graphs && screens)
+        for (const auto& kv : screens->obj) {
+            const forge::JsonValue* gref = kv.second.find("graph");
+            if (gref && gref->is_string() && !gref->str.empty() && !graphs->find(gref->str))
+                issues.push_back("screen '" + kv.first + "' references missing graph '" + gref->str + "'");
+        }
+    return issues;
+}
+
+static int bundle_selftest() {
+    int fail = 0;
+    auto check = [&](bool ok, const char* what) {
+        std::printf("  %s %s\n", ok ? "PASS:" : "FAIL:", what); if (!ok) ++fail;
+    };
+    forge::JsonValue b = build_game_bundle();
+    const forge::JsonValue* man = b.find("manifest");
+    check(man != nullptr, "bundle has a manifest");
+    const forge::JsonValue* graphs = b.find("graphs");
+    check(graphs && graphs->obj.size() >= 40, "bundle embeds >= 40 graphs");
+    const forge::JsonValue* screens = b.find("screens");
+    check(screens && screens->obj.size() >= 12, "bundle embeds >= 12 screens");
+    const forge::JsonValue* scen = b.find("scenarios");
+    check(scen && scen->obj.size() >= 1, "bundle embeds >= 1 scenario");
+    const forge::JsonValue* data = b.find("data");
+    check(data && data->find("schema") && data->find("turn") && data->find("messages") &&
+          data->find("sprites"), "bundle embeds schema/turn/messages/sprites");
+    const forge::JsonValue* tables = b.find("tables");
+    check(tables && tables->find("names"), "bundle embeds reference tables");
+    check(verify_bundle(b).empty(), "bundle passes self-consistency verification");
+    // Round-trip: dump -> parse -> re-verify, and counts survive.
+    std::string s = forge::json_dump(b);
+    forge::JsonValue rt = forge::json_parse(s);
+    check(verify_bundle(rt).empty(), "bundle round-trips through JSON dump/parse");
+    const forge::JsonValue* rg = rt.find("graphs");
+    check(graphs && rg && rg->obj.size() == graphs->obj.size(), "graph count survives round-trip");
+    std::printf("bundle selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
+    return fail == 0 ? 0 : 1;
+}
+
+static int do_bundle(int argc, char** argv) {
+    std::string sub = argc >= 3 ? argv[2] : "";
+    if (sub == "selftest") return bundle_selftest();
+    if (sub == "export" && argc >= 4) {
+        forge::JsonValue b = build_game_bundle();
+        std::ofstream f(argv[3], std::ios::binary);
+        if (!f) { std::printf("bundle: cannot write %s\n", argv[3]); return 1; }
+        f << forge::json_dump(b);
+        const forge::JsonValue* man = b.find("manifest");
+        std::printf("wrote bundle %s (%d graphs, %d screens, %d scenarios)\n", argv[3],
+                    (int)(man && man->find("graphs") ? man->find("graphs")->as_int() : 0),
+                    (int)(man && man->find("screens") ? man->find("screens")->as_int() : 0),
+                    (int)(man && man->find("scenarios") ? man->find("scenarios")->as_int() : 0));
+        return 0;
+    }
+    if (sub == "verify" && argc >= 4) {
+        forge::JsonValue b;
+        try { b = forge::json_parse_file(argv[3]); } catch (const std::exception& e) {
+            std::printf("bundle verify: cannot read %s: %s\n", argv[3], e.what()); return 1;
+        }
+        std::vector<std::string> issues = verify_bundle(b);
+        for (const std::string& i : issues) std::printf("  ISSUE: %s\n", i.c_str());
+        std::printf("bundle verify: %s\n", issues.empty() ? "OK" : "FAILURES");
+        return issues.empty() ? 0 : 1;
+    }
+    std::printf("usage: forge bundle {selftest | export FILE | verify FILE}\n");
+    return 1;
+}
+
 int main(int argc, char** argv) {
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
     if (cmd == "rules")   return do_rules(argc, argv);
     if (cmd == "map")     return do_map(argc, argv);
     if (cmd == "mod")     return do_mod(argc, argv);
+    if (cmd == "bundle")  return do_bundle(argc, argv);
     if (cmd == "save")    return do_save(argc, argv);
     if (cmd == "data")    return do_data(argc, argv);
     if (cmd == "formulas") { std::printf("%s\n", forge::formulas_text().c_str()); return 0; }
@@ -2497,6 +2669,9 @@ int main(int argc, char** argv) {
                 "  forge map roundtrip FILE.mp    confirm load->save->load is byte-identical\n"
                 "  forge mod selftest             write/load/validate a mod package (self-test)\n"
                 "  forge mod validate DIR         validate a mod directory\n"
+                "  forge bundle export FILE       export the whole game as one data bundle\n"
+                "  forge bundle verify FILE       validate a game/mod bundle\n"
+                "  forge bundle selftest          bundle export + round-trip self-test\n"
                 "  forge save selftest            game save/load round-trip self-test\n"
                 "  forge data check [FILE]        structural-validate the data tables\n"
                 "  forge data selftest            data-table validator self-test\n"
