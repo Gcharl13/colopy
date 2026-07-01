@@ -4,7 +4,7 @@ The game is a **database** mutated by functions and events. Everything is data:
 **reference** tables (rules), **state** tables (dynamic records), **config** scalars.
 The runtime interprets this schema; offsets are traceability-only.
 
-- Tables: 54 total — 40 reference, 13 state, 1 config.
+- Tables: 56 total — 42 reference, 13 state, 1 config.
 
 ## Path grammar (one interface addresses any cell)
 - **singleton**: `<table>.<col>            e.g. game.turn, revolution.sol, cfg.max_population`
@@ -34,7 +34,7 @@ warehouse_cap_base, sol_decay_shift, sol_inflow_mult, sol_birth_bonus, food_grow
 
 ## Reference tables (@SECTION[row].col)
 
-@SEASONS, @UNFORESTED, @FORESTED, @OTHER, @OTHER_NAMES, @RESOURCE, @COUNTRY, @NATIONALITY, @NATIONABBREV, @HOMEPORT, @COLONYNAME, @INDEPENDENT, @LEADERNAME, @MISSION, @DIFFICULTY, @CLASS, @BUILDING, @SCENARIO, @JOB, @CARGO, @UNIT, @ORDERS, @ACTIONS, @VALUES, @ATTITUDE, @ATTITUDINAL, @LEVELS, @TRIBES, @FOUNDING, @FATHERS, @COLORS, @IROQUOIS, @STOP, @CHEROKEE, @ARAWAK, @INCA, @SIOUX, @APACHE, @AZTEC, @TUPI
+@SEASONS, @UNFORESTED, @FORESTED, @OTHER, @OTHER_NAMES, @RESOURCE, @COUNTRY, @NATIONALITY, @NATIONABBREV, @HOMEPORT, @COLONYNAME, @INDEPENDENT, @LEADERNAME, @MISSION, @DIFFICULTY, @CLASS, @BUILDING, @SCENARIO, @JOB, @CARGO, @UNIT, @ORDERS, @ACTIONS, @VALUES, @ATTITUDE, @ATTITUDINAL, @LEVELS, @TRIBES, @FOUNDING, @FATHERS, @COLORS, @IROQUOIS, @STOP, @CHEROKEE, @ARAWAK, @INCA, @SIOUX, @APACHE, @AZTEC, @TUPI, @SPRITES, @MESSAGES
 
 ## Functions → columns (update rules)
 Each function's `writes` and the `reverse_index` (column → writers) live in `functions.json`. Example writers:
