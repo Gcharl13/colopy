@@ -1,0 +1,11 @@
+{ "id":"newgame", "name":"New Game", "background":"OPENMENU", "size":[320,200],
+  "widgets":[
+    {"id":"title","type":"text","rect":[70,14,200,10],"color":"227,170,40","text":"BEGIN A NEW WORLD"},
+    {"id":"natlbl","type":"text","rect":[24,40,120,8],"color":"255,255,190","text":"Nation"},
+    {"id":"nation","type":"text","rect":[24,52,180,8],"color":"255,255,255","text":"{game.nation} — @COUNTRY[{game.nation}].name"},
+    {"id":"leader","type":"text","rect":[24,64,220,8],"color":"180,200,255","text":"Leader: @LEADERNAME[{game.nation}].name"},
+    {"id":"diflbl","type":"text","rect":[24,86,120,8],"color":"255,255,190","text":"Difficulty"},
+    {"id":"diff","type":"text","rect":[24,98,180,8],"color":"255,255,255","text":"{game.difficulty} — @DIFFICULTY[{game.difficulty}].name"},
+    {"id":"gold","type":"text","rect":[24,120,220,8],"color":"255,255,255","text":"Starting treasury: {power0.gold}¤"},
+    {"id":"ref","type":"text","rect":[24,132,260,8],"color":"200,200,200","text":"King's army: {ref.regulars} regulars, {ref.cavalry} cavalry, {ref.artillery} artillery, {ref.manowar} men-o-war"},
+    {"id":"begin","type":"button","rect":[24,160,150,12],"color":"120,220,120","text":"Begin in the New World","onClick":"goto_status"} ] }

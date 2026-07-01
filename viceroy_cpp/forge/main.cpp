@@ -591,47 +591,113 @@ static std::pair<int,int> game_find_land(int tx, int ty) {
             }
     return {tx, ty};
 }
+// Nearest water tile to (tx,ty) -- where the starting ship sits. -1,-1 if the map has none.
+static std::pair<int,int> game_find_water(int tx, int ty) {
+    for (int r = 0; r < 40; ++r)
+        for (int dy = -r; dy <= r; ++dy)
+            for (int dx = -r; dx <= r; ++dx) {
+                int x = tx + dx, y = ty + dy, id = g_world.terrain_id(x, y);
+                if (id >= 0 && game_is_water(id)) return {x, y};
+            }
+    return {-1, -1};
+}
 
-static void game_new() {
+// Resolve a scenario unit-type name ("Soldiers","Caravel",...) to its type id via the
+// @UNIT reference table (row index == type id), so the scenario is authored by name.
+static int scenario_unit_type(const std::string& name) {
+    static forge::JsonValue names; static bool loaded = false;
+    if (!loaded) { loaded = true;
+        try { names = forge::json_parse_file("data_extracted/tables/names_tables.json"); } catch (...) {} }
+    const forge::JsonValue* sec = names.find("@UNIT"); if (!sec) return -1;
+    const forge::JsonValue* rows = sec->find("rows"); if (!rows) return -1;
+    for (size_t i = 0; i < rows->arr.size(); ++i) {
+        const forge::JsonValue* nm = rows->arr[i].find("name");
+        if (nm && nm->str == name) return (int)i;
+    }
+    return -1;
+}
+
+// Start a new game, seeded from the chosen nation + difficulty and the authored
+// scenario (data_extracted/engine/scenarios/new_world.json). The scenario supplies
+// the map, calendar, starting gold, colonies and units; nation/difficulty come from
+// the new-game screen. Falls back to the classic 2-colony opening if the file is absent.
+static void game_new(int nation = 0, int difficulty = 1) {
     g_game = GameState{}; g_world = World{}; g_colony_xy.clear();
     g_engine_extra = forge::EngineExtra{}; g_rng = 0x2BAD1234;
-    try {
-        forge::MpFile m = forge::load_mp("data_extracted/map/AMER2.MP");
+
+    forge::JsonValue sc;
+    try { sc = forge::json_parse_file("data_extracted/engine/scenarios/new_world.json"); } catch (...) {}
+    auto scn = [&](const char* k) -> const forge::JsonValue* {
+        return sc.type == forge::JsonValue::Object ? sc.find(k) : nullptr; };
+
+    std::string mapfile = "data_extracted/map/AMER2.MP";
+    if (const forge::JsonValue* m = scn("map")) mapfile = "data_extracted/map/" + m->str;
+    try { forge::MpFile m = forge::load_mp(mapfile);
         g_world.map_w = m.w; g_world.map_h = m.h; g_world.terrain = m.terrain;
     } catch (...) { g_world.map_w = g_world.map_h = 0; }
 
-    g_game.difficulty = 1; g_game.year = 1492; g_game.season = 0; g_game.turn = 0;
-    g_game.powers[0].gold = 500;
+    g_game.difficulty = difficulty < 0 ? 0 : difficulty > 4 ? 4 : difficulty;
+    g_game.nation     = nation < 0 ? 0 : nation > 3 ? 3 : nation;
+    g_game.year   = scn("year")   ? (int)scn("year")->num   : 1492;
+    g_game.season = scn("season") ? (int)scn("season")->num : 0;
+    g_game.turn   = 0;
+    g_game.powers[0].gold = scn("start_gold") ? (long)scn("start_gold")->num : 500;
     // price_base = the internal supply accumulator (DGROUP 0x53EA), random-seeded per good in
     // [600,1000] (func_07561C, BYTE_VERIFIED market.md). It drives the drift; it is NOT the gold
     // price -- the player-facing buy/sell gold per unit comes from @CARGO (price_start1/2, ~1..20).
     for (int i = 0; i < NGOODS; ++i) g_game.price_base[i] = game_rng(600, 1000);
     g_game.ref = ref_start(g_game.difficulty);          // the King starts with an army
 
+    std::vector<std::pair<int,int>> cxy;                // colony coords, indexed as authored
     auto add_colony = [&](int tx, int ty, int pop, int bells, int hammers, int food, int crosses) {
         auto xy = game_find_land(tx, ty);
         Colony c; c.owner_power = 0; c.human = true; c.population = pop;
         c.bells_per_turn = bells; c.hammers_per_turn = hammers;
         c.food_per_turn = food; c.crosses_output = crosses;
         c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
-        g_world.colonies.push_back(c); g_colony_xy.push_back(xy);
+        g_world.colonies.push_back(c); g_colony_xy.push_back(xy); cxy.push_back(xy);
         return xy;
     };
-    auto a = add_colony(20, 22, 3, 3, 4, 60, 2);
-    auto b = add_colony(34, 42, 2, 1, 2, 45, 1);
+    if (const forge::JsonValue* cols = scn("colonies"))
+        for (const forge::JsonValue& c : cols->arr) {
+            auto gi = [&](const char* k, int d) { const forge::JsonValue* v = c.find(k); return v ? (int)v->num : d; };
+            add_colony(gi("x", 20), gi("y", 22), gi("pop", 1), gi("bells", 0),
+                       gi("hammers", 0), gi("food", 0), gi("crosses", 0));
+        }
+    if (g_world.colonies.empty()) { add_colony(20, 22, 3, 3, 4, 60, 2); add_colony(34, 42, 2, 1, 2, 45, 1); }
 
     auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1) {
         Unit u; u.type = type; u.owner = 0; u.x = x; u.y = y;
         u.order = order; u.target_x = txx; u.target_y = tyy; u.alive = true;
         g_world.units.push_back(u);
     };
-    add_unit(SOLDIERS,  a.first, a.second);
-    add_unit(PIONEERS,  a.first + 1, a.second);
-    add_unit(COLONISTS, a.first, a.second + 1, ORDER_GOTO, b.first, b.second);  // marches each turn
-    const int dx[8] = {1,-1,0,0,1,1,-1,-1}, dy[8] = {0,0,1,-1,1,-1,1,-1};
-    for (int k = 0; k < 8; ++k) {                       // a ship on adjacent water
-        int x = a.first + dx[k], y = a.second + dy[k];
-        if (game_is_water(g_world.terrain_id(x, y))) { add_unit(CARAVEL, x, y); break; }
+    const int dx8[8] = {1,-1,0,0,1,1,-1,-1}, dy8[8] = {0,0,1,-1,1,-1,1,-1};
+    if (const forge::JsonValue* us = scn("units"))
+        for (const forge::JsonValue& u : us->arr) {
+            int ci = u.find("at_colony") ? (int)u.find("at_colony")->num : 0;
+            if (ci < 0 || ci >= (int)cxy.size()) ci = 0;
+            std::pair<int,int> base = cxy.empty() ? std::make_pair(20, 22) : cxy[ci];
+            int type = scenario_unit_type(u.find("type") ? u.find("type")->str : "Colonists");
+            if (type < 0) type = COLONISTS;
+            if (u.find("on_water_adjacent")) {          // a ship: adjacent water, else nearest water
+                bool placed = false;
+                for (int k = 0; k < 8 && !placed; ++k) { int x = base.first + dx8[k], y = base.second + dy8[k];
+                    if (game_is_water(g_world.terrain_id(x, y))) { add_unit(type, x, y); placed = true; } }
+                if (!placed) { auto wxy = game_find_water(base.first, base.second);
+                    if (wxy.first >= 0) add_unit(type, wxy.first, wxy.second); }
+            } else {
+                int x = base.first + (u.find("dx") ? (int)u.find("dx")->num : 0);
+                int y = base.second + (u.find("dy") ? (int)u.find("dy")->num : 0);
+                if (const forge::JsonValue* g = u.find("goto_colony")) {
+                    int gc = (int)g->num;               // marches toward that colony each turn
+                    if (gc >= 0 && gc < (int)cxy.size()) add_unit(type, x, y, ORDER_GOTO, cxy[gc].first, cxy[gc].second);
+                    else add_unit(type, x, y);
+                } else add_unit(type, x, y);
+            }
+        }
+    if (g_world.units.empty()) {                        // fallback opening force
+        auto a = cxy.empty() ? std::make_pair(20, 22) : cxy[0];
+        add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
     }
     g_game_active = true;
 }
@@ -651,6 +717,8 @@ static forge::JsonValue game_state_json() {
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);
+    o.obj["nation"] = forge::json_num(g_game.nation);
+    o.obj["difficulty"] = forge::json_num(g_game.difficulty);
     o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
     o.obj["royal_money"] = forge::json_num((double)g_game.powers[0].royal_money);
     forge::JsonValue ref = jobj();
@@ -870,6 +938,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
 
         if (path == "/api/game/new"  && method == "POST") { game_new();  return J(200, game_state_json()); }
+        // New game from the setup screen: {nation 0..3, difficulty 0..4} seed the scenario.
+        if (path == "/api/game/setup" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int nat  = b.find("nation")     ? b.find("nation")->as_int(0)     : 0;
+            int diff = b.find("difficulty") ? b.find("difficulty")->as_int(1) : 1;
+            game_new(nat, diff);
+            return J(200, game_state_json());
+        }
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/turn" && method == "POST") {
             game_step();                                    // advance the turn

@@ -72,6 +72,7 @@ struct GameState {
     int  season = 0;             // [0x538C]  0=Spring/early, 1=Autumn
     long turn   = 0;             // [0x538E]
     int  difficulty = 1;         // [0x53A6]  0..4
+    int  nation = 0;             // human player's @COUNTRY (0=England..3=Netherlands)
 
     std::array<Power, 4> powers{};
     std::array<int32_t, NGOODS> price_base{};  // DGROUP 0x53EA (per-good, [600,1000])

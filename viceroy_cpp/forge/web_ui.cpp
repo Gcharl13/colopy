@@ -239,7 +239,7 @@ const char* forge_index_html() {
 
   <section id="play" class="tab">
     <div class="row">
-      <button class="act" onclick="newGame()">New game</button>
+      <button class="act" onclick="newGameSetup()">New game&hellip;</button>
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
@@ -1151,6 +1151,37 @@ async function newGame(){
   try { const r=await fetch('/api/game/new',{method:'POST'}); GAME=await r.json(); }
   catch(e){ $('#ghud').innerHTML='<span class="fail">game unavailable</span>'; return; }
   drawGame(); showSel(); fillEvents(); ui.toast('New game ('+GAME.year+')');
+}
+// #68 opening flow: pick a nation + difficulty (from @COUNTRY / @LEADERNAME / @DIFFICULTY),
+// then POST /api/game/setup to seed the scenario. The cards are data, not authored strings.
+let SETUP={nation:0,difficulty:1,country:[],leaders:[],diff:[]};
+async function newGameSetup(){
+  let names={}; try{ names=await (await fetch('/api/tables?file=names')).json(); }catch(e){}
+  SETUP.country=(names['@COUNTRY']&&names['@COUNTRY'].rows)||[];
+  SETUP.leaders=(names['@LEADERNAME']&&names['@LEADERNAME'].rows)||[];
+  SETUP.diff=(names['@DIFFICULTY']&&names['@DIFFICULTY'].rows)||[];
+  const gc='display:inline-block;min-width:120px;margin:4px;padding:8px 10px;border-radius:6px;background:#1c2330;cursor:pointer;border:1px solid #555;vertical-align:top';
+  const natCard=(r,i)=>'<span class="gc nat" data-i="'+i+'" onclick="pickNation('+i+')" style="'+gc+'">'
+    +'<b>'+esc(r.name)+'</b><br><span class="muted" style="font-size:11px">'+esc((SETUP.leaders[i]&&SETUP.leaders[i].name)||'')+'</span></span>';
+  const difCard=(r,i)=>'<span class="gc dif" data-i="'+i+'" onclick="pickDiff('+i+')" style="'+gc+';min-width:96px">'+esc(r.name)+'</span>';
+  const html='<div class="muted" style="max-width:520px">Choose your nation and difficulty. Starting gold, colonies and the King\'s expeditionary force are seeded from the scenario and the difficulty level.</div>'
+    +'<h4 style="margin:10px 0 2px">Nation</h4><div id="nats">'+SETUP.country.map(natCard).join('')+'</div>'
+    +'<h4 style="margin:10px 0 2px">Difficulty</h4><div id="difs">'+SETUP.diff.map(difCard).join('')+'</div>'
+    +'<div class="row" style="margin-top:12px"><button class="act" onclick="beginGame()">Begin in the New World &#9654;</button></div>';
+  ui.popup('New Game', html);
+  pickNation(SETUP.nation); pickDiff(SETUP.difficulty);
+}
+function pickNation(i){ SETUP.nation=i;
+  document.querySelectorAll('#nats .gc').forEach(e=>{ e.style.outline=(+e.dataset.i===i)?'2px solid #e2aa28':'none'; }); }
+function pickDiff(i){ SETUP.difficulty=i;
+  document.querySelectorAll('#difs .gc').forEach(e=>{ e.style.outline=(+e.dataset.i===i)?'2px solid #e2aa28':'none'; }); }
+async function beginGame(){
+  ui.close(); SEL=-1;
+  try{ const r=await fetch('/api/game/setup',{method:'POST',body:JSON.stringify({nation:SETUP.nation,difficulty:SETUP.difficulty})}); GAME=await r.json(); }
+  catch(e){ $('#ghud').innerHTML='<span class="fail">game unavailable</span>'; return; }
+  drawGame(); showSel(); fillEvents();
+  const nn=(SETUP.country[SETUP.nation]||{}).name||'?', dn=(SETUP.diff[SETUP.difficulty]||{}).name||'?';
+  ui.toast('New game — '+nn+', '+dn+' ('+GAME.year+')');
 }
 async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
   $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }

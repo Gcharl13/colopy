@@ -1,0 +1,21 @@
+{
+  "id": "new_world",
+  "name": "The New World (1492)",
+  "_doc": "Authored starting conditions as data (B10): the opening seeds the state tables from this scenario. nation/difficulty are picked at the new-game screen; everything else (map, year, starting gold, colonies, units) is here. Colony coords are snapped to the nearest land tile at load. Unit 'type' resolves through @UNIT (row index == type id).",
+  "map": "AMER2.MP",
+  "year": 1492,
+  "season": 0,
+  "start_gold": 500,
+  "default_nation": 0,
+  "default_difficulty": 1,
+  "colonies": [
+    { "x": 20, "y": 22, "pop": 3, "bells": 3, "hammers": 4, "food": 60, "crosses": 2 },
+    { "x": 34, "y": 42, "pop": 2, "bells": 1, "hammers": 2, "food": 45, "crosses": 1 }
+  ],
+  "units": [
+    { "type": "Soldiers",  "at_colony": 0, "dx": 0, "dy": 0 },
+    { "type": "Pioneers",  "at_colony": 0, "dx": 1, "dy": 0 },
+    { "type": "Colonists", "at_colony": 0, "dx": 0, "dy": 1, "goto_colony": 1 },
+    { "type": "Caravel",   "at_colony": 0, "on_water_adjacent": true }
+  ]
+}

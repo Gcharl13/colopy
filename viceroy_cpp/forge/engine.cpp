@@ -627,6 +627,9 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     if (path == "game.difficulty") {
         int d = (int)value; g.difficulty = d < 0 ? 0 : d > 4 ? 4 : d; return true;
     }
+    if (path == "game.nation") {
+        int nn = (int)value; g.nation = nn < 0 ? 0 : nn > 3 ? 3 : nn; return true;
+    }
     if (path == "natives.tension") {
         int t = (int)value; cx.x.tension = t < 0 ? 0 : t > 100 ? 100 : t; return true;
     }
@@ -705,6 +708,7 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     if (path == "game.season")  return num(g.season);
     if (path == "game.turn")    return num((double)g.turn);
     if (path == "game.difficulty") return num(g.difficulty);
+    if (path == "game.nation")     return num(g.nation);
     if (path == "ref.regulars") return num(g.ref.regulars);
     if (path == "ref.cavalry")  return num(g.ref.cavalry);
     if (path == "ref.manowar")  return num(g.ref.manowar);
