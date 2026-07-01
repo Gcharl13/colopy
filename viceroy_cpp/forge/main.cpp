@@ -936,6 +936,32 @@ static void tory_uprising_step() {
         ")! Parliament arms " + std::to_string(spawned) + " Tory Militia against the rebellion.");
 }
 
+// Auto-export: each turn every colony ships its over-cap tradeables (>100 -> keep 50) to Europe,
+// crediting the owner's gold at the SAME @CARGO market bid + tax the manual sell route uses (so
+// auto-selling and hand-selling price identically), skipping boycotted goods and Food (which feeds
+// growth). No Crown market during the rebellion (spec/systems/colony.md §3: independence gates it).
+// This lives Forge-side (not in the pure sim pipeline) because the sale price is @CARGO table data.
+static void auto_export_step() {
+    if (g_engine_extra.woi_declared) return;            // no European market while at war with the Crown
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    long total = 0; int goods_sold = 0;
+    for (Colony& c : g_world.colonies) {
+        int owner = c.owner_power; if (owner < 0 || owner >= 4) continue;
+        for (int gd = 1; gd < NGOODS; ++gd) {           // Food(0) is never auto-sold
+            if (c.stockpile[gd] < 100) continue;        // over-cap threshold (0x64)
+            if ((g_engine_extra.boycotts >> gd) & 1u) continue;   // boycotted -> can't sell
+            int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;   // keep the lower band (0x32)
+            int bid = (int)forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].price_start1", cx).as_int();
+            long net = (long)excess * bid * (100 - g_game.powers[owner].tax) / 100;
+            if (net < 0) net = 0;
+            g_game.powers[owner].gold += net; total += net; ++goods_sold;
+        }
+    }
+    if (goods_sold > 0)
+        g_turn_notices.push_back("Auto-export: shipped surplus from " + std::to_string(goods_sold) +
+                                 " warehouse(s) to Europe for " + std::to_string(total) + " gold.");
+}
+
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
     // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
@@ -946,6 +972,7 @@ static void game_step() {
         Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
         forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
+        auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
