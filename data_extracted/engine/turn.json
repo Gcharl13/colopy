@@ -1,0 +1,27 @@
+{
+  "_doc": "The turn loop as data (A3). step_turn iterates this ordered phase list and dispatches each phase to its byte-verified sim function; reordering/disabling a phase here changes the turn without recompiling. A golden-master test asserts this pipeline is identical to the reference sim::step_turn. reads/writes name the schema columns each phase touches (for the reverse index + the B5 turn editor).",
+  "phases": [
+    { "id": "production", "function": "colony_economic_step", "scope": "colonies", "enabled": true,
+      "reads": ["colony.bells_per_turn", "colony.hammers_per_turn", "colony.food_per_turn", "colony.population", "colony.build_cost"],
+      "writes": ["colony.sol", "colony.build_bank", "colony.built_mask", "colony.food_accum", "colony.population"],
+      "note": "Each colony updates SoL / build progress / growth." },
+    { "id": "market", "function": "price_drift", "scope": "global", "enabled": true,
+      "reads": ["market.price_base"], "writes": ["market.price_base"],
+      "note": "European supply-accumulator drift, once per turn." },
+    { "id": "immigration", "function": "immigration_step", "scope": "powers", "enabled": true,
+      "reads": ["power.crosses", "colony.crosses_output", "colony.population", "cfg.imm_base_crosses"],
+      "writes": ["power.crosses", "power.crosses_threshold", "power.dock_pool"],
+      "note": "Each power advances its own Europe dock; crosses = base + its colonies' output." },
+    { "id": "ref", "function": "ref_accrue_purchase", "scope": "global", "enabled": true,
+      "reads": ["game.difficulty", "game.year", "power.royal_money"],
+      "writes": ["power.royal_money", "ref.regulars", "ref.cavalry", "ref.manowar", "ref.artillery"],
+      "note": "King's REF budget accrual + unit purchase." },
+    { "id": "units", "function": "refresh_and_orders", "scope": "units", "enabled": true,
+      "reads": ["unit.type", "unit.order", "unit.x", "unit.y"],
+      "writes": ["unit.moves_left", "unit.x", "unit.y", "unit.alive"],
+      "note": "Refresh move points and execute standing orders (all owners)." },
+    { "id": "cadence", "function": "advance_cadence", "scope": "global", "enabled": true,
+      "reads": ["game.year", "game.season"], "writes": ["game.year", "game.season", "game.turn"],
+      "note": "Advance year/season at end of turn." }
+  ]
+}

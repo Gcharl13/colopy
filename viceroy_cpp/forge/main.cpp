@@ -24,6 +24,7 @@
 #include "rules_invariants.hpp"
 #include "rules_json.hpp"
 #include "savegame.hpp"
+#include "turnpipe.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
 #include "web_ui.hpp"
@@ -721,7 +722,9 @@ static void history_snapshot() {
 }
 
 static void game_step() {
-    if (g_game_active) { step_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
+    // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
+    // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
+    if (g_game_active) { forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules); history_snapshot(); }
 }
 
 static forge::JsonValue game_state_json() {
@@ -1076,6 +1079,10 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int diff = b.find("difficulty") ? b.find("difficulty")->as_int(1) : 1;
             game_new(nat, diff); g_history.clear(); history_snapshot();
             return J(200, game_state_json());
+        }
+        if (path == "/api/turn") {          // the data-driven turn pipeline (turn.json)
+            try { return J(200, forge::json_parse_file("data_extracted/engine/turn.json")); }
+            catch (...) { return err(404, "turn.json not found"); }
         }
         if (path == "/api/game/history") {
             forge::JsonValue a = jarr();
@@ -1760,6 +1767,43 @@ static int engine_selftest() {
     check(forge::resolve_binding("congress.cost", cx).as_int() > 0, "congress.cost computes the FF bell cost");
     forge::set_binding("congress.bells", 42, cx);
     check(forge::resolve_binding("congress.bells", cx).as_int() == 42, "congress.bells is writable");
+
+    // A3 golden-master: the data-driven turn pipeline (turn.json / forge::run_turn) must be
+    // byte-identical to the reference sim::step_turn over several turns.
+    {
+        auto mkworld = [] {
+            GameState gg; gg.difficulty = 2; gg.powers[0].gold = 500;
+            gg.price_base[SUGAR] = 800;
+            World ww; ww.map_w = 16; ww.map_h = 10;
+            ww.terrain.assign((size_t)ww.map_w * ww.map_h, (uint8_t)2);
+            Colony c; c.owner_power = 0; c.population = 4; c.hammers_per_turn = 8;
+            c.build_target = 0; c.build_cost = 64; c.food_per_turn = 55; c.crosses_output = 3;
+            ww.colonies.push_back(c);
+            Unit u; u.type = DRAGOONS; u.owner = 0; u.x = 0; u.y = 5;
+            u.order = ORDER_GOTO; u.target_x = 12; u.target_y = 5; ww.units.push_back(u);
+            return std::make_pair(gg, ww);
+        };
+        auto refp = mkworld(); auto pipe = mkworld();
+        auto det = [](int lo, int hi) { return lo; };            // deterministic: same rolls both sides
+        RuleData rd2 = make_default_rules();
+        for (int i = 0; i < 8; ++i) {
+            step_turn(refp.first, refp.second, det, 0, rd2);
+            forge::run_turn(pipe.first, pipe.second, det, 0, rd2);
+        }
+        bool same = refp.first.year == pipe.first.year && refp.first.season == pipe.first.season &&
+                    refp.first.turn == pipe.first.turn &&
+                    refp.first.powers[0].gold == pipe.first.powers[0].gold &&
+                    refp.first.powers[0].royal_money == pipe.first.powers[0].royal_money &&
+                    refp.first.price_base[SUGAR] == pipe.first.price_base[SUGAR] &&
+                    refp.second.colonies.size() == pipe.second.colonies.size() &&
+                    refp.second.colonies[0].population == pipe.second.colonies[0].population &&
+                    refp.second.colonies[0].build_bank == pipe.second.colonies[0].build_bank &&
+                    refp.second.colonies[0].built_mask == pipe.second.colonies[0].built_mask &&
+                    refp.second.units.size() == pipe.second.units.size() &&
+                    refp.second.units[0].x == pipe.second.units[0].x &&
+                    refp.second.units[0].y == pipe.second.units[0].y;
+        check(same, "A3 turn.json pipeline == sim::step_turn (golden-master, 8 turns)");
+    }
 
     std::printf("engine selftest: %s\n", fail == 0 ? "ALL PASSED" : "FAILURES");
     return fail == 0 ? 0 : 1;
