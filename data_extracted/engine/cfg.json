@@ -1,0 +1,47 @@
+{
+  "_note": "The tunable config scalars (sim/rules.hpp Config), as data — the third schema kind alongside reference tables and state. Edited via the Rules overlay; injected into the formulas. Grouped by system; each is a single cell cfg.<name>.",
+  "groups": {
+    "economy": [
+      {"name": "warehouse_cap_base", "default": 100, "meaning": "per-good cap = (level+1)*base"},
+      {"name": "sol_decay_shift", "default": 6, "meaning": "SoL EMA decay 1/(2^shift) = 1/64"},
+      {"name": "sol_inflow_mult", "default": 2, "meaning": "SoL divisor inflow = mult*population"},
+      {"name": "sol_birth_bonus", "default": 100, "meaning": "SoL divisor bump on a birth"},
+      {"name": "food_growth_threshold", "default": 200, "meaning": "food to add +1 population"},
+      {"name": "max_population", "default": 32, "meaning": "colony population cap"},
+      {"name": "tory_divisor_base", "default": 10, "meaning": "tory penalty divisor (human: base-diff; ai: base)"},
+      {"name": "expert_era_bonus", "default": 2, "meaning": "expert on an era good: +bonus"},
+      {"name": "expert_mfg_mult", "default": 2, "meaning": "expert on a manufactured good: *mult"}
+    ],
+    "market": [
+      {"name": "price_drift_shift", "default": 8, "meaning": "price drift = acc >> shift (/256)"}
+    ],
+    "combat": [
+      {"name": "fortify_def_num", "default": 3, "meaning": "fortified DEF numerator (DEF *3/2)"},
+      {"name": "fortify_def_den", "default": 2, "meaning": "fortified DEF denominator"}
+    ],
+    "founding_fathers": [
+      {"name": "ff_human_scale", "default": 16, "meaning": "human base = (diff+off)*scale"},
+      {"name": "ff_human_offset", "default": 3, "meaning": "human base offset"},
+      {"name": "ff_ai_scale", "default": 8, "meaning": "ai base = (off-diff)*scale"},
+      {"name": "ff_ai_offset", "default": 14, "meaning": "ai base offset"},
+      {"name": "ff_post_indep_scale", "default": 1500, "meaning": "post-independence: diff*scale+off"},
+      {"name": "ff_post_indep_offset", "default": 2000, "meaning": "post-independence offset"},
+      {"name": "ff_compounding_shift", "default": 1, "meaning": "per reached gate: cost += cost>>shift (x1.5)"},
+      {"name": "ff_first_father_shift", "default": 1, "meaning": "first father: cost >>= shift (half price)"},
+      {"name": "ff_gate_years", "default": [1600, 1650, 1700, 1750], "meaning": "cost-compounding gate years"}
+    ],
+    "ref": [
+      {"name": "ref_regulars_scale", "default": 8, "meaning": "REF regulars start = scale*diff+off"},
+      {"name": "ref_regulars_offset", "default": 15, "meaning": "REF regulars offset"},
+      {"name": "ref_cavalry_scale", "default": 5, "meaning": "REF cavalry start scale"},
+      {"name": "ref_cavalry_offset", "default": 5, "meaning": "REF cavalry offset"},
+      {"name": "ref_manowar_scale", "default": 3, "meaning": "REF man-o-war start scale"},
+      {"name": "ref_manowar_offset", "default": 2, "meaning": "REF man-o-war offset"},
+      {"name": "ref_artillery_scale", "default": 6, "meaning": "REF artillery start scale"},
+      {"name": "ref_artillery_offset", "default": 2, "meaning": "REF artillery offset"},
+      {"name": "ref_accrue_scale", "default": 8, "meaning": "royal_money rate = scale*diff+off"},
+      {"name": "ref_accrue_offset", "default": 10, "meaning": "royal_money rate offset"},
+      {"name": "ref_accrue_gate_years", "default": [1600, 1700, 1750], "meaning": "accrual rate doubles at each gate year"}
+    ]
+  }
+}

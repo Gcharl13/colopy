@@ -1,7 +1,7 @@
 {
-  "_note": "Canonical variable namespace shared by the logic and the tables. Live-state names are resolved by forge/engine.cpp resolve_binding (each maps to the DGROUP source shown); table cells use @SECTION[row].column or @SECTION[name:X].column and any row you add in the Tables tab is immediately usable. <N> is an index, <good>=0..15, <id> a row/bit. * = the DGROUP array is proxied by an editable field (undecoded magnitude).",
+  "_note": "Generated from bindings.json + names_tables.json by tools/build_schema.py. Live-state names resolve via forge/engine.cpp; table cells use @SECTION[row].col.",
   "live_state": {
-    "Game clock": [
+    "game": [
       {
         "name": "game.year",
         "type": "int",
@@ -31,6 +31,13 @@
         "meaning": "0..4 (Discoverer..Viceroy)"
       },
       {
+        "name": "game.nation",
+        "type": "int",
+        "writable": true,
+        "source": "player_nation",
+        "meaning": "the human player's nation 0..3 (@NATIONALITY)"
+      },
+      {
         "name": "game.score",
         "type": "int",
         "writable": false,
@@ -38,7 +45,7 @@
         "meaning": "last computed game score"
       }
     ],
-    "Power (power0..power3)": [
+    "powers": [
       {
         "name": "power<N>.gold",
         "type": "int",
@@ -71,14 +78,14 @@
         "name": "power<N>.mil_strength",
         "type": "int",
         "writable": true,
-        "source": "[0x9418]*",
+        "source": "[0x9418]",
         "meaning": "military strength (succession rank input)"
       },
       {
         "name": "power<N>.econ_strength",
         "type": "int",
         "writable": true,
-        "source": "[0x9410]*",
+        "source": "[0x9410]",
         "meaning": "economic strength (succession/king inputs)"
       },
       {
@@ -103,13 +110,20 @@
         "meaning": "rank = 3*mil + 2*colonies + econ"
       }
     ],
-    "Colony (colony0..)": [
+    "colonies": [
       {
         "name": "colony<N>.population",
         "type": "int",
         "writable": true,
         "source": "ColonyRecord +0x1F",
         "meaning": "colonists"
+      },
+      {
+        "name": "colony<N>.owner",
+        "type": "int",
+        "writable": false,
+        "source": "ColonyRecord +0x1A",
+        "meaning": "owner power 0..3"
       },
       {
         "name": "colony<N>.sol",
@@ -137,7 +151,7 @@
         "type": "int",
         "writable": false,
         "source": "net food",
-        "meaning": "food surplus per turn"
+        "meaning": "food surplus per turn (max 0)"
       },
       {
         "name": "colony<N>.crosses",
@@ -145,13 +159,6 @@
         "writable": false,
         "source": "ColonyRecord +0x05",
         "meaning": "crosses output (feeds immigration)"
-      },
-      {
-        "name": "colony<N>.owner",
-        "type": "int",
-        "writable": false,
-        "source": "ColonyRecord +0x1A",
-        "meaning": "owner power 0..3"
       },
       {
         "name": "colony<N>.build_target",
@@ -196,14 +203,28 @@
         "meaning": "warehouse level 0/1/2"
       },
       {
-        "name": "colony<N>.built.<id>",
+        "name": "colony<N>.workers",
+        "type": "int",
+        "writable": false,
+        "source": "ColonyRecord +0x40/+0x70",
+        "meaning": "assigned colonist count"
+      },
+      {
+        "name": "stockpile.<good>",
+        "type": "int",
+        "writable": true,
+        "source": "ColonyRecord +0x9A",
+        "meaning": "stored cargo of good 0..15"
+      },
+      {
+        "name": "built.<id>",
         "type": "int",
         "writable": false,
         "source": "ColonyRecord +0x84",
         "meaning": "1 if building <id> is constructed"
       }
     ],
-    "Unit (unit0..)": [
+    "units": [
       {
         "name": "unit<N>.type",
         "type": "int",
@@ -226,17 +247,24 @@
         "meaning": "class/profession 0x13..0x1C"
       },
       {
-        "name": "unit<N>.x / unit<N>.y",
+        "name": "unit<N>.x",
         "type": "int",
         "writable": false,
-        "source": "UnitRecord +0x07/+0x08",
-        "meaning": "map position"
+        "source": "UnitRecord +0x07",
+        "meaning": "map x"
+      },
+      {
+        "name": "unit<N>.y",
+        "type": "int",
+        "writable": false,
+        "source": "UnitRecord +0x08",
+        "meaning": "map y"
       },
       {
         "name": "unit<N>.alive",
         "type": "int",
         "writable": false,
-        "source": "UnitRecord +0x08(alive)",
+        "source": "UnitRecord alive flag",
         "meaning": "1 if alive"
       },
       {
@@ -275,14 +303,7 @@
         "meaning": "terrain defense bonus at its tile"
       }
     ],
-    "Natives / Congress / Revolution": [
-      {
-        "name": "natives.tension",
-        "type": "int",
-        "writable": true,
-        "source": "settlement alarm",
-        "meaning": "0..100 alarm proxy (war at >=~128/80)"
-      },
+    "congress": [
       {
         "name": "congress.bells",
         "type": "int",
@@ -308,9 +329,11 @@
         "name": "congress.count",
         "type": "int",
         "writable": false,
-        "source": "popcount",
+        "source": "popcount +0x07",
         "meaning": "Founding Fathers acquired"
-      },
+      }
+    ],
+    "ff": [
       {
         "name": "ff.count",
         "type": "int",
@@ -324,7 +347,9 @@
         "writable": false,
         "source": "PowerRecord +0x07 bit",
         "meaning": "1 if Father <id> (0..24) is held"
-      },
+      }
+    ],
+    "revolution": [
       {
         "name": "revolution.sol",
         "type": "int",
@@ -345,7 +370,9 @@
         "writable": false,
         "source": "[0x5398]",
         "meaning": "power that declared independence"
-      },
+      }
+    ],
+    "succession": [
       {
         "name": "succession.seceded",
         "type": "int",
@@ -354,7 +381,62 @@
         "meaning": "power withdrawn by Spanish Succession"
       }
     ],
-    "World / market / diplomacy": [
+    "natives": [
+      {
+        "name": "natives.tension",
+        "type": "int",
+        "writable": true,
+        "source": "settlement alarm",
+        "meaning": "0..100 alarm proxy (war at >=~128/80)"
+      }
+    ],
+    "ref": [
+      {
+        "name": "ref.regulars",
+        "type": "int",
+        "writable": false,
+        "source": "[0x53DA]",
+        "meaning": "REF regular infantry"
+      },
+      {
+        "name": "ref.cavalry",
+        "type": "int",
+        "writable": false,
+        "source": "[0x53DC]",
+        "meaning": "REF cavalry"
+      },
+      {
+        "name": "ref.manowar",
+        "type": "int",
+        "writable": false,
+        "source": "[0x53DE]",
+        "meaning": "REF men-o-war"
+      },
+      {
+        "name": "ref.artillery",
+        "type": "int",
+        "writable": false,
+        "source": "[0x53E0]",
+        "meaning": "REF artillery"
+      }
+    ],
+    "market": [
+      {
+        "name": "price.<good>",
+        "type": "int",
+        "writable": true,
+        "source": "[0x53EA]",
+        "meaning": "European base price for good 0..15 (seed from @CARGO)"
+      },
+      {
+        "name": "boycott.<good>",
+        "type": "int",
+        "writable": false,
+        "source": "PowerRecord +0x20 bit",
+        "meaning": "1 if good is boycotted"
+      }
+    ],
+    "world": [
       {
         "name": "colonies.count",
         "type": "int",
@@ -377,39 +459,20 @@
         "meaning": "total on-map units"
       },
       {
-        "name": "ref.regulars / cavalry / manowar / artillery",
+        "name": "terrain.defense.<id>",
         "type": "int",
         "writable": false,
-        "source": "[0x53DA..0x53E0]",
-        "meaning": "Royal Expeditionary Force counts"
-      },
-      {
-        "name": "price.<good>",
-        "type": "int",
-        "writable": true,
-        "source": "[0x53EA]",
-        "meaning": "European base price for good 0..15"
-      },
-      {
-        "name": "boycott.<good>",
-        "type": "int",
-        "writable": false,
-        "source": "PowerRecord +0x20 bit",
-        "meaning": "1 if good is boycotted"
-      },
+        "source": "@TERRAIN defensive",
+        "meaning": "terrain id defense value"
+      }
+    ],
+    "diplomacy": [
       {
         "name": "war.<a>.<b>",
         "type": "int",
         "writable": false,
         "source": "diplomacy matrix",
         "meaning": "1 if powers a,b are at war"
-      },
-      {
-        "name": "terrain.defense.<id>",
-        "type": "int",
-        "writable": false,
-        "source": "@TERRAIN defensive",
-        "meaning": "terrain id defense value"
       }
     ]
   },
@@ -417,8 +480,7 @@
     "_syntax": "@SECTION[<row index or name:VALUE>].<column>",
     "_examples": [
       "@BUILDING[name:Fort].cost",
-      "@CLASS[3].transport_cost",
-      "@UNIT[name:Soldiers].attack"
+      "@CLASS[3].transport_cost"
     ],
     "sections": {
       "@SEASONS": {
@@ -426,13 +488,7 @@
           "id",
           "name"
         ],
-        "rows": 2,
-        "legend": [
-          "COLONIZATION Game Data",
-          "Copyright (c) 1994 by MicroProse Software",
-          "Altering the contents of this file may cause the game to",
-          "malfunction."
-        ]
+        "rows": 2
       },
       "@UNFORESTED": {
         "columns": [
@@ -451,15 +507,7 @@
           "y_silver",
           "y_fisherman"
         ],
-        "rows": 8,
-        "legend": [
-          "Terrain Squares",
-          "a) Name",
-          "b) Movement, Defensive, Improvement, Value",
-          "c) Yield (Farmer, Planter(s), Planter(t), Planter(c),",
-          "Trapper, Lumberjack, Ore Miner, Silver Miner,",
-          "Fisherman)"
-        ]
+        "rows": 8
       },
       "@FORESTED": {
         "columns": [
@@ -478,8 +526,7 @@
           "y_silver",
           "y_fisherman"
         ],
-        "rows": 8,
-        "legend": []
+        "rows": 8
       },
       "@OTHER": {
         "columns": [
@@ -498,76 +545,63 @@
           "y_silver",
           "y_fisherman"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@OTHER_NAMES": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@RESOURCE": {
         "columns": [
           "name",
           "value"
         ],
-        "rows": 14,
-        "legend": [
-          "Special resource squares & values."
-        ]
+        "rows": 14
       },
       "@COUNTRY": {
         "columns": [
           "name",
           "color"
         ],
-        "rows": 4,
-        "legend": [
-          "Country names (color => must be 9-15)"
-        ]
+        "rows": 4
       },
       "@NATIONALITY": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@NATIONABBREV": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@HOMEPORT": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@COLONYNAME": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@INDEPENDENT": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@LEADERNAME": {
         "columns": [
@@ -576,40 +610,28 @@
           "expansionist_perfectionist",
           "civilize_militaristic"
         ],
-        "rows": 4,
-        "legend": [
-          "Leaders",
-          "a) aggressive/friendly",
-          "b) expansionist/perfectionist",
-          "c) civilize/militaristic"
-        ]
+        "rows": 4
       },
       "@MISSION": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@DIFFICULTY": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@CLASS": {
         "columns": [
           "name",
           "transport_cost"
         ],
-        "rows": 8,
-        "legend": [
-          "European classes",
-          "Name, transportation costs"
-        ]
+        "rows": 8
       },
       "@BUILDING": {
         "columns": [
@@ -620,13 +642,7 @@
           "min_colony",
           "upkeep"
         ],
-        "rows": 42,
-        "legend": [
-          "Buildings in Colonies",
-          "name, cost, tools(*10), size, min_colony, upkeep",
-          "(Cost guidelines: If <= 52, should be divisible by 13.  Otherwise,",
-          "should be divisible by 8)."
-        ]
+        "rows": 42
       },
       "@SCENARIO": {
         "columns": [
@@ -642,11 +658,7 @@
           "x3",
           "y3"
         ],
-        "rows": 2,
-        "legend": [
-          "Scenarios",
-          "map file (do not change), start, end, x0, y0, x1, y1, x2, y2, x3, y3"
-        ]
+        "rows": 2
       },
       "@JOB": {
         "columns": [
@@ -655,11 +667,7 @@
           "school_tier",
           "europe_value"
         ],
-        "rows": 28,
-        "legend": [
-          "Colonist professions",
-          "name, student level (4 = unlearnable), cost in europe"
-        ]
+        "rows": 28
       },
       "@CARGO": {
         "columns": [
@@ -674,21 +682,7 @@
           "attrition",
           "volatility"
         ],
-        "rows": 20,
-        "legend": [
-          "Cargo types & economic model",
-          "Economy: start1, 2, low, high, burden, rise, fall, attrition, volatility",
-          "Start 1, 2      = Starting cargo price (lowest/highest)",
-          "Low             = Lowest possible drift",
-          "High            = Highest possible drift",
-          "Burden          = Extra difference between ask & bid prices",
-          "(0 means ask is 1 higher than bid)",
-          "Rise            = Price rises at this traffic indicator",
-          "Fall            = Price falls at this traffic indicator",
-          "Attrition       = Amount added to traffic volume each turn",
-          "(represents ability of price to recover)",
-          "Volatility      = Shift value for traffic volume"
-        ]
+        "rows": 20
       },
       "@UNIT": {
         "columns": [
@@ -705,52 +699,42 @@
           "hull",
           "ai_role_bits"
         ],
-        "rows": 23,
-        "legend": [
-          "Unit types",
-          "icon, movement, attack, combat, cargo, size, cost, tools, guns, hull, role",
-          "AI Role(binary) => Invade Settle Explore Attack Defend Escort Transp Naval"
-        ]
+        "rows": 23
       },
       "@ORDERS": {
         "columns": [
           "name",
           "key"
         ],
-        "rows": 13,
-        "legend": []
+        "rows": 13
       },
       "@ACTIONS": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 10,
-        "legend": []
+        "rows": 10
       },
       "@VALUES": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 4,
-        "legend": []
+        "rows": 4
       },
       "@ATTITUDE": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@ATTITUDINAL": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@LEVELS": {
         "columns": [
@@ -758,8 +742,7 @@
           "settlement_singular",
           "settlement_plural"
         ],
-        "rows": 5,
-        "legend": []
+        "rows": 5
       },
       "@TRIBES": {
         "columns": [
@@ -769,22 +752,14 @@
           "level",
           "value"
         ],
-        "rows": 26,
-        "legend": [
-          "Indian tribe info",
-          "tech-level, color"
-        ]
+        "rows": 26
       },
       "@FOUNDING": {
         "columns": [
           "id",
           "name"
         ],
-        "rows": 6,
-        "legend": [
-          "Extra tribe names",
-          "Founding father types."
-        ]
+        "rows": 6
       },
       "@FATHERS": {
         "columns": [
@@ -794,13 +769,7 @@
           "weight_1600_1700",
           "weight_1700plus"
         ],
-        "rows": 25,
-        "legend": [
-          "Founding Fathers",
-          "type, weight 1500-1600, weight 1600-1700, weight 1700+",
-          "Father of higher level will not appear until at least one",
-          "father of next lower level (of same type) has joined the Congress."
-        ]
+        "rows": 25
       },
       "@COLORS": {
         "columns": [
@@ -814,11 +783,7 @@
           "border1",
           "border2"
         ],
-        "rows": 1,
-        "legend": [
-          "Text Colors",
-          "basic, hilite, grey, enhance, shadow, select, border 0, 1, 2"
-        ]
+        "rows": 1
       }
     }
   }

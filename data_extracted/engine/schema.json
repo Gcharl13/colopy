@@ -1,0 +1,2558 @@
+{
+  "_note": "The authoritative game database schema (DDL). Three kinds: reference (rules data, NAMES/TRIBE), state (dynamic per-turn records, cited to the dgroup memory map for traceability only), config (tunable cfg scalars). One path grammar addresses any cell: game.<col>, power<N>.<col>, colony<N>.<col> / colony<N>.stockpile.<good>, unit<N>.<col>, @SECTION[row].col, cfg.<name>. The runtime interprets this schema; no offsets are needed to rebuild.",
+  "path_grammar": {
+    "singleton": "<table>.<col>            e.g. game.turn, revolution.sol, cfg.max_population",
+    "entity": "<table_singular><N>.<col>  e.g. power0.gold, colony2.population, unit5.type",
+    "indexed_col": "<...>.<col>.<idx>     e.g. colony0.stockpile.3, ff.16, price.9",
+    "reference": "@SECTION[<row index or name:VALUE>].<column>  e.g. @BUILDING[name:Fort].cost"
+  },
+  "kind_counts": {
+    "reference": 40,
+    "state": 13,
+    "config": 1
+  },
+  "tables": {
+    "@SEASONS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 2,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@UNFORESTED": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 8,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "movement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "defensive",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "improvement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_farmer",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_sugar",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_tobacco",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_cotton",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_trapper",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_lumberjack",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_ore",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_silver",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_fisherman",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@FORESTED": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 8,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "movement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "defensive",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "improvement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_farmer",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_sugar",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_tobacco",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_cotton",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_trapper",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_lumberjack",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_ore",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_silver",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_fisherman",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@OTHER": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "movement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "defensive",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "improvement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_farmer",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_sugar",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_tobacco",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_planter_cotton",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_trapper",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_lumberjack",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_ore",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_silver",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y_fisherman",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@OTHER_NAMES": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@RESOURCE": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 14,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@COUNTRY": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "color",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@NATIONALITY": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@NATIONABBREV": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@HOMEPORT": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@COLONYNAME": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@INDEPENDENT": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@LEADERNAME": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "aggressive_friendly",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "expansionist_perfectionist",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "civilize_militaristic",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@MISSION": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@DIFFICULTY": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@CLASS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 8,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "transport_cost",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@BUILDING": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 42,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "cost",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "tools_x10",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "size",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "min_colony",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "upkeep",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@SCENARIO": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 2,
+      "columns": [
+        {
+          "name": "map_file",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "start",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "end",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "x0",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y0",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "x1",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y1",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "x2",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y2",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "x3",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "y3",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@JOB": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 28,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "expert_name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "school_tier",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "europe_value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@CARGO": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 20,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "price_start1",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "price_start2",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "drift_low",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "drift_high",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "burden",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "rise",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "fall",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "attrition",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "volatility",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@UNIT": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 23,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "icon",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "movement",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "attack",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "combat",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "cargo",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "size",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "cost",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "tools",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "guns",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "hull",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "ai_role_bits",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@ORDERS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 13,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "key",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@ACTIONS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 10,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@VALUES": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@ATTITUDE": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@ATTITUDINAL": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@LEVELS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "tech_name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "settlement_singular",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "settlement_plural",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@TRIBES": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 26,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "singular",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "treasure",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "level",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@FOUNDING": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 6,
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@FATHERS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 25,
+      "columns": [
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "weight_1500_1600",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "weight_1600_1700",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "weight_1700plus",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@COLORS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 1,
+      "columns": [
+        {
+          "name": "basic",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "hilite",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "grey",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "enhance",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "shadow",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "select",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "border0",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "border1",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        },
+        {
+          "name": "border2",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "NAMES.TXT"
+        }
+      ]
+    },
+    "@IROQUOIS": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 11,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@STOP": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@CHEROKEE": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@ARAWAK": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@INCA": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 5,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@SIOUX": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 7,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@APACHE": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 7,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@AZTEC": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 4,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "@TUPI": {
+      "kind": "reference",
+      "cardinality": "table",
+      "rows": 16,
+      "columns": [
+        {
+          "name": "map_x",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        },
+        {
+          "name": "map_y",
+          "type": "int",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "TRIBE.TXT"
+        }
+      ]
+    },
+    "game": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "game",
+      "columns": [
+        {
+          "name": "year",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x538A]",
+          "meaning": "current year"
+        },
+        {
+          "name": "season",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x538C]",
+          "meaning": "0=Spring/early, 1=Autumn"
+        },
+        {
+          "name": "turn",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x538E]",
+          "meaning": "turn counter"
+        },
+        {
+          "name": "difficulty",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x53A6]",
+          "meaning": "0..4 (Discoverer..Viceroy)"
+        },
+        {
+          "name": "nation",
+          "type": "int",
+          "rw": "write",
+          "tier": "R",
+          "source": "player_nation",
+          "meaning": "the human player's nation 0..3 (@NATIONALITY)"
+        },
+        {
+          "name": "score",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "[0x0372]",
+          "meaning": "last computed game score"
+        }
+      ]
+    },
+    "powers": {
+      "kind": "state",
+      "cardinality": "entity",
+      "index": "power<N>",
+      "count": 4,
+      "columns": [
+        {
+          "name": "gold",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "PowerRecord +0x2A",
+          "meaning": "treasury"
+        },
+        {
+          "name": "tax",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "PowerRecord +0x01",
+          "meaning": "tax rate %"
+        },
+        {
+          "name": "royal_money",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "PowerRecord +0x22",
+          "meaning": "King's REF budget"
+        },
+        {
+          "name": "crosses",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "PowerRecord +0x2E",
+          "meaning": "accumulated immigration crosses"
+        },
+        {
+          "name": "mil_strength",
+          "type": "int",
+          "rw": "write",
+          "tier": "A",
+          "source": "[0x9418]",
+          "meaning": "military strength (succession rank input)"
+        },
+        {
+          "name": "econ_strength",
+          "type": "int",
+          "rw": "write",
+          "tier": "A",
+          "source": "[0x9410]",
+          "meaning": "economic strength (succession/king inputs)"
+        },
+        {
+          "name": "colonies",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "computed",
+          "meaning": "owned colony count"
+        },
+        {
+          "name": "units",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "computed",
+          "meaning": "owned on-map unit count"
+        },
+        {
+          "name": "strength",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "computed",
+          "meaning": "rank = 3*mil + 2*colonies + econ"
+        }
+      ]
+    },
+    "colonies": {
+      "kind": "state",
+      "cardinality": "entity",
+      "index": "colony<N>",
+      "count_source": "colonies.count",
+      "columns": [
+        {
+          "name": "population",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "ColonyRecord +0x1F",
+          "meaning": "colonists"
+        },
+        {
+          "name": "owner",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x1A",
+          "meaning": "owner power 0..3"
+        },
+        {
+          "name": "sol",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "from +0xC2/+0xC6",
+          "meaning": "Sons of Liberty %"
+        },
+        {
+          "name": "bells",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "good 0x12 out",
+          "meaning": "liberty bells per turn"
+        },
+        {
+          "name": "hammers",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "good 0x10 out",
+          "meaning": "hammers per turn"
+        },
+        {
+          "name": "food",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "net food",
+          "meaning": "food surplus per turn (max 0)"
+        },
+        {
+          "name": "crosses",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x05",
+          "meaning": "crosses output (feeds immigration)"
+        },
+        {
+          "name": "build_target",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x94",
+          "meaning": "building id under construction (-1 none)"
+        },
+        {
+          "name": "build_cost",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@BUILDING cost",
+          "meaning": "hammers the target needs"
+        },
+        {
+          "name": "build_bank",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0xB6",
+          "meaning": "hammers accumulated (the 'X of Y')"
+        },
+        {
+          "name": "build_remaining",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "computed",
+          "meaning": "max(0, build_cost - build_bank)"
+        },
+        {
+          "name": "building_name",
+          "type": "str",
+          "rw": "read",
+          "tier": "C",
+          "source": "@BUILDING name",
+          "meaning": "the in-progress building's name"
+        },
+        {
+          "name": "warehouse",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x95",
+          "meaning": "warehouse level 0/1/2"
+        },
+        {
+          "name": "workers",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x40/+0x70",
+          "meaning": "assigned colonist count"
+        },
+        {
+          "name": "stockpile.<good>",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "ColonyRecord +0x9A",
+          "meaning": "stored cargo of good 0..15"
+        },
+        {
+          "name": "built.<id>",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "ColonyRecord +0x84",
+          "meaning": "1 if building <id> is constructed"
+        }
+      ]
+    },
+    "units": {
+      "kind": "state",
+      "cardinality": "entity",
+      "index": "unit<N>",
+      "count_source": "units.count",
+      "columns": [
+        {
+          "name": "type",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord +0x00",
+          "meaning": "@UNIT row index 0..23"
+        },
+        {
+          "name": "owner",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord +0x01",
+          "meaning": "owner power"
+        },
+        {
+          "name": "profession",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord +0x17",
+          "meaning": "class/profession 0x13..0x1C"
+        },
+        {
+          "name": "x",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord +0x07",
+          "meaning": "map x"
+        },
+        {
+          "name": "y",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord +0x08",
+          "meaning": "map y"
+        },
+        {
+          "name": "alive",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "UnitRecord alive flag",
+          "meaning": "1 if alive"
+        },
+        {
+          "name": "attack",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@UNIT attack",
+          "meaning": "attack strength (from its type)"
+        },
+        {
+          "name": "defense",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@UNIT combat",
+          "meaning": "defense strength (from its type)"
+        },
+        {
+          "name": "movement",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@UNIT movement",
+          "meaning": "move allowance"
+        },
+        {
+          "name": "terrain",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "map tile",
+          "meaning": "terrain id at the unit's tile"
+        },
+        {
+          "name": "terraindef",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@TERRAIN defensive",
+          "meaning": "terrain defense bonus at its tile"
+        }
+      ]
+    },
+    "congress": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "congress",
+      "columns": [
+        {
+          "name": "bells",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "PowerRecord +0x0C",
+          "meaning": "liberty-bell pool toward next Father"
+        },
+        {
+          "name": "cost",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "func_03C282",
+          "meaning": "bell cost of the next Founding Father"
+        },
+        {
+          "name": "era_band",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "func_03B95A",
+          "meaning": "0 (<1600) / 1 (1600-99) / 2 (>=1700)"
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "popcount +0x07",
+          "meaning": "Founding Fathers acquired"
+        }
+      ]
+    },
+    "ff": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "ff",
+      "columns": [
+        {
+          "name": "count",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "popcount +0x07",
+          "meaning": "Founding Fathers acquired"
+        },
+        {
+          "name": "<id>",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "PowerRecord +0x07 bit",
+          "meaning": "1 if Father <id> (0..24) is held"
+        }
+      ]
+    },
+    "revolution": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "revolution",
+      "columns": [
+        {
+          "name": "sol",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x53D0]",
+          "meaning": "national Sons of Liberty meter 0..100"
+        },
+        {
+          "name": "declared",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x5382]&1",
+          "meaning": "1 if War of Independence declared"
+        },
+        {
+          "name": "rebel",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x5398]",
+          "meaning": "power that declared independence"
+        }
+      ]
+    },
+    "succession": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "succession",
+      "columns": [
+        {
+          "name": "seceded",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x53D2]",
+          "meaning": "power withdrawn by Spanish Succession"
+        }
+      ]
+    },
+    "natives": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "natives",
+      "columns": [
+        {
+          "name": "tension",
+          "type": "int",
+          "rw": "write",
+          "tier": "A",
+          "source": "settlement alarm",
+          "meaning": "0..100 alarm proxy (war at >=~128/80)"
+        }
+      ]
+    },
+    "ref": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "ref",
+      "columns": [
+        {
+          "name": "regulars",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x53DA]",
+          "meaning": "REF regular infantry"
+        },
+        {
+          "name": "cavalry",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x53DC]",
+          "meaning": "REF cavalry"
+        },
+        {
+          "name": "manowar",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x53DE]",
+          "meaning": "REF men-o-war"
+        },
+        {
+          "name": "artillery",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x53E0]",
+          "meaning": "REF artillery"
+        }
+      ]
+    },
+    "market": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "market",
+      "columns": [
+        {
+          "name": "price.<good>",
+          "type": "int",
+          "rw": "write",
+          "tier": "B",
+          "source": "[0x53EA]",
+          "meaning": "European base price for good 0..15 (seed from @CARGO)"
+        },
+        {
+          "name": "boycott.<good>",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "PowerRecord +0x20 bit",
+          "meaning": "1 if good is boycotted"
+        }
+      ]
+    },
+    "world": {
+      "kind": "state",
+      "cardinality": "singleton",
+      "index": "",
+      "columns": [
+        {
+          "name": "colonies.count",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x539E]",
+          "meaning": "total colonies"
+        },
+        {
+          "name": "colonies.population",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "sum +0x1F",
+          "meaning": "total colonists across colonies"
+        },
+        {
+          "name": "units.count",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "[0x539C]",
+          "meaning": "total on-map units"
+        },
+        {
+          "name": "terrain.defense.<id>",
+          "type": "int",
+          "rw": "read",
+          "tier": "C",
+          "source": "@TERRAIN defensive",
+          "meaning": "terrain id defense value"
+        }
+      ]
+    },
+    "diplomacy": {
+      "kind": "state",
+      "cardinality": "matrix",
+      "index": "war.<a>.<b>",
+      "columns": [
+        {
+          "name": "war.<a>.<b>",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "diplomacy matrix",
+          "meaning": "1 if powers a,b are at war"
+        }
+      ]
+    },
+    "cfg": {
+      "kind": "config",
+      "cardinality": "singleton",
+      "index": "cfg",
+      "columns": [
+        {
+          "name": "warehouse_cap_base",
+          "type": "int",
+          "default": 100,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "per-good cap = (level+1)*base",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "sol_decay_shift",
+          "type": "int",
+          "default": 6,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "SoL EMA decay 1/(2^shift) = 1/64",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "sol_inflow_mult",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "SoL divisor inflow = mult*population",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "sol_birth_bonus",
+          "type": "int",
+          "default": 100,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "SoL divisor bump on a birth",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "food_growth_threshold",
+          "type": "int",
+          "default": 200,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "food to add +1 population",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "max_population",
+          "type": "int",
+          "default": 32,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "colony population cap",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "tory_divisor_base",
+          "type": "int",
+          "default": 10,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "tory penalty divisor (human: base-diff; ai: base)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "expert_era_bonus",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "expert on an era good: +bonus",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "expert_mfg_mult",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "expert on a manufactured good: *mult",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "price_drift_shift",
+          "type": "int",
+          "default": 8,
+          "rw": "write",
+          "group": "market",
+          "meaning": "price drift = acc >> shift (/256)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "fortify_def_num",
+          "type": "int",
+          "default": 3,
+          "rw": "write",
+          "group": "combat",
+          "meaning": "fortified DEF numerator (DEF *3/2)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "fortify_def_den",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "combat",
+          "meaning": "fortified DEF denominator",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_human_scale",
+          "type": "int",
+          "default": 16,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "human base = (diff+off)*scale",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_human_offset",
+          "type": "int",
+          "default": 3,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "human base offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_ai_scale",
+          "type": "int",
+          "default": 8,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "ai base = (off-diff)*scale",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_ai_offset",
+          "type": "int",
+          "default": 14,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "ai base offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_post_indep_scale",
+          "type": "int",
+          "default": 1500,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "post-independence: diff*scale+off",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_post_indep_offset",
+          "type": "int",
+          "default": 2000,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "post-independence offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_compounding_shift",
+          "type": "int",
+          "default": 1,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "per reached gate: cost += cost>>shift (x1.5)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_first_father_shift",
+          "type": "int",
+          "default": 1,
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "first father: cost >>= shift (half price)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ff_gate_years",
+          "type": "int-list",
+          "default": [
+            1600,
+            1650,
+            1700,
+            1750
+          ],
+          "rw": "write",
+          "group": "founding_fathers",
+          "meaning": "cost-compounding gate years",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_regulars_scale",
+          "type": "int",
+          "default": 8,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF regulars start = scale*diff+off",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_regulars_offset",
+          "type": "int",
+          "default": 15,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF regulars offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_cavalry_scale",
+          "type": "int",
+          "default": 5,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF cavalry start scale",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_cavalry_offset",
+          "type": "int",
+          "default": 5,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF cavalry offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_manowar_scale",
+          "type": "int",
+          "default": 3,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF man-o-war start scale",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_manowar_offset",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF man-o-war offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_artillery_scale",
+          "type": "int",
+          "default": 6,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF artillery start scale",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_artillery_offset",
+          "type": "int",
+          "default": 2,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "REF artillery offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_accrue_scale",
+          "type": "int",
+          "default": 8,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "royal_money rate = scale*diff+off",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_accrue_offset",
+          "type": "int",
+          "default": 10,
+          "rw": "write",
+          "group": "ref",
+          "meaning": "royal_money rate offset",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "ref_accrue_gate_years",
+          "type": "int-list",
+          "default": [
+            1600,
+            1700,
+            1750
+          ],
+          "rw": "write",
+          "group": "ref",
+          "meaning": "accrual rate doubles at each gate year",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        }
+      ]
+    }
+  }
+}

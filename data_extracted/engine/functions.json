@@ -1,5 +1,5 @@
 {
-  "_note": "The sim's functions and their I/O (transcribed from forge/formulas.cpp; also at /api/formulas). 'knobs' are the editable input variables each formula reads.",
+  "_note": "The sim's functions and their I/O. `knobs` = the editable cfg inputs a formula READS; `writes` = the schema columns it mutates. `reverse_index` inverts it: for each state column, which functions update it (the 'how it's updated' map).",
   "systems": [
     {
       "formulas": [
@@ -10,14 +10,16 @@
             "warehouse_cap_base"
           ],
           "note": "Per-good storage cap; production over the cap spoils.",
-          "title": "Warehouse capacity per good"
+          "title": "Warehouse capacity per good",
+          "writes": []
         },
         {
           "expr": "sol% = clamp( rebel_A * 100 / rebel_B , 0 .. 100 )   ; 0 when rebel_B <= 0",
           "fn": "sol_pct",
           "knobs": [],
           "note": "Rebel sentiment as a percent of accumulated bell support (A=dividend, B=divisor).",
-          "title": "Sons-of-Liberty percentage"
+          "title": "Sons-of-Liberty percentage",
+          "writes": []
         },
         {
           "expr": "B -= B >> sol_decay_shift   (floor 1) ; then  B += sol_inflow_mult * population",
@@ -27,7 +29,10 @@
             "sol_inflow_mult"
           ],
           "note": "1/64 exponential decay (shift 6) plus a per-colonist inflow each turn.",
-          "title": "SoL membership divisor"
+          "title": "SoL membership divisor",
+          "writes": [
+            "colony<N>.sol"
+          ]
         },
         {
           "expr": "A += bells_this_turn - (A >> sol_decay_shift) ; clamp A to [0, B]",
@@ -36,7 +41,10 @@
             "sol_decay_shift"
           ],
           "note": "Bells raise rebel sentiment; the same 1/64 decay pulls it back down.",
-          "title": "SoL bell accumulator"
+          "title": "SoL bell accumulator",
+          "writes": [
+            "colony<N>.sol"
+          ]
         },
         {
           "expr": "tory = (population*(100-sol%) + 50)/100 ; div = human ? (tory_divisor_base - difficulty) : tory_divisor_base  (floor 1) ; y -= tory/div ; if expert: era-good y += expert_era_bonus else y *= expert_mfg_mult ; y = max(y,0)",
@@ -47,7 +55,8 @@
             "expert_mfg_mult"
           ],
           "note": "Loyalists (Tories) cut output; experts add a flat era bonus or multiply manufactured goods.",
-          "title": "Tory penalty + expert bonus on a tile yield"
+          "title": "Tory penalty + expert bonus on a tile yield",
+          "writes": []
         },
         {
           "expr": "food_accum += food_per_turn ; if food_accum >= food_growth_threshold and population < max_population: population += 1 ; food_accum -= food_growth_threshold ; rebel_B += sol_birth_bonus",
@@ -58,14 +67,23 @@
             "sol_birth_bonus"
           ],
           "note": "A new colonist is born once stored food crosses the threshold; surplus carries over.",
-          "title": "Population growth on stored food"
+          "title": "Population growth on stored food",
+          "writes": [
+            "colony<N>.population",
+            "colony<N>.sol"
+          ]
         },
         {
           "expr": "accumulate hammers into hammers_accum and build_bank ; when build_cost <= both, build_bank -= build_cost and the building/unit completes (surplus carried)",
           "fn": "build_step",
           "knobs": [],
           "note": "build_cost is per-building/unit data (@BUILDING/@UNIT), not a global knob.",
-          "title": "Construction from hammers"
+          "title": "Construction from hammers",
+          "writes": [
+            "colony<N>.build_bank",
+            "colony<N>.built.<id>",
+            "colony<N>.build_target"
+          ]
         }
       ],
       "name": "Economy - Sons of Liberty, tax, growth, building",
@@ -80,7 +98,10 @@
             "price_drift_shift"
           ],
           "note": "Selling pushes a good's price down proportionally (>>8 = /256 each turn); buys (negative) ignored.",
-          "title": "Per-good price decay from net sales"
+          "title": "Per-good price decay from net sales",
+          "writes": [
+            "market.price.<good>"
+          ]
         }
       ],
       "name": "Market - European price drift",
@@ -93,7 +114,8 @@
           "fn": "combat_odds",
           "knobs": [],
           "note": "Pure ATK/(ATK+DEF) odds -- the classic Colonization combat model.",
-          "title": "Probability the attacker wins"
+          "title": "Probability the attacker wins",
+          "writes": []
         },
         {
           "expr": "atk = unit.attack (+difficulty_bonus if human attacker) ; def = unit.defense + terrain_defense + fort_bonus (+difficulty_bonus if human defender) ; clamp both >= 0 ; if fortified: def = def * fortify_def_num / fortify_def_den",
@@ -104,28 +126,35 @@
             "terrain_defense"
           ],
           "note": "Terrain defense comes from the editable terrain_defense table; fortify adds +50% (3/2).",
-          "title": "Attack/defense strength build-up"
+          "title": "Attack/defense strength build-up",
+          "writes": []
         },
         {
           "expr": "roll = rng(1, atk_str + def_str) ; attacker_won = (roll <= atk_str)",
           "fn": "resolve_land (roll)",
           "knobs": [],
           "note": "A single uniform roll over the combined strength decides the fight.",
-          "title": "The combat die"
+          "title": "The combat die",
+          "writes": []
         },
         {
           "expr": "Soldiers->Colonists ; Dragoons->Soldiers ; Cont.Cavalry->Cont.Army ; Cavalry->Regulars ; Cont.Army->Colonists ; (Missionary loser of a ->Colonists step becomes Missionaries) ; anything else -> destroyed",
           "fn": "demote",
           "knobs": [],
           "note": "Fixed structural ladder (unit type ids) -- a code wall, not data.",
-          "title": "Loser demotion ladder"
+          "title": "Loser demotion ladder",
+          "writes": [
+            "unit<N>.type",
+            "unit<N>.alive"
+          ]
         },
         {
           "expr": "capturable = loser is Colonists, Treasure, or Wagon Train  (taken intact by the winner)",
           "fn": "is_capturable",
           "knobs": [],
           "note": "Fixed structural set -- a code wall, not data.",
-          "title": "Units that change hands instead of dying"
+          "title": "Units that change hands instead of dying",
+          "writes": []
         }
       ],
       "name": "Combat - land resolution, demotion, capture",
@@ -147,7 +176,13 @@
             "ref_artillery_offset"
           ],
           "note": "The King's army at game start scales with the difficulty level.",
-          "title": "Starting REF size by difficulty d"
+          "title": "Starting REF size by difficulty d",
+          "writes": [
+            "ref.regulars",
+            "ref.cavalry",
+            "ref.manowar",
+            "ref.artillery"
+          ]
         },
         {
           "expr": "rate = ref_accrue_scale*d + ref_accrue_offset ; then for each gate year in ref_accrue_gate_years with year >= gate: rate *= 2",
@@ -158,7 +193,10 @@
             "ref_accrue_gate_years"
           ],
           "note": "The King saves faster as the game advances (doubles at each gate year).",
-          "title": "Royal treasury growth per turn"
+          "title": "Royal treasury growth per turn",
+          "writes": [
+            "power<N>.royal_money"
+          ]
         },
         {
           "expr": "while royal_money >= ref_unit_cost: if regulars+2 > ref_cavalry_ratio*cavalry -> +1 cavalry ; else if regulars > ref_artillery_ratio*artillery -> +1 artillery ; else if (regulars+cavalry+artillery+5) > ref_naval_ratio*manowar -> +1 man-o-war ; else +1 regular ; royal_money -= ref_unit_cost",
@@ -170,7 +208,14 @@
             "ref_naval_ratio"
           ],
           "note": "Buys to keep target ratios of cavalry/artillery/ships to regulars.",
-          "title": "Spending the treasury on new REF units"
+          "title": "Spending the treasury on new REF units",
+          "writes": [
+            "ref.regulars",
+            "ref.cavalry",
+            "ref.manowar",
+            "ref.artillery",
+            "power<N>.royal_money"
+          ]
         }
       ],
       "name": "REF / the King - the Royal Expeditionary Force",
@@ -193,21 +238,24 @@
             "ff_first_father_shift"
           ],
           "note": "Each father costs more than the last; later eras compound it; the first is half price.",
-          "title": "Bells (or gold) to recruit the next father"
+          "title": "Bells (or gold) to recruit the next father",
+          "writes": []
         },
         {
           "expr": "band = (year < 1600) ? 0 : (year < 1700) ? 1 : 2",
           "fn": "ff_era_band",
           "knobs": [],
           "note": "Fixed era cutoffs (code) used to weight which fathers appear.",
-          "title": "Era band for father weighting"
+          "title": "Era band for father weighting",
+          "writes": []
         },
         {
           "expr": "offerable = any father not yet owned  (next pick is a weighted random over all un-owned)",
           "fn": "ff_available",
           "knobs": [],
           "note": "Byte-verified: no intra-category ordering gate -- simply un-acquired.",
-          "title": "Which fathers may be offered"
+          "title": "Which fathers may be offered",
+          "writes": []
         }
       ],
       "name": "Founding Fathers - recruitment cost & availability",
@@ -228,7 +276,8 @@
             "imm_england_den"
           ],
           "note": "More colonists raise the bar; England immigrates faster (x2/3).",
-          "title": "Crosses needed for the next immigrant"
+          "title": "Crosses needed for the next immigrant",
+          "writes": []
         },
         {
           "expr": "crosses_accum += crosses_gained ; if crosses_accum > threshold: spawn a Free Colonist at dock slot rng(0, imm_dock_slots-1) ; crosses_accum = 0",
@@ -237,7 +286,10 @@
             "imm_dock_slots"
           ],
           "note": "When accumulated crosses pass the threshold, a recruit appears in a random dock slot.",
-          "title": "Spawning an immigrant on the dock"
+          "title": "Spawning an immigrant on the dock",
+          "writes": [
+            "power<N>.crosses"
+          ]
         }
       ],
       "name": "Immigration - religious unrest & the docks",
@@ -252,14 +304,34 @@
             "imm_base_crosses"
           ],
           "note": "Fixed phase sequence; only the base-crosses scalar is a knob.",
-          "title": "Order of operations each turn"
+          "title": "Order of operations each turn",
+          "writes": [
+            "game.turn",
+            "game.season",
+            "game.year",
+            "colony<N>.population",
+            "colony<N>.sol",
+            "colony<N>.build_bank",
+            "market.price.<good>",
+            "power<N>.crosses",
+            "power<N>.royal_money",
+            "ref.regulars",
+            "unit<N>.x",
+            "unit<N>.y",
+            "unit<N>.alive"
+          ]
         },
         {
           "expr": "turn += 1 ; if year < 1600: year += 1  (1 turn = 1 year) ; else season = (season+1) mod 2, and year += 1 when season wraps to 0  (2 seasons/year)",
           "fn": "advance_cadence",
           "knobs": [],
           "note": "Fixed calendar: yearly turns before 1600, two seasons per year after.",
-          "title": "Calendar advance"
+          "title": "Calendar advance",
+          "writes": [
+            "game.turn",
+            "game.season",
+            "game.year"
+          ]
         }
       ],
       "name": "Turn loop - phase order & calendar",
@@ -272,7 +344,10 @@
           "fn": "refresh_moves",
           "knobs": [],
           "note": "Movement allowance is per-unit data (@UNIT movement column).",
-          "title": "Move points restored each turn"
+          "title": "Move points restored each turn",
+          "writes": [
+            "unit<N>.movement"
+          ]
         },
         {
           "expr": "greedy step = sign(target - pos) on each axis ; if that tile is off-map or wrong land/water -> find_step routes around it ; enemy occupant -> combat ; friendly -> blocked ; entering a tile costs terrain_move[id] (floor 1), but a unit always moves at least one tile",
@@ -281,7 +356,13 @@
             "terrain_move"
           ],
           "note": "Greedy stepping with Dijkstra fallback; entry cost comes from the editable terrain_move table.",
-          "title": "Executing a move order"
+          "title": "Executing a move order",
+          "writes": [
+            "unit<N>.x",
+            "unit<N>.y",
+            "unit<N>.alive",
+            "unit<N>.type"
+          ]
         },
         {
           "expr": "Dijkstra over passable tiles (passable = naval flag matches Ocean/Sea-Lane), 8-connected, edge cost = terrain_move[id] ; returns the first step of the least-cost route, or none",
@@ -290,14 +371,19 @@
             "terrain_move"
           ],
           "note": "Routes a unit around coastlines/obstacles toward its target.",
-          "title": "Obstacle-routing pathfinder"
+          "title": "Obstacle-routing pathfinder",
+          "writes": []
         },
         {
           "expr": "attacker vs the occupant (defender fortified if its order is FORTIFY) ; loser is captured, destroyed, or demoted in place ; attacking sets attacker moves_left = 0",
           "fn": "do_combat",
           "knobs": [],
           "note": "Wraps resolve_land for unit-vs-unit encounters during movement.",
-          "title": "Combat triggered by a move"
+          "title": "Combat triggered by a move",
+          "writes": [
+            "unit<N>.alive",
+            "unit<N>.type"
+          ]
         }
       ],
       "name": "Units & movement - orders, routing, terrain cost",
@@ -310,28 +396,34 @@
           "fn": "mission_threshold / converts / prob",
           "knobs": [],
           "note": "Code-side native formulas (literals; not in the cfg block).",
-          "title": "Mission conversion chance"
+          "title": "Mission conversion chance",
+          "writes": []
         },
         {
           "expr": "if delta>0: halve if a French power, halve again if Pocahontas ; tension = clamp(tension + delta, 0 .. 100)",
           "fn": "apply_tension",
           "knobs": [],
           "note": "French diplomacy and the Pocahontas father each soften provocations.",
-          "title": "Native tension update"
+          "title": "Native tension update",
+          "writes": [
+            "natives.tension"
+          ]
         },
         {
           "expr": "p = max(5*difficulty + 50, 2*tax_pct) ; cap p at 90",
           "fn": "native_trade_price",
           "knobs": [],
           "note": "Code-side; rises with difficulty and your tax rate, capped at 90%.",
-          "title": "Native trade price percent"
+          "title": "Native trade price percent",
+          "writes": []
         },
         {
           "expr": "hi = min(3*settlement_wealth + 10, 100) ; gold = clamp(demand, 10 .. hi)",
           "fn": "tribute_gold",
           "knobs": [],
           "note": "Code-side bounds on a tribute demand.",
-          "title": "Gold a native demand resolves to"
+          "title": "Gold a native demand resolves to",
+          "writes": []
         }
       ],
       "name": "Natives - missions, tension, trade, tribute",
@@ -344,18 +436,114 @@
           "fn": "declare_war / make_peace / sign_treaty",
           "knobs": [],
           "note": "Bit-flag relationship bookkeeping between the 4 powers.",
-          "title": "Relationship state transitions"
+          "title": "Relationship state transitions",
+          "writes": [
+            "war.<a>.<b>"
+          ]
         },
         {
           "expr": "restrained = (attitude >> 2 > demand_score) and (demand_score > 12) and (rng(0,4) != 0) ; the AI acts = not restrained",
           "fn": "ai_acts",
           "knobs": [],
           "note": "Code-side nerve check: a calm, cautious AI sometimes backs down.",
-          "title": "Whether an AI follows through on a demand"
+          "title": "Whether an AI follows through on a demand",
+          "writes": []
         }
       ],
       "name": "Diplomacy - war/peace/treaty & AI nerve",
       "source": "sim/diplomacy.cpp"
     }
-  ]
+  ],
+  "reverse_index": {
+    "colony<N>.build_bank": [
+      "build_step",
+      "step_turn"
+    ],
+    "colony<N>.build_target": [
+      "build_step"
+    ],
+    "colony<N>.built.<id>": [
+      "build_step"
+    ],
+    "colony<N>.population": [
+      "colony_economic_step (growth)",
+      "step_turn"
+    ],
+    "colony<N>.sol": [
+      "sol_update (divisor B)",
+      "sol_update (dividend A)",
+      "colony_economic_step (growth)",
+      "step_turn"
+    ],
+    "game.season": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "game.turn": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "game.year": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "market.price.<good>": [
+      "price_drift",
+      "step_turn"
+    ],
+    "natives.tension": [
+      "apply_tension"
+    ],
+    "power<N>.crosses": [
+      "immigration_step",
+      "step_turn"
+    ],
+    "power<N>.royal_money": [
+      "ref_accrue_rate",
+      "ref_purchase",
+      "step_turn"
+    ],
+    "ref.artillery": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.cavalry": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.manowar": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.regulars": [
+      "ref_start",
+      "ref_purchase",
+      "step_turn"
+    ],
+    "unit<N>.alive": [
+      "demote",
+      "step_turn",
+      "apply_orders (GOTO)",
+      "do_combat"
+    ],
+    "unit<N>.movement": [
+      "refresh_moves"
+    ],
+    "unit<N>.type": [
+      "demote",
+      "apply_orders (GOTO)",
+      "do_combat"
+    ],
+    "unit<N>.x": [
+      "step_turn",
+      "apply_orders (GOTO)"
+    ],
+    "unit<N>.y": [
+      "step_turn",
+      "apply_orders (GOTO)"
+    ],
+    "war.<a>.<b>": [
+      "declare_war / make_peace / sign_treaty"
+    ]
+  }
 }

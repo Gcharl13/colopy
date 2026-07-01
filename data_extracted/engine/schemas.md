@@ -1,86 +1,50 @@
-# Forge engine — data schemas
+# Forge engine — the game database schema
 
-The game is **data the engine runs and the IDE authors**. Logic is authored visually as
-**node graphs** (Blueprint-inspired); these JSON files are only the serialization behind the
-editor — you don't hand-edit them.
+The game is a **database** mutated by functions and events. Everything is data:
+**reference** tables (rules), **state** tables (dynamic records), **config** scalars.
+The runtime interprets this schema; offsets are traceability-only.
 
-## Node graph (`graphs/<id>.json`)
+- Tables: 54 total — 40 reference, 13 state, 1 config.
 
-```json
-{
-  "id": "kings_tax",
-  "name": "King's Tax Demand",
-  "nodes": [ { "id": "n1", "type": "OnTurnStart", "x": 40, "y": 60, "params": {} }, ... ],
-  "edges": [ { "from": { "node": "n1", "pin": "out" }, "to": { "node": "n2", "pin": "in" } }, ... ]
-}
-```
+## Path grammar (one interface addresses any cell)
+- **singleton**: `<table>.<col>            e.g. game.turn, revolution.sol, cfg.max_population`
+- **entity**: `<table_singular><N>.<col>  e.g. power0.gold, colony2.population, unit5.type`
+- **indexed_col**: `<...>.<col>.<idx>     e.g. colony0.stockpile.3, ff.16, price.9`
+- **reference**: `@SECTION[<row index or name:VALUE>].<column>  e.g. @BUILDING[name:Fort].cost`
 
-- **nodes** — placed instances. `type` indexes the Node Catalog (`GET /api/nodes`). `params`
-  are the node's inline values (numbers, text, selects, binding paths). `x,y` are canvas coords.
-- **edges** — wires. A wire connects an output pin `from` to an input pin `to`. Pins are either
-  **exec** (control flow, fired in order) or **data** (a value pulled on demand).
+## State tables
 
-### Pin kinds
-- **exec** — white control-flow wires. A node runs, does its effect, then fires its exec output.
-- **data** — typed value wires (number/bool). Pulled lazily when a node needs an input; if an
-  input data pin is unwired, the node's same-named **param** is used instead.
+- **game** (singleton, `game`): year, season, turn, difficulty, nation, score
+- **powers** (entity, `power<N>`): gold, tax, royal_money, crosses, mil_strength, econ_strength, colonies, units, strength
+- **colonies** (entity, `colony<N>`): population, owner, sol, bells, hammers, food, crosses, build_target, build_cost, build_bank, build_remaining, building_name, warehouse, workers, stockpile.<good>, built.<id>
+- **units** (entity, `unit<N>`): type, owner, profession, x, y, alive, attack, defense, movement, terrain, terraindef
+- **congress** (singleton, `congress`): bells, cost, era_band, count
+- **ff** (singleton, `ff`): count, <id>
+- **revolution** (singleton, `revolution`): sol, declared, rebel
+- **succession** (singleton, `succession`): seceded
+- **natives** (singleton, `natives`): tension
+- **ref** (singleton, `ref`): regulars, cavalry, manowar, artillery
+- **market** (singleton, `market`): price.<good>, boycott.<good>
+- **world** (singleton, ``): colonies.count, colonies.population, units.count, terrain.defense.<id>
+- **diplomacy** (matrix, `war.<a>.<b>`): war.<a>.<b>
 
-### Node types (first set; see `GET /api/nodes` for the live catalog)
-- *Triggers*: `OnTurnStart`, `OnTestFire` (editor Run button).
-- *Flow*: `Branch` (cond→true/false), `Sequence`, `Roll` (random min..max).
-- *Data*: `Constant`, `GetState` (binding path), `Math`, `Compare`.
-- *Actions*: `GrantGold`, `SetTax`, `SetPrice`, `AddColonyPop`, `Log`.
-- *Dialog*: `ShowPopup` (title/body/choices; each choice is an exec output pin → the runtime
-  pauses, returns the popup, and resumes down the chosen pin).
+## Config (cfg.<name>) — tunable scalars
 
-## Variables — one namespace for the logic and the tables (`GET /api/bind?path=`)
+warehouse_cap_base, sol_decay_shift, sol_inflow_mult, sol_birth_bonus, food_growth_threshold, max_population, tory_divisor_base, expert_era_bonus, expert_mfg_mult, price_drift_shift, fortify_def_num, fortify_def_den, ff_human_scale, ff_human_offset, ff_ai_scale, ff_ai_offset, ff_post_indep_scale, ff_post_indep_offset, ff_compounding_shift, ff_first_father_shift, ff_gate_years, ref_regulars_scale, ref_regulars_offset, ref_cavalry_scale, ref_cavalry_offset, ref_manowar_scale, ref_manowar_offset, ref_artillery_scale, ref_artillery_offset, ref_accrue_scale, ref_accrue_offset, ref_accrue_gate_years
 
-There is a single variable namespace shared by the logic graphs and the data tables. The full,
-machine-readable catalog is **`variables.json`** (live-state names + every table section/column);
-the sim's functions and their inputs/outputs are in **`functions.json`** (also `GET /api/formulas`).
+## Reference tables (@SECTION[row].col)
 
-**Live game state** — resolved by `forge/engine.cpp resolve_binding`; each maps to a real DGROUP
-field. Groups: `game.*` (year/season/turn/difficulty/score), `power<N>.*`
-(gold/tax/royal_money/crosses/mil_strength/econ_strength/colonies/units/strength), `colony<N>.*`
-(population/sol/bells/hammers/food/crosses/owner/build_target/build_cost/build_bank/
-build_remaining/building_name/warehouse/built.<id>), `unit<N>.*`
-(type/owner/profession/x/y/alive/attack/defense/movement/terrain/terraindef), `natives.tension`,
-`congress.*` (bells/cost/era_band/count), `ff.count`/`ff.<id>`, `revolution.*`, `succession.seceded`,
-`colonies.count`/`colonies.population`, `units.count`, `ref.*`, `price.<good>`, `boycott.<good>`,
-`war.<a>.<b>`, `terrain.defense.<id>`. Writable ones (via `POST /api/bind/set`): year/season/turn/
-difficulty, power gold/tax/crosses/mil_strength/econ_strength, colony population, natives.tension,
-revolution.sol, congress.bells, price.<good>.
+@SEASONS, @UNFORESTED, @FORESTED, @OTHER, @OTHER_NAMES, @RESOURCE, @COUNTRY, @NATIONALITY, @NATIONABBREV, @HOMEPORT, @COLONYNAME, @INDEPENDENT, @LEADERNAME, @MISSION, @DIFFICULTY, @CLASS, @BUILDING, @SCENARIO, @JOB, @CARGO, @UNIT, @ORDERS, @ACTIONS, @VALUES, @ATTITUDE, @ATTITUDINAL, @LEVELS, @TRIBES, @FOUNDING, @FATHERS, @COLORS, @IROQUOIS, @STOP, @CHEROKEE, @ARAWAK, @INCA, @SIOUX, @APACHE, @AZTEC, @TUPI
 
-**Data-table cells** — `@SECTION[<row>].<column>` where `<row>` is an index or `name:VALUE`, e.g.
-`@BUILDING[name:Fort].cost`, `@CLASS[3].transport_cost`, `@UNIT[name:Soldiers].attack`. Resolved
-against the live tables (preferring your Tables-tab edits), so **any row you add is immediately
-usable in any logic function** — no code change. Numeric cells return numbers, text cells strings.
-
-These names work anywhere a value is read: `GetState` paths, `Formula` expressions, `ShowPopup`/
-`Notify` `{binding}` interpolation, and screen-widget text.
-
-### Newer node types (see `GET /api/nodes` for the live catalog)
-- **`Formula`** — one node for a whole expression over the variables above plus `+ - * / %`,
-  comparisons (→1/0), `? :`, `min/max/clamp/abs/floor/ceil`, `roll(lo,hi)`, and the `a..d` pins.
-  Collapses long Constant/Math/Compare chains (e.g. the king's-tax severity score → one node).
-- **`Notify`** — emits a real GAME.TXT message (`textKey`/`textKeys`, with `%NUMBER`/`%STRING`
-  fill) as the run output, replacing hand-typed `Log` strings.
-- **`StartBuilding` / `BuildStep` / `RushBuild`** — the colony construction + manual-purchase loop
-  (cost/min from `@BUILDING`; rush cost is a Formula, RECONSTRUCTED — see `notes/rulings`).
-
-## Running a graph (`POST /api/graph/run`)
-
-Body `{ "id": "..." }` or `{ "graph": {...} }`. Returns `{ log, effects, popup }`. When a
-`ShowPopup` is hit, `popup` is `{ title, body, node, choices }` and the run pauses; resume with
-`{ "graph"|"id", "from_node": "<that node id>", "choice": "<chosen pin>" }`.
-
-## Screens (`screens/<id>.json`, phase E4)
-
-```json
-{ "id": "colony", "background": "COLONY", "size": [320,200],
-  "widgets": [ { "id":"w1", "type":"label", "rect":[90,1,140,8], "font":"tiny",
-                 "color":"82,138,49", "text":"%S0", "binds": {"S0":"colony0.name"},
-                 "onClick": "<graph id>" }, ... ] }
-```
-Widget `type` maps 1:1 to the spec draw-verbs (label, value, rect, sprite, gauge, list, button,
-panel). A button's `onClick` references a node graph.
+## Functions → columns (update rules)
+Each function's `writes` and the `reverse_index` (column → writers) live in `functions.json`. Example writers:
+- `colony<N>.build_bank` ← build_step, step_turn
+- `colony<N>.build_target` ← build_step
+- `colony<N>.built.<id>` ← build_step
+- `colony<N>.population` ← colony_economic_step (growth), step_turn
+- `colony<N>.sol` ← sol_update (divisor B), sol_update (dividend A), colony_economic_step (growth), step_turn
+- `game.season` ← step_turn, advance_cadence
+- `game.turn` ← step_turn, advance_cadence
+- `game.year` ← step_turn, advance_cadence
+- `market.price.<good>` ← price_drift, step_turn
+- `natives.tension` ← apply_tension
