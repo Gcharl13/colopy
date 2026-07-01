@@ -969,11 +969,24 @@ $('#agallery').addEventListener('click', e=>{
         + R"HTML(
 let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}, selW=null, BINDV={}, SINIT=false; const SS=2;
 // sprite sheets a screen 'sprite' widget can draw (horizontal strips under /assets/tileset).
+// ICONS is the FULL ICONS.SS (131 frames at native size; per-frame rects lazy-loaded from
+// icons.json, frame = ssdec index = EXE sprite id - 1). UNITS/UNIT = the 24 32x32 unit crops.
 const SHEETS={
   BUILDING:{url:'/assets/tileset/buildings.png',cw:56,ch:48,n:48},
   UNIT:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24},
-  ICONS:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24}};
+  UNITS:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24},
+  ICONS:{url:'/assets/tileset/icons.png',rectsUrl:'/assets/tileset/icons.json',n:131}};
 const SHEETIMG={};
+// Per-frame rects for variable-width sheets (ICONS): frame -> {x,w,h}, loaded once on demand.
+function sheetRects(sh,then){
+  if(sh.rects) return then();
+  if(sh._loading){ sh._loading.push(then); return; }
+  sh._loading=[then];
+  fetch(sh.rectsUrl).then(r=>r.json()).then(d=>{
+    sh.rects={}; d.frames.forEach(f=>sh.rects[f.frame]={x:f.x,w:f.w,h:f.h});
+    sh._loading.forEach(fn=>fn()); sh._loading=null;
+  });
+}
 // Render a sprite widget: a canvas drawing frame f of its sheet, contain-fit + centered,
 // crisp (no smoothing). Falls back to the old text placeholder for an unknown sheet/frame.
 function spriteEl(w){
@@ -986,9 +999,12 @@ function spriteEl(w){
   const img=SHEETIMG[sh.url]||(SHEETIMG[sh.url]=Object.assign(new Image(),{src:sh.url}));
   const g=cv.getContext('2d');
   const draw=()=>{ g.imageSmoothingEnabled=false; g.clearRect(0,0,cv.width,cv.height);
-    const sc=Math.min(cv.width/sh.cw,cv.height/sh.ch),dw=sh.cw*sc,dh=sh.ch*sc;
-    g.drawImage(img,f*sh.cw,0,sh.cw,sh.ch,(cv.width-dw)/2,(cv.height-dh)/2,dw,dh); };
-  if(img.complete&&img.naturalWidth) draw(); else img.addEventListener('load',draw);
+    const rc=sh.rects?sh.rects[f]:null;
+    const sx=rc?rc.x:f*sh.cw, sw=rc?rc.w:sh.cw, shh=rc?rc.h:sh.ch;
+    const sc=Math.min(cv.width/sw,cv.height/shh),dw=sw*sc,dh=shh*sc;
+    g.drawImage(img,sx,0,sw,shh,(cv.width-dw)/2,(cv.height-dh)/2,dw,dh); };
+  const kick=()=>{ if(img.complete&&img.naturalWidth) draw(); else img.addEventListener('load',draw); };
+  if(sh.rectsUrl) sheetRects(sh,kick); else kick();
   return cv;
 }
 async function scrInit(){

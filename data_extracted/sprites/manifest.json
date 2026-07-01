@@ -1,10 +1,10 @@
 {
- "_note": "individual sprites sliced from the decoded strips by tools/slice_sprites.py",
- "count": 238,
+ "_note": "individual sprites sliced from the decoded strips + the ICONS.SS atlas by tools/slice_sprites.py",
+ "count": 369,
  "sprites": [
   {
-   "file": "data_extracted/sprites/icons/000_colonists.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/000_colonists.png",
+   "sheet": "UNITS",
    "index": 0,
    "label": "Colonists",
    "w": 32,
@@ -12,8 +12,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/001_soldiers.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/001_soldiers.png",
+   "sheet": "UNITS",
    "index": 1,
    "label": "Soldiers",
    "w": 32,
@@ -21,8 +21,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/002_pioneers.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/002_pioneers.png",
+   "sheet": "UNITS",
    "index": 2,
    "label": "Pioneers",
    "w": 32,
@@ -30,8 +30,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/003_missionaries.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/003_missionaries.png",
+   "sheet": "UNITS",
    "index": 3,
    "label": "Missionaries",
    "w": 32,
@@ -39,8 +39,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/004_dragoons.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/004_dragoons.png",
+   "sheet": "UNITS",
    "index": 4,
    "label": "Dragoons",
    "w": 32,
@@ -48,8 +48,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/005_scouts.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/005_scouts.png",
+   "sheet": "UNITS",
    "index": 5,
    "label": "Scouts",
    "w": 32,
@@ -57,8 +57,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/006_regulars.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/006_regulars.png",
+   "sheet": "UNITS",
    "index": 6,
    "label": "Regulars",
    "w": 32,
@@ -66,8 +66,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/007_continental_cavalry.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/007_continental_cavalry.png",
+   "sheet": "UNITS",
    "index": 7,
    "label": "Continental Cavalry",
    "w": 32,
@@ -75,8 +75,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/008_cavalry.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/008_cavalry.png",
+   "sheet": "UNITS",
    "index": 8,
    "label": "Cavalry",
    "w": 32,
@@ -84,8 +84,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/009_continental_army.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/009_continental_army.png",
+   "sheet": "UNITS",
    "index": 9,
    "label": "Continental Army",
    "w": 32,
@@ -93,8 +93,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/010_treasure.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/010_treasure.png",
+   "sheet": "UNITS",
    "index": 10,
    "label": "Treasure",
    "w": 32,
@@ -102,8 +102,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/011_artillery.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/011_artillery.png",
+   "sheet": "UNITS",
    "index": 11,
    "label": "Artillery",
    "w": 32,
@@ -111,8 +111,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/012_wagon_train.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/012_wagon_train.png",
+   "sheet": "UNITS",
    "index": 12,
    "label": "Wagon Train",
    "w": 32,
@@ -120,8 +120,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/013_caravel.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/013_caravel.png",
+   "sheet": "UNITS",
    "index": 13,
    "label": "Caravel",
    "w": 32,
@@ -129,8 +129,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/014_merchantman.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/014_merchantman.png",
+   "sheet": "UNITS",
    "index": 14,
    "label": "Merchantman",
    "w": 32,
@@ -138,8 +138,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/015_galleon.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/015_galleon.png",
+   "sheet": "UNITS",
    "index": 15,
    "label": "Galleon",
    "w": 32,
@@ -147,8 +147,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/016_privateer.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/016_privateer.png",
+   "sheet": "UNITS",
    "index": 16,
    "label": "Privateer",
    "w": 32,
@@ -156,8 +156,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/017_frigate.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/017_frigate.png",
+   "sheet": "UNITS",
    "index": 17,
    "label": "Frigate",
    "w": 32,
@@ -165,8 +165,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/018_man_o_war.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/018_man_o_war.png",
+   "sheet": "UNITS",
    "index": 18,
    "label": "Man-O-War",
    "w": 32,
@@ -174,8 +174,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/019_braves.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/019_braves.png",
+   "sheet": "UNITS",
    "index": 19,
    "label": "Braves",
    "w": 32,
@@ -183,8 +183,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/020_armed_braves.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/020_armed_braves.png",
+   "sheet": "UNITS",
    "index": 20,
    "label": "Armed Braves",
    "w": 32,
@@ -192,8 +192,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/021_mounted_braves.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/021_mounted_braves.png",
+   "sheet": "UNITS",
    "index": 21,
    "label": "Mounted Braves",
    "w": 32,
@@ -201,8 +201,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/022_mounted_warriors.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/022_mounted_warriors.png",
+   "sheet": "UNITS",
    "index": 22,
    "label": "Mounted Warriors",
    "w": 32,
@@ -210,8 +210,8 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/023_unused.png",
-   "sheet": "ICONS",
+   "file": "data_extracted/sprites/units/023_unused.png",
+   "sheet": "UNITS",
    "index": 23,
    "label": "(unused)",
    "w": 32,
@@ -2142,6 +2142,1185 @@
    "label": "beaches 3",
    "w": 16,
    "h": 16,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/000_icon_0_0x00.png",
+   "sheet": "ICONS",
+   "index": 0,
+   "label": "icon 0 (0x00)",
+   "w": 42,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/001_icon_1_0x01.png",
+   "sheet": "ICONS",
+   "index": 1,
+   "label": "icon 1 (0x01)",
+   "w": 42,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/002_icon_2_0x02.png",
+   "sheet": "ICONS",
+   "index": 2,
+   "label": "icon 2 (0x02)",
+   "w": 42,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/003_icon_3_0x03.png",
+   "sheet": "ICONS",
+   "index": 3,
+   "label": "icon 3 (0x03)",
+   "w": 36,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/004_icon_4_0x04.png",
+   "sheet": "ICONS",
+   "index": 4,
+   "label": "icon 4 (0x04)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/005_caravel.png",
+   "sheet": "ICONS",
+   "index": 5,
+   "label": "Caravel",
+   "w": 26,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/006_merchantman.png",
+   "sheet": "ICONS",
+   "index": 6,
+   "label": "Merchantman",
+   "w": 26,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/007_galleon.png",
+   "sheet": "ICONS",
+   "index": 7,
+   "label": "Galleon",
+   "w": 28,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/008_wagon_train.png",
+   "sheet": "ICONS",
+   "index": 8,
+   "label": "Wagon Train",
+   "w": 28,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/009_artillery.png",
+   "sheet": "ICONS",
+   "index": 9,
+   "label": "Artillery",
+   "w": 28,
+   "h": 14,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/010_icon_10_0x0a.png",
+   "sheet": "ICONS",
+   "index": 10,
+   "label": "icon 10 (0x0A)",
+   "w": 34,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/011_icon_11_0x0b.png",
+   "sheet": "ICONS",
+   "index": 11,
+   "label": "icon 11 (0x0B)",
+   "w": 34,
+   "h": 22,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/012_icon_12_0x0c.png",
+   "sheet": "ICONS",
+   "index": 12,
+   "label": "icon 12 (0x0C)",
+   "w": 36,
+   "h": 22,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/013_icon_13_0x0d.png",
+   "sheet": "ICONS",
+   "index": 13,
+   "label": "icon 13 (0x0D)",
+   "w": 42,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/014_privateer.png",
+   "sheet": "ICONS",
+   "index": 14,
+   "label": "Privateer",
+   "w": 26,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/015_frigate.png",
+   "sheet": "ICONS",
+   "index": 15,
+   "label": "Frigate",
+   "w": 26,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/016_treasure.png",
+   "sheet": "ICONS",
+   "index": 16,
+   "label": "Treasure",
+   "w": 28,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/017_icon_17_0x11.png",
+   "sheet": "ICONS",
+   "index": 17,
+   "label": "icon 17 (0x11)",
+   "w": 18,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/018_icon_18_0x12.png",
+   "sheet": "ICONS",
+   "index": 18,
+   "label": "icon 18 (0x12)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/019_icon_19_0x13.png",
+   "sheet": "ICONS",
+   "index": 19,
+   "label": "icon 19 (0x13)",
+   "w": 24,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/020_icon_20_0x14.png",
+   "sheet": "ICONS",
+   "index": 20,
+   "label": "icon 20 (0x14)",
+   "w": 12,
+   "h": 12,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/021_icon_21_0x15.png",
+   "sheet": "ICONS",
+   "index": 21,
+   "label": "icon 21 (0x15)",
+   "w": 6,
+   "h": 6,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/022_food.png",
+   "sheet": "ICONS",
+   "index": 22,
+   "label": "Food",
+   "w": 15,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/023_sugar.png",
+   "sheet": "ICONS",
+   "index": 23,
+   "label": "Sugar",
+   "w": 24,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/024_tobacco.png",
+   "sheet": "ICONS",
+   "index": 24,
+   "label": "Tobacco",
+   "w": 21,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/025_cotton.png",
+   "sheet": "ICONS",
+   "index": 25,
+   "label": "Cotton",
+   "w": 24,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/026_furs.png",
+   "sheet": "ICONS",
+   "index": 26,
+   "label": "Furs",
+   "w": 27,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/027_lumber.png",
+   "sheet": "ICONS",
+   "index": 27,
+   "label": "Lumber",
+   "w": 30,
+   "h": 15,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/028_ore.png",
+   "sheet": "ICONS",
+   "index": 28,
+   "label": "Ore",
+   "w": 30,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/029_silver.png",
+   "sheet": "ICONS",
+   "index": 29,
+   "label": "Silver",
+   "w": 30,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/030_horses.png",
+   "sheet": "ICONS",
+   "index": 30,
+   "label": "Horses",
+   "w": 39,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/031_rum.png",
+   "sheet": "ICONS",
+   "index": 31,
+   "label": "Rum",
+   "w": 15,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/032_cigars.png",
+   "sheet": "ICONS",
+   "index": 32,
+   "label": "Cigars",
+   "w": 6,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/033_cloth.png",
+   "sheet": "ICONS",
+   "index": 33,
+   "label": "Cloth",
+   "w": 18,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/034_coats.png",
+   "sheet": "ICONS",
+   "index": 34,
+   "label": "Coats",
+   "w": 18,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/035_trade_goods.png",
+   "sheet": "ICONS",
+   "index": 35,
+   "label": "Trade Goods",
+   "w": 21,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/036_tools.png",
+   "sheet": "ICONS",
+   "index": 36,
+   "label": "Tools",
+   "w": 24,
+   "h": 21,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/037_muskets.png",
+   "sheet": "ICONS",
+   "index": 37,
+   "label": "Muskets",
+   "w": 9,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/038_icon_38_0x26.png",
+   "sheet": "ICONS",
+   "index": 38,
+   "label": "icon 38 (0x26)",
+   "w": 15,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/039_icon_39_0x27.png",
+   "sheet": "ICONS",
+   "index": 39,
+   "label": "icon 39 (0x27)",
+   "w": 24,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/040_icon_40_0x28.png",
+   "sheet": "ICONS",
+   "index": 40,
+   "label": "icon 40 (0x28)",
+   "w": 21,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/041_icon_41_0x29.png",
+   "sheet": "ICONS",
+   "index": 41,
+   "label": "icon 41 (0x29)",
+   "w": 24,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/042_icon_42_0x2a.png",
+   "sheet": "ICONS",
+   "index": 42,
+   "label": "icon 42 (0x2A)",
+   "w": 27,
+   "h": 33,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/043_icon_43_0x2b.png",
+   "sheet": "ICONS",
+   "index": 43,
+   "label": "icon 43 (0x2B)",
+   "w": 30,
+   "h": 15,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/044_icon_44_0x2c.png",
+   "sheet": "ICONS",
+   "index": 44,
+   "label": "icon 44 (0x2C)",
+   "w": 30,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/045_icon_45_0x2d.png",
+   "sheet": "ICONS",
+   "index": 45,
+   "label": "icon 45 (0x2D)",
+   "w": 30,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/046_icon_46_0x2e.png",
+   "sheet": "ICONS",
+   "index": 46,
+   "label": "icon 46 (0x2E)",
+   "w": 39,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/047_icon_47_0x2f.png",
+   "sheet": "ICONS",
+   "index": 47,
+   "label": "icon 47 (0x2F)",
+   "w": 15,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/048_icon_48_0x30.png",
+   "sheet": "ICONS",
+   "index": 48,
+   "label": "icon 48 (0x30)",
+   "w": 6,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/049_icon_49_0x31.png",
+   "sheet": "ICONS",
+   "index": 49,
+   "label": "icon 49 (0x31)",
+   "w": 18,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/050_icon_50_0x32.png",
+   "sheet": "ICONS",
+   "index": 50,
+   "label": "icon 50 (0x32)",
+   "w": 18,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/051_icon_51_0x33.png",
+   "sheet": "ICONS",
+   "index": 51,
+   "label": "icon 51 (0x33)",
+   "w": 21,
+   "h": 18,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/052_icon_52_0x34.png",
+   "sheet": "ICONS",
+   "index": 52,
+   "label": "icon 52 (0x34)",
+   "w": 24,
+   "h": 21,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/053_icon_53_0x35.png",
+   "sheet": "ICONS",
+   "index": 53,
+   "label": "icon 53 (0x35)",
+   "w": 9,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/054_hammers_production.png",
+   "sheet": "ICONS",
+   "index": 54,
+   "label": "Hammers (production)",
+   "w": 24,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/055_icon_55_0x37.png",
+   "sheet": "ICONS",
+   "index": 55,
+   "label": "icon 55 (0x37)",
+   "w": 24,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/056_icon_56_0x38.png",
+   "sheet": "ICONS",
+   "index": 56,
+   "label": "icon 56 (0x38)",
+   "w": 24,
+   "h": 33,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/057_icon_57_0x39.png",
+   "sheet": "ICONS",
+   "index": 57,
+   "label": "icon 57 (0x39)",
+   "w": 21,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/058_icon_58_0x3a.png",
+   "sheet": "ICONS",
+   "index": 58,
+   "label": "icon 58 (0x3A)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/059_icon_59_0x3b.png",
+   "sheet": "ICONS",
+   "index": 59,
+   "label": "icon 59 (0x3B)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/060_icon_60_0x3c.png",
+   "sheet": "ICONS",
+   "index": 60,
+   "label": "icon 60 (0x3C)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/061_icon_61_0x3d.png",
+   "sheet": "ICONS",
+   "index": 61,
+   "label": "icon 61 (0x3D)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/062_icon_62_0x3e.png",
+   "sheet": "ICONS",
+   "index": 62,
+   "label": "icon 62 (0x3E)",
+   "w": 18,
+   "h": 21,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/063_icon_63_0x3f.png",
+   "sheet": "ICONS",
+   "index": 63,
+   "label": "icon 63 (0x3F)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/064_icon_64_0x40.png",
+   "sheet": "ICONS",
+   "index": 64,
+   "label": "icon 64 (0x40)",
+   "w": 22,
+   "h": 22,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/065_icon_65_0x41.png",
+   "sheet": "ICONS",
+   "index": 65,
+   "label": "icon 65 (0x41)",
+   "w": 22,
+   "h": 10,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/066_icon_66_0x42.png",
+   "sheet": "ICONS",
+   "index": 66,
+   "label": "icon 66 (0x42)",
+   "w": 12,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/067_icon_67_0x43.png",
+   "sheet": "ICONS",
+   "index": 67,
+   "label": "icon 67 (0x43)",
+   "w": 28,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/068_icon_68_0x44.png",
+   "sheet": "ICONS",
+   "index": 68,
+   "label": "icon 68 (0x44)",
+   "w": 28,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/069_icon_69_0x45.png",
+   "sheet": "ICONS",
+   "index": 69,
+   "label": "icon 69 (0x45)",
+   "w": 28,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/070_icon_70_0x46.png",
+   "sheet": "ICONS",
+   "index": 70,
+   "label": "icon 70 (0x46)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/071_icon_71_0x47.png",
+   "sheet": "ICONS",
+   "index": 71,
+   "label": "icon 71 (0x47)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/072_icon_72_0x48.png",
+   "sheet": "ICONS",
+   "index": 72,
+   "label": "icon 72 (0x48)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/073_icon_73_0x49.png",
+   "sheet": "ICONS",
+   "index": 73,
+   "label": "icon 73 (0x49)",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/074_icon_74_0x4a.png",
+   "sheet": "ICONS",
+   "index": 74,
+   "label": "icon 74 (0x4A)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/075_icon_75_0x4b.png",
+   "sheet": "ICONS",
+   "index": 75,
+   "label": "icon 75 (0x4B)",
+   "w": 26,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/076_icon_76_0x4c.png",
+   "sheet": "ICONS",
+   "index": 76,
+   "label": "icon 76 (0x4C)",
+   "w": 28,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/077_icon_77_0x4d.png",
+   "sheet": "ICONS",
+   "index": 77,
+   "label": "icon 77 (0x4D)",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/078_icon_78_0x4e.png",
+   "sheet": "ICONS",
+   "index": 78,
+   "label": "icon 78 (0x4E)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/079_icon_79_0x4f.png",
+   "sheet": "ICONS",
+   "index": 79,
+   "label": "icon 79 (0x4F)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/080_icon_80_0x50.png",
+   "sheet": "ICONS",
+   "index": 80,
+   "label": "icon 80 (0x50)",
+   "w": 1,
+   "h": 1,
+   "blank": true
+  },
+  {
+   "file": "data_extracted/sprites/icons/081_working_colonist.png",
+   "sheet": "ICONS",
+   "index": 81,
+   "label": "Working colonist",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/082_icon_82_0x52.png",
+   "sheet": "ICONS",
+   "index": 82,
+   "label": "icon 82 (0x52)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/083_icon_83_0x53.png",
+   "sheet": "ICONS",
+   "index": 83,
+   "label": "icon 83 (0x53)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/084_icon_84_0x54.png",
+   "sheet": "ICONS",
+   "index": 84,
+   "label": "icon 84 (0x54)",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/085_icon_85_0x55.png",
+   "sheet": "ICONS",
+   "index": 85,
+   "label": "icon 85 (0x55)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/086_icon_86_0x56.png",
+   "sheet": "ICONS",
+   "index": 86,
+   "label": "icon 86 (0x56)",
+   "w": 16,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/087_icon_87_0x57.png",
+   "sheet": "ICONS",
+   "index": 87,
+   "label": "icon 87 (0x57)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/088_icon_88_0x58.png",
+   "sheet": "ICONS",
+   "index": 88,
+   "label": "icon 88 (0x58)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/089_icon_89_0x59.png",
+   "sheet": "ICONS",
+   "index": 89,
+   "label": "icon 89 (0x59)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/090_icon_90_0x5a.png",
+   "sheet": "ICONS",
+   "index": 90,
+   "label": "icon 90 (0x5A)",
+   "w": 12,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/091_icon_91_0x5b.png",
+   "sheet": "ICONS",
+   "index": 91,
+   "label": "icon 91 (0x5B)",
+   "w": 12,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/092_icon_92_0x5c.png",
+   "sheet": "ICONS",
+   "index": 92,
+   "label": "icon 92 (0x5C)",
+   "w": 12,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/093_icon_93_0x5d.png",
+   "sheet": "ICONS",
+   "index": 93,
+   "label": "icon 93 (0x5D)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/094_icon_94_0x5e.png",
+   "sheet": "ICONS",
+   "index": 94,
+   "label": "icon 94 (0x5E)",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/095_icon_95_0x5f.png",
+   "sheet": "ICONS",
+   "index": 95,
+   "label": "icon 95 (0x5F)",
+   "w": 16,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/096_icon_96_0x60.png",
+   "sheet": "ICONS",
+   "index": 96,
+   "label": "icon 96 (0x60)",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/097_icon_97_0x61.png",
+   "sheet": "ICONS",
+   "index": 97,
+   "label": "icon 97 (0x61)",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/098_icon_98_0x62.png",
+   "sheet": "ICONS",
+   "index": 98,
+   "label": "icon 98 (0x62)",
+   "w": 12,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/099_icon_99_0x63.png",
+   "sheet": "ICONS",
+   "index": 99,
+   "label": "icon 99 (0x63)",
+   "w": 14,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/100_colonists.png",
+   "sheet": "ICONS",
+   "index": 100,
+   "label": "Colonists",
+   "w": 12,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/101_pioneers.png",
+   "sheet": "ICONS",
+   "index": 101,
+   "label": "Pioneers",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/102_soldiers.png",
+   "sheet": "ICONS",
+   "index": 102,
+   "label": "Soldiers",
+   "w": 16,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/103_scouts.png",
+   "sheet": "ICONS",
+   "index": 103,
+   "label": "Scouts",
+   "w": 26,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/104_dragoons.png",
+   "sheet": "ICONS",
+   "index": 104,
+   "label": "Dragoons",
+   "w": 28,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/105_missionaries.png",
+   "sheet": "ICONS",
+   "index": 105,
+   "label": "Missionaries",
+   "w": 14,
+   "h": 28,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/106_icon_106_0x6a.png",
+   "sheet": "ICONS",
+   "index": 106,
+   "label": "icon 106 (0x6A)",
+   "w": 12,
+   "h": 26,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/107_icon_107_0x6b.png",
+   "sheet": "ICONS",
+   "index": 107,
+   "label": "icon 107 (0x6B)",
+   "w": 16,
+   "h": 24,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/108_icon_108_0x6c.png",
+   "sheet": "ICONS",
+   "index": 108,
+   "label": "icon 108 (0x6C)",
+   "w": 16,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/109_braves.png",
+   "sheet": "ICONS",
+   "index": 109,
+   "label": "Braves",
+   "w": 12,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/110_armed_braves.png",
+   "sheet": "ICONS",
+   "index": 110,
+   "label": "Armed Braves",
+   "w": 16,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/111_mounted_braves.png",
+   "sheet": "ICONS",
+   "index": 111,
+   "label": "Mounted Braves",
+   "w": 26,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/112_mounted_warriors.png",
+   "sheet": "ICONS",
+   "index": 112,
+   "label": "Mounted Warriors",
+   "w": 24,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/113_face_0_unverified.png",
+   "sheet": "ICONS",
+   "index": 113,
+   "label": "face 0 (unverified)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/114_face_1_unverified.png",
+   "sheet": "ICONS",
+   "index": 114,
+   "label": "face 1 (unverified)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/115_face_2_unverified.png",
+   "sheet": "ICONS",
+   "index": 115,
+   "label": "face 2 (unverified)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/116_face_3_unverified.png",
+   "sheet": "ICONS",
+   "index": 116,
+   "label": "face 3 (unverified)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/117_face_4_unverified.png",
+   "sheet": "ICONS",
+   "index": 117,
+   "label": "face 4 (unverified)",
+   "w": 32,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/118_icon_118_0x76.png",
+   "sheet": "ICONS",
+   "index": 118,
+   "label": "icon 118 (0x76)",
+   "w": 15,
+   "h": 12,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/119_icon_119_0x77.png",
+   "sheet": "ICONS",
+   "index": 119,
+   "label": "icon 119 (0x77)",
+   "w": 15,
+   "h": 12,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/120_icon_120_0x78.png",
+   "sheet": "ICONS",
+   "index": 120,
+   "label": "icon 120 (0x78)",
+   "w": 15,
+   "h": 12,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/121_icon_121_0x79.png",
+   "sheet": "ICONS",
+   "index": 121,
+   "label": "icon 121 (0x79)",
+   "w": 15,
+   "h": 12,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/122_icon_122_0x7a.png",
+   "sheet": "ICONS",
+   "index": 122,
+   "label": "icon 122 (0x7A)",
+   "w": 30,
+   "h": 36,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/123_us_flag_unverified.png",
+   "sheet": "ICONS",
+   "index": 123,
+   "label": "US flag (unverified)",
+   "w": 27,
+   "h": 27,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/124_icon_124_0x7c.png",
+   "sheet": "ICONS",
+   "index": 124,
+   "label": "icon 124 (0x7C)",
+   "w": 39,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/125_regulars.png",
+   "sheet": "ICONS",
+   "index": 125,
+   "label": "Regulars",
+   "w": 16,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/126_cavalry.png",
+   "sheet": "ICONS",
+   "index": 126,
+   "label": "Cavalry",
+   "w": 28,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/127_man_o_war.png",
+   "sheet": "ICONS",
+   "index": 127,
+   "label": "Man-O-War",
+   "w": 28,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/128_continental_army.png",
+   "sheet": "ICONS",
+   "index": 128,
+   "label": "Continental Army",
+   "w": 16,
+   "h": 30,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/129_continental_cavalry.png",
+   "sheet": "ICONS",
+   "index": 129,
+   "label": "Continental Cavalry",
+   "w": 28,
+   "h": 32,
+   "blank": false
+  },
+  {
+   "file": "data_extracted/sprites/icons/130_icon_130_0x82.png",
+   "sheet": "ICONS",
+   "index": 130,
+   "label": "icon 130 (0x82)",
+   "w": 15,
+   "h": 12,
    "blank": false
   }
  ]

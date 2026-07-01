@@ -3,20 +3,21 @@
  "kind_counts": {
   "unit": 23,
   "building": 44,
+  "icon": 131,
   "terrain": 12,
   "overlay": 154,
   "portrait": 25,
   "woodcut": 13,
   "background": 35
  },
- "count": 306,
+ "count": 437,
  "sprites": [
   {
    "id": "unit.colonists",
    "label": "Colonists",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 100,
+   "sheet": "UNITS",
+   "frame": 0,
    "w": 32,
    "h": 32
   },
@@ -24,8 +25,8 @@
    "id": "unit.soldiers",
    "label": "Soldiers",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 102,
+   "sheet": "UNITS",
+   "frame": 1,
    "w": 32,
    "h": 32
   },
@@ -33,8 +34,8 @@
    "id": "unit.pioneers",
    "label": "Pioneers",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 101,
+   "sheet": "UNITS",
+   "frame": 2,
    "w": 32,
    "h": 32
   },
@@ -42,8 +43,8 @@
    "id": "unit.missionaries",
    "label": "Missionaries",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 105,
+   "sheet": "UNITS",
+   "frame": 3,
    "w": 32,
    "h": 32
   },
@@ -51,8 +52,8 @@
    "id": "unit.dragoons",
    "label": "Dragoons",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 104,
+   "sheet": "UNITS",
+   "frame": 4,
    "w": 32,
    "h": 32
   },
@@ -60,8 +61,8 @@
    "id": "unit.scouts",
    "label": "Scouts",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 103,
+   "sheet": "UNITS",
+   "frame": 5,
    "w": 32,
    "h": 32
   },
@@ -69,8 +70,8 @@
    "id": "unit.regulars",
    "label": "Regulars",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 125,
+   "sheet": "UNITS",
+   "frame": 6,
    "w": 32,
    "h": 32
   },
@@ -78,8 +79,8 @@
    "id": "unit.continental_cavalry",
    "label": "Continental Cavalry",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 129,
+   "sheet": "UNITS",
+   "frame": 7,
    "w": 32,
    "h": 32
   },
@@ -87,8 +88,8 @@
    "id": "unit.cavalry",
    "label": "Cavalry",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 126,
+   "sheet": "UNITS",
+   "frame": 8,
    "w": 32,
    "h": 32
   },
@@ -96,8 +97,8 @@
    "id": "unit.continental_army",
    "label": "Continental Army",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 128,
+   "sheet": "UNITS",
+   "frame": 9,
    "w": 32,
    "h": 32
   },
@@ -105,8 +106,8 @@
    "id": "unit.treasure",
    "label": "Treasure",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 16,
+   "sheet": "UNITS",
+   "frame": 10,
    "w": 32,
    "h": 32
   },
@@ -114,8 +115,8 @@
    "id": "unit.artillery",
    "label": "Artillery",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 9,
+   "sheet": "UNITS",
+   "frame": 11,
    "w": 32,
    "h": 32
   },
@@ -123,8 +124,8 @@
    "id": "unit.wagon_train",
    "label": "Wagon Train",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 8,
+   "sheet": "UNITS",
+   "frame": 12,
    "w": 32,
    "h": 32
   },
@@ -132,8 +133,8 @@
    "id": "unit.caravel",
    "label": "Caravel",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 5,
+   "sheet": "UNITS",
+   "frame": 13,
    "w": 32,
    "h": 32
   },
@@ -141,8 +142,8 @@
    "id": "unit.merchantman",
    "label": "Merchantman",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 6,
+   "sheet": "UNITS",
+   "frame": 14,
    "w": 32,
    "h": 32
   },
@@ -150,8 +151,8 @@
    "id": "unit.galleon",
    "label": "Galleon",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 7,
+   "sheet": "UNITS",
+   "frame": 15,
    "w": 32,
    "h": 32
   },
@@ -159,8 +160,8 @@
    "id": "unit.privateer",
    "label": "Privateer",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 14,
+   "sheet": "UNITS",
+   "frame": 16,
    "w": 32,
    "h": 32
   },
@@ -168,8 +169,8 @@
    "id": "unit.frigate",
    "label": "Frigate",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 15,
+   "sheet": "UNITS",
+   "frame": 17,
    "w": 32,
    "h": 32
   },
@@ -177,8 +178,8 @@
    "id": "unit.man_o_war",
    "label": "Man-O-War",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 127,
+   "sheet": "UNITS",
+   "frame": 18,
    "w": 32,
    "h": 32
   },
@@ -186,8 +187,8 @@
    "id": "unit.braves",
    "label": "Braves",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 109,
+   "sheet": "UNITS",
+   "frame": 19,
    "w": 32,
    "h": 32
   },
@@ -195,8 +196,8 @@
    "id": "unit.armed_braves",
    "label": "Armed Braves",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 110,
+   "sheet": "UNITS",
+   "frame": 20,
    "w": 32,
    "h": 32
   },
@@ -204,8 +205,8 @@
    "id": "unit.mounted_braves",
    "label": "Mounted Braves",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 111,
+   "sheet": "UNITS",
+   "frame": 21,
    "w": 32,
    "h": 32
   },
@@ -213,8 +214,8 @@
    "id": "unit.mounted_warriors",
    "label": "Mounted Warriors",
    "kind": "unit",
-   "sheet": "ICONS",
-   "frame": 112,
+   "sheet": "UNITS",
+   "frame": 22,
    "w": 32,
    "h": 32
   },
@@ -613,6 +614,1185 @@
    "frame": 43,
    "w": 56,
    "h": 48
+  },
+  {
+   "id": "icon.000_icon_0_0x00",
+   "label": "icon 0 (0x00)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 0,
+   "w": 42,
+   "h": 32
+  },
+  {
+   "id": "icon.001_icon_1_0x01",
+   "label": "icon 1 (0x01)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 1,
+   "w": 42,
+   "h": 32
+  },
+  {
+   "id": "icon.002_icon_2_0x02",
+   "label": "icon 2 (0x02)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 2,
+   "w": 42,
+   "h": 32
+  },
+  {
+   "id": "icon.003_icon_3_0x03",
+   "label": "icon 3 (0x03)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 3,
+   "w": 36,
+   "h": 30
+  },
+  {
+   "id": "icon.004_icon_4_0x04",
+   "label": "icon 4 (0x04)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 4,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.005_caravel",
+   "label": "Caravel",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 5,
+   "w": 26,
+   "h": 32
+  },
+  {
+   "id": "icon.006_merchantman",
+   "label": "Merchantman",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 6,
+   "w": 26,
+   "h": 32
+  },
+  {
+   "id": "icon.007_galleon",
+   "label": "Galleon",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 7,
+   "w": 28,
+   "h": 32
+  },
+  {
+   "id": "icon.008_wagon_train",
+   "label": "Wagon Train",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 8,
+   "w": 28,
+   "h": 24
+  },
+  {
+   "id": "icon.009_artillery",
+   "label": "Artillery",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 9,
+   "w": 28,
+   "h": 14
+  },
+  {
+   "id": "icon.010_icon_10_0x0a",
+   "label": "icon 10 (0x0A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 10,
+   "w": 34,
+   "h": 24
+  },
+  {
+   "id": "icon.011_icon_11_0x0b",
+   "label": "icon 11 (0x0B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 11,
+   "w": 34,
+   "h": 22
+  },
+  {
+   "id": "icon.012_icon_12_0x0c",
+   "label": "icon 12 (0x0C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 12,
+   "w": 36,
+   "h": 22
+  },
+  {
+   "id": "icon.013_icon_13_0x0d",
+   "label": "icon 13 (0x0D)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 13,
+   "w": 42,
+   "h": 26
+  },
+  {
+   "id": "icon.014_privateer",
+   "label": "Privateer",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 14,
+   "w": 26,
+   "h": 32
+  },
+  {
+   "id": "icon.015_frigate",
+   "label": "Frigate",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 15,
+   "w": 26,
+   "h": 32
+  },
+  {
+   "id": "icon.016_treasure",
+   "label": "Treasure",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 16,
+   "w": 28,
+   "h": 18
+  },
+  {
+   "id": "icon.017_icon_17_0x11",
+   "label": "icon 17 (0x11)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 17,
+   "w": 18,
+   "h": 18
+  },
+  {
+   "id": "icon.018_icon_18_0x12",
+   "label": "icon 18 (0x12)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 18,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.019_icon_19_0x13",
+   "label": "icon 19 (0x13)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 19,
+   "w": 24,
+   "h": 24
+  },
+  {
+   "id": "icon.020_icon_20_0x14",
+   "label": "icon 20 (0x14)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 20,
+   "w": 12,
+   "h": 12
+  },
+  {
+   "id": "icon.021_icon_21_0x15",
+   "label": "icon 21 (0x15)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 21,
+   "w": 6,
+   "h": 6
+  },
+  {
+   "id": "icon.022_food",
+   "label": "Food",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 22,
+   "w": 15,
+   "h": 30
+  },
+  {
+   "id": "icon.023_sugar",
+   "label": "Sugar",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 23,
+   "w": 24,
+   "h": 36
+  },
+  {
+   "id": "icon.024_tobacco",
+   "label": "Tobacco",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 24,
+   "w": 21,
+   "h": 36
+  },
+  {
+   "id": "icon.025_cotton",
+   "label": "Cotton",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 25,
+   "w": 24,
+   "h": 24
+  },
+  {
+   "id": "icon.026_furs",
+   "label": "Furs",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 26,
+   "w": 27,
+   "h": 30
+  },
+  {
+   "id": "icon.027_lumber",
+   "label": "Lumber",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 27,
+   "w": 30,
+   "h": 15
+  },
+  {
+   "id": "icon.028_ore",
+   "label": "Ore",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 28,
+   "w": 30,
+   "h": 27
+  },
+  {
+   "id": "icon.029_silver",
+   "label": "Silver",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 29,
+   "w": 30,
+   "h": 18
+  },
+  {
+   "id": "icon.030_horses",
+   "label": "Horses",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 30,
+   "w": 39,
+   "h": 36
+  },
+  {
+   "id": "icon.031_rum",
+   "label": "Rum",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 31,
+   "w": 15,
+   "h": 27
+  },
+  {
+   "id": "icon.032_cigars",
+   "label": "Cigars",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 32,
+   "w": 6,
+   "h": 30
+  },
+  {
+   "id": "icon.033_cloth",
+   "label": "Cloth",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 33,
+   "w": 18,
+   "h": 27
+  },
+  {
+   "id": "icon.034_coats",
+   "label": "Coats",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 34,
+   "w": 18,
+   "h": 30
+  },
+  {
+   "id": "icon.035_trade_goods",
+   "label": "Trade Goods",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 35,
+   "w": 21,
+   "h": 18
+  },
+  {
+   "id": "icon.036_tools",
+   "label": "Tools",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 36,
+   "w": 24,
+   "h": 21
+  },
+  {
+   "id": "icon.037_muskets",
+   "label": "Muskets",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 37,
+   "w": 9,
+   "h": 30
+  },
+  {
+   "id": "icon.038_icon_38_0x26",
+   "label": "icon 38 (0x26)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 38,
+   "w": 15,
+   "h": 30
+  },
+  {
+   "id": "icon.039_icon_39_0x27",
+   "label": "icon 39 (0x27)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 39,
+   "w": 24,
+   "h": 36
+  },
+  {
+   "id": "icon.040_icon_40_0x28",
+   "label": "icon 40 (0x28)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 40,
+   "w": 21,
+   "h": 36
+  },
+  {
+   "id": "icon.041_icon_41_0x29",
+   "label": "icon 41 (0x29)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 41,
+   "w": 24,
+   "h": 24
+  },
+  {
+   "id": "icon.042_icon_42_0x2a",
+   "label": "icon 42 (0x2A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 42,
+   "w": 27,
+   "h": 33
+  },
+  {
+   "id": "icon.043_icon_43_0x2b",
+   "label": "icon 43 (0x2B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 43,
+   "w": 30,
+   "h": 15
+  },
+  {
+   "id": "icon.044_icon_44_0x2c",
+   "label": "icon 44 (0x2C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 44,
+   "w": 30,
+   "h": 27
+  },
+  {
+   "id": "icon.045_icon_45_0x2d",
+   "label": "icon 45 (0x2D)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 45,
+   "w": 30,
+   "h": 18
+  },
+  {
+   "id": "icon.046_icon_46_0x2e",
+   "label": "icon 46 (0x2E)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 46,
+   "w": 39,
+   "h": 36
+  },
+  {
+   "id": "icon.047_icon_47_0x2f",
+   "label": "icon 47 (0x2F)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 47,
+   "w": 15,
+   "h": 27
+  },
+  {
+   "id": "icon.048_icon_48_0x30",
+   "label": "icon 48 (0x30)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 48,
+   "w": 6,
+   "h": 30
+  },
+  {
+   "id": "icon.049_icon_49_0x31",
+   "label": "icon 49 (0x31)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 49,
+   "w": 18,
+   "h": 27
+  },
+  {
+   "id": "icon.050_icon_50_0x32",
+   "label": "icon 50 (0x32)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 50,
+   "w": 18,
+   "h": 30
+  },
+  {
+   "id": "icon.051_icon_51_0x33",
+   "label": "icon 51 (0x33)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 51,
+   "w": 21,
+   "h": 18
+  },
+  {
+   "id": "icon.052_icon_52_0x34",
+   "label": "icon 52 (0x34)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 52,
+   "w": 24,
+   "h": 21
+  },
+  {
+   "id": "icon.053_icon_53_0x35",
+   "label": "icon 53 (0x35)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 53,
+   "w": 9,
+   "h": 30
+  },
+  {
+   "id": "icon.054_hammers_production",
+   "label": "Hammers (production)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 54,
+   "w": 24,
+   "h": 30
+  },
+  {
+   "id": "icon.055_icon_55_0x37",
+   "label": "icon 55 (0x37)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 55,
+   "w": 24,
+   "h": 24
+  },
+  {
+   "id": "icon.056_icon_56_0x38",
+   "label": "icon 56 (0x38)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 56,
+   "w": 24,
+   "h": 33
+  },
+  {
+   "id": "icon.057_icon_57_0x39",
+   "label": "icon 57 (0x39)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 57,
+   "w": 21,
+   "h": 36
+  },
+  {
+   "id": "icon.058_icon_58_0x3a",
+   "label": "icon 58 (0x3A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 58,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.059_icon_59_0x3b",
+   "label": "icon 59 (0x3B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 59,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.060_icon_60_0x3c",
+   "label": "icon 60 (0x3C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 60,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.061_icon_61_0x3d",
+   "label": "icon 61 (0x3D)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 61,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.062_icon_62_0x3e",
+   "label": "icon 62 (0x3E)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 62,
+   "w": 18,
+   "h": 21
+  },
+  {
+   "id": "icon.063_icon_63_0x3f",
+   "label": "icon 63 (0x3F)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 63,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.064_icon_64_0x40",
+   "label": "icon 64 (0x40)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 64,
+   "w": 22,
+   "h": 22
+  },
+  {
+   "id": "icon.065_icon_65_0x41",
+   "label": "icon 65 (0x41)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 65,
+   "w": 22,
+   "h": 10
+  },
+  {
+   "id": "icon.066_icon_66_0x42",
+   "label": "icon 66 (0x42)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 66,
+   "w": 12,
+   "h": 30
+  },
+  {
+   "id": "icon.067_icon_67_0x43",
+   "label": "icon 67 (0x43)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 67,
+   "w": 28,
+   "h": 26
+  },
+  {
+   "id": "icon.068_icon_68_0x44",
+   "label": "icon 68 (0x44)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 68,
+   "w": 28,
+   "h": 26
+  },
+  {
+   "id": "icon.069_icon_69_0x45",
+   "label": "icon 69 (0x45)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 69,
+   "w": 28,
+   "h": 26
+  },
+  {
+   "id": "icon.070_icon_70_0x46",
+   "label": "icon 70 (0x46)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 70,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.071_icon_71_0x47",
+   "label": "icon 71 (0x47)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 71,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.072_icon_72_0x48",
+   "label": "icon 72 (0x48)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 72,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.073_icon_73_0x49",
+   "label": "icon 73 (0x49)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 73,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.074_icon_74_0x4a",
+   "label": "icon 74 (0x4A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 74,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.075_icon_75_0x4b",
+   "label": "icon 75 (0x4B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 75,
+   "w": 26,
+   "h": 30
+  },
+  {
+   "id": "icon.076_icon_76_0x4c",
+   "label": "icon 76 (0x4C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 76,
+   "w": 28,
+   "h": 30
+  },
+  {
+   "id": "icon.077_icon_77_0x4d",
+   "label": "icon 77 (0x4D)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 77,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.078_icon_78_0x4e",
+   "label": "icon 78 (0x4E)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 78,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.079_icon_79_0x4f",
+   "label": "icon 79 (0x4F)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 79,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.080_icon_80_0x50",
+   "label": "icon 80 (0x50)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 80,
+   "w": 1,
+   "h": 1
+  },
+  {
+   "id": "icon.081_working_colonist",
+   "label": "Working colonist",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 81,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.082_icon_82_0x52",
+   "label": "icon 82 (0x52)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 82,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.083_icon_83_0x53",
+   "label": "icon 83 (0x53)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 83,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.084_icon_84_0x54",
+   "label": "icon 84 (0x54)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 84,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.085_icon_85_0x55",
+   "label": "icon 85 (0x55)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 85,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.086_icon_86_0x56",
+   "label": "icon 86 (0x56)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 86,
+   "w": 16,
+   "h": 30
+  },
+  {
+   "id": "icon.087_icon_87_0x57",
+   "label": "icon 87 (0x57)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 87,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.088_icon_88_0x58",
+   "label": "icon 88 (0x58)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 88,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.089_icon_89_0x59",
+   "label": "icon 89 (0x59)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 89,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.090_icon_90_0x5a",
+   "label": "icon 90 (0x5A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 90,
+   "w": 12,
+   "h": 26
+  },
+  {
+   "id": "icon.091_icon_91_0x5b",
+   "label": "icon 91 (0x5B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 91,
+   "w": 12,
+   "h": 26
+  },
+  {
+   "id": "icon.092_icon_92_0x5c",
+   "label": "icon 92 (0x5C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 92,
+   "w": 12,
+   "h": 26
+  },
+  {
+   "id": "icon.093_icon_93_0x5d",
+   "label": "icon 93 (0x5D)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 93,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.094_icon_94_0x5e",
+   "label": "icon 94 (0x5E)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 94,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.095_icon_95_0x5f",
+   "label": "icon 95 (0x5F)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 95,
+   "w": 16,
+   "h": 26
+  },
+  {
+   "id": "icon.096_icon_96_0x60",
+   "label": "icon 96 (0x60)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 96,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.097_icon_97_0x61",
+   "label": "icon 97 (0x61)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 97,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.098_icon_98_0x62",
+   "label": "icon 98 (0x62)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 98,
+   "w": 12,
+   "h": 26
+  },
+  {
+   "id": "icon.099_icon_99_0x63",
+   "label": "icon 99 (0x63)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 99,
+   "w": 14,
+   "h": 26
+  },
+  {
+   "id": "icon.100_colonists",
+   "label": "Colonists",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 100,
+   "w": 12,
+   "h": 28
+  },
+  {
+   "id": "icon.101_pioneers",
+   "label": "Pioneers",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 101,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.102_soldiers",
+   "label": "Soldiers",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 102,
+   "w": 16,
+   "h": 28
+  },
+  {
+   "id": "icon.103_scouts",
+   "label": "Scouts",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 103,
+   "w": 26,
+   "h": 30
+  },
+  {
+   "id": "icon.104_dragoons",
+   "label": "Dragoons",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 104,
+   "w": 28,
+   "h": 30
+  },
+  {
+   "id": "icon.105_missionaries",
+   "label": "Missionaries",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 105,
+   "w": 14,
+   "h": 28
+  },
+  {
+   "id": "icon.106_icon_106_0x6a",
+   "label": "icon 106 (0x6A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 106,
+   "w": 12,
+   "h": 26
+  },
+  {
+   "id": "icon.107_icon_107_0x6b",
+   "label": "icon 107 (0x6B)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 107,
+   "w": 16,
+   "h": 24
+  },
+  {
+   "id": "icon.108_icon_108_0x6c",
+   "label": "icon 108 (0x6C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 108,
+   "w": 16,
+   "h": 32
+  },
+  {
+   "id": "icon.109_braves",
+   "label": "Braves",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 109,
+   "w": 12,
+   "h": 30
+  },
+  {
+   "id": "icon.110_armed_braves",
+   "label": "Armed Braves",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 110,
+   "w": 16,
+   "h": 30
+  },
+  {
+   "id": "icon.111_mounted_braves",
+   "label": "Mounted Braves",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 111,
+   "w": 26,
+   "h": 32
+  },
+  {
+   "id": "icon.112_mounted_warriors",
+   "label": "Mounted Warriors",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 112,
+   "w": 24,
+   "h": 32
+  },
+  {
+   "id": "icon.113_face_0_unverified",
+   "label": "face 0 (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 113,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.114_face_1_unverified",
+   "label": "face 1 (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 114,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.115_face_2_unverified",
+   "label": "face 2 (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 115,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.116_face_3_unverified",
+   "label": "face 3 (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 116,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.117_face_4_unverified",
+   "label": "face 4 (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 117,
+   "w": 32,
+   "h": 32
+  },
+  {
+   "id": "icon.118_icon_118_0x76",
+   "label": "icon 118 (0x76)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 118,
+   "w": 15,
+   "h": 12
+  },
+  {
+   "id": "icon.119_icon_119_0x77",
+   "label": "icon 119 (0x77)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 119,
+   "w": 15,
+   "h": 12
+  },
+  {
+   "id": "icon.120_icon_120_0x78",
+   "label": "icon 120 (0x78)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 120,
+   "w": 15,
+   "h": 12
+  },
+  {
+   "id": "icon.121_icon_121_0x79",
+   "label": "icon 121 (0x79)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 121,
+   "w": 15,
+   "h": 12
+  },
+  {
+   "id": "icon.122_icon_122_0x7a",
+   "label": "icon 122 (0x7A)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 122,
+   "w": 30,
+   "h": 36
+  },
+  {
+   "id": "icon.123_us_flag_unverified",
+   "label": "US flag (unverified)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 123,
+   "w": 27,
+   "h": 27
+  },
+  {
+   "id": "icon.124_icon_124_0x7c",
+   "label": "icon 124 (0x7C)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 124,
+   "w": 39,
+   "h": 30
+  },
+  {
+   "id": "icon.125_regulars",
+   "label": "Regulars",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 125,
+   "w": 16,
+   "h": 30
+  },
+  {
+   "id": "icon.126_cavalry",
+   "label": "Cavalry",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 126,
+   "w": 28,
+   "h": 32
+  },
+  {
+   "id": "icon.127_man_o_war",
+   "label": "Man-O-War",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 127,
+   "w": 28,
+   "h": 32
+  },
+  {
+   "id": "icon.128_continental_army",
+   "label": "Continental Army",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 128,
+   "w": 16,
+   "h": 30
+  },
+  {
+   "id": "icon.129_continental_cavalry",
+   "label": "Continental Cavalry",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 129,
+   "w": 28,
+   "h": 32
+  },
+  {
+   "id": "icon.130_icon_130_0x82",
+   "label": "icon 130 (0x82)",
+   "kind": "icon",
+   "sheet": "ICONS",
+   "frame": 130,
+   "w": 15,
+   "h": 12
   },
   {
    "id": "terrain.tundra",

@@ -1,0 +1,924 @@
+{
+ "_note": "all 131 ICONS.SS frames at native size, sliced from atlas_ICONS.png by tools/slice_sprites.py; frame = ssdec/png index (= EXE sprite id - 1). Labels only where verified (see slice_sprites.py docstring); unknowns are literal 'icon N (0xHH)'. x/w/h = the frame's rect in icons.png.",
+ "count": 131,
+ "height": 36,
+ "frames": [
+  {
+   "frame": 0,
+   "label": "icon 0 (0x00)",
+   "w": 42,
+   "h": 32,
+   "x": 0
+  },
+  {
+   "frame": 1,
+   "label": "icon 1 (0x01)",
+   "w": 42,
+   "h": 32,
+   "x": 42
+  },
+  {
+   "frame": 2,
+   "label": "icon 2 (0x02)",
+   "w": 42,
+   "h": 32,
+   "x": 84
+  },
+  {
+   "frame": 3,
+   "label": "icon 3 (0x03)",
+   "w": 36,
+   "h": 30,
+   "x": 126
+  },
+  {
+   "frame": 4,
+   "label": "icon 4 (0x04)",
+   "w": 1,
+   "h": 1,
+   "x": 162
+  },
+  {
+   "frame": 5,
+   "label": "Caravel",
+   "w": 26,
+   "h": 32,
+   "x": 163
+  },
+  {
+   "frame": 6,
+   "label": "Merchantman",
+   "w": 26,
+   "h": 32,
+   "x": 189
+  },
+  {
+   "frame": 7,
+   "label": "Galleon",
+   "w": 28,
+   "h": 32,
+   "x": 215
+  },
+  {
+   "frame": 8,
+   "label": "Wagon Train",
+   "w": 28,
+   "h": 24,
+   "x": 243
+  },
+  {
+   "frame": 9,
+   "label": "Artillery",
+   "w": 28,
+   "h": 14,
+   "x": 271
+  },
+  {
+   "frame": 10,
+   "label": "icon 10 (0x0A)",
+   "w": 34,
+   "h": 24,
+   "x": 299
+  },
+  {
+   "frame": 11,
+   "label": "icon 11 (0x0B)",
+   "w": 34,
+   "h": 22,
+   "x": 333
+  },
+  {
+   "frame": 12,
+   "label": "icon 12 (0x0C)",
+   "w": 36,
+   "h": 22,
+   "x": 367
+  },
+  {
+   "frame": 13,
+   "label": "icon 13 (0x0D)",
+   "w": 42,
+   "h": 26,
+   "x": 403
+  },
+  {
+   "frame": 14,
+   "label": "Privateer",
+   "w": 26,
+   "h": 32,
+   "x": 445
+  },
+  {
+   "frame": 15,
+   "label": "Frigate",
+   "w": 26,
+   "h": 32,
+   "x": 471
+  },
+  {
+   "frame": 16,
+   "label": "Treasure",
+   "w": 28,
+   "h": 18,
+   "x": 497
+  },
+  {
+   "frame": 17,
+   "label": "icon 17 (0x11)",
+   "w": 18,
+   "h": 18,
+   "x": 525
+  },
+  {
+   "frame": 18,
+   "label": "icon 18 (0x12)",
+   "w": 32,
+   "h": 32,
+   "x": 543
+  },
+  {
+   "frame": 19,
+   "label": "icon 19 (0x13)",
+   "w": 24,
+   "h": 24,
+   "x": 575
+  },
+  {
+   "frame": 20,
+   "label": "icon 20 (0x14)",
+   "w": 12,
+   "h": 12,
+   "x": 599
+  },
+  {
+   "frame": 21,
+   "label": "icon 21 (0x15)",
+   "w": 6,
+   "h": 6,
+   "x": 611
+  },
+  {
+   "frame": 22,
+   "label": "Food",
+   "w": 15,
+   "h": 30,
+   "x": 617
+  },
+  {
+   "frame": 23,
+   "label": "Sugar",
+   "w": 24,
+   "h": 36,
+   "x": 632
+  },
+  {
+   "frame": 24,
+   "label": "Tobacco",
+   "w": 21,
+   "h": 36,
+   "x": 656
+  },
+  {
+   "frame": 25,
+   "label": "Cotton",
+   "w": 24,
+   "h": 24,
+   "x": 677
+  },
+  {
+   "frame": 26,
+   "label": "Furs",
+   "w": 27,
+   "h": 30,
+   "x": 701
+  },
+  {
+   "frame": 27,
+   "label": "Lumber",
+   "w": 30,
+   "h": 15,
+   "x": 728
+  },
+  {
+   "frame": 28,
+   "label": "Ore",
+   "w": 30,
+   "h": 27,
+   "x": 758
+  },
+  {
+   "frame": 29,
+   "label": "Silver",
+   "w": 30,
+   "h": 18,
+   "x": 788
+  },
+  {
+   "frame": 30,
+   "label": "Horses",
+   "w": 39,
+   "h": 36,
+   "x": 818
+  },
+  {
+   "frame": 31,
+   "label": "Rum",
+   "w": 15,
+   "h": 27,
+   "x": 857
+  },
+  {
+   "frame": 32,
+   "label": "Cigars",
+   "w": 6,
+   "h": 30,
+   "x": 872
+  },
+  {
+   "frame": 33,
+   "label": "Cloth",
+   "w": 18,
+   "h": 27,
+   "x": 878
+  },
+  {
+   "frame": 34,
+   "label": "Coats",
+   "w": 18,
+   "h": 30,
+   "x": 896
+  },
+  {
+   "frame": 35,
+   "label": "Trade Goods",
+   "w": 21,
+   "h": 18,
+   "x": 914
+  },
+  {
+   "frame": 36,
+   "label": "Tools",
+   "w": 24,
+   "h": 21,
+   "x": 935
+  },
+  {
+   "frame": 37,
+   "label": "Muskets",
+   "w": 9,
+   "h": 30,
+   "x": 959
+  },
+  {
+   "frame": 38,
+   "label": "icon 38 (0x26)",
+   "w": 15,
+   "h": 30,
+   "x": 968
+  },
+  {
+   "frame": 39,
+   "label": "icon 39 (0x27)",
+   "w": 24,
+   "h": 36,
+   "x": 983
+  },
+  {
+   "frame": 40,
+   "label": "icon 40 (0x28)",
+   "w": 21,
+   "h": 36,
+   "x": 1007
+  },
+  {
+   "frame": 41,
+   "label": "icon 41 (0x29)",
+   "w": 24,
+   "h": 24,
+   "x": 1028
+  },
+  {
+   "frame": 42,
+   "label": "icon 42 (0x2A)",
+   "w": 27,
+   "h": 33,
+   "x": 1052
+  },
+  {
+   "frame": 43,
+   "label": "icon 43 (0x2B)",
+   "w": 30,
+   "h": 15,
+   "x": 1079
+  },
+  {
+   "frame": 44,
+   "label": "icon 44 (0x2C)",
+   "w": 30,
+   "h": 27,
+   "x": 1109
+  },
+  {
+   "frame": 45,
+   "label": "icon 45 (0x2D)",
+   "w": 30,
+   "h": 18,
+   "x": 1139
+  },
+  {
+   "frame": 46,
+   "label": "icon 46 (0x2E)",
+   "w": 39,
+   "h": 36,
+   "x": 1169
+  },
+  {
+   "frame": 47,
+   "label": "icon 47 (0x2F)",
+   "w": 15,
+   "h": 27,
+   "x": 1208
+  },
+  {
+   "frame": 48,
+   "label": "icon 48 (0x30)",
+   "w": 6,
+   "h": 30,
+   "x": 1223
+  },
+  {
+   "frame": 49,
+   "label": "icon 49 (0x31)",
+   "w": 18,
+   "h": 27,
+   "x": 1229
+  },
+  {
+   "frame": 50,
+   "label": "icon 50 (0x32)",
+   "w": 18,
+   "h": 30,
+   "x": 1247
+  },
+  {
+   "frame": 51,
+   "label": "icon 51 (0x33)",
+   "w": 21,
+   "h": 18,
+   "x": 1265
+  },
+  {
+   "frame": 52,
+   "label": "icon 52 (0x34)",
+   "w": 24,
+   "h": 21,
+   "x": 1286
+  },
+  {
+   "frame": 53,
+   "label": "icon 53 (0x35)",
+   "w": 9,
+   "h": 30,
+   "x": 1310
+  },
+  {
+   "frame": 54,
+   "label": "Hammers (production)",
+   "w": 24,
+   "h": 30,
+   "x": 1319
+  },
+  {
+   "frame": 55,
+   "label": "icon 55 (0x37)",
+   "w": 24,
+   "h": 24,
+   "x": 1343
+  },
+  {
+   "frame": 56,
+   "label": "icon 56 (0x38)",
+   "w": 24,
+   "h": 33,
+   "x": 1367
+  },
+  {
+   "frame": 57,
+   "label": "icon 57 (0x39)",
+   "w": 21,
+   "h": 36,
+   "x": 1391
+  },
+  {
+   "frame": 58,
+   "label": "icon 58 (0x3A)",
+   "w": 12,
+   "h": 28,
+   "x": 1412
+  },
+  {
+   "frame": 59,
+   "label": "icon 59 (0x3B)",
+   "w": 12,
+   "h": 28,
+   "x": 1424
+  },
+  {
+   "frame": 60,
+   "label": "icon 60 (0x3C)",
+   "w": 12,
+   "h": 28,
+   "x": 1436
+  },
+  {
+   "frame": 61,
+   "label": "icon 61 (0x3D)",
+   "w": 12,
+   "h": 28,
+   "x": 1448
+  },
+  {
+   "frame": 62,
+   "label": "icon 62 (0x3E)",
+   "w": 18,
+   "h": 21,
+   "x": 1460
+  },
+  {
+   "frame": 63,
+   "label": "icon 63 (0x3F)",
+   "w": 32,
+   "h": 32,
+   "x": 1478
+  },
+  {
+   "frame": 64,
+   "label": "icon 64 (0x40)",
+   "w": 22,
+   "h": 22,
+   "x": 1510
+  },
+  {
+   "frame": 65,
+   "label": "icon 65 (0x41)",
+   "w": 22,
+   "h": 10,
+   "x": 1532
+  },
+  {
+   "frame": 66,
+   "label": "icon 66 (0x42)",
+   "w": 12,
+   "h": 30,
+   "x": 1554
+  },
+  {
+   "frame": 67,
+   "label": "icon 67 (0x43)",
+   "w": 28,
+   "h": 26,
+   "x": 1566
+  },
+  {
+   "frame": 68,
+   "label": "icon 68 (0x44)",
+   "w": 28,
+   "h": 26,
+   "x": 1594
+  },
+  {
+   "frame": 69,
+   "label": "icon 69 (0x45)",
+   "w": 28,
+   "h": 26,
+   "x": 1622
+  },
+  {
+   "frame": 70,
+   "label": "icon 70 (0x46)",
+   "w": 1,
+   "h": 1,
+   "x": 1650
+  },
+  {
+   "frame": 71,
+   "label": "icon 71 (0x47)",
+   "w": 1,
+   "h": 1,
+   "x": 1651
+  },
+  {
+   "frame": 72,
+   "label": "icon 72 (0x48)",
+   "w": 1,
+   "h": 1,
+   "x": 1652
+  },
+  {
+   "frame": 73,
+   "label": "icon 73 (0x49)",
+   "w": 14,
+   "h": 28,
+   "x": 1653
+  },
+  {
+   "frame": 74,
+   "label": "icon 74 (0x4A)",
+   "w": 16,
+   "h": 28,
+   "x": 1667
+  },
+  {
+   "frame": 75,
+   "label": "icon 75 (0x4B)",
+   "w": 26,
+   "h": 30,
+   "x": 1683
+  },
+  {
+   "frame": 76,
+   "label": "icon 76 (0x4C)",
+   "w": 28,
+   "h": 30,
+   "x": 1709
+  },
+  {
+   "frame": 77,
+   "label": "icon 77 (0x4D)",
+   "w": 14,
+   "h": 28,
+   "x": 1737
+  },
+  {
+   "frame": 78,
+   "label": "icon 78 (0x4E)",
+   "w": 1,
+   "h": 1,
+   "x": 1751
+  },
+  {
+   "frame": 79,
+   "label": "icon 79 (0x4F)",
+   "w": 1,
+   "h": 1,
+   "x": 1752
+  },
+  {
+   "frame": 80,
+   "label": "icon 80 (0x50)",
+   "w": 1,
+   "h": 1,
+   "x": 1753
+  },
+  {
+   "frame": 81,
+   "label": "Working colonist",
+   "w": 16,
+   "h": 28,
+   "x": 1754
+  },
+  {
+   "frame": 82,
+   "label": "icon 82 (0x52)",
+   "w": 12,
+   "h": 28,
+   "x": 1770
+  },
+  {
+   "frame": 83,
+   "label": "icon 83 (0x53)",
+   "w": 12,
+   "h": 28,
+   "x": 1782
+  },
+  {
+   "frame": 84,
+   "label": "icon 84 (0x54)",
+   "w": 12,
+   "h": 28,
+   "x": 1794
+  },
+  {
+   "frame": 85,
+   "label": "icon 85 (0x55)",
+   "w": 16,
+   "h": 28,
+   "x": 1806
+  },
+  {
+   "frame": 86,
+   "label": "icon 86 (0x56)",
+   "w": 16,
+   "h": 30,
+   "x": 1822
+  },
+  {
+   "frame": 87,
+   "label": "icon 87 (0x57)",
+   "w": 16,
+   "h": 28,
+   "x": 1838
+  },
+  {
+   "frame": 88,
+   "label": "icon 88 (0x58)",
+   "w": 16,
+   "h": 28,
+   "x": 1854
+  },
+  {
+   "frame": 89,
+   "label": "icon 89 (0x59)",
+   "w": 16,
+   "h": 28,
+   "x": 1870
+  },
+  {
+   "frame": 90,
+   "label": "icon 90 (0x5A)",
+   "w": 12,
+   "h": 26,
+   "x": 1886
+  },
+  {
+   "frame": 91,
+   "label": "icon 91 (0x5B)",
+   "w": 12,
+   "h": 26,
+   "x": 1898
+  },
+  {
+   "frame": 92,
+   "label": "icon 92 (0x5C)",
+   "w": 12,
+   "h": 26,
+   "x": 1910
+  },
+  {
+   "frame": 93,
+   "label": "icon 93 (0x5D)",
+   "w": 16,
+   "h": 28,
+   "x": 1922
+  },
+  {
+   "frame": 94,
+   "label": "icon 94 (0x5E)",
+   "w": 16,
+   "h": 28,
+   "x": 1938
+  },
+  {
+   "frame": 95,
+   "label": "icon 95 (0x5F)",
+   "w": 16,
+   "h": 26,
+   "x": 1954
+  },
+  {
+   "frame": 96,
+   "label": "icon 96 (0x60)",
+   "w": 14,
+   "h": 28,
+   "x": 1970
+  },
+  {
+   "frame": 97,
+   "label": "icon 97 (0x61)",
+   "w": 14,
+   "h": 28,
+   "x": 1984
+  },
+  {
+   "frame": 98,
+   "label": "icon 98 (0x62)",
+   "w": 12,
+   "h": 26,
+   "x": 1998
+  },
+  {
+   "frame": 99,
+   "label": "icon 99 (0x63)",
+   "w": 14,
+   "h": 26,
+   "x": 2010
+  },
+  {
+   "frame": 100,
+   "label": "Colonists",
+   "w": 12,
+   "h": 28,
+   "x": 2024
+  },
+  {
+   "frame": 101,
+   "label": "Pioneers",
+   "w": 14,
+   "h": 28,
+   "x": 2036
+  },
+  {
+   "frame": 102,
+   "label": "Soldiers",
+   "w": 16,
+   "h": 28,
+   "x": 2050
+  },
+  {
+   "frame": 103,
+   "label": "Scouts",
+   "w": 26,
+   "h": 30,
+   "x": 2066
+  },
+  {
+   "frame": 104,
+   "label": "Dragoons",
+   "w": 28,
+   "h": 30,
+   "x": 2092
+  },
+  {
+   "frame": 105,
+   "label": "Missionaries",
+   "w": 14,
+   "h": 28,
+   "x": 2120
+  },
+  {
+   "frame": 106,
+   "label": "icon 106 (0x6A)",
+   "w": 12,
+   "h": 26,
+   "x": 2134
+  },
+  {
+   "frame": 107,
+   "label": "icon 107 (0x6B)",
+   "w": 16,
+   "h": 24,
+   "x": 2146
+  },
+  {
+   "frame": 108,
+   "label": "icon 108 (0x6C)",
+   "w": 16,
+   "h": 32,
+   "x": 2162
+  },
+  {
+   "frame": 109,
+   "label": "Braves",
+   "w": 12,
+   "h": 30,
+   "x": 2178
+  },
+  {
+   "frame": 110,
+   "label": "Armed Braves",
+   "w": 16,
+   "h": 30,
+   "x": 2190
+  },
+  {
+   "frame": 111,
+   "label": "Mounted Braves",
+   "w": 26,
+   "h": 32,
+   "x": 2206
+  },
+  {
+   "frame": 112,
+   "label": "Mounted Warriors",
+   "w": 24,
+   "h": 32,
+   "x": 2232
+  },
+  {
+   "frame": 113,
+   "label": "face 0 (unverified)",
+   "w": 32,
+   "h": 32,
+   "x": 2256
+  },
+  {
+   "frame": 114,
+   "label": "face 1 (unverified)",
+   "w": 32,
+   "h": 32,
+   "x": 2288
+  },
+  {
+   "frame": 115,
+   "label": "face 2 (unverified)",
+   "w": 32,
+   "h": 32,
+   "x": 2320
+  },
+  {
+   "frame": 116,
+   "label": "face 3 (unverified)",
+   "w": 32,
+   "h": 32,
+   "x": 2352
+  },
+  {
+   "frame": 117,
+   "label": "face 4 (unverified)",
+   "w": 32,
+   "h": 32,
+   "x": 2384
+  },
+  {
+   "frame": 118,
+   "label": "icon 118 (0x76)",
+   "w": 15,
+   "h": 12,
+   "x": 2416
+  },
+  {
+   "frame": 119,
+   "label": "icon 119 (0x77)",
+   "w": 15,
+   "h": 12,
+   "x": 2431
+  },
+  {
+   "frame": 120,
+   "label": "icon 120 (0x78)",
+   "w": 15,
+   "h": 12,
+   "x": 2446
+  },
+  {
+   "frame": 121,
+   "label": "icon 121 (0x79)",
+   "w": 15,
+   "h": 12,
+   "x": 2461
+  },
+  {
+   "frame": 122,
+   "label": "icon 122 (0x7A)",
+   "w": 30,
+   "h": 36,
+   "x": 2476
+  },
+  {
+   "frame": 123,
+   "label": "US flag (unverified)",
+   "w": 27,
+   "h": 27,
+   "x": 2506
+  },
+  {
+   "frame": 124,
+   "label": "icon 124 (0x7C)",
+   "w": 39,
+   "h": 30,
+   "x": 2533
+  },
+  {
+   "frame": 125,
+   "label": "Regulars",
+   "w": 16,
+   "h": 30,
+   "x": 2572
+  },
+  {
+   "frame": 126,
+   "label": "Cavalry",
+   "w": 28,
+   "h": 32,
+   "x": 2588
+  },
+  {
+   "frame": 127,
+   "label": "Man-O-War",
+   "w": 28,
+   "h": 32,
+   "x": 2616
+  },
+  {
+   "frame": 128,
+   "label": "Continental Army",
+   "w": 16,
+   "h": 30,
+   "x": 2644
+  },
+  {
+   "frame": 129,
+   "label": "Continental Cavalry",
+   "w": 28,
+   "h": 32,
+   "x": 2660
+  },
+  {
+   "frame": 130,
+   "label": "icon 130 (0x82)",
+   "w": 15,
+   "h": 12,
+   "x": 2688
+  }
+ ]
+}
