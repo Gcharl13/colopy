@@ -785,6 +785,23 @@ static void history_snapshot() {
     if (g_history.size() > 400) g_history.erase(g_history.begin());
 }
 
+// Turn notices: late-game turn-loop events (Spanish Succession, Tory uprisings) surface here so
+// the /api/game/turn route can present them to the player alongside the OnTurnStart event graphs.
+static std::vector<std::string> g_turn_notices;
+
+// Tory-militia land strength: Crown-loyalist land units (owner != rebel power 0) that arm during
+// the War of Independence and fight ALONGSIDE the King's expeditionary force against the rebels.
+static long tory_militia_strength() {
+    long str = 0;
+    for (const Unit& u : g_world.units) {
+        if (!u.alive || u.owner == 0) continue;         // rebel = power 0; loyalist militia are the rest
+        const UnitStats& st = unit_stats(u.type);
+        if (st.move_class == 99) continue;              // ships hold no ground
+        str += st.attack + st.defense;
+    }
+    return str;
+}
+
 // Rebel land strength: player land-combat units (attack+defense) + a per-colony defensive bump.
 static long rebel_strength(int* weakest_unit = nullptr) {
     long str = 0; int weakest = -1; long weakest_str = 0;
@@ -811,7 +828,8 @@ static void war_resolution_step() {
     if (!g_engine_extra.woi_declared) return;
     long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
     if (ref_total <= 0 || g_world.colonies.empty()) return;   // already decided; endgame_json reports it
-    int weakest = -1; long reb = rebel_strength(&weakest), king = ref_land_strength();
+    int weakest = -1; long reb = rebel_strength(&weakest);
+    long king = ref_land_strength() + tory_militia_strength();   // REF + any risen Tory militia
     long total = reb + king; if (total <= 0) return;
     if (game_rng(1, (int)total) <= reb) {               // rebels repel the assault -> REF attrition
         int loss = game_rng(1, 4);
@@ -827,6 +845,97 @@ static void war_resolution_step() {
     }
 }
 
+// Nation display name for a power slot (@NATIONALITY, falling back to @COUNTRY / "power N").
+static std::string nation_name(int p) {
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    forge::JsonValue v = forge::resolve_binding("@NATIONALITY[" + std::to_string(p) + "].name", cx);
+    if (v.is_string() && !v.str.empty()) return v.str;
+    v = forge::resolve_binding("@COUNTRY[" + std::to_string(p) + "].name", cx);
+    return (v.is_string() && !v.str.empty()) ? v.str : ("power " + std::to_string(p));
+}
+
+// Per-power strength score (spec/systems/spanish_succession.md §2): rank powers by
+// 3*mil + 2*colony_count + 1*econ (colony_count is live; mil/econ are the editable proxy stats
+// standing in for the undecoded 0x9418/0x9410 arrays).
+static long power_score(int p) {
+    long nc = 0; for (const auto& c : g_world.colonies) if (c.owner_power == p) ++nc;
+    return 3L * g_engine_extra.power_mil[p] + 2L * nc + g_engine_extra.power_econ[p];
+}
+
+// War of the Spanish Succession (spec/systems/spanish_succession.md): a scripted historical event --
+// the Treaty of Utrecht (1713) ends the European war and a war-ravaged rival cedes its New-World
+// possessions to another power. Fires ONCE, pre-independence, single-player: the weakest eligible AI
+// (powers 1..3) is removed and its colonies/units pass to the strongest surviving power; the removed
+// power is thereafter "(Withdrawn from New World)". Deterministic year gate -- the byte-verified
+// dispatcher reads no RNG (spec §3); the once-flag is seceded_power ([0x53D2]).
+static void spanish_succession_step() {
+    if (g_engine_extra.seceded_power >= 0) return;      // already happened (once-flag [0x53D2] set)
+    if (g_engine_extra.woi_declared) return;            // pre-revolution only ([0x5382] gate, spec §3)
+    if (g_game.year < 1713) return;                     // Treaty of Utrecht -- the scripted trigger year
+    int ceder = -1; long cw = 0;                        // weakest of the AI powers 1..3 cedes
+    for (int p = 1; p < 4; ++p) { long s = power_score(p);
+        if (ceder < 0 || s < cw) { cw = s; ceder = p; } }
+    if (ceder < 0) return;
+    int benef = -1; long bw = 0;                        // strongest of the remaining powers receives
+    for (int p = 0; p < 4; ++p) { if (p == ceder) continue; long s = power_score(p);
+        if (benef < 0 || s > bw) { bw = s; benef = p; } }
+    if (benef < 0) return;
+    int moved_c = 0, moved_u = 0;
+    for (auto& c : g_world.colonies) if (c.owner_power == ceder) { c.owner_power = benef; ++moved_c; }
+    for (auto& u : g_world.units)    if (u.alive && u.owner == ceder) { u.owner = benef; ++moved_u; }
+    g_engine_extra.seceded_power = ceder;               // now shown "(Withdrawn from New World)"
+    g_turn_notices.push_back(
+        "War of the Spanish Succession ends in Europe! " + nation_name(ceder) +
+        ", ravaged by war, cedes its New World possessions to the " + nation_name(benef) +
+        " (Treaty of Utrecht, " + std::to_string(g_game.year) + "; " +
+        std::to_string(moved_c) + " colonies, " + std::to_string(moved_u) + " units transferred).");
+}
+
+// Tory uprising during the War of Independence (spec/systems/tory_uprising.md, func_03CAC6): each WoI
+// turn, with probability (diff+1)/(diff+2), Crown-loyal colonists rise in the rebel colony with the
+// highest Tory strength = pop*2*(100-SoL%)/100 + diff + 1, arming Tory Militia (Soldiers, some promoted
+// to Dragoons) on the free tiles adjacent to it. Latched per colony so it can't re-fire; suppressed
+// silently (no latch) if no adjacent tile is free.
+static void tory_uprising_step() {
+    if (!g_engine_extra.woi_declared) return;
+    int diff = g_game.difficulty;
+    if (game_rng(0, diff + 1) == 0) return;             // per-call gate: fires with prob (diff+1)/(diff+2)
+    int best = -1; long best_str = 0;                   // rebel colony with the highest tory strength
+    for (int i = 0; i < (int)g_world.colonies.size(); ++i) {
+        const Colony& c = g_world.colonies[i];
+        if (c.owner_power != 0 || c.tory_risen) continue;
+        int sol = c.rebel_B > 0 ? (int)((long)c.rebel_A * 100 / c.rebel_B) : g_engine_extra.national_sol;
+        if (sol < 0) sol = 0; else if (sol > 100) sol = 100;
+        long tstr = (long)c.population * 2 * (100 - sol) / 100 + diff + 1;
+        if (best < 0 || tstr > best_str) { best_str = tstr; best = i; }
+    }
+    if (best < 0) return;                               // no eligible colony
+    int cx0 = -1, cy0 = -1;
+    if (best < (int)g_colony_xy.size()) { cx0 = g_colony_xy[best].first; cy0 = g_colony_xy[best].second; }
+    if (cx0 < 0) return;
+    static const int DX[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+    static const int DY[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+    long budget = best_str; int spawned = 0;
+    for (int d = 0; d < 8 && budget > 0; ++d) {         // one militia per free adjacent tile, up to strength
+        int nx = cx0 + DX[d], ny = cy0 + DY[d];
+        int tid = g_world.terrain_id(nx, ny);
+        if (tid < 0 || tid == 24 || tid == 25 || tid == 26) continue;   // OOB / Arctic / Ocean / Sea Lane
+        bool occupied = false;
+        for (const Unit& u : g_world.units) if (u.alive && u.x == nx && u.y == ny) { occupied = true; break; }
+        if (occupied) continue;
+        Unit m; m.owner = 1; m.x = nx; m.y = ny; m.alive = true;
+        m.type = (game_rng(1, 100) <= 25) ? 4 : 1;      // random upgrade gate: Soldiers(1) -> Dragoons(4)
+        m.moves_left = unit_stats(m.type).movement;
+        g_world.units.push_back(m);
+        ++spawned; --budget;
+    }
+    if (spawned == 0) return;                           // no free tile -> uprising suppressed (no latch)
+    g_world.colonies[best].tory_risen = true;           // latch so this colony can't re-fire
+    g_turn_notices.push_back(
+        "Tory uprising near the colony at (" + std::to_string(cx0) + "," + std::to_string(cy0) +
+        ")! Parliament arms " + std::to_string(spawned) + " Tory Militia against the rebellion.");
+}
+
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
     // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
@@ -837,6 +946,8 @@ static void game_step() {
         Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
         forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
+        spanish_succession_step();                      // scripted pre-revolution event (self-gated)
+        tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
         history_snapshot();
     }
@@ -953,8 +1064,13 @@ static forge::JsonValue game_state_json() {
       war.obj["national_sol"] = forge::json_num(g_engine_extra.national_sol);
       war.obj["rebel_strength"] = forge::json_num((double)rebel_strength());
       war.obj["ref_strength"] = forge::json_num((double)ref_land_strength());
+      war.obj["tory_strength"] = forge::json_num((double)tory_militia_strength());
       war.obj["ref_total"] = forge::json_num((double)(g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery));
       o.obj["war"] = war; }
+    // War of the Spanish Succession: the rival withdrawn from the New World, -1 if none yet.
+    o.obj["seceded_power"] = forge::json_num(g_engine_extra.seceded_power);
+    if (g_engine_extra.seceded_power >= 0)
+        o.obj["seceded_name"] = forge::json_str(nation_name(g_engine_extra.seceded_power));
     o.obj["w"] = forge::json_num(g_world.map_w);
     o.obj["h"] = forge::json_num(g_world.map_h);
     forge::JsonValue terr = jarr();
@@ -1386,9 +1502,17 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
         if (path == "/api/game/step" && method == "POST") { game_step(); return J(200, game_state_json()); }
         if (path == "/api/game/turn" && method == "POST") {
+            g_turn_notices.clear();                         // late-game turn-loop events fill this
             game_step();                                    // advance the turn
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue events = jarr();
+            for (const std::string& notice : g_turn_notices) {   // Spanish Succession / Tory uprising
+                forge::JsonValue e = jobj();
+                e.obj["graph"] = forge::json_str("turn_event");
+                forge::JsonValue rep = jobj(); forge::JsonValue effs = jarr();
+                effs.arr.push_back(forge::json_str(notice)); rep.obj["effects"] = effs;
+                e.obj["report"] = rep; events.arr.push_back(e);
+            }
             for (const std::string& id : forge::list_graphs()) {
                 forge::JsonValue gr;
                 try { gr = forge::load_graph(id); } catch (...) { continue; }

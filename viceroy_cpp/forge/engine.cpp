@@ -731,6 +731,7 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     if (path == "ref.artillery") { g.ref.artillery = (int)value; return true; }
     if (path == "revolution.declared") { cx.x.woi_declared = value != 0; return true; }
     if (path == "revolution.rebel")    { cx.x.rebel_power = (int)value; return true; }
+    if (path == "succession.seceded")  { cx.x.seceded_power = (int)value; return true; }
     if (path.rfind("power", 0) == 0) {
         int p = path[5] - '0'; size_t dot = path.find('.');
         if (p >= 0 && p < 4 && dot != std::string::npos) {

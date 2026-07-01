@@ -46,6 +46,7 @@ struct Colony {
     int crosses_output   = 0;    // +0x05  preacher crosses (feeds immigration)
     int center_food      = 0;    // authored fallback for the town-square auto-food
     int center_terrain   = 0;    // the colony's own tile terrain id (center auto-produces its food)
+    bool tory_risen      = false;// +0x1C bit0 latch: a Tory uprising has already fired here (no re-fire)
 
     // Worker/stockpile model (spec/systems/colony.md §3). Each Worker is a colonist assigned
     // to a tile (raw goods 0..7 from the terrain-yield table) or a building (bells/hammers/
