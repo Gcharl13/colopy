@@ -7,6 +7,7 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#include <vector>
 
 namespace vc::sim {
 
@@ -43,6 +44,13 @@ struct Colony {
     int hammers_per_turn = 0;    // carpenters -> good 0x10
     int food_per_turn    = 0;    // net food surplus
     int crosses_output   = 0;    // +0x05  preacher crosses (feeds immigration)
+
+    // Worker/stockpile model (spec/systems/colony.md §3). Each Worker is a colonist assigned
+    // to a tile (raw goods 0..7 from the terrain-yield table) or a building (bells/hammers/
+    // crosses); production accumulates into the per-good stockpile (+0x9A, capped by warehouse).
+    std::array<int32_t, NGOODS> stockpile{};   // +0x9A  current cargo per good
+    struct Worker { int terrain = 0; int good = 0; bool expert = false; };
+    std::vector<Worker> workers;               // +0x40/+0x70 colonist job + tile assignment
 };
 
 struct Power {

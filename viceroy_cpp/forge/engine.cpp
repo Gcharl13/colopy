@@ -156,6 +156,23 @@ JsonValue category(const char* name, std::vector<JsonValue> nodes) {
 double as_num(const JsonValue& v) { return v.type == JsonValue::Number ? v.num
                                          : v.type == JsonValue::Bool ? (v.b ? 1 : 0) : 0; }
 
+// Base terrain yield of raw good g (0..7) on a terrain id, read live from the yield tables
+// (@UNFORESTED 0..7 / @FORESTED 8..23 / @OTHER 24..28) -- so editing a terrain's yield in the
+// Tables tab changes production. Good->column per spec/systems/colony.md §3.
+int terrain_good_yield(int terrain, int good) {
+    static const char* YCOL[8] = { "y_farmer", "y_planter_sugar", "y_planter_tobacco",
+        "y_planter_cotton", "y_trapper", "y_lumberjack", "y_ore", "y_silver" };
+    if (good < 0 || good >= 8) return 0;
+    std::string sec; int row;
+    if (terrain >= 0 && terrain < 8)        { sec = "@UNFORESTED"; row = terrain; }
+    else if (terrain >= 8 && terrain < 24)  { sec = "@FORESTED";   row = (terrain - 8) % 8; }
+    else if (terrain >= 24 && terrain <= 28){ sec = "@OTHER";      row = terrain - 24; }
+    else return 0;
+    std::string col = YCOL[good];
+    if (sec == "@OTHER" && (row == 1 || row == 2) && good == 0) col = "y_fisherman";  // ocean food
+    return (int)as_num(table_cell(sec + "[" + std::to_string(row) + "]." + col));
+}
+
 } // namespace
 
 JsonValue node_catalog() {
@@ -453,6 +470,23 @@ JsonValue node_catalog() {
                  "RECONSTRUCTED). Debits the owner and sets the built bit if affordable.",
                  {pin("in","exec","in"), pin("cost","data","in","number"), pin("out","exec","out")},
                  {param("colony","number")}),
+        node_def("AssignWorker", "Assign Colonist (tile/building)",
+                 "Assigns a colonist in a colony to produce a good: a raw good (Food..Silver) on a "
+                 "terrain tile (yield read LIVE from @UNFORESTED/@FORESTED/@OTHER by terrain id), or "
+                 "Hammers/Crosses/Bells in a building. Expert doubles manufactured goods (+2 for "
+                 "Food/Horses). Feeds ColonyProduce.",
+                 {pin("in","exec","in"), pin("out","exec","out")},
+                 {param("colony","number"), param("terrain","number"),
+                  param("good","select",{"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore",
+                   "Silver","Horses","Rum","Cigars","Cloth","Coats","Trade goods","Tools","Muskets",
+                   "Hammers","Crosses","Bells"}),
+                  param("expert","select",{"0","1"})}),
+        node_def("ColonyProduce", "Colony Produce (workers -> stockpile)",
+                 "Runs the colony's assigned workers: each tile worker's yield (terrain table + "
+                 "tory/expert per spec/systems/colony.md) and each building worker's output accumulate "
+                 "into the per-good stockpile (capped by warehouse) and the colony's "
+                 "food/bells/hammers/crosses.",
+                 {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
         node_def("PromoteUnit", "Promote / Train Unit",
                  "Upgrades an on-map unit (by index) to a trained type, e.g. Soldiers -> "
                  "Continental Army (training.md).",
@@ -575,8 +609,12 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
     }
     if (path.rfind("colony", 0) == 0) {
         size_t dot = path.find('.'); int c = std::atoi(path.c_str() + 6);
-        if (dot != std::string::npos && c >= 0 && c < (int)w.colonies.size() &&
-            path.substr(dot + 1) == "population") { w.colonies[c].population = (int)value; return true; }
+        if (dot != std::string::npos && c >= 0 && c < (int)w.colonies.size()) {
+            std::string f = path.substr(dot + 1);
+            if (f == "population") { w.colonies[c].population = (int)value; return true; }
+            if (f.rfind("stockpile.", 0) == 0) { int gi = std::atoi(f.c_str() + 10);
+                if (gi >= 0 && gi < NGOODS) { w.colonies[c].stockpile[gi] = (int)value; return true; } }
+        }
     }
     if (path.rfind("price", 0) == 0) {
         int gi = std::atoi(path.c_str() + 6);
@@ -694,6 +732,12 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
                 return num((double)(rem < 0 ? 0 : rem));
             }
             if (f == "warehouse")  return num(w.colonies[c].warehouse_lvl);
+            if (f == "workers")    return num((double)w.colonies[c].workers.size());
+            // stockpile.<good 0..15> -> stored cargo of that good
+            if (f.rfind("stockpile.", 0) == 0) {
+                int gi = std::atoi(f.c_str() + 10);
+                if (gi >= 0 && gi < NGOODS) return num(w.colonies[c].stockpile[gi]);
+            }
             // the in-progress building's @BUILDING name (build_target is a dynamic id)
             if (f == "building_name") { int bt = w.colonies[c].build_target;
                 return bt < 0 ? JsonValue{} : table_cell("@BUILDING[" + std::to_string(bt) + "].name"); }
@@ -1259,6 +1303,58 @@ struct Runner {
                            " gold (treasury now " + std::to_string((long)cx.g.powers[p].gold) + ")");
                 else effect("colony " + std::to_string(c) + " rush failed (no target or not enough gold)");
             } else effect("RushBuild: no colony " + std::to_string(c));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "AssignWorker") {
+            static const char* GN[19] = {"Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore",
+                "Silver","Horses","Rum","Cigars","Cloth","Coats","Trade goods","Tools","Muskets",
+                "Hammers","Crosses","Bells"};
+            int ci = (int)as_num(pget(*n, "colony"));
+            if (ci >= 0 && ci < (int)cx.w.colonies.size()) {
+                vc::sim::Colony::Worker wk;
+                wk.terrain = (int)as_num(pget(*n, "terrain"));
+                std::string gs = pget(*n, "good").str; wk.good = std::atoi(gs.c_str());
+                for (int i = 0; i < 19; ++i) if (gs == GN[i]) { wk.good = i; break; }
+                wk.expert = as_num(pget(*n, "expert")) != 0;
+                cx.w.colonies[ci].workers.push_back(wk);
+                effect("colony " + std::to_string(ci) + " assigns a colonist to " +
+                       (wk.good >= 0 && wk.good < 19 ? GN[wk.good] : gs) +
+                       " (terrain " + std::to_string(wk.terrain) + (wk.expert ? ", expert)" : ")"));
+            } else effect("AssignWorker: no colony " + std::to_string(ci));
+            return follow(nodeId, "out", popup);
+        }
+        if (t == "ColonyProduce") {
+            int ci = (int)as_num(pget(*n, "colony"));
+            if (ci >= 0 && ci < (int)cx.w.colonies.size()) {
+                vc::sim::Colony& col = cx.w.colonies[ci];
+                int sol = vc::sim::sol_pct(col);
+                std::array<int, vc::sim::NGOODS> prod{};
+                int food = 0, bells = 0, hammers = 0, crosses = 0;
+                for (const auto& wk : col.workers) {
+                    int g = wk.good, y;
+                    if (g >= 0 && g < 8) {                       // raw tile good from the terrain table
+                        y = terrain_good_yield(wk.terrain, g);
+                        y = vc::sim::tory_expert_adjust(y, col.population, sol, cx.g.difficulty,
+                                                        col.human, wk.expert, g, cx.rd);
+                    } else { y = 3; if (wk.expert) y *= 2; }     // building/manufactured base rate
+                    if (g == 0) food += y;
+                    else if (g == 16) hammers += y;
+                    else if (g == 17) crosses += y;
+                    else if (g == 18) bells += y;
+                    else if (g >= 1 && g < vc::sim::NGOODS) prod[g] += y;
+                }
+                int cap = vc::sim::warehouse_cap(col, cx.rd);
+                for (int g = 0; g < vc::sim::NGOODS; ++g) {
+                    col.stockpile[g] += prod[g];
+                    if (col.stockpile[g] > cap) col.stockpile[g] = cap;
+                }
+                col.food_per_turn = food - 2 * col.population;   // eaten = 2*pop (colony.md)
+                col.bells_per_turn = bells; col.hammers_per_turn = hammers; col.crosses_output = crosses;
+                effect("colony " + std::to_string(ci) + " production from " +
+                       std::to_string(col.workers.size()) + " workers: food " +
+                       std::to_string(col.food_per_turn) + ", bells " + std::to_string(bells) +
+                       ", hammers " + std::to_string(hammers) + ", crosses " + std::to_string(crosses));
+            } else effect("ColonyProduce: no colony " + std::to_string(ci));
             return follow(nodeId, "out", popup);
         }
         if (t == "PromoteUnit") {

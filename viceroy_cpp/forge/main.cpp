@@ -1251,6 +1251,33 @@ static int engine_selftest() {
         check(shown > 0 && applied == shown, "pause/resume cache keeps the rolled value stable (offered==applied)");
     }
 
+    // Worker/stockpile production: assign colonists to tiles + a building, run ColonyProduce,
+    // and confirm the per-good stockpile + net food/bells match the terrain tables + spec math.
+    {
+        vc::sim::Colony col; col.population = 3; col.rebel_A = 1; col.rebel_B = 1;  // sol=100 -> no tory penalty
+        w.colonies.push_back(col);   // no colonies were pushed to `w` earlier, so this is colony 0
+        forge::JsonValue gw = forge::json_parse(
+            R"({"id":"w","nodes":[)"
+            R"({"id":"t","type":"OnTestFire","params":{}},)"
+            R"({"id":"a1","type":"AssignWorker","params":{"colony":"0","terrain":3,"good":"Cotton","expert":"0"}},)"
+            R"({"id":"a2","type":"AssignWorker","params":{"colony":"0","terrain":2,"good":"Food","expert":"0"}},)"
+            R"({"id":"a3","type":"AssignWorker","params":{"colony":"0","terrain":0,"good":"Bells","expert":"0"}},)"
+            R"({"id":"pr","type":"ColonyProduce","params":{"colony":"0"}}],"edges":[)"
+            R"({"from":{"node":"t","pin":"out"},"to":{"node":"a1","pin":"in"}},)"
+            R"({"from":{"node":"a1","pin":"out"},"to":{"node":"a2","pin":"in"}},)"
+            R"({"from":{"node":"a2","pin":"out"},"to":{"node":"a3","pin":"in"}},)"
+            R"({"from":{"node":"a3","pin":"out"},"to":{"node":"pr","pin":"in"}}]})");
+        forge::run_graph(gw, cx);
+        check(forge::resolve_binding("colony0.workers", cx).as_int() == 3, "AssignWorker pushed 3 colonists");
+        // Prairie(3) y_planter_cotton = 3, sol=100 -> tory 0 -> stockpile Cotton(3) = 3
+        check(forge::resolve_binding("colony0.stockpile.3", cx).as_int() == 3,
+              "ColonyProduce: Prairie cotton worker -> stockpile Cotton = 3");
+        // Plains(2) y_farmer = 4; food_per_turn = 4 - 2*pop(3) = -2
+        check(w.colonies[0].food_per_turn == -2, "ColonyProduce: net food = tile yield 4 - 2*pop = -2");
+        // building Bells worker base rate = 3
+        check(w.colonies[0].bells_per_turn == 3, "ColonyProduce: building Bells worker = 3 bells");
+    }
+
     // congress.cost reflects the byte-verified bell-cost curve; congress.bells is writable.
     check(forge::resolve_binding("congress.cost", cx).as_int() > 0, "congress.cost computes the FF bell cost");
     forge::set_binding("congress.bells", 42, cx);
