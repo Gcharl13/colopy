@@ -916,6 +916,7 @@ async function loadFormulas() {
 
 // ---- Assets ----
 let ASSETS = null, SLICED = null;
+const SPR_SCALE = 3;   // common display scale: a 16px map tile -> 48px; a 32px unit -> 96px (true ratio)
 function assetType(){ const r=document.querySelector('input[name=atype]:checked'); return r?r.value:'individual'; }
 function assetURL(type, name){ return '/assets/'+(type==='backgrounds'?'pik':'sprites')+'/'+name; }
 async function loadAssets(){
@@ -929,12 +930,16 @@ function renderAssets(){
   if(type==='individual'){
     const list=SLICED||[];
     const shown=list.filter(s=>!s.blank && (!f || (s.label+' '+s.sheet).toUpperCase().includes(f)));
-    $('#ainfo').textContent=shown.length+' / '+list.length+' sprites';
+    $('#ainfo').textContent=shown.length+' / '+list.length+' sprites (scale: 16px map tile ×'+SPR_SCALE+')';
+    // one common scale so relative sizes are true (16px tile -> a 32px unit is 2 tiles tall).
+    // checkerboard background makes the transparent areas read as transparent, not black.
+    const CHECK='background-image:linear-gradient(45deg,#bbb 25%,transparent 25%,transparent 75%,#bbb 75%),linear-gradient(45deg,#bbb 25%,#eee 25%,#eee 75%,#bbb 75%);background-size:8px 8px;background-position:0 0,4px 4px';
     $('#agallery').innerHTML=shown.map(s=>{
       const u='/assets/sliced/'+s.file.replace('data_extracted/sprites/','');
-      return '<figure class="thumb" data-url="'+u+'" data-label="'+esc(s.sheet+' #'+s.index+' — '+s.label)+'">'
-        +'<img loading="lazy" style="image-rendering:pixelated;width:48px;height:48px;object-fit:contain" src="'+u+'">'
-        +'<figcaption>'+esc(s.label)+'<br><span class="muted" style="font-size:9px">'+s.sheet+' #'+s.index+'</span></figcaption></figure>';
+      const w=(s.w||16)*SPR_SCALE, h=(s.h||16)*SPR_SCALE;
+      return '<figure class="thumb" data-url="'+u+'" data-label="'+esc(s.sheet+' #'+s.index+' — '+s.label+' ('+s.w+'×'+s.h+')')+'">'
+        +'<div style="'+CHECK+';display:inline-block;padding:2px"><img loading="lazy" style="image-rendering:pixelated;width:'+w+'px;height:'+h+'px;display:block" src="'+u+'"></div>'
+        +'<figcaption>'+esc(s.label)+'<br><span class="muted" style="font-size:9px">'+s.sheet+' #'+s.index+' &middot; '+s.w+'×'+s.h+'</span></figcaption></figure>';
     }).join('');
     return;
   }
@@ -1521,8 +1526,9 @@ function drawGame(){
     g.strokeStyle='#ffe27a'; g.lineWidth=2;
     g.beginPath(); g.moveTo(TX-4,TY-4); g.lineTo(TX+4,TY+4); g.moveTo(TX+4,TY-4); g.lineTo(TX-4,TY+4); g.stroke();
   }
-  // units (real sprites; disc fallback for the unused slot or before load)
-  const DS=Math.round(GCELL*1.7);
+  // units (real sprites; disc fallback for the unused slot or before load). A unit sprite is 32px
+  // on a 16px map tile, so it draws at 2x the tile size -- the SAME pixel scale as the terrain.
+  const DS=GCELL*2;
   for(const u of GAME.units){
     const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
     if(UNITS_READY && u.type<23){
