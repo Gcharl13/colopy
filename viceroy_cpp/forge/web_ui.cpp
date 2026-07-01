@@ -221,6 +221,7 @@ const char* forge_index_html() {
       <button class="act" onclick="scrSave()">Save</button>
       <button class="act" onclick="scrRefresh()">Refresh</button>
       <button class="act" onclick="scrPreview()">&#9654; Preview</button>
+      <button class="act" onclick="scrTest()">&#129514; Test values</button>
       <span class="muted">Click a widget to select, drag to move; edit it on the right. The
         State Inspector tweaks the live game and the screen reacts. <code>{game.year}</code>-style
         tokens in text bind to game state.</span>
@@ -229,6 +230,7 @@ const char* forge_index_html() {
       <div id="sstage" class="sstage"></div>
       <div style="display:flex; flex-direction:column; gap:10px">
         <div class="gprops" id="sprops" style="width:224px"><span class="muted">No widget selected.</span></div>
+        <div class="gprops" id="stest" style="width:224px"></div>
         <div class="gprops" id="sinspect" style="width:224px"></div>
       </div>
       <div class="gpalette" id="spalette" style="width:120px"></div>
@@ -943,6 +945,30 @@ async function scrRefresh(){
   scrRender();
 }
 function interp(t){ return String(t||'').replace(/\{([^}]+)\}/g,(m,p)=> (BINDV[p]!==undefined&&BINDV[p]!==null)?BINDV[p]:m); }
+// ---- per-screen test harness: drive every value + sprite the screen consumes, watch it react ----
+function screenBindPaths(){ const s=new Set();
+  for(const w of SCR.widgets){ (String(w.text||'').match(/\{[^}]+\}/g)||[]).forEach(m=>s.add(m.slice(1,-1))); } return [...s]; }
+async function scrTest(){
+  await scrRefresh();  // seed values from the live game so you start from a real state
+  const paths=screenBindPaths();
+  const sprites=SCR.widgets.filter(w=>w.type==='sprite');
+  const menus=SCR.widgets.filter(w=>w.type==='buildmenu');
+  let h='<div style="font-weight:bold">&#129514; Test harness</div>';
+  h+='<div class="muted" style="font-size:11px;margin-bottom:4px">Drive every column this screen binds; it re-renders live. Confirms which values + sprites influence it.</div>';
+  h+='<div style="font-weight:bold;font-size:12px">Bound columns ('+paths.length+')</div>';
+  if(!paths.length) h+='<div class="muted" style="font-size:11px">(none)</div>';
+  for(const p of paths){ const v=BINDV[p];
+    h+='<div style="display:flex;justify-content:space-between;gap:6px;align-items:center;margin:1px 0">'
+      +'<code style="font-size:10px">'+esc(p)+'</code>'
+      +'<input data-tp="'+esc(p)+'" value="'+esc(v===undefined||v===null?'':v)+'" style="width:76px;font-size:11px"></div>'; }
+  h+='<div style="font-weight:bold;font-size:12px;margin-top:6px">Sprites ('+sprites.length+')</div>';
+  for(const s of sprites) h+='<div class="muted" style="font-size:10px">'+esc(s.sheet||'?')+' #'+(s.frame||0)+'</div>';
+  if(menus.length) h+='<div class="muted" style="font-size:10px">+ '+menus.length+' dynamic build-menu</div>';
+  if(!sprites.length&&!menus.length) h+='<div class="muted" style="font-size:11px">(none)</div>';
+  const box=$('#stest'); box.innerHTML=h;
+  box.querySelectorAll('[data-tp]').forEach(el=>el.oninput=()=>{ const p=el.dataset.tp; const n=parseFloat(el.value);
+    BINDV[p]=(el.value!==''&&!isNaN(n))?n:el.value; scrRender(); });
+}
 function scrRender(){
   const st=$('#sstage'); st.innerHTML='';
   if(SCR.background){ const img=document.createElement('img'); img.className='bg'; img.src='/assets/pik/'+SCR.background+'.png'; img.onerror=()=>img.style.display='none'; st.appendChild(img); }
