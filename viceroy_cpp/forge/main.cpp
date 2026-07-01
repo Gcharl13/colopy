@@ -676,7 +676,8 @@ static void game_new(int nation = 0, int difficulty = 1) {
         auto gi = [&](const char* k, int d) { const forge::JsonValue* v = cj.find(k); return v ? (int)v->num : d; };
         auto xy = game_find_land(gi("x", 20), gi("y", 22));
         Colony c; c.owner_power = 0; c.human = true; c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
-        c.center_food = gi("center_food", 3);           // town-square auto-food (center tile)
+        c.center_food = gi("center_food", 3);           // authored fallback for the town-square auto-food
+        { int t = g_world.terrain_id(xy.first, xy.second); c.center_terrain = t < 0 ? 0 : (t & 0x1F); }
         if (const forge::JsonValue* bs = cj.find("buildings"))
             for (const forge::JsonValue& b : bs->arr) { int id = (int)b.num; if (id >= 0 && id < 48) c.built_mask |= (1ull << id); }
         if (const forge::JsonValue* ws = cj.find("workers"))
@@ -1337,8 +1338,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int id = g_world.terrain_id(u.x, u.y);
             if (id < 0 || game_is_water(id)) return err(400, "must found on land");
             Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
-            c.food_per_turn = 50; c.bells_per_turn = 1; c.hammers_per_turn = 2; c.crosses_output = 1;
             c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+            c.center_terrain = id & 0x1F; c.center_food = 3;   // center tile auto-produces its food (floor 3)
+            { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food
+              int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
+              c.workers.push_back(wk); }
+            forge::colony_compute_production(c, g_game.difficulty, g_active_rules);
             g_world.colonies.push_back(c);
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
@@ -2013,11 +2018,13 @@ static int engine_selftest() {
         RuleData rd4 = make_default_rules();
         auto mkw = [](int prof, int tile, int terrain, int good) {
             Colony::Worker w; w.profession = prof; w.tile = tile; w.terrain = terrain; w.good = good; w.expert = false; return w; };
-        // A: one Farmer on Plains (terrain 2), pop 1 -> gross Food 4, net = 4 - 2*1 = 2.
+        // A: center Plains (terrain 2, auto food 4) + one Farmer on Plains (gross 4), pop 1
+        //    -> net = 4 (center) + 4 (farmer) - 2*1 = 6.
         Colony a; a.owner_power = 0; a.human = true; a.population = 1; a.rebel_A = 0; a.rebel_B = 1;
+        a.center_terrain = 2;                                        // Plains center -> +4 auto-food
         a.workers.push_back(mkw(0, 0, 2, 0));                         // Farmer, Plains, Food
         forge::colony_compute_production(a, /*diff*/1, rd4);
-        check(a.food_per_turn == 2, "1 Farmer on Plains -> net food 2 (gross 4 - 2 eaten)");
+        check(a.food_per_turn == 6, "center Plains(4) + 1 Farmer(4) - 2 eaten -> net food 6");
         // B: Farmer + Lumberjack(forest) + Carpenter + Statesman + Preacher, pop 5.
         Colony b; b.owner_power = 0; b.human = true; b.population = 5; b.rebel_A = 0; b.rebel_B = 1;
         b.workers.push_back(mkw(0, 0, 2, 0));                          // Farmer -> Food

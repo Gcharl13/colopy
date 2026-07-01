@@ -222,7 +222,12 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
     using vc::sim::NGOODS;
     int sol = vc::sim::sol_pct(col);
     std::array<int, NGOODS> prod{};
-    int food = col.center_food, bells = 0, hammers = 0, crosses = 0;   // town-square auto-food
+    // The center (town-square) tile auto-produces its own food -- the 3x3 ring includes the center
+    // (spec colony.md step 2). Use the colony's real tile terrain, with the authored center_food as
+    // a floor (the town square always yields at least its baseline).
+    int centerFood = terrain_good_yield(col.center_terrain, 0);
+    if (centerFood < col.center_food) centerFood = col.center_food;
+    int food = centerFood, bells = 0, hammers = 0, crosses = 0;
     for (const auto& wk : col.workers) {
         int g = wk.good;
         if (g >= 0 && g < 8) {
@@ -233,24 +238,50 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         else if (g == 17)   crosses += wk.expert ? 6 : 3;
         else if (g == 18)   bells   += wk.expert ? 6 : 3;
     }
-    static const int RAW_OF[NGOODS]   = { -1,-1,-1,-1,-1,-1,-1,-1, -1, 1, 2, 3, 4, -1, 6, -1 };
-    // Gate building per finished good (@BUILDING id via built_mask): Rum->Rum Distiller's House(27),
-    // Cigars->Tobacconist's(24), Cloth->Weaver's(21), Coats->Fur Trader's(32), Tools->Blacksmith's
-    // House(39). (Blacksmith's House IS in @BUILDING at row 39 -- closes backlog #7.)
-    static const int GATE_BLD[NGOODS] = { -1,-1,-1,-1,-1,-1,-1,-1,-1, 27, 24, 21, 32, -1, 39, -1 };
+    // Raw->finished conversion (spec colony.md §3 / func_008E84): a finished good is made 1:1 from
+    // its input raw, gated on the base manufacturing building (built_mask), and THROTTLED x2/3 when
+    // the finished good's building-chain count > 2 (factory tier, byte-verified @0x8EB1). An artisan
+    // (a building worker assigned to the finished good) drives it up to its throughput (3, x2 expert).
+    // Input good per finished (Horses(8)<-Food handled below; Muskets(15)<-Tools(14), second-order).
+    static const int RAW_OF[NGOODS]   = { -1,-1,-1,-1,-1,-1,-1,-1, -1, 1, 2, 3, 4, -1, 6, 14 };
+    // Base gate building id: Rum->27, Cigars->24, Cloth->21, Coats->32, Tools->39(Blacksmith #7),
+    // Muskets->3(Armory).
+    static const int GATE_BLD[NGOODS] = { -1,-1,-1,-1,-1,-1,-1,-1,-1, 27, 24, 21, 32, -1, 39, 3 };
+    // The upgrade chain (base/shop/factory) per finished good -- >2 owned = factory-tier throttle.
+    static const int CHAIN[NGOODS][3] = {
+        {-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},{-1,-1,-1},
+        {-1,-1,-1},               // 8  Horses (Stable, no chain)
+        {27,28,29},               // 9  Rum
+        {24,25,26},               // 10 Cigars
+        {21,22,23},               // 11 Cloth
+        {32,33,34},               // 12 Coats
+        {-1,-1,-1},               // 13 Trade goods
+        {39,40,41},               // 14 Tools
+        {3,4,5} };                // 15 Muskets
     for (const auto& wk : col.workers) {
         int g = wk.good;
-        if (g < 8 || g >= NGOODS) continue;
+        if (g < 9 || g >= NGOODS) continue;         // 9..15 are the 1:1 chains (Horses(8) bred below)
         int raw = RAW_OF[g]; if (raw < 0) continue;
         int gate = GATE_BLD[g];
         if (gate >= 0 && !(col.built_mask & (1ull << gate))) continue;
-        int capacity = wk.expert ? 6 : 3;
-        int amt = prod[raw] < capacity ? prod[raw] : capacity;
+        int amt = prod[raw] < (wk.expert ? 6 : 3) ? prod[raw] : (wk.expert ? 6 : 3);
         if (amt <= 0) continue;
+        int owned = 0;                              // factory throttle: >2 chain buildings owned -> x2/3
+        for (int k = 0; k < 3; ++k) { int b = CHAIN[g][k]; if (b >= 0 && (col.built_mask & (1ull << b))) ++owned; }
+        if (owned > 2) amt = amt * 2 / 3;
         prod[raw] -= amt; prod[g] += amt;
     }
     for (int g = 1; g < NGOODS; ++g) { col.stockpile[g] += prod[g]; if (col.stockpile[g] < 0) col.stockpile[g] = 0; }
     col.food_per_turn = food - 2 * col.population; if (col.food_per_turn < 0) col.food_per_turn = 0;
+    // Horses breed from the net food surplus when a Stable (building 17) + a rancher (good 8) are
+    // present -- min(surplus, 3; x2 expert) horses/turn (colony.md; the exact breed curve is RECONSTRUCTED).
+    if (col.built_mask & (1ull << 17))
+        for (const auto& wk : col.workers) if (wk.good == 8) {
+            int breed = col.food_per_turn, cap = wk.expert ? 6 : 3;
+            if (breed > cap) breed = cap;
+            if (breed > 0) col.stockpile[8] += breed;
+            break;
+        }
     col.bells_per_turn = bells; col.hammers_per_turn = hammers; col.crosses_output = crosses;
 }
 

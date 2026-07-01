@@ -51,6 +51,7 @@ JsonValue dump_colony(const Colony& c) {
     o.obj["food_per_turn"]   = json_num(c.food_per_turn);
     o.obj["crosses_output"]  = json_num(c.crosses_output);
     o.obj["center_food"]     = json_num(c.center_food);
+    o.obj["center_terrain"]  = json_num(c.center_terrain);
     // stockpile + workers -- previously dropped on save (fidelity backlog #2).
     JsonValue sp = arr();
     for (int i = 0; i < NGOODS; ++i) sp.arr.push_back(json_num(c.stockpile[i]));
@@ -120,6 +121,7 @@ Colony read_colony(const JsonValue& o) {
     c.food_per_turn    = gi(o, "food_per_turn");
     c.crosses_output   = gi(o, "crosses_output");
     c.center_food      = gi(o, "center_food");
+    c.center_terrain   = gi(o, "center_terrain");
     if (const JsonValue* sp = o.find("stockpile"))
         for (int i = 0; i < NGOODS && i < (int)sp->arr.size(); ++i) c.stockpile[i] = sp->arr[i].as_int();
     if (const JsonValue* wk = o.find("workers"))

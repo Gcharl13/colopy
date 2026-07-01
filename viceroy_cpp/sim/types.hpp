@@ -44,7 +44,8 @@ struct Colony {
     int hammers_per_turn = 0;    // carpenters -> good 0x10
     int food_per_turn    = 0;    // net food surplus
     int crosses_output   = 0;    // +0x05  preacher crosses (feeds immigration)
-    int center_food      = 0;    // the colony's own (center/town-square) tile food, auto-produced
+    int center_food      = 0;    // authored fallback for the town-square auto-food
+    int center_terrain   = 0;    // the colony's own tile terrain id (center auto-produces its food)
 
     // Worker/stockpile model (spec/systems/colony.md §3). Each Worker is a colonist assigned
     // to a tile (raw goods 0..7 from the terrain-yield table) or a building (bells/hammers/
