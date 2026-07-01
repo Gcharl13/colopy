@@ -39,6 +39,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <map>
 #include <random>
 #include <string>
 #include <vector>
@@ -1333,25 +1334,29 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
     }
 }
 
-// An exact UI label from LABELS.TXT @MISC (line index). The Continental Congress spec cites these
-// verbatim (title @MISC[37], "Next Continental Congress Session" [112], Rebel/Tory/Sentiment
-// [69/70/71], "Expeditionary Force" [85], "Founding Fathers" [89], "OK" [46]) -- so the screen text
-// is pulled from the data, not invented. Parsed once from the newline-joined @MISC string.
+// Verbatim UI labels from LABELS.TXT, by section + line index. Every screen pulls its exact
+// strings from here (title @MISC[37], "OK" @MISC[46], the advisor titles, @EUROLABEL rows, ...)
+// -- the text is the game's own, never retyped. Sections parse once from the newline-joined
+// LABELS_sections.json strings and cache.
+static const std::vector<std::string>& labels_section(const std::string& section) {
+    static std::map<std::string, std::vector<std::string>> cache;
+    auto it = cache.find(section);
+    if (it != cache.end()) return it->second;
+    std::vector<std::string> lines;
+    try {
+        forge::JsonValue d = forge::json_parse_file("data_extracted/text/LABELS_sections.json");
+        const forge::JsonValue* m = d.find("@" + section);
+        if (m && m->type == forge::JsonValue::String) {
+            std::string cur;
+            for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
+            lines.push_back(cur);
+        }
+    } catch (...) {}
+    return cache.emplace(section, std::move(lines)).first->second;
+}
 static const std::string& misc_label(int idx) {
-    static std::vector<std::string> lines;
     static const std::string empty;
-    if (lines.empty()) {
-        try {
-            forge::JsonValue d = forge::json_parse_file("data_extracted/text/LABELS_sections.json");
-            const forge::JsonValue* m = d.find("@MISC");
-            if (m && m->type == forge::JsonValue::String) {
-                std::string cur;
-                for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
-                lines.push_back(cur);
-            }
-        } catch (...) {}
-        if (lines.empty()) lines.push_back("");   // parsed (even if empty) -- don't retry every call
-    }
+    const std::vector<std::string>& lines = labels_section("MISC");
     return (idx >= 0 && idx < (int)lines.size()) ? lines[idx] : empty;
 }
 
@@ -1724,6 +1729,16 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/bundle") return J(200, build_game_bundle());
         // The 25 founding fathers + their effects (which ones boost colony production).
         if (path == "/api/fathers") return J(200, fathers_json());
+        if (path == "/api/labels") {
+            // ?section=MISC|EUROLABEL|... -> the verbatim LABELS.TXT section lines (index = the
+            // line number the specs cite, e.g. @MISC[37] = the Congress title). Screens draw
+            // these exact strings -- text is data, never retyped.
+            std::string sec = qparam(query, "section"); if (sec.empty()) sec = "MISC";
+            forge::JsonValue a = jarr();
+            for (const std::string& s : labels_section(sec)) a.arr.push_back(forge::json_str(s));
+            forge::JsonValue o = jobj(); o.obj["section"] = forge::json_str("@" + sec); o.obj["lines"] = a;
+            return J(200, o);
+        }
         if (path == "/api/functions") {
             try { return J(200, forge::json_parse_file("data_extracted/engine/functions.json")); }
             catch (...) { return err(404, "functions.json not found"); }

@@ -1404,6 +1404,105 @@ function sbRender(){
     +row('Ore stock','colony0.stockpile.6',(SB.stockpile||[])[6]||0);
 }
 
+// ==== Native-screen framework (the baseline for EVERY advisor/game screen) ====
+// A native 320x200 (mode 13h) stage over its PIK background, scaled by NS_SC, with widgets
+// placed at native (x,y). Palette constants are the byte-resolved REPORT-PIK indices
+// (spec/ui/advisor_reports.md 2.3): 0x90 title pale-yellow, 0x92 label bright-yellow,
+// 0x61 value cream, 0x91 strength yellow, 0x77 separator dark-red, 0x0F white. Body text is
+// FONTTINY (6px glyphs, line pitch 8 -- spec/ui/continental_congress.md "Fonts & colors").
+const NS_SC=2.4;
+const NS={title:'#FFFFBE', label:'#FFF35D', value:'#F7F3C7', strength:'#FFFF8E',
+          rule:'#860000', white:'#FFFFFF', green:'#559634', gold:'#C7A220'};
+const NS_PITCH=8;   // FONTTINY line pitch (glyph height 6 + 2)
+function nsScreen(bg,inner,extra){
+  return '<div '+(extra||'')+' style="position:relative;width:'+(320*NS_SC)+'px;height:'+(200*NS_SC)+'px;'
+    +'background:#101014 url(/assets/'+bg+') top left / '+(320*NS_SC)+'px '+(200*NS_SC)+'px no-repeat;'
+    +'image-rendering:pixelated;font-family:monospace;overflow:hidden;user-select:none">'+inner+'</div>';
+}
+// text at native (x,y). opts: col, size (native px, default 6=FONTTINY), w (native), center,
+// right (right-align in w), bold, wrap
+function nsT(x,y,html,opts){ opts=opts||{};
+  const col=opts.col||NS.label, sz=(opts.size||6)*NS_SC;
+  const w=opts.w!=null?('width:'+(opts.w*NS_SC)+'px;'):'';
+  return '<div style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;'+w
+    +(opts.center?'text-align:center;':'')+(opts.right?'text-align:right;':'')
+    +(opts.bold?'font-weight:bold;':'')
+    +(opts.wrap?'white-space:normal;':'white-space:nowrap;')
+    +'color:'+col+';font-size:'+sz+'px;line-height:1.2;text-shadow:1px 1px 0 #000,0 0 3px #000">'+html+'</div>';
+}
+// a 1px horizontal separator rule (the 0x191F:0x8BC line-fill; F4/F5/F8 use color 0x77)
+function nsRule(x0,x1,y,col){
+  return '<div style="position:absolute;left:'+(x0*NS_SC)+'px;top:'+(y*NS_SC)+'px;'
+    +'width:'+((x1-x0)*NS_SC)+'px;height:'+Math.max(1,Math.round(NS_SC))+'px;background:'+(col||NS.rule)+'"></div>';
+}
+// the advisor title bar: fill (0,0,320,~7) color 0x90 + the centered verbatim title string
+function nsTitle(text){
+  return '<div style="position:absolute;left:0;top:0;width:'+(320*NS_SC)+'px;height:'+(7*NS_SC)+'px;'
+    +'background:#00000055"></div>'
+    + nsT(0,1,esc(text),{col:NS.title,w:320,center:true,bold:true});
+}
+// the OK button at its spec rect (290,184,26,14); onclickJs runs on click (label = @MISC 46)
+function nsOK(onclickJs,label){
+  return '<div onclick="event.stopPropagation();'+onclickJs+'" style="position:absolute;'
+    +'left:'+(289*NS_SC)+'px;top:'+(183*NS_SC)+'px;width:'+(27*NS_SC)+'px;height:'+(14*NS_SC)+'px;'
+    +'border:1px solid '+NS.label+';color:'+NS.label+';font-size:'+(6*NS_SC)+'px;font-weight:bold;'
+    +'display:flex;align-items:center;justify-content:center;cursor:pointer;background:#000a;'
+    +'text-shadow:1px 1px 0 #000">'+(label||'OK')+'</div>';
+}
+// one ICONS.SS frame at its native size, drawn at native (x,y) from the packed icons strip
+// (per-frame rects in icons.json, lazy-loaded). scale multiplies on top of NS_SC.
+let NS_ICONS=null;   // {frames:{frame:{x,w,h}}, width, height} once loaded
+function nsIconsReady(then){
+  if(NS_ICONS) return then();
+  fetch('/assets/tileset/icons.json').then(r=>r.json()).then(d=>{
+    const m={}; let W=0; d.frames.forEach(f=>{ m[f.frame]=f; W=Math.max(W,f.x+f.w); });
+    NS_ICONS={frames:m,width:W,height:d.height}; then();
+  });
+}
+function nsIcon(frame,x,y,opts){ opts=opts||{};
+  const f=NS_ICONS&&NS_ICONS.frames[frame]; if(!f) return '';
+  const s=NS_SC*(opts.scale||1);
+  return '<div title="'+esc(opts.title||('ICONS '+frame))+'" style="position:absolute;'
+    +'left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;width:'+(f.w*s)+'px;height:'+(f.h*s)+'px;'
+    +'background:url(/assets/tileset/icons.png) no-repeat;'
+    +'background-size:'+(NS_ICONS.width*s)+'px '+(NS_ICONS.height*s)+'px;'
+    +'background-position:-'+(f.x*s)+'px 0;image-rendering:pixelated"></div>';
+}
+// the shared 0x181F:0x236 PROPORTIONAL filled/empty icon strip (span 300, pitch
+// (span-w)/(count-1) clamped [1, w+1]): `value` filled sprites then `max-value` empty ones.
+// NOT a fill bar -- the game has none; fullness reads as filled-vs-empty count.
+function nsIconStrip(filledFrame,emptyFrame,value,max,x,y,span){
+  span=span||300;
+  const f=NS_ICONS&&NS_ICONS.frames[filledFrame]; if(!f||max<1) return '';
+  const w=f.w, count=Math.max(1,max);
+  let pitch=count>1?Math.floor((span-w)/(count-1)):w+1;
+  pitch=Math.max(1,Math.min(w+1,pitch));
+  let h='';
+  for(let i=0;i<count;i++)
+    h+=nsIcon(i<value?filledFrame:emptyFrame, x+i*pitch/1, y,
+              {title:(i<value?'filled':'empty')+' '+(i+1)+'/'+count});
+  return h;
+}
+// the 0x181F:0x222/0x22C count-badge row: N columns across a span, each an icon + its count
+function nsIconRow(items,x,y,span){
+  span=span||300;
+  const cols=items.length||1, cw=span/cols;
+  let h='';
+  items.forEach((it,i)=>{
+    h+=nsIcon(it.frame, x+i*cw+2, y, {title:it.title||''});
+    h+=nsT(x+i*cw, y+20, '<b>'+it.count+'</b>'+(it.label?'<br>'+esc(it.label):''),
+           {w:cw, center:true, size:5, col:NS.value});
+  });
+  return h;
+}
+// verbatim LABELS.TXT lines by section (cached; index = the spec-cited line number)
+const NS_LABELS={};
+function nsLabels(section,then){
+  if(NS_LABELS[section]) return then(NS_LABELS[section]);
+  fetch('/api/labels?section='+section).then(r=>r.json()).then(d=>{ NS_LABELS[section]=d.lines||[]; then(NS_LABELS[section]); });
+}
+function nsLbl(section,idx,fb){ const L=NS_LABELS[section]; return (L&&L[idx])||fb||''; }
+
 // ---- Continental Congress: the two-screen report flow, drawn to the spec layout ----
 // The game's F report cycles map -> screen 1 (the Activities report) -> screen 2 (the portrait view)
 // -> map. Both are drawn at the native 320x200 over the CCBKGD.PIK hall backdrop, with widgets at the
@@ -1413,31 +1512,10 @@ const SBCATS=['Trade','Exploration','Military','Political','Religious'];
 const SBCATCOL=['#c9a227','#3d9bd6','#c0504d','#8064a2','#4f9d69'];  // one accent per category row
 let CONGRESS_VIEW=0;   // 0 closed, 1 Activities, 2 portrait view
 function congressById(){ const m={}; SBFATHERS.forEach(f=>m[f.id]=f); return m; }
-// Advisor-screen chrome (the baseline for every F-report): a native 320x200 stage over its PIK
-// background, into which widgets are placed at native (x,y). CC_SC scales the whole 320x200 up.
-const CC_SC=2.4, CC_TITLE='#FFFFBE', CC_BODY='#FFF35D';
-function ccScreen(bg,inner){
-  return '<div style="position:relative;width:'+(320*CC_SC)+'px;height:'+(200*CC_SC)+'px;'
-    +'background:#101014 url(/assets/'+bg+') top left / '+(320*CC_SC)+'px '+(200*CC_SC)+'px no-repeat;'
-    +'image-rendering:pixelated;font-family:monospace;overflow:hidden;user-select:none">'+inner+'</div>';
-}
-// text at native (x,y). opts: col, size(native px, default 6=FONTTINY), w(native), center, bold, wrap
-function ccT(x,y,html,opts){ opts=opts||{};
-  const col=opts.col||CC_BODY, sz=(opts.size||6)*CC_SC;
-  const w=opts.w!=null?('width:'+(opts.w*CC_SC)+'px;'):'';
-  return '<div style="position:absolute;left:'+(x*CC_SC)+'px;top:'+(y*CC_SC)+'px;'+w
-    +(opts.center?'text-align:center;':'')+(opts.bold?'font-weight:bold;':'')
-    +(opts.wrap?'white-space:normal;':'white-space:nowrap;')
-    +'color:'+col+';font-size:'+sz+'px;line-height:1.2;text-shadow:1px 1px 0 #000,0 0 3px #000">'+html+'</div>';
-}
-// the OK button at its spec rect (290,184,26,14); a click advances the cycle
-function ccOK(){
-  return '<div onclick="event.stopPropagation();congressAdvance()" style="position:absolute;'
-    +'left:'+(289*CC_SC)+'px;top:'+(183*CC_SC)+'px;width:'+(27*CC_SC)+'px;height:'+(14*CC_SC)+'px;'
-    +'border:1px solid '+CC_BODY+';color:'+CC_BODY+';font-size:'+(6*CC_SC)+'px;font-weight:bold;'
-    +'display:flex;align-items:center;justify-content:center;cursor:pointer;background:#000a;'
-    +'text-shadow:1px 1px 0 #000">OK</div>';
-}
+// (legacy aliases -- the Congress screens were the framework prototype; they now ride ns*)
+const CC_SC=NS_SC, CC_TITLE=NS.title, CC_BODY=NS.label;
+const ccScreen=nsScreen, ccT=nsT;
+function ccOK(){ return nsOK('congressAdvance()'); }
 
 // The verbatim @MISC label (pulled by the backend from LABELS.TXT), with a fallback.
 function ccLbl(k,fb){ const L=(SB.congress||{}).labels||{}; return (L[k]||fb); }
