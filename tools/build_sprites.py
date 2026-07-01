@@ -25,15 +25,17 @@ def main():
         sprites.append({"id": "unit." + slug(label), "label": label, "kind": "unit",
                         "sheet": "ICONS", "frame": u["frames"][i], "w": u["cell"], "h": u["cell"]})
 
-    # --- buildings (BUILDING sheet): frame = @BUILDING def_id + 1 (buildings.json note) ---
+    # --- buildings (BUILDING sheet): decoded-bundle cell N == @BUILDING def_id N (0-based).
+    # The EXE draws def_id+1 in EXE-sheet space, but the ssdec decoder is off-by-one
+    # (ssdec[K] = game[K+1], spec/ui/colony_screen.md §0.2), so buildings.png cell 0 IS the
+    # Stockade. USER-VERIFIED (cell 0 = log palisade). frame here = the 0-based bundle cell.
     b = rd("data_extracted/tileset/buildings.json")
     brows = names["@BUILDING"]["rows"]
-    for frame in range(1, b["drawn"] + 1):
-        did = frame - 1
+    for did in range(b["drawn"]):
         label = brows[did]["name"] if did < len(brows) else f"building #{did}"
-        sprites.append({"id": "building." + slug(label) + (f".{frame}" if did >= len(brows) else ""),
+        sprites.append({"id": "building." + slug(label) + (f".{did}" if did >= len(brows) else ""),
                         "label": label, "kind": "building", "sheet": "BUILDING",
-                        "frame": frame, "w": b["cell_w"], "h": b["cell_h"]})
+                        "frame": did, "w": b["cell_w"], "h": b["cell_h"]})
 
     # --- terrain (TERRAIN sheet): 12 named base grounds ---
     tr = rd("data_extracted/tileset/terrain16.json")

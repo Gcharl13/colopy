@@ -4,5 +4,5 @@
   "count": 48,
   "drawn": 44,
   "source": "docs/atlas/sprites/atlas_BUILDING.png",
-  "note": "frame = EXE BUILDING.SS index (col+row*16); colony screen uses def_id+1 (spec/ui/colony_screen.md)"
+  "note": "strip cell N = @BUILDING def_id N (0-based; cell 0 = Stockade, USER-VERIFIED). EXE draws def_id+1 in EXE-sheet space; the ssdec decode is off-by-one from it so they cancel (spec/ui/colony_screen.md \u00a70.2)"
 }

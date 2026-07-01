@@ -223,7 +223,7 @@
    "label": "Stockade",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 1,
+   "frame": 0,
    "w": 56,
    "h": 48
   },
@@ -232,7 +232,7 @@
    "label": "Fort",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 2,
+   "frame": 1,
    "w": 56,
    "h": 48
   },
@@ -241,7 +241,7 @@
    "label": "Fortress",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 3,
+   "frame": 2,
    "w": 56,
    "h": 48
   },
@@ -250,7 +250,7 @@
    "label": "Armory",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 4,
+   "frame": 3,
    "w": 56,
    "h": 48
   },
@@ -259,7 +259,7 @@
    "label": "Magazine",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 5,
+   "frame": 4,
    "w": 56,
    "h": 48
   },
@@ -268,7 +268,7 @@
    "label": "Arsenal",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 6,
+   "frame": 5,
    "w": 56,
    "h": 48
   },
@@ -277,7 +277,7 @@
    "label": "Docks",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 7,
+   "frame": 6,
    "w": 56,
    "h": 48
   },
@@ -286,13 +286,22 @@
    "label": "Drydock",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 8,
+   "frame": 7,
    "w": 56,
    "h": 48
   },
   {
    "id": "building.shipyard",
    "label": "Shipyard",
+   "kind": "building",
+   "sheet": "BUILDING",
+   "frame": 8,
+   "w": 56,
+   "h": 48
+  },
+  {
+   "id": "building.town_hall",
+   "label": "Town Hall",
    "kind": "building",
    "sheet": "BUILDING",
    "frame": 9,
@@ -318,20 +327,11 @@
    "h": 48
   },
   {
-   "id": "building.town_hall",
-   "label": "Town Hall",
-   "kind": "building",
-   "sheet": "BUILDING",
-   "frame": 12,
-   "w": 56,
-   "h": 48
-  },
-  {
    "id": "building.schoolhouse",
    "label": "Schoolhouse",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 13,
+   "frame": 12,
    "w": 56,
    "h": 48
   },
@@ -340,7 +340,7 @@
    "label": "College",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 14,
+   "frame": 13,
    "w": 56,
    "h": 48
   },
@@ -349,7 +349,7 @@
    "label": "University",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 15,
+   "frame": 14,
    "w": 56,
    "h": 48
   },
@@ -358,7 +358,7 @@
    "label": "Warehouse",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 16,
+   "frame": 15,
    "w": 56,
    "h": 48
   },
@@ -367,7 +367,7 @@
    "label": "Warehouse Expansion",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 17,
+   "frame": 16,
    "w": 56,
    "h": 48
   },
@@ -376,7 +376,7 @@
    "label": "Stable",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 18,
+   "frame": 17,
    "w": 56,
    "h": 48
   },
@@ -385,7 +385,7 @@
    "label": "Custom House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 19,
+   "frame": 18,
    "w": 56,
    "h": 48
   },
@@ -394,7 +394,7 @@
    "label": "Printing Press",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 20,
+   "frame": 19,
    "w": 56,
    "h": 48
   },
@@ -403,7 +403,7 @@
    "label": "Newspaper",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 21,
+   "frame": 20,
    "w": 56,
    "h": 48
   },
@@ -412,7 +412,7 @@
    "label": "Weaver's House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 22,
+   "frame": 21,
    "w": 56,
    "h": 48
   },
@@ -421,7 +421,7 @@
    "label": "Weaver's Shop",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 23,
+   "frame": 22,
    "w": 56,
    "h": 48
   },
@@ -430,7 +430,7 @@
    "label": "Textile Mill",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 24,
+   "frame": 23,
    "w": 56,
    "h": 48
   },
@@ -439,7 +439,7 @@
    "label": "Tobacconist's House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 25,
+   "frame": 24,
    "w": 56,
    "h": 48
   },
@@ -448,7 +448,7 @@
    "label": "Tobacconist's Shop",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 26,
+   "frame": 25,
    "w": 56,
    "h": 48
   },
@@ -457,7 +457,7 @@
    "label": "Cigar Factory",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 27,
+   "frame": 26,
    "w": 56,
    "h": 48
   },
@@ -466,7 +466,7 @@
    "label": "Rum Distiller's House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 28,
+   "frame": 27,
    "w": 56,
    "h": 48
   },
@@ -475,7 +475,7 @@
    "label": "Rum Distillery",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 29,
+   "frame": 28,
    "w": 56,
    "h": 48
   },
@@ -484,7 +484,7 @@
    "label": "Rum Factory",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 30,
+   "frame": 29,
    "w": 56,
    "h": 48
   },
@@ -493,7 +493,7 @@
    "label": "Capitol",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 31,
+   "frame": 30,
    "w": 56,
    "h": 48
   },
@@ -502,7 +502,7 @@
    "label": "Capitol Expansion",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 32,
+   "frame": 31,
    "w": 56,
    "h": 48
   },
@@ -511,7 +511,7 @@
    "label": "Fur Trader's House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 33,
+   "frame": 32,
    "w": 56,
    "h": 48
   },
@@ -520,7 +520,7 @@
    "label": "Fur Trading Post",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 34,
+   "frame": 33,
    "w": 56,
    "h": 48
   },
@@ -529,7 +529,7 @@
    "label": "Fur Factory",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 35,
+   "frame": 34,
    "w": 56,
    "h": 48
   },
@@ -538,7 +538,7 @@
    "label": "Carpenter's Shop",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 36,
+   "frame": 35,
    "w": 56,
    "h": 48
   },
@@ -547,7 +547,7 @@
    "label": "Lumber Mill",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 37,
+   "frame": 36,
    "w": 56,
    "h": 48
   },
@@ -556,7 +556,7 @@
    "label": "Church",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 38,
+   "frame": 37,
    "w": 56,
    "h": 48
   },
@@ -565,7 +565,7 @@
    "label": "Cathedral",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 39,
+   "frame": 38,
    "w": 56,
    "h": 48
   },
@@ -574,7 +574,7 @@
    "label": "Blacksmith's House",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 40,
+   "frame": 39,
    "w": 56,
    "h": 48
   },
@@ -583,7 +583,7 @@
    "label": "Blacksmith's Shop",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 41,
+   "frame": 40,
    "w": 56,
    "h": 48
   },
@@ -592,25 +592,25 @@
    "label": "Iron Works",
    "kind": "building",
    "sheet": "BUILDING",
+   "frame": 41,
+   "w": 56,
+   "h": 48
+  },
+  {
+   "id": "building.building_42.42",
+   "label": "building #42",
+   "kind": "building",
+   "sheet": "BUILDING",
    "frame": 42,
    "w": 56,
    "h": 48
   },
   {
-   "id": "building.building_42.43",
-   "label": "building #42",
-   "kind": "building",
-   "sheet": "BUILDING",
-   "frame": 43,
-   "w": 56,
-   "h": 48
-  },
-  {
-   "id": "building.building_43.44",
+   "id": "building.building_43.43",
    "label": "building #43",
    "kind": "building",
    "sheet": "BUILDING",
-   "frame": 44,
+   "frame": 43,
    "w": 56,
    "h": 48
   },

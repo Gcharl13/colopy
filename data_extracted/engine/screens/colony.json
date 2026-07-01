@@ -1,84 +1,84 @@
 {
-  "id": "colony",
-  "name": "Colony Screen",
-  "background": "COLONY",
-  "size": [
-    320,
-    200
-  ],
-  "widgets": [
-    {
-      "id": "title",
-      "type": "text",
-      "rect": [
-        70,
-        1,
-        240,
-        8
-      ],
-      "color": "82,138,49",
-      "text": "Jamestown.  Year {game.year}.  Gold: {power0.gold}"
-    },
-    {
-      "id": "popl",
-      "type": "text",
-      "rect": [
-        10,
-        14,
-        120,
-        8
-      ],
-      "color": "255,255,255",
-      "text": "Population: {colony0.population}"
-    },
-    {
-      "id": "soll",
-      "type": "text",
-      "rect": [
-        10,
-        24,
-        120,
-        8
-      ],
-      "color": "255,243,93",
-      "text": "Sons of Liberty: {colony0.sol}%"
-    },
-    {
-      "id": "church",
-      "type": "sprite",
-      "rect": [
-        24,
-        40,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 1
-    },
-    {
-      "id": "townh",
-      "type": "sprite",
-      "rect": [
-        64,
-        40,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 4
-    },
-    {
-      "id": "exit",
-      "type": "button",
-      "rect": [
-        284,
-        182,
-        32,
-        12
-      ],
-      "color": "255,255,255",
-      "text": "Exit",
-      "onClick": "goto_status"
-    }
-  ]
+ "id": "colony",
+ "name": "Colony Screen",
+ "background": "COLONY",
+ "size": [
+  320,
+  200
+ ],
+ "widgets": [
+  {
+   "id": "title",
+   "type": "text",
+   "rect": [
+    70,
+    1,
+    240,
+    8
+   ],
+   "color": "82,138,49",
+   "text": "Jamestown.  Year {game.year}.  Gold: {power0.gold}"
+  },
+  {
+   "id": "popl",
+   "type": "text",
+   "rect": [
+    10,
+    14,
+    120,
+    8
+   ],
+   "color": "255,255,255",
+   "text": "Population: {colony0.population}"
+  },
+  {
+   "id": "soll",
+   "type": "text",
+   "rect": [
+    10,
+    24,
+    120,
+    8
+   ],
+   "color": "255,243,93",
+   "text": "Sons of Liberty: {colony0.sol}%"
+  },
+  {
+   "id": "church",
+   "type": "sprite",
+   "rect": [
+    24,
+    40,
+    32,
+    32
+   ],
+   "sheet": "BUILDING",
+   "frame": 37
+  },
+  {
+   "id": "townh",
+   "type": "sprite",
+   "rect": [
+    64,
+    40,
+    32,
+    32
+   ],
+   "sheet": "BUILDING",
+   "frame": 9
+  },
+  {
+   "id": "exit",
+   "type": "button",
+   "rect": [
+    284,
+    182,
+    32,
+    12
+   ],
+   "color": "255,255,255",
+   "text": "Exit",
+   "onClick": "goto_status"
+  }
+ ]
 }

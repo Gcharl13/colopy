@@ -10,9 +10,11 @@ like atlas_PHYS0).
 
 This lifts each frame's tight sprite bbox (skipping the label strip, black -> alpha)
 and centers it in a fixed CELL_W x CELL_H cell, packing all 48 into a horizontal strip
-data_extracted/tileset/buildings.png (frame f at x=f*CELL_W). The frame index is the
-EXE-sheet index (col + row*16); per spec/ui/colony_screen.md the colony screen selects
-a building by `def_id + 1` in this space. buildings.json records the layout.
+data_extracted/tileset/buildings.png (frame f at x=f*CELL_W). Frame semantics: the
+decoded-bundle cell N == @BUILDING def_id N (0-based; cell 0 IS the Stockade,
+USER-VERIFIED). The EXE selects `def_id + 1` in EXE-sheet space, but the ssdec decode
+is off-by-one from it (ssdec[K] = game[K+1], spec/ui/colony_screen.md §0.2), so the
+two cancel: this strip is indexed directly by def_id. buildings.json records the layout.
 
 Frames 10/11/30/31 are blank in the sheet (left empty -> a renderer falls back to its
 placeholder). Same black-key approximation caveat as phys0/units. Needs Pillow only to
@@ -72,8 +74,9 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     strip.save(os.path.join(OUT_DIR, "buildings.png"))
     meta = {"cell_w": CELL_W, "cell_h": CELL_H, "count": N, "drawn": drawn,
-            "source": SRC, "note": "frame = EXE BUILDING.SS index (col+row*16); "
-            "colony screen uses def_id+1 (spec/ui/colony_screen.md)"}
+            "source": SRC, "note": "strip cell N = @BUILDING def_id N (0-based; cell 0 = Stockade, "
+            "USER-VERIFIED). EXE draws def_id+1 in EXE-sheet space; the ssdec decode is off-by-one "
+            "from it so they cancel (spec/ui/colony_screen.md §0.2)"}
     with open(os.path.join(OUT_DIR, "buildings.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
     print(f"wrote {OUT_DIR}/buildings.png ({strip.size[0]}x{strip.size[1]}, "
