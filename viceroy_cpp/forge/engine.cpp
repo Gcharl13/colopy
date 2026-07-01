@@ -50,6 +50,33 @@ std::string game_text(const std::string& key) {
     return it == T.end() ? std::string() : it->second;
 }
 
+// Message metadata (box geometry + sprite) from data_extracted/engine/messages.json, keyed by @KEY.
+// A ShowPopup carries only the key; the runtime renders the box at box_w (auto if 0), placed at x/y
+// (-1 = centered), with the associated sprite -- so the popup is the message record, not authored.
+struct MsgMeta { int box_w = 0, x = -1, y = -1; std::string sprite; bool found = false; };
+const std::map<std::string, MsgMeta>& message_meta_table() {
+    static std::map<std::string, MsgMeta> M; static bool loaded = false;
+    if (!loaded) { loaded = true;
+        try { JsonValue d = json_parse_file("data_extracted/engine/messages.json");
+            const JsonValue* rows = d.find("messages");
+            if (rows) for (const auto& r : rows->arr) {
+                const JsonValue* k = r.find("key"); if (!k) continue;
+                MsgMeta m; m.found = true;
+                if (const JsonValue* v = r.find("box_w")) m.box_w = (int)v->num;
+                if (const JsonValue* v = r.find("x"))     m.x = (int)v->num;
+                if (const JsonValue* v = r.find("y"))     m.y = (int)v->num;
+                if (const JsonValue* v = r.find("sprite")) m.sprite = v->str;
+                M[k->str] = m;
+            }
+        } catch (...) {}
+    }
+    return M;
+}
+MsgMeta message_meta(const std::string& key) {
+    const auto& M = message_meta_table(); auto it = M.find(key);
+    return it == M.end() ? MsgMeta{} : it->second;
+}
+
 // ---- data-table cells as variables ----
 // A binding like "@BUILDING[name:Fort].cost" or "@CLASS[3].transport_cost" reads a real
 // cell from the game's data tables, so any row added in the Tables tab is immediately usable
@@ -1479,10 +1506,24 @@ struct Runner {
         if (t == "ShowPopup") {
             popup.type = JsonValue::Object;
             std::string key; std::string body = resolve_message(nodeId, key);
-            if (!key.empty()) popup.obj["textKey"] = json_str(key);
-            popup.obj["title"] = json_str(interp_bindings(pget(*n, "title").str));
+            if (!key.empty()) {
+                // The message IS the record: title = the @KEY, text = verbatim GAME.TXT, and the
+                // box size / placement / sprite come from messages.json -- not authored on the node.
+                popup.obj["textKey"] = json_str(key);
+                popup.obj["title"]   = json_str(key);            // the title IS the key
+                MsgMeta mm = message_meta(key);
+                if (mm.box_w) popup.obj["box_w"] = json_num(mm.box_w);
+                popup.obj["box_x"] = json_num(mm.x);
+                popup.obj["box_y"] = json_num(mm.y);
+                int lines = 1; for (char c : body) if (c == '\n') ++lines;   // box height auto from line count
+                popup.obj["box_h"] = json_num(lines);
+                if (!mm.sprite.empty()) popup.obj["sprite"] = json_str(mm.sprite);
+            } else {
+                // a custom popup with no @KEY (e.g. a computed report) may carry an authored title
+                popup.obj["title"] = json_str(interp_bindings(pget(*n, "title").str));
+            }
             popup.obj["body"]  = json_str(body);
-            // sprite channels this popup carries (spec/ui/popups.md 4-channel system)
+            // explicit sprite channels on the node still override the record (woodcut/speaker)
             std::string wc = pget(*n, "woodcut").str, sp = pget(*n, "speaker").str;
             if (!wc.empty()) popup.obj["woodcut"] = json_str(wc);
             if (!sp.empty()) popup.obj["speaker"] = json_str(sp);

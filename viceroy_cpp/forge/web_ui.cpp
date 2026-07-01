@@ -286,6 +286,19 @@ const char* forge_index_html() {
 const $ = s => document.querySelector(s);
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+// ---- sprite catalog (loaded once; id -> {label,kind,sheet,frame|file,w,h}) ----
+let SPRITECAT=null;
+async function loadSprites(){ if(SPRITECAT) return SPRITECAT;
+  try{ const d=await (await fetch('/api/sprites')).json(); SPRITECAT={}; (d.sprites||[]).forEach(s=>SPRITECAT[s.id]=s); }
+  catch(e){ SPRITECAT={}; } return SPRITECAT; }
+loadSprites();  // eager, so popups can render their sprite synchronously
+function spriteImg(id, maxw){
+  const s=SPRITECAT&&SPRITECAT[id]; if(!s) return '';
+  const w=maxw||160;
+  if(s.file) return '<img src="/assets/'+esc(s.file)+'" style="max-width:'+w+'px;max-height:'+Math.round(w*0.7)+'px;image-rendering:pixelated;border:1px solid #2a2f3a" onerror="this.style.display=\'none\'">';
+  return '';  // frame-based atlas sprites are drawn on canvas elsewhere
+}
+
 // ---- tabs ----
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
@@ -729,10 +742,16 @@ function showRun(d){
 }
 // Show the sprite channels a popup carries (spec/ui/popups.md): woodcut scene + speaker portrait.
 function popupSprites(p){
-  if(!p.woodcut&&!p.speaker) return '';
-  return '<div class="muted" style="margin:6px 0;border-top:1px solid #2a2f3a;padding-top:5px">sprites: '
-    +(p.woodcut?'<span title="scene woodcut">&#x1F5BC; woodcut <code>'+esc(p.woodcut)+'</code></span> ':'')
-    +(p.speaker?'<span title="speaker portrait">&#x1F464; speaker <code>'+esc(p.speaker)+'</code></span>':'')+'</div>';
+  let h='';
+  // the message record's associated sprite (a catalog id like woodcut.wdcut04) -> real image
+  if(p.sprite){ const img=spriteImg(p.sprite,180); if(img){ const s=SPRITECAT[p.sprite];
+    h+='<div style="text-align:center;margin:6px 0">'+img+'<div class="muted" style="font-size:11px">'+esc(s.label||p.sprite)+'</div></div>'; } }
+  // legacy node sprite channels (woodcut/speaker), if any
+  if(p.woodcut||p.speaker) h+='<div class="muted" style="margin:4px 0;font-size:11px;border-top:1px solid #2a2f3a;padding-top:4px">'
+    +(p.woodcut?'&#x1F5BC; '+esc(p.woodcut)+' ':'')+(p.speaker?'&#x1F464; '+esc(p.speaker):'')+'</div>';
+  // the box geometry the message record specifies
+  if(p.box_w) h+='<div class="muted" style="font-size:10px;text-align:right">box '+p.box_w+'px'+(p.box_x>=0?' @'+p.box_x+','+p.box_y:' (centered)')+'</div>';
+  return h;
 }
 addEventListener('keydown',e=>{ const t=document.activeElement&&document.activeElement.tagName;
   if((e.key==='Delete'||e.key==='Backspace')&&selNode&&t!=='INPUT'&&t!=='TEXTAREA'&&t!=='SELECT'){ delNode(); } });
