@@ -40,7 +40,8 @@ struct Config {
     int sol_decay_shift       = 6;    // SoL EMA decay 1/(2^shift) = 1/64
     int sol_inflow_mult       = 2;    // divisor inflow = mult*population
     int sol_birth_bonus       = 100;  // SoL divisor bump on a birth
-    int food_growth_threshold = 200;  // food to add +1 population
+    int food_growth_threshold = 50;   // +0xAA food store to add +1 pop, no Stable (spec colony.md, func_00A3E1 @0xA5CD)
+    int food_growth_threshold_stable = 25; // ... with a Stable (building 0x11=17) present (@0xA5BB seeds 0x19)
     int max_population        = 32;   // colony population cap
     int tory_divisor_base     = 10;   // tory penalty divisor (human: base-diff; ai: base)
     int expert_era_bonus      = 2;    // expert on an era good: +bonus

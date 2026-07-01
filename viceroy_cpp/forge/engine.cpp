@@ -234,7 +234,10 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         else if (g == 18)   bells   += wk.expert ? 6 : 3;
     }
     static const int RAW_OF[NGOODS]   = { -1,-1,-1,-1,-1,-1,-1,-1, -1, 1, 2, 3, 4, -1, 6, -1 };
-    static const int GATE_BLD[NGOODS] = { -1,-1,-1,-1,-1,-1,-1,-1,-1, 27, 24, 21, 32, -1, -1, -1 };
+    // Gate building per finished good (@BUILDING id via built_mask): Rum->Rum Distiller's House(27),
+    // Cigars->Tobacconist's(24), Cloth->Weaver's(21), Coats->Fur Trader's(32), Tools->Blacksmith's
+    // House(39). (Blacksmith's House IS in @BUILDING at row 39 -- closes backlog #7.)
+    static const int GATE_BLD[NGOODS] = { -1,-1,-1,-1,-1,-1,-1,-1,-1, 27, 24, 21, 32, -1, 39, -1 };
     for (const auto& wk : col.workers) {
         int g = wk.good;
         if (g < 8 || g >= NGOODS) continue;

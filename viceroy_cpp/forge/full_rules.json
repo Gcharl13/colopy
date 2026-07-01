@@ -286,5 +286,7 @@
       "move_class": 99,
       "movement": 2
     }
-  }
+  },
+  "food_growth_threshold": 50,
+  "food_growth_threshold_stable": 25
 }

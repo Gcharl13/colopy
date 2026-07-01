@@ -2384,10 +2384,20 @@
         {
           "name": "food_growth_threshold",
           "type": "int",
-          "default": 200,
+          "default": 50,
           "rw": "write",
           "group": "economy",
-          "meaning": "food to add +1 population",
+          "meaning": "half-surplus food store (+0xAA) to add +1 pop, no Stable",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "food_growth_threshold_stable",
+          "type": "int",
+          "default": 25,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "growth threshold with a Stable (building 17)",
           "tier": "R",
           "source": "sim/rules.hpp Config"
         },
