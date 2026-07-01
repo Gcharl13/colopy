@@ -1396,9 +1396,8 @@ static forge::JsonValue sandbox_state_json() {
     o.obj["colonists"] = colonists;
     o.obj["food_accum"] = forge::json_num((double)c.food_accum);
     o.obj["center_food"] = forge::json_num(c.center_food);
-    int thr = (c.built_mask & (1ull << 17)) ? g_active_rules.cfg.food_growth_threshold_stable
-                                            : g_active_rules.cfg.food_growth_threshold;
-    o.obj["food_threshold"] = forge::json_num(thr);
+    // 200 stored food -> a new colonist (USER RULING + warehousing.md:61-62; single threshold)
+    o.obj["food_threshold"] = forge::json_num(g_active_rules.cfg.food_growth_threshold);
     // Sons-of-Liberty production bonus (+1 at >=50%, +2 at 100%) + the owned founding fathers, so
     // the screen can show the multiplier and which fathers are boosting production.
     int sbsol = sol_pct(c);

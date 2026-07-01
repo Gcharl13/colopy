@@ -68,11 +68,12 @@ JsonValue formulas_catalog() {
           {"tory_divisor_base", "expert_era_bonus", "expert_mfg_mult"},
           "Loyalists (Tories) cut output; experts add a flat era bonus or multiply manufactured goods."),
         F("colony_economic_step (growth)", "Population growth on stored food",
-          "food_accum += food_per_turn ; if food_accum >= food_growth_threshold and "
-          "population < max_population: population += 1 ; food_accum -= food_growth_threshold ; "
+          "warehouse Food += food surplus ; if Food >= food_growth_threshold (200) and "
+          "population < max_population: population += 1 ; Food -= threshold ; "
           "rebel_B += sol_birth_bonus",
           {"food_growth_threshold", "max_population", "sol_birth_bonus"},
-          "A new colonist is born once stored food crosses the threshold; surplus carries over."),
+          "USER RULING + warehousing.md: at 200 stored food a new colonist is born and eats the "
+          "200; surplus carries over."),
         F("build_step", "Construction from hammers",
           "accumulate hammers into hammers_accum and build_bank ; when build_cost <= both, "
           "build_bank -= build_cost and the building/unit completes (surplus carried)",

@@ -196,15 +196,17 @@ static void test_ref() {
 }
 
 static void test_food_growth() {
-    std::printf("food -> population growth (food 50/turn: half=25 accrues, threshold 50 no Stable):\n");
-    Colony c; c.population = 1; c.food_per_turn = 50;    // half the surplus (25) accrues each turn
-    colony_economic_step(c, 1); colony_economic_step(c, 1); colony_economic_step(c, 1);
-    // t1 acc 25; t2 acc 50 -> grow pop2 acc0; t3 acc 25
-    CHECK(c.population == 2 && c.food_accum == 25, "after 3 -> pop %d acc %u",
-          c.population, c.food_accum);
-    colony_economic_step(c, 1);                          // t4 acc 50 -> grow pop3 acc0
-    CHECK(c.population == 3 && c.food_accum == 0, "after 4 -> pop %d acc %u",
-          c.population, c.food_accum);
+    std::printf("food -> population growth (USER RULING: 200 stored food -> +1 colonist, -200):\n");
+    Colony c; c.population = 1; c.food_per_turn = 75;    // the full surplus banks in the warehouse
+    colony_economic_step(c, 1); colony_economic_step(c, 1);
+    CHECK(c.population == 1 && c.stockpile[FOOD] == 150, "after 2 -> pop %d food %d",
+          c.population, c.stockpile[FOOD]);
+    colony_economic_step(c, 1);                          // t3: 225 >= 200 -> grow, keep 25
+    CHECK(c.population == 2 && c.stockpile[FOOD] == 25, "after 3 -> pop %d food %d",
+          c.population, c.stockpile[FOOD]);
+    // the SoL divisor gets the +100 birth bump (colony.md:211 @0x009453): 3 turns of
+    // sol_update on pop 1 leave B=7, then the birth adds 100.
+    CHECK(c.rebel_B == 107, "birth bumps rebel_B -> %d", c.rebel_B);
 }
 
 static void test_immigration() {

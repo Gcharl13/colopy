@@ -1322,10 +1322,11 @@ function sbRender(){
   h+='<tr><td>Bells / Hammers / Food / Crosses</td><td>'+SB.bells+' / '+SB.hammers+' / '+SB.food+' / '+SB.crosses+'</td></tr>';
   const bn=SB.building_name||'';
   h+='<tr><td>Under construction</td><td>'+(SB.build_target<0?'<span class="muted">idle</span>':(esc(bn)+' &mdash; '+SB.build_bank+' of '+SB.build_cost+' hammers ('+SB.build_remaining+' left)'))+'</td></tr>';
-  // food-growth progress: accumulator toward the next colonist (25 with a Stable, else 50)
-  if(SB.food_threshold){ const fa=SB.food_accum||0, thr=SB.food_threshold, half=Math.max(1,Math.ceil((SB.food+1)/2));
-    const left=Math.max(0,Math.ceil((thr-fa)/half));
-    h+='<tr><td>Food &rarr; growth</td><td>'+fa+' / '+thr+' &nbsp;<span class="muted">(+'+half+'/turn, ~'+left+' turns to next colonist)</span></td></tr>'; }
+  // food-growth progress: 200 stored food -> a new colonist (USER RULING + warehousing.md); the
+  // full food surplus banks in the warehouse each turn.
+  if(SB.food_threshold){ const fa=SB.food_accum||0, thr=SB.food_threshold, rate=Math.max(0,SB.food||0);
+    const left=rate>0?Math.max(0,Math.ceil((thr-fa)/rate)):null;
+    h+='<tr><td>Food &rarr; growth</td><td>'+fa+' / '+thr+' &nbsp;<span class="muted">(+'+rate+'/turn'+(left!=null?', ~'+left+' turns to next colonist':', no surplus')+')</span></td></tr>'; }
   h+='</table>';
   // the colonist roster -- who is here, their specialty, and where they work (the mechanics behind the numbers)
   const cols=SB.colonists||[];

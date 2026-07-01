@@ -47,21 +47,18 @@ void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
     const Config& cfg = rd.cfg;
     sol_update(c, c.bells_per_turn, c.population, rd);
     build_step(c, c.hammers_per_turn, c.build_cost);
-    // HALF the food surplus accrues toward growth (ceil(surplus/2), spec @0xA606); food_per_turn is
-    // the already-netted surplus (produced - 2*pop, >=0).
-    if (c.food_per_turn > 0) c.food_accum += (uint32_t)((c.food_per_turn + 1) / 2);
-    // Growth threshold is 25 with a Stable (building 0x11 = 17) present, else 50 (spec colony.md
-    // func_00A3E1 @0xA5BB/@0xA5CD -- corrected from the mis-attributed 200).
-    uint32_t threshold = (c.built_mask & (1ull << 17)) ? (uint32_t)cfg.food_growth_threshold_stable
-                                                       : (uint32_t)cfg.food_growth_threshold;
-    if (c.food_accum >= threshold && c.population < cfg.max_population) {
+    // Food growth (USER RULING + warehousing.md:61-62): the food SURPLUS (produced - 2*pop, already
+    // netted into food_per_turn) accumulates in the warehouse Food store; when it reaches 200 a new
+    // colonist is born and 200 food is consumed. This supersedes colony.md's 25/50 "+0xAA" trace
+    // (whose accrual instruction was never byte-found; the Stable-gated 25/50 threshold is likely
+    // the HORSES-breeding mechanism misattributed to food -- RULING note in spec/systems/colony.md).
+    if (c.food_per_turn > 0) c.stockpile[FOOD] += c.food_per_turn;
+    if (c.stockpile[FOOD] >= cfg.food_growth_threshold && c.population < cfg.max_population) {
         c.population += 1;
-        c.food_accum -= threshold;             // surplus carried
+        c.stockpile[FOOD] -= cfg.food_growth_threshold;   // the new colonist consumes the 200 food
         c.rebel_B += cfg.sol_birth_bonus;      // SoL divisor bump on birth (colony.md:211, @0x009453, B)
     }
-    // Surface the food-growth store (+0xAA) as the colony's warehouse Food (+0x9A[0]) so stored food
-    // is visible and drawn down on a birth -- the same accumulator, just shown in the warehouse row.
-    c.stockpile[FOOD] = (int32_t)c.food_accum;
+    c.food_accum = (uint32_t)(c.stockpile[FOOD] < 0 ? 0 : c.stockpile[FOOD]);  // legacy mirror (saves/bindings)
 }
 
 long export_overflow(Colony& c, Power& owner, const std::array<int32_t, NGOODS>& price,

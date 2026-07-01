@@ -41,8 +41,9 @@ struct Config {
     int sol_decay_shift       = 6;    // SoL EMA decay 1/(2^shift) = 1/64
     int sol_inflow_mult       = 2;    // divisor inflow = mult*population
     int sol_birth_bonus       = 100;  // SoL divisor bump on a birth
-    int food_growth_threshold = 50;   // +0xAA food store to add +1 pop, no Stable (spec colony.md, func_00A3E1 @0xA5CD)
-    int food_growth_threshold_stable = 25; // ... with a Stable (building 0x11=17) present (@0xA5BB seeds 0x19)
+    int food_growth_threshold = 200;  // warehouse Food to add +1 pop (USER RULING + warehousing.md:61-62:
+                                      // at 200 stored food a new colonist is created and 200 removed;
+                                      // supersedes colony.md's 25/50 "+0xAA" trace -- see the RULING note)
     int max_population        = 32;   // colony population cap
     int rush_gold_per_hammer  = 8;    // RECONSTRUCTED: gold to rush-buy one remaining hammer (no
                                       // byte-verified buyout curve in the spec; editable knob)

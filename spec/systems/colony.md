@@ -334,6 +334,17 @@ population count `+0x1F` and the secondary index `[bp+8]` against `0x13`=19 — 
 accumulator vs the 25/50 threshold** in `func_00A3E1` (next paragraph); the 200 figure was a
 mis-attribution.
 
+> **RULING (2026-07-01, USER GROUND TRUTH — supersedes the 25/50 model below for the
+> reimplementation):** the user rules **"it's 200 food for a new colonist"** — matching
+> `warehousing.md` §"Food exception" (manual: at 200+ stored food a new colonist is created and
+> 200 food removed). The 25/50 `+0xAA` model below keeps its byte anchors, but note: (a) the
+> per-turn `+0xAA` accrual instruction was **never found** (write-census, foot of section) — only
+> the threshold seeds and read sites are cited; (b) the threshold toggle is the **Stable**
+> (`0x11`), a horse building — the 25/50 mechanism is plausibly **HORSES breeding** mis-attributed
+> to food growth (hypothesis, not verified). The reimplementation accrues the food surplus into
+> the warehouse Food store and grows at **200** (−200 on birth, +100 SoL-divisor bump per
+> `func_009318 @0x009453`).
+
 **Growth & starvation mechanism — refined 2026-06-27 (B mechanism + B warning-trigger + B
 starvation-removal site `func_02D658 @0x2E2DE`; the per-turn `+0xAA` write was found NOT to exist — write-census closed **B**, see foot of section).** Per turn the
 food **surplus = max(0, producedFood[`0x8DC8`] − 2·pop)** (`@0xA5F7`); **half of it**
