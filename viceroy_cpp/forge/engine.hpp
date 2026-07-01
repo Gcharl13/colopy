@@ -22,11 +22,25 @@
 
 namespace forge {
 
+// A native settlement -- a first-class map entity (NativeSettlement record, spec/systems/natives.md):
+// a tribe's village at (x,y) with a per-power alarm[4], a size (population -> CHIEFKILL treasure),
+// wealth (trade/tribute), an optional mission (which power converted it, -1 none), and a Capital flag.
+struct NativeSettlement {
+    int  tribe = 0;              // @TRIBES row (0 Inca..7 Tupi)
+    int  x = 0, y = 0;           // +0x00 / +0x01 map position
+    int  population = 1;         // +0x04 size byte (feeds CHIEFKILL treasure)
+    int  wealth = 0;             // trade/tribute wealth
+    int  mission = -1;           // power that established a mission here, -1 = none
+    bool capital = false;        // +0x03 bit 0x04 Capital marker
+    int  alarm[4] = {0, 0, 0, 0};// +0x0A + power*2 per-European-power alarm (>=128 -> war)
+};
+
 // Game state the action nodes need that the pure sim GameState/World don't carry
 // (the sim core is economic; these are the relational fields the events touch).
 // Lives Forge-side and persists across requests, like colony_xy.
 struct EngineExtra {
-    int      tension  = 0;        // native tension 0..100 (sim/natives.hpp scale)
+    int      tension  = 0;        // native tension 0..100 (sim/natives.hpp scale) -- global legacy scalar
+    std::vector<NativeSettlement> settlements;   // real native villages (first-class entities)
     uint32_t ff_owned = 0;        // bit i set = founding father i acquired
     uint16_t boycotts = 0;        // bit g set = good g boycotted in Europe
     vc::sim::Diplomacy diplo;     // inter-power war/treaty matrices

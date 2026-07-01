@@ -805,6 +805,24 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     }
     if (path == "units.count")    return num((double)w.units.size());
     if (path == "natives.tension") return num(cx.x.tension);
+    if (path == "natives.count")   return num((double)cx.x.settlements.size());
+    // native<N>.<field> -- an individual settlement (tribe/x/y/population/wealth/mission/capital/alarm[.p])
+    if (path.rfind("native", 0) == 0 && path.size() > 6 && path[6] >= '0' && path[6] <= '9') {
+        size_t dot = path.find('.'); int s = std::atoi(path.c_str() + 6);
+        if (dot != std::string::npos && s >= 0 && s < (int)cx.x.settlements.size()) {
+            const forge::NativeSettlement& st = cx.x.settlements[s]; std::string f = path.substr(dot + 1);
+            if (f == "tribe")      return num(st.tribe);
+            if (f == "x")          return num(st.x);
+            if (f == "y")          return num(st.y);
+            if (f == "population") return num(st.population);
+            if (f == "wealth")     return num(st.wealth);
+            if (f == "mission")    return num(st.mission);
+            if (f == "capital")    return num(st.capital ? 1 : 0);
+            if (f == "alarm")      return num(st.alarm[0]);
+            if (f.rfind("alarm.", 0) == 0) { int p = std::atoi(f.c_str() + 6);
+                if (p >= 0 && p < 4) return num(st.alarm[p]); }
+        }
+    }
     // price.<good index> -> current European base price
     if (path.rfind("price.", 0) == 0) {
         int gi = std::atoi(path.c_str() + 6);
@@ -1293,8 +1311,17 @@ struct Runner {
         if (t == "ChangeNativeTension") {
             int delta = (int)as_num(eval_in(nodeId, "amount"));
             bool poca = (cx.x.ff_owned >> 16) & 1u;
-            cx.x.tension = vc::sim::apply_tension(cx.x.tension, delta, false, poca);
-            effect("native tension = " + std::to_string(cx.x.tension));
+            JsonValue sv = pget(*n, "settlement");
+            int si = sv.type == JsonValue::Null ? -1 : (int)as_num(sv);
+            if (si >= 0 && si < (int)cx.x.settlements.size()) {   // target a specific village's alarm (power 0)
+                int d = delta; if (poca && d > 0) d /= 2;         // Pocahontas (ff.16) halves increases
+                int& al = cx.x.settlements[si].alarm[0];
+                al += d; if (al < 0) al = 0; if (al > 200) al = 200;   // war threshold 128 (natives.md)
+                effect("settlement " + std::to_string(si) + " alarm = " + std::to_string(al));
+            } else {                                             // global fallback (legacy tension scalar)
+                cx.x.tension = vc::sim::apply_tension(cx.x.tension, delta, false, poca);
+                effect("native tension = " + std::to_string(cx.x.tension));
+            }
             return follow(nodeId, "out", popup);
         }
         if (t == "GiveFoundingFather") {

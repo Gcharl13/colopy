@@ -631,6 +631,33 @@ static int scenario_unit_type(const std::string& name) {
     return -1;
 }
 
+// Seed the native settlements as first-class entities: one village per (map_x,map_y) in each
+// active tribe's @<TRIBE> position table (tribe_tables.json), sized by its civilization @TRIBES
+// level, the first per tribe flagged Capital. Replaces the phantom global tension scalar.
+static void seed_native_settlements() {
+    g_engine_extra.settlements.clear();
+    static const char* TRIBE_TBL[8] = {"@INCA","@AZTEC","@ARAWAK","@IROQUOIS","@CHEROKEE","@APACHE","@SIOUX","@TUPI"};
+    static const int TRIBE_LEVEL[8] = {3, 2, 1, 1, 1, 0, 0, 0};
+    forge::JsonValue tribes;
+    try { tribes = forge::json_parse_file("data_extracted/tables/tribe_tables.json"); } catch (...) { return; }
+    auto asi = [](const forge::JsonValue* v) { return v ? (v->type == forge::JsonValue::String ? std::atoi(v->str.c_str()) : (int)v->num) : 0; };
+    for (int t = 0; t < 8; ++t) {
+        const forge::JsonValue* sec = tribes.find(TRIBE_TBL[t]); if (!sec) continue;
+        const forge::JsonValue* rows = sec->find("rows"); if (!rows) continue;
+        bool first = true;
+        for (const forge::JsonValue& r : rows->arr) {
+            const forge::JsonValue* mx = r.find("map_x"); const forge::JsonValue* my = r.find("map_y");
+            if (!mx || !my) continue;
+            forge::NativeSettlement s;
+            s.tribe = t; s.x = asi(mx); s.y = asi(my);
+            s.population = TRIBE_LEVEL[t] * 2 + 3;      // size scales with civilization level
+            s.wealth = TRIBE_LEVEL[t] * 20 + 10;
+            s.capital = first; first = false;           // first settlement of each tribe = its Capital
+            g_engine_extra.settlements.push_back(s);
+        }
+    }
+}
+
 // Start a new game, seeded from the chosen nation + difficulty and the authored
 // scenario (data_extracted/engine/scenarios/new_world.json). The scenario supplies
 // the map, calendar, starting gold, colonies and units; nation/difficulty come from
@@ -744,6 +771,7 @@ static void game_new(int nation = 0, int difficulty = 1) {
         auto a = cxy.empty() ? std::make_pair(20, 22) : cxy[0];
         add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
     }
+    seed_native_settlements();                          // real native villages on the map
     g_game_active = true;
 }
 
@@ -910,6 +938,19 @@ static forge::JsonValue game_state_json() {
         cols.arr.push_back(cj);
     }
     o.obj["colonies"] = cols;
+    // native settlements (first-class map entities): tribe name + position + capital + player alarm
+    forge::JsonValue nats = jarr();
+    for (const forge::NativeSettlement& s : g_engine_extra.settlements) {
+        forge::JsonValue so = jobj();
+        so.obj["tribe"] = forge::json_num(s.tribe);
+        so.obj["name"] = forge::resolve_binding("@TRIBES[" + std::to_string(s.tribe) + "].name",
+            forge::EngineCtx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng});
+        so.obj["x"] = forge::json_num(s.x); so.obj["y"] = forge::json_num(s.y);
+        so.obj["capital"] = jbool(s.capital); so.obj["population"] = forge::json_num(s.population);
+        so.obj["alarm"] = forge::json_num(s.alarm[0]);   // the human player's alarm at this village
+        nats.arr.push_back(so);
+    }
+    o.obj["settlements"] = nats;
     forge::JsonValue us = jarr();
     for (int i = 0; i < (int)g_world.units.size(); ++i) {
         const Unit& u = g_world.units[i];
@@ -1015,6 +1056,16 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         rel.arr.push_back(forge::json_num(x.diplo.rel[a][b])); }
     for (int a = 0; a < 4; ++a) cd.arr.push_back(forge::json_num(x.diplo.cooldown[a]));
     o.obj["diplo_war"] = war; o.obj["diplo_rel"] = rel; o.obj["diplo_cooldown"] = cd;
+    forge::JsonValue st = jarr();
+    for (const forge::NativeSettlement& s : x.settlements) {
+        forge::JsonValue so = jobj();
+        so.obj["tribe"] = forge::json_num(s.tribe); so.obj["x"] = forge::json_num(s.x); so.obj["y"] = forge::json_num(s.y);
+        so.obj["population"] = forge::json_num(s.population); so.obj["wealth"] = forge::json_num(s.wealth);
+        so.obj["mission"] = forge::json_num(s.mission); so.obj["capital"] = jbool(s.capital);
+        forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
+        so.obj["alarm"] = al; st.arr.push_back(so);
+    }
+    o.obj["settlements"] = st;
     return o;
 }
 static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
@@ -1041,6 +1092,18 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             if (k < (int)r->arr.size()) x.diplo.rel[a][b] = (uint8_t)r->arr[k].as_int(); }
     if (const forge::JsonValue* c = o->find("diplo_cooldown"))
         for (int a = 0; a < 4 && a < (int)c->arr.size(); ++a) x.diplo.cooldown[a] = c->arr[a].as_int();
+    x.settlements.clear();
+    if (const forge::JsonValue* st = o->find("settlements"))
+        for (const forge::JsonValue& s : st->arr) {
+            forge::NativeSettlement ns;
+            auto si = [&](const char* k, int d) { const forge::JsonValue* v = s.find(k); return v ? v->as_int(d) : d; };
+            ns.tribe = si("tribe", 0); ns.x = si("x", 0); ns.y = si("y", 0);
+            ns.population = si("population", 1); ns.wealth = si("wealth", 0); ns.mission = si("mission", -1);
+            const forge::JsonValue* cap = s.find("capital"); ns.capital = cap && cap->type == forge::JsonValue::Bool ? cap->b : false;
+            if (const forge::JsonValue* al = s.find("alarm"))
+                for (int p = 0; p < 4 && p < (int)al->arr.size(); ++p) ns.alarm[p] = al->arr[p].as_int();
+            x.settlements.push_back(ns);
+        }
 }
 
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
@@ -1348,6 +1411,28 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
             return J(200, game_state_json());
+        }
+
+        // Native settlements (first-class entities): tribe/name/position/capital/size/wealth/mission +
+        // per-power alarm. The source for a native-relations screen and the native event graphs.
+        if (path == "/api/natives") {
+            if (!g_game_active) game_new();
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            forge::JsonValue a = jarr();
+            for (size_t i = 0; i < g_engine_extra.settlements.size(); ++i) {
+                const forge::NativeSettlement& s = g_engine_extra.settlements[i];
+                forge::JsonValue so = jobj();
+                so.obj["index"] = forge::json_num((double)i); so.obj["tribe"] = forge::json_num(s.tribe);
+                so.obj["name"] = forge::resolve_binding("@TRIBES[" + std::to_string(s.tribe) + "].name", cx);
+                so.obj["x"] = forge::json_num(s.x); so.obj["y"] = forge::json_num(s.y);
+                so.obj["capital"] = jbool(s.capital); so.obj["population"] = forge::json_num(s.population);
+                so.obj["wealth"] = forge::json_num(s.wealth); so.obj["mission"] = forge::json_num(s.mission);
+                forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
+                so.obj["alarm"] = al; a.arr.push_back(so);
+            }
+            forge::JsonValue o = jobj(); o.obj["settlements"] = a;
+            o.obj["count"] = forge::json_num((double)g_engine_extra.settlements.size());
+            return J(200, o);
         }
 
         // Full colony detail: buildings built, colonist roster (profession/specialty/where),
