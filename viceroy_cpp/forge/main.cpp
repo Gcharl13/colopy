@@ -914,6 +914,44 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, game_state_json());
         }
 
+        // Start constructing a specific building in a colony (the interactive build menu).
+        // {colony, building} -> start_building with cost/min_colony from @BUILDING.
+        if (path == "/api/colony/build" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
+            int bid = b.find("building") ? b.find("building")->as_int(-1) : -1;
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            if (bid < 0) return err(400, "bad building");
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
+            int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx).as_int();
+            std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
+            bool ok = start_building(g_world.colonies[ci], bid, cost, minc);
+            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok);
+            o.obj["building"] = forge::json_str(name); o.obj["cost"] = forge::json_num(cost);
+            o.obj["msg"] = forge::json_str(ok ? ("Started " + name + " (" + std::to_string(cost) + " hammers)")
+                                              : (name + " unavailable (too small or already built)"));
+            return J(200, o);
+        }
+
+        // Rush-buy the current build with gold (reconstructed cost = remaining hammers * 8, see
+        // notes/rulings). {colony} -> rush_build against the colony's owner.
+        if (path == "/api/colony/rush" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            Colony& col = g_world.colonies[ci];
+            if (col.build_target < 0) return err(400, "nothing under construction");
+            long remaining = (long)col.build_cost - (long)col.build_bank;
+            if (remaining < 0) remaining = 0;
+            long gold_cost = remaining * 8;                       // RECONSTRUCTED rush curve
+            int owner = col.owner_power;
+            bool ok = (owner >= 0 && owner < 4) && rush_build(col, g_game.powers[owner], gold_cost);
+            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok); o.obj["cost"] = forge::json_num((double)gold_cost);
+            o.obj["msg"] = forge::json_str(ok ? "Construction complete" : "Not enough gold");
+            return J(200, o);
+        }
+
         if (path.rfind("/assets/", 0) == 0)
             return serve_asset(path.substr(8));   // strip "/assets/"
 

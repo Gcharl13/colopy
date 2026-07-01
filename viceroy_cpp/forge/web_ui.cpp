@@ -916,6 +916,7 @@ function scrRender(){
     d.style.left=(r[0]*SS)+'px'; d.style.top=(r[1]*SS)+'px'; d.style.width=(r[2]*SS)+'px'; d.style.height=(r[3]*SS)+'px';
     if(w.type==='rect'){ d.style.background='rgb('+(w.color||'0,0,0')+')'; }
     else if(w.type==='sprite'){ d.appendChild(spriteEl(w)); }
+    else if(w.type==='buildmenu'){ d.style.color='#8ad'; d.style.font='11px ui-monospace,monospace'; d.style.border='1px dashed #456'; d.textContent='[dynamic build menu: colony '+(w.colony||0)+']'; }
     else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2));
       d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px';
       d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
@@ -972,9 +973,38 @@ async function scrPreview(){
     d.style.cssText='left:'+(r[0]*SS)+'px;top:'+(r[1]*SS)+'px;width:'+(r[2]*SS)+'px;height:'+(r[3]*SS)+'px;cursor:'+((w.type==='button'&&w.onClick)?'pointer':'default');
     if(w.type==='rect') d.style.background='rgb('+(w.color||'0,0,0')+')';
     else if(w.type==='sprite'){ d.appendChild(spriteEl(w)); }
+    else if(w.type==='buildmenu'){ d.style.overflow='auto'; d.style.color='rgb('+(w.color||'220,220,220')+')'; d.style.font='11px ui-monospace,monospace'; renderBuildMenu(d, w); }
     else { d.style.color='rgb('+(w.color||'255,255,255')+')'; const fs=Math.max(8,Math.min(16,r[3]*SS-2)); d.style.font=fs+'px ui-monospace,monospace'; d.style.lineHeight=(r[3]*SS)+'px'; d.textContent=(w.type==='button')?('[ '+interp(w.text)+' ]'):interp(w.text); }
     if(w.type==='button'&&w.onClick) d.onclick=()=>pvFire(w.onClick);
     st.appendChild(d);
+  }
+}
+// Dynamic build menu: lists the @BUILDING rows this colony can actually construct right now
+// (population >= min_colony, not already built, not the current target) with a working Build button.
+async function renderBuildMenu(host, w){
+  const ci = w.colony||0;
+  host.textContent='Loading construction options...';
+  let tbl, pop, target;
+  try {
+    tbl = await (await fetch('/api/tables?file=names')).json();
+    pop = (await (await fetch('/api/bind?path=colony'+ci+'.population')).json()).value;
+    target = (await (await fetch('/api/bind?path=colony'+ci+'.build_target')).json()).value;
+  } catch(e){ host.textContent='build menu unavailable'; return; }
+  const sec = tbl['@BUILDING']||tbl.BUILDING||{}; const rows = sec.rows||[];
+  const elig=[];
+  await Promise.all(rows.map(async (r,i)=>{
+    let built=0; try{ built=(await (await fetch('/api/bind?path=colony'+ci+'.built.'+i)).json()).value; }catch(e){}
+    if(!built && pop>=(+r.min_colony) && i!==target) elig.push({i, name:r.name, cost:+r.cost, min:+r.min_colony});
+  }));
+  elig.sort((a,b)=>a.cost-b.cost);
+  host.innerHTML='<div style="opacity:.7;margin-bottom:3px">Available construction (pop '+pop+'):</div>';
+  if(!elig.length){ host.innerHTML+='<div style="opacity:.6">Nothing new to build here.</div>'; return; }
+  for(const e of elig){
+    const row=document.createElement('div'); row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;padding:1px 0';
+    row.innerHTML='<span>'+esc(e.name)+' <span style="opacity:.6">('+e.cost+'h)</span></span>';
+    const b=document.createElement('button'); b.className='act'; b.style.cssText='padding:0 6px;font-size:11px'; b.textContent='Build';
+    b.onclick=async()=>{ try{ const r=await (await fetch('/api/colony/build',{method:'POST',body:JSON.stringify({colony:ci,building:e.i})})).json(); ui.toast(r.msg||'built'); }catch(e){ ui.toast('build failed'); } scrPreview(); };
+    row.appendChild(b); host.appendChild(row);
   }
 }
 async function pvNav(id){ ui.close(); $('#scrpick').value=id; await scrLoad(); scrPreview(); }

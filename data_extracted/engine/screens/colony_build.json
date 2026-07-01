@@ -10,217 +10,35 @@
     {
       "id": "title",
       "type": "text",
-      "rect": [
-        70,
-        1,
-        240,
-        8
-      ],
+      "rect": [ 70, 1, 240, 8 ],
       "color": "82,138,49",
       "text": "Jamestown.  Year {game.year}.  Gold: {power0.gold}"
     },
     {
       "id": "now",
       "type": "text",
-      "rect": [
-        10,
-        16,
-        300,
-        8
-      ],
+      "rect": [ 10, 16, 300, 8 ],
       "color": "255,243,93",
       "text": "Now building: {colony0.building_name}  --  {colony0.build_bank} of {colony0.build_cost} hammers ({colony0.build_remaining} to go)"
     },
     {
-      "id": "sp0",
-      "type": "sprite",
-      "rect": [
-        14,
-        34,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 1
-    },
-    {
-      "id": "nm0",
-      "type": "text",
-      "rect": [
-        10,
-        68,
-        48,
-        8
-      ],
-      "color": "255,255,255",
-      "text": "Stockade"
-    },
-    {
-      "id": "co0",
-      "type": "text",
-      "rect": [
-        10,
-        77,
-        48,
-        8
-      ],
-      "color": "180,180,255",
-      "text": "{@BUILDING[0].cost} h"
-    },
-    {
-      "id": "sp1",
-      "type": "sprite",
-      "rect": [
-        92,
-        34,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 2
-    },
-    {
-      "id": "nm1",
-      "type": "text",
-      "rect": [
-        88,
-        68,
-        48,
-        8
-      ],
-      "color": "255,255,255",
-      "text": "Fort"
-    },
-    {
-      "id": "co1",
-      "type": "text",
-      "rect": [
-        88,
-        77,
-        48,
-        8
-      ],
-      "color": "180,180,255",
-      "text": "{@BUILDING[1].cost} h"
-    },
-    {
-      "id": "sp3",
-      "type": "sprite",
-      "rect": [
-        170,
-        34,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 4
-    },
-    {
-      "id": "nm3",
-      "type": "text",
-      "rect": [
-        166,
-        68,
-        48,
-        8
-      ],
-      "color": "255,255,255",
-      "text": "Carpenter's Shop"
-    },
-    {
-      "id": "co3",
-      "type": "text",
-      "rect": [
-        166,
-        77,
-        48,
-        8
-      ],
-      "color": "180,180,255",
-      "text": "{@BUILDING[3].cost} h"
-    },
-    {
-      "id": "sp6",
-      "type": "sprite",
-      "rect": [
-        248,
-        34,
-        32,
-        32
-      ],
-      "sheet": "BUILDING",
-      "frame": 7
-    },
-    {
-      "id": "nm6",
-      "type": "text",
-      "rect": [
-        244,
-        68,
-        48,
-        8
-      ],
-      "color": "255,255,255",
-      "text": "Church"
-    },
-    {
-      "id": "co6",
-      "type": "text",
-      "rect": [
-        244,
-        77,
-        48,
-        8
-      ],
-      "color": "180,180,255",
-      "text": "{@BUILDING[6].cost} h"
-    },
-    {
-      "id": "hint",
-      "type": "text",
-      "rect": [
-        10,
-        98,
-        300,
-        8
-      ],
-      "color": "160,160,160",
-      "text": "Min size {@BUILDING[1].min_colony} for a Fort; upkeep {@BUILDING[1].upkeep}/turn."
+      "id": "menu",
+      "type": "buildmenu",
+      "rect": [ 10, 28, 300, 74 ],
+      "color": "220,220,220",
+      "colony": 0
     },
     {
       "id": "stock",
       "type": "text",
-      "rect": [
-        10,
-        108,
-        300,
-        8
-      ],
+      "rect": [ 10, 106, 300, 8 ],
       "color": "210,190,120",
       "text": "Warehouse -- Sugar {colony0.stockpile.1}  Cotton {colony0.stockpile.3}  Furs {colony0.stockpile.4}  Lumber {colony0.stockpile.5}  Ore {colony0.stockpile.6}   Net food/turn {colony0.food}   Colonists {colony0.workers}"
     },
     {
-      "id": "build",
-      "type": "button",
-      "rect": [
-        10,
-        120,
-        70,
-        12
-      ],
-      "color": "255,255,255",
-      "text": "Build Fort",
-      "onClick": "colony_build"
-    },
-    {
       "id": "rush",
       "type": "button",
-      "rect": [
-        90,
-        120,
-        90,
-        12
-      ],
+      "rect": [ 10, 120, 90, 12 ],
       "color": "255,255,255",
       "text": "Rush with gold",
       "onClick": "colony_rush_buy"
@@ -228,12 +46,7 @@
     {
       "id": "exit",
       "type": "button",
-      "rect": [
-        284,
-        182,
-        32,
-        12
-      ],
+      "rect": [ 284, 182, 32, 12 ],
       "color": "255,255,255",
       "text": "Exit",
       "onClick": "goto_status"
