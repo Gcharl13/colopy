@@ -132,6 +132,10 @@ unless noted.
   `@CARGO` "Burden" legend: *"0 means ask is 1 higher than bid"* — `@CARGO` row
   verified present, e.g. `Food, 1, 3, …`). Sell handler `@0x32914` (price helper
   `@0x3245C`); cross-ref `systems/market.md`. **B**
+  > **RULING (2026-07-01, USER CONFIRMED):** the bid→ask spread IS the per-good defined
+  > value in the NAMES.TXT `@CARGO` table — **`ask = bid + Burden + 1`** (Food burden 7 →
+  > spread 8; Sugar 1 → 2; the finished goods 0 → 1). This reading GOVERNS over
+  > `systems/market.md`'s "display spread = start_low + 1" phrasing wherever they differ.
 - **Market-bar price-number X centering** (`func_0310B4 @0x031179..0x0311B3`):
   `textW = measure(0x204)`, `x = cell_center − textW/2 + 8` (`sar ax,1; sub; neg;
   add 8` @0x031191). Prices are **CENTERED in each cell**, drawn `Y=0xC2 (194)`,

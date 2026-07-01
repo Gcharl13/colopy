@@ -81,6 +81,15 @@ F7→`@MISC 52` 'NAVAL ADVISER REPORT' (via 0x39E3F→`0x191F:0xF12`); N=8→`@M
 'COLONIZATION SCORE'. (N byte-verified: F1=1@0x37450, F2=2@0x37967, F3=3@0x37A20,
 F4=4@0x38429, F5=5@0x38A60, F6=7@0x39403, F8=8@0x398AF.) **B.**
 
+> **RULING (2026-07-01, USER GROUND TRUTH — Colony/Naval PIK mapping):** the user rules
+> **"colony and naval advisor reports are labeled backwards"** ⇒ **F6 Colony Adviser renders
+> over REPORT6.PIK** (the fort/colony artwork) and **F7 Naval Adviser over REPORT7.PIK** (the
+> sailing-ship artwork). The byte anchor `F6=7@0x39403` stands as a byte fact, but its
+> *attribution* (which body function is the Colony vs Naval report) is superseded by the
+> artwork + user ground truth — the anchor most likely sits in the Naval body. REPORT6 = the
+> stockaded colony scene, REPORT7 = the ship (both decoded from the PIKs); Reading A
+> ("Colony=REPORT7") is struck.
+
 ### 2.2 Shared draw / text-composition primitives (`0x181F:` library) — **B**
 
 The bodies build text into a stack buffer then draw it via these resident primitives.

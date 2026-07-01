@@ -33,7 +33,7 @@ bool set_cfg_scalar(Config& c, const std::string& k, const JsonValue& v) {
     F(ref_cavalry_ratio) F(ref_artillery_ratio) F(ref_naval_ratio)
     F(imm_threshold_cap) F(imm_sub4k_mult) F(imm_sub4k_offset)
     F(imm_ai_scale) F(imm_ai_divisor) F(imm_england_num) F(imm_england_den)
-    F(imm_dock_slots) F(imm_base_crosses)
+    F(imm_dock_slots) F(imm_base_crosses) F(imm_refill_addend)
 #undef F
     return false;
 }
@@ -148,7 +148,7 @@ JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
     D(ref_cavalry_ratio) D(ref_artillery_ratio) D(ref_naval_ratio)
     D(imm_threshold_cap) D(imm_sub4k_mult) D(imm_sub4k_offset)
     D(imm_ai_scale) D(imm_ai_divisor) D(imm_england_num) D(imm_england_den)
-    D(imm_dock_slots) D(imm_base_crosses)
+    D(imm_dock_slots) D(imm_base_crosses) D(imm_refill_addend)
 #undef D
     auto emit_array = [&](const char* key, const int* bv, const int* cv, size_t n) {
         bool diff = false;
@@ -217,7 +217,7 @@ JsonValue full_overlay(const RuleData& rd) {
     E(ref_cavalry_ratio) E(ref_artillery_ratio) E(ref_naval_ratio)
     E(imm_threshold_cap) E(imm_sub4k_mult) E(imm_sub4k_offset)
     E(imm_ai_scale) E(imm_ai_divisor) E(imm_england_num) E(imm_england_den)
-    E(imm_dock_slots) E(imm_base_crosses)
+    E(imm_dock_slots) E(imm_base_crosses) E(imm_refill_addend)
 #undef E
     auto emit_array = [&](const char* key, const int* cv, size_t n) {
         JsonValue a; a.type = JsonValue::Array;

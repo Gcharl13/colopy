@@ -226,14 +226,19 @@ static void test_immigration() {
     CHECK(crosses_threshold(3, 0, 0, false, /*is_england*/true) == 9, "threshold -> %d",
           crosses_threshold(3, 0, 0, false, /*is_england*/true));
     Power p;
-    auto rng = [](int, int) { return 1; };       // dock slot 1
+    auto rng = [](int, int) { return 1; };       // dock slot 1; refill roll 1 -> low tier -> criminal
     bool spawned = false;
     int turns = 0;
     for (; turns < 10 && !spawned; ++turns)       // 2 crosses/turn, England threshold 9
         spawned = immigration_step(p, 2, 3, 0, /*diff*/0, /*ai*/false, /*is_england*/true, rng).spawned;
     CHECK(turns == 5, "spawned on turn %d", turns);
-    CHECK(p.dock_pool[1] == 0x1C && p.crosses_accum == 0, "dock %d acc %d",
+    // rng==1 everywhere: refill roll 1 < threshold (0+8)/2=4 -> low tier; rng(1,10)=1 -> Petty Criminal
+    CHECK(p.dock_pool[1] == 0x19 && p.crosses_accum == 0, "dock %d acc %d",
           p.dock_pool[1], p.crosses_accum);
+    // the func_034C24 distribution: high tier is Servant, Free Colonist with Brewster
+    auto hi = [](int lo, int) { return lo == 1 ? 15 : 5; };   // roll 15 -> high tier
+    CHECK(immigrant_refill(0, false, hi) == 0x1A, "high tier -> Indentured Servant");
+    CHECK(immigrant_refill(0, true,  hi) == 0x1C, "Brewster high tier -> Free Colonist");
 }
 
 static void test_turn_loop() {

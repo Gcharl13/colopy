@@ -27,6 +27,12 @@ Operates on the CURRENT `PowerRecord` via far ptr `DGROUP:0x84FC` (= `0x8808 + p
   (stride 202) and the UnitRecord table; `if accum<4000: accum*=2; accum+=8; clamp
   4000`; difficulty scale `accum*(8-difficulty[0x53A6])/8`; **England (player 0):
   accum*2/3**. **BYTE_VERIFIED shape.**
+> **RULING (2026-07-01, USER GROUND TRUTH):** the immigration pool is driven by **CROSSES**
+> (church/cathedral production) — "crosses drive it." Any reading that reconciles the
+> per-colony byte `+0x05` to *population* is superseded: `+0x05` is the colony's **cross
+> output**, consistent with the "Base +2/turn + per-colony church/cathedral cross output"
+> summary below. The reimplementation accumulates base 2 + Σ colony crosses per turn.
+
 - **Per-turn crosses increment** — produced by the **same** `func_035D9A` via its
   out-param `[bp+8]`, **BYTE_VERIFIED** (`@0x35DA1..0x35E2B`): seeds the delta at
   **`2`** (`@0x35DA1`), then over each colony (count `[0x539E]`, table `DGROUP:0x5D60`

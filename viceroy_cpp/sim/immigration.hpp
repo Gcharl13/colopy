@@ -20,14 +20,20 @@ int crosses_threshold(int total_workers, int unit_count,
 
 struct ImmigrationResult { bool spawned = false; int type = -1; int slot = -1; };
 
-// One immigration step for a power: accrue `crosses_gained` (= base + Σ
-// colony cross output), recompute the threshold, and when accum > threshold
-// spawn an immigrant into a random dock slot and reset accum.
-// (P1 spawns a Free Colonist; the full turn&3 type-distribution RNG is P2.)
+// The dock-slot refill distribution (func_034C24): difficulty-scaled high/low tier split;
+// Brewster (FF 0x14) upgrades the high tier to Free Colonist. See immigration.cpp.
+int immigrant_refill(int difficulty, bool has_brewster, const RandFn& rng,
+                     const RuleData& rd = default_rules());
+
+// One immigration step for a power: accrue `crosses_gained` (= base + Σ colony cross
+// output -- USER RULING: crosses drive the pool), recompute the threshold, and when
+// accum > threshold the chosen dock slot's stored colonist arrives (the slot refills via
+// the func_034C24 distribution) and accum resets.
 ImmigrationResult immigration_step(Power& p, int crosses_gained,
                                    int total_workers, int unit_count,
                                    int difficulty, bool ai, bool is_england,
                                    const RandFn& rng,
-                                   const RuleData& rd = default_rules());
+                                   const RuleData& rd = default_rules(),
+                                   bool has_brewster = false);
 
 } // namespace vc::sim

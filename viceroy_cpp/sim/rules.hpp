@@ -79,6 +79,8 @@ struct Config {
     int imm_england_num = 2, imm_england_den = 3;  // England (player 0): a*num/den
     int imm_dock_slots = 3;           // immigrant dock slot count
     int imm_base_crosses = 2;         // per-turn base crosses before colony output
+    int imm_refill_addend = 8;        // dock refill threshold = (diff+addend)/2 vs roll 1..15
+                                      // (func_034C24; the addend is elided in the spec -- RECONSTRUCTED)
 };
 
 // One @CARGO row's market columns (NAMES.TXT @CARGO; value-identity asserted against

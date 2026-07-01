@@ -62,14 +62,17 @@ void phase_production(GameState& g, World& w, const RuleData& rd, uint32_t ff_ow
     }
 }
 void phase_market(GameState& g, World&, const RuleData& rd) { market_turn(g, rd); }
-void phase_immigration(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
+void phase_immigration(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd,
+                       uint32_t ff_owned) {
     for (int p = 0; p < 4; ++p) {
         int workers = 0, crosses = rd.cfg.imm_base_crosses;
         for (const Colony& c : w.colonies)
             if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
         bool is_england = (p == player_idx) && (g.nation == 0);
+        // William Brewster (FF 0x14 = 20) shifts the human power's dock refill to the top class.
+        bool brewster = (p == player_idx) && ((ff_owned >> 20) & 1u);
         immigration_step(g.powers[p], crosses, workers, /*units*/0,
-                         g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd);
+                         g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd, brewster);
     }
 }
 void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
@@ -92,7 +95,7 @@ void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const R
     for (const std::string& id : turn_phases()) {
         if (id == "production")       phase_production(g, w, rd, ff_owned);
         else if (id == "market")      phase_market(g, w, rd);
-        else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd);
+        else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
         else if (id == "ref")         phase_ref(g, w, player_idx, rd);
         else if (id == "units")       phase_units(g, w, rng, rd);
         else if (id == "cadence")     phase_cadence(g, w, rd);
