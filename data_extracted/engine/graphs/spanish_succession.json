@@ -40,7 +40,6 @@
       "x": 470,
       "y": 40,
       "params": {
-        "title": "The Spanish Succession",
         "textKey": "@SUCCESSION",
         "speaker": "King",
         "choices": "Continue"

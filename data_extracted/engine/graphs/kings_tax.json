@@ -83,7 +83,6 @@
       "x": 820,
       "y": 20,
       "params": {
-        "title": "A Royal Wedding",
         "textKey": "@KINGWIFE",
         "choices": "Kiss the royal pinky ring,Hold a Party",
         "speaker": "King"
@@ -95,7 +94,6 @@
       "x": 820,
       "y": 110,
       "params": {
-        "title": "The Crown's War",
         "textKey": "@KINGWAR",
         "choices": "Kiss the royal pinky ring,Hold a Party",
         "speaker": "King"
@@ -107,7 +105,6 @@
       "x": 820,
       "y": 200,
       "params": {
-        "title": "A Navigation Act",
         "textKey": "@KINGNAVACT",
         "choices": "Kiss the royal pinky ring,Hold a Party",
         "speaker": "King"
@@ -119,7 +116,6 @@
       "x": 820,
       "y": 290,
       "params": {
-        "title": "A Stamp Act",
         "textKey": "@KINGSTAMPACT",
         "choices": "Kiss the royal pinky ring,Hold a Party",
         "speaker": "King"
@@ -149,7 +145,6 @@
       "x": 1300,
       "y": 300,
       "params": {
-        "title": "A Colonial Party!",
         "textKey": "@TEAPARTY",
         "choices": "No taxation without representation!"
       }

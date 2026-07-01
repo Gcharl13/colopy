@@ -63,9 +63,7 @@
     {
       "id": "pop",
       "params": {
-        "body": "Your explorers uncover the ruins of a lost civilization and recover its gold!",
         "choices": "Praise be to God,Onward",
-        "title": "Ruins of a Lost Civilization",
         "textKey": "@LOSTCITY3",
         "woodcut": "WDCUT04"
       },

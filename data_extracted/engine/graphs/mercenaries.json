@@ -40,7 +40,6 @@
       "x": 420,
       "y": 40,
       "params": {
-        "title": "Mercenaries for Hire",
         "textKey": "@MERCENARIES",
         "choices": "Hire them,Decline",
         "speaker": "King"
@@ -51,7 +50,9 @@
       "type": "Formula",
       "x": 620,
       "y": 170,
-      "params": { "expr": "revolution.declared" }
+      "params": {
+        "expr": "revolution.declared"
+      }
     },
     {
       "id": "hbr",
@@ -86,7 +87,6 @@
       "x": 1040,
       "y": 40,
       "params": {
-        "title": "Mercenaries Arrive",
         "textKey": "@MERCS",
         "choices": "Welcome."
       }
@@ -124,28 +124,64 @@
       }
     },
     {
-      "from": { "node": "pop", "pin": "Hire them" },
-      "to": { "node": "hbr", "pin": "in" }
+      "from": {
+        "node": "pop",
+        "pin": "Hire them"
+      },
+      "to": {
+        "node": "hbr",
+        "pin": "in"
+      }
     },
     {
-      "from": { "node": "wdecl", "pin": "value" },
-      "to": { "node": "hbr", "pin": "cond" }
+      "from": {
+        "node": "wdecl",
+        "pin": "value"
+      },
+      "to": {
+        "node": "hbr",
+        "pin": "cond"
+      }
     },
     {
-      "from": { "node": "hbr", "pin": "true" },
-      "to": { "node": "hire", "pin": "in" }
+      "from": {
+        "node": "hbr",
+        "pin": "true"
+      },
+      "to": {
+        "node": "hire",
+        "pin": "in"
+      }
     },
     {
-      "from": { "node": "hbr", "pin": "false" },
-      "to": { "node": "hpeace", "pin": "in" }
+      "from": {
+        "node": "hbr",
+        "pin": "false"
+      },
+      "to": {
+        "node": "hpeace",
+        "pin": "in"
+      }
     },
     {
-      "from": { "node": "hire", "pin": "out" },
-      "to": { "node": "arr", "pin": "in" }
+      "from": {
+        "node": "hire",
+        "pin": "out"
+      },
+      "to": {
+        "node": "arr",
+        "pin": "in"
+      }
     },
     {
-      "from": { "node": "hpeace", "pin": "out" },
-      "to": { "node": "arr", "pin": "in" }
+      "from": {
+        "node": "hpeace",
+        "pin": "out"
+      },
+      "to": {
+        "node": "arr",
+        "pin": "in"
+      }
     }
   ]
 }

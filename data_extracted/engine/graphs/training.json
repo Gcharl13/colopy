@@ -56,7 +56,6 @@
       "x": 640,
       "y": 360,
       "params": {
-        "title": "Too Unskilled",
         "textKey": "@LEARNCRIMINAL",
         "choices": "We shall return."
       }
@@ -76,7 +75,6 @@
       "x": 840,
       "y": 180,
       "params": {
-        "title": "A Skill Learned",
         "textKey": "@LEARNDONE",
         "choices": "We are grateful."
       }
@@ -87,7 +85,6 @@
       "x": 640,
       "y": 460,
       "params": {
-        "title": "Already a Master",
         "textKey": "@LEARNMASTER",
         "choices": "Of course."
       }

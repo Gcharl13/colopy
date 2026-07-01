@@ -79,7 +79,6 @@
       "x": 780,
       "y": 40,
       "params": {
-        "title": "Religious Unrest",
         "textKey": "@UNREST",
         "choices": "Visit the docks",
         "woodcut": "WDCUT04"
@@ -91,7 +90,6 @@
       "x": 980,
       "y": 40,
       "params": {
-        "title": "Recruit a Colonist",
         "textKey": "@RECRUIT",
         "choices": "Pay their passage,Leave them waiting",
         "speaker": "Recruiter"

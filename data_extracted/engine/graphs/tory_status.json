@@ -40,7 +40,6 @@
       "x": 420,
       "y": 20,
       "params": {
-        "title": "Rebels Unanimous",
         "textKey": "@REBELUNANIMOUS",
         "choices": "Liberty!"
       }
@@ -51,7 +50,6 @@
       "x": 420,
       "y": 90,
       "params": {
-        "title": "Rebel Majority",
         "textKey": "@REBELMAJORITY",
         "choices": "Onward."
       }
@@ -62,7 +60,6 @@
       "x": 420,
       "y": 160,
       "params": {
-        "title": "Tory Majority",
         "textKey": "@TORYMAJORITY",
         "choices": "Hmph."
       }

@@ -33,7 +33,6 @@
       "x": 240,
       "y": 40,
       "params": {
-        "title": "Rush Construction?",
         "textKey": "@BUYME1",
         "choices": "Never mind,Complete it",
         "speaker": "Governor"

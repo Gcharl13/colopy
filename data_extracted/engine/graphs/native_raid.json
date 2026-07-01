@@ -75,7 +75,6 @@
       "x": 820,
       "y": 20,
       "params": {
-        "title": "Raid Repelled",
         "textKey": "@RAIDNOTHING",
         "choices": "Jubilant!"
       }
@@ -86,7 +85,6 @@
       "x": 820,
       "y": 90,
       "params": {
-        "title": "Stores Raided",
         "textKey": "@RAIDSTORES",
         "woodcut": "WDCUT12",
         "choices": "Outrage!"
@@ -98,7 +96,6 @@
       "x": 820,
       "y": 160,
       "params": {
-        "title": "Havoc",
         "textKey": "@RAIDWREAK",
         "woodcut": "WDCUT12",
         "choices": "Vengeance!"
@@ -119,7 +116,6 @@
       "x": 1020,
       "y": 260,
       "params": {
-        "title": "Strongboxes Seized",
         "textKey": "@RAIDGOLD",
         "woodcut": "WDCUT12",
         "choices": "Enraged!"
@@ -131,7 +127,6 @@
       "x": 820,
       "y": 330,
       "params": {
-        "title": "Buildings Burn",
         "textKey": "@RAIDBURN",
         "woodcut": "WDCUT12",
         "choices": "Rebuild"

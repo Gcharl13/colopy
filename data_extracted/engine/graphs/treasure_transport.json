@@ -33,7 +33,6 @@
       "x": 240,
       "y": 40,
       "params": {
-        "title": "The Crown's Galleon",
         "textKey": "@KINGGALLEON2",
         "speaker": "King",
         "choices": "Let the Crown ship it,Keep it in the New World"
@@ -72,10 +71,55 @@
     }
   ],
   "edges": [
-    { "from": { "node": "trig", "pin": "out" }, "to": { "node": "pop", "pin": "in" } },
-    { "from": { "node": "pop", "pin": "Let the Crown ship it" }, "to": { "node": "grant", "pin": "in" } },
-    { "from": { "node": "keep", "pin": "value" }, "to": { "node": "grant", "pin": "amount" } },
-    { "from": { "node": "grant", "pin": "out" }, "to": { "node": "done", "pin": "in" } },
-    { "from": { "node": "pop", "pin": "Keep it in the New World" }, "to": { "node": "kept", "pin": "in" } }
+    {
+      "from": {
+        "node": "trig",
+        "pin": "out"
+      },
+      "to": {
+        "node": "pop",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pop",
+        "pin": "Let the Crown ship it"
+      },
+      "to": {
+        "node": "grant",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "keep",
+        "pin": "value"
+      },
+      "to": {
+        "node": "grant",
+        "pin": "amount"
+      }
+    },
+    {
+      "from": {
+        "node": "grant",
+        "pin": "out"
+      },
+      "to": {
+        "node": "done",
+        "pin": "in"
+      }
+    },
+    {
+      "from": {
+        "node": "pop",
+        "pin": "Keep it in the New World"
+      },
+      "to": {
+        "node": "kept",
+        "pin": "in"
+      }
+    }
   ]
 }

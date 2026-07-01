@@ -77,7 +77,6 @@
       "x": 440,
       "y": 40,
       "params": {
-        "title": "Forest Cleared",
         "textKey": "@CLEARCUT",
         "choices": "Onward."
       }

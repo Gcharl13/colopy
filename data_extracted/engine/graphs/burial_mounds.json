@@ -68,7 +68,6 @@
       "x": 420,
       "y": 20,
       "params": {
-        "title": "Empty Mounds",
         "textKey": "@BURIAL1",
         "choices": "Move on."
       }
@@ -88,7 +87,6 @@
       "x": 620,
       "y": 120,
       "params": {
-        "title": "Burial Trinkets",
         "textKey": "@BURIAL2",
         "choices": "Modest reward."
       }
@@ -108,7 +106,6 @@
       "x": 620,
       "y": 240,
       "params": {
-        "title": "Burial Treasure",
         "textKey": "@BURIAL3",
         "choices": "A fortune!"
       }

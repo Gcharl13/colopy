@@ -40,7 +40,6 @@
       "x": 220,
       "y": 200,
       "params": {
-        "title": "Too Few Patriots",
         "textKey": "@TOOTORY",
         "choices": "We shall build more bells."
       }
@@ -51,7 +50,6 @@
       "x": 420,
       "y": 40,
       "params": {
-        "title": "Declare Independence?",
         "textKey": "@DECLARE",
         "choices": "Declare independence!,Not yet"
       }
@@ -76,7 +74,6 @@
       "x": 980,
       "y": 40,
       "params": {
-        "title": "The War of Independence",
         "textKey": "@INDEPENDENCE",
         "choices": "Liberty or death!"
       }

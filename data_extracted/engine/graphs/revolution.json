@@ -52,7 +52,6 @@
       "x": 780,
       "y": 40,
       "params": {
-        "title": "Independence!",
         "textKey": "@INDEPENDENCE",
         "choices": "Liberty or death!"
       }
