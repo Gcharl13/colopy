@@ -1195,9 +1195,21 @@ static void sandbox_new(int pop) {
     g_sb_game.difficulty = 1; g_sb_game.year = 1600; g_sb_game.season = 0;
     g_sb_game.powers[0].gold = 1000; g_sb_game.powers[0].tax = 0;
     for (int i = 0; i < NGOODS; ++i) g_sb_game.price_base[i] = 800;
-    Colony c; c.owner_power = 0; c.human = true; c.population = pop < 1 ? 1 : pop > 32 ? 32 : pop;
-    c.bells_per_turn = 2; c.hammers_per_turn = 3; c.food_per_turn = 4; c.crosses_output = 1;
+    Colony c; c.owner_power = 0; c.human = true;
     c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+    c.center_terrain = 2; c.center_food = 5;                 // town-square auto-food (center tile)
+    // A REAL colonist roster (Worker = {profession, tile, terrain, good, expert}) so production is
+    // DERIVED from who works where, not seeded as flat numbers. Farmers on plains -> food, an expert
+    // Lumberjack on forest -> lumber, a Carpenter -> hammers, a Statesman -> bells.
+    c.workers.push_back(Colony::Worker{ 0,  0, 2,  0, false});   // Farmer            field tile 0 -> Food
+    c.workers.push_back(Colony::Worker{ 0,  6, 2,  0, false});   // Farmer            field tile 6 -> Food
+    c.workers.push_back(Colony::Worker{ 5,  4, 8,  5, true });   // Expert Lumberjack field tile 4 -> Lumber
+    c.workers.push_back(Colony::Worker{13, -1, 0, 16, false});   // Carpenter         building     -> Hammers
+    c.workers.push_back(Colony::Worker{17, -1, 0, 18, false});   // Statesman         building     -> Bells
+    c.built_mask = (1ull << 9) | (1ull << 35) | (1ull << 37);   // Town Hall / Carpenter's Shop / Church
+    c.population = (int)c.workers.size();
+    if (pop > (int)c.workers.size() && pop <= 32) c.population = pop;
+    forge::colony_compute_production(c, g_sb_game.difficulty, g_active_rules);   // roster -> *_per_turn
     g_sb_world.colonies.push_back(c); g_sb_colony_xy.push_back({0, 0});
     g_sb_active = true;
 }
@@ -1230,6 +1242,24 @@ static forge::JsonValue sandbox_state_json() {
     forge::JsonValue built = jarr();
     for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) built.arr.push_back(forge::json_num(b));
     o.obj["built"] = built;
+    // The colonist roster -- who is here, their specialty, and where they work -- plus the
+    // food-growth accumulator, so the sandbox screen can show the mechanics, not just totals.
+    forge::JsonValue colonists = jarr();
+    for (const auto& wk : c.workers) {
+        forge::JsonValue w = jobj();
+        w.obj["name"] = forge::json_str(forge::job_name(wk.profession, wk.expert));
+        w.obj["expert"] = jbool(wk.expert);
+        w.obj["produces"] = forge::json_str(good_display(wk.good));
+        w.obj["tile"] = forge::json_num(wk.tile);
+        w.obj["where"] = forge::json_str(wk.tile >= 0 ? ("field tile " + std::to_string(wk.tile)) : "building");
+        colonists.arr.push_back(w);
+    }
+    o.obj["colonists"] = colonists;
+    o.obj["food_accum"] = forge::json_num((double)c.food_accum);
+    o.obj["center_food"] = forge::json_num(c.center_food);
+    int thr = (c.built_mask & (1ull << 17)) ? g_active_rules.cfg.food_growth_threshold_stable
+                                            : g_active_rules.cfg.food_growth_threshold;
+    o.obj["food_threshold"] = forge::json_num(thr);
     return o;
 }
 
@@ -1876,7 +1906,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue b = forge::json_parse(body);
             if (!g_sb_active) sandbox_new(3);
             int n = b.find("n") ? b.find("n")->as_int(1) : 1; if (n < 1) n = 1; if (n > 50) n = 50;
-            for (int i = 0; i < n; ++i) step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
+            for (int i = 0; i < n; ++i) {
+                // Recompute production from the colonist roster (as the real turn pipeline's
+                // production phase does), THEN run the economic step off those fresh numbers.
+                forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules);
+                step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
+            }
             return J(200, sandbox_state_json());
         }
 
@@ -2646,7 +2681,32 @@ static int do_bundle(int argc, char** argv) {
     return 1;
 }
 
+// All data paths are relative to a repo root that contains data_extracted/. Launching from the
+// wrong directory (e.g. the build/ folder after `make`) makes every table/graph/message lookup
+// silently return nothing, so the game looks empty/broken. Locate the root once at startup -- from
+// the CWD, else by walking up from the executable's own directory -- and chdir there, so `forge`
+// works no matter where it is launched.
+static void ensure_data_root(const char* argv0) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    if (fs::exists("data_extracted", ec)) return;                 // already at a valid root
+    auto try_up = [&](fs::path p) -> bool {
+        for (int i = 0; i < 8 && !p.empty(); ++i) {
+            if (fs::exists(p / "data_extracted", ec)) { fs::current_path(p, ec); return true; }
+            if (!p.has_parent_path()) break;
+            p = p.parent_path();
+        }
+        return false;
+    };
+    if (argv0 && *argv0) {
+        fs::path exe = fs::weakly_canonical(fs::path(argv0), ec);
+        if (!exe.empty() && exe.has_parent_path() && try_up(exe.parent_path())) return;
+    }
+    try_up(fs::current_path(ec));                                 // last resort: walk up from CWD
+}
+
 int main(int argc, char** argv) {
+    ensure_data_root(argv[0]);
     std::string cmd = argc >= 2 ? argv[1] : "";
     if (cmd == "inspect") return do_inspect(argc >= 3 ? argv[2] : nullptr);
     if (cmd == "rules")   return do_rules(argc, argv);

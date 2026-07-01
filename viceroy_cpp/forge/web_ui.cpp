@@ -1253,7 +1253,20 @@ function sbRender(){
   h+='<tr><td>Bells / Hammers / Food / Crosses</td><td>'+SB.bells+' / '+SB.hammers+' / '+SB.food+' / '+SB.crosses+'</td></tr>';
   const bn=SB.building_name||'';
   h+='<tr><td>Building</td><td>'+(SB.build_target<0?'<span class="muted">idle</span>':(esc(bn)+' &mdash; '+SB.build_bank+' of '+SB.build_cost+' hammers ('+SB.build_remaining+' left)'))+'</td></tr>';
-  h+='<tr><td>Built</td><td>'+built+'</td></tr></table>';
+  h+='<tr><td>Built</td><td>'+built+'</td></tr>';
+  // food-growth progress: accumulator toward the next colonist (25 with a Stable, else 50)
+  if(SB.food_threshold){ const fa=SB.food_accum||0, thr=SB.food_threshold, half=Math.max(1,Math.ceil((SB.food+1)/2));
+    const left=Math.max(0,Math.ceil((thr-fa)/half));
+    h+='<tr><td>Food &rarr; growth</td><td>'+fa+' / '+thr+' &nbsp;<span class="muted">(+'+half+'/turn, ~'+left+' turns to next colonist)</span></td></tr>'; }
+  h+='</table>';
+  // the colonist roster -- who is here, their specialty, and where they work (the mechanics behind the numbers)
+  const cols=SB.colonists||[];
+  h+='<h4 style="margin:10px 0 2px">Colonists ('+cols.length+')</h4>';
+  if(!cols.length){ h+='<div class="muted">no colonists</div>'; }
+  else{ h+='<table style="width:100%"><tr><th>#</th><th>Colonist</th><th>Working</th><th>Produces</th><th>Expert</th></tr>';
+    cols.forEach((w,i)=>{ h+='<tr><td>'+(i+1)+'</td><td><b>'+esc(w.name)+'</b></td><td>'+esc(w.where)
+      +'</td><td>'+esc(w.produces)+'</td><td style="text-align:center">'+(w.expert?'&#10003;':'')+'</td></tr>'; });
+    h+='</table>'; }
   h+='<h4 style="margin:10px 0 2px">Warehouse</h4><table><tr>';
   (SB.stockpile||[]).forEach((v,i)=>{ h+='<td style="padding:1px 6px">'+GOODS[i]+':<b>'+v+'</b></td>'; if(i%4===3)h+='</tr><tr>'; });
   h+='</tr></table>';
