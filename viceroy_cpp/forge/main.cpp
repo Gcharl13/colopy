@@ -1108,15 +1108,93 @@ static forge::JsonValue colony_detail_json(int ci) {
     return o;
 }
 
-// End-game score (spec/systems/scoring.md, simplified): difficulty multiplier times
-// empire value (colonists + founding fathers + an independence bonus).
+// ---- the native colony screen (spec/ui/colony_screen.md, composer func_028592) ----
+// Everything the 12-panel composer draws, assembled server-side from live sim state +
+// the verbatim text sections. The frontend places it at the byte-cited rects.
+static const std::vector<std::string>& labels_section(const std::string& section);
+namespace forge { int terrain_good_yield(int terrain, int good); }
+static forge::JsonValue colony_screen_json(int ci) {
+    forge::JsonValue o = colony_detail_json(ci);
+    if (o.find("error")) return o;
+    const Colony& c = g_world.colonies[ci];
+    // Title fields (spec 3.1, all oracle-confirmed): colony name + @SEASONS + year + gold.
+    // The name comes from the per-nation COLONY.TXT pool (spec 5 "@COLONYNAME + per-nation
+    // lists") by colony index; English entries carry a ",year" suffix that is not displayed.
+    static const char* kPool[4] = {"ENGLISH", "FRENCH", "SPANISH", "DUTCH"};
+    std::string name = "Colony " + std::to_string(ci + 1);
+    { const auto& pool = labels_section(kPool[g_game.nation & 3]);
+      if (ci < (int)pool.size() && !pool[ci].empty()) {
+          name = pool[ci];
+          size_t comma = name.find(','); if (comma != std::string::npos) name.resize(comma);
+      } }
+    o.obj["name"] = forge::json_str(name);
+    { const auto& seasons = labels_section("SEASONS");   // 2 entries (Spring/Autumn), spec 5
+      o.obj["season_name"] = forge::json_str(
+          seasons.empty() ? "" : seasons[(g_game.season & 1) % seasons.size()]); }
+    o.obj["year"] = forge::json_num(g_game.year);
+    o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
+    // SoL line "N% (M)" (spec 8.4): members = population - round(tory% * pop / 100).
+    { int sol = sol_pct(c), tory = 100 - sol;
+      int members = c.population - (int)((tory * c.population + 50) / 100);
+      o.obj["sol_members"] = forge::json_num(members); }
+    o.obj["warehouse_cap"] = forge::json_num(vc::sim::warehouse_cap(c, g_active_rules));
+    // Field-production panel data (spec 3.2 / 0.5): the center tile auto-yields its food
+    // band + a secondary good (func_00A222 writes [0xA891]/[0xA893]/[0xA894]; the row-2
+    // good here is the center terrain's best non-food yield -- the @0x00A34D loop's pick).
+    { forge::JsonValue ctr = jobj();
+      int food = forge::terrain_good_yield(c.center_terrain, 0);
+      if (food < c.center_food) food = c.center_food;
+      int bg = -1, bc = 0;
+      for (int g = 1; g <= 7; ++g) {
+          int yv = forge::terrain_good_yield(c.center_terrain, g);
+          if (yv > bc) { bc = yv; bg = g; }
+      }
+      ctr.obj["food"] = forge::json_num(food);
+      ctr.obj["good"] = forge::json_num(bg);
+      ctr.obj["count"] = forge::json_num(bc);
+      ctr.obj["terrain"] = forge::json_num(c.center_terrain);
+      o.obj["center"] = ctr; }
+    // The 8 surrounding ring tiles (terrain ids) for the field panel's tile scene.
+    { static const int RDX[8] = {-1,0,1,-1,1,-1,0,1}, RDY[8] = {-1,-1,-1,0,0,1,1,1};
+      forge::JsonValue ring = jarr();
+      int cx = ci < (int)g_colony_xy.size() ? g_colony_xy[ci].first : 0;
+      int cy = ci < (int)g_colony_xy.size() ? g_colony_xy[ci].second : 0;
+      for (int t = 0; t < 8; ++t) {
+          int tid = g_world.terrain_id(cx + RDX[t], cy + RDY[t]);
+          ring.arr.push_back(forge::json_num(tid < 0 ? 25 : tid));
+      }
+      o.obj["ring"] = ring; }
+    // Ships in port (spec 3.5: the (121,130,84,48) panel is the port view; the shared
+    // empty-panel caption @MISC[11] "No Ships In Port" when none).
+    { forge::JsonValue ships = jarr();
+      int cx = ci < (int)g_colony_xy.size() ? g_colony_xy[ci].first : 0;
+      int cy = ci < (int)g_colony_xy.size() ? g_colony_xy[ci].second : 0;
+      for (const Unit& u : g_world.units) {
+          if (!u.alive || u.owner != 0 || u.x != cx || u.y != cy) continue;
+          if (unit_stats(u.type).move_class != 99) continue;
+          forge::JsonValue s = jobj();
+          s.obj["type"] = forge::json_num(u.type);
+          const char* nm = unit_stats(u.type).name;
+          s.obj["name"] = forge::json_str(nm ? nm : "?");
+          ships.arr.push_back(s);
+      }
+      o.obj["ships"] = ships; }
+    return o;
+}
+
+// End-game score: the spec/systems/scoring.md model (the same vc::sim::score_game the
+// F10 report and the ScoreGame node use -- one scoring formula everywhere).
 static long compute_score() {
-    long pop = 0; for (const auto& c : g_world.colonies) pop += c.population;
-    int ff = 0; for (uint32_t b = g_engine_extra.ff_owned; b; b &= b - 1) ++ff;
-    long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
-    long base = pop * 2 + ff * 10;
-    if (g_engine_extra.woi_declared && ref_total == 0) base += 100;   // independence won
-    return (long)vc::sim::score_difficulty_mult(g_game.difficulty) * base;
+    long pop_score = 0;
+    for (const Colony& c : g_world.colonies)
+        if (c.owner_power == 0)
+            for (const Colony::Worker& w : c.workers) pop_score += w.expert ? 4 : 2;
+    int ffc = 0; for (uint32_t b = g_engine_extra.ff_owned; b; b &= b - 1) ++ffc;
+    return vc::sim::score_game(g_game.difficulty, pop_score, ffc,
+                               g_engine_extra.national_sol, g_engine_extra.razed_settlements,
+                               (long)g_game.powers[0].gold,
+                               g_engine_extra.bells_since_declaration,
+                               g_engine_extra.declaration_year, g_engine_extra.woi_declared);
 }
 // Endgame evaluation: independence won (REF destroyed), defeat (all colonies lost),
 // or retirement at the scenario end year -- with the final score + Hall-of-Fame rank.
@@ -1347,20 +1425,29 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
 // strings from here (title @MISC[37], "OK" @MISC[46], the advisor titles, @EUROLABEL rows, ...)
 // -- the text is the game's own, never retyped. Sections parse once from the newline-joined
 // LABELS_sections.json strings and cache.
+// Verbatim text-section lines by name. LABELS.TXT first (@MISC/@CTITLE/@CMISC/...), then
+// NAMES.TXT (@SEASONS/...) and COLONY.TXT (the per-nation colony-name pools) -- every screen
+// string is pulled from these files, never authored.
 static const std::vector<std::string>& labels_section(const std::string& section) {
     static std::map<std::string, std::vector<std::string>> cache;
     auto it = cache.find(section);
     if (it != cache.end()) return it->second;
     std::vector<std::string> lines;
-    try {
-        forge::JsonValue d = forge::json_parse_file("data_extracted/text/LABELS_sections.json");
-        const forge::JsonValue* m = d.find("@" + section);
-        if (m && m->type == forge::JsonValue::String) {
-            std::string cur;
-            for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
-            lines.push_back(cur);
-        }
-    } catch (...) {}
+    static const char* kSources[] = {"data_extracted/text/LABELS_sections.json",
+                                     "data_extracted/text/NAMES_sections.json",
+                                     "data_extracted/text/COLONY_sections.json"};
+    for (const char* src : kSources) {
+        try {
+            forge::JsonValue d = forge::json_parse_file(src);
+            const forge::JsonValue* m = d.find("@" + section);
+            if (m && m->type == forge::JsonValue::String) {
+                std::string cur;
+                for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
+                lines.push_back(cur);
+                break;
+            }
+        } catch (...) {}
+    }
     return cache.emplace(section, std::move(lines)).first->second;
 }
 static const std::string& misc_label(int idx) {
@@ -2324,6 +2411,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) game_new();
             int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
             return J(200, colony_detail_json(ci));
+        }
+        // Everything the native colony-screen composer draws (spec/ui/colony_screen.md).
+        if (path == "/api/colony/screen") {
+            if (!g_game_active) game_new();
+            int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
+            return J(200, colony_screen_json(ci));
         }
         // Assign a colonist to a job: a ring tile (0..7) producing a raw good, or a building
         // slot (tile -1) producing Hammers(16)/Crosses(17)/Bells(18). Production recomputes.

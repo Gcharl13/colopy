@@ -1854,6 +1854,234 @@ window.addEventListener('keydown',e=>{
 });
 document.querySelector('nav button[data-tab=sandbox]').addEventListener('click',()=>{ sbInit(); });
 
+// ==== Native colony screen (spec/ui/colony_screen.md -- composer func_028592, 12 panels) ====
+// Layout anchored to the byte-cited rects (spec 0.2/3.x/4) + the live capture
+// docs/screens/colony_live_1505.png: terrain scene + buildings on top, the COLONY.PIK
+// 320x72 street strip at the bottom, the panel band (plaza SoL / port / cargo / flag)
+// composited over the strip at y=130, the 16-cell stockpile bar at (0,179,320,21).
+const COL_PLOTS=[            // 15 plots: x, y (drawn at y+8), category -- DS:0x266 + 0x8D62
+  [56,13,0],[145,15,0],[173,18,0],[8,41,0],[37,45,0],[67,54,0],[96,53,0],
+  [6,14,1],[128,53,1],[10,76,1],[15,102,1],[87,11,2],[66,87,2],[123,106,3],[123,55,4]];
+const COL_CAT_START=[0,7,11,13,14], COL_CAT_COUNT=[7,4,2,1,1];  // 0x22A starts / 0x224 counts
+const COL_EMPTY_FRAME=[44,43,42,-1,45];  // empty plot = BUILDING DS:0x260[cat]-1; cat 3 draws none
+// Building def -> plot category. The EXE builds this map at runtime (func_025D34 step 4) and
+// the table is not in NAMES.TXT, so it is RECONSTRUCTED from the RAM-verified Jamestown
+// sample (spec 0.2): production "...House" -> 0; Stockade/Fort/Fortress -> 3 (the fort plot);
+// Docks/Drydock/Shipyard -> 4 (waterfront); Town Hall + Church/Cathedral -> 2; the rest -> 1.
+function colCategory(id,name){
+  if(id<=2) return 3;
+  if(id>=6&&id<=8) return 4;
+  if(/house/i.test(name)) return 0;
+  if(id===9||/church|cathedral/i.test(name)) return 2;
+  return 1;
+}
+// Within-category placement shuffle (func_025D34 step 3: plot = random(count[cat])+start[cat],
+// retry while occupied, seeded per colony) -- seeded from the colony index so it is stable.
+function colPlace(built){
+  let seed=((COL.index+1)*2654435761)>>>0;
+  const rnd=n=>{ seed=(seed*1103515245+12345)>>>0; return (seed>>>16)%n; };
+  const plot=new Array(15).fill(null);      // plot -> building record, null = empty (0xFF)
+  for(const b of built){
+    const cat=colCategory(b.id,b.name||''), s=COL_CAT_START[cat], n=COL_CAT_COUNT[cat];
+    let p=-1;
+    for(let t=0;t<n*4&&p<0;t++){ const q=s+rnd(n); if(!plot[q])p=q; }
+    if(p<0) for(let i=s;i<s+n;i++) if(!plot[i]){p=i;break;}
+    if(p>=0) plot[p]=b;
+  }
+  return plot;
+}
+let COL=null;
+async function colOpen(ci){
+  COL=await (await fetch('/api/colony/screen?colony='+ci)).json();
+  if(COL.error){ ui.toast(COL.error); COL=null; return; }
+  nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('CMISC',()=>nsLabels('CTITLE',()=>colRender()))));
+}
+function colClose(){ COL=null; ui.close(); }
+function colFill(x,y,w,h,col){
+  return '<div style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;width:'+(w*NS_SC)
+    +'px;height:'+(h*NS_SC)+'px;background:'+(col||'#181c7d')+'"></div>';
+}
+// one BUILDING.SS cell (56x48 grid sheet) at native (x,y); onclickJs optional
+function colBld(frame,x,y,title,onclickJs){
+  const sh=SHEETS.BUILDING;
+  return '<div title="'+esc(title||('BUILDING '+frame))+'"'
+    +(onclickJs?' onclick="event.stopPropagation();'+onclickJs+'" ':'')
+    +' style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;'
+    +'width:'+(sh.cw*NS_SC)+'px;height:'+(sh.ch*NS_SC)+'px;'
+    +(onclickJs?'cursor:pointer;':'')
+    +'background:url('+sh.url+') no-repeat;'
+    +'background-size:'+(sh.n*sh.cw*NS_SC)+'px '+(sh.ch*NS_SC)+'px;'
+    +'background-position:-'+(frame*sh.cw*NS_SC)+'px 0;image-rendering:pixelated"></div>';
+}
+// one UNITS-sheet sprite (32x32) at native (x,y) -- the ships-in-port slots
+function colShip(type,x,y,title){
+  const sh=SHEETS.UNITS;
+  return '<div title="'+esc(title||'')+'" style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)
+    +'px;width:'+(32*NS_SC)+'px;height:'+(32*NS_SC)+'px;background:url('+sh.url+') no-repeat;'
+    +'background-size:'+(sh.n*32*NS_SC)+'px '+(32*NS_SC)+'px;'
+    +'background-position:-'+(type*32*NS_SC)+'px 0;image-rendering:pixelated"></div>';
+}
+function colRender(){
+  const c=COL, GI=g=>22+g;   // ICONS 22..37 = Food..Muskets (Food FIRST -- spec 0.3/0.6)
+  let h='';
+  // Steps 3+4: the terrain scene around the colony tile (16-px pitch, func_026374),
+  // drawn onto a canvas after insert; the buildings + title paint over it.
+  h+='<canvas id="colscene" width="320" height="128" style="position:absolute;left:0;top:0;'
+    +'width:'+(320*NS_SC)+'px;height:'+(128*NS_SC)+'px;image-rendering:pixelated"></canvas>';
+  // COLONY.PIK = a 320x72 street-scene STRIP (build-verified, spec 5), at the screen bottom
+  // under the panel band per the live capture.
+  h+='<img src="/assets/pik/COLONY.png" style="position:absolute;left:0;top:'+(128*NS_SC)+'px;'
+    +'width:'+(320*NS_SC)+'px;height:'+(72*NS_SC)+'px;image-rendering:pixelated">';
+  // Step 12: the 15 building plots (spec 0.2). Occupied = bundle frame def_id (def_id 0 ->
+  // frame 16, the byte-read special case); empty = DS:0x260[category]-1 decoration.
+  const plots=colPlace(c.built||[]);
+  COL_PLOTS.forEach((p,i)=>{
+    const b=plots[i];
+    if(b&&b.id>=0) h+=colBld(b.id===0?16:b.id, p[0], p[1]+8, b.name);
+    else if(COL_EMPTY_FRAME[p[2]]>=0)
+      h+=colBld(COL_EMPTY_FRAME[p[2]], p[0], p[1]+8, 'empty plot (build here)', 'colBuildMenu()');
+  });
+  // Working colonist + hammer strip on the hammer-producing plot (spec 0.4: colonist ICONS 81
+  // at plot+27,+9; production icons ICONS 54 at plot x pitch 6, y+1; count = live per-turn state).
+  const carp=(c.built||[]).find(b=>/carpenter/i.test(b.name||''));
+  if(carp&&(c.production||{}).hammers>0){
+    const pi=plots.findIndex(b=>b===carp);
+    if(pi>=0){ const p=COL_PLOTS[pi];
+      h+=nsIcon(81,p[0]+27,p[1]+9,{title:'working colonist'});
+      const n=Math.min(c.production.hammers,5);   // atlas hammer cell is 24x30 -> ~6px glyph
+      for(let i=0;i<n;i++) h+=nsIcon(54,p[0]+i*6,p[1]+1,{scale:0.25,title:'hammer production'});
+    }
+  }
+  // Step 5: title -- "Name.  Season, Year.  Gold: N" (spec 3.1, all fields oracle-confirmed;
+  // green FONTTINY per the capture; "Gold:" is the verbatim @CTITLE line).
+  h+=nsT(0,1,esc(c.name)+'.  '+esc(c.season_name)+', '+c.year+'.  '
+        +esc(nsLbl('CTITLE',1,'Gold:'))+' '+c.gold,
+        {col:NS.green,w:320,center:true,bold:true});
+  // Step 6: field-production panel (224,32,72,72) -- the 3x3 surrounding-tile work view
+  // (canvas) + the center tile's auto-yield and each field worker's good icon (spec 3.2).
+  h+=nsT(224,25,esc(nsLbl('CMISC',0,'Harvest / Resources')),{size:5,col:NS.label,w:96});
+  h+='<canvas id="colfield" width="72" height="72" style="position:absolute;'
+    +'left:'+(224*NS_SC)+'px;top:'+(32*NS_SC)+'px;width:'+(72*NS_SC)+'px;height:'+(72*NS_SC)
+    +'px;image-rendering:pixelated;outline:1px solid #000"></canvas>';
+  const GPOS=[[0,0],[1,0],[2,0],[0,1],[2,1],[0,2],[1,2],[2,2]];   // ring tile -> 3x3 cell
+  if(c.center){
+    h+=nsIcon(GI(0),224+24+2,32+24+1,{scale:0.55,title:'center food'})
+      +nsT(224+24+13,32+24+13,String(c.center.food),{size:5,col:NS.white});
+    if(c.center.good>0&&c.center.count>0)
+      h+=nsIcon(GI(c.center.good),224+24+2,32+24+11,{scale:0.55,title:'center good'});
+  }
+  (c.colonists||[]).forEach(w=>{
+    if(w.tile>=0&&w.tile<8){ const gp=GPOS[w.tile];
+      h+=nsIcon(GI(w.good),224+gp[0]*24+2,32+gp[1]*24+1,
+                {scale:0.55,title:esc(w.name)+(w.expert?' (expert)':'')});
+    }
+  });
+  // Step 7 + capture: the panel band over the strip. The dark fill spans the band row;
+  // the SoL line "N% (M)" is white at (75,133) (spec 0.5, digits not letters).
+  h+=colFill(0,130,302,17);
+  h+='<div title="'+esc(nsLbl('MISC',209,'Sons of Liberty'))+'">'
+    +nsT(75,133,c.sol+'% ('+c.sol_members+')',{col:NS.white})+'</div>';
+  // Plaza colonist row (func_0270D0): x-origin 143 walking LEFT at y=+10 over the street
+  // strip; inter-colonist gap starts 2 and shrinks until the row fits the 96-px budget.
+  {
+    const n=Math.max(0,c.population|0), fw=(NS_ICONS&&NS_ICONS.frames[81])?NS_ICONS.frames[81].w:12;
+    let gap=2; while(n>1&&gap>0&&gap*(n-1)+4+fw*n>=96) gap--;
+    let x=143;
+    for(let i=0;i<n&&x-fw>0;i++){ x-=fw; h+=nsIcon(81,x,138,{title:'colonist'}); x-=gap; }
+  }
+  // Step 10: the port panel (121,130,84,48): ships in port, or the shared empty-panel
+  // caption -- verbatim @MISC[11] "No Ships In Port" (oracle-confirmed string, spec 3.5).
+  const ships=c.ships||[];
+  if(ships.length===0)
+    h+=nsT(121,132,esc(nsLbl('MISC',11,'No Ships In Port')),{w:84,center:true,col:NS.white});
+  else ships.slice(0,6).forEach((s,i)=>{ h+=colShip(s.type,125+i*12,140,s.name); });
+  // Step 11: the SoL/cargo/msg panel (211,130,91,48), cargo+build mode (func_027BB6):
+  // build-project caption + the 0x236 hammer strip (ICONS 54) + shortage marks --
+  // Lumber(27)/Hammers(54) each under a red X (ICONS 55) when production is stalled.
+  const b=c.build||{};
+  if(b.target>=0&&b.name){
+    h+=nsT(213,132,esc(b.name)+' ('+b.bank+'/'+b.cost+')',{size:5,col:NS.white,w:88});
+    const filled=Math.max(0,Math.min(10,Math.round((b.bank/(b.cost||1))*10)));
+    for(let i=0;i<filled;i++) h+=nsIcon(54,213+i*6,148,{scale:0.3,title:'build progress'});
+    if((c.production||{}).hammers===0){
+      h+=nsIcon(27,254,160,{scale:0.4,title:'Lumber shortage'})+nsIcon(55,254,158,{scale:0.4,title:'shortage'})
+        +nsIcon(54,272,158,{scale:0.4,title:'Hammer shortage'})+nsIcon(55,272,158,{scale:0.4,title:'shortage'});
+    }
+  } else {
+    h+='<div onclick="event.stopPropagation();colBuildMenu()" style="cursor:pointer">'
+      +nsT(213,132,esc(nsLbl('CTITLE',4,'Select An Item To Build')),{size:5,col:NS.label,w:88,wrap:true})
+      +'</div>';
+  }
+  // Step 9: flag panel (303,132,17,45). The EXE draws ICONS sprite 0x44 with frame = the
+  // nation byte [0x337]; the packed strip's only verified flag art is frame 123 (identity
+  // "(unverified)" in the catalog) -- drawn here, not invented as per-nation art.
+  h+=nsIcon(123,306,135,{title:'flag (ICONS sprite 0x44, frame = nation -- atlas identity unverified)'});
+  // Step 8: stockpile bar (0,179,320,21), 16 cells pitch 19 (0x13), icons at y=181,
+  // Food FIRST; qty white 0x0F, RED 0x0C when over the warehouse cap (all byte-cited).
+  h+=colFill(0,179,320,21);
+  const cap=c.warehouse_cap||100;
+  (c.stockpile||[]).forEach((s,g)=>{
+    h+=nsIcon(GI(g),g*19+3,181,{scale:0.5,title:s.good});
+    h+=nsT(g*19,194,String(s.qty),{w:19,center:true,size:5,col:(s.qty>cap?'#e04040':NS.white)});
+  });
+  // The build tool button (the blue anvil in the capture's bottom-right corner).
+  h+='<div onclick="event.stopPropagation();colBuildMenu()" style="cursor:pointer" title="Build">'
+    +nsIcon(69,306,181,{title:'Build'})+'</div>';
+  const stage='<div style="position:relative;width:'+(320*NS_SC)+'px;height:'+(200*NS_SC)+'px;'
+    +'background:#101014;image-rendering:pixelated;font-family:monospace;overflow:hidden;'
+    +'user-select:none">'+h+'</div>';
+  ui.popup(esc(c.name)+' &mdash; colony', stage);
+  setTimeout(colDrawCanvases,0);
+}
+// The two live canvases: the 16-px scene window centered on the colony tile, and the
+// 3x3 24-px surrounding-tile field view (center row 1 col 1; ring order NW..SE).
+function colDrawCanvases(){
+  const c=COL; if(!c) return;
+  const sc=document.getElementById('colscene');
+  if(sc&&typeof GAME!=='undefined'&&GAME&&GAME.terrain){
+    const W=20,H=8,t=[];
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      const mx=c.x-10+x, my=c.y-4+y;
+      t.push((mx<0||my<0||mx>=GAME.w||my>=GAME.h)?25:GAME.terrain[my*GAME.w+mx]);
+    }
+    composeMap(sc.getContext('2d'),t,W,H,16,true);
+  }
+  const fc=document.getElementById('colfield');
+  if(fc&&c.ring&&TILES_READY){
+    const g=fc.getContext('2d'); g.imageSmoothingEnabled=false;
+    const draw=(tid,cx,cy)=>g.drawImage(TILESET,baseFrame(tid&0x1F)*16,0,16,16,cx*24,cy*24,24,24);
+    const GPOS=[[0,0],[1,0],[2,0],[0,1],[2,1],[0,2],[1,2],[2,2]];
+    c.ring.forEach((tid,i)=>draw(tid,GPOS[i][0],GPOS[i][1]));
+    draw((c.center||{}).terrain||0,1,1);
+  }
+}
+// "Select An Item To Build": the eligible @BUILDING rows (name, cost, min_colony gate)
+// -> POST /api/colony/build, then re-open the screen with the new project.
+async function colBuildMenu(){
+  const ci=COL?COL.index:0, pop=COL?COL.population:0, target=COL&&COL.build?COL.build.target:-1;
+  const builtSet=new Set(((COL&&COL.built)||[]).map(b=>b.id));
+  let tbl; try{ tbl=await (await fetch('/api/tables?file=names')).json(); }
+  catch(e){ ui.toast('build menu unavailable'); return; }
+  const rows=((tbl['@BUILDING']||{}).rows)||[];
+  const elig=rows.map((r,i)=>({i,name:r.name,cost:+r.cost,min:+r.min_colony}))
+    .filter(e=>e.name&&!builtSet.has(e.i)&&e.i!==target&&pop>=e.min)
+    .sort((a,b)=>a.cost-b.cost);
+  let body='<h3 style="margin:0 0 6px">'+esc(nsLbl('CTITLE',4,'Select An Item To Build'))+'</h3>';
+  if(!elig.length) body+='<div class="muted">Nothing new to build here.</div>';
+  body+='<div style="max-height:340px;overflow:auto">'+elig.map(e=>
+    '<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0">'
+    +'<span>'+esc(e.name)+' <span class="muted">('+e.cost+'h, pop&ge;'+e.min+')</span></span>'
+    +'<button class="act" onclick="colBuild('+e.i+')">Build</button></div>').join('')+'</div>';
+  ui.popup('Construction &mdash; '+esc(COL?COL.name:''), body);
+}
+async function colBuild(bid){
+  const ci=COL?COL.index:0;
+  try{ const r=await (await fetch('/api/colony/build',{method:'POST',
+      body:JSON.stringify({colony:ci,building:bid})})).json();
+    ui.toast(r.msg||'started'); }catch(e){ ui.toast('build failed'); }
+  colOpen(ci);
+}
+
 // ---- Turn tab (B5): edit the data-driven turn pipeline (turn.json) ----
 let TURN=null;
 async function turnLoad(){ TURN=await (await fetch('/api/turn')).json(); TURN.phases=TURN.phases||[]; turnRender(); }
@@ -2024,8 +2252,15 @@ $('#gcv').addEventListener('click', e=>{
   if(x<0||y<0||x>=GAME.w||y>=GAME.h) return;
   const here=GAME.units.find(u=>u.x===x&&u.y===y);
   if(here){ SEL=here.id; drawGame(); showSel(); return; }   // select a unit
-  const col=GAME.colonies.find(c=>c.x===x&&c.y===y);
-  if(col && SEL<0){ ui.popup('Colony', '<p>Population '+col.population+', Sons of Liberty '+col.sol+'%, at ('+col.x+','+col.y+').</p>'); return; }
+  const ci=GAME.colonies.findIndex(c=>c.x===x&&c.y===y);
+  if(ci>=0 && SEL<0){
+    const col=GAME.colonies[ci];
+    // an own colony opens the native colony screen (spec entry chain: click own colony
+    // tile -> set_active_colony -> colony-screen open); foreign ones just report.
+    if(col.owner===0) colOpen(ci);
+    else ui.popup('Colony', '<p>Foreign colony: population '+col.population+' at ('+col.x+','+col.y+').</p>');
+    return;
+  }
   if(SEL>=0){ orderMove(x,y); }                             // send the selected unit here
 });
 function drawHud(){

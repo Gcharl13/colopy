@@ -189,9 +189,12 @@ double as_num(const JsonValue& v) {
     return 0;
 }
 
+} // namespace
+
 // Base terrain yield of raw good g (0..7) on a terrain id, read live from the yield tables
 // (@UNFORESTED 0..7 / @FORESTED 8..23 / @OTHER 24..28) -- so editing a terrain's yield in the
-// Tables tab changes production. Good->column per spec/systems/colony.md §3.
+// Tables tab changes production. Good->column per spec/systems/colony.md §3. Exported: the
+// colony-screen field panel derives the center tile's auto-yields from it.
 int terrain_good_yield(int terrain, int good) {
     static const char* YCOL[8] = { "y_farmer", "y_planter_sugar", "y_planter_tobacco",
         "y_planter_cotton", "y_trapper", "y_lumberjack", "y_ore", "y_silver" };
@@ -205,8 +208,6 @@ int terrain_good_yield(int terrain, int good) {
     if (sec == "@OTHER" && (row == 1 || row == 2) && good == 0) col = "y_fisherman";  // ocean food
     return (int)as_num(table_cell(sec + "[" + std::to_string(row) + "]." + col));
 }
-
-} // namespace
 
 // Compute a colony's per-turn production from its colonist roster (spec/systems/colony.md §3):
 // tile workers (good 0..7) yield raw goods from the terrain table with the tory/expert adjust;

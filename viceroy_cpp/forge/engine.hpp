@@ -123,6 +123,10 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
 // The @JOB display name for a profession id (the expert_name column for an expert, else name).
 std::string job_name(int profession, bool expert);
 
+// Base terrain yield of raw good g (0..7) on a terrain id, read live from the yield tables
+// (@UNFORESTED / @FORESTED / @OTHER). Used by production and the colony-screen field panel.
+int terrain_good_yield(int terrain, int good);
+
 // Run a node graph against the game. Executes exec flow from the entry (Trigger) node,
 // evaluating data pins on demand, applying Action nodes to the sim. Returns a report:
 //   { "log":[strings], "effects":[strings], "popup": {title,body,choices:[...]} | null,
