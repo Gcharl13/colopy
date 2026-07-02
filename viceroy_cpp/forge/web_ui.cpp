@@ -1267,18 +1267,22 @@ function tribeColor(t){
 function drawChip(g,X,Y,px,color,glyph){
   if(px<8) return;
   const t=String(glyph==null?'':glyph);
-  const w=Math.max(5,Math.round(px*7/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
-  const h=Math.max(7,Math.round(px*10/16));
-  const cx=X-(w>>1), cy=Y+((px-h)>>1)-1;   // pokes out of the tile's left edge
+  // USER RULING: the chip stays fully inside its own 16x16 tile (nothing
+  // crosses tile borders). Native proportions ~6x9 of a 16px tile, sitting at
+  // the left edge behind the sprite, 1px black border included in the bounds.
+  let w=Math.max(4,Math.round(px*6/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
+  w=Math.min(w,px-2);
+  const h=Math.max(6,Math.round(px*9/16));
+  const cx=X+1, cy=Y+((px-h)>>1);
   g.fillStyle='#000'; g.fillRect(cx-1,cy-1,w+2,h+2);
   g.fillStyle=color; g.fillRect(cx,cy,w,h);
   if(t&&t!==' '){
     const m=/^#(..)(..)(..)$/.exec(color);
     const lum=m?parseInt(m[1],16)*3+parseInt(m[2],16)*6+parseInt(m[3],16):0;
     g.fillStyle=lum>1200?'#000':'#fff';
-    g.font='bold '+Math.max(6,Math.round(px*8/16))+'px monospace';
+    g.font='bold '+Math.max(6,Math.round(px*7/16))+'px monospace';
     g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(t,cx+(w>>1),cy+(h>>1)+1);
+    g.fillText(t,cx+(w>>1)+1,cy+(h>>1)+1);
     g.textAlign='start'; g.textBaseline='alphabetic';
   }
 }
