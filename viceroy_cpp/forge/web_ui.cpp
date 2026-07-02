@@ -2466,36 +2466,57 @@ function nvMenu(k){
 // sheets) -- element Y here is placed against the panorama art
 // (RECONSTRUCTED). A click early-outs (func_001522's kbhit poll).
 let OPEN_SHEETS={};
-function openSheet(name){                 // masked frames from a 58px-pitch contact sheet
+// Masked frames from a docs/atlas contact sheet. Exact geometry (verified by
+// pixel scan across the OPEN*/DEC-*/CLOS-* generations): 24px title header,
+// then 58px-pitch cell rows (H = 24 + 58*rows); each cell row = ~15px baked
+// blue label band + content; cell width 58 (content x in [c*58+1, c*58+56]);
+// black = transparency, (70,70,80) = the grid rule color. Skipping the label
+// band by geometry removes the label text without color heuristics (blue
+// sprite ink, e.g. MPSLOGO, stays intact).
+function openSheet(name){
   if(OPEN_SHEETS[name]) return OPEN_SHEETS[name];
   OPEN_SHEETS[name]=new Promise(res=>{
     const img=new Image();
     img.onload=()=>{
-      const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height;
+      const W=img.width,H=img.height;
+      const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
       const g=cv.getContext('2d'); g.drawImage(img,0,0);
+      const all=g.getImageData(0,0,W,H).data;
+      const ink=o=>{
+        const r=all[o],gg=all[o+1],b=all[o+2];
+        if(r+gg+b<50) return false;                          // black bg / dark noise
+        if(Math.abs(r-70)<14&&Math.abs(gg-70)<14&&Math.abs(b-80)<14) return false; // grid rule
+        return true;
+      };
       const frames=[];
-      for(let c=0;c<15;c++){
-        const cx0=c*58+1; if(cx0+56>img.width) break;
-        const d=g.getImageData(cx0,17,56,img.height-18).data;
-        let x0=56,x1=-1,y0=99,y1=-1;
-        for(let y=0;y<img.height-18;y++) for(let x=0;x<56;x++){
-          const o=(y*56+x)*4;
-          if(d[o]+d[o+1]+d[o+2]>40&&d[o+2]<=d[o+1]+40&&!(d[o+2]>140&&d[o+2]>d[o]+60)){  // key out black + the blue label
-            if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
-        }
-        if(x1<0){ if(frames.length) break; else continue; }
-        const w=x1-x0+1,h=y1-y0+1;
-        const fc=document.createElement('canvas'); fc.width=w; fc.height=h;
-        const out=fc.getContext('2d').createImageData(w,h);
-        for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
-          const o=(y*56+x)*4;
-          if(d[o]+d[o+1]+d[o+2]>40&&d[o+2]<=d[o+1]+40&&!(d[o+2]>140&&d[o+2]>d[o]+60)){
-            const q=((y-y0)*w+(x-x0))*4;
-            out.data[q]=d[o]; out.data[q+1]=d[o+1]; out.data[q+2]=d[o+2]; out.data[q+3]=255;
+      const rows=Math.max(1,Math.round((H-24)/58)), cols=Math.floor(W/58);
+      let stop=false;
+      for(let r=0;r<rows&&!stop;r++){
+        const top=24+r*58;
+        const cy0=top+15, cy1=Math.min(top+56,H-1);          // skip the label band
+        let empty=0;
+        for(let c=0;c<cols;c++){
+          const cx0=c*58+1;
+          let x0=56,x1=-1,y0=1e4,y1=-1;
+          for(let y=cy0;y<=cy1;y++) for(let x=0;x<56;x++){
+            if(ink(((y*W)+(cx0+x))*4)){
+              if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
           }
+          if(x1<0){ if(++empty>1&&frames.length){ stop=true; break; } else continue; }
+          empty=0;
+          const w=x1-x0+1,h=y1-y0+1;
+          const fc=document.createElement('canvas'); fc.width=w; fc.height=h;
+          const out=fc.getContext('2d').createImageData(w,h);
+          for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+            const o=((y*W)+(cx0+x))*4;
+            if(ink(o)){
+              const q=((y-y0)*w+(x-x0))*4;
+              out.data[q]=all[o]; out.data[q+1]=all[o+1]; out.data[q+2]=all[o+2]; out.data[q+3]=255;
+            }
+          }
+          fc.getContext('2d').putImageData(out,0,0);
+          frames.push({cv:fc,w:w,h:h});
         }
-        fc.getContext('2d').putImageData(out,0,0);
-        frames.push({cv:fc,w:w,h:h});
       }
       res({frames:frames});
     };
@@ -2503,6 +2524,55 @@ function openSheet(name){                 // masked frames from a 58px-pitch con
     img.src='/assets/sprites/atlas_'+name+'.png';
   });
   return OPEN_SHEETS[name];
+}
+// ---- CLOSING retirement pageant (spec/ui/cinematics.md 4/9, CLOSING.EXE) ----
+// The committed @CLOSING actor table (CLOSING_sections.json, parsed like
+// func_000A00 @0xA00: col1 sheet-idx / col2 count / col5 Y) runs actors over
+// CLOS-BKG.PIK to the "-1 End of closing" sentinel at time 390 (the pacer
+// func_000E4C @0xE4C). Sheet map from the table's own row comments (Hat/Lady/
+// Man/Military/Fireworks/Rock/Liberty Bell); the actors' X anchors live in the
+// .SS headers (not in the contact sheets) -- placement against the scene art
+// is RECONSTRUCTED. A click early-outs; the flow continues to the Score screen.
+const CLOS_ORDER=['CLOS-HAT','CLOS-LDY','CLOS-MAN','CLOS-MIL','CLOS-FWK','CLOS-ROC','CLOS-BEL'];
+const CLOS_POS={0:[40,168],1:[110,166],2:[180,166],3:[248,166],4:[70,8],5:[230,60],6:[128,28]};
+let CLOS_SKIP=false;
+async function closingPlay(then){
+  CLOS_SKIP=false;
+  let actors=[];
+  try{ const d=await (await fetch('/api/text?file=CLOSING')).json();
+    (d['@CLOSING']||'').split('\n').forEach(l=>{
+      const m=l.split(';')[0].trim(); if(!m) return;
+      const c=m.split(',').map(v=>parseInt(v,10));
+      if(c.length>=5&&!isNaN(c[0])&&c[0]>=0) actors.push({sheet:c[0],y:c[4]});
+    });
+  }catch(e){}
+  const S=NS_SC;
+  ui.popup('CLOSING',
+    '<div onclick="CLOS_SKIP=true" style="cursor:pointer">'
+    +'<div style="position:relative;width:'+(320*S)+'px;height:'+(200*S)+'px;'
+    +'background:#000;image-rendering:pixelated;overflow:hidden">'
+    +'<canvas id="clcv" width="'+(320*S)+'" height="'+(200*S)+'" '
+    +'style="position:absolute;left:0;top:0;background:transparent;border:none"></canvas></div>'
+    +'<div class="muted" style="font-size:11px;margin-top:4px">click to skip</div></div>');
+  const cv=document.getElementById('clcv'); if(!cv){ if(then) then(); return; }
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  const bkg=await new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null);
+    i.src='/assets/pik/CLOS-BKG.png'; });
+  const sheets=[]; for(const n of CLOS_ORDER) sheets.push(await openSheet(n));
+  for(let t=0;t<390&&!CLOS_SKIP;t++){                 // the sentinel time (@CLOSING row -1,390)
+    g.clearRect(0,0,cv.width,cv.height);
+    if(bkg) g.drawImage(bkg,0,0,320*S,200*S);
+    for(const a of actors){
+      const sh=sheets[a.sheet]; if(!sh||!sh.frames.length) continue;
+      const fr=sh.frames[Math.floor(t/5)%sh.frames.length];
+      const pos=CLOS_POS[a.sheet]||[160,100];
+      const y=a.y>0?a.y:pos[1];
+      g.drawImage(fr.cv,(pos[0]-(fr.w>>1))*S,(y-fr.h)*S,fr.w*S,fr.h*S);
+    }
+    await new Promise(r=>setTimeout(r,55));
+  }
+  ui.close();
+  if(then) then();
 }
 // anim-table sheet index -> sheet name (the _opening load order @0x1e0e..0x1ebe)
 const OPEN_ORDER=['OPENWND1','OPENSUN','OPENMON1','OPENWND2','OPENMON2','OPENMON3',
@@ -2546,10 +2616,14 @@ async function openingPlay(){
   // MPS logo -> name intro (schedule RECONSTRUCTED ~1.5s each; the demo follows)
   for(const sh of [mps1,mps2]){
     if(OPEN_SKIP) break;
-    g.clearRect(0,0,cv.width,cv.height);
-    const fr=sh.frames[0];
-    if(fr) draw(fr,160-(fr.w>>1),100-(fr.h>>1));
-    await new Promise(r=>setTimeout(r,1500));
+    const n=sh.frames.length||1;                 // both logos are stroke animations
+    for(let f=0;f<n&&!OPEN_SKIP;f++){
+      g.clearRect(0,0,cv.width,cv.height);
+      const fr=sh.frames[f];
+      if(fr) draw(fr,160-(fr.w>>1),100-(fr.h>>1));
+      await new Promise(r=>setTimeout(r,Math.max(60,1500/n)));
+    }
+    if(!OPEN_SKIP) await new Promise(r=>setTimeout(r,700));
   }
   // The panned demo: pan_x 640 -> 0 (1 px/tick), ship along the PATH.DAT track
   // (endpoints committed: (868,89) -> (~170,87); interpolated), anim elements
@@ -3009,7 +3083,12 @@ async function stepGame(){
 // scrolls (adaptation); GAME.TXT hard wraps re-flow into the @width box.
 function showEndgame(e){
   const woi=GAME&&GAME.war&&GAME.war.declared;
-  if(!woi){ ui.toast(e.reason); reportOpen(9); return; }   // retirement/collapse: straight to the score
+  if(!woi){
+    ui.toast(e.reason);
+    if(e.won) closingPlay(()=>reportOpen(9));   // retirement -> the CLOSING pageant -> Score
+    else reportOpen(9);                          // colonial collapse: straight to the score
+    return;
+  }
   kingDefeats(e);
 }
 async function kingDefeats(e){
