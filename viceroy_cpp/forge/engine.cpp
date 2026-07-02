@@ -902,7 +902,7 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     // boycott.<good index> -> 1 if boycotted
     if (path.rfind("boycott.", 0) == 0) {
         int gi = std::atoi(path.c_str() + 8);
-        if (gi >= 0 && gi < 16) return num((cx.x.boycotts >> gi) & 1u);
+        if (gi >= 0 && gi < 16) return num((cx.g.powers[0].boycotts >> gi) & 1u);
     }
     // war.<a>.<b> -> 1 if powers a,b are at war
     if (path.rfind("war.", 0) == 0) {
@@ -1296,6 +1296,8 @@ struct Runner {
         if (t == "SetTax") {
             int p = std::atoi(pget(*n, "power").str.c_str());
             int v = (int)as_num(eval_in(nodeId, "value"));
+            if (v > 75) v = 75;   // the hard tax_pct clamp (func_034318
+                                  //   @0x03434F cmp [bx+1],0x4B -- king.md)
             if (p >= 0 && p < 4) { cx.g.powers[p].tax = v;
                 effect("power" + std::to_string(p) + ".tax = " + std::to_string(v)); }
             return follow(nodeId, "out", popup);
@@ -1392,7 +1394,7 @@ struct Runner {
                 "Silver","Horses","Rum","Cigars","Cloth","Coats","Trade goods","Tools","Muskets"};
             std::string gn = pget(*n, "good").str; int gi = -1;
             for (int i = 0; i < 16; ++i) if (gn == G[i]) gi = i;
-            if (gi >= 0) { cx.x.boycotts |= (uint16_t)(1u << gi); effect(gn + " is now boycotted"); }
+            if (gi >= 0) { cx.g.powers[0].boycotts |= (uint16_t)(1u << gi); effect(gn + " is now boycotted"); }
             return follow(nodeId, "out", popup);
         }
         if (t == "DeclareWar") {

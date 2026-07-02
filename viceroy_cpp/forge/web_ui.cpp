@@ -2166,6 +2166,21 @@ async function euTrade(g){
 async function euDo(op,g){
   try{ const r=await (await fetch('/api/europe/'+op,{method:'POST',
       body:JSON.stringify({colony:0,good:g,qty:10})})).json();
+    if(r.boycotted){
+      // The back-tax pay-or-abort dialog (@KISSUP verbatim, boycotts.md): the
+      // record's two option lines are the abort / pay choices.
+      const parts=(r.msg||'').split('\n\n');
+      const opts=(parts[1]||'Unfair!\nPay.').split('\n');
+      wfShow({key:'@KISSUP', body:parts[0]||'', choices:opts}, async c=>{
+        if(opts.indexOf(c)===1){
+          const d=await (await fetch('/api/europe/liftboycott',{method:'POST',
+              body:JSON.stringify({good:g})})).json();
+          ui.toast(d.error||('Boycott lifted for '+d.paid+' gold in back taxes'));
+        }
+        euOpen();
+      }, null);
+      return;
+    }
     ui.toast(r.msg||r.error||op+' done'); }catch(e){ ui.toast(op+' failed'); }
   euOpen();
 }

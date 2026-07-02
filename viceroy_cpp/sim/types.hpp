@@ -72,6 +72,10 @@ struct Power {
     int64_t royal_money = 0;         // PowerRecord +0x22 (REF budget; SALES TAX accrues here, king.md:92)
     int64_t gold        = 0;         // +0x2A
     int     tax         = 0;         // +0x01
+    uint16_t boycotts   = 0;         // +0x20 per-good boycott bitmask (boycotts.md: set on a
+                                     //   Tea Party @0x34717, tested by the sell logic
+                                     //   func_030B38, cleared on back-tax payment @0x33423
+                                     //   or in full by Jakob Fugger FF 1 @0x3BD45)
     std::array<int32_t, NGOODS> trade{};  // +0xFC per-turn trade volume: SELL += qty, BUY -= qty
                                           // (market.md @0x323BC/@0x32324); reset by the turn drift
     std::array<int32_t, NGOODS> price_level{};  // +0x4C published per-good price level: the market

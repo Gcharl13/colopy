@@ -1007,7 +1007,7 @@ static void auto_export_step() {
             if (c.stockpile[gd] <= 100) continue;       // only surplus above the base warehouse
             if (custom_house) {
                 // Custom House sells surplus directly to Europe -- no ship needed (Peter Stuyvesant).
-                if ((g_engine_extra.boycotts >> gd) & 1u) continue;       // boycotted -> can't sell
+                if ((g_game.powers[0].boycotts >> gd) & 1u) continue;     // boycotted -> can't sell (+0x20)
                 int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;  // keep the lower band
                 // The one market path: taxed sale at the published bid; the tax funds the REF;
                 // the volume floods the market and the published price re-derives immediately.
@@ -1053,7 +1053,12 @@ static void game_step() {
         { int bells = 0;
           for (const Colony& c : g_world.colonies)
               if (c.owner_power == 0) bells += c.bells_per_turn;
-          congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng); }
+          const uint32_t ff_before = g_engine_extra.ff_owned;
+          congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng);
+          // Jakob Fugger (FF id 1) clears ALL boycotts on acquisition
+          // (func_03BC42 @0x3BD45: mov word [bx+0x20], 0 -- boycotts.md).
+          if (((g_engine_extra.ff_owned ^ ff_before) >> 1) & 1u)
+              g_game.powers[0].boycotts = 0; }
         if (g_engine_extra.woi_declared)                // scoring component 6 (RECONSTRUCTED gate)
             for (const Colony& c : g_world.colonies)
                 if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
@@ -1823,7 +1828,7 @@ static forge::JsonValue sandbox_state_json() {
         m.obj["low"] = forge::json_num(mrd.cargo[gd].lo);
         m.obj["high"] = forge::json_num(mrd.cargo[gd].hi);
         m.obj["burden"] = forge::json_num(mrd.cargo[gd].burden);
-        m.obj["boycott"] = jbool((g_sb_extra.boycotts >> gd) & 1u);
+        m.obj["boycott"] = jbool((g_sb_game.powers[0].boycotts >> gd) & 1u);
         market.arr.push_back(m);
     }
     o.obj["market"] = market;
@@ -1986,7 +1991,7 @@ static forge::JsonValue report_state_json() {
           r.obj["stock"] = forge::json_num((double)stock);
           r.obj["bid"] = forge::json_num(vc::sim::market_bid(g_game, 0, gd));
           r.obj["ask"] = forge::json_num(vc::sim::market_ask(g_game, 0, gd, mrd));
-          r.obj["boycott"] = jbool((g_engine_extra.boycotts >> gd) & 1u);
+          r.obj["boycott"] = jbool((g_game.powers[0].boycotts >> gd) & 1u);
           eco.arr.push_back(r);
       }
       o.obj["economic"] = eco; }
@@ -2922,7 +2927,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 pj.obj["supply"] = forge::json_num(vc::sim::market_supply(g_game, gd));
                 pj.obj["base"] = forge::json_num(g_game.price_base[gd]);
                 pj.obj["trade"] = forge::json_num(g_game.powers[0].trade[gd]);
-                pj.obj["boycott"] = jbool((g_engine_extra.boycotts >> gd) & 1u);
+                pj.obj["boycott"] = jbool((g_game.powers[0].boycotts >> gd) & 1u);
                 pr.arr.push_back(pj);
             }
             o.obj["prices"] = pr;
@@ -2938,7 +2943,23 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int qty = b.find("qty") ? b.find("qty")->as_int(0) : 0;
             if (ci < 0 || ci >= (int)g_world.colonies.size() || gd < 0 || gd >= NGOODS || qty <= 0)
                 return err(400, "need {colony,good 0..15,qty>0}");
-            if ((g_engine_extra.boycotts >> gd) & 1u) return err(400, good_display(gd) + " is boycotted in Europe");
+            if ((g_game.powers[0].boycotts >> gd) & 1u) {
+                // The interactive sell handler falls through to the back-tax
+                // pay-or-abort dialog (@KISSUP, func_041410 @0x415A6): back_tax =
+                // current price x 500 (func_03334E @0x333AF imul 0x1F4).
+                const long back_tax = (long)g_game.powers[0].price_level[gd] * 500;
+                forge::JsonValue o = jobj();
+                o.obj["boycotted"] = jbool(true);
+                o.obj["key"] = forge::json_str("@KISSUP");
+                std::string m = game_message_text("@KISSUP");
+                { size_t p2; while ((p2 = m.find("%STRING0")) != std::string::npos) m.replace(p2, 8, good_display(gd));
+                  while ((p2 = m.find("%STRING1")) != std::string::npos) m.replace(p2, 8, "Europe");
+                  std::string t = std::to_string(back_tax);
+                  while ((p2 = m.find("%NUMBER0")) != std::string::npos) m.replace(p2, 8, t); }
+                o.obj["msg"] = forge::json_str(m);
+                o.obj["back_tax"] = forge::json_num((double)back_tax);
+                return J(200, o);
+            }
             Colony& c = g_world.colonies[ci];
             if (c.stockpile[gd] < qty) qty = c.stockpile[gd];
             if (qty <= 0) return err(400, "colony has none of that good");
@@ -2967,6 +2988,25 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue o = jobj(); o.obj["bought"] = forge::json_num(qty); o.obj["gold_spent"] = forge::json_num((double)cost);
             o.obj["ask_now"] = forge::json_num(vc::sim::market_ask(g_game, 0, gd, mrd));
             o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold); return J(200, o);
+        }
+        // Lift a boycott by paying the back tax (boycotts.md, func_03334E): the
+        // payment moves treasury -> the King's REF fund (@0x3340C) and clears the
+        // good's bit (@0x33423); unaffordable -> not lifted (@0x333DD).
+        if (path == "/api/europe/liftboycott" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
+            if (gd < 0 || gd >= NGOODS) return err(400, "need {good 0..15}");
+            Power& p = g_game.powers[0];
+            if (!((p.boycotts >> gd) & 1u)) return err(400, "not boycotted");
+            const long back_tax = (long)p.price_level[gd] * 500;   // @0x333AF x0x1F4
+            if (p.gold < back_tax) return err(400, "not enough gold for the back taxes");
+            p.gold -= back_tax;
+            p.royal_money += back_tax;                             // -> the Crown's REF budget
+            p.boycotts &= (uint16_t)~(1u << gd);                   // clear the bit (@0x33423)
+            forge::JsonValue o = jobj();
+            o.obj["lifted"] = jbool(true); o.obj["paid"] = forge::json_num((double)back_tax);
+            o.obj["gold"] = forge::json_num((double)p.gold);
+            return J(200, o);
         }
         if (path == "/api/europe/recruit" && method == "POST") {   // take a waiting dock immigrant (free)
             forge::JsonValue b = forge::json_parse(body);
@@ -3183,7 +3223,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
             int qty = b.find("qty") ? b.find("qty")->as_int(0) : 0;
             if (gd < 1 || gd >= NGOODS) return err(400, "bad good");
-            if ((g_sb_extra.boycotts >> gd) & 1u) return err(400, good_display(gd) + " is boycotted in Europe");
+            if ((g_sb_game.powers[0].boycotts >> gd) & 1u) return err(400, good_display(gd) + " is boycotted in Europe");
             if (qty <= 0 || qty > col.stockpile[gd]) qty = col.stockpile[gd];
             if (qty <= 0) return err(400, "nothing to sell");
             forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};

@@ -55,14 +55,20 @@ void trade_route_step(GameState& g, World& w, int unit_idx, const RuleData& rd) 
         // Lane order (unload before load) is not byte-cited -- RECONSTRUCTED:
         // freeing holds first is the only order that lets a full ship restock.
         if (st.dest == ROUTE_DEST_EUROPE) {
-            for (int good : st.unload)
+            // The auto-sell loop tests the boycott bit (func_030B38 @0x41210,
+            // boycotts.md): a boycotted good stays aboard (@SOMEBOYCOTT).
+            const uint16_t boy = g.powers[u.owner].boycotts;
+            for (int good : st.unload) {
+                if (good >= 0 && good < 16 && ((boy >> good) & 1u)) continue;
                 for (int h = 0; h < capacity && h < 6; ++h)
                     if (u.hold_good[h] == good && u.hold_qty[h] > 0) {
                         market_sell(g, u.owner, good, u.hold_qty[h], rd);
                         u.hold_good[h] = -1; u.hold_qty[h] = 0;
                     }
+            }
             for (int good : st.load) {
                 if (good < 0 || good >= NGOODS) continue;
+                if (((boy >> good) & 1u)) continue;   // boycotted: cannot buy either
                 int h = accept_hold(u, capacity, good);
                 if (h < 0) continue;
                 const int qty = 100 - u.hold_qty[h];

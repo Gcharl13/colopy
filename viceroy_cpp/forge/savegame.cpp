@@ -21,6 +21,7 @@ JsonValue dump_power(const Power& p) {
     o.obj["royal_money"]       = json_num((double)p.royal_money);
     o.obj["gold"]              = json_num((double)p.gold);
     o.obj["tax"]               = json_num(p.tax);
+    o.obj["boycotts"]          = json_num(p.boycotts);
     o.obj["crosses_accum"]     = json_num(p.crosses_accum);
     o.obj["crosses_threshold"] = json_num(p.crosses_threshold);
     JsonValue tr = arr();
@@ -115,6 +116,7 @@ void read_power(const JsonValue& o, Power& p) {
     p.royal_money       = (int64_t)gd(o, "royal_money");
     p.gold              = (int64_t)gd(o, "gold");
     p.tax               = gi(o, "tax");
+    p.boycotts          = (uint16_t)gi(o, "boycotts", 0);
     p.crosses_accum     = gi(o, "crosses_accum");
     p.crosses_threshold = gi(o, "crosses_threshold");
     if (const JsonValue* tr = o.find("trade"))

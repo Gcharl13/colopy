@@ -401,6 +401,22 @@
             "ref.artillery",
             "power<N>.royal_money"
           ]
+        },
+        {
+          "expr": "set on a Tea Party: |= 1<<good (@0x34717) ; tested by ALL sell logic (func_030B38 -- the auto-sell loop @0x41210, the interactive sell @0x415A6, and the trade-route Europe leg) ; lift: back_tax = current price x 500 (@0x333AF imul 0x1F4), paid treasury -> the King's REF fund (@0x3340C), then &= ~(1<<good) (@0x33423); unaffordable -> not lifted (@0x333DD) ; Jakob Fugger (FF 1) clears the whole mask (@0x3BD45)",
+          "fn": "boycott mask (Power.boycotts)",
+          "knobs": [],
+          "note": "The interactive sell of a boycotted good opens the verbatim @KISSUP pay-or-abort dialog; there is NO passive boycott glyph in the trade list (byte-decidably none -- no render path reads the bit, boycotts.md 4).",
+          "title": "Tea Party boycotts (+0x20 bitmask)",
+          "writes": []
+        },
+        {
+          "expr": "tax_pct hard-clamped at 75 on the raise write (func_034318 @0x03434F cmp 0x4B) ; 60 (0x3C) is an independent message gate (func_0349F4 @0x034A1B), not the cap",
+          "fn": "tax clamp",
+          "knobs": [],
+          "note": "",
+          "title": "Tax gates (60 message gate / 75 hard clamp)",
+          "writes": []
         }
       ],
       "name": "REF / the King - the Royal Expeditionary Force",

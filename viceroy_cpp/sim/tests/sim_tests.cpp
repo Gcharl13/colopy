@@ -851,6 +851,24 @@ static void test_trade_routes() {
       CHECK(g.powers[0].trade[SUGAR] == 100, "volume rides the +0xFC accumulator");
       CHECK(w.units[0].hold_good[0] == -1, "hold emptied");
     }
+    { // a boycotted good stays aboard at Europe (func_030B38 test @0x41210)
+      GameState g; World w; w.map_w = 3; w.map_h = 1;
+      w.terrain.push_back(25); w.terrain.push_back(25); w.terrain.push_back(26);
+      g.powers[0].price_level[SUGAR] = 5;
+      g.powers[0].boycotts = (uint16_t)(1u << SUGAR);   // Tea Party on Sugar (+0x20)
+      TradeRoute r; r.type = 0;
+      TradeStop s; s.dest = ROUTE_DEST_EUROPE; s.unload.push_back(SUGAR);
+      r.stops.push_back(s);
+      g.routes.push_back(r);
+      Unit sh; sh.type = GALLEON; sh.x = 2; sh.y = 0;
+      sh.order = ORDER_TRADE_ROUTE; sh.route = 0;
+      sh.hold_good[0] = SUGAR; sh.hold_qty[0] = 100;
+      w.units.push_back(sh);
+      RandFn rng2 = [](int lo, int) { return lo; };
+      refresh_moves(w, rd); apply_orders(g, w, rng2, rd);
+      CHECK(g.powers[0].gold == 0 && w.units[0].hold_good[0] == SUGAR,
+            "boycotted cargo not sold (@SOMEBOYCOTT)");
+    }
     { // broken route binding clears the order (func_041080 @0x041089)
       GameState g; World w; w.map_w = 2; w.map_h = 1;
       w.terrain.push_back(4); w.terrain.push_back(4);
