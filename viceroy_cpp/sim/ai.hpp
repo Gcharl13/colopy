@@ -40,13 +40,46 @@ int ai_move_allowance(const RuleData& rd, int unit_type);
 // resource plane.) This is what the F9 "Show Colony Sites" cheat displays.
 int colony_site_value(const World& w, const RuleData& rd, int x, int y);
 
+// --- Strategic plan-map accessors (ai.md 6.1, all BYTE-VERIFIED sites) ---
+// The 4x64 per-power table of provisional goal tiles (GameState::plan).
+//   plan_clear -- func_04C1F0: reset one slot to {goal_type=0xFF, priority=0}.
+//   plan_set   -- func_04C3A2: priority-ordered insert (scans for the first
+//                 slot that is free or outranked, shifts, writes the 4 fields).
+//                 Returns false when the table is full of higher-priority goals.
+//   plan_query -- func_04C306: max priority among slots matching (x,y,goal_type);
+//                 -1 when none match.
+void plan_clear(GameState& g, int power, int slot);
+bool plan_set(GameState& g, int power, int x, int y, int goal_type, int priority);
+int  plan_query(const GameState& g, int power, int x, int y, int goal_type);
+
+// The per-power strategic pass (func_04CC50, ai.md 6.1/6.3): refills the
+// power's plan slots from what it can see, then matches idle units to the
+// highest-priority slot whose goal_type capbit the unit's @UNIT capability
+// bitfield carries ((1<<G) & capbits, @0x04DFF4) -- writing state '1' (target
+// selected) + the goto coords, refined to 't' (goal_type==1, unit-flag 0x4
+// gate @0x04E05C) or 'i' (goal_type==7, flag 0x8 gate @0x04E07E). The slot
+// FILL policy (which targets get which goal class) is RECONSTRUCTED: settle
+// sites -> goal 6 (the 0x40 Colonist/Pioneer bit), explore frontier -> goal 5
+// (the 0x20 Scout/Missionary bit), garrison -> goal 3 (a Soldier-band bit);
+// the layout, match test, and state chars are the byte-cited part.
+void ai_strategic_plan(GameState& g, World& w, int power, const RuleData& rd);
+
+// The match half of the strategic pass alone (fill and match are the two
+// halves of func_04CC50): binds idle units of the power to the best plan slot
+// their capbits qualify for. Exposed so a caller (or test) can stage slots
+// with plan_set and observe the binding/refinement chars directly.
+void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd);
+
 // One power's AI pass (ai.md 6.3: controller gate -> strategic plan ->
 // per-unit dispatch -> execute). Assigns missions (writing Unit.ai_state with
 // the decoded state chars) and steps each unit via the func_046FFA heading
 // scorer within its budget. Settler-class units seek the best colony site
 // (the +500 term) and found a colony on arrival (state '=' absorbed); scouts
-// explore toward their power's fog frontier ('2'); military garrisons the
-// nearest own colony ('3' en route, 'G' garrisoned); ships wander ('8').
+// explore toward their power's fog frontier ('2', 'D' when >= 8 tiles out);
+// military garrisons a colony ('3' assigned, 'L' routing in, 'V' arrived,
+// 'G' garrisoned); ships wander ('8'); AI Pioneers improve tiles around their
+// colonies ('B' clear/plow, 'e' road, 'C' complete). Budget exhaustion mid-
+// route writes '9'; a lost goal writes '?' (re-planned next pass).
 // AI units do not initiate combat in this pass (the enemy-on-tile candidate
 // reject @0x047A1D; attack missions are not in the decoded dispatch table).
 void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd,

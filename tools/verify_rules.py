@@ -28,9 +28,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TABLES = os.path.join(ROOT, "data_extracted", "tables", "names_tables.json")
 RULES_CPP = os.path.join(ROOT, "viceroy_cpp", "sim", "rules.cpp")
 
-# A kDefaultUnits row:  {"Name ...", attack, defense, cargo, move_class, movement},
+# A kDefaultUnits row:  {"Name ...", attack, defense, cargo, move_class, movement, capbits},
 ROW_RE = re.compile(r'\{\s*"((?:[^"\\]|\\.)*)"\s*,\s*'
-                    r'(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\}')
+                    r'(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*'
+                    r'(0[xX][0-9a-fA-F]+|-?\d+)\s*\}')
 
 
 def parse_cpp_units(path):
@@ -43,8 +44,8 @@ def parse_cpp_units(path):
     body = m.group(1)
     rows = []
     for r in ROW_RE.finditer(body):
-        name, atk, dfn, cargo, mclass, mv = r.groups()
-        rows.append((name, int(atk), int(dfn), int(cargo), int(mclass), int(mv)))
+        name, atk, dfn, cargo, mclass, mv, caps = r.groups()
+        rows.append((name, int(atk), int(dfn), int(cargo), int(mclass), int(mv), int(caps, 0)))
     return rows
 
 
@@ -123,17 +124,18 @@ def main():
 
     mism = []
     for i, row in enumerate(units):
-        j = (int(row["attack"]), int(row["combat"]), int(row["cargo"]), int(row["movement"]))
-        _, c_atk, c_def, c_cargo, _mclass, c_mv = cpp[i]
-        c = (c_atk, c_def, c_cargo, c_mv)
+        j = (int(row["attack"]), int(row["combat"]), int(row["cargo"]), int(row["movement"]),
+             int(row["ai_role_bits"], 2))
+        _, c_atk, c_def, c_cargo, _mclass, c_mv, c_caps = cpp[i]
+        c = (c_atk, c_def, c_cargo, c_mv, c_caps)
         if c != j:
-            mism.append("  row %2d %-17s  JSON(a%d d%d c%d mv%d) != C++(a%d d%d c%d mv%d)" % (
-                i, row["name"], j[0], j[1], j[2], j[3], c[0], c[1], c[2], c[3]))
+            mism.append("  row %2d %-17s  JSON(a%d d%d c%d mv%d cap%02X) != C++(a%d d%d c%d mv%d cap%02X)" % (
+                i, row["name"], j[0], j[1], j[2], j[3], j[4], c[0], c[1], c[2], c[3], c[4]))
 
     # The padded C++ rows beyond the JSON (the unused 23rd unit) must be zeroed.
     for i in range(len(units), len(cpp)):
-        _, c_atk, c_def, c_cargo, _mclass, c_mv = cpp[i]
-        if (c_atk, c_def, c_cargo, c_mv) != (0, 0, 0, 0):
+        _, c_atk, c_def, c_cargo, _mclass, c_mv, c_caps = cpp[i]
+        if (c_atk, c_def, c_cargo, c_mv, c_caps) != (0, 0, 0, 0, 0):
             mism.append("  row %2d (padding) expected zeros, got (a%d d%d c%d mv%d)" % (
                 i, c_atk, c_def, c_cargo, c_mv))
 

@@ -844,18 +844,18 @@
     {
       "formulas": [
         {
-          "expr": "controller gate skips the human (@0x58A6) ; per unit: mission -> state char (ai.md 4 alphabet: '1' target selected, '2' scout explore, '3' move-to-colony, '8' wander, 'G' garrisoned, '=' absorbed into a founded colony) ; step within budget: allowance = @UNIT movement x3 (UnitTypeStats +0x00), one step charges +3 (@0x05CAE2), act while allowance - spent >= 3 (@0x03EE95)",
+          "expr": "controller gate skips the human (@0x58A6) ; strategic pass fills + matches the plan map ; per unit: resume the persistent state char (ai.md 4 alphabet), step within budget: allowance = @UNIT movement x3 (UnitTypeStats +0x00), one step charges +3 (@0x05CAE2), act while allowance - spent >= 3 (@0x03EE95)",
           "fn": "ai_power_turn",
           "knobs": [],
-          "note": "Missions decoded from the func_04E2B6 dispatch table: explore ('2'/'8'/'D'), return-to-colony ('3'/'5'/'N'/'P'/'V'/'W'), visit-natives ('4'/'J' -- settlements live forge-side, skipped). Settlers seek the best visible colony site and found on arrival; the state char renders as the F8 'Show Strategy' badge on rival units.",
+          "note": "Missions decoded from the func_04E2B6 dispatch table: explore ('2', 'D' when >= 8 tiles out @0x05107C setting flag 0x3148.10, '8' wander with step counter +0x3156 = rand(1,0x14) @0x050D58), return-to-colony ('3' scored by distance + size, 'L' routing in @0x04EA53, 'V' arrived @0x04E9F0, 'G' garrisoned), pioneer worksite ('N' @0x050C3B, 'B' clear/plow @0x051B26, 'e' road @0x051B7A, 'C' complete @0x04F3B8), ship goto 'B' promotion (@0x051D37), out-of-budget '9' (@0x051A5E), goal lost '?' (@0x04E202), sitting on target 'U' (@0x0508D7), '=' absorbed into a founded colony. Sentry toggle on stay (order 5, fortify when flag 0x3148.2 @0x051AB9); adjacent threat wakes a sentry (tail @0x051C68). Visit-natives ('4'/'J') stays forge-side (settlements live there). The state char renders as the F8 'Show Strategy' badge on rival units.",
           "title": "Per-power AI pass (missions + budget)",
           "writes": []
         },
         {
-          "expr": "9 candidates (8 compass dirs + stay, @0x047371) ; base +200 (@0x0473A4) ; Ocean/Sea-Lane/Arctic reject for land units (@0x0473BB) ; occupied-tile reject (@0x047A1D) ; colony stay bonus +40 (@0x047A33) ; target-distance x3 (@0x047AEC, applied closer-is-better -- sign RECONSTRUCTED) ; colony-site +500 (@0x047D84) for settler classes ; + rand(1,5) jitter (@0x047F44) ; clamp >= 0 ; strict max wins (@0x047F6E), 8 = stay",
+          "expr": "9 candidates (8 compass dirs + stay, @0x047371) ; base +200 (@0x0473A4) ; Ocean/Sea-Lane/Arctic reject for land units (@0x0473BB) ; occupied-tile reject (@0x047A1D) ; heading continuity +4 when dir == stored heading +0x314F (@0x047A79) ; reverse turn cost -6 (@0x047A8D) ; colony stay bonus +40 (@0x047A33, gated to goal-less units -- adaptation) ; target-distance x3 (@0x047AEC, applied closer-is-better -- sign RECONSTRUCTED) ; colony-site +500 (@0x047D84) for settler classes ; + rand(1,5) jitter (@0x047F44) ; clamp >= 0 ; strict max wins (@0x047F6E), 8 = stay, winner latched to heading +0x314F (@0x051A95)",
           "fn": "ai_pick_heading",
           "knobs": [],
-          "note": "Skipped (engine state not carried): +4 heading continuity / reverse turn cost (needs the +0x314F compass byte), settlement +20, early-era +50, yield +16, frontier reject.",
+          "note": "Skipped (engine state not carried): settlement +20, early-era +50, yield +16, frontier reject.",
           "title": "Tactical heading scorer (func_046FFA)",
           "writes": []
         },
@@ -865,6 +865,14 @@
           "knobs": [],
           "note": "This is the low nibble of map-layer #4 the F9 'Show Colony Sites' cheat displays (writer func_063F3C @0x064130, display func_021602). Catchment tile ORDER is RECONSTRUCTED (the EXE's delta tables are runtime-built); the special-resource bonus table is skipped (no resource plane in World). Live-capture oracle: coastal land 9..13, ocean 0.",
           "title": "Colony-site land value 0..15 (func_063F3C)",
+          "writes": []
+        },
+        {
+          "expr": "4-byte records at DS:0x98B0, POWER-indexed 4x64 (byte addr = ((power<<6)+slot)<<2) ; fields: target X (-> +0x314D on commit), target Y (-> +0x314E), goal_type (0xFF = empty; 0..7 = capbit position), priority (insert keeps slots ordered) ; a slot binds a unit only if (1 << goal_type) & @UNIT capbits (UnitTypeStats +0x09 @0x523d, reader @0x04DFF4) ; goal_type==1 refines state '1' -> 't' (flag 0x3148.4 gate @0x04E05C), ==7 -> 'i' (flag 0x3148.8 gate @0x04E07E), ==4 consumed but excluded from the per-class tally (@0x04E1BF)",
+          "fn": "plan_set",
+          "knobs": [],
+          "note": "The slot FILL policy (which targets get which goal class) is RECONSTRUCTED: settle sites -> goal 6 (the 0x40 Colonist/Pioneer bit), explore frontier -> goal 5 (0x20), garrison -> goal 3; the table layout, accessors, match test, and refinement chars are the byte-cited part. @UNIT capbits column loaded verbatim (Colonist 0x40, Soldier 0x1C, Caravel 0xA2).",
+          "title": "Strategic plan-map (func_04C1F0/func_04C3A2/func_04C306)",
           "writes": []
         }
       ],

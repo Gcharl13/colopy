@@ -129,6 +129,15 @@ struct GameState {
     std::array<int32_t, NGOODS> price_base{};  // DGROUP 0x53EA (per-good, [600,1000])
     Ref ref;
     std::vector<TradeRoute> routes;            // segment 0x1B22 route table (max 12)
+
+    // Strategic plan-map (spec/systems/ai.md 6.1, BYTE-VERIFIED layout): the
+    // 4-byte records at DS:0x98B0, POWER-indexed 4x64 (byte addr =
+    // ((power<<6)+slot)<<2). goal_type 0xFF = empty; 0..7 = the capbit position
+    // a matching unit must carry ((1<<G) & @UNIT capbits, reader @0x04DFF4).
+    // Setter func_04C3A2 priority-inserts; clearer func_04C1F0 writes {FF,0}.
+    // Per-turn scratch, refilled by the strategic pass -- not persisted.
+    struct PlanSlot { int x = 0, y = 0, goal_type = 0xFF, priority = 0; };
+    std::array<std::array<PlanSlot, 64>, 4> plan{};
 };
 
 } // namespace vc::sim

@@ -993,18 +993,26 @@ static void test_ai() {
       CHECK(w.units[0].x == 3 && w.units[0].ai_spent == 9,
             "3 steps to the frontier tile (9 credits spent)");
       CHECK(w.explored(4, 0, 1), "the walk revealed new ground for power 1");
+      CHECK(w.units[0].heading == 0, "heading +0x314F latched to the walked dir (E=0)");
     }
-    { // military: walks to its own colony ('3'), then garrisons ('G', fortify)
-      GameState g; World w; w.map_w = 5; w.map_h = 1;
-      w.terrain.assign(5, 4);
-      Colony c; c.x = 2; c.y = 0; c.owner_power = 1; c.human = false; w.colonies.push_back(c);
+    { // military: the full colony-bound chain '3' (dispatched) -> 'L' (routing
+      // in, adjacent) -> 'V' (arrived) -> 'G' (garrisoned, fortify) -- ai.md 4
+      GameState g; World w; w.map_w = 9; w.map_h = 1;
+      w.terrain.assign(9, 4);
+      Colony c; c.x = 4; c.y = 0; c.owner_power = 1; c.human = false; w.colonies.push_back(c);
       Unit m; m.type = SOLDIERS; m.owner = 1; m.x = 0; m.y = 0; w.units.push_back(m);
       ai_power_turn(g, w, 1, rd, rig);                 // Soldiers: 1 move = 3 credits = 1 step
       CHECK(w.units[0].ai_state == '3' && w.units[0].x == 1, "moving to the colony ('3')");
       ai_power_turn(g, w, 1, rd, rig);
+      ai_power_turn(g, w, 1, rd, rig);                 // x=3: one step out
+      CHECK(w.units[0].ai_state == 'L' && w.units[0].x == 3,
+            "routing into the colony ('L' @0x04EA53)");
+      ai_power_turn(g, w, 1, rd, rig);
+      CHECK(w.units[0].ai_state == 'V' && w.units[0].x == 4,
+            "arrived at the colony ('V' @0x04E9F0)");
       ai_power_turn(g, w, 1, rd, rig);
       CHECK(w.units[0].ai_state == 'G' && w.units[0].order == ORDER_FORTIFY &&
-            w.units[0].x == 2, "garrisoned ('G') and fortified at the colony");
+            w.units[0].x == 4, "garrisoned ('G') and fortified at the colony");
     }
     { // controller gate: the human power's units are never AI-driven
       GameState g; World w; w.map_w = 4; w.map_h = 1;
@@ -1012,6 +1020,100 @@ static void test_ai() {
       Unit s; s.type = COLONISTS; s.owner = 0; s.x = 0; s.y = 0; w.units.push_back(s);
       ai_power_turn(g, w, 0, rd, rig);
       CHECK(w.units[0].x == 0 && w.units[0].ai_state == 'X', "human units untouched (@0x58A6)");
+    }
+}
+
+// ai.md second pass: the strategic plan-map (6.1), the capability bitfield,
+// the planning refinements 't'/'i', AI Pioneer terrain builds ('B'/'e'->'C'),
+// the ship '1'->'B' promotion, and the sentry wake.
+static void test_ai_plan() {
+    std::printf("computer players, plan-map layer (ai.md 6.1 + state alphabet):\n");
+    const RuleData& rd = default_rules();
+    RandFn rig = [](int lo, int) { return lo; };
+    CHECK(unit_stats(rd, COLONISTS).capbits == 0x40 &&
+          unit_stats(rd, SOLDIERS).capbits == 0x1C &&
+          unit_stats(rd, CARAVEL).capbits == 0xA2 &&
+          unit_stats(rd, PRIVATEER).capbits == 0x01,
+          "@UNIT capbits column loaded verbatim (0x523d)");
+    { // plan accessors: priority-ordered insert, query, clear
+      GameState g;
+      CHECK(plan_set(g, 1, 5, 5, 6, 10) && plan_set(g, 1, 2, 2, 3, 20),
+            "plan_set inserts (func_04C3A2)");
+      CHECK(g.plan[1][0].priority == 20 && g.plan[1][0].goal_type == 3 &&
+            g.plan[1][1].priority == 10,
+            "slots kept priority-ordered (the insert thunk)");
+      CHECK(plan_query(g, 1, 5, 5, 6) == 10 && plan_query(g, 1, 5, 5, 3) == -1,
+            "plan_query max-priority match (func_04C306)");
+      plan_clear(g, 1, 0);
+      CHECK(g.plan[1][0].goal_type == 0xFF && plan_query(g, 1, 2, 2, 3) == -1,
+            "plan_clear resets to the 0xFF empty mark (func_04C1F0)");
+      for (int s = 0; s < 64; ++s) plan_set(g, 2, s, 0, 6, 5);
+      CHECK(!plan_set(g, 2, 9, 9, 6, 4) && plan_set(g, 2, 9, 9, 6, 6),
+            "a full table rejects lower priority, accepts higher");
+    }
+    { // capbit goal match + the 't'/'i' refinements (flag-gated)
+      GameState g; World w; w.map_w = 6; w.map_h = 1;
+      w.terrain.assign(6, 25);                         // open water
+      Unit ship; ship.type = CARAVEL; ship.owner = 1; ship.x = 0; ship.y = 0;
+      ship.ai_state = '0'; ship.ai_flags = 0x4;        // goal-class-1 gate bit
+      w.units.push_back(ship);
+      plan_set(g, 1, 3, 0, 1, 5);                      // a goal_type-1 slot (capbit 1)
+      ai_plan_match(g, w, 1, rd);
+      CHECK(w.units[0].ai_state == 't' && w.units[0].target_x == 3,
+            "goal 1 + flag 0x4 refines '1' -> 't' (@0x04E175)");
+      w.units[0].ai_state = '0'; w.units[0].ai_flags = 0x8;
+      plan_set(g, 1, 4, 0, 7, 5);                      // a goal_type-7 slot (capbit 7)
+      ai_plan_match(g, w, 1, rd);
+      CHECK(w.units[0].ai_state == 'i' && w.units[0].target_x == 4,
+            "goal 7 + flag 0x8 refines -> 'i' (@0x04E194)");
+      Unit sol; sol.type = SOLDIERS; sol.owner = 1; sol.x = 5; sol.y = 0;
+      sol.ai_state = '0'; w.units.push_back(sol);
+      plan_set(g, 1, 2, 0, 6, 9);                      // settle slot: soldier lacks bit 6
+      ai_plan_match(g, w, 1, rd);
+      CHECK(w.units[1].ai_state == '0',
+            "capbit mismatch never binds ((1<<G)&capbits @0x04DFF4)");
+    }
+    { // ship reaching its goto target: '1' -> 'B' (@0x051D37)
+      GameState g; World w; w.map_w = 6; w.map_h = 1;
+      w.terrain.assign(6, 25);
+      Unit ship; ship.type = CARAVEL; ship.owner = 1; ship.x = 0; ship.y = 0;
+      ship.ai_state = '1'; ship.target_x = 3; ship.target_y = 0;
+      w.units.push_back(ship);
+      ai_power_turn(g, w, 1, rd, rig);
+      CHECK(w.units[0].ai_state == 'B' && w.units[0].x == 3,
+            "ship promoted '1' -> 'B' on goto arrival");
+    }
+    { // AI Pioneer: walks to a worksite ('N'), starts the build ('B', order
+      // clear/plow), completes it ('C') and the tile gains the plow bit
+      GameState g; World w; w.map_w = 5; w.map_h = 5;
+      w.terrain.assign(25, 2);                         // open Plains
+      Colony c; c.x = 2; c.y = 2; c.owner_power = 1; c.human = false; w.colonies.push_back(c);
+      Unit p; p.type = PIONEERS; p.owner = 1; p.x = 2; p.y = 2; w.units.push_back(p);
+      ai_power_turn(g, w, 1, rd, rig);                 // dispatch 'N' + step to the worksite
+      CHECK(w.units[0].ai_state == '0' || w.units[0].ai_state == 'N',
+            "pioneer dispatched toward the worksite ('N' @0x050C3B)");
+      ai_power_turn(g, w, 1, rd, rig);                 // on-site: start the build
+      CHECK(w.units[0].ai_state == 'B' &&
+            (w.units[0].order == ORDER_CLEAR_PLOW || w.units[0].order == ORDER_ROAD),
+            "build started ('B' @0x051B26, the improvement order)");
+      const int wx = w.units[0].x, wy = w.units[0].y;
+      for (int t = 0; t < 6 && w.units[0].ai_state != 'C'; ++t) {
+          apply_orders(g, w, rig, rd, 0, nullptr, nullptr);
+          ai_power_turn(g, w, 1, rd, rig);
+      }
+      CHECK(w.units[0].ai_state == 'C', "build complete ('C' @0x04F3B8)");
+      CHECK((w.improve_at(wx, wy) & 0x48) != 0, "the tile gained the improvement bit");
+      CHECK(w.units[0].tools == 100 - rd.cfg.improve_tool_cost,
+            "20 tools debited on completion (@0x4060F)");
+    }
+    { // sentry wake: a sentried AI unit with an adjacent enemy wakes (tail)
+      GameState g; World w; w.map_w = 3; w.map_h = 1;
+      w.terrain.assign(3, 4);
+      Unit s; s.type = SOLDIERS; s.owner = 1; s.x = 0; s.y = 0;
+      s.ai_state = '0'; s.order = ORDER_SENTRY; w.units.push_back(s);
+      Unit e; e.type = SOLDIERS; e.owner = 2; e.x = 1; e.y = 0; w.units.push_back(e);
+      ai_power_turn(g, w, 1, rd, rig);
+      CHECK(w.units[0].order == ORDER_NONE, "adjacent threat wakes the sentry (@0x051C68)");
     }
 }
 
@@ -1096,6 +1198,7 @@ int main() {
     test_trade_routes();
     test_scout_infiltrate();
     test_ai();
+    test_ai_plan();
     test_combat_depth();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);

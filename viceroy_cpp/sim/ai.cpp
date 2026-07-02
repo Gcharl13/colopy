@@ -82,6 +82,36 @@ int colony_site_value(const World& w, const RuleData& rd, int x, int y) {
     return (int)v;
 }
 
+// --- Plan-map accessors (ai.md 6.1; table GameState::plan) -------------------
+
+void plan_clear(GameState& g, int power, int slot) {   // func_04C1F0
+    if (power < 0 || power > 3 || slot < 0 || slot > 63) return;
+    g.plan[power][slot] = GameState::PlanSlot{};       // {goal_type=0xFF, v3=0}
+}
+
+bool plan_set(GameState& g, int power, int x, int y, int goal_type, int priority) {
+    if (power < 0 || power > 3) return false;
+    auto& tab = g.plan[power];
+    // func_04C3A2: scan the 64 slots for the first that is free (0xFF) or
+    // outranked by the new entry; the priority-insert thunk shifts the rest.
+    int at = -1;
+    for (int s = 0; s < 64; ++s)
+        if (tab[s].goal_type == 0xFF || tab[s].priority < priority) { at = s; break; }
+    if (at < 0) return false;                          // full of higher-priority goals
+    for (int s = 63; s > at; --s) tab[s] = tab[s - 1];
+    tab[at].x = x; tab[at].y = y; tab[at].goal_type = goal_type; tab[at].priority = priority;
+    return true;
+}
+
+int plan_query(const GameState& g, int power, int x, int y, int goal_type) {
+    if (power < 0 || power > 3) return -1;
+    int best = -1;                                     // func_04C306: max v3 among matches
+    for (const auto& s : g.plan[power])
+        if (s.goal_type == goal_type && s.x == x && s.y == y && s.priority > best)
+            best = s.priority;
+    return best;
+}
+
 namespace {
 
 // func_046FFA -- score the 9 candidates (8 compass dirs + stay) for one unit and
@@ -107,12 +137,15 @@ int ai_pick_heading(const World& w, const RuleData& rd, const Unit& u, int self_
             if (unit_at(w, tx, ty, self_idx) >= 0) continue;   // occupied tile reject (@0x047A1D)
         }
         long score = 200;                             // base +200 (@0x0473A4)
-        // (+4 heading continuity and the reverse turn-cost helper need the stored
-        // compass heading +0x314F, which this model does not carry -- skipped.)
-        if (dir == 8 && colony_near(w, u.x, u.y, 0) >= 0)
+        if (dir == u.heading && dir != 8)
+            score += 4;                               // heading continuity +4 (@0x047A79)
+        else if (u.heading < 8 && dir < 8 && ((dir - u.heading + 8) & 7) == 4)
+            score -= 6;                               // turn-cost helper: reverse ~ -6 (@0x047A8D)
+        if (dir == 8 && u.target_x < 0 && colony_near(w, u.x, u.y, 0) >= 0)
             score += 40;                              // colony-proximity stay bonus (0x28;
-                                                      //   applied ON a colony tile so marchers
-                                                      //   are not pinned short -- adaptation)
+                                                      //   gated to goal-less units ON a colony
+                                                      //   tile so goal-seekers are not pinned
+                                                      //   -- adaptation)
         if (u.target_x >= 0)                          // target-distance term (@0x047AEC)
             score -= 3 * octile(u.target_x - tx, u.target_y - ty);
         if (settler && dir != 8 && colony_near(w, tx, ty, 1) < 0) {
@@ -158,81 +191,309 @@ bool best_colony_site(const World& w, const RuleData& rd, int power, int x, int 
     return found;
 }
 
-int nearest_own_colony(const World& w, int power, int x, int y) {
-    int best = -1; long bd = 1 << 20;
+// Own colony chosen by mission '3' (@0x04F1FD: "scores own colonies by
+// distance + size [+0x1f]"). The exact combination of the two terms is not in
+// the trace -- nearest first, population breaking ties is the RECONSTRUCTED
+// reading (a big colony wins between two equally far ones).
+int pick_garrison_colony(const World& w, int power, int x, int y) {
+    int best = -1; long bd = 1 << 20; int bp = -1;
     for (int i = 0; i < (int)w.colonies.size(); ++i) {
         const Colony& c = w.colonies[i];
         if (c.owner_power != power || c.x < 0) continue;
         const long d = octile(c.x - x, c.y - y);
-        if (d < bd) { bd = d; best = i; }
+        if (d < bd || (d == bd && c.population > bp)) { bd = d; best = i; bp = c.population; }
     }
     return best;
 }
 
+// Worksite for an AI Pioneer: an improvable tile in the catchment of one of the
+// power's colonies. Forested -> clear, open unplowed -> plow (both 'B'), sound
+// land without a road -> road ('e'). Which build each cap-bit test maps to is
+// not pinned in the trace (the &0x40/&0x20/&1/&4 probes, ai.md 4) -- the
+// clear/plow-vs-road split here is the RECONSTRUCTED part; the state chars,
+// work counter, and completion rule are the cited part.
+bool pioneer_worksite(const World& w, int power, int self_idx, int& ox, int& oy, int& kind) {
+    for (const Colony& c : w.colonies) {
+        if (c.owner_power != power || c.x < 0) continue;
+        for (int i = 1; i < 21; ++i) {                // ring tiles (skip the colony centre)
+            const int tx = c.x + CATCH[i].dx, ty = c.y + CATCH[i].dy;
+            const int t = w.terrain_id(tx, ty);
+            if (!land_ok(t) || t == 24 || t == 27) continue;
+            if (unit_at(w, tx, ty, self_idx) >= 0) continue;
+            const int imp = w.improve_at(tx, ty);
+            if (t >= 8 && t <= 23) { ox = tx; oy = ty; kind = 'B'; return true; }  // clear
+            if (!(imp & 0x40))     { ox = tx; oy = ty; kind = 'B'; return true; }  // plow
+            if (!(imp & 0x08))     { ox = tx; oy = ty; kind = 'e'; return true; }  // road
+        }
+    }
+    return false;
+}
+
+bool idle_state(int s) {
+    return s == 'X' || s == '0' || s == '?' || s == 'C' || s == 'U';
+}
+
+// Adjacent enemy unit (the sentry wake scan, tail @0x051C68: 0x181F:0xA38
+// neighbour flags, test al,0x40 = threat).
+bool adjacent_enemy(const World& w, int power, int x, int y) {
+    for (int i = 0; i < (int)w.units.size(); ++i) {
+        const Unit& o = w.units[i];
+        if (!o.alive || o.owner == power) continue;
+        if (std::abs(o.x - x) <= 1 && std::abs(o.y - y) <= 1) return true;
+    }
+    return false;
+}
+
 } // namespace
+
+void ai_strategic_plan(GameState& g, World& w, int power, const RuleData& rd) {
+    if (power < 0 || power > 3) return;
+    for (int s = 0; s < 64; ++s) plan_clear(g, power, s);   // refill each pass
+
+    // --- fill (policy RECONSTRUCTED; layout/match byte-cited, ai.md 6.1) ---
+    // Settle sites -> goal 6 (the 0x40 Colonist/Pioneer capbit), priority =
+    // site value: the best visible site from each settle-class unit's seat.
+    for (const Unit& u : w.units) {
+        if (!u.alive || u.owner != power) continue;
+        const int caps = unit_stats(rd, u.type).capbits;
+        if (caps & 0x40) {
+            int sx, sy;
+            if (best_colony_site(w, rd, power, u.x, u.y, sx, sy) &&
+                plan_query(g, power, sx, sy, 6) < 0)
+                plan_set(g, power, sx, sy, 6, colony_site_value(w, rd, sx, sy));
+        }
+        if (caps & 0x20) {                            // explore frontier -> goal 5
+            int fx, fy;
+            if (nearest_frontier(w, power, u.x, u.y, fx, fy) &&
+                plan_query(g, power, fx, fy, 5) < 0)
+                plan_set(g, power, fx, fy, 5, 4);
+        }
+    }
+    for (const Colony& c : w.colonies)                // garrison -> goal 3
+        if (c.owner_power == power && c.x >= 0 &&
+            plan_query(g, power, c.x, c.y, 3) < 0)
+            plan_set(g, power, c.x, c.y, 3, 1 + c.population);
+
+    ai_plan_match(g, w, power, rd);
+}
+
+// The match half of the strategic pass: idle units bind to the highest-priority
+// slot whose goal_type capbit they carry ((1<<G) & capbits, @0x04DFF4);
+// consumed slots clear (func_04C1F0).
+void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd) {
+    bool has_colony = false;
+    for (const Colony& c : w.colonies)
+        if (c.owner_power == power && c.x >= 0) { has_colony = true; break; }
+    for (Unit& u : w.units) {
+        if (!u.alive || u.owner != power || !idle_state(u.ai_state)) continue;
+        const int caps  = unit_stats(rd, u.type).capbits;
+        const bool naval = unit_stats(rd, u.type).move_class == 99;
+        auto& tab = g.plan[power];
+        for (int s = 0; s < 64; ++s) {
+            if (tab[s].goal_type == 0xFF || tab[s].goal_type > 7) continue;
+            if (!((1 << tab[s].goal_type) & caps)) continue;
+            // Land-tile goal classes (settle/explore/garrison) never bind ships;
+            // Pioneers with an owned colony leave settle slots to Colonists and
+            // take the improvement mission instead (allocation RECONSTRUCTED --
+            // the EXE's per-class tally @0x04E1BF is the untraced part).
+            if (naval && (tab[s].goal_type == 3 || tab[s].goal_type == 5 ||
+                          tab[s].goal_type == 6)) continue;
+            if (u.type == PIONEERS && tab[s].goal_type == 6 && has_colony) continue;
+            u.target_x = tab[s].x; u.target_y = tab[s].y;
+            u.ai_state = '1';                          // target selected (@0x04E15D)
+            if (tab[s].goal_type == 1 && (u.ai_flags & 0x4))
+                u.ai_state = 't';                      // goal class 1 (@0x04E175, gate @0x04E05C)
+            else if (tab[s].goal_type == 7 && (u.ai_flags & 0x8))
+                u.ai_state = 'i';                      // goal class 7 (@0x04E194, gate @0x04E07E)
+            else if (tab[s].goal_type == 5)
+                u.ai_state = '2';                      // scout-explore dispatch (@0x04F030)
+            else if (tab[s].goal_type == 3)
+                u.ai_state = '3';                      // move-to-colony dispatch (@0x04F1FD)
+            plan_clear(g, power, s);                   // consumed (func_04C1F0)
+            break;
+        }
+    }
+}
 
 void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const RandFn& rng) {
     if (power == HUMAN_OWNER) return;                 // controller gate (@0x58A6)
+    ai_strategic_plan(g, w, power, rd);               // func_04CC50 pass
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
         if (!u.alive || u.owner != power) continue;
         u.ai_spent = 0;                               // budget reset (@0x005872)
         const bool naval   = unit_stats(rd, u.type).move_class == 99;
-        const bool settler = u.type == COLONISTS || u.type == PIONEERS;
-        const bool scout   = u.type == SCOUTS;
+        const bool settler = (u.type == COLONISTS ||
+                              (u.type == PIONEERS && u.ai_state == '1'));
 
-        // --- strategic plan: pick/refresh the mission (func_04CC50 -> state char) ---
-        if (settler) {
-            int sx, sy;
-            if (best_colony_site(w, rd, power, u.x, u.y, sx, sy)) {
-                u.target_x = sx; u.target_y = sy; u.ai_state = '1';   // target selected
-            } else { u.ai_state = '0'; continue; }                    // idle/sentry
-        } else if (scout) {
+        // --- resume the persistent state machine (ai.md 4) ---
+        if (u.ai_state == 'G') { u.order = ORDER_FORTIFY; continue; }   // garrisoned
+        if (u.ai_state == 'V') {                       // arrived -> garrison (promotion)
+            u.ai_state = 'G'; u.order = ORDER_FORTIFY; continue;
+        }
+        if (u.ai_state == 'B' || u.ai_state == 'e') {
+            if (u.order == ORDER_CLEAR_PLOW || u.order == ORDER_ROAD)
+                continue;                              // still working (counter in apply_orders)
+            u.ai_state = 'C';                          // build complete (@0x04F3B8)
+            continue;                                  // re-planned next pass
+        }
+
+        // --- mission upkeep / fallback dispatch (func_04E2D6 + ai.md 6.2) ---
+        if (u.ai_state == '2' || u.ai_state == 'D') {  // explore: retarget the frontier
             int fx, fy;
             if (nearest_frontier(w, power, u.x, u.y, fx, fy)) {
-                u.target_x = fx; u.target_y = fy; u.ai_state = '2';   // scout explore
-            } else { u.ai_state = '0'; continue; }
-        } else if (!naval) {
-            const int ci = nearest_own_colony(w, power, u.x, u.y);
-            if (ci < 0) { u.ai_state = '0'; continue; }
-            const Colony& c = w.colonies[ci];
-            if (u.x == c.x && u.y == c.y) {                           // arrived: garrison
-                u.ai_state = 'G'; u.order = ORDER_FORTIFY; continue;
+                u.target_x = fx; u.target_y = fy;
+                if (octile(fx - u.x, fy - u.y) >= 8) { // long-range explore (@0x05107C)
+                    u.ai_state = 'D'; u.ai_flags |= 0x10;
+                } else u.ai_state = '2';
+            } else { u.ai_state = '0'; u.target_x = u.target_y = -1; }
+        } else if (u.ai_state == '1' && settler) {     // settle: re-validate the site
+            if (u.target_x < 0 ||
+                colony_near(w, u.target_x, u.target_y, 1) >= 0 ||
+                colony_site_value(w, rd, u.target_x, u.target_y) < SITE_BAR) {
+                u.ai_state = '?';                      // goal lost (@0x04E202) -> re-plan
+                u.target_x = u.target_y = -1;
+                continue;
             }
-            u.target_x = c.x; u.target_y = c.y; u.ai_state = '3';     // move-to-colony
-        } else {
-            u.target_x = -1; u.target_y = -1; u.ai_state = '8';       // explore-wander
+        } else if (idle_state(u.ai_state) || (u.ai_state == '8' && u.ai_steps <= 0)) {
+            if (u.type == PIONEERS && u.tools >= rd.cfg.improve_tool_cost) {
+                int wx, wy, kind;                      // AI Pioneer: improve near a colony
+                if (pioneer_worksite(w, power, i, wx, wy, kind)) {
+                    if (u.x == wx && u.y == wy) {      // on the worksite: start the build
+                        u.order = (kind == 'B') ? ORDER_CLEAR_PLOW : ORDER_ROAD;
+                        u.ai_state = kind;             // 'B' @0x051B26 / 'e' @0x051B7A
+                        u.target_x = u.target_y = -1;
+                        continue;
+                    }
+                    u.target_x = wx; u.target_y = wy;
+                    u.ai_state = 'N';                  // Scout/Pioneer -> colony (@0x050C3B)
+                } else u.ai_state = '0';
+            } else if (naval) {
+                u.ai_state = '8';                      // explore-wander (@0x050D58)
+                u.ai_steps = rng(1, 0x14);             //   step counter +0x3156
+                u.target_x = u.target_y = -1;
+            } else if (u.type == SCOUTS || u.type == MISSIONARIES) {
+                int fx, fy;
+                if (nearest_frontier(w, power, u.x, u.y, fx, fy)) {
+                    u.target_x = fx; u.target_y = fy;
+                    u.ai_state = octile(fx - u.x, fy - u.y) >= 8 ? 'D' : '2';
+                    if (u.ai_state == 'D') u.ai_flags |= 0x10;
+                } else u.ai_state = '0';
+            } else if (unit_stats(rd, u.type).capbits & 0x40) {
+                int sx, sy;                            // settle-class fallback
+                if (best_colony_site(w, rd, power, u.x, u.y, sx, sy)) {
+                    u.target_x = sx; u.target_y = sy; u.ai_state = '1';
+                } else { u.ai_state = '0'; }
+            } else {                                   // military: garrison ('3' @0x04F1FD)
+                const int ci = pick_garrison_colony(w, power, u.x, u.y);
+                if (ci < 0) { u.ai_state = '0'; }
+                else if (u.x == w.colonies[ci].x && u.y == w.colonies[ci].y) {
+                    u.ai_state = 'V';                  // already there (@0x04E9F0)
+                    continue;
+                } else {
+                    u.target_x = w.colonies[ci].x; u.target_y = w.colonies[ci].y;
+                    u.ai_state = '3';
+                }
+            }
         }
 
         // --- execute: step within the budget (allowance - spent >= 3, @0x03EE95) ---
         const int allowance = ai_move_allowance(rd, u.type);
+        const bool wander = (u.ai_state == '8');
+        bool moved = false;
         while (u.alive && allowance - u.ai_spent >= 3) {
-            const int dir = ai_pick_heading(w, rd, u, i, settler && u.ai_state == '1', rng);
+            if (!wander && u.target_x < 0) break;
+            int dir;
+            if (wander) {
+                if (u.ai_steps <= 0) break;
+                dir = rng(0, 7);                      // random-walk step (@0x050D58)
+                static const int DXW[8] = {1, 1, 0, -1, -1, -1, 0, 1};
+                static const int DYW[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+                const int t = w.terrain_id(u.x + DXW[dir], u.y + DYW[dir]);
+                const bool ok = naval ? water_id(t) : land_ok(t);
+                if (!ok) { --u.ai_steps; continue; }
+            } else {
+                dir = ai_pick_heading(w, rd, u, i, settler && u.ai_state == '1', rng);
+            }
             if (dir == 8) break;                      // stay (heading 8, @0x051A95)
             static const int DX[8] = {1, 1, 0, -1, -1, -1, 0, 1};
             static const int DY[8] = {0, 1, 1, 1, 0, -1, -1, -1};
             u.x += DX[dir]; u.y += DY[dir];
+            u.heading = dir;                          // write heading +0x314F (@0x051A95)
             u.ai_spent += 3;                          // step charge +3 (@0x05CAE2)
+            moved = true;
+            if (wander) --u.ai_steps;
             reveal_around(w, u.x, u.y, 1, power);     // AI powers track their own fog
             if (u.x == u.target_x && u.y == u.target_y) break;
         }
 
-        // --- arrival handling ---
-        if (settler && u.ai_state == '1' && u.x == u.target_x && u.y == u.target_y &&
-            colony_near(w, u.x, u.y, 1) < 0 && colony_site_value(w, rd, u.x, u.y) >= SITE_BAR) {
-            Colony c;                                  // found: the unit is absorbed ('=',
-            c.x = u.x; c.y = u.y;                      //   type mutated @0x04F20E)
-            c.owner_power = power; c.human = false;
-            c.population = 1;
-            c.center_terrain = w.terrain_id(u.x, u.y) & 0x1F;
-            c.center_food = 3;
-            Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;
-            wk.terrain = c.center_terrain;
-            c.workers.push_back(wk);
-            w.colonies.push_back(c);
-            u.ai_state = '=';
-            u.alive = false;
+        // --- arrival / tail handling (func_04E2D6 tail + ai.md 4) ---
+        if (u.target_x >= 0 && u.x == u.target_x && u.y == u.target_y) {
+            if (settler && u.ai_state == '1' &&
+                colony_near(w, u.x, u.y, 1) < 0 &&
+                colony_site_value(w, rd, u.x, u.y) >= SITE_BAR) {
+                Colony c;                              // found: the unit is absorbed ('=',
+                c.x = u.x; c.y = u.y;                  //   type mutated @0x04F20E)
+                c.owner_power = power; c.human = false;
+                c.population = 1;
+                c.center_terrain = w.terrain_id(u.x, u.y) & 0x1F;
+                c.center_food = 3;
+                Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;
+                wk.terrain = c.center_terrain;
+                c.workers.push_back(wk);
+                w.colonies.push_back(c);
+                Unit& uu = w.units[i];                 // push_back may reallocate elsewhere;
+                uu.ai_state = '=';                     //   re-take the reference
+                uu.alive = false;
+                continue;
+            }
+            const int ci = colony_near(w, u.x, u.y, 0);
+            if (ci >= 0 && w.colonies[ci].owner_power == power && !settler) {
+                u.ai_state = 'V';                      // arrived at the colony (@0x04E9F0)
+                u.target_x = u.target_y = -1;
+                continue;
+            }
+            if (u.ai_state == '2' || u.ai_state == 'D') {
+                u.target_x = u.target_y = -1;          // frontier reached; retarget next pass
+                continue;
+            }
+            if (u.ai_state == 'N') {                   // pioneer reached the worksite: the
+                u.ai_state = '0';                      //   next pass dispatch starts the build
+                u.target_x = u.target_y = -1;
+                continue;
+            }
+            if (naval && u.ai_state == '1') {
+                u.ai_state = 'B';                      // ship reached goto: '1' -> 'B' (@0x051D37)
+                u.target_x = u.target_y = -1;
+                continue;
+            }
+            u.ai_state = 'U';                          // sitting on the stored target (@0x0508D7)
+            u.target_x = u.target_y = -1;
+            continue;
         }
+        if (u.target_x >= 0 && allowance - u.ai_spent < 3) {
+            // Budget exhausted mid-route: the mission char persists across turns
+            // (the re-entry tests, e.g. '2' @0x04E66B, '8' @0x050C9D). Routing
+            // into a colony gets its own char when the entering step is next
+            // ('L', @0x04EA53); a unit that could not step AT ALL is marked out-
+            // of-budget ('9' @0x051A5E, the forced-stay branch).
+            if ((u.ai_state == '3' || u.ai_state == 'L' || u.ai_state == '9') &&
+                octile(u.target_x - u.x, u.target_y - u.y) <= 1)
+                u.ai_state = 'L';
+            else if (!moved)
+                u.ai_state = '9';
+            continue;
+        }
+        if (!moved && u.target_x < 0 && u.ai_state != 'G') {
+            // stayed put with no goal: the sentry toggle (@0x051AB0) -- order 5,
+            // promoted to fortify when transient bit 0x3148&2 is set (@0x051AB9).
+            u.ai_state = '0';
+            if (u.order != ORDER_FORTIFY && u.order != ORDER_SENTRY)
+                u.order = (u.ai_flags & 0x2) ? ORDER_FORTIFY : ORDER_SENTRY;
+        }
+        // tail wake (@0x051C68): a sentried AI unit with an adjacent enemy wakes.
+        if (u.order == ORDER_SENTRY && adjacent_enemy(w, power, u.x, u.y))
+            u.order = ORDER_NONE;
     }
 }
 

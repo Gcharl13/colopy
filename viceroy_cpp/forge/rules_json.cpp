@@ -92,6 +92,7 @@ OverlayResult apply_overlay(const JsonValue& root, RuleData base) {
                 if (const JsonValue* c = u.find("cargo"))      out.rules.units[idx].cargo = c->as_int(out.rules.units[idx].cargo);
                 if (const JsonValue* m = u.find("move_class")) out.rules.units[idx].move_class = m->as_int(out.rules.units[idx].move_class);
                 if (const JsonValue* v = u.find("movement"))   out.rules.units[idx].movement = v->as_int(out.rules.units[idx].movement);
+                if (const JsonValue* b = u.find("capbits"))    out.rules.units[idx].capbits = b->as_int(out.rules.units[idx].capbits);
             }
         } else out.warnings.push_back("units is not an object");
     }
@@ -177,6 +178,7 @@ JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
         if (ub.cargo      != uc.cargo)      u.obj["cargo"]      = json_num(uc.cargo);
         if (ub.move_class != uc.move_class) u.obj["move_class"] = json_num(uc.move_class);
         if (ub.movement   != uc.movement)   u.obj["movement"]   = json_num(uc.movement);
+        if (ub.capbits    != uc.capbits)    u.obj["capbits"]    = json_num(uc.capbits);
         if (!u.obj.empty()) {
             std::string key = (uc.name && uc.name[0]) ? uc.name : std::to_string(i);
             units.obj[key] = u;
@@ -246,6 +248,7 @@ JsonValue full_overlay(const RuleData& rd) {
         uj.obj["cargo"]      = json_num(u.cargo);
         uj.obj["move_class"] = json_num(u.move_class);
         uj.obj["movement"]   = json_num(u.movement);
+        uj.obj["capbits"]    = json_num(u.capbits);
         std::string key = (u.name && u.name[0]) ? u.name : std::to_string(i);
         units.obj[key] = uj;
     }

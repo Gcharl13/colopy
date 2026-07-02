@@ -7,7 +7,7 @@
 namespace vc::sim {
 
 const UnitStats& unit_stats(const RuleData& rd, int type) {
-    static const UnitStats zero{"", 0, 0, 0, 0, 0};
+    static const UnitStats zero{"", 0, 0, 0, 0, 0, 0};
     if (type < 0 || type >= NUNITTYPES) return zero;
     return rd.units[type];
 }

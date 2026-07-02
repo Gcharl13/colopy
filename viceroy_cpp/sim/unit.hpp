@@ -25,6 +25,10 @@ struct UnitStats {
     int cargo;        // @UNIT cargo  -- hold capacity
     int move_class;   // structural class: 1 land / 99 naval / 6 treasure / 0 native
     int movement;     // @UNIT movement -- move points per turn
+    int capbits;      // @UNIT last column verbatim (binary; UnitTypeStats +0x09
+                      //   @0x523d): the capability bitfield the plan-map goal
+                      //   match tests ((1<<goal_type) & capbits, ai.md 6.1
+                      //   @0x04DFF4) and the B/e build states probe (ai.md 4).
 };
 
 struct RuleData;   // sim/rules.hpp -- the injected, data-driven parameter set.
@@ -69,6 +73,16 @@ struct Unit {
                                //   the decoded alphabet is ai.md 4)
     int  ai_spent = 0;         // +0x3149 move-credits SPENT this turn (allowance =
                                //   @UNIT movement x3; one step = 3, ai.md 5)
+    int  heading  = 8;         // +0x314F compass heading written by the scorer
+                               //   (0..7; 8 = no-move) -- feeds the +4 continuity
+                               //   term (@0x047A79) and the turn-cost helper
+    int  ai_flags = 0;         // +0x3148 unit flag word (ai.md): bit1 (0x2)
+                               //   sentry->fortify toggle (@0x051AB9), bit2 (0x4)
+                               //   goal-class-1 gate (@0x04E05C), bit3 (0x8)
+                               //   goal-class-7 gate (@0x04E07E), bit4 (0x10)
+                               //   long-range explore 'D' (@0x05107C)
+    int  ai_steps = 0;         // +0x3156 explore-wander step counter, seeded
+                               //   rand(1,0x14) by mission '8' (@0x050D58)
     // --- trade route (trade_routes.md 2): on a ship/wagon the +0x315B byte is
     // route index (low nibble, func_0075D4) + current-stop index (high nibble,
     // func_0075FE) -- the profession byte is unused on those types, so the two
