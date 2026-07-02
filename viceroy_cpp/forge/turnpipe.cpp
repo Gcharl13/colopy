@@ -57,11 +57,16 @@ const std::vector<std::string>& turn_phases() {
 }
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
+std::vector<std::pair<int, vc::sim::TeachResult>> g_teach_log;   // (colony, result) per graduation
 void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
-    for (Colony& c : w.colonies) {
+    std::vector<vc::sim::TeachResult> tr;
+    for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
+        Colony& c = w.colonies[ci];
         colony_compute_production(c, g.difficulty, rd, ff_owned);   // colonists -> food/bells/hammers/goods
         colony_economic_step(c, g.difficulty, rd);                  // then SoL / build / growth off those
-        school_teach_step(c, rd, rng);                              // then the school teaches (func_02D658)
+        tr.clear();
+        school_teach_step(c, rd, rng, &tr);                         // then the school teaches (func_02D658)
+        for (const auto& t : tr) g_teach_log.push_back({ci, t});
     }
 }
 void phase_market(GameState& g, World&, const RuleData& rd) { market_turn(g, rd); }
@@ -82,11 +87,12 @@ void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 }
-std::vector<RumorResult> g_rumor_log;   // drained by game_step for the turn notices
+std::vector<RumorResult> g_rumor_log;      // drained by game_step for the turn notices
+std::vector<PromoteResult> g_promote_log;  // battlefield promotions (training.md 3)
 
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
-    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log);
+    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log);
     reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
@@ -98,6 +104,8 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
 }
 
 std::vector<vc::sim::RumorResult>& rumor_log() { return g_rumor_log; }
+std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log() { return g_teach_log; }
+std::vector<vc::sim::PromoteResult>& promote_log() { return g_promote_log; }
 
 const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
 

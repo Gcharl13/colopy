@@ -7,10 +7,13 @@
 // stays identical (a golden-master test asserts run_turn == sim::step_turn).
 #pragma once
 
-#include "game.hpp"    // vc::sim::GameState, World, RandFn
-#include "events.hpp"  // vc::sim::RumorResult
+#include "game.hpp"      // vc::sim::GameState, World, RandFn
+#include "events.hpp"    // vc::sim::RumorResult
+#include "training.hpp"  // vc::sim::TeachResult
+#include "unit_turn.hpp" // vc::sim::PromoteResult
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace forge {
@@ -34,6 +37,14 @@ const std::vector<std::string>& enabled_turn_phases();
 // Lost-City rumor events resolved during the units phase (events.md), accumulated
 // for the caller to drain into turn notices / popups.
 std::vector<vc::sim::RumorResult>& rumor_log();
+
+// School graduations / no-student stalls from the production phase, as
+// (colony index, result) -- drained into the @TRAINPROFESSION/@TRAINFAIL notices.
+std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log();
+
+// Battlefield promotions from the units phase (training.md 3) -- drained into
+// the @VETERAN/@CONTINENTAL notices.
+std::vector<vc::sim::PromoteResult>& promote_log();
 
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).

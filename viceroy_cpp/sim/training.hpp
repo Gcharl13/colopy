@@ -22,14 +22,22 @@
 #include "types.hpp"
 #include "rules.hpp"
 #include "immigration.hpp"   // RandFn
+#include <vector>
 
 namespace vc::sim {
 
 // The colony's school level: 3 University / 2 College / 1 Schoolhouse / 0 none.
 int school_level(const Colony& c);
 
+// One teaching outcome, surfaced for the end-of-turn notices: a graduation
+// (@TRAINPROFESSION "A {colonist} ... has learned the specialty profession
+// {%STRING1}.") or a teacher with no eligible student (@TRAINFAIL).
+struct TeachResult { int profession = -1; bool no_students = false; };
+
 // One colony-turn of school teaching (part of the per-colony turn processor).
-void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng);
+// `out`, when given, receives this turn's graduations / the no-student stall.
+void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng,
+                       std::vector<TeachResult>* out = nullptr);
 
 // --- Native learning ("live among the Indians", spec/systems/training.md 3) ---
 // Learnable skills are the outdoors/gathering experts ONLY (the player-aid chart's

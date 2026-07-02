@@ -629,11 +629,18 @@ static void test_training() {
     Colony::Worker teacher; teacher.profession = 0; teacher.expert = true; teacher.tile = -1;  // Expert Farmer
     Colony::Worker student; student.profession = 19; student.expert = false; student.tile = 0;
     c.workers = {teacher, student};
-    for (int t = 0; t < 3; ++t) school_teach_step(c, rd, first);
+    std::vector<TeachResult> log;
+    for (int t = 0; t < 3; ++t) school_teach_step(c, rd, first, &log);
     CHECK(!c.workers[1].expert && c.workers[1].teach == 3, "3 turns in: still a student (needs 4)");
-    school_teach_step(c, rd, first);
+    CHECK(log.empty(), "no notice before graduation");
+    school_teach_step(c, rd, first, &log);
     CHECK(c.workers[1].expert && c.workers[1].profession == 0 && c.workers[1].teach == 0,
           "4th turn: graduates as Expert Farmer, counter reset");
+    CHECK(log.size() == 1 && log[0].profession == 0 && !log[0].no_students,
+          "graduation surfaced for the @TRAINPROFESSION notice");
+    log.clear();
+    school_teach_step(c, rd, first, &log);           // everyone expert now: teacher stalls
+    CHECK(log.size() == 1 && log[0].no_students, "@TRAINFAIL surfaced when no student is left");
     // tier gate: a Schoolhouse (level 1) cannot teach a tier-3 Elder Statesman
     Colony c2; c2.built_mask = 1ull << 12;
     Colony::Worker states; states.profession = 17; states.expert = true; states.tile = -1;

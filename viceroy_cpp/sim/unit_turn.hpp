@@ -20,6 +20,12 @@ namespace vc::sim {
 // Owner index treated as the human player (affects the combat difficulty handicap).
 constexpr int HUMAN_OWNER = 0;
 
+// A battlefield promotion (training.md 3, promote_on_win), surfaced for the
+// end-of-turn notices: the veteran stamp -> @VETERAN "Our {%STRING0} have
+// hardened to {Veteran} status"; the type ceiling (Soldiers->Continental Army,
+// Dragoons->Continental Cavalry) -> @CONTINENTAL.
+struct PromoteResult { int unit = -1; int owner = 0; int old_type = 0; int new_type = 0; };
+
 // Start-of-turn: each living unit's moves_left = unit_stats(rd, type).movement.
 void refresh_moves(World& w, const RuleData& rd = default_rules());
 
@@ -30,7 +36,8 @@ void refresh_moves(World& w, const RuleData& rd = default_rules());
 // founding-father bitmask, bit 11 = George Washington's auto-promote).
 void apply_orders(GameState& g, World& w, const RandFn& rng,
                   const RuleData& rd = default_rules(), uint32_t ff_owned = 0,
-                  std::vector<RumorResult>* rumor_out = nullptr);
+                  std::vector<RumorResult>* rumor_out = nullptr,
+                  std::vector<PromoteResult>* promote_out = nullptr);
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);

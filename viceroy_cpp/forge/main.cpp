@@ -1089,6 +1089,33 @@ static void game_step() {
             g_turn_notices.push_back(msg);
         }
         forge::rumor_log().clear();
+        // School graduations (training.md 3): the verbatim @TRAINPROFESSION /
+        // @TRAINFAIL records as turn notices (%STRING0 colony, %STRING1 profession).
+        for (const auto& [ci, t] : forge::teach_log()) {
+            const std::string clabel = "#" + std::to_string(ci + 1);
+            std::string msg = game_message_text(t.no_students ? "@TRAINFAIL" : "@TRAINPROFESSION");
+            size_t p2;
+            while ((p2 = msg.find("%STRING0")) != std::string::npos) msg.replace(p2, 8, clabel);
+            if (!t.no_students) {
+                const std::string prof = forge::job_name(t.profession, true);
+                while ((p2 = msg.find("%STRING1")) != std::string::npos) msg.replace(p2, 8, prof);
+            }
+            g_turn_notices.push_back(msg);
+        }
+        forge::teach_log().clear();
+        // Battlefield promotions (training.md 3): the human power's units only --
+        // @CONTINENTAL for the type ceiling, @VETERAN for the veteran stamp.
+        for (const vc::sim::PromoteResult& pr : forge::promote_log()) {
+            if (pr.owner != 0) continue;
+            const bool ceiling = pr.new_type != pr.old_type;      // Soldiers->Cont. Army etc.
+            std::string msg = game_message_text(ceiling ? "@CONTINENTAL" : "@VETERAN");
+            const char* nm = unit_stats(pr.old_type).name;
+            size_t p2;
+            while ((p2 = msg.find("%STRING0")) != std::string::npos)
+                msg.replace(p2, 8, nm ? nm : "troops");
+            g_turn_notices.push_back(msg);
+        }
+        forge::promote_log().clear();
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared

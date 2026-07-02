@@ -19,7 +19,8 @@ int school_level(const Colony& c) {
     return 0;
 }
 
-void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng) {
+void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng,
+                       std::vector<TeachResult>* out) {
     const int level = school_level(c);
     if (level <= 0) return;
     // Faculty: expert colonists working a building slot (tile < 0) whose profession the
@@ -36,7 +37,10 @@ void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng) {
     if (cap > rd.cfg.school_faculty_cap) cap = rd.cfg.school_faculty_cap;
     if ((int)teachers.size() > cap) teachers.resize(cap);
     for (int ti : teachers) {
-        if (students.empty()) return;                      // @TRAINFAIL: no eligible student
+        if (students.empty()) {                            // @TRAINFAIL: no eligible student
+            if (out) out->push_back(TeachResult{-1, true});
+            return;
+        }
         const int pick = (int)rng(0, (int)students.size() - 1);   // random student @0x02DEC5
         const int si = students[pick];
         Colony::Worker& s = c.workers[si];
@@ -48,6 +52,7 @@ void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng) {
             s.profession = c.workers[ti].profession;
             s.expert = true;
             s.teach = 0;
+            if (out) out->push_back(TeachResult{s.profession, false});
             students.erase(students.begin() + pick);       // not a student twice in one turn
         }
     }
