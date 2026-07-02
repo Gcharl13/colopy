@@ -62,6 +62,18 @@ SPEAKER = {
 KEY2SPEAKER = {}
 for sp, keys in SPEAKER.items():
     for k in keys: KEY2SPEAKER[k] = sp
+# Advisor-portrait channel (MSS0..MSS5), extracted from the EXE emit sites
+# (data_extracted/engine/speaker_advisor.json: the emit wrapper's ARG ->
+# [0x1F5E], popups.md 2.7). The KING/IND/MYR channels above take precedence
+# where both are set (the dispatcher fires every channel >= 0; the renderer
+# shows the primary).
+try:
+    with open(os.path.join(ROOT, "data_extracted/engine/speaker_advisor.json")) as f:
+        _adv = json.load(f).get("channels", {})
+    for k, ch in _adv.items():
+        KEY2SPEAKER.setdefault(k, "MSS%d" % ch)
+except FileNotFoundError:
+    pass
 
 def to_int(v, default):
     try: return int(v)

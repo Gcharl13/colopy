@@ -173,6 +173,17 @@ dispatcher `func_06E3D0` @0x06E3D0 fires whichever channels are `≥ 0`:
 |---------|--------|---------|----------------------------------|
 | KING / tribe | `[0x1F5C]` | `func_06BE92` @0x06BE92 | `0..7` → `IND<n>A<pose>.SS`; `> 7` → `KING<n>.SS` (the `CMP 7 / JLE` split @0x06BE96) |
 | advisor | `[0x1F5E]` | `func_06BF12` @0x06BF12 | `0..5` → `MSS0..MSS5.SS` |
+> **Advisor-channel KEY MAP — CLOSED 2026-07-02 (full emit-site scan):** the emit
+> wrapper `0x181F:0x652` stashes its second argument (`[bp+8]`) into `[0x1F5E]`,
+> so every `push ARG; push HANDLE; lcall 0x181F:0x652` site binds its message to
+> `MSS<ARG>.SS`. `HANDLE` = the key-string file offset − `0x1D9A0` (the in-EXE key
+> table). 116 keys carry an immediate 0..5 arg — the complete extraction is
+> committed as `data_extracted/engine/speaker_advisor.json` and merged into
+> `messages.json` by `tools/build_messages.py` (KING/IND/MYR channels take
+> precedence where both are set). Headlines: **MSS2** (17 keys — trade/economy:
+> KISSUP/KISSSORRY/PRICEUP/PRICEDOWN/REALLYBUY/SUCCESSION/…), **MSS3** (20 keys —
+> colony/terrain: TUTNOSPACES/TUTNOLUMBER/NOPLOW/NOROAD/SCOUTCOLONY/LANDFALL2/…),
+> **MSS4** (5 keys — religious: HERESY0/HERESY1/DEADCONVERTS/UNREST/TUTORIAL19). **B.**
 | missionary | `[0x1F60]` | `func_06BF3C` @0x06BF3C | `0..3` → `MYR0..MYR3.SS` |
 | (blitter) | — | `func_06BF66` @0x06BF66 | makes a cel from the loaded sheet handle + blits it; **no box-relative x/y math** (see §2.7.1) |
 
