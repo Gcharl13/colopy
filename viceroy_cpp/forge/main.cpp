@@ -1122,6 +1122,36 @@ static void game_step() {
             g_turn_notices.push_back(msg);
         }
         forge::promote_log().clear();
+        // Shore bombardment (combat.md func_02D3C6): the verbatim @FORTFIRE +
+        // @SHIPSUNK/@SHIPDAMAGE records as turn notices.
+        for (const vc::sim::ShoreFire& sf : forge::shore_log()) {
+            auto sfill = [](std::string s, const char* tok, const std::string& v) {
+                for (size_t p2; (p2 = s.find(tok)) != std::string::npos; )
+                    s.replace(p2, std::strlen(tok), v);
+                return s;
+            };
+            const Colony& c = g_world.colonies[sf.colony];
+            const bool ft = (c.built_mask >> 1) & 1ull, fs = (c.built_mask >> 2) & 1ull;
+            const std::string fort_name = fs ? "Fortress" : ft ? "Fort" : "Stockade";  // @BUILDING 2/1/0
+            const std::string clabel = "#" + std::to_string(sf.colony + 1);
+            std::string ship_nation = "enemy", ship_name = "ship";
+            if (sf.ship >= 0 && sf.ship < (int)g_world.units.size()) {
+                const Unit& sh = g_world.units[sf.ship];
+                ship_nation = nation_name(sh.owner);
+                const char* nm = unit_stats(sh.type).name;
+                if (nm) ship_name = nm;
+            }
+            std::string m = game_message_text("@FORTFIRE");
+            m = sfill(m, "%STRING0", fort_name);  m = sfill(m, "%STRING1", clabel);
+            m = sfill(m, "%STRING2", ship_nation); m = sfill(m, "%STRING3", ship_name);
+            g_turn_notices.push_back(m);
+            std::string m2 = game_message_text(sf.sunk ? "@SHIPSUNK" : "@SHIPDAMAGE");
+            m2 = sfill(m2, "%STRING0", ship_nation); m2 = sfill(m2, "%STRING1", ship_name);
+            m2 = sfill(m2, "%STRING2", sf.sunk ? fort_name : "port");   // @SHIPDAMAGE "returns
+            m2 = sfill(m2, "%STRING3", clabel);                         //   to %STRING2" -- port
+            g_turn_notices.push_back(m2);                               //   voyage not modeled
+        }
+        forge::shore_log().clear();
         // AI powers may have founded colonies this turn (ai.md settler missions):
         // keep the legacy colony_xy list in step with the world's colony roster.
         while (g_colony_xy.size() < g_world.colonies.size()) {

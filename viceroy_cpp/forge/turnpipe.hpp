@@ -11,6 +11,7 @@
 #include "events.hpp"    // vc::sim::RumorResult
 #include "training.hpp"  // vc::sim::TeachResult
 #include "unit_turn.hpp" // vc::sim::PromoteResult
+#include "combat.hpp"    // vc::sim::ShoreFire
 
 #include <string>
 #include <utility>
@@ -45,6 +46,10 @@ std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log();
 // Battlefield promotions from the units phase (training.md 3) -- drained into
 // the @VETERAN/@CONTINENTAL notices.
 std::vector<vc::sim::PromoteResult>& promote_log();
+
+// Shore-bombardment shots from the units phase (combat.md func_02D3C6) --
+// drained into the @FORTFIRE (+@SHIPSUNK/@SHIPDAMAGE) notices.
+std::vector<vc::sim::ShoreFire>& shore_log();
 
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).

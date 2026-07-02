@@ -968,6 +968,53 @@ static void test_ai() {
     }
 }
 
+// combat.md depth: the func_007D3E defense-bonus chain, the func_05B2C2 naval
+// roll on raw stats, and the func_02D3C6 deterministic shore bombardment.
+static void test_combat_depth() {
+    std::printf("combat depth:\n");
+    const RuleData& rd = default_rules();
+    CHECK(defense_bonus(rd, true, 0, false, 0, 2) == 2, "colony +2 (@0x7D8D), plains +0");
+    CHECK(defense_bonus(rd, true, 2, false, 0, 27) == 2 + 4 + 6,
+          "colony +2, fort-level-2 +4, Mountains +6");
+    CHECK(defense_bonus(rd, false, 2, true, 1, 0) == 8 + 4,
+          "doubled fort 8 (@0x7DD1) + road (1+1)*2");
+    CHECK(apply_defense_bonus(8, 0) == 8, "no bonus: strength unchanged");
+    CHECK(apply_defense_bonus(8, 4) == 24, "bonus 4: 8*(4+4)/4 = 16, then *3/2 = 24 (@0x05CE05/16)");
+    { // naval: Privateer(8/8) vs Caravel(0/2): roll <= 8 of 10 wins (@0x05B844)
+      Unit p; p.type = PRIVATEER; Unit c; c.type = CARAVEL;
+      RandFn low = [](int lo, int) { return lo; };
+      NavalResult nr = resolve_naval(rd, p, c, low);
+      CHECK(nr.atk_str == 8 && nr.def_str == 2 && nr.attacker_won,
+            "raw Guns/Hull pair, roll 1 <= 8 wins");
+      CHECK(!nr.loser_sunk, "empty loser is damaged, not sunk");
+      c.hold_good[0] = SUGAR; c.hold_qty[0] = 100;
+      nr = resolve_naval(rd, p, c, low);
+      CHECK(nr.loser_sunk, "laden loser is sunk (the 0x3148&0x40 cargo bit)");
+      CHECK(!can_attack_ships(CARAVEL) && can_attack_ships(FRIGATE),
+            "only Privateers/Frigates (and the Man-O-War) attack ships");
+    }
+    { // shore bombardment: stockade+fort colony with 1 artillery vs adjacent caravel
+      World w; w.map_w = 4; w.map_h = 1;
+      w.terrain.push_back(4); w.terrain.push_back(4); w.terrain.push_back(25); w.terrain.push_back(25);
+      Colony c; c.x = 1; c.y = 0; c.owner_power = 0;
+      c.built_mask = (1ull << 0) | (1ull << 1);        // Stockade + Fort -> level 2
+      w.colonies.push_back(c);
+      Unit art; art.type = ARTILLERY; art.x = 1; art.y = 0; w.units.push_back(art);
+      Unit sh; sh.type = CARAVEL; sh.owner = 1; sh.x = 2; sh.y = 0; sh.moves_left = 4;
+      w.units.push_back(sh);
+      std::vector<ShoreFire> log;
+      shore_bombardment(w, rd, &log);
+      // strength = (1 + 1 artillery) * level 2 * 4 = 16 >= Caravel hull 2 -> sunk
+      CHECK(log.size() == 1 && log[0].strength == 16 && log[0].sunk,
+            "fort fires: strength (1+art)*level*4 = 16, caravel sunk");
+      CHECK(!w.units[1].alive, "the ship is destroyed");
+      // no fortification -> no fire (@0x02D44D)
+      w.colonies[0].built_mask = 0; w.units[1].alive = true; log.clear();
+      shore_bombardment(w, rd, &log);
+      CHECK(log.empty() && w.units[1].alive, "no fort building: no fire");
+    }
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -1002,6 +1049,7 @@ int main() {
     test_trade_routes();
     test_scout_infiltrate();
     test_ai();
+    test_combat_depth();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

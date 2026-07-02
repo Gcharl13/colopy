@@ -315,6 +315,30 @@
           "note": "@0x5C758 Washington gate, @0x5C764 roll, @0x5C7C3/@0x5C7CE type advance, @0x5C7DD class write. The losing side runs the existing demotion ladder (func_05B2C2).",
           "title": "Veteran promotion on a combat win",
           "writes": []
+        },
+        {
+          "expr": "bonus = colony +2 (@0x7D8D) + fortified-building(level>=2) +4 (@0x7DBC, x2 under the 0x20 condition @0x7DD1) + river/road (n+1)*2 (@0x7E12) + @TERRAIN Defensive (@0x7E63) ; applied to the defending strength as strength*(bonus+4)/4 then *3/2 (@0x05CE05/@0x05CE16)",
+          "fn": "defense_bonus / apply_defense_bonus",
+          "knobs": [],
+          "note": "Applied only when a bonus exists: the trace's unconditional *3/2 is ambiguous about which strength local it scales -- gating on bonus>0 keeps unmodified engagements identical (RECONCILIATION note in combat.hpp).",
+          "title": "Defense-bonus chain (func_007D3E + func_05CA7E)",
+          "writes": []
+        },
+        {
+          "expr": "raw @UNIT Guns/Hull pair (0x523B/0x523C), NO land modifiers (@0x05B819) ; roll = random_int(1, A+D) (@0x05B844), attacker wins iff roll <= A ; loser laden (the +0x3148&0x40 cargo bit @0x05BD1E) -> SUNK with cargo ; empty -> DAMAGED (@SHIPDAMAGE)",
+          "fn": "resolve_naval",
+          "knobs": [],
+          "note": "Only Privateers and Frigates can attack enemy ships (@SHIPCOMBAT verbatim; the Man-O-War fights on the King's side). The damaged ship's repair voyage is not modeled -- it survives with its move spent.",
+          "title": "Ship-vs-ship roll (func_05B2C2 ship path)",
+          "writes": []
+        },
+        {
+          "expr": "strength = artillery_count * fort_level * 4 (count starts 1, +1 per Artillery in the colony @0x02D432; level = +1 stockade +1 fort, the 0x181F:0x9FC queries) ; no fortification -> no fire (@0x02D44D) ; DETERMINISTIC -- no random thunk in the function ; one adjacent enemy ship per colony per turn ; emits @FORTFIRE",
+          "fn": "shore_bombardment",
+          "knobs": [],
+          "note": "Damage-vs-sink in the EXE is the opaque owner-bit test [bp-6] (@0x02D530) -- RECONSTRUCTED as sunk iff strength >= the ship's Hull stat.",
+          "title": "Fort fire on adjacent ships (func_02D3C6)",
+          "writes": []
         }
       ],
       "name": "Combat - land resolution, demotion, capture",

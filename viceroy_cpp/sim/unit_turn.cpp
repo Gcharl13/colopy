@@ -92,7 +92,35 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
                       std::vector<PromoteResult>* promote_out) {
     Unit& atk = w.units[ai];
     Unit& def = w.units[di];
-    CombatResult res = resolve_land(rd, atk, def, /*terrain*/0, /*fort*/0, g.difficulty,
+    const bool atk_naval = unit_stats(rd, atk.type).move_class == 99;
+    const bool def_naval = unit_stats(rd, def.type).move_class == 99;
+    if (atk_naval && def_naval) {
+        // Ship-vs-ship (func_05B2C2 ship path): only Privateers/Frigates (and
+        // the King's Man-O-War) can attack enemy ships (@SHIPCOMBAT verbatim).
+        if (!can_attack_ships(atk.type)) { atk.moves_left = 0; return false; }
+        NavalResult nr = resolve_naval(rd, atk, def, rng);
+        Unit& loser = nr.attacker_won ? def : atk;
+        if (nr.loser_sunk) loser.alive = false;        // laden -> sunk, cargo lost
+        else loser.moves_left = 0;                     // empty -> damaged (@SHIPDAMAGE)
+        atk.moves_left = 0;
+        return nr.attacker_won && !def.alive;
+    }
+    // The defending tile's func_007D3E bonus terms: the @TERRAIN Defensive value
+    // + colony presence + fortification level + road (river overlay not modeled
+    // as a separate count -- the road bit feeds the (n+1)*2 feature term).
+    int fort_level = 0; bool colony_here = false;
+    for (const Colony& c : w.colonies)
+        if (c.x == def.x && c.y == def.y) {
+            colony_here = true;
+            const bool st = (c.built_mask >> 0) & 1ull, ft = (c.built_mask >> 1) & 1ull,
+                       fs = (c.built_mask >> 2) & 1ull;
+            fort_level = ((st || ft || fs) ? 1 : 0) + ((ft || fs) ? 1 : 0);
+            break;
+        }
+    const int road_n = (w.improve_at(def.x, def.y) & 0x08) ? 1 : 0;
+    const int bonus = defense_bonus(rd, colony_here, fort_level, false, road_n,
+                                    w.terrain_id(def.x, def.y));
+    CombatResult res = resolve_land(rd, atk, def, /*terrain+folds*/bonus, /*fort*/0, g.difficulty,
                                     atk.owner == HUMAN_OWNER, def.owner == HUMAN_OWNER, rng,
                                     /*defender_fortified*/ def.order == ORDER_FORTIFY);
     Unit& loser = res.attacker_won ? def : atk;

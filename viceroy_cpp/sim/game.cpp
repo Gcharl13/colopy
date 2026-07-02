@@ -1,6 +1,7 @@
 // sim/game.cpp -- see game.hpp.
 #include "game.hpp"
 #include "ai.hpp"
+#include "combat.hpp"    // shore_bombardment
 #include "economy.hpp"
 #include "explore.hpp"
 #include "market.hpp"
@@ -50,7 +51,8 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     for (int p = 0; p < 4; ++p)
         if (p != player_idx) ai_power_turn(g, w, p, rd, rng);
     apply_orders(g, w, rng, rd, ff_owned);
-    reveal_step(w, ff_owned);
+    shore_bombardment(w, rd);          // fortified colonies fire on adjacent enemy
+    reveal_step(w, ff_owned);          //   ships (func_02D3C6, deterministic)
 
     // 6. End of turn: advance year/season.
     advance_cadence(g);

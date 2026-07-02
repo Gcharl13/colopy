@@ -1727,6 +1727,14 @@
           "meaning": "",
           "tier": "B",
           "source": "data_extracted/engine/messages.json"
+        },
+        {
+          "name": "speaker",
+          "type": "str",
+          "rw": "write",
+          "meaning": "",
+          "tier": "B",
+          "source": "data_extracted/engine/messages.json"
         }
       ]
     },

@@ -90,12 +90,14 @@ void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
 }
 std::vector<RumorResult> g_rumor_log;      // drained by game_step for the turn notices
 std::vector<PromoteResult> g_promote_log;  // battlefield promotions (training.md 3)
+std::vector<ShoreFire> g_shore_log;        // fort fire on adjacent ships (@FORTFIRE)
 
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
     for (int p = 1; p < 4; ++p)        // AI powers' strategic pass (ai.md 6.3; human = 0)
         vc::sim::ai_power_turn(g, w, p, rd, rng);
     apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log);
+    shore_bombardment(w, rd, &g_shore_log);   // func_02D3C6 (deterministic fort fire)
     reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
@@ -109,6 +111,7 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
 std::vector<vc::sim::RumorResult>& rumor_log() { return g_rumor_log; }
 std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log() { return g_teach_log; }
 std::vector<vc::sim::PromoteResult>& promote_log() { return g_promote_log; }
+std::vector<vc::sim::ShoreFire>& shore_log() { return g_shore_log; }
 
 const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
 
