@@ -2020,6 +2020,17 @@ static forge::JsonValue game_state_json() {
                   ru.arr.push_back(pt);
               }
       o.obj["rumors"] = ru; }
+    { forge::JsonValue rs = jarr();      // prime resources (procedural, func_0060A0:
+      for (int y = 0; y < g_world.map_h; ++y)      // same map seed as the rumor hash)
+          for (int x = 0; x < g_world.map_w; ++x) {
+              int r = vc::sim::resource_at(g_world, x, y, g_game.rumor_seed);
+              if (r < 0) continue;
+              forge::JsonValue pt = jarr();
+              pt.arr.push_back(forge::json_num(x)); pt.arr.push_back(forge::json_num(y));
+              pt.arr.push_back(forge::json_num(r));
+              rs.arr.push_back(pt);
+          }
+      o.obj["resources"] = rs; }
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);

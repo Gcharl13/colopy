@@ -2919,6 +2919,10 @@ function nvDraw(){
     if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,(b.x-NVX)*px,(b.y-NVY)*px,px,px); });
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)      // rumor medallions
     if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
+  // prime resources (func_0060A0 lattice): PHYS0 game frame 0x5A+idx = png
+  // 0x59+idx, drawn at zoom 0 only (the EXE's [0x184]==0 gate @0x68288)
+  if(GAME.resources&&PHYS_READY&&px>=16) for(const [rx,ry,ri] of GAME.resources)
+    if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,(0x59+ri)*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
   (GAME.colonies||[]).forEach(c=>{ if(!inWin(c.x,c.y)||!fogSeen(c.x,c.y)) return;
     const X=(c.x-NVX)*px,Y=(c.y-NVY)*px;
     // ICONS colony sprites: 3 open / 0 stockade / 1 fort / 2 fortress
@@ -4102,6 +4106,10 @@ function drawGame(){
   // active Lost-City rumor sites (procedural hash): the PHYS0 rumor medallion (frame 103)
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)
     if(fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,rx*GCELL,ry*GCELL,GCELL,GCELL);
+  // prime resources (func_0060A0 lattice): PHYS0 game frame 0x5A+idx = png
+  // 0x59+idx; GCELL is native 16px = the EXE's zoom-0 draw
+  if(GAME.resources&&PHYS_READY) for(const [rx,ry,ri] of GAME.resources)
+    if(fogSeen(rx,ry)) g.drawImage(PHYS,(0x59+ri)*16,0,16,16,rx*GCELL,ry*GCELL,GCELL,GCELL);
   // native villages (first-class settlements; hidden until explored):
   // the class dwelling = ICONS frame 10 + @TRIBES.level (tepee camp / lodge
   // village / Aztec pyramid / Inca stone city)

@@ -14,6 +14,31 @@ bool rumor_present(const World& w, int x, int y, int seed) {
     return h == (x & 3);
 }
 
+// DGROUP 0x192 word table (EXE image @0x1DB32), indexed by terrain id 0..28:
+// the @RESOURCE row a terrain spawns. -1 = none.
+static const int RESOURCE_BY_TERRAIN[29] = {
+    6, 1, 2, 3, 4, 5, 6, 6,             // 0..7   Tundra..Swamp
+    9, 1, 8, 9, 10, 10, 6, 6,           // 8..15  forested band 1 (Boreal..Rain)
+    9, 1, 8, 9, 10, 10, 6, 6,           // 16..23 forested band 2
+    -1, 7, -1, 12, 13,                  // 24 Arctic, 25 Ocean->Fishery,
+};                                      // 26 Sea Lane, 27 Mtns->Silver, 28 Hills->Ore
+
+int resource_at(const World& w, int x, int y, int seed) {
+    if (w.map_w <= 0 || x < 0 || y < 0 || x >= w.map_w || y >= w.map_h) return -1;
+    if (seed == 0) return -1;                       // unseeded map (@0x60A9)
+    const uint8_t b = w.terrain[(size_t)y * w.map_w + x];
+    const int k = b & 0x3F;
+    const int forested = (k >= 8 && k < 0x18) ? 1 : 0;
+    const int a = (x & 3) * 4 + (y & 3);
+    const int c = (((y >> 2) * 3 + (x >> 2)) - forested + seed) & 0xF;
+    if (c != a && (c ^ 0xA) != a) return -1;        // the two lattice points
+    const int t = w.terrain_id(x, y);
+    if (t < 0 || t > 28) return -1;
+    int res = RESOURCE_BY_TERRAIN[t];
+    if (res == 0) res = 6;                          // table-0 -> Minerals (@0x6154)
+    return res;
+}
+
 CashInResult treasure_cash_in(GameState& g, World& w, int unit_idx,
                               bool independence, bool cortes) {
     CashInResult r;

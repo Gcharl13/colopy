@@ -37,6 +37,28 @@ constexpr uint8_t RUMOR_BIT = 0x10;   // improvement-plane CONSUMED/suppressed m
 // and the tile has not been consumed/suppressed.
 bool rumor_present(const World& w, int x, int y, int seed);
 
+// The byte-verified PRIME-RESOURCE predicate (func_0060A0, resolved from the
+// map-view draw site @0x6829A `lcall 0x181F:0x718` -> RTLink stub -> body
+// @0x60A0). Returns the @RESOURCE row index at (x,y) or -1. Presence is
+// PROCEDURAL -- computed from the same map seed [0x190] the rumor hash uses
+// (rolled at new game; seed==0 -> no resources anywhere, @0x60A9):
+//   a = (x&3)*4 + (y&3)                       (position in the 4x4 cell)
+//   c = ((y>>2)*3 + (x>>2) - forested + seed) & 0xF
+//   present iff c == a  or  (c ^ 0xA) == a    (two lattice points per cell;
+//                                              @0x6101..0x6139)
+// forested = terrain byte & 0x3F in [8, 0x18) (@0x60D4..0x6101) -- so clearing
+// a forest MOVES the lattice under that tile. The resource kind is the word
+// table DGROUP 0x192[terrain_id] (id 0..28; dumped from the EXE image
+// @file 0x1DB32): Ocean->Fishery, Mountains->Silver Deposit, Hills->Ore
+// Deposit, Arctic/Sea Lane->none, and per-band land kinds; table value 0 ->
+// Minerals (@0x6154). The EXE also gates on the runtime flags plane [0x160]:
+// bit1 = stored feature (suppresses, via func_005F82), bit2 = DEPLETED --
+// a depleted Silver Deposit renders as Depleted Mine (idx 0), any other
+// depleted resource vanishes (@0x616A..0x617E; not yet modeled -- our engine
+// has no depletion writer). Sprite = PHYS0 game frame 0x5A+idx (png 0x59+idx),
+// drawn at zoom 0 only ([0x184]==0 gate @0x68288).
+int resource_at(const World& w, int x, int y, int seed);
+
 struct RumorResult {
     int  unit = -1;         // triggering unit index
     int  x = 0, y = 0;      // where

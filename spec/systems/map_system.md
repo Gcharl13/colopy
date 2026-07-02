@@ -252,6 +252,56 @@ far-pointers into the **4 layers** — `[0x15C]` terrain / `[0x160]` elevation /
 per-tile fog byte holds **one bit per power (bits 4–7)** — so explored-by-player-3 =
 bit 7 = `0x80` (matches the runtime dump's "`0x80` = explored"). See `exploration.md`.
 
+### Prime resources — **BYTE_VERIFIED 2026-07-02 (`func_0060A0`)**
+
+Prime-resource presence is **PROCEDURAL** — nothing is stored in the `.MP` file
+(AMER2.MP plane 2 is all zeros, plane 3 is region ids; confirmed) — computed per
+tile from the **same map seed `[0x190]` the Lost-City rumor hash uses** (rolled at
+new game; `[0x190]==0` ⇒ no resources anywhere, `@0x60A9`). Resolution chain: the
+map-view draw site `@0x6829A` `lcall 0x181F:0x718` → RTLink stub `@file 0x1AD08`
+(`lcall 0x110D:0xD91` + embedded target `0x04B0`) → overlay body **`@0x60A0`**
+(stub-decode cross-validated: `0x181F:0x75E` → `0x0598` → `0x6188` = the known
+rumor predicate; `0x181F:0x736` → `0x02E0` → `0x5ED0` = the known land-value fn).
+
+`resource_at(x, y) → @RESOURCE row | −1` (`func_0060A0`, all offsets file-absolute):
+
+1. **Seed gate** `[0x190]==0 → −1` (`@0x60A9`).
+2. **Stored-feature gate**: `func_005F82(x,y) ≥ 0 → −1` (`@0x60B3..0x60C4`) — a
+   tile carrying an explicit feature (runtime flags plane `[0x160]` bit 1 +
+   high-nibble read via `0x5DF0`) suppresses the lattice.
+3. `k = terrain_byte(x,y) & 0x3F` (`func_005CFE` reads plane `[0x15C]`);
+   **forested** = `k ∈ [8, 0x18)` (`@0x60D4..0x6101`).
+4. **Lattice** (`@0x6101..0x6139`): `a = (x&3)·4 + (y&3)` (position in the 4×4
+   cell); `c = ((y>>2)·3 + (x>>2) − forested + seed) & 0xF`; present iff
+   `c == a` **or** `(c ^ 0xA) == a` — **two lattice points per 4×4 cell**
+   (density 2/16). The `−forested` term shifts the lattice on forested tiles, so
+   **clearing a forest moves the resource point under it** (the classic
+   clear-to-reveal behaviour).
+5. **Kind** = word table **DGROUP `0x192`** (EXE image `@0x1DB32`), indexed by the
+   **terrain id 0..28** from `lcall 0x3E4:0x3A` (`@0x6141`):
+   `Tundra→Minerals(6), Desert→Oasis(1), Plains→Wheat(2), Prairie→Prime Cotton(3),
+   Grassland→Prime Tobacco(4), Savanna→Prime Sugar(5), Marsh/Swamp→Minerals(6);`
+   forested bands (8..15 and 16..23, identical): `Game(9), Oasis(1), Beaver(8),
+   Game(9), Prime Timber(10), Prime Timber(10), Minerals(6), Minerals(6);`
+   `Arctic→none(0xFFFF), Ocean→Fishery(7), Sea Lane→none, Mountains→Silver
+   Deposit(12), Hills→Ore Deposit(13)`. Table value `0 → Minerals` (`@0x6154`).
+6. **Depletion** (`@0x615D..0x617E`): flags plane `[0x160]` bit 2 (`func_005D32`,
+   `test al,4`) — when set, **Silver Deposit(12) renders as Depleted Mine(0)** and
+   any other resource returns −1 (mined out). Bit clear → return the kind.
+
+**Sprite**: PHYS0 **game frame `0x5A + idx`** (`add ax,0x5A @0x682B2/@0x683F7`;
+png frame = game−1 = `0x59+idx`, aligning 1:1 with the `@RESOURCE` rows: 0x59
+Depleted Mine, 0x5A Oasis, 0x5B Wheat, 0x5C Prime Cotton, 0x5D Prime Tobacco,
+0x5E Prime Sugar, 0x5F Minerals, 0x60 Fishery, 0x61 Beaver, 0x62 Game, 0x63
+Prime Timber, 0x64 empty duplicate row, 0x65 Silver, 0x66 Ore). Drawn at
+**zoom 0 only** (`cmp [0x184],0 @0x68288`; overview `[0x18A]` also gates). The
+sibling call `0x181F:0x75E` at `@0x68405` is the rumor predicate → medallion
+frame `0x68` (game) when true. **B** (full chain byte-traced + table dumped).
+
+> Open: the `@RESOURCE` **value column** (bonus magnitude, §6.3) application
+> point in the yield formulas is still unextracted; the depletion **writer**
+> (what sets `[0x160]` bit 2, presumably on silver extraction) is unlocated.
+
 ## 4. UI
 Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)
 (CLAUDE.md hard rule 7; see §3 Coast rendering). Terrain-info popup on `[F1]` is a WOODPANL info popup rendered by the **shared popup framework**
