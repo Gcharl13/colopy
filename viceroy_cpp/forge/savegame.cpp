@@ -37,6 +37,8 @@ JsonValue dump_power(const Power& p) {
 
 JsonValue dump_colony(const Colony& c) {
     JsonValue o = obj();
+    o.obj["x"] = json_num(c.x);
+    o.obj["y"] = json_num(c.y);
     o.obj["owner_power"]      = json_num(c.owner_power);
     o.obj["human"]           = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = c.human; return v; }();
     o.obj["population"]      = json_num(c.population);
@@ -82,6 +84,8 @@ JsonValue dump_unit(const Unit& u) {
     o.obj["x"]          = json_num(u.x);
     o.obj["y"]          = json_num(u.y);
     o.obj["profession"] = json_num(u.profession);
+    o.obj["tools"]      = json_num(u.tools);
+    o.obj["work"]       = json_num(u.work);
     o.obj["moves_left"] = json_num(u.moves_left);
     o.obj["order"]      = json_num(u.order);
     o.obj["target_x"]   = json_num(u.target_x);
@@ -111,6 +115,8 @@ void read_power(const JsonValue& o, Power& p) {
 
 Colony read_colony(const JsonValue& o) {
     Colony c;
+    c.x                = gi(o, "x", -1);
+    c.y                = gi(o, "y", -1);
     c.owner_power      = gi(o, "owner_power");
     c.human            = gb(o, "human", true);
     c.population       = gi(o, "population", 1);
@@ -153,6 +159,8 @@ Unit read_unit(const JsonValue& o) {
     u.x          = gi(o, "x");
     u.y          = gi(o, "y");
     u.profession = gi(o, "profession");
+    u.tools      = gi(o, "tools", 100);   // absent in old saves -> the +0x15 init
+    u.work       = gi(o, "work", 0);
     u.moves_left = gi(o, "moves_left");
     u.order      = gi(o, "order");
     u.target_x   = gi(o, "target_x", -1);
@@ -193,6 +201,11 @@ std::string dump_game(const GameState& g, const World& w) {
     JsonValue ter = arr();
     for (uint8_t b : w.terrain) ter.arr.push_back(json_num(b));
     wd.obj["terrain"] = ter;
+    if (!w.improve.empty()) {                       // plow/road plane (terrain_improvement.md)
+        JsonValue imp = arr();
+        for (uint8_t b : w.improve) imp.arr.push_back(json_num(b));
+        wd.obj["improve"] = imp;
+    }
     JsonValue cols = arr();
     for (const Colony& c : w.colonies) cols.arr.push_back(dump_colony(c));
     wd.obj["colonies"] = cols;
@@ -231,6 +244,8 @@ LoadedGame parse_game(const std::string& json) {
         lg.w.map_h = gi(*wd, "map_h");
         if (const JsonValue* ter = wd->find("terrain"))
             for (const auto& b : ter->arr) lg.w.terrain.push_back((uint8_t)b.as_int());
+        if (const JsonValue* imp = wd->find("improve"))   // absent in old saves -> none
+            for (const auto& b : imp->arr) lg.w.improve.push_back((uint8_t)b.as_int());
         if (const JsonValue* cols = wd->find("colonies"))
             for (const auto& c : cols->arr) lg.w.colonies.push_back(read_colony(c));
         if (const JsonValue* units = wd->find("units"))

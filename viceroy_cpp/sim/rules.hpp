@@ -86,6 +86,11 @@ struct Config {
     int school_turns_t2 = 6;          // tier 2 (@0x02DE98)
     int school_turns_t3 = 8;          // tier 3 (@0x02DE8E)
     int school_faculty_cap = 3;       // hard faculty cap (cmp [bp-0x6C],3 @0x02DE5B)
+    // --- terrain improvement (sim/unit_turn.cpp; terrain_improvement.md 3) ---
+    int improve_tool_cost  = 20;      // tools per completed action (sub 0x14 @0x4060F)
+    int clear_lumber_base  = 20;      // lumber deposited on clearing near a colony
+                                      //   (@0x04084D adds a @TERRAIN-column amount not
+                                      //   decoded numerically -- RECONSTRUCTED knob)
 };
 
 // One @CARGO row's market columns (NAMES.TXT @CARGO; value-identity asserted against

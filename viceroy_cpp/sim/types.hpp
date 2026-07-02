@@ -23,6 +23,7 @@ enum Good : int {
 inline bool good_is_era(int g) { return g == FOOD || g == HORSES; }
 
 struct Colony {
+    int  x = -1, y = -1;         // ColonyRecord +0x00 / +0x01 map position (-1 = unplaced)
     int  owner_power = 0;        // ColonyRecord +0x1A
     bool human       = true;     // controller gate (+0x543F on the power)
     int  population  = 1;        // +0x1F  (max 32)

@@ -656,6 +656,41 @@
       "name": "Training - schools teach professions",
       "source": "sim/training.cpp",
       "spec": "spec/systems/training.md (func_02D658 @0x02DDB4..0x02E012, BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "work += 1 per held turn ; threshold = terrain_move[t] + (clear/plow ? 2 : 0) ; Hardy Pioneer (class 0x14): threshold >>= 1 ; complete at work >= threshold (counter resets, order clears)",
+          "fn": "do_improve (work/threshold)",
+          "knobs": [],
+          "note": "Counter +0x16 (@0x04071D/@0x040A46); +2 for clear/plow @0x040727, none for road @0x040A50; the halve is sar ax,1 @0x04074A/@0x040A59. The per-terrain basis is read as the terrain movement column (the stride-16 @TERRAIN row).",
+          "title": "Improvement work counter + completion",
+          "writes": []
+        },
+        {
+          "expr": "clear (forested): terrain id -= 8 (drops to the unforested base) + lumber to the adjacent own colony ; plow: improvement bit 0x40 ; road: improvement bit 0x08",
+          "fn": "do_improve (effects)",
+          "knobs": [
+            "clear_lumber_base"
+          ],
+          "note": "Tile writes @0x040896 / @0x04089F / @0x040AEC; the lumber grant (@0x04084D, the +0xA4 Lumber slot) uses a @TERRAIN column not decoded numerically -> cfg.clear_lumber_base (RECONSTRUCTED). Clearing changes future yields byte-faithfully: the tile becomes its unforested base and the production model reads the new id.",
+          "title": "Tile effects on completion",
+          "writes": []
+        },
+        {
+          "expr": "tools -= 20 per completed action ; if tools < 20: tools = 0 and the Pioneer reverts to a plain Colonist",
+          "fn": "do_improve (tools)",
+          "knobs": [
+            "improve_tool_cost"
+          ],
+          "note": "func_040608: sub 0x14 @0x4060F, the < 20 check @0x040614, reversion writes @0x04061D/@0x040621 (@USEDUPTOOLS). Tools live at UnitRecord +0x15, init 100.",
+          "title": "Tool debit + pioneer reversion",
+          "writes": []
+        }
+      ],
+      "name": "Terrain improvement - clear, plow, roads",
+      "source": "sim/unit_turn.cpp (do_improve)",
+      "spec": "spec/systems/terrain_improvement.md (func_040656 clear/plow, func_0409D6 road, func_040608 tools -- BYTE-VERIFIED)"
     }
   ]
 }

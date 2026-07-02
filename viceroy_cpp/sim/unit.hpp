@@ -34,12 +34,18 @@ struct RuleData;   // sim/rules.hpp -- the injected, data-driven parameter set.
 const UnitStats& unit_stats(const RuleData& rd, int type);
 const UnitStats& unit_stats(int type);
 
+// Hardy Pioneer class (+0x315B == 0x14): improvement work thresholds halve
+// (spec/systems/terrain_improvement.md, sar ax,1 @0x04074A/@0x040A59).
+constexpr int CLASS_HARDY_PIONEER = 0x14;
+
 // Standing order for a unit (spec/systems/unit_orders.md, subset for the spine).
 enum Order : int {
     ORDER_NONE = 0,    // idle (manual control each turn)
     ORDER_FORTIFY,     // hold position; +defense (applied by the colony/site, P2+)
     ORDER_SENTRY,      // skip until something happens
     ORDER_GOTO,        // move toward (target_x, target_y) each turn
+    ORDER_CLEAR_PLOW,  // "P" -- clear (forested tile) / plow (open tile), order 8
+    ORDER_ROAD,        // "R" -- build road, order 9 (terrain_improvement.md)
 };
 
 struct Unit {
@@ -47,6 +53,9 @@ struct Unit {
     int owner   = 0;           // +0x3147 low nibble (power 0..3)
     int x = 0, y = 0;          // +0x3144 / +0x3145
     int profession = 0;        // +0x315B class/profession
+    int tools   = 100;         // +0x15 (0x3159) tool count, init 100; each completed
+                               //   improvement debits 20 (func_040608 @0x4060F)
+    int work    = 0;           // +0x16 (0x315A) improvement work counter, ++ per turn
     // --- per-turn movement/order state (the unit/turn spine) ---
     int  moves_left = 0;       // refreshed to unit_stats().movement each turn
     int  order      = ORDER_NONE;

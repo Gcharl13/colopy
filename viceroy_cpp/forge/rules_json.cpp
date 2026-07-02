@@ -35,6 +35,7 @@ bool set_cfg_scalar(Config& c, const std::string& k, const JsonValue& v) {
     F(imm_ai_scale) F(imm_ai_divisor) F(imm_england_num) F(imm_england_den)
     F(imm_dock_slots) F(imm_base_crosses) F(imm_refill_addend)
     F(school_turns_t1) F(school_turns_t2) F(school_turns_t3) F(school_faculty_cap)
+    F(improve_tool_cost) F(clear_lumber_base)
 #undef F
     return false;
 }
@@ -151,6 +152,7 @@ JsonValue overlay_diff(const RuleData& base, const RuleData& cur) {
     D(imm_ai_scale) D(imm_ai_divisor) D(imm_england_num) D(imm_england_den)
     D(imm_dock_slots) D(imm_base_crosses) D(imm_refill_addend)
     D(school_turns_t1) D(school_turns_t2) D(school_turns_t3) D(school_faculty_cap)
+    D(improve_tool_cost) D(clear_lumber_base)
 #undef D
     auto emit_array = [&](const char* key, const int* bv, const int* cv, size_t n) {
         bool diff = false;
@@ -221,6 +223,7 @@ JsonValue full_overlay(const RuleData& rd) {
     E(imm_ai_scale) E(imm_ai_divisor) E(imm_england_num) E(imm_england_den)
     E(imm_dock_slots) E(imm_base_crosses) E(imm_refill_addend)
     E(school_turns_t1) E(school_turns_t2) E(school_turns_t3) E(school_faculty_cap)
+    E(improve_tool_cost) E(clear_lumber_base)
 #undef E
     auto emit_array = [&](const char* key, const int* cv, size_t n) {
         JsonValue a; a.type = JsonValue::Array;

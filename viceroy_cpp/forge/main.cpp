@@ -713,6 +713,7 @@ static void game_new(int nation = 0, int difficulty = 1) {
         auto gi = [&](const char* k, int d) { const forge::JsonValue* v = cj.find(k); return v ? (int)v->num : d; };
         auto xy = game_find_land(gi("x", 20), gi("y", 22));
         Colony c; c.owner_power = 0; c.human = true; c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+        c.x = xy.first; c.y = xy.second;                // ColonyRecord +0/+1 map position
         c.center_food = gi("center_food", 3);           // authored fallback for the town-square auto-food
         { int t = g_world.terrain_id(xy.first, xy.second); c.center_terrain = t < 0 ? 0 : (t & 0x1F); }
         if (const forge::JsonValue* bs = cj.find("buildings"))
@@ -2391,13 +2392,27 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/game/order" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* pu = b.find("unit");
-            const forge::JsonValue* px = b.find("tx");
-            const forge::JsonValue* py = b.find("ty");
-            if (!pu || !px || !py) return err(400, "need {unit,tx,ty}");
+            if (!pu) return err(400, "need {unit}");
             int ui = pu->as_int(-1);
             if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive)
                 return err(400, "bad unit");
             Unit& u = g_world.units[ui];
+            // Optional named order (unit_orders.md status letters): "P" clear/plow,
+            // "R" road, "F" fortify, "S" sentry, "-" none. Default: GOTO to {tx,ty}.
+            if (const forge::JsonValue* po = b.find("order")) {
+                const std::string& o = po->str;
+                if (o == "P")      u.order = ORDER_CLEAR_PLOW;
+                else if (o == "R") u.order = ORDER_ROAD;
+                else if (o == "F") u.order = ORDER_FORTIFY;
+                else if (o == "S") u.order = ORDER_SENTRY;
+                else if (o == "-") u.order = ORDER_NONE;
+                else return err(400, "unknown order (use P/R/F/S/-)");
+                u.work = 0;                                   // fresh improvement start
+                return J(200, game_state_json());
+            }
+            const forge::JsonValue* px = b.find("tx");
+            const forge::JsonValue* py = b.find("ty");
+            if (!px || !py) return err(400, "need {unit,tx,ty} or {unit,order}");
             u.order = ORDER_GOTO; u.target_x = px->as_int(u.x); u.target_y = py->as_int(u.y);
             return J(200, game_state_json());
         }
@@ -2414,6 +2429,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (id < 0 || game_is_water(id)) return err(400, "must found on land");
             Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
             c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+            c.x = u.x; c.y = u.y;                              // ColonyRecord +0/+1 map position
             c.center_terrain = id & 0x1F; c.center_food = 3;   // center tile auto-produces its food (floor 3)
             { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food
               int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);

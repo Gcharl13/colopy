@@ -3,6 +3,7 @@
 #include "combat.hpp"
 
 #include <climits>
+#include <cstdlib>
 #include <queue>
 #include <vector>
 
@@ -101,10 +102,65 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
     return res.attacker_won && !res.captured && !def.alive;     // defender tile cleared
 }
 
+// Terrain improvement (spec/systems/terrain_improvement.md 3, all sites byte-cited):
+// Clear/Plow "P" (func_040656) and Build Road "R" (func_0409D6). Work counter +0x16
+// increments each held turn (@0x04071D/@0x040A46); threshold = the per-terrain table
+// value (+2 for clear/plow, @0x040727; none for road, @0x040A50), HALVED for a Hardy
+// Pioneer (class 0x14, sar ax,1 @0x04074A/@0x040A59). On completion (@0x040756/
+// @0x040A6C) the counter resets and the order clears; clear drops a forested id by 8
+// (@0x040896), plow sets 0x40 (@0x04089F), road sets 0x08 (@0x040AEC); clearing next
+// to an own colony deposits lumber into its stockpile (@0x04084D, the Lumber slot);
+// then func_040608 debits 20 tools (@0x4060F) and reverts the Pioneer to a plain
+// Colonist when fewer than 20 remain (@0x040614.., @USEDUPTOOLS).
+static void do_improve(World& w, Unit& u, const RuleData& rd) {
+    const int t = w.terrain_id(u.x, u.y);
+    if (t < 0 || t == 25 || t == 26) { u.order = ORDER_NONE; return; }   // no plane / water
+    const bool forested = t >= 8 && t <= 23;
+    if (u.order == ORDER_CLEAR_PLOW && !forested && (w.improve_at(u.x, u.y) & 0x40)) {
+        u.order = ORDER_NONE; return;                                    // already plowed
+    }
+    if (u.order == ORDER_ROAD && (w.improve_at(u.x, u.y) & 0x08)) {
+        u.order = ORDER_NONE; return;                                    // already a road
+    }
+    ++u.work;
+    int threshold = rd.terrain_move[t] + (u.order == ORDER_CLEAR_PLOW ? 2 : 0);
+    if (u.profession == CLASS_HARDY_PIONEER) threshold >>= 1;
+    if (threshold < 1) threshold = 1;
+    if (u.work < threshold) return;
+    u.work = 0;
+    if (u.order == ORDER_CLEAR_PLOW) {
+        if (forested) {
+            // Forested id -> its unforested base. The EXE subtracts 8 (@0x040896), which
+            // assumes ids 8..15; the map data also carries the duplicate encodings 16..23
+            // ((id&7)|8 canon), where the base is id&7 -- one rule covers both.
+            uint8_t& b = w.terrain[(size_t)u.y * w.map_w + u.x];
+            b = (uint8_t)((b & ~0x1F) | (b & 0x07));
+            for (Colony& c : w.colonies)                   // lumber to the adjacent own colony
+                if (c.owner_power == u.owner &&
+                    c.x >= 0 && std::abs(c.x - u.x) <= 1 && std::abs(c.y - u.y) <= 1) {
+                    c.stockpile[5] += rd.cfg.clear_lumber_base;   // good 5 = Lumber (@CLEARCUT)
+                    break;
+                }
+        } else {
+            w.improve_set(u.x, u.y, 0x40);                 // plow
+        }
+    } else {
+        w.improve_set(u.x, u.y, 0x08);                     // road
+    }
+    u.order = ORDER_NONE;
+    u.tools -= rd.cfg.improve_tool_cost;
+    if (u.tools < rd.cfg.improve_tool_cost) {              // out of tools: back to a Colonist
+        u.tools = 0;
+        if (u.type == PIONEERS) u.type = COLONISTS;
+    }
+}
+
 void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
-        if (!u.alive || u.order != ORDER_GOTO) continue;
+        if (!u.alive) continue;
+        if (u.order == ORDER_CLEAR_PLOW || u.order == ORDER_ROAD) { do_improve(w, u, rd); continue; }
+        if (u.order != ORDER_GOTO) continue;
         const bool naval = unit_stats(rd, u.type).move_class == 99;
 
         while (u.alive && u.moves_left > 0 && (u.x != u.target_x || u.y != u.target_y)) {

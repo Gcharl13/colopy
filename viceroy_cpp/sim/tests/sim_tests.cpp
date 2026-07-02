@@ -675,6 +675,42 @@ static void test_native_learn_and_veterancy() {
     CHECK(promote_on_win(t6, p6, 5, 10, false, lo) && t6 == 7, "veteran dragoons -> Continental Cavalry");
 }
 
+// terrain_improvement.md 3: clear/plow/road executors, thresholds, tool debit, reversion.
+static void test_terrain_improvement() {
+    std::printf("terrain improvement:\n");
+    const RuleData& rd = default_rules();
+    RandFn rng = [](int lo, int) { return lo; };
+    GameState g; World w;
+    w.map_w = 4; w.map_h = 1;
+    for (int b : {10, 2, 2, 27}) w.terrain.push_back((uint8_t)b);   // forest, plains x2, mountains
+    Colony col; col.owner_power = 0; col.x = 1; col.y = 0;   // adjacent to the forest tile
+    w.colonies.push_back(col);
+    Unit p; p.type = PIONEERS; p.x = 0; p.y = 0; p.tools = 100; p.order = ORDER_CLEAR_PLOW;
+    w.units.push_back(p);
+    // clear forested id 10 (move 2): threshold 2+2 = 4 turns
+    for (int t = 0; t < 3; ++t) apply_orders(g, w, rng, rd);
+    CHECK(w.units[0].order == ORDER_CLEAR_PLOW && w.terrain[0] == 10, "3 turns in: still clearing");
+    apply_orders(g, w, rng, rd);
+    CHECK(w.terrain[0] == 2 && w.units[0].order == ORDER_NONE, "4th turn: forest cleared (id -8)");
+    CHECK(w.colonies[0].stockpile[5] == rd.cfg.clear_lumber_base, "lumber granted to the adjacent colony");
+    CHECK(w.units[0].tools == 80, "20 tools debited");
+    // plow the now-open tile: threshold 1+2 = 3 turns; sets bit 0x40
+    w.units[0].order = ORDER_CLEAR_PLOW;
+    for (int t = 0; t < 3; ++t) apply_orders(g, w, rng, rd);
+    CHECK((w.improve_at(0, 0) & 0x40) && w.units[0].tools == 60, "plowed (0x40) and debited");
+    // road on mountains (move 3): threshold 3; Hardy Pioneer (0x14) halves it to 1
+    w.units[0].x = 3; w.units[0].profession = 0x14; w.units[0].order = ORDER_ROAD;
+    apply_orders(g, w, rng, rd);
+    CHECK((w.improve_at(3, 0) & 0x08) && w.units[0].tools == 40, "hardy pioneer roads mountains in 1 turn");
+    // run tools out: two more improvements -> 0 tools -> reverts to a Colonist
+    w.units[0].order = ORDER_ROAD; w.units[0].x = 1;
+    apply_orders(g, w, rng, rd);                       // road plains: threshold 1/2 -> 1
+    w.units[0].order = ORDER_ROAD; w.units[0].x = 2;
+    apply_orders(g, w, rng, rd);
+    CHECK(w.units[0].tools == 0 && w.units[0].type == COLONISTS,
+          "out of tools: pioneer reverts to a colonist (@USEDUPTOOLS)");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -703,6 +739,7 @@ int main() {
     test_mapgen();
     test_training();
     test_native_learn_and_veterancy();
+    test_terrain_improvement();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;
