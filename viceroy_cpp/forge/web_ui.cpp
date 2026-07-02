@@ -2325,14 +2325,57 @@ async function foundColony(){
   if(d.error){ ui.toast(d.error); return; }
   GAME=d; SEL=-1; drawGame(); showSel(); ui.toast('Colony founded');
 }
+// The +0x315B class byte, displayed (training.md: veteran/hardy/seasoned + the dock classes).
+function className(p){
+  return {0x14:'Hardy Pioneer',0x15:'Veteran',0x16:'Seasoned Scout',0x18:'Missionary',
+          0x19:'Petty Criminal',0x1A:'Indentured Servant',0x1C:'Free Colonist'}[p]||null;
+}
+// Issue a named standing order (unit_orders.md status letters: P clear/plow, R road,
+// F fortify, S sentry, - clear). The improvement executors run on End turn.
+async function orderNamed(o){
+  if(SEL<0) return;
+  GAME=await (await fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,order:o})})).json();
+  drawGame(); showSel();
+}
+// "Live among the Indians" (training.md 3): ask the adjacent village to teach. The
+// response text is the VERBATIM GAME.TXT @LEARN* record.
+async function nativeLearn(){
+  if(SEL<0) return;
+  try{ const d=await (await fetch('/api/native/learn',{method:'POST',body:JSON.stringify({unit:SEL})})).json();
+    ui.popup('The village elders speak','<p>'+esc(d.msg||'').replace(/\n/g,'<br>')+'</p>');
+  }catch(e){ ui.toast('no village will receive us'); }
+  await refreshGame();
+}
+function villageAdjacent(u){
+  return (GAME.settlements||[]).some(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
+}
 function showSel(){
   const u=selUnit();
   $('#foundbtn').disabled = !(u && !u.naval);
   if(!u){ SEL = u===undefined ? -1 : SEL; $('#selinfo').innerHTML='No unit selected. Click a unit to select it.'; return; }
-  const ord=['idle','fortified','sentry','moving'][u.order]||'?';
-  $('#selinfo').innerHTML='Selected: <b>'+u.name+'</b> at ('+u.x+','+u.y+') &middot; moves '+u.moves
-    +' &middot; '+ord+(u.order===3?(' → ('+u.target_x+','+u.target_y+')'):'')
-    +(u.naval?' &middot; <span class="muted">ship</span>':' &middot; click a tile to send it, or Found colony');
+  const ord=['idle','fortified','sentry','moving','clear/plow','building road'][u.order]||'?';
+  const cls=className(u.profession);
+  let h='Selected: <b>'+esc(u.name)+'</b>'+(cls?' <span style="color:#e2c14a">('+cls+')</span>':'')
+    +' at ('+u.x+','+u.y+') &middot; moves '+u.moves+' &middot; '+ord
+    +(u.order===3?(' → ('+u.target_x+','+u.target_y+')'):'')
+    +((u.order===4||u.order===5)?(' <span class="muted">('+(u.work||0)+' turns in)</span>'):'')
+    +(!u.naval&&u.tools!==undefined?' &middot; tools '+u.tools:'')
+    +(u.naval?' &middot; <span class="muted">ship</span>':'');
+  // standing-order buttons (the game's P/R/F/S keys) + the village-learning command
+  if(!u.naval){
+    h+='<div class="row" style="margin-top:4px">'
+      +'<button class="act" onclick="orderNamed(\'P\')" title="Clear forest / plow (20 tools; Pioneers work faster as Hardy)">Plow/Clear (P)</button>'
+      +'<button class="act" onclick="orderNamed(\'R\')" title="Build road (20 tools)">Road (R)</button>'
+      +'<button class="act" onclick="orderNamed(\'F\')" title="Fortify (+50% defense)">Fortify (F)</button>'
+      +'<button class="act" onclick="orderNamed(\'S\')">Sentry (S)</button>'
+      +'<button class="act" onclick="orderNamed(\'-\')">Clear order</button>'
+      +(u.type===0&&villageAdjacent(u)
+        ?'<button class="act" style="border-color:#4f9d69" onclick="nativeLearn()" '
+         +'title="Live among the Indians: learn the village\'s skill (training.md)">Learn from village</button>'
+        :'')
+      +'</div>';
+  }
+  $('#selinfo').innerHTML=h;
 }
 // Fog of war (exploration.md): the player's sticky visibility bit is 0x10 (player 0).
 function fogSeen(x,y){ return !GAME.fog || (GAME.fog[y*GAME.w+x]&0x10)!==0; }
@@ -2341,6 +2384,27 @@ function drawGame(){
   const cv=$('#gcv'); cv.width=GAME.w*GCELL; cv.height=GAME.h*GCELL;
   const g=cv.getContext('2d');
   composeMap(g, GAME.terrain, GAME.w, GAME.h, GCELL, true);   // base ground + forest/coast overlays
+  // terrain improvements (terrain_improvement.md): plow furrows (0x40) + roads (0x08)
+  if(GAME.improve){
+    for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++){
+      const b=GAME.improve[y*GAME.w+x]; if(!b) continue;
+      const X=x*GCELL, Y=y*GCELL;
+      if(b&0x40){ g.strokeStyle='rgba(94,62,28,.85)'; g.lineWidth=1;
+        for(let i=3;i<GCELL;i+=4){ g.beginPath(); g.moveTo(X+2,Y+i); g.lineTo(X+GCELL-2,Y+i); g.stroke(); } }
+      if(b&0x08){ g.strokeStyle='#b08a52'; g.lineWidth=2;
+        g.beginPath(); g.moveTo(X,Y+GCELL/2); g.lineTo(X+GCELL,Y+GCELL/2); g.stroke(); }
+    }
+  }
+  // native villages (first-class settlements; hidden until explored)
+  for(const s of (GAME.settlements||[])){
+    if(!fogSeen(s.x,s.y)) continue;
+    const X=s.x*GCELL, Y=s.y*GCELL;
+    g.fillStyle='#c9a227'; g.beginPath();
+    g.moveTo(X+GCELL/2,Y+2); g.lineTo(X+GCELL-2,Y+GCELL-2); g.lineTo(X+2,Y+GCELL-2);
+    g.closePath(); g.fill();
+    g.strokeStyle='#5e3e1c'; g.lineWidth=1; g.stroke();
+    if(s.capital){ g.fillStyle='#5e3e1c'; g.fillRect(X+GCELL/2-1,Y+GCELL/2,2,GCELL/2-2); }
+  }
   // unexplored tiles render hidden (the game's black fog; "Unexplored" per @OTHER_NAMES)
   if(GAME.fog){ g.fillStyle='#04060c';
     for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++)

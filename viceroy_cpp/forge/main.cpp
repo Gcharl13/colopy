@@ -1256,6 +1256,11 @@ static forge::JsonValue game_state_json() {
         for (uint8_t b : g_world.fog) fg.arr.push_back(forge::json_num(b));
         o.obj["fog"] = fg;
     }
+    if (!g_world.improve.empty()) {      // plow 0x40 / road 0x08 per tile
+        forge::JsonValue im = jarr();
+        for (uint8_t b : g_world.improve) im.arr.push_back(forge::json_num(b));
+        o.obj["improve"] = im;
+    }
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);
@@ -1321,6 +1326,9 @@ static forge::JsonValue game_state_json() {
         uj.obj["target_x"] = forge::json_num(u.target_x);
         uj.obj["target_y"] = forge::json_num(u.target_y);
         uj.obj["naval"] = jbool(unit_stats(u.type).move_class == 99);
+        uj.obj["profession"] = forge::json_num(u.profession);
+        uj.obj["tools"] = forge::json_num(u.tools);
+        uj.obj["work"] = forge::json_num(u.work);
         us.arr.push_back(uj);
     }
     o.obj["units"] = us;
