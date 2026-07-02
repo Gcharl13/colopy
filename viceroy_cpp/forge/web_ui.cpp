@@ -1775,16 +1775,27 @@ function repColony(s){
 // F7 Naval (REPORT7 per USER RULING): the 4-column ship table y=42 pitch 20, 7/page --
 // name x=26, location centered in a box at x=162 w=80, destination x=242 w=76 (spec).
 function repNaval(s){
-  let h=nsT(26,30,'Ship',{col:NS.label})+nsT(162,30,'Location',{w:80,center:true,col:NS.label})
-       +nsT(242,30,'Destination',{w:76,center:true,col:NS.label});
+  // Headers = the verbatim @MISC 61..64 rows (Ship / Cargo / Location /
+  // Destination); the cargo column renders one cell per hold -- a laden hold
+  // shows its good's icon (EXE frames 0x17+good -> png 22+good), an empty hold
+  // the 0x27 empty-hold frame (-> png 38) per @0x39574.
+  let h=nsT(6,30,esc(nsLbl('MISC',61,'Ship')),{col:NS.label})
+       +nsT(96,30,esc(nsLbl('MISC',62,'Cargo')),{w:90,center:true,col:NS.label})
+       +nsT(192,30,esc(nsLbl('MISC',63,'Location')),{w:56,center:true,col:NS.label})
+       +nsT(252,30,esc(nsLbl('MISC',64,'Destination')),{w:66,center:true,col:NS.label});
   let y=42;
   (s.naval||[]).slice(0,7).forEach(u=>{
-    h+=nsT(26,y,esc(u.name),{col:NS.value})
-      +nsT(162,y,'('+u.x+','+u.y+')',{w:80,center:true,col:NS.value})
-      +nsT(242,y,u.order==='GOTO'?('('+u.tx+','+u.ty+')'):esc(u.order),{w:76,center:true,col:NS.value});
+    h+=nsT(6,y,esc(u.name),{col:NS.value});
+    const cap=Math.min(u.cap||0,6), laden=u.cargo||[];
+    for(let k=0;k<cap;k++){
+      const fr=k<laden.length?22+laden[k]:38;    // good icon / empty hold
+      h+=nsIcon(fr,96+k*15,y-3,{h:12});
+    }
+    h+=nsT(192,y,'('+u.x+','+u.y+')',{w:56,center:true,col:NS.value})
+      +nsT(252,y,u.order==='GOTO'?('('+u.tx+','+u.ty+')'):esc(u.order),{w:66,center:true,col:NS.value});
     y+=20;                                       // spec pitch 20, 7 per page
   });
-  if(!(s.naval||[]).length) h+=nsT(26,42,'No ships.',{col:NS.value});
+  if(!(s.naval||[]).length) h+=nsT(6,42,'No ships.',{col:NS.value});
   h+=nsRule(0,320,178,NS.rule);                  // footer rule only (spec)
   return h;
 }

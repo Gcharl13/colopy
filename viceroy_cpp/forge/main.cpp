@@ -2237,6 +2237,11 @@ static forge::JsonValue report_state_json() {
                             : u.order == vc::sim::ORDER_FORTIFIED ? "FORTIFIED"
                             : u.order == vc::sim::ORDER_SENTRY ? "SENTRY" : "-");
           r.obj["tx"] = forge::json_num(u.target_x); r.obj["ty"] = forge::json_num(u.target_y);
+          r.obj["cap"] = forge::json_num(g_active_rules.units[u.type].cargo);
+          { forge::JsonValue cg = jarr();          // laden holds: the good per hold
+            for (int h2 = 0; h2 < 6; ++h2)
+                if (u.hold_good[h2] >= 0) cg.arr.push_back(forge::json_num(u.hold_good[h2]));
+            r.obj["cargo"] = cg; }
           nav.arr.push_back(r);
       }
       o.obj["naval"] = nav; }
