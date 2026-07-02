@@ -158,7 +158,12 @@ Rationale: parity-oracle types first (provable), matrix-shaped types second (gri
 value fastest), ref-heavy and bulk types last (need pickers + grouped-file support). EVNT/DLOG/
 SCEN deliberately excluded (Q5).
 
-## 7. Open questions — **rulings needed before implementation**
+## 7. Open questions — **RULED 2026-07-02** (owner approval via review)
+
+> Q1 → **C++17 throughout** (spec architecture in the repo's existing style; C11 mandate waived).
+> Q2 → **Web shell hosts the P1–P2 views** (ImGui revisited at P4). Q3–Q7 → approved as written.
+> Migration order §6 → approved.
+
 
 1. **Language.** Spec mandates C11; the codebase is C++17 and the sim's golden masters live in
    C++. A full C rewrite would break every byte-verified test. Options:
