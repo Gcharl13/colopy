@@ -106,6 +106,8 @@ static void test_build() {
     CHECK(build_step(c, 10, 64), "70 completes");
     CHECK(c.build_bank == 6, "surplus carried -> %u", c.build_bank);
     CHECK((c.built_mask & 1ull) != 0, "built bit set");
+    CHECK(!build_step(c, 100, 64) && c.build_bank == 106,
+          "completed target never re-fires (the +0x84 guard @0x860E); the bank keeps banking");
 
     // start_building gates on colony size + already-built; rush_build pays gold to finish.
     Colony c2; c2.population = 2;
@@ -234,9 +236,22 @@ static void test_food_growth() {
     colony_economic_step(c, 1);                          // t3: 225 >= 200 -> grow, keep 25
     CHECK(c.population == 2 && c.stockpile[FOOD] == 25, "after 3 -> pop %d food %d",
           c.population, c.stockpile[FOOD]);
-    // the SoL divisor gets the +100 birth bump (colony.md:211 @0x009453): 3 turns of
-    // sol_update on pop 1 leave B=7, then the birth adds 100.
-    CHECK(c.rebel_B == 107, "birth bumps rebel_B -> %d", c.rebel_B);
+    // the SoL divisor gets the +100 birth bump (colony.md:211 @0x009453): from the
+    // founding seed B=200, 3 turns of 1/64 decay + 2*pop inflow leave 197, +100.
+    CHECK(c.rebel_B == 297, "birth bumps rebel_B -> %d", c.rebel_B);
+    std::printf("starvation (colony.md 3, func_02D658 @0x2E2DE -> func_008FB4):\n");
+    Colony s2; s2.population = 2; s2.stockpile[FOOD] = 3; s2.food_per_turn = -4;
+    s2.workers.resize(2); const int b0 = s2.rebel_B;
+    colony_economic_step(s2, 1);                         // store 3-4 < 0 -> one starves
+    CHECK(s2.population == 1 && s2.workers.size() == 1 && s2.stockpile[FOOD] == 0,
+          "deficit removes a colonist (DEC +0x1F) -> pop %d", s2.population);
+    CHECK(s2.rebel_B == b0 - (b0 >> 6) + 2 * 2 - 100, "death debits the SoL divisor 100 -> %d",
+          s2.rebel_B);
+    colony_economic_step(s2, 1);                         // last colonist starves
+    CHECK(s2.population == 0 && s2.x == -1, "whole-colony depletion vanishes (@VANISH)");
+    Colony s3; s3.population = 1; s3.stockpile[FOOD] = 10; s3.food_per_turn = -4;
+    colony_economic_step(s3, 1);
+    CHECK(s3.population == 1 && s3.stockpile[FOOD] == 6, "the warehouse covers a deficit");
 }
 
 static void test_immigration() {

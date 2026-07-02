@@ -726,7 +726,7 @@ static void game_new(int nation = 0, int difficulty = 1, bool random_map = false
     auto add_colony_json = [&](const forge::JsonValue& cj) {
         auto gi = [&](const char* k, int d) { const forge::JsonValue* v = cj.find(k); return v ? (int)v->num : d; };
         auto xy = game_find_land(gi("x", 20), gi("y", 22));
-        Colony c; c.owner_power = 0; c.human = true; c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+        Colony c; c.owner_power = 0; c.human = true; c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
         c.x = xy.first; c.y = xy.second;                // ColonyRecord +0/+1 map position
         c.center_food = gi("center_food", 3);           // authored fallback for the town-square auto-food
         { int t = g_world.terrain_id(xy.first, xy.second); c.center_terrain = t < 0 ? 0 : (t & 0x1F); }
@@ -1605,7 +1605,7 @@ static void sandbox_new(int pop) {
     for (int i = 0; i < NGOODS; ++i) g_sb_game.price_base[i] = sb_rng(600, 1000);
     vc::sim::market_init(g_sb_game, sb_rng, g_active_rules);
     Colony c; c.owner_power = 0; c.human = true;
-    c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+    c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
     c.center_terrain = 2; c.center_food = 5;                 // town-square auto-food (center tile)
     // A REAL colonist roster (Worker = {profession, tile, terrain, good, expert}) so production is
     // DERIVED from who works where, not seeded as flat numbers. Farmers on plains -> food, an expert
@@ -2736,7 +2736,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int id = g_world.terrain_id(u.x, u.y);
             if (id < 0 || game_is_water(id)) return err(400, "must found on land");
             Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
-            c.rebel_A = 0; c.rebel_B = 1; c.build_target = -1;
+            c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
             c.x = u.x; c.y = u.y;                              // ColonyRecord +0/+1 map position
             c.center_terrain = id & 0x1F; c.center_food = 3;   // center tile auto-produces its food (floor 3)
             { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food

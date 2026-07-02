@@ -52,11 +52,27 @@ void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
     // colonist is born and 200 food is consumed. This supersedes colony.md's 25/50 "+0xAA" trace
     // (whose accrual instruction was never byte-found; the Stable-gated 25/50 threshold is likely
     // the HORSES-breeding mechanism misattributed to food -- RULING note in spec/systems/colony.md).
-    if (c.food_per_turn > 0) c.stockpile[FOOD] += c.food_per_turn;
+    c.stockpile[FOOD] += c.food_per_turn;      // surplus banks; a deficit draws the store
     if (c.stockpile[FOOD] >= cfg.food_growth_threshold && c.population < cfg.max_population) {
         c.population += 1;
         c.stockpile[FOOD] -= cfg.food_growth_threshold;   // the new colonist consumes the 200 food
         c.rebel_B += cfg.sol_birth_bonus;      // SoL divisor bump on birth (colony.md:211, @0x009453, B)
+    }
+    // Starvation (colony.md 3, removal loop func_02D658 @0x2E2DE -> func_008FB4
+    // @0x902E, B): when the warehouse cannot cover the 2*pop consumption (already
+    // netted into food_per_turn), a colonist is removed (DEC +0x1F; the job arrays
+    // shift down -- we drop the last Worker) and the SoL divisor loses 100
+    // (@0x9031/@0x9036). The EXE's removal loop runs per food-state count; one
+    // removal per starving turn is the cadence modeled here. A colony that loses
+    // its last colonist vanishes (@VANISH template 0xe47) -- marked with the
+    // dead-slot convention x = -1.
+    if (c.stockpile[FOOD] < 0) {
+        c.stockpile[FOOD] = 0;
+        c.population -= 1;
+        if (!c.workers.empty()) c.workers.pop_back();
+        c.rebel_B -= cfg.sol_birth_bonus;
+        if (c.rebel_B < 1) c.rebel_B = 1;
+        if (c.population <= 0) { c.population = 0; c.x = -1; }
     }
     c.food_accum = (uint32_t)(c.stockpile[FOOD] < 0 ? 0 : c.stockpile[FOOD]);  // legacy mirror (saves/bindings)
 }
@@ -82,6 +98,10 @@ bool build_step(Colony& c, int hammers_produced, int build_cost) {
         c.build_bank    += (uint32_t)hammers_produced;
     }
     if (c.build_target < 0) return false;
+    if ((c.built_mask >> c.build_target) & 1ull)
+        return false;   // the +0x84 pre-completion guard (@0x860E, @ALREADYHAVE):
+                        //   a completed target never re-fires (target stays un-reset
+                        //   per the byte trace, RULINGS 2026-06-20 @0x2E544)
     if ((uint32_t)build_cost <= c.hammers_accum &&
         (uint32_t)build_cost <= c.build_bank) {
         c.build_bank -= (uint32_t)build_cost;          // surplus carried

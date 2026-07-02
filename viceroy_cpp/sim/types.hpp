@@ -31,7 +31,9 @@ struct Colony {
 
     // Sons-of-Liberty 32-bit EMA (rebel dividend A / divisor B).
     int32_t rebel_A = 0;         // +0xC2
-    int32_t rebel_B = 1;         // +0xC6  (>=1)
+    int32_t rebel_B = 200;       // +0xC6  (>=1) -- founding init B=200/A=0, RUNTIME-
+                                 //   CONFIRMED (colony_jamestown.bin, colony.md 2);
+                                 //   the 1/64 EMA decays it toward 128*pop
 
     uint32_t hammers_accum = 0;  // +0x92  raw per-turn hammer sum (early gate)
     uint32_t build_bank    = 0;  // +0xB6  progress bank ("X of Y"), surplus carried
