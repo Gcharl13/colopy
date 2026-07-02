@@ -1511,9 +1511,19 @@ struct Runner {
             if (!carrier.empty()) { int cty = unit_type_by_name(carrier);
                 if (cty >= 0) { vc::sim::Unit u; u.type = cty; u.owner = owner; u.alive = true;
                     u.x = px; u.y = py; cx.w.units.push_back(u); } }
+            // The BYTE-VERIFIED price (mercenary.md @0x03E558/@0x03E713):
+            //   gold_per_unit = ((diff+K)*2 + random_int(0,6)) * 100
+            //   (K = 3 wartime / 4 peacetime); qty = (catA+catC)*2 + count.
+            const int K = wartime ? 3 : 4;
+            const int gold_per_unit = ((diff + K) * 2 + cx.rng(0, 6)) * 100;
+            const long qty = (long)(catCount[1] + catCount[3]) * 2 + catCount[0];
+            const long price = (long)gold_per_unit * qty;
+            cx.g.powers[owner].gold -= price;
+            if (cx.g.powers[owner].gold < 0) cx.g.powers[owner].gold = 0;
             effect(std::string(wartime ? "wartime" : "peacetime") + " mercenaries hired: " +
                    (breakdown.empty() ? std::to_string(total) + " veterans" : breakdown) +
-                   (carrier.empty() ? "" : " (carried by " + carrier + ")"));
+                   (carrier.empty() ? "" : " (carried by " + carrier + ")") +
+                   " for " + std::to_string(price) + " gold");
             return follow(nodeId, "out", popup);
         }
         if (t == "WageSpanishSuccession") {
