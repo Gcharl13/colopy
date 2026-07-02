@@ -403,6 +403,14 @@ corroborated verbatim by `GAME_MANUAL.md` "Map Commands" (L63–103). Accelerato
 | `E` | Return to / go to Europe screen | B (accel) / M | `MENU @ORDERS` `~Return to Europe`; `GAME_MANUAL.md` L84 |
 | `V` | Put display in View mode | B (accel) / M | `MENU @VIEW` `~View Pieces`; `GAME_MANUAL.md` L80 |
 | `M` | Put display in Move mode | B (accel) / M | `MENU @VIEW` `~Move Pieces`; `GAME_MANUAL.md` L82 |
+
+> **View/Move "modes" have no mode flag — probed 2026-07-02:** the command
+> dispatcher `func_0235D6` (`0x235D6..0x23E80`) toggles exactly one global by
+> immediate write — `[0x1F5E]`, the advisor-portrait channel — and no candidate
+> mode byte exists beside the zoom/overview words (`[0x184]`/`[0x18A]`; `[0x186]`
+> is only compared against 100, `[0x188]` untouched). The functional reading is
+> that "View mode" = no active unit (the free cursor) and "Move mode" = a unit is
+> active — a *derived* state, not a stored one. **B (negative scan), R (reading).**
 | `H` | Show Hidden terrain | B (accel) / M | `MENU @VIEW` `Show ~Hidden Terrain`; `GAME_MANUAL.md` L91 |
 | `Z` | Zoom in | B (accel) / M | `MENU @VIEW` `Zoom In#   ~Z`; `GAME_MANUAL.md` L86 |
 | `X` | Zoom out | B (accel) / M | `MENU @VIEW` `Zoom Out   ~X`; `GAME_MANUAL.md` L89 |
