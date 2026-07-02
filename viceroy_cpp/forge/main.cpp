@@ -3049,6 +3049,109 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // "Live among the Indians" (player command, spec/systems/training.md 3): a colonist
         // unit adjacent to a village asks to learn its skill. The outcome message is the
         // VERBATIM GAME.TXT @LEARN* record; the class/skill rules live in sim/training.cpp.
+        // The native-village action menu (context_dialogs.md 6, func_04B308):
+        // the 10 verbatim @ACTIONS rows with each row's BYTE-VERIFIED show/enable
+        // predicate. Returns {rows:[{id,label,enabled,wired}]} for the unit at
+        // the village; the UI runs the enabled rows against their routes.
+        if (path == "/api/native/actions") {
+            if (!g_game_active) return err(400, "no active game");
+            int ui2 = qparam(query, "unit").empty() ? -1 : std::atoi(qparam(query, "unit").c_str());
+            int si = qparam(query, "settlement").empty() ? -1 : std::atoi(qparam(query, "settlement").c_str());
+            if (ui2 < 0 || ui2 >= (int)g_world.units.size() ||
+                si < 0 || si >= (int)g_engine_extra.settlements.size())
+                return err(400, "bad unit/settlement");
+            const Unit& u = g_world.units[ui2];
+            const forge::NativeSettlement& sv = g_engine_extra.settlements[si];
+            const auto& acts = labels_section("ACTIONS");
+            const int alarm = sv.alarm[u.owner & 3];
+            const bool scout = u.type == vc::sim::SCOUTS;
+            const bool missionary = u.type == vc::sim::MISSIONARIES;
+            const bool ship = u.type >= 0x0D && u.type <= 0x12;
+            const int tl = forge::tribe_level(sv.tribe);   // TribeData [+0x5236] proxy: the level
+            forge::JsonValue rows = jarr();
+            auto row = [&](int id, bool show, bool wired) {
+                if (!show) return;
+                forge::JsonValue r = jobj();
+                r.obj["id"] = forge::json_num(id);
+                std::string lbl = id < (int)acts.size() ? acts[id] : "?";
+                r.obj["label"] = forge::json_str(lbl);
+                r.obj["wired"] = jbool(wired);
+                rows.arr.push_back(r);
+            };
+            row(0, alarm < 0x4B, false);                   // Trade (alarm < 75, @0x4B664)
+            row(1, alarm >= 0x4B, false);                  // Enter Hostile (the exclusive twin)
+            row(2, missionary && sv.mission < 0, true);    // Establish Mission
+            row(3, sv.mission >= 0 && sv.mission != (u.owner & 3), false);   // Denounce Heresy
+            row(4, alarm < 128 && tl < 2 && !scout, true); // Live Among (relation >= 0, tribe < 2, not Scout)
+            row(5, scout, false);                          // Speak With Chief (type 5)
+            row(6, tl != 0, false);                        // Incite (tribe-record != 0)
+            row(7, tl != 0 && !ship, true);                // Demand Tribute (also excludes ships)
+            row(8, tl > 1, true);                          // Attack Village (tribe-record > 1)
+            row(9, true, true);                            // Cancel -- always
+            forge::JsonValue o = jobj(); o.obj["rows"] = rows;
+            o.obj["settlement"] = forge::json_num(si);
+            return J(200, o);
+        }
+
+        // Establish a mission (the r2 action): a Missionary at a mission-less
+        // village founds one -- the unit is absorbed into the mission; the
+        // @MISSION<n> response keys carry the tribe's reception.
+        if (path == "/api/native/mission" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui2 = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            int si = b.find("settlement") ? b.find("settlement")->as_int(-1) : -1;
+            if (ui2 < 0 || ui2 >= (int)g_world.units.size() ||
+                si < 0 || si >= (int)g_engine_extra.settlements.size())
+                return err(400, "bad unit/settlement");
+            Unit& u = g_world.units[ui2];
+            forge::NativeSettlement& sv = g_engine_extra.settlements[si];
+            if (!u.alive || u.type != vc::sim::MISSIONARIES) return err(400, "needs a Missionary");
+            if (sv.mission >= 0) return err(400, "a mission is already present");
+            if (std::abs(u.x - sv.x) > 1 || std::abs(u.y - sv.y) > 1) return err(400, "not adjacent");
+            sv.mission = u.owner & 3;
+            // The expert-mission doubler (natives.md): a Jesuit-trained missionary
+            // (class 0x18 expert) marks the mission expert (+5 |= 0x10).
+            sv.mission_expert = (u.profession == 0x18);
+            u.alive = false;                               // absorbed into the mission
+            std::string key = "@MISSION" + std::to_string(game_rng(0, 3));
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(true); o.obj["key"] = forge::json_str(key);
+            o.obj["msg"] = forge::json_str(game_message_text(key));
+            return J(200, o);
+        }
+
+        // Demand tribute (r7): attitude-gated -- an amenable village pays from
+        // its wealth; a refusal raises tension (the trespass-scale delta).
+        // The payment magnitude is RECONSTRUCTED (wealth-bounded roll).
+        if (path == "/api/native/tribute" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui2 = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            int si = b.find("settlement") ? b.find("settlement")->as_int(-1) : -1;
+            if (ui2 < 0 || ui2 >= (int)g_world.units.size() ||
+                si < 0 || si >= (int)g_engine_extra.settlements.size())
+                return err(400, "bad unit/settlement");
+            Unit& u = g_world.units[ui2];
+            forge::NativeSettlement& sv = g_engine_extra.settlements[si];
+            if (std::abs(u.x - sv.x) > 1 || std::abs(u.y - sv.y) > 1) return err(400, "not adjacent");
+            forge::JsonValue o = jobj();
+            const int alarm = sv.alarm[u.owner & 3];
+            if (alarm < 75 && sv.wealth > 0 && game_rng(1, 4) != 1) {
+                long pay = std::min<long>(sv.wealth, game_rng(10, 50));
+                sv.wealth -= (int)pay;
+                g_game.powers[u.owner & 3].gold += pay;
+                o.obj["ok"] = jbool(true); o.obj["gold"] = forge::json_num((double)pay);
+            } else {
+                forge::tension_apply(sv, u.owner & 3, forge::TENSION_TRESPASS_SEVERE,
+                                     power_nation(g_game, u.owner & 3) == 1,
+                                     (g_engine_extra.ff_owned >> 16) & 1u);
+                o.obj["ok"] = jbool(false); o.obj["gold"] = forge::json_num(0);
+            }
+            u.moves_left = 0;
+            return J(200, o);
+        }
+
         if (path == "/api/native/learn" && method == "POST") {
             if (!g_game_active) return err(400, "no active game");
             forge::JsonValue b = forge::json_parse(body);

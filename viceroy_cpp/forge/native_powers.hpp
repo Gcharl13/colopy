@@ -83,6 +83,10 @@ constexpr int TENSION_INCITE            = 100;
 constexpr int TENSION_PACIFY            = -100;
 constexpr int TENSION_DESECRATE         = 100;
 
+// The tribe's civilization level (@TRIBES[t].level -- the TribeData +2 column
+// that scales missions, raze payouts and the action-menu gates).
+int tribe_level(int tribe);
+
 // CHIEFKILL -- razing a settlement (natives.md, func_04A7CA): the attacker's
 // class 0x16 (Seasoned Scout) sets scout=1 (@0x4A7D9); the escape roll bound
 // is 40*scout + 100 (@0x4A81A), or (8 - difficulty) << scout for tribe 2

@@ -2715,6 +2715,47 @@ async function nativeLearn(){
   }catch(e){ ui.toast('no village will receive us'); }
   await refreshGame();
 }
+// The native-village action menu (context_dialogs.md 6): the verbatim @ACTIONS
+// rows, each shown per its byte-verified func_04B308 predicate; wired rows run
+// their routes, the rest are shown disabled until their backends land.
+async function villageMenu(){
+  const u=selUnit(); if(!u) return;
+  const sv=(GAME.settlements||[]).map((s,i)=>({s,i})).find(e=>Math.abs(e.s.x-u.x)<=1&&Math.abs(e.s.y-u.y)<=1);
+  if(!sv){ ui.toast('no village adjacent'); return; }
+  let d; try{ d=await (await fetch('/api/native/actions?unit='+SEL+'&settlement='+sv.i)).json(); }
+  catch(e){ ui.toast('village menu unavailable'); return; }
+  const disp={0:'villageTrade',2:'villageMission',4:'nativeLearn',5:'villageChief',7:'villageTribute',8:'villageAttack',9:''};
+  let body='<div style="display:flex;flex-direction:column;gap:4px">'+(d.rows||[]).map(r=>{
+    const fn=disp[r.id];
+    if(r.id===9) return '<button class="act" onclick="ui.close()">'+esc(r.label)+'</button>';
+    if(!r.wired||fn===undefined) return '<button class="act" disabled style="opacity:.45" title="backend pending">'+esc(r.label)+'</button>';
+    return '<button class="act" onclick="ui.close();'+fn+'('+sv.i+')">'+esc(r.label)+'</button>';
+  }).join('')+'</div>';
+  ui.popup('Village &mdash; '+esc(sv.s.name||'natives'), body);
+}
+async function villageMission(si){
+  try{ const r=await (await fetch('/api/native/mission',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    if(r.msg) playPopup(r.key||'@MISSION0', r.msg); else ui.toast(r.error||'failed');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+async function villageTribute(si){
+  try{ const r=await (await fetch('/api/native/tribute',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    ui.toast(r.ok?('Tribute paid: '+r.gold+' gold'):'They refuse -- and remember the insult.');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+async function villageAttack(si){
+  try{ const r=await (await fetch('/api/native/attack',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    ui.toast(r.razed?('Village razed! Treasure: '+r.gold+' gold'):'The villagers escaped with their wealth.');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+function villageTrade(si){ ui.toast('Trade: bring goods on a wagon/ship (native trade pricing, natives.md)'); }
+function villageChief(si){ ui.toast('The chief receives you... (chief outcomes pending)'); }
 function villageAdjacent(u){
   return (GAME.settlements||[]).some(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
 }
@@ -2858,9 +2899,9 @@ function showSel(){
       +'<button class="act" onclick="orderNamed(\'S\')">Sentry (S)</button>'
       +tbtn
       +'<button class="act" onclick="orderNamed(\'-\')">Clear order</button>'
-      +(u.type===0&&villageAdjacent(u)
-        ?'<button class="act" style="border-color:#4f9d69" onclick="nativeLearn()" '
-         +'title="Live among the Indians: learn the village\'s skill (training.md)">Learn from village</button>'
+      +(villageAdjacent(u)
+        ?'<button class="act" style="border-color:#4f9d69" onclick="villageMenu()" '
+         +'title="The 10-action village menu (context_dialogs.md 6, func_04B308 row gating)">Village...</button>'
         :'')
       +(u.type===5&&foreignColonyAdjacent(u)
         ?'<button class="act" style="border-color:#4f9d69" onclick="scoutColony()" '

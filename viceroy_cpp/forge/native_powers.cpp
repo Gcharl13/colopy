@@ -8,7 +8,6 @@ using namespace vc::sim;
 
 namespace forge {
 
-namespace {
 // @TRIBES[t].level (the TribeData +2 column), live-table aware.
 int tribe_level(int tribe) {
     JsonValue v = table_cell("@TRIBES[" + std::to_string(tribe) + "].level");
@@ -16,6 +15,8 @@ int tribe_level(int tribe) {
     if (v.is_string()) { try { return std::stoi(v.str); } catch (...) {} }
     return 1;
 }
+
+namespace {
 } // namespace
 
 int tension_apply(NativeSettlement& s, int power, int delta,
