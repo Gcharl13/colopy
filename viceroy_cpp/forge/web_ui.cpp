@@ -1275,10 +1275,10 @@ function drawChip(g,X,Y,px,color,glyph,anchor){
   // USER RULING: the chip stays fully inside its own 16x16 tile (nothing
   // crosses tile borders). Native proportions ~6x9 of a 16px tile, sitting at
   // the left edge behind the sprite, 1px black border included in the bounds.
-  // total box ~7x10 of a 16px tile, the 1px black border INSIDE those bounds
+  // USER RULING: the box is 7x9 of a 16px tile (1px black border INSIDE)
   let w=Math.max(5,Math.round(px*7/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
   w=Math.min(w,px-1);
-  const h=Math.max(7,Math.round(px*10/16));
+  const h=Math.max(6,Math.round(px*9/16));
   // USER RULING: the chip tucks into the sprite's empty space, per kind --
   // 'br' bottom-right (narrow foot units), 'ul' upper-left (ships, cavalry,
   // artillery), 'tc' top-center (wagon train); 'lm' left-middle (colonies);
