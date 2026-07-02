@@ -1656,9 +1656,24 @@ const REPORTS_DEF=[
   {key:'F9', pik:'pik/REPORT9.png',  title:29,  body:repIndian},
   {key:'F10',pik:'pik/WOODPAN2.png', title:114, body:repScore},
 ];
-let RS=null, REPORT_IDX=-1;
+let RS=null, REPORT_IDX=-1, F8_VIEW=-1;
 async function reportOpen(i){
   RS=await (await fetch('/api/report/state')).json();
+  // F8 runs the nested "View Whose Report?" power picker first (the verbatim
+  // DEBUG.TXT @SETREPORT dialog; dispatcher block @0x23810, SETVIEW @0x023D52).
+  if(i===7 && !RS.woi_declared){
+    let rec='';
+    try{ const d=await (await fetch('/api/text?file=DEBUG')).json(); rec=d['@SETREPORT']||''; }catch(e){}
+    if(rec){
+      const parts=rec.split('\n').filter(Boolean);
+      const body=parts[0]||'View Whose Report?', opts=parts.slice(1);
+      wfShow({key:'@SETREPORT', body:body, choices:opts}, c=>{
+        F8_VIEW=Math.max(0,opts.indexOf(c));
+        nsIconsReady(()=>nsLabels('MISC',()=>{ REPORT_IDX=i; reportRender(); }));
+      }, null);
+      return;
+    }
+  }
   nsIconsReady(()=>nsLabels('MISC',()=>{ REPORT_IDX=i; reportRender(); }));
 }
 function reportRender(){
@@ -1675,15 +1690,19 @@ function reportClose(){ REPORT_IDX=-1; ui.close(); }
 // a verified ICONS frame, so rows are text-only).
 function repTerrain(s){
   let h=nsT(25,14,'Terrain',{col:NS.label,bold:true})
-       +nsT(150,14,'Move',{col:NS.label})+nsT(200,14,'Def%',{col:NS.label})
-       +nsT(250,14,'Food',{col:NS.label})+nsT(290,14,'Value',{col:NS.label});
+       +nsT(130,14,'Move',{col:NS.label})+nsT(165,14,'Def%',{col:NS.label})
+       +nsT(200,14,'Food',{col:NS.label})+nsT(230,14,'Value',{col:NS.label})
+       +nsT(258,14,'Units',{col:NS.label})+nsT(288,14,'Cols',{col:NS.label});
   let y=25;                                     // body y-seed 0x19 (spec)
   (s.terrain||[]).forEach(t=>{
     h+=nsT(25,y,esc(t.name),{col:NS.value})
-      +nsT(140,y,String(t.move),{w:30,right:true,col:NS.value})
-      +nsT(190,y,String(t.defense),{w:30,right:true,col:NS.value})
-      +nsT(240,y,String(t.food),{w:30,right:true,col:NS.value})
-      +nsT(280,y,String(t.value),{w:30,right:true,col:NS.value});
+      +nsT(120,y,String(t.move),{w:30,right:true,col:NS.value})
+      +nsT(155,y,String(t.defense),{w:30,right:true,col:NS.value})
+      +nsT(190,y,String(t.food),{w:30,right:true,col:NS.value})
+      +nsT(220,y,String(t.value),{w:30,right:true,col:NS.value})
+      // this-nation counts, right-justified toward x=0x136=310 (func_3744A)
+      +nsT(250,y,String(t.units),{w:30,right:true,col:NS.white})
+      +nsT(280,y,String(t.colonies),{w:30,right:true,col:NS.white});
     y+=14;                                      // spec F1 row advance ~0x1E/2 glyph bands
   });
   return h;
@@ -1699,6 +1718,10 @@ function repReligious(s){
   const filled=Math.round(Math.min(1,r.accum/max)*cap);
   h+='<div style="position:absolute;left:'+(10*NS_SC)+'px;top:'+(25*NS_SC)+'px">'
     +'</div>'+nsIconStripAt(57,56,filled,cap,10,25,300);
+  // The waiting dock immigrants (func_37958's optional next-immigrant text; the
+  // @0x11A9 template string is unextracted, so the raw @JOB names render alone).
+  if((r.dock||[]).length)
+    h+=nsT(10,52,esc(r.dock.join(', ')),{col:NS.white,size:6});
   let y=70;
   h+=nsT(4,y-10,'Colony crosses / turn:',{col:NS.label});
   (r.colonies||[]).forEach(c=>{ h+=nsT(10,y,'Colony '+c.colony,{col:NS.value})
@@ -1825,7 +1848,9 @@ function repForeign(s){
   const rows=[['colonies',95],['population',96],['avg_colony',97],['military',98],['naval',99],['merchant',100]];
   const colx=[13,80,160,240];
   let h=''; const fp=s.foreign||[];
-  fp.forEach((p,i)=>{ h+=nsT(colx[i]+10,25,esc(p.name)+(p.seceded?' *':''),{col:NS.label,bold:true}); });
+  const vw=(typeof F8_VIEW==='number')?F8_VIEW:-1;   // the @SETREPORT picked power
+  fp.forEach((p,i)=>{ h+=nsT(colx[i]+10,25,esc(p.name)+(p.seceded?' *':''),
+    {col:i===vw?NS.white:NS.label,bold:true}); });
   h+=nsRule(0,320,34,NS.rule);
   let y=40;
   rows.forEach(rw=>{
@@ -1842,6 +1867,9 @@ function repForeign(s){
 // F9 Indian: tribe rows (x=16 name / +72 position / +20 stats per the spec offsets); text in
 // the @COLORS slots (green cells, gold title already in the chrome).
 function repIndian(s){
+  // The dispatcher gates the body pre-contact (@0x0238D1: [DS:0x5383] bit 0x20,
+  // natives discovered -- no body draws until then).
+  if(s.natives_discovered===false) return '';
   let h=nsT(16,27,'Tribe',{col:NS.gold})+nsT(120,27,'Village',{col:NS.gold})
        +nsT(200,27,'Size',{col:NS.gold})+nsT(240,27,'Alarm',{col:NS.gold})+nsT(280,27,'Mission',{col:NS.gold});
   let y=40;
@@ -2764,11 +2792,21 @@ async function wfShow(p, onChoice, onClose){
   document.body.appendChild(ov);
   const done=()=>{ ov.remove(); };
   if(ch.length){
+    // @default pre-highlight (the GAME.TXT @default directive, 1-based): the
+    // recorded choice starts highlighted and Enter accepts it.
+    const defi=parseInt(rec.default,10)-1;
     ov.querySelectorAll('.wfopt').forEach(el=>{
+      if(+el.dataset.i===defi) el.style.background='#fff6d84d';
       el.onmouseenter=()=>{ el.style.background='#fff6d84d'; };
-      el.onmouseleave=()=>{ el.style.background='#ffffff14'; };
+      el.onmouseleave=()=>{ el.style.background=(+el.dataset.i===defi)?'#fff6d84d':'#ffffff14'; };
       el.onclick=()=>{ done(); if(onChoice) onChoice(ch[+el.dataset.i]); };
     });
+    if(defi>=0&&defi<ch.length){
+      const onkey=e=>{ if(e.key==='Enter'){ e.preventDefault();
+        window.removeEventListener('keydown',onkey); done(); if(onChoice) onChoice(ch[defi]); } };
+      window.addEventListener('keydown',onkey);
+      ov.addEventListener('click',()=>window.removeEventListener('keydown',onkey));
+    }
   } else {
     ov.onclick=()=>{ done(); if(onClose) onClose(); };   // modal wait (0x181F:0x3C0)
   }

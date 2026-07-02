@@ -2248,15 +2248,39 @@ static forge::JsonValue report_state_json() {
     o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
     o.obj["tax"] = forge::json_num(g_game.powers[0].tax);
 
-    // F1 Terrain: the encyclopedia rows -- name/move/defense/farmer-food from @UNFORESTED (+Arctic).
+    // F1 Terrain: the encyclopedia rows -- name/move/defense/farmer-food from @UNFORESTED
+    // (+Arctic), plus this-nation unit/colony counts per base ground (func_3744A: the
+    // right-justified x=0x136 counts; base = id 0-7, forested variants 8..23 fold to
+    // their base, Arctic id 24 -> row 8).
+    int t_units[9] = {0}, t_cols[9] = {0};
+    auto base_ground = [](int id) {
+        id &= 0x1F;
+        if (id < 8) return id;
+        if (id < 24) return (id - 8) & 7;
+        return id == 24 ? 8 : -1;      // ocean/sea lane/mountains/hills: not F1 rows
+    };
+    for (const Unit& u : g_world.units)
+        if (u.alive && u.owner == 0) {
+            int b = base_ground(g_world.terrain_id(u.x, u.y));
+            if (b >= 0) ++t_units[b];
+        }
+    for (const Colony& c : g_world.colonies)
+        if (c.owner_power == 0 && c.x >= 0) {
+            int b = base_ground(g_world.terrain_id(c.x, c.y));
+            if (b >= 0) ++t_cols[b];
+        }
     forge::JsonValue terr = jarr();
     for (int t = 0; t < 9; ++t) {
-        forge::JsonValue r = jobj(); std::string i = std::to_string(t);
-        r.obj["name"] = tcell("@UNFORESTED[" + i + "].name");
-        r.obj["move"] = tcell("@UNFORESTED[" + i + "].movement");
-        r.obj["defense"] = tcell("@UNFORESTED[" + i + "].defensive");
-        r.obj["food"] = tcell("@UNFORESTED[" + i + "].y_farmer");
-        r.obj["value"] = tcell("@UNFORESTED[" + i + "].value");
+        forge::JsonValue r = jobj();
+        // rows 0..7 = the base grounds (@UNFORESTED); row 8 = Arctic (@OTHER[0])
+        std::string sec = t < 8 ? "@UNFORESTED[" + std::to_string(t) + "]" : "@OTHER[0]";
+        r.obj["name"] = tcell(sec + ".name");
+        r.obj["move"] = tcell(sec + ".movement");
+        r.obj["defense"] = tcell(sec + ".defensive");
+        r.obj["food"] = tcell(sec + ".y_farmer");
+        r.obj["value"] = tcell(sec + ".value");
+        r.obj["units"] = forge::json_num(t_units[t]);
+        r.obj["colonies"] = forge::json_num(t_cols[t]);
         terr.arr.push_back(r);
     }
     o.obj["terrain"] = terr;
@@ -2274,6 +2298,16 @@ static forge::JsonValue report_state_json() {
         relc.arr.push_back(r);
     }
     rel.obj["colonies"] = relc;
+    // The waiting dock immigrants (func_37958's optional next-immigrant text,
+    // template @0x11A9 -- the template string is not extracted, so the record
+    // ships the raw @JOB class names; the renderer draws them without prose).
+    { forge::JsonValue dk = jarr();
+      for (int i = 0; i < 3; ++i) {
+          int cls = g_game.powers[0].dock_pool[i];
+          if (cls < 0) continue;
+          dk.arr.push_back(forge::json_str(forge::job_name(cls, false)));
+      }
+      rel.obj["dock"] = dk; }
     o.obj["religious"] = rel;
 
     // F3 Congress: pool/threshold/offer/REF/sentiment (the game loop runs congress_step).
@@ -2409,7 +2443,17 @@ static forge::JsonValue report_state_json() {
     if (g_engine_extra.woi_declared)
         o.obj["foreign_notavail"] = forge::json_str(game_message_text("@FOREIGNNOTAVAIL"));
 
-    // F9 Indian: one row per native settlement (tribe name via @TRIBES).
+    // F9 Indian: one row per native settlement (tribe name via @TRIBES). The report
+    // body is GATED in the dispatcher (@0x0238D1, [DS:0x5383] bit 0x20 -- natives
+    // discovered); the bit's write site is untraced, RECONSTRUCTED as: at least one
+    // settlement stands on a tile the player has revealed (fog bit 0x10).
+    { bool discovered = false;
+      if (!g_world.fog.empty())
+          for (const auto& s : g_engine_extra.settlements) {
+              size_t k = (size_t)s.y * g_world.map_w + s.x;
+              if (k < g_world.fog.size() && (g_world.fog[k] & 0x10)) { discovered = true; break; }
+          }
+      o.obj["natives_discovered"] = jbool(discovered); }
     { forge::JsonValue ind = jarr();
       for (const auto& s : g_engine_extra.settlements) {
           forge::JsonValue r = jobj();
