@@ -3139,7 +3139,57 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                     u.alive = false;
                     return J(200, game_state_json());
                 }
-                else return err(400, "unknown order (use P/R/F/S/T/D/-)");
+                else if (o == "L" || o == "U" || o == "O") {
+                    // @ORDERS "~Load Cargo" / "~Unload Cargo" ("most valuable",
+                    // input.md) and "Dump Cargo ~Overboard" (manual L102), over the
+                    // byte-verified hold layout (unit_orders.md 0x3150..: <=6 holds,
+                    // 100/hold cap, capacity = @UNIT col4). "Most valuable" scored
+                    // published bid x quantity -- the metric is RECONSTRUCTED (the
+                    // spec carries only the row names).
+                    const int cap = std::min(6, unit_stats(u.type).cargo);
+                    if (cap <= 0) return err(400, "unit has no cargo holds");
+                    if (o == "O") {                    // dump: one hold if given, else all
+                        int hi = b.find("hold") ? b.find("hold")->as_int(-1) : -1;
+                        for (int h = 0; h < cap; ++h)
+                            if (hi < 0 || hi == h) { u.hold_good[h] = -1; u.hold_qty[h] = 0; }
+                        return J(200, game_state_json());
+                    }
+                    Colony* col = nullptr;
+                    for (auto& c : g_world.colonies)
+                        if (c.x == u.x && c.y == u.y && c.owner_power == u.owner) { col = &c; break; }
+                    if (!col) return err(400, "must be in one of your colonies");
+                    if (o == "L") {
+                        int best = -1; long bv = 0;
+                        for (int gd = 0; gd < vc::sim::NGOODS; ++gd) {
+                            if (col->stockpile[gd] <= 0) continue;
+                            long v = (long)vc::sim::market_bid(g_game, u.owner, gd) * col->stockpile[gd];
+                            if (best < 0 || v > bv) { best = gd; bv = v; }
+                        }
+                        if (best < 0) return err(400, "nothing to load");
+                        int h = -1;
+                        for (int i2 = 0; i2 < cap; ++i2)          // top up a matching hold first
+                            if (u.hold_good[i2] == best && u.hold_qty[i2] < 100) { h = i2; break; }
+                        if (h < 0) for (int i2 = 0; i2 < cap; ++i2)
+                            if (u.hold_good[i2] < 0) { h = i2; break; }
+                        if (h < 0) return err(400, "all holds are full");
+                        const int have = (u.hold_good[h] == best) ? u.hold_qty[h] : 0;
+                        const int qty = std::min(100 - have, (int)col->stockpile[best]);
+                        u.hold_good[h] = best; u.hold_qty[h] = have + qty;
+                        col->stockpile[best] -= qty;
+                        return J(200, game_state_json());
+                    }
+                    int h = -1; long bv = 0;                      // "U": most valuable hold out
+                    for (int i2 = 0; i2 < cap; ++i2) {
+                        if (u.hold_good[i2] < 0 || u.hold_qty[i2] <= 0) continue;
+                        long v = (long)vc::sim::market_bid(g_game, u.owner, u.hold_good[i2]) * u.hold_qty[i2];
+                        if (h < 0 || v > bv) { h = i2; bv = v; }
+                    }
+                    if (h < 0) return err(400, "no cargo to unload");
+                    col->stockpile[u.hold_good[h]] += u.hold_qty[h];
+                    u.hold_good[h] = -1; u.hold_qty[h] = 0;
+                    return J(200, game_state_json());
+                }
+                else return err(400, "unknown order (use P/R/F/S/T/D/L/U/O/-)");
                 u.work = 0;                                   // fresh improvement start
                 return J(200, game_state_json());
             }

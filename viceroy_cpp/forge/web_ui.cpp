@@ -2511,6 +2511,9 @@ function nvMenu(k){
       [/Build Colony|Join Colony/i, "nvBuild()"],
       [/Clear Forest|Plow Fields/i, "nvOrder('P')"],
       [/Build ~?Road/i,  "nvOrder('R')"],
+      [/Load Cargo/i,    "nvOrder('L')"],
+      [/Unload Cargo/i,  "nvOrder('U')"],
+      [/Dump Cargo/i,    "nvOrder('O')"],
       [/Return to Europe/i, "NV=false;euOpen()"],
       [/No Orders/i,     "nvNext()"],
       [/Disband/i,       "nvOrder('D')"],
@@ -2876,6 +2879,9 @@ window.addEventListener('keydown',e=>{
   if(k==='p'){ e.preventDefault(); nvOrder('P'); return; }    // Clear Forest (~P) / Plow Fields (~P)
   if(k==='r'){ e.preventDefault(); nvOrder('R'); return; }    // Build ~Road
   if(k==='d'&&e.shiftKey){ e.preventDefault(); nvOrder('D'); return; }   // Disband Unit (shift-D)
+  if(k==='l'){ e.preventDefault(); nvOrder('L'); return; }    // ~Load Cargo (most valuable)
+  if(k==='u'){ e.preventDefault(); nvOrder('U'); return; }    // ~Unload Cargo (most valuable)
+  if(k==='o'){ e.preventDefault(); nvOrder('O'); return; }    // Dump Cargo ~Overboard
   if(k==='e'){ e.preventDefault(); ui.close(); NV=false; euOpen(); return; }  // ~Return to Europe
   const d={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[e.key];
   if(!d) return;
