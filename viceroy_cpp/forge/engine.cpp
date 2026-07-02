@@ -778,6 +778,16 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
                 if (gi >= 0 && gi < NGOODS) { w.colonies[c].stockpile[gi] = (int)value; return true; } }
         }
     }
+    // Unit position/class writes (the inspector + scenario setup; closes more of gap #18).
+    if (path.rfind("unit", 0) == 0) {
+        size_t dot = path.find('.'); int i = std::atoi(path.c_str() + 4);
+        if (dot != std::string::npos && i >= 0 && i < (int)w.units.size()) {
+            std::string f = path.substr(dot + 1);
+            if (f == "x") { w.units[i].x = (int)value; return true; }
+            if (f == "y") { w.units[i].y = (int)value; return true; }
+            if (f == "profession") { w.units[i].profession = (int)value; return true; }
+        }
+    }
     if (path.rfind("price", 0) == 0) {
         int gi = std::atoi(path.c_str() + 6);
         if (gi >= 0 && gi < NGOODS) { g.price_base[gi] = (int)value; return true; }

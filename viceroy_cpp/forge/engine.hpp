@@ -33,6 +33,10 @@ struct NativeSettlement {
     int  mission = -1;           // power that established a mission here, -1 = none
     bool capital = false;        // +0x03 bit 0x04 Capital marker
     int  alarm[4] = {0, 0, 0, 0};// +0x0A + power*2 per-European-power alarm (>=128 -> war)
+    int  skill = 0;              // the @JOB profession this village can teach (training.md 3;
+                                 //   which skill a given village carries is RECONSTRUCTED --
+                                 //   assigned from the learnable list at seeding)
+    bool taught = false;         // +0x03 bit 0x02 "already taught" once-only latch (@0x04A78A)
 };
 
 // Game state the action nodes need that the pure sim GameState/World don't carry

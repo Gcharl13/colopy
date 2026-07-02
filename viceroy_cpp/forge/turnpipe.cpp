@@ -81,9 +81,9 @@ void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 }
-void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd) {
+void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
-    apply_orders(g, w, rng, rd);
+    apply_orders(g, w, rng, rd, ff_owned);
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
 
@@ -101,7 +101,7 @@ void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn&
     else if (id == "market")      phase_market(g, w, rd);
     else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
     else if (id == "ref")         phase_ref(g, w, player_idx, rd);
-    else if (id == "units")       phase_units(g, w, rng, rd);
+    else if (id == "units")       phase_units(g, w, rng, rd, ff_owned);
     else if (id == "cadence")     phase_cadence(g, w, rd);
     // unknown phase ids are skipped (a modded pipeline may reference a not-yet-built phase)
 }

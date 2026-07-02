@@ -26,6 +26,7 @@
 #include "scoring.hpp"
 #include "savegame.hpp"
 #include "store.hpp"
+#include "training.hpp"
 #include "turnpipe.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
@@ -655,6 +656,10 @@ static void seed_native_settlements() {
             s.population = TRIBE_LEVEL[t] * 2 + 3;      // size scales with civilization level
             s.wealth = TRIBE_LEVEL[t] * 20 + 10;
             s.capital = first; first = false;           // first settlement of each tribe = its Capital
+            // The skill this village can teach (training.md 3). The per-village assignment
+            // driver is RECONSTRUCTED: cycled deterministically over the learnable list.
+            static const int LEARNABLE[8] = {0, 1, 2, 3, 4, 7, 8, 22};
+            s.skill = LEARNABLE[(t + (int)g_engine_extra.settlements.size()) % 8];
             g_engine_extra.settlements.push_back(s);
         }
     }
@@ -1456,6 +1461,25 @@ static const std::string& misc_label(int idx) {
     return (idx >= 0 && idx < (int)lines.size()) ? lines[idx] : empty;
 }
 
+// The verbatim GAME.TXT text for a message @KEY (messages.json record, cached).
+// Falls back to the key itself so a missing record is visible, never invented.
+static std::string game_message_text(const std::string& key) {
+    static std::map<std::string, std::string> cache; static bool loaded = false;
+    if (!loaded) { loaded = true;
+        try {
+            forge::JsonValue d = forge::json_parse_file("data_extracted/engine/messages.json");
+            if (const forge::JsonValue* rows = d.find("messages"))
+                for (const auto& r : rows->arr) {
+                    const forge::JsonValue* k = r.find("key");
+                    const forge::JsonValue* t = r.find("text");
+                    if (k && t) cache[k->str] = t->str;
+                }
+        } catch (...) {}
+    }
+    auto it = cache.find(key);
+    return it == cache.end() ? key : it->second;
+}
+
 static forge::JsonValue sandbox_state_json() {
     if (!g_sb_active) sandbox_new(3);
     forge::EngineCtx cx{g_sb_game, g_sb_world, g_sb_colony_xy, g_sb_extra, g_active_rules, sb_rng};
@@ -1881,6 +1905,7 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         so.obj["tribe"] = forge::json_num(s.tribe); so.obj["x"] = forge::json_num(s.x); so.obj["y"] = forge::json_num(s.y);
         so.obj["population"] = forge::json_num(s.population); so.obj["wealth"] = forge::json_num(s.wealth);
         so.obj["mission"] = forge::json_num(s.mission); so.obj["capital"] = jbool(s.capital);
+        so.obj["skill"] = forge::json_num(s.skill); so.obj["taught"] = jbool(s.taught);
         forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
         so.obj["alarm"] = al; st.arr.push_back(so);
     }
@@ -1918,7 +1943,9 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             auto si = [&](const char* k, int d) { const forge::JsonValue* v = s.find(k); return v ? v->as_int(d) : d; };
             ns.tribe = si("tribe", 0); ns.x = si("x", 0); ns.y = si("y", 0);
             ns.population = si("population", 1); ns.wealth = si("wealth", 0); ns.mission = si("mission", -1);
+            ns.skill = si("skill", 0);
             const forge::JsonValue* cap = s.find("capital"); ns.capital = cap && cap->type == forge::JsonValue::Bool ? cap->b : false;
+            const forge::JsonValue* tg = s.find("taught"); ns.taught = tg && tg->type == forge::JsonValue::Bool ? tg->b : false;
             if (const forge::JsonValue* al = s.find("alarm"))
                 for (int p = 0; p < 4 && p < (int)al->arr.size(); ++p) ns.alarm[p] = al->arr[p].as_int();
             x.settlements.push_back(ns);
@@ -2417,6 +2444,44 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             }
             forge::JsonValue o = jobj(); o.obj["settlements"] = a;
             o.obj["count"] = forge::json_num((double)g_engine_extra.settlements.size());
+            return J(200, o);
+        }
+        // "Live among the Indians" (player command, spec/systems/training.md 3): a colonist
+        // unit adjacent to a village asks to learn its skill. The outcome message is the
+        // VERBATIM GAME.TXT @LEARN* record; the class/skill rules live in sim/training.cpp.
+        if (path == "/api/native/learn" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            if (ui < 0 || ui >= (int)g_world.units.size()) return err(400, "bad unit");
+            Unit& u = g_world.units[ui];
+            if (!u.alive || u.owner != 0) return err(400, "not a live player unit");
+            if (u.type != vc::sim::COLONISTS) return err(400, "only a colonist can live among the Indians");
+            forge::NativeSettlement* vil = nullptr;
+            for (auto& s : g_engine_extra.settlements)
+                if (std::abs(s.x - u.x) <= 1 && std::abs(s.y - u.y) <= 1) { vil = &s; break; }
+            if (!vil) return err(400, "no native village adjacent");
+            vc::sim::LearnResult r = vc::sim::native_learn(u.profession, vil->skill, vil->taught,
+                                                           g_game.difficulty, game_rng);
+            const char* key = r == vc::sim::LearnResult::LEARNED          ? "@LEARNDONE"
+                            : r == vc::sim::LearnResult::STAYED           ? "@LEARNSLOW"
+                            : r == vc::sim::LearnResult::REFUSED_CRIMINAL ? "@LEARNCRIMINAL"
+                            : r == vc::sim::LearnResult::REFUSED_MASTER   ? "@LEARNMASTER"
+                                                                          : "@LEARNALREADY";
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            std::string skill_name = forge::job_name(vil->skill, true);
+            std::string tribe_name = forge::resolve_binding(
+                "@TRIBES[" + std::to_string(vil->tribe) + "].name", cx).str;
+            std::string msg = game_message_text(key);
+            { size_t p; while ((p = msg.find("{%STRING1}")) != std::string::npos) msg.replace(p, 10, skill_name);
+              while ((p = msg.find("{%STRING0}")) != std::string::npos) msg.replace(p, 10, tribe_name); }
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(true);
+            o.obj["key"] = forge::json_str(key);
+            o.obj["msg"] = forge::json_str(msg);
+            o.obj["learned"] = jbool(r == vc::sim::LearnResult::LEARNED);
+            o.obj["profession"] = forge::json_num(u.profession);
+            o.obj["skill_name"] = forge::json_str(skill_name);
             return J(200, o);
         }
 

@@ -25,6 +25,17 @@ inline int difficulty_bonus(int difficulty) { return 4 - difficulty; }
 // profession is Missionary (0x18) becomes Missionaries(3).
 int demote(int loser_type, int profession);
 
+// Win-promotion (spec/systems/training.md 3 "Veteran promotion", BYTE-VERIFIED):
+// with George Washington (Founding Father #11, @0x5C758) the roll is skipped and
+// promotion is automatic; otherwise promote iff random_int(1, S) <= winner_strength
+// (@0x5C764; S = the combat strength sum, so P = winner_strength / S). A non-veteran
+// soldier-line winner is stamped Veteran (class 0x15, the @0x03D835 veteran stamp /
+// func_05E714 next-rank write); a veteran at the class ceiling advances TYPE instead
+// (@0x5C7C3/@0x5C7CE): Soldiers(1) -> Continental Army(9), Dragoons(4) ->
+// Continental Cavalry(7). Returns true if io_type/io_profession changed.
+bool promote_on_win(int& io_type, int& io_profession, int winner_strength,
+                    int strength_sum, bool has_washington, const RandFn& rng);
+
 // Capture-eligible loser types: Colonists(0), Treasure(0xA), Wagon Train(0xC).
 bool is_capturable(int loser_type);
 

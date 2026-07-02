@@ -27,8 +27,9 @@ struct World {
 //   REF (King) accrual+purchase -> cadence advance.
 // (Per-power Orders/Diplomacy AI phases are P2+.) `rng` drives immigration's
 // dock-slot pick; `player_idx` is the human power whose immigration/REF advance;
-// `rd` is the active ruleset (the Forge drives a whole turn with a modded one).
+// `rd` is the active ruleset (the Forge drives a whole turn with a modded one);
+// `ff_owned` is the human power's founding-father bitmask (school/combat effects).
 void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx = 0,
-               const RuleData& rd = default_rules());
+               const RuleData& rd = default_rules(), uint32_t ff_owned = 0);
 
 } // namespace vc::sim

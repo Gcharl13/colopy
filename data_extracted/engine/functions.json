@@ -307,6 +307,14 @@
           "note": "Fixed structural set -- a code wall, not data.",
           "title": "Units that change hands instead of dying",
           "writes": []
+        },
+        {
+          "expr": "with George Washington (FF 11): automatic ; else promote iff random_int(1, S) <= winner_strength  (P = winner_strength / S) ; non-veteran soldier-line -> Veteran stamp (0x15) ; veteran at the ceiling: Soldiers(1) -> Continental Army(9), Dragoons(4) -> Continental Cavalry(7)",
+          "fn": "promote_on_win",
+          "knobs": [],
+          "note": "@0x5C758 Washington gate, @0x5C764 roll, @0x5C7C3/@0x5C7CE type advance, @0x5C7DD class write. The losing side runs the existing demotion ladder (func_05B2C2).",
+          "title": "Veteran promotion on a combat win",
+          "writes": []
         }
       ],
       "name": "Combat - land resolution, demotion, capture",
@@ -634,6 +642,14 @@
           ],
           "note": "Random student per @0x02DEC5; turns-to-graduate 4/6/8 @0x02DDB4/@0x02DE98/@0x02DE8E; tier >= 4 (Teacher, Colonist, dock classes) is not teachable. The EXE's criminal->servant->colonist promotion applies to dock classes this colony model does not carry -- the free-colonist learn-outright branch is the one modeled.",
           "title": "Per-turn teaching + graduation",
+          "writes": []
+        },
+        {
+          "expr": "refused if criminal / already a master / village already taught ; else succeed iff random_int(1,1000) >= 200*difficulty + 100  (P = 90/70/50/30/10%) ; on success class = village skill, village latched",
+          "fn": "native_learn",
+          "knobs": [],
+          "note": "Learnable skills are the outdoors/gathering experts only (Farmer, the three Planters, Fur Trapper, Silver Miner, Fisherman, Scout); each village teaches once (+0x03 bit 0x02 latch @0x04A78A); grant site @0x04A782, roll @0x4A72C. Player command POST /api/native/learn; outcome text = the verbatim GAME.TXT @LEARN* record.",
+          "title": "Native learning (\"live among the Indians\")",
           "writes": []
         }
       ],

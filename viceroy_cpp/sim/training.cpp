@@ -53,4 +53,32 @@ void school_teach_step(Colony& c, const RuleData& rd, const RandFn& rng) {
     }
 }
 
+bool native_learnable(int job) {
+    switch (job) {
+        case 0: case 1: case 2: case 3:   // Farmer, Sugar/Tobacco/Cotton Planter
+        case 4:                           // Fur Trapper
+        case 7:                           // Silver Miner
+        case 8:                           // Fisherman
+        case 22:                          // Scout (Seasoned)
+            return true;
+        default: return false;            // manufacturing skills are not Indian-learnable
+    }
+}
+
+LearnResult native_learn(int& unit_class, int village_skill, bool& village_taught,
+                         int difficulty, const RandFn& rng) {
+    constexpr int PETTY_CRIMINAL     = 0x19;   // the class immigration.cpp names Criminal
+    constexpr int INDENTURED_SERVANT = 0x1A;
+    constexpr int FREE_COLONIST      = 0x1C;
+    if (village_taught) return LearnResult::REFUSED_TAUGHT;          // @LEARNALREADY
+    if (unit_class == PETTY_CRIMINAL) return LearnResult::REFUSED_CRIMINAL;
+    if (unit_class != FREE_COLONIST && unit_class != INDENTURED_SERVANT)
+        return LearnResult::REFUSED_MASTER;                          // already skilled/master
+    // Slow-learner roll (@0x4A72C): random_int(1,1000) >= 200*difficulty + 100.
+    if (rng(1, 1000) < 200 * difficulty + 100) return LearnResult::STAYED;   // @LEARNSLOW
+    unit_class = village_skill;                                      // expertise grant @0x04A782
+    village_taught = true;                                           // once-only latch @0x04A78A
+    return LearnResult::LEARNED;                                     // @LEARNDONE
+}
+
 } // namespace vc::sim

@@ -9,7 +9,8 @@
 
 namespace vc::sim {
 
-void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
+void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd,
+               uint32_t ff_owned) {
     // 1. Production phase: each colony updates SoL / build / growth, then its school
     //    teaches (both live in the per-colony turn processor func_02D658).
     for (Colony& c : w.colonies) {
@@ -41,7 +42,7 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
 
     // 5. Units: refresh move points and execute standing orders (all owners).
     refresh_moves(w, rd);
-    apply_orders(g, w, rng, rd);
+    apply_orders(g, w, rng, rd, ff_owned);
 
     // 6. End of turn: advance year/season.
     advance_cadence(g);

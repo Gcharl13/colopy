@@ -24,9 +24,11 @@ void refresh_moves(World& w, const RuleData& rd = default_rules());
 
 // Execute standing orders for every living unit (all owners). ORDER_GOTO steps
 // one tile/move toward (target_x,target_y); entering an enemy tile triggers
-// resolve_land and ends the unit's move. Mutates units (move/demote/capture/kill).
+// resolve_land and ends the unit's move. Mutates units (move/demote/capture/kill;
+// the winner may promote per training.md -- ff_owned is the HUMAN power's
+// founding-father bitmask, bit 11 = George Washington's auto-promote).
 void apply_orders(GameState& g, World& w, const RandFn& rng,
-                  const RuleData& rd = default_rules());
+                  const RuleData& rd = default_rules(), uint32_t ff_owned = 0);
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);

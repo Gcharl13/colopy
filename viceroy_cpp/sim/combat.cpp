@@ -39,6 +39,23 @@ bool is_capturable(int loser_type) {
     return loser_type == COLONISTS || loser_type == TREASURE || loser_type == WAGON_TRAIN;
 }
 
+bool promote_on_win(int& io_type, int& io_profession, int winner_strength,
+                    int strength_sum, bool has_washington, const RandFn& rng) {
+    constexpr int VETERAN = 0x15;   // Veteran Soldier class (+0x315B)
+    // Only the soldier line promotes; Continental units are already at the type ceiling.
+    const bool soldier = (io_type == 1 || io_type == 4);
+    const bool continental = (io_type == 9 || io_type == 7);
+    if (!soldier && !continental) return false;
+    if (!has_washington) {
+        const int s = strength_sum > 0 ? strength_sum : 1;
+        if (rng(1, s) > winner_strength) return false;   // P(promote) = winner_strength / S
+    }
+    if (soldier && io_profession != VETERAN) { io_profession = VETERAN; return true; }
+    if (io_type == 1) { io_type = 9; return true; }      // Soldiers -> Continental Army
+    if (io_type == 4) { io_type = 7; return true; }      // Dragoons -> Continental Cavalry
+    return false;                                        // Continental veteran: ceiling reached
+}
+
 CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,

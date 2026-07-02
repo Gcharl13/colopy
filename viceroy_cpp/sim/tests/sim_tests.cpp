@@ -645,6 +645,36 @@ static void test_training() {
     CHECK(c2.workers[1].expert && c2.workers[1].profession == 17, "university graduates an Elder Statesman in 8");
 }
 
+// training.md 3: native learning ("live among the Indians") + combat veterancy.
+static void test_native_learn_and_veterancy() {
+    std::printf("native learning + veterancy:\n");
+    RandFn hi = [](int, int h) { return h; };     // max roll: learn succeeds, promo roll fails gate
+    RandFn lo = [](int l, int) { return l; };     // min roll: learn fails, promo roll passes
+    int cls = 0x1C; bool taught = false;          // a Free Colonist at a Fur Trapper village
+    CHECK(native_learn(cls, 4, taught, 0, hi) == LearnResult::LEARNED && cls == 4 && taught,
+          "free colonist learns Fur Trapper; village latched");
+    int c1 = 0x1C;
+    CHECK(native_learn(c1, 4, taught, 0, hi) == LearnResult::REFUSED_TAUGHT, "each village teaches once");
+    int crim = 0x19; bool t2 = false;
+    CHECK(native_learn(crim, 4, t2, 0, hi) == LearnResult::REFUSED_CRIMINAL, "criminals refused");
+    int master = 4; bool t3 = false;
+    CHECK(native_learn(master, 0, t3, 0, hi) == LearnResult::REFUSED_MASTER, "masters refused");
+    int c2 = 0x1C; bool t4 = false;               // roll 1 < 200*0+100: the unskilled stay
+    CHECK(native_learn(c2, 4, t4, 0, lo) == LearnResult::STAYED && c2 == 0x1C, "failed roll: stays");
+    CHECK(native_learnable(4) && !native_learnable(13), "Fur Trapper learnable, Carpenter not");
+    // Veterancy: Washington skips the roll; the stamp precedes the type-ceiling advance.
+    int type = 1, prof = 0x1C;
+    CHECK(promote_on_win(type, prof, 5, 10, true, hi) && prof == 0x15 && type == 1,
+          "Washington: winning soldier stamped Veteran");
+    CHECK(promote_on_win(type, prof, 5, 10, true, hi) && type == 9,
+          "veteran soldier advances to Continental Army");
+    int t5 = 1, p5 = 0x1C;
+    RandFn ten = [](int, int) { return 10; };     // roll 10 > winner strength 5
+    CHECK(!promote_on_win(t5, p5, 5, 10, false, ten) && p5 == 0x1C, "lost roll: no promotion");
+    int t6 = 4, p6 = 0x15;                        // veteran Dragoons at the ceiling
+    CHECK(promote_on_win(t6, p6, 5, 10, false, lo) && t6 == 7, "veteran dragoons -> Continental Cavalry");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -672,6 +702,7 @@ int main() {
     test_scoring();
     test_mapgen();
     test_training();
+    test_native_learn_and_veterancy();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;
