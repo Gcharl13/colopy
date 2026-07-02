@@ -33,7 +33,8 @@ UNIT_NAMES = {r["name"] for r in NAMES.get("@UNIT", {}).get("rows", []) if isins
 
 # the pipeline's known phase functions (forge/turnpipe.cpp dispatch)
 TURN_FUNCS = {"colony_economic_step", "price_drift", "immigration_step",
-              "ref_accrue_purchase", "refresh_and_orders", "advance_cadence"}
+              "ref_accrue_purchase", "refresh_and_orders", "advance_cadence",
+              "apply_orders"}
 
 errors = []
 checked = 0

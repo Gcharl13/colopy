@@ -61,10 +61,14 @@ const std::vector<std::string>& turn_phases() {
 std::vector<std::pair<int, vc::sim::TeachResult>> g_teach_log;   // (colony, result) per graduation
 std::vector<std::pair<int, int>> g_food_log;                      // (colony, event 1/2/3) per shortage
 std::vector<std::pair<int, int>> g_sol_log;                       // (colony, event 1..4) SoL status
-void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
+// Production for ONE power's colonies (func_02F052 @0x2F25F: the per-power
+// colony loop of the turn_dispatch.md interleave). only_power < 0 = all.
+void phase_production_p(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
+                        uint32_t ff_owned, int only_power) {
     std::vector<vc::sim::TeachResult> tr;
     for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
         Colony& c = w.colonies[ci];
+        if (only_power >= 0 && c.owner_power != only_power) continue;
         colony_compute_production(c, g.difficulty, rd, ff_owned,    // colonists -> food/bells/hammers/goods
                                   g.powers[c.owner_power & 3].tax);  //   (Paine reads the tax rate)
         int fe = 0, se = 0;
@@ -76,19 +80,25 @@ void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData&
         for (const auto& t : tr) g_teach_log.push_back({ci, t});
     }
 }
+void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
+    phase_production_p(g, w, rng, rd, ff_owned, -1);
+}
 void phase_market(GameState& g, World&, const RuleData& rd) { market_turn(g, rd); }
+void phase_immigration_p(GameState& g, World& w, const RandFn& rng, int player_idx,
+                         const RuleData& rd, uint32_t ff_owned, int p) {
+    int workers = 0, crosses = rd.cfg.imm_base_crosses;
+    for (const Colony& c : w.colonies)
+        if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
+    bool is_england = (p == player_idx) && (g.nation == 0);
+    // William Brewster (FF 0x14 = 20) shifts the human power's dock refill to the top class.
+    bool brewster = (p == player_idx) && ((ff_owned >> 20) & 1u);
+    immigration_step(g.powers[p], crosses, workers, /*units*/0,
+                     g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd, brewster);
+}
 void phase_immigration(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd,
                        uint32_t ff_owned) {
-    for (int p = 0; p < 4; ++p) {
-        int workers = 0, crosses = rd.cfg.imm_base_crosses;
-        for (const Colony& c : w.colonies)
-            if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
-        bool is_england = (p == player_idx) && (g.nation == 0);
-        // William Brewster (FF 0x14 = 20) shifts the human power's dock refill to the top class.
-        bool brewster = (p == player_idx) && ((ff_owned >> 20) & 1u);
-        immigration_step(g.powers[p], crosses, workers, /*units*/0,
-                         g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd, brewster);
-    }
+    for (int p = 0; p < 4; ++p)
+        phase_immigration_p(g, w, rng, player_idx, rd, ff_owned, p);
 }
 void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
@@ -99,6 +109,20 @@ std::vector<PromoteResult> g_promote_log;  // battlefield promotions (training.m
 std::vector<ShoreFire> g_shore_log;        // fort fire on adjacent ships (@FORTFIRE)
 
 bool g_woi = false;                    // [0x5382] bit 0 mirror (set by the caller)
+// Orders for ONE power (turn_dispatch.md 3, phase 2 of the interleave): the
+// REF accrual rides here for the crown-facing power (@0x24B42), the AI
+// strategic pass for computer powers (@0x24731), then that power's standing
+// orders. Shore fire + the fog sweep run once after the whole power loop.
+void phase_orders_p(GameState& g, World& w, const RandFn& rng, int player_idx,
+                    const RuleData& rd, uint32_t ff_owned, int p) {
+    if (p == player_idx) {
+        g.powers[p].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
+        ref_purchase(g.ref, g.powers[p].royal_money, rd);
+    } else {
+        vc::sim::ai_power_turn(g, w, p, rd, rng);
+    }
+    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log, g_woi, p);
+}
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
     for (int p = 1; p < 4; ++p)        // AI powers' strategic pass (ai.md 6.3; human = 0)
@@ -128,7 +152,13 @@ const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
 
 void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn& rng,
                     int player_idx, const RuleData& rd, uint32_t ff_owned) {
-    if (id == "production")       phase_production(g, w, rng, rd, ff_owned);
+    if (id == "orders") {
+        refresh_moves(w, rd);
+        for (int p = 0; p < 4; ++p) phase_orders_p(g, w, rng, player_idx, rd, ff_owned, p);
+        shore_bombardment(w, rd, &g_shore_log);
+        reveal_step(w, ff_owned);
+    }
+    else if (id == "production")  phase_production(g, w, rng, rd, ff_owned);
     else if (id == "market")      phase_market(g, w, rd);
     else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
     else if (id == "ref")         phase_ref(g, w, player_idx, rd);
@@ -138,8 +168,41 @@ void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn&
 }
 
 void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd, uint32_t ff_owned) {
-    for (const std::string& id : turn_phases())
-        run_turn_phase(id, g, w, rng, player_idx, rd, ff_owned);
+    // The byte-verified per-power interleave (turn_dispatch.md 3, func_005760):
+    // King -> Orders(+REF,+AI) -> Production -> Diplomacy -> Periodic per power
+    // 0..3, then the global tail (market once -- see the model-shape note in
+    // sim/game.cpp -- shore fire, fog sweep, cadence). turn.json still gates
+    // which phases are enabled; per-power phases run inside the power loop in
+    // list order, globals after it.
+    const std::vector<std::string>& ids = turn_phases();
+    auto on = [&](const char* k) {
+        for (const std::string& id : ids) if (id == k) return true;
+        return false;
+    };
+    const bool orders  = on("orders") || on("units");   // legacy id kept enabled
+    const bool prod    = on("production");
+    const bool imm     = on("immigration");
+    const bool ref_leg = on("ref");                     // legacy separate-REF pipeline
+    if (orders) refresh_moves(w, rd);                   // budget reset (@0x005872, global)
+    for (int p = 0; p < 4; ++p) {
+        if (orders) {
+            if (ref_leg && p == player_idx) {           // legacy: REF phase listed apart --
+                vc::sim::ai_power_turn(g, w, p, rd, rng);   // (no-op for the human; keeps
+                apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log, g_woi, p);
+            } else {
+                phase_orders_p(g, w, rng, player_idx, rd, ff_owned, p);
+            }
+        }
+        if (prod) phase_production_p(g, w, rng, rd, ff_owned, p);
+        if (imm)  phase_immigration_p(g, w, rng, player_idx, rd, ff_owned, p);
+    }
+    if (ref_leg) phase_ref(g, w, player_idx, rd);       // legacy position (post-loop)
+    if (on("market")) phase_market(g, w, rd);
+    if (orders) {
+        shore_bombardment(w, rd, &g_shore_log);         // func_02D3C6 (after all movement)
+        reveal_step(w, ff_owned);
+    }
+    if (on("cadence")) phase_cadence(g, w, rd);
 }
 
 } // namespace forge

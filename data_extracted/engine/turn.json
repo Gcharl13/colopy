@@ -1,27 +1,100 @@
 {
-  "_doc": "The turn loop as data (A3). step_turn iterates this ordered phase list and dispatches each phase to its byte-verified sim function; reordering/disabling a phase here changes the turn without recompiling. A golden-master test asserts this pipeline is identical to the reference sim::step_turn. reads/writes name the schema columns each phase touches (for the reverse index + the B5 turn editor).",
-  "phases": [
-    { "id": "production", "function": "colony_economic_step", "scope": "colonies", "enabled": true,
-      "reads": ["colony.bells_per_turn", "colony.hammers_per_turn", "colony.food_per_turn", "colony.population", "colony.build_cost"],
-      "writes": ["colony.sol", "colony.build_bank", "colony.built_mask", "colony.food_accum", "colony.population"],
-      "note": "Each colony updates SoL / build progress / growth." },
-    { "id": "market", "function": "price_drift", "scope": "global", "enabled": true,
-      "reads": ["market.price_base"], "writes": ["market.price_base"],
-      "note": "European supply-accumulator drift, once per turn." },
-    { "id": "immigration", "function": "immigration_step", "scope": "powers", "enabled": true,
-      "reads": ["power.crosses", "colony.crosses_output", "colony.population", "cfg.imm_base_crosses"],
-      "writes": ["power.crosses", "power.crosses_threshold", "power.dock_pool"],
-      "note": "Each power advances its own Europe dock; crosses = base + its colonies' output." },
-    { "id": "ref", "function": "ref_accrue_purchase", "scope": "global", "enabled": true,
-      "reads": ["game.difficulty", "game.year", "power.royal_money"],
-      "writes": ["power.royal_money", "ref.regulars", "ref.cavalry", "ref.manowar", "ref.artillery"],
-      "note": "King's REF budget accrual + unit purchase." },
-    { "id": "units", "function": "refresh_and_orders", "scope": "units", "enabled": true,
-      "reads": ["unit.type", "unit.order", "unit.x", "unit.y"],
-      "writes": ["unit.moves_left", "unit.x", "unit.y", "unit.alive"],
-      "note": "Refresh move points and execute standing orders (all owners)." },
-    { "id": "cadence", "function": "advance_cadence", "scope": "global", "enabled": true,
-      "reads": ["game.year", "game.season"], "writes": ["game.year", "game.season", "game.turn"],
-      "note": "Advance year/season at end of turn." }
-  ]
+ "_doc": "The turn loop as data (A3), restructured to the BYTE-VERIFIED per-power interleave (turn_dispatch.md 3, func_005760): King -> Orders(+REF accrual @0x24B42, +AI @0x24731) -> Production(+immigration @0x2F218) -> Diplomacy -> Periodic run per power 0..3 in that order, then the global tail (market once per turn -- the EXE nests drift in each power's production slice @0x363D3, but the validated drift folds all four powers' volumes in one decay step; a model-shape note -- then shore fire, the fog sweep and the year/season cadence @0x5A9D). phases with scope 'power' run inside the power loop in list order; scope 'global' after it. King/Diplomacy/Periodic have no sim body (king dialogs, king-tax dispatch and the Congress live in the event layer). A golden-master test asserts this pipeline == sim::step_turn.",
+ "phases": [
+  {
+   "id": "orders",
+   "function": "apply_orders",
+   "scope": "power",
+   "enabled": true,
+   "reads": [
+    "unit.type",
+    "unit.order",
+    "unit.x",
+    "unit.y",
+    "game.difficulty",
+    "game.year",
+    "power.royal_money"
+   ],
+   "writes": [
+    "unit.moves_left",
+    "unit.x",
+    "unit.y",
+    "unit.alive",
+    "power.royal_money",
+    "ref.regulars",
+    "ref.cavalry",
+    "ref.manowar",
+    "ref.artillery"
+   ],
+   "note": "Per power: REF accrual+purchase (crown-facing power), the AI strategic pass (computer powers), then that power's standing orders. Shore fire + the fog sweep run once after the whole power loop."
+  },
+  {
+   "id": "production",
+   "function": "colony_economic_step",
+   "scope": "power",
+   "enabled": true,
+   "reads": [
+    "colony.bells_per_turn",
+    "colony.hammers_per_turn",
+    "colony.food_per_turn",
+    "colony.population",
+    "colony.build_cost"
+   ],
+   "writes": [
+    "colony.sol",
+    "colony.build_bank",
+    "colony.built_mask",
+    "colony.food_accum",
+    "colony.population"
+   ],
+   "note": "The per-power colony loop (func_02F052 @0x2F25F): production, SoL, build, growth, school."
+  },
+  {
+   "id": "immigration",
+   "function": "immigration_step",
+   "scope": "power",
+   "enabled": true,
+   "reads": [
+    "power.crosses",
+    "colony.crosses_output",
+    "colony.population",
+    "cfg.imm_base_crosses"
+   ],
+   "writes": [
+    "power.crosses",
+    "power.crosses_threshold",
+    "power.dock_pool"
+   ],
+   "note": "Rides the production slice (func_0363A2 @0x363E2): the power's Europe dock advances."
+  },
+  {
+   "id": "market",
+   "function": "price_drift",
+   "scope": "global",
+   "enabled": true,
+   "reads": [
+    "market.price_base"
+   ],
+   "writes": [
+    "market.price_base"
+   ],
+   "note": "Supply-accumulator drift + republish + volume reset, once per turn (model-shape note in _doc)."
+  },
+  {
+   "id": "cadence",
+   "function": "advance_cadence",
+   "scope": "global",
+   "enabled": true,
+   "reads": [
+    "game.year",
+    "game.season"
+   ],
+   "writes": [
+    "game.year",
+    "game.season",
+    "game.turn"
+   ],
+   "note": "Turn counter +1 (@0x5A9D); 1 turn = 1 year before 1600, Spring/Autumn halves after."
+  }
+ ]
 }

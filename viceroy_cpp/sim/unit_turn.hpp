@@ -37,11 +37,14 @@ void refresh_moves(World& w, const RuleData& rd = default_rules());
 // woi = the War of Independence is declared ([0x5382] bit 0): rebel attacks
 // on other European powers are cancelled (@NOWARSDURINGREV, func_05A862
 // @0x5A912).
+// only_owner >= 0 runs the order loop for that power's units alone -- the
+// per-power interleave slice (turn_dispatch.md 3: the func_005760 power loop
+// runs Orders per power, not globally).
 void apply_orders(GameState& g, World& w, const RandFn& rng,
                   const RuleData& rd = default_rules(), uint32_t ff_owned = 0,
                   std::vector<RumorResult>* rumor_out = nullptr,
                   std::vector<PromoteResult>* promote_out = nullptr,
-                  bool woi = false);
+                  bool woi = false, int only_owner = -1);
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);

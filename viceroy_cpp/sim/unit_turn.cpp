@@ -234,7 +234,7 @@ static void do_improve(World& w, Unit& u, const RuleData& rd) {
 
 void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned,
                   std::vector<RumorResult>* rumor_out, std::vector<PromoteResult>* promote_out,
-                  bool woi) {
+                  bool woi, int only_owner) {
     // Entering a Lost-City rumor square resolves the event (events.md) and ends the
     // unit's move. NOTE: resolution may push new units (treasure/colonist), so the
     // w.units[i] reference must be re-taken -- we stop the unit's loop instead.
@@ -249,6 +249,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
         if (!u.alive) continue;
+        if (only_owner >= 0 && u.owner != only_owner) continue;   // per-power slice
         if (u.order == ORDER_FORTIFY) {                 // Fortify(5) -> Fortified(6)
             u.order = ORDER_FORTIFIED;                  //   next turn (func_04101C @0x41024)
             continue;

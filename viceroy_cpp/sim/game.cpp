@@ -14,47 +14,53 @@ namespace vc::sim {
 
 void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd,
                uint32_t ff_owned) {
-    // 1. Production phase: each colony updates SoL / build / growth, then its school
-    //    teaches (both live in the per-colony turn processor func_02D658).
-    for (Colony& c : w.colonies) {
-        colony_economic_step(c, g.difficulty, rd);
-        school_teach_step(c, rd, rng);
+    // The byte-verified per-power interleave (turn_dispatch.md 3, func_005760):
+    // for each power 0..3 the five phases run in order -- King -> Orders(+REF
+    // accrual @0x24B42, +AI @0x24731) -> Production(+immigration @0x2F218) ->
+    // Diplomacy -> Periodic -- then the once-per-turn year/cadence block.
+    // King/Diplomacy/Periodic have no sim-core body (the king dialogs, king-tax
+    // dispatch and Congress live in the event layer above); the market drift
+    // stays once-per-turn below (the EXE nests drift in each power's production
+    // slice @0x363D3, but our validated drift folds all four powers' volumes in
+    // ONE decay step -- splitting it would change the byte-derived decay rate;
+    // a model-shape note, not a missing behavior).
+    refresh_moves(w, rd);                       // turn-start budget reset (@0x005872, global)
+    for (int p = 0; p < 4; ++p) {
+        // --- 2. Orders (+REF accrual, +AI strategic pass) ---
+        if (p == player_idx) {
+            g.powers[p].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
+            ref_purchase(g.ref, g.powers[p].royal_money, rd);
+        } else {
+            ai_power_turn(g, w, p, rd, rng);    // controller gate skips the human (@0x58A6)
+        }
+        apply_orders(g, w, rng, rd, ff_owned, nullptr, nullptr, false, /*only_owner*/p);
+
+        // --- 3. Production (per-power colony loop func_02F052 @0x2F25F) ---
+        for (Colony& c : w.colonies)
+            if (c.owner_power == p) {
+                colony_economic_step(c, g.difficulty, rd);
+                school_teach_step(c, rd, rng);
+            }
+        // Immigration rides the production slice (func_0363A2 @0x363E2).
+        {
+            int workers = 0, crosses = rd.cfg.imm_base_crosses;
+            for (const Colony& c : w.colonies)
+                if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
+            bool is_england = (p == player_idx) && (g.nation == 0);
+            immigration_step(g.powers[p], crosses, workers, /*units*/0,
+                             g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd);
+        }
     }
 
-    // 2. Market: drift the supply bases with this turn's trade volume, republish the
-    //    pooled price levels, reset the per-turn volumes (market.hpp model).
+    // Market once per turn (see the model-shape note above).
     market_turn(g, rd);
 
-    // 3. Immigration: every power advances its own Europe dock. crosses = base +
-    //    Σ that power's colony cross output; the human is player_idx (ai otherwise).
-    //    The England (power 0) bonus + AI scaling live in crosses_threshold.
-    for (int p = 0; p < 4; ++p) {
-        int workers = 0, crosses = rd.cfg.imm_base_crosses;
-        for (const Colony& c : w.colonies)
-            if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
-        // England (@COUNTRY 0) gets the *2/3 bonus; the human's nation is g.nation, AI
-        // powers' nations aren't modeled so only the human power can be England here.
-        bool is_england = (p == player_idx) && (g.nation == 0);
-        immigration_step(g.powers[p], crosses, workers, /*units*/0,
-                         g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd);
-    }
+    // Defensive fortifications fire on adjacent enemy ships after all movement
+    // (func_02D3C6, deterministic), then the sticky per-power fog reveal.
+    shore_bombardment(w, rd);
+    reveal_step(w, ff_owned);
 
-    // 4. REF (King) budget accrual + unit purchase.
-    g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
-    ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
-
-    // 5. Units: refresh move points; each AI power's strategic pass assigns missions
-    //    and steps its units (func_005760's per-power loop, ai.md 6.3 -- the
-    //    controller gate skips the human); then standing orders execute (all owners)
-    //    and the exploration sweep (sticky per-power fog reveal) runs.
-    refresh_moves(w, rd);
-    for (int p = 0; p < 4; ++p)
-        if (p != player_idx) ai_power_turn(g, w, p, rd, rng);
-    apply_orders(g, w, rng, rd, ff_owned);
-    shore_bombardment(w, rd);          // fortified colonies fire on adjacent enemy
-    reveal_step(w, ff_owned);          //   ships (func_02D3C6, deterministic)
-
-    // 6. End of turn: advance year/season.
+    // 6. End of turn: advance year/season (once, gated [0x53C2]).
     advance_cadence(g);
 }
 
