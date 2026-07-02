@@ -1486,6 +1486,17 @@ function nsIcon(frame,x,y,opts){ opts=opts||{};
     +'background-size:'+(NS_ICONS.width*s)+'px '+(NS_ICONS.height*s)+'px;'
     +'background-position:-'+(f.x*s)+'px 0;image-rendering:pixelated"></div>';
 }
+// one crop of a 928px-wide contact-sheet atlas (docs/atlas/sprites/atlas_<sheet>.png;
+// frame 0 content starts at (0,16) under the 16px header row), drawn at native (x,y).
+// The small baked "0/0x00" cell label is the accepted contact-sheet artifact -- the
+// raw .SS files are not in the repo (see wfPortrait).
+function nsSheet(sheet,sx,sy,w,h,x,y){
+  const S=NS_SC;
+  return '<div style="position:absolute;left:'+(x*S)+'px;top:'+(y*S)+'px;'
+    +'width:'+(w*S)+'px;height:'+(h*S)+'px;image-rendering:pixelated;'
+    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-sx*S)+'px '+(-sy*S)+'px;'
+    +'background-size:'+(928*S)+'px auto"></div>';
+}
 // the shared 0x181F:0x236 PROPORTIONAL filled/empty icon strip (span 300, pitch
 // (span-w)/(count-1) clamped [1, w+1]): `value` filled sprites then `max-value` empty ones.
 // NOT a fill bar -- the game has none; fullness reads as filled-vs-empty count.
@@ -1850,22 +1861,27 @@ function repIndian(s){
 // live component breakdown; figures larger (the F10 body is FONTTINY labels + FONTINTR figures).
 function repScore(s){
   const sc=s.score||{};
+  // The rating band plate over WOODPAN2 (func_03A9C0 @0x3AAAA: filename = "SCORE"
+  // + ("0" if panel<9) + (panel+1), panel = the Hall-of-Fame rank from the i*i/3
+  // selector = sc.rank). Frame content = atlas (0,16) 101x66; the on-screen x/y
+  // of the plate is not byte-pinned -- top-centered (RECONSTRUCTED).
+  const nn=String(Math.min(Math.max(sc.rank||0,0),23)+1).padStart(2,'0');
+  let h=nsSheet('SCORE'+nn,0,16,100,66,110,10);
   const line=(y,idx,fb,val)=>nsT(20,y,esc(nsLbl('MISC',idx,fb)),{col:NS.label})
                             +nsT(220,y,String(val),{w:60,right:true,col:NS.white,size:8});
-  let h='';
-  let y=30;
-  h+=line(y,115,'Citizens',sc.population); y+=16;
+  let y=82;
+  h+=line(y,115,'Citizens',sc.population); y+=12;
   h+=nsT(20,y,esc(nsLbl('MISC',89,'Founding Fathers')),{col:NS.label})
-    +nsT(220,y,String(sc.fathers),{w:60,right:true,col:NS.white,size:8}); y+=16;
+    +nsT(220,y,String(sc.fathers),{w:60,right:true,col:NS.white,size:8}); y+=12;
   h+=nsT(20,y,esc(nsLbl('MISC',71,'Sentiment')),{col:NS.label})
-    +nsT(220,y,String(sc.sentiment),{w:60,right:true,col:NS.white,size:8}); y+=16;
-  h+=line(y,117,'Villages Burned',sc.razed); y+=16;
+    +nsT(220,y,String(sc.sentiment),{w:60,right:true,col:NS.white,size:8}); y+=12;
+  h+=line(y,117,'Villages Burned',sc.razed); y+=12;
   h+=nsT(20,y,'Gold / 1000',{col:NS.label})
-    +nsT(220,y,String(sc.gold),{w:60,right:true,col:NS.white,size:8}); y+=16;
-  h+=line(y,113,'Intervention',sc.war_bells); y+=16;
-  h+=line(y,116,'Independence',sc.revolution); y+=20;
-  h+=nsRule(20,300,y,NS.gold); y+=8;
-  h+=line(y,121,'Total Score',sc.total); y+=18;
+    +nsT(220,y,String(sc.gold),{w:60,right:true,col:NS.white,size:8}); y+=12;
+  h+=line(y,113,'Intervention',sc.war_bells); y+=12;
+  h+=line(y,116,'Independence',sc.revolution); y+=14;
+  h+=nsRule(20,300,y,NS.gold); y+=6;
+  h+=line(y,121,'Total Score',sc.total); y+=14;
   h+=nsT(20,y,'Rank',{col:NS.label})+nsT(220,y,String(sc.rank),{w:60,right:true,col:NS.gold,size:8});
   return h;
 }
@@ -2660,10 +2676,42 @@ async function stepGame(){
   if(GAME.events && GAME.events.length) eventQueue(GAME.events.slice());
   if(GAME.endgame && GAME.endgame.over) showEndgame(GAME.endgame);
 }
+// Endgame. A revolution conclusion shows the King-defeats screen first
+// (spec/ui/cinematics.md 3): player wins -> KINGLSS1.PIK + GAME @KINGLOSE at its
+// GAME.TXT directives (@x=232 @y=31 @width=68, the upper-right scroll); player
+// loses -> KINGLSS2.PIK + @KINGWIN (@x=202 @y=125 @width=90, the lower-right
+// scroll), %STRING0 = the mother country (@COUNTRY). Then the Score plate screen
+// (the F10 report), per the cinematic order. NOT drawn: the ENGLND/FRANCE/SPAIN/
+// DUTCH nation art + KING sprite overlays -- the extracted contact sheets carry
+// only partial 66px bands of those tall .SS frames (an asset gap, not a spec
+// gap; positions also unpinned). Text ink: FONTKING fg = pixel index 3 of the
+// loaded PIK palette (A-tier, palette not in repo) -- dark ink on the parchment
+// scrolls (adaptation); GAME.TXT hard wraps re-flow into the @width box.
 function showEndgame(e){
-  ui.popup(e.won?'Victory':'Defeat',
-    '<p>'+esc(e.reason)+'</p><p>Final score: <b>'+e.score+'</b> (Hall-of-Fame rank '+e.rank+')</p>'
-    +'<div style="margin-top:8px"><button class="act" onclick="ui.close()">Close</button></div>');
+  const woi=GAME&&GAME.war&&GAME.war.declared;
+  if(!woi){ ui.toast(e.reason); reportOpen(9); return; }   // retirement/collapse: straight to the score
+  kingDefeats(e);
+}
+async function kingDefeats(e){
+  const R=await wfRecs();
+  const rec=R[e.won?'@KINGLOSE':'@KINGWIN']||{};
+  let body=rec.text||'';
+  if(body.indexOf('%STRING0')>=0){
+    let nm='?';
+    try{ const t=await (await fetch('/api/tables?file=names')).json();
+      nm=(((t['@COUNTRY']||{}).rows||[])[(GAME&&GAME.nation)||0]||{}).name||'?'; }catch(err){}
+    body=body.split('%STRING0').join(nm);
+  }
+  const x=rec.x>=0?rec.x:(e.won?232:202), y=rec.y>=0?rec.y:(e.won?31:125),
+        w=rec.box_w||(e.won?68:90);
+  nsLabels('MISC',()=>{
+    const txt='<div style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;'
+      +'width:'+(w*NS_SC)+'px;color:#1a1008;font-size:'+(5*NS_SC)+'px;line-height:1.3;'
+      +'font-family:serif;font-weight:bold">'+esc(body.replace(/\n/g,' '))+'</div>';
+    const inner=txt+nsOK('ui.close();reportOpen(9)',esc(nsLbl('MISC',46,'OK')));
+    ui.popup('Endgame &mdash; '+esc(e.reason),
+      nsScreen('pik/KINGLSS'+(e.won?1:2)+'.png',inner));
+  });
 }
 async function drawHistory(){
   let h=[]; try{ h=await (await fetch('/api/game/history')).json(); }catch(e){ return; }
