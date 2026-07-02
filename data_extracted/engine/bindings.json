@@ -1,134 +1,622 @@
 {
-  "_note": "The live-state binding catalog, moved out of tools/build_variable_schema.py so schema.json has a single data source (any language can consume it). Each state table lists its columns; the `index` gives the path form (game.turn, power<N>.gold, colony<N>.stockpile.<good>). `source` cites the DGROUP record field for traceability only; `rw` is read|write; `tier` is B(byte)/A(anchor)/R(reconstructed)/C(computed).",
-  "state_tables": {
-    "game": {
-      "cardinality": "singleton", "index": "game",
-      "columns": [
-        {"name": "year", "type": "int", "rw": "write", "tier": "B", "source": "[0x538A]", "meaning": "current year"},
-        {"name": "season", "type": "int", "rw": "write", "tier": "B", "source": "[0x538C]", "meaning": "0=Spring/early, 1=Autumn"},
-        {"name": "turn", "type": "int", "rw": "write", "tier": "B", "source": "[0x538E]", "meaning": "turn counter"},
-        {"name": "difficulty", "type": "int", "rw": "write", "tier": "B", "source": "[0x53A6]", "meaning": "0..4 (Discoverer..Viceroy)"},
-        {"name": "nation", "type": "int", "rw": "write", "tier": "R", "source": "player_nation", "meaning": "the human player's nation 0..3 (@NATIONALITY)"},
-        {"name": "score", "type": "int", "rw": "read", "tier": "C", "source": "[0x0372]", "meaning": "last computed game score"}
-      ]
+ "_note": "The live-state binding catalog, moved out of tools/build_variable_schema.py so schema.json has a single data source (any language can consume it). Each state table lists its columns; the `index` gives the path form (game.turn, power<N>.gold, colony<N>.stockpile.<good>). `source` cites the DGROUP record field for traceability only; `rw` is read|write; `tier` is B(byte)/A(anchor)/R(reconstructed)/C(computed).",
+ "state_tables": {
+  "game": {
+   "cardinality": "singleton",
+   "index": "game",
+   "columns": [
+    {
+     "name": "year",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x538A]",
+     "meaning": "current year"
     },
-    "powers": {
-      "cardinality": "entity", "index": "power<N>", "count": 4,
-      "columns": [
-        {"name": "gold", "type": "int", "rw": "write", "tier": "B", "source": "PowerRecord +0x2A", "meaning": "treasury"},
-        {"name": "tax", "type": "int", "rw": "write", "tier": "B", "source": "PowerRecord +0x01", "meaning": "tax rate %"},
-        {"name": "royal_money", "type": "int", "rw": "read", "tier": "B", "source": "PowerRecord +0x22", "meaning": "King's REF budget"},
-        {"name": "crosses", "type": "int", "rw": "write", "tier": "B", "source": "PowerRecord +0x2E", "meaning": "accumulated immigration crosses"},
-        {"name": "mil_strength", "type": "int", "rw": "write", "tier": "A", "source": "[0x9418]", "meaning": "military strength (succession rank input)"},
-        {"name": "econ_strength", "type": "int", "rw": "write", "tier": "A", "source": "[0x9410]", "meaning": "economic strength (succession/king inputs)"},
-        {"name": "colonies", "type": "int", "rw": "read", "tier": "C", "source": "computed", "meaning": "owned colony count"},
-        {"name": "units", "type": "int", "rw": "read", "tier": "C", "source": "computed", "meaning": "owned on-map unit count"},
-        {"name": "strength", "type": "int", "rw": "read", "tier": "C", "source": "computed", "meaning": "rank = 3*mil + 2*colonies + econ"}
-      ]
+    {
+     "name": "season",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x538C]",
+     "meaning": "0=Spring/early, 1=Autumn"
     },
-    "colonies": {
-      "cardinality": "entity", "index": "colony<N>", "count_source": "colonies.count",
-      "columns": [
-        {"name": "population", "type": "int", "rw": "write", "tier": "B", "source": "ColonyRecord +0x1F", "meaning": "colonists"},
-        {"name": "owner", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x1A", "meaning": "owner power 0..3"},
-        {"name": "sol", "type": "int", "rw": "read", "tier": "C", "source": "from +0xC2/+0xC6", "meaning": "Sons of Liberty %"},
-        {"name": "bells", "type": "int", "rw": "read", "tier": "C", "source": "good 0x12 out", "meaning": "liberty bells per turn"},
-        {"name": "hammers", "type": "int", "rw": "read", "tier": "C", "source": "good 0x10 out", "meaning": "hammers per turn"},
-        {"name": "food", "type": "int", "rw": "read", "tier": "C", "source": "net food", "meaning": "food surplus per turn (max 0)"},
-        {"name": "crosses", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x05", "meaning": "crosses output (feeds immigration)"},
-        {"name": "build_target", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x94", "meaning": "building id under construction (-1 none)"},
-        {"name": "build_cost", "type": "int", "rw": "read", "tier": "C", "source": "@BUILDING cost", "meaning": "hammers the target needs"},
-        {"name": "build_bank", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0xB6", "meaning": "hammers accumulated (the 'X of Y')"},
-        {"name": "build_remaining", "type": "int", "rw": "read", "tier": "C", "source": "computed", "meaning": "max(0, build_cost - build_bank)"},
-        {"name": "building_name", "type": "str", "rw": "read", "tier": "C", "source": "@BUILDING name", "meaning": "the in-progress building's name"},
-        {"name": "warehouse", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x95", "meaning": "warehouse level 0/1/2"},
-        {"name": "workers", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x40/+0x70", "meaning": "assigned colonist count"},
-        {"name": "stockpile.<good>", "type": "int", "rw": "write", "tier": "B", "source": "ColonyRecord +0x9A", "meaning": "stored cargo of good 0..15"},
-        {"name": "built.<id>", "type": "int", "rw": "read", "tier": "B", "source": "ColonyRecord +0x84", "meaning": "1 if building <id> is constructed"}
-      ]
+    {
+     "name": "turn",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x538E]",
+     "meaning": "turn counter"
     },
-    "units": {
-      "cardinality": "entity", "index": "unit<N>", "count_source": "units.count",
-      "columns": [
-        {"name": "type", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord +0x00", "meaning": "@UNIT row index 0..23"},
-        {"name": "owner", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord +0x01", "meaning": "owner power"},
-        {"name": "profession", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord +0x17", "meaning": "class/profession 0x13..0x1C"},
-        {"name": "x", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord +0x07", "meaning": "map x"},
-        {"name": "y", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord +0x08", "meaning": "map y"},
-        {"name": "alive", "type": "int", "rw": "read", "tier": "B", "source": "UnitRecord alive flag", "meaning": "1 if alive"},
-        {"name": "attack", "type": "int", "rw": "read", "tier": "C", "source": "@UNIT attack", "meaning": "attack strength (from its type)"},
-        {"name": "defense", "type": "int", "rw": "read", "tier": "C", "source": "@UNIT combat", "meaning": "defense strength (from its type)"},
-        {"name": "movement", "type": "int", "rw": "read", "tier": "C", "source": "@UNIT movement", "meaning": "move allowance"},
-        {"name": "terrain", "type": "int", "rw": "read", "tier": "C", "source": "map tile", "meaning": "terrain id at the unit's tile"},
-        {"name": "terraindef", "type": "int", "rw": "read", "tier": "C", "source": "@TERRAIN defensive", "meaning": "terrain defense bonus at its tile"}
-      ]
+    {
+     "name": "difficulty",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x53A6]",
+     "meaning": "0..4 (Discoverer..Viceroy)"
     },
-    "congress": {
-      "cardinality": "singleton", "index": "congress",
-      "columns": [
-        {"name": "bells", "type": "int", "rw": "write", "tier": "B", "source": "PowerRecord +0x0C", "meaning": "liberty-bell pool toward next Father"},
-        {"name": "cost", "type": "int", "rw": "read", "tier": "B", "source": "func_03C282", "meaning": "bell cost of the next Founding Father"},
-        {"name": "era_band", "type": "int", "rw": "read", "tier": "B", "source": "func_03B95A", "meaning": "0 (<1600) / 1 (1600-99) / 2 (>=1700)"},
-        {"name": "count", "type": "int", "rw": "read", "tier": "C", "source": "popcount +0x07", "meaning": "Founding Fathers acquired"}
-      ]
+    {
+     "name": "nation",
+     "type": "int",
+     "rw": "write",
+     "tier": "R",
+     "source": "player_nation",
+     "meaning": "the human player's nation 0..3 (@NATIONALITY)"
     },
-    "ff": {
-      "cardinality": "singleton", "index": "ff",
-      "columns": [
-        {"name": "count", "type": "int", "rw": "read", "tier": "C", "source": "popcount +0x07", "meaning": "Founding Fathers acquired"},
-        {"name": "<id>", "type": "int", "rw": "read", "tier": "B", "source": "PowerRecord +0x07 bit", "meaning": "1 if Father <id> (0..24) is held"}
-      ]
+    {
+     "name": "score",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "[0x0372]",
+     "meaning": "last computed game score"
     },
-    "revolution": {
-      "cardinality": "singleton", "index": "revolution",
-      "columns": [
-        {"name": "sol", "type": "int", "rw": "write", "tier": "B", "source": "[0x53D0]", "meaning": "national Sons of Liberty meter 0..100"},
-        {"name": "declared", "type": "int", "rw": "read", "tier": "B", "source": "[0x5382]&1", "meaning": "1 if War of Independence declared"},
-        {"name": "rebel", "type": "int", "rw": "read", "tier": "B", "source": "[0x5398]", "meaning": "power that declared independence"}
-      ]
+    {
+     "name": "merc_price",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "pending offer (func_03E442 pre-roll)",
+     "meaning": "the quoted mercenary price for the pending @MERCENARIES offer"
     },
-    "succession": {
-      "cardinality": "singleton", "index": "succession",
-      "columns": [
-        {"name": "seceded", "type": "int", "rw": "read", "tier": "B", "source": "[0x53D2]", "meaning": "power withdrawn by Spanish Succession"}
-      ]
+    {
+     "name": "merc_force",
+     "type": "text",
+     "rw": "read",
+     "tier": "B",
+     "source": "pending offer (force_composition rows)",
+     "meaning": "the quoted mercenary force description (%STRING1 of @MERCENARIES)"
     },
-    "natives": {
-      "cardinality": "singleton", "index": "natives",
-      "columns": [
-        {"name": "tension", "type": "int", "rw": "write", "tier": "A", "source": "settlement alarm", "meaning": "0..100 alarm proxy (war at >=~128/80)"}
-      ]
-    },
-    "ref": {
-      "cardinality": "singleton", "index": "ref",
-      "columns": [
-        {"name": "regulars", "type": "int", "rw": "read", "tier": "B", "source": "[0x53DA]", "meaning": "REF regular infantry"},
-        {"name": "cavalry", "type": "int", "rw": "read", "tier": "B", "source": "[0x53DC]", "meaning": "REF cavalry"},
-        {"name": "manowar", "type": "int", "rw": "read", "tier": "B", "source": "[0x53DE]", "meaning": "REF men-o-war"},
-        {"name": "artillery", "type": "int", "rw": "read", "tier": "B", "source": "[0x53E0]", "meaning": "REF artillery"}
-      ]
-    },
-    "market": {
-      "cardinality": "singleton", "index": "market",
-      "columns": [
-        {"name": "price.<good>", "type": "int", "rw": "write", "tier": "B", "source": "[0x53EA]", "meaning": "European base price for good 0..15 (seed from @CARGO)"},
-        {"name": "boycott.<good>", "type": "int", "rw": "read", "tier": "B", "source": "PowerRecord +0x20 bit", "meaning": "1 if good is boycotted"}
-      ]
-    },
-    "world": {
-      "cardinality": "singleton", "index": "",
-      "columns": [
-        {"name": "colonies.count", "type": "int", "rw": "read", "tier": "B", "source": "[0x539E]", "meaning": "total colonies"},
-        {"name": "colonies.population", "type": "int", "rw": "read", "tier": "C", "source": "sum +0x1F", "meaning": "total colonists across colonies"},
-        {"name": "units.count", "type": "int", "rw": "read", "tier": "B", "source": "[0x539C]", "meaning": "total on-map units"},
-        {"name": "terrain.defense.<id>", "type": "int", "rw": "read", "tier": "C", "source": "@TERRAIN defensive", "meaning": "terrain id defense value"}
-      ]
-    },
-    "diplomacy": {
-      "cardinality": "matrix", "index": "war.<a>.<b>",
-      "columns": [
-        {"name": "war.<a>.<b>", "type": "int", "rw": "read", "tier": "B", "source": "diplomacy matrix", "meaning": "1 if powers a,b are at war"}
-      ]
+    {
+     "name": "merc_primed",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "PowerRecord +0x00 bit 0x08 (@0x03E4BC)",
+     "meaning": "the first-eligible-offer prime bit: the very first roll is skipped"
     }
+   ]
+  },
+  "powers": {
+   "cardinality": "entity",
+   "index": "power<N>",
+   "count": 4,
+   "columns": [
+    {
+     "name": "gold",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "PowerRecord +0x2A",
+     "meaning": "treasury"
+    },
+    {
+     "name": "tax",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "PowerRecord +0x01",
+     "meaning": "tax rate %"
+    },
+    {
+     "name": "royal_money",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "PowerRecord +0x22",
+     "meaning": "King's REF budget"
+    },
+    {
+     "name": "crosses",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "PowerRecord +0x2E",
+     "meaning": "accumulated immigration crosses"
+    },
+    {
+     "name": "mil_strength",
+     "type": "int",
+     "rw": "write",
+     "tier": "A",
+     "source": "[0x9418]",
+     "meaning": "military strength (succession rank input)"
+    },
+    {
+     "name": "econ_strength",
+     "type": "int",
+     "rw": "write",
+     "tier": "A",
+     "source": "[0x9410]",
+     "meaning": "economic strength (succession/king inputs)"
+    },
+    {
+     "name": "colonies",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "computed",
+     "meaning": "owned colony count"
+    },
+    {
+     "name": "units",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "computed",
+     "meaning": "owned on-map unit count"
+    },
+    {
+     "name": "strength",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "computed",
+     "meaning": "rank = 3*mil + 2*colonies + econ"
+    }
+   ]
+  },
+  "colonies": {
+   "cardinality": "entity",
+   "index": "colony<N>",
+   "count_source": "colonies.count",
+   "columns": [
+    {
+     "name": "population",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "ColonyRecord +0x1F",
+     "meaning": "colonists"
+    },
+    {
+     "name": "owner",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x1A",
+     "meaning": "owner power 0..3"
+    },
+    {
+     "name": "sol",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "from +0xC2/+0xC6",
+     "meaning": "Sons of Liberty %"
+    },
+    {
+     "name": "bells",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "good 0x12 out",
+     "meaning": "liberty bells per turn"
+    },
+    {
+     "name": "hammers",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "good 0x10 out",
+     "meaning": "hammers per turn"
+    },
+    {
+     "name": "food",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "net food",
+     "meaning": "food surplus per turn (max 0)"
+    },
+    {
+     "name": "crosses",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x05",
+     "meaning": "crosses output (feeds immigration)"
+    },
+    {
+     "name": "build_target",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x94",
+     "meaning": "building id under construction (-1 none)"
+    },
+    {
+     "name": "build_cost",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@BUILDING cost",
+     "meaning": "hammers the target needs"
+    },
+    {
+     "name": "build_bank",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0xB6",
+     "meaning": "hammers accumulated (the 'X of Y')"
+    },
+    {
+     "name": "build_remaining",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "computed",
+     "meaning": "max(0, build_cost - build_bank)"
+    },
+    {
+     "name": "building_name",
+     "type": "str",
+     "rw": "read",
+     "tier": "C",
+     "source": "@BUILDING name",
+     "meaning": "the in-progress building's name"
+    },
+    {
+     "name": "warehouse",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x95",
+     "meaning": "warehouse level 0/1/2"
+    },
+    {
+     "name": "workers",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x40/+0x70",
+     "meaning": "assigned colonist count"
+    },
+    {
+     "name": "stockpile.<good>",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "ColonyRecord +0x9A",
+     "meaning": "stored cargo of good 0..15"
+    },
+    {
+     "name": "built.<id>",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "ColonyRecord +0x84",
+     "meaning": "1 if building <id> is constructed"
+    }
+   ]
+  },
+  "units": {
+   "cardinality": "entity",
+   "index": "unit<N>",
+   "count_source": "units.count",
+   "columns": [
+    {
+     "name": "type",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord +0x00",
+     "meaning": "@UNIT row index 0..23"
+    },
+    {
+     "name": "owner",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord +0x01",
+     "meaning": "owner power"
+    },
+    {
+     "name": "profession",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord +0x17",
+     "meaning": "class/profession 0x13..0x1C"
+    },
+    {
+     "name": "x",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord +0x07",
+     "meaning": "map x"
+    },
+    {
+     "name": "y",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord +0x08",
+     "meaning": "map y"
+    },
+    {
+     "name": "alive",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "UnitRecord alive flag",
+     "meaning": "1 if alive"
+    },
+    {
+     "name": "attack",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@UNIT attack",
+     "meaning": "attack strength (from its type)"
+    },
+    {
+     "name": "defense",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@UNIT combat",
+     "meaning": "defense strength (from its type)"
+    },
+    {
+     "name": "movement",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@UNIT movement",
+     "meaning": "move allowance"
+    },
+    {
+     "name": "terrain",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "map tile",
+     "meaning": "terrain id at the unit's tile"
+    },
+    {
+     "name": "terraindef",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@TERRAIN defensive",
+     "meaning": "terrain defense bonus at its tile"
+    }
+   ]
+  },
+  "congress": {
+   "cardinality": "singleton",
+   "index": "congress",
+   "columns": [
+    {
+     "name": "bells",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "PowerRecord +0x0C",
+     "meaning": "liberty-bell pool toward next Father"
+    },
+    {
+     "name": "cost",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "func_03C282",
+     "meaning": "bell cost of the next Founding Father"
+    },
+    {
+     "name": "era_band",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "func_03B95A",
+     "meaning": "0 (<1600) / 1 (1600-99) / 2 (>=1700)"
+    },
+    {
+     "name": "count",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "popcount +0x07",
+     "meaning": "Founding Fathers acquired"
+    }
+   ]
+  },
+  "ff": {
+   "cardinality": "singleton",
+   "index": "ff",
+   "columns": [
+    {
+     "name": "count",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "popcount +0x07",
+     "meaning": "Founding Fathers acquired"
+    },
+    {
+     "name": "<id>",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "PowerRecord +0x07 bit",
+     "meaning": "1 if Father <id> (0..24) is held"
+    }
+   ]
+  },
+  "revolution": {
+   "cardinality": "singleton",
+   "index": "revolution",
+   "columns": [
+    {
+     "name": "sol",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x53D0]",
+     "meaning": "national Sons of Liberty meter 0..100"
+    },
+    {
+     "name": "declared",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x5382]&1",
+     "meaning": "1 if War of Independence declared"
+    },
+    {
+     "name": "rebel",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x5398]",
+     "meaning": "power that declared independence"
+    }
+   ]
+  },
+  "succession": {
+   "cardinality": "singleton",
+   "index": "succession",
+   "columns": [
+    {
+     "name": "seceded",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x53D2]",
+     "meaning": "power withdrawn by Spanish Succession"
+    }
+   ]
+  },
+  "natives": {
+   "cardinality": "singleton",
+   "index": "natives",
+   "columns": [
+    {
+     "name": "tension",
+     "type": "int",
+     "rw": "write",
+     "tier": "A",
+     "source": "settlement alarm",
+     "meaning": "0..100 alarm proxy (war at >=~128/80)"
+    }
+   ]
+  },
+  "ref": {
+   "cardinality": "singleton",
+   "index": "ref",
+   "columns": [
+    {
+     "name": "regulars",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x53DA]",
+     "meaning": "REF regular infantry"
+    },
+    {
+     "name": "cavalry",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x53DC]",
+     "meaning": "REF cavalry"
+    },
+    {
+     "name": "manowar",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x53DE]",
+     "meaning": "REF men-o-war"
+    },
+    {
+     "name": "artillery",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x53E0]",
+     "meaning": "REF artillery"
+    }
+   ]
+  },
+  "market": {
+   "cardinality": "singleton",
+   "index": "market",
+   "columns": [
+    {
+     "name": "price.<good>",
+     "type": "int",
+     "rw": "write",
+     "tier": "B",
+     "source": "[0x53EA]",
+     "meaning": "European base price for good 0..15 (seed from @CARGO)"
+    },
+    {
+     "name": "boycott.<good>",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "PowerRecord +0x20 bit",
+     "meaning": "1 if good is boycotted"
+    }
+   ]
+  },
+  "world": {
+   "cardinality": "singleton",
+   "index": "",
+   "columns": [
+    {
+     "name": "colonies.count",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x539E]",
+     "meaning": "total colonies"
+    },
+    {
+     "name": "colonies.population",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "sum +0x1F",
+     "meaning": "total colonists across colonies"
+    },
+    {
+     "name": "units.count",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "[0x539C]",
+     "meaning": "total on-map units"
+    },
+    {
+     "name": "terrain.defense.<id>",
+     "type": "int",
+     "rw": "read",
+     "tier": "C",
+     "source": "@TERRAIN defensive",
+     "meaning": "terrain id defense value"
+    }
+   ]
+  },
+  "diplomacy": {
+   "cardinality": "matrix",
+   "index": "war.<a>.<b>",
+   "columns": [
+    {
+     "name": "war.<a>.<b>",
+     "type": "int",
+     "rw": "read",
+     "tier": "B",
+     "source": "diplomacy matrix",
+     "meaning": "1 if powers a,b are at war"
+    }
+   ]
   }
+ }
 }

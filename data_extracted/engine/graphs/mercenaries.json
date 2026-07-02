@@ -1,187 +1,261 @@
 {
-  "id": "mercenaries",
-  "name": "Mercenary Offer",
-  "nodes": [
-    {
-      "id": "note",
-      "type": "Comment",
-      "x": 20,
-      "y": -90,
-      "params": {
-        "text": "Mercenary offer (spec/systems/mercenary.md): odds are wartime 1-in-3 (after independence) vs peacetime 1-in-21, in one Formula. On an offer the King presents @MERCENARIES; Hire -> a veteran stack arrives (@MERCS); declining is silent. The FORCE depends on the state: wartime spawns Continental Army/Cavalry + Artillery, peacetime spawns Veteran Dragoons + Artillery -- so the hire branches on revolution.declared."
-      }
-    },
-    {
-      "id": "trig",
-      "type": "OnTurnStart",
-      "x": 20,
-      "y": 40,
-      "params": {}
-    },
-    {
-      "id": "offer",
-      "type": "Formula",
-      "x": 20,
-      "y": 150,
-      "params": {
-        "expr": "revolution.declared ? (roll(1,3)==1) : (roll(1,21)==1)"
-      }
-    },
-    {
-      "id": "br",
-      "type": "Branch",
-      "x": 220,
-      "y": 40,
-      "params": {}
-    },
-    {
-      "id": "pop",
-      "type": "ShowPopup",
-      "x": 420,
-      "y": 40,
-      "params": {
-        "textKey": "@MERCENARIES",
-        "choices": "Hire them,Decline",
-        "speaker": "King"
-      }
-    },
-    {
-      "id": "wdecl",
-      "type": "Formula",
-      "x": 620,
-      "y": 170,
-      "params": {
-        "expr": "revolution.declared"
-      }
-    },
-    {
-      "id": "hbr",
-      "type": "Branch",
-      "x": 620,
-      "y": 40,
-      "params": {}
-    },
-    {
-      "id": "hire",
-      "type": "HireMercenaries",
-      "x": 820,
-      "y": 10,
-      "params": {
-        "power": "0",
-        "kind": "Wartime"
-      }
-    },
-    {
-      "id": "hpeace",
-      "type": "HireMercenaries",
-      "x": 820,
-      "y": 90,
-      "params": {
-        "power": "0",
-        "kind": "Peacetime"
-      }
-    },
-    {
-      "id": "arr",
-      "type": "ShowPopup",
-      "x": 1040,
-      "y": 40,
-      "params": {
-        "textKey": "@MERCS",
-        "choices": "Welcome."
-      }
-    }
-  ],
-  "edges": [
-    {
-      "from": {
-        "node": "trig",
-        "pin": "out"
-      },
-      "to": {
-        "node": "br",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "offer",
-        "pin": "value"
-      },
-      "to": {
-        "node": "br",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "br",
-        "pin": "true"
-      },
-      "to": {
-        "node": "pop",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "pop",
-        "pin": "Hire them"
-      },
-      "to": {
-        "node": "hbr",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "wdecl",
-        "pin": "value"
-      },
-      "to": {
-        "node": "hbr",
-        "pin": "cond"
-      }
-    },
-    {
-      "from": {
-        "node": "hbr",
-        "pin": "true"
-      },
-      "to": {
-        "node": "hire",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "hbr",
-        "pin": "false"
-      },
-      "to": {
-        "node": "hpeace",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "hire",
-        "pin": "out"
-      },
-      "to": {
-        "node": "arr",
-        "pin": "in"
-      }
-    },
-    {
-      "from": {
-        "node": "hpeace",
-        "pin": "out"
-      },
-      "to": {
-        "node": "arr",
-        "pin": "in"
-      }
-    }
-  ]
+ "id": "mercenaries",
+ "name": "Mercenary Offer",
+ "nodes": [
+  {
+   "id": "note",
+   "type": "Comment",
+   "x": 40,
+   "y": 40,
+   "params": {
+    "text": "Mercenary offer (spec/systems/mercenary.md func_03E442): odds wartime 1-in-3 vs peacetime 1-in-21; the counts, force description and BYTE-VERIFIED price ((diff+K)*2+roll(0,6))*100 per unit are pre-rolled by MercenaryQuote BEFORE the @MERCENARIES dialog so %NUMBER0/%STRING1 bind the real offer (@0x03E4E8 odds; quote/affordability @0x03E5FD; first-call prime bit @0x03E4BC). The dialog's choice texts live in the message tail (No thank you. / Pay); choice 1 hires at exactly the quoted price."
+   }
+  },
+  {
+   "id": "trig",
+   "type": "OnTurnStart",
+   "x": 40,
+   "y": 160,
+   "params": {}
+  },
+  {
+   "id": "odds",
+   "type": "Formula",
+   "x": 200,
+   "y": 220,
+   "params": {
+    "expr": "revolution.declared ? (roll(1,3)==1) : (roll(1,21)==1)"
+   }
+  },
+  {
+   "id": "br",
+   "type": "Branch",
+   "x": 360,
+   "y": 160,
+   "params": {}
+  },
+  {
+   "id": "quote",
+   "type": "MercenaryQuote",
+   "x": 520,
+   "y": 160,
+   "params": {}
+  },
+  {
+   "id": "priceF",
+   "type": "GetState",
+   "x": 520,
+   "y": 300,
+   "params": {
+    "path": "game.merc_price"
+   }
+  },
+  {
+   "id": "forceF",
+   "type": "GetState",
+   "x": 520,
+   "y": 360,
+   "params": {
+    "path": "game.merc_force"
+   }
+  },
+  {
+   "id": "nationF",
+   "type": "GetState",
+   "x": 520,
+   "y": 420,
+   "params": {
+    "path": "@NATIONALITY[0].name"
+   }
+  },
+  {
+   "id": "pop",
+   "type": "ShowPopup",
+   "x": 700,
+   "y": 160,
+   "params": {
+    "textKey": "@MERCENARIES",
+    "choices": "No thank you.,Pay",
+    "speaker": "King"
+   }
+  },
+  {
+   "id": "wdecl",
+   "type": "Formula",
+   "x": 860,
+   "y": 300,
+   "params": {
+    "expr": "revolution.declared"
+   }
+  },
+  {
+   "id": "hbr",
+   "type": "Branch",
+   "x": 1020,
+   "y": 160,
+   "params": {}
+  },
+  {
+   "id": "hire",
+   "type": "HireMercenaries",
+   "x": 1180,
+   "y": 100,
+   "params": {
+    "power": "0",
+    "kind": "Wartime"
+   }
+  },
+  {
+   "id": "hpeace",
+   "type": "HireMercenaries",
+   "x": 1180,
+   "y": 220,
+   "params": {
+    "power": "0",
+    "kind": "Peacetime"
+   }
+  },
+  {
+   "id": "arr",
+   "type": "ShowPopup",
+   "x": 1340,
+   "y": 160,
+   "params": {
+    "textKey": "@MERCS",
+    "choices": "Welcome."
+   }
+  }
+ ],
+ "edges": [
+  {
+   "from": {
+    "node": "trig",
+    "pin": "out"
+   },
+   "to": {
+    "node": "br",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "odds",
+    "pin": "value"
+   },
+   "to": {
+    "node": "br",
+    "pin": "cond"
+   }
+  },
+  {
+   "from": {
+    "node": "br",
+    "pin": "true"
+   },
+   "to": {
+    "node": "quote",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "quote",
+    "pin": "offer"
+   },
+   "to": {
+    "node": "pop",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "priceF",
+    "pin": "value"
+   },
+   "to": {
+    "node": "pop",
+    "pin": "num0"
+   }
+  },
+  {
+   "from": {
+    "node": "forceF",
+    "pin": "value"
+   },
+   "to": {
+    "node": "pop",
+    "pin": "str1"
+   }
+  },
+  {
+   "from": {
+    "node": "nationF",
+    "pin": "value"
+   },
+   "to": {
+    "node": "pop",
+    "pin": "str0"
+   }
+  },
+  {
+   "from": {
+    "node": "pop",
+    "pin": "choice1"
+   },
+   "to": {
+    "node": "hbr",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "wdecl",
+    "pin": "value"
+   },
+   "to": {
+    "node": "hbr",
+    "pin": "cond"
+   }
+  },
+  {
+   "from": {
+    "node": "hbr",
+    "pin": "true"
+   },
+   "to": {
+    "node": "hire",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "hbr",
+    "pin": "false"
+   },
+   "to": {
+    "node": "hpeace",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "hire",
+    "pin": "out"
+   },
+   "to": {
+    "node": "arr",
+    "pin": "in"
+   }
+  },
+  {
+   "from": {
+    "node": "hpeace",
+    "pin": "out"
+   },
+   "to": {
+    "node": "arr",
+    "pin": "in"
+   }
+  }
+ ]
 }

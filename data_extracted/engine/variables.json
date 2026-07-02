@@ -43,6 +43,27 @@
         "writable": false,
         "source": "[0x0372]",
         "meaning": "last computed game score"
+      },
+      {
+        "name": "game.merc_price",
+        "type": "int",
+        "writable": false,
+        "source": "pending offer (func_03E442 pre-roll)",
+        "meaning": "the quoted mercenary price for the pending @MERCENARIES offer"
+      },
+      {
+        "name": "game.merc_force",
+        "type": "text",
+        "writable": false,
+        "source": "pending offer (force_composition rows)",
+        "meaning": "the quoted mercenary force description (%STRING1 of @MERCENARIES)"
+      },
+      {
+        "name": "game.merc_primed",
+        "type": "int",
+        "writable": false,
+        "source": "PowerRecord +0x00 bit 0x08 (@0x03E4BC)",
+        "meaning": "the first-eligible-offer prime bit: the very first roll is skipped"
       }
     ],
     "powers": [

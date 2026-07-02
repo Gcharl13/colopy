@@ -1790,6 +1790,30 @@
           "tier": "C",
           "source": "[0x0372]",
           "meaning": "last computed game score"
+        },
+        {
+          "name": "merc_price",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "pending offer (func_03E442 pre-roll)",
+          "meaning": "the quoted mercenary price for the pending @MERCENARIES offer"
+        },
+        {
+          "name": "merc_force",
+          "type": "text",
+          "rw": "read",
+          "tier": "B",
+          "source": "pending offer (force_composition rows)",
+          "meaning": "the quoted mercenary force description (%STRING1 of @MERCENARIES)"
+        },
+        {
+          "name": "merc_primed",
+          "type": "int",
+          "rw": "read",
+          "tier": "B",
+          "source": "PowerRecord +0x00 bit 0x08 (@0x03E4BC)",
+          "meaning": "the first-eligible-offer prime bit: the very first roll is skipped"
         }
       ]
     },

@@ -14,7 +14,7 @@ The runtime interprets this schema; offsets are traceability-only.
 
 ## State tables
 
-- **game** (singleton, `game`): year, season, turn, difficulty, nation, score
+- **game** (singleton, `game`): year, season, turn, difficulty, nation, score, merc_price, merc_force, merc_primed
 - **powers** (entity, `power<N>`): gold, tax, royal_money, crosses, mil_strength, econ_strength, colonies, units, strength
 - **colonies** (entity, `colony<N>`): population, owner, sol, bells, hammers, food, crosses, build_target, build_cost, build_bank, build_remaining, building_name, warehouse, workers, stockpile.<good>, built.<id>
 - **units** (entity, `unit<N>`): type, owner, profession, x, y, alive, attack, defense, movement, terrain, terraindef

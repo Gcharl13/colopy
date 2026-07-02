@@ -588,6 +588,14 @@ JsonValue node_catalog() {
         node_def("WageSpanishSuccession", "War of Spanish Succession",
                  "Withdraws the weakest rival power; its colonies pass to the strongest (spanish_succession.md).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {}),
+        node_def("MercenaryQuote", "Mercenary Quote",
+                 "Pre-rolls the mercenary offer (counts + the byte-verified price, "
+                 "mercenary.md func_03E442) so the @MERCENARIES dialog can show the real "
+                 "force and cost (bind game.merc_price / game.merc_force). First eligible "
+                 "call primes the offer bit and exits via 'skip'; an unaffordable wartime "
+                 "offer also exits via 'skip'.",
+                 {pin("in","exec","in"), pin("offer","exec","out"), pin("skip","exec","out")},
+                 {}),
         node_def("SpawnToryMilitia", "Spawn Tory Militia",
                  "Spawns loyalist Soldiers near a colony during the WoI (tory_uprising.md).",
                  {pin("in","exec","in"), pin("out","exec","out")}, {param("colony","number")}),
@@ -858,6 +866,10 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
     }
     if (path == "units.count")    return num((double)w.units.size());
     if (path == "natives.tension") return num(cx.x.tension);
+    if (path == "game.merc_price")  return num((double)cx.x.pending_merc_price);
+    if (path == "game.merc_primed") return num(cx.x.merc_primed ? 1 : 0);
+    if (path == "game.merc_force") { JsonValue v; v.type = JsonValue::String;
+                                     v.str = cx.x.pending_merc_force; return v; }
     if (path == "natives.count")   return num((double)cx.x.settlements.size());
     // native<N>.<field> -- an individual settlement (tribe/x/y/population/wealth/mission/capital/alarm[.p])
     if (path.rfind("native", 0) == 0 && path.size() > 6 && path[6] >= '0' && path[6] <= '9') {
@@ -1475,16 +1487,63 @@ struct Runner {
             effect("King's Army mobilizes: +" + std::to_string(r) + " regulars");
             return follow(nodeId, "out", popup);
         }
+        if (t == "MercenaryQuote") {
+            // Pre-roll the offer (mercenary.md func_03E442): the counts, force
+            // description and BYTE-VERIFIED price are fixed BEFORE the
+            // @MERCENARIES dialog so its %NUMBER0/%STRING1 show the real offer.
+            // First eligible call only primes the offer bit and returns
+            // (PowerRecord +0x00 bit 0x08, @0x03E4BC/@0x03E4CD). A wartime
+            // offer the power cannot afford is suppressed (@0x03E5FD).
+            if (!cx.x.merc_primed) { cx.x.merc_primed = true; return follow(nodeId, "skip", popup); }
+            const bool wartime = cx.x.woi_declared;
+            const int diff = cx.g.difficulty;
+            int cat[4] = {0, 0, 0, 0};
+            if (wartime) {
+                int hi = (4 - diff) / 2 + 2; if (hi < 2) hi = 2;
+                cat[0] = cx.rng(2, hi);
+                if (cx.rng(0, 1) != 0) cat[1] = 1; else cat[3] = 1;
+            } else {
+                cat[0] = cx.rng(1, 3);
+                if (cx.rng(0, 1) == 1) cat[0] += 1;
+                else { cat[3] = 1; if (cx.rng(0, 1) == 1) cat[3] += 1; }
+            }
+            const int K = wartime ? 3 : 4;
+            const int gold_per_unit = ((diff + K) * 2 + cx.rng(0, 6)) * 100;
+            const long qty = (long)(cat[1] + cat[3]) * 2 + cat[0];
+            const long price = (long)gold_per_unit * qty;
+            if (wartime && price > cx.g.powers[0].gold)
+                return follow(nodeId, "skip", popup);   // affordability gate (@0x03E5FD)
+            std::string force;
+            if (const JsonValue* comp = force_composition(wartime ? "mercenary_wartime"
+                                                                  : "mercenary_peacetime"))
+                if (const JsonValue* cats = comp->find("categories"))
+                    for (const JsonValue& c : cats->arr) {
+                        const JsonValue* catv = c.find("cat"); const JsonValue* uv = c.find("unit");
+                        if (!catv || !uv) continue;
+                        int ci2 = (int)catv->num; if (ci2 < 0 || ci2 > 3 || cat[ci2] <= 0) continue;
+                        if (!force.empty()) force += ", ";
+                        force += std::to_string(cat[ci2]) + " Veteran " + uv->str;
+                    }
+            cx.x.pending_merc_price = price;
+            for (int k = 0; k < 4; ++k) cx.x.pending_merc_cat[k] = cat[k];
+            cx.x.pending_merc_wartime = wartime;
+            cx.x.pending_merc_force = force;
+            return follow(nodeId, "offer", popup);
+        }
         if (t == "HireMercenaries") {
             // Force composition is DATA (effects.json force_composition.<kind>): which unit
             // types per category, the carrier, the veteran stamp. Only the per-category COUNT
             // rolls are byte-verified procedure (spec/systems/mercenary.md func_03E442/03E664).
             int p = std::atoi(pget(*n, "power").str.c_str()); int owner = (p >= 0 && p < 4) ? p : 0;
             bool wartime = pget(*n, "kind").str == "Wartime";
+            const bool pending = cx.x.pending_merc_price > 0;   // MercenaryQuote pre-rolled
+            if (pending) wartime = cx.x.pending_merc_wartime;
             const JsonValue* comp = force_composition(wartime ? "mercenary_wartime" : "mercenary_peacetime");
             int diff = cx.g.difficulty;
             int catCount[4] = {0, 0, 0, 0};     // per-category unit counts, by the byte-verified rolls
-            if (wartime) {
+            if (pending) {
+                for (int k = 0; k < 4; ++k) catCount[k] = cx.x.pending_merc_cat[k];
+            } else if (wartime) {
                 int hi = (4 - diff) / 2 + 2; if (hi < 2) hi = 2;
                 catCount[0] = cx.rng(2, hi);
                 if (cx.rng(0, 1) != 0) catCount[1] = 1; else catCount[3] = 1;   // exactly one category
@@ -1520,10 +1579,18 @@ struct Runner {
             // The BYTE-VERIFIED price (mercenary.md @0x03E558/@0x03E713):
             //   gold_per_unit = ((diff+K)*2 + random_int(0,6)) * 100
             //   (K = 3 wartime / 4 peacetime); qty = (catA+catC)*2 + count.
-            const int K = wartime ? 3 : 4;
-            const int gold_per_unit = ((diff + K) * 2 + cx.rng(0, 6)) * 100;
-            const long qty = (long)(catCount[1] + catCount[3]) * 2 + catCount[0];
-            const long price = (long)gold_per_unit * qty;
+            long price;
+            if (pending) {
+                price = cx.x.pending_merc_price;            // the quoted offer, debited exactly
+                cx.x.pending_merc_price = 0;
+                cx.x.pending_merc_force.clear();
+                for (int k = 0; k < 4; ++k) cx.x.pending_merc_cat[k] = 0;
+            } else {
+                const int K = wartime ? 3 : 4;
+                const int gold_per_unit = ((diff + K) * 2 + cx.rng(0, 6)) * 100;
+                const long qty = (long)(catCount[1] + catCount[3]) * 2 + catCount[0];
+                price = (long)gold_per_unit * qty;
+            }
             cx.g.powers[owner].gold -= price;
             if (cx.g.powers[owner].gold < 0) cx.g.powers[owner].gold = 0;
             effect(std::string(wartime ? "wartime" : "peacetime") + " mercenaries hired: " +

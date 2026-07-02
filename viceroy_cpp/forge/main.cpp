@@ -1156,6 +1156,8 @@ static void game_step() {
                 }
                 size_t p3; while ((p3 = msg.find("%STRING0")) != std::string::npos) msg.replace(p3, 8, tribe);
             }
+            if (rr.immigrants > 0)                      // FoY: the next recruits are free
+                g_engine_extra.free_recruits += rr.immigrants;   // (+0x49 queue @0x52682)
             if (rr.immigrants > 0) {                    // Fountain of Youth: fill the dock queue
                 // the EXE queues 8 immigrants; this model's dock holds imm_dock_slots --
                 // empty slots fill now, the rest arrive with the regular flow (noted cap)
@@ -2263,6 +2265,15 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     o.obj["seceded_power"] = forge::json_num(x.seceded_power);
     o.obj["score"] = forge::json_num((double)x.score);
     o.obj["congress_bells"] = forge::json_num(x.congress_bells);
+    o.obj["merc_primed"] = jbool(x.merc_primed);
+    o.obj["merc_price"] = forge::json_num((double)x.pending_merc_price);
+    { forge::JsonValue mc = jarr();
+      for (int i = 0; i < 4; ++i) mc.arr.push_back(forge::json_num(x.pending_merc_cat[i]));
+      o.obj["merc_cat"] = mc; }
+    o.obj["merc_wartime"] = jbool(x.pending_merc_wartime);
+    o.obj["merc_force"] = forge::json_str(x.pending_merc_force);
+    o.obj["free_recruits"] = forge::json_num(x.free_recruits);
+    o.obj["artillery_bought"] = forge::json_num(x.artillery_bought);
     forge::JsonValue mil = jarr(), econ = jarr();
     for (int i = 0; i < 4; ++i) { mil.arr.push_back(forge::json_num(x.power_mil[i]));
         econ.arr.push_back(forge::json_num(x.power_econ[i])); }
@@ -2301,6 +2312,18 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
     x.seceded_power = gi("seceded_power", -1);
     if (const forge::JsonValue* v = o->find("score")) x.score = (long)v->num;
     x.congress_bells = gi("congress_bells", 0);
+    { const forge::JsonValue* v = o->find("merc_primed");
+      x.merc_primed = v && v->type == forge::JsonValue::Bool ? v->b : false; }
+    x.pending_merc_price = gi("merc_price", 0);
+    if (const forge::JsonValue* mc = o->find("merc_cat"))
+        for (int i = 0; i < 4 && i < (int)mc->arr.size(); ++i)
+            x.pending_merc_cat[i] = mc->arr[i].as_int();
+    { const forge::JsonValue* v = o->find("merc_wartime");
+      x.pending_merc_wartime = v && v->type == forge::JsonValue::Bool ? v->b : false; }
+    { const forge::JsonValue* v = o->find("merc_force");
+      if (v && v->type == forge::JsonValue::String) x.pending_merc_force = v->str; }
+    x.free_recruits = gi("free_recruits", 0);
+    x.artillery_bought = gi("artillery_bought", 0);
     if (const forge::JsonValue* m = o->find("power_mil"))
         for (int i = 0; i < 4 && i < (int)m->arr.size(); ++i) x.power_mil[i] = m->arr[i].as_int();
     if (const forge::JsonValue* e = o->find("power_econ"))
@@ -3250,18 +3273,40 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             o.obj["gold"] = forge::json_num((double)p.gold);
             return J(200, o);
         }
-        if (path == "/api/europe/recruit" && method == "POST") {   // take a waiting dock immigrant (free)
+        if (path == "/api/europe/recruit" && method == "POST") {
+            // Recruit a waiting dock immigrant (immigration.md 3): the cost is
+            // the recruit-pool slot cost word (+0x04, read @0x051E52/@0x35114),
+            // whose value is the class's @CLASS transport_cost row -- Petty
+            // Criminals 300 / Indentured Servants 400 / free colonists priced
+            // as Peasant Farmers 600 (the class->row mapping for classless
+            // colonists is RECONSTRUCTED). A Fountain-of-Youth grant makes the
+            // next recruits free (the +0x49 free queue, @0x52682).
             forge::JsonValue b = forge::json_parse(body);
             int slot = b.find("slot") ? b.find("slot")->as_int(-1) : -1;
             int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
             if (slot < 0 || slot >= 3) return err(400, "slot 0..2");
-            int type = g_game.powers[0].dock_pool[slot];
-            if (type < 0) return err(400, "no immigrant waiting in that slot");
-            Unit u; u.type = type < NUNITTYPES ? type : COLONISTS; u.owner = 0; u.alive = true;
+            int cls = g_game.powers[0].dock_pool[slot];
+            if (cls < 0) return err(400, "no immigrant waiting in that slot");
+            long cost = 0;
+            if (g_engine_extra.free_recruits > 0) {
+                --g_engine_extra.free_recruits;          // FoY free queue
+            } else {
+                forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+                const int row = cls == 0x19 ? 0 : cls == 0x1A ? 1 : 2;
+                cost = forge::resolve_binding("@CLASS[" + std::to_string(row) + "].transport_cost", cx).as_int();
+                if (cost < 0) cost = 0;
+                if (g_game.powers[0].gold < cost) return err(400, "not enough gold");
+                g_game.powers[0].gold -= cost;
+            }
+            Unit u; u.owner = 0; u.alive = true;
+            if (cls < NUNITTYPES) { u.type = cls; }      // legacy unit-typed slot
+            else { u.type = COLONISTS; u.profession = cls; }   // class byte carried (+0x315B)
             if (ci >= 0 && ci < (int)g_colony_xy.size()) { u.x = g_colony_xy[ci].first; u.y = g_colony_xy[ci].second; }
             g_world.units.push_back(u);
             g_game.powers[0].dock_pool[slot] = -1;
-            return J(200, game_state_json());
+            forge::JsonValue o = game_state_json();
+            o.obj["recruit_cost"] = forge::json_num((double)cost);
+            return J(200, o);
         }
         if (path == "/api/europe/train" && method == "POST") {     // pay gold for a trained specialist
             forge::JsonValue b = forge::json_parse(body);

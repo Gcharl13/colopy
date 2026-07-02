@@ -70,6 +70,18 @@ struct EngineExtra {
     // Scoring inputs (spec/systems/scoring.md components):
     int  declaration_year = 0;    // year independence was declared (revolution bonus), 0 = never
     int  razed_settlements = 0;   // native settlements this power destroyed (-(diff+1) each)
+    // Mercenary offer state (mercenary.md func_03E442): the first-eligible-call
+    // skip bit (PowerRecord +0x00 bit 0x08, set-then-return @0x03E4BC/@0x03E4CD)
+    // and the PRE-ROLLED pending offer -- counts/price roll BEFORE the
+    // @MERCENARIES dialog so %NUMBER0/%STRING1 bind the real force.
+    int  free_recruits = 0;       // Fountain-of-Youth free-recruit queue (+0x49, @0x52682)
+    int  artillery_bought = 0;    // Europe artillery escalation counter (PowerRecord +0x1E,
+                                  //   cost = base + count*100, @0x035124/@0x035282)
+    bool merc_primed = false;
+    long pending_merc_price = 0;
+    int  pending_merc_cat[4] = {0, 0, 0, 0};
+    bool pending_merc_wartime = false;
+    std::string pending_merc_force;
     long bells_since_declaration = 0;  // bells produced after the declaration (component 6;
                                        // spec gates on the intervention flag [0x5382]&2 --
                                        // gating on the declaration is RECONSTRUCTED)
