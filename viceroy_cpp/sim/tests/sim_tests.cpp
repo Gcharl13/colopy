@@ -422,7 +422,8 @@ static void test_unit_turn() {
         GameState g; g.difficulty = 4;
         refresh_moves(w); apply_orders(g, w, win);
         CHECK(w.units[0].x == 3 && w.units[0].order == ORDER_NONE, "scout arrived, order cleared");
-        CHECK(w.units[0].moves_left == 1, "leftover moves -> %d", w.units[0].moves_left);
+        CHECK(w.units[0].moves_left == 3, "leftover thirds -> %d (one full move)",
+              w.units[0].moves_left);
     }
     // combat: win vs Soldiers -> demoted in place; attacker does NOT advance.
     {
@@ -1008,20 +1009,24 @@ static void test_ai() {
     RandFn rig = [](int lo, int) { return lo; };       // jitter = 1, deterministic
     CHECK(ai_move_allowance(rd, COLONISTS) == 3 && ai_move_allowance(rd, SCOUTS) == 12,
           "budget allowance = @UNIT moves x3 (colonist 3, scout 12)");
-    { // site value: water 0; swampland scores high; Mountains centre 0
+    { // site value: reads the terrain VALUE column (@0x2F79) -- an all-Plains
+      // catchment scores exactly 13, the observed F9 capture maximum; swamp
+      // (value 2) stays below the settle bar; water/Mountains-centre = 0
       World w; w.map_w = 8; w.map_h = 8;
-      w.terrain.assign(64, 7);                         // all Swamp (improvement 7)
-      CHECK(colony_site_value(w, rd, 4, 4) == 15, "swamp catchment clamps at 15");
+      w.terrain.assign(64, 2);                         // all Plains (value 4)
+      CHECK(colony_site_value(w, rd, 4, 4) == 13, "plains catchment -> 13 (oracle max)");
+      w.terrain.assign(64, 7);                         // all Swamp (value 2)
+      CHECK(colony_site_value(w, rd, 4, 4) == 6, "swampland scores low (value 2)");
       w.terrain.assign(64, 25);                        // all Ocean
       CHECK(colony_site_value(w, rd, 4, 4) == 0, "water sites are 0");
-      w.terrain.assign(64, 7); w.terrain[4 * 8 + 4] = 27;
+      w.terrain.assign(64, 2); w.terrain[4 * 8 + 4] = 27;
       CHECK(colony_site_value(w, rd, 4, 4) == 0, "Mountains centre -> 0");
     }
     { // settler: sees a qualifying site, walks to it, founds a colony ('=').
-      // (An 8x8 swamp field scores 15; a 1-row strip only reaches 7 -- the
-      // catchment needs area, which is itself a formula check.)
+      // (An 8x8 plains field scores 13; the catchment needs area, which is
+      // itself a formula check.)
       GameState g; World w; w.map_w = 8; w.map_h = 8;
-      w.terrain.assign(64, 7);
+      w.terrain.assign(64, 2);                         // Plains: site value 13 >= bar
       w.fog.assign(64, 0xFF);                          // power 1 has explored everything
       Unit s; s.type = COLONISTS; s.owner = 1; s.x = 0; s.y = 0; w.units.push_back(s);
       for (int t = 0; t < 12 && w.colonies.empty(); ++t) ai_power_turn(g, w, 1, rd, rig);
@@ -1060,8 +1065,9 @@ static void test_ai() {
       CHECK(w.units[0].ai_state == 'V' && w.units[0].x == 4,
             "arrived at the colony ('V' @0x04E9F0)");
       ai_power_turn(g, w, 1, rd, rig);
-      CHECK(w.units[0].ai_state == 'G' && w.units[0].order == ORDER_FORTIFY &&
-            w.units[0].x == 4, "garrisoned ('G') and fortified at the colony");
+      CHECK(w.units[0].ai_state == 'G' &&
+            (w.units[0].order == ORDER_FORTIFY || w.units[0].order == ORDER_FORTIFIED) &&
+            w.units[0].x == 4, "garrisoned ('G') and fortifying at the colony");
     }
     { // controller gate: the human power's units are never AI-driven
       GameState g; World w; w.map_w = 4; w.map_h = 1;

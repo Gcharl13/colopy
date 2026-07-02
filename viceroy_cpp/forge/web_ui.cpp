@@ -2261,7 +2261,7 @@ function nvRender(){
       +'background-size:'+(24*16*NS_SC)+'px '+(16*NS_SC)+'px;'
       +'background-position:-'+(u.type*16*NS_SC)+'px 0;image-rendering:pixelated"></div>';
     const lm=nvLine('moves')||{x:270,y:82}, ll=nvLine('locat')||{x:270,y:92};
-    h+=nsT(lm.x,lm.y,esc(nsLbl('INFO',0,'Moves:'))+' '+u.moves,{size:5,col:NS.white});
+    h+=nsT(lm.x,lm.y,esc(nsLbl('INFO',0,'Moves:'))+' '+(Math.floor(u.moves/3))+(u.moves%3?' '+(u.moves%3)+'/3':''),{size:5,col:NS.white});
     h+=nsT(ll.x,ll.y,esc(nsLbl('INFO',1,'Locat:'))+' ('+u.x+','+u.y+')',{size:5,col:NS.white});
     const lt=nvLine('unit type')||{x:244,y:104}, lk=nvLine('skill')||{x:244,y:112};
     h+=nsT(lt.x,lt.y,esc(u.name),{size:5,col:NS.white});

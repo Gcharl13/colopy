@@ -53,8 +53,10 @@ std::pair<int, int> find_step(const World& w, const RuleData& rd,
             int nx = ux + dx[k], ny = uy + dy[k];
             if (!passable(nx, ny)) continue;
             int nt = w.terrain_id(nx, ny);
-            long cost = (nt >= 0 && nt < NTERRAIN) ? rd.terrain_move[nt] : 1;
-            if (cost < 1) cost = 1;
+            long cost = (nt >= 0 && nt < NTERRAIN) ? rd.terrain_move[nt] * 3 : 3;
+            if (cost < 3) cost = 3;
+            if (w.improve_at(nx, ny) & 0x08) cost = 1;   // road = 1/3 move
+
             int v = idx(nx, ny);
             if (dist[top.second] + cost < dist[v]) {
                 dist[v] = dist[top.second] + cost;
@@ -80,8 +82,11 @@ int unit_at(const World& w, int x, int y, int except) {
 }
 
 void refresh_moves(World& w, const RuleData& rd) {
+    // Movement is accounted in THIRDS (unit.md 3: the @UNIT loader stores
+    // movement x3 @0x074F04; a step charges terrain-move x3 @0x051125..31;
+    // a road tile costs 1 = one third).
     for (Unit& u : w.units)
-        if (u.alive) u.moves_left = unit_stats(rd, u.type).movement;
+        if (u.alive) u.moves_left = unit_stats(rd, u.type).movement * 3;
 }
 
 // Resolve combat when unit `ai` attacks the unit at index `di`; apply the outcome
@@ -122,7 +127,7 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
                                     w.terrain_id(def.x, def.y));
     CombatResult res = resolve_land(rd, atk, def, /*terrain+folds*/bonus, /*fort*/0, g.difficulty,
                                     atk.owner == HUMAN_OWNER, def.owner == HUMAN_OWNER, rng,
-                                    /*defender_fortified*/ def.order == ORDER_FORTIFY,
+                                    /*defender_fortified*/ def.order == ORDER_FORTIFIED,
                                     /*attacker_nation*/ power_nation(g, atk.owner));
     Unit& loser = res.attacker_won ? def : atk;
     if (res.captured) {
@@ -222,6 +227,10 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
         if (!u.alive) continue;
+        if (u.order == ORDER_FORTIFY) {                 // Fortify(5) -> Fortified(6)
+            u.order = ORDER_FORTIFIED;                  //   next turn (func_04101C @0x41024)
+            continue;
+        }
         if (u.order == ORDER_CLEAR_PLOW || u.order == ORDER_ROAD) { do_improve(w, u, rd); continue; }
         // Trade-route automation (func_041080): resolve arrival/load/unload and
         // (re)write the GoTo target, then fall through to the shared move loop.
@@ -261,10 +270,12 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
                 break;                                              // combat or block ends the move
             }
 
-            // (nx,ny) is now a passable, empty neighbor. Charge its terrain entry cost.
+            // (nx,ny) is now a passable, empty neighbor. Charge its terrain entry
+            // cost in thirds (@0x051125: terrain-move x3); a road costs 1 (= 1/3).
             int tid = w.terrain_id(nx, ny);
-            int cost = 1;
-            if (tid >= 0 && tid < NTERRAIN) { cost = rd.terrain_move[tid]; if (cost < 1) cost = 1; }
+            int cost = 3;
+            if (tid >= 0 && tid < NTERRAIN) { cost = rd.terrain_move[tid] * 3; if (cost < 3) cost = 3; }
+            if (w.improve_at(nx, ny) & 0x08) cost = 1;
             u.x = nx; u.y = ny;
             if (!w.fog.empty())                                     // reveal per step (func_006468)
                 reveal_around(w, u.x, u.y,

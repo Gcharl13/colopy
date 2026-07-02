@@ -93,6 +93,26 @@ static int default_terrain_improve(int terrain_id) {
     return 0;
 }
 
+// Per-terrain "Value" column (the 4th prefix byte @0x2F79 of the 16-byte
+// terrain record: Movement @0x2F76 / Defensive @0x2F77 / Improvement @0x2F78 /
+// Value @0x2F79 -- the four consecutive byte reads @0x051125, @0x7E63,
+// @0x040727 and func_063F3C pin the order). This is the colony-site
+// desirability stat the AI's F9 land-value formula sums (ai.md 3b).
+static int default_terrain_value(int terrain_id) {
+    static const int land[8]   = {2, 2, 4, 4, 4, 4, 2, 2};       // ids 0..7
+    static const int forest[8] = {3, 1, 3, 3, 3, 3, 1, 1};       // ids 8..15
+    if (terrain_id >= 0 && terrain_id <= 7)  return land[terrain_id];
+    if (terrain_id >= 8 && terrain_id <= 23) return forest[((terrain_id & 7) | 8) - 8];
+    switch (terrain_id) {
+        case 24: return 0;   // Arctic
+        case 25: return 3;   // Ocean
+        case 26: return 0;   // Sea Lane
+        case 27: return 2;   // Mountains
+        case 28: return 2;   // Hills
+    }
+    return 0;
+}
+
 // NAMES @CARGO market columns per good: {price_start1, price_start2, drift_low, drift_high,
 // burden}. Value-identical to data_extracted/tables/names_tables.json @CARGO (asserted by the
 // tools/verify_rules.py oracle, same as @UNIT). Order = the Good enum (Food..Muskets).
@@ -157,6 +177,7 @@ RuleData make_default_rules() {
         rd.terrain_defense[id] = default_terrain_defense(id);
         rd.terrain_move[id]    = default_terrain_move(id);
         rd.terrain_improve[id] = default_terrain_improve(id);
+        rd.terrain_value[id]   = default_terrain_value(id);
     }
     for (int g = 0; g < NGOODS; ++g) rd.cargo[g] = kDefaultCargo[g];
     for (int j = 0; j < NJOBS; ++j) rd.jobs[j] = kDefaultJobs[j];

@@ -987,7 +987,7 @@ static void tory_uprising_step() {
         if (occupied) continue;
         Unit m; m.owner = 1; m.x = nx; m.y = ny; m.alive = true;
         m.type = (game_rng(1, 100) <= 25) ? 4 : 1;      // random upgrade gate: Soldiers(1) -> Dragoons(4)
-        m.moves_left = unit_stats(m.type).movement;
+        m.moves_left = unit_stats(m.type).movement * 3;   // thirds (unit.md 3)
         g_world.units.push_back(m);
         ++spawned; --budget;
     }
@@ -2077,6 +2077,7 @@ static forge::JsonValue report_state_json() {
           r.obj["x"] = forge::json_num(u.x); r.obj["y"] = forge::json_num(u.y);
           r.obj["order"] = forge::json_str(u.order == vc::sim::ORDER_GOTO ? "GOTO"
                             : u.order == vc::sim::ORDER_FORTIFY ? "FORTIFY"
+                            : u.order == vc::sim::ORDER_FORTIFIED ? "FORTIFIED"
                             : u.order == vc::sim::ORDER_SENTRY ? "SENTRY" : "-");
           r.obj["tx"] = forge::json_num(u.target_x); r.obj["ty"] = forge::json_num(u.target_y);
           nav.arr.push_back(r);

@@ -66,7 +66,13 @@ int colony_site_value(const World& w, const RuleData& rd, int x, int y) {
                     ++adj_land;
             v = (2 + 2 * adj_land) >> 2;
         } else {
-            v = rd.terrain_improve[t < NTERRAIN ? t : 0];   // the +0x2F79 Improvement stat
+            // The +0x2F79 byte = the terrain VALUE column (4th of the M/D/I/V
+            // prefix: Movement @0x2F76 [@0x051125], Defensive @0x2F77 [@0x7E63],
+            // Improvement @0x2F78 [@0x040727], Value @0x2F79 [func_063F3C]).
+            // ai.md's "Improvement" label for this byte is a one-byte cross-file
+            // inconsistency -- the Value read reproduces the F9 captures exactly
+            // (all-Plains catchment = 13, the observed maximum).
+            v = rd.terrain_value[t < NTERRAIN ? t : 0];
         }
         if (!w.terrain.empty() && tx >= 0 && tx < w.map_w && ty >= 0 && ty < w.map_h &&
             (w.terrain[(size_t)ty * w.map_w + tx] & 0x40))
@@ -331,7 +337,11 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
                               (u.type == PIONEERS && u.ai_state == '1'));
 
         // --- resume the persistent state machine (ai.md 4) ---
-        if (u.ai_state == 'G') { u.order = ORDER_FORTIFY; continue; }   // garrisoned
+        if (u.ai_state == 'G') {                       // garrisoned: hold fortification
+            if (u.order != ORDER_FORTIFY && u.order != ORDER_FORTIFIED)
+                u.order = ORDER_FORTIFY;               // (5 -> 6 next turn, @0x41024)
+            continue;
+        }
         if (u.ai_state == 'V') {                       // arrived -> garrison (promotion)
             u.ai_state = 'G'; u.order = ORDER_FORTIFY; continue;
         }
@@ -492,7 +502,8 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
             // stayed put with no goal: the sentry toggle (@0x051AB0) -- order 5,
             // promoted to fortify when transient bit 0x3148&2 is set (@0x051AB9).
             u.ai_state = '0';
-            if (u.order != ORDER_FORTIFY && u.order != ORDER_SENTRY)
+            if (u.order != ORDER_FORTIFY && u.order != ORDER_FORTIFIED &&
+                u.order != ORDER_SENTRY)
                 u.order = (u.ai_flags & 0x2) ? ORDER_FORTIFY : ORDER_SENTRY;
         }
         // tail wake (@0x051C68): a sentried AI unit with an adjacent enemy wakes.

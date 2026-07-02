@@ -53,6 +53,12 @@ enum Order : int {
     ORDER_ROAD,        // "R" -- build road, order 9 (terrain_improvement.md)
     ORDER_TRADE_ROUTE, // "T" -- @ORDERS row 2; EXE order byte 2 (+0x314C, dispatch
                        //   @0x249CB) -> automation func_041080 (trade_routes.md)
+    ORDER_FORTIFIED,   // EXE order 6: the ACTIVE fortification. Fortify (EXE 5,
+                       //   our ORDER_FORTIFY) is only "in progress"; func_04101C
+                       //   promotes 5 -> 6 on the following turn (@0x41024) and
+                       //   the 3/2 defense bonus applies only in this state
+                       //   (unit_orders.md rows 5/6 -- "not gain the effects
+                       //   until the following turn").
 };
 
 struct Unit {
