@@ -30,6 +30,7 @@
 #include "training.hpp"
 #include "turnpipe.hpp"
 #include "native_powers.hpp"
+#include "mapgen.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
 #include "web_ui.hpp"
@@ -671,7 +672,8 @@ static void seed_native_settlements() {
 // scenario (data_extracted/engine/scenarios/new_world.json). The scenario supplies
 // the map, calendar, starting gold, colonies and units; nation/difficulty come from
 // the new-game screen. Falls back to the classic 2-colony opening if the file is absent.
-static void game_new(int nation = 0, int difficulty = 1) {
+static void game_new(int nation = 0, int difficulty = 1, bool random_map = false,
+                     int p_land = 1, int p_cont = 1, int p_temp = 1, int p_clim = 1) {
     g_game = GameState{}; g_world = World{}; g_colony_xy.clear();
     // Seed the live game from entropy so real play differs each time (fidelity backlog #14).
     // Tests/selftests inject their own deterministic rng, so they are unaffected; the sandbox
@@ -684,11 +686,21 @@ static void game_new(int nation = 0, int difficulty = 1) {
     auto scn = [&](const char* k) -> const forge::JsonValue* {
         return sc.type == forge::JsonValue::Object ? sc.find(k) : nullptr; };
 
-    std::string mapfile = "data_extracted/map/AMER2.MP";
-    if (const forge::JsonValue* m = scn("map")) mapfile = "data_extracted/map/" + m->str;
-    try { forge::MpFile m = forge::load_mp(mapfile);
-        g_world.map_w = m.w; g_world.map_h = m.h; g_world.terrain = m.terrain;
-    } catch (...) { g_world.map_w = g_world.map_h = 0; }
+    vc::sim::MapStart gen_starts[4]; bool have_gen_starts = false;
+    if (random_map) {
+        // Random continental map (func_064A10, map_generation.md): P0..P6 with
+        // the Customize enums; the ship anchorages come from the P6 bands.
+        vc::sim::MapGenParams mp; mp.land = p_land; mp.landform = p_cont;
+        mp.temperature = p_temp; mp.climate = p_clim;
+        vc::sim::generate_map(g_world, mp, game_rng, gen_starts);
+        have_gen_starts = true;
+    } else {
+        std::string mapfile = "data_extracted/map/AMER2.MP";
+        if (const forge::JsonValue* m = scn("map")) mapfile = "data_extracted/map/" + m->str;
+        try { forge::MpFile m = forge::load_mp(mapfile);
+            g_world.map_w = m.w; g_world.map_h = m.h; g_world.terrain = m.terrain;
+        } catch (...) { g_world.map_w = g_world.map_h = 0; }
+    }
 
     g_game.difficulty = difficulty < 0 ? 0 : difficulty > 4 ? 4 : difficulty;
     g_game.nation     = nation < 0 ? 0 : nation > 3 ? 3 : nation;
@@ -741,9 +753,11 @@ static void game_new(int nation = 0, int difficulty = 1) {
         g_world.colonies.push_back(c); g_colony_xy.push_back(xy); cxy.push_back(xy);
         return xy;
     };
+    if (!random_map)
     if (const forge::JsonValue* cols = scn("colonies"))
         for (const forge::JsonValue& c : cols->arr) add_colony_json(c);
-    if (g_world.colonies.empty()) {                     // fallback: two colonies with a Farmer each
+    if (g_world.colonies.empty() && !random_map) {      // fallback: two colonies with a Farmer each
+                                                        // (a random map starts at sea, colony-less)
         const char* fb = R"([{"x":20,"y":22,"buildings":[13,27],"workers":[
             {"profession":0,"good":0,"tile":0},{"profession":13,"good":16,"tile":-1}]},
             {"x":34,"y":42,"buildings":[13],"workers":[{"profession":0,"good":0,"tile":0}]}])";
@@ -758,6 +772,25 @@ static void game_new(int nation = 0, int difficulty = 1) {
         g_world.units.push_back(u);
     };
     const int dx8[8] = {1,-1,0,0,1,1,-1,-1}, dy8[8] = {0,0,1,-1,1,-1,1,-1};
+    if (random_map && have_gen_starts) {
+        // The classic opening loadout (func_0755CC @0x07584B..0x0758F5, all
+        // BYTE-VERIFIED): per power a Caravel (Dutch power 3: Merchantman) at
+        // the P6 anchorage with Pioneers (French power 1: class 0x14 Pioneer)
+        // and Soldiers (Spanish power 2: class 0x15) aboard -- modeled as the
+        // colonists standing on the anchorage; at difficulty <= 1 the human
+        // runs the placement TWICE (the easy-mode double-units handicap).
+        for (int pw = 0; pw < 4; ++pw) {
+            const int passes = (pw == 0 && g_game.difficulty <= 1) ? 2 : 1;
+            for (int pass = 0; pass < passes; ++pass) {
+                const int sx = gen_starts[pw].x, sy = gen_starts[pw].y;
+                add_unit(pw == 3 ? MERCHANTMAN : CARAVEL, sx, sy, 0, -1, -1, pw);
+                add_unit(PIONEERS, sx, sy, 0, -1, -1, pw);
+                g_world.units.back().profession = pw == 1 ? 0x14 : 0x13;
+                add_unit(SOLDIERS, sx, sy, 0, -1, -1, pw);
+                g_world.units.back().profession = pw == 2 ? 0x15 : 0x13;
+            }
+        }
+    } else
     if (const forge::JsonValue* us = scn("units"))
         for (const forge::JsonValue& u : us->arr) {
             const int owner = u.find("owner") ? u.find("owner")->as_int(0) : 0;
@@ -2420,12 +2453,19 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/game/new"  && method == "POST") {
             game_new(); g_history.clear(); history_snapshot(); return J(200, game_state_json());
         }
-        // New game from the setup screen: {nation 0..3, difficulty 0..4} seed the scenario.
+        // New game from the setup screen: {nation 0..3, difficulty 0..4} seed the
+        // scenario; {random:1, land/landform/temperature/climate 0..2} rolls a
+        // random continental map instead (func_064A10 + the Customize enums).
         if (path == "/api/game/setup" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             int nat  = b.find("nation")     ? b.find("nation")->as_int(0)     : 0;
             int diff = b.find("difficulty") ? b.find("difficulty")->as_int(1) : 1;
-            game_new(nat, diff); g_history.clear(); history_snapshot();
+            const bool rnd = b.find("random") && b.find("random")->as_int(0);
+            auto p3 = [&](const char* k) { const forge::JsonValue* v = b.find(k);
+                int n = v ? v->as_int(1) : 1; return n < 0 ? 0 : n > 2 ? 2 : n; };
+            game_new(nat, diff, rnd, p3("land"), p3("landform"),
+                     p3("temperature"), p3("climate"));
+            g_history.clear(); history_snapshot();
             return J(200, game_state_json());
         }
         if (path == "/api/turn" && method != "POST") {   // read the turn pipeline (turn.json)

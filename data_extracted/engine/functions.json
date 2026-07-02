@@ -871,6 +871,29 @@
       "name": "Computer players - per-unit order/move engine",
       "source": "sim/ai.cpp",
       "spec": "spec/systems/ai.md (func_04CC50 strategic pass, func_04E2D6 per-unit driver, func_046FFA heading scorer, func_063F3C site value -- 80 byte-verified findings)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "P0 all-Ocean fill (0x19 @0x64A4B) ; P1 blob-growth landmass: (p1+p2+1)*0x140 tiles by 8-dir random walks (@0x64AAD/@0x64B5A) ; P2 latitude climate bands -> base terrain via the inline jump tables N {5,4,1,3,2,2} S {2,3,3,4,6,7} (Marsh 50% roll @0x6500C) + hills/forest features ; P3 smoothing (unforested -> forested +8 folds) ; P4 rivers (feature-bit walks) ; P5 borders: polar rows Arctic 0x18 (@0x6582A) then the right TWO columns Sea Lane 0x1A (@0x65941/@0x65975) ; P6 starts: y = (H/5)*(p+1) bands, x walked inland from the east sea lane (@0x65C9C)",
+          "fn": "generate_map",
+          "knobs": [],
+          "note": "Defaults 58x72 (@0x75702/@0x75708). The Customize menu's 4 parameters are 3-way enums (@CLAND/@CCONT/@CTEMP/@CCLIM, func_070060). Feature DENSITIES inside P2/P4 are RECONSTRUCTED; the pass structure, climate tables, seed counts, borders, and start bands are byte-cited.",
+          "title": "func_064A10 pass structure",
+          "writes": []
+        },
+        {
+          "expr": "per power: Caravel 0x0D (@0x07584B; Dutch power 3 -> Merchantman 0x0E @0x075875) + Pioneers (French power 1: class 0x14 @0x0758B5) + Soldiers (Spanish power 2: class 0x15 @0x0758F5) at the P6 anchorage ; difficulty <= 1: the human places TWICE (double starting units, @0x075961)",
+          "fn": "opening loadout",
+          "knobs": [],
+          "note": "Applied on random-map games; scenario games keep their authored seeds.",
+          "title": "Starting units per power (func_0755CC)",
+          "writes": []
+        }
+      ],
+      "name": "Map generation - the random new-world builder",
+      "source": "sim/mapgen.cpp",
+      "spec": "spec/systems/map_generation.md (func_064A10 BYTE-VERIFIED control flow, P0..P6)"
     }
   ]
 }

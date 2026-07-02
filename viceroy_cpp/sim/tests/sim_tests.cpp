@@ -614,6 +614,35 @@ static void test_mapgen() {
     CHECK(climate_base_terrain(0, false) == 5, "north band0 -> Savannah(5)");
     CHECK(climate_base_terrain(3, true) == 4, "south band3 -> Grassland(4)");
     CHECK(climate_base_terrain(2, false) == 1, "north band2 -> Desert(1)");
+    // the full generator (func_064A10 P0..P6) with a deterministic LCG
+    World w; MapGenParams p; MapStart st[4];
+    unsigned seed = 12345;
+    RandFn lcg = [&](int lo, int hi) {
+        seed = seed * 1103515245u + 12345u;
+        return lo + (int)((seed >> 16) % (unsigned)(hi - lo + 1));
+    };
+    generate_map(w, p, lcg, st);
+    CHECK(w.map_w == 58 && w.map_h == 72, "generated at the default dims");
+    bool borders = true;
+    for (int y = 0; y < w.map_h; ++y)
+        if (w.terrain_id(57, y) != 26 || w.terrain_id(56, y) != 26) borders = false;
+    for (int x = 0; x < w.map_w - 2; ++x)   // the two sea-lane corners stay 26
+        if (w.terrain_id(x, 0) != 24 || w.terrain_id(x, 71) != 24) borders = false;
+    CHECK(borders, "P5: right two columns Sea Lane, polar rows Arctic");
+    int land = 0, bad = 0;
+    for (int y = 0; y < 72; ++y) for (int x = 0; x < 58; ++x) {
+        const int t = w.terrain_id(x, y);
+        if (t < 0 || t >= NTERRAIN) ++bad;
+        else if (t != 24 && t != 25 && t != 26) ++land;
+    }
+    CHECK(bad == 0, "every tile id is valid (0..28)");
+    CHECK(land > 400, "the landmass grew (P1 blob growth)");
+    bool starts_ok = true;
+    for (int pw = 0; pw < 4; ++pw) {
+        if (st[pw].y != (72 / 5) * (pw + 1)) starts_ok = false;   // the P6 bands
+        if (st[pw].x < 1 || st[pw].x >= 57) starts_ok = false;
+    }
+    CHECK(starts_ok, "P6: starts on the (H/5)*(p+1) latitude bands");
 }
 
 // spec/systems/training.md 3: school teaching (func_02D658). Tier gate by school level,

@@ -38,6 +38,7 @@ add_library(viceroy_sim STATIC
   sim/events.cpp
   sim/trade_routes.cpp
   sim/ai.cpp
+  sim/mapgen.cpp
 )
 target_include_directories(viceroy_sim PUBLIC sim)
 
