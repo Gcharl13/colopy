@@ -22,6 +22,7 @@
 #include "../training.hpp"
 #include "../explore.hpp"
 #include "../events.hpp"
+#include "../trade_routes.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -787,6 +788,73 @@ static void test_lost_city_rumors() {
     }
 }
 
+// trade_routes.md: per-turn automation (func_041080), cargo primitives
+// (func_00B880/func_00B8D0), the Europe leg on the market path.
+static void test_trade_routes() {
+    std::printf("trade routes:\n");
+    const RuleData& rd = default_rules();
+    RandFn rng = [](int lo, int) { return lo; };
+    { // land ferry: wagon loads Lumber at colony A, carts it to B, unloads, loops
+      GameState g; World w; w.map_w = 6; w.map_h = 1;
+      for (int i = 0; i < 6; ++i) w.terrain.push_back(4);   // plains strip
+      Colony a; a.x = 0; a.y = 0; a.stockpile[LUMBER] = 120; w.colonies.push_back(a);
+      Colony b; b.x = 4; b.y = 0; w.colonies.push_back(b);
+      TradeRoute r; r.name = "Run"; r.type = 1;             // @TRADENAMES preset; land
+      TradeStop s0; s0.dest = 0; s0.load = {LUMBER};
+      TradeStop s1; s1.dest = 1; s1.unload = {LUMBER};
+      r.stops.push_back(s0); r.stops.push_back(s1);
+      g.routes.push_back(r);
+      Unit wag; wag.type = WAGON_TRAIN; wag.x = 0; wag.y = 0;
+      wag.order = ORDER_TRADE_ROUTE; wag.route = 0; wag.route_stop = 0;
+      w.units.push_back(wag);
+      refresh_moves(w, rd); apply_orders(g, w, rng, rd);    // at A: load, retarget, move
+      CHECK(w.units[0].hold_good[0] == LUMBER && w.units[0].hold_qty[0] == 100,
+            "loaded one full hold (func_00B880 cap 100)");
+      CHECK(w.colonies[0].stockpile[LUMBER] == 20, "colony store debited (sub @0xB8A5)");
+      CHECK(w.units[0].route_stop == 1 && w.units[0].target_x == 4,
+            "stop cursor advanced; GoTo cache -> colony B");
+      int guard = 0;                                        // ferry until B receives it
+      while (w.colonies[1].stockpile[LUMBER] == 0 && guard++ < 10) {
+          refresh_moves(w, rd); apply_orders(g, w, rng, rd);
+      }
+      CHECK(w.colonies[1].stockpile[LUMBER] == 100 && w.units[0].hold_good[0] == -1,
+            "unloaded at B (add @0xB8F5)");
+      CHECK(w.units[0].route_stop == 0 && w.units[0].target_x == 0,
+            "route loops back to stop A");
+      CHECK(w.units[0].order == ORDER_TRADE_ROUTE, "the trade-route order persists");
+    }
+    { // Europe leg (dest 0x3E7): sale rides the market path -- net gold, tax to
+      // the King's REF fund, volume on the trade accumulator (market.md 3.1)
+      GameState g; World w; w.map_w = 3; w.map_h = 1;
+      w.terrain.push_back(25); w.terrain.push_back(25); w.terrain.push_back(26);
+      g.powers[0].price_level[SUGAR] = 5; g.powers[0].tax = 10;
+      TradeRoute r; r.type = 0;
+      TradeStop s; s.dest = ROUTE_DEST_EUROPE; s.unload.push_back(SUGAR);
+      r.stops.push_back(s);
+      g.routes.push_back(r);
+      Unit sh; sh.type = GALLEON; sh.x = 2; sh.y = 0;       // already on the Sea Lane
+      sh.order = ORDER_TRADE_ROUTE; sh.route = 0;
+      sh.hold_good[0] = SUGAR; sh.hold_qty[0] = 100;
+      w.units.push_back(sh);
+      refresh_moves(w, rd); apply_orders(g, w, rng, rd);
+      // bid = max(level-1,0) = 4; gross 400, 10% tax -> net 360, King +40
+      CHECK(g.powers[0].gold == 360 && g.powers[0].royal_money == 40,
+            "Europe sale: net gold + tax to the REF fund (king.md:92)");
+      CHECK(g.powers[0].trade[SUGAR] == 100, "volume rides the +0xFC accumulator");
+      CHECK(w.units[0].hold_good[0] == -1, "hold emptied");
+    }
+    { // broken route binding clears the order (func_041080 @0x041089)
+      GameState g; World w; w.map_w = 2; w.map_h = 1;
+      w.terrain.push_back(4); w.terrain.push_back(4);
+      Unit wag; wag.type = WAGON_TRAIN; wag.x = 0; wag.y = 0;
+      wag.order = ORDER_TRADE_ROUTE; wag.route = 3;         // no such route
+      w.units.push_back(wag);
+      refresh_moves(w, rd); apply_orders(g, w, rng, rd);
+      CHECK(w.units[0].order == ORDER_NONE && w.units[0].route == -1,
+            "invalid binding clears the order");
+    }
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -818,6 +886,7 @@ int main() {
     test_terrain_improvement();
     test_fog_of_war();
     test_lost_city_rumors();
+    test_trade_routes();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

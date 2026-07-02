@@ -1384,9 +1384,41 @@ static forge::JsonValue game_state_json() {
         uj.obj["profession"] = forge::json_num(u.profession);
         uj.obj["tools"] = forge::json_num(u.tools);
         uj.obj["work"] = forge::json_num(u.work);
+        uj.obj["cargo_cap"] = forge::json_num(unit_stats(u.type).cargo);
+        uj.obj["route"] = forge::json_num(u.route);
+        uj.obj["route_stop"] = forge::json_num(u.route_stop);
+        forge::JsonValue cg = jarr();               // occupied holds: [good, qty]
+        for (int h = 0; h < 6; ++h)
+            if (u.hold_good[h] >= 0) {
+                forge::JsonValue pr = jarr();
+                pr.arr.push_back(forge::json_num(u.hold_good[h]));
+                pr.arr.push_back(forge::json_num(u.hold_qty[h]));
+                cg.arr.push_back(pr);
+            }
+        uj.obj["cargo"] = cg;
         us.arr.push_back(uj);
     }
     o.obj["units"] = us;
+    // Trade-route table (trade_routes.md 2: seg 0x1B22, max 12 x 4 stops).
+    forge::JsonValue rts = jarr();
+    for (const TradeRoute& r : g_game.routes) {
+        forge::JsonValue ro = jobj();
+        ro.obj["name"] = forge::json_str(r.name);
+        ro.obj["type"] = forge::json_num(r.type);
+        forge::JsonValue sts = jarr();
+        for (const TradeStop& st : r.stops) {
+            forge::JsonValue so = jobj();
+            so.obj["dest"] = forge::json_num(st.dest);
+            forge::JsonValue ld = jarr(), ul = jarr();
+            for (int gg : st.load)   ld.arr.push_back(forge::json_num(gg));
+            for (int gg : st.unload) ul.arr.push_back(forge::json_num(gg));
+            so.obj["load"] = ld; so.obj["unload"] = ul;
+            sts.arr.push_back(so);
+        }
+        ro.obj["stops"] = sts;
+        rts.arr.push_back(ro);
+    }
+    o.obj["routes"] = rts;
     return o;
 }
 
@@ -2498,8 +2530,23 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 else if (o == "R") u.order = ORDER_ROAD;
                 else if (o == "F") u.order = ORDER_FORTIFY;
                 else if (o == "S") u.order = ORDER_SENTRY;
-                else if (o == "-") u.order = ORDER_NONE;
-                else return err(400, "unknown order (use P/R/F/S/-)");
+                else if (o == "-") { u.order = ORDER_NONE; u.route = -1; }
+                else if (o == "T") {
+                    // @ORDERS row 2 "Trade Route, T" (order byte 2 @0x22E05):
+                    // needs a cargo carrier and a valid route of the matching kind.
+                    if (unit_stats(u.type).cargo <= 0)
+                        return err(400, "unit has no cargo holds");
+                    int ri = b.find("route") ? b.find("route")->as_int(-1) : -1;
+                    if (ri < 0 || ri >= (int)g_game.routes.size())
+                        return err(400, "need a valid {route}");
+                    const bool naval = unit_stats(u.type).move_class == 99;
+                    if (g_game.routes[ri].type == 0 ? !naval : naval)
+                        return err(400, g_game.routes[ri].type == 0
+                                        ? "a sea route needs a ship"
+                                        : "a land route needs a wagon train");
+                    u.order = ORDER_TRADE_ROUTE; u.route = ri; u.route_stop = 0;
+                }
+                else return err(400, "unknown order (use P/R/F/S/T/-)");
                 u.work = 0;                                   // fresh improvement start
                 return J(200, game_state_json());
             }
@@ -2531,6 +2578,55 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             g_world.colonies.push_back(c);
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
+            return J(200, game_state_json());
+        }
+        // Trade-route editor (trade_routes.md 4): create func_0610B0 (12-route cap
+        // @0x610B5 -> @TRADEMANY; name uniqueness @0x611FF), delete func_0612E6.
+        if (path == "/api/route/create" && method == "POST") {
+            if ((int)g_game.routes.size() >= MAX_TRADE_ROUTES)
+                return err(400, "Only 12 trade routes can be defined");   // @TRADEMANY
+            forge::JsonValue b = forge::json_parse(body);
+            TradeRoute r;
+            if (const forge::JsonValue* nm = b.find("name"); nm && nm->is_string())
+                r.name = nm->str.substr(0, 31);                           // 32 B name field
+            if (r.name.empty()) return err(400, "need {name}");
+            for (const TradeRoute& ex : g_game.routes)
+                if (ex.name == r.name) return err(400, "route name already in use");
+            r.type = b.find("type") ? b.find("type")->as_int(0) : 0;
+            if (const forge::JsonValue* sts = b.find("stops"))
+                for (const forge::JsonValue& so : sts->arr) {
+                    if ((int)r.stops.size() >= MAX_ROUTE_STOPS) break;    // 4-stop cap
+                    TradeStop st;
+                    st.dest = so.find("dest") ? so.find("dest")->as_int(ROUTE_DEST_NONE)
+                                              : ROUTE_DEST_NONE;
+                    if (st.dest != ROUTE_DEST_EUROPE && st.dest != ROUTE_DEST_NONE &&
+                        (st.dest < 0 || st.dest >= (int)g_world.colonies.size()))
+                        return err(400, "bad stop destination");
+                    auto lane = [&](const char* key, std::vector<int>& out) {
+                        if (const forge::JsonValue* l = so.find(key))
+                            for (const forge::JsonValue& v : l->arr) {
+                                int gg = v.as_int(-1);
+                                if (gg >= 0 && gg < NGOODS &&
+                                    (int)out.size() < MAX_LANE_GOODS) out.push_back(gg);
+                            }
+                    };
+                    lane("load", st.load); lane("unload", st.unload);
+                    r.stops.push_back(st);
+                }
+            g_game.routes.push_back(r);
+            return J(200, game_state_json());
+        }
+        if (path == "/api/route/delete" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ri = b.find("route") ? b.find("route")->as_int(-1) : -1;
+            if (ri < 0 || ri >= (int)g_game.routes.size()) return err(400, "bad route");
+            g_game.routes.erase(g_game.routes.begin() + ri);
+            // Rebind carriers (the EXE shifts records @0x605DB; higher indices slide down).
+            for (Unit& u : g_world.units) {
+                if (u.route == ri) { u.route = -1; u.route_stop = 0;
+                                     if (u.order == ORDER_TRADE_ROUTE) u.order = ORDER_NONE; }
+                else if (u.route > ri) --u.route;
+            }
             return J(200, game_state_json());
         }
 

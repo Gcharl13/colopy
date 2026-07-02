@@ -3,6 +3,7 @@
 #include "combat.hpp"
 #include "explore.hpp"
 #include "events.hpp"
+#include "trade_routes.hpp"
 
 #include <climits>
 #include <cstdlib>
@@ -14,6 +15,13 @@ namespace vc::sim {
 namespace {
 int sgn(int v) { return (v > 0) - (v < 0); }
 bool is_water_id(int tid) { return tid == 25 || tid == 26; }   // Ocean / Sea Lane
+// A colony occupies (x,y): ships may dock there (a coastal colony is a port; the
+// war/no-contact gate of @TRADEATWAR needs a diplomacy state that isn't modeled).
+bool colony_tile(const World& w, int x, int y) {
+    for (const Colony& c : w.colonies)
+        if (c.x == x && c.y == y) return true;
+    return false;
+}
 }
 
 std::pair<int, int> find_step(const World& w, const RuleData& rd,
@@ -21,6 +29,7 @@ std::pair<int, int> find_step(const World& w, const RuleData& rd,
     if (w.terrain.empty() || w.map_w <= 0 || w.map_h <= 0) return {-1, -1};
     auto passable = [&](int x, int y) {
         if (x < 0 || x >= w.map_w || y < 0 || y >= w.map_h) return false;
+        if (naval && colony_tile(w, x, y)) return true;        // ships dock at colonies
         return naval == is_water_id(w.terrain_id(x, y));
     };
     if (!passable(tx, ty)) return {-1, -1};
@@ -174,7 +183,10 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
         Unit& u = w.units[i];
         if (!u.alive) continue;
         if (u.order == ORDER_CLEAR_PLOW || u.order == ORDER_ROAD) { do_improve(w, u, rd); continue; }
-        if (u.order != ORDER_GOTO) continue;
+        // Trade-route automation (func_041080): resolve arrival/load/unload and
+        // (re)write the GoTo target, then fall through to the shared move loop.
+        if (u.order == ORDER_TRADE_ROUTE) trade_route_step(g, w, i, rd);
+        if (u.order != ORDER_GOTO && u.order != ORDER_TRADE_ROUTE) continue;
         const bool naval = unit_stats(rd, u.type).move_class == 99;
 
         while (u.alive && u.moves_left > 0 && (u.x != u.target_x || u.y != u.target_y)) {
@@ -186,7 +198,9 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
                              !(w.map_h > 0 && (ny < 0 || ny >= w.map_h));
             if (greedy_ok) {
                 int tid = w.terrain_id(nx, ny);
-                if (tid >= 0 && naval != (tid == 25 || tid == 26)) greedy_ok = false;
+                if (tid >= 0 && naval != (tid == 25 || tid == 26) &&
+                    !(naval && colony_tile(w, nx, ny)))          // ships dock at colonies
+                    greedy_ok = false;
             }
             if (!greedy_ok) {
                 // Straight path blocked by impassable terrain -> route around it.
@@ -219,8 +233,9 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
             u.moves_left = (u.moves_left > cost) ? (u.moves_left - cost) : 0;
             if (rumor_here(i)) break;                               // rumor resolved: move ends
         }
-        if (u.alive && u.x == u.target_x && u.y == u.target_y)
-            u.order = ORDER_NONE;                                   // arrived
+        if (u.alive && u.order == ORDER_GOTO && u.x == u.target_x && u.y == u.target_y)
+            u.order = ORDER_NONE;      // arrived (a trade route persists; its arrival
+                                       // is processed by next turn's automation pass)
     }
 }
 

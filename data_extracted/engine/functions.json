@@ -1,742 +1,765 @@
 {
- "_note": "The sim's functions and their I/O. `knobs` = the editable cfg inputs a formula READS; `writes` = the schema columns it mutates. `reverse_index` inverts it: for each state column, which functions update it (the 'how it's updated' map).",
- "reverse_index": {
-  "colony<N>.build_bank": [
-   "build_step",
-   "step_turn"
-  ],
-  "colony<N>.build_target": [
-   "build_step"
-  ],
-  "colony<N>.built.<id>": [
-   "build_step"
-  ],
-  "colony<N>.population": [
-   "colony_economic_step (growth)",
-   "step_turn"
-  ],
-  "colony<N>.sol": [
-   "sol_update (divisor B)",
-   "sol_update (dividend A)",
-   "colony_economic_step (growth)",
-   "step_turn"
-  ],
-  "game.season": [
-   "step_turn",
-   "advance_cadence"
-  ],
-  "game.turn": [
-   "step_turn",
-   "advance_cadence"
-  ],
-  "game.year": [
-   "step_turn",
-   "advance_cadence"
-  ],
-  "market.price.<good>": [
-   "price_drift",
-   "step_turn"
-  ],
-  "natives.tension": [
-   "apply_tension"
-  ],
-  "power<N>.crosses": [
-   "immigration_step",
-   "step_turn"
-  ],
-  "power<N>.royal_money": [
-   "ref_accrue_rate",
-   "ref_purchase",
-   "step_turn"
-  ],
-  "ref.artillery": [
-   "ref_start",
-   "ref_purchase"
-  ],
-  "ref.cavalry": [
-   "ref_start",
-   "ref_purchase"
-  ],
-  "ref.manowar": [
-   "ref_start",
-   "ref_purchase"
-  ],
-  "ref.regulars": [
-   "ref_start",
-   "ref_purchase",
-   "step_turn"
-  ],
-  "unit<N>.alive": [
-   "demote",
-   "step_turn",
-   "apply_orders (GOTO)",
-   "do_combat"
-  ],
-  "unit<N>.movement": [
-   "refresh_moves"
-  ],
-  "unit<N>.type": [
-   "demote",
-   "apply_orders (GOTO)",
-   "do_combat"
-  ],
-  "unit<N>.x": [
-   "step_turn",
-   "apply_orders (GOTO)"
-  ],
-  "unit<N>.y": [
-   "step_turn",
-   "apply_orders (GOTO)"
-  ],
-  "war.<a>.<b>": [
-   "declare_war / make_peace / sign_treaty"
+  "_note": "The sim's functions and their I/O. `knobs` = the editable cfg inputs a formula READS; `writes` = the schema columns it mutates. `reverse_index` inverts it: for each state column, which functions update it (the 'how it's updated' map).",
+  "reverse_index": {
+    "colony<N>.build_bank": [
+      "build_step",
+      "step_turn"
+    ],
+    "colony<N>.build_target": [
+      "build_step"
+    ],
+    "colony<N>.built.<id>": [
+      "build_step"
+    ],
+    "colony<N>.population": [
+      "colony_economic_step (growth)",
+      "step_turn"
+    ],
+    "colony<N>.sol": [
+      "sol_update (divisor B)",
+      "sol_update (dividend A)",
+      "colony_economic_step (growth)",
+      "step_turn"
+    ],
+    "game.season": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "game.turn": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "game.year": [
+      "step_turn",
+      "advance_cadence"
+    ],
+    "market.price.<good>": [
+      "price_drift",
+      "step_turn"
+    ],
+    "natives.tension": [
+      "apply_tension"
+    ],
+    "power<N>.crosses": [
+      "immigration_step",
+      "step_turn"
+    ],
+    "power<N>.royal_money": [
+      "ref_accrue_rate",
+      "ref_purchase",
+      "step_turn"
+    ],
+    "ref.artillery": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.cavalry": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.manowar": [
+      "ref_start",
+      "ref_purchase"
+    ],
+    "ref.regulars": [
+      "ref_start",
+      "ref_purchase",
+      "step_turn"
+    ],
+    "unit<N>.alive": [
+      "demote",
+      "step_turn",
+      "apply_orders (GOTO)",
+      "do_combat"
+    ],
+    "unit<N>.movement": [
+      "refresh_moves"
+    ],
+    "unit<N>.type": [
+      "demote",
+      "apply_orders (GOTO)",
+      "do_combat"
+    ],
+    "unit<N>.x": [
+      "step_turn",
+      "apply_orders (GOTO)"
+    ],
+    "unit<N>.y": [
+      "step_turn",
+      "apply_orders (GOTO)"
+    ],
+    "war.<a>.<b>": [
+      "declare_war / make_peace / sign_treaty"
+    ]
+  },
+  "systems": [
+    {
+      "formulas": [
+        {
+          "expr": "cap = (warehouse_lvl + 1) * warehouse_cap_base",
+          "fn": "warehouse_cap",
+          "knobs": [
+            "warehouse_cap_base"
+          ],
+          "note": "Per-good storage cap; production over the cap spoils.",
+          "title": "Warehouse capacity per good",
+          "writes": []
+        },
+        {
+          "expr": "sol% = clamp( rebel_A * 100 / rebel_B , 0 .. 100 )   ; 0 when rebel_B <= 0",
+          "fn": "sol_pct",
+          "knobs": [],
+          "note": "Rebel sentiment as a percent of accumulated bell support (A=dividend, B=divisor).",
+          "title": "Sons-of-Liberty percentage",
+          "writes": []
+        },
+        {
+          "expr": "B -= B >> sol_decay_shift   (floor 1) ; then  B += sol_inflow_mult * population",
+          "fn": "sol_update (divisor B)",
+          "knobs": [
+            "sol_decay_shift",
+            "sol_inflow_mult"
+          ],
+          "note": "1/64 exponential decay (shift 6) plus a per-colonist inflow each turn.",
+          "title": "SoL membership divisor",
+          "writes": [
+            "colony<N>.sol"
+          ]
+        },
+        {
+          "expr": "A += bells_this_turn - (A >> sol_decay_shift) ; clamp A to [0, B]",
+          "fn": "sol_update (dividend A)",
+          "knobs": [
+            "sol_decay_shift"
+          ],
+          "note": "Bells raise rebel sentiment; the same 1/64 decay pulls it back down.",
+          "title": "SoL bell accumulator",
+          "writes": [
+            "colony<N>.sol"
+          ]
+        },
+        {
+          "expr": "tory = (population*(100-sol%) + 50)/100 ; div = human ? (tory_divisor_base - difficulty) : tory_divisor_base  (floor 1) ; y -= tory/div ; if expert: era-good y += expert_era_bonus else y *= expert_mfg_mult ; y = max(y,0)",
+          "fn": "tory_expert_adjust",
+          "knobs": [
+            "tory_divisor_base",
+            "expert_era_bonus",
+            "expert_mfg_mult"
+          ],
+          "note": "Loyalists (Tories) cut output; experts add a flat era bonus or multiply manufactured goods.",
+          "title": "Tory penalty + expert bonus on a tile yield",
+          "writes": []
+        },
+        {
+          "expr": "food_accum += food_per_turn ; if food_accum >= food_growth_threshold and population < max_population: population += 1 ; food_accum -= food_growth_threshold ; rebel_B += sol_birth_bonus",
+          "fn": "colony_economic_step (growth)",
+          "knobs": [
+            "food_growth_threshold",
+            "max_population",
+            "sol_birth_bonus"
+          ],
+          "note": "A new colonist is born once stored food crosses the threshold; surplus carries over.",
+          "title": "Population growth on stored food",
+          "writes": [
+            "colony<N>.population",
+            "colony<N>.sol"
+          ]
+        },
+        {
+          "expr": "accumulate hammers into hammers_accum and build_bank ; when build_cost <= both, build_bank -= build_cost and the building/unit completes (surplus carried)",
+          "fn": "build_step",
+          "knobs": [],
+          "note": "build_cost is per-building/unit data (@BUILDING/@UNIT), not a global knob.",
+          "title": "Construction from hammers",
+          "writes": [
+            "colony<N>.build_bank",
+            "colony<N>.built.<id>",
+            "colony<N>.build_target"
+          ]
+        }
+      ],
+      "name": "Economy - Sons of Liberty, tax, growth, building",
+      "source": "sim/economy.cpp",
+      "spec": "spec/systems/colony.md + spec/systems/warehousing.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "supply[g] = price_base[g] + SUM over 4 powers of max(trade[p][g], 0)",
+          "fn": "market_supply",
+          "knobs": [],
+          "note": "price_base is the hidden supply accumulator (seeded rng 600..1000 per market.md); trade (+0xFC) is this turn's net volume: SELL adds, BUY subtracts. What you sell builds the visible supply; what you buy draws it down.",
+          "title": "Hidden supply per good",
+          "writes": []
+        },
+        {
+          "expr": "S_pair = clamp( supply[Rum]+supply[Cigars]+supply[Cloth]+supply[Coats], >=1 ) ; level[g] = clamp( S_pair*3 / supply[g], @CARGO.drift_low .. drift_high )   for g in {Sugar..Furs, Rum..Coats}",
+          "fn": "market_recompute (pool)",
+          "knobs": [],
+          "note": "One shared pool couples the four finished goods and their raws: dumping Rum raises Cigars/Cloth/Coats. Furs supply is halved; +1 if year<1700 and +1 more if <1600 (attach point RECONSTRUCTED).",
+          "title": "Pool price level (finished goods + their raws)",
+          "writes": []
+        },
+        {
+          "expr": "bid = max(level - 1, 0) ; ask = bid + @CARGO.burden + 1",
+          "fn": "market_bid / market_ask",
+          "knobs": [],
+          "note": "USER RULING: the bid/ask spread is the per-good Burden column in NAMES.TXT @CARGO (Food 7, Sugar 1, finished goods 0 -> spread 1).",
+          "title": "Published prices",
+          "writes": []
+        },
+        {
+          "expr": "gross = bid*qty ; tax_cut = gross*tax%/100 ; gold += gross - tax_cut ; royal_money += tax_cut ; trade[g] += qty ; recompute",
+          "fn": "market_sell",
+          "knobs": [],
+          "note": "The tax cut funds the King's REF treasury (king.md:92 -- taxes pay for the Royal Expeditionary Force). Gold clamps to 0..999999.",
+          "title": "Sell to Europe (taxed)",
+          "writes": []
+        },
+        {
+          "expr": "gold -= ask*qty ; trade[g] -= qty ; recompute",
+          "fn": "market_buy",
+          "knobs": [],
+          "note": "Buying is untaxed and collapses the hidden supply, pushing the price back up.",
+          "title": "Buy from Europe (untaxed)",
+          "writes": []
+        },
+        {
+          "expr": "price_drift ; market_recompute ; zero trade[] for all powers",
+          "fn": "market_turn",
+          "knobs": [
+            "price_drift_shift"
+          ],
+          "note": "Drift then republish then reset the per-turn volume (the zero order is RECONSTRUCTED).",
+          "title": "Per-turn market phase",
+          "writes": []
+        },
+        {
+          "expr": "for each good: acc = price_base + SUM over 4 powers of max(trade,0) ; price_base -= acc >> price_drift_shift",
+          "fn": "price_drift",
+          "knobs": [
+            "price_drift_shift"
+          ],
+          "note": "Selling pushes a good's hidden supply (and so its price) down proportionally (>>8 = /256 each turn); buys (negative volume) are ignored by the drift.",
+          "title": "Per-good supply decay from net sales",
+          "writes": [
+            "market.price.<good>"
+          ]
+        },
+        {
+          "expr": "on sell: level -= 1 ; on buy: level += 1 ; clamp to @CARGO.drift_low .. drift_high",
+          "fn": "non-pool stepper",
+          "knobs": [],
+          "note": "Goods outside the pool (Food, Silver, Horses, Trade Goods, Tools, Muskets) move by +/-1 steppers per transaction (steppers byte-cited; the exact driver is RECONSTRUCTED).",
+          "title": "Non-pool goods price movement",
+          "writes": []
+        }
+      ],
+      "name": "Market - the European commodity market (hidden supply, pool pricing, tax)",
+      "source": "sim/market.cpp",
+      "spec": "spec/systems/market.md (+ spec/ui/europe_screen.md RULING: ask = bid + @CARGO.burden + 1)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "P(attacker wins) = atk_str / (atk_str + def_str)   ; 0 when total is 0",
+          "fn": "combat_odds",
+          "knobs": [],
+          "note": "Pure ATK/(ATK+DEF) odds -- the classic Colonization combat model.",
+          "title": "Probability the attacker wins",
+          "writes": []
+        },
+        {
+          "expr": "atk = unit.attack (+difficulty_bonus if human attacker) ; def = unit.defense + terrain_defense + fort_bonus (+difficulty_bonus if human defender) ; clamp both >= 0 ; if fortified: def = def * fortify_def_num / fortify_def_den",
+          "fn": "resolve_land (strengths)",
+          "knobs": [
+            "fortify_def_num",
+            "fortify_def_den",
+            "terrain_defense"
+          ],
+          "note": "Terrain defense comes from the editable terrain_defense table; fortify adds +50% (3/2).",
+          "title": "Attack/defense strength build-up",
+          "writes": []
+        },
+        {
+          "expr": "roll = rng(1, atk_str + def_str) ; attacker_won = (roll <= atk_str)",
+          "fn": "resolve_land (roll)",
+          "knobs": [],
+          "note": "A single uniform roll over the combined strength decides the fight.",
+          "title": "The combat die",
+          "writes": []
+        },
+        {
+          "expr": "Soldiers->Colonists ; Dragoons->Soldiers ; Cont.Cavalry->Cont.Army ; Cavalry->Regulars ; Cont.Army->Colonists ; (Missionary loser of a ->Colonists step becomes Missionaries) ; anything else -> destroyed",
+          "fn": "demote",
+          "knobs": [],
+          "note": "Fixed structural ladder (unit type ids) -- a code wall, not data.",
+          "title": "Loser demotion ladder",
+          "writes": [
+            "unit<N>.type",
+            "unit<N>.alive"
+          ]
+        },
+        {
+          "expr": "capturable = loser is Colonists, Treasure, or Wagon Train  (taken intact by the winner)",
+          "fn": "is_capturable",
+          "knobs": [],
+          "note": "Fixed structural set -- a code wall, not data.",
+          "title": "Units that change hands instead of dying",
+          "writes": []
+        },
+        {
+          "expr": "with George Washington (FF 11): automatic ; else promote iff random_int(1, S) <= winner_strength  (P = winner_strength / S) ; non-veteran soldier-line -> Veteran stamp (0x15) ; veteran at the ceiling: Soldiers(1) -> Continental Army(9), Dragoons(4) -> Continental Cavalry(7)",
+          "fn": "promote_on_win",
+          "knobs": [],
+          "note": "@0x5C758 Washington gate, @0x5C764 roll, @0x5C7C3/@0x5C7CE type advance, @0x5C7DD class write. The losing side runs the existing demotion ladder (func_05B2C2).",
+          "title": "Veteran promotion on a combat win",
+          "writes": []
+        }
+      ],
+      "name": "Combat - land resolution, demotion, capture",
+      "source": "sim/combat.cpp",
+      "spec": "spec/systems/combat.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "regulars  = ref_regulars_scale*d  + ref_regulars_offset ; cavalry   = ref_cavalry_scale*d   + ref_cavalry_offset ; manowar   = ref_manowar_scale*d   + ref_manowar_offset ; artillery = ref_artillery_scale*d + ref_artillery_offset",
+          "fn": "ref_start",
+          "knobs": [
+            "ref_regulars_scale",
+            "ref_regulars_offset",
+            "ref_cavalry_scale",
+            "ref_cavalry_offset",
+            "ref_manowar_scale",
+            "ref_manowar_offset",
+            "ref_artillery_scale",
+            "ref_artillery_offset"
+          ],
+          "note": "The King's army at game start scales with the difficulty level.",
+          "title": "Starting REF size by difficulty d",
+          "writes": [
+            "ref.regulars",
+            "ref.cavalry",
+            "ref.manowar",
+            "ref.artillery"
+          ]
+        },
+        {
+          "expr": "rate = ref_accrue_scale*d + ref_accrue_offset ; then for each gate year in ref_accrue_gate_years with year >= gate: rate *= 2",
+          "fn": "ref_accrue_rate",
+          "knobs": [
+            "ref_accrue_scale",
+            "ref_accrue_offset",
+            "ref_accrue_gate_years"
+          ],
+          "note": "The King saves faster as the game advances (doubles at each gate year).",
+          "title": "Royal treasury growth per turn",
+          "writes": [
+            "power<N>.royal_money"
+          ]
+        },
+        {
+          "expr": "while royal_money >= ref_unit_cost: if regulars+2 > ref_cavalry_ratio*cavalry -> +1 cavalry ; else if regulars > ref_artillery_ratio*artillery -> +1 artillery ; else if (regulars+cavalry+artillery+5) > ref_naval_ratio*manowar -> +1 man-o-war ; else +1 regular ; royal_money -= ref_unit_cost",
+          "fn": "ref_purchase",
+          "knobs": [
+            "ref_unit_cost",
+            "ref_cavalry_ratio",
+            "ref_artillery_ratio",
+            "ref_naval_ratio"
+          ],
+          "note": "Buys to keep target ratios of cavalry/artillery/ships to regulars.",
+          "title": "Spending the treasury on new REF units",
+          "writes": [
+            "ref.regulars",
+            "ref.cavalry",
+            "ref.manowar",
+            "ref.artillery",
+            "power<N>.royal_money"
+          ]
+        }
+      ],
+      "name": "REF / the King - the Royal Expeditionary Force",
+      "source": "sim/ref.cpp",
+      "spec": "spec/systems/king.md + spec/systems/ref_growth.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "post-independence: cost = difficulty*ff_post_indep_scale + ff_post_indep_offset ; otherwise base = human ? (difficulty+ff_human_offset)*ff_human_scale : (ff_ai_offset-difficulty)*ff_ai_scale ; for each gate in ff_gate_years with year>=gate: cost += cost >> ff_compounding_shift  (x1.5) ; cost = (ff_count+1)*cost + 1 ; if ff_count==0: cost >>= ff_first_father_shift  (half price)",
+          "fn": "ff_cost",
+          "knobs": [
+            "ff_post_indep_scale",
+            "ff_post_indep_offset",
+            "ff_human_offset",
+            "ff_human_scale",
+            "ff_ai_offset",
+            "ff_ai_scale",
+            "ff_gate_years",
+            "ff_compounding_shift",
+            "ff_first_father_shift"
+          ],
+          "note": "Each father costs more than the last; later eras compound it; the first is half price.",
+          "title": "Bells (or gold) to recruit the next father",
+          "writes": []
+        },
+        {
+          "expr": "band = (year < 1600) ? 0 : (year < 1700) ? 1 : 2",
+          "fn": "ff_era_band",
+          "knobs": [],
+          "note": "Fixed era cutoffs (code) used to weight which fathers appear.",
+          "title": "Era band for father weighting",
+          "writes": []
+        },
+        {
+          "expr": "offerable = any father not yet owned  (next pick is a weighted random over all un-owned)",
+          "fn": "ff_available",
+          "knobs": [],
+          "note": "Byte-verified: no intra-category ordering gate -- simply un-acquired.",
+          "title": "Which fathers may be offered",
+          "writes": []
+        }
+      ],
+      "name": "Founding Fathers - recruitment cost & availability",
+      "source": "sim/founding_fathers.cpp",
+      "spec": "spec/systems/founding_fathers.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "a = total_workers + unit_count ; if a < imm_threshold_cap: a = a*imm_sub4k_mult + imm_sub4k_offset ; cap a at imm_threshold_cap ; if AI: a = a*(imm_ai_scale - difficulty)/imm_ai_divisor ; if player 0 (England): a = a*imm_england_num/imm_england_den",
+          "fn": "crosses_threshold",
+          "knobs": [
+            "imm_threshold_cap",
+            "imm_sub4k_mult",
+            "imm_sub4k_offset",
+            "imm_ai_scale",
+            "imm_ai_divisor",
+            "imm_england_num",
+            "imm_england_den"
+          ],
+          "note": "More colonists raise the bar; England immigrates faster (x2/3).",
+          "title": "Crosses needed for the next immigrant",
+          "writes": []
+        },
+        {
+          "expr": "crosses_accum += crosses_gained ; if crosses_accum > threshold: spawn a Free Colonist at dock slot rng(0, imm_dock_slots-1) ; crosses_accum = 0",
+          "fn": "immigration_step",
+          "knobs": [
+            "imm_dock_slots"
+          ],
+          "note": "When accumulated crosses pass the threshold, a recruit appears in a random dock slot.",
+          "title": "Spawning an immigrant on the dock",
+          "writes": [
+            "power<N>.crosses"
+          ]
+        }
+      ],
+      "name": "Immigration - religious unrest & the docks",
+      "source": "sim/immigration.cpp",
+      "spec": "spec/systems/immigration.md (RULING: crosses drive the pool)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "1) production: every colony runs colony_economic_step ; 2) market: price_drift once ; 3) immigration: each of 4 powers, crosses = imm_base_crosses + SUM of its colonies' crosses_output ; 4) REF: human player's royal_money += accrue rate, then ref_purchase ; 5) units: refresh_moves then apply_orders (all owners) ; 6) advance_cadence",
+          "fn": "step_turn",
+          "knobs": [
+            "imm_base_crosses"
+          ],
+          "note": "Fixed phase sequence; only the base-crosses scalar is a knob.",
+          "title": "Order of operations each turn",
+          "writes": [
+            "game.turn",
+            "game.season",
+            "game.year",
+            "colony<N>.population",
+            "colony<N>.sol",
+            "colony<N>.build_bank",
+            "market.price.<good>",
+            "power<N>.crosses",
+            "power<N>.royal_money",
+            "ref.regulars",
+            "unit<N>.x",
+            "unit<N>.y",
+            "unit<N>.alive"
+          ]
+        },
+        {
+          "expr": "turn += 1 ; if year < 1600: year += 1  (1 turn = 1 year) ; else season = (season+1) mod 2, and year += 1 when season wraps to 0  (2 seasons/year)",
+          "fn": "advance_cadence",
+          "knobs": [],
+          "note": "Fixed calendar: yearly turns before 1600, two seasons per year after.",
+          "title": "Calendar advance",
+          "writes": [
+            "game.turn",
+            "game.season",
+            "game.year"
+          ]
+        }
+      ],
+      "name": "Turn loop - phase order & calendar",
+      "source": "sim/game.cpp, sim/turn.cpp",
+      "spec": "spec/systems/turn_dispatch.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "moves_left = unit.movement   (per unit type)",
+          "fn": "refresh_moves",
+          "knobs": [],
+          "note": "Movement allowance is per-unit data (@UNIT movement column).",
+          "title": "Move points restored each turn",
+          "writes": [
+            "unit<N>.movement"
+          ]
+        },
+        {
+          "expr": "greedy step = sign(target - pos) on each axis ; if that tile is off-map or wrong land/water -> find_step routes around it ; enemy occupant -> combat ; friendly -> blocked ; entering a tile costs terrain_move[id] (floor 1), but a unit always moves at least one tile",
+          "fn": "apply_orders (GOTO)",
+          "knobs": [
+            "terrain_move"
+          ],
+          "note": "Greedy stepping with Dijkstra fallback; entry cost comes from the editable terrain_move table.",
+          "title": "Executing a move order",
+          "writes": [
+            "unit<N>.x",
+            "unit<N>.y",
+            "unit<N>.alive",
+            "unit<N>.type"
+          ]
+        },
+        {
+          "expr": "Dijkstra over passable tiles (passable = naval flag matches Ocean/Sea-Lane), 8-connected, edge cost = terrain_move[id] ; returns the first step of the least-cost route, or none",
+          "fn": "find_step",
+          "knobs": [
+            "terrain_move"
+          ],
+          "note": "Routes a unit around coastlines/obstacles toward its target.",
+          "title": "Obstacle-routing pathfinder",
+          "writes": []
+        },
+        {
+          "expr": "attacker vs the occupant (defender fortified if its order is FORTIFY) ; loser is captured, destroyed, or demoted in place ; attacking sets attacker moves_left = 0",
+          "fn": "do_combat",
+          "knobs": [],
+          "note": "Wraps resolve_land for unit-vs-unit encounters during movement.",
+          "title": "Combat triggered by a move",
+          "writes": [
+            "unit<N>.alive",
+            "unit<N>.type"
+          ]
+        }
+      ],
+      "name": "Units & movement - orders, routing, terrain cost",
+      "source": "sim/unit_turn.cpp",
+      "spec": "spec/systems/unit.md + spec/systems/unit_orders.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "threshold = tribe_level + 2 ; if Jesuit: threshold *= 2 ; converts when rng(0..15) < threshold ; probability = threshold / 15",
+          "fn": "mission_threshold / converts / prob",
+          "knobs": [],
+          "note": "Code-side native formulas (literals; not in the cfg block).",
+          "title": "Mission conversion chance",
+          "writes": []
+        },
+        {
+          "expr": "if delta>0: halve if a French power, halve again if Pocahontas ; tension = clamp(tension + delta, 0 .. 100)",
+          "fn": "apply_tension",
+          "knobs": [],
+          "note": "French diplomacy and the Pocahontas father each soften provocations.",
+          "title": "Native tension update",
+          "writes": [
+            "natives.tension"
+          ]
+        },
+        {
+          "expr": "p = max(5*difficulty + 50, 2*tax_pct) ; cap p at 90",
+          "fn": "native_trade_price",
+          "knobs": [],
+          "note": "Code-side; rises with difficulty and your tax rate, capped at 90%.",
+          "title": "Native trade price percent",
+          "writes": []
+        },
+        {
+          "expr": "hi = min(3*settlement_wealth + 10, 100) ; gold = clamp(demand, 10 .. hi)",
+          "fn": "tribute_gold",
+          "knobs": [],
+          "note": "Code-side bounds on a tribute demand.",
+          "title": "Gold a native demand resolves to",
+          "writes": []
+        }
+      ],
+      "name": "Natives - missions, tension, trade, tribute",
+      "source": "sim/natives.cpp",
+      "spec": "spec/systems/natives.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "war/peace toggle the AT_WAR and WAR relation bits both ways ; sign_treaty sets the TREATY bit, makes peace, and sets a cooldown = treaty_cooldown(turn)",
+          "fn": "declare_war / make_peace / sign_treaty",
+          "knobs": [],
+          "note": "Bit-flag relationship bookkeeping between the 4 powers.",
+          "title": "Relationship state transitions",
+          "writes": [
+            "war.<a>.<b>"
+          ]
+        },
+        {
+          "expr": "restrained = (attitude >> 2 > demand_score) and (demand_score > 12) and (rng(0,4) != 0) ; the AI acts = not restrained",
+          "fn": "ai_acts",
+          "knobs": [],
+          "note": "Code-side nerve check: a calm, cautious AI sometimes backs down.",
+          "title": "Whether an AI follows through on a demand",
+          "writes": []
+        }
+      ],
+      "name": "Diplomacy - war/peace/treaty & AI nerve",
+      "source": "sim/diplomacy.cpp",
+      "spec": "spec/systems/diplomacy.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "level = University(0x0E)? 3 : College(0x0D)? 2 : Schoolhouse(0x0C)? 1 : 0",
+          "fn": "school_level",
+          "knobs": [],
+          "note": "Building bits 12/13/14 of the colony building bitmap. The level is both the tier cap (a level-L school teaches only @JOB tiers <= L) and the faculty cap.",
+          "title": "School level from buildings",
+          "writes": []
+        },
+        {
+          "expr": "per teacher (expert building-worker, tier <= level, faculty capped at min(level, cap)): random student.teach += 1 ; graduate at 4 / 6 / 8 turns by the profession's @JOB school tier ; graduate learns the teacher's profession as an expert (counter reset)",
+          "fn": "school_teach_step",
+          "knobs": [
+            "school_turns_t1",
+            "school_turns_t2",
+            "school_turns_t3",
+            "school_faculty_cap"
+          ],
+          "note": "Random student per @0x02DEC5; turns-to-graduate 4/6/8 @0x02DDB4/@0x02DE98/@0x02DE8E; tier >= 4 (Teacher, Colonist, dock classes) is not teachable. The EXE's criminal->servant->colonist promotion applies to dock classes this colony model does not carry -- the free-colonist learn-outright branch is the one modeled.",
+          "title": "Per-turn teaching + graduation",
+          "writes": []
+        },
+        {
+          "expr": "refused if criminal / already a master / village already taught ; else succeed iff random_int(1,1000) >= 200*difficulty + 100  (P = 90/70/50/30/10%) ; on success class = village skill, village latched",
+          "fn": "native_learn",
+          "knobs": [],
+          "note": "Learnable skills are the outdoors/gathering experts only (Farmer, the three Planters, Fur Trapper, Silver Miner, Fisherman, Scout); each village teaches once (+0x03 bit 0x02 latch @0x04A78A); grant site @0x04A782, roll @0x4A72C. Player command POST /api/native/learn; outcome text = the verbatim GAME.TXT @LEARN* record.",
+          "title": "Native learning (\"live among the Indians\")",
+          "writes": []
+        }
+      ],
+      "name": "Training - schools teach professions",
+      "source": "sim/training.cpp",
+      "spec": "spec/systems/training.md (func_02D658 @0x02DDB4..0x02E012, BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "work += 1 per held turn ; threshold = terrain_move[t] + (clear/plow ? 2 : 0) ; Hardy Pioneer (class 0x14): threshold >>= 1 ; complete at work >= threshold (counter resets, order clears)",
+          "fn": "do_improve (work/threshold)",
+          "knobs": [],
+          "note": "Counter +0x16 (@0x04071D/@0x040A46); +2 for clear/plow @0x040727, none for road @0x040A50; the halve is sar ax,1 @0x04074A/@0x040A59. The per-terrain basis is read as the terrain movement column (the stride-16 @TERRAIN row).",
+          "title": "Improvement work counter + completion",
+          "writes": []
+        },
+        {
+          "expr": "clear (forested): terrain id -= 8 (drops to the unforested base) + lumber to the adjacent own colony ; plow: improvement bit 0x40 ; road: improvement bit 0x08",
+          "fn": "do_improve (effects)",
+          "knobs": [
+            "clear_lumber_base"
+          ],
+          "note": "Tile writes @0x040896 / @0x04089F / @0x040AEC; the lumber grant (@0x04084D, the +0xA4 Lumber slot) uses a @TERRAIN column not decoded numerically -> cfg.clear_lumber_base (RECONSTRUCTED). Clearing changes future yields byte-faithfully: the tile becomes its unforested base and the production model reads the new id.",
+          "title": "Tile effects on completion",
+          "writes": []
+        },
+        {
+          "expr": "tools -= 20 per completed action ; if tools < 20: tools = 0 and the Pioneer reverts to a plain Colonist",
+          "fn": "do_improve (tools)",
+          "knobs": [
+            "improve_tool_cost"
+          ],
+          "note": "func_040608: sub 0x14 @0x4060F, the < 20 check @0x040614, reversion writes @0x04061D/@0x040621 (@USEDUPTOOLS). Tools live at UnitRecord +0x15, init 100.",
+          "title": "Tool debit + pioneer reversion",
+          "writes": []
+        }
+      ],
+      "name": "Terrain improvement - clear, plow, roads",
+      "source": "sim/unit_turn.cpp (do_improve)",
+      "spec": "spec/systems/terrain_improvement.md (func_040656 clear/plow, func_0409D6 road, func_040608 tools -- BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "Scout: 2 ; Galleon/Privateer/Frigate: 2 ; any naval with Hernando de Soto (FF 7): 2 ; else 1  (a (2R+1)x(2R+1) square)",
+          "fn": "sight_radius",
+          "knobs": [],
+          "note": "func_006608 selector; the de Soto boost is naval-ONLY in the EXE (@0x6647) -- a documented divergence from the manual's 'all units'. No terrain sight extension exists.",
+          "title": "Sight radius by unit type",
+          "writes": []
+        },
+        {
+          "expr": "each power owns fog bit 1 << (player+4) per tile ; units OR their sight square each turn/step ; colonies OR an 11x11 (+/-5) block ; bits never clear",
+          "fn": "reveal_step",
+          "knobs": [],
+          "note": "The visibility layer is separate from the .MP terrain byte (the EXE's 4th map layer); no shared exploration -- rivals are seen only inside your own revealed tiles. Colony reveal = func_0063B6.",
+          "title": "Sticky per-power reveal",
+          "writes": []
+        }
+      ],
+      "name": "Exploration - fog of war & sight",
+      "source": "sim/explore.cpp",
+      "spec": "spec/systems/exploration.md (fog encoding + func_006608 radii BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "n = random_int(1,9) used DIRECTLY as the @LOSTCITY<n> suffix ; scout level s = Scout(+1) + Seasoned 0x16(+1) + de Soto(+1) ; bad outcomes (5 vanish / 8 shrines) escape-reroll via random_int(1, s+1) ; de Soto forces positive",
+          "fn": "lost_city_rumor (outcome)",
+          "knobs": [],
+          "note": "No weight table -- the itoa-append @0x618D1 builds the key. Rumor PRESENCE is PROCEDURAL (func_006188, EXE-verified): ((x>>2)*0x13 + (y>>2)*0x11 + seed + 8) & 0x1F - (y&3)*4 == (x&3), seed = random_int(0,0x7fff) stored by the map generator (@0x64A23), gated on terrain (no Arctic/Ocean/Sea Lane) and a clean feature state; entering consumes the site (the stored state suppresses). Marker art = PHYS0 frame 103.",
+          "title": "Rumor outcome roll",
+          "writes": []
+        },
+        {
+          "expr": "ruins: gold = 10*(3d8) * (s+2)/2 ; Cibola: treasure = (10*(s+2) + 1d20) * 100 ; tribe gift: 2*(4d10) ; burial: empty / 10*(3d8) gold / 2*(1d8+2*(s+5))*100 treasure ; Fountain of Youth: 8 immigrants ; vanish: unit destroyed ; survivors: colonist joins",
+          "fn": "lost_city_rumor (rewards)",
+          "knobs": [],
+          "note": "Dice sites @0x61776..@0x61A75; %NUMBER1 = value*100 (@0x618B1, the treasure stores gross/100); treasury credit @0x61C4C. Messages are the verbatim GAME.TXT @LOSTCITY1..9 / @BURIAL1..3 records with the %NUMBER fills, shown as turn notices.",
+          "title": "Byte-verified reward dice",
+          "writes": []
+        }
+      ],
+      "name": "Events - Lost City Rumors",
+      "source": "sim/events.cpp",
+      "spec": "spec/systems/events.md (func_061454 BYTE-VERIFIED outcomes + reward dice)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "order byte 2 (@ORDERS row 2 'Trade Route, T') -> func_041080 ; arrival test @0x41034: Europe (dest 0x3E7) = the sea-lane column, colony = its (X,Y) ; on arrival run the stop's unload+load lists, advance the stop cursor (unit +0x315B high nibble), write the next stop's (X,Y) into the GoTo cache (+0x314D/+0x314E)",
+          "fn": "trade_route_step (automation)",
+          "knobs": [],
+          "note": "Route table: seg 0x1B22, stride 0x4A, max 12 routes ([0x53A0] cap @0x610B5 -> @TRADEMANY), 4 stops/route, 6 goods per lane (nibble-packed +0x03..+0x05 LOAD / +0x06..+0x08 UNLOAD, lane split @0x060E83). Unit binding: +0x315B low nibble = route, high nibble = stop (func_0075D4/func_0075FE). Unload-before-load lane order is RECONSTRUCTED.",
+          "title": "Per-turn route automation",
+          "writes": []
+        },
+        {
+          "expr": "LOAD func_00B880: colony stockpile[good] -= qty (sub @0xB8A5, 100/hold cap) ; UNLOAD func_00B8D0: stockpile[good] += qty (add @0xB8F5) ; Europe (dest 0x3E7 @0x4119A): the generic market sell/buy path -- sale credits gold net of tax, tax accrues to the King's REF fund, volume rides the +0xFC trade accumulator; buy is untaxed",
+          "fn": "cargo primitives",
+          "knobs": [],
+          "note": "The Europe-side PowerRecord writes are scalar-only (REF +0x22 / tally +0x26 / gold via 0x181f:0xaba @0x032A82..0x032A9C); the good-volume market arrays ride the same accumulator path as a manual sale (market.md 3.1). Skip-if-unaffordable on the Europe buy is RECONSTRUCTED.",
+          "title": "LOAD / UNLOAD / Europe leg",
+          "writes": []
+        }
+      ],
+      "name": "Trade routes - automated cargo ferrying",
+      "source": "sim/trade_routes.cpp",
+      "spec": "spec/systems/trade_routes.md (func_041080 automation + func_00B880/func_00B8D0 primitives, all BYTE_VERIFIED)"
+    }
   ]
- },
- "systems": [
-  {
-   "formulas": [
-    {
-     "expr": "cap = (warehouse_lvl + 1) * warehouse_cap_base",
-     "fn": "warehouse_cap",
-     "knobs": [
-      "warehouse_cap_base"
-     ],
-     "note": "Per-good storage cap; production over the cap spoils.",
-     "title": "Warehouse capacity per good",
-     "writes": []
-    },
-    {
-     "expr": "sol% = clamp( rebel_A * 100 / rebel_B , 0 .. 100 )   ; 0 when rebel_B <= 0",
-     "fn": "sol_pct",
-     "knobs": [],
-     "note": "Rebel sentiment as a percent of accumulated bell support (A=dividend, B=divisor).",
-     "title": "Sons-of-Liberty percentage",
-     "writes": []
-    },
-    {
-     "expr": "B -= B >> sol_decay_shift   (floor 1) ; then  B += sol_inflow_mult * population",
-     "fn": "sol_update (divisor B)",
-     "knobs": [
-      "sol_decay_shift",
-      "sol_inflow_mult"
-     ],
-     "note": "1/64 exponential decay (shift 6) plus a per-colonist inflow each turn.",
-     "title": "SoL membership divisor",
-     "writes": [
-      "colony<N>.sol"
-     ]
-    },
-    {
-     "expr": "A += bells_this_turn - (A >> sol_decay_shift) ; clamp A to [0, B]",
-     "fn": "sol_update (dividend A)",
-     "knobs": [
-      "sol_decay_shift"
-     ],
-     "note": "Bells raise rebel sentiment; the same 1/64 decay pulls it back down.",
-     "title": "SoL bell accumulator",
-     "writes": [
-      "colony<N>.sol"
-     ]
-    },
-    {
-     "expr": "tory = (population*(100-sol%) + 50)/100 ; div = human ? (tory_divisor_base - difficulty) : tory_divisor_base  (floor 1) ; y -= tory/div ; if expert: era-good y += expert_era_bonus else y *= expert_mfg_mult ; y = max(y,0)",
-     "fn": "tory_expert_adjust",
-     "knobs": [
-      "tory_divisor_base",
-      "expert_era_bonus",
-      "expert_mfg_mult"
-     ],
-     "note": "Loyalists (Tories) cut output; experts add a flat era bonus or multiply manufactured goods.",
-     "title": "Tory penalty + expert bonus on a tile yield",
-     "writes": []
-    },
-    {
-     "expr": "food_accum += food_per_turn ; if food_accum >= food_growth_threshold and population < max_population: population += 1 ; food_accum -= food_growth_threshold ; rebel_B += sol_birth_bonus",
-     "fn": "colony_economic_step (growth)",
-     "knobs": [
-      "food_growth_threshold",
-      "max_population",
-      "sol_birth_bonus"
-     ],
-     "note": "A new colonist is born once stored food crosses the threshold; surplus carries over.",
-     "title": "Population growth on stored food",
-     "writes": [
-      "colony<N>.population",
-      "colony<N>.sol"
-     ]
-    },
-    {
-     "expr": "accumulate hammers into hammers_accum and build_bank ; when build_cost <= both, build_bank -= build_cost and the building/unit completes (surplus carried)",
-     "fn": "build_step",
-     "knobs": [],
-     "note": "build_cost is per-building/unit data (@BUILDING/@UNIT), not a global knob.",
-     "title": "Construction from hammers",
-     "writes": [
-      "colony<N>.build_bank",
-      "colony<N>.built.<id>",
-      "colony<N>.build_target"
-     ]
-    }
-   ],
-   "name": "Economy - Sons of Liberty, tax, growth, building",
-   "source": "sim/economy.cpp",
-   "spec": "spec/systems/colony.md + spec/systems/warehousing.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "supply[g] = price_base[g] + SUM over 4 powers of max(trade[p][g], 0)",
-     "fn": "market_supply",
-     "knobs": [],
-     "note": "price_base is the hidden supply accumulator (seeded rng 600..1000 per market.md); trade (+0xFC) is this turn's net volume: SELL adds, BUY subtracts. What you sell builds the visible supply; what you buy draws it down.",
-     "title": "Hidden supply per good",
-     "writes": []
-    },
-    {
-     "expr": "S_pair = clamp( supply[Rum]+supply[Cigars]+supply[Cloth]+supply[Coats], >=1 ) ; level[g] = clamp( S_pair*3 / supply[g], @CARGO.drift_low .. drift_high )   for g in {Sugar..Furs, Rum..Coats}",
-     "fn": "market_recompute (pool)",
-     "knobs": [],
-     "note": "One shared pool couples the four finished goods and their raws: dumping Rum raises Cigars/Cloth/Coats. Furs supply is halved; +1 if year<1700 and +1 more if <1600 (attach point RECONSTRUCTED).",
-     "title": "Pool price level (finished goods + their raws)",
-     "writes": []
-    },
-    {
-     "expr": "bid = max(level - 1, 0) ; ask = bid + @CARGO.burden + 1",
-     "fn": "market_bid / market_ask",
-     "knobs": [],
-     "note": "USER RULING: the bid/ask spread is the per-good Burden column in NAMES.TXT @CARGO (Food 7, Sugar 1, finished goods 0 -> spread 1).",
-     "title": "Published prices",
-     "writes": []
-    },
-    {
-     "expr": "gross = bid*qty ; tax_cut = gross*tax%/100 ; gold += gross - tax_cut ; royal_money += tax_cut ; trade[g] += qty ; recompute",
-     "fn": "market_sell",
-     "knobs": [],
-     "note": "The tax cut funds the King's REF treasury (king.md:92 -- taxes pay for the Royal Expeditionary Force). Gold clamps to 0..999999.",
-     "title": "Sell to Europe (taxed)",
-     "writes": []
-    },
-    {
-     "expr": "gold -= ask*qty ; trade[g] -= qty ; recompute",
-     "fn": "market_buy",
-     "knobs": [],
-     "note": "Buying is untaxed and collapses the hidden supply, pushing the price back up.",
-     "title": "Buy from Europe (untaxed)",
-     "writes": []
-    },
-    {
-     "expr": "price_drift ; market_recompute ; zero trade[] for all powers",
-     "fn": "market_turn",
-     "knobs": [
-      "price_drift_shift"
-     ],
-     "note": "Drift then republish then reset the per-turn volume (the zero order is RECONSTRUCTED).",
-     "title": "Per-turn market phase",
-     "writes": []
-    },
-    {
-     "expr": "for each good: acc = price_base + SUM over 4 powers of max(trade,0) ; price_base -= acc >> price_drift_shift",
-     "fn": "price_drift",
-     "knobs": [
-      "price_drift_shift"
-     ],
-     "note": "Selling pushes a good's hidden supply (and so its price) down proportionally (>>8 = /256 each turn); buys (negative volume) are ignored by the drift.",
-     "title": "Per-good supply decay from net sales",
-     "writes": [
-      "market.price.<good>"
-     ]
-    },
-    {
-     "expr": "on sell: level -= 1 ; on buy: level += 1 ; clamp to @CARGO.drift_low .. drift_high",
-     "fn": "non-pool stepper",
-     "knobs": [],
-     "note": "Goods outside the pool (Food, Silver, Horses, Trade Goods, Tools, Muskets) move by +/-1 steppers per transaction (steppers byte-cited; the exact driver is RECONSTRUCTED).",
-     "title": "Non-pool goods price movement",
-     "writes": []
-    }
-   ],
-   "name": "Market - the European commodity market (hidden supply, pool pricing, tax)",
-   "source": "sim/market.cpp",
-   "spec": "spec/systems/market.md (+ spec/ui/europe_screen.md RULING: ask = bid + @CARGO.burden + 1)"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "P(attacker wins) = atk_str / (atk_str + def_str)   ; 0 when total is 0",
-     "fn": "combat_odds",
-     "knobs": [],
-     "note": "Pure ATK/(ATK+DEF) odds -- the classic Colonization combat model.",
-     "title": "Probability the attacker wins",
-     "writes": []
-    },
-    {
-     "expr": "atk = unit.attack (+difficulty_bonus if human attacker) ; def = unit.defense + terrain_defense + fort_bonus (+difficulty_bonus if human defender) ; clamp both >= 0 ; if fortified: def = def * fortify_def_num / fortify_def_den",
-     "fn": "resolve_land (strengths)",
-     "knobs": [
-      "fortify_def_num",
-      "fortify_def_den",
-      "terrain_defense"
-     ],
-     "note": "Terrain defense comes from the editable terrain_defense table; fortify adds +50% (3/2).",
-     "title": "Attack/defense strength build-up",
-     "writes": []
-    },
-    {
-     "expr": "roll = rng(1, atk_str + def_str) ; attacker_won = (roll <= atk_str)",
-     "fn": "resolve_land (roll)",
-     "knobs": [],
-     "note": "A single uniform roll over the combined strength decides the fight.",
-     "title": "The combat die",
-     "writes": []
-    },
-    {
-     "expr": "Soldiers->Colonists ; Dragoons->Soldiers ; Cont.Cavalry->Cont.Army ; Cavalry->Regulars ; Cont.Army->Colonists ; (Missionary loser of a ->Colonists step becomes Missionaries) ; anything else -> destroyed",
-     "fn": "demote",
-     "knobs": [],
-     "note": "Fixed structural ladder (unit type ids) -- a code wall, not data.",
-     "title": "Loser demotion ladder",
-     "writes": [
-      "unit<N>.type",
-      "unit<N>.alive"
-     ]
-    },
-    {
-     "expr": "capturable = loser is Colonists, Treasure, or Wagon Train  (taken intact by the winner)",
-     "fn": "is_capturable",
-     "knobs": [],
-     "note": "Fixed structural set -- a code wall, not data.",
-     "title": "Units that change hands instead of dying",
-     "writes": []
-    },
-    {
-     "expr": "with George Washington (FF 11): automatic ; else promote iff random_int(1, S) <= winner_strength  (P = winner_strength / S) ; non-veteran soldier-line -> Veteran stamp (0x15) ; veteran at the ceiling: Soldiers(1) -> Continental Army(9), Dragoons(4) -> Continental Cavalry(7)",
-     "fn": "promote_on_win",
-     "knobs": [],
-     "note": "@0x5C758 Washington gate, @0x5C764 roll, @0x5C7C3/@0x5C7CE type advance, @0x5C7DD class write. The losing side runs the existing demotion ladder (func_05B2C2).",
-     "title": "Veteran promotion on a combat win",
-     "writes": []
-    }
-   ],
-   "name": "Combat - land resolution, demotion, capture",
-   "source": "sim/combat.cpp",
-   "spec": "spec/systems/combat.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "regulars  = ref_regulars_scale*d  + ref_regulars_offset ; cavalry   = ref_cavalry_scale*d   + ref_cavalry_offset ; manowar   = ref_manowar_scale*d   + ref_manowar_offset ; artillery = ref_artillery_scale*d + ref_artillery_offset",
-     "fn": "ref_start",
-     "knobs": [
-      "ref_regulars_scale",
-      "ref_regulars_offset",
-      "ref_cavalry_scale",
-      "ref_cavalry_offset",
-      "ref_manowar_scale",
-      "ref_manowar_offset",
-      "ref_artillery_scale",
-      "ref_artillery_offset"
-     ],
-     "note": "The King's army at game start scales with the difficulty level.",
-     "title": "Starting REF size by difficulty d",
-     "writes": [
-      "ref.regulars",
-      "ref.cavalry",
-      "ref.manowar",
-      "ref.artillery"
-     ]
-    },
-    {
-     "expr": "rate = ref_accrue_scale*d + ref_accrue_offset ; then for each gate year in ref_accrue_gate_years with year >= gate: rate *= 2",
-     "fn": "ref_accrue_rate",
-     "knobs": [
-      "ref_accrue_scale",
-      "ref_accrue_offset",
-      "ref_accrue_gate_years"
-     ],
-     "note": "The King saves faster as the game advances (doubles at each gate year).",
-     "title": "Royal treasury growth per turn",
-     "writes": [
-      "power<N>.royal_money"
-     ]
-    },
-    {
-     "expr": "while royal_money >= ref_unit_cost: if regulars+2 > ref_cavalry_ratio*cavalry -> +1 cavalry ; else if regulars > ref_artillery_ratio*artillery -> +1 artillery ; else if (regulars+cavalry+artillery+5) > ref_naval_ratio*manowar -> +1 man-o-war ; else +1 regular ; royal_money -= ref_unit_cost",
-     "fn": "ref_purchase",
-     "knobs": [
-      "ref_unit_cost",
-      "ref_cavalry_ratio",
-      "ref_artillery_ratio",
-      "ref_naval_ratio"
-     ],
-     "note": "Buys to keep target ratios of cavalry/artillery/ships to regulars.",
-     "title": "Spending the treasury on new REF units",
-     "writes": [
-      "ref.regulars",
-      "ref.cavalry",
-      "ref.manowar",
-      "ref.artillery",
-      "power<N>.royal_money"
-     ]
-    }
-   ],
-   "name": "REF / the King - the Royal Expeditionary Force",
-   "source": "sim/ref.cpp",
-   "spec": "spec/systems/king.md + spec/systems/ref_growth.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "post-independence: cost = difficulty*ff_post_indep_scale + ff_post_indep_offset ; otherwise base = human ? (difficulty+ff_human_offset)*ff_human_scale : (ff_ai_offset-difficulty)*ff_ai_scale ; for each gate in ff_gate_years with year>=gate: cost += cost >> ff_compounding_shift  (x1.5) ; cost = (ff_count+1)*cost + 1 ; if ff_count==0: cost >>= ff_first_father_shift  (half price)",
-     "fn": "ff_cost",
-     "knobs": [
-      "ff_post_indep_scale",
-      "ff_post_indep_offset",
-      "ff_human_offset",
-      "ff_human_scale",
-      "ff_ai_offset",
-      "ff_ai_scale",
-      "ff_gate_years",
-      "ff_compounding_shift",
-      "ff_first_father_shift"
-     ],
-     "note": "Each father costs more than the last; later eras compound it; the first is half price.",
-     "title": "Bells (or gold) to recruit the next father",
-     "writes": []
-    },
-    {
-     "expr": "band = (year < 1600) ? 0 : (year < 1700) ? 1 : 2",
-     "fn": "ff_era_band",
-     "knobs": [],
-     "note": "Fixed era cutoffs (code) used to weight which fathers appear.",
-     "title": "Era band for father weighting",
-     "writes": []
-    },
-    {
-     "expr": "offerable = any father not yet owned  (next pick is a weighted random over all un-owned)",
-     "fn": "ff_available",
-     "knobs": [],
-     "note": "Byte-verified: no intra-category ordering gate -- simply un-acquired.",
-     "title": "Which fathers may be offered",
-     "writes": []
-    }
-   ],
-   "name": "Founding Fathers - recruitment cost & availability",
-   "source": "sim/founding_fathers.cpp",
-   "spec": "spec/systems/founding_fathers.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "a = total_workers + unit_count ; if a < imm_threshold_cap: a = a*imm_sub4k_mult + imm_sub4k_offset ; cap a at imm_threshold_cap ; if AI: a = a*(imm_ai_scale - difficulty)/imm_ai_divisor ; if player 0 (England): a = a*imm_england_num/imm_england_den",
-     "fn": "crosses_threshold",
-     "knobs": [
-      "imm_threshold_cap",
-      "imm_sub4k_mult",
-      "imm_sub4k_offset",
-      "imm_ai_scale",
-      "imm_ai_divisor",
-      "imm_england_num",
-      "imm_england_den"
-     ],
-     "note": "More colonists raise the bar; England immigrates faster (x2/3).",
-     "title": "Crosses needed for the next immigrant",
-     "writes": []
-    },
-    {
-     "expr": "crosses_accum += crosses_gained ; if crosses_accum > threshold: spawn a Free Colonist at dock slot rng(0, imm_dock_slots-1) ; crosses_accum = 0",
-     "fn": "immigration_step",
-     "knobs": [
-      "imm_dock_slots"
-     ],
-     "note": "When accumulated crosses pass the threshold, a recruit appears in a random dock slot.",
-     "title": "Spawning an immigrant on the dock",
-     "writes": [
-      "power<N>.crosses"
-     ]
-    }
-   ],
-   "name": "Immigration - religious unrest & the docks",
-   "source": "sim/immigration.cpp",
-   "spec": "spec/systems/immigration.md (RULING: crosses drive the pool)"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "1) production: every colony runs colony_economic_step ; 2) market: price_drift once ; 3) immigration: each of 4 powers, crosses = imm_base_crosses + SUM of its colonies' crosses_output ; 4) REF: human player's royal_money += accrue rate, then ref_purchase ; 5) units: refresh_moves then apply_orders (all owners) ; 6) advance_cadence",
-     "fn": "step_turn",
-     "knobs": [
-      "imm_base_crosses"
-     ],
-     "note": "Fixed phase sequence; only the base-crosses scalar is a knob.",
-     "title": "Order of operations each turn",
-     "writes": [
-      "game.turn",
-      "game.season",
-      "game.year",
-      "colony<N>.population",
-      "colony<N>.sol",
-      "colony<N>.build_bank",
-      "market.price.<good>",
-      "power<N>.crosses",
-      "power<N>.royal_money",
-      "ref.regulars",
-      "unit<N>.x",
-      "unit<N>.y",
-      "unit<N>.alive"
-     ]
-    },
-    {
-     "expr": "turn += 1 ; if year < 1600: year += 1  (1 turn = 1 year) ; else season = (season+1) mod 2, and year += 1 when season wraps to 0  (2 seasons/year)",
-     "fn": "advance_cadence",
-     "knobs": [],
-     "note": "Fixed calendar: yearly turns before 1600, two seasons per year after.",
-     "title": "Calendar advance",
-     "writes": [
-      "game.turn",
-      "game.season",
-      "game.year"
-     ]
-    }
-   ],
-   "name": "Turn loop - phase order & calendar",
-   "source": "sim/game.cpp, sim/turn.cpp",
-   "spec": "spec/systems/turn_dispatch.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "moves_left = unit.movement   (per unit type)",
-     "fn": "refresh_moves",
-     "knobs": [],
-     "note": "Movement allowance is per-unit data (@UNIT movement column).",
-     "title": "Move points restored each turn",
-     "writes": [
-      "unit<N>.movement"
-     ]
-    },
-    {
-     "expr": "greedy step = sign(target - pos) on each axis ; if that tile is off-map or wrong land/water -> find_step routes around it ; enemy occupant -> combat ; friendly -> blocked ; entering a tile costs terrain_move[id] (floor 1), but a unit always moves at least one tile",
-     "fn": "apply_orders (GOTO)",
-     "knobs": [
-      "terrain_move"
-     ],
-     "note": "Greedy stepping with Dijkstra fallback; entry cost comes from the editable terrain_move table.",
-     "title": "Executing a move order",
-     "writes": [
-      "unit<N>.x",
-      "unit<N>.y",
-      "unit<N>.alive",
-      "unit<N>.type"
-     ]
-    },
-    {
-     "expr": "Dijkstra over passable tiles (passable = naval flag matches Ocean/Sea-Lane), 8-connected, edge cost = terrain_move[id] ; returns the first step of the least-cost route, or none",
-     "fn": "find_step",
-     "knobs": [
-      "terrain_move"
-     ],
-     "note": "Routes a unit around coastlines/obstacles toward its target.",
-     "title": "Obstacle-routing pathfinder",
-     "writes": []
-    },
-    {
-     "expr": "attacker vs the occupant (defender fortified if its order is FORTIFY) ; loser is captured, destroyed, or demoted in place ; attacking sets attacker moves_left = 0",
-     "fn": "do_combat",
-     "knobs": [],
-     "note": "Wraps resolve_land for unit-vs-unit encounters during movement.",
-     "title": "Combat triggered by a move",
-     "writes": [
-      "unit<N>.alive",
-      "unit<N>.type"
-     ]
-    }
-   ],
-   "name": "Units & movement - orders, routing, terrain cost",
-   "source": "sim/unit_turn.cpp",
-   "spec": "spec/systems/unit.md + spec/systems/unit_orders.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "threshold = tribe_level + 2 ; if Jesuit: threshold *= 2 ; converts when rng(0..15) < threshold ; probability = threshold / 15",
-     "fn": "mission_threshold / converts / prob",
-     "knobs": [],
-     "note": "Code-side native formulas (literals; not in the cfg block).",
-     "title": "Mission conversion chance",
-     "writes": []
-    },
-    {
-     "expr": "if delta>0: halve if a French power, halve again if Pocahontas ; tension = clamp(tension + delta, 0 .. 100)",
-     "fn": "apply_tension",
-     "knobs": [],
-     "note": "French diplomacy and the Pocahontas father each soften provocations.",
-     "title": "Native tension update",
-     "writes": [
-      "natives.tension"
-     ]
-    },
-    {
-     "expr": "p = max(5*difficulty + 50, 2*tax_pct) ; cap p at 90",
-     "fn": "native_trade_price",
-     "knobs": [],
-     "note": "Code-side; rises with difficulty and your tax rate, capped at 90%.",
-     "title": "Native trade price percent",
-     "writes": []
-    },
-    {
-     "expr": "hi = min(3*settlement_wealth + 10, 100) ; gold = clamp(demand, 10 .. hi)",
-     "fn": "tribute_gold",
-     "knobs": [],
-     "note": "Code-side bounds on a tribute demand.",
-     "title": "Gold a native demand resolves to",
-     "writes": []
-    }
-   ],
-   "name": "Natives - missions, tension, trade, tribute",
-   "source": "sim/natives.cpp",
-   "spec": "spec/systems/natives.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "war/peace toggle the AT_WAR and WAR relation bits both ways ; sign_treaty sets the TREATY bit, makes peace, and sets a cooldown = treaty_cooldown(turn)",
-     "fn": "declare_war / make_peace / sign_treaty",
-     "knobs": [],
-     "note": "Bit-flag relationship bookkeeping between the 4 powers.",
-     "title": "Relationship state transitions",
-     "writes": [
-      "war.<a>.<b>"
-     ]
-    },
-    {
-     "expr": "restrained = (attitude >> 2 > demand_score) and (demand_score > 12) and (rng(0,4) != 0) ; the AI acts = not restrained",
-     "fn": "ai_acts",
-     "knobs": [],
-     "note": "Code-side nerve check: a calm, cautious AI sometimes backs down.",
-     "title": "Whether an AI follows through on a demand",
-     "writes": []
-    }
-   ],
-   "name": "Diplomacy - war/peace/treaty & AI nerve",
-   "source": "sim/diplomacy.cpp",
-   "spec": "spec/systems/diplomacy.md"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "level = University(0x0E)? 3 : College(0x0D)? 2 : Schoolhouse(0x0C)? 1 : 0",
-     "fn": "school_level",
-     "knobs": [],
-     "note": "Building bits 12/13/14 of the colony building bitmap. The level is both the tier cap (a level-L school teaches only @JOB tiers <= L) and the faculty cap.",
-     "title": "School level from buildings",
-     "writes": []
-    },
-    {
-     "expr": "per teacher (expert building-worker, tier <= level, faculty capped at min(level, cap)): random student.teach += 1 ; graduate at 4 / 6 / 8 turns by the profession's @JOB school tier ; graduate learns the teacher's profession as an expert (counter reset)",
-     "fn": "school_teach_step",
-     "knobs": [
-      "school_turns_t1",
-      "school_turns_t2",
-      "school_turns_t3",
-      "school_faculty_cap"
-     ],
-     "note": "Random student per @0x02DEC5; turns-to-graduate 4/6/8 @0x02DDB4/@0x02DE98/@0x02DE8E; tier >= 4 (Teacher, Colonist, dock classes) is not teachable. The EXE's criminal->servant->colonist promotion applies to dock classes this colony model does not carry -- the free-colonist learn-outright branch is the one modeled.",
-     "title": "Per-turn teaching + graduation",
-     "writes": []
-    },
-    {
-     "expr": "refused if criminal / already a master / village already taught ; else succeed iff random_int(1,1000) >= 200*difficulty + 100  (P = 90/70/50/30/10%) ; on success class = village skill, village latched",
-     "fn": "native_learn",
-     "knobs": [],
-     "note": "Learnable skills are the outdoors/gathering experts only (Farmer, the three Planters, Fur Trapper, Silver Miner, Fisherman, Scout); each village teaches once (+0x03 bit 0x02 latch @0x04A78A); grant site @0x04A782, roll @0x4A72C. Player command POST /api/native/learn; outcome text = the verbatim GAME.TXT @LEARN* record.",
-     "title": "Native learning (\"live among the Indians\")",
-     "writes": []
-    }
-   ],
-   "name": "Training - schools teach professions",
-   "source": "sim/training.cpp",
-   "spec": "spec/systems/training.md (func_02D658 @0x02DDB4..0x02E012, BYTE-VERIFIED)"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "work += 1 per held turn ; threshold = terrain_move[t] + (clear/plow ? 2 : 0) ; Hardy Pioneer (class 0x14): threshold >>= 1 ; complete at work >= threshold (counter resets, order clears)",
-     "fn": "do_improve (work/threshold)",
-     "knobs": [],
-     "note": "Counter +0x16 (@0x04071D/@0x040A46); +2 for clear/plow @0x040727, none for road @0x040A50; the halve is sar ax,1 @0x04074A/@0x040A59. The per-terrain basis is read as the terrain movement column (the stride-16 @TERRAIN row).",
-     "title": "Improvement work counter + completion",
-     "writes": []
-    },
-    {
-     "expr": "clear (forested): terrain id -= 8 (drops to the unforested base) + lumber to the adjacent own colony ; plow: improvement bit 0x40 ; road: improvement bit 0x08",
-     "fn": "do_improve (effects)",
-     "knobs": [
-      "clear_lumber_base"
-     ],
-     "note": "Tile writes @0x040896 / @0x04089F / @0x040AEC; the lumber grant (@0x04084D, the +0xA4 Lumber slot) uses a @TERRAIN column not decoded numerically -> cfg.clear_lumber_base (RECONSTRUCTED). Clearing changes future yields byte-faithfully: the tile becomes its unforested base and the production model reads the new id.",
-     "title": "Tile effects on completion",
-     "writes": []
-    },
-    {
-     "expr": "tools -= 20 per completed action ; if tools < 20: tools = 0 and the Pioneer reverts to a plain Colonist",
-     "fn": "do_improve (tools)",
-     "knobs": [
-      "improve_tool_cost"
-     ],
-     "note": "func_040608: sub 0x14 @0x4060F, the < 20 check @0x040614, reversion writes @0x04061D/@0x040621 (@USEDUPTOOLS). Tools live at UnitRecord +0x15, init 100.",
-     "title": "Tool debit + pioneer reversion",
-     "writes": []
-    }
-   ],
-   "name": "Terrain improvement - clear, plow, roads",
-   "source": "sim/unit_turn.cpp (do_improve)",
-   "spec": "spec/systems/terrain_improvement.md (func_040656 clear/plow, func_0409D6 road, func_040608 tools -- BYTE-VERIFIED)"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "Scout: 2 ; Galleon/Privateer/Frigate: 2 ; any naval with Hernando de Soto (FF 7): 2 ; else 1  (a (2R+1)x(2R+1) square)",
-     "fn": "sight_radius",
-     "knobs": [],
-     "note": "func_006608 selector; the de Soto boost is naval-ONLY in the EXE (@0x6647) -- a documented divergence from the manual's 'all units'. No terrain sight extension exists.",
-     "title": "Sight radius by unit type",
-     "writes": []
-    },
-    {
-     "expr": "each power owns fog bit 1 << (player+4) per tile ; units OR their sight square each turn/step ; colonies OR an 11x11 (+/-5) block ; bits never clear",
-     "fn": "reveal_step",
-     "knobs": [],
-     "note": "The visibility layer is separate from the .MP terrain byte (the EXE's 4th map layer); no shared exploration -- rivals are seen only inside your own revealed tiles. Colony reveal = func_0063B6.",
-     "title": "Sticky per-power reveal",
-     "writes": []
-    }
-   ],
-   "name": "Exploration - fog of war & sight",
-   "source": "sim/explore.cpp",
-   "spec": "spec/systems/exploration.md (fog encoding + func_006608 radii BYTE-VERIFIED)"
-  },
-  {
-   "formulas": [
-    {
-     "expr": "n = random_int(1,9) used DIRECTLY as the @LOSTCITY<n> suffix ; scout level s = Scout(+1) + Seasoned 0x16(+1) + de Soto(+1) ; bad outcomes (5 vanish / 8 shrines) escape-reroll via random_int(1, s+1) ; de Soto forces positive",
-     "fn": "lost_city_rumor (outcome)",
-     "knobs": [],
-     "note": "No weight table -- the itoa-append @0x618D1 builds the key. Rumor PRESENCE is PROCEDURAL (func_006188, EXE-verified): ((x>>2)*0x13 + (y>>2)*0x11 + seed + 8) & 0x1F - (y&3)*4 == (x&3), seed = random_int(0,0x7fff) stored by the map generator (@0x64A23), gated on terrain (no Arctic/Ocean/Sea Lane) and a clean feature state; entering consumes the site (the stored state suppresses). Marker art = PHYS0 frame 103.",
-     "title": "Rumor outcome roll",
-     "writes": []
-    },
-    {
-     "expr": "ruins: gold = 10*(3d8) * (s+2)/2 ; Cibola: treasure = (10*(s+2) + 1d20) * 100 ; tribe gift: 2*(4d10) ; burial: empty / 10*(3d8) gold / 2*(1d8+2*(s+5))*100 treasure ; Fountain of Youth: 8 immigrants ; vanish: unit destroyed ; survivors: colonist joins",
-     "fn": "lost_city_rumor (rewards)",
-     "knobs": [],
-     "note": "Dice sites @0x61776..@0x61A75; %NUMBER1 = value*100 (@0x618B1, the treasure stores gross/100); treasury credit @0x61C4C. Messages are the verbatim GAME.TXT @LOSTCITY1..9 / @BURIAL1..3 records with the %NUMBER fills, shown as turn notices.",
-     "title": "Byte-verified reward dice",
-     "writes": []
-    }
-   ],
-   "name": "Events - Lost City Rumors",
-   "source": "sim/events.cpp",
-   "spec": "spec/systems/events.md (func_061454 BYTE-VERIFIED outcomes + reward dice)"
-  }
- ]
 }

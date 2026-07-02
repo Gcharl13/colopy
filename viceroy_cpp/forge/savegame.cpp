@@ -91,6 +91,16 @@ JsonValue dump_unit(const Unit& u) {
     o.obj["target_x"]   = json_num(u.target_x);
     o.obj["target_y"]   = json_num(u.target_y);
     o.obj["alive"]      = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = u.alive; return v; }();
+    o.obj["route"]      = json_num(u.route);
+    o.obj["route_stop"] = json_num(u.route_stop);
+    JsonValue cg = arr();                       // cargo holds as [good, qty] pairs
+    for (int h = 0; h < 6; ++h) {
+        JsonValue pr = arr();
+        pr.arr.push_back(json_num(u.hold_good[h]));
+        pr.arr.push_back(json_num(u.hold_qty[h]));
+        cg.arr.push_back(pr);
+    }
+    o.obj["cargo"] = cg;
     return o;
 }
 
@@ -166,6 +176,16 @@ Unit read_unit(const JsonValue& o) {
     u.target_x   = gi(o, "target_x", -1);
     u.target_y   = gi(o, "target_y", -1);
     u.alive      = gb(o, "alive", true);
+    u.route      = gi(o, "route", -1);
+    u.route_stop = gi(o, "route_stop", 0);
+    if (const JsonValue* cg = o.find("cargo"))
+        for (int h = 0; h < 6 && h < (int)cg->arr.size(); ++h) {
+            const JsonValue& pr = cg->arr[h];
+            if (pr.arr.size() >= 2) {
+                u.hold_good[h] = pr.arr[0].as_int(-1);
+                u.hold_qty[h]  = pr.arr[1].as_int(0);
+            }
+        }
     return u;
 }
 
@@ -194,6 +214,25 @@ std::string dump_game(const GameState& g, const World& w) {
     ref.obj["artillery"] = json_num(g.ref.artillery);
     gs.obj["ref"] = ref;
     gs.obj["rumor_seed"] = json_num(g.rumor_seed);
+    JsonValue rts = arr();                       // trade-route table (trade_routes.md 2)
+    for (const TradeRoute& r : g.routes) {
+        JsonValue ro = obj();
+        ro.obj["name"] = [&]{ JsonValue v; v.type = JsonValue::String; v.str = r.name; return v; }();
+        ro.obj["type"] = json_num(r.type);
+        JsonValue sts = arr();
+        for (const TradeStop& st : r.stops) {
+            JsonValue so = obj();
+            so.obj["dest"] = json_num(st.dest);
+            JsonValue ld = arr(), ul = arr();
+            for (int gd2 : st.load)   ld.arr.push_back(json_num(gd2));
+            for (int gd2 : st.unload) ul.arr.push_back(json_num(gd2));
+            so.obj["load"] = ld; so.obj["unload"] = ul;
+            sts.arr.push_back(so);
+        }
+        ro.obj["stops"] = sts;
+        rts.arr.push_back(ro);
+    }
+    gs.obj["routes"] = rts;
     root.obj["game"] = gs;
 
     JsonValue wd = obj();
@@ -234,6 +273,23 @@ LoadedGame parse_game(const std::string& json) {
     lg.g.difficulty = gi(*gs, "difficulty", 1);
     lg.g.nation     = gi(*gs, "nation", 0);
     lg.g.rumor_seed = gi(*gs, "rumor_seed", 0);
+    if (const JsonValue* rts = gs->find("routes"))
+        for (const JsonValue& ro : rts->arr) {
+            TradeRoute r;
+            if (const JsonValue* nm = ro.find("name"); nm && nm->is_string()) r.name = nm->str;
+            r.type = gi(ro, "type", 0);
+            if (const JsonValue* sts = ro.find("stops"))
+                for (const JsonValue& so : sts->arr) {
+                    TradeStop st;
+                    st.dest = gi(so, "dest", ROUTE_DEST_NONE);
+                    if (const JsonValue* ld = so.find("load"))
+                        for (const JsonValue& v : ld->arr) st.load.push_back(v.as_int());
+                    if (const JsonValue* ul = so.find("unload"))
+                        for (const JsonValue& v : ul->arr) st.unload.push_back(v.as_int());
+                    r.stops.push_back(st);
+                }
+            lg.g.routes.push_back(r);
+        }
     if (const JsonValue* pw = gs->find("powers"))
         for (int i = 0; i < 4 && i < (int)pw->arr.size(); ++i) read_power(pw->arr[i], lg.g.powers[i]);
     if (const JsonValue* pb = gs->find("price_base"))

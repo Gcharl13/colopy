@@ -7,6 +7,7 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#include <string>
 #include <vector>
 
 namespace vc::sim {
@@ -85,6 +86,32 @@ struct Power {
 // Royal Expeditionary Force counts (DGROUP 0x53DA..0x53E0).
 struct Ref { int regulars = 0, cavalry = 0, manowar = 0, artillery = 0; };
 
+// --- Trade routes (spec/systems/trade_routes.md, BYTE_VERIFIED layout) ---
+// The EXE keeps route definitions in segment 0x1B22 (record stride 0x4A, max 12
+// routes, active count [0x53A0] capped 0xC @0x610B5 -> @TRADEMANY). Record:
+// +0x00 name (32 B, uniqueness strcmp @0x611FF), +0x20 type byte (0=sea 1=land
+// @0x61282), +0x21 stop cursor, +0x22 stop array (stride 0x0A, up to 4 stops).
+// Stop entry: +0x00 dest word (colony id, 0x3E7=Europe, 0x3E8=none), +0x02
+// packed counts (low nibble = UNLOAD, high nibble = LOAD, func_060382), then
+// nibble-packed good ids: LOAD lane +0x03..+0x05, UNLOAD lane +0x06..+0x08
+// (lane split byte-confirmed func_060D8C @0x060E83).
+constexpr int MAX_TRADE_ROUTES  = 12;    // [0x53A0] cap 0xC
+constexpr int MAX_ROUTE_STOPS   = 4;     // (0x4A-0x22)/0x0A
+constexpr int MAX_LANE_GOODS    = 6;     // 3 lane bytes x 2 good nibbles per lane
+constexpr int ROUTE_DEST_EUROPE = 999;   // 0x3E7
+constexpr int ROUTE_DEST_NONE   = 1000;  // 0x3E8
+
+struct TradeStop {
+    int dest = ROUTE_DEST_NONE;   // colony index, ROUTE_DEST_EUROPE, or _NONE
+    std::vector<int> load;        // good ids to LOAD here  (+0x03..+0x05, @CARGOLOAD)
+    std::vector<int> unload;      // good ids to UNLOAD here (+0x06..+0x08, @CARGOUNLOAD)
+};
+struct TradeRoute {
+    std::string name;             // +0x00 (@TRADENAMES offers 5 presets)
+    int type = 0;                 // +0x20: 0 = sea, 1 = land
+    std::vector<TradeStop> stops; // +0x22 (up to MAX_ROUTE_STOPS)
+};
+
 struct GameState {
     int  year   = 1492;          // [0x538A]
     int  season = 0;             // [0x538C]  0=Spring/early, 1=Autumn
@@ -97,6 +124,7 @@ struct GameState {
     std::array<Power, 4> powers{};
     std::array<int32_t, NGOODS> price_base{};  // DGROUP 0x53EA (per-good, [600,1000])
     Ref ref;
+    std::vector<TradeRoute> routes;            // segment 0x1B22 route table (max 12)
 };
 
 } // namespace vc::sim

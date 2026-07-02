@@ -4,6 +4,7 @@
 // stride 14, indexed type*14 (attack col @0x5236, defense @0x5235). For ships
 // the attack/defense shown here are the Guns/Hull columns.
 #pragma once
+#include <array>
 
 namespace vc::sim {
 
@@ -46,6 +47,8 @@ enum Order : int {
     ORDER_GOTO,        // move toward (target_x, target_y) each turn
     ORDER_CLEAR_PLOW,  // "P" -- clear (forested tile) / plow (open tile), order 8
     ORDER_ROAD,        // "R" -- build road, order 9 (terrain_improvement.md)
+    ORDER_TRADE_ROUTE, // "T" -- @ORDERS row 2; EXE order byte 2 (+0x314C, dispatch
+                       //   @0x249CB) -> automation func_041080 (trade_routes.md)
 };
 
 struct Unit {
@@ -61,6 +64,16 @@ struct Unit {
     int  order      = ORDER_NONE;
     int  target_x = -1, target_y = -1;  // ORDER_GOTO destination
     bool alive      = true;    // cleared when destroyed in combat
+    // --- trade route (trade_routes.md 2): on a ship/wagon the +0x315B byte is
+    // route index (low nibble, func_0075D4) + current-stop index (high nibble,
+    // func_0075FE) -- the profession byte is unused on those types, so the two
+    // uses never collide. Modeled as separate ints; route -1 = none.
+    int  route = -1;
+    int  route_stop = 0;
+    // Cargo holds: @UNIT cargo = hold count (up to 6); each hold carries up to
+    // 100 of one good (LOAD primitive func_00B880 caps at 100). good -1 = empty.
+    std::array<int, 6> hold_good{{-1, -1, -1, -1, -1, -1}};
+    std::array<int, 6> hold_qty{};
 };
 
 } // namespace vc::sim

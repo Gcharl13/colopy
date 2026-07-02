@@ -22,7 +22,8 @@ static const UnitStats kDefaultUnits[NUNITTYPES] = {
     /* 9  Cont. Army   */ {"Continental Army",4,  4, 0,  1, 1},
     /* 10 Treasure     */ {"Treasure",       0,  0, 0,  6, 1},
     /* 11 Artillery    */ {"Artillery",      7,  5, 0,  1, 1},
-    /* 12 Wagon Train  */ {"Wagon Train",    0,  1, 2, 99, 2},
+    /* 12 Wagon Train  */ {"Wagon Train",    0,  1, 2,  1, 2},   // land hauler (naval band
+                                                                 // is 13..18, unit.md)
     /* 13 Caravel      */ {"Caravel",        0,  2, 2, 99, 4},
     /* 14 Merchantman  */ {"Merchantman",    0,  6, 4, 99, 5},
     /* 15 Galleon      */ {"Galleon",        0, 10, 6, 99, 6},

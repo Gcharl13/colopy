@@ -281,6 +281,7 @@ const char* forge_index_html() {
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
       <button class="act" onclick="euOpen()" title="The Royal port: market, docks, recruiting (spec/ui/europe_screen.md)">Europe (E)</button>
       <button class="act" onclick="nvOpen()" title="The game's main screen at native 320x200 (spec/ui/map_view.md)">Native HUD</button>
+      <button class="act" onclick="trOpen()" title="Define automated cargo routes for ships and wagon trains (spec/systems/trade_routes.md)">Trade routes</button>
       <button class="act" onclick="saveGame()">Save</button>
       <button class="act" onclick="loadGame()">Load</button>
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
@@ -2602,18 +2603,109 @@ async function nativeLearn(){
 function villageAdjacent(u){
   return (GAME.settlements||[]).some(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
 }
+// ---- Trade routes (spec/systems/trade_routes.md; the @TRADE* GAME.TXT dialogs) ----
+// A route = up to 4 stops (colony or Europe), each with a load list and an unload
+// list; a ship/wagon on order "T" ferries the cargo automatically each turn.
+function trDestName(d){
+  if(d===999) return 'Europe';                    // dest 0x3E7
+  if(d===1000) return '—';                   // 0x3E8 = none
+  const c=(GAME.colonies||[])[d];
+  return c?('#'+(d+1)+' ('+c.x+','+c.y+')'):('colony '+d);
+}
+function trOpen(){
+  if(!GAME){ ui.toast('start a game first'); return; }
+  const rts=GAME.routes||[];
+  let h='';
+  if(!rts.length){
+    h+='<p class="muted">You have not yet defined any trade routes.</p>';  // @TRADENONE verbatim
+  } else {
+    h+='<table class="tbl"><tr><th>route</th><th>type</th><th>stops (load &rarr; unload)</th><th></th></tr>';
+    rts.forEach((r,i)=>{
+      const stops=r.stops.map(s=>trDestName(s.dest)
+        +(s.load.length?' +['+s.load.map(g=>GOODS[g]).join(', ')+']':'')
+        +(s.unload.length?' &minus;['+s.unload.map(g=>GOODS[g]).join(', ')+']':'')).join(' &rarr; ');
+      h+='<tr><td><b>'+esc(r.name)+'</b></td><td>'+(r.type===0?'Sea route':'Land route')  /* @TRADETYPE */
+        +'</td><td>'+stops+'</td>'
+        +'<td><button class="act" onclick="trDelete('+i+')">delete</button></td></tr>';
+    });
+    h+='</table>';
+  }
+  // create form (@TRADETYPE / @TRADENAME; the @TRADENAMES presets seed the name box)
+  const presets=['Run','Ferry','Cargo','Transport','Triangle'];               // @TRADENAMES
+  const dests=['<option value="1000">—</option>']
+    .concat((GAME.colonies||[]).map((c,i)=>'<option value="'+i+'">'+trDestName(i)+'</option>'))
+    .concat(['<option value="999">Europe</option>']).join('');
+  const goodsSel=n=>'<select multiple size="3" id="'+n+'" style="min-width:90px">'
+    +GOODS.map((g,i)=>'<option value="'+i+'">'+g+'</option>').join('')+'</select>';
+  h+='<hr><p><b>Enter the name for this trade route.</b></p>'                 // @TRADENAME
+    +'<div class="row">Name: <input id="trname" value="'+presets[(GAME.routes||[]).length%5]+'" maxlength="31"> '
+    +'<select id="trtype"><option value="0">Sea route</option><option value="1">Land route</option></select></div>'
+    +'<table class="tbl"><tr><th>stop</th><th>destination</th><th>load</th><th>unload</th></tr>';
+  for(let s=0;s<4;s++)
+    h+='<tr><td>'+(s+1)+'</td><td><select id="trd'+s+'">'+dests+'</select></td>'
+      +'<td>'+goodsSel('trl'+s)+'</td><td>'+goodsSel('tru'+s)+'</td></tr>';
+  h+='</table><div class="row"><button class="act" onclick="trCreate()">Create route</button>'
+    +'<span class="muted"> max 12 routes &middot; 4 stops &middot; 6 goods per list</span></div>';
+  ui.popup('Trade routes', h);
+}
+async function trCreate(){
+  const picks=id=>Array.from($('#'+id).selectedOptions).map(o=>+o.value).slice(0,6);
+  const stops=[];
+  for(let s=0;s<4;s++){
+    const d=+$('#trd'+s).value;
+    if(d===1000) continue;                        // skip "none" rows
+    stops.push({dest:d, load:picks('trl'+s), unload:picks('tru'+s)});
+  }
+  if(!stops.length){ ui.toast('pick at least one destination'); return; }
+  const r=await (await fetch('/api/route/create',{method:'POST',
+    body:JSON.stringify({name:$('#trname').value,type:+$('#trtype').value,stops})})).json();
+  if(r.error){ ui.toast(r.error); return; }
+  GAME=r; ui.close(); trOpen();
+}
+async function trDelete(i){
+  const r=await (await fetch('/api/route/delete',{method:'POST',body:JSON.stringify({route:i})})).json();
+  if(r.error){ ui.toast(r.error); return; }
+  GAME=r; ui.close(); trOpen(); drawGame(); showSel();
+}
+// Assign the selected carrier to a route (@TRADESELECT "Select a trade route:").
+function trAssign(){
+  const u=selUnit(); if(!u) return;
+  const rts=(GAME.routes||[]).map((r,i)=>({r,i}))
+    .filter(x=>x.r.type===(u.naval?0:1));
+  if(!rts.length){ ui.toast('You have not yet defined any '+(u.naval?'sea':'land')+' trade routes.'); return; }  // @TRADENONE2
+  let h='<p><b>Select a trade route:</b></p>';    // @TRADESELECT verbatim
+  rts.forEach(x=>{ h+='<button class="act" style="margin:3px" onclick="trDoAssign('+x.i+')">'
+    +esc(x.r.name)+' ('+x.r.stops.map(s=>trDestName(s.dest)).join(' → ')+')</button>'; });
+  ui.popup('Trade route', h);
+}
+async function trDoAssign(i){
+  const r=await (await fetch('/api/game/order',{method:'POST',
+    body:JSON.stringify({unit:SEL,order:'T',route:i})})).json();
+  if(r.error){ ui.toast(r.error); return; }
+  GAME=r; ui.close(); drawGame(); showSel(); ui.toast('Trade route assigned — end turn to run it');
+}
 function showSel(){
   const u=selUnit();
   $('#foundbtn').disabled = !(u && !u.naval);
   if(!u){ SEL = u===undefined ? -1 : SEL; $('#selinfo').innerHTML='No unit selected. Click a unit to select it.'; return; }
-  const ord=['idle','fortified','sentry','moving','clear/plow','building road'][u.order]||'?';
+  const ord=['idle','fortified','sentry','moving','clear/plow','building road','trade route'][u.order]||'?';
   const cls=className(u.profession);
   let h='Selected: <b>'+esc(u.name)+'</b>'+(cls?' <span style="color:#e2c14a">('+cls+')</span>':'')
     +' at ('+u.x+','+u.y+') &middot; moves '+u.moves+' &middot; '+ord
     +(u.order===3?(' → ('+u.target_x+','+u.target_y+')'):'')
     +((u.order===4||u.order===5)?(' <span class="muted">('+(u.work||0)+' turns in)</span>'):'')
+    +(u.order===6&&(GAME.routes||[])[u.route]
+      ?(' <b>'+esc(GAME.routes[u.route].name)+'</b> &rarr; '
+        +trDestName((GAME.routes[u.route].stops[u.route_stop]||{dest:1000}).dest)):'')
     +(!u.naval&&u.tools!==undefined?' &middot; tools '+u.tools:'')
     +(u.naval?' &middot; <span class="muted">ship</span>':'');
+  if(u.cargo_cap>0)
+    h+=' &middot; cargo '+((u.cargo&&u.cargo.length)
+      ?u.cargo.map(p=>p[1]+' '+GOODS[p[0]]).join(', '):'empty')
+      +' <span class="muted">('+(u.cargo?u.cargo.length:0)+'/'+u.cargo_cap+' holds)</span>';
+  // trade-route assignment (@ORDERS row 2 "Trade Route, T") for any cargo carrier
+  const tbtn=u.cargo_cap>0
+    ?'<button class="act" onclick="trAssign()" title="Automate this carrier over a defined route (trade_routes.md)">Trade route (T)</button>':'';
   // standing-order buttons (the game's P/R/F/S keys) + the village-learning command
   if(!u.naval){
     h+='<div class="row" style="margin-top:4px">'
@@ -2621,12 +2713,16 @@ function showSel(){
       +'<button class="act" onclick="orderNamed(\'R\')" title="Build road (20 tools)">Road (R)</button>'
       +'<button class="act" onclick="orderNamed(\'F\')" title="Fortify (+50% defense)">Fortify (F)</button>'
       +'<button class="act" onclick="orderNamed(\'S\')">Sentry (S)</button>'
+      +tbtn
       +'<button class="act" onclick="orderNamed(\'-\')">Clear order</button>'
       +(u.type===0&&villageAdjacent(u)
         ?'<button class="act" style="border-color:#4f9d69" onclick="nativeLearn()" '
          +'title="Live among the Indians: learn the village\'s skill (training.md)">Learn from village</button>'
         :'')
       +'</div>';
+  } else if(tbtn){
+    h+='<div class="row" style="margin-top:4px">'+tbtn
+      +'<button class="act" onclick="orderNamed(\'-\')">Clear order</button></div>';
   }
   $('#selinfo').innerHTML=h;
 }
