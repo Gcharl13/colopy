@@ -5,6 +5,7 @@
 #include "../schema/schema.hpp"
 #include "../../forge/drydock_bridge.hpp"
 #include "rules.hpp"
+#include "dd_gen.hpp"
 #include <fstream>
 #include <sstream>
 #include <cstdio>
@@ -191,6 +192,24 @@ static void test_ruledata_parity() {
     check(bad == 0, "parity: every PROF field == compiled defaults");
 }
 
+static void test_reflection() {
+    // codegen'd struct + reflection tables: load a real record through the
+    // generic runtime and get typed fields back; serialize returns the same
+    // record (schema order, absent fields stay absent).
+    std::string src = slurp("data/base/good/food.rec"), err;
+    std::vector<Record> rs;
+    check(parse_records(src, rs, err) && rs.size() == 1, "reflect: food.rec parses");
+    DDGood g;
+    check(load_good(rs[0], g), "reflect: generic load into DDGood");
+    check(g.index == 0 && g.has_index, "reflect: index field");
+    check(g.name == "Food" && g.has_name, "reflect: string field");
+    check(g.burden == 7, "reflect: burden == 7 (the Food spread)");
+    Record back = reflect_serialize(good_type, "good.food", &g);
+    check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
+    check(dd_all_types_count == 3 && std::string(good_type.code) == "good",
+          "reflect: type registry populated");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
@@ -199,6 +218,7 @@ int main() {
     test_dicts();
     test_schema();
     test_ruledata_parity();
+    test_reflection();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }

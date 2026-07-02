@@ -107,6 +107,18 @@ add_library(drydock STATIC
 )
 add_executable(drydockc drydock/drydockc.cpp)
 target_link_libraries(drydockc PRIVATE drydock)
+# host-side codegen (spec 7 consumer #1): schema .rec -> structs + reflection
+# tables. Runs at build time; the generated header lands in the build tree.
+add_executable(drydock-gen drydock/schema/codegen.cpp)
+target_link_libraries(drydock-gen PRIVATE drydock)
+set(DD_GEN_DIR ${CMAKE_BINARY_DIR}/dd_gen)
+file(GLOB DD_SCHEMA_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../data/schema/*.rec)
+add_custom_command(
+  OUTPUT ${DD_GEN_DIR}/dd_gen.hpp
+  COMMAND drydock-gen ${CMAKE_CURRENT_SOURCE_DIR}/../data/schema ${DD_GEN_DIR}
+  DEPENDS drydock-gen ${DD_SCHEMA_FILES}
+  COMMENT "drydock-gen: schema -> structs + reflection tables")
+add_custom_target(dd_gen_header DEPENDS ${DD_GEN_DIR}/dd_gen.hpp)
 target_include_directories(drydock PUBLIC drydock)
 
 find_program(PYTHON3 python3)
@@ -116,6 +128,8 @@ target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
 add_executable(drydock_tests drydock/tests/drydock_tests.cpp forge/drydock_bridge.cpp)
 target_link_libraries(drydock_tests PRIVATE drydock viceroy_sim)
+add_dependencies(drydock_tests dd_gen_header)
+target_include_directories(drydock_tests PRIVATE ${DD_GEN_DIR} drydock/core)
 # drydock_tests reads the authored schemas under data/schema/ -> repo root cwd
 add_test(NAME drydock_tests COMMAND drydock_tests
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
