@@ -257,6 +257,21 @@ static void test_food_growth() {
     colony_economic_step(s3, 1, default_rules(), &fe);   // store 2 < deficit 4
     CHECK(fe == 1, "one turn of cover left -> @FOODLOW event");
 
+    std::printf("SoL status hysteresis (func_02D658 @0x2DB29..@0x2DBFA):\n");
+    { Colony h; h.population = 1; h.rebel_B = 100; int se = 0;
+      auto step_at = [&](int a) { h.rebel_A = a; h.bells_per_turn = 0;
+          // pin the EMA so the percent stays where the test puts it
+          int32_t B = h.rebel_B; colony_economic_step(h, 1, default_rules(), nullptr, &se);
+          h.rebel_B = B; return se; };
+      h.rebel_B = 100000;                        // huge divisor: decay noise ~0
+      CHECK(step_at(60000) == 1, "rising past 50%% -> @REBELMAJORITY once");
+      CHECK(step_at(60000) == 0, "staying there -> no repeat (latch 0x04)");
+      CHECK(step_at(200000) == 2, "reaching 100%% -> @REBELUNANIMOUS (A clamps to B)");
+      CHECK(step_at(94000) == 3, "falling below 95%% -> @TORYMINORITY (latch 0x02 clears)");
+      CHECK(step_at(60000) == 0, "still a majority: quiet");
+      CHECK(step_at(40000) == 4, "falling below 50%% -> @TORYMAJORITY");
+      CHECK(step_at(40000) == 0, "and quiet after");
+    }
     std::printf("SoL membership modifiers (colony.md 2):\n");
     Colony m; m.rebel_A = 50; m.rebel_B = 100;
     CHECK(sol_pct(m) == 50, "base A*100/B");

@@ -48,6 +48,11 @@ std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log();
 // (@FOODLOW), 2 = a colonist starved (@STARVE1), 3 = vanished (@VANISH).
 std::vector<std::pair<int, int>>& food_log();
 
+// Per-colony SoL status announcements from the production phase (colony.md 2,
+// hysteresis func_02D658 @0x2DB29..@0x2DBFA): (colony, event) with 1 =
+// @REBELMAJORITY, 2 = @REBELUNANIMOUS, 3 = @TORYMINORITY, 4 = @TORYMAJORITY.
+std::vector<std::pair<int, int>>& sol_log();
+
 // Battlefield promotions from the units phase (training.md 3) -- drained into
 // the @VETERAN/@CONTINENTAL notices.
 std::vector<vc::sim::PromoteResult>& promote_log();

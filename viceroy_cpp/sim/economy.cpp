@@ -54,11 +54,30 @@ int tory_expert_adjust(int base_yield, int population, int sol_percent,
 }
 
 void colony_economic_step(Colony& c, int difficulty, const RuleData& rd,
-                          int* food_event) {
+                          int* food_event, int* sol_event) {
     (void)difficulty;                          // tile-yield difficulty applies upstream
     const Config& cfg = rd.cfg;
     if (food_event) *food_event = 0;
+    if (sol_event) *sol_event = 0;
     sol_update(c, c.bells_per_turn, c.population, rd);
+    // SoL status announcements with hysteresis (func_02D658 @0x2DB29/@0x2DB6E/
+    // @0x2DBB4/@0x2DBFA; latch bits +0x1C 0x04 majority / 0x02 unanimous):
+    // rising edges announce once; the falling cutoffs are 95 (from unanimous)
+    // and 50 (from majority) -- one event per colony per turn.
+    {
+        const int pct = sol_pct(c);
+        int ev = 0;
+        if (pct >= 100 && !(c.status_latch & 0x02)) {
+            c.status_latch |= 0x02 | 0x04; ev = 2;               // @REBELUNANIMOUS
+        } else if (pct >= 50 && !(c.status_latch & 0x04)) {
+            c.status_latch |= 0x04; ev = 1;                      // @REBELMAJORITY
+        } else if (pct < 95 && (c.status_latch & 0x02)) {
+            c.status_latch &= ~0x02; ev = 3;                     // @TORYMINORITY
+        } else if (pct < 50 && (c.status_latch & 0x04)) {
+            c.status_latch &= ~0x04; ev = 4;                     // @TORYMAJORITY
+        }
+        if (sol_event) *sol_event = ev;
+    }
     build_step(c, c.hammers_per_turn, c.build_cost);
     // Food growth (USER RULING + warehousing.md:61-62): the food SURPLUS (produced - 2*pop, already
     // netted into food_per_turn) accumulates in the warehouse Food store; when it reaches 200 a new

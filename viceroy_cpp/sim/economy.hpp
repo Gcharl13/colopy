@@ -57,9 +57,15 @@ bool rush_build(Colony& c, Power& owner, long gold_cost);
 // family), 2 = a colonist starved (@STARVE1), 3 = the colony vanished
 // (@VANISH) -- the resident driver's per-colony message push (func_02D658
 // @0x2E219/@0x2E234/@0x2E265, once-per-turn gate [0xa898]).
+// sol_event (optional out): the per-colony SoL announcement with the
+// byte-verified hysteresis latches (func_02D658 @0x2DB29..@0x2DBFA, latch
+// bits ColonyRecord +0x1C 0x04/0x02): 1 = @REBELMAJORITY (rose to >= 50),
+// 2 = @REBELUNANIMOUS (reached 100), 3 = @TORYMINORITY (fell below 95 from
+// unanimous), 4 = @TORYMAJORITY (fell below 50).
 void colony_economic_step(Colony& c, int difficulty,
                           const RuleData& rd = default_rules(),
-                          int* food_event = nullptr);
+                          int* food_event = nullptr,
+                          int* sol_event = nullptr);
 
 // End-of-turn surplus disposal (warehousing.md §6.4, func_02D658 @0x2D6F7): after production is
 // banked, each tradeable good (1..15; Food(0) drives growth, excluded) whose stockpile >= 100 is

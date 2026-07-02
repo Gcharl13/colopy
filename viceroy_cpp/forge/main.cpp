@@ -1244,6 +1244,27 @@ static void game_step() {
             g_turn_notices.push_back(m);
         }
         forge::food_log().clear();
+        // Per-colony SoL status announcements (colony.md 2, the func_02D658
+        // hysteresis): verbatim @REBELMAJORITY/@REBELUNANIMOUS/@TORYMINORITY/
+        // @TORYMAJORITY with the colony and the live membership percent.
+        for (auto& [ci, ev] : forge::sol_log()) {
+            static const char* KEYS[5] = {"", "@REBELMAJORITY", "@REBELUNANIMOUS",
+                                          "@TORYMINORITY", "@TORYMAJORITY"};
+            if (ev < 1 || ev > 4 || ci >= (int)g_world.colonies.size()) continue;
+            const Colony& c = g_world.colonies[ci];
+            if (c.owner_power != 0 || !c.human) continue;   // announcements are the player's
+            std::string m = game_message_text(KEYS[ev]);
+            auto sfill2 = [](std::string s2, const char* tok, const std::string& v) {
+                for (size_t p2; (p2 = s2.find(tok)) != std::string::npos; )
+                    s2.replace(p2, std::strlen(tok), v);
+                return s2;
+            };
+            m = sfill2(m, "%STRING0", "#" + std::to_string(ci + 1));
+            m = sfill2(m, "%NUMBER0", std::to_string(
+                sol_pct(c, g_engine_extra.ff_owned, true)));
+            g_turn_notices.push_back(m);
+        }
+        forge::sol_log().clear();
         // The native powers' turn (natives.md): tension decay, mission converts
         // (@INDIANSCONVERT), and raids by hostile settlements (the 6 @RAID* keys).
         {
