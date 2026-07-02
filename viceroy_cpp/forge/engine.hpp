@@ -33,6 +33,9 @@ struct NativeSettlement {
     int  mission = -1;           // power that established a mission here, -1 = none
     bool capital = false;        // +0x03 bit 0x04 Capital marker
     int  alarm[4] = {0, 0, 0, 0};// +0x0A + power*2 per-European-power alarm (>=128 -> war)
+    int  tension[4] = {0, 0, 0, 0};// the 0x5B1C anger meter [0,100] per power
+                                 //   (func_045DF2; 75 hostile / 100 war -- a parallel,
+                                 //   distinct signal from alarm[], natives.md)
     int  skill = 0;              // the @JOB profession this village can teach (training.md 3;
                                  //   which skill a given village carries is RECONSTRUCTED --
                                  //   assigned from the learnable list at seeding)
@@ -126,6 +129,10 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
 
 // The @JOB display name for a profession id (the expert_name column for an expert, else name).
 std::string job_name(int profession, bool expert);
+
+// Resolve one reference-table cell "@SECTION[row].col" against the live
+// (edit-aware) table data. Null JsonValue when the path does not resolve.
+JsonValue table_cell(const std::string& path);
 
 // Base terrain yield of raw good g (0..7) on a terrain id, read live from the yield tables
 // (@UNFORESTED / @FORESTED / @OTHER). Used by production and the colony-screen field panel.

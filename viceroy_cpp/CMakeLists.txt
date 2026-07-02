@@ -84,6 +84,7 @@ add_executable(forge
   forge/formulas.cpp
   forge/engine.cpp
   forge/turnpipe.cpp
+  forge/native_powers.cpp
   forge/store.cpp
   forge/expr.cpp
   forge/httpd.cpp

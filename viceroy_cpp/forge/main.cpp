@@ -29,6 +29,7 @@
 #include "store.hpp"
 #include "training.hpp"
 #include "turnpipe.hpp"
+#include "native_powers.hpp"
 #include "types.hpp"
 #include "unit_turn.hpp"
 #include "web_ui.hpp"
@@ -1034,6 +1035,7 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
                           std::function<int(int,int)> rng);
 // Verbatim GAME.TXT message text by @KEY (defined with the label helpers below).
 static std::string game_message_text(const std::string& key);
+static std::string good_display(int g);
 
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
@@ -1078,7 +1080,10 @@ static void game_step() {
                 }
                 std::string tribe = "natives";
                 if (near_v) {
-                    near_v->alarm[0] += 10;             // magnitude RECONSTRUCTED
+                    // Burial-ground desecration: tension +100 vs the desecrating
+                    // power (func_045DF2 caller @0x61B84, BYTE-VERIFIED delta).
+                    forge::tension_apply(*near_v, 0, 100, g_game.nation == 1,
+                                         (g_engine_extra.ff_owned >> 16) & 1u);
                     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
                     tribe = forge::resolve_binding("@TRIBES[" + std::to_string(near_v->tribe) + "].name", cx).str;
                 }
@@ -1152,6 +1157,47 @@ static void game_step() {
             g_turn_notices.push_back(m2);                               //   voyage not modeled
         }
         forge::shore_log().clear();
+        // The native powers' turn (natives.md): tension decay, mission converts
+        // (@INDIANSCONVERT), and raids by hostile settlements (the 6 @RAID* keys).
+        {
+            forge::NativeTurn nt = forge::native_turn_step(g_game, g_world, g_engine_extra, game_rng);
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            auto tname = [&](int si) {
+                return forge::resolve_binding("@TRIBES[" + std::to_string(
+                    g_engine_extra.settlements[si].tribe) + "].name", cx).str;
+            };
+            auto nfill = [](std::string s, const char* tok, const std::string& v) {
+                for (size_t p2; (p2 = s.find(tok)) != std::string::npos; )
+                    s.replace(p2, std::strlen(tok), v);
+                return s;
+            };
+            for (auto& [si, ci] : nt.converts) {
+                std::string m = game_message_text("@INDIANSCONVERT");
+                m = nfill(m, "%STRING0", "#" + std::to_string(ci + 1));
+                g_turn_notices.push_back(m);
+            }
+            for (auto& [si, rr] : nt.raids) {
+                std::string m = game_message_text(rr.key);
+                m = nfill(m, "%STRING0", tname(si));
+                // find the raided colony label from the nearest own colony used
+                m = nfill(m, "%STRING1", "#" + std::to_string(
+                    [&]{ int best=-1; long bd=1<<20;
+                         const forge::NativeSettlement& s = g_engine_extra.settlements[si];
+                         for (int c2=0;c2<(int)g_world.colonies.size();++c2){
+                             const Colony& c=g_world.colonies[c2]; if(c.x<0)continue;
+                             long d=std::abs(c.x-s.x)+std::abs(c.y-s.y);
+                             if(d<bd){bd=d;best=c2;} } return best+1; }()));
+                if (rr.good >= 0)     m = nfill(m, "%STRING2", good_display(rr.good));
+                if (rr.building >= 0) m = nfill(m, "%STRING2",
+                    forge::resolve_binding("@BUILDING[" + std::to_string(rr.building) + "].name", cx).str);
+                if (rr.ship >= 0 && rr.ship < (int)g_world.units.size())
+                    m = nfill(m, "%STRING2", unit_stats(g_world.units[rr.ship].type).name);
+                m = nfill(m, "%STRING3", nation_name(0));
+                { size_t p2; std::string t = std::to_string(rr.gold);
+                  while ((p2 = m.find("%NUMBER0")) != std::string::npos) m.replace(p2, 8, t); }
+                g_turn_notices.push_back(m);
+            }
+        }
         // AI powers may have founded colonies this turn (ai.md settler missions):
         // keep the legacy colony_xy list in step with the world's colony roster.
         while (g_colony_xy.size() < g_world.colonies.size()) {
@@ -2088,7 +2134,9 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         so.obj["mission"] = forge::json_num(s.mission); so.obj["capital"] = jbool(s.capital);
         so.obj["skill"] = forge::json_num(s.skill); so.obj["taught"] = jbool(s.taught);
         forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
-        so.obj["alarm"] = al; st.arr.push_back(so);
+        so.obj["alarm"] = al;
+        forge::JsonValue tn = jarr(); for (int p = 0; p < 4; ++p) tn.arr.push_back(forge::json_num(s.tension[p]));
+        so.obj["tension"] = tn; st.arr.push_back(so);
     }
     o.obj["settlements"] = st;
     return o;
@@ -2129,6 +2177,8 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             const forge::JsonValue* tg = s.find("taught"); ns.taught = tg && tg->type == forge::JsonValue::Bool ? tg->b : false;
             if (const forge::JsonValue* al = s.find("alarm"))
                 for (int p = 0; p < 4 && p < (int)al->arr.size(); ++p) ns.alarm[p] = al->arr[p].as_int();
+            if (const forge::JsonValue* tn = s.find("tension"))
+                for (int p = 0; p < 4 && p < (int)tn->arr.size(); ++p) ns.tension[p] = tn->arr[p].as_int();
             x.settlements.push_back(ns);
         }
 }

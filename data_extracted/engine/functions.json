@@ -614,6 +614,38 @@
           "note": "Code-side bounds on a tribute demand.",
           "title": "Gold a native demand resolves to",
           "writes": []
+        },
+        {
+          "expr": "tension[settlement][power] += delta, clamped [0,100] ; positive deltas HALVED for the French power (@0x45E21) and again for Pocahontas (FF 16, @0x45E30) ; thresholds: 75 hostile (@0x45E9E), 100 war (@0x45EB2) ; per-action deltas: trespass +1/+2/+3, trade -4, mission clamp <=70, incite +/-100, desecration +100 (@0x61B84)",
+          "fn": "tension_apply",
+          "knobs": [],
+          "note": "The 0x5B1C meter is a PARALLEL signal from the alarm[] words (threshold 128). The EXE's 4th 'category' arg is dead -- never read by the applier (2026-06-27 reseg).",
+          "title": "Tension meter (func_045DF2)",
+          "writes": []
+        },
+        {
+          "expr": "gate = random_int(1,12)-1 (+(diff-2) vs a human target @0x5BF1A) vs 3*K+1 (@0x5BEE5; K RECONSTRUCTED = colony fort level) ; base outcome random_int(1,4) (@0x5BF35), -1 while turn < 40*(2-diff) (@0x5BF44) ; ladder (@0x5C026): 0 @RAIDNOTHING / 1 @RAIDSTORES (wealth +25 @0x5C3E4) / 2 @RAIDWREAK / 3 @RAIDGOLD / 4 @RAIDBURN|@RAIDSHIP",
+          "fn": "native_raid",
+          "knobs": [],
+          "note": "Stolen-goods share, gold share, and the burn target are RECONSTRUCTED (the keys + ladder + wealth bump are byte-cited).",
+          "title": "Raid outcomes (func_05BE84)",
+          "writes": []
+        },
+        {
+          "expr": "threshold = @TRIBES.level + 2, DOUBLED with Jean de Brebeuf (FF 0x16, @0x48C81) ; roll = random_int(0,15) ; converts iff roll < threshold (@0x57316) => P = (level+2)/15 ; the convert joins the colony as class 0x1B (@0x57374)",
+          "fn": "mission_convert_roll",
+          "knobs": [],
+          "note": "",
+          "title": "Mission conversion (func_0572E6)",
+          "writes": []
+        },
+        {
+          "expr": "buy offer = min(90, max(5*diff+50, 2*tax)) (@0x5C976..@0x5C9A3) ; successful trade: tension -4 (@0x5C41E) ; raze gold = (sum of 3 x rng(0,10-diff)) * rng(0,6) * 4 * (level+1), credited directly (@0x4AAD0..@0x4AB66, no x100, no treasure unit)",
+          "fn": "native_trade_price / raze_treasure_gold",
+          "knobs": [],
+          "note": "",
+          "title": "Trade price + CHIEFKILL treasure",
+          "writes": []
         }
       ],
       "name": "Natives - missions, tension, trade, tribute",

@@ -99,6 +99,8 @@ const JsonValue* find_table_section(const std::string& section) {
     }
     return nullptr;
 }
+} // namespace (table_cell is exported -- forge/natives.cpp reads @TRIBES rows)
+
 // Resolve "@SECTION[rowsel].column": rowsel = integer index or "name:VALUE".
 JsonValue table_cell(const std::string& path) {
     size_t lb = path.find('[');
@@ -146,6 +148,8 @@ JsonValue table_cell(const std::string& path) {
     }
     return *cell;
 }
+
+namespace {
 
 // ---- node catalog helpers ----
 JsonValue pin(const char* name, const char* kind, const char* dir, const char* dtype = "") {
