@@ -1,0 +1,15 @@
+record unit.wagon_train {
+  index        = 12
+  name         = "Wagon Train"
+  icon         = 9
+  movement     = 2
+  attack       = 0
+  combat       = 1
+  cargo        = 2
+  size         = 99
+  cost         = 1
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00000000"
+}

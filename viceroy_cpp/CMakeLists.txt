@@ -81,6 +81,7 @@ add_executable(forge
   forge/mapedit.cpp
   forge/mod.cpp
   forge/savegame.cpp
+  forge/drydock_bridge.cpp
   forge/datacheck.cpp
   forge/formulas.cpp
   forge/engine.cpp
@@ -92,7 +93,7 @@ add_executable(forge
   forge/web_ui.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
-target_link_libraries(forge PRIVATE viceroy_sim)
+target_link_libraries(forge PRIVATE viceroy_sim drydock)
 if(WIN32)
   target_link_libraries(forge PRIVATE ws2_32)   # Winsock for `forge serve`
 endif()
@@ -102,18 +103,32 @@ endif()
 add_library(drydock STATIC
   drydock/text/rec_text.cpp
   drydock/schema/schema.cpp
+  drydock/pack/pack.cpp
 )
+add_executable(drydockc drydock/drydockc.cpp)
+target_link_libraries(drydockc PRIVATE drydock)
 target_include_directories(drydock PUBLIC drydock)
 
+find_program(PYTHON3 python3)
 enable_testing()
 add_executable(sim_tests sim/tests/sim_tests.cpp)
 target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
-add_executable(drydock_tests drydock/tests/drydock_tests.cpp)
-target_link_libraries(drydock_tests PRIVATE drydock)
+add_executable(drydock_tests drydock/tests/drydock_tests.cpp forge/drydock_bridge.cpp)
+target_link_libraries(drydock_tests PRIVATE drydock viceroy_sim)
 # drydock_tests reads the authored schemas under data/schema/ -> repo root cwd
 add_test(NAME drydock_tests COMMAND drydock_tests
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+# HARD GATE (spec 10.4): validate + canonical byte-identity over the FULL data
+# set, then compile + read back the pack.
+add_test(NAME drydockc_gate COMMAND drydockc data -o ${CMAKE_BINARY_DIR}/game.pack
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+if(PYTHON3)
+  # data/base provenance: a regeneration from the extraction tables must be
+  # byte-identical to the committed .rec files.
+  add_test(NAME drydock_migrate_check COMMAND ${PYTHON3} tools/drydock_migrate.py --check
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
 add_test(NAME forge_map COMMAND forge map selftest)
 add_test(NAME forge_rules COMMAND forge rules selftest)
 add_test(NAME forge_mod COMMAND forge mod selftest)
@@ -130,7 +145,6 @@ add_test(NAME forge_bundle COMMAND forge bundle selftest
 
 # Data-integrity gates (B12): schema binding resolution + cross-reference validation.
 # Python, data-only; run from the repo root where the JSON data lives.
-find_program(PYTHON3 python3)
 if(PYTHON3)
   add_test(NAME validate_schema COMMAND ${PYTHON3} tools/validate_schema.py
            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)

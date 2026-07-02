@@ -1,0 +1,7 @@
+record prof.teacher {
+  index        = 18
+  name         = "Teacher"
+  expert_name  = "Expert Teachers"
+  school_tier  = 4
+  europe_value = -1
+}

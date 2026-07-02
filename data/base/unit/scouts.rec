@@ -1,0 +1,15 @@
+record unit.scouts {
+  index        = 5
+  name         = "Scouts"
+  icon         = 104
+  movement     = 4
+  attack       = 1
+  combat       = 1
+  cargo        = 0
+  size         = 1
+  cost         = 2
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "01100100"
+}

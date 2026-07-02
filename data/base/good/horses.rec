@@ -1,0 +1,13 @@
+record good.horses {
+  index        = 8
+  name         = "Horses"
+  price_start1 = 2
+  price_start2 = 3
+  drift_low    = 2
+  drift_high   = 11
+  burden       = 0
+  rise         = 3
+  fall         = 2
+  attrition    = -3
+  volatility   = 0
+}

@@ -1,0 +1,15 @@
+record unit.artillery {
+  index        = 11
+  name         = "Artillery"
+  icon         = 10
+  movement     = 1
+  attack       = 7
+  combat       = 5
+  cargo        = 0
+  size         = 1
+  cost         = 6
+  tools        = 4
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00011000"
+}

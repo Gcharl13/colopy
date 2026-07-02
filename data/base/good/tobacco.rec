@@ -1,0 +1,13 @@
+record good.tobacco {
+  index        = 2
+  name         = "Tobacco"
+  price_start1 = 3
+  price_start2 = 5
+  drift_low    = 2
+  drift_high   = 5
+  burden       = 1
+  rise         = 4
+  fall         = 8
+  attrition    = -10
+  volatility   = 1
+}

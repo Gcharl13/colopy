@@ -1,0 +1,7 @@
+record prof.lumberjack {
+  index        = 5
+  name         = "Lumberjack"
+  expert_name  = "Expert Lumberjacks"
+  school_tier  = 1
+  europe_value = 700
+}

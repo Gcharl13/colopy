@@ -1,0 +1,15 @@
+record unit.caravel {
+  index        = 13
+  name         = "Caravel"
+  icon         = 6
+  movement     = 4
+  attack       = 0
+  combat       = 2
+  cargo        = 2
+  size         = 99
+  cost         = 4
+  tools        = 4
+  guns         = 0
+  hull         = 4
+  ai_role_bits = "10100010"
+}

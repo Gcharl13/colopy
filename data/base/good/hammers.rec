@@ -1,0 +1,4 @@
+record good.hammers {
+  index = 16
+  name  = "Hammers"
+}

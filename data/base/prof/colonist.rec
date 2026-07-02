@@ -1,0 +1,7 @@
+record prof.colonist {
+  index        = 19
+  name         = "Colonist"
+  expert_name  = "Free Colonists"
+  school_tier  = 4
+  europe_value = -1
+}

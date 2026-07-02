@@ -1,0 +1,15 @@
+record unit.man_o_war {
+  index        = 18
+  name         = "Man-O-War"
+  icon         = 128
+  movement     = 5
+  attack       = 24
+  combat       = 24
+  cargo        = 6
+  size         = 99
+  cost         = 32
+  tools        = 90
+  guns         = 32
+  hull         = 64
+  ai_role_bits = "10000001"
+}

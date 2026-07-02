@@ -1,0 +1,7 @@
+record prof.carpenter {
+  index        = 13
+  name         = "Carpenter"
+  expert_name  = "Master Carpenters"
+  school_tier  = 1
+  europe_value = 1000
+}

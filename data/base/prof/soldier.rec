@@ -1,0 +1,7 @@
+record prof.soldier {
+  index        = 21
+  name         = "Soldier"
+  expert_name  = "Veteran Soldiers"
+  school_tier  = 2
+  europe_value = 2000
+}

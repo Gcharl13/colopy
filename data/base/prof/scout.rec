@@ -1,0 +1,7 @@
+record prof.scout {
+  index        = 22
+  name         = "Scout"
+  expert_name  = "Seasoned Scouts"
+  school_tier  = 1
+  europe_value = -1
+}

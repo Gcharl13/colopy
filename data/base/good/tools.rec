@@ -1,0 +1,13 @@
+record good.tools {
+  index        = 14
+  name         = "Tools"
+  price_start1 = 2
+  price_start2 = 2
+  drift_low    = 2
+  drift_high   = 9
+  burden       = 0
+  rise         = 2
+  fall         = 2
+  attrition    = 5
+  volatility   = 0
+}

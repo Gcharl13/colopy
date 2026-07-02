@@ -1,0 +1,7 @@
+record prof.statesman {
+  index        = 17
+  name         = "Statesman"
+  expert_name  = "Elder Statesmen"
+  school_tier  = 3
+  europe_value = 1900
+}

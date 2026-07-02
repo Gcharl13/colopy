@@ -1,0 +1,7 @@
+record prof.ore_miner {
+  index        = 6
+  name         = "Ore Miner"
+  expert_name  = "Expert Ore Miners"
+  school_tier  = 1
+  europe_value = 600
+}

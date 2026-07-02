@@ -1,0 +1,7 @@
+record prof.tobacco_planter {
+  index        = 2
+  name         = "Tobacco Planter"
+  expert_name  = "Master Tobacco Planters"
+  school_tier  = 2
+  europe_value = -1
+}

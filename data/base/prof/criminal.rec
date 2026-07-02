@@ -1,0 +1,7 @@
+record prof.criminal {
+  index        = 26
+  name         = "Criminal"
+  expert_name  = "Petty Criminals"
+  school_tier  = 4
+  europe_value = -1
+}

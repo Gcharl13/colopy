@@ -1,0 +1,7 @@
+record prof.convert {
+  index        = 27
+  name         = "Convert"
+  expert_name  = "Indian Converts"
+  school_tier  = 4
+  europe_value = -1
+}

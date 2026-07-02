@@ -1,0 +1,15 @@
+record unit.cont_cav {
+  index        = 7
+  name         = "Cont. Cav."
+  icon         = 130
+  movement     = 4
+  attack       = 5
+  combat       = 5
+  cargo        = 0
+  size         = 1
+  cost         = 3
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00011100"
+}

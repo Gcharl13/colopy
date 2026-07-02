@@ -1,0 +1,7 @@
+record prof.dragoon {
+  index        = 23
+  name         = "Dragoon"
+  expert_name  = "Veteran Dragoons"
+  school_tier  = 2
+  europe_value = -1
+}

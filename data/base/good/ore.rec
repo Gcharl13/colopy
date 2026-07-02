@@ -1,0 +1,13 @@
+record good.ore {
+  index        = 6
+  name         = "Ore"
+  price_start1 = 3
+  price_start2 = 6
+  drift_low    = 2
+  drift_high   = 6
+  burden       = 2
+  rise         = 2
+  fall         = 4
+  attrition    = -7
+  volatility   = 0
+}

@@ -1,0 +1,7 @@
+record prof.fur_trader {
+  index        = 12
+  name         = "Fur Trader"
+  expert_name  = "Master Fur Traders"
+  school_tier  = 2
+  europe_value = 950
+}

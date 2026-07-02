@@ -1,0 +1,15 @@
+record unit.regulars {
+  index        = 6
+  name         = "Regulars"
+  icon         = 126
+  movement     = 1
+  attack       = 5
+  combat       = 5
+  cargo        = 0
+  size         = 1
+  cost         = 3
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00011100"
+}

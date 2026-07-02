@@ -1,0 +1,13 @@
+record good.silver {
+  index        = 7
+  name         = "Silver"
+  price_start1 = 20
+  price_start2 = 20
+  drift_low    = 2
+  drift_high   = 20
+  burden       = 0
+  rise         = 8
+  fall         = 1
+  attrition    = -8
+  volatility   = 2
+}

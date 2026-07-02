@@ -1,0 +1,13 @@
+record good.coats {
+  index        = 12
+  name         = "Coats"
+  price_start1 = 11
+  price_start2 = 13
+  drift_low    = 1
+  drift_high   = 20
+  burden       = 0
+  rise         = 4
+  fall         = 4
+  attrition    = -11
+  volatility   = 1
+}

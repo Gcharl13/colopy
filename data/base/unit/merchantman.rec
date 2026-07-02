@@ -1,0 +1,15 @@
+record unit.merchantman {
+  index        = 14
+  name         = "Merchantman"
+  icon         = 7
+  movement     = 5
+  attack       = 0
+  combat       = 6
+  cargo        = 4
+  size         = 99
+  cost         = 6
+  tools        = 8
+  guns         = 1
+  hull         = 8
+  ai_role_bits = "10000010"
+}

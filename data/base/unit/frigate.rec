@@ -1,0 +1,15 @@
+record unit.frigate {
+  index        = 17
+  name         = "Frigate"
+  icon         = 16
+  movement     = 6
+  attack       = 16
+  combat       = 16
+  cargo        = 4
+  size         = 99
+  cost         = 16
+  tools        = 20
+  guns         = 12
+  hull         = 32
+  ai_role_bits = "10000001"
+}

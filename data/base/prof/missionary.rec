@@ -1,0 +1,7 @@
+record prof.missionary {
+  index        = 24
+  name         = "Missionary"
+  expert_name  = "Jesuit Missionaries"
+  school_tier  = 3
+  europe_value = 1400
+}

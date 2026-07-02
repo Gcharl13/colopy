@@ -1,0 +1,15 @@
+record unit.galleon {
+  index        = 15
+  name         = "Galleon"
+  icon         = 8
+  movement     = 6
+  attack       = 0
+  combat       = 10
+  cargo        = 6
+  size         = 99
+  cost         = 10
+  tools        = 10
+  guns         = 4
+  hull         = 20
+  ai_role_bits = "10000010"
+}

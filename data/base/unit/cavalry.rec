@@ -1,0 +1,15 @@
+record unit.cavalry {
+  index        = 8
+  name         = "Cavalry"
+  icon         = 127
+  movement     = 4
+  attack       = 6
+  combat       = 6
+  cargo        = 0
+  size         = 1
+  cost         = 4
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00011100"
+}

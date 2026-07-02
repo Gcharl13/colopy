@@ -3,6 +3,8 @@
 // error quality. Grows with each Drydock phase.
 #include "../text/rec_text.hpp"
 #include "../schema/schema.hpp"
+#include "../../forge/drydock_bridge.hpp"
+#include "rules.hpp"
 #include <fstream>
 #include <sstream>
 #include <cstdio>
@@ -155,6 +157,40 @@ static void test_schema() {
     check(req_hit, "validate flags missing required field");
 }
 
+static void test_ruledata_parity() {
+    // The migration hard gate: the values loaded from data/base/*.rec must be
+    // IDENTICAL to the compiled defaults (which verify_rules.py proves equal
+    // to the original extraction tables). Zero out the migrated fields first
+    // so equality proves the values actually came from the records.
+    using vc::sim::RuleData;
+    RuleData def = vc::sim::make_default_rules();
+    RuleData rd  = def;
+    // @UNIT has 23 rows; units[23] is the zeroed padding slot with no record
+    const size_t NU = rd.units.size() - 1;
+    for (size_t i = 0; i < NU; ++i) { auto& u = rd.units[i];
+        u.attack = -999; u.defense = -999; u.cargo = -999; u.movement = -999; }
+    for (auto& c : rd.cargo) { c.start1 = c.start2 = c.lo = c.hi = c.burden = -999; }
+    for (auto& j : rd.jobs)  { j.school_tier = -999; j.value = -999; }
+    std::string msg;
+    check(forge::drydock_apply_base(rd, "data", msg), "parity: drydock_apply_base loads data/");
+    if (!msg.empty()) std::printf("       %s\n", msg.c_str());
+    int bad = 0;
+    for (size_t i = 0; i < NU; ++i)
+        if (rd.units[i].attack != def.units[i].attack || rd.units[i].defense != def.units[i].defense ||
+            rd.units[i].cargo != def.units[i].cargo || rd.units[i].movement != def.units[i].movement) ++bad;
+    check(bad == 0, "parity: every UNIT field == compiled defaults");
+    bad = 0;
+    for (size_t i = 0; i < rd.cargo.size(); ++i)
+        if (rd.cargo[i].start1 != def.cargo[i].start1 || rd.cargo[i].start2 != def.cargo[i].start2 ||
+            rd.cargo[i].lo != def.cargo[i].lo || rd.cargo[i].hi != def.cargo[i].hi ||
+            rd.cargo[i].burden != def.cargo[i].burden) ++bad;
+    check(bad == 0, "parity: every GOOD market field == compiled defaults");
+    bad = 0;
+    for (size_t i = 0; i < rd.jobs.size(); ++i)
+        if (rd.jobs[i].school_tier != def.jobs[i].school_tier || rd.jobs[i].value != def.jobs[i].value) ++bad;
+    check(bad == 0, "parity: every PROF field == compiled defaults");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
@@ -162,6 +198,7 @@ int main() {
     test_multi_and_lists();
     test_dicts();
     test_schema();
+    test_ruledata_parity();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }

@@ -1,0 +1,7 @@
+record prof.distiller {
+  index        = 9
+  name         = "Distiller"
+  expert_name  = "Master Distiller"
+  school_tier  = 2
+  europe_value = 1100
+}

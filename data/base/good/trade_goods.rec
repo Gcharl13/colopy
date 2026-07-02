@@ -1,0 +1,13 @@
+record good.trade_goods {
+  index        = 13
+  name         = "Trade Goods"
+  price_start1 = 2
+  price_start2 = 3
+  drift_low    = 2
+  drift_high   = 12
+  burden       = 0
+  rise         = 2
+  fall         = 3
+  attrition    = 4
+  volatility   = 0
+}

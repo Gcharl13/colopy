@@ -1,0 +1,7 @@
+record prof.fur_trapper {
+  index        = 4
+  name         = "Fur Trapper"
+  expert_name  = "Expert Fur Trappers"
+  school_tier  = 1
+  europe_value = -1
+}

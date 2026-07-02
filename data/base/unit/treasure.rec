@@ -1,0 +1,15 @@
+record unit.treasure {
+  index        = 10
+  name         = "Treasure"
+  icon         = 17
+  movement     = 1
+  attack       = 0
+  combat       = 0
+  cargo        = 0
+  size         = 6
+  cost         = 4
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00000000"
+}

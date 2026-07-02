@@ -1,0 +1,4 @@
+record good.flags {
+  index = 19
+  name  = "Flags"
+}

@@ -1,0 +1,13 @@
+record good.sugar {
+  index        = 1
+  name         = "Sugar"
+  price_start1 = 4
+  price_start2 = 7
+  drift_low    = 3
+  drift_high   = 7
+  burden       = 1
+  rise         = 4
+  fall         = 6
+  attrition    = -8
+  volatility   = 1
+}

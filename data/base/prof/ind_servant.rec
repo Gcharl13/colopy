@@ -1,0 +1,7 @@
+record prof.ind_servant {
+  index        = 25
+  name         = "Ind. Servant"
+  expert_name  = "Indentured Servants"
+  school_tier  = 4
+  europe_value = -1
+}

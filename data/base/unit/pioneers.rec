@@ -1,0 +1,15 @@
+record unit.pioneers {
+  index        = 2
+  name         = "Pioneers"
+  icon         = 102
+  movement     = 1
+  attack       = 0
+  combat       = 1
+  cargo        = 0
+  size         = 1
+  cost         = 2
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "01000000"
+}

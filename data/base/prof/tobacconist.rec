@@ -1,0 +1,7 @@
+record prof.tobacconist {
+  index        = 10
+  name         = "Tobacconist"
+  expert_name  = "Master Tobacconists"
+  school_tier  = 2
+  europe_value = 1200
+}

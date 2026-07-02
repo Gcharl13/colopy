@@ -1,0 +1,13 @@
+record good.cotton {
+  index        = 3
+  name         = "Cotton"
+  price_start1 = 2
+  price_start2 = 5
+  drift_low    = 2
+  drift_high   = 5
+  burden       = 1
+  rise         = 4
+  fall         = 6
+  attrition    = -11
+  volatility   = 1
+}

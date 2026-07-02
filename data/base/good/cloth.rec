@@ -1,0 +1,13 @@
+record good.cloth {
+  index        = 11
+  name         = "Cloth"
+  price_start1 = 11
+  price_start2 = 13
+  drift_low    = 1
+  drift_high   = 20
+  burden       = 0
+  rise         = 4
+  fall         = 4
+  attrition    = -13
+  volatility   = 1
+}

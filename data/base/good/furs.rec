@@ -1,0 +1,13 @@
+record good.furs {
+  index        = 4
+  name         = "Furs"
+  price_start1 = 4
+  price_start2 = 6
+  drift_low    = 2
+  drift_high   = 6
+  burden       = 1
+  rise         = 4
+  fall         = 20
+  attrition    = -13
+  volatility   = 1
+}

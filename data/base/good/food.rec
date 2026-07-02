@@ -1,0 +1,13 @@
+record good.food {
+  index        = 0
+  name         = "Food"
+  price_start1 = 1
+  price_start2 = 3
+  drift_low    = 1
+  drift_high   = 6
+  burden       = 7
+  rise         = 3
+  fall         = 2
+  attrition    = -1
+  volatility   = 0
+}

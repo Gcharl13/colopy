@@ -1,0 +1,15 @@
+record unit.braves {
+  index        = 19
+  name         = "Braves"
+  icon         = 110
+  movement     = 1
+  attack       = 1
+  combat       = 1
+  cargo        = 0
+  size         = 0
+  cost         = 1
+  tools        = 0
+  guns         = 0
+  hull         = 0
+  ai_role_bits = "00111000"
+}

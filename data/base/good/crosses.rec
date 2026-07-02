@@ -1,0 +1,4 @@
+record good.crosses {
+  index = 17
+  name  = "Crosses"
+}

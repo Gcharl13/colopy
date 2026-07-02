@@ -1,0 +1,7 @@
+record prof.preacher {
+  index        = 16
+  name         = "Preacher"
+  expert_name  = "Firebrand Preachers"
+  school_tier  = 3
+  europe_value = 1500
+}

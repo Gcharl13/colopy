@@ -1,0 +1,13 @@
+record good.lumber {
+  index        = 5
+  name         = "Lumber"
+  price_start1 = 2
+  price_start2 = 2
+  drift_low    = 2
+  drift_high   = 2
+  burden       = 4
+  rise         = 3
+  fall         = 2
+  attrition    = 0
+  volatility   = 0
+}

@@ -26,6 +26,7 @@
 #include "rules_json.hpp"
 #include "scoring.hpp"
 #include "savegame.hpp"
+#include "drydock_bridge.hpp"
 #include "explore.hpp"
 #include "natives.hpp"
 #include "store.hpp"
@@ -5540,6 +5541,12 @@ static int engine_selftest() {
 static int do_serve(int argc, char** argv) {
     int port = (argc >= 3) ? std::atoi(argv[2]) : 8099;
     if (port <= 0 || port > 65535) port = 8099;
+    // Drydock strangler seam: the migrated types (GOOD/UNIT/PROF) load from the
+    // canonical text under data/ when present (dev text loading, spec 4.1);
+    // values are parity-proven identical to the compiled defaults.
+    { std::string dmsg;
+      if (forge::drydock_apply_base(g_active_rules, "data", dmsg)) std::printf("%s\n", dmsg.c_str());
+      else if (!dmsg.empty()) std::printf("drydock: NOT applied -- %s\n", dmsg.c_str()); }
     // Load the persisted active mod (if any) so the Play game starts on the saved ruleset.
     if (std::filesystem::exists(ACTIVE_RULES_PATH)) {
         try {

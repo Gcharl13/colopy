@@ -1,0 +1,4 @@
+record good.liberty_bells {
+  index = 18
+  name  = "Liberty Bells"
+}

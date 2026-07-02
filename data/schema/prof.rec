@@ -4,7 +4,7 @@ record schm.prof {
     { name = "index", type = "int", required = true, min = 0, max = 27, doc = "@JOB row ordinal (EXE-parity; profession/class ids are load-bearing)" },
     { name = "name", type = "str", required = true, doc = "Verbatim @JOB profession name" },
     { name = "expert_name", type = "str", doc = "Expert display name (plural form, verbatim)" },
-    { name = "school_tier", type = "int", min = 0, max = 3, doc = "Schoolhouse tier required to teach (training.md)" },
+    { name = "school_tier", type = "int", min = 0, max = 4, doc = "Minimum school tier that teaches it (1 Schoolhouse / 2 College / 3 University / 4 not school-taught, training.md)" },
     { name = "europe_value", type = "int", doc = "Europe recruit value (@JOB europe_value)" },
     { name = "notes", type = "str", doc = "Free prose" }
   ]

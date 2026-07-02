@@ -1,0 +1,15 @@
+record unit.privateer {
+  index        = 16
+  name         = "Privateer"
+  icon         = 15
+  movement     = 8
+  attack       = 8
+  combat       = 8
+  cargo        = 2
+  size         = 99
+  cost         = 8
+  tools        = 12
+  guns         = 4
+  hull         = 12
+  ai_role_bits = "00000001"
+}

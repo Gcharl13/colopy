@@ -1,0 +1,13 @@
+record good.muskets {
+  index        = 15
+  name         = "Muskets"
+  price_start1 = 3
+  price_start2 = 3
+  drift_low    = 2
+  drift_high   = 20
+  burden       = 0
+  rise         = 2
+  fall         = 2
+  attrition    = 6
+  volatility   = 0
+}

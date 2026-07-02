@@ -1,0 +1,7 @@
+record prof.blacksmith {
+  index        = 14
+  name         = "Blacksmith"
+  expert_name  = "Master Blacksmiths"
+  school_tier  = 2
+  europe_value = 1050
+}
