@@ -71,6 +71,22 @@ struct NativeTurn {
     std::vector<std::pair<int, int>> converts;              // (settlement, colony)
     std::vector<std::pair<int, RaidResult>> raids;           // (settlement, result)
 };
+// The byte-verified tension-event delta table (natives.md, func_045DF2
+// callers): trespass minor/moderate/severe +1/+2/+3 (@0x4A2E8/@0x4A319/
+// @0x4A674), successful trade -4 (@0x5C41E), incite +100 / pacify -100
+// (@0x486F8/@0x4870C), burial-ground desecration +100 (@0x61B84).
+constexpr int TENSION_TRESPASS_MINOR    = 1;
+constexpr int TENSION_TRESPASS_MODERATE = 2;
+constexpr int TENSION_TRESPASS_SEVERE   = 3;
+constexpr int TENSION_TRADE_GOODWILL    = -4;
+constexpr int TENSION_INCITE            = 100;
+constexpr int TENSION_PACIFY            = -100;
+constexpr int TENSION_DESECRATE         = 100;
+
+// Attitude banding (natives.md @0x048AFE): 0 Content / 1 Uneasy / 2 Restless /
+// 3 Angry from score = 8*X-5 (bands -5/0/10); 4 War when alarm >= 128.
+int settlement_attitude(int presence_x, int alarm);
+
 NativeTurn native_turn_step(vc::sim::GameState& g, vc::sim::World& w,
                             EngineExtra& x, const vc::sim::RandFn& rng);
 

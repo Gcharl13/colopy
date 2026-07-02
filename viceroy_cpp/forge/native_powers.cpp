@@ -115,6 +115,20 @@ RaidResult native_raid(GameState& g, World& w, NativeSettlement& s, int ci,
     return r;
 }
 
+int settlement_attitude(int presence_x, int alarm) {
+    // Attitude banding (natives.md @0x048AFE / @0x048B62..@0x048B90):
+    // score = 8*X - 5; bands < -5 Content(0) / -5..0 Uneasy(1) / 0..<10
+    // Restless(2) / >= 10 Angry(3). War(4) is the separate alarm >= 128
+    // state. X = the colonial-presence score (its composition is not
+    // decomposed in the trace -- callers supply it).
+    if (alarm >= 128) return 4;
+    const int score = 8 * presence_x - 5;
+    if (score < -5) return 0;
+    if (score <= 0) return 1;
+    if (score < 10) return 2;
+    return 3;
+}
+
 NativeTurn native_turn_step(GameState& g, World& w, EngineExtra& x, const RandFn& rng) {
     NativeTurn out;
     for (int si = 0; si < (int)x.settlements.size(); ++si) {
@@ -144,9 +158,16 @@ NativeTurn native_turn_step(GameState& g, World& w, EngineExtra& x, const RandFn
             }
         }
         // Raids: hostile toward a power (tension >= 75 or alarm >= 128) -> raid
-        // that power's nearest colony (one raid per settlement per turn).
+        // that power's nearest colony (one raid per settlement per turn), gated
+        // by the byte-verified probability rolls: the global aggressive-action
+        // gate random_int(1000) < 200*diff + 100 (10%..90%, @0x4A73D/@0x58315)
+        // and the per-settlement attack chance random_int((5-diff)*2) == 0
+        // (@0x48697 -- the bound shrinks at higher difficulty).
         for (int p = 0; p < 4; ++p) {
             if (s.tension[p] < TENSION_HOSTILE && s.alarm[p] < 128) continue;
+            if (rng(0, 999) >= 200 * g.difficulty + 100) continue;
+            { const int bound = (5 - g.difficulty) * 2;
+              if (bound > 1 && rng(0, bound - 1) != 0) continue; }
             int best = -1; long bd = 1 << 20;
             for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
                 const Colony& c = w.colonies[ci];

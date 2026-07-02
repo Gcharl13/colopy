@@ -147,6 +147,22 @@ int ai_pick_heading(const World& w, const RuleData& rd, const Unit& u, int self_
             score += 4;                               // heading continuity +4 (@0x047A79)
         else if (u.heading < 8 && dir < 8 && ((dir - u.heading + 8) & 7) == 4)
             score -= 6;                               // turn-cost helper: reverse ~ -6 (@0x047A8D)
+        if (dir != 8 && t >= 0 && t < NTERRAIN)
+            score -= rd.terrain_move[t] * 3;          // terrain step cost (@0x051125..31:
+                                                      //   the same x3 table the mover charges)
+        if (naval && u.heading < 8 && dir < 8) {
+            int ad = (dir - u.heading + 8) & 7;       // ship turn penalty: angular distance
+            if (ad > 4) ad = 8 - ad;                  //   d*d*2 (the +0x314F ship term)
+            score -= ad * ad * 2;
+        }
+        if (dir != 8) {                               // adjacent enemy attacker: -10 (@0x05170A,
+            for (int k = 0; k < 8; ++k) {             //   0x0A when the neighbour attack != 0)
+                const int ox = tx + DX[k], oy = ty + DY[k];
+                const int oi = unit_at(w, ox, oy, self_idx);
+                if (oi >= 0 && w.units[oi].owner != u.owner &&
+                    unit_stats(rd, w.units[oi].type).attack > 0) { score -= 10; break; }
+            }
+        }
         if (dir == 8 && u.target_x < 0 && colony_near(w, u.x, u.y, 0) >= 0)
             score += 40;                              // colony-proximity stay bonus (0x28;
                                                       //   gated to goal-less units ON a colony

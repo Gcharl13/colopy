@@ -663,6 +663,12 @@ static void seed_native_settlements() {
             // driver is RECONSTRUCTED: cycled deterministically over the learnable list.
             static const int LEARNABLE[8] = {0, 1, 2, 3, 4, 7, 8, 22};
             s.skill = LEARNABLE[(t + (int)g_engine_extra.settlements.size()) % 8];
+            // Per-power alarm seed at init (func_065D26 @0x65DA6: random_int(0,14);
+            // @0x65DC7: +2*difficulty iff the human power; saturate 20).
+            for (int p = 0; p < 4; ++p) {
+                int seed = game_rng(0, 14) + (p == 0 ? 2 * g_game.difficulty : 0);
+                s.alarm[p] = seed > 20 ? 20 : seed;
+            }
             g_engine_extra.settlements.push_back(s);
         }
     }
@@ -1109,7 +1115,7 @@ static void game_step() {
                 while ((p2 = msg.find(ph)) != std::string::npos) msg.replace(p2, std::strlen(ph), t);
             };
             fill("%NUMBER0", rr.gold); fill("%NUMBER1", rr.treasure);
-            if (rr.n == 8) {                            // shrines: the local tribe is displeased
+            if (rr.n == 8 || rr.n == 4) {               // shrines / burial mounds: find the tribe
                 forge::NativeSettlement* near_v = nullptr; int best = 1 << 20;
                 for (auto& sv : g_engine_extra.settlements) {
                     int dd = std::abs(sv.x - rr.x) + std::abs(sv.y - rr.y);
@@ -1117,10 +1123,19 @@ static void game_step() {
                 }
                 std::string tribe = "natives";
                 if (near_v) {
-                    // Burial-ground desecration: tension +100 vs the desecrating
-                    // power (func_045DF2 caller @0x61B84, BYTE-VERIFIED delta).
-                    forge::tension_apply(*near_v, 0, 100, g_game.nation == 1,
-                                         (g_engine_extra.ff_owned >> 16) & 1u);
+                    // Burial-ground desecration (n=4 only, @SCREWED family): tension
+                    // +100 vs the desecrating power (func_045DF2 caller @0x61B84).
+                    // Trespassing near shrines (n=8) displeases without the +100
+                    // (its delta is the trespass table, natives.md) -- the earlier
+                    // wiring on n=8 was the audit-corrected mis-mapping.
+                    if (rr.n == 4)
+                        forge::tension_apply(*near_v, 0, forge::TENSION_DESECRATE,
+                                             g_game.nation == 1,
+                                             (g_engine_extra.ff_owned >> 16) & 1u);
+                    else
+                        forge::tension_apply(*near_v, 0, forge::TENSION_TRESPASS_SEVERE,
+                                             g_game.nation == 1,
+                                             (g_engine_extra.ff_owned >> 16) & 1u);
                     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
                     tribe = forge::resolve_binding("@TRIBES[" + std::to_string(near_v->tribe) + "].name", cx).str;
                 }
