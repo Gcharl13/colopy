@@ -75,6 +75,17 @@ def main() -> int:
     fx = read(FUNCTIONS)
     for a in anchors_in(fx):
         impl_anchors.setdefault(a, set()).add(FUNCTIONS)
+    # extracted layouts (tools/extract_layouts.py) are implementation data: the engine
+    # renders from them, and they carry the spec's byte anchors verbatim
+    lay_dir = "data_extracted/engine/layouts"
+    layout_specs = set()
+    if os.path.isdir(lay_dir):
+        for fn in os.listdir(lay_dir):
+            if fn.endswith(".json"):
+                p = os.path.join(lay_dir, fn)
+                for a in anchors_in(read(p)):
+                    impl_anchors.setdefault(a, set()).add(p)
+                layout_specs.add("spec/ui/" + fn[:-5] + ".md")
 
     # 3. which spec files the Systems cards cite
     cites = set()
@@ -88,7 +99,7 @@ def main() -> int:
     for path, anchors in spec_anchors.items():
         fn = os.path.basename(path)
         echoed = {a for a in anchors if a in impl_anchors}
-        cited = path in cites
+        cited = path in cites or path in layout_specs
         if fn in DATA_ONLY:
             status = "DATA-ONLY"
         elif not anchors:
