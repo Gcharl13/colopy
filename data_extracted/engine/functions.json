@@ -894,6 +894,21 @@
       "name": "Map generation - the random new-world builder",
       "source": "sim/mapgen.cpp",
       "spec": "spec/systems/map_generation.md (func_064A10 BYTE-VERIFIED control flow, P0..P6)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "starting REF: regulars 8d+15 / cavalry 5(d+1) / artillery 6d+2 / man-o-war 3d+2 (@0x7569B -> sim/ref.cpp cfg.ref_*) ; combat human handicap +(4-d) both sides (@0x5CE35/54 -> combat.cpp difficulty_bonus) ; native attitude human 2(d+3)+level+value-prior vs 0x41 / AI level+value-d+12-prior vs 0x32 (@0x46500/38 -> native_powers tribe_attitude) ; native learn/action P = 200d+100 of 1000 (@0x4A73D -> training.cpp) ; native trade floor 5d+50 (@0x5C976 -> native_powers) ; CHIEFKILL bound (8-d)<<scout (@0x4A84D) ; raid gate +(d-2) human bias (@0x5BF1A -> native_powers) ; REF budget accrual 8d+10 (@0x3E17C -> ref.cpp) ; immigration (8-d)/8 AI scale (@0x35E60 -> immigration.cpp) ; score multiplier d+4(+1 if>=3,+1 if>=4) (@0x3AA0A -> scoring.cpp) ; easy-mode double starting units at d<=1 (@0x075961 -> game_new random-map loadout) ; infiltrate threshold +(d-2) vs human (exploration.md -> explore.cpp)",
+          "fn": "catalog (implemented)",
+          "knobs": [],
+          "note": "Not yet modeled (flagged): AI war/refusal grace 10*(10-d) turns (@0x58374), AI tribute value *10*(d+8)/100 (@0x583A0), AI demand surcharge +500(d+1) (@0x5842B), merc cost ((d+3)*2+rand)*100*troops (@0x3E558), King merc stock 100*(10-d) (@0x529FC), rival-immigration bonus 100(d+1) (@0x35FFB), Tory penalty threshold 10-d (manual R). The [0x53A6] byte is dual-role (also current-player) -- only the confirmed arithmetic sites are listed.",
+          "title": "Byte-verified rows and where they live",
+          "writes": []
+        }
+      ],
+      "name": "Difficulty - every byte-cited touch point",
+      "source": "spec/systems/difficulty.md (catalog; each formula lives in its home system)",
+      "spec": "spec/systems/difficulty.md 3 (diff = [0x53A6], 0 Discoverer .. 4 Viceroy; the difficulty term is a HUMAN handicap -- AI branches use fixed constants)"
     }
   ]
 }
