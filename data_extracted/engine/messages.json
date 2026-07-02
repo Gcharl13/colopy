@@ -3,6 +3,7 @@
  "count": 499,
  "with_box_w": 475,
  "with_sprite": 43,
+ "with_speaker": 60,
  "messages": [
   {
    "key": "@DOS",
@@ -10,7 +11,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DOSYES",
@@ -18,7 +20,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RETIRE",
@@ -26,7 +29,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BEGINMENU",
@@ -34,7 +38,8 @@
    "box_w": 160,
    "x": -1,
    "y": 91,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@AMERICA",
@@ -42,7 +47,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MAPTOLOAD",
@@ -50,7 +56,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MULTI",
@@ -58,7 +65,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MULTINEXT",
@@ -66,7 +74,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MULTIREV",
@@ -74,7 +83,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GAMEOPTIONS",
@@ -82,7 +92,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COLONYOPTIONS",
@@ -90,7 +101,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SOUNDOPTIONS",
@@ -98,7 +110,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAVEGAME",
@@ -106,7 +119,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAVEGOOD",
@@ -114,7 +128,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAVEERROR",
@@ -122,7 +137,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADGAME",
@@ -130,7 +146,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADGOOD",
@@ -138,7 +155,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADNOT",
@@ -146,7 +164,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADOLD",
@@ -154,7 +173,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADSIZE",
@@ -162,7 +182,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOADERROR",
@@ -170,7 +191,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKNATION",
@@ -178,7 +200,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DIFFICULTY",
@@ -186,7 +209,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LEADERNAME",
@@ -194,7 +218,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FINDCITY",
@@ -202,7 +227,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOCITY",
@@ -210,7 +236,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VICEROY",
@@ -218,7 +245,8 @@
    "box_w": 78,
    "x": 232,
    "y": 21,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VICEROY2",
@@ -226,7 +254,8 @@
    "box_w": 78,
    "x": 232,
    "y": 21,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LANDHO",
@@ -234,7 +263,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COLONY",
@@ -242,7 +272,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RENAMECOLONY",
@@ -250,7 +281,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LANDFALL",
@@ -258,7 +290,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LANDFALL2",
@@ -266,7 +299,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ONLYPIO",
@@ -274,7 +308,8 @@
    "box_w": 120,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ONLYCOL",
@@ -282,7 +317,8 @@
    "box_w": 120,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SHIPCOMBAT",
@@ -290,7 +326,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SHIPLAKE",
@@ -298,7 +335,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LANDFIRST",
@@ -306,7 +344,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SEACOLONY",
@@ -314,7 +353,8 @@
    "box_w": 140,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOPORT",
@@ -322,7 +362,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILT",
@@ -330,7 +371,8 @@
    "box_w": 140,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FULL",
@@ -338,7 +380,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOTEACHER",
@@ -346,7 +389,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NEEDCOLLEGE",
@@ -354,7 +398,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NEEDUNIVERSITY",
@@ -362,7 +407,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRAINFAIL",
@@ -370,7 +416,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRAINCRIMINAL",
@@ -378,7 +425,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRAININDENTURED",
@@ -386,7 +434,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRAINPROFESSION",
@@ -394,7 +443,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SIEGE",
@@ -402,7 +452,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ABANDON",
@@ -410,7 +461,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ABANDON2",
@@ -418,7 +470,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAILHOME",
@@ -426,7 +479,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAILAWAY",
@@ -434,7 +488,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SAILPORT",
@@ -442,7 +497,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRAVELPLACE",
@@ -450,7 +506,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UNREST",
@@ -458,7 +515,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RECRUIT",
@@ -466,7 +524,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RECRUITCHOOSE",
@@ -474,7 +533,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RECRUIT2",
@@ -482,7 +542,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGRECRUIT",
@@ -490,7 +551,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PURCHASE",
@@ -498,7 +560,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SCHOOL1",
@@ -506,7 +569,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COLLEGE2",
@@ -514,7 +578,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UNIV3",
@@ -522,7 +587,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NODOCKS",
@@ -530,7 +596,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CARGOREADY0",
@@ -538,7 +605,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CARGOREADY1",
@@ -546,7 +614,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CARGOREADY2",
@@ -554,7 +623,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LUMBER",
@@ -562,7 +632,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COTTON",
@@ -570,7 +641,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOBACCO",
@@ -578,7 +650,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CANESUGAR",
@@ -586,7 +659,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FURS",
@@ -594,7 +668,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ORE",
@@ -602,7 +677,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOOLS",
@@ -610,7 +686,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FOOD1",
@@ -618,7 +695,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FOOD2",
@@ -626,7 +704,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VANISH",
@@ -634,7 +713,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@STARVE1",
@@ -642,7 +722,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@STARVE2",
@@ -650,7 +731,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FOODLOW",
@@ -658,7 +740,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SPOIL1",
@@ -666,7 +749,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SPOIL2",
@@ -674,7 +758,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SPOIL3",
@@ -682,7 +767,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SPOIL4",
@@ -690,7 +776,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUYME0",
@@ -698,7 +785,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUYME1",
@@ -706,7 +794,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DEFOREST",
@@ -714,7 +803,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DEPLETION",
@@ -722,7 +812,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UNITFLAG",
@@ -730,7 +821,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COLONYFLAG",
@@ -738,7 +830,8 @@
    "box_w": 160,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY0",
@@ -746,7 +839,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY1",
@@ -754,7 +848,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY2",
@@ -762,7 +857,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY3",
@@ -770,7 +866,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY4",
@@ -778,7 +875,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SCREWED",
@@ -786,7 +884,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BURIAL1",
@@ -794,7 +893,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BURIAL2",
@@ -802,7 +902,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@BURIAL3",
@@ -810,7 +911,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY5",
@@ -818,7 +920,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY6",
@@ -826,7 +929,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY7",
@@ -834,7 +938,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY8",
@@ -842,7 +947,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTCITY9",
@@ -850,7 +956,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SNEAK",
@@ -858,7 +965,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CANCELPEACE",
@@ -866,7 +974,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SIGNTREATY",
@@ -874,7 +983,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DECLAREWAR",
@@ -882,7 +992,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HAVETREATY",
@@ -890,7 +1001,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WHACKINDIANS",
@@ -898,7 +1010,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VILLAGEHAPPY",
@@ -906,7 +1019,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VILLAGESAVAGE",
@@ -914,7 +1028,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VILLAGEMEDIUM",
@@ -922,7 +1037,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VILLAGEBAD",
@@ -930,7 +1046,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VILLAGEWAR",
@@ -938,7 +1055,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANWELCOME",
@@ -946,7 +1064,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANBOW",
@@ -954,7 +1073,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANTREATY",
@@ -962,7 +1082,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANHELLO1",
@@ -970,7 +1091,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANHELLO2",
@@ -978,7 +1100,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANPEACE",
@@ -986,7 +1109,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANCOME",
@@ -994,7 +1118,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANSHUN",
@@ -1002,7 +1127,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWAGONS",
@@ -1010,7 +1136,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANCITY",
@@ -1018,7 +1145,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANGOLD",
@@ -1026,7 +1154,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut12"
+   "sprite": "woodcut.wdcut12",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANSLAVES",
@@ -1034,7 +1163,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANSCONVERT",
@@ -1042,7 +1172,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANGIVEFOOD",
@@ -1050,7 +1181,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANGIVESTUFF",
@@ -1058,7 +1190,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANCOMMENT",
@@ -1066,7 +1199,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANBEGFOOD",
@@ -1074,7 +1208,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWAR",
@@ -1082,7 +1217,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANGRUDGE",
@@ -1090,7 +1226,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANLAND",
@@ -1098,7 +1235,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANROAD",
@@ -1106,7 +1244,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANFOREST",
@@ -1114,7 +1253,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANFOREST2",
@@ -1122,7 +1262,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANBRIBE",
@@ -1130,7 +1271,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOPLOW",
@@ -1138,7 +1280,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOROAD",
@@ -1146,7 +1289,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VIOLATE",
@@ -1154,7 +1298,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HALF",
@@ -1162,7 +1307,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOLOOT",
@@ -1170,7 +1316,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@LOOT",
@@ -1178,7 +1325,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@LOOT2",
@@ -1186,7 +1334,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@LOOTCASH",
@@ -1194,7 +1343,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": "KING1"
   },
   {
    "key": "@LOOTFOREIGN",
@@ -1202,7 +1352,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@LOOTCAPTURE",
@@ -1210,7 +1361,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": ""
   },
   {
    "key": "@WAGONCAPTURE",
@@ -1218,7 +1370,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@COLONISTCAPTURE",
@@ -1226,7 +1379,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@COLONISTCAPTURE2",
@@ -1234,7 +1388,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@CARGOCAPTURE",
@@ -1242,7 +1397,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@DEMOTE",
@@ -1250,7 +1406,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@SHIPDAMAGE",
@@ -1258,7 +1415,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@SHIPSUNK",
@@ -1266,7 +1424,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RAIDNOTHING",
@@ -1274,7 +1433,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@RAIDWREAK",
@@ -1282,7 +1442,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@RAIDSTORES",
@@ -1290,7 +1451,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@RAIDBURN",
@@ -1298,7 +1460,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@RAIDSCALP",
@@ -1306,7 +1469,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RAIDSHIP",
@@ -1314,7 +1478,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@RAIDGOLD",
@@ -1322,7 +1487,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@MISSION0",
@@ -1330,7 +1496,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@MISSION1",
@@ -1338,7 +1505,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@MISSION2",
@@ -1346,7 +1514,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@MISSION3",
@@ -1354,7 +1523,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@HERESY0",
@@ -1362,7 +1532,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@HERESY1",
@@ -1370,7 +1541,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "MYR"
   },
   {
    "key": "@INDIANBURN",
@@ -1378,7 +1550,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut12"
+   "sprite": "woodcut.wdcut12",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANWIN0",
@@ -1386,7 +1559,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWIN1",
@@ -1394,7 +1568,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWIN2",
@@ -1402,7 +1577,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANLOSE",
@@ -1410,7 +1586,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWINCOLONY",
@@ -1418,7 +1595,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@INDIANWINCOLONY2",
@@ -1426,7 +1604,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@INDIANBURNCOLONY",
@@ -1434,7 +1613,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@INDIANBURNCOLONY2",
@@ -1442,7 +1622,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@INDIANSURPRISE",
@@ -1450,7 +1631,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@CAPTURED",
@@ -1458,7 +1640,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@CAPTURED2",
@@ -1466,7 +1649,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@CAPTURED3",
@@ -1474,7 +1658,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@BURNED",
@@ -1482,7 +1667,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@BURNED2",
@@ -1490,7 +1676,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@BURNED3",
@@ -1498,7 +1685,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@EUROPEWIN",
@@ -1506,7 +1694,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@EUROPELOSE",
@@ -1514,7 +1703,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut11"
+   "sprite": "woodcut.wdcut11",
+   "speaker": ""
   },
   {
    "key": "@WAREHOUSEFULL",
@@ -1522,7 +1712,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EXTORTSTUFF",
@@ -1530,7 +1721,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EXTORTPOOR",
@@ -1538,7 +1730,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EXTORTLAUGH",
@@ -1546,7 +1739,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EXTORTNO",
@@ -1554,7 +1748,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOONEAR",
@@ -1562,7 +1757,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOONEARBUILD",
@@ -1570,7 +1766,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOOMOUNTAIN",
@@ -1578,7 +1775,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DONTKNOWSHIPS",
@@ -1586,7 +1784,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@MADATSHIPS",
@@ -1594,7 +1793,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@MADATWAGONS",
@@ -1602,7 +1802,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@GRUDGEWAGONS",
@@ -1610,7 +1811,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CONFISCATE",
@@ -1618,7 +1820,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CHIEFHOWDY",
@@ -1626,7 +1829,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@CHIEFGUIDES",
@@ -1634,7 +1838,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@CHIEFAREA",
@@ -1642,7 +1847,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@CHIEFGIFT",
@@ -1650,7 +1856,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@CHIEFBORED",
@@ -1658,7 +1865,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@CHIEFKILL",
@@ -1666,7 +1874,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut12"
+   "sprite": "woodcut.wdcut12",
+   "speaker": "IND"
   },
   {
    "key": "@KILLWAGONS",
@@ -1674,7 +1883,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADE0",
@@ -1682,7 +1892,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@TRADE1",
@@ -1690,7 +1901,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@BADCARGO",
@@ -1698,7 +1910,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BADHAGGLE0",
@@ -1706,7 +1919,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BADHAGGLE1",
@@ -1714,7 +1928,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BADHAGGLE2",
@@ -1722,7 +1937,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BADHAGGLE3",
@@ -1730,7 +1946,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BRING",
@@ -1738,7 +1955,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DEFICIT",
@@ -1746,7 +1964,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUYWHICH",
@@ -1754,7 +1973,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADEWHICH",
@@ -1762,7 +1982,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUY0",
@@ -1770,7 +1991,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUY1",
@@ -1778,7 +2000,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOTENOUGH",
@@ -1786,7 +2009,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LEARNMASTER",
@@ -1794,7 +2018,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@LEARNCRIMINAL",
@@ -1802,7 +2027,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@LEARNALREADY",
@@ -1810,7 +2036,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@LEARNMAD",
@@ -1818,7 +2045,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LEARNSLOW",
@@ -1826,7 +2054,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@LEARNSTAY",
@@ -1834,7 +2063,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LEARNLATER",
@@ -1842,7 +2072,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LEARNDONE",
@@ -1850,7 +2081,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@TRADEMANY",
@@ -1858,7 +2090,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADESTART",
@@ -1866,7 +2099,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADETYPE",
@@ -1874,7 +2108,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADENAMES",
@@ -1882,7 +2117,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADENAME",
@@ -1890,7 +2126,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADENONE",
@@ -1898,7 +2135,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADENONE2",
@@ -1906,7 +2144,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADESELECT",
@@ -1914,7 +2153,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADEDELETE",
@@ -1922,7 +2162,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SUREDELETE",
@@ -1930,7 +2171,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CARGOLOAD",
@@ -1938,7 +2180,8 @@
    "box_w": 120,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CARGOUNLOAD",
@@ -1946,7 +2189,8 @@
    "box_w": 120,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ROUTELOOP",
@@ -1954,7 +2198,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS0",
@@ -1962,7 +2207,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS1",
@@ -1970,7 +2216,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS2",
@@ -1978,7 +2225,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS3",
@@ -1986,7 +2234,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS4",
@@ -1994,7 +2243,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PISS5",
@@ -2002,7 +2252,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGNO",
@@ -2010,7 +2261,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGFUND",
@@ -2018,7 +2270,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGLOWER",
@@ -2026,7 +2279,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGNOTHING",
@@ -2034,7 +2288,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGRAISE",
@@ -2042,7 +2297,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGTAX",
@@ -2050,7 +2306,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGBLESS",
@@ -2058,7 +2315,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGLAUGH",
@@ -2066,7 +2324,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGWELCOME0",
@@ -2074,7 +2333,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MERCANTILISM",
@@ -2082,7 +2342,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@PURCHASETAX",
@@ -2090,7 +2351,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@TAXOPTIONS",
@@ -2098,7 +2360,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@TEAPARTY",
@@ -2106,7 +2369,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KISSUP",
@@ -2114,7 +2378,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KISSSORRY",
@@ -2122,7 +2387,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PRICEUP",
@@ -2130,7 +2396,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PRICEDOWN",
@@ -2138,7 +2405,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WHICHFREEDOM",
@@ -2146,7 +2414,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FREEDOM",
@@ -2154,7 +2423,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CLAND",
@@ -2162,7 +2432,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CCONT",
@@ -2170,7 +2441,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CTEMP",
@@ -2178,7 +2450,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CCLIM",
@@ -2186,7 +2459,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SHIPSLOW",
@@ -2194,7 +2468,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SHIPRUN",
@@ -2202,7 +2477,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FORTFIRE",
@@ -2210,7 +2486,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EUROPEARM",
@@ -2218,7 +2495,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EUROPESHIPCLICK",
@@ -2226,7 +2504,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ARMOPTIONS",
@@ -2234,7 +2513,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@COLONYUNIT",
@@ -2242,7 +2522,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UNITOPTIONS",
@@ -2250,7 +2531,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SHIPOPTIONS",
@@ -2258,7 +2540,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EUROPESHIPOPTIONS",
@@ -2266,7 +2549,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGFRIGATE",
@@ -2274,7 +2558,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGGALLEON2",
@@ -2282,7 +2567,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGGALLEON3",
@@ -2290,7 +2576,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": "KING1"
   },
   {
    "key": "@CASHTREASURE",
@@ -2298,7 +2585,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut04"
+   "sprite": "woodcut.wdcut04",
+   "speaker": "KING1"
   },
   {
    "key": "@USEDUPTOOLS",
@@ -2306,7 +2594,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EVASIVE",
@@ -2314,7 +2603,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGMERCY",
@@ -2322,7 +2612,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGNEWWAR",
@@ -2330,7 +2621,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGVICTORY",
@@ -2338,7 +2630,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGWIFE",
@@ -2346,7 +2639,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGWAR",
@@ -2354,7 +2648,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGNAVACT",
@@ -2362,7 +2657,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@KINGSTAMPACT",
@@ -2370,7 +2666,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "KING1"
   },
   {
    "key": "@COUNTRIES",
@@ -2378,7 +2675,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ORDINAL",
@@ -2386,7 +2684,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NEEDTOOLS",
@@ -2394,7 +2693,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NEEDTOOLS0",
@@ -2402,7 +2702,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ALREADYHAVE",
@@ -2410,7 +2711,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOBOTOMIZE",
@@ -2418,7 +2720,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION0A",
@@ -2426,7 +2729,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION0B",
@@ -2434,7 +2738,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION1A",
@@ -2442,7 +2747,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION1B",
@@ -2450,7 +2756,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION2A",
@@ -2458,7 +2765,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION2B",
@@ -2466,7 +2774,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION3A",
@@ -2474,7 +2783,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NATION3B",
@@ -2482,7 +2792,8 @@
    "box_w": 300,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKACARGO",
@@ -2490,7 +2801,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CUSTOM",
@@ -2498,7 +2810,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CONTINENTAL",
@@ -2506,7 +2819,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@VETERAN",
@@ -2514,7 +2828,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@VALOR",
@@ -2522,7 +2837,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@SCOUTCOLONY",
@@ -2530,7 +2846,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTOURSCOUTS",
@@ -2538,7 +2855,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSTTHEIRSCOUTS",
@@ -2546,7 +2864,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HELLOFIRST",
@@ -2554,7 +2873,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HELLOUSA",
@@ -2562,7 +2882,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HELLOAHOY",
@@ -2570,7 +2891,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HELLOMEEK",
@@ -2578,7 +2900,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HELLOMANLY",
@@ -2586,7 +2909,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GREATKINGS",
@@ -2594,7 +2918,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GREATDEEDS",
@@ -2602,7 +2927,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GREATLEADER",
@@ -2610,7 +2936,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GREATLEADER2",
@@ -2618,7 +2945,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MYLEADER",
@@ -2626,7 +2954,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PIRACY",
@@ -2634,7 +2963,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PIRACYUSA",
@@ -2642,7 +2972,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SIEGES",
@@ -2650,7 +2981,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SIEGESUSA",
@@ -2658,7 +2990,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MEEKNESS",
@@ -2666,7 +2999,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HEATHEN",
@@ -2674,7 +3008,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HEATHENUSA",
@@ -2682,7 +3017,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@APOSTATES",
@@ -2690,7 +3026,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@APOSTATESUSA",
@@ -2698,7 +3035,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRIBUTE",
@@ -2706,7 +3044,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRIBUTEUSA",
@@ -2714,7 +3053,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WANTSTUFF",
@@ -2722,7 +3062,8 @@
    "box_w": 260,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WANTSTUFFUSA",
@@ -2730,7 +3071,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RID",
@@ -2738,7 +3080,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RIDUSA",
@@ -2746,7 +3089,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WORTHY",
@@ -2754,7 +3098,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GIVECASH",
@@ -2762,7 +3107,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PEACEMANLY",
@@ -2770,7 +3116,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PEACEMEEK",
@@ -2778,7 +3125,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OLDPEACEMEEK",
@@ -2786,7 +3134,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OLDPEACEMANLY",
@@ -2794,7 +3143,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PEACEUSA",
@@ -2802,7 +3152,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOTWITHDRAW",
@@ -2810,7 +3161,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WITHDRAW",
@@ -2818,7 +3170,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOTHINGWITHDRAW",
@@ -2826,7 +3179,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MAYBEWITHDRAW",
@@ -2834,7 +3188,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PROVOKE",
@@ -2842,7 +3197,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WARMEEK",
@@ -2850,7 +3206,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WARMANLY",
@@ -2858,7 +3215,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@THREATS",
@@ -2866,7 +3224,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@GIFTS",
@@ -2874,7 +3233,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MILITARY",
@@ -2882,7 +3242,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOCONTACT",
@@ -2890,7 +3251,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ALREADYSMITE",
@@ -2898,7 +3260,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SMITEINDIANS",
@@ -2906,7 +3269,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SMITEEUROPE",
@@ -2914,7 +3278,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UNFORTUNATE",
@@ -2922,7 +3287,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MERCENARY",
@@ -2930,7 +3296,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SUCCESSION",
@@ -2938,7 +3305,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REBELMAJORITY",
@@ -2946,7 +3314,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REBELUNANIMOUS",
@@ -2954,7 +3323,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TORYMINORITY",
@@ -2962,7 +3332,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TORYMAJORITY",
@@ -2970,7 +3341,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SONSUP",
@@ -2978,7 +3350,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SONSDOWN",
@@ -2986,7 +3359,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REBELUP",
@@ -2994,7 +3368,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REBELUP50",
@@ -3002,7 +3377,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REBELDOWN",
@@ -3010,7 +3386,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REFIT",
@@ -3018,7 +3395,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WELLSEASONED",
@@ -3026,7 +3404,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@KINGBUY",
@@ -3034,7 +3413,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SEIZURE",
@@ -3042,7 +3422,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SEIZURESEA",
@@ -3050,7 +3431,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SEIZURELAND",
@@ -3058,7 +3440,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDEPENDENCE",
@@ -3066,7 +3449,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INVASION",
@@ -3074,7 +3458,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOOTORY",
@@ -3082,7 +3467,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DECLARE",
@@ -3090,7 +3476,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DEADCONVERTS",
@@ -3098,7 +3485,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOOMANYUNITS",
@@ -3106,7 +3494,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TOOMANYCOLONIES",
@@ -3114,7 +3503,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKMUSIC",
@@ -3122,7 +3512,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKINDEPENDENCE",
@@ -3130,7 +3521,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKMILITARY",
@@ -3138,7 +3530,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@PICKINDIAN",
@@ -3146,7 +3539,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@UPKEEP",
@@ -3154,7 +3548,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MOBILIZE",
@@ -3162,7 +3557,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MOBILIZE2",
@@ -3170,7 +3566,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CANTMOBILIZE",
@@ -3178,7 +3575,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGMOBILIZE",
@@ -3186,7 +3584,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EUROPENOTAVAIL",
@@ -3194,7 +3593,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FOREIGNNOTAVAIL",
@@ -3202,7 +3602,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EUROPENOTLEAVE",
@@ -3210,7 +3611,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOWARSDURINGREV",
@@ -3218,7 +3620,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOCOLONIESEITHER",
@@ -3226,7 +3629,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOMAYORSDURINGREV",
@@ -3234,7 +3638,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWMUCH1",
@@ -3242,7 +3647,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWMUCH2",
@@ -3250,7 +3656,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWMUCH3",
@@ -3258,7 +3665,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWMUCH4",
@@ -3266,7 +3674,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWMUCH5",
@@ -3274,7 +3683,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@AMBUSHHINT",
@@ -3282,7 +3692,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CONSIDER",
@@ -3290,7 +3701,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INTERVENTION",
@@ -3298,7 +3710,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@FRIEND",
@@ -3306,7 +3719,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INTERVENE",
@@ -3314,7 +3728,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EXPLOITS",
@@ -3322,7 +3737,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SCORE",
@@ -3330,7 +3746,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSING1",
@@ -3338,7 +3755,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WARN1",
@@ -3346,7 +3764,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSING2",
@@ -3354,7 +3773,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WARN2",
@@ -3362,7 +3782,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOSING3",
@@ -3370,7 +3791,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WARN3",
@@ -3378,7 +3800,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@WINNING",
@@ -3386,7 +3809,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OTHERGRANTED",
@@ -3394,7 +3818,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OTHERMIGHT",
@@ -3402,7 +3827,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OTHERLESS",
@@ -3410,7 +3836,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SCORED",
@@ -3418,7 +3845,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TORYUPRISING",
@@ -3426,7 +3854,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CANNOTATTACK",
@@ -3434,7 +3863,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADEMERCANTILISM",
@@ -3442,7 +3872,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADEATWAR",
@@ -3450,7 +3881,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TRADENOCARGO",
@@ -3458,7 +3890,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@TRADENOWANT",
@@ -3466,7 +3899,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@TRADEWITH",
@@ -3474,7 +3908,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": "IND"
   },
   {
    "key": "@EXTINCT",
@@ -3482,7 +3917,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MERCENARIES",
@@ -3490,7 +3926,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MERCS",
@@ -3498,7 +3935,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@OVERBOARD",
@@ -3506,7 +3944,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ALREADYREVOLUTION",
@@ -3514,7 +3953,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SUREDISBAND",
@@ -3522,7 +3962,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NEWCOLONIST",
@@ -3530,7 +3971,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INEFFICIENT",
@@ -3538,7 +3980,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@EFFICIENT",
@@ -3546,7 +3989,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@CLEARCUT",
@@ -3554,7 +3998,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@REALLYBUY",
@@ -3562,7 +4007,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@INDIANWARPATH",
@@ -3570,7 +4016,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANWARPATH2",
@@ -3578,7 +4025,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@INDIANWARFARE",
@@ -3586,7 +4034,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut13"
+   "sprite": "woodcut.wdcut13",
+   "speaker": "IND"
   },
   {
    "key": "@LOSENOCOLONIES",
@@ -3594,7 +4043,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SOONRETIRING0",
@@ -3602,7 +4052,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SOONRETIRING1",
@@ -3610,7 +4061,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RETIRING",
@@ -3618,7 +4070,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@RETIRING2",
@@ -3626,7 +4079,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@HOWTOWIN",
@@ -3634,7 +4088,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@ARTILLERY",
@@ -3642,7 +4097,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@ARTILLERY2",
@@ -3650,7 +4106,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": "woodcut.wdcut10"
+   "sprite": "woodcut.wdcut10",
+   "speaker": ""
   },
   {
    "key": "@TIMECHANGE",
@@ -3658,7 +4115,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TEACHCONVERT",
@@ -3666,7 +4124,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@SOMEBOYCOTT",
@@ -3674,7 +4133,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KEEPSTOCKADE",
@@ -3682,7 +4142,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@MORETHANTHREE",
@@ -3690,7 +4151,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@LOOTWAGONS",
@@ -3698,7 +4160,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL1",
@@ -3706,7 +4169,8 @@
    "box_w": 190,
    "x": 10,
    "y": 40,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL2",
@@ -3714,7 +4178,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL3",
@@ -3722,7 +4187,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL4",
@@ -3730,7 +4196,8 @@
    "box_w": 190,
    "x": 10,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL5",
@@ -3738,7 +4205,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL6",
@@ -3746,7 +4214,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL7",
@@ -3754,7 +4223,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL8",
@@ -3762,7 +4232,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL9",
@@ -3770,7 +4241,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL10",
@@ -3778,7 +4250,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL11",
@@ -3786,7 +4259,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL12",
@@ -3794,7 +4268,8 @@
    "box_w": 220,
    "x": -1,
    "y": 5,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL13",
@@ -3802,7 +4277,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL14",
@@ -3810,7 +4286,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL15",
@@ -3818,7 +4295,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL16",
@@ -3826,7 +4304,8 @@
    "box_w": 220,
    "x": 5,
    "y": 10,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL17",
@@ -3834,7 +4313,8 @@
    "box_w": 300,
    "x": -1,
    "y": 10,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL18",
@@ -3842,7 +4322,8 @@
    "box_w": 300,
    "x": -1,
    "y": 10,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTORIAL19",
@@ -3850,7 +4331,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTNOLUMBER",
@@ -3858,7 +4340,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@TUTNOSPACES",
@@ -3866,7 +4349,8 @@
    "box_w": 220,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGLOSE",
@@ -3874,7 +4358,8 @@
    "box_w": 68,
    "x": 232,
    "y": 31,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@KINGWIN",
@@ -3882,7 +4367,8 @@
    "box_w": 90,
    "x": 202,
    "y": 125,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@DISBANDSHIP",
@@ -3890,7 +4376,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOMOREWAREHOUSE",
@@ -3898,7 +4385,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@NOMOREWAGONS",
@@ -3906,7 +4394,8 @@
    "box_w": 190,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD1",
@@ -3914,7 +4403,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD2",
@@ -3922,7 +4412,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD3",
@@ -3930,7 +4421,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD4",
@@ -3938,7 +4430,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD5",
@@ -3946,7 +4439,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD6",
@@ -3954,7 +4448,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD7",
@@ -3962,7 +4457,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD8",
@@ -3970,7 +4466,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD9",
@@ -3978,7 +4475,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@BUILD10",
@@ -3986,7 +4484,8 @@
    "box_w": 310,
    "x": -1,
    "y": 30,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   },
   {
    "key": "@END",
@@ -3994,7 +4493,8 @@
    "box_w": 0,
    "x": -1,
    "y": -1,
-   "sprite": ""
+   "sprite": "",
+   "speaker": ""
   }
  ]
 }

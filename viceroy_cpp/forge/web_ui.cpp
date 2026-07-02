@@ -2503,19 +2503,113 @@ async function fireEvent(){
   if((d.effects||[]).length) ui.toast(d.effects.join('; '));
   if(d.popup) playPopup(id, d.popup);
 }
+// ---- The shared popup FRAME engine (spec/ui/popups.md 2, BYTE-VERIFIED geometry) ----
+// Every gameplay popup renders through one engine: WOODPANL-tiled body inside a
+// 3px wood border + 2px inset (func_06C520 +0x46/+0x48), content width
+// max(80, longest_line+10, @width) (func_06D316 @0x06D392, body margin +10
+// @0x06CCE3), centered on (160,100) unless the record pins @x/@y, clamped to
+// 320x200 (@0x06D563/71). The speaker-portrait channels (2.7): KING1.SS /
+// IND<tribe>A0.SS / MSS<n>.SS / MYR<n>.SS -- the landing pixel is runtime in the
+// EXE (2.7.1), here anchored above the box's top-left corner (adaptation).
+// {braces} in GAME.TXT bodies mark highlighted words -- rendered as emphasis.
+let MSGREC=null;   // @KEY -> {text, box_w, x, y, sprite, speaker} (messages.json)
+async function wfRecs(){
+  if(MSGREC) return MSGREC;
+  MSGREC={};
+  try{ const d=await (await fetch('/api/messages')).json();
+    (d.messages||d).forEach(r=>{ MSGREC[r.key]=r; }); }catch(e){}
+  return MSGREC;
+}
+// Portrait sheet frame 0 = atlas cell (1,17)..(57,81) of the standard 58px-pitch
+// label atlas. The cell's small "0/0x00" index label is BAKED over the sprite
+// pixels (a debug-render artifact of the committed contact sheets -- the raw .SS
+// files are not in the repo, so it cannot be cropped away without losing the
+// face; same accepted artifact as the extracted Founding-Father portraits, see
+// tools/extract_cc_portraits.py). Native-scaled portrait div, above the frame.
+function wfPortrait(sheet){
+  const S=NS_SC;
+  return '<div style="position:absolute;left:'+(-8*S)+'px;top:'+(-58*S)+'px;'
+    +'width:'+(56*S)+'px;height:'+(64*S)+'px;image-rendering:pixelated;'
+    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-1*S)+'px '+(-17*S)+'px;'
+    +'background-size:'+(928*S)+'px '+(82*S)+'px;z-index:2"></div>';
+}
+// Show one popup with the wood chrome. p: {key, body, choices[], tribe?}.
+// onChoice(choiceText) fires on a pick; onClose() when a no-choice box is
+// dismissed. The record's speaker/box_w/x/y drive the chrome.
+async function wfShow(p, onChoice, onClose){
+  const recs=await wfRecs();
+  const rec=recs[p.key]||{box_w:0,x:-1,y:-1,speaker:'',sprite:''};
+  const S=NS_SC;
+  const body=(p.body||'').replace(/\r/g,'');
+  const lines=body?body.split('\n'):[];
+  const ch=p.choices||[];
+  // measure the longest line in native px (FONTTINY = 6px monospace rows)
+  const cv=document.createElement('canvas').getContext('2d');
+  cv.font=(6*S)+'px monospace';
+  let longest=0;
+  lines.concat(ch).forEach(l=>{ const w=cv.measureText(l.replace(/[{}]/g,'')).width/S;
+    if(w>longest) longest=w; });
+  const contentW=Math.max(80, Math.ceil(longest)+10, rec.box_w||0);   // @0x06D392
+  const rowH=8;                                                        // FONTTINY row pitch
+  const boxW=contentW+6;                                               // +border(3)+pad
+  const boxH=lines.length*rowH + (ch.length?ch.length*(rowH+3)+3:0) + 6 + 10;
+  let X=rec.x>=0?rec.x:Math.round((320-boxW)/2);                       // @0x06D522
+  let Y=rec.y>=0?rec.y:Math.round((200-boxH)/2);                       // @0x06D53B
+  if(X+boxW>320) X=320-boxW; if(Y+boxH>200) Y=200-boxH;                // clamp @0x06D563
+  if(X<0) X=0; if(Y<0) Y=0;
+  // speaker channel -> sheet name (2.7); IND needs the tribe index
+  let sheet='';
+  if(rec.speaker==='KING1') sheet='KING1';
+  else if(rec.speaker==='IND') sheet='IND'+(p.tribe||0)+'A0';
+  else if(rec.speaker==='MYR') sheet='MYR0';
+  else if(rec.speaker&&rec.speaker.startsWith('MSS')) sheet=rec.speaker;
+  // {highlight} braces -> emphasized words (the glyph-engine highlight color)
+  const mark=t=>esc(t).replace(/\{([^}]*)\}/g,'<span style="color:#fff6d8;font-weight:bold">$1</span>');
+  let inner='';
+  lines.forEach((l,i)=>{ inner+='<div style="position:absolute;left:'+(5*S)+'px;top:'
+    +((5+i*rowH)*S)+'px;font-size:'+(6*S)+'px;line-height:1;white-space:pre;color:#1a1206">'
+    +mark(l)+'</div>'; });
+  const chTop=5+lines.length*rowH+3;
+  ch.forEach((c,i)=>{ inner+='<div class="wfopt" data-i="'+i+'" style="position:absolute;left:'
+    +(5*S)+'px;top:'+((chTop+i*(rowH+3))*S)+'px;width:'+((contentW-10)*S)+'px;text-align:center;'
+    +'font-size:'+(6*S)+'px;line-height:'+(rowH*S)+'px;color:#2a1c08;cursor:pointer;'
+    +'border:1px solid #00000033;background:#ffffff14">'+mark(c)+'</div>'; });
+  const ov=document.createElement('div');
+  ov.id='wfov';
+  ov.style.cssText='position:fixed;inset:0;background:#0008;z-index:70;display:flex;'
+    +'align-items:center;justify-content:center';
+  ov.innerHTML='<div style="position:relative;width:'+(320*S)+'px;height:'+(200*S)+'px">'
+    +'<div id="wfbox" style="position:absolute;left:'+(X*S)+'px;top:'+(Y*S)+'px;'
+    +'width:'+(boxW*S)+'px;height:'+(boxH*S)+'px;'
+    +'background:url(/assets/pik/WOODPANL.png);background-size:'+(320*S)+'px '+(200*S)+'px;'
+    +'image-rendering:pixelated;font-family:monospace;'
+    +'border:'+(3*S)+'px solid #5a3d20;box-shadow:inset 0 0 0 '+(2*S)+'px #2e1f10,0 '+(4*S)+'px '+(8*S)+'px #000c;'
+    +'cursor:'+(ch.length?'default':'pointer')+'">'
+    +inner+'</div>'
+    +(sheet?('<div style="position:absolute;left:'+(X*S)+'px;top:'+(Y*S)+'px">'+wfPortrait(sheet)+'</div>'):'')
+    +'</div>';
+  document.body.appendChild(ov);
+  const done=()=>{ ov.remove(); };
+  if(ch.length){
+    ov.querySelectorAll('.wfopt').forEach(el=>{
+      el.onmouseenter=()=>{ el.style.background='#fff6d84d'; };
+      el.onmouseleave=()=>{ el.style.background='#ffffff14'; };
+      el.onclick=()=>{ done(); if(onChoice) onChoice(ch[+el.dataset.i]); };
+    });
+  } else {
+    ov.onclick=()=>{ done(); if(onClose) onClose(); };   // modal wait (0x181F:0x3C0)
+  }
+}
 // Render an event popup and, on a choice, resume the graph -- re-rendering ANY further popup the
 // resume returns (a chained ShowPopup) so a multi-stage event is not silently truncated. cache:p._cache
 // keeps rolled/offered values stable across each choice.
 function playPopup(id, p){
-  ui.popup(esc(p.title),'<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="evch"></div>');
-  const box=$('#evch'), ch=p.choices||[];
-  const resume=async(c)=>{ ui.close();
+  const resume=async(c)=>{
     const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
     await refreshGame();
     if(r.popup) playPopup(id, r.popup);
     else if((r.effects||[]).length) ui.toast(r.effects.join('; ')); };
-  if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent='Continue'; b.onclick=()=>ui.close(); box.appendChild(b); return; }
-  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
+  wfShow({key:p.title, body:p.body, choices:p.choices||[]}, resume, null);
 }
 async function saveGame(){
   if(!GAME){ ui.toast('No active game'); return; }
@@ -2557,15 +2651,13 @@ function eventQueue(q){
 // Like playPopup, but for the per-turn event batch: a chained popup within one event re-renders
 // (staying on this event's graph); when the chain ends, advance to the next queued event.
 function showEventPopup(id, p, q){
-  ui.popup(esc(p.title), '<p>'+esc(p.body).replace(/\n/g,'<br>')+'</p>'+popupSprites(p)+'<div id="eqch"></div>');
-  const box=$('#eqch'), ch=p.choices||[];
-  const resume=async(c)=>{ ui.close();
+  const resume=async(c)=>{
     const r=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id,from_node:p.node,choice:c,cache:p._cache})})).json();
     await refreshGame();
     if(r.popup) showEventPopup(id, r.popup, q);
     else eventQueue(q); };
-  if(!ch.length){ const b=document.createElement('button'); b.className='act'; b.textContent='Continue'; b.onclick=()=>{ ui.close(); refreshGame(); eventQueue(q); }; box.appendChild(b); return; }
-  ch.forEach(c=>{ const b=document.createElement('button'); b.className='act'; b.style.margin='3px'; b.textContent=c; b.onclick=()=>resume(c); box.appendChild(b); });
+  wfShow({key:p.title, body:p.body, choices:p.choices||[]}, resume,
+         ()=>{ refreshGame(); eventQueue(q); });
 }
 function selUnit(){ return SEL<0 ? null : (GAME&&GAME.units.find(u=>u.id===SEL)); }
 async function orderMove(tx,ty){
@@ -2596,7 +2688,9 @@ async function orderNamed(o){
 async function nativeLearn(){
   if(SEL<0) return;
   try{ const d=await (await fetch('/api/native/learn',{method:'POST',body:JSON.stringify({unit:SEL})})).json();
-    ui.popup('The village elders speak','<p>'+esc(d.msg||'').replace(/\n/g,'<br>')+'</p>');
+    const u=selUnit();
+    const vil=u&&(GAME.settlements||[]).find(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
+    wfShow({key:d.key||'', body:d.msg||'', tribe:vil?vil.tribe:0}, null, null);
   }catch(e){ ui.toast('no village will receive us'); }
   await refreshGame();
 }
@@ -2614,15 +2708,13 @@ async function scoutColony(){
   if(d.error){ ui.toast(d.error); return; }
   const parts=(d.msg||'').split('\n\n');                     // text, then the option lines
   const opts=(parts[1]||'Meet With Mayor\nInfiltrate Colony\nAttack Colony\nNothing').split('\n');
-  let h='<p>'+esc(parts[0]||'').replace(/\n/g,'<br>')+'</p>';
-  opts.forEach((t,i)=>{ h+='<button class="act" style="margin:3px" onclick="scoutChoice('+i+')">'+esc(t)+'</button>'; });
-  ui.popup('Scouts', h);
+  wfShow({key:'@SCOUTCOLONY', body:parts[0]||'', choices:opts},
+         c=>scoutChoice(opts.indexOf(c)), null);
 }
 async function scoutChoice(i){
-  ui.close();
   const d=await (await fetch('/api/scout/colony',{method:'POST',body:JSON.stringify({unit:SEL,choice:i})})).json();
   if(d.error){ ui.toast(d.error); return; }
-  if(d.msg){ ui.popup('Scouts','<p>'+esc(d.msg).replace(/\n/g,'<br>')+'</p>'); }
+  if(d.msg){ wfShow({key:d.key||'', body:d.msg}, null, null); }
   else if(d.info){
     const inf=d.info;
     let h='<p><b>'+esc(inf.owner)+'</b> colony &middot; population '+inf.population+'</p>';
