@@ -101,6 +101,7 @@ endif()
 #     P0: canonical text module + tests. C++17 per Phase-0 ruling. ---
 add_library(drydock STATIC
   drydock/text/rec_text.cpp
+  drydock/schema/schema.cpp
 )
 target_include_directories(drydock PUBLIC drydock)
 
@@ -110,7 +111,9 @@ target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
 add_executable(drydock_tests drydock/tests/drydock_tests.cpp)
 target_link_libraries(drydock_tests PRIVATE drydock)
-add_test(NAME drydock_tests COMMAND drydock_tests)
+# drydock_tests reads the authored schemas under data/schema/ -> repo root cwd
+add_test(NAME drydock_tests COMMAND drydock_tests
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 add_test(NAME forge_map COMMAND forge map selftest)
 add_test(NAME forge_rules COMMAND forge rules selftest)
 add_test(NAME forge_mod COMMAND forge mod selftest)

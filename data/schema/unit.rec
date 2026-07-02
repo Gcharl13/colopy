@@ -1,0 +1,19 @@
+record schm.unit {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 23, doc = "@UNIT row ordinal (EXE-parity; unit type ids are load-bearing)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @UNIT display name" },
+    { name = "icon", type = "int", doc = "@UNIT sprite column (EXE frame id; png = EXE-1)" },
+    { name = "movement", type = "int", min = 0, max = 40, doc = "Movement points per turn" },
+    { name = "attack", type = "int", min = 0, max = 99, doc = "Attack strength" },
+    { name = "combat", type = "int", min = 0, max = 99, doc = "Defense/combat strength" },
+    { name = "cargo", type = "int", min = 0, max = 8, doc = "Cargo holds" },
+    { name = "size", type = "int", doc = "@UNIT size column (lossless)" },
+    { name = "cost", type = "int", doc = "@UNIT cost column (lossless)" },
+    { name = "tools", type = "int", doc = "@UNIT tools column (lossless)" },
+    { name = "guns", type = "int", doc = "@UNIT guns column (lossless)" },
+    { name = "hull", type = "int", doc = "@UNIT hull column (lossless)" },
+    { name = "ai_role_bits", type = "str", doc = "@UNIT AI role bitstring, leading zeros significant" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

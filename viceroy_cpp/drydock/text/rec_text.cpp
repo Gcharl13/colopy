@@ -21,6 +21,11 @@ bool value_equal(const Value& a, const Value& b) {
             for (size_t i = 0; i < a.list.size(); ++i)
                 if (!value_equal(a.list[i], b.list[i])) return false;
             return true;
+        case ValKind::Dict:
+            if (a.keys != b.keys || a.list.size() != b.list.size()) return false;
+            for (size_t i = 0; i < a.list.size(); ++i)
+                if (!value_equal(a.list[i], b.list[i])) return false;
+            return true;
     }
     return false;
 }
@@ -133,6 +138,27 @@ struct Lex {
             out = Value::make_list(std::move(xs));
             return true;
         }
+        if (c == '{') {                            // inline dict: { k = v, k2 = v2 }
+            ++p;
+            out = Value::make_dict();
+            skip_ws();
+            if (peek('}')) { ++p; return true; }
+            for (;;) {
+                std::string k;
+                if (!token(k)) return false;
+                for (const auto& ek : out.keys)
+                    if (ek == k) return fail("duplicate dict key '" + k + "'");
+                if (!expect('=')) return false;
+                Value v;
+                if (!value(v, depth + 1)) return false;
+                out.dict_put(std::move(k), std::move(v));
+                skip_ws();
+                if (peek(',')) { ++p; continue; }
+                if (peek('}')) { ++p; break; }
+                return fail("expected ',' or '}' in dict");
+            }
+            return true;
+        }
         if (c == '-' || c == '+' || std::isdigit((unsigned char)c)) return number(out);
         if (ident_start(c)) { std::string t; if (!token(t)) return false; out = Value::make_token(std::move(t)); return true; }
         return fail("unexpected character in value");
@@ -216,6 +242,15 @@ std::string canon_value(const Value& v) {
                 o += canon_value(v.list[i]);
             }
             o += "]";
+            return o;
+        }
+        case ValKind::Dict: {
+            std::string o = "{ ";
+            for (size_t i = 0; i < v.list.size(); ++i) {
+                if (i) o += ", ";
+                o += v.keys[i] + " = " + canon_value(v.list[i]);
+            }
+            o += v.list.empty() ? "}" : " }";
             return o;
         }
     }

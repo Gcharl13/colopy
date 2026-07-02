@@ -27,7 +27,7 @@
 
 namespace drydock {
 
-enum class ValKind : uint8_t { Int, Float, Str, Token, List };
+enum class ValKind : uint8_t { Int, Float, Str, Token, List, Dict };
 
 struct Value {
     ValKind kind = ValKind::Int;
@@ -35,12 +35,22 @@ struct Value {
     double             f = 0.0;    // Float
     std::string        s;          // Str (unquoted content) / Token (bare)
     std::vector<Value> list;       // List
+    // Dict: parallel arrays (keys/list) keep Value self-referential without
+    // an extra heap type; keys[i] names list[i].
+    std::vector<std::string> keys;
 
     static Value make_int(long long v)          { Value x; x.kind = ValKind::Int;   x.i = v; return x; }
     static Value make_float(double v)           { Value x; x.kind = ValKind::Float; x.f = v; return x; }
     static Value make_str(std::string v)        { Value x; x.kind = ValKind::Str;   x.s = std::move(v); return x; }
     static Value make_token(std::string v)      { Value x; x.kind = ValKind::Token; x.s = std::move(v); return x; }
     static Value make_list(std::vector<Value> v){ Value x; x.kind = ValKind::List;  x.list = std::move(v); return x; }
+    static Value make_dict()                    { Value x; x.kind = ValKind::Dict;  return x; }
+    void dict_put(std::string k, Value v)       { keys.push_back(std::move(k)); list.push_back(std::move(v)); }
+    const Value* dict_get(const std::string& k) const {
+        for (size_t i = 0; i < keys.size(); ++i) if (keys[i] == k) return &list[i];
+        return nullptr;
+    }
+    bool truthy() const { return kind == ValKind::Token && s == "true"; }
 };
 
 bool value_equal(const Value& a, const Value& b);

@@ -1,0 +1,17 @@
+record schm.good {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 19, doc = "@CARGO row ordinal (EXE-parity; goods indices are load-bearing)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @CARGO display name" },
+    { name = "price_start1", type = "int", doc = "Initial bid seed lower bound (market.md)" },
+    { name = "price_start2", type = "int", doc = "Initial bid seed upper bound" },
+    { name = "drift_low", type = "int", doc = "price_level clamp low (@CARGO drift band)" },
+    { name = "drift_high", type = "int", doc = "price_level clamp high" },
+    { name = "burden", type = "int", doc = "Ask spread: ask = bid + burden + 1 (USER RULING #4)" },
+    { name = "rise", type = "int", doc = "Legacy per-good rise step (kept lossless from @CARGO)" },
+    { name = "fall", type = "int", doc = "Legacy per-good fall step" },
+    { name = "attrition", type = "int", doc = "Legacy attrition; -1 on Food" },
+    { name = "volatility", type = "int", doc = "Legacy volatility" },
+    { name = "notes", type = "str", doc = "Free prose; the only comment channel (spec 4.2)" }
+  ]
+}

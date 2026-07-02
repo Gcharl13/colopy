@@ -2,6 +2,9 @@
 // text -> store -> text byte-identical, canonical number formatting, parser
 // error quality. Grows with each Drydock phase.
 #include "../text/rec_text.hpp"
+#include "../schema/schema.hpp"
+#include <fstream>
+#include <sstream>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -87,11 +90,78 @@ static void test_multi_and_lists() {
     check(rs.size() == 2 && rs[1].find("tags") && rs[1].find("tags")->list.empty(), "empty list");
 }
 
+static std::string slurp(const char* path) {
+    std::ifstream f(path);
+    std::stringstream ss; ss << f.rdbuf();
+    return ss.str();
+}
+
+static void test_dicts() {
+    const char* src =
+        "record schm.demo {\n"
+        "  fields = [{ name = \"x\", type = \"int\", min = 0, max = 5 }]\n"
+        "}\n";
+    std::vector<Record> rs; std::string err;
+    check(parse_records(src, rs, err), "dict: schema-style source parses");
+    std::string t2 = rs.empty() ? "" : serialize_records(rs);
+    std::vector<Record> rs2;
+    check(parse_records(t2, rs2, err) && !rs2.empty() &&
+          value_equal(*rs[0].find("fields"), *rs2[0].find("fields")),
+          "dict: value round-trips");
+    err.clear(); rs.clear();
+    check(!parse_records("record a.b { d = { k = 1, k = 2 } }", rs, err),
+          "dict: duplicate key rejected");
+}
+
+static void test_schema() {
+    // the real authored schemas load
+    std::vector<Record> schm; std::string err;
+    for (const char* p : {"data/schema/good.rec", "data/schema/unit.rec", "data/schema/prof.rec"}) {
+        std::string s = slurp(p);
+        check(!s.empty(), "schema file readable");
+        check(parse_records(s, schm, err), "schema file parses");
+        if (!err.empty()) { std::printf("       %s: %s\n", p, err.c_str()); err.clear(); }
+    }
+    Schema sc;
+    check(schema_load(schm, sc, err), "schema_load on authored schemas");
+    if (!err.empty()) std::printf("       err: %s\n", err.c_str());
+    check(sc.find("good") && sc.find("unit") && sc.find("prof"), "three types loaded");
+    check(sc.find("good") && sc.find("good")->find("burden") &&
+          sc.find("good")->find("burden")->type == FType::Int, "field types parsed");
+
+    // canonicalize: schema order + unknown-field rejection
+    Record r;
+    r.id = "good.food";
+    r.fields.push_back({"name",  Value::make_str("Food")});
+    r.fields.push_back({"index", Value::make_int(0)});
+    check(schema_canonicalize(sc, r, err), "canonicalize ok");
+    check(r.fields.size() == 2 && r.fields[0].name == "index", "fields re-ordered to schema order");
+    Record bad = r;
+    bad.fields.push_back({"bogus", Value::make_int(1)});
+    check(!schema_canonicalize(sc, bad, err) && err.find("bogus") != std::string::npos,
+          "canonicalize rejects unknown field");
+
+    // validation: range + required + ref shape
+    std::vector<std::string> ve;
+    Record v; v.id = "prof.farmer";
+    v.fields.push_back({"index", Value::make_int(99)});          // out of range
+    schema_validate(sc, v, ve);
+    bool range_hit = false, req_hit = false;
+    for (const auto& e : ve) {
+        if (e.find("out of range") != std::string::npos) range_hit = true;
+        if (e.find("required field 'name'") != std::string::npos) req_hit = true;
+    }
+    check(range_hit, "validate flags out-of-range int");
+    check(req_hit, "validate flags missing required field");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
     test_parse_errors();
     test_multi_and_lists();
+    test_dicts();
+    test_schema();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }
