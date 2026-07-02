@@ -2296,7 +2296,7 @@ async function euPurchase(){
 // minimap (241,8,79,41), sidebar B/C) AND the pixel-measured sidebar line table (tier R, cited) --
 // nothing hand-transcribed. Menu titles = the verbatim MENU.TXT sections; sidebar strings = the
 // verbatim @INFO/@MISC/@SEASONS/@UNIT lines; minimap dot colors = NAMES @COLORS palette indices.
-let NV=false, NVX=0, NVY=0, NVZ=0, NVLAY=null, NVMENU=null, NVPAL=null;
+let NV=false, NVX=0, NVY=0, NVZ=0, NVH=false, NVLAY=null, NVMENU=null, NVPAL=null;
 // VIEW zoom state [0x184] 0..3 (map_view.md 6.2, render_frame_setup @0x6787C):
 // SPAN_W[0x8544]=0xF<<zoom, SPAN_H[0x8546]=0xC<<zoom, TILE_PX[0x5AD4]=0x10>>zoom
 // -> 15x12@16px / 30x24@8px / 60x48@4px / 120x96@2px (the four @VIEW rows).
@@ -2317,6 +2317,29 @@ function nvCenter(){                                   // ~Center View (accel C)
   const s=nvSpan();
   NVX=Math.max(0,Math.min(GAME.w-s.W,u.x-(s.W>>1))); NVY=Math.max(0,Math.min(GAME.h-s.H,u.y-(s.H>>1)));
   nvRefresh();
+}
+// @ORDERS accelerators (input.md map-command table; verbatim MENU.TXT rows).
+async function nvOrder(o){                             // F/S/P/R standing orders, '-' activate, 'D' disband
+  const u=selUnit(); if(!u){ ui.toast('No active unit'); return; }
+  const r=await fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,order:o})});
+  const d=await r.json(); if(d.error){ ui.toast(d.error); return; }
+  GAME=d; if(o==='D') SEL=-1;
+  nvRefresh();
+}
+async function nvBuild(){                              // ~Build Colony / Join Colony (~B)
+  const u=selUnit(); if(!u){ ui.toast('No active unit'); return; }
+  const r=await fetch('/api/game/found',{method:'POST',body:JSON.stringify({unit:SEL})});
+  const d=await r.json(); if(d.error){ ui.toast(d.error); return; }
+  GAME=d; SEL=-1; nvRefresh();
+}
+function nvNext(){                                     // ~Wait for next unit / No Orders (space)
+  const alive=(GAME.units||[]).filter(u=>u.owner===0&&u.alive!==false);
+  const ready=alive.filter(u=>u.moves>0);              // moves refresh inside the turn step, so
+  const pool=ready.length?ready:alive;                 // at turn 0 every unit still cycles
+  if(!pool.length){ SEL=-1; nvRefresh(); return; }
+  const i=pool.findIndex(u=>u.id===SEL);
+  SEL=pool[(i+1)%pool.length].id;
+  nvCenter();
 }
 async function nvOpen(){
   if(!GAME||!GAME.w) await refreshGame();
@@ -2411,6 +2434,9 @@ function nvDraw(){
   const inWin=(x,y)=>x>=NVX&&y>=NVY&&x<NVX+W&&y<NVY+H;
   for(let y=0;y<H;y++) for(let x=0;x<W;x++)            // fog inside the viewport
     if(!fogSeen(Math.min(GAME.w-1,NVX+x),Math.min(GAME.h-1,NVY+y))){ g.fillStyle='#04060c'; g.fillRect(x*px,y*px,px,px); }
+  if(!NVH){                                            // Show ~Hidden Terrain (accel H) hides the
+                                                       // piece/colony overlays so the terrain
+                                                       // beneath shows (RECONSTRUCTED from the row name)
   (GAME.settlements||[]).forEach(s=>{ if(!inWin(s.x,s.y)||!fogSeen(s.x,s.y)) return;
     const X=(s.x-NVX)*px,Y=(s.y-NVY)*px;
     g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); });
@@ -2429,6 +2455,7 @@ function nvDraw(){
     if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*32,0,32,32,(u.x-NVX)*px-(px>>1),(u.y-NVY)*px-(px>>1),px*2,px*2); });
   const s=selUnit();
   if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
+  }                                                    // end !NVH overlay block
   // minimap: a 1px/tile scrolling window; dot colors = NAMES @COLORS palette indices
   // (0x830 ocean/coast=68, 0x831 land=149, fog=8, owned=128 -- resolved via VICEROY.PAL)
   const mcv=document.getElementById('nvmini'); if(!mcv) return;
@@ -2473,6 +2500,27 @@ function nvMenu(k){
         return '<div style="padding:2px 0"><a href="#" onclick="ui.close();declareIndependence();return false">'+esc(it)+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join('')||'<i>empty</i>');
+    return;
+  }
+  if(k==='@ORDERS'){                                   // unit-order rows dispatch to the backend
+    const live=[                                       // [regex, onclick] per verbatim row
+      [/Activate/i,      "nvOrder('-')"],
+      [/Wait for next/i, "nvNext()"],
+      [/^~?Fortify/i,    "nvOrder('F')"],
+      [/Sentry/i,        "nvOrder('S')"],
+      [/Build Colony|Join Colony/i, "nvBuild()"],
+      [/Clear Forest|Plow Fields/i, "nvOrder('P')"],
+      [/Build ~?Road/i,  "nvOrder('R')"],
+      [/Return to Europe/i, "NV=false;euOpen()"],
+      [/No Orders/i,     "nvNext()"],
+      [/Disband/i,       "nvOrder('D')"],
+    ];
+    ui.popup('ORDERS',items.map(it=>{
+      const m=live.find(l=>l[0].test(it.replace(/~/g,'')));
+      if(m) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();'+m[1]+';return false">'
+        +esc(it.replace(/~/g,''))+'</a></div>';
+      return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
+    }).join(''));
     return;
   }
   if(k==='@VIEW'){                                     // zoom rows are live (map_view.md 6.2)
@@ -2817,6 +2865,18 @@ window.addEventListener('keydown',e=>{
   if(k==='z'){ e.preventDefault(); nvZoom(NVZ-1); return; }   // @VIEW Zoom In# ~Z
   if(k==='x'){ e.preventDefault(); nvZoom(NVZ+1); return; }   // @VIEW Zoom Out ~X
   if(k==='c'){ e.preventDefault(); nvCenter(); return; }      // @VIEW ~Center View
+  if(k==='h'){ e.preventDefault(); NVH=!NVH; nvDraw(); return; }         // Show ~Hidden Terrain
+  // @ORDERS accelerators (input.md map-command table, manual L63-103)
+  if(k==='a'){ e.preventDefault(); nvOrder('-'); return; }    // ~Activate unit
+  if(k==='w'){ e.preventDefault(); nvNext(); return; }        // ~Wait for next unit
+  if(k===' '){ e.preventDefault(); nvNext(); return; }        // No Orders (space bar)
+  if(k==='f'){ e.preventDefault(); nvOrder('F'); return; }    // ~Fortify
+  if(k==='s'){ e.preventDefault(); nvOrder('S'); return; }    // ~Sentry
+  if(k==='b'){ e.preventDefault(); nvBuild(); return; }       // ~Build Colony / Join Colony (~B)
+  if(k==='p'){ e.preventDefault(); nvOrder('P'); return; }    // Clear Forest (~P) / Plow Fields (~P)
+  if(k==='r'){ e.preventDefault(); nvOrder('R'); return; }    // Build ~Road
+  if(k==='d'&&e.shiftKey){ e.preventDefault(); nvOrder('D'); return; }   // Disband Unit (shift-D)
+  if(k==='e'){ e.preventDefault(); ui.close(); NV=false; euOpen(); return; }  // ~Return to Europe
   const d={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[e.key];
   if(!d) return;
   e.preventDefault();

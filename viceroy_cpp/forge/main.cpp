@@ -3134,7 +3134,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                                         : "a land route needs a wagon train");
                     u.order = ORDER_TRADE_ROUTE; u.route = ri; u.route_stop = 0;
                 }
-                else return err(400, "unknown order (use P/R/F/S/T/-)");
+                else if (o == "D") {
+                    // @ORDERS "Disband Unit (shift-D)" (input.md L77): immediate removal.
+                    u.alive = false;
+                    return J(200, game_state_json());
+                }
+                else return err(400, "unknown order (use P/R/F/S/T/D/-)");
                 u.work = 0;                                   // fresh improvement start
                 return J(200, game_state_json());
             }
@@ -3155,6 +3160,21 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (unit_stats(u.type).move_class == 99) return err(400, "a ship cannot found a colony");
             int id = g_world.terrain_id(u.x, u.y);
             if (id < 0 || game_is_water(id)) return err(400, "must found on land");
+            // "Join Colony (~B)" (@ORDERS; manual L85): standing on an own colony,
+            // the unit joins it as a colonist instead of founding a new one.
+            for (auto& jc : g_world.colonies) {
+                if (jc.x != u.x || jc.y != u.y) continue;
+                if (jc.owner_power != u.owner) return err(400, "cannot join a foreign colony");
+                if (jc.population >= 32) return err(400, "colony is full");   // +0x1F cap
+                jc.population += 1;
+                Colony::Worker wk; wk.profession = u.profession; wk.tile = 0; wk.good = 0;
+                int t = g_world.terrain_id(u.x, u.y + 1);
+                wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
+                jc.workers.push_back(wk);
+                forge::colony_compute_production(jc, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
+                u.alive = false;                        // the colonist becomes population
+                return J(200, game_state_json());
+            }
             Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
             c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
             c.x = u.x; c.y = u.y;                              // ColonyRecord +0/+1 map position
