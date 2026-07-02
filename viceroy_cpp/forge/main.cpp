@@ -2159,6 +2159,116 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::invalidate_turn_pipeline();           // next turn uses the edited order
             forge::JsonValue o = jobj(); o.obj["saved"] = jbool((bool)f); return J(200, o);
         }
+        // The Systems browser's per-turn trace (3.1): advance ONE real turn -- the same
+        // stages as game_step(), in the same order -- but phase-by-phase, snapshotting each
+        // stage's declared writes (turn.json) so every mechanic's effect on live state shows
+        // as before->after cell deltas. Only CHANGED cells are returned.
+        if (path == "/api/turn/trace" && method == "POST") {
+            if (!g_game_active) game_new();
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            // expand a turn.json shorthand write (colony.X / power.X / market.price_base /
+            // unit.X / literal) into concrete cell paths against the live world
+            auto expand = [&](const std::string& w, std::vector<std::string>& out) {
+                size_t ncol = g_world.colonies.size(); if (ncol > 6) ncol = 6;
+                if (w.rfind("colony.", 0) == 0) {
+                    std::string rest = w.substr(7);
+                    if (rest.find('<') != std::string::npos) return;   // pattern cols (built.<id>)
+                    for (size_t i = 0; i < ncol; ++i) out.push_back("colony" + std::to_string(i) + "." + rest);
+                } else if (w.rfind("power.", 0) == 0) {
+                    out.push_back("power0." + w.substr(6));            // the player power
+                } else if (w.rfind("market.price", 0) == 0) {
+                    for (int g = 0; g < NGOODS; ++g) out.push_back("price." + std::to_string(g));
+                } else if (w.rfind("unit.", 0) == 0) {
+                    size_t n = g_world.units.size(); if (n > 8) n = 8;
+                    for (size_t i = 0; i < n; ++i) out.push_back("unit" + std::to_string(i) + "." + w.substr(5));
+                } else if (w.find('<') == std::string::npos) out.push_back(w);
+            };
+            auto snap = [&](const std::vector<std::string>& paths) {
+                std::vector<std::string> vals; vals.reserve(paths.size());
+                for (const std::string& p : paths) vals.push_back(forge::json_dump(forge::cell_get(p, cx)));
+                return vals;
+            };
+            forge::JsonValue stages = jarr();
+            auto trace_stage = [&](const std::string& id, const std::string& fn, const std::string& note,
+                                   const std::vector<std::string>& watch, const std::function<void()>& run) {
+                std::vector<std::string> before = snap(watch);
+                run();
+                std::vector<std::string> after = snap(watch);
+                forge::JsonValue st = jobj();
+                st.obj["id"] = forge::json_str(id);
+                st.obj["function"] = forge::json_str(fn);
+                st.obj["note"] = forge::json_str(note);
+                forge::JsonValue ch = jarr();
+                for (size_t i = 0; i < watch.size(); ++i) if (before[i] != after[i]) {
+                    forge::JsonValue c = jobj();
+                    c.obj["path"] = forge::json_str(watch[i]);
+                    c.obj["before"] = forge::json_parse(before[i]);
+                    c.obj["after"] = forge::json_parse(after[i]);
+                    ch.arr.push_back(c);
+                }
+                st.obj["changes"] = ch;
+                stages.arr.push_back(st);
+            };
+            // pipeline phases with their turn.json declarations
+            forge::JsonValue turn_doc; try { turn_doc = forge::json_parse_file("data_extracted/engine/turn.json"); } catch (...) {}
+            const forge::JsonValue* phv = turn_doc.find("phases");
+            Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
+            for (const std::string& id : forge::enabled_turn_phases()) {
+                std::string fn = id, note; std::vector<std::string> watch;
+                if (phv) for (const forge::JsonValue& p : phv->arr) {
+                    const forge::JsonValue* pid = p.find("id");
+                    if (!pid || pid->str != id) continue;
+                    if (const forge::JsonValue* f = p.find("function")) fn = f->str;
+                    if (const forge::JsonValue* n = p.find("note")) note = n->str;
+                    if (const forge::JsonValue* ws = p.find("writes"))
+                        for (const forge::JsonValue& w : ws->arr) expand(w.str, watch);
+                    break;
+                }
+                trace_stage(id, fn, note, watch, [&]{
+                    forge::run_turn_phase(id, g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned);
+                });
+            }
+            // wartime REF freeze -- same rule as game_step: once independence is declared the
+            // King's force is committed; the peacetime buildup is reverted.
+            if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
+            // forge-side stages, in game_step order, each with a fixed watch set
+            { std::vector<std::string> w = {"power0.gold"};
+              for (int g = 0; g < NGOODS; ++g) w.push_back("price." + std::to_string(g));
+              trace_stage("auto_export", "auto_export_step",
+                          "Custom-House auto-sell of over-cap goods (peacetime).", w,
+                          [&]{ auto_export_step(); }); }
+            { std::vector<std::string> w = {"congress.bells", "congress.cost", "congress.count", "revolution.sol"};
+              trace_stage("congress", "congress_step",
+                          "Player liberty bells accrue toward the next founding father.", w, [&]{
+                    int bells = 0;
+                    for (const Colony& c : g_world.colonies)
+                        if (c.owner_power == 0) bells += c.bells_per_turn;
+                    congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng);
+                    if (g_engine_extra.woi_declared)
+                        for (const Colony& c : g_world.colonies)
+                            if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
+              }); }
+            trace_stage("succession", "spanish_succession_step",
+                        "War of the Spanish Succession (scripted, self-gated).",
+                        {"succession.seceded"}, [&]{ spanish_succession_step(); });
+            { std::vector<std::string> w;
+              expand("colony.sol", w); expand("colony.population", w);
+              trace_stage("tory_uprising", "tory_uprising_step",
+                          "During-war internal dissent (self-gated).", w, [&]{ tory_uprising_step(); }); }
+            { std::vector<std::string> w = {"ref.regulars", "ref.cavalry", "ref.manowar", "ref.artillery",
+                                            "revolution.sol", "revolution.declared"};
+              trace_stage("war", "war_resolution_step",
+                          "Resolve the War of Independence if declared.", w,
+                          [&]{ war_resolution_step(); }); }
+            history_snapshot();
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(true);
+            o.obj["turn"] = forge::json_num((double)g_game.turn);
+            o.obj["year"] = forge::json_num(g_game.year);
+            o.obj["season"] = forge::json_num(g_game.season);
+            o.obj["stages"] = stages;
+            return J(200, o);
+        }
         // Declare the War of Independence (player command). Requires national Sons of Liberty >= 50
         // (spec revolution gate); sets the war flag so war_resolution_step() runs each turn.
         if (path == "/api/game/declare" && method == "POST") {

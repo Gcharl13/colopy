@@ -9,6 +9,9 @@
 
 #include "game.hpp"    // vc::sim::GameState, World, RandFn
 
+#include <string>
+#include <vector>
+
 namespace forge {
 
 // Run one turn by iterating the data pipeline (turn.json, cached on first use).
@@ -16,6 +19,16 @@ namespace forge {
 // power's founding-father bitmask (production applies the father effects); 0 = none.
 void run_turn(vc::sim::GameState& g, vc::sim::World& w, const vc::sim::RandFn& rng,
               int player_idx, const vc::sim::RuleData& rd, uint32_t ff_owned = 0);
+
+// Run ONE named phase of the pipeline (the same dispatch run_turn uses). The Systems
+// browser's per-turn trace steps the pipeline phase-by-phase, snapshotting each phase's
+// declared writes between calls. Unknown ids are a no-op.
+void run_turn_phase(const std::string& id, vc::sim::GameState& g, vc::sim::World& w,
+                    const vc::sim::RandFn& rng, int player_idx, const vc::sim::RuleData& rd,
+                    uint32_t ff_owned = 0);
+
+// The enabled phase ids in pipeline order (turn.json, cached; default order fallback).
+const std::vector<std::string>& enabled_turn_phases();
 
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).

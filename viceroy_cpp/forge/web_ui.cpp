@@ -111,6 +111,7 @@ const char* forge_index_html() {
   <button data-tab="formulas">Formulas</button>
   <button data-tab="assets">Assets</button>
   <button data-tab="screens">Screens</button>
+  <button data-tab="systems">Systems</button>
   <button data-tab="logic">Logic</button>
   <button data-tab="turn">Turn</button>
   <button data-tab="sandbox">Sandbox</button>
@@ -302,6 +303,17 @@ const char* forge_index_html() {
           &nbsp;<span style="color:#6cc06c">&#9632;</span> Sons of Liberty</div>
       </div>
     </div>
+  </section>
+
+  <section id="systems" class="tab">
+    <div class="row">
+      <input id="sysfilter" placeholder="filter: name / knob / column&hellip;" style="width:260px" oninput="sysRender()">
+      <button class="act" onclick="sysTrace()">&#9654; Step 1 turn &mdash; trace writes</button>
+      <span class="muted">Every mechanic as its spec formula: what it reads (knobs editable live), what it writes,
+        the live value, and &mdash; after a traced turn &mdash; exactly which cells it changed.</span>
+    </div>
+    <div id="systrace" style="margin-top:8px"></div>
+    <div id="syscards" style="margin-top:8px"></div>
   </section>
 
   <section id="logic" class="tab">
@@ -2109,6 +2121,124 @@ function turnMove(i,d){ const j=i+d; if(j<0||j>=TURN.phases.length) return;
 async function turnSave(){ const d=await (await fetch('/api/turn',{method:'POST',body:JSON.stringify(TURN)})).json();
   ui.toast(d.saved?'Turn pipeline saved — next End turn uses it':(d.error||'save failed')); }
 document.querySelector('nav button[data-tab=turn]').addEventListener('click',()=>{ if(!TURN) turnLoad(); });
+
+// ---- Systems browser (3.1): the understand/adjust surface over every game mechanic ----
+// One card per formula (functions.json): the spec expression + note + spec cite; the cfg
+// knobs it reads, editable live (read-modify-write of the active rules overlay -- the same
+// validated /api/rules/save path the Rules tab uses, so an invariant-breaking edit is
+// rejected); its declared writes with live cell values; and, from the reverse index, every
+// other function that also writes those columns. "Step 1 turn" advances the REAL game via
+// /api/turn/trace and shows exactly which cells each stage changed.
+let SYSD=null, SYSKNOBS={}, SYSTRACE=null;
+async function sysInit(){
+  if(!SYSD){ SYSD=await (await fetch('/api/functions')).json(); await sysKnobRefresh(); }
+  sysRender(); sysLive();
+}
+async function sysKnobRefresh(){
+  const ks=new Set();
+  (SYSD.systems||[]).forEach(s=>(s.formulas||[]).forEach(f=>(f.knobs||[]).forEach(k=>ks.add(k))));
+  await Promise.all([...ks].map(async k=>{
+    try{ SYSKNOBS[k]=(await (await fetch('/api/cell?path=cfg.'+k)).json()).value; }catch(e){}
+  }));
+}
+// a declared write pattern -> one concrete sample cell path against the live game
+function sysSample(w){
+  if(w.indexOf('market.price')===0) return 'price.0';
+  let p=w.replace('colony<N>','colony0').replace('power<N>','power0').replace('unit<N>','unit0')
+         .replace('.<good>','.0');
+  if(p.indexOf('<')>=0) return null;      // unexpanded pattern (built.<id> etc.)
+  return p;
+}
+function sysRender(){
+  if(!SYSD) return;
+  const q=($('#sysfilter').value||'').toLowerCase();
+  const hit=t=>String(t||'').toLowerCase().indexOf(q)>=0;
+  let h='';
+  (SYSD.systems||[]).forEach(s=>{
+    const fs=(s.formulas||[]).filter(f=> !q || hit(f.title)||hit(f.fn)||hit(f.expr)
+      ||(f.knobs||[]).some(hit)||(f.writes||[]).some(hit));
+    if(!fs.length) return;
+    h+='<div style="margin:14px 0 6px"><b style="font-size:14px">'+esc(s.name)+'</b>'
+      +' <span class="muted" style="font-size:11px">'+esc(s.source||'')+'</span>'
+      +(s.spec?'<div class="muted" style="font-size:11px">contract: '+esc(s.spec)+'</div>':'')+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:8px">';
+    fs.forEach(f=>{
+      h+='<div style="border:1px solid #2a2f3a;border-radius:6px;padding:8px;background:#12161f">';
+      h+='<div><b>'+esc(f.title||f.fn)+'</b> <code class="muted" style="font-size:10px">'+esc(f.fn)+'</code></div>';
+      h+='<pre style="white-space:pre-wrap;background:#0d1117;border:1px solid #232936;border-radius:4px;'
+        +'padding:6px;margin:6px 0;font-size:11.5px;color:#9fd0ff">'+esc(f.expr||'')+'</pre>';
+      if(f.note) h+='<div class="muted" style="font-size:11px;margin-bottom:6px">'+esc(f.note)+'</div>';
+      (f.knobs||[]).forEach(k=>{
+        h+='<div style="display:flex;gap:6px;align-items:center;margin:2px 0">'
+          +'<code style="font-size:11px;min-width:170px">cfg.'+esc(k)+'</code>'
+          +'<input type="number" value="'+(SYSKNOBS[k]!==undefined?SYSKNOBS[k]:'')+'" style="width:90px"'
+          +' onchange="sysSetKnob(\''+esc(k)+'\',this.value)"></div>';
+      });
+      (f.writes||[]).forEach(w=>{
+        const sp=sysSample(w);
+        const others=((SYSD.reverse_index||{})[w]||[]).filter(x=>x!==f.fn);
+        h+='<div style="font-size:11px;margin:2px 0">&rarr; writes <code>'+esc(w)+'</code>'
+          +(sp?' = <span class="syslive" data-path="'+esc(sp)+'" style="color:#e2c14a">&hellip;</span>':'')
+          +(others.length?' <span class="muted">(also written by '+esc(others.join(', '))+')</span>':'')
+          +'</div>';
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+  $('#syscards').innerHTML=h||'<span class="muted">no formulas match</span>';
+}
+// fill every live-value span from the cell store (colony0/power0 samples of the write columns)
+async function sysLive(){
+  const els=[...document.querySelectorAll('#syscards .syslive')];
+  await Promise.all(els.map(async el=>{
+    try{ const v=(await (await fetch('/api/cell?path='+encodeURIComponent(el.dataset.path))).json()).value;
+      el.textContent=(v===null||v===undefined)?'—':String(v);
+      el.title=el.dataset.path;
+    }catch(e){ el.textContent='—'; }
+  }));
+}
+async function sysSetKnob(k,v){
+  let act; try{ act=await (await fetch('/api/rules/active')).json(); }
+  catch(e){ ui.toast('rules API unavailable'); return; }
+  const ov=act.overlay&&act.overlay.obj!==undefined?act.overlay:(act.overlay||{});
+  ov.cfg=ov.cfg||{}; ov.cfg[k]=+v;
+  const r=await (await fetch('/api/rules/save',{method:'POST',body:JSON.stringify(ov)})).json();
+  if(r.saved){ SYSKNOBS[k]=+v; ui.toast('cfg.'+k+' = '+v+' — active mod saved, sim uses it now'); }
+  else ui.toast('rejected: the edit violates a rules invariant');
+  sysRender(); sysLive();
+}
+// advance ONE real game turn, stage by stage, and show exactly what each stage wrote
+async function sysTrace(){
+  $('#systrace').innerHTML='<span class="muted">stepping one traced turn&hellip;</span>';
+  let d; try{ d=await (await fetch('/api/turn/trace',{method:'POST',body:'{}'})).json(); }
+  catch(e){ $('#systrace').innerHTML='<span class="muted">trace failed</span>'; return; }
+  SYSTRACE=d;
+  let h='<div style="border:1px solid #3a4152;border-radius:6px;padding:8px;background:#151a26">'
+    +'<b>Turn '+d.turn+' &mdash; year '+d.year+(d.season?' Autumn':' Spring')+'</b>'
+    +' <span class="muted" style="font-size:11px">(the Play game advanced; each stage below lists the cells it changed)</span>';
+  (d.stages||[]).forEach(st=>{
+    const ch=st.changes||[];
+    h+='<div style="margin-top:6px"><b>'+esc(st.id)+'</b> <code class="muted" style="font-size:10px">'
+      +esc(st.function||'')+'</code>'
+      +(ch.length?'':' <span class="muted" style="font-size:11px">— no visible writes</span>');
+    if(st.note) h+='<span class="muted" style="font-size:10px"> &middot; '+esc(st.note)+'</span>';
+    h+='</div>';
+    if(ch.length){
+      h+='<table style="font-size:11px;margin:2px 0 2px 14px"><tr><th style="text-align:left">cell</th>'
+        +'<th>before</th><th></th><th>after</th></tr>';
+      ch.forEach(c=>{ h+='<tr><td><code>'+esc(c.path)+'</code></td><td style="text-align:right">'
+        +esc(JSON.stringify(c.before))+'</td><td>&rarr;</td><td style="text-align:right;color:#e2c14a">'
+        +esc(JSON.stringify(c.after))+'</td></tr>'; });
+      h+='</table>';
+    }
+  });
+  h+='</div>';
+  $('#systrace').innerHTML=h;
+  sysLive();                       // refresh the card live values
+  if(typeof GAME!=='undefined'&&GAME) refreshGame();   // the Play map advanced too
+}
+document.querySelector('nav button[data-tab=systems]').addEventListener('click',()=>sysInit());
 async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
   $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }
 async function refreshGame(){ GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }

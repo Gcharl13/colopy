@@ -91,16 +91,22 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
     phase_cache() = PhaseCache{};
 }
 
+const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
+
+void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn& rng,
+                    int player_idx, const RuleData& rd, uint32_t ff_owned) {
+    if (id == "production")       phase_production(g, w, rd, ff_owned);
+    else if (id == "market")      phase_market(g, w, rd);
+    else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
+    else if (id == "ref")         phase_ref(g, w, player_idx, rd);
+    else if (id == "units")       phase_units(g, w, rng, rd);
+    else if (id == "cadence")     phase_cadence(g, w, rd);
+    // unknown phase ids are skipped (a modded pipeline may reference a not-yet-built phase)
+}
+
 void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd, uint32_t ff_owned) {
-    for (const std::string& id : turn_phases()) {
-        if (id == "production")       phase_production(g, w, rd, ff_owned);
-        else if (id == "market")      phase_market(g, w, rd);
-        else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
-        else if (id == "ref")         phase_ref(g, w, player_idx, rd);
-        else if (id == "units")       phase_units(g, w, rng, rd);
-        else if (id == "cadence")     phase_cadence(g, w, rd);
-        // unknown phase ids are skipped (a modded pipeline may reference a not-yet-built phase)
-    }
+    for (const std::string& id : turn_phases())
+        run_turn_phase(id, g, w, rng, player_idx, rd, ff_owned);
 }
 
 } // namespace forge

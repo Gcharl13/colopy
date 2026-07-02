@@ -1615,7 +1615,7 @@
     "@SPRITES": {
       "kind": "reference",
       "cardinality": "table",
-      "rows": 306,
+      "rows": 437,
       "columns": [
         {
           "name": "id",
