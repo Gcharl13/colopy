@@ -2392,8 +2392,122 @@ function nvMenu(k){
       +Math.min(i,9)+');return false">'+esc(it)+'</a></div>').join(''));
     return;
   }
+  if(k==='@GAME'){                                     // DECLARE INDEPENDENCE is live
+    ui.popup(esc(k.slice(1)),items.map(it=>{
+      if(/DECLARE INDEPENDENCE/i.test(it))
+        return '<div style="padding:2px 0"><a href="#" onclick="ui.close();declareIndependence();return false">'+esc(it)+'</a></div>';
+      return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
+    }).join('')||'<i>empty</i>');
+    return;
+  }
   ui.popup(esc(k.slice(1))+' &mdash; verbatim MENU.TXT items',
     items.map(it=>'<div class="muted" style="padding:1px 0">'+esc(it)+'</div>').join('')||'<i>empty</i>');
+}
+// ---- Declaration of Independence cinematic (spec/ui/declaration_independence.md) ----
+// func_03DA2A: DECOIND.PIK fills (0,0,320,200); the leader signature (the name at
+// 0x540E + rebel*0x34 = @LEADERNAME) is composed glyph-by-glyph from the
+// DEC-UPP*/DEC-LOW* cursive sprites. Pen geometry BYTE-VERIFIED inline: seed
+// 0x94/0x7E, primary advance += glyph width (es:[sprite+0x4A]), cross kern
+// {-1..-4} by glyph class, run ends at 0xDC (220). The end test at 220 exceeds
+// the 200-line screen, so the RUNNING axis is x (126 -> 220) and the kern axis
+// is y (seed 148, drifting up along the document's tilt) -- the spec's inline
+// x/y labels are swapped by that constraint (noted). Per-glyph delay 10/7 ticks
+// by class; a click skips (the kbhit/getch poll @0x3DD7A). Glyph widths are
+// measured from the atlas frames at runtime (the .SS width word is not in the
+// contact sheets); kern RECONSTRUCTED as -2 uppercase / -1 lowercase.
+// Each DEC-*.SS is a progressive STROKE animation (e.g. DEC-UPPW = 11 frames,
+// the last = the complete cursive letter): the signing "typewriter" draws the
+// letter stroke by stroke. The contact-sheet cells are 58px-pitch with baked
+// blue index labels + gray borders; the glyph ink is yellow-green, so frames
+// are isolated by color (g dominant) inside each cell interior.
+const DEC_CACHE={};
+function decGlyph(ch){            // -> Promise<{img,frames:[{sx,sy,w,h,dx,dy}]}> | null
+  if(!/[a-zA-Z]/.test(ch)) return Promise.resolve(null);
+  const up=ch===ch.toUpperCase();
+  const sheet='DEC-'+(up?'UPP':'LOW')+ch.toUpperCase();
+  if(DEC_CACHE[sheet]) return DEC_CACHE[sheet];
+  DEC_CACHE[sheet]=new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height;
+      const g=cv.getContext('2d'); g.drawImage(img,0,0);
+      const frames=[];
+      for(let c=0;c<15;c++){
+        const cx0=c*58+1; if(cx0+56>img.width) break;
+        const d=g.getImageData(cx0,17,56,img.height-18).data;
+        let x0=56,x1=-1,y0=99,y1=-1;
+        for(let y=0;y<img.height-18;y++) for(let x=0;x<56;x++){
+          const o=(y*56+x)*4;
+          const r=d[o],gg=d[o+1],b=d[o+2];
+          if(gg>70&&gg>b+30){                        // the yellow-green ink only
+            if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+        }
+        if(x1<0){ if(frames.length) break; else continue; }   // trailing empty = done
+        // mask the frame to the ink pixels only (the cell background/labels
+        // inside the bbox stay transparent)
+        const w=x1-x0+1, h=y1-y0+1;
+        const fc=document.createElement('canvas'); fc.width=w; fc.height=h;
+        const fg=fc.getContext('2d');
+        const out=fg.createImageData(w,h);
+        for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+          const o=(y*56+x)*4;
+          const gg=d[o+1],b=d[o+2];
+          if(gg>70&&gg>b+30){
+            const q=((y-y0)*w+(x-x0))*4;
+            out.data[q]=d[o]; out.data[q+1]=gg; out.data[q+2]=b; out.data[q+3]=255;
+          }
+        }
+        fg.putImageData(out,0,0);
+        frames.push({cv:fc, w:w, h:h, dx:x0, dy:y0});
+      }
+      res(frames.length?{frames:frames}:null);
+    };
+    img.onerror=()=>res(null);
+    img.src='/assets/sprites/atlas_'+sheet+'.png';
+  });
+  return DEC_CACHE[sheet];
+}
+let DECL_SKIP=false;
+async function declareIndependence(){
+  let r;
+  try{ r=await (await fetch('/api/game/declare',{method:'POST',body:'{}'})).json(); }
+  catch(e){ ui.toast('declare failed'); return; }
+  if(r.error){ ui.toast(r.error); return; }
+  GAME=r; drawGame&&drawGame();
+  let leader='';
+  try{ const t=await (await fetch('/api/tables?file=names')).json();
+    leader=(((t['@LEADERNAME']||{}).rows||[])[(GAME&&GAME.nation)||0]||{}).name||''; }catch(e){}
+  DECL_SKIP=false;
+  const S=NS_SC;
+  const inner='<canvas id="declcv" width="'+(320*S)+'" height="'+(200*S)+'" '
+    +'style="position:absolute;left:0;top:0;background:transparent;border:none"></canvas>';
+  ui.popup('DECLARATION OF INDEPENDENCE',
+    '<div onclick="DECL_SKIP=true" style="cursor:pointer">'
+    +nsScreen('pik/DECOIND.png',inner)
+    +'<div class="muted" style="font-size:11px;margin-top:4px">click to skip the signing; close when done'
+    +(r.continentals?(' &mdash; '+r.continentals+' veterans promoted to the Continental line'):'')+'</div></div>');
+  const cv=document.getElementById('declcv'); if(!cv||!leader) return;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  let x=126, y=148;                                  // pen seed (@0x3DC3C/@0x3DC42)
+  for(const ch of leader){
+    if(x>=220) break;                                // end test 0xDC (@0x3DE04)
+    const gl=await decGlyph(ch);
+    if(!gl){ x+=3; continue; }                       // space/non-letter: gap RECONSTRUCTED
+    const last=gl.frames[gl.frames.length-1];
+    // per-stroke animation: each frame replaces the letter as it grows. Stroke
+    // frames position relative to the FINAL frame's bbox (the complete letter);
+    // the contact-sheet cell padding is layout, not a glyph metric.
+    for(let f=0;f<gl.frames.length;f++){
+      const fr=gl.frames[f];
+      g.clearRect((x-1)*S,(y-last.h-2)*S,(last.w+3)*S,(last.h+6)*S);
+      g.drawImage(fr.cv, (x+fr.dx-last.dx)*S,(y-last.h+(fr.dy-last.dy))*S, fr.w*S,fr.h*S);
+      if(!DECL_SKIP&&f<gl.frames.length-1)
+        await new Promise(rs=>setTimeout(rs,55));    // ~1 PIT tick per stroke
+    }
+    x+=last.w+1;                                     // primary advance = glyph width (@0x3DDD9)
+    y-=(ch===ch.toUpperCase())?2:1;                  // cross kern (@0x3DDE0, class RECONSTRUCTED)
+    if(!DECL_SKIP) await new Promise(rs=>setTimeout(rs, (ch===ch.toUpperCase()?10:7)*55));
+  }                                                  // ~55ms/tick (18.2Hz PIT, class 0xA/7)
 }
 // arrow keys scroll the native viewport while it is open
 window.addEventListener('keydown',e=>{
