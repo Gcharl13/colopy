@@ -2454,6 +2454,79 @@ async function nvSave(){
   const d=await (await fetch('/api/game/save',{method:'POST',body:'{}'})).json();
   ui.toast(d.saved?'Game saved':'Save failed'); nvRefresh();
 }
+// ---- Colonizopedia (@PEDIA; the verbatim PEDIA.TXT entries) ----
+// The MENU @PEDIA category rows map onto the PEDIA_sections key families
+// (@CARGO0..15 / @UNIT0..23 / @TERRAIN0..28 / @JOB0..27 / @BUILDING0..41 /
+// @FATHER0..24 / @MISCELLANEOUS). Pages show the verbatim prose: '^' starts
+// a paragraph, {braces} highlight, '@;' comment lines are stripped; the
+// "(More)"/"(Exit)" footer strings are the @MISC label rows the original uses.
+let PEDIA_TXT=null;
+async function pediaTxt(){
+  if(!PEDIA_TXT){ try{ PEDIA_TXT=await (await fetch('/api/text?file=PEDIA')).json(); }catch(e){ PEDIA_TXT={}; } }
+  return PEDIA_TXT;
+}
+const PEDIA_CATS=[
+  ['Cargo Types','@CARGO',16,'good'],
+  ['Unit Types','@UNIT',24,'unit'],
+  ['Terrain Types','@TERRAIN',29,'terrain'],
+  ['Colonist Skills','@JOB',28,''],
+  ['Colony Buildings','@BUILDING',42,'building'],
+  ['Founding Fathers','@FATHER',25,''],
+];
+function pediaName(t){ const m=(t||'').match(/\{([^}]*)\}/); return m?m[1]:'(unnamed)'; }
+function pediaSpr(kind,i){                             // catalog sprite thumbnail per family
+  const st='display:inline-block;vertical-align:middle;margin:0 8px 4px 0;image-rendering:pixelated;';
+  if(kind==='good'&&NS_ICONS){ const f=NS_ICONS.frames[22+i]; if(!f) return '';   // goods icons 22..37
+    return '<div style="'+st+'width:'+(f.w*2)+'px;height:'+(f.h*2)+'px;'
+      +'background:url(/assets/tileset/icons.png) no-repeat;'
+      +'background-size:'+(NS_ICONS.width*2)+'px '+(NS_ICONS.height*2)+'px;'
+      +'background-position:-'+(f.x*2)+'px 0"></div>'; }
+  if(kind==='unit'&&i<23) return '<div style="'+st+'width:64px;height:64px;'
+      +'background:url(/assets/tileset/units.png) no-repeat;background-size:auto 64px;'
+      +'background-position:-'+(i*64)+'px 0"></div>';
+  if(kind==='terrain') return '<div style="'+st+'width:32px;height:32px;'
+      +'background:url(/assets/tileset/terrain16.png) no-repeat;background-size:auto 32px;'
+      +'background-position:-'+(baseFrame(i)*32)+'px 0"></div>';
+  if(kind==='building') return '<div style="'+st+'width:56px;height:48px;'
+      +'background:url(/assets/tileset/buildings.png) no-repeat;'
+      +'background-position:-'+(i*56)+'px 0"></div>';
+  return '';
+}
+async function pediaCat(name){                         // one category, or null = Complete
+  const T=await pediaTxt();
+  const cats=name?PEDIA_CATS.filter(c=>c[0]===name):PEDIA_CATS;
+  let h='';
+  for(const [label,fam,n,spr] of cats){
+    h+='<h3 style="margin:8px 0 4px">'+esc(label)+'</h3>';
+    for(let i=0;i<n;i++){
+      const t=T[fam+i]; if(!t) continue;
+      h+='<div style="padding:1px 0"><a href="#" onclick="pediaPage(\''+fam+'\','+i
+        +',\''+spr+'\',\''+esc(label)+'\');return false">'+esc(pediaName(t))+'</a></div>';
+    }
+  }
+  ui.popup(name?esc(name):'COLONIZOPEDIA &mdash; Complete',h);
+}
+async function pediaPage(fam,i,spr,back){
+  const T=await pediaTxt();
+  const raw=(T[fam+i]||'').replace(/\r/g,'');
+  const paras=raw.split('\n').filter(l=>!l.trim().startsWith('@;')).join('\n')
+    .split('^').map(p=>p.trim()).filter(Boolean);
+  const body=paras.map(p=>'<p style="margin:6px 0;max-width:480px">'
+    +esc(p).replace(/\{([^}]*)\}/g,'<b style="color:#ffe9b0">$1</b>').replace(/\n/g,' ')+'</p>').join('');
+  ui.popup(esc(pediaName(raw)),
+    (spr?pediaSpr(spr,i):'')+body
+    +'<div style="margin-top:8px"><a href="#" onclick="pediaCat(\''+esc(back)+'\');return false">(More)</a> '
+    +'<a href="#" onclick="ui.close();nvRefresh();return false">(Exit)</a></div>');
+}
+async function pediaMisc(){                            // @MISCELLANEOUS: the game-concept list
+  const T=await pediaTxt();
+  const lines=(T['@MISCELLANEOUS']||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const n=parseInt(lines[0],10)||0;
+  ui.popup('Game Concepts',lines.slice(1,1+n).map(nm=>'<div style="padding:1px 0">'+esc(nm)+'</div>').join('')
+    +'<div class="muted" style="margin-top:6px;font-size:11px">(the verbatim concept list; '
+    +'per-concept prose is not in the extracted PEDIA.TXT)</div>'
+    +'<div style="margin-top:4px"><a href="#" onclick="ui.close();nvRefresh();return false">(Exit)</a></div>');
+}
 async function nvLoad(){
   const d=await (await fetch('/api/game/load',{method:'POST',body:'{}'})).json();
   if(d.error){ ui.toast(d.error); return; }
@@ -2653,6 +2726,16 @@ function nvMenu(k){
       const m=live.find(l=>l[0].test(it.replace(/~/g,'')));
       if(m) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();'+m[1]+';return false">'
         +esc(it.replace(/~/g,''))+'</a></div>';
+      return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
+    }).join(''));
+    return;
+  }
+  if(k==='@PEDIA'){                                    // Colonizopedia (verbatim PEDIA.TXT)
+    ui.popup('COLONIZOPEDIA',items.map(it=>{
+      const cat=PEDIA_CATS.find(c=>c[0]===it);
+      if(cat) return '<div style="padding:2px 0"><a href="#" onclick="pediaCat(\''+esc(it)+'\');return false">'+esc(it)+'</a></div>';
+      if(/Miscellaneous/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="pediaMisc();return false">'+esc(it)+'</a></div>';
+      if(/Complete/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="pediaCat(null);return false">'+esc(it)+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join(''));
     return;
