@@ -1240,7 +1240,7 @@ document.querySelector('nav button[data-tab=schema]').addEventListener('click',(
         // ---- chunk 4d: play ----
         + R"HTML(
 // ---- Play (the engine loop) ----
-let GAME = null, SEL = -1; const GCELL = 14;
+let GAME = null, SEL = -1; const GCELL = 16;   // one map tile = 16x16, drawn 1:1
 const GOODS = ['Food','Sugar','Tobacco','Cotton','Furs','Lumber','Ore','Silver',
                'Horses','Rum','Cigars','Cloth','Coats','Trade goods','Tools','Muskets'];
 // Owner colors from NAMES @COUNTRY.color (palette idx: England 12 red, France 9
@@ -1275,17 +1275,19 @@ function drawChip(g,X,Y,px,color,glyph,anchor){
   // USER RULING: the chip stays fully inside its own 16x16 tile (nothing
   // crosses tile borders). Native proportions ~6x9 of a 16px tile, sitting at
   // the left edge behind the sprite, 1px black border included in the bounds.
-  let w=Math.max(4,Math.round(px*6/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
-  w=Math.min(w,px-2);
-  const h=Math.max(6,Math.round(px*9/16));
+  // total box ~7x10 of a 16px tile, the 1px black border INSIDE those bounds
+  let w=Math.max(5,Math.round(px*7/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
+  w=Math.min(w,px-1);
+  const h=Math.max(7,Math.round(px*10/16));
   // USER RULING: the chip tucks into the sprite's empty space, per kind --
   // 'br' bottom-right (narrow foot units), 'ul' upper-left (ships, cavalry,
-  // artillery), 'tc' top-center (wagon train); 'lm' left-middle (colonies).
+  // artillery), 'tc' top-center (wagon train); 'lm' left-middle (colonies);
+  // always fully inside the unit's own 16x16 tile.
   const a=anchor||'lm';
   const cx=a==='br'?X+px-w-1:a==='tc'?X+((px-w)>>1):X+1;
   const cy=a==='br'?Y+px-h-1:(a==='tc'||a==='ul')?Y+1:Y+((px-h)>>1);
-  g.fillStyle='#000'; g.fillRect(cx-1,cy-1,w+2,h+2);
-  g.fillStyle=color; g.fillRect(cx,cy,w,h);
+  g.fillStyle='#000'; g.fillRect(cx,cy,w,h);
+  g.fillStyle=color; g.fillRect(cx+1,cy+1,w-2,h-2);
   if(t&&t!==' '){
     const m=/^#(..)(..)(..)$/.exec(color);
     const lum=m?parseInt(m[1],16)*3+parseInt(m[2],16)*6+parseInt(m[3],16):0;
@@ -1496,7 +1498,7 @@ function sbRender(){
 // (spec/ui/advisor_reports.md 2.3): 0x90 title pale-yellow, 0x92 label bright-yellow,
 // 0x61 value cream, 0x91 strength yellow, 0x77 separator dark-red, 0x0F white. Body text is
 // FONTTINY (6px glyphs, line pitch 8 -- spec/ui/continental_congress.md "Fonts & colors").
-const NS_SC=2.4;
+const NS_SC=2;   // integer scale: exact 2x nearest-neighbor, no fractional blur
 const NS={title:'#FFFFBE', label:'#FFF35D', value:'#F7F3C7', strength:'#FFFF8E',
           rule:'#860000', white:'#FFFFFF', green:'#559634', gold:'#C7A220'};
 const NS_PITCH=8;   // FONTTINY line pitch (glyph height 6 + 2)

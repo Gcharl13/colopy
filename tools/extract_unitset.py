@@ -74,8 +74,14 @@ def main():
         # halve back to native so a unit fits its 16x16 map tile
         sp = sp.resize((max(1, round(sp.width / 2)), max(1, round(sp.height / 2))), Image.NEAREST)
         sp = sp.crop((0, 0, min(sp.width, CELL), min(sp.height, CELL)))   # clamp to cell
-        ox = t * CELL + (CELL - sp.width) // 2
-        oy = (CELL - sp.height) // 2
+        # In-cell placement (the contact sheet centers every sprite, so the
+        # original ICONS.SS baked x/y offsets are not recoverable from this
+        # repo -- RECONSTRUCTED per USER RULING + original screenshots):
+        # feet/hulls stand on the tile floor (bottom-aligned); narrow foot
+        # sprites sit LEFT so the ownership chip fits in the bottom-right
+        # free space; wide sprites (mounted/ships/carts) stay centered.
+        ox = t * CELL + (2 if sp.width <= 10 else (CELL - sp.width) // 2)
+        oy = CELL - sp.height
         strip.paste(sp, (ox, oy), sp)
     os.makedirs(OUT_DIR, exist_ok=True)
     strip.save(os.path.join(OUT_DIR, "units.png"))
