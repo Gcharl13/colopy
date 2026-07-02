@@ -894,6 +894,12 @@ static long ref_land_strength() {                       // Man-o-War is naval, w
 // colony is lost (lose). Abstract strength model (RECONSTRUCTED; the real WoI runs unit-level battles).
 static void war_resolution_step() {
     if (!g_engine_extra.woi_declared) return;
+    // Victory check (revolution.md @0x2F4D2..0x2F4E5): the surviving-REF tally
+    // counts the COMBATANT types (Regulars/Cavalry/Artillery -- the Man-O-War
+    // is transport); rebels win when it falls below 1 (or 8 under the
+    // harder-end flag [0x5382]&0x40, not modeled) with no intervention force.
+    const int surviving = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.artillery;
+    if (vc::sim::ref_war_won(surviving, /*intervention*/0, /*hard*/false)) return;
     long ref_total = g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery;
     if (ref_total <= 0 || g_world.colonies.empty()) return;   // already decided; endgame_json reports it
     int weakest = -1; long reb = rebel_strength(&weakest);
@@ -939,7 +945,13 @@ static long power_score(int p) {
 static void spanish_succession_step() {
     if (g_engine_extra.seceded_power >= 0) return;      // already happened (once-flag [0x53D2] set)
     if (g_engine_extra.woi_declared) return;            // pre-revolution only ([0x5382] gate, spec §3)
-    if (g_game.year < 1713) return;                     // Treaty of Utrecht -- the scripted trigger year
+    // The byte-verified dispatcher gates (func_0235D6 @0x02391C/@0x023930):
+    // national SoL below 75 (cmp [0x53D0],0x4B) and no power seceded yet --
+    // there is NO year check in the handler (the earlier 1713 gate was the
+    // audit-corrected invention; the per-turn enqueue odds are runtime-only,
+    // modeled as a 1-in-16 turn roll, RECONSTRUCTED).
+    if (g_engine_extra.national_sol >= 75) return;
+    if (game_rng(1, 16) != 1) return;
     int ceder = -1; long cw = 0;                        // weakest of the AI powers 1..3 cedes
     for (int p = 1; p < 4; ++p) { long s = power_score(p);
         if (ceder < 0 || s < cw) { cw = s; ceder = p; } }
@@ -949,7 +961,10 @@ static void spanish_succession_step() {
         if (benef < 0 || s > bw) { bw = s; benef = p; } }
     if (benef < 0) return;
     int moved_c = 0, moved_u = 0;
-    for (auto& c : g_world.colonies) if (c.owner_power == ceder) { c.owner_power = benef; ++moved_c; }
+    for (auto& c : g_world.colonies) if (c.owner_power == ceder) {
+        c.owner_power = benef; ++moved_c;
+        c.rebel_A = 0; c.rebel_B = 200;                 // rebel counters reset on transfer
+    }                                                   //   (+0xC2/+0xC6 zeroed, audit brief)
     for (auto& u : g_world.units)    if (u.alive && u.owner == ceder) { u.owner = benef; ++moved_u; }
     g_engine_extra.seceded_power = ceder;               // now shown "(Withdrawn from New World)"
     g_turn_notices.push_back(
@@ -2696,7 +2711,30 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                                 std::to_string(g_engine_extra.national_sol) + "%)");
             g_engine_extra.woi_declared = true; g_engine_extra.rebel_power = 0;
             if (g_engine_extra.declaration_year == 0) g_engine_extra.declaration_year = g_game.year;
-            forge::JsonValue o = game_state_json(); o.obj["declared"] = jbool(true); return J(200, o);
+            // Continental-promotion pass (func_03E2EA @0x3E2EA..0x3E440): per
+            // colony with SoL >= 50 (@0x03E3F1), budget = max(1,
+            // ((SoL-50)*(pop/2))/50) (@0x03E3F6..0x03E425); Veteran (0x15)
+            // Soldiers -> Continental Army and Dragoons -> Continental Cavalry
+            // stacked on the colony tile, until the budget runs out. No new
+            // units are created.
+            int promoted = 0;
+            for (const Colony& c : g_world.colonies) {
+                if (c.owner_power != 0 || !c.human || c.x < 0) continue;
+                const int sol = sol_pct(c, g_engine_extra.ff_owned, true);
+                if (sol < 50) continue;
+                int budget = ((sol - 50) * (c.population / 2)) / 50;
+                if (budget < 1) budget = 1;
+                for (Unit& u : g_world.units) {
+                    if (budget <= 0) break;
+                    if (!u.alive || u.owner != 0 || u.x != c.x || u.y != c.y) continue;
+                    if (u.profession != 0x15) continue;          // Veterans only
+                    if (u.type == vc::sim::SOLDIERS)      { u.type = vc::sim::CONT_ARMY; --budget; ++promoted; }
+                    else if (u.type == vc::sim::DRAGOONS) { u.type = vc::sim::CONT_CAV;  --budget; ++promoted; }
+                }
+            }
+            forge::JsonValue o = game_state_json(); o.obj["declared"] = jbool(true);
+            o.obj["continentals"] = forge::json_num(promoted);
+            return J(200, o);
         }
         if (path == "/api/game/history") {
             forge::JsonValue a = jarr();

@@ -24,11 +24,14 @@ int ref_accrue_rate(int d, int year, const RuleData& rd) {
 void ref_purchase(Ref& ref, int64_t& royal_money, const RuleData& rd) {
     const Config& cfg = rd.cfg;
     while (royal_money >= cfg.ref_unit_cost) {
-        if (ref.regulars + 2 > cfg.ref_cavalry_ratio * ref.cavalry)
-            ref.cavalry += 1;                       // 1 cav per N reg
-        else if (ref.regulars > cfg.ref_artillery_ratio * ref.artillery)
-            ref.artillery += 1;                     // 1 art per N reg
-        else if (ref.regulars + ref.cavalry + ref.artillery + 5 > cfg.ref_naval_ratio * ref.manowar)
+        // Truncating integer divisions exactly as the EXE (func_03E162
+        // @0x3E1D5/@0x3E1EB/@0x3E203) -- the cross-multiplied forms differ
+        // whenever the dividend is not an exact multiple.
+        if ((ref.regulars + 2) / cfg.ref_cavalry_ratio > ref.cavalry)
+            ref.cavalry += 1;                       // (reg+2)/3 > cav
+        else if (ref.regulars / cfg.ref_artillery_ratio > ref.artillery)
+            ref.artillery += 1;                     // reg/4 > art
+        else if ((ref.regulars + ref.cavalry + ref.artillery + 5) / cfg.ref_naval_ratio > ref.manowar)
             ref.manowar += 1;                       // 1 naval per N land
         else
             ref.regulars += 1;                      // default

@@ -30,7 +30,10 @@ int crosses_threshold(int total_workers, int unit_count,
     int a = total_workers + unit_count;
     if (a < cfg.imm_threshold_cap) a = a * cfg.imm_sub4k_mult + cfg.imm_sub4k_offset;
     if (a > cfg.imm_threshold_cap) a = cfg.imm_threshold_cap;
-    if (ai) a = a * (cfg.imm_ai_scale - difficulty) / cfg.imm_ai_divisor;
+    // The (8 - difficulty)/8 scale applies UNCONDITIONALLY (func_035D9A @0x35E60,
+    // difficulty.md) -- the earlier AI-only gate was the audit-corrected misread.
+    (void)ai;
+    a = a * (cfg.imm_ai_scale - difficulty) / cfg.imm_ai_divisor;
     if (is_england) a = a * cfg.imm_england_num / cfg.imm_england_den;  // England nation bonus
     return a;
 }
