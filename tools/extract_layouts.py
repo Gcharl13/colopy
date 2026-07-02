@@ -40,14 +40,16 @@ def classify(hdr):
     h = [x.lower() for x in hdr]
     if any(("element" in c or "region" in c) for c in h) and any("rect" in c for c in h):
         return "elements"
-    if h and h[0] in ("#", "step") :
+    if "x" in h and "y" in h:               # per-line coordinate tables (| Line | x | y | ... |)
+        return "lines"
+    if h and h[0] in ("#", "step"):
         return "draw_order"
     return None
 
 
 def parse_file(path):
     lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
-    doc = {"source": os.path.relpath(path, ROOT), "elements": [], "draw_order": []}
+    doc = {"source": os.path.relpath(path, ROOT), "elements": [], "draw_order": [], "lines": []}
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -59,10 +61,24 @@ def parse_file(path):
             if kind:
                 # which column holds the rect (any header mentioning rect; else scan all)
                 rect_col = next((k for k, h in enumerate(hdr) if "rect" in h.lower()), None)
+                hl = [x.lower() for x in hdr]
+                xc = hl.index("x") if kind == "lines" else None
+                yc = hl.index("y") if kind == "lines" else None
                 j = i + 2
                 while j < len(lines) and lines[j].lstrip().startswith("|"):
                     row = cells(lines[j])
                     row += [""] * (len(hdr) - len(row))
+                    if kind == "lines":
+                        try:
+                            doc["lines"].append({
+                                "name": clean(row[0]),
+                                "x": int(clean(row[xc])), "y": int(clean(row[yc])),
+                                "cols": {clean(h): clean(v) for h, v in zip(hdr, row)},
+                            })
+                        except ValueError:
+                            pass                        # non-numeric coordinate row: skip
+                        j += 1
+                        continue
                     scan = [row[rect_col]] if rect_col is not None else row
                     m = next((RECT.search(c) for c in scan if RECT.search(c)), None)
                     doc[kind].append({
@@ -86,15 +102,15 @@ def main():
         if not fn.endswith(".md"):
             continue
         doc = parse_file(os.path.join("spec/ui", fn))
-        if not doc["elements"] and not doc["draw_order"]:
+        if not doc["elements"] and not doc["draw_order"] and not doc["lines"]:
             continue
         out = os.path.join(OUT, fn[:-3] + ".json")
         with open(out, "w", encoding="utf-8") as f:
             json.dump(doc, f, indent=1, sort_keys=True)
-        ne, nd = len(doc["elements"]), len(doc["draw_order"])
+        ne, nd, nl = len(doc["elements"]), len(doc["draw_order"]), len(doc["lines"])
         nr = sum(1 for e in doc["elements"] if e["rect"])
-        print(f"{out}: {ne} elements ({nr} literal rects), {nd} draw/step rows")
-        total_e += ne; total_d += nd; files += 1
+        print(f"{out}: {ne} elements ({nr} literal rects), {nd} draw/step rows, {nl} coordinate lines")
+        total_e += ne; total_d += nd + nl; files += 1
     print(f"-- {files} layout files, {total_e} elements, {total_d} draw/step rows extracted")
     return 0
 

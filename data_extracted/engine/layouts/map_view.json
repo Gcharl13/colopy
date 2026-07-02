@@ -87,5 +87,117 @@
    "rect_raw": "(240, 136, 80, 64)"
   }
  ],
+ "lines": [
+  {
+   "cols": {
+    "Line": "Season/year",
+    "Source string": "Spring %YEAR (NAMES @SEASONS)",
+    "x": "244",
+    "y": "58"
+   },
+   "name": "Season/year",
+   "x": 244,
+   "y": 58
+  },
+  {
+   "cols": {
+    "Line": "Gold",
+    "Source string": "Gold: %d%% (LABELS @MISC)",
+    "x": "244",
+    "y": "66"
+   },
+   "name": "Gold",
+   "x": 244,
+   "y": 66
+  },
+  {
+   "cols": {
+    "Line": "Tax",
+    "Source string": "Tax: %d%%",
+    "x": "290",
+    "y": "66"
+   },
+   "name": "Tax",
+   "x": 290,
+   "y": 66
+  },
+  {
+   "cols": {
+    "Line": "Unit sprite",
+    "Source string": "ICONS.SS[unit_type]",
+    "x": "244",
+    "y": "80"
+   },
+   "name": "Unit sprite",
+   "x": 244,
+   "y": 80
+  },
+  {
+   "cols": {
+    "Line": "Moves: N",
+    "Source string": "LABELS @INFO[0]",
+    "x": "270",
+    "y": "82"
+   },
+   "name": "Moves: N",
+   "x": 270,
+   "y": 82
+  },
+  {
+   "cols": {
+    "Line": "Locat: (x,y)",
+    "Source string": "LABELS @INFO[1]",
+    "x": "270",
+    "y": "92"
+   },
+   "name": "Locat: (x,y)",
+   "x": 270,
+   "y": 92
+  },
+  {
+   "cols": {
+    "Line": "Unit type",
+    "Source string": "NAMES @UNIT[type]",
+    "x": "244",
+    "y": "104"
+   },
+   "name": "Unit type",
+   "x": 244,
+   "y": 104
+  },
+  {
+   "cols": {
+    "Line": "Unit skill",
+    "Source string": "NAMES @JOB[skill]",
+    "x": "244",
+    "y": "112"
+   },
+   "name": "Unit skill",
+   "x": 244,
+   "y": 112
+  },
+  {
+   "cols": {
+    "Line": "Orders",
+    "Source string": "LABELS @MISC (No Orders/Sentry/\u2026)",
+    "x": "244",
+    "y": "120"
+   },
+   "name": "Orders",
+   "x": 244,
+   "y": 120
+  },
+  {
+   "cols": {
+    "Line": "(Terrain)",
+    "Source string": "NAMES @UNFORESTED/@FORESTED",
+    "x": "244",
+    "y": "128"
+   },
+   "name": "(Terrain)",
+   "x": 244,
+   "y": 128
+  }
+ ],
  "source": "spec/ui/map_view.md"
 }

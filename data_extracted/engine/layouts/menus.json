@@ -245,5 +245,67 @@
   }
  ],
  "elements": [],
+ "lines": [
+  {
+   "cols": {
+    "@asm": "@0x060890 (build) / @0x060898 (args) / @0x0608A6 (call)",
+    "element": "menu-bar label LINE",
+    "h": "\u2014",
+    "how (byte-cited)": "0x181F:0x182 builds the bar string into [bp-0x50], then lcall 0x181F:0x100 (= center-text-in-box) color 0x0F",
+    "tier": "B",
+    "w": "box-w 0x140 (320)",
+    "x": "0",
+    "y": "5"
+   },
+   "name": "menu-bar label LINE",
+   "x": 0,
+   "y": 5
+  },
+  {
+   "cols": {
+    "@asm": "@0x060C1E",
+    "element": "full-screen frame box",
+    "h": "0xC8",
+    "how (byte-cited)": "lcall 0x181F:0xE2 (clipped sprite/cell blit)",
+    "tier": "B",
+    "w": "0x140",
+    "x": "0",
+    "y": "0"
+   },
+   "name": "full-screen frame box",
+   "x": 0,
+   "y": 0
+  },
+  {
+   "cols": {
+    "@asm": "@0x06083A \u2192 @0x06787C",
+    "element": "map viewport",
+    "h": "192",
+    "how (byte-cited)": "render_frame_setup (func_06787C)",
+    "tier": "B",
+    "w": "240",
+    "x": "0",
+    "y": "8"
+   },
+   "name": "map viewport",
+   "x": 0,
+   "y": 8
+  },
+  {
+   "cols": {
+    "@asm": "@0x066DD7",
+    "element": "minimap panel frame",
+    "h": "41",
+    "how (byte-cited)": "(HUD chain, page 0x15) \u2014 see map_view.md \u00a76.1",
+    "tier": "B",
+    "w": "79",
+    "x": "241",
+    "y": "8"
+   },
+   "name": "minimap panel frame",
+   "x": 241,
+   "y": 8
+  }
+ ],
  "source": "spec/ui/menus.md"
 }

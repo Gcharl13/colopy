@@ -280,6 +280,7 @@ const char* forge_index_html() {
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
       <button class="act" onclick="euOpen()" title="The Royal port: market, docks, recruiting (spec/ui/europe_screen.md)">Europe (E)</button>
+      <button class="act" onclick="nvOpen()" title="The game's main screen at native 320x200 (spec/ui/map_view.md)">Native HUD</button>
       <button class="act" onclick="saveGame()">Save</button>
       <button class="act" onclick="loadGame()">Load</button>
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
@@ -2178,6 +2179,171 @@ function euAction(r){
     if(i<0) ui.toast('no immigrant waiting'); else euRecruitSlot(i); }
   else ui.toast((r===1?'PURCHASE':'TRAIN')+': pick via the Tables tab @UNIT costs (train route: /api/europe/train)');
 }
+
+// ==== Native map HUD (spec/ui/map_view.md) -- the game's MAIN screen, from the EXTRACTED layout ====
+// Geometry from /api/layout?screen=map_view: the byte-verified region rects (viewport (0,8,240,192),
+// minimap (241,8,79,41), sidebar B/C) AND the pixel-measured sidebar line table (tier R, cited) --
+// nothing hand-transcribed. Menu titles = the verbatim MENU.TXT sections; sidebar strings = the
+// verbatim @INFO/@MISC/@SEASONS/@UNIT lines; minimap dot colors = NAMES @COLORS palette indices.
+let NV=false, NVX=0, NVY=0, NVLAY=null, NVMENU=null, NVPAL=null;
+async function nvOpen(){
+  if(!GAME||!GAME.w) await refreshGame();
+  if(!NVLAY) NVLAY=await (await fetch('/api/layout?screen=map_view')).json();
+  if(!NVMENU){ try{ NVMENU=await (await fetch('/api/text?file=MENU')).json(); }catch(e){ NVMENU={}; } }
+  if(!NVPAL){ try{ NVPAL=await (await fetch('/assets/palette.json')).json(); }catch(e){ NVPAL=[]; } }
+  const c=(GAME.colonies||[]).find(c=>c.owner===0)||{x:20,y:22};
+  NVX=Math.max(0,c.x-7); NVY=Math.max(0,c.y-6);       // center the 15x12 viewport on colony 0
+  NV=true;
+  nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('INFO',()=>nsLabels('SEASONS',
+    ()=>nsLabels('UNFORESTED',()=>nsLabels('FORESTED',()=>nsLabels('OTHER',()=>nvRender())))))));
+}
+function nvClose(){ NV=false; ui.close(); }
+function nvPal(i){ const c=(NVPAL||[])[i]; return c&&c.hex?c.hex:'#888'; }
+function nvRect(sub,fb){
+  const e=(NVLAY&&NVLAY.elements||[]).find(e=>e.rect&&e.name.toLowerCase().indexOf(sub)>=0);
+  return e?e.rect:fb;
+}
+function nvLine(sub){ return (NVLAY&&NVLAY.lines||[]).find(l=>l.name.toLowerCase().indexOf(sub)>=0); }
+function nvRender(){
+  const vp=nvRect('viewport',[0,8,240,192]), mm=nvRect('minimap',[241,8,79,41]);
+  let h='';
+  // sidebar wood backdrop (WOODPANL) under the right 80px, then the top menu strip
+  h+='<img src="/assets/pik/WOODPANL.png" style="position:absolute;left:'+(240*NS_SC)+'px;top:0;'
+    +'width:'+(80*NS_SC)+'px;height:'+(200*NS_SC)+'px;image-rendering:pixelated;object-fit:cover">';
+  h+=colFill(0,0,320,9,'#4a2f18');
+  { // menu titles: the verbatim MENU.TXT section titles (~NAME first line), FONTTINY green
+    let x=11;                                          // GAME@11 (spec R x-origins; width-driven)
+    ['@GAME','@VIEW','@ORDERS','@REPORTS','@TRADE','@CUP','@PEDIA'].forEach(k=>{
+      const sec=String((NVMENU||{})[k]||k.slice(1));
+      const title=sec.split('\n')[0].replace(/^~/,'');
+      h+='<div onclick="event.stopPropagation();nvMenu(\''+k+'\')" style="cursor:pointer">'
+        +nsT(x,1,esc(title),{size:5,col:'#528A31'})+'</div>';
+      x+=title.length*4+8;                             // glyph-grid: x advances by title width
+    });
+    h+='<div onclick="event.stopPropagation();nvEndTurn()" style="cursor:pointer" title="End turn">'
+      +nsT(305,1,'&#9654;',{size:5,col:'#FFF35D'})+'</div>';
+  }
+  // viewport + minimap canvases (drawn after insert)
+  h+='<canvas id="nvview" width="'+vp[2]+'" height="'+vp[3]+'" onclick="nvClick(event)" '
+    +'style="position:absolute;left:'+(vp[0]*NS_SC)+'px;top:'+(vp[1]*NS_SC)+'px;'
+    +'width:'+(vp[2]*NS_SC)+'px;height:'+(vp[3]*NS_SC)+'px;image-rendering:pixelated;cursor:crosshair"></canvas>';
+  h+='<canvas id="nvmini" width="'+mm[2]+'" height="'+mm[3]+'" '
+    +'style="position:absolute;left:'+(mm[0]*NS_SC)+'px;top:'+(mm[1]*NS_SC)+'px;'
+    +'width:'+(mm[2]*NS_SC)+'px;height:'+(mm[3]*NS_SC)+'px;image-rendering:pixelated"></canvas>';
+  // sidebar B: season/year + gold + tax at the EXTRACTED line coords (tier R, cited)
+  const seas=nsLbl('SEASONS',GAME.season?1:0,GAME.season?'Autumn':'Spring');
+  const l1=nvLine('season')||{x:244,y:58}, l2=nvLine('gold')||{x:244,y:66}, l3=nvLine('tax')||{x:290,y:66};
+  h+=nsT(l1.x,l1.y,esc(seas)+' '+GAME.year,{size:5,col:NS.white});
+  h+=nsT(l2.x,l2.y,esc(nsLbl('CTITLE',1,'Gold:'))+' '+GAME.gold,{size:5,col:NS.white});
+  h+=nsT(l3.x,l3.y,esc(nsLbl('CTITLE',9,'Tax:'))+' 0%',{size:5,col:NS.white});
+  // sidebar C: the selected-unit panel at the extracted line coords
+  const u=selUnit();
+  if(u){
+    const ls=nvLine('unit sprite')||{x:244,y:80};
+    h+='<div style="position:absolute;left:'+(ls.x*NS_SC)+'px;top:'+(ls.y*NS_SC)+'px;'
+      +'width:'+(16*NS_SC)+'px;height:'+(16*NS_SC)+'px;background:url(/assets/tileset/units.png) no-repeat;'
+      +'background-size:'+(24*16*NS_SC)+'px '+(16*NS_SC)+'px;'
+      +'background-position:-'+(u.type*16*NS_SC)+'px 0;image-rendering:pixelated"></div>';
+    const lm=nvLine('moves')||{x:270,y:82}, ll=nvLine('locat')||{x:270,y:92};
+    h+=nsT(lm.x,lm.y,esc(nsLbl('INFO',0,'Moves:'))+' '+u.moves,{size:5,col:NS.white});
+    h+=nsT(ll.x,ll.y,esc(nsLbl('INFO',1,'Locat:'))+' ('+u.x+','+u.y+')',{size:5,col:NS.white});
+    const lt=nvLine('unit type')||{x:244,y:104}, lk=nvLine('skill')||{x:244,y:112};
+    h+=nsT(lt.x,lt.y,esc(u.name),{size:5,col:NS.white});
+    const cls=className(u.profession); if(cls) h+=nsT(lk.x,lk.y,esc(cls),{size:5,col:NS.white});
+    const lo=nvLine('orders')||{x:244,y:120};
+    h+=nsT(lo.x,lo.y,esc(['No Orders','Fortified','Sentry','Go To','Plowing','Building Road'][u.order]||''),
+          {size:5,col:NS.white});
+    const lr=nvLine('terrain')||{x:244,y:128};
+    const tid=(GAME.terrain[u.y*GAME.w+u.x]||0)&0x1F;
+    const tname=(nsLbl(tid>=8&&tid<=23?'FORESTED':(tid>=24?'OTHER':'UNFORESTED'),
+                       tid>=24?tid-24:(tid&7),'')||'').split(',')[0];
+    h+=nsT(lr.x,lr.y,'('+esc(tname||('terrain '+tid))+')',{size:5,col:NS.white});
+  }
+  const stage='<div style="position:relative;width:'+(320*NS_SC)+'px;height:'+(200*NS_SC)+'px;'
+    +'background:#04060c;image-rendering:pixelated;font-family:monospace;overflow:hidden;'
+    +'user-select:none">'+h+'</div>';
+  ui.popup('Map view &mdash; native HUD (arrows scroll, click to select/move)',stage);
+  setTimeout(nvDraw,0);
+}
+// the 15x12 @16px viewport window + the 1px/tile minimap with the @COLORS owner-dot palette
+function nvDraw(){
+  const vcv=document.getElementById('nvview'); if(!vcv||!GAME) return;
+  const W=15,H=12,t=[];
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const mx=NVX+x,my=NVY+y;
+    t.push((mx<0||my<0||mx>=GAME.w||my>=GAME.h)?25:GAME.terrain[my*GAME.w+mx]);
+  }
+  const g=vcv.getContext('2d');
+  composeMap(g,t,W,H,16,true);
+  const inWin=(x,y)=>x>=NVX&&y>=NVY&&x<NVX+W&&y<NVY+H;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++)            // fog inside the viewport
+    if(!fogSeen(Math.min(GAME.w-1,NVX+x),Math.min(GAME.h-1,NVY+y))){ g.fillStyle='#04060c'; g.fillRect(x*16,y*16,16,16); }
+  (GAME.settlements||[]).forEach(s=>{ if(!inWin(s.x,s.y)||!fogSeen(s.x,s.y)) return;
+    const X=(s.x-NVX)*16,Y=(s.y-NVY)*16;
+    g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+8,Y+2); g.lineTo(X+14,Y+14); g.lineTo(X+2,Y+14); g.closePath(); g.fill(); });
+  (GAME.colonies||[]).forEach(c=>{ if(!inWin(c.x,c.y)||!fogSeen(c.x,c.y)) return;
+    const X=(c.x-NVX)*16,Y=(c.y-NVY)*16;
+    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,16,16);
+    g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,12,12);
+    g.fillStyle='#ffe9b0'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(String(c.population),X+8,Y+9); });
+  (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
+    if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
+    if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*32,0,32,32,(u.x-NVX)*16-8,(u.y-NVY)*16-8,32,32); });
+  const s=selUnit();
+  if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=2; g.strokeRect((s.x-NVX)*16+1,(s.y-NVY)*16+1,14,14); }
+  // minimap: a 1px/tile scrolling window; dot colors = NAMES @COLORS palette indices
+  // (0x830 ocean/coast=68, 0x831 land=149, fog=8, owned=128 -- resolved via VICEROY.PAL)
+  const mcv=document.getElementById('nvmini'); if(!mcv) return;
+  const mg=mcv.getContext('2d'), MW=mcv.width, MH=mcv.height;
+  const ox=Math.max(0,Math.min(GAME.w-MW,NVX+7-(MW>>1))), oy=Math.max(0,Math.min(GAME.h-MH,NVY+6-(MH>>1)));
+  for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
+    const mx=ox+x,my=oy+y;
+    let col='#000';
+    if(mx<GAME.w&&my<GAME.h){
+      if(!fogSeen(mx,my)) col=nvPal(8);
+      else{ const id=GAME.terrain[my*GAME.w+mx]&0x1F;
+        col=(id===25||id===26)?nvPal(68):nvPal(149);
+        if((GAME.colonies||[]).some(c=>c.x===mx&&c.y===my)) col=nvPal(128); }
+    }
+    mg.fillStyle=col; mg.fillRect(x,y,1,1);
+  }
+  mg.strokeStyle=nvPal(15); mg.lineWidth=1;            // the white viewport rect (idx 0x0F)
+  mg.strokeRect(NVX-ox+0.5,NVY-oy+0.5,15,12);
+}
+function nvClick(ev){
+  const r=ev.target.getBoundingClientRect();
+  const x=NVX+Math.floor((ev.clientX-r.left)/(16*NS_SC)), y=NVY+Math.floor((ev.clientY-r.top)/(16*NS_SC));
+  ev.stopPropagation();
+  const here=(GAME.units||[]).findIndex(u=>u.x===x&&u.y===y&&u.alive!==false);
+  if(here>=0&&GAME.units[here].owner===0){ SEL=GAME.units[here].id; nvRender(); return; }
+  const ci=(GAME.colonies||[]).findIndex(c=>c.x===x&&c.y===y);
+  if(ci>=0&&SEL<0){ if(GAME.colonies[ci].owner===0){ NV=false; colOpen(ci); } return; }
+  if(SEL>=0){ fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,tx:x,ty:y})})
+    .then(r=>r.json()).then(d=>{ GAME=d; nvRender(); }); }
+}
+async function nvEndTurn(){ GAME=await (await fetch('/api/game/step',{method:'POST',body:'{}'})).json(); nvRender(); }
+function nvMenu(k){
+  const sec=String((NVMENU||{})[k]||''); const items=sec.split('\n').slice(1).map(s=>s.trim()).filter(Boolean);
+  if(k==='@REPORTS'){                                  // the one live pulldown: F1-F10 advisors
+    ui.popup('REPORTS',items.map((it,i)=>'<div style="padding:2px 0"><a href="#" onclick="ui.close();reportOpen('
+      +Math.min(i,9)+');return false">'+esc(it)+'</a></div>').join(''));
+    return;
+  }
+  ui.popup(esc(k.slice(1))+' &mdash; verbatim MENU.TXT items',
+    items.map(it=>'<div class="muted" style="padding:1px 0">'+esc(it)+'</div>').join('')||'<i>empty</i>');
+}
+// arrow keys scroll the native viewport while it is open
+window.addEventListener('keydown',e=>{
+  if(!NV||!document.querySelector('#modal.show')) return;
+  const t=document.activeElement&&document.activeElement.tagName;
+  if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT') return;
+  const d={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[e.key];
+  if(!d) return;
+  e.preventDefault();
+  NVX=Math.max(0,Math.min(GAME.w-15,NVX+d[0])); NVY=Math.max(0,Math.min(GAME.h-12,NVY+d[1]));
+  nvDraw();
+});
 
 // ---- Turn tab (B5): edit the data-driven turn pipeline (turn.json) ----
 let TURN=null;
