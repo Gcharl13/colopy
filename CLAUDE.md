@@ -23,8 +23,10 @@ there is no disassembly here. The spec is finished; your job is the implementati
 
 ## Load-bearing data invariants (matter for any map/asset code)
 - Terrain ids: base 0–7 unforested, **8..23 forested** variants, **24 Arctic / 25 Ocean / 26 Sea Lane**,
-  27 Mountains / 28 Hills. `.MP` tile byte: low 5 bits = terrain id (`& 0x1F`), bit 5 = river overlay,
-  bit 6 = forest/special. (`spec/systems/map_system.md`, `formats/MP_FORMAT.md`.)
+  27 Mountains / 28 Hills. `.MP` tile byte (func_0624E, byte-verified + AMER2.MP-confirmed): low 5 bits
+  = terrain id (`& 0x1F`, never 27/28 in shipped maps), **bit 0x20 = special terrain (Hills; with
+  bit 0x80 = Mountains)**, **bit 0x40 = river overlay** (bit 0x80 = major river). Forest is the id band
+  8..23, not a bit. (`spec/systems/map_system.md` §8, `formats/MP_FORMAT.md`.)
 - The right-edge map column is the **Sea Lane** (id 26), never desert.
 - Sprite sheets: `TERRAIN.SS` is the base-ground sheet composited under `PHYS0.SS` overlays; skip
   placeholder frames 0/16/100; `BDARK.SS`/`FONTSMAL.FF` are orphans (don't load). (`spec/ui/map_view.md`.)

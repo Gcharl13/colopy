@@ -512,39 +512,153 @@ const PHYS = new Image(); let PHYS_READY = false;
 PHYS.onload = () => { PHYS_READY = true; if (MAP) drawMap(); if (typeof GAME!=='undefined' && GAME) drawGame(); };
 PHYS.src = '/assets/tileset/phys0.png';
 const CDX8=[0,1,1,1,0,-1,-1,-1], CDY8=[-1,-1,0,1,1,1,0,-1];   // N,NE,E,SE,S,SW,W,NW
-function baseFrame(i){ return i<=7?i : (i<=23?((i&7)===1?8:(i&7)) : (i===24?9:i===25?10:i===26?11:2)); }
-// Compose the whole terrain plane: TERRAIN.SS base ground + PHYS0 forest/coast/river.
+// ---- Map compositor: port of viceroy_cpp/src/mapview.cpp (the byte-traced
+// O513/O512 render chain, spec/systems/map_system.md 6-10). L1 tile byte = the
+// .MP FILE packing (func_0624E, byte-verified): bits 0-4 base id (8..23 = the
+// forested variants), bit 0x20 = special terrain (hills; + bit 0x80 =
+// mountains), bit 0x40 = river (bit 0x80 = major river). There are NO ids
+// 27/28 in the low bits of shipped maps.
+let TPX=null, PPX=null;                                // terrain16/phys0 pixels
+function sheetPixels(img){
+  const c=document.createElement('canvas'); c.width=img.width; c.height=img.height;
+  const g=c.getContext('2d'); g.drawImage(img,0,0);
+  return {d:g.getImageData(0,0,img.width,img.height).data, w:img.width};
+}
+// classify_terrain (func_006204): id&0x1F, fold forest 8..0x17 -> (id&7)|8
+function classifyVis(b){ const id=b&0x1F; return (id>=8&&id<0x18)?((id&7)|8):id; }
+// O513 land base: vis<0x18 ? vis&7 : vis; unforested Desert -> the 0x11 group
+function landBaseOf(b){ const vis=b&0x1F, fo=(vis>=8&&vis<0x18);
+  let lb=(vis<0x18)?(vis&7):vis; if(lb===1&&!fo) lb=0x11; return lb; }
+// terrain_cell_transform (@18195): terrain code -> TERRAIN.SS frame
+function terrBaseFrame(c){ if(c===0x11||c===0x09) return 8; return c>=8?c-0xF:c; }
+// Scrub (forested desert, classified 9) -> brush frame 8; plain Desert -> sand 1
+function baseFrameOf(b){ if(classifyVis(b)===9) return 8;
+  if((b&0x1F)===1) return 1; return terrBaseFrame(landBaseOf(b)); }
+const MSCR=document.createElement('canvas'); MSCR.width=16; MSCR.height=16;
+const MSCG=MSCR.getContext('2d');
+// Compose the whole terrain plane: TERRAIN.SS ground + PHYS0 blend/forest/
+// river/relief/coast, each 16x16 tile composed per-pixel then blitted at cell.
 function composeMap(g, terr, w, h, cell, useTiles){
   g.imageSmoothingEnabled=false;
-  const bAt=(x,y)=> (x<0||y<0||x>=w||y>=h)?26:terr[y*w+x];
-  const tid=(x,y)=> bAt(x,y)&0x1F;
-  const water=i=>i===25||i===26;
-  const overlay = useTiles && TILES_READY && PHYS_READY;
-  const fnb=(x,y)=>{ const b=tid(x,y); return (b>=8&&b<=23&&(b&7)!==1) || ((bAt(x,y)&0x40)&&!water(b)); };
+  if(!(useTiles && TILES_READY && PHYS_READY)){
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){        // flat-colour fallback
+      const b=terr[y*w+x]; let i=b&0x1F;
+      if(b&0x20) i=(b&0x80)?27:28;
+      g.fillStyle=terrColor(i); g.fillRect(x*cell,y*cell,cell,cell);
+    }
+    return;
+  }
+  if(!TPX) TPX=sheetPixels(TILESET);
+  if(!PPX) PPX=sheetPixels(PHYS);
+  const bAt=(x,y)=>(x<0||y<0||x>=w||y>=h)?0x19:terr[y*w+x];   // off-map = ocean
+  const isW=(x,y)=>{const i=bAt(x,y)&0x1F; return i===25||i===26;};
+  const img=MSCG.createImageData(16,16), D=img.data;
+  const tp=(f,lx,ly)=>((ly*TPX.w)+(f*16+lx))*4;
+  const pp=(f,lx,ly)=>((ly*PPX.w)+(f*16+lx))*4;
+  const put=(lx,ly,S,o)=>{const q=(ly*16+lx)*4; D[q]=S[o]; D[q+1]=S[o+1]; D[q+2]=S[o+2]; D[q+3]=255;};
+  const blitPhys=(f)=>{ for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+      const o=pp(f,lx,ly); if(PPX.d[o+3]>0) put(lx,ly,PPX.d,o); } };
+  // draw_ground: flat sampled colour under the texture (gaps show biome colour)
+  const ground=(b)=>{ const bf=baseFrameOf(b), co=tp(bf,8,8);
+    for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+      const o=tp(bf,lx,ly);
+      if(TPX.d[o+3]>0) put(lx,ly,TPX.d,o);
+      else if(TPX.d[co+3]>0) put(lx,ly,TPX.d,co);
+      else {const q=(ly*16+lx)*4; D[q]=D[q+1]=D[q+2]=0; D[q+3]=255;}
+    } };
+  // land_fill_px: nearest cardinal LAND neighbour's ground pixel at (lx,ly);
+  // -1 when only water cardinals cover it (caller keeps the ocean base)
+  const landFill=(x,y,lx,ly)=>{
+    const es=[[ly,x,y-1],[15-ly,x,y+1],[lx,x-1,y],[15-lx,x+1,y]].sort((a,b)=>a[0]-b[0]);
+    for(const e of es){ const nx=e[1], ny=e[2];
+      if(nx<0||ny<0||nx>=w||ny>=h) continue;
+      const nb=terr[ny*w+nx], ni=nb&0x1F;
+      if(ni===25||ni===26) continue;
+      const o=tp(baseFrameOf(nb),lx,ly); if(TPX.d[o+3]>0) return o;
+    }
+    return -1; };
+  const D4X=[0,1,0,-1], D4Y=[-1,0,1,0];                // N,E,S,W
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
-    const b=bAt(x,y), i=b&0x1F;
-    if(useTiles && TILES_READY) g.drawImage(TILESET, baseFrame(i)*16,0,16,16, x*cell,y*cell,cell,cell);
-    else { g.fillStyle=terrColor(i); g.fillRect(x*cell,y*cell,cell,cell); }
-    if(!overlay) continue;
-    if(water(i)){                                     // coastline: beaches / shore sub-tiles
+    const b=bAt(x,y), id=b&0x1F, vis=classifyVis(b);
+    ground(b);
+    if(id===25||id===26){
+      // compose_coast (O513 step 10): 8-neighbour land bitmap + quadrant masks.
+      // The PNG frames merged the .SS land-side/ocean-cutout indices into one
+      // transparency, so transparent coast pixels are backfilled from the
+      // nearest cardinal LAND terrain (land_fill_px) -- the in-game
+      // emit_terrain backfill; open-ocean quadrants keep the ocean base.
       let cfg=[0,0,0,0], conn=0;
-      for(let dr=0;dr<8;dr++){ if(water(tid(x+CDX8[dr],y+CDY8[dr]))) continue; conn|=(1<<dr);
+      for(let dr=0;dr<8;dr++){ if(isW(x+CDX8[dr],y+CDY8[dr])) continue; conn|=(1<<dr);
         if(dr&1) cfg[((dr+1)&6)>>1]|=2; else { cfg[dr>>1]|=4; cfg[((dr>>1)+1)&3]|=1; } }
-      if(!conn) continue;
-      let pat=-1;
-      if((conn&0xDD)===0xC1)pat=0; if((conn&0x77)===0x07)pat=1; if((conn&0x77)===0x70)pat=2; if((conn&0xDD)===0x1C)pat=3;
-      const frames = pat>=0 ? [0x96+pat] : [0,1,2,3].map(q=>0x6C+cfg[q]*4+q);
-      for(const f of frames) g.drawImage(PHYS, f*16,0,16,16, x*cell,y*cell,cell,cell);
-    } else {
-      if((i>=8&&i<=23&&(i&7)!==1) || (b&0x40)){       // forest canopy (id band or painted bit)
-        let k=0; if(fnb(x,y-1))k|=8; if(fnb(x,y+1))k|=4; if(fnb(x-1,y))k|=2; if(fnb(x+1,y))k|=1;
-        g.drawImage(PHYS, (0x40+k)*16,0,16,16, x*cell,y*cell,cell,cell);
+      if(conn){
+        let pat=-1;
+        if((conn&0xDD)===0xC1)pat=0; if((conn&0x77)===0x07)pat=1;
+        if((conn&0x77)===0x70)pat=2; if((conn&0xDD)===0x1C)pat=3;
+        if(pat>=0){                                    // clean diagonal beach 0x96+pat
+          const f=0x96+pat;
+          for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+            const o=pp(f,lx,ly);
+            if(PPX.d[o+3]>0) put(lx,ly,PPX.d,o);
+            else { const lo=landFill(x,y,lx,ly); if(lo>=0) put(lx,ly,TPX.d,lo); }
+          }
+        } else {                                       // 4x 8x8 quadrant sub-tiles
+          const qx=[0,8,8,0], qy=[0,0,8,8];
+          for(let q=0;q<4;q++){
+            const f=0x6C+cfg[q]*4+q;
+            for(let ly=qy[q];ly<qy[q]+8;ly++)for(let lx=qx[q];lx<qx[q]+8;lx++){
+              const o=pp(f,lx,ly);
+              if(PPX.d[o+3]>0) put(lx,ly,PPX.d,o);
+              else if(cfg[q]){ const lo=landFill(x,y,lx,ly); if(lo>=0) put(lx,ly,TPX.d,lo); }
+            }
+          }
+        }
       }
-      if(b&0x20){                                     // river band
-        let k=0; if(bAt(x,y-1)&0x20)k|=8; if(bAt(x,y+1)&0x20)k|=4; if(bAt(x-1,y)&0x20)k|=2; if(bAt(x+1,y)&0x20)k|=1;
-        g.drawImage(PHYS, (0x10+(k||0xF))*16,0,16,16, x*cell,y*cell,cell,cell);
+    } else {
+      // O512 land biome edge blend (func_067F50): each differing LAND cardinal
+      // dithers its ground into a 4px edge strip. The PHYS0 stencils 0x68-0x6B
+      // did not survive the atlas (index-0 dots baked to transparency), so the
+      // dither pattern is a synthesized checkerboard -- RECONSTRUCTED.
+      const cclass=classifyVis(b);
+      for(let d=0;d<4;d++){
+        const nx=x+D4X[d], ny=y+D4Y[d];
+        if(nx<0||ny<0||nx>=w||ny>=h) continue;
+        const nb=terr[ny*w+nx], nclass=classifyVis(nb), ni=nb&0x1F;
+        if(ni===25||ni===26) continue;                 // water -> no dither
+        if(nclass===cclass) continue;                  // same biome -> no edge
+        const nf=baseFrameOf(nb);
+        for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+          const edge=d===0?ly:d===1?15-lx:d===2?15-ly:lx;
+          if(edge>=4) continue;
+          if(((lx+ly)&1)!==(edge&1)) continue;
+          const o=tp(nf,lx,ly); if(TPX.d[o+3]>0) put(lx,ly,TPX.d,o);
+        }
+      }
+      // forest canopy: visible band 8..0x17 except Desert/Scrub; 0x40+mask
+      if(vis>=8&&vis<0x18&&landBaseOf(b)!==1){
+        const fnb=(xx,yy)=>{const v=bAt(xx,yy)&0x1F; return v>=8&&v<0x18&&(v&7)!==1;};
+        let k=0;
+        if(fnb(x,y-1))k|=8; if(fnb(x,y+1))k|=4; if(fnb(x-1,y))k|=2; if(fnb(x+1,y))k|=1;
+        blitPhys(0x40+k);
+      }
+      // river (bit 0x40): base 0x00 major (bit 0x80) / 0x10 minor + 4-cardinal
+      // river mask; isolated -> 0xF (@0x683BB)
+      if(b&0x40){
+        let k=0;
+        if(bAt(x,y-1)&0x40)k|=8; if(bAt(x,y+1)&0x40)k|=4;
+        if(bAt(x-1,y)&0x40)k|=2; if(bAt(x+1,y)&0x40)k|=1;
+        blitPhys(((b&0x80)?0x00:0x10)+(k||0xF));
+      }
+      // hills / mountains (bit 0x20; bit 0x80 = mountains): 0x20/0x30 + the
+      // same-class (b&0xA0) neighbour mask
+      if(b&0x20){
+        const hi=b&0xA0; let k=0;
+        if((bAt(x,y-1)&0xA0)===hi)k|=8; if((bAt(x,y+1)&0xA0)===hi)k|=4;
+        if((bAt(x-1,y)&0xA0)===hi)k|=2; if((bAt(x+1,y)&0xA0)===hi)k|=1;
+        blitPhys(((b&0x80)?0x20:0x30)+k);
       }
     }
+    MSCG.putImageData(img,0,0);
+    g.drawImage(MSCR,0,0,16,16,x*cell,y*cell,cell,cell);
   }
 }
 // our terrain id (0..28) -> TERRAIN.SS base-ground frame (0..11)
@@ -591,9 +705,16 @@ function paintAt(ev) {
   const r = $('#cv').getBoundingClientRect();
   const x = Math.floor((ev.clientX-r.left)/CELL), y = Math.floor((ev.clientY-r.top)/CELL);
   if (x<0||x>=MAP.w||y<0||y>=MAP.h) return;
-  let b = selId() & 0x1F;
-  if ($('#river').checked) b |= 0x20;
-  if ($('#forest').checked) b |= 0x40;
+  const prev = MAP.terrain[y*MAP.w+x], sel = selId();
+  let b;
+  if (sel === 27 || sel === 28) {          // relief FLAGS over the existing base
+    let base = prev & 0x1F; if (base === 25 || base === 26) base = 2;
+    b = base | (sel === 27 ? 0xA0 : 0x20); // func_0624E: 0x20 hills, +0x80 mtns
+  } else {
+    b = sel & 0x1F;
+    if ($('#forest').checked && b < 8 && b !== 1) b = (b & 7) | 8;   // forested variant
+  }
+  if ($('#river').checked) b |= 0x40;      // river = bit 0x40 (file packing)
   MAP.terrain[y*MAP.w+x] = b; drawMap();
 }
 let painting=false;
@@ -2680,10 +2801,10 @@ function nvRender(){
       +nsT(305,1,'&#9654;',{size:5,col:'#FFF35D'})+'</div>';
   }
   // viewport + minimap canvases (drawn after insert)
-  h+='<canvas id="nvview" width="'+vp[2]+'" height="'+vp[3]+'" onclick="nvClick(event)" '
+  h+='<canvas id="nvview" width="'+(vp[2]*NS_SC)+'" height="'+(vp[3]*NS_SC)+'" onclick="nvClick(event)" '
     +'style="position:absolute;left:'+(vp[0]*NS_SC)+'px;top:'+(vp[1]*NS_SC)+'px;'
     +'width:'+(vp[2]*NS_SC)+'px;height:'+(vp[3]*NS_SC)+'px;image-rendering:pixelated;cursor:crosshair"></canvas>';
-  h+='<canvas id="nvmini" width="'+mm[2]+'" height="'+mm[3]+'" '
+  h+='<canvas id="nvmini" width="'+(mm[2]*NS_SC)+'" height="'+(mm[3]*NS_SC)+'" '
     +'style="position:absolute;left:'+(mm[0]*NS_SC)+'px;top:'+(mm[1]*NS_SC)+'px;'
     +'width:'+(mm[2]*NS_SC)+'px;height:'+(mm[3]*NS_SC)+'px;image-rendering:pixelated"></canvas>';
   // sidebar B: season/year + gold + tax at the EXTRACTED line coords (tier R, cited)
@@ -2730,6 +2851,7 @@ function nvDraw(){
     t.push((mx<0||my<0||mx>=GAME.w||my>=GAME.h)?25:GAME.terrain[my*GAME.w+mx]);
   }
   const g=vcv.getContext('2d');
+  g.setTransform(NS_SC,0,0,NS_SC,0,0);   // 2x backing: draw in native coords, no CSS blur
   composeMap(g,t,W,H,px,true);
   const inWin=(x,y)=>x>=NVX&&y>=NVY&&x<NVX+W&&y<NVY+H;
   for(let y=0;y<H;y++) for(let x=0;x<W;x++)            // fog inside the viewport
@@ -2780,7 +2902,8 @@ function nvDraw(){
   // minimap: a 1px/tile scrolling window; dot colors = NAMES @COLORS palette indices
   // (0x830 ocean/coast=68, 0x831 land=149, fog=8, owned=128 -- resolved via VICEROY.PAL)
   const mcv=document.getElementById('nvmini'); if(!mcv) return;
-  const mg=mcv.getContext('2d'), MW=mcv.width, MH=mcv.height;
+  const mg=mcv.getContext('2d'), MW=Math.round(mcv.width/NS_SC), MH=Math.round(mcv.height/NS_SC);
+  mg.setTransform(NS_SC,0,0,NS_SC,0,0);
   const ox=Math.max(0,Math.min(GAME.w-MW,NVX+(W>>1)-(MW>>1))), oy=Math.max(0,Math.min(GAME.h-MH,NVY+(H>>1)-(MH>>1)));
   for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
     const mx=ox+x,my=oy+y;

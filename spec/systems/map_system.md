@@ -17,9 +17,12 @@ economic yields, movement cost, and combat modifiers (`docs/GAME_MANUAL.md`).
 ## 2. State & data
 **`.MP` file layout** (`formats/MP_FORMAT.md`, BYTE_VERIFIED):
 - Header: `width:word`, `height:word` (AMER2 = 56 × 70).
-- Tile data: width × height bytes, row-major (y outer, x inner). Per byte:
-  bits 0–4 = terrain id (0..27); bit 5 = river overlay; bit 6 = forest/special
-  overlay; bit 7 = ? (possibly "discovered").
+- Tile data: width × height bytes, row-major (y outer, x inner). Per byte
+  (**corrected 2026-07-02 to match §7/§8 + AMER2.MP**): bits 0–4 = terrain id
+  0..26 (8..23 = forested variants; 27/28 never appear in the low bits); bit 5
+  (0x20) = special terrain — Hills, or Mountains with bit 7 (`func_0624E` §8);
+  bit 6 (0x40) = river overlay (§7); bit 7 (0x80) = Mountains-vs-Hills /
+  major-vs-minor-river select.
 - Then ColonyRecord / UnitRecord / NativeSettlement arrays.
 
 **Runtime map layers** (`colonization-memory-map (1).md`, **RUNTIME-VERIFIED**; live

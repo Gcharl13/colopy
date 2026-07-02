@@ -23,11 +23,17 @@ struct World {
     // OR'd by func_00631A; no shared exploration. Empty = fog disabled (all seen).
     std::vector<uint8_t> fog;
 
-    // Terrain id at (x,y) (low 5 bits); -1 if no terrain plane / out of range.
+    // Terrain id at (x,y); -1 if no terrain plane / out of range. The stored
+    // byte is the .MP FILE packing (func_0624E, map_system.md 8): bits 0-4 =
+    // base id, bit 0x20 = special terrain (with bit 0x80: Mountains 27, else
+    // Hills 28), bit 0x40 = river. Ids 27/28 never occur in the low bits of
+    // shipped maps -- they are synthesized here from the flag.
     int terrain_id(int x, int y) const {
         if (terrain.empty() || map_w <= 0) return -1;
         if (x < 0 || x >= map_w || y < 0 || y >= map_h) return -1;
-        return terrain[(size_t)y * map_w + x] & 0x1F;
+        uint8_t b = terrain[(size_t)y * map_w + x];
+        if (b & 0x20) return (b & 0x80) ? 27 : 28;
+        return b & 0x1F;
     }
     // Improvement bits at (x,y): 0x40 plowed, 0x08 road; 0 if none/out of range.
     int improve_at(int x, int y) const {

@@ -46,13 +46,15 @@ void generate_map(World& w, const MapGenParams& p, const RandFn& rng,
             if (band > 5) band = 5;
             int base = climate_base_terrain(band, south);
             if (base == 6 && rng(1, 2) == 2) base = 4;   // the Marsh 50% roll (@0x6500C)
-            // features: hills / forest (the 0x20/0x80 board bits ~ our ids/bit6)
+            // features: hills / mountains are the .MP special-terrain FLAG
+            // (func_0624E: bit 0x20, + bit 0x80 = mountains), not low-bit ids
+            int flags = 0;
             const int r = rng(1, 12);
-            if (r == 1)      base = 28;                  // Hills
-            else if (r == 2) base = 27;                  // Mountains
+            if (r == 1)      flags = 0x20;               // Hills
+            else if (r == 2) flags = 0xA0;               // Mountains
             else if (base <= 7 && rng(1, 3) <= 1 + p.climate)   // wetter -> denser forest
                 base = (base & 7) | 8;                   // P3 fold: unforested -> +8
-            at(x, y) = (uint8_t)base;
+            at(x, y) = (uint8_t)(base | flags);
         }
 
     // P3: light smoothing -- stray interior ocean surrounded by >= 6 land
@@ -67,14 +69,14 @@ void generate_map(World& w, const MapGenParams& p, const RandFn& rng,
         }
 
     // P4: rivers -- a few walks from high ground toward the sea setting the
-    // .MP river bit (bit 5; the runtime board uses 0x40, the FILE packing
-    // 0x20 -- our World carries the file packing). Count RECONSTRUCTED.
+    // .MP river bit 0x40 (func_0624E file packing; AMER2.MP carries 226 such
+    // tiles incl. 30 estuary mouths on ocean). Count RECONSTRUCTED.
     for (int r = 0; r < 3 + p.climate; ++r) {
         int x = rng(4, W - 6), y = rng(4, H - 5);
         for (int step = 0; step < 30; ++step) {
             const int t = at(x, y) & 0x1F;
             if (t == 25 || t == 26) break;               // reached the sea
-            at(x, y) |= 0x20;                            // river overlay (MP_FORMAT bit 5)
+            at(x, y) |= 0x40;                            // river overlay (file bit 0x40)
             const int d = rng(0, 7);
             x += DX8[d]; y += DY8[d];
             if (x < 1 || x >= W - 1 || y < 1 || y >= H - 1) break;

@@ -122,7 +122,7 @@ static int yield_row(int id) {
 // founding colonist on the tile it works, and the per-tile production value (good icon +
 // quantity) from the byte-verified terrain yields. 16px tiles nearest-scaled to 24px cells.
 static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet& phys,
-                                const Sheet& icons, const Sheet& font,
+                                const Sheet& icons, const Sheet& /*font*/,
                                 const Map& map, int cx, int cy) {
     constexpr int CELL = 24, GX = 224, GY = 32;     // byte-exact: cell_x=200+24*col(1..3), cell_y=8+24*row(1..3)
     // 1. terrain: compose the 3x3 region at 16px, nearest-scale to the 72x72 panel.
@@ -138,11 +138,6 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
         int x = cx + col - 1, y = cy + row - 1;
         if (x < 0 || y < 0 || x >= map.w || y >= map.h) return 25;     // ocean
         return (int)(map.tiles[(size_t)y * map.w + x] & 0x1F);
-    };
-    auto blit_centered = [&](const Sheet& sh, int fi, int col, int row) {
-        if (fi < 0 || fi >= (int)sh.frames.size()) return;
-        const Frame& f = sh.frames[fi];
-        scr.blit_frame(f, GX + col * CELL + (CELL - f.w) / 2, GY + row * CELL + (CELL - f.h) / 2);
     };
     // The figure (colonist/colony) sits at the BOTTOM-CENTRE of the cell, facing RIGHT (sheet
     // art faces left → flip via the engine's 0x8000 flag, func_00E76A).
@@ -279,7 +274,7 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         int pop = c.population < 1 ? 1 : c.population;
         // y=132 row: Tory crown (ICONS 0x7C) @ (2,132) + Tory COUNT; SoL% right-aligned @ x=0x75-w.
         blit_idx(scr, icons, 0x7C, 2, 132);
-        char tn[8]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count (= pop at 0% SoL)
+        char tn[16]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count (= pop at 0% SoL)
         scr.draw_text(font, 16, 133, tn, COL_WHITE);
         const char* sol = "0%";                            // fresh founding SoL = 0%
         int sw = font.frames.empty() ? 0 : scr.text_width(font, sol);
@@ -299,10 +294,12 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                 if (x < 0 || y < 0 || x >= map->w || y >= map->h) return 25;
                 return (int)(map->tiles[(size_t)y * map->w + x] & 0x1F);
             };
-            int cr = yield_row(tid(0, 0)); if (cr >= 0) food += YIELD[cr][0];   // colony-centre auto food
+            int cr = yield_row(tid(0, 0));   // colony-centre auto food
+            if (cr >= 0) food += YIELD[cr][0];
             int bestf = 0;
             for (int dy = -1; dy <= 1; ++dy) for (int dx = -1; dx <= 1; ++dx) {
-                if (!dx && !dy) continue; int yr = yield_row(tid(dx, dy));
+                if (!dx && !dy) continue;
+                int yr = yield_row(tid(dx, dy));
                 if (yr >= 0 && YIELD[yr][0] > bestf) bestf = YIELD[yr][0];
             }
             food += bestf;                                 // TOTAL food produced (centre + worked tile)

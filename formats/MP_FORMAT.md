@@ -85,14 +85,17 @@ Sources for ID semantics:
 
 | Bit | Mask | Meaning |
 |-----|------|---------|
-| 5 | 0x20 | River overlay — sprite added on top of base terrain |
-| 6 | 0x40 | Forest overlay (applied to base land terrains 0..7 to map to 8..15) |
-| 7 | 0x80 | Possibly "explored by player 0" flag (TODO_VERIFY) |
+| 5 | 0x20 | **Special terrain flag** — Hills; with bit 7 set, Mountains (`func_0624E`: `and 0x80; sbb; +0x1B` → id 27/28) |
+| 6 | 0x40 | **River overlay** (map_system.md §7: render gated on this bit; frames 0x01/0x11 + 4-cardinal mask) |
+| 7 | 0x80 | With bit 5: Mountains-vs-Hills select; with bit 6 alone: major-vs-minor river. Never observed in isolation (PROJECT_BOARD AMB-6) |
 
-The forest bit is REDUNDANT with terrain id 8..15 since those IDs are
-the auto-forest mapping. The bit may be set for ALL forested tiles to
-make traversal-cost lookups simpler. (TODO_VERIFY against the .MP
-loader function.)
+> **CORRECTED 2026-07-02** (was "0x20 = river, 0x40 = forest"): the byte-verified
+> `.MP` tile decoder `func_0624E` reads 0x20 as the special-terrain flag and the
+> render chain gates rivers on 0x40 (`spec/systems/map_system.md` §7/§8). Confirmed
+> against `AMER2.MP` (58×72): **no tile carries id 27/28 in its low 5 bits**; 227
+> tiles carry 0x20 (the hill/mountain ranges), 226 carry 0x40 (river courses, incl.
+> 30 estuary mouths on Ocean tiles). Forest is the id band 8..23 — there is no
+> forest bit.
 
 ---
 
