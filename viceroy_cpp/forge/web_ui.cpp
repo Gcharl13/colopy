@@ -2603,6 +2603,36 @@ async function nativeLearn(){
 function villageAdjacent(u){
   return (GAME.settlements||[]).some(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
 }
+function foreignColonyAdjacent(u){
+  return (GAME.colonies||[]).some(c=>c.owner!==0&&Math.abs(c.x-u.x)<=1&&Math.abs(c.y-u.y)<=1);
+}
+// Scout at a foreign colony (exploration.md 3, func_05A20E): the verbatim
+// 4-option @SCOUTCOLONY dialog -- Meet With Mayor / Infiltrate / Attack / Nothing.
+async function scoutColony(){
+  if(SEL<0) return;
+  const d=await (await fetch('/api/scout/colony',{method:'POST',body:JSON.stringify({unit:SEL})})).json();
+  if(d.error){ ui.toast(d.error); return; }
+  const parts=(d.msg||'').split('\n\n');                     // text, then the option lines
+  const opts=(parts[1]||'Meet With Mayor\nInfiltrate Colony\nAttack Colony\nNothing').split('\n');
+  let h='<p>'+esc(parts[0]||'').replace(/\n/g,'<br>')+'</p>';
+  opts.forEach((t,i)=>{ h+='<button class="act" style="margin:3px" onclick="scoutChoice('+i+')">'+esc(t)+'</button>'; });
+  ui.popup('Scouts', h);
+}
+async function scoutChoice(i){
+  ui.close();
+  const d=await (await fetch('/api/scout/colony',{method:'POST',body:JSON.stringify({unit:SEL,choice:i})})).json();
+  if(d.error){ ui.toast(d.error); return; }
+  if(d.msg){ ui.popup('Scouts','<p>'+esc(d.msg).replace(/\n/g,'<br>')+'</p>'); }
+  else if(d.info){
+    const inf=d.info;
+    let h='<p><b>'+esc(inf.owner)+'</b> colony &middot; population '+inf.population+'</p>';
+    if(inf.stockpile)
+      h+='<p class="muted">stores: '+(inf.stockpile.map((q,g)=>q?q+' '+GOODS[g]:'').filter(Boolean).join(', ')||'empty')
+        +'</p><p class="muted">'+inf.buildings+' buildings built</p>';
+    ui.popup('Colony intelligence', h);
+  }
+  await refreshGame();
+}
 // ---- Trade routes (spec/systems/trade_routes.md; the @TRADE* GAME.TXT dialogs) ----
 // A route = up to 4 stops (colony or Europe), each with a load list and an unload
 // list; a ship/wagon on order "T" ferries the cargo automatically each turn.
@@ -2718,6 +2748,10 @@ function showSel(){
       +(u.type===0&&villageAdjacent(u)
         ?'<button class="act" style="border-color:#4f9d69" onclick="nativeLearn()" '
          +'title="Live among the Indians: learn the village\'s skill (training.md)">Learn from village</button>'
+        :'')
+      +(u.type===5&&foreignColonyAdjacent(u)
+        ?'<button class="act" style="border-color:#4f9d69" onclick="scoutColony()" '
+         +'title="Meet the mayor, infiltrate, or attack the foreign colony (exploration.md 3)">Scout colony</button>'
         :'')
       +'</div>';
   } else if(tbtn){

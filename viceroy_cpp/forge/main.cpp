@@ -2690,6 +2690,95 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, o);
         }
 
+        // Scout at a foreign colony (exploration.md 3, func_05A20E): the 4-option
+        // @SCOUTCOLONY dialog. choice 0 Meet With Mayor (blocked during the WoI,
+        // test [0x5382],1 -> @NOMAYORSDURINGREV) / 1 Infiltrate (the random_int(1,36)
+        // roll, scout lost on failure) / 2 Attack (the Jan de Witt FF#4 info gate
+        // @0x5A469) / 3 Nothing. No choice -> the dialog record itself.
+        if (path == "/api/scout/colony" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            if (ui < 0 || ui >= (int)g_world.units.size()) return err(400, "bad unit");
+            Unit& u = g_world.units[ui];
+            if (!u.alive || u.owner != 0) return err(400, "not a live player unit");
+            if (u.type != vc::sim::SCOUTS) return err(400, "only scouts parley at colonies");
+            int ci = -1;
+            for (int i = 0; i < (int)g_world.colonies.size(); ++i) {
+                const Colony& c = g_world.colonies[i];
+                if (c.owner_power != u.owner &&
+                    std::abs(c.x - u.x) <= 1 && std::abs(c.y - u.y) <= 1) { ci = i; break; }
+            }
+            if (ci < 0) return err(400, "no foreign colony adjacent");
+            const std::string clabel = "#" + std::to_string(ci + 1);
+            auto fill = [](std::string s, const char* tok, const std::string& v) {
+                for (size_t p; (p = s.find(tok)) != std::string::npos; )
+                    s.replace(p, std::string(tok).size(), v);
+                return s;
+            };
+            // Colony intelligence: FULL (stockpile + works) vs LIMITED (population
+            // only). The de Witt gate governs the Attack path's report @0x5A469.
+            auto colony_info = [&](bool full) {
+                const Colony& c = g_world.colonies[ci];
+                forge::JsonValue o = jobj();
+                o.obj["colony"] = forge::json_num(ci);
+                o.obj["owner"] = forge::json_str(nation_name(c.owner_power));
+                o.obj["population"] = forge::json_num(c.population);
+                if (full) {
+                    forge::JsonValue sp = jarr();
+                    for (int gd = 0; gd < NGOODS; ++gd) sp.arr.push_back(forge::json_num(c.stockpile[gd]));
+                    o.obj["stockpile"] = sp;
+                    int nb = 0; for (int bi = 0; bi < 48; ++bi) nb += (int)((c.built_mask >> bi) & 1u);
+                    o.obj["buildings"] = forge::json_num(nb);
+                    o.obj["build_target"] = forge::json_num(c.build_target);
+                }
+                return o;
+            };
+            forge::JsonValue o = jobj();
+            const forge::JsonValue* pc = b.find("choice");
+            if (!pc) {                                    // the dialog record, filled
+                o.obj["key"] = forge::json_str("@SCOUTCOLONY");
+                o.obj["msg"] = forge::json_str(fill(game_message_text("@SCOUTCOLONY"),
+                                                    "{%STRING0}", clabel));
+                return J(200, o);
+            }
+            const int choice = pc->as_int(3);
+            if (choice == 0) {                            // Meet With Mayor
+                if (g_engine_extra.woi_declared) {
+                    o.obj["key"] = forge::json_str("@NOMAYORSDURINGREV");
+                    o.obj["msg"] = forge::json_str(game_message_text("@NOMAYORSDURINGREV"));
+                    return J(200, o);
+                }
+                o.obj["ok"] = jbool(true);                // parley: a limited briefing
+                o.obj["info"] = colony_info(false);       //   (detail RECONSTRUCTED)
+                return J(200, o);
+            }
+            if (choice == 1) {                            // Infiltrate Colony
+                const bool ok = vc::sim::scout_infiltrate(g_game, g_world, ui, ci, game_rng);
+                o.obj["ok"] = jbool(ok);
+                if (ok) { o.obj["info"] = colony_info(true); }
+                else {
+                    o.obj["key"] = forge::json_str("@LOSTOURSCOUTS");
+                    std::string m = game_message_text("@LOSTOURSCOUTS");
+                    m = fill(m, "{%STRING0}", nation_name(g_world.colonies[ci].owner_power));
+                    m = fill(m, "{%STRING1}", clabel);
+                    o.obj["msg"] = forge::json_str(m);
+                }
+                return J(200, o);
+            }
+            if (choice == 2) {                            // Attack Colony (func_05A40E)
+                const bool de_witt = (g_engine_extra.ff_owned >> 4) & 1u;   // FF #4 gate
+                o.obj["ok"] = jbool(true);
+                o.obj["info"] = colony_info(de_witt);
+                u.order = ORDER_GOTO;                     // close on the colony; combat vs
+                u.target_x = g_world.colonies[ci].x;      //   its defenders resolves in the
+                u.target_y = g_world.colonies[ci].y;      //   movement loop (assault itself
+                return J(200, o);                         //   is not separately modeled)
+            }
+            o.obj["ok"] = jbool(true);                    // Nothing
+            return J(200, o);
+        }
+
         // ---- Europe market (player-command trade): buy/sell goods for gold, recruit/train colonists ----
         // Prices from @CARGO (price_start1 = bid/sell, price_start2 = ask/buy, ~1..20); tax on sales.
         if (path == "/api/europe") {

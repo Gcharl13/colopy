@@ -855,6 +855,47 @@ static void test_trade_routes() {
     }
 }
 
+// exploration.md 3: scout infiltrate roll (func_05A20E @0x5A2DC) -- success/failure
+// effects, the Seasoned halving, the loss side (@LOSTOURSCOUTS/@LOSTTHEIRSCOUTS).
+static void test_scout_infiltrate() {
+    std::printf("scout infiltrate:\n");
+    auto make = [] {
+        GameState g; World w; w.map_w = 4; w.map_h = 1;
+        g.difficulty = 2;                                  // threshold (2+6)*2 = 16
+        for (int i = 0; i < 4; ++i) w.terrain.push_back(4);
+        Colony c; c.x = 2; c.y = 0; c.owner_power = 1; c.human = false;
+        w.colonies.push_back(c);
+        Unit s; s.type = SCOUTS; s.x = 1; s.y = 0; w.units.push_back(s);
+        return std::make_pair(g, w);
+    };
+    { // roll 16 <= 16: success reveals the square and bumps the +0xAA store
+      auto [g, w] = make();
+      RandFn rig = [](int, int) { return 16; };
+      CHECK(scout_infiltrate(g, w, 0, 0, rig), "roll at the threshold succeeds");
+      CHECK(w.colonies[0].food_accum == 100, "target +0xAA bumped by 100");
+      CHECK(w.units[0].alive && w.explored(2, 0, 0), "scout lives; colony square revealed");
+    }
+    { // roll 17 > 16: the scout is caught; its mounts go to the stables
+      auto [g, w] = make();
+      RandFn rig = [](int, int) { return 17; };
+      CHECK(!scout_infiltrate(g, w, 0, 0, rig), "roll over the threshold fails");
+      CHECK(!w.units[0].alive, "the scout is lost (@0x5A3EA)");
+      CHECK(w.colonies[0].stockpile[HORSES] == 50, "mounts to the colony stables (@LOSTTHEIRSCOUTS)");
+    }
+    { // Seasoned Scout (0x16): the same roll 17 halves to 8 -> success (sar @0x5A2F2)
+      auto [g, w] = make();
+      w.units[0].profession = 0x16;
+      RandFn rig = [](int, int) { return 17; };
+      CHECK(scout_infiltrate(g, w, 0, 0, rig), "Seasoned Scout halves the roll");
+    }
+    { // human target: threshold 16 + (diff-2) = 16 at diff 2; diff 4 -> 20+2 = 22
+      auto [g, w] = make();
+      g.difficulty = 4; w.colonies[0].human = true;
+      RandFn rig = [](int, int) { return 22; };
+      CHECK(scout_infiltrate(g, w, 0, 0, rig), "human target adds (diff-2) to the threshold");
+    }
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -887,6 +928,7 @@ int main() {
     test_fog_of_war();
     test_lost_city_rumors();
     test_trade_routes();
+    test_scout_infiltrate();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

@@ -709,6 +709,14 @@
           "note": "The visibility layer is separate from the .MP terrain byte (the EXE's 4th map layer); no shared exploration -- rivals are seen only inside your own revealed tiles. Colony reveal = func_0063B6.",
           "title": "Sticky per-power reveal",
           "writes": []
+        },
+        {
+          "expr": "4-option dialog (func_05A20E): Meet With Mayor (blocked during the WoI, test [0x5382],1 -> @NOMAYORSDURINGREV) / Infiltrate: success iff random_int(1,36) <= (X+6)*2, roll HALVED for a Seasoned Scout (sar @0x5A2F2), threshold +(diff-2) vs a human target / Attack -> func_05A40E with the Jan de Witt FF#4 info gate @0x5A469 / Nothing",
+          "fn": "scout_infiltrate",
+          "knobs": [],
+          "note": "Success reveals the colony square + bumps the target's +0xAA store by 100; failure loses the scout (@0x5A3EA, @LOSTOURSCOUTS) and its mounts go to the stables (@LOSTTHEIRSCOUTS '%NUMBER0 horses' -- count RECONSTRUCTED as 50). X in the threshold is unnamed in the disasm -- RECONSTRUCTED as the game difficulty.",
+          "title": "Scout at a foreign colony (@SCOUTCOLONY)",
+          "writes": []
         }
       ],
       "name": "Exploration - fog of war & sight",

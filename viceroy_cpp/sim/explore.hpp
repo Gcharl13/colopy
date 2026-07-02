@@ -8,6 +8,7 @@
 #pragma once
 
 #include "game.hpp"
+#include "immigration.hpp"   // RandFn
 
 namespace vc::sim {
 
@@ -25,5 +26,17 @@ void reveal_around(World& w, int x, int y, int r, int player);
 // colony its +/-5 block (idempotent -- the bits are sticky). human_ff_owned
 // carries de Soto for player 0; AI founding fathers are not modeled.
 void reveal_step(World& w, uint32_t human_ff_owned);
+
+// Scout "Infiltrate Colony" (exploration.md 3, func_05A20E option 2 @0x5A2DC):
+// success iff random_int(1,36) <= (X+6)*2, the roll HALVED for a Seasoned Scout
+// (class 0x16, sar @0x5A2F2), the threshold +(difficulty-2) against a human
+// target. The spec leaves X unnamed -- RECONSTRUCTED as the game difficulty.
+// Success reveals the colony's square and bumps the target's +0xAA store by 100;
+// failure = the scout is caught and lost (@0x5A3EA, @LOSTOURSCOUTS), and its
+// mounts go to the colony stables (@LOSTTHEIRSCOUTS "%NUMBER0 horses"; the count
+// is not byte-cited -- RECONSTRUCTED as 50, the scout's mount complement).
+// Returns true on success. Never adds/removes units (only marks the scout dead).
+bool scout_infiltrate(GameState& g, World& w, int unit_idx, int colony_idx,
+                      const RandFn& rng);
 
 } // namespace vc::sim
