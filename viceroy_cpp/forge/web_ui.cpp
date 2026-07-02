@@ -1243,7 +1243,45 @@ document.querySelector('nav button[data-tab=schema]').addEventListener('click',(
 let GAME = null, SEL = -1; const GCELL = 14;
 const GOODS = ['Food','Sugar','Tobacco','Cotton','Furs','Lumber','Ore','Silver',
                'Horses','Rum','Cigars','Cloth','Coats','Trade goods','Tools','Muskets'];
-function ownerColor(o){ return ['#d94f4f','#4f7fd9','#56b96a','#d9b84f'][o&3]; }
+// Owner colors from NAMES @COUNTRY.color (palette idx: England 12 red, France 9
+// blue, Spain 14 yellow, Netherlands 13 orange) resolved through VICEROY.PAL;
+// GAME.chip carries the live per-power-slot/per-tribe indices from the server.
+// The hex literals are only a pre-load fallback (same palette values).
+function ownerColor(o){
+  const c=(typeof GAME!=='undefined'&&GAME&&GAME.chip)?GAME.chip:null;
+  if(c&&NVPAL&&NVPAL.length) return nvPal(c.powers[o&3]);
+  return ['#ff0000','#5555ff','#ffff55','#ff7100'][o&3];
+}
+// Tribe chip colors: NAMES @TRIBES 5th column (file legend "tech-level, color"):
+// Inca 97, Aztec 149, Arawak 54, Iroquois 87, Cherokee 67, Apache 111, Sioux 118,
+// Tupi 71 -- VICEROY.PAL indices.
+function tribeColor(t){
+  const c=(typeof GAME!=='undefined'&&GAME&&GAME.chip)?GAME.chip:null;
+  if(c&&NVPAL&&NVPAL.length) return nvPal(c.tribes[t&7]);
+  return ['#f7f3c7','#c7a220','#698ac3','#6d3c18','#75a64d','#c3ae86','#920000','#045d04'][t&7];
+}
+// The unit ownership chip (unit_orders.md 2.3, renderer func @0x0386A): a small
+// owner-colored box beside the sprite carrying the 0x54DE status letter. Box
+// geometry (right edge, ~7x9 of a 16px tile) and the black/white glyph-contrast
+// pick are RECONSTRUCTED from original screenshots; fill + letter are spec data.
+function drawChip(g,X,Y,px,color,glyph){
+  if(px<8) return;
+  const t=String(glyph==null?'':glyph);
+  const w=Math.max(5,Math.round(px*7/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
+  const h=Math.max(7,Math.round(px*10/16));
+  const cx=X-(w>>1), cy=Y+((px-h)>>1)-1;   // pokes out of the tile's left edge
+  g.fillStyle='#000'; g.fillRect(cx-1,cy-1,w+2,h+2);
+  g.fillStyle=color; g.fillRect(cx,cy,w,h);
+  if(t&&t!==' '){
+    const m=/^#(..)(..)(..)$/.exec(color);
+    const lum=m?parseInt(m[1],16)*3+parseInt(m[2],16)*6+parseInt(m[3],16):0;
+    g.fillStyle=lum>1200?'#000':'#fff';
+    g.font='bold '+Math.max(6,Math.round(px*8/16))+'px monospace';
+    g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(t,cx+(w>>1),cy+(h>>1)+1);
+    g.textAlign='start'; g.textBaseline='alphabetic';
+  }
+}
 // real on-map unit sprites (32px cells, cell t = unit type), cropped from ICONS.SS
 const UNITSET = new Image(); let UNITS_READY = false;
 UNITSET.onload = () => { UNITS_READY = true; if (GAME) drawGame(); };
@@ -2691,6 +2729,7 @@ function nvDraw(){
       g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); }
     if(s.capital&&px>=8){ g.fillStyle='#ffe27a'; g.fillRect(X+px-3,Y+1,2,2); } });
   (GAME.braves||[]).forEach(b=>{ if(!inWin(b.x,b.y)||!fogSeen(b.x,b.y)) return;
+    drawChip(g,(b.x-NVX)*px,(b.y-NVY)*px,px,tribeColor(b.tribe),'-');
     if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,(b.x-NVX)*px,(b.y-NVY)*px,px,px); });
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)      // rumor medallions
     if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
@@ -2698,10 +2737,8 @@ function nvDraw(){
     const X=(c.x-NVX)*px,Y=(c.y-NVY)*px;
     // ICONS colony sprites: 3 open / 0 stockade / 1 fort / 2 fortress
     const cf=(c.fort!=null&&c.fort>=0)?c.fort:3;
+    drawChip(g,X,Y,px,ownerColor(c.owner),String(c.population));
     if(drawIconTile(g,cf,X,Y,px)){
-      if(px>=8){ g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y+px-3,3,3);
-        g.fillStyle='#ffe9b0'; g.font='bold '+Math.max(6,px-9)+'px sans-serif'; g.textAlign='left'; g.textBaseline='top';
-        g.fillText(String(c.population),X+1,Y+1); }
     } else {
       g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,px,px);
       if(px>=8){
@@ -2712,6 +2749,7 @@ function nvDraw(){
     } });
   (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
     if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
+    drawChip(g,(u.x-NVX)*px,(u.y-NVY)*px,px,ownerColor(u.owner),u.glyph||'-');
     if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*16,0,16,16,(u.x-NVX)*px,(u.y-NVY)*px,px,px); });
   const s=selUnit();
   if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
@@ -3360,7 +3398,9 @@ async function sysTrace(){
 document.querySelector('nav button[data-tab=systems]').addEventListener('click',()=>sysInit());
 async function fillEvents(){ try{ const ids=await (await fetch('/api/graphs')).json();
   $('#evpick').innerHTML=ids.map(i=>'<option>'+esc(i)+'</option>').join(''); }catch(e){} }
-async function refreshGame(){ GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }
+async function refreshGame(){
+  if(!NVPAL){ try{ NVPAL=await (await fetch('/assets/palette.json')).json(); }catch(e){ NVPAL=[]; } }
+  GAME=await (await fetch('/api/game/state')).json(); drawGame(); showSel(); }
 async function fireEvent(){
   const id=$('#evpick').value; if(!id) return;
   const d=await (await fetch('/api/graph/run',{method:'POST',body:JSON.stringify({id})})).json();
@@ -3892,6 +3932,8 @@ function drawGame(){
   // the villages' wandering braves (roam step per turn; unit type 19 sprite)
   for(const b of (GAME.braves||[])){
     if(!fogSeen(b.x,b.y)) continue;
+    // tribe chip behind the sprite; '-' glyph (owner>=4 order-code clamp @0x03915)
+    drawChip(g, b.x*GCELL, b.y*GCELL, GCELL, tribeColor(b.tribe), '-');
     if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,b.x*GCELL,b.y*GCELL,GCELL,GCELL);
   }
   // unexplored tiles render hidden (the game's black fog; "Unexplored" per @OTHER_NAMES)
@@ -3905,10 +3947,10 @@ function drawGame(){
     if(!fogSeen(c.x,c.y)) continue;                     // hidden until explored
     const X=c.x*GCELL, Y=c.y*GCELL;
     const cf=(c.fort!=null&&c.fort>=0)?c.fort:3;
+    // population chip behind the colony sprite (nation color box + count,
+    // like the original's colony box)
+    drawChip(g, X, Y, GCELL, ownerColor(c.owner), String(c.population));
     if(drawIconTile(g,cf,X,Y,GCELL)){
-      g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y+GCELL-4,4,4);
-      g.fillStyle='#ffe9b0'; g.font='bold 9px sans-serif'; g.textAlign='left'; g.textBaseline='top';
-      g.fillText(String(c.population), X+1, Y+1);
     } else {
       g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,GCELL,GCELL);
       g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
@@ -3932,6 +3974,9 @@ function drawGame(){
   for(const u of GAME.units){
     if(u.owner!==0 && !fogSeen(u.x,u.y)) continue;      // rivals visible only in explored tiles
     const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
+    // the ownership chip first, so the piece stands in front of it (original
+    // layering: box off to the side behind each sprite)
+    drawChip(g, u.x*GCELL, u.y*GCELL, GCELL, ownerColor(u.owner), u.glyph||'-');
     if(UNITS_READY && u.type<23){
       g.drawImage(UNITSET, u.type*16,0,16,16, cx-DS/2, cy-DS/2, DS, DS);
     } else {
@@ -3939,14 +3984,6 @@ function drawGame(){
       g.lineWidth=1; g.strokeStyle='#000'; g.stroke();
       g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
       g.fillText((u.name||'?')[0], cx, cy+1);
-    }
-    // the AI mission char (ai.md 4 state alphabet) -- the game's F8 "Show
-    // Strategy" cheat overlay, drawn as a small badge on rival units
-    if(u.ai_state && u.ai_state!=='X' && u.ai_state!=='0'){
-      g.fillStyle='#111'; g.fillRect(cx+GCELL*0.15, cy-GCELL*0.85, GCELL*0.55, GCELL*0.55);
-      g.fillStyle='#ffe27a'; g.font='bold '+Math.round(GCELL*0.45)+'px monospace';
-      g.textAlign='center'; g.textBaseline='middle';
-      g.fillText(u.ai_state, cx+GCELL*0.42, cy-GCELL*0.56);
     }
   }
   // selection ring on top

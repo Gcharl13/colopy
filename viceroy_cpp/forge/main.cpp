@@ -1921,6 +1921,62 @@ static forge::JsonValue endgame_json() {
     return o;
 }
 
+// ---- unit ownership chip (unit_orders.md Â§2.2/Â§2.3 + NAMES @COUNTRY/@TRIBES) --------
+// The on-map status glyph is the 0x54DE accelerator/status-letter array
+// {'-','S','T','G','L','F','F','B','P','R','-','-','-'}, indexed by the EXE order
+// code (UnitRecord 0x314C, row == code); renderer func @0x0386A. Our spine Order
+// enum has its own ordering, so each order maps to its byte-verified row letter.
+static char unit_status_glyph(const Unit& u) {
+    // Override (@0x0393B): a ship not owned by the viewer draws its cargo count
+    // as an ASCII digit ('0'+count) instead of an order letter (types 0x0D..0x12,
+    // own-viewer test @0x03935).
+    if (unit_stats(u.type).move_class == 99 && u.owner != 0) {
+        int n = 0;
+        for (int h = 0; h < 6; ++h) if (u.hold_good[h] >= 0) ++n;
+        return (char)('0' + n);
+    }
+    // Override (@0x0397B): AI units draw the persistent AI mission char
+    // (UnitRecord 0x314B, ai.md Â§4), replaced by 'E' when >= 0x80 (@0x03986).
+    // The si-state gate over which passes render it is undecoded; RECONSTRUCTED
+    // as "AI-owned units with a live mission char".
+    if (u.owner != 0 && (unsigned char)u.ai_state >= 0x80) return 'E';
+    if (u.owner != 0 && u.ai_state && u.ai_state != 'X') return (char)u.ai_state;
+    switch (u.order) {
+        case ORDER_SENTRY:      return 'S';   // EXE code 1
+        case ORDER_TRADE_ROUTE: return 'T';   // EXE code 2
+        case ORDER_GOTO:        return 'G';   // EXE code 3
+        case ORDER_FORTIFY:                   // EXE code 5 (in progress) and
+        case ORDER_FORTIFIED:   return 'F';   // EXE code 6 (active) share 'F'
+        case ORDER_CLEAR_PLOW:  return 'P';   // EXE code 8
+        case ORDER_ROAD:        return 'R';   // EXE code 9
+        default:                return '-';   // EXE code 0 / reserved AI rows
+    }
+}
+
+// Owner-chip fill colors as VICEROY.PAL indices: EU powers from NAMES @COUNTRY.color
+// (legend "color => must be 9-15": England 12, France 9, Spain 14, Netherlands 13),
+// tribes from the NAMES @TRIBES 5th column (file legend "tech-level, color": Inca 97,
+// Aztec 149, Arawak 54, Iroquois 87, Cherokee 67, Apache 111, Sioux 118, Tupi 71;
+// EXE tribe order = PowerRecord idx 4..11). Resolved live so table edits bite.
+static forge::JsonValue chip_colors_json() {
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    auto cell_int = [&](const std::string& path, int def) {
+        forge::JsonValue v = forge::resolve_binding(path, cx);
+        if (v.is_number()) return v.as_int(def);
+        if (v.is_string() && !v.str.empty()) return atoi(v.str.c_str());
+        return def;
+    };
+    forge::JsonValue o = jobj(), pw = jarr(), tr = jarr();
+    for (int p = 0; p < 4; ++p)                          // chip idx per power SLOT
+        pw.arr.push_back(forge::json_num(cell_int(
+            "@COUNTRY[" + std::to_string(power_nation(g_game, p)) + "].color", 15)));
+    for (int t = 0; t < 8; ++t)                          // chip idx per tribe
+        tr.arr.push_back(forge::json_num(cell_int(
+            "@TRIBES[" + std::to_string(t) + "].value", 15)));
+    o.obj["powers"] = pw; o.obj["tribes"] = tr;
+    return o;
+}
+
 static forge::JsonValue game_state_json() {
     forge::JsonValue o = jobj();
     o.obj["active"] = jbool(g_game_active);
@@ -1968,6 +2024,7 @@ static forge::JsonValue game_state_json() {
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);
     o.obj["nation"] = forge::json_num(g_game.nation);
+    o.obj["chip"] = chip_colors_json();
     o.obj["difficulty"] = forge::json_num(g_game.difficulty);
     o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
     o.obj["royal_money"] = forge::json_num((double)g_game.powers[0].royal_money);
@@ -2041,6 +2098,10 @@ static forge::JsonValue game_state_json() {
         uj.obj["name"] = forge::json_str(nm ? nm : "?");
         uj.obj["owner"] = forge::json_num(u.owner);
         uj.obj["order"] = forge::json_num(u.order);
+        {   // ownership-chip status letter (unit_orders.md Â§2.3)
+            char gl[2] = {unit_status_glyph(u), 0};
+            uj.obj["glyph"] = forge::json_str(gl);
+        }
         uj.obj["moves"] = forge::json_num(u.moves_left);
         uj.obj["target_x"] = forge::json_num(u.target_x);
         uj.obj["target_y"] = forge::json_num(u.target_y);
