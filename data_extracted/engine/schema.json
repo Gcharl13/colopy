@@ -2416,20 +2416,10 @@
         {
           "name": "food_growth_threshold",
           "type": "int",
-          "default": 50,
+          "default": 200,
           "rw": "write",
           "group": "economy",
-          "meaning": "half-surplus food store (+0xAA) to add +1 pop, no Stable",
-          "tier": "R",
-          "source": "sim/rules.hpp Config"
-        },
-        {
-          "name": "food_growth_threshold_stable",
-          "type": "int",
-          "default": 25,
-          "rw": "write",
-          "group": "economy",
-          "meaning": "growth threshold with a Stable (building 17)",
+          "meaning": "warehouse Food to add +1 pop (USER RULING + warehousing.md; 200 stored -> new colonist, -200)",
           "tier": "R",
           "source": "sim/rules.hpp Config"
         },
@@ -2440,6 +2430,26 @@
           "rw": "write",
           "group": "economy",
           "meaning": "colony population cap",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "rush_gold_per_hammer",
+          "type": "int",
+          "default": 8,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "gold to rush-buy one remaining hammer (RECONSTRUCTED)",
+          "tier": "R",
+          "source": "sim/rules.hpp Config"
+        },
+        {
+          "name": "artillery_base_cost",
+          "type": "int",
+          "default": 500,
+          "rw": "write",
+          "group": "economy",
+          "meaning": "Europe artillery purchase base; +100 per prior purchase (counter +0x1E, @0x035124/@0x035282). Base RECONSTRUCTED.",
           "tier": "R",
           "source": "sim/rules.hpp Config"
         },

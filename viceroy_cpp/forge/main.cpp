@@ -3713,6 +3713,29 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             o.obj["recruit_cost"] = forge::json_num((double)cost);
             return J(200, o);
         }
+        // Purchase artillery in Europe (the PURCHASE menu): the one recruit type
+        // with a count-based cost -- cost = base + artillery_bought*100 (the
+        // PowerRecord +0x1E escalation counter, read x100 @0x035124/@0x03527B,
+        // inc @0x035282, zeroed at new-game init @0x03662F). The base is the
+        // recruit-pool slot cost word, not decomposed in the spec -- the
+        // cfg.artillery_base_cost knob (RECONSTRUCTED default 500).
+        if (path == "/api/europe/purchase" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(0) : 0;
+            long cost = g_active_rules.cfg.artillery_base_cost
+                      + (long)g_engine_extra.artillery_bought * 100;
+            if (g_game.powers[0].gold < cost) return err(400, "not enough gold");
+            g_game.powers[0].gold -= cost;
+            ++g_engine_extra.artillery_bought;               // @0x035282
+            Unit u; u.type = ARTILLERY; u.owner = 0; u.alive = true;
+            if (ci >= 0 && ci < (int)g_colony_xy.size()) { u.x = g_colony_xy[ci].first; u.y = g_colony_xy[ci].second; }
+            g_world.units.push_back(u);
+            forge::JsonValue o = game_state_json();
+            o.obj["purchase_cost"] = forge::json_num((double)cost);
+            o.obj["next_cost"] = forge::json_num((double)(g_active_rules.cfg.artillery_base_cost
+                                                          + (long)g_engine_extra.artillery_bought * 100));
+            return J(200, o);
+        }
         if (path == "/api/europe/train" && method == "POST") {     // pay gold for a trained specialist
             forge::JsonValue b = forge::json_parse(body);
             int prof = b.find("profession") ? b.find("profession")->as_int(-1) : -1;

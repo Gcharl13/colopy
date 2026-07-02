@@ -30,7 +30,7 @@ The runtime interprets this schema; offsets are traceability-only.
 
 ## Config (cfg.<name>) — tunable scalars
 
-warehouse_cap_base, sol_decay_shift, sol_inflow_mult, sol_birth_bonus, food_growth_threshold, food_growth_threshold_stable, max_population, tory_divisor_base, expert_era_bonus, expert_mfg_mult, price_drift_shift, fortify_def_num, fortify_def_den, ff_human_scale, ff_human_offset, ff_ai_scale, ff_ai_offset, ff_post_indep_scale, ff_post_indep_offset, ff_compounding_shift, ff_first_father_shift, ff_gate_years, ref_regulars_scale, ref_regulars_offset, ref_cavalry_scale, ref_cavalry_offset, ref_manowar_scale, ref_manowar_offset, ref_artillery_scale, ref_artillery_offset, ref_accrue_scale, ref_accrue_offset, ref_accrue_gate_years
+warehouse_cap_base, sol_decay_shift, sol_inflow_mult, sol_birth_bonus, food_growth_threshold, max_population, rush_gold_per_hammer, artillery_base_cost, tory_divisor_base, expert_era_bonus, expert_mfg_mult, price_drift_shift, fortify_def_num, fortify_def_den, ff_human_scale, ff_human_offset, ff_ai_scale, ff_ai_offset, ff_post_indep_scale, ff_post_indep_offset, ff_compounding_shift, ff_first_father_shift, ff_gate_years, ref_regulars_scale, ref_regulars_offset, ref_cavalry_scale, ref_cavalry_offset, ref_manowar_scale, ref_manowar_offset, ref_artillery_scale, ref_artillery_offset, ref_accrue_scale, ref_accrue_offset, ref_accrue_gate_years
 
 ## Reference tables (@SECTION[row].col)
 

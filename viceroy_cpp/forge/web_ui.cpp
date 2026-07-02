@@ -2226,7 +2226,18 @@ async function euRecruitSlot(i){
 function euAction(r){
   if(r===0){ const i=(EU.dock||[]).findIndex(t=>t>=0);
     if(i<0) ui.toast('no immigrant waiting'); else euRecruitSlot(i); }
-  else ui.toast((r===1?'PURCHASE':'TRAIN')+': pick via the Tables tab @UNIT costs (train route: /api/europe/train)');
+  else if(r===1) euPurchase();
+  else ui.toast('TRAIN: pick a profession via /api/europe/train (see the Tables tab @JOB europe_value)');
+}
+// PURCHASE (artillery): cost = base + bought*100 (the +0x1E escalation counter,
+// @0x035124/@0x035282; base = the cfg.artillery_base_cost knob).
+async function euPurchase(){
+  try{
+    const r=await (await fetch('/api/europe/purchase',{method:'POST',body:JSON.stringify({colony:0})})).json();
+    if(r.error){ ui.toast(r.error); return; }
+    ui.toast('Artillery purchased for '+r.purchase_cost+' gold (next: '+r.next_cost+')');
+  }catch(e){ ui.toast('purchase failed'); }
+  euOpen(); if(typeof GAME!=='undefined'&&GAME) refreshGame();
 }
 
 // ==== Native map HUD (spec/ui/map_view.md) -- the game's MAIN screen, from the EXTRACTED layout ====

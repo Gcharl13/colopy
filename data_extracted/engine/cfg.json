@@ -6,9 +6,10 @@
       {"name": "sol_decay_shift", "default": 6, "meaning": "SoL EMA decay 1/(2^shift) = 1/64"},
       {"name": "sol_inflow_mult", "default": 2, "meaning": "SoL divisor inflow = mult*population"},
       {"name": "sol_birth_bonus", "default": 100, "meaning": "SoL divisor bump on a birth"},
-      {"name": "food_growth_threshold", "default": 50, "meaning": "half-surplus food store (+0xAA) to add +1 pop, no Stable"},
-      {"name": "food_growth_threshold_stable", "default": 25, "meaning": "growth threshold with a Stable (building 17)"},
+      {"name": "food_growth_threshold", "default": 200, "meaning": "warehouse Food to add +1 pop (USER RULING + warehousing.md; 200 stored -> new colonist, -200)"},
       {"name": "max_population", "default": 32, "meaning": "colony population cap"},
+      {"name": "rush_gold_per_hammer", "default": 8, "meaning": "gold to rush-buy one remaining hammer (RECONSTRUCTED)"},
+      {"name": "artillery_base_cost", "default": 500, "meaning": "Europe artillery purchase base; +100 per prior purchase (counter +0x1E, @0x035124/@0x035282). Base RECONSTRUCTED."},
       {"name": "tory_divisor_base", "default": 10, "meaning": "tory penalty divisor (human: base-diff; ai: base)"},
       {"name": "expert_era_bonus", "default": 2, "meaning": "expert on an era good: +bonus"},
       {"name": "expert_mfg_mult", "default": 2, "meaning": "expert on a manufactured good: *mult"}

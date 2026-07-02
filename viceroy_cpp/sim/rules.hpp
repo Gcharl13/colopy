@@ -47,6 +47,11 @@ struct Config {
     int max_population        = 32;   // colony population cap
     int rush_gold_per_hammer  = 8;    // RECONSTRUCTED: gold to rush-buy one remaining hammer (no
                                       // byte-verified buyout curve in the spec; editable knob)
+    int artillery_base_cost   = 500;  // Europe artillery purchase base. The +100-per-purchase
+                                      // escalation is BYTE-VERIFIED (PowerRecord +0x1E counter,
+                                      // read x100 @0x035124/@0x03527B, inc @0x035282); the base
+                                      // is the recruit-pool slot +0x04 word whose fill is not
+                                      // decomposed in the spec -- RECONSTRUCTED default 500.
     int tory_divisor_base     = 10;   // tory penalty divisor (human: base-diff; ai: base)
     int expert_era_bonus      = 2;    // expert on an era good: +bonus
     int expert_mfg_mult       = 2;    // expert on a manufactured good: *mult
