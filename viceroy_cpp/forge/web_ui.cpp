@@ -2657,6 +2657,14 @@ function nvMenu(k){
     }).join(''));
     return;
   }
+  if(k==='@TRADE'){                                    // all three rows -> the route editor
+    // (trade_routes.md; the editor dialog covers list/create/delete in one
+    // surface, using the verbatim @TRADENAME/@TRADETYPE/@TRADENONE strings)
+    ui.popup('TRADE',items.map(it=>
+      '<div style="padding:2px 0"><a href="#" onclick="ui.close();trOpen();return false">'+esc(it)+'</a></div>'
+    ).join(''));
+    return;
+  }
   if(k==='@VIEW'){                                     // zoom rows are live (map_view.md 6.2)
     // menu order 120x96..15x12 = zoom 3..0; the current level gets the # mark slot highlighted
     ui.popup('VIEW',items.map(it=>{
