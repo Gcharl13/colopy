@@ -42,7 +42,15 @@ from the manual / observed strings; trigger wiring not byte-traced).
   step owns one bit and is **idempotent**: its event site does
   `test [0x538x], <bit>; jne skip` → emit `@TUTORIALn` → `or [0x538x], <bit>` (mark
   shown), so each lesson fires **once** when its event first occurs. New-game init
-  `mov word [0x5386], 0x0E` (`@0x755EB`) pre-marks three steps as already-shown.
+  `mov word [0x5386], 0x0E` (`@0x755EB`). **CORRECTED 2026-07-02 (full re-disassembly):**
+  the 0x0E init does NOT pre-mark tutorial steps -- bits 1..3 of `[0x5386]` are
+  **sound-driver capability flags** sharing the byte (recomputed `@0x23301`:
+  `and [0x5386],0xF1` then `or 2` if `[0xA2]!=0`, `or 4` if `[0xA0]!=0`, `or 8`
+  from the `0x191F:0x306` driver probe). There is also a **second tutorial mask
+  byte `[0x5380]`** (steps 13/14/15/16/17/19) and two stepless emitters (T2 gated
+  on the land-sighted event flag `[0x5382]&0x80`; T18 with no once-mark found).
+  The message handle passed to the emit wrappers is the **file offset of the key
+  string minus 0x1D9A0** (the in-EXE key table; verified across all steps).
 
 ## 3. Formulas & rules
 
@@ -50,14 +58,32 @@ from the manual / observed strings; trigger wiring not byte-traced).
   Each `@TUTORIALn` is emitted inline at the game function for its triggering event,
   guarded by its `[0x5386]/[0x5387]` bit (`tools/rtlink/event_emitters.json` handle map):
 
-  | Step (handle) | Bit | Triggering function / event |
+  | Step (handle) | Bit | Trigger (guard conditions byte-cited at the test site) |
   |---|---|---|
-  | TUTORIAL1 (`0x8B3`) | `[0x5386]&0x10` | `func_020F50` — unit move/land dispatcher (`@0x20FFB`) |
-  | TUTORIAL5 (`0x1197`) | `[0x5387]&0x01` | `func_033F6A` — market/king phase (`@0x3651F`) |
-  | TUTORIAL6 (`0xEC7`) | `[0x5387]&0x02` | `func_02D658` — colony processor / found colony (`@0x2EA4C`) |
-  | TUTORIAL7 (`0xC99`) | `[0x5387]&0x04` | `func_02883E` — unit-movement event (`@0x28D41`) |
-  | TUTORIAL4/12 (`0xD3D`/`0xD47`) | `[0x5386]&0x80` / `[0x5387]&0x80` | `func_02C5D4` — Europe/docks (`@0x2C74A`/`@0x2C7BC`) |
-  | TUTORIAL3/8–11/13–15/19 | other `[0x5386]/[0x5387]` bits | `func_020F50` (`@0x21350`/`@0x213E9`/`@0x21481`/`@0x215CD`/…) |
+  | TUTORIAL1 (`0x8B3`) | `[0x5386]&0x10` | game start / move-land dispatcher (test `@0x20FC3`, mark `@0x20FFB`) |
+  | TUTORIAL2 (`0x8A9`) | — (event flag `[0x5382]&0x80`) | uncharted land sighted (`test [0x5382],0x80` `@0x20F3A`, emit `@0x20F43`; no shown-bit — once-semantics live in the flag's lifecycle, **R**) |
+  | TUTORIAL3 (`0x8E9`) | `[0x5386]&0x40` | a Pioneers unit (`[bx+0x3146]==2` `@0x2117B`) on a good first-colony site (test `@0x21160`, mark `@0x21350`) |
+  | TUTORIAL4 (`0xD3D`) | `[0x5386]&0x80` | colony screen (test `@0x2C688`, emit `@0x2C742`, mark `@0x2C74A`) |
+  | TUTORIAL5 (`0x1197`) | `[0x5387]&0x01` | dock immigrants waiting (test `@0x3650B`, mark `@0x3651F`) |
+  | TUTORIAL6 (`0xEC7`) | `[0x5387]&0x02` | colony cargo ready (test `@0x2E9DC`, mark `@0x2EA4C`) |
+  | TUTORIAL7 (`0xC99`) | `[0x5387]&0x04` | colony growth / stockade (test `@0x28D04`, mark `@0x28D41`) |
+  | TUTORIAL8 (`0x8F3`) | `[0x5387]&0x08` | a no-specialty unit near a native village (test `@0x21358`, mark `@0x213E9`) |
+  | TUTORIAL9 (`0x8FD`) | `[0x5387]&0x10` | a Pioneers unit on a road-worthy square (test `@0x213F2`, mark `@0x21481`) |
+  | TUTORIAL10 (`0x907`) | `[0x5387]&0x20` | a Pioneers unit on a plow/clear-worthy square (test `@0x2148C`, mark `@0x215CD`) |
+  | TUTORIAL11 (`0x8BD`) | `[0x5387]&0x40` | the early ship-value lesson (test `@0x21004`, mark `@0x21079`) |
+  | TUTORIAL12 (`0xD47`) | `[0x5387]&0x80` | Europe docks, ship waiting for cargo (test `@0x2C756`, mark `@0x2C7BC`; a second reader gates other Europe code `@0x3F6C5`) |
+  | TUTORIAL13 (`0x8C8`) | **`[0x5380]&0x01`** | Pioneers arrive in the New World — gates `turn [0x538E] < 0x14` `@0x21089`, type==2 `@0x21094` (test `@0x21082`, mark `@0x210C4`) |
+  | TUTORIAL14 (`0x8D3`) | **`[0x5380]&0x02`** | the Soldiers lesson — same `turn < 0x14` gate `@0x210D3` (test `@0x210CC`, mark `@0x21104`) |
+  | TUTORIAL15 (`0x8DE`) | **`[0x5380]&0x08`** | a Colonists unit (type 0 `@0x2111E`) at a colony tile (`0x181F:0x7BE` lookup `@0x2112B`) (test `@0x21113`, mark `@0x21157`) |
+  | TUTORIAL16 (`0xBAD`) | **`[0x5380]&0x10`** | the colony food lesson — colony-screen context, gate `[0x8E5A]!=0` `@0x286EF` (test `@0x286E1`, emit via `lea bx/lcall 0x181F:0x3FE` `@0x286FA`, mark `@0x286FF`) |
+  | TUTORIAL17 (`0x1129`) | **`[0x5380]&0x20`** | the European Status Screen lesson (test `@0x35BE3`, emit `@0x35C26`, mark `@0x35C2B`) |
+  | TUTORIAL18 (`0xFDB`) | — (no once-mark found) | the Europe cargo-cost lesson in the buy flow — `%NUMBER` fills from `[bx+0x2A/0x2C]` via `0x181F:0x9AE`, emit `@0x32764`; idempotence unresolved (**R**) |
+  | TUTORIAL19 (`0x912`) | **`[0x5380]&0x80`** | a native **Convert** unit — type 0 `@0x215DF` **and profession `[bx+0x315B]==0x1B`** `@0x215E6` (test `@0x215D4`, mark `@0x215FA`) |
+  | HOWTOWIN (`0x1C3F`) | `[0x5386]&0x01` | the rebel power (`[0x5398]` compare `@0x5DC43`) recaptures a colony during the War of Independence (test `@0x5DC49`, mark `@0x5DC50`) |
+
+  Two emit wrappers reach the same dialog engine: `push handle; lcall 0x181F:0x652`
+  (most steps) and `lea bx,[handle]; lcall 0x181F:0x3FE` (T16/T17/T18). `[0x5380]`
+  bits 0x04/0x40 and `[0x5386]&0x20` have no test/or sites — unused.
 
 - No numeric formulas.
 

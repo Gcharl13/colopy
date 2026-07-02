@@ -94,11 +94,23 @@ struct EngineExtra {
     long bells_since_declaration = 0;  // bells produced after the declaration (component 6;
                                        // spec gates on the intervention flag [0x5382]&2 --
                                        // gating on the declaration is RECONSTRUCTED)
-    // In-game tutorial (tutorial.md): the 16-bit step-shown bitmask
-    // [0x5386] (low) / [0x5387] (high); event-driven and idempotent -- each
-    // step fires once when its bit is clear, then sets it. New-game init
-    // 0x000E (@0x755EB pre-marks three steps).
+    // In-game tutorial (tutorial.md, full re-disassembly 2026-07-02): the
+    // 16-bit step-shown bitmask [0x5386] (low) / [0x5387] (high); event-driven
+    // and idempotent. New-game init 0x000E (@0x755EB) -- bits 1..3 are NOT
+    // tutorial marks but sound-driver capability flags sharing the byte
+    // (recomputed @0x23301); kept for byte-fidelity, never tested here.
+    // Bits: 0x0001 HOWTOWIN, 0x0010 T1, 0x0040 T3, 0x0080 T4, 0x0100 T5,
+    // 0x0200 T6, 0x0400 T7, 0x0800 T8, 0x1000 T9, 0x2000 T10, 0x4000 T11,
+    // 0x8000 T12.
     uint16_t tutorial_mask = 0x000E;
+    // The SECOND tutorial mask byte [0x5380]: 0x01 T13, 0x02 T14, 0x08 T15,
+    // 0x10 T16, 0x20 T17, 0x80 T19 (0x04/0x40 unused in the EXE).
+    uint8_t  tutorial_mask2 = 0;
+    // Engine-local once-latches for the two stepless emitters: bit0 = T2
+    // (the EXE gates on the land-sighted event flag [0x5382]&0x80 with no
+    // shown-bit), bit1 = T18 (no once-mark found at the emit @0x32764).
+    // The latch itself is RECONSTRUCTED; the emit sites are byte-cited.
+    uint8_t  tutorial_extra = 0;
     // @GAME menu options (menus.md @GAME; the verbatim toggle lists
     // @GAMEOPTIONS/@COLONYOPTIONS/@SOUNDOPTIONS + @PICKMUSIC). Bit i = list
     // row i (0-based after the title line), 1 = enabled; defaults all-on
