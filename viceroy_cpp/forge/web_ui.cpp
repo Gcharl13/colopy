@@ -2296,14 +2296,36 @@ async function euPurchase(){
 // minimap (241,8,79,41), sidebar B/C) AND the pixel-measured sidebar line table (tier R, cited) --
 // nothing hand-transcribed. Menu titles = the verbatim MENU.TXT sections; sidebar strings = the
 // verbatim @INFO/@MISC/@SEASONS/@UNIT lines; minimap dot colors = NAMES @COLORS palette indices.
-let NV=false, NVX=0, NVY=0, NVLAY=null, NVMENU=null, NVPAL=null;
+let NV=false, NVX=0, NVY=0, NVZ=0, NVLAY=null, NVMENU=null, NVPAL=null;
+// VIEW zoom state [0x184] 0..3 (map_view.md 6.2, render_frame_setup @0x6787C):
+// SPAN_W[0x8544]=0xF<<zoom, SPAN_H[0x8546]=0xC<<zoom, TILE_PX[0x5AD4]=0x10>>zoom
+// -> 15x12@16px / 30x24@8px / 60x48@4px / 120x96@2px (the four @VIEW rows).
+function nvSpan(){ return {W:15<<NVZ, H:12<<NVZ, px:16>>NVZ}; }
+function nvRefresh(){                                  // redraw in place, or re-open the HUD if a
+  if(document.getElementById('nvview')) nvDraw();      // menu popup replaced it (nvMenu path)
+  else nvRender();
+}
+function nvZoom(z){                                    // clamp + keep the view center fixed
+  z=Math.max(0,Math.min(3,z)); if(z===NVZ){ nvRefresh(); return; }
+  const o=nvSpan(); const cx=NVX+(o.W>>1), cy=NVY+(o.H>>1);
+  NVZ=z; const n=nvSpan();
+  NVX=Math.max(0,Math.min(GAME.w-n.W,cx-(n.W>>1))); NVY=Math.max(0,Math.min(GAME.h-n.H,cy-(n.H>>1)));
+  nvRefresh();
+}
+function nvCenter(){                                   // ~Center View (accel C): on the active unit
+  const u=selUnit(); if(!u){ nvRefresh(); return; }
+  const s=nvSpan();
+  NVX=Math.max(0,Math.min(GAME.w-s.W,u.x-(s.W>>1))); NVY=Math.max(0,Math.min(GAME.h-s.H,u.y-(s.H>>1)));
+  nvRefresh();
+}
 async function nvOpen(){
   if(!GAME||!GAME.w) await refreshGame();
   if(!NVLAY) NVLAY=await (await fetch('/api/layout?screen=map_view')).json();
   if(!NVMENU){ try{ NVMENU=await (await fetch('/api/text?file=MENU')).json(); }catch(e){ NVMENU={}; } }
   if(!NVPAL){ try{ NVPAL=await (await fetch('/assets/palette.json')).json(); }catch(e){ NVPAL=[]; } }
   const c=(GAME.colonies||[]).find(c=>c.owner===0)||{x:20,y:22};
-  NVX=Math.max(0,c.x-7); NVY=Math.max(0,c.y-6);       // center the 15x12 viewport on colony 0
+  const sp=nvSpan();
+  NVX=Math.max(0,c.x-(sp.W>>1)); NVY=Math.max(0,c.y-(sp.H>>1)); // center the viewport on colony 0
   NV=true;
   nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('INFO',()=>nsLabels('SEASONS',
     ()=>nsLabels('UNFORESTED',()=>nsLabels('FORESTED',()=>nsLabels('OTHER',()=>nvRender())))))));
@@ -2376,40 +2398,42 @@ function nvRender(){
   ui.popup('Map view &mdash; native HUD (arrows scroll, click to select/move)',stage);
   setTimeout(nvDraw,0);
 }
-// the 15x12 @16px viewport window + the 1px/tile minimap with the @COLORS owner-dot palette
+// the zoomed viewport window + the 1px/tile minimap with the @COLORS owner-dot palette
 function nvDraw(){
   const vcv=document.getElementById('nvview'); if(!vcv||!GAME) return;
-  const W=15,H=12,t=[];
+  const sp=nvSpan(), W=sp.W,H=sp.H,px=sp.px,t=[];
   for(let y=0;y<H;y++) for(let x=0;x<W;x++){
     const mx=NVX+x,my=NVY+y;
     t.push((mx<0||my<0||mx>=GAME.w||my>=GAME.h)?25:GAME.terrain[my*GAME.w+mx]);
   }
   const g=vcv.getContext('2d');
-  composeMap(g,t,W,H,16,true);
+  composeMap(g,t,W,H,px,true);
   const inWin=(x,y)=>x>=NVX&&y>=NVY&&x<NVX+W&&y<NVY+H;
   for(let y=0;y<H;y++) for(let x=0;x<W;x++)            // fog inside the viewport
-    if(!fogSeen(Math.min(GAME.w-1,NVX+x),Math.min(GAME.h-1,NVY+y))){ g.fillStyle='#04060c'; g.fillRect(x*16,y*16,16,16); }
+    if(!fogSeen(Math.min(GAME.w-1,NVX+x),Math.min(GAME.h-1,NVY+y))){ g.fillStyle='#04060c'; g.fillRect(x*px,y*px,px,px); }
   (GAME.settlements||[]).forEach(s=>{ if(!inWin(s.x,s.y)||!fogSeen(s.x,s.y)) return;
-    const X=(s.x-NVX)*16,Y=(s.y-NVY)*16;
-    g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+8,Y+2); g.lineTo(X+14,Y+14); g.lineTo(X+2,Y+14); g.closePath(); g.fill(); });
+    const X=(s.x-NVX)*px,Y=(s.y-NVY)*px;
+    g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); });
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)      // rumor medallions
-    if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*16,(ry-NVY)*16,16,16);
+    if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
   (GAME.colonies||[]).forEach(c=>{ if(!inWin(c.x,c.y)||!fogSeen(c.x,c.y)) return;
-    const X=(c.x-NVX)*16,Y=(c.y-NVY)*16;
-    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,16,16);
-    g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,12,12);
-    g.fillStyle='#ffe9b0'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(String(c.population),X+8,Y+9); });
+    const X=(c.x-NVX)*px,Y=(c.y-NVY)*px;
+    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,px,px);
+    if(px>=8){
+      g.fillStyle='#2a1c10'; g.fillRect(X+(px>>3),Y+(px>>3),px-(px>>2),px-(px>>2));
+      g.fillStyle='#ffe9b0'; g.font='bold '+Math.max(6,px-7)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(String(c.population),X+(px>>1),Y+(px>>1)+1);
+    } });
   (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
     if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
-    if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*32,0,32,32,(u.x-NVX)*16-8,(u.y-NVY)*16-8,32,32); });
+    if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*32,0,32,32,(u.x-NVX)*px-(px>>1),(u.y-NVY)*px-(px>>1),px*2,px*2); });
   const s=selUnit();
-  if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=2; g.strokeRect((s.x-NVX)*16+1,(s.y-NVY)*16+1,14,14); }
+  if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
   // minimap: a 1px/tile scrolling window; dot colors = NAMES @COLORS palette indices
   // (0x830 ocean/coast=68, 0x831 land=149, fog=8, owned=128 -- resolved via VICEROY.PAL)
   const mcv=document.getElementById('nvmini'); if(!mcv) return;
   const mg=mcv.getContext('2d'), MW=mcv.width, MH=mcv.height;
-  const ox=Math.max(0,Math.min(GAME.w-MW,NVX+7-(MW>>1))), oy=Math.max(0,Math.min(GAME.h-MH,NVY+6-(MH>>1)));
+  const ox=Math.max(0,Math.min(GAME.w-MW,NVX+(W>>1)-(MW>>1))), oy=Math.max(0,Math.min(GAME.h-MH,NVY+(H>>1)-(MH>>1)));
   for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
     const mx=ox+x,my=oy+y;
     let col='#000';
@@ -2422,11 +2446,11 @@ function nvDraw(){
     mg.fillStyle=col; mg.fillRect(x,y,1,1);
   }
   mg.strokeStyle=nvPal(15); mg.lineWidth=1;            // the white viewport rect (idx 0x0F)
-  mg.strokeRect(NVX-ox+0.5,NVY-oy+0.5,15,12);
+  mg.strokeRect(NVX-ox+0.5,NVY-oy+0.5,W,H);
 }
 function nvClick(ev){
-  const r=ev.target.getBoundingClientRect();
-  const x=NVX+Math.floor((ev.clientX-r.left)/(16*NS_SC)), y=NVY+Math.floor((ev.clientY-r.top)/(16*NS_SC));
+  const r=ev.target.getBoundingClientRect(), px=nvSpan().px;
+  const x=NVX+Math.floor((ev.clientX-r.left)/(px*NS_SC)), y=NVY+Math.floor((ev.clientY-r.top)/(px*NS_SC));
   ev.stopPropagation();
   const here=(GAME.units||[]).findIndex(u=>u.x===x&&u.y===y&&u.alive!==false);
   if(here>=0&&GAME.units[here].owner===0){ SEL=GAME.units[here].id; nvRender(); return; }
@@ -2449,6 +2473,22 @@ function nvMenu(k){
         return '<div style="padding:2px 0"><a href="#" onclick="ui.close();declareIndependence();return false">'+esc(it)+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join('')||'<i>empty</i>');
+    return;
+  }
+  if(k==='@VIEW'){                                     // zoom rows are live (map_view.md 6.2)
+    // menu order 120x96..15x12 = zoom 3..0; the current level gets the # mark slot highlighted
+    ui.popup('VIEW',items.map(it=>{
+      let m;
+      if(/Zoom In/i.test(it))  return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvZoom(NVZ-1);return false">'+esc(it)+'</a></div>';
+      if(/Zoom Out/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvZoom(NVZ+1);return false">'+esc(it)+'</a></div>';
+      if((m=it.match(/Zoom Level\s*#?(\d+)/i))){
+        const z={120:3,60:2,30:1,15:0}[+m[1]];
+        const cur=(z===NVZ)?' &#10004;':'';
+        return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvZoom('+z+');return false">'+esc(it)+cur+'</a></div>';
+      }
+      if(/Center View/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvCenter();return false">'+esc(it)+'</a></div>';
+      return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
+    }).join(''));
     return;
   }
   ui.popup(esc(k.slice(1))+' &mdash; verbatim MENU.TXT items',
@@ -2773,10 +2813,15 @@ window.addEventListener('keydown',e=>{
   if(!NV||!document.querySelector('#modal.show')) return;
   const t=document.activeElement&&document.activeElement.tagName;
   if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT') return;
+  const k=e.key.toLowerCase();
+  if(k==='z'){ e.preventDefault(); nvZoom(NVZ-1); return; }   // @VIEW Zoom In# ~Z
+  if(k==='x'){ e.preventDefault(); nvZoom(NVZ+1); return; }   // @VIEW Zoom Out ~X
+  if(k==='c'){ e.preventDefault(); nvCenter(); return; }      // @VIEW ~Center View
   const d={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[e.key];
   if(!d) return;
   e.preventDefault();
-  NVX=Math.max(0,Math.min(GAME.w-15,NVX+d[0])); NVY=Math.max(0,Math.min(GAME.h-12,NVY+d[1]));
+  const s=nvSpan();
+  NVX=Math.max(0,Math.min(GAME.w-s.W,NVX+d[0])); NVY=Math.max(0,Math.min(GAME.h-s.H,NVY+d[1]));
   nvDraw();
 });
 
