@@ -2454,6 +2454,44 @@ async function nvSave(){
   const d=await (await fetch('/api/game/save',{method:'POST',body:'{}'})).json();
   ui.toast(d.saved?'Game saved':'Save failed'); nvRefresh();
 }
+// ---- CHEAT menu (@CUP): forge/debug tools over existing engine features ----
+// Rows without a subsystem (Sound Test / Memory Check / Debug Info Flags /
+// Test Routine / Set Human Player) stay verbatim-muted.
+let NV_MARKS=[];                                       // [{x,y,label,color}] overlay pins
+async function chUnit(){                               // F01 Create Unit at the view center
+  const types=await (await fetch('/api/cheat/units')).json();
+  const s=nvSpan(), cx=NVX+(s.W>>1), cy=NVY+(s.H>>1);
+  ui.popup('Create Unit &mdash; at ('+cx+','+cy+')',types.map(t=>
+    '<div style="padding:1px 0"><a href="#" onclick="chUnitAt('+t.type+','+cx+','+cy+');return false">'
+    +esc(t.name)+'</a></div>').join(''));
+}
+async function chUnitAt(type,x,y){
+  const d=await (await fetch('/api/cheat/unit',{method:'POST',body:JSON.stringify({type:type,x:x,y:y})})).json();
+  if(d.error){ ui.toast(d.error); return; }
+  GAME=d; ui.close(); nvRefresh();
+}
+async function chReveal(){                             // F04 Reveal Map
+  GAME=await (await fetch('/api/cheat/reveal',{method:'POST',body:'{}'})).json();
+  nvRefresh();
+}
+async function chKillIndians(){                        // F06 Kill Indians
+  GAME=await (await fetch('/api/cheat/kill_indians',{method:'POST',body:'{}'})).json();
+  ui.toast('Native settlements removed'); nvRefresh();
+}
+async function chRevolution(){                         // F07 Advance Revolution Status
+  GAME=await (await fetch('/api/cheat/revolution',{method:'POST',body:'{}'})).json();
+  ui.toast('Sons of Liberty: '+((GAME.war||{}).national_sol||0)+'%'); nvRefresh();
+}
+async function chStrategy(){                           // F08 Show Strategy (the AI plan-map)
+  const d=await (await fetch('/api/cheat/strategy')).json();
+  NV_MARKS=(d.slots||[]).map(s=>({x:s.x,y:s.y,label:'P'+s.power+':'+s.goal,color:ownerColor(s.power)}));
+  ui.toast(NV_MARKS.length+' plan slots (turn scratch; step a turn to fill)'); nvRefresh();
+}
+async function chSites(){                              // F09 Show Colony Sites (site scorer)
+  const d=await (await fetch('/api/cheat/sites')).json();
+  NV_MARKS=(d.sites||[]).map(s=>({x:s.x,y:s.y,label:String(s.value),color:'#3fd47a'}));
+  ui.toast('Top '+NV_MARKS.length+' colony sites'); nvRefresh();
+}
 // ---- Colonizopedia (@PEDIA; the verbatim PEDIA.TXT entries) ----
 // The MENU @PEDIA category rows map onto the PEDIA_sections key families
 // (@CARGO0..15 / @UNIT0..23 / @TERRAIN0..28 / @JOB0..27 / @BUILDING0..41 /
@@ -2648,6 +2686,13 @@ function nvDraw(){
   const s=selUnit();
   if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
   }                                                    // end !NVH overlay block
+  for(const m of NV_MARKS){                            // CHEAT overlays (plan-map / colony sites)
+    if(!inWin(m.x,m.y)) continue;
+    const X=(m.x-NVX)*px,Y=(m.y-NVY)*px;
+    g.strokeStyle=m.color||'#3fd47a'; g.lineWidth=1; g.strokeRect(X+0.5,Y+0.5,px-1,px-1);
+    if(px>=8){ g.fillStyle=m.color||'#3fd47a'; g.font='bold '+Math.max(6,px-9)+'px monospace';
+      g.textAlign='center'; g.textBaseline='middle'; g.fillText(m.label,X+(px>>1),Y+(px>>1)); }
+  }
   // minimap: a 1px/tile scrolling window; dot colors = NAMES @COLORS palette indices
   // (0x830 ocean/coast=68, 0x831 land=149, fog=8, owned=128 -- resolved via VICEROY.PAL)
   const mcv=document.getElementById('nvmini'); if(!mcv) return;
@@ -2728,6 +2773,23 @@ function nvMenu(k){
         +esc(it.replace(/~/g,''))+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join(''));
+    return;
+  }
+  if(k==='@CUP'){                                      // CHEAT tools over engine features
+    const live=[
+      [/Create Unit/i,       "chUnit()"],
+      [/Reveal Map/i,        "chReveal()"],
+      [/Kill Indians/i,      "chKillIndians()"],
+      [/Advance Revolution/i,"chRevolution()"],
+      [/Show Strategy/i,     "chStrategy()"],
+      [/Show Colony Sites/i, "chSites()"],
+    ];
+    ui.popup('CHEAT',items.map(it=>{
+      const clean=it.replace(/~/g,'');
+      const m=live.find(l=>l[0].test(clean));
+      if(m) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();'+m[1]+';return false">'+esc(clean)+'</a></div>';
+      return '<div class="muted" style="padding:1px 0">'+esc(clean)+'</div>';
+    }).join('')+'<div style="margin-top:6px"><a href="#" onclick="NV_MARKS=[];ui.close();nvRefresh();return false">Clear overlays</a></div>');
     return;
   }
   if(k==='@PEDIA'){                                    // Colonizopedia (verbatim PEDIA.TXT)

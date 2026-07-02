@@ -7,6 +7,7 @@
 // vs the un-modded baseline -- so a designer can see exactly how an edit moves the
 // game. It links the headless sim in-process; this is the "balance laboratory."
 // The Dear ImGui GUI + editors are the next cycle (F2).
+#include "ai.hpp"
 #include "founding_fathers.hpp"
 #include "economy.hpp"
 #include "market.hpp"
@@ -3031,6 +3032,79 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) return err(400, "no active game");
             g_engine_extra.retired = true;
             return J(200, game_state_json());
+        }
+        // ---- CHEAT menu backends (MENU @CUP rows) -- forge/debug tools over
+        // existing engine features. Rows without a subsystem here (Sound Test,
+        // Memory Check, Debug Info Flags, Test Routine, Set Human Player) stay
+        // menu-muted rather than faked.
+        if (path == "/api/cheat/units") {                // the @UNIT type list for Create Unit
+            forge::JsonValue a = jarr();
+            for (int t = 0; t < 24; ++t) {
+                const char* nm = unit_stats(t).name; if (!nm || !*nm) continue;
+                forge::JsonValue e = jobj();
+                e.obj["type"] = forge::json_num(t); e.obj["name"] = forge::json_str(nm);
+                a.arr.push_back(e);
+            }
+            return J(200, a);
+        }
+        if (path == "/api/cheat/unit" && method == "POST") {   // F01 Create Unit
+            forge::JsonValue b = forge::json_parse(body);
+            int type = b.find("type") ? b.find("type")->as_int(0) : 0;
+            int x = b.find("x") ? b.find("x")->as_int(-1) : -1;
+            int y = b.find("y") ? b.find("y")->as_int(-1) : -1;
+            if (type < 0 || type >= 24) return err(400, "bad @UNIT type");
+            if (g_world.terrain_id(x, y) < 0) return err(400, "off the map");
+            Unit u; u.type = type; u.owner = 0; u.x = x; u.y = y; u.alive = true;
+            g_world.units.push_back(u);
+            return J(200, game_state_json());
+        }
+        if (path == "/api/cheat/reveal" && method == "POST") { // F04 Reveal Map
+            for (uint8_t& fb : g_world.fog) fb |= 0x10;        // player-0 seen bit (player+4)
+            return J(200, game_state_json());
+        }
+        if (path == "/api/cheat/kill_indians" && method == "POST") {   // F06 Kill Indians
+            g_engine_extra.settlements.clear();
+            return J(200, game_state_json());
+        }
+        if (path == "/api/cheat/revolution" && method == "POST") {
+            // F07 Advance Revolution Status: the per-invocation step is not
+            // spec'd -- +10 national SoL clamped to 100 (RECONSTRUCTED).
+            g_engine_extra.national_sol = std::min(100, g_engine_extra.national_sol + 10);
+            return J(200, game_state_json());
+        }
+        if (path == "/api/cheat/strategy") {             // F08 Show Strategy: the plan-map
+            forge::JsonValue a = jarr();                 // (ai.md 6.1, DS:0x98B0 4x64 slots)
+            for (int p = 0; p < 4; ++p)
+                for (const auto& s : g_game.plan[p]) {
+                    if (s.goal_type == 0xFF) continue;
+                    forge::JsonValue e = jobj();
+                    e.obj["power"] = forge::json_num(p); e.obj["x"] = forge::json_num(s.x);
+                    e.obj["y"] = forge::json_num(s.y); e.obj["goal"] = forge::json_num(s.goal_type);
+                    e.obj["priority"] = forge::json_num(s.priority);
+                    a.arr.push_back(e);
+                }
+            forge::JsonValue o = jobj(); o.obj["slots"] = a; return J(200, o);
+        }
+        if (path == "/api/cheat/sites") {                // F09 Show Colony Sites (ai.md scorer)
+            struct Site { int v, x, y; };
+            std::vector<Site> scored;
+            for (int y = 0; y < g_world.map_h; ++y)
+                for (int x = 0; x < g_world.map_w; ++x) {
+                    int t = g_world.terrain_id(x, y);
+                    if (t < 0 || game_is_water(t)) continue;
+                    int v = vc::sim::colony_site_value(g_world, g_active_rules, x, y);
+                    if (v > 0) scored.push_back({v, x, y});
+                }
+            std::sort(scored.begin(), scored.end(), [](const Site& a2, const Site& b2){ return a2.v > b2.v; });
+            forge::JsonValue a = jarr();
+            for (size_t i = 0; i < scored.size() && i < 20; ++i) {
+                forge::JsonValue e = jobj();
+                e.obj["value"] = forge::json_num(scored[i].v);
+                e.obj["x"] = forge::json_num(scored[i].x);
+                e.obj["y"] = forge::json_num(scored[i].y);
+                a.arr.push_back(e);
+            }
+            forge::JsonValue o = jobj(); o.obj["sites"] = a; return J(200, o);
         }
         if (path == "/api/tutorial") {                   // drain the pending lessons
             forge::JsonValue o = jobj(), a = jarr();
