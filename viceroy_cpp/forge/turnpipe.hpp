@@ -43,6 +43,11 @@ std::vector<vc::sim::RumorResult>& rumor_log();
 // (colony index, result) -- drained into the @TRAINPROFESSION/@TRAINFAIL notices.
 std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log();
 
+// Food shortages from the production phase (colony.md 3, func_02D658
+// @0x2E219/@0x2E265): (colony index, event) with event 1 = running out
+// (@FOODLOW), 2 = a colonist starved (@STARVE1), 3 = vanished (@VANISH).
+std::vector<std::pair<int, int>>& food_log();
+
 // Battlefield promotions from the units phase (training.md 3) -- drained into
 // the @VETERAN/@CONTINENTAL notices.
 std::vector<vc::sim::PromoteResult>& promote_log();

@@ -250,8 +250,29 @@ static void test_food_growth() {
     colony_economic_step(s2, 1);                         // last colonist starves
     CHECK(s2.population == 0 && s2.x == -1, "whole-colony depletion vanishes (@VANISH)");
     Colony s3; s3.population = 1; s3.stockpile[FOOD] = 10; s3.food_per_turn = -4;
-    colony_economic_step(s3, 1);
+    int fe = 0;
+    colony_economic_step(s3, 1, default_rules(), &fe);
     CHECK(s3.population == 1 && s3.stockpile[FOOD] == 6, "the warehouse covers a deficit");
+    CHECK(fe == 0, "no food event while covered for another turn");
+    colony_economic_step(s3, 1, default_rules(), &fe);   // store 2 < deficit 4
+    CHECK(fe == 1, "one turn of cover left -> @FOODLOW event");
+
+    std::printf("SoL membership modifiers (colony.md 2):\n");
+    Colony m; m.rebel_A = 50; m.rebel_B = 100;
+    CHECK(sol_pct(m) == 50, "base A*100/B");
+    CHECK(sol_pct(m, 1u << 18, true) == 70, "FF op 0x12 +20 for the human (@0x859C)");
+    CHECK(sol_pct(m, 1u << 18, false) == 50, "AI colonies get no bonus");
+    m.rebel_A = 95; m.rebel_B = 100;
+    CHECK(sol_pct(m, 1u << 18, true) == 100, "clamped at 100");
+    Colony e1; e1.rebel_A = 64; e1.rebel_B = 200;
+    sol_update(e1, 10, 1, default_rules(), /*woi_tory*/true);
+    // tory-leader colony in the WoI: bells = -(10/2) = -5 (@0x2D9F2);
+    // A = 64 - (64>>6) + (-5) = 58
+    CHECK(e1.rebel_A == 58, "WoI tory-leader colony bells halved+negated -> A %d", e1.rebel_A);
+    Colony e2; e2.rebel_A = 0; e2.rebel_B = 4000;
+    sol_update(e2, 30, 40, default_rules());
+    // pop 40 > bells 30: bells += 30/(-20) = -1 (@0x2DA0E) -> A = 29
+    CHECK(e2.rebel_A == 29, "pop>bells downward pressure -> A %d", e2.rebel_A);
 }
 
 static void test_immigration() {

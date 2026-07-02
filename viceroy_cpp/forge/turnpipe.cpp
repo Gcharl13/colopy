@@ -59,12 +59,15 @@ const std::vector<std::string>& turn_phases() {
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
 std::vector<std::pair<int, vc::sim::TeachResult>> g_teach_log;   // (colony, result) per graduation
+std::vector<std::pair<int, int>> g_food_log;                      // (colony, event 1/2/3) per shortage
 void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     std::vector<vc::sim::TeachResult> tr;
     for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
         Colony& c = w.colonies[ci];
         colony_compute_production(c, g.difficulty, rd, ff_owned);   // colonists -> food/bells/hammers/goods
-        colony_economic_step(c, g.difficulty, rd);                  // then SoL / build / growth off those
+        int fe = 0;
+        colony_economic_step(c, g.difficulty, rd, &fe);             // then SoL / build / growth off those
+        if (fe) g_food_log.push_back({ci, fe});
         tr.clear();
         school_teach_step(c, rd, rng, &tr);                         // then the school teaches (func_02D658)
         for (const auto& t : tr) g_teach_log.push_back({ci, t});
@@ -110,6 +113,7 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
 
 std::vector<vc::sim::RumorResult>& rumor_log() { return g_rumor_log; }
 std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log() { return g_teach_log; }
+std::vector<std::pair<int, int>>& food_log() { return g_food_log; }
 std::vector<vc::sim::PromoteResult>& promote_log() { return g_promote_log; }
 std::vector<vc::sim::ShoreFire>& shore_log() { return g_shore_log; }
 

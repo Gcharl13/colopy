@@ -9,14 +9,21 @@ namespace vc::sim {
 int warehouse_cap(const Colony& c, const RuleData& rd = default_rules());
 
 // Sons-of-Liberty % from the EMA state (sol_membership_pct @0x8524): A*100/B.
-int sol_pct(const Colony& c);
+// Sons-of-Liberty membership percent (sol_membership_pct @0x8557/@0x855E):
+// A*100/B clamped to 100; the FF with op 0x12 (row 18) adds +20 for the
+// human player's colonies, clamp 100 (@0x859C -- colony.md 2).
+int sol_pct(const Colony& c, uint32_t ff_owned = 0, bool human_owner = false);
 
 // Per-turn SoL EMA update (func_02D658 @0x2DA1C): decay 1/64, inflow 2*pop.
 //   B -= B>>cfg.sol_decay_shift; B = max(B,1); B += cfg.sol_inflow_mult*pop
 //   A += bells - (A>>shift); A = clamp(0, B)
 // Steady state => sol% ~= 50*bells/pop.
+// woi_tory_colony: the colony belongs to the tory-leader power ([0x53D2])
+// during the War of Independence -- its bells are halved and negated
+// (@0x2D9F2) before the EMA.
 void sol_update(Colony& c, int bells_this_turn, int population,
-                const RuleData& rd = default_rules());
+                const RuleData& rd = default_rules(),
+                bool woi_tory_colony = false);
 
 // Tory production penalty + expert match on a base tile yield
 // (compute_terrain_yield @0x9D14/@0x9DAD):
@@ -46,8 +53,13 @@ bool rush_build(Colony& c, Power& owner, long gold_cost);
 // One colony's per-turn economic update (the Production phase, per colony):
 // SoL EMA from bells, build progress from hammers, and food->population growth
 // (accumulate food_per_turn; +1 pop at threshold, surplus carried, max @0x009432).
+// food_event (optional out): 0 none, 1 = food running out (@FOODLOW/@FOOD1
+// family), 2 = a colonist starved (@STARVE1), 3 = the colony vanished
+// (@VANISH) -- the resident driver's per-colony message push (func_02D658
+// @0x2E219/@0x2E234/@0x2E265, once-per-turn gate [0xa898]).
 void colony_economic_step(Colony& c, int difficulty,
-                          const RuleData& rd = default_rules());
+                          const RuleData& rd = default_rules(),
+                          int* food_event = nullptr);
 
 // End-of-turn surplus disposal (warehousing.md §6.4, func_02D658 @0x2D6F7): after production is
 // banked, each tradeable good (1..15; Food(0) drives growth, excluded) whose stockpile >= 100 is

@@ -226,7 +226,7 @@ int terrain_good_yield(int terrain, int good) {
 void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
                                uint32_t ff_owned) {
     using vc::sim::NGOODS;
-    int sol = vc::sim::sol_pct(col);
+    int sol = vc::sim::sol_pct(col, ff_owned, col.human && col.owner_power == 0);
     // Sons-of-Liberty production bonus (spec @REBELMAJORITY/@REBELUNANIMOUS): each producing colonist
     // gains +1 at a rebel majority (SoL >= 50%) and +2 when unanimous (100%).
     int sol_bonus = sol >= 100 ? 2 : (sol >= 50 ? 1 : 0);
@@ -941,7 +941,8 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx) {
         if (dot != std::string::npos && c >= 0 && c < (int)w.colonies.size()) {
             std::string f = path.substr(dot + 1);
             if (f == "population") return num(w.colonies[c].population);
-            if (f == "sol")        return num(vc::sim::sol_pct(w.colonies[c]));
+            if (f == "sol")        return num(vc::sim::sol_pct(w.colonies[c], cx.x.ff_owned,
+                                       w.colonies[c].human && w.colonies[c].owner_power == 0));
             if (f == "bells")      return num(w.colonies[c].bells_per_turn);
             if (f == "hammers")    return num(w.colonies[c].hammers_per_turn);
             if (f == "food")       return num(w.colonies[c].food_per_turn);

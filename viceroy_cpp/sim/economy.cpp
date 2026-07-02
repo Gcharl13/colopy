@@ -7,14 +7,25 @@ int warehouse_cap(const Colony& c, const RuleData& rd) {
     return (c.warehouse_lvl + 1) * rd.cfg.warehouse_cap_base;
 }
 
-int sol_pct(const Colony& c) {
+int sol_pct(const Colony& c, uint32_t ff_owned, bool human_owner) {
     if (c.rebel_B <= 0) return 0;
     int p = (int)((int64_t)c.rebel_A * 100 / c.rebel_B);
+    if (human_owner && ((ff_owned >> 18) & 1u))
+        p += 20;                                   // FF op 0x12 bonus (@0x859C)
     return p > 100 ? 100 : p;
 }
 
-void sol_update(Colony& c, int bells_this_turn, int population, const RuleData& rd) {
+void sol_update(Colony& c, int bells_this_turn, int population, const RuleData& rd,
+                bool woi_tory_colony) {
     const Config& cfg = rd.cfg;
+    // new_bells pre-EMA modifiers (@0x2D9DF..0x2DA1C): during the War of
+    // Independence a colony owned by the tory-leader power ([0x53D2]) has its
+    // bells halved and negated (@0x2D9F2); otherwise a colony bigger than its
+    // bell output gets the small downward pressure bells/(-20) (@0x2DA0E,
+    // idiv 0xFFEC). (The [0x53D2] tory-leader global itself is not modeled --
+    // callers pass the flag; false when no tory leader exists.)
+    if (woi_tory_colony) bells_this_turn = -(bells_this_turn / 2);
+    else if (population > bells_this_turn) bells_this_turn += bells_this_turn / -20;
     // divisor B: decay 1/64, floor 1, inflow mult*pop
     c.rebel_B -= c.rebel_B >> cfg.sol_decay_shift;
     if (c.rebel_B < 1) c.rebel_B = 1;
@@ -42,9 +53,11 @@ int tory_expert_adjust(int base_yield, int population, int sol_percent,
     return y < 0 ? 0 : y;
 }
 
-void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
+void colony_economic_step(Colony& c, int difficulty, const RuleData& rd,
+                          int* food_event) {
     (void)difficulty;                          // tile-yield difficulty applies upstream
     const Config& cfg = rd.cfg;
+    if (food_event) *food_event = 0;
     sol_update(c, c.bells_per_turn, c.population, rd);
     build_step(c, c.hammers_per_turn, c.build_cost);
     // Food growth (USER RULING + warehousing.md:61-62): the food SURPLUS (produced - 2*pop, already
@@ -72,7 +85,14 @@ void colony_economic_step(Colony& c, int difficulty, const RuleData& rd) {
         if (!c.workers.empty()) c.workers.pop_back();
         c.rebel_B -= cfg.sol_birth_bonus;
         if (c.rebel_B < 1) c.rebel_B = 1;
-        if (c.population <= 0) { c.population = 0; c.x = -1; }
+        if (food_event) *food_event = 2;                 // @STARVE1
+        if (c.population <= 0) {
+            c.population = 0; c.x = -1;
+            if (food_event) *food_event = 3;             // @VANISH
+        }
+    } else if (food_event && c.food_per_turn < 0 &&
+               c.stockpile[FOOD] < -c.food_per_turn) {
+        *food_event = 1;                                 // @FOODLOW: one turn of cover left
     }
     c.food_accum = (uint32_t)(c.stockpile[FOOD] < 0 ? 0 : c.stockpile[FOOD]);  // legacy mirror (saves/bindings)
 }

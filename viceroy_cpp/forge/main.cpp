@@ -1195,6 +1195,24 @@ static void game_step() {
             g_turn_notices.push_back(m2);                               //   voyage not modeled
         }
         forge::shore_log().clear();
+        // Food shortages from the production phase (colony.md 3, func_02D658
+        // @0x2E219/@0x2E265): @FOODLOW warning, @STARVE1 death, @VANISH loss.
+        for (auto& [ci, ev] : forge::food_log()) {
+            auto ffill = [](std::string s, const char* tok, const std::string& v) {
+                for (size_t p2; (p2 = s.find(tok)) != std::string::npos; )
+                    s.replace(p2, std::strlen(tok), v);
+                return s;
+            };
+            const char* key = ev == 3 ? "@VANISH" : ev == 2 ? "@STARVE1" : "@FOODLOW";
+            std::string m = game_message_text(key);
+            m = ffill(m, "%STRING0", "#" + std::to_string(ci + 1));
+            if (ev == 1 && ci < (int)g_world.colonies.size()) {
+                size_t p2; std::string t = std::to_string(g_world.colonies[ci].stockpile[0]);
+                while ((p2 = m.find("%NUMBER0")) != std::string::npos) m.replace(p2, 8, t);
+            }
+            g_turn_notices.push_back(m);
+        }
+        forge::food_log().clear();
         // The native powers' turn (natives.md): tension decay, mission converts
         // (@INDIANSCONVERT), and raids by hostile settlements (the 6 @RAID* keys).
         {
@@ -1271,7 +1289,7 @@ static forge::JsonValue colony_detail_json(int ci) {
     o.obj["x"] = forge::json_num(ci < (int)g_colony_xy.size() ? g_colony_xy[ci].first : 0);
     o.obj["y"] = forge::json_num(ci < (int)g_colony_xy.size() ? g_colony_xy[ci].second : 0);
     o.obj["population"] = forge::json_num(c.population);
-    o.obj["sol"] = forge::json_num(sol_pct(c));
+    o.obj["sol"] = forge::json_num(sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0));
     o.obj["warehouse"] = forge::json_num(c.warehouse_lvl);
     o.obj["food_accum"] = forge::json_num((double)c.food_accum);
     forge::JsonValue prod = jobj();                               // per-turn production breakdown
@@ -1346,7 +1364,7 @@ static forge::JsonValue colony_screen_json(int ci) {
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
     // SoL line "N% (M)" (spec 8.4): members = population - round(tory% * pop / 100).
-    { int sol = sol_pct(c), tory = 100 - sol;
+    { int sol = sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0), tory = 100 - sol;
       int members = c.population - (int)((tory * c.population + 50) / 100);
       o.obj["sol_members"] = forge::json_num(members); }
     o.obj["warehouse_cap"] = forge::json_num(vc::sim::warehouse_cap(c, g_active_rules));
@@ -1493,7 +1511,7 @@ static forge::JsonValue game_state_json() {
         cj.obj["y"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].second : 0);
         cj.obj["owner"] = forge::json_num(c.owner_power);
         cj.obj["population"] = forge::json_num(c.population);
-        cj.obj["sol"] = forge::json_num(sol_pct(c));
+        cj.obj["sol"] = forge::json_num(sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0));
         // production summary + counts so the map HUD has them; /api/colony/detail has the rest.
         forge::JsonValue prod = jobj();
         prod.obj["food"] = forge::json_num(c.food_per_turn); prod.obj["bells"] = forge::json_num(c.bells_per_turn);
@@ -1756,7 +1774,7 @@ static forge::JsonValue sandbox_state_json() {
     o.obj["gold"] = forge::json_num((double)g_sb_game.powers[0].gold);
     o.obj["tax"] = forge::json_num(g_sb_game.powers[0].tax);
     o.obj["population"] = forge::json_num(c.population);
-    o.obj["sol"] = forge::json_num(sol_pct(c));
+    o.obj["sol"] = forge::json_num(sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0));
     o.obj["bells"] = forge::json_num(c.bells_per_turn);
     o.obj["hammers"] = forge::json_num(c.hammers_per_turn);
     o.obj["food"] = forge::json_num(c.food_per_turn);
@@ -1793,7 +1811,7 @@ static forge::JsonValue sandbox_state_json() {
     o.obj["food_threshold"] = forge::json_num(g_active_rules.cfg.food_growth_threshold);
     // Sons-of-Liberty production bonus (+1 at >=50%, +2 at 100%) + the owned founding fathers, so
     // the screen can show the multiplier and which fathers are boosting production.
-    int sbsol = sol_pct(c);
+    int sbsol = sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0);
     o.obj["sol_bonus"] = forge::json_num(sbsol >= 100 ? 2 : (sbsol >= 50 ? 1 : 0));
     o.obj["ff_owned"] = forge::json_num((double)g_sb_extra.ff_owned);
     forge::JsonValue ffa = jarr();
@@ -2039,7 +2057,7 @@ static forge::JsonValue report_state_json() {
           r.obj["x"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].first : 0);
           r.obj["y"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].second : 0);
           r.obj["population"] = forge::json_num(c.population);
-          r.obj["sol"] = forge::json_num(sol_pct(c));
+          r.obj["sol"] = forge::json_num(sol_pct(c, g_engine_extra.ff_owned, c.human && c.owner_power == 0));
           int nb = 0; for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) ++nb;
           r.obj["buildings"] = forge::json_num(nb);
           r.obj["food"] = forge::json_num(c.stockpile[0]);
