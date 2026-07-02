@@ -84,7 +84,8 @@ int colony_site_value(const World& w, const RuleData& rd, int x, int y) {
     if (center == 27) return 0;                       // Mountains centre -> 0
     if (center == 28) score >>= 1;                    // Hills centre -> halved
     long v = score / 10;                              // idiv 10 @0x6410E
-    if (v < 0) v = 0; if (v > 15) v = 15;             // clamp(v,0,0xF) (func_0048CC)
+    if (v < 0) v = 0;
+    if (v > 15) v = 15;                               // clamp(v,0,0xF) (func_0048CC)
     return (int)v;
 }
 

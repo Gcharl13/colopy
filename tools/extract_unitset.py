@@ -23,7 +23,7 @@ SRC = "docs/atlas/sprites/atlas_ICONS.png"
 OUT_DIR = "data_extracted/tileset"
 PITCH = 58
 SEPS = [24, 81, 139, 197, 255, 313, 371, 429, 487, 546]   # row-band boundaries (last = H)
-CELL = 32
+CELL = 16
 LABEL_SKIP = 15                                            # px of label strip at each band top
 
 # sim UnitType (0..23) -> ICONS PNG frame index (VICEROY @UNIT sprite col minus 1).
@@ -63,6 +63,16 @@ def main():
         if not bb:
             continue
         sp = im.crop(bb)
+        # black is the sheet's baked transparency key: alpha it out
+        _px = sp.load()
+        for _y in range(sp.height):
+            for _x in range(sp.width):
+                _r, _g, _b, _a = _px[_x, _y]
+                if _r + _g + _b <= 24:
+                    _px[_x, _y] = (0, 0, 0, 0)
+        # the contact sheet draws sprites at 2x (see extract_tileset.py) --
+        # halve back to native so a unit fits its 16x16 map tile
+        sp = sp.resize((max(1, round(sp.width / 2)), max(1, round(sp.height / 2))), Image.NEAREST)
         sp = sp.crop((0, 0, min(sp.width, CELL), min(sp.height, CELL)))   # clamp to cell
         ox = t * CELL + (CELL - sp.width) // 2
         oy = (CELL - sp.height) // 2

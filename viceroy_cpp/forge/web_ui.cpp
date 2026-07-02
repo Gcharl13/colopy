@@ -989,11 +989,11 @@ $('#agallery').addEventListener('click', e=>{
 let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widgets:[]}, selW=null, BINDV={}, SINIT=false; const SS=2;
 // sprite sheets a screen 'sprite' widget can draw (horizontal strips under /assets/tileset).
 // ICONS is the FULL ICONS.SS (131 frames at native size; per-frame rects lazy-loaded from
-// icons.json, frame = ssdec index = EXE sprite id - 1). UNITS/UNIT = the 24 32x32 unit crops.
+// icons.json, frame = ssdec index = EXE sprite id - 1). UNITS/UNIT = the 24 native 16x16 unit crops.
 const SHEETS={
-  BUILDING:{url:'/assets/tileset/buildings.png',cw:56,ch:48,n:48},
-  UNIT:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24},
-  UNITS:{url:'/assets/tileset/units.png',cw:32,ch:32,n:24},
+  BUILDING:{url:'/assets/tileset/buildings.png',cw:28,ch:24,n:48},
+  UNIT:{url:'/assets/tileset/units.png',cw:16,ch:16,n:24},
+  UNITS:{url:'/assets/tileset/units.png',cw:16,ch:16,n:24},
   ICONS:{url:'/assets/tileset/icons.png',rectsUrl:'/assets/tileset/icons.json',n:131}};
 const SHEETIMG={};
 // Per-frame rects for variable-width sheets (ICONS): frame -> {x,w,h}, loaded once on demand.
@@ -1492,11 +1492,12 @@ function nsIcon(frame,x,y,opts){ opts=opts||{};
 // The small baked "0/0x00" cell label is the accepted contact-sheet artifact -- the
 // raw .SS files are not in the repo (see wfPortrait).
 function nsSheet(sheet,sx,sy,w,h,x,y){
+  // sx/sy/w/h are 2x contact-sheet pixels (extract_tileset.py); display halved = native
   const S=NS_SC;
   return '<div style="position:absolute;left:'+(x*S)+'px;top:'+(y*S)+'px;'
-    +'width:'+(w*S)+'px;height:'+(h*S)+'px;image-rendering:pixelated;'
-    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-sx*S)+'px '+(-sy*S)+'px;'
-    +'background-size:'+(928*S)+'px auto"></div>';
+    +'width:'+(w/2*S)+'px;height:'+(h/2*S)+'px;image-rendering:pixelated;'
+    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-sx/2*S)+'px '+(-sy/2*S)+'px;'
+    +'background-size:'+(928/2*S)+'px auto"></div>';
 }
 // the shared 0x181F:0x236 PROPORTIONAL filled/empty icon strip (span 300, pitch
 // (span-w)/(count-1) clamped [1, w+1]): `value` filled sprites then `max-value` empty ones.
@@ -1616,7 +1617,7 @@ function congressPortraits(){
       +(on?'':(isOff?'\n(the Congress is working toward this father)':'\n(not yet acquired)'));
     h+='<img src="/assets/'+f.portrait+'" title="'+tip+'" loading="lazy" '
       +'onclick="event.stopPropagation();congressFather('+p.id+','+(on?'false':'true')+')" '
-      +'style="position:absolute;left:'+(p.x*CC_SC)+'px;top:'+(p.y*CC_SC)+'px;height:'+(84*CC_SC)+'px;'
+      +'style="position:absolute;left:'+(p.x*CC_SC)+'px;top:'+(p.y*CC_SC)+'px;height:'+(42*CC_SC)+'px;'
       +'width:auto;image-rendering:pixelated;cursor:pointer;'+filt+';'+ring+'">';
   }
   h+=ccOK();
@@ -1983,7 +1984,7 @@ function colFill(x,y,w,h,col){
   return '<div style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)+'px;width:'+(w*NS_SC)
     +'px;height:'+(h*NS_SC)+'px;background:'+(col||'#181c7d')+'"></div>';
 }
-// one BUILDING.SS cell (56x48 grid sheet) at native (x,y); onclickJs optional
+// one BUILDING.SS cell (native 28x24 grid sheet) at native (x,y); onclickJs optional
 function colBld(frame,x,y,title,onclickJs){
   const sh=SHEETS.BUILDING;
   return '<div title="'+esc(title||('BUILDING '+frame))+'"'
@@ -1995,7 +1996,7 @@ function colBld(frame,x,y,title,onclickJs){
     +'background-size:'+(sh.n*sh.cw*NS_SC)+'px '+(sh.ch*NS_SC)+'px;'
     +'background-position:-'+(frame*sh.cw*NS_SC)+'px 0;image-rendering:pixelated"></div>';
 }
-// one UNITS-sheet sprite (32x32) at native (x,y) -- the ships-in-port slots
+// one UNITS-sheet sprite (native 16x16) at native (x,y) -- the ships-in-port slots
 function colShip(type,x,y,title){
   const sh=SHEETS.UNITS;
   return '<div title="'+esc(title||'')+'" style="position:absolute;left:'+(x*NS_SC)+'px;top:'+(y*NS_SC)
@@ -2526,7 +2527,7 @@ function pediaSpr(kind,i){                             // catalog sprite thumbna
       +'background:url(/assets/tileset/terrain16.png) no-repeat;background-size:auto 32px;'
       +'background-position:-'+(baseFrame(i)*32)+'px 0"></div>';
   if(kind==='building') return '<div style="'+st+'width:56px;height:48px;'
-      +'background:url(/assets/tileset/buildings.png) no-repeat;'
+      +'background:url(/assets/tileset/buildings.png) no-repeat;background-size:auto 48px;'
       +'background-position:-'+(i*56)+'px 0"></div>';
   return '';
 }
@@ -2682,7 +2683,7 @@ function nvDraw(){
     } });
   (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
     if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
-    if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*32,0,32,32,(u.x-NVX)*px-(px>>1),(u.y-NVY)*px-(px>>1),px*2,px*2); });
+    if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*16,0,16,16,(u.x-NVX)*px,(u.y-NVY)*px,px,px); });
   const s=selUnit();
   if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
   }                                                    // end !NVH overlay block
@@ -2891,7 +2892,13 @@ function openSheet(name){
             }
           }
           fc.getContext('2d').putImageData(out,0,0);
-          frames.push({cv:fc,w:w,h:h});
+          // the contact sheets draw at 2x (extract_tileset.py) -- halve each
+          // frame to native so cinematic/glyph art sits at 320x200 scale
+          const hw=Math.max(1,Math.round(w/2)), hh=Math.max(1,Math.round(h/2));
+          const hc=document.createElement('canvas'); hc.width=hw; hc.height=hh;
+          const hg=hc.getContext('2d'); hg.imageSmoothingEnabled=false;
+          hg.drawImage(fc,0,0,hw,hh);
+          frames.push({cv:hc,w:hw,h:hh});
         }
       }
       res({frames:frames});
@@ -3356,7 +3363,8 @@ async function wfRecs(){
 // face; same accepted artifact as the extracted Founding-Father portraits, see
 // tools/extract_cc_portraits.py). Native-scaled portrait div, above the frame.
 function wfPortrait(sheet){
-  const S=NS_SC;
+  // the contact sheet draws at 2x (extract_tileset.py) -- render at half = native
+  const S=NS_SC/2;
   return '<div style="position:absolute;left:'+(-8*S)+'px;top:'+(-58*S)+'px;'
     +'width:'+(56*S)+'px;height:'+(64*S)+'px;image-rendering:pixelated;'
     +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-1*S)+'px '+(-17*S)+'px;'
@@ -3871,14 +3879,14 @@ function drawGame(){
     g.strokeStyle='#ffe27a'; g.lineWidth=2;
     g.beginPath(); g.moveTo(TX-4,TY-4); g.lineTo(TX+4,TY+4); g.moveTo(TX+4,TY-4); g.lineTo(TX-4,TY+4); g.stroke();
   }
-  // units (real sprites; disc fallback for the unused slot or before load). A unit sprite is 32px
-  // on a 16px map tile, so it draws at 2x the tile size -- the SAME pixel scale as the terrain.
-  const DS=GCELL*2;
+  // units (real sprites; disc fallback for the unused slot or before load). Unit sprites are
+  // native 16x16 -- one map tile, the same pixel scale as the terrain.
+  const DS=GCELL;
   for(const u of GAME.units){
     if(u.owner!==0 && !fogSeen(u.x,u.y)) continue;      // rivals visible only in explored tiles
     const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
     if(UNITS_READY && u.type<23){
-      g.drawImage(UNITSET, u.type*32,0,32,32, cx-DS/2, cy-DS/2, DS, DS);
+      g.drawImage(UNITSET, u.type*16,0,16,16, cx-DS/2, cy-DS/2, DS, DS);
     } else {
       g.beginPath(); g.arc(cx,cy,GCELL*0.4,0,7); g.fillStyle=ownerColor(u.owner); g.fill();
       g.lineWidth=1; g.strokeStyle='#000'; g.stroke();

@@ -42,7 +42,8 @@ void generate_map(World& w, const MapGenParams& p, const RandFn& rng,
             const bool south = y >= H / 2;
             int row = south ? (H - 1 - y) : y;
             int band = (row >> 2) + (p.temperature - 1);
-            if (band < 0) band = 0; if (band > 5) band = 5;
+            if (band < 0) band = 0;
+            if (band > 5) band = 5;
             int base = climate_base_terrain(band, south);
             if (base == 6 && rng(1, 2) == 2) base = 4;   // the Marsh 50% roll (@0x6500C)
             // features: hills / forest (the 0x20/0x80 board bits ~ our ids/bit6)
@@ -91,7 +92,8 @@ void generate_map(World& w, const MapGenParams& p, const RandFn& rng,
     // water tile just east of it.
     for (int pw = 0; pw < 4; ++pw) {
         int y = (H / 5) * (pw + 1);
-        if (y < 1) y = 1; if (y > H - 2) y = H - 2;
+        if (y < 1) y = 1;
+        if (y > H - 2) y = H - 2;
         int sx = W - 3;
         while (sx > 1 && (at(sx, y) & 0x1F) == 25) --sx;
         starts[pw].x = (sx < W - 3) ? sx + 1 : W - 3;    // the water tile east of land

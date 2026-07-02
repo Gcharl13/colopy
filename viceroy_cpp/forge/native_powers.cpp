@@ -25,7 +25,8 @@ int tension_apply(NativeSettlement& s, int power, int delta,
     if (delta > 0 && is_france)   delta >>= 1;      // French halving (@0x45E21)
     if (delta > 0 && pocahontas)  delta >>= 1;      // Pocahontas FF 16 (@0x45E30)
     int v = s.tension[power] + delta;
-    if (v < 0) v = 0; if (v > 100) v = 100;         // clamp [0,100] (@0x45E4A)
+    if (v < 0) v = 0;
+    if (v > 100) v = 100;                           // clamp [0,100] (@0x45E4A)
     s.tension[power] = v;
     return v;
 }

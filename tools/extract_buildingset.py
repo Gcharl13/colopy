@@ -31,7 +31,7 @@ OUT_DIR = "data_extracted/tileset"
 PITCH = 58
 SEPS = [24, 81, 139, 197]          # 3 row bands; last entry = band-3 bottom
 LABEL_SKIP = 14                     # px of index-label strip at each band top
-CELL_W, CELL_H = 56, 48            # fits the largest building (measured 56x43)
+CELL_W, CELL_H = 28, 24            # native cell (largest building 56x43 at 2x = 28x22)
 N = 48
 
 
@@ -60,6 +60,15 @@ def main():
         if not bb or bb[2] - bb[0] < 4 or bb[3] - bb[1] < 4:
             continue                        # blank frame
         sp = im.crop(bb).convert("RGBA")
+        # black is the sheet's baked transparency key: alpha it out
+        _px = sp.load()
+        for _y in range(sp.height):
+            for _x in range(sp.width):
+                _r, _g, _b, _a = _px[_x, _y]
+                if _r + _g + _b <= 24:
+                    _px[_x, _y] = (0, 0, 0, 0)
+        # atlas sprites are drawn at 2x (see extract_tileset.py) -- halve to native
+        sp = sp.resize((max(1, round(sp.width / 2)), max(1, round(sp.height / 2))), Image.NEAREST)
         sp = sp.crop((0, 0, min(sp.width, CELL_W), min(sp.height, CELL_H)))  # clamp
         spx = sp.load()
         for j in range(sp.height):

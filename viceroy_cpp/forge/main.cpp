@@ -871,7 +871,7 @@ static std::vector<std::string> g_turn_notices;
 // GET /api/tutorial; the client shows each as a wood-frame popup.
 static std::vector<std::pair<std::string, std::string>> g_tutorial_queue;
 static std::string game_message_text(const std::string& key);           // below
-static const std::vector<std::string>& labels_section(const std::string& s); // below
+static const std::vector<std::string>& labels_section(const char* s); // below
 static bool save_game_to(const std::string& path);                      // below (after dump_extra)
 static void tutorial_emit(const std::string& key,
                           const std::vector<std::string>& s,
@@ -1785,7 +1785,7 @@ static forge::JsonValue colony_detail_json(int ci) {
 // ---- the native colony screen (spec/ui/colony_screen.md, composer func_028592) ----
 // Everything the 12-panel composer draws, assembled server-side from live sim state +
 // the verbatim text sections. The frontend places it at the byte-cited rects.
-static const std::vector<std::string>& labels_section(const std::string& section);
+static const std::vector<std::string>& labels_section(const char* section);
 namespace forge { int terrain_good_yield(int terrain, int good); }
 static forge::JsonValue colony_screen_json(int ci) {
     forge::JsonValue o = colony_detail_json(ci);
@@ -2229,7 +2229,7 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
 // Verbatim text-section lines by name. LABELS.TXT first (@MISC/@CTITLE/@CMISC/...), then
 // NAMES.TXT (@SEASONS/...) and COLONY.TXT (the per-nation colony-name pools) -- every screen
 // string is pulled from these files, never authored.
-static const std::vector<std::string>& labels_section(const std::string& section) {
+static const std::vector<std::string>& labels_section(const char* section) {
     static std::map<std::string, std::vector<std::string>> cache;
     auto it = cache.find(section);
     if (it != cache.end()) return it->second;
@@ -2240,7 +2240,7 @@ static const std::vector<std::string>& labels_section(const std::string& section
     for (const char* src : kSources) {
         try {
             forge::JsonValue d = forge::json_parse_file(src);
-            const forge::JsonValue* m = d.find("@" + section);
+            const forge::JsonValue* m = d.find(std::string("@") + section);
             if (m && m->type == forge::JsonValue::String) {
                 std::string cur;
                 for (char ch : m->str) { if (ch == '\n') { lines.push_back(cur); cur.clear(); } else cur += ch; }
@@ -3010,7 +3010,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             // these exact strings -- text is data, never retyped.
             std::string sec = qparam(query, "section"); if (sec.empty()) sec = "MISC";
             forge::JsonValue a = jarr();
-            for (const std::string& s : labels_section(sec)) a.arr.push_back(forge::json_str(s));
+            for (const std::string& s : labels_section(sec.c_str())) a.arr.push_back(forge::json_str(s));
             forge::JsonValue o = jobj(); o.obj["section"] = forge::json_str("@" + sec); o.obj["lines"] = a;
             return J(200, o);
         }

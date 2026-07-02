@@ -10,8 +10,8 @@ data_extracted/sprites/<sheet>/<index>_<label>.png.
 ICONS.SS (the full sheet, 131 frames): sliced straight from the committed contact sheet
 docs/atlas/sprites/atlas_ICONS.png (928x546, black = transparency key): 16 columns at 58 px
 pitch, row bands separated at SEPS, a "N/0xHH" label strip at the top of each band
-(LABEL_SKIP clears it), sprite = the tight non-black bbox at its NATIVE size (sizes vary:
-goods ~15x30, foot units ~12-16x28, ships 26-42 wide -- there is no uniform 16/32 cell).
+(LABEL_SKIP clears it), sprite = the tight non-black bbox HALVED to native (the atlas draws at 2x;
+native sizes vary: goods ~8x15, foot units ~6-8x14, ships 13-21 wide -- no uniform cell).
 Frame identities are labeled ONLY where verified:
   - goods icons = frames 22..37 = 0x16 + good (spec/ui/colony_screen.md section 0.3: the EXE
     literal is good+0x17; the ssdec decode is off-by-one, png = EXE id - 1) -> @CARGO names;
@@ -108,6 +108,10 @@ def slice_icons(manifest):
             sprite = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
         else:
             sprite = rgba.crop(bbox)
+            # the contact sheet draws sprites at 2x (see extract_tileset.py):
+            # halve back to native so goods/units sit at original screen scale
+            sprite = sprite.resize((max(1, round(sprite.width / 2)),
+                                    max(1, round(sprite.height / 2))), Image.NEAREST)
         label = lab[fr]
         fname = f"{fr:03d}_{slug(label)}.png"
         sprite.save(os.path.join(d, fname))
