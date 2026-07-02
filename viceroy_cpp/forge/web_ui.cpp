@@ -2362,6 +2362,41 @@ function nvNext(){                                     // ~Wait for next unit / 
   SEL=pool[(i+1)%pool.length].id;
   nvCenter();
 }
+// ~Go to Port / ~Go to Place (accel G, manual L100) + @VIEW "Find Colony"
+// (no accelerator): a picker over the known colonies. Colony display names
+// come from the NAMES colony-name pool (the same list the colony screen uses).
+let NV_PICK=null;
+function nvColonyPick(title,cb){
+  const pool=['ENGLISH','FRENCH','SPANISH','DUTCH'][(GAME.nation||0)&3];
+  nsLabels(pool,()=>{
+    const cols=(GAME.colonies||[]).map((c,i)=>({c:c,i:i}))
+      .filter(e=>e.c.owner===0||fogSeen(e.c.x,e.c.y));
+    if(!cols.length){ ui.toast('No known colonies'); return; }
+    NV_PICK=cb;
+    ui.popup(title,cols.map(e=>{
+      let nm=nsLbl(pool,e.i,'Colony '+(e.i+1)); const cm=nm.indexOf(','); if(cm>=0) nm=nm.slice(0,cm);
+      return '<div style="padding:2px 0"><a href="#" onclick="ui.close();NV_PICK('+e.i
+        +');return false">'+esc(nm)+' ('+e.c.x+','+e.c.y+')</a></div>';
+    }).join(''));
+  });
+}
+function nvGoTo(){                                     // G: route the active unit to a colony
+  const u=selUnit(); if(!u){ ui.toast('No active unit'); return; }
+  nvColonyPick('GO TO',async i=>{
+    const c=GAME.colonies[i];
+    const r=await fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,tx:c.x,ty:c.y})});
+    const d=await r.json(); if(d.error){ ui.toast(d.error); return; }
+    GAME=d; nvRefresh();
+  });
+}
+function nvFindColony(){                               // @VIEW Find Colony: center the viewport
+  nvColonyPick('FIND COLONY',i=>{
+    const c=GAME.colonies[i], s=nvSpan();
+    NVX=Math.max(0,Math.min(GAME.w-s.W,c.x-(s.W>>1)));
+    NVY=Math.max(0,Math.min(GAME.h-s.H,c.y-(s.H>>1)));
+    nvRefresh();
+  });
+}
 async function nvOpen(){
   if(!GAME||!GAME.w) await refreshGame();
   if(!NVLAY) NVLAY=await (await fetch('/api/layout?screen=map_view')).json();
@@ -2536,6 +2571,7 @@ function nvMenu(k){
       [/Load Cargo/i,    "nvOrder('L')"],
       [/Unload Cargo/i,  "nvOrder('U')"],
       [/Dump Cargo/i,    "nvOrder('O')"],
+      [/Go to (Port|Place)/i, "nvGoTo()"],
       [/Return to Europe/i, "NV=false;euOpen()"],
       [/No Orders/i,     "nvNext()"],
       [/Disband/i,       "nvOrder('D')"],
@@ -2560,6 +2596,7 @@ function nvMenu(k){
         return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvZoom('+z+');return false">'+esc(it)+cur+'</a></div>';
       }
       if(/Center View/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvCenter();return false">'+esc(it)+'</a></div>';
+      if(/Find Colony/i.test(it)) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();nvFindColony();return false">'+esc(it)+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join(''));
     return;
@@ -2904,6 +2941,7 @@ window.addEventListener('keydown',e=>{
   if(k==='l'){ e.preventDefault(); nvOrder('L'); return; }    // ~Load Cargo (most valuable)
   if(k==='u'){ e.preventDefault(); nvOrder('U'); return; }    // ~Unload Cargo (most valuable)
   if(k==='o'){ e.preventDefault(); nvOrder('O'); return; }    // Dump Cargo ~Overboard
+  if(k==='g'){ e.preventDefault(); nvGoTo(); return; }        // ~Go to Port / ~Go to Place
   if(k==='e'){ e.preventDefault(); ui.close(); NV=false; euOpen(); return; }  // ~Return to Europe
   const d={ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[e.key];
   if(!d) return;
