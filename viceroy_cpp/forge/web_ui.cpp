@@ -1248,6 +1248,21 @@ function ownerColor(o){ return ['#d94f4f','#4f7fd9','#56b96a','#d9b84f'][o&3]; }
 const UNITSET = new Image(); let UNITS_READY = false;
 UNITSET.onload = () => { UNITS_READY = true; if (GAME) drawGame(); };
 UNITSET.src = '/assets/tileset/units.png';
+// icons.png for canvas draws (settlement/colony map sprites); rects from icons.json
+const ICONSIMG = new Image(); let ICONSIMG_READY = false;
+ICONSIMG.onload = () => { ICONSIMG_READY = true;
+  nsIconsReady(() => { if (GAME) drawGame(); });   // rects too, then repaint
+};
+ICONSIMG.src = '/assets/tileset/icons.png';
+// draw one native-size ICONS frame scaled into a px-sized tile, anchored
+// bottom-center (the dwelling/colony sprites sit on the tile like the original).
+function drawIconTile(g, frame, X, Y, px){
+  if(!ICONSIMG_READY || !NS_ICONS) return false;
+  const f = NS_ICONS.frames[frame]; if(!f) return false;
+  const s = px/16, w = f.w*s, h = f.h*s;
+  g.drawImage(ICONSIMG, f.x, 0, f.w, f.h, X+(px-w)/2, Y+px-h, w, h);
+  return true;
+}
 async function newGame(){
   SEL=-1;
   try { const r=await fetch('/api/game/new',{method:'POST'}); GAME=await r.json(); }
@@ -2670,16 +2685,30 @@ function nvDraw(){
                                                        // beneath shows (RECONSTRUCTED from the row name)
   (GAME.settlements||[]).forEach(s=>{ if(!inWin(s.x,s.y)||!fogSeen(s.x,s.y)) return;
     const X=(s.x-NVX)*px,Y=(s.y-NVY)*px;
-    g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); });
+    // the class dwelling: ICONS 10 tepee camp / 11 lodge village / 12 Aztec
+    // pyramid / 13 Inca stone city = frame 10 + @TRIBES.level
+    if(!drawIconTile(g,10+(s.level||0),X,Y,px)){
+      g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); }
+    if(s.capital&&px>=8){ g.fillStyle='#ffe27a'; g.fillRect(X+px-3,Y+1,2,2); } });
+  (GAME.braves||[]).forEach(b=>{ if(!inWin(b.x,b.y)||!fogSeen(b.x,b.y)) return;
+    if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,(b.x-NVX)*px,(b.y-NVY)*px,px,px); });
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)      // rumor medallions
     if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
   (GAME.colonies||[]).forEach(c=>{ if(!inWin(c.x,c.y)||!fogSeen(c.x,c.y)) return;
     const X=(c.x-NVX)*px,Y=(c.y-NVY)*px;
-    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,px,px);
-    if(px>=8){
-      g.fillStyle='#2a1c10'; g.fillRect(X+(px>>3),Y+(px>>3),px-(px>>2),px-(px>>2));
-      g.fillStyle='#ffe9b0'; g.font='bold '+Math.max(6,px-7)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-      g.fillText(String(c.population),X+(px>>1),Y+(px>>1)+1);
+    // ICONS colony sprites: 3 open / 0 stockade / 1 fort / 2 fortress
+    const cf=(c.fort!=null&&c.fort>=0)?c.fort:3;
+    if(drawIconTile(g,cf,X,Y,px)){
+      if(px>=8){ g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y+px-3,3,3);
+        g.fillStyle='#ffe9b0'; g.font='bold '+Math.max(6,px-9)+'px sans-serif'; g.textAlign='left'; g.textBaseline='top';
+        g.fillText(String(c.population),X+1,Y+1); }
+    } else {
+      g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,px,px);
+      if(px>=8){
+        g.fillStyle='#2a1c10'; g.fillRect(X+(px>>3),Y+(px>>3),px-(px>>2),px-(px>>2));
+        g.fillStyle='#ffe9b0'; g.font='bold '+Math.max(6,px-7)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(String(c.population),X+(px>>1),Y+(px>>1)+1);
+      }
     } });
   (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
     if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
@@ -3363,12 +3392,13 @@ async function wfRecs(){
 // face; same accepted artifact as the extracted Founding-Father portraits, see
 // tools/extract_cc_portraits.py). Native-scaled portrait div, above the frame.
 function wfPortrait(sheet){
-  // the contact sheet draws at 2x (extract_tileset.py) -- render at half = native
-  const S=NS_SC/2;
-  return '<div style="position:absolute;left:'+(-8*S)+'px;top:'+(-58*S)+'px;'
-    +'width:'+(56*S)+'px;height:'+(64*S)+'px;image-rendering:pixelated;'
-    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-1*S)+'px '+(-17*S)+'px;'
-    +'background-size:'+(928*S)+'px '+(82*S)+'px;z-index:2"></div>';
+  // one contact-sheet cell-0 portrait at native (the sheet draws 2x, cell
+  // content rows 39..81 below the label band): a 28x21 native window.
+  const S=NS_SC;
+  return '<div style="position:absolute;left:'+(-2*S)+'px;top:'+(-23*S)+'px;'
+    +'width:'+(28*S)+'px;height:'+(21*S)+'px;image-rendering:pixelated;'
+    +'background:url(/assets/sprites/atlas_'+sheet+'.png) '+(-0.5*S)+'px '+(-19.5*S)+'px;'
+    +'background-size:'+(464*S)+'px '+(41*S)+'px;z-index:2"></div>';
 }
 // Show one popup with the wood chrome. p: {key, body, choices[], tribe?}.
 // onChoice(choiceText) fires on a pick; onClose() when a no-choice box is
@@ -3845,29 +3875,46 @@ function drawGame(){
   // active Lost-City rumor sites (procedural hash): the PHYS0 rumor medallion (frame 103)
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)
     if(fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,rx*GCELL,ry*GCELL,GCELL,GCELL);
-  // native villages (first-class settlements; hidden until explored)
+  // native villages (first-class settlements; hidden until explored):
+  // the class dwelling = ICONS frame 10 + @TRIBES.level (tepee camp / lodge
+  // village / Aztec pyramid / Inca stone city)
   for(const s of (GAME.settlements||[])){
     if(!fogSeen(s.x,s.y)) continue;
     const X=s.x*GCELL, Y=s.y*GCELL;
-    g.fillStyle='#c9a227'; g.beginPath();
-    g.moveTo(X+GCELL/2,Y+2); g.lineTo(X+GCELL-2,Y+GCELL-2); g.lineTo(X+2,Y+GCELL-2);
-    g.closePath(); g.fill();
-    g.strokeStyle='#5e3e1c'; g.lineWidth=1; g.stroke();
-    if(s.capital){ g.fillStyle='#5e3e1c'; g.fillRect(X+GCELL/2-1,Y+GCELL/2,2,GCELL/2-2); }
+    if(!drawIconTile(g,10+(s.level||0),X,Y,GCELL)){
+      g.fillStyle='#c9a227'; g.beginPath();
+      g.moveTo(X+GCELL/2,Y+2); g.lineTo(X+GCELL-2,Y+GCELL-2); g.lineTo(X+2,Y+GCELL-2);
+      g.closePath(); g.fill();
+      g.strokeStyle='#5e3e1c'; g.lineWidth=1; g.stroke();
+    }
+    if(s.capital){ g.fillStyle='#ffe27a'; g.fillRect(X+GCELL-4,Y+1,3,3); }
+  }
+  // the villages' wandering braves (roam step per turn; unit type 19 sprite)
+  for(const b of (GAME.braves||[])){
+    if(!fogSeen(b.x,b.y)) continue;
+    if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,b.x*GCELL,b.y*GCELL,GCELL,GCELL);
   }
   // unexplored tiles render hidden (the game's black fog; "Unexplored" per @OTHER_NAMES)
   if(GAME.fog){ g.fillStyle='#04060c';
     for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++)
       if(!fogSeen(x,y)) g.fillRect(x*GCELL,y*GCELL,GCELL,GCELL);
   }
-  // colonies (settlement marker: owner-ringed block + population)
+  // colonies: the ICONS colony sprite (3 open / 0 stockade / 1 fort /
+  // 2 fortress) + an owner chip and the population count
   for(const c of GAME.colonies){
     if(!fogSeen(c.x,c.y)) continue;                     // hidden until explored
     const X=c.x*GCELL, Y=c.y*GCELL;
-    g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,GCELL,GCELL);
-    g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
-    g.fillStyle='#ffe9b0'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(String(c.population), X+GCELL/2, Y+GCELL/2+1);
+    const cf=(c.fort!=null&&c.fort>=0)?c.fort:3;
+    if(drawIconTile(g,cf,X,Y,GCELL)){
+      g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y+GCELL-4,4,4);
+      g.fillStyle='#ffe9b0'; g.font='bold 9px sans-serif'; g.textAlign='left'; g.textBaseline='top';
+      g.fillText(String(c.population), X+1, Y+1);
+    } else {
+      g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,GCELL,GCELL);
+      g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
+      g.fillStyle='#ffe9b0'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(String(c.population), X+GCELL/2, Y+GCELL/2+1);
+    }
   }
   // selected unit's GOTO line + target marker
   const sel=selUnit();

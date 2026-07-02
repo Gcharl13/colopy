@@ -50,9 +50,15 @@ struct NativeSettlement {
 // Game state the action nodes need that the pure sim GameState/World don't carry
 // (the sim core is economic; these are the relational fields the events touch).
 // Lives Forge-side and persists across requests, like colony_xy.
+// A native brave wandering the map near its home village (natives.md fields
+// the villages with roamers; the roam step itself is RECONSTRUCTED -- one land
+// step per turn with a pull back inside radius 3 of home).
+struct NativeBrave { int x = 0, y = 0, home = -1, tribe = 0; };
+
 struct EngineExtra {
     int      tension  = 0;        // native tension 0..100 (sim/natives.hpp scale) -- global legacy scalar
     std::vector<NativeSettlement> settlements;   // real native villages (first-class entities)
+    std::vector<NativeBrave> braves;             // their wanderers on the map
     uint32_t ff_owned = 0;        // bit i set = founding father i acquired
     uint16_t boycotts = 0;        // bit g set = good g boycotted in Europe
     vc::sim::Diplomacy diplo;     // inter-power war/treaty matrices

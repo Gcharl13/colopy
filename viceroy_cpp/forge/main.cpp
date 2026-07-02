@@ -644,6 +644,7 @@ static int scenario_unit_type(const std::string& name) {
 // level, the first per tribe flagged Capital. Replaces the phantom global tension scalar.
 static void seed_native_settlements() {
     g_engine_extra.settlements.clear();
+    g_engine_extra.braves.clear();
     static const char* TRIBE_TBL[8] = {"@INCA","@AZTEC","@ARAWAK","@IROQUOIS","@CHEROKEE","@APACHE","@SIOUX","@TUPI"};
     static const int TRIBE_LEVEL[8] = {3, 2, 1, 1, 1, 0, 0, 0};
     forge::JsonValue tribes;
@@ -675,6 +676,13 @@ static void seed_native_settlements() {
             // assignment driver RECONSTRUCTED: random tradable good 1..15.
             s.wanted = game_rng(1, 15);
             g_engine_extra.settlements.push_back(s);
+            // field the village's wanderers: 1 brave, 2 for larger villages
+            // (count driver RECONSTRUCTED; natives.md gives the villages a
+            // raid budget, not a standing roster)
+            const int nb = 1 + (s.population >= 6 ? 1 : 0);
+            for (int bi = 0; bi < nb; ++bi)
+                g_engine_extra.braves.push_back(
+                    forge::NativeBrave{s.x, s.y, (int)g_engine_extra.settlements.size() - 1, t});
         }
     }
 }
@@ -856,6 +864,22 @@ static void history_snapshot() {
     g_history.push_back(HistPoint{(long)g_game.turn, g_game.year,
         (long)g_game.powers[0].gold, g_engine_extra.national_sol, pop});
     if (g_history.size() > 400) g_history.erase(g_history.begin());
+}
+
+// Native braves roam near their home village (one land step per turn, pulled
+// back inside radius 3 -- the roam step is RECONSTRUCTED presentation of the
+// village's activity; raids/tension remain settlement-driven, natives.md).
+static void native_braves_step() {
+    for (forge::NativeBrave& b : g_engine_extra.braves) {
+        if (b.home < 0 || b.home >= (int)g_engine_extra.settlements.size()) continue;
+        const forge::NativeSettlement& h = g_engine_extra.settlements[b.home];
+        int dx = game_rng(-1, 1), dy = game_rng(-1, 1);
+        if (std::abs(b.x + dx - h.x) > 3) dx = h.x > b.x ? 1 : (h.x < b.x ? -1 : 0);
+        if (std::abs(b.y + dy - h.y) > 3) dy = h.y > b.y ? 1 : (h.y < b.y ? -1 : 0);
+        const int nx = b.x + dx, ny = b.y + dy;
+        const int t = g_world.terrain_id(nx, ny);
+        if (t >= 0 && !game_is_water(t)) { b.x = nx; b.y = ny; }
+    }
 }
 
 // Turn notices: late-game turn-loop events (Spanish Succession, Tory uprisings) surface here so
@@ -1676,6 +1700,7 @@ static void game_step() {
         if (g_engine_extra.woi_declared &&
             g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery < ref_pre)
             tutorial_fire(0x0001, "@HOWTOWIN");
+        native_braves_step();                           // the villages' wanderers roam
         tutorial_turn_checks();                         // event-driven lessons (T5/T6/T7 sites)
         // ---- Grievance lifecycle (diplomacy.md; driver extracted 2026-07-02).
         // Accrual @0x42335: a destroyed unit adds a per-unit value to its
@@ -1971,6 +1996,11 @@ static forge::JsonValue game_state_json() {
         cj.obj["production"] = prod;
         int nb = 0; for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) ++nb;
         cj.obj["buildings"] = forge::json_num(nb);
+        // the map sprite's fortification tier (ICONS frames: 3 open colony,
+        // 0 stockade, 1 fort, 2 fortress -- @BUILDING ids 0/1/2)
+        cj.obj["fort"] = forge::json_num((c.built_mask >> 2) & 1ull ? 2 :
+                                         (c.built_mask >> 1) & 1ull ? 1 :
+                                         (c.built_mask & 1ull) ? 0 : -1);
         cj.obj["colonists"] = forge::json_num((double)c.workers.size());
         cols.arr.push_back(cj);
     }
@@ -1985,9 +2015,20 @@ static forge::JsonValue game_state_json() {
         so.obj["x"] = forge::json_num(s.x); so.obj["y"] = forge::json_num(s.y);
         so.obj["capital"] = jbool(s.capital); so.obj["population"] = forge::json_num(s.population);
         so.obj["alarm"] = forge::json_num(s.alarm[0]);   // the human player's alarm at this village
+        static const int TRIBE_LEVEL[8] = {3, 2, 1, 1, 1, 0, 0, 0};   // @TRIBES.level (natives.md)
+        so.obj["level"] = forge::json_num(s.tribe >= 0 && s.tribe < 8 ? TRIBE_LEVEL[s.tribe] : 0);
         nats.arr.push_back(so);
     }
     o.obj["settlements"] = nats;
+    // the villages' wandering braves (map presentation; unit type 19 sprite)
+    forge::JsonValue brs = jarr();
+    for (const forge::NativeBrave& b : g_engine_extra.braves) {
+        forge::JsonValue bj = jobj();
+        bj.obj["x"] = forge::json_num(b.x); bj.obj["y"] = forge::json_num(b.y);
+        bj.obj["tribe"] = forge::json_num(b.tribe);
+        brs.arr.push_back(bj);
+    }
+    o.obj["braves"] = brs;
     forge::JsonValue us = jarr();
     for (int i = 0; i < (int)g_world.units.size(); ++i) {
         const Unit& u = g_world.units[i];
@@ -2788,6 +2829,14 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         so.obj["tension"] = tn; st.arr.push_back(so);
     }
     o.obj["settlements"] = st;
+    forge::JsonValue bv = jarr();
+    for (const forge::NativeBrave& b : x.braves) {
+        forge::JsonValue bj = jobj();
+        bj.obj["x"] = forge::json_num(b.x); bj.obj["y"] = forge::json_num(b.y);
+        bj.obj["home"] = forge::json_num(b.home); bj.obj["tribe"] = forge::json_num(b.tribe);
+        bv.arr.push_back(bj);
+    }
+    o.obj["braves"] = bv;
     return o;
 }
 // Serialize the full live game (world + colony_xy + EngineExtra) to a file --
@@ -2857,6 +2906,14 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
     if (const forge::JsonValue* gv = o->find("diplo_grievance"))
         for (int a = 0; a < 4 && a < (int)gv->arr.size(); ++a) x.diplo.grievance[a] = (uint16_t)gv->arr[a].as_int();
     x.settlements.clear();
+    x.braves.clear();
+    if (const forge::JsonValue* bv = o->find("braves"))
+        for (const forge::JsonValue& b : bv->arr)
+            x.braves.push_back(forge::NativeBrave{
+                b.find("x") ? b.find("x")->as_int(0) : 0,
+                b.find("y") ? b.find("y")->as_int(0) : 0,
+                b.find("home") ? b.find("home")->as_int(-1) : -1,
+                b.find("tribe") ? b.find("tribe")->as_int(0) : 0});
     if (const forge::JsonValue* st = o->find("settlements"))
         for (const forge::JsonValue& s : st->arr) {
             forge::NativeSettlement ns;
@@ -3206,6 +3263,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
         if (path == "/api/cheat/kill_indians" && method == "POST") {   // F06 Kill Indians
             g_engine_extra.settlements.clear();
+            g_engine_extra.braves.clear();
             return J(200, game_state_json());
         }
         if (path == "/api/cheat/revolution" && method == "POST") {
