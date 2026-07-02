@@ -38,11 +38,28 @@ int crosses_threshold(int total_workers, int unit_count,
     return a;
 }
 
+// The field-unit crosses override (func_035D9A @0x35DE7..0x35E2B, immigration.md 2):
+// once an immigrant has ever arrived (the sticky PowerRecord +0x00 bit 0x40 latch,
+// set @0x036528), each field unit that carries a colonist (the DGROUP:0x30E
+// unit_type -> @JOB-profession map returns >= 0) turns the accrual NEGATIVE --
+// the first forces the delta to -2 (@0x35E27), each further one subtracts 2
+// (@0x35DD8): net -2 * count. The 0x30E map's exact content is not extracted
+// (file 0x1DCAE) -- RECONSTRUCTED as the person-carrying types (<= Cont. Army);
+// the (b) sub-condition @0x35DFB is byte-cited but semantically undecoded (omitted).
+int field_crosses_override(bool immigrant_arrived, int field_colonist_units,
+                           int crosses_gained) {
+    if (!immigrant_arrived || field_colonist_units <= 0) return crosses_gained;
+    if (crosses_gained <= 0) return crosses_gained - 2 * field_colonist_units;
+    return -2 * field_colonist_units;
+}
+
 ImmigrationResult immigration_step(Power& p, int crosses_gained,
                                    int total_workers, int unit_count,
                                    int difficulty, bool ai, bool is_england,
                                    const RandFn& rng, const RuleData& rd,
-                                   bool has_brewster) {
+                                   bool has_brewster, int field_colonist_units) {
+    crosses_gained = field_crosses_override(p.immigrant_arrived,
+                                            field_colonist_units, crosses_gained);
     p.crosses_accum += crosses_gained;
     p.crosses_threshold = crosses_threshold(total_workers, unit_count,
                                             difficulty, ai, is_england, rd);
@@ -57,6 +74,7 @@ ImmigrationResult immigration_step(Power& p, int crosses_gained,
         r.spawned = true;
         p.dock_pool[r.slot] = immigrant_refill(difficulty, has_brewster, rng, rd);
         p.crosses_accum = 0;
+        p.immigrant_arrived = true;       // the sticky arrival latch (@0x036528)
     }
     return r;
 }

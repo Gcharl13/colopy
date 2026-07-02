@@ -46,9 +46,15 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
             int workers = 0, crosses = rd.cfg.imm_base_crosses;
             for (const Colony& c : w.colonies)
                 if (c.owner_power == p) { workers += c.population; crosses += c.crosses_output; }
+            // Colonist-carrying field units feed the -2 override (func_035D9A
+            // @0x35DE7..0x35E2B; person types <= Cont. Army, RECONSTRUCTED map).
+            int fieldc = 0;
+            for (const Unit& u : w.units)
+                if (u.alive && u.owner == p && u.type <= CONT_ARMY) ++fieldc;
             bool is_england = (p == player_idx) && (g.nation == 0);
             immigration_step(g.powers[p], crosses, workers, /*units*/0,
-                             g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd);
+                             g.difficulty, /*ai*/ p != player_idx, is_england, rng, rd,
+                             /*brewster*/ false, fieldc);
         }
     }
 

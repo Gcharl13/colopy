@@ -33,6 +33,8 @@ JsonValue dump_power(const Power& p) {
     JsonValue dk = arr();
     for (int i = 0; i < 3; ++i) dk.arr.push_back(json_num(p.dock_pool[i]));
     o.obj["dock_pool"] = dk;
+    o.obj["immigrant_arrived"] = [&]{ JsonValue v; v.type = JsonValue::Bool;
+                                      v.b = p.immigrant_arrived; return v; }();
     return o;
 }
 
@@ -129,6 +131,8 @@ void read_power(const JsonValue& o, Power& p) {
         for (int i = 0; i < NGOODS && i < (int)pl->arr.size(); ++i) p.price_level[i] = pl->arr[i].as_int();
     if (const JsonValue* dk = o.find("dock_pool"))
         for (int i = 0; i < 3 && i < (int)dk->arr.size(); ++i) p.dock_pool[i] = dk->arr[i].as_int();
+    { const JsonValue* v = o.find("immigrant_arrived");   // absent in old saves -> false
+      p.immigrant_arrived = v && v->type == JsonValue::Bool ? v->b : false; }
 }
 
 Colony read_colony(const JsonValue& o) {

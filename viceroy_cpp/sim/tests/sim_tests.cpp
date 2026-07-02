@@ -308,6 +308,17 @@ static void test_immigration() {
     auto hi = [](int lo, int) { return lo == 1 ? 15 : 5; };   // roll 15 -> high tier
     CHECK(immigrant_refill(0, false, hi) == 0x1A, "high tier -> Indentured Servant");
     CHECK(immigrant_refill(0, true,  hi) == 0x1C, "Brewster high tier -> Free Colonist");
+    // The field-unit -2 override (func_035D9A @0x35DE7..0x35E2B): once the sticky
+    // arrival latch is set, N colonist field units force the delta to -2*N.
+    CHECK(field_crosses_override(false, 3, 10) == 10, "no latch -> untouched");
+    CHECK(field_crosses_override(true, 0, 10) == 10, "no field units -> untouched");
+    CHECK(field_crosses_override(true, 1, 10) == -2, "first unit forces -2 (@0x35E27)");
+    CHECK(field_crosses_override(true, 3, 10) == -6, "3 units -> -6 (each -=2 @0x35DD8)");
+    CHECK(p.immigrant_arrived, "the spawn above set the sticky latch (@0x036528)");
+    // Applied inside immigration_step: with the latch + 2 field units, +5/turn accrues -4.
+    Power p2; p2.immigrant_arrived = true; p2.crosses_accum = 10;
+    immigration_step(p2, 5, 3, 0, 0, false, true, rng, default_rules(), false, /*field*/2);
+    CHECK(p2.crosses_accum == 6, "accum 10 + (-4) = %d", p2.crosses_accum);
 }
 
 static void test_turn_loop() {

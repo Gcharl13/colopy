@@ -90,6 +90,10 @@ struct Power {
     int crosses_accum     = 0;       // +0x2E  accumulated crosses
     int crosses_threshold = 0;       // +0x30  spawn threshold (recomputed each turn)
     std::array<int, 3> dock_pool{{-1, -1, -1}};  // +0x02..+0x04 waiting immigrant types
+    bool immigrant_arrived = false;  // +0x00 bit 0x40: STICKY "an immigrant has arrived on
+                                     //   this power's docks" latch (set @0x036528, no clear;
+                                     //   read only @0x35E18 to gate the field-unit -2
+                                     //   crosses override, immigration.md 2)
 };
 
 // Royal Expeditionary Force counts (DGROUP 0x53DA..0x53E0).

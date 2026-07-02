@@ -25,15 +25,24 @@ struct ImmigrationResult { bool spawned = false; int type = -1; int slot = -1; }
 int immigrant_refill(int difficulty, bool has_brewster, const RandFn& rng,
                      const RuleData& rd = default_rules());
 
+// The field-unit crosses override (func_035D9A @0x35DE7..0x35E2B): once the power's
+// sticky immigrant-arrived latch is set, N colonist-carrying field units force the
+// per-turn crosses delta to -2 * N (the first forces -2 @0x35E27, each further one
+// subtracts 2 @0x35DD8). Exposed for tests; immigration_step applies it.
+int field_crosses_override(bool immigrant_arrived, int field_colonist_units,
+                           int crosses_gained);
+
 // One immigration step for a power: accrue `crosses_gained` (= base + Σ colony cross
-// output -- USER RULING: crosses drive the pool), recompute the threshold, and when
-// accum > threshold the chosen dock slot's stored colonist arrives (the slot refills via
-// the func_034C24 distribution) and accum resets.
+// output -- USER RULING: crosses drive the pool) after the field-unit override,
+// recompute the threshold, and when accum > threshold the chosen dock slot's stored
+// colonist arrives (the slot refills via the func_034C24 distribution), accum resets,
+// and the sticky arrival latch is set (@0x036528).
 ImmigrationResult immigration_step(Power& p, int crosses_gained,
                                    int total_workers, int unit_count,
                                    int difficulty, bool ai, bool is_england,
                                    const RandFn& rng,
                                    const RuleData& rd = default_rules(),
-                                   bool has_brewster = false);
+                                   bool has_brewster = false,
+                                   int field_colonist_units = 0);
 
 } // namespace vc::sim
