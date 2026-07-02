@@ -545,6 +545,10 @@ function terrBaseFrame(c){ if(c===0x11||c===0x09) return 8; return c>=8?c-0xF:c;
 // Scrub (forested desert, classified 9) -> brush frame 8; plain Desert -> sand 1
 function baseFrameOf(b){ if(classifyVis(b)===9) return 8;
   if((b&0x1F)===1) return 1; return terrBaseFrame(landBaseOf(b)); }
+// O512 tear profile: depth per lane + speck lanes (one fixed shape per
+// direction = one stencil sprite, like the original's 0x69..0x6C)
+const TEAR_D=[2,3,1,4,3,2,4,1,3,4,2,3,1,4,2,3];
+const TEAR_S=[0,0,1,0,0,1,0,1,0,0,1,0,1,0,0,1];
 const MSCR=document.createElement('canvas'); MSCR.width=16; MSCR.height=16;
 const MSCG=MSCR.getContext('2d');
 // Compose the whole terrain plane: TERRAIN.SS ground + PHYS0 blend/forest/
@@ -662,13 +666,18 @@ function composeMap(g, terr, w, h, cell, useTiles){
         if(ni===25||ni===26) continue;                 // water -> no dither
         if(nclass===cclass) continue;                  // same biome -> no edge
         const nf=baseFrameOf(nb);
+        // Edge tear (the 0x69+dir stencil; its pixels were baked out of the
+        // committed atlas, pattern RECONSTRUCTED from the user's original-game
+        // capture 2026-07-02): the neighbour terrain tears in as a SOLID
+        // jagged strip of 1..4px depth per lane, with sparse detached specks
+        // one px beyond the tear -- not a translucent dither.
         for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
           const edge=d===0?ly:d===1?15-lx:d===2?15-ly:lx;
-          if(edge>=4) continue;
-          // 2x2-block dither (the original's coarse DOS pattern; the true
-          // 0x69+dir stencil pixels were baked out of the atlas -- the block
-          // dither is RECONSTRUCTED from original screenshots)
-          if((((lx>>1)+(ly>>1))&1)!==0) continue;
+          if(edge>=6) continue;
+          const lane=(d===0||d===2)?lx:ly;
+          const solid=edge<TEAR_D[lane];
+          const speck=TEAR_S[lane]&&edge===TEAR_D[lane]+1;
+          if(!solid&&!speck) continue;
           const o=tp(nf,lx,ly); if(TPX.d[o+3]>0) put(lx,ly,TPX.d,o);
         }
       }
