@@ -2954,6 +2954,74 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, o);
         }
 
+        // Treasure cash-in / the King's galleon (events.md, func_05C878): gross =
+        // 100 * value-class; post-independence full; else the Crown's cut% = tax
+        // with Cortes (FF #10) or max(5*diff+50, 2*tax) <= 90. Returns the
+        // @KINGGALLEON record fields so the UI can show cut / gross / net.
+        if (path == "/api/treasure/cashin" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            const bool cortes = (g_engine_extra.ff_owned >> 10) & 1u;
+            vc::sim::CashInResult cr = vc::sim::treasure_cash_in(
+                g_game, g_world, ui, g_engine_extra.woi_declared, cortes);
+            if (!cr.ok) return err(400, "not a live treasure unit");
+            forge::JsonValue o = jobj();
+            o.obj["gross"] = forge::json_num((double)cr.gross);
+            o.obj["cut_pct"] = forge::json_num(cr.cut_pct);
+            o.obj["cut"] = forge::json_num((double)cr.cut);
+            o.obj["net"] = forge::json_num((double)cr.net);
+            o.obj["key"] = forge::json_str(g_engine_extra.woi_declared ? "@CASHTREASURE"
+                                                                       : "@KINGGALLEON");
+            std::string m = game_message_text(g_engine_extra.woi_declared ? "@CASHTREASURE"
+                                                                          : "@KINGGALLEON");
+            for (auto& [tok, val] : std::initializer_list<std::pair<const char*, long>>{
+                     {"%NUMBER0", cr.gross}, {"%NUMBER1", (long)cr.cut_pct}, {"%NUMBER2", cr.net}}) {
+                size_t p2; std::string t = std::to_string(val);
+                while ((p2 = m.find(tok)) != std::string::npos) m.replace(p2, std::strlen(tok), t);
+            }
+            o.obj["msg"] = forge::json_str(m);
+            return J(200, o);
+        }
+
+        // Attack a native settlement (CHIEFKILL, natives.md func_04A7CA): the
+        // village is razed (treasure gold straight to the treasury, settlement
+        // removed, score razed-counter++) or the villagers escape with their
+        // wealth; either way the tribe's other villages turn hostile (+100
+        // tension toward the attacker -- the incite-scale delta).
+        if (path == "/api/native/attack" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            forge::JsonValue b = forge::json_parse(body);
+            int ui = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            int si = b.find("settlement") ? b.find("settlement")->as_int(-1) : -1;
+            if (ui < 0 || ui >= (int)g_world.units.size() ||
+                si < 0 || si >= (int)g_engine_extra.settlements.size())
+                return err(400, "bad unit/settlement");
+            Unit& u = g_world.units[ui];
+            forge::NativeSettlement& sv = g_engine_extra.settlements[si];
+            if (!u.alive || std::abs(u.x - sv.x) > 1 || std::abs(u.y - sv.y) > 1)
+                return err(400, "unit not adjacent");
+            forge::ChiefKillResult ck = forge::chiefkill(g_game, sv, u.profession, game_rng);
+            forge::JsonValue o = jobj();
+            o.obj["razed"] = jbool(ck.razed);
+            o.obj["gold"] = forge::json_num((double)ck.gold);
+            const int tribe = sv.tribe;
+            if (ck.razed) {
+                g_game.powers[u.owner & 3].gold += ck.gold;    // straight credit (@0x4AB66)
+                if (g_game.powers[u.owner & 3].gold > 999999)
+                    g_game.powers[u.owner & 3].gold = 999999;
+                if (u.owner == 0) g_engine_extra.razed_settlements += 1;
+                g_engine_extra.settlements.erase(g_engine_extra.settlements.begin() + si);
+            }
+            for (auto& other : g_engine_extra.settlements)     // the tribe turns hostile
+                if (other.tribe == tribe)
+                    forge::tension_apply(other, u.owner & 3, forge::TENSION_INCITE,
+                                         power_nation(g_game, u.owner & 3) == 1,
+                                         (g_engine_extra.ff_owned >> 16) & 1u);
+            u.moves_left = 0;
+            return J(200, o);
+        }
+
         // Scout at a foreign colony (exploration.md 3, func_05A20E): the 4-option
         // @SCOUTCOLONY dialog. choice 0 Meet With Mayor (blocked during the WoI,
         // test [0x5382],1 -> @NOMAYORSDURINGREV) / 1 Infiltrate (the random_int(1,36)
@@ -3983,6 +4051,26 @@ static int engine_selftest() {
         Colony tp; tp.population = 1; tp.rebel_A = 0; tp.rebel_B = 1; tp.workers.push_back(mkw(17, -1, 0, 18));
         forge::colony_compute_production(tp, 1, rd4, /*ff*/ (1u << 17), /*tax*/ 50);
         check(tp.bells_per_turn == 4, "Thomas Paine (#17) -> bells +tax% (3 -> 4 at 50%%)");
+        // CHIEFKILL (natives.md func_04A7CA): the escape roll vs alarm and the
+        // once-shape of the payout (raze_treasure_gold is separately checked).
+        { vc::sim::GameState cg; cg.difficulty = 1;
+          forge::NativeSettlement sv; sv.tribe = 0; sv.population = 10; sv.alarm[0] = 50;
+          vc::sim::RandFn hi = [](int, int hi2) { return hi2; };   // roll = bound = 100
+          forge::ChiefKillResult ck = forge::chiefkill(cg, sv, 0, hi);
+          check(ck.razed && ck.gold > 0, "high roll >= alarm: razed with treasure gold");
+          vc::sim::RandFn lo = [](int lo2, int) { return lo2; };   // roll = 0
+          ck = forge::chiefkill(cg, sv, 0, lo);
+          check(!ck.razed && ck.gold == 0, "low roll < alarm: the villagers escape");
+          sv.population = 80;                                      // big-treasure branch
+          ck = forge::chiefkill(cg, sv, 0, lo);
+          check(ck.razed, "size >= 75 takes the big-treasure branch (@0x4A802)");
+          check(forge::settlement_attitude(-1, 0) == 0 &&          // 8*-1-5 = -13 -> Content
+                forge::settlement_attitude(0, 0)  == 1 &&          // -5 -> Uneasy (band edge)
+                forge::settlement_attitude(1, 0)  == 2 &&          // 3 -> Restless
+                forge::settlement_attitude(2, 0)  == 3 &&          // 11 -> Angry
+                forge::settlement_attitude(0, 128) == 4,           // War = alarm >= 128
+                "attitude bands -5/0/10 + War (@0x048AFE/@0x048B62)");
+        }
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
         Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)
         forge::colony_compute_production(hh, 1, rd4, /*ff*/ 0);

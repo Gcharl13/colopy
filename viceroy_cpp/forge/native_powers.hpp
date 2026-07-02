@@ -83,6 +83,25 @@ constexpr int TENSION_INCITE            = 100;
 constexpr int TENSION_PACIFY            = -100;
 constexpr int TENSION_DESECRATE         = 100;
 
+// CHIEFKILL -- razing a settlement (natives.md, func_04A7CA): the attacker's
+// class 0x16 (Seasoned Scout) sets scout=1 (@0x4A7D9); the escape roll bound
+// is 40*scout + 100 (@0x4A81A), or (8 - difficulty) << scout for tribe 2
+// (@0x4A84A); settlements of size >= 25 re-roll while size/4 >= roll
+// (@0x4A832..41, biasing large villages toward high rolls); size >= 75 takes
+// the distinct big-treasure branch (@0x4A802, internals undecoded -- treated
+// as razed). The roll is the village-survives/ESCAPE check vs alarm
+// (@0x4A97A); the comparison DIRECTION is not in the trace -- razed on
+// roll >= alarm is the RECONSTRUCTED reading (the size re-roll biases toward
+// success, matching "larger settlements bias toward larger treasure"). On a
+// raze the payout is raze_treasure_gold (credited by the caller) and the
+// settlement is removed.
+struct ChiefKillResult {
+    bool razed = false;      // false = the villagers escaped with their wealth
+    long gold  = 0;          // razed payout, credited straight to gold (@0x4AB66)
+};
+ChiefKillResult chiefkill(const vc::sim::GameState& g, const NativeSettlement& s,
+                          int attacker_class, const vc::sim::RandFn& rng);
+
 // Attitude banding (natives.md @0x048AFE): 0 Content / 1 Uneasy / 2 Restless /
 // 3 Angry from score = 8*X-5 (bands -5/0/10); 4 War when alarm >= 128.
 int settlement_attitude(int presence_x, int alarm);

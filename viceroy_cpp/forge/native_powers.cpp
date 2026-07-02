@@ -115,6 +115,27 @@ RaidResult native_raid(GameState& g, World& w, NativeSettlement& s, int ci,
     return r;
 }
 
+ChiefKillResult chiefkill(const vc::sim::GameState& g, const NativeSettlement& s,
+                          int attacker_class, const vc::sim::RandFn& rng) {
+    ChiefKillResult r;
+    const int scout = attacker_class == 0x16 ? 1 : 0;    // Seasoned Scout (@0x4A7D9)
+    const int sz = s.population;
+    if (sz >= 75) {                                      // big-treasure branch (@0x4A802)
+        r.razed = true;
+    } else {
+        int bound = s.tribe == 2 ? ((8 - g.difficulty) << scout)   // tribe-2 special (@0x4A84A)
+                                 : (40 * scout + 100);             // (@0x4A81A)
+        if (bound < 1) bound = 1;
+        int roll = rng(0, bound);
+        if (sz >= 25)                                    // size re-roll (@0x4A832..41)
+            for (int t = 0; t < 16 && sz / 4 >= roll; ++t) roll = rng(0, bound);
+        r.razed = roll >= s.alarm[0];                    // escape check vs alarm (@0x4A97A;
+    }                                                    //   direction RECONSTRUCTED)
+    if (r.razed)
+        r.gold = raze_treasure_gold(g.difficulty, tribe_level(s.tribe), rng);
+    return r;
+}
+
 int settlement_attitude(int presence_x, int alarm) {
     // Attitude banding (natives.md @0x048AFE / @0x048B62..@0x048B90):
     // score = 8*X - 5; bands < -5 Content(0) / -5..0 Uneasy(1) / 0..<10

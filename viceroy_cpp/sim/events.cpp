@@ -14,6 +14,29 @@ bool rumor_present(const World& w, int x, int y, int seed) {
     return h == (x & 3);
 }
 
+CashInResult treasure_cash_in(GameState& g, World& w, int unit_idx,
+                              bool independence, bool cortes) {
+    CashInResult r;
+    if (unit_idx < 0 || unit_idx >= (int)w.units.size()) return r;
+    Unit& u = w.units[unit_idx];
+    if (!u.alive || u.type != TREASURE) return r;
+    r.gross = 100L * u.profession;                  // value/100 convention (@0x5C882)
+    if (!independence) {
+        Power& pw = g.powers[u.owner & 3];
+        r.cut_pct = cortes ? pw.tax                 // Cortes: cut = tax (@0x5C965)
+                           : std::max(5 * g.difficulty + 50, 2 * pw.tax);
+        if (r.cut_pct > 90) r.cut_pct = 90;         // clamp (@0x5C9A3)
+        r.cut = r.gross * r.cut_pct / 100;          // (@0x5C9BF/@0x5C9C6)
+    }
+    r.net = r.gross - r.cut;                        // (@0x5C9F0)
+    Power& pw = g.powers[u.owner & 3];
+    pw.gold += r.net;
+    if (pw.gold > 999999) pw.gold = 999999;         // treasury clamp (@0x32a82)
+    u.alive = false;                                // the treasure is spent
+    r.ok = true;
+    return r;
+}
+
 RumorResult lost_city_rumor(GameState& g, World& w, int unit_idx,
                             bool de_soto, const RandFn& rng) {
     RumorResult r;

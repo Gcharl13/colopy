@@ -1078,6 +1078,43 @@ static void test_ai() {
     }
 }
 
+// events.md: treasure cash-in / the King's galleon (func_05C878).
+static void test_treasure_cashin() {
+    std::printf("treasure cash-in (func_05C878):\n");
+    RandFn rig = [](int lo, int) { return lo; };
+    { GameState g; g.difficulty = 0; World w;
+      g.powers[0].tax = 10; g.powers[0].gold = 0;
+      Unit t; t.type = TREASURE; t.owner = 0; t.profession = 8;   // gross 800
+      w.units.push_back(t);
+      CashInResult r = treasure_cash_in(g, w, 0, /*indep*/false, /*cortes*/false);
+      CHECK(r.ok && r.gross == 800, "gross = 100 * class (@0x5C882) -> %ld", r.gross);
+      CHECK(r.cut_pct == 50, "diff 0: cut = max(50, 2*10) = 50%% -> %d", r.cut_pct);
+      CHECK(r.net == 400 && g.powers[0].gold == 400, "player nets gross-cut (@0x5C9F0)");
+      CHECK(!w.units[0].alive, "the treasure unit is spent");
+    }
+    { GameState g; g.difficulty = 4; World w;                     // 5*4+50 = 70
+      g.powers[0].tax = 40;                                       // 2*40 = 80 wins
+      Unit t; t.type = TREASURE; t.owner = 0; t.profession = 10; w.units.push_back(t);
+      CashInResult r = treasure_cash_in(g, w, 0, false, false);
+      CHECK(r.cut_pct == 80, "cut = max(5*diff+50, 2*tax) -> %d (@0x5C976)", r.cut_pct);
+      g.powers[0].tax = 50; Unit t2 = t; t2.alive = true; w.units.push_back(t2);
+      r = treasure_cash_in(g, w, 1, false, false);
+      CHECK(r.cut_pct == 90, "clamped <= 90%% (@0x5C9A3) -> %d", r.cut_pct);
+    }
+    { GameState g; g.difficulty = 3; World w;
+      g.powers[0].tax = 15;
+      Unit t; t.type = TREASURE; t.owner = 0; t.profession = 10; w.units.push_back(t);
+      CashInResult r = treasure_cash_in(g, w, 0, false, /*cortes*/true);
+      CHECK(r.cut_pct == 15, "Cortes (FF #10): cut = the tax rate (@0x5C965)");
+      Unit t2; t2.type = TREASURE; t2.owner = 0; t2.profession = 10; w.units.push_back(t2);
+      r = treasure_cash_in(g, w, 1, /*indep*/true, false);
+      CHECK(r.cut == 0 && r.net == 1000, "post-independence: cashed in full (@0x5C88B)");
+      Unit c; c.type = COLONISTS; w.units.push_back(c);
+      r = treasure_cash_in(g, w, 2, false, false);
+      CHECK(!r.ok, "non-treasure units are rejected");
+    }
+}
+
 // ai.md second pass: the strategic plan-map (6.1), the capability bitfield,
 // the planning refinements 't'/'i', AI Pioneer terrain builds ('B'/'e'->'C'),
 // the ship '1'->'B' promotion, and the sentry wake.
@@ -1310,6 +1347,7 @@ int main() {
     test_lost_city_rumors();
     test_trade_routes();
     test_scout_infiltrate();
+    test_treasure_cashin();
     test_ai();
     test_ai_plan();
     test_combat_depth();

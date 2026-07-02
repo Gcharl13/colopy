@@ -49,6 +49,23 @@ struct RumorResult {
     bool vanished = false;  // n=5 unit destroyed
 };
 
+// Treasure cash-in / the King's galleon (events.md, func_05C878 FULLY
+// BYTE_VERIFIED): gross = 100 * the Treasure unit's class byte (value/100
+// convention, @0x5C882). Post-independence the treasure cashes IN FULL
+// (@0x5C88B). Pre-independence the King ships it (@KINGGALLEON) for a cut:
+// with Hernan Cortes (FF #10) cut% = the tax rate (@0x5C965); without,
+// cut% = max(5*difficulty + 50, 2*tax) clamped <= 90 (@0x5C976/@0x5C9A3).
+// Cut = gross*cut%/100 (@0x5C9BF/@0x5C9C6); the player receives gross-cut
+// (@0x5C9F0). (Transporting with your OWN Galleon -- no cut -- would need
+// treasure units as ship cargo, which is not modeled; noted.)
+struct CashInResult {
+    bool ok = false;
+    long gross = 0, cut = 0, net = 0;
+    int  cut_pct = 0;
+};
+CashInResult treasure_cash_in(GameState& g, World& w, int unit_idx,
+                              bool independence, bool cortes);
+
 // Resolve one rumor entry (func_061454). Mutates the unit/game/world (gold credit,
 // treasure/colonist unit spawns, vanish) and clears the rumor bit. de_soto = the
 // owner holds Founding Father #7.
