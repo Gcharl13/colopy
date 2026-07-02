@@ -6,6 +6,7 @@
 namespace vc::sim {
 
 // War bit-matrix (PowerRecord +0x34) bit meanings.
+constexpr uint8_t WAR_RESOLVED  = 0x01;   // resolved/normalized relationship (set @0x5318F)
 constexpr uint8_t WAR_AT_WAR    = 0x02;
 constexpr uint8_t WAR_GRIEVANCE = 0x08;
 constexpr uint8_t WAR_PRIVATEER = 0x80;
@@ -18,6 +19,12 @@ struct Diplomacy {
     uint8_t war[4][4] = {};       // +0x34 matrix
     uint8_t rel[4][4] = {};       // +0x40 matrix
     int     cooldown[4] = {};     // [power*2 + 0x53C8] re-parley lockout turn
+    // Per-power grievance score (the DGROUP 0x941C 4-word array, extraction
+    // 2026-07-02): reset @0x42142, accrued @0x42335 by a per-unit value call
+    // (0x181F:0x9C8, overlay -- undecoded) when a power's unit is destroyed;
+    // the confrontation evaluator compares two powers' scores relatively
+    // (@0x3F0C5/@0x3F0CE) to raise the pending-grievance bit (@0x3F0D7).
+    uint16_t grievance[4] = {};
 };
 
 // Symmetric writes (SIGNTREATY writes matrix[A][B] = matrix[B][A]).

@@ -29,6 +29,17 @@ The player coexists with three rival European powers (English/French/Spanish/Dut
   `func_057DC0` writes the matrix **symmetrically** (`matrix[A][B] = matrix[B][A]`,
   `@0x57EC5`/`@0x57ED0`): state `1` = treaty established, `0` = cleared/war; it emits
   `@SIGNTREATY` (`0x188D`) / `@CANCELTREATY` (`0x1898`) / `@DECLAREWAR` (`0x18A5`).
+- **Grievance-score DRIVER — CLOSED 2026-07-02 (full xref of `[0x941C]`):** the
+  per-power score (`bx = power*2; [bx-0x6BE4]` = DGROUP `0x941C`, a 4-word array)
+  has exactly two writers: **reset to 0** `@0x42142` (the power-init scrub, which
+  also zeroes the `0x7304/0x6D68/0x6BF8/0x6BF4` scratch bytes) and **accrual**
+  `@0x42335` — when a power's unit is destroyed, `score += value(unit)` where
+  `value` is the per-unit call `0x181F:0x9C8` (overlay-resident, undecoded —
+  implementations may proxy the combat weight, **R**), alongside saturating
+  byte-adds into the `0x9180`/`0x918C`/`0x9572` per-slot alarm tables via the
+  clamp-to-0xFF helper `@0x42126`. The confrontation evaluator compares two
+  powers' scores **relatively** (`@0x3F0C5`/`@0x3F0CE`) before raising the
+  pending-grievance bit (`@0x3F0D7`). **B (sites), R (value fn internals).**
 - **Treaty cooldown** at `[power*2 + 0x53C8]` (word) — set to `turn + 0x10`
   (`@0x58075`/`0x5914C`); a 16-turn re-parley lockout. **BYTE_VERIFIED.**
 - PowerRecord base `DGROUP:0x8808`, stride 316 (0x13C), 4 powers.

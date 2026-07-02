@@ -89,6 +89,10 @@ void refresh_moves(World& w, const RuleData& rd) {
         if (u.alive) u.moves_left = unit_stats(rd, u.type).movement * 3;
 }
 
+// Destroyed-unit log (the grievance driver's input; drained by the engine's
+// turn step alongside promote_log).
+std::vector<KillResult>& kill_log() { static std::vector<KillResult> v; return v; }
+
 // Resolve combat when unit `ai` attacks the unit at index `di`; apply the outcome
 // to both units. Returns true if the attacker's tile is now free to advance into
 // (defender destroyed). The attacker's move ends regardless.
@@ -148,6 +152,9 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
         loser.owner = res.attacker_won ? atk.owner : def.owner;  // changes hands intact
     } else if (res.loser_outcome < 0) {
         loser.alive = false;                                     // destroyed
+        kill_log().push_back(KillResult{loser.owner,
+                                        res.attacker_won ? atk.owner : def.owner,
+                                        loser.type});            // feeds the grievance driver
     } else {
         loser.type = res.loser_outcome;                         // demoted in place
     }

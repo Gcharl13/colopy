@@ -26,6 +26,11 @@ constexpr int HUMAN_OWNER = 0;
 // Dragoons->Continental Cavalry) -> @CONTINENTAL.
 struct PromoteResult { int unit = -1; int owner = 0; int old_type = 0; int new_type = 0; };
 
+// A unit destroyed in combat (the grievance driver's input, diplomacy.md):
+// owner lost a unit of `type` to by_owner. Drained per turn like promote_log.
+struct KillResult { int owner = 0; int by_owner = 0; int type = 0; };
+std::vector<KillResult>& kill_log();
+
 // Start-of-turn: each living unit's moves_left = unit_stats(rd, type).movement.
 void refresh_moves(World& w, const RuleData& rd = default_rules());
 

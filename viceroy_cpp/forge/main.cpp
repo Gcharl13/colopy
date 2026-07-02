@@ -1677,6 +1677,31 @@ static void game_step() {
             g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery < ref_pre)
             tutorial_fire(0x0001, "@HOWTOWIN");
         tutorial_turn_checks();                         // event-driven lessons (T5/T6/T7 sites)
+        // ---- Grievance lifecycle (diplomacy.md; driver extracted 2026-07-02).
+        // Accrual @0x42335: a destroyed unit adds a per-unit value to its
+        // owner's grievance score (DGROUP 0x941C). The EXE's value call
+        // (0x181F:0x9C8) is overlay-resident/undecoded -- the combat weight
+        // (attack+defense) stands in, RECONSTRUCTED. The evaluator compares
+        // scores relatively (@0x3F0C5/@0x3F0CE) and raises the pending-
+        // grievance bit (@0x3F0D7); per turn the bit resolves to 0x01 when
+        // the parley cooldown has expired and random_int(0,3)==0 (@0x53165).
+        for (const vc::sim::KillResult& kr : vc::sim::kill_log()) {
+            if (kr.owner == kr.by_owner || kr.owner > 3 || kr.by_owner > 3) continue;
+            const UnitStats& us = unit_stats(g_active_rules, kr.type);
+            long v = g_engine_extra.diplo.grievance[kr.owner] + us.attack + us.defense;
+            g_engine_extra.diplo.grievance[kr.owner] = (uint16_t)std::min(v, 0xFFFFL);
+            if (g_engine_extra.diplo.grievance[kr.owner] >
+                g_engine_extra.diplo.grievance[kr.by_owner])
+                g_engine_extra.diplo.war[kr.owner][kr.by_owner] |= vc::sim::WAR_GRIEVANCE;
+        }
+        vc::sim::kill_log().clear();
+        for (int a = 0; a < 4; ++a) for (int b = 0; b < 4; ++b) {
+            if (!(g_engine_extra.diplo.war[a][b] & vc::sim::WAR_GRIEVANCE)) continue;
+            if (g_game.turn >= g_engine_extra.diplo.cooldown[a] && game_rng(0, 3) == 0) {
+                g_engine_extra.diplo.war[a][b] &= ~vc::sim::WAR_GRIEVANCE;
+                g_engine_extra.diplo.war[a][b] |= vc::sim::WAR_RESOLVED;   // @0x5318F
+            }
+        }
         history_snapshot();
         // Autosave (save.md, BYTE_VERIFIED): the main turn loop writes the
         // rolling autosave to slot 10 (@0x5AF3), gated by the enable flag
@@ -2745,6 +2770,9 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         rel.arr.push_back(forge::json_num(x.diplo.rel[a][b])); }
     for (int a = 0; a < 4; ++a) cd.arr.push_back(forge::json_num(x.diplo.cooldown[a]));
     o.obj["diplo_war"] = war; o.obj["diplo_rel"] = rel; o.obj["diplo_cooldown"] = cd;
+    { forge::JsonValue gv = jarr();
+      for (int a = 0; a < 4; ++a) gv.arr.push_back(forge::json_num(x.diplo.grievance[a]));
+      o.obj["diplo_grievance"] = gv; }                           // DGROUP 0x941C
     forge::JsonValue st = jarr();
     for (const forge::NativeSettlement& s : x.settlements) {
         forge::JsonValue so = jobj();
@@ -2826,6 +2854,8 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             if (k < (int)r->arr.size()) x.diplo.rel[a][b] = (uint8_t)r->arr[k].as_int(); }
     if (const forge::JsonValue* c = o->find("diplo_cooldown"))
         for (int a = 0; a < 4 && a < (int)c->arr.size(); ++a) x.diplo.cooldown[a] = c->arr[a].as_int();
+    if (const forge::JsonValue* gv = o->find("diplo_grievance"))
+        for (int a = 0; a < 4 && a < (int)gv->arr.size(); ++a) x.diplo.grievance[a] = (uint16_t)gv->arr[a].as_int();
     x.settlements.clear();
     if (const forge::JsonValue* st = o->find("settlements"))
         for (const forge::JsonValue& s : st->arr) {
