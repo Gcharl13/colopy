@@ -100,11 +100,17 @@ struct CombatResult {
 // draws the roll; attacker wins if roll <= atk_str.
 //   resolve_land(rd, ...)  uses the injected ruleset for unit strengths.
 //   resolve_land(...)      falls back to default_rules() (value-identical).
+// attacker_nation is the @NATIONALITY index (-1 = unknown): a Spanish (2)
+// attacker vs a native defender gains +strength/2 (national_powers.md,
+// func_05CA7E @0x05CF2F..0x05CF4D: attacker owner == 2, defender owner >= 4
+// -> sar ax,1; add -- our engine maps "native defender" to the @UNIT brave
+// band 19..22, the only native land units).
 CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
-                          const RandFn& rng, bool defender_fortified = false);
+                          const RandFn& rng, bool defender_fortified = false,
+                          int attacker_nation = -1);
 CombatResult resolve_land(const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,

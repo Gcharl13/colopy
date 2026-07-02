@@ -209,7 +209,7 @@
           "writes": []
         },
         {
-          "expr": "gross = bid*qty ; tax_cut = gross*tax%/100 ; gold += gross - tax_cut ; royal_money += tax_cut ; trade[g] += qty ; recompute",
+          "expr": "gross = bid*qty ; tax_cut = gross*tax%/100 ; gold += gross - tax_cut ; royal_money += tax_cut ; trade[g] += qty ; recompute ; Dutch (nation 3) SELL pool delta x2/3 (national_powers.md, func_03234A @0x32390)",
           "fn": "market_sell",
           "knobs": [],
           "note": "The tax cut funds the King's REF treasury (king.md:92 -- taxes pay for the Royal Expeditionary Force). Gold clamps to 0..999999.",

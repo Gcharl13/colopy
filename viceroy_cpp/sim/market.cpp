@@ -83,7 +83,10 @@ long market_sell(GameState& g, int power, int good, int qty, const RuleData& rd)
     if (pw.gold < 0) pw.gold = 0;                   // clamp [0, 999999] (@0x32a82)
     if (pw.gold > 999999) pw.gold = 999999;
     pw.royal_money += tax;                          // the King's cut funds the REF (king.md:92)
-    pw.trade[good] += qty;                          // SELL adds volume (@0x323BC)
+    int delta = qty;                                // SELL adds volume (@0x323BC)
+    if (power_nation(g, power) == 3)                // Dutch: pool delta x2/3 -> stabler
+        delta = delta * 2 / 3;                      //   prices (national_powers.md @0x32390)
+    pw.trade[good] += delta;
     if (pool_priced(good)) market_recompute(g, rd); // post-transaction re-price (@0x32902)
     else step_level(g, good, -1, rd);               // non-pool: -1 stepper (RECONSTRUCTED driver)
     return net;

@@ -140,4 +140,14 @@ struct GameState {
     std::array<std::array<PlanSlot, 64>, 4> plan{};
 };
 
+// The power's @NATIONALITY row (national_powers.md 2): in the EXE the power
+// INDEX is the nationality (0 English / 1 French / 2 Spanish / 3 Dutch) and
+// every national effect is a literal index test. Our engine fixes the human
+// at slot 0 playing game.nation, so slot 0 maps to the chosen nation and the
+// AI slots keep their index. (When the human picks a rival's nation the
+// nationality is duplicated across two powers -- an engine artifact, noted.)
+inline int power_nation(const GameState& g, int power) {
+    return power == 0 ? g.nation : power;
+}
+
 } // namespace vc::sim

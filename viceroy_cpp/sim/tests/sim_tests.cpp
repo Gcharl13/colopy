@@ -195,6 +195,19 @@ static void test_market_model() {
     market_turn(g, rd);
     CHECK(g.powers[0].trade[RUM] == 0 && g.powers[0].trade[MUSKETS] == 0,
           "trade volumes zeroed at the turn boundary");
+
+    std::printf("market: Dutch pool damping (national_powers.md @0x32390):\n");
+    market_sell(g, 3, RUM, 90, rd);                 // power 3 = the Dutch slot
+    CHECK(g.powers[3].trade[RUM] == 60, "Dutch SELL volume x2/3 -> %d",
+          g.powers[3].trade[RUM]);
+    market_sell(g, 1, RUM, 90, rd);                 // power 1 = French: full value
+    CHECK(g.powers[1].trade[RUM] == 90, "other powers at full value -> %d",
+          g.powers[1].trade[RUM]);
+    g.nation = 3;                                   // human playing the Netherlands
+    market_sell(g, 0, RUM, 90, rd);
+    CHECK(g.powers[0].trade[RUM] == 60, "human Dutch keyed on game.nation -> %d",
+          g.powers[0].trade[RUM]);
+    g.nation = 0;
 }
 
 static void test_ref() {
@@ -1141,6 +1154,19 @@ static void test_combat_depth() {
       CHECK(nr.loser_sunk, "laden loser is sunk (the 0x3148&0x40 cargo bit)");
       CHECK(!can_attack_ships(CARAVEL) && can_attack_ships(FRIGATE),
             "only Privateers/Frigates (and the Man-O-War) attack ships");
+    }
+    { // Spanish +50% land attack vs natives (national_powers.md @0x05CF2F)
+      Unit sp; sp.type = SOLDIERS;                   // attack 2
+      Unit br; br.type = BRAVES;
+      RandFn low = [](int lo, int) { return lo; };
+      CombatResult cr = resolve_land(rd, sp, br, 0, 0, 1, false, false, low,
+                                     false, /*nation*/2);
+      CHECK(cr.atk_str == 3, "Spanish vs brave: 2 + 2/2 = 3 (sar;add)");
+      cr = resolve_land(rd, sp, br, 0, 0, 1, false, false, low, false, /*nation*/0);
+      CHECK(cr.atk_str == 2, "English vs brave: unchanged");
+      Unit eu; eu.type = SOLDIERS;                   // a European defender
+      cr = resolve_land(rd, sp, eu, 0, 0, 1, false, false, low, false, /*nation*/2);
+      CHECK(cr.atk_str == 2, "Spanish vs European: unchanged (natives only)");
     }
     { // shore bombardment: stockade+fort colony with 1 artillery vs adjacent caravel
       World w; w.map_w = 4; w.map_h = 1;

@@ -137,9 +137,12 @@ CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
-                          const RandFn& rng, bool defender_fortified) {
+                          const RandFn& rng, bool defender_fortified,
+                          int attacker_nation) {
     CombatResult res;
     res.atk_str = unit_stats(rd, attacker.type).attack;
+    if (attacker_nation == 2 && defender.type >= BRAVES && defender.type < NUNITTYPES)
+        res.atk_str += res.atk_str / 2;   // Spanish +50% vs natives (@0x05CF2F: sar;add)
     // The func_007D3E accumulator (terrain + colony/fort/road folds) applies to
     // the defending strength via the byte-verified *(bonus+4)/4 *3/2 chain
     // (func_05CA7E @0x05CE05/@0x05CE16), not additively.
