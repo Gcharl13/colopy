@@ -1088,6 +1088,50 @@ static void auto_export_step() {
 static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_this_turn,
                           std::function<int(int,int)> rng);
 static void apply_ff_acquire(int id);
+// The engine-coded upgrade ladders (func_07464C), loaded from
+// effects.json/building_chains: prereq = the previous chain member,
+// superseded = any later member built (func_0B900 @0xB97D/@0xB956).
+static const std::vector<std::vector<int>>& building_chains() {
+    static std::vector<std::vector<int>> chains; static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+        try {
+            forge::JsonValue d = forge::json_parse_file("data_extracted/engine/effects.json");
+            if (const forge::JsonValue* bc = d.find("building_chains"))
+                if (const forge::JsonValue* cs = bc->find("chains"))
+                    for (const forge::JsonValue& ch : cs->arr) {
+                        std::vector<int> c2;
+                        for (const forge::JsonValue& v : ch.arr) c2.push_back(v.as_int());
+                        chains.push_back(c2);
+                    }
+        } catch (...) {}
+    }
+    return chains;
+}
+// nullptr = buildable; else the blocking chain member (out_blocker) with
+// out_super = true when a later member supersedes the entry.
+static bool building_chain_blocked(const Colony& c, int bid, int* out_blocker, bool* out_super) {
+    for (const auto& ch : building_chains()) {
+        for (size_t k = 0; k < ch.size(); ++k) {
+            if (ch[k] != bid) continue;
+            if (k > 0 && !((c.built_mask >> ch[k-1]) & 1ull)) {
+                if (out_blocker) *out_blocker = ch[k-1];
+                if (out_super) *out_super = false;
+                return true;                            // prereq missing (@0xB97D)
+            }
+            for (size_t m = k + 1; m < ch.size(); ++m)
+                if ((c.built_mask >> ch[m]) & 1ull) {
+                    if (out_blocker) *out_blocker = ch[m];
+                    if (out_super) *out_super = true;
+                    return true;                        // superseded (@0xB956)
+                }
+            return false;
+        }
+    }
+    return false;                                       // chainless building
+}
+
+
 // Verbatim GAME.TXT message text by @KEY (defined with the label helpers below).
 static std::string game_message_text(const std::string& key);
 static std::string good_display(int g);
@@ -2227,6 +2271,11 @@ static forge::JsonValue report_state_json() {
           fp.arr.push_back(r);
       }
       o.obj["foreign"] = fp; }
+    // F8 revolution gate (@0x39892): the table is unavailable during the WoI --
+    // ship the verbatim @FOREIGNNOTAVAIL text for the report to show instead.
+    o.obj["woi_declared"] = jbool(g_engine_extra.woi_declared);
+    if (g_engine_extra.woi_declared)
+        o.obj["foreign_notavail"] = forge::json_str(game_message_text("@FOREIGNNOTAVAIL"));
 
     // F9 Indian: one row per native settlement (tribe name via @TRIBES).
     { forge::JsonValue ind = jarr();
@@ -3396,6 +3445,39 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         // Start constructing a specific building in a colony (the interactive build menu).
         // {colony, building} -> start_building with cost/min_colony from @BUILDING.
+        // The func_0B900 availability predicate (context_dialogs.md 12): within an
+        // upgrade family (the @BUILDING `size` column = chain id, constant per
+        // family, e.g. 3 = Stockade/Fort/Fortress), the PREVIOUS member must be
+        // built (prereq @0xB97D) and a LATER member built supersedes the entry
+        // (@0xB956); plus min-colony-size (@0xB940) and already-built. The
+        // prereq/supersede chain itself is engine-coded from the family order
+        // (func_07464C), not a CSV column.
+        if (path == "/api/colony/buildmenu") {
+            if (!g_game_active) game_new();
+            int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            const Colony& c = g_world.colonies[ci];
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            forge::JsonValue a = jarr();
+            for (int i = 0; i < 48; ++i) {
+                std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].name", cx).str;
+                if (name.empty()) break;
+                const int fam  = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].size", cx).as_int();
+                const int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].min_colony", cx).as_int();
+                const int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].cost", cx).as_int();
+                if ((c.built_mask >> i) & 1ull) continue;               // already built
+                if (i == c.build_target) continue;                      // already in progress
+                if (c.population < minc) continue;                      // size gate (@0xB940)
+                (void)fam;
+                if (building_chain_blocked(c, i, nullptr, nullptr)) continue;   // @0xB97D/@0xB956
+                if (building_ff_requirement(i, g_engine_extra.ff_owned)) continue;   // Smith/Stuyvesant gates
+                forge::JsonValue e = jobj();
+                e.obj["id"] = forge::json_num(i); e.obj["name"] = forge::json_str(name);
+                e.obj["cost"] = forge::json_num(cost); e.obj["min_colony"] = forge::json_num(minc);
+                a.arr.push_back(e);
+            }
+            forge::JsonValue o = jobj(); o.obj["buildable"] = a; return J(200, o);
+        }
         if (path == "/api/colony/build" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
@@ -3409,6 +3491,19 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (const char* req = building_ff_requirement(bid, g_engine_extra.ff_owned)) {
                 forge::JsonValue o = jobj(); o.obj["ok"] = jbool(false);
                 o.obj["msg"] = forge::json_str(name + " " + req); return J(200, o);
+            }
+            // The func_0B900 chain gate (prereq @0xB97D / supersede @0xB956).
+            {
+                int blocker = -1; bool super2 = false;
+                if (building_chain_blocked(g_world.colonies[ci], bid, &blocker, &super2)) {
+                    std::string bn = forge::resolve_binding(
+                        "@BUILDING[" + std::to_string(blocker) + "].name", cx).str;
+                    forge::JsonValue o = jobj(); o.obj["ok"] = jbool(false);
+                    o.obj["msg"] = forge::json_str(name + (super2
+                        ? " is superseded by the " + bn + " already built"
+                        : " needs its predecessor (" + bn + ") built first"));
+                    return J(200, o);
+                }
             }
             bool ok = start_building(g_world.colonies[ci], bid, cost, minc);
             forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok);

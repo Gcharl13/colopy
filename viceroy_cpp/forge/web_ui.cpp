@@ -1792,6 +1792,14 @@ function repNaval(s){
 // column per power at x=13/80/160/240; full-width separator rules color 0x77; War/Peace
 // (@MISC 101/102) as the last row.
 function repForeign(s){
+  // Revolution gate (@0x39892 test [0x5382]&1): once independence is declared the
+  // 4-power table is unavailable -- the verbatim @FOREIGNNOTAVAIL text shows instead.
+  if(s.woi_declared){
+    let h='';
+    (s.foreign_notavail||'Foreign affairs reports are not available during the War of Independence.')
+      .split('\n').forEach((ln,i)=>{ h+=nsT(10,30+i*(NS_PITCH+2),esc(ln),{col:NS.value,size:5}); });
+    return h;
+  }
   const rows=[['colonies',95],['population',96],['avg_colony',97],['military',98],['naval',99],['merchant',100]];
   const colx=[13,80,160,240];
   let h=''; const fp=s.foreign||[];
@@ -2073,13 +2081,11 @@ function colDrawCanvases(){
 // "Select An Item To Build": the eligible @BUILDING rows (name, cost, min_colony gate)
 // -> POST /api/colony/build, then re-open the screen with the new project.
 async function colBuildMenu(){
-  const ci=COL?COL.index:0, pop=COL?COL.population:0, target=COL&&COL.build?COL.build.target:-1;
-  const builtSet=new Set(((COL&&COL.built)||[]).map(b=>b.id));
-  let tbl; try{ tbl=await (await fetch('/api/tables?file=names')).json(); }
+  const ci=COL?COL.index:0;
+  // the byte-verified func_0B900 gate (size/prereq/supersede/FF) runs server-side
+  let mr; try{ mr=await (await fetch('/api/colony/buildmenu?colony='+ci)).json(); }
   catch(e){ ui.toast('build menu unavailable'); return; }
-  const rows=((tbl['@BUILDING']||{}).rows)||[];
-  const elig=rows.map((r,i)=>({i,name:r.name,cost:+r.cost,min:+r.min_colony}))
-    .filter(e=>e.name&&!builtSet.has(e.i)&&e.i!==target&&pop>=e.min)
+  const elig=(mr.buildable||[]).map(e=>({i:e.id,name:e.name,cost:+e.cost,min:+e.min_colony}))
     .sort((a,b)=>a.cost-b.cost);
   let body='<h3 style="margin:0 0 6px">'+esc(nsLbl('CTITLE',4,'Select An Item To Build'))+'</h3>';
   if(!elig.length) body+='<div class="muted">Nothing new to build here.</div>';
@@ -2251,7 +2257,7 @@ function nvRender(){
   const l1=nvLine('season')||{x:244,y:58}, l2=nvLine('gold')||{x:244,y:66}, l3=nvLine('tax')||{x:290,y:66};
   h+=nsT(l1.x,l1.y,esc(seas)+' '+GAME.year,{size:5,col:NS.white});
   h+=nsT(l2.x,l2.y,esc(nsLbl('CTITLE',1,'Gold:'))+' '+GAME.gold,{size:5,col:NS.white});
-  h+=nsT(l3.x,l3.y,esc(nsLbl('CTITLE',9,'Tax:'))+' 0%',{size:5,col:NS.white});
+  h+=nsT(l3.x,l3.y,esc(nsLbl('CTITLE',9,'Tax:'))+' '+(GAME.tax||0)+'%',{size:5,col:NS.white});
   // sidebar C: the selected-unit panel at the extracted line coords
   const u=selUnit();
   if(u){
