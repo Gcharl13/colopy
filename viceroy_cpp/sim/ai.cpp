@@ -299,6 +299,10 @@ void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd) {
             if (naval && (tab[s].goal_type == 3 || tab[s].goal_type == 5 ||
                           tab[s].goal_type == 6)) continue;
             if (u.type == PIONEERS && tab[s].goal_type == 6 && has_colony) continue;
+            if (u.type == SCOUTS && tab[s].goal_type == 6) continue;   // scouts explore;
+                                                       //   only settle classes found (the
+                                                       //   dispatch, not the capbit, picks
+                                                       //   the mission -- ai.md 6.2)
             u.target_x = tab[s].x; u.target_y = tab[s].y;
             u.ai_state = '1';                          // target selected (@0x04E15D)
             if (tab[s].goal_type == 1 && (u.ai_flags & 0x4))
