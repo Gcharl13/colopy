@@ -120,12 +120,13 @@ bool g_woi = false;                    // [0x5382] bit 0 mirror (set by the call
 // strategic pass for computer powers (@0x24731), then that power's standing
 // orders. Shore fire + the fog sweep run once after the whole power loop.
 void phase_orders_p(GameState& g, World& w, const RandFn& rng, int player_idx,
-                    const RuleData& rd, uint32_t ff_owned, int p) {
+                    const RuleData& rd, uint32_t ff_owned, int p,
+                    const std::vector<vc::sim::AiVillage>* villages = nullptr) {
     if (p == player_idx) {
         g.powers[p].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
         ref_purchase(g.ref, g.powers[p].royal_money, rd);
     } else {
-        vc::sim::ai_power_turn(g, w, p, rd, rng);
+        vc::sim::ai_power_turn(g, w, p, rd, rng, villages);
     }
     apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log, g_woi, p);
 }
@@ -173,7 +174,8 @@ void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn&
     // unknown phase ids are skipped (a modded pipeline may reference a not-yet-built phase)
 }
 
-void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd, uint32_t ff_owned) {
+void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd, uint32_t ff_owned,
+              const std::vector<vc::sim::AiVillage>* villages) {
     // The byte-verified per-power interleave (turn_dispatch.md 3, func_005760):
     // King -> Orders(+REF,+AI) -> Production -> Diplomacy -> Periodic per power
     // 0..3, then the global tail (market once -- see the model-shape note in
@@ -193,10 +195,10 @@ void run_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const R
     for (int p = 0; p < 4; ++p) {
         if (orders) {
             if (ref_leg && p == player_idx) {           // legacy: REF phase listed apart --
-                vc::sim::ai_power_turn(g, w, p, rd, rng);   // (no-op for the human; keeps
+                vc::sim::ai_power_turn(g, w, p, rd, rng, villages);   // (no-op for the human; keeps
                 apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log, g_woi, p);
             } else {
-                phase_orders_p(g, w, rng, player_idx, rd, ff_owned, p);
+                phase_orders_p(g, w, rng, player_idx, rd, ff_owned, p, villages);
             }
         }
         if (prod) phase_production_p(g, w, rng, rd, ff_owned, p);

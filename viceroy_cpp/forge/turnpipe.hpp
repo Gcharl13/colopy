@@ -7,6 +7,7 @@
 // stays identical (a golden-master test asserts run_turn == sim::step_turn).
 #pragma once
 
+#include "ai.hpp"        // vc::sim::AiVillage (the visit-natives view)
 #include "game.hpp"      // vc::sim::GameState, World, RandFn
 #include "events.hpp"    // vc::sim::RumorResult
 #include "training.hpp"  // vc::sim::TeachResult
@@ -22,8 +23,12 @@ namespace forge {
 // Run one turn by iterating the data pipeline (turn.json, cached on first use).
 // Behaviorally identical to vc::sim::step_turn for the default pipeline. ff_owned is the human
 // power's founding-father bitmask (production applies the father effects); 0 = none.
+// villages: the read-only native-settlement view for the AI's visit-natives
+// missions ('4'/'J', ai.md 6.2) -- built by the caller from the engine-side
+// settlement entities; nullptr = no villages known (the sim-only paths).
 void run_turn(vc::sim::GameState& g, vc::sim::World& w, const vc::sim::RandFn& rng,
-              int player_idx, const vc::sim::RuleData& rd, uint32_t ff_owned = 0);
+              int player_idx, const vc::sim::RuleData& rd, uint32_t ff_owned = 0,
+              const std::vector<vc::sim::AiVillage>* villages = nullptr);
 
 // Run ONE named phase of the pipeline (the same dispatch run_turn uses). The Systems
 // browser's per-turn trace steps the pipeline phase-by-phase, snapshotting each phase's

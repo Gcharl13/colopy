@@ -162,6 +162,24 @@ int settlement_attitude(int presence_x, int alarm) {
 
 NativeTurn native_turn_step(GameState& g, World& w, EngineExtra& x, const RandFn& rng) {
     NativeTurn out;
+    // AI missionaries found missions: the 'J' visit-natives mission (ai.md 6.2,
+    // @0x050BD8) delivers a computer power's Missionary to a mission-less
+    // village; the founding itself is the same establish action the player's
+    // r2 menu row runs (the unit is absorbed, a Jesuit expert marks the mission
+    // expert +5 bit 0x10). The AI's act-on-arrival driver is untraced --
+    // RECONSTRUCTED as founding on adjacency, mirroring the player route.
+    for (auto& u : w.units) {
+        if (!u.alive || u.owner == 0 || u.type != vc::sim::MISSIONARIES) continue;
+        for (auto& s : x.settlements) {
+            if (s.mission >= 0) continue;
+            if (std::abs(s.x - u.x) <= 1 && std::abs(s.y - u.y) <= 1) {
+                s.mission = u.owner & 3;
+                s.mission_expert = (u.profession == 0x18);
+                u.alive = false;                       // absorbed into the mission
+                break;
+            }
+        }
+    }
     for (int si = 0; si < (int)x.settlements.size(); ++si) {
         NativeSettlement& s = x.settlements[si];
         // Per-turn tension normalization decay (the @0x485E7 loop).

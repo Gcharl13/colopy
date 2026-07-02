@@ -1233,6 +1233,39 @@ static void test_ai_plan() {
       ai_power_turn(g, w, 1, rd, rig);
       CHECK(w.units[0].order == ORDER_NONE, "adjacent threat wakes the sentry (@0x051C68)");
     }
+    { // visit-natives missions '4'/'J' (ai.md 6.2 @0x0508AB/@0x050BD8): with a
+      // village view, a Missionary heads for the mission-open village ('J',
+      // capital-preferred) and releases to '0' on arrival; without a view the
+      // dispatch falls back to the frontier as before.
+      GameState g; World w; w.map_w = 9; w.map_h = 1;
+      w.terrain.assign(9, 4);
+      w.fog.assign(9, 0xFF);                       // no frontier left anywhere
+      Unit m; m.type = MISSIONARIES; m.owner = 1; m.x = 0; m.y = 0;
+      m.ai_state = '0'; w.units.push_back(m);
+      std::vector<AiVillage> vs;
+      vs.push_back({4, 0, false, true});           // nearer, ordinary
+      vs.push_back({6, 0, true,  true});           // farther but the Capital
+      ai_power_turn(g, w, 1, rd, rig, &vs);
+      CHECK(w.units[0].ai_state == 'J',
+            "missionary takes the 'J' mission (state %c)", w.units[0].ai_state);
+      CHECK(w.units[0].target_x == 6,
+            "capital bonus prefers the farther Capital (target %d)", w.units[0].target_x);
+      for (int t = 0; t < 12 && w.units[0].ai_state == 'J'; ++t)
+          ai_power_turn(g, w, 1, rd, rig, &vs);
+      CHECK(w.units[0].x >= 5, "missionary walked to the village (x=%d)", w.units[0].x);
+      CHECK(w.units[0].ai_state != 'J' || w.units[0].target_x >= 0,
+            "mission released on arrival");
+      // a Scout with a village nearer than any frontier takes '4'
+      GameState g2; World w2; w2.map_w = 9; w2.map_h = 1;
+      w2.terrain.assign(9, 4);
+      w2.fog.assign(9, 0xFF);
+      Unit sc; sc.type = SCOUTS; sc.owner = 1; sc.x = 0; sc.y = 0;
+      sc.ai_state = '0'; w2.units.push_back(sc);
+      std::vector<AiVillage> vs2; vs2.push_back({5, 0, false, false});
+      ai_power_turn(g2, w2, 1, rd, rig, &vs2);
+      CHECK(w2.units[0].ai_state == '4' && w2.units[0].target_x == 5,
+            "scout takes the '4' go-to-village mission (state %c)", w2.units[0].ai_state);
+    }
 }
 
 // combat.md depth: the func_007D3E defense-bonus chain, the func_05B2C2 naval

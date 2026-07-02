@@ -325,6 +325,11 @@ void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd) {
                                                        //   only settle classes found (the
                                                        //   dispatch, not the capbit, picks
                                                        //   the mission -- ai.md 6.2)
+            if (u.type == MISSIONARIES && tab[s].goal_type == 5) continue;
+                                                       // missionaries leave the explore slots
+                                                       //   to Scouts and take the visit-natives
+                                                       //   dispatch ('J', @0x050BD8; allocation
+                                                       //   RECONSTRUCTED like the settle split)
             u.target_x = tab[s].x; u.target_y = tab[s].y;
             u.ai_state = '1';                          // target selected (@0x04E15D)
             if (tab[s].goal_type == 1 && (u.ai_flags & 0x4))
@@ -341,7 +346,8 @@ void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd) {
     }
 }
 
-void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const RandFn& rng) {
+void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const RandFn& rng,
+                   const std::vector<AiVillage>* villages) {
     if (power == HUMAN_OWNER) return;                 // controller gate (@0x58A6)
     ai_strategic_plan(g, w, power, rd);               // func_04CC50 pass
     for (int i = 0; i < (int)w.units.size(); ++i) {
@@ -403,8 +409,32 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
                 u.ai_steps = rng(1, 0x14);             //   step counter +0x3156
                 u.target_x = u.target_y = -1;
             } else if (u.type == SCOUTS || u.type == MISSIONARIES) {
-                int fx, fy;
-                if (nearest_frontier(w, power, u.x, u.y, fx, fy)) {
+                // Visit-natives missions (ai.md 6.2): '4' go-to-native-village
+                // scores the settlement table (@0x0508AB); 'J' is the capital-
+                // preferring variant (@0x050BD8: distance + capital bonus).
+                // Dispatch RECONSTRUCTED (the upstream driver is untraced): a
+                // Missionary heads for the best mission-open village ('J',
+                // capital bonus 4); a Scout takes the village when it scores no
+                // worse than the fog frontier ('4'). An adjacent village never
+                // re-binds (the visit is done; the engine layer acts on it).
+                int fx = -1, fy = -1;
+                const bool frontier = nearest_frontier(w, power, u.x, u.y, fx, fy);
+                int bvx = -1, bvy = -1, bvs = 0;
+                if (villages)
+                    for (const AiVillage& v : *villages) {
+                        if (u.type == MISSIONARIES && !v.mission_open) continue;
+                        const int d = octile(v.x - u.x, v.y - u.y);
+                        if (d <= 1) continue;              // already visiting it
+                        const int s = d - (u.type == MISSIONARIES && v.capital ? 4 : 0);
+                        if (bvx < 0 || s < bvs) { bvx = v.x; bvy = v.y; bvs = s; }
+                    }
+                const bool take_village = bvx >= 0 &&
+                    (u.type == MISSIONARIES || !frontier ||
+                     bvs <= octile(fx - u.x, fy - u.y));
+                if (take_village) {
+                    u.target_x = bvx; u.target_y = bvy;
+                    u.ai_state = u.type == MISSIONARIES ? 'J' : '4';
+                } else if (frontier) {
                     u.target_x = fx; u.target_y = fy;
                     u.ai_state = octile(fx - u.x, fy - u.y) >= 8 ? 'D' : '2';
                     if (u.ai_state == 'D') u.ai_flags |= 0x10;
@@ -496,6 +526,11 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
                 u.ai_state = 'B';                      // ship reached goto: '1' -> 'B' (@0x051D37)
                 u.target_x = u.target_y = -1;
                 continue;
+            }
+            if (u.ai_state == '4' || u.ai_state == 'J') {
+                u.ai_state = '0';                      // village reached: the visit itself is
+                u.target_x = u.target_y = -1;          //   engine-side (mission founding); the
+                continue;                              //   adjacency guard stops a re-bind
             }
             u.ai_state = 'U';                          // sitting on the stored target (@0x0508D7)
             u.target_x = u.target_y = -1;

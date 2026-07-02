@@ -70,6 +70,12 @@ void ai_strategic_plan(GameState& g, World& w, int power, const RuleData& rd);
 // with plan_set and observe the binding/refinement chars directly.
 void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd);
 
+// A native-settlement view for the visit-natives missions ('4'/'J', ai.md 6.2).
+// The settlement entities live engine-side (forge EngineExtra.settlements); the
+// sim AI receives this read-only projection of the table the EXE scans (count
+// [0x539A], stride 0x12; the Capital bit is NativeSettlement +0x03 & 0x04).
+struct AiVillage { int x = 0, y = 0; bool capital = false; bool mission_open = true; };
+
 // One power's AI pass (ai.md 6.3: controller gate -> strategic plan ->
 // per-unit dispatch -> execute). Assigns missions (writing Unit.ai_state with
 // the decoded state chars) and steps each unit via the func_046FFA heading
@@ -80,9 +86,13 @@ void ai_plan_match(GameState& g, World& w, int power, const RuleData& rd);
 // 'G' garrisoned); ships wander ('8'); AI Pioneers improve tiles around their
 // colonies ('B' clear/plow, 'e' road, 'C' complete). Budget exhaustion mid-
 // route writes '9'; a lost goal writes '?' (re-planned next pass).
+// With a village view, Scouts/Missionaries also take the visit-natives
+// missions: '4' go-to-native-village (@0x0508AB, nearest-scored) and 'J' the
+// capital-preferring variant (@0x050BD8, distance + capital bonus).
 // AI units do not initiate combat in this pass (the enemy-on-tile candidate
 // reject @0x047A1D; attack missions are not in the decoded dispatch table).
 void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd,
-                   const RandFn& rng);
+                   const RandFn& rng,
+                   const std::vector<AiVillage>* villages = nullptr);
 
 } // namespace vc::sim

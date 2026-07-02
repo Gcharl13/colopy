@@ -1260,7 +1260,15 @@ static void game_step() {
         // ref_purchase) during the war so the conflict is winnable; war_resolution_step depletes it.
         Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
         forge::set_woi(g_engine_extra.woi_declared);    // @NOWARSDURINGREV gate for the units phase
-        forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned);
+        // The native-settlement view for the AI's visit-natives missions
+        // ('4'/'J', ai.md 6.2): the read-only projection of the engine-side
+        // settlement entities the EXE scans ([0x539A], stride 0x12).
+        std::vector<vc::sim::AiVillage> villages;
+        villages.reserve(g_engine_extra.settlements.size());
+        for (const forge::NativeSettlement& s : g_engine_extra.settlements)
+            villages.push_back({s.x, s.y, s.capital, s.mission < 0});
+        forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned,
+                        &villages);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         // (the per-turn market phase -- drift + republish + volume reset -- runs inside run_turn)
