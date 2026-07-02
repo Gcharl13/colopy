@@ -524,6 +524,17 @@ function sheetPixels(img){
   const g=c.getContext('2d'); g.drawImage(img,0,0);
   return {d:g.getImageData(0,0,img.width,img.height).data, w:img.width};
 }
+let PBB=null;                                          // phys0 tight-bbox cache
+function physBBox(f){
+  if(!PBB) PBB={};
+  if(PBB[f]!==undefined) return PBB[f];
+  let x0=16,y0=16,x1=-1,y1=-1;
+  for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+    const o=((ly*PPX.w)+(f*16+lx))*4;
+    if(PPX.d[o+3]>0){ if(lx<x0)x0=lx; if(ly<y0)y0=ly; if(lx>x1)x1=lx; if(ly>y1)y1=ly; }
+  }
+  return PBB[f]=(x1<0?null:{x:x0,y:y0,w:x1-x0+1,h:y1-y0+1});
+}
 // classify_terrain (func_006204): id&0x1F, fold forest 8..0x17 -> (id&7)|8
 function classifyVis(b){ const id=b&0x1F; return (id>=8&&id<0x18)?((id&7)|8):id; }
 // O513 land base: vis<0x18 ? vis&7 : vis; unforested Desert -> the 0x11 group
@@ -591,26 +602,51 @@ function composeMap(g, terr, w, h, cell, useTiles){
       for(let dr=0;dr<8;dr++){ if(isW(x+CDX8[dr],y+CDY8[dr])) continue; conn|=(1<<dr);
         if(dr&1) cfg[((dr+1)&6)>>1]|=2; else { cfg[dr>>1]|=4; cfg[((dr>>1)+1)&3]|=1; } }
       if(conn){
+        // Build the tile's opaque coast-sprite mask first. The atlas CENTERED
+        // each sub-tile frame in its cell (baked blit offsets lost), so each
+        // quadrant's content is re-anchored at the tile corner that quadrant
+        // touches -- shores join and corner arcs hug the corner.
+        const OP=new Uint8Array(256);                  // opaque mask + staged pixels
+        const STG=new Int32Array(256).fill(-1);
+        const stage=(lx,ly,o)=>{ if(lx>=0&&lx<16&&ly>=0&&ly<16){ OP[ly*16+lx]=1; STG[ly*16+lx]=o; } };
         let pat=-1;
         if((conn&0xDD)===0xC1)pat=0; if((conn&0x77)===0x07)pat=1;
         if((conn&0x77)===0x70)pat=2; if((conn&0xDD)===0x1C)pat=3;
+        // land edges of this tile (which cardinals are land)
+        const eN=!isW(x,y-1), eE=!isW(x+1,y), eS=!isW(x,y+1), eW=!isW(x-1,y);
         if(pat>=0){                                    // clean diagonal beach 0x96+pat
           const f=0x96+pat;
           for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
-            const o=pp(f,lx,ly);
-            if(PPX.d[o+3]>0) put(lx,ly,PPX.d,o);
-            else { const lo=landFill(x,y,lx,ly); if(lo>=0) put(lx,ly,TPX.d,lo); }
+            const o=pp(f,lx,ly); if(PPX.d[o+3]>0) stage(lx,ly,o);
           }
-        } else {                                       // 4x 8x8 quadrant sub-tiles
-          const qx=[0,8,8,0], qy=[0,0,8,8];
+        } else {                                       // 4 quadrant sub-tiles, corner-anchored
+          const qcx=[0,1,1,0], qcy=[0,0,1,1];          // NW,NE,SE,SW outer corner
           for(let q=0;q<4;q++){
-            const f=0x6C+cfg[q]*4+q;
-            for(let ly=qy[q];ly<qy[q]+8;ly++)for(let lx=qx[q];lx<qx[q]+8;lx++){
-              const o=pp(f,lx,ly);
-              if(PPX.d[o+3]>0) put(lx,ly,PPX.d,o);
-              else if(cfg[q]){ const lo=landFill(x,y,lx,ly); if(lo>=0) put(lx,ly,TPX.d,lo); }
+            const f=0x6C+cfg[q]*4+q, bb=physBBox(f);
+            if(!bb) continue;
+            const ax=qcx[q]?16-bb.w:0, ay=qcy[q]?16-bb.h:0;
+            for(let gy=0;gy<bb.h;gy++)for(let gx=0;gx<bb.w;gx++){
+              const o=pp(f,bb.x+gx,bb.y+gy);
+              if(PPX.d[o+3]>0) stage(ax+gx,ay+gy,o);
             }
           }
+        }
+        // Land-side classification: a transparent pixel is LAND when the
+        // straight path from it to a LAND edge crosses no opaque shore pixel
+        // (the shore band is the boundary; the seaward side stays ocean).
+        // Filled from the nearest cardinal land terrain (emit_terrain backfill).
+        const clearTo=(lx,ly,d)=>{ // d: 0 N,1 E,2 S,3 W
+          if(d===0){ for(let t=ly-1;t>=0;t--) if(OP[t*16+lx]) return false; return true; }
+          if(d===2){ for(let t=ly+1;t<16;t++) if(OP[t*16+lx]) return false; return true; }
+          if(d===3){ for(let t=lx-1;t>=0;t--) if(OP[ly*16+t]) return false; return true; }
+          for(let t=lx+1;t<16;t++) if(OP[ly*16+t]) return false; return true;
+        };
+        for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
+          const s=STG[ly*16+lx];
+          if(s>=0){ put(lx,ly,PPX.d,s); continue; }
+          const land=(eN&&clearTo(lx,ly,0))||(eE&&clearTo(lx,ly,1))||
+                     (eS&&clearTo(lx,ly,2))||(eW&&clearTo(lx,ly,3));
+          if(land){ const lo=landFill(x,y,lx,ly); if(lo>=0) put(lx,ly,TPX.d,lo); }
         }
       }
     } else {
@@ -629,7 +665,10 @@ function composeMap(g, terr, w, h, cell, useTiles){
         for(let ly=0;ly<16;ly++)for(let lx=0;lx<16;lx++){
           const edge=d===0?ly:d===1?15-lx:d===2?15-ly:lx;
           if(edge>=4) continue;
-          if(((lx+ly)&1)!==(edge&1)) continue;
+          // 2x2-block dither (the original's coarse DOS pattern; the true
+          // 0x69+dir stencil pixels were baked out of the atlas -- the block
+          // dither is RECONSTRUCTED from original screenshots)
+          if((((lx>>1)+(ly>>1))&1)!==0) continue;
           const o=tp(nf,lx,ly); if(TPX.d[o+3]>0) put(lx,ly,TPX.d,o);
         }
       }
