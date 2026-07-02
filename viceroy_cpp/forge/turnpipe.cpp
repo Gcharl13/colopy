@@ -8,6 +8,7 @@
 #include "immigration.hpp" // immigration_step
 #include "ref.hpp"         // ref_accrue_rate, ref_purchase
 #include "training.hpp"    // school_teach_step
+#include "explore.hpp"     // reveal_step
 #include "unit_turn.hpp"   // refresh_moves, apply_orders
 #include "turn.hpp"        // advance_cadence
 #include "rules.hpp"       // Config
@@ -84,6 +85,7 @@ void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
     apply_orders(g, w, rng, rd, ff_owned);
+    reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
 

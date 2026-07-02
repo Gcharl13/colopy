@@ -2334,13 +2334,21 @@ function showSel(){
     +' &middot; '+ord+(u.order===3?(' → ('+u.target_x+','+u.target_y+')'):'')
     +(u.naval?' &middot; <span class="muted">ship</span>':' &middot; click a tile to send it, or Found colony');
 }
+// Fog of war (exploration.md): the player's sticky visibility bit is 0x10 (player 0).
+function fogSeen(x,y){ return !GAME.fog || (GAME.fog[y*GAME.w+x]&0x10)!==0; }
 function drawGame(){
   if(!GAME || !GAME.w) return;
   const cv=$('#gcv'); cv.width=GAME.w*GCELL; cv.height=GAME.h*GCELL;
   const g=cv.getContext('2d');
   composeMap(g, GAME.terrain, GAME.w, GAME.h, GCELL, true);   // base ground + forest/coast overlays
+  // unexplored tiles render hidden (the game's black fog; "Unexplored" per @OTHER_NAMES)
+  if(GAME.fog){ g.fillStyle='#04060c';
+    for(let y=0;y<GAME.h;y++) for(let x=0;x<GAME.w;x++)
+      if(!fogSeen(x,y)) g.fillRect(x*GCELL,y*GCELL,GCELL,GCELL);
+  }
   // colonies (settlement marker: owner-ringed block + population)
   for(const c of GAME.colonies){
+    if(!fogSeen(c.x,c.y)) continue;                     // hidden until explored
     const X=c.x*GCELL, Y=c.y*GCELL;
     g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,GCELL,GCELL);
     g.fillStyle='#2a1c10'; g.fillRect(X+2,Y+2,GCELL-4,GCELL-4);
@@ -2361,6 +2369,7 @@ function drawGame(){
   // on a 16px map tile, so it draws at 2x the tile size -- the SAME pixel scale as the terrain.
   const DS=GCELL*2;
   for(const u of GAME.units){
+    if(u.owner!==0 && !fogSeen(u.x,u.y)) continue;      // rivals visible only in explored tiles
     const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
     if(UNITS_READY && u.type<23){
       g.drawImage(UNITSET, u.type*32,0,32,32, cx-DS/2, cy-DS/2, DS, DS);

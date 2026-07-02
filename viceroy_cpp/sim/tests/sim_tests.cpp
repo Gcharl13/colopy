@@ -20,6 +20,7 @@
 #include "../scoring.hpp"
 #include "../mapgen.hpp"
 #include "../training.hpp"
+#include "../explore.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -711,6 +712,31 @@ static void test_terrain_improvement() {
           "out of tools: pioneer reverts to a colonist (@USEDUPTOOLS)");
 }
 
+// exploration.md: sight radii (func_006608), sticky per-power fog, colony +/-5 reveal.
+static void test_fog_of_war() {
+    std::printf("fog of war:\n");
+    CHECK(sight_radius(COLONISTS, false) == 1 && sight_radius(SCOUTS, false) == 2,
+          "land 1, scout 2");
+    CHECK(sight_radius(GALLEON, false) == 2 && sight_radius(FRIGATE, false) == 2,
+          "big ships 2");
+    CHECK(sight_radius(CARAVEL, false) == 1 && sight_radius(CARAVEL, true) == 2,
+          "caravel 1; 2 with de Soto (naval-only)");
+    CHECK(sight_radius(SOLDIERS, true) == 1, "de Soto does not extend land sight");
+    World w; w.map_w = 12; w.map_h = 12; w.terrain.assign(144, 4);
+    Unit u; u.type = COLONISTS; u.owner = 0; u.x = 5; u.y = 5; w.units.push_back(u);
+    reveal_step(w, 0);
+    CHECK(w.explored(5, 5, 0) && w.explored(4, 4, 0) && w.explored(6, 6, 0),
+          "3x3 revealed around a land unit");
+    CHECK(!w.explored(7, 5, 0), "outside the square stays fogged");
+    CHECK(!w.explored(5, 5, 1), "no shared exploration: player 1 still fogged");
+    w.units[0].x = 9;                                  // moved; old tiles stay revealed
+    reveal_step(w, 0);
+    CHECK(w.explored(4, 4, 0) && w.explored(9, 5, 0), "reveal is sticky");
+    Colony c; c.owner_power = 0; c.x = 2; c.y = 2; w.colonies.push_back(c);
+    reveal_step(w, 0);
+    CHECK(w.explored(0, 0, 0) && w.explored(7, 7, 0), "colony reveals +/-5 (11x11)");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -740,6 +766,7 @@ int main() {
     test_training();
     test_native_learn_and_veterancy();
     test_terrain_improvement();
+    test_fog_of_war();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

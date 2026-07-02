@@ -1,6 +1,7 @@
 // sim/unit_turn.cpp -- see unit_turn.hpp.
 #include "unit_turn.hpp"
 #include "combat.hpp"
+#include "explore.hpp"
 
 #include <climits>
 #include <cstdlib>
@@ -187,6 +188,9 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
                     bool cleared = do_combat(g, w, i, occ, rng, rd, ff_owned);
                     if (cleared && u.alive) { u.x = nx; u.y = ny; }  // advance into vacated tile
                 } // friendly occupant: blocked this turn (no stacking)
+                if (u.alive && !w.fog.empty())                       // reveal the new tile's square
+                    reveal_around(w, u.x, u.y,
+                                  sight_radius(u.type, u.owner == 0 && ((ff_owned >> 7) & 1u)), u.owner);
                 break;                                              // combat or block ends the move
             }
 
@@ -195,6 +199,9 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
             int cost = 1;
             if (tid >= 0 && tid < NTERRAIN) { cost = rd.terrain_move[tid]; if (cost < 1) cost = 1; }
             u.x = nx; u.y = ny;
+            if (!w.fog.empty())                                     // reveal per step (func_006468)
+                reveal_around(w, u.x, u.y,
+                              sight_radius(u.type, u.owner == 0 && ((ff_owned >> 7) & 1u)), u.owner);
             // "always move at least one tile": entering costs `cost`, floored at 0.
             u.moves_left = (u.moves_left > cost) ? (u.moves_left - cost) : 0;
         }

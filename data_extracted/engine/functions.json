@@ -691,6 +691,29 @@
       "name": "Terrain improvement - clear, plow, roads",
       "source": "sim/unit_turn.cpp (do_improve)",
       "spec": "spec/systems/terrain_improvement.md (func_040656 clear/plow, func_0409D6 road, func_040608 tools -- BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "Scout: 2 ; Galleon/Privateer/Frigate: 2 ; any naval with Hernando de Soto (FF 7): 2 ; else 1  (a (2R+1)x(2R+1) square)",
+          "fn": "sight_radius",
+          "knobs": [],
+          "note": "func_006608 selector; the de Soto boost is naval-ONLY in the EXE (@0x6647) -- a documented divergence from the manual's 'all units'. No terrain sight extension exists.",
+          "title": "Sight radius by unit type",
+          "writes": []
+        },
+        {
+          "expr": "each power owns fog bit 1 << (player+4) per tile ; units OR their sight square each turn/step ; colonies OR an 11x11 (+/-5) block ; bits never clear",
+          "fn": "reveal_step",
+          "knobs": [],
+          "note": "The visibility layer is separate from the .MP terrain byte (the EXE's 4th map layer); no shared exploration -- rivals are seen only inside your own revealed tiles. Colony reveal = func_0063B6.",
+          "title": "Sticky per-power reveal",
+          "writes": []
+        }
+      ],
+      "name": "Exploration - fog of war & sight",
+      "source": "sim/explore.cpp",
+      "spec": "spec/systems/exploration.md (fog encoding + func_006608 radii BYTE-VERIFIED)"
     }
   ]
 }

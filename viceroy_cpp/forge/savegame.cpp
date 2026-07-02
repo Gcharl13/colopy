@@ -206,6 +206,11 @@ std::string dump_game(const GameState& g, const World& w) {
         for (uint8_t b : w.improve) imp.arr.push_back(json_num(b));
         wd.obj["improve"] = imp;
     }
+    if (!w.fog.empty()) {                           // per-power visibility plane (exploration.md)
+        JsonValue fg = arr();
+        for (uint8_t b : w.fog) fg.arr.push_back(json_num(b));
+        wd.obj["fog"] = fg;
+    }
     JsonValue cols = arr();
     for (const Colony& c : w.colonies) cols.arr.push_back(dump_colony(c));
     wd.obj["colonies"] = cols;
@@ -246,6 +251,8 @@ LoadedGame parse_game(const std::string& json) {
             for (const auto& b : ter->arr) lg.w.terrain.push_back((uint8_t)b.as_int());
         if (const JsonValue* imp = wd->find("improve"))   // absent in old saves -> none
             for (const auto& b : imp->arr) lg.w.improve.push_back((uint8_t)b.as_int());
+        if (const JsonValue* fg = wd->find("fog"))        // absent in old saves -> fog off
+            for (const auto& b : fg->arr) lg.w.fog.push_back((uint8_t)b.as_int());
         if (const JsonValue* cols = wd->find("colonies"))
             for (const auto& c : cols->arr) lg.w.colonies.push_back(read_colony(c));
         if (const JsonValue* units = wd->find("units"))

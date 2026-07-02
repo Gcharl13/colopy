@@ -1,6 +1,7 @@
 // sim/game.cpp -- see game.hpp.
 #include "game.hpp"
 #include "economy.hpp"
+#include "explore.hpp"
 #include "market.hpp"
 #include "ref.hpp"
 #include "training.hpp"
@@ -40,9 +41,11 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 
-    // 5. Units: refresh move points and execute standing orders (all owners).
+    // 5. Units: refresh move points and execute standing orders (all owners), then the
+    //    exploration sweep (sticky per-power fog reveal around every unit + colony).
     refresh_moves(w, rd);
     apply_orders(g, w, rng, rd, ff_owned);
+    reveal_step(w, ff_owned);
 
     // 6. End of turn: advance year/season.
     advance_cadence(g);

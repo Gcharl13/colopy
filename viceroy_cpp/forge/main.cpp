@@ -25,6 +25,7 @@
 #include "rules_json.hpp"
 #include "scoring.hpp"
 #include "savegame.hpp"
+#include "explore.hpp"
 #include "store.hpp"
 #include "training.hpp"
 #include "turnpipe.hpp"
@@ -783,6 +784,12 @@ static void game_new(int nation = 0, int difficulty = 1) {
         add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
     }
     seed_native_settlements();                          // real native villages on the map
+    // Fog of war (exploration.md): the map starts hidden; the opening reveal is the
+    // sight squares around the starting units + the +/-5 blocks around the colonies.
+    if (g_world.map_w > 0 && g_world.map_h > 0) {
+        g_world.fog.assign((size_t)g_world.map_w * g_world.map_h, 0);
+        vc::sim::reveal_step(g_world, g_engine_extra.ff_owned);
+    }
     g_game_active = true;
 }
 
@@ -1244,6 +1251,11 @@ static forge::JsonValue game_state_json() {
     forge::JsonValue terr = jarr();
     for (uint8_t b : g_world.terrain) terr.arr.push_back(forge::json_num(b));
     o.obj["terrain"] = terr;
+    if (!g_world.fog.empty()) {          // per-power visibility plane (bit player+4)
+        forge::JsonValue fg = jarr();
+        for (uint8_t b : g_world.fog) fg.arr.push_back(forge::json_num(b));
+        o.obj["fog"] = fg;
+    }
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);

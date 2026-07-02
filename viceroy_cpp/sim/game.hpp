@@ -17,6 +17,11 @@ struct World {
     // road 0x08 @0x040AEC -- a feature plane distinct from the .MP terrain byte).
     // Lazily sized on the first write; empty = no improvements anywhere.
     std::vector<uint8_t> improve;
+    // Per-tile fog-of-war (exploration.md 2, BYTE-VERIFIED encoding): a separate
+    // visibility layer (the EXE's 4th map layer at far-ptr [0x168]) holding one
+    // STICKY bit per power -- bit player+4 (player 0 = 0x10 .. player 3 = 0x80),
+    // OR'd by func_00631A; no shared exploration. Empty = fog disabled (all seen).
+    std::vector<uint8_t> fog;
 
     // Terrain id at (x,y) (low 5 bits); -1 if no terrain plane / out of range.
     int terrain_id(int x, int y) const {
@@ -34,6 +39,12 @@ struct World {
         if (map_w <= 0 || map_h <= 0 || x < 0 || x >= map_w || y < 0 || y >= map_h) return;
         if (improve.empty()) improve.assign((size_t)map_w * map_h, 0);
         improve[(size_t)y * map_w + x] |= bit;
+    }
+    // Has `player` explored (x,y)? Fog disabled (empty plane) => everything visible.
+    bool explored(int x, int y, int player) const {
+        if (fog.empty() || map_w <= 0) return true;
+        if (x < 0 || x >= map_w || y < 0 || y >= map_h) return false;
+        return (fog[(size_t)y * map_w + x] & (uint8_t)(1u << (player + 4))) != 0;
     }
 };
 
