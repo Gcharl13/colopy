@@ -1264,7 +1264,12 @@ function tribeColor(t){
 // owner-colored box beside the sprite carrying the 0x54DE status letter. Box
 // geometry (right edge, ~7x9 of a 16px tile) and the black/white glyph-contrast
 // pick are RECONSTRUCTED from original screenshots; fill + letter are spec data.
-function drawChip(g,X,Y,px,color,glyph){
+function chipAnchor(u){
+  if(u.naval||[4,5,7,8,11,21,22].indexOf(u.type)>=0) return 'ul';
+  if(u.type===12||u.type===10) return 'tc';   // treasure cart tc RECONSTRUCTED
+  return 'br';
+}
+function drawChip(g,X,Y,px,color,glyph,anchor){
   if(px<8) return;
   const t=String(glyph==null?'':glyph);
   // USER RULING: the chip stays fully inside its own 16x16 tile (nothing
@@ -1273,7 +1278,12 @@ function drawChip(g,X,Y,px,color,glyph){
   let w=Math.max(4,Math.round(px*6/16))+(t.length>1?(t.length-1)*Math.round(px*4/16):0);
   w=Math.min(w,px-2);
   const h=Math.max(6,Math.round(px*9/16));
-  const cx=X+1, cy=Y+((px-h)>>1);
+  // USER RULING: the chip tucks into the sprite's empty space, per kind --
+  // 'br' bottom-right (narrow foot units), 'ul' upper-left (ships, cavalry,
+  // artillery), 'tc' top-center (wagon train); 'lm' left-middle (colonies).
+  const a=anchor||'lm';
+  const cx=a==='br'?X+px-w-1:a==='tc'?X+((px-w)>>1):X+1;
+  const cy=a==='br'?Y+px-h-1:(a==='tc'||a==='ul')?Y+1:Y+((px-h)>>1);
   g.fillStyle='#000'; g.fillRect(cx-1,cy-1,w+2,h+2);
   g.fillStyle=color; g.fillRect(cx,cy,w,h);
   if(t&&t!==' '){
@@ -2733,7 +2743,7 @@ function nvDraw(){
       g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+(px>>1),Y+(px>>3)); g.lineTo(X+px-(px>>3),Y+px-(px>>3)); g.lineTo(X+(px>>3),Y+px-(px>>3)); g.closePath(); g.fill(); }
     if(s.capital&&px>=8){ g.fillStyle='#ffe27a'; g.fillRect(X+px-3,Y+1,2,2); } });
   (GAME.braves||[]).forEach(b=>{ if(!inWin(b.x,b.y)||!fogSeen(b.x,b.y)) return;
-    drawChip(g,(b.x-NVX)*px,(b.y-NVY)*px,px,tribeColor(b.tribe),'-');
+    drawChip(g,(b.x-NVX)*px,(b.y-NVY)*px,px,tribeColor(b.tribe),'-','br');
     if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,(b.x-NVX)*px,(b.y-NVY)*px,px,px); });
   if(GAME.rumors&&PHYS_READY) for(const [rx,ry] of GAME.rumors)      // rumor medallions
     if(inWin(rx,ry)&&fogSeen(rx,ry)) g.drawImage(PHYS,103*16,0,16,16,(rx-NVX)*px,(ry-NVY)*px,px,px);
@@ -2753,7 +2763,7 @@ function nvDraw(){
     } });
   (GAME.units||[]).forEach(u=>{ if(!inWin(u.x,u.y)) return;
     if(u.owner!==0&&!fogSeen(u.x,u.y)) return;
-    drawChip(g,(u.x-NVX)*px,(u.y-NVY)*px,px,ownerColor(u.owner),u.glyph||'-');
+    drawChip(g,(u.x-NVX)*px,(u.y-NVY)*px,px,ownerColor(u.owner),u.glyph||'-',chipAnchor(u));
     if(UNITS_READY&&u.type<23) g.drawImage(UNITSET,u.type*16,0,16,16,(u.x-NVX)*px,(u.y-NVY)*px,px,px); });
   const s=selUnit();
   if(s&&inWin(s.x,s.y)){ g.strokeStyle='#ffe27a'; g.lineWidth=Math.max(1,px>>3); g.strokeRect((s.x-NVX)*px+1,(s.y-NVY)*px+1,px-2,px-2); }
@@ -3937,7 +3947,7 @@ function drawGame(){
   for(const b of (GAME.braves||[])){
     if(!fogSeen(b.x,b.y)) continue;
     // tribe chip behind the sprite; '-' glyph (owner>=4 order-code clamp @0x03915)
-    drawChip(g, b.x*GCELL, b.y*GCELL, GCELL, tribeColor(b.tribe), '-');
+    drawChip(g, b.x*GCELL, b.y*GCELL, GCELL, tribeColor(b.tribe), '-', 'br');
     if(UNITS_READY) g.drawImage(UNITSET,19*16,0,16,16,b.x*GCELL,b.y*GCELL,GCELL,GCELL);
   }
   // unexplored tiles render hidden (the game's black fog; "Unexplored" per @OTHER_NAMES)
@@ -3980,7 +3990,7 @@ function drawGame(){
     const cx=u.x*GCELL+GCELL/2, cy=u.y*GCELL+GCELL/2;
     // the ownership chip first, so the piece stands in front of it (original
     // layering: box off to the side behind each sprite)
-    drawChip(g, u.x*GCELL, u.y*GCELL, GCELL, ownerColor(u.owner), u.glyph||'-');
+    drawChip(g, u.x*GCELL, u.y*GCELL, GCELL, ownerColor(u.owner), u.glyph||'-', chipAnchor(u));
     if(UNITS_READY && u.type<23){
       g.drawImage(UNITSET, u.type*16,0,16,16, cx-DS/2, cy-DS/2, DS, DS);
     } else {
