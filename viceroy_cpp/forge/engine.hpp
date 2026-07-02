@@ -94,6 +94,11 @@ struct EngineExtra {
     long bells_since_declaration = 0;  // bells produced after the declaration (component 6;
                                        // spec gates on the intervention flag [0x5382]&2 --
                                        // gating on the declaration is RECONSTRUCTED)
+    // In-game tutorial (tutorial.md): the 16-bit step-shown bitmask
+    // [0x5386] (low) / [0x5387] (high); event-driven and idempotent -- each
+    // step fires once when its bit is clear, then sets it. New-game init
+    // 0x000E (@0x755EB pre-marks three steps).
+    uint16_t tutorial_mask = 0x000E;
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side

@@ -861,6 +861,84 @@ static void history_snapshot() {
 // the /api/game/turn route can present them to the player alongside the OnTurnStart event graphs.
 static std::vector<std::string> g_turn_notices;
 
+// ---- In-game tutorial (spec/systems/tutorial.md) ----------------------------
+// Event-driven, idempotent lessons: each @TUTORIALn owns one bit of the 16-bit
+// step-shown mask [0x5386]/[0x5387] (EngineExtra.tutorial_mask, new-game init
+// 0x000E @0x755EB) and fires ONCE when its event first occurs (test bit; emit;
+// set bit). Only the byte-mapped steps are wired (tutorial.md 3 table); the
+// unmapped bits stay dormant rather than invented. The queue drains through
+// GET /api/tutorial; the client shows each as a wood-frame popup.
+static std::vector<std::pair<std::string, std::string>> g_tutorial_queue;
+static std::string game_message_text(const std::string& key);           // below
+static const std::vector<std::string>& labels_section(const std::string& s); // below
+static void tutorial_fire(uint16_t bit, const std::string& key,
+                          const std::vector<std::string>& s = {},
+                          const std::vector<long>& n = {}) {
+    if (g_engine_extra.tutorial_mask & bit) return;      // already shown
+    g_engine_extra.tutorial_mask |= bit;
+    std::string text = game_message_text(key);           // verbatim GAME.TXT prose
+    if (text == key) return;                             // record missing: stay silent
+    for (size_t i = 0; i < s.size(); ++i) {
+        const std::string ph = "%STRING" + std::to_string(i);
+        size_t p; while ((p = text.find(ph)) != std::string::npos) text.replace(p, ph.size(), s[i]);
+    }
+    for (size_t i = 0; i < n.size(); ++i) {
+        const std::string ph = "%NUMBER" + std::to_string(i);
+        size_t p; while ((p = text.find(ph)) != std::string::npos) text.replace(p, ph.size(), std::to_string(n[i]));
+    }
+    g_tutorial_queue.emplace_back(key, text);
+}
+// The colony display name (the NAMES colony-name pool by index, as the colony
+// screen titles it).
+static std::string tutorial_colony_name(int ci) {
+    static const char* kPool[4] = {"ENGLISH", "FRENCH", "SPANISH", "DUTCH"};
+    std::string name = "Colony " + std::to_string(ci + 1);
+    const auto& pool = labels_section(kPool[g_game.nation & 3]);
+    if (ci < (int)pool.size() && !pool[ci].empty()) {
+        name = pool[ci];
+        size_t comma = name.find(','); if (comma != std::string::npos) name.resize(comma);
+    }
+    return name;
+}
+static std::string tutorial_home_port() {                // @HOMEPORT[nation] (NAMES)
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    std::string p = forge::resolve_binding("@HOMEPORT[" + std::to_string(g_game.nation & 3) + "].name", cx).str;
+    return p.empty() ? "Europe" : p;
+}
+// The per-turn tutorial checks (T5/T6/T7 sites, run after the turn pipeline).
+static void tutorial_turn_checks() {
+    // T5 ([0x5387]&0x01, market/king phase func_033F6A @0x3651F): immigrants
+    // are waiting on the docks in Europe.
+    if (!(g_engine_extra.tutorial_mask & 0x0100) && g_game.powers[0].dock_pool[0] >= 0)
+        tutorial_fire(0x0100, "@TUTORIAL5",
+                      {tutorial_home_port(), forge::job_name(g_game.powers[0].dock_pool[0], false)});
+    // T6 ([0x5387]&0x02, colony processor func_02D658 @0x2EA4C): a colony has
+    // stockpiled cargo a ship could carry to Europe.
+    if (!(g_engine_extra.tutorial_mask & 0x0200))
+        for (size_t ci = 0; ci < g_world.colonies.size(); ++ci) {
+            const Colony& c = g_world.colonies[ci];
+            if (c.owner_power != 0) continue;
+            for (int gd = 1; gd < vc::sim::NGOODS && !(g_engine_extra.tutorial_mask & 0x0200); ++gd)
+                if (c.stockpile[gd] > 0) {
+                    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+                    tutorial_fire(0x0200, "@TUTORIAL6",
+                                  {forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].name", cx).str,
+                                   tutorial_colony_name((int)ci), tutorial_home_port()},
+                                  {c.stockpile[gd]});
+                }
+            if (g_engine_extra.tutorial_mask & 0x0200) break;
+        }
+    // T7 ([0x5387]&0x04): a colony is growing -- suggest the Stockade once the
+    // @BUILDING population gate (min_colony 3) is reachable and it isn't built.
+    if (!(g_engine_extra.tutorial_mask & 0x0400))
+        for (size_t ci = 0; ci < g_world.colonies.size(); ++ci) {
+            const Colony& c = g_world.colonies[ci];
+            if (c.owner_power != 0 || c.population < 3 || (c.built_mask & 1ull)) continue;
+            tutorial_fire(0x0400, "@TUTORIAL7", {tutorial_colony_name((int)ci)});
+            break;
+        }
+}
+
 // Tory-militia land strength: Crown-loyalist land units (owner != rebel power 0) that arm during
 // the War of Independence and fight ALONGSIDE the King's expeditionary force against the rebels.
 static long tory_militia_strength() {
@@ -1487,6 +1565,7 @@ static void game_step() {
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         intervention_step();                            // foreign ally declaration + landings (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
+        tutorial_turn_checks();                         // event-driven lessons (T5/T6/T7 sites)
         history_snapshot();
     }
 }
@@ -2531,6 +2610,7 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     o.obj["merc_force"] = forge::json_str(x.pending_merc_force);
     o.obj["free_recruits"] = forge::json_num(x.free_recruits);
     o.obj["artillery_bought"] = forge::json_num(x.artillery_bought);
+    o.obj["tutorial_mask"] = forge::json_num(x.tutorial_mask);   // [0x5386]/[0x5387]
     forge::JsonValue mil = jarr(), econ = jarr();
     for (int i = 0; i < 4; ++i) { mil.arr.push_back(forge::json_num(x.power_mil[i]));
         econ.arr.push_back(forge::json_num(x.power_econ[i])); }
@@ -2577,6 +2657,7 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
     { const forge::JsonValue* v = o->find("merc_primed");
       x.merc_primed = v && v->type == forge::JsonValue::Bool ? v->b : false; }
     x.pending_merc_price = gi("merc_price", 0);
+    if (const forge::JsonValue* v = o->find("tutorial_mask")) x.tutorial_mask = (uint16_t)v->num;
     if (const forge::JsonValue* mc = o->find("merc_cat"))
         for (int i = 0; i < 4 && i < (int)mc->arr.size(); ++i)
             x.pending_merc_cat[i] = mc->arr[i].as_int();
@@ -2847,8 +2928,21 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             return J(200, forge::run_graph(graph, cx, from, choice, cache));
         }
 
+        // T1 ([0x5386]&0x10, the move/land dispatcher func_020F50 @0x20FFB):
+        // the opening "our ship is on the high seas" lesson, fired as the new
+        // game begins; %STRING0 = the starting ship's @UNIT name.
+        auto tutorial_start = [&]() {
+            g_tutorial_queue.clear();                    // no popups from a prior game
+            for (const Unit& tu : g_world.units)
+                if (tu.owner == 0 && tu.alive && unit_stats(tu.type).move_class == 99) {
+                    const char* nm = unit_stats(tu.type).name;
+                    tutorial_fire(0x0010, "@TUTORIAL1", {nm ? nm : "ship"});
+                    break;
+                }
+        };
         if (path == "/api/game/new"  && method == "POST") {
-            game_new(); g_history.clear(); history_snapshot(); return J(200, game_state_json());
+            game_new(); g_history.clear(); history_snapshot(); tutorial_start();
+            return J(200, game_state_json());
         }
         // New game from the setup screen: {nation 0..3, difficulty 0..4} seed the
         // scenario; {random:1, land/landform/temperature/climate 0..2} rolls a
@@ -2862,8 +2956,19 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 int n = v ? v->as_int(1) : 1; return n < 0 ? 0 : n > 2 ? 2 : n; };
             game_new(nat, diff, rnd, p3("land"), p3("landform"),
                      p3("temperature"), p3("climate"));
-            g_history.clear(); history_snapshot();
+            g_history.clear(); history_snapshot(); tutorial_start();
             return J(200, game_state_json());
+        }
+        if (path == "/api/tutorial") {                   // drain the pending lessons
+            forge::JsonValue o = jobj(), a = jarr();
+            for (auto& [k, t] : g_tutorial_queue) {
+                forge::JsonValue e = jobj();
+                e.obj["key"] = forge::json_str(k); e.obj["text"] = forge::json_str(t);
+                a.arr.push_back(e);
+            }
+            g_tutorial_queue.clear();
+            o.obj["steps"] = a;
+            return J(200, o);
         }
         if (path == "/api/turn" && method != "POST") {   // read the turn pipeline (turn.json)
             try { return J(200, forge::json_parse_file("data_extracted/engine/turn.json")); }
@@ -3210,6 +3315,45 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (unit_stats(u.type).move_class == 99) return err(400, "a ship cannot found a colony");
             int id = g_world.terrain_id(u.x, u.y);
             if (id < 0 || game_is_water(id)) return err(400, "must found on land");
+            // Site warnings @TUTNOSPACES / @TUTNOLUMBER (tutorial.md 2, the
+            // founding-colony validation func_022542): gated on difficulty < 2
+            // (cmp [0x53a6],2 @0x22763). TUTNOSPACES when the adjacent
+            // productive-square count < 4 (@0x2276A), TUTNOLUMBER when the
+            // forested-square count == 0 (@0x22782); each a two-choice dialog
+            // ("Cancel action. / Build colony anyway.") and the build proceeds
+            // only on the second choice. The "productive" predicate (land, not
+            // water/Arctic) is RECONSTRUCTED; the counts/gates are byte-cited.
+            // The client acknowledges a warning by listing its key in {ack}.
+            {
+                bool on_colony = false;
+                for (const auto& jc : g_world.colonies)
+                    if (jc.x == u.x && jc.y == u.y) { on_colony = true; break; }
+                if (!on_colony && g_game.difficulty < 2) {
+                    auto acked = [&](const char* k) {
+                        if (const forge::JsonValue* a = b.find("ack"))
+                            for (const forge::JsonValue& e : a->arr) if (e.str == k) return true;
+                        return false;
+                    };
+                    int productive = 0, forested = 0;
+                    static const int ddx[8] = {1,-1,0,0,1,1,-1,-1}, ddy[8] = {0,0,1,-1,1,-1,1,-1};
+                    for (int k = 0; k < 8; ++k) {
+                        int t = g_world.terrain_id(u.x + ddx[k], u.y + ddy[k]);
+                        if (t < 0) continue;
+                        const int tid = t & 0x1F;
+                        if (tid != 24 && tid != 25 && tid != 26) ++productive;
+                        if (tid >= 8 && tid <= 23) ++forested;
+                    }
+                    const char* warn = nullptr;
+                    if (productive < 4 && !acked("@TUTNOSPACES")) warn = "@TUTNOSPACES";
+                    else if (forested == 0 && !acked("@TUTNOLUMBER")) warn = "@TUTNOLUMBER";
+                    if (warn) {
+                        forge::JsonValue o = jobj();
+                        o.obj["confirm"] = forge::json_str(warn);
+                        o.obj["text"] = forge::json_str(game_message_text(warn));
+                        return J(200, o);
+                    }
+                }
+            }
             // "Join Colony (~B)" (@ORDERS; manual L85): standing on an own colony,
             // the unit joins it as a colonist instead of founding a new one.
             for (auto& jc : g_world.colonies) {
@@ -3835,6 +3979,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) game_new();
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             RuleData mrd = live_market_rules(cx);
+            // T12 ([0x5387]&0x80, Europe/docks func_02C5D4 @0x2C7BC): the "ship
+            // has arrived in %STRING0, waiting for cargo" lesson on first visit.
+            tutorial_fire(0x8000, "@TUTORIAL12", {tutorial_home_port()});
             forge::JsonValue o = jobj();
             o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
             o.obj["tax"] = forge::json_num(g_game.powers[0].tax);
@@ -4015,6 +4162,21 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/colony/screen") {
             if (!g_game_active) game_new();
             int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
+            // T4 ([0x5386]&0x80): the colony-screen jobs lesson, on first open.
+            // %STRING0 = the good a colonist produces now, %STRING1 = an alternative.
+            if (!(g_engine_extra.tutorial_mask & 0x0080) &&
+                ci >= 0 && ci < (int)g_world.colonies.size()) {
+                const Colony& c = g_world.colonies[ci];
+                for (const auto& wk : c.workers)
+                    if (wk.tile >= 0 && wk.good >= 0 && wk.good < NGOODS) {   // a ring-tile worker
+                        forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+                        const int cur = wk.good, alt = cur == 5 ? 0 : 5;      // Lumber unless already
+                        tutorial_fire(0x0080, "@TUTORIAL4",
+                            {forge::resolve_binding("@CARGO[" + std::to_string(cur) + "].name", cx).str,
+                             forge::resolve_binding("@CARGO[" + std::to_string(alt) + "].name", cx).str});
+                        break;
+                    }
+            }
             return J(200, colony_screen_json(ci));
         }
         // Toggle a good's Custom-House auto-sell selection (USER RULING 2026-07-02:

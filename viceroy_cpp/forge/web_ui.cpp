@@ -1976,6 +1976,7 @@ async function colOpen(ci){
   COL=await (await fetch('/api/colony/screen?colony='+ci)).json();
   if(COL.error){ ui.toast(COL.error); COL=null; return; }
   nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('CMISC',()=>nsLabels('CTITLE',()=>colRender()))));
+  tutCheck();                                          // T4: the colony-screen jobs lesson
 }
 function colClose(){ COL=null; ui.close(); }
 function colFill(x,y,w,h,col){
@@ -2190,6 +2191,7 @@ async function euOpen(){
   EU=await (await fetch('/api/europe')).json();
   if(!EULAY) EULAY=await (await fetch('/api/layout?screen=europe_screen')).json();
   nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('EUROLABEL',()=>euRender())));
+  tutCheck();                                          // T12: ship waiting for cargo in Europe
 }
 // look an element's byte-cited rect up by (partial) name in the extracted layout
 function euRect(sub,fb){
@@ -2326,11 +2328,30 @@ async function nvOrder(o){                             // F/S/P/R standing order
   GAME=d; if(o==='D') SEL=-1;
   nvRefresh();
 }
-async function nvBuild(){                              // ~Build Colony / Join Colony (~B)
+async function nvBuild(ack){                           // ~Build Colony / Join Colony (~B)
   const u=selUnit(); if(!u){ ui.toast('No active unit'); return; }
-  const r=await fetch('/api/game/found',{method:'POST',body:JSON.stringify({unit:SEL})});
+  const r=await fetch('/api/game/found',{method:'POST',body:JSON.stringify({unit:SEL,ack:ack||[]})});
   const d=await r.json(); if(d.error){ ui.toast(d.error); return; }
+  if(d.confirm){                                       // @TUTNOSPACES / @TUTNOLUMBER two-choice
+    const t=(d.text||'').replace(/\r/g,'').trim().split('\n');
+    const choices=t.slice(-2).map(s=>s.trim()).filter(Boolean);   // "Cancel action." / "Build colony anyway."
+    const body=t.slice(0,-2).join('\n').trim();
+    wfShow({key:d.confirm,body:body,choices:choices},c=>{
+      if(/anyway/i.test(c)) nvBuild((ack||[]).concat([d.confirm]));
+    });
+    return;
+  }
   GAME=d; SEL=-1; nvRefresh();
+  tutCheck();
+}
+// Drain pending tutorial lessons (spec/systems/tutorial.md): each is the
+// verbatim @TUTORIALn prose (server-filled %STRING/%NUMBER) in a wood-frame box.
+async function tutCheck(){
+  try{
+    const d=await (await fetch('/api/tutorial')).json();
+    for(const t of (d.steps||[]))
+      await new Promise(res=>wfShow({key:t.key,body:t.text},null,res));
+  }catch(e){}
 }
 function nvNext(){                                     // ~Wait for next unit / No Orders (space)
   const alive=(GAME.units||[]).filter(u=>u.owner===0&&u.alive!==false);
@@ -2352,6 +2373,7 @@ async function nvOpen(){
   NV=true;
   nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('INFO',()=>nsLabels('SEASONS',
     ()=>nsLabels('UNFORESTED',()=>nsLabels('FORESTED',()=>nsLabels('OTHER',()=>nvRender())))))));
+  tutCheck();                                          // pending lessons (T1 at game start)
 }
 function nvClose(){ NV=false; ui.close(); }
 function nvPal(i){ const c=(NVPAL||[])[i]; return c&&c.hex?c.hex:'#888'; }
@@ -2486,7 +2508,7 @@ function nvClick(ev){
   if(SEL>=0){ fetch('/api/game/order',{method:'POST',body:JSON.stringify({unit:SEL,tx:x,ty:y})})
     .then(r=>r.json()).then(d=>{ GAME=d; nvRender(); }); }
 }
-async function nvEndTurn(){ GAME=await (await fetch('/api/game/step',{method:'POST',body:'{}'})).json(); nvRender(); }
+async function nvEndTurn(){ GAME=await (await fetch('/api/game/step',{method:'POST',body:'{}'})).json(); nvRender(); tutCheck(); }
 function nvMenu(k){
   const sec=String((NVMENU||{})[k]||''); const items=sec.split('\n').slice(1).map(s=>s.trim()).filter(Boolean);
   if(k==='@REPORTS'){                                  // the one live pulldown: F1-F10 advisors
