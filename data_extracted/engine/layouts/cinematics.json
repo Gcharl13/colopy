@@ -1,0 +1,83 @@
+{
+ "draw_order": [
+  {
+   "cols": {
+    "@asm": "0x0754F2",
+    "action": "lea bx,[0x232B](\"FONTKING\"); lcall 0x1A1F:0xA86",
+    "step": "load FONTKING",
+    "value": "handle 0x232B"
+   },
+   "name": "lea bx,[0x232B](\"FONTKING\"); lcall 0x1A1F:0xA86",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x075511",
+    "action": "[0x1F9E]=ax; [0x1FA0]=dx",
+    "step": "set dialog font",
+    "value": "FONTKING"
+   },
+   "name": "[0x1F9E]=ax; [0x1FA0]=dx",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x075526",
+    "action": "[0x1F4A]=0xF2 (242)",
+    "step": "override pen X",
+    "value": "0xF2"
+   },
+   "name": "[0x1F4A]=0xF2 (242)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x07552C",
+    "action": "[0x1F50]=0x2F (47)",
+    "step": "override pen Y",
+    "value": "0x2F"
+   },
+   "name": "[0x1F50]=0x2F (47)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x18",
+    "action": "[0x1F56]",
+    "step": "style bits",
+    "value": "= 0x18"
+   },
+   "name": "[0x1F56]",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x075540",
+    "action": "lcall 0x181F:0x3FE (king's choice list)",
+    "step": "run @-menu",
+    "value": "\u2014"
+   },
+   "name": "lcall 0x181F:0x3FE (king's choice list)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "0x075558",
+    "action": "push 0xA000; push 0xFC00; lcall 0x181F:0x3F4",
+    "step": "restore buffer",
+    "value": "\u2014"
+   },
+   "name": "push 0xA000; push 0xFC00; lcall 0x181F:0x3F4",
+   "rect": null,
+   "rect_raw": ""
+  }
+ ],
+ "elements": [],
+ "source": "spec/ui/cinematics.md"
+}

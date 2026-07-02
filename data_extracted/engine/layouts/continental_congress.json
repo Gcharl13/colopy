@@ -1,0 +1,118 @@
+{
+ "draw_order": [],
+ "elements": [
+  {
+   "cols": {
+    "Notes": "\"CONTINENTAL CONGRESS ACTIVITIES\"",
+    "Pixel rect": "(0, 0, 320, 10)",
+    "Region": "Title",
+    "Tier": "A"
+   },
+   "name": "Title",
+   "rect": [
+    0,
+    0,
+    320,
+    10
+   ],
+   "rect_raw": "(0, 0, 320, 10)"
+  },
+  {
+   "cols": {
+    "Notes": "\"Next Continental Congress Session: (\\<FF\\>) (NN in MM)\" \u2014 the progress is this text, not a bar",
+    "Pixel rect": "(0, 10, 320, 20)",
+    "Region": "Session subtitle",
+    "Tier": "A"
+   },
+   "name": "Session subtitle",
+   "rect": [
+    0,
+    10,
+    320,
+    20
+   ],
+   "rect_raw": "(0, 10, 320, 20)"
+  },
+  {
+   "cols": {
+    "Notes": "\"Rebel Sentiment: X%   Tory Sentiment: Y%\"",
+    "Pixel rect": "(0, 36, 320, 8)",
+    "Region": "Sentiment strip",
+    "Tier": "A"
+   },
+   "name": "Sentiment strip",
+   "rect": [
+    0,
+    36,
+    320,
+    8
+   ],
+   "rect_raw": "(0, 36, 320, 8)"
+  },
+  {
+   "cols": {
+    "Notes": "discrete bell sprites (one per bells/turn) drawn IN the F3 body at func_037A20 @0x037BF5 (mov ax,0x3f; lcall 0x181f,0x236 = func_002EE4, span 0x12c=300) \u2014 *not* a separate overlay path (the \u00a76.1 \"not in the F3 body\" claim rested on a 140-byte-truncated disasm; the full 0x037A10..0x3807D body draws it). Sprite 0x3F filled / 0x38 empty (func_002EE4 @0x002FA5). Band rect still luma-A.",
+    "Pixel rect": "(0, 44, 320, 32)",
+    "Region": "Bell icons row",
+    "Tier": "A/B"
+   },
+   "name": "Bell icons row",
+   "rect": [
+    0,
+    44,
+    320,
+    32
+   ],
+   "rect_raw": "(0, 44, 320, 32)"
+  },
+  {
+   "cols": {
+    "Notes": "4 REF unit groups w/ count badges",
+    "Pixel rect": "(0, 76, 320, 40)",
+    "Region": "REF / FF list",
+    "Tier": "A"
+   },
+   "name": "REF / FF list",
+   "rect": [
+    0,
+    76,
+    320,
+    40
+   ],
+   "rect_raw": "(0, 76, 320, 40)"
+  },
+  {
+   "cols": {
+    "Notes": "acquired FF names (plain green text, not portraits)",
+    "Pixel rect": "(0, 116, 320, 60)",
+    "Region": "Founding Fathers list",
+    "Tier": "A"
+   },
+   "name": "Founding Fathers list",
+   "rect": [
+    0,
+    116,
+    320,
+    60
+   ],
+   "rect_raw": "(0, 116, 320, 60)"
+  },
+  {
+   "cols": {
+    "Notes": "bottom-right",
+    "Pixel rect": "(290, 184, 26, 14)",
+    "Region": "OK button",
+    "Tier": "A"
+   },
+   "name": "OK button",
+   "rect": [
+    290,
+    184,
+    26,
+    14
+   ],
+   "rect_raw": "(290, 184, 26, 14)"
+  }
+ ],
+ "source": "spec/ui/continental_congress.md"
+}

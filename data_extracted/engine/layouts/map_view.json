@@ -1,0 +1,91 @@
+{
+ "draw_order": [],
+ "elements": [
+  {
+   "cols": {
+    "Color": "green ui_color_for(0x52,0x8A,0x31)\u2192(82,138,49)",
+    "Font": "FONTTINY",
+    "Notes": "glyph-grid; ui_wood_fill(0,0,320,9) bg. Item x-ranges from title widths (mechanism B; exact coords R)",
+    "Pixel rect": "(0, 0, 320, 9)",
+    "Region": "Top menu strip"
+   },
+   "name": "Top menu strip",
+   "rect": [
+    0,
+    0,
+    320,
+    9
+   ],
+   "rect_raw": "(0, 0, 320, 9)"
+  },
+  {
+   "cols": {
+    "Color": "per-tile palette",
+    "Font": "\u2014 (tiles)",
+    "Notes": "15\u00d712@16px (zoom 0); see \u00a76.2",
+    "Pixel rect": "(0, 8, 240, 192)",
+    "Region": "Map viewport"
+   },
+   "name": "Map viewport",
+   "rect": [
+    0,
+    8,
+    240,
+    192
+   ],
+   "rect_raw": "(0, 8, 240, 192)"
+  },
+  {
+   "cols": {
+    "Color": "viewport rect 0x0F\u2192white; dots from DG8(0x830..0x833)",
+    "Font": "\u2014",
+    "Notes": "func_066CD6 (\u00a76.1)",
+    "Pixel rect": "(241, 8, 79, 41)",
+    "Region": "Sidebar A \u2014 minimap"
+   },
+   "name": "Sidebar A \u2014 minimap",
+   "rect": [
+    241,
+    8,
+    79,
+    41
+   ],
+   "rect_raw": "(241, 8, 79, 41)"
+  },
+  {
+   "cols": {
+    "Color": "white 0x0F\u2192(255,255,255)",
+    "Font": "FONTTINY",
+    "Notes": "per-line x,y overlay-resident (\u00a76.3)",
+    "Pixel rect": "(240, 72, 80, 64)",
+    "Region": "Sidebar B \u2014 season/gold/tax"
+   },
+   "name": "Sidebar B \u2014 season/gold/tax",
+   "rect": [
+    240,
+    72,
+    80,
+    64
+   ],
+   "rect_raw": "(240, 72, 80, 64)"
+  },
+  {
+   "cols": {
+    "Color": "white 0x0F",
+    "Font": "FONTTINY",
+    "Notes": "sprite + @INFO labels; layout overlay-resident",
+    "Pixel rect": "(240, 136, 80, 64)",
+    "Region": "Sidebar C \u2014 selected-unit panel"
+   },
+   "name": "Sidebar C \u2014 selected-unit panel",
+   "rect": [
+    240,
+    136,
+    80,
+    64
+   ],
+   "rect_raw": "(240, 136, 80, 64)"
+  }
+ ],
+ "source": "spec/ui/map_view.md"
+}

@@ -1,0 +1,391 @@
+{
+ "draw_order": [
+  {
+   "cols": {
+    "#": "1",
+    "call site": "@0x031E4C",
+    "callee": "func_030D86 (frame helper)",
+    "draws": "play-area fill below header",
+    "rect / key": "(0, 8, 320, 192)"
+   },
+   "name": "@0x031E4C",
+   "rect": [
+    0,
+    8,
+    320,
+    192
+   ],
+   "rect_raw": "(0, 8, 320, 192)"
+  },
+  {
+   "cols": {
+    "#": "2",
+    "call site": "@0x031E5D",
+    "callee": "0x368A4 trampoline (ljmp 0x191F:0xC76)",
+    "draws": "header STATE SETUP (no rect)",
+    "rect / key": "full-width top band; banner text-box rect = (320,7,0,0) B (set_text_box @0x035B2D, func_035B06). RESOLVED 2026-06-27 (multibranch): 0x191F:0xC76 = func_030D6C @0x030D6C, disassembled in full \u2014 it draws NOTHING: push 0xFA4; call func_030B4C; mov [0xFA2],ax (ship count), mov [0x9E20],0; mov [0x9E1C],0, then call 0x36872\u2192func_030D16 @0x030D16 (recruit-pool counter: zeroes [0x9E2A], loops unit-type 0x0D\u20130x12), retf. Neither function emits a fill/blit/rect; the play-area backdrop is step-1 func_030D86 (0,8,320,192) over EUROPE.PIK. Step-2 has no own fill rect \u2014 the prior \"open (overlay-resident)\" claim was a phantom."
+   },
+   "name": "@0x031E5D",
+   "rect": [
+    320,
+    7,
+    0,
+    0
+   ],
+   "rect_raw": "full-width top band; banner text-box rect = (320,7,0,0) B (set_text_box @0x035B2D, func_035B06). RESOLVED 2026-06-27 (multibranch): 0x191F:0xC76 = func_030D6C @0x030D6C, disassembled in full \u2014 it draws NOTHING: push 0xFA4; call func_030B4C; mov [0xFA2],ax (ship count), mov [0x9E20],0; mov [0x9E1C],0, then call 0x36872\u2192func_030D16 @0x030D16 (recruit-pool counter: zeroes [0x9E2A], loops unit-type 0x0D\u20130x12), retf. Neither function emits a fill/blit/rect; the play-area backdrop is step-1 func_030D86 (0,8,320,192) over EUROPE.PIK. Step-2 has no own fill rect \u2014 the prior \"open (overlay-resident)\" claim was a phantom."
+  },
+  {
+   "cols": {
+    "#": "3",
+    "call site": "@0x031E63",
+    "callee": "func_0310B4 (arg 0)",
+    "draws": "16-good market PRICE bar",
+    "rect / key": "bar (0,179,320,21); icons+prices"
+   },
+   "name": "@0x031E63",
+   "rect": [
+    0,
+    179,
+    320,
+    21
+   ],
+   "rect_raw": "bar (0,179,320,21); icons+prices"
+  },
+  {
+   "cols": {
+    "#": "4",
+    "call site": "@0x031E6B",
+    "callee": "func_030F76 (arg 0)",
+    "draws": "\"Selling \u2026\" market banner",
+    "rect / key": "header band y=0..7; X = runtime-centered. RESOLVED-as-state 2026-06-27: painter func_00275C @0x00275C reads box [0x2cc6]=x=320,[0x2cca]=w=0,[0x2ccc]=h=0 and centers the live formatted line via lcall 0xb9e:0xa @0x002823 (args [0x2cca]=w,[0x2ccc]=h,[0x2cc6]=x). Band geom is static-B (320,7,0,0); the literal text X is computed per-paint from the live string width \u2014 per-game state, not a static constant."
+   },
+   "name": "@0x031E6B",
+   "rect": [
+    320,
+    7,
+    0,
+    0
+   ],
+   "rect_raw": "header band y=0..7; X = runtime-centered. RESOLVED-as-state 2026-06-27: painter func_00275C @0x00275C reads box [0x2cc6]=x=320,[0x2cca]=w=0,[0x2ccc]=h=0 and centers the live formatted line via lcall 0xb9e:0xa @0x002823 (args [0x2cca]=w,[0x2ccc]=h,[0x2cc6]=x). Band geom is static-B (320,7,0,0); the literal text X is computed per-paint from the live string width \u2014 per-game state, not a static constant."
+  },
+  {
+   "cols": {
+    "#": "5",
+    "call site": "@0x031E73",
+    "callee": "func_0314DC (arg 0)",
+    "draws": "dock + 6 ships + in-port list",
+    "rect / key": "dock (143,118,81,60)"
+   },
+   "name": "@0x031E73",
+   "rect": [
+    143,
+    118,
+    81,
+    60
+   ],
+   "rect_raw": "dock (143,118,81,60)"
+  },
+  {
+   "cols": {
+    "#": "6",
+    "call site": "@0x031E7C",
+    "callee": "0x36863 trampoline",
+    "draws": "sub-renderer (ov_draw_extra_a)",
+    "rect / key": "transaction parchment top strip (see \u00a77)"
+   },
+   "name": "@0x031E7C",
+   "rect": null,
+   "rect_raw": "transaction parchment top strip (see \u00a77)"
+  },
+  {
+   "cols": {
+    "#": "7",
+    "call site": "@0x031E85",
+    "callee": "0x36926 trampoline",
+    "draws": "sub-renderer (ov_draw_extra_b)",
+    "rect / key": "transaction parchment bottom strip (see \u00a77)"
+   },
+   "name": "@0x031E85",
+   "rect": null,
+   "rect_raw": "transaction parchment bottom strip (see \u00a77)"
+  },
+  {
+   "cols": {
+    "#": "8",
+    "call site": "@0x031E8D",
+    "callee": "func_031DC8 (arg 0)",
+    "draws": "RECRUIT/PURCHASE/TRAIN menu",
+    "rect / key": "(281,89,37,32)"
+   },
+   "name": "@0x031E8D",
+   "rect": [
+    281,
+    89,
+    37,
+    32
+   ],
+   "rect_raw": "(281,89,37,32)"
+  },
+  {
+   "cols": {
+    "#": "9",
+    "call site": "@0x031E95/@0x031EA0",
+    "callee": "0x181F:0xE2",
+    "draws": "screen outer rule",
+    "rect / key": "(0, 200, 320)"
+   },
+   "name": "@0x031E95/@0x031EA0",
+   "rect": null,
+   "rect_raw": "(0, 200, 320)"
+  }
+ ],
+ "elements": [
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Play-area fill",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0, 8, 320, 192)",
+    "Sprite / text": "frame-helper fill func_030D86",
+    "Tier": "B (push 0xC0,0x140,8,0; call 0x368CC @0x031E4C)"
+   },
+   "name": "Play-area fill",
+   "rect": [
+    0,
+    8,
+    320,
+    192
+   ],
+   "rect_raw": "(0, 8, 320, 192)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Header/backdrop band",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "full-width top band; banner text-box = (x=320,y=7,w=0,h=0)",
+    "Sprite / text": "trampoline STATE-SETUP (no rect)",
+    "Tier": "B-called; band y=0..7 B (push cs; call 0x368A4 @0x031E5D \u2192 ljmp 0x191F:0xC76 = func_030D6C @0x030D6C; the banner top-band rect (320,7,0,0) is set by set_text_box @0x035B2D / func_035B06). RESOLVED-B 2026-06-27: the step-2 target draws no fill \u2014 func_030D6C only sets [0xFA2]=ship-count + zeroes [0x9E20]/[0x9E1C] then calls func_030D16 (recruit-pool counter). No own fill rect exists."
+   },
+   "name": "Header/backdrop band",
+   "rect": null,
+   "rect_raw": "full-width top band; banner text-box = (x=320,y=7,w=0,h=0)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Market banner (\"Selling \u2026\")",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "top title band y=0..7 (set_text_box), text X center-justified at runtime",
+    "Sprite / text": "@CMESSAGE formatted line",
+    "Tier": "B-mech + B-band-y (func_030F76 builds; paint 0x181F:0xB0=func_00275C @0x0310AD reads box [0x2cc6..0x2ccc]=(320,7,0,0) set by set_text_box=func_00273E @0x035B2D in func_035B06); X is runtime-centered"
+   },
+   "name": "Market banner (\"Selling \u2026\")",
+   "rect": null,
+   "rect_raw": "top title band y=0..7 (set_text_box), text X center-justified at runtime"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Market bar fill (16-good)",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0, 179, 320, 21)",
+    "Sprite / text": "frame-helper fill",
+    "Tier": "B (push 0x15,0x140,0xB3,0; call 0x368CC @0x0310B9)"
+   },
+   "name": "Market bar fill (16-good)",
+   "rect": [
+    0,
+    179,
+    320,
+    21
+   ],
+   "rect_raw": "(0, 179, 320, 21)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Market-bar icons (16)",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "x=1, stride 19, icon row in bar",
+    "Sprite / text": "ICONS.SS good+0x17 (23..38)",
+    "Tier": "B (add ax,0x17 @0x0310F2; pitch via [0x83E]:[si+0x152] half-width @0x031101)"
+   },
+   "name": "Market-bar icons (16)",
+   "rect": null,
+   "rect_raw": "x=1, stride 19, icon row in bar"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "0x2F (price ink)",
+    "Element": "Market-bar prices (16)",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "cell-centered, y=194",
+    "Sprite / text": "bid-price \"%d\"",
+    "Tier": "B (centering @0x031191; 0x181F:0x13C @0x0311AE)"
+   },
+   "name": "Market-bar prices (16)",
+   "rect": null,
+   "rect_raw": "cell-centered, y=194"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "0x0F\u2192white",
+    "Element": "Warehouse-bar right readout",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "x=306, y=179",
+    "Sprite / text": "heap string #[0x2F5E] = idx 537 = \"Sons of Liberty\" (NOT gold)",
+    "Tier": "B draw (push 0xf;push 0xb3;push 0x132;push [0x2f5e]; lcall 0x181F:0x22 fetch; lcall 0x181F:0x13c draw @0x031261). Semantic RESOLVED 2026-06-27 (ram_read): live snapshot rep_europe.bin \u2192 [0x2f5e]=0x219=537; string-heap (far ptr [0x2d42:0x2d44], walked by FETCH func_002462) index 537 = \"Sons of Liberty\" (also =537 in the colony snapshot \u2014 a load-time @LABELS caption pointer, stable)."
+   },
+   "name": "Warehouse-bar right readout",
+   "rect": null,
+   "rect_raw": "x=306, y=179"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Dock fill",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(143, 118, 81, 60)",
+    "Sprite / text": "frame-helper fill",
+    "Tier": "B (push 0x3C,0x51,0x76,0x8F; call 0x368CC @0x0314E1)"
+   },
+   "name": "Dock fill",
+   "rect": [
+    143,
+    118,
+    81,
+    60
+   ],
+   "rect_raw": "(143, 118, 81, 60)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Empty-dock caption box",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(143, 81, 120, 69)",
+    "Sprite / text": "FILL + CENTERED caption [0x2DD0] = idx 338 = \"Bound For\"",
+    "Tier": "B (push 0x45,0x78,0x51,0x8F; push [0x2dd0]; 0x181F:0x22 then 0x181F:0x100 @0x0314F8, gated by cmp [0xfa2],0; jne @0x0314F1). [0x2DD0] RESOLVED 2026-06-27 (ram_read): snapshot \u2192 338 = \"Bound For\" (heap idx 338)."
+   },
+   "name": "Empty-dock caption box",
+   "rect": [
+    143,
+    81,
+    120,
+    69
+   ],
+   "rect_raw": "(143, 81, 120, 69)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "In-port ship-name list",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(143, 81, 120, 69)",
+    "Sprite / text": "CENTERED ship-name rows",
+    "Tier": "B (0x181F:0x100 @0x0315C9; 2nd line @0x031621)"
+   },
+   "name": "In-port ship-name list",
+   "rect": [
+    143,
+    81,
+    120,
+    69
+   ],
+   "rect_raw": "(143, 81, 120, 69)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Docked ships (6 slots)",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "x=147+slot\u00b712 (147,159,171,183,195,207), y=165, 10\u00d712",
+    "Sprite / text": "ICONS.SS sprite 0x7B (123)",
+    "Tier": "B (func_0314AE: x @0x0314BD, y=0xA5 @0x0314C8, w=0xA @0x0314CF, h=0xC @0x0314D6; sprite mov ax,0x7B @0x03154F)"
+   },
+   "name": "Docked ships (6 slots)",
+   "rect": null,
+   "rect_raw": "x=147+slot\u00b712 (147,159,171,183,195,207), y=165, 10\u00d712"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Ship status row (per in-port ship)",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "x=state\u00b7tile+base, y=146/137/132 by state 1/2/3",
+    "Sprite / text": "sail-progress bar (0x181F:0x2BC) + type ICON @UNIT[type]+0x5232",
+    "Tier": "B (func_031366/func_031298; bar width 0x64>>state @0x0313A4)"
+   },
+   "name": "Ship status row (per in-port ship)",
+   "rect": null,
+   "rect_raw": "x=state\u00b7tile+base, y=146/137/132 by state 1/2/3"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Recruit/Purchase/Train panel",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(281, 89, 37, 32)",
+    "Sprite / text": "frame-helper fill, optional 1-px frame 0x181F:0xE2 @0x031E45",
+    "Tier": "B (push 0x20,0x25,0x59,0x119; call 0x368CC @0x031DCC)"
+   },
+   "name": "Recruit/Purchase/Train panel",
+   "rect": null,
+   "rect_raw": "(281, 89, 37, 32)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "0x0F/0x0 by selection",
+    "Element": "RECRUIT/PURCHASE/TRAIN rows (3)",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "inside panel, centered, y = 89 + row\u00b7(glyphH+2)",
+    "Sprite / text": "@EUROLABEL text",
+    "Tier": "B (3-row loop @0x031DEB..0x031E2F; center @0x031C40; ink @0x031C10/@0x031BF4)"
+   },
+   "name": "RECRUIT/PURCHASE/TRAIN rows (3)",
+   "rect": null,
+   "rect_raw": "inside panel, centered, y = 89 + row\u00b7(glyphH+2)"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Boycott marker",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "over dock, gated unit-type 0x0D\u20130x12 + [+0x3150]\u22600",
+    "Sprite / text": "ICONS.SS good+0x17 (the good's own icon)",
+    "Tier": "B (gate @0x031A73..0x031AB4; add ax,0x17; blit 0x181F:0x254 @0x031417)"
+   },
+   "name": "Boycott marker",
+   "rect": null,
+   "rect_raw": "over dock, gated unit-type 0x0D\u20130x12 + [+0x3150]\u22600"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Screen outer rule",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0, 200, 320) bottom 1-px line",
+    "Sprite / text": "rule via 0x181F:0xE2",
+    "Tier": "B (push 0,0x140,0xC8; lcall 0x181F:0xE2 @0x031E95/@0x031EA0)"
+   },
+   "name": "Screen outer rule",
+   "rect": null,
+   "rect_raw": "(0, 200, 320) bottom 1-px line"
+  },
+  {
+   "cols": {
+    "Color \u2192 RGB": "\u2014",
+    "Element": "Exit",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "framework-level (no painted button)",
+    "Sprite / text": "\u2014",
+    "Tier": "RESOLVED 2026-06-23: leaving Europe is the generic screen-view runner's close (@EUROLABEL 4th token \"x\"/ESC), not a Europe-painted button; steps 6/func_036863/036926 are the two left dock sub-panels (func_0317CC/func_0318D2), not an exit widget. EUROPE_SCREEN_VICEROY_DECODE.md \u00a710/\u00a711"
+   },
+   "name": "Exit",
+   "rect": null,
+   "rect_raw": "framework-level (no painted button)"
+  }
+ ],
+ "source": "spec/ui/europe_screen.md"
+}

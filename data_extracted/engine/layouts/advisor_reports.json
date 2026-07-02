@@ -1,0 +1,139 @@
+{
+ "draw_order": [
+  {
+   "cols": {
+    "Step": "set active player record",
+    "cite": "@0x030550",
+    "effect": "arg\u2192[DS:0x9E12]; arg\u00b70x13C+0x8808\u2192[DS:0x84FC] = ptr to active PowerRecord (stride 0x13C=316). NOT a draw.",
+    "primitive": "0x181F:0x582 (func_030550)"
+   },
+   "name": "0x181F:0x582 (func_030550)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "Step": "title-bar background",
+    "cite": "@0x037340",
+    "effect": "loads title template 0x11A2, appends report-number N (0x181F:0x182), substitutes nation quartet [DS:0x2DA8/2DAA/2DAC/2DAE] (0x181F:0x44E), draws (0x181F:0x484). Only REPORT-PIK load site.",
+    "primitive": "push N; call 0x39E53\u21920x191F:0xF4A (func_037340)"
+   },
+   "name": "push N; call 0x39E53\u21920x191F:0xF4A (func_037340)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "Step": "title fill-rect",
+    "cite": "@0x002462",
+    "effect": "fill_rect(x=0,w=0x140,h,color); color 0x90; [DS:<attr>] = per-report title attr",
+    "primitive": "push <color>; push <h>; push 0x140; push 0; push [DS:<attr>]; 0x181F:0x22"
+   },
+   "name": "push <color>; push <h>; push 0x140; push 0; push [DS:<attr>]; 0x181F:0x22",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "Step": "footer rule",
+    "cite": "@0x00DB3A",
+    "effect": "full-width horizontal rule, w=0x140, y=0xC8 (200)",
+    "primitive": "push 0; push 0x140; push 0xC8; 0x181F:0xE2 (func_00DB3A)"
+   },
+   "name": "push 0; push 0x140; push 0xC8; 0x181F:0xE2 (func_00DB3A)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "Step": "OK button",
+    "cite": "@0x004A80",
+    "effect": "OK widget (@MISC 46 \"OK\")",
+    "primitive": "0x181F:0x3C0 (func_004A80)"
+   },
+   "name": "0x181F:0x3C0 (func_004A80)",
+   "rect": null,
+   "rect_raw": ""
+  }
+ ],
+ "elements": [
+  {
+   "cols": {
+    "Color": "PIK palette",
+    "Font": "\u2014",
+    "Notes / cite": "REPORT<N>.PIK, loaded by func_037340 (\u00a72.1). B",
+    "Pixel rect": "(0, 0, 320, 200)",
+    "Region": "Background plate"
+   },
+   "name": "Background plate",
+   "rect": [
+    0,
+    0,
+    320,
+    200
+   ],
+   "rect_raw": "(0, 0, 320, 200)"
+  },
+  {
+   "cols": {
+    "Color": "0x90\u2192(255,255,190)",
+    "Font": "FONTTINY",
+    "Notes / cite": "CORRECTED 2026-06-23: 0x181F:0x22 (func_002462) is the string FETCH of the report-name id [0x2DF6], fed to 0x181F:0x100 (centre-text-in-box, color 0x90) @0x37970/@0x37988 (F2). It is NOT a fill_rect \u2014 0x22 does not draw (UI_PRIMITIVES.md \u00a70x022). B",
+    "Pixel rect": "centered in box (0,0,0x140,5)",
+    "Region": "Title \u2014 report-name text"
+   },
+   "name": "Title \u2014 report-name text",
+   "rect": null,
+   "rect_raw": "centered in box (0,0,0x140,5)"
+  },
+  {
+   "cols": {
+    "Color": "composited (PIK)",
+    "Font": "FONTTINY",
+    "Notes / cite": "title template 0x11A2 + report-N \u2192 @MISC string, drawn by 0x191F:0xF4A (func_037340 @0x37340). B",
+    "Pixel rect": "(0, 0, 320, ~10)",
+    "Region": "Title bar \u2014 background"
+   },
+   "name": "Title bar \u2014 background",
+   "rect": null,
+   "rect_raw": "(0, 0, 320, ~10)"
+  },
+  {
+   "cols": {
+    "Color": "per-report (\u00a74)",
+    "Font": "FONTTINY",
+    "Notes / cite": "per-report row/column stack; bodies at 0x37xxx\u20130x3Axxx. B (layout) / R (flow y, live values)",
+    "Pixel rect": "(0, ~10, 320, ~188)",
+    "Region": "Body"
+   },
+   "name": "Body",
+   "rect": null,
+   "rect_raw": "(0, ~10, 320, ~188)"
+  },
+  {
+   "cols": {
+    "Color": "composited sprite",
+    "Font": "\u2014",
+    "Notes / cite": "CORRECTED 2026-06-23: 0x181F:0xE2 (func_00DB3A) is a clipped sprite blit (sheet [0x2DA8]), push 0xC8 (y=200) \u2014 NOT a 1-px line-rule (UI_PRIMITIVES.md \u00a70x0E2). The intra-report separators (F4/F8) are the real lines, via 0x191F:0x8BC. B",
+    "Pixel rect": "(0, 200, 320)",
+    "Region": "Footer strip"
+   },
+   "name": "Footer strip",
+   "rect": null,
+   "rect_raw": "(0, 200, 320)"
+  },
+  {
+   "cols": {
+    "Color": "(widget)",
+    "Font": "(widget)",
+    "Notes / cite": "0x181F:0x3C0 (func_004A80), label @MISC 46 \"OK\". B",
+    "Pixel rect": "bottom (widget)",
+    "Region": "OK button"
+   },
+   "name": "OK button",
+   "rect": null,
+   "rect_raw": "bottom (widget)"
+  }
+ ],
+ "source": "spec/ui/advisor_reports.md"
+}

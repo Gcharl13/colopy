@@ -1,0 +1,171 @@
+{
+ "draw_order": [],
+ "elements": [
+  {
+   "cols": {
+    "Citation": "func @0x299A0 @0x29AA9",
+    "Rect (x,y,w,h)": "(0,0,320,7)",
+    "Region / action": "top title bar",
+    "Region-id": "0xA",
+    "Tier": "B"
+   },
+   "name": "(0,0,320,7)",
+   "rect": [
+    0,
+    0,
+    320,
+    7
+   ],
+   "rect_raw": "(0,0,320,7)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x29A11",
+    "Rect (x,y,w,h)": "(0,8,199,120)",
+    "Region / action": "main scene / work-area left",
+    "Region-id": "2",
+    "Tier": "B"
+   },
+   "name": "(0,8,199,120)",
+   "rect": [
+    0,
+    8,
+    199,
+    120
+   ],
+   "rect_raw": "(0,8,199,120)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x299A9",
+    "Rect (x,y,w,h)": "(200,8,120,120)",
+    "Region / action": "field-production / right scene panel",
+    "Region-id": "1",
+    "Tier": "B"
+   },
+   "name": "(200,8,120,120)",
+   "rect": [
+    200,
+    8,
+    120,
+    120
+   ],
+   "rect_raw": "(200,8,120,120)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x299F1",
+    "Rect (x,y,w,h)": "(0,130,120,48)",
+    "Region / action": "colonist plaza row (func_0270D0)",
+    "Region-id": "0",
+    "Tier": "B"
+   },
+   "name": "(0,130,120,48)",
+   "rect": [
+    0,
+    130,
+    120,
+    48
+   ],
+   "rect_raw": "(0,130,120,48)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x29A8D",
+    "Rect (x,y,w,h)": "(121,130,84,48)",
+    "Region / action": "surrounding-tile minimap (func_027DB2)",
+    "Region-id": "8",
+    "Tier": "B"
+   },
+   "name": "(121,130,84,48)",
+   "rect": [
+    121,
+    130,
+    84,
+    48
+   ],
+   "rect_raw": "(121,130,84,48)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x29A70",
+    "Rect (x,y,w,h)": "(211,130,91,48)",
+    "Region / action": "SoL / cargo / message panel (func_02814C)",
+    "Region-id": "4",
+    "Tier": "B"
+   },
+   "name": "(211,130,91,48)",
+   "rect": [
+    211,
+    130,
+    91,
+    48
+   ],
+   "rect_raw": "(211,130,91,48)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x29A32",
+    "Rect (x,y,w,h)": "(303,132,17,45)",
+    "Region / action": "nation flag panel (func_028540)",
+    "Region-id": "3",
+    "Tier": "B"
+   },
+   "name": "(303,132,17,45)",
+   "rect": [
+    303,
+    132,
+    17,
+    45
+   ],
+   "rect_raw": "(303,132,17,45)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x29A52",
+    "Rect (x,y,w,h)": "(0,179,305,21)",
+    "Region / action": "16-commodity stockpile strip (func_0281D6)",
+    "Region-id": "5",
+    "Tier": "B"
+   },
+   "name": "(0,179,305,21)",
+   "rect": [
+    0,
+    179,
+    305,
+    21
+   ],
+   "rect_raw": "(0,179,305,21)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x299D2; draw @0x0283F1",
+    "Rect (x,y,w,h)": "(305,179,15,21)",
+    "Region / action": "warehouse / gold readout (heap string [0x2F5E], NOT gold)",
+    "Region-id": "9",
+    "Tier": "B"
+   },
+   "name": "(305,179,15,21)",
+   "rect": [
+    305,
+    179,
+    15,
+    21
+   ],
+   "rect_raw": "(305,179,15,21)"
+  },
+  {
+   "cols": {
+    "Citation": "@0x299A4 mov [bp-2],0x14",
+    "Rect (x,y,w,h)": "(anywhere else)",
+    "Region / action": "no region (default)",
+    "Region-id": "0x14",
+    "Tier": "B"
+   },
+   "name": "(anywhere else)",
+   "rect": null,
+   "rect_raw": "(anywhere else)"
+  }
+ ],
+ "source": "spec/ui/input.md"
+}

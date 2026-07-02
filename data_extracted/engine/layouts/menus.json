@@ -1,0 +1,249 @@
+{
+ "draw_order": [
+  {
+   "cols": {
+    "#": "0",
+    "@asm": "@0x075AE4 / @0x075B1D",
+    "element": "menu backdrop",
+    "how (byte-cited)": "build via 0x181F:0x44E; composite to off-screen buf 0x0D1D:0xFB2",
+    "source / sprite": "str [0x233C]=\"OPENMENU\"",
+    "tier": "B"
+   },
+   "name": "menu backdrop",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "0'",
+    "@asm": "@0x075DA3",
+    "element": "new-game backdrop",
+    "how (byte-cited)": "push @0x075DA3",
+    "source / sprite": "str [0x2374]=\"OPENMENU\"",
+    "tier": "B"
+   },
+   "name": "new-game backdrop",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "1",
+    "@asm": "@0x075B8E",
+    "element": "OPENBORD pair (6,7)",
+    "how (byte-cited)": "push 7; push 6; lcall 0x1A1F:0xDF8; x via bx=0x140, y=0xC8=200",
+    "source / sprite": "OPENBORD sprites 6,7",
+    "tier": "B"
+   },
+   "name": "OPENBORD pair (6,7)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "2",
+    "@asm": "@0x075BB0",
+    "element": "OPENBORD pair (8,9)",
+    "how (byte-cited)": "lcall 0x1A1F:0xDF8",
+    "source / sprite": "OPENBORD sprites 8,9",
+    "tier": "B"
+   },
+   "name": "OPENBORD pair (8,9)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "3",
+    "@asm": "@0x075BD2",
+    "element": "OPENBORD pair (0xE,0xF)",
+    "how (byte-cited)": "lcall 0x1A1F:0xDF8",
+    "source / sprite": "OPENBORD sprites 14,15",
+    "tier": "B"
+   },
+   "name": "OPENBORD pair (0xE,0xF)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "4",
+    "@asm": "@0x075C00",
+    "element": "OPENBORD cursor decor",
+    "how (byte-cited)": "lcall 0x181F:0x444 (rect block-copy), y=0xC8 w=0x140",
+    "source / sprite": "sprite-list [0x2DA8..0x2DAE]",
+    "tier": "B"
+   },
+   "name": "OPENBORD cursor decor",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "5",
+    "@asm": "@0x075C12",
+    "element": "full-screen cell blit",
+    "how (byte-cited)": "bx=0; dx=0; push 0xC8(h); push 0x140(w); push 0(x); lcall 0x181F:0xE2",
+    "source / sprite": "0x181F:0xE2 = clipped sprite blit (sheet [0x2DA8]), not a fill",
+    "tier": "B"
+   },
+   "name": "full-screen cell blit",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "6",
+    "@asm": "@0x075C1D",
+    "element": "restore composed buffer",
+    "how (byte-cited)": "lcall 0x181F:0x3F4",
+    "source / sprite": "off-screen \u2192 0xA000",
+    "tier": "B"
+   },
+   "name": "restore composed buffer",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "7",
+    "@asm": "@0x075C28",
+    "element": "cursor/mode primer",
+    "how (byte-cited)": "push 0x33; lcall 0x181F:0x4DE",
+    "source / sprite": "id 0x33",
+    "tier": "B"
+   },
+   "name": "cursor/mode primer",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075C60",
+    "action": "lea bx,[0x2345](\"BEGINMENU\"); lcall 0x181F:0x3FE (runner \u2192 func_06F594 @0x06F594, page 0x17) returns 1-based index in AX",
+    "step": "run @BEGINMENU",
+    "tier": "B"
+   },
+   "name": "lea bx,[0x2345](\"BEGINMENU\"); lcall 0x181F:0x3FE (runner \u2192 func_06F594 @0x06F594, page 0x17) returns 1-based index in AX",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075C6D",
+    "action": "1=exit (jmp 0x75F8D); 2=load-game; 3=setup/scenario-list; 4=new-game",
+    "step": "dec ax ladder",
+    "tier": "B"
+   },
+   "name": "1=exit (jmp 0x75F8D); 2=load-game; 3=setup/scenario-list; 4=new-game",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075CE5 / @0x075AB4",
+    "action": "lea bx,[0x234f](\"AMERICA\"); lcall 0x181F:0x3FE \u2192 @AMERICA scenario list; per-power init loop [bx+0x543F]=1, imul 0x34",
+    "step": "opt 3 SETUP",
+    "tier": "B"
+   },
+   "name": "lea bx,[0x234f](\"AMERICA\"); lcall 0x181F:0x3FE \u2192 @AMERICA scenario list; per-power init loop [bx+0x543F]=1, imul 0x34",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075CE5 / @0x075D14 / @0x075E00",
+    "action": "re-run @AMERICA + MAPTOLOAD file dialog call 0x763b6 (args \"GAME\",\"MAPTOLOAD\",\"\\*.MP\"); WOODPANL backdrop push 0x236B; lcall 0x191F:0x87A",
+    "step": "opt 2 LOAD",
+    "tier": "B"
+   },
+   "name": "re-run @AMERICA + MAPTOLOAD file dialog call 0x763b6 (args \"GAME\",\"MAPTOLOAD\",\"\\*.MP\"); WOODPANL backdrop push 0x236B; lcall 0x191F:0x87A",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075D22",
+    "action": "str [0x2166]=\"AMER2.MP\" fallback lcall 0x0D1D:0x816",
+    "step": "default map",
+    "tier": "B"
+   },
+   "name": "str [0x2166]=\"AMER2.MP\" fallback lcall 0x0D1D:0x816",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x075E5F",
+    "action": "lcall 0x191F:0x320 = begin_game @0x072578 (page 0x1A)",
+    "step": "opt 4 NEW-GAME",
+    "tier": "B"
+   },
+   "name": "lcall 0x191F:0x320 = begin_game @0x072578 (page 0x1A)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x072099",
+    "action": "lcall 0x1A1F:0x2D2 (FONTINTR handle 0xFA0) \u2192 [0x896]/[0x898]",
+    "source": "\u2014",
+    "step": "open font ctx",
+    "tier": "B"
+   },
+   "name": "lcall 0x1A1F:0x2D2 (FONTINTR handle 0xFA0) \u2192 [0x896]/[0x898]",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x0720BE",
+    "action": "push \"game\"(0x2098); push \"menu\"(0x209D); lcall 0x191F:0x928 (section reader \u2192 func_06F8FA @0x06F8FA)",
+    "source": "game menu",
+    "step": "open section",
+    "tier": "B"
+   },
+   "name": "push \"game\"(0x2098); push \"menu\"(0x209D); lcall 0x191F:0x928 (section reader \u2192 func_06F8FA @0x06F8FA)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x0720D5 (loop)",
+    "action": "lcall 0x191F:0x91C (record reader \u2192 func_06F9E6 @0x06F9E6) per command id",
+    "source": "sequential ids",
+    "step": "read record N",
+    "tier": "B"
+   },
+   "name": "lcall 0x191F:0x91C (record reader \u2192 func_06F9E6 @0x06F9E6) per command id",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "@0x0720E4 / @0x0720FD",
+    "action": "lcall 0x1A1F:0x31A / 0x1A1F:0x33E (add command record \u2192 func_044B7A / func_044D16)",
+    "source": "\u2014",
+    "step": "register row",
+    "tier": "B"
+   },
+   "name": "lcall 0x1A1F:0x31A / 0x1A1F:0x33E (add command record \u2192 func_044B7A / func_044D16)",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "@asm": "(run \u00a76.3)",
+    "action": "menu engine func_06E3D0 via 0x191F:0x16A (run + hit-test); mode [0x1F5C] per command",
+    "source": "\u2014",
+    "step": "RUN dropdown",
+    "tier": "B"
+   },
+   "name": "menu engine func_06E3D0 via 0x191F:0x16A (run + hit-test); mode [0x1F5C] per command",
+   "rect": null,
+   "rect_raw": ""
+  }
+ ],
+ "elements": [],
+ "source": "spec/ui/menus.md"
+}

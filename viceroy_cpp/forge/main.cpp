@@ -2083,6 +2083,24 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) game_new();
             return J(200, report_state_json());
         }
+        // Byte-cited UI geometry extracted from spec/ui/*.md by tools/extract_layouts.py --
+        // screens render from THIS data, not hand-transcribed coordinates.
+        if (path == "/api/layout") {
+            std::string sc = qparam(query, "screen");
+            for (char c : sc) if (!std::isalnum((unsigned char)c) && c != '_') return err(400, "bad screen");
+            if (sc.empty()) {                       // list the extracted layouts
+                forge::JsonValue a = jarr();
+                std::error_code ec;
+                for (const auto& e : std::filesystem::directory_iterator("data_extracted/engine/layouts", ec)) {
+                    std::string fn = e.path().filename().string();
+                    if (fn.size() > 5 && fn.compare(fn.size() - 5, 5, ".json") == 0)
+                        a.arr.push_back(forge::json_str(fn.substr(0, fn.size() - 5)));
+                }
+                return J(200, a);
+            }
+            try { return J(200, forge::json_parse_file("data_extracted/engine/layouts/" + sc + ".json")); }
+            catch (...) { return err(404, "no layout for " + sc + " (run tools/extract_layouts.py)"); }
+        }
         if (path == "/api/labels") {
             // ?section=MISC|EUROLABEL|... -> the verbatim LABELS.TXT section lines (index = the
             // line number the specs cite, e.g. @MISC[37] = the Congress title). Screens draw

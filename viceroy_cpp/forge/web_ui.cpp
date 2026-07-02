@@ -279,6 +279,7 @@ const char* forge_index_html() {
       <button class="act" onclick="newGameSetup()">New game&hellip;</button>
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
+      <button class="act" onclick="euOpen()" title="The Royal port: market, docks, recruiting (spec/ui/europe_screen.md)">Europe (E)</button>
       <button class="act" onclick="saveGame()">Save</button>
       <button class="act" onclick="loadGame()">Load</button>
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
@@ -2092,6 +2093,90 @@ async function colBuild(bid){
       body:JSON.stringify({colony:ci,building:bid})})).json();
     ui.toast(r.msg||'started'); }catch(e){ ui.toast('build failed'); }
   colOpen(ci);
+}
+
+// ==== Native Europe screen (spec/ui/europe_screen.md) -- rendered from the EXTRACTED layout ====
+// The geometry comes from /api/layout?screen=europe_screen: tools/extract_layouts.py lifts the
+// spec's byte-cited element table into data, so NO coordinate here is hand-transcribed -- a spec
+// correction re-extracts straight into this screen. Prices are the live 1.3 market model.
+let EU=null, EULAY=null;
+async function euOpen(){
+  EU=await (await fetch('/api/europe')).json();
+  if(!EULAY) EULAY=await (await fetch('/api/layout?screen=europe_screen')).json();
+  nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('EUROLABEL',()=>euRender())));
+}
+// look an element's byte-cited rect up by (partial) name in the extracted layout
+function euRect(sub,fb){
+  const e=(EULAY&&EULAY.elements||[]).find(e=>e.rect&&e.name.toLowerCase().indexOf(sub)>=0);
+  return e?e.rect:fb;
+}
+function euRender(){
+  const GI=g=>22+g;
+  let h='';
+  // market bar: extracted rect (0,179,320,21); icons stride 19, prices y=194 (spec rows)
+  const mb=euRect('market bar fill',[0,179,320,21]);
+  h+=colFill(mb[0],mb[1],mb[2],mb[3]);
+  (EU.prices||[]).forEach((p,g)=>{
+    const x=mb[0]+1+g*19;
+    h+='<div onclick="event.stopPropagation();euTrade('+g+')" style="cursor:pointer" title="'
+      +esc(p.good)+' — bid '+p.bid+' / ask '+p.ask+' (click to trade)">'
+      +nsIcon(GI(g),x+2,mb[1]+2,{scale:0.5})+'</div>';
+    h+=nsT(x-2,194,p.bid+'/'+p.ask,{w:19,center:true,size:4,col:p.boycott?'#e04040':NS.white});
+    if(p.boycott) h+=nsIcon(55,x+2,mb[1]+1,{scale:0.4,title:'boycotted after the Tax Party'});
+  });
+  // dock (extracted rect) + the 3-slot immigrant pool on the quay
+  const dk=euRect('dock fill',[143,118,81,60]);
+  h+=colFill(dk[0],dk[1],dk[2],dk[3],'#181c7d88');
+  (EU.dock||[]).forEach((t,i)=>{
+    if(t<0) return;                                 // empty dock slot
+    h+='<div onclick="event.stopPropagation();euRecruitSlot('+i+')" style="cursor:pointer" '
+      +'title="waiting immigrant — click to bring ashore">'
+      +nsIcon(81,147+i*12,165,{})+'</div>';         // slots x=147+slot*12, y=165 (spec row)
+  });
+  // caption box (extracted rect): verbatim @MISC[10] "Bound For"
+  const cb=euRect('caption box',[143,81,120,69]);
+  h+=nsT(cb[0],cb[1]+28,esc(nsLbl('MISC',10,'Bound For')),{w:cb[2],center:true,col:NS.white});
+  // recruit panel (extracted rect (281,89,37,32)): the three verbatim @EUROLABEL rows
+  const rp=euRect('recruit',[281,89,37,32]);
+  h+=colFill(rp[0],rp[1],rp[2],rp[3],'#000000aa');
+  ['RECRUIT','PURCHASE','TRAIN'].forEach((fb,r)=>{
+    h+='<div onclick="event.stopPropagation();euAction('+r+')" style="cursor:pointer">'
+      +nsT(rp[0],rp[1]+3+r*9,esc(nsLbl('EUROLABEL',r,fb)),{w:rp[2],center:true,size:4,col:NS.white})
+      +'</div>';
+  });
+  // warehouse-bar right readout: verbatim @MISC[209] "Sons of Liberty" (spec x=306,y=179)
+  h+=nsT(230,171,esc(nsLbl('MISC',209,'Sons of Liberty')),{size:5,col:NS.white,w:88,right:true});
+  // header band: gold + tax (the "Selling ..." banner is runtime-formatted per spec)
+  h+=nsT(0,1,esc(nsLbl('CTITLE',1,'Gold:'))+' '+EU.gold+'   '
+        +esc(nsLbl('CTITLE',9,'Tax:'))+' '+EU.tax+'%',{col:NS.green,w:320,center:true,bold:true});
+  ui.popup('Europe &mdash; the Royal port',
+    '<div>'+nsScreen('pik/EUROPE.png',h+nsOK('ui.close()',esc(nsLbl('MISC',46,'OK'))))+'</div>');
+}
+async function euTrade(g){
+  const p=(EU.prices||[])[g]||{};
+  ui.popup('Trade &mdash; '+esc(p.good||('good '+g)),
+    '<p>bid <b>'+p.bid+'</b> / ask <b>'+p.ask+'</b> &middot; hidden supply '+p.supply
+    +' &middot; this turn\'s volume '+p.trade+'</p>'
+    +'<div class="row">'
+    +'<button class="act" onclick="euDo(\'sell\','+g+')">Sell 10 (from colony 0)</button>'
+    +'<button class="act" onclick="euDo(\'buy\','+g+')">Buy 10 (to colony 0)</button></div>');
+}
+async function euDo(op,g){
+  try{ const r=await (await fetch('/api/europe/'+op,{method:'POST',
+      body:JSON.stringify({colony:0,good:g,qty:10})})).json();
+    ui.toast(r.msg||r.error||op+' done'); }catch(e){ ui.toast(op+' failed'); }
+  euOpen();
+}
+async function euRecruitSlot(i){
+  try{ const r=await (await fetch('/api/europe/recruit',{method:'POST',
+      body:JSON.stringify({slot:i,colony:0})})).json();
+    ui.toast(r.error||'immigrant ashore'); }catch(e){ ui.toast('recruit failed'); }
+  euOpen(); if(typeof GAME!=='undefined'&&GAME) refreshGame();
+}
+function euAction(r){
+  if(r===0){ const i=(EU.dock||[]).findIndex(t=>t>=0);
+    if(i<0) ui.toast('no immigrant waiting'); else euRecruitSlot(i); }
+  else ui.toast((r===1?'PURCHASE':'TRAIN')+': pick via the Tables tab @UNIT costs (train route: /api/europe/train)');
 }
 
 // ---- Turn tab (B5): edit the data-driven turn pipeline (turn.json) ----

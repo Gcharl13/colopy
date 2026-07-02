@@ -1,0 +1,413 @@
+{
+ "draw_order": [
+  {
+   "cols": {
+    "#": "1",
+    "Call site": "@0x028595 lcall 0x181F:0xC22",
+    "Role": "scene context / clear setup",
+    "Sub-renderer": "\u2014",
+    "Tier": "B"
+   },
+   "name": "@0x028595 lcall 0x181F:0xC22",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "2",
+    "Call site": "@0x02859B call 0x2CA5A",
+    "Role": "colonist sort / stage A",
+    "Sub-renderer": "func_025C32",
+    "Tier": "B"
+   },
+   "name": "@0x02859B call 0x2CA5A",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "3",
+    "Call site": "@0x02859F call 0x2CACD",
+    "Role": "TERRAIN scene + scene units (\u00a73.8)",
+    "Sub-renderer": "func_026374",
+    "Tier": "B"
+   },
+   "name": "@0x02859F call 0x2CACD",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "4",
+    "Call site": "@0x0285A2 call 0x2CAC3",
+    "Role": "full-screen region FILL (0,0,320,200)",
+    "Sub-renderer": "func_02633E",
+    "Tier": "B"
+   },
+   "name": "@0x0285A2 call 0x2CAC3",
+   "rect": [
+    0,
+    0,
+    320,
+    200
+   ],
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "5",
+    "Call site": "@0x0285B5 call 0x2CAE6",
+    "Role": "title text (\u00a73.1)",
+    "Sub-renderer": "func_0268CE",
+    "Tier": "B"
+   },
+   "name": "@0x0285B5 call 0x2CAE6",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "6",
+    "Call site": "@0x0285BD call 0x2C9A1",
+    "Role": "field-production panel (\u00a73.2)",
+    "Sub-renderer": "func_0264A8",
+    "Tier": "B"
+   },
+   "name": "@0x0285BD call 0x2C9A1",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "7",
+    "Call site": "@0x0285C5 call 0x2C9DD",
+    "Role": "colonist plaza row (\u00a73.3)",
+    "Sub-renderer": "func_0270D0",
+    "Tier": "B"
+   },
+   "name": "@0x0285C5 call 0x2C9DD",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "8",
+    "Call site": "@0x0285CD call 0x2CA19 \u2192 0x191F:0x654",
+    "Role": "stockpile bar (\u00a73.9)",
+    "Sub-renderer": "func_0281D6",
+    "Tier": "B"
+   },
+   "name": "@0x0285CD call 0x2CA19 \u2192 0x191F:0x654",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "9",
+    "Call site": "@0x0285D7 call 0x2C9E7",
+    "Role": "flag panel (\u00a73.4)",
+    "Sub-renderer": "func_02853C",
+    "Tier": "B"
+   },
+   "name": "@0x0285D7 call 0x2C9E7",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "10",
+    "Call site": "@0x0285DF call 0x2C9FB",
+    "Role": "surrounding-tile minimap (\u00a73.5)",
+    "Sub-renderer": "func_027DB2",
+    "Tier": "B"
+   },
+   "name": "@0x0285DF call 0x2C9FB",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "11",
+    "Call site": "@0x0285E7 call 0x2C983",
+    "Role": "SoL / cargo / msg panel (\u00a73.6)",
+    "Sub-renderer": "func_02814C",
+    "Tier": "B"
+   },
+   "name": "@0x0285E7 call 0x2C983",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "12",
+    "Call site": "@0x0285EF call 0x2C97E",
+    "Role": "buildings loop, 15 slots (\u00a73.7)",
+    "Sub-renderer": "func_02701C",
+    "Tier": "B"
+   },
+   "name": "@0x0285EF call 0x2C97E",
+   "rect": null,
+   "rect_raw": ""
+  },
+  {
+   "cols": {
+    "#": "\u2014",
+    "Call site": "@0x028607 lcall 0x181F:0xE2 (if [bp+6]\u22600)",
+    "Role": "screen-bottom rule (0,200,320)",
+    "Sub-renderer": "\u2014",
+    "Tier": "B"
+   },
+   "name": "@0x028607 lcall 0x181F:0xE2 (if [bp+6]\u22600)",
+   "rect": null,
+   "rect_raw": ""
+  }
+ ],
+ "elements": [
+  {
+   "cols": {
+    "Color": "panel fill",
+    "Element": "Full-screen region fill",
+    "Fn @offset": "func_02633E (0x181F:0x444)",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0,0,320,200)",
+    "Sprite / text": "flat patterned fill",
+    "Tier": "B"
+   },
+   "name": "Full-screen region fill",
+   "rect": [
+    0,
+    0,
+    320,
+    200
+   ],
+   "rect_raw": "(0,0,320,200)"
+  },
+  {
+   "cols": {
+    "Color": "nation/screen-latched\u00b9",
+    "Element": "Title strip (\"menu bar above\")",
+    "Fn @offset": "func_0268CE @0x0268CE (paint 0x181F:0xB0 @0x026AA6)",
+    "Font": "FONTTINY\u00b9",
+    "Rect (x,y,w,h)": "origin R (DOS-centered, y\u22485)",
+    "Sprite / text": "name + season + year + gold (all B-resolved \u00a73.1; only the inter-field separator glyph 0xd1d:0x7a4(0x58/0x52) is unliteralized)",
+    "Tier": "B chain"
+   },
+   "name": "Title strip (\"menu bar above\")",
+   "rect": null,
+   "rect_raw": "origin R (DOS-centered, y\u22485)"
+  },
+  {
+   "cols": {
+    "Color": "per-icon",
+    "Element": "Field-production panel",
+    "Fn @offset": "func_0264A8 @0x0264E9",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(224,32,72,72)",
+    "Sprite / text": "commodity icons ICONS good+0x17",
+    "Tier": "B"
+   },
+   "name": "Field-production panel",
+   "rect": [
+    224,
+    32,
+    72,
+    72
+   ],
+   "rect_raw": "(224,32,72,72)"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Colonist plaza row",
+    "Fn @offset": "func_0270D0 @0x0270D6 (pitch @0x027160)",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0,130,120,48)",
+    "Sprite / text": "colonist sprites; x-origin 143, walks left; pitch = sprite_width(+0x3E) + adaptive gap ([0xA890]=2\u21920, fit-to-96px)",
+    "Tier": "B"
+   },
+   "name": "Colonist plaza row",
+   "rect": [
+    0,
+    130,
+    120,
+    48
+   ],
+   "rect_raw": "(0,130,120,48)"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Flag panel",
+    "Fn @offset": "func_02853C @0x028540",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(303,132,17,45)",
+    "Sprite / text": "ICONS sprite 0x44 (68) at +3, frame=[0x337]/[0x339]",
+    "Tier": "B"
+   },
+   "name": "Flag panel",
+   "rect": [
+    303,
+    132,
+    17,
+    45
+   ],
+   "rect_raw": "(303,132,17,45)"
+  },
+  {
+   "cols": {
+    "Color": "per-tile",
+    "Element": "Surrounding-tile minimap",
+    "Fn @offset": "func_027DB2 @0x027DB7",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(121,130,84,48)",
+    "Sprite / text": "6\u00d7 ICONS sprite 0x7B (123) tiles (or centered caption if [0x33C]==0)",
+    "Tier": "B"
+   },
+   "name": "Surrounding-tile minimap",
+   "rect": [
+    121,
+    130,
+    84,
+    48
+   ],
+   "rect_raw": "(121,130,84,48)"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "SoL / cargo / msg panel",
+    "Fn @offset": "func_02814C @0x02814F (cases @0x0275CE/0x027746/0x027BB6)",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(211,130,91,48)",
+    "Sprite / text": "mode-switch on [0x337]: 0=SoL/garrison icon bar (func_0275CE, no string), 1=cargo+caption [0x939A] (func_027746), 2=cargo+caption+hammer strip (func_027BB6)",
+    "Tier": "B"
+   },
+   "name": "SoL / cargo / msg panel",
+   "rect": [
+    211,
+    130,
+    91,
+    48
+   ],
+   "rect_raw": "(211,130,91,48)"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Buildings (15 slots)",
+    "Fn @offset": "func_02701C @0x02701C \u2192 func_026DD4 @0x026DD4",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "DS:0x266 table (stride-4: x@+0, y@+2, drawn y+8)",
+    "Sprite / text": "BUILDING.SS frame (func_026DD4 @0x026E4E blit, reseg 2026-06-27): occupied \u21d2 def_id+1 EXE-sheet (=def_id in lab bundle), special: def_id 0+query0==0\u21920x11(bundle 16), def_id 0xF/0x11\u21920x2F/0x30; empty (byte[0x8E82+i]==255) \u21d2 DS:0x260[byte[0x8D62+i]]\u22121",
+    "Tier": "B"
+   },
+   "name": "Buildings (15 slots)",
+   "rect": null,
+   "rect_raw": "DS:0x266 table (stride-4: x@+0, y@+2, drawn y+8)"
+  },
+  {
+   "cols": {
+    "Color": "per-tile",
+    "Element": "Terrain scene tiles",
+    "Fn @offset": "func_026374 @0x066968",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "x=col\u2212[0x9CCC]+252, y=row\u2212[0x9CCA]+9",
+    "Sprite / text": "sheet [0x2DA8], blit 0x181F:0x290",
+    "Tier": "B"
+   },
+   "name": "Terrain scene tiles",
+   "rect": null,
+   "rect_raw": "x=col\u2212[0x9CCC]+252, y=row\u2212[0x9CCA]+9"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Scene units",
+    "Fn @offset": "func_026374 @0x0263E5",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "x=cell\u00b724+252, y=cell\u00b724+60",
+    "Sprite / text": "sheet [0x839E] via func_0060A0",
+    "Tier": "B"
+   },
+   "name": "Scene units",
+   "rect": null,
+   "rect_raw": "x=cell\u00b724+252, y=cell\u00b724+60"
+  },
+  {
+   "cols": {
+    "Color": "qty white 0x0F, red 0x0C when over warehouse cap (0x181F:0xD3A)",
+    "Element": "Stockpile strip",
+    "Fn @offset": "func_0281D6 @0x0281DB",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(0,179,320,21); 16 cells, pitch 19, icon-Y 181",
+    "Sprite / text": "ICONS good+0x17 (23..38); qty",
+    "Tier": "B"
+   },
+   "name": "Stockpile strip",
+   "rect": [
+    0,
+    179,
+    320,
+    21
+   ],
+   "rect_raw": "(0,179,320,21); 16 cells, pitch 19, icon-Y 181"
+  },
+  {
+   "cols": {
+    "Color": "white 0x0F",
+    "Element": "Warehouse-bar right readout",
+    "Fn @offset": "@0x0283F1 (push 0xf,0xb3,0x132,[0x2f5e]\u21920x181F:0x22)",
+    "Font": "FONTTINY",
+    "Rect (x,y,w,h)": "(306,179)",
+    "Sprite / text": "heap string #[0x2F5E] = 0x219 (537) = \"Sons of Liberty\" (oracle-resolved 2026-06-27; NOT gold)",
+    "Tier": "B"
+   },
+   "name": "Warehouse-bar right readout",
+   "rect": null,
+   "rect_raw": "(306,179)"
+  },
+  {
+   "cols": {
+    "Color": "green title latch",
+    "Element": "Gold (treasury)",
+    "Fn @offset": "title func_0268CE @0x026A61 (paint 0x181F:0xB0 @0x026AA6)",
+    "Font": "FONTTINY (title)",
+    "Rect (x,y,w,h)": "rendered as part of the TITLE (\u00a73.1 field 7), not a separate colony-composer blit",
+    "Sprite / text": "PowerRecord+0x2A via [0x84FC], formatted into title buffer by 0xd1d:0x11b4 @0x026A61",
+    "Tier": "B"
+   },
+   "name": "Gold (treasury)",
+   "rect": null,
+   "rect_raw": "rendered as part of the TITLE (\u00a73.1 field 7), not a separate colony-composer blit"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Panel outlines",
+    "Fn @offset": "0x181F:0xE2",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "each panel (single colour)",
+    "Sprite / text": "1-px frame",
+    "Tier": "B"
+   },
+   "name": "Panel outlines",
+   "rect": null,
+   "rect_raw": "each panel (single colour)"
+  },
+  {
+   "cols": {
+    "Color": "\u2014",
+    "Element": "Screen-bottom rule",
+    "Fn @offset": "func_028592 @0x028607",
+    "Font": "\u2014",
+    "Rect (x,y,w,h)": "(0,200,320)",
+    "Sprite / text": "1-px rule",
+    "Tier": "B"
+   },
+   "name": "Screen-bottom rule",
+   "rect": null,
+   "rect_raw": "(0,200,320)"
+  }
+ ],
+ "source": "spec/ui/colony_screen.md"
+}
