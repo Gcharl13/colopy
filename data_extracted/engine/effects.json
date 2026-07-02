@@ -70,7 +70,22 @@
    ],
    "note": "The AI/default per-category types from func_03C4A2 when neither the wartime nor human-foreign branch is taken: Regulars/Cavalry/Artillery.",
    "_source": "spec/systems/mercenary.md func_03C4A2 (AI/default column). BYTE_VERIFIED."
+  },
+  "intervention": {
+   "label": "Foreign intervention force (per landing)",
+   "trigger": "revolution.intervention",
+   "carrier": "Man-O-War",
+   "veteran": true,
+   "categories": [
+    {"cat": 0, "unit": "Cont. Army", "count": 2},
+    {"cat": 1, "unit": "Cont. Cav.", "count": 1},
+    {"cat": 3, "unit": "Artillery", "count": 1}
+   ],
+   "landings": 3,
+   "note": "The free func_03D510(arg 0) landing for the rebel power. BYTE-VERIFIED: the Man-O-War carrier (@0x03D748), the veteran stamp (vet_type 0x15 @0x03D835), the wartime per-category unit types (func_03C4A2), and the population-weighted pick among the rebel's coastal colonies (+0x1C & 0x40, random_int(1, sum +0x1F) @0x3D57E). RECONSTRUCTED: the per-landing counts and the total-landings cap (the mercenary path reads the offer package words @0x03D919; the arg-0 budget source is not decomposed).",
+   "_source": "spec/systems/revolution.md (func_03D948 declaration, [0x5382]|=2 @0x3DA22) + spec/systems/tory_uprising.md 3 (@INTERVENE emit @0x3D7BB) + spec/systems/mercenary.md (shared landing)"
   }
+ 
  },
  "building_chains": {
   "_note": "The engine-coded upgrade ladders (context_dialogs.md 12, func_07464C: the prereq [-0x707C] / supersede [-0x707B] fields are a hardcoded chain init, NOT CSV columns). Within a chain, each member requires its predecessor built (@0xB97D) and is superseded once a later member is built (@0xB956). Membership follows the unambiguous @BUILDING name ladders (RECONSTRUCTED membership, byte-cited gate).",

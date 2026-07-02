@@ -59,6 +59,12 @@ struct EngineExtra {
     // Revolution / late-game state the spec systems drive (DGROUP 0x53D0.. in the original).
     int  national_sol  = 0;       // national Sons of Liberty meter 0..100 ([0x53D0])
     bool woi_declared  = false;   // War of Independence declared ([0x5382] bit 0)
+    bool intervention_active = false;  // foreign intervention declared ([0x5382] bit 1,
+                                       //   set by func_03D948 @0x3DA22)
+    int  intervention_power  = -1;     // the allied foreign power (func_03D948 pick)
+    int  intervention_landings = 0;    // force landings so far (func_03D510 arrivals;
+                                       //   capped by effects.json force_composition
+                                       //   .intervention.landings, RECONSTRUCTED)
     int  rebel_power   = -1;      // power that declared independence ([0x5398])
     int  seceded_power = -1;      // power withdrawn by War of Spanish Succession ([0x53D2])
     long score         = 0;       // last computed game score
@@ -132,6 +138,14 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx);
 // Drop the cached data tables (call after the Tables tab saves so a newly added row /
 // edited cell is picked up by the next @SECTION[...] binding lookup without a restart).
 void invalidate_tables();
+
+// Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its @UNIT type id (row
+// index). -1 if unknown. No name->type list is hardcoded in C++.
+int unit_type_by_name(const std::string& name);
+
+// One force-composition record from data_extracted/engine/effects.json
+// (force_composition.<kind>), or null -- the data that makes a spawn concrete.
+const JsonValue* force_composition(const std::string& kind);
 
 // Compute a colony's per-turn production from its colonist roster (spec/systems/colony.md §3):
 // tile workers -> raw goods (terrain table + tory/expert), building workers -> Hammers/Crosses/

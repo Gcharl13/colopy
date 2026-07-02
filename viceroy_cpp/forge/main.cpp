@@ -923,6 +923,117 @@ static void war_resolution_step() {
     }
 }
 
+static std::string game_message_text(const std::string& key);   // defined below
+
+// Coastal test for the ColonyRecord +0x1C & 0x40 flag consumers (mercenary.md pins
+// the bit as "coastal"): any Ocean(25)/Sea Lane(26) tile in the 8-neighborhood.
+static bool colony_coastal(int x, int y) {
+    for (int dy = -1; dy <= 1; ++dy) for (int dx = -1; dx <= 1; ++dx) {
+        if (!dx && !dy) continue;
+        int nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= g_world.map_w || ny >= g_world.map_h) continue;
+        int t = g_world.terrain[(size_t)ny * g_world.map_w + nx] & 0x1F;
+        if (t == 25 || t == 26) return true;
+    }
+    return false;
+}
+
+// Foreign intervention (spec/systems/{revolution,tory_uprising,mercenary}.md).
+// DECLARATION (func_03D948, one-time, no roll): fires from the end-game dispatcher
+// once the WoI is declared, the national SoL meter is >= 75 ([0x53D0], the @0x2391C
+// high-meter branch), and the intervention bit ([0x5382] bit 1) is clear. The ally
+// is the owner of the strongest eligible foreign colony (coastal +0x1C & 0x40, max
+// population +0x1F); emits the verbatim @INTERVENTION and sets the bit (@0x3DA22).
+// ARRIVALS (func_03D510, the shared force-landing, arg 0): per WoI turn while
+// active, a population-weighted random pick among the rebel's coastal colonies
+// (random_int(1, sum weights) @0x3D57E) lands a Man-O-War carrier plus a veteran
+// (vet_type 0x15 @0x3D835) wartime-typed stack, emitting @INTERVENE (@0x3D7BB).
+// The per-landing counts + total landings come from effects.json
+// force_composition.intervention (RECONSTRUCTED; types/carrier/veteran/pick are B).
+static void intervention_step() {
+    forge::EngineExtra& x = g_engine_extra;
+    if (!x.woi_declared) return;
+    auto fill = [](std::string s, const char* tok, const std::string& v) {
+        for (size_t q; (q = s.find(tok)) != std::string::npos; )
+            s.replace(q, std::strlen(tok), v);
+        return s;
+    };
+    if (!x.intervention_active) {
+        if (x.national_sol < 75) return;                // the dispatcher's >= 75 gate
+        int best = -1, bestpop = -1;                    // strongest coastal foreign colony
+        for (const Colony& c : g_world.colonies) {
+            if (c.owner_power == 0 || c.x < 0) continue;
+            if (g_engine_extra.seceded_power == c.owner_power) continue;
+            if (!colony_coastal(c.x, c.y)) continue;
+            if (c.population > bestpop) { bestpop = c.population; best = c.owner_power; }
+        }
+        if (best < 0) return;                           // no eligible foreign ally yet
+        x.intervention_active = true;                   // [0x5382] |= 2 (@0x3DA22)
+        x.intervention_power = best;
+        const int an = power_nation(g_game, best), rn = g_game.nation;
+        forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+        auto tbl = [&](const char* t, int i) {
+            return forge::resolve_binding(std::string(t) + "[" + std::to_string(i) + "].name", cx).str;
+        };
+        // Fill sources RECONSTRUCTED: %STRING0/%STRING1 = the ally / mother country
+        // (@COUNTRY), %STRING2 = the ally's leader (@LEADERNAME), %STRING3 = the
+        // rebel's largest colony, %STRING4 = the ally nationality (@NATIONALITY).
+        int bigc = -1, bigp = -1;
+        for (int i = 0; i < (int)g_world.colonies.size(); ++i)
+            if (g_world.colonies[i].owner_power == 0 && g_world.colonies[i].population > bigp)
+                { bigp = g_world.colonies[i].population; bigc = i; }
+        std::string m = game_message_text("@INTERVENTION");
+        m = fill(m, "%STRING0", tbl("@COUNTRY", an));
+        m = fill(m, "%STRING1", tbl("@COUNTRY", rn));
+        m = fill(m, "%STRING2", tbl("@LEADERNAME", an));
+        m = fill(m, "%STRING3", bigc >= 0 ? "#" + std::to_string(bigc + 1) : "the colonies");
+        m = fill(m, "%STRING4", tbl("@NATIONALITY", an));
+        g_turn_notices.push_back(m);
+        return;                                          // arrivals begin next turn
+    }
+    // Arrivals while active, up to the data cap.
+    const forge::JsonValue* comp = forge::force_composition("intervention");
+    if (!comp) return;
+    int cap = comp->find("landings") ? comp->find("landings")->as_int(0) : 0;
+    if (x.intervention_landings >= cap) return;
+    long wsum = 0;                                       // pop-weighted coastal pick (@0x3D57E)
+    std::vector<std::pair<int, long>> elig;              // (colony, weight)
+    for (int i = 0; i < (int)g_world.colonies.size() && (int)elig.size() < 10; ++i) {
+        const Colony& c = g_world.colonies[i];
+        if (c.owner_power != 0 || c.x < 0 || !colony_coastal(c.x, c.y)) continue;
+        elig.push_back({i, (long)c.population});
+        wsum += c.population;
+    }
+    if (elig.empty() || wsum <= 0) return;
+    long roll = game_rng(1, (int)wsum); int land = elig[0].first;
+    for (const auto& e : elig) { roll -= e.second; if (roll <= 0) { land = e.first; break; } }
+    const int lx = g_world.colonies[land].x, ly = g_world.colonies[land].y;
+    if (const forge::JsonValue* carrier = comp->find("carrier")) {
+        int cty = forge::unit_type_by_name(carrier->str);        // Man-O-War (@0x3D748)
+        if (cty >= 0) { Unit u; u.type = cty; u.owner = 0; u.alive = true;
+                        u.x = lx; u.y = ly; g_world.units.push_back(u); }
+    }
+    if (const forge::JsonValue* cats = comp->find("categories"))
+        for (const forge::JsonValue& c : cats->arr) {
+            const forge::JsonValue* uv = c.find("unit"); const forge::JsonValue* nv = c.find("count");
+            if (!uv || !nv) continue;
+            int ty = forge::unit_type_by_name(uv->str); if (ty < 0) continue;
+            for (int k = 0; k < nv->as_int(0); ++k) {
+                Unit u; u.type = ty; u.owner = 0; u.alive = true;
+                u.profession = 0x15;                     // Veteran stamp (@0x3D835)
+                u.x = lx; u.y = ly; g_world.units.push_back(u);
+            }
+        }
+    ++x.intervention_landings;
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    std::string adj = forge::resolve_binding(
+        "@NATIONALITY[" + std::to_string(power_nation(g_game, x.intervention_power)) + "].name", cx).str;
+    std::string m = game_message_text("@INTERVENE");
+    m = fill(m, "%STRING0", "#" + std::to_string(land + 1));
+    m = fill(m, "%STRING1", adj);
+    g_turn_notices.push_back(m);
+}
+
 // Nation display name for a power slot (@NATIONALITY, falling back to @COUNTRY / "power N").
 static std::string nation_name(int p) {
     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
@@ -1362,6 +1473,7 @@ static void game_step() {
         }
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
+        intervention_step();                            // foreign ally declaration + landings (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
         history_snapshot();
     }
@@ -1558,6 +1670,9 @@ static forge::JsonValue game_state_json() {
       war.obj["ref_strength"] = forge::json_num((double)ref_land_strength());
       war.obj["tory_strength"] = forge::json_num((double)tory_militia_strength());
       war.obj["ref_total"] = forge::json_num((double)(g_game.ref.regulars + g_game.ref.cavalry + g_game.ref.manowar + g_game.ref.artillery));
+      war.obj["intervention_active"] = jbool(g_engine_extra.intervention_active);   // [0x5382] bit 1
+      war.obj["intervention_power"] = forge::json_num(g_engine_extra.intervention_power);
+      war.obj["intervention_landings"] = forge::json_num(g_engine_extra.intervention_landings);
       o.obj["war"] = war; }
     // War of the Spanish Succession: the rival withdrawn from the New World, -1 if none yet.
     o.obj["seceded_power"] = forge::json_num(g_engine_extra.seceded_power);
@@ -2341,6 +2456,9 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     o.obj["national_sol"] = forge::json_num(x.national_sol);
     o.obj["woi_declared"] = jbool(x.woi_declared);
     o.obj["rebel_power"] = forge::json_num(x.rebel_power);
+    o.obj["intervention_active"] = jbool(x.intervention_active);
+    o.obj["intervention_power"] = forge::json_num(x.intervention_power);
+    o.obj["intervention_landings"] = forge::json_num(x.intervention_landings);
     o.obj["seceded_power"] = forge::json_num(x.seceded_power);
     o.obj["score"] = forge::json_num((double)x.score);
     o.obj["congress_bells"] = forge::json_num(x.congress_bells);
@@ -2389,6 +2507,10 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
     x.national_sol = gi("national_sol", 0);
     if (const forge::JsonValue* v = o->find("woi_declared")) x.woi_declared = v->type == forge::JsonValue::Bool ? v->b : false;
     x.rebel_power = gi("rebel_power", -1);
+    { const forge::JsonValue* v = o->find("intervention_active");
+      x.intervention_active = v && v->type == forge::JsonValue::Bool ? v->b : false; }
+    x.intervention_power = gi("intervention_power", -1);
+    x.intervention_landings = gi("intervention_landings", 0);
     x.seceded_power = gi("seceded_power", -1);
     if (const forge::JsonValue* v = o->find("score")) x.score = (long)v->num;
     x.congress_bells = gi("congress_bells", 0);
