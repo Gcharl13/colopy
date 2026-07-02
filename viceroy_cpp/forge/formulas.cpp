@@ -236,6 +236,11 @@ JsonValue formulas_catalog() {
           "p = max(5*difficulty + 50, 2*tax_pct) ; cap p at 90",
           {},
           "Code-side; rises with difficulty and your tax rate, capped at 90%."),
+        F("incite_price", "Gold the tribe asks to move against a rival",
+          "price = max(50, 100 + 4*tension_toward_you - 2*tension_toward_target - 100*own_missions_in_tribe)",
+          {},
+          "RECONSTRUCTED from the manual's three factors: your missions in the tribe, "
+          "their attitude to you, and their attitude to the target."),
         F("tribute_gold", "Gold a native demand resolves to",
           "hi = min(3*settlement_wealth + 10, 100) ; gold = clamp(demand, 10 .. hi)",
           {},

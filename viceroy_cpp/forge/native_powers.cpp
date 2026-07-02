@@ -43,6 +43,15 @@ int native_trade_price(int difficulty, int tax_pct) {
     return offer;
 }
 
+int incite_price(int tension_you, int tension_target, int missions_in_tribe) {
+    // RECONSTRUCTED from the manual's three factors (see the header note):
+    // liking you (low tension_you) and disliking the target (high
+    // tension_target) cheapen the deal; each of your missions in the tribe
+    // knocks 100 off. Floor 50 so an incitement is never free.
+    int price = 100 + 4 * tension_you - 2 * tension_target - 100 * missions_in_tribe;
+    return price < 50 ? 50 : price;
+}
+
 long raze_treasure_gold(int difficulty, int tl, const RandFn& rng) {
     long sum = 0;                                    // sum of 3 x rng(0, 10-diff)
     for (int i = 0; i < 3; ++i) sum += rng(0, 10 - difficulty);

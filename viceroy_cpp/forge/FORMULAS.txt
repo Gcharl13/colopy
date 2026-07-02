@@ -137,6 +137,10 @@ Every formula the sim computes. The named knobs are cfg values you can edit on t
     p = max(5*difficulty + 50, 2*tax_pct) ; cap p at 90
     knobs: (none - fixed code logic)
     Code-side; rises with difficulty and your tax rate, capped at 90%.
+  Gold the tribe asks to move against a rival  (incite_price)
+    price = max(50, 100 + 4*tension_toward_you - 2*tension_toward_target - 100*own_missions_in_tribe)
+    knobs: (none - fixed code logic)
+    RECONSTRUCTED from the manual's three factors: your missions in the tribe, their attitude to you, and their attitude to the target.
   Gold a native demand resolves to  (tribute_gold)
     hi = min(3*settlement_wealth + 10, 100) ; gold = clamp(demand, 10 .. hi)
     knobs: (none - fixed code logic)

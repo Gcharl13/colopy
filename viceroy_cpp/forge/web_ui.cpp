@@ -2783,7 +2783,8 @@ async function villageMenu(){
   if(!sv){ ui.toast('no village adjacent'); return; }
   let d; try{ d=await (await fetch('/api/native/actions?unit='+SEL+'&settlement='+sv.i)).json(); }
   catch(e){ ui.toast('village menu unavailable'); return; }
-  const disp={0:'villageTrade',2:'villageMission',4:'nativeLearn',5:'villageChief',7:'villageTribute',8:'villageAttack',9:''};
+  const disp={0:'villageTrade',1:'villageHostile',2:'villageMission',3:'villageDenounce',
+              4:'nativeLearn',5:'villageChief',6:'villageIncite',7:'villageTribute',8:'villageAttack',9:''};
   let body='<div style="display:flex;flex-direction:column;gap:4px">'+(d.rows||[]).map(r=>{
     const fn=disp[r.id];
     if(r.id===9) return '<button class="act" onclick="ui.close()">'+esc(r.label)+'</button>';
@@ -2813,8 +2814,54 @@ async function villageAttack(si){
   }catch(e){ ui.toast('failed'); }
   refresh();
 }
-function villageTrade(si){ ui.toast('Trade: bring goods on a wagon/ship (native trade pricing, natives.md)'); }
-function villageChief(si){ ui.toast('The chief receives you... (chief outcomes pending)'); }
+// r0 Trade: sells the unit's laden holds at the byte-verified percent (func_05C878).
+async function villageTrade(si){
+  try{ const r=await (await fetch('/api/native/trade',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    if(r.ok) ui.toast('Traded '+(r.deals||[]).map(d=>d.qty+' '+d.name).join(', ')+' for '+r.gold+' gold ('+r.pct+'%)');
+    else ui.toast(r.error||'no deal');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+// r1 Enter Hostile: a moderate trespass (@0x4A319); the natives will not trade.
+async function villageHostile(si){
+  try{ const r=await (await fetch('/api/native/hostile',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    ui.toast(r.war?'The village is at WAR with you.':'The village turns you away (alarm '+r.alarm+').');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+// r3 Denounce Heresy: verbatim @HERESY0/@HERESY1 outcome.
+async function villageDenounce(si){
+  try{ const r=await (await fetch('/api/native/denounce',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    if(r.msg) playPopup(r.key||'@HERESY1', r.msg); else ui.toast(r.error||'failed');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+// r5 Speak With Chief: verbatim @CHIEF* outcome (howdy/gift/tales/bored/kill).
+async function villageChief(si){
+  try{ const r=await (await fetch('/api/native/chief',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si})})).json();
+    if(r.msg) playPopup(r.key||'@CHIEFBORED', r.msg); else ui.toast(r.error||'failed');
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
+// r6 Incite Indians: quote the price (manual's three factors), then confirm.
+async function villageIncite(si){
+  const t=prompt('Incite against which power? (1..3)','1'); if(t===null) return;
+  const target=+t;
+  try{
+    const q=await (await fetch('/api/native/incite',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si,target:target})})).json();
+    if(q.error){ ui.toast(q.error); return; }
+    if(!confirm('The tribe asks '+q.price+' gold to move against power '+target+'. Pay?')) return;
+    const r=await (await fetch('/api/native/incite',{method:'POST',
+      body:JSON.stringify({unit:SEL,settlement:si,target:target,confirm:true})})).json();
+    ui.toast(r.ok?('The tribe turns on '+r.target+' (tension '+r.tension_target+').'):(r.error||'failed'));
+  }catch(e){ ui.toast('failed'); }
+  refresh();
+}
 function villageAdjacent(u){
   return (GAME.settlements||[]).some(s=>Math.abs(s.x-u.x)<=1&&Math.abs(s.y-u.y)<=1);
 }

@@ -26,6 +26,7 @@
 #include "scoring.hpp"
 #include "savegame.hpp"
 #include "explore.hpp"
+#include "natives.hpp"
 #include "store.hpp"
 #include "training.hpp"
 #include "turnpipe.hpp"
@@ -669,6 +670,9 @@ static void seed_native_settlements() {
                 int seed = game_rng(0, 14) + (p == 0 ? 2 * g_game.difficulty : 0);
                 s.alarm[p] = seed > 20 ? 20 : seed;
             }
+            // The good the village "badly needs" (@CHIEFHOWDY %STRING1) --
+            // assignment driver RECONSTRUCTED: random tradable good 1..15.
+            s.wanted = game_rng(1, 15);
             g_engine_extra.settlements.push_back(s);
         }
     }
@@ -2367,6 +2371,7 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         so.obj["mission"] = forge::json_num(s.mission); so.obj["capital"] = jbool(s.capital);
         so.obj["skill"] = forge::json_num(s.skill); so.obj["taught"] = jbool(s.taught);
         so.obj["mission_expert"] = jbool(s.mission_expert);
+        so.obj["wanted"] = forge::json_num(s.wanted);
         forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
         so.obj["alarm"] = al;
         forge::JsonValue tn = jarr(); for (int p = 0; p < 4; ++p) tn.arr.push_back(forge::json_num(s.tension[p]));
@@ -2422,6 +2427,7 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             const forge::JsonValue* cap = s.find("capital"); ns.capital = cap && cap->type == forge::JsonValue::Bool ? cap->b : false;
             const forge::JsonValue* tg = s.find("taught"); ns.taught = tg && tg->type == forge::JsonValue::Bool ? tg->b : false;
             const forge::JsonValue* mx = s.find("mission_expert"); ns.mission_expert = mx && mx->type == forge::JsonValue::Bool ? mx->b : false;
+            ns.wanted = si("wanted", 1);
             if (const forge::JsonValue* al = s.find("alarm"))
                 for (int p = 0; p < 4 && p < (int)al->arr.size(); ++p) ns.alarm[p] = al->arr[p].as_int();
             if (const forge::JsonValue* tn = s.find("tension"))
@@ -3083,13 +3089,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 r.obj["wired"] = jbool(wired);
                 rows.arr.push_back(r);
             };
-            row(0, alarm < 0x4B, false);                   // Trade (alarm < 75, @0x4B664)
-            row(1, alarm >= 0x4B, false);                  // Enter Hostile (the exclusive twin)
+            row(0, alarm < 0x4B, true);                    // Trade (alarm < 75, @0x4B664)
+            row(1, alarm >= 0x4B, true);                   // Enter Hostile (the exclusive twin)
             row(2, missionary && sv.mission < 0, true);    // Establish Mission
-            row(3, sv.mission >= 0 && sv.mission != (u.owner & 3), false);   // Denounce Heresy
+            row(3, sv.mission >= 0 && sv.mission != (u.owner & 3), true);    // Denounce Heresy
             row(4, alarm < 128 && tl < 2 && !scout, true); // Live Among (relation >= 0, tribe < 2, not Scout)
-            row(5, scout, false);                          // Speak With Chief (type 5)
-            row(6, tl != 0, false);                        // Incite (tribe-record != 0)
+            row(5, scout, true);                           // Speak With Chief (type 5)
+            row(6, tl != 0, true);                         // Incite (tribe-record != 0)
             row(7, tl != 0 && !ship, true);                // Demand Tribute (also excludes ships)
             row(8, tl > 1, true);                          // Attack Village (tribe-record > 1)
             row(9, true, true);                            // Cancel -- always
@@ -3154,6 +3160,227 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 o.obj["ok"] = jbool(false); o.obj["gold"] = forge::json_num(0);
             }
             u.moves_left = 0;
+            return J(200, o);
+        }
+
+        // The remaining village actions share the same (unit, settlement) lookup.
+        auto village_pair = [&](const std::string& body_str, Unit** up, forge::NativeSettlement** sp,
+                                int* sip) -> bool {
+            forge::JsonValue b = forge::json_parse(body_str);
+            int ui2 = b.find("unit") ? b.find("unit")->as_int(-1) : -1;
+            int si = b.find("settlement") ? b.find("settlement")->as_int(-1) : -1;
+            if (ui2 < 0 || ui2 >= (int)g_world.units.size() ||
+                si < 0 || si >= (int)g_engine_extra.settlements.size()) return false;
+            Unit& u = g_world.units[ui2];
+            forge::NativeSettlement& sv = g_engine_extra.settlements[si];
+            if (!u.alive || std::abs(u.x - sv.x) > 1 || std::abs(u.y - sv.y) > 1) return false;
+            *up = &u; *sp = &sv; if (sip) *sip = si;
+            return true;
+        };
+        auto vfill = [](std::string s, const char* tok, const std::string& v) {
+            for (size_t p2; (p2 = s.find(tok)) != std::string::npos; )
+                s.replace(p2, std::strlen(tok), v);
+            return s;
+        };
+        auto tribe_name = [&](int tribe) {
+            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            return forge::resolve_binding("@TRIBES[" + std::to_string(tribe) + "].name", cx).str;
+        };
+
+        // Trade With Village (r0): sell the unit's laden cargo holds. The offer
+        // percentage is BYTE-VERIFIED (func_05C878 @0x5C976: max(5*diff+50,
+        // 2*tax) capped 90); what it multiplies is not decomposed in the trace --
+        // RECONSTRUCTED as that percent of the European bid price per unit of
+        // good. Success lowers tension by 4 (@0x5C41E) and bumps the village
+        // wealth/goodwill bytes (@0x5C3E4; magnitudes not byte-cited -- +1 per
+        // hold sold, RECONSTRUCTED).
+        if (path == "/api/native/trade" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            Unit* u; forge::NativeSettlement* sv; int si = -1;
+            if (!village_pair(body, &u, &sv, &si)) return err(400, "bad unit/settlement");
+            const int p = u->owner & 3;
+            if (sv->alarm[p] >= 0x4B) return err(400, "the village is hostile (alarm >= 75)");
+            const int pct = forge::native_trade_price(g_game.difficulty, g_game.powers[p].tax);
+            long total = 0; int holds_sold = 0;
+            forge::JsonValue deals = jarr();
+            for (int h = 0; h < 6; ++h) {
+                if (u->hold_good[h] < 0 || u->hold_qty[h] <= 0) continue;
+                const int good = u->hold_good[h], qty = u->hold_qty[h];
+                long offer = (long)qty * vc::sim::market_bid(g_game, p, good) * pct / 100;
+                forge::JsonValue d = jobj();
+                d.obj["good"] = forge::json_num(good);
+                d.obj["name"] = forge::json_str(good_display(good));
+                d.obj["qty"] = forge::json_num(qty);
+                d.obj["gold"] = forge::json_num((double)offer);
+                deals.arr.push_back(d);
+                total += offer; ++holds_sold;
+                u->hold_good[h] = -1; u->hold_qty[h] = 0;
+            }
+            forge::JsonValue o = jobj();
+            if (!holds_sold) { o.obj["ok"] = jbool(false); o.obj["error"] = forge::json_str("no cargo to trade"); return J(200, o); }
+            g_game.powers[p].gold += total;
+            forge::tension_apply(*sv, p, forge::TENSION_TRADE_GOODWILL,         // -4 (@0x5C41E)
+                                 power_nation(g_game, p) == 1,
+                                 (g_engine_extra.ff_owned >> 16) & 1u);
+            sv->wealth += holds_sold;                                           // goodwill bump (@0x5C3E4)
+            u->moves_left = 0;
+            o.obj["ok"] = jbool(true);
+            o.obj["gold"] = forge::json_num((double)total);
+            o.obj["pct"] = forge::json_num(pct);
+            o.obj["deals"] = deals;
+            return J(200, o);
+        }
+
+        // Enter Hostile Village (r1, the alarm >= 75 twin of Trade): the natives
+        // will not trade; forcing entry is a moderate trespass (+2, @0x4A319 --
+        // the byte-cited middle tier of the village-entry trespass ladder). The
+        // response reports the attitude band so the player sees where they stand.
+        // No further outcome is specified for this row -- RECONSTRUCTED as the
+        // trespass bump alone.
+        if (path == "/api/native/hostile" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            Unit* u; forge::NativeSettlement* sv; int si = -1;
+            if (!village_pair(body, &u, &sv, &si)) return err(400, "bad unit/settlement");
+            const int p = u->owner & 3;
+            forge::tension_apply(*sv, p, forge::TENSION_TRESPASS_MODERATE,
+                                 power_nation(g_game, p) == 1,
+                                 (g_engine_extra.ff_owned >> 16) & 1u);
+            u->moves_left = 0;
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(true);
+            o.obj["alarm"] = forge::json_num(sv->alarm[p]);   // >= 128 = the War state
+            o.obj["war"] = jbool(sv->alarm[p] >= 128);
+            return J(200, o);
+        }
+
+        // Denounce Heresy (r3): a missionary preaches against a rival's mission.
+        // Outcome keys @HERESY0 (the converts burn the rival mission and erect
+        // ours) / @HERESY1 (the loyal worshipers burn OUR missionary at the
+        // stake) -- both verbatim GAME.TXT. The council roll driver is not
+        // byte-decomposed -- RECONSTRUCTED by reusing the establish-mission roll
+        // (func_0572E6 @0x57316: rng(0,15) < tribe_level+2, doubled for a Jesuit
+        // expert -- the Jesuit FF card pins "more effective denouncements").
+        if (path == "/api/native/denounce" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            Unit* u; forge::NativeSettlement* sv; int si = -1;
+            if (!village_pair(body, &u, &sv, &si)) return err(400, "bad unit/settlement");
+            const int p = u->owner & 3;
+            if (u->type != vc::sim::MISSIONARIES) return err(400, "needs a Missionary");
+            if (sv->mission < 0 || sv->mission == p) return err(400, "no foreign mission here");
+            const bool jesuit = u->profession == 0x18;
+            const int old_owner = sv->mission;
+            const bool won = forge::mission_convert_roll(forge::tribe_level(sv->tribe), jesuit, game_rng);
+            forge::JsonValue o = jobj();
+            std::string msg = game_message_text(won ? "@HERESY0" : "@HERESY1");
+            msg = vfill(msg, "%STRING0", nation_name(p));
+            msg = vfill(msg, "%STRING1", nation_name(old_owner));
+            msg = vfill(msg, "%STRING2", tribe_name(sv->tribe));
+            if (won) {                       // the converts flip the mission to us
+                sv->mission = p;
+                sv->mission_expert = jesuit;
+                u->alive = false;            // absorbed into the new mission (as r2)
+            } else {
+                u->alive = false;            // burned at the stake (@HERESY1)
+            }
+            o.obj["ok"] = jbool(won);
+            o.obj["key"] = forge::json_str(won ? "@HERESY0" : "@HERESY1");
+            o.obj["msg"] = forge::json_str(msg);
+            return J(200, o);
+        }
+
+        // Ask to Speak With Chief (r5, Scouts): the manual pins the outcomes --
+        // the chief tells what the village trades for and teaches (@CHIEFHOWDY),
+        // gifts beads (@CHIEFGIFT), tells tales of nearby lands (@CHIEFAREA,
+        // a map reveal), or is merely polite (@CHIEFBORED); "there is a chance
+        // he will not come out alive... influenced by the mood of the tribe"
+        // (@CHIEFKILL). The selection driver is runtime (A-tier) -- RECONSTRUCTED:
+        // kill iff rng(0,255) < alarm, else an even pick of the four responses;
+        // the bead gift reuses the byte-verified tribute clamp (natives.md 6.3);
+        // the tales reveal is an 11x11ish +/-8 square (radius RECONSTRUCTED).
+        if (path == "/api/native/chief" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            Unit* u; forge::NativeSettlement* sv; int si = -1;
+            if (!village_pair(body, &u, &sv, &si)) return err(400, "bad unit/settlement");
+            const int p = u->owner & 3;
+            if (u->type != vc::sim::SCOUTS) return err(400, "needs a Scout");
+            forge::JsonValue o = jobj();
+            std::string key, msg;
+            if (game_rng(0, 255) < sv->alarm[p]) {
+                key = "@CHIEFKILL";
+                msg = vfill(game_message_text(key), "%STRING0", tribe_name(sv->tribe));
+                u->alive = false;                           // the scout does not come out
+            } else {
+                switch (game_rng(0, 3)) {
+                case 0: {                                   // what we trade for / teach
+                    key = "@CHIEFHOWDY";
+                    msg = game_message_text(key);
+                    msg = vfill(msg, "%STRING0", forge::job_name(sv->skill, false));
+                    msg = vfill(msg, "%STRING1", good_display(sv->wanted));
+                    break; }
+                case 1: {                                   // beads for the chieftain
+                    key = "@CHIEFGIFT";
+                    long gift = vc::sim::tribute_gold(game_rng(10, 100), sv->wealth);
+                    g_game.powers[p].gold += gift;
+                    msg = game_message_text(key);
+                    msg = vfill(msg, "%NUMBER0", std::to_string(gift));
+                    msg = vfill(msg, "%STRING0", tribe_name(sv->tribe));
+                    msg = vfill(msg, "%STRING1", nation_name(p));
+                    o.obj["gold"] = forge::json_num((double)gift);
+                    break; }
+                case 2: {                                   // tales of nearby lands
+                    key = "@CHIEFAREA";
+                    vc::sim::reveal_around(g_world, sv->x, sv->y, 8, p);
+                    msg = game_message_text(key);
+                    msg = vfill(msg, "%STRING0", tribe_name(sv->tribe));
+                    break; }
+                default: {
+                    key = "@CHIEFBORED";
+                    msg = game_message_text(key);
+                    msg = vfill(msg, "%STRING0", tribe_name(sv->tribe));
+                    msg = vfill(msg, "%STRING1", nation_name(p));
+                    break; }
+                }
+            }
+            u->moves_left = 0;
+            o.obj["ok"] = jbool(key != "@CHIEFKILL");
+            o.obj["key"] = forge::json_str(key);
+            o.obj["msg"] = forge::json_str(msg);
+            return J(200, o);
+        }
+
+        // Incite Indians (r6): pay the tribe to move against a rival. Deltas are
+        // BYTE-VERIFIED: +100 tension toward the target (@0x486F8) with the
+        // paired -100 favor shift toward the inciter (@0x04870C). The price
+        // formula is forge::incite_price -- RECONSTRUCTED from the manual's
+        // three factors (missions in the tribe / their attitude to you / their
+        // attitude to the target).
+        if (path == "/api/native/incite" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            Unit* u; forge::NativeSettlement* sv; int si = -1;
+            if (!village_pair(body, &u, &sv, &si)) return err(400, "bad unit/settlement");
+            const int p = u->owner & 3;
+            forge::JsonValue b2 = forge::json_parse(body);
+            int target = b2.find("target") ? b2.find("target")->as_int(-1) : -1;
+            if (target < 0 || target > 3 || target == p) return err(400, "bad target power");
+            int missions = 0;
+            for (const forge::NativeSettlement& s2 : g_engine_extra.settlements)
+                if (s2.tribe == sv->tribe && s2.mission == p) ++missions;
+            const long price = forge::incite_price(sv->tension[p], sv->tension[target], missions);
+            forge::JsonValue o = jobj();
+            o.obj["price"] = forge::json_num((double)price);
+            const bool confirm = b2.find("confirm") && b2.find("confirm")->type == forge::JsonValue::Bool
+                                 && b2.find("confirm")->b;
+            if (!confirm) { o.obj["ok"] = jbool(false); o.obj["quote"] = jbool(true); return J(200, o); }
+            if (g_game.powers[p].gold < price) return err(400, "not enough gold");
+            g_game.powers[p].gold -= price;
+            const bool french = power_nation(g_game, p) == 1;
+            const bool poca = (g_engine_extra.ff_owned >> 16) & 1u;
+            forge::tension_apply(*sv, target, forge::TENSION_INCITE, false, false);   // +100 (@0x486F8)
+            forge::tension_apply(*sv, p, forge::TENSION_PACIFY, french, poca);        // -100 pair (@0x04870C)
+            u->moves_left = 0;
+            o.obj["ok"] = jbool(true);
+            o.obj["target"] = forge::json_str(nation_name(target));
+            o.obj["tension_target"] = forge::json_num(sv->tension[target]);
             return J(200, o);
         }
 
@@ -4377,6 +4604,12 @@ static int engine_selftest() {
                 forge::settlement_attitude(2, 0)  == 3 &&          // 11 -> Angry
                 forge::settlement_attitude(0, 128) == 4,           // War = alarm >= 128
                 "attitude bands -5/0/10 + War (@0x048AFE/@0x048B62)");
+          // Incite price (RECONSTRUCTED, manual-structured): base 100 +4/you -2/target,
+          // -100 per own mission in the tribe, floored at 50.
+          check(forge::incite_price(0, 0, 0) == 100, "incite: neutral base 100");
+          check(forge::incite_price(50, 0, 0) == 300, "incite: they dislike you -> pricier");
+          check(forge::incite_price(0, 100, 0) == 50, "incite: they hate the target -> floor 50");
+          check(forge::incite_price(0, 0, 1) == 50, "incite: a mission in the tribe -> floor 50");
         }
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
         Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)

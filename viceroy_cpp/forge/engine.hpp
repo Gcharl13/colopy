@@ -42,6 +42,9 @@ struct NativeSettlement {
     bool taught = false;         // +0x03 bit 0x02 "already taught" once-only latch (@0x04A78A)
     bool mission_expert = false; // +0x05 bit 0x10 expert mission (set for existing missions by
                                  //   Jean de Brebeuf on acquire, @0x3BE77)
+    int  wanted = 1;             // the good this village "badly needs" (@CHIEFHOWDY %STRING1;
+                                 //   the per-village assignment driver is RECONSTRUCTED --
+                                 //   seeded random over the tradable goods 1..15)
 };
 
 // Game state the action nodes need that the pure sim GameState/World don't carry

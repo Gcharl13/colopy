@@ -35,6 +35,16 @@ bool mission_convert_roll(int tribe_level, bool brebeuf, const vc::sim::RandFn& 
 // max(floor, 2*tax_pct), capped at 90 (@0x5C9A3).
 int native_trade_price(int difficulty, int tax_pct);
 
+// Incite-Indians price. The EXE formula is not byte-decomposed; the manual
+// (GAME_MANUAL.md "Inciting Indians") pins the three factors: "the number of
+// missions you have operating within settlements of their tribe, their current
+// attitude toward you, and their current attitude toward the Europeans you
+// want them to whack. The more missions you have, the better; the more they
+// like you and dislike the target of your attack, the better."
+// RECONSTRUCTED with that structure: price = 100 + 4*tension_toward_you
+// - 2*tension_toward_target - 100*own_missions_in_tribe, floored at 50.
+int incite_price(int tension_you, int tension_target, int missions_in_tribe);
+
 // CHIEFKILL raze treasure (func_04A7CA raze branch @0x4AAD0..0x4AB35):
 // gold = (sum of 3 x random_int(0, 10-difficulty)) * random_int(0,6) * 4
 //        * (tribe_level + 1), credited DIRECTLY to the attacker's gold
