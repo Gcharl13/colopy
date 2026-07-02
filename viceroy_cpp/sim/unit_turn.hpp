@@ -12,6 +12,7 @@
 #include "game.hpp"      // World
 #include "rules.hpp"     // RuleData
 #include "immigration.hpp"  // RandFn
+#include "events.hpp"       // RumorResult (rumor squares resolve during movement)
 #include <utility>       // std::pair
 
 namespace vc::sim {
@@ -28,7 +29,8 @@ void refresh_moves(World& w, const RuleData& rd = default_rules());
 // the winner may promote per training.md -- ff_owned is the HUMAN power's
 // founding-father bitmask, bit 11 = George Washington's auto-promote).
 void apply_orders(GameState& g, World& w, const RandFn& rng,
-                  const RuleData& rd = default_rules(), uint32_t ff_owned = 0);
+                  const RuleData& rd = default_rules(), uint32_t ff_owned = 0,
+                  std::vector<RumorResult>* rumor_out = nullptr);
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);

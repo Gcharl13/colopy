@@ -714,6 +714,31 @@
       "name": "Exploration - fog of war & sight",
       "source": "sim/explore.cpp",
       "spec": "spec/systems/exploration.md (fog encoding + func_006608 radii BYTE-VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "n = random_int(1,9) used DIRECTLY as the @LOSTCITY<n> suffix ; scout level s = Scout(+1) + Seasoned 0x16(+1) + de Soto(+1) ; bad outcomes (5 vanish / 8 shrines) escape-reroll via random_int(1, s+1) ; de Soto forces positive",
+          "fn": "lost_city_rumor (outcome)",
+          "knobs": [
+            "rumor_count"
+          ],
+          "note": "No weight table -- the itoa-append @0x618D1 builds the key. The rumor square (improvement bit 0x10) is consumed on entry; placement is RECONSTRUCTED (cfg.rumor_count) since the original map carries fixed sites.",
+          "title": "Rumor outcome roll",
+          "writes": []
+        },
+        {
+          "expr": "ruins: gold = 10*(3d8) * (s+2)/2 ; Cibola: treasure = (10*(s+2) + 1d20) * 100 ; tribe gift: 2*(4d10) ; burial: empty / 10*(3d8) gold / 2*(1d8+2*(s+5))*100 treasure ; Fountain of Youth: 8 immigrants ; vanish: unit destroyed ; survivors: colonist joins",
+          "fn": "lost_city_rumor (rewards)",
+          "knobs": [],
+          "note": "Dice sites @0x61776..@0x61A75; %NUMBER1 = value*100 (@0x618B1, the treasure stores gross/100); treasury credit @0x61C4C. Messages are the verbatim GAME.TXT @LOSTCITY1..9 / @BURIAL1..3 records with the %NUMBER fills, shown as turn notices.",
+          "title": "Byte-verified reward dice",
+          "writes": []
+        }
+      ],
+      "name": "Events - Lost City Rumors",
+      "source": "sim/events.cpp",
+      "spec": "spec/systems/events.md (func_061454 BYTE-VERIFIED outcomes + reward dice)"
     }
   ]
 }

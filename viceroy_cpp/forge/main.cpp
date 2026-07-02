@@ -784,6 +784,21 @@ static void game_new(int nation = 0, int difficulty = 1) {
         add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
     }
     seed_native_settlements();                          // real native villages on the map
+    // Lost-City rumor squares (events.md): the original map carries fixed placements we
+    // do not have -- seed cfg.rumor_count on land tiles away from the starting colonies
+    // (RECONSTRUCTED placement), marked on the improvement plane.
+    { int placed = 0, guard = 0;
+      while (placed < g_active_rules.cfg.rumor_count && guard++ < 4000) {
+          int x = game_rng(0, g_world.map_w - 1), y = game_rng(0, g_world.map_h - 1);
+          int id = g_world.terrain_id(x, y);
+          if (id < 0 || id == 25 || id == 26 || id == 24) continue;         // land only
+          if (g_world.improve_at(x, y) & vc::sim::RUMOR_BIT) continue;      // fresh tile
+          bool near = false;
+          for (auto& xy : g_colony_xy)
+              if (std::abs(xy.first - x) <= 3 && std::abs(xy.second - y) <= 3) near = true;
+          if (near) continue;
+          g_world.improve_set(x, y, vc::sim::RUMOR_BIT); ++placed;
+      } }
     // Fog of war (exploration.md): the map starts hidden; the opening reveal is the
     // sight squares around the starting units + the +/-5 blocks around the colonies.
     if (g_world.map_w > 0 && g_world.map_h > 0) {
@@ -1022,6 +1037,8 @@ static void auto_export_step() {
 // Continental Congress bell economy (defined with the sandbox helpers below; shared by both loops).
 static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_this_turn,
                           std::function<int(int,int)> rng);
+// Verbatim GAME.TXT message text by @KEY (defined with the label helpers below).
+static std::string game_message_text(const std::string& key);
 
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
@@ -1043,6 +1060,46 @@ static void game_step() {
         if (g_engine_extra.woi_declared)                // scoring component 6 (RECONSTRUCTED gate)
             for (const Colony& c : g_world.colonies)
                 if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
+        // Lost-City rumors resolved during the units phase: verbatim @LOSTCITY<n> /
+        // @BURIAL<b> GAME.TXT text with the byte-verified %NUMBER fills as turn notices;
+        // side effects the sim cannot reach (dock queue, tribe alarm) applied here.
+        for (const vc::sim::RumorResult& rr : forge::rumor_log()) {
+            std::string key = rr.n == 4 && rr.burial > 0
+                ? ("@BURIAL" + std::to_string(rr.burial))
+                : ("@LOSTCITY" + std::to_string(rr.n));
+            std::string msg = game_message_text(key);
+            // GAME.TXT placeholders appear as {%NUMBERn}, {%NUMBERn$}, {%NUMBERn gold}...
+            // -- the suffix inside the braces is display text, so replace the token only.
+            auto fill = [&](const char* ph, long v) {
+                size_t p2; std::string t = std::to_string(v);
+                while ((p2 = msg.find(ph)) != std::string::npos) msg.replace(p2, std::strlen(ph), t);
+            };
+            fill("%NUMBER0", rr.gold); fill("%NUMBER1", rr.treasure);
+            if (rr.n == 8) {                            // shrines: the local tribe is displeased
+                forge::NativeSettlement* near_v = nullptr; int best = 1 << 20;
+                for (auto& sv : g_engine_extra.settlements) {
+                    int dd = std::abs(sv.x - rr.x) + std::abs(sv.y - rr.y);
+                    if (dd < best) { best = dd; near_v = &sv; }
+                }
+                std::string tribe = "natives";
+                if (near_v) {
+                    near_v->alarm[0] += 10;             // magnitude RECONSTRUCTED
+                    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+                    tribe = forge::resolve_binding("@TRIBES[" + std::to_string(near_v->tribe) + "].name", cx).str;
+                }
+                size_t p3; while ((p3 = msg.find("%STRING0")) != std::string::npos) msg.replace(p3, 8, tribe);
+            }
+            if (rr.immigrants > 0) {                    // Fountain of Youth: fill the dock queue
+                // the EXE queues 8 immigrants; this model's dock holds imm_dock_slots --
+                // empty slots fill now, the rest arrive with the regular flow (noted cap)
+                for (int sl = 0; sl < 3; ++sl)
+                    if (g_game.powers[0].dock_pool[sl] < 0)
+                        g_game.powers[0].dock_pool[sl] = vc::sim::immigrant_refill(
+                            g_game.difficulty, (g_engine_extra.ff_owned >> 20) & 1u, game_rng, g_active_rules);
+            }
+            g_turn_notices.push_back(msg);
+        }
+        forge::rumor_log().clear();
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared

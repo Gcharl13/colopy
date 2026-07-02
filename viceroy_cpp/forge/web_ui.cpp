@@ -2281,6 +2281,11 @@ function nvDraw(){
   (GAME.settlements||[]).forEach(s=>{ if(!inWin(s.x,s.y)||!fogSeen(s.x,s.y)) return;
     const X=(s.x-NVX)*16,Y=(s.y-NVY)*16;
     g.fillStyle='#c9a227'; g.beginPath(); g.moveTo(X+8,Y+2); g.lineTo(X+14,Y+14); g.lineTo(X+2,Y+14); g.closePath(); g.fill(); });
+  if(GAME.improve) for(let y=0;y<H;y++) for(let x=0;x<W;x++){   // rumor squares "?"
+    const mx=NVX+x,my=NVY+y;
+    if(mx<GAME.w&&my<GAME.h&&(GAME.improve[my*GAME.w+mx]&0x10)&&fogSeen(mx,my)){
+      g.fillStyle='#ffe27a'; g.font='bold 11px serif'; g.textAlign='center'; g.textBaseline='middle';
+      g.fillText('?',x*16+8,y*16+8); } }
   (GAME.colonies||[]).forEach(c=>{ if(!inWin(c.x,c.y)||!fogSeen(c.x,c.y)) return;
     const X=(c.x-NVX)*16,Y=(c.y-NVY)*16;
     g.fillStyle=ownerColor(c.owner); g.fillRect(X,Y,16,16);
@@ -2644,6 +2649,8 @@ function drawGame(){
         for(let i=3;i<GCELL;i+=4){ g.beginPath(); g.moveTo(X+2,Y+i); g.lineTo(X+GCELL-2,Y+i); g.stroke(); } }
       if(b&0x08){ g.strokeStyle='#b08a52'; g.lineWidth=2;
         g.beginPath(); g.moveTo(X,Y+GCELL/2); g.lineTo(X+GCELL,Y+GCELL/2); g.stroke(); }
+      if((b&0x10)&&fogSeen(x,y)){ g.fillStyle='#ffe27a'; g.font='bold 11px serif';
+        g.textAlign='center'; g.textBaseline='middle'; g.fillText('?',X+GCELL/2,Y+GCELL/2); }
     }
   }
   // native villages (first-class settlements; hidden until explored)

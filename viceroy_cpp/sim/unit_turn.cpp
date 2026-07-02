@@ -2,6 +2,7 @@
 #include "unit_turn.hpp"
 #include "combat.hpp"
 #include "explore.hpp"
+#include "events.hpp"
 
 #include <climits>
 #include <cstdlib>
@@ -156,7 +157,19 @@ static void do_improve(World& w, Unit& u, const RuleData& rd) {
     }
 }
 
-void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
+void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned,
+                  std::vector<RumorResult>* rumor_out) {
+    // Entering a Lost-City rumor square resolves the event (events.md) and ends the
+    // unit's move. NOTE: resolution may push new units (treasure/colonist), so the
+    // w.units[i] reference must be re-taken -- we stop the unit's loop instead.
+    auto rumor_here = [&](int idx) -> bool {
+        const Unit& uu = w.units[idx];
+        if (w.improve.empty() || !(w.improve_at(uu.x, uu.y) & RUMOR_BIT)) return false;
+        RumorResult rr = lost_city_rumor(g, w, idx,
+            uu.owner == HUMAN_OWNER && ((ff_owned >> 7) & 1u), rng);
+        if (rumor_out) rumor_out->push_back(rr);
+        return true;
+    };
     for (int i = 0; i < (int)w.units.size(); ++i) {
         Unit& u = w.units[i];
         if (!u.alive) continue;
@@ -204,6 +217,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
                               sight_radius(u.type, u.owner == 0 && ((ff_owned >> 7) & 1u)), u.owner);
             // "always move at least one tile": entering costs `cost`, floored at 0.
             u.moves_left = (u.moves_left > cost) ? (u.moves_left - cost) : 0;
+            if (rumor_here(i)) break;                               // rumor resolved: move ends
         }
         if (u.alive && u.x == u.target_x && u.y == u.target_y)
             u.order = ORDER_NONE;                                   // arrived

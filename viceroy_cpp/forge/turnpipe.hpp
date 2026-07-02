@@ -8,6 +8,7 @@
 #pragma once
 
 #include "game.hpp"    // vc::sim::GameState, World, RandFn
+#include "events.hpp"  // vc::sim::RumorResult
 
 #include <string>
 #include <vector>
@@ -29,6 +30,10 @@ void run_turn_phase(const std::string& id, vc::sim::GameState& g, vc::sim::World
 
 // The enabled phase ids in pipeline order (turn.json, cached; default order fallback).
 const std::vector<std::string>& enabled_turn_phases();
+
+// Lost-City rumor events resolved during the units phase (events.md), accumulated
+// for the caller to drain into turn notices / popups.
+std::vector<vc::sim::RumorResult>& rumor_log();
 
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).

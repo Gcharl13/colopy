@@ -21,6 +21,7 @@
 #include "../mapgen.hpp"
 #include "../training.hpp"
 #include "../explore.hpp"
+#include "../events.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -737,6 +738,48 @@ static void test_fog_of_war() {
     CHECK(w.explored(0, 0, 0) && w.explored(7, 7, 0), "colony reveals +/-5 (11x11)");
 }
 
+// events.md: Lost-City rumor outcomes (func_061454) -- dice, effects, consumption.
+static void test_lost_city_rumors() {
+    std::printf("lost city rumors:\n");
+    auto make = [](int type, int cls) {
+        GameState g; World w; w.map_w = 3; w.map_h = 1;
+        for (int i = 0; i < 3; ++i) w.terrain.push_back(4);
+        w.improve_set(1, 0, RUMOR_BIT);
+        Unit u; u.type = type; u.profession = cls; u.x = 1; u.y = 0; w.units.push_back(u);
+        return std::make_pair(g, w);
+    };
+    { // scripted rolls: n=3 (ruins), then 3d8 all 4s -> gold 10*12 = 120, *(0+2)/2 = 120
+      auto [g, w] = make(COLONISTS, 0x1C);
+      int seq[] = {3, 4, 4, 4}; int at = 0;
+      RandFn rig = [&](int lo, int hi) { (void)lo; (void)hi; return seq[at < 4 ? at++ : 3]; };
+      RumorResult r = lost_city_rumor(g, w, 0, false, rig);
+      CHECK(r.n == 3 && r.gold == 120 && g.powers[0].gold == 120, "ruins: 10*(3d8) gold credited");
+      CHECK(!(w.improve_at(1, 0) & RUMOR_BIT), "rumor square consumed");
+    }
+    { // n=5 vanish destroys the unit (no scout to escape the bad outcome)
+      auto [g, w] = make(COLONISTS, 0x1C);
+      int seq[] = {5, 1}; int at = 0;
+      RandFn rig = [&](int, int) { return seq[at < 2 ? at++ : 1]; };
+      RumorResult r = lost_city_rumor(g, w, 0, false, rig);
+      CHECK(r.n == 5 && r.vanished && !w.units[0].alive, "expedition vanished");
+    }
+    { // n=2 Cibola: Seasoned Scout s=2 -> value = 10*4 + d20; treasure unit spawned
+      auto [g, w] = make(SCOUTS, 0x16);
+      int seq[] = {2, 20}; int at = 0;
+      RandFn rig = [&](int, int) { return seq[at < 2 ? at++ : 1]; };
+      RumorResult r = lost_city_rumor(g, w, 0, false, rig);
+      CHECK(r.n == 2 && r.treasure == (10 * 4 + 20) * 100, "Cibola treasure = (10*(s+2)+1d20)*100");
+      CHECK(w.units.size() == 2 && w.units[1].type == TREASURE, "treasure unit spawned");
+    }
+    { // de Soto forces a positive reroll away from 5/8
+      auto [g, w] = make(COLONISTS, 0x1C);
+      int seq[] = {5, 8, 6}; int at = 0;
+      RandFn rig = [&](int, int) { return seq[at < 3 ? at++ : 2]; };
+      RumorResult r = lost_city_rumor(g, w, 0, true, rig);
+      CHECK(r.n == 6 && w.units[0].alive, "de Soto rerolls the bad outcomes");
+    }
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -767,6 +810,7 @@ int main() {
     test_native_learn_and_veterancy();
     test_terrain_improvement();
     test_fog_of_war();
+    test_lost_city_rumors();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

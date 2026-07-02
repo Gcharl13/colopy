@@ -82,9 +82,11 @@ void phase_ref(GameState& g, World&, int player_idx, const RuleData& rd) {
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 }
+std::vector<RumorResult> g_rumor_log;   // drained by game_step for the turn notices
+
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
-    apply_orders(g, w, rng, rd, ff_owned);
+    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log);
     reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
@@ -94,6 +96,8 @@ void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); 
 void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads turn.json
     phase_cache() = PhaseCache{};
 }
+
+std::vector<vc::sim::RumorResult>& rumor_log() { return g_rumor_log; }
 
 const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
 
