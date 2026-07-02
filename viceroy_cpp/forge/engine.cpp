@@ -224,17 +224,20 @@ int terrain_good_yield(int terrain, int good) {
 // NOTE (flagged, not modeled): second-order goods (Muskets<-Tools, Horses) and the >2-building x2/3
 // factory throttle are reconstructed/ambiguous and intentionally left out rather than guessed.
 void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
-                               uint32_t ff_owned) {
+                               uint32_t ff_owned, int tax_pct) {
     using vc::sim::NGOODS;
     int sol = vc::sim::sol_pct(col, ff_owned, col.human && col.owner_power == 0);
     // Sons-of-Liberty production bonus (spec @REBELMAJORITY/@REBELUNANIMOUS): each producing colonist
     // gains +1 at a rebel majority (SoL >= 50%) and +2 when unanimous (100%).
     int sol_bonus = sol >= 100 ? 2 : (sol >= 50 ? 1 : 0);
     // Byte-verified founding-father production effects (spec/systems/founding_fathers.md).
-    bool ff_hudson    = (ff_owned >> 8)  & 1u;   // #8  Henry Hudson    -> furs (good 4) x2
-    bool ff_jefferson = (ff_owned >> 15) & 1u;   // #15 Thomas Jefferson -> bells +50%
-    bool ff_penn      = (ff_owned >> 21) & 1u;   // #21 William Penn     -> crosses +50%
-    bool ff_smith     = (ff_owned >> 0)  & 1u;   // #0  Adam Smith       -> factory tier un-throttled
+    // ff_owned is the HUMAN power's roster: the effects never apply to AI colonies.
+    const bool ff_human = col.human && col.owner_power == 0;
+    bool ff_hudson    = ff_human && ((ff_owned >> 8)  & 1u);   // #8  Henry Hudson: furs (good 4) x2
+    bool ff_jefferson = ff_human && ((ff_owned >> 15) & 1u);   // #15 Thomas Jefferson: bells x2 (@0x55818)
+    bool ff_penn      = ff_human && ((ff_owned >> 21) & 1u);   // #21 William Penn: crosses +50% (@0xA16B)
+    bool ff_paine     = ff_human && ((ff_owned >> 17) & 1u);   // #17 Thomas Paine: bells += bells*tax/100 (@0x290FB)
+    bool ff_smith     = ff_human && ((ff_owned >> 0)  & 1u);   // #0  Adam Smith: factory tier un-throttled
     std::array<int, NGOODS> prod{};
     // The center (town-square) tile auto-produces its own food -- the 3x3 ring includes the center
     // (spec colony.md step 2). Use the colony's real tile terrain, with the authored center_food as
@@ -306,7 +309,9 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
             if (breed > 0) col.stockpile[8] += breed;
             break;
         }
-    if (ff_jefferson) bells  += bells  / 2;   // Thomas Jefferson (#15): bell production +50%
+    if (ff_jefferson) bells += bells;         // Thomas Jefferson (#15): bells x2 (@0x55818 --
+                                              //   the byte site doubles; the manual says +50%)
+    if (ff_paine)     bells += bells * tax_pct / 100;   // Thomas Paine (#17): +tax% (@0x290FB)
     if (ff_penn)      crosses += crosses / 2; // William Penn      (#21): crosses production +50%
     col.bells_per_turn = bells; col.hammers_per_turn = hammers; col.crosses_output = crosses;
 }

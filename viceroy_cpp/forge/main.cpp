@@ -1066,6 +1066,7 @@ static void auto_export_step() {
 // Continental Congress bell economy (defined with the sandbox helpers below; shared by both loops).
 static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_this_turn,
                           std::function<int(int,int)> rng);
+static void apply_ff_acquire(int id);
 // Verbatim GAME.TXT message text by @KEY (defined with the label helpers below).
 static std::string game_message_text(const std::string& key);
 static std::string good_display(int g);
@@ -1087,12 +1088,9 @@ static void game_step() {
         { int bells = 0;
           for (const Colony& c : g_world.colonies)
               if (c.owner_power == 0) bells += c.bells_per_turn;
-          const uint32_t ff_before = g_engine_extra.ff_owned;
-          congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng);
-          // Jakob Fugger (FF id 1) clears ALL boycotts on acquisition
-          // (func_03BC42 @0x3BD45: mov word [bx+0x20], 0 -- boycotts.md).
-          if (((g_engine_extra.ff_owned ^ ff_before) >> 1) & 1u)
-              g_game.powers[0].boycotts = 0; }
+          congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng); }
+          // (the per-father one-time effects -- incl. Fugger's boycott clear
+          //  @0x3BD45 -- fire inside congress_step via apply_ff_acquire)
         if (g_engine_extra.woi_declared)                // scoring component 6 (RECONSTRUCTED gate)
             for (const Colony& c : g_world.colonies)
                 if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
@@ -1652,13 +1650,12 @@ static int ff_bells_required(int diff, int year, int ff_count) {
     return (int)cost;
 }
 // A father is offerable when it is not yet owned AND every lower-index father in its own category
-// is already owned (the category-gated walk, congress.c ff_is_available). Categories are the fixed
-// 5-per contiguous blocks (id/5 = category, id%5 = slot).
+// Any un-acquired father is offerable: the byte-verified Congress pick is a
+// WEIGHTED RANDOM over ALL 25 minus the owned set (func_03BFD2 @0x03C035..
+// @0x03C0C4) -- there is no category-ordering gate (the earlier gate was an
+// invention; sim/founding_fathers.cpp records its removal).
 static bool ff_offerable(int id, uint32_t owned) {
-    if ((owned >> id) & 1u) return false;
-    int cat = id / 5;
-    for (int j = cat * 5; j < id; ++j) if (!((owned >> j) & 1u)) return false;
-    return true;
+    return !((owned >> id) & 1u);
 }
 // Pick the next father the Congress offers: era-weighted random over the offerable fathers
 // (spec §3 father selection). Reads the three @FATHERS weight columns via the binding grammar.
@@ -1674,10 +1671,11 @@ static int ff_pick_next(uint32_t owned, int year, std::function<int(int,int)> rn
         forge::JsonValue wv = forge::resolve_binding("@FATHERS[" + std::to_string(i) + "]." + col, cx);
         int w = (wv.type == forge::JsonValue::String) ? std::atoi(wv.str.c_str())
                 : (wv.type == forge::JsonValue::Number ? (int)wv.num : 0);
-        if (w < 1) w = 1;                    // every offerable father must be reachable
+        if (w < 0) w = 0;                    // a 0-weight father is era-locked (@FATHERS data)
         offer[noff] = i; weight[noff] = w; total += w; ++noff;
     }
     if (noff == 0) return -1;
+    if (total == 0) return offer[0];         // all weights 0: degenerate fallback (noted)
     int budget = rng(1, total);
     for (int k = 0; k < noff; ++k) { budget -= weight[k]; if (budget <= 0) return offer[k]; }
     return offer[noff - 1];
@@ -1689,6 +1687,66 @@ static int congress_ensure_offer(forge::EngineExtra& x, int year, std::function<
     if (x.offered_ff < 0 || !ff_offerable(x.offered_ff, x.ff_owned))
         x.offered_ff = ff_pick_next(x.ff_owned, year, rng);
     return x.offered_ff;
+}
+// The one-time on-acquire effect dispatch (func_03BC42 @0x03BC42..0x03BFD0,
+// if-ladder on ff_id; all 9 immediate effects byte-verified,
+// founding_fathers.md 3). Continuous effects live at their systems' sites.
+static void apply_ff_acquire(int id) {
+    using namespace vc::sim;
+    World& w = g_world; GameState& g = g_game; forge::EngineExtra& x = g_engine_extra;
+    switch (id) {
+    case 1:                                    // Jakob Fugger: clear ALL boycotts
+        g.powers[0].boycotts = 0;              //   (+0x20 := 0, @0x3BD45)
+        break;
+    case 6:                                    // Coronado: reveal every colony
+        for (const Colony& c : w.colonies)     //   (per-colony 0x181F:0x7AA @0x3BF54;
+            if (c.x >= 0)                      //    reveal radius RECONSTRUCTED = 1)
+                reveal_around(w, c.x, c.y, 1, 0);
+        break;
+    case 9:                                    // La Salle: free Stockade at size >= 3
+        for (Colony& c : w.colonies)           //   (0x181F:0xBBE @0x3BD4A)
+            if (c.owner_power == 0 && c.human && c.population >= 3)
+                c.built_mask |= 1ull;          //   building 0 = Stockade
+        break;
+    case 14: {                                 // John Paul Jones: a free Frigate
+        Unit f; f.type = FRIGATE; f.owner = 0; //   (spawn_unit 0x181F:0x95C, type 0x11
+        f.x = w.map_w > 0 ? w.map_w - 1 : 0;   //    @0x3BD8B; placement RECONSTRUCTED:
+        f.y = w.map_h / 2;                     //    the east sea lane, mid-map)
+        for (const Colony& c : w.colonies)     //   ...at the first own colony's row
+            if (c.owner_power == 0 && c.x >= 0) { f.y = c.y; break; }
+        f.moves_left = unit_stats(FRIGATE).movement * 3;
+        w.units.push_back(f);
+        break;
+    }
+    case 16:                                   // Pocahontas: native attitudes reset
+        for (auto& st : x.settlements) {       //   to content (0x181F:0xA42 @0x3BDDD)
+            st.tension[0] = 0;
+            st.alarm[0] = 0;
+        }
+        break;
+    case 18:                                   // Simon Bolivar: +20 national SoL,
+        x.national_sol += 20;                  //   capped 100 ([0x53D0] @0x3BE64)
+        if (x.national_sol > 100) x.national_sol = 100;
+        break;
+    case 20:                                   // Brewster: no criminals/servants on
+        for (auto& d : g.powers[0].dock_pool)  //   the docks (+0x02..+0x04 @0x3BF85)
+            if (d == 0x19 || d == 0x1A) d = 0x1C;
+        break;
+    case 22:                                   // Brebeuf: existing own missions become
+        for (auto& st : x.settlements)         //   expert (+5 |= 0x10, @0x3BE77)
+            if (st.mission == 0) st.mission_expert = true;
+        break;
+    case 24:                                   // Las Casas: all own Indian Converts
+        for (Unit& u : w.units)                //   (class 0x1B) -> Free Colonists
+            if (u.alive && u.owner == 0 && u.profession == 0x1B)
+                u.profession = 0x1C;           //   (@0x3BEB2)
+        for (Colony& c : w.colonies)
+            if (c.owner_power == 0 && c.human)
+                for (auto& wk : c.workers)
+                    if (wk.profession == 0x1B) wk.profession = 0x1C;
+        break;
+    default: break;                            // the other 16 are continuous effects
+    }
 }
 // Accumulate this turn's bells into the pool and, when the pool reaches the threshold, acquire the
 // offered father, reset the pool, record it for the Congress reveal, and offer the next father.
@@ -1703,8 +1761,9 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
     if (x.congress_bells >= need) {
         x.ff_owned |= (1u << offer);
         x.last_ff = offer;
-        x.congress_bells -= need;
-        if (x.congress_bells < 0) x.congress_bells = 0;
+        x.congress_bells = 0;                  // the pool RESETS on acquisition
+                                               //   (PowerRecord +0x0C, founding_fathers.md)
+        apply_ff_acquire(offer);               // the func_03BC42 one-time effect
         x.offered_ff = -1;                     // Congress offers the next father from now on
         congress_ensure_offer(x, year, rng);
     }
@@ -2191,6 +2250,7 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
         so.obj["population"] = forge::json_num(s.population); so.obj["wealth"] = forge::json_num(s.wealth);
         so.obj["mission"] = forge::json_num(s.mission); so.obj["capital"] = jbool(s.capital);
         so.obj["skill"] = forge::json_num(s.skill); so.obj["taught"] = jbool(s.taught);
+        so.obj["mission_expert"] = jbool(s.mission_expert);
         forge::JsonValue al = jarr(); for (int p = 0; p < 4; ++p) al.arr.push_back(forge::json_num(s.alarm[p]));
         so.obj["alarm"] = al;
         forge::JsonValue tn = jarr(); for (int p = 0; p < 4; ++p) tn.arr.push_back(forge::json_num(s.tension[p]));
@@ -2233,6 +2293,7 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             ns.skill = si("skill", 0);
             const forge::JsonValue* cap = s.find("capital"); ns.capital = cap && cap->type == forge::JsonValue::Bool ? cap->b : false;
             const forge::JsonValue* tg = s.find("taught"); ns.taught = tg && tg->type == forge::JsonValue::Bool ? tg->b : false;
+            const forge::JsonValue* mx = s.find("mission_expert"); ns.mission_expert = mx && mx->type == forge::JsonValue::Bool ? mx->b : false;
             if (const forge::JsonValue* al = s.find("alarm"))
                 for (int p = 0; p < 4 && p < (int)al->arr.size(); ++p) ns.alarm[p] = al->arr[p].as_int();
             if (const forge::JsonValue* tn = s.find("tension"))
@@ -3898,10 +3959,15 @@ static int engine_selftest() {
         check(bells_at(0, 1)  == 3, "SoL 0%  -> Statesman 3 bells (no bonus)");
         check(bells_at(1, 1)  == 5, "SoL 100% -> Statesman 3+2 bells (unanimous bonus)");
         check(bells_at(1, 2)  == 4, "SoL 50%  -> Statesman 3+1 bells (majority bonus)");
-        // Founding-father effect: Thomas Jefferson (#15) -> bells +50%. At SoL 0, base 3 -> 4 (3 + 3/2).
+        // Founding-father effect: Thomas Jefferson (#15) -> bells x2 (@0x55818 --
+        // the byte site doubles; the manual's "+50%" diverges). At SoL 0, base 3 -> 6.
         Colony jf; jf.population = 1; jf.rebel_A = 0; jf.rebel_B = 1; jf.workers.push_back(mkw(17, -1, 0, 18));
         forge::colony_compute_production(jf, 1, rd4, /*ff*/ (1u << 15));
-        check(jf.bells_per_turn == 4, "Thomas Jefferson (#15) -> bells +50% (3 -> 4)");
+        check(jf.bells_per_turn == 6, "Thomas Jefferson (#15) -> bells x2 (3 -> 6, @0x55818)");
+        // Thomas Paine (#17): bells += bells * tax% / 100 (@0x290FB). Tax 50% on base 3 -> 4.
+        Colony tp; tp.population = 1; tp.rebel_A = 0; tp.rebel_B = 1; tp.workers.push_back(mkw(17, -1, 0, 18));
+        forge::colony_compute_production(tp, 1, rd4, /*ff*/ (1u << 17), /*tax*/ 50);
+        check(tp.bells_per_turn == 4, "Thomas Paine (#17) -> bells +tax% (3 -> 4 at 50%%)");
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
         Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)
         forge::colony_compute_production(hh, 1, rd4, /*ff*/ 0);

@@ -64,7 +64,8 @@ void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData&
     std::vector<vc::sim::TeachResult> tr;
     for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
         Colony& c = w.colonies[ci];
-        colony_compute_production(c, g.difficulty, rd, ff_owned);   // colonists -> food/bells/hammers/goods
+        colony_compute_production(c, g.difficulty, rd, ff_owned,    // colonists -> food/bells/hammers/goods
+                                  g.powers[c.owner_power & 3].tax);  //   (Paine reads the tax rate)
         int fe = 0;
         colony_economic_step(c, g.difficulty, rd, &fe);             // then SoL / build / growth off those
         if (fe) g_food_log.push_back({ci, fe});

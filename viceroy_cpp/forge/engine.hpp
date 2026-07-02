@@ -40,6 +40,8 @@ struct NativeSettlement {
                                  //   which skill a given village carries is RECONSTRUCTED --
                                  //   assigned from the learnable list at seeding)
     bool taught = false;         // +0x03 bit 0x02 "already taught" once-only latch (@0x04A78A)
+    bool mission_expert = false; // +0x05 bit 0x10 expert mission (set for existing missions by
+                                 //   Jean de Brebeuf on acquire, @0x3BE77)
 };
 
 // Game state the action nodes need that the pure sim GameState/World don't carry
@@ -125,7 +127,7 @@ void invalidate_tables();
 // crosses, Adam Smith un-throttles factory tier) and the Sons-of-Liberty bonus (+1 at >=50%, +2 at
 // 100%). 0 = no fathers.
 void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
-                               uint32_t ff_owned = 0);
+                               uint32_t ff_owned = 0, int tax_pct = 0);
 
 // The @JOB display name for a profession id (the expert_name column for an expert, else name).
 std::string job_name(int profession, bool expert);
