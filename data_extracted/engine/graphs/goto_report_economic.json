@@ -1,4 +1,0 @@
-{ "id":"goto_report_economic", "name":"Go to report_economic",
-  "nodes":[ {"id":"t","type":"OnTestFire","x":40,"y":60,"params":{}},
-            {"id":"nav","type":"Navigate","x":240,"y":60,"params":{"screen":"report_economic"}} ],
-  "edges":[ {"from":{"node":"t","pin":"out"},"to":{"node":"nav","pin":"in"}} ] }

@@ -3,4 +3,4 @@
     {"id":"title","type":"text","rect":[8,2,304,8],"color":"255,255,190","text":"CONTINENTAL CONGRESS"},
     {"id":"note","type":"text","rect":[20,30,280,8],"color":"255,255,255","text":"Liberty bells recruit Founding Fathers to your cause."},
     {"id":"offer","type":"button","rect":[100,150,120,12],"color":"255,255,255","text":"Convene a Father","onClick":"founding_father"},
-    {"id":"ok","type":"button","rect":[260,182,48,12],"color":"255,255,255","text":"Close","onClick":"goto_status"} ] }
+    {"id":"ok","type":"button","rect":[260,182,48,12],"color":"255,255,255","text":"Close","onClick":"goto_mainmenu"} ] }

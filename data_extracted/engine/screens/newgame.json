@@ -8,4 +8,4 @@
     {"id":"diff","type":"text","rect":[24,98,180,8],"color":"255,255,255","text":"{game.difficulty} — @DIFFICULTY[{game.difficulty}].name"},
     {"id":"gold","type":"text","rect":[24,120,220,8],"color":"255,255,255","text":"Starting treasury: {power0.gold}¤"},
     {"id":"ref","type":"text","rect":[24,132,260,8],"color":"200,200,200","text":"King's army: {ref.regulars} regulars, {ref.cavalry} cavalry, {ref.artillery} artillery, {ref.manowar} men-o-war"},
-    {"id":"begin","type":"button","rect":[24,160,150,12],"color":"120,220,120","text":"Begin in the New World","onClick":"goto_status"} ] }
+    {"id":"begin","type":"button","rect":[24,160,150,12],"color":"120,220,120","text":"Begin in the New World","onClick":"goto_mainmenu"} ] }

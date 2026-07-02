@@ -1,7 +1,0 @@
-{ "id":"report_economic", "name":"Economic Adviser Report", "background":"REPORT5", "size":[320,200],
-  "widgets":[
-    {"id":"title","type":"text","rect":[8,2,304,8],"color":"255,255,190","text":"ECONOMIC ADVISER REPORT"},
-    {"id":"gold","type":"text","rect":[20,28,260,8],"color":"255,255,255","text":"Treasury: {power0.gold} gold     Tax rate: {power0.tax}%"},
-    {"id":"sugar","type":"text","rect":[20,42,260,8],"color":"255,243,93","text":"Sugar price (Europe): {price.1}"},
-    {"id":"furs","type":"text","rect":[20,54,260,8],"color":"255,243,93","text":"Furs price (Europe): {price.4}"},
-    {"id":"ok","type":"button","rect":[140,182,40,12],"color":"255,255,255","text":"OK","onClick":"goto_status"} ] }

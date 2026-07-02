@@ -1006,6 +1006,10 @@ static void auto_export_step() {
                                  " colony(ies) -- build a Custom House (needs Peter Stuyvesant) or ship goods to Europe to sell them.");
 }
 
+// Continental Congress bell economy (defined with the sandbox helpers below; shared by both loops).
+static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_this_turn,
+                          std::function<int(int,int)> rng);
+
 static void game_step() {
     // Advance one turn by iterating the DATA pipeline (turn.json) -- behaviorally identical
     // to sim::step_turn (asserted by the engine selftest golden-master), but moddable.
@@ -1018,6 +1022,11 @@ static void game_step() {
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         // (the per-turn market phase -- drift + republish + volume reset -- runs inside run_turn)
+        // Continental Congress: the player's liberty bells accumulate toward the next father.
+        { int bells = 0;
+          for (const Colony& c : g_world.colonies)
+              if (c.owner_power == 0) bells += c.bells_per_turn;
+          congress_step(g_engine_extra, g_game.difficulty, g_game.year, bells, game_rng); }
         if (g_engine_extra.woi_declared)                // scoring component 6 (RECONSTRUCTED gate)
             for (const Colony& c : g_world.colonies)
                 if (c.owner_power == 0) g_engine_extra.bells_since_declaration += c.bells_per_turn;
@@ -1549,6 +1558,212 @@ static forge::JsonValue fathers_json() {
     return arr;
 }
 
+// ---- Advisor-report state (spec/ui/advisor_reports.md): one endpoint assembling the live rows
+// every F1-F10 report body draws. Text comes verbatim from LABELS/NAMES via /api/labels and the
+// binding grammar; this carries only the numbers/rows. Report geometry lives in the renderer.
+static forge::JsonValue report_state_json() {
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+    auto tcell = [&](const std::string& p) { return forge::resolve_binding(p, cx); };
+    forge::JsonValue o = jobj();
+    o.obj["year"] = forge::json_num(g_game.year);
+    o.obj["season"] = forge::json_num(g_game.season);
+    o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold);
+    o.obj["tax"] = forge::json_num(g_game.powers[0].tax);
+
+    // F1 Terrain: the encyclopedia rows -- name/move/defense/farmer-food from @UNFORESTED (+Arctic).
+    forge::JsonValue terr = jarr();
+    for (int t = 0; t < 9; ++t) {
+        forge::JsonValue r = jobj(); std::string i = std::to_string(t);
+        r.obj["name"] = tcell("@UNFORESTED[" + i + "].name");
+        r.obj["move"] = tcell("@UNFORESTED[" + i + "].movement");
+        r.obj["defense"] = tcell("@UNFORESTED[" + i + "].defensive");
+        r.obj["food"] = tcell("@UNFORESTED[" + i + "].y_farmer");
+        r.obj["value"] = tcell("@UNFORESTED[" + i + "].value");
+        terr.arr.push_back(r);
+    }
+    o.obj["terrain"] = terr;
+
+    // F2 Religious: the crosses gauge (+0x2E of +0x30) + per-colony cross rows.
+    forge::JsonValue rel = jobj();
+    rel.obj["accum"] = forge::json_num(g_game.powers[0].crosses_accum);
+    rel.obj["threshold"] = forge::json_num(g_game.powers[0].crosses_threshold);
+    forge::JsonValue relc = jarr();
+    for (size_t i = 0; i < g_world.colonies.size(); ++i) {
+        if (g_world.colonies[i].owner_power != 0) continue;
+        forge::JsonValue r = jobj();
+        r.obj["colony"] = forge::json_num((double)i);
+        r.obj["crosses"] = forge::json_num(g_world.colonies[i].crosses_output);
+        relc.arr.push_back(r);
+    }
+    rel.obj["colonies"] = relc;
+    o.obj["religious"] = rel;
+
+    // F3 Congress: pool/threshold/offer/REF/sentiment (the game loop runs congress_step).
+    { forge::JsonValue cg = jobj();
+      int ffc = 0; for (uint32_t b = g_engine_extra.ff_owned; b; b &= b - 1) ++ffc;
+      int bells = 0; for (const Colony& c : g_world.colonies) if (c.owner_power == 0) bells += c.bells_per_turn;
+      cg.obj["bells_per_turn"] = forge::json_num(bells);
+      cg.obj["bells_pool"] = forge::json_num(g_engine_extra.congress_bells);
+      int need = ff_bells_required(g_game.difficulty, g_game.year, ffc);
+      cg.obj["threshold"] = forge::json_num(need);
+      cg.obj["remaining"] = forge::json_num(need > g_engine_extra.congress_bells ? need - g_engine_extra.congress_bells : 0);
+      cg.obj["ff_count"] = forge::json_num(ffc);
+      cg.obj["offered"] = forge::json_num(ffc >= 25 ? -1 : congress_ensure_offer(g_engine_extra, g_game.year, game_rng));
+      cg.obj["last_ff"] = forge::json_num(g_engine_extra.last_ff);
+      cg.obj["national_sol"] = forge::json_num(g_engine_extra.national_sol);
+      forge::JsonValue ffa = jarr();
+      for (int i = 0; i < 25; ++i) if ((g_engine_extra.ff_owned >> i) & 1u) ffa.arr.push_back(forge::json_num(i));
+      cg.obj["fathers"] = ffa;
+      forge::JsonValue ref = jobj();
+      ref.obj["regulars"] = forge::json_num(g_game.ref.regulars);
+      ref.obj["cavalry"] = forge::json_num(g_game.ref.cavalry);
+      ref.obj["manowar"] = forge::json_num(g_game.ref.manowar);
+      ref.obj["artillery"] = forge::json_num(g_game.ref.artillery);
+      cg.obj["ref"] = ref;
+      o.obj["congress"] = cg; }
+
+    // F4 Labor: the occupation tally -- colonists per @JOB profession across the player's colonies.
+    { std::map<int, int> tally;
+      for (const Colony& c : g_world.colonies)
+          if (c.owner_power == 0)
+              for (const Colony::Worker& w : c.workers) tally[w.profession]++;
+      forge::JsonValue lab = jarr();
+      for (auto& kv : tally) {
+          forge::JsonValue r = jobj();
+          r.obj["job"] = tcell("@JOB[" + std::to_string(kv.first) + "].name");
+          r.obj["count"] = forge::json_num(kv.second);
+          lab.arr.push_back(r);
+      }
+      o.obj["labor"] = lab; }
+
+    // F5 Economic: per-good total stock across the player's colonies + the published market.
+    { forge::JsonValue eco = jarr();
+      RuleData mrd = live_market_rules(cx);
+      for (int gd = 0; gd < NGOODS; ++gd) {
+          long stock = 0;
+          for (const Colony& c : g_world.colonies)
+              if (c.owner_power == 0) stock += c.stockpile[gd];
+          forge::JsonValue r = jobj();
+          r.obj["good"] = forge::json_str(good_display(gd));
+          r.obj["stock"] = forge::json_num((double)stock);
+          r.obj["bid"] = forge::json_num(vc::sim::market_bid(g_game, 0, gd));
+          r.obj["ask"] = forge::json_num(vc::sim::market_ask(g_game, 0, gd, mrd));
+          r.obj["boycott"] = jbool((g_engine_extra.boycotts >> gd) & 1u);
+          eco.arr.push_back(r);
+      }
+      o.obj["economic"] = eco; }
+
+    // F6 Colony: one row per player colony (pitch 17, 9/page in the renderer).
+    { forge::JsonValue cols = jarr();
+      for (size_t i = 0; i < g_world.colonies.size(); ++i) {
+          const Colony& c = g_world.colonies[i];
+          if (c.owner_power != 0) continue;
+          forge::JsonValue r = jobj();
+          r.obj["i"] = forge::json_num((double)i);
+          r.obj["x"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].first : 0);
+          r.obj["y"] = forge::json_num(i < g_colony_xy.size() ? g_colony_xy[i].second : 0);
+          r.obj["population"] = forge::json_num(c.population);
+          r.obj["sol"] = forge::json_num(sol_pct(c));
+          int nb = 0; for (int b = 0; b < 48; ++b) if ((c.built_mask >> b) & 1ull) ++nb;
+          r.obj["buildings"] = forge::json_num(nb);
+          r.obj["food"] = forge::json_num(c.stockpile[0]);
+          r.obj["muskets"] = forge::json_num(c.stockpile[15]);
+          r.obj["horses"] = forge::json_num(c.stockpile[8]);
+          cols.arr.push_back(r);
+      }
+      o.obj["colonies"] = cols; }
+
+    // F7 Naval: the player's ships (move_class 99), two passes are the renderer's concern.
+    { forge::JsonValue nav = jarr();
+      for (const auto& u : g_world.units) {
+          if (!u.alive || u.owner != 0) continue;
+          if (g_active_rules.units[u.type].move_class != 99) continue;
+          forge::JsonValue r = jobj();
+          r.obj["name"] = forge::json_str(g_active_rules.units[u.type].name);
+          r.obj["x"] = forge::json_num(u.x); r.obj["y"] = forge::json_num(u.y);
+          r.obj["order"] = forge::json_str(u.order == vc::sim::ORDER_GOTO ? "GOTO"
+                            : u.order == vc::sim::ORDER_FORTIFY ? "FORTIFY"
+                            : u.order == vc::sim::ORDER_SENTRY ? "SENTRY" : "-");
+          r.obj["tx"] = forge::json_num(u.target_x); r.obj["ty"] = forge::json_num(u.target_y);
+          nav.arr.push_back(r);
+      }
+      o.obj["naval"] = nav; }
+
+    // F8 Foreign Affairs: the four powers' strength rows (+ war/peace vs the player).
+    { forge::JsonValue fp = jarr();
+      for (int p = 0; p < 4; ++p) {
+          forge::JsonValue r = jobj();
+          r.obj["name"] = tcell("@COUNTRY[" + std::to_string(p) + "].name");
+          int ncol = 0; long pop = 0;
+          for (const Colony& c : g_world.colonies)
+              if (c.owner_power == p) { ++ncol; pop += c.population; }
+          // the @MISC 95..100 strength rows: Colonies / Population / Average Colony /
+          // Military Power (armed land units) / Naval Power (armed ships) / Merchant Marine
+          // (unarmed cargo ships)
+          int mil = 0, navy = 0, merchant = 0;
+          for (const auto& u : g_world.units) {
+              if (!u.alive || u.owner != p) continue;
+              const auto& st = g_active_rules.units[u.type];
+              if (st.move_class == 99) { if (st.attack > 0) ++navy; else ++merchant; }
+              else if (st.attack > 0) ++mil;
+          }
+          r.obj["colonies"] = forge::json_num(ncol);
+          r.obj["population"] = forge::json_num((double)pop);
+          r.obj["avg_colony"] = forge::json_num(ncol > 0 ? (int)(pop / ncol) : 0);
+          r.obj["military"] = forge::json_num(mil + g_engine_extra.power_mil[p]);
+          r.obj["naval"] = forge::json_num(navy);
+          r.obj["merchant"] = forge::json_num(merchant);
+          r.obj["gold"] = forge::json_num((double)g_game.powers[p].gold);
+          r.obj["at_war"] = jbool(p != 0 && vc::sim::at_war(g_engine_extra.diplo, 0, p));
+          r.obj["seceded"] = jbool(g_engine_extra.seceded_power == p);
+          fp.arr.push_back(r);
+      }
+      o.obj["foreign"] = fp; }
+
+    // F9 Indian: one row per native settlement (tribe name via @TRIBES).
+    { forge::JsonValue ind = jarr();
+      for (const auto& s : g_engine_extra.settlements) {
+          forge::JsonValue r = jobj();
+          r.obj["tribe"] = tcell("@TRIBES[" + std::to_string(s.tribe) + "].name");
+          r.obj["x"] = forge::json_num(s.x); r.obj["y"] = forge::json_num(s.y);
+          r.obj["population"] = forge::json_num(s.population);
+          r.obj["alarm"] = forge::json_num(s.alarm[0]);
+          r.obj["mission"] = forge::json_num(s.mission);
+          r.obj["capital"] = jbool(s.capital);
+          ind.arr.push_back(r);
+      }
+      o.obj["indian"] = ind; }
+
+    // F10 Score: the scoring.md component breakdown (the same math as the ScoreGame node).
+    { forge::JsonValue sc = jobj();
+      long pop_score = 0;
+      for (const Colony& c : g_world.colonies)
+          if (c.owner_power == 0)
+              for (const Colony::Worker& w : c.workers) pop_score += w.expert ? 4 : 2;
+      int ffc = 0; for (uint32_t b = g_engine_extra.ff_owned; b; b &= b - 1) ++ffc;
+      sc.obj["population"] = forge::json_num((double)pop_score);
+      sc.obj["fathers"] = forge::json_num(ffc * 5);
+      sc.obj["sentiment"] = forge::json_num(g_engine_extra.national_sol);
+      sc.obj["razed"] = forge::json_num(-g_engine_extra.razed_settlements * (g_game.difficulty + 1));
+      sc.obj["gold"] = forge::json_num((double)(g_game.powers[0].gold / 1000));
+      long pb = g_engine_extra.bells_since_declaration / 100; if (pb > 100) pb = 100;
+      sc.obj["war_bells"] = forge::json_num((double)pb);
+      sc.obj["revolution"] = forge::json_num(
+          (g_engine_extra.woi_declared && g_engine_extra.declaration_year > 0)
+              ? vc::sim::revolution_bonus(g_engine_extra.declaration_year) : 0);
+      long total = vc::sim::score_game(g_game.difficulty, pop_score, ffc,
+                                       g_engine_extra.national_sol, g_engine_extra.razed_settlements,
+                                       (long)g_game.powers[0].gold,
+                                       g_engine_extra.bells_since_declaration,
+                                       g_engine_extra.declaration_year, g_engine_extra.woi_declared);
+      sc.obj["total"] = forge::json_num((double)total);
+      sc.obj["rank"] = forge::json_num(vc::sim::score_rank((int)total));
+      sc.obj["mult"] = forge::json_num(vc::sim::score_difficulty_mult(g_game.difficulty));
+      o.obj["score"] = sc; }
+
+    return o;
+}
+
 // EngineExtra (the relational/Forge-side state) + colony_xy round-trip -- these were
 // dropped by the (GameState,World)-only save (fidelity backlog #2/#3). Serialized here
 // because they live Forge-side; the sim save stays pure.
@@ -1729,6 +1944,10 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         if (path == "/api/bundle") return J(200, build_game_bundle());
         // The 25 founding fathers + their effects (which ones boost colony production).
         if (path == "/api/fathers") return J(200, fathers_json());
+        if (path == "/api/report/state") {
+            if (!g_game_active) game_new();
+            return J(200, report_state_json());
+        }
         if (path == "/api/labels") {
             // ?section=MISC|EUROLABEL|... -> the verbatim LABELS.TXT section lines (index = the
             // line number the specs cite, e.g. @MISC[37] = the Congress title). Screens draw
@@ -3067,9 +3286,9 @@ static int bundle_selftest() {
     const forge::JsonValue* man = b.find("manifest");
     check(man != nullptr, "bundle has a manifest");
     const forge::JsonValue* graphs = b.find("graphs");
-    check(graphs && graphs->obj.size() >= 40, "bundle embeds >= 40 graphs");
+    check(graphs && graphs->obj.size() >= 36, "bundle embeds >= 36 graphs");
     const forge::JsonValue* screens = b.find("screens");
-    check(screens && screens->obj.size() >= 12, "bundle embeds >= 12 screens");
+    check(screens && screens->obj.size() >= 8, "bundle embeds >= 8 screens");
     const forge::JsonValue* scen = b.find("scenarios");
     check(scen && scen->obj.size() >= 1, "bundle embeds >= 1 scenario");
     const forge::JsonValue* data = b.find("data");

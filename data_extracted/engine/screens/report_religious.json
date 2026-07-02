@@ -1,6 +1,0 @@
-{ "id":"report_religious", "name":"Religious Adviser Report", "background":"REPORT2", "size":[320,200],
-  "widgets":[
-    {"id":"title","type":"text","rect":[8,2,304,8],"color":"255,255,190","text":"RELIGIOUS ADVISER REPORT"},
-    {"id":"cross","type":"text","rect":[20,30,260,8],"color":"255,243,93","text":"Crosses this turn (power 0): {power0.crosses}"},
-    {"id":"note","type":"text","rect":[20,44,280,8],"color":"255,255,255","text":"Immigrants arrive when crosses cross the threshold."},
-    {"id":"ok","type":"button","rect":[140,182,40,12],"color":"255,255,255","text":"OK","onClick":"goto_status"} ] }

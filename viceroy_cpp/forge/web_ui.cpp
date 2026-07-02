@@ -283,6 +283,9 @@ const char* forge_index_html() {
       <span class="muted">Click a unit to select it, then click a tile to send it (it routes
         around coastline over the following turns). End turn advances the whole world.</span>
     </div>
+    <div class="row" id="reportbar">
+      <span class="muted" style="margin-right:4px">Reports (F1&ndash;F10):</span>
+    </div>
     <div class="row"><span id="selinfo" class="muted">No unit selected.</span></div>
     <div class="row">
       <select id="evpick"></select>
@@ -1608,6 +1611,247 @@ async function congressFather(id,on){
   SB=await (await fetch('/api/sandbox/father',{method:'POST',body:JSON.stringify({id,on})})).json();
   congressRender();
 }
+
+// ==== Advisor reports F1-F10 (spec/ui/advisor_reports.md) ====
+// Each report is a native 320x200 page over its REPORT<N>.PIK: title fill 0x90 + centered
+// verbatim @MISC title, FONTTINY body (x=4, y-seed 25, pitch 8), colors from the byte-resolved
+// palette, OK at (289,183). PIK mapping carries the USER RULING: F6 Colony -> REPORT6 (the
+// fort/colony art), F7 Naval -> REPORT7 (the ship) -- "colony and naval reports are labeled
+// backwards" (RULING note in the spec). Live rows come from /api/report/state.
+const REPORTS_DEF=[
+  {key:'F1', pik:'pik/REPORT1.png',  title:79,  body:repTerrain},
+  {key:'F2', pik:'pik/REPORT2.png',  title:30,  body:repReligious},
+  {key:'F3', pik:'pik/REPORT3.png',  title:37,  body:repCongressBody},
+  {key:'F4', pik:'pik/REPORT4.png',  title:49,  body:repLabor},
+  {key:'F5', pik:'pik/REPORT5.png',  title:50,  body:repEconomic},
+  {key:'F6', pik:'pik/REPORT6.png',  title:51,  body:repColony},   // USER RULING: fort art
+  {key:'F7', pik:'pik/REPORT7.png',  title:52,  body:repNaval},    // USER RULING: ship art
+  {key:'F8', pik:'pik/REPORT8.png',  title:93,  body:repForeign},
+  {key:'F9', pik:'pik/REPORT9.png',  title:29,  body:repIndian},
+  {key:'F10',pik:'pik/WOODPAN2.png', title:114, body:repScore},
+];
+let RS=null, REPORT_IDX=-1;
+async function reportOpen(i){
+  RS=await (await fetch('/api/report/state')).json();
+  nsIconsReady(()=>nsLabels('MISC',()=>{ REPORT_IDX=i; reportRender(); }));
+}
+function reportRender(){
+  const def=REPORTS_DEF[REPORT_IDX];
+  const title=nsLbl('MISC',def.title,def.key);
+  const inner=nsTitle(title)+def.body(RS)+nsOK('reportClose()',esc(nsLbl('MISC',46,'OK')));
+  ui.popup(def.key+' &mdash; '+esc(title),
+    '<div onclick="reportClose()" style="cursor:pointer">'+nsScreen(def.pik,inner)+'</div>');
+}
+function reportClose(){ REPORT_IDX=-1; ui.close(); }
+
+// F1 Terrain (the encyclopedia): one row per base ground -- name left, the @UNFORESTED numbers
+// right-justified toward x=0x136=310 (spec F1 geometry; the per-terrain icon id is not pinned to
+// a verified ICONS frame, so rows are text-only).
+function repTerrain(s){
+  let h=nsT(25,14,'Terrain',{col:NS.label,bold:true})
+       +nsT(150,14,'Move',{col:NS.label})+nsT(200,14,'Def%',{col:NS.label})
+       +nsT(250,14,'Food',{col:NS.label})+nsT(290,14,'Value',{col:NS.label});
+  let y=25;                                     // body y-seed 0x19 (spec)
+  (s.terrain||[]).forEach(t=>{
+    h+=nsT(25,y,esc(t.name),{col:NS.value})
+      +nsT(140,y,String(t.move),{w:30,right:true,col:NS.value})
+      +nsT(190,y,String(t.defense),{w:30,right:true,col:NS.value})
+      +nsT(240,y,String(t.food),{w:30,right:true,col:NS.value})
+      +nsT(280,y,String(t.value),{w:30,right:true,col:NS.value});
+    y+=14;                                      // spec F1 row advance ~0x1E/2 glyph bands
+  });
+  return h;
+}
+// F2 Religious: the crosses gauge -- the shared proportional filled/empty strip. The spec ids
+// 0x39 filled / 0x38 empty ARE the ICONS frames 57/56 (57 = the gold cross, 56 = the dull one --
+// visually confirmed; the goods' png=EXE-1 shift does not apply to this band) + the byte-verified
+// "(N of M)" text. The strip sprite COUNT is capped for the DOM; (N of M) is the exact conveyance.
+function repReligious(s){
+  const r=s.religious||{accum:0,threshold:1};
+  let h=nsT(10,16,'Crosses: ('+r.accum+' of '+r.threshold+')',{col:NS.label});
+  const max=Math.max(1,r.threshold), cap=Math.min(max,40);
+  const filled=Math.round(Math.min(1,r.accum/max)*cap);
+  h+='<div style="position:absolute;left:'+(10*NS_SC)+'px;top:'+(25*NS_SC)+'px">'
+    +'</div>'+nsIconStripAt(57,56,filled,cap,10,25,300);
+  let y=70;
+  h+=nsT(4,y-10,'Colony crosses / turn:',{col:NS.label});
+  (r.colonies||[]).forEach(c=>{ h+=nsT(10,y,'Colony '+c.colony,{col:NS.value})
+                                 +nsT(120,y,String(c.crosses),{w:30,right:true,col:NS.value}); y+=NS_PITCH; });
+  return h;
+}
+// helper: nsIconStrip placed at (x,y) native
+function nsIconStripAt(f,e,v,n,x,y,span){ return nsIconStrip(f,e,v,n,x,y,span); }
+// F3 Congress body over REPORT3.PIK: session subtitle, bell strip (bells filled = EXE 0x3F ->
+// png 62 / empty png 55), sentiment TEXT (continental_congress.md: no bar), REF badge row
+// (png 125 Regulars / 126 Cavalry / 9 Artillery / 127 Man-O-War), acquired-father names.
+// The CCBKGD portrait crowd remains screen 2 of the Congress cycle (the sandbox flow).
+function repCongressBody(s){
+  const c=s.congress||{}; const byId=congressById();
+  const offName=(c.offered>=0&&byId[c.offered])?byId[c.offered].name:'—';
+  let h=nsT(4,14, c.ff_count>=25?'All 25 Founding Fathers have joined.'
+      : esc(nsLbl('MISC',112,'Next Continental Congress Session'))+': '+esc(offName)
+        +'  ('+(c.remaining||0)+' in '+(c.threshold||0)+')',{w:312});
+  const sol=Math.max(0,Math.min(100,c.national_sol||0));
+  h+=nsT(4,36,esc(nsLbl('MISC',69,'Rebel'))+' '+esc(nsLbl('MISC',71,'Sentiment'))+': '+sol+'%    '
+           +esc(nsLbl('MISC',70,'Tory'))+' '+esc(nsLbl('MISC',71,'Sentiment'))+': '+(100-sol)+'%');
+  // bell row (0,44,320,32): count = bells needed, filled = the pool (sprite count DOM-capped).
+  // The spec's exact ids: bell filled 0x3F = frame 63, empty 0x38 = frame 56 (the atlas decode
+  // of frame 63 is a plain red box -- it may have lost the bell art; ids kept as byte-cited).
+  const need=Math.max(1,c.threshold||1), cap=Math.min(need,30);
+  const filled=Math.round(Math.min(1,(c.bells_pool||0)/need)*cap);
+  h+=nsIconStrip(63,56,filled,cap,10,46,300);
+  // REF band (0,76,320,40): the 4-column count-badge row (spec 5 order incl. the swap)
+  const ref=c.ref||{};
+  h+=nsT(4,72,esc(nsLbl('MISC',85,'Expeditionary Force'))+':');
+  h+=nsIconRow([{frame:125,count:ref.regulars||0,label:'Regulars'},
+                {frame:126,count:ref.cavalry||0,label:'Cavalry'},
+                {frame:9,  count:ref.artillery||0,label:'Artillery'},
+                {frame:127,count:ref.manowar||0,label:'Man-O-War'}],10,82,300);
+  // FF list band (0,116,320,60): plain text names
+  const owned=(c.fathers||[]);
+  h+=nsT(4,118,esc(nsLbl('MISC',89,'Founding Fathers'))+' ('+owned.length+'/25):');
+  h+=nsT(4,128,owned.map(id=>esc((byId[id]||{}).name||('#'+id))).join(',  ')||'none yet',
+        {w:312,wrap:true,size:5,col:NS.value});
+  return h;
+}
+// F4 Labor: the occupation matrix -- job name x=2 color 0x92, count color 0x61, y=42 pitch 8,
+// header separator rule x 2..311 color 0x77 (all spec-cited).
+function repLabor(s){
+  let h=nsT(2,30,'Occupation',{col:NS.label,bold:true})+nsT(200,30,'Colonists',{col:NS.label});
+  h+=nsRule(2,311,40,NS.rule);
+  let y=42;
+  (s.labor||[]).forEach(r=>{ h+=nsT(2,y,esc(r.job),{col:NS.label})
+                              +nsT(200,y,String(r.count),{w:40,right:true,col:NS.value}); y+=NS_PITCH; });
+  if(!(s.labor||[]).length) h+=nsT(2,42,'No colonists.',{col:NS.value});
+  return h;
+}
+// F5 Economic: goods rows with their real ICONS (frames 22..37), stock, and the PUBLISHED
+// market bid/ask (@MISC 203/204 labels); rows stride 17 per the spec, two columns of 8.
+function repEconomic(s){
+  let h=nsT(140,25,esc(nsLbl('MISC',203,'Bid Price')),{col:NS.label})
+       +nsT(210,25,esc(nsLbl('MISC',204,'Ask Price')),{col:NS.label})
+       +nsT(270,25,'Stock',{col:NS.label});
+  let y=34;
+  (s.economic||[]).forEach((r,gd)=>{
+    h+=nsIcon(22+gd,2,y-2,{scale:0.5,title:r.good});
+    h+=nsT(22,y,esc(r.good)+(r.boycott?' (boycott)':''),{col:r.boycott?NS.rule:NS.label,size:5});
+    h+=nsT(140,y,String(r.bid),{w:40,right:true,col:NS.value,size:5})
+      +nsT(210,y,String(r.ask),{w:40,right:true,col:NS.value,size:5})
+      +nsT(262,y,String(r.stock),{w:40,right:true,col:NS.value,size:5});
+    y+=9;
+  });
+  return h;
+}
+// F6 Colony (REPORT6 per USER RULING): one row per colony, pitch 17, 9/page; the 4 caption
+// columns sit at x=2/82/162/242 (spec) -- caption words are not spec-pinned (reconstructed).
+function repColony(s){
+  let h=nsT(2,27,'Colony',{col:NS.label})+nsT(82,27,esc(nsLbl('MISC',96,'Population')),{col:NS.label})
+       +nsT(162,27,'Sons of Liberty',{col:NS.label})+nsT(242,27,'Buildings',{col:NS.label});
+  let y=40;
+  (s.colonies||[]).slice(0,9).forEach(c=>{
+    h+=nsT(2,y,'Colony '+c.i+' ('+c.x+','+c.y+')',{col:NS.value})
+      +nsT(82,y,String(c.population),{w:40,right:true,col:NS.value})
+      +nsT(162,y,c.sol+'%',{w:40,right:true,col:NS.value})
+      +nsT(242,y,String(c.buildings),{w:40,right:true,col:NS.value});
+    y+=17;                                       // spec pitch 17, 9 per page
+  });
+  return h;
+}
+// F7 Naval (REPORT7 per USER RULING): the 4-column ship table y=42 pitch 20, 7/page --
+// name x=26, location centered in a box at x=162 w=80, destination x=242 w=76 (spec).
+function repNaval(s){
+  let h=nsT(26,30,'Ship',{col:NS.label})+nsT(162,30,'Location',{w:80,center:true,col:NS.label})
+       +nsT(242,30,'Destination',{w:76,center:true,col:NS.label});
+  let y=42;
+  (s.naval||[]).slice(0,7).forEach(u=>{
+    h+=nsT(26,y,esc(u.name),{col:NS.value})
+      +nsT(162,y,'('+u.x+','+u.y+')',{w:80,center:true,col:NS.value})
+      +nsT(242,y,u.order==='GOTO'?('('+u.tx+','+u.ty+')'):esc(u.order),{w:76,center:true,col:NS.value});
+    y+=20;                                       // spec pitch 20, 7 per page
+  });
+  if(!(s.naval||[]).length) h+=nsT(26,42,'No ships.',{col:NS.value});
+  h+=nsRule(0,320,178,NS.rule);                  // footer rule only (spec)
+  return h;
+}
+// F8 Foreign Affairs: the verbatim @MISC 95..100 strength rows down x=2 (color 0x91), one
+// column per power at x=13/80/160/240; full-width separator rules color 0x77; War/Peace
+// (@MISC 101/102) as the last row.
+function repForeign(s){
+  const rows=[['colonies',95],['population',96],['avg_colony',97],['military',98],['naval',99],['merchant',100]];
+  const colx=[13,80,160,240];
+  let h=''; const fp=s.foreign||[];
+  fp.forEach((p,i)=>{ h+=nsT(colx[i]+10,25,esc(p.name)+(p.seceded?' *':''),{col:NS.label,bold:true}); });
+  h+=nsRule(0,320,34,NS.rule);
+  let y=40;
+  rows.forEach(rw=>{
+    h+=nsT(2,y,esc(nsLbl('MISC',rw[1],rw[0])),{col:NS.strength,size:5});
+    fp.forEach((p,i)=>{ h+=nsT(colx[i]+30,y,String(p[rw[0]]),{w:34,right:true,col:NS.value,size:5}); });
+    y+=NS_PITCH+2;
+  });
+  h+=nsRule(0,320,y,NS.rule); y+=6;
+  h+=nsT(2,y,'Status',{col:NS.strength,size:5});
+  fp.forEach((p,i)=>{ h+=nsT(colx[i]+30,y,i===0?'—':esc(nsLbl('MISC',p.at_war?101:102,p.at_war?'War':'Peace')),
+                            {w:34,right:true,col:p.at_war?NS.rule:NS.value,size:5}); });
+  return h;
+}
+// F9 Indian: tribe rows (x=16 name / +72 position / +20 stats per the spec offsets); text in
+// the @COLORS slots (green cells, gold title already in the chrome).
+function repIndian(s){
+  let h=nsT(16,27,'Tribe',{col:NS.gold})+nsT(120,27,'Village',{col:NS.gold})
+       +nsT(200,27,'Size',{col:NS.gold})+nsT(240,27,'Alarm',{col:NS.gold})+nsT(280,27,'Mission',{col:NS.gold});
+  let y=40;
+  (s.indian||[]).forEach(t=>{
+    h+=nsT(16,y,esc(t.tribe)+(t.capital?' (capital)':''),{col:NS.green})
+      +nsT(120,y,'('+t.x+','+t.y+')',{col:NS.green})
+      +nsT(200,y,String(t.population),{w:30,right:true,col:NS.green})
+      +nsT(240,y,String(t.alarm),{w:30,right:true,col:t.alarm>=128?NS.rule:NS.green})
+      +nsT(280,y,t.mission>=0?'✝':'-',{w:30,center:true,col:NS.green});
+    y+=NS_PITCH+2;
+  });
+  if(!(s.indian||[]).length) h+=nsT(16,40,'No known villages.',{col:NS.green});
+  return h;
+}
+// F10 Score: WOODPAN2 with the verbatim @MISC scoring lines (115 Citizens / 116 Independence
+// + 118 Declared / 117 Villages Burned / 120 Foreign Recognition / 121 Total Score) and the
+// live component breakdown; figures larger (the F10 body is FONTTINY labels + FONTINTR figures).
+function repScore(s){
+  const sc=s.score||{};
+  const line=(y,idx,fb,val)=>nsT(20,y,esc(nsLbl('MISC',idx,fb)),{col:NS.label})
+                            +nsT(220,y,String(val),{w:60,right:true,col:NS.white,size:8});
+  let h='';
+  let y=30;
+  h+=line(y,115,'Citizens',sc.population); y+=16;
+  h+=nsT(20,y,esc(nsLbl('MISC',89,'Founding Fathers')),{col:NS.label})
+    +nsT(220,y,String(sc.fathers),{w:60,right:true,col:NS.white,size:8}); y+=16;
+  h+=nsT(20,y,esc(nsLbl('MISC',71,'Sentiment')),{col:NS.label})
+    +nsT(220,y,String(sc.sentiment),{w:60,right:true,col:NS.white,size:8}); y+=16;
+  h+=line(y,117,'Villages Burned',sc.razed); y+=16;
+  h+=nsT(20,y,'Gold / 1000',{col:NS.label})
+    +nsT(220,y,String(sc.gold),{w:60,right:true,col:NS.white,size:8}); y+=16;
+  h+=line(y,113,'Intervention',sc.war_bells); y+=16;
+  h+=line(y,116,'Independence',sc.revolution); y+=20;
+  h+=nsRule(20,300,y,NS.gold); y+=8;
+  h+=line(y,121,'Total Score',sc.total); y+=18;
+  h+=nsT(20,y,'Rank',{col:NS.label})+nsT(220,y,String(sc.rank),{w:60,right:true,col:NS.gold,size:8});
+  return h;
+}
+// The Play tab's report button bar (one per F-report, labeled with the verbatim titles once loaded).
+(function(){ const bar=document.getElementById('reportbar'); if(!bar) return;
+  REPORTS_DEF.forEach((d,i)=>{ const b=document.createElement('button'); b.className='act';
+    b.textContent=d.key; b.title=d.key+' report'; b.onclick=()=>reportOpen(i); bar.appendChild(b); });
+  nsLabels('MISC',L=>REPORTS_DEF.forEach((d,i)=>{ bar.children[i+1].title=L[d.title]||d.key; }));
+})();
+// The F1-F10 keys open the advisor reports from the Play or Sandbox tab (the game's report keys).
+window.addEventListener('keydown',e=>{
+  const t=document.activeElement&&document.activeElement.tagName;
+  if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT') return;
+  const m=/^F(\d+)$/.exec(e.key); if(!m) return;
+  const n=+m[1]; if(n<1||n>10) return;
+  const tab=document.querySelector('nav button.active');
+  if(!tab||(tab.dataset.tab!=='play'&&tab.dataset.tab!=='sandbox')) return;
+  e.preventDefault();
+  if(REPORT_IDX===n-1) reportClose(); else reportOpen(n-1);
+});
 document.querySelector('nav button[data-tab=sandbox]').addEventListener('click',()=>{ sbInit(); });
 
 // ---- Turn tab (B5): edit the data-driven turn pipeline (turn.json) ----

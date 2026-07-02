@@ -1,11 +1,75 @@
-{ "id":"mainmenu", "name":"Main Menu", "background":"OPENMENU", "size":[320,200],
-  "widgets":[
-    {"id":"title","type":"text","rect":[86,16,180,10],"color":"227,170,40","text":"COLONIZATION"},
-    {"id":"b1","type":"button","rect":[40,60,110,11],"color":"255,255,255","text":"Status Report","onClick":"goto_status"},
-    {"id":"b2","type":"button","rect":[40,76,110,11],"color":"255,255,255","text":"Colony","onClick":"goto_colony"},
-    {"id":"b3","type":"button","rect":[40,92,110,11],"color":"255,255,255","text":"Europe (Harbor)","onClick":"goto_europe"},
-    {"id":"b4","type":"button","rect":[40,108,110,11],"color":"255,255,255","text":"Continental Congress","onClick":"goto_continental_congress"},
-    {"id":"b5","type":"button","rect":[170,60,120,11],"color":"255,255,255","text":"Economic Report","onClick":"goto_report_economic"},
-    {"id":"b6","type":"button","rect":[170,76,120,11],"color":"255,255,255","text":"Military Report","onClick":"goto_report_military"},
-    {"id":"b7","type":"button","rect":[170,92,120,11],"color":"255,255,255","text":"Religious Report","onClick":"goto_report_religious"},
-    {"id":"b8","type":"button","rect":[170,108,120,11],"color":"255,90,90","text":"Declaration","onClick":"goto_declaration"} ] }
+{
+ "id": "mainmenu",
+ "name": "Main Menu",
+ "background": "OPENMENU",
+ "size": [
+  320,
+  200
+ ],
+ "widgets": [
+  {
+   "id": "title",
+   "type": "text",
+   "rect": [
+    86,
+    16,
+    180,
+    10
+   ],
+   "color": "227,170,40",
+   "text": "COLONIZATION"
+  },
+  {
+   "id": "b2",
+   "type": "button",
+   "rect": [
+    40,
+    60,
+    110,
+    11
+   ],
+   "color": "255,255,255",
+   "text": "Colony",
+   "onClick": "goto_colony"
+  },
+  {
+   "id": "b3",
+   "type": "button",
+   "rect": [
+    40,
+    76,
+    110,
+    11
+   ],
+   "color": "255,255,255",
+   "text": "Europe (Harbor)",
+   "onClick": "goto_europe"
+  },
+  {
+   "id": "b4",
+   "type": "button",
+   "rect": [
+    40,
+    92,
+    110,
+    11
+   ],
+   "color": "255,255,255",
+   "text": "Continental Congress",
+   "onClick": "goto_continental_congress"
+  },
+  {
+   "id": "b8",
+   "type": "button",
+   "rect": [
+    170,
+    108,
+    120,
+    11
+   ],
+   "color": "255,90,90",
+   "text": "Declaration",
+   "onClick": "goto_declaration"
+  }
+ ]
+}

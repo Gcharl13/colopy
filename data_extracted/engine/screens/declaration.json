@@ -1,6 +1,61 @@
-{ "id":"declaration", "name":"Declaration of Independence", "background":"DECLARAT", "size":[320,200],
-  "widgets":[
-    {"id":"title","type":"text","rect":[8,4,304,8],"color":"255,255,190","text":"THE DECLARATION OF INDEPENDENCE"},
-    {"id":"sol","type":"text","rect":[20,150,280,8],"color":"255,243,93","text":"Sons of Liberty (colony 0): {colony0.sol}%"},
-    {"id":"sign","type":"button","rect":[90,168,140,12],"color":"255,255,255","text":"Declare Independence","onClick":"independence"},
-    {"id":"back","type":"button","rect":[262,182,48,12],"color":"255,255,255","text":"Back","onClick":"goto_status"} ] }
+{
+ "id": "declaration",
+ "name": "Declaration of Independence",
+ "background": "DECOIND",
+ "size": [
+  320,
+  200
+ ],
+ "widgets": [
+  {
+   "id": "title",
+   "type": "text",
+   "rect": [
+    8,
+    4,
+    304,
+    8
+   ],
+   "color": "255,255,190",
+   "text": "THE DECLARATION OF INDEPENDENCE"
+  },
+  {
+   "id": "sol",
+   "type": "text",
+   "rect": [
+    20,
+    150,
+    280,
+    8
+   ],
+   "color": "255,243,93",
+   "text": "Sons of Liberty (colony 0): {colony0.sol}%"
+  },
+  {
+   "id": "sign",
+   "type": "button",
+   "rect": [
+    90,
+    168,
+    140,
+    12
+   ],
+   "color": "255,255,255",
+   "text": "Declare Independence",
+   "onClick": "independence"
+  },
+  {
+   "id": "back",
+   "type": "button",
+   "rect": [
+    262,
+    182,
+    48,
+    12
+   ],
+   "color": "255,255,255",
+   "text": "Back",
+   "onClick": "goto_mainmenu"
+  }
+ ]
+}

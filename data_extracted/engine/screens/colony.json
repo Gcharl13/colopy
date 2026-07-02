@@ -78,7 +78,7 @@
    ],
    "color": "255,255,255",
    "text": "Exit",
-   "onClick": "goto_status"
+   "onClick": "goto_mainmenu"
   }
  ]
 }
