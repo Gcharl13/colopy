@@ -140,6 +140,16 @@ struct GameState {
     // Per-turn scratch, refilled by the strategic pass -- not persisted.
     struct PlanSlot { int x = 0, y = 0, goal_type = 0xFF, priority = 0; };
     std::array<std::array<PlanSlot, 64>, 4> plan{};
+
+    // Lost-City rumor bias state (events.md 2): the per-power anti-streak
+    // floor [bp-0x2C] (min(prev+1,3) each rumor -- FoY/Cibola only reachable
+    // on the FIRST rumors), the per-game rare-outcome caps [0x1DC6]/[0x1DC7]
+    // (max 1 Fountain / 7 Cibolas), and the once-per-power burial special
+    // (AIPersonality +0x30 bit 0x40 @0x6186B).
+    std::array<int, 4> rumor_floor{};
+    int fountains_found = 0;
+    int cibolas_found   = 0;
+    std::array<bool, 4> burial_special_used{};
 };
 
 // The power's @NATIONALITY row (national_powers.md 2): in the EXE the power

@@ -226,6 +226,14 @@ std::string dump_game(const GameState& g, const World& w) {
     ref.obj["artillery"] = json_num(g.ref.artillery);
     gs.obj["ref"] = ref;
     gs.obj["rumor_seed"] = json_num(g.rumor_seed);
+    { JsonValue rf = arr();                      // Lost-City bias state (events.md 2)
+      for (int p2 = 0; p2 < 4; ++p2) rf.arr.push_back(json_num(g.rumor_floor[p2]));
+      gs.obj["rumor_floor"] = rf;
+      gs.obj["fountains_found"] = json_num(g.fountains_found);
+      gs.obj["cibolas_found"]   = json_num(g.cibolas_found);
+      JsonValue bu = arr();
+      for (int p2 = 0; p2 < 4; ++p2) bu.arr.push_back(json_num(g.burial_special_used[p2] ? 1 : 0));
+      gs.obj["burial_special"] = bu; }
     JsonValue rts = arr();                       // trade-route table (trade_routes.md 2)
     for (const TradeRoute& r : g.routes) {
         JsonValue ro = obj();
@@ -285,6 +293,14 @@ LoadedGame parse_game(const std::string& json) {
     lg.g.difficulty = gi(*gs, "difficulty", 1);
     lg.g.nation     = gi(*gs, "nation", 0);
     lg.g.rumor_seed = gi(*gs, "rumor_seed", 0);
+    if (const JsonValue* rf = gs->find("rumor_floor"))
+        for (int p2 = 0; p2 < 4 && p2 < (int)rf->arr.size(); ++p2)
+            lg.g.rumor_floor[p2] = rf->arr[p2].as_int();
+    lg.g.fountains_found = gi(*gs, "fountains_found", 0);
+    lg.g.cibolas_found   = gi(*gs, "cibolas_found", 0);
+    if (const JsonValue* bu = gs->find("burial_special"))
+        for (int p2 = 0; p2 < 4 && p2 < (int)bu->arr.size(); ++p2)
+            lg.g.burial_special_used[p2] = bu->arr[p2].as_int() != 0;
     if (const JsonValue* rts = gs->find("routes"))
         for (const JsonValue& ro : rts->arr) {
             TradeRoute r;
