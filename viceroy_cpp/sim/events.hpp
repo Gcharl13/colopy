@@ -16,9 +16,12 @@
 //   n=7 friendly tribe     -> gift of gold 2*(4d10)
 //   n=8 holy shrines       -> the local tribe is displeased (alarm)
 //   n=9 survivors          -> colonist(s) join (count elided -> 1, RECONSTRUCTED)
-// The rumor square is consumed on entry. Rumor PLACEMENT is not in the spec's
-// byte record (the original map carries them) -- seeded via cfg.rumor_count
-// (RECONSTRUCTED), stored as improvement-plane bit 0x10.
+// The rumor square is consumed on entry. Rumor PRESENCE is PROCEDURAL
+// (events.md 6.1, EXE-verified func_006188): a coordinate hash against the map
+// seed [0x190] -- ((x>>2)*0x13 + (y>>2)*0x11 + seed + 8) & 0x1F - (y&3)*4 ==
+// (x&3) -- gated on terrain (not Arctic/Ocean/Sea Lane) and on the tile's
+// feature state being clean (a stored feature SUPPRESSES the rumor). Here the
+// improvement-plane bit 0x10 is that suppress/consumed state.
 #pragma once
 
 #include "game.hpp"
@@ -27,7 +30,12 @@
 
 namespace vc::sim {
 
-constexpr uint8_t RUMOR_BIT = 0x10;   // improvement-plane marker for a rumor square
+constexpr uint8_t RUMOR_BIT = 0x10;   // improvement-plane CONSUMED/suppressed marker
+
+// The byte-verified rumor-presence predicate (func_006188 @0x61C7..0x61F8):
+// true iff the coordinate hash selects this tile, the terrain admits a rumor,
+// and the tile has not been consumed/suppressed.
+bool rumor_present(const World& w, int x, int y, int seed);
 
 struct RumorResult {
     int  unit = -1;         // triggering unit index

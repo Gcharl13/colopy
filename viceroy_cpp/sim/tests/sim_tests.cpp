@@ -743,18 +743,25 @@ static void test_lost_city_rumors() {
     std::printf("lost city rumors:\n");
     auto make = [](int type, int cls) {
         GameState g; World w; w.map_w = 3; w.map_h = 1;
+        g.rumor_seed = 25;                 // hash: ((25+8)&0x1F)==1 -> tile (1,0) is a rumor
         for (int i = 0; i < 3; ++i) w.terrain.push_back(4);
-        w.improve_set(1, 0, RUMOR_BIT);
         Unit u; u.type = type; u.profession = cls; u.x = 1; u.y = 0; w.units.push_back(u);
         return std::make_pair(g, w);
     };
+    { GameState g; World w; w.map_w = 3; w.map_h = 1; g.rumor_seed = 25;
+      for (int i = 0; i < 3; ++i) w.terrain.push_back(4);
+      CHECK(rumor_present(w, 1, 0, 25) && !rumor_present(w, 0, 0, 25),
+            "coordinate hash picks tile (1,0) only");
+      w.terrain[1] = 25;                   // ocean gate
+      CHECK(!rumor_present(w, 1, 0, 25), "no rumors on water"); }
     { // scripted rolls: n=3 (ruins), then 3d8 all 4s -> gold 10*12 = 120, *(0+2)/2 = 120
       auto [g, w] = make(COLONISTS, 0x1C);
       int seq[] = {3, 4, 4, 4}; int at = 0;
       RandFn rig = [&](int lo, int hi) { (void)lo; (void)hi; return seq[at < 4 ? at++ : 3]; };
       RumorResult r = lost_city_rumor(g, w, 0, false, rig);
       CHECK(r.n == 3 && r.gold == 120 && g.powers[0].gold == 120, "ruins: 10*(3d8) gold credited");
-      CHECK(!(w.improve_at(1, 0) & RUMOR_BIT), "rumor square consumed");
+      CHECK((w.improve_at(1, 0) & RUMOR_BIT) && !rumor_present(w, 1, 0, 25),
+            "consumed: the stored state suppresses the site");
     }
     { // n=5 vanish destroys the unit (no scout to escape the bad outcome)
       auto [g, w] = make(COLONISTS, 0x1C);

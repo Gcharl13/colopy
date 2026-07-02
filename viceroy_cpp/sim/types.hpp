@@ -91,6 +91,8 @@ struct GameState {
     long turn   = 0;             // [0x538E]
     int  difficulty = 1;         // [0x53A6]  0..4
     int  nation = 0;             // human player's @COUNTRY (0=England..3=Netherlands)
+    int  rumor_seed = 0;         // [0x190] map seed for the Lost-City rumor coordinate
+                                 //   hash (func_064A10 stores random_int(0,0x7fff) @0x64A23)
 
     std::array<Power, 4> powers{};
     std::array<int32_t, NGOODS> price_base{};  // DGROUP 0x53EA (per-good, [600,1000])

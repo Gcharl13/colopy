@@ -4,15 +4,22 @@
 
 namespace vc::sim {
 
+bool rumor_present(const World& w, int x, int y, int seed) {
+    if (w.map_w <= 0 || x < 0 || y < 0 || x >= w.map_w || y >= w.map_h) return false;
+    const int t = w.terrain_id(x, y);
+    if (t < 0 || t == 24 || t == 25 || t == 26) return false;   // Arctic/Ocean/Sea Lane gate
+    if (w.improve_at(x, y) & RUMOR_BIT) return false;           // consumed / suppressed
+    const int h = (((x >> 2) * 0x13 + (y >> 2) * 0x11 + seed + 8) & 0x1F) - (y & 3) * 4;
+    return h == (x & 3);
+}
+
 RumorResult lost_city_rumor(GameState& g, World& w, int unit_idx,
                             bool de_soto, const RandFn& rng) {
     RumorResult r;
     if (unit_idx < 0 || unit_idx >= (int)w.units.size()) return r;
     Unit& u = w.units[unit_idx];
     r.unit = unit_idx; r.x = u.x; r.y = u.y;
-    // consume the rumor square
-    if (!w.improve.empty() && w.map_w > 0)
-        w.improve[(size_t)u.y * w.map_w + u.x] &= (uint8_t)~RUMOR_BIT;
+    w.improve_set(u.x, u.y, RUMOR_BIT);             // consume: the stored state suppresses
     // scout level s: unit type Scout (@0x614A6) + Seasoned class 0x16 (@0x614BB)
     // + de Soto (exploration.md func_061454 note; he also forces positive rerolls)
     int s = (u.type == SCOUTS ? 1 : 0) + (u.profession == 0x16 ? 1 : 0) + (de_soto ? 1 : 0);

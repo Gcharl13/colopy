@@ -91,10 +91,6 @@ struct Config {
     int clear_lumber_base  = 20;      // lumber deposited on clearing near a colony
                                       //   (@0x04084D adds a @TERRAIN-column amount not
                                       //   decoded numerically -- RECONSTRUCTED knob)
-    // --- events (sim/events.cpp; events.md) ---
-    int rumor_count = 12;             // Lost-City rumor squares seeded per game (the
-                                      //   original map carries fixed placements we do
-                                      //   not have -- RECONSTRUCTED knob)
 };
 
 // One @CARGO row's market columns (NAMES.TXT @CARGO; value-identity asserted against

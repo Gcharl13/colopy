@@ -784,21 +784,10 @@ static void game_new(int nation = 0, int difficulty = 1) {
         add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
     }
     seed_native_settlements();                          // real native villages on the map
-    // Lost-City rumor squares (events.md): the original map carries fixed placements we
-    // do not have -- seed cfg.rumor_count on land tiles away from the starting colonies
-    // (RECONSTRUCTED placement), marked on the improvement plane.
-    { int placed = 0, guard = 0;
-      while (placed < g_active_rules.cfg.rumor_count && guard++ < 4000) {
-          int x = game_rng(0, g_world.map_w - 1), y = game_rng(0, g_world.map_h - 1);
-          int id = g_world.terrain_id(x, y);
-          if (id < 0 || id == 25 || id == 26 || id == 24) continue;         // land only
-          if (g_world.improve_at(x, y) & vc::sim::RUMOR_BIT) continue;      // fresh tile
-          bool near = false;
-          for (auto& xy : g_colony_xy)
-              if (std::abs(xy.first - x) <= 3 && std::abs(xy.second - y) <= 3) near = true;
-          if (near) continue;
-          g_world.improve_set(x, y, vc::sim::RUMOR_BIT); ++placed;
-      } }
+    // Lost-City rumor presence is PROCEDURAL (events.md 6.1, func_006188): the map
+    // generator seeds [0x190] with random_int(0,0x7fff) (@0x64A23) and the per-tile
+    // coordinate hash decides the sites -- nothing is scattered or stored.
+    g_game.rumor_seed = game_rng(0, 0x7fff);
     // Fog of war (exploration.md): the map starts hidden; the opening reveal is the
     // sight squares around the starting units + the +/-5 blocks around the colonies.
     if (g_world.map_w > 0 && g_world.map_h > 0) {
@@ -1318,6 +1307,15 @@ static forge::JsonValue game_state_json() {
         for (uint8_t b : g_world.improve) im.arr.push_back(forge::json_num(b));
         o.obj["improve"] = im;
     }
+    { forge::JsonValue ru = jarr();      // active Lost-City rumor sites (procedural hash)
+      for (int y = 0; y < g_world.map_h; ++y)
+          for (int x = 0; x < g_world.map_w; ++x)
+              if (vc::sim::rumor_present(g_world, x, y, g_game.rumor_seed)) {
+                  forge::JsonValue pt = jarr();
+                  pt.arr.push_back(forge::json_num(x)); pt.arr.push_back(forge::json_num(y));
+                  ru.arr.push_back(pt);
+              }
+      o.obj["rumors"] = ru; }
     o.obj["year"] = forge::json_num(g_game.year);
     o.obj["season"] = forge::json_num(g_game.season);
     o.obj["turn"] = forge::json_num((double)g_game.turn);

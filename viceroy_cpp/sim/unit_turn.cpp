@@ -164,7 +164,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
     // w.units[i] reference must be re-taken -- we stop the unit's loop instead.
     auto rumor_here = [&](int idx) -> bool {
         const Unit& uu = w.units[idx];
-        if (w.improve.empty() || !(w.improve_at(uu.x, uu.y) & RUMOR_BIT)) return false;
+        if (!rumor_present(w, uu.x, uu.y, g.rumor_seed)) return false;
         RumorResult rr = lost_city_rumor(g, w, idx,
             uu.owner == HUMAN_OWNER && ((ff_owned >> 7) & 1u), rng);
         if (rumor_out) rumor_out->push_back(rr);

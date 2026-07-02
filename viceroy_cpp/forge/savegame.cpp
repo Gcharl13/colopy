@@ -193,6 +193,7 @@ std::string dump_game(const GameState& g, const World& w) {
     ref.obj["manowar"] = json_num(g.ref.manowar);
     ref.obj["artillery"] = json_num(g.ref.artillery);
     gs.obj["ref"] = ref;
+    gs.obj["rumor_seed"] = json_num(g.rumor_seed);
     root.obj["game"] = gs;
 
     JsonValue wd = obj();
@@ -232,6 +233,7 @@ LoadedGame parse_game(const std::string& json) {
     lg.g.turn       = (long)gd(*gs, "turn");
     lg.g.difficulty = gi(*gs, "difficulty", 1);
     lg.g.nation     = gi(*gs, "nation", 0);
+    lg.g.rumor_seed = gi(*gs, "rumor_seed", 0);
     if (const JsonValue* pw = gs->find("powers"))
         for (int i = 0; i < 4 && i < (int)pw->arr.size(); ++i) read_power(pw->arr[i], lg.g.powers[i]);
     if (const JsonValue* pb = gs->find("price_base"))
