@@ -31,6 +31,12 @@ bool has_treaty(const Diplomacy& d, int a, int b);
 inline int treaty_cooldown(int turn) { return turn + 0x10; }
 // AI demand grace period: 10*(10-difficulty) turns.
 inline int ai_grace(int difficulty) { return 10 * (10 - difficulty); }
+// AI tribute/demand value scaling (difficulty.md @0x583A0): x0.8 .. x1.2.
+inline long ai_demand_value(long value, int difficulty) {
+    return value * 10 * (difficulty + 8) / 100;
+}
+// AI demand surcharge (@0x5842B): += 500*(diff+1).
+inline long ai_demand_surcharge(int difficulty) { return 500L * (difficulty + 1); }
 
 // AI willingness (@0x58C24): the AI takes NO action when
 //   (attitude>>2) > demand_score AND demand_score > 12 AND random(0,4) != 0.
