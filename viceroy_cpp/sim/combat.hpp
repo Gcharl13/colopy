@@ -53,7 +53,8 @@ struct NavalResult {
     bool loser_sunk = false;    // cargo aboard -> sunk; empty -> damaged
 };
 NavalResult resolve_naval(const RuleData& rd, const Unit& attacker,
-                          const Unit& defender, const RandFn& rng);
+                          const Unit& defender, const RandFn& rng,
+                          bool atk_drake = false, bool def_drake = false);
 
 // --- Shore bombardment (func_02D3C6, BYTE-VERIFIED) ---
 // A colony with a fortification building fires DETERMINISTICALLY (no random
@@ -81,6 +82,10 @@ int demote(int loser_type, int profession);
 // func_05E714 next-rank write); a veteran at the class ceiling advances TYPE instead
 // (@0x5C7C3/@0x5C7CE): Soldiers(1) -> Continental Army(9), Dragoons(4) ->
 // Continental Cavalry(7). Returns true if io_type/io_profession changed.
+// strength_sum = the promotion denominator S (@0x5C764): atk_str + def_str
+// +difficulty for a human winner / -difficulty for an AI winner, minus the
+// winner's class penalty (Criminal 0x1A -10, Indentured Servant 0x19 -5) --
+// computed by the caller, floored >= 1 here.
 bool promote_on_win(int& io_type, int& io_profession, int winner_strength,
                     int strength_sum, bool has_washington, const RandFn& rng);
 
@@ -105,12 +110,26 @@ struct CombatResult {
 // func_05CA7E @0x05CF2F..0x05CF4D: attacker owner == 2, defender owner >= 4
 // -> sar ax,1; add -- our engine maps "native defender" to the @UNIT brave
 // band 19..22, the only native land units).
+// defender_in_colony: a colony/occupant sits on the defending tile -- the
+// attacker accumulator gains +strength/2 and report flag 0x10 (func_05CA7E
+// @0x05CF43, applied LITERALLY to [bp-0x90] per the byte trace). The chain's
+// SoL% (@0x05CF98) and difficulty/20 (@0x05CFFC) scalings are NOT modeled:
+// their literal replacement reading degenerates (zero strength at 0%/diff 0)
+// and the add-vs-replace semantics are not in the trace -- noted, not invented.
 CombatResult resolve_land(const RuleData& rd,
                           const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
                           const RandFn& rng, bool defender_fortified = false,
-                          int attacker_nation = -1);
+                          int attacker_nation = -1,
+                          bool defender_in_colony = false);
+
+// Evaluate-mode land odds score (func_05CA7E @0x05D032: shl ax,3; idiv):
+// the AI ranks a prospective attack by (ATK*8)/(DEF+1) on the same modified
+// strengths the act-mode roll would use.
+inline int land_odds_score(int atk_str, int def_str) {
+    return (atk_str * 8) / (def_str + 1);
+}
 CombatResult resolve_land(const Unit& attacker, const Unit& defender,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,

@@ -23,6 +23,12 @@ struct Diplomacy {
 // Symmetric writes (SIGNTREATY writes matrix[A][B] = matrix[B][A]).
 void declare_war(Diplomacy& d, int a, int b);
 void make_peace(Diplomacy& d, int a, int b);
+
+// Privateer hidden attribution (diplomacy.md @0x3F092 -> @0x3F0A1): a
+// Privateer (type 0x10) attack sets the victim's WAR_PRIVATEER bit toward
+// the owner INSTEAD of open war (the victim knows pirates struck, not whose);
+// cleared on make-peace (@0x58BE1).
+void privateer_attack(Diplomacy& d, int victim, int owner);
 bool at_war(const Diplomacy& d, int a, int b);
 void sign_treaty(Diplomacy& d, int a, int b, int turn);  // sets REL_TREATY + cooldown
 bool has_treaty(const Diplomacy& d, int a, int b);

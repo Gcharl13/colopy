@@ -1078,6 +1078,7 @@ static void game_step() {
         // depletes, it does not keep building. Freeze the peacetime REF buildup (run_turn's
         // ref_purchase) during the war so the conflict is winnable; war_resolution_step depletes it.
         Ref ref_before = g_game.ref; int64_t rm_before = g_game.powers[0].royal_money;
+        forge::set_woi(g_engine_extra.woi_declared);    // @NOWARSDURINGREV gate for the units phase
         forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)

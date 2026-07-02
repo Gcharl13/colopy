@@ -10,8 +10,14 @@ void declare_war(Diplomacy& d, int a, int b) {
 }
 
 void make_peace(Diplomacy& d, int a, int b) {
-    d.war[a][b] &= ~WAR_AT_WAR; d.war[b][a] &= ~WAR_AT_WAR;
+    d.war[a][b] &= ~(WAR_AT_WAR | WAR_PRIVATEER);   // privateer bit clears too (@0x58BE1)
+    d.war[b][a] &= ~(WAR_AT_WAR | WAR_PRIVATEER);
     d.rel[a][b] &= ~REL_WAR;    d.rel[b][a] &= ~REL_WAR;
+}
+
+void privateer_attack(Diplomacy& d, int victim, int owner) {
+    if (victim < 0 || victim > 3 || owner < 0 || owner > 3) return;
+    d.war[victim][owner] |= WAR_PRIVATEER;          // hidden, one-directional (@0x3F092)
 }
 
 bool at_war(const Diplomacy& d, int a, int b) {

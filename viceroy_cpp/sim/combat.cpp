@@ -32,12 +32,17 @@ bool can_attack_ships(int type) {
 }
 
 NavalResult resolve_naval(const RuleData& rd, const Unit& attacker,
-                          const Unit& defender, const RandFn& rng) {
+                          const Unit& defender, const RandFn& rng,
+                          bool atk_drake, bool def_drake) {
     NavalResult res;
     // RAW stat pair (for ships attack/defense = the @UNIT Guns/Hull columns);
-    // no terrain/fort/veteran modifiers on the ship roll (@0x05B819).
+    // no terrain/fort/veteran modifiers on the ship roll (@0x05B819) -- except
+    // Sir Francis Drake (FF 13): a Privateer's strength gains +50% when its
+    // owner holds him (founding_fathers.md @0x7CF0).
     res.atk_str = unit_stats(rd, attacker.type).attack;
     res.def_str = unit_stats(rd, defender.type).defense;
+    if (atk_drake && attacker.type == PRIVATEER) res.atk_str += res.atk_str / 2;
+    if (def_drake && defender.type == PRIVATEER) res.def_str += res.def_str / 2;
     const int total = res.atk_str + res.def_str;
     const int roll = total > 0 ? rng(1, total) : 1;    // random_int(1, A+D) @0x05B844
     res.attacker_won = roll <= res.atk_str;
@@ -138,11 +143,14 @@ CombatResult resolve_land(const RuleData& rd,
                           int terrain_defense, int fort_bonus, int difficulty,
                           bool attacker_human, bool defender_human,
                           const RandFn& rng, bool defender_fortified,
-                          int attacker_nation) {
+                          int attacker_nation, bool defender_in_colony) {
     CombatResult res;
     res.atk_str = unit_stats(rd, attacker.type).attack;
     if (attacker_nation == 2 && defender.type >= BRAVES && defender.type < NUNITTYPES)
         res.atk_str += res.atk_str / 2;   // Spanish +50% vs natives (@0x05CF2F: sar;add)
+    if (defender_in_colony)
+        res.atk_str += res.atk_str >> 1;  // colony/occupant on the defending tile:
+                                          //   attacker +50%, flag 0x10 (@0x05CF43)
     // The func_007D3E accumulator (terrain + colony/fort/road folds) applies to
     // the defending strength via the byte-verified *(bonus+4)/4 *3/2 chain
     // (func_05CA7E @0x05CE05/@0x05CE16), not additively.

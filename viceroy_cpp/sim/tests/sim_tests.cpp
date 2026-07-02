@@ -1197,6 +1197,51 @@ static void test_combat_depth() {
       CHECK(!can_attack_ships(CARAVEL) && can_attack_ships(FRIGATE),
             "only Privateers/Frigates (and the Man-O-War) attack ships");
     }
+    { // colony-assault +50% on the attacker accumulator (@0x05CF43, literal)
+      Unit sp; sp.type = SOLDIERS; Unit df; df.type = SOLDIERS;
+      RandFn low = [](int lo, int) { return lo; };
+      CombatResult cr = resolve_land(rd, sp, df, 0, 0, 1, false, false, low,
+                                     false, -1, /*defender_in_colony*/true);
+      CHECK(cr.atk_str == 3, "attacking a colony tile: 2 + 2/2 = 3 (flag 0x10)");
+      CHECK(land_odds_score(cr.atk_str, cr.def_str) == (3 * 8) / (2 + 1),
+            "evaluate-mode odds (ATK*8)/(DEF+1) (@0x05D032)");
+    }
+    { // Sir Francis Drake (FF 13): Privateer strength +50% (@0x7CF0)
+      Unit p; p.type = PRIVATEER; Unit c; c.type = FRIGATE;
+      RandFn low = [](int lo, int) { return lo; };
+      NavalResult nr = resolve_naval(rd, p, c, low, /*atk_drake*/true, false);
+      CHECK(nr.atk_str == 12 && nr.def_str == 16, "Drake privateer 8 -> 12");
+      nr = resolve_naval(rd, c, p, low, false, /*def_drake*/true);
+      CHECK(nr.def_str == 12, "defending privateer boosted too");
+      nr = resolve_naval(rd, c, c, low, true, true);
+      CHECK(nr.atk_str == 16 && nr.def_str == 16, "non-privateers unaffected");
+    }
+    { // @NOWARSDURINGREV: rebel attacks on Europeans cancelled during the WoI
+      GameState g; World w; w.map_w = 3; w.map_h = 1; w.terrain.assign(3, 4);
+      Unit a; a.type = SOLDIERS; a.owner = 0; a.x = 0; a.y = 0;
+      a.order = ORDER_GOTO; a.target_x = 1; a.target_y = 0; w.units.push_back(a);
+      Unit d2; d2.type = SOLDIERS; d2.owner = 1; d2.x = 1; d2.y = 0; w.units.push_back(d2);
+      RandFn low = [](int lo, int) { return lo; };
+      refresh_moves(w, rd);
+      apply_orders(g, w, low, rd, 0, nullptr, nullptr, /*woi*/true);
+      CHECK(w.units[1].alive && w.units[1].type == SOLDIERS && w.units[0].x == 0,
+            "attack cancelled (func_05A862 @0x5A912)");
+      apply_orders(g, w, low, rd, 0, nullptr, nullptr, /*woi*/false);
+      // (moves were zeroed by the cancelled attempt; refresh for the real one)
+      refresh_moves(w, rd);
+      apply_orders(g, w, low, rd, 0, nullptr, nullptr, /*woi*/false);
+      CHECK(!w.units[1].alive || w.units[1].type != SOLDIERS,
+            "same attack resolves in peacetime");
+    }
+    { // privateer hidden war attribution (diplomacy.md @0x3F092)
+      Diplomacy d;
+      privateer_attack(d, /*victim*/1, /*owner*/0);
+      CHECK((d.war[1][0] & WAR_PRIVATEER) && !(d.war[1][0] & WAR_AT_WAR),
+            "WAR_PRIVATEER set without open war");
+      CHECK(!(d.war[0][1] & WAR_PRIVATEER), "one-directional (the victim's view)");
+      make_peace(d, 1, 0);
+      CHECK(!(d.war[1][0] & WAR_PRIVATEER), "cleared on make-peace (@0x58BE1)");
+    }
     { // Spanish +50% land attack vs natives (national_powers.md @0x05CF2F)
       Unit sp; sp.type = SOLDIERS;                   // attack 2
       Unit br; br.type = BRAVES;

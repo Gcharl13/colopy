@@ -325,7 +325,7 @@
           "writes": []
         },
         {
-          "expr": "raw @UNIT Guns/Hull pair (0x523B/0x523C), NO land modifiers (@0x05B819) ; roll = random_int(1, A+D) (@0x05B844), attacker wins iff roll <= A ; loser laden (the +0x3148&0x40 cargo bit @0x05BD1E) -> SUNK with cargo ; empty -> DAMAGED (@SHIPDAMAGE)",
+          "expr": "raw @UNIT Guns/Hull pair (0x523B/0x523C), NO land modifiers (@0x05B819) ; roll = random_int(1, A+D) (@0x05B844), attacker wins iff roll <= A ; loser laden (the +0x3148&0x40 cargo bit @0x05BD1E) -> SUNK with cargo ; empty -> DAMAGED (@SHIPDAMAGE) ; Sir Francis Drake (FF 13): a Privateer's strength +50% when its owner holds him (@0x7CF0)",
           "fn": "resolve_naval",
           "knobs": [],
           "note": "Only Privateers and Frigates can attack enemy ships (@SHIPCOMBAT verbatim; the Man-O-War fights on the King's side). The damaged ship's repair voyage is not modeled -- it survives with its move spent.",
@@ -686,6 +686,14 @@
           "knobs": [],
           "note": "Code-side nerve check: a calm, cautious AI sometimes backs down.",
           "title": "Whether an AI follows through on a demand",
+          "writes": []
+        },
+        {
+          "expr": "a Privateer (type 0x10) attack sets war[victim][owner] |= WAR_PRIVATEER (0x80) instead of open war -- one-directional, the victim's view ; cleared on make-peace (@0x58BE1)",
+          "fn": "privateer_attack",
+          "knobs": [],
+          "note": "The automatic call from ship combat awaits a combat-event log (trigger plumbing deferred).",
+          "title": "Privateer hidden war attribution (@0x3F092)",
           "writes": []
         }
       ],

@@ -34,10 +34,14 @@ void refresh_moves(World& w, const RuleData& rd = default_rules());
 // resolve_land and ends the unit's move. Mutates units (move/demote/capture/kill;
 // the winner may promote per training.md -- ff_owned is the HUMAN power's
 // founding-father bitmask, bit 11 = George Washington's auto-promote).
+// woi = the War of Independence is declared ([0x5382] bit 0): rebel attacks
+// on other European powers are cancelled (@NOWARSDURINGREV, func_05A862
+// @0x5A912).
 void apply_orders(GameState& g, World& w, const RandFn& rng,
                   const RuleData& rd = default_rules(), uint32_t ff_owned = 0,
                   std::vector<RumorResult>* rumor_out = nullptr,
-                  std::vector<PromoteResult>* promote_out = nullptr);
+                  std::vector<PromoteResult>* promote_out = nullptr,
+                  bool woi = false);
 
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);

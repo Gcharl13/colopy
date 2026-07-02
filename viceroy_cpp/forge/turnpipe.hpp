@@ -56,6 +56,11 @@ std::vector<vc::sim::PromoteResult>& promote_log();
 // drained into the @FORTFIRE (+@SHIPSUNK/@SHIPDAMAGE) notices.
 std::vector<vc::sim::ShoreFire>& shore_log();
 
+// Mirror of the War-of-Independence flag ([0x5382] bit 0) for the units
+// phase: rebel attacks on other European powers are cancelled while set
+// (@NOWARSDURINGREV, func_05A862 @0x5A912).
+void set_woi(bool declared);
+
 // Drop the cached turn.json (call after the turn editor saves so the next turn
 // uses the edited pipeline without a restart).
 void invalidate_turn_pipeline();

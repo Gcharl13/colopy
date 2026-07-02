@@ -95,17 +95,20 @@ std::vector<RumorResult> g_rumor_log;      // drained by game_step for the turn 
 std::vector<PromoteResult> g_promote_log;  // battlefield promotions (training.md 3)
 std::vector<ShoreFire> g_shore_log;        // fort fire on adjacent ships (@FORTFIRE)
 
+bool g_woi = false;                    // [0x5382] bit 0 mirror (set by the caller)
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
     for (int p = 1; p < 4; ++p)        // AI powers' strategic pass (ai.md 6.3; human = 0)
         vc::sim::ai_power_turn(g, w, p, rd, rng);
-    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log);
+    apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log, g_woi);
     shore_bombardment(w, rd, &g_shore_log);   // func_02D3C6 (deterministic fort fire)
     reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }
 void phase_cadence(GameState& g, World&, const RuleData&) { advance_cadence(g); }
 
 } // namespace
+
+void set_woi(bool declared) { g_woi = declared; }
 
 void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads turn.json
     phase_cache() = PhaseCache{};

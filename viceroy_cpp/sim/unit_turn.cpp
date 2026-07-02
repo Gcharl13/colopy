@@ -94,16 +94,29 @@ void refresh_moves(World& w, const RuleData& rd) {
 // (defender destroyed). The attacker's move ends regardless.
 static bool do_combat(GameState& g, World& w, int ai, int di,
                       const RandFn& rng, const RuleData& rd, uint32_t ff_owned,
-                      std::vector<PromoteResult>* promote_out) {
+                      std::vector<PromoteResult>* promote_out, bool woi) {
     Unit& atk = w.units[ai];
     Unit& def = w.units[di];
+    // @NOWARSDURINGREV (revolution.md, func_05A862 @0x5A912, WoI gate [0x5382]&1
+    // @0x5A8C8): during the War of Independence a rebel attack on another
+    // European power's unit is cancelled (natives and the abstract REF are
+    // unaffected). The verbatim notice fires from the caller's turn report.
+    if (woi && atk.owner == HUMAN_OWNER && def.owner != HUMAN_OWNER &&
+        def.owner >= 0 && def.owner < 4 && def.type < BRAVES) {
+        atk.moves_left = 0;
+        return false;
+    }
     const bool atk_naval = unit_stats(rd, atk.type).move_class == 99;
     const bool def_naval = unit_stats(rd, def.type).move_class == 99;
     if (atk_naval && def_naval) {
         // Ship-vs-ship (func_05B2C2 ship path): only Privateers/Frigates (and
         // the King's Man-O-War) can attack enemy ships (@SHIPCOMBAT verbatim).
         if (!can_attack_ships(atk.type)) { atk.moves_left = 0; return false; }
-        NavalResult nr = resolve_naval(rd, atk, def, rng);
+        // Sir Francis Drake (FF 13) boosts a HUMAN-owned Privateer's strength
+        // (the AI powers' father rosters are not modeled).
+        const bool atk_drake = atk.owner == HUMAN_OWNER && ((ff_owned >> 13) & 1u);
+        const bool def_drake = def.owner == HUMAN_OWNER && ((ff_owned >> 13) & 1u);
+        NavalResult nr = resolve_naval(rd, atk, def, rng, atk_drake, def_drake);
         Unit& loser = nr.attacker_won ? def : atk;
         if (nr.loser_sunk) loser.alive = false;        // laden -> sunk, cargo lost
         else loser.moves_left = 0;                     // empty -> damaged (@SHIPDAMAGE)
@@ -128,7 +141,8 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
     CombatResult res = resolve_land(rd, atk, def, /*terrain+folds*/bonus, /*fort*/0, g.difficulty,
                                     atk.owner == HUMAN_OWNER, def.owner == HUMAN_OWNER, rng,
                                     /*defender_fortified*/ def.order == ORDER_FORTIFIED,
-                                    /*attacker_nation*/ power_nation(g, atk.owner));
+                                    /*attacker_nation*/ power_nation(g, atk.owner),
+                                    /*defender_in_colony*/ colony_here);
     Unit& loser = res.attacker_won ? def : atk;
     if (res.captured) {
         loser.owner = res.attacker_won ? atk.owner : def.owner;  // changes hands intact
@@ -143,8 +157,15 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
     const int winner_str = res.attacker_won ? res.atk_str : res.def_str;
     const bool washington = winner.owner == HUMAN_OWNER && ((ff_owned >> 11) & 1u);
     const int pre_type = winner.type, pre_prof = winner.profession;
-    promote_on_win(winner.type, winner.profession, winner_str,
-                   res.atk_str + res.def_str, washington, rng);
+    // Promotion denominator S (@0x5C764): atk+def, +difficulty for a human
+    // winner / -difficulty for an AI winner, minus the winner's class penalty
+    // (Criminal 0x1A -10, Indentured Servant 0x19 -5); floor 1.
+    int S = res.atk_str + res.def_str +
+            (winner.owner == HUMAN_OWNER ? g.difficulty : -g.difficulty);
+    if (winner.profession == 0x1A) S -= 10;
+    else if (winner.profession == 0x19) S -= 5;
+    if (S < 1) S = 1;
+    promote_on_win(winner.type, winner.profession, winner_str, S, washington, rng);
     if (promote_out && (winner.type != pre_type || winner.profession != pre_prof))
         promote_out->push_back(PromoteResult{res.attacker_won ? ai : di, winner.owner,
                                              pre_type, winner.type});
@@ -212,7 +233,8 @@ static void do_improve(World& w, Unit& u, const RuleData& rd) {
 }
 
 void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned,
-                  std::vector<RumorResult>* rumor_out, std::vector<PromoteResult>* promote_out) {
+                  std::vector<RumorResult>* rumor_out, std::vector<PromoteResult>* promote_out,
+                  bool woi) {
     // Entering a Lost-City rumor square resolves the event (events.md) and ends the
     // unit's move. NOTE: resolution may push new units (treasure/colonist), so the
     // w.units[i] reference must be re-taken -- we stop the unit's loop instead.
@@ -261,7 +283,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
             int occ = unit_at(w, nx, ny, i);
             if (occ >= 0) {
                 if (w.units[occ].owner != u.owner) {
-                    bool cleared = do_combat(g, w, i, occ, rng, rd, ff_owned, promote_out);
+                    bool cleared = do_combat(g, w, i, occ, rng, rd, ff_owned, promote_out, woi);
                     if (cleared && u.alive) { u.x = nx; u.y = ny; }  // advance into vacated tile
                 } // friendly occupant: blocked this turn (no stacking)
                 if (u.alive && !w.fog.empty())                       // reveal the new tile's square
