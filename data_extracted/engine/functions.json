@@ -612,6 +612,34 @@
       "name": "Diplomacy - war/peace/treaty & AI nerve",
       "source": "sim/diplomacy.cpp",
       "spec": "spec/systems/diplomacy.md"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "level = University(0x0E)? 3 : College(0x0D)? 2 : Schoolhouse(0x0C)? 1 : 0",
+          "fn": "school_level",
+          "knobs": [],
+          "note": "Building bits 12/13/14 of the colony building bitmap. The level is both the tier cap (a level-L school teaches only @JOB tiers <= L) and the faculty cap.",
+          "title": "School level from buildings",
+          "writes": []
+        },
+        {
+          "expr": "per teacher (expert building-worker, tier <= level, faculty capped at min(level, cap)): random student.teach += 1 ; graduate at 4 / 6 / 8 turns by the profession's @JOB school tier ; graduate learns the teacher's profession as an expert (counter reset)",
+          "fn": "school_teach_step",
+          "knobs": [
+            "school_turns_t1",
+            "school_turns_t2",
+            "school_turns_t3",
+            "school_faculty_cap"
+          ],
+          "note": "Random student per @0x02DEC5; turns-to-graduate 4/6/8 @0x02DDB4/@0x02DE98/@0x02DE8E; tier >= 4 (Teacher, Colonist, dock classes) is not teachable. The EXE's criminal->servant->colonist promotion applies to dock classes this colony model does not carry -- the free-colonist learn-outright branch is the one modeled.",
+          "title": "Per-turn teaching + graduation",
+          "writes": []
+        }
+      ],
+      "name": "Training - schools teach professions",
+      "source": "sim/training.cpp",
+      "spec": "spec/systems/training.md (func_02D658 @0x02DDB4..0x02E012, BYTE-VERIFIED)"
     }
   ]
 }

@@ -19,6 +19,7 @@
 #include "../revolution.hpp"
 #include "../scoring.hpp"
 #include "../mapgen.hpp"
+#include "../training.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -611,6 +612,39 @@ static void test_mapgen() {
     CHECK(climate_base_terrain(2, false) == 1, "north band2 -> Desert(1)");
 }
 
+// spec/systems/training.md 3: school teaching (func_02D658). Tier gate by school level,
+// turns-to-graduate 4/6/8 by @JOB tier, faculty cap = level, graduate learns the profession.
+static void test_training() {
+    std::printf("school teaching:\n");
+    const RuleData& rd = default_rules();
+    CHECK(rd.jobs[0].school_tier == 1 && rd.jobs[17].school_tier == 3 && rd.jobs[18].school_tier == 4,
+          "@JOB tiers: Farmer 1, Statesman 3, Teacher 4 (not taught)");
+    RandFn first = [](int lo, int) { return lo; };   // deterministic: always pick student 0
+    Colony c;
+    c.built_mask = 1ull << 12;                       // Schoolhouse (0x0C)
+    CHECK(school_level(c) == 1, "schoolhouse = level 1");
+    Colony::Worker teacher; teacher.profession = 0; teacher.expert = true; teacher.tile = -1;  // Expert Farmer
+    Colony::Worker student; student.profession = 19; student.expert = false; student.tile = 0;
+    c.workers = {teacher, student};
+    for (int t = 0; t < 3; ++t) school_teach_step(c, rd, first);
+    CHECK(!c.workers[1].expert && c.workers[1].teach == 3, "3 turns in: still a student (needs 4)");
+    school_teach_step(c, rd, first);
+    CHECK(c.workers[1].expert && c.workers[1].profession == 0 && c.workers[1].teach == 0,
+          "4th turn: graduates as Expert Farmer, counter reset");
+    // tier gate: a Schoolhouse (level 1) cannot teach a tier-3 Elder Statesman
+    Colony c2; c2.built_mask = 1ull << 12;
+    Colony::Worker states; states.profession = 17; states.expert = true; states.tile = -1;
+    Colony::Worker stud2; stud2.profession = 19; stud2.expert = false; stud2.tile = 0;
+    c2.workers = {states, stud2};
+    for (int t = 0; t < 12; ++t) school_teach_step(c2, rd, first);
+    CHECK(!c2.workers[1].expert && c2.workers[1].teach == 0, "schoolhouse cannot teach a tier-3 skill");
+    // University teaches it in 8 turns
+    c2.built_mask |= 1ull << 14;                     // University (0x0E)
+    CHECK(school_level(c2) == 3, "university = level 3");
+    for (int t = 0; t < 8; ++t) school_teach_step(c2, rd, first);
+    CHECK(c2.workers[1].expert && c2.workers[1].profession == 17, "university graduates an Elder Statesman in 8");
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -637,6 +671,7 @@ int main() {
     test_revolution();
     test_scoring();
     test_mapgen();
+    test_training();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

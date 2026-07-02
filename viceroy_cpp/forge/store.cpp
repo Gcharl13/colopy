@@ -22,7 +22,8 @@ namespace {
     X(ref_cavalry_ratio) X(ref_artillery_ratio) X(ref_naval_ratio) \
     X(imm_threshold_cap) X(imm_sub4k_mult) X(imm_sub4k_offset) \
     X(imm_ai_scale) X(imm_ai_divisor) X(imm_england_num) X(imm_england_den) \
-    X(imm_dock_slots) X(imm_base_crosses) X(imm_refill_addend)
+    X(imm_dock_slots) X(imm_base_crosses) X(imm_refill_addend) \
+    X(school_turns_t1) X(school_turns_t2) X(school_turns_t3) X(school_faculty_cap)
 
 } // namespace
 

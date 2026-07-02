@@ -3,15 +3,19 @@
 #include "economy.hpp"
 #include "market.hpp"
 #include "ref.hpp"
+#include "training.hpp"
 #include "turn.hpp"
 #include "unit_turn.hpp"
 
 namespace vc::sim {
 
 void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const RuleData& rd) {
-    // 1. Production phase: each colony updates SoL / build / growth.
-    for (Colony& c : w.colonies)
+    // 1. Production phase: each colony updates SoL / build / growth, then its school
+    //    teaches (both live in the per-colony turn processor func_02D658).
+    for (Colony& c : w.colonies) {
         colony_economic_step(c, g.difficulty, rd);
+        school_teach_step(c, rd, rng);
+    }
 
     // 2. Market: drift the supply bases with this turn's trade volume, republish the
     //    pooled price levels, reset the per-turn volumes (market.hpp model).

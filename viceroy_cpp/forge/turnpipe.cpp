@@ -7,6 +7,7 @@
 #include "market.hpp"      // price_drift
 #include "immigration.hpp" // immigration_step
 #include "ref.hpp"         // ref_accrue_rate, ref_purchase
+#include "training.hpp"    // school_teach_step
 #include "unit_turn.hpp"   // refresh_moves, apply_orders
 #include "turn.hpp"        // advance_cadence
 #include "rules.hpp"       // Config
@@ -55,10 +56,11 @@ const std::vector<std::string>& turn_phases() {
 }
 
 // --- the phase implementations (each identical to the matching block in sim::step_turn) ---
-void phase_production(GameState& g, World& w, const RuleData& rd, uint32_t ff_owned) {
+void phase_production(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     for (Colony& c : w.colonies) {
         colony_compute_production(c, g.difficulty, rd, ff_owned);   // colonists -> food/bells/hammers/goods
         colony_economic_step(c, g.difficulty, rd);                  // then SoL / build / growth off those
+        school_teach_step(c, rd, rng);                              // then the school teaches (func_02D658)
     }
 }
 void phase_market(GameState& g, World&, const RuleData& rd) { market_turn(g, rd); }
@@ -95,7 +97,7 @@ const std::vector<std::string>& enabled_turn_phases() { return turn_phases(); }
 
 void run_turn_phase(const std::string& id, GameState& g, World& w, const RandFn& rng,
                     int player_idx, const RuleData& rd, uint32_t ff_owned) {
-    if (id == "production")       phase_production(g, w, rd, ff_owned);
+    if (id == "production")       phase_production(g, w, rng, rd, ff_owned);
     else if (id == "market")      phase_market(g, w, rd);
     else if (id == "immigration") phase_immigration(g, w, rng, player_idx, rd, ff_owned);
     else if (id == "ref")         phase_ref(g, w, player_idx, rd);

@@ -68,6 +68,7 @@ JsonValue dump_colony(const Colony& c) {
         wo.obj["terrain"] = json_num(wkr.terrain);
         wo.obj["good"]    = json_num(wkr.good);
         wo.obj["expert"]  = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = wkr.expert; return v; }();
+        wo.obj["teach"]   = json_num(wkr.teach);
         wk.arr.push_back(wo);
     }
     o.obj["workers"] = wk;
@@ -139,6 +140,7 @@ Colony read_colony(const JsonValue& o) {
             wkr.terrain = gi(wo, "terrain");
             wkr.good    = gi(wo, "good");
             wkr.expert  = gb(wo, "expert");
+            wkr.teach   = gi(wo, "teach");     // absent in old saves -> 0
             c.workers.push_back(wkr);
         }
     return c;

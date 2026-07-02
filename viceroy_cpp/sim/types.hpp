@@ -59,7 +59,10 @@ struct Colony {
     // tile_worker_assignment) producing a raw good (good 0..7), or to a building slot
     // (tile = -1) producing Hammers(16)/Crosses(17)/Bells(18). expert = the colonist is a
     // specialist at that good (era good +2, manufactured x2).
-    struct Worker { int profession = 19; int tile = -1; int terrain = 0; int good = 0; bool expert = false; };
+    // teach = the per-student school counter (spec/systems/training.md 3: read/incremented
+    // each turn via 0x181F:0xD1C, reset on graduation; graduates at 4/6/8 turns by tier).
+    struct Worker { int profession = 19; int tile = -1; int terrain = 0; int good = 0;
+                    bool expert = false; int teach = 0; };
     std::vector<Worker> workers;               // colonist roster (job + tile assignment)
 };
 

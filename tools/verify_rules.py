@@ -66,6 +66,37 @@ def parse_cpp_cargo(path):
     return rows
 
 
+# A kDefaultJobs row: {tier, value},   // Name
+JOB_ROW_RE = re.compile(r'\{\s*(-?\d+)\s*,\s*(-?\d+)\s*\}\s*,?\s*//\s*(.+)')
+
+
+def parse_cpp_jobs(path):
+    """Extract kDefaultJobs[] rows -> list of (school_tier, value, name)."""
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    m = re.search(r'kDefaultJobs\[NJOBS\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    if not m:
+        sys.exit("verify_rules: could not find kDefaultJobs[] in %s" % path)
+    rows = []
+    for r in JOB_ROW_RE.finditer(m.group(1)):
+        tier, val, name = r.groups()
+        rows.append((int(tier), int(val), name.strip()))
+    return rows
+
+
+def check_jobs(names, mism):
+    """@JOB parity: the C++ kDefaultJobs training columns == the extracted table."""
+    jobs = names["@JOB"]["rows"]
+    cpp = parse_cpp_jobs(RULES_CPP)
+    if len(cpp) != len(jobs):
+        mism.append("  @JOB: C++ has %d rows, JSON has %d" % (len(cpp), len(jobs)))
+        return
+    for i, row in enumerate(jobs):
+        j = (int(row["school_tier"]), int(row["europe_value"]))
+        if cpp[i][:2] != j:
+            mism.append("  @JOB row %2d %-16s JSON%s != C++%s" % (i, row["name"], j, cpp[i][:2]))
+
+
 def check_cargo(names, mism):
     """@CARGO parity: the C++ kDefaultCargo market columns == the extracted table."""
     cargo = names["@CARGO"]["rows"][:16]          # rows 16+ are the Hammers/Crosses placeholders
@@ -107,14 +138,16 @@ def main():
                 i, c_atk, c_def, c_cargo, c_mv))
 
     check_cargo(names, mism)
+    check_jobs(names, mism)
 
     if mism:
-        print("PARITY FAIL: @UNIT/@CARGO vs default RuleData")
+        print("PARITY FAIL: @UNIT/@CARGO/@JOB vs default RuleData")
         print("\n".join(mism))
         return 1
     print("PARITY OK: default RuleData == @UNIT for attack/defense(combat)/cargo/movement "
           "across %d rows (+%d zeroed padding); == @CARGO for start1/start2/lo/hi/burden "
-          "across 16 goods" % (len(units), len(cpp) - len(units)))
+          "across 16 goods; == @JOB for school_tier/value across 28 professions"
+          % (len(units), len(cpp) - len(units)))
     return 0
 
 

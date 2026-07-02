@@ -93,6 +93,41 @@ static const CargoStats kDefaultCargo[NGOODS] = {
     {3, 3, 2, 20, 0},     // Muskets
 };
 
+// NAMES @JOB training columns per profession: {school_tier, value}. Column 3 = the minimum
+// school level to teach the skill (1 Schoolhouse / 2 College / 3 University / 4 not taught);
+// column 4 = the expert's gold value. Value-identical to names_tables.json @JOB (asserted by
+// the tools/verify_rules.py oracle). Order = the @JOB row order (Farmer..Convert).
+static const JobStats kDefaultJobs[NJOBS] = {
+    {1, 1100},  // Farmer
+    {2, -1},    // Sugar Planter
+    {2, -1},    // Tobacco Planter
+    {2, -1},    // Cotton Planter
+    {1, -1},    // Fur Trapper
+    {1, 700},   // Lumberjack
+    {1, 600},   // Ore Miner
+    {1, 900},   // Silver Miner
+    {1, 1000},  // Fisherman
+    {2, 1100},  // Distiller
+    {2, 1200},  // Tobacconist
+    {2, 1300},  // Weaver
+    {2, 950},   // Fur Trader
+    {1, 1000},  // Carpenter
+    {2, 1050},  // Blacksmith
+    {2, 850},   // Gunsmith
+    {3, 1500},  // Preacher
+    {3, 1900},  // Statesman
+    {4, -1},    // Teacher
+    {4, -1},    // Colonist
+    {1, 1200},  // Pioneer
+    {2, 2000},  // Soldier
+    {1, -1},    // Scout
+    {2, -1},    // Dragoon
+    {3, 1400},  // Missionary
+    {4, -1},    // Ind. Servant
+    {4, -1},    // Criminal
+    {4, -1},    // Convert
+};
+
 RuleData make_default_rules() {
     RuleData rd;
     for (int i = 0; i < NUNITTYPES; ++i) rd.units[i] = kDefaultUnits[i];
@@ -101,6 +136,7 @@ RuleData make_default_rules() {
         rd.terrain_move[id]    = default_terrain_move(id);
     }
     for (int g = 0; g < NGOODS; ++g) rd.cargo[g] = kDefaultCargo[g];
+    for (int j = 0; j < NJOBS; ++j) rd.jobs[j] = kDefaultJobs[j];
     return rd;
 }
 

@@ -81,6 +81,11 @@ struct Config {
     int imm_base_crosses = 2;         // per-turn base crosses before colony output
     int imm_refill_addend = 8;        // dock refill threshold = (diff+addend)/2 vs roll 1..15
                                       // (func_034C24; the addend is elided in the spec -- RECONSTRUCTED)
+    // --- schools (sim/training.cpp; spec/systems/training.md 3, func_02D658) ---
+    int school_turns_t1 = 4;          // turns-to-graduate, @JOB school tier 1 (@0x02DDB4)
+    int school_turns_t2 = 6;          // tier 2 (@0x02DE98)
+    int school_turns_t3 = 8;          // tier 3 (@0x02DE8E)
+    int school_faculty_cap = 3;       // hard faculty cap (cmp [bp-0x6C],3 @0x02DE5B)
 };
 
 // One @CARGO row's market columns (NAMES.TXT @CARGO; value-identity asserted against
@@ -90,11 +95,19 @@ struct Config {
 // (ask = bid + burden + 1, USER RULING: "its in the names.txt table portion").
 struct CargoStats { int start1 = 0, start2 = 0, lo = 0, hi = 0, burden = 0; };
 
+// One @JOB row's training columns (NAMES.TXT @JOB; value-identity asserted by
+// tools/verify_rules.py). school_tier = the minimum school level that can teach the
+// profession (1 Schoolhouse / 2 College / 3 University / 4 not school-taught);
+// value = the expert's gold value (the Europe recruit/train cost basis, -1 = none).
+constexpr int NJOBS = 28;
+struct JobStats { int school_tier = 4; int value = -1; };
+
 struct RuleData {
     std::array<UnitStats, NUNITTYPES> units{};
     std::array<int, NTERRAIN> terrain_defense{};   // "Defensive" value by terrain id
     std::array<int, NTERRAIN> terrain_move{};      // move-points to ENTER, by terrain id
     std::array<CargoStats, NGOODS> cargo{};        // @CARGO market columns per good
+    std::array<JobStats, NJOBS> jobs{};            // @JOB training columns per profession
     Config cfg{};                                  // scalar balance constants
 };
 
