@@ -64,6 +64,11 @@ struct Unit {
     int  order      = ORDER_NONE;
     int  target_x = -1, target_y = -1;  // ORDER_GOTO destination
     bool alive      = true;    // cleared when destroyed in combat
+    // --- computer-player state (spec/systems/ai.md) ---
+    int  ai_state = 'X';       // +0x314B persistent AI mode char ('X' = fresh @0x06D84;
+                               //   the decoded alphabet is ai.md 4)
+    int  ai_spent = 0;         // +0x3149 move-credits SPENT this turn (allowance =
+                               //   @UNIT movement x3; one step = 3, ai.md 5)
     // --- trade route (trade_routes.md 2): on a ship/wagon the +0x315B byte is
     // route index (low nibble, func_0075D4) + current-stop index (high nibble,
     // func_0075FE) -- the profession byte is unused on those types, so the two

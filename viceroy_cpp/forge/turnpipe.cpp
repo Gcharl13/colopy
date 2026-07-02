@@ -8,6 +8,7 @@
 #include "immigration.hpp" // immigration_step
 #include "ref.hpp"         // ref_accrue_rate, ref_purchase
 #include "training.hpp"    // school_teach_step
+#include "ai.hpp"          // ai_power_turn (the computer players, ai.md)
 #include "explore.hpp"     // reveal_step
 #include "unit_turn.hpp"   // refresh_moves, apply_orders
 #include "turn.hpp"        // advance_cadence
@@ -92,6 +93,8 @@ std::vector<PromoteResult> g_promote_log;  // battlefield promotions (training.m
 
 void phase_units(GameState& g, World& w, const RandFn& rng, const RuleData& rd, uint32_t ff_owned) {
     refresh_moves(w, rd);
+    for (int p = 1; p < 4; ++p)        // AI powers' strategic pass (ai.md 6.3; human = 0)
+        vc::sim::ai_power_turn(g, w, p, rd, rng);
     apply_orders(g, w, rng, rd, ff_owned, &g_rumor_log, &g_promote_log);
     reveal_step(w, ff_owned);          // sticky per-power fog reveal (exploration.md)
 }

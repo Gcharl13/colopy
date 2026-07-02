@@ -72,6 +72,27 @@ static int default_terrain_move(int terrain_id) {
     return 1;
 }
 
+// Per-terrain "Improvement" column (@UNFORESTED/@FORESTED/@OTHER improvement --
+// the 16-byte terrain record's +2 prefix byte at 0x2F79, map_system.md). This is
+// the AI colony-site land-value base contribution (ai.md 3b, func_063F3C):
+// unforested {Tundra4,Desert3,Plains3,Prairie3,Grassland3,Savannah3,Marsh5,Swamp7};
+// forested 8..15 {Boreal4,Scrub4,Mixed4,Broadleaf4,Conifer4,Tropical6,Wetland6,Rain7}
+// (16..23 duplicate via (id&7)|8); Arctic 4, Ocean 2, Sea Lane 2, Mountains 7, Hills 4.
+static int default_terrain_improve(int terrain_id) {
+    static const int land[8]   = {4, 3, 3, 3, 3, 3, 5, 7};       // ids 0..7
+    static const int forest[8] = {4, 4, 4, 4, 4, 6, 6, 7};       // ids 8..15
+    if (terrain_id >= 0 && terrain_id <= 7)  return land[terrain_id];
+    if (terrain_id >= 8 && terrain_id <= 23) return forest[((terrain_id & 7) | 8) - 8];
+    switch (terrain_id) {
+        case 24: return 4;   // Arctic
+        case 25: return 2;   // Ocean
+        case 26: return 2;   // Sea Lane
+        case 27: return 7;   // Mountains
+        case 28: return 4;   // Hills
+    }
+    return 0;
+}
+
 // NAMES @CARGO market columns per good: {price_start1, price_start2, drift_low, drift_high,
 // burden}. Value-identical to data_extracted/tables/names_tables.json @CARGO (asserted by the
 // tools/verify_rules.py oracle, same as @UNIT). Order = the Good enum (Food..Muskets).
@@ -135,6 +156,7 @@ RuleData make_default_rules() {
     for (int id = 0; id < NTERRAIN; ++id) {
         rd.terrain_defense[id] = default_terrain_defense(id);
         rd.terrain_move[id]    = default_terrain_move(id);
+        rd.terrain_improve[id] = default_terrain_improve(id);
     }
     for (int g = 0; g < NGOODS; ++g) rd.cargo[g] = kDefaultCargo[g];
     for (int j = 0; j < NJOBS; ++j) rd.jobs[j] = kDefaultJobs[j];

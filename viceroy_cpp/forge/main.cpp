@@ -750,19 +750,25 @@ static void game_new(int nation = 0, int difficulty = 1) {
         for (const forge::JsonValue& c : fbj.arr) add_colony_json(c);
     }
 
-    auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1) {
-        Unit u; u.type = type; u.owner = 0; u.x = x; u.y = y;
+    auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1,
+                        int owner = 0) {
+        Unit u; u.type = type; u.owner = owner; u.x = x; u.y = y;
         u.order = order; u.target_x = txx; u.target_y = tyy; u.alive = true;
         g_world.units.push_back(u);
     };
     const int dx8[8] = {1,-1,0,0,1,1,-1,-1}, dy8[8] = {0,0,1,-1,1,-1,1,-1};
     if (const forge::JsonValue* us = scn("units"))
         for (const forge::JsonValue& u : us->arr) {
+            const int owner = u.find("owner") ? u.find("owner")->as_int(0) : 0;
+            int type = scenario_unit_type(u.find("type") ? u.find("type")->str : "Colonists");
+            if (type < 0) type = COLONISTS;
+            if (u.find("x") && u.find("y")) {           // absolute placement (rival landfalls)
+                add_unit(type, u.find("x")->as_int(0), u.find("y")->as_int(0), 0, -1, -1, owner);
+                continue;
+            }
             int ci = u.find("at_colony") ? (int)u.find("at_colony")->num : 0;
             if (ci < 0 || ci >= (int)cxy.size()) ci = 0;
             std::pair<int,int> base = cxy.empty() ? std::make_pair(20, 22) : cxy[ci];
-            int type = scenario_unit_type(u.find("type") ? u.find("type")->str : "Colonists");
-            if (type < 0) type = COLONISTS;
             if (u.find("on_water_adjacent")) {          // a ship: adjacent water, else nearest water
                 bool placed = false;
                 for (int k = 0; k < 8 && !placed; ++k) { int x = base.first + dx8[k], y = base.second + dy8[k];
@@ -1116,6 +1122,12 @@ static void game_step() {
             g_turn_notices.push_back(msg);
         }
         forge::promote_log().clear();
+        // AI powers may have founded colonies this turn (ai.md settler missions):
+        // keep the legacy colony_xy list in step with the world's colony roster.
+        while (g_colony_xy.size() < g_world.colonies.size()) {
+            const Colony& nc = g_world.colonies[g_colony_xy.size()];
+            g_colony_xy.push_back({nc.x, nc.y});
+        }
         spanish_succession_step();                      // scripted pre-revolution event (self-gated)
         tory_uprising_step();                           // during-WoI internal dissent (self-gated)
         war_resolution_step();                          // resolve the War of Independence if declared
@@ -1412,6 +1424,10 @@ static forge::JsonValue game_state_json() {
         uj.obj["tools"] = forge::json_num(u.tools);
         uj.obj["work"] = forge::json_num(u.work);
         uj.obj["cargo_cap"] = forge::json_num(unit_stats(u.type).cargo);
+        if (u.owner != 0) {                          // the AI mission char (ai.md 4) --
+            char sc[2] = {(char)u.ai_state, 0};      // the F8 "Show Strategy" overlay data
+            uj.obj["ai_state"] = forge::json_str(sc);
+        }
         uj.obj["route"] = forge::json_num(u.route);
         uj.obj["route_stop"] = forge::json_num(u.route_stop);
         forge::JsonValue cg = jarr();               // occupied holds: [good, qty]

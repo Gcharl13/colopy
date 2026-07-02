@@ -768,6 +768,37 @@
       "name": "Trade routes - automated cargo ferrying",
       "source": "sim/trade_routes.cpp",
       "spec": "spec/systems/trade_routes.md (func_041080 automation + func_00B880/func_00B8D0 primitives, all BYTE_VERIFIED)"
+    },
+    {
+      "formulas": [
+        {
+          "expr": "controller gate skips the human (@0x58A6) ; per unit: mission -> state char (ai.md 4 alphabet: '1' target selected, '2' scout explore, '3' move-to-colony, '8' wander, 'G' garrisoned, '=' absorbed into a founded colony) ; step within budget: allowance = @UNIT movement x3 (UnitTypeStats +0x00), one step charges +3 (@0x05CAE2), act while allowance - spent >= 3 (@0x03EE95)",
+          "fn": "ai_power_turn",
+          "knobs": [],
+          "note": "Missions decoded from the func_04E2B6 dispatch table: explore ('2'/'8'/'D'), return-to-colony ('3'/'5'/'N'/'P'/'V'/'W'), visit-natives ('4'/'J' -- settlements live forge-side, skipped). Settlers seek the best visible colony site and found on arrival; the state char renders as the F8 'Show Strategy' badge on rival units.",
+          "title": "Per-power AI pass (missions + budget)",
+          "writes": []
+        },
+        {
+          "expr": "9 candidates (8 compass dirs + stay, @0x047371) ; base +200 (@0x0473A4) ; Ocean/Sea-Lane/Arctic reject for land units (@0x0473BB) ; occupied-tile reject (@0x047A1D) ; colony stay bonus +40 (@0x047A33) ; target-distance x3 (@0x047AEC, applied closer-is-better -- sign RECONSTRUCTED) ; colony-site +500 (@0x047D84) for settler classes ; + rand(1,5) jitter (@0x047F44) ; clamp >= 0 ; strict max wins (@0x047F6E), 8 = stay",
+          "fn": "ai_pick_heading",
+          "knobs": [],
+          "note": "Skipped (engine state not carried): +4 heading continuity / reverse turn cost (needs the +0x314F compass byte), settlement +20, early-era +50, yield +16, frontier reject.",
+          "title": "Tactical heading scorer (func_046FFA)",
+          "writes": []
+        },
+        {
+          "expr": "water/out-of-bounds -> 0 ; land: sum over the 21-tile catchment: per-terrain Improvement stat (byte[terrain*16+0x2F79]) / ocean (2+2*adjacent-land)>>2 / +1 for the layer-1 0x40 feature bit ; ring-weighted (v*w)>>1 with w = 5/4/3/2 (cmp 4/8/0xc/0x14) ; halved near an existing colony ; Mountains centre 0, Hills halved ; final = clamp(score/10, 0, 15) (idiv @0x6410E)",
+          "fn": "colony_site_value",
+          "knobs": [],
+          "note": "This is the low nibble of map-layer #4 the F9 'Show Colony Sites' cheat displays (writer func_063F3C @0x064130, display func_021602). Catchment tile ORDER is RECONSTRUCTED (the EXE's delta tables are runtime-built); the special-resource bonus table is skipped (no resource plane in World). Live-capture oracle: coastal land 9..13, ocean 0.",
+          "title": "Colony-site land value 0..15 (func_063F3C)",
+          "writes": []
+        }
+      ],
+      "name": "Computer players - per-unit order/move engine",
+      "source": "sim/ai.cpp",
+      "spec": "spec/systems/ai.md (func_04CC50 strategic pass, func_04E2D6 per-unit driver, func_046FFA heading scorer, func_063F3C site value -- 80 byte-verified findings)"
     }
   ]
 }

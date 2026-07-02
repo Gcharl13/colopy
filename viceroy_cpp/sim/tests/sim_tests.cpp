@@ -23,6 +23,7 @@
 #include "../explore.hpp"
 #include "../events.hpp"
 #include "../trade_routes.hpp"
+#include "../ai.hpp"
 #include <cstdio>
 
 using namespace vc::sim;
@@ -903,6 +904,70 @@ static void test_scout_infiltrate() {
     }
 }
 
+// ai.md: colony-site value (func_063F3C), move budget (moves x3), missions +
+// heading scorer (func_04CC50/func_046FFA) for the computer powers.
+static void test_ai() {
+    std::printf("computer players (ai.md):\n");
+    const RuleData& rd = default_rules();
+    RandFn rig = [](int lo, int) { return lo; };       // jitter = 1, deterministic
+    CHECK(ai_move_allowance(rd, COLONISTS) == 3 && ai_move_allowance(rd, SCOUTS) == 12,
+          "budget allowance = @UNIT moves x3 (colonist 3, scout 12)");
+    { // site value: water 0; swampland scores high; Mountains centre 0
+      World w; w.map_w = 8; w.map_h = 8;
+      w.terrain.assign(64, 7);                         // all Swamp (improvement 7)
+      CHECK(colony_site_value(w, rd, 4, 4) == 15, "swamp catchment clamps at 15");
+      w.terrain.assign(64, 25);                        // all Ocean
+      CHECK(colony_site_value(w, rd, 4, 4) == 0, "water sites are 0");
+      w.terrain.assign(64, 7); w.terrain[4 * 8 + 4] = 27;
+      CHECK(colony_site_value(w, rd, 4, 4) == 0, "Mountains centre -> 0");
+    }
+    { // settler: sees a qualifying site, walks to it, founds a colony ('=').
+      // (An 8x8 swamp field scores 15; a 1-row strip only reaches 7 -- the
+      // catchment needs area, which is itself a formula check.)
+      GameState g; World w; w.map_w = 8; w.map_h = 8;
+      w.terrain.assign(64, 7);
+      w.fog.assign(64, 0xFF);                          // power 1 has explored everything
+      Unit s; s.type = COLONISTS; s.owner = 1; s.x = 0; s.y = 0; w.units.push_back(s);
+      for (int t = 0; t < 12 && w.colonies.empty(); ++t) ai_power_turn(g, w, 1, rd, rig);
+      CHECK(!w.colonies.empty(), "AI settler founded a colony");
+      if (!w.colonies.empty())
+          CHECK(w.colonies[0].owner_power == 1 && !w.colonies[0].human, "owned by power 1, AI-run");
+      CHECK(!w.units[0].alive && w.units[0].ai_state == '=', "settler absorbed ('=')");
+    }
+    { // scout: explores toward the fog frontier ('2'); the nearest unexplored
+      // tile (3,0) takes 3 steps = 9 of its 12 credits (+3 each @0x05CAE2)
+      GameState g; World w; w.map_w = 12; w.map_h = 1;
+      w.terrain.assign(12, 4);
+      w.fog.assign(12, 0);
+      for (int x = 0; x < 3; ++x) w.fog[x] = 1 << 5;   // power 1 knows only x<3
+      Unit sc; sc.type = SCOUTS; sc.owner = 1; sc.x = 0; sc.y = 0; w.units.push_back(sc);
+      ai_power_turn(g, w, 1, rd, rig);
+      CHECK(w.units[0].ai_state == '2', "scout mission = explore ('2')");
+      CHECK(w.units[0].x == 3 && w.units[0].ai_spent == 9,
+            "3 steps to the frontier tile (9 credits spent)");
+      CHECK(w.explored(4, 0, 1), "the walk revealed new ground for power 1");
+    }
+    { // military: walks to its own colony ('3'), then garrisons ('G', fortify)
+      GameState g; World w; w.map_w = 5; w.map_h = 1;
+      w.terrain.assign(5, 4);
+      Colony c; c.x = 2; c.y = 0; c.owner_power = 1; c.human = false; w.colonies.push_back(c);
+      Unit m; m.type = SOLDIERS; m.owner = 1; m.x = 0; m.y = 0; w.units.push_back(m);
+      ai_power_turn(g, w, 1, rd, rig);                 // Soldiers: 1 move = 3 credits = 1 step
+      CHECK(w.units[0].ai_state == '3' && w.units[0].x == 1, "moving to the colony ('3')");
+      ai_power_turn(g, w, 1, rd, rig);
+      ai_power_turn(g, w, 1, rd, rig);
+      CHECK(w.units[0].ai_state == 'G' && w.units[0].order == ORDER_FORTIFY &&
+            w.units[0].x == 2, "garrisoned ('G') and fortified at the colony");
+    }
+    { // controller gate: the human power's units are never AI-driven
+      GameState g; World w; w.map_w = 4; w.map_h = 1;
+      w.terrain.assign(4, 7); w.fog.assign(4, 0xFF);
+      Unit s; s.type = COLONISTS; s.owner = 0; s.x = 0; s.y = 0; w.units.push_back(s);
+      ai_power_turn(g, w, 0, rd, rig);
+      CHECK(w.units[0].x == 0 && w.units[0].ai_state == 'X', "human units untouched (@0x58A6)");
+    }
+}
+
 int main() {
     test_cadence();
     test_sol();
@@ -936,6 +1001,7 @@ int main() {
     test_lost_city_rumors();
     test_trade_routes();
     test_scout_infiltrate();
+    test_ai();
     if (failures == 0) { std::printf("\nALL SIM TESTS PASSED\n"); return 0; }
     std::printf("\n%d FAILURE(S)\n", failures);
     return 1;

@@ -111,6 +111,8 @@ struct RuleData {
     std::array<UnitStats, NUNITTYPES> units{};
     std::array<int, NTERRAIN> terrain_defense{};   // "Defensive" value by terrain id
     std::array<int, NTERRAIN> terrain_move{};      // move-points to ENTER, by terrain id
+    std::array<int, NTERRAIN> terrain_improve{};   // "Improvement" column (the AI land-value
+                                                   //   base, ai.md 3b: byte[terrain*16+0x2F79])
     std::array<CargoStats, NGOODS> cargo{};        // @CARGO market columns per good
     std::array<JobStats, NJOBS> jobs{};            // @JOB training columns per profession
     Config cfg{};                                  // scalar balance constants

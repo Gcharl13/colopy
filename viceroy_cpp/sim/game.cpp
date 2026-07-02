@@ -1,5 +1,6 @@
 // sim/game.cpp -- see game.hpp.
 #include "game.hpp"
+#include "ai.hpp"
 #include "economy.hpp"
 #include "explore.hpp"
 #include "market.hpp"
@@ -41,9 +42,13 @@ void step_turn(GameState& g, World& w, const RandFn& rng, int player_idx, const 
     g.powers[player_idx].royal_money += ref_accrue_rate(g.difficulty, g.year, rd);
     ref_purchase(g.ref, g.powers[player_idx].royal_money, rd);
 
-    // 5. Units: refresh move points and execute standing orders (all owners), then the
-    //    exploration sweep (sticky per-power fog reveal around every unit + colony).
+    // 5. Units: refresh move points; each AI power's strategic pass assigns missions
+    //    and steps its units (func_005760's per-power loop, ai.md 6.3 -- the
+    //    controller gate skips the human); then standing orders execute (all owners)
+    //    and the exploration sweep (sticky per-power fog reveal) runs.
     refresh_moves(w, rd);
+    for (int p = 0; p < 4; ++p)
+        if (p != player_idx) ai_power_turn(g, w, p, rd, rng);
     apply_orders(g, w, rng, rd, ff_owned);
     reveal_step(w, ff_owned);
 

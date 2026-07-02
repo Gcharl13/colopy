@@ -2829,6 +2829,14 @@ function drawGame(){
       g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle';
       g.fillText((u.name||'?')[0], cx, cy+1);
     }
+    // the AI mission char (ai.md 4 state alphabet) -- the game's F8 "Show
+    // Strategy" cheat overlay, drawn as a small badge on rival units
+    if(u.ai_state && u.ai_state!=='X' && u.ai_state!=='0'){
+      g.fillStyle='#111'; g.fillRect(cx+GCELL*0.15, cy-GCELL*0.85, GCELL*0.55, GCELL*0.55);
+      g.fillStyle='#ffe27a'; g.font='bold '+Math.round(GCELL*0.45)+'px monospace';
+      g.textAlign='center'; g.textBaseline='middle';
+      g.fillText(u.ai_state, cx+GCELL*0.42, cy-GCELL*0.56);
+    }
   }
   // selection ring on top
   if(sel){ g.strokeStyle='#ffe27a'; g.lineWidth=2; g.strokeRect(sel.x*GCELL+1, sel.y*GCELL+1, GCELL-2, GCELL-2); }
