@@ -4310,14 +4310,17 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             RuleData mrd = live_market_rules(cx);
             long cost = (long)vc::sim::market_ask(g_game, 0, gd, mrd) * qty;   // untaxed (market.md 3.1)
-            if (g_game.powers[0].gold < cost) return err(400, "not enough gold");
+            if (g_game.powers[0].gold < cost) {
+                // T18 (emit @0x32764; guard = the buy is UNAFFORDABLE, the `ja`
+                // skip @0x32754): "%STRING0 costs %NUMBER0$ per unit and we only
+                // have %NUMBER1$ gold". No once-mark in the EXE -- engine latch.
+                tutorial_fire_x(2, "@TUTORIAL18",
+                    {forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].name", cx).str},
+                    {(long)vc::sim::market_ask(g_game, 0, gd, mrd), (long)g_game.powers[0].gold});
+                return err(400, "not enough gold");
+            }
             vc::sim::market_buy(g_game, 0, gd, qty, mrd);                       // buying drains the volume
             g_world.colonies[ci].stockpile[gd] += qty;
-            // T18 (emit @0x32764, no once-mark in the EXE -- engine latch): the
-            // cargo-cost lesson on the first purchase; %STRING0/%NUMBER0 = good/cost.
-            tutorial_fire_x(2, "@TUTORIAL18",
-                {forge::resolve_binding("@CARGO[" + std::to_string(gd) + "].name", cx).str},
-                {(long)vc::sim::market_ask(g_game, 0, gd, mrd)});
             forge::JsonValue o = jobj(); o.obj["bought"] = forge::json_num(qty); o.obj["gold_spent"] = forge::json_num((double)cost);
             o.obj["ask_now"] = forge::json_num(vc::sim::market_ask(g_game, 0, gd, mrd));
             o.obj["gold"] = forge::json_num((double)g_game.powers[0].gold); return J(200, o);
@@ -4331,7 +4334,13 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (gd < 0 || gd >= NGOODS) return err(400, "need {good 0..15}");
             Power& p = g_game.powers[0];
             if (!((p.boycotts >> gd) & 1u)) return err(400, "not boycotted");
-            const long back_tax = (long)p.price_level[gd] * 500;   // @0x333AF x0x1F4
+            // Back tax = the good's live PER-UNIT price x 500 (imul 0x1F4
+            // @0x333AF), computed on demand -- there is NO per-good accumulator
+            // (full scan 2026-07-02; the pricing helper 0x36890 is the same one
+            // TUTORIAL18 cites as "costs %NUMBER0$ per unit", i.e. the ask).
+            forge::EngineCtx cx2{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
+            RuleData brd = live_market_rules(cx2);
+            const long back_tax = (long)vc::sim::market_ask(g_game, 0, gd, brd) * 500;
             if (p.gold < back_tax) return err(400, "not enough gold for the back taxes");
             p.gold -= back_tax;
             p.royal_money += back_tax;                             // -> the Crown's REF budget

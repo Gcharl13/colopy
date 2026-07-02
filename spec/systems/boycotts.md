@@ -52,6 +52,12 @@ storage/lift mechanics; the refusal→boycott link is established in `king.md`.
     `PowerRecord +0x4C[good]`). A gold-sufficiency check precedes the charge
     (`@0x333DD`); if the player can't afford it the boycott is **not** lifted.
     (Confirms the prior "`commodity_price × 500`" estimate.) **B.**
+    **No accumulator exists — CLOSED 2026-07-02 (negative scan):** a full-file
+    sweep found no per-good back-tax accrual writes anywhere; the amount is
+    live-computed at the dialog. The offer dialog is **`@KISSUP`** (handle
+    `0x1033`, emit `@0x333C8`, `%NUMBER0` = the tax, pay = choice 2
+    `cmp ax,2 @0x333D0`); the can't-afford reply is **`@KISSSORRY`** (handle
+    `0x103A`, emit `@0x333FE`, `%NUMBER0` = gold on hand `[bx+0x2A/0x2C]`). **B.**
 - **Lift-all (Jakob Fugger) — BYTE_VERIFIED:** acquiring father id 1 (Jakob Fugger)
   clears the whole mask `PowerRecord +0x20 := 0` in the FF acquire dispatch
   `func_03BC42` (`@0x3BD45`, gated on `ff_id == 1`). See `founding_fathers.md` §3. **B.**

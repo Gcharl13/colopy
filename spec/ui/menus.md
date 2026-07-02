@@ -216,6 +216,14 @@ value-fill placeholder):
 | **`@GAME`** (`~GAME`) | Game Options · Colony Report Options · Sound Options · Pick Music · Save Game (§8) · Load Game (§8) · **DECLARE INDEPENDENCE** · Retire · Exit to DOS | B |
 | **`@VIEW`** (`~VIEW`) | ~Move Pieces · ~View Pieces · ~European Status · Find Colony · Zoom In# ~Z · Zoom Out ~X · **Zoom Level 120 x 96 / #60 x 48 / #30 x 24 / #15 x 12** · Show ~Hidden Terrain · ~Center View | B |
 | **`@ORDERS`** (`~ORDERS`) | ~Activate unit · ~Wait for next unit · ~Fortify · ~Sentry · ~Build Colony · Join Colony (~B) · Clear Forest (~P) · Plow Fields (~P) · Build ~Road · ~Load Cargo · ~Unload Cargo · ~Pillage · ~Go to Port · ~Go to Place · Begin ~Trade Route · ~Return to Europe · No Orders (~s~p~a~c~e~ bar) · Dump Cargo ~Overboard · Disband Unit (~s~h~i~f~t~-~D) | B |
+
+> **`~Pillage` is vestigial — CLOSED 2026-07-02 (negative scan of VICEROY.EXE):**
+> the string "Pillage" appears nowhere in the executable (MENU.TXT only), and no
+> instruction in any encoding clears the road (`0x08`) or plow (`0x40`) improvement
+> bits once set (the only improvement-plane mutations are the byte-cited
+> `or es:[bx],0x40` `@0x4089F`, `or es:[bx],8` `@0x40AEC` and the forest-clear
+> `sub es:[bx],8` `@0x40896`). The menu row has no handler; selecting it does
+> nothing. **B (negative).**
 | **`@REPORTS`** (`~REPORTS`) | ~F~1 Terrain Information · ~F~2 Religious Adviser · ~F~3 Continental Congress · ~F~4 Labor Adviser · ~F~5 Economic Adviser · ~F~6 Colony Adviser · ~F~7 Naval Adviser · ~F~8 Foreign Affairs Advisor · ~F~9 Indian Adviser · ~F~1~0 Colonization Score | B |
 | **`@TRADE`** (`~TRADE`) | Edit Trade Route · Create Trade Route · Delete Trade Route | B |
 | **`@CUP`** (`~CHEAT`) | ~F~0~1 Create Unit · ~F~0~2 Debug Info Flags · ~F~0~4 Reveal Map · ~F~0~5 Set Human Player · ~F~0~6 Kill Indians · ~F~0~7 Advance Revolution Status · Sound Test · Memory Check · ~F~0~8 Show Strategy · ~F~0~9 Show Colony Sites · ~F~0~1~0 Test Routine | B |
