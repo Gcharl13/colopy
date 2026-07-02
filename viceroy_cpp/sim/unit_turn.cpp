@@ -168,7 +168,13 @@ static void do_improve(World& w, Unit& u, const RuleData& rd) {
         u.order = ORDER_NONE; return;                                    // already a road
     }
     ++u.work;
-    int threshold = rd.terrain_move[t] + (u.order == ORDER_CLEAR_PLOW ? 2 : 0);
+    // Threshold = the @TERRAIN Improvement column (+2 for clear/plow @0x040727,
+    // none for road @0x040A50). The improvement column's absolute anchor is
+    // written 0x2F78 in terrain_improvement.md and 0x2F79 in ai.md (a one-byte
+    // cross-file discrepancy); the COLUMN identity is data-verified -- col 3 of
+    // @UNFORESTED/@FORESTED/@OTHER, the same stat the colony-site value reads --
+    // and reproduces the known pacing (plow Plains 5, road Plains 3).
+    int threshold = rd.terrain_improve[t] + (u.order == ORDER_CLEAR_PLOW ? 2 : 0);
     if (u.profession == CLASS_HARDY_PIONEER) threshold >>= 1;
     if (threshold < 1) threshold = 1;
     if (u.work < threshold) return;

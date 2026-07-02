@@ -740,24 +740,24 @@ static void test_terrain_improvement() {
     w.colonies.push_back(col);
     Unit p; p.type = PIONEERS; p.x = 0; p.y = 0; p.tools = 100; p.order = ORDER_CLEAR_PLOW;
     w.units.push_back(p);
-    // clear forested id 10 (move 2): threshold 2+2 = 4 turns
-    for (int t = 0; t < 3; ++t) apply_orders(g, w, rng, rd);
-    CHECK(w.units[0].order == ORDER_CLEAR_PLOW && w.terrain[0] == 10, "3 turns in: still clearing");
+    // clear forested id 10 (Improvement 4): threshold 4+2 = 6 turns (@0x040727)
+    for (int t = 0; t < 5; ++t) apply_orders(g, w, rng, rd);
+    CHECK(w.units[0].order == ORDER_CLEAR_PLOW && w.terrain[0] == 10, "5 turns in: still clearing");
     apply_orders(g, w, rng, rd);
-    CHECK(w.terrain[0] == 2 && w.units[0].order == ORDER_NONE, "4th turn: forest cleared (id -8)");
+    CHECK(w.terrain[0] == 2 && w.units[0].order == ORDER_NONE, "6th turn: forest cleared (id -8)");
     CHECK(w.colonies[0].stockpile[5] == rd.cfg.clear_lumber_base, "lumber granted to the adjacent colony");
     CHECK(w.units[0].tools == 80, "20 tools debited");
-    // plow the now-open tile: threshold 1+2 = 3 turns; sets bit 0x40
+    // plow the now-open Plains (Improvement 3): threshold 3+2 = 5 turns; sets 0x40
     w.units[0].order = ORDER_CLEAR_PLOW;
-    for (int t = 0; t < 3; ++t) apply_orders(g, w, rng, rd);
+    for (int t = 0; t < 5; ++t) apply_orders(g, w, rng, rd);
     CHECK((w.improve_at(0, 0) & 0x40) && w.units[0].tools == 60, "plowed (0x40) and debited");
-    // road on mountains (move 3): threshold 3; Hardy Pioneer (0x14) halves it to 1
+    // road on mountains (Improvement 7): Hardy Pioneer (0x14) halves it to 3
     w.units[0].x = 3; w.units[0].profession = 0x14; w.units[0].order = ORDER_ROAD;
-    apply_orders(g, w, rng, rd);
-    CHECK((w.improve_at(3, 0) & 0x08) && w.units[0].tools == 40, "hardy pioneer roads mountains in 1 turn");
+    for (int t = 0; t < 3; ++t) apply_orders(g, w, rng, rd);
+    CHECK((w.improve_at(3, 0) & 0x08) && w.units[0].tools == 40, "hardy pioneer roads mountains in 3 turns");
     // run tools out: two more improvements -> 0 tools -> reverts to a Colonist
     w.units[0].order = ORDER_ROAD; w.units[0].x = 1;
-    apply_orders(g, w, rng, rd);                       // road plains: threshold 1/2 -> 1
+    apply_orders(g, w, rng, rd);                       // road plains: hardy 3/2 -> 1 turn
     w.units[0].order = ORDER_ROAD; w.units[0].x = 2;
     apply_orders(g, w, rng, rd);
     CHECK(w.units[0].tools == 0 && w.units[0].type == COLONISTS,
