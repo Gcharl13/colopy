@@ -99,6 +99,18 @@ struct EngineExtra {
     // step fires once when its bit is clear, then sets it. New-game init
     // 0x000E (@0x755EB pre-marks three steps).
     uint16_t tutorial_mask = 0x000E;
+    // @GAME menu options (menus.md @GAME; the verbatim toggle lists
+    // @GAMEOPTIONS/@COLONYOPTIONS/@SOUNDOPTIONS + @PICKMUSIC). Bit i = list
+    // row i (0-based after the title line), 1 = enabled; defaults all-on
+    // (RECONSTRUCTED -- shipped defaults are not byte-cited). Engine effects:
+    // game_options bit 4 = Autosave (the byte-verified turn-loop autosave to
+    // slot 10, save.md; enable flag [0x826] @0x5AD7), bit 7 = Tutorial Hints
+    // (gates the tutorial emitter); the rest are stored presentation flags.
+    uint16_t game_options   = 0xFFFF;
+    uint16_t colony_options = 0xFFFF;
+    uint16_t sound_options  = 0xFFFF;
+    int  music_pick = -1;               // @PICKMUSIC row (no audio subsystem; stored)
+    bool retired = false;               // @GAME "Retire" accepted (@RETIRE Yes)
 };
 
 // The live game the engine binds to / mutates. Colony map positions live Forge-side

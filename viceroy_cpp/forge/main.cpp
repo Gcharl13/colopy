@@ -871,9 +871,11 @@ static std::vector<std::string> g_turn_notices;
 static std::vector<std::pair<std::string, std::string>> g_tutorial_queue;
 static std::string game_message_text(const std::string& key);           // below
 static const std::vector<std::string>& labels_section(const std::string& s); // below
+static bool save_game_to(const std::string& path);                      // below (after dump_extra)
 static void tutorial_fire(uint16_t bit, const std::string& key,
                           const std::vector<std::string>& s = {},
                           const std::vector<long>& n = {}) {
+    if (!((g_engine_extra.game_options >> 7) & 1)) return;   // @GAMEOPTIONS "~Tutorial Hints" off
     if (g_engine_extra.tutorial_mask & bit) return;      // already shown
     g_engine_extra.tutorial_mask |= bit;
     std::string text = game_message_text(key);           // verbatim GAME.TXT prose
@@ -1567,6 +1569,11 @@ static void game_step() {
         war_resolution_step();                          // resolve the War of Independence if declared
         tutorial_turn_checks();                         // event-driven lessons (T5/T6/T7 sites)
         history_snapshot();
+        // Autosave (save.md, BYTE_VERIFIED): the main turn loop writes the
+        // rolling autosave to slot 10 (@0x5AF3), gated by the enable flag
+        // [0x826] (@0x5AD7) -- here @GAMEOPTIONS "~Autosave" (bit 4) and the
+        // slot-10 file savegame_auto.json.
+        if ((g_engine_extra.game_options >> 4) & 1) save_game_to("data_extracted/engine/savegame_auto.json");
     }
 }
 
@@ -1742,7 +1749,8 @@ static forge::JsonValue endgame_json() {
         over = true; won = true; reason = "Independence won -- the King's forces are defeated!";
     } else if (g_game_active && g_world.colonies.empty()) {
         over = true; won = false; reason = "All colonies are lost. The venture ends.";
-    } else if (g_game.year >= g_end_year) {
+    } else if (g_engine_extra.retired || g_game.year >= g_end_year) {
+        // scenario end year, or the player accepted the @GAME "Retire" dialog
         over = true; won = true; reason = "You retire to Europe in " + std::to_string(g_game.year) + ".";
     }
     long score = compute_score(); g_engine_extra.score = score;
@@ -2611,6 +2619,11 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     o.obj["free_recruits"] = forge::json_num(x.free_recruits);
     o.obj["artillery_bought"] = forge::json_num(x.artillery_bought);
     o.obj["tutorial_mask"] = forge::json_num(x.tutorial_mask);   // [0x5386]/[0x5387]
+    o.obj["game_options"] = forge::json_num(x.game_options);
+    o.obj["colony_options"] = forge::json_num(x.colony_options);
+    o.obj["sound_options"] = forge::json_num(x.sound_options);
+    o.obj["music_pick"] = forge::json_num(x.music_pick);
+    o.obj["retired"] = jbool(x.retired);
     forge::JsonValue mil = jarr(), econ = jarr();
     for (int i = 0; i < 4; ++i) { mil.arr.push_back(forge::json_num(x.power_mil[i]));
         econ.arr.push_back(forge::json_num(x.power_econ[i])); }
@@ -2638,6 +2651,21 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     o.obj["settlements"] = st;
     return o;
 }
+// Serialize the full live game (world + colony_xy + EngineExtra) to a file --
+// the /api/game/save body and the turn-loop autosave (save.md slot 10) share it.
+static bool save_game_to(const std::string& path) {
+    if (!g_game_active) return false;
+    forge::JsonValue root = forge::json_parse(forge::dump_game(g_game, g_world));
+    forge::JsonValue cxy = jarr();
+    for (auto& p : g_colony_xy) { forge::JsonValue e = jarr();
+        e.arr.push_back(forge::json_num(p.first)); e.arr.push_back(forge::json_num(p.second));
+        cxy.arr.push_back(e); }
+    root.obj["colony_xy"] = cxy;
+    root.obj["engine_extra"] = dump_extra(g_engine_extra);
+    std::ofstream f(path, std::ios::binary);
+    f << forge::json_dump(root);
+    return (bool)f;
+}
 static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
     if (!o) return;
     auto gi = [&](const char* k, int d) { const forge::JsonValue* v = o->find(k); return v ? v->as_int(d) : d; };
@@ -2658,6 +2686,12 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
       x.merc_primed = v && v->type == forge::JsonValue::Bool ? v->b : false; }
     x.pending_merc_price = gi("merc_price", 0);
     if (const forge::JsonValue* v = o->find("tutorial_mask")) x.tutorial_mask = (uint16_t)v->num;
+    if (const forge::JsonValue* v = o->find("game_options")) x.game_options = (uint16_t)v->num;
+    if (const forge::JsonValue* v = o->find("colony_options")) x.colony_options = (uint16_t)v->num;
+    if (const forge::JsonValue* v = o->find("sound_options")) x.sound_options = (uint16_t)v->num;
+    x.music_pick = gi("music_pick", -1);
+    { const forge::JsonValue* v = o->find("retired");
+      x.retired = v && v->type == forge::JsonValue::Bool ? v->b : false; }
     if (const forge::JsonValue* mc = o->find("merc_cat"))
         for (int i = 0; i < 4 && i < (int)mc->arr.size(); ++i)
             x.pending_merc_cat[i] = mc->arr[i].as_int();
@@ -2959,6 +2993,45 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             g_history.clear(); history_snapshot(); tutorial_start();
             return J(200, game_state_json());
         }
+        // @GAME menu options (menus.md): the three verbatim toggle lists +
+        // Pick Music. GET reads; POST {list:"game"|"colony"|"sound", bit:N}
+        // toggles one row, POST {music:N} records the @PICKMUSIC row.
+        if (path == "/api/options" && method != "POST") {
+            forge::JsonValue o = jobj();
+            o.obj["game"] = forge::json_num(g_engine_extra.game_options);
+            o.obj["colony"] = forge::json_num(g_engine_extra.colony_options);
+            o.obj["sound"] = forge::json_num(g_engine_extra.sound_options);
+            o.obj["music"] = forge::json_num(g_engine_extra.music_pick);
+            return J(200, o);
+        }
+        if (path == "/api/options" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            if (const forge::JsonValue* m = b.find("music")) {
+                g_engine_extra.music_pick = m->as_int(-1);
+            } else {
+                const forge::JsonValue* l = b.find("list"); const forge::JsonValue* bt = b.find("bit");
+                if (!l || !bt) return err(400, "need {list,bit} or {music}");
+                int bit = bt->as_int(-1);
+                if (bit < 0 || bit > 15) return err(400, "bit 0..15");
+                if (l->str == "game")        g_engine_extra.game_options   ^= (1u << bit);
+                else if (l->str == "colony") g_engine_extra.colony_options ^= (1u << bit);
+                else if (l->str == "sound")  g_engine_extra.sound_options  ^= (1u << bit);
+                else return err(400, "list is game/colony/sound");
+            }
+            forge::JsonValue o = jobj();
+            o.obj["game"] = forge::json_num(g_engine_extra.game_options);
+            o.obj["colony"] = forge::json_num(g_engine_extra.colony_options);
+            o.obj["sound"] = forge::json_num(g_engine_extra.sound_options);
+            o.obj["music"] = forge::json_num(g_engine_extra.music_pick);
+            return J(200, o);
+        }
+        // @GAME "Retire" (@RETIRE Yes): end the game as a voluntary retirement
+        // -- the endgame turns over/won and the client plays the CLOSING pageant.
+        if (path == "/api/game/retire" && method == "POST") {
+            if (!g_game_active) return err(400, "no active game");
+            g_engine_extra.retired = true;
+            return J(200, game_state_json());
+        }
         if (path == "/api/tutorial") {                   // drain the pending lessons
             forge::JsonValue o = jobj(), a = jarr();
             for (auto& [k, t] : g_tutorial_queue) {
@@ -3182,16 +3255,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // nation) plus the Forge-side colony_xy + EngineExtra -- nothing dropped (backlog #2/#3).
         if (path == "/api/game/save" && method == "POST") {
             if (!g_game_active) return err(400, "no active game");
-            forge::JsonValue root = forge::json_parse(forge::dump_game(g_game, g_world));
-            forge::JsonValue cxy = jarr();
-            for (auto& p : g_colony_xy) { forge::JsonValue e = jarr();
-                e.arr.push_back(forge::json_num(p.first)); e.arr.push_back(forge::json_num(p.second));
-                cxy.arr.push_back(e); }
-            root.obj["colony_xy"] = cxy;
-            root.obj["engine_extra"] = dump_extra(g_engine_extra);
-            std::ofstream f("data_extracted/engine/savegame.json", std::ios::binary);
-            f << forge::json_dump(root);
-            forge::JsonValue o = jobj(); o.obj["saved"] = jbool((bool)f); return J(200, o);
+            forge::JsonValue o = jobj();
+            o.obj["saved"] = jbool(save_game_to("data_extracted/engine/savegame.json"));
+            return J(200, o);
         }
         if (path == "/api/game/load" && method == "POST") {
             forge::JsonValue root;

@@ -2397,6 +2397,68 @@ function nvFindColony(){                               // @VIEW Find Colony: cen
     nvRefresh();
   });
 }
+// @GAME menu (menus.md): the verbatim option toggle lists (@GAMEOPTIONS /
+// @COLONYOPTIONS / @SOUNDOPTIONS, bit i = row i) + @PICKMUSIC + @RETIRE.
+// Autosave (bit 4) and Tutorial Hints (bit 7) have engine effects; the other
+// toggles are stored flags; music is recorded (no audio subsystem).
+let GAME_TXT=null;
+async function gameTxt(){
+  if(!GAME_TXT){ try{ GAME_TXT=await (await fetch('/api/text?file=GAME')).json(); }catch(e){ GAME_TXT={}; } }
+  return GAME_TXT;
+}
+async function nvOptions(section,list){
+  const txt=(await gameTxt())['@'+section]||'';
+  const opts=await (await fetch('/api/options')).json();
+  const lines=txt.replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const title=lines[0]||section, rows=lines.slice(1);
+  const cur=opts[list]||0;
+  ui.popup(esc(title),rows.map((r,i)=>{
+    const on=(cur>>i)&1;
+    return '<div style="padding:2px 0"><a href="#" onclick="nvOptToggle(\''+list+'\','+i+',\''+section+'\');return false">'
+      +(on?'&#9745; ':'&#9744; ')+esc(r.replace(/~/g,''))+'</a></div>';
+  }).join('')+'<div style="margin-top:8px"><a href="#" onclick="ui.close();nvRefresh();return false">OK</a></div>');
+}
+async function nvOptToggle(list,bit,section){
+  await fetch('/api/options',{method:'POST',body:JSON.stringify({list:list,bit:bit})});
+  nvOptions(section,list);
+}
+async function nvMusic(){
+  const txt=(await gameTxt())['@PICKMUSIC']||'';
+  const opts=await (await fetch('/api/options')).json();
+  const lines=txt.replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const title=lines[0]||'Select a piece of music:', rows=lines.slice(1);
+  ui.popup(esc(title),rows.map((r,i)=>
+    '<div style="padding:2px 0"><a href="#" onclick="nvMusicPick('+i+');return false">'
+    +(opts.music===i?'&#9679; ':'&#9675; ')+esc(r)+'</a></div>').join('')
+    +'<div class="muted" style="margin-top:6px;font-size:11px">(recorded; no audio subsystem)</div>'
+    +'<div style="margin-top:4px"><a href="#" onclick="ui.close();nvRefresh();return false">OK</a></div>');
+}
+async function nvMusicPick(i){
+  await fetch('/api/options',{method:'POST',body:JSON.stringify({music:i})});
+  nvMusic();
+}
+async function nvRetire(){                             // @GAME Retire -> the @RETIRE Yes/No dialog
+  const txt=(await gameTxt())['@RETIRE']||'Do you really want to quit?\n\nYes\nNo';
+  const t=txt.replace(/\r/g,'').trim().split('\n');
+  const choices=t.slice(-2).map(s=>s.trim()).filter(Boolean);
+  const body=t.slice(0,-2).join('\n').trim();
+  wfShow({key:'@RETIRE',body:body,choices:choices},async c=>{
+    if(!/yes/i.test(c)) return;
+    const d=await (await fetch('/api/game/retire',{method:'POST',body:'{}'})).json();
+    if(d.error){ ui.toast(d.error); return; }
+    GAME=d;
+    if(GAME.endgame&&GAME.endgame.over) showEndgame(GAME.endgame);
+  });
+}
+async function nvSave(){
+  const d=await (await fetch('/api/game/save',{method:'POST',body:'{}'})).json();
+  ui.toast(d.saved?'Game saved':'Save failed'); nvRefresh();
+}
+async function nvLoad(){
+  const d=await (await fetch('/api/game/load',{method:'POST',body:'{}'})).json();
+  if(d.error){ ui.toast(d.error); return; }
+  GAME=d; ui.toast('Game loaded ('+GAME.year+')'); nvRefresh();
+}
 async function nvOpen(){
   if(!GAME||!GAME.w) await refreshGame();
   if(!NVLAY) NVLAY=await (await fetch('/api/layout?screen=map_view')).json();
@@ -2551,10 +2613,21 @@ function nvMenu(k){
       +Math.min(i,9)+');return false">'+esc(it)+'</a></div>').join(''));
     return;
   }
-  if(k==='@GAME'){                                     // DECLARE INDEPENDENCE is live
+  if(k==='@GAME'){                                     // every row dispatches (menus.md @GAME)
+    const live=[
+      [/^Game Options/i,         "nvOptions('GAMEOPTIONS','game')"],
+      [/Colony Report Options/i, "nvOptions('COLONYOPTIONS','colony')"],
+      [/Sound Options/i,         "nvOptions('SOUNDOPTIONS','sound')"],
+      [/Pick Music/i,            "nvMusic()"],
+      [/Save Game/i,             "nvSave()"],
+      [/Load Game/i,             "nvLoad()"],
+      [/DECLARE INDEPENDENCE/i,  "declareIndependence()"],
+      [/^Retire/i,               "nvRetire()"],
+      [/Exit to DOS/i,           "nvClose()"],
+    ];
     ui.popup(esc(k.slice(1)),items.map(it=>{
-      if(/DECLARE INDEPENDENCE/i.test(it))
-        return '<div style="padding:2px 0"><a href="#" onclick="ui.close();declareIndependence();return false">'+esc(it)+'</a></div>';
+      const m=live.find(l=>l[0].test(it));
+      if(m) return '<div style="padding:2px 0"><a href="#" onclick="ui.close();'+m[1]+';return false">'+esc(it)+'</a></div>';
       return '<div class="muted" style="padding:1px 0">'+esc(it)+'</div>';
     }).join('')||'<i>empty</i>');
     return;
