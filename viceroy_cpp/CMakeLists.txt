@@ -97,10 +97,20 @@ if(WIN32)
   target_link_libraries(forge PRIVATE ws2_32)   # Winsock for `forge serve`
 endif()
 
+# --- Drydock (engine-dev-environment-spec.md): record-database dev environment.
+#     P0: canonical text module + tests. C++17 per Phase-0 ruling. ---
+add_library(drydock STATIC
+  drydock/text/rec_text.cpp
+)
+target_include_directories(drydock PUBLIC drydock)
+
 enable_testing()
 add_executable(sim_tests sim/tests/sim_tests.cpp)
 target_link_libraries(sim_tests PRIVATE viceroy_sim)
 add_test(NAME sim_tests COMMAND sim_tests)
+add_executable(drydock_tests drydock/tests/drydock_tests.cpp)
+target_link_libraries(drydock_tests PRIVATE drydock)
+add_test(NAME drydock_tests COMMAND drydock_tests)
 add_test(NAME forge_map COMMAND forge map selftest)
 add_test(NAME forge_rules COMMAND forge rules selftest)
 add_test(NAME forge_mod COMMAND forge mod selftest)
