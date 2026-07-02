@@ -276,6 +276,7 @@ const char* forge_index_html() {
 
   <section id="play" class="tab">
     <div class="row">
+      <button class="act" onclick="openingPlay()" title="The OPENING.EXE title pageant (cinematics.md 6)">&#9654; Opening</button>
       <button class="act" onclick="newGameSetup()">New game&hellip;</button>
       <button class="act" onclick="stepGame()">End turn &#9654;</button>
       <button class="act" id="foundbtn" onclick="foundColony()" disabled>Found colony</button>
@@ -2148,7 +2149,7 @@ function colDrawCanvases(){
 }
 // "Select An Item To Build": the eligible @BUILDING rows (name, cost, min_colony gate)
 // -> POST /api/colony/build, then re-open the screen with the new project.
-async // Toggle a good's Custom-House auto-sell selection (USER RULING 2026-07-02).
+// Toggle a good's Custom-House auto-sell selection (USER RULING 2026-07-02).
 async function colExport(g){
   try{ const r=await (await fetch('/api/colony/export',{method:'POST',
       body:JSON.stringify({colony:COL_CI,good:g})})).json();
@@ -2157,7 +2158,7 @@ async function colExport(g){
     colOpen(COL_CI);
   }catch(e){ ui.toast('failed'); }
 }
-function colBuildMenu(){
+async function colBuildMenu(){
   const ci=COL?COL.index:0;
   // the byte-verified func_0B900 gate (size/prereq/supersede/FF) runs server-side
   let mr; try{ mr=await (await fetch('/api/colony/buildmenu?colony='+ci)).json(); }
@@ -2453,6 +2454,140 @@ function nvMenu(k){
   ui.popup(esc(k.slice(1))+' &mdash; verbatim MENU.TXT items',
     items.map(it=>'<div class="muted" style="padding:1px 0">'+esc(it)+'</div>').join('')||'<i>empty</i>');
 }
+// ---- OPENING title cinematic (spec/ui/cinematics.md 6, OPENING.EXE) ----
+// Committed data drives it: the @OPENING anim table (col1 sheet-idx / col2
+// activation tick / col4 X-base, parsed by _load_anims @0xDD2), @CREDITS
+// (start/end tick + OPENCRD sheet/frame, plates centered x=160/y=183
+// per _do_credit @0xFB6), OPENING.PIK -- the 960x132 panorama panned 640->0
+// at 1 px per 18.2Hz tick (_pan @0x113E) inside the OPENBORD.PIK window
+// (rows 24..155) -- and PATH.DAT's ship track (only the endpoint runs are
+// committed; the middle is interpolated, RECONSTRUCTED). Per-sprite Y anchors
+// live in the .SS frame headers (asset-derived, A-tier; lost in the contact
+// sheets) -- element Y here is placed against the panorama art
+// (RECONSTRUCTED). A click early-outs (func_001522's kbhit poll).
+let OPEN_SHEETS={};
+function openSheet(name){                 // masked frames from a 58px-pitch contact sheet
+  if(OPEN_SHEETS[name]) return OPEN_SHEETS[name];
+  OPEN_SHEETS[name]=new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height;
+      const g=cv.getContext('2d'); g.drawImage(img,0,0);
+      const frames=[];
+      for(let c=0;c<15;c++){
+        const cx0=c*58+1; if(cx0+56>img.width) break;
+        const d=g.getImageData(cx0,17,56,img.height-18).data;
+        let x0=56,x1=-1,y0=99,y1=-1;
+        for(let y=0;y<img.height-18;y++) for(let x=0;x<56;x++){
+          const o=(y*56+x)*4;
+          if(d[o]+d[o+1]+d[o+2]>40&&d[o+2]<=d[o+1]+40&&!(d[o+2]>140&&d[o+2]>d[o]+60)){  // key out black + the blue label
+            if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+        }
+        if(x1<0){ if(frames.length) break; else continue; }
+        const w=x1-x0+1,h=y1-y0+1;
+        const fc=document.createElement('canvas'); fc.width=w; fc.height=h;
+        const out=fc.getContext('2d').createImageData(w,h);
+        for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+          const o=(y*56+x)*4;
+          if(d[o]+d[o+1]+d[o+2]>40&&d[o+2]<=d[o+1]+40&&!(d[o+2]>140&&d[o+2]>d[o]+60)){
+            const q=((y-y0)*w+(x-x0))*4;
+            out.data[q]=d[o]; out.data[q+1]=d[o+1]; out.data[q+2]=d[o+2]; out.data[q+3]=255;
+          }
+        }
+        fc.getContext('2d').putImageData(out,0,0);
+        frames.push({cv:fc,w:w,h:h});
+      }
+      res({frames:frames});
+    };
+    img.onerror=()=>res({frames:[]});
+    img.src='/assets/sprites/atlas_'+name+'.png';
+  });
+  return OPEN_SHEETS[name];
+}
+// anim-table sheet index -> sheet name (the _opening load order @0x1e0e..0x1ebe)
+const OPEN_ORDER=['OPENWND1','OPENSUN','OPENMON1','OPENWND2','OPENMON2','OPENMON3',
+                  'OPENFISH','OPENGUY','OPENLOGO','OPENBONK'];
+// Panorama-space Y per sheet (RECONSTRUCTED -- the .SS y-anchors are not in the
+// contact sheets; placed against the baked panorama art).
+const OPEN_Y={0:2,1:6,2:18,3:2,4:64,5:20,6:84,7:56,8:36,9:56};
+let OPEN_SKIP=false;
+async function openingPlay(){
+  OPEN_SKIP=false;
+  let table=[],credits=[];
+  try{ const d=await (await fetch('/api/text?file=OPENING')).json();
+    (d['@OPENING']||'').split('\n').forEach(l=>{
+      const m=l.split(';')[0].trim(); if(!m) return;
+      const c=m.split(',').map(v=>parseInt(v,10));
+      if(c.length>=4&&!isNaN(c[0])) table.push({sheet:c[0],tick:c[1],fset:c[2],xbase:c[3]});
+    });
+    (d['@CREDITS']||'').split('\n').forEach(l=>{
+      const m=l.split(';')[0].trim(); if(!m) return;
+      const c=m.split(',').map(v=>parseInt(v,10));
+      if(c.length>=4&&!isNaN(c[0])) credits.push({t0:c[0],t1:c[1],sheet:c[2],frame:c[3]});
+    });
+  }catch(e){}
+  const S=NS_SC;
+  ui.popup('OPENING',
+    '<div onclick="OPEN_SKIP=true" style="cursor:pointer">'
+    +'<div id="opstage" style="position:relative;width:'+(320*S)+'px;height:'+(200*S)+'px;'
+    +'background:#000;image-rendering:pixelated;overflow:hidden">'
+    +'<canvas id="opcv" width="'+(320*S)+'" height="'+(200*S)+'" '
+    +'style="position:absolute;left:0;top:0;background:transparent;border:none"></canvas></div>'
+    +'<div class="muted" style="font-size:11px;margin-top:4px">click to skip</div></div>');
+  const cv=document.getElementById('opcv'); if(!cv) return;
+  const g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+  const imload=src=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=src; });
+  const pano=await imload('/assets/pik/OPENING.png');
+  const bord=await imload('/assets/pik/OPENBORD.png');
+  const sheets=[]; for(const n of OPEN_ORDER) sheets.push(await openSheet(n));
+  const crd=[await openSheet('OPENCRD1'),await openSheet('OPENCRD2'),await openSheet('OPENCRD3')];
+  const mps1=await openSheet('MPSLOGO'), mps2=await openSheet('MPSNAME'), ship=await openSheet('OPENSHIP');
+  const draw=(fr,x,y)=>{ if(fr) g.drawImage(fr.cv,x*S,y*S,fr.w*S,fr.h*S); };
+  // MPS logo -> name intro (schedule RECONSTRUCTED ~1.5s each; the demo follows)
+  for(const sh of [mps1,mps2]){
+    if(OPEN_SKIP) break;
+    g.clearRect(0,0,cv.width,cv.height);
+    const fr=sh.frames[0];
+    if(fr) draw(fr,160-(fr.w>>1),100-(fr.h>>1));
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  // The panned demo: pan_x 640 -> 0 (1 px/tick), ship along the PATH.DAT track
+  // (endpoints committed: (868,89) -> (~170,87); interpolated), anim elements
+  // activate at their table ticks, credits at x=160/y=183 between their ticks.
+  const TICKS=760;
+  for(let t=0;t<TICKS&&!OPEN_SKIP;t++){
+    const pan=Math.max(0,640-t);
+    g.clearRect(0,0,cv.width,cv.height);
+    if(pano) g.drawImage(pano, pan,0,320,132, 0,24*S,320*S,132*S);
+    // active anim elements (frame cycles ~1/8 ticks, RECONSTRUCTED cycling)
+    for(const a of table){
+      if(t<a.tick) continue;
+      const sh=sheets[a.sheet]; if(!sh||!sh.frames.length) continue;
+      const fr=sh.frames[Math.floor((t-a.tick)/8)%sh.frames.length];
+      const x=a.xbase-(fr.w>>1)-pan, y=24+(OPEN_Y[a.sheet]||40);
+      if(x>-fr.w&&x<320) draw(fr,x,y);
+    }
+    // the ship (PATH.DAT: 701 points 868->170, y~89; X -= sheetW>>2 + pan @0xF6E)
+    if(ship.frames.length){
+      const p=Math.min(t,700), sx=868-(868-170)*p/700, sy=89-2*Math.sin(p/9);
+      const fr=ship.frames[Math.floor(t/6)%ship.frames.length];
+      const x=sx-(fr.w>>2)-pan;
+      if(x>-fr.w&&x<320) draw(fr,x,24+sy-(fr.h>>1));
+    }
+    // credits (plates centered x=160 / y=183 over the bottom border)
+    for(const c of credits){
+      if(t<c.t0||t>c.t1) continue;
+      const sh=crd[c.sheet]||crd[0]; const fr=sh.frames[c.frame%Math.max(1,sh.frames.length)];
+      if(fr) draw(fr,160-(fr.w>>1),183-(fr.h>>1));
+    }
+    if(bord) g.drawImage(bord, 0,0,320,24, 0,0,320*S,24*S),
+             g.drawImage(bord, 0,156,320,44, 0,156*S,320*S,44*S);
+    await new Promise(r=>setTimeout(r,55));           // one 18.2 Hz tick
+  }
+  ui.close();
+  newGameSetup();                                     // the boot flow continues into setup
+}
+
 // ---- Declaration of Independence cinematic (spec/ui/declaration_independence.md) ----
 // func_03DA2A: DECOIND.PIK fills (0,0,320,200); the leader signature (the name at
 // 0x540E + rebel*0x34 = @LEADERNAME) is composed glyph-by-glyph from the
