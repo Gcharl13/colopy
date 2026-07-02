@@ -62,6 +62,7 @@ JsonValue dump_colony(const Colony& c) {
     o.obj["center_terrain"]  = json_num(c.center_terrain);
     o.obj["tory_risen"]      = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = c.tory_risen; return v; }();
     o.obj["status_latch"]    = json_num(c.status_latch);
+    o.obj["export_mask"]     = json_num(c.export_mask);
     // stockpile + workers -- previously dropped on save (fidelity backlog #2).
     JsonValue sp = arr();
     for (int i = 0; i < NGOODS; ++i) sp.arr.push_back(json_num(c.stockpile[i]));
@@ -159,6 +160,7 @@ Colony read_colony(const JsonValue& o) {
     c.center_terrain   = gi(o, "center_terrain");
     c.tory_risen       = gb(o, "tory_risen");
     c.status_latch     = gi(o, "status_latch", 0);
+    c.export_mask      = (uint16_t)gi(o, "export_mask", 0);
     if (const JsonValue* sp = o.find("stockpile"))
         for (int i = 0; i < NGOODS && i < (int)sp->arr.size(); ++i) c.stockpile[i] = sp->arr[i].as_int();
     if (const JsonValue* wk = o.find("workers"))

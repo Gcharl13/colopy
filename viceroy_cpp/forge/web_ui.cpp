@@ -1969,7 +1969,9 @@ function colPlace(built){
   return plot;
 }
 let COL=null;
+let COL_CI=-1;
 async function colOpen(ci){
+  COL_CI=ci;
   COL=await (await fetch('/api/colony/screen?colony='+ci)).json();
   if(COL.error){ ui.toast(COL.error); COL=null; return; }
   nsIconsReady(()=>nsLabels('MISC',()=>nsLabels('CMISC',()=>nsLabels('CTITLE',()=>colRender()))));
@@ -2098,9 +2100,20 @@ function colRender(){
   // Food FIRST; qty white 0x0F, RED 0x0C when over the warehouse cap (all byte-cited).
   h+=colFill(0,179,320,21);
   const cap=c.warehouse_cap||100;
+  // USER RULING (2026-07-02): with a Custom House, clicking a stockpile cell
+  // toggles that good's auto-sell selection; selected goods sell over 50 each
+  // turn. Selected cells show a gold marker + gold qty.
   (c.stockpile||[]).forEach((s,g)=>{
-    h+=nsIcon(GI(g),g*19+3,181,{scale:0.5,title:s.good});
-    h+=nsT(g*19,194,String(s.qty),{w:19,center:true,size:5,col:(s.qty>cap?'#e04040':NS.white)});
+    const sel=c.custom_house&&g>0&&((c.export_mask>>g)&1);
+    const click=c.custom_house&&g>0
+      ?'<div onclick="event.stopPropagation();colExport('+g+')" style="cursor:pointer" '
+        +'title="'+esc(s.good)+(sel?' -- auto-selling over 50 (click to stop)':' -- click to auto-sell over 50')+'">'
+      :'<div>';
+    h+=click+nsIcon(GI(g),g*19+3,181,{scale:0.5,title:s.good})
+      +(sel?nsT(g*19+1,180,'&#9679;',{size:4,col:NS.gold}):'')
+      +nsT(g*19,194,String(s.qty),{w:19,center:true,size:5,
+           col:(s.qty>cap?'#e04040':(sel?NS.gold:NS.white))})
+      +'</div>';
   });
   // The build tool button (the blue anvil in the capture's bottom-right corner).
   h+='<div onclick="event.stopPropagation();colBuildMenu()" style="cursor:pointer" title="Build">'
@@ -2135,7 +2148,16 @@ function colDrawCanvases(){
 }
 // "Select An Item To Build": the eligible @BUILDING rows (name, cost, min_colony gate)
 // -> POST /api/colony/build, then re-open the screen with the new project.
-async function colBuildMenu(){
+async // Toggle a good's Custom-House auto-sell selection (USER RULING 2026-07-02).
+async function colExport(g){
+  try{ const r=await (await fetch('/api/colony/export',{method:'POST',
+      body:JSON.stringify({colony:COL_CI,good:g})})).json();
+    if(r.error){ ui.toast(r.error); return; }
+    ui.toast((r.selected?'Auto-selling over 50: ':'Auto-sell stopped: ')+'good '+g);
+    colOpen(COL_CI);
+  }catch(e){ ui.toast('failed'); }
+}
+function colBuildMenu(){
   const ci=COL?COL.index:0;
   // the byte-verified func_0B900 gate (size/prereq/supersede/FF) runs server-side
   let mr; try{ mr=await (await fetch('/api/colony/buildmenu?colony='+ci)).json(); }

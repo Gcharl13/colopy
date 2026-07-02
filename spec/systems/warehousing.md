@@ -101,3 +101,15 @@ showing each storable good and its on-hand count; `[Tab]` selects the strip
    open, waste if at war for independence), strictly **after** production is banked. Source:
    `colony_sol_tory_turn` (byte-derived; `score_add_money`/tax gate `[0x5382]&1` cross-checked
    vs the EXE). **B.**
+
+> **RULING (2026-07-02, USER GROUND TRUTH — auto-export is Custom-House-gated and
+> per-good SELECTED):** the user rules that the auto-sell requires a **Custom House**
+> (building 18) and a per-good player **selection**: *"if you have a custom house, you
+> can select which goods are sold, and if they are selected they will sell everything
+> over 50."* This supersedes the byte reading above (the unconditional over-100→50
+> disposal in every colony) for the implementation: a colony without a Custom House
+> (or an unselected good) **spoils** above its warehouse cap instead of selling; a
+> selected good on a Custom House sells its stock **over 50** (keep 50) each turn.
+> The per-good selection is engine state (`Colony.export_mask`, toggled per stockpile
+> cell on the colony screen). The byte trace stands as the record of what the EXE
+> does; the ruling defines the product behavior.

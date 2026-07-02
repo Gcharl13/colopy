@@ -56,6 +56,9 @@ struct Colony {
     int  status_latch    = 0;    // +0x1C bits 0x04/0x02: SoL announcement hysteresis latches
                                  //   (majority announced / unanimous announced; func_02D658
                                  //   @0x2DB29/@0x2DB6E/@0x2DBB4/@0x2DBFA)
+    uint16_t export_mask = 0;    // USER RULING (2026-07-02): with a Custom House the player
+                                 //   SELECTS which goods auto-sell; bit g = good g selected.
+                                 //   Each selected good sells everything over 50 each turn.
 
     // Worker/stockpile model (spec/systems/colony.md §3). Each Worker is a colonist assigned
     // to a tile (raw goods 0..7 from the terrain-yield table) or a building (bells/hammers/

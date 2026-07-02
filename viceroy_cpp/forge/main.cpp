@@ -1158,10 +1158,13 @@ static RuleData live_market_rules(const forge::EngineCtx& cx) {
     return rd;
 }
 
-// Auto-export: each turn every colony ships its over-cap tradeables (>100 -> keep 50) to Europe,
-// crediting the owner's gold at the SAME @CARGO market bid + tax the manual sell route uses (so
-// auto-selling and hand-selling price identically), skipping boycotted goods and Food (which feeds
-// growth). No Crown market during the rebellion (spec/systems/colony.md §3: independence gates it).
+// Auto-export (USER RULING 2026-07-02): with a Custom House the player SELECTS which
+// goods auto-sell (Colony.export_mask, toggled per stockpile cell); each SELECTED good
+// sells everything over 50 each turn -- crediting the owner's gold at the SAME @CARGO
+// market bid + tax the manual sell route uses (so auto-selling and hand-selling price
+// identically), skipping boycotted goods and Food (which feeds growth). Unselected
+// goods (and colonies without a Custom House) spoil above the warehouse cap. No Crown
+// market during the rebellion (spec/systems/colony.md §3: independence gates it).
 // This lives Forge-side (not in the pure sim pipeline) because the sale price is @CARGO table data.
 static void auto_export_step() {
     if (g_engine_extra.woi_declared) return;            // no European market while at war with the Crown
@@ -1173,18 +1176,19 @@ static void auto_export_step() {
         int cap = (c.warehouse_lvl + 1) * g_active_rules.cfg.warehouse_cap_base;   // 100 / 200 / 300
         bool spoiled = false;
         for (int gd = 1; gd < NGOODS; ++gd) {           // Food(0) is the growth store, never here
-            if (c.stockpile[gd] <= 100) continue;       // only surplus above the base warehouse
-            if (custom_house) {
-                // Custom House sells surplus directly to Europe -- no ship needed (Peter Stuyvesant).
+            const bool selected = custom_house && ((c.export_mask >> gd) & 1u);
+            if (selected && c.stockpile[gd] > 50) {
+                // Custom House sells the SELECTED good's surplus over 50 directly to
+                // Europe -- no ship needed (Peter Stuyvesant).
                 if ((g_game.powers[0].boycotts >> gd) & 1u) continue;     // boycotted -> can't sell (+0x20)
-                int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;  // keep the lower band
+                int excess = c.stockpile[gd] - 50; c.stockpile[gd] = 50;  // keep 50, sell the rest
                 // The one market path: taxed sale at the published bid; the tax funds the REF;
                 // the volume floods the market and the published price re-derives immediately.
                 RuleData mrd = live_market_rules(cx);
                 total += vc::sim::market_sell(g_game, owner, gd, excess, mrd);
             } else if (c.stockpile[gd] > cap) {
-                // No Custom House: goods above the warehouse cap SPOIL. To sell, ship them to the
-                // Europe market (/api/europe/sell) or build a Custom House (needs Stuyvesant).
+                // Not auto-sold: goods above the warehouse cap SPOIL. To sell, ship them
+                // to Europe (/api/europe/sell), or select the good on a Custom House.
                 c.stockpile[gd] = cap; spoiled = true;
             }
         }
@@ -1588,6 +1592,10 @@ static forge::JsonValue colony_screen_json(int ci) {
       int members = c.population - (int)((tory * c.population + 50) / 100);
       o.obj["sol_members"] = forge::json_num(members); }
     o.obj["warehouse_cap"] = forge::json_num(vc::sim::warehouse_cap(c, g_active_rules));
+    // USER RULING (2026-07-02): the Custom House auto-sell is per-good SELECTED --
+    // the screen's stockpile cells toggle export_mask; selected goods sell over 50.
+    o.obj["custom_house"] = jbool((c.built_mask >> 18) & 1ull);
+    o.obj["export_mask"] = forge::json_num(c.export_mask);
     // Field-production panel data (spec 3.2 / 0.5): the center tile auto-yields its food
     // band + a secondary good (func_00A222 writes [0xA891]/[0xA893]/[0xA894]; the row-2
     // good here is the center terrain's best non-food yield -- the @0x00A34D loop's pick).
@@ -3938,6 +3946,23 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) game_new();
             int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
             return J(200, colony_screen_json(ci));
+        }
+        // Toggle a good's Custom-House auto-sell selection (USER RULING 2026-07-02:
+        // selected goods sell everything over 50 each turn). Needs the Custom House built.
+        if (path == "/api/colony/export" && method == "POST") {
+            forge::JsonValue b = forge::json_parse(body);
+            int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
+            int gd = b.find("good") ? b.find("good")->as_int(-1) : -1;
+            if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
+            if (gd < 1 || gd >= NGOODS) return err(400, "good 1..15 (Food feeds growth)");
+            Colony& c = g_world.colonies[ci];
+            if (!((c.built_mask >> 18) & 1ull)) return err(400, "needs a Custom House");
+            c.export_mask ^= (1u << gd);
+            forge::JsonValue o = jobj();
+            o.obj["ok"] = jbool(true);
+            o.obj["selected"] = jbool((c.export_mask >> gd) & 1u);
+            o.obj["export_mask"] = forge::json_num(c.export_mask);
+            return J(200, o);
         }
         // Assign a colonist to a job: a ring tile (0..7) producing a raw good, or a building
         // slot (tile -1) producing Hammers(16)/Crosses(17)/Bells(18). Production recomputes.
