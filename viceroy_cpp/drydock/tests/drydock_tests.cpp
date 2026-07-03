@@ -98,6 +98,8 @@ static void test_multi_and_lists() {
     check(rs.size() == 2 && rs[1].find("tags") && rs[1].find("tags")->list.empty(), "empty list");
 }
 
+static void walk_dir(const std::string& dir, std::vector<std::string>& out);   // below
+
 static std::string slurp(const char* path) {
     std::ifstream f(path);
     std::stringstream ss; ss << f.rdbuf();
@@ -163,12 +165,33 @@ static void test_schema() {
     check(req_hit, "validate flags missing required field");
 }
 
-static void test_ruledata_parity() {
-    // The migration hard gate: the values loaded from data/base/*.rec must be
-    // IDENTICAL to the compiled defaults (which verify_rules.py proves equal
-    // to the original extraction tables). Zero out the migrated fields first
-    // so equality proves the values actually came from the records.
+static void test_loader_faithfulness() {
+    // AUTHORITY FLIP (ruling Q7): data/base is the authoring truth and may
+    // legitimately diverge from the extraction once the user edits, so this
+    // gate proves the BRIDGE, not the migration: whatever the records say is
+    // exactly what lands in RuleData (poison-then-load against values read
+    // independently from the parsed records). Spec fidelity stays gated by
+    // verify_rules.py, which pins the COMPILED DEFAULTS to the byte-verified
+    // extraction tables forever.
     using vc::sim::RuleData;
+    std::vector<std::string> files;
+    std::vector<Record> recs;
+    std::string err;
+    walk_dir("data/base", files);
+    for (const auto& p : files) parse_records(slurp(p.c_str()), recs, err);
+    auto by_index = [&](const char* ty, long long idx) -> const Record* {
+        for (const Record& r : recs) {
+            if (r.type() != ty) continue;
+            const Value* v = r.find("index");
+            if (v && v->kind == ValKind::Int && v->i == idx) return &r;
+        }
+        return nullptr;
+    };
+    auto gi = [](const Record* r, const char* f) -> long long {
+        const Value* v = r ? r->find(f) : nullptr;
+        return (v && v->kind == ValKind::Int) ? v->i : -12345;
+    };
+
     RuleData def = vc::sim::make_default_rules();
     RuleData rd  = def;
     // @UNIT has 23 rows; units[23] is the zeroed padding slot with no record
@@ -178,25 +201,31 @@ static void test_ruledata_parity() {
     for (auto& c : rd.cargo) { c.start1 = c.start2 = c.lo = c.hi = c.burden = -999; }
     for (auto& j : rd.jobs)  { j.school_tier = -999; j.value = -999; }
     std::string msg;
-    check(forge::drydock_apply_base(rd, "data", msg), "parity: drydock_apply_base loads data/");
+    check(forge::drydock_apply_base(rd, "data", msg), "loader: drydock_apply_base loads data/");
     if (!msg.empty()) std::printf("       %s\n", msg.c_str());
     int bad = 0;
-    for (size_t i = 0; i < NU; ++i)
-        if (rd.units[i].attack != def.units[i].attack || rd.units[i].defense != def.units[i].defense ||
-            rd.units[i].cargo != def.units[i].cargo || rd.units[i].movement != def.units[i].movement) ++bad;
-    check(bad == 0, "parity: every UNIT field == compiled defaults");
+    for (size_t i = 0; i < NU; ++i) {
+        const Record* r = by_index("unit", (long long)i);
+        if (rd.units[i].attack != gi(r, "attack") || rd.units[i].defense != gi(r, "combat") ||
+            rd.units[i].cargo != gi(r, "cargo") || rd.units[i].movement != gi(r, "movement")) ++bad;
+    }
+    check(bad == 0, "loader: every UNIT field == its record");
     bad = 0;
-    for (size_t i = 0; i < rd.cargo.size(); ++i)
-        if (rd.cargo[i].start1 != def.cargo[i].start1 || rd.cargo[i].start2 != def.cargo[i].start2 ||
-            rd.cargo[i].lo != def.cargo[i].lo || rd.cargo[i].hi != def.cargo[i].hi ||
-            rd.cargo[i].burden != def.cargo[i].burden) ++bad;
-    check(bad == 0, "parity: every GOOD market field == compiled defaults");
+    for (size_t i = 0; i < 16; ++i) {                  // goods 16+ are pseudo-goods, no market row
+        const Record* r = by_index("good", (long long)i);
+        if (rd.cargo[i].start1 != gi(r, "price_start1") || rd.cargo[i].start2 != gi(r, "price_start2") ||
+            rd.cargo[i].lo != gi(r, "drift_low") || rd.cargo[i].hi != gi(r, "drift_high") ||
+            rd.cargo[i].burden != gi(r, "burden")) ++bad;
+    }
+    check(bad == 0, "loader: every GOOD market field == its record");
     bad = 0;
-    for (size_t i = 0; i < rd.jobs.size(); ++i)
-        if (rd.jobs[i].school_tier != def.jobs[i].school_tier || rd.jobs[i].value != def.jobs[i].value) ++bad;
-    check(bad == 0, "parity: every PROF field == compiled defaults");
+    for (size_t i = 0; i < rd.jobs.size(); ++i) {
+        const Record* r = by_index("prof", (long long)i);
+        if (rd.jobs[i].school_tier != gi(r, "school_tier") || rd.jobs[i].value != gi(r, "europe_value")) ++bad;
+    }
+    check(bad == 0, "loader: every PROF field == its record");
 
-    // TERR: poison the four terrain arrays, reload, compare
+    // TERR: poison the four terrain arrays, reload, compare to the records
     RuleData rt = def;
     for (size_t i = 0; i < rt.terrain_defense.size(); ++i) {
         rt.terrain_defense[i] = -999; rt.terrain_move[i] = -999;
@@ -204,17 +233,25 @@ static void test_ruledata_parity() {
     }
     rt.cfg.food_growth_threshold = -999;                 // CONF spot-check
     rt.cfg.fortify_def_num = -999;
-    check(forge::drydock_apply_base(rt, "data", msg), "parity: reload with terr/conf");
+    check(forge::drydock_apply_base(rt, "data", msg), "loader: reload with terr/conf");
     bad = 0;
-    for (size_t i = 0; i < rt.terrain_defense.size(); ++i)
-        if (rt.terrain_defense[i] != def.terrain_defense[i] ||
-            rt.terrain_move[i] != def.terrain_move[i] ||
-            rt.terrain_improve[i] != def.terrain_improve[i] ||
-            rt.terrain_value[i] != def.terrain_value[i]) ++bad;
-    check(bad == 0, "parity: every TERR array == compiled defaults");
-    check(rt.cfg.food_growth_threshold == def.cfg.food_growth_threshold &&
-          rt.cfg.fortify_def_num == def.cfg.fortify_def_num,
-          "parity: CONF scalars == compiled defaults");
+    for (size_t i = 0; i < rt.terrain_defense.size(); ++i) {
+        const Record* r = by_index("terr", (long long)i);
+        if (rt.terrain_defense[i] != gi(r, "defensive") ||
+            rt.terrain_move[i] != gi(r, "movement") ||
+            rt.terrain_improve[i] != gi(r, "improvement") ||
+            rt.terrain_value[i] != gi(r, "value")) ++bad;
+    }
+    check(bad == 0, "loader: every TERR array == its record");
+    auto conf_val = [&](const char* name) -> long long {
+        for (const Record& r : recs)
+            if (r.type() == "conf" && r.id == std::string("conf.") + name)
+                return gi(&r, "value");
+        return -12345;
+    };
+    check(rt.cfg.food_growth_threshold == conf_val("food_growth_threshold") &&
+          rt.cfg.fortify_def_num == conf_val("fortify_def_num"),
+          "loader: CONF scalars == their records");
 }
 
 static void test_reflection() {
@@ -228,7 +265,7 @@ static void test_reflection() {
     check(load_good(rs[0], g), "reflect: generic load into DDGood");
     check(g.index == 0 && g.has_index, "reflect: index field");
     check(g.name == "Food" && g.has_name, "reflect: string field");
-    check(g.burden == 7, "reflect: burden == 7 (the Food spread)");
+    check(g.has_burden, "reflect: burden field present");   // value is user-editable (Q7 flip)
     Record back = reflect_serialize(good_type, "good.food", &g);
     check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
     check(dd_all_types_count == 16 && std::string(good_type.code) == "good",
@@ -451,7 +488,7 @@ int main() {
     test_multi_and_lists();
     test_dicts();
     test_schema();
-    test_ruledata_parity();
+    test_loader_faithfulness();
     test_reflection();
     test_store();
     test_real_refs();

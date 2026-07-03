@@ -139,12 +139,12 @@ add_test(NAME drydock_tests COMMAND drydock_tests
 # set, then compile + read back the pack.
 add_test(NAME drydockc_gate COMMAND drydockc data -o ${CMAKE_BINARY_DIR}/game.pack
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
-if(PYTHON3)
-  # data/base provenance: a regeneration from the extraction tables must be
-  # byte-identical to the committed .rec files.
-  add_test(NAME drydock_migrate_check COMMAND ${PYTHON3} tools/drydock_migrate.py --check
-           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
-endif()
+# AUTHORITY FLIP (ruling Q7, MIGRATION-LOG 20): data/base is the authoring
+# truth now, free to diverge from the extraction as the user edits -- so the
+# migration-era provenance gate (drydock_migrate.py --check as a ctest) is
+# RETIRED. The script remains for reference regeneration. Loader correctness
+# stays gated by drydock_tests (records -> RuleData faithfulness) and spec
+# fidelity by verify_rules.py (compiled defaults == extraction, forever).
 add_test(NAME forge_map COMMAND forge map selftest)
 add_test(NAME forge_rules COMMAND forge rules selftest)
 add_test(NAME forge_mod COMMAND forge mod selftest)
