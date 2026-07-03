@@ -708,7 +708,8 @@ static void game_new(int nation = 0, int difficulty = 1, bool random_map = false
     g_engine_extra = forge::EngineExtra{}; g_rng = (int)(rdv() ^ 0x2BAD1234u);
 
     forge::JsonValue sc;
-    try { sc = forge::json_parse_file("data_extracted/engine/scenarios/new_world.json"); } catch (...) {}
+    if (!forge::drydock_scenario_json("new_world", sc))   // store-authoritative when loaded
+        try { sc = forge::json_parse_file("data_extracted/engine/scenarios/new_world.json"); } catch (...) {}
     auto scn = [&](const char* k) -> const forge::JsonValue* {
         return sc.type == forge::JsonValue::Object ? sc.find(k) : nullptr; };
 
@@ -5655,9 +5656,15 @@ static forge::JsonValue build_game_bundle() {
         try { screens.obj[id] = forge::load_screen(id); } catch (...) {}
     b.obj["screens"] = screens;
 
-    // Every scenario (data_extracted/engine/scenarios/*.json), keyed by stem.
+    // Every scenario, keyed by stem (scen records when the store is loaded,
+    // else data_extracted/engine/scenarios/*.json).
     forge::JsonValue scenarios = jobj();
-    try {
+    if (const auto ids = forge::drydock_scenario_ids(); !ids.empty()) {
+        for (const std::string& id : ids) {
+            forge::JsonValue v;
+            if (forge::drydock_scenario_json(id, v)) scenarios.obj[id] = v;
+        }
+    } else try {
         for (const auto& e : fs::directory_iterator("data_extracted/engine/scenarios")) {
             if (e.path().extension() != ".json") continue;
             forge::JsonValue v = tryfile(e.path().string().c_str());

@@ -231,8 +231,8 @@ static void test_reflection() {
     check(g.burden == 7, "reflect: burden == 7 (the Food spread)");
     Record back = reflect_serialize(good_type, "good.food", &g);
     check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
-    check(dd_all_types_count == 15 && std::string(good_type.code) == "good",
-          "reflect: type registry populated (schm meta + natn/ffat/msge/text/sprt/pltt/dlog)");
+    check(dd_all_types_count == 16 && std::string(good_type.code) == "good",
+          "reflect: type registry populated (schm meta + natn/ffat/msge/text/sprt/pltt/dlog/scen)");
 }
 
 static Store make_test_store() {

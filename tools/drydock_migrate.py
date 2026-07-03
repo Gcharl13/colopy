@@ -237,6 +237,25 @@ def main():
         drift = emit(os.path.join("dlog", scr["id"] + ".rec"),
                      render(rid, fields), check, drift)
 
+    # SCEN: authored scenarios (engine/scenarios/*.json); _doc carries into notes
+    for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/scenarios/*.json"))):
+        scn = json.load(open(f))
+        rid = f"scen.{scn['id']}"
+        fields = [("name", quote(scn["name"]))]
+        if str(scn.get("map", "")):
+            fields.append(("map", quote(scn["map"])))
+        for k in ("year", "season", "end_year", "start_gold",
+                  "default_nation", "default_difficulty"):
+            if k in scn:
+                fields.append((k, str(int(scn[k]))))
+        for k in ("colonies", "units"):
+            if scn.get(k):
+                fields.append((k, rec_value(scn[k])))
+        if str(scn.get("_doc", "")):
+            fields.append(("notes", quote(scn["_doc"])))
+        drift = emit(os.path.join("scen", scn["id"] + ".rec"),
+                     render(rid, fields), check, drift)
+
     # SPRT: the sprite catalog (sprites.json). The verbatim catalog id lives in
     # `sid` (record slugs flatten its dot namespace); the one duplicated catalog
     # id (building.town_hall x3 tiers) dedups to _2/_3 slugs.

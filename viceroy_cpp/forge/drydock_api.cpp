@@ -348,6 +348,29 @@ static bool dd_screen_save(const std::string& id, const JsonValue& screen, std::
 
 static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd_screen_save};
 
+// ---- SCEN consumer cutover: scenario seed data -----------------------------------
+std::vector<std::string> drydock_scenario_ids() {
+    std::vector<std::string> ids;
+    if (!g_ready) return ids;
+    auto ti = g_store.type_index.find("scen");
+    if (ti == g_store.type_index.end()) return ids;
+    for (const Record& r : g_store.records[ti->second])
+        ids.push_back(r.id.substr(5));                    // "scen.new_world" -> "new_world"
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+
+bool drydock_scenario_json(const std::string& id, JsonValue& out) {
+    if (!g_ready) return false;
+    const Record* r = store_find(g_store, "scen." + id);
+    if (!r) return false;
+    out = JsonValue{}; out.type = JsonValue::Object;
+    out.obj["id"] = json_str(id);
+    for (const auto& f : r->fields)
+        out.obj[f.name == "notes" ? "_doc" : f.name] = value_to_json(f.value);
+    return true;
+}
+
 // ---- SPRT/PLTT consumer cutover --------------------------------------------------
 // The sprite catalog (/api/sprites -> web SPRITECAT keyed by the verbatim sid)
 // and the palette asset (/assets/palette.json -> NVPAL) rebuild from the store.

@@ -1,0 +1,16 @@
+record schm.scen {
+  version = 1
+  fields  = [
+    { name = "name", type = "str", required = true, doc = "Scenario display name (the record slug is the scenario id)" },
+    { name = "map", type = "str", doc = "Map file the scenario plays on (.MP)" },
+    { name = "year", type = "int", doc = "Starting year" },
+    { name = "season", type = "int", doc = "Starting season (0 Spring / 1 Autumn)" },
+    { name = "end_year", type = "int", doc = "Retirement/end year" },
+    { name = "start_gold", type = "int", doc = "Starting treasury (difficulty adjusts on top)" },
+    { name = "default_nation", type = "int", min = 0, max = 3, doc = "Pre-selected nation on the new-game screen" },
+    { name = "default_difficulty", type = "int", min = 0, max = 4, doc = "Pre-selected difficulty" },
+    { name = "colonies", type = "list<dict>", ordered = true, doc = "Authored starting colonies: x/y (snapped to land at load), buildings [@BUILDING ids], workers [{profession (@JOB id), good, tile (-1 = building slot), expert}]" },
+    { name = "units", type = "list<dict>", ordered = true, doc = "Authored starting units: type (@UNIT row id), colony anchor or x/y; on_water_adjacent = 1 places a ship on adjacent water (presence-checked; JSON true migrates as 1)" },
+    { name = "notes", type = "str", doc = "Free prose (carries the scenario _doc)" }
+  ]
+}

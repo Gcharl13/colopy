@@ -56,6 +56,11 @@ bool drydock_sprites_json(std::string& out);
 // {index,r,g,b,hex} entries derived from the ordered hex colors).
 bool drydock_palette_json(std::string& out);
 
+// Store-authoritative scenario seed data (scen records): the ids, and one
+// scenario as the same JSON shape game_new / the bundle exporter consume.
+std::vector<std::string> drydock_scenario_ids();
+bool drydock_scenario_json(const std::string& id, JsonValue& out);
+
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).
 HttpResponse drydock_route(const std::string& method, const std::string& path,
