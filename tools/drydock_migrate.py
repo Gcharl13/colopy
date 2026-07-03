@@ -49,6 +49,24 @@ TYPES = [
     ]),
 ]
 
+# PROF.produces -- ref<good> keyed by @JOB row ordinal. Data-sourced from the
+# engine's profession->good mapping, not invented:
+#   0-7  tile professions == the terrain yield columns y_farmer..y_silver, whose
+#        column index IS the good id (engine.cpp terrain_good_yield YCOL[good]);
+#   8    Fisherman -> Food via the y_fisherman ocean-food column (engine.cpp:212);
+#   9-15 artisans: the finished good whose throughput cap the worker feeds in
+#        colony_compute_production (Rum<-Distiller ... Muskets<-Gunsmith;
+#        Carpenter's output is the Hammers pseudo-good, index 16);
+#   16/17 Preacher -> Crosses (17), Statesman -> Liberty Bells (18)
+#        (colony_compute_production g==17/g==18 branches).
+# Non-producing classes (Teacher 18 .. Convert 27) get no produces field.
+PROF_PRODUCES = {
+    0: "food", 1: "sugar", 2: "tobacco", 3: "cotton", 4: "furs", 5: "lumber",
+    6: "ore", 7: "silver", 8: "food",
+    9: "rum", 10: "cigars", 11: "cloth", 12: "coats", 13: "hammers",
+    14: "tools", 15: "muskets", 16: "crosses", 17: "liberty_bells",
+}
+
 TERR_COLS = [("name", "name", "str"), ("movement", "movement", "int"),
              ("defensive", "defensive", "int"), ("improvement", "improvement", "int"),
              ("value", "value", "int"), ("y_farmer", "y_farmer", "int"),
@@ -172,6 +190,8 @@ def main():
                 if str(v).strip() == "":
                     continue                      # empty source cell -> field absent (lossless)
                 fields.append((fname, quote(str(v)) if kind == "str" else str(int(v))))
+            if type_code == "prof" and idx in PROF_PRODUCES:
+                fields.append(("produces", "good." + PROF_PRODUCES[idx]))
             drift = emit(os.path.join(type_code, rid.split(".", 1)[1] + ".rec"),
                          render(rid, fields), check, drift)
     if check:

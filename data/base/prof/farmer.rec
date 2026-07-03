@@ -4,4 +4,5 @@ record prof.farmer {
   expert_name  = "Expert Farmers"
   school_tier  = 1
   europe_value = 1100
+  produces     = good.food
 }

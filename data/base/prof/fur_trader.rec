@@ -4,4 +4,5 @@ record prof.fur_trader {
   expert_name  = "Master Fur Traders"
   school_tier  = 2
   europe_value = 950
+  produces     = good.coats
 }

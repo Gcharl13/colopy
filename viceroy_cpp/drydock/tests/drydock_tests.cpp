@@ -12,6 +12,9 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <dirent.h>
+#include <sys/stat.h>
 
 static int g_fail = 0;
 static void check(bool ok, const char* what) {
@@ -311,6 +314,78 @@ static void test_store() {
     check(!s.dirty.empty(), "store: dirty set tracks edits");
 }
 
+static void walk_dir(const std::string& dir, std::vector<std::string>& out) {
+    DIR* d = opendir(dir.c_str());
+    if (!d) return;
+    while (dirent* e = readdir(d)) {
+        std::string n = e->d_name;
+        if (n == "." || n == "..") continue;
+        std::string p = dir + "/" + n;
+        struct stat st{};
+        if (stat(p.c_str(), &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) walk_dir(p, out);
+        else if (n.size() > 4 && n.substr(n.size() - 4) == ".rec") out.push_back(p);
+    }
+    closedir(d);
+    std::sort(out.begin(), out.end());
+}
+
+static void test_real_refs() {
+    // P2 real refs: prof.produces = ref<good>, data-sourced from the engine's
+    // profession->good mapping (terrain yield columns for tile profs, the
+    // colony_compute_production outputs for artisans). The store's ref index,
+    // used-by, and safe delete run over the GENUINE data/base topology here.
+    std::vector<std::string> files;
+    std::vector<Record> schm, recs;
+    std::string err;
+    bool ok = true;
+    walk_dir("data/schema", files);
+    for (const auto& p : files) ok = ok && parse_records(slurp(p.c_str()), schm, err);
+    files.clear();
+    walk_dir("data/base", files);
+    for (const auto& p : files) ok = ok && parse_records(slurp(p.c_str()), recs, err);
+    Schema sc;
+    ok = ok && schema_load(schm, sc, err);
+    check(ok, "real refs: data/ parses");
+    Store s;
+    check(store_init(s, sc, recs, err), "real refs: store_init over data/base");
+    if (!err.empty()) std::printf("       %s\n", err.c_str());
+
+    // 18 producing professions carry the ref (0-17); the 10 classes don't
+    int nrefs = 0;
+    for (const Record& r : recs)
+        if (r.type() == "prof" && r.find("produces")) ++nrefs;
+    check(nrefs == 18, "real refs: 18 prof records carry produces");
+
+    // Farmer AND Fisherman both produce Food (y_farmer / y_fisherman columns)
+    auto food = store_used_by(s, "good.food");
+    bool farmer = false, fisher = false;
+    for (const auto& [src, fld] : food)
+        if (fld == "produces") { farmer |= src == "prof.farmer"; fisher |= src == "prof.fisherman"; }
+    check(food.size() == 2 && farmer && fisher, "real refs: good.food used by farmer + fisherman");
+
+    // Statesman -> the Liberty Bells pseudo-good (index 18)
+    auto bells = store_used_by(s, "good.liberty_bells");
+    check(bells.size() == 1 && bells[0].first == "prof.statesman",
+          "real refs: liberty_bells used by statesman only");
+
+    // safe delete on the real topology: Rum is Distiller's output
+    check(!store_delete(s, "good.rum", err) && err.find("prof.distiller") != std::string::npos,
+          "real refs: delete good.rum refused, names prof.distiller");
+
+    // a dangling ref is a validation error at the store chokepoint... shape only;
+    // wrong TARGET TYPE is rejected here (existence is drydockc's whole-set gate)
+    Value wrong = Value::make_token("unit.frigate");
+    check(!store_set(s, "prof.farmer", "produces", &wrong, err),
+          "real refs: ref to the wrong type refused");
+    Value horses = Value::make_token("good.horses");
+    check(store_set(s, "prof.farmer", "produces", &horses, err) &&
+          store_used_by(s, "good.horses").size() == 1,
+          "real refs: retarget updates the real index");
+    check(store_undo(s, err) && store_used_by(s, "good.food").size() == 2,
+          "real refs: undo restores the extraction truth");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
@@ -321,6 +396,7 @@ int main() {
     test_ruledata_parity();
     test_reflection();
     test_store();
+    test_real_refs();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }

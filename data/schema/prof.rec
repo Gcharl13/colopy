@@ -6,6 +6,7 @@ record schm.prof {
     { name = "expert_name", type = "str", doc = "Expert display name (plural form, verbatim)" },
     { name = "school_tier", type = "int", min = 0, max = 4, doc = "Minimum school tier that teaches it (1 Schoolhouse / 2 College / 3 University / 4 not school-taught, training.md)" },
     { name = "europe_value", type = "int", doc = "Europe recruit value (@JOB europe_value)" },
+    { name = "produces", type = "ref<good>", doc = "The good this profession produces when working (tile profs 0-8: the terrain yield column keyed by good id, engine terrain_good_yield; artisans 9-17: the manufacturing/building outputs in colony_compute_production -- Carpenter->Hammers 16, Preacher->Crosses 17, Statesman->Liberty Bells 18). Absent for non-producing classes (Teacher, Colonist, Pioneer, Soldier, Scout, Dragoon, Missionary, Ind. Servant, Criminal, Convert)" },
     { name = "notes", type = "str", doc = "Free prose" }
   ]
 }

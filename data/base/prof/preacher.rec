@@ -4,4 +4,5 @@ record prof.preacher {
   expert_name  = "Firebrand Preachers"
   school_tier  = 3
   europe_value = 1500
+  produces     = good.crosses
 }

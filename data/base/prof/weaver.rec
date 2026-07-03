@@ -4,4 +4,5 @@ record prof.weaver {
   expert_name  = "Master Weavers"
   school_tier  = 2
   europe_value = 1300
+  produces     = good.cloth
 }

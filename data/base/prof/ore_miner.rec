@@ -4,4 +4,5 @@ record prof.ore_miner {
   expert_name  = "Expert Ore Miners"
   school_tier  = 1
   europe_value = 600
+  produces     = good.ore
 }

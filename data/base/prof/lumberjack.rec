@@ -4,4 +4,5 @@ record prof.lumberjack {
   expert_name  = "Expert Lumberjacks"
   school_tier  = 1
   europe_value = 700
+  produces     = good.lumber
 }

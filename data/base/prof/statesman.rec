@@ -4,4 +4,5 @@ record prof.statesman {
   expert_name  = "Elder Statesmen"
   school_tier  = 3
   europe_value = 1900
+  produces     = good.liberty_bells
 }

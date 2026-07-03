@@ -4,4 +4,5 @@ record prof.tobacconist {
   expert_name  = "Master Tobacconists"
   school_tier  = 2
   europe_value = 1200
+  produces     = good.cigars
 }

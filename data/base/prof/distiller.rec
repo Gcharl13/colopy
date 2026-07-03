@@ -4,4 +4,5 @@ record prof.distiller {
   expert_name  = "Master Distiller"
   school_tier  = 2
   europe_value = 1100
+  produces     = good.rum
 }

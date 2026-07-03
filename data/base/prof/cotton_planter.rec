@@ -4,4 +4,5 @@ record prof.cotton_planter {
   expert_name  = "Master Cotton Planters"
   school_tier  = 2
   europe_value = -1
+  produces     = good.cotton
 }

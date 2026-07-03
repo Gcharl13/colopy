@@ -4,4 +4,5 @@ record prof.blacksmith {
   expert_name  = "Master Blacksmiths"
   school_tier  = 2
   europe_value = 1050
+  produces     = good.tools
 }

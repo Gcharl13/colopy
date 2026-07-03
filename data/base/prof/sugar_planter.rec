@@ -4,4 +4,5 @@ record prof.sugar_planter {
   expert_name  = "Master Sugar Planters"
   school_tier  = 2
   europe_value = -1
+  produces     = good.sugar
 }

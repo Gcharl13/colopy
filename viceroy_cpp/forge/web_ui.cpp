@@ -1228,6 +1228,7 @@ async function ddFormRender(id){
     +'<b style="font-size:15px">'+esc(id)+'</b>'+(d.dirty?' <span class="warn">modified</span>':'')
     +'<button class="act" onclick="ddCloseForm()" style="margin-left:auto">grid</button></div>';
   h+='<table style="max-width:640px">';
+  const refTypes=new Set();
   for(const f of (t?t.fields:[])){
     const v=d.fields[f.name];
     const shown=(v&&typeof v==='object'&&'ref' in v)?v.ref:(v===undefined?'':v);
@@ -1238,7 +1239,7 @@ async function ddFormRender(id){
         +'" data-f="'+esc(f.name)+'" data-k="3" onchange="ddEdit(this)" style="width:200px">';
       if(shown) h+=' <a href="#" onclick="ddForm(\''+esc(String(shown))+'\');return false">&#8599;</a>';
       h+='<datalist id="ddrefs_'+esc(f.ref)+'"></datalist>';
-      ddFillRefs(f.ref);
+      refTypes.add(f.ref);                             // filled AFTER the HTML lands in the DOM
     } else if(f.kind===0){                             // int: number input with range
       h+='<input type="number" value="'+esc(String(shown))+'"'
         +(f.min!==undefined?' min="'+f.min+'"':'')+(f.max!==undefined?' max="'+f.max+'"':'')
@@ -1258,6 +1259,7 @@ async function ddFormRender(id){
   $('#ddform').innerHTML=h;
   $('#ddform').style.display='';
   $('#ddgrid').style.display='none';
+  refTypes.forEach(rt=>ddFillRefs(rt));
   // inspector: used-by from the ref index (CK Use Info)
   let ins='<h4>used by ('+d.used_by.length+')</h4>';
   for(const u of d.used_by)
