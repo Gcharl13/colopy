@@ -125,8 +125,16 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   RuleData fields applied from the store live; CONF seeds defaults at serve start (Rules
   overlay stays the live-tweak layer until P5); PHAS/BLDG/NATN/FFAT under the write-through
   + provenance gate; MSGE/TEXT/SPRT/PLTT fully cut over.
-- **Post-P2 (out of the approved scope):** EVNT decomposition of the node graphs (Q5),
-  DLOG/SCEN, overlay subsumption (P5), JSON source deletion once nothing reads them.
+- **P3 landed (MIGRATION-LOG 17–19):** the engine can boot the whole store from the
+  `drydockc` pack (`forge serve <port> --pack game.pack`; text stays the dev default);
+  **DLOG** — the 8 screen layouts are records and the Screens-tab designer's save is
+  ordinary `store_set` calls (validated, journaled, undoable); **SCEN** — new games seed
+  from the scenario record. Store: **16 types / 1,191 records**.
+- **Remaining (out of the approved P0–P2 scope):** EVNT decomposition of the node graphs
+  (Q5 — the last behavior-as-programs subsystem), overlay subsumption (P5: Rules tab over
+  CONF records, mod.cpp retires), structured-field form widgets (lists/dicts are
+  read-only in the form; editable via API/text), JSON extraction files stay as the
+  provenance layer (GAP-ANALYSIS §4 disposition) with runtime reads already store-first.
 
 ## 4. No spec counterpart — keep / migrate / retire
 
