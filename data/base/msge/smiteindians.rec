@@ -1,0 +1,5 @@
+record msge.smiteindians {
+  key   = "@SMITEINDIANS"
+  text  = "\"We shall ruthlessly smite the heathen {%STRING0}\nin exchange for {%NUMBER0$} to cover our expenses.\"\n\nPay {%NUMBER0$}.\nNever mind."
+  box_w = 220
+}

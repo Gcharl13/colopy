@@ -1,0 +1,6 @@
+record msge.intervention {
+  key     = "@INTERVENTION"
+  text    = "{%STRING0} declares war on %STRING1 and joins the War of Independence\non the Rebel side! %STRING2 dispatched to %STRING3 for\nstrategic consultations.  %STRING4 navy plans bombardment of\nTory-held fortifications."
+  box_w   = 220
+  speaker = "MSS1"
+}

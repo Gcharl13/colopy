@@ -1,0 +1,5 @@
+record msge.europenotavail {
+  key   = "@EUROPENOTAVAIL"
+  text  = "The European Status Screen is no longer available once\nthe {War of Independence} has begun.  Ships cannot sail to\nEurope for the duration of the war.  Colonies which build\n{Custom House} improvements can trade with European smugglers,\nhowever."
+  box_w = 190
+}

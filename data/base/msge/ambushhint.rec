@@ -1,0 +1,6 @@
+record msge.ambushhint {
+  key     = "@AMBUSHHINT"
+  text    = "Your Excellency, the King's armies have little experience with the\nkind of tactics that\nare necessary when fighting in the New World.\nIf our troops attack the King's troops while {neither} unit is in a\ncolony square, we gain an {ambush bonus} equal to the terrain's normal\ndefensive value!"
+  box_w   = 220
+  speaker = "MSS1"
+}

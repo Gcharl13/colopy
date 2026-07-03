@@ -1,0 +1,6 @@
+record msge.kingmobilize {
+  key     = "@KINGMOBILIZE"
+  text    = "Parliament votes additional funds to suppress\nrevolution in %STRING0.  {%STRING1} mobilized in %STRING2."
+  box_w   = 190
+  speaker = "MSS1"
+}

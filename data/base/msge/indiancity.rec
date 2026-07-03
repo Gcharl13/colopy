@@ -1,0 +1,5 @@
+record msge.indiancity {
+  key   = "@INDIANCITY"
+  text  = "The {%STRING0} settlers in {%STRING3} have committed\nintolerable acts of destruction against {%STRING1} lands\nand the %STRING1 people.  We therefore demand {%NUMBER0 %STRING2}\nfrom the colony stores as reparations.\"\n\nMan the stockade.\nHand them over."
+  box_w = 190
+}

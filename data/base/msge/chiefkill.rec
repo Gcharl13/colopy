@@ -1,0 +1,7 @@
+record msge.chiefkill {
+  key     = "@CHIEFKILL"
+  text    = "\"You have broken sacred taboos of the {%STRING0} tribe!\nWe shall tie you up for target practice.\""
+  box_w   = 190
+  sprite  = "woodcut.wdcut12"
+  speaker = "IND"
+}

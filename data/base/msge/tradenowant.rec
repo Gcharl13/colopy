@@ -1,0 +1,6 @@
+record msge.tradenowant {
+  key     = "@TRADENOWANT"
+  text    = "\"We are not interested in your {%NUMBER0 %STRING0}.  Come back when\nyou have something better to offer.\""
+  box_w   = 190
+  speaker = "IND"
+}

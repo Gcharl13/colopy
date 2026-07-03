@@ -1,0 +1,5 @@
+record msge.traincriminal {
+  key   = "@TRAINCRIMINAL"
+  text  = "A {criminal} in {%STRING0} has become an {indentured\nservant} through education."
+  box_w = 190
+}

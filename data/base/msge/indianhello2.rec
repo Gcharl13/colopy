@@ -1,0 +1,5 @@
+record msge.indianhello2 {
+  key   = "@INDIANHELLO2"
+  text  = "\"The {%STRING0} tribe greets the most ruthless {%STRING1}\nof the {%STRING2}.\""
+  box_w = 190
+}

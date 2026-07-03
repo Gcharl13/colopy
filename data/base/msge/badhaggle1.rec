@@ -1,0 +1,5 @@
+record msge.badhaggle1 {
+  key   = "@BADHAGGLE1"
+  text  = "\"We have already told you that we no longer want your\n{%STRING0}.  Come back when you have something\nelse.\""
+  box_w = 190
+}

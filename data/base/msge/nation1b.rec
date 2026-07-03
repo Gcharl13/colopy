@@ -1,0 +1,5 @@
+record msge.nation1b {
+  key   = "@NATION1B"
+  text  = "^^FRANCE\n^^_\nTo reflect the superior ability of the French to cooperate with the\nnative population, the French player's colonies and units cause {alarm} among\nthe Indians at only {half} the rate of other European powers."
+  box_w = 300
+}

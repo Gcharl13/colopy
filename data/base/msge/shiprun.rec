@@ -1,0 +1,6 @@
+record msge.shiprun {
+  key     = "@SHIPRUN"
+  text    = "{%STRING2 %STRING0} slips past {%STRING1 %STRING3}!"
+  box_w   = 190
+  speaker = "MSS0"
+}

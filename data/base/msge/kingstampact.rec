@@ -1,0 +1,6 @@
+record msge.kingstampact {
+  key     = "@KINGSTAMPACT"
+  text    = "\"%STRING0 %STRING1.  The ungrateful attitude of the colonists\nin {%STRING2} makes us ill.  We have therefore decided to teach\nthem proper respect for their sovereign by imposing a new {Stamp Act},\nraising the tax rate by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.\nIf you wish, you may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

@@ -1,0 +1,6 @@
+record msge.colonistcapture {
+  key    = "@COLONISTCAPTURE"
+  text   = "{%STRING0} colonists CAPTURED by the {%STRING1}!"
+  box_w  = 190
+  sprite = "woodcut.wdcut10"
+}

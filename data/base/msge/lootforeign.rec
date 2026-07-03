@@ -1,0 +1,7 @@
+record msge.lootforeign {
+  key     = "@LOOTFOREIGN"
+  text    = "Spies report: {%STRING0} treasure fleet laden with {%NUMBER0$} arrives\nin %STRING1.  %STRING0 king pleased with booty."
+  box_w   = 190
+  sprite  = "woodcut.wdcut04"
+  speaker = "MSS2"
+}

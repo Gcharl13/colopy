@@ -1,0 +1,6 @@
+record msge.declare {
+  key     = "@DECLARE"
+  text    = "Shall we declare our independence from {%STRING0}, Your Excellency?\nThis will end our turn and place us at war with our King!\n\n\"Never! That would be treasonous! God save the King!\"\n\"Yes! Give me liberty or give me death!\""
+  box_w   = 190
+  speaker = "MSS1"
+}

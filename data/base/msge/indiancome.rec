@@ -1,0 +1,5 @@
+record msge.indiancome {
+  key   = "@INDIANCOME"
+  text  = "\"We hope you will soon {visit} %STRING0 villages to\nshare knowledge with us, and that you will send your\n{wagon trains} to trade with us.\""
+  box_w = 190
+}

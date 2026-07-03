@@ -1,0 +1,5 @@
+record msge.nation2a {
+  key   = "@NATION2A"
+  text  = "^^SPAIN\n^^_\n__In 1492, the same year that Columbus discovered America, the Spanish\ncompleted their centuries-long \"reconquista\" of the\nIberian peninsula from the Muslim Moors.  This victory left Spain with\na generation of {military men} spoiling for a new avenue of expansion and\nmore eager than ever to bring Christianity to the {heathen} at the point\nof a sword.  The New World and its unsuspecting natives provided exactly\nsuch an opportunity, and the history of the first century of Spanish\nexpansion in America is the history of the conquest, plunder, and destruction\nof countless Native American civilizations.  The Spanish were the first\nEuropeans to encounter the 'Indians,' and the otherwise mighty {Aztec}\nand {Inca} empires proved psychologically unprepared for the arrival of an\nalien power armed with muskets and thirsty for conquest.  Conquistador\n{Hernan Cortes} arrived at Veracruz in 1519 with a few hundred men and,\nwithin two years, brought the Aztec Empire to its knees."
+  box_w = 300
+}

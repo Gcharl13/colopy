@@ -1,0 +1,5 @@
+record msge.buy1 {
+  key   = "@BUY1"
+  text  = "\"We grow tired of your constant haggling.  We shall fill up\nyour {%STRING1} with {%NUMBER2 %STRING0} in exchange for {%NUMBER0$}.\nIs this acceptable?\"\n\n\"We will gladly pay {%NUMBER0$} (of {%NUMBER3$}).\"\n\"A fairer price would be {%NUMBER1$}.\"\n\"Never mind.\""
+  box_w = 190
+}

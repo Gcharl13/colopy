@@ -1,0 +1,6 @@
+record msge.havetreaty {
+  key     = "@HAVETREATY"
+  text    = "\"We have signed a peace treaty with the {%STRING0},\nYour Excellency.\"\n\nCancel Action.\nBreak Treaty."
+  box_w   = 190
+  speaker = "MSS1"
+}

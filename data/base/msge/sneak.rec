@@ -1,0 +1,5 @@
+record msge.sneak {
+  key   = "@SNEAK"
+  text  = "Sneak attack by the treacherous {%STRING0}!"
+  box_w = 190
+}

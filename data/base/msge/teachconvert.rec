@@ -1,0 +1,5 @@
+record msge.teachconvert {
+  key   = "@TEACHCONVERT"
+  text  = "Indian converts already know the Indian ways."
+  box_w = 190
+}

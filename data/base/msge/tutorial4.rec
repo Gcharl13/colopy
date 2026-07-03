@@ -1,0 +1,7 @@
+record msge.tutorial4 {
+  key     = "@TUTORIAL4"
+  text    = "On the {Colony Screen}, you can decide what the colonists in this colony\nshould be doing.  Our colonist is currently producing {%STRING0}.  He\ncould, for instance, produce {%STRING1} instead.  To change his job,\nselect him to bring up the {Jobs Menu}, then choose what you want him\nto do.  You can also drag him to a different square, or into one of the\nbuildings in the colony.  To take a colonist out of a colony, drag him\nto the fence (near the water on the colony picture)."
+  box_w   = 190
+  x       = 10
+  speaker = "MSS5"
+}

@@ -1,0 +1,6 @@
+record msge.reallybuy {
+  key     = "@REALLYBUY"
+  text    = "Purchase %STRING0 for %NUMBER0$?\n\nYes\nNo"
+  box_w   = 190
+  speaker = "MSS2"
+}

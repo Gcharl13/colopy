@@ -1,0 +1,5 @@
+record msge.noteacher {
+  key   = "@NOTEACHER"
+  text  = "Only colonists who have mastered a profession may teach."
+  box_w = 190
+}

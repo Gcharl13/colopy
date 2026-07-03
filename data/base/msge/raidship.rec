@@ -1,0 +1,6 @@
+record msge.raidship {
+  key     = "@RAIDSHIP"
+  text    = "{%STRING0} raiding party attacks harbor in {%STRING1}!\n{%STRING2} damaged.  Colonists appalled!"
+  box_w   = 190
+  speaker = "IND"
+}

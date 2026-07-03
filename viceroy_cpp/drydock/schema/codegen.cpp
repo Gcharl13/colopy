@@ -55,6 +55,19 @@ static std::string type_struct(const std::string& code) {
     return s;                                        // "good" -> "DDGood"
 }
 
+// Struct member for a schema field: C++ keywords get a trailing underscore
+// ("default" -> "default_"); the DDFieldInfo keeps the real schema name.
+static std::string member_name(const std::string& f) {
+    static const char* kw[] = {"default", "int", "float", "double", "bool", "char",
+        "class", "struct", "union", "enum", "template", "operator", "new", "delete",
+        "this", "true", "false", "return", "if", "else", "for", "while", "do",
+        "switch", "case", "break", "continue", "public", "private", "protected",
+        "static", "const", "auto", "namespace", "using", "typedef", nullptr};
+    for (int i = 0; kw[i]; ++i)
+        if (f == kw[i]) return f + "_";
+    return f;
+}
+
 int main(int argc, char** argv) {
     if (argc != 3) {
         std::fprintf(stderr, "usage: drydock-gen <schema-dir> <out-dir>\n");
@@ -103,18 +116,18 @@ int main(int argc, char** argv) {
                  ") not struct-represented yet -- use the generic Record path\n";
         o += "struct " + S + " {\n";
         for (const FieldDef* fd : rep) {
-            o += "    " + std::string(cpp_type(*fd)) + " " + fd->name +
+            o += "    " + std::string(cpp_type(*fd)) + " " + member_name(fd->name) +
                  (fd->type == FType::Int ? " = 0;" : ";");
             if (!fd->doc.empty()) o += "   // " + fd->doc;
             o += "\n";
         }
         for (const FieldDef* fd : rep)
-            o += "    bool has_" + fd->name + " = false;\n";
+            o += "    bool has_" + member_name(fd->name) + " = false;\n";
         o += "};\n";
         o += "inline const DDFieldInfo " + code + "_fields[] = {\n";
         for (const FieldDef* fd : rep)
             o += "    {\"" + fd->name + "\", " + rtype_name(*fd) + ", offsetof(" + S + ", " +
-                 fd->name + "), offsetof(" + S + ", has_" + fd->name + ")},\n";
+                 member_name(fd->name) + "), offsetof(" + S + ", has_" + member_name(fd->name) + ")},\n";
         o += "};\n";
         o += "inline const DDTypeInfo " + code + "_type = {\"" + code + "\", " + code +
              "_fields, " + std::to_string(rep.size()) + ", sizeof(" + S + ")};\n";

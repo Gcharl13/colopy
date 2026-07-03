@@ -1,0 +1,5 @@
+record msge.hellousa {
+  key   = "@HELLOUSA"
+  text  = "\"Greetings, %STRING0, from the newly elected government\nof the {%STRING1}.\""
+  box_w = 220
+}

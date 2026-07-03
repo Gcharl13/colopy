@@ -1,0 +1,6 @@
+record msge.chiefbored {
+  key     = "@CHIEFBORED"
+  text    = "\"The {%STRING0} are always pleased to welcome {%STRING1}\ntravelers.\""
+  box_w   = 190
+  speaker = "IND"
+}

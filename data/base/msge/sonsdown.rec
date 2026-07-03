@@ -1,0 +1,5 @@
+record msge.sonsdown {
+  key   = "@SONSDOWN"
+  text  = "Sons of Liberty membership in {%STRING0} is down to %NUMBER0%%, Your\nExcellency.  Perhaps we should generate more {Liberty Bells} there.\nWe can generate Liberty Bells with {Statesmen}.  {Printing Presses}\nand {Newspapers}, as well as improvements to our government buildings,\ncan increase the rate at which we generate them."
+  box_w = 220
+}

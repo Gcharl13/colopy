@@ -1,0 +1,6 @@
+record msge.tutorial17 {
+  key   = "@TUTORIAL17"
+  text  = "The European Status Screen shows your home port in %STRING0, %STRING1.\nAs new immigrants arrive, they will line up on the docks to await transport\nto the New World.  You can recruit new immigrants by pressing the {Recruit}\nor {Train} buttons.  When ships arrive in the harbor, their cargo can be\nsold by dragging it from the cargo holds to the blue warehouses at the bottom\nof the screen.  Cargo can also be purchased by dragging it from the warehouse\nto a ship's holds.  In the warehouse boxes, the first number indicates the\n{bidding} price which the port will pay for that type of cargo.  The second\nindicates the {asking} price should you wish to buy that cargo.  To send a\nship back to the New World, click on it or drag it into the \"Bound for\n%STRING2\" box."
+  box_w = 300
+  y     = 10
+}

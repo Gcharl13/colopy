@@ -1,0 +1,4 @@
+record msge.armoptions {
+  key  = "@ARMOPTIONS"
+  text = "Don't get on next ship.\nBoard next ship.\nMove to front of dock.\nArm with {Muskets} (costs {%NUMBER0$}).\nSell {Muskets} (save {%NUMBER0$}).\nEquip with {Tools} (costs {%NUMBER1$}).\nSell {Tools} (save {%NUMBER1$}).\nEquip with {Horses} (costs {%NUMBER2$}).\nSell {Horses} (save {%NUMBER2$}).\nBless as {Missionaries}.\nCancel {Missionary} Status.\nNo changes."
+}

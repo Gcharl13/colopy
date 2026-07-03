@@ -1,0 +1,5 @@
+record msge.recruit2 {
+  key   = "@RECRUIT2"
+  text  = "The following specialty professions are available\namong the %STRING0. Which shall we recruit?"
+  box_w = 190
+}

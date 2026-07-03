@@ -1,0 +1,5 @@
+record msge.piracy {
+  key   = "@PIRACY"
+  text  = "\"%STRING0 is most displeased with the {%STRING1 pirates} lying\nin wait off the coast of %STRING2.  We {%STRING3} that you withdraw\nall {privateers} immediately.\"\n\n\"What pirates? We have NEVER condoned piracy!\"\n\"Very well, we shall withdraw our {privateers} to Europe.\""
+  box_w = 220
+}

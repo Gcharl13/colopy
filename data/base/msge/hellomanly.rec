@@ -1,0 +1,5 @@
+record msge.hellomanly {
+  key   = "@HELLOMANLY"
+  text  = "\"%STRING0.  We note with {displeasure} that your presence continues\nto befoul {%STRING1}, which we have justly claimed\nin the name of {%STRING2}.  Our task here is to %STRING3,\nand you interfere with us at your {peril}.\""
+  box_w = 220
+}

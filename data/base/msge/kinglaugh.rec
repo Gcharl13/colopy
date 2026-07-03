@@ -1,0 +1,5 @@
+record msge.kinglaugh {
+  key   = "@KINGLAUGH"
+  text  = "\"Ha ha ha ha ha ha ha!  You make a funny joke!\nHo ho ho ho ho!  Independence!  Ha ha ha ha ha!\""
+  box_w = 190
+}

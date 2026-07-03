@@ -1,0 +1,6 @@
+record msge.veteran {
+  key    = "@VETERAN"
+  text   = "Our {%STRING0} have hardened to {Veteran} status,\nYour Excellency!"
+  box_w  = 190
+  sprite = "woodcut.wdcut10"
+}

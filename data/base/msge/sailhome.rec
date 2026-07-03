@@ -1,0 +1,7 @@
+record msge.sailhome {
+  key     = "@SAILHOME"
+  text    = "We have reached the {high seas}, Your\nExcellency.  Shall we sail for\nEurope?\n\nYes, steady as she goes.\nNo, let us remain in these waters."
+  box_w   = 190
+  speaker = "MSS0"
+  default = "1"
+}

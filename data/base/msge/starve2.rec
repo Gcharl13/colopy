@@ -1,0 +1,5 @@
+record msge.starve2 {
+  key   = "@STARVE2"
+  text  = "{%STRING0} colony has run out of food, Your Excellency!\nColonists are {starving} to death, and to make matters worse,\nwinter is coming soon."
+  box_w = 190
+}

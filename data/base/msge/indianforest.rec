@@ -1,0 +1,5 @@
+record msge.indianforest {
+  key   = "@INDIANFOREST"
+  text  = "\"This forest and the creatures\nit supports are necessary to sustain the {%STRING0} way\nof life.  We patiently ask you not to destroy it.\"\n\n\"Let these trees stand forever, then, friend.\"\n\"We offer you {%NUMBER1$} in compensation.\"\n\"Timmmmmmmbeeeeerrrrrrrrrrrr!\""
+  box_w = 190
+}

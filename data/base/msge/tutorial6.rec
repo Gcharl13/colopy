@@ -1,0 +1,6 @@
+record msge.tutorial6 {
+  key     = "@TUTORIAL6"
+  text    = "Sire, there are {%NUMBER0} {%STRING0} in {%STRING1}.  If we move a ship\ninto %STRING1, we can pick up this cargo and take it back to %STRING2 in\nEurope, where we can sell it for a profit."
+  box_w   = 220
+  speaker = "MSS0"
+}

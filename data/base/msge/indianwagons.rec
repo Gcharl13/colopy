@@ -1,0 +1,5 @@
+record msge.indianwagons {
+  key   = "@INDIANWAGONS"
+  text  = "\"The {%STRING0} settlers have committed\nintolerable acts of destruction against {%STRING1} lands\nand the %STRING1 people.  We therefore demand all {%NUMBER0} of\nthe {%STRING2} in these wagons as reparations.\"\n\nHand them over.\nCircle the wagons."
+  box_w = 190
+}

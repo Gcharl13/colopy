@@ -1,0 +1,5 @@
+record msge.lostourscouts {
+  key   = "@LOSTOURSCOUTS"
+  text  = "Our {scouts} near {%STRING1} have been captured by the {%STRING0}, Your\nExcellency!"
+  box_w = 190
+}

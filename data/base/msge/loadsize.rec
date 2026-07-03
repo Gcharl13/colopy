@@ -1,0 +1,5 @@
+record msge.loadsize {
+  key   = "@LOADSIZE"
+  text  = "%STRING0 does not match the current map\nsize.  It cannot be loaded at this time."
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.seizuresea {
+  key   = "@SEIZURESEA"
+  text  = "{%STRING0} captured at sea by the Royal Navy!"
+  box_w = 190
+}

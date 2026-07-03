@@ -1,0 +1,6 @@
+record msge.kissup {
+  key     = "@KISSUP"
+  text    = "{%STRING0} is currently under Parliamentary {boycott}, Your Excellency.\nWe cannot trade %STRING0 in %STRING1 until Parliament lifts the boycott,\nwhich it will not do until we agree to pay {%NUMBER0$} in back taxes.\n\nThis is taxation without representation! Unfair!\nPay {%NUMBER0$}."
+  box_w   = 220
+  speaker = "MSS2"
+}

@@ -1,0 +1,5 @@
+record msge.tradestart {
+  key   = "@TRADESTART"
+  text  = "Select destination number %NUMBER0 for route"
+  box_w = 190
+}

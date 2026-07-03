@@ -1,0 +1,6 @@
+record msge.toryuprising {
+  key     = "@TORYUPRISING"
+  text    = "Tory uprising near %STRING0!  Parliament arms Tory Militia!"
+  box_w   = 220
+  speaker = "MSS1"
+}

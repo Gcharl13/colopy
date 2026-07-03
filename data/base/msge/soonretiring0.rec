@@ -1,0 +1,5 @@
+record msge.soonretiring0 {
+  key   = "@SOONRETIRING0"
+  text  = "%STRING0 %STRING1 plans to retire in 1800!  A rumor circulates\nthat he would postpone his retirement were a War of Independence\nto begin."
+  box_w = 190
+}

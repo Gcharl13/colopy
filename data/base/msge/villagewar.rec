@@ -1,0 +1,6 @@
+record msge.villagewar {
+  key     = "@VILLAGEWAR"
+  text    = "Your expedition has reached a %STRING0 of {%STRING1}.  A\ncollection of scalps hangs threateningly from a nearby\ntree.  From within, you hear the ominous sound\nof {war drums}."
+  box_w   = 190
+  speaker = "IND"
+}

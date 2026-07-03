@@ -1,0 +1,5 @@
+record msge.hellomeek {
+  key   = "@HELLOMEEK"
+  text  = "\"{Mighty} %STRING0, we again welcome you to {%STRING1}.\nPlease remember that we have justly claimed all of this\nland in the name of {%STRING2}.  We continue in our efforts\nto %STRING3.\""
+  box_w = 220
+}

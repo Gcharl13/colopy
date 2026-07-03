@@ -1,0 +1,6 @@
+record msge.travelplace {
+  key     = "@TRAVELPLACE"
+  text    = "Select a colony to travel to:"
+  box_w   = 190
+  default = "1"
+}

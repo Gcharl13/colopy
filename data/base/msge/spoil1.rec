@@ -1,0 +1,5 @@
+record msge.spoil1 {
+  key   = "@SPOIL1"
+  text  = "The colony of {%STRING0} has exceeded its warehouse capacity.\n{%NUMBER0} tons of {%STRING1} have been thrown away.\nA larger {warehouse} could hold another {100} tons of this cargo."
+  box_w = 190
+}

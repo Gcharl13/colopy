@@ -1,0 +1,5 @@
+record msge.retire {
+  key     = "@RETIRE"
+  text    = "Do you really want to quit?\n\nYes\nNo"
+  default = "2"
+}

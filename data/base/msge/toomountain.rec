@@ -1,0 +1,5 @@
+record msge.toomountain {
+  key   = "@TOOMOUNTAIN"
+  text  = "Colonies cannot be built in the {mountains},\nYour Excellency."
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.mission2 {
+  key     = "@MISSION2"
+  text    = "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0.\n{%STRING3} are {offended}."
+  box_w   = 190
+  speaker = "MYR"
+}

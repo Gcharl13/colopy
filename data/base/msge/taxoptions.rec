@@ -1,0 +1,5 @@
+record msge.taxoptions {
+  key     = "@TAXOPTIONS"
+  text    = "Kiss pinky ring.\nHold '{%STRING3 Party}.'"
+  speaker = "KING1"
+}

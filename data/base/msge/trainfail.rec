@@ -1,0 +1,5 @@
+record msge.trainfail {
+  key   = "@TRAINFAIL"
+  text  = "We have a {teacher} in {%STRING0}, but all the colonists\nthere already have specialty professions.  Perhaps\nyou should clear the specialty of one of the colonists\nby selecting him on the colony screen and picking\n\"{Clear Specialty}\" from the Jobs menu."
+  box_w = 190
+}

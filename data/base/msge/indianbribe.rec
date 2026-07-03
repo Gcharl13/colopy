@@ -1,0 +1,5 @@
+record msge.indianbribe {
+  key   = "@INDIANBRIBE"
+  text  = "\"Very well, we withdraw our objection.\""
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.raidgold {
+  key     = "@RAIDGOLD"
+  text    = "{%STRING0} raiding party seizes strongboxes in {%STRING1}!\nMerchants report {%NUMBER0$} plundered.  Colonists enraged!"
+  box_w   = 190
+  speaker = "IND"
+}

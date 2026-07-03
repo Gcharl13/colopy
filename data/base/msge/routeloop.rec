@@ -1,0 +1,6 @@
+record msge.routeloop {
+  key     = "@ROUTELOOP"
+  text    = "Your Excellency, our \"{%STRING0}\" trade route\nhas only one port on its itinerary!"
+  box_w   = 190
+  speaker = "MSS0"
+}

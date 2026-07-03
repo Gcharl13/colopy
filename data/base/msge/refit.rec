@@ -1,0 +1,6 @@
+record msge.refit {
+  key     = "@REFIT"
+  text    = "{%STRING0} has completed its repairs in {%STRING1}."
+  box_w   = 190
+  speaker = "MSS0"
+}

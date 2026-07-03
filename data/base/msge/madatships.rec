@@ -1,0 +1,6 @@
+record msge.madatships {
+  key     = "@MADATSHIPS"
+  text    = "\"The {%STRING0} people do not trust the men in your\nships.  Therefore, we do not wish to trade with you\nat this time.\nIf you approach our shoreline we shall punish you.\""
+  box_w   = 190
+  speaker = "IND"
+}

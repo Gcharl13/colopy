@@ -1,0 +1,5 @@
+record msge.tradenone2 {
+  key   = "@TRADENONE2"
+  text  = "You have not yet defined any {%STRING0} trade routes."
+  box_w = 190
+}

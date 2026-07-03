@@ -1,0 +1,6 @@
+record msge.declarewar {
+  key     = "@DECLAREWAR"
+  text    = "The {%STRING0} and {%STRING1} are now at war."
+  box_w   = 190
+  speaker = "MSS2"
+}

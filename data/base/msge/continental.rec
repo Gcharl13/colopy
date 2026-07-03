@@ -1,0 +1,5 @@
+record msge.continental {
+  key   = "@CONTINENTAL"
+  text  = "Our {Veteran %STRING0} have hardened to {Continental Army}\nstatus, Your Excellency!"
+  box_w = 190
+}

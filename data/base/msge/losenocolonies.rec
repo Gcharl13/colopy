@@ -1,0 +1,5 @@
+record msge.losenocolonies {
+  key   = "@LOSENOCOLONIES"
+  text  = "\"%STRING0 %STRING1.  Our efforts in the New World have\nproven fruitless and we have decided to remove you\nas Viceroy.  You may, as always, kiss our royal pinky ring.\""
+  box_w = 190
+}

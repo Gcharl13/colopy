@@ -1,0 +1,7 @@
+record msge.shipdamage {
+  key     = "@SHIPDAMAGE"
+  text    = "{%STRING0 %STRING1} damaged!  Ship returns to {%STRING2} for repairs."
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS0"
+}

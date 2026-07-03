@@ -1,0 +1,5 @@
+record msge.lostcity5 {
+  key   = "@LOSTCITY5"
+  text  = "Your expedition has vanished without\na trace!"
+  box_w = 190
+}

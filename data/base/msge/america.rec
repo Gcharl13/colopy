@@ -1,0 +1,5 @@
+record msge.america {
+  key   = "@AMERICA"
+  text  = "Would you like to use the original Americas map, or\na map prepared with the map editor?\n\nOriginal Americas\nMap Editor"
+  box_w = 160
+}

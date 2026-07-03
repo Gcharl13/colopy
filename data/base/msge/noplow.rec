@@ -1,0 +1,6 @@
+record msge.noplow {
+  key     = "@NOPLOW"
+  text    = "That land has already been {plowed}."
+  box_w   = 190
+  speaker = "MSS3"
+}

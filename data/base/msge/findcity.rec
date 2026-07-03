@@ -1,0 +1,5 @@
+record msge.findcity {
+  key   = "@FINDCITY"
+  text  = "Where the heck is . . .\n\nColony:"
+  box_w = 190
+}

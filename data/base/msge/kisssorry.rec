@@ -1,0 +1,6 @@
+record msge.kisssorry {
+  key     = "@KISSSORRY"
+  text    = "Unfortunately, we only have {%NUMBER0$} available."
+  box_w   = 220
+  speaker = "MSS2"
+}

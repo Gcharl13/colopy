@@ -1,0 +1,5 @@
+record msge.landfirst {
+  key   = "@LANDFIRST"
+  text  = "Land units cannot enter an enemy occupied square\nfrom on board a ship.  You must first unload them\ninto an empty or friendly-occupied square."
+  box_w = 190
+}

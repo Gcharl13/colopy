@@ -1,0 +1,6 @@
+record msge.losttheirscouts {
+  key     = "@LOSTTHEIRSCOUTS"
+  text    = "We have captured a party of {%STRING0 scouts} attempting\nto infiltrate {%STRING1}, Your Excellency.  Their {%NUMBER0 horses}\nhave been taken to the colony stables."
+  box_w   = 190
+  speaker = "MSS3"
+}

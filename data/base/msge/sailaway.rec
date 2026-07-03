@@ -1,0 +1,6 @@
+record msge.sailaway {
+  key     = "@SAILAWAY"
+  text    = "Shall we set sail for the {New World},\nYour Excellency?\n\nYes, steady as she goes.\nNo, let us remain in port."
+  box_w   = 190
+  default = "1"
+}

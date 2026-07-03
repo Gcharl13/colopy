@@ -1,0 +1,6 @@
+record msge.tutorial2 {
+  key     = "@TUTORIAL2"
+  text    = "We've found uncharted land, Excellency.  To put the colonists ashore,\nmove the ship toward land and choose {Make Landfall} from the menu."
+  box_w   = 190
+  speaker = "MSS0"
+}

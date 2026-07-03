@@ -1,0 +1,6 @@
+record msge.chiefhowdy {
+  key     = "@CHIEFHOWDY"
+  text    = "\"Greetings, travelers.  We are a peaceful village\nknown for our {%STRING0}.  We would gladly trade with\nyou if you bring us some badly\nneeded {%STRING1}.  We would also pay well for {%STRING2}\nor {%STRING3}."
+  box_w   = 190
+  speaker = "IND"
+}

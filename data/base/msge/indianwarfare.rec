@@ -1,0 +1,7 @@
+record msge.indianwarfare {
+  key     = "@INDIANWARFARE"
+  text    = "{%STRING0} nation holds War Council!\n{%STRING1} missionaries incite %STRING2 to warfare against\nthe {%STRING3}!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

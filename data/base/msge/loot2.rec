@@ -1,0 +1,7 @@
+record msge.loot2 {
+  key     = "@LOOT2"
+  text    = "{%STRING0} burn {%STRING1 %STRING2}!  Natives flee in panic!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut04"
+  speaker = "MSS1"
+}

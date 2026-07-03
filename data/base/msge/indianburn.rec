@@ -1,0 +1,7 @@
+record msge.indianburn {
+  key     = "@INDIANBURN"
+  text    = "{%STRING0} burn {%STRING1} missions!  Church authorities\nare outraged!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut12"
+  speaker = "IND"
+}

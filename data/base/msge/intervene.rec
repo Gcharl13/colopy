@@ -1,0 +1,5 @@
+record msge.intervene {
+  key   = "@INTERVENE"
+  text  = "%STRING1 Intervention Force arrives in {%STRING0}!  Local Rebel Army\ncommander regales %STRING1 admiral."
+  box_w = 190
+}

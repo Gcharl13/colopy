@@ -1,0 +1,5 @@
+record msge.ccont {
+  key   = "@CCONT"
+  text  = "LAND FORM\n\nArchipelago\nNormal\nLarge Continents"
+  box_w = 190
+}

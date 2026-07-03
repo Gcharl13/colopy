@@ -1,0 +1,5 @@
+record msge.retiring2 {
+  key   = "@RETIRING2"
+  text  = "War-weary Continental Congress sues for peace!  King accepts\nsurrender from %STRING0 %STRING1, who retires to country\nestate near %STRING2."
+  box_w = 220
+}

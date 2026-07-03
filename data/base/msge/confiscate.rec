@@ -1,0 +1,5 @@
+record msge.confiscate {
+  key   = "@CONFISCATE"
+  text  = "\"Because of the atrocities you have committed against\nthe {%STRING0} people, we shall confiscate all the\n{%STRING1} in these wagons.\""
+  box_w = 190
+}

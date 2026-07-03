@@ -1,0 +1,5 @@
+record msge.cland {
+  key   = "@CLAND"
+  text  = "LAND MASS\n\nSmall\nNormal\nLarge"
+  box_w = 190
+}

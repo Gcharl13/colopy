@@ -1,0 +1,5 @@
+record msge.savegame {
+  key   = "@SAVEGAME"
+  text  = "Select Save Slot"
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.lobotomize {
+  key     = "@LOBOTOMIZE"
+  text    = "Do you wish to {clear} this colonist's specialty\n({%STRING0}) and make him an ordinary free colonist?\n\nYes\nNo"
+  box_w   = 190
+  speaker = "MSS5"
+}

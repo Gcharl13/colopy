@@ -1,0 +1,5 @@
+record msge.multi {
+  key   = "@MULTI"
+  text  = "^^Multiplayer Start Selected\n^\nSelect powers to be controlled by human players."
+  box_w = 220
+}

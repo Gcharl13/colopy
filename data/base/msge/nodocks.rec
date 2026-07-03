@@ -1,0 +1,5 @@
+record msge.nodocks {
+  key   = "@NODOCKS"
+  text  = "We cannot operate fishing boats at this colony\nuntil we build {Docks}, Your Excellency."
+  box_w = 190
+}

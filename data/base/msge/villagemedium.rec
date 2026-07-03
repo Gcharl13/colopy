@@ -1,0 +1,5 @@
+record msge.villagemedium {
+  key   = "@VILLAGEMEDIUM"
+  text  = "Your expedition has reached a %STRING0 of {%STRING1}.  The\ninhabitants are busy in the surrounding fields.\nSmall parties of warriors practice\n{archery} and frown at you {suspiciously}."
+  box_w = 190
+}

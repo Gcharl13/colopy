@@ -1,0 +1,5 @@
+record msge.timechange {
+  key   = "@TIMECHANGE"
+  text  = "^^Colonization Help: Time Scale\n^\nIn 1600, the {time scale} changes from one turn per year to\n{two turns per year}.  Henceforth there will be a {Spring} and\na {Fall} turn in each year."
+  box_w = 190
+}

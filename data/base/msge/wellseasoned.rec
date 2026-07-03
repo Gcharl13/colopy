@@ -1,0 +1,7 @@
+record msge.wellseasoned {
+  key     = "@WELLSEASONED"
+  text    = "Our {Scouts} have improved to {Seasoned} status, Your Excellency."
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS3"
+}

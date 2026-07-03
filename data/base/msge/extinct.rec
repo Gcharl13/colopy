@@ -1,0 +1,6 @@
+record msge.extinct {
+  key     = "@EXTINCT"
+  text    = "The %STRING0 tribe has been wiped out."
+  box_w   = 190
+  speaker = "MSS3"
+}

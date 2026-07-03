@@ -1,0 +1,5 @@
+record msge.indianland {
+  key   = "@INDIANLAND"
+  text  = "\"You are trespassing on {%STRING0 land}.\nWe patiently ask that you leave immediately.\"\n\n\"Very well, we shall respect your wishes.\"\n\"We offer you {%NUMBER1$} for this land.\"\n\"You are mistaken; this is OUR land now!\""
+  box_w = 190
+}

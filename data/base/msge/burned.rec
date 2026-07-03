@@ -1,0 +1,6 @@
+record msge.burned {
+  key    = "@BURNED"
+  text   = "{%STRING0} burn {%STRING3} to the ground!\nColonists flee in panic!  King demands\nexplanation!"
+  box_w  = 190
+  sprite = "woodcut.wdcut11"
+}

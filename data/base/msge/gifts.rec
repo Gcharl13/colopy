@@ -1,0 +1,5 @@
+record msge.gifts {
+  key   = "@GIFTS"
+  text  = "\"We present you with a gift of {%NUMBER0$} in exchange for\nyour continued forbearance.\""
+  box_w = 220
+}

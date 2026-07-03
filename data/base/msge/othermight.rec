@@ -1,0 +1,6 @@
+record msge.othermight {
+  key     = "@OTHERMIGHT"
+  text    = "Your Excellency, the King of {%STRING0} is considering granting independence\nto his colonies.  {%NUMBER0} (out of %NUMBER1) of the %STRING1 colonists\ncurrently support independence.  Once {%NUMBER2} colonists support\nliberty, the %STRING1 colonies will be granted their freedom and become\nan independent nation."
+  box_w   = 220
+  speaker = "MSS2"
+}

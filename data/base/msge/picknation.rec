@@ -1,0 +1,5 @@
+record msge.picknation {
+  key     = "@PICKNATION"
+  text    = "Select a European Power\n\nEngland\nFrance\nSpain\nNetherlands"
+  default = "1"
+}

@@ -1,0 +1,6 @@
+record msge.burial2 {
+  key    = "@BURIAL2"
+  text   = "Within, you find trinkets worth {%NUMBER0$}."
+  box_w  = 190
+  sprite = "woodcut.wdcut04"
+}

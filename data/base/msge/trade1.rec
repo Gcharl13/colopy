@@ -1,0 +1,6 @@
+record msge.trade1 {
+  key     = "@TRADE1"
+  text    = "\"Your haggling is trying our patience, but\nwe shall raise our offer to {%NUMBER0$}\nfor your {%STRING1}.\"\n\n\"We gratefully accept {%NUMBER0$}.\"\n\"A fairer price would be {%NUMBER1$}.\"\n\"Never mind.\""
+  box_w   = 190
+  speaker = "IND"
+}

@@ -1,0 +1,6 @@
+record msge.shipcombat {
+  key     = "@SHIPCOMBAT"
+  text    = "Only {Privateers} and {Frigates} can attack enemy ships."
+  box_w   = 190
+  speaker = "MSS0"
+}

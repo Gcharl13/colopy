@@ -1,0 +1,5 @@
+record msge.lumber {
+  key   = "@LUMBER"
+  text  = "{%STRING0} has run out of {lumber}, Your Excellency.  Our carpenters\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

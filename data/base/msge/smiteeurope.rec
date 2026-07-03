@@ -1,0 +1,5 @@
+record msge.smiteeurope {
+  key   = "@SMITEEUROPE"
+  text  = "\"We shall ruthlessly drive the heretic {%STRING0}\nfrom the New World in exchange for {%NUMBER0$}\nto cover our expenses.\"\n\nPay {%NUMBER0$}.\nNever mind."
+  box_w = 220
+}

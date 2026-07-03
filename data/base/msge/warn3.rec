@@ -1,0 +1,5 @@
+record msge.warn3 {
+  key   = "@WARN3"
+  text  = "Your Excellency, the King's forces control %NUMBER2%% of the %STRING0\npopulation.  If he ever controls 90%%, the Continental Congress will be\nunable to continue the war and we will have to surrender!"
+  box_w = 220
+}

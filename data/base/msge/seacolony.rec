@@ -1,0 +1,5 @@
+record msge.seacolony {
+  key   = "@SEACOLONY"
+  text  = "It may surprise you to learn that colonies\ncannot be built at sea."
+  box_w = 140
+}

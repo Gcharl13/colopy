@@ -1,0 +1,5 @@
+record msge.lostcity1 {
+  key   = "@LOSTCITY1"
+  text  = "You have discovered a {Fountain\nof Youth}!  Rumors fly in Europe! Immigrants line\nthe docks to seek perpetual youth in the New World!"
+  box_w = 190
+}

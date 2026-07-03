@@ -1,0 +1,5 @@
+record msge.toomanycolonies {
+  key   = "@TOOMANYCOLONIES"
+  text  = "A {colony} cannot be created because the maximum number of colonies for\nthe game has been reached.  Colonies must be eliminated before new\ncolonies can be created."
+  box_w = 190
+}

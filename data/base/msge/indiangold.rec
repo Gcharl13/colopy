@@ -1,0 +1,7 @@
+record msge.indiangold {
+  key     = "@INDIANGOLD"
+  text    = "\"The {%STRING0} people cry out for justice.\nWe demand {%NUMBER0$} in reparations.\"\n\n\"Never shall we accede to blackmail!\"\n\"We shall gladly pay {%NUMBER0$}.\""
+  box_w   = 190
+  sprite  = "woodcut.wdcut12"
+  speaker = "IND"
+}

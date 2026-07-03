@@ -1,0 +1,6 @@
+record msge.indianslaves {
+  key     = "@INDIANSLAVES"
+  text    = "Frightened {%STRING0} flock to %STRING1 mission as {converts}."
+  box_w   = 190
+  speaker = "MSS1"
+}

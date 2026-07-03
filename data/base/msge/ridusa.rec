@@ -1,0 +1,5 @@
+record msge.ridusa {
+  key   = "@RIDUSA"
+  text  = "\"The {%STRING1} orders you to leave this hemisphere immediately.\nIf you do not, we shall drive you into the sea.\""
+  box_w = 220
+}

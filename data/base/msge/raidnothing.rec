@@ -1,0 +1,6 @@
+record msge.raidnothing {
+  key     = "@RAIDNOTHING"
+  text    = "{%STRING0} raiding party wiped out in {%STRING1}!\nColonists jubilant!"
+  box_w   = 190
+  speaker = "IND"
+}

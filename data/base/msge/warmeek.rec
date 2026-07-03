@@ -1,0 +1,5 @@
+record msge.warmeek {
+  key   = "@WARMEEK"
+  text  = "\"Very well, then in the name of %STRING0 we shall drive\nyou from the shores of {%STRING1}.  Prepare for WAR!\""
+  box_w = 220
+}

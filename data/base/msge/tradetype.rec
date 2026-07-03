@@ -1,0 +1,5 @@
+record msge.tradetype {
+  key   = "@TRADETYPE"
+  text  = "Is this a {sea} trade route or a {land} trade route?\n\nSea route\nLand route"
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.kingbless {
+  key   = "@KINGBLESS"
+  text  = "\"You have our royal blessing.  If you wish, you may kiss\nour royal pinky ring.\""
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.captured3 {
+  key    = "@CAPTURED3"
+  text   = "{%STRING0} march into {%STRING2}!"
+  box_w  = 190
+  sprite = "woodcut.wdcut11"
+}

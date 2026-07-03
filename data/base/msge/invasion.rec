@@ -1,0 +1,6 @@
+record msge.invasion {
+  key     = "@INVASION"
+  text    = "Royal Expeditionary Force lands near {%STRING0}!"
+  box_w   = 190
+  speaker = "MSS1"
+}

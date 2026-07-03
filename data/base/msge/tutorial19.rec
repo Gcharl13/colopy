@@ -1,0 +1,6 @@
+record msge.tutorial19 {
+  key     = "@TUTORIAL19"
+  text    = "{Converts} are natives who for one reason or another have decided to\njoin you and live in your colonies.  Unlike other types of colonist,\nconverts cannot be educated in new skills.  On the other hand, converts\nare better than ordinary colonists at farming, planting, fishing, and\nmining."
+  box_w   = 190
+  speaker = "MSS4"
+}

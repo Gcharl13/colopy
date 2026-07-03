@@ -1,0 +1,5 @@
+record msge.nocontact {
+  key   = "@NOCONTACT"
+  text  = "\"We have no contact with the {%STRING0}.\""
+  box_w = 220
+}

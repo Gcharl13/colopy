@@ -1,0 +1,6 @@
+record msge.burial3 {
+  key    = "@BURIAL3"
+  text   = "Within, you find incredible treasure worth {%NUMBER1$}!\nIt will take a {Galleon} to get this treasure back\nto Europe!"
+  box_w  = 190
+  sprite = "woodcut.wdcut04"
+}

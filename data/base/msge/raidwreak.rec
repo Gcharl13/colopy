@@ -1,0 +1,6 @@
+record msge.raidwreak {
+  key     = "@RAIDWREAK"
+  text    = "Spies report: {%STRING0} raiding party wreaks havoc in\nthe {%STRING3} colony of {%STRING1}."
+  box_w   = 190
+  speaker = "IND"
+}

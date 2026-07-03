@@ -1,0 +1,6 @@
+record msge.tutorial11 {
+  key     = "@TUTORIAL11"
+  text    = "Our ship, a {%STRING0}, is one of our most valuable units.  We can use\nit to explore the uncharted vastness of the New World, to carry our cargo\nhome to %STRING1 for sale, and to bring new immigrants from Europe.  You\ncan move the ship normally with the arrow keys.  You can also send it to\nthe port of your choice by pressing the '{G}' key."
+  box_w   = 220
+  speaker = "MSS0"
+}

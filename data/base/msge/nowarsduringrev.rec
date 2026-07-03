@@ -1,0 +1,5 @@
+record msge.nowarsduringrev {
+  key   = "@NOWARSDURINGREV"
+  text  = "Foreign colonies cannot be attacked during the {War of Independence}."
+  box_w = 190
+}

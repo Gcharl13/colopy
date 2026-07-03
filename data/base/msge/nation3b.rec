@@ -1,0 +1,5 @@
+record msge.nation3b {
+  key   = "@NATION3B"
+  text  = "^^NETHERLANDS\n^^_\n__To represent the strength of the Dutch economy, as well as Dutch\nachievements in shipping, commerce, and banking, the Dutch player\nreceives a bonus when trading with Amsterdam.  {Commodity prices} in\nAmsterdam {do not collapse} as quickly as in other European ports and\nthey {recover} more quickly."
+  box_w = 300
+}

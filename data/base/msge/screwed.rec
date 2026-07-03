@@ -1,0 +1,6 @@
+record msge.screwed {
+  key     = "@SCREWED"
+  text    = "\"These are the burial grounds of our\nancient {%STRING0} fathers!  You have\ntrespassed on sacred land.  Now\nyou must die!\""
+  box_w   = 190
+  speaker = "MSS3"
+}

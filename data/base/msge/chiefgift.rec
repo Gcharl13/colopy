@@ -1,0 +1,6 @@
+record msge.chiefgift {
+  key     = "@CHIEFGIFT"
+  text    = "\"The {%STRING0} welcome the emissaries of the {%STRING1}\ntribe.  Please take these valuable beads (worth {%NUMBER0$})\nback to your chieftain as a peace offering.\""
+  box_w   = 190
+  speaker = "IND"
+}

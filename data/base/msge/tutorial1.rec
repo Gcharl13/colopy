@@ -1,0 +1,8 @@
+record msge.tutorial1 {
+  key     = "@TUTORIAL1"
+  text    = "Our {%STRING0} carrying a pioneer and a soldier is on the high seas,\nYour Excellency.  If we navigate to the west ({left arrow}), we'll\nprobably find land.  If we sail to the east ({right arrow}), we can\nreturn to port."
+  box_w   = 190
+  x       = 10
+  y       = 40
+  speaker = "MSS0"
+}

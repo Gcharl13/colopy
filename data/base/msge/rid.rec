@@ -1,0 +1,5 @@
+record msge.rid {
+  key   = "@RID"
+  text  = "\"In the name of {%STRING0}, we order you to leave {%STRING1} immediately.\nIf you do not, we shall drive you into the sea.\""
+  box_w = 220
+}

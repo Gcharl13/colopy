@@ -1,0 +1,6 @@
+record msge.learncriminal {
+  key     = "@LEARNCRIMINAL"
+  text    = "\"Your ill manners offend us, Young One, and\nwe doubt that you will ever be more than a {common\ncriminal}.  The {%STRING0} will teach you nothing.\""
+  box_w   = 190
+  speaker = "IND"
+}

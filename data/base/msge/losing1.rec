@@ -1,0 +1,5 @@
+record msge.losing1 {
+  key   = "@LOSING1"
+  text  = "King's Forces control all ports in %STRING0!\nContinental Congress capitulates to King's terms!\nContinental Army demobilized; Royal Expeditionary force occupies colonies.\n%STRING1, stripped of titles, escapes to {exile} in %STRING2."
+  box_w = 220
+}

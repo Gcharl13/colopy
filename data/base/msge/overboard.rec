@@ -1,0 +1,5 @@
+record msge.overboard {
+  key   = "@OVERBOARD"
+  text  = "What cargo shall we throw overboard, Your Excellency?"
+  box_w = 190
+}

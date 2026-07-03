@@ -1,0 +1,6 @@
+record msge.build1 {
+  key   = "@BUILD1"
+  text  = "^^In the Year of Our Lord One Thousand Four Hundred Ninety-Two,"
+  box_w = 310
+  y     = 30
+}

@@ -1,0 +1,5 @@
+record msge.freedom {
+  key   = "@FREEDOM"
+  text  = "%STRING1 Founding Fathers announce that\n{%STRING0} has joined the Continental Congress!"
+  box_w = 190
+}

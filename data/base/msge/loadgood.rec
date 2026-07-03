@@ -1,0 +1,5 @@
+record msge.loadgood {
+  key   = "@LOADGOOD"
+  text  = "Loaded %STRING0 successfully."
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.tradeselect {
+  key   = "@TRADESELECT"
+  text  = "Select a trade route:"
+  box_w = 190
+}

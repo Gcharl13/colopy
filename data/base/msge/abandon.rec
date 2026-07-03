@@ -1,0 +1,6 @@
+record msge.abandon {
+  key     = "@ABANDON"
+  text    = "Shall we indeed {abandon} our %STRING0 colony,\nYour Excellency, forfeiting all of our hard work\nhere?\n\nYes, it is God's will.\nNever! That would be folly."
+  box_w   = 190
+  default = "2"
+}

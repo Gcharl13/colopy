@@ -1,0 +1,5 @@
+record msge.cargoready0 {
+  key   = "@CARGOREADY0"
+  text  = "A new cargo of {%STRING1} is ready at {%STRING0}, Your Excellency."
+  box_w = 190
+}

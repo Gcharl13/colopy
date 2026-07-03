@@ -1,0 +1,5 @@
+record msge.trademany {
+  key   = "@TRADEMANY"
+  text  = "Only {%NUMBER0} trade routes can be defined, Your Excellency.\nTo create a new trade route now, you must delete an old one first."
+  box_w = 190
+}

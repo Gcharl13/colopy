@@ -1,0 +1,5 @@
+record msge.nation3a {
+  key   = "@NATION3A"
+  text  = "^^NETHERLANDS\n^^_\n__The Protestant Dutch provinces gained their independence from Catholic\nSpain during the Age of Expansion.  A maritime country of {fishermen}\nand {merchants}, the Dutch Netherlands operated large merchant and fishing\nfleets in the North Sea and the Baltic.  Upon achieving political\nindependence in the early seventeenth century, this tiny nation found itself\nideally poised to expand its {overseas trade} into lucrative new markets\nin the Far East and New World.  Unlike their rivals and sometime enemies\nthe Spanish, French, and English, the Dutch were ruled by their merchant\nclass.  This unique arrangement led them to focus all aspects of state\ndiplomatic, military, and economic policy around the {interests of trade}.\nTheir strategy proved quite successful, and the Dutch economy\nand merchant fleet expanded so rapidly that the other European powers felt\ncompelled to take drastic measures against the Dutch in order to prop up\ntheir own less successful enterprises."
+  box_w = 300
+}

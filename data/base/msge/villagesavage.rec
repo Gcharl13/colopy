@@ -1,0 +1,5 @@
+record msge.villagesavage {
+  key   = "@VILLAGESAVAGE"
+  text  = "Your expedition has reached a %STRING0 of {%STRING1}.  The\ninhabitants are busy\nin the surrounding fields.  As they wave to you {happily},\nyou notice a collection of scalps hanging threateningly from\na nearby tree."
+  box_w = 190
+}

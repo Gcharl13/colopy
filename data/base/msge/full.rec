@@ -1,0 +1,5 @@
+record msge.full {
+  key   = "@FULL"
+  text  = "The colony of {%STRING0} is {far too crowded},\nExcellency.\nWe had best find another colony for these\nimmigrants."
+  box_w = 190
+}

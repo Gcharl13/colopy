@@ -1,0 +1,5 @@
+record msge.toonearbuild {
+  key   = "@TOONEARBUILD"
+  text  = "A colony building project is already under way\nin an adjacent square, Your Excellency."
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.tutorial15 {
+  key     = "@TUTORIAL15"
+  text    = "New colonists have arrived in {%STRING0}, Your Excellency!  You can make\nthem citizens of {%STRING0} by clicking on the colony, and then dragging\nthe colonists from the \"fence\" to a field or building."
+  box_w   = 220
+  speaker = "MSS5"
+}

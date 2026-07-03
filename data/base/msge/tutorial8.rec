@@ -1,0 +1,6 @@
+record msge.tutorial8 {
+  key     = "@TUTORIAL8"
+  text    = "This %STRING0 has no specialty profession.  If we move him into a\nfriendly native village, the indians may be willing to teach him a\nnew skill."
+  box_w   = 190
+  speaker = "MSS5"
+}

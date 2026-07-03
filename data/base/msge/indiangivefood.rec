@@ -1,0 +1,6 @@
+record msge.indiangivefood {
+  key     = "@INDIANGIVEFOOD"
+  text    = "\"The {%STRING0} see that your food stores are low this\nseason.  Our own harvest has been plentiful, however,\nand we have come to share our bounty with you.\nWe offer you a gift of {%NUMBER0 food} in recognition of the\neverlasting peace between our peoples.  Let us eat together\nand give thanks for our good fortune.\""
+  box_w   = 190
+  speaker = "IND"
+}

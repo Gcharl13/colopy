@@ -1,0 +1,6 @@
+record msge.nocolonieseither {
+  key     = "@NOCOLONIESEITHER"
+  text    = "New colonies cannot be founded during the {War of Independence}."
+  box_w   = 190
+  speaker = "MSS1"
+}

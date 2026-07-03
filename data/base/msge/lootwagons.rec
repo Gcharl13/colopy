@@ -1,0 +1,5 @@
+record msge.lootwagons {
+  key   = "@LOOTWAGONS"
+  text  = "%STRING0 loot wagon trains near %STRING3!"
+  box_w = 220
+}

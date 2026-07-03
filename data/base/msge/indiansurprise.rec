@@ -1,0 +1,7 @@
+record msge.indiansurprise {
+  key     = "@INDIANSURPRISE"
+  text    = "{%STRING0} make surprise raid near {%STRING1}!  Colonists\nfrightened.  %STRING2 chief denies involvement."
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

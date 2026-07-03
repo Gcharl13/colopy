@@ -1,0 +1,5 @@
+record msge.lostcity2 {
+  key   = "@LOSTCITY2"
+  text  = "You have found one of the {Seven\nCities of Cibola}!  Treasure worth {%NUMBER1$} unearthed\nin the ruins!  It will take a {Galleon} to get this\ntreasure back to Europe!"
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.tutorial13 {
+  key     = "@TUTORIAL13"
+  text    = "Our {pioneers} have arrived in the New World, Excellency!  They are\nready to look for a good place to build our first colony.  Try to look\nfor a spot where there will be plenty of food and other resources\navailable.  Also, our first colony should be built near the ocean so that\nour ships can reach it.  Our pioneers are currently equipped\nwith {100 Tools}, which they can use to clear forests, plow fields,\nand build roads.  If we want to make more pioneer units later, we will\nneed either to bring more Tools from Europe or to have our blacksmiths\nmanufacture them."
+  box_w   = 220
+  speaker = "MSS3"
+}

@@ -1,0 +1,6 @@
+record msge.seizureland {
+  key     = "@SEIZURELAND"
+  text    = "{%STRING0} captured by the Royal Army!"
+  box_w   = 190
+  speaker = "MSS1"
+}

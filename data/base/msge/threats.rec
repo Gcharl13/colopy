@@ -1,0 +1,5 @@
+record msge.threats {
+  key   = "@THREATS"
+  text  = "\"We laugh at your feeble threats.\""
+  box_w = 220
+}

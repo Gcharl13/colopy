@@ -1,0 +1,4 @@
+record msge.meekness {
+  key  = "@MEEKNESS"
+  text = "request\ndemand"
+}

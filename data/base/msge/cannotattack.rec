@@ -1,0 +1,5 @@
+record msge.cannotattack {
+  key   = "@CANNOTATTACK"
+  text  = "That unit type cannot attack."
+  box_w = 190
+}

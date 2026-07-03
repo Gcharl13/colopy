@@ -1,0 +1,6 @@
+record msge.build5 {
+  key   = "@BUILD5"
+  text  = "^^to Explore the Ocean Sea,"
+  box_w = 310
+  y     = 30
+}

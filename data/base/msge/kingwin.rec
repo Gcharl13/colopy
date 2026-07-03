@@ -1,0 +1,7 @@
+record msge.kingwin {
+  key   = "@KINGWIN"
+  text  = "\"As expected, your attempt to separate from\nmother %STRING0 has proven futile. Your\nRag Tag armies are simply no match for our\nRoyal forces.\""
+  box_w = 90
+  x     = 202
+  y     = 125
+}

@@ -1,0 +1,6 @@
+record msge.abandon2 {
+  key     = "@ABANDON2"
+  text    = "Shall we indeed {abandon} our %STRING0 colony,\nYour Excellency, forfeiting all of our hard work\nhere?  If we have no colonies at all after 1600,\nthe King may revoke our charter!\n\nYes, it is God's will.\nNever! That would be folly."
+  box_w   = 190
+  default = "2"
+}

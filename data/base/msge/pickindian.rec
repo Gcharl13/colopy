@@ -1,0 +1,5 @@
+record msge.pickindian {
+  key   = "@PICKINDIAN"
+  text  = "Select an Indian tune:\n\n\"Indian Victory\"\n\"Natives\"\n\"Tenochtitlan\"\n\"Pizarro at Cuzco\""
+  box_w = 220
+}

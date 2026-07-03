@@ -1,0 +1,5 @@
+record msge.cargoready1 {
+  key   = "@CARGOREADY1"
+  text  = "A new cargo of {%STRING1} is ready at {%STRING0}, Your Excellency.\n%STRING0 has reached its storage capacity for %STRING1 ({%NUMBER0}), so\nwe may wish to consider building a larger {warehouse} there."
+  box_w = 190
+}

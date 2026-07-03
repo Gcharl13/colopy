@@ -1,0 +1,4 @@
+record msge.greatleader {
+  key  = "@GREATLEADER"
+  text = "Our Queen\nOur King\nThe Pope\nOur Stadtholder"
+}

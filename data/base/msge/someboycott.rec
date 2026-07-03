@@ -1,0 +1,6 @@
+record msge.someboycott {
+  key     = "@SOMEBOYCOTT"
+  text    = "Some of the cargo could not be unloaded because of a parliamentary\nboycott.  If you want to ask that the boycott be lifted, click on\nthe cargo type in question."
+  box_w   = 190
+  speaker = "MSS2"
+}

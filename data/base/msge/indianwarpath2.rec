@@ -1,0 +1,7 @@
+record msge.indianwarpath2 {
+  key     = "@INDIANWARPATH2"
+  text    = "\"We will gladly drive the {%STRING0} from our ancestral\nlands in exchange for {%NUMBER0$}.\"\n\nPay {%NUMBER0$}.\nNever mind."
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

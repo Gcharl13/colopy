@@ -1,0 +1,6 @@
+record msge.tradenocargo {
+  key     = "@TRADENOCARGO"
+  text    = "\"You have brought nothing with you to trade with us.  Please come\nback when you have something useful to offer.\""
+  box_w   = 190
+  speaker = "IND"
+}

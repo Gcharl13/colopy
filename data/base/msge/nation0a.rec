@@ -1,0 +1,5 @@
+record msge.nation0a {
+  key   = "@NATION0A"
+  text  = "^^ENGLAND\n^^_\n__The Age of Expansion coincided with a period of {religious\nstrife} in England.  The Church of England--theoretically a\nProtestant denomination but maintaining many Catholic traditions--faced\na series of challenges during the colonial period from would-be\nreformers, or {Puritans}.  The English monarchy shifted its support\nbetween pro-Catholic and various Protestant factions from generation to\ngeneration, and the English Civil War (1640-49) resulted in the execution\nof Charles I and a period of Puritan rule (1649-60) under Oliver Cromwell.\nWith so much religious conflict at home, the English government had\nneither the desire nor the ability to enforce religious conformity in\nits colonial possessions.  The colonies became havens of\n{religious freedom} for groups (e.g. Puritans, Anabaptists, Quakers) who\nfaced persecution in the Old World."
+  box_w = 300
+}

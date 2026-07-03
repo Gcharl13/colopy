@@ -1,0 +1,5 @@
+record msge.notenough {
+  key   = "@NOTENOUGH"
+  text  = "\"Sadly, your treasury ({%NUMBER0$}) is not large enough to\nback your promise.\""
+  box_w = 190
+}

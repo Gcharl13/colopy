@@ -1,0 +1,6 @@
+record msge.keepstockade {
+  key     = "@KEEPSTOCKADE"
+  text    = "We cannot voluntarily reduce below {three} the population of a colony\nthat has a stockade, fort, or fortress."
+  box_w   = 220
+  speaker = "MSS5"
+}

@@ -1,0 +1,5 @@
+record msge.learnstay {
+  key   = "@LEARNSTAY"
+  text  = "\"You are unskilled, Young One, and your ways are\nstrange.  If you wish, however, we {%STRING0} will\nshow you how to become a master {%STRING1}.\"\n\n\"Then I shall become a master {%STRING1}.\"\n\"Not right now, thanks.\""
+  box_w = 190
+}

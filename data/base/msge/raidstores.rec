@@ -1,0 +1,6 @@
+record msge.raidstores {
+  key     = "@RAIDSTORES"
+  text    = "{%STRING0} raiding party attacks stores in {%STRING1}!\nLarge quantities of {%STRING2} stolen.  Colonists outraged!"
+  box_w   = 190
+  speaker = "IND"
+}

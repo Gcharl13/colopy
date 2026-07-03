@@ -182,6 +182,18 @@ void invalidate_tables();
 bool table_patch_cell(const std::string& section, int row, const std::string& column,
                       const std::string& value);
 
+// Drydock message hook (strangler seam): installed by the record store at
+// serve start so @KEY message lookups (verbatim GAME.TXT text + box/sprite
+// metadata) become store-authoritative. Null when no store is loaded (e.g.
+// the forge_gui build) -- callers then fall back to the frozen messages.json.
+struct DDMsgView {
+    bool found = false;
+    std::string text;
+    int box_w = 0, x = -1, y = -1;      // absent record fields keep these defaults
+    std::string sprite, speaker, def;
+};
+extern DDMsgView (*dd_message_hook)(const std::string& key);
+
 // Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its @UNIT type id (row
 // index). -1 if unknown. No name->type list is hardcoded in C++.
 int unit_type_by_name(const std::string& name);

@@ -1,0 +1,6 @@
+record msge.tradenone {
+  key     = "@TRADENONE"
+  text    = "You have not yet defined any trade routes."
+  box_w   = 190
+  speaker = "MSS0"
+}

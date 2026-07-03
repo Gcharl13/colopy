@@ -1,0 +1,5 @@
+record msge.whichfreedom {
+  key   = "@WHICHFREEDOM"
+  text  = "The Continental Congress will expand during its next session,\nYour Excellency.  Which Founding Father shall we appoint as its next member?"
+  box_w = 190
+}

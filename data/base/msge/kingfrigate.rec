@@ -1,0 +1,5 @@
+record msge.kingfrigate {
+  key   = "@KINGFRIGATE"
+  text  = "\"%STRING0 %STRING1.  We note that enemy warships are\npreying on your undefended shipping lanes.  Shall we\ndispatch a {frigate} from the %STRING2 navy to assist\nyou?\"\n\n\"Yes, I fear it is necessary.\"\n\"No. We shall attend to our own defense.\""
+  box_w = 190
+}

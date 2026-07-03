@@ -1,0 +1,5 @@
+record msge.kingrecruit {
+  key   = "@KINGRECRUIT"
+  text  = "The {Royal University} can provide us with specialists\nif we grease the right palms.  Which\nskill shall we request?"
+  box_w = 190
+}

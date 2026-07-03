@@ -1,0 +1,7 @@
+record msge.tutorial16 {
+  key   = "@TUTORIAL16"
+  text  = "It is important for every colony to grow enough {food} to feed its\ncolonists.  Each colonist eats {two} units of food per turn.  Food is\nrepresented by the \"corn\" icon; if you are not growing enough food\neach turn to feed all of your colonists, some of the corn in the colonist\nwindow will be covered with red \"X\"'es.  To grow more food, turn more of\nyour colonists into {farmers} or {fishermen}.  You can make individual\nfarmers more productive by having your pioneers {clear} forests and {plow}\nfields."
+  box_w = 220
+  x     = 5
+  y     = 10
+}

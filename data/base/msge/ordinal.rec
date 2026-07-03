@@ -1,0 +1,4 @@
+record msge.ordinal {
+  key  = "@ORDINAL"
+  text = "first\nsecond\nthird\nfourth\nfifth\nsixth\nseventh\neighth\nninth\ntenth\neleventh\ntwelfth\nthirteenth\nfourteenth\nfifteenth\nsixteenth\nseventeenth\neighteenth\nnineteenth\ntwentieth\ntwenty first\ntwenty second\ntwenty third\ntwenty fourth\ntwenty fifth\ntwenty sixth\ntwenty seventh\ntwenty eighth\ntwenty ninth\nthirtieth"
+}

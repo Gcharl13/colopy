@@ -1,0 +1,5 @@
+record msge.scored {
+  key   = "@SCORED"
+  text  = "Scoring for this game is now complete.\n\nThat's all.\nKeep playing anyway."
+  box_w = 220
+}

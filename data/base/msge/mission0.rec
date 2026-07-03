@@ -1,0 +1,6 @@
+record msge.mission0 {
+  key     = "@MISSION0"
+  text    = "%STRING0 %STRING1 mission founded in %STRING2, %NUMBER0.\n{%STRING3} approach new religion with {curiousity}."
+  box_w   = 190
+  speaker = "MYR"
+}

@@ -1,0 +1,5 @@
+record msge.dos {
+  key     = "@DOS"
+  text    = "Exit to DOS?\n\nYes\nNo"
+  default = "2"
+}

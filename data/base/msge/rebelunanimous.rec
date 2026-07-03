@@ -1,0 +1,5 @@
+record msge.rebelunanimous {
+  key   = "@REBELUNANIMOUS"
+  text  = "Sons of Liberty membership in {%STRING0} is up to 100%%, Your Excellency.\nAll of the colonists there support the idea of independence from %STRING1!\nAll colonists in %STRING0 gain +2 to their base production\nabilities.  Colonists can also be educated more quickly here."
+  box_w = 220
+}

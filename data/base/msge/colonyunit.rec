@@ -1,0 +1,5 @@
+record msge.colonyunit {
+  key   = "@COLONYUNIT"
+  text  = "Options for {%STRING0%STRING1}:"
+  box_w = 190
+}

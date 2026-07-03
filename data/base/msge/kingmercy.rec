@@ -1,0 +1,5 @@
+record msge.kingmercy {
+  key   = "@KINGMERCY"
+  text  = "\"%STRING0 %STRING1.  In light of the unfortunate loss\nof a Royal {%STRING2} unit, we have graciously decided to\nlower your tax rate by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.\nIf you wish, you may kiss our royal pinky ring.\""
+  box_w = 190
+}

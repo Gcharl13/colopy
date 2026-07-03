@@ -1,0 +1,6 @@
+record msge.whackindians {
+  key     = "@WHACKINDIANS"
+  text    = "Shall we attack the {%STRING0}, Your Excellency?\n\nYes\nNo"
+  box_w   = 190
+  speaker = "MSS1"
+}

@@ -1,0 +1,5 @@
+record msge.loadgame {
+  key   = "@LOADGAME"
+  text  = "Select Game To Load"
+  box_w = 190
+}

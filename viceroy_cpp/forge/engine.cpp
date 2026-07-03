@@ -73,6 +73,14 @@ const std::map<std::string, MsgMeta>& message_meta_table() {
     return M;
 }
 MsgMeta message_meta(const std::string& key) {
+    if (dd_message_hook) {                      // store-authoritative when loaded
+        DDMsgView v = dd_message_hook(key);
+        if (v.found) {
+            MsgMeta m; m.found = true;
+            m.box_w = v.box_w; m.x = v.x; m.y = v.y; m.sprite = v.sprite;
+            return m;
+        }
+    }
     const auto& M = message_meta_table(); auto it = M.find(key);
     return it == M.end() ? MsgMeta{} : it->second;
 }
@@ -815,6 +823,9 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
 // Drop the cached data tables so the next @SECTION[...] lookup re-reads them (called
 // when the Tables tab saves an edit, so a freshly added row resolves immediately).
 void invalidate_tables() { table_store().docs.clear(); table_store().loaded = false; }
+
+// installed by drydock_api at store init (see engine.hpp) -- null otherwise
+DDMsgView (*dd_message_hook)(const std::string& key) = nullptr;
 
 // Drydock write-through: see engine.hpp. Values are written as strings -- the
 // extraction rows are CSV strings and every reader parses through as_num.

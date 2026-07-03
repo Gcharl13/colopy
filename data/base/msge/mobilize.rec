@@ -1,0 +1,5 @@
+record msge.mobilize {
+  key   = "@MOBILIZE"
+  text  = "Continental Army mobilizes at {%STRING0}! Our Veteran %STRING1\nhave been promoted to {Continental Army} status."
+  box_w = 190
+}

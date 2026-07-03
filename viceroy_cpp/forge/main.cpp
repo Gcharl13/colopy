@@ -2378,9 +2378,14 @@ static const std::string& misc_label(int idx) {
     return (idx >= 0 && idx < (int)lines.size()) ? lines[idx] : empty;
 }
 
-// The verbatim GAME.TXT text for a message @KEY (messages.json record, cached).
+// The verbatim GAME.TXT text for a message @KEY (the record store when loaded,
+// else the frozen messages.json extraction, cached).
 // Falls back to the key itself so a missing record is visible, never invented.
 static std::string game_message_text(const std::string& key) {
+    if (forge::dd_message_hook) {              // store-authoritative when loaded
+        forge::DDMsgView v = forge::dd_message_hook(key);
+        if (v.found) return v.text;
+    }
     static std::map<std::string, std::string> cache; static bool loaded = false;
     if (!loaded) { loaded = true;
         try {
@@ -3167,6 +3172,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             catch (...) { return err(404, "run tools/slice_sprites.py to cut the sheets into sprites"); }
         }
         if (path == "/api/messages") {
+            { std::string ddm;                 // store-authoritative when loaded
+              if (forge::drydock_messages_json(ddm))
+                  return forge::HttpResponse{200, "application/json", ddm}; }
             try { return J(200, forge::json_parse_file("data_extracted/engine/messages.json")); }
             catch (...) { return err(404, "messages.json not found (run tools/build_messages.py)"); }
         }

@@ -1,0 +1,6 @@
+record msge.deadconverts {
+  key     = "@DEADCONVERTS"
+  text    = "Indian {converts} lose faith and return to tribe.  Converts\nwho do not join colonies within {eight turns} of their conversion\nare eliminated for loss of faith."
+  box_w   = 190
+  speaker = "MSS4"
+}

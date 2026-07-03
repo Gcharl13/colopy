@@ -1,0 +1,6 @@
+record msge.indianwincolony {
+  key    = "@INDIANWINCOLONY"
+  text   = "{%STRING0} massacre {%STRING1} colonists at {%STRING3}!\n{%STRING2} dies fending off onslaught."
+  box_w  = 190
+  sprite = "woodcut.wdcut11"
+}

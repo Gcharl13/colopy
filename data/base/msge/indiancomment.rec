@@ -1,0 +1,5 @@
+record msge.indiancomment {
+  key   = "@INDIANCOMMENT"
+  text  = "The {%STRING0} are pleased to see the prosperity of our\nneighbors the {%STRING1}.  We are concerned, however, that\nyour colonies are beginning to overuse the lands near our\nsettlements."
+  box_w = 190
+}

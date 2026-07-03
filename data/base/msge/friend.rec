@@ -1,0 +1,4 @@
+record msge.friend {
+  key  = "@FRIEND"
+  text = "British General Cornwallis\nFrench General Lafayette\nSpanish Generals\nDutch Admiral de Ruyter"
+}

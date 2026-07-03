@@ -1,0 +1,5 @@
+record msge.canesugar {
+  key   = "@CANESUGAR"
+  text  = "{%STRING0} has run out of {sugar}, Your Excellency.  Our distillers\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

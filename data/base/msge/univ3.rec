@@ -1,0 +1,5 @@
+record msge.univ3 {
+  key   = "@UNIV3"
+  text  = "The {University} can support a faculty of only {three}\nteachers at a time, Your Excellency."
+  box_w = 190
+}

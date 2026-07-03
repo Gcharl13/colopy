@@ -1,0 +1,6 @@
+record msge.learnslow {
+  key     = "@LEARNSLOW"
+  text    = "\"You are unskilled and uncouth, Young One, and have\ndifficulty understanding our ways.  We see scarce\nhope for you, although you are welcome to remain\nin our village.  Perhaps in time you will\nbe productive.\""
+  box_w   = 190
+  speaker = "IND"
+}

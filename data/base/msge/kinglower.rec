@@ -1,0 +1,6 @@
+record msge.kinglower {
+  key     = "@KINGLOWER"
+  text    = "\"After careful consideration, we have graciously decided\nto lower your tax rate by {%NUMBER0%%}.  The tax rate is\nnow {%NUMBER1%%}.\""
+  box_w   = 190
+  speaker = "KING1"
+}

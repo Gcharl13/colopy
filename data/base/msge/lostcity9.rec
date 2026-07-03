@@ -1,0 +1,5 @@
+record msge.lostcity9 {
+  key   = "@LOSTCITY9"
+  text  = "You happen upon the desperate survivors of\na former colony.  In exchange for badly needed\nsupplies, they swear allegiance to %STRING0."
+  box_w = 190
+}

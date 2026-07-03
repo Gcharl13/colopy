@@ -1,0 +1,5 @@
+record msge.leadername {
+  key   = "@LEADERNAME"
+  text  = "^^Please Enter Your Name.\n_\n_\n______________________"
+  box_w = 300
+}

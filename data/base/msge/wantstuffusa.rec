@@ -1,0 +1,5 @@
+record msge.wantstuffusa {
+  key   = "@WANTSTUFFUSA"
+  text  = "\"The {%STRING0} does not recognize the right of european powers to\nestablish colonies in this hemisphere.  We are willing, however, to\noverlook this doctrine temporarily in exchange for {%NUMBER0 %STRING1}.\"\n\n\"We laugh at your puny threats.\"\n\"We gladly share {%NUMBER0 %STRING1} with our neighbors.\""
+  box_w = 220
+}

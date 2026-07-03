@@ -1,0 +1,5 @@
+record msge.siege {
+  key   = "@SIEGE"
+  text  = "This colony is under {siege}, since enemy combat units\noutnumber friendly combat units in the area.  Until the siege is\nlifted, only Soldier and Dragoon units can be created here."
+  box_w = 190
+}

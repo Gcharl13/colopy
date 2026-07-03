@@ -1,0 +1,7 @@
+record msge.viceroy {
+  key   = "@VICEROY"
+  text  = "^\n^^Year of Our Lord\n^^1492\n^\n^^An Audience With\n^^The King of %COUNTRY\n^\n\"For the greater glory of %COUNTRY,\nwe dub thee Viceroy of the New World.\nGo and explore this new land. Settle\nit and bring wealth and glory to\nyourself and our nation.\""
+  box_w = 78
+  x     = 232
+  y     = 21
+}

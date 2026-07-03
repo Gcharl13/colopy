@@ -1,0 +1,6 @@
+record msge.multinext {
+  key     = "@MULTINEXT"
+  text    = "^^{%STRING0} Player Turn\n^\n^^Press any key for {%STRING0} player's turn."
+  box_w   = 220
+  speaker = "MSS2"
+}

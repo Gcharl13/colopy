@@ -1,0 +1,5 @@
+record msge.extortstuff {
+  key   = "@EXTORTSTUFF"
+  text  = "\"Great %STRING0, we bow before the might of your strange weapons.\nThe humble and peaceloving {%STRING1} shall gladly deliver {%NUMBER0\n%STRING2} to {%STRING3} in the hope that you will spare us from the\nwrath of your warriors.\""
+  box_w = 190
+}

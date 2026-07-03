@@ -1,0 +1,5 @@
+record msge.tradeatwar {
+  key   = "@TRADEATWAR"
+  text  = "Ships and wagon trains cannot enter the colonies of foreign powers\nwith whom you are at war or with whom you have not yet established\ncontact."
+  box_w = 190
+}

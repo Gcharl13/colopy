@@ -1,0 +1,6 @@
+record msge.indiansconvert {
+  key     = "@INDIANSCONVERT"
+  text    = "\"The wisdom of your missionaries has convinced some of us\nto join your colony\nat {%STRING0} and live among you as {converts}.\""
+  box_w   = 190
+  speaker = "IND"
+}

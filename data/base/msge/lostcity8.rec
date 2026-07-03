@@ -1,0 +1,5 @@
+record msge.lostcity8 {
+  key   = "@LOSTCITY8"
+  text  = "\"You are trespassing near our holy {%STRING0} shrines!  The\n%STRING0 tribe is most displeased!\""
+  box_w = 190
+}

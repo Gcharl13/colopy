@@ -1,0 +1,5 @@
+record msge.maybewithdraw {
+  key   = "@MAYBEWITHDRAW"
+  text  = "\"Our forces protect valid %STRING0 interests.  We are, however,\nwilling to move them in exchange for {%NUMBER0$} to cover the\ncost of demobilization.\"\n\n\"We shall gladly pay {%NUMBER0$}.\"\n\"Withdraw or perish, heathen pigs!\"\n\"Oh. Never mind then.\""
+  box_w = 220
+}

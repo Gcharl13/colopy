@@ -1,0 +1,5 @@
+record msge.saveerror {
+  key   = "@SAVEERROR"
+  text  = "Error saving game %STRING0."
+  box_w = 190
+}

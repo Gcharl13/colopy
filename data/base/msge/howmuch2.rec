@@ -1,0 +1,5 @@
+record msge.howmuch2 {
+  key   = "@HOWMUCH2"
+  text  = "How much {%STRING0} should be unloaded from %STRING1 to %STRING2 (0-%NUMBER0).\n\nAmount:"
+  box_w = 190
+}

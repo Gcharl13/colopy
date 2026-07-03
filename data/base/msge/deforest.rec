@@ -1,0 +1,5 @@
+record msge.deforest {
+  key   = "@DEFOREST"
+  text  = "Deforestation near %STRING0."
+  box_w = 160
+}

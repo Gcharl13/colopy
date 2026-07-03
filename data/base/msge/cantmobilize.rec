@@ -1,0 +1,5 @@
+record msge.cantmobilize {
+  key   = "@CANTMOBILIZE"
+  text  = "Continental Army can mobilize in colonies\nwhich contain at least {%NUMBER0 muskets} only.  None\nof our colonies have enough muskets available\nfor mobilization!"
+  box_w = 190
+}

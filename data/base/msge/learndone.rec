@@ -1,0 +1,6 @@
+record msge.learndone {
+  key     = "@LEARNDONE"
+  text    = "\"Congratulations, Young One.  You have learned the\nways of the {%STRING0} and become a master {%STRING1}.\nWe hope you will share this knowledge wisely.  You\nare always welcome to stay in our village.\""
+  box_w   = 190
+  speaker = "IND"
+}

@@ -1,0 +1,7 @@
+record msge.indianwincolony2 {
+  key     = "@INDIANWINCOLONY2"
+  text    = "Spies report: {%STRING0} massacre {%STRING1} colonists at {%STRING3}.\n%STRING1 governor plans countermeasures."
+  box_w   = 190
+  sprite  = "woodcut.wdcut11"
+  speaker = "MSS3"
+}

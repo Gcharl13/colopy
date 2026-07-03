@@ -1,0 +1,6 @@
+record msge.shipslow {
+  key     = "@SHIPSLOW"
+  text    = "{%STRING0}'s progress slowed by presence of {%STRING1 %STRING2}."
+  box_w   = 190
+  speaker = "MSS0"
+}

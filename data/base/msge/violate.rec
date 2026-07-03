@@ -1,0 +1,5 @@
+record msge.violate {
+  key   = "@VIOLATE"
+  text  = "{%STRING0} violate {%STRING1} territory near {%STRING2}!\nColonists are outraged!"
+  box_w = 190
+}

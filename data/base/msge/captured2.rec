@@ -1,0 +1,7 @@
+record msge.captured2 {
+  key     = "@CAPTURED2"
+  text    = "Spies report: {%STRING0} march into {%STRING2}."
+  box_w   = 190
+  sprite  = "woodcut.wdcut11"
+  speaker = "MSS2"
+}

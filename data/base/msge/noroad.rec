@@ -1,0 +1,6 @@
+record msge.noroad {
+  key     = "@NOROAD"
+  text    = "There is already a {road} here,\nYour Excellency."
+  box_w   = 190
+  speaker = "MSS3"
+}

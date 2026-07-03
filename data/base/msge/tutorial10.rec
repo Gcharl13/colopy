@@ -1,0 +1,6 @@
+record msge.tutorial10 {
+  key     = "@TUTORIAL10"
+  text    = "This looks like a good place to {plow} or {clear}.  Our {pioneers} will plow\nthe fields in a square if you press the '{P}' key.  Plowing a square\nincreases its food, tobacco, cotton, and sugar production by one.\nPlowing a {forest} square causes the forest to be {cleared}, making room\nfor more agriculture."
+  box_w   = 220
+  speaker = "MSS3"
+}

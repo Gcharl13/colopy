@@ -1,0 +1,5 @@
+record msge.raidscalp {
+  key   = "@RAIDSCALP"
+  text  = "{%STRING0} raiding party takes scalps in {%STRING1}!\nColonists scream for revenge!"
+  box_w = 190
+}

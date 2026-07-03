@@ -1,0 +1,5 @@
+record msge.burial1 {
+  key   = "@BURIAL1"
+  text  = "The mounds are cold and empty."
+  box_w = 190
+}

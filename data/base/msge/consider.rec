@@ -1,0 +1,6 @@
+record msge.consider {
+  key     = "@CONSIDER"
+  text    = "%STRING0 is considering intervention on our behalf against the King,\nYour Excellency!  If we can generate %NUMBER0 liberty bells, they will\njoin us."
+  box_w   = 220
+  speaker = "MSS1"
+}

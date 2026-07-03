@@ -1,0 +1,6 @@
+record msge.useduptools {
+  key     = "@USEDUPTOOLS"
+  text    = "Our {pioneer} has reverted to {colonist} status after using\nall its {tools}."
+  box_w   = 190
+  speaker = "MSS3"
+}

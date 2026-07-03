@@ -1,0 +1,5 @@
+record msge.soundoptions {
+  key   = "@SOUNDOPTIONS"
+  text  = "Set Sound Options\n~Background Music\n~Event Music\n~Sound Effects"
+  box_w = 190
+}

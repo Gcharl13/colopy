@@ -1,0 +1,5 @@
+record msge.foodlow {
+  key   = "@FOODLOW"
+  text  = "The colony of {%STRING0} is rapidly depleting its\nfood supply, Your Excellency.  We have only {%NUMBER0 food}\nleft.  We must have food for the winter months."
+  box_w = 190
+}

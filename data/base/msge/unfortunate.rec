@@ -1,0 +1,5 @@
+record msge.unfortunate {
+  key   = "@UNFORTUNATE"
+  text  = "\"Unfortunately, your treasury is insufficient to\nmatch your extravagant promises.\""
+  box_w = 220
+}

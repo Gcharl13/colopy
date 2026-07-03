@@ -1,0 +1,6 @@
+record msge.evasive {
+  key     = "@EVASIVE"
+  text    = "{%STRING0 %STRING1} evades {%STRING2 %STRING3}."
+  box_w   = 190
+  speaker = "MSS0"
+}

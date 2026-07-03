@@ -1,0 +1,6 @@
+record msge.succession {
+  key     = "@SUCCESSION"
+  text    = "War of the Spanish Succession ends in Europe!\n{%STRING0}, ravaged by war, agrees to cede %STRING1\nto the {%STRING2}.  Treaty of Utrecht specifies that all\n{%STRING3} possessions in the New World now fall under {%STRING2} rule."
+  box_w   = 220
+  speaker = "MSS2"
+}

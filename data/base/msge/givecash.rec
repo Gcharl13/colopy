@@ -1,0 +1,5 @@
+record msge.givecash {
+  key   = "@GIVECASH"
+  text  = "\"Please spare our meek and helpless settlement from destruction.\nWe will give you {%NUMBER0$} if you will agree not to attack us.\"\n\n\"Very well, you shall be spared.\"\n\"Alas, it is God's will.\""
+  box_w = 220
+}

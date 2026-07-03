@@ -1,0 +1,5 @@
+record msge.nomorewagons {
+  key   = "@NOMOREWAGONS"
+  text  = "{%STRING0} is set to produce a {Wagon Train}, Your\nExcellency, but we are not allowed to have more\nwagon trains than we have colonies ({%NUMBER0})."
+  box_w = 190
+}

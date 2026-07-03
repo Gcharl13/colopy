@@ -1,0 +1,6 @@
+record msge.multirev {
+  key     = "@MULTIREV"
+  text    = "^^Warning!\n^\nThe Revolution does not function in multi-player mode.  If\nyou declare independence, the game will become a single player\ngame.  Are you sure you want to do this?\n\nDeclare independence\nNever Mind"
+  box_w   = 220
+  speaker = "MSS1"
+}

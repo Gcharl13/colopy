@@ -1,0 +1,6 @@
+record msge.independence {
+  key     = "@INDEPENDENCE"
+  text    = "Continental Congress signs {Declaration of Independence}!\nAbuses and usurpations cited!  Ultimatum presented to King!\nExpeditionary force dispatched to suppress rebellion!\nGeneral %STRING0 calls for volunteers for new Continental Army!"
+  box_w   = 220
+  speaker = "MSS1"
+}

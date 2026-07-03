@@ -1,0 +1,5 @@
+record msge.piss2 {
+  key   = "@PISS2"
+  text  = "Because you persist in destroying the forest,\nthe {%STRING1} tribe is now %STRING2 {%STRING3}."
+  box_w = 190
+}

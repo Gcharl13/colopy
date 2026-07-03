@@ -1,0 +1,5 @@
+record msge.trademercantilism {
+  key   = "@TRADEMERCANTILISM"
+  text  = "\"In the interests of {Mercantilism}, %STRING0 has ordered us not\nto trade with foreign merchants.  We must therefore ask you to\ngo away please.\""
+  box_w = 190
+}

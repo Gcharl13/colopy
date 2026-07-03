@@ -1264,6 +1264,10 @@ async function ddFormRender(id){
         +(f.min!==undefined?' min="'+f.min+'"':'')+(f.max!==undefined?' max="'+f.max+'"':'')
         +' data-id="'+esc(id)+'" data-f="'+esc(f.name)+'" data-k="0" onchange="ddEdit(this)" style="width:110px">'
         +(f.min!==undefined||f.max!==undefined?' <span class="muted">'+(f.min??'')+'..'+(f.max??'')+'</span>':'');
+    } else if(f.kind===2&&String(shown).indexOf('\n')>=0){   // multi-line str: a plain
+      h+='<textarea data-id="'+esc(id)+'" data-f="'+esc(f.name)   // input would DROP the \n
+        +'" data-k="2" onchange="ddEdit(this)" rows="'+Math.min(8,String(shown).split('\n').length)
+        +'" style="width:420px">'+esc(String(shown))+'</textarea>';
     } else if(f.kind===1||f.kind===2){                 // float / str
       h+='<input value="'+esc(String(shown))+'" data-id="'+esc(id)+'" data-f="'+esc(f.name)
         +'" data-k="'+f.kind+'" onchange="ddEdit(this)" style="width:320px">';

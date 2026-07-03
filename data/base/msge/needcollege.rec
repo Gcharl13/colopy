@@ -1,0 +1,5 @@
+record msge.needcollege {
+  key   = "@NEEDCOLLEGE"
+  text  = "We must build a {college} to teach that\nprofession ({%STRING0}) in our colony."
+  box_w = 190
+}

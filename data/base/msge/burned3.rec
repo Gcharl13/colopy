@@ -1,0 +1,7 @@
+record msge.burned3 {
+  key     = "@BURNED3"
+  text    = "Spies report: {%STRING0} burn {%STRING1} colony at {%STRING3}.\n%STRING1 governor vows reprisals."
+  box_w   = 190
+  sprite  = "woodcut.wdcut11"
+  speaker = "MSS2"
+}

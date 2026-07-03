@@ -1,0 +1,5 @@
+record msge.heathenusa {
+  key   = "@HEATHENUSA"
+  text  = "\"The %STRING0 is currently in the process of relocating members\nof the dangerous\n{%STRING1} tribe to a government-run reservation.  Will you assist us\nin this task?\"\n\n\"Never! That would be a terrible crime!\"\n\"Yes, it is our manifest destiny.\""
+  box_w = 220
+}

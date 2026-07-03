@@ -1,0 +1,5 @@
+record msge.howmuch1 {
+  key   = "@HOWMUCH1"
+  text  = "How much {%STRING0} should be loaded onto %STRING1 (0-%NUMBER0).\n\nAmount:"
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.badhaggle3 {
+  key   = "@BADHAGGLE3"
+  text  = "\"As we said before, we will sell you nothing further\nuntil you bring us something of value.\""
+  box_w = 190
+}

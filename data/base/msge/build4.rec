@@ -1,0 +1,6 @@
+record msge.build4 {
+  key   = "@BUILD4"
+  text  = "^^Commissioned and Blessed by the %STRING1 of %STRING0,"
+  box_w = 310
+  y     = 30
+}

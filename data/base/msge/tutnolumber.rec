@@ -1,0 +1,6 @@
+record msge.tutnolumber {
+  key     = "@TUTNOLUMBER"
+  text    = "None of the spaces surrounding this square are forested, Your Excellency.\nA colony built here will have a hard time getting enough lumber to supply\nits carpenters.\n\nCancel action.\nBuild colony anyway."
+  box_w   = 220
+  speaker = "MSS3"
+}

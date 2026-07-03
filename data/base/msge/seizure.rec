@@ -1,0 +1,6 @@
+record msge.seizure {
+  key     = "@SEIZURE"
+  text    = "{%STRING0} seized on the high seas by the Royal Navy!"
+  box_w   = 190
+  speaker = "MSS0"
+}

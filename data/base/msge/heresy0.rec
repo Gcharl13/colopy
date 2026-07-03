@@ -1,0 +1,6 @@
+record msge.heresy0 {
+  key     = "@HERESY0"
+  text    = "{%STRING0 missionaries} denounce heresy of {%STRING1}.\n{%STRING2} converts burn %STRING1 mission and erect\na new, %STRING0 one!"
+  box_w   = 190
+  speaker = "MYR"
+}

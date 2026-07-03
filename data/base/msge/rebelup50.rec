@@ -1,0 +1,5 @@
+record msge.rebelup50 {
+  key   = "@REBELUP50"
+  text  = "{Rebel} sentiment is rising in the colonies, Your Excellency!\n{%NUMBER0%%} of the population supports the idea of independence\nfrom %STRING0.  Some of the Founding Fathers think we should\nrequest an audience with the King and declare our independence!"
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.toomanyunits {
+  key   = "@TOOMANYUNITS"
+  text  = "A {unit} cannot be created because the maximum number of units for\nthe game has been reached.  Units must be eliminated before new\nunits can be created."
+  box_w = 190
+}

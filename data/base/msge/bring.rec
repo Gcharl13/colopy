@@ -1,0 +1,5 @@
+record msge.bring {
+  key   = "@BRING"
+  text  = "\"We are in need of {%STRING0} and {%STRING1}.  Perhaps you will\nbring some next time you come to trade with us.  Even {%STRING2}\nwould be of some value.\""
+  box_w = 190
+}

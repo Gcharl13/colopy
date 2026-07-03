@@ -1,0 +1,6 @@
+record msge.clearcut {
+  key     = "@CLEARCUT"
+  text    = "Pioneers clear forest near {%STRING0}.  {%NUMBER0 lumber} added\nto stockpile."
+  box_w   = 190
+  speaker = "MSS5"
+}

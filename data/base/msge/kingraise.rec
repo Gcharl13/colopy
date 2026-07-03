@@ -1,0 +1,6 @@
+record msge.kingraise {
+  key     = "@KINGRAISE"
+  text    = "\"Your DARE to demand lower taxes!  After the kindness\nthe crown has shown?  For your impudence we shall raise\ntaxes by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.\""
+  box_w   = 190
+  speaker = "KING1"
+}

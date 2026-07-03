@@ -1,0 +1,5 @@
+record msge.lostcity7 {
+  key   = "@LOSTCITY7"
+  text  = "Your expedition enters the village of a small,\nfriendly tribe.  The chief offers you a gift\nof {%NUMBER0$}."
+  box_w = 190
+}

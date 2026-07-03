@@ -1,0 +1,7 @@
+record msge.landfall2 {
+  key     = "@LANDFALL2"
+  text    = "Our ships cannot navigate up this river,\nExcellency.  Shall we make landfall\nand leave the ships behind?\n\nStay With Ships\nMake Landfall"
+  box_w   = 190
+  speaker = "MSS3"
+  default = "1"
+}

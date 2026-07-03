@@ -1,0 +1,5 @@
+record msge.oldpeacemanly {
+  key   = "@OLDPEACEMANLY"
+  text  = "\"Although the {%STRING0} do not properly belong in this hemisphere,\nwe elect not to drive you from the New World at this time.\"\n\n\"Go in peace, {%STRING1} brothers.\"\n\"First you must withdraw your forces from outside our colonies!\"\n\"How much do you value your worthless lives, heathen swine?\"\n\"We suggest an alliance.\""
+  box_w = 220
+}

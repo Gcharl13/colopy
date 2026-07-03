@@ -1,0 +1,5 @@
+record msge.trainindentured {
+  key   = "@TRAININDENTURED"
+  text  = "An {indentured servant} in {%STRING0} has become a\n{free colonist} through education."
+  box_w = 190
+}

@@ -1,0 +1,6 @@
+record msge.tutorial18 {
+  key   = "@TUTORIAL18"
+  text  = "Cargo is normally purchased in units of 100; when you drag a cargo from\nthe warehouse to your ship, you are assumed to be loading 100 units.  Since\n{%STRING0} costs {%NUMBER0$} per unit and we only have {%NUMBER1$} gold,\nwe cannot afford 100 units.  If you want to load or unload less than 100\nunits of cargo onto a ship, simply hold down the {SHIFT} key while you drag\nthe cargo with the mouse.  You will then be prompted to enter the number\nof units you wish to buy."
+  box_w = 300
+  y     = 10
+}

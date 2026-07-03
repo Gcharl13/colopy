@@ -1,0 +1,5 @@
+record msge.piracyusa {
+  key   = "@PIRACYUSA"
+  text  = "\"The {%STRING0} will not suffer foreign pirates to prey\nupon its commercial interests.  We {%STRING3} that you withdraw\nall {privateers} at once.\"\n\n\"What pirates? We have NEVER condoned piracy!\"\n\"Very well, we shall withdraw our {privateers} to Europe.\""
+  box_w = 220
+}

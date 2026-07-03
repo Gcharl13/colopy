@@ -1,0 +1,5 @@
+record msge.heathen {
+  key   = "@HEATHEN"
+  text  = "\"We are currently busy subduing the notorious heathen {%STRING1} tribe.\nWill you, as fellow believers, join with us in this holy task?\"\n\n\"Never! The {%STRING0} are a harmless and peaceful people!\"\n\"Yes! Let us teach the {%STRING0} a lesson!\""
+  box_w = 220
+}

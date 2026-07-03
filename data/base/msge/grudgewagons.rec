@@ -1,0 +1,5 @@
+record msge.grudgewagons {
+  key   = "@GRUDGEWAGONS"
+  text  = "\"We grudgingly receive your wagons in spite of the\natrocities you have committed against the {%STRING0} people.\""
+  box_w = 190
+}

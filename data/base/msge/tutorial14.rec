@@ -1,0 +1,6 @@
+record msge.tutorial14 {
+  key     = "@TUTORIAL14"
+  text    = "Our {soldiers} have two uses.  They can be used to attack our\nenemies, if we run across any.  More importantly, they can be used\nto protect our own colonies from harm.  Our soldiers are equipped\nwith {50 Muskets}.  If we want to make more soldier units later on, we\nwill need either to bring more Muskets from Europe or to have our\ngunsmiths manufacture them.  Our soldiers will also become more powerful\nif we equip them with {Horses}."
+  box_w   = 220
+  speaker = "MSS1"
+}

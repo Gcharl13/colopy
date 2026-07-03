@@ -1,0 +1,5 @@
+record msge.tribute {
+  key   = "@TRIBUTE"
+  text  = "\"%STRING0 has told us that we must drive all {%STRING1} from the\nshores of {%STRING2}.  Our efforts are currently given to\nweightier matters, however, and we might temporarily overlook\nthis directive in exchange for a 'donation' of {%NUMBER0$} to the 'Church'.\"\n\n\"Not a penny for those heretic swine!\"\n\"We will gladly donate {%NUMBER0$} to such a worthy cause.\""
+  box_w = 220
+}

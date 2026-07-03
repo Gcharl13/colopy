@@ -1,0 +1,7 @@
+record msge.artillery2 {
+  key     = "@ARTILLERY2"
+  text    = "Damaged %STRING0 %STRING1 {destroyed}."
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS1"
+}

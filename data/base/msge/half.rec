@@ -1,0 +1,6 @@
+record msge.half {
+  key     = "@HALF"
+  text    = "Your Excellency, these men are tired.  If we force\nthem to attack this turn, they will fight at {%NUMBER0/3\nstrength}.\n\n\"Charge!\"\n\"Then let them rest.\""
+  box_w   = 190
+  speaker = "MSS1"
+}

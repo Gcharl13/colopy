@@ -1,0 +1,6 @@
+record msge.europewin {
+  key    = "@EUROPEWIN"
+  text   = "{%STRING0} %STRING4 {%STRING1 %STRING2} near %STRING3!"
+  box_w  = 190
+  sprite = "woodcut.wdcut11"
+}

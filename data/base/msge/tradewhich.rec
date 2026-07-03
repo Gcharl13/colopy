@@ -1,0 +1,5 @@
+record msge.tradewhich {
+  key   = "@TRADEWHICH"
+  text  = "Which cargo shall we offer to trade, Your Excellency?"
+  box_w = 190
+}

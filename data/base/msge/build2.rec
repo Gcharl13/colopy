@@ -1,0 +1,6 @@
+record msge.build2 {
+  key   = "@BUILD2"
+  text  = "^^an Expedition led by the Great %STRING0,\n^^%STRING1,"
+  box_w = 310
+  y     = 30
+}

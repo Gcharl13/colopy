@@ -1,0 +1,6 @@
+record msge.mercenaries {
+  key     = "@MERCENARIES"
+  text    = "The King of %STRING0 has offered to send us a force of trained {mercenaries}\n(%STRING1)\nin exchange for {%NUMBER0$}.\n\nNo thank you.\nPay {%NUMBER0$}."
+  box_w   = 190
+  speaker = "MSS1"
+}

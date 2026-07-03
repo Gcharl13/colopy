@@ -1,0 +1,6 @@
+record msge.purchasetax {
+  key     = "@PURCHASETAX"
+  text    = "\"We have graciously decided to raise your tax rate by {%NUMBER0%%}\nin recognition of your use of Crown resources.  The tax rate is\nnow {%NUMBER1%%}.  If you wish, you may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

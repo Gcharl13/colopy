@@ -1,0 +1,5 @@
+record msge.indianbegfood {
+  key   = "@INDIANBEGFOOD"
+  text  = "\"The {%STRING0} tribe has fallen upon hard times and does\nnot have enough food this season.  Will our brothers of\n{%STRING1} share the bounty of their harvests with us in our\ntime of need?\"\n\n\"I'm sorry, we gave at the office.\"\n\"We offer you {%NUMBER0} of our {%NUMBER1 food} as a sign of friendship.\""
+  box_w = 190
+}

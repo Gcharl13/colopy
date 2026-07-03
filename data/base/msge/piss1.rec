@@ -1,0 +1,5 @@
+record msge.piss1 {
+  key   = "@PISS1"
+  text  = "Because of your incessant roadbuilding,\nthe {%STRING1} tribe is now %STRING2 {%STRING3}."
+  box_w = 190
+}

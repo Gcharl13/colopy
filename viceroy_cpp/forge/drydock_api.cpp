@@ -174,10 +174,66 @@ void drydock_repatch_tables() {
         for (const auto& r : bucket) patch_record_tables(r);
 }
 
+// ---- MSGE consumer cutover (strangler): @KEY -> store record --------------------
+// The message readers are keyed lookups, so they cut over directly instead of
+// using the JSON write-through: dd_message_hook (engine.hpp) serves message_meta
+// and game_message_text from the store; /api/messages is rebuilt from it too.
+static std::unordered_map<std::string, std::string> g_msg_index;   // "@KEY" -> record id
+
+static void rebuild_msg_index() {
+    g_msg_index.clear();
+    auto ti = g_store.type_index.find("msge");
+    if (ti == g_store.type_index.end()) return;
+    for (const Record& r : g_store.records[ti->second])
+        if (const Value* k = r.find("key"); k && k->kind == ValKind::Str)
+            g_msg_index[k->s] = r.id;
+}
+
+static DDMsgView dd_message_provider(const std::string& key) {
+    DDMsgView v;
+    auto it = g_msg_index.find(key);
+    if (it == g_msg_index.end()) return v;
+    const Record* r = store_find(g_store, it->second);
+    if (!r) return v;
+    v.found = true;
+    auto s = [&](const char* f) { const Value* x = r->find(f);
+        return (x && x->kind == ValKind::Str) ? x->s : std::string(); };
+    auto i = [&](const char* f, int def) { const Value* x = r->find(f);
+        return (x && x->kind == ValKind::Int) ? (int)x->i : def; };
+    v.text = s("text");
+    v.box_w = i("box_w", 0); v.x = i("x", -1); v.y = i("y", -1);
+    v.sprite = s("sprite"); v.speaker = s("speaker"); v.def = s("default");
+    return v;
+}
+
+bool drydock_messages_json(std::string& out) {
+    if (!g_ready) return false;
+    JsonValue rows; rows.type = JsonValue::Array;
+    for (const auto& [key, id] : g_msg_index) {
+        DDMsgView v = dd_message_provider(key);
+        if (!v.found) continue;
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["key"] = json_str(key);
+        o.obj["text"] = json_str(v.text);
+        o.obj["box_w"] = json_num(v.box_w);
+        o.obj["x"] = json_num(v.x);
+        o.obj["y"] = json_num(v.y);
+        o.obj["sprite"] = json_str(v.sprite);
+        o.obj["speaker"] = json_str(v.speaker);
+        o.obj["default"] = json_str(v.def);
+        rows.arr.push_back(std::move(o));
+    }
+    JsonValue doc; doc.type = JsonValue::Object;
+    doc.obj["messages"] = std::move(rows);
+    out = json_dump(doc);
+    return true;
+}
+
 // after any mutation: keep the live game's rules AND the legacy JSON readers in
 // lockstep with the store
 static void sync_rules(vc::sim::RuleData* rd) {
     drydock_repatch_tables();
+    rebuild_msg_index();               // key edits retarget the @KEY lookups
     if (!rd) return;
     std::vector<Record> all;
     for (const auto& bucket : g_store.records)
@@ -214,6 +270,8 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg) {
     g_data_dir = data_dir;
     g_ready = true;
     drydock_repatch_tables();      // legacy JSON readers follow the store from boot
+    rebuild_msg_index();
+    dd_message_hook = dd_message_provider;   // @KEY message lookups cut over
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();
     msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +

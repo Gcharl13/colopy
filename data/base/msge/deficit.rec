@@ -1,0 +1,5 @@
+record msge.deficit {
+  key   = "@DEFICIT"
+  text  = "\"Since you have brought no trade goods, we will not\ntrade with you.\""
+  box_w = 190
+}

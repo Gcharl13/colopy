@@ -1,0 +1,5 @@
+record msge.extortno {
+  key   = "@EXTORTNO"
+  text  = "\"You must think us very foolish indeed, %STRING0 %STRING1.  The {%STRING2}\nwill not be taken in by your tricks and treachery.\""
+  box_w = 190
+}

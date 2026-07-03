@@ -1,0 +1,5 @@
+record msge.buy0 {
+  key   = "@BUY0"
+  text  = "\"We shall fill up your {%STRING1} with {%NUMBER2 %STRING0} in\nexchange for {%NUMBER0$}.  Is this acceptable?\"\n\n\"We will gladly pay {%NUMBER0$} (of {%NUMBER3$}).\"\n\"A fairer price would be {%NUMBER1$}.\"\n\"Never mind.\""
+  box_w = 190
+}

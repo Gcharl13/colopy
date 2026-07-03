@@ -1,0 +1,5 @@
+record msge.pickmilitary {
+  key   = "@PICKMILITARY"
+  text  = "Select a military tune:\n\n\"The Reveille\"\n\"Successful Campaign\"\n\"Morelli's Lesson\"\n\"To Arms\""
+  box_w = 220
+}

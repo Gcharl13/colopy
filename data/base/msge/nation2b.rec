@@ -1,0 +1,5 @@
+record msge.nation2b {
+  key   = "@NATION2B"
+  text  = "^^SPAIN\n^^_\nTo reflect the strategic surprise which Spain achieved over pre-Columbian\nAmerican civilizations, the Spanish player receives a {50%% combat bonus}\nwhen {attacking Indian villages}."
+  box_w = 300
+}

@@ -1,0 +1,5 @@
+record msge.indianforest2 {
+  key   = "@INDIANFOREST2"
+  text  = "\"This forest and the creatures\nit supports are necessary to sustain the {%STRING0} way\nof life.  Your colony at {%STRING1} is now encroaching on\nthe forest.  We patiently ask you not to destroy it.\""
+  box_w = 190
+}

@@ -1,0 +1,7 @@
+record msge.indiangrudge {
+  key     = "@INDIANGRUDGE"
+  text    = "{%STRING0} nation holds War Council!\n%STRING1 enter the War of Independence on the Tory side!\nTories agree to provide Muskets and Horses for the %STRING0."
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

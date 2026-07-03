@@ -1,0 +1,5 @@
+record msge.furs {
+  key   = "@FURS"
+  text  = "{%STRING0} has run out of {furs}, Your Excellency.  Our fur traders\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

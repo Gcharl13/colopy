@@ -1,0 +1,5 @@
+record msge.colonyoptions {
+  key   = "@COLONYOPTIONS"
+  text  = "Set Colony Report Options\nLabels on {buildings}\nLabels on {cargo} and {terrain}\nReport when colonists {trained}\nReport {food} shortages\nReport {raw materials} shortages\nReport {tools} needed for production\nReport {inefficient} government\nReport {new cargos} available\nReport {Sons of Liberty} membership\nReport {rebel} majorities"
+  box_w = 220
+}

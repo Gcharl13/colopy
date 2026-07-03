@@ -1,0 +1,5 @@
+record msge.apostatesusa {
+  key   = "@APOSTATESUSA"
+  text  = "\"We note that you have signed a treaty with those imperialist\npigs, the {%STRING0}.  We {%STRING1} that you cancel this treaty\nat once.\"\n\n\"Never! The {%STRING0} are our friends!\"\n\"Yes! We shall crush the foul-smelling {%STRING0} together!\""
+  box_w = 220
+}

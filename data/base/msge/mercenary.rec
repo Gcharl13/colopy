@@ -1,0 +1,5 @@
+record msge.mercenary {
+  key   = "@MERCENARY"
+  text  = "The {%STRING0} declare war on the {%STRING1}."
+  box_w = 220
+}

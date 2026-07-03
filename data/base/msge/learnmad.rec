@@ -1,0 +1,5 @@
+record msge.learnmad {
+  key   = "@LEARNMAD"
+  text  = "\"Your ill manners infuriate us, Young One.  You fail\nto understand our ways, so we doubt you will ever\nlearn anything from us.  In fact, we wish you would\nleave_._._._your presence offends us.\""
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.nomorewarehouse {
+  key   = "@NOMOREWAREHOUSE"
+  text  = "{%STRING0} is set to produce a {Warehouse Expansion},\nYour Excellency, but only {one} expansion is allowed\nper colony."
+  box_w = 190
+}

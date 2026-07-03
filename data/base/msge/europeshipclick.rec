@@ -1,0 +1,5 @@
+record msge.europeshipclick {
+  key   = "@EUROPESHIPCLICK"
+  text  = "European harbor options for {%STRING0}:"
+  box_w = 190
+}

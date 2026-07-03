@@ -1,0 +1,5 @@
+record msge.othergranted {
+  key   = "@OTHERGRANTED"
+  text  = "The King of {%STRING0} grants {independence} to %STRING1!  %STRING2\nelected first President of the new republic.  %STRING3\nmakes peace with all european nations."
+  box_w = 220
+}

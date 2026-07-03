@@ -1,0 +1,5 @@
+record msge.kingwelcome0 {
+  key   = "@KINGWELCOME0"
+  text  = "\"Welcome, %STRING0 %STRING1.  Your exploits in\nthe New World please us greatly.\""
+  box_w = 190
+}

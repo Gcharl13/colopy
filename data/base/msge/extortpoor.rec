@@ -1,0 +1,5 @@
+record msge.extortpoor {
+  key   = "@EXTORTPOOR"
+  text  = "\"Mighty %STRING0, we tremble before you.  Alas, the humble and\npeaceloving {%STRING1} have no gifts worthy of your magnificence.\nWe pray that you will be merciful and spare us.\""
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.purchase {
+  key   = "@PURCHASE"
+  text  = "The following items are available.  Which shall\nwe purchase?"
+  box_w = 190
+}

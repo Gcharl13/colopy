@@ -1,0 +1,5 @@
+record msge.cancelpeace {
+  key   = "@CANCELPEACE"
+  text  = "{%STRING0} cancel peace treaty with {%STRING1}."
+  box_w = 190
+}

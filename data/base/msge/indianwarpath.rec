@@ -1,0 +1,7 @@
+record msge.indianwarpath {
+  key     = "@INDIANWARPATH"
+  text    = "\"The {%STRING0} tribe is ready to go on the warpath.\nWhom would you like us to attack?\""
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

@@ -1,0 +1,6 @@
+record msge.otherless {
+  key     = "@OTHERLESS"
+  text    = "Spies Report:  Only {%NUMBER0} {%STRING1} now support independence\nfrom %STRING0.  The King of {%STRING0} will not grant them their liberty\nunless {%NUMBER2} are in favor."
+  box_w   = 220
+  speaker = "MSS2"
+}

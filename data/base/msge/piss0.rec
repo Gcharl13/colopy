@@ -1,0 +1,5 @@
+record msge.piss0 {
+  key   = "@PISS0"
+  text  = "The {%STRING1} tribe is now %STRING2 {%STRING3}."
+  box_w = 190
+}

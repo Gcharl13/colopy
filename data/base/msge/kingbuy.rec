@@ -1,0 +1,6 @@
+record msge.kingbuy {
+  key     = "@KINGBUY"
+  text    = "King increases military spending.  {%STRING0} added to royal\nexpeditionary force.  Colonial leaders express alarm."
+  box_w   = 190
+  speaker = "MSS1"
+}

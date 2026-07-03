@@ -1,0 +1,6 @@
+record msge.kingnewwar {
+  key     = "@KINGNEWWAR"
+  text    = "\"%STRING0 %STRING1.  The arrogant attitude of the {%STRING2} has\nforced us to {declare war} on them.  We have therefore cancelled\nyour peace arrangement and we order you to teach\nthem a lesson in manners at once.  We shall provide you with {%NUMBER0$}\nfrom the Royal Treasury and {%NUMBER1} of our {Veteran Soldier} units to\nassist you in carrying out your campaign.\nIf you wish, you may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

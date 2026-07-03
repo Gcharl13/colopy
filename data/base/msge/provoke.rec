@@ -1,0 +1,5 @@
+record msge.provoke {
+  key   = "@PROVOKE"
+  text  = "\"We can no longer tolerate your foul provocations.  Prepare for WAR!\""
+  box_w = 220
+}

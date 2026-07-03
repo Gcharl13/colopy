@@ -1,0 +1,7 @@
+record msge.lootcapture {
+  key     = "@LOOTCAPTURE"
+  text    = "{%STRING0} treasure worth {%NUMBER0$} CAPTURED by the {%STRING1}!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut04"
+  speaker = "MSS1"
+}

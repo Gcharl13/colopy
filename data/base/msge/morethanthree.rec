@@ -1,0 +1,5 @@
+record msge.morethanthree {
+  key   = "@MORETHANTHREE"
+  text  = "We cannot put more than {three} colonists in any one building, Your\nExcellency."
+  box_w = 220
+}

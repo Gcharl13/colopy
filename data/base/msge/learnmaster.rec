@@ -1,0 +1,6 @@
+record msge.learnmaster {
+  key     = "@LEARNMASTER"
+  text    = "\"We are glad to have a master {%STRING1} living\namong us, Old One.  However, we can only teach\nnew skills to colonists who do not yet have one.\nBring us an {indentured servant} or a {free colonist} and\nwe will train him.\""
+  box_w   = 190
+  speaker = "IND"
+}

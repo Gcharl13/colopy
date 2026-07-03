@@ -1,0 +1,5 @@
+record msge.indiantreaty {
+  key   = "@INDIANTREATY"
+  text  = "\"The {%STRING0} tribe bows before the\nmight of the {%STRING1}.  In tribute to your greatness,\nwe give you all the land you now occupy.\nWill you accept our treaty and live side by side with\nus in peace?\"\n\nYes\nNo"
+  box_w = 190
+}

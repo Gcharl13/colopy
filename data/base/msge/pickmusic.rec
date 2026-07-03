@@ -1,0 +1,5 @@
+record msge.pickmusic {
+  key   = "@PICKMUSIC"
+  text  = "Select a piece of music:\n\n\"Bird Song\"\n\"Smoky Tune\"\n\"Cornwall\"\n\"Shady Grove\"\n\"Fiddler's Dance\"\n\"Jine the Cavalry\"\n\"Joe Clark\"\n\"Little Fiddle\"\n\"Hornpipe\"\n\"Bonny Morn\"\n\"Hole In The Wall\"\n\"Nightingale\"\nIndependence Tunes\nMilitary Tunes\nIndian Tunes"
+  box_w = 220
+}

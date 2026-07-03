@@ -1,0 +1,6 @@
+record msge.warehousefull {
+  key     = "@WAREHOUSEFULL"
+  text    = "Your Excellency, the warehouse at {%STRING0} already\ncontains {%NUMBER0} units of {%STRING1}.  It can only hold {%NUMBER1}.\nIf we add another {%NUMBER2} units, some of the %STRING1 will\nprobably {spoil}!\n\nNever mind.\nUnload the {%STRING1} anyway."
+  box_w   = 190
+  speaker = "MSS5"
+}

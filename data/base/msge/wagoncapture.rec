@@ -1,0 +1,6 @@
+record msge.wagoncapture {
+  key    = "@WAGONCAPTURE"
+  text   = "{%STRING0} wagon train CAPTURED by the {%STRING1}!"
+  box_w  = 190
+  sprite = "woodcut.wdcut10"
+}

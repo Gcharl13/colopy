@@ -1,0 +1,5 @@
+record msge.kingno {
+  key   = "@KINGNO"
+  text  = "\"We are most dissatisfied with your efforts in the\nNew World.  Therefore we do not deign to fulfill\nyour request at this time.\""
+  box_w = 190
+}

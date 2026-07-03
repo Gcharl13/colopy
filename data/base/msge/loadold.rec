@@ -1,0 +1,5 @@
+record msge.loadold {
+  key   = "@LOADOLD"
+  text  = "%STRING0 is an obsolete save file."
+  box_w = 190
+}

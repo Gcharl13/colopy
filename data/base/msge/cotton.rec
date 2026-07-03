@@ -1,0 +1,5 @@
+record msge.cotton {
+  key   = "@COTTON"
+  text  = "{%STRING0} has run out of {cotton}, Your Excellency.  Our weavers\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

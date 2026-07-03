@@ -1,0 +1,5 @@
+record msge.buywhich {
+  key   = "@BUYWHICH"
+  text  = "\"We have {%STRING0}, {%STRING1}, and {%STRING2} available to trade with\nyou.  Which would you like to buy?\"\n\n\"{%STRING0}.\"\n\"{%STRING1}.\"\n\"{%STRING2}.\"\n\"Nothing right now, thank you.\""
+  box_w = 190
+}

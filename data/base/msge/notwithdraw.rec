@@ -1,0 +1,5 @@
+record msge.notwithdraw {
+  key   = "@NOTWITHDRAW"
+  text  = "\"Our forces protect valid %STRING0 interests and shall\nnot be moved.\""
+  box_w = 220
+}

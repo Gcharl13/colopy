@@ -1,0 +1,5 @@
+record msge.onlypio {
+  key   = "@ONLYPIO"
+  text  = "That function can be performed only\nby {pioneers}."
+  box_w = 120
+}

@@ -1,0 +1,7 @@
+record msge.cashtreasure {
+  key     = "@CASHTREASURE"
+  text    = "Treasure sold to foreign agents for {%NUMBER0$}."
+  box_w   = 220
+  sprite  = "woodcut.wdcut04"
+  speaker = "KING1"
+}

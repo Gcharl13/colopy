@@ -1,0 +1,6 @@
+record msge.beginmenu {
+  key   = "@BEGINMENU"
+  text  = "{COLONIZATION} Version %STRING0 -- %STRING1\nStart a Game in NEW WORLD\nStart a Game in AMERICA\nCUSTOMIZE New World\nLOAD Game\nView Hall of Fame"
+  box_w = 160
+  y     = 91
+}

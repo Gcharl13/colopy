@@ -1,0 +1,5 @@
+record msge.tributeusa {
+  key   = "@TRIBUTEUSA"
+  text  = "\"The {%STRING0} does not recognize the right of european powers to\nestablish colonies in this hemisphere.  We are willing, however, to\noverlook this doctrine temporarily in exchange for an indemnity payment\nof {%NUMBER0$}.\"\n\n\"That is blackmail and we will have none of it.\"\n\"We will gladly pay {%NUMBER0$}.\""
+  box_w = 220
+}

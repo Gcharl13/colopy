@@ -1,0 +1,5 @@
+record msge.oldpeacemeek {
+  key   = "@OLDPEACEMEEK"
+  text  = "\"We welcome the friendship of our brothers the {%STRING0} and their\nwise leader %STRING2 %STRING3.  Together we shall work God's will\nin the New World.\"\n\n\"Go in peace, {%STRING1} brothers.\"\n\"First you must withdraw your forces from our colonies!\"\n\"How much do you value your worthless lives, heathen swine?\"\n\"We suggest an alliance.\""
+  box_w = 220
+}

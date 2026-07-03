@@ -1,0 +1,6 @@
+record msge.chiefguides {
+  key     = "@CHIEFGUIDES"
+  text    = "\"We gladly welcome you to our %STRING1.\nIn honor of the strange tales you have shared with us,\nthe {%STRING0} shall provide you with {guides} to\naid your passage through our lands.\""
+  box_w   = 190
+  speaker = "IND"
+}

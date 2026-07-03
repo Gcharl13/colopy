@@ -1,0 +1,5 @@
+record msge.school1 {
+  key   = "@SCHOOL1"
+  text  = "The {Schoolhouse} can support a faculty of only {one}\nteacher at a time, Your Excellency."
+  box_w = 190
+}

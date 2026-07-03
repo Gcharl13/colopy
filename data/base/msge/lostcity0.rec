@@ -1,0 +1,5 @@
+record msge.lostcity0 {
+  key   = "@LOSTCITY0"
+  text  = "Which of the following individuals shall we recruit?"
+  box_w = 190
+}

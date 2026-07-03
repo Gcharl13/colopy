@@ -1,0 +1,6 @@
+record msge.kingnavact {
+  key     = "@KINGNAVACT"
+  text    = "\"%STRING0 %STRING1.  We are concerned that the Crown is not\nreceiving its due share of New World revenue.  We have therefore\ndecided to impose a new {Navigation Act}, raising your tax rate\nby {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.  If you wish,\nyou may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

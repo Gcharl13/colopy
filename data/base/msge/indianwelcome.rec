@@ -1,0 +1,5 @@
+record msge.indianwelcome {
+  key   = "@INDIANWELCOME"
+  text  = "\"The {%STRING0} tribe welcomes you.\nWe are a glorious nation of {%NUMBER0 %STRING1}.\nTo celebrate our friendship, we generously\noffer you the land you now occupy as a gift.\nWill you accept our treaty and live\nwith us in peace as brothers?\"\n\nYes\nNo"
+  box_w = 190
+}

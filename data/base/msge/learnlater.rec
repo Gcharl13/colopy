@@ -1,0 +1,5 @@
+record msge.learnlater {
+  key   = "@LEARNLATER"
+  text  = "\"Very well.  Perhaps another time.\""
+  box_w = 190
+}

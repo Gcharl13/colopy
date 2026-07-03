@@ -1,0 +1,5 @@
+record msge.badcargo {
+  key   = "@BADCARGO"
+  text  = "\"We have enough {%STRING0} and don't\nneed any more right now.\nCome back when you have something else to\noffer.  We are in need of {%STRING1} and {%STRING2}.\nEven {%STRING3} would be of some use.\""
+  box_w = 190
+}

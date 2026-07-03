@@ -1,0 +1,5 @@
+record msge.peacemeek {
+  key   = "@PEACEMEEK"
+  text  = "\"Excellent. All of the land which you now occupy\nshall constitute the {%STRING0} sphere; the land which we occupy shall be\n{%STRING1} in perpetuity.  Please remember not to trespass in\nthose areas.\"\n\n\"Go in peace, {%STRING1} brothers.\"\n\"First you must withdraw your forces from our colonies!\"\n\"How much do you value your worthless lives, heathen swine?\"\n\"We suggest an alliance.\""
+  box_w = 220
+}

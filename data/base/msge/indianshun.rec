@@ -1,0 +1,5 @@
+record msge.indianshun {
+  key   = "@INDIANSHUN"
+  text  = "\"Then the mighty {%STRING0} shall mercilessly drive you from our\nshores.  Prepare for WAR!\""
+  box_w = 190
+}

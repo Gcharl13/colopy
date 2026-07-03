@@ -1,0 +1,6 @@
+record msge.shipsunk {
+  key     = "@SHIPSUNK"
+  text    = "{%STRING0 %STRING1 sunk} by %STRING2 %STRING3!"
+  box_w   = 190
+  speaker = "MSS0"
+}

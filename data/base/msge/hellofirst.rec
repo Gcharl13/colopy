@@ -1,0 +1,5 @@
+record msge.hellofirst {
+  key   = "@HELLOFIRST"
+  text  = "\"Greetings, %STRING0, and welcome to {%STRING1}.\nWe have justly claimed all of this land in the name\nof {%STRING2}, and we are here to %STRING3.  Please do\nnot interfere with this God-given mission.\""
+  box_w = 220
+}

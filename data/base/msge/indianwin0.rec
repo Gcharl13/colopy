@@ -1,0 +1,5 @@
+record msge.indianwin0 {
+  key   = "@INDIANWIN0"
+  text  = "{%STRING0} ambush {%STRING1 %STRING2} near %STRING3!"
+  box_w = 190
+}

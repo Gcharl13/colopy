@@ -1,0 +1,5 @@
+record msge.colonyflag {
+  key   = "@COLONYFLAG"
+  text  = "Colony Flags Error."
+  box_w = 160
+}

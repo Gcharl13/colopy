@@ -1,0 +1,5 @@
+record msge.retiring {
+  key   = "@RETIRING"
+  text  = "%STRING0 %STRING1 steps down after over 300 years of loyal service to the\nCrown.  King knights aging Viceroy, who retires to country estate\nnear %STRING2."
+  box_w = 220
+}

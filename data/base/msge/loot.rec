@@ -1,0 +1,7 @@
+record msge.loot {
+  key     = "@LOOT"
+  text    = "{%STRING0} loot and burn {%STRING1 %STRING2}!  Natives flee in\npanic! {%NUMBER0$} worth of treasure recovered from ruins!\nIt will take a {Galleon} to get this treasure back to Europe!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut04"
+  speaker = "MSS1"
+}

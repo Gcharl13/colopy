@@ -1,0 +1,5 @@
+record msge.europenotleave {
+  key   = "@EUROPENOTLEAVE"
+  text  = "Ships cannot sail to and from Europe for the duration\nof the {War of Independence}.  Colonies which build {Custom House}\nimprovements can trade with European smugglers, however."
+  box_w = 190
+}

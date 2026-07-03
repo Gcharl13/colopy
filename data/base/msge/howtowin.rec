@@ -1,0 +1,6 @@
+record msge.howtowin {
+  key     = "@HOWTOWIN"
+  text    = "We have just won a glorious victory on the road to freedom, Your Excellency.\nIn order to\ndefeat the King's forces and win our independence, we must recapture\n{all} of our colonies from the King, and we must destroy most of his\nground forces in the New World."
+  box_w   = 220
+  speaker = "MSS1"
+}

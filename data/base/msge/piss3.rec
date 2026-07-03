@@ -1,0 +1,5 @@
+record msge.piss3 {
+  key   = "@PISS3"
+  text  = "Because of the continued work of %STRING0 missionaries,\nthe {%STRING1} tribe is now %STRING2 {%STRING3}."
+  box_w = 190
+}

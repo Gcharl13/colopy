@@ -1,0 +1,6 @@
+record msge.kingwife {
+  key     = "@KINGWIFE"
+  text    = "\"%STRING0 %STRING1.  In honor of our recent wedding to\nour %STRING2 wife, we have graciously decided to raise\nyour tax rate by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.\nYou may, if you wish, kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

@@ -1,0 +1,6 @@
+record msge.kingwar {
+  key     = "@KINGWAR"
+  text    = "\"%STRING0 %STRING1.  Because of recent developments in our\nongoing war with %STRING2, we have decided to raise your tax\nrate by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.  If you\nwish, you may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

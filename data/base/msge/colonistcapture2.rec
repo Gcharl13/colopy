@@ -1,0 +1,6 @@
+record msge.colonistcapture2 {
+  key    = "@COLONISTCAPTURE2"
+  text   = "{%STRING0} colonists CAPTURED by the {%STRING1}!  Soldiers\nlose Veteran status."
+  box_w  = 190
+  sprite = "woodcut.wdcut10"
+}

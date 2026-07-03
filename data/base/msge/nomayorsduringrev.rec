@@ -1,0 +1,6 @@
+record msge.nomayorsduringrev {
+  key     = "@NOMAYORSDURINGREV"
+  text    = "Scouts cannot meet with mayors during the {War of Independence}."
+  box_w   = 190
+  speaker = "MSS1"
+}

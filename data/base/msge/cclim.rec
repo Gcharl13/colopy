@@ -1,0 +1,5 @@
+record msge.cclim {
+  key   = "@CCLIM"
+  text  = "CLIMATE\n\nArid\nNormal\nWet"
+  box_w = 190
+}

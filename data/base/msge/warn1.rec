@@ -1,0 +1,5 @@
+record msge.warn1 {
+  key   = "@WARN1"
+  text  = "Your Excellency, the King's forces control all but %NUMBER0 of the\nports in %STRING0!  If we don't retain control of at least one port\nour commerce will be choked and we will have to surrender!"
+  box_w = 220
+}

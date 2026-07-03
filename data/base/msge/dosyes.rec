@@ -1,0 +1,4 @@
+record msge.dosyes {
+  key  = "@DOSYES"
+  text = "Exit to DOS?\n\nYes\nNo"
+}

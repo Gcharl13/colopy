@@ -1,0 +1,6 @@
+record msge.mercs {
+  key     = "@MERCS"
+  text    = "%STRING1 mercenaries arrive in %STRING0."
+  box_w   = 190
+  speaker = "MSS1"
+}

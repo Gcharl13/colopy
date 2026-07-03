@@ -1,0 +1,5 @@
+record msge.recruit {
+  key   = "@RECRUIT"
+  text  = "The following individuals will\naccompany us to the New World if we will\npay their passage ({%NUMBER0 gold}).  Whom\nshall we recruit?"
+  box_w = 190
+}

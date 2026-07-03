@@ -1,0 +1,5 @@
+record msge.winning {
+  key   = "@WINNING"
+  text  = "Royal Expeditionary Force annihilated!\nGeneral %STRING0 accepts {surrender} of all Tory forces in brief ceremony.\nParliament declares King unfit to rule and votes to accept independence\nof %STRING1.\nContinental Congress proclaims %STRING0 the first {President} of the new\nrepublic!"
+  box_w = 220
+}

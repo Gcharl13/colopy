@@ -1,0 +1,6 @@
+record msge.landho {
+  key     = "@LANDHO"
+  text    = "Land Ho!  What shall we call this new\nland, Your Excellency?\n\nName:"
+  box_w   = 190
+  default = "America"
+}

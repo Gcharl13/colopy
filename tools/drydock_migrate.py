@@ -168,6 +168,24 @@ def main():
         drift = emit(os.path.join("natn", rid.split(".", 1)[1] + ".rec"),
                      render(rid, fields), check, drift)
 
+    # MSGE: GAME.TXT message records (messages.json, tools/build_messages.py).
+    # "None" defaults stay absent (lossless): box_w 0, x/y -1, empty strings.
+    msg = json.load(open(os.path.join(ROOT, "data_extracted/engine/messages.json")))
+    used = set()
+    for row in msg["messages"]:
+        rid = f"msge.{slug(row['key'], used)}"
+        fields = [("key", quote(row["key"])), ("text", quote(row["text"]))]
+        if int(row.get("box_w", 0)):
+            fields.append(("box_w", str(int(row["box_w"]))))
+        for coord in ("x", "y"):
+            if int(row.get(coord, -1)) != -1:
+                fields.append((coord, str(int(row[coord]))))
+        for sf in ("sprite", "speaker", "default"):
+            if str(row.get(sf, "")):
+                fields.append((sf, quote(str(row[sf]))))
+        drift = emit(os.path.join("msge", rid.split(".", 1)[1] + ".rec"),
+                     render(rid, fields), check, drift)
+
     # CONF: cfg.json knobs (value scalar OR ordered values list)
     cfg = json.load(open(os.path.join(ROOT, "data_extracted/engine/cfg.json")))
     for group, knobs in cfg["groups"].items():

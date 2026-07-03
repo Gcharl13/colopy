@@ -1,0 +1,6 @@
+record msge.foreignnotavail {
+  key     = "@FOREIGNNOTAVAIL"
+  text    = "The Foreign Affairs Adviser's report is no longer available\nonce the {War of Independence} has begun."
+  box_w   = 190
+  speaker = "MSS1"
+}

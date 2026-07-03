@@ -1,0 +1,6 @@
+record msge.kingnothing {
+  key     = "@KINGNOTHING"
+  text    = "\"In spite of your impudence, we shall not change your\ntax rate at this time.  You may, however, kiss our\nroyal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

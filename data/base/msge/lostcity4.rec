@@ -1,0 +1,5 @@
+record msge.lostcity4 {
+  key   = "@LOSTCITY4"
+  text  = "Your expedition happens upon strange burial\nmounds.\n\n\"Let us search for treasure!\"\n\"Stay clear of those!\""
+  box_w = 190
+}

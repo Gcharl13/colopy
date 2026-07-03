@@ -1,0 +1,5 @@
+record msge.tools {
+  key   = "@TOOLS"
+  text  = "{%STRING0} has run out of {tools}, Your Excellency.  Our gunsmiths\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

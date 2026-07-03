@@ -1,0 +1,4 @@
+record msge.end {
+  key  = "@END"
+  text = ""
+}

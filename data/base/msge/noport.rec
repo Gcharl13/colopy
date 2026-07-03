@@ -1,0 +1,6 @@
+record msge.noport {
+  key     = "@NOPORT"
+  text    = "This square does not have access to the {ocean},\nYour Excellency.  If we build a {colony} here we\nmust transport its produce to {port}\nusing {wagon trains}, which we can build in any\ncolony.\n\n\"Oh, I forgot about that.\"\n\"And that is exactly what I had in mind.\""
+  box_w   = 190
+  speaker = "MSS3"
+}

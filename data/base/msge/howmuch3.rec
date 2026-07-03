@@ -1,0 +1,5 @@
+record msge.howmuch3 {
+  key   = "@HOWMUCH3"
+  text  = "How much {%STRING0} should be moved from %STRING1 to %STRING2 (0-%NUMBER0).\n\nAmount:"
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.food2 {
+  key   = "@FOOD2"
+  text  = "Food stores have been depleted\nin {%STRING0}, Your Excellency!  {Winter} is coming soon and\nwe may {starve} to death!"
+  box_w = 190
+}

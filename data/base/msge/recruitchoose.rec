@@ -1,0 +1,5 @@
+record msge.recruitchoose {
+  key   = "@RECRUITCHOOSE"
+  text  = "Religious unrest in %COUNTRY causes increased\nemigration.  Colonists now available in %STRING0.\nThe following individuals will\naccompany us to the New World to\npursue religious freedom.  Whom shall we recruit?"
+  box_w = 220
+}

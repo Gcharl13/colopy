@@ -1,0 +1,5 @@
+record msge.college2 {
+  key   = "@COLLEGE2"
+  text  = "The {College} can support a faculty of only {two}\nteachers at a time, Your Excellency."
+  box_w = 190
+}

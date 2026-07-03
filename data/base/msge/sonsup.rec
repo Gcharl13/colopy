@@ -1,0 +1,5 @@
+record msge.sonsup {
+  key   = "@SONSUP"
+  text  = "Sons of Liberty membership in {%STRING0} is up to %NUMBER0%%, Your\nExcellency.  The more {Liberty Bells} our {Statesmen} generate,\nthe faster membership will rise."
+  box_w = 220
+}

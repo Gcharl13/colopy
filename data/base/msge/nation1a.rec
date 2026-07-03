@@ -1,0 +1,5 @@
+record msge.nation1a {
+  key   = "@NATION1A"
+  text  = "^^FRANCE\n^^_\n__Latecomers to the New World, France established her first\nsecure American colonies in {Canada} along the St. Lawrence river, where the\nharsh northern climate proved more suitable for the {fur trade} than for\nlarge-scale agricultural endeavors.\nThe French found the\n{Great Lakes Indians} to be ideal partners in the fur trade and formed\nlong-term trading relationships with the Hurons, Algonquins and other\ntribes.  Though French forts, missions, and trading posts soon dotted\nthe Great Lakes region, French settlements were generally small enough\nto operate in relative {harmony} with the local native population.  Although\nthis relationship was not entirely without incident, the French were often\nable to cooperate profitably with the natives.  This cooperation occasionally\nextended into the military realm."
+  box_w = 300
+}

@@ -1,0 +1,5 @@
+record msge.soonretiring1 {
+  key   = "@SOONRETIRING1"
+  text  = "\"General %STRING1, the people are weary of this long war.  If we cannot\nforce a conclusion by 1850, the Continental Congress will sue for\npeace and seek to swear renewed allegiance to the King.\""
+  box_w = 190
+}

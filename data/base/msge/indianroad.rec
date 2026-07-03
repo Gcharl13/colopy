@@ -1,0 +1,5 @@
+record msge.indianroad {
+  key   = "@INDIANROAD"
+  text  = "\"We are worried that building a {road}\nhere might disrupt the {%STRING0} way of life.  We\npatiently ask you to stop.\"\n\n\"Then we shall not build a road, friend.\"\n\"We offer you {%NUMBER1$} in compensation.\"\n\"I'm sorry, but this road is necessary.\""
+  box_w = 190
+}

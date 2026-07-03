@@ -1,0 +1,7 @@
+record msge.valor {
+  key     = "@VALOR"
+  text    = "Because of their valor in battle, our {%STRING0}\nsoldiers have been promoted from {%STRING1} to\n{%STRING2} status."
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS1"
+}

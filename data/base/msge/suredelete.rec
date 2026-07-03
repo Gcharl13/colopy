@@ -1,0 +1,5 @@
+record msge.suredelete {
+  key   = "@SUREDELETE"
+  text  = "Are you sure you want to delete the {%STRING0}?\n\nYes\nNo"
+  box_w = 190
+}

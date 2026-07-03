@@ -1,0 +1,6 @@
+record msge.indianlose {
+  key     = "@INDIANLOSE"
+  text    = "{%STRING1 %STRING2} %STRING4 {%STRING0} near %STRING3!"
+  box_w   = 190
+  speaker = "MSS1"
+}

@@ -1,0 +1,5 @@
+record msge.savegood {
+  key   = "@SAVEGOOD"
+  text  = "%STRING1 saved as %STRING0."
+  box_w = 190
+}

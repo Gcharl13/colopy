@@ -1,0 +1,5 @@
+record msge.villagebad {
+  key   = "@VILLAGEBAD"
+  text  = "Your expedition has reached a %STRING0 of {%STRING1}.  A\nband of {warriors} eyes you warily.  The others\nare nowhere to be seen."
+  box_w = 190
+}

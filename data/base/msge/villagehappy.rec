@@ -1,0 +1,5 @@
+record msge.villagehappy {
+  key   = "@VILLAGEHAPPY"
+  text  = "Your expedition has reached a %STRING0 of {%STRING1}.  The\ninhabitants are peacefully working in the surrounding fields.\nThey wave to you {happily}."
+  box_w = 190
+}

@@ -1,0 +1,7 @@
+record msge.kinggalleon2 {
+  key     = "@KINGGALLEON2"
+  text    = "\"%STRING0 %STRING1.  We are most pleased at the amount\nof plunder and booty your conquistadores are obtaining\nin the New World.  Alas, we notice that you do not have\na {galleon} fleet to transport this marvelous treasure home\nto %STRING2.  If you wish, we shall transport the treasure\nhome in our own royal galleons once our assessors have\ncomputed the Crown's proper share.\"\n\n\"Very well, and let the Crown claim its rightful share.\"\n\"No, I would sooner {kiss} your royal pinky ring.\""
+  box_w   = 220
+  sprite  = "woodcut.wdcut04"
+  speaker = "KING1"
+}

@@ -1,0 +1,5 @@
+record msge.nothingwithdraw {
+  key   = "@NOTHINGWITHDRAW"
+  text  = "\"We have no forces adjacent to your colonies.\""
+  box_w = 220
+}

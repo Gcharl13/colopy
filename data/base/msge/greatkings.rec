@@ -1,0 +1,4 @@
+record msge.greatkings {
+  key  = "@GREATKINGS"
+  text = "our Queen and the Church of England\nHis Most Christian Majesty, King Louis\nthe Pope and the Spanish Crown\nthe Stadtholder of the United Provinces of the Netherlands"
+}

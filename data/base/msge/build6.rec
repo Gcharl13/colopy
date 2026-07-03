@@ -1,0 +1,6 @@
+record msge.build6 {
+  key   = "@BUILD6"
+  text  = "^^to find Uncharted Lands,"
+  box_w = 310
+  y     = 30
+}

@@ -1,0 +1,6 @@
+record msge.scoutcolony {
+  key     = "@SCOUTCOLONY"
+  text    = "Our {scouts} have reached the outskirts of {%STRING0},\nYour Excellency.  What shall they do?\n\nMeet With Mayor\nInfiltrate Colony\nAttack Colony\nNothing"
+  box_w   = 190
+  speaker = "MSS3"
+}

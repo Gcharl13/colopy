@@ -1,0 +1,5 @@
+record msge.withdraw {
+  key   = "@WITHDRAW"
+  text  = "\"In the interest of peace, we shall withdraw our forces.\""
+  box_w = 220
+}

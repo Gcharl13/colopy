@@ -1,0 +1,5 @@
+record msge.badhaggle2 {
+  key   = "@BADHAGGLE2"
+  text  = "\"Our patience with your haggling is exhausted.\nWe will sell you nothing further until you bring\nus something of value.\""
+  box_w = 190
+}

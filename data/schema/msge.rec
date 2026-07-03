@@ -1,0 +1,14 @@
+record schm.msge {
+  version = 1
+  fields  = [
+    { name = "key", type = "str", required = true, doc = "Verbatim GAME.TXT @KEY (the lookup handle every ShowPopup/Notify carries; the record id is its slug)" },
+    { name = "text", type = "str", required = true, doc = "Verbatim GAME.TXT message text, unedited, with its %NUMBER0/1 and %STRING0/1/2 placeholders (spec/ui/popups.md; extracted by tools/build_messages.py)" },
+    { name = "box_w", type = "int", min = 0, doc = "Message-box width in chars (GAME.TXT /W directive; absent/0 = auto-size)" },
+    { name = "x", type = "int", doc = "Box x placement (GAME.TXT /X; absent = -1 centered)" },
+    { name = "y", type = "int", doc = "Box y placement (GAME.TXT /Y; absent = -1 centered)" },
+    { name = "sprite", type = "str", doc = "Associated woodcut/scene sprite name (GAME.TXT /P channel; absent = none)" },
+    { name = "speaker", type = "str", doc = "Speaker portrait channel (GAME.TXT /L; absent = none)" },
+    { name = "default", type = "str", doc = "Pre-highlighted choice line (GAME.TXT @default rider; absent = none)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

@@ -1,0 +1,6 @@
+record msge.indianburncolony {
+  key    = "@INDIANBURNCOLONY"
+  text   = "{%STRING0} massacre {%STRING1} colonists at {%STRING3}!\nColony burned to the ground!  King demands\nexplanation!"
+  box_w  = 190
+  sprite = "woodcut.wdcut11"
+}

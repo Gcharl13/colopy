@@ -1,0 +1,5 @@
+record msge.kingvictory {
+  key   = "@KINGVICTORY"
+  text  = "\"%STRING0 %STRING1.  To celebrate our recent victory\nover %STRING2, we have magnanimously decided to LOWER\nyour tax rate by {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.\nYou may, as always, kiss our royal pinky ring.\""
+  box_w = 190
+}

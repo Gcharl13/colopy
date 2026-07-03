@@ -1,0 +1,5 @@
+record msge.worthy {
+  key   = "@WORTHY"
+  text  = "\"Although all of this land is rightfully ours by order of %STRING0,\nwe propose a demarcation {treaty}, dividing all\nthe land before God into perpetual and inviolable {%STRING1} and {%STRING2}\nspheres of influence. Will you agree to such a partition?\"\n\n\"Yes\"\n\"No\""
+  box_w = 220
+}

@@ -1,0 +1,4 @@
+record msge.tradenames {
+  key  = "@TRADENAMES"
+  text = "5\nRun\nFerry\nCargo\nTransport\nTriangle"
+}

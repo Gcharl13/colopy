@@ -1,0 +1,5 @@
+record msge.warmanly {
+  key   = "@WARMANLY"
+  text  = "\"You reject our generous offer?  Then in the name of\n%STRING0 we shall wipe you from the face of the New World.\nPrepare for WAR!"
+  box_w = 220
+}

@@ -1,0 +1,4 @@
+record msge.colony {
+  key  = "@COLONY"
+  text = "What shall we name this colony?\n\nName:"
+}

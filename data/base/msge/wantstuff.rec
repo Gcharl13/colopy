@@ -1,0 +1,5 @@
+record msge.wantstuff {
+  key   = "@WANTSTUFF"
+  text  = "\"We are displeased that you continue to befoul lands that are\nrightfully ours by order of %STRING0.  We demand {%NUMBER0 %STRING1}\nas reparations.\"\n\n\"We laugh at your puny threats.\"\n\"We gladly share {%NUMBER0 %STRING1} with our {%STRING2} brothers.\""
+  box_w = 260
+}

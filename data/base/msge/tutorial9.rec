@@ -1,0 +1,6 @@
+record msge.tutorial9 {
+  key     = "@TUTORIAL9"
+  text    = "This looks like a good place for a {road}.  Our {pioneers} will build\nroads in a square if you press the '{R}' key. If we build a road here,\nour fur, lumber, ore, and silver production in this square will be\nincreased.  Our units also move faster when they are moving\nalong a road."
+  box_w   = 220
+  speaker = "MSS3"
+}

@@ -1,0 +1,6 @@
+record msge.indiangivestuff {
+  key     = "@INDIANGIVESTUFF"
+  text    = "\"The {%STRING0} tribe is pleased to see the progress of\nour neighbors at {%STRING1}.  We have come to offer you\n{%NUMBER0 %STRING2} in recognition of the everlasting\npeace between our peoples.\""
+  box_w   = 190
+  speaker = "IND"
+}

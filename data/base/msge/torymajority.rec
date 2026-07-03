@@ -1,0 +1,5 @@
+record msge.torymajority {
+  key   = "@TORYMAJORITY"
+  text  = "Sons of Liberty membership in {%STRING0} is down to %NUMBER0%%, Your\nExcellency.  The majority of colonists there no longer support the idea\nof independence from %STRING1!  %STRING0 colonists no longer gain\nproduction bonuses."
+  box_w = 220
+}

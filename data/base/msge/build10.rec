@@ -1,0 +1,6 @@
+record msge.build10 {
+  key   = "@BUILD10"
+  text  = "^^A New World!"
+  box_w = 310
+  y     = 30
+}

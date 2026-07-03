@@ -1,0 +1,4 @@
+record msge.countries {
+  key  = "@COUNTRIES"
+  text = "the Holy Roman Empire\nthe Portuguese\nthe Ottoman Turks\nthe Barbary Pirates\nRussia\nPrussia\nSweden\nDenmark"
+}

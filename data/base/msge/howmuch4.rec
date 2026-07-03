@@ -1,0 +1,5 @@
+record msge.howmuch4 {
+  key   = "@HOWMUCH4"
+  text  = "How much {%STRING0} (at {%NUMBER1$}) should be purchased\nand loaded onto %STRING1 (0-%NUMBER0).\n\nAmount:"
+  box_w = 190
+}

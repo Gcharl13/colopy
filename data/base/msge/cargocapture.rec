@@ -1,0 +1,7 @@
+record msge.cargocapture {
+  key     = "@CARGOCAPTURE"
+  text    = "{%STRING0} cargo of {%NUMBER0 %STRING1} captured by {%STRING2 %STRING3}!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS0"
+}

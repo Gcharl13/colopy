@@ -1,0 +1,6 @@
+record msge.rebeldown {
+  key     = "@REBELDOWN"
+  text    = "{Tory} sentiment is once again on the rise in the colonies, Your\nExcellency.  Only {%NUMBER0%%} of the population now supports the notion\nof independence from %STRING0."
+  box_w   = 190
+  speaker = "MSS1"
+}

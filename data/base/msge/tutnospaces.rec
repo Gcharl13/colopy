@@ -1,0 +1,6 @@
+record msge.tutnospaces {
+  key     = "@TUTNOSPACES"
+  text    = "There are only a few productive squares adjacent to this square,\nYour Excellency.  A colony built here may have a lower potential\nfor growth than we hope.  Perhaps we should move on to a larger\narea?\n\nCancel action.\nBuild colony anyway."
+  box_w   = 220
+  speaker = "MSS3"
+}

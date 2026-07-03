@@ -1,0 +1,6 @@
+record msge.raidburn {
+  key     = "@RAIDBURN"
+  text    = "{%STRING0} raiding party burns buildings in {%STRING1}!\n{%STRING2} destroyed.  Colonists demand immediate vengeance!"
+  box_w   = 190
+  speaker = "IND"
+}

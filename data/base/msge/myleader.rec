@@ -1,0 +1,4 @@
+record msge.myleader {
+  key  = "@MYLEADER"
+  text = "King\nKing\nKing\nStadtholder"
+}

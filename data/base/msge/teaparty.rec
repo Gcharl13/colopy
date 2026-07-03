@@ -1,0 +1,6 @@
+record msge.teaparty {
+  key     = "@TEAPARTY"
+  text    = "{%STRING3 Party}!  Sons of Liberty throw {%NUMBER0} tons of %STRING0\ninto the sea at %STRING1!  Colonists refuse to pay new tax.  Parliament\nannounces boycott of %STRING0.  %STRING0 cannot be traded in %STRING2\nuntil boycott is lifted."
+  box_w   = 220
+  speaker = "KING1"
+}

@@ -1,0 +1,5 @@
+record msge.vanish {
+  key   = "@VANISH"
+  text  = "Your Excellency!  Our colony at {%STRING0} has\nvanished!  The colonists appear\nto have {starved} to death."
+  box_w = 190
+}

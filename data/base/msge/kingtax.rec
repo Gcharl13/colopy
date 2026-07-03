@@ -1,0 +1,6 @@
+record msge.kingtax {
+  key     = "@KINGTAX"
+  text    = "\"It is essential that the Crown receive proper\nrecompense for its efforts on your behalf.\nTherefore we have graciously decided to raise your tax rate\nby {%NUMBER0%%}.  The tax rate is now {%NUMBER1%%}.  If you\nwish, you may kiss our royal pinky ring.\""
+  box_w   = 190
+  speaker = "KING1"
+}

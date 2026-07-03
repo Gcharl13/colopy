@@ -1,0 +1,6 @@
+record msge.rebelup {
+  key     = "@REBELUP"
+  text    = "{Rebel} sentiment is rising in the colonies, Your Excellency!\n{%NUMBER0%%} of the population supports the idea of independence\nfrom %STRING0.  As our colonists begin to feel more self-sufficient,\nthey also become more productive.  Any colony with at least {50%%}\nSons of Liberty membership receives a {+1} production bonus."
+  box_w   = 190
+  speaker = "MSS1"
+}

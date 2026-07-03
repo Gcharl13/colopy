@@ -1,0 +1,5 @@
+record msge.ctemp {
+  key   = "@CTEMP"
+  text  = "TEMPERATURE\n\nCool\nTemperate\nWarm"
+  box_w = 190
+}

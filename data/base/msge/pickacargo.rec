@@ -1,0 +1,5 @@
+record msge.pickacargo {
+  key   = "@PICKACARGO"
+  text  = "Which cargo shall we capture?"
+  box_w = 190
+}

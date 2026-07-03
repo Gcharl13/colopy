@@ -1,0 +1,4 @@
+record msge.greatdeeds {
+  key  = "@GREATDEEDS"
+  text = "seek a life of {religious freedom} and service to the Crown\npromote the greater {glory} of France\n{convert the heathen} and enrich our Sovereign\nbuild a mighty overseas {trading empire}"
+}

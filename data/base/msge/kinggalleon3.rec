@@ -1,0 +1,7 @@
+record msge.kinggalleon3 {
+  key     = "@KINGGALLEON3"
+  text    = "\"%STRING0 %STRING1.  We are most pleased at the amount\nof plunder and booty your conquistadores are obtaining\nin the New World.  We do not wish you to be distracted\nby the task of transporting this marvelous treasure home\nto %STRING2.  If you wish, we shall transport the treasure\nhome in our own royal galleons {for no extra charge} once our assessors have\ntaken a percentage equal to the current tax rate ({%NUMBER0%%}).\"\n\n\"Very well, and let the Crown claim its rightful share.\"\n\"No, I would sooner {kiss} your royal pinky ring.\""
+  box_w   = 220
+  sprite  = "woodcut.wdcut04"
+  speaker = "KING1"
+}

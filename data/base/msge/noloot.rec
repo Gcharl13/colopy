@@ -1,0 +1,6 @@
+record msge.noloot {
+  key    = "@NOLOOT"
+  text   = "{%STRING0} burn {%STRING1 %STRING2}!  Natives flee in\npanic!"
+  box_w  = 190
+  sprite = "woodcut.wdcut04"
+}

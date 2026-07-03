@@ -1,0 +1,7 @@
+record msge.demote {
+  key     = "@DEMOTE"
+  text    = "{%STRING0 %STRING1} routed!  Unit demoted to {%STRING2} status."
+  box_w   = 190
+  sprite  = "woodcut.wdcut10"
+  speaker = "MSS1"
+}

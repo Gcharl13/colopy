@@ -1,0 +1,6 @@
+record msge.disbandship {
+  key     = "@DISBANDSHIP"
+  text    = "We cannot disband a ship at sea while it is carrying\nunits."
+  box_w   = 190
+  speaker = "MSS0"
+}

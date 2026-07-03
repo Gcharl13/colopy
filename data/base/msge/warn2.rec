@@ -1,0 +1,5 @@
+record msge.warn2 {
+  key   = "@WARN2"
+  text  = "Your Excellency, the King's forces control all but %NUMBER1 of our\ncolonies!  We need to protect our remaining colonies, or we will lose\nthe war!"
+  box_w = 220
+}

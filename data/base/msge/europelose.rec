@@ -1,0 +1,7 @@
+record msge.europelose {
+  key     = "@EUROPELOSE"
+  text    = "{%STRING1 %STRING2} %STRING4 {%STRING0} near %STRING3!"
+  box_w   = 190
+  sprite  = "woodcut.wdcut11"
+  speaker = "MSS1"
+}

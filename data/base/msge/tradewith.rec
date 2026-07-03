@@ -1,0 +1,6 @@
+record msge.tradewith {
+  key     = "@TRADEWITH"
+  text    = "\"We will give you {%NUMBER0 %STRING0} in exchange for your %NUMBER1 %STRING1.\nOr, if you like, we are willing to give you {%NUMBER2$}.\nIs this satisfactory?\"\n\n\"We'll take the {%NUMBER0 %STRING0}.\"\n\"Just give us the {%NUMBER2$}.\"\n\"Do you take us for fools?\""
+  box_w   = 190
+  speaker = "IND"
+}

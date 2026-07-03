@@ -1,0 +1,5 @@
+record msge.tootory {
+  key   = "@TOOTORY"
+  text  = "Only {%NUMBER0%%} of the colonists support the independence\nmovement, Your Excellency.  We cannot start a rebellion against\nthe King until the {majority} is behind us."
+  box_w = 190
+}

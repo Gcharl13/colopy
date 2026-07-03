@@ -1,0 +1,5 @@
+record msge.difficulty {
+  key   = "@DIFFICULTY"
+  text  = "Select a Difficulty Level\n\nDiscoverer\nExplorer\nConquistador\nGovernor\nViceroy"
+  box_w = 190
+}

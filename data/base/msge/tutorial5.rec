@@ -1,0 +1,6 @@
+record msge.tutorial5 {
+  key     = "@TUTORIAL5"
+  text    = "Excellency, there are {%STRING1} ready to join our colony on the docks\nin {%STRING0} (Europe).  If we send our ship there they will gladly\nset sail with us and become useful members of our community."
+  box_w   = 220
+  speaker = "MSS0"
+}

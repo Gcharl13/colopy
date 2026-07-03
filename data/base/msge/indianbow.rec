@@ -1,0 +1,5 @@
+record msge.indianbow {
+  key   = "@INDIANBOW"
+  text  = "\"The {%STRING0} tribe bows before the might of the {%STRING1}.\nIn tribute to your greatness, we give you all the land you\nnow occupy.\""
+  box_w = 190
+}

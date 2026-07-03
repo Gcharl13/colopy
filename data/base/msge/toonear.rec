@@ -1,0 +1,5 @@
+record msge.toonear {
+  key   = "@TOONEAR"
+  text  = "This land is too near to {%STRING0} for\na new colony, Your Excellency."
+  box_w = 190
+}

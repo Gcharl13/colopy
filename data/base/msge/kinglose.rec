@@ -1,0 +1,7 @@
+record msge.kinglose {
+  key   = "@KINGLOSE"
+  text  = "\"In our wisdom, we have decided to let you go\nyour own way. We have far more importatnt\nmatters to deal with than you wretched\ncolonists. Do not seek our aid in the future,\nfor it will not be forthcoming.\""
+  box_w = 68
+  x     = 232
+  y     = 31
+}

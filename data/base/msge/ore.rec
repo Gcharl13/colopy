@@ -1,0 +1,5 @@
+record msge.ore {
+  key   = "@ORE"
+  text  = "{%STRING0} has run out of {ore}, Your Excellency.  Our blacksmiths\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

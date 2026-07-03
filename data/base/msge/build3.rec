@@ -1,0 +1,6 @@
+record msge.build3 {
+  key   = "@BUILD3"
+  text  = "^^left %STRING0 on a Voyage of Discovery."
+  box_w = 310
+  y     = 30
+}

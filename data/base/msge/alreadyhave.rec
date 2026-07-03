@@ -1,0 +1,5 @@
+record msge.alreadyhave {
+  key   = "@ALREADYHAVE"
+  text  = "{%STRING0} is set to produce a {%STRING1}, but\nit has already built one!"
+  box_w = 190
+}

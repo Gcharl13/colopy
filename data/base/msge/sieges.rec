@@ -1,0 +1,5 @@
+record msge.sieges {
+  key   = "@SIEGES"
+  text  = "\"%STRING0 is disturbed by the large %STRING1 forces lurking\noutside our %STRING2 colonies.  We {%STRING3} that you {withdraw}\nall military units adjacent to %STRING2 colonies immediately.\"\n\n\"Our forces protect valid %STRING1 interests and shall stay.\"\n\"Very well, we shall {withdraw} our forces to Europe.\""
+  box_w = 220
+}

@@ -1,0 +1,5 @@
+record msge.siegesusa {
+  key   = "@SIEGESUSA"
+  text  = "\"The %STRING0 has never recognized the right of foreign powers\nto station large military forces in this hemisphere.  Forces lurking\nnear our major cities are of particular concern to us.\nWe {%STRING3} that you {withdraw}\nall military units adjacent to our cities immediately.\"\n\n\"Very well, we shall {withdraw} our forces to Europe.\"\n\"Our forces protect valid %STRING1 interests and shall stay.\""
+  box_w = 220
+}

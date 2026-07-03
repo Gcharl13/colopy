@@ -1,0 +1,5 @@
+record msge.newcolonist {
+  key   = "@NEWCOLONIST"
+  text  = "Population increase in %STRING0.  New colonist now available."
+  box_w = 190
+}

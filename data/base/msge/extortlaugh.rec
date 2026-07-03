@@ -1,0 +1,5 @@
+record msge.extortlaugh {
+  key   = "@EXTORTLAUGH"
+  text  = "\"We laugh at your puny threats.  Do not try our patience, for\n{%STRING0} warriors are known for their ferocity in times of war.\""
+  box_w = 190
+}

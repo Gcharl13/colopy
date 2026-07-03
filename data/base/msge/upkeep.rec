@@ -1,0 +1,5 @@
+record msge.upkeep {
+  key   = "@UPKEEP"
+  text  = "Your Excellency, we cannot afford to pay the upkeep ({%NUMBER0$}) on\nall our buildings this turn.  Until we pay the {upkeep}, colonists in\nthe buildings will produce at {half efficiency}."
+  box_w = 190
+}

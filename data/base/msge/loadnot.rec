@@ -1,0 +1,5 @@
+record msge.loadnot {
+  key   = "@LOADNOT"
+  text  = "%STRING0 is not a valid save file."
+  box_w = 190
+}

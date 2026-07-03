@@ -1,0 +1,6 @@
+record msge.buyme0 {
+  key     = "@BUYME0"
+  text    = "Cost to complete %STRING0: %NUMBER0$.\n^Treasury: %NUMBER1$."
+  box_w   = 160
+  speaker = "MSS5"
+}

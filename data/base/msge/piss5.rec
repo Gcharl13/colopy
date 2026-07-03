@@ -1,0 +1,5 @@
+record msge.piss5 {
+  key   = "@PISS5"
+  text  = "Because of increasing population pressure\nfrom %STRING0 colonies, the {%STRING1} tribe\nis now %STRING2 {%STRING3}."
+  box_w = 190
+}

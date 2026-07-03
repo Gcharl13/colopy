@@ -1,0 +1,6 @@
+record msge.chiefarea {
+  key     = "@CHIEFAREA"
+  text    = "\"The {%STRING0} are pleased to welcome travelers\nfrom afar.  Come sit by the fire and\nwe shall tell you tales of {nearby lands}.\""
+  box_w   = 190
+  speaker = "IND"
+}

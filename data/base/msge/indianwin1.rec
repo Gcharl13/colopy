@@ -1,0 +1,5 @@
+record msge.indianwin1 {
+  key   = "@INDIANWIN1"
+  text  = "{%STRING0} ambush {%STRING1 %STRING2} near %STRING3!\n{Muskets} seized by %STRING4 braves!"
+  box_w = 190
+}

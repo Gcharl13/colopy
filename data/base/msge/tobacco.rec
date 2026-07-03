@@ -1,0 +1,5 @@
+record msge.tobacco {
+  key   = "@TOBACCO"
+  text  = "{%STRING0} has run out of {tobacco}, Your Excellency.  Our tobacconists\ncannot continue their work until a new supply is found."
+  box_w = 190
+}

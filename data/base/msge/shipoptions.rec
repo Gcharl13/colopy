@@ -1,0 +1,4 @@
+record msge.shipoptions {
+  key  = "@SHIPOPTIONS"
+  text = "Move to front.\nClear orders.\nSentry.\nAnchor in harbor (\"Fortify\").\nUnload all cargo.\nNo changes."
+}

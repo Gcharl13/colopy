@@ -1,0 +1,4 @@
+record msge.unitoptions {
+  key  = "@UNITOPTIONS"
+  text = "Move to front.\nClear orders.\nSentry / Board ship.\nFortify.\nNo changes."
+}

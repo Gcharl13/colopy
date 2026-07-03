@@ -1,0 +1,6 @@
+record msge.madatwagons {
+  key     = "@MADATWAGONS"
+  text    = "\"Because of the atrocities you have committed against\nthe {%STRING0} people, we do not wish to trade with you.\""
+  box_w   = 190
+  speaker = "IND"
+}

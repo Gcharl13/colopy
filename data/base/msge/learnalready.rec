@@ -1,0 +1,6 @@
+record msge.learnalready {
+  key     = "@LEARNALREADY"
+  text    = "\"The {%STRING0} of this village have already shared\ntheir skills with young Europeans.  Go and learn\nfrom them if you will, for we have nothing else to\nteach.\""
+  box_w   = 190
+  speaker = "IND"
+}

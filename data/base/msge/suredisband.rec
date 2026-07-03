@@ -1,0 +1,5 @@
+record msge.suredisband {
+  key   = "@SUREDISBAND"
+  text  = "Really {disband} %STRING0?\n\nYes\nNo"
+  box_w = 190
+}

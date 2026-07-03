@@ -1,0 +1,6 @@
+record msge.build8 {
+  key   = "@BUILD8"
+  text  = "^^A Ship loaded with Pioneers and Soldiers"
+  box_w = 310
+  y     = 30
+}

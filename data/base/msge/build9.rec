@@ -1,0 +1,6 @@
+record msge.build9 {
+  key   = "@BUILD9"
+  text  = "^^Set Sail to find a New Life, a New Beginning, . . ."
+  box_w = 310
+  y     = 30
+}

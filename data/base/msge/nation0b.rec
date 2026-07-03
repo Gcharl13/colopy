@@ -1,0 +1,5 @@
+record msge.nation0b {
+  key   = "@NATION0B"
+  text  = "^^ENGLAND\n^^_\nTo reflect the great flow of religious immigrants into English\ncolonies, the English player requires only {2/3} the normal number of\n\"{Crosses}\" to generate immigrants."
+  box_w = 300
+}

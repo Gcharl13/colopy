@@ -1,0 +1,6 @@
+record msge.dontknowships {
+  key     = "@DONTKNOWSHIPS"
+  text    = "We must contact the Indians on land first, Excellency.\""
+  box_w   = 190
+  speaker = "IND"
+}

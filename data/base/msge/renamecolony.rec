@@ -1,0 +1,4 @@
+record msge.renamecolony {
+  key  = "@RENAMECOLONY"
+  text = "What shall we rename this colony?\n\nName:"
+}

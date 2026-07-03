@@ -1,0 +1,6 @@
+record msge.alreadyrevolution {
+  key     = "@ALREADYREVOLUTION"
+  text    = "We are already fighting a War of Independence, Excellency."
+  box_w   = 190
+  speaker = "MSS1"
+}

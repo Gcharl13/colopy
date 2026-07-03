@@ -1,0 +1,6 @@
+record msge.landfall {
+  key     = "@LANDFALL"
+  text    = "Shall we make landfall, Your Excellency,\nand leave the ships behind?\n\nStay With Ships\nMake Landfall"
+  box_w   = 190
+  default = "1"
+}

@@ -1,0 +1,7 @@
+record msge.tutorial12 {
+  key     = "@TUTORIAL12"
+  text    = "Our ship has arrived in %STRING0, Your Excellency, and is waiting\nfor cargo!  The blue boxes across the bottom of the screen list the\ncargo available in our warehouse.  To load cargo onto the ship, use\nthe mouse to drag it from the warehouse into one of the ship's cargo\nholds (the small boxes underneath the ship's picture).  Once the ship\nis loaded, you can return to the main map (press '{ESC}').  Then, on\nthe ship's next turn, you can send it to Europe by pressing '{G}'."
+  box_w   = 220
+  y       = 5
+  speaker = "MSS5"
+}

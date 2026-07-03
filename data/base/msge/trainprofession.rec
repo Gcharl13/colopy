@@ -1,0 +1,5 @@
+record msge.trainprofession {
+  key   = "@TRAINPROFESSION"
+  text  = "A {colonist} in {%STRING0} has learned the specialty profession {%STRING1}."
+  box_w = 190
+}

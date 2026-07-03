@@ -1,0 +1,6 @@
+record msge.killwagons {
+  key     = "@KILLWAGONS"
+  text    = "Your Excellency! Our {wagon train} has disappeared\nwithout a trace in {%STRING0} country."
+  box_w   = 190
+  speaker = "MSS3"
+}

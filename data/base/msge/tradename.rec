@@ -1,0 +1,5 @@
+record msge.tradename {
+  key   = "@TRADENAME"
+  text  = "Enter the name for this trade route.\n\nName:"
+  box_w = 190
+}

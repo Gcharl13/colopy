@@ -1,0 +1,7 @@
+record msge.lootcash {
+  key     = "@LOOTCASH"
+  text    = "{%STRING0} treasure fleet laden with {%NUMBER0$} arrives safely in %STRING1!\nCrown takes {%NUMBER1%%} share.  {%NUMBER2$} added to %STRING0 treasury."
+  box_w   = 190
+  sprite  = "woodcut.wdcut04"
+  speaker = "KING1"
+}

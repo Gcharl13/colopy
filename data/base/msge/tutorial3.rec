@@ -1,0 +1,6 @@
+record msge.tutorial3 {
+  key     = "@TUTORIAL3"
+  text    = "The abundance of {%STRING0} in this area makes this a good place to\nstart our first colony.  To begin a colony, Sire, press the '{B}' key."
+  box_w   = 190
+  speaker = "MSS3"
+}

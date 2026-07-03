@@ -1,0 +1,6 @@
+record msge.trade0 {
+  key     = "@TRADE0"
+  text    = "\"We see that you have brought some %STRING0\n{%STRING1} to trade with us.  We offer you {%NUMBER0$}\nin exchange.\"\n\n\"We gratefully accept {%NUMBER0$}.\"\n\"A fairer price would be {%NUMBER1$}.\"\n\"No, let the %STRING1 be our {gift} to you.\"\n\"Never mind.\""
+  box_w   = 190
+  speaker = "IND"
+}

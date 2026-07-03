@@ -1,0 +1,5 @@
+record msge.lostcity3 {
+  key   = "@LOSTCITY3"
+  text  = "You find the ruins of a lost civilization.\nWithin are gold and artifacts worth {%NUMBER0$}."
+  box_w = 190
+}

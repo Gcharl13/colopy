@@ -1,0 +1,6 @@
+record msge.build7 {
+  key   = "@BUILD7"
+  text  = "^^and to Establish Colonies for the Greater Glory of %STRING0."
+  box_w = 310
+  y     = 30
+}

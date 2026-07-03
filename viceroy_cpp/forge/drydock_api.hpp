@@ -27,6 +27,11 @@ bool drydock_active();
 // Call after invalidate_tables() so a legacy reload cannot shadow the store.
 void drydock_repatch_tables();
 
+// The /api/messages payload built from the store's msge records (same shape as
+// the legacy messages.json: {"messages":[{key,text,box_w,x,y,sprite,speaker,
+// default}...]}). False when the store is not loaded (caller serves the file).
+bool drydock_messages_json(std::string& out);
+
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).
 HttpResponse drydock_route(const std::string& method, const std::string& path,

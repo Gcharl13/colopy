@@ -1,0 +1,5 @@
+record msge.peacemanly {
+  key   = "@PEACEMANLY"
+  text  = "\"Very well.  However, {only} the land you now occupy\nshall constitute the {%STRING0} sphere; the {remaining} territories shall be\n{%STRING1} in perpetuity.  Trespass in those areas at your\nown {peril}.\"\n\n\"Go in peace, {%STRING1} brothers.\"\n\"First you must withdraw your forces from our colonies!\"\n\"How much do you value your puny lives, heathen swine?\"\n\"We suggest an alliance.\""
+  box_w = 220
+}

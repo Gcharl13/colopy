@@ -1,0 +1,6 @@
+record msge.tutorial7 {
+  key     = "@TUTORIAL7"
+  text    = "%STRING0 is growing rapidly, Your Excellency, and we may want to\nconsider building a {Stockade} to protect it from harm.  To build\nsomething, we must first make one of our colonists a {Lumberjack}\nand have him chop {Lumber} in a forested square.  Then, we make\na colonist a {Carpenter}, who makes buildings out of the lumber.\nFinally, we tell the carpenter what to build.  We do this by clicking\non the blue 'Hammer' button at the lower right of the screen.  This\nshows us what we are currently building, and allows us to change it\nif we want."
+  box_w   = 220
+  speaker = "MSS1"
+}

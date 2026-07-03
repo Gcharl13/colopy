@@ -1,0 +1,5 @@
+record msge.inefficient {
+  key   = "@INEFFICIENT"
+  text  = "{%STRING0} has an inefficient government, Your Excellency!\nAny colony which has {%NUMBER0} or more colonists who are\nnot members of the Sons of Liberty is lagging behind in its\ngovernmental development.  Colonists in such colonies receive\na {-1} production penalty for every %NUMBER0 tories.  We can\nincrease Sons of Liberty membership by producing more {Liberty\nBells} in this colony; conversely, we can avoid the production\npenalty by removing enough colonists to get the number of tories\nbelow %NUMBER0."
+  box_w = 220
+}

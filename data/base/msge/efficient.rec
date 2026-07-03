@@ -1,0 +1,5 @@
+record msge.efficient {
+  key   = "@EFFICIENT"
+  text  = "{%STRING0} has improved the efficiency of its government, Your Excellency.\nProduction penalties no longer apply to %STRING0 colonists."
+  box_w = 190
+}

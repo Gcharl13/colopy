@@ -1,0 +1,6 @@
+record msge.sailport {
+  key     = "@SAILPORT"
+  text    = "Select a port to sail to:"
+  box_w   = 190
+  default = "1"
+}

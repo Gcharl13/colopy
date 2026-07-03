@@ -1,0 +1,5 @@
+record msge.peaceusa {
+  key   = "@PEACEUSA"
+  text  = "\"The {%STRING0} welcomes peace with our politically backward neighbors,\nthe {%STRING1}.\"\n\n\"Go in peace.\"\n\"First you must withdraw your forces from outside our colonies!\"\n\"How much do you value your worthless lives, swine?\"\n\"We suggest an alliance.\""
+  box_w = 220
+}

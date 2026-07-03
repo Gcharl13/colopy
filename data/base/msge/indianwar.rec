@@ -1,0 +1,7 @@
+record msge.indianwar {
+  key     = "@INDIANWAR"
+  text    = "\"We {%STRING0} have tried to live in\npeace with you, but these provocations are intolerable.\nYour crimes cry out for vengeance--prepare for WAR!\""
+  box_w   = 190
+  sprite  = "woodcut.wdcut13"
+  speaker = "IND"
+}

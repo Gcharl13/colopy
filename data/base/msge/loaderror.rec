@@ -1,0 +1,5 @@
+record msge.loaderror {
+  key   = "@LOADERROR"
+  text  = "Error loading game %STRING0."
+  box_w = 190
+}

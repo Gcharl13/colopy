@@ -1,0 +1,5 @@
+record msge.gameoptions {
+  key   = "@GAMEOPTIONS"
+  text  = "Set Game Options\nShow ~Indian Moves\nShow ~Foreign Moves\nFast Piece ~Slide\n~End of Turn\n~Autosave\n~Combat Analysis\nWater Color C~ycling\n~Tutorial Hints"
+  box_w = 190
+}

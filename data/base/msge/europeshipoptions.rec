@@ -1,0 +1,4 @@
+record msge.europeshipoptions {
+  key  = "@EUROPESHIPOPTIONS"
+  text = "Move to front.\nSet sail for the New World.\nUnload all cargo.\nNo changes."
+}

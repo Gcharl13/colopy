@@ -1,0 +1,5 @@
+record msge.indianpeace {
+  key   = "@INDIANPEACE"
+  text  = "\"The {%STRING0} welcome peace with our brothers\nthe {%STRING1}.  Let us smoke a peace pipe to celebrate\nour perpetual friendship.\""
+  box_w = 190
+}

@@ -1,0 +1,5 @@
+record msge.pickindependence {
+  key   = "@PICKINDEPENDENCE"
+  text  = "Select an independence tune:\n\n\"Love Forever\"\n\"York Fusiliers\"\n\"Washington Artillery March\"\n\"Road to Boston\"\n\"Independence Way\""
+  box_w = 220
+}
