@@ -43,6 +43,11 @@ const UnitStats& unit_stats(int type);
 // (spec/systems/terrain_improvement.md, sar ax,1 @0x04074A/@0x040A59).
 constexpr int CLASS_HARDY_PIONEER = 0x14;
 
+// Veteran Soldier class (+0x315B == 0x15): the combat-promotion stamp
+// (training.md 3 @0x03D835); Soldiers/Dragoons carry +50% strength inside
+// the per-unit evaluator func_007C2A (diplomacy.md 2 / combat.md 2).
+constexpr int CLASS_VETERAN = 0x15;
+
 // Standing order for a unit (spec/systems/unit_orders.md, subset for the spine).
 enum Order : int {
     ORDER_NONE = 0,    // idle (manual control each turn)

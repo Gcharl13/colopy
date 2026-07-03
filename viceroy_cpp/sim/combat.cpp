@@ -123,7 +123,6 @@ bool is_capturable(int loser_type) {
 
 bool promote_on_win(int& io_type, int& io_profession, int winner_strength,
                     int strength_sum, bool has_washington, const RandFn& rng) {
-    constexpr int VETERAN = 0x15;   // Veteran Soldier class (+0x315B)
     // Only the soldier line promotes; Continental units are already at the type ceiling.
     const bool soldier = (io_type == 1 || io_type == 4);
     const bool continental = (io_type == 9 || io_type == 7);
@@ -132,7 +131,7 @@ bool promote_on_win(int& io_type, int& io_profession, int winner_strength,
         const int s = strength_sum > 0 ? strength_sum : 1;
         if (rng(1, s) > winner_strength) return false;   // P(promote) = winner_strength / S
     }
-    if (soldier && io_profession != VETERAN) { io_profession = VETERAN; return true; }
+    if (soldier && io_profession != CLASS_VETERAN) { io_profession = CLASS_VETERAN; return true; }
     if (io_type == 1) { io_type = 9; return true; }      // Soldiers -> Continental Army
     if (io_type == 4) { io_type = 7; return true; }      // Dragoons -> Continental Cavalry
     return false;                                        // Continental veteran: ceiling reached
@@ -145,7 +144,15 @@ CombatResult resolve_land(const RuleData& rd,
                           const RandFn& rng, bool defender_fortified,
                           int attacker_nation, bool defender_in_colony) {
     CombatResult res;
-    res.atk_str = unit_stats(rd, attacker.type).attack;
+    // The decider reads each side's strength through the shared per-unit
+    // evaluator func_007C2A (0x181F:0x9C8 @0x5CDF9, decoded 2026-07-03):
+    // veteran class (0x15) Soldiers/Dragoons carry +50% INSIDE the accessor,
+    // before the decider's own folds (diplomacy.md 2 / combat.md 2).
+    auto veteran50 = [](const Unit& u, int s) {
+        return (u.profession == CLASS_VETERAN && (u.type == SOLDIERS || u.type == DRAGOONS))
+                   ? s + s / 2 : s;
+    };
+    res.atk_str = veteran50(attacker, unit_stats(rd, attacker.type).attack);
     if (attacker_nation == 2 && defender.type >= BRAVES && defender.type < NUNITTYPES)
         res.atk_str += res.atk_str / 2;   // Spanish +50% vs natives (@0x05CF2F: sar;add)
     if (defender_in_colony)
@@ -154,7 +161,7 @@ CombatResult resolve_land(const RuleData& rd,
     // The func_007D3E accumulator (terrain + colony/fort/road folds) applies to
     // the defending strength via the byte-verified *(bonus+4)/4 *3/2 chain
     // (func_05CA7E @0x05CE05/@0x05CE16), not additively.
-    res.def_str = apply_defense_bonus(unit_stats(rd, defender.type).defense,
+    res.def_str = apply_defense_bonus(veteran50(defender, unit_stats(rd, defender.type).defense),
                                       terrain_defense + fort_bonus);
     if (attacker_human) res.atk_str += difficulty_bonus(difficulty);
     if (defender_human) res.def_str += difficulty_bonus(difficulty);

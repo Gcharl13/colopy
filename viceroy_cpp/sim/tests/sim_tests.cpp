@@ -383,6 +383,18 @@ static void test_combat() {
     CHECK(r.def_str == 3, "fortified Soldiers def 2 -> %d (expect 3)", r.def_str);
     r = resolve_land(default_rules(), atk, def, 0, 0, 4, false, false, win, /*fortified*/false);
     CHECK(r.def_str == 2, "unfortified Soldiers def -> %d (expect 2)", r.def_str);
+
+    // Veteran class (0x15) Soldiers/Dragoons: +50% inside the strength
+    // accessor (func_007C2A via the decider @0x5CDF9) -- atk 2 -> 3, def 2 -> 3.
+    Unit vat = atk; vat.profession = CLASS_VETERAN;
+    Unit vde = def; vde.profession = CLASS_VETERAN;
+    r = resolve_land(default_rules(), vat, vde, 0, 0, 4, false, false, win);
+    CHECK(r.atk_str == 3 && r.def_str == 3,
+          "veteran Soldiers atk %d def %d (expect 3/3)", r.atk_str, r.def_str);
+    Unit vscout; vscout.type = SCOUTS; vscout.profession = CLASS_VETERAN;   // not a soldier line
+    r = resolve_land(default_rules(), vscout, def, 0, 0, 4, false, false, win);
+    CHECK(r.atk_str == unit_stats(SCOUTS).attack,
+          "veteran class on a non-soldier type: no bonus (atk %d)", r.atk_str);
 }
 
 // --- RuleData seam: the modded-data invariant suite (seed). Proves the sim reads
