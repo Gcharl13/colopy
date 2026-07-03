@@ -1,0 +1,7 @@
+record sprt.bg_nations {
+  sid   = "bg.nations"
+  label = "NATIONS"
+  kind  = "background"
+  sheet = "NATIONS"
+  file  = "pik/NATIONS.png"
+}

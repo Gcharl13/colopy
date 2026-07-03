@@ -1,0 +1,7 @@
+record sprt.bg_openbord {
+  sid   = "bg.openbord"
+  label = "OPENBORD"
+  kind  = "background"
+  sheet = "OPENBORD"
+  file  = "pik/OPENBORD.png"
+}

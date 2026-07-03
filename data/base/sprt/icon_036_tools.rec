@@ -1,0 +1,9 @@
+record sprt.icon_036_tools {
+  sid   = "icon.036_tools"
+  label = "Tools"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 36
+  w     = 12
+  h     = 10
+}

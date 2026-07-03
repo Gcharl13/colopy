@@ -1,0 +1,9 @@
+record sprt.terrain_plains {
+  sid   = "terrain.plains"
+  label = "Plains"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 2
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.overlay_phys0_33 {
+  sid   = "overlay.phys0_33"
+  label = "PHYS0 frame 33"
+  kind  = "overlay"
+  sheet = "PHYS0"
+  frame = 33
+  w     = 16
+  h     = 16
+}

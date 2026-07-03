@@ -1,0 +1,9 @@
+record sprt.icon_028_ore {
+  sid   = "icon.028_ore"
+  label = "Ore"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 28
+  w     = 15
+  h     = 14
+}

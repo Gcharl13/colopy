@@ -1,0 +1,9 @@
+record sprt.unit_man_o_war {
+  sid   = "unit.man_o_war"
+  label = "Man-O-War"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 18
+  w     = 16
+  h     = 16
+}

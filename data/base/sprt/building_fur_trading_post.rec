@@ -1,0 +1,9 @@
+record sprt.building_fur_trading_post {
+  sid   = "building.fur_trading_post"
+  label = "Fur Trading Post"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 33
+  w     = 28
+  h     = 24
+}

@@ -1,0 +1,9 @@
+record sprt.icon_123_us_flag_unverified {
+  sid   = "icon.123_us_flag_unverified"
+  label = "US flag (unverified)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 123
+  w     = 14
+  h     = 14
+}

@@ -1,0 +1,7 @@
+record sprt.father_george_washington {
+  sid   = "father.george_washington"
+  label = "George Washington"
+  kind  = "portrait"
+  sheet = "CC-11"
+  file  = "sprites/atlas_CC-11.png"
+}

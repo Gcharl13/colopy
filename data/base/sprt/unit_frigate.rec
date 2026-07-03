@@ -1,0 +1,9 @@
+record sprt.unit_frigate {
+  sid   = "unit.frigate"
+  label = "Frigate"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 17
+  w     = 16
+  h     = 16
+}

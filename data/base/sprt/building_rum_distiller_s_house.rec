@@ -1,0 +1,9 @@
+record sprt.building_rum_distiller_s_house {
+  sid   = "building.rum_distiller_s_house"
+  label = "Rum Distiller's House"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 27
+  w     = 28
+  h     = 24
+}

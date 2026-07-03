@@ -1,0 +1,9 @@
+record sprt.icon_007_galleon {
+  sid   = "icon.007_galleon"
+  label = "Galleon"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 7
+  w     = 14
+  h     = 16
+}

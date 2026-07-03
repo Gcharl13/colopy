@@ -1,0 +1,9 @@
+record sprt.icon_101_pioneers {
+  sid   = "icon.101_pioneers"
+  label = "Pioneers"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 101
+  w     = 7
+  h     = 14
+}

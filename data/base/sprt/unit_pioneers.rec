@@ -1,0 +1,9 @@
+record sprt.unit_pioneers {
+  sid   = "unit.pioneers"
+  label = "Pioneers"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 2
+  w     = 16
+  h     = 16
+}

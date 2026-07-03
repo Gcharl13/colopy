@@ -1,0 +1,9 @@
+record sprt.unit_dragoons {
+  sid   = "unit.dragoons"
+  label = "Dragoons"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 4
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.building_schoolhouse {
+  sid   = "building.schoolhouse"
+  label = "Schoolhouse"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 12
+  w     = 28
+  h     = 24
+}

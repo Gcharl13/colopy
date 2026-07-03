@@ -1,0 +1,9 @@
+record sprt.building_capitol {
+  sid   = "building.capitol"
+  label = "Capitol"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 30
+  w     = 28
+  h     = 24
+}

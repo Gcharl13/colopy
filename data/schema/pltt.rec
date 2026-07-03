@@ -1,0 +1,8 @@
+record schm.pltt {
+  version = 1
+  fields  = [
+    { name = "name", type = "str", required = true, doc = "Palette name (VICEROY.PAL)" },
+    { name = "colors", type = "list<str>", required = true, ordered = true, doc = "256 #rrggbb hex colors, position = palette index (data_extracted/palette.json; the atlas PNGs store indices into this, enabling palette cycling)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

@@ -1,0 +1,9 @@
+record sprt.icon_009_artillery {
+  sid   = "icon.009_artillery"
+  label = "Artillery"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 9
+  w     = 14
+  h     = 7
+}

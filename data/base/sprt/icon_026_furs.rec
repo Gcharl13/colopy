@@ -1,0 +1,9 @@
+record sprt.icon_026_furs {
+  sid   = "icon.026_furs"
+  label = "Furs"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 26
+  w     = 14
+  h     = 15
+}

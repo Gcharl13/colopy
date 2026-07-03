@@ -1,0 +1,9 @@
+record sprt.terrain_forest_hill_ground {
+  sid   = "terrain.forest_hill_ground"
+  label = "Forest/Hill ground"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 8
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.icon_021_icon_21_0x15 {
+  sid   = "icon.021_icon_21_0x15"
+  label = "icon 21 (0x15)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 21
+  w     = 3
+  h     = 3
+}

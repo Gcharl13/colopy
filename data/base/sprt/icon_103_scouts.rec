@@ -1,0 +1,9 @@
+record sprt.icon_103_scouts {
+  sid   = "icon.103_scouts"
+  label = "Scouts"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 103
+  w     = 13
+  h     = 15
+}

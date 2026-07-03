@@ -1,0 +1,7 @@
+record sprt.father_adam_smith {
+  sid   = "father.adam_smith"
+  label = "Adam Smith"
+  kind  = "portrait"
+  sheet = "CC-00"
+  file  = "sprites/atlas_CC-00.png"
+}

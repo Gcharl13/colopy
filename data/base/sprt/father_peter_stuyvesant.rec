@@ -1,0 +1,7 @@
+record sprt.father_peter_stuyvesant {
+  sid   = "father.peter_stuyvesant"
+  label = "Peter Stuyvesant"
+  kind  = "portrait"
+  sheet = "CC-03"
+  file  = "sprites/atlas_CC-03.png"
+}

@@ -1,0 +1,9 @@
+record sprt.building_weaver_s_shop {
+  sid   = "building.weaver_s_shop"
+  label = "Weaver's Shop"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 22
+  w     = 28
+  h     = 24
+}

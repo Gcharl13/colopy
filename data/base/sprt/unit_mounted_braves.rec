@@ -1,0 +1,9 @@
+record sprt.unit_mounted_braves {
+  sid   = "unit.mounted_braves"
+  label = "Mounted Braves"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 21
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,7 @@
+record sprt.father_francis_drake {
+  sid   = "father.francis_drake"
+  label = "Francis Drake"
+  kind  = "portrait"
+  sheet = "CC-13"
+  file  = "sprites/atlas_CC-13.png"
+}

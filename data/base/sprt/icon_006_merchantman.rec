@@ -1,0 +1,9 @@
+record sprt.icon_006_merchantman {
+  sid   = "icon.006_merchantman"
+  label = "Merchantman"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 6
+  w     = 13
+  h     = 16
+}

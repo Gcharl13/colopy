@@ -1,0 +1,14 @@
+record schm.sprt {
+  version = 1
+  fields  = [
+    { name = "sid", type = "str", required = true, doc = "Verbatim sprite-catalog id (sprites.json; the key every screen/consumer references, e.g. unit.colonists -- kept verbatim because the record slug flattens its dot namespace)" },
+    { name = "label", type = "str", required = true, doc = "Human sprite label (tools/build_sprites.py catalog)" },
+    { name = "kind", type = "str", required = true, doc = "Catalog kind (unit | building | terrain | overlay | icon | portrait | woodcut | background)" },
+    { name = "sheet", type = "str", doc = "Source sheet name (TERRAIN/PHYS0/UNITS/ICONS/... -- the ATLS reference; no separate atlas artifact exists, so sheet+file ARE the atlas metadata)" },
+    { name = "frame", type = "int", min = 0, doc = "Frame index within the sheet (absent for file-based sprites)" },
+    { name = "file", type = "str", doc = "Direct asset path when the sprite is a whole file, not a sheet frame" },
+    { name = "w", type = "int", min = 0, doc = "Native pixel width (absent = 0 = unknown in the extraction)" },
+    { name = "h", type = "int", min = 0, doc = "Native pixel height (absent = 0 = unknown)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

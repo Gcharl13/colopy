@@ -1,0 +1,9 @@
+record sprt.icon_029_silver {
+  sid   = "icon.029_silver"
+  label = "Silver"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 29
+  w     = 15
+  h     = 9
+}

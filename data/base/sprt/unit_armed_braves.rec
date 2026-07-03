@@ -1,0 +1,9 @@
+record sprt.unit_armed_braves {
+  sid   = "unit.armed_braves"
+  label = "Armed Braves"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 20
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.building_custom_house {
+  sid   = "building.custom_house"
+  label = "Custom House"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 18
+  w     = 28
+  h     = 24
+}

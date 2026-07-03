@@ -1,0 +1,9 @@
+record sprt.icon_034_coats {
+  sid   = "icon.034_coats"
+  label = "Coats"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 34
+  w     = 9
+  h     = 15
+}

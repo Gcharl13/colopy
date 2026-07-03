@@ -1,0 +1,9 @@
+record sprt.building_building_42_42 {
+  sid   = "building.building_42.42"
+  label = "building #42"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 42
+  w     = 28
+  h     = 24
+}

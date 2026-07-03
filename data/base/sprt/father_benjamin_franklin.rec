@@ -1,0 +1,7 @@
+record sprt.father_benjamin_franklin {
+  sid   = "father.benjamin_franklin"
+  label = "Benjamin Franklin"
+  kind  = "portrait"
+  sheet = "CC-19"
+  file  = "sprites/atlas_CC-19.png"
+}

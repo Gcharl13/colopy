@@ -553,7 +553,12 @@ static forge::HttpResponse serve_asset(const std::string& sub) {
     else if (sub.rfind("sprites/", 0) == 0 || sub.rfind("pik/", 0) == 0) fpath = "docs/atlas/" + sub;
     else if (sub.rfind("screens/", 0) == 0)                         fpath = "docs/" + sub;
     else if (sub.rfind("tileset/", 0) == 0)                         fpath = "data_extracted/" + sub;
-    else if (sub == "palette.json")                                 fpath = "data_extracted/palette.json";
+    else if (sub == "palette.json") {
+        std::string ddp;                       // store-authoritative when loaded
+        if (forge::drydock_palette_json(ddp))
+            return forge::HttpResponse{200, "application/json", std::move(ddp)};
+        fpath = "data_extracted/palette.json";
+    }
     else return forge::HttpResponse{404, "text/plain", "unknown asset: " + sub};
 
     std::ifstream f(fpath, std::ios::binary);
@@ -3174,6 +3179,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             catch (...) { return err(404, "functions.json not found"); }
         }
         if (path == "/api/sprites") {
+            { std::string dds;                 // store-authoritative when loaded
+              if (forge::drydock_sprites_json(dds))
+                  return forge::HttpResponse{200, "application/json", std::move(dds)}; }
             try { return J(200, forge::json_parse_file("data_extracted/engine/sprites.json")); }
             catch (...) { return err(404, "sprites.json not found (run tools/build_sprites.py)"); }
         }

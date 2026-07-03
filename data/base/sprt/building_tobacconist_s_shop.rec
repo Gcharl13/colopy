@@ -1,0 +1,9 @@
+record sprt.building_tobacconist_s_shop {
+  sid   = "building.tobacconist_s_shop"
+  label = "Tobacconist's Shop"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 25
+  w     = 28
+  h     = 24
+}

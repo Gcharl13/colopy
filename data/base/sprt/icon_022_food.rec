@@ -1,0 +1,9 @@
+record sprt.icon_022_food {
+  sid   = "icon.022_food"
+  label = "Food"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 22
+  w     = 8
+  h     = 15
+}

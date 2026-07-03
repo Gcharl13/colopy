@@ -1,0 +1,9 @@
+record sprt.unit_galleon {
+  sid   = "unit.galleon"
+  label = "Galleon"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 15
+  w     = 16
+  h     = 16
+}

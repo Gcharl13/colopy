@@ -276,6 +276,59 @@ void drydock_text_overlay(JsonValue& doc, const std::string& file) {
     }
 }
 
+// ---- SPRT/PLTT consumer cutover --------------------------------------------------
+// The sprite catalog (/api/sprites -> web SPRITECAT keyed by the verbatim sid)
+// and the palette asset (/assets/palette.json -> NVPAL) rebuild from the store.
+bool drydock_sprites_json(std::string& out) {
+    if (!g_ready) return false;
+    auto ti = g_store.type_index.find("sprt");
+    if (ti == g_store.type_index.end()) return false;
+    JsonValue rows; rows.type = JsonValue::Array;
+    for (const Record& r : g_store.records[ti->second]) {
+        JsonValue o; o.type = JsonValue::Object;
+        auto s = [&](const char* f) { const Value* x = r.find(f);
+            return (x && x->kind == ValKind::Str) ? x->s : std::string(); };
+        auto i = [&](const char* f) { const Value* x = r.find(f);
+            return (x && x->kind == ValKind::Int) ? (int)x->i : 0; };
+        o.obj["id"] = json_str(s("sid"));               // consumers key on the catalog id
+        o.obj["label"] = json_str(s("label"));
+        o.obj["kind"] = json_str(s("kind"));
+        if (const Value* x = r.find("sheet")) o.obj["sheet"] = json_str(x->s);
+        if (const Value* x = r.find("frame")) o.obj["frame"] = json_num((double)x->i);
+        if (const Value* x = r.find("file"))  o.obj["file"] = json_str(x->s);
+        o.obj["w"] = json_num(i("w"));
+        o.obj["h"] = json_num(i("h"));
+        rows.arr.push_back(std::move(o));
+    }
+    JsonValue doc; doc.type = JsonValue::Object;
+    doc.obj["count"] = json_num((double)rows.arr.size());
+    doc.obj["sprites"] = std::move(rows);
+    out = json_dump(doc);
+    return true;
+}
+
+bool drydock_palette_json(std::string& out) {
+    if (!g_ready) return false;
+    const Record* r = store_find(g_store, "pltt.viceroy");
+    const Value* cols = r ? r->find("colors") : nullptr;
+    if (!cols || cols->kind != ValKind::List) return false;
+    JsonValue arr; arr.type = JsonValue::Array;
+    for (size_t i = 0; i < cols->list.size(); ++i) {
+        const std::string& hex = cols->list[i].s;       // "#rrggbb"
+        if (cols->list[i].kind != ValKind::Str || hex.size() != 7) continue;
+        auto hx = [&](int off) { return (int)std::strtol(hex.substr(off, 2).c_str(), nullptr, 16); };
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["index"] = json_num((double)i);
+        o.obj["r"] = json_num(hx(1));
+        o.obj["g"] = json_num(hx(3));
+        o.obj["b"] = json_num(hx(5));
+        o.obj["hex"] = json_str(hex);
+        arr.arr.push_back(std::move(o));
+    }
+    out = json_dump(arr);
+    return true;
+}
+
 bool drydock_messages_json(std::string& out) {
     if (!g_ready) return false;
     JsonValue rows; rows.type = JsonValue::Array;

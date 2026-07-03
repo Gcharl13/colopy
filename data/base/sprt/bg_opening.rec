@@ -1,0 +1,7 @@
+record sprt.bg_opening {
+  sid   = "bg.opening"
+  label = "OPENING"
+  kind  = "background"
+  sheet = "OPENING"
+  file  = "pik/OPENING.png"
+}

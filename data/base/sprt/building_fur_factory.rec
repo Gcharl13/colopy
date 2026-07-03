@@ -1,0 +1,9 @@
+record sprt.building_fur_factory {
+  sid   = "building.fur_factory"
+  label = "Fur Factory"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 34
+  w     = 28
+  h     = 24
+}

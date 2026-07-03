@@ -1,0 +1,7 @@
+record sprt.bg_levn0003 {
+  sid   = "bg.levn0003"
+  label = "LEVN0003"
+  kind  = "background"
+  sheet = "LEVN0003"
+  file  = "pik/LEVN0003.png"
+}

@@ -1,0 +1,7 @@
+record sprt.bg_ccbkgd {
+  sid   = "bg.ccbkgd"
+  label = "CCBKGD"
+  kind  = "background"
+  sheet = "CCBKGD"
+  file  = "pik/CCBKGD.png"
+}

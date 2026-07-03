@@ -1,0 +1,9 @@
+record sprt.icon_090_icon_90_0x5a {
+  sid   = "icon.090_icon_90_0x5a"
+  label = "icon 90 (0x5A)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 90
+  w     = 6
+  h     = 13
+}

@@ -1,0 +1,7 @@
+record sprt.father_pocahontas {
+  sid   = "father.pocahontas"
+  label = "Pocahontas"
+  kind  = "portrait"
+  sheet = "CC-16"
+  file  = "sprites/atlas_CC-16.png"
+}

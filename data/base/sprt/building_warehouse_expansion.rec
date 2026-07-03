@@ -1,0 +1,9 @@
+record sprt.building_warehouse_expansion {
+  sid   = "building.warehouse_expansion"
+  label = "Warehouse Expansion"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 16
+  w     = 28
+  h     = 24
+}

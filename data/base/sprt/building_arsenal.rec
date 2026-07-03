@@ -1,0 +1,9 @@
+record sprt.building_arsenal {
+  sid   = "building.arsenal"
+  label = "Arsenal"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 5
+  w     = 28
+  h     = 24
+}

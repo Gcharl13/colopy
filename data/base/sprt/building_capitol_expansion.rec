@@ -1,0 +1,9 @@
+record sprt.building_capitol_expansion {
+  sid   = "building.capitol_expansion"
+  label = "Capitol Expansion"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 31
+  w     = 28
+  h     = 24
+}

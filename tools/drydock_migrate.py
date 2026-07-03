@@ -208,6 +208,34 @@ def main():
             drift = emit(os.path.join("text", rid.split(".", 1)[1] + ".rec"),
                          render(rid, fields), check, drift)
 
+    # SPRT: the sprite catalog (sprites.json). The verbatim catalog id lives in
+    # `sid` (record slugs flatten its dot namespace); the one duplicated catalog
+    # id (building.town_hall x3 tiers) dedups to _2/_3 slugs.
+    spr = json.load(open(os.path.join(ROOT, "data_extracted/engine/sprites.json")))
+    used = set()
+    for row in spr["sprites"]:
+        rid = f"sprt.{slug(row['id'], used)}"
+        fields = [("sid", quote(row["id"])), ("label", quote(row["label"])),
+                  ("kind", quote(row["kind"]))]
+        if str(row.get("sheet", "")):
+            fields.append(("sheet", quote(row["sheet"])))
+        if "frame" in row:
+            fields.append(("frame", str(int(row["frame"]))))
+        if str(row.get("file", "")):
+            fields.append(("file", quote(row["file"])))
+        for dim in ("w", "h"):
+            if int(row.get(dim, 0)):
+                fields.append((dim, str(int(row[dim]))))
+        drift = emit(os.path.join("sprt", rid.split(".", 1)[1] + ".rec"),
+                     render(rid, fields), check, drift)
+
+    # PLTT: VICEROY.PAL as one ordered 256-color record (position = index)
+    pal = json.load(open(os.path.join(ROOT, "data_extracted/palette.json")))
+    fields = [("name", quote("VICEROY.PAL")),
+              ("colors", "[" + ", ".join(quote(c["hex"]) for c in pal) + "]")]
+    drift = emit(os.path.join("pltt", "viceroy.rec"), render("pltt.viceroy", fields),
+                 check, drift)
+
     # CONF: cfg.json knobs (value scalar OR ordered values list)
     cfg = json.load(open(os.path.join(ROOT, "data_extracted/engine/cfg.json")))
     for group, knobs in cfg["groups"].items():

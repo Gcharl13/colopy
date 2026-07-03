@@ -1,0 +1,9 @@
+record sprt.unit_missionaries {
+  sid   = "unit.missionaries"
+  label = "Missionaries"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 3
+  w     = 16
+  h     = 16
+}

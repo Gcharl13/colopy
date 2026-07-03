@@ -1,0 +1,9 @@
+record sprt.building_printing_press {
+  sid   = "building.printing_press"
+  label = "Printing Press"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 19
+  w     = 28
+  h     = 24
+}

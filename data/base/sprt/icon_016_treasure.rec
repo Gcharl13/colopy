@@ -1,0 +1,9 @@
+record sprt.icon_016_treasure {
+  sid   = "icon.016_treasure"
+  label = "Treasure"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 16
+  w     = 14
+  h     = 9
+}

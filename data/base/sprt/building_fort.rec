@@ -1,0 +1,9 @@
+record sprt.building_fort {
+  sid   = "building.fort"
+  label = "Fort"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 1
+  w     = 28
+  h     = 24
+}

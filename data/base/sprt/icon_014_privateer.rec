@@ -1,0 +1,9 @@
+record sprt.icon_014_privateer {
+  sid   = "icon.014_privateer"
+  label = "Privateer"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 14
+  w     = 13
+  h     = 16
+}

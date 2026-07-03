@@ -1,0 +1,9 @@
+record sprt.unit_artillery {
+  sid   = "unit.artillery"
+  label = "Artillery"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 11
+  w     = 16
+  h     = 16
+}

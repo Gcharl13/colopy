@@ -1,0 +1,9 @@
+record sprt.icon_116_face_3_unverified {
+  sid   = "icon.116_face_3_unverified"
+  label = "face 3 (unverified)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 116
+  w     = 16
+  h     = 16
+}

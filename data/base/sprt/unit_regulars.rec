@@ -1,0 +1,9 @@
+record sprt.unit_regulars {
+  sid   = "unit.regulars"
+  label = "Regulars"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 6
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,7 @@
+record sprt.bg_kinglss2 {
+  sid   = "bg.kinglss2"
+  label = "KINGLSS2"
+  kind  = "background"
+  sheet = "KINGLSS2"
+  file  = "pik/KINGLSS2.png"
+}

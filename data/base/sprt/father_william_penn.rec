@@ -1,0 +1,7 @@
+record sprt.father_william_penn {
+  sid   = "father.william_penn"
+  label = "William Penn"
+  kind  = "portrait"
+  sheet = "CC-21"
+  file  = "sprites/atlas_CC-21.png"
+}

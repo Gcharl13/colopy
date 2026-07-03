@@ -1,0 +1,9 @@
+record sprt.icon_023_sugar {
+  sid   = "icon.023_sugar"
+  label = "Sugar"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 23
+  w     = 12
+  h     = 18
+}

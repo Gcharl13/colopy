@@ -1,0 +1,7 @@
+record sprt.father_jean_de_brebeuf {
+  sid   = "father.jean_de_brebeuf"
+  label = "Jean de Brebeuf"
+  kind  = "portrait"
+  sheet = "CC-22"
+  file  = "sprites/atlas_CC-22.png"
+}

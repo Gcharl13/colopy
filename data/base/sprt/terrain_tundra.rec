@@ -1,0 +1,9 @@
+record sprt.terrain_tundra {
+  sid   = "terrain.tundra"
+  label = "Tundra"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 0
+  w     = 16
+  h     = 16
+}

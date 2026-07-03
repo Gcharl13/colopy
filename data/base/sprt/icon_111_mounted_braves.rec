@@ -1,0 +1,9 @@
+record sprt.icon_111_mounted_braves {
+  sid   = "icon.111_mounted_braves"
+  label = "Mounted Braves"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 111
+  w     = 13
+  h     = 16
+}

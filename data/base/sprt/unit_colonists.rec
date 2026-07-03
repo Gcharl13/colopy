@@ -1,0 +1,9 @@
+record sprt.unit_colonists {
+  sid   = "unit.colonists"
+  label = "Colonists"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 0
+  w     = 16
+  h     = 16
+}

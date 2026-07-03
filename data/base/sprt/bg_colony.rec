@@ -1,0 +1,7 @@
+record sprt.bg_colony {
+  sid   = "bg.colony"
+  label = "COLONY"
+  kind  = "background"
+  sheet = "COLONY"
+  file  = "pik/COLONY.png"
+}

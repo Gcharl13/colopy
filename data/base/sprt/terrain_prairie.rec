@@ -1,0 +1,9 @@
+record sprt.terrain_prairie {
+  sid   = "terrain.prairie"
+  label = "Prairie"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 3
+  w     = 16
+  h     = 16
+}

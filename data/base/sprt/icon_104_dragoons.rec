@@ -1,0 +1,9 @@
+record sprt.icon_104_dragoons {
+  sid   = "icon.104_dragoons"
+  label = "Dragoons"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 104
+  w     = 14
+  h     = 15
+}

@@ -1,0 +1,9 @@
+record sprt.icon_033_cloth {
+  sid   = "icon.033_cloth"
+  label = "Cloth"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 33
+  w     = 9
+  h     = 14
+}

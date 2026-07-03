@@ -43,6 +43,14 @@ bool drydock_text_lines(const std::string& section, std::vector<std::string>& ou
 // "NAMES" | "COLONY" | "MENU") with the store's text records, in place.
 void drydock_text_overlay(JsonValue& doc, const std::string& file);
 
+// The /api/sprites catalog rebuilt from the store's sprt records (rows keyed
+// by the verbatim catalog `sid`); false when the store is off.
+bool drydock_sprites_json(std::string& out);
+
+// The /assets/palette.json payload rebuilt from pltt.viceroy (256
+// {index,r,g,b,hex} entries derived from the ordered hex colors).
+bool drydock_palette_json(std::string& out);
+
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).
 HttpResponse drydock_route(const std::string& method, const std::string& path,

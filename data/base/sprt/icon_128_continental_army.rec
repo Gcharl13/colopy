@@ -1,0 +1,9 @@
+record sprt.icon_128_continental_army {
+  sid   = "icon.128_continental_army"
+  label = "Continental Army"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 128
+  w     = 8
+  h     = 15
+}

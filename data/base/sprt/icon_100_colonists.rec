@@ -1,0 +1,9 @@
+record sprt.icon_100_colonists {
+  sid   = "icon.100_colonists"
+  label = "Colonists"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 100
+  w     = 6
+  h     = 14
+}

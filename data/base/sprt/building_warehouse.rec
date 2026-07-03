@@ -1,0 +1,9 @@
+record sprt.building_warehouse {
+  sid   = "building.warehouse"
+  label = "Warehouse"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 15
+  w     = 28
+  h     = 24
+}

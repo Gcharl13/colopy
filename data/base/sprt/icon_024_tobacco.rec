@@ -1,0 +1,9 @@
+record sprt.icon_024_tobacco {
+  sid   = "icon.024_tobacco"
+  label = "Tobacco"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 24
+  w     = 10
+  h     = 18
+}

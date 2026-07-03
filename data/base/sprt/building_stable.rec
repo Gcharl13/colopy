@@ -1,0 +1,9 @@
+record sprt.building_stable {
+  sid   = "building.stable"
+  label = "Stable"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 17
+  w     = 28
+  h     = 24
+}

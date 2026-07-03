@@ -1,0 +1,9 @@
+record sprt.icon_015_frigate {
+  sid   = "icon.015_frigate"
+  label = "Frigate"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 15
+  w     = 13
+  h     = 16
+}

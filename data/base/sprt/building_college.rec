@@ -1,0 +1,9 @@
+record sprt.building_college {
+  sid   = "building.college"
+  label = "College"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 13
+  w     = 28
+  h     = 24
+}

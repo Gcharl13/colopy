@@ -1,0 +1,9 @@
+record sprt.icon_107_icon_107_0x6b {
+  sid   = "icon.107_icon_107_0x6b"
+  label = "icon 107 (0x6B)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 107
+  w     = 8
+  h     = 12
+}

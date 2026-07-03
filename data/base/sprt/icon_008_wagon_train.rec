@@ -1,0 +1,9 @@
+record sprt.icon_008_wagon_train {
+  sid   = "icon.008_wagon_train"
+  label = "Wagon Train"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 8
+  w     = 14
+  h     = 12
+}

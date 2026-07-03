@@ -1,0 +1,9 @@
+record sprt.building_docks {
+  sid   = "building.docks"
+  label = "Docks"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 6
+  w     = 28
+  h     = 24
+}

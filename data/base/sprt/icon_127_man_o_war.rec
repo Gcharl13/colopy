@@ -1,0 +1,9 @@
+record sprt.icon_127_man_o_war {
+  sid   = "icon.127_man_o_war"
+  label = "Man-O-War"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 127
+  w     = 14
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.icon_109_braves {
+  sid   = "icon.109_braves"
+  label = "Braves"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 109
+  w     = 6
+  h     = 15
+}

@@ -1,0 +1,9 @@
+record sprt.unit_privateer {
+  sid   = "unit.privateer"
+  label = "Privateer"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 16
+  w     = 16
+  h     = 16
+}

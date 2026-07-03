@@ -1,0 +1,9 @@
+record sprt.icon_035_trade_goods {
+  sid   = "icon.035_trade_goods"
+  label = "Trade Goods"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 35
+  w     = 10
+  h     = 9
+}

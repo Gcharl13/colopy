@@ -1,0 +1,7 @@
+record sprt.father_francisco_coronado {
+  sid   = "father.francisco_coronado"
+  label = "Francisco Coronado"
+  kind  = "portrait"
+  sheet = "CC-06"
+  file  = "sprites/atlas_CC-06.png"
+}

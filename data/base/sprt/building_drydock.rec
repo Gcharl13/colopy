@@ -1,0 +1,9 @@
+record sprt.building_drydock {
+  sid   = "building.drydock"
+  label = "Drydock"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 7
+  w     = 28
+  h     = 24
+}

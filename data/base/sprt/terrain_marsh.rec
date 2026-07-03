@@ -1,0 +1,9 @@
+record sprt.terrain_marsh {
+  sid   = "terrain.marsh"
+  label = "Marsh"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 6
+  w     = 16
+  h     = 16
+}

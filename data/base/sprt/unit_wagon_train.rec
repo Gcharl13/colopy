@@ -1,0 +1,9 @@
+record sprt.unit_wagon_train {
+  sid   = "unit.wagon_train"
+  label = "Wagon Train"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 12
+  w     = 16
+  h     = 16
+}

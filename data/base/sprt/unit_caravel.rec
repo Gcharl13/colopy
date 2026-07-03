@@ -1,0 +1,9 @@
+record sprt.unit_caravel {
+  sid   = "unit.caravel"
+  label = "Caravel"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 13
+  w     = 16
+  h     = 16
+}

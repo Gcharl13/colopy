@@ -1,0 +1,9 @@
+record sprt.icon_030_horses {
+  sid   = "icon.030_horses"
+  label = "Horses"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 30
+  w     = 20
+  h     = 18
+}

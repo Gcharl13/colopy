@@ -1,0 +1,9 @@
+record sprt.icon_095_icon_95_0x5f {
+  sid   = "icon.095_icon_95_0x5f"
+  label = "icon 95 (0x5F)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 95
+  w     = 8
+  h     = 13
+}

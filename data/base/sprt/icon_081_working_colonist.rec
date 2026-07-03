@@ -1,0 +1,9 @@
+record sprt.icon_081_working_colonist {
+  sid   = "icon.081_working_colonist"
+  label = "Working colonist"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 81
+  w     = 8
+  h     = 14
+}

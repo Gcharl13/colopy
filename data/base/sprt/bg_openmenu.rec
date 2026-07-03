@@ -1,0 +1,7 @@
+record sprt.bg_openmenu {
+  sid   = "bg.openmenu"
+  label = "OPENMENU"
+  kind  = "background"
+  sheet = "OPENMENU"
+  file  = "pik/OPENMENU.png"
+}

@@ -1,0 +1,9 @@
+record sprt.icon_032_cigars {
+  sid   = "icon.032_cigars"
+  label = "Cigars"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 32
+  w     = 3
+  h     = 15
+}

@@ -1,0 +1,7 @@
+record sprt.bg_report1 {
+  sid   = "bg.report1"
+  label = "REPORT1"
+  kind  = "background"
+  sheet = "REPORT1"
+  file  = "pik/REPORT1.png"
+}

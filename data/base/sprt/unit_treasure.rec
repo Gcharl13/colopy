@@ -1,0 +1,9 @@
+record sprt.unit_treasure {
+  sid   = "unit.treasure"
+  label = "Treasure"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 10
+  w     = 16
+  h     = 16
+}

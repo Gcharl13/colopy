@@ -1,0 +1,9 @@
+record sprt.building_town_hall_3 {
+  sid   = "building.town_hall"
+  label = "Town Hall"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 11
+  w     = 28
+  h     = 24
+}

@@ -1,0 +1,9 @@
+record sprt.icon_102_soldiers {
+  sid   = "icon.102_soldiers"
+  label = "Soldiers"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 102
+  w     = 8
+  h     = 14
+}

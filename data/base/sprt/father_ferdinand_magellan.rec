@@ -1,0 +1,7 @@
+record sprt.father_ferdinand_magellan {
+  sid   = "father.ferdinand_magellan"
+  label = "Ferdinand Magellan"
+  kind  = "portrait"
+  sheet = "CC-05"
+  file  = "sprites/atlas_CC-05.png"
+}

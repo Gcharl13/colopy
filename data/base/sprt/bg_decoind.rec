@@ -1,0 +1,7 @@
+record sprt.bg_decoind {
+  sid   = "bg.decoind"
+  label = "DECOIND"
+  kind  = "background"
+  sheet = "DECOIND"
+  file  = "pik/DECOIND.png"
+}

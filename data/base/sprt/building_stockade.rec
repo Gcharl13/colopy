@@ -1,0 +1,9 @@
+record sprt.building_stockade {
+  sid   = "building.stockade"
+  label = "Stockade"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 0
+  w     = 28
+  h     = 24
+}

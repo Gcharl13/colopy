@@ -1,0 +1,9 @@
+record sprt.icon_037_muskets {
+  sid   = "icon.037_muskets"
+  label = "Muskets"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 37
+  w     = 4
+  h     = 15
+}

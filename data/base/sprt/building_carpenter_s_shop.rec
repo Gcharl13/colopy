@@ -1,0 +1,9 @@
+record sprt.building_carpenter_s_shop {
+  sid   = "building.carpenter_s_shop"
+  label = "Carpenter's Shop"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 35
+  w     = 28
+  h     = 24
+}

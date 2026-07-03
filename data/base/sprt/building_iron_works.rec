@@ -1,0 +1,9 @@
+record sprt.building_iron_works {
+  sid   = "building.iron_works"
+  label = "Iron Works"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 41
+  w     = 28
+  h     = 24
+}

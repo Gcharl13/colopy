@@ -1,0 +1,7 @@
+record sprt.bg_europe {
+  sid   = "bg.europe"
+  label = "EUROPE"
+  kind  = "background"
+  sheet = "EUROPE"
+  file  = "pik/EUROPE.png"
+}

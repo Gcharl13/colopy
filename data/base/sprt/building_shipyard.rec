@@ -1,0 +1,9 @@
+record sprt.building_shipyard {
+  sid   = "building.shipyard"
+  label = "Shipyard"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 8
+  w     = 28
+  h     = 24
+}

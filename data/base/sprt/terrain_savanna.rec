@@ -1,0 +1,9 @@
+record sprt.terrain_savanna {
+  sid   = "terrain.savanna"
+  label = "Savanna"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 5
+  w     = 16
+  h     = 16
+}

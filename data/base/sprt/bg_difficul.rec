@@ -1,0 +1,7 @@
+record sprt.bg_difficul {
+  sid   = "bg.difficul"
+  label = "DIFFICUL"
+  kind  = "background"
+  sheet = "DIFFICUL"
+  file  = "pik/DIFFICUL.png"
+}

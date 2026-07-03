@@ -1,0 +1,9 @@
+record sprt.icon_129_continental_cavalry {
+  sid   = "icon.129_continental_cavalry"
+  label = "Continental Cavalry"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 129
+  w     = 14
+  h     = 16
+}

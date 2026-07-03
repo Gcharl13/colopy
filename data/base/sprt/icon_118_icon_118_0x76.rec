@@ -1,0 +1,9 @@
+record sprt.icon_118_icon_118_0x76 {
+  sid   = "icon.118_icon_118_0x76"
+  label = "icon 118 (0x76)"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 118
+  w     = 8
+  h     = 6
+}

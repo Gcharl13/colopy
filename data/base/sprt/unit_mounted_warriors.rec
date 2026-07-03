@@ -1,0 +1,9 @@
+record sprt.unit_mounted_warriors {
+  sid   = "unit.mounted_warriors"
+  label = "Mounted Warriors"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 22
+  w     = 16
+  h     = 16
+}

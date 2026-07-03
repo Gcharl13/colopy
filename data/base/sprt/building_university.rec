@@ -1,0 +1,9 @@
+record sprt.building_university {
+  sid   = "building.university"
+  label = "University"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 14
+  w     = 28
+  h     = 24
+}

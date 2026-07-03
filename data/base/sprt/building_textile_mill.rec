@@ -1,0 +1,9 @@
+record sprt.building_textile_mill {
+  sid   = "building.textile_mill"
+  label = "Textile Mill"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 23
+  w     = 28
+  h     = 24
+}

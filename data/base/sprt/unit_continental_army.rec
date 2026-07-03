@@ -1,0 +1,9 @@
+record sprt.unit_continental_army {
+  sid   = "unit.continental_army"
+  label = "Continental Army"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 9
+  w     = 16
+  h     = 16
+}

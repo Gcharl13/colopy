@@ -1,0 +1,9 @@
+record sprt.terrain_swamp {
+  sid   = "terrain.swamp"
+  label = "Swamp"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 7
+  w     = 16
+  h     = 16
+}

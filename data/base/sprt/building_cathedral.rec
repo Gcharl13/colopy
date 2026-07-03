@@ -1,0 +1,9 @@
+record sprt.building_cathedral {
+  sid   = "building.cathedral"
+  label = "Cathedral"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 38
+  w     = 28
+  h     = 24
+}

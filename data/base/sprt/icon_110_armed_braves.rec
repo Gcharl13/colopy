@@ -1,0 +1,9 @@
+record sprt.icon_110_armed_braves {
+  sid   = "icon.110_armed_braves"
+  label = "Armed Braves"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 110
+  w     = 8
+  h     = 15
+}

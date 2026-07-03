@@ -1,0 +1,9 @@
+record sprt.icon_005_caravel {
+  sid   = "icon.005_caravel"
+  label = "Caravel"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 5
+  w     = 13
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.icon_105_missionaries {
+  sid   = "icon.105_missionaries"
+  label = "Missionaries"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 105
+  w     = 7
+  h     = 14
+}

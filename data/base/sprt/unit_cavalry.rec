@@ -1,0 +1,9 @@
+record sprt.unit_cavalry {
+  sid   = "unit.cavalry"
+  label = "Cavalry"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 8
+  w     = 16
+  h     = 16
+}

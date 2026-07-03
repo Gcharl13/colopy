@@ -1,0 +1,9 @@
+record sprt.unit_soldiers {
+  sid   = "unit.soldiers"
+  label = "Soldiers"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 1
+  w     = 16
+  h     = 16
+}

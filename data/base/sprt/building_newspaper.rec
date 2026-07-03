@@ -1,0 +1,9 @@
+record sprt.building_newspaper {
+  sid   = "building.newspaper"
+  label = "Newspaper"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 20
+  w     = 28
+  h     = 24
+}

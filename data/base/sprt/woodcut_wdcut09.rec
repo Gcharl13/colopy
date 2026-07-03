@@ -1,0 +1,7 @@
+record sprt.woodcut_wdcut09 {
+  sid   = "woodcut.wdcut09"
+  label = "WDCUT09"
+  kind  = "woodcut"
+  sheet = "WDCUT09"
+  file  = "sprites/atlas_WDCUT09.png"
+}

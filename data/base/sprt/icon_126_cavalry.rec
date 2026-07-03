@@ -1,0 +1,9 @@
+record sprt.icon_126_cavalry {
+  sid   = "icon.126_cavalry"
+  label = "Cavalry"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 126
+  w     = 14
+  h     = 16
+}

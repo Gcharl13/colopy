@@ -1,0 +1,7 @@
+record sprt.bg_customiz {
+  sid   = "bg.customiz"
+  label = "CUSTOMIZ"
+  kind  = "background"
+  sheet = "CUSTOMIZ"
+  file  = "pik/CUSTOMIZ.png"
+}

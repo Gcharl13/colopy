@@ -1,0 +1,9 @@
+record sprt.building_church {
+  sid   = "building.church"
+  label = "Church"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 37
+  w     = 28
+  h     = 24
+}

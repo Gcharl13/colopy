@@ -1,0 +1,9 @@
+record sprt.building_fortress {
+  sid   = "building.fortress"
+  label = "Fortress"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 2
+  w     = 28
+  h     = 24
+}

@@ -1,0 +1,9 @@
+record sprt.building_cigar_factory {
+  sid   = "building.cigar_factory"
+  label = "Cigar Factory"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 26
+  w     = 28
+  h     = 24
+}

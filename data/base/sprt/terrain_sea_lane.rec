@@ -1,0 +1,9 @@
+record sprt.terrain_sea_lane {
+  sid   = "terrain.sea_lane"
+  label = "Sea Lane"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 11
+  w     = 16
+  h     = 16
+}

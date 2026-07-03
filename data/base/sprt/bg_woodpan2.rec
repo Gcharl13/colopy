@@ -1,0 +1,7 @@
+record sprt.bg_woodpan2 {
+  sid   = "bg.woodpan2"
+  label = "WOODPAN2"
+  kind  = "background"
+  sheet = "WOODPAN2"
+  file  = "pik/WOODPAN2.png"
+}

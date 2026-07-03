@@ -1,0 +1,9 @@
+record sprt.unit_continental_cavalry {
+  sid   = "unit.continental_cavalry"
+  label = "Continental Cavalry"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 7
+  w     = 16
+  h     = 16
+}

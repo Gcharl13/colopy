@@ -1,0 +1,9 @@
+record sprt.building_rum_factory {
+  sid   = "building.rum_factory"
+  label = "Rum Factory"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 29
+  w     = 28
+  h     = 24
+}

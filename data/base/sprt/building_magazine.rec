@@ -1,0 +1,9 @@
+record sprt.building_magazine {
+  sid   = "building.magazine"
+  label = "Magazine"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 4
+  w     = 28
+  h     = 24
+}

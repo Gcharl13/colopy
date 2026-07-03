@@ -1,0 +1,7 @@
+record sprt.father_hernan_cortes {
+  sid   = "father.hernan_cortes"
+  label = "Hernan Cortes"
+  kind  = "portrait"
+  sheet = "CC-10"
+  file  = "sprites/atlas_CC-10.png"
+}

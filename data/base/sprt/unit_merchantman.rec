@@ -1,0 +1,9 @@
+record sprt.unit_merchantman {
+  sid   = "unit.merchantman"
+  label = "Merchantman"
+  kind  = "unit"
+  sheet = "UNITS"
+  frame = 14
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,7 @@
+record sprt.father_henry_hudson {
+  sid   = "father.henry_hudson"
+  label = "Henry Hudson"
+  kind  = "portrait"
+  sheet = "CC-08"
+  file  = "sprites/atlas_CC-08.png"
+}

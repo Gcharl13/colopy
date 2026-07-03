@@ -1,0 +1,9 @@
+record sprt.terrain_desert {
+  sid   = "terrain.desert"
+  label = "Desert"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 1
+  w     = 16
+  h     = 16
+}

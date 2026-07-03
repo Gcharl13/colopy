@@ -1,0 +1,9 @@
+record sprt.icon_027_lumber {
+  sid   = "icon.027_lumber"
+  label = "Lumber"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 27
+  w     = 15
+  h     = 8
+}

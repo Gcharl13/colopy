@@ -1,0 +1,9 @@
+record sprt.building_armory {
+  sid   = "building.armory"
+  label = "Armory"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 3
+  w     = 28
+  h     = 24
+}

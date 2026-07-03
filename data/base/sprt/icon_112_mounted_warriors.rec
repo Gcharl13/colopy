@@ -1,0 +1,9 @@
+record sprt.icon_112_mounted_warriors {
+  sid   = "icon.112_mounted_warriors"
+  label = "Mounted Warriors"
+  kind  = "icon"
+  sheet = "ICONS"
+  frame = 112
+  w     = 12
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.terrain_arctic {
+  sid   = "terrain.arctic"
+  label = "Arctic"
+  kind  = "terrain"
+  sheet = "TERRAIN"
+  frame = 9
+  w     = 16
+  h     = 16
+}

@@ -1,0 +1,9 @@
+record sprt.building_lumber_mill {
+  sid   = "building.lumber_mill"
+  label = "Lumber Mill"
+  kind  = "building"
+  sheet = "BUILDING"
+  frame = 36
+  w     = 28
+  h     = 24
+}

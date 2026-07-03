@@ -107,19 +107,26 @@ JSON everywhere for data; binary `.MP` maps (3-plane, byte-faithful loader); PNG
 Nothing is proposed for outright retirement in P0–P2: each legacy tab retires only when its
 generic replacement covers the workflow (strangler rule), logged in MIGRATION-LOG.md.
 
-**Status (updated as increments land — see MIGRATION-LOG for the full record):**
-- Store live with **10 types / 220 records** (good, unit, prof, terr, bldg, conf, phas, natn,
-  ffat + the schm registry describing itself); prof.produces = ref<good> gives the ref
+**Status — the approved P0–P2 migration order is COMPLETE (see MIGRATION-LOG 0–16):**
+- Store live with **14 types / 1,182 records**: good, unit, prof, terr, bldg, conf, phas,
+  natn, ffat, msge (499 GAME.TXT messages), text (21 label/menu/name-pool sections),
+  sprt (437 sprite catalog), pltt (VICEROY.PAL) + the schm registry describing itself
+  (schm.schm is the meta-schema fixed point). prof.produces = ref<good> gives the ref
   index/pickers/used-by/safe-delete genuine data.
 - **Retired:** Tables-tab editing for @CARGO, @UNIT, @JOB, @BUILDING, @UNFORESTED, @FORESTED,
   @OTHER, @COUNTRY, @NATIONALITY, @FATHERS (read-only + open-in-Drydock; MIGRATION-LOG 11/13).
   Honest because of the legacy-reader **write-through**: every store mutation patches the
   mapped in-memory JSON cells, so un-cut-over `@SECTION[row].col` consumers follow the store.
+- **Direct consumer cutovers** (keyed lookups, no write-through needed): @KEY messages
+  (message_meta / game_message_text / /api/messages via the dd_message_hook seam), @SECTION
+  label lines (labels_section / /api/labels / /api/text), the sprite catalog (/api/sprites),
+  and the palette (/assets/palette.json).
 - **Authority:** GOOD market knobs store-authoritative (cutover #1); TERR arrays + UNIT/PROF
   RuleData fields applied from the store live; CONF seeds defaults at serve start (Rules
-  overlay stays the live-tweak layer until P5); PHAS/BLDG/NATN/FFAT passive under the
-  write-through + provenance gate.
-- **Remaining P2 order:** TEXT/MSGE bulk (grouped files), SPRT/ATLS/PLTT metadata.
+  overlay stays the live-tweak layer until P5); PHAS/BLDG/NATN/FFAT under the write-through
+  + provenance gate; MSGE/TEXT/SPRT/PLTT fully cut over.
+- **Post-P2 (out of the approved scope):** EVNT decomposition of the node graphs (Q5),
+  DLOG/SCEN, overlay subsumption (P5), JSON source deletion once nothing reads them.
 
 ## 4. No spec counterpart — keep / migrate / retire
 
