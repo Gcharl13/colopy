@@ -241,44 +241,74 @@ def main():
     # out->in path, no comments/branches/data pins) decompose to typed EVNT
     # steps (spec 8, EVNT-1); everything else stays a lossless grph record.
     def as_chain(g):
+        """Chain + optional Comment annotations + flat single-consumer data
+        producers feeding step value pins. Returns (steps, comments) or None."""
         nodes = g["nodes"]; edges = g.get("edges", [])
-        if any(n["type"] == "Comment" for n in nodes):
-            return None
-        trig = [n for n in nodes if n["type"].startswith("On")]
+        comments = [n for n in nodes if n["type"] == "Comment"]
+        rest = [n for n in nodes if n["type"] != "Comment"]
+        byid = {n["id"]: n for n in nodes}
+        for e in edges:                       # comments must be edge-free
+            if byid[e["from"]["node"]]["type"] == "Comment" or \
+               byid[e["to"]["node"]]["type"] == "Comment":
+                return None
+        trig = [n for n in rest if n["type"].startswith("On")]
         if len(trig) != 1:
             return None
         nxt = {}; indeg = {}
+        data_in = {}                          # chain node id -> [(pin, producer id)]
+        outdeg = {}
         for e in edges:
-            if e["from"]["pin"] != "out" or e["to"]["pin"] != "in":
-                return None
-            if e["from"]["node"] in nxt:
-                return None
-            nxt[e["from"]["node"]] = e["to"]["node"]
-            indeg[e["to"]["node"]] = indeg.get(e["to"]["node"], 0) + 1
-            if indeg[e["to"]["node"]] > 1:
-                return None
-        byid = {n["id"]: n for n in nodes}
+            outdeg[e["from"]["node"]] = outdeg.get(e["from"]["node"], 0) + 1
+        for e in edges:
+            if e["to"]["pin"] == "in":        # exec edge
+                if e["from"]["pin"] != "out" or e["from"]["node"] in nxt:
+                    return None
+                nxt[e["from"]["node"]] = e["to"]["node"]
+                indeg[e["to"]["node"]] = indeg.get(e["to"]["node"], 0) + 1
+                if indeg[e["to"]["node"]] > 1:
+                    return None
+            else:                             # data edge: flat producer, value pin,
+                src = e["from"]["node"]       # single consumer (no sharing: an impure
+                if e["from"]["pin"] != "value" or outdeg.get(src, 0) != 1:  # producer
+                    return None               # like Roll must not be duplicated)
+                if any(x["to"]["node"] == src for x in edges):
+                    return None
+                data_in.setdefault(e["to"]["node"], []).append((e["to"]["pin"], src))
+        producers = {s for lst in data_in.values() for _, s in lst}
         chain = [trig[0]]; seen = {trig[0]["id"]}; cur = trig[0]["id"]
         while cur in nxt:
             cur = nxt[cur]
             if cur in seen:
                 return None
             seen.add(cur); chain.append(byid[cur])
-        if len(seen) != len(nodes):
+        if seen | producers != {n["id"] for n in rest}:
             return None
         steps = []
         for n in chain:
             p = dict(n.get("params", {}))
-            if "op" in p:
+            if "op" in p or "args" in p:
                 return None
-            steps.append({"op": n["type"], **p})
-        return steps
+            step = {"op": n["type"], **p}
+            if n["id"] in data_in:
+                args = {}
+                for pin, src in sorted(data_in[n["id"]]):
+                    sp = dict(byid[src].get("params", {}))
+                    if "op" in sp:
+                        return None
+                    args[pin] = {"op": byid[src]["type"], **sp}
+                step["args"] = args
+            steps.append(step)
+        return steps, [{"text": c.get("params", {}).get("text", ""),
+                        "x": c.get("x", 0), "y": c.get("y", 0)} for c in comments]
     for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/graphs/*.json"))):
         gr = json.load(open(f))
-        steps = as_chain(gr)
-        if steps is not None:
+        typed = as_chain(gr)
+        if typed is not None:
+            steps, comments = typed
             rid = f"evnt.{gr['id']}"
             fields = [("name", quote(gr["name"])), ("steps", rec_value(steps))]
+            if comments:
+                fields.append(("comments", rec_value(comments)))
             drift = emit(os.path.join("evnt", gr["id"] + ".rec"),
                          render(rid, fields), check, drift)
             continue

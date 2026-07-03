@@ -1,0 +1,4 @@
+record evnt.demo_treasure {
+  name  = "Demo: lost-city treasure reward"
+  steps = [{ op = "OnTestFire" }, { args = { amount = { max = 240, min = 30, op = "Roll" } }, op = "GrantGold", power = "0" }, { choices = "Praise be to God,Onward", op = "ShowPopup", textKey = "@LOSTCITY3", woodcut = "WDCUT04" }]
+}

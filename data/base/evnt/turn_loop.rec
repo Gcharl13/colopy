@@ -1,0 +1,5 @@
+record evnt.turn_loop {
+  name     = "Turn Loop (events)"
+  steps    = [{ op = "OnTurnStart" }, { graph = "kings_tax", op = "FireEvent" }, { graph = "mercenaries", op = "FireEvent" }, { graph = "immigration", op = "FireEvent" }, { graph = "native_raid", op = "FireEvent" }, { graph = "lost_city", op = "FireEvent" }, { graph = "founding_father", op = "FireEvent" }, { graph = "revolution", op = "FireEvent" }]
+  comments = [{ text = "Turn loop EVENT layer (spec/systems/turn_dispatch.md): fires the per-turn event graphs in spec phase order. The SIM MECHANICS (production, price drift, immigration accrual, REF accrual, cadence) are owned by the data-driven turn pipeline (turn.json / run_turn) and are NOT duplicated here -- doing both double-advanced the turn. This graph is the events only.", x = 30, y = -70 }, { text = "Phase 1: King's tax & mercenary offers", x = 210, y = -10 }, { text = "Phase 3: Immigration event (docks/recruit)", x = 650, y = -10 }, { text = "Phase 4: Diplomacy, natives & random events", x = 870, y = -10 }, { text = "Phase 5: Continental Congress & revolution", x = 1090, y = -10 }]
+}

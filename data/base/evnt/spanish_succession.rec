@@ -1,0 +1,5 @@
+record evnt.spanish_succession {
+  name     = "War of Spanish Succession"
+  steps    = [{ op = "OnSpanishSuccession" }, { args = { from = { metric = "strength", op = "WeakestPower" }, to = { metric = "strength", op = "StrongestPower" } }, op = "TransferColonies" }, { args = { str0 = { op = "GetState", path = "@NATIONALITY[2].name" }, str1 = { op = "PickText", options = "its New World possessions" }, str2 = { op = "GetState", path = "@NATIONALITY[0].name" } }, choices = "Continue", op = "ShowPopup", speaker = "King", textKey = "@SUCCESSION" }]
+  comments = [{ text = "Victim selection (spec: rank by 3*[0x9418]+2*[0x9298]+1*[0x9410]). Now reads REAL editable per-power fields: power<N>.strength = 3*mil_strength + 2*colony_count + 1*econ_strength. colony_count is live (the decoded 0x9298); mil_strength/econ_strength are editable in the State Inspector (proxy the undecoded 0x9418/0x9410 arrays). WeakestPower cedes to StrongestPower. NOTE: @SUCCESSION also has a %STRING3 slot, but the engine only fills str0/str1/str2 and num0/num1 on ShowPopup -- there is no str3, so %STRING3 is left unsupported and unfilled.", x = 20, y = -90 }]
+}

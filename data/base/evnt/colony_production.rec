@@ -1,0 +1,5 @@
+record evnt.colony_production {
+  name     = "Colony Production"
+  steps    = [{ op = "OnColonyProduction" }, { colony = 0, op = "ColonyStep" }, { body = "The colony makes {colony0.hammers} hammers, {colony0.bells} bells, {colony0.food} food. Building {colony0.building_name}: {colony0.build_bank} of {colony0.build_cost} hammers. Sons of Liberty {colony0.sol}%.", choices = "Onward.", op = "ShowPopup", title = "Colony Report" }]
+  comments = [{ text = "Per-turn colony update (spec/systems/colony.md). ColonyStep runs the SoL EMA, food->population growth, production AND build progress (it accrues this turn's hammers toward the @BUILDING target and completes it when the cost is met). The report reads live colony bindings.", x = 20, y = -90 }]
+}

@@ -1,0 +1,5 @@
+record evnt.colony_build {
+  name     = "Colony: Start Building"
+  steps    = [{ op = "OnPlayerCommand" }, { args = { building = { op = "Constant", value = 1 } }, colony = 0, op = "StartBuilding" }, { body = "Construction of {colony0.building_name} begins -- {colony0.build_cost} hammers required.", choices = "Very good.", op = "ShowPopup", title = "Construction Begun" }]
+  comments = [{ text = "Begin construction (spec/ui/context_dialogs.md build menu). Pick a building id from the @BUILDING table; StartBuilding gates on its min_colony and sets the target+cost. Thereafter colony_production's BuildStep accrues hammers until it completes. Here the id is a Constant (designer's choice).", x = 20, y = -90 }]
+}

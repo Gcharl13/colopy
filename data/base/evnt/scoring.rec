@@ -1,0 +1,5 @@
+record evnt.scoring {
+  name     = "Final Score"
+  steps    = [{ op = "OnGameOver" }, { op = "ScoreGame" }, { args = { num0 = { op = "GetState", path = "game.score" }, num1 = { expr = "game.difficulty + 4 + (game.difficulty>=3) + (game.difficulty>=4)", op = "Formula" } }, body = "The age of colonization closes. Final score: {%NUMBER0} points at a difficulty multiplier of x{%NUMBER1}, with {ff.count} Founding Fathers and {colonies.population} colonists tallied.", choices = "So be it.", op = "ShowPopup", title = "The Hall of Fame" }]
+  comments = [{ text = "End-game scoring (spec/systems/scoring.md func_03A9C0), rebuilt. ScoreGame computes the live score; the difficulty multiplier diff+4 (+1 at diff>=3, +1 at diff>=4) = {4,5,6,8,10} is one Formula. %NUMBER0=score, %NUMBER1=mult.", x = 20, y = -80 }]
+}
