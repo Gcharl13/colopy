@@ -98,6 +98,7 @@ endif()
 #     the tiny JSON reader is forge-local so the sim core stays dependency-light. ---
 add_executable(forge
   forge/main.cpp
+  forge/session.cpp
   forge/json.cpp
   forge/rules_json.cpp
   forge/mapedit.cpp
