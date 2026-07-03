@@ -1,0 +1,4 @@
+record evnt.goto_europe {
+  name  = "Go to europe"
+  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "europe" }]
+}

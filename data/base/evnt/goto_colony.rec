@@ -1,0 +1,4 @@
+record evnt.goto_colony {
+  name  = "Go to colony"
+  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "colony" }]
+}

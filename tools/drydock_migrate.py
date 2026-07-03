@@ -237,10 +237,51 @@ def main():
         drift = emit(os.path.join("dlog", scr["id"] + ".rec"),
                      render(rid, fields), check, drift)
 
-    # GRPH: the node graphs, verbatim (EVNT-0: lossless storage first; the typed
-    # atom decomposition evolves record-side). Same sorted-dict-key rule as DLOG.
+    # GRPH/EVNT: the node graphs. Pure exec chains (one On* trigger, a single
+    # out->in path, no comments/branches/data pins) decompose to typed EVNT
+    # steps (spec 8, EVNT-1); everything else stays a lossless grph record.
+    def as_chain(g):
+        nodes = g["nodes"]; edges = g.get("edges", [])
+        if any(n["type"] == "Comment" for n in nodes):
+            return None
+        trig = [n for n in nodes if n["type"].startswith("On")]
+        if len(trig) != 1:
+            return None
+        nxt = {}; indeg = {}
+        for e in edges:
+            if e["from"]["pin"] != "out" or e["to"]["pin"] != "in":
+                return None
+            if e["from"]["node"] in nxt:
+                return None
+            nxt[e["from"]["node"]] = e["to"]["node"]
+            indeg[e["to"]["node"]] = indeg.get(e["to"]["node"], 0) + 1
+            if indeg[e["to"]["node"]] > 1:
+                return None
+        byid = {n["id"]: n for n in nodes}
+        chain = [trig[0]]; seen = {trig[0]["id"]}; cur = trig[0]["id"]
+        while cur in nxt:
+            cur = nxt[cur]
+            if cur in seen:
+                return None
+            seen.add(cur); chain.append(byid[cur])
+        if len(seen) != len(nodes):
+            return None
+        steps = []
+        for n in chain:
+            p = dict(n.get("params", {}))
+            if "op" in p:
+                return None
+            steps.append({"op": n["type"], **p})
+        return steps
     for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/graphs/*.json"))):
         gr = json.load(open(f))
+        steps = as_chain(gr)
+        if steps is not None:
+            rid = f"evnt.{gr['id']}"
+            fields = [("name", quote(gr["name"])), ("steps", rec_value(steps))]
+            drift = emit(os.path.join("evnt", gr["id"] + ".rec"),
+                         render(rid, fields), check, drift)
+            continue
         rid = f"grph.{gr['id']}"
         fields = [("name", quote(gr["name"])), ("nodes", rec_value(gr["nodes"]))]
         if gr.get("edges"):

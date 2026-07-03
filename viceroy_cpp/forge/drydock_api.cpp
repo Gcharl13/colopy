@@ -420,9 +420,12 @@ static bool dd_screen_load(const std::string& id, JsonValue& out) {
 
 static bool dd_screen_save(const std::string& id, const JsonValue& screen, std::string& err) {
     const std::string rid = "dlog." + id;
-    if (!store_find(g_store, rid)) {                      // new screen from the designer
-        Record nr; nr.id = rid;
-        if (!store_add(g_store, std::move(nr), err)) return false;
+    if (!store_find(g_store, rid)) {                      // new screen: add COMPLETE
+        Record nr; nr.id = rid;                           // (store_add validates required fields)
+        for (const char* f : {"name", "background", "size", "widgets"})
+            if (const JsonValue* v = screen.find(f))
+                nr.fields.push_back({f, json_any_to_value(*v)});
+        return store_add(g_store, std::move(nr), err);
     }
     for (const char* f : {"name", "background", "size", "widgets"}) {
         const JsonValue* v = screen.find(f);
@@ -438,46 +441,163 @@ static bool dd_screen_save(const std::string& id, const JsonValue& screen, std::
 
 static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd_screen_save};
 
-// ---- GRPH consumer cutover: the node-graph CRUD (EVNT-0) --------------------------
-// Same shape as screens: grph records hold the graphs losslessly; the Logic
-// canvas + run_graph/FireEvent flow through this CRUD, so a canvas save is a
-// journaled store edit and the interpreter always executes the store's truth.
+// ---- GRPH/EVNT consumer cutover: the node-graph CRUD (EVNT-0/1) -------------------
+// Behavior lives in the store two ways: pure exec chains as TYPED evnt records
+// (spec 8 steps -- the legible outline form), everything else as lossless grph
+// records. The Logic canvas + run_graph/FireEvent flow through this CRUD; a
+// canvas save reclassifies (still a chain -> evnt, gained branches -> grph),
+// and every save is a journaled store edit.
+
+// A pure chain: one On* trigger, a single out->in path covering every node,
+// no comments, no branch/data pins. Returns the typed steps, or false.
+static bool graph_as_steps(const JsonValue& graph, JsonValue& steps_out) {
+    const JsonValue* nodes = graph.find("nodes");
+    if (!nodes || !nodes->is_array()) return false;
+    const JsonValue* trig = nullptr;
+    std::map<std::string, const JsonValue*> byid;
+    for (const JsonValue& n : nodes->arr) {
+        const JsonValue* ty = n.find("type");
+        const JsonValue* nid = n.find("id");
+        if (!ty || !nid) return false;
+        if (ty->str == "Comment") return false;
+        if (ty->str.rfind("On", 0) == 0) { if (trig) return false; trig = &n; }
+        byid[nid->str] = &n;
+    }
+    if (!trig) return false;
+    std::map<std::string, std::string> nxt;
+    std::map<std::string, int> indeg;
+    if (const JsonValue* edges = graph.find("edges"); edges && edges->is_array())
+        for (const JsonValue& e : edges->arr) {
+            const JsonValue* f = e.find("from");
+            const JsonValue* t = e.find("to");
+            if (!f || !t || f->find("pin")->str != "out" || t->find("pin")->str != "in") return false;
+            const std::string fn = f->find("node")->str;
+            if (nxt.count(fn)) return false;
+            nxt[fn] = t->find("node")->str;
+            if (++indeg[nxt[fn]] > 1) return false;
+        }
+    steps_out = JsonValue{}; steps_out.type = JsonValue::Array;
+    std::set<std::string> seen;
+    const JsonValue* cur = trig;
+    while (cur) {
+        JsonValue step; step.type = JsonValue::Object;
+        step.obj["op"] = json_str(cur->find("type")->str);
+        if (const JsonValue* p = cur->find("params"); p && p->is_object())
+            for (const auto& [k, v] : p->obj) {
+                if (k == "op") return false;
+                step.obj[k] = v;
+            }
+        steps_out.arr.push_back(std::move(step));
+        const std::string cid = cur->find("id")->str;
+        seen.insert(cid);
+        auto it = nxt.find(cid);
+        if (it == nxt.end()) break;
+        if (seen.count(it->second)) return false;
+        auto b = byid.find(it->second);
+        if (b == byid.end()) return false;
+        cur = b->second;
+    }
+    return seen.size() == byid.size();
+}
+
+// evnt steps -> graph JSON the interpreter runs (deterministic row layout)
+static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& out) {
+    const Value* steps = r.find("steps");
+    if (!steps || steps->kind != ValKind::List) return false;
+    out = JsonValue{}; out.type = JsonValue::Object;
+    out.obj["id"] = json_str(id);
+    if (const Value* n = r.find("name"); n && n->kind == ValKind::Str)
+        out.obj["name"] = json_str(n->s);
+    JsonValue nodes; nodes.type = JsonValue::Array;
+    JsonValue edges; edges.type = JsonValue::Array;
+    for (size_t i = 0; i < steps->list.size(); ++i) {
+        const Value& s = steps->list[i];
+        if (s.kind != ValKind::Dict) return false;
+        JsonValue n; n.type = JsonValue::Object;
+        n.obj["id"] = json_str("s" + std::to_string(i));
+        n.obj["x"] = json_num(40.0 + 200.0 * (double)i);
+        n.obj["y"] = json_num(60);
+        JsonValue params; params.type = JsonValue::Object;
+        for (size_t k = 0; k < s.keys.size(); ++k) {
+            if (s.keys[k] == "op") { n.obj["type"] = json_str(s.list[k].s); continue; }
+            params.obj[s.keys[k]] = value_to_json(s.list[k]);
+        }
+        n.obj["params"] = std::move(params);
+        nodes.arr.push_back(std::move(n));
+        if (i) {
+            JsonValue e; e.type = JsonValue::Object;
+            JsonValue f; f.type = JsonValue::Object;
+            f.obj["node"] = json_str("s" + std::to_string(i - 1));
+            f.obj["pin"] = json_str("out");
+            JsonValue t; t.type = JsonValue::Object;
+            t.obj["node"] = json_str("s" + std::to_string(i));
+            t.obj["pin"] = json_str("in");
+            e.obj["from"] = std::move(f); e.obj["to"] = std::move(t);
+            edges.arr.push_back(std::move(e));
+        }
+    }
+    out.obj["nodes"] = std::move(nodes);
+    out.obj["edges"] = std::move(edges);
+    return true;
+}
+
 static std::vector<std::string> dd_graph_list() {
     std::vector<std::string> ids;
-    auto ti = g_store.type_index.find("grph");
-    if (ti == g_store.type_index.end()) return ids;
-    for (const Record& r : g_store.records[ti->second])
-        ids.push_back(r.id.substr(5));                    // "grph.combat" -> "combat"
+    for (const char* ty : {"grph", "evnt"}) {
+        auto ti = g_store.type_index.find(ty);
+        if (ti == g_store.type_index.end()) continue;
+        for (const Record& r : g_store.records[ti->second])
+            ids.push_back(r.id.substr(5));                // "grph.combat" -> "combat"
+    }
     std::sort(ids.begin(), ids.end());
     return ids;
 }
 
 static bool dd_graph_load(const std::string& id, JsonValue& out) {
-    const Record* r = store_find(g_store, "grph." + id);
-    if (!r) return false;
-    out = JsonValue{}; out.type = JsonValue::Object;
-    out.obj["id"] = json_str(id);
-    for (const auto& f : r->fields)
-        if (f.name != "notes") out.obj[f.name] = value_to_json(f.value);
-    return true;
+    if (const Record* r = store_find(g_store, "grph." + id)) {
+        out = JsonValue{}; out.type = JsonValue::Object;
+        out.obj["id"] = json_str(id);
+        for (const auto& f : r->fields)
+            if (f.name != "notes") out.obj[f.name] = value_to_json(f.value);
+        return true;
+    }
+    if (const Record* r = store_find(g_store, "evnt." + id))
+        return dd_compile_evnt(*r, id, out);
+    return false;
 }
 
 static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::string& err) {
-    const std::string rid = "grph." + id;
-    if (!store_find(g_store, rid)) {                      // new graph from the canvas
-        Record nr; nr.id = rid;
-        if (!store_add(g_store, std::move(nr), err)) return false;
+    JsonValue steps;
+    const bool chain = graph_as_steps(graph, steps);
+    const std::string rid = std::string(chain ? "evnt." : "grph.") + id;
+    const std::string other = std::string(chain ? "grph." : "evnt.") + id;
+    if (store_find(g_store, other) && !store_delete(g_store, other, err))
+        return false;                                     // reclassified: drop the old form
+    if (!store_find(g_store, rid)) {                      // new/reclassified: add COMPLETE
+        Record nr; nr.id = rid;                           // (store_add validates required fields)
+        if (const JsonValue* n = graph.find("name"))
+            nr.fields.push_back({"name", json_any_to_value(*n)});
+        if (chain) nr.fields.push_back({"steps", json_any_to_value(steps)});
+        else {
+            if (const JsonValue* v = graph.find("nodes"))
+                nr.fields.push_back({"nodes", json_any_to_value(*v)});
+            if (const JsonValue* v = graph.find("edges"))
+                nr.fields.push_back({"edges", json_any_to_value(*v)});
+        }
+        return store_add(g_store, std::move(nr), err);
     }
-    for (const char* f : {"name", "nodes", "edges"}) {
-        const JsonValue* v = graph.find(f);
-        if (!v) continue;
+    auto put = [&](const char* f, const JsonValue* v) {
+        if (!v) return true;
         Value val = json_any_to_value(*v);
         const Record* cur = store_find(g_store, rid);
         const Value* old = cur ? cur->find(f) : nullptr;
-        if (old && value_equal(*old, val)) continue;      // unchanged: keep the journal clean
-        if (!store_set(g_store, rid, f, &val, err)) return false;
-    }
-    return true;
+        if (old && value_equal(*old, val)) return true;   // unchanged: keep the journal clean
+        return store_set(g_store, rid, f, &val, err);
+    };
+    if (!put("name", graph.find("name"))) return false;
+    if (chain) return put("steps", &steps);
+    if (!put("nodes", graph.find("nodes"))) return false;
+    return put("edges", graph.find("edges"));
 }
 
 static const DDScreenHooks DD_GRAPH_HOOKS = {dd_graph_list, dd_graph_load, dd_graph_save};

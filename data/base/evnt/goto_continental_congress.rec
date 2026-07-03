@@ -1,0 +1,4 @@
+record evnt.goto_continental_congress {
+  name  = "Go to continental_congress"
+  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "continental_congress" }]
+}

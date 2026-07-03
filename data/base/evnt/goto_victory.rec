@@ -1,0 +1,4 @@
+record evnt.goto_victory {
+  name  = "Go to Game Over"
+  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "victory" }]
+}

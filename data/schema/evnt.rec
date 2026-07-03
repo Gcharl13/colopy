@@ -1,0 +1,8 @@
+record schm.evnt {
+  version = 1
+  fields  = [
+    { name = "name", type = "str", required = true, doc = "Event display name (the record slug is the event/graph id)" },
+    { name = "steps", type = "list<dict>", required = true, ordered = true, doc = "The typed event chain (spec 8 atoms, EVNT-1 linear form): step 0 is the trigger ({ op = On* }), each following step one effect/op with its flat params ({ op = Navigate, screen = europe }). Compiles deterministically to a node graph for the interpreter; a canvas save that stays linear decompiles back here, one that gains branches/data-flow reclassifies to grph" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

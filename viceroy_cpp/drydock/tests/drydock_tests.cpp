@@ -268,8 +268,8 @@ static void test_reflection() {
     check(g.has_burden, "reflect: burden field present");   // value is user-editable (Q7 flip)
     Record back = reflect_serialize(good_type, "good.food", &g);
     check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
-    check(dd_all_types_count == 17 && std::string(good_type.code) == "good",
-          "reflect: type registry populated (schm meta + 16 data types incl. grph)");
+    check(dd_all_types_count == 18 && std::string(good_type.code) == "good",
+          "reflect: type registry populated (schm meta + 17 data types incl. grph/evnt)");
 }
 
 static Store make_test_store() {

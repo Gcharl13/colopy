@@ -143,11 +143,16 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   nodes / 58 kinds; a one-step atom decomposition risked semantic drift); the Logic
   canvas CRUD flows through the chokepoint and `run_graph` executes the store's truth
   (36/36 smoke green).
-- **Remaining:** the typed EVNT/RQMT/EFCT atom decomposition + §8.5 outline editor — now
-  a record-side schema evolution over the grph type rather than a JSON migration (start
-  with the 12 ≤6-node chain graphs; the interpreter stays as the execution engine);
-  flags-field widgets (no migrated type uses flags); JSON extraction files stay as the
-  provenance layer (§4 disposition) with every runtime read store-first.
+- **EVNT-1 landed (MIGRATION-LOG 23):** typed `evnt` records exist — pure chains store as
+  ordered `steps` (the legible outline form), compile deterministically to graphs for the
+  unchanged interpreter, and canvas saves reclassify between evnt/grph automatically.
+  The 6 goto_* events are typed; 30 graphs remain lossless grph records.
+- **Remaining:** grow the typed decomposition beyond chains (next shapes: single-Branch
+  events, then Switch fans; each family needs its typed form + compiler + the same
+  equivalence proof); a dedicated §8.5 outline editor view (the canonical text already
+  reads as an outline); flags-field widgets (no migrated type uses flags); JSON
+  extraction files stay as the provenance layer (§4 disposition), every runtime read
+  store-first.
 
 ## 4. No spec counterpart — keep / migrate / retire
 

@@ -1,0 +1,4 @@
+record evnt.goto_mainmenu {
+  name  = "Go to mainmenu"
+  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "mainmenu" }]
+}
