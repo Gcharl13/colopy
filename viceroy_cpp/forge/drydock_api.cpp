@@ -4,6 +4,7 @@
 #include "engine.hpp"
 #include "json.hpp"
 #include "../drydock/core/store.hpp"
+#include "../drydock/pack/pack.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -367,19 +368,30 @@ static void sync_rules(vc::sim::RuleData* rd) {
 
 // ---- init ----------------------------------------------------------------------
 
-bool drydock_store_init(const std::string& data_dir, std::string& msg) {
-    struct stat st{};
-    if (stat((data_dir + "/base").c_str(), &st) != 0) { msg = "no " + data_dir + "/base"; return false; }
-    std::vector<std::string> files;
+bool drydock_store_init(const std::string& data_dir, std::string& msg,
+                        const std::string& pack_path) {
     std::vector<Record> schm, recs;
     std::string err;
-    walk(data_dir + "/schema", files);
-    for (const auto& p : files)
-        if (!parse_records(slurp(p), schm, err)) { msg = p + ": " + err; return false; }
-    files.clear();
-    walk(data_dir + "/base", files);
-    for (const auto& p : files)
-        if (!parse_records(slurp(p), recs, err)) { msg = p + ": " + err; return false; }
+    bool from_pack = false;
+    if (!pack_path.empty()) {
+        // release path: the drydockc pack carries schema + data in one artifact
+        std::vector<Record> all;
+        if (!pack_read(pack_path, all, err)) { msg = pack_path + ": " + err; return false; }
+        for (auto& r : all)
+            (r.type() == "schm" ? schm : recs).push_back(std::move(r));
+        from_pack = true;
+    } else {
+        struct stat st{};
+        if (stat((data_dir + "/base").c_str(), &st) != 0) { msg = "no " + data_dir + "/base"; return false; }
+        std::vector<std::string> files;
+        walk(data_dir + "/schema", files);
+        for (const auto& p : files)
+            if (!parse_records(slurp(p), schm, err)) { msg = p + ": " + err; return false; }
+        files.clear();
+        walk(data_dir + "/base", files);
+        for (const auto& p : files)
+            if (!parse_records(slurp(p), recs, err)) { msg = p + ": " + err; return false; }
+    }
     Schema sc;
     if (!schema_load(schm, sc, err)) { msg = err; return false; }
     // the registry describes itself (spec §7 / migration order item 8): the
@@ -400,7 +412,8 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg) {
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();
     msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +
-          std::to_string(n) + " records";
+          std::to_string(n) + " records" +
+          (from_pack ? " (from pack " + pack_path + ")" : " (from canonical text)");
     return true;
 }
 

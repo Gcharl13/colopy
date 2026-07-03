@@ -5579,6 +5579,13 @@ static int engine_selftest() {
 static int do_serve(int argc, char** argv) {
     int port = (argc >= 3) ? std::atoi(argv[2]) : 8099;
     if (port <= 0 || port > 65535) port = 8099;
+    // Optional release-path pack: `forge serve <port> --pack game.pack` boots the
+    // whole store (schema + records) from the drydockc artifact instead of
+    // parsing the canonical text (spec 4.1). Explicit only -- a stale pack must
+    // never silently shadow fresh .rec edits in a dev tree.
+    std::string pack_path;
+    for (int i = 3; i + 1 < argc; ++i)
+        if (!std::strcmp(argv[i], "--pack")) pack_path = argv[i + 1];
     // Drydock strangler seam: the migrated types (GOOD/UNIT/PROF) load from the
     // canonical text under data/ when present (dev text loading, spec 4.1);
     // values are parity-proven identical to the compiled defaults.
@@ -5586,7 +5593,7 @@ static int do_serve(int argc, char** argv) {
       if (forge::drydock_apply_base(g_active_rules, "data", dmsg)) std::printf("%s\n", dmsg.c_str());
       else if (!dmsg.empty()) std::printf("drydock: NOT applied -- %s\n", dmsg.c_str()); }
     { std::string smsg;
-      if (forge::drydock_store_init("data", smsg)) std::printf("%s\n", smsg.c_str());
+      if (forge::drydock_store_init("data", smsg, pack_path)) std::printf("%s\n", smsg.c_str());
       else std::printf("drydock store: NOT loaded -- %s\n", smsg.c_str()); }
     // Load the persisted active mod (if any) so the Play game starts on the saved ruleset.
     if (std::filesystem::exists(ACTIVE_RULES_PATH)) {

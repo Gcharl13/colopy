@@ -15,7 +15,12 @@ namespace forge {
 
 // Load schema + data/base into the global Drydock store. Safe to call once at
 // serve start; returns false with msg on error (store left empty).
-bool drydock_store_init(const std::string& data_dir, std::string& msg);
+// With a non-empty pack_path, the whole store (schema + records) boots from
+// that single drydockc pack instead of parsing the canonical text -- the
+// release path (spec §4.1; dev builds keep loading text). Saving still writes
+// text under data_dir.
+bool drydock_store_init(const std::string& data_dir, std::string& msg,
+                        const std::string& pack_path = "");
 
 // True when a /api/dd/* path should be handled here.
 bool drydock_handles(const std::string& path);

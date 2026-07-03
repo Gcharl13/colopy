@@ -124,14 +124,22 @@ int main(int argc, char** argv) {
 
     if (!pack_out.empty()) {
         std::string err;
-        if (!pack_write(pack_out, all, err)) { fail(err); return 1; }
+        // the pack carries the SCHM records too, so an engine can boot the whole
+        // store (schema + data) from the single artifact with no text parsing
+        std::vector<Record> packed = all;
+        for (Record r : schm) {
+            if (!schema_canonicalize(sc, r, err)) { fail("schm: " + err); return 1; }
+            packed.push_back(std::move(r));
+        }
+        if (!pack_write(pack_out, packed, err)) { fail(err); return 1; }
         // read-back proves the pack round-trips
         std::vector<Record> back;
-        if (!pack_read(pack_out, back, err) || back.size() != all.size()) {
+        if (!pack_read(pack_out, back, err) || back.size() != packed.size()) {
             fail("pack read-back failed: " + err);
             return 1;
         }
-        std::printf("drydockc: wrote %s (%zu records)\n", pack_out.c_str(), back.size());
+        std::printf("drydockc: wrote %s (%zu records incl. %zu schema)\n",
+                    pack_out.c_str(), back.size(), schm.size());
     }
     return 0;
 }

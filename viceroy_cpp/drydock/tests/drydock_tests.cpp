@@ -4,6 +4,7 @@
 #include "../text/rec_text.hpp"
 #include "../schema/schema.hpp"
 #include "../core/store.hpp"
+#include "../pack/pack.hpp"
 #include "../../forge/drydock_bridge.hpp"
 #include "rules.hpp"
 #include "dd_gen.hpp"
@@ -386,6 +387,63 @@ static void test_real_refs() {
           "real refs: undo restores the extraction truth");
 }
 
+static void test_pack_boot() {
+    // The release path (spec 4.1): schema + records pack into ONE artifact and
+    // a store booted from it is indistinguishable from the text-booted store.
+    std::vector<std::string> files;
+    std::vector<Record> schm, recs;
+    std::string err;
+    walk_dir("data/schema", files);
+    for (const auto& p : files) parse_records(slurp(p.c_str()), schm, err);
+    files.clear();
+    walk_dir("data/base", files);
+    for (const auto& p : files) parse_records(slurp(p.c_str()), recs, err);
+    Schema sc;
+    check(schema_load(schm, sc, err), "pack boot: schema loads");
+    std::vector<Record> all = recs;
+    for (Record r : schm) {                    // the pack carries the schema too
+        check(schema_canonicalize(sc, r, err), "pack boot: schm canonicalizes");
+        all.push_back(std::move(r));
+    }
+    const std::string tmp = "dd_test_boot.pack";
+    check(pack_write(tmp, all, err), "pack boot: pack_write");
+    std::vector<Record> back;
+    check(pack_read(tmp, back, err) && back.size() == all.size(),
+          "pack boot: read-back count matches");
+    std::remove(tmp.c_str());
+
+    // boot two stores -- text vs pack -- and demand identical canonical bytes
+    std::vector<Record> t_schm = schm, t_recs = recs;
+    for (auto& r : t_schm) t_recs.push_back(r);
+    Schema sc1;
+    schema_load(schm, sc1, err);
+    for (auto& r : t_recs) schema_canonicalize(sc1, r, err);
+    Store text_store;
+    check(store_init(text_store, std::move(sc1), std::move(t_recs), err),
+          "pack boot: text store inits");
+
+    std::vector<Record> p_schm, p_recs;
+    for (auto& r : back) (r.type() == "schm" ? p_schm : p_recs).push_back(std::move(r));
+    Schema sc2;
+    check(schema_load(p_schm, sc2, err), "pack boot: schema loads FROM the pack");
+    for (auto& r : p_schm) p_recs.push_back(r);
+    for (auto& r : p_recs) schema_canonicalize(sc2, r, err);
+    Store pack_store;
+    check(store_init(pack_store, std::move(sc2), std::move(p_recs), err),
+          "pack boot: pack store inits");
+
+    check(pack_store.type_codes == text_store.type_codes, "pack boot: same type set");
+    size_t mismatch = 0, total = 0;
+    for (size_t t = 0; t < text_store.records.size(); ++t)
+        for (const Record& r : text_store.records[t]) {
+            ++total;
+            const Record* p = store_find(pack_store, r.id);
+            if (!p || serialize_record(*p) != serialize_record(r)) ++mismatch;
+        }
+    check(mismatch == 0 && total > 1000,
+          "pack boot: every record BYTE-IDENTICAL between text and pack stores");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
@@ -397,6 +455,7 @@ int main() {
     test_reflection();
     test_store();
     test_real_refs();
+    test_pack_boot();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }
