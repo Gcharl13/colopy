@@ -100,19 +100,27 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   `@ATTITUDINAL` intensity {Extremely, Very, Rather, Somewhat, Slightly} modifies the
   displayed phrase. The exact composition of the presence score `X` (`[bp-0x2C]`) is
   multi-term and not fully decomposed, but the **band cutoffs are byte-verified.**
-- **Tribe attitude/demand evaluator — BYTE_VERIFIED (2026-06-20)** (a separate
-  per-tribe evaluator reading the active tribe-data record's fields `+2` and `+5`,
-  `diff=[0x53A6]`): the human and AI take **different formulas**, making native
-  friendliness a difficulty handicap —
-  - **Human player** (`controller==0`, `@0x46500`):
-    `attitude = 2·(diff+3) + tribe[+2] + tribe[+5] − prior` = `2·diff + 6 + …`,
-    compared to threshold `0x41`.
-  - **AI power** (`@0x46538`): `attitude = tribe[+2] + tribe[+5] − diff + 12 − prior`,
-    threshold `0x32`.
+- **Native LAND-PRICE evaluator `func_0464C2` — CORRECTED 2026-07-03 (was
+  misread as a "tribe attitude vs threshold" evaluator).** The two branches
+  previously described here (`@0x46500` human / `@0x46538` AI) are the two arms
+  of the **`@INDIANLAND` land-price computation**, and the `0x41`/`0x32`
+  constants are **`imul` price multipliers** (`imul [bp-2]` `@0x4658A`), *not*
+  comparison thresholds. Reading the active tribe-data record's fields `+2` and
+  `+5` (the `@TRIBES` per-row **level**/**value** columns, cross-ref
+  `spec/data/tables.md`; `diff=[0x53A6]`):
+  - **Human player** (`controller==0`, `@0x464F5`):
+    `score = 2·(diff+3) + tribe[+2] + tribe[+5] − dist`, unit price `0x41` (65).
+  - **AI power** (`@0x46538`): `score = tribe[+2] + tribe[+5] − diff − dist + 12`,
+    unit price `0x32` (50).
 
-  So at higher difficulty the human faces a **higher (worse)** native-attitude value
-  while the AI faces a **lower (better)** one. (`tribe[+2]`/`tribe[+5]` are the
-  `@TRIBES` per-row level/value columns; cross-ref `spec/data/tables.md`.) **B.**
+  Then: prime resource on the tile → `score ×2` (`@0x46576`); clamp
+  `score ≥ 1` (`@0x4657C`); `price = score × unit`; CAPITAL settlement →
+  `+50%` (`@0x465C5`); Peter Minuit (FF index 2, the `0x7b4(power,2)` gate
+  `@0x465D5`) → `0`; final halving (`@0x465E6`). The difficulty handicap
+  stands, but as a **price**: at higher difficulty the human pays **more**
+  per demanded plot while an AI power pays **less**. **B** (shape + anchors);
+  the per-power prior-deduction operand (`[bx−0x6bf0]`, `@0x4654C`) and the
+  human-path `(X+1)` distance multiply (`@0x465A1`) remain unidentified, **R**.
   See `spec/systems/difficulty.md` §3.
 - **Thunk `0x181F:0x30C` is a table GETTER, not the delta computer — CORRECTED
   2026-06-20.** It resolves (Type-B) to **file `0x0082A0`**: a 2-arg accessor

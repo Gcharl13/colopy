@@ -20,10 +20,11 @@ struct Diplomacy {
     uint8_t rel[4][4] = {};       // +0x40 matrix
     int     cooldown[4] = {};     // [power*2 + 0x53C8] re-parley lockout turn
     // Per-power grievance score (the DGROUP 0x941C 4-word array, extraction
-    // 2026-07-02): reset @0x42142, accrued @0x42335 by a per-unit value call
-    // (0x181F:0x9C8, overlay -- undecoded) when a power's unit is destroyed;
-    // the confrontation evaluator compares two powers' scores relatively
-    // (@0x3F0C5/@0x3F0CE) to raise the pending-grievance bit (@0x3F0D7).
+    // 2026-07-02): reset @0x42142, accrued @0x42335 by the per-unit value call
+    // (0x181F:0x9C8 -> file 0x7C2A, decoded -- grievance_unit_value below)
+    // when a power's unit is destroyed; the confrontation evaluator compares
+    // two powers' scores relatively (@0x3F0C5/@0x3F0CE) to raise the
+    // pending-grievance bit (@0x3F0D7).
     uint16_t grievance[4] = {};
     // Per-power attitude byte (DGROUP 0x940C, diplomacy.md 3): the willingness
     // input to ai_acts and the parley target-eligibility floor (>= 8 on at
@@ -56,6 +57,24 @@ inline long ai_demand_value(long value, int difficulty) {
 }
 // AI demand surcharge (@0x5842B): += 500*(diff+1).
 inline long ai_demand_surcharge(int difficulty) { return 500L * (difficulty + 1); }
+
+// Per-unit grievance value -- func_007C2A (thunk 0x181F:0x9C8, type-B ->
+// file 0x7C2A; decoded 2026-07-03 via tools/rtlink_decode.py). BYTE_VERIFIED:
+//   base  = @UNIT stat [type*14 + 0x5235] = defense (mode 0, the destroyed-
+//           unit accrual path @0x42335; mode 1 reads attack @+0x5236)
+//   damaged Artillery (type 0xB, unit flag [0x3148]&0x80) -> base -= 2
+//     (NOT MODELED: the sim demotes artillery by type, no damage flag)
+//   score = base * 8
+//   veteran class ([0x315B]==0x15) Soldiers (1) / Dragoons (4) -> +50%
+//   Privateer (0x10) whose owner has Francis Drake (FF 13)     -> +50%
+//   ships (0xD..0x12) -> score -= hull-damage byte [unit+0x3150]
+//     (NOT MODELED: the sim keeps no persistent hull-damage counter)
+inline long grievance_unit_value(int defense, int type, bool veteran, bool drake) {
+    long score = (long)defense * 8;
+    if (veteran && (type == 1 || type == 4)) score += score / 2;
+    if (type == 0x10 && drake) score += score / 2;
+    return score;
+}
 
 // AI willingness (@0x58C24): the AI takes NO action when
 //   (attitude>>2) > demand_score AND demand_score > 12 AND random(0,4) != 0.

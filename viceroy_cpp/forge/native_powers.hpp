@@ -142,13 +142,9 @@ int settlement_attitude(int presence_x, int alarm);
 NativeTurn native_turn_step(vc::sim::GameState& g, vc::sim::World& w,
                             EngineExtra& x, const vc::sim::RandFn& rng);
 
-// The per-tribe attitude/demand evaluator (natives.md / difficulty.md, BYTE-
-// VERIFIED @0x46500/@0x46538): the human and AI take DIFFERENT formulas --
-// native friendliness is a difficulty handicap.
-//   human: 2*(diff+3) + level + value - prior   (threshold 0x41 = 65)
-//   AI:    level + value - diff + 12 - prior    (threshold 0x32 = 50)
-// Returns the attitude value; `hostile` (out) = value >= the branch threshold.
-int tribe_attitude(bool human, int difficulty, int tribe_level, int tribe_value,
-                   int prior, bool& hostile);
+// (A former tribe_attitude() helper -- "attitude vs threshold 0x41/0x32" --
+// was removed 2026-07-03: those anchors (@0x46500/@0x46538) are the two arms
+// of the land-price fn func_0464C2, and 0x41/0x32 are its imul price
+// multipliers, not thresholds. See native_land_price above.)
 
 } // namespace forge

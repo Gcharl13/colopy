@@ -48,8 +48,8 @@ be genuine difficulty arithmetic, not player indexing.)
 | **Starting REF — man-o-war** | `[0x53DE] = 3·diff + 2` (2/5/8/11/14) | `@0x7569B` |
 | **Combat human handicap** | attacker `[bp-0x90] += (4−diff)`; defender `[bp-0xa6] += (4−diff)` (human only) → fed to `odds=ATK/(ATK+DEF)` | land decider `func_05CA7E @0x5CE35`/`@0x5CE54` |
 | **Generic combat base** | `strength_base [bp-0x34] = diff + 5` | `@0x3F005` |
-| **Native attitude (human)** | `2·(diff+3) + tribe[+2] + tribe[+5] − prior`; threshold `0x41` | native eval `@0x46500` |
-| **Native attitude (AI)** | `tribe[+2] + tribe[+5] − diff + 12 − prior`; threshold `0x32` | `@0x46538` |
+| **Native land price (human)** | `score = 2·(diff+3) + tribe[+2] + tribe[+5] − dist`, `price = score × 65` — the `0x41` is an `imul` **price multiplier**, not a threshold (corrected 2026-07-03; full chain in `natives.md`) | land-price fn `func_0464C2 @0x464F5`/`@0x4658A` |
+| **Native land price (AI)** | `score = tribe[+2] + tribe[+5] − diff − dist + 12`, `price = score × 50` (`0x32`) | `@0x46538` |
 | **Native per-power seed** | AI powers: `tribe[+0x46 + power·2] = rand(0..13) + 2·diff` | tribe init `func_065D26 @0x65DCE` |
 | **AI war/refusal grace** | `10·(10−diff)` turns (100/90/80/70/60) | diplomacy `@0x58374` |
 | **AI tribute/demand value** | `value · 10·(diff+8)/100` (×0.8…×1.2) | `@0x583A0` |
@@ -58,8 +58,8 @@ be genuine difficulty arithmetic, not player indexing.)
 | **Easy-mode double starting units** | at `diff ≤ 1` the human reruns the starting-unit placement a 2nd time (double Caravel+Pioneer+Soldier, stamped Veteran) | new-game setup `func_0755CC @0x0758F5`/`@0x075961` |
 
 Net effect of the human-side terms: higher difficulty → larger Royal Expeditionary
-Force at independence, less combat padding for the player, worse native attitude,
-and more aggressive/expensive AI diplomacy. **B** (the rows above).
+Force at independence, less combat padding for the player, pricier native land
+demands, and more aggressive/expensive AI diplomacy. **B** (the rows above).
 
 ### Touch points consistent with the same idioms (instruction-verified 2026-06-25 — promoted R→B)
 - **Native gift/treasure:** reward `2·diff+15` (`@0x4A05A`); `10·(diff+rand)`

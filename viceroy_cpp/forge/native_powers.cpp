@@ -248,14 +248,4 @@ NativeTurn native_turn_step(GameState& g, World& w, EngineExtra& x, const RandFn
     return out;
 }
 
-int tribe_attitude(bool human, int difficulty, int tribe_level, int tribe_value,
-                   int prior, bool& hostile) {
-    int v;
-    if (human) { v = 2 * (difficulty + 3) + tribe_level + tribe_value - prior;   // @0x46500
-                 hostile = v >= 0x41; }
-    else       { v = tribe_level + tribe_value - difficulty + 12 - prior;        // @0x46538
-                 hostile = v >= 0x32; }
-    return v;
-}
-
 } // namespace forge

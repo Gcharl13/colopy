@@ -154,7 +154,8 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
         loser.alive = false;                                     // destroyed
         kill_log().push_back(KillResult{loser.owner,
                                         res.attacker_won ? atk.owner : def.owner,
-                                        loser.type});            // feeds the grievance driver
+                                        loser.type,
+                                        loser.profession == 0x15});  // feeds the grievance driver
     } else {
         loser.type = res.loser_outcome;                         // demoted in place
     }

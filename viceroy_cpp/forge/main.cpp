@@ -1729,16 +1729,19 @@ static void game_step() {
         tutorial_turn_checks();                         // event-driven lessons (T5/T6/T7 sites)
         // ---- Grievance lifecycle (diplomacy.md; driver extracted 2026-07-02).
         // Accrual @0x42335: a destroyed unit adds a per-unit value to its
-        // owner's grievance score (DGROUP 0x941C). The EXE's value call
-        // (0x181F:0x9C8) is overlay-resident/undecoded -- the combat weight
-        // (attack+defense) stands in, RECONSTRUCTED. The evaluator compares
+        // owner's grievance score (DGROUP 0x941C). The value call is
+        // func_007C2A (0x181F:0x9C8 -> file 0x7C2A, decoded): defense x8 with
+        // the veteran-Soldiers/Dragoons and Drake-Privateer +50% riders --
+        // grievance_unit_value in sim/diplomacy.hpp. The evaluator compares
         // scores relatively (@0x3F0C5/@0x3F0CE) and raises the pending-
         // grievance bit (@0x3F0D7); per turn the bit resolves to 0x01 when
         // the parley cooldown has expired and random_int(0,3)==0 (@0x53165).
         for (const vc::sim::KillResult& kr : vc::sim::kill_log()) {
             if (kr.owner == kr.by_owner || kr.owner > 3 || kr.by_owner > 3) continue;
             const UnitStats& us = unit_stats(g_active_rules, kr.type);
-            long v = g_engine_extra.diplo.grievance[kr.owner] + us.attack + us.defense;
+            const bool drake = kr.owner == 0 && ((g_engine_extra.ff_owned >> 13) & 1u);
+            long v = g_engine_extra.diplo.grievance[kr.owner] +
+                     vc::sim::grievance_unit_value(us.defense, kr.type, kr.veteran, drake);
             g_engine_extra.diplo.grievance[kr.owner] = (uint16_t)std::min(v, 0xFFFFL);
             if (g_engine_extra.diplo.grievance[kr.owner] >
                 g_engine_extra.diplo.grievance[kr.by_owner])
