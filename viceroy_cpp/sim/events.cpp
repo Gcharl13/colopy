@@ -36,7 +36,30 @@ int resource_at(const World& w, int x, int y, int seed) {
     if (t < 0 || t > 28) return -1;
     int res = RESOURCE_BY_TERRAIN[t];
     if (res == 0) res = 6;                          // table-0 -> Minerals (@0x6154)
+    if (w.improve_at(x, y) & DEPLETED_BIT)          // flags bit2 (@0x615D..0x617E):
+        return res == 12 ? 0 : -1;                  //  Silver -> Depleted Mine, rest vanish
     return res;
+}
+
+// func_009AAA @0x9AAA, verbatim: (resource, yield column) -> additive bonus,
+// or -1 = double. Columns: 0 food, 1 sugar, 2 tobacco, 3 cotton, 4 furs,
+// 5 lumber, 6 ore, 7 silver, 8 fish (y_fisherman).
+int resource_good_bonus(int resource, int good) {
+    switch (resource) {
+        case 1:  return good == 0 ? 2 : 0;                            // Oasis
+        case 2:  return good == 0 ? 2 : 0;                            // Wheat
+        case 3:  return good == 3 ? -1 : 0;                           // Prime Cotton
+        case 4:  return good == 2 ? -1 : 0;                           // Prime Tobacco
+        case 5:  return good == 1 ? -1 : 0;                           // Prime Sugar
+        case 6:  return good == 6 ? 3 : good == 7 ? 1 : 0;            // Minerals
+        case 7:  return good == 8 ? 3 : 0;                            // Fishery
+        case 8:  return good == 4 ? 3 : 0;                            // Beaver
+        case 9:  return good == 0 ? 2 : good == 4 ? 2 : 0;            // Game
+        case 10: return good == 5 ? 2 : 0;                            // Prime Timber
+        case 12: return good == 7 ? 2 : 0;                            // Silver Deposit
+        case 13: return good == 6 ? 2 : 0;                            // Ore Deposit
+        default: return 0;                          // incl. Depleted Mine (0): nothing
+    }
 }
 
 CashInResult treasure_cash_in(GameState& g, World& w, int unit_idx,

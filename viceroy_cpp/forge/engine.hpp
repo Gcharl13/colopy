@@ -226,8 +226,15 @@ const JsonValue* force_composition(const std::string& kind);
 // applies the byte-verified father effects (Henry Hudson furs x2, Jefferson +50% bells, Penn +50%
 // crosses, Adam Smith un-throttles factory tier) and the Sons-of-Liberty bonus (+1 at >=50%, +2 at
 // 100%). 0 = no fathers.
+// world + map_seed (the rumor/resource seed) enable the byte-verified prime-resource bonus
+// (map_system.md "Resource yield application"); null world = no resources (detached test
+// colonies). mining_pressure, when non-null, accumulates this colony's depletion pressure
+// (+1 ore-on-Minerals, +2 silver-on-Minerals, +1 silver-on-Deposit -- func_009B9C
+// @0x9E13..0x9E41) for the turn pipeline's depletion roll.
 void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
-                               uint32_t ff_owned = 0, int tax_pct = 0);
+                               uint32_t ff_owned = 0, int tax_pct = 0,
+                               const vc::sim::World* world = nullptr, int map_seed = 0,
+                               int* mining_pressure = nullptr);
 
 // The @JOB display name for a profession id (the expert_name column for an expert, else name).
 std::string job_name(int profession, bool expert);

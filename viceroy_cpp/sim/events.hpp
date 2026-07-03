@@ -30,7 +30,8 @@
 
 namespace vc::sim {
 
-constexpr uint8_t RUMOR_BIT = 0x10;   // improvement-plane CONSUMED/suppressed marker
+constexpr uint8_t RUMOR_BIT    = 0x10; // improvement-plane CONSUMED/suppressed marker
+constexpr uint8_t DEPLETED_BIT = 0x04; // mine depleted (original flags plane [0x160] bit 2, mask 4)
 
 // The byte-verified rumor-presence predicate (func_006188 @0x61C7..0x61F8):
 // true iff the coordinate hash selects this tile, the terrain admits a rumor,
@@ -54,10 +55,19 @@ bool rumor_present(const World& w, int x, int y, int seed);
 // Minerals (@0x6154). The EXE also gates on the runtime flags plane [0x160]:
 // bit1 = stored feature (suppresses, via func_005F82), bit2 = DEPLETED --
 // a depleted Silver Deposit renders as Depleted Mine (idx 0), any other
-// depleted resource vanishes (@0x616A..0x617E; not yet modeled -- our engine
-// has no depletion writer). Sprite = PHYS0 game frame 0x5A+idx (png 0x59+idx),
-// drawn at zoom 0 only ([0x184]==0 gate @0x68288).
+// depleted resource vanishes (@0x616A..0x617E; modeled via DEPLETED_BIT on
+// the improvement plane -- the writer is the colony mining-depletion chain,
+// map_system.md "Depletion writer"). Sprite = PHYS0 game frame 0x5A+idx
+// (png 0x59+idx), drawn at zoom 0 only ([0x184]==0 gate @0x68288).
 int resource_at(const World& w, int x, int y, int seed);
+
+// The byte-verified @RESOURCE production bonus map, func_009AAA(resource,
+// yield column 0..8 = y_farmer..y_fisherman). Returns the additive bonus
+// (an EXPERT doubles it at the apply site, func_009B9C @0x9E04), or -1 --
+// the DOUBLE sentinel (Prime Cotton/Tobacco/Sugar on their own crop:
+// yield <<= 1 @0x9DF8). The @RESOURCE *value column* is never read by
+// production (it feeds only the AI site scorer + map-gen weighting).
+int resource_good_bonus(int resource, int good);
 
 struct RumorResult {
     int  unit = -1;         // triggering unit index

@@ -53,6 +53,11 @@ std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log();
 // (@FOODLOW), 2 = a colonist starved (@STARVE1), 3 = vanished (@VANISH).
 std::vector<std::pair<int, int>>& food_log();
 
+// Mine depletions fired by the production phase (map_system.md "Depletion
+// writer": the @0x2EA62 roll loop + the func_02D30A scan): colony indexes
+// whose worked deposits just depleted -- drained into the @DEPLETION notice.
+std::vector<int>& depletion_log();
+
 // Per-colony SoL status announcements from the production phase (colony.md 2,
 // hysteresis func_02D658 @0x2DB29..@0x2DBFA): (colony, event) with 1 =
 // @REBELMAJORITY, 2 = @REBELUNANIMOUS, 3 = @TORYMINORITY, 4 = @TORYMAJORITY.

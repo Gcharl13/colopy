@@ -8,6 +8,7 @@
 #include "immigration.hpp" // immigration_step
 #include "ref.hpp"         // ref_accrue_rate, ref_purchase
 #include "training.hpp"    // school_teach_step
+#include "events.hpp"      // resource_at / DEPLETED_BIT (mine depletion)
 #include "ai.hpp"          // ai_power_turn (the computer players, ai.md)
 #include "explore.hpp"     // reveal_step
 #include "unit_turn.hpp"   // refresh_moves, apply_orders
@@ -61,16 +62,37 @@ const std::vector<std::string>& turn_phases() {
 std::vector<std::pair<int, vc::sim::TeachResult>> g_teach_log;   // (colony, result) per graduation
 std::vector<std::pair<int, int>> g_food_log;                      // (colony, event 1/2/3) per shortage
 std::vector<std::pair<int, int>> g_sol_log;                       // (colony, event 1..4) SoL status
+std::vector<int> g_depletion_log;                                 // colony per fired depletion event
 // Production for ONE power's colonies (func_02F052 @0x2F25F: the per-power
 // colony loop of the turn_dispatch.md interleave). only_power < 0 = all.
 void phase_production_p(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
                         uint32_t ff_owned, int only_power) {
+    static const int rdx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};   // ring order 0=NW..7=SE
+    static const int rdy[8] = {-1,-1,-1,  0, 0,  1, 1, 1};
     std::vector<vc::sim::TeachResult> tr;
     for (int ci = 0; ci < (int)w.colonies.size(); ++ci) {
         Colony& c = w.colonies[ci];
         if (only_power >= 0 && c.owner_power != only_power) continue;
+        int pressure = 0;                                            // [0xA896] per colony scan
         colony_compute_production(c, g.difficulty, rd, ff_owned,    // colonists -> food/bells/hammers/goods
-                                  g.powers[c.owner_power & 3].tax);  //   (Paine reads the tax rate)
+                                  g.powers[c.owner_power & 3].tax,   //   (Paine reads the tax rate)
+                                  &w, g.rumor_seed, &pressure);      //   + prime resources / mining pressure
+        // Mine depletion (map_system.md "Depletion writer", @0x2EA62..0x2EA9D): per unit of
+        // mining pressure, a NONZERO rng(0, difficulty+1) roll bumps the colony counter
+        // (+0x97); at >= 50 it wraps and the worked deposits deplete (func_02D30A scan).
+        for (; pressure > 0; --pressure) {
+            if (rng(0, g.difficulty + 1) == 0) continue;
+            if (++c.depletion_counter < 50) continue;
+            c.depletion_counter -= 50;
+            bool fired = false;
+            for (const auto& wk : c.workers) {                       // the worked-slot scan
+                if (wk.tile < 0 || wk.tile > 7 || (wk.good != 6 && wk.good != 7)) continue;
+                int tx = c.x + rdx[wk.tile], ty = c.y + rdy[wk.tile];
+                int res = resource_at(w, tx, ty, g.rumor_seed);
+                if (res == 6 || res == 12) { w.improve_set(tx, ty, DEPLETED_BIT); fired = true; }
+            }
+            if (fired) g_depletion_log.push_back(ci);
+        }
         int fe = 0, se = 0;
         colony_economic_step(c, g.difficulty, rd, &fe, &se);        // then SoL / build / growth off those
         if (fe) g_food_log.push_back({ci, fe});
@@ -151,6 +173,7 @@ void invalidate_turn_pipeline() {   // drop the cache so the next turn re-reads 
 std::vector<vc::sim::RumorResult>& rumor_log() { return g_rumor_log; }
 std::vector<std::pair<int, vc::sim::TeachResult>>& teach_log() { return g_teach_log; }
 std::vector<std::pair<int, int>>& food_log() { return g_food_log; }
+std::vector<int>& depletion_log() { return g_depletion_log; }
 std::vector<std::pair<int, int>>& sol_log() { return g_sol_log; }
 std::vector<vc::sim::PromoteResult>& promote_log() { return g_promote_log; }
 std::vector<vc::sim::ShoreFire>& shore_log() { return g_shore_log; }

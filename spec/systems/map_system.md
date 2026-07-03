@@ -298,9 +298,66 @@ Prime Timber, 0x64 empty duplicate row, 0x65 Silver, 0x66 Ore). Drawn at
 sibling call `0x181F:0x75E` at `@0x68405` is the rumor predicate → medallion
 frame `0x68` (game) when true. **B** (full chain byte-traced + table dumped).
 
-> Open: the `@RESOURCE` **value column** (bonus magnitude, §6.3) application
-> point in the yield formulas is still unextracted; the depletion **writer**
-> (what sets `[0x160]` bit 2, presumably on silver extraction) is unlocated.
+### Resource yield application — **BYTE_VERIFIED 2026-07-03 (`func_009AAA` / `func_009B9C`)**
+
+**The `@RESOURCE` value column is NEVER read by production.** Its only readers are
+the AI colony-site catchment scorer and the map-gen weighting pass (the parsed
+table `[id − 0x684E]` has exactly three references: the NAMES loader write
+`@0x74B0B`, the AI read `@0x54B0B`, the map-gen read `@0x63FE3`). The production
+bonus is a **hardcoded (resource, yield-column) map**, `func_009AAA(res, col)`
+(file `@0x9AAA`, both args word params; yield columns 0..8 = the 9 per-terrain
+yield columns `y_farmer..y_fisherman`):
+
+| resource | column | bonus |
+|---|---|---|
+| Oasis (1) | food (0) | +2 |
+| Wheat (2) | food (0) | +2 |
+| Game (9) | food (0) | +2 |
+| Game (9) | furs (4) | +2 |
+| Beaver (8) | furs (4) | +3 |
+| Prime Cotton (3) | cotton (3) | **−1 = DOUBLE** |
+| Prime Tobacco (4) | tobacco (2) | **−1 = DOUBLE** |
+| Prime Sugar (5) | sugar (1) | **−1 = DOUBLE** |
+| Prime Timber (10) | lumber (5) | +2 |
+| Minerals (6) | ore (6) | +3 |
+| Minerals (6) | silver (7) | +1 |
+| Silver Deposit (12) | silver (7) | +2 |
+| Ore Deposit (13) | ore (6) | +2 |
+| Fishery (7) | fisherman (8) | +3 |
+| all other pairs (incl. Depleted Mine 0) | — | 0 |
+
+Application point: the per-tile production fn `func_009B9C` (`@0x9DD5..0x9E13`),
+AFTER the tory/SoL adjust and the expert adjust (food-column expert +2, other
+columns ×2): `b = func_009AAA(resource_at(x,y), column)`; **Fishery special
+case** — if `resource == 7` and the running yield ≤ 0, `b = 0` (`@0x9DE7`);
+if `b < 0` → **yield ×2** (`@0x9DF8`, the three Prime crops); else **an EXPERT
+doubles the additive bonus** (`b <<= 1 @0x9E04`), then `yield += b`. Also in
+`func_009B9C`: silver mined on a **non-deposit, non-depleted** tile collapses to
+1 (with road/plow flags `&0xA` or an expert) else 0 (`@0x9E41..0x9EA6`); the
+Henry Hudson father ×2 on furs comes later (`@0x9F65`), the convert +1 and the
+negative tory term last. **B** (full chain disassembled; `tools/rtlink_decode.py`
+maps the call sites).
+
+### Depletion writer — **BYTE_VERIFIED 2026-07-03 (the full chain)**
+
+1. **Mining pressure** (in `func_009B9C @0x9E13..0x9E41`): per worked tile,
+   byte `[0xA896]` += 1 (ore column on Minerals), += 2 (silver column on
+   Minerals), += 1 (silver column on Silver Deposit). Zeroed per colony scan
+   (`@0xA229/0xA22C`).
+2. **Roll loop** (colony turn, `@0x2EA62..0x2EA9D`): while pressure > 0,
+   consume one unit and roll `rng(0, difficulty+1)` (`[0x53A6]`, lcall
+   `0x181F:0x4D4`); each NONZERO roll increments the colony's depletion
+   counter (ColonyRecord **+0x97**); at ≥ 50 (`0x32`) the counter wraps
+   (−50) and the depletion event fires.
+3. **Depletion scan** (`func_02D30A` = overlay seg 3 + 0x33A, reached via the
+   `@0x2EF50` trampoline island): for every WORKED colony slot whose worker's
+   yield column is ore (6) or silver (7) and whose tile's `resource_at` is
+   Minerals (6) or Silver Deposit (12): **set flags-plane `[0x160]` bit 2**
+   (mask 4 via the set/clear helper `func_005D4E` = `0x37F:0x15E` — the only
+   mask-4 setter in the binary, `@0x2D379..0x2D388`), then the `@DEPLETION`
+   message *"Mine depleted near %STRING0."* (id 0xD75) once per scan (latch
+   `[0xA898]`). The read side (§ above, `@0x615D..0x617E`) then renders
+   Silver as Depleted Mine (0) and returns −1 for the rest. **B**.
 
 ## 4. UI
 Tiles drawn by `func_O514`(`0x0685DC`) `→ func_O513`(`0x0681A8`) `→ func_O512`(`0x067F50`)

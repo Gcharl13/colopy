@@ -223,19 +223,29 @@ The first record's high byte 0x87 may be a directory-version marker
 Subsequent records' values are small integers compatible with paragraph
 counts or byte sizes.
 
-**What's NOT yet decoded for VICEROY:**
+**DECODED 2026-07-03 (`tools/rtlink_decode.py`)** — the segment ↔ file
+mapping is solved empirically, without needing the LE32 directory:
 
-- The mapping from a segment ID (e.g. 0x05EB) to its physical byte
-  offset in the overlay file region.
-- Whether each 4-byte LE32 record corresponds 1:1 to a segment, or
-  whether the records are interleaved with relocation tables / per-
-  segment metadata.
+- **Type-B thunks** (runtime entry `0x110D:0xD91`) carry a REAL
+  `seg:off` in their LJMP: the target is **image-resident** and maps
+  linearly, `file = header_paras·16 + seg·16 + off` (= `0x2400 + …`).
+  323/362 land exactly on a function prologue. Anchor: thunk `0x718` →
+  `ljmp 0x037F:0x04B0` → file `0x60A0` = `func_0060A0` (the prime-resource
+  predicate) ✓.
+- **Type-A thunks** (runtime entry `0x110D:0xDAB`) LJMP to a
+  runtime-patched segment word (`0x0000` on disk); **the first LE16 word
+  of the trailer is the overlay-segment index**. Each index's file base
+  is fitted by maximizing prologue hits (ENTER `C8 .. 00` / `55 8B EC`)
+  across the group's target offsets over paragraph-aligned candidates —
+  31 segments resolved (most at 0.7–1.0 confidence; the few small
+  low-confidence groups are flagged in the tool's output). Anchor:
+  segment 3 base `0x2CFD0` + `0x33A` = file `0x2D30A` = the mine-depletion
+  scan, independently located by content (the binary's only mask-4
+  flags-plane setter) ✓.
 
-Decoding the directory is the next leverage point: once we can map a
-segment ID to a physical file offset, every overlay thunk's
-`LJMP <seg>:<off>` becomes a concrete file offset that can be added
-to `manual_funcs.json` as a named overlay function. **This is the next
-step to unblock per-anchor game-logic annotation.**
+This closed the last two blocked spec items (the `@RESOURCE` yield
+application point and the depletion writer — see
+`spec/systems/map_system.md` "Prime resources").
 
 ## What we already have without the directory
 

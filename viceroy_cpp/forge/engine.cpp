@@ -3,6 +3,7 @@
 #include "expr.hpp"             // Formula-node expression evaluator
 
 #include "economy.hpp"          // sol_pct, colony_economic_step
+#include "events.hpp"           // resource_at / resource_good_bonus (prime-resource yields)
 #include "unit.hpp"             // unit_stats
 #include "combat.hpp"           // resolve_land, combat_odds
 #include "natives.hpp"          // apply_tension
@@ -232,7 +233,9 @@ int terrain_good_yield(int terrain, int good) {
 // NOTE (flagged, not modeled): second-order goods (Muskets<-Tools, Horses) and the >2-building x2/3
 // factory throttle are reconstructed/ambiguous and intentionally left out rather than guessed.
 void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::sim::RuleData& rd,
-                               uint32_t ff_owned, int tax_pct) {
+                               uint32_t ff_owned, int tax_pct,
+                               const vc::sim::World* world, int map_seed,
+                               int* mining_pressure) {
     using vc::sim::NGOODS;
     int sol = vc::sim::sol_pct(col, ff_owned, col.human && col.owner_power == 0);
     // Sons-of-Liberty production bonus (spec @REBELMAJORITY/@REBELUNANIMOUS): each producing colonist
@@ -252,6 +255,21 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
     // a floor (the town square always yields at least its baseline).
     int centerFood = terrain_good_yield(col.center_terrain, 0);
     if (centerFood < col.center_food) centerFood = col.center_food;
+    // Prime-resource bonus (map_system.md "Resource yield application", func_009AAA applied at
+    // func_009B9C @0x9DD5..0x9E13): after the tory/expert adjust, b = bonus(resource, good);
+    // b < 0 -> yield x2 (the Prime crops); else an EXPERT doubles the additive bonus.
+    // The surrounding-ring order matches the assignment convention: 0=NW..7=SE.
+    static const int rdx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+    static const int rdy[8] = {-1,-1,-1,  0, 0,  1, 1, 1};
+    auto res_at_tile = [&](int tile) -> int {   // tile -1 = the center square
+        if (!world || col.x < 0) return -1;
+        int tx = col.x + (tile >= 0 ? rdx[tile & 7] : 0);
+        int ty = col.y + (tile >= 0 ? rdy[tile & 7] : 0);
+        return vc::sim::resource_at(*world, tx, ty, map_seed);
+    };
+    { int rc = res_at_tile(-1);                              // the town square farms its own food
+      int b = vc::sim::resource_good_bonus(rc, 0);
+      if (b > 0 && centerFood > 0) centerFood += b; }
     int food = centerFood, bells = 0, crosses = 0;
     int cap[19] = {0};                       // artisan throughput requested per finished good (16 = Hammers)
     for (const auto& wk : col.workers) {
@@ -259,6 +277,15 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         if (g >= 0 && g < 8) {               // tile worker -> raw good from the terrain-yield table
             int y = terrain_good_yield(wk.terrain, g);
             y = vc::sim::tory_expert_adjust(y, col.population, sol, difficulty, col.human, wk.expert, g, rd);
+            int res = (wk.tile >= 0 && wk.tile < 8) ? res_at_tile(wk.tile) : -1;
+            int b = vc::sim::resource_good_bonus(res, g);
+            if (res == 7 && y <= 0) b = 0;                  // Fishery needs a non-zero base (@0x9DE7)
+            if (b < 0) y *= 2;                              // Prime crop DOUBLE (@0x9DF8)
+            else if (b > 0) y += wk.expert ? b * 2 : b;     // expert doubles the bonus (@0x9E04)
+            if (mining_pressure) {                          // depletion pressure (@0x9E13..0x9E41)
+                if (res == 6)  *mining_pressure += (g == 6) ? 1 : (g == 7) ? 2 : 0;
+                if (res == 12 && g == 7) *mining_pressure += 1;
+            }
             if (y > 0) y += sol_bonus;                      // Sons-of-Liberty +1/+2 per producing colonist
             if (g == 4 && ff_hudson) y *= 2;                // Henry Hudson (#8): furs (good 4) x2
             if (g == 0) food += y; else prod[g] += y;

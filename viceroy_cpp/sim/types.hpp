@@ -36,6 +36,9 @@ struct Colony {
                                  //   the 1/64 EMA decays it toward 128*pop
 
     uint32_t hammers_accum = 0;  // +0x92  raw per-turn hammer sum (early gate)
+    int  depletion_counter = 0;  // +0x97  mine-depletion accumulator (map_system.md "Depletion
+                                 //        writer": +1 per nonzero rng(0,diff+1) roll per unit of
+                                 //        mining pressure; wraps at 50 -> worked deposits deplete)
     uint32_t build_bank    = 0;  // +0xB6  progress bank ("X of Y"), surplus carried
     int      build_target  = -1; // +0x94  building id (<0 = none)
     int      build_cost    = 0;  // cost of build_target (from @BUILDING)

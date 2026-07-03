@@ -48,6 +48,7 @@ JsonValue dump_colony(const Colony& c) {
     o.obj["rebel_A"]         = json_num(c.rebel_A);
     o.obj["rebel_B"]         = json_num(c.rebel_B);
     o.obj["hammers_accum"]   = json_num((double)c.hammers_accum);
+    o.obj["depletion_counter"] = json_num((double)c.depletion_counter);
     o.obj["build_bank"]      = json_num((double)c.build_bank);
     o.obj["build_target"]    = json_num(c.build_target);
     o.obj["build_cost"]      = json_num(c.build_cost);
@@ -146,6 +147,7 @@ Colony read_colony(const JsonValue& o) {
     c.rebel_A          = gi(o, "rebel_A");
     c.rebel_B          = gi(o, "rebel_B", 1);
     c.hammers_accum    = (uint32_t)gd(o, "hammers_accum");
+    c.depletion_counter = (int)gd(o, "depletion_counter");
     c.build_bank       = (uint32_t)gd(o, "build_bank");
     c.build_target     = gi(o, "build_target", -1);
     c.build_cost       = gi(o, "build_cost");

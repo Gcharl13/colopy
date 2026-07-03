@@ -776,7 +776,8 @@ static void game_new(int nation = 0, int difficulty = 1, bool random_map = false
                 c.workers.push_back(wk);
             }
         c.population = gi("pop", (int)c.workers.size()); if (c.population < 1) c.population = 1;
-        forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);   // populate turn-0 output
+        forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
+                                     0, &g_world, g_game.rumor_seed);   // populate turn-0 output
         g_world.colonies.push_back(c); g_colony_xy.push_back(xy); cxy.push_back(xy);
         return xy;
     };
@@ -1634,6 +1635,16 @@ static void game_step() {
             g_turn_notices.push_back(m);
         }
         forge::food_log().clear();
+        // Mine depletions (map_system.md "Depletion writer"): the verbatim
+        // @DEPLETION record, %STRING0 = the colony name.
+        for (int ci : forge::depletion_log()) {
+            std::string m = game_message_text("@DEPLETION");
+            size_t p2;
+            while ((p2 = m.find("%STRING0")) != std::string::npos)
+                m.replace(p2, 8, tutorial_colony_name(ci));
+            g_turn_notices.push_back(m);
+        }
+        forge::depletion_log().clear();
         // Per-colony SoL status announcements (colony.md 2, the func_02D658
         // hysteresis): verbatim @REBELMAJORITY/@REBELUNANIMOUS/@TORYMINORITY/
         // @TORYMAJORITY with the colony and the live membership percent.
@@ -2215,7 +2226,8 @@ static void sandbox_new(int pop) {
     c.built_mask = (1ull << 9) | (1ull << 35) | (1ull << 37);   // Town Hall / Carpenter's Shop / Church
     c.population = (int)c.workers.size();
     if (pop > (int)c.workers.size() && pop <= 32) c.population = pop;
-    forge::colony_compute_production(c, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);   // roster -> *_per_turn
+    forge::colony_compute_production(c, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned,
+                                     0, &g_sb_world, g_sb_game.rumor_seed);   // roster -> *_per_turn
     g_sb_world.colonies.push_back(c); g_sb_colony_xy.push_back({0, 0});
     g_sb_active = true;
 }
@@ -3829,7 +3841,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 int t = g_world.terrain_id(u.x, u.y + 1);
                 wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
                 jc.workers.push_back(wk);
-                forge::colony_compute_production(jc, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
+                forge::colony_compute_production(jc, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
+                                     0, &g_world, g_game.rumor_seed);
                 u.alive = false;                        // the colonist becomes population
                 return J(200, game_state_json());
             }
@@ -3840,7 +3853,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food
               int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
               c.workers.push_back(wk); }
-            forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
+            forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
+                                     0, &g_world, g_game.rumor_seed);
             g_world.colonies.push_back(c);
             g_colony_xy.push_back({u.x, u.y});
             u.alive = false;                            // the colonist becomes the colony
@@ -4704,7 +4718,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             } else wk.terrain = 0;
             col.workers.push_back(wk);
             if ((int)col.workers.size() > col.population) col.population = (int)col.workers.size();
-            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
+                                     0, &g_world, g_game.rumor_seed);
             return J(200, colony_detail_json(ci));
         }
         // Remove a colonist from a job (back to the plaza); production recomputes.
@@ -4716,7 +4731,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             Colony& col = g_world.colonies[ci];
             if (wi < 0 || wi >= (int)col.workers.size()) return err(400, "bad worker");
             col.workers.erase(col.workers.begin() + wi);
-            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned);
+            forge::colony_compute_production(col, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
+                                     0, &g_world, g_game.rumor_seed);
             return J(200, colony_detail_json(ci));
         }
 
@@ -4864,7 +4880,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             wk.expert = ev ? (ev->type == forge::JsonValue::Bool ? ev->b : ev->as_int(0) != 0) : false;
             col.workers.push_back(wk);
             if ((int)col.workers.size() > col.population) col.population = (int)col.workers.size();
-            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned,
+                                     0, &g_sb_world, g_sb_game.rumor_seed);
             return J(200, sandbox_state_json());
         }
         if (path == "/api/sandbox/unassign" && method == "POST") {
@@ -4876,7 +4893,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 col.workers.erase(col.workers.begin() + idx);
                 if (col.population > (int)col.workers.size() && col.population > 1) col.population = (int)col.workers.size();
             }
-            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            forge::colony_compute_production(col, g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned,
+                                     0, &g_sb_world, g_sb_game.rumor_seed);
             return J(200, sandbox_state_json());
         }
         // Sandbox: grant/revoke a founding father (a bit in ff_owned) to watch its production effect.
@@ -4891,7 +4909,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 else    { g_sb_extra.ff_owned &= ~(1u << id); if (g_sb_extra.last_ff == id) g_sb_extra.last_ff = -1; }
                 if (g_sb_extra.offered_ff == id) g_sb_extra.offered_ff = -1;               // re-offer next
             }
-            forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+            forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned,
+                                     0, &g_sb_world, g_sb_game.rumor_seed);
             return J(200, sandbox_state_json());
         }
         // Sandbox: ship a good to the Europe market and sell it (the path when you have NO Custom
@@ -4937,7 +4956,8 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             for (int i = 0; i < n; ++i) {
                 // Recompute production from the colonist roster (as the real turn pipeline's
                 // production phase does), THEN run the economic step off those fresh numbers.
-                forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned);
+                forge::colony_compute_production(g_sb_world.colonies[0], g_sb_game.difficulty, g_active_rules, g_sb_extra.ff_owned,
+                                     0, &g_sb_world, g_sb_game.rumor_seed);
                 step_turn(g_sb_game, g_sb_world, sb_rng, 0, g_active_rules);
                 // Continental Congress: liberty bells accumulate toward the next founding father,
                 // who is acquired (and revealed) when the bell pool crosses the cost threshold.
@@ -5562,6 +5582,64 @@ static int engine_selftest() {
         Colony hh2; hh2.population = 1; hh2.rebel_A = 0; hh2.rebel_B = 1; hh2.workers.push_back(mkw(4, 0, 8, 4));  // same fur trapper, with Hudson owned
         forge::colony_compute_production(hh2, 1, rd4, /*ff*/ (1u << 8));
         check(base_furs > 0 && hh2.stockpile[4] == base_furs * 2, "Henry Hudson (#8) -> fur production x2");
+
+        // Prime-resource yield application (map_system.md "Resource yield application",
+        // func_009AAA @0x9AAA applied at func_009B9C): a resource on the worked tile
+        // doubles the Prime crops and adds the mapped bonus otherwise (expert doubles it).
+        {
+            const int SEED = 5;
+            auto find_res = [&](World& ww, int want) {          // a tile whose lattice hits `want`
+                for (int y2 = 1; y2 < ww.map_h - 1; ++y2)
+                    for (int x2 = 1; x2 < ww.map_w - 1; ++x2)
+                        if (vc::sim::resource_at(ww, x2, y2, SEED) == want)
+                            return std::pair<int,int>{x2, y2};
+                return std::pair<int,int>{-1, -1};
+            };
+            World wt; wt.map_w = 16; wt.map_h = 16;
+            wt.terrain.assign(256, 4);                          // all Grassland -> Prime Tobacco (4)
+            auto [tx, ty] = find_res(wt, 4);
+            check(tx >= 0, "lattice yields a Prime Tobacco tile on a Grassland map");
+            int base = forge::terrain_good_yield(4, 2);
+            Colony pt; pt.population = 1; pt.rebel_A = 0; pt.rebel_B = 1;
+            pt.x = tx + 1; pt.y = ty + 1;                        // ring slot 0 (NW) = the prime tile
+            pt.workers.push_back(mkw(2, 0, 4, 2));               // tobacco planter on that tile
+            forge::colony_compute_production(pt, 1, rd4, 0, 0, &wt, SEED);
+            check(base > 0 && pt.stockpile[2] == base * 2, "Prime Tobacco on the worked tile -> tobacco x2");
+            // Minerals + expert ore miner: additive +3, doubled to +6 for the expert (@0x9E04).
+            World wm; wm.map_w = 16; wm.map_h = 16;
+            wm.terrain.assign(256, 0);                           // all Tundra -> Minerals (6)
+            auto [mx, my] = find_res(wm, 6);
+            int ore = forge::terrain_good_yield(0, 6);
+            Colony om; om.population = 1; om.rebel_A = 0; om.rebel_B = 1;
+            om.x = mx + 1; om.y = my + 1;
+            om.workers.push_back(mkw(6, 0, 0, 6)); om.workers.back().expert = true;
+            forge::colony_compute_production(om, 1, rd4, 0, 0, &wm, SEED);
+            check(om.stockpile[6] == ore * 2 + 6, "expert ore miner on Minerals -> base x2 (expert) + 3x2 (bonus doubled)");
+            // Mining pressure + the depletion writer: silver on Minerals accrues +2/turn;
+            // with the counter primed at 49 and a nonzero roll, the deposit depletes --
+            // the bit is set, resource_at reads Depleted (-1 on Minerals), notice queued.
+            int pressure = 0;
+            Colony sm; sm.population = 1; sm.rebel_A = 0; sm.rebel_B = 1;
+            sm.x = mx + 1; sm.y = my + 1;
+            sm.workers.push_back(mkw(7, 0, 0, 7));               // silver miner on the Minerals tile
+            forge::colony_compute_production(sm, 1, rd4, 0, 0, &wm, SEED, &pressure);
+            check(pressure == 2, "silver mined on Minerals -> +2 mining pressure (@0x9E2A)");
+            sm.depletion_counter = 49;
+            World& gw = wm; GameState gs; gs.difficulty = 1; gs.rumor_seed = SEED;
+            gw.colonies.push_back(sm);
+            vc::sim::RandFn one = [](int, int) { return 1; };    // every roll lands (nonzero)
+            forge::run_turn_phase("production", gs, gw, one, 0, rd4, 0);
+            check((gw.improve_at(mx, my) & 0x04) != 0, "depletion roll at counter 50 sets the tile bit (mask 4)");
+            check(vc::sim::resource_at(gw, mx, my, SEED) == -1, "depleted Minerals vanish (resource_at -1)");
+            check(!forge::depletion_log().empty(), "the depletion event queues the @DEPLETION notice");
+            forge::depletion_log().clear();
+            // A depleted SILVER deposit renders as Depleted Mine (0), not -1 (@0x616A).
+            World ws; ws.map_w = 16; ws.map_h = 16;
+            ws.terrain.assign(256, 0xA0);                        // special+0x80 -> Mountains (27) -> Silver Deposit
+            auto [sx, sy] = find_res(ws, 12);
+            ws.improve_set(sx, sy, 0x04);
+            check(vc::sim::resource_at(ws, sx, sy, SEED) == 0, "depleted Silver Deposit -> Depleted Mine (0)");
+        }
     }
 
     // A2 unified store: cell_get resolves reference + state + config through one grammar.
