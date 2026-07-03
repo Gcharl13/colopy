@@ -3,6 +3,7 @@
 // error quality. Grows with each Drydock phase.
 #include "../text/rec_text.hpp"
 #include "../schema/schema.hpp"
+#include "../core/store.hpp"
 #include "../../forge/drydock_bridge.hpp"
 #include "rules.hpp"
 #include "dd_gen.hpp"
@@ -210,6 +211,86 @@ static void test_reflection() {
           "reflect: type registry populated");
 }
 
+static Store make_test_store() {
+    // tiny synthetic schema with a ref field so the ref index is exercised
+    const char* schm_src =
+        "record schm.good { fields = [ { name = \"index\", type = \"int\" }, "
+        "{ name = \"name\", type = \"str\" } ] }\n"
+        "record schm.unit { fields = [ { name = \"index\", type = \"int\" }, "
+        "{ name = \"eats\", type = \"ref<good>\" } ] }\n";
+    const char* rec_src =
+        "record good.food { index = 0 name = \"Food\" }\n"
+        "record good.rum { index = 9 name = \"Rum\" }\n"
+        "record unit.colonist { index = 0 eats = good.food }\n";
+    std::vector<Record> schm, recs;
+    std::string err;
+    parse_records(schm_src, schm, err);
+    parse_records(rec_src, recs, err);
+    Schema sc;
+    schema_load(schm, sc, err);
+    Store s;
+    if (!store_init(s, sc, recs, err)) std::printf("       store_init: %s\n", err.c_str());
+    return s;
+}
+
+static void test_store() {
+    Store s = make_test_store();
+    std::string err;
+
+    // lookup + handles
+    check(store_find(s, "good.food") != nullptr, "store: find by id");
+    check(store_handle(s, "good.rum") != DD_NULL_HANDLE, "store: handle assigned");
+    check(store_handle(s, "good.nope") == DD_NULL_HANDLE, "store: missing id -> null handle");
+
+    // ref index built at init
+    auto uses = store_used_by(s, "good.food");
+    check(uses.size() == 1 && uses[0].first == "unit.colonist" && uses[0].second == "eats",
+          "store: ref index built (used-by)");
+
+    // the chokepoint: set validates, journals, retargets the ref index
+    Value nine = Value::make_int(9);
+    check(store_set(s, "good.food", "index", &nine, err), "store: set int");
+    check(store_find(s, "good.food")->find("index")->i == 9, "store: value applied");
+    Value bad = Value::make_str("nope");
+    check(!store_set(s, "good.food", "index", &bad, err), "store: type-mismatched set refused");
+    Value rum = Value::make_token("good.rum");
+    check(store_set(s, "unit.colonist", "eats", &rum, err), "store: ref retarget");
+    check(store_used_by(s, "good.food").empty() && store_used_by(s, "good.rum").size() == 1,
+          "store: ref index follows the edit");
+
+    // safe delete: refused while referenced, allowed after clearing
+    check(!store_delete(s, "good.rum", err) && err.find("unit.colonist") != std::string::npos,
+          "store: delete refused with inbound-ref list");
+    check(store_set(s, "unit.colonist", "eats", nullptr, err), "store: clear ref field");
+    check(store_delete(s, "good.rum", err), "store: delete after refs cleared");
+    check(store_find(s, "good.rum") == nullptr, "store: deleted record gone");
+
+    // undo/redo round-trip across set/clear/delete
+    check(store_undo(s, err), "store: undo delete");
+    check(store_find(s, "good.rum") != nullptr, "store: record restored");
+    check(store_undo(s, err), "store: undo clear");
+    check(store_used_by(s, "good.rum").size() == 1, "store: ref index restored by undo");
+    check(store_undo(s, err), "store: undo retarget");
+    check(store_used_by(s, "good.food").size() == 1, "store: ref back on food");
+    check(store_undo(s, err) && store_find(s, "good.food")->find("index")->i == 0,
+          "store: undo set restores original value");
+    check(!store_undo(s, err), "store: journal floor");
+    // redo all the way forward
+    while (store_redo(s, err)) {}
+    check(store_find(s, "good.rum") == nullptr &&
+          store_find(s, "good.food")->find("index")->i == 9,
+          "store: redo replays to the final state");
+
+    // add + undo add
+    Record nr;
+    nr.id = "good.cloth";
+    nr.fields.push_back({"index", Value::make_int(11)});
+    check(store_add(s, nr, err), "store: add record");
+    check(store_handle(s, "good.cloth") != DD_NULL_HANDLE, "store: added record indexed");
+    check(store_undo(s, err) && store_find(s, "good.cloth") == nullptr, "store: undo add");
+    check(!s.dirty.empty(), "store: dirty set tracks edits");
+}
+
 int main() {
     test_roundtrip();
     test_canonical_numbers();
@@ -219,6 +300,7 @@ int main() {
     test_schema();
     test_ruledata_parity();
     test_reflection();
+    test_store();
     std::printf(g_fail ? "drydock tests: %d FAILED\n" : "drydock tests: ALL PASSED\n", g_fail);
     return g_fail ? 1 : 0;
 }

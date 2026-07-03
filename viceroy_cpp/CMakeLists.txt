@@ -104,6 +104,7 @@ add_library(drydock STATIC
   drydock/text/rec_text.cpp
   drydock/schema/schema.cpp
   drydock/pack/pack.cpp
+  drydock/core/store.cpp
 )
 add_executable(drydockc drydock/drydockc.cpp)
 target_link_libraries(drydockc PRIVATE drydock)
