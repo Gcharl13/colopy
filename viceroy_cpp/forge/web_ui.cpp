@@ -1201,6 +1201,9 @@ async function ddEdit(inp){
   if(value===''){ value=null; }                       // empty -> clear the field
   else if(kind===0) value=parseInt(value,10);
   else if(kind===1) value=parseFloat(value);
+  else if(kind>=5&&kind<=7){                          // lists edit as JSON arrays
+    try{ value=JSON.parse(value); }catch(e){ ui.toast('invalid JSON: '+e.message); return; }
+  }
   const r=await fetch('/api/dd/set',{method:'POST',body:JSON.stringify(
     {id:inp.dataset.id, field:inp.dataset.f, value})});
   const d=await r.json();
@@ -1271,7 +1274,12 @@ async function ddFormRender(id){
     } else if(f.kind===1||f.kind===2){                 // float / str
       h+='<input value="'+esc(String(shown))+'" data-id="'+esc(id)+'" data-f="'+esc(f.name)
         +'" data-k="'+f.kind+'" onchange="ddEdit(this)" style="width:320px">';
-    } else {                                           // flags / lists / dicts: read-only for now
+    } else if(f.kind>=5&&f.kind<=7){                   // lists (int/str/dict): JSON edit
+      h+='<textarea data-id="'+esc(id)+'" data-f="'+esc(f.name)+'" data-k="'+f.kind
+        +'" onchange="ddEdit(this)" rows="'+Math.min(10,(v===undefined?1:JSON.stringify(v,null,1).split('\n').length))
+        +'" style="width:460px">'+esc(v===undefined?'':JSON.stringify(v,null,1))+'</textarea>'
+        +'<div class="muted" style="font-size:11px">JSON array &mdash; validated by the schema on save</div>';
+    } else {                                           // flags: read-only for now
       h+='<pre class="muted" style="margin:0;max-width:460px;white-space:pre-wrap">'
         +esc(v===undefined?'(absent)':JSON.stringify(v,null,1))+'</pre>'
         +'<div class="muted" style="font-size:11px">structured field &mdash; edit the .rec text (read-only in the form)</div>';

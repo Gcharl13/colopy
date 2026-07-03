@@ -82,6 +82,8 @@ static JsonValue value_to_json(const Value& v) {
     }
     return json_str("");
 }
+static Value json_any_to_value(const JsonValue& j);   // defined with the DLOG cutover
+
 // JSON -> Value, guided by the schema field kind (so 3 becomes Int for int
 // fields, "good.rum" becomes a ref Token for ref fields, etc.)
 static bool json_to_value(const JsonValue& j, const FieldDef& fd, Value& out, std::string& err) {
@@ -114,6 +116,16 @@ static bool json_to_value(const JsonValue& j, const FieldDef& fd, Value& out, st
                     if (!x.is_string()) { err = "expected string element"; return false; }
                     xs.push_back(Value::make_str(x.str));
                 }
+            }
+            out = Value::make_list(std::move(xs));
+            return true;
+        }
+        case FType::ListDict: {
+            if (!j.is_array()) { err = "expected array of objects"; return false; }
+            std::vector<Value> xs;
+            for (const JsonValue& x : j.arr) {
+                if (!x.is_object()) { err = "expected object element"; return false; }
+                xs.push_back(json_any_to_value(x));
             }
             out = Value::make_list(std::move(xs));
             return true;
