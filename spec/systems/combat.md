@@ -22,6 +22,7 @@ decided by a single odds roll modified by terrain/fortification/veterancy.
 |-------|---------|------|----------|
 | `@UNIT` rows (NAMES.TXT) | per-type stat columns (attack, defense, guns, …) | **BYTE_VERIFIED** | `data_extracted/text/NAMES_sections.json` |
 | stat loader `@0x74EC3` | maps `@UNIT` col3 ATTACK→`0x5236`, col4 DEFENSE→`0x5235` (LAND, ×8 in accessor); col9 guns→`0x523B`, →`0x523C` (ship) | **BYTE_VERIFIED** | `notes/rulings/RULINGS.md` (wave-10 loader trace) |
+| the "×8 accessor" itself | **`func_007C2A`** (thunk `0x181F:0x9C8`, decoded 2026-07-03): base = attack (mode 1) / defense (mode 0), damaged-Artillery −2, **×8**, veteran-class (`0x15`) Soldiers/Dragoons **+50%**, Drake Privateer **+50%**, ships −cargo count; publishes base→`[0x8D06+2m]`, flags→`[0x8D00+2m]`. Callers (full thunk scan, 8 sites): the LAND decider `@0x5CDF9`, the stack defender-selection scan `@0x5B03C` (artillery order-state `>>3`), the grievance accrual `@0x42325/@0x422F2`, +4 report/AI aggregates | **BYTE_VERIFIED** | `spec/systems/diplomacy.md` §2 (full decode) |
 | `UnitRecord +0x00` | `unit_type` = @UNIT row — indexes the **demotion** if-ladder | **BYTE_VERIFIED** | `docs/DATA_MODEL.md` |
 | `UnitRecord +0x17` | `unit_class` / profession (abs `0x315B`) — the demotion **override** condition (`==24`) | **BYTE_VERIFIED** | `docs/DATA_MODEL.md`; `cmp [bx+0x315B],0x18` `@0x5B60E` (see §3) |
 
