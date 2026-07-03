@@ -1,5 +1,6 @@
 // native_assets.cpp -- see native_assets.hpp.
 #include "native_assets.hpp"
+#include "ff.hpp"        // load_font -- the game's own .FF fonts when present
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #include "stb_image.h"   // vendored (third_party/stb) -- no libpng dependency
@@ -304,7 +305,18 @@ NativeAssets load_native_assets(const std::string& root) {
         a.woodtile = std::move(s);
     }
 
+    // Fonts: prefer the game's own FONTTINY.FF when the project carries the
+    // user's game copy (raw/COLONIZE, same layout the extractors read) -- the
+    // repo ships only decoded art, and .FF fonts aren't part of that set, so
+    // the baked 5x7 stands in until the real file is present.
     a.font = baked_font();
+    for (const char* dir : {"/raw/COLONIZE/", "/raw/", "/"}) {
+        try {
+            a.font = load_font(root + dir + "FONTTINY.FF");
+            a.font_real = true;
+            break;
+        } catch (const std::exception&) {}
+    }
     return a;
 }
 

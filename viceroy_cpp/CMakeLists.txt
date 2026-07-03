@@ -58,6 +58,12 @@ add_library(viceroy_render STATIC
   src/mapview.cpp
   src/colony_screen.cpp
   src/popup_render.cpp
+  # the original MADSPACK/FAB codec (pure, no libpng): lets the runtime load
+  # the game's own .FF fonts / .SS sheets when the user's copy provides them
+  src/fab.cpp
+  src/madspack.cpp
+  src/ss.cpp
+  src/ff.cpp
 )
 target_include_directories(viceroy_render PUBLIC include . third_party/stb)
 target_link_libraries(viceroy_render PUBLIC viceroy_sim)
@@ -70,12 +76,8 @@ endif()
 if(PNG_FOUND)
   add_executable(viceroy_cpp
     src/main.cpp
-    # importer (offline): original codec
-    src/fab.cpp
-    src/madspack.cpp
-    src/ss.cpp
+    # importer (offline): PIK background codec (SS/FF live in viceroy_render)
     src/pik.cpp
-    src/ff.cpp
   )
   target_link_libraries(viceroy_cpp PRIVATE viceroy_render)
 

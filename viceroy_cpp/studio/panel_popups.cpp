@@ -233,6 +233,12 @@ void popups_panel(Driver& drv) {
         defi >= 0 && defi < (int)spec.choices.size())
         app().status = "popup choice (default): " + spec.choices[defi];
 
+    ImGui::TextDisabled("font: %s | box %d,%d %dx%d",
+                        assets().nat.font_real
+                            ? "FONTTINY.FF (game)"
+                            : "baked 5x7 (add raw/COLONIZE/FONTTINY.FF for the game font)",
+                        L.x, L.y, L.w, L.h);
+
     // ---- tester inputs
     if (ImGui::CollapsingHeader("Test fills", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::SetNextItemWidth(90);

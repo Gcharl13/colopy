@@ -318,8 +318,9 @@ static int cmd_nativepopup(int argc, char** argv) {
     uint8_t border = scr.idx[(size_t)L.y * 320 + L.x];
     uint8_t inside = scr.idx[(size_t)(L.y + 5) * 320 + (L.x + 5)];
     ok = ok && border != 0 && inside != 0;
-    std::printf("nativepopup: box %d,%d %dx%d content %d border=%d body=%d\n",
-                L.x, L.y, L.w, L.h, L.content_w, border, inside);
+    std::printf("nativepopup: box %d,%d %dx%d content %d border=%d body=%d font=%s\n",
+                L.x, L.y, L.w, L.h, L.content_w, border, inside,
+                a.font_real ? "FONTTINY.FF" : "baked5x7");
 
     vc::Image img = scr.to_rgb(scale);
     vc::write_png_rgb(out, img.w, img.h, img.rgb);

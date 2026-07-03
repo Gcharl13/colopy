@@ -223,6 +223,48 @@ void screens_panel(Driver& drv) {
         ImGui::End();
         return;
     }
+    // screen header: name + background picker (every background sprt record)
+    {
+        char nbuf[64];
+        std::snprintf(nbuf, sizeof nbuf, "%s", rstr(*rec, "name").c_str());
+        ImGui::SetNextItemWidth(200);
+        if (ImGui::InputText("name", nbuf, sizeof nbuf,
+                             ImGuiInputTextFlags_EnterReturnsTrue)) {
+            Value v = Value::make_str(nbuf);
+            std::string err;
+            if (!drydock::store_set(*st, rec->id, "name", &v, err))
+                app().status = "edit rejected: " + err;
+        }
+        ImGui::SameLine();
+        std::string bg = rstr(*rec, "background");
+        ImGui::SetNextItemWidth(180);
+        if (ImGui::BeginCombo("background", bg.empty() ? "(none)" : bg.c_str())) {
+            if (ImGui::Selectable("(none)", bg.empty())) {
+                Value v = Value::make_str("");
+                std::string err;
+                drydock::store_set(*st, rec->id, "background", &v, err);
+            }
+            auto si = st->type_index.find("sprt");
+            if (si != st->type_index.end())
+                for (const Record& s : st->records[si->second]) {
+                    if (s.find("kind") && s.find("kind")->s != "background") continue;
+                    const Value* sheet = s.find("sheet");
+                    if (!sheet) continue;
+                    if (ImGui::Selectable(sheet->s.c_str(), bg == sheet->s)) {
+                        Value v = Value::make_str(sheet->s);
+                        std::string err;
+                        if (!drydock::store_set(*st, rec->id, "background", &v, err))
+                            app().status = "edit rejected: " + err;
+                    }
+                }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("320x200 | font: %s",
+                            assets().nat.font_real ? "FONTTINY.FF"
+                                                   : "baked 5x7 (add raw/COLONIZE/FONTTINY.FF)");
+    }
+
     const Value* widgets = rwidgets(*rec);
     const int nwidgets = widgets ? (int)widgets->list.size() : 0;
 
@@ -340,6 +382,39 @@ void screens_panel(Driver& drv) {
         ImVec2 b(a.x + g_sc.wrect[2] * scale, a.y + g_sc.wrect[3] * scale);
         ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 255, 120, 255));
     }
+    // cursor readout (320x200 space) + arrow-key nudge (1px, Shift = 8px)
+    if (ImGui::IsItemHovered()) {
+        ImVec2 mp = ImGui::GetMousePos();
+        ImGui::SameLine();
+        ImGui::TextDisabled("(%d,%d)", (int)((mp.x - origin.x) / scale),
+                            (int)((mp.y - origin.y) / scale));
+    }
+    bool have_nudge = g_sc.sel_w >= 0 && g_sc.sel_w < nwidgets && !g_sc.dragging &&
+                      ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) &&
+                      !ImGui::GetIO().WantTextInput;
+    if (have_nudge) {
+        int dx = 0, dy = 0;
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))  dx = -1;
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) dx = 1;
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))    dy = -1;
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  dy = 1;
+        if (dx || dy) {
+            int step = ImGui::GetIO().KeyShift ? 8 : 1;
+            commit_widgets(*rec, [&](std::vector<Value>& list) {
+                if (g_sc.sel_w >= (int)list.size()) return;
+                Value& d = list[g_sc.sel_w];
+                int r[4];
+                drect(d, r);
+                std::vector<Value> rr{Value::make_int(r[0] + dx * step),
+                                      Value::make_int(r[1] + dy * step),
+                                      Value::make_int(r[2]), Value::make_int(r[3])};
+                for (size_t k = 0; k < d.keys.size(); ++k)
+                    if (d.keys[k] == "rect") { d.list[k] = Value::make_list(rr); return; }
+                d.dict_put("rect", Value::make_list(rr));
+            });
+            g_sc.loaded_w = -2;
+        }
+    }
 
     // ---- widget strip: list + reorder + add/delete
     ImGui::BeginChild("wlist", ImVec2(190, 0), ImGuiChildFlags_Borders);
@@ -428,10 +503,49 @@ void screens_panel(Driver& drv) {
         ImGui::SetNextItemWidth(220);
         ImGui::InputInt4("rect", g_sc.wrect);
         if (g_sc.wtype == 1) {
+            static const char* SHEETS[] = {"TERRAIN", "PHYS0", "UNITS",
+                                           "BUILDING", "ICONS"};
             ImGui::SetNextItemWidth(150);
-            ImGui::InputText("sheet", g_sc.wsheet, sizeof g_sc.wsheet);
+            if (ImGui::BeginCombo("sheet", g_sc.wsheet)) {
+                for (const char* s : SHEETS)
+                    if (ImGui::Selectable(s, std::strcmp(s, g_sc.wsheet) == 0))
+                        std::snprintf(g_sc.wsheet, sizeof g_sc.wsheet, "%s", s);
+                ImGui::EndCombo();
+            }
+            const vc::Sheet* sh = tileset_sheet(g_sc.wsheet);
             ImGui::SetNextItemWidth(150);
             ImGui::InputInt("frame", &g_sc.wframe);
+            if (sh) {
+                if (g_sc.wframe < 0) g_sc.wframe = 0;
+                if (g_sc.wframe >= sh->nframes) g_sc.wframe = sh->nframes - 1;
+                ImGui::SameLine();
+                ImGui::TextDisabled("of %d", sh->nframes);
+                // live frame preview at 2x, drawn straight from the sheet
+                if (g_sc.wframe >= 0 && g_sc.wframe < sh->nframes) {
+                    char key[64];
+                    std::snprintf(key, sizeof key, "frm:%s:%d", g_sc.wsheet,
+                                  g_sc.wframe);
+                    const vc::Frame& f = sh->frames[g_sc.wframe];
+                    Texture* tex = static_texture(drv, key, [&](vc::Image& img) {
+                        if (f.w <= 0 || f.h <= 0) return false;
+                        img.w = f.w; img.h = f.h;
+                        img.rgb.assign((size_t)f.w * f.h * 3, 32);
+                        for (int y = 0; y < f.h; ++y)
+                            for (int x = 0; x < f.w; ++x) {
+                                uint8_t i = f.px[(size_t)y * f.w + x];
+                                if (i == vc::SS_TRANSPARENT) continue;
+                                uint8_t* p = &img.rgb[((size_t)y * f.w + x) * 3];
+                                const uint8_t* pal = assets().nat.pal;
+                                p[0] = pal[i * 3]; p[1] = pal[i * 3 + 1];
+                                p[2] = pal[i * 3 + 2];
+                            }
+                        return true;
+                    });
+                    if (tex)
+                        ImGui::Image((ImTextureID)(intptr_t)tex->id,
+                                     ImVec2(tex->w * 2.0f, tex->h * 2.0f));
+                }
+            }
         } else {
             ImGui::SetNextItemWidth(150);
             ImGui::InputText("color r,g,b", g_sc.wcolor, sizeof g_sc.wcolor);

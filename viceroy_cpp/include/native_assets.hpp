@@ -59,7 +59,9 @@ struct NativeAssets {
     Sheet units;       // unit figures (@UNIT order)
     Sheet buildings;   // colony buildings (def_id order)
     Sheet woodtile;    // 32x24 wood-grain chrome tile (cropped from WOODPANL)
-    Sheet font;        // baked_font()
+    Sheet font;        // FONTTINY.FF when the project has the game files
+                       // (raw/COLONIZE), else baked_font()
+    bool  font_real = false;   // true = the game's own FONTTINY loaded
     int   strays = 0;  // total nearest-fallback pixels across all sheets
 };
 NativeAssets load_native_assets(const std::string& repo_root);
