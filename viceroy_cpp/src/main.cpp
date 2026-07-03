@@ -15,6 +15,7 @@
 #include "surface.hpp"   // Surface (P4 presentation)
 #include "mapview.hpp"   // render_mapview
 #include "colony_screen.hpp" // render_colony_screen
+#include "native_assets.hpp" // repo-asset boot (no import bundle needed)
 #include "sim/game.hpp"  // GameState, World, step_turn
 #include "sim/ref.hpp"   // ref_start
 #include <cstdio>
@@ -235,6 +236,49 @@ static int cmd_mapview(int argc, char** argv) {
     return 0;
 }
 
+// Compose the map view from the REPO's decoded assets (data_extracted/tileset +
+// docs/atlas/pik + data_extracted/palette.json) -- no import bundle, no original
+// game files. This is the native application's asset path (native_assets.hpp);
+// the frame it writes is the same compositor output as `mapview`, so it doubles
+// as the headless render gate for the SDL client.
+static int cmd_nativemap(int argc, char** argv) {
+    using namespace vc::sim;
+    const char* root = opt(argc, argv, "--root");
+    const char* mp   = opt(argc, argv, "--mp");
+    const char* out  = opt(argc, argv, "--out");
+    if (!out) {
+        std::fprintf(stderr, "usage: viceroy_cpp nativemap --out FILE.png "
+                             "[--root DIR] [--mp FILE] [--scale S] [--ox X --oy Y]\n");
+        return 2;
+    }
+    std::string rt = root ? root : ".";
+    std::string mpp = mp ? mp : rt + "/data_extracted/map/AMER2.MP";
+    int scale = opt(argc, argv, "--scale") ? std::atoi(opt(argc, argv, "--scale")) : 3;
+    int ox    = opt(argc, argv, "--ox") ? std::atoi(opt(argc, argv, "--ox")) : 38;
+    int oy    = opt(argc, argv, "--oy") ? std::atoi(opt(argc, argv, "--oy")) : 56;
+
+    NativeAssets a = load_native_assets(rt);
+    std::printf("nativemap: sheets terrain=%d phys=%d icons=%d units=%d buildings=%d"
+                " (stray px %d)\n", a.terrain.nframes, a.phys.nframes, a.icons.nframes,
+                a.units.nframes, a.buildings.nframes, a.strays);
+    Map map = load_mp(mpp);
+
+    // Same minimal, honest state as `mapview` (the live-session hookup is N0).
+    GameState g; g.difficulty = 1; g.powers[0].gold = 600; g.ref = ref_start(g.difficulty);
+    World w; Colony c;
+    c.owner_power = 0; c.population = 3; c.bells_per_turn = 6; c.hammers_per_turn = 10;
+    c.food_per_turn = 40; c.build_target = 0; c.build_cost = 64; c.crosses_output = 1;
+    w.colonies.push_back(c);
+
+    Surface scr;
+    scr.set_palette(a.pal);   // display palette == the quantization palette
+    render_mapview(scr, map, a.terrain, a.phys, a.woodtile, a.font, g, w, ox, oy);
+    Image img = scr.to_rgb(scale);
+    write_png_rgb(out, img.w, img.h, img.rgb);
+    std::printf("nativemap: wrote %s (320x200 x%d)\n", out, scale);
+    return 0;
+}
+
 // Compose the colony screen from spec/ui/colony_screen.md (see colony_screen.cpp).
 // Loads the COLONY.PIK backdrop + ICONS/BUILDING/FONTTINY from the bundle and a
 // minimal colony state, writes one 320x200 PNG.
@@ -313,6 +357,7 @@ int main(int argc, char** argv) {
         if (std::strcmp(argv[1], "import") == 0)      return cmd_import(argc, argv);
         if (std::strcmp(argv[1], "render") == 0)      return cmd_render(argc, argv);
         if (std::strcmp(argv[1], "mapview") == 0)     return cmd_mapview(argc, argv);
+        if (std::strcmp(argv[1], "nativemap") == 0)   return cmd_nativemap(argc, argv);
         if (std::strcmp(argv[1], "colony") == 0)      return cmd_colony(argc, argv);
         std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;

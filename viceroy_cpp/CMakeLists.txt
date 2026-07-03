@@ -54,6 +54,7 @@ if(PNG_FOUND)
     src/ff.cpp
     # bundle + runtime
     src/bundle.cpp
+    src/native_assets.cpp
     src/png_io.cpp
     src/mp.cpp
     src/pal.cpp
@@ -158,6 +159,16 @@ add_test(NAME forge_engine COMMAND forge engine selftest
 # round-trips it, so it likewise reads data_extracted/ from the repo root (B13).
 add_test(NAME forge_bundle COMMAND forge bundle selftest
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+# Native render gate (N1): the application's asset path -- boot the sheet set
+# from the repo's decoded assets (data_extracted + docs/atlas/pik) and compose
+# a map-view frame. Fails on any missing/unreadable asset, palette-quantization
+# breakdown, or compositor error. Runs from the repo root like forge_engine.
+if(PNG_FOUND)
+  add_test(NAME native_render COMMAND viceroy_cpp nativemap
+           --out ${CMAKE_BINARY_DIR}/native_render_test.png --scale 1
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
 
 # Data-integrity gates (B12): schema binding resolution + cross-reference validation.
 # Python, data-only; run from the repo root where the JSON data lives.
