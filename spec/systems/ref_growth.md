@@ -1,6 +1,6 @@
 # REF Growth (Royal Expeditionary Force)
 
-> **Layer 2 — Specification (population stub).** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Details pending — breadth pass.
+> **Layer 2 — Specification.** Primary-only per `/METHODOLOGY.md`. Tiers: B/A/R. Driver fully decoded (`func_03E162`, §3).
 
 **Overall confidence:** REF count globals `USER-VERIFIED`; **the budget→force driver
 `func_03E162` `BYTE_VERIFIED`** — accrual rate `(8·diff+10)·2^era`, **threshold 1800**,
@@ -12,11 +12,13 @@ primary:** `func_03E162`; `docs/DATA_MODEL.md` (runtime-verified). Cross-ref `sp
 
 Over the game the Crown accumulates a hidden **expansion budget** and uses it to
 grow the **Royal Expeditionary Force** — the army deployed against the player on
-a declaration of independence. The budget ticks up every turn; at some
-(undecoded) threshold a new REF unit is added to one of four count slots. The
+a declaration of independence. The budget ticks up every turn at
+`(8·diff+10)·2^era`; when it reaches **1800** a new REF unit is bought into one
+of four count slots, chosen to hold the force ratios (§3, `func_03E162` —
+**BYTE_VERIFIED**, superseding the earlier "undecoded threshold" note). The
 REF is **exactly four unit types**: Regulars, Cavalry, Man-O-War, Artillery
-(per `king.md` and `docs/DATA_MODEL.md`). **RECONSTRUCTED** for the
-budget→unit causal link; the counts and the per-turn rate are runtime-verified.
+(per `king.md` and `docs/DATA_MODEL.md`). The budget→unit causal link, the
+threshold, and the composition selection are all byte-verified in §3.
 
 ## 2. State & data
 

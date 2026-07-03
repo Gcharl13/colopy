@@ -84,10 +84,13 @@ Top type-A trailer values (decoded as little-endian metadata words):
 | `16000000`    |    21 | 0x0016,0x0000          |
 | `1A001E01`    |    20 | 0x001A,0x011E          |
 
-The trailer values are likely RTLink-runtime hints (e.g. relocation
-fix-up indices, segment-affinity tags); the precise semantics aren't
-yet reverse-engineered. The 4-byte trailers may carry (segment,
-offset) of a target the runtime patches alongside the LJMP.
+**Trailer semantics DECODED 2026-07-03** (see "DECODED" below): the
+trailer is `<overlay_segment:le16> [<para:le16>]` — the first word is
+the overlay-segment index the runtime loads, the optional second word
+is a **paragraph offset within that segment's file image** added to the
+LJMP offset (`file = segment_base + para·16 + ljmp_off`; 2-byte
+trailers ⇒ `para = 0`). E.g. `0600B200` = segment 6, para 0xB2;
+`1A001E01` = segment 0x1A, para 0x11E.
 
 ## VICEROY.EXE overlay segments
 
@@ -233,15 +236,46 @@ mapping is solved empirically, without needing the LE32 directory:
   `ljmp 0x037F:0x04B0` → file `0x60A0` = `func_0060A0` (the prime-resource
   predicate) ✓.
 - **Type-A thunks** (runtime entry `0x110D:0xDAB`) LJMP to a
-  runtime-patched segment word (`0x0000` on disk); **the first LE16 word
-  of the trailer is the overlay-segment index**. Each index's file base
-  is fitted by maximizing prologue hits (ENTER `C8 .. 00` / `55 8B EC`)
-  across the group's target offsets over paragraph-aligned candidates —
-  31 segments resolved (most at 0.7–1.0 confidence; the few small
-  low-confidence groups are flagged in the tool's output). Anchor:
-  segment 3 base `0x2CFD0` + `0x33A` = file `0x2D30A` = the mine-depletion
-  scan, independently located by content (the binary's only mask-4
-  flags-plane setter) ✓.
+  runtime-patched segment word (`0x0000` on disk); the trailer is
+  **`<overlay_segment:le16> [<para:le16>]`** and the target is
+
+      file = segment_file_base + para·16 + ljmp_off
+
+  with `para = 0` for the short 2-byte trailer form. **The `para`
+  word was decoded 2026-07-03** (superseding the first-cut model that
+  ignored it): pages whose thunks carry mixed `para` values — e.g.
+  segment `0x15`, the map-HUD page — cannot be fitted to a single base
+  without it (the old fit scored 7/33 prologues there; the corrected
+  model scores 23/33 and lands every byte-verified anchor exactly).
+  Each segment's file base is fitted by maximizing prologue hits
+  (ENTER `C8 .. 00` / `55 8B EC`) over paragraph-aligned candidates,
+  then **pinned by byte-verified spec anchors where available** (an
+  anchor wins over the blind fit — several pages are dominated by
+  frameless leaf functions the prologue heuristic cannot see). 31
+  segments resolved; bases are monotonic in segment index (the one
+  exception, segment `0x11`, has a single thunk — insufficient data).
+  Anchors (all validated by the tool, exit 1 on failure):
+  - segment 3 base `0x2CFD0` + `0x33A` = file `0x2D30A` = the
+    mine-depletion scan (content-located, the binary's only mask-4
+    flags-plane setter) ✓
+  - thunk `0x0E1C` (`0x181F:0xE1C`) → `0x67700` = `func_067700`, the
+    map-HUD composer (`spec/ui/map_view.md` §6.3) ✓
+  - thunk `0x1896` (`0x191F:0x896`) → `0x672C8` = `func_0672C8`, the
+    unit-panel data fn (`map_view.md` §6.3) ✓
+  - thunk `0x123C` (`0x191F:0x23C`) → `0x6C520` = `func_06C520`, the
+    message-box draw (`spec/systems/turn_dispatch.md` §4) ✓
+  - thunk `0x1928` (`0x191F:0x928`) → `0x6F8FA` = `func_06F8FA`, the
+    popup window fill (`turn_dispatch.md` §4; pins segment `0x18`,
+    whose blind fit is weak) ✓
+  - thunk `0x11A8` (`0x191F:0x1A8`) → `0x789FA` = `func_0789FA`, the
+    resident string primitive (`turn_dispatch.md` §4) ✓
+
+  Note the "segment" seen in an `lcall`/far pointer (`0x181F`, `0x191F`,
+  `0x1A1F`, …) is a **position in the thunk table**, not a code segment:
+  table file pos = `0x2400 + seg·16 + off` (the table spans `0x1A5F0..
+  0x1D5E6` = segments `0x181F..0x1D1E`). A "runtime-installed far
+  pointer" like `[0xa644] = 0x1A1F:0x0F10` therefore resolves through
+  the same table (that one → type-B → file `0x12A66`, image-resident).
 
 This closed the last two blocked spec items (the `@RESOURCE` yield
 application point and the depletion writer — see
