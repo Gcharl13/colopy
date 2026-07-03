@@ -1,0 +1,5 @@
+record text.names_seasons {
+  section = "@SEASONS"
+  source  = "NAMES"
+  lines   = ["Spring", "Autumn"]
+}

@@ -1,0 +1,5 @@
+record text.menu_pedia {
+  section = "@PEDIA"
+  source  = "MENU"
+  lines   = ["~COLONIZOPEDIA", "  Cargo Types", "  Unit Types", "  Terrain Types", "  Colonist Skills", "  Colony Buildings", "  Founding Fathers", "  Miscellaneous", "  Complete"]
+}

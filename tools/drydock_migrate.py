@@ -186,6 +186,28 @@ def main():
         drift = emit(os.path.join("msge", rid.split(".", 1)[1] + ".rec"),
                      render(rid, fields), check, drift)
 
+    # TEXT: verbatim line-list sections from the <FILE>_sections.json extractions.
+    # Only sections consumed AS TEXT migrate; the NAMES CSV tables are typed
+    # records already (good/unit/prof/terr/bldg/natn/ffat) -- duplicating them
+    # as text would create dual authority.
+    TEXT_SECTIONS = [
+        ("LABELS", None),                 # all 7 label sections
+        ("COLONY", None),                 # the per-nation colony-name pools + @STOP
+        ("MENU", None),                   # the pulldown menus
+        ("NAMES", {"@SEASONS"}),          # the one NAMES section consumed as text
+    ]
+    for src_file, only in TEXT_SECTIONS:
+        secs = json.load(open(os.path.join(ROOT, f"data_extracted/text/{src_file}_sections.json")))
+        for sec in sorted(secs):
+            body = secs[sec]
+            if not isinstance(body, str) or (only is not None and sec not in only):
+                continue
+            rid = f"text.{src_file.lower()}_{re.sub(r'[^a-z0-9]+', '_', sec.lower()).strip('_')}"
+            fields = [("section", quote(sec)), ("source", quote(src_file)),
+                      ("lines", "[" + ", ".join(quote(l) for l in body.split("\n")) + "]")]
+            drift = emit(os.path.join("text", rid.split(".", 1)[1] + ".rec"),
+                         render(rid, fields), check, drift)
+
     # CONF: cfg.json knobs (value scalar OR ordered values list)
     cfg = json.load(open(os.path.join(ROOT, "data_extracted/engine/cfg.json")))
     for group, knobs in cfg["groups"].items():

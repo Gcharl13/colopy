@@ -1,0 +1,9 @@
+record schm.text {
+  version = 1
+  fields  = [
+    { name = "section", type = "str", required = true, doc = "Verbatim @SECTION name (the labels_section / /api/labels lookup key)" },
+    { name = "source", type = "str", required = true, doc = "Original .TXT sections file (LABELS | NAMES | COLONY | MENU) the /api/text overlay serves it back into" },
+    { name = "lines", type = "list<str>", required = true, ordered = true, doc = "Verbatim section lines; order is load-bearing (the specs cite line indices, e.g. @MISC[37] = the Congress title, @MISC[46] = OK). Only line-list sections migrate here -- the NAMES CSV tables are typed records (good/unit/prof/terr/bldg/natn/ffat), never duplicated as text" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

@@ -1,0 +1,5 @@
+record text.menu_view {
+  section = "@VIEW"
+  source  = "MENU"
+  lines   = ["~VIEW", "  ~Move Pieces", "  ~View Pieces", "  ~European Status", "  Find Colony", "  Zoom In#   ~Z", "  Zoom Out   ~X", "  Zoom Level 120 x 96", "  Zoom Level #60 x 48", "  Zoom Level #30 x 24", "  Zoom Level #15 x 12", "  Show ~Hidden Terrain", "  ~Center View"]
+}

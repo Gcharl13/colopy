@@ -1,0 +1,5 @@
+record text.menu_game {
+  section = "@GAME"
+  source  = "MENU"
+  lines   = ["~GAME", "  Game Options", "  Colony Report Options", "  Sound Options", "  Pick Music", "  Save Game", "  Load Game", "  DECLARE INDEPENDENCE", "  Retire", "  Exit to DOS"]
+}

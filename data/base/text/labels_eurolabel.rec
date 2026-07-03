@@ -1,0 +1,5 @@
+record text.labels_eurolabel {
+  section = "@EUROLABEL"
+  source  = "LABELS"
+  lines   = ["RECRUIT", "PURCHASE", "TRAIN", "x"]
+}

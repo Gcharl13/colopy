@@ -1,0 +1,5 @@
+record text.colony_english {
+  section = "@ENGLISH"
+  source  = "COLONY"
+  lines   = ["Jamestown,1607", "Plymouth,1620", "Roanoke,1585", "Barbados,1627", "Penobscot,1628", "Boston,1630", "Baltimore,1632", "Providence,1636", "Hartford,1636", "New Haven,1640", "New York,1664", "Albany,1664", "New Jersey,1666", "Charleston,1670", "Philadelphia,1682", "Newport", "Yorktown", "Annapolis,1708", "Halifax,1710", "Lexington", "Savannah", "Williamsburg", "St. John's", "Norfolk", "Concord", "Wilmington", "Richmond", "Portsmouth", "Camden", "Springfield", "Newport News", "Antigua", "Rupert House,1668", "Kingston", "Reading", "Ottawa"]
+}

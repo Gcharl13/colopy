@@ -101,6 +101,22 @@ static bool json_to_value(const JsonValue& j, const FieldDef& fd, Value& out, st
             if (!j.is_string()) { err = "expected ref id string"; return false; }
             out = Value::make_token(j.str);
             return true;
+        case FType::ListInt:
+        case FType::ListStr: {
+            if (!j.is_array()) { err = "expected array"; return false; }
+            std::vector<Value> xs;
+            for (const JsonValue& x : j.arr) {
+                if (fd.type == FType::ListInt) {
+                    if (!x.is_number()) { err = "expected number element"; return false; }
+                    xs.push_back(Value::make_int((long long)x.num));
+                } else {
+                    if (!x.is_string()) { err = "expected string element"; return false; }
+                    xs.push_back(Value::make_str(x.str));
+                }
+            }
+            out = Value::make_list(std::move(xs));
+            return true;
+        }
         default:
             err = "field kind not editable over the API yet";
             return false;
@@ -206,6 +222,60 @@ static DDMsgView dd_message_provider(const std::string& key) {
     return v;
 }
 
+// ---- TEXT consumer cutover: @SECTION line lists ---------------------------------
+// labels_section (main.cpp) and /api/text serve label/menu/name-pool lines; the
+// migrated sections come from the store. Index keeps the legacy source
+// precedence (LABELS, then NAMES, then COLONY; MENU sections don't collide).
+static std::unordered_map<std::string, std::string> g_text_index;   // "@MISC" -> record id
+
+static void rebuild_text_index() {
+    g_text_index.clear();
+    auto ti = g_store.type_index.find("text");
+    if (ti == g_store.type_index.end()) return;
+    static const char* PRECEDENCE[] = {"MENU", "COLONY", "NAMES", "LABELS"};   // later wins
+    for (const char* want : PRECEDENCE)
+        for (const Record& r : g_store.records[ti->second]) {
+            const Value* sec = r.find("section");
+            const Value* src = r.find("source");
+            if (sec && sec->kind == ValKind::Str && src && src->kind == ValKind::Str &&
+                src->s == want)
+                g_text_index[sec->s] = r.id;
+        }
+}
+
+bool drydock_text_lines(const std::string& section, std::vector<std::string>& out) {
+    if (!g_ready) return false;
+    auto it = g_text_index.find(section.rfind("@", 0) == 0 ? section : "@" + section);
+    if (it == g_text_index.end()) return false;
+    const Record* r = store_find(g_store, it->second);
+    const Value* lines = r ? r->find("lines") : nullptr;
+    if (!lines || lines->kind != ValKind::List) return false;
+    out.clear();
+    for (const Value& x : lines->list)
+        out.push_back(x.kind == ValKind::Str ? x.s : std::string());
+    return true;
+}
+
+void drydock_text_overlay(JsonValue& doc, const std::string& file) {
+    if (!g_ready || doc.type != JsonValue::Object) return;
+    auto ti = g_store.type_index.find("text");
+    if (ti == g_store.type_index.end()) return;
+    for (const Record& r : g_store.records[ti->second]) {
+        const Value* src = r.find("source");
+        const Value* sec = r.find("section");
+        const Value* lines = r.find("lines");
+        if (!src || src->kind != ValKind::Str || src->s != file) continue;
+        if (!sec || sec->kind != ValKind::Str || !lines || lines->kind != ValKind::List) continue;
+        std::string joined;
+        for (size_t i = 0; i < lines->list.size(); ++i) {
+            if (i) joined += '\n';
+            if (lines->list[i].kind == ValKind::Str) joined += lines->list[i].s;
+        }
+        JsonValue v; v.type = JsonValue::String; v.str = std::move(joined);
+        doc.obj[sec->s] = std::move(v);
+    }
+}
+
 bool drydock_messages_json(std::string& out) {
     if (!g_ready) return false;
     JsonValue rows; rows.type = JsonValue::Array;
@@ -234,6 +304,7 @@ bool drydock_messages_json(std::string& out) {
 static void sync_rules(vc::sim::RuleData* rd) {
     drydock_repatch_tables();
     rebuild_msg_index();               // key edits retarget the @KEY lookups
+    rebuild_text_index();
     if (!rd) return;
     std::vector<Record> all;
     for (const auto& bucket : g_store.records)
@@ -271,6 +342,7 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg) {
     g_ready = true;
     drydock_repatch_tables();      // legacy JSON readers follow the store from boot
     rebuild_msg_index();
+    rebuild_text_index();
     dd_message_hook = dd_message_provider;   // @KEY message lookups cut over
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();

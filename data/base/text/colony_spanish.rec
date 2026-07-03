@@ -1,0 +1,5 @@
+record text.colony_spanish {
+  section = "@SPANISH"
+  source  = "COLONY"
+  lines   = ["Isabella", "Santo Domingo", "San Salvador", "Veracruz", "Havana", "Trinidad", "San Juan", "Panama", "Cartajena", "St. Augustine", "Lima", "Buenos Aires", "Guatemala", "Honduras", "Potosi", "Santiago", "Guadalajara", "Asuncion", "Managua", "Costa Rica", "Santa Fe", "Los Angeles", "Bogota", "Corpus Christi", "Acapulco", "Santa Marta", "San Agostin", "Caracas", "Tobago", "San Francisco", "Santiago", "San Diego", "San Angelo", "El Paso", "Cancun", "Valparaiso", "Concepcion", "La Plata", "Port of Spain"]
+}

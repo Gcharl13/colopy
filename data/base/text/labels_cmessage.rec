@@ -1,0 +1,5 @@
+record text.labels_cmessage {
+  section = "@CMESSAGE"
+  source  = "LABELS"
+  lines   = ["bought for", "sold for", "moved to", ". Price:", "No room for", "Nothing to transport", "Not enough", "to fill cargo hold!", "too expensive!", "No", "in cargo hold!", "Nothing to transfer!", "at", "Buying", "Selling", "Loading", "Unloading", "% Tax:", ". Net:"]
+}

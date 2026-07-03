@@ -1,0 +1,5 @@
+record text.labels_info {
+  section = "@INFO"
+  source  = "LABELS"
+  lines   = ["Moves:", "Locat:", "With:", "With:"]
+}

@@ -6,8 +6,10 @@
 // changed records").
 #pragma once
 #include "httpd.hpp"
+#include "json.hpp"
 #include "rules.hpp"
 #include <string>
+#include <vector>
 
 namespace forge {
 
@@ -31,6 +33,15 @@ void drydock_repatch_tables();
 // the legacy messages.json: {"messages":[{key,text,box_w,x,y,sprite,speaker,
 // default}...]}). False when the store is not loaded (caller serves the file).
 bool drydock_messages_json(std::string& out);
+
+// Store-authoritative @SECTION text lines (the labels_section cutover).
+// Accepts "MISC" or "@MISC". False when the store is off or the section is
+// not migrated -- the caller falls back to the frozen _sections.json.
+bool drydock_text_lines(const std::string& section, std::vector<std::string>& out);
+
+// Overlay the migrated sections of <file>_sections.json (file = "LABELS" |
+// "NAMES" | "COLONY" | "MENU") with the store's text records, in place.
+void drydock_text_overlay(JsonValue& doc, const std::string& file);
 
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).

@@ -1,0 +1,5 @@
+record text.labels_ctitle {
+  section = "@CTITLE"
+  source  = "LABELS"
+  lines   = ["Pop:", "Gold:", "BUY", "CHANGE", "Select An Item To Build", "(No Production)", "(More)", "Turns)", "Select a Profession for", "Tax:"]
+}

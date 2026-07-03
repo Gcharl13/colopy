@@ -1,0 +1,5 @@
+record text.menu_cup {
+  section = "@CUP"
+  source  = "MENU"
+  lines   = ["~CHEAT", "  ~F~0~1 Create Unit", "  ~F~0~2 Debug Info Flags", "  ~F~0~4 Reveal Map", "  ~F~0~5 Set Human Player", "  ~F~0~6 Kill Indians", "  ~F~0~7 Advance Revolution Status", "  Sound Test", "  Memory Check", "  ~F~0~8 Show Strategy", "  ~F~0~9 Show Colony Sites", "  ~F~0~1~0 Test Routine"]
+}

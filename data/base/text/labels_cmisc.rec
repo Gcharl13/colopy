@@ -1,0 +1,5 @@
+record text.labels_cmisc {
+  section = "@CMISC"
+  source  = "LABELS"
+  lines   = ["Harvest / Resources", "Units Present", "Make"]
+}

@@ -2351,6 +2351,12 @@ static void congress_step(forge::EngineExtra& x, int diff, int year, int bells_t
 // NAMES.TXT (@SEASONS/...) and COLONY.TXT (the per-nation colony-name pools) -- every screen
 // string is pulled from these files, never authored.
 static const std::vector<std::string>& labels_section(const char* section) {
+    if (forge::drydock_active()) {              // store-authoritative when loaded;
+        static std::map<std::string, std::vector<std::string>> live;   // re-read every
+        std::vector<std::string> lines;                                 // call so edits follow
+        if (forge::drydock_text_lines(section, lines))
+            return live[section] = std::move(lines);
+    }
     static std::map<std::string, std::vector<std::string>> cache;
     auto it = cache.find(section);
     if (it != cache.end()) return it->second;
@@ -3106,10 +3112,15 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         }
 
         if (path == "/api/text") {
-            // Real game strings from data_extracted/text/<FILE>_sections.json (default GAME).
+            // Real game strings from data_extracted/text/<FILE>_sections.json (default GAME);
+            // sections migrated to Drydock TEXT records are overlaid from the store.
             std::string file = qparam(query, "file"); if (file.empty()) file = "GAME";
             for (char c : file) if (!std::isalnum((unsigned char)c) && c != '_') return err(400, "bad file");
-            try { return J(200, forge::json_parse_file("data_extracted/text/" + file + "_sections.json")); }
+            try {
+                forge::JsonValue d = forge::json_parse_file("data_extracted/text/" + file + "_sections.json");
+                forge::drydock_text_overlay(d, file);
+                return J(200, d);
+            }
             catch (const std::exception& e) { return err(404, e.what()); }
         }
 

@@ -1,0 +1,5 @@
+record text.menu_end {
+  section = "@END"
+  source  = "MENU"
+  lines   = [""]
+}

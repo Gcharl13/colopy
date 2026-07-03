@@ -1,0 +1,5 @@
+record text.menu_trade {
+  section = "@TRADE"
+  source  = "MENU"
+  lines   = ["~TRADE", "  Edit Trade Route", "  Create Trade Route", "  Delete Trade Route"]
+}

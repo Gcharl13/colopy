@@ -1,0 +1,5 @@
+record text.menu_orders {
+  section = "@ORDERS"
+  source  = "MENU"
+  lines   = ["~ORDERS", "  ~Activate unit", "  ~Wait for next unit", "  ~Fortify", "  ~Fortify", "  ~Sentry", "  ~Build Colony", "  Join Colony (~B)", "  Clear Forest (~P)", "  Plow Fields  (~P)", "  Build ~Road", "  ~Load Cargo", "  ~Unload Cargo", "  ~Pillage", "  ~Go to Port", "  ~Go to Place", "  Begin ~Trade Route", "  ~Return to Europe", "  No Orders (~s~p~a~c~e~ bar)", "  Dump Cargo ~Overboard", "  Disband Unit (~s~h~i~f~t~-~D)"]
+}

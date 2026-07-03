@@ -1,0 +1,5 @@
+record text.colony_dutch {
+  section = "@DUTCH"
+  source  = "COLONY"
+  lines   = ["New Amsterdam", "Fort Orange", "Fort Nassau", "New Holland", "Vlissingen", "Curacao", "Recife", "Bahia", "Paramaribo", "Pernambuco", "St. Martin", "St. Eustatius", "Essequibo", "Berbice", "Surinam", "Paraiba", "Bonaire", "Willemstad", "Aruba", "Santa Catharina", "Saba", "Utrecht", "Haarlem", "Tappans", "Hoboken", "Rensselaerswyck", "Nederhorst", "Fort Cristina", "Gottenburgh", "Fort Kasimiris", "Fort Elsenburgh", "Naiack"]
+}

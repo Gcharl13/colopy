@@ -1,0 +1,5 @@
+record text.labels_route {
+  section = "@ROUTE"
+  source  = "LABELS"
+  lines   = ["EDIT TRADE ROUTE", "Route Name:", "Route Type:", "Sea", "Land", "Destination", "Unload Cargo", "Load Cargo", "(Delete Destination)"]
+}

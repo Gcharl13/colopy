@@ -1,0 +1,5 @@
+record text.menu_reports {
+  section = "@REPORTS"
+  source  = "MENU"
+  lines   = ["~REPORTS", "  ~F~1 Terrain Information", "  ~F~2 Religious Adviser", "  ~F~3 Continental Congress", "  ~F~4 Labor Adviser", "  ~F~5 Economic Adviser", "  ~F~6 Colony Adviser", "  ~F~7 Naval Adviser", "  ~F~8 Foreign Affairs Advisor", "  ~F~9 Indian Adviser", "  ~F~1~0 Colonization Score"]
+}
