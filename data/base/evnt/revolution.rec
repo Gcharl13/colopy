@@ -1,0 +1,6 @@
+record evnt.revolution {
+  name     = "Revolution"
+  vars     = [{ do = "CanDeclareIndependence", id = "can" }, { do = "PickText", id = "genName", options = "Washington" }]
+  steps    = [{ do = "OnSoLThreshold" }, { args = { cond = "$can" }, branches = [{ pin = "true", steps = [{ do = "DeclareIndependence" }, { do = "MobilizeREF" }, { args = { str0 = "$genName" }, choices = "Liberty or death!", do = "ShowPopup", textKey = "@INDEPENDENCE" }] }], do = "Branch" }]
+  comments = [{ text = "Revolution trigger (spec/systems/revolution.md): when the national SoL allows it (can_declare_independence, >=50%), declare independence and mobilize the King's Expeditionary Force; below the floor it is silent.", x = 20, y = -80 }]
+}

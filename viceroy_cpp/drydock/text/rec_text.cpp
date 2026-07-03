@@ -118,7 +118,9 @@ struct Lex {
     bool value(Value& out, int depth) {
         skip_ws();
         if (p >= end) return fail("expected value");
-        if (depth > 4) return fail("list nesting too deep");
+        // runaway-nesting guard. Raised from 4 for the typed event trees
+        // (EVNT-3): steps nest branches nest steps -- kings_tax reaches ~14.
+        if (depth > 32) return fail("list nesting too deep");
         char c = *p;
         if (c == '"') { std::string s; if (!string_lit(s)) return false; out = Value::make_str(std::move(s)); return true; }
         if (c == '[') {

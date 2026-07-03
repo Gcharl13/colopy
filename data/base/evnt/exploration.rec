@@ -1,0 +1,6 @@
+record evnt.exploration {
+  name     = "Exploration / Scouting"
+  vars     = [{ do = "Formula", expr = "roll(1,10) >= 9", id = "rumor_gate" }]
+  steps    = [{ do = "OnUnitEntersTile" }, { args = { cond = "$rumor_gate" }, branches = [{ pin = "true", steps = [{ do = "FireEvent", graph = "lost_city" }] }], do = "Branch" }]
+  comments = [{ text = "Scouting (spec/systems/exploration.md): entering an unexplored tile reveals it; ~1-in-5 (roll(1,10)>=9) a lost-city rumor fires the lost_city event. Otherwise nothing of note (silent).", x = 20, y = -80 }]
+}

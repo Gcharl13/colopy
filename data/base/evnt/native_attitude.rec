@@ -1,0 +1,6 @@
+record evnt.native_attitude {
+  name     = "Native Attitude"
+  vars     = [{ do = "Formula", expr = "natives.tension >= 80", id = "atwar" }, { do = "Formula", expr = "(natives.tension>=20)+(natives.tension>=40)+(natives.tension>=60)+(natives.tension>=80)", id = "band" }, { args = { index = "$band" }, column = "name", do = "TableLookup", id = "name", section = "@ATTITUDE" }]
+  steps    = [{ do = "OnNativeAttitude" }, { args = { cond = "$atwar" }, branches = [{ pin = "false", steps = [{ args = { str0 = "$name" }, body = "Our scouts report the natives' mood toward our colonies: %STRING0.", choices = "Noted.", do = "ShowPopup", title = "Tribal Relations" }] }, { pin = "true", steps = [{ a = "0", b = "3", do = "DeclareWar" }, { args = { str0 = "$name" }, body = "The natives have reached open %STRING0 -- braves take up arms against our colonies!", choices = "To the walls!", do = "ShowPopup", title = "War!", woodcut = "WDCUT13" }] }], do = "Branch" }]
+  comments = [{ text = "Native attitude (spec/systems/natives.md @0x048B62), rebuilt. The colonial-presence alarm bands into the 5 @ATTITUDE levels (Content/Uneasy/Restless/Angry/War); War (alarm>=128, modeled tension>=80) declares war. The band name is read live from the @ATTITUDE table.", x = 20, y = -90 }]
+}

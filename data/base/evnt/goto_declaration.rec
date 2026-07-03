@@ -1,4 +1,4 @@
 record evnt.goto_declaration {
   name  = "Go to declaration"
-  steps = [{ op = "OnTestFire" }, { op = "Navigate", screen = "declaration" }]
+  steps = [{ do = "OnTestFire" }, { do = "Navigate", screen = "declaration" }]
 }

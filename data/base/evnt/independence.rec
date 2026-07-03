@@ -1,0 +1,6 @@
+record evnt.independence {
+  name     = "Declare Independence"
+  vars     = [{ do = "PickText", id = "ann_str0", options = "Washington" }, { do = "GetState", id = "confirm_str0", path = "@COUNTRY[0].name" }, { do = "Formula", expr = "revolution.sol >= 50", id = "gate" }, { do = "GetState", id = "tootory_num0", path = "revolution.sol" }]
+  steps    = [{ do = "OnPlayerCommand" }, { args = { cond = "$gate" }, branches = [{ pin = "false", steps = [{ args = { num0 = "$tootory_num0" }, choices = "We shall build more bells.", do = "ShowPopup", textKey = "@TOOTORY" }] }, { pin = "true", steps = [{ args = { str0 = "$confirm_str0" }, branches = [{ pin = "Declare independence!", steps = [{ do = "DeclareIndependence" }, { do = "MobilizeREF" }, { args = { str0 = "$ann_str0" }, choices = "Liberty or death!", do = "ShowPopup", textKey = "@INDEPENDENCE" }] }], choices = "Declare independence!,Not yet", do = "ShowPopup", textKey = "@DECLARE" }] }], do = "Branch" }]
+  comments = [{ text = "Declaring independence is a PLAYER MENU COMMAND (OnPlayerCommand), never an automatic per-turn event. When invoked it checks national SoL: below 50%% it shows @TOOTORY and refuses; at/above 50%% it asks @DECLARE, and on confirm fires DeclareIndependence + MobilizeREF + the @INDEPENDENCE announcement.", x = 20, y = -90 }]
+}

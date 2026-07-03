@@ -1,0 +1,6 @@
+record evnt.trade_route {
+  name     = "Trade Route"
+  vars     = [{ do = "Formula", expr = "100*@CARGO[10].price_start1 - 100*@CARGO[10].price_start1*power0.tax/100", id = "net" }, { do = "Formula", expr = "100*@CARGO[10].price_start1*power0.tax/100", id = "taxtaken" }]
+  steps    = [{ do = "OnPlayerCommand" }, { args = { amount = "$net" }, do = "GrantGold", power = "0" }, { args = { num0 = "$net", num1 = "$taxtaken" }, body = "The cargo sells for {%NUMBER0} gold after the Crown takes {%NUMBER1} in tax.", choices = "Good trade.", do = "ShowPopup", title = "Goods Sold in Europe" }]
+  comments = [{ text = "Selling goods in Europe is a PLAYER MENU COMMAND (OnPlayerCommand), not an automatic per-turn sale. When invoked it sells the cargo at the European price less the Crown's tax cut and credits the net to the treasury (@ shows the sale).", x = 20, y = -90 }]
+}

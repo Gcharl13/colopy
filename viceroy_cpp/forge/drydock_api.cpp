@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <sstream>
 
 namespace forge {
@@ -448,12 +449,19 @@ static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd
 // canvas save reclassifies (still a chain -> evnt, gained branches -> grph),
 // and every save is a journaled store edit.
 
-// A typed event shape: one On* trigger, a single out->in exec path, optional
-// edge-free Comment annotations, optional FLAT single-consumer data producers
-// (value pin) feeding step pins. Returns the typed steps (+ comments), or false
-// (branches, exec fan-out, shared producers -- an impure Roll must never be
-// duplicated -- stay in the lossless grph form).
-static bool graph_as_steps(const JsonValue& graph, JsonValue& steps_out, JsonValue& comments_out) {
+// The FULL typed event form (spec 8, EVNT-3). Exec flow decompiles to a
+// nested step tree: { do = <Type>, ...params, args = { <pin> = "$<var>" },
+// branches = [{ pin = <label>, steps = [...] }] }, the 'out' continuation
+// being the next step in the enclosing list. Data producers hoist to `vars`
+// (a DAG keyed by original node id; sharing is exact -- one node, many
+// consumers -- so an impure Roll still rolls once). Exec JOINS are walked once
+// per inbound path -- the tail is DUPLICATED (behavior identical: each run
+// executes one path). Comments carry losslessly. Only true cycles,
+// multi-triggers and mixed/multi-'out' pins fall back to the lossless grph
+// form. The type key is `do` ("op" is a real Math/Compare param); compiled
+// synthetic node ids are '#'-prefixed (no authored id starts with '#').
+static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
+                           JsonValue& steps_out, JsonValue& comments_out) {
     const JsonValue* nodes = graph.find("nodes");
     if (!nodes || !nodes->is_array()) return false;
     const JsonValue* trig = nullptr;
@@ -478,76 +486,114 @@ static bool graph_as_steps(const JsonValue& graph, JsonValue& steps_out, JsonVal
         if (ty->str.rfind("On", 0) == 0) { if (trig) return false; trig = &n; }
     }
     if (!trig) return false;
-    std::map<std::string, std::string> nxt;
-    std::map<std::string, int> indeg, outdeg, data_indeg;
-    std::map<std::string, std::vector<std::pair<std::string, std::string>>> data_in;
-    if (const JsonValue* edges = graph.find("edges"); edges && edges->is_array()) {
-        for (const JsonValue& e : edges->arr)
-            ++outdeg[e.find("from")->find("node")->str];
+    // edges: exec successors (pin -> target) and data feeds (pin <- producer)
+    std::map<std::string, std::map<std::string, std::string>> succ;   // node -> pin -> target
+    std::map<std::string, std::map<std::string, std::string>> data_in; // node -> pin -> producer
+    std::set<std::string> has_exec;
+    if (const JsonValue* edges = graph.find("edges"); edges && edges->is_array())
         for (const JsonValue& e : edges->arr) {
             const JsonValue* f = e.find("from");
             const JsonValue* t = e.find("to");
-            if (!f || !t) return false;
+            if (!f || !t || !f->find("node") || !t->find("node") ||
+                !f->find("pin") || !t->find("pin")) return false;
             const std::string fn = f->find("node")->str, tn = t->find("node")->str;
             if (comment_ids.count(fn) || comment_ids.count(tn)) return false;
-            if (t->find("pin")->str == "in") {            // exec edge
-                if (f->find("pin")->str != "out" || nxt.count(fn)) return false;
-                nxt[fn] = tn;
-                if (++indeg[tn] > 1) return false;
+            if (t->find("pin")->str == "in") {             // exec edge
+                if (!succ[fn].emplace(f->find("pin")->str, tn).second)
+                    return false;                          // duplicate pin (multi-out)
+                has_exec.insert(fn); has_exec.insert(tn);
             } else {                                       // data edge
-                if (f->find("pin")->str != "value" || outdeg[fn] != 1) return false;
-                ++data_indeg[fn];                          // (checked as consumer below)
-                data_in[tn].push_back({t->find("pin")->str, fn});
+                if (f->find("pin")->str != "value") return false;
+                if (!data_in[tn].emplace(t->find("pin")->str, fn).second)
+                    return false;                          // two feeds into one pin
             }
         }
-    }
     std::set<std::string> producers;
-    for (const auto& [tn, lst] : data_in)
-        for (const auto& [pin, src] : lst) {
-            if (nxt.count(src) || indeg.count(src) || data_in.count(src)) return false;
-            producers.insert(src);
-        }
-    steps_out = JsonValue{}; steps_out.type = JsonValue::Array;
-    std::set<std::string> seen;
-    const JsonValue* cur = trig;
-    while (cur) {
-        JsonValue step; step.type = JsonValue::Object;
-        step.obj["op"] = json_str(cur->find("type")->str);
-        if (const JsonValue* p = cur->find("params"); p && p->is_object())
-            for (const auto& [k, v] : p->obj) {
-                if (k == "op" || k == "args") return false;
-                step.obj[k] = v;
-            }
-        const std::string cid = cur->find("id")->str;
-        if (auto di = data_in.find(cid); di != data_in.end()) {
-            JsonValue args; args.type = JsonValue::Object;
-            for (const auto& [pin, src] : di->second) {
-                const JsonValue* pn = byid[src];
-                JsonValue a; a.type = JsonValue::Object;
-                a.obj["op"] = json_str(pn->find("type")->str);
-                if (const JsonValue* pp = pn->find("params"); pp && pp->is_object())
-                    for (const auto& [k, v] : pp->obj) {
-                        if (k == "op") return false;
-                        a.obj[k] = v;
-                    }
-                args.obj[pin] = std::move(a);
-            }
-            step.obj["args"] = std::move(args);
-        }
-        steps_out.arr.push_back(std::move(step));
-        seen.insert(cid);
-        auto it = nxt.find(cid);
-        if (it == nxt.end()) break;
-        if (seen.count(it->second)) return false;
-        auto b = byid.find(it->second);
-        if (b == byid.end()) return false;
-        cur = b->second;
+    for (const auto& [tn, feeds] : data_in)
+        for (const auto& [pin, src] : feeds) producers.insert(src);
+    for (const std::string& pid : producers) {
+        if (has_exec.count(pid)) return false;             // producers never exec
+        auto b = byid.find(pid);
+        if (b == byid.end() || b->second->find("type")->str.rfind("On", 0) == 0)
+            return false;
+        if (!pid.empty() && pid[0] == '#') return false;   // reserved synthetic prefix
     }
-    return seen.size() + producers.size() + comment_ids.size() == byid.size();
+    for (const auto& [n, pins] : succ)                     // no out+label mix
+        if (pins.count("out") && pins.size() > 1) return false;
+    // vars: every producer, sorted by id (std::set iterates sorted)
+    vars_out = JsonValue{}; vars_out.type = JsonValue::Array;
+    for (const std::string& pid : producers) {
+        const JsonValue* pn = byid[pid];
+        JsonValue v; v.type = JsonValue::Object;
+        v.obj["do"] = json_str(pn->find("type")->str);
+        v.obj["id"] = json_str(pid);
+        if (const JsonValue* pp = pn->find("params"); pp && pp->is_object())
+            for (const auto& [k, val] : pp->obj) {
+                if (k == "do" || k == "id" || k == "args") return false;
+                v.obj[k] = val;
+            }
+        if (auto di = data_in.find(pid); di != data_in.end()) {
+            JsonValue args; args.type = JsonValue::Object;
+            for (const auto& [pin, src] : di->second)
+                args.obj[pin] = json_str("$" + src);
+            v.obj["args"] = std::move(args);
+        }
+        vars_out.arr.push_back(std::move(v));
+    }
+    // exec tree with per-path cycle detection; joins re-walk (tail duplication)
+    std::set<std::string> emitted;
+    std::function<bool(const std::string&, std::set<std::string>, JsonValue&)> walk =
+        [&](const std::string& start, std::set<std::string> path, JsonValue& list) -> bool {
+        list = JsonValue{}; list.type = JsonValue::Array;
+        std::string cur = start;
+        while (!cur.empty()) {
+            if (path.count(cur)) return false;             // true cycle
+            path.insert(cur);
+            auto b = byid.find(cur);
+            if (b == byid.end()) return false;
+            const JsonValue* n = b->second;
+            JsonValue step; step.type = JsonValue::Object;
+            step.obj["do"] = json_str(n->find("type")->str);
+            if (const JsonValue* p = n->find("params"); p && p->is_object())
+                for (const auto& [k, v] : p->obj) {
+                    if (k == "do" || k == "args" || k == "branches") return false;
+                    step.obj[k] = v;
+                }
+            if (auto di = data_in.find(cur); di != data_in.end()) {
+                JsonValue args; args.type = JsonValue::Object;
+                for (const auto& [pin, src] : di->second)
+                    args.obj[pin] = json_str("$" + src);
+                step.obj["args"] = std::move(args);
+            }
+            emitted.insert(cur);
+            std::string nxt;
+            JsonValue branches; branches.type = JsonValue::Array;
+            if (auto s = succ.find(cur); s != succ.end())
+                for (const auto& [pin, tgt] : s->second) { // std::map: pin-sorted
+                    if (pin == "out") { nxt = tgt; continue; }
+                    JsonValue br; br.type = JsonValue::Object;
+                    br.obj["pin"] = json_str(pin);
+                    JsonValue body;
+                    if (!walk(tgt, path, body)) return false;
+                    br.obj["steps"] = std::move(body);
+                    branches.arr.push_back(std::move(br));
+                }
+            if (!branches.arr.empty()) step.obj["branches"] = std::move(branches);
+            list.arr.push_back(std::move(step));
+            cur = nxt;
+        }
+        return true;
+    };
+    if (!walk(trig->find("id")->str, {}, steps_out)) return false;
+    // coverage: every non-comment node is exec-reached or a producer
+    for (const auto& [nid, n] : byid)
+        if (!comment_ids.count(nid) && !emitted.count(nid) && !producers.count(nid))
+            return false;
+    return true;
 }
 
-// evnt steps -> graph JSON the interpreter runs (deterministic layout: the
-// chain on one row, each step's data producers below it, comments verbatim)
+// evnt record -> graph JSON the interpreter runs. Deterministic layout: the
+// exec tree left-to-right/top-down, vars in a column beneath, comments verbatim.
 static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& out) {
     const Value* steps = r.find("steps");
     if (!steps || steps->kind != ValKind::List) return false;
@@ -557,66 +603,115 @@ static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& o
         out.obj["name"] = json_str(n->s);
     JsonValue nodes; nodes.type = JsonValue::Array;
     JsonValue edges; edges.type = JsonValue::Array;
-    auto exec_edge = [&](const std::string& a, const std::string& b) {
+    auto edge = [&](const std::string& an, const std::string& ap,
+                    const std::string& bn, const std::string& bp) {
         JsonValue e; e.type = JsonValue::Object;
         JsonValue f; f.type = JsonValue::Object;
-        f.obj["node"] = json_str(a); f.obj["pin"] = json_str("out");
+        f.obj["node"] = json_str(an); f.obj["pin"] = json_str(ap);
         JsonValue t; t.type = JsonValue::Object;
-        t.obj["node"] = json_str(b); t.obj["pin"] = json_str("in");
+        t.obj["node"] = json_str(bn); t.obj["pin"] = json_str(bp);
         e.obj["from"] = std::move(f); e.obj["to"] = std::move(t);
         edges.arr.push_back(std::move(e));
     };
-    for (size_t i = 0; i < steps->list.size(); ++i) {
-        const Value& s = steps->list[i];
-        if (s.kind != ValKind::Dict) return false;
-        const std::string sid = "s" + std::to_string(i);
-        JsonValue n; n.type = JsonValue::Object;
-        n.obj["id"] = json_str(sid);
-        n.obj["x"] = json_num(40.0 + 220.0 * (double)i);
-        n.obj["y"] = json_num(60);
-        JsonValue params; params.type = JsonValue::Object;
-        for (size_t k = 0; k < s.keys.size(); ++k) {
-            if (s.keys[k] == "op") { n.obj["type"] = json_str(s.list[k].s); continue; }
-            if (s.keys[k] == "args") {                     // data producers below the step
-                const Value& args = s.list[k];
-                if (args.kind != ValKind::Dict) return false;
-                for (size_t a = 0; a < args.keys.size(); ++a) {
-                    const Value& prod = args.list[a];
-                    if (prod.kind != ValKind::Dict) return false;
-                    const std::string pid = sid + "_" + args.keys[a];
-                    JsonValue pn; pn.type = JsonValue::Object;
-                    pn.obj["id"] = json_str(pid);
-                    pn.obj["x"] = json_num(40.0 + 220.0 * (double)i);
-                    pn.obj["y"] = json_num(170.0 + 70.0 * (double)a);
-                    JsonValue pp; pp.type = JsonValue::Object;
-                    for (size_t q = 0; q < prod.keys.size(); ++q) {
-                        if (prod.keys[q] == "op") { pn.obj["type"] = json_str(prod.list[q].s); continue; }
-                        pp.obj[prod.keys[q]] = value_to_json(prod.list[q]);
+    // vars first: node id = var id verbatim (round-trips), args -> data edges
+    if (const Value* vars = r.find("vars")) {
+        if (vars->kind != ValKind::List) return false;
+        double vy = 420;
+        for (const Value& v : vars->list) {
+            if (v.kind != ValKind::Dict) return false;
+            JsonValue pn; pn.type = JsonValue::Object;
+            JsonValue pp; pp.type = JsonValue::Object;
+            std::string vid;
+            for (size_t k = 0; k < v.keys.size(); ++k) {
+                const std::string& key = v.keys[k];
+                if (key == "do") { pn.obj["type"] = json_str(v.list[k].s); continue; }
+                if (key == "id") { vid = v.list[k].s; continue; }
+                if (key == "args") {
+                    const Value& a = v.list[k];
+                    if (a.kind != ValKind::Dict) return false;
+                    for (size_t q = 0; q < a.keys.size(); ++q) {
+                        const Value& ref = a.list[q];
+                        if (ref.kind != ValKind::Str || ref.s.empty() || ref.s[0] != '$')
+                            return false;
+                        // consumer id resolved after we know vid -- defer below
                     }
-                    pn.obj["params"] = std::move(pp);
-                    nodes.arr.push_back(std::move(pn));
-                    JsonValue e; e.type = JsonValue::Object;
-                    JsonValue f; f.type = JsonValue::Object;
-                    f.obj["node"] = json_str(pid); f.obj["pin"] = json_str("value");
-                    JsonValue t; t.type = JsonValue::Object;
-                    t.obj["node"] = json_str(sid); t.obj["pin"] = json_str(args.keys[a]);
-                    e.obj["from"] = std::move(f); e.obj["to"] = std::move(t);
-                    edges.arr.push_back(std::move(e));
+                    continue;
                 }
-                continue;
+                pp.obj[key] = value_to_json(v.list[k]);
             }
-            params.obj[s.keys[k]] = value_to_json(s.list[k]);
+            if (vid.empty() || vid[0] == '#') return false;
+            pn.obj["id"] = json_str(vid);
+            pn.obj["x"] = json_num(40);
+            pn.obj["y"] = json_num(vy); vy += 70;
+            pn.obj["params"] = std::move(pp);
+            nodes.arr.push_back(std::move(pn));
+            if (const Value* a = v.dict_get("args"))
+                for (size_t q = 0; q < a->keys.size(); ++q)
+                    edge(a->list[q].s.substr(1), "value", vid, a->keys[q]);
         }
-        n.obj["params"] = std::move(params);
-        nodes.arr.push_back(std::move(n));
-        if (i) exec_edge("s" + std::to_string(i - 1), sid);
     }
+    // exec tree: nodes #s<counter>, DFS; branch pin edges to each body's head
+    int counter = 0;
+    std::function<bool(const Value&, int, std::string&)> emit_list =
+        [&](const Value& list, int depth, std::string& head) -> bool {
+        if (list.kind != ValKind::List) return false;
+        std::string prev;
+        head.clear();
+        for (const Value& s : list.list) {
+            if (s.kind != ValKind::Dict) return false;
+            const std::string sid = "#s" + std::to_string(counter++);
+            if (head.empty()) head = sid;
+            JsonValue n; n.type = JsonValue::Object;
+            n.obj["id"] = json_str(sid);
+            n.obj["x"] = json_num(40.0 + 220.0 * (double)(counter - 1));
+            n.obj["y"] = json_num(60.0 + 90.0 * (double)depth);
+            JsonValue params; params.type = JsonValue::Object;
+            const Value* branches = nullptr;
+            for (size_t k = 0; k < s.keys.size(); ++k) {
+                const std::string& key = s.keys[k];
+                if (key == "do") { n.obj["type"] = json_str(s.list[k].s); continue; }
+                if (key == "branches") { branches = &s.list[k]; continue; }
+                if (key == "args") {
+                    const Value& a = s.list[k];
+                    if (a.kind != ValKind::Dict) return false;
+                    for (size_t q = 0; q < a.keys.size(); ++q) {
+                        const Value& ref = a.list[q];
+                        if (ref.kind != ValKind::Str || ref.s.empty() || ref.s[0] != '$')
+                            return false;
+                        edge(ref.s.substr(1), "value", sid, a.keys[q]);
+                    }
+                    continue;
+                }
+                params.obj[key] = value_to_json(s.list[k]);
+            }
+            if (!n.find("type")) return false;
+            n.obj["params"] = std::move(params);
+            nodes.arr.push_back(std::move(n));
+            if (!prev.empty()) edge(prev, "out", sid, "in");
+            prev = sid;
+            if (branches) {
+                if (branches->kind != ValKind::List) return false;
+                for (const Value& br : branches->list) {
+                    if (br.kind != ValKind::Dict) return false;
+                    const Value* pin = br.dict_get("pin");
+                    const Value* body = br.dict_get("steps");
+                    if (!pin || pin->kind != ValKind::Str || !body) return false;
+                    std::string bhead;
+                    if (!emit_list(*body, depth + 1, bhead)) return false;
+                    if (!bhead.empty()) edge(sid, pin->s, bhead, "in");
+                }
+            }
+        }
+        return true;
+    };
+    std::string head;
+    if (!emit_list(*steps, 0, head)) return false;
     if (const Value* cs = r.find("comments"); cs && cs->kind == ValKind::List)
         for (size_t j = 0; j < cs->list.size(); ++j) {
             const Value& c = cs->list[j];
             if (c.kind != ValKind::Dict) continue;
             JsonValue cn; cn.type = JsonValue::Object;
-            cn.obj["id"] = json_str("c" + std::to_string(j));
+            cn.obj["id"] = json_str("#c" + std::to_string(j));
             cn.obj["type"] = json_str("Comment");
             JsonValue cp; cp.type = JsonValue::Object;
             for (size_t k = 0; k < c.keys.size(); ++k) {
@@ -658,18 +753,20 @@ static bool dd_graph_load(const std::string& id, JsonValue& out) {
 }
 
 static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::string& err) {
-    JsonValue steps, comments;
-    const bool chain = graph_as_steps(graph, steps, comments);
-    const bool has_comments = chain && !comments.arr.empty();
-    const std::string rid = std::string(chain ? "evnt." : "grph.") + id;
-    const std::string other = std::string(chain ? "grph." : "evnt.") + id;
+    JsonValue vars, steps, comments;
+    const bool typed = graph_as_typed(graph, vars, steps, comments);
+    const bool has_vars = typed && !vars.arr.empty();
+    const bool has_comments = typed && !comments.arr.empty();
+    const std::string rid = std::string(typed ? "evnt." : "grph.") + id;
+    const std::string other = std::string(typed ? "grph." : "evnt.") + id;
     if (store_find(g_store, other) && !store_delete(g_store, other, err))
         return false;                                     // reclassified: drop the old form
     if (!store_find(g_store, rid)) {                      // new/reclassified: add COMPLETE
         Record nr; nr.id = rid;                           // (store_add validates required fields)
         if (const JsonValue* n = graph.find("name"))
             nr.fields.push_back({"name", json_any_to_value(*n)});
-        if (chain) {
+        if (typed) {
+            if (has_vars) nr.fields.push_back({"vars", json_any_to_value(vars)});
             nr.fields.push_back({"steps", json_any_to_value(steps)});
             if (has_comments)
                 nr.fields.push_back({"comments", json_any_to_value(comments)});
@@ -693,13 +790,15 @@ static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::st
         return store_set(g_store, rid, f, &val, err);
     };
     if (!put("name", graph.find("name"))) return false;
-    if (chain) {
+    if (typed) {
+        if (!put("vars", has_vars ? &vars : nullptr)) return false;
         if (!put("steps", &steps)) return false;
         return put("comments", has_comments ? &comments : nullptr);
     }
     if (!put("nodes", graph.find("nodes"))) return false;
     return put("edges", graph.find("edges"));
 }
+
 
 static const DDScreenHooks DD_GRAPH_HOOKS = {dd_graph_list, dd_graph_load, dd_graph_save};
 

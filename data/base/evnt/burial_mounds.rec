@@ -1,0 +1,6 @@
+record evnt.burial_mounds {
+  name     = "Burial Mounds"
+  vars     = [{ do = "UnitIsSeasonedScout", id = "s", unit = 0 }, { do = "Roll", id = "sub", max = 3, min = 1 }, { args = { a = "$s" }, do = "Formula", expr = "(roll(1,8)+2*a+10)*200", id = "treasV" }, { do = "Formula", expr = "(roll(1,8)+roll(1,8)+roll(1,8))*10", id = "trink" }]
+  steps    = [{ do = "OnTestFire" }, { args = { value = "$sub" }, branches = [{ pin = "1", steps = [{ choices = "Move on.", do = "ShowPopup", textKey = "@BURIAL1" }] }, { pin = "2", steps = [{ args = { amount = "$trink" }, do = "GrantGold", power = "0" }, { args = { num0 = "$trink" }, choices = "Modest reward.", do = "ShowPopup", textKey = "@BURIAL2" }] }, { pin = "default", steps = [{ args = { amount = "$treasV" }, do = "GrantGold", power = "0" }, { args = { num1 = "$treasV" }, choices = "A fortune!", do = "ShowPopup", textKey = "@BURIAL3" }] }], do = "Switch" }]
+  comments = [{ text = "Burial mounds (spec/systems/exploration.md), rebuilt. Roll(1,3) -> Switch: 1 @BURIAL1 (nothing/curse), 2 @BURIAL2 trinkets = 3d8*10 (%NUMBER0), else @BURIAL3 treasure = (1d8+10)*200 (%NUMBER1). Each formula is one node.", x = 20, y = -90 }]
+}

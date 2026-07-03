@@ -240,73 +240,111 @@ def main():
     # GRPH/EVNT: the node graphs. Pure exec chains (one On* trigger, a single
     # out->in path, no comments/branches/data pins) decompose to typed EVNT
     # steps (spec 8, EVNT-1); everything else stays a lossless grph record.
-    def as_chain(g):
-        """Chain + optional Comment annotations + flat single-consumer data
-        producers feeding step value pins. Returns (steps, comments) or None."""
+    def decompose(g):
+        """The full typed event form (spec 8): exec flow as a nested step tree
+        (branches = [{pin, steps}], exec joins tail-duplicated -- behavior
+        identical, each run walks one path), data producers hoisted to `vars`
+        (a DAG keyed by original node id; args reference them as "$id"),
+        Comment annotations lossless. Returns (vars, steps, comments) or None
+        for shapes the form cannot hold (cycles, multi-trigger, mixed pins)."""
         nodes = g["nodes"]; edges = g.get("edges", [])
-        comments = [n for n in nodes if n["type"] == "Comment"]
-        rest = [n for n in nodes if n["type"] != "Comment"]
         byid = {n["id"]: n for n in nodes}
+        comments = [n for n in nodes if n["type"] == "Comment"]
         for e in edges:                       # comments must be edge-free
             if byid[e["from"]["node"]]["type"] == "Comment" or \
                byid[e["to"]["node"]]["type"] == "Comment":
                 return None
+        rest = [n for n in nodes if n["type"] != "Comment"]
         trig = [n for n in rest if n["type"].startswith("On")]
         if len(trig) != 1:
             return None
-        nxt = {}; indeg = {}
-        data_in = {}                          # chain node id -> [(pin, producer id)]
-        outdeg = {}
+        succ = {}                             # exec: node -> [(pin, target)]
+        data_in = {}                          # node -> [(pin, producer id)]
+        has_exec = set()
         for e in edges:
-            outdeg[e["from"]["node"]] = outdeg.get(e["from"]["node"], 0) + 1
-        for e in edges:
-            if e["to"]["pin"] == "in":        # exec edge
-                if e["from"]["pin"] != "out" or e["from"]["node"] in nxt:
+            if e["to"]["pin"] == "in":
+                succ.setdefault(e["from"]["node"], []).append(
+                    (e["from"]["pin"], e["to"]["node"]))
+                has_exec.add(e["from"]["node"]); has_exec.add(e["to"]["node"])
+            else:
+                if e["from"]["pin"] != "value":
                     return None
-                nxt[e["from"]["node"]] = e["to"]["node"]
-                indeg[e["to"]["node"]] = indeg.get(e["to"]["node"], 0) + 1
-                if indeg[e["to"]["node"]] > 1:
-                    return None
-            else:                             # data edge: flat producer, value pin,
-                src = e["from"]["node"]       # single consumer (no sharing: an impure
-                if e["from"]["pin"] != "value" or outdeg.get(src, 0) != 1:  # producer
-                    return None               # like Roll must not be duplicated)
-                if any(x["to"]["node"] == src for x in edges):
-                    return None
-                data_in.setdefault(e["to"]["node"], []).append((e["to"]["pin"], src))
+                data_in.setdefault(e["to"]["node"], []).append(
+                    (e["to"]["pin"], e["from"]["node"]))
         producers = {s for lst in data_in.values() for _, s in lst}
-        chain = [trig[0]]; seen = {trig[0]["id"]}; cur = trig[0]["id"]
-        while cur in nxt:
-            cur = nxt[cur]
-            if cur in seen:
-                return None
-            seen.add(cur); chain.append(byid[cur])
-        if seen | producers != {n["id"] for n in rest}:
+        if producers & has_exec:              # producers never sit in exec flow
             return None
-        steps = []
-        for n in chain:
-            p = dict(n.get("params", {}))
-            if "op" in p or "args" in p:
+        for n, lst in succ.items():           # at most one 'out'; no out+label mix
+            pins = [p for p, _ in lst]
+            if pins.count("out") > 1 or ("out" in pins and len(pins) > 1):
                 return None
-            step = {"op": n["type"], **p}
-            if n["id"] in data_in:
-                args = {}
-                for pin, src in sorted(data_in[n["id"]]):
-                    sp = dict(byid[src].get("params", {}))
-                    if "op" in sp:
-                        return None
-                    args[pin] = {"op": byid[src]["type"], **sp}
-                step["args"] = args
-            steps.append(step)
-        return steps, [{"text": c.get("params", {}).get("text", ""),
-                        "x": c.get("x", 0), "y": c.get("y", 0)} for c in comments]
+        # vars: every producer, keyed by its original node id (may ref other vars)
+        vars_list = []
+        for pid in sorted(producers):
+            pn = byid.get(pid)
+            if pn is None or pn["type"].startswith("On"):
+                return None
+            if pid.startswith("#"):
+                return None                   # '#' prefixes the compiled synthetic ids
+            p = dict(pn.get("params", {}))
+            if "do" in p or "id" in p or "args" in p:
+                return None
+            v = {"do": pn["type"], "id": pid, **p}
+            if pid in data_in:
+                v["args"] = {pin: "$" + src for pin, src in sorted(data_in[pid])}
+            vars_list.append(v)
+        # exec tree from the trigger. An exec JOIN (indeg > 1) is walked once per
+        # inbound path -- the tail is DUPLICATED in the typed form. Behavior is
+        # identical (each run still executes one path once); only true cycles
+        # (a node on its own root path) are unrepresentable.
+        emitted = set()
+        def walk(nid, path):
+            out_steps = []
+            cur = nid
+            path = set(path)                  # the root-to-here path, per branch
+            while cur is not None:
+                if cur in path:
+                    raise ValueError          # cycle: not representable
+                path.add(cur)
+                n = byid[cur]
+                p = dict(n.get("params", {}))
+                if "do" in p or "args" in p or "branches" in p:
+                    raise ValueError
+                step = {"do": n["type"], **p}
+                if cur in data_in:
+                    step["args"] = {pin: "$" + src for pin, src in sorted(data_in[cur])}
+                emitted.add(cur)
+                nxt = None; branches = []
+                for pin, tgt in sorted(succ.get(cur, [])):
+                    if pin == "out":
+                        nxt = tgt
+                    else:
+                        branches.append({"pin": pin, "steps": walk(tgt, path)})
+                if branches:
+                    step["branches"] = branches
+                out_steps.append(step)
+                cur = nxt
+            return out_steps
+        try:
+            steps = walk(trig[0]["id"], set())
+        except ValueError:
+            return None
+        # coverage: every non-comment node is a producer or exec-reachable
+        if emitted | producers != {n["id"] for n in rest}:
+            return None
+        return vars_list, steps, [{"text": c.get("params", {}).get("text", ""),
+                                   "x": c.get("x", 0), "y": c.get("y", 0)}
+                                  for c in comments]
     for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/graphs/*.json"))):
         gr = json.load(open(f))
-        typed = as_chain(gr)
+        typed = decompose(gr)
         if typed is not None:
-            steps, comments = typed
+            vars_list, steps, comments = typed
             rid = f"evnt.{gr['id']}"
-            fields = [("name", quote(gr["name"])), ("steps", rec_value(steps))]
+            fields = [("name", quote(gr["name"]))]
+            if vars_list:
+                fields.append(("vars", rec_value(vars_list)))
+            fields.append(("steps", rec_value(steps)))
             if comments:
                 fields.append(("comments", rec_value(comments)))
             drift = emit(os.path.join("evnt", gr["id"] + ".rec"),

@@ -1,0 +1,6 @@
+record evnt.native_uprising {
+  name     = "Native Uprising"
+  vars     = [{ do = "Formula", expr = "natives.tension >= 80", id = "gate" }]
+  steps    = [{ do = "OnTurnStart" }, { args = { cond = "$gate" }, branches = [{ pin = "true", steps = [{ amount = 20, do = "ChangeNativeTension" }, { a = "0", b = "3", do = "DeclareWar" }, { choices = "To the walls!", do = "ShowPopup", textKeys = "@RAIDBURN,@RAIDSCALP,@RAIDWREAK", woodcut = "WDCUT13" }] }], do = "Branch" }]
+  comments = [{ text = "Native uprising (spec/systems/natives.md). A tribe rises to open war when its alarm reaches the war threshold (alarm>=128, modeled tension>=80): spike the alarm, set war, braves assault (one of @RAIDBURN/SCALP/WREAK).", x = 20, y = -90 }]
+}

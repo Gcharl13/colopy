@@ -79,7 +79,7 @@ JSON everywhere for data; binary `.MP` maps (3-plane, byte-faithful loader); PNG
 | `effects.json` force compositions | ~10 | **new type FORC** (or EFCT operand lists) | decide during EVNT work |
 | GAME.TXT sections (`GAME_sections.json`, 499) | 499 | **MSGE** + **TEXT** | box/sprite/speaker metadata → MSGE; strings → TEXT |
 | NAMES/MENU/LABELS text sections | ~31 tables | **TEXT** | grouped ~50/file per §4.2 |
-| 36 node graphs (`graphs/*.json`) | 36 | **EVNT/RQMT/RQST/EFCT** | **Largest semantic migration** — graphs are imperative node programs; spec §8 wants relational atoms. Deferred past P2 (see §7 Q5) |
+| 36 node graphs (`graphs/*.json`) | 36 | **EVNT/RQMT/RQST/EFCT** | **Largest semantic migration** — graphs are imperative node programs; spec §8 wants relational atoms. Deferred past P2 (see §7 Q5); **DONE at EVNT-3** (MIGRATION-LOG 22–25: all 36 typed as `evnt` vars/steps/branches records; `grph` remains the lossless fallback type) |
 | `screens/*.json` layouts | 8 | **DLOG** | |
 | `sprites.json` catalog + tileset PNGs | ~437 entries | **ATLS/SPRT** | atlas PNGs become payload records (§4.4) |
 | `palette.json` (VICEROY.PAL) | 1 | **PLTT** | remap ranges not yet modeled |
@@ -143,13 +143,18 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   nodes / 58 kinds; a one-step atom decomposition risked semantic drift); the Logic
   canvas CRUD flows through the chokepoint and `run_graph` executes the store's truth
   (36/36 smoke green).
-- **EVNT-1 landed (MIGRATION-LOG 23):** typed `evnt` records exist — pure chains store as
-  ordered `steps` (the legible outline form), compile deterministically to graphs for the
-  unchanged interpreter, and canvas saves reclassify between evnt/grph automatically.
-  The 6 goto_* events are typed; 30 graphs remain lossless grph records.
-- **Remaining:** grow the typed decomposition beyond chains (next shapes: single-Branch
-  events, then Switch fans; each family needs its typed form + compiler + the same
-  equivalence proof); a dedicated §8.5 outline editor view (the canonical text already
+- **EVNT-1/2/3 landed (MIGRATION-LOG 23–25): the decomposition is COMPLETE — all 36
+  behavior graphs are typed `evnt` records and `data/base/grph/` is empty.** The typed
+  form: `vars` = the data-producer DAG hoisted out of the exec flow (sharing by
+  reference — one impure Roll stays one roll; producers chain), `steps` = the exec tree
+  with `branches` (Branch/Switch/popup-choice labels; joins tail-duplicated, per-path
+  walk), `comments` lossless. Two decomposers enforce identical fallback constraints
+  (Python generator + C++ `graph_as_typed` on canvas save; cycles/multi-trigger/
+  mixed-pin shapes would reclassify to grph — the type stays as the safety net, currently
+  0 records). Equivalence proven per graph: path-set equality with transitively-resolved
+  feed signatures vs the frozen extraction, 36/36 smoke, byte-stable no-op saves, live
+  reclassification round trip.
+- **Remaining:** a dedicated §8.5 outline editor view (the canonical text already
   reads as an outline); flags-field widgets (no migrated type uses flags); JSON
   extraction files stay as the provenance layer (§4 disposition), every runtime read
   store-first.
@@ -161,7 +166,7 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
 | `bin/reconstitute.py` + extraction `tools/*` + `data_extracted/**` | **Keep** — provenance layer; `data/base/*.rec` is *generated from it once*, then becomes authoring truth |
 | `spec/` (byte-verified game spec) + gate G (ctest/selftests/validators/Playwright) | **Keep** — unchanged; Drydock work must pass the same gate |
 | `verify_rules.py` parity oracle | **Keep & extend** — becomes the P0 migration-correctness gate (store-loaded values == RuleData == original tables) |
-| Node-graph interpreter (`engine.cpp`) | **Keep until** EVNT atoms replace graphs (post-P2) |
+| Node-graph interpreter (`engine.cpp`) | **Keep** — the execution engine: typed `evnt` records compile deterministically to node graphs for it (EVNT-3); the canvas stays the visual debugger |
 | `forge/store.cpp` `cell()` grammar + bindings | **Migrate** — catalog reads route to the new record store via a bridge; state/cfg paths keep working; retire the reference-table half when all catalog types are migrated |
 | Web `httpd` + `/api` routes | **Keep** — the strangler host (see Q2) |
 | `forge/gui` ImGui scaffold | **Decision needed** (Q2) — either becomes the Drydock shell or is retired |

@@ -1,5 +1,6 @@
 record evnt.market_prices {
   name     = "Market Price Drift"
-  steps    = [{ op = "OnPriceDrift" }, { op = "DriftPrices" }, { args = { num0 = { op = "GetState", path = "@CARGO[9].price_start1" }, str0 = { op = "GetState", path = "@CARGO[9].name" }, str1 = { op = "GetState", path = "@HOMEPORT[0].name" } }, op = "Notify", textKey = "@PRICEDOWN" }]
+  vars     = [{ do = "GetState", id = "good", path = "@CARGO[9].name" }, { do = "GetState", id = "port", path = "@HOMEPORT[0].name" }, { do = "GetState", id = "price", path = "@CARGO[9].price_start1" }]
+  steps    = [{ do = "OnPriceDrift" }, { do = "DriftPrices" }, { args = { num0 = "$price", str0 = "$good", str1 = "$port" }, do = "Notify", textKey = "@PRICEDOWN" }]
   comments = [{ text = "European price drift (spec/systems/market.md, func_0305A8 BYTE_VERIFIED). Each turn every good's price base relaxes by (base + sum over the 4 powers of max(trade,0)) >> 8 -- heavy SELLING (a large per-good trade accumulator) pushes the price down harder, buys are ignored. DriftPrices runs that sim step; the report reads the drifted price.<good> back and names the good + port straight from the @CARGO / @HOMEPORT tables, so editing a table row changes the message with no code.", x = 20, y = -140 }]
 }

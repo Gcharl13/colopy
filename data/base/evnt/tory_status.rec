@@ -1,0 +1,6 @@
+record evnt.tory_status {
+  name     = "Tory / Rebel Status"
+  vars     = [{ do = "Formula", expr = "(revolution.sol>=50)+(revolution.sol>=100)", id = "bucket" }, { do = "GetState", id = "gsM_num0", path = "revolution.sol" }, { do = "GetState", id = "gsM_str0", path = "@COLONYNAME[0].name" }, { do = "GetState", id = "gsM_str1", path = "@COUNTRY[0].name" }]
+  steps    = [{ do = "OnSoLThreshold" }, { args = { value = "$bucket" }, branches = [{ pin = "1", steps = [{ args = { num0 = "$gsM_num0", str0 = "$gsM_str0", str1 = "$gsM_str1" }, choices = "Onward.", do = "ShowPopup", textKey = "@REBELMAJORITY" }] }, { pin = "2", steps = [{ choices = "Liberty!", do = "ShowPopup", textKey = "@REBELUNANIMOUS" }] }, { pin = "default", steps = [{ choices = "Hmph.", do = "ShowPopup", textKey = "@TORYMAJORITY" }] }], do = "Switch" }]
+  comments = [{ text = "Tory/rebel status (spec/systems/revolution.md). bucket = (sol>=50)+(sol>=100): 2 unanimous, 1 majority, else Tory majority. One Formula + Switch over the real @REBEL*/@TORYMAJORITY messages.", x = 20, y = -80 }]
+}

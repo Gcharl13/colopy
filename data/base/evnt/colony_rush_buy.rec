@@ -1,0 +1,6 @@
+record evnt.colony_rush_buy {
+  name     = "Colony: Rush-Buy"
+  vars     = [{ do = "GetState", id = "bname", path = "colony0.building_name" }, { do = "Formula", expr = "colony0.build_remaining * 8", id = "cost" }, { do = "GetState", id = "gold", path = "power0.gold" }]
+  steps    = [{ do = "OnPlayerCommand" }, { args = { num0 = "$cost", num1 = "$gold", str0 = "$bname" }, branches = [{ pin = "Complete it", steps = [{ args = { cost = "$cost" }, colony = 0, do = "RushBuild" }, { body = "{colony0.building_name} stands complete, Your Excellency.", choices = "Excellent.", do = "ShowPopup", title = "Project Complete" }] }], choices = "Never mind,Complete it", do = "ShowPopup", speaker = "Governor", textKey = "@BUYME1" }]
+  comments = [{ text = "Rush a project to completion with gold (the @BUYME1 dialog). The cost is RECONSTRUCTED (the binary isn't in-repo to byte-decode it; see notes/rulings/RULINGS.md): a Formula over the hammers still needed, here build_remaining*8 gold, editable inline. 'Complete it' debits the treasury and finishes the building; 'Never mind' leaves it building normally.", x = 20, y = -110 }]
+}
