@@ -294,6 +294,21 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
                 if (!(fl & vc::sim::DEPLETED_BIT))
                     y = ((fl & 0x48) || wk.expert) ? 1 : 0;
             }
+            // Furs riders (func_009B9C @0x9C87..0x9CB1): +1 with a tile
+            // improvement (the flags 0xA test; our road/plow bits), +1 on a
+            // minor river (terrain byte 0x40), +1 more on a major (0x80).
+            if (g == 4 && y > 0 && world && wk.tile >= 0 && wk.tile < 8) {
+                int tx = col.x + rdx[wk.tile], ty = col.y + rdy[wk.tile];
+                if (world->improve_at(tx, ty) & 0x48) y += 1;
+                if (tx >= 0 && tx < world->map_w && ty >= 0 && ty < world->map_h &&
+                    !world->terrain.empty()) {
+                    uint8_t tb = world->terrain[(size_t)ty * world->map_w + tx];
+                    if (tb & 0x40) { y += 1; if (tb & 0x80) y += 1; }
+                }
+            }
+            // Indian Convert +1 on the gathering columns (food/sugar/tobacco/
+            // cotton/furs, @0x9F86..0x9FB6; the fisherman column when modeled).
+            if (wk.profession == 27 && y > 0 && g <= 4) y += 1;
             if (y > 0) y += sol_bonus;                      // Sons-of-Liberty +1/+2 per producing colonist
             if (g == 4 && ff_hudson) y *= 2;                // Henry Hudson (#8): furs (good 4) x2
             if (g == 0) food += y; else prod[g] += y;
