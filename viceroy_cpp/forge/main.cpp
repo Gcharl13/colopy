@@ -1034,7 +1034,7 @@ static void tutorial_turn_checks() {
             // T3 ([0x5386]&0x40): a good first-colony site; %STRING0 = the
             // tile's most abundant raw good.
             if (!(g_engine_extra.tutorial_mask & 0x0040) && !on_colony &&
-                vc::sim::colony_site_value(g_world, g_active_rules, u.x, u.y) > 0) {
+                vc::sim::colony_site_value(g_world, g_active_rules, u.x, u.y, g_game.rumor_seed) > 0) {
                 int best = 0, bv = -1;
                 for (int gd = 0; gd < 8; ++gd) {
                     int yv = forge::terrain_good_yield(tid, gd);
@@ -3428,7 +3428,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 for (int x = 0; x < g_world.map_w; ++x) {
                     int t = g_world.terrain_id(x, y);
                     if (t < 0 || game_is_water(t)) continue;
-                    int v = vc::sim::colony_site_value(g_world, g_active_rules, x, y);
+                    int v = vc::sim::colony_site_value(g_world, g_active_rules, x, y, g_game.rumor_seed);
                     if (v > 0) scored.push_back({v, x, y});
                 }
             std::sort(scored.begin(), scored.end(), [](const Site& a2, const Site& b2){ return a2.v > b2.v; });

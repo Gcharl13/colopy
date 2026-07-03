@@ -286,6 +286,14 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
                 if (res == 6)  *mining_pressure += (g == 6) ? 1 : (g == 7) ? 2 : 0;
                 if (res == 12 && g == 7) *mining_pressure += 1;
             }
+            // Silver on a NON-deposit, NON-depleted tile collapses to 1 (with a
+            // road/plow improvement or an expert) else 0 (@0x9E41..0x9EA6) --
+            // only real Silver Deposits sustain mining.
+            if (g == 7 && res == -1 && world && wk.tile >= 0 && wk.tile < 8 && y > 0) {
+                int fl = world->improve_at(col.x + rdx[wk.tile], col.y + rdy[wk.tile]);
+                if (!(fl & vc::sim::DEPLETED_BIT))
+                    y = ((fl & 0x48) || wk.expert) ? 1 : 0;
+            }
             if (y > 0) y += sol_bonus;                      // Sons-of-Liberty +1/+2 per producing colonist
             if (g == 4 && ff_hudson) y *= 2;                // Henry Hudson (#8): furs (good 4) x2
             if (g == 0) food += y; else prod[g] += y;

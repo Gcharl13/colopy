@@ -36,9 +36,12 @@ int ai_move_allowance(const RuleData& rd, int unit_type);
 // tile the coastal bonus (2 + 2*adjacent-land)>>2, +1 for the layer-1 0x40
 // feature bit; halved near an existing colony; center Mountains -> 0, Hills
 // halved; final = clamp(score/10, 0, 15) (idiv @0x6410E, clamp 0x181F:0x35c).
-// (The special-resource bonus table [id-0x684e] is skipped: World carries no
-// resource plane.) This is what the F9 "Show Colony Sites" cheat displays.
-int colony_site_value(const World& w, const RuleData& rd, int x, int y);
+// A catchment tile carrying a prime resource contributes the @RESOURCE value
+// from the bonus table [id-0x684e] INSTEAD of its terrain stat (ai.md 3b) --
+// map_seed (the rumor/resource seed) enables it; 0 = no resources (the seed-0
+// gate is resource_at's own). This is what the F9 "Show Colony Sites" cheat
+// displays.
+int colony_site_value(const World& w, const RuleData& rd, int x, int y, int map_seed = 0);
 
 // --- Strategic plan-map accessors (ai.md 6.1, all BYTE-VERIFIED sites) ---
 // The 4x64 per-power table of provisional goal tiles (GameState::plan).

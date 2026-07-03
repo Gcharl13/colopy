@@ -3,6 +3,7 @@
 #include "unit.hpp"
 #include "unit_turn.hpp"   // unit_at
 #include "explore.hpp"     // reveal_around
+#include "events.hpp"      // resource_at (prime-resource site bonus, ai.md 3b)
 
 #include <cstdlib>
 
@@ -50,7 +51,11 @@ int ai_move_allowance(const RuleData& rd, int unit_type) {
     return unit_stats(rd, unit_type).movement * 3;    // UnitTypeStats +0x00 = moves*3
 }
 
-int colony_site_value(const World& w, const RuleData& rd, int x, int y) {
+// The parsed @RESOURCE value column (NAMES.TXT "Special resource squares &
+// values"; runtime table [id-0x684e], read here per ai.md 3b @0x54B0B).
+static const int RESOURCE_VALUE[14] = { 6, 3, 4, 6, 6, 7, 4, 5, 6, 6, 6, 6, 12, 6 };
+
+int colony_site_value(const World& w, const RuleData& rd, int x, int y, int map_seed) {
     const int center = w.terrain_id(x, y);
     if (center < 0 || water_id(center)) return 0;     // water / out-of-bounds -> 0
     long score = 0;
@@ -59,7 +64,10 @@ int colony_site_value(const World& w, const RuleData& rd, int x, int y) {
         const int t = w.terrain_id(tx, ty);
         if (t < 0) continue;
         long v;
-        if (t == 25) {                                // ocean: coastal-adjacency bonus
+        const int res = resource_at(w, tx, ty, map_seed);
+        if (res >= 0 && res < 14) {                   // prime resource: the @RESOURCE value
+            v = RESOURCE_VALUE[res];                  //   replaces the terrain stat (ai.md 3b)
+        } else if (t == 25) {                                // ocean: coastal-adjacency bonus
             int adj_land = 0;
             for (int k = 1; k <= 8; ++k)              // the 8 neighbours (ring-1 deltas)
                 if (land_ok(w.terrain_id(tx + CATCH[k].dx, ty + CATCH[k].dy)))
@@ -128,7 +136,7 @@ namespace {
 // applied as closer-is-better (the byte trace reads "3*dist" without the sign
 // context; toward-the-target is the only reading consistent with the decoded
 // goal-seeking missions -- RECONSTRUCTED note).
-int ai_pick_heading(const World& w, const RuleData& rd, const Unit& u, int self_idx,
+int ai_pick_heading(const World& w, const RuleData& rd, int map_seed, const Unit& u, int self_idx,
                     bool settler, const RandFn& rng) {
     static const int DX[9] = {1, 1, 0, -1, -1, -1, 0, 1, 0};
     static const int DY[9] = {0, 1, 1, 1, 0, -1, -1, -1, 0};
@@ -172,7 +180,7 @@ int ai_pick_heading(const World& w, const RuleData& rd, const Unit& u, int self_
         if (u.target_x >= 0)                          // target-distance term (@0x047AEC)
             score -= 3 * octile(u.target_x - tx, u.target_y - ty);
         if (settler && dir != 8 && colony_near(w, tx, ty, 1) < 0) {
-            const int sv = colony_site_value(w, rd, tx, ty);
+            const int sv = colony_site_value(w, rd, tx, ty, map_seed);
             if (sv >= SITE_BAR) score += 500;         // colony-site term (0x1F4, @0x047D84)
         }
         score += rng(1, 5);                           // RNG jitter (@0x047F44)
@@ -197,7 +205,7 @@ bool nearest_frontier(const World& w, int power, int x, int y, int& ox, int& oy)
 }
 
 // Best colony site this power can see (max site value, octile-near breaks ties).
-bool best_colony_site(const World& w, const RuleData& rd, int power, int x, int y,
+bool best_colony_site(const World& w, const RuleData& rd, int map_seed, int power, int x, int y,
                       int& ox, int& oy) {
     int best_v = SITE_BAR;                            // must reach the qualifying bar
     long best_d = 1 << 20; bool found = false;
@@ -206,7 +214,7 @@ bool best_colony_site(const World& w, const RuleData& rd, int power, int x, int 
             if (!w.explored(tx, ty, power)) continue;
             if (!land_ok(w.terrain_id(tx, ty))) continue;
             if (colony_near(w, tx, ty, 1) >= 0) continue;
-            const int v = colony_site_value(w, rd, tx, ty);
+            const int v = colony_site_value(w, rd, tx, ty, map_seed);
             if (v < best_v) continue;
             const long d = octile(tx - x, ty - y);
             if (v > best_v || d < best_d) { best_v = v; best_d = d; ox = tx; oy = ty; found = true; }
@@ -281,9 +289,9 @@ void ai_strategic_plan(GameState& g, World& w, int power, const RuleData& rd) {
         const int caps = unit_stats(rd, u.type).capbits;
         if (caps & 0x40) {
             int sx, sy;
-            if (best_colony_site(w, rd, power, u.x, u.y, sx, sy) &&
+            if (best_colony_site(w, rd, g.rumor_seed, power, u.x, u.y, sx, sy) &&
                 plan_query(g, power, sx, sy, 6) < 0)
-                plan_set(g, power, sx, sy, 6, colony_site_value(w, rd, sx, sy));
+                plan_set(g, power, sx, sy, 6, colony_site_value(w, rd, sx, sy, g.rumor_seed));
         }
         if (caps & 0x20) {                            // explore frontier -> goal 5
             int fx, fy;
@@ -387,7 +395,7 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
         } else if (u.ai_state == '1' && settler) {     // settle: re-validate the site
             if (u.target_x < 0 ||
                 colony_near(w, u.target_x, u.target_y, 1) >= 0 ||
-                colony_site_value(w, rd, u.target_x, u.target_y) < SITE_BAR) {
+                colony_site_value(w, rd, u.target_x, u.target_y, g.rumor_seed) < SITE_BAR) {
                 u.ai_state = '?';                      // goal lost (@0x04E202) -> re-plan
                 u.target_x = u.target_y = -1;
                 continue;
@@ -442,7 +450,7 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
                 } else u.ai_state = '0';
             } else if (unit_stats(rd, u.type).capbits & 0x40) {
                 int sx, sy;                            // settle-class fallback
-                if (best_colony_site(w, rd, power, u.x, u.y, sx, sy)) {
+                if (best_colony_site(w, rd, g.rumor_seed, power, u.x, u.y, sx, sy)) {
                     u.target_x = sx; u.target_y = sy; u.ai_state = '1';
                 } else { u.ai_state = '0'; }
             } else {                                   // military: garrison ('3' @0x04F1FD)
@@ -474,7 +482,7 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
                 const bool ok = naval ? water_id(t) : land_ok(t);
                 if (!ok) { --u.ai_steps; continue; }
             } else {
-                dir = ai_pick_heading(w, rd, u, i, settler && u.ai_state == '1', rng);
+                dir = ai_pick_heading(w, rd, g.rumor_seed, u, i, settler && u.ai_state == '1', rng);
             }
             if (dir == 8) break;                      // stay (heading 8, @0x051A95)
             static const int DX[8] = {1, 1, 0, -1, -1, -1, 0, 1};
@@ -492,7 +500,7 @@ void ai_power_turn(GameState& g, World& w, int power, const RuleData& rd, const 
         if (u.target_x >= 0 && u.x == u.target_x && u.y == u.target_y) {
             if (settler && u.ai_state == '1' &&
                 colony_near(w, u.x, u.y, 1) < 0 &&
-                colony_site_value(w, rd, u.x, u.y) >= SITE_BAR) {
+                colony_site_value(w, rd, u.x, u.y, g.rumor_seed) >= SITE_BAR) {
                 Colony c;                              // found: the unit is absorbed ('=',
                 c.x = u.x; c.y = u.y;                  //   type mutated @0x04F20E)
                 c.owner_power = power; c.human = false;
