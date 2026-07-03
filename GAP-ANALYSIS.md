@@ -154,10 +154,14 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   0 records). Equivalence proven per graph: path-set equality with transitively-resolved
   feed signatures vs the frozen extraction, 36/36 smoke, byte-stable no-op saves, live
   reclassification round trip.
-- **Remaining:** a dedicated §8.5 outline editor view (the canonical text already
-  reads as an outline); flags-field widgets (no migrated type uses flags); JSON
-  extraction files stay as the provenance layer (§4 disposition), every runtime read
-  store-first.
+- **§8.5 outline view landed:** the Logic tab's Outline toggle renders the typed
+  evnt record as a legible outline (a `where` block for the producer vars, the
+  nested step/branch tree, comments as notes) straight from the record fields --
+  the record IS the outline; editing stays on the canvas/form, and saves
+  reclassify automatically. grph records report themselves as lossless.
+- **Remaining:** flags-field widgets (no migrated type uses flags -- deferred until
+  one does); JSON extraction files stay as the provenance layer (§4 disposition),
+  every runtime read store-first.
 
 ## 4. No spec counterpart — keep / migrate / retire
 

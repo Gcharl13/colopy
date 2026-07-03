@@ -356,9 +356,13 @@ const char* forge_index_html() {
       <button class="act" onclick="newGraph()">New</button>
       <button class="act" onclick="saveGraph()">Save</button>
       <button class="act" onclick="runGraph()">&#9654; Run</button>
+      <button class="act" onclick="toggleOutline()">Outline</button>
       <span class="muted">Drag a node from the palette; drag pin&rarr;pin to wire. Click a node to edit it.</span>
       <span id="ginfo" class="muted"></span>
     </div>
+    <div id="goutline" style="display:none;font-family:ui-monospace,monospace;font-size:13px;
+         line-height:1.5;padding:10px 14px;border:1px solid #444;border-radius:6px;margin:6px 0;
+         max-height:60vh;overflow:auto"></div>
     <div class="glayout">
       <div class="gpalette" id="gpalette"></div>
       <div class="gcanvas" id="gcanvas">
@@ -896,7 +900,53 @@ async function gLoadList(){ const ids=await (await fetch('/api/graphs')).json();
   dl.innerHTML=ids.map(i=>'<option value="'+esc(i)+'">').join(''); }
 async function loadGraph(){ const id=$('#graphpick').value; if(!id)return;
   G=await (await fetch('/api/graph?id='+encodeURIComponent(id))).json(); G.nodes=G.nodes||[]; G.edges=G.edges||[];
-  selNode=null; gProps(); gRender(); $('#ginfo').textContent=G.nodes.length+' nodes'; }
+  selNode=null; gProps(); gRender(); $('#ginfo').textContent=G.nodes.length+' nodes';
+  if($('#goutline').style.display!=='none'){ $('#goutline').style.display='none'; toggleOutline(); } }
+// ---- spec 8.5 outline view: the typed evnt record rendered as a legible outline ----
+function outlineStep(s,d){
+  const pad='&nbsp;'.repeat(d*4);
+  const ps=Object.entries(s).filter(([k])=>!['do','args','branches'].includes(k))
+    .map(([k,v])=>esc(k)+' = '+esc(JSON.stringify(v))).join(', ');
+  const as=s.args?Object.entries(s.args).map(([k,v])=>esc(k)+' &larr; '+esc(String(v))).join(', '):'';
+  let h=pad+'&#9656; <b>'+esc(s['do']||'?')+'</b>'+(ps?' <span class="muted">('+ps+')</span>':'')+
+        (as?' <span class="muted">['+as+']</span>':'')+'<br>';
+  for(const br of (s.branches||[])){
+    h+=pad+'&nbsp;&nbsp;&nbsp;&nbsp;<i>'+esc(String(br.pin))+':</i><br>';
+    for(const t of (br.steps||[])) h+=outlineStep(t,d+2);
+  }
+  return h;
+}
+async function toggleOutline(){
+  const el=$('#goutline');
+  if(el.style.display!=='none'){ el.style.display='none'; return; }
+  const id=$('#graphpick').value; if(!id)return;
+  const r=await fetch('/api/dd/record?id=evnt.'+encodeURIComponent(id));
+  if(!r.ok){
+    el.innerHTML='<span class="muted">'+esc(id)+' is a lossless node graph (grph) &mdash; '+
+                 'it has no typed outline; edit it on the canvas.</span>';
+    el.style.display='block'; return;
+  }
+  const rec=await r.json(); const f=rec.fields||{};
+  let h='<b>'+esc(f.name||id)+'</b> <span class="muted">&mdash; evnt.'+esc(id)+
+        ' (the record IS this outline; a canvas save reclassifies automatically)</span><br><br>';
+  if(f.vars&&f.vars.length){
+    h+='<span class="muted">where</span><br>';
+    for(const v of f.vars){
+      const ps=Object.entries(v).filter(([k])=>!['do','id','args'].includes(k))
+        .map(([k,x])=>esc(k)+' = '+esc(JSON.stringify(x))).join(', ');
+      const as=v.args?Object.entries(v.args).map(([k,x])=>esc(k)+' &larr; '+esc(String(x))).join(', '):'';
+      h+='&nbsp;&nbsp;$'+esc(v.id)+' = <b>'+esc(v['do'])+'</b>'+
+         (ps?' <span class="muted">('+ps+')</span>':'')+(as?' <span class="muted">['+as+']</span>':'')+'<br>';
+    }
+    h+='<br>';
+  }
+  for(const s of (f.steps||[])) h+=outlineStep(s,0);
+  if(f.comments&&f.comments.length){
+    h+='<br><span class="muted">notes</span><br>';
+    for(const c of f.comments) h+='&nbsp;&nbsp;<i class="muted">'+esc(String(c.text||''))+'</i><br>';
+  }
+  el.innerHTML=h; el.style.display='block';
+}
 function newGraph(){ G={id:'untitled',name:'Untitled',nodes:[],edges:[]}; selNode=null; gProps(); gRender(); }
 function gClean(){ return {id:G.id,name:G.name,nodes:G.nodes.map(n=>({id:n.id,type:n.type,x:n.x,y:n.y,params:n.params||{}})),edges:G.edges}; }
 async function saveGraph(){
