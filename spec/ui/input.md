@@ -531,10 +531,34 @@ rects match the `colony_screen.md` paint rects 1:1 (RESOLVED 2026-06-25).
 | (anywhere else) | 0x14 | no region (default) | B | `@0x299A4 mov [bp-2],0x14` |
 
 > The `AX` return of `func @0x299A0` is the **region-id** built in `[bp-2]` (the 0/1/2/3/4/5/8/9/0xA/0x14
-> table above; default `0x14` @0x299A4) — fully decoded. The downstream id→action `switch` lives in
-> the overlay-resident caller (reached via RTLink thunk; no static far-call to `0x299A0` exists in the
-> resident image, scan-confirmed), so the action targets per id are **overlay-resident** and would need
-> an overlay-page trace of that caller to tabulate (see Open blockers).
+> table above; default `0x14` @0x299A4) — fully decoded.
+>
+> **id→action dispatch DECODED 2026-07-03 (decoder v2).** `0x299A0` is reached through
+> thunk `0x191F:0x6CC` via page-0x02's in-page **ljmp-stub vector** (5-byte `ljmp 0x191F:xxx`
+> stubs at `0x2C988..0x2CAD2`; callers `push cs; call stub`). The click dispatcher is
+> **`func_02BB8A`**: it stores the mouse-down region in `[0x8D54]/[0x8D56]`, re-polls on
+> transient ids 6/7 (drag start→end must land compatibly or the id degrades to `0x14`
+> no-op), applies two **suppression gates** — `[0x5384]&2` blocks region **2** actions,
+> `[0x5384]&1` blocks regions **1/5** (the locked/foreign-view colony screen) — then
+> switches `jmp word ptr cs:[bx+0x635A]` (11-entry jump table at file `0x2BC5A`,
+> cs-base `0x25900` = page 0x02's file base, self-consistent). Per-id action handlers
+> (each case near-calls a stub → thunk → handler):
+>
+> | Region-id | Region | Handler (file) | Stub → thunk |
+> |---|---|---|---|
+> | 0 | colonist plaza row | `func_029C10` | `0x2CA0F → 0x191F:0x63C` |
+> | 1 | field-production panel | `func_02A0BC` | `0x2CAA5 → 0x191F:0x7A4` |
+> | 2 | main scene / work-area | `func_029DD4` | `0x2CAD2 → 0x191F:0x810` |
+> | 3 | nation flag panel | `func_02A31C` | `0x2CA05 → 0x191F:0x624` |
+> | 4 | SoL / cargo / message panel | `func_02B9B6` | `0x2C988 → 0x191F:0x4F8` |
+> | 5 | stockpile strip | `func_02B9DC` | `0x2C9BA → 0x191F:0x570` |
+> | 6, 7 | (transient drag ids) | no direct action — re-poll path | — |
+> | 8 | surrounding-tile minimap | `func_02AFCE` | `0x2C9C4 → 0x191F:0x588` |
+> | 9 | warehouse / gold readout | `func_02BB74` (clears `[0x346]` when `[0x7F4]≠0`) | `0x2CA5F → 0x191F:0x6FC` |
+> | 0xA | top title bar | `func_02BB2C` | `0x2CA3C → 0x191F:0x6A8` |
+>
+> **B** (dispatcher + gates + jump table + handler offsets; regions 9/0xA additionally
+> require mouse-down and re-poll to agree on the same id before acting).
 
 ---
 
