@@ -1075,7 +1075,11 @@ static HttpResponse dd_save() {
         std::string path = dir + "/" + id.substr(dot + 1) + ".rec";
         const Record* r = store_find(g_store, id);
         if (!r) { std::remove(path.c_str()); ++removed; continue; }
+#ifdef _WIN32
+        mkdir(dir.c_str());
+#else
         mkdir(dir.c_str(), 0755);
+#endif
         std::ofstream f(path);
         f << serialize_record(*r);
         ++written;

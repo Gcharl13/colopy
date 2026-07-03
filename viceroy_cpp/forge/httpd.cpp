@@ -73,7 +73,8 @@ void send_all(sock_t fd, const std::string& s) {
 
 }  // namespace
 
-int serve_http(int port, const HttpHandler& handler) {
+int serve_http(int port, const HttpHandler& handler,
+               const std::function<void(int)>& on_ready) {
     if (!net_init()) { std::fprintf(stderr, "forge serve: network init failed\n"); return 1; }
 
     sock_t srv = socket(AF_INET, SOCK_STREAM, 0);
@@ -91,8 +92,19 @@ int serve_http(int port, const HttpHandler& handler) {
     if (listen(srv, 16) != 0) {
         std::fprintf(stderr, "forge serve: listen failed\n"); net_close(srv); return 1;
     }
+    if (port == 0) {                                 // ephemeral: report the real port
+        sockaddr_in got{};
+#ifdef _WIN32
+        int glen = sizeof got;
+#else
+        socklen_t glen = sizeof got;
+#endif
+        if (getsockname(srv, (sockaddr*)&got, &glen) == 0)
+            port = (int)ntohs(got.sin_port);
+    }
+    if (on_ready) on_ready(port);
 
-    std::printf("Viceroy Forge GUI: http://127.0.0.1:%d  (Ctrl-C to stop)\n", port);
+    std::printf("Forge: http://127.0.0.1:%d  (Ctrl-C to stop)\n", port);
     std::fflush(stdout);
 
     for (;;) {

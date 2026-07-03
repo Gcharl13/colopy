@@ -24,6 +24,10 @@ using HttpHandler = std::function<HttpResponse(const std::string& method,
 
 // Serve on 127.0.0.1:port forever (until the process is killed). Returns non-zero
 // on bind/listen failure (or on platforms without POSIX sockets).
-int serve_http(int port, const HttpHandler& handler);
+// port 0 = ephemeral (the OS picks); on_ready (if set) is called once with the
+// ACTUAL bound port after listen() succeeds -- the desktop shell uses this to
+// point its window at the in-process engine.
+int serve_http(int port, const HttpHandler& handler,
+               const std::function<void(int)>& on_ready = nullptr);
 
 } // namespace forge

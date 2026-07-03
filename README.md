@@ -29,26 +29,34 @@ the game data, the graphics, and the tools to (re)generate them from original fi
 the contract — reproduce its *output*. The *route* (language, math width, RNG, engine) is
 free; see `REWRITE_READINESS.md` §1 for the preserve-vs-modernize line.
 
-## Building and running the game (native application)
+## Forge — the desktop engine
+
+**Forge is the product: a desktop game-development engine.** It opens a
+*project* — a folder of game data (this repository checkout is the
+Colonization project) — and presents the full editor: rules, data tables,
+maps, assets, screens, events, scenarios, and a playable Play tab.
 
 ```bash
-# prerequisites: cmake, a C++17 compiler, zlib, libpng; SDL2 for the window
-sudo apt-get install libsdl2-dev        # Debian/Ubuntu (optional but recommended)
-
+# build (cmake, C++17 compiler; zlib/libpng optional, SDL2 optional)
 cmake -S viceroy_cpp -B viceroy_cpp/build
 cmake --build viceroy_cpp/build -j8
 
-./viceroy_cpp/build/viceroy             # run from the repo root (finds data_extracted/)
+./viceroy_cpp/build/forge desktop .     # open THIS checkout as the project
 ```
 
-Controls (N2 skeleton): click / `Tab` select unit · arrows move · `W A S D`
-scroll · `Enter`/`E` end turn · `Esc` quit. Without SDL2 the binary still
-builds and supports `--frames N --out BASE` (headless frame dump — the CI
-render gate). The web editor (`forge serve`) remains for rules/data tooling;
-the game itself is the `viceroy` executable.
+On Windows the binary is `Forge.exe` — double-click it inside the project
+folder (or anywhere: it asks you to pick one). Cross-compile from Linux:
 
-Verify a checkout: `ctest --test-dir viceroy_cpp/build` (includes the
-`native_render` + `viceroy_app_smoke` gates).
+```bash
+cmake -S viceroy_cpp -B viceroy_cpp/build-win \
+      -DCMAKE_TOOLCHAIN_FILE=$PWD/viceroy_cpp/cmake/mingw-w64-x86_64.cmake
+cmake --build viceroy_cpp/build-win -j8 --target forge   # -> build-win/Forge.exe (static)
+```
+
+The same build also produces `viceroy` (the standalone native game runtime,
+needs SDL2) and the asset-pipeline CLI. `forge serve 8099` remains as the
+classic browser mode. Verify a checkout: `ctest --test-dir viceroy_cpp/build`
+(14 gates incl. native render + app smokes).
 
 ## Regenerating assets from your own game files
 The original copyrighted assets are **not** shipped verbatim. To rebuild them locally:

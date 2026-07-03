@@ -39,6 +39,7 @@
 #include "unit_turn.hpp"
 #include "web_ui.hpp"
 #include "session.hpp"   // the game session (shared with the viceroy app)
+#include "desktop.hpp"   // Forge as a desktop application (project + window)
 
 #include <algorithm>
 #include <cctype>
@@ -3648,6 +3649,12 @@ int main(int argc, char** argv) {
     if (cmd == "formulas") { std::printf("%s\n", forge::formulas_text().c_str()); return 0; }
     if (cmd == "engine" && argc >= 3 && std::string(argv[2]) == "selftest") return engine_selftest();
     if (cmd == "serve")   return do_serve(argc, argv);
+    if (cmd == "desktop")
+        return forge::desktop_main(argc >= 3 ? argv[2] : nullptr, serve_route);
+#ifdef _WIN32
+    if (cmd.empty())      // double-clicked: run as the desktop application
+        return forge::desktop_main(nullptr, serve_route);
+#endif
 
     std::printf("Viceroy Forge -- headless modding tool\n"
                 "usage:\n"
@@ -3666,6 +3673,7 @@ int main(int argc, char** argv) {
                 "  forge data check [FILE]        structural-validate the data tables\n"
                 "  forge data selftest            data-table validator self-test\n"
                 "  forge formulas                 print the complete formula/function catalog\n"
+                "  forge desktop [PROJECT]        open the desktop editor on a project folder\n"
                 "  forge serve [port]             launch the browser GUI (default port 8099)\n");
     return 0;
 }

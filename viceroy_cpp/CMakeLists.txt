@@ -122,12 +122,17 @@ target_link_libraries(forge_core PUBLIC viceroy_sim drydock)
 add_executable(forge
   forge/main.cpp
   forge/httpd.cpp
+  forge/desktop.cpp
   forge/web_ui.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE forge_core)
 if(WIN32)
-  target_link_libraries(forge PRIVATE ws2_32)   # Winsock for `forge serve`
+  # Winsock for the engine server; COM/shell/registry for the desktop shell
+  # (project folder picker + editor window). The Windows binary is the
+  # desktop product -- name it Forge.exe.
+  target_link_libraries(forge PRIVATE ws2_32 ole32 uuid shell32 advapi32 user32)
+  set_target_properties(forge PROPERTIES OUTPUT_NAME "Forge")
 endif()
 
 # --- Drydock (engine-dev-environment-spec.md): record-database dev environment.
