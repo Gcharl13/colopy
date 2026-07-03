@@ -57,6 +57,7 @@ add_library(viceroy_render STATIC
   src/surface.cpp
   src/mapview.cpp
   src/colony_screen.cpp
+  src/popup_render.cpp
 )
 target_include_directories(viceroy_render PUBLIC include . third_party/stb)
 target_link_libraries(viceroy_render PUBLIC viceroy_sim)
@@ -173,7 +174,13 @@ else()
 endif()
 
 if(FORGE_STUDIO_OK)
-  add_executable(forge_studio studio/studio_main.cpp ${FORGE_STUDIO_DRIVER})
+  add_executable(forge_studio
+    studio/studio_main.cpp
+    studio/studio_assets.cpp
+    studio/panel_sprites.cpp
+    studio/panel_popups.cpp
+    studio/panel_screens.cpp
+    ${FORGE_STUDIO_DRIVER})
   target_include_directories(forge_studio PRIVATE studio forge sim)
   target_link_libraries(forge_studio PRIVATE imgui forge_core)
   set_target_properties(forge_studio PROPERTIES OUTPUT_NAME "Forge")
@@ -262,6 +269,11 @@ if(PNG_FOUND)
   # the full asset->state->compose->present pipeline minus the window.
   add_test(NAME viceroy_app_smoke COMMAND viceroy --frames 2 --scale 1
            --out ${CMAKE_BINARY_DIR}/viceroy_smoke
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  # Popup frame engine (spec/ui/popups.md §2): render one popup through the
+  # native compositor; asserts the byte-cited box geometry, writes a PNG.
+  add_test(NAME native_popup COMMAND viceroy_cpp nativepopup
+           --out ${CMAKE_BINARY_DIR}/native_popup_test.png --scale 1
            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 endif()
 

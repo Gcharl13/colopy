@@ -16,6 +16,7 @@
 #include "mapview.hpp"   // render_mapview
 #include "colony_screen.hpp" // render_colony_screen
 #include "native_assets.hpp" // repo-asset boot (no import bundle needed)
+#include "popup_render.hpp"  // render_popup (nativepopup gate)
 #include "sim/game.hpp"  // GameState, World, step_turn
 #include "sim/ref.hpp"   // ref_start
 #include <cstdio>
@@ -279,6 +280,53 @@ static int cmd_nativemap(int argc, char** argv) {
     return 0;
 }
 
+// Render one gameplay popup through the native frame engine (popup_render.cpp,
+// spec/ui/popups.md §2) over a WOODPANL-dimmed backdrop -- the headless render
+// gate for the popup compositor (asserts the byte-cited geometry, writes a PNG).
+static int cmd_nativepopup(int argc, char** argv) {
+    const char* root = opt(argc, argv, "--root");
+    const char* out  = opt(argc, argv, "--out");
+    if (!out) {
+        std::fprintf(stderr, "usage: viceroy_cpp nativepopup --out FILE.png "
+                             "[--root DIR] [--scale S]\n");
+        return 2;
+    }
+    std::string rt = root ? root : ".";
+    int scale = opt(argc, argv, "--scale") ? std::atoi(opt(argc, argv, "--scale")) : 3;
+
+    vc::NativeAssets a = vc::load_native_assets(rt);
+    vc::IndexedPng woodpanl = vc::load_pik_bg(rt, "WOODPANL", a.pal);
+
+    vc::Surface scr;
+    scr.set_palette(a.pal);
+    scr.clear(0);
+
+    // The @ABANDON record's shape: two body lines + two choice rows, default 2.
+    vc::PopupSpec p;
+    p.lines = {"Shall we abandon the colony of", "{Jamestown}?"};
+    p.choices = {"Yes", "No"};
+    p.highlight = 1;
+    p.box_w = 190;
+    vc::PopupLayout L = vc::popup_layout(a.font, p);
+    render_popup(scr, woodpanl, a.font, p, L);
+
+    // geometry gate: content >= @width, box centered + clamped on 320x200
+    bool ok = L.content_w >= 190 && L.w == L.content_w + 6 &&
+              L.x == (320 - L.w) / 2 && L.x >= 0 && L.y >= 0 &&
+              L.x + L.w <= 320 && L.y + L.h <= 200;
+    // paint gate: the border ring is the wood border color, not the backdrop
+    uint8_t border = scr.idx[(size_t)L.y * 320 + L.x];
+    uint8_t inside = scr.idx[(size_t)(L.y + 5) * 320 + (L.x + 5)];
+    ok = ok && border != 0 && inside != 0;
+    std::printf("nativepopup: box %d,%d %dx%d content %d border=%d body=%d\n",
+                L.x, L.y, L.w, L.h, L.content_w, border, inside);
+
+    vc::Image img = scr.to_rgb(scale);
+    vc::write_png_rgb(out, img.w, img.h, img.rgb);
+    std::printf("nativepopup: wrote %s%s\n", out, ok ? "" : "  GEOMETRY FAIL");
+    return ok ? 0 : 1;
+}
+
 // Compose the colony screen from spec/ui/colony_screen.md (see colony_screen.cpp).
 // Loads the COLONY.PIK backdrop + ICONS/BUILDING/FONTTINY from the bundle and a
 // minimal colony state, writes one 320x200 PNG.
@@ -358,6 +406,7 @@ int main(int argc, char** argv) {
         if (std::strcmp(argv[1], "render") == 0)      return cmd_render(argc, argv);
         if (std::strcmp(argv[1], "mapview") == 0)     return cmd_mapview(argc, argv);
         if (std::strcmp(argv[1], "nativemap") == 0)   return cmd_nativemap(argc, argv);
+        if (std::strcmp(argv[1], "nativepopup") == 0) return cmd_nativepopup(argc, argv);
         if (std::strcmp(argv[1], "colony") == 0)      return cmd_colony(argc, argv);
         std::fprintf(stderr, "unknown command '%s'\n", argv[1]);
         return 2;

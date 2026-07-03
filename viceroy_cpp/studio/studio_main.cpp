@@ -7,6 +7,7 @@
 // view over the byte-faithful session; the remaining panels (rules curves,
 // tables, map, screens, events) port over surface by surface.
 #include "studio.hpp"
+#include "studio_shared.hpp"  // AppState + shared assets + the editor panels
 #include "imgui.h"
 #include "imgui_internal.h"   // DockBuilder (first-run layout)
 
@@ -63,19 +64,26 @@ std::string value_preview(const Value& v) {
     return "";
 }
 
-// ------------------------------------------------------------------ app state
-struct App {
-    std::string project;
-    bool store_ok = false;
-    std::string status;              // one-line status/toast
-    // records browser
-    int sel_type = -1;
-    std::string sel_id;
-    // game view
-    bool game_active = false;
-};
+}  // namespace
 
-App g_app;
+// ------------------------------------------------------------------ app state
+// Shared with the panels (studio_shared.hpp): one AppState singleton.
+AppState& app() {
+    static AppState a;
+    return a;
+}
+
+void select_record(const std::string& id) {
+    Store* st = forge::drydock_store();
+    if (!st || !drydock::store_find(*st, id)) return;
+    app().sel_id = id;
+    auto ti = st->type_index.find(Record{id, {}}.type());
+    if (ti != st->type_index.end()) app().sel_type = (int)ti->second;
+}
+
+namespace {
+
+AppState& g_app = app();
 
 // ------------------------------------------------------------ records panel
 void records_panel() {
@@ -201,8 +209,7 @@ void inspector_panel() {
 // ---------------------------------------------------------------- game panel
 #if FORGE_STUDIO_GAME
 struct GameView {
-    bool assets_ok = false;
-    vc::NativeAssets assets;
+    bool tex_ok = false;
     Texture tex;
     int ox = 0, oy = 0, sel = -1;
     std::string notice;
@@ -263,14 +270,13 @@ void game_end_turn() {
 void game_panel(Driver& drv) {
     ImGui::Begin("Game");
     static bool auto_game = std::getenv("FORGE_AUTOGAME") != nullptr;
-    if (!g_gv.assets_ok) {
+    if (!g_gv.tex_ok) {
         if (ImGui::Button("Load game assets") || auto_game) {
-            try {
-                g_gv.assets = vc::load_native_assets(".");
+            if (assets_ensure()) {
                 g_gv.tex = drv.create_texture(vc::Surface::W, vc::Surface::H);
-                g_gv.assets_ok = true;
-            } catch (const std::exception& e) {
-                g_app.status = e.what();
+                g_gv.tex_ok = true;
+            } else {
+                g_app.status = assets().err;
             }
         }
         ImGui::SameLine();
@@ -278,6 +284,7 @@ void game_panel(Driver& drv) {
         ImGui::End();
         return;
     }
+    vc::NativeAssets& A = assets().nat;
     bool want_new = ImGui::Button(g_app.game_active ? "New Game" : "New Game##start");
     if (auto_game && !g_app.game_active) { want_new = true; auto_game = false; }
     if (want_new) {
@@ -297,10 +304,10 @@ void game_panel(Driver& drv) {
 
         // compose the frame from the live session
         vc::Surface scr;
-        scr.set_palette(g_gv.assets.pal);
+        scr.set_palette(A.pal);
         vc::Map m = session_map();
-        render_mapview(scr, m, g_gv.assets.terrain, g_gv.assets.phys,
-                       g_gv.assets.woodtile, g_gv.assets.font, g_game, g_world,
+        render_mapview(scr, m, A.terrain, A.phys,
+                       A.woodtile, A.font, g_game, g_world,
                        g_gv.ox, g_gv.oy);
         auto on_screen = [&](int x, int y, int& px, int& py) {
             int vx = x - g_gv.ox, vy = y - g_gv.oy;
@@ -313,7 +320,7 @@ void game_panel(Driver& drv) {
             if (c.x < 0 || !on_screen(c.x, c.y, px, py)) continue;
             scr.fill_rect(px + 2, py + 2, 12, 12, 6);
             scr.rect_outline(px + 2, py + 2, 12, 12, 15);
-            scr.draw_text(g_gv.assets.font, px + 5, py + 5,
+            scr.draw_text(A.font, px + 5, py + 5,
                           std::to_string(c.population), 15);
         }
         bool flash = ((int)(ImGui::GetTime() * 3)) & 1;
@@ -321,12 +328,12 @@ void game_panel(Driver& drv) {
             const vc::sim::Unit& u = g_world.units[i];
             int px, py;
             if (!u.alive || !on_screen(u.x, u.y, px, py)) continue;
-            if (u.type >= 0 && u.type < g_gv.assets.units.nframes)
-                scr.blit_frame(g_gv.assets.units.frames[u.type], px, py);
+            if (u.type >= 0 && u.type < A.units.nframes)
+                scr.blit_frame(A.units.frames[u.type], px, py);
             if (i == g_gv.sel && flash) scr.rect_outline(px, py, 16, 16, 15);
         }
         if (!g_gv.notice.empty())
-            scr.draw_text(g_gv.assets.font, 2, 193, g_gv.notice.substr(0, 52), 15);
+            scr.draw_text(A.font, 2, 193, g_gv.notice.substr(0, 52), 15);
 
         vc::Image img = scr.to_rgb(1);
         drv.update_texture(g_gv.tex, img.rgb.data());
@@ -374,6 +381,8 @@ void game_panel(Driver& drv) {
 #endif  // FORGE_STUDIO_GAME
 
 // -------------------------------------------------------------------- shell
+bool g_reset_layout = false;   // View > Reset window layout
+
 void main_menu() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -403,6 +412,11 @@ void main_menu() {
                 drydock::store_redo(*st, id);
                 g_app.status = "redo " + id;
             }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Reset window layout"))
+                g_reset_layout = true;
             ImGui::EndMenu();
         }
         ImGui::Separator();
@@ -436,8 +450,9 @@ int studio_run(Driver& drv, const std::string& project_dir) {
     while (drv.frame_begin()) {
         main_menu();
         ImGuiID dsid = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-        if (!layout_done) {                             // default dock layout
+        if (!layout_done || g_reset_layout) {           // default dock layout
             layout_done = true;
+            g_reset_layout = false;
             ImGui::DockBuilderRemoveNode(dsid);
             ImGui::DockBuilderAddNode(dsid, ImGuiDockNodeFlags_DockSpace);
             ImGui::DockBuilderSetNodeSize(dsid, ImGui::GetMainViewport()->WorkSize);
@@ -446,14 +461,23 @@ int studio_run(Driver& drv, const std::string& project_dir) {
             ImGui::DockBuilderSplitNode(rest, ImGuiDir_Right, 0.30f, &right, &center);
             ImGui::DockBuilderDockWindow("Records", left);
             ImGui::DockBuilderDockWindow("Inspector", right);
-            ImGui::DockBuilderDockWindow("Game", center);
+            ImGui::DockBuilderDockWindow("Game", center);       // center tabs:
+            ImGui::DockBuilderDockWindow("Screens", center);    // the editing
+            ImGui::DockBuilderDockWindow("Popups", center);     // surfaces live
+            ImGui::DockBuilderDockWindow("Sprites", center);    // with the game
             ImGui::DockBuilderFinish(dsid);
         }
         records_panel();
         inspector_panel();
+        sprites_panel(drv);
+        popups_panel(drv);
+        screens_panel(drv);
 #if FORGE_STUDIO_GAME
         game_panel(drv);
 #endif
+        // headless/CI hook: FORGE_FOCUS=<window> raises a panel (screenshots)
+        static const char* focus = std::getenv("FORGE_FOCUS");
+        if (focus) { ImGui::SetWindowFocus(focus); focus = nullptr; }
         drv.frame_end();
     }
     return 0;
