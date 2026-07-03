@@ -25,6 +25,12 @@ struct Diplomacy {
     // the confrontation evaluator compares two powers' scores relatively
     // (@0x3F0C5/@0x3F0CE) to raise the pending-grievance bit (@0x3F0D7).
     uint16_t grievance[4] = {};
+    // Per-power attitude byte (DGROUP 0x940C, diplomacy.md 3): the willingness
+    // input to ai_acts and the parley target-eligibility floor (>= 8 on at
+    // least one side, @0x57B1A). Adjusted on unit-ownership transfer
+    // (@0x5DC76); the INITIAL value is unextracted -- seeded 8 (the
+    // eligibility floor) at game setup, RECONSTRUCTED.
+    uint8_t attitude[4] = {8, 8, 8, 8};
 };
 
 // Symmetric writes (SIGNTREATY writes matrix[A][B] = matrix[B][A]).

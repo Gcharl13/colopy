@@ -2923,6 +2923,9 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     { forge::JsonValue gv = jarr();
       for (int a = 0; a < 4; ++a) gv.arr.push_back(forge::json_num(x.diplo.grievance[a]));
       o.obj["diplo_grievance"] = gv; }                           // DGROUP 0x941C
+    { forge::JsonValue at = jarr();
+      for (int a = 0; a < 4; ++a) at.arr.push_back(forge::json_num(x.diplo.attitude[a]));
+      o.obj["diplo_attitude"] = at; }                            // DGROUP 0x940C
     forge::JsonValue st = jarr();
     for (const forge::NativeSettlement& s : x.settlements) {
         forge::JsonValue so = jobj();
@@ -3014,6 +3017,8 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
         for (int a = 0; a < 4 && a < (int)c->arr.size(); ++a) x.diplo.cooldown[a] = c->arr[a].as_int();
     if (const forge::JsonValue* gv = o->find("diplo_grievance"))
         for (int a = 0; a < 4 && a < (int)gv->arr.size(); ++a) x.diplo.grievance[a] = (uint16_t)gv->arr[a].as_int();
+    if (const forge::JsonValue* at = o->find("diplo_attitude"))
+        for (int a = 0; a < 4 && a < (int)at->arr.size(); ++a) x.diplo.attitude[a] = (uint8_t)at->arr[a].as_int();
     x.settlements.clear();
     x.braves.clear();
     if (const forge::JsonValue* bv = o->find("braves"))
@@ -4225,6 +4230,60 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // kill iff rng(0,255) < alarm, else an even pick of the four responses;
         // the bead gift reuses the byte-verified tribute clamp (natives.md 6.3);
         // the tales reveal is an 11x11ish +/-8 square (radius RECONSTRUCTED).
+        // European parley (diplomacy.md func_057F4E): the human court meets
+        // power 1..3. Eligibility (@0x57B10/@0x57B1A): turn >= 0x28, one
+        // side's attitude >= 8, and the 16-turn re-parley cooldown expired.
+        // Actions write the byte-verified +0x34/+0x40 matrices; every
+        // completed action re-arms the cooldown (@0x58075). The tribute
+        // gold->demand-score conversion (1 per 100) and the -2 attitude cost
+        // of a paid demand are RECONSTRUCTED.
+        if (path == "/api/diplomacy/parley" && method == "POST") {
+            if (!g_game_active) game_new();
+            forge::JsonValue b = forge::json_parse(body);
+            int p = b.find("power") ? b.find("power")->as_int(-1) : -1;
+            if (p < 1 || p > 3) return err(400, "need {power: 1..3}");
+            auto& dp = g_engine_extra.diplo;
+            forge::JsonValue o = jobj();
+            const bool eligible = g_game.turn >= 0x28 &&
+                (dp.attitude[p] >= 8 || dp.attitude[0] >= 8) &&
+                g_game.turn >= dp.cooldown[p];
+            std::string act = b.find("action") ? b.find("action")->str : "topics";
+            if (act != "topics" && !eligible)
+                return err(400, "the court will not receive you");
+            if (act == "treaty") {
+                vc::sim::sign_treaty(dp, 0, p, g_game.turn);
+                o.obj["text"] = forge::json_str(game_message_text("@SIGNTREATY"));
+            } else if (act == "peace") {
+                if (!vc::sim::at_war(dp, 0, p)) return err(400, "not at war");
+                vc::sim::make_peace(dp, 0, p);
+                dp.cooldown[p] = vc::sim::treaty_cooldown(g_game.turn);
+                o.obj["text"] = forge::json_str(game_message_text("@PEACEMANLY"));
+            } else if (act == "war") {
+                vc::sim::declare_war(dp, 0, p);
+                dp.cooldown[p] = vc::sim::treaty_cooldown(g_game.turn);
+                o.obj["text"] = forge::json_str(game_message_text("@DECLAREWAR"));
+            } else if (act == "tribute") {
+                long amount = b.find("amount") ? (long)b.find("amount")->num : 0;
+                if (amount <= 0) return err(400, "need {amount}");
+                const int score = (int)(amount / 100);
+                auto& pw = g_game.powers[p & 3];
+                const bool accepted = vc::sim::ai_acts(dp.attitude[p], score, game_rng) &&
+                                      pw.gold >= amount;   // affordability (@0x58E1F)
+                if (accepted) {
+                    pw.gold -= amount; g_game.powers[0].gold += amount;
+                    if (dp.attitude[p] >= 2) dp.attitude[p] -= 2;
+                }
+                dp.cooldown[p] = vc::sim::treaty_cooldown(g_game.turn);
+                o.obj["accepted"] = jbool(accepted);
+            } else if (act != "topics") return err(400, "unknown action");
+            o.obj["eligible"] = jbool(eligible);
+            o.obj["at_war"] = jbool(vc::sim::at_war(dp, 0, p));
+            o.obj["treaty"] = jbool(vc::sim::has_treaty(dp, 0, p));
+            o.obj["attitude"] = forge::json_num(dp.attitude[p]);
+            o.obj["grievance"] = forge::json_num(dp.grievance[p]);
+            o.obj["cooldown_until"] = forge::json_num(dp.cooldown[p]);
+            return J(200, o);
+        }
         if (path == "/api/native/chief" && method == "POST") {
             if (!g_game_active) return err(400, "no active game");
             Unit* u; forge::NativeSettlement* sv; int si = -1;
