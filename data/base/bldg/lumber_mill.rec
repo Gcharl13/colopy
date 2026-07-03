@@ -1,0 +1,9 @@
+record bldg.lumber_mill {
+  index      = 36
+  name       = "Lumber Mill"
+  cost       = 52
+  tools_x10  = 0
+  size       = 1
+  min_colony = 3
+  upkeep     = 10
+}

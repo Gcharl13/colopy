@@ -1,0 +1,9 @@
+record bldg.capitol {
+  index      = 30
+  name       = "Capitol"
+  cost       = 400
+  tools_x10  = 10
+  size       = 2
+  min_colony = 16
+  upkeep     = 20
+}

@@ -1,0 +1,9 @@
+record bldg.stable {
+  index      = 17
+  name       = "Stable"
+  cost       = 64
+  tools_x10  = 0
+  size       = 0
+  min_colony = 1
+  upkeep     = 5
+}

@@ -1,0 +1,5 @@
+record conf.sol_birth_bonus {
+  value = 100
+  group = "economy"
+  doc   = "SoL divisor bump on a birth"
+}

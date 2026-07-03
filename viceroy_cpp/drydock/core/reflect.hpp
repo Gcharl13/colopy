@@ -11,7 +11,7 @@
 
 namespace drydock {
 
-enum class RType : uint8_t { I32, Str };   // grows with the migrated field kinds
+enum class RType : uint8_t { I32, Str, RefId };   // grows with the migrated field kinds
 
 struct DDFieldInfo {
     const char* name;        // schema field name
@@ -44,6 +44,10 @@ inline bool reflect_load(const DDTypeInfo& ti, const Record& r, void* obj) {
                 if (v->kind != ValKind::Str) return false;
                 *reinterpret_cast<std::string*>((char*)obj + fi.offset) = v->s;
                 break;
+            case RType::RefId:
+                if (v->kind != ValKind::Token) return false;
+                *reinterpret_cast<std::string*>((char*)obj + fi.offset) = v->s;
+                break;
         }
     }
     return true;
@@ -64,6 +68,10 @@ inline Record reflect_serialize(const DDTypeInfo& ti, const std::string& id, con
                 break;
             case RType::Str:
                 r.fields.push_back({fi.name, Value::make_str(
+                    *reinterpret_cast<const std::string*>((const char*)obj + fi.offset))});
+                break;
+            case RType::RefId:
+                r.fields.push_back({fi.name, Value::make_token(
                     *reinterpret_cast<const std::string*>((const char*)obj + fi.offset))});
                 break;
         }

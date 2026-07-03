@@ -1,0 +1,9 @@
+record bldg.rum_factory {
+  index      = 29
+  name       = "Rum Factory"
+  cost       = 160
+  tools_x10  = 10
+  size       = 0
+  min_colony = 8
+  upkeep     = 15
+}

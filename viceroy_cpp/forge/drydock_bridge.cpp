@@ -1,6 +1,7 @@
 // forge/drydock_bridge -- populate RuleData from the Drydock canonical text
 // (dev-build text loading per spec §4.1). See drydock_bridge.hpp.
 #include "drydock_bridge.hpp"
+#include "cfg_fields.hpp"
 #include "../drydock/text/rec_text.hpp"
 #include "../drydock/schema/schema.hpp"
 #include <dirent.h>
@@ -13,6 +14,14 @@ namespace forge {
 
 using namespace drydock;
 using vc::sim::RuleData;
+
+// one Config scalar by name (shared X-macro; also see store.cpp cfg_get)
+static bool cfg_set_field(vc::sim::Config& c, const std::string& name, double v) {
+#define X(f) if (name == #f) { c.f = (decltype(c.f))v; return true; }
+    CFG_FIELDS(X)
+#undef X
+    return false;
+}
 
 static std::string slurp(const std::string& p) {
     std::ifstream f(p);
@@ -68,19 +77,22 @@ bool drydock_apply_base(RuleData& rd, const std::string& data_dir, std::string& 
     }
 
     RuleData out = rd;
-    drydock_apply_records(out, recs);
-    int ng = 0, nu = 0, np = 0;
+    drydock_apply_records(out, recs, /*include_conf=*/true);
+    int ng = 0, nu = 0, np = 0, nt = 0, nc = 0;
     for (const Record& r : recs) {
         if (r.type() == "good") ++ng; else if (r.type() == "unit") ++nu;
-        else if (r.type() == "prof") ++np;
+        else if (r.type() == "prof") ++np; else if (r.type() == "terr") ++nt;
+        else if (r.type() == "conf") ++nc;
     }
     rd = out;
     msg = "drydock: rules loaded from " + data_dir + "/base (" + std::to_string(ng) +
-          " goods, " + std::to_string(nu) + " units, " + std::to_string(np) + " professions)";
+          " goods, " + std::to_string(nu) + " units, " + std::to_string(np) +
+          " professions, " + std::to_string(nt) + " terrains, " + std::to_string(nc) + " knobs)";
     return true;
 }
 
-void drydock_apply_records(RuleData& out, const std::vector<Record>& recs) {
+void drydock_apply_records(RuleData& out, const std::vector<Record>& recs,
+                           bool include_conf) {
     for (const Record& r : recs) {
         const long long idx = geti(r, "index", -1);
         if (r.type() == "good") {
@@ -103,6 +115,17 @@ void drydock_apply_records(RuleData& out, const std::vector<Record>& recs) {
             auto& j = out.jobs[idx];
             j.school_tier = (int)geti(r, "school_tier", j.school_tier);
             j.value       = (int)geti(r, "europe_value", j.value);
+        } else if (r.type() == "terr") {
+            if (idx < 0 || idx >= (long long)out.terrain_defense.size()) continue;
+            out.terrain_defense[idx] = (int)geti(r, "defensive",   out.terrain_defense[idx]);
+            out.terrain_move[idx]    = (int)geti(r, "movement",    out.terrain_move[idx]);
+            out.terrain_improve[idx] = (int)geti(r, "improvement", out.terrain_improve[idx]);
+            out.terrain_value[idx]   = (int)geti(r, "value",       out.terrain_value[idx]);
+        } else if (include_conf && r.type() == "conf") {
+            const Value* v = r.find("value");
+            if (v && v->kind == ValKind::Int)
+                cfg_set_field(out.cfg, r.id.substr(5), (double)v->i);
+            // list-valued knobs (gate years) stay overlay-edited for now
         }
     }
 }

@@ -1,0 +1,9 @@
+record bldg.newspaper {
+  index      = 20
+  name       = "Newspaper"
+  cost       = 120
+  tools_x10  = 5
+  size       = 0
+  min_colony = 4
+  upkeep     = 10
+}

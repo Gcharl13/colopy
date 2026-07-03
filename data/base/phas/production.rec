@@ -1,0 +1,9 @@
+record phas.production {
+  index    = 1
+  function = "colony_economic_step"
+  scope    = "power"
+  enabled  = 1
+  reads    = ["colony.bells_per_turn", "colony.build_cost", "colony.food_per_turn", "colony.hammers_per_turn", "colony.population"]
+  writes   = ["colony.build_bank", "colony.built_mask", "colony.food_accum", "colony.population", "colony.sol"]
+  doc      = "The per-power colony loop (func_02F052 @0x2F25F): production, SoL, build, growth, school."
+}

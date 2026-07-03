@@ -1,0 +1,9 @@
+record bldg.custom_house {
+  index      = 18
+  name       = "Custom House"
+  cost       = 160
+  tools_x10  = 5
+  size       = 0
+  min_colony = 1
+  upkeep     = 15
+}

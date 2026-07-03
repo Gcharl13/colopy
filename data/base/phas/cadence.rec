@@ -1,0 +1,9 @@
+record phas.cadence {
+  index    = 4
+  function = "advance_cadence"
+  scope    = "global"
+  enabled  = 1
+  reads    = ["game.season", "game.year"]
+  writes   = ["game.season", "game.turn", "game.year"]
+  doc      = "Turn counter +1 (@0x5A9D); 1 turn = 1 year before 1600, Spring/Autumn halves after."
+}

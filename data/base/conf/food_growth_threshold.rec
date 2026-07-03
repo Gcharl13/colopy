@@ -1,0 +1,5 @@
+record conf.food_growth_threshold {
+  value = 200
+  group = "economy"
+  doc   = "warehouse Food to add +1 pop (USER RULING + warehousing.md; 200 stored -> new colonist, -200)"
+}

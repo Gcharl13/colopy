@@ -1,0 +1,5 @@
+record conf.ref_accrue_scale {
+  value = 8
+  group = "ref"
+  doc   = "royal_money rate = scale*diff+off"
+}

@@ -1,0 +1,21 @@
+record schm.terr {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 28, doc = "Terrain id (0-7 base, 8-23 forested bands, 24 Arctic, 25 Ocean, 26 Sea Lane, 27 Mountains, 28 Hills; load-bearing)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @UNFORESTED/@FORESTED/@OTHER row name" },
+    { name = "movement", type = "int", doc = "Move points to enter (@TERRAIN movement)" },
+    { name = "defensive", type = "int", doc = "Defense bonus value (combat.md defense_bonus)" },
+    { name = "improvement", type = "int", doc = "Clear/plow/road work threshold base (terrain_improvement.md)" },
+    { name = "value", type = "int", doc = "AI colony-site desirability base (ai.md 3b)" },
+    { name = "y_farmer", type = "int", doc = "Food yield" },
+    { name = "y_planter_sugar", type = "int", doc = "Sugar yield" },
+    { name = "y_planter_tobacco", type = "int", doc = "Tobacco yield" },
+    { name = "y_planter_cotton", type = "int", doc = "Cotton yield" },
+    { name = "y_trapper", type = "int", doc = "Furs yield" },
+    { name = "y_lumberjack", type = "int", doc = "Lumber yield" },
+    { name = "y_ore", type = "int", doc = "Ore yield" },
+    { name = "y_silver", type = "int", doc = "Silver yield" },
+    { name = "y_fisherman", type = "int", doc = "Fish yield" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

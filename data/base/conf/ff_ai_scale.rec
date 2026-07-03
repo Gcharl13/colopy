@@ -1,0 +1,5 @@
+record conf.ff_ai_scale {
+  value = 8
+  group = "founding_fathers"
+  doc   = "ai base = (off-diff)*scale"
+}

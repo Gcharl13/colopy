@@ -1,0 +1,5 @@
+record conf.fortify_def_num {
+  value = 3
+  group = "combat"
+  doc   = "fortified DEF numerator (DEF *3/2)"
+}

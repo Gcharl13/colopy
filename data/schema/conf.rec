@@ -1,0 +1,10 @@
+record schm.conf {
+  version = 1
+  fields  = [
+    { name = "value", type = "int", doc = "The scalar value (absent when the knob is a list)" },
+    { name = "values", type = "list<int>", ordered = true, doc = "List-valued knob (e.g. gate years)" },
+    { name = "group", type = "str", doc = "System grouping (economy/market/combat/...)" },
+    { name = "doc", type = "str", doc = "What the knob means (from sim/rules.hpp)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

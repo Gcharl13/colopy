@@ -1,0 +1,5 @@
+record conf.ff_gate_years {
+  values = [1600, 1650, 1700, 1750]
+  group  = "founding_fathers"
+  doc    = "cost-compounding gate years"
+}

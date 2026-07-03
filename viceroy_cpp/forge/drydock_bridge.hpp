@@ -21,7 +21,11 @@ bool drydock_apply_base(vc::sim::RuleData& rd, const std::string& data_dir,
 
 // Apply already-parsed records onto rd (the store-backed API uses this to keep
 // the live game in lockstep after edits). Unknown types/indices are skipped.
+// include_conf: CONF scalars apply only at startup (before the Rules overlay
+// loads on top); live /api/dd edits skip them so overlay cfg edits survive
+// until overlays are subsumed at P5.
 void drydock_apply_records(vc::sim::RuleData& rd,
-                           const std::vector<drydock::Record>& recs);
+                           const std::vector<drydock::Record>& recs,
+                           bool include_conf = false);
 
 } // namespace forge

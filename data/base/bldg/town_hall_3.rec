@@ -1,0 +1,9 @@
+record bldg.town_hall_3 {
+  index      = 11
+  name       = "Town Hall"
+  cost       = 120
+  tools_x10  = 10
+  size       = 2
+  min_colony = 8
+  upkeep     = 15
+}

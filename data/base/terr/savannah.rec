@@ -1,0 +1,17 @@
+record terr.savannah {
+  index             = 5
+  name              = "Savannah"
+  movement          = 1
+  defensive         = 0
+  improvement       = 3
+  value             = 4
+  y_farmer          = 3
+  y_planter_sugar   = 3
+  y_planter_tobacco = 0
+  y_planter_cotton  = 0
+  y_trapper         = 0
+  y_lumberjack      = 0
+  y_ore             = 0
+  y_silver          = 0
+  y_fisherman       = 0
+}

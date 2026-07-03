@@ -1,0 +1,5 @@
+record conf.ref_cavalry_scale {
+  value = 5
+  group = "ref"
+  doc   = "REF cavalry start scale"
+}

@@ -1,0 +1,5 @@
+record conf.expert_era_bonus {
+  value = 2
+  group = "economy"
+  doc   = "expert on an era good: +bonus"
+}

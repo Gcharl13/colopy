@@ -1,0 +1,9 @@
+record bldg.printing_press {
+  index      = 19
+  name       = "Printing Press"
+  cost       = 52
+  tools_x10  = 2
+  size       = 0
+  min_colony = 1
+  upkeep     = 5
+}

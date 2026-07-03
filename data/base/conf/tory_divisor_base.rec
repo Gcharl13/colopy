@@ -1,0 +1,5 @@
+record conf.tory_divisor_base {
+  value = 10
+  group = "economy"
+  doc   = "tory penalty divisor (human: base-diff; ai: base)"
+}

@@ -1,0 +1,5 @@
+record conf.ref_cavalry_offset {
+  value = 5
+  group = "ref"
+  doc   = "REF cavalry offset"
+}

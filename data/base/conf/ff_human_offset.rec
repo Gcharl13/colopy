@@ -1,0 +1,5 @@
+record conf.ff_human_offset {
+  value = 3
+  group = "founding_fathers"
+  doc   = "human base offset"
+}

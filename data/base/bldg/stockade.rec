@@ -1,0 +1,9 @@
+record bldg.stockade {
+  index      = 0
+  name       = "Stockade"
+  cost       = 64
+  tools_x10  = 0
+  size       = 3
+  min_colony = 3
+  upkeep     = 0
+}

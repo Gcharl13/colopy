@@ -1,0 +1,5 @@
+record conf.sol_inflow_mult {
+  value = 2
+  group = "economy"
+  doc   = "SoL divisor inflow = mult*population"
+}

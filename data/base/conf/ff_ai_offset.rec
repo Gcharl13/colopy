@@ -1,0 +1,5 @@
+record conf.ff_ai_offset {
+  value = 14
+  group = "founding_fathers"
+  doc   = "ai base offset"
+}

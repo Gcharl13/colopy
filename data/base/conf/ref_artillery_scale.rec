@@ -1,0 +1,5 @@
+record conf.ref_artillery_scale {
+  value = 6
+  group = "ref"
+  doc   = "REF artillery start scale"
+}

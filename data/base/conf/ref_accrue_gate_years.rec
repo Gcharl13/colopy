@@ -1,0 +1,5 @@
+record conf.ref_accrue_gate_years {
+  values = [1600, 1700, 1750]
+  group  = "ref"
+  doc    = "accrual rate doubles at each gate year"
+}

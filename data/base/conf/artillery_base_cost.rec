@@ -1,0 +1,5 @@
+record conf.artillery_base_cost {
+  value = 500
+  group = "economy"
+  doc   = "Europe artillery purchase base; +100 per prior purchase (counter +0x1E, @0x035124/@0x035282). Base RECONSTRUCTED."
+}

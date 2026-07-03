@@ -1,0 +1,9 @@
+record bldg.fur_trading_post {
+  index      = 33
+  name       = "Fur Trading Post"
+  cost       = 56
+  tools_x10  = 2
+  size       = 0
+  min_colony = 1
+  upkeep     = 5
+}

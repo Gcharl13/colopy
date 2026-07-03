@@ -1,0 +1,9 @@
+record phas.orders {
+  index    = 0
+  function = "apply_orders"
+  scope    = "power"
+  enabled  = 1
+  reads    = ["game.difficulty", "game.year", "power.royal_money", "unit.order", "unit.type", "unit.x", "unit.y"]
+  writes   = ["power.royal_money", "ref.artillery", "ref.cavalry", "ref.manowar", "ref.regulars", "unit.alive", "unit.moves_left", "unit.x", "unit.y"]
+  doc      = "Per power: REF accrual+purchase (crown-facing power), the AI strategic pass (computer powers), then that power's standing orders. Shore fire + the fog sweep run once after the whole power loop."
+}

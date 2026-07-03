@@ -1,0 +1,5 @@
+record conf.warehouse_cap_base {
+  value = 100
+  group = "economy"
+  doc   = "per-good cap = (level+1)*base"
+}

@@ -1,0 +1,9 @@
+record phas.market {
+  index    = 3
+  function = "price_drift"
+  scope    = "global"
+  enabled  = 1
+  reads    = ["market.price_base"]
+  writes   = ["market.price_base"]
+  doc      = "Supply-accumulator drift + republish + volume reset, once per turn (model-shape note in _doc)."
+}

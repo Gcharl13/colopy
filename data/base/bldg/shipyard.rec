@@ -1,0 +1,9 @@
+record bldg.shipyard {
+  index      = 8
+  name       = "Shipyard"
+  cost       = 240
+  tools_x10  = 10
+  size       = 4
+  min_colony = 8
+  upkeep     = 15
+}

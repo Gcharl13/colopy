@@ -191,6 +191,26 @@ static void test_ruledata_parity() {
     for (size_t i = 0; i < rd.jobs.size(); ++i)
         if (rd.jobs[i].school_tier != def.jobs[i].school_tier || rd.jobs[i].value != def.jobs[i].value) ++bad;
     check(bad == 0, "parity: every PROF field == compiled defaults");
+
+    // TERR: poison the four terrain arrays, reload, compare
+    RuleData rt = def;
+    for (size_t i = 0; i < rt.terrain_defense.size(); ++i) {
+        rt.terrain_defense[i] = -999; rt.terrain_move[i] = -999;
+        rt.terrain_improve[i] = -999; rt.terrain_value[i] = -999;
+    }
+    rt.cfg.food_growth_threshold = -999;                 // CONF spot-check
+    rt.cfg.fortify_def_num = -999;
+    check(forge::drydock_apply_base(rt, "data", msg), "parity: reload with terr/conf");
+    bad = 0;
+    for (size_t i = 0; i < rt.terrain_defense.size(); ++i)
+        if (rt.terrain_defense[i] != def.terrain_defense[i] ||
+            rt.terrain_move[i] != def.terrain_move[i] ||
+            rt.terrain_improve[i] != def.terrain_improve[i] ||
+            rt.terrain_value[i] != def.terrain_value[i]) ++bad;
+    check(bad == 0, "parity: every TERR array == compiled defaults");
+    check(rt.cfg.food_growth_threshold == def.cfg.food_growth_threshold &&
+          rt.cfg.fortify_def_num == def.cfg.fortify_def_num,
+          "parity: CONF scalars == compiled defaults");
 }
 
 static void test_reflection() {
@@ -207,7 +227,7 @@ static void test_reflection() {
     check(g.burden == 7, "reflect: burden == 7 (the Food spread)");
     Record back = reflect_serialize(good_type, "good.food", &g);
     check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
-    check(dd_all_types_count == 3 && std::string(good_type.code) == "good",
+    check(dd_all_types_count == 7 && std::string(good_type.code) == "good",
           "reflect: type registry populated");
 }
 

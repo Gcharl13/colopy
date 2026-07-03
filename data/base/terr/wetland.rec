@@ -1,0 +1,17 @@
+record terr.wetland {
+  index             = 14
+  name              = "Wetland"
+  movement          = 3
+  defensive         = 2
+  improvement       = 6
+  value             = 1
+  y_farmer          = 1
+  y_planter_sugar   = 0
+  y_planter_tobacco = 1
+  y_planter_cotton  = 0
+  y_trapper         = 2
+  y_lumberjack      = 2
+  y_ore             = 1
+  y_silver          = 0
+  y_fisherman       = 0
+}

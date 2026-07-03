@@ -1,0 +1,5 @@
+record conf.rush_gold_per_hammer {
+  value = 8
+  group = "economy"
+  doc   = "gold to rush-buy one remaining hammer (RECONSTRUCTED)"
+}

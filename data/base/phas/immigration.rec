@@ -1,0 +1,9 @@
+record phas.immigration {
+  index    = 2
+  function = "immigration_step"
+  scope    = "power"
+  enabled  = 1
+  reads    = ["cfg.imm_base_crosses", "colony.crosses_output", "colony.population", "power.crosses"]
+  writes   = ["power.crosses", "power.crosses_threshold", "power.dock_pool"]
+  doc      = "Rides the production slice (func_0363A2 @0x363E2): the power's Europe dock advances."
+}

@@ -1,0 +1,5 @@
+record conf.ff_post_indep_offset {
+  value = 2000
+  group = "founding_fathers"
+  doc   = "post-independence offset"
+}

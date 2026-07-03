@@ -1,0 +1,5 @@
+record conf.sol_decay_shift {
+  value = 6
+  group = "economy"
+  doc   = "SoL EMA decay 1/(2^shift) = 1/64"
+}

@@ -1,0 +1,9 @@
+record bldg.rum_distiller_s_house {
+  index      = 27
+  name       = "Rum Distiller's House"
+  cost       = 64
+  tools_x10  = 0
+  size       = 0
+  min_colony = 1
+  upkeep     = 0
+}

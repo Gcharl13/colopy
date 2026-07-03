@@ -1,0 +1,5 @@
+record conf.ref_artillery_offset {
+  value = 2
+  group = "ref"
+  doc   = "REF artillery offset"
+}

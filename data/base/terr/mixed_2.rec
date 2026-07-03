@@ -1,0 +1,17 @@
+record terr.mixed_2 {
+  index             = 18
+  name              = "Mixed"
+  movement          = 2
+  defensive         = 2
+  improvement       = 4
+  value             = 3
+  y_farmer          = 2
+  y_planter_sugar   = 0
+  y_planter_tobacco = 0
+  y_planter_cotton  = 1
+  y_trapper         = 3
+  y_lumberjack      = 3
+  y_ore             = 0
+  y_silver          = 0
+  y_fisherman       = 0
+}

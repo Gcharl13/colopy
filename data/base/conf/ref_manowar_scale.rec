@@ -1,0 +1,5 @@
+record conf.ref_manowar_scale {
+  value = 3
+  group = "ref"
+  doc   = "REF man-o-war start scale"
+}

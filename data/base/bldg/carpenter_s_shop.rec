@@ -1,0 +1,9 @@
+record bldg.carpenter_s_shop {
+  index      = 35
+  name       = "Carpenter's Shop"
+  cost       = 39
+  tools_x10  = 0
+  size       = 1
+  min_colony = 1
+  upkeep     = 0
+}

@@ -1,0 +1,9 @@
+record bldg.cathedral {
+  index      = 38
+  name       = "Cathedral"
+  cost       = 176
+  tools_x10  = 10
+  size       = 2
+  min_colony = 8
+  upkeep     = 15
+}

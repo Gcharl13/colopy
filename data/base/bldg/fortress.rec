@@ -1,0 +1,9 @@
+record bldg.fortress {
+  index      = 2
+  name       = "Fortress"
+  cost       = 320
+  tools_x10  = 20
+  size       = 3
+  min_colony = 8
+  upkeep     = 15
+}

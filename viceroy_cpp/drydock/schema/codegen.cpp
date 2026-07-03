@@ -35,6 +35,7 @@ static const char* cpp_type(const FieldDef& fd) {
     switch (fd.type) {
         case FType::Int: return "int32_t";
         case FType::Str: return "std::string";
+        case FType::Ref: return "std::string";      // ref id as string
         default: return nullptr;
     }
 }
@@ -42,6 +43,7 @@ static const char* rtype_name(const FieldDef& fd) {
     switch (fd.type) {
         case FType::Int: return "RType::I32";
         case FType::Str: return "RType::Str";
+        case FType::Ref: return "RType::RefId";
         default: return nullptr;
     }
 }
@@ -91,29 +93,31 @@ int main(int argc, char** argv) {
     for (const auto& [code, td] : sc.types) {        // std::map: sorted by code
         const std::string S = type_struct(code);
         o += "\n// ---- " + code + " (schema v" + std::to_string(td.version) + ") ----\n";
+        // fields the P1 struct emitter can represent; the rest stay accessible
+        // through the generic Record path (noted in the header, never silent)
+        std::vector<const FieldDef*> rep, skipped;
+        for (const FieldDef& fd : td.fields)
+            (cpp_type(fd) ? rep : skipped).push_back(&fd);
+        for (const FieldDef* fd : skipped)
+            o += "// NOTE: field '" + fd->name + "' (" + code +
+                 ") not struct-represented yet -- use the generic Record path\n";
         o += "struct " + S + " {\n";
-        for (const FieldDef& fd : td.fields) {
-            const char* ct = cpp_type(fd);
-            if (!ct) {
-                std::fprintf(stderr, "%s.%s: field type not yet representable in codegen\n",
-                             code.c_str(), fd.name.c_str());
-                return 1;
-            }
-            o += "    " + std::string(ct) + " " + fd.name +
-                 (fd.type == FType::Int ? " = 0;" : ";");
-            if (!fd.doc.empty()) o += "   // " + fd.doc;
+        for (const FieldDef* fd : rep) {
+            o += "    " + std::string(cpp_type(*fd)) + " " + fd->name +
+                 (fd->type == FType::Int ? " = 0;" : ";");
+            if (!fd->doc.empty()) o += "   // " + fd->doc;
             o += "\n";
         }
-        for (const FieldDef& fd : td.fields)
-            o += "    bool has_" + fd.name + " = false;\n";
+        for (const FieldDef* fd : rep)
+            o += "    bool has_" + fd->name + " = false;\n";
         o += "};\n";
         o += "inline const DDFieldInfo " + code + "_fields[] = {\n";
-        for (const FieldDef& fd : td.fields)
-            o += "    {\"" + fd.name + "\", " + rtype_name(fd) + ", offsetof(" + S + ", " +
-                 fd.name + "), offsetof(" + S + ", has_" + fd.name + ")},\n";
+        for (const FieldDef* fd : rep)
+            o += "    {\"" + fd->name + "\", " + rtype_name(*fd) + ", offsetof(" + S + ", " +
+                 fd->name + "), offsetof(" + S + ", has_" + fd->name + ")},\n";
         o += "};\n";
         o += "inline const DDTypeInfo " + code + "_type = {\"" + code + "\", " + code +
-             "_fields, " + std::to_string(td.fields.size()) + ", sizeof(" + S + ")};\n";
+             "_fields, " + std::to_string(rep.size()) + ", sizeof(" + S + ")};\n";
         o += "inline bool load_" + code + "(const Record& r, " + S + "& out) "
              "{ return reflect_load(" + code + "_type, r, &out); }\n";
         o += "inline Record serialize_" + code + "(const std::string& id, const " + S +

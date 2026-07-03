@@ -1,0 +1,17 @@
+record terr.rain {
+  index             = 15
+  name              = "Rain"
+  movement          = 3
+  defensive         = 3
+  improvement       = 7
+  value             = 1
+  y_farmer          = 1
+  y_planter_sugar   = 1
+  y_planter_tobacco = 0
+  y_planter_cotton  = 0
+  y_trapper         = 1
+  y_lumberjack      = 2
+  y_ore             = 1
+  y_silver          = 0
+  y_fisherman       = 0
+}

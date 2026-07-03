@@ -1,0 +1,13 @@
+record schm.bldg {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 41, doc = "@BUILDING row ordinal (def_id; load-bearing for sprites + build menu)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @BUILDING name" },
+    { name = "cost", type = "int", doc = "Hammer cost" },
+    { name = "tools_x10", type = "int", doc = "Tool cost x10 (@BUILDING column, kept verbatim)" },
+    { name = "size", type = "int", doc = "@BUILDING size column" },
+    { name = "min_colony", type = "int", doc = "Minimum colony population to build" },
+    { name = "upkeep", type = "int", doc = "Per-turn upkeep" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

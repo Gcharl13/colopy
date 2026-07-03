@@ -1,0 +1,5 @@
+record conf.ff_human_scale {
+  value = 16
+  group = "founding_fathers"
+  doc   = "human base = (diff+off)*scale"
+}

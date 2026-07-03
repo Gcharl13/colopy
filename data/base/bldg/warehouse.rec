@@ -1,0 +1,9 @@
+record bldg.warehouse {
+  index      = 15
+  name       = "Warehouse"
+  cost       = 80
+  tools_x10  = 0
+  size       = 1
+  min_colony = 1
+  upkeep     = 5
+}

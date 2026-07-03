@@ -1,0 +1,9 @@
+record bldg.college {
+  index      = 13
+  name       = "College"
+  cost       = 160
+  tools_x10  = 5
+  size       = 1
+  min_colony = 8
+  upkeep     = 10
+}

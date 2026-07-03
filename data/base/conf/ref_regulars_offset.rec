@@ -1,0 +1,5 @@
+record conf.ref_regulars_offset {
+  value = 15
+  group = "ref"
+  doc   = "REF regulars offset"
+}

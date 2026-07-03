@@ -1,0 +1,17 @@
+record terr.mountains {
+  index             = 27
+  name              = "Mountains"
+  movement          = 3
+  defensive         = 6
+  improvement       = 7
+  value             = 2
+  y_farmer          = 0
+  y_planter_sugar   = 0
+  y_planter_tobacco = 0
+  y_planter_cotton  = 0
+  y_trapper         = 0
+  y_lumberjack      = 0
+  y_ore             = 4
+  y_silver          = 1
+  y_fisherman       = 0
+}

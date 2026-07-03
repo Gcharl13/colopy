@@ -1,0 +1,17 @@
+record terr.tropical {
+  index             = 13
+  name              = "Tropical"
+  movement          = 2
+  defensive         = 2
+  improvement       = 6
+  value             = 3
+  y_farmer          = 2
+  y_planter_sugar   = 1
+  y_planter_tobacco = 0
+  y_planter_cotton  = 0
+  y_trapper         = 2
+  y_lumberjack      = 2
+  y_ore             = 0
+  y_silver          = 0
+  y_fisherman       = 0
+}

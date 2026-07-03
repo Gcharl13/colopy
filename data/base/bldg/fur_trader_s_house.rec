@@ -1,0 +1,9 @@
+record bldg.fur_trader_s_house {
+  index      = 32
+  name       = "Fur Trader's House"
+  cost       = 56
+  tools_x10  = 0
+  size       = 0
+  min_colony = 1
+  upkeep     = 0
+}

@@ -1,0 +1,9 @@
+record bldg.schoolhouse {
+  index      = 12
+  name       = "Schoolhouse"
+  cost       = 64
+  tools_x10  = 0
+  size       = 1
+  min_colony = 4
+  upkeep     = 5
+}

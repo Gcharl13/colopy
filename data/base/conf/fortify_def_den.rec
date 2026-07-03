@@ -1,0 +1,5 @@
+record conf.fortify_def_den {
+  value = 2
+  group = "combat"
+  doc   = "fortified DEF denominator"
+}

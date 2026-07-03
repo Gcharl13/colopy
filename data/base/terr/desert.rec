@@ -1,0 +1,17 @@
+record terr.desert {
+  index             = 1
+  name              = "Desert"
+  movement          = 1
+  defensive         = 0
+  improvement       = 3
+  value             = 2
+  y_farmer          = 1
+  y_planter_sugar   = 0
+  y_planter_tobacco = 0
+  y_planter_cotton  = 1
+  y_trapper         = 0
+  y_lumberjack      = 0
+  y_ore             = 2
+  y_silver          = 0
+  y_fisherman       = 0
+}

@@ -1,0 +1,5 @@
+record conf.ref_manowar_offset {
+  value = 2
+  group = "ref"
+  doc   = "REF man-o-war offset"
+}

@@ -1,0 +1,5 @@
+record conf.expert_mfg_mult {
+  value = 2
+  group = "economy"
+  doc   = "expert on a manufactured good: *mult"
+}

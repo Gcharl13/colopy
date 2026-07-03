@@ -1,0 +1,17 @@
+record terr.scrub {
+  index             = 9
+  name              = "Scrub"
+  movement          = 1
+  defensive         = 2
+  improvement       = 4
+  value             = 1
+  y_farmer          = 1
+  y_planter_sugar   = 0
+  y_planter_tobacco = 0
+  y_planter_cotton  = 1
+  y_trapper         = 2
+  y_lumberjack      = 1
+  y_ore             = 1
+  y_silver          = 0
+  y_fisherman       = 0
+}

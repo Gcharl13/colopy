@@ -1,0 +1,5 @@
+record conf.ff_compounding_shift {
+  value = 1
+  group = "founding_fathers"
+  doc   = "per reached gate: cost += cost>>shift (x1.5)"
+}

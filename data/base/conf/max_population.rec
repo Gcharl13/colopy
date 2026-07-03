@@ -1,0 +1,5 @@
+record conf.max_population {
+  value = 32
+  group = "economy"
+  doc   = "colony population cap"
+}

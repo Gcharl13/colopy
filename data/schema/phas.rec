@@ -1,0 +1,13 @@
+record schm.phas {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 63, doc = "Pipeline order (turn_dispatch.md per-power interleave)" },
+    { name = "function", type = "str", required = true, doc = "The sim formula this phase runs" },
+    { name = "scope", type = "str", doc = "power | global" },
+    { name = "enabled", type = "int", min = 0, max = 1, doc = "0 = skipped by run_turn" },
+    { name = "reads", type = "list<str>", doc = "Columns read (reverse-index source)" },
+    { name = "writes", type = "list<str>", doc = "Columns written" },
+    { name = "doc", type = "str", doc = "Byte-anchor note" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

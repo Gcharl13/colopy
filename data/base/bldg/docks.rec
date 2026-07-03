@@ -1,0 +1,9 @@
+record bldg.docks {
+  index      = 6
+  name       = "Docks"
+  cost       = 52
+  tools_x10  = 0
+  size       = 4
+  min_colony = 1
+  upkeep     = 5
+}

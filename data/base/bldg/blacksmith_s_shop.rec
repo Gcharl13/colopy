@@ -1,0 +1,9 @@
+record bldg.blacksmith_s_shop {
+  index      = 40
+  name       = "Blacksmith's Shop"
+  cost       = 64
+  tools_x10  = 2
+  size       = 0
+  min_colony = 1
+  upkeep     = 5
+}

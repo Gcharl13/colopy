@@ -1,0 +1,5 @@
+record conf.price_drift_shift {
+  value = 8
+  group = "market"
+  doc   = "price drift = acc >> shift (/256)"
+}

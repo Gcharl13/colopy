@@ -1,0 +1,9 @@
+record bldg.fur_factory {
+  index      = 34
+  name       = "Fur Factory"
+  cost       = 160
+  tools_x10  = 10
+  size       = 0
+  min_colony = 6
+  upkeep     = 15
+}

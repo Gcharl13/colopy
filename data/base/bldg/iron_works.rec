@@ -1,0 +1,9 @@
+record bldg.iron_works {
+  index      = 41
+  name       = "Iron Works"
+  cost       = 240
+  tools_x10  = 10
+  size       = 0
+  min_colony = 8
+  upkeep     = 15
+}

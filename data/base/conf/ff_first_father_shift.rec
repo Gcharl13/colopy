@@ -1,0 +1,5 @@
+record conf.ff_first_father_shift {
+  value = 1
+  group = "founding_fathers"
+  doc   = "first father: cost >>= shift (half price)"
+}

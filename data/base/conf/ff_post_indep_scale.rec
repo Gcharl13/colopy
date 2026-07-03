@@ -1,0 +1,5 @@
+record conf.ff_post_indep_scale {
+  value = 1500
+  group = "founding_fathers"
+  doc   = "post-independence: diff*scale+off"
+}

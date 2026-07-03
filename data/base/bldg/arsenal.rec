@@ -1,0 +1,9 @@
+record bldg.arsenal {
+  index      = 5
+  name       = "Arsenal"
+  cost       = 240
+  tools_x10  = 10
+  size       = 1
+  min_colony = 8
+  upkeep     = 15
+}

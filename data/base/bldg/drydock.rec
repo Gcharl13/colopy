@@ -1,0 +1,9 @@
+record bldg.drydock {
+  index      = 7
+  name       = "Drydock"
+  cost       = 80
+  tools_x10  = 5
+  size       = 4
+  min_colony = 4
+  upkeep     = 10
+}

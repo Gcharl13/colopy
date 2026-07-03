@@ -1,0 +1,9 @@
+record bldg.textile_mill {
+  index      = 23
+  name       = "Textile Mill"
+  cost       = 160
+  tools_x10  = 10
+  size       = 0
+  min_colony = 8
+  upkeep     = 15
+}

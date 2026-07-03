@@ -1,0 +1,9 @@
+record bldg.weaver_s_house {
+  index      = 21
+  name       = "Weaver's House"
+  cost       = 64
+  tools_x10  = 0
+  size       = 0
+  min_colony = 1
+  upkeep     = 0
+}

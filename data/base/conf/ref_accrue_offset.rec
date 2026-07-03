@@ -1,0 +1,5 @@
+record conf.ref_accrue_offset {
+  value = 10
+  group = "ref"
+  doc   = "royal_money rate offset"
+}
