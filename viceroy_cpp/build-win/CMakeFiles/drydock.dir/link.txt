@@ -1,2 +1,0 @@
-/usr/bin/x86_64-w64-mingw32-ar qc libdrydock.a CMakeFiles/drydock.dir/drydock/text/rec_text.cpp.obj CMakeFiles/drydock.dir/drydock/schema/schema.cpp.obj CMakeFiles/drydock.dir/drydock/pack/pack.cpp.obj CMakeFiles/drydock.dir/drydock/core/store.cpp.obj
-/usr/bin/x86_64-w64-mingw32-ranlib libdrydock.a

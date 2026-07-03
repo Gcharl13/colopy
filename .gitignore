@@ -10,7 +10,9 @@ extracted/
 
 # C++ build dirs
 viceroy_cpp/build/
+viceroy_cpp/build-win/
 build/
+build-win/
 *.o
 *.obj
 
