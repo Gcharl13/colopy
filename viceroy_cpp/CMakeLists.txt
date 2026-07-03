@@ -81,11 +81,11 @@ if(PNG_FOUND)
   if(SDL2_FOUND)
     add_executable(viceroy src/viceroy_app.cpp)
     target_compile_definitions(viceroy PRIVATE VICEROY_HAVE_SDL=1)
-    target_link_libraries(viceroy PRIVATE viceroy_render SDL2::SDL2)
+    target_link_libraries(viceroy PRIVATE viceroy_render forge_core SDL2::SDL2)
     message(STATUS "SDL2 ${SDL2_VERSION} found -- building the `viceroy` application.")
   else()
     add_executable(viceroy src/viceroy_app.cpp)
-    target_link_libraries(viceroy PRIVATE viceroy_render)
+    target_link_libraries(viceroy PRIVATE viceroy_render forge_core)
     message(STATUS "SDL2 not found -- `viceroy` builds HEADLESS-ONLY "
                    "(--frames mode); install libsdl2-dev for the window.")
   endif()
@@ -96,8 +96,10 @@ endif()
 
 # --- Viceroy Forge: headless balance inspector (F1). Links the sim in-process;
 #     the tiny JSON reader is forge-local so the sim core stays dependency-light. ---
-add_executable(forge
-  forge/main.cpp
+# The game core shared by BOTH frontends: the session + engine VM + data
+# layers, with no HTTP/web code. `forge` (web/editor) adds the routes +
+# embedded UI on top; `viceroy` (the native application) links this directly.
+add_library(forge_core STATIC
   forge/session.cpp
   forge/json.cpp
   forge/rules_json.cpp
@@ -113,11 +115,17 @@ add_executable(forge
   forge/native_powers.cpp
   forge/store.cpp
   forge/expr.cpp
+)
+target_include_directories(forge_core PUBLIC forge sim)
+target_link_libraries(forge_core PUBLIC viceroy_sim drydock)
+
+add_executable(forge
+  forge/main.cpp
   forge/httpd.cpp
   forge/web_ui.cpp
 )
 target_include_directories(forge PRIVATE forge sim)
-target_link_libraries(forge PRIVATE viceroy_sim drydock)
+target_link_libraries(forge PRIVATE forge_core)
 if(WIN32)
   target_link_libraries(forge PRIVATE ws2_32)   # Winsock for `forge serve`
 endif()

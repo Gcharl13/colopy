@@ -1,31 +1,33 @@
-// viceroy_app.cpp -- the native application (N2 skeleton).
+// viceroy_app.cpp -- the native application.
 //
 // A thin SDL2 shell over the 320x200 indexed compositor (mapview.cpp) and the
-// pure sim core: the framebuffer is composed exactly like the `nativemap`
-// harness frame, then integer-scaled into a window; input drives the sim
-// directly (select unit, step with the thirds move-credit system, end turn
-// via sim::step_turn). The full game session (colonies, Europe, natives,
-// events -- the forge engine layer) arrives with the N0 session extraction;
-// this skeleton is the honest playable spine the sim already provides.
+// REAL game session (forge/session.hpp -- the same session the web editor
+// drives): game_new() boots the scenario (colonies, starting units, native
+// settlements, rules overlay), game_step() runs the full byte-faithful
+// end-turn pipeline (production, market, immigration, natives, King/REF,
+// diplomacy, events, autosave), and the frame is composed from g_game/g_world.
 //
 // Modes:
-//   viceroy [--root DIR] [--mp FILE] [--scale N]     interactive window (SDL2)
-//   viceroy --frames N --out BASE [...]              headless: compose N frames
-//                                                    to BASE_00..png and exit
-//                                                    (no SDL needed -- the
-//                                                    ctest smoke path)
+//   viceroy [--root DIR] [--scale N] [--nation N] [--difficulty N]   window (SDL2)
+//   viceroy --frames N --out BASE [...]    headless: compose N frames (with a
+//                                          unit step + full end-turn between
+//                                          them) and exit -- the ctest smoke;
+//                                          needs no SDL.
+//
+// In-session actions beyond move/end-turn (found colony, board ship, colony
+// management, Europe) are the next extraction phase; today they live in the
+// web routes only.
 #include "native_assets.hpp"
 #include "surface.hpp"
 #include "mapview.hpp"
 #include "mp.hpp"
-#include "sim/game.hpp"
-#include "sim/unit.hpp"
-#include "sim/unit_turn.hpp"
-#include "sim/ref.hpp"
+#include "session.hpp"       // the game session (g_game/g_world, game_new/game_step)
+#include "unit.hpp"
+#include "unit_turn.hpp"
 #include <cstdio>
 #include <cstring>
-#include <random>
 #include <string>
+#include <unistd.h>          // chdir
 
 #if VICEROY_HAVE_SDL
 #include <SDL.h>
@@ -40,116 +42,112 @@ static const char* opt(int argc, char** argv, const char* key) {
     return nullptr;
 }
 
-// ---------------- game bootstrap (skeleton) ----------------
-// The honest new-game landing: the human power's Caravel on open water beside
-// a coastal tile, a Soldier + Pioneer ashore (the @DIFFICULTY starting party;
-// scenario/colony seeding is forge-session territory -- N0).
-struct App {
-    Map map;
-    GameState g;
-    World w;
-    int ox = 38, oy = 56;        // viewport top-left tile
-    int sel = -1;                // selected unit index (-1 none)
-    std::mt19937 rngeng{12345};
-    int turn_no = 1;
-
-    long rng(int lo, int hi) {
-        if (hi <= lo) return lo;
-        return lo + (int)(rngeng() % (unsigned)(hi - lo + 1));
-    }
+// ---------------- view state ----------------
+struct View {
+    int ox = 0, oy = 0;      // viewport top-left tile
+    int sel = -1;            // selected unit index into g_world.units (-1 none)
+    std::string notice;      // latest end-of-turn notice line (drained queue)
 };
 
-static bool water_tile(const Map& m, int x, int y) {
-    if (x < 0 || y < 0 || x >= m.w || y >= m.h) return true;
-    int id = m.tiles[y * m.w + x] & 0x1F;
-    return id == 0x19 || id == 0x1A;
+static Map world_map() {     // renderer Map over the session's live terrain plane
+    Map m;
+    m.w = g_world.map_w;
+    m.h = g_world.map_h;
+    m.tiles = g_world.terrain;
+    return m;
 }
 
-static void seed_landing(App& a) {
-    // scan westward from the sea-lane edge on the viewport's middle row for
-    // the first water tile whose west neighbour is land -> the landing spot.
-    int row = a.oy + 6;
-    for (int x = a.map.w - 2; x > 1; --x) {
-        if (water_tile(a.map, x, row) && !water_tile(a.map, x - 1, row)) {
-            Unit ship; ship.type = CARAVEL; ship.owner = 0; ship.x = x; ship.y = row;
-            Unit sol;  sol.type = SOLDIERS; sol.owner = 0; sol.x = x - 1; sol.y = row;
-            Unit pio;  pio.type = PIONEERS; pio.owner = 0; pio.x = x - 1; pio.y = row;
-            a.w.units.push_back(ship);
-            a.w.units.push_back(sol);
-            a.w.units.push_back(pio);
-            a.ox = x - 8; a.oy = row - 6;
-            break;
-        }
-    }
-    if (a.ox < 0) a.ox = 0;
-    if (a.oy < 0) a.oy = 0;
+static void clamp_view(View& v) {
+    if (v.ox < 0) v.ox = 0;
+    if (v.oy < 0) v.oy = 0;
+    if (v.ox > g_world.map_w - 15) v.ox = g_world.map_w - 15;
+    if (v.oy > g_world.map_h - 12) v.oy = g_world.map_h - 12;
 }
 
-static void clamp_view(App& a) {
-    if (a.ox < 0) a.ox = 0;
-    if (a.oy < 0) a.oy = 0;
-    if (a.ox > a.map.w - 15) a.ox = a.map.w - 15;
-    if (a.oy > a.map.h - 12) a.oy = a.map.h - 12;
-}
-
-// Direct one-tile step with the byte-verified movement rules the sim uses:
-// entering costs terrain_move[id]*3 move-credits (refresh gives movement*3);
-// land units keep to land, ships to water. Occupied tiles block (combat is
-// session territory). Returns true if the unit moved.
-static bool try_step(App& a, int ui, int dx, int dy) {
-    if (ui < 0 || ui >= (int)a.w.units.size()) return false;
-    Unit& u = a.w.units[ui];
-    if (!u.alive || u.moves_left <= 0) return false;
-    int nx = u.x + dx, ny = u.y + dy;
-    if (nx < 0 || ny < 0 || nx >= a.map.w || ny >= a.map.h) return false;
-    const RuleData& rd = default_rules();
-    bool naval = unit_stats(rd, u.type).move_class == 99;
-    if (water_tile(a.map, nx, ny) != naval) return false;
-    if (unit_at(a.w, nx, ny, ui) >= 0) return false;
-    int id = a.map.tiles[ny * a.map.w + nx] & 0x1F;
-    int cost = naval ? 3 : (id < NTERRAIN ? rd.terrain_move[id] * 3 : 3);
-    u.x = nx; u.y = ny;
-    u.moves_left -= cost;
-    if (u.moves_left < 0) u.moves_left = 0;
-    return true;
-}
-
-static void end_turn(App& a) {
-    auto rngfn = [&a](int lo, int hi) { return (int)a.rng(lo, hi); };
-    step_turn(a.g, a.w, rngfn);
-    refresh_moves(a.w);
-    ++a.turn_no;
-}
-
-static int next_own_unit(const App& a, int from) {
-    int n = (int)a.w.units.size();
+static int next_own_unit(int from) {
+    int n = (int)g_world.units.size();
     for (int k = 1; k <= n; ++k) {
         int i = (from + k) % n;
-        if (a.w.units[i].alive && a.w.units[i].owner == 0) return i;
+        if (g_world.units[i].alive && g_world.units[i].owner == 0 &&
+            g_world.units[i].moves_left > 0) return i;
+    }
+    for (int k = 1; k <= n; ++k) {              // fall back: any own unit
+        int i = (from + k) % n;
+        if (g_world.units[i].alive && g_world.units[i].owner == 0) return i;
     }
     return -1;
 }
 
+static void center_on(View& v, int x, int y) {
+    v.ox = x - 7; v.oy = y - 6;
+    clamp_view(v);
+}
+
+// Direct one-tile step with the sim's movement rules: entering costs
+// terrain_move[id]*3 credits; land units keep to land, ships to water;
+// occupied tiles block (bump-combat is routed through the session's order
+// layer in the next phase). Returns true if the unit moved.
+static bool try_step(int ui, int dx, int dy) {
+    if (ui < 0 || ui >= (int)g_world.units.size()) return false;
+    Unit& u = g_world.units[ui];
+    if (!u.alive || u.moves_left <= 0) return false;
+    int nx = u.x + dx, ny = u.y + dy;
+    if (nx < 0 || ny < 0 || nx >= g_world.map_w || ny >= g_world.map_h) return false;
+    int id = g_world.terrain_id(nx, ny);
+    bool water = (id == 25 || id == 26);
+    bool naval = unit_stats(g_active_rules, u.type).move_class == 99;
+    if (water != naval) return false;
+    if (unit_at(g_world, nx, ny, ui) >= 0) return false;
+    int base = id >= 0 && id < NTERRAIN ? g_active_rules.terrain_move[id % NTERRAIN] : 1;
+    u.x = nx; u.y = ny;
+    u.moves_left -= naval ? 3 : base * 3;
+    if (u.moves_left < 0) u.moves_left = 0;
+    return true;
+}
+
+static void end_turn(View& v) {
+    game_step();                                  // the FULL session pipeline
+    refresh_moves(g_world, g_active_rules);
+    v.notice = g_turn_notices.empty() ? "" : g_turn_notices.back();
+    g_turn_notices.clear();
+    v.sel = next_own_unit(v.sel);
+    if (v.sel >= 0) center_on(v, g_world.units[v.sel].x, g_world.units[v.sel].y);
+}
+
 // ---------------- frame composition ----------------
-static void compose(App& a, const NativeAssets& as, Surface& scr, bool flash_on) {
-    render_mapview(scr, a.map, as.terrain, as.phys, as.woodtile, as.font,
-                   a.g, a.w, a.ox, a.oy);
-    // units overlay (map_view.md: viewport tiles at (x-ox)*16, 8+(y-oy)*16)
-    for (int i = 0; i < (int)a.w.units.size(); ++i) {
-        const Unit& u = a.w.units[i];
-        if (!u.alive) continue;
-        int vx = u.x - a.ox, vy = u.y - a.oy;
-        if (vx < 0 || vy < 0 || vx >= 15 || vy >= 12) continue;
-        int px = vx * 16, py = 8 + vy * 16;
+static void compose(const NativeAssets& as, const View& v, Surface& scr, bool flash_on) {
+    Map m = world_map();
+    render_mapview(scr, m, as.terrain, as.phys, as.woodtile, as.font,
+                   g_game, g_world, v.ox, v.oy);
+    auto on_screen = [&](int x, int y, int& px, int& py) {
+        int vx = x - v.ox, vy = y - v.oy;
+        if (vx < 0 || vy < 0 || vx >= 15 || vy >= 12) return false;
+        px = vx * 16; py = 8 + vy * 16;
+        return true;
+    };
+    // colonies: marker box + population count (the web Play view's scheme;
+    // the sprite-faithful colony icon comes with the screens port)
+    for (const Colony& c : g_world.colonies) {
+        int px, py;
+        if (c.x < 0 || !on_screen(c.x, c.y, px, py)) continue;
+        scr.fill_rect(px + 2, py + 2, 12, 12, 6);        // brown block
+        scr.rect_outline(px + 2, py + 2, 12, 12, 15);
+        scr.draw_text(as.font, px + 5, py + 5, std::to_string(c.population), 15);
+    }
+    // units
+    for (int i = 0; i < (int)g_world.units.size(); ++i) {
+        const Unit& u = g_world.units[i];
+        int px, py;
+        if (!u.alive || !on_screen(u.x, u.y, px, py)) continue;
         if (u.type >= 0 && u.type < as.units.nframes)
             scr.blit_frame(as.units.frames[u.type], px, py);
-        if (i == a.sel && flash_on)
-            scr.rect_outline(px, py, 16, 16, 15);     // selection flash, white
+        if (i == v.sel && flash_on)
+            scr.rect_outline(px, py, 16, 16, 15);
     }
-    // sidebar C: selected-unit readout (approx text tier, same as sidebar B)
-    if (a.sel >= 0 && a.sel < (int)a.w.units.size() && a.w.units[a.sel].alive) {
-        const Unit& u = a.w.units[a.sel];
-        const UnitStats& st = unit_stats(u.type);
+    // sidebar C: selected-unit readout
+    if (v.sel >= 0 && v.sel < (int)g_world.units.size() && g_world.units[v.sel].alive) {
+        const Unit& u = g_world.units[v.sel];
+        const UnitStats& st = unit_stats(g_active_rules, u.type);
         scr.draw_text(as.font, 244, 140, st.name, 15);
         scr.draw_text(as.font, 244, 150,
                       "Moves: " + std::to_string(u.moves_left / 3) + "/" +
@@ -157,52 +155,57 @@ static void compose(App& a, const NativeAssets& as, Surface& scr, bool flash_on)
         scr.draw_text(as.font, 244, 160,
                       "(" + std::to_string(u.x) + "," + std::to_string(u.y) + ")", 15);
     }
-    scr.draw_text(as.font, 244, 180, "Turn " + std::to_string(a.turn_no), 15);
+    scr.draw_text(as.font, 244, 180, "Turn " + std::to_string((long)g_game.turn), 15);
+    // latest end-of-turn notice, bottom strip
+    if (!v.notice.empty())
+        scr.draw_text(as.font, 2, 193, v.notice.substr(0, 52), 15);
 }
 
 // ---------------- main ----------------
 int main(int argc, char** argv) {
     std::string root = opt(argc, argv, "--root") ? opt(argc, argv, "--root") : ".";
-    std::string mp = opt(argc, argv, "--mp") ? opt(argc, argv, "--mp")
-                                             : root + "/data_extracted/map/AMER2.MP";
     int scale  = opt(argc, argv, "--scale")  ? std::atoi(opt(argc, argv, "--scale"))  : 3;
     int frames = opt(argc, argv, "--frames") ? std::atoi(opt(argc, argv, "--frames")) : 0;
+    int nation = opt(argc, argv, "--nation") ? std::atoi(opt(argc, argv, "--nation")) : 0;
+    int diff   = opt(argc, argv, "--difficulty") ? std::atoi(opt(argc, argv, "--difficulty")) : 1;
     const char* out = opt(argc, argv, "--out");
 
-    NativeAssets as;
-    App a;
-    try {
-        as = load_native_assets(root);
-        a.map = load_mp(mp);
-    } catch (const std::exception& e) {
-        std::fprintf(stderr, "viceroy: %s\n", e.what());
+    // The session reads data_extracted/ relative to the cwd (like `forge`).
+    if (root != "." && chdir(root.c_str()) != 0) {
+        std::fprintf(stderr, "viceroy: cannot chdir to %s\n", root.c_str());
         return 1;
     }
-    a.g.difficulty = 1;
-    a.g.powers[0].gold = 600;
-    a.g.ref = ref_start(a.g.difficulty);
-    seed_landing(a);
-    clamp_view(a);
-    refresh_moves(a.w);
-    a.sel = next_own_unit(a, -1);
+    NativeAssets as;
+    try {
+        as = load_native_assets(".");
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "viceroy: %s\n(run from the repo root or pass --root)\n",
+                     e.what());
+        return 1;
+    }
+    game_new(nation, diff);                       // the REAL scenario boot
+    refresh_moves(g_world, g_active_rules);
+    View v;
+    v.sel = next_own_unit(-1);
+    if (v.sel >= 0) center_on(v, g_world.units[v.sel].x, g_world.units[v.sel].y);
 
     if (frames > 0) {           // ---- headless smoke: compose frames, exit ----
         if (!out) { std::fprintf(stderr, "--frames needs --out BASE\n"); return 2; }
         for (int t = 0; t < frames; ++t) {
             Surface scr;
             scr.set_palette(as.pal);
-            compose(a, as, scr, true);
+            compose(as, v, scr, true);
             Image img = scr.to_rgb(scale);
             char name[512];
             std::snprintf(name, sizeof name, "%s_%02d.png", out, t);
             write_png_rgb(name, img.w, img.h, img.rgb);
-            // exercise the loop between frames: move the selected unit east,
-            // then end the turn -- proves sim+render round-trip headlessly.
-            try_step(a, a.sel, 1, 0);
-            end_turn(a);
+            try_step(v.sel, 1, 0);
+            end_turn(v);
         }
-        std::printf("viceroy: wrote %d headless frame(s) %s_00..%02d.png\n",
-                    frames, out, frames - 1);
+        std::printf("viceroy: wrote %d headless frame(s) %s_00..%02d.png "
+                    "(turn %ld, %zu colonies, %zu units)\n",
+                    frames, out, frames - 1, (long)g_game.turn,
+                    g_world.colonies.size(), g_world.units.size());
         return 0;
     }
 
@@ -228,42 +231,44 @@ int main(int argc, char** argv) {
                 int dx = 0, dy = 0;
                 switch (e.key.keysym.sym) {
                     case SDLK_ESCAPE: running = false; break;
-                    case SDLK_TAB:    a.sel = next_own_unit(a, a.sel); break;
+                    case SDLK_TAB: {
+                        v.sel = next_own_unit(v.sel);
+                        if (v.sel >= 0)
+                            center_on(v, g_world.units[v.sel].x, g_world.units[v.sel].y);
+                        break;
+                    }
                     case SDLK_RETURN:
-                    case SDLK_e:      end_turn(a); break;
+                    case SDLK_e:      end_turn(v); break;
                     case SDLK_UP:    dy = -1; break;
                     case SDLK_DOWN:  dy = 1;  break;
                     case SDLK_LEFT:  dx = -1; break;
                     case SDLK_RIGHT: dx = 1;  break;
-                    case SDLK_w: a.oy -= 2; clamp_view(a); break;   // scroll
-                    case SDLK_s: a.oy += 2; clamp_view(a); break;
-                    case SDLK_a: a.ox -= 2; clamp_view(a); break;
-                    case SDLK_d: a.ox += 2; clamp_view(a); break;
+                    case SDLK_w: v.oy -= 2; clamp_view(v); break;   // scroll
+                    case SDLK_s: v.oy += 2; clamp_view(v); break;
+                    case SDLK_a: v.ox -= 2; clamp_view(v); break;
+                    case SDLK_d: v.ox += 2; clamp_view(v); break;
                     default: break;
                 }
-                if ((dx || dy) && a.sel >= 0) {
-                    try_step(a, a.sel, dx, dy);
-                    // keep the selected unit in view
-                    const Unit& u = a.w.units[a.sel];
-                    if (u.x < a.ox + 1)  a.ox = u.x - 1;
-                    if (u.x > a.ox + 13) a.ox = u.x - 13;
-                    if (u.y < a.oy + 1)  a.oy = u.y - 1;
-                    if (u.y > a.oy + 10) a.oy = u.y - 10;
-                    clamp_view(a);
+                if ((dx || dy) && v.sel >= 0) {
+                    try_step(v.sel, dx, dy);
+                    const Unit& u = g_world.units[v.sel];
+                    if (u.x < v.ox + 1 || u.x > v.ox + 13 ||
+                        u.y < v.oy + 1 || u.y > v.oy + 10)
+                        center_on(v, u.x, u.y);
                 }
             } else if (e.type == SDL_MOUSEBUTTONDOWN) {
                 int mx = e.button.x / scale, my = e.button.y / scale;
                 if (mx < 240 && my >= 8) {              // inside the viewport
-                    int tx = a.ox + mx / 16, ty = a.oy + (my - 8) / 16;
-                    int ui = unit_at(a.w, tx, ty);
-                    if (ui >= 0 && a.w.units[ui].owner == 0) a.sel = ui;
+                    int tx = v.ox + mx / 16, ty = v.oy + (my - 8) / 16;
+                    int ui = unit_at(g_world, tx, ty);
+                    if (ui >= 0 && g_world.units[ui].owner == 0) v.sel = ui;
                 }
             }
         }
         bool flash = ((SDL_GetTicks() - t0) / 300) & 1;
         Surface scr;
         scr.set_palette(as.pal);
-        compose(a, as, scr, flash);
+        compose(as, v, scr, flash);
         Image img = scr.to_rgb(1);
         SDL_UpdateTexture(tex, nullptr, img.rgb.data(), Surface::W * 3);
         SDL_RenderClear(ren);
