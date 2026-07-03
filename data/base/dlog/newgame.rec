@@ -1,0 +1,6 @@
+record dlog.newgame {
+  name       = "New Game"
+  background = "OPENMENU"
+  size       = [320, 200]
+  widgets    = [{ color = "227,170,40", id = "title", rect = [70, 14, 200, 10], text = "BEGIN A NEW WORLD", type = "text" }, { color = "255,255,190", id = "natlbl", rect = [24, 40, 120, 8], text = "Nation", type = "text" }, { color = "255,255,255", id = "nation", rect = [24, 52, 180, 8], text = "{game.nation} — @COUNTRY[{game.nation}].name", type = "text" }, { color = "180,200,255", id = "leader", rect = [24, 64, 220, 8], text = "Leader: @LEADERNAME[{game.nation}].name", type = "text" }, { color = "255,255,190", id = "diflbl", rect = [24, 86, 120, 8], text = "Difficulty", type = "text" }, { color = "255,255,255", id = "diff", rect = [24, 98, 180, 8], text = "{game.difficulty} — @DIFFICULTY[{game.difficulty}].name", type = "text" }, { color = "255,255,255", id = "gold", rect = [24, 120, 220, 8], text = "Starting treasury: {power0.gold}¤", type = "text" }, { color = "200,200,200", id = "ref", rect = [24, 132, 260, 8], text = "King's army: {ref.regulars} regulars, {ref.cavalry} cavalry, {ref.artillery} artillery, {ref.manowar} men-o-war", type = "text" }, { color = "120,220,120", id = "begin", onClick = "goto_mainmenu", rect = [24, 160, 150, 12], text = "Begin in the New World", type = "button" }]
+}

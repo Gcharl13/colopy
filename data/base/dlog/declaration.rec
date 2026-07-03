@@ -1,0 +1,6 @@
+record dlog.declaration {
+  name       = "Declaration of Independence"
+  background = "DECOIND"
+  size       = [320, 200]
+  widgets    = [{ color = "255,255,190", id = "title", rect = [8, 4, 304, 8], text = "THE DECLARATION OF INDEPENDENCE", type = "text" }, { color = "255,243,93", id = "sol", rect = [20, 150, 280, 8], text = "Sons of Liberty (colony 0): {colony0.sol}%", type = "text" }, { color = "255,255,255", id = "sign", onClick = "independence", rect = [90, 168, 140, 12], text = "Declare Independence", type = "button" }, { color = "255,255,255", id = "back", onClick = "goto_mainmenu", rect = [262, 182, 48, 12], text = "Back", type = "button" }]
+}

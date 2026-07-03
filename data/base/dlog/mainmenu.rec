@@ -1,0 +1,6 @@
+record dlog.mainmenu {
+  name       = "Main Menu"
+  background = "OPENMENU"
+  size       = [320, 200]
+  widgets    = [{ color = "227,170,40", id = "title", rect = [86, 16, 180, 10], text = "COLONIZATION", type = "text" }, { color = "255,255,255", id = "b2", onClick = "goto_colony", rect = [40, 60, 110, 11], text = "Colony", type = "button" }, { color = "255,255,255", id = "b3", onClick = "goto_europe", rect = [40, 76, 110, 11], text = "Europe (Harbor)", type = "button" }, { color = "255,255,255", id = "b4", onClick = "goto_continental_congress", rect = [40, 92, 110, 11], text = "Continental Congress", type = "button" }, { color = "255,90,90", id = "b8", onClick = "goto_declaration", rect = [170, 108, 120, 11], text = "Declaration", type = "button" }]
+}

@@ -194,6 +194,17 @@ struct DDMsgView {
 };
 extern DDMsgView (*dd_message_hook)(const std::string& key);
 
+// Drydock screen hooks (strangler seam): when installed, the screen CRUD is
+// store-authoritative -- dlog records replace screens/*.json as the layout
+// truth (edits journal through the store chokepoint and save as canonical
+// text). Null in builds without the store (forge_gui) -- files stay in use.
+struct DDScreenHooks {
+    std::vector<std::string> (*list)();
+    bool (*load)(const std::string& id, JsonValue& out);
+    bool (*save)(const std::string& id, const JsonValue& screen, std::string& err);
+};
+extern const DDScreenHooks* dd_screen_hooks;
+
 // Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its @UNIT type id (row
 // index). -1 if unknown. No name->type list is hardcoded in C++.
 int unit_type_by_name(const std::string& name);

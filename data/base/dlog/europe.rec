@@ -1,0 +1,6 @@
+record dlog.europe {
+  name       = "Europe (Harbor)"
+  background = "EUROPE"
+  size       = [320, 200]
+  widgets    = [{ color = "82,138,49", id = "title", rect = [71, 1, 240, 8], text = "London, England.  Year {game.year}.  Tax: {power0.tax}%  Gold: {power0.gold}", type = "text" }, { color = "56,200,90", id = "soon", rect = [16, 118, 90, 8], text = "Expected Soon", type = "text" }, { color = "56,200,90", id = "bound", rect = [150, 118, 90, 8], text = "Loading:", type = "text" }, { color = "255,255,255", id = "mkt", rect = [8, 168, 300, 8], text = "Market open -- 16 goods traded here", type = "text" }, { color = "255,255,255", id = "exit", onClick = "goto_mainmenu", rect = [284, 182, 32, 12], text = "Exit", type = "button" }]
+}

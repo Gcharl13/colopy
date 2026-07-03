@@ -277,6 +277,77 @@ void drydock_text_overlay(JsonValue& doc, const std::string& file) {
     }
 }
 
+// ---- DLOG consumer cutover: the screen CRUD ---------------------------------------
+// list/load/save route through dlog records; a designer save becomes ordinary
+// store_set calls (validated, journaled, undoable, saved as canonical text).
+static JsonValue json_int_num(long long i) { return json_num((double)i); }
+
+// generic JSON -> Value (screens are int/str/list/dict; bools map to 0/1,
+// non-integral numbers become floats)
+static Value json_any_to_value(const JsonValue& j) {
+    switch (j.type) {
+        case JsonValue::Number:
+            if (j.num == (double)(long long)j.num) return Value::make_int((long long)j.num);
+            return Value::make_float(j.num);
+        case JsonValue::Bool:   return Value::make_int(j.b ? 1 : 0);
+        case JsonValue::String: return Value::make_str(j.str);
+        case JsonValue::Array: {
+            std::vector<Value> xs;
+            for (const JsonValue& x : j.arr) xs.push_back(json_any_to_value(x));
+            return Value::make_list(std::move(xs));
+        }
+        case JsonValue::Object: {
+            Value d; d.kind = ValKind::Dict;
+            for (const auto& [k, x] : j.obj) {   // std::map: keys sorted == canonical form
+                d.keys.push_back(k);
+                d.list.push_back(json_any_to_value(x));
+            }
+            return d;
+        }
+        default: return Value::make_str("");
+    }
+}
+
+static std::vector<std::string> dd_screen_list() {
+    std::vector<std::string> ids;
+    auto ti = g_store.type_index.find("dlog");
+    if (ti == g_store.type_index.end()) return ids;
+    for (const Record& r : g_store.records[ti->second])
+        ids.push_back(r.id.substr(5));                    // "dlog.colony" -> "colony"
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+
+static bool dd_screen_load(const std::string& id, JsonValue& out) {
+    const Record* r = store_find(g_store, "dlog." + id);
+    if (!r) return false;
+    out = JsonValue{}; out.type = JsonValue::Object;
+    out.obj["id"] = json_str(id);
+    for (const auto& f : r->fields)
+        if (f.name != "notes") out.obj[f.name] = value_to_json(f.value);
+    return true;
+}
+
+static bool dd_screen_save(const std::string& id, const JsonValue& screen, std::string& err) {
+    const std::string rid = "dlog." + id;
+    if (!store_find(g_store, rid)) {                      // new screen from the designer
+        Record nr; nr.id = rid;
+        if (!store_add(g_store, std::move(nr), err)) return false;
+    }
+    for (const char* f : {"name", "background", "size", "widgets"}) {
+        const JsonValue* v = screen.find(f);
+        if (!v) continue;
+        Value val = json_any_to_value(*v);
+        const Record* cur = store_find(g_store, rid);
+        const Value* old = cur ? cur->find(f) : nullptr;
+        if (old && value_equal(*old, val)) continue;      // unchanged: keep the journal clean
+        if (!store_set(g_store, rid, f, &val, err)) return false;
+    }
+    return true;
+}
+
+static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd_screen_save};
+
 // ---- SPRT/PLTT consumer cutover --------------------------------------------------
 // The sprite catalog (/api/sprites -> web SPRITECAT keyed by the verbatim sid)
 // and the palette asset (/assets/palette.json -> NVPAL) rebuild from the store.
@@ -409,6 +480,7 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg,
     rebuild_msg_index();
     rebuild_text_index();
     dd_message_hook = dd_message_provider;   // @KEY message lookups cut over
+    dd_screen_hooks = &DD_SCREEN_HOOKS;      // screen CRUD cut over to dlog records
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();
     msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +

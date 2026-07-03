@@ -729,8 +729,12 @@ void save_graph(const std::string& id, const JsonValue& graph) {
 }
 
 // ---- screen CRUD (same shape as graphs) ----
+// dd_screen_hooks (engine.hpp): installed by the record store at serve start;
+// dlog records are then the layout authority and the JSON files stay frozen.
+const DDScreenHooks* dd_screen_hooks = nullptr;
 namespace { const char* SCREEN_DIR = "data_extracted/engine/screens"; }
 std::vector<std::string> list_screens() {
+    if (dd_screen_hooks) return dd_screen_hooks->list();
     std::vector<std::string> ids; std::error_code ec;
     for (const auto& e : fs::directory_iterator(SCREEN_DIR, ec)) {
         if (!e.is_regular_file()) continue;
@@ -742,9 +746,19 @@ std::vector<std::string> list_screens() {
     return ids;
 }
 JsonValue load_screen(const std::string& id) {
+    if (dd_screen_hooks) {
+        JsonValue v;
+        if (dd_screen_hooks->load(id, v)) return v;
+    }
     return json_parse_file(std::string(SCREEN_DIR) + "/" + id + ".json");
 }
 void save_screen(const std::string& id, const JsonValue& screen) {
+    if (dd_screen_hooks) {
+        std::string err;
+        if (!dd_screen_hooks->save(id, screen, err))
+            throw std::runtime_error("drydock screen save: " + err);
+        return;                        // the store is the truth; JSON stays frozen
+    }
     std::error_code ec; fs::create_directories(SCREEN_DIR, ec);
     std::ofstream f(std::string(SCREEN_DIR) + "/" + id + ".json", std::ios::binary);
     if (!f) throw std::runtime_error("engine: cannot write screen " + id);

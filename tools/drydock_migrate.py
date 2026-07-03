@@ -208,6 +208,35 @@ def main():
             drift = emit(os.path.join("text", rid.split(".", 1)[1] + ".rec"),
                          render(rid, fields), check, drift)
 
+    # DLOG: screen layouts (engine/screens/*.json). Values are int/str/list/dict
+    # only (verified); dict keys emit SORTED so a designer save (which round-trips
+    # through the C++ sorted-map JSON) is byte-stable against this generator.
+    def rec_value(v):
+        if isinstance(v, bool):
+            return "1" if v else "0"
+        if isinstance(v, int):
+            return str(v)
+        if isinstance(v, str):
+            return quote(v)
+        if isinstance(v, list):
+            return "[" + ", ".join(rec_value(x) for x in v) + "]"
+        if isinstance(v, dict):
+            if not v:
+                return "{}"
+            return "{ " + ", ".join(f"{k} = {rec_value(v[k])}" for k in sorted(v)) + " }"
+        raise ValueError(f"unrepresentable screen value: {v!r}")
+    import glob as _glob
+    for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/screens/*.json"))):
+        scr = json.load(open(f))
+        rid = f"dlog.{scr['id']}"
+        fields = [("name", quote(scr["name"]))]
+        if str(scr.get("background", "")):
+            fields.append(("background", quote(scr["background"])))
+        fields.append(("size", rec_value(scr["size"])))
+        fields.append(("widgets", rec_value(scr["widgets"])))
+        drift = emit(os.path.join("dlog", scr["id"] + ".rec"),
+                     render(rid, fields), check, drift)
+
     # SPRT: the sprite catalog (sprites.json). The verbatim catalog id lives in
     # `sid` (record slugs flatten its dot namespace); the one duplicated catalog
     # id (building.town_hall x3 tiers) dedups to _2/_3 slugs.

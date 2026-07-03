@@ -1,0 +1,6 @@
+record dlog.colony_build {
+  name       = "Colony Construction"
+  background = "COLONY"
+  size       = [320, 200]
+  widgets    = [{ color = "82,138,49", id = "title", rect = [70, 1, 240, 8], text = "Jamestown.  Year {game.year}.  Gold: {power0.gold}", type = "text" }, { color = "255,243,93", id = "now", rect = [10, 16, 300, 8], text = "Now building: {colony0.building_name}  --  {colony0.build_bank} of {colony0.build_cost} hammers ({colony0.build_remaining} to go)", type = "text" }, { colony = 0, color = "220,220,220", id = "menu", rect = [10, 28, 300, 74], type = "buildmenu" }, { color = "210,190,120", id = "stock", rect = [10, 106, 300, 8], text = "Warehouse -- Sugar {colony0.stockpile.1}  Cotton {colony0.stockpile.3}  Furs {colony0.stockpile.4}  Lumber {colony0.stockpile.5}  Ore {colony0.stockpile.6}   Net food/turn {colony0.food}   Colonists {colony0.workers}", type = "text" }, { color = "255,255,255", id = "rush", onClick = "colony_rush_buy", rect = [10, 120, 90, 12], text = "Rush with gold", type = "button" }, { color = "255,255,255", id = "exit", onClick = "goto_mainmenu", rect = [284, 182, 32, 12], text = "Exit", type = "button" }]
+}

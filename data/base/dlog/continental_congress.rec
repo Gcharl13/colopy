@@ -1,0 +1,6 @@
+record dlog.continental_congress {
+  name       = "Continental Congress"
+  background = "CCBKGD"
+  size       = [320, 200]
+  widgets    = [{ color = "255,255,190", id = "title", rect = [8, 2, 304, 8], text = "CONTINENTAL CONGRESS", type = "text" }, { color = "255,255,255", id = "note", rect = [20, 30, 280, 8], text = "Liberty bells recruit Founding Fathers to your cause.", type = "text" }, { color = "255,255,255", id = "offer", onClick = "founding_father", rect = [100, 150, 120, 12], text = "Convene a Father", type = "button" }, { color = "255,255,255", id = "ok", onClick = "goto_mainmenu", rect = [260, 182, 48, 12], text = "Close", type = "button" }]
+}

@@ -1,0 +1,6 @@
+record dlog.victory {
+  name       = "Game Over"
+  background = "REPORT1"
+  size       = [320, 200]
+  widgets    = [{ color = "255,215,80", id = "title", rect = [80, 20, 180, 12], text = "THE VENTURE ENDS", type = "text" }, { color = "255,255,255", id = "reason", rect = [24, 54, 272, 8], text = "{game.year} — the colonies stand.", type = "text" }, { color = "255,255,190", id = "scorelbl", rect = [24, 84, 120, 8], text = "Final score", type = "text" }, { color = "255,255,255", id = "score", rect = [150, 84, 120, 8], text = "{game.score}", type = "text" }, { color = "180,200,255", id = "nation", rect = [24, 100, 272, 8], text = "@COUNTRY[{game.nation}].name — @DIFFICULTY[{game.difficulty}].name", type = "text" }, { color = "200,220,255", id = "done", onClick = "goto_mainmenu", rect = [24, 160, 150, 12], text = "Return to Main Menu", type = "button" }]
+}
