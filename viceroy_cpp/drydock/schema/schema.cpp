@@ -63,6 +63,24 @@ bool schema_load(const std::vector<Record>& schm_records, Schema& out, std::stri
     return true;
 }
 
+// Dict keys render sorted EVERYWHERE in a value tree (the generators' shared
+// convention -- enforced here so the byte-identity gate catches hand-reordered
+// keys instead of passing them off as canonical). Values live in v.list for
+// both kinds, so one recursion covers list elements and dict values.
+static void sort_dict_keys(Value& v) {
+    for (Value& c : v.list) sort_dict_keys(c);
+    if (v.kind != ValKind::Dict || v.keys.size() < 2) return;
+    std::vector<size_t> ord(v.keys.size());
+    for (size_t i = 0; i < ord.size(); ++i) ord[i] = i;
+    std::sort(ord.begin(), ord.end(),
+              [&](size_t a, size_t b) { return v.keys[a] < v.keys[b]; });
+    std::vector<std::string> ks; ks.reserve(ord.size());
+    std::vector<Value> vs; vs.reserve(ord.size());
+    for (size_t i : ord) { ks.push_back(std::move(v.keys[i])); vs.push_back(std::move(v.list[i])); }
+    v.keys = std::move(ks);
+    v.list = std::move(vs);
+}
+
 bool schema_canonicalize(const Schema& s, Record& r, std::string& err) {
     const TypeDef* td = s.find(r.type());
     if (!td) { err = r.id + ": no schema for type '" + r.type() + "'"; return false; }
@@ -74,6 +92,7 @@ bool schema_canonicalize(const Schema& s, Record& r, std::string& err) {
     for (const FieldDef& fd : td->fields) {
         for (auto& f : r.fields)
             if (f.name == fd.name) {
+                sort_dict_keys(f.value);      // before the list sort: rendering depends on key order
                 // sort unordered lists by canonical rendering (spec 4.2)
                 if (f.value.kind == ValKind::List && !fd.ordered &&
                     fd.type != FType::ListDict)

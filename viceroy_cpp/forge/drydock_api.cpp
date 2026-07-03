@@ -460,6 +460,19 @@ static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd
 // multi-triggers and mixed/multi-'out' pins fall back to the lossless grph
 // form. The type key is `do` ("op" is a real Math/Compare param); compiled
 // synthetic node ids are '#'-prefixed (no authored id starts with '#').
+// Deepest nesting level of a value tree (scalar/empty container = 0; each
+// enclosing container +1) == the deepest recursion the canonical-text parser
+// makes, which it refuses past 32. A typed tree beyond that must stay in the
+// flat grph form -- otherwise the written record would fail to PARSE at boot.
+static int json_depth(const JsonValue& v) {
+    int d = 0;
+    if (v.type == JsonValue::Array)
+        for (const JsonValue& c : v.arr) d = std::max(d, 1 + json_depth(c));
+    else if (v.type == JsonValue::Object)
+        for (const auto& [k, c] : v.obj) d = std::max(d, 1 + json_depth(c));
+    return d;
+}
+
 static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
                            JsonValue& steps_out, JsonValue& comments_out) {
     const JsonValue* nodes = graph.find("nodes");
@@ -472,11 +485,20 @@ static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
         const JsonValue* ty = n.find("type");
         const JsonValue* nid = n.find("id");
         if (!ty || !nid) return false;
-        byid[nid->str] = &n;
+        // ('#'-prefixed ids are legitimate here: the compiler emits synthetic
+        // #s/#c ids for steps/comments, whose ids the typed form discards --
+        // only PRODUCER ids round-trip and are checked below)
+        if (nid->str.empty()) return false;
+        if (!byid.emplace(nid->str, &n).second) return false;     // duplicate node id
+        if (const JsonValue* p = n.find("params"); p && !p->is_object())
+            return false;                                         // params must be a dict
         if (ty->str == "Comment") {
             comment_ids.insert(nid->str);
             JsonValue c; c.type = JsonValue::Object;
             const JsonValue* p = n.find("params");
+            if (p)                             // lossless means text-only string comments
+                for (const auto& [k, v] : p->obj)
+                    if (k != "text" || v.type != JsonValue::String) return false;
             c.obj["text"] = json_str(p && p->find("text") ? p->find("text")->str : "");
             c.obj["x"] = json_num(n.find("x") ? n.find("x")->num : 0);
             c.obj["y"] = json_num(n.find("y") ? n.find("y")->num : 0);
@@ -516,7 +538,7 @@ static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
         auto b = byid.find(pid);
         if (b == byid.end() || b->second->find("type")->str.rfind("On", 0) == 0)
             return false;
-        if (!pid.empty() && pid[0] == '#') return false;   // reserved synthetic prefix
+        if (pid[0] == '#') return false;                   // reserved synthetic prefix
     }
     for (const auto& [n, pins] : succ)                     // no out+label mix
         if (pins.count("out") && pins.size() > 1) return false;
@@ -589,6 +611,7 @@ static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
     for (const auto& [nid, n] : byid)
         if (!comment_ids.count(nid) && !emitted.count(nid) && !producers.count(nid))
             return false;
+    if (json_depth(steps_out) > 32) return false;          // parser nesting guard
     return true;
 }
 
@@ -597,6 +620,11 @@ static bool graph_as_typed(const JsonValue& graph, JsonValue& vars_out,
 static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& out) {
     const Value* steps = r.find("steps");
     if (!steps || steps->kind != ValKind::List) return false;
+    // step 0 of the top list must be the On* trigger, or run_graph/FireEvent
+    // would have no entry point and the compiled graph silently does nothing
+    if (steps->list.empty() || steps->list[0].kind != ValKind::Dict) return false;
+    if (const Value* d0 = steps->list[0].dict_get("do");
+        !d0 || d0->kind != ValKind::Str || d0->s.rfind("On", 0) != 0) return false;
     out = JsonValue{}; out.type = JsonValue::Object;
     out.obj["id"] = json_str(id);
     if (const Value* n = r.find("name"); n && n->kind == ValKind::Str)
@@ -613,33 +641,50 @@ static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& o
         e.obj["from"] = std::move(f); e.obj["to"] = std::move(t);
         edges.arr.push_back(std::move(e));
     };
-    // vars first: node id = var id verbatim (round-trips), args -> data edges
-    if (const Value* vars = r.find("vars")) {
+    // vars first: node id = var id verbatim (round-trips), args -> data edges.
+    // Pass 1 collects the ids (the DAG may reference forward) so every "$ref"
+    // -- var or step args -- is checked to name a REAL var, not a ghost edge
+    // that would shadow a same-named param and silently evaluate to 0.
+    std::set<std::string> var_ids;
+    const Value* vars = r.find("vars");
+    if (vars) {
         if (vars->kind != ValKind::List) return false;
-        double vy = 420;
         for (const Value& v : vars->list) {
             if (v.kind != ValKind::Dict) return false;
+            const Value* vid = v.dict_get("id");
+            if (!vid || vid->kind != ValKind::Str || vid->s.empty() || vid->s[0] == '#')
+                return false;
+            if (!var_ids.insert(vid->s).second) return false;   // duplicate var id
+        }
+    }
+    auto var_ref = [&](const Value& ref) {                 // "$id" naming a var
+        return ref.kind == ValKind::Str && ref.s.size() > 1 && ref.s[0] == '$' &&
+               var_ids.count(ref.s.substr(1)) != 0;
+    };
+    if (vars) {
+        double vy = 420;
+        for (const Value& v : vars->list) {
             JsonValue pn; pn.type = JsonValue::Object;
             JsonValue pp; pp.type = JsonValue::Object;
             std::string vid;
             for (size_t k = 0; k < v.keys.size(); ++k) {
                 const std::string& key = v.keys[k];
-                if (key == "do") { pn.obj["type"] = json_str(v.list[k].s); continue; }
+                if (key == "do") {
+                    if (v.list[k].kind != ValKind::Str) return false;
+                    pn.obj["type"] = json_str(v.list[k].s);
+                    continue;
+                }
                 if (key == "id") { vid = v.list[k].s; continue; }
                 if (key == "args") {
                     const Value& a = v.list[k];
                     if (a.kind != ValKind::Dict) return false;
-                    for (size_t q = 0; q < a.keys.size(); ++q) {
-                        const Value& ref = a.list[q];
-                        if (ref.kind != ValKind::Str || ref.s.empty() || ref.s[0] != '$')
-                            return false;
-                        // consumer id resolved after we know vid -- defer below
-                    }
+                    for (size_t q = 0; q < a.keys.size(); ++q)
+                        if (!var_ref(a.list[q])) return false;
                     continue;
                 }
                 pp.obj[key] = value_to_json(v.list[k]);
             }
-            if (vid.empty() || vid[0] == '#') return false;
+            if (!pn.find("type")) return false;            // a var must carry 'do'
             pn.obj["id"] = json_str(vid);
             pn.obj["x"] = json_num(40);
             pn.obj["y"] = json_num(vy); vy += 70;
@@ -657,7 +702,8 @@ static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& o
         if (list.kind != ValKind::List) return false;
         std::string prev;
         head.clear();
-        for (const Value& s : list.list) {
+        for (size_t si = 0; si < list.list.size(); ++si) {
+            const Value& s = list.list[si];
             if (s.kind != ValKind::Dict) return false;
             const std::string sid = "#s" + std::to_string(counter++);
             if (head.empty()) head = sid;
@@ -675,10 +721,8 @@ static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& o
                     const Value& a = s.list[k];
                     if (a.kind != ValKind::Dict) return false;
                     for (size_t q = 0; q < a.keys.size(); ++q) {
-                        const Value& ref = a.list[q];
-                        if (ref.kind != ValKind::Str || ref.s.empty() || ref.s[0] != '$')
-                            return false;
-                        edge(ref.s.substr(1), "value", sid, a.keys[q]);
+                        if (!var_ref(a.list[q])) return false;
+                        edge(a.list[q].s.substr(1), "value", sid, a.keys[q]);
                     }
                     continue;
                 }
@@ -690,15 +734,26 @@ static bool dd_compile_evnt(const Record& r, const std::string& id, JsonValue& o
             if (!prev.empty()) edge(prev, "out", sid, "in");
             prev = sid;
             if (branches) {
+                // the interpreter never follows 'out' from a branching node
+                // (Branch/Switch resolve a labeled pin), so a sibling after a
+                // branch-bearing step would be silently dead code -- reject
+                if (si + 1 != list.list.size()) return false;
                 if (branches->kind != ValKind::List) return false;
+                std::set<std::string> seen_pins;
                 for (const Value& br : branches->list) {
                     if (br.kind != ValKind::Dict) return false;
                     const Value* pin = br.dict_get("pin");
                     const Value* body = br.dict_get("steps");
-                    if (!pin || pin->kind != ValKind::Str || !body) return false;
+                    if (!pin || pin->kind != ValKind::Str || pin->s == "out" || !body)
+                        return false;
+                    if (!seen_pins.insert(pin->s).second) return false;
+                    // an empty body would emit no edge, and a Switch with no
+                    // edge for a value pin falls through to 'default' -- the
+                    // typed form cannot hold an explicit empty case
+                    if (body->kind != ValKind::List || body->list.empty()) return false;
                     std::string bhead;
                     if (!emit_list(*body, depth + 1, bhead)) return false;
-                    if (!bhead.empty()) edge(sid, pin->s, bhead, "in");
+                    edge(sid, pin->s, bhead, "in");
                 }
             }
         }
@@ -736,6 +791,9 @@ static std::vector<std::string> dd_graph_list() {
             ids.push_back(r.id.substr(5));                // "grph.combat" -> "combat"
     }
     std::sort(ids.begin(), ids.end());
+    // a grph/evnt twin pair (possible via the generic /api/dd/add or a
+    // hand-authored data tree) must not list its id twice
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
     return ids;
 }
 
@@ -759,8 +817,12 @@ static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::st
     const bool has_comments = typed && !comments.arr.empty();
     const std::string rid = std::string(typed ? "evnt." : "grph.") + id;
     const std::string other = std::string(typed ? "grph." : "evnt.") + id;
-    if (store_find(g_store, other) && !store_delete(g_store, other, err))
-        return false;                                     // reclassified: drop the old form
+    // reclassification is ADD-then-DELETE: if the new form failed validation
+    // after the twin were already deleted, the graph would be destroyed (and
+    // the next dd-save would drop its .rec from disk)
+    auto drop_twin = [&]() {
+        return !store_find(g_store, other) || store_delete(g_store, other, err);
+    };
     if (!store_find(g_store, rid)) {                      // new/reclassified: add COMPLETE
         Record nr; nr.id = rid;                           // (store_add validates required fields)
         if (const JsonValue* n = graph.find("name"))
@@ -776,7 +838,13 @@ static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::st
             if (const JsonValue* v = graph.find("edges"))
                 nr.fields.push_back({"edges", json_any_to_value(*v)});
         }
-        return store_add(g_store, std::move(nr), err);
+        // the canvas never carries the record's prose -- carry it across the
+        // reclassification instead of silently destroying it
+        if (const Record* tw = store_find(g_store, other))
+            if (const Value* notes = tw->find("notes"))
+                nr.fields.push_back({"notes", *notes});
+        if (!store_add(g_store, std::move(nr), err)) return false;
+        return drop_twin();
     }
     auto put = [&](const char* f, const JsonValue* v) {
         const Record* cur = store_find(g_store, rid);
@@ -793,10 +861,12 @@ static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::st
     if (typed) {
         if (!put("vars", has_vars ? &vars : nullptr)) return false;
         if (!put("steps", &steps)) return false;
-        return put("comments", has_comments ? &comments : nullptr);
+        if (!put("comments", has_comments ? &comments : nullptr)) return false;
+    } else {
+        if (!put("nodes", graph.find("nodes"))) return false;
+        if (!put("edges", graph.find("edges"))) return false;
     }
-    if (!put("nodes", graph.find("nodes"))) return false;
-    return put("edges", graph.find("edges"));
+    return drop_twin();                                   // update landed: clear any stale twin
 }
 
 

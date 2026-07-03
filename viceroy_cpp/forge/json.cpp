@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -35,8 +36,13 @@ struct Parser {
         else if (cp <= 0x7FF) {
             out.push_back((char)(0xC0 | (cp >> 6)));
             out.push_back((char)(0x80 | (cp & 0x3F)));
-        } else {
+        } else if (cp <= 0xFFFF) {
             out.push_back((char)(0xE0 | (cp >> 12)));
+            out.push_back((char)(0x80 | ((cp >> 6) & 0x3F)));
+            out.push_back((char)(0x80 | (cp & 0x3F)));
+        } else {
+            out.push_back((char)(0xF0 | (cp >> 18)));
+            out.push_back((char)(0x80 | ((cp >> 12) & 0x3F)));
             out.push_back((char)(0x80 | ((cp >> 6) & 0x3F)));
             out.push_back((char)(0x80 | (cp & 0x3F)));
         }
@@ -70,7 +76,22 @@ struct Parser {
                     case 'n': out.push_back('\n'); break;
                     case 'r': out.push_back('\r'); break;
                     case 't': out.push_back('\t'); break;
-                    case 'u': encode_utf8(hex4(), out); break;
+                    case 'u': {
+                        uint32_t cp = hex4();
+                        // \uD800-\uDBFF opens a UTF-16 surrogate pair: without
+                        // combining, an emoji decodes to invalid CESU-8 bytes
+                        if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < s.size() &&
+                            s[i] == '\\' && s[i + 1] == 'u') {
+                            size_t save = i;
+                            i += 2;
+                            uint32_t lo = hex4();
+                            if (lo >= 0xDC00 && lo <= 0xDFFF)
+                                cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
+                            else i = save;             // not a pair -- leave both as-is
+                        }
+                        encode_utf8(cp, out);
+                        break;
+                    }
                     default: --i; fail("bad escape");
                 }
             } else {
@@ -202,8 +223,14 @@ void dump_number(double n, std::string& out) {
     char buf[32];
     if (n == (double)(long long)n && n < 1e15 && n > -1e15)
         std::snprintf(buf, sizeof buf, "%lld", (long long)n);
-    else
-        std::snprintf(buf, sizeof buf, "%g", n);
+    else {
+        // shortest form that round-trips (plain %g caps at 6 significant
+        // digits, silently corrupting the value across a load/save cycle)
+        for (int prec = 6; prec <= 17; ++prec) {
+            std::snprintf(buf, sizeof buf, "%.*g", prec, n);
+            if (std::strtod(buf, nullptr) == n) break;
+        }
+    }
     out += buf;
 }
 

@@ -216,6 +216,13 @@ def main():
             return "1" if v else "0"
         if isinstance(v, int):
             return str(v)
+        if isinstance(v, float):
+            # parity with the C++ side (json_any_to_value): whole floats
+            # collapse to int; the rest render shortest-round-trip with a dot
+            if v == int(v) and abs(v) < 1e15:
+                return str(int(v))
+            r = repr(v)
+            return r if ("." in r or "e" in r or "n" in r) else r + ".0"
         if isinstance(v, str):
             return quote(v)
         if isinstance(v, list):
@@ -246,37 +253,61 @@ def main():
         identical, each run walks one path), data producers hoisted to `vars`
         (a DAG keyed by original node id; args reference them as "$id"),
         Comment annotations lossless. Returns (vars, steps, comments) or None
-        for shapes the form cannot hold (cycles, multi-trigger, mixed pins)."""
+        for shapes the form cannot hold (cycles, multi-trigger, mixed pins).
+        The constraint set MIRRORS the C++ decompiler (graph_as_typed) exactly,
+        so a record this generator emits round-trips a canvas save byte-stably
+        and vice versa."""
         nodes = g["nodes"]; edges = g.get("edges", [])
-        byid = {n["id"]: n for n in nodes}
+        byid = {}
+        for n in nodes:
+            nid = n["id"]
+            # ('#'-prefixed ids stay legal for exec/comment nodes -- the typed
+            # form discards those ids; only round-tripping PRODUCER ids are
+            # checked against the synthetic prefix, below)
+            if not isinstance(nid, str) or not nid:
+                return None
+            if nid in byid:
+                return None                   # duplicate node id
+            if not isinstance(n.get("params", {}), dict):
+                return None                   # params must be a dict
+            byid[nid] = n
         comments = [n for n in nodes if n["type"] == "Comment"]
-        for e in edges:                       # comments must be edge-free
+        for c in comments:                    # lossless means text-only string comments
+            cp = c.get("params", {})
+            if set(cp) - {"text"} or not isinstance(cp.get("text", ""), str):
+                return None
+        for e in edges:
+            if e["from"]["node"] not in byid or e["to"]["node"] not in byid:
+                return None                   # edge references an unknown node
             if byid[e["from"]["node"]]["type"] == "Comment" or \
                byid[e["to"]["node"]]["type"] == "Comment":
-                return None
+                return None                   # comments must be edge-free
         rest = [n for n in nodes if n["type"] != "Comment"]
         trig = [n for n in rest if n["type"].startswith("On")]
         if len(trig) != 1:
             return None
-        succ = {}                             # exec: node -> [(pin, target)]
-        data_in = {}                          # node -> [(pin, producer id)]
+        succ = {}                             # exec: node -> {pin: target}
+        data_in = {}                          # node -> {pin: producer id}
         has_exec = set()
         for e in edges:
             if e["to"]["pin"] == "in":
-                succ.setdefault(e["from"]["node"], []).append(
-                    (e["from"]["pin"], e["to"]["node"]))
+                pins = succ.setdefault(e["from"]["node"], {})
+                if e["from"]["pin"] in pins:  # duplicate exec pin (multi-out)
+                    return None
+                pins[e["from"]["pin"]] = e["to"]["node"]
                 has_exec.add(e["from"]["node"]); has_exec.add(e["to"]["node"])
             else:
                 if e["from"]["pin"] != "value":
                     return None
-                data_in.setdefault(e["to"]["node"], []).append(
-                    (e["to"]["pin"], e["from"]["node"]))
-        producers = {s for lst in data_in.values() for _, s in lst}
+                feeds = data_in.setdefault(e["to"]["node"], {})
+                if e["to"]["pin"] in feeds:   # two feeds into one pin
+                    return None
+                feeds[e["to"]["pin"]] = e["from"]["node"]
+        producers = {s for feeds in data_in.values() for s in feeds.values()}
         if producers & has_exec:              # producers never sit in exec flow
             return None
-        for n, lst in succ.items():           # at most one 'out'; no out+label mix
-            pins = [p for p, _ in lst]
-            if pins.count("out") > 1 or ("out" in pins and len(pins) > 1):
+        for n, pins in succ.items():          # never out+label mixed
+            if "out" in pins and len(pins) > 1:
                 return None
         # vars: every producer, keyed by its original node id (may ref other vars)
         vars_list = []
@@ -291,7 +322,7 @@ def main():
                 return None
             v = {"do": pn["type"], "id": pid, **p}
             if pid in data_in:
-                v["args"] = {pin: "$" + src for pin, src in sorted(data_in[pid])}
+                v["args"] = {pin: "$" + src for pin, src in sorted(data_in[pid].items())}
             vars_list.append(v)
         # exec tree from the trigger. An exec JOIN (indeg > 1) is walked once per
         # inbound path -- the tail is DUPLICATED in the typed form. Behavior is
@@ -312,10 +343,10 @@ def main():
                     raise ValueError
                 step = {"do": n["type"], **p}
                 if cur in data_in:
-                    step["args"] = {pin: "$" + src for pin, src in sorted(data_in[cur])}
+                    step["args"] = {pin: "$" + src for pin, src in sorted(data_in[cur].items())}
                 emitted.add(cur)
                 nxt = None; branches = []
-                for pin, tgt in sorted(succ.get(cur, [])):
+                for pin, tgt in sorted(succ.get(cur, {}).items()):
                     if pin == "out":
                         nxt = tgt
                     else:
@@ -332,12 +363,22 @@ def main():
         # coverage: every non-comment node is a producer or exec-reachable
         if emitted | producers != {n["id"] for n in rest}:
             return None
+        # parser nesting guard parity: the C++ side refuses a typed tree the
+        # canonical-text parser could not re-read (depth > 32) -- mirror it
+        def depth(v):
+            kids = v.values() if isinstance(v, dict) else v if isinstance(v, list) else ()
+            return max((1 + depth(x) for x in kids), default=0)
+        if depth(steps) > 32:
+            return None
         return vars_list, steps, [{"text": c.get("params", {}).get("text", ""),
                                    "x": c.get("x", 0), "y": c.get("y", 0)}
                                   for c in comments]
     for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/graphs/*.json"))):
         gr = json.load(open(f))
-        typed = decompose(gr)
+        try:
+            typed = decompose(gr)
+        except (KeyError, TypeError):         # structurally malformed graph:
+            typed = None                      # keep it lossless (grph), like the C++ side
         if typed is not None:
             vars_list, steps, comments = typed
             rid = f"evnt.{gr['id']}"
