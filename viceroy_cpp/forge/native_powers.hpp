@@ -54,11 +54,14 @@ int incite_price(int tension_you, int tension_target, int missions_in_tribe);
 //   (@0x4657C); price = score * unit; CAPITAL settlement -> +50% (@0x465C5,
 //   the +0x03 bit-4 marker); Peter Minuit (FF index 2, the 0x7b4(power,2)
 //   gate @0x465D5) -> 0; final halving (@0x465E6).
-// RECONSTRUCTED: s2/s5 (settlement record bytes +2/+5) are mapped to
-// population and wealth; the per-power attitude deduction ([bx-0x6bf0],
-// @0x4654C) and the human-path (X+1) distance multiply (@0x465A1) use
-// unidentified operands and are omitted.
-long native_land_price(const NativeSettlement& sv, int difficulty, int dist,
+// s2/s5 are the @TRIBES per-row LEVEL and VALUE columns, read through the
+// active tribe-record pointer [0x8D4E] (natives.md "Tribe attitude/demand
+// evaluator" -- whose 'threshold 0x41/0x32' wording is a misread: the bytes
+// MULTIPLY, `imul [bp-2]` @0x4658A). RECONSTRUCTED: the per-power attitude
+// deduction ([bx-0x6bf0], @0x4654C) and the human-path (X+1) distance
+// multiply (@0x465A1) use unidentified operands and are omitted.
+long native_land_price(int tribe_level, int tribe_value, bool capital,
+                       int difficulty, int dist,
                        bool human, bool resource_present, bool has_minuit);
 
 // CHIEFKILL raze treasure (func_04A7CA raze branch @0x4AAD0..0x4AB35):

@@ -53,16 +53,17 @@ int incite_price(int tension_you, int tension_target, int missions_in_tribe) {
     return price < 50 ? 50 : price;
 }
 
-long native_land_price(const NativeSettlement& sv, int difficulty, int dist,
+long native_land_price(int tribe_level, int tribe_value, bool capital,
+                       int difficulty, int dist,
                        bool human, bool resource_present, bool has_minuit) {
     if (has_minuit) return 0;                       // Peter Minuit: the land is free (@0x465D5)
     long score, unit;
-    if (human) { score = (difficulty + 3) * 2 + sv.population + sv.wealth - dist; unit = 0x41; }
-    else       { score = sv.population + sv.wealth - difficulty - dist + 12;      unit = 0x32; }
+    if (human) { score = (difficulty + 3) * 2 + tribe_level + tribe_value - dist; unit = 0x41; }
+    else       { score = tribe_level + tribe_value - difficulty - dist + 12;      unit = 0x32; }
     if (resource_present) score *= 2;               // prime resource doubles the ask (@0x46576)
     if (score < 1) score = 1;                       // clamp (@0x4657C)
     long price = score * unit;
-    if (sv.capital) price += price / 2;             // capital settlement +50% (@0x465C5)
+    if (capital) price += price / 2;                // capital settlement +50% (@0x465C5)
     return price / 2;                               // final halving (@0x465E6)
 }
 

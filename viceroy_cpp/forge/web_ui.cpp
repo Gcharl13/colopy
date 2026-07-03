@@ -2880,6 +2880,26 @@ async function tutCheck(){
     for(const t of (d.steps||[]))
       await new Promise(res=>wfShow({key:t.key,body:t.text},null,res));
   }catch(e){}
+  demandCheck();
+}
+// Pending AI reparation demand (@WANTSTUFF, diplomacy.md func_057F4E): the
+// verbatim body with its two choices; refusing risks war (ai_acts gate).
+async function demandCheck(){
+  try{
+    const d=await (await fetch('/api/diplomacy/demand')).json();
+    if(!d.pending) return;
+    const t=(d.text||'').replace(/\r/g,'').trim().split('\n');
+    const choices=t.slice(-2).map(s=>s.trim()).filter(Boolean);
+    const body=t.slice(0,-2).join('\n').trim();
+    wfShow({key:'@WANTSTUFF',body:body,choices:choices},async c=>{
+      const accept=/gladly|share/i.test(c);
+      const r=await (await fetch('/api/diplomacy/demand',{method:'POST',
+          body:JSON.stringify({accept:accept})})).json();
+      if(accept) ui.toast('Reparations paid: '+(r.paid||0)+' gold.');
+      else ui.toast(r.war?'They declare WAR!':'They back down... for now.');
+      refresh();
+    });
+  }catch(e){}
 }
 function nvNext(){                                     // ~Wait for next unit / No Orders (space)
   const alive=(GAME.units||[]).filter(u=>u.owner===0&&u.alive!==false);
@@ -4222,6 +4242,50 @@ function villageAdjacent(u){
 function foreignColonyAdjacent(u){
   return (GAME.colonies||[]).some(c=>c.owner!==0&&Math.abs(c.x-u.x)<=1&&Math.abs(c.y-u.y)<=1);
 }
+// The adjacent foreign EUROPEAN power (1..3) for a parley, from a bordering
+// foreign colony or unit; -1 when none.
+function foreignPowerAdjacent(u){
+  const c=(GAME.colonies||[]).find(c=>c.owner>0&&c.owner<4&&Math.abs(c.x-u.x)<=1&&Math.abs(c.y-u.y)<=1);
+  if(c) return c.owner;
+  const f=(GAME.units||[]).find(v=>v.owner>0&&v.owner<4&&Math.abs(v.x-u.x)<=1&&Math.abs(v.y-u.y)<=1);
+  return f?f.owner:-1;
+}
+// European parley (diplomacy.md func_057F4E) over /api/diplomacy/parley:
+// topics first, then treaty / peace / war / tribute.
+async function parleyMenu(p){
+  let d; try{ d=await (await fetch('/api/diplomacy/parley',{method:'POST',
+      body:JSON.stringify({power:p})})).json(); }
+  catch(e){ ui.toast('parley unavailable'); return; }
+  if(d.error){ ui.toast(d.error); return; }
+  const nm=(GAME.powers&&GAME.powers[p]&&GAME.powers[p].name)||('Power '+p);
+  if(!d.eligible){ ui.toast('The '+nm+' court will not receive us (turn 40+, goodwill, or a recent parley).'); return; }
+  let body='<div class="muted" style="margin-bottom:6px">attitude '+d.attitude
+    +(d.at_war?' &middot; AT WAR':'')+(d.treaty?' &middot; treaty in force':'')+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px">'
+    +(!d.treaty&&!d.at_war?'<button class="act" onclick="ui.close();parleyAct('+p+',\'treaty\')">Sign a treaty of alliance</button>':'')
+    +(d.at_war?'<button class="act" onclick="ui.close();parleyAct('+p+',\'peace\')">Make peace</button>':'')
+    +(!d.at_war?'<button class="act" onclick="ui.close();parleyAct('+p+',\'war\')">Declare WAR</button>':'')
+    +'<button class="act" onclick="ui.close();parleyTribute('+p+')">Demand tribute...</button>'
+    +'<button class="act" onclick="ui.close()">Never mind</button>'
+    +'</div>';
+  ui.popup('Parley &mdash; '+esc(nm), body);
+}
+async function parleyAct(p,act){
+  const r=await (await fetch('/api/diplomacy/parley',{method:'POST',
+      body:JSON.stringify({power:p,action:act})})).json();
+  if(r.error){ ui.toast(r.error); return; }
+  if(r.text) playPopup(act==='treaty'?'@SIGNTREATY':act==='war'?'@DECLAREWAR':'@PEACEMANLY', r.text);
+  refresh();
+}
+async function parleyTribute(p){
+  const amt=parseInt(prompt('Demand how much gold in tribute?','300')||'0',10);
+  if(!(amt>0)) return;
+  const r=await (await fetch('/api/diplomacy/parley',{method:'POST',
+      body:JSON.stringify({power:p,action:'tribute',amount:amt})})).json();
+  if(r.error){ ui.toast(r.error); return; }
+  ui.toast(r.accepted?('They pay '+amt+' gold to keep the peace.'):'They laugh at our puny threats.');
+  refresh();
+}
 // Scout at a foreign colony (exploration.md 3, func_05A20E): the verbatim
 // 4-option @SCOUTCOLONY dialog -- Meet With Mayor / Infiltrate / Attack / Nothing.
 async function scoutColony(){
@@ -4366,6 +4430,10 @@ function showSel(){
       +(u.type===5&&foreignColonyAdjacent(u)
         ?'<button class="act" style="border-color:#4f9d69" onclick="scoutColony()" '
          +'title="Meet the mayor, infiltrate, or attack the foreign colony (exploration.md 3)">Scout colony</button>'
+        :'')
+      +(foreignPowerAdjacent(u)>0
+        ?'<button class="act" style="border-color:#6a8fd8" onclick="parleyMenu('+foreignPowerAdjacent(u)+')" '
+         +'title="Meet the rival court: treaty / peace / war / tribute (diplomacy.md func_057F4E)">Parley</button>'
         :'')
       +'</div>';
   } else if(tbtn){

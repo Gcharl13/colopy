@@ -85,6 +85,8 @@ struct EngineExtra {
     // Scoring inputs (spec/systems/scoring.md components):
     int  declaration_year = 0;    // year independence was declared (revolution bonus), 0 = never
     int  razed_settlements = 0;   // native settlements this power destroyed (-(diff+1) each)
+    int  demand_power  = -1;      // pending AI reparation demand (@WANTSTUFF, func_057F4E):
+    long demand_amount = 0;       //   the demanding power / the gold asked; -1 = none
     // Mercenary offer state (mercenary.md func_03E442): the first-eligible-call
     // skip bit (PowerRecord +0x00 bit 0x08, set-then-return @0x03E4BC/@0x03E4CD)
     // and the PRE-ROLLED pending offer -- counts/price roll BEFORE the

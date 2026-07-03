@@ -1750,6 +1750,19 @@ static void game_step() {
             if (g_game.turn >= g_engine_extra.diplo.cooldown[a] && game_rng(0, 3) == 0) {
                 g_engine_extra.diplo.war[a][b] &= ~vc::sim::WAR_GRIEVANCE;
                 g_engine_extra.diplo.war[a][b] |= vc::sim::WAR_RESOLVED;   // @0x5318F
+                // An AI power's resolved grievance against the HUMAN becomes a
+                // reparation demand (@WANTSTUFF, func_057F4E): probability gate
+                // rng(1000) < 200*diff+100 (@0x58315); value = grievance scaled
+                // x10(diff+8)/100 (@0x583A0) + the 500*(diff+1) surcharge
+                // (@0x5842B). The grievance-as-base is RECONSTRUCTED.
+                if (a >= 1 && a <= 3 && b == 0 && g_engine_extra.demand_power < 0 &&
+                    game_rng(0, 999) < 200 * g_game.difficulty + 100) {
+                    long base = g_engine_extra.diplo.grievance[a];
+                    g_engine_extra.demand_power = a;
+                    g_engine_extra.demand_amount =
+                        vc::sim::ai_demand_value(base, g_game.difficulty) +
+                        vc::sim::ai_demand_surcharge(g_game.difficulty);
+                }
             }
         }
         history_snapshot();
@@ -2926,6 +2939,8 @@ static forge::JsonValue dump_extra(const forge::EngineExtra& x) {
     { forge::JsonValue at = jarr();
       for (int a = 0; a < 4; ++a) at.arr.push_back(forge::json_num(x.diplo.attitude[a]));
       o.obj["diplo_attitude"] = at; }                            // DGROUP 0x940C
+    o.obj["demand_power"]  = forge::json_num(x.demand_power);
+    o.obj["demand_amount"] = forge::json_num((double)x.demand_amount);
     forge::JsonValue st = jarr();
     for (const forge::NativeSettlement& s : x.settlements) {
         forge::JsonValue so = jobj();
@@ -3019,6 +3034,8 @@ static void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
         for (int a = 0; a < 4 && a < (int)gv->arr.size(); ++a) x.diplo.grievance[a] = (uint16_t)gv->arr[a].as_int();
     if (const forge::JsonValue* at = o->find("diplo_attitude"))
         for (int a = 0; a < 4 && a < (int)at->arr.size(); ++a) x.diplo.attitude[a] = (uint8_t)at->arr[a].as_int();
+    if (const forge::JsonValue* v = o->find("demand_power"))  x.demand_power  = v->as_int();
+    if (const forge::JsonValue* v = o->find("demand_amount")) x.demand_amount = (long)v->num;
     x.settlements.clear();
     x.braves.clear();
     if (const forge::JsonValue* bv = o->find("braves"))
@@ -3872,7 +3889,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                     auto& sv = g_engine_extra.settlements[best];
                     const bool minuit = (g_engine_extra.ff_owned >> 2) & 1u;
                     const bool res = vc::sim::resource_at(g_world, u.x, u.y, g_game.rumor_seed) >= 0;
-                    const long price = forge::native_land_price(sv, g_game.difficulty, bd,
+                    forge::EngineCtx tcx{g_game, g_world, g_colony_xy, g_engine_extra,
+                                         g_active_rules, game_rng};
+                    const int tl = (int)forge::resolve_binding(
+                        "@TRIBES[" + std::to_string(sv.tribe) + "].level", tcx).num;
+                    const int tv = (int)forge::resolve_binding(
+                        "@TRIBES[" + std::to_string(sv.tribe) + "].value", tcx).num;
+                    const long price = forge::native_land_price(tl, tv, sv.capital,
+                                                                g_game.difficulty, bd,
                                                                 u.owner == 0, res, minuit);
                     if (price > 0 && !acked2("@INDIANLAND")) {
                         forge::JsonValue o = jobj();
@@ -4237,6 +4261,56 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // completed action re-arms the cooldown (@0x58075). The tribute
         // gold->demand-score conversion (1 per 100) and the -2 attitude cost
         // of a paid demand are RECONSTRUCTED.
+        // Pending AI reparation demand (@WANTSTUFF): GET reads it (filled text),
+        // POST {accept} resolves -- pay (gold transfers, grievance clears) or
+        // refuse ("We laugh at your puny threats"): the aggrieved power may
+        // declare war through the ai_acts willingness gate (@0x58C24).
+        if (path == "/api/diplomacy/demand" && method == "GET") {
+            forge::JsonValue o = jobj();
+            const int p = g_engine_extra.demand_power;
+            o.obj["pending"] = jbool(p >= 0);
+            if (p >= 0) {
+                o.obj["power"] = forge::json_num(p);
+                o.obj["amount"] = forge::json_num((double)g_engine_extra.demand_amount);
+                std::string m = game_message_text("@WANTSTUFF");
+                forge::EngineCtx dcx{g_game, g_world, g_colony_xy, g_engine_extra,
+                                     g_active_rules, game_rng};
+                std::string who = forge::resolve_binding(
+                    "@COUNTRY[" + std::to_string(p) + "].name", dcx).str;
+                size_t p2;
+                while ((p2 = m.find("%STRING0")) != std::string::npos) m.replace(p2, 8, who);
+                while ((p2 = m.find("%NUMBER0")) != std::string::npos)
+                    m.replace(p2, 8, std::to_string(g_engine_extra.demand_amount));
+                while ((p2 = m.find("%STRING1")) != std::string::npos) m.replace(p2, 8, "Gold");
+                o.obj["text"] = forge::json_str(m);
+            }
+            return J(200, o);
+        }
+        if (path == "/api/diplomacy/demand" && method == "POST") {
+            const int p = g_engine_extra.demand_power;
+            if (p < 0) return err(400, "no pending demand");
+            forge::JsonValue b = forge::json_parse(body);
+            const bool accept = b.find("accept") && b.find("accept")->b;
+            forge::JsonValue o = jobj();
+            auto& dp = g_engine_extra.diplo;
+            if (accept) {
+                long pay = std::min<long>(g_game.powers[0].gold, g_engine_extra.demand_amount);
+                g_game.powers[0].gold -= pay;
+                g_game.powers[p & 3].gold += pay;
+                dp.grievance[p] = 0;                            // reparations settle the score
+                o.obj["paid"] = forge::json_num((double)pay);
+            } else {
+                const int score = (int)(g_engine_extra.demand_amount / 100);
+                if (vc::sim::ai_acts(dp.attitude[p], score, game_rng)) {
+                    vc::sim::declare_war(dp, p, 0);             // they make good on the threat
+                    o.obj["war"] = jbool(true);
+                } else o.obj["war"] = jbool(false);
+            }
+            dp.cooldown[p] = vc::sim::treaty_cooldown(g_game.turn);
+            g_engine_extra.demand_power = -1;
+            g_engine_extra.demand_amount = 0;
+            return J(200, o);
+        }
         if (path == "/api/diplomacy/parley" && method == "POST") {
             if (!g_game_active) game_new();
             forge::JsonValue b = forge::json_parse(body);
@@ -5689,15 +5763,13 @@ static int engine_selftest() {
           check(forge::incite_price(0, 0, 1) == 50, "incite: a mission in the tribe -> floor 50");
           // Native land price (func_0464C2, the @INDIANLAND offer): the byte-
           // verified shape, the resource/capital multipliers, the Minuit waiver.
-          forge::NativeSettlement lp; lp.population = 6; lp.wealth = 4;
-          check(forge::native_land_price(lp, 1, 2, true, false, false) == 520,
-                "land price: human path ((diff+3)*2+s2+s5-dist)*65/2 = 520");
-          check(forge::native_land_price(lp, 1, 2, true, true, false) == 1040,
+          check(forge::native_land_price(6, 4, false, 1, 2, true, false, false) == 520,
+                "land price: human path ((diff+3)*2+level+value-dist)*65/2 = 520");
+          check(forge::native_land_price(6, 4, false, 1, 2, true, true, false) == 1040,
                 "land price: a prime resource doubles the ask (@0x46576)");
-          lp.capital = true;
-          check(forge::native_land_price(lp, 1, 2, true, false, false) == 780,
+          check(forge::native_land_price(6, 4, true, 1, 2, true, false, false) == 780,
                 "land price: capital settlement +50% (@0x465C5)");
-          check(forge::native_land_price(lp, 1, 2, true, false, true) == 0,
+          check(forge::native_land_price(6, 4, false, 1, 2, true, false, true) == 0,
                 "land price: Peter Minuit -> the land is free (@0x465D5)");
         }
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
