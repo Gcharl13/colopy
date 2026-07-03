@@ -276,6 +276,23 @@ void colony_compute_production(vc::sim::Colony& col, int difficulty, const vc::s
         int g = wk.good;
         if (g >= 0 && g < 8) {               // tile worker -> raw good from the terrain-yield table
             int y = terrain_good_yield(wk.terrain, g);
+            // Ocean food = the fisherman column (@0x9C2E..0x9C87): adjust by the
+            // water-neighbour count (>=8 open sea: -2, 6..7: -1, else a coastal
+            // bay: +1 -- the deeper +2/+3/+4 tiers sit behind an always-false
+            // compare in the EXE, dead code), then the Docks gate: no Docks
+            // (@BUILDING 6), no sea food (@0x9F4F).
+            const bool fish = (g == 0) && (wk.terrain == 25 || wk.terrain == 26);
+            if (fish && y > 0 && world && wk.tile >= 0 && wk.tile < 8) {
+                int tx = col.x + rdx[wk.tile], ty = col.y + rdy[wk.tile];
+                int wet = 0;
+                for (int k = 0; k < 8; ++k) {
+                    int t2 = world->terrain_id(tx + rdx[k], ty + rdy[k]);
+                    if (t2 == 25 || t2 == 26) ++wet;
+                }
+                y += wet >= 8 ? -2 : wet >= 6 ? -1 : 1;
+                if (y < 0) y = 0;
+            }
+            if (fish && !(col.built_mask & (1ull << 6))) y = 0;
             y = vc::sim::tory_expert_adjust(y, col.population, sol, difficulty, col.human, wk.expert, g, rd);
             int res = (wk.tile >= 0 && wk.tile < 8) ? res_at_tile(wk.tile) : -1;
             int b = vc::sim::resource_good_bonus(res, g);

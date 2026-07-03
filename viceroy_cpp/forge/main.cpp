@@ -5771,6 +5771,21 @@ static int engine_selftest() {
                 "land price: capital settlement +50% (@0x465C5)");
           check(forge::native_land_price(6, 4, false, 1, 2, true, false, true) == 0,
                 "land price: Peter Minuit -> the land is free (@0x465D5)");
+          // Fisherman column (@0x9C2E/@0x9F4F): an ocean tile feeds food only
+          // through the Docks; the fisherman yield column supplies the base.
+          { RuleData rdf = make_default_rules();
+            int base_fish = forge::terrain_good_yield(25, 0);
+            Colony fc; fc.population = 1; fc.rebel_A = 0; fc.rebel_B = 1;
+            fc.center_terrain = 2; fc.center_food = 0;
+            Colony::Worker fw; fw.profession = 11; fw.tile = 0; fw.terrain = 25; fw.good = 0;
+            fc.workers.push_back(fw);
+            forge::colony_compute_production(fc, 1, rdf);
+            int without = fc.food_per_turn;
+            fc.built_mask |= (1ull << 6);                      // build the Docks
+            forge::colony_compute_production(fc, 1, rdf);
+            check(base_fish > 0 && fc.food_per_turn == without + base_fish,
+                  "ocean food needs the Docks (@0x9F4F); with them the fisherman column feeds");
+          }
         }
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
         Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)
