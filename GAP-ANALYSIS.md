@@ -107,6 +107,20 @@ JSON everywhere for data; binary `.MP` maps (3-plane, byte-faithful loader); PNG
 Nothing is proposed for outright retirement in P0–P2: each legacy tab retires only when its
 generic replacement covers the workflow (strangler rule), logged in MIGRATION-LOG.md.
 
+**Status (updated as increments land — see MIGRATION-LOG for the full record):**
+- Store live with **10 types / 220 records** (good, unit, prof, terr, bldg, conf, phas, natn,
+  ffat + the schm registry describing itself); prof.produces = ref<good> gives the ref
+  index/pickers/used-by/safe-delete genuine data.
+- **Retired:** Tables-tab editing for @CARGO, @UNIT, @JOB, @BUILDING, @UNFORESTED, @FORESTED,
+  @OTHER, @COUNTRY, @NATIONALITY, @FATHERS (read-only + open-in-Drydock; MIGRATION-LOG 11/13).
+  Honest because of the legacy-reader **write-through**: every store mutation patches the
+  mapped in-memory JSON cells, so un-cut-over `@SECTION[row].col` consumers follow the store.
+- **Authority:** GOOD market knobs store-authoritative (cutover #1); TERR arrays + UNIT/PROF
+  RuleData fields applied from the store live; CONF seeds defaults at serve start (Rules
+  overlay stays the live-tweak layer until P5); PHAS/BLDG/NATN/FFAT passive under the
+  write-through + provenance gate.
+- **Remaining P2 order:** TEXT/MSGE bulk (grouped files), SPRT/ATLS/PLTT metadata.
+
 ## 4. No spec counterpart — keep / migrate / retire
 
 | Item | Disposition |
