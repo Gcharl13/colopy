@@ -45,6 +45,22 @@ int native_trade_price(int difficulty, int tax_pct);
 // - 2*tension_toward_target - 100*own_missions_in_tribe, floored at 50.
 int incite_price(int tension_you, int tension_target, int missions_in_tribe);
 
+// Native land price (func_0464C2 -- the @INDIANLAND "We offer you {%NUMBER1$}"
+// figure, BYTE-VERIFIED shape):
+//   human path (@0x464F5, owner < 4 and not the +0x543F AI flag):
+//     score = (difficulty+3)*2 + s2 + s5 - dist,  unit = 0x41 (65)
+//   else:  score = s2 + s5 - difficulty - dist + 12,  unit = 0x32 (50)
+//   prime resource on the tile -> score x2 (@0x46576); clamp score >= 1
+//   (@0x4657C); price = score * unit; CAPITAL settlement -> +50% (@0x465C5,
+//   the +0x03 bit-4 marker); Peter Minuit (FF index 2, the 0x7b4(power,2)
+//   gate @0x465D5) -> 0; final halving (@0x465E6).
+// RECONSTRUCTED: s2/s5 (settlement record bytes +2/+5) are mapped to
+// population and wealth; the per-power attitude deduction ([bx-0x6bf0],
+// @0x4654C) and the human-path (X+1) distance multiply (@0x465A1) use
+// unidentified operands and are omitted.
+long native_land_price(const NativeSettlement& sv, int difficulty, int dist,
+                       bool human, bool resource_present, bool has_minuit);
+
 // CHIEFKILL raze treasure (func_04A7CA raze branch @0x4AAD0..0x4AB35):
 // gold = (sum of 3 x random_int(0, 10-difficulty)) * random_int(0,6) * 4
 //        * (tribe_level + 1), credited DIRECTLY to the attacker's gold

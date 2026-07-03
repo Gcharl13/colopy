@@ -2849,16 +2849,23 @@ async function nvOrder(o){                             // F/S/P/R standing order
   GAME=d; if(o==='D') SEL=-1;
   nvRefresh();
 }
-async function nvBuild(ack){                           // ~Build Colony / Join Colony (~B)
+async function nvBuild(ack,extra){                     // ~Build Colony / Join Colony (~B)
   const u=selUnit(); if(!u){ ui.toast('No active unit'); return; }
-  const r=await fetch('/api/game/found',{method:'POST',body:JSON.stringify({unit:SEL,ack:ack||[]})});
+  const r=await fetch('/api/game/found',{method:'POST',
+    body:JSON.stringify(Object.assign({unit:SEL,ack:ack||[]},extra||{}))});
   const d=await r.json(); if(d.error){ ui.toast(d.error); return; }
-  if(d.confirm){                                       // @TUTNOSPACES / @TUTNOLUMBER two-choice
+  if(d.confirm){                                       // @TUTNO* two-choice / @INDIANLAND three-choice
+    const n=d.choices||2;
     const t=(d.text||'').replace(/\r/g,'').trim().split('\n');
-    const choices=t.slice(-2).map(s=>s.trim()).filter(Boolean);   // "Cancel action." / "Build colony anyway."
-    const body=t.slice(0,-2).join('\n').trim();
+    const choices=t.slice(-n).map(s=>s.trim()).filter(Boolean);
+    const body=t.slice(0,-n).join('\n').trim();
     wfShow({key:d.confirm,body:body,choices:choices},c=>{
-      if(/anyway/i.test(c)) nvBuild((ack||[]).concat([d.confirm]));
+      if(d.confirm==='@INDIANLAND'){                   // respect / pay / claim (func_0464C2 price)
+        if(/offer/i.test(c)) nvBuild((ack||[]).concat([d.confirm]),{land:'pay'});
+        else if(/mistaken/i.test(c)) nvBuild((ack||[]).concat([d.confirm]),{land:'claim'});
+        return;                                        // "we shall respect your wishes" = cancel
+      }
+      if(/anyway/i.test(c)) nvBuild((ack||[]).concat([d.confirm]),extra);
     });
     return;
   }

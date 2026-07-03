@@ -3846,6 +3846,60 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
                 u.alive = false;                        // the colonist becomes population
                 return J(200, game_state_json());
             }
+            // Native land demand (@INDIANLAND, priced by func_0464C2): founding
+            // inside a settlement's claim asks first. Claim radius 2 is
+            // RECONSTRUCTED (the original claim is the settlement catchment);
+            // the price shape, the resource doubling, the capital +50% and the
+            // Peter Minuit waiver are byte-verified (native_powers.hpp).
+            {
+                auto acked2 = [&](const char* k) {
+                    if (const forge::JsonValue* a = b.find("ack"))
+                        for (const forge::JsonValue& e : a->arr) if (e.str == k) return true;
+                    return false;
+                };
+                int best = -1; int bd = 99;
+                for (int si = 0; si < (int)g_engine_extra.settlements.size(); ++si) {
+                    const auto& sv = g_engine_extra.settlements[si];
+                    int d = std::max(std::abs(sv.x - u.x), std::abs(sv.y - u.y));
+                    if (d <= 2 && d < bd) { bd = d; best = si; }
+                }
+                if (best >= 0) {
+                    auto& sv = g_engine_extra.settlements[best];
+                    const bool minuit = (g_engine_extra.ff_owned >> 2) & 1u;
+                    const bool res = vc::sim::resource_at(g_world, u.x, u.y, g_game.rumor_seed) >= 0;
+                    const long price = forge::native_land_price(sv, g_game.difficulty, bd,
+                                                                u.owner == 0, res, minuit);
+                    if (price > 0 && !acked2("@INDIANLAND")) {
+                        forge::JsonValue o = jobj();
+                        o.obj["confirm"] = forge::json_str("@INDIANLAND");
+                        std::string m = game_message_text("@INDIANLAND");
+                        std::string tn = forge::resolve_binding(
+                            "@TRIBES[" + std::to_string(sv.tribe) + "].name",
+                            forge::EngineCtx{g_game, g_world, g_colony_xy, g_engine_extra,
+                                             g_active_rules, game_rng}).str;
+                        size_t p2;
+                        while ((p2 = m.find("%STRING0")) != std::string::npos) m.replace(p2, 8, tn);
+                        while ((p2 = m.find("%NUMBER1")) != std::string::npos)
+                            m.replace(p2, 8, std::to_string(price));
+                        o.obj["text"] = forge::json_str(m);
+                        o.obj["choices"] = forge::json_num(3);
+                        o.obj["price"] = forge::json_num((double)price);
+                        return J(200, o);
+                    }
+                    if (price > 0 && acked2("@INDIANLAND")) {
+                        const forge::JsonValue* lc = b.find("land");
+                        if (lc && lc->str == "pay") {           // "We offer you {%NUMBER1$}"
+                            auto& pw = g_game.powers[u.owner & 3];
+                            if (pw.gold < price) return err(400, "not enough gold for the land");
+                            pw.gold -= price;
+                        } else {                                // "You are mistaken; this is ours"
+                            // Squatting angers the tribe (magnitude RECONSTRUCTED --
+                            // the +8 step other insults use).
+                            forge::tension_apply(sv, u.owner & 3, 8, false, false);
+                        }
+                    }
+                }
+            }
             Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
             c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
             c.x = u.x; c.y = u.y;                              // ColonyRecord +0/+1 map position
@@ -5574,6 +5628,18 @@ static int engine_selftest() {
           check(forge::incite_price(50, 0, 0) == 300, "incite: they dislike you -> pricier");
           check(forge::incite_price(0, 100, 0) == 50, "incite: they hate the target -> floor 50");
           check(forge::incite_price(0, 0, 1) == 50, "incite: a mission in the tribe -> floor 50");
+          // Native land price (func_0464C2, the @INDIANLAND offer): the byte-
+          // verified shape, the resource/capital multipliers, the Minuit waiver.
+          forge::NativeSettlement lp; lp.population = 6; lp.wealth = 4;
+          check(forge::native_land_price(lp, 1, 2, true, false, false) == 520,
+                "land price: human path ((diff+3)*2+s2+s5-dist)*65/2 = 520");
+          check(forge::native_land_price(lp, 1, 2, true, true, false) == 1040,
+                "land price: a prime resource doubles the ask (@0x46576)");
+          lp.capital = true;
+          check(forge::native_land_price(lp, 1, 2, true, false, false) == 780,
+                "land price: capital settlement +50% (@0x465C5)");
+          check(forge::native_land_price(lp, 1, 2, true, false, true) == 0,
+                "land price: Peter Minuit -> the land is free (@0x465D5)");
         }
         // Founding-father effect: Henry Hudson (#8) -> furs x2 for a fur trapper on tundra.
         Colony hh; hh.population = 1; hh.rebel_A = 0; hh.rebel_B = 1; hh.workers.push_back(mkw(4, 0, 8, 4));   // fur trapper on Boreal forest (terrain 8)
