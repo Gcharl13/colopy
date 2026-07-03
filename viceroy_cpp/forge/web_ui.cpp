@@ -38,6 +38,9 @@ const char* forge_index_html() {
   .delta { color:#e8b94b; } .muted { color:#6b7280; }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
   .pal { display:flex; gap:4px; flex-wrap:wrap; margin:8px 0; }
+  #ddgrid input { background:#11141a; border:1px solid #2a2e37; color:#e5e9f0; border-radius:3px; padding:2px 4px; }
+  #ddgrid th { cursor:pointer; white-space:nowrap; }
+  #ddgrid td { white-space:nowrap; }
   .sw { width:26px; height:26px; border:2px solid #2a2e37; border-radius:4px; cursor:pointer; }
   .sw.sel { border-color:#e8b94b; }
   canvas { border:1px solid #2a2e37; image-rendering:pixelated; background:#0b0d11; }
@@ -115,6 +118,7 @@ const char* forge_index_html() {
   <button data-tab="logic">Logic</button>
   <button data-tab="turn">Turn</button>
   <button data-tab="sandbox">Sandbox</button>
+  <button data-tab="drydock">Drydock</button>
   <button data-tab="play">Play</button>
 </nav>
 <main>
@@ -238,6 +242,23 @@ const char* forge_index_html() {
         <div class="gprops" id="sinspect" style="width:224px"></div>
       </div>
       <div class="gpalette" id="spalette" style="width:120px"></div>
+    </div>
+  </section>
+
+  <section id="drydock" class="tab">
+    <div class="row">
+      <input id="ddfilter" placeholder="filter records (ids, names, values)..." style="width:280px">
+      <button class="act" onclick="ddSave()">Save</button>
+      <button class="act" onclick="ddUndo()">Undo</button>
+      <button class="act" onclick="ddRedo()">Redo</button>
+      <span id="ddstatus" class="muted"></span>
+      <span class="muted">The record store (Drydock): every edit goes through the store
+        chokepoint (validated, journaled, ref-indexed); Save re-serializes dirty records
+        to canonical text under data/base/. The running game follows edits live.</span>
+    </div>
+    <div style="display:flex; gap:10px; align-items:flex-start">
+      <div class="gpalette" id="ddtree" style="width:210px; max-height:74vh"></div>
+      <div style="flex:1; overflow:auto; max-height:74vh" id="ddgrid"></div>
     </div>
   </section>
 
@@ -1083,6 +1104,106 @@ async function tReset(){
   ui.toast('Reverted '+TBL.file); tLoadFile(TBL.file);
 }
 document.querySelector('nav button[data-tab=tables]').addEventListener('click',()=>{ if(!window._tinit){ window._tinit=true; tInit(); } });
+
+// ---- Drydock: Object Window + grid view (spec 5.1/5.2) ----------------------
+// Entirely schema-driven from /api/dd/types -- ZERO per-type UI code.
+let DD_TYPES=null, DD_CUR=null, DD_ROWS=null, DD_SORT=null, DD_ASC=true;
+async function ddStatus(){
+  try{ const s=await (await fetch('/api/dd/status')).json();
+    $('#ddstatus').textContent='dirty: '+s.dirty+'  undo: '+s.undo_depth+'  redo: '+s.redo_depth;
+  }catch(e){}
+}
+async function ddInit(){
+  try{ DD_TYPES=await (await fetch('/api/dd/types')).json(); }
+  catch(e){ $('#ddtree').innerHTML='<div class="muted">store not loaded</div>'; return; }
+  ddTree(); ddStatus();
+  if(!DD_CUR&&DD_TYPES.length) ddOpen(DD_TYPES[0].code);
+}
+function ddTree(){
+  let h='<h4>record types</h4>';
+  for(const t of DD_TYPES)
+    h+='<div style="padding:3px 6px;cursor:pointer;border-radius:4px'
+      +(DD_CUR===t.code?';background:#2a3040':'')+'" onclick="ddOpen(\''+t.code+'\')">'
+      +'<b>'+esc(t.code)+'</b> <span class="muted">'+t.count+'</span></div>';
+  $('#ddtree').innerHTML=h;
+}
+async function ddOpen(code){
+  DD_CUR=code; DD_SORT=null;
+  DD_ROWS=await (await fetch('/api/dd/records?type='+encodeURIComponent(code))).json();
+  ddTree(); ddGrid();
+}
+function ddCols(){
+  const t=DD_TYPES.find(t=>t.code===DD_CUR);
+  return t?t.fields.filter(f=>f.kind<=2||f.kind===3):[];   // Int/Float/Str/Ref: scalar grid cols
+}
+function ddGrid(){
+  const cols=ddCols(), q=($('#ddfilter').value||'').toLowerCase();
+  let rows=DD_ROWS.filter(r=>!q||JSON.stringify(r).toLowerCase().indexOf(q)>=0);
+  if(DD_SORT){ rows=rows.slice().sort((a,b)=>{
+    const x=a[DD_SORT], y=b[DD_SORT];
+    const c=(typeof x==='number'&&typeof y==='number')?x-y:String(x??'').localeCompare(String(y??''));
+    return DD_ASC?c:-c; }); }
+  let h='<table class="grid"><tr><th onclick="ddSortBy(\'id\')">id</th>';
+  for(const c of cols) h+='<th onclick="ddSortBy(\''+c.name+'\')" title="'+esc(c.doc||'')+'">'+esc(c.name)+'</th>';
+  h+='<th></th></tr>';
+  for(const r of rows){
+    h+='<tr><td'+(r.dirty?' style="color:#e8b94b"':'')+'>'+esc(r.id)+(r.dirty?' *':'')+'</td>';
+    for(const c of cols){
+      const v=r[c.name];
+      const shown=(v&&typeof v==='object'&&'ref' in v)?v.ref:(v===undefined?'':v);
+      h+='<td><input value="'+esc(String(shown))+'" data-id="'+esc(r.id)+'" data-f="'+esc(c.name)
+        +'" data-k="'+c.kind+'" onchange="ddEdit(this)" style="width:'+(c.kind===2||c.kind===3?'140':'56')+'px"></td>';
+    }
+    h+='<td><button class="act" onclick="ddDup(\''+esc(r.id)+'\')" title="duplicate-as-new">dup</button>'
+      +'<button class="act" onclick="ddDel(\''+esc(r.id)+'\')" title="delete (ref-checked)">del</button></td></tr>';
+  }
+  // column stats: instant balance sanity (spec 5.2 grid view)
+  h+='<tr><td class="muted">min/max/mean</td>';
+  for(const c of cols){
+    if(c.kind===0||c.kind===1){
+      const vals=rows.map(r=>r[c.name]).filter(v=>typeof v==='number');
+      if(vals.length){ const mn=Math.min(...vals), mx=Math.max(...vals);
+        const mean=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+        h+='<td class="muted">'+mn+'/'+mx+'/'+mean+'</td>'; } else h+='<td></td>';
+    } else h+='<td></td>';
+  }
+  h+='<td></td></tr></table>';
+  $('#ddgrid').innerHTML=h;
+}
+function ddSortBy(c){ DD_ASC=(DD_SORT===c)?!DD_ASC:true; DD_SORT=c; ddGrid(); }
+async function ddEdit(inp){
+  const kind=+inp.dataset.k;
+  let value=inp.value;
+  if(value===''){ value=null; }                       // empty -> clear the field
+  else if(kind===0) value=parseInt(value,10);
+  else if(kind===1) value=parseFloat(value);
+  const r=await fetch('/api/dd/set',{method:'POST',body:JSON.stringify(
+    {id:inp.dataset.id, field:inp.dataset.f, value})});
+  const d=await r.json();
+  if(d.error){ ui.toast(d.error); }
+  await ddOpen(DD_CUR); ddStatus();
+}
+async function ddDup(id){
+  const nid=prompt('new record id ('+DD_CUR+'.*):', id+'_copy');
+  if(!nid) return;
+  const d=await (await fetch('/api/dd/add',{method:'POST',body:JSON.stringify({id:nid,from:id})})).json();
+  if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); }
+}
+async function ddDel(id){
+  const d=await (await fetch('/api/dd/delete',{method:'POST',body:JSON.stringify({id})})).json();
+  if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); }
+}
+async function ddSave(){
+  const d=await (await fetch('/api/dd/save',{method:'POST',body:'{}'})).json();
+  ui.toast('saved: '+d.written+' file(s)'+(d.removed?', removed '+d.removed:''));
+  await ddOpen(DD_CUR); ddStatus();
+}
+async function ddUndo(){ const d=await (await fetch('/api/dd/undo',{method:'POST',body:'{}'})).json();
+  if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); } }
+async function ddRedo(){ const d=await (await fetch('/api/dd/redo',{method:'POST',body:'{}'})).json();
+  if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); } }
+document.querySelector('nav button[data-tab=drydock]').addEventListener('click',()=>{ if(!window._ddinit){ window._ddinit=true; ddInit(); } });
+document.addEventListener('input',e=>{ if(e.target&&e.target.id==='ddfilter'&&DD_ROWS) ddGrid(); });
 )HTML"
         // ---- chunk 4b ----
         + R"HTML(
