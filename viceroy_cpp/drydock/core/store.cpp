@@ -149,11 +149,8 @@ bool store_set(Store& s, const std::string& id, const std::string& field,
     const FieldDef* fd = td ? td->find(field) : nullptr;
     if (!fd) { err = id + ": unknown field '" + field + "'"; return false; }
     if (value) {                                     // validate the candidate value
-        Record probe;
-        probe.id = id;
-        probe.fields.push_back({field, *value});
         std::vector<std::string> ve;
-        schema_validate(s.schema, probe, ve);
+        schema_validate_field(id, *fd, *value, ve);
         if (!ve.empty()) { err = ve.front(); return false; }
     } else if (fd->required) {
         err = id + ": cannot clear required field '" + field + "'";

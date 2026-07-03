@@ -82,6 +82,7 @@ add_executable(forge
   forge/mod.cpp
   forge/savegame.cpp
   forge/drydock_bridge.cpp
+  forge/drydock_api.cpp
   forge/datacheck.cpp
   forge/formulas.cpp
   forge/engine.cpp

@@ -111,16 +111,25 @@ void schema_validate(const Schema& s, const Record& r, std::vector<std::string>&
     for (const auto& f : r.fields) {
         const FieldDef* fd = td->find(f.name);
         if (!fd) { errors.push_back(r.id + ": unknown field '" + f.name + "'"); continue; }
-        const Value& v = f.value;
+        schema_validate_field(r.id, *fd, f.value, errors);
+    }
+}
+
+void schema_validate_field(const std::string& rec_id, const FieldDef& fdef,
+                           const Value& v, std::vector<std::string>& errors) {
+    {
+        const FieldDef* fd = &fdef;
+        const std::string& rid = rec_id;
+        const std::string& fname = fdef.name;
         auto type_err = [&](const char* want) {
-            errors.push_back(r.id + "." + f.name + ": expected " + want +
+            errors.push_back(rid + "." + fname + ": expected " + want +
                              ", got " + kind_name(v.kind));
         };
         switch (fd->type) {
             case FType::Int:
                 if (v.kind != ValKind::Int) { type_err("int"); break; }
                 if ((fd->min && v.i < *fd->min) || (fd->max && v.i > *fd->max))
-                    errors.push_back(r.id + "." + f.name + ": " + canon_int(v.i) +
+                    errors.push_back(rid + "." + fname + ": " + canon_int(v.i) +
                                      " out of range " +
                                      (fd->min ? canon_int(*fd->min) : "") + ".." +
                                      (fd->max ? canon_int(*fd->max) : ""));
@@ -134,7 +143,7 @@ void schema_validate(const Schema& s, const Record& r, std::vector<std::string>&
             case FType::Ref:
                 if (v.kind != ValKind::Token) { type_err("ref token"); break; }
                 if (v.s.rfind(fd->ref_type + ".", 0) != 0)
-                    errors.push_back(r.id + "." + f.name + ": ref '" + v.s +
+                    errors.push_back(rid + "." + fname + ": ref '" + v.s +
                                      "' must target type '" + fd->ref_type + "'");
                 break;
             case FType::Flags:
@@ -144,7 +153,7 @@ void schema_validate(const Schema& s, const Record& r, std::vector<std::string>&
                     if (!fd->flag_values.empty() &&
                         std::find(fd->flag_values.begin(), fd->flag_values.end(), x.s) ==
                             fd->flag_values.end())
-                        errors.push_back(r.id + "." + f.name + ": unknown flag '" + x.s + "'");
+                        errors.push_back(rid + "." + fname + ": unknown flag '" + x.s + "'");
                 }
                 break;
             case FType::ListInt:

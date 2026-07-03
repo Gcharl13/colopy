@@ -68,7 +68,19 @@ bool drydock_apply_base(RuleData& rd, const std::string& data_dir, std::string& 
     }
 
     RuleData out = rd;
+    drydock_apply_records(out, recs);
     int ng = 0, nu = 0, np = 0;
+    for (const Record& r : recs) {
+        if (r.type() == "good") ++ng; else if (r.type() == "unit") ++nu;
+        else if (r.type() == "prof") ++np;
+    }
+    rd = out;
+    msg = "drydock: rules loaded from " + data_dir + "/base (" + std::to_string(ng) +
+          " goods, " + std::to_string(nu) + " units, " + std::to_string(np) + " professions)";
+    return true;
+}
+
+void drydock_apply_records(RuleData& out, const std::vector<Record>& recs) {
     for (const Record& r : recs) {
         const long long idx = geti(r, "index", -1);
         if (r.type() == "good") {
@@ -79,7 +91,6 @@ bool drydock_apply_base(RuleData& rd, const std::string& data_dir, std::string& 
             c.lo     = (int)geti(r, "drift_low",  c.lo);
             c.hi     = (int)geti(r, "drift_high", c.hi);
             c.burden = (int)geti(r, "burden",     c.burden);
-            ++ng;
         } else if (r.type() == "unit") {
             if (idx < 0 || idx >= (long long)out.units.size()) continue;
             auto& u = out.units[idx];
@@ -87,19 +98,13 @@ bool drydock_apply_base(RuleData& rd, const std::string& data_dir, std::string& 
             u.defense  = (int)geti(r, "combat",   u.defense);
             u.cargo    = (int)geti(r, "cargo",    u.cargo);
             u.movement = (int)geti(r, "movement", u.movement);
-            ++nu;
         } else if (r.type() == "prof") {
             if (idx < 0 || idx >= (long long)out.jobs.size()) continue;
             auto& j = out.jobs[idx];
             j.school_tier = (int)geti(r, "school_tier", j.school_tier);
             j.value       = (int)geti(r, "europe_value", j.value);
-            ++np;
         }
     }
-    rd = out;
-    msg = "drydock: rules loaded from " + data_dir + "/base (" + std::to_string(ng) +
-          " goods, " + std::to_string(nu) + " units, " + std::to_string(np) + " professions)";
-    return true;
 }
 
 } // namespace forge

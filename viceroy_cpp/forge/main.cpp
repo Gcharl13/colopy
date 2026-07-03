@@ -27,6 +27,7 @@
 #include "scoring.hpp"
 #include "savegame.hpp"
 #include "drydock_bridge.hpp"
+#include "drydock_api.hpp"
 #include "explore.hpp"
 #include "natives.hpp"
 #include "store.hpp"
@@ -1351,8 +1352,14 @@ static int cargo_i(const forge::EngineCtx& cx, int g, const char* col, int dflt)
     return v.type == forge::JsonValue::Null ? dflt : (int)v.as_int(dflt);
 }
 // The active ruleset with its cargo block refreshed from the live @CARGO bindings.
+// STRANGLER CUTOVER (Drydock P1): once the record store is loaded, GOOD records
+// are the market-knob authority -- g_active_rules is kept in lockstep by the
+// /api/dd mutation path, so the legacy @CARGO binding re-read is skipped
+// (editing @CARGO in the Tables tab no longer drives the market; the GOOD grid
+// does). Without the store (no data/ dir) the legacy path still applies.
 static RuleData live_market_rules(const forge::EngineCtx& cx) {
     RuleData rd = g_active_rules;
+    if (forge::drydock_active()) return rd;
     for (int g = 0; g < NGOODS; ++g) {
         const vc::sim::CargoStats& d = rd.cargo[g];   // canonical defaults as fallbacks
         rd.cargo[g].start1 = cargo_i(cx, g, "price_start1", d.start1);
@@ -3020,6 +3027,8 @@ static const char* building_ff_requirement(int bid, uint32_t ff_owned) {
 
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
+    if (forge::drydock_handles(path))
+        return forge::drydock_route(method, path, query, body, &g_active_rules);
     using forge::HttpResponse;
     auto J = [](int st, const forge::JsonValue& v) {
         return HttpResponse{st, "application/json", forge::json_dump(v)};
@@ -5547,6 +5556,9 @@ static int do_serve(int argc, char** argv) {
     { std::string dmsg;
       if (forge::drydock_apply_base(g_active_rules, "data", dmsg)) std::printf("%s\n", dmsg.c_str());
       else if (!dmsg.empty()) std::printf("drydock: NOT applied -- %s\n", dmsg.c_str()); }
+    { std::string smsg;
+      if (forge::drydock_store_init("data", smsg)) std::printf("%s\n", smsg.c_str());
+      else std::printf("drydock store: NOT loaded -- %s\n", smsg.c_str()); }
     // Load the persisted active mod (if any) so the Play game starts on the saved ruleset.
     if (std::filesystem::exists(ACTIVE_RULES_PATH)) {
         try {

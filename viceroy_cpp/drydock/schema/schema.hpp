@@ -71,4 +71,9 @@ bool schema_canonicalize(const Schema& s, Record& r, std::string& err);
 // Appends human-readable errors ("unit.frigate: moves out of range 0..20").
 void schema_validate(const Schema& s, const Record& r, std::vector<std::string>& errors);
 
+// Validate ONE candidate field value (type/range/ref-shape/flags) without
+// required-field completeness checks -- the store_set chokepoint's validator.
+void schema_validate_field(const std::string& rec_id, const FieldDef& fd,
+                           const Value& v, std::vector<std::string>& errors);
+
 } // namespace drydock

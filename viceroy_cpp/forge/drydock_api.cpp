@@ -1,0 +1,330 @@
+// forge/drydock_api -- see drydock_api.hpp.
+#include "drydock_api.hpp"
+#include "drydock_bridge.hpp"
+#include "json.hpp"
+#include "../drydock/core/store.hpp"
+#include <dirent.h>
+#include <sys/stat.h>
+#include <algorithm>
+#include <fstream>
+#include <sstream>
+
+namespace forge {
+
+using namespace drydock;
+
+static Store g_store;
+static std::string g_data_dir;
+static bool g_ready = false;
+
+// ---- helpers -------------------------------------------------------------------
+
+static std::string slurp(const std::string& p) {
+    std::ifstream f(p);
+    std::stringstream ss; ss << f.rdbuf();
+    return ss.str();
+}
+static void walk(const std::string& dir, std::vector<std::string>& out) {
+    DIR* d = opendir(dir.c_str());
+    if (!d) return;
+    while (dirent* e = readdir(d)) {
+        std::string n = e->d_name;
+        if (n == "." || n == "..") continue;
+        std::string p = dir + "/" + n;
+        struct stat st{};
+        if (stat(p.c_str(), &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) walk(p, out);
+        else if (n.size() > 4 && n.substr(n.size() - 4) == ".rec") out.push_back(p);
+    }
+    closedir(d);
+    std::sort(out.begin(), out.end());
+}
+static std::string dd_qparam(const std::string& query, const std::string& key) {
+    size_t i = 0;
+    while (i < query.size()) {
+        size_t amp = query.find('&', i);
+        std::string kv = query.substr(i, amp == std::string::npos ? std::string::npos : amp - i);
+        size_t eq = kv.find('=');
+        if (eq != std::string::npos && kv.substr(0, eq) == key) {
+            std::string v = kv.substr(eq + 1);           // minimal decode: %2E + '+' only
+            std::string o;
+            for (size_t j = 0; j < v.size(); ++j) {
+                if (v[j] == '+') o += ' ';
+                else if (v[j] == '%' && j + 2 < v.size())
+                    { o += (char)std::stoi(v.substr(j + 1, 2), nullptr, 16); j += 2; }
+                else o += v[j];
+            }
+            return o;
+        }
+        if (amp == std::string::npos) break;
+        i = amp + 1;
+    }
+    return "";
+}
+
+// Value <-> JSON (the web views speak JSON; the store speaks Values)
+static JsonValue value_to_json(const Value& v) {
+    switch (v.kind) {
+        case ValKind::Int:   return json_num((double)v.i);
+        case ValKind::Float: return json_num(v.f);
+        case ValKind::Str:   return json_str(v.s);
+        case ValKind::Token: { JsonValue o; o.type = JsonValue::Object;
+            o.obj["ref"] = json_str(v.s); return o; }
+        case ValKind::List: { JsonValue a; a.type = JsonValue::Array;
+            for (const auto& x : v.list) a.arr.push_back(value_to_json(x));
+            return a; }
+        case ValKind::Dict: { JsonValue o; o.type = JsonValue::Object;
+            for (size_t i = 0; i < v.keys.size(); ++i)
+                o.obj[v.keys[i]] = value_to_json(v.list[i]);
+            return o; }
+    }
+    return json_str("");
+}
+// JSON -> Value, guided by the schema field kind (so 3 becomes Int for int
+// fields, "good.rum" becomes a ref Token for ref fields, etc.)
+static bool json_to_value(const JsonValue& j, const FieldDef& fd, Value& out, std::string& err) {
+    switch (fd.type) {
+        case FType::Int:
+            if (!j.is_number()) { err = "expected number"; return false; }
+            out = Value::make_int((long long)j.num);
+            return true;
+        case FType::Float:
+            if (!j.is_number()) { err = "expected number"; return false; }
+            out = Value::make_float(j.num);
+            return true;
+        case FType::Str:
+            if (!j.is_string()) { err = "expected string"; return false; }
+            out = Value::make_str(j.str);
+            return true;
+        case FType::Ref:
+            if (!j.is_string()) { err = "expected ref id string"; return false; }
+            out = Value::make_token(j.str);
+            return true;
+        default:
+            err = "field kind not editable over the API yet";
+            return false;
+    }
+}
+
+// after any mutation: keep the live game's rules in lockstep with the store
+static void sync_rules(vc::sim::RuleData* rd) {
+    if (!rd) return;
+    std::vector<Record> all;
+    for (const auto& bucket : g_store.records)
+        for (const auto& r : bucket) all.push_back(r);
+    drydock_apply_records(*rd, all);
+}
+
+// ---- init ----------------------------------------------------------------------
+
+bool drydock_store_init(const std::string& data_dir, std::string& msg) {
+    struct stat st{};
+    if (stat((data_dir + "/base").c_str(), &st) != 0) { msg = "no " + data_dir + "/base"; return false; }
+    std::vector<std::string> files;
+    std::vector<Record> schm, recs;
+    std::string err;
+    walk(data_dir + "/schema", files);
+    for (const auto& p : files)
+        if (!parse_records(slurp(p), schm, err)) { msg = p + ": " + err; return false; }
+    files.clear();
+    walk(data_dir + "/base", files);
+    for (const auto& p : files)
+        if (!parse_records(slurp(p), recs, err)) { msg = p + ": " + err; return false; }
+    Schema sc;
+    if (!schema_load(schm, sc, err)) { msg = err; return false; }
+    for (auto& r : recs)
+        if (!schema_canonicalize(sc, r, err)) { msg = err; return false; }
+    g_store = Store{};
+    if (!store_init(g_store, std::move(sc), std::move(recs), err)) { msg = err; return false; }
+    g_data_dir = data_dir;
+    g_ready = true;
+    size_t n = 0;
+    for (const auto& b : g_store.records) n += b.size();
+    msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +
+          std::to_string(n) + " records";
+    return true;
+}
+
+bool drydock_handles(const std::string& path) { return path.rfind("/api/dd/", 0) == 0; }
+bool drydock_active() { return g_ready; }
+
+// ---- save: dirty records -> canonical text, one per file -------------------------
+
+static HttpResponse dd_save() {
+    int written = 0, removed = 0;
+    for (const auto& id : g_store.dirty) {
+        auto dot = id.find('.');
+        std::string dir = g_data_dir + "/base/" + id.substr(0, dot);
+        std::string path = dir + "/" + id.substr(dot + 1) + ".rec";
+        const Record* r = store_find(g_store, id);
+        if (!r) { std::remove(path.c_str()); ++removed; continue; }
+        mkdir(dir.c_str(), 0755);
+        std::ofstream f(path);
+        f << serialize_record(*r);
+        ++written;
+    }
+    g_store.dirty.clear();
+    JsonValue o; o.type = JsonValue::Object;
+    o.obj["written"] = json_num(written);
+    o.obj["removed"] = json_num(removed);
+    return {200, "application/json", json_dump(o)};
+}
+
+// ---- the routes ------------------------------------------------------------------
+
+HttpResponse drydock_route(const std::string& method, const std::string& path,
+                           const std::string& query, const std::string& body,
+                           vc::sim::RuleData* live_rules) {
+    auto J = [](int st, const JsonValue& v) { return HttpResponse{st, "application/json", json_dump(v)}; };
+    auto ERR = [&](int st, const std::string& m) {
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["error"] = json_str(m);
+        return J(st, o);
+    };
+    if (!g_ready) return ERR(503, "drydock store not loaded");
+
+    if (path == "/api/dd/types") {                       // Object Window tree
+        JsonValue a; a.type = JsonValue::Array;
+        for (size_t t = 0; t < g_store.type_codes.size(); ++t) {
+            JsonValue o; o.type = JsonValue::Object;
+            o.obj["code"] = json_str(g_store.type_codes[t]);
+            o.obj["count"] = json_num((double)g_store.records[t].size());
+            const TypeDef* td = g_store.schema.find(g_store.type_codes[t]);
+            JsonValue fs; fs.type = JsonValue::Array;
+            if (td) for (const auto& fd : td->fields) {
+                JsonValue f; f.type = JsonValue::Object;
+                f.obj["name"] = json_str(fd.name);
+                f.obj["kind"] = json_num((double)(int)fd.type);
+                if (fd.type == FType::Ref) f.obj["ref"] = json_str(fd.ref_type);
+                if (fd.min) f.obj["min"] = json_num((double)*fd.min);
+                if (fd.max) f.obj["max"] = json_num((double)*fd.max);
+                f.obj["required"] = json_num(fd.required ? 1 : 0);
+                if (!fd.doc.empty()) f.obj["doc"] = json_str(fd.doc);
+                fs.arr.push_back(f);
+            }
+            o.obj["fields"] = fs;
+            a.arr.push_back(o);
+        }
+        return J(200, a);
+    }
+
+    if (path == "/api/dd/records") {                     // grid rows for one type
+        std::string type = dd_qparam(query, "type");
+        auto ti = g_store.type_index.find(type);
+        if (ti == g_store.type_index.end()) return ERR(404, "unknown type " + type);
+        JsonValue a; a.type = JsonValue::Array;
+        for (const Record& r : g_store.records[ti->second]) {
+            JsonValue o; o.type = JsonValue::Object;
+            o.obj["id"] = json_str(r.id);
+            o.obj["dirty"] = json_num(g_store.dirty.count(r.id) ? 1 : 0);
+            for (const auto& f : r.fields) o.obj[f.name] = value_to_json(f.value);
+            a.arr.push_back(o);
+        }
+        return J(200, a);
+    }
+
+    if (path == "/api/dd/record") {                      // one record + its text + used-by
+        std::string id = dd_qparam(query, "id");
+        const Record* r = store_find(g_store, id);
+        if (!r) return ERR(404, "no record " + id);
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["id"] = json_str(r->id);
+        JsonValue fs; fs.type = JsonValue::Object;
+        for (const auto& f : r->fields) fs.obj[f.name] = value_to_json(f.value);
+        o.obj["fields"] = fs;
+        o.obj["text"] = json_str(serialize_record(*r));
+        JsonValue ub; ub.type = JsonValue::Array;
+        for (const auto& [src, field] : store_used_by(g_store, id)) {
+            JsonValue u; u.type = JsonValue::Object;
+            u.obj["src"] = json_str(src);
+            u.obj["field"] = json_str(field);
+            ub.arr.push_back(u);
+        }
+        o.obj["used_by"] = ub;
+        o.obj["dirty"] = json_num(g_store.dirty.count(id) ? 1 : 0);
+        return J(200, o);
+    }
+
+    if (path == "/api/dd/set" && method == "POST") {     // THE edit chokepoint
+        JsonValue b = json_parse(body);
+        const JsonValue* id = b.find("id");
+        const JsonValue* field = b.find("field");
+        const JsonValue* val = b.find("value");          // absent/null => clear
+        if (!id || !field) return ERR(400, "need {id, field, value?}");
+        const Record* r = store_find(g_store, id->str);
+        if (!r) return ERR(404, "no record " + id->str);
+        const TypeDef* td = g_store.schema.find(r->type());
+        const FieldDef* fd = td ? td->find(field->str) : nullptr;
+        if (!fd) return ERR(400, "unknown field " + field->str);
+        std::string err;
+        if (val && val->type != JsonValue::Null) {
+            Value v;
+            if (!json_to_value(*val, *fd, v, err)) return ERR(400, field->str + ": " + err);
+            if (!store_set(g_store, id->str, field->str, &v, err)) return ERR(400, err);
+        } else {
+            if (!store_set(g_store, id->str, field->str, nullptr, err)) return ERR(400, err);
+        }
+        sync_rules(live_rules);
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["ok"] = json_num(1);
+        return J(200, o);
+    }
+
+    if (path == "/api/dd/add" && method == "POST") {     // duplicate-as-new / new record
+        JsonValue b = json_parse(body);
+        const JsonValue* id = b.find("id");
+        const JsonValue* from = b.find("from");          // optional: copy fields from
+        if (!id) return ERR(400, "need {id, from?}");
+        Record nr;
+        nr.id = id->str;
+        if (from && from->type == JsonValue::String) {
+            const Record* src = store_find(g_store, from->str);
+            if (!src) return ERR(404, "no record " + from->str);
+            nr.fields = src->fields;
+        }
+        std::string err;
+        if (!store_add(g_store, std::move(nr), err)) return ERR(400, err);
+        sync_rules(live_rules);
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["ok"] = json_num(1);
+        return J(200, o);
+    }
+
+    if (path == "/api/dd/delete" && method == "POST") {  // ref-checked
+        JsonValue b = json_parse(body);
+        const JsonValue* id = b.find("id");
+        if (!id) return ERR(400, "need {id}");
+        std::string err;
+        if (!store_delete(g_store, id->str, err)) return ERR(409, err);
+        sync_rules(live_rules);
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["ok"] = json_num(1);
+        return J(200, o);
+    }
+
+    if ((path == "/api/dd/undo" || path == "/api/dd/redo") && method == "POST") {
+        std::string err;
+        bool ok = (path == "/api/dd/undo") ? store_undo(g_store, err) : store_redo(g_store, err);
+        if (!ok) return ERR(409, err);
+        sync_rules(live_rules);
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["ok"] = json_num(1);
+        o.obj["undo_depth"] = json_num((double)g_store.journal_pos);
+        o.obj["redo_depth"] = json_num((double)(g_store.journal.size() - g_store.journal_pos));
+        return J(200, o);
+    }
+
+    if (path == "/api/dd/save" && method == "POST") return dd_save();
+
+    if (path == "/api/dd/status") {
+        JsonValue o; o.type = JsonValue::Object;
+        o.obj["dirty"] = json_num((double)g_store.dirty.size());
+        o.obj["undo_depth"] = json_num((double)g_store.journal_pos);
+        o.obj["redo_depth"] = json_num((double)(g_store.journal.size() - g_store.journal_pos));
+        return J(200, o);
+    }
+
+    return ERR(404, "unknown drydock route " + path);
+}
+
+} // namespace forge

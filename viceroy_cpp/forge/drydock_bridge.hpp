@@ -5,7 +5,9 @@
 // changes the SOURCE OF TRUTH for the migrated types (GOOD/UNIT/PROF).
 #pragma once
 #include "rules.hpp"
+#include "../drydock/text/rec_text.hpp"
 #include <string>
+#include <vector>
 
 namespace forge {
 
@@ -16,5 +18,10 @@ namespace forge {
 // bad data, spec §6.2). A missing data/ dir is "false" with an empty msg.
 bool drydock_apply_base(vc::sim::RuleData& rd, const std::string& data_dir,
                         std::string& msg);
+
+// Apply already-parsed records onto rd (the store-backed API uses this to keep
+// the live game in lockstep after edits). Unknown types/indices are skipped.
+void drydock_apply_records(vc::sim::RuleData& rd,
+                           const std::vector<drydock::Record>& recs);
 
 } // namespace forge
