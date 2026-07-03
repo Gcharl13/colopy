@@ -8,6 +8,7 @@
 #include "httpd.hpp"
 #include "json.hpp"
 #include "rules.hpp"
+#include "../drydock/core/store.hpp"
 #include <string>
 #include <vector>
 
@@ -28,6 +29,15 @@ bool drydock_handles(const std::string& path);
 // True once the store is loaded -- migrated types then take authority over
 // their legacy JSON-binding paths (strangler cutover, GAP-ANALYSIS 5).
 bool drydock_active();
+
+// Direct access to the global store for NATIVE editor panels (the ImGui
+// Forge app). All mutations must still go through the drydock::store_set /
+// store_add / store_delete chokepoint. Null until drydock_store_init.
+drydock::Store* drydock_store();
+
+// Serialize the store's DIRTY records to canonical text under the project's
+// data/ dir (same behavior as the web /api/dd/save). Returns written count.
+int drydock_save_dirty(std::string& summary, int* removed_out = nullptr);
 
 // Re-patch the in-memory legacy JSON tables from the store (write-through for
 // the un-cut-over @SECTION[...] readers). No-op until the store is loaded.

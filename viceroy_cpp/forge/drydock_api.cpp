@@ -1061,10 +1061,11 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg,
 
 bool drydock_handles(const std::string& path) { return path.rfind("/api/dd/", 0) == 0; }
 bool drydock_active() { return g_ready; }
+drydock::Store* drydock_store() { return g_ready ? &g_store : nullptr; }
 
 // ---- save: dirty records -> canonical text, one per file -------------------------
 
-static HttpResponse dd_save() {
+int drydock_save_dirty(std::string& summary, int* removed_out) {
     int written = 0, removed = 0;
     for (const auto& id : g_store.dirty) {
         auto dot = id.find('.');
@@ -1085,6 +1086,15 @@ static HttpResponse dd_save() {
         ++written;
     }
     g_store.dirty.clear();
+    summary = std::to_string(written) + " written, " + std::to_string(removed) + " removed";
+    if (removed_out) *removed_out = removed;
+    return written;
+}
+
+static HttpResponse dd_save() {
+    std::string summary;
+    int removed = 0;
+    int written = drydock_save_dirty(summary, &removed);
     JsonValue o; o.type = JsonValue::Object;
     o.obj["written"] = json_num(written);
     o.obj["removed"] = json_num(removed);

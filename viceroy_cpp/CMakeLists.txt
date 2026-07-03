@@ -128,11 +128,61 @@ add_executable(forge
 target_include_directories(forge PRIVATE forge sim)
 target_link_libraries(forge PRIVATE forge_core)
 if(WIN32)
-  # Winsock for the engine server; COM/shell/registry for the desktop shell
-  # (project folder picker + editor window). The Windows binary is the
-  # desktop product -- name it Forge.exe.
+  # Winsock for the engine server; COM/shell/registry for the (legacy)
+  # browser-window shell. The NATIVE editor (forge_studio) owns the Forge
+  # name now; this web/CLI binary stays `forge` on every platform.
   target_link_libraries(forge PRIVATE ws2_32 ole32 uuid shell32 advapi32 user32)
-  set_target_properties(forge PROPERTIES OUTPUT_NAME "Forge")
+endif()
+
+# --- Forge Studio: the NATIVE desktop editor (no web technology). Dear ImGui
+# (vendored, third_party/imgui) over a per-platform driver: Win32 + Direct3D
+# 11 on Windows (zero external deps), SDL2 elsewhere. Opens a project folder
+# and edits the game through the record-store chokepoint; the game view uses
+# the native 320x200 compositor when libpng is available.
+add_library(imgui STATIC
+  third_party/imgui/imgui.cpp
+  third_party/imgui/imgui_draw.cpp
+  third_party/imgui/imgui_tables.cpp
+  third_party/imgui/imgui_widgets.cpp
+  third_party/imgui/imgui_stacklayout.cpp
+)
+target_include_directories(imgui PUBLIC third_party/imgui)
+
+if(WIN32)
+  set(FORGE_STUDIO_DRIVER studio/driver_win32_dx11.cpp
+      third_party/imgui/backends/imgui_impl_win32.cpp
+      third_party/imgui/backends/imgui_impl_dx11.cpp)
+  set(FORGE_STUDIO_OK TRUE)
+else()
+  find_package(SDL2 QUIET)
+  if(SDL2_FOUND)
+    set(FORGE_STUDIO_DRIVER studio/driver_sdl2.cpp
+        third_party/imgui/backends/imgui_impl_sdl2.cpp
+        third_party/imgui/backends/imgui_impl_sdlrenderer2.cpp)
+    set(FORGE_STUDIO_OK TRUE)
+  else()
+    set(FORGE_STUDIO_OK FALSE)
+    message(STATUS "SDL2 not found -- skipping the native Forge editor "
+                   "(forge_studio); install libsdl2-dev.")
+  endif()
+endif()
+
+if(FORGE_STUDIO_OK)
+  add_executable(forge_studio studio/studio_main.cpp ${FORGE_STUDIO_DRIVER})
+  target_include_directories(forge_studio PRIVATE studio forge sim)
+  target_link_libraries(forge_studio PRIVATE imgui forge_core)
+  set_target_properties(forge_studio PROPERTIES OUTPUT_NAME "Forge")
+  if(WIN32)
+    # a real GUI app: no console window behind the editor
+    set_target_properties(forge_studio PROPERTIES WIN32_EXECUTABLE TRUE)
+    target_link_libraries(forge_studio PRIVATE d3d11 dxgi d3dcompiler ole32 uuid shell32 user32 gdi32 dwmapi)
+  else()
+    target_link_libraries(forge_studio PRIVATE SDL2::SDL2)
+  endif()
+  if(PNG_FOUND)
+    target_compile_definitions(forge_studio PRIVATE FORGE_STUDIO_GAME=1)
+    target_link_libraries(forge_studio PRIVATE viceroy_render)
+  endif()
 endif()
 
 # --- Drydock (engine-dev-environment-spec.md): record-database dev environment.
@@ -209,6 +259,15 @@ if(PNG_FOUND)
   add_test(NAME viceroy_app_smoke COMMAND viceroy --frames 2 --scale 1
            --out ${CMAKE_BINARY_DIR}/viceroy_smoke
            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
+
+# Native editor smoke (no web): boot Forge on the project under the SDL dummy
+# driver for a few frames -- store load + dock layout + panels + exit 0.
+if(FORGE_STUDIO_OK AND NOT WIN32)
+  add_test(NAME forge_studio_smoke COMMAND forge_studio .
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  set_tests_properties(forge_studio_smoke PROPERTIES
+    ENVIRONMENT "SDL_VIDEODRIVER=dummy;FORGE_FRAMES=5")
 endif()
 
 # Data-integrity gates (B12): schema binding resolution + cross-reference validation.

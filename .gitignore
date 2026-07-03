@@ -31,3 +31,6 @@ package.json
 package-lock.json
 data_extracted/engine/savegame.json
 data_extracted/engine/savegame_auto.json
+
+# Forge editor per-project window layout
+imgui.ini
