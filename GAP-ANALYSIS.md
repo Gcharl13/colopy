@@ -138,10 +138,16 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   re-inits from data/ — the store is the single live rules authority (`move_class`/
   `capbits` are the two overlay-only stragglers, not record-represented yet). Structured
   list fields (`list<int/str/dict>`) are form-editable as JSON.
-- **Remaining:** EVNT decomposition of the node graphs (Q5 — the last
-  behavior-as-programs subsystem, deliberately parked), flags-field widgets (no migrated
-  type uses flags), JSON extraction files stay as the provenance layer (§4 disposition)
-  with every runtime read already store-first.
+- **EVNT-0 landed (MIGRATION-LOG 22):** the 36 node graphs are `grph` records — the last
+  data family in the store (17 types, 1,230 records). Stored losslessly (survey: 442
+  nodes / 58 kinds; a one-step atom decomposition risked semantic drift); the Logic
+  canvas CRUD flows through the chokepoint and `run_graph` executes the store's truth
+  (36/36 smoke green).
+- **Remaining:** the typed EVNT/RQMT/EFCT atom decomposition + §8.5 outline editor — now
+  a record-side schema evolution over the grph type rather than a JSON migration (start
+  with the 12 ≤6-node chain graphs; the interpreter stays as the execution engine);
+  flags-field widgets (no migrated type uses flags); JSON extraction files stay as the
+  provenance layer (§4 disposition) with every runtime read store-first.
 
 ## 4. No spec counterpart — keep / migrate / retire
 

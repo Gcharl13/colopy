@@ -205,6 +205,11 @@ struct DDScreenHooks {
 };
 extern const DDScreenHooks* dd_screen_hooks;
 
+// Same seam for the node graphs (EVNT-0: grph records store the graphs
+// losslessly; the Logic canvas keeps editing them through this CRUD, now
+// journaled/undoable; the typed atom decomposition evolves record-side).
+extern const DDScreenHooks* dd_graph_hooks;
+
 // Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its @UNIT type id (row
 // index). -1 if unknown. No name->type list is hardcoded in C++.
 int unit_type_by_name(const std::string& name);

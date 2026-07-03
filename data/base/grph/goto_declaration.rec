@@ -1,0 +1,5 @@
+record grph.goto_declaration {
+  name  = "Go to declaration"
+  nodes = [{ id = "t", params = { }, type = "OnTestFire", x = 40, y = 60 }, { id = "nav", params = { screen = "declaration" }, type = "Navigate", x = 240, y = 60 }]
+  edges = [{ from = { node = "t", pin = "out" }, to = { node = "nav", pin = "in" } }]
+}

@@ -1,0 +1,9 @@
+record schm.grph {
+  version = 1
+  fields  = [
+    { name = "name", type = "str", required = true, doc = "Graph display name (the record slug is the graph id)" },
+    { name = "nodes", type = "list<dict>", required = true, ordered = true, doc = "Node list, verbatim from the node-graph editor: id, type (the 58-kind catalog: On* triggers, Formula/GetState/Branch/Switch logic, ShowPopup/Grant*/Spawn* effects, Comment), x/y canvas position, params (flat str/int dict). EVNT-0 stores graphs losslessly; the typed EVNT/RQMT/EFCT atom decomposition (spec 8) evolves record-side from here" },
+    { name = "edges", type = "list<dict>", ordered = true, doc = "Edge list: from/to {node, pin}. Exec pins (out/in, true/false, choice labels) sequence the flow; value pins carry data (popup fills etc.)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

@@ -1,0 +1,5 @@
+record grph.colony_build {
+  name  = "Colony: Start Building"
+  nodes = [{ id = "note", params = { text = "Begin construction (spec/ui/context_dialogs.md build menu). Pick a building id from the @BUILDING table; StartBuilding gates on its min_colony and sets the target+cost. Thereafter colony_production's BuildStep accrues hammers until it completes. Here the id is a Constant (designer's choice)." }, type = "Comment", x = 20, y = -90 }, { id = "trig", params = { }, type = "OnPlayerCommand", x = 20, y = 40 }, { id = "bid", params = { value = 1 }, type = "Constant", x = 20, y = 160 }, { id = "start", params = { colony = 0 }, type = "StartBuilding", x = 220, y = 40 }, { id = "done", params = { body = "Construction of {colony0.building_name} begins -- {colony0.build_cost} hammers required.", choices = "Very good.", title = "Construction Begun" }, type = "ShowPopup", x = 420, y = 40 }]
+  edges = [{ from = { node = "trig", pin = "out" }, to = { node = "start", pin = "in" } }, { from = { node = "bid", pin = "value" }, to = { node = "start", pin = "building" } }, { from = { node = "start", pin = "out" }, to = { node = "done", pin = "in" } }]
+}

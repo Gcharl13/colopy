@@ -1,0 +1,5 @@
+record grph.exploration {
+  name  = "Exploration / Scouting"
+  nodes = [{ id = "note", params = { text = "Scouting (spec/systems/exploration.md): entering an unexplored tile reveals it; ~1-in-5 (roll(1,10)>=9) a lost-city rumor fires the lost_city event. Otherwise nothing of note (silent)." }, type = "Comment", x = 20, y = -80 }, { id = "trig", params = { }, type = "OnUnitEntersTile", x = 20, y = 40 }, { id = "rumor_gate", params = { expr = "roll(1,10) >= 9" }, type = "Formula", x = 20, y = 150 }, { id = "br", params = { }, type = "Branch", x = 220, y = 40 }, { id = "rumor", params = { graph = "lost_city" }, type = "FireEvent", x = 420, y = 40 }]
+  edges = [{ from = { node = "trig", pin = "out" }, to = { node = "br", pin = "in" } }, { from = { node = "rumor_gate", pin = "value" }, to = { node = "br", pin = "cond" } }, { from = { node = "br", pin = "true" }, to = { node = "rumor", pin = "in" } }]
+}

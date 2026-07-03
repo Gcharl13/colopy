@@ -1,0 +1,5 @@
+record grph.colony_production {
+  name  = "Colony Production"
+  nodes = [{ id = "note", params = { text = "Per-turn colony update (spec/systems/colony.md). ColonyStep runs the SoL EMA, food->population growth, production AND build progress (it accrues this turn's hammers toward the @BUILDING target and completes it when the cost is met). The report reads live colony bindings." }, type = "Comment", x = 20, y = -90 }, { id = "trig", params = { }, type = "OnColonyProduction", x = 20, y = 40 }, { id = "step", params = { colony = 0 }, type = "ColonyStep", x = 200, y = 40 }, { id = "rep", params = { body = "The colony makes {colony0.hammers} hammers, {colony0.bells} bells, {colony0.food} food. Building {colony0.building_name}: {colony0.build_bank} of {colony0.build_cost} hammers. Sons of Liberty {colony0.sol}%.", choices = "Onward.", title = "Colony Report" }, type = "ShowPopup", x = 560, y = 40 }]
+  edges = [{ from = { node = "trig", pin = "out" }, to = { node = "step", pin = "in" } }, { from = { node = "step", pin = "out" }, to = { node = "rep", pin = "in" } }]
+}

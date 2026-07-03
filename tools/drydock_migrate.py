@@ -222,7 +222,7 @@ def main():
             return "[" + ", ".join(rec_value(x) for x in v) + "]"
         if isinstance(v, dict):
             if not v:
-                return "{}"
+                return "{ }"                 # matches the C++ canon_value empty-dict form
             return "{ " + ", ".join(f"{k} = {rec_value(v[k])}" for k in sorted(v)) + " }"
         raise ValueError(f"unrepresentable screen value: {v!r}")
     import glob as _glob
@@ -235,6 +235,17 @@ def main():
         fields.append(("size", rec_value(scr["size"])))
         fields.append(("widgets", rec_value(scr["widgets"])))
         drift = emit(os.path.join("dlog", scr["id"] + ".rec"),
+                     render(rid, fields), check, drift)
+
+    # GRPH: the node graphs, verbatim (EVNT-0: lossless storage first; the typed
+    # atom decomposition evolves record-side). Same sorted-dict-key rule as DLOG.
+    for f in sorted(_glob.glob(os.path.join(ROOT, "data_extracted/engine/graphs/*.json"))):
+        gr = json.load(open(f))
+        rid = f"grph.{gr['id']}"
+        fields = [("name", quote(gr["name"])), ("nodes", rec_value(gr["nodes"]))]
+        if gr.get("edges"):
+            fields.append(("edges", rec_value(gr["edges"])))
+        drift = emit(os.path.join("grph", gr["id"] + ".rec"),
                      render(rid, fields), check, drift)
 
     # SCEN: authored scenarios (engine/scenarios/*.json); _doc carries into notes

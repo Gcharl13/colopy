@@ -438,6 +438,50 @@ static bool dd_screen_save(const std::string& id, const JsonValue& screen, std::
 
 static const DDScreenHooks DD_SCREEN_HOOKS = {dd_screen_list, dd_screen_load, dd_screen_save};
 
+// ---- GRPH consumer cutover: the node-graph CRUD (EVNT-0) --------------------------
+// Same shape as screens: grph records hold the graphs losslessly; the Logic
+// canvas + run_graph/FireEvent flow through this CRUD, so a canvas save is a
+// journaled store edit and the interpreter always executes the store's truth.
+static std::vector<std::string> dd_graph_list() {
+    std::vector<std::string> ids;
+    auto ti = g_store.type_index.find("grph");
+    if (ti == g_store.type_index.end()) return ids;
+    for (const Record& r : g_store.records[ti->second])
+        ids.push_back(r.id.substr(5));                    // "grph.combat" -> "combat"
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+
+static bool dd_graph_load(const std::string& id, JsonValue& out) {
+    const Record* r = store_find(g_store, "grph." + id);
+    if (!r) return false;
+    out = JsonValue{}; out.type = JsonValue::Object;
+    out.obj["id"] = json_str(id);
+    for (const auto& f : r->fields)
+        if (f.name != "notes") out.obj[f.name] = value_to_json(f.value);
+    return true;
+}
+
+static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::string& err) {
+    const std::string rid = "grph." + id;
+    if (!store_find(g_store, rid)) {                      // new graph from the canvas
+        Record nr; nr.id = rid;
+        if (!store_add(g_store, std::move(nr), err)) return false;
+    }
+    for (const char* f : {"name", "nodes", "edges"}) {
+        const JsonValue* v = graph.find(f);
+        if (!v) continue;
+        Value val = json_any_to_value(*v);
+        const Record* cur = store_find(g_store, rid);
+        const Value* old = cur ? cur->find(f) : nullptr;
+        if (old && value_equal(*old, val)) continue;      // unchanged: keep the journal clean
+        if (!store_set(g_store, rid, f, &val, err)) return false;
+    }
+    return true;
+}
+
+static const DDScreenHooks DD_GRAPH_HOOKS = {dd_graph_list, dd_graph_load, dd_graph_save};
+
 // ---- SCEN consumer cutover: scenario seed data -----------------------------------
 std::vector<std::string> drydock_scenario_ids() {
     std::vector<std::string> ids;
@@ -595,6 +639,7 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg,
     rebuild_text_index();
     dd_message_hook = dd_message_provider;   // @KEY message lookups cut over
     dd_screen_hooks = &DD_SCREEN_HOOKS;      // screen CRUD cut over to dlog records
+    dd_graph_hooks  = &DD_GRAPH_HOOKS;       // graph CRUD cut over to grph records
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();
     msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +

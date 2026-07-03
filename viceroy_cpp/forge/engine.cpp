@@ -707,7 +707,11 @@ JsonValue node_catalog() {
 }
 
 // ---- graph CRUD ----
+// dd_graph_hooks (engine.hpp): installed by the record store at serve start;
+// grph records are then the graph authority and the JSON files stay frozen.
+const DDScreenHooks* dd_graph_hooks = nullptr;
 std::vector<std::string> list_graphs() {
+    if (dd_graph_hooks) return dd_graph_hooks->list();
     std::vector<std::string> ids; std::error_code ec;
     for (const auto& e : fs::directory_iterator(GRAPH_DIR, ec)) {
         if (!e.is_regular_file()) continue;
@@ -719,9 +723,19 @@ std::vector<std::string> list_graphs() {
     return ids;
 }
 JsonValue load_graph(const std::string& id) {
+    if (dd_graph_hooks) {
+        JsonValue v;
+        if (dd_graph_hooks->load(id, v)) return v;
+    }
     return json_parse_file(std::string(GRAPH_DIR) + "/" + id + ".json");
 }
 void save_graph(const std::string& id, const JsonValue& graph) {
+    if (dd_graph_hooks) {
+        std::string err;
+        if (!dd_graph_hooks->save(id, graph, err))
+            throw std::runtime_error("drydock graph save: " + err);
+        return;                        // the store is the truth; JSON stays frozen
+    }
     std::error_code ec; fs::create_directories(GRAPH_DIR, ec);
     std::ofstream f(std::string(GRAPH_DIR) + "/" + id + ".json", std::ios::binary);
     if (!f) throw std::runtime_error("engine: cannot write graph " + id);

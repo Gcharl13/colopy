@@ -1,0 +1,5 @@
+record grph.goto_victory {
+  name  = "Go to Game Over"
+  nodes = [{ id = "trig", params = { }, type = "OnTestFire", x = 20, y = 40 }, { id = "nav", params = { screen = "victory" }, type = "Navigate", x = 220, y = 40 }]
+  edges = [{ from = { node = "trig", pin = "out" }, to = { node = "nav", pin = "in" } }]
+}
