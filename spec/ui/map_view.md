@@ -82,9 +82,16 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
    +0x2A`, tax=`+0x01`, season = year `[0x538a]` band (`(year−1500)/50` `@0x051F1F`); **string sources**
    `@MISC`/`@INFO`/`@SEASONS` via resolver `func_002462` (`0x181F:0x22`); **unit-panel data** =
    `func_0672C8` (`imul bx,[bp+6],0x1c`; sprite `+0x3144/45` via `0x181F:0x7BE`; type `@UNIT`, skill
-   `@JOB`). The **only** unresolved leaf is the per-line **y-offset within the rect**: the lines are
-   emitted by a printer reached through a **runtime-installed BSS far-pointer** (`[0xa644]=0x1a1f:0x0f10`,
-   installed by `func_0772FA @0x07730C`) — a true runtime indirection, not a static constant. Per the
+   `@JOB`). The **only** unresolved leaf is the per-line **y-offset within the rect** — the emission
+   point of the text lines is unlocated in the disasm. *(CORRECTED 2026-07-03, decoder v2: the
+   previously-suspected "runtime-installed far-pointer printer" `[0xa644]=0x1a1f:0x0f10` — installed by
+   `func_0772FA @0x07730C` — resolves through the thunk table (type-B) to file `0x12A66`, a
+   **buffered-stream copy helper**, one of a reader/writer pair over the `[0xa628..0xa64a]` stream
+   state with sibling entry `0x1a1f:0xf06`; `func_0772FA` is stream-init, i.e. file IO, **not** the
+   sidebar text printer. Additionally byte-confirmed: `func_067700`'s own draw chain is the map plane —
+   its five thunked sub-draws are viewport/minimap painters, one of which (`0x1a1f:0x8a4` → `0x66CD6`)
+   pushes the exact byte-verified minimap rect `(0xF1,8,0x4F,0x29)` = (241,8,79,41) of §6.1; its only
+   direct text emission is the zoom-3 power name via `0x181F:0x100` at x=`[0x8550]`.)* Per the
    trust hierarchy (pixels > disasm) the authoritative layout is **pixel-measured from the live capture**
    (below): FONTTINY 8-px line stack `[season+year, "Gold:N", "Tax:N%"]` in block B, panel C below at
    y=136 — **pixel-confirmed** in `docs/screens/06_ingame_map.png`. So the field is **B (rect + font +
