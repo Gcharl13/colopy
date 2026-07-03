@@ -1,0 +1,6 @@
+record natn.england {
+  index       = 0
+  name        = "England"
+  nationality = "English"
+  color       = 12
+}

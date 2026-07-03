@@ -1,0 +1,8 @@
+record ffat.george_washington {
+  index            = 11
+  name             = "George Washington"
+  type             = 2
+  weight_1500_1600 = 0
+  weight_1600_1700 = 4
+  weight_1700plus  = 10
+}

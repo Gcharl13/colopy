@@ -1,0 +1,8 @@
+record ffat.john_paul_jones {
+  index            = 14
+  name             = "John Paul Jones"
+  type             = 2
+  weight_1500_1600 = 0
+  weight_1600_1700 = 6
+  weight_1700plus  = 7
+}

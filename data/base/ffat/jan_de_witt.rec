@@ -1,0 +1,8 @@
+record ffat.jan_de_witt {
+  index            = 4
+  name             = "Jan de Witt"
+  type             = 0
+  weight_1500_1600 = 2
+  weight_1600_1700 = 6
+  weight_1700plus  = 10
+}

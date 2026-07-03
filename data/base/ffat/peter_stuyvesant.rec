@@ -1,0 +1,8 @@
+record ffat.peter_stuyvesant {
+  index            = 3
+  name             = "Peter Stuyvesant"
+  type             = 0
+  weight_1500_1600 = 2
+  weight_1600_1700 = 4
+  weight_1700plus  = 8
+}

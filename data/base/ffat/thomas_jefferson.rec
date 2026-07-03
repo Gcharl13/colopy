@@ -1,0 +1,8 @@
+record ffat.thomas_jefferson {
+  index            = 15
+  name             = "Thomas Jefferson"
+  type             = 3
+  weight_1500_1600 = 4
+  weight_1600_1700 = 5
+  weight_1700plus  = 6
+}

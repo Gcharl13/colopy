@@ -1,0 +1,8 @@
+record ffat.henry_hudson {
+  index            = 8
+  name             = "Henry Hudson"
+  type             = 1
+  weight_1500_1600 = 10
+  weight_1600_1700 = 1
+  weight_1700plus  = 0
+}

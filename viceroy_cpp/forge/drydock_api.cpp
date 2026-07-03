@@ -121,6 +121,9 @@ static const char* UNIT_COLS[] = {"name","icon","movement","attack","combat","ca
     "size","cost","tools","guns","hull","ai_role_bits",nullptr};
 static const char* PROF_COLS[] = {"name","expert_name","school_tier","europe_value",nullptr};
 static const char* BLDG_COLS[] = {"name","cost","tools_x10","size","min_colony","upkeep",nullptr};
+static const char* FFAT_COLS[] = {"name","type","weight_1500_1600","weight_1600_1700",
+    "weight_1700plus",nullptr};
+static const char* NATN_COLS[] = {"name","color",nullptr};   // @COUNTRY half; @NATIONALITY below
 static const char* TERR_JCOLS[] = {"name","movement","defensive","improvement","value",
     "y_farmer","y_planter_sugar","y_planter_tobacco","y_planter_cotton","y_trapper",
     "y_lumberjack","y_ore","y_silver","y_fisherman",nullptr};
@@ -137,6 +140,13 @@ static void patch_record_tables(const Record& r) {
     else if (ty == "unit") { cols = UNIT_COLS; section = "@UNIT"; }
     else if (ty == "prof") { cols = PROF_COLS; section = "@JOB"; }
     else if (ty == "bldg") { cols = BLDG_COLS; section = "@BUILDING"; }
+    else if (ty == "ffat") { cols = FFAT_COLS; section = "@FATHERS"; }
+    else if (ty == "natn") {
+        // one record fans out to the two row-parallel legacy tables
+        cols = NATN_COLS; section = "@COUNTRY";
+        if (const Value* v = r.find("nationality"); v && v->kind == ValKind::Str)
+            table_patch_cell("@NATIONALITY", idx, "name", v->s);
+    }
     else if (ty == "terr") {
         cols = TERR_JCOLS;
         // the two forested bands fold onto the same 8 @FORESTED rows (legacy

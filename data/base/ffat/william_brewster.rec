@@ -1,0 +1,8 @@
+record ffat.william_brewster {
+  index            = 20
+  name             = "William Brewster"
+  type             = 4
+  weight_1500_1600 = 7
+  weight_1600_1700 = 4
+  weight_1700plus  = 1
+}

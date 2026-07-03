@@ -1,0 +1,8 @@
+record ffat.francisco_coronado {
+  index            = 6
+  name             = "Francisco Coronado"
+  type             = 1
+  weight_1500_1600 = 3
+  weight_1600_1700 = 5
+  weight_1700plus  = 7
+}

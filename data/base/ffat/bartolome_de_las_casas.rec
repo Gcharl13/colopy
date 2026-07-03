@@ -1,0 +1,8 @@
+record ffat.bartolome_de_las_casas {
+  index            = 24
+  name             = "Bartolome de las Casas"
+  type             = 4
+  weight_1500_1600 = 0
+  weight_1600_1700 = 5
+  weight_1700plus  = 10
+}

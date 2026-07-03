@@ -1,0 +1,8 @@
+record ffat.simon_bolivar {
+  index            = 18
+  name             = "Simon Bolivar"
+  type             = 3
+  weight_1500_1600 = 0
+  weight_1600_1700 = 4
+  weight_1700plus  = 6
+}

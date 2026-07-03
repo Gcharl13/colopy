@@ -1,0 +1,8 @@
+record ffat.hernando_de_soto {
+  index            = 7
+  name             = "Hernando de Soto"
+  type             = 1
+  weight_1500_1600 = 5
+  weight_1600_1700 = 10
+  weight_1700plus  = 5
+}

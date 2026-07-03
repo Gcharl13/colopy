@@ -1,0 +1,8 @@
+record ffat.ferdinand_magellan {
+  index            = 5
+  name             = "Ferdinand Magellan"
+  type             = 1
+  weight_1500_1600 = 2
+  weight_1600_1700 = 10
+  weight_1700plus  = 10
+}

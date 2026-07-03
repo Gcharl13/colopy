@@ -1,0 +1,8 @@
+record ffat.francis_drake {
+  index            = 13
+  name             = "Francis Drake"
+  type             = 2
+  weight_1500_1600 = 4
+  weight_1600_1700 = 8
+  weight_1700plus  = 6
+}

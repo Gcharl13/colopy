@@ -1,0 +1,6 @@
+record natn.netherlands {
+  index       = 3
+  name        = "Netherlands"
+  nationality = "Dutch"
+  color       = 13
+}

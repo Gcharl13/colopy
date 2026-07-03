@@ -1,0 +1,8 @@
+record ffat.hernan_cortes {
+  index            = 10
+  name             = "Hernan Cortes"
+  type             = 2
+  weight_1500_1600 = 6
+  weight_1600_1700 = 5
+  weight_1700plus  = 1
+}

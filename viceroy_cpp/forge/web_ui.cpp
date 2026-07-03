@@ -1083,7 +1083,8 @@ function tShowGrid(i){ TBL.cur=i;
 // record store now -- the store is authoritative (edits there write through to
 // the legacy readers), so their rows here are frozen read-only views.
 const TBL_MIGRATED={'@CARGO':'good','@UNIT':'unit','@JOB':'prof','@BUILDING':'bldg',
-                    '@UNFORESTED':'terr','@FORESTED':'terr','@OTHER':'terr'};
+                    '@UNFORESTED':'terr','@FORESTED':'terr','@OTHER':'terr',
+                    '@COUNTRY':'natn','@NATIONALITY':'natn','@FATHERS':'ffat'};
 function tGotoDrydock(){ document.querySelector('nav button[data-tab=drydock]').click(); }
 function tRender(){
   const g=TBL.grids[TBL.cur]; if(!g){ $('#tgrid').innerHTML=''; return; }

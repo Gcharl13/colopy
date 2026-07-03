@@ -1,0 +1,6 @@
+record natn.spain {
+  index       = 2
+  name        = "Spain"
+  nationality = "Spanish"
+  color       = 14
+}

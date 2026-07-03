@@ -1,0 +1,8 @@
+record ffat.adam_smith {
+  index            = 0
+  name             = "Adam Smith"
+  type             = 0
+  weight_1500_1600 = 2
+  weight_1600_1700 = 8
+  weight_1700plus  = 6
+}

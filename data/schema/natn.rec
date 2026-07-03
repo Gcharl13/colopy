@@ -1,0 +1,10 @@
+record schm.natn {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 3, doc = "Power slot ordinal (EXE-parity: 0 England, 1 France, 2 Spain, 3 Netherlands; load-bearing in saves, AI, and the chip palette)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @COUNTRY country name" },
+    { name = "nationality", type = "str", doc = "Verbatim @NATIONALITY name (row-parallel to @COUNTRY by power slot)" },
+    { name = "color", type = "int", min = 9, max = 15, doc = "VICEROY.PAL index for the ownership chip / minimap dot (@COUNTRY legend: color => must be 9-15)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

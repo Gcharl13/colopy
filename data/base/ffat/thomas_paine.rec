@@ -1,0 +1,8 @@
+record ffat.thomas_paine {
+  index            = 17
+  name             = "Thomas Paine"
+  type             = 3
+  weight_1500_1600 = 1
+  weight_1600_1700 = 2
+  weight_1700plus  = 8
+}

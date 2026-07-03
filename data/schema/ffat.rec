@@ -1,0 +1,12 @@
+record schm.ffat {
+  version = 1
+  fields  = [
+    { name = "index", type = "int", required = true, min = 0, max = 24, doc = "@FATHERS row ordinal (EXE-parity; the FF bit position in ff_owned is load-bearing)" },
+    { name = "name", type = "str", required = true, doc = "Verbatim @FATHERS founding-father name" },
+    { name = "type", type = "int", min = 0, max = 4, doc = "Category id per @FOUNDING (0 Trade, 1 Exploration, 2 Military, 3 Political, 4 Religious; founding_fathers.md -- exactly 5 fathers each)" },
+    { name = "weight_1500_1600", type = "int", doc = "Era-band offer weight, years < 1600 (@FATHERS w0, founding_fathers.md 3)" },
+    { name = "weight_1600_1700", type = "int", doc = "Era-band offer weight, 1600-1699 (w1)" },
+    { name = "weight_1700plus", type = "int", doc = "Era-band offer weight, 1700+ (w2)" },
+    { name = "notes", type = "str", doc = "Free prose" }
+  ]
+}

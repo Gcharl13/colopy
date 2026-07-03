@@ -230,8 +230,8 @@ static void test_reflection() {
     check(g.burden == 7, "reflect: burden == 7 (the Food spread)");
     Record back = reflect_serialize(good_type, "good.food", &g);
     check(serialize_record(back) == src, "reflect: struct -> record -> text BYTE-IDENTICAL");
-    check(dd_all_types_count == 8 && std::string(good_type.code) == "good",
-          "reflect: type registry populated (incl. the schm meta-type)");
+    check(dd_all_types_count == 10 && std::string(good_type.code) == "good",
+          "reflect: type registry populated (incl. schm meta-type + natn/ffat)");
 }
 
 static Store make_test_store() {

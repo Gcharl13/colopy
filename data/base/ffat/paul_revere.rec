@@ -1,0 +1,8 @@
+record ffat.paul_revere {
+  index            = 12
+  name             = "Paul Revere"
+  type             = 2
+  weight_1500_1600 = 10
+  weight_1600_1700 = 2
+  weight_1700plus  = 1
+}

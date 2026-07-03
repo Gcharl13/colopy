@@ -1,0 +1,8 @@
+record ffat.sieur_de_la_salle {
+  index            = 9
+  name             = "Sieur De La Salle"
+  type             = 1
+  weight_1500_1600 = 7
+  weight_1600_1700 = 5
+  weight_1700plus  = 3
+}

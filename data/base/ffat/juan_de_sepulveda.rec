@@ -1,0 +1,8 @@
+record ffat.juan_de_sepulveda {
+  index            = 23
+  name             = "Juan de Sepulveda"
+  type             = 4
+  weight_1500_1600 = 3
+  weight_1600_1700 = 8
+  weight_1700plus  = 3
+}

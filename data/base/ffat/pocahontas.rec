@@ -1,0 +1,8 @@
+record ffat.pocahontas {
+  index            = 16
+  name             = "Pocahontas"
+  type             = 3
+  weight_1500_1600 = 7
+  weight_1600_1700 = 5
+  weight_1700plus  = 3
+}

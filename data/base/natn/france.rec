@@ -1,0 +1,6 @@
+record natn.france {
+  index       = 1
+  name        = "France"
+  nationality = "French"
+  color       = 9
+}

@@ -1,0 +1,8 @@
+record ffat.william_penn {
+  index            = 21
+  name             = "William Penn"
+  type             = 4
+  weight_1500_1600 = 8
+  weight_1600_1700 = 5
+  weight_1700plus  = 2
+}

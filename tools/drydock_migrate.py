@@ -47,6 +47,12 @@ TYPES = [
         ("name", "name", "str"), ("cost", "cost", "int"), ("tools_x10", "tools_x10", "int"),
         ("size", "size", "int"), ("min_colony", "min_colony", "int"), ("upkeep", "upkeep", "int"),
     ]),
+    ("ffat", "@FATHERS", [
+        ("name", "name", "str"), ("type", "type", "int"),
+        ("weight_1500_1600", "weight_1500_1600", "int"),
+        ("weight_1600_1700", "weight_1600_1700", "int"),
+        ("weight_1700plus", "weight_1700plus", "int"),
+    ]),
 ]
 
 # PROF.produces -- ref<good> keyed by @JOB row ordinal. Data-sourced from the
@@ -147,6 +153,19 @@ def main():
                 continue
             fields.append((fname, quote(str(v)) if kind == "str" else str(int(v))))
         drift = emit(os.path.join("terr", rid.split(".", 1)[1] + ".rec"),
+                     render(rid, fields), check, drift)
+
+    # NATN: @COUNTRY merged with the row-parallel @NATIONALITY (same power slot)
+    used = set()
+    nat = tables["@NATIONALITY"]["rows"]
+    for idx, row in enumerate(tables["@COUNTRY"]["rows"]):
+        rid = f"natn.{slug(row['name'], used)}"
+        fields = [("index", str(idx)), ("name", quote(row["name"]))]
+        if idx < len(nat) and str(nat[idx].get("name", "")).strip():
+            fields.append(("nationality", quote(nat[idx]["name"])))
+        if str(row.get("color", "")).strip():
+            fields.append(("color", str(int(row["color"]))))
+        drift = emit(os.path.join("natn", rid.split(".", 1)[1] + ".rec"),
                      render(rid, fields), check, drift)
 
     # CONF: cfg.json knobs (value scalar OR ordered values list)

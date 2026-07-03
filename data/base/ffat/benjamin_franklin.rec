@@ -1,0 +1,8 @@
+record ffat.benjamin_franklin {
+  index            = 19
+  name             = "Benjamin Franklin"
+  type             = 3
+  weight_1500_1600 = 5
+  weight_1600_1700 = 5
+  weight_1700plus  = 5
+}
