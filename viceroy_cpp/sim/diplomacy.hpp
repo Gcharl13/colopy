@@ -58,21 +58,28 @@ inline long ai_demand_value(long value, int difficulty) {
 // AI demand surcharge (@0x5842B): += 500*(diff+1).
 inline long ai_demand_surcharge(int difficulty) { return 500L * (difficulty + 1); }
 
-// Per-unit grievance value -- func_007C2A (thunk 0x181F:0x9C8, type-B ->
-// file 0x7C2A; decoded 2026-07-03 via tools/rtlink_decode.py). BYTE_VERIFIED:
+// Per-unit combat-strength value -- func_007C2A (thunk 0x181F:0x9C8, type-B
+// -> file 0x7C2A; decoded 2026-07-03 via tools/rtlink_decode.py). This is the
+// shared "x8 accessor" of combat.md 2 (it also publishes the base to
+// [0x8D06+2*mode] and modifier flags to [0x8D00+2*mode]: bit 2 veteran,
+// 0x40 Drake, 4 cargo-laden -- the combat-analysis readout); the grievance
+// accrual @0x42335 reuses it as the destroyed unit's value. BYTE_VERIFIED:
 //   base  = @UNIT stat [type*14 + 0x5235] = defense (mode 0, the destroyed-
-//           unit accrual path @0x42335; mode 1 reads attack @+0x5236)
+//           unit accrual path; mode 1 reads attack @+0x5236)
 //   damaged Artillery (type 0xB, unit flag [0x3148]&0x80) -> base -= 2
-//     (NOT MODELED: the sim demotes artillery by type, no damage flag)
+//     (approximated: the sim demotes damaged artillery by type, so the
+//     lower @UNIT stat already reflects it)
 //   score = base * 8
 //   veteran class ([0x315B]==0x15) Soldiers (1) / Dragoons (4) -> +50%
 //   Privateer (0x10) whose owner has Francis Drake (FF 13)     -> +50%
-//   ships (0xD..0x12) -> score -= hull-damage byte [unit+0x3150]
-//     (NOT MODELED: the sim keeps no persistent hull-damage counter)
-inline long grievance_unit_value(int defense, int type, bool veteran, bool drake) {
+//   ships (0xD..0x12) -> score -= cargo count [unit+0x3150] (unit.md: the
+//     # goods in hold -- laden ships fight/are valued weaker per item)
+inline long grievance_unit_value(int defense, int type, bool veteran, bool drake,
+                                 int cargo = 0) {
     long score = (long)defense * 8;
     if (veteran && (type == 1 || type == 4)) score += score / 2;
     if (type == 0x10 && drake) score += score / 2;
+    if (type >= 0xD && type <= 0x12) score -= cargo;
     return score;
 }
 

@@ -36,13 +36,20 @@ The player coexists with three rival European powers (English/French/Spanish/Dut
   `@0x42335` — when a power's unit is destroyed, `score += value(unit)` where
   `value` is the per-unit call `0x181F:0x9C8` → **file `0x7C2A` (`func_007C2A`,
   decoded 2026-07-03 via `tools/rtlink_decode.py`, type-B thunk). BYTE_VERIFIED:**
-  `func_007C2A(unit, mode)` — base = the `@UNIT` runtime stat table entry
-  `[type·14 + 0x5235]` = **defense** for `mode 0` (the destroyed-unit accrual
-  path; `mode 1` reads attack `@+0x5236`); damaged Artillery (type `0xB`, unit
-  flag `[0x3148]&0x80`) → base −2; **score = base × 8**; veteran class
+  `func_007C2A(unit, mode)` is the **shared per-unit combat-strength evaluator**
+  (the "×8 in accessor" of `combat.md` §2's stat-loader row): base = the `@UNIT`
+  runtime stat table entry `[type·14 + 0x5235]` = **defense** for `mode 0` (the
+  destroyed-unit accrual path; `mode 1` reads attack `@+0x5236`); damaged
+  Artillery (type `0xB`, unit flag `[0x3148]&0x80`, set by the `@ARTILLERY`
+  demotion `@0x05B6F6`) → base −2; **score = base × 8**; veteran class
   (`[0x315B]==0x15`) on Soldiers (1) / Dragoons (4) → **+50%**; Privateer
   (`0x10`) whose owner has Francis Drake (FF 13) → **+50%**; ships
-  (`0xD..0x12`) → score −= the hull-damage byte `[unit+0x3150]` — alongside saturating
+  (`0xD..0x12`) → **score −= the cargo count `[unit+0x3150]`** (`unit.md`: the
+  # goods in hold — laden ships are weaker per item carried; an earlier
+  "hull-damage byte" reading of this operand was wrong). It also publishes the
+  pre-×8 base to `[0x8D06 + 2·mode]` and a modifier-flag byte to
+  `[0x8D00 + 2·mode]` (bit 2 = veteran, `0x40` = Drake, bit 4 = cargo-laden) —
+  the combat-analysis readout's inputs — alongside saturating
   byte-adds into the `0x9180`/`0x918C`/`0x9572` per-slot alarm tables via the
   clamp-to-0xFF helper `@0x42126`. The confrontation evaluator compares two
   powers' scores **relatively** (`@0x3F0C5`/`@0x3F0CE`) before raising the

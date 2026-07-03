@@ -1741,7 +1741,8 @@ static void game_step() {
             const UnitStats& us = unit_stats(g_active_rules, kr.type);
             const bool drake = kr.owner == 0 && ((g_engine_extra.ff_owned >> 13) & 1u);
             long v = g_engine_extra.diplo.grievance[kr.owner] +
-                     vc::sim::grievance_unit_value(us.defense, kr.type, kr.veteran, drake);
+                     vc::sim::grievance_unit_value(us.defense, kr.type, kr.veteran, drake,
+                                                   kr.cargo);
             g_engine_extra.diplo.grievance[kr.owner] = (uint16_t)std::min(v, 0xFFFFL);
             if (g_engine_extra.diplo.grievance[kr.owner] >
                 g_engine_extra.diplo.grievance[kr.by_owner])

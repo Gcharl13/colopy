@@ -122,8 +122,16 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
         const bool def_drake = def.owner == HUMAN_OWNER && ((ff_owned >> 13) & 1u);
         NavalResult nr = resolve_naval(rd, atk, def, rng, atk_drake, def_drake);
         Unit& loser = nr.attacker_won ? def : atk;
-        if (nr.loser_sunk) loser.alive = false;        // laden -> sunk, cargo lost
-        else loser.moves_left = 0;                     // empty -> damaged (@SHIPDAMAGE)
+        if (nr.loser_sunk) {
+            loser.alive = false;                       // laden -> sunk, cargo lost
+            int held = 0;
+            for (int g : loser.hold_good) if (g >= 0) ++held;
+            kill_log().push_back(KillResult{loser.owner,
+                                            nr.attacker_won ? atk.owner : def.owner,
+                                            loser.type,
+                                            loser.profession == 0x15,
+                                            held});    // feeds the grievance driver
+        } else loser.moves_left = 0;                   // empty -> damaged (@SHIPDAMAGE)
         atk.moves_left = 0;
         return nr.attacker_won && !def.alive;
     }
@@ -152,10 +160,13 @@ static bool do_combat(GameState& g, World& w, int ai, int di,
         loser.owner = res.attacker_won ? atk.owner : def.owner;  // changes hands intact
     } else if (res.loser_outcome < 0) {
         loser.alive = false;                                     // destroyed
+        int held = 0;
+        for (int g : loser.hold_good) if (g >= 0) ++held;
         kill_log().push_back(KillResult{loser.owner,
                                         res.attacker_won ? atk.owner : def.owner,
                                         loser.type,
-                                        loser.profession == 0x15});  // feeds the grievance driver
+                                        loser.profession == 0x15,
+                                        held});         // feeds the grievance driver
     } else {
         loser.type = res.loser_outcome;                         // demoted in place
     }

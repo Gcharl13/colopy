@@ -28,10 +28,12 @@ struct PromoteResult { int unit = -1; int owner = 0; int old_type = 0; int new_t
 
 // A unit destroyed in combat (the grievance driver's input, diplomacy.md):
 // owner lost a unit of `type` to by_owner. Drained per turn like promote_log.
-// veteran = the class byte (+0x315B) was 0x15 at death; feeds the grievance
-// value fn's +50% Soldiers/Dragoons rider (func_007C2A, diplomacy.md 2).
+// veteran = the class byte (+0x315B) was 0x15 at death; feeds the strength
+// fn's +50% Soldiers/Dragoons rider. cargo = occupied holds at death (the
+// EXE's +0x3150 cargo count); ships lose 1 strength point per item carried
+// (func_007C2A, diplomacy.md 2 / combat.md "x8 in accessor").
 struct KillResult { int owner = 0; int by_owner = 0; int type = 0;
-                    bool veteran = false; };
+                    bool veteran = false; int cargo = 0; };
 std::vector<KillResult>& kill_log();
 
 // Start-of-turn: each living unit's moves_left = unit_stats(rd, type).movement.
