@@ -815,6 +815,27 @@ static bool dd_graph_save(const std::string& id, const JsonValue& graph, std::st
     const bool typed = graph_as_typed(graph, vars, steps, comments);
     const bool has_vars = typed && !vars.arr.empty();
     const bool has_comments = typed && !comments.arr.empty();
+    // Structural pre-check BEFORE any mutation. The update path below applies
+    // field-by-field through store_set; without this, a payload that passes
+    // the first put but fails a later one (e.g. name-only, no nodes) would
+    // half-apply -- name committed, journaled and flushed, save reported
+    // failed. After this check every remaining put is either guaranteed valid
+    // (decompiler output) or an optional-field clear.
+    if (!typed) {
+        const JsonValue* nn = graph.find("nodes");
+        if (!nn || !nn->is_array()) { err = "graph needs a nodes array"; return false; }
+        for (const JsonValue& n : nn->arr)
+            if (!n.is_object()) { err = "graph nodes must be objects"; return false; }
+        if (const JsonValue* ee = graph.find("edges")) {
+            if (!ee->is_array()) { err = "graph edges must be a list"; return false; }
+            for (const JsonValue& e : ee->arr)
+                if (!e.is_object()) { err = "graph edges must be objects"; return false; }
+        }
+    }
+    if (const JsonValue* n = graph.find("name"); n && n->type != JsonValue::String) {
+        err = "graph name must be a string";
+        return false;
+    }
     const std::string rid = std::string(typed ? "evnt." : "grph.") + id;
     const std::string other = std::string(typed ? "grph." : "evnt.") + id;
     // reclassification is ADD-then-DELETE: if the new form failed validation
