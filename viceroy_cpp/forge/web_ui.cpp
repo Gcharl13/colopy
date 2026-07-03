@@ -135,11 +135,11 @@ const char* forge_index_html() {
       <b>Save as active mod</b> makes them bite the Play game + events. Overridden cells are
       highlighted; the raw overlay is mirrored in the box (paste a sparse <code>rules.json</code>
       there too).</p>
-    <p class="muted"><b>Authority note (Drydock migration):</b> the <code>cfg</code> scalars are
-      also Drydock <b>conf</b> records &mdash; those seed the defaults at serve start; this tab's
-      overlay applies ON TOP and stays the live-tweak authority until overlays are subsumed (P5).
-      Unit/goods/profession/terrain/building tables are store-authoritative: edit them in the
-      Drydock tab, not here.</p>
+    <p class="muted"><b>Authority note (P5, overlay subsumed):</b> the record store is the single
+      live rules authority. Saving here IMPORTS your overlay as Drydock record edits
+      (validated, journaled, undoable in the Drydock tab); the overlay file remains only as the
+      boot-time exchange format. <code>move_class</code>/<code>capbits</code> are not
+      record-represented yet and still apply overlay-side.</p>
     <div id="rgrid"></div>
     <details style="margin:8px 0"><summary class="muted">raw overlay JSON</summary>
       <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea></details>

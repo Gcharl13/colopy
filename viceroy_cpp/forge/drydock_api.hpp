@@ -61,6 +61,13 @@ bool drydock_palette_json(std::string& out);
 std::vector<std::string> drydock_scenario_ids();
 bool drydock_scenario_json(const std::string& id, JsonValue& out);
 
+// P5 overlay subsumption: convert a rules-overlay JSON ({cfg, units,
+// terrain_defense/move}) into store edits through the chokepoint (validated,
+// journaled, undoable; no-ops skipped), then sync *rd from the store. The
+// overlay file remains the boot-time import + export exchange format; the
+// STORE is the live authority. False when the store is not loaded.
+bool drydock_import_overlay(const JsonValue& root, vc::sim::RuleData* rd, std::string& summary);
+
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).
 HttpResponse drydock_route(const std::string& method, const std::string& path,

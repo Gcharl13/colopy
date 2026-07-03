@@ -191,6 +191,84 @@ void drydock_repatch_tables() {
         for (const auto& r : bucket) patch_record_tables(r);
 }
 
+// ---- P5 overlay subsumption: rules-overlay JSON -> store edits --------------------
+// The mod overlay ({cfg:{...}, units:{Name:{...}}, terrain_defense/move:{id:v}})
+// is now an IMPORT/EXPORT format; the record store is the single live rules
+// authority. Importing converts each diff to a store_set through the chokepoint
+// (validated, journaled, undoable), skipping no-ops, then syncs the live rules.
+static void sync_rules(vc::sim::RuleData* rd);         // defined below
+static bool import_set(const std::string& id, const char* field, Value v, int& applied) {
+    const Record* r = store_find(g_store, id);
+    if (!r) return false;
+    if (const Value* old = r->find(field); old && value_equal(*old, v)) return true;
+    std::string err;
+    if (!store_set(g_store, id, field, &v, err)) return false;
+    ++applied;
+    return true;
+}
+
+bool drydock_import_overlay(const JsonValue& root, vc::sim::RuleData* rd, std::string& summary) {
+    if (!g_ready || !root.is_object()) return false;
+    int applied = 0;
+    std::vector<std::string> skipped;
+    if (const JsonValue* cfg = root.find("cfg"); cfg && cfg->is_object()) {
+        for (const auto& [k, v] : cfg->obj) {
+            if (v.is_array()) {                       // ff_gate_years / ref_accrue_gate_years
+                std::vector<Value> xs;
+                for (const JsonValue& x : v.arr) xs.push_back(Value::make_int((long long)x.num));
+                if (!import_set("conf." + k, "values", Value::make_list(std::move(xs)), applied))
+                    skipped.push_back("cfg." + k);
+            } else if (v.is_number()) {
+                if (!import_set("conf." + k, "value", Value::make_int((long long)v.num), applied))
+                    skipped.push_back("cfg." + k);
+            }
+        }
+    }
+    if (const JsonValue* units = root.find("units"); units && units->is_object()) {
+        auto ti = g_store.type_index.find("unit");
+        for (const auto& [name, u] : units->obj) {
+            std::string rid;                          // unit record by its name field
+            if (ti != g_store.type_index.end())
+                for (const Record& r : g_store.records[ti->second])
+                    if (const Value* n = r.find("name"); n && n->s == name) { rid = r.id; break; }
+            if (rid.empty()) { skipped.push_back("units." + name); continue; }
+            // overlay field -> record column (defense is the @UNIT combat column);
+            // move_class/capbits are not record-represented and stay skipped
+            static const std::pair<const char*, const char*> M[] = {
+                {"attack", "attack"}, {"defense", "combat"},
+                {"cargo", "cargo"}, {"movement", "movement"}};
+            for (const auto& [ov, col] : M)
+                if (const JsonValue* x = u.find(ov); x && x->is_number())
+                    import_set(rid, col, Value::make_int((long long)x->num), applied);
+            for (const char* nr : {"move_class", "capbits"})
+                if (u.find(nr)) skipped.push_back("units." + name + "." + nr);
+        }
+    }
+    for (const auto& [sec, col] : {std::pair<const char*, const char*>{"terrain_defense", "defensive"},
+                                   std::pair<const char*, const char*>{"terrain_move", "movement"}}) {
+        const JsonValue* t = root.find(sec);
+        if (!t || !t->is_object()) continue;
+        auto ti = g_store.type_index.find("terr");
+        for (const auto& [ids, v] : t->obj) {
+            std::string rid;
+            long long want = std::atoll(ids.c_str());
+            if (ti != g_store.type_index.end())
+                for (const Record& r : g_store.records[ti->second])
+                    if (const Value* ix = r.find("index"); ix && ix->i == want) { rid = r.id; break; }
+            if (rid.empty() || !v.is_number()) { skipped.push_back(std::string(sec) + "." + ids); continue; }
+            import_set(rid, col, Value::make_int((long long)v.num), applied);
+        }
+    }
+    sync_rules(rd);
+    summary = "drydock: overlay imported into the store (" + std::to_string(applied) + " edits";
+    if (!skipped.empty()) {
+        summary += ", skipped:";
+        for (const auto& s : skipped) summary += " " + s;
+    }
+    summary += ")";
+    return true;
+}
+
 // ---- MSGE consumer cutover (strangler): @KEY -> store record --------------------
 // The message readers are keyed lookups, so they cut over directly instead of
 // using the JSON write-through: dd_message_hook (engine.hpp) serves message_meta
@@ -448,7 +526,8 @@ bool drydock_messages_json(std::string& out) {
 }
 
 // after any mutation: keep the live game's rules AND the legacy JSON readers in
-// lockstep with the store
+// lockstep with the store. CONF applies live too (P5: the store is the single
+// rules authority; the overlay is subsumed as an import/export format).
 static void sync_rules(vc::sim::RuleData* rd) {
     drydock_repatch_tables();
     rebuild_msg_index();               // key edits retarget the @KEY lookups
@@ -457,7 +536,7 @@ static void sync_rules(vc::sim::RuleData* rd) {
     std::vector<Record> all;
     for (const auto& bucket : g_store.records)
         for (const auto& r : bucket) all.push_back(r);
-    drydock_apply_records(*rd, all);
+    drydock_apply_records(*rd, all, /*include_conf=*/true);
 }
 
 // ---- init ----------------------------------------------------------------------

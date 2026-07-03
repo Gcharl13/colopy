@@ -125,7 +125,16 @@ void drydock_apply_records(RuleData& out, const std::vector<Record>& recs,
             const Value* v = r.find("value");
             if (v && v->kind == ValKind::Int)
                 cfg_set_field(out.cfg, r.id.substr(5), (double)v->i);
-            // list-valued knobs (gate years) stay overlay-edited for now
+            // list-valued knobs: the two Config int arrays
+            if (const Value* vs = r.find("values"); vs && vs->kind == ValKind::List) {
+                const std::string name = r.id.substr(5);
+                auto fill = [&](auto& arr) {
+                    for (size_t i = 0; i < arr.size() && i < vs->list.size(); ++i)
+                        if (vs->list[i].kind == ValKind::Int) arr[i] = (int)vs->list[i].i;
+                };
+                if (name == "ff_gate_years")              fill(out.cfg.ff_gate_years);
+                else if (name == "ref_accrue_gate_years") fill(out.cfg.ref_accrue_gate_years);
+            }
         }
     }
 }

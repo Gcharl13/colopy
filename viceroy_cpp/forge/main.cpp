@@ -3099,7 +3099,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             root.obj["invariants"] = inv_json(rep);
             root.obj["warnings"]   = jstrs(o.warnings);
             if (rep.ok()) {
-                g_active_rules = o.rules;
+                // P5: with the store loaded the overlay IMPORTS as record edits
+                // (chokepoint-validated, journaled, undoable) and the live rules
+                // sync from the store; the file stays as boot-import + export.
+                std::string isum;
+                if (forge::drydock_import_overlay(forge::json_parse(body), &g_active_rules, isum))
+                    root.obj["imported"] = forge::json_str(isum);
+                else
+                    g_active_rules = o.rules;
                 try { forge::save_overlay(ACTIVE_RULES_PATH, base, g_active_rules); }
                 catch (const std::exception& e) { return err(500, std::string("write failed: ") + e.what()); }
                 root.obj["saved"]   = jbool(true);
@@ -3112,8 +3119,15 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
 
         if (path == "/api/rules/reset" && method == "POST") {
             // Revert to the un-modded ruleset and remove the on-disk overlay.
+            // With the store loaded, re-init it from data/ so imported overlay
+            // edits vanish too and the rules rebuild from the records.
             g_active_rules = make_default_rules();
             std::error_code ec; std::filesystem::remove(ACTIVE_RULES_PATH, ec);
+            if (forge::drydock_active()) {
+                std::string smsg;
+                forge::drydock_store_init("data", smsg);
+                forge::drydock_apply_base(g_active_rules, "data", smsg);
+            }
             return J(200, jbool(true));
         }
 
@@ -5596,13 +5610,22 @@ static int do_serve(int argc, char** argv) {
     { std::string smsg;
       if (forge::drydock_store_init("data", smsg, pack_path)) std::printf("%s\n", smsg.c_str());
       else std::printf("drydock store: NOT loaded -- %s\n", smsg.c_str()); }
-    // Load the persisted active mod (if any) so the Play game starts on the saved ruleset.
+    // Load the persisted active mod (if any). With the store loaded it IMPORTS
+    // as record edits (P5: the store is the single live rules authority; the
+    // overlay file is the boot-time exchange format); otherwise the legacy
+    // direct-apply path keeps working.
     if (std::filesystem::exists(ACTIVE_RULES_PATH)) {
         try {
-            forge::OverlayResult o = forge::load_overlay(ACTIVE_RULES_PATH, make_default_rules());
-            if (check_rules(o.rules).ok()) { g_active_rules = o.rules;
-                std::printf("loaded active mod from %s\n", ACTIVE_RULES_PATH); }
-            else std::printf("active mod %s is invalid -- ignoring\n", ACTIVE_RULES_PATH);
+            forge::JsonValue ov = forge::json_parse_file(ACTIVE_RULES_PATH);
+            std::string isum;
+            if (forge::drydock_import_overlay(ov, &g_active_rules, isum)) {
+                std::printf("%s\n", isum.c_str());
+            } else {
+                forge::OverlayResult o = forge::apply_overlay(ov, make_default_rules());
+                if (check_rules(o.rules).ok()) { g_active_rules = o.rules;
+                    std::printf("loaded active mod from %s\n", ACTIVE_RULES_PATH); }
+                else std::printf("active mod %s is invalid -- ignoring\n", ACTIVE_RULES_PATH);
+            }
         } catch (const std::exception& e) {
             std::printf("could not load %s: %s\n", ACTIVE_RULES_PATH, e.what());
         }
