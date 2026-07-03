@@ -1,6 +1,8 @@
 // native_assets.cpp -- see native_assets.hpp.
 #include "native_assets.hpp"
-#include <png.h>
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#include "stb_image.h"   // vendored (third_party/stb) -- no libpng dependency
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -55,29 +57,15 @@ void load_palette_json(const std::string& path, uint8_t pal[768]) {
 
 IndexedPng read_png_quantized(const std::string& path, const uint8_t pal[768],
                               int* strays) {
-    FILE* fp = std::fopen(path.c_str(), "rb");
-    if (!fp) throw std::runtime_error("cannot open " + path);
-    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-    png_infop info = png_create_info_struct(png);
-    if (setjmp(png_jmpbuf(png))) {
-        png_destroy_read_struct(&png, &info, nullptr);
-        std::fclose(fp);
-        throw std::runtime_error("png read error: " + path);
-    }
-    png_init_io(png, fp);
-    png_read_info(png, info);
-    // Normalize everything to 8-bit RGBA rows.
-    png_set_expand(png);
-    png_set_strip_16(png);
-    png_set_gray_to_rgb(png);
-    png_set_add_alpha(png, 0xFF, PNG_FILLER_AFTER);
-    png_read_update_info(png, info);
+    // stb_image normalizes every PNG color type to 8-bit RGBA for us.
+    int w = 0, h = 0, comp = 0;
+    unsigned char* px = stbi_load(path.c_str(), &w, &h, &comp, 4);
+    if (!px) throw std::runtime_error("cannot open/decode " + path);
 
     IndexedPng out;
-    out.w = (int)png_get_image_width(png, info);
-    out.h = (int)png_get_image_height(png, info);
-    std::vector<uint8_t> row((size_t)out.w * 4);
-    out.idx.resize((size_t)out.w * out.h);
+    out.w = w;
+    out.h = h;
+    out.idx.resize((size_t)w * h);
     for (int i = 0; i < 768; ++i) out.pal[i] = pal[i];
 
     // exact-match lookup: RGB24 -> index (first palette occurrence wins)
@@ -87,37 +75,32 @@ IndexedPng read_png_quantized(const std::string& path, const uint8_t pal[768],
             (uint8_t)i;
 
     int miss = 0;
-    for (int y = 0; y < out.h; ++y) {
-        png_read_row(png, row.data(), nullptr);
-        for (int x = 0; x < out.w; ++x) {
-            uint8_t r = row[x * 4], g = row[x * 4 + 1], b = row[x * 4 + 2],
-                    a = row[x * 4 + 3];
-            uint8_t v;
-            if (a < 128) {
-                v = SS_TRANSPARENT;
+    for (size_t p = 0; p < (size_t)w * h; ++p) {
+        uint8_t r = px[p * 4], g = px[p * 4 + 1], b = px[p * 4 + 2], a = px[p * 4 + 3];
+        uint8_t v;
+        if (a < 128) {
+            v = SS_TRANSPARENT;
+        } else {
+            auto it = lut.find((uint32_t)r << 16 | (uint32_t)g << 8 | b);
+            if (it != lut.end()) {
+                v = it->second;
             } else {
-                auto it = lut.find((uint32_t)r << 16 | (uint32_t)g << 8 | b);
-                if (it != lut.end()) {
-                    v = it->second;
-                } else {
-                    // stray (documented: <40 px repo-wide) -> nearest entry
-                    int best = 0;
-                    long bd = 1L << 30;
-                    for (int i = 0; i < 256; ++i) {
-                        long dr = r - pal[i * 3], dg = g - pal[i * 3 + 1],
-                             db = b - pal[i * 3 + 2];
-                        long d = dr * dr + dg * dg + db * db;
-                        if (d < bd) { bd = d; best = i; }
-                    }
-                    v = (uint8_t)best;
-                    ++miss;
+                // stray (documented: <40 px repo-wide) -> nearest entry
+                int best = 0;
+                long bd = 1L << 30;
+                for (int i = 0; i < 256; ++i) {
+                    long dr = r - pal[i * 3], dg = g - pal[i * 3 + 1],
+                         db = b - pal[i * 3 + 2];
+                    long d = dr * dr + dg * dg + db * db;
+                    if (d < bd) { bd = d; best = i; }
                 }
+                v = (uint8_t)best;
+                ++miss;
             }
-            out.idx[(size_t)y * out.w + x] = v;
         }
+        out.idx[p] = v;
     }
-    png_destroy_read_struct(&png, &info, nullptr);
-    std::fclose(fp);
+    stbi_image_free(px);
     if (strays) *strays += miss;
     return out;
 }

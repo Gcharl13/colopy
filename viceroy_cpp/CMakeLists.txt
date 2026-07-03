@@ -42,26 +42,31 @@ add_library(viceroy_sim STATIC
 )
 target_include_directories(viceroy_sim PUBLIC sim)
 
+# --- Runtime renderer library: 320x200 indexed compositors + repo-asset
+# loaders. PNG READING is stb_image (vendored) so the core builds with ZERO
+# external deps everywhere (the native editor's game view needs it on every
+# platform); libpng gates only the import/write pipeline (png_io + bundle),
+# used by the asset CLI and the frame-dump modes.
+add_library(viceroy_render STATIC
+  src/native_assets.cpp
+  src/mp.cpp
+  src/pal.cpp
+  src/render.cpp
+  src/image_io.cpp
+  # presentation (P4): 320x200 indexed surface + screen compositors
+  src/surface.cpp
+  src/mapview.cpp
+  src/colony_screen.cpp
+)
+target_include_directories(viceroy_render PUBLIC include . third_party/stb)
+target_link_libraries(viceroy_render PUBLIC viceroy_sim)
+if(PNG_FOUND)
+  target_sources(viceroy_render PRIVATE src/png_io.cpp src/bundle.cpp)
+  target_link_libraries(viceroy_render PUBLIC PNG::PNG)
+endif()
+
 # --- CLI: import-all / import / import-font / render / mapview (needs libpng) ---
 if(PNG_FOUND)
-  # Runtime renderer library -- shared by the asset-pipeline CLI (viceroy_cpp)
-  # and the native application (viceroy). No original-codec code in here.
-  add_library(viceroy_render STATIC
-    src/bundle.cpp
-    src/native_assets.cpp
-    src/png_io.cpp
-    src/mp.cpp
-    src/pal.cpp
-    src/render.cpp
-    src/image_io.cpp
-    # presentation (P4): 320x200 indexed surface + screen compositors
-    src/surface.cpp
-    src/mapview.cpp
-    src/colony_screen.cpp
-  )
-  target_include_directories(viceroy_render PUBLIC include .)
-  target_link_libraries(viceroy_render PUBLIC PNG::PNG viceroy_sim)
-
   add_executable(viceroy_cpp
     src/main.cpp
     # importer (offline): original codec
@@ -179,10 +184,9 @@ if(FORGE_STUDIO_OK)
   else()
     target_link_libraries(forge_studio PRIVATE SDL2::SDL2)
   endif()
-  if(PNG_FOUND)
-    target_compile_definitions(forge_studio PRIVATE FORGE_STUDIO_GAME=1)
-    target_link_libraries(forge_studio PRIVATE viceroy_render)
-  endif()
+  # the game view runs on the stb-based renderer core -- every platform
+  target_compile_definitions(forge_studio PRIVATE FORGE_STUDIO_GAME=1)
+  target_link_libraries(forge_studio PRIVATE viceroy_render)
 endif()
 
 # --- Drydock (engine-dev-environment-spec.md): record-database dev environment.
