@@ -1,0 +1,7 @@
+record schm.schm {
+  version = 1
+  fields  = [
+    { name = "version", type = "int", min = 1, doc = "Schema version of the described record type" },
+    { name = "fields", type = "list<dict>", required = true, ordered = true, doc = "Field definitions in canonical order (order is semantic: it fixes the serialized field order and the generated struct layout; a change takes effect at rebuild, when drydock-gen regenerates dd_gen.hpp). Dict keys: name, type (int | float | str | ref<TYPE> | flags | list<int> | list<str> | list<dict>), required, ordered, min, max, default, values, doc" }
+  ]
+}

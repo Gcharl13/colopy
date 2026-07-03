@@ -1263,9 +1263,13 @@ async function ddFormRender(id){
         +(f.min!==undefined?' min="'+f.min+'"':'')+(f.max!==undefined?' max="'+f.max+'"':'')
         +' data-id="'+esc(id)+'" data-f="'+esc(f.name)+'" data-k="0" onchange="ddEdit(this)" style="width:110px">'
         +(f.min!==undefined||f.max!==undefined?' <span class="muted">'+(f.min??'')+'..'+(f.max??'')+'</span>':'');
-    } else {                                           // str / float
+    } else if(f.kind===1||f.kind===2){                 // float / str
       h+='<input value="'+esc(String(shown))+'" data-id="'+esc(id)+'" data-f="'+esc(f.name)
         +'" data-k="'+f.kind+'" onchange="ddEdit(this)" style="width:320px">';
+    } else {                                           // flags / lists / dicts: read-only for now
+      h+='<pre class="muted" style="margin:0;max-width:460px;white-space:pre-wrap">'
+        +esc(v===undefined?'(absent)':JSON.stringify(v,null,1))+'</pre>'
+        +'<div class="muted" style="font-size:11px">structured field &mdash; edit the .rec text (read-only in the form)</div>';
     }
     if(f.doc) h+='<div class="muted" style="font-size:11px">'+esc(f.doc)+'</div>';
     h+='</td></tr>';

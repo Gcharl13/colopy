@@ -192,6 +192,11 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg) {
         if (!parse_records(slurp(p), recs, err)) { msg = p + ": " + err; return false; }
     Schema sc;
     if (!schema_load(schm, sc, err)) { msg = err; return false; }
+    // the registry describes itself (spec §7 / migration order item 8): the
+    // schm.* records join the store, browsable like any type -- schm.schm is
+    // the meta-schema fixed point. Live schm edits are data-only until the
+    // next rebuild regenerates dd_gen.hpp (noted in the meta-schema doc).
+    for (auto& r : schm) recs.push_back(r);
     for (auto& r : recs)
         if (!schema_canonicalize(sc, r, err)) { msg = err; return false; }
     g_store = Store{};
@@ -215,7 +220,10 @@ static HttpResponse dd_save() {
     int written = 0, removed = 0;
     for (const auto& id : g_store.dirty) {
         auto dot = id.find('.');
-        std::string dir = g_data_dir + "/base/" + id.substr(0, dot);
+        // schm records ARE the schema files (data/schema/<code>.rec); everything
+        // else is one-record-per-file under data/base/<type>/
+        std::string dir = (id.rfind("schm.", 0) == 0) ? g_data_dir + "/schema"
+                                                      : g_data_dir + "/base/" + id.substr(0, dot);
         std::string path = dir + "/" + id.substr(dot + 1) + ".rec";
         const Record* r = store_find(g_store, id);
         if (!r) { std::remove(path.c_str()); ++removed; continue; }
