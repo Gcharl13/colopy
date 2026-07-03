@@ -258,7 +258,11 @@ const char* forge_index_html() {
     </div>
     <div style="display:flex; gap:10px; align-items:flex-start">
       <div class="gpalette" id="ddtree" style="width:210px; max-height:74vh"></div>
-      <div style="flex:1; overflow:auto; max-height:74vh" id="ddgrid"></div>
+      <div style="flex:1; overflow:auto; max-height:74vh">
+        <div id="ddform" style="display:none"></div>
+        <div id="ddgrid"></div>
+      </div>
+      <div class="gpalette" id="ddinspect" style="width:230px; max-height:74vh; display:none"></div>
     </div>
   </section>
 
@@ -1147,7 +1151,8 @@ function ddGrid(){
   for(const c of cols) h+='<th onclick="ddSortBy(\''+c.name+'\')" title="'+esc(c.doc||'')+'">'+esc(c.name)+'</th>';
   h+='<th></th></tr>';
   for(const r of rows){
-    h+='<tr><td'+(r.dirty?' style="color:#e8b94b"':'')+'>'+esc(r.id)+(r.dirty?' *':'')+'</td>';
+    h+='<tr><td><a href="#" style="color:'+(r.dirty?'#e8b94b':'#7aa2f7')+'" '
+      +'onclick="ddForm(\''+esc(r.id)+'\');return false">'+esc(r.id)+'</a>'+(r.dirty?' *':'')+'</td>';
     for(const c of cols){
       const v=r[c.name];
       const shown=(v&&typeof v==='object'&&'ref' in v)?v.ref:(v===undefined?'':v);
@@ -1182,6 +1187,7 @@ async function ddEdit(inp){
   const d=await r.json();
   if(d.error){ ui.toast(d.error); }
   await ddOpen(DD_CUR); ddStatus();
+  if($('#ddform').style.display!=='none' && DD_HPOS>=0) ddFormRender(DD_HIST[DD_HPOS]);
 }
 async function ddDup(id){
   const nid=prompt('new record id ('+DD_CUR+'.*):', id+'_copy');
@@ -1202,6 +1208,74 @@ async function ddUndo(){ const d=await (await fetch('/api/dd/undo',{method:'POST
   if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); } }
 async function ddRedo(){ const d=await (await fetch('/api/dd/redo',{method:'POST',body:'{}'})).json();
   if(d.error) ui.toast(d.error); else { await ddOpen(DD_CUR); ddStatus(); } }
+// ---- form view (spec 5.2): schema-generated widgets, ref hyperlinks/pickers,
+// browser-style back/forward, used-by panel, read-only canonical text ----------
+let DD_HIST=[], DD_HPOS=-1;
+function ddForm(id, nav){
+  if(!nav){ DD_HIST=DD_HIST.slice(0,DD_HPOS+1); DD_HIST.push(id); DD_HPOS=DD_HIST.length-1; }
+  ddFormRender(id);
+}
+function ddBack(){ if(DD_HPOS>0){ DD_HPOS--; ddFormRender(DD_HIST[DD_HPOS]); } }
+function ddFwd(){ if(DD_HPOS<DD_HIST.length-1){ DD_HPOS++; ddFormRender(DD_HIST[DD_HPOS]); } }
+function ddCloseForm(){ $('#ddform').style.display='none'; $('#ddinspect').style.display='none'; $('#ddgrid').style.display=''; }
+async function ddFormRender(id){
+  const d=await (await fetch('/api/dd/record?id='+encodeURIComponent(id))).json();
+  if(d.error){ ui.toast(d.error); return; }
+  const type=id.split('.')[0];
+  const t=DD_TYPES.find(t=>t.code===type);
+  let h='<div class="row"><button class="act" onclick="ddBack()" '+(DD_HPOS>0?'':'disabled')+'>&larr;</button>'
+    +'<button class="act" onclick="ddFwd()" '+(DD_HPOS<DD_HIST.length-1?'':'disabled')+'>&rarr;</button>'
+    +'<b style="font-size:15px">'+esc(id)+'</b>'+(d.dirty?' <span class="warn">modified</span>':'')
+    +'<button class="act" onclick="ddCloseForm()" style="margin-left:auto">grid</button></div>';
+  h+='<table style="max-width:640px">';
+  for(const f of (t?t.fields:[])){
+    const v=d.fields[f.name];
+    const shown=(v&&typeof v==='object'&&'ref' in v)?v.ref:(v===undefined?'':v);
+    h+='<tr><td style="width:170px" title="'+esc(f.doc||'')+'">'+esc(f.name)
+      +(f.required?' <span class="warn">*</span>':'')+'</td><td>';
+    if(f.kind===3){                                    // ref: picker + hyperlink
+      h+='<input list="ddrefs_'+esc(f.ref)+'" value="'+esc(String(shown))+'" data-id="'+esc(id)
+        +'" data-f="'+esc(f.name)+'" data-k="3" onchange="ddEdit(this)" style="width:200px">';
+      if(shown) h+=' <a href="#" onclick="ddForm(\''+esc(String(shown))+'\');return false">&#8599;</a>';
+      h+='<datalist id="ddrefs_'+esc(f.ref)+'"></datalist>';
+      ddFillRefs(f.ref);
+    } else if(f.kind===0){                             // int: number input with range
+      h+='<input type="number" value="'+esc(String(shown))+'"'
+        +(f.min!==undefined?' min="'+f.min+'"':'')+(f.max!==undefined?' max="'+f.max+'"':'')
+        +' data-id="'+esc(id)+'" data-f="'+esc(f.name)+'" data-k="0" onchange="ddEdit(this)" style="width:110px">'
+        +(f.min!==undefined||f.max!==undefined?' <span class="muted">'+(f.min??'')+'..'+(f.max??'')+'</span>':'');
+    } else {                                           // str / float
+      h+='<input value="'+esc(String(shown))+'" data-id="'+esc(id)+'" data-f="'+esc(f.name)
+        +'" data-k="'+f.kind+'" onchange="ddEdit(this)" style="width:320px">';
+    }
+    if(f.doc) h+='<div class="muted" style="font-size:11px">'+esc(f.doc)+'</div>';
+    h+='</td></tr>';
+  }
+  h+='</table>';
+  h+='<details style="margin-top:10px"><summary class="muted">canonical text (what git sees)</summary>'
+    +'<pre style="background:#0f1115;border:1px solid #2a2e37;border-radius:6px;padding:8px">'
+    +esc(d.text)+'</pre></details>';
+  $('#ddform').innerHTML=h;
+  $('#ddform').style.display='';
+  $('#ddgrid').style.display='none';
+  // inspector: used-by from the ref index (CK Use Info)
+  let ins='<h4>used by ('+d.used_by.length+')</h4>';
+  for(const u of d.used_by)
+    ins+='<div><a href="#" onclick="ddForm(\''+esc(u.src)+'\');return false">'+esc(u.src)+'</a>'
+       +' <span class="muted">.'+esc(u.field)+'</span></div>';
+  if(!d.used_by.length) ins+='<div class="muted">no inbound refs</div>';
+  ins+='<h4 style="margin-top:10px">actions</h4>'
+     +'<div><button class="act" onclick="ddDup(\''+esc(id)+'\')">duplicate-as-new</button></div>'
+     +'<div><button class="act" onclick="ddDel(\''+esc(id)+'\')">delete (ref-checked)</button></div>';
+  $('#ddinspect').innerHTML=ins;
+  $('#ddinspect').style.display='';
+}
+async function ddFillRefs(type){
+  const dl=document.getElementById('ddrefs_'+type);
+  if(!dl||dl.childElementCount) return;
+  try{ const rs=await (await fetch('/api/dd/records?type='+encodeURIComponent(type))).json();
+    dl.innerHTML=rs.map(r=>'<option value="'+esc(r.id)+'">').join(''); }catch(e){}
+}
 document.querySelector('nav button[data-tab=drydock]').addEventListener('click',()=>{ if(!window._ddinit){ window._ddinit=true; ddInit(); } });
 document.addEventListener('input',e=>{ if(e.target&&e.target.id==='ddfilter'&&DD_ROWS) ddGrid(); });
 )HTML"
