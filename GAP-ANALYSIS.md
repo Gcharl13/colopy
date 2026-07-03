@@ -130,11 +130,18 @@ generic replacement covers the workflow (strangler rule), logged in MIGRATION-LO
   **DLOG** — the 8 screen layouts are records and the Screens-tab designer's save is
   ordinary `store_set` calls (validated, journaled, undoable); **SCEN** — new games seed
   from the scenario record. Store: **16 types / 1,191 records**.
-- **Remaining (out of the approved P0–P2 scope):** EVNT decomposition of the node graphs
-  (Q5 — the last behavior-as-programs subsystem), overlay subsumption (P5: Rules tab over
-  CONF records, mod.cpp retires), structured-field form widgets (lists/dicts are
-  read-only in the form; editable via API/text), JSON extraction files stay as the
-  provenance layer (GAP-ANALYSIS §4 disposition) with runtime reads already store-first.
+- **AUTHORITY FLIP + P5 landed (MIGRATION-LOG 20–21):** per ruling Q7, `data/base` is the
+  authoring truth — the migration-era provenance ctest retired, the parity test became
+  loader-faithfulness (records → RuleData), and spec fidelity stays permanently pinned by
+  `verify_rules.py` on the compiled defaults. The rules overlay is SUBSUMED: CONF applies
+  live, `/api/rules/save` and boot both import overlays as journaled record edits, reset
+  re-inits from data/ — the store is the single live rules authority (`move_class`/
+  `capbits` are the two overlay-only stragglers, not record-represented yet). Structured
+  list fields (`list<int/str/dict>`) are form-editable as JSON.
+- **Remaining:** EVNT decomposition of the node graphs (Q5 — the last
+  behavior-as-programs subsystem, deliberately parked), flags-field widgets (no migrated
+  type uses flags), JSON extraction files stay as the provenance layer (§4 disposition)
+  with every runtime read already store-first.
 
 ## 4. No spec counterpart — keep / migrate / retire
 
