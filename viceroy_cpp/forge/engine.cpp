@@ -816,6 +816,24 @@ bool set_binding(const std::string& path, double value, EngineCtx& cx) {
 // when the Tables tab saves an edit, so a freshly added row resolves immediately).
 void invalidate_tables() { table_store().docs.clear(); table_store().loaded = false; }
 
+// Drydock write-through: see engine.hpp. Values are written as strings -- the
+// extraction rows are CSV strings and every reader parses through as_num.
+bool table_patch_cell(const std::string& section, int row, const std::string& column,
+                      const std::string& value) {
+    find_table_section(section);                       // force-load the docs
+    for (auto& kv : table_store().docs) {
+        auto so = kv.second.obj.find(section);
+        if (so == kv.second.obj.end()) continue;
+        auto ro = so->second.obj.find("rows");
+        if (ro == so->second.obj.end() || ro->second.type != JsonValue::Array) return false;
+        if (row < 0 || row >= (int)ro->second.arr.size()) return false;
+        JsonValue v; v.type = JsonValue::String; v.str = value;
+        ro->second.arr[row].obj[column] = std::move(v);
+        return true;
+    }
+    return false;
+}
+
 // ---- unit-type resolution (@UNIT is the catalog; row index == type id) ----
 // Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its type id by scanning the
 // @UNIT reference table, so no name->type list is hardcoded in C++. -1 if unknown.

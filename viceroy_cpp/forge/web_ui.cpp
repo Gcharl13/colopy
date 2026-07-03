@@ -135,6 +135,11 @@ const char* forge_index_html() {
       <b>Save as active mod</b> makes them bite the Play game + events. Overridden cells are
       highlighted; the raw overlay is mirrored in the box (paste a sparse <code>rules.json</code>
       there too).</p>
+    <p class="muted"><b>Authority note (Drydock migration):</b> the <code>cfg</code> scalars are
+      also Drydock <b>conf</b> records &mdash; those seed the defaults at serve start; this tab's
+      overlay applies ON TOP and stays the live-tweak authority until overlays are subsumed (P5).
+      Unit/goods/profession/terrain/building tables are store-authoritative: edit them in the
+      Drydock tab, not here.</p>
     <div id="rgrid"></div>
     <details style="margin:8px 0"><summary class="muted">raw overlay JSON</summary>
       <textarea id="overlay" placeholder='{ "cfg": { "warehouse_cap_base": 150 }, "units": { "Soldiers": { "attack": 3 } } }'></textarea></details>
@@ -1074,19 +1079,32 @@ function tCols(g){ if(g.cols&&g.cols.length) return g.cols;
   const set=[]; for(const r of g.rows) if(r&&typeof r==='object') for(const k of Object.keys(r)) if(!set.includes(k)) set.push(k); return set; }
 function tShowGrid(i){ TBL.cur=i;
   $('#tlist').querySelectorAll('.gpitem').forEach(el=>el.classList.toggle('sel', +el.dataset.i===i)); tRender(); }
+// Strangler retirements (MIGRATION-LOG): these @SECTIONs live in the Drydock
+// record store now -- the store is authoritative (edits there write through to
+// the legacy readers), so their rows here are frozen read-only views.
+const TBL_MIGRATED={'@CARGO':'good','@UNIT':'unit','@JOB':'prof','@BUILDING':'bldg',
+                    '@UNFORESTED':'terr','@FORESTED':'terr','@OTHER':'terr'};
+function tGotoDrydock(){ document.querySelector('nav button[data-tab=drydock]').click(); }
 function tRender(){
   const g=TBL.grids[TBL.cur]; if(!g){ $('#tgrid').innerHTML=''; return; }
+  const mig=TBL.file==='names'?TBL_MIGRATED[g.name]:null;
   const cols=tCols(g); const f=($('#tfilter').value||'').toLowerCase();
-  let h='<h3>'+esc(g.name)+' <span class="muted" style="font-weight:400">'+g.rows.length+' rows &middot; click a cell to edit</span></h3>';
+  let h='<h3>'+esc(g.name)+' <span class="muted" style="font-weight:400">'+g.rows.length+' rows &middot; '
+    +(mig?'read-only':'click a cell to edit')+'</span></h3>';
+  if(mig) h+='<div style="background:#2a2410;border:1px solid #8a6d1a;border-radius:6px;padding:8px;margin-bottom:8px">'
+    +'RETIRED &mdash; migrated to the Drydock record store (type <b>'+mig+'</b>). '
+    +'The store is authoritative and its edits drive the game and the legacy readers; '
+    +'this grid is a frozen view of the extraction. '
+    +'<button class="act" onclick="tGotoDrydock()">open in Drydock</button></div>';
   if(g.meta&&g.meta.legend) h+='<div class="muted" style="margin-bottom:6px">'+esc([].concat(g.meta.legend).join(' ')).slice(0,160)+'</div>';
   h+='<table><tr><th>#</th>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr>';
   g.rows.forEach((r,ri)=>{
     if(!r||typeof r!=='object') return;
     if(f && !cols.some(c=>String(r[c]==null?'':r[c]).toLowerCase().includes(f))) return;
     h+='<tr><td class="muted">'+ri+'</td>'+cols.map(c=>{ const v=r[c];
-      return (v!=null && typeof v==='object')
-        ? '<td class="muted">'+esc(JSON.stringify(v)).slice(0,40)+'</td>'
-        : '<td><input class="tcell" data-ri="'+ri+'" data-c="'+esc(c)+'" value="'+esc(v==null?'':String(v))+'"></td>';
+      if(v!=null && typeof v==='object') return '<td class="muted">'+esc(JSON.stringify(v)).slice(0,40)+'</td>';
+      if(mig) return '<td class="muted">'+esc(v==null?'':String(v))+'</td>';
+      return '<td><input class="tcell" data-ri="'+ri+'" data-c="'+esc(c)+'" value="'+esc(v==null?'':String(v))+'"></td>';
     }).join('')+'</tr>';
   });
   $('#tgrid').innerHTML=h+'</table>';

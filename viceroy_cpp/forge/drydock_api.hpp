@@ -22,6 +22,11 @@ bool drydock_handles(const std::string& path);
 // their legacy JSON-binding paths (strangler cutover, GAP-ANALYSIS 5).
 bool drydock_active();
 
+// Re-patch the in-memory legacy JSON tables from the store (write-through for
+// the un-cut-over @SECTION[...] readers). No-op until the store is loaded.
+// Call after invalidate_tables() so a legacy reload cannot shadow the store.
+void drydock_repatch_tables();
+
 // Route a /api/dd/* request. After any successful mutation the migrated rule
 // values are re-applied onto *live_rules (the live game follows the store).
 HttpResponse drydock_route(const std::string& method, const std::string& path,

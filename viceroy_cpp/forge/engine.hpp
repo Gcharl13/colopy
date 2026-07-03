@@ -174,6 +174,14 @@ JsonValue resolve_binding(const std::string& path, const EngineCtx& cx);
 // edited cell is picked up by the next @SECTION[...] binding lookup without a restart).
 void invalidate_tables();
 
+// Drydock write-through (strangler seam, GAP-ANALYSIS §5): overwrite one
+// in-memory table cell so every legacy @SECTION[...] reader (terrain yields,
+// job/unit names, ...) follows the record store without each consumer being
+// rewritten. In-memory only -- the canonical .rec files are the persistent
+// truth for migrated types. Returns false if the section/row doesn't exist.
+bool table_patch_cell(const std::string& section, int row, const std::string& column,
+                      const std::string& value);
+
 // Resolve a unit name ("Cont. Army", "Man-O-War", ...) to its @UNIT type id (row
 // index). -1 if unknown. No name->type list is hardcoded in C++.
 int unit_type_by_name(const std::string& name);

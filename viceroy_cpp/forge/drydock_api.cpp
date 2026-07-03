@@ -1,6 +1,7 @@
 // forge/drydock_api -- see drydock_api.hpp.
 #include "drydock_api.hpp"
 #include "drydock_bridge.hpp"
+#include "engine.hpp"
 #include "json.hpp"
 #include "../drydock/core/store.hpp"
 #include <dirent.h>
@@ -106,8 +107,67 @@ static bool json_to_value(const JsonValue& j, const FieldDef& fd, Value& out, st
     }
 }
 
-// after any mutation: keep the live game's rules in lockstep with the store
+// ---- legacy-table write-through (strangler seam, GAP-ANALYSIS §5) ---------------
+// Legacy readers still resolve @SECTION[row].col from the JSON extraction tables
+// (terrain yields via terrain_good_yield, job/unit display names, ...). Until
+// each consumer is cut over to the store, every store mutation patches the
+// mapped in-memory JSON cells so ALL of them follow Drydock edits live -- which
+// is what lets the Tables-tab rows for these sections retire honestly. Field
+// names == column names (the drydock_migrate.py mapping is the identity);
+// store-only fields (prof.produces) have no JSON column and are skipped.
+static const char* GOOD_COLS[] = {"name","price_start1","price_start2","drift_low",
+    "drift_high","burden","rise","fall","attrition","volatility",nullptr};
+static const char* UNIT_COLS[] = {"name","icon","movement","attack","combat","cargo",
+    "size","cost","tools","guns","hull","ai_role_bits",nullptr};
+static const char* PROF_COLS[] = {"name","expert_name","school_tier","europe_value",nullptr};
+static const char* BLDG_COLS[] = {"name","cost","tools_x10","size","min_colony","upkeep",nullptr};
+static const char* TERR_JCOLS[] = {"name","movement","defensive","improvement","value",
+    "y_farmer","y_planter_sugar","y_planter_tobacco","y_planter_cotton","y_trapper",
+    "y_lumberjack","y_ore","y_silver","y_fisherman",nullptr};
+
+static void patch_record_tables(const Record& r) {
+    const std::string ty = r.type();
+    const Value* iv = r.find("index");
+    if (!iv || iv->kind != ValKind::Int) return;         // conf (no index) / adds beyond rows
+    const int idx = (int)iv->i;
+    const char* const* cols;
+    std::string section;
+    int row = idx;
+    if      (ty == "good") { cols = GOOD_COLS; section = "@CARGO"; }
+    else if (ty == "unit") { cols = UNIT_COLS; section = "@UNIT"; }
+    else if (ty == "prof") { cols = PROF_COLS; section = "@JOB"; }
+    else if (ty == "bldg") { cols = BLDG_COLS; section = "@BUILDING"; }
+    else if (ty == "terr") {
+        cols = TERR_JCOLS;
+        // the two forested bands fold onto the same 8 @FORESTED rows (legacy
+        // readers index (t-8)%8); on a full repatch band 2 writes last
+        if (idx < 8)       { section = "@UNFORESTED"; }
+        else if (idx < 24) { section = "@FORESTED"; row = (idx - 8) % 8; }
+        else               { section = "@OTHER"; row = idx - 24; }
+    }
+    else return;                                          // conf/phas: no JSON section
+    for (int i = 0; cols[i]; ++i) {
+        const Value* v = r.find(cols[i]);
+        std::string s;                                    // absent -> "" (empty extraction cell)
+        if (v) {
+            if (v->kind == ValKind::Int) s = std::to_string(v->i);
+            else if (v->kind == ValKind::Str || v->kind == ValKind::Token) s = v->s;
+            else continue;
+        }
+        table_patch_cell(section, row, cols[i], s);
+    }
+}
+
+void drydock_repatch_tables() {
+    if (!g_ready) return;
+    for (const auto& bucket : g_store.records)
+        for (const auto& r : bucket) patch_record_tables(r);
+}
+
+// after any mutation: keep the live game's rules AND the legacy JSON readers in
+// lockstep with the store
 static void sync_rules(vc::sim::RuleData* rd) {
+    drydock_repatch_tables();
     if (!rd) return;
     std::vector<Record> all;
     for (const auto& bucket : g_store.records)
@@ -138,6 +198,7 @@ bool drydock_store_init(const std::string& data_dir, std::string& msg) {
     if (!store_init(g_store, std::move(sc), std::move(recs), err)) { msg = err; return false; }
     g_data_dir = data_dir;
     g_ready = true;
+    drydock_repatch_tables();      // legacy JSON readers follow the store from boot
     size_t n = 0;
     for (const auto& b : g_store.records) n += b.size();
     msg = "drydock store: " + std::to_string(g_store.type_codes.size()) + " types, " +

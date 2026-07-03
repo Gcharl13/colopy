@@ -4954,6 +4954,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!f) return err(500, "cannot write " + user);
             f << forge::json_dump(doc);
             forge::invalidate_tables();   // a newly added row resolves at once in @SECTION[...] bindings
+            forge::drydock_repatch_tables();   // the store stays authoritative for migrated sections
             return J(200, jbool(true));
         }
 
@@ -4962,6 +4963,7 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!table_paths(file, canon, user)) return err(400, "unknown table file: " + file);
             std::error_code ec; std::filesystem::remove(user, ec);
             forge::invalidate_tables();
+            forge::drydock_repatch_tables();
             return J(200, jbool(true));
         }
 
