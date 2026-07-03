@@ -29,6 +29,27 @@ the game data, the graphics, and the tools to (re)generate them from original fi
 the contract — reproduce its *output*. The *route* (language, math width, RNG, engine) is
 free; see `REWRITE_READINESS.md` §1 for the preserve-vs-modernize line.
 
+## Building and running the game (native application)
+
+```bash
+# prerequisites: cmake, a C++17 compiler, zlib, libpng; SDL2 for the window
+sudo apt-get install libsdl2-dev        # Debian/Ubuntu (optional but recommended)
+
+cmake -S viceroy_cpp -B viceroy_cpp/build
+cmake --build viceroy_cpp/build -j8
+
+./viceroy_cpp/build/viceroy             # run from the repo root (finds data_extracted/)
+```
+
+Controls (N2 skeleton): click / `Tab` select unit · arrows move · `W A S D`
+scroll · `Enter`/`E` end turn · `Esc` quit. Without SDL2 the binary still
+builds and supports `--frames N --out BASE` (headless frame dump — the CI
+render gate). The web editor (`forge serve`) remains for rules/data tooling;
+the game itself is the `viceroy` executable.
+
+Verify a checkout: `ctest --test-dir viceroy_cpp/build` (includes the
+`native_render` + `viceroy_app_smoke` gates).
+
 ## Regenerating assets from your own game files
 The original copyrighted assets are **not** shipped verbatim. To rebuild them locally:
 

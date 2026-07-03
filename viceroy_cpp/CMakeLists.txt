@@ -44,6 +44,24 @@ target_include_directories(viceroy_sim PUBLIC sim)
 
 # --- CLI: import-all / import / import-font / render / mapview (needs libpng) ---
 if(PNG_FOUND)
+  # Runtime renderer library -- shared by the asset-pipeline CLI (viceroy_cpp)
+  # and the native application (viceroy). No original-codec code in here.
+  add_library(viceroy_render STATIC
+    src/bundle.cpp
+    src/native_assets.cpp
+    src/png_io.cpp
+    src/mp.cpp
+    src/pal.cpp
+    src/render.cpp
+    src/image_io.cpp
+    # presentation (P4): 320x200 indexed surface + screen compositors
+    src/surface.cpp
+    src/mapview.cpp
+    src/colony_screen.cpp
+  )
+  target_include_directories(viceroy_render PUBLIC include .)
+  target_link_libraries(viceroy_render PUBLIC PNG::PNG viceroy_sim)
+
   add_executable(viceroy_cpp
     src/main.cpp
     # importer (offline): original codec
@@ -52,22 +70,25 @@ if(PNG_FOUND)
     src/ss.cpp
     src/pik.cpp
     src/ff.cpp
-    # bundle + runtime
-    src/bundle.cpp
-    src/native_assets.cpp
-    src/png_io.cpp
-    src/mp.cpp
-    src/pal.cpp
-    src/render.cpp
-    src/image_io.cpp
-    # presentation (P4): map-view screen compositor
-    src/surface.cpp
-    src/mapview.cpp
-    src/colony_screen.cpp
   )
-  # `include` for the engine headers, `.` so mapview.cpp resolves "sim/*.hpp".
-  target_include_directories(viceroy_cpp PRIVATE include .)
-  target_link_libraries(viceroy_cpp PRIVATE PNG::PNG viceroy_sim)
+  target_link_libraries(viceroy_cpp PRIVATE viceroy_render)
+
+  # --- The native application (N2): SDL2 window over the compositors. ---
+  # SDL2 is optional (apt: libsdl2-dev); without it the app target is skipped
+  # and everything else still builds. The app's --frames headless mode does
+  # not need SDL and is what the ctest smoke runs.
+  find_package(SDL2 QUIET)
+  if(SDL2_FOUND)
+    add_executable(viceroy src/viceroy_app.cpp)
+    target_compile_definitions(viceroy PRIVATE VICEROY_HAVE_SDL=1)
+    target_link_libraries(viceroy PRIVATE viceroy_render SDL2::SDL2)
+    message(STATUS "SDL2 ${SDL2_VERSION} found -- building the `viceroy` application.")
+  else()
+    add_executable(viceroy src/viceroy_app.cpp)
+    target_link_libraries(viceroy PRIVATE viceroy_render)
+    message(STATUS "SDL2 not found -- `viceroy` builds HEADLESS-ONLY "
+                   "(--frames mode); install libsdl2-dev for the window.")
+  endif()
 else()
   message(STATUS "libpng not found -- skipping the asset importer/renderer "
                  "(`viceroy_cpp`); `forge` + `sim_tests` still build.")
@@ -167,6 +188,12 @@ add_test(NAME forge_bundle COMMAND forge bundle selftest
 if(PNG_FOUND)
   add_test(NAME native_render COMMAND viceroy_cpp nativemap
            --out ${CMAKE_BINARY_DIR}/native_render_test.png --scale 1
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+  # Application smoke (N2): boot `viceroy` headless (--frames needs no SDL),
+  # composing 2 frames with a unit step + sim end-turn between them -- proves
+  # the full asset->state->compose->present pipeline minus the window.
+  add_test(NAME viceroy_app_smoke COMMAND viceroy --frames 2 --scale 1
+           --out ${CMAKE_BINARY_DIR}/viceroy_smoke
            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 endif()
 
