@@ -462,9 +462,13 @@ int studio_run(Driver& drv, const std::string& project_dir) {
             ImGui::DockBuilderDockWindow("Records", left);
             ImGui::DockBuilderDockWindow("Inspector", right);
             ImGui::DockBuilderDockWindow("Game", center);       // center tabs:
-            ImGui::DockBuilderDockWindow("Screens", center);    // the editing
-            ImGui::DockBuilderDockWindow("Popups", center);     // surfaces live
-            ImGui::DockBuilderDockWindow("Sprites", center);    // with the game
+            ImGui::DockBuilderDockWindow("Map", center);        // every editing
+            ImGui::DockBuilderDockWindow("Events", center);     // surface lives
+            ImGui::DockBuilderDockWindow("Rules", center);      // with the game
+            ImGui::DockBuilderDockWindow("Tables", center);
+            ImGui::DockBuilderDockWindow("Screens", center);
+            ImGui::DockBuilderDockWindow("Popups", center);
+            ImGui::DockBuilderDockWindow("Sprites", center);
             ImGui::DockBuilderFinish(dsid);
         }
         records_panel();
@@ -472,6 +476,10 @@ int studio_run(Driver& drv, const std::string& project_dir) {
         sprites_panel(drv);
         popups_panel(drv);
         screens_panel(drv);
+        tables_panel(drv);
+        rules_panel(drv);
+        events_panel(drv);
+        map_panel(drv);
 #if FORGE_STUDIO_GAME
         game_panel(drv);
 #endif

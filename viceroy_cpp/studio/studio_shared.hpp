@@ -74,5 +74,9 @@ void invalidate_texture(const std::string& key);
 void sprites_panel(Driver& drv);
 void popups_panel(Driver& drv);
 void screens_panel(Driver& drv);
+void tables_panel(Driver& drv);
+void rules_panel(Driver& drv);
+void events_panel(Driver& drv);
+void map_panel(Driver& drv);
 
 } // namespace studio
