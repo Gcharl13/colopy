@@ -64,6 +64,10 @@ int main(int argc, char** argv) {
             if (s == "boot-scene")
                 for (int i = 0; i < 3; ++i) shell.key(forge::GK_ENTER, false);
         } else {
+            // the colony shots need a founded colony: use the test scenario
+            // (the standard opening starts at sea, colony-less)
+            if (s == "colony" || s.rfind("build", 0) == 0)
+                setenv("FORGE_SCENARIO", "test_world", 1);
             shell.new_game();
             if (s == "europe") shell.key('e', false);
             if (s.rfind("report", 0) == 0)
@@ -81,6 +85,11 @@ int main(int argc, char** argv) {
                 shell.key(forge::GK_DOWN, false);
                 shell.key(forge::GK_ENTER, false);
                 shell.key('b', false);
+            }
+            if (s == "landfall") {           // pioneer steps ashore + founds
+                shell.key(forge::GK_TAB, false);      // ship -> first pioneer
+                shell.key(forge::GK_LEFT, false);     // disembark westward
+                shell.key('b', false);                // found the colony
             }
             if (s == "sail") {               // caravel sails east, crosses,
                 int ship = -1;               // then the Europe docks show it

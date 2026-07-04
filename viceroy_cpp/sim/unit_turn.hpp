@@ -59,6 +59,11 @@ void apply_orders(GameState& g, World& w, const RandFn& rng,
 // Index of a living unit at (x,y) other than `except`, or -1.
 int unit_at(const World& w, int x, int y, int except = -1);
 
+// Move unit ui to (nx,ny). A ship departing a water tile carries its
+// passengers (own land units standing on its tile -- the classic-loadout
+// "aboard" model) along with the hull.
+void move_unit(World& w, const RuleData& rd, int ui, int nx, int ny);
+
 // First step of a least-cost route over PASSABLE terrain from (fx,fy) to (tx,ty)
 // for a land/naval unit (8-connected Dijkstra; edge cost = terrain_move; units are
 // ignored — combat/blocking is handled at execution). Returns {-1,-1} if the

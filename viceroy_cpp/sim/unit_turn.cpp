@@ -82,6 +82,27 @@ int unit_at(const World& w, int x, int y, int except) {
     return -1;
 }
 
+void move_unit(World& w, const RuleData& rd, int ui, int nx, int ny) {
+    Unit& u = w.units[ui];
+    const bool naval = unit_stats(rd, u.type).move_class == 99;
+    if (naval) {
+        // A ship carries its passengers: any own land unit standing on the
+        // ship's water tile is aboard (the classic-loadout model) and moves
+        // with the hull.
+        int tid = w.terrain_id(u.x, u.y);
+        if (tid == 25 || tid == 26)
+            for (Unit& p : w.units) {
+                if (!p.alive || p.sail != 0 || p.in_europe) continue;
+                if (p.owner != u.owner || p.x != u.x || p.y != u.y) continue;
+                if (unit_stats(rd, p.type).move_class == 99) continue;
+                p.x = nx;
+                p.y = ny;
+            }
+    }
+    u.x = nx;
+    u.y = ny;
+}
+
 void refresh_moves(World& w, const RuleData& rd) {
     // Movement is accounted in THIRDS (unit.md 3: the @UNIT loader stores
     // movement x3 @0x074F04; a step charges terrain-move x3 @0x051125..31;
@@ -305,7 +326,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
             if (occ >= 0) {
                 if (w.units[occ].owner != u.owner) {
                     bool cleared = do_combat(g, w, i, occ, rng, rd, ff_owned, promote_out, woi);
-                    if (cleared && u.alive) { u.x = nx; u.y = ny; }  // advance into vacated tile
+                    if (cleared && u.alive) move_unit(w, rd, i, nx, ny);  // advance into vacated tile
                 } // friendly occupant: blocked this turn (no stacking)
                 if (u.alive && !w.fog.empty())                       // reveal the new tile's square
                     reveal_around(w, u.x, u.y,
@@ -319,7 +340,7 @@ void apply_orders(GameState& g, World& w, const RandFn& rng, const RuleData& rd,
             int cost = 3;
             if (tid >= 0 && tid < NTERRAIN) { cost = rd.terrain_move[tid] * 3; if (cost < 3) cost = 3; }
             if (w.improve_at(nx, ny) & 0x08) cost = 1;
-            u.x = nx; u.y = ny;
+            move_unit(w, rd, i, nx, ny);
             if (!w.fog.empty())                                     // reveal per step (func_006468)
                 reveal_around(w, u.x, u.y,
                               sight_radius(u.type, u.owner == 0 && ((ff_owned >> 7) & 1u)), u.owner);

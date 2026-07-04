@@ -178,9 +178,11 @@ static void seed_native_settlements() {
 }
 
 // Start a new game, seeded from the chosen nation + difficulty and the authored
-// scenario (data_extracted/engine/scenarios/new_world.json). The scenario supplies
-// the map, calendar, starting gold, colonies and units; nation/difficulty come from
-// the new-game screen. Falls back to the classic 2-colony opening if the file is absent.
+// scenario (scen.new_world record / scenarios/new_world.json). The scenario
+// supplies the map, calendar and starting gold; nation/difficulty come from the
+// new-game screen. When the scenario authors no units (the standard opening)
+// each European power starts with its expedition at anchor east of the
+// continent (@SCENARIO start positions) -- no colony is pre-founded.
 void game_new(int nation, int difficulty, bool random_map,
                      int p_land, int p_cont, int p_temp, int p_clim) {
     g_game = GameState{}; g_world = World{}; g_colony_xy.clear();
@@ -190,9 +192,13 @@ void game_new(int nation, int difficulty, bool random_map,
     std::random_device rdv;
     g_engine_extra = forge::EngineExtra{}; g_rng = (int)(rdv() ^ 0x2BAD1234u);
 
+    // FORGE_SCENARIO selects an alternate scenario record (the test harnesses
+    // use scen.test_world, which still authors pre-founded colonies).
+    const char* sce = std::getenv("FORGE_SCENARIO");
+    const std::string sid = sce && *sce ? sce : "new_world";
     forge::JsonValue sc;
-    if (!forge::drydock_scenario_json("new_world", sc))   // store-authoritative when loaded
-        try { sc = forge::json_parse_file("data_extracted/engine/scenarios/new_world.json"); } catch (...) {}
+    if (!forge::drydock_scenario_json(sid, sc))           // store-authoritative when loaded
+        try { sc = forge::json_parse_file("data_extracted/engine/scenarios/" + sid + ".json"); } catch (...) {}
     auto scn = [&](const char* k) -> const forge::JsonValue* {
         return sc.type == forge::JsonValue::Object ? sc.find(k) : nullptr; };
 
@@ -267,14 +273,6 @@ void game_new(int nation, int difficulty, bool random_map,
     if (!random_map)
     if (const forge::JsonValue* cols = scn("colonies"))
         for (const forge::JsonValue& c : cols->arr) add_colony_json(c);
-    if (g_world.colonies.empty() && !random_map) {      // fallback: two colonies with a Farmer each
-                                                        // (a random map starts at sea, colony-less)
-        const char* fb = R"([{"x":20,"y":22,"buildings":[13,27],"workers":[
-            {"profession":0,"good":0,"tile":0},{"profession":13,"good":16,"tile":-1}]},
-            {"x":34,"y":42,"buildings":[13],"workers":[{"profession":0,"good":0,"tile":0}]}])";
-        forge::JsonValue fbj = forge::json_parse(fb);
-        for (const forge::JsonValue& c : fbj.arr) add_colony_json(c);
-    }
 
     auto add_unit = [&](int type, int x, int y, int order = 0, int txx = -1, int tyy = -1,
                         int owner = 0) {
@@ -282,18 +280,18 @@ void game_new(int nation, int difficulty, bool random_map,
         u.order = order; u.target_x = txx; u.target_y = tyy; u.alive = true;
         g_world.units.push_back(u);
     };
-    const int dx8[8] = {1,-1,0,0,1,1,-1,-1}, dy8[8] = {0,0,1,-1,1,-1,1,-1};
-    if (random_map && have_gen_starts) {
-        // The classic opening loadout (func_0755CC @0x07584B..0x0758F5, all
-        // BYTE-VERIFIED): per power a Caravel (Dutch power 3: Merchantman) at
-        // the P6 anchorage with Pioneers (French power 1: class 0x14 Pioneer)
-        // and Soldiers (Spanish power 2: class 0x15) aboard -- modeled as the
-        // colonists standing on the anchorage; at difficulty <= 1 the human
-        // runs the placement TWICE (the easy-mode double-units handicap).
+    // The classic opening loadout (func_0755CC @0x07584B..0x0758F5, all
+    // BYTE-VERIFIED): per power a Caravel (Dutch power 3: Merchantman) at the
+    // anchorage EAST of the continent with Pioneers (French power 1: class
+    // 0x14 Pioneer) and Soldiers (Spanish power 2: class 0x15) aboard --
+    // modeled as the colonists standing on the anchorage; at difficulty <= 1
+    // the human runs the placement TWICE (the easy-mode double-units handicap).
+    auto classic_loadout = [&](const std::pair<int,int> anchor[4]) {
         for (int pw = 0; pw < 4; ++pw) {
+            if (anchor[pw].first < 0 || anchor[pw].second < 0) continue;
             const int passes = (pw == 0 && g_game.difficulty <= 1) ? 2 : 1;
             for (int pass = 0; pass < passes; ++pass) {
-                const int sx = gen_starts[pw].x, sy = gen_starts[pw].y;
+                const int sx = anchor[pw].first, sy = anchor[pw].second;
                 add_unit(pw == 3 ? MERCHANTMAN : CARAVEL, sx, sy, 0, -1, -1, pw);
                 add_unit(PIONEERS, sx, sy, 0, -1, -1, pw);
                 g_world.units.back().profession = pw == 1 ? 0x14 : 0x13;
@@ -301,6 +299,49 @@ void game_new(int nation, int difficulty, bool random_map,
                 g_world.units.back().profession = pw == 2 ? 0x15 : 0x13;
             }
         }
+    };
+    // Fixed-map anchorages: the @SCENARIO row for the loaded map (NAMES.TXT
+    // verbatim x0..y3 -- all Ocean tiles east of the continent on AMER2).
+    // Entries the data leaves empty (AMER2 x3/y3) fall back to the generator's
+    // P6 band rule (map_generation.md 3): y = (H/5)*(p+1), x = the westmost
+    // water tile walking in from the east sea lane (RECONSTRUCTED application
+    // of the byte-cited random-map rule to fixed maps).
+    auto scenario_anchors = [&](std::pair<int,int> anchor[4]) {
+        for (int pw = 0; pw < 4; ++pw) anchor[pw] = {-1, -1};
+        std::string mf = scn("map") ? scn("map")->str : "AMER2.MP";
+        size_t dot = mf.rfind('.');
+        if (dot != std::string::npos) mf.resize(dot);
+        forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                            g_active_rules, game_rng};
+        for (int row = 0; row < 8; ++row) {
+            std::string rs = std::to_string(row);
+            if (forge::resolve_binding("@SCENARIO[" + rs + "].map_file", cx).str != mf)
+                continue;
+            for (int pw = 0; pw < 4; ++pw) {
+                std::string sx = forge::resolve_binding(
+                    "@SCENARIO[" + rs + "].x" + std::to_string(pw), cx).str;
+                std::string sy = forge::resolve_binding(
+                    "@SCENARIO[" + rs + "].y" + std::to_string(pw), cx).str;
+                if (!sx.empty() && !sy.empty())
+                    anchor[pw] = {std::atoi(sx.c_str()), std::atoi(sy.c_str())};
+            }
+            break;
+        }
+        for (int pw = 0; pw < 4; ++pw) {
+            if (anchor[pw].first >= 0 || g_world.map_h <= 0) continue;
+            int y = (g_world.map_h / 5) * (pw + 1);
+            if (y >= g_world.map_h) y = g_world.map_h - 1;
+            int x = g_world.map_w - 1;
+            while (x > 0 && game_is_water(g_world.terrain_id(x - 1, y))) --x;
+            anchor[pw] = {x, y};
+        }
+    };
+    const int dx8[8] = {1,-1,0,0,1,1,-1,-1}, dy8[8] = {0,0,1,-1,1,-1,1,-1};
+    if (random_map && have_gen_starts) {
+        std::pair<int,int> anchor[4];
+        for (int pw = 0; pw < 4; ++pw)
+            anchor[pw] = {gen_starts[pw].x, gen_starts[pw].y};
+        classic_loadout(anchor);
     } else
     if (const forge::JsonValue* us = scn("units"))
         for (const forge::JsonValue& u : us->arr) {
@@ -330,9 +371,14 @@ void game_new(int nation, int difficulty, bool random_map,
                 } else add_unit(type, x, y);
             }
         }
-    if (g_world.units.empty()) {                        // fallback opening force
-        auto a = cxy.empty() ? std::make_pair(20, 22) : cxy[0];
-        add_unit(SOLDIERS, a.first, a.second); add_unit(PIONEERS, a.first + 1, a.second);
+    if (g_world.units.empty()) {
+        // The authentic opening: no colony is founded -- each European power
+        // begins with its expedition at anchor east of the continent, at the
+        // @SCENARIO-identified start positions. Sail west, make landfall,
+        // and found the first colony yourself.
+        std::pair<int,int> anchor[4];
+        scenario_anchors(anchor);
+        classic_loadout(anchor);
     }
     seed_native_settlements();                          // real native villages on the map
     // Lost-City rumor presence is PROCEDURAL (events.md 6.1, func_006188): the map
