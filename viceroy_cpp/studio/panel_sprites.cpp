@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "drydock_api.hpp"
 #include "../drydock/core/store.hpp"
+#include <cmath>
 #include <cstring>
 #include <vector>
 
@@ -113,11 +114,17 @@ void sprites_panel(Driver& drv) {
         });
         if (tex) {
             float s = cell / (float)(tex->w > tex->h ? tex->w : tex->h);
-            if (s > 3.0f) s = 3.0f;
+            if (s > 3.0f) s = std::floor(s) > 3.0f ? 3.0f : std::floor(s);
             ImVec2 sz(tex->w * s, tex->h * s);
             ImVec2 at(pos.x + (cell - sz.x) / 2, pos.y + (cell - sz.y) / 2);
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)tex->id,
-                                                 at, ImVec2(at.x + sz.x, at.y + sz.y));
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            ImGuiPlatformIO& pio = ImGui::GetPlatformIO();
+            if (pio.DrawCallback_SetSamplerNearest)
+                dl->AddCallback(pio.DrawCallback_SetSamplerNearest, nullptr);
+            dl->AddImage((ImTextureID)(intptr_t)tex->id,
+                         at, ImVec2(at.x + sz.x, at.y + sz.y));
+            if (pio.DrawCallback_SetSamplerLinear)
+                dl->AddCallback(pio.DrawCallback_SetSamplerLinear, nullptr);
         } else {
             ImGui::GetWindowDrawList()->AddText(pos, IM_COL32(160, 90, 90, 255), "?");
         }
@@ -139,12 +146,10 @@ void sprites_panel(Driver& drv) {
             return sprite_image(*sel, img);
         });
         if (tex) {
-            float z = g_sp.zoom;
+            float z = std::floor(g_sp.zoom);
             float availw = ImGui::GetContentRegionAvail().x - 8;
-            if (tex->w * z > availw) z = availw / tex->w;
-            if (z < 1) z = 1;
-            ImGui::Image((ImTextureID)(intptr_t)tex->id,
-                         ImVec2(tex->w * z, tex->h * z));
+            while (z > 1 && tex->w * z > availw) --z;
+            pixel_image(*tex, ImVec2(tex->w * z, tex->h * z));
             ImGui::TextDisabled("%dx%d px", tex->w, tex->h);
         } else {
             ImGui::TextDisabled("(no image -- sheet/frame unresolved)");

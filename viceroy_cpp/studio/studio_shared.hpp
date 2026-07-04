@@ -8,6 +8,7 @@
 #include "studio.hpp"
 #include "native_assets.hpp"   // NativeAssets, IndexedPng, Sheet/Frame
 #include "surface.hpp"
+#include "imgui.h"
 #include <functional>
 #include <map>
 #include <string>
@@ -62,6 +63,17 @@ const vc::Frame* sheet_window(const std::string& sheet);
 // native_w/h receive the unscaled sprite size. False if unresolvable.
 bool sprite_image(const drydock::Record& r, vc::Image& out,
                   int* native_w = nullptr, int* native_h = nullptr);
+
+// --------------------------------------------------------- crisp rendering
+// Draw a game texture with NEAREST sampling (pixel-art crisp on every
+// backend; the editor UI keeps its linear sampler). ALWAYS use this for the
+// 320x200 stages and sprite images -- plain ImGui::Image goes through the
+// backend's default bilinear sampler and blurs every upscale.
+void pixel_image(const Texture& t, const ImVec2& size);
+
+// The INTEGER stage scale for a native 320x200 view fit to `avail_w` px
+// (1..4): fractional scales make pixel columns uneven even under nearest.
+float stage_scale(float avail_w);
 
 // ------------------------------------------------------------ texture cache
 // Static images: created + filled once per key. Live views should own their

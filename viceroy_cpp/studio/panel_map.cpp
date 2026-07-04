@@ -201,8 +201,7 @@ void map_panel(Driver& drv) {
     ImGui::BeginChild("stage", ImVec2(0, 0), ImGuiChildFlags_Borders,
                       ImGuiWindowFlags_HorizontalScrollbar);
     ImVec2 origin = ImGui::GetCursorScreenPos();
-    ImGui::Image((ImTextureID)(intptr_t)g_mp.tex.id,
-                 ImVec2((float)g_mp.img.w, (float)g_mp.img.h));
+    pixel_image(g_mp.tex, ImVec2((float)g_mp.img.w, (float)g_mp.img.h));
     if (ImGui::IsItemHovered()) {
         ImVec2 mp = ImGui::GetMousePos();
         int tx = (int)((mp.x - origin.x) / 16), ty = (int)((mp.y - origin.y) / 16);

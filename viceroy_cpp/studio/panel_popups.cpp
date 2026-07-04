@@ -208,12 +208,9 @@ void popups_panel(Driver& drv) {
     drv.update_texture(g_pp.stage, img.rgb.data());
 
     float availw = ImGui::GetContentRegionAvail().x;
-    float scale = availw / vc::Surface::W;
-    if (scale > 2.5f) scale = 2.5f;
-    if (scale < 1.0f) scale = 1.0f;
+    float scale = stage_scale(availw);
     ImVec2 origin = ImGui::GetCursorScreenPos();
-    ImGui::Image((ImTextureID)(intptr_t)g_pp.stage.id,
-                 ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+    pixel_image(g_pp.stage, ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
     // choice hover/click on the stage
     g_pp.hover = -1;
     if (ImGui::IsItemHovered()) {

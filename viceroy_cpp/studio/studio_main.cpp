@@ -439,11 +439,10 @@ void game_panel(Driver& drv) {
                 vc::Image img = scr.to_rgb(1);
                 drv.update_texture(g_gv.tex, img.rgb.data());
                 float availw = ImGui::GetContentRegionAvail().x;
-                float scale = availw / vc::Surface::W;
-                if (scale > 3.0f) scale = 3.0f;
-                if (scale < 1.0f) scale = 1.0f;
-                ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
-                             ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+                float scale = studio::stage_scale(availw);
+                studio::pixel_image(g_gv.tex,
+                                    ImVec2(vc::Surface::W * scale,
+                                           vc::Surface::H * scale));
                 ImGui::TextDisabled("advisor report F%d -- F1..F10 switch, Esc closes",
                                     g_gv.report_view);
             }
@@ -478,12 +477,11 @@ void game_panel(Driver& drv) {
                 vc::Image img = scr.to_rgb(1);
                 drv.update_texture(g_gv.tex, img.rgb.data());
                 float availw = ImGui::GetContentRegionAvail().x;
-                float scale = availw / vc::Surface::W;
-                if (scale > 3.0f) scale = 3.0f;
-                if (scale < 1.0f) scale = 1.0f;
+                float scale = studio::stage_scale(availw);
                 ImVec2 origin = ImGui::GetCursorScreenPos();
-                ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
-                             ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+                studio::pixel_image(g_gv.tex,
+                                    ImVec2(vc::Surface::W * scale,
+                                           vc::Surface::H * scale));
                 // worked-tiles grid hit test (colony_screen.cpp: CELL=24 at
                 // 224,32; ring order = the assign route's RDX/RDY table).
                 // Left-click: quick Farmer assign / take off. Right-click:
@@ -657,9 +655,7 @@ void game_panel(Driver& drv) {
             vc::Image img = scr.to_rgb(1);
             drv.update_texture(g_gv.tex, img.rgb.data());
             float availw = ImGui::GetContentRegionAvail().x;
-            float scale = availw / vc::Surface::W;
-            if (scale > 3.0f) scale = 3.0f;
-            if (scale < 1.0f) scale = 1.0f;
+            float scale = studio::stage_scale(availw);
             ImVec2 origin = ImGui::GetCursorScreenPos();
             ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
                          ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
@@ -804,12 +800,10 @@ void game_panel(Driver& drv) {
         drv.update_texture(g_gv.tex, img.rgb.data());
         // fit: scale to the available width unless Z/X pinned a zoom level
         float availw = ImGui::GetContentRegionAvail().x;
-        float scale = g_gv.zoom > 0 ? g_gv.zoom : availw / vc::Surface::W;
-        if (scale > 3.0f) scale = 3.0f;
-        if (scale < 1.0f) scale = 1.0f;
+        float scale = g_gv.zoom > 0 ? g_gv.zoom : studio::stage_scale(availw);
         ImVec2 sz(vc::Surface::W * scale, vc::Surface::H * scale);
         ImVec2 origin = ImGui::GetCursorScreenPos();
-        ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id, sz);
+        studio::pixel_image(g_gv.tex, sz);
         // clicks: confirm choices > goto target > open colony > select unit
         if (ImGui::IsItemHovered()) {
             ImVec2 mp = ImGui::GetMousePos();

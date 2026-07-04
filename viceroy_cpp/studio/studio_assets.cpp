@@ -2,6 +2,7 @@
 #include "studio_shared.hpp"
 #include "pik.hpp"       // load_pik: the game's own backgrounds when present
 #include "../drydock/core/store.hpp"
+#include <cmath>
 #include <cstring>
 
 namespace studio {
@@ -84,15 +85,39 @@ const vc::Frame* sheet_window(const std::string& sheet) {
     }
     const vc::IndexedPng* img = atlas_file("sprites/atlas_" + sheet + ".png");
     // The committed contact sheets are 2x with a label band; the first cell's
-    // face window is PNG rect (1,39) 56x42 (the web wfPortrait geometry),
-    // downsampled to native 28x21 by point-sampling every other pixel.
+    // content window is PNG rect (1,39) 56x42 (the web wfPortrait geometry),
+    // downsampled to native 28x21 by point-sampling every other pixel. The
+    // cell pads the real frame with OPAQUE BLACK, so tighten to the non-black
+    // bounding box -- otherwise tiles (PARCH) carry black gutters.
     if (img && img->w >= 57 && img->h >= 81) {
-        f.w = 28; f.h = 21; f.x = f.y = 0;
-        f.px.resize((size_t)f.w * f.h);
-        for (int y = 0; y < f.h; ++y)
-            for (int x = 0; x < f.w; ++x)
-                f.px[(size_t)y * f.w + x] =
+        uint8_t win[28 * 21];
+        for (int y = 0; y < 21; ++y)
+            for (int x = 0; x < 28; ++x)
+                win[y * 28 + x] =
                     img->idx[(size_t)(39 + y * 2) * img->w + (1 + x * 2)];
+        auto is_pad = [&](uint8_t i) {
+            if (i == vc::SS_TRANSPARENT) return true;
+            const uint8_t* p = &a.nat.pal[i * 3];
+            return p[0] == 0 && p[1] == 0 && p[2] == 0;
+        };
+        int x0 = 28, y0 = 21, x1 = -1, y1 = -1;
+        for (int y = 0; y < 21; ++y)
+            for (int x = 0; x < 28; ++x)
+                if (!is_pad(win[y * 28 + x])) {
+                    if (x < x0) x0 = x;
+                    if (y < y0) y0 = y;
+                    if (x > x1) x1 = x;
+                    if (y > y1) y1 = y;
+                }
+        if (x1 >= x0 && y1 >= y0) {
+            f.w = x1 - x0 + 1;
+            f.h = y1 - y0 + 1;
+            f.x = f.y = 0;
+            f.px.resize((size_t)f.w * f.h);
+            for (int y = 0; y < f.h; ++y)
+                for (int x = 0; x < f.w; ++x)
+                    f.px[(size_t)y * f.w + x] = win[(y0 + y) * 28 + (x0 + x)];
+        }
     }
     auto& slot = a.windows[sheet] = std::move(f);
     return slot.w > 0 ? &slot : nullptr;
@@ -178,6 +203,24 @@ bool sprite_image(const drydock::Record& r, vc::Image& out,
         }
     }
     return false;
+}
+
+// --------------------------------------------------------- crisp rendering
+void pixel_image(const Texture& t, const ImVec2& size) {
+    ImGuiPlatformIO& pio = ImGui::GetPlatformIO();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    // DX11 backend: swap to the point sampler for this image, restore after.
+    // SDL backend: per-texture nearest is already set at creation.
+    if (pio.DrawCallback_SetSamplerNearest)
+        dl->AddCallback(pio.DrawCallback_SetSamplerNearest, nullptr);
+    ImGui::Image((ImTextureID)(intptr_t)t.id, size);
+    if (pio.DrawCallback_SetSamplerLinear)
+        dl->AddCallback(pio.DrawCallback_SetSamplerLinear, nullptr);
+}
+
+float stage_scale(float avail_w) {
+    float s = std::floor(avail_w / (float)vc::Surface::W);
+    return s < 1.0f ? 1.0f : s > 4.0f ? 4.0f : s;
 }
 
 // ------------------------------------------------------------ texture cache

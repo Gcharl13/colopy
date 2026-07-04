@@ -302,7 +302,7 @@ NativeAssets load_native_assets(const std::string& root) {
         Sheet s;
         for (int i = 0; i < 768; ++i) s.pal[i] = a.pal[i];
         s.nframes = 1;
-        s.frames.push_back(cut(wp, 0, 0, 32, 24));
+        s.frames.push_back(cut(wp, 32, 40, 96, 72));
         a.woodtile = std::move(s);
     }
 
@@ -355,7 +355,7 @@ NativeAssets load_native_assets(const std::string& root) {
             Sheet s;
             for (int i = 0; i < 768; ++i) s.pal[i] = a.pal[i];
             s.nframes = 1;
-            s.frames.push_back(cut(img, 0, 0, 32, 24));
+            s.frames.push_back(cut(img, 32, 40, 96, 72));
             a.woodtile = std::move(s);
             ++a.raw_overrides;
             break;

@@ -521,12 +521,9 @@ void screens_panel(Driver& drv) {
     drv.update_texture(g_sc.stage, img.rgb.data());
 
     float availw = ImGui::GetContentRegionAvail().x;
-    float scale = availw / vc::Surface::W;
-    if (scale > 2.5f) scale = 2.5f;
-    if (scale < 1.0f) scale = 1.0f;
+    float scale = stage_scale(availw);
     ImVec2 origin = ImGui::GetCursorScreenPos();
-    ImGui::Image((ImTextureID)(intptr_t)g_sc.stage.id,
-                 ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+    pixel_image(g_sc.stage, ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
 
     // play mode: buttons fire their onClick; popup choices click through
     if (g_sc.play) {
@@ -872,8 +869,7 @@ void screens_panel(Driver& drv) {
                         return true;
                     });
                     if (tex)
-                        ImGui::Image((ImTextureID)(intptr_t)tex->id,
-                                     ImVec2(tex->w * 2.0f, tex->h * 2.0f));
+                        pixel_image(*tex, ImVec2(tex->w * 2.0f, tex->h * 2.0f));
                 }
             }
         } else {
