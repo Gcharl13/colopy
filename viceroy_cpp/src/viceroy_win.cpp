@@ -8,6 +8,7 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>        // GET_X_LPARAM / GET_Y_LPARAM
 #include "game_shell.hpp"
 #include "surface.hpp"
 #include <direct.h>          // _chdir

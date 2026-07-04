@@ -95,14 +95,6 @@ if(PNG_FOUND)
     message(STATUS "SDL2 not found -- `viceroy` builds HEADLESS-ONLY "
                    "(--frames mode); install libsdl2-dev for the window.")
   endif()
-  # --- The standalone Windows game player: pure Win32 + GDI (no SDL, no
-  #     ImGui, no D3D) over the same platform-free GameShell. ---
-  if(WIN32)
-    add_executable(viceroy_win src/viceroy_win.cpp)
-    target_link_libraries(viceroy_win PRIVATE game_shell user32 gdi32)
-    set_target_properties(viceroy_win PROPERTIES OUTPUT_NAME "Viceroy"
-                          WIN32_EXECUTABLE TRUE)
-  endif()
 else()
   message(STATUS "libpng not found -- skipping the asset importer/renderer "
                  "(`viceroy_cpp`); `forge` + `sim_tests` still build.")
@@ -145,6 +137,14 @@ if(PNG_FOUND OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb/stb_image.h)
     forge/game_shell.cpp
   )
   target_link_libraries(game_shell PUBLIC viceroy_render forge_core)
+  # --- The standalone Windows game player: pure Win32 + GDI (no SDL, no
+  #     ImGui, no D3D, no libpng -- stb decodes the art) over GameShell. ---
+  if(WIN32)
+    add_executable(viceroy_win src/viceroy_win.cpp)
+    target_link_libraries(viceroy_win PRIVATE game_shell user32 gdi32)
+    set_target_properties(viceroy_win PROPERTIES OUTPUT_NAME "Viceroy"
+                          WIN32_EXECUTABLE TRUE)
+  endif()
 endif()
 
 add_executable(forge
