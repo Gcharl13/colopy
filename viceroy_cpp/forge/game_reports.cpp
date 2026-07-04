@@ -1,16 +1,16 @@
-// game_views.cpp -- the F1..F10 advisor reports, composed natively from the
+// game_reports.cpp -- the F1..F10 advisor reports, composed natively from the
 // session's report_state_json() (the same assembled rows the web reports
 // consumed). Backgrounds + titles are the byte-cited pairs (advisor_reports.md
 // + USER RULING #2: F6 Colony -> REPORT6, F7 Naval -> REPORT7); the row grid
 // is a faithful-tier text table (per-column x positions RECONSTRUCTED -- the
 // data, titles, art and colors are the cited ones).
-#include "studio_shared.hpp"
+#include "game_assets.hpp"
 #include "popup_render.hpp"    // nearest_pal_index
 #include "session.hpp"         // report_state_json / labels_section
 #include "json.hpp"
 #include <cstdio>
 
-namespace studio {
+namespace forge {
 namespace {
 
 using forge::JsonValue;
@@ -90,9 +90,9 @@ std::string misc(int i) {
 }  // namespace
 
 bool compose_report(vc::Surface& scr, int f) {
-    if (!assets_ensure()) return false;
-    const vc::Sheet& font = assets().nat.font;
-    const Chrome C = chrome(assets().nat.pal);
+    if (!game_assets_ensure()) return false;
+    const vc::Sheet& font = game_assets().nat.font;
+    const Chrome C = chrome(game_assets().nat.pal);
     // background + @MISC title per F-key (advisor_reports.md; RULING #2)
     static const char* PIK[10] = {"REPORT1", "REPORT2", "REPORT3", "REPORT4",
                                   "REPORT5", "REPORT6", "REPORT7", "REPORT8",
@@ -257,4 +257,4 @@ bool compose_report(vc::Surface& scr, int f) {
     return true;
 }
 
-} // namespace studio
+} // namespace forge

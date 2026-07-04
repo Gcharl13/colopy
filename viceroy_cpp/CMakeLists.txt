@@ -87,13 +87,21 @@ if(PNG_FOUND)
   if(SDL2_FOUND)
     add_executable(viceroy src/viceroy_app.cpp)
     target_compile_definitions(viceroy PRIVATE VICEROY_HAVE_SDL=1)
-    target_link_libraries(viceroy PRIVATE viceroy_render forge_core SDL2::SDL2)
+    target_link_libraries(viceroy PRIVATE game_shell SDL2::SDL2)
     message(STATUS "SDL2 ${SDL2_VERSION} found -- building the `viceroy` application.")
   else()
     add_executable(viceroy src/viceroy_app.cpp)
-    target_link_libraries(viceroy PRIVATE viceroy_render forge_core)
+    target_link_libraries(viceroy PRIVATE game_shell)
     message(STATUS "SDL2 not found -- `viceroy` builds HEADLESS-ONLY "
                    "(--frames mode); install libsdl2-dev for the window.")
+  endif()
+  # --- The standalone Windows game player: pure Win32 + GDI (no SDL, no
+  #     ImGui, no D3D) over the same platform-free GameShell. ---
+  if(WIN32)
+    add_executable(viceroy_win src/viceroy_win.cpp)
+    target_link_libraries(viceroy_win PRIVATE game_shell user32 gdi32)
+    set_target_properties(viceroy_win PROPERTIES OUTPUT_NAME "Viceroy"
+                          WIN32_EXECUTABLE TRUE)
   endif()
 else()
   message(STATUS "libpng not found -- skipping the asset importer/renderer "
@@ -124,6 +132,20 @@ add_library(forge_core STATIC
 )
 target_include_directories(forge_core PUBLIC forge sim)
 target_link_libraries(forge_core PUBLIC viceroy_sim drydock)
+
+# --- The platform-free playable game: asset provider + advisor reports +
+#     the GameShell (map/colony/Europe/reports/popups composed into the
+#     320x200 surface, abstract key/click events). Shared verbatim by the
+#     SDL player, the Win32 player, the Teensy port and the editor's
+#     game view. Needs libpng-or-stb (viceroy_render) for the loaders.
+if(PNG_FOUND OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb/stb_image.h)
+  add_library(game_shell STATIC
+    forge/game_assets.cpp
+    forge/game_reports.cpp
+    forge/game_shell.cpp
+  )
+  target_link_libraries(game_shell PUBLIC viceroy_render forge_core)
+endif()
 
 add_executable(forge
   forge/main.cpp
@@ -182,10 +204,9 @@ if(FORGE_STUDIO_OK)
     studio/panel_screens.cpp
     studio/panel_data.cpp
     studio/panel_map.cpp
-    studio/game_views.cpp
     ${FORGE_STUDIO_DRIVER})
   target_include_directories(forge_studio PRIVATE studio forge sim)
-  target_link_libraries(forge_studio PRIVATE imgui forge_core)
+  target_link_libraries(forge_studio PRIVATE imgui forge_core game_shell)
   set_target_properties(forge_studio PROPERTIES OUTPUT_NAME "Forge")
   if(WIN32)
     # a real GUI app: no console window behind the editor

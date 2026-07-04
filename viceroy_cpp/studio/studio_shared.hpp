@@ -8,6 +8,7 @@
 #include "studio.hpp"
 #include "native_assets.hpp"   // NativeAssets, IndexedPng, Sheet/Frame
 #include "surface.hpp"
+#include "../forge/game_assets.hpp"   // the shared platform-free asset provider
 #include "imgui.h"
 #include <functional>
 #include <map>
@@ -32,32 +33,15 @@ AppState& app();
 void select_record(const std::string& id);
 
 // ------------------------------------------------------------ shared assets
-// The tileset sheets + palette (NativeAssets) plus a cache of quantized
-// docs/atlas images (PIK backgrounds, contact sheets), loaded on first use.
-struct StudioAssets {
-    bool ok = false;
-    bool tried = false;
-    std::string err;
-    vc::NativeAssets nat;
-    std::map<std::string, vc::IndexedPng> files;   // docs/atlas-relative -> image
-    std::map<std::string, vc::Frame> windows;      // cached 28x21 sheet windows
-};
-StudioAssets& assets();
-bool assets_ensure();                              // lazy load; false + err on fail
-
-// A quantized docs/atlas image by repo-relative path under docs/atlas/
-// (e.g. "pik/COLONY.png", "sprites/atlas_WDCUT04.png"). Null if unreadable.
-const vc::IndexedPng* atlas_file(const std::string& rel);
-
-// The tileset Sheet for a catalog sheet name (TERRAIN/PHYS0/UNITS/BUILDING/
-// ICONS); null for file-based sheets.
-const vc::Sheet* tileset_sheet(const std::string& sheet);
-
-// The 28x21 native content window of a 928x82 contact sheet's first cell
-// (the popup speaker/scene channel adaptation -- same window the web uses:
-// PNG rect (1,39) 56x42 at 2x, downsampled). Null if the sheet is missing.
-// `sheet` is the bare name ("KING1", "IND0A0", "WDCUT04", "CC-19").
-const vc::Frame* sheet_window(const std::string& sheet);
+// The asset provider itself is platform-free and shared with the standalone
+// player + Teensy frontends (forge/game_assets.hpp) -- the studio names alias
+// it so the panels keep reading naturally.
+using StudioAssets = forge::GameAssets;
+inline StudioAssets& assets() { return forge::game_assets(); }
+inline bool assets_ensure() { return forge::game_assets_ensure(); }
+using forge::atlas_file;
+using forge::tileset_sheet;
+using forge::sheet_window;
 
 // Render a sprt record to RGB24 over a checkerboard (transparency visible).
 // native_w/h receive the unscaled sprite size. False if unresolvable.
@@ -82,9 +66,8 @@ Texture* static_texture(Driver& drv, const std::string& key,
                         const std::function<bool(vc::Image&)>& make);
 void invalidate_texture(const std::string& key);
 
-// Compose advisor report F1..F10 (f = 1..10) onto a 320x200 surface from the
-// live session (report_state_json). False when assets are unavailable.
-bool compose_report(vc::Surface& scr, int f);
+// Advisor reports live in the shared layer (forge/game_reports.cpp).
+using forge::compose_report;
 
 // ---------------------------------------------------------------- panels
 void sprites_panel(Driver& drv);
