@@ -35,6 +35,9 @@
 #include "mapview.hpp"
 #include "colony_screen.hpp"   // the spec colony-screen composer
 #include "mp.hpp"
+#include "engine.hpp"          // colony_compute_production (worker assignment)
+#include "sim/market.hpp"      // market_bid/ask/sell/buy (the Europe screen)
+#include "popup_render.hpp"    // nearest_pal_index
 #endif
 
 using drydock::Record;
@@ -214,6 +217,7 @@ struct GameView {
     Texture tex;
     int ox = 0, oy = 0, sel = -1;
     int colony_view = -1;        // >= 0: the colony screen is open
+    bool europe_view = false;    // the Europe harbor/market screen
     std::string notice;
 };
 GameView g_gv;
@@ -297,11 +301,16 @@ void game_panel(Driver& drv) {
         if (g_gv.sel >= 0)
             center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
     }
-    // headless/CI hook: FORGE_COLONY=N opens colony N's screen (screenshots)
+    // headless/CI hooks: FORGE_COLONY=N / FORGE_EUROPE=1 open a screen (shots)
     static const char* auto_col = std::getenv("FORGE_COLONY");
     if (auto_col && g_app.game_active) {
         g_gv.colony_view = std::atoi(auto_col);
         auto_col = nullptr;
+    }
+    static const char* auto_eur = std::getenv("FORGE_EUROPE");
+    if (auto_eur && g_app.game_active) {
+        g_gv.europe_view = true;
+        auto_eur = nullptr;
     }
     if (g_app.game_active) {
         ImGui::SameLine();
@@ -310,17 +319,23 @@ void game_panel(Driver& drv) {
         ImGui::Text("Turn %ld  Gold %lld", (long)g_game.turn,
                     (long long)g_game.powers[0].gold);
 
-        // --- colony screen (spec composer): opened by clicking an own colony
-        if (g_gv.colony_view >= 0 &&
-            g_gv.colony_view < (int)g_world.colonies.size()) {
-            ImGui::SameLine();
+        ImGui::SameLine();
+        if (g_gv.colony_view < 0 && !g_gv.europe_view) {
+            if (ImGui::Button("Europe (E)")) g_gv.europe_view = true;
+        } else {
             if (ImGui::Button("Back to map (Esc)") ||
-                (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape)))
+                (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))) {
                 g_gv.colony_view = -1;
+                g_gv.europe_view = false;
+            }
         }
+
+        // --- colony screen (spec composer): opened by clicking an own colony.
+        // Click a ring cell of the worked-tiles grid to assign a colonist
+        // there (Farmer, the /api/colony/assign default) or take one off.
         if (g_gv.colony_view >= 0 &&
             g_gv.colony_view < (int)g_world.colonies.size()) {
-            const vc::sim::Colony& c = g_world.colonies[g_gv.colony_view];
+            vc::sim::Colony& c = g_world.colonies[g_gv.colony_view];
             const vc::IndexedPng* backdrop = studio::atlas_file("pik/COLONY.png");
             static vc::Sheet parch;          // PARCH tile from the contact sheet
             if (parch.nframes == 0)
@@ -345,11 +360,129 @@ void game_panel(Driver& drv) {
                 float scale = availw / vc::Surface::W;
                 if (scale > 3.0f) scale = 3.0f;
                 if (scale < 1.0f) scale = 1.0f;
+                ImVec2 origin = ImGui::GetCursorScreenPos();
                 ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
                              ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+                // worked-tiles grid hit test (colony_screen.cpp: CELL=24 at
+                // 224,32; ring order = the assign route's RDX/RDY table)
+                if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
+                    ImVec2 mp = ImGui::GetMousePos();
+                    int mx = (int)((mp.x - origin.x) / scale);
+                    int my = (int)((mp.y - origin.y) / scale);
+                    int col = (mx - 224) / 24, row = (my - 32) / 24;
+                    if (mx >= 224 && my >= 32 && col >= 0 && col < 3 &&
+                        row >= 0 && row < 3 && !(col == 1 && row == 1)) {
+                        static const int RDX[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+                        static const int RDY[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+                        int tile = -1;
+                        for (int t = 0; t < 8; ++t)
+                            if (RDX[t] == col - 1 && RDY[t] == row - 1) tile = t;
+                        int existing = -1;
+                        for (int w = 0; w < (int)c.workers.size(); ++w)
+                            if (c.workers[w].tile == tile) existing = w;
+                        if (existing >= 0) {
+                            c.workers.erase(c.workers.begin() + existing);
+                            g_app.status = "colonist taken off the fields";
+                        } else {
+                            vc::sim::Colony::Worker wk;
+                            wk.profession = 19;              // Farmer (route default)
+                            wk.tile = tile;
+                            wk.good = 0;
+                            wk.expert = false;
+                            int tid = g_world.terrain_id(c.x + RDX[tile],
+                                                         c.y + RDY[tile]);
+                            wk.terrain = tid < 0 ? 2 : (tid & 0x1F);
+                            c.workers.push_back(wk);
+                            if ((int)c.workers.size() > c.population)
+                                c.population = (int)c.workers.size();
+                            g_app.status = "farmer assigned to the fields";
+                        }
+                        forge::colony_compute_production(
+                            c, g_game.difficulty, g_active_rules,
+                            g_engine_extra.ff_owned, 0, &g_world,
+                            g_game.rumor_seed);
+                    }
+                }
+                ImGui::TextDisabled("click a surrounding tile to assign/remove "
+                                    "a colonist; production recomputes");
             } else {
                 ImGui::TextDisabled("COLONY.PIK / PARCH sheet unavailable");
             }
+            ImGui::End();
+            return;
+        }
+
+        // --- Europe screen (europe_screen.md): the harbor + the 16-good
+        // market bar (0,179) stride 19, icons 22..37, bid/ask published from
+        // the live model. Click a good to SELL 1, right-click to BUY 1.
+        if (g_gv.europe_view) {
+            const vc::IndexedPng* backdrop = studio::atlas_file("pik/EUROPE.png");
+            vc::Surface scr;
+            scr.set_palette(A.pal);
+            scr.clear(0);
+            if (backdrop)
+                scr.blit_region(*backdrop, 0, 0, backdrop->w, backdrop->h, 0, 0);
+            uint8_t title_c = vc::nearest_pal_index(A.pal, 255, 255, 190);
+            uint8_t val_c = vc::nearest_pal_index(A.pal, 247, 243, 199);
+            char tl[96];
+            std::snprintf(tl, sizeof tl, "London, England.  Year %d.  Tax: %d%%  Gold: %lld",
+                          (int)g_game.year, g_game.powers[0].tax,
+                          (long long)g_game.powers[0].gold);
+            scr.draw_text(A.font, 8, 1, tl, title_c);
+            for (int gd = 0; gd < 16; ++gd) {           // the market bar
+                int cx = gd * 19;
+                int fi = 22 + gd;                        // goods icons (png ids)
+                if (fi < A.icons.nframes) {
+                    const vc::Frame& f = A.icons.frames[fi];
+                    scr.blit_frame(f, cx + (19 - f.w) / 2, 180);
+                }
+                int bid = vc::sim::market_bid(g_game, 0, gd);
+                int ask = vc::sim::market_ask(g_game, 0, gd, g_active_rules);
+                char pr[16];
+                std::snprintf(pr, sizeof pr, "%d/%d", bid, ask);
+                int tw = scr.text_width(A.font, pr);
+                scr.draw_text(A.font, cx + (19 - tw) / 2, 194, pr, val_c);
+            }
+            vc::Image img = scr.to_rgb(1);
+            drv.update_texture(g_gv.tex, img.rgb.data());
+            float availw = ImGui::GetContentRegionAvail().x;
+            float scale = availw / vc::Surface::W;
+            if (scale > 3.0f) scale = 3.0f;
+            if (scale < 1.0f) scale = 1.0f;
+            ImVec2 origin = ImGui::GetCursorScreenPos();
+            ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
+                         ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+            if (ImGui::IsItemHovered()) {
+                ImVec2 mp = ImGui::GetMousePos();
+                int mx = (int)((mp.x - origin.x) / scale);
+                int my = (int)((mp.y - origin.y) / scale);
+                if (my >= 179 && mx < 304) {
+                    int gd = mx / 19;
+                    if (gd >= 0 && gd < 16) {
+                        int bid = vc::sim::market_bid(g_game, 0, gd);
+                        int ask = vc::sim::market_ask(g_game, 0, gd, g_active_rules);
+                        ImGui::SetTooltip("good %d -- pays %d, costs %d\n"
+                                          "click: sell 1   right-click: buy 1",
+                                          gd, bid, ask);
+                        if (ImGui::IsMouseClicked(0)) {
+                            long net = vc::sim::market_sell(g_game, 0, gd, 1,
+                                                            g_active_rules);
+                            g_app.status = "sold 1 for " + std::to_string(net);
+                        }
+                        if (ImGui::IsMouseClicked(1)) {
+                            if (g_game.powers[0].gold >= ask) {
+                                long cost = vc::sim::market_buy(g_game, 0, gd, 1,
+                                                                g_active_rules);
+                                g_app.status = "bought 1 for " + std::to_string(cost);
+                            } else {
+                                g_app.status = "not enough gold";
+                            }
+                        }
+                    }
+                }
+            }
+            ImGui::TextDisabled("the published market: bid/ask per good; "
+                                "click sells, right-click buys");
             ImGui::End();
             return;
         }
@@ -437,6 +570,7 @@ void game_panel(Driver& drv) {
                     center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
             }
             if (ImGui::IsKeyPressed(ImGuiKey_Enter)) game_end_turn();
+            if (ImGui::IsKeyPressed(ImGuiKey_E)) g_gv.europe_view = true;
         }
     }
     ImGui::End();
