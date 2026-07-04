@@ -62,6 +62,7 @@ struct NativeAssets {
     Sheet font;        // FONTTINY.FF when the project has the game files
                        // (raw/COLONIZE), else baked_font()
     bool  font_real = false;   // true = the game's own FONTTINY loaded
+    int   raw_overrides = 0;   // how many sheets came from the game's own files
     int   strays = 0;  // total nearest-fallback pixels across all sheets
 };
 NativeAssets load_native_assets(const std::string& repo_root);

@@ -1,5 +1,6 @@
 // studio_assets.cpp -- shared native assets + sprite resolution for the panels.
 #include "studio_shared.hpp"
+#include "pik.hpp"       // load_pik: the game's own backgrounds when present
 #include "../drydock/core/store.hpp"
 #include <cstring>
 
@@ -30,11 +31,26 @@ const vc::IndexedPng* atlas_file(const std::string& rel) {
     auto it = a.files.find(rel);
     if (it != a.files.end()) return it->second.w > 0 ? &it->second : nullptr;
     vc::IndexedPng img;
-    try {
-        img = vc::read_png_quantized("docs/atlas/" + rel, a.nat.pal);
-    } catch (const std::exception&) {
-        img = {};   // cache the miss (w=0) so we don't re-stat every frame
+    // Prefer the game's own .PIK when the project carries the user's copy
+    // (raw/COLONIZE) -- indices are palette-native, no quantization needed.
+    if (rel.rfind("pik/", 0) == 0 && rel.size() > 8) {
+        std::string name = rel.substr(4, rel.size() - 8);   // strip pik/ + .png
+        for (const char* dir : {"raw/COLONIZE/", "raw/"}) {
+            try {
+                vc::PikImage p = vc::load_pik(dir + name + ".PIK", a.nat.pal);
+                img.w = p.w;
+                img.h = p.h;
+                img.idx = std::move(p.idx);
+                break;
+            } catch (const std::exception&) {}
+        }
     }
+    if (img.w == 0)
+        try {
+            img = vc::read_png_quantized("docs/atlas/" + rel, a.nat.pal);
+        } catch (const std::exception&) {
+            img = {};   // cache the miss (w=0) so we don't re-stat every frame
+        }
     auto& slot = a.files[rel] = std::move(img);
     return slot.w > 0 ? &slot : nullptr;
 }
@@ -56,6 +72,16 @@ const vc::Frame* sheet_window(const std::string& sheet) {
     auto it = a.windows.find(sheet);
     if (it != a.windows.end()) return it->second.w > 0 ? &it->second : nullptr;
     vc::Frame f{};
+    // the game's own .SS first: the REAL portrait/scene at native size
+    for (const char* dir : {"raw/COLONIZE/", "raw/"}) {
+        try {
+            vc::Sheet s = vc::load_sheet(std::string(dir) + sheet + ".SS");
+            if (s.nframes > 0 && s.frames[0].w > 0) {
+                auto& slot = a.windows[sheet] = s.frames[0];
+                return &slot;
+            }
+        } catch (const std::exception&) {}
+    }
     const vc::IndexedPng* img = atlas_file("sprites/atlas_" + sheet + ".png");
     // The committed contact sheets are 2x with a label band; the first cell's
     // face window is PNG rect (1,39) 56x42 (the web wfPortrait geometry),

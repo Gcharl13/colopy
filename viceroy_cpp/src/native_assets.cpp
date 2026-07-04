@@ -1,6 +1,7 @@
 // native_assets.cpp -- see native_assets.hpp.
 #include "native_assets.hpp"
 #include "ff.hpp"        // load_font -- the game's own .FF fonts when present
+#include "pik.hpp"       // load_pik -- the game's own .PIK backgrounds when present
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
 #include "stb_image.h"   // vendored (third_party/stb) -- no libpng dependency
@@ -314,6 +315,49 @@ NativeAssets load_native_assets(const std::string& root) {
         try {
             a.font = load_font(root + dir + "FONTTINY.FF");
             a.font_real = true;
+            break;
+        } catch (const std::exception&) {}
+    }
+
+    // Raw sheet overrides: same drop-in policy for the sprite sheets. The
+    // decoded tileset PNGs preserve the ssdec frame ids (see the header), so
+    // the original .SS decodes are index-compatible 1:1 -- except BUILDING,
+    // whose EXE sheet is def_id+1 (colony_screen.md 0.2): the raw override
+    // shifts one frame down to stay in the catalog's 0-based space.
+    auto try_ss = [&](Sheet& dst, const char* name, int drop_first) {
+        for (const char* dir : {"/raw/COLONIZE/", "/raw/", "/"}) {
+            try {
+                Sheet s = load_sheet(root + dir + name);
+                if (s.nframes <= drop_first) continue;
+                if (drop_first > 0) {
+                    s.frames.erase(s.frames.begin(),
+                                   s.frames.begin() + drop_first);
+                    s.nframes -= drop_first;
+                }
+                dst = std::move(s);
+                ++a.raw_overrides;
+                return;
+            } catch (const std::exception&) {}
+        }
+    };
+    try_ss(a.terrain, "TERRAIN.SS", 0);
+    try_ss(a.phys, "PHYS0.SS", 0);
+    try_ss(a.icons, "ICONS.SS", 0);
+    try_ss(a.buildings, "BUILDING.SS", 1);
+    // (UNITS has no own sheet -- the unit figures were cut from ICONS.SS.)
+    for (const char* dir : {"/raw/COLONIZE/", "/raw/", "/"}) {
+        try {                                   // real wood grain for the chrome
+            PikImage wp = load_pik(root + dir + "WOODPANL.PIK", a.pal);
+            IndexedPng img;
+            img.w = wp.w;
+            img.h = wp.h;
+            img.idx = std::move(wp.idx);
+            Sheet s;
+            for (int i = 0; i < 768; ++i) s.pal[i] = a.pal[i];
+            s.nframes = 1;
+            s.frames.push_back(cut(img, 0, 0, 32, 24));
+            a.woodtile = std::move(s);
+            ++a.raw_overrides;
             break;
         } catch (const std::exception&) {}
     }

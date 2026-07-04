@@ -13,6 +13,7 @@
 
 #include "drydock_api.hpp"        // drydock_store / drydock_store_init / save
 #include "drydock_bridge.hpp"     // drydock_apply_records (live-rules sync)
+#include "savegame.hpp"           // parse_game (File > Load Game)
 #include "session.hpp"            // the game session (g_game/g_world, game_new/step)
 #include "unit.hpp"
 #include "unit_turn.hpp"
@@ -769,6 +770,34 @@ void main_menu() {
                 std::string summary;
                 forge::drydock_save_dirty(summary);
                 g_app.status = "saved: " + summary;
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Save Game", nullptr, false, g_app.game_active)) {
+                g_app.status = save_game_to("data_extracted/engine/savegame.json")
+                                   ? "game saved"
+                                   : "game save FAILED";
+            }
+            if (ImGui::MenuItem("Load Game")) {
+                try {   // the /api/game/load path, natively
+                    forge::JsonValue root =
+                        forge::json_parse_file("data_extracted/engine/savegame.json");
+                    forge::LoadedGame lg = forge::parse_game(forge::json_dump(root));
+                    g_game = lg.g;
+                    g_world = lg.w;
+                    g_colony_xy.clear();
+                    if (const forge::JsonValue* cxy = root.find("colony_xy"))
+                        for (const auto& e : cxy->arr)
+                            if (e.arr.size() >= 2)
+                                g_colony_xy.push_back(
+                                    {(int)e.arr[0].num, (int)e.arr[1].num});
+                    g_engine_extra = forge::EngineExtra{};
+                    read_extra(root.find("engine_extra"), g_engine_extra);
+                    g_game_active = true;
+                    g_app.game_active = true;
+                    g_app.status = "game loaded";
+                } catch (const std::exception& e) {
+                    g_app.status = std::string("load failed: ") + e.what();
+                }
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit")) {

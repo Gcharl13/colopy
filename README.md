@@ -29,19 +29,32 @@ the game data, the graphics, and the tools to (re)generate them from original fi
 the contract — reproduce its *output*. The *route* (language, math width, RNG, engine) is
 free; see `REWRITE_READINESS.md` §1 for the preserve-vs-modernize line.
 
-## Forge — the desktop engine
+## Forge — the native desktop engine
 
-**Forge is the product: a desktop game-development engine.** It opens a
-*project* — a folder of game data (this repository checkout is the
-Colonization project) — and presents the full editor: rules, data tables,
-maps, assets, screens, events, scenarios, and a playable Play tab.
+**Forge is the product: a fully native desktop game-development engine**
+(Dear ImGui — no web technology). It opens a *project* — a folder of game
+data; this repository checkout is the Colonization project — and presents
+every layer as editable, journaled, undoable data that saves back to the
+project as canonical text (`data/`, Ctrl+S):
+
+| panel | what it does |
+| --- | --- |
+| Records / Inspector | every record type in the store; field-level editing |
+| Sprites | the full 437-sprite catalog drawn from the real sheets |
+| Popups | all 499 GAME.TXT messages rendered through the wood-frame engine; test `%NUMBER/%STRING` fills + choices, edit text/box/speaker |
+| Screens | the screen designer: real PIK backgrounds (movable), sprites, text with `{bindings}`, buttons + message boxes in game chrome; **Play mode** fires onClick events with real in-chrome popups |
+| Tables | spreadsheet grid per record type, inline cell editing |
+| Rules | the config knobs grouped by system; edits hit the live rules |
+| Events | the 36 typed chain events with commentary + step trees |
+| Map | the byte-faithful `.MP` editor rendered with the real tile stack; paint terrain/river/forest, validate, save |
+| Game | the playable game: map/units/turns, click a colony for the full colony screen (assign colonists, right-click picks the profession), `E` for Europe (live market, docks recruit, artillery), `F1..F10` advisor reports |
 
 ```bash
-# build (cmake, C++17 compiler; zlib/libpng optional, SDL2 optional)
+# build (cmake, C++17; SDL2 for the editor on Linux; zlib/libpng optional)
 cmake -S viceroy_cpp -B viceroy_cpp/build
 cmake --build viceroy_cpp/build -j8
 
-./viceroy_cpp/build/forge desktop .     # open THIS checkout as the project
+./viceroy_cpp/build/Forge .             # open THIS checkout as the project
 ```
 
 On Windows the binary is `Forge.exe` — double-click it inside the project
@@ -50,13 +63,20 @@ folder (or anywhere: it asks you to pick one). Cross-compile from Linux:
 ```bash
 cmake -S viceroy_cpp -B viceroy_cpp/build-win \
       -DCMAKE_TOOLCHAIN_FILE=$PWD/viceroy_cpp/cmake/mingw-w64-x86_64.cmake
-cmake --build viceroy_cpp/build-win -j8 --target forge   # -> build-win/Forge.exe (static)
+cmake --build viceroy_cpp/build-win -j8 --target forge_studio   # -> build-win/Forge.exe (static)
 ```
 
-The same build also produces `viceroy` (the standalone native game runtime,
-needs SDL2) and the asset-pipeline CLI. `forge serve 8099` remains as the
-classic browser mode. Verify a checkout: `ctest --test-dir viceroy_cpp/build`
-(14 gates incl. native render + app smokes).
+**Your game files upgrade the art automatically.** The repo ships decoded
+art; the `.FF` fonts and original `.SS`/`.PIK` codecs are loaded straight
+from the game's own files when present — drop `FONTTINY.FF` (and any
+`.SS`/`.PIK` you have) into `raw/COLONIZE/` and Forge uses the real fonts,
+sheets, backgrounds and portraits everywhere.
+
+The same build also produces `forge` (the CLI: selftests, map/rules/save
+tools, plus `forge serve 8099` — the legacy browser mode kept as reference),
+`viceroy` (a standalone SDL2 game runtime), and the asset-pipeline CLI.
+Verify a checkout: `ctest --test-dir viceroy_cpp/build` (16 gates incl. the
+native render/popup/app/editor smokes).
 
 ## Regenerating assets from your own game files
 The original copyrighted assets are **not** shipped verbatim. To rebuild them locally:

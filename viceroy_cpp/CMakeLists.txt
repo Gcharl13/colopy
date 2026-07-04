@@ -59,11 +59,13 @@ add_library(viceroy_render STATIC
   src/colony_screen.cpp
   src/popup_render.cpp
   # the original MADSPACK/FAB codec (pure, no libpng): lets the runtime load
-  # the game's own .FF fonts / .SS sheets when the user's copy provides them
+  # the game's own .FF fonts / .SS sheets / .PIK backgrounds when the user's
+  # copy provides them (raw/COLONIZE)
   src/fab.cpp
   src/madspack.cpp
   src/ss.cpp
   src/ff.cpp
+  src/pik.cpp
 )
 target_include_directories(viceroy_render PUBLIC include . third_party/stb)
 target_link_libraries(viceroy_render PUBLIC viceroy_sim)
@@ -74,11 +76,7 @@ endif()
 
 # --- CLI: import-all / import / import-font / render / mapview (needs libpng) ---
 if(PNG_FOUND)
-  add_executable(viceroy_cpp
-    src/main.cpp
-    # importer (offline): PIK background codec (SS/FF live in viceroy_render)
-    src/pik.cpp
-  )
+  add_executable(viceroy_cpp src/main.cpp)   # codecs live in viceroy_render
   target_link_libraries(viceroy_cpp PRIVATE viceroy_render)
 
   # --- The native application (N2): SDL2 window over the compositors. ---
