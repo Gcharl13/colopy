@@ -49,6 +49,18 @@ std::string rstr(const Record& r, const char* name, const std::string& dflt = ""
             return f.value.s;
     return dflt;
 }
+long long rint(const Record& r, const char* name, long long dflt) {
+    for (const auto& f : r.fields)
+        if (f.name == name && f.value.kind == ValKind::Int) return f.value.i;
+    return dflt;
+}
+void commit_int(const Record& rec, const char* field, long long v) {
+    Value nv = Value::make_int(v);
+    Store* st = forge::drydock_store();
+    std::string err;
+    if (!drydock::store_set(*st, rec.id, field, &nv, err))
+        app().status = "edit rejected: " + err;
+}
 const Value* rwidgets(const Record& r) {
     for (const auto& f : r.fields)
         if (f.name == "widgets" && f.value.kind == ValKind::List) return &f.value;
@@ -98,6 +110,10 @@ struct ScreensState {
     Texture stage{};
     bool dragging = false;
     int drag_dx = 0, drag_dy = 0;
+    // background drag (click empty stage area): live offsets until release
+    bool bg_dragging = false;
+    int bg_press_mx = 0, bg_press_my = 0, bg_start_x = 0, bg_start_y = 0;
+    int bg_live_x = 0, bg_live_y = 0;
     // property buffers (loaded on widget select)
     std::string loaded_for;
     int loaded_w = -2;
@@ -109,7 +125,7 @@ struct ScreensState {
     char new_id[48] = {0};
 };
 ScreensState g_sc;
-const char* WTYPES[] = {"text", "sprite", "button"};
+const char* WTYPES[] = {"text", "sprite", "button", "message"};
 
 // Rebuild the whole widgets list with `mut` applied and store_set it.
 void commit_widgets(const Record& rec,
@@ -136,7 +152,7 @@ Value widget_from_buffers() {
         d.dict_put("frame", Value::make_int(g_sc.wframe));
     } else {
         d.dict_put("color", Value::make_str(g_sc.wcolor[0] ? g_sc.wcolor
-                                                           : "255,255,255"));
+                                                           : "255,243,93"));
         d.dict_put("text", Value::make_str(g_sc.wtext));
     }
     if (g_sc.wclick[0]) d.dict_put("onClick", Value::make_str(g_sc.wclick));
@@ -154,7 +170,7 @@ void load_widget_buffers(const Value& d) {
     drect(d, g_sc.wrect);
     g_sc.wframe = (int)dint(d, "frame", 0);
     std::string t = dstr(d, "type", "text");
-    g_sc.wtype = t == "sprite" ? 1 : t == "button" ? 2 : 0;
+    g_sc.wtype = t == "sprite" ? 1 : t == "button" ? 2 : t == "message" ? 3 : 0;
 }
 
 }  // namespace
@@ -260,7 +276,16 @@ void screens_panel(Driver& drv) {
             ImGui::EndCombo();
         }
         ImGui::SameLine();
-        ImGui::TextDisabled("320x200 | font: %s",
+        int bx = (int)rint(*rec, "bg_x", 0), by = (int)rint(*rec, "bg_y", 0);
+        ImGui::SetNextItemWidth(70);
+        if (ImGui::InputInt("bg x", &bx, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+            commit_int(*rec, "bg_x", bx);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(70);
+        if (ImGui::InputInt("y##bgy", &by, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
+            commit_int(*rec, "bg_y", by);
+        ImGui::SameLine();
+        ImGui::TextDisabled("font: %s",
                             assets().nat.font_real ? "FONTTINY.FF"
                                                    : "baked 5x7 (add raw/COLONIZE/FONTTINY.FF)");
     }
@@ -273,9 +298,11 @@ void screens_panel(Driver& drv) {
     scr.set_palette(assets().nat.pal);
     scr.clear(0);
     std::string bg = rstr(*rec, "background");
+    int bgx = (int)rint(*rec, "bg_x", 0), bgy = (int)rint(*rec, "bg_y", 0);
+    if (g_sc.bg_dragging) { bgx = g_sc.bg_live_x; bgy = g_sc.bg_live_y; }
     if (!bg.empty())
         if (const vc::IndexedPng* pik = atlas_file("pik/" + bg + ".png"))
-            scr.blit_region(*pik, 0, 0, pik->w, pik->h, 0, 0);
+            scr.blit_region(*pik, 0, 0, pik->w, pik->h, bgx, bgy);
     for (int i = 0; i < nwidgets; ++i) {
         const Value& d = widgets->list[i];
         if (d.kind != ValKind::Dict) continue;
@@ -288,18 +315,33 @@ void screens_panel(Driver& drv) {
                 if (fi >= 0 && fi < sh->nframes)
                     scr.blit_frame(sh->frames[fi], r[0], r[1]);
             }
+        } else if (type == "message") {
+            // the game's message-box format: the wood-frame popup engine
+            // pinned at the widget rect, box width from the rect
+            vc::PopupSpec ps;
+            std::string body = resolve_text(dstr(d, "text")), cur;
+            for (char c : body) {
+                if (c == '\r') continue;
+                if (c == '\n') { ps.lines.push_back(cur); cur.clear(); }
+                else cur += c;
+            }
+            ps.lines.push_back(cur);
+            ps.box_w = r[2] > 6 ? r[2] - 6 : 0;   // rect w = outer box incl border
+            ps.px = r[0];
+            ps.py = r[1];
+            vc::PopupLayout L = vc::popup_layout(assets().nat.font, ps);
+            static const vc::IndexedPng no_panl;
+            const vc::IndexedPng* panl = atlas_file("pik/WOODPANL.png");
+            render_popup(scr, panl ? *panl : no_panl, assets().nat.font, ps, L);
         } else {
             uint8_t col = color_idx(assets().nat.pal, dstr(d, "color"), 15);
             std::string text = resolve_text(dstr(d, "text"));
             if (type == "button") {
-                // wood-tile button face + outline (the DLOG buttons are the
-                // editor-era chrome; native menus draw their own plates)
-                for (int y = r[1]; y < r[1] + r[3]; ++y)
-                    for (int x = r[0]; x < r[0] + r[2]; ++x) {
-                        const vc::Frame& t = assets().nat.woodtile.frames[0];
-                        if (t.w > 0)
-                            scr.put(x, y, t.px[(size_t)(y % t.h) * t.w + (x % t.w)]);
-                    }
+                // the game's button chrome (advisor OK, report_framework.md /
+                // web nsOK): dark plate, 1px label-color frame, centered
+                // FONTTINY label in the label color (0x92)
+                uint8_t ink = vc::nearest_pal_index(assets().nat.pal, 0, 0, 0);
+                scr.fill_rect(r[0], r[1], r[2], r[3], ink);
                 scr.rect_outline(r[0], r[1], r[2], r[3], col);
                 int tw = scr.text_width(assets().nat.font, text);
                 scr.draw_text(assets().nat.font, r[0] + (r[2] - tw) / 2,
@@ -348,6 +390,25 @@ void screens_panel(Driver& drv) {
                 g_sc.dragging = true;
                 g_sc.drag_dx = mx - r[0];
                 g_sc.drag_dy = my - r[1];
+            } else if (!bg.empty()) {
+                // no widget under the cursor: drag the background PIK
+                g_sc.bg_dragging = true;
+                g_sc.bg_press_mx = mx;
+                g_sc.bg_press_my = my;
+                g_sc.bg_start_x = bgx;
+                g_sc.bg_start_y = bgy;
+                g_sc.bg_live_x = bgx;
+                g_sc.bg_live_y = bgy;
+            }
+        }
+        if (g_sc.bg_dragging) {
+            if (ImGui::IsMouseDown(0)) {
+                g_sc.bg_live_x = g_sc.bg_start_x + (mx - g_sc.bg_press_mx);
+                g_sc.bg_live_y = g_sc.bg_start_y + (my - g_sc.bg_press_my);
+            } else {
+                g_sc.bg_dragging = false;
+                commit_int(*rec, "bg_x", g_sc.bg_live_x);
+                commit_int(*rec, "bg_y", g_sc.bg_live_y);
             }
         }
         if (g_sc.dragging && g_sc.sel_w >= 0 && g_sc.sel_w < nwidgets) {
@@ -457,6 +518,39 @@ void screens_panel(Driver& drv) {
         g_sc.sel_w = nwidgets;
         g_sc.loaded_w = -2;
     }
+    if (ImGui::Button("+ button")) {
+        commit_widgets(*rec, [&](std::vector<Value>& list) {
+            Value d = Value::make_dict();
+            d.dict_put("id", Value::make_str("w" + std::to_string(nwidgets)));
+            d.dict_put("type", Value::make_str("button"));
+            // the advisor OK plate geometry (spec rect 289,183,27,14)
+            std::vector<Value> rr{Value::make_int(289), Value::make_int(183),
+                                  Value::make_int(27), Value::make_int(14)};
+            d.dict_put("rect", Value::make_list(std::move(rr)));
+            d.dict_put("color", Value::make_str("255,243,93"));
+            d.dict_put("text", Value::make_str("OK"));
+            list.push_back(std::move(d));
+        });
+        g_sc.sel_w = nwidgets;
+        g_sc.loaded_w = -2;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+ message")) {
+        commit_widgets(*rec, [&](std::vector<Value>& list) {
+            Value d = Value::make_dict();
+            d.dict_put("id", Value::make_str("w" + std::to_string(nwidgets)));
+            d.dict_put("type", Value::make_str("message"));
+            std::vector<Value> rr{Value::make_int(60), Value::make_int(70),
+                                  Value::make_int(200), Value::make_int(40)};
+            d.dict_put("rect", Value::make_list(std::move(rr)));
+            d.dict_put("color", Value::make_str("255,243,93"));
+            d.dict_put("text", Value::make_str("A message in the game's\n"
+                                               "wood-frame box format."));
+            list.push_back(std::move(d));
+        });
+        g_sc.sel_w = nwidgets;
+        g_sc.loaded_w = -2;
+    }
     bool have_sel = g_sc.sel_w >= 0 && g_sc.sel_w < nwidgets;
     if (have_sel) {
         if (ImGui::Button("up") && g_sc.sel_w > 0) {
@@ -499,7 +593,7 @@ void screens_panel(Driver& drv) {
         ImGui::SetNextItemWidth(150);
         ImGui::InputText("id", g_sc.wid, sizeof g_sc.wid);
         ImGui::SetNextItemWidth(150);
-        ImGui::Combo("type", &g_sc.wtype, WTYPES, 3);
+        ImGui::Combo("type", &g_sc.wtype, WTYPES, 4);
         ImGui::SetNextItemWidth(220);
         ImGui::InputInt4("rect", g_sc.wrect);
         if (g_sc.wtype == 1) {

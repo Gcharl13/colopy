@@ -3,6 +3,8 @@ record schm.dlog {
   fields  = [
     { name = "name", type = "str", required = true, doc = "Screen display name (screens/<id>.json name; the record slug IS the screen id)" },
     { name = "background", type = "str", doc = "Background sheet/PIK name (COLONY, EUROPE, CCBKGD, ...)" },
+    { name = "bg_x", type = "int", doc = "Background blit x offset, native px (default 0; negative pans left)" },
+    { name = "bg_y", type = "int", doc = "Background blit y offset, native px (default 0; negative pans up)" },
     { name = "size", type = "list<int>", required = true, ordered = true, doc = "[width, height] in native pixels (320x200 screens)" },
     { name = "widgets", type = "list<dict>", required = true, ordered = true, doc = "The widget list, draw order semantic (z-order). Dict keys per widget type: id, type (text|rect|sprite|button|list|bar|...), rect [x,y,w,h], plus type-specific props ({path} bindings in text, sheet/frame for sprites). Dict keys are stored SORTED -- a designer save round-trips through a sorted map, so the canonical form sorts from the start" },
     { name = "notes", type = "str", doc = "Free prose" }
