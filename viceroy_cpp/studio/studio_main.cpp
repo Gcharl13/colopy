@@ -15,6 +15,7 @@
 #include "drydock_bridge.hpp"     // drydock_apply_records (live-rules sync)
 #include "savegame.hpp"           // parse_game (File > Load Game)
 #include "export_game.hpp"        // Build menu: export the game from data
+#include "import_original.hpp"    // File menu: ingest the original game folder
 #include <filesystem>
 #include "session.hpp"            // the game session (g_game/g_world, game_new/step)
 #include "unit.hpp"
@@ -1066,7 +1067,55 @@ bool g_reset_layout = false;   // View > Reset window layout
 bool g_show_help = false;      // Help > Keyboard commands
 bool g_show_build = false;     // Build > Build game...
 bool g_build_teensy = false;   // which target the Build dialog exports
+bool g_show_import = false;    // File > Import original game files...
 std::string g_exe_dir;         // where Forge itself runs from (template lookup)
+#ifdef _WIN32
+std::string pick_project_folder();   // defined below (COM folder picker)
+#endif
+
+// Import dialog: ingest the user's original game folder (VICEROY.EXE + its
+// data files). The assets are copied into raw/COLONIZE, decode-verified with
+// the native codecs, and the asset cache reloads so the REAL art (fonts,
+// sheets, backgrounds, palette) takes over everywhere immediately.
+void import_window() {
+    if (!g_show_import) return;
+    ImGui::SetNextWindowSize(ImVec2(560, 340), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Import original game files", &g_show_import)) {
+        ImGui::End();
+        return;
+    }
+    ImGui::TextWrapped(
+        "Point this at your original game folder -- the one containing "
+        "VICEROY.EXE and its .SS / .PIK / .FF / .PAL / .TXT / .MP files. "
+        "Everything is copied into raw/COLONIZE and decoded with the native "
+        "codecs; the loaders prefer these originals over the converted "
+        "stand-ins, so the real art takes over at once (VICEROY.EXE itself "
+        "holds the code this engine reimplements -- it is kept for "
+        "reference, nothing is extracted from the binary).");
+    ImGui::Spacing();
+    static char src[256] = {0};
+    ImGui::SetNextItemWidth(400);
+    ImGui::InputText("game folder", src, sizeof src);
+#ifdef _WIN32
+    ImGui::SameLine();
+    if (ImGui::Button("Browse...")) {
+        std::string p = pick_project_folder();
+        if (!p.empty()) std::snprintf(src, sizeof src, "%s", p.c_str());
+    }
+#endif
+    static forge::ImportReport rep;
+    if (ImGui::Button("Import") && src[0]) {
+        rep = forge::import_original_game(src, ".");
+        g_app.status = rep.message;
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted(rep.message.c_str());
+    for (const std::string& n : rep.notes) ImGui::BulletText("%s", n.c_str());
+    if (rep.ok)
+        ImGui::TextDisabled("(cached sprite previews refresh on restart; the "
+                            "game view is live already)");
+    ImGui::End();
+}
 
 // Build dialog: export the game FROM THE PROJECT DATA, engine-style. The
 // player executable is a prebuilt export template (shipped next to Forge /
@@ -1215,6 +1264,8 @@ void main_menu() {
                 forge::drydock_save_dirty(summary);
                 g_app.status = "saved: " + summary;
             }
+            if (ImGui::MenuItem("Import original game files..."))
+                g_show_import = true;
             ImGui::Separator();
             if (ImGui::MenuItem("Save Game", nullptr, false, g_app.game_active)) {
                 g_app.status = save_game_to("data_extracted/engine/savegame.json")
@@ -1309,6 +1360,12 @@ int studio_run(Driver& drv, const std::string& project_dir) {
     g_app.project = project_dir;
     // headless/CI hook: FORGE_BUILD=<dir> runs the Build > Windows export
     // exactly as the dialog would (FORGE_BUILD_TEENSY=1 for the SD layout).
+    if (const char* im = std::getenv("FORGE_IMPORT")) {
+        forge::ImportReport ir = forge::import_original_game(im, ".");
+        std::printf("FORGE_IMPORT: %s\n", ir.message.c_str());
+        for (const std::string& n : ir.notes)
+            std::printf("  - %s\n", n.c_str());
+    }
     if (const char* bo = std::getenv("FORGE_BUILD")) {
         bool teensy = std::getenv("FORGE_BUILD_TEENSY") != nullptr;
         std::string summary;
@@ -1372,6 +1429,7 @@ int studio_run(Driver& drv, const std::string& project_dir) {
         game_panel(drv);
         routes_window();
         build_window();
+        import_window();
 #endif
         help_window();
         // headless/CI hook: FORGE_FOCUS=<window> raises a panel (screenshots)

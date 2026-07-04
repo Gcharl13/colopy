@@ -136,6 +136,7 @@ if(PNG_FOUND OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb/stb_image.h)
     forge/game_assets.cpp
     forge/game_reports.cpp
     forge/game_shell.cpp
+    forge/import_original.cpp
   )
   target_link_libraries(game_shell PUBLIC viceroy_render forge_core)
   # --- The standalone Windows game player: pure Win32 + GDI (no SDL, no
