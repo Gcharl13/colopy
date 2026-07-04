@@ -4,6 +4,7 @@
 #include "pik.hpp"       // load_pik -- the game's own .PIK backgrounds when present
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
+#define STBI_ONLY_BMP    // the asset files are 24-bit BMPs (PNG = fallback)
 #include "stb_image.h"   // vendored (third_party/stb) -- no libpng dependency
 #include <cstdio>
 #include <cstring>
@@ -59,9 +60,21 @@ void load_palette_json(const std::string& path, uint8_t pal[768]) {
 
 IndexedPng read_png_quantized(const std::string& path, const uint8_t pal[768],
                               int* strays) {
-    // stb_image normalizes every PNG color type to 8-bit RGBA for us.
+    // The project's asset files are 24-bit BMPs (transparency = the magenta
+    // colorkey below); a .png with the same stem is accepted as a fallback so
+    // older project folders keep loading. stb_image decodes both.
     int w = 0, h = 0, comp = 0;
-    unsigned char* px = stbi_load(path.c_str(), &w, &h, &comp, 4);
+    unsigned char* px = nullptr;
+    size_t dot = path.rfind('.');
+    if (dot != std::string::npos) {
+        std::string ext = path.substr(dot);
+        if (ext == ".png" || ext == ".bmp") {
+            std::string sib = path.substr(0, dot) + (ext == ".png" ? ".bmp" : ".png");
+            px = stbi_load((ext == ".png" ? sib : path).c_str(), &w, &h, &comp, 4);
+            if (!px) px = stbi_load((ext == ".png" ? path : sib).c_str(), &w, &h, &comp, 4);
+        }
+    }
+    if (!px) px = stbi_load(path.c_str(), &w, &h, &comp, 4);
     if (!px) throw std::runtime_error("cannot open/decode " + path);
 
     IndexedPng out;
@@ -80,7 +93,10 @@ IndexedPng read_png_quantized(const std::string& path, const uint8_t pal[768],
     for (size_t p = 0; p < (size_t)w * h; ++p) {
         uint8_t r = px[p * 4], g = px[p * 4 + 1], b = px[p * 4 + 2], a = px[p * 4 + 3];
         uint8_t v;
-        if (a < 128) {
+        if (a < 128 || (r == 255 && g == 0 && b == 255)) {
+            // alpha (PNG) or the pure-magenta colorkey (24-bit BMP has no
+            // alpha channel; 255,0,255 is not a VICEROY.PAL color and no
+            // asset uses it opaquely -- verified repo-wide 2026-07-04)
             v = SS_TRANSPARENT;
         } else {
             auto it = lut.find((uint32_t)r << 16 | (uint32_t)g << 8 | b);

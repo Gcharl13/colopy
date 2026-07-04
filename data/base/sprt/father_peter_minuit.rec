@@ -3,5 +3,5 @@ record sprt.father_peter_minuit {
   label = "Peter Minuit"
   kind  = "portrait"
   sheet = "CC-02"
-  file  = "sprites/atlas_CC-02.png"
+  file  = "sprites/atlas_CC-02.bmp"
 }

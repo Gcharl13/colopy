@@ -114,6 +114,15 @@ original game files (user-owned)            ── importer (uses the decoder) �
 - **Runtime** loads the bundle (libpng + JSON) and never touches `.SS`. Simpler, modding-friendly
   (artists can edit the PNGs), and dependency-light.
 
+> **Format update (2026-07-04, user directive):** the committed asset trees
+> (`data_extracted/**`, `docs/atlas/**`) ship as **24-bit BMPs** (magenta 255,0,255 =
+> transparency colorkey), not PNGs. Invariant 1 below is preserved a different way: the runtime
+> quantizes the BMP's RGB back to `VICEROY.PAL` **indices at load** (exact-match LUT in
+> `native_assets.cpp read_png_quantized` — lossless because every asset pixel is a palette color
+> and the magenta key collides with nothing, verified repo-wide), so palette cycling still works
+> on indices. The legacy `viceroy_cpp import-all` bundle CLI below still round-trips its own
+> paletted PNGs internally.
+
 **Two fidelity invariants this must keep** (the reason it's *paletted* PNG, not flattened RGB):
 1. **Indexed color is preserved.** The atlas stores **palette indices**, not baked RGB, so the
    runtime can apply the live `VICEROY.PAL` and do **palette cycling** (animated water/shimmer per
@@ -124,7 +133,7 @@ original game files (user-owned)            ── importer (uses the decoder) �
 
 **Provenance:** ship the **engine + importer**, not the converted art. The import step runs locally
 against the user's own game files — the bundle is derived from copyrighted MicroProse assets and is
-not committed/redistributed (the `docs/atlas/` PNGs are a deliberate documentation exception, not
+not committed/redistributed (the `docs/atlas/` BMPs are a deliberate documentation exception, not
 the shipping path).
 
 ---

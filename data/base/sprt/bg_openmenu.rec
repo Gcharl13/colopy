@@ -3,5 +3,5 @@ record sprt.bg_openmenu {
   label = "OPENMENU"
   kind  = "background"
   sheet = "OPENMENU"
-  file  = "pik/OPENMENU.png"
+  file  = "pik/OPENMENU.bmp"
 }

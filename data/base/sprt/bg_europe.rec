@@ -3,5 +3,5 @@ record sprt.bg_europe {
   label = "EUROPE"
   kind  = "background"
   sheet = "EUROPE"
-  file  = "pik/EUROPE.png"
+  file  = "pik/EUROPE.bmp"
 }

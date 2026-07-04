@@ -3,5 +3,5 @@ record sprt.bg_opening {
   label = "OPENING"
   kind  = "background"
   sheet = "OPENING"
-  file  = "pik/OPENING.png"
+  file  = "pik/OPENING.bmp"
 }

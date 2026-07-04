@@ -3,5 +3,5 @@ record sprt.bg_customiz {
   label = "CUSTOMIZ"
   kind  = "background"
   sheet = "CUSTOMIZ"
-  file  = "pik/CUSTOMIZ.png"
+  file  = "pik/CUSTOMIZ.bmp"
 }

@@ -3,5 +3,5 @@ record sprt.father_simon_bolivar {
   label = "Simon Bolivar"
   kind  = "portrait"
   sheet = "CC-18"
-  file  = "sprites/atlas_CC-18.png"
+  file  = "sprites/atlas_CC-18.bmp"
 }

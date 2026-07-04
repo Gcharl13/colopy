@@ -3,5 +3,5 @@ record sprt.father_thomas_jefferson {
   label = "Thomas Jefferson"
   kind  = "portrait"
   sheet = "CC-15"
-  file  = "sprites/atlas_CC-15.png"
+  file  = "sprites/atlas_CC-15.bmp"
 }

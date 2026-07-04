@@ -3,5 +3,5 @@ record sprt.bg_clos_bkg {
   label = "CLOS-BKG"
   kind  = "background"
   sheet = "CLOS-BKG"
-  file  = "pik/CLOS-BKG.png"
+  file  = "pik/CLOS-BKG.bmp"
 }

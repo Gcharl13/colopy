@@ -3,5 +3,5 @@ record sprt.bg_report4 {
   label = "REPORT4"
   kind  = "background"
   sheet = "REPORT4"
-  file  = "pik/REPORT4.png"
+  file  = "pik/REPORT4.bmp"
 }

@@ -3,5 +3,5 @@ record sprt.father_jan_de_witt {
   label = "Jan de Witt"
   kind  = "portrait"
   sheet = "CC-04"
-  file  = "sprites/atlas_CC-04.png"
+  file  = "sprites/atlas_CC-04.bmp"
 }

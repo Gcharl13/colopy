@@ -3,5 +3,5 @@ record sprt.bg_declarat {
   label = "DECLARAT"
   kind  = "background"
   sheet = "DECLARAT"
-  file  = "pik/DECLARAT.png"
+  file  = "pik/DECLARAT.bmp"
 }

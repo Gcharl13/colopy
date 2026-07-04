@@ -3,7 +3,7 @@
  "count": 369,
  "sprites": [
   {
-   "file": "data_extracted/sprites/units/000_colonists.png",
+   "file": "data_extracted/sprites/units/000_colonists.bmp",
    "sheet": "UNITS",
    "index": 0,
    "label": "Colonists",
@@ -12,7 +12,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/001_soldiers.png",
+   "file": "data_extracted/sprites/units/001_soldiers.bmp",
    "sheet": "UNITS",
    "index": 1,
    "label": "Soldiers",
@@ -21,7 +21,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/002_pioneers.png",
+   "file": "data_extracted/sprites/units/002_pioneers.bmp",
    "sheet": "UNITS",
    "index": 2,
    "label": "Pioneers",
@@ -30,7 +30,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/003_missionaries.png",
+   "file": "data_extracted/sprites/units/003_missionaries.bmp",
    "sheet": "UNITS",
    "index": 3,
    "label": "Missionaries",
@@ -39,7 +39,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/004_dragoons.png",
+   "file": "data_extracted/sprites/units/004_dragoons.bmp",
    "sheet": "UNITS",
    "index": 4,
    "label": "Dragoons",
@@ -48,7 +48,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/005_scouts.png",
+   "file": "data_extracted/sprites/units/005_scouts.bmp",
    "sheet": "UNITS",
    "index": 5,
    "label": "Scouts",
@@ -57,7 +57,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/006_regulars.png",
+   "file": "data_extracted/sprites/units/006_regulars.bmp",
    "sheet": "UNITS",
    "index": 6,
    "label": "Regulars",
@@ -66,7 +66,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/007_continental_cavalry.png",
+   "file": "data_extracted/sprites/units/007_continental_cavalry.bmp",
    "sheet": "UNITS",
    "index": 7,
    "label": "Continental Cavalry",
@@ -75,7 +75,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/008_cavalry.png",
+   "file": "data_extracted/sprites/units/008_cavalry.bmp",
    "sheet": "UNITS",
    "index": 8,
    "label": "Cavalry",
@@ -84,7 +84,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/009_continental_army.png",
+   "file": "data_extracted/sprites/units/009_continental_army.bmp",
    "sheet": "UNITS",
    "index": 9,
    "label": "Continental Army",
@@ -93,7 +93,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/010_treasure.png",
+   "file": "data_extracted/sprites/units/010_treasure.bmp",
    "sheet": "UNITS",
    "index": 10,
    "label": "Treasure",
@@ -102,7 +102,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/011_artillery.png",
+   "file": "data_extracted/sprites/units/011_artillery.bmp",
    "sheet": "UNITS",
    "index": 11,
    "label": "Artillery",
@@ -111,7 +111,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/012_wagon_train.png",
+   "file": "data_extracted/sprites/units/012_wagon_train.bmp",
    "sheet": "UNITS",
    "index": 12,
    "label": "Wagon Train",
@@ -120,7 +120,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/013_caravel.png",
+   "file": "data_extracted/sprites/units/013_caravel.bmp",
    "sheet": "UNITS",
    "index": 13,
    "label": "Caravel",
@@ -129,7 +129,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/014_merchantman.png",
+   "file": "data_extracted/sprites/units/014_merchantman.bmp",
    "sheet": "UNITS",
    "index": 14,
    "label": "Merchantman",
@@ -138,7 +138,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/015_galleon.png",
+   "file": "data_extracted/sprites/units/015_galleon.bmp",
    "sheet": "UNITS",
    "index": 15,
    "label": "Galleon",
@@ -147,7 +147,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/016_privateer.png",
+   "file": "data_extracted/sprites/units/016_privateer.bmp",
    "sheet": "UNITS",
    "index": 16,
    "label": "Privateer",
@@ -156,7 +156,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/017_frigate.png",
+   "file": "data_extracted/sprites/units/017_frigate.bmp",
    "sheet": "UNITS",
    "index": 17,
    "label": "Frigate",
@@ -165,7 +165,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/018_man_o_war.png",
+   "file": "data_extracted/sprites/units/018_man_o_war.bmp",
    "sheet": "UNITS",
    "index": 18,
    "label": "Man-O-War",
@@ -174,7 +174,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/019_braves.png",
+   "file": "data_extracted/sprites/units/019_braves.bmp",
    "sheet": "UNITS",
    "index": 19,
    "label": "Braves",
@@ -183,7 +183,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/020_armed_braves.png",
+   "file": "data_extracted/sprites/units/020_armed_braves.bmp",
    "sheet": "UNITS",
    "index": 20,
    "label": "Armed Braves",
@@ -192,7 +192,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/021_mounted_braves.png",
+   "file": "data_extracted/sprites/units/021_mounted_braves.bmp",
    "sheet": "UNITS",
    "index": 21,
    "label": "Mounted Braves",
@@ -201,7 +201,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/022_mounted_warriors.png",
+   "file": "data_extracted/sprites/units/022_mounted_warriors.bmp",
    "sheet": "UNITS",
    "index": 22,
    "label": "Mounted Warriors",
@@ -210,7 +210,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/units/023_unused.png",
+   "file": "data_extracted/sprites/units/023_unused.bmp",
    "sheet": "UNITS",
    "index": 23,
    "label": "(unused)",
@@ -219,7 +219,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/building/000_stockade.png",
+   "file": "data_extracted/sprites/building/000_stockade.bmp",
    "sheet": "BUILDING",
    "index": 0,
    "label": "Stockade",
@@ -228,7 +228,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/001_fort.png",
+   "file": "data_extracted/sprites/building/001_fort.bmp",
    "sheet": "BUILDING",
    "index": 1,
    "label": "Fort",
@@ -237,7 +237,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/002_fortress.png",
+   "file": "data_extracted/sprites/building/002_fortress.bmp",
    "sheet": "BUILDING",
    "index": 2,
    "label": "Fortress",
@@ -246,7 +246,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/003_armory.png",
+   "file": "data_extracted/sprites/building/003_armory.bmp",
    "sheet": "BUILDING",
    "index": 3,
    "label": "Armory",
@@ -255,7 +255,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/004_magazine.png",
+   "file": "data_extracted/sprites/building/004_magazine.bmp",
    "sheet": "BUILDING",
    "index": 4,
    "label": "Magazine",
@@ -264,7 +264,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/005_arsenal.png",
+   "file": "data_extracted/sprites/building/005_arsenal.bmp",
    "sheet": "BUILDING",
    "index": 5,
    "label": "Arsenal",
@@ -273,7 +273,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/006_docks.png",
+   "file": "data_extracted/sprites/building/006_docks.bmp",
    "sheet": "BUILDING",
    "index": 6,
    "label": "Docks",
@@ -282,7 +282,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/007_drydock.png",
+   "file": "data_extracted/sprites/building/007_drydock.bmp",
    "sheet": "BUILDING",
    "index": 7,
    "label": "Drydock",
@@ -291,7 +291,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/008_shipyard.png",
+   "file": "data_extracted/sprites/building/008_shipyard.bmp",
    "sheet": "BUILDING",
    "index": 8,
    "label": "Shipyard",
@@ -300,7 +300,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/009_town_hall.png",
+   "file": "data_extracted/sprites/building/009_town_hall.bmp",
    "sheet": "BUILDING",
    "index": 9,
    "label": "Town Hall",
@@ -309,7 +309,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/010_town_hall.png",
+   "file": "data_extracted/sprites/building/010_town_hall.bmp",
    "sheet": "BUILDING",
    "index": 10,
    "label": "Town Hall",
@@ -318,7 +318,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/building/011_town_hall.png",
+   "file": "data_extracted/sprites/building/011_town_hall.bmp",
    "sheet": "BUILDING",
    "index": 11,
    "label": "Town Hall",
@@ -327,7 +327,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/building/012_schoolhouse.png",
+   "file": "data_extracted/sprites/building/012_schoolhouse.bmp",
    "sheet": "BUILDING",
    "index": 12,
    "label": "Schoolhouse",
@@ -336,7 +336,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/013_college.png",
+   "file": "data_extracted/sprites/building/013_college.bmp",
    "sheet": "BUILDING",
    "index": 13,
    "label": "College",
@@ -345,7 +345,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/014_university.png",
+   "file": "data_extracted/sprites/building/014_university.bmp",
    "sheet": "BUILDING",
    "index": 14,
    "label": "University",
@@ -354,7 +354,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/015_warehouse.png",
+   "file": "data_extracted/sprites/building/015_warehouse.bmp",
    "sheet": "BUILDING",
    "index": 15,
    "label": "Warehouse",
@@ -363,7 +363,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/016_warehouse_expansion.png",
+   "file": "data_extracted/sprites/building/016_warehouse_expansion.bmp",
    "sheet": "BUILDING",
    "index": 16,
    "label": "Warehouse Expansion",
@@ -372,7 +372,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/017_stable.png",
+   "file": "data_extracted/sprites/building/017_stable.bmp",
    "sheet": "BUILDING",
    "index": 17,
    "label": "Stable",
@@ -381,7 +381,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/018_custom_house.png",
+   "file": "data_extracted/sprites/building/018_custom_house.bmp",
    "sheet": "BUILDING",
    "index": 18,
    "label": "Custom House",
@@ -390,7 +390,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/019_printing_press.png",
+   "file": "data_extracted/sprites/building/019_printing_press.bmp",
    "sheet": "BUILDING",
    "index": 19,
    "label": "Printing Press",
@@ -399,7 +399,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/020_newspaper.png",
+   "file": "data_extracted/sprites/building/020_newspaper.bmp",
    "sheet": "BUILDING",
    "index": 20,
    "label": "Newspaper",
@@ -408,7 +408,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/021_weaver_s_house.png",
+   "file": "data_extracted/sprites/building/021_weaver_s_house.bmp",
    "sheet": "BUILDING",
    "index": 21,
    "label": "Weaver's House",
@@ -417,7 +417,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/022_weaver_s_shop.png",
+   "file": "data_extracted/sprites/building/022_weaver_s_shop.bmp",
    "sheet": "BUILDING",
    "index": 22,
    "label": "Weaver's Shop",
@@ -426,7 +426,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/023_textile_mill.png",
+   "file": "data_extracted/sprites/building/023_textile_mill.bmp",
    "sheet": "BUILDING",
    "index": 23,
    "label": "Textile Mill",
@@ -435,7 +435,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/024_tobacconist_s_house.png",
+   "file": "data_extracted/sprites/building/024_tobacconist_s_house.bmp",
    "sheet": "BUILDING",
    "index": 24,
    "label": "Tobacconist's House",
@@ -444,7 +444,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/025_tobacconist_s_shop.png",
+   "file": "data_extracted/sprites/building/025_tobacconist_s_shop.bmp",
    "sheet": "BUILDING",
    "index": 25,
    "label": "Tobacconist's Shop",
@@ -453,7 +453,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/026_cigar_factory.png",
+   "file": "data_extracted/sprites/building/026_cigar_factory.bmp",
    "sheet": "BUILDING",
    "index": 26,
    "label": "Cigar Factory",
@@ -462,7 +462,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/027_rum_distiller_s_house.png",
+   "file": "data_extracted/sprites/building/027_rum_distiller_s_house.bmp",
    "sheet": "BUILDING",
    "index": 27,
    "label": "Rum Distiller's House",
@@ -471,7 +471,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/028_rum_distillery.png",
+   "file": "data_extracted/sprites/building/028_rum_distillery.bmp",
    "sheet": "BUILDING",
    "index": 28,
    "label": "Rum Distillery",
@@ -480,7 +480,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/029_rum_factory.png",
+   "file": "data_extracted/sprites/building/029_rum_factory.bmp",
    "sheet": "BUILDING",
    "index": 29,
    "label": "Rum Factory",
@@ -489,7 +489,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/030_capitol.png",
+   "file": "data_extracted/sprites/building/030_capitol.bmp",
    "sheet": "BUILDING",
    "index": 30,
    "label": "Capitol",
@@ -498,7 +498,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/building/031_capitol_expansion.png",
+   "file": "data_extracted/sprites/building/031_capitol_expansion.bmp",
    "sheet": "BUILDING",
    "index": 31,
    "label": "Capitol Expansion",
@@ -507,7 +507,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/building/032_fur_trader_s_house.png",
+   "file": "data_extracted/sprites/building/032_fur_trader_s_house.bmp",
    "sheet": "BUILDING",
    "index": 32,
    "label": "Fur Trader's House",
@@ -516,7 +516,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/033_fur_trading_post.png",
+   "file": "data_extracted/sprites/building/033_fur_trading_post.bmp",
    "sheet": "BUILDING",
    "index": 33,
    "label": "Fur Trading Post",
@@ -525,7 +525,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/034_fur_factory.png",
+   "file": "data_extracted/sprites/building/034_fur_factory.bmp",
    "sheet": "BUILDING",
    "index": 34,
    "label": "Fur Factory",
@@ -534,7 +534,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/035_carpenter_s_shop.png",
+   "file": "data_extracted/sprites/building/035_carpenter_s_shop.bmp",
    "sheet": "BUILDING",
    "index": 35,
    "label": "Carpenter's Shop",
@@ -543,7 +543,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/036_lumber_mill.png",
+   "file": "data_extracted/sprites/building/036_lumber_mill.bmp",
    "sheet": "BUILDING",
    "index": 36,
    "label": "Lumber Mill",
@@ -552,7 +552,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/037_church.png",
+   "file": "data_extracted/sprites/building/037_church.bmp",
    "sheet": "BUILDING",
    "index": 37,
    "label": "Church",
@@ -561,7 +561,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/038_cathedral.png",
+   "file": "data_extracted/sprites/building/038_cathedral.bmp",
    "sheet": "BUILDING",
    "index": 38,
    "label": "Cathedral",
@@ -570,7 +570,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/039_blacksmith_s_house.png",
+   "file": "data_extracted/sprites/building/039_blacksmith_s_house.bmp",
    "sheet": "BUILDING",
    "index": 39,
    "label": "Blacksmith's House",
@@ -579,7 +579,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/040_blacksmith_s_shop.png",
+   "file": "data_extracted/sprites/building/040_blacksmith_s_shop.bmp",
    "sheet": "BUILDING",
    "index": 40,
    "label": "Blacksmith's Shop",
@@ -588,7 +588,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/041_iron_works.png",
+   "file": "data_extracted/sprites/building/041_iron_works.bmp",
    "sheet": "BUILDING",
    "index": 41,
    "label": "Iron Works",
@@ -597,7 +597,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/042_building_42.png",
+   "file": "data_extracted/sprites/building/042_building_42.bmp",
    "sheet": "BUILDING",
    "index": 42,
    "label": "building #42",
@@ -606,7 +606,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/043_building_43.png",
+   "file": "data_extracted/sprites/building/043_building_43.bmp",
    "sheet": "BUILDING",
    "index": 43,
    "label": "building #43",
@@ -615,7 +615,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/044_building_44.png",
+   "file": "data_extracted/sprites/building/044_building_44.bmp",
    "sheet": "BUILDING",
    "index": 44,
    "label": "Building 44",
@@ -624,7 +624,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/045_building_45.png",
+   "file": "data_extracted/sprites/building/045_building_45.bmp",
    "sheet": "BUILDING",
    "index": 45,
    "label": "Building 45",
@@ -633,7 +633,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/046_building_46.png",
+   "file": "data_extracted/sprites/building/046_building_46.bmp",
    "sheet": "BUILDING",
    "index": 46,
    "label": "Building 46",
@@ -642,7 +642,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/building/047_building_47.png",
+   "file": "data_extracted/sprites/building/047_building_47.bmp",
    "sheet": "BUILDING",
    "index": 47,
    "label": "Building 47",
@@ -651,7 +651,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/000_tundra.png",
+   "file": "data_extracted/sprites/terrain/000_tundra.bmp",
    "sheet": "TERRAIN",
    "index": 0,
    "label": "Tundra",
@@ -660,7 +660,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/001_desert.png",
+   "file": "data_extracted/sprites/terrain/001_desert.bmp",
    "sheet": "TERRAIN",
    "index": 1,
    "label": "Desert",
@@ -669,7 +669,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/002_plains.png",
+   "file": "data_extracted/sprites/terrain/002_plains.bmp",
    "sheet": "TERRAIN",
    "index": 2,
    "label": "Plains",
@@ -678,7 +678,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/003_prairie.png",
+   "file": "data_extracted/sprites/terrain/003_prairie.bmp",
    "sheet": "TERRAIN",
    "index": 3,
    "label": "Prairie",
@@ -687,7 +687,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/004_grassland.png",
+   "file": "data_extracted/sprites/terrain/004_grassland.bmp",
    "sheet": "TERRAIN",
    "index": 4,
    "label": "Grassland",
@@ -696,7 +696,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/005_savanna.png",
+   "file": "data_extracted/sprites/terrain/005_savanna.bmp",
    "sheet": "TERRAIN",
    "index": 5,
    "label": "Savanna",
@@ -705,7 +705,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/006_marsh.png",
+   "file": "data_extracted/sprites/terrain/006_marsh.bmp",
    "sheet": "TERRAIN",
    "index": 6,
    "label": "Marsh",
@@ -714,7 +714,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/007_swamp.png",
+   "file": "data_extracted/sprites/terrain/007_swamp.bmp",
    "sheet": "TERRAIN",
    "index": 7,
    "label": "Swamp",
@@ -723,7 +723,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/008_forest_hill_ground.png",
+   "file": "data_extracted/sprites/terrain/008_forest_hill_ground.bmp",
    "sheet": "TERRAIN",
    "index": 8,
    "label": "Forest/Hill ground",
@@ -732,7 +732,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/009_arctic.png",
+   "file": "data_extracted/sprites/terrain/009_arctic.bmp",
    "sheet": "TERRAIN",
    "index": 9,
    "label": "Arctic",
@@ -741,7 +741,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/010_ocean.png",
+   "file": "data_extracted/sprites/terrain/010_ocean.bmp",
    "sheet": "TERRAIN",
    "index": 10,
    "label": "Ocean",
@@ -750,7 +750,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/terrain/011_sea_lane.png",
+   "file": "data_extracted/sprites/terrain/011_sea_lane.bmp",
    "sheet": "TERRAIN",
    "index": 11,
    "label": "Sea Lane",
@@ -759,7 +759,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/000_river_0.png",
+   "file": "data_extracted/sprites/phys0/000_river_0.bmp",
    "sheet": "PHYS0",
    "index": 0,
    "label": "river 0",
@@ -768,7 +768,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/001_river_1.png",
+   "file": "data_extracted/sprites/phys0/001_river_1.bmp",
    "sheet": "PHYS0",
    "index": 1,
    "label": "river 1",
@@ -777,7 +777,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/002_river_2.png",
+   "file": "data_extracted/sprites/phys0/002_river_2.bmp",
    "sheet": "PHYS0",
    "index": 2,
    "label": "river 2",
@@ -786,7 +786,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/003_river_3.png",
+   "file": "data_extracted/sprites/phys0/003_river_3.bmp",
    "sheet": "PHYS0",
    "index": 3,
    "label": "river 3",
@@ -795,7 +795,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/004_river_4.png",
+   "file": "data_extracted/sprites/phys0/004_river_4.bmp",
    "sheet": "PHYS0",
    "index": 4,
    "label": "river 4",
@@ -804,7 +804,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/005_river_5.png",
+   "file": "data_extracted/sprites/phys0/005_river_5.bmp",
    "sheet": "PHYS0",
    "index": 5,
    "label": "river 5",
@@ -813,7 +813,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/006_river_6.png",
+   "file": "data_extracted/sprites/phys0/006_river_6.bmp",
    "sheet": "PHYS0",
    "index": 6,
    "label": "river 6",
@@ -822,7 +822,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/007_river_7.png",
+   "file": "data_extracted/sprites/phys0/007_river_7.bmp",
    "sheet": "PHYS0",
    "index": 7,
    "label": "river 7",
@@ -831,7 +831,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/008_river_8.png",
+   "file": "data_extracted/sprites/phys0/008_river_8.bmp",
    "sheet": "PHYS0",
    "index": 8,
    "label": "river 8",
@@ -840,7 +840,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/009_river_9.png",
+   "file": "data_extracted/sprites/phys0/009_river_9.bmp",
    "sheet": "PHYS0",
    "index": 9,
    "label": "river 9",
@@ -849,7 +849,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/010_river_10.png",
+   "file": "data_extracted/sprites/phys0/010_river_10.bmp",
    "sheet": "PHYS0",
    "index": 10,
    "label": "river 10",
@@ -858,7 +858,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/011_river_11.png",
+   "file": "data_extracted/sprites/phys0/011_river_11.bmp",
    "sheet": "PHYS0",
    "index": 11,
    "label": "river 11",
@@ -867,7 +867,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/012_river_12.png",
+   "file": "data_extracted/sprites/phys0/012_river_12.bmp",
    "sheet": "PHYS0",
    "index": 12,
    "label": "river 12",
@@ -876,7 +876,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/013_river_13.png",
+   "file": "data_extracted/sprites/phys0/013_river_13.bmp",
    "sheet": "PHYS0",
    "index": 13,
    "label": "river 13",
@@ -885,7 +885,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/014_river_14.png",
+   "file": "data_extracted/sprites/phys0/014_river_14.bmp",
    "sheet": "PHYS0",
    "index": 14,
    "label": "river 14",
@@ -894,7 +894,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/015_river_15.png",
+   "file": "data_extracted/sprites/phys0/015_river_15.bmp",
    "sheet": "PHYS0",
    "index": 15,
    "label": "river 15",
@@ -903,7 +903,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/016_river_16.png",
+   "file": "data_extracted/sprites/phys0/016_river_16.bmp",
    "sheet": "PHYS0",
    "index": 16,
    "label": "river 16",
@@ -912,7 +912,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/017_river_17.png",
+   "file": "data_extracted/sprites/phys0/017_river_17.bmp",
    "sheet": "PHYS0",
    "index": 17,
    "label": "river 17",
@@ -921,7 +921,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/018_river_18.png",
+   "file": "data_extracted/sprites/phys0/018_river_18.bmp",
    "sheet": "PHYS0",
    "index": 18,
    "label": "river 18",
@@ -930,7 +930,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/019_river_19.png",
+   "file": "data_extracted/sprites/phys0/019_river_19.bmp",
    "sheet": "PHYS0",
    "index": 19,
    "label": "river 19",
@@ -939,7 +939,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/020_river_20.png",
+   "file": "data_extracted/sprites/phys0/020_river_20.bmp",
    "sheet": "PHYS0",
    "index": 20,
    "label": "river 20",
@@ -948,7 +948,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/021_river_21.png",
+   "file": "data_extracted/sprites/phys0/021_river_21.bmp",
    "sheet": "PHYS0",
    "index": 21,
    "label": "river 21",
@@ -957,7 +957,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/022_river_22.png",
+   "file": "data_extracted/sprites/phys0/022_river_22.bmp",
    "sheet": "PHYS0",
    "index": 22,
    "label": "river 22",
@@ -966,7 +966,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/023_river_23.png",
+   "file": "data_extracted/sprites/phys0/023_river_23.bmp",
    "sheet": "PHYS0",
    "index": 23,
    "label": "river 23",
@@ -975,7 +975,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/024_river_24.png",
+   "file": "data_extracted/sprites/phys0/024_river_24.bmp",
    "sheet": "PHYS0",
    "index": 24,
    "label": "river 24",
@@ -984,7 +984,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/025_river_25.png",
+   "file": "data_extracted/sprites/phys0/025_river_25.bmp",
    "sheet": "PHYS0",
    "index": 25,
    "label": "river 25",
@@ -993,7 +993,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/026_river_26.png",
+   "file": "data_extracted/sprites/phys0/026_river_26.bmp",
    "sheet": "PHYS0",
    "index": 26,
    "label": "river 26",
@@ -1002,7 +1002,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/027_river_27.png",
+   "file": "data_extracted/sprites/phys0/027_river_27.bmp",
    "sheet": "PHYS0",
    "index": 27,
    "label": "river 27",
@@ -1011,7 +1011,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/028_river_28.png",
+   "file": "data_extracted/sprites/phys0/028_river_28.bmp",
    "sheet": "PHYS0",
    "index": 28,
    "label": "river 28",
@@ -1020,7 +1020,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/029_river_29.png",
+   "file": "data_extracted/sprites/phys0/029_river_29.bmp",
    "sheet": "PHYS0",
    "index": 29,
    "label": "river 29",
@@ -1029,7 +1029,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/030_river_30.png",
+   "file": "data_extracted/sprites/phys0/030_river_30.bmp",
    "sheet": "PHYS0",
    "index": 30,
    "label": "river 30",
@@ -1038,7 +1038,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/031_river_31.png",
+   "file": "data_extracted/sprites/phys0/031_river_31.bmp",
    "sheet": "PHYS0",
    "index": 31,
    "label": "river 31",
@@ -1047,7 +1047,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/032_mountains_0.png",
+   "file": "data_extracted/sprites/phys0/032_mountains_0.bmp",
    "sheet": "PHYS0",
    "index": 32,
    "label": "mountains 0",
@@ -1056,7 +1056,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/033_mountains_1.png",
+   "file": "data_extracted/sprites/phys0/033_mountains_1.bmp",
    "sheet": "PHYS0",
    "index": 33,
    "label": "mountains 1",
@@ -1065,7 +1065,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/034_mountains_2.png",
+   "file": "data_extracted/sprites/phys0/034_mountains_2.bmp",
    "sheet": "PHYS0",
    "index": 34,
    "label": "mountains 2",
@@ -1074,7 +1074,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/035_mountains_3.png",
+   "file": "data_extracted/sprites/phys0/035_mountains_3.bmp",
    "sheet": "PHYS0",
    "index": 35,
    "label": "mountains 3",
@@ -1083,7 +1083,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/036_mountains_4.png",
+   "file": "data_extracted/sprites/phys0/036_mountains_4.bmp",
    "sheet": "PHYS0",
    "index": 36,
    "label": "mountains 4",
@@ -1092,7 +1092,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/037_mountains_5.png",
+   "file": "data_extracted/sprites/phys0/037_mountains_5.bmp",
    "sheet": "PHYS0",
    "index": 37,
    "label": "mountains 5",
@@ -1101,7 +1101,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/038_mountains_6.png",
+   "file": "data_extracted/sprites/phys0/038_mountains_6.bmp",
    "sheet": "PHYS0",
    "index": 38,
    "label": "mountains 6",
@@ -1110,7 +1110,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/039_mountains_7.png",
+   "file": "data_extracted/sprites/phys0/039_mountains_7.bmp",
    "sheet": "PHYS0",
    "index": 39,
    "label": "mountains 7",
@@ -1119,7 +1119,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/040_mountains_8.png",
+   "file": "data_extracted/sprites/phys0/040_mountains_8.bmp",
    "sheet": "PHYS0",
    "index": 40,
    "label": "mountains 8",
@@ -1128,7 +1128,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/041_mountains_9.png",
+   "file": "data_extracted/sprites/phys0/041_mountains_9.bmp",
    "sheet": "PHYS0",
    "index": 41,
    "label": "mountains 9",
@@ -1137,7 +1137,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/042_mountains_10.png",
+   "file": "data_extracted/sprites/phys0/042_mountains_10.bmp",
    "sheet": "PHYS0",
    "index": 42,
    "label": "mountains 10",
@@ -1146,7 +1146,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/043_mountains_11.png",
+   "file": "data_extracted/sprites/phys0/043_mountains_11.bmp",
    "sheet": "PHYS0",
    "index": 43,
    "label": "mountains 11",
@@ -1155,7 +1155,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/044_mountains_12.png",
+   "file": "data_extracted/sprites/phys0/044_mountains_12.bmp",
    "sheet": "PHYS0",
    "index": 44,
    "label": "mountains 12",
@@ -1164,7 +1164,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/045_mountains_13.png",
+   "file": "data_extracted/sprites/phys0/045_mountains_13.bmp",
    "sheet": "PHYS0",
    "index": 45,
    "label": "mountains 13",
@@ -1173,7 +1173,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/046_mountains_14.png",
+   "file": "data_extracted/sprites/phys0/046_mountains_14.bmp",
    "sheet": "PHYS0",
    "index": 46,
    "label": "mountains 14",
@@ -1182,7 +1182,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/047_mountains_15.png",
+   "file": "data_extracted/sprites/phys0/047_mountains_15.bmp",
    "sheet": "PHYS0",
    "index": 47,
    "label": "mountains 15",
@@ -1191,7 +1191,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/048_hills_0.png",
+   "file": "data_extracted/sprites/phys0/048_hills_0.bmp",
    "sheet": "PHYS0",
    "index": 48,
    "label": "hills 0",
@@ -1200,7 +1200,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/049_hills_1.png",
+   "file": "data_extracted/sprites/phys0/049_hills_1.bmp",
    "sheet": "PHYS0",
    "index": 49,
    "label": "hills 1",
@@ -1209,7 +1209,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/050_hills_2.png",
+   "file": "data_extracted/sprites/phys0/050_hills_2.bmp",
    "sheet": "PHYS0",
    "index": 50,
    "label": "hills 2",
@@ -1218,7 +1218,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/051_hills_3.png",
+   "file": "data_extracted/sprites/phys0/051_hills_3.bmp",
    "sheet": "PHYS0",
    "index": 51,
    "label": "hills 3",
@@ -1227,7 +1227,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/052_hills_4.png",
+   "file": "data_extracted/sprites/phys0/052_hills_4.bmp",
    "sheet": "PHYS0",
    "index": 52,
    "label": "hills 4",
@@ -1236,7 +1236,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/053_hills_5.png",
+   "file": "data_extracted/sprites/phys0/053_hills_5.bmp",
    "sheet": "PHYS0",
    "index": 53,
    "label": "hills 5",
@@ -1245,7 +1245,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/054_hills_6.png",
+   "file": "data_extracted/sprites/phys0/054_hills_6.bmp",
    "sheet": "PHYS0",
    "index": 54,
    "label": "hills 6",
@@ -1254,7 +1254,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/055_hills_7.png",
+   "file": "data_extracted/sprites/phys0/055_hills_7.bmp",
    "sheet": "PHYS0",
    "index": 55,
    "label": "hills 7",
@@ -1263,7 +1263,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/056_hills_8.png",
+   "file": "data_extracted/sprites/phys0/056_hills_8.bmp",
    "sheet": "PHYS0",
    "index": 56,
    "label": "hills 8",
@@ -1272,7 +1272,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/057_hills_9.png",
+   "file": "data_extracted/sprites/phys0/057_hills_9.bmp",
    "sheet": "PHYS0",
    "index": 57,
    "label": "hills 9",
@@ -1281,7 +1281,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/058_hills_10.png",
+   "file": "data_extracted/sprites/phys0/058_hills_10.bmp",
    "sheet": "PHYS0",
    "index": 58,
    "label": "hills 10",
@@ -1290,7 +1290,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/059_hills_11.png",
+   "file": "data_extracted/sprites/phys0/059_hills_11.bmp",
    "sheet": "PHYS0",
    "index": 59,
    "label": "hills 11",
@@ -1299,7 +1299,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/060_hills_12.png",
+   "file": "data_extracted/sprites/phys0/060_hills_12.bmp",
    "sheet": "PHYS0",
    "index": 60,
    "label": "hills 12",
@@ -1308,7 +1308,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/061_hills_13.png",
+   "file": "data_extracted/sprites/phys0/061_hills_13.bmp",
    "sheet": "PHYS0",
    "index": 61,
    "label": "hills 13",
@@ -1317,7 +1317,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/062_hills_14.png",
+   "file": "data_extracted/sprites/phys0/062_hills_14.bmp",
    "sheet": "PHYS0",
    "index": 62,
    "label": "hills 14",
@@ -1326,7 +1326,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/063_hills_15.png",
+   "file": "data_extracted/sprites/phys0/063_hills_15.bmp",
    "sheet": "PHYS0",
    "index": 63,
    "label": "hills 15",
@@ -1335,7 +1335,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/064_forest_0.png",
+   "file": "data_extracted/sprites/phys0/064_forest_0.bmp",
    "sheet": "PHYS0",
    "index": 64,
    "label": "forest 0",
@@ -1344,7 +1344,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/065_forest_1.png",
+   "file": "data_extracted/sprites/phys0/065_forest_1.bmp",
    "sheet": "PHYS0",
    "index": 65,
    "label": "forest 1",
@@ -1353,7 +1353,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/066_forest_2.png",
+   "file": "data_extracted/sprites/phys0/066_forest_2.bmp",
    "sheet": "PHYS0",
    "index": 66,
    "label": "forest 2",
@@ -1362,7 +1362,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/067_forest_3.png",
+   "file": "data_extracted/sprites/phys0/067_forest_3.bmp",
    "sheet": "PHYS0",
    "index": 67,
    "label": "forest 3",
@@ -1371,7 +1371,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/068_forest_4.png",
+   "file": "data_extracted/sprites/phys0/068_forest_4.bmp",
    "sheet": "PHYS0",
    "index": 68,
    "label": "forest 4",
@@ -1380,7 +1380,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/069_forest_5.png",
+   "file": "data_extracted/sprites/phys0/069_forest_5.bmp",
    "sheet": "PHYS0",
    "index": 69,
    "label": "forest 5",
@@ -1389,7 +1389,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/070_forest_6.png",
+   "file": "data_extracted/sprites/phys0/070_forest_6.bmp",
    "sheet": "PHYS0",
    "index": 70,
    "label": "forest 6",
@@ -1398,7 +1398,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/071_forest_7.png",
+   "file": "data_extracted/sprites/phys0/071_forest_7.bmp",
    "sheet": "PHYS0",
    "index": 71,
    "label": "forest 7",
@@ -1407,7 +1407,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/072_forest_8.png",
+   "file": "data_extracted/sprites/phys0/072_forest_8.bmp",
    "sheet": "PHYS0",
    "index": 72,
    "label": "forest 8",
@@ -1416,7 +1416,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/073_forest_9.png",
+   "file": "data_extracted/sprites/phys0/073_forest_9.bmp",
    "sheet": "PHYS0",
    "index": 73,
    "label": "forest 9",
@@ -1425,7 +1425,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/074_forest_10.png",
+   "file": "data_extracted/sprites/phys0/074_forest_10.bmp",
    "sheet": "PHYS0",
    "index": 74,
    "label": "forest 10",
@@ -1434,7 +1434,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/075_forest_11.png",
+   "file": "data_extracted/sprites/phys0/075_forest_11.bmp",
    "sheet": "PHYS0",
    "index": 75,
    "label": "forest 11",
@@ -1443,7 +1443,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/076_forest_12.png",
+   "file": "data_extracted/sprites/phys0/076_forest_12.bmp",
    "sheet": "PHYS0",
    "index": 76,
    "label": "forest 12",
@@ -1452,7 +1452,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/077_forest_13.png",
+   "file": "data_extracted/sprites/phys0/077_forest_13.bmp",
    "sheet": "PHYS0",
    "index": 77,
    "label": "forest 13",
@@ -1461,7 +1461,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/078_forest_14.png",
+   "file": "data_extracted/sprites/phys0/078_forest_14.bmp",
    "sheet": "PHYS0",
    "index": 78,
    "label": "forest 14",
@@ -1470,7 +1470,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/079_forest_15.png",
+   "file": "data_extracted/sprites/phys0/079_forest_15.bmp",
    "sheet": "PHYS0",
    "index": 79,
    "label": "forest 15",
@@ -1479,7 +1479,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/080_phys0_frame_80.png",
+   "file": "data_extracted/sprites/phys0/080_phys0_frame_80.bmp",
    "sheet": "PHYS0",
    "index": 80,
    "label": "phys0 frame 80",
@@ -1488,7 +1488,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/081_phys0_frame_81.png",
+   "file": "data_extracted/sprites/phys0/081_phys0_frame_81.bmp",
    "sheet": "PHYS0",
    "index": 81,
    "label": "phys0 frame 81",
@@ -1497,7 +1497,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/082_phys0_frame_82.png",
+   "file": "data_extracted/sprites/phys0/082_phys0_frame_82.bmp",
    "sheet": "PHYS0",
    "index": 82,
    "label": "phys0 frame 82",
@@ -1506,7 +1506,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/083_phys0_frame_83.png",
+   "file": "data_extracted/sprites/phys0/083_phys0_frame_83.bmp",
    "sheet": "PHYS0",
    "index": 83,
    "label": "phys0 frame 83",
@@ -1515,7 +1515,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/084_phys0_frame_84.png",
+   "file": "data_extracted/sprites/phys0/084_phys0_frame_84.bmp",
    "sheet": "PHYS0",
    "index": 84,
    "label": "phys0 frame 84",
@@ -1524,7 +1524,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/085_phys0_frame_85.png",
+   "file": "data_extracted/sprites/phys0/085_phys0_frame_85.bmp",
    "sheet": "PHYS0",
    "index": 85,
    "label": "phys0 frame 85",
@@ -1533,7 +1533,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/086_phys0_frame_86.png",
+   "file": "data_extracted/sprites/phys0/086_phys0_frame_86.bmp",
    "sheet": "PHYS0",
    "index": 86,
    "label": "phys0 frame 86",
@@ -1542,7 +1542,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/087_phys0_frame_87.png",
+   "file": "data_extracted/sprites/phys0/087_phys0_frame_87.bmp",
    "sheet": "PHYS0",
    "index": 87,
    "label": "phys0 frame 87",
@@ -1551,7 +1551,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/088_phys0_frame_88.png",
+   "file": "data_extracted/sprites/phys0/088_phys0_frame_88.bmp",
    "sheet": "PHYS0",
    "index": 88,
    "label": "phys0 frame 88",
@@ -1560,7 +1560,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/089_phys0_frame_89.png",
+   "file": "data_extracted/sprites/phys0/089_phys0_frame_89.bmp",
    "sheet": "PHYS0",
    "index": 89,
    "label": "phys0 frame 89",
@@ -1569,7 +1569,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/090_phys0_frame_90.png",
+   "file": "data_extracted/sprites/phys0/090_phys0_frame_90.bmp",
    "sheet": "PHYS0",
    "index": 90,
    "label": "phys0 frame 90",
@@ -1578,7 +1578,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/091_phys0_frame_91.png",
+   "file": "data_extracted/sprites/phys0/091_phys0_frame_91.bmp",
    "sheet": "PHYS0",
    "index": 91,
    "label": "phys0 frame 91",
@@ -1587,7 +1587,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/092_phys0_frame_92.png",
+   "file": "data_extracted/sprites/phys0/092_phys0_frame_92.bmp",
    "sheet": "PHYS0",
    "index": 92,
    "label": "phys0 frame 92",
@@ -1596,7 +1596,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/093_phys0_frame_93.png",
+   "file": "data_extracted/sprites/phys0/093_phys0_frame_93.bmp",
    "sheet": "PHYS0",
    "index": 93,
    "label": "phys0 frame 93",
@@ -1605,7 +1605,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/094_phys0_frame_94.png",
+   "file": "data_extracted/sprites/phys0/094_phys0_frame_94.bmp",
    "sheet": "PHYS0",
    "index": 94,
    "label": "phys0 frame 94",
@@ -1614,7 +1614,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/095_phys0_frame_95.png",
+   "file": "data_extracted/sprites/phys0/095_phys0_frame_95.bmp",
    "sheet": "PHYS0",
    "index": 95,
    "label": "phys0 frame 95",
@@ -1623,7 +1623,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/096_phys0_frame_96.png",
+   "file": "data_extracted/sprites/phys0/096_phys0_frame_96.bmp",
    "sheet": "PHYS0",
    "index": 96,
    "label": "phys0 frame 96",
@@ -1632,7 +1632,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/097_phys0_frame_97.png",
+   "file": "data_extracted/sprites/phys0/097_phys0_frame_97.bmp",
    "sheet": "PHYS0",
    "index": 97,
    "label": "phys0 frame 97",
@@ -1641,7 +1641,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/098_phys0_frame_98.png",
+   "file": "data_extracted/sprites/phys0/098_phys0_frame_98.bmp",
    "sheet": "PHYS0",
    "index": 98,
    "label": "phys0 frame 98",
@@ -1650,7 +1650,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/099_phys0_frame_99.png",
+   "file": "data_extracted/sprites/phys0/099_phys0_frame_99.bmp",
    "sheet": "PHYS0",
    "index": 99,
    "label": "phys0 frame 99",
@@ -1659,7 +1659,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/100_phys0_frame_100.png",
+   "file": "data_extracted/sprites/phys0/100_phys0_frame_100.bmp",
    "sheet": "PHYS0",
    "index": 100,
    "label": "phys0 frame 100",
@@ -1668,7 +1668,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/101_phys0_frame_101.png",
+   "file": "data_extracted/sprites/phys0/101_phys0_frame_101.bmp",
    "sheet": "PHYS0",
    "index": 101,
    "label": "phys0 frame 101",
@@ -1677,7 +1677,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/102_phys0_frame_102.png",
+   "file": "data_extracted/sprites/phys0/102_phys0_frame_102.bmp",
    "sheet": "PHYS0",
    "index": 102,
    "label": "phys0 frame 102",
@@ -1686,7 +1686,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/103_phys0_frame_103.png",
+   "file": "data_extracted/sprites/phys0/103_phys0_frame_103.bmp",
    "sheet": "PHYS0",
    "index": 103,
    "label": "phys0 frame 103",
@@ -1695,7 +1695,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/104_stencils_0.png",
+   "file": "data_extracted/sprites/phys0/104_stencils_0.bmp",
    "sheet": "PHYS0",
    "index": 104,
    "label": "stencils 0",
@@ -1704,7 +1704,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/105_stencils_1.png",
+   "file": "data_extracted/sprites/phys0/105_stencils_1.bmp",
    "sheet": "PHYS0",
    "index": 105,
    "label": "stencils 1",
@@ -1713,7 +1713,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/106_stencils_2.png",
+   "file": "data_extracted/sprites/phys0/106_stencils_2.bmp",
    "sheet": "PHYS0",
    "index": 106,
    "label": "stencils 2",
@@ -1722,7 +1722,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/107_stencils_3.png",
+   "file": "data_extracted/sprites/phys0/107_stencils_3.bmp",
    "sheet": "PHYS0",
    "index": 107,
    "label": "stencils 3",
@@ -1731,7 +1731,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/108_coast_subtiles_0.png",
+   "file": "data_extracted/sprites/phys0/108_coast_subtiles_0.bmp",
    "sheet": "PHYS0",
    "index": 108,
    "label": "coast_subtiles 0",
@@ -1740,7 +1740,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/109_coast_subtiles_1.png",
+   "file": "data_extracted/sprites/phys0/109_coast_subtiles_1.bmp",
    "sheet": "PHYS0",
    "index": 109,
    "label": "coast_subtiles 1",
@@ -1749,7 +1749,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/110_coast_subtiles_2.png",
+   "file": "data_extracted/sprites/phys0/110_coast_subtiles_2.bmp",
    "sheet": "PHYS0",
    "index": 110,
    "label": "coast_subtiles 2",
@@ -1758,7 +1758,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/111_coast_subtiles_3.png",
+   "file": "data_extracted/sprites/phys0/111_coast_subtiles_3.bmp",
    "sheet": "PHYS0",
    "index": 111,
    "label": "coast_subtiles 3",
@@ -1767,7 +1767,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/phys0/112_coast_subtiles_4.png",
+   "file": "data_extracted/sprites/phys0/112_coast_subtiles_4.bmp",
    "sheet": "PHYS0",
    "index": 112,
    "label": "coast_subtiles 4",
@@ -1776,7 +1776,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/113_coast_subtiles_5.png",
+   "file": "data_extracted/sprites/phys0/113_coast_subtiles_5.bmp",
    "sheet": "PHYS0",
    "index": 113,
    "label": "coast_subtiles 5",
@@ -1785,7 +1785,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/114_coast_subtiles_6.png",
+   "file": "data_extracted/sprites/phys0/114_coast_subtiles_6.bmp",
    "sheet": "PHYS0",
    "index": 114,
    "label": "coast_subtiles 6",
@@ -1794,7 +1794,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/115_coast_subtiles_7.png",
+   "file": "data_extracted/sprites/phys0/115_coast_subtiles_7.bmp",
    "sheet": "PHYS0",
    "index": 115,
    "label": "coast_subtiles 7",
@@ -1803,7 +1803,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/116_coast_subtiles_8.png",
+   "file": "data_extracted/sprites/phys0/116_coast_subtiles_8.bmp",
    "sheet": "PHYS0",
    "index": 116,
    "label": "coast_subtiles 8",
@@ -1812,7 +1812,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/117_coast_subtiles_9.png",
+   "file": "data_extracted/sprites/phys0/117_coast_subtiles_9.bmp",
    "sheet": "PHYS0",
    "index": 117,
    "label": "coast_subtiles 9",
@@ -1821,7 +1821,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/118_coast_subtiles_10.png",
+   "file": "data_extracted/sprites/phys0/118_coast_subtiles_10.bmp",
    "sheet": "PHYS0",
    "index": 118,
    "label": "coast_subtiles 10",
@@ -1830,7 +1830,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/119_coast_subtiles_11.png",
+   "file": "data_extracted/sprites/phys0/119_coast_subtiles_11.bmp",
    "sheet": "PHYS0",
    "index": 119,
    "label": "coast_subtiles 11",
@@ -1839,7 +1839,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/120_coast_subtiles_12.png",
+   "file": "data_extracted/sprites/phys0/120_coast_subtiles_12.bmp",
    "sheet": "PHYS0",
    "index": 120,
    "label": "coast_subtiles 12",
@@ -1848,7 +1848,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/121_coast_subtiles_13.png",
+   "file": "data_extracted/sprites/phys0/121_coast_subtiles_13.bmp",
    "sheet": "PHYS0",
    "index": 121,
    "label": "coast_subtiles 13",
@@ -1857,7 +1857,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/122_coast_subtiles_14.png",
+   "file": "data_extracted/sprites/phys0/122_coast_subtiles_14.bmp",
    "sheet": "PHYS0",
    "index": 122,
    "label": "coast_subtiles 14",
@@ -1866,7 +1866,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/123_coast_subtiles_15.png",
+   "file": "data_extracted/sprites/phys0/123_coast_subtiles_15.bmp",
    "sheet": "PHYS0",
    "index": 123,
    "label": "coast_subtiles 15",
@@ -1875,7 +1875,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/124_coast_subtiles_16.png",
+   "file": "data_extracted/sprites/phys0/124_coast_subtiles_16.bmp",
    "sheet": "PHYS0",
    "index": 124,
    "label": "coast_subtiles 16",
@@ -1884,7 +1884,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/125_coast_subtiles_17.png",
+   "file": "data_extracted/sprites/phys0/125_coast_subtiles_17.bmp",
    "sheet": "PHYS0",
    "index": 125,
    "label": "coast_subtiles 17",
@@ -1893,7 +1893,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/126_coast_subtiles_18.png",
+   "file": "data_extracted/sprites/phys0/126_coast_subtiles_18.bmp",
    "sheet": "PHYS0",
    "index": 126,
    "label": "coast_subtiles 18",
@@ -1902,7 +1902,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/127_coast_subtiles_19.png",
+   "file": "data_extracted/sprites/phys0/127_coast_subtiles_19.bmp",
    "sheet": "PHYS0",
    "index": 127,
    "label": "coast_subtiles 19",
@@ -1911,7 +1911,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/128_coast_subtiles_20.png",
+   "file": "data_extracted/sprites/phys0/128_coast_subtiles_20.bmp",
    "sheet": "PHYS0",
    "index": 128,
    "label": "coast_subtiles 20",
@@ -1920,7 +1920,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/129_coast_subtiles_21.png",
+   "file": "data_extracted/sprites/phys0/129_coast_subtiles_21.bmp",
    "sheet": "PHYS0",
    "index": 129,
    "label": "coast_subtiles 21",
@@ -1929,7 +1929,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/130_coast_subtiles_22.png",
+   "file": "data_extracted/sprites/phys0/130_coast_subtiles_22.bmp",
    "sheet": "PHYS0",
    "index": 130,
    "label": "coast_subtiles 22",
@@ -1938,7 +1938,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/131_coast_subtiles_23.png",
+   "file": "data_extracted/sprites/phys0/131_coast_subtiles_23.bmp",
    "sheet": "PHYS0",
    "index": 131,
    "label": "coast_subtiles 23",
@@ -1947,7 +1947,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/132_coast_subtiles_24.png",
+   "file": "data_extracted/sprites/phys0/132_coast_subtiles_24.bmp",
    "sheet": "PHYS0",
    "index": 132,
    "label": "coast_subtiles 24",
@@ -1956,7 +1956,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/133_coast_subtiles_25.png",
+   "file": "data_extracted/sprites/phys0/133_coast_subtiles_25.bmp",
    "sheet": "PHYS0",
    "index": 133,
    "label": "coast_subtiles 25",
@@ -1965,7 +1965,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/134_coast_subtiles_26.png",
+   "file": "data_extracted/sprites/phys0/134_coast_subtiles_26.bmp",
    "sheet": "PHYS0",
    "index": 134,
    "label": "coast_subtiles 26",
@@ -1974,7 +1974,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/135_coast_subtiles_27.png",
+   "file": "data_extracted/sprites/phys0/135_coast_subtiles_27.bmp",
    "sheet": "PHYS0",
    "index": 135,
    "label": "coast_subtiles 27",
@@ -1983,7 +1983,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/136_coast_subtiles_28.png",
+   "file": "data_extracted/sprites/phys0/136_coast_subtiles_28.bmp",
    "sheet": "PHYS0",
    "index": 136,
    "label": "coast_subtiles 28",
@@ -1992,7 +1992,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/137_coast_subtiles_29.png",
+   "file": "data_extracted/sprites/phys0/137_coast_subtiles_29.bmp",
    "sheet": "PHYS0",
    "index": 137,
    "label": "coast_subtiles 29",
@@ -2001,7 +2001,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/138_coast_subtiles_30.png",
+   "file": "data_extracted/sprites/phys0/138_coast_subtiles_30.bmp",
    "sheet": "PHYS0",
    "index": 138,
    "label": "coast_subtiles 30",
@@ -2010,7 +2010,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/139_coast_subtiles_31.png",
+   "file": "data_extracted/sprites/phys0/139_coast_subtiles_31.bmp",
    "sheet": "PHYS0",
    "index": 139,
    "label": "coast_subtiles 31",
@@ -2019,7 +2019,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/140_phys0_frame_140.png",
+   "file": "data_extracted/sprites/phys0/140_phys0_frame_140.bmp",
    "sheet": "PHYS0",
    "index": 140,
    "label": "phys0 frame 140",
@@ -2028,7 +2028,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/141_phys0_frame_141.png",
+   "file": "data_extracted/sprites/phys0/141_phys0_frame_141.bmp",
    "sheet": "PHYS0",
    "index": 141,
    "label": "phys0 frame 141",
@@ -2037,7 +2037,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/142_phys0_frame_142.png",
+   "file": "data_extracted/sprites/phys0/142_phys0_frame_142.bmp",
    "sheet": "PHYS0",
    "index": 142,
    "label": "phys0 frame 142",
@@ -2046,7 +2046,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/143_phys0_frame_143.png",
+   "file": "data_extracted/sprites/phys0/143_phys0_frame_143.bmp",
    "sheet": "PHYS0",
    "index": 143,
    "label": "phys0 frame 143",
@@ -2055,7 +2055,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/144_phys0_frame_144.png",
+   "file": "data_extracted/sprites/phys0/144_phys0_frame_144.bmp",
    "sheet": "PHYS0",
    "index": 144,
    "label": "phys0 frame 144",
@@ -2064,7 +2064,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/145_phys0_frame_145.png",
+   "file": "data_extracted/sprites/phys0/145_phys0_frame_145.bmp",
    "sheet": "PHYS0",
    "index": 145,
    "label": "phys0 frame 145",
@@ -2073,7 +2073,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/146_phys0_frame_146.png",
+   "file": "data_extracted/sprites/phys0/146_phys0_frame_146.bmp",
    "sheet": "PHYS0",
    "index": 146,
    "label": "phys0 frame 146",
@@ -2082,7 +2082,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/147_phys0_frame_147.png",
+   "file": "data_extracted/sprites/phys0/147_phys0_frame_147.bmp",
    "sheet": "PHYS0",
    "index": 147,
    "label": "phys0 frame 147",
@@ -2091,7 +2091,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/148_phys0_frame_148.png",
+   "file": "data_extracted/sprites/phys0/148_phys0_frame_148.bmp",
    "sheet": "PHYS0",
    "index": 148,
    "label": "phys0 frame 148",
@@ -2100,7 +2100,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/149_phys0_frame_149.png",
+   "file": "data_extracted/sprites/phys0/149_phys0_frame_149.bmp",
    "sheet": "PHYS0",
    "index": 149,
    "label": "phys0 frame 149",
@@ -2109,7 +2109,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/150_beaches_0.png",
+   "file": "data_extracted/sprites/phys0/150_beaches_0.bmp",
    "sheet": "PHYS0",
    "index": 150,
    "label": "beaches 0",
@@ -2118,7 +2118,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/151_beaches_1.png",
+   "file": "data_extracted/sprites/phys0/151_beaches_1.bmp",
    "sheet": "PHYS0",
    "index": 151,
    "label": "beaches 1",
@@ -2127,7 +2127,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/152_beaches_2.png",
+   "file": "data_extracted/sprites/phys0/152_beaches_2.bmp",
    "sheet": "PHYS0",
    "index": 152,
    "label": "beaches 2",
@@ -2136,7 +2136,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/phys0/153_beaches_3.png",
+   "file": "data_extracted/sprites/phys0/153_beaches_3.bmp",
    "sheet": "PHYS0",
    "index": 153,
    "label": "beaches 3",
@@ -2145,7 +2145,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/000_icon_0_0x00.png",
+   "file": "data_extracted/sprites/icons/000_icon_0_0x00.bmp",
    "sheet": "ICONS",
    "index": 0,
    "label": "icon 0 (0x00)",
@@ -2154,7 +2154,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/001_icon_1_0x01.png",
+   "file": "data_extracted/sprites/icons/001_icon_1_0x01.bmp",
    "sheet": "ICONS",
    "index": 1,
    "label": "icon 1 (0x01)",
@@ -2163,7 +2163,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/002_icon_2_0x02.png",
+   "file": "data_extracted/sprites/icons/002_icon_2_0x02.bmp",
    "sheet": "ICONS",
    "index": 2,
    "label": "icon 2 (0x02)",
@@ -2172,7 +2172,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/003_icon_3_0x03.png",
+   "file": "data_extracted/sprites/icons/003_icon_3_0x03.bmp",
    "sheet": "ICONS",
    "index": 3,
    "label": "icon 3 (0x03)",
@@ -2181,7 +2181,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/004_icon_4_0x04.png",
+   "file": "data_extracted/sprites/icons/004_icon_4_0x04.bmp",
    "sheet": "ICONS",
    "index": 4,
    "label": "icon 4 (0x04)",
@@ -2190,7 +2190,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/005_caravel.png",
+   "file": "data_extracted/sprites/icons/005_caravel.bmp",
    "sheet": "ICONS",
    "index": 5,
    "label": "Caravel",
@@ -2199,7 +2199,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/006_merchantman.png",
+   "file": "data_extracted/sprites/icons/006_merchantman.bmp",
    "sheet": "ICONS",
    "index": 6,
    "label": "Merchantman",
@@ -2208,7 +2208,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/007_galleon.png",
+   "file": "data_extracted/sprites/icons/007_galleon.bmp",
    "sheet": "ICONS",
    "index": 7,
    "label": "Galleon",
@@ -2217,7 +2217,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/008_wagon_train.png",
+   "file": "data_extracted/sprites/icons/008_wagon_train.bmp",
    "sheet": "ICONS",
    "index": 8,
    "label": "Wagon Train",
@@ -2226,7 +2226,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/009_artillery.png",
+   "file": "data_extracted/sprites/icons/009_artillery.bmp",
    "sheet": "ICONS",
    "index": 9,
    "label": "Artillery",
@@ -2235,7 +2235,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/010_icon_10_0x0a.png",
+   "file": "data_extracted/sprites/icons/010_icon_10_0x0a.bmp",
    "sheet": "ICONS",
    "index": 10,
    "label": "icon 10 (0x0A)",
@@ -2244,7 +2244,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/011_icon_11_0x0b.png",
+   "file": "data_extracted/sprites/icons/011_icon_11_0x0b.bmp",
    "sheet": "ICONS",
    "index": 11,
    "label": "icon 11 (0x0B)",
@@ -2253,7 +2253,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/012_icon_12_0x0c.png",
+   "file": "data_extracted/sprites/icons/012_icon_12_0x0c.bmp",
    "sheet": "ICONS",
    "index": 12,
    "label": "icon 12 (0x0C)",
@@ -2262,7 +2262,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/013_icon_13_0x0d.png",
+   "file": "data_extracted/sprites/icons/013_icon_13_0x0d.bmp",
    "sheet": "ICONS",
    "index": 13,
    "label": "icon 13 (0x0D)",
@@ -2271,7 +2271,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/014_privateer.png",
+   "file": "data_extracted/sprites/icons/014_privateer.bmp",
    "sheet": "ICONS",
    "index": 14,
    "label": "Privateer",
@@ -2280,7 +2280,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/015_frigate.png",
+   "file": "data_extracted/sprites/icons/015_frigate.bmp",
    "sheet": "ICONS",
    "index": 15,
    "label": "Frigate",
@@ -2289,7 +2289,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/016_treasure.png",
+   "file": "data_extracted/sprites/icons/016_treasure.bmp",
    "sheet": "ICONS",
    "index": 16,
    "label": "Treasure",
@@ -2298,7 +2298,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/017_icon_17_0x11.png",
+   "file": "data_extracted/sprites/icons/017_icon_17_0x11.bmp",
    "sheet": "ICONS",
    "index": 17,
    "label": "icon 17 (0x11)",
@@ -2307,7 +2307,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/018_icon_18_0x12.png",
+   "file": "data_extracted/sprites/icons/018_icon_18_0x12.bmp",
    "sheet": "ICONS",
    "index": 18,
    "label": "icon 18 (0x12)",
@@ -2316,7 +2316,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/019_icon_19_0x13.png",
+   "file": "data_extracted/sprites/icons/019_icon_19_0x13.bmp",
    "sheet": "ICONS",
    "index": 19,
    "label": "icon 19 (0x13)",
@@ -2325,7 +2325,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/020_icon_20_0x14.png",
+   "file": "data_extracted/sprites/icons/020_icon_20_0x14.bmp",
    "sheet": "ICONS",
    "index": 20,
    "label": "icon 20 (0x14)",
@@ -2334,7 +2334,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/021_icon_21_0x15.png",
+   "file": "data_extracted/sprites/icons/021_icon_21_0x15.bmp",
    "sheet": "ICONS",
    "index": 21,
    "label": "icon 21 (0x15)",
@@ -2343,7 +2343,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/022_food.png",
+   "file": "data_extracted/sprites/icons/022_food.bmp",
    "sheet": "ICONS",
    "index": 22,
    "label": "Food",
@@ -2352,7 +2352,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/023_sugar.png",
+   "file": "data_extracted/sprites/icons/023_sugar.bmp",
    "sheet": "ICONS",
    "index": 23,
    "label": "Sugar",
@@ -2361,7 +2361,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/024_tobacco.png",
+   "file": "data_extracted/sprites/icons/024_tobacco.bmp",
    "sheet": "ICONS",
    "index": 24,
    "label": "Tobacco",
@@ -2370,7 +2370,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/025_cotton.png",
+   "file": "data_extracted/sprites/icons/025_cotton.bmp",
    "sheet": "ICONS",
    "index": 25,
    "label": "Cotton",
@@ -2379,7 +2379,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/026_furs.png",
+   "file": "data_extracted/sprites/icons/026_furs.bmp",
    "sheet": "ICONS",
    "index": 26,
    "label": "Furs",
@@ -2388,7 +2388,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/027_lumber.png",
+   "file": "data_extracted/sprites/icons/027_lumber.bmp",
    "sheet": "ICONS",
    "index": 27,
    "label": "Lumber",
@@ -2397,7 +2397,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/028_ore.png",
+   "file": "data_extracted/sprites/icons/028_ore.bmp",
    "sheet": "ICONS",
    "index": 28,
    "label": "Ore",
@@ -2406,7 +2406,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/029_silver.png",
+   "file": "data_extracted/sprites/icons/029_silver.bmp",
    "sheet": "ICONS",
    "index": 29,
    "label": "Silver",
@@ -2415,7 +2415,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/030_horses.png",
+   "file": "data_extracted/sprites/icons/030_horses.bmp",
    "sheet": "ICONS",
    "index": 30,
    "label": "Horses",
@@ -2424,7 +2424,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/031_rum.png",
+   "file": "data_extracted/sprites/icons/031_rum.bmp",
    "sheet": "ICONS",
    "index": 31,
    "label": "Rum",
@@ -2433,7 +2433,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/032_cigars.png",
+   "file": "data_extracted/sprites/icons/032_cigars.bmp",
    "sheet": "ICONS",
    "index": 32,
    "label": "Cigars",
@@ -2442,7 +2442,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/033_cloth.png",
+   "file": "data_extracted/sprites/icons/033_cloth.bmp",
    "sheet": "ICONS",
    "index": 33,
    "label": "Cloth",
@@ -2451,7 +2451,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/034_coats.png",
+   "file": "data_extracted/sprites/icons/034_coats.bmp",
    "sheet": "ICONS",
    "index": 34,
    "label": "Coats",
@@ -2460,7 +2460,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/035_trade_goods.png",
+   "file": "data_extracted/sprites/icons/035_trade_goods.bmp",
    "sheet": "ICONS",
    "index": 35,
    "label": "Trade Goods",
@@ -2469,7 +2469,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/036_tools.png",
+   "file": "data_extracted/sprites/icons/036_tools.bmp",
    "sheet": "ICONS",
    "index": 36,
    "label": "Tools",
@@ -2478,7 +2478,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/037_muskets.png",
+   "file": "data_extracted/sprites/icons/037_muskets.bmp",
    "sheet": "ICONS",
    "index": 37,
    "label": "Muskets",
@@ -2487,7 +2487,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/038_icon_38_0x26.png",
+   "file": "data_extracted/sprites/icons/038_icon_38_0x26.bmp",
    "sheet": "ICONS",
    "index": 38,
    "label": "icon 38 (0x26)",
@@ -2496,7 +2496,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/039_icon_39_0x27.png",
+   "file": "data_extracted/sprites/icons/039_icon_39_0x27.bmp",
    "sheet": "ICONS",
    "index": 39,
    "label": "icon 39 (0x27)",
@@ -2505,7 +2505,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/040_icon_40_0x28.png",
+   "file": "data_extracted/sprites/icons/040_icon_40_0x28.bmp",
    "sheet": "ICONS",
    "index": 40,
    "label": "icon 40 (0x28)",
@@ -2514,7 +2514,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/041_icon_41_0x29.png",
+   "file": "data_extracted/sprites/icons/041_icon_41_0x29.bmp",
    "sheet": "ICONS",
    "index": 41,
    "label": "icon 41 (0x29)",
@@ -2523,7 +2523,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/042_icon_42_0x2a.png",
+   "file": "data_extracted/sprites/icons/042_icon_42_0x2a.bmp",
    "sheet": "ICONS",
    "index": 42,
    "label": "icon 42 (0x2A)",
@@ -2532,7 +2532,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/043_icon_43_0x2b.png",
+   "file": "data_extracted/sprites/icons/043_icon_43_0x2b.bmp",
    "sheet": "ICONS",
    "index": 43,
    "label": "icon 43 (0x2B)",
@@ -2541,7 +2541,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/044_icon_44_0x2c.png",
+   "file": "data_extracted/sprites/icons/044_icon_44_0x2c.bmp",
    "sheet": "ICONS",
    "index": 44,
    "label": "icon 44 (0x2C)",
@@ -2550,7 +2550,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/045_icon_45_0x2d.png",
+   "file": "data_extracted/sprites/icons/045_icon_45_0x2d.bmp",
    "sheet": "ICONS",
    "index": 45,
    "label": "icon 45 (0x2D)",
@@ -2559,7 +2559,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/046_icon_46_0x2e.png",
+   "file": "data_extracted/sprites/icons/046_icon_46_0x2e.bmp",
    "sheet": "ICONS",
    "index": 46,
    "label": "icon 46 (0x2E)",
@@ -2568,7 +2568,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/047_icon_47_0x2f.png",
+   "file": "data_extracted/sprites/icons/047_icon_47_0x2f.bmp",
    "sheet": "ICONS",
    "index": 47,
    "label": "icon 47 (0x2F)",
@@ -2577,7 +2577,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/048_icon_48_0x30.png",
+   "file": "data_extracted/sprites/icons/048_icon_48_0x30.bmp",
    "sheet": "ICONS",
    "index": 48,
    "label": "icon 48 (0x30)",
@@ -2586,7 +2586,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/049_icon_49_0x31.png",
+   "file": "data_extracted/sprites/icons/049_icon_49_0x31.bmp",
    "sheet": "ICONS",
    "index": 49,
    "label": "icon 49 (0x31)",
@@ -2595,7 +2595,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/050_icon_50_0x32.png",
+   "file": "data_extracted/sprites/icons/050_icon_50_0x32.bmp",
    "sheet": "ICONS",
    "index": 50,
    "label": "icon 50 (0x32)",
@@ -2604,7 +2604,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/051_icon_51_0x33.png",
+   "file": "data_extracted/sprites/icons/051_icon_51_0x33.bmp",
    "sheet": "ICONS",
    "index": 51,
    "label": "icon 51 (0x33)",
@@ -2613,7 +2613,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/052_icon_52_0x34.png",
+   "file": "data_extracted/sprites/icons/052_icon_52_0x34.bmp",
    "sheet": "ICONS",
    "index": 52,
    "label": "icon 52 (0x34)",
@@ -2622,7 +2622,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/053_icon_53_0x35.png",
+   "file": "data_extracted/sprites/icons/053_icon_53_0x35.bmp",
    "sheet": "ICONS",
    "index": 53,
    "label": "icon 53 (0x35)",
@@ -2631,7 +2631,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/054_hammers_production.png",
+   "file": "data_extracted/sprites/icons/054_hammers_production.bmp",
    "sheet": "ICONS",
    "index": 54,
    "label": "Hammers (production)",
@@ -2640,7 +2640,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/055_icon_55_0x37.png",
+   "file": "data_extracted/sprites/icons/055_icon_55_0x37.bmp",
    "sheet": "ICONS",
    "index": 55,
    "label": "icon 55 (0x37)",
@@ -2649,7 +2649,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/056_icon_56_0x38.png",
+   "file": "data_extracted/sprites/icons/056_icon_56_0x38.bmp",
    "sheet": "ICONS",
    "index": 56,
    "label": "icon 56 (0x38)",
@@ -2658,7 +2658,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/057_icon_57_0x39.png",
+   "file": "data_extracted/sprites/icons/057_icon_57_0x39.bmp",
    "sheet": "ICONS",
    "index": 57,
    "label": "icon 57 (0x39)",
@@ -2667,7 +2667,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/058_icon_58_0x3a.png",
+   "file": "data_extracted/sprites/icons/058_icon_58_0x3a.bmp",
    "sheet": "ICONS",
    "index": 58,
    "label": "icon 58 (0x3A)",
@@ -2676,7 +2676,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/059_icon_59_0x3b.png",
+   "file": "data_extracted/sprites/icons/059_icon_59_0x3b.bmp",
    "sheet": "ICONS",
    "index": 59,
    "label": "icon 59 (0x3B)",
@@ -2685,7 +2685,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/060_icon_60_0x3c.png",
+   "file": "data_extracted/sprites/icons/060_icon_60_0x3c.bmp",
    "sheet": "ICONS",
    "index": 60,
    "label": "icon 60 (0x3C)",
@@ -2694,7 +2694,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/061_icon_61_0x3d.png",
+   "file": "data_extracted/sprites/icons/061_icon_61_0x3d.bmp",
    "sheet": "ICONS",
    "index": 61,
    "label": "icon 61 (0x3D)",
@@ -2703,7 +2703,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/062_icon_62_0x3e.png",
+   "file": "data_extracted/sprites/icons/062_icon_62_0x3e.bmp",
    "sheet": "ICONS",
    "index": 62,
    "label": "icon 62 (0x3E)",
@@ -2712,7 +2712,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/063_icon_63_0x3f.png",
+   "file": "data_extracted/sprites/icons/063_icon_63_0x3f.bmp",
    "sheet": "ICONS",
    "index": 63,
    "label": "icon 63 (0x3F)",
@@ -2721,7 +2721,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/064_icon_64_0x40.png",
+   "file": "data_extracted/sprites/icons/064_icon_64_0x40.bmp",
    "sheet": "ICONS",
    "index": 64,
    "label": "icon 64 (0x40)",
@@ -2730,7 +2730,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/065_icon_65_0x41.png",
+   "file": "data_extracted/sprites/icons/065_icon_65_0x41.bmp",
    "sheet": "ICONS",
    "index": 65,
    "label": "icon 65 (0x41)",
@@ -2739,7 +2739,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/066_icon_66_0x42.png",
+   "file": "data_extracted/sprites/icons/066_icon_66_0x42.bmp",
    "sheet": "ICONS",
    "index": 66,
    "label": "icon 66 (0x42)",
@@ -2748,7 +2748,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/067_icon_67_0x43.png",
+   "file": "data_extracted/sprites/icons/067_icon_67_0x43.bmp",
    "sheet": "ICONS",
    "index": 67,
    "label": "icon 67 (0x43)",
@@ -2757,7 +2757,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/068_icon_68_0x44.png",
+   "file": "data_extracted/sprites/icons/068_icon_68_0x44.bmp",
    "sheet": "ICONS",
    "index": 68,
    "label": "icon 68 (0x44)",
@@ -2766,7 +2766,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/069_icon_69_0x45.png",
+   "file": "data_extracted/sprites/icons/069_icon_69_0x45.bmp",
    "sheet": "ICONS",
    "index": 69,
    "label": "icon 69 (0x45)",
@@ -2775,7 +2775,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/070_icon_70_0x46.png",
+   "file": "data_extracted/sprites/icons/070_icon_70_0x46.bmp",
    "sheet": "ICONS",
    "index": 70,
    "label": "icon 70 (0x46)",
@@ -2784,7 +2784,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/071_icon_71_0x47.png",
+   "file": "data_extracted/sprites/icons/071_icon_71_0x47.bmp",
    "sheet": "ICONS",
    "index": 71,
    "label": "icon 71 (0x47)",
@@ -2793,7 +2793,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/072_icon_72_0x48.png",
+   "file": "data_extracted/sprites/icons/072_icon_72_0x48.bmp",
    "sheet": "ICONS",
    "index": 72,
    "label": "icon 72 (0x48)",
@@ -2802,7 +2802,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/073_icon_73_0x49.png",
+   "file": "data_extracted/sprites/icons/073_icon_73_0x49.bmp",
    "sheet": "ICONS",
    "index": 73,
    "label": "icon 73 (0x49)",
@@ -2811,7 +2811,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/074_icon_74_0x4a.png",
+   "file": "data_extracted/sprites/icons/074_icon_74_0x4a.bmp",
    "sheet": "ICONS",
    "index": 74,
    "label": "icon 74 (0x4A)",
@@ -2820,7 +2820,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/075_icon_75_0x4b.png",
+   "file": "data_extracted/sprites/icons/075_icon_75_0x4b.bmp",
    "sheet": "ICONS",
    "index": 75,
    "label": "icon 75 (0x4B)",
@@ -2829,7 +2829,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/076_icon_76_0x4c.png",
+   "file": "data_extracted/sprites/icons/076_icon_76_0x4c.bmp",
    "sheet": "ICONS",
    "index": 76,
    "label": "icon 76 (0x4C)",
@@ -2838,7 +2838,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/077_icon_77_0x4d.png",
+   "file": "data_extracted/sprites/icons/077_icon_77_0x4d.bmp",
    "sheet": "ICONS",
    "index": 77,
    "label": "icon 77 (0x4D)",
@@ -2847,7 +2847,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/078_icon_78_0x4e.png",
+   "file": "data_extracted/sprites/icons/078_icon_78_0x4e.bmp",
    "sheet": "ICONS",
    "index": 78,
    "label": "icon 78 (0x4E)",
@@ -2856,7 +2856,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/079_icon_79_0x4f.png",
+   "file": "data_extracted/sprites/icons/079_icon_79_0x4f.bmp",
    "sheet": "ICONS",
    "index": 79,
    "label": "icon 79 (0x4F)",
@@ -2865,7 +2865,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/080_icon_80_0x50.png",
+   "file": "data_extracted/sprites/icons/080_icon_80_0x50.bmp",
    "sheet": "ICONS",
    "index": 80,
    "label": "icon 80 (0x50)",
@@ -2874,7 +2874,7 @@
    "blank": true
   },
   {
-   "file": "data_extracted/sprites/icons/081_working_colonist.png",
+   "file": "data_extracted/sprites/icons/081_working_colonist.bmp",
    "sheet": "ICONS",
    "index": 81,
    "label": "Working colonist",
@@ -2883,7 +2883,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/082_icon_82_0x52.png",
+   "file": "data_extracted/sprites/icons/082_icon_82_0x52.bmp",
    "sheet": "ICONS",
    "index": 82,
    "label": "icon 82 (0x52)",
@@ -2892,7 +2892,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/083_icon_83_0x53.png",
+   "file": "data_extracted/sprites/icons/083_icon_83_0x53.bmp",
    "sheet": "ICONS",
    "index": 83,
    "label": "icon 83 (0x53)",
@@ -2901,7 +2901,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/084_icon_84_0x54.png",
+   "file": "data_extracted/sprites/icons/084_icon_84_0x54.bmp",
    "sheet": "ICONS",
    "index": 84,
    "label": "icon 84 (0x54)",
@@ -2910,7 +2910,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/085_icon_85_0x55.png",
+   "file": "data_extracted/sprites/icons/085_icon_85_0x55.bmp",
    "sheet": "ICONS",
    "index": 85,
    "label": "icon 85 (0x55)",
@@ -2919,7 +2919,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/086_icon_86_0x56.png",
+   "file": "data_extracted/sprites/icons/086_icon_86_0x56.bmp",
    "sheet": "ICONS",
    "index": 86,
    "label": "icon 86 (0x56)",
@@ -2928,7 +2928,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/087_icon_87_0x57.png",
+   "file": "data_extracted/sprites/icons/087_icon_87_0x57.bmp",
    "sheet": "ICONS",
    "index": 87,
    "label": "icon 87 (0x57)",
@@ -2937,7 +2937,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/088_icon_88_0x58.png",
+   "file": "data_extracted/sprites/icons/088_icon_88_0x58.bmp",
    "sheet": "ICONS",
    "index": 88,
    "label": "icon 88 (0x58)",
@@ -2946,7 +2946,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/089_icon_89_0x59.png",
+   "file": "data_extracted/sprites/icons/089_icon_89_0x59.bmp",
    "sheet": "ICONS",
    "index": 89,
    "label": "icon 89 (0x59)",
@@ -2955,7 +2955,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/090_icon_90_0x5a.png",
+   "file": "data_extracted/sprites/icons/090_icon_90_0x5a.bmp",
    "sheet": "ICONS",
    "index": 90,
    "label": "icon 90 (0x5A)",
@@ -2964,7 +2964,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/091_icon_91_0x5b.png",
+   "file": "data_extracted/sprites/icons/091_icon_91_0x5b.bmp",
    "sheet": "ICONS",
    "index": 91,
    "label": "icon 91 (0x5B)",
@@ -2973,7 +2973,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/092_icon_92_0x5c.png",
+   "file": "data_extracted/sprites/icons/092_icon_92_0x5c.bmp",
    "sheet": "ICONS",
    "index": 92,
    "label": "icon 92 (0x5C)",
@@ -2982,7 +2982,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/093_icon_93_0x5d.png",
+   "file": "data_extracted/sprites/icons/093_icon_93_0x5d.bmp",
    "sheet": "ICONS",
    "index": 93,
    "label": "icon 93 (0x5D)",
@@ -2991,7 +2991,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/094_icon_94_0x5e.png",
+   "file": "data_extracted/sprites/icons/094_icon_94_0x5e.bmp",
    "sheet": "ICONS",
    "index": 94,
    "label": "icon 94 (0x5E)",
@@ -3000,7 +3000,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/095_icon_95_0x5f.png",
+   "file": "data_extracted/sprites/icons/095_icon_95_0x5f.bmp",
    "sheet": "ICONS",
    "index": 95,
    "label": "icon 95 (0x5F)",
@@ -3009,7 +3009,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/096_icon_96_0x60.png",
+   "file": "data_extracted/sprites/icons/096_icon_96_0x60.bmp",
    "sheet": "ICONS",
    "index": 96,
    "label": "icon 96 (0x60)",
@@ -3018,7 +3018,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/097_icon_97_0x61.png",
+   "file": "data_extracted/sprites/icons/097_icon_97_0x61.bmp",
    "sheet": "ICONS",
    "index": 97,
    "label": "icon 97 (0x61)",
@@ -3027,7 +3027,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/098_icon_98_0x62.png",
+   "file": "data_extracted/sprites/icons/098_icon_98_0x62.bmp",
    "sheet": "ICONS",
    "index": 98,
    "label": "icon 98 (0x62)",
@@ -3036,7 +3036,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/099_icon_99_0x63.png",
+   "file": "data_extracted/sprites/icons/099_icon_99_0x63.bmp",
    "sheet": "ICONS",
    "index": 99,
    "label": "icon 99 (0x63)",
@@ -3045,7 +3045,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/100_colonists.png",
+   "file": "data_extracted/sprites/icons/100_colonists.bmp",
    "sheet": "ICONS",
    "index": 100,
    "label": "Colonists",
@@ -3054,7 +3054,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/101_pioneers.png",
+   "file": "data_extracted/sprites/icons/101_pioneers.bmp",
    "sheet": "ICONS",
    "index": 101,
    "label": "Pioneers",
@@ -3063,7 +3063,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/102_soldiers.png",
+   "file": "data_extracted/sprites/icons/102_soldiers.bmp",
    "sheet": "ICONS",
    "index": 102,
    "label": "Soldiers",
@@ -3072,7 +3072,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/103_scouts.png",
+   "file": "data_extracted/sprites/icons/103_scouts.bmp",
    "sheet": "ICONS",
    "index": 103,
    "label": "Scouts",
@@ -3081,7 +3081,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/104_dragoons.png",
+   "file": "data_extracted/sprites/icons/104_dragoons.bmp",
    "sheet": "ICONS",
    "index": 104,
    "label": "Dragoons",
@@ -3090,7 +3090,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/105_missionaries.png",
+   "file": "data_extracted/sprites/icons/105_missionaries.bmp",
    "sheet": "ICONS",
    "index": 105,
    "label": "Missionaries",
@@ -3099,7 +3099,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/106_icon_106_0x6a.png",
+   "file": "data_extracted/sprites/icons/106_icon_106_0x6a.bmp",
    "sheet": "ICONS",
    "index": 106,
    "label": "icon 106 (0x6A)",
@@ -3108,7 +3108,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/107_icon_107_0x6b.png",
+   "file": "data_extracted/sprites/icons/107_icon_107_0x6b.bmp",
    "sheet": "ICONS",
    "index": 107,
    "label": "icon 107 (0x6B)",
@@ -3117,7 +3117,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/108_icon_108_0x6c.png",
+   "file": "data_extracted/sprites/icons/108_icon_108_0x6c.bmp",
    "sheet": "ICONS",
    "index": 108,
    "label": "icon 108 (0x6C)",
@@ -3126,7 +3126,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/109_braves.png",
+   "file": "data_extracted/sprites/icons/109_braves.bmp",
    "sheet": "ICONS",
    "index": 109,
    "label": "Braves",
@@ -3135,7 +3135,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/110_armed_braves.png",
+   "file": "data_extracted/sprites/icons/110_armed_braves.bmp",
    "sheet": "ICONS",
    "index": 110,
    "label": "Armed Braves",
@@ -3144,7 +3144,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/111_mounted_braves.png",
+   "file": "data_extracted/sprites/icons/111_mounted_braves.bmp",
    "sheet": "ICONS",
    "index": 111,
    "label": "Mounted Braves",
@@ -3153,7 +3153,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/112_mounted_warriors.png",
+   "file": "data_extracted/sprites/icons/112_mounted_warriors.bmp",
    "sheet": "ICONS",
    "index": 112,
    "label": "Mounted Warriors",
@@ -3162,7 +3162,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/113_face_0_unverified.png",
+   "file": "data_extracted/sprites/icons/113_face_0_unverified.bmp",
    "sheet": "ICONS",
    "index": 113,
    "label": "face 0 (unverified)",
@@ -3171,7 +3171,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/114_face_1_unverified.png",
+   "file": "data_extracted/sprites/icons/114_face_1_unverified.bmp",
    "sheet": "ICONS",
    "index": 114,
    "label": "face 1 (unverified)",
@@ -3180,7 +3180,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/115_face_2_unverified.png",
+   "file": "data_extracted/sprites/icons/115_face_2_unverified.bmp",
    "sheet": "ICONS",
    "index": 115,
    "label": "face 2 (unverified)",
@@ -3189,7 +3189,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/116_face_3_unverified.png",
+   "file": "data_extracted/sprites/icons/116_face_3_unverified.bmp",
    "sheet": "ICONS",
    "index": 116,
    "label": "face 3 (unverified)",
@@ -3198,7 +3198,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/117_face_4_unverified.png",
+   "file": "data_extracted/sprites/icons/117_face_4_unverified.bmp",
    "sheet": "ICONS",
    "index": 117,
    "label": "face 4 (unverified)",
@@ -3207,7 +3207,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/118_icon_118_0x76.png",
+   "file": "data_extracted/sprites/icons/118_icon_118_0x76.bmp",
    "sheet": "ICONS",
    "index": 118,
    "label": "icon 118 (0x76)",
@@ -3216,7 +3216,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/119_icon_119_0x77.png",
+   "file": "data_extracted/sprites/icons/119_icon_119_0x77.bmp",
    "sheet": "ICONS",
    "index": 119,
    "label": "icon 119 (0x77)",
@@ -3225,7 +3225,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/120_icon_120_0x78.png",
+   "file": "data_extracted/sprites/icons/120_icon_120_0x78.bmp",
    "sheet": "ICONS",
    "index": 120,
    "label": "icon 120 (0x78)",
@@ -3234,7 +3234,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/121_icon_121_0x79.png",
+   "file": "data_extracted/sprites/icons/121_icon_121_0x79.bmp",
    "sheet": "ICONS",
    "index": 121,
    "label": "icon 121 (0x79)",
@@ -3243,7 +3243,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/122_icon_122_0x7a.png",
+   "file": "data_extracted/sprites/icons/122_icon_122_0x7a.bmp",
    "sheet": "ICONS",
    "index": 122,
    "label": "icon 122 (0x7A)",
@@ -3252,7 +3252,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/123_us_flag_unverified.png",
+   "file": "data_extracted/sprites/icons/123_us_flag_unverified.bmp",
    "sheet": "ICONS",
    "index": 123,
    "label": "US flag (unverified)",
@@ -3261,7 +3261,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/124_icon_124_0x7c.png",
+   "file": "data_extracted/sprites/icons/124_icon_124_0x7c.bmp",
    "sheet": "ICONS",
    "index": 124,
    "label": "icon 124 (0x7C)",
@@ -3270,7 +3270,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/125_regulars.png",
+   "file": "data_extracted/sprites/icons/125_regulars.bmp",
    "sheet": "ICONS",
    "index": 125,
    "label": "Regulars",
@@ -3279,7 +3279,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/126_cavalry.png",
+   "file": "data_extracted/sprites/icons/126_cavalry.bmp",
    "sheet": "ICONS",
    "index": 126,
    "label": "Cavalry",
@@ -3288,7 +3288,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/127_man_o_war.png",
+   "file": "data_extracted/sprites/icons/127_man_o_war.bmp",
    "sheet": "ICONS",
    "index": 127,
    "label": "Man-O-War",
@@ -3297,7 +3297,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/128_continental_army.png",
+   "file": "data_extracted/sprites/icons/128_continental_army.bmp",
    "sheet": "ICONS",
    "index": 128,
    "label": "Continental Army",
@@ -3306,7 +3306,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/129_continental_cavalry.png",
+   "file": "data_extracted/sprites/icons/129_continental_cavalry.bmp",
    "sheet": "ICONS",
    "index": 129,
    "label": "Continental Cavalry",
@@ -3315,7 +3315,7 @@
    "blank": false
   },
   {
-   "file": "data_extracted/sprites/icons/130_icon_130_0x82.png",
+   "file": "data_extracted/sprites/icons/130_icon_130_0x82.bmp",
    "sheet": "ICONS",
    "index": 130,
    "label": "icon 130 (0x82)",

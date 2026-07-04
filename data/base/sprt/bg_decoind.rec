@@ -3,5 +3,5 @@ record sprt.bg_decoind {
   label = "DECOIND"
   kind  = "background"
   sheet = "DECOIND"
-  file  = "pik/DECOIND.png"
+  file  = "pik/DECOIND.bmp"
 }

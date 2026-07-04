@@ -24,8 +24,9 @@ Usage: tools/extract_phys0.py
 import json
 import os
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
-SRC = "docs/atlas/sprites/atlas_PHYS0.png"
+SRC = "docs/atlas/sprites/atlas_PHYS0.bmp"
 OUT_DIR = "data_extracted/tileset"
 SEPS = [24, 81, 139, 197, 255, 313, 371, 429, 487, 545, 604]
 PITCH = 58
@@ -34,7 +35,7 @@ N = 154
 
 
 def main():
-    im = Image.open(SRC).convert("RGB")
+    im = open_image(SRC).convert("RGB")
     strip = Image.new("RGBA", (N * 16, 16), (0, 0, 0, 0))
     for f in range(N):
         col, row = f % 16, f // 16
@@ -48,14 +49,14 @@ def main():
                     px[i, j] = (0, 0, 0, 0)        # black -> transparent
         strip.paste(cell, (f * 16, 0))
     os.makedirs(OUT_DIR, exist_ok=True)
-    strip.save(os.path.join(OUT_DIR, "phys0.png"))
+    save_bmp(strip, os.path.join(OUT_DIR, "phys0.bmp"))
     meta = {"frame": 16, "count": N, "source": SRC,
             "bands": {"river": [0x00, 0x1F], "mountains": [0x20, 0x2F], "hills": [0x30, 0x3F],
                       "forest": [0x40, 0x4F], "stencils": [0x68, 0x6B],
                       "coast_subtiles": [0x6C, 0x8B], "beaches": [0x96, 0x99]}}
     with open(os.path.join(OUT_DIR, "phys0.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    print(f"wrote {OUT_DIR}/phys0.png ({strip.size[0]}x{strip.size[1]}, {N} frames) + phys0.json")
+    print(f"wrote {OUT_DIR}/phys0.bmp ({strip.size[0]}x{strip.size[1]}, {N} frames) + phys0.json")
 
 
 if __name__ == "__main__":

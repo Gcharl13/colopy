@@ -3,5 +3,5 @@ record sprt.bg_kinglss2 {
   label = "KINGLSS2"
   kind  = "background"
   sheet = "KINGLSS2"
-  file  = "pik/KINGLSS2.png"
+  file  = "pik/KINGLSS2.bmp"
 }

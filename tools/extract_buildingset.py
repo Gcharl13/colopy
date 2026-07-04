@@ -32,8 +32,9 @@ Usage: tools/extract_buildingset.py
 import json
 import os
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
-SRC = "docs/atlas/sprites/atlas_BUILDING.png"
+SRC = "docs/atlas/sprites/atlas_BUILDING.bmp"
 OUT_DIR = "data_extracted/tileset"
 PITCH = 58
 SEPS = [24, 81, 139, 197]          # 3 row bands; last entry = band-3 bottom
@@ -43,7 +44,7 @@ N = 48
 
 
 def main():
-    im = Image.open(SRC).convert("RGB")
+    im = open_image(SRC).convert("RGB")
     W, H = im.size
     strip = Image.new("RGBA", (N * CELL_W, CELL_H), (0, 0, 0, 0))
     drawn = 0
@@ -67,7 +68,7 @@ def main():
         strip.paste(cell, (f * CELL_W, 0), cell)
         drawn += 1
     os.makedirs(OUT_DIR, exist_ok=True)
-    strip.save(os.path.join(OUT_DIR, "buildings.png"))
+    save_bmp(strip, os.path.join(OUT_DIR, "buildings.bmp"))
     meta = {"cell_w": CELL_W, "cell_h": CELL_H, "count": N, "drawn": drawn,
             "source": SRC, "note": "strip cell N = @BUILDING def_id N (0-based; cell 0 = Stockade, "
             "USER-VERIFIED). EXE draws def_id+1 in EXE-sheet space; the ssdec decode is off-by-one "
@@ -77,7 +78,7 @@ def main():
             "(capture-calibrated vs docs/screens/colony_live_1505.png)."}
     with open(os.path.join(OUT_DIR, "buildings.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
-    print(f"wrote {OUT_DIR}/buildings.png ({strip.size[0]}x{strip.size[1]}, "
+    print(f"wrote {OUT_DIR}/buildings.bmp ({strip.size[0]}x{strip.size[1]}, "
           f"{drawn}/{N} frames) + buildings.json")
 
 

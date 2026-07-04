@@ -3,5 +3,5 @@ record sprt.father_pocahontas {
   label = "Pocahontas"
   kind  = "portrait"
   sheet = "CC-16"
-  file  = "sprites/atlas_CC-16.png"
+  file  = "sprites/atlas_CC-16.bmp"
 }

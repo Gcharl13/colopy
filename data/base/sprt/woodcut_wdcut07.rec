@@ -3,5 +3,5 @@ record sprt.woodcut_wdcut07 {
   label = "WDCUT07"
   kind  = "woodcut"
   sheet = "WDCUT07"
-  file  = "sprites/atlas_WDCUT07.png"
+  file  = "sprites/atlas_WDCUT07.bmp"
 }

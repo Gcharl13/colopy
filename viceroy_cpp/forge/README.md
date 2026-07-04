@@ -56,7 +56,7 @@ Run it from the repo root so the default data paths resolve. Tabs:
   with **`PHYS0.SS` overlays composited on top per each tile's neighbours** — forest canopy,
   rivers, and **coastline beaches/shore** (the `compose_coast`/forest-mask logic ported from
   `viceroy_cpp/src/mapview.cpp`). `AMER2.MP` renders as a recognizable, textured Americas.
-  Tilesets are cropped offline into `data_extracted/tileset/{terrain16,phys0}.png`. Toggle
+  Tilesets are cropped offline into `data_extracted/tileset/{terrain16,phys0}.bmp`. Toggle
   "real tiles" off for flat colors. Paint terrain, Validate, Save (byte-faithful).
   *Caveat:* the committed contact sheets baked transparency to opaque black, losing the
   original land-side/ocean-cutout index distinction, so coast is a faithful **approximation**
@@ -76,7 +76,7 @@ Run it from the repo root so the default data paths resolve. Tabs:
 
 - **Play** — the **engine loop**: a real game on the real Americas map driven by the same
   headless sim, with **real unit sprites** (cropped from `ICONS.SS` into
-  `data_extracted/tileset/units.png`, one per unit type). **New game** seeds colonies + units
+  `data_extracted/tileset/units.bmp`, one per unit type). **New game** seeds colonies + units
   on `AMER2.MP`; **click a unit** to select it and **click a tile** to send it (it routes
   around coastline over the next turns); **Found colony** turns a land unit into a colony;
   **End turn** runs `step_turn` once (colonies grow, immigration & the King's army accrue,
@@ -126,7 +126,7 @@ Run it from the repo root so the default data paths resolve. Tabs:
   `{bindings}`.
 - **Screens** — the **visual screen designer**: pick/new/save a screen, drag widgets (text /
   button / rect / **sprite** — which blits real art: building frames from `BUILDING.SS`
-  (`data_extracted/tileset/buildings.png`) or unit frames from `units.png`, contain-fit + crisp),
+  (`data_extracted/tileset/buildings.bmp`) or unit frames from `units.bmp`, contain-fit + crisp),
   edit them in the property panel, and a **State Inspector** that writes
   live game values (year/gold/tax/…) so the screen reacts. Text widgets interpolate `{binding}`
   tokens. **Preview** runs the screen with live buttons that fire their `onClick` node graph —

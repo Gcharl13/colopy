@@ -532,6 +532,7 @@ static const char* asset_content_type(const std::string& p) {
         return p.size() >= n && p.compare(p.size() - n, n, x) == 0;
     };
     if (ends(".png"))  return "image/png";
+    if (ends(".bmp"))  return "image/bmp";
     if (ends(".json")) return "application/json";
     return "application/octet-stream";
 }
@@ -569,7 +570,8 @@ static forge::JsonValue assets_manifest() {
         for (const auto& e : fs::directory_iterator(dir, ec)) {
             if (!e.is_regular_file()) continue;
             std::string fn = e.path().filename().string();
-            if (fn.size() >= 4 && fn.compare(fn.size() - 4, 4, ".png") == 0) names.push_back(fn);
+            if (fn.size() >= 4 && (fn.compare(fn.size() - 4, 4, ".png") == 0 ||
+                                   fn.compare(fn.size() - 4, 4, ".bmp") == 0)) names.push_back(fn);
         }
         std::sort(names.begin(), names.end());
         return jstrs(names);

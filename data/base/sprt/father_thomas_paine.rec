@@ -3,5 +3,5 @@ record sprt.father_thomas_paine {
   label = "Thomas Paine"
   kind  = "portrait"
   sheet = "CC-17"
-  file  = "sprites/atlas_CC-17.png"
+  file  = "sprites/atlas_CC-17.bmp"
 }

@@ -3,5 +3,5 @@ record sprt.bg_nations {
   label = "NATIONS"
   kind  = "background"
   sheet = "NATIONS"
-  file  = "pik/NATIONS.png"
+  file  = "pik/NATIONS.bmp"
 }

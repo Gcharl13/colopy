@@ -16,7 +16,7 @@ the game data, the graphics, and the tools to (re)generate them from original fi
 | **`spec/`** | The **contract** — every system's formulas (`spec/systems/*.md`), every screen's layout/font/color (`spec/ui/*.md`), and the data-record layouts (`spec/data/*.md`). Byte-verified; **this is the source of truth.** Start at `spec/README.md`. |
 | **`formats/`** | File-format specs for the original data/asset files (`.MP` maps, `.SS` sprites, `.PAL` palette, `.PIK` backgrounds, `.FF` fonts, `.TXT` tables). |
 | **`data_extracted/`** | The decoded **game data** as JSON: `text/` (NAMES/GAME tables — terrain, units, buildings, cargo, fathers…), `tables/`, `map/` (AMER2 etc.), `palette.json`. |
-| **`docs/atlas/`** | The **graphics** — 206 sprite sheets + 35 backgrounds as **paletted PNGs** (indices preserved for palette cycling) with `frames.json` metadata. |
+| **`docs/atlas/`** | The **graphics** — 206 sprite sheets + 35 backgrounds as **24-bit BMPs** (magenta 255,0,255 = transparency; the runtime quantizes against `VICEROY.PAL` at load, so indices/palette-cycling survive) with `frames.json` metadata. |
 | **`docs/screens/`** | Reference screenshots of the original — a **visual oracle** to diff against. |
 | **`docs/GAME_MANUAL.md`** | The original game manual (HIGH-trust for *what a feature does*). |
 | **`viceroy_cpp/`** | A **reference C++ port** (asset importer + format loaders + a thin sim core). Crib loaders/patterns from it, or ignore it and start fresh. |
@@ -90,6 +90,6 @@ python tools/ssdec.py ...                  # .SS sprites → PNG atlas
 ```
 
 ## License / provenance
-The decoded data tables and the paletted-PNG atlas are derived from copyrighted MicroProse
+The decoded data tables and the BMP atlas are derived from copyrighted MicroProse
 assets and are included here for a **private** build-from-spec effort. Do not redistribute the
 art or any reconstituted binaries. Ship your engine + importer, not the converted assets.

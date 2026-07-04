@@ -3,5 +3,5 @@ record sprt.father_hernando_de_soto {
   label = "Hernando de Soto"
   kind  = "portrait"
   sheet = "CC-07"
-  file  = "sprites/atlas_CC-07.png"
+  file  = "sprites/atlas_CC-07.bmp"
 }

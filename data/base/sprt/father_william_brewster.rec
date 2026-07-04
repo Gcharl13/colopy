@@ -3,5 +3,5 @@ record sprt.father_william_brewster {
   label = "William Brewster"
   kind  = "portrait"
   sheet = "CC-20"
-  file  = "sprites/atlas_CC-20.png"
+  file  = "sprites/atlas_CC-20.bmp"
 }

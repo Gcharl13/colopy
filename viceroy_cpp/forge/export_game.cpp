@@ -18,7 +18,7 @@ static const char* COPY_TREES[] = {
 };
 static const char* COPY_FILES[] = {
     "data_extracted/palette.json",
-    "docs/atlas/sprites/atlas_PARCH.png",
+    "docs/atlas/sprites/atlas_PARCH.bmp",
 };
 
 static const char* README_WIN = R"(Viceroy -- your build of the reconstructed game

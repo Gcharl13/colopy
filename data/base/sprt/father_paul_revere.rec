@@ -3,5 +3,5 @@ record sprt.father_paul_revere {
   label = "Paul Revere"
   kind  = "portrait"
   sheet = "CC-12"
-  file  = "sprites/atlas_CC-12.png"
+  file  = "sprites/atlas_CC-12.bmp"
 }

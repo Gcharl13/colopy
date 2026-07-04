@@ -3,5 +3,5 @@ record sprt.bg_openbord {
   label = "OPENBORD"
   kind  = "background"
   sheet = "OPENBORD"
-  file  = "pik/OPENBORD.png"
+  file  = "pik/OPENBORD.bmp"
 }

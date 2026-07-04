@@ -5,10 +5,10 @@ identified sprites.
 Grid strips (tools/extract_*.py output under data_extracted/tileset/): BUILDING (48 cells =
 @BUILDING def_id, 0-based), TERRAIN (12), PHYS0 (154 overlays), UNITS (the 24 per-unit-type
 crops packed from ICONS.SS). Each strip cell becomes one PNG under
-data_extracted/sprites/<sheet>/<index>_<label>.png.
+data_extracted/sprites/<sheet>/<index>_<label>.bmp (24-bit; magenta = transparent).
 
 ICONS.SS (the full sheet, 131 frames): sliced straight from the committed contact sheet
-docs/atlas/sprites/atlas_ICONS.png (928x546, black = transparency key): 16 columns at 58 px
+docs/atlas/sprites/atlas_ICONS.bmp (928x546, black = transparency key): 16 columns at 58 px
 pitch, row bands separated at SEPS, a "N/0xHH" label strip at the top of each band
 (LABEL_SKIP clears it), sprite = the tight non-black bbox HALVED to native (the atlas draws at 2x;
 native sizes vary: goods ~8x15, foot units ~6-8x14, ships 13-21 wide -- no uniform cell).
@@ -20,7 +20,7 @@ Frame identities are labeled ONLY where verified:
   - US flag 123 and the face/head block ~113..117 are visually identified only -> "(unverified)";
   - everything else = literal "icon N (0xHH)" -- the authoritative catalog
     (notes/SPRITE_CATALOG.md) is absent from this repo; identities are NOT invented.
-Also packs all 131 native-size frames into a horizontal strip data_extracted/tileset/icons.png
+Also packs all 131 native-size frames into a horizontal strip data_extracted/tileset/icons.bmp
 with per-frame rects in icons.json, so renderers can address any ICONS.SS frame by index.
 
 Writes data_extracted/sprites/manifest.json covering everything. Run AFTER tools/build_sprites.py
@@ -31,13 +31,14 @@ Run: python3 tools/slice_sprites.py   (needs Pillow; the decoded strips + atlas 
 """
 import json, os, re
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TILESET = os.path.join(ROOT, "data_extracted", "tileset")
 OUT = os.path.join(ROOT, "data_extracted", "sprites")
 
 # atlas_ICONS.png geometry (measured; same family as the other contact sheets)
-ICONS_ATLAS = os.path.join(ROOT, "docs", "atlas", "sprites", "atlas_ICONS.png")
+ICONS_ATLAS = os.path.join(ROOT, "docs", "atlas", "sprites", "atlas_ICONS.bmp")
 ICONS_COLS = 16
 ICONS_PITCH = 58
 ICONS_SEPS = [24, 81, 139, 197, 255, 313, 371, 429, 487, 546]   # row-band tops, last = H
@@ -82,7 +83,7 @@ def icons_labels():
 
 def slice_icons(manifest):
     """Slice all 131 ICONS.SS frames from the atlas at native size; pack a strip + rects."""
-    img = Image.open(ICONS_ATLAS).convert("RGB")
+    img = open_image(ICONS_ATLAS).convert("RGB")
     lab = icons_labels()
     d = os.path.join(OUT, "icons")
     os.makedirs(d, exist_ok=True)
@@ -135,8 +136,8 @@ def slice_icons(manifest):
                 for i in range(nw):
                     spx[i, j] = cpx[bx0 + bdx + 2 * i, by0 + bdy + 2 * j]
         label = lab[fr]
-        fname = f"{fr:03d}_{slug(label)}.png"
-        sprite.save(os.path.join(d, fname))
+        fname = f"{fr:03d}_{slug(label)}.bmp"
+        save_bmp(sprite, os.path.join(d, fname))
         manifest.append({"file": f"data_extracted/sprites/icons/{fname}",
                          "sheet": "ICONS", "index": fr, "label": label,
                          "w": sprite.width, "h": sprite.height, "blank": bbox is None})
@@ -151,34 +152,34 @@ def slice_icons(manifest):
         strip.paste(c, (x, 0))
         f["x"] = x
         x += c.width
-    strip.save(os.path.join(TILESET, "icons.png"))
-    json.dump({"_note": "all 131 ICONS.SS frames at native size, sliced from atlas_ICONS.png by "
+    save_bmp(strip, os.path.join(TILESET, "icons.bmp"))
+    json.dump({"_note": "all 131 ICONS.SS frames at native size, sliced from atlas_ICONS.bmp by "
                         "tools/slice_sprites.py; frame = ssdec/png index (= EXE sprite id - 1). "
                         "Labels only where verified (see slice_sprites.py docstring); unknowns "
-                        "are literal 'icon N (0xHH)'. x/w/h = the frame's rect in icons.png.",
+                        "are literal 'icon N (0xHH)'. x/w/h = the frame's rect in icons.bmp.",
                "count": len(frames), "height": H, "frames": frames},
               open(os.path.join(TILESET, "icons.json"), "w"), indent=1)
-    print(f"icons: sliced {len(frames)} ICONS.SS frames -> {d} + tileset/icons.png ({W}x{H})")
+    print(f"icons: sliced {len(frames)} ICONS.SS frames -> {d} + tileset/icons.bmp ({W}x{H})")
 
 
 def sheets():
-    """[(sheet_name, png_path, cell_w, cell_h, [labels])] for each uniform grid strip."""
+    """[(sheet_name, bmp_path, cell_w, cell_h, [labels])] for each uniform grid strip."""
     out = []
     # the 24 per-unit-type crops (32x32 cells packed from ICONS.SS by extract_unitset.py)
     u = load("data_extracted/tileset/units.json")
-    out.append(("UNITS", "data_extracted/tileset/units.png", u["cell"], u["cell"], u["types"]))
+    out.append(("UNITS", "data_extracted/tileset/units.bmp", u["cell"], u["cell"], u["types"]))
     # BUILDING strip: cell N = @BUILDING def_id N (0-based; catalog labels match)
     b = load("data_extracted/tileset/buildings.json")
     cat = {s["frame"]: s["label"] for s in load("data_extracted/engine/sprites.json")["sprites"]
            if s.get("sheet") == "BUILDING" and "frame" in s}
     blabels = [cat.get(i, f"Building {i}") for i in range(b["count"])]
-    out.append(("BUILDING", "data_extracted/tileset/buildings.png", b["cell_w"], b["cell_h"], blabels))
+    out.append(("BUILDING", "data_extracted/tileset/buildings.bmp", b["cell_w"], b["cell_h"], blabels))
     # TERRAIN strip
     t = load("data_extracted/tileset/terrain16.json")
-    out.append(("TERRAIN", "data_extracted/tileset/terrain16.png", t["tile"], t["tile"], t["names"]))
+    out.append(("TERRAIN", "data_extracted/tileset/terrain16.bmp", t["tile"], t["tile"], t["names"]))
     # PHYS0 overlays
     p = load("data_extracted/tileset/phys0.json")
-    out.append(("PHYS0", "data_extracted/tileset/phys0.png", p["frame"], p["frame"],
+    out.append(("PHYS0", "data_extracted/tileset/phys0.bmp", p["frame"], p["frame"],
                 [phys0_label(i) for i in range(p["count"])]))
     return out
 
@@ -186,7 +187,7 @@ def sheets():
 def main():
     manifest = []
     for name, png, cw, ch, labels in sheets():
-        img = Image.open(os.path.join(ROOT, png)).convert("RGBA")
+        img = open_rgba(os.path.join(ROOT, png))
         n = img.width // cw
         d = os.path.join(OUT, slug(name))
         os.makedirs(d, exist_ok=True)
@@ -195,8 +196,8 @@ def main():
             cell = img.crop((i * cw, 0, i * cw + cw, ch))
             bbox = cell.getbbox()
             blank = bbox is None
-            fname = f"{i:03d}_{slug(label)}.png"
-            cell.save(os.path.join(d, fname))
+            fname = f"{i:03d}_{slug(label)}.bmp"
+            save_bmp(cell, os.path.join(d, fname))
             manifest.append({"file": f"data_extracted/sprites/{slug(name)}/{fname}",
                              "sheet": name, "index": i, "label": label,
                              "w": cw, "h": ch, "blank": blank})

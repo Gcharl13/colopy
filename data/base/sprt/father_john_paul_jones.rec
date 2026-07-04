@@ -3,5 +3,5 @@ record sprt.father_john_paul_jones {
   label = "John Paul Jones"
   kind  = "portrait"
   sheet = "CC-14"
-  file  = "sprites/atlas_CC-14.png"
+  file  = "sprites/atlas_CC-14.bmp"
 }

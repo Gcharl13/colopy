@@ -3,5 +3,5 @@ record sprt.bg_levn0001 {
   label = "LEVN0001"
   kind  = "background"
   sheet = "LEVN0001"
-  file  = "pik/LEVN0001.png"
+  file  = "pik/LEVN0001.bmp"
 }

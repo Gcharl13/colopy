@@ -30,5 +30,8 @@ there is no disassembly here. The spec is finished; your job is the implementati
 - The right-edge map column is the **Sea Lane** (id 26), never desert.
 - Sprite sheets: `TERRAIN.SS` is the base-ground sheet composited under `PHYS0.SS` overlays; skip
   placeholder frames 0/16/100; `BDARK.SS`/`FONTSMAL.FF` are orphans (don't load). (`spec/ui/map_view.md`.)
-- The atlas PNGs are **paletted** (store indices, not RGB) so you can apply `VICEROY.PAL` + do palette
-  cycling at runtime. (`REWRITE_READINESS.md` §4a.)
+- The atlas/asset images are **24-bit BMPs** (user directive 2026-07-04: every asset ships as BMP,
+  not PNG). Transparency = the pure-magenta colorkey (255,0,255 — not a `VICEROY.PAL` color, never
+  used opaquely; verified repo-wide). The runtime quantizes RGB back to `VICEROY.PAL` indices at
+  load (`native_assets.cpp read_png_quantized`), so index identity + palette cycling survive;
+  `.png` siblings still load as a fallback. (`REWRITE_READINESS.md` §4a.)

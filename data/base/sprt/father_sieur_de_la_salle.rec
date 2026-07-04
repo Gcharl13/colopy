@@ -3,5 +3,5 @@ record sprt.father_sieur_de_la_salle {
   label = "Sieur De La Salle"
   kind  = "portrait"
   sheet = "CC-09"
-  file  = "sprites/atlas_CC-09.png"
+  file  = "sprites/atlas_CC-09.bmp"
 }

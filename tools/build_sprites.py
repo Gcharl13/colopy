@@ -66,19 +66,19 @@ def main():
     fa = names.get("@FATHERS") or names.get("@FOUNDING")
     if fa:
         for i, r in enumerate(fa["rows"]):
-            f = f"atlas_CC-{i:02d}.png"
+            f = f"atlas_CC-{i:02d}.bmp"
             if os.path.exists(os.path.join(ROOT, "docs/atlas/sprites", f)):
                 sprites.append({"id": "father." + slug(r["name"]), "label": r["name"], "kind": "portrait",
                                 "sheet": f"CC-{i:02d}", "file": "sprites/" + f, "w": 0, "h": 0})
 
     # --- woodcuts (scene illustrations) WDCUT## ---
-    for f in sorted(glob.glob(os.path.join(ROOT, "docs/atlas/sprites/atlas_WDCUT*.png"))):
-        n = os.path.basename(f)[6:-4]  # strip atlas_ / .png
+    for f in sorted(glob.glob(os.path.join(ROOT, "docs/atlas/sprites/atlas_WDCUT*.bmp"))):
+        n = os.path.basename(f)[6:-4]  # strip atlas_ / .bmp
         sprites.append({"id": "woodcut." + slug(n), "label": n, "kind": "woodcut",
                         "sheet": n, "file": "sprites/" + os.path.basename(f), "w": 0, "h": 0})
 
     # --- full-screen backgrounds (pik/*) ---
-    for f in sorted(glob.glob(os.path.join(ROOT, "docs/atlas/pik/*.png"))):
+    for f in sorted(glob.glob(os.path.join(ROOT, "docs/atlas/pik/*.bmp"))):
         n = os.path.basename(f)[:-4]
         sprites.append({"id": "bg." + slug(n), "label": n, "kind": "background",
                         "sheet": n, "file": "pik/" + os.path.basename(f), "w": 0, "h": 0})

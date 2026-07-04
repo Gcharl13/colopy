@@ -3293,7 +3293,7 @@
    "label": "Adam Smith",
    "kind": "portrait",
    "sheet": "CC-00",
-   "file": "sprites/atlas_CC-00.png",
+   "file": "sprites/atlas_CC-00.bmp",
    "w": 0,
    "h": 0
   },
@@ -3302,7 +3302,7 @@
    "label": "Jakob Fugger",
    "kind": "portrait",
    "sheet": "CC-01",
-   "file": "sprites/atlas_CC-01.png",
+   "file": "sprites/atlas_CC-01.bmp",
    "w": 0,
    "h": 0
   },
@@ -3311,7 +3311,7 @@
    "label": "Peter Minuit",
    "kind": "portrait",
    "sheet": "CC-02",
-   "file": "sprites/atlas_CC-02.png",
+   "file": "sprites/atlas_CC-02.bmp",
    "w": 0,
    "h": 0
   },
@@ -3320,7 +3320,7 @@
    "label": "Peter Stuyvesant",
    "kind": "portrait",
    "sheet": "CC-03",
-   "file": "sprites/atlas_CC-03.png",
+   "file": "sprites/atlas_CC-03.bmp",
    "w": 0,
    "h": 0
   },
@@ -3329,7 +3329,7 @@
    "label": "Jan de Witt",
    "kind": "portrait",
    "sheet": "CC-04",
-   "file": "sprites/atlas_CC-04.png",
+   "file": "sprites/atlas_CC-04.bmp",
    "w": 0,
    "h": 0
   },
@@ -3338,7 +3338,7 @@
    "label": "Ferdinand Magellan",
    "kind": "portrait",
    "sheet": "CC-05",
-   "file": "sprites/atlas_CC-05.png",
+   "file": "sprites/atlas_CC-05.bmp",
    "w": 0,
    "h": 0
   },
@@ -3347,7 +3347,7 @@
    "label": "Francisco Coronado",
    "kind": "portrait",
    "sheet": "CC-06",
-   "file": "sprites/atlas_CC-06.png",
+   "file": "sprites/atlas_CC-06.bmp",
    "w": 0,
    "h": 0
   },
@@ -3356,7 +3356,7 @@
    "label": "Hernando de Soto",
    "kind": "portrait",
    "sheet": "CC-07",
-   "file": "sprites/atlas_CC-07.png",
+   "file": "sprites/atlas_CC-07.bmp",
    "w": 0,
    "h": 0
   },
@@ -3365,7 +3365,7 @@
    "label": "Henry Hudson",
    "kind": "portrait",
    "sheet": "CC-08",
-   "file": "sprites/atlas_CC-08.png",
+   "file": "sprites/atlas_CC-08.bmp",
    "w": 0,
    "h": 0
   },
@@ -3374,7 +3374,7 @@
    "label": "Sieur De La Salle",
    "kind": "portrait",
    "sheet": "CC-09",
-   "file": "sprites/atlas_CC-09.png",
+   "file": "sprites/atlas_CC-09.bmp",
    "w": 0,
    "h": 0
   },
@@ -3383,7 +3383,7 @@
    "label": "Hernan Cortes",
    "kind": "portrait",
    "sheet": "CC-10",
-   "file": "sprites/atlas_CC-10.png",
+   "file": "sprites/atlas_CC-10.bmp",
    "w": 0,
    "h": 0
   },
@@ -3392,7 +3392,7 @@
    "label": "George Washington",
    "kind": "portrait",
    "sheet": "CC-11",
-   "file": "sprites/atlas_CC-11.png",
+   "file": "sprites/atlas_CC-11.bmp",
    "w": 0,
    "h": 0
   },
@@ -3401,7 +3401,7 @@
    "label": "Paul Revere",
    "kind": "portrait",
    "sheet": "CC-12",
-   "file": "sprites/atlas_CC-12.png",
+   "file": "sprites/atlas_CC-12.bmp",
    "w": 0,
    "h": 0
   },
@@ -3410,7 +3410,7 @@
    "label": "Francis Drake",
    "kind": "portrait",
    "sheet": "CC-13",
-   "file": "sprites/atlas_CC-13.png",
+   "file": "sprites/atlas_CC-13.bmp",
    "w": 0,
    "h": 0
   },
@@ -3419,7 +3419,7 @@
    "label": "John Paul Jones",
    "kind": "portrait",
    "sheet": "CC-14",
-   "file": "sprites/atlas_CC-14.png",
+   "file": "sprites/atlas_CC-14.bmp",
    "w": 0,
    "h": 0
   },
@@ -3428,7 +3428,7 @@
    "label": "Thomas Jefferson",
    "kind": "portrait",
    "sheet": "CC-15",
-   "file": "sprites/atlas_CC-15.png",
+   "file": "sprites/atlas_CC-15.bmp",
    "w": 0,
    "h": 0
   },
@@ -3437,7 +3437,7 @@
    "label": "Pocahontas",
    "kind": "portrait",
    "sheet": "CC-16",
-   "file": "sprites/atlas_CC-16.png",
+   "file": "sprites/atlas_CC-16.bmp",
    "w": 0,
    "h": 0
   },
@@ -3446,7 +3446,7 @@
    "label": "Thomas Paine",
    "kind": "portrait",
    "sheet": "CC-17",
-   "file": "sprites/atlas_CC-17.png",
+   "file": "sprites/atlas_CC-17.bmp",
    "w": 0,
    "h": 0
   },
@@ -3455,7 +3455,7 @@
    "label": "Simon Bolivar",
    "kind": "portrait",
    "sheet": "CC-18",
-   "file": "sprites/atlas_CC-18.png",
+   "file": "sprites/atlas_CC-18.bmp",
    "w": 0,
    "h": 0
   },
@@ -3464,7 +3464,7 @@
    "label": "Benjamin Franklin",
    "kind": "portrait",
    "sheet": "CC-19",
-   "file": "sprites/atlas_CC-19.png",
+   "file": "sprites/atlas_CC-19.bmp",
    "w": 0,
    "h": 0
   },
@@ -3473,7 +3473,7 @@
    "label": "William Brewster",
    "kind": "portrait",
    "sheet": "CC-20",
-   "file": "sprites/atlas_CC-20.png",
+   "file": "sprites/atlas_CC-20.bmp",
    "w": 0,
    "h": 0
   },
@@ -3482,7 +3482,7 @@
    "label": "William Penn",
    "kind": "portrait",
    "sheet": "CC-21",
-   "file": "sprites/atlas_CC-21.png",
+   "file": "sprites/atlas_CC-21.bmp",
    "w": 0,
    "h": 0
   },
@@ -3491,7 +3491,7 @@
    "label": "Jean de Brebeuf",
    "kind": "portrait",
    "sheet": "CC-22",
-   "file": "sprites/atlas_CC-22.png",
+   "file": "sprites/atlas_CC-22.bmp",
    "w": 0,
    "h": 0
   },
@@ -3500,7 +3500,7 @@
    "label": "Juan de Sepulveda",
    "kind": "portrait",
    "sheet": "CC-23",
-   "file": "sprites/atlas_CC-23.png",
+   "file": "sprites/atlas_CC-23.bmp",
    "w": 0,
    "h": 0
   },
@@ -3509,7 +3509,7 @@
    "label": "Bartolome de las Casas",
    "kind": "portrait",
    "sheet": "CC-24",
-   "file": "sprites/atlas_CC-24.png",
+   "file": "sprites/atlas_CC-24.bmp",
    "w": 0,
    "h": 0
   },
@@ -3518,7 +3518,7 @@
    "label": "WDCUT01",
    "kind": "woodcut",
    "sheet": "WDCUT01",
-   "file": "sprites/atlas_WDCUT01.png",
+   "file": "sprites/atlas_WDCUT01.bmp",
    "w": 0,
    "h": 0
   },
@@ -3527,7 +3527,7 @@
    "label": "WDCUT02",
    "kind": "woodcut",
    "sheet": "WDCUT02",
-   "file": "sprites/atlas_WDCUT02.png",
+   "file": "sprites/atlas_WDCUT02.bmp",
    "w": 0,
    "h": 0
   },
@@ -3536,7 +3536,7 @@
    "label": "WDCUT03",
    "kind": "woodcut",
    "sheet": "WDCUT03",
-   "file": "sprites/atlas_WDCUT03.png",
+   "file": "sprites/atlas_WDCUT03.bmp",
    "w": 0,
    "h": 0
   },
@@ -3545,7 +3545,7 @@
    "label": "WDCUT04",
    "kind": "woodcut",
    "sheet": "WDCUT04",
-   "file": "sprites/atlas_WDCUT04.png",
+   "file": "sprites/atlas_WDCUT04.bmp",
    "w": 0,
    "h": 0
   },
@@ -3554,7 +3554,7 @@
    "label": "WDCUT05",
    "kind": "woodcut",
    "sheet": "WDCUT05",
-   "file": "sprites/atlas_WDCUT05.png",
+   "file": "sprites/atlas_WDCUT05.bmp",
    "w": 0,
    "h": 0
   },
@@ -3563,7 +3563,7 @@
    "label": "WDCUT06",
    "kind": "woodcut",
    "sheet": "WDCUT06",
-   "file": "sprites/atlas_WDCUT06.png",
+   "file": "sprites/atlas_WDCUT06.bmp",
    "w": 0,
    "h": 0
   },
@@ -3572,7 +3572,7 @@
    "label": "WDCUT07",
    "kind": "woodcut",
    "sheet": "WDCUT07",
-   "file": "sprites/atlas_WDCUT07.png",
+   "file": "sprites/atlas_WDCUT07.bmp",
    "w": 0,
    "h": 0
   },
@@ -3581,7 +3581,7 @@
    "label": "WDCUT08",
    "kind": "woodcut",
    "sheet": "WDCUT08",
-   "file": "sprites/atlas_WDCUT08.png",
+   "file": "sprites/atlas_WDCUT08.bmp",
    "w": 0,
    "h": 0
   },
@@ -3590,7 +3590,7 @@
    "label": "WDCUT09",
    "kind": "woodcut",
    "sheet": "WDCUT09",
-   "file": "sprites/atlas_WDCUT09.png",
+   "file": "sprites/atlas_WDCUT09.bmp",
    "w": 0,
    "h": 0
   },
@@ -3599,7 +3599,7 @@
    "label": "WDCUT10",
    "kind": "woodcut",
    "sheet": "WDCUT10",
-   "file": "sprites/atlas_WDCUT10.png",
+   "file": "sprites/atlas_WDCUT10.bmp",
    "w": 0,
    "h": 0
   },
@@ -3608,7 +3608,7 @@
    "label": "WDCUT11",
    "kind": "woodcut",
    "sheet": "WDCUT11",
-   "file": "sprites/atlas_WDCUT11.png",
+   "file": "sprites/atlas_WDCUT11.bmp",
    "w": 0,
    "h": 0
   },
@@ -3617,7 +3617,7 @@
    "label": "WDCUT12",
    "kind": "woodcut",
    "sheet": "WDCUT12",
-   "file": "sprites/atlas_WDCUT12.png",
+   "file": "sprites/atlas_WDCUT12.bmp",
    "w": 0,
    "h": 0
   },
@@ -3626,7 +3626,7 @@
    "label": "WDCUT13",
    "kind": "woodcut",
    "sheet": "WDCUT13",
-   "file": "sprites/atlas_WDCUT13.png",
+   "file": "sprites/atlas_WDCUT13.bmp",
    "w": 0,
    "h": 0
   },
@@ -3635,7 +3635,7 @@
    "label": "CCBKGD",
    "kind": "background",
    "sheet": "CCBKGD",
-   "file": "pik/CCBKGD.png",
+   "file": "pik/CCBKGD.bmp",
    "w": 0,
    "h": 0
   },
@@ -3644,7 +3644,7 @@
    "label": "CLOS-BKG",
    "kind": "background",
    "sheet": "CLOS-BKG",
-   "file": "pik/CLOS-BKG.png",
+   "file": "pik/CLOS-BKG.bmp",
    "w": 0,
    "h": 0
   },
@@ -3653,7 +3653,7 @@
    "label": "COLONY",
    "kind": "background",
    "sheet": "COLONY",
-   "file": "pik/COLONY.png",
+   "file": "pik/COLONY.bmp",
    "w": 0,
    "h": 0
   },
@@ -3662,7 +3662,7 @@
    "label": "CUSTOMIZ",
    "kind": "background",
    "sheet": "CUSTOMIZ",
-   "file": "pik/CUSTOMIZ.png",
+   "file": "pik/CUSTOMIZ.bmp",
    "w": 0,
    "h": 0
   },
@@ -3671,7 +3671,7 @@
    "label": "DECLARAT",
    "kind": "background",
    "sheet": "DECLARAT",
-   "file": "pik/DECLARAT.png",
+   "file": "pik/DECLARAT.bmp",
    "w": 0,
    "h": 0
   },
@@ -3680,7 +3680,7 @@
    "label": "DECOIND",
    "kind": "background",
    "sheet": "DECOIND",
-   "file": "pik/DECOIND.png",
+   "file": "pik/DECOIND.bmp",
    "w": 0,
    "h": 0
   },
@@ -3689,7 +3689,7 @@
    "label": "DIFFICUL",
    "kind": "background",
    "sheet": "DIFFICUL",
-   "file": "pik/DIFFICUL.png",
+   "file": "pik/DIFFICUL.bmp",
    "w": 0,
    "h": 0
   },
@@ -3698,7 +3698,7 @@
    "label": "EUROPE",
    "kind": "background",
    "sheet": "EUROPE",
-   "file": "pik/EUROPE.png",
+   "file": "pik/EUROPE.bmp",
    "w": 0,
    "h": 0
   },
@@ -3707,7 +3707,7 @@
    "label": "KINGLSS1",
    "kind": "background",
    "sheet": "KINGLSS1",
-   "file": "pik/KINGLSS1.png",
+   "file": "pik/KINGLSS1.bmp",
    "w": 0,
    "h": 0
   },
@@ -3716,7 +3716,7 @@
    "label": "KINGLSS2",
    "kind": "background",
    "sheet": "KINGLSS2",
-   "file": "pik/KINGLSS2.png",
+   "file": "pik/KINGLSS2.bmp",
    "w": 0,
    "h": 0
   },
@@ -3725,7 +3725,7 @@
    "label": "LEVN0001",
    "kind": "background",
    "sheet": "LEVN0001",
-   "file": "pik/LEVN0001.png",
+   "file": "pik/LEVN0001.bmp",
    "w": 0,
    "h": 0
   },
@@ -3734,7 +3734,7 @@
    "label": "LEVN0002",
    "kind": "background",
    "sheet": "LEVN0002",
-   "file": "pik/LEVN0002.png",
+   "file": "pik/LEVN0002.bmp",
    "w": 0,
    "h": 0
   },
@@ -3743,7 +3743,7 @@
    "label": "LEVN0003",
    "kind": "background",
    "sheet": "LEVN0003",
-   "file": "pik/LEVN0003.png",
+   "file": "pik/LEVN0003.bmp",
    "w": 0,
    "h": 0
   },
@@ -3752,7 +3752,7 @@
    "label": "LEVN0004",
    "kind": "background",
    "sheet": "LEVN0004",
-   "file": "pik/LEVN0004.png",
+   "file": "pik/LEVN0004.bmp",
    "w": 0,
    "h": 0
   },
@@ -3761,7 +3761,7 @@
    "label": "LEVN0005",
    "kind": "background",
    "sheet": "LEVN0005",
-   "file": "pik/LEVN0005.png",
+   "file": "pik/LEVN0005.bmp",
    "w": 0,
    "h": 0
   },
@@ -3770,7 +3770,7 @@
    "label": "LEVN0006",
    "kind": "background",
    "sheet": "LEVN0006",
-   "file": "pik/LEVN0006.png",
+   "file": "pik/LEVN0006.bmp",
    "w": 0,
    "h": 0
   },
@@ -3779,7 +3779,7 @@
    "label": "LEVN0007",
    "kind": "background",
    "sheet": "LEVN0007",
-   "file": "pik/LEVN0007.png",
+   "file": "pik/LEVN0007.bmp",
    "w": 0,
    "h": 0
   },
@@ -3788,7 +3788,7 @@
    "label": "LEVN0008",
    "kind": "background",
    "sheet": "LEVN0008",
-   "file": "pik/LEVN0008.png",
+   "file": "pik/LEVN0008.bmp",
    "w": 0,
    "h": 0
   },
@@ -3797,7 +3797,7 @@
    "label": "LEVN0009",
    "kind": "background",
    "sheet": "LEVN0009",
-   "file": "pik/LEVN0009.png",
+   "file": "pik/LEVN0009.bmp",
    "w": 0,
    "h": 0
   },
@@ -3806,7 +3806,7 @@
    "label": "LEVN0010",
    "kind": "background",
    "sheet": "LEVN0010",
-   "file": "pik/LEVN0010.png",
+   "file": "pik/LEVN0010.bmp",
    "w": 0,
    "h": 0
   },
@@ -3815,7 +3815,7 @@
    "label": "NATIONS",
    "kind": "background",
    "sheet": "NATIONS",
-   "file": "pik/NATIONS.png",
+   "file": "pik/NATIONS.bmp",
    "w": 0,
    "h": 0
   },
@@ -3824,7 +3824,7 @@
    "label": "OPENBORD",
    "kind": "background",
    "sheet": "OPENBORD",
-   "file": "pik/OPENBORD.png",
+   "file": "pik/OPENBORD.bmp",
    "w": 0,
    "h": 0
   },
@@ -3833,7 +3833,7 @@
    "label": "OPENING",
    "kind": "background",
    "sheet": "OPENING",
-   "file": "pik/OPENING.png",
+   "file": "pik/OPENING.bmp",
    "w": 0,
    "h": 0
   },
@@ -3842,7 +3842,7 @@
    "label": "OPENMENU",
    "kind": "background",
    "sheet": "OPENMENU",
-   "file": "pik/OPENMENU.png",
+   "file": "pik/OPENMENU.bmp",
    "w": 0,
    "h": 0
   },
@@ -3851,7 +3851,7 @@
    "label": "REPORT1",
    "kind": "background",
    "sheet": "REPORT1",
-   "file": "pik/REPORT1.png",
+   "file": "pik/REPORT1.bmp",
    "w": 0,
    "h": 0
   },
@@ -3860,7 +3860,7 @@
    "label": "REPORT2",
    "kind": "background",
    "sheet": "REPORT2",
-   "file": "pik/REPORT2.png",
+   "file": "pik/REPORT2.bmp",
    "w": 0,
    "h": 0
   },
@@ -3869,7 +3869,7 @@
    "label": "REPORT3",
    "kind": "background",
    "sheet": "REPORT3",
-   "file": "pik/REPORT3.png",
+   "file": "pik/REPORT3.bmp",
    "w": 0,
    "h": 0
   },
@@ -3878,7 +3878,7 @@
    "label": "REPORT4",
    "kind": "background",
    "sheet": "REPORT4",
-   "file": "pik/REPORT4.png",
+   "file": "pik/REPORT4.bmp",
    "w": 0,
    "h": 0
   },
@@ -3887,7 +3887,7 @@
    "label": "REPORT5",
    "kind": "background",
    "sheet": "REPORT5",
-   "file": "pik/REPORT5.png",
+   "file": "pik/REPORT5.bmp",
    "w": 0,
    "h": 0
   },
@@ -3896,7 +3896,7 @@
    "label": "REPORT6",
    "kind": "background",
    "sheet": "REPORT6",
-   "file": "pik/REPORT6.png",
+   "file": "pik/REPORT6.bmp",
    "w": 0,
    "h": 0
   },
@@ -3905,7 +3905,7 @@
    "label": "REPORT7",
    "kind": "background",
    "sheet": "REPORT7",
-   "file": "pik/REPORT7.png",
+   "file": "pik/REPORT7.bmp",
    "w": 0,
    "h": 0
   },
@@ -3914,7 +3914,7 @@
    "label": "REPORT8",
    "kind": "background",
    "sheet": "REPORT8",
-   "file": "pik/REPORT8.png",
+   "file": "pik/REPORT8.bmp",
    "w": 0,
    "h": 0
   },
@@ -3923,7 +3923,7 @@
    "label": "REPORT9",
    "kind": "background",
    "sheet": "REPORT9",
-   "file": "pik/REPORT9.png",
+   "file": "pik/REPORT9.bmp",
    "w": 0,
    "h": 0
   },
@@ -3932,7 +3932,7 @@
    "label": "WOODPAN2",
    "kind": "background",
    "sheet": "WOODPAN2",
-   "file": "pik/WOODPAN2.png",
+   "file": "pik/WOODPAN2.bmp",
    "w": 0,
    "h": 0
   },
@@ -3941,7 +3941,7 @@
    "label": "WOODPANL",
    "kind": "background",
    "sheet": "WOODPANL",
-   "file": "pik/WOODPANL.png",
+   "file": "pik/WOODPANL.bmp",
    "w": 0,
    "h": 0
   }

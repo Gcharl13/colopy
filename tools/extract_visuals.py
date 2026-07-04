@@ -71,7 +71,7 @@ def extract_one(src: Path, kind: str, dest_root: Path) -> tuple[bool, dict]:
         except Exception as e:
             return False, {"skipped": True, "reason": f"mpskit error: {e}"}
 
-        # Collect outputs (PNGs + JSONs)
+        # Collect outputs (images -> 24-bit BMP + JSONs)
         png_count = 0
         json_count = 0
         for f in sorted(tmp_path.iterdir()):
@@ -81,7 +81,12 @@ def extract_one(src: Path, kind: str, dest_root: Path) -> tuple[bool, dict]:
                 continue   # skip raw section dumps
             target = dest / f.name
             shutil.copy2(f, target)
-            if f.suffix == ".png": png_count += 1
+            if f.suffix == ".png":
+                # mpskit emits PNG; the project's asset format is 24-bit BMP
+                from bmp_io import open_image, save_bmp
+                save_bmp(open_image(str(target)).convert("RGBA"), str(target))
+                target.unlink()
+                png_count += 1
             if f.suffix == ".json": json_count += 1
 
         # Sidecar

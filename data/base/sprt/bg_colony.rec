@@ -3,5 +3,5 @@ record sprt.bg_colony {
   label = "COLONY"
   kind  = "background"
   sheet = "COLONY"
-  file  = "pik/COLONY.png"
+  file  = "pik/COLONY.bmp"
 }

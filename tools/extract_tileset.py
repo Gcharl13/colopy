@@ -17,8 +17,9 @@ Usage: tools/extract_tileset.py
 import json
 import os
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
-SRC = "docs/atlas/sprites/atlas_TERRAIN.png"
+SRC = "docs/atlas/sprites/atlas_TERRAIN.bmp"
 OUT_DIR = "data_extracted/tileset"
 N = 12
 TILE_BAND = (45, 77)              # rows of the 32px (=16 @2x) tile, below the labels
@@ -26,7 +27,7 @@ X0, PITCH, SIZE2X = 13, 58, 32    # first tile x, slot pitch, 2x tile size
 
 
 def main():
-    im = Image.open(SRC).convert("RGBA")
+    im = open_rgba(SRC)
     strip = Image.new("RGBA", (N * 16, 16), (0, 0, 0, 0))
     for i in range(N):
         x = X0 + i * PITCH
@@ -34,7 +35,7 @@ def main():
         tile = cell.resize((16, 16), Image.NEAREST)                  # back to native
         strip.paste(tile, (i * 16, 0))
     os.makedirs(OUT_DIR, exist_ok=True)
-    strip.save(os.path.join(OUT_DIR, "terrain16.png"))
+    save_bmp(strip, os.path.join(OUT_DIR, "terrain16.bmp"))
     meta = {
         "tile": 16, "count": N, "source": SRC,
         "names": ["Tundra", "Desert", "Plains", "Prairie", "Grassland", "Savanna",
@@ -42,7 +43,7 @@ def main():
     }
     with open(os.path.join(OUT_DIR, "terrain16.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    print(f"wrote {OUT_DIR}/terrain16.png ({strip.size[0]}x{strip.size[1]}) + terrain16.json")
+    print(f"wrote {OUT_DIR}/terrain16.bmp ({strip.size[0]}x{strip.size[1]}) + terrain16.json")
 
 
 if __name__ == "__main__":

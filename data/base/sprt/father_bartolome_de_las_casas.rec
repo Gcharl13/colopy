@@ -3,5 +3,5 @@ record sprt.father_bartolome_de_las_casas {
   label = "Bartolome de las Casas"
   kind  = "portrait"
   sheet = "CC-24"
-  file  = "sprites/atlas_CC-24.png"
+  file  = "sprites/atlas_CC-24.bmp"
 }

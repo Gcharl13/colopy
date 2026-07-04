@@ -3,5 +3,5 @@ record sprt.father_juan_de_sepulveda {
   label = "Juan de Sepulveda"
   kind  = "portrait"
   sheet = "CC-23"
-  file  = "sprites/atlas_CC-23.png"
+  file  = "sprites/atlas_CC-23.bmp"
 }

@@ -10,7 +10,7 @@ self-contained folder next to an exe:
       data/                  canonical record store (drydock boots from it)
       data_extracted/        palette + tileset + map + engine + text
       docs/atlas/pik/        PIK backgrounds (map HUD chrome, screens)
-      docs/atlas/sprites/atlas_PARCH.png   the colony parchment tile
+      docs/atlas/sprites/atlas_PARCH.bmp   the colony parchment tile
 
 Self-test: run the LINUX player headless against the packaged tree
 (`viceroy --root PKG --frames 6`) to prove the set is complete before
@@ -36,7 +36,7 @@ COPY_TREES = [
 ]
 COPY_FILES = [
     "data_extracted/palette.json",
-    "docs/atlas/sprites/atlas_PARCH.png",
+    "docs/atlas/sprites/atlas_PARCH.bmp",
 ]
 
 README = """Viceroy -- the reconstructed game, standalone player

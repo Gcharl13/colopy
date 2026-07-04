@@ -3,5 +3,5 @@ record sprt.bg_difficul {
   label = "DIFFICUL"
   kind  = "background"
   sheet = "DIFFICUL"
-  file  = "pik/DIFFICUL.png"
+  file  = "pik/DIFFICUL.bmp"
 }

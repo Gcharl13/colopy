@@ -18,8 +18,9 @@ Usage: tools/extract_unitset.py
 import json
 import os
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
-SRC = "docs/atlas/sprites/atlas_ICONS.png"
+SRC = "docs/atlas/sprites/atlas_ICONS.bmp"
 OUT_DIR = "data_extracted/tileset"
 PITCH = 58
 SEPS = [24, 81, 139, 197, 255, 313, 371, 429, 487, 546]   # row-band boundaries (last = H)
@@ -49,7 +50,7 @@ def sprite_bbox(px, x0, x1, y0, y1):
 
 
 def main():
-    im = Image.open(SRC).convert("RGBA")
+    im = open_rgba(SRC)
     W, _ = im.size
     px = im.load()
     n = len(TYPE_TO_FRAME)
@@ -84,12 +85,12 @@ def main():
         oy = CELL - sp.height
         strip.paste(sp, (ox, oy), sp)
     os.makedirs(OUT_DIR, exist_ok=True)
-    strip.save(os.path.join(OUT_DIR, "units.png"))
+    save_bmp(strip, os.path.join(OUT_DIR, "units.bmp"))
     meta = {"cell": CELL, "count": n, "source": SRC,
             "types": NAMES, "frames": TYPE_TO_FRAME}
     with open(os.path.join(OUT_DIR, "units.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    print(f"wrote {OUT_DIR}/units.png ({strip.size[0]}x{strip.size[1]}) + units.json")
+    print(f"wrote {OUT_DIR}/units.bmp ({strip.size[0]}x{strip.size[1]}) + units.json")
 
 
 if __name__ == "__main__":

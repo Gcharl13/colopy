@@ -3,5 +3,5 @@ record sprt.father_henry_hudson {
   label = "Henry Hudson"
   kind  = "portrait"
   sheet = "CC-08"
-  file  = "sprites/atlas_CC-08.png"
+  file  = "sprites/atlas_CC-08.bmp"
 }

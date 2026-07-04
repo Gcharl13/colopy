@@ -3,5 +3,5 @@ record sprt.father_jakob_fugger {
   label = "Jakob Fugger"
   kind  = "portrait"
   sheet = "CC-01"
-  file  = "sprites/atlas_CC-01.png"
+  file  = "sprites/atlas_CC-01.bmp"
 }

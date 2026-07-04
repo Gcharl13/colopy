@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """extract_cc_portraits.py -- crop the 25 Founding-Father portraits out of the CC-NN atlas sheets.
 
-The committed docs/atlas/sprites/atlas_CC-NN.png files are debug contact-sheets: frame 0 (the
+The committed docs/atlas/sprites/atlas_CC-NN.bmp files are debug contact-sheets: frame 0 (the
 portrait, CC-00..CC-24 = @FATHERS order per spec/ui/continental_congress.md §3) sits at the top-left,
 followed by a wide black legend strip with annotation text. This tool auto-detects the portrait
 cell width (the first run of near-empty columns after the figure) and crops [0,0,width,H] into a
-clean per-father PNG under data_extracted/sprites/fathers/CC-NN.png, plus a manifest with each
+clean per-father 24-bit BMP under data_extracted/sprites/fathers/CC-NN.bmp, plus a manifest with each
 portrait's size. (The original .SS frames aren't in the repo, so these atlas crops are the source;
 a small baked frame-index label may remain over the figure -- an artifact of the debug render.)
 
@@ -13,6 +13,7 @@ Run: python3 tools/extract_cc_portraits.py   (needs Pillow; the atlas sheets are
 """
 import json, os
 from PIL import Image
+from bmp_io import open_image, open_rgba, save_bmp
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "docs", "atlas", "sprites")
@@ -141,16 +142,16 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     manifest = []
     for i in range(25):
-        src = os.path.join(SRC, f"atlas_CC-{i:02d}.png")
-        im = Image.open(src).convert("RGBA")
+        src = os.path.join(SRC, f"atlas_CC-{i:02d}.bmp")
+        im = open_rgba(src)
         w = portrait_width(im)
         crop = im.crop((0, 0, w, im.height))
         strip_title_text(crop)          # strong-yellow title band -> transparent
         key_out_background(crop)         # black cell background -> transparent (flood fill)
         drop_small_islands(crop)         # floating title-glyph remnants -> gone
         inpaint_index_label(crop)        # the "N/0xNN" watermark -> painted over
-        fn = f"CC-{i:02d}.png"
-        crop.save(os.path.join(OUT, fn))
+        fn = f"CC-{i:02d}.bmp"
+        save_bmp(crop, os.path.join(OUT, fn))
         manifest.append({"id": i, "file": f"data_extracted/sprites/fathers/{fn}",
                          "w": w, "h": im.height})
     json.dump({"_note": "founding-father portraits cropped from the CC-NN atlas sheets "

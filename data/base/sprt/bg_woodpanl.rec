@@ -3,5 +3,5 @@ record sprt.bg_woodpanl {
   label = "WOODPANL"
   kind  = "background"
   sheet = "WOODPANL"
-  file  = "pik/WOODPANL.png"
+  file  = "pik/WOODPANL.bmp"
 }

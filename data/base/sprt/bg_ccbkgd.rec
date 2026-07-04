@@ -3,5 +3,5 @@ record sprt.bg_ccbkgd {
   label = "CCBKGD"
   kind  = "background"
   sheet = "CCBKGD"
-  file  = "pik/CCBKGD.png"
+  file  = "pik/CCBKGD.bmp"
 }
