@@ -2550,3 +2550,221 @@ void read_extra(const forge::JsonValue* o, forge::EngineExtra& x) {
             x.settlements.push_back(ns);
         }
 }
+
+// ---- shared player commands (session.hpp) ----------------------------------
+// The bodies moved verbatim from the /api/game/{order,found} routes so the
+// HTTP server and the native editor run the SAME mechanics (N0 policy).
+
+OrderResult unit_order(int ui, const std::string& o, int tx, int ty,
+                       int route, int hold) {
+    OrderResult r;
+    if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive) {
+        r.err = "bad unit";
+        return r;
+    }
+    Unit& u = g_world.units[ui];
+    if (o.empty()) {                                     // GOTO to (tx,ty)
+        if (tx < 0 || ty < 0) { r.err = "need a target tile"; return r; }
+        u.order = ORDER_GOTO;
+        u.target_x = tx;
+        u.target_y = ty;
+        r.ok = true;
+        return r;
+    }
+    if (o == "P")      u.order = ORDER_CLEAR_PLOW;
+    else if (o == "R") u.order = ORDER_ROAD;
+    else if (o == "F") u.order = ORDER_FORTIFY;
+    else if (o == "S") u.order = ORDER_SENTRY;
+    else if (o == "-") { u.order = ORDER_NONE; u.route = -1; }
+    else if (o == "T") {
+        // @ORDERS row 2 "Trade Route, T" (order byte 2 @0x22E05).
+        if (unit_stats(u.type).cargo <= 0) { r.err = "unit has no cargo holds"; return r; }
+        if (route < 0 || route >= (int)g_game.routes.size()) { r.err = "need a valid route"; return r; }
+        const bool naval = unit_stats(u.type).move_class == 99;
+        if (g_game.routes[route].type == 0 ? !naval : naval) {
+            r.err = g_game.routes[route].type == 0 ? "a sea route needs a ship"
+                                                   : "a land route needs a wagon train";
+            return r;
+        }
+        u.order = ORDER_TRADE_ROUTE; u.route = route; u.route_stop = 0;
+    }
+    else if (o == "D") {                                 // Disband (shift-D)
+        u.alive = false;
+        r.ok = true;
+        return r;
+    }
+    else if (o == "L" || o == "U" || o == "O") {
+        // Load/Unload "most valuable" + Dump Overboard over the byte-verified
+        // hold layout (unit_orders.md 0x3150..; metric RECONSTRUCTED).
+        const int cap = std::min(6, unit_stats(u.type).cargo);
+        if (cap <= 0) { r.err = "unit has no cargo holds"; return r; }
+        if (o == "O") {
+            for (int h = 0; h < cap; ++h)
+                if (hold < 0 || hold == h) { u.hold_good[h] = -1; u.hold_qty[h] = 0; }
+            r.ok = true;
+            return r;
+        }
+        Colony* col = nullptr;
+        for (auto& c : g_world.colonies)
+            if (c.x == u.x && c.y == u.y && c.owner_power == u.owner) { col = &c; break; }
+        if (!col) { r.err = "must be in one of your colonies"; return r; }
+        if (o == "L") {
+            int best = -1; long bv = 0;
+            for (int gd = 0; gd < NGOODS; ++gd) {
+                if (col->stockpile[gd] <= 0) continue;
+                long v = (long)market_bid(g_game, u.owner, gd) * col->stockpile[gd];
+                if (best < 0 || v > bv) { best = gd; bv = v; }
+            }
+            if (best < 0) { r.err = "nothing to load"; return r; }
+            int h = -1;
+            for (int i2 = 0; i2 < cap; ++i2)
+                if (u.hold_good[i2] == best && u.hold_qty[i2] < 100) { h = i2; break; }
+            if (h < 0) for (int i2 = 0; i2 < cap; ++i2)
+                if (u.hold_good[i2] < 0) { h = i2; break; }
+            if (h < 0) { r.err = "all holds are full"; return r; }
+            const int have = (u.hold_good[h] == best) ? u.hold_qty[h] : 0;
+            const int qty = std::min(100 - have, (int)col->stockpile[best]);
+            u.hold_good[h] = best; u.hold_qty[h] = have + qty;
+            col->stockpile[best] -= qty;
+            r.ok = true;
+            return r;
+        }
+        int h = -1; long bv = 0;                          // "U": most valuable out
+        for (int i2 = 0; i2 < cap; ++i2) {
+            if (u.hold_good[i2] < 0 || u.hold_qty[i2] <= 0) continue;
+            long v = (long)market_bid(g_game, u.owner, u.hold_good[i2]) * u.hold_qty[i2];
+            if (h < 0 || v > bv) { h = i2; bv = v; }
+        }
+        if (h < 0) { r.err = "no cargo to unload"; return r; }
+        col->stockpile[u.hold_good[h]] += u.hold_qty[h];
+        u.hold_good[h] = -1; u.hold_qty[h] = 0;
+        r.ok = true;
+        return r;
+    }
+    else { r.err = "unknown order (use P/R/F/S/T/D/L/U/O/-)"; return r; }
+    u.work = 0;                                          // fresh improvement start
+    r.ok = true;
+    return r;
+}
+
+FoundResult found_colony(int ui, const std::vector<std::string>& acks,
+                         const std::string& land_choice) {
+    FoundResult r;
+    auto acked = [&](const char* k) {
+        for (const std::string& a : acks) if (a == k) return true;
+        return false;
+    };
+    if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive) {
+        r.err = "bad unit";
+        return r;
+    }
+    Unit& u = g_world.units[ui];
+    if (unit_stats(u.type).move_class == 99) { r.err = "a ship cannot found a colony"; return r; }
+    int id = g_world.terrain_id(u.x, u.y);
+    if (id < 0 || game_is_water(id)) { r.err = "must found on land"; return r; }
+    // Site warnings @TUTNOSPACES / @TUTNOLUMBER (tutorial.md 2, func_022542):
+    // gated on difficulty < 2 (@0x22763); counts byte-cited, predicate RECONSTRUCTED.
+    {
+        bool on_colony = false;
+        for (const auto& jc : g_world.colonies)
+            if (jc.x == u.x && jc.y == u.y) { on_colony = true; break; }
+        if (!on_colony && g_game.difficulty < 2) {
+            int productive = 0, forested = 0;
+            static const int ddx[8] = {1,-1,0,0,1,1,-1,-1}, ddy[8] = {0,0,1,-1,1,-1,1,-1};
+            for (int k = 0; k < 8; ++k) {
+                int t = g_world.terrain_id(u.x + ddx[k], u.y + ddy[k]);
+                if (t < 0) continue;
+                const int tid = t & 0x1F;
+                if (tid != 24 && tid != 25 && tid != 26) ++productive;
+                if (tid >= 8 && tid <= 23) ++forested;
+            }
+            const char* warn = nullptr;
+            if (productive < 4 && !acked("@TUTNOSPACES")) warn = "@TUTNOSPACES";
+            else if (forested == 0 && !acked("@TUTNOLUMBER")) warn = "@TUTNOLUMBER";
+            if (warn) {
+                r.confirm = warn;
+                r.text = game_message_text(warn);
+                r.choices = 2;
+                return r;
+            }
+        }
+    }
+    // "Join Colony (~B)": standing on an own colony joins it instead.
+    for (auto& jc : g_world.colonies) {
+        if (jc.x != u.x || jc.y != u.y) continue;
+        if (jc.owner_power != u.owner) { r.err = "cannot join a foreign colony"; return r; }
+        if (jc.population >= 32) { r.err = "colony is full"; return r; }
+        jc.population += 1;
+        Colony::Worker wk; wk.profession = u.profession; wk.tile = 0; wk.good = 0;
+        int t = g_world.terrain_id(u.x, u.y + 1);
+        wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
+        jc.workers.push_back(wk);
+        forge::colony_compute_production(jc, g_game.difficulty, g_active_rules,
+                                         g_engine_extra.ff_owned, 0, &g_world,
+                                         g_game.rumor_seed);
+        u.alive = false;
+        r.ok = true;
+        return r;
+    }
+    // Native land demand @INDIANLAND (func_0464C2 price; claim radius 2 RECONSTRUCTED).
+    {
+        int best = -1; int bd = 99;
+        for (int si = 0; si < (int)g_engine_extra.settlements.size(); ++si) {
+            const auto& sv = g_engine_extra.settlements[si];
+            int d = std::max(std::abs(sv.x - u.x), std::abs(sv.y - u.y));
+            if (d <= 2 && d < bd) { bd = d; best = si; }
+        }
+        if (best >= 0) {
+            auto& sv = g_engine_extra.settlements[best];
+            const bool minuit = (g_engine_extra.ff_owned >> 2) & 1u;
+            const bool res = resource_at(g_world, u.x, u.y, g_game.rumor_seed) >= 0;
+            forge::EngineCtx tcx{g_game, g_world, g_colony_xy, g_engine_extra,
+                                 g_active_rules, game_rng};
+            const int tl = (int)forge::resolve_binding(
+                "@TRIBES[" + std::to_string(sv.tribe) + "].level", tcx).num;
+            const int tv = (int)forge::resolve_binding(
+                "@TRIBES[" + std::to_string(sv.tribe) + "].value", tcx).num;
+            const long price = forge::native_land_price(tl, tv, sv.capital,
+                                                        g_game.difficulty, bd,
+                                                        u.owner == 0, res, minuit);
+            if (price > 0 && !acked("@INDIANLAND")) {
+                r.confirm = "@INDIANLAND";
+                std::string m = game_message_text("@INDIANLAND");
+                std::string tn = forge::resolve_binding(
+                    "@TRIBES[" + std::to_string(sv.tribe) + "].name", tcx).str;
+                size_t p2;
+                while ((p2 = m.find("%STRING0")) != std::string::npos) m.replace(p2, 8, tn);
+                while ((p2 = m.find("%NUMBER1")) != std::string::npos)
+                    m.replace(p2, 8, std::to_string(price));
+                r.text = m;
+                r.choices = 3;
+                r.price = price;
+                return r;
+            }
+            if (price > 0 && acked("@INDIANLAND")) {
+                if (land_choice == "pay") {              // "We offer you {%NUMBER1$}"
+                    auto& pw = g_game.powers[u.owner & 3];
+                    if (pw.gold < price) { r.err = "not enough gold for the land"; return r; }
+                    pw.gold -= price;
+                } else {                                 // squatting: +8 tension step
+                    forge::tension_apply(sv, u.owner & 3, 8, false, false);
+                }
+            }
+        }
+    }
+    Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
+    c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0
+    c.x = u.x; c.y = u.y;
+    c.center_terrain = id & 0x1F; c.center_food = 3;
+    { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;
+      int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
+      c.workers.push_back(wk); }
+    forge::colony_compute_production(c, g_game.difficulty, g_active_rules,
+                                     g_engine_extra.ff_owned, 0, &g_world,
+                                     g_game.rumor_seed);
+    g_world.colonies.push_back(c);
+    g_colony_xy.push_back({u.x, u.y});
+    u.alive = false;
+    r.ok = true;
+    return r;
+}

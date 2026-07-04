@@ -1222,242 +1222,43 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             g_game_active = true;
             return J(200, game_state_json());
         }
+        // Player commands shared with the native editor (session.cpp):
+        // thin JSON shims over unit_order() / found_colony().
         if (path == "/api/game/order" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* pu = b.find("unit");
             if (!pu) return err(400, "need {unit}");
-            int ui = pu->as_int(-1);
-            if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive)
-                return err(400, "bad unit");
-            Unit& u = g_world.units[ui];
-            // Optional named order (unit_orders.md status letters): "P" clear/plow,
-            // "R" road, "F" fortify, "S" sentry, "-" none. Default: GOTO to {tx,ty}.
-            if (const forge::JsonValue* po = b.find("order")) {
-                const std::string& o = po->str;
-                if (o == "P")      u.order = ORDER_CLEAR_PLOW;
-                else if (o == "R") u.order = ORDER_ROAD;
-                else if (o == "F") u.order = ORDER_FORTIFY;
-                else if (o == "S") u.order = ORDER_SENTRY;
-                else if (o == "-") { u.order = ORDER_NONE; u.route = -1; }
-                else if (o == "T") {
-                    // @ORDERS row 2 "Trade Route, T" (order byte 2 @0x22E05):
-                    // needs a cargo carrier and a valid route of the matching kind.
-                    if (unit_stats(u.type).cargo <= 0)
-                        return err(400, "unit has no cargo holds");
-                    int ri = b.find("route") ? b.find("route")->as_int(-1) : -1;
-                    if (ri < 0 || ri >= (int)g_game.routes.size())
-                        return err(400, "need a valid {route}");
-                    const bool naval = unit_stats(u.type).move_class == 99;
-                    if (g_game.routes[ri].type == 0 ? !naval : naval)
-                        return err(400, g_game.routes[ri].type == 0
-                                        ? "a sea route needs a ship"
-                                        : "a land route needs a wagon train");
-                    u.order = ORDER_TRADE_ROUTE; u.route = ri; u.route_stop = 0;
-                }
-                else if (o == "D") {
-                    // @ORDERS "Disband Unit (shift-D)" (input.md L77): immediate removal.
-                    u.alive = false;
-                    return J(200, game_state_json());
-                }
-                else if (o == "L" || o == "U" || o == "O") {
-                    // @ORDERS "~Load Cargo" / "~Unload Cargo" ("most valuable",
-                    // input.md) and "Dump Cargo ~Overboard" (manual L102), over the
-                    // byte-verified hold layout (unit_orders.md 0x3150..: <=6 holds,
-                    // 100/hold cap, capacity = @UNIT col4). "Most valuable" scored
-                    // published bid x quantity -- the metric is RECONSTRUCTED (the
-                    // spec carries only the row names).
-                    const int cap = std::min(6, unit_stats(u.type).cargo);
-                    if (cap <= 0) return err(400, "unit has no cargo holds");
-                    if (o == "O") {                    // dump: one hold if given, else all
-                        int hi = b.find("hold") ? b.find("hold")->as_int(-1) : -1;
-                        for (int h = 0; h < cap; ++h)
-                            if (hi < 0 || hi == h) { u.hold_good[h] = -1; u.hold_qty[h] = 0; }
-                        return J(200, game_state_json());
-                    }
-                    Colony* col = nullptr;
-                    for (auto& c : g_world.colonies)
-                        if (c.x == u.x && c.y == u.y && c.owner_power == u.owner) { col = &c; break; }
-                    if (!col) return err(400, "must be in one of your colonies");
-                    if (o == "L") {
-                        int best = -1; long bv = 0;
-                        for (int gd = 0; gd < vc::sim::NGOODS; ++gd) {
-                            if (col->stockpile[gd] <= 0) continue;
-                            long v = (long)vc::sim::market_bid(g_game, u.owner, gd) * col->stockpile[gd];
-                            if (best < 0 || v > bv) { best = gd; bv = v; }
-                        }
-                        if (best < 0) return err(400, "nothing to load");
-                        int h = -1;
-                        for (int i2 = 0; i2 < cap; ++i2)          // top up a matching hold first
-                            if (u.hold_good[i2] == best && u.hold_qty[i2] < 100) { h = i2; break; }
-                        if (h < 0) for (int i2 = 0; i2 < cap; ++i2)
-                            if (u.hold_good[i2] < 0) { h = i2; break; }
-                        if (h < 0) return err(400, "all holds are full");
-                        const int have = (u.hold_good[h] == best) ? u.hold_qty[h] : 0;
-                        const int qty = std::min(100 - have, (int)col->stockpile[best]);
-                        u.hold_good[h] = best; u.hold_qty[h] = have + qty;
-                        col->stockpile[best] -= qty;
-                        return J(200, game_state_json());
-                    }
-                    int h = -1; long bv = 0;                      // "U": most valuable hold out
-                    for (int i2 = 0; i2 < cap; ++i2) {
-                        if (u.hold_good[i2] < 0 || u.hold_qty[i2] <= 0) continue;
-                        long v = (long)vc::sim::market_bid(g_game, u.owner, u.hold_good[i2]) * u.hold_qty[i2];
-                        if (h < 0 || v > bv) { h = i2; bv = v; }
-                    }
-                    if (h < 0) return err(400, "no cargo to unload");
-                    col->stockpile[u.hold_good[h]] += u.hold_qty[h];
-                    u.hold_good[h] = -1; u.hold_qty[h] = 0;
-                    return J(200, game_state_json());
-                }
-                else return err(400, "unknown order (use P/R/F/S/T/D/L/U/O/-)");
-                u.work = 0;                                   // fresh improvement start
-                return J(200, game_state_json());
-            }
-            const forge::JsonValue* px = b.find("tx");
-            const forge::JsonValue* py = b.find("ty");
-            if (!px || !py) return err(400, "need {unit,tx,ty} or {unit,order}");
-            u.order = ORDER_GOTO; u.target_x = px->as_int(u.x); u.target_y = py->as_int(u.y);
+            std::string o = b.find("order") ? b.find("order")->str : "";
+            int tx = b.find("tx") ? b.find("tx")->as_int(-1) : -1;
+            int ty = b.find("ty") ? b.find("ty")->as_int(-1) : -1;
+            if (o.empty() && (!b.find("tx") || !b.find("ty")))
+                return err(400, "need {unit,tx,ty} or {unit,order}");
+            OrderResult r = unit_order(pu->as_int(-1), o, tx, ty,
+                                       b.find("route") ? b.find("route")->as_int(-1) : -1,
+                                       b.find("hold") ? b.find("hold")->as_int(-1) : -1);
+            if (!r.ok) return err(400, r.err);
             return J(200, game_state_json());
         }
         if (path == "/api/game/found" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
             const forge::JsonValue* pu = b.find("unit");
             if (!pu) return err(400, "need {unit}");
-            int ui = pu->as_int(-1);
-            if (ui < 0 || ui >= (int)g_world.units.size() || !g_world.units[ui].alive)
-                return err(400, "bad unit");
-            Unit& u = g_world.units[ui];
-            if (unit_stats(u.type).move_class == 99) return err(400, "a ship cannot found a colony");
-            int id = g_world.terrain_id(u.x, u.y);
-            if (id < 0 || game_is_water(id)) return err(400, "must found on land");
-            // Site warnings @TUTNOSPACES / @TUTNOLUMBER (tutorial.md 2, the
-            // founding-colony validation func_022542): gated on difficulty < 2
-            // (cmp [0x53a6],2 @0x22763). TUTNOSPACES when the adjacent
-            // productive-square count < 4 (@0x2276A), TUTNOLUMBER when the
-            // forested-square count == 0 (@0x22782); each a two-choice dialog
-            // ("Cancel action. / Build colony anyway.") and the build proceeds
-            // only on the second choice. The "productive" predicate (land, not
-            // water/Arctic) is RECONSTRUCTED; the counts/gates are byte-cited.
-            // The client acknowledges a warning by listing its key in {ack}.
-            {
-                bool on_colony = false;
-                for (const auto& jc : g_world.colonies)
-                    if (jc.x == u.x && jc.y == u.y) { on_colony = true; break; }
-                if (!on_colony && g_game.difficulty < 2) {
-                    auto acked = [&](const char* k) {
-                        if (const forge::JsonValue* a = b.find("ack"))
-                            for (const forge::JsonValue& e : a->arr) if (e.str == k) return true;
-                        return false;
-                    };
-                    int productive = 0, forested = 0;
-                    static const int ddx[8] = {1,-1,0,0,1,1,-1,-1}, ddy[8] = {0,0,1,-1,1,-1,1,-1};
-                    for (int k = 0; k < 8; ++k) {
-                        int t = g_world.terrain_id(u.x + ddx[k], u.y + ddy[k]);
-                        if (t < 0) continue;
-                        const int tid = t & 0x1F;
-                        if (tid != 24 && tid != 25 && tid != 26) ++productive;
-                        if (tid >= 8 && tid <= 23) ++forested;
-                    }
-                    const char* warn = nullptr;
-                    if (productive < 4 && !acked("@TUTNOSPACES")) warn = "@TUTNOSPACES";
-                    else if (forested == 0 && !acked("@TUTNOLUMBER")) warn = "@TUTNOLUMBER";
-                    if (warn) {
-                        forge::JsonValue o = jobj();
-                        o.obj["confirm"] = forge::json_str(warn);
-                        o.obj["text"] = forge::json_str(game_message_text(warn));
-                        return J(200, o);
-                    }
+            std::vector<std::string> acks;
+            if (const forge::JsonValue* a = b.find("ack"))
+                for (const forge::JsonValue& e : a->arr) acks.push_back(e.str);
+            FoundResult fr = found_colony(pu->as_int(-1), acks,
+                                          b.find("land") ? b.find("land")->str : "");
+            if (!fr.confirm.empty()) {
+                forge::JsonValue o = jobj();
+                o.obj["confirm"] = forge::json_str(fr.confirm);
+                o.obj["text"] = forge::json_str(fr.text);
+                if (fr.choices == 3) {
+                    o.obj["choices"] = forge::json_num(3);
+                    o.obj["price"] = forge::json_num((double)fr.price);
                 }
+                return J(200, o);
             }
-            // "Join Colony (~B)" (@ORDERS; manual L85): standing on an own colony,
-            // the unit joins it as a colonist instead of founding a new one.
-            for (auto& jc : g_world.colonies) {
-                if (jc.x != u.x || jc.y != u.y) continue;
-                if (jc.owner_power != u.owner) return err(400, "cannot join a foreign colony");
-                if (jc.population >= 32) return err(400, "colony is full");   // +0x1F cap
-                jc.population += 1;
-                Colony::Worker wk; wk.profession = u.profession; wk.tile = 0; wk.good = 0;
-                int t = g_world.terrain_id(u.x, u.y + 1);
-                wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
-                jc.workers.push_back(wk);
-                forge::colony_compute_production(jc, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
-                                     0, &g_world, g_game.rumor_seed);
-                u.alive = false;                        // the colonist becomes population
-                return J(200, game_state_json());
-            }
-            // Native land demand (@INDIANLAND, priced by func_0464C2): founding
-            // inside a settlement's claim asks first. Claim radius 2 is
-            // RECONSTRUCTED (the original claim is the settlement catchment);
-            // the price shape, the resource doubling, the capital +50% and the
-            // Peter Minuit waiver are byte-verified (native_powers.hpp).
-            {
-                auto acked2 = [&](const char* k) {
-                    if (const forge::JsonValue* a = b.find("ack"))
-                        for (const forge::JsonValue& e : a->arr) if (e.str == k) return true;
-                    return false;
-                };
-                int best = -1; int bd = 99;
-                for (int si = 0; si < (int)g_engine_extra.settlements.size(); ++si) {
-                    const auto& sv = g_engine_extra.settlements[si];
-                    int d = std::max(std::abs(sv.x - u.x), std::abs(sv.y - u.y));
-                    if (d <= 2 && d < bd) { bd = d; best = si; }
-                }
-                if (best >= 0) {
-                    auto& sv = g_engine_extra.settlements[best];
-                    const bool minuit = (g_engine_extra.ff_owned >> 2) & 1u;
-                    const bool res = vc::sim::resource_at(g_world, u.x, u.y, g_game.rumor_seed) >= 0;
-                    forge::EngineCtx tcx{g_game, g_world, g_colony_xy, g_engine_extra,
-                                         g_active_rules, game_rng};
-                    const int tl = (int)forge::resolve_binding(
-                        "@TRIBES[" + std::to_string(sv.tribe) + "].level", tcx).num;
-                    const int tv = (int)forge::resolve_binding(
-                        "@TRIBES[" + std::to_string(sv.tribe) + "].value", tcx).num;
-                    const long price = forge::native_land_price(tl, tv, sv.capital,
-                                                                g_game.difficulty, bd,
-                                                                u.owner == 0, res, minuit);
-                    if (price > 0 && !acked2("@INDIANLAND")) {
-                        forge::JsonValue o = jobj();
-                        o.obj["confirm"] = forge::json_str("@INDIANLAND");
-                        std::string m = game_message_text("@INDIANLAND");
-                        std::string tn = forge::resolve_binding(
-                            "@TRIBES[" + std::to_string(sv.tribe) + "].name",
-                            forge::EngineCtx{g_game, g_world, g_colony_xy, g_engine_extra,
-                                             g_active_rules, game_rng}).str;
-                        size_t p2;
-                        while ((p2 = m.find("%STRING0")) != std::string::npos) m.replace(p2, 8, tn);
-                        while ((p2 = m.find("%NUMBER1")) != std::string::npos)
-                            m.replace(p2, 8, std::to_string(price));
-                        o.obj["text"] = forge::json_str(m);
-                        o.obj["choices"] = forge::json_num(3);
-                        o.obj["price"] = forge::json_num((double)price);
-                        return J(200, o);
-                    }
-                    if (price > 0 && acked2("@INDIANLAND")) {
-                        const forge::JsonValue* lc = b.find("land");
-                        if (lc && lc->str == "pay") {           // "We offer you {%NUMBER1$}"
-                            auto& pw = g_game.powers[u.owner & 3];
-                            if (pw.gold < price) return err(400, "not enough gold for the land");
-                            pw.gold -= price;
-                        } else {                                // "You are mistaken; this is ours"
-                            // Squatting angers the tribe (magnitude RECONSTRUCTED --
-                            // the +8 step other insults use).
-                            forge::tension_apply(sv, u.owner & 3, 8, false, false);
-                        }
-                    }
-                }
-            }
-            Colony c; c.owner_power = u.owner; c.human = true; c.population = 1;
-            c.rebel_A = 0; c.rebel_B = 200; c.build_target = -1;   // founding B=200/A=0 (colony.md 2, RUNTIME-CONFIRMED)
-            c.x = u.x; c.y = u.y;                              // ColonyRecord +0/+1 map position
-            c.center_terrain = id & 0x1F; c.center_food = 3;   // center tile auto-produces its food (floor 3)
-            { Colony::Worker wk; wk.profession = 19; wk.tile = 0; wk.good = 0;   // founding Free Colonist -> food
-              int t = g_world.terrain_id(u.x, u.y + 1); wk.terrain = t < 0 ? (id & 0x1F) : (t & 0x1F);
-              c.workers.push_back(wk); }
-            forge::colony_compute_production(c, g_game.difficulty, g_active_rules, g_engine_extra.ff_owned,
-                                     0, &g_world, g_game.rumor_seed);
-            g_world.colonies.push_back(c);
-            g_colony_xy.push_back({u.x, u.y});
-            u.alive = false;                            // the colonist becomes the colony
+            if (!fr.ok) return err(400, fr.err);
             return J(200, game_state_json());
         }
         // Trade-route editor (trade_routes.md 4): create func_0610B0 (12-route cap

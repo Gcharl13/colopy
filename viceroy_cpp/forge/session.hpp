@@ -40,6 +40,29 @@ void game_step();
 // ---- persistence ----
 bool save_game_to(const std::string& path);
 
+// ---- shared player commands (the HTTP routes + the native editor) ----------
+// Named unit order (unit_orders.md status letters): "P" clear/plow, "R" road,
+// "F" fortify, "S" sentry, "T" trade route, "D" disband, "L"/"U"/"O" cargo
+// load/unload/dump, "-" clear; with `order` empty, GOTO to (tx,ty).
+struct OrderResult { bool ok = false; std::string err; };
+OrderResult unit_order(int ui, const std::string& order, int tx = -1, int ty = -1,
+                       int route = -1, int hold = -1);
+
+// Found/join a colony with unit ui (the ~B command): site warnings
+// (@TUTNOSPACES/@TUTNOLUMBER), Join Colony on an own colony, the @INDIANLAND
+// native land demand (pay/claim), then the founding itself. `acks` lists the
+// confirm keys the player already accepted; `land_choice` = ""|"pay"|"claim".
+// When a confirmation is pending nothing changes and confirm/text/choices set.
+struct FoundResult {
+    bool ok = false;
+    std::string err;                 // rejection (when !ok and confirm empty)
+    std::string confirm, text;       // pending confirmation @KEY + filled text
+    long price = 0;                  // the @INDIANLAND asking price
+    int choices = 0;                 // trailing option-row count in `text`
+};
+FoundResult found_colony(int ui, const std::vector<std::string>& acks,
+                         const std::string& land_choice = "");
+
 // ---- per-turn history (the Play sparkline / /api/history) ----
 struct HistPoint { long turn; int year; long gold; int sol; long population; };
 extern std::vector<HistPoint> g_history;
