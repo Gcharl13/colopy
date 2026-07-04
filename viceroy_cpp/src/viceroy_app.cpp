@@ -12,6 +12,7 @@
 //
 // The headless mode needs no SDL.
 #include "game_shell.hpp"
+#include "mapview.hpp"       // MAP_MENU_X (the --shot menuN target)
 #include "surface.hpp"
 #include "png_io.hpp"
 #include <cstdio>
@@ -65,11 +66,14 @@ int main(int argc, char** argv) {
             if (s == "europe") shell.key('e', false);
             if (s.rfind("report", 0) == 0)
                 shell.key(forge::GK_F1 + std::atoi(s.c_str() + 6) - 1, false);
+            if (s.rfind("menu", 0) == 0)     // menuN: open pulldown N's dropdown
+                shell.click(vc::MAP_MENU_X[std::atoi(s.c_str() + 4)], 3, 0);
         }
         vc::Surface scr;
         bool booted = s.rfind("boot", 0) != 0;
+        bool menued = s.rfind("menu", 0) == 0;
         for (int f = 0; f < frames; ++f) {
-            if (booted && f && (f % 3) == 0)
+            if (booted && !menued && f && (f % 3) == 0)
                 shell.key(forge::GK_ENTER, false);   // end turns while playing
             shell.compose(scr, (f / 3) & 1);
         }

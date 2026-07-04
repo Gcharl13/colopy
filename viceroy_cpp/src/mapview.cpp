@@ -25,6 +25,10 @@ namespace vc {
 // differs from the 4-byte-per-entry VICEROY.PAL in 197/256 entries).
 // map_view.md / fonts_and_colors.md:
 static constexpr uint8_t COL_MENU_GREEN = 68;   // menu titles, ui_color_for(0x52,0x8A,0x31)
+
+// exported menu-strip geometry (mapview.hpp): titles + spread x-origins (R, §6.4)
+const char* const MAP_MENU[7] = {"GAME","VIEW","ORDERS","REPORTS","TRADE","CHEAT","COLONIZOPEDIA"};
+const int MAP_MENU_X[7] = {6, 44, 82, 132, 188, 226, 258};
 static constexpr uint8_t COL_WHITE      = 15;   // 0x0F sidebar text + minimap viewport rect
 
 // Map-view geometry (map_view.md §2, tier A pixel-measured):
@@ -377,8 +381,8 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
 
     // --- Menu strip (0,0,320,9): MENU ~titles, FONTTINY green, left->right
     //     (mechanism B; item x-positions R per §6.4 glyph-grid). ---------------
-    static const char* MENU[]  = {"GAME","VIEW","ORDERS","REPORTS","TRADE","CHEAT","COLONIZOPEDIA"};
-    static const int    MENU_X[] = {6, 44, 82, 132, 188, 226, 258};   // spread x-origins (R, §6.4)
+    const char* const* MENU = MAP_MENU;
+    const int* MENU_X = MAP_MENU_X;
     for (int i = 0; i < 7; ++i)
         scr.draw_text(font, MENU_X[i], 1, MENU[i], COL_MENU_GREEN);
 

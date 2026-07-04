@@ -31,4 +31,10 @@ void render_mapview(Surface& scr, const Map& map, const Sheet& terrain,
 void compose_map_tile(Surface& scr, const Map& map, const Sheet& terrain,
                       const Sheet& tiles, int mx, int my, int dx, int dy);
 
+// Menu strip geometry (the labels render_mapview draws at y=1): the seven
+// pulldown titles + their x-origins. Shared with the GameShell's clickable
+// dropdowns so the hit-test matches the drawn bar exactly.
+extern const char* const MAP_MENU[7];
+extern const int MAP_MENU_X[7];
+
 } // namespace vc

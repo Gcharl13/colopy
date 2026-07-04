@@ -75,6 +75,10 @@ private:
     bool europe_view_ = false;
     int report_view_ = 0;            // 1..10
     bool goto_mode_ = false;
+    // pulldown menu bar (spec/ui/menus.md §6): open menu index + row cursor
+    int menu_open_ = -1;
+    int menu_sel_ = 0;
+    int find_colony_ = -1;           // @VIEW Find Colony cycle cursor
     std::vector<std::string> log_;
     // found-colony confirm popup (@TUTNO*/@INDIANLAND flow)
     bool confirm_open_ = false;
@@ -97,6 +101,10 @@ private:
     void assign_worker(int colony, int tile, int profession, int good);
     void key_map(int k, bool shift);
     void click_map(int x, int y, int button);
+    void key_menu(int k);
+    void click_menu(int x, int y, int button);
+    void menu_action(int mi, int row);
+    void compose_menu(vc::Surface& scr);
     void click_colony(int x, int y, int button);
     void click_europe(int x, int y, int button);
     void compose_map(vc::Surface& scr, bool flash);

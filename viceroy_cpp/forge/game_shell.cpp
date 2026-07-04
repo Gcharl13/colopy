@@ -16,6 +16,7 @@
 #include "sim/unit_turn.hpp"
 #include "sim/market.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 
@@ -114,6 +115,7 @@ void GameShell::resync() {
     europe_view_ = false;
     report_view_ = 0;
     confirm_open_ = picker_open_ = goto_mode_ = false;
+    menu_open_ = -1;
     sel_ = next_own_unit(-1);
     if (sel_ >= 0) center_on(g_world.units[sel_].x, g_world.units[sel_].y);
 }
@@ -458,6 +460,221 @@ void GameShell::click_europe(int mx, int my, int button) {
     }
 }
 
+// ------------------------------------------------ pulldown menu (menus.md §6)
+// The map-screen bar (GAME .. COLONIZOPEDIA, geometry exported by mapview)
+// runs the verbatim MENU records (@GAME @VIEW @ORDERS @REPORTS @TRADE @CUP
+// @PEDIA). The dropdown opens at the label x, below the bar (y=8), and the
+// selection is a 1-px hollow outline (menus.md §6.3 RULING, not a filled
+// cell). `~` is the hotkey-underline marker, `#` a value-fill placeholder.
+static const char* const MENU_SECTIONS[7] = {"GAME",  "VIEW", "ORDERS",
+                                             "REPORTS", "TRADE", "CUP", "PEDIA"};
+
+static std::vector<std::string> menu_rows(int mi) {
+    std::vector<std::string> raw;
+    if (mi < 0 || mi > 6 || !drydock_text_lines(MENU_SECTIONS[mi], raw) ||
+        raw.size() < 2)
+        return {};
+    std::vector<std::string> rows;
+    for (size_t i = 1; i < raw.size(); ++i) {          // row 0 = the ~TITLE
+        std::string s;
+        for (char c : raw[i]) if (c != '~' && c != '#') s += c;
+        size_t b = s.find_first_not_of(' ');
+        size_t e = s.find_last_not_of(' ');
+        rows.push_back(b == std::string::npos ? std::string()
+                                              : s.substr(b, e - b + 1));
+    }
+    return rows;
+}
+
+static bool row_is(const std::string& row, const char* what) {
+    std::string lo;
+    for (char c : row) lo += (char)std::tolower((unsigned char)c);
+    return lo.find(what) != std::string::npos;
+}
+
+// The dropdown box (anchored at the label x, opens below the bar; sized by
+// the row texts -- the shared dialog geometry engine, menus.md §6.3/§11).
+static void menu_box(int mi, const std::vector<std::string>& rows,
+                     int& bx, int& by, int& bw, int& bh) {
+    static vc::Surface meas;                 // measurement-only scratch
+    vc::NativeAssets& A = game_assets().nat;
+    bw = 60;
+    for (const std::string& r : rows) {
+        int tw = meas.text_width(A.font, r) + 12;
+        if (tw > bw) bw = tw;
+    }
+    bh = (int)rows.size() * 9 + 6;
+    bx = vc::MAP_MENU_X[mi];
+    by = 8;
+    if (bx + bw > vc::Surface::W) bx = vc::Surface::W - bw;
+}
+
+// Which bar title owns x? Labels partition the strip at their x-origins
+// (mechanism B, per-item x R -- menus.md §6.4).
+static int menu_bar_hit(int x) {
+    for (int i = 6; i >= 0; --i)
+        if (x >= vc::MAP_MENU_X[i] - 2) return i;
+    return 0;
+}
+
+void GameShell::compose_menu(vc::Surface& scr) {
+    std::vector<std::string> rows = menu_rows(menu_open_);
+    if (rows.empty()) return;
+    vc::NativeAssets& A = game_assets().nat;
+    uint8_t outline = vc::nearest_pal_index(A.pal, 20, 12, 6);
+    uint8_t green   = vc::nearest_pal_index(A.pal, 82, 138, 49);
+    uint8_t gold    = vc::nearest_pal_index(A.pal, 227, 170, 40);
+    int bx, by, bw, bh;
+    menu_box(menu_open_, rows, bx, by, bw, bh);
+    if (A.woodtile.nframes > 0) {            // wood plaque fill (dialog chrome)
+        const vc::Frame& f = A.woodtile.frames[0];
+        for (int yy = 0; yy < bh; ++yy)
+            for (int xx = 0; xx < bw; ++xx)
+                scr.put(bx + xx, by + yy,
+                        f.px[(size_t)(yy % f.h) * f.w + (xx % f.w)]);
+    }
+    scr.rect_outline(bx, by, bw, bh, outline);
+    for (int i = 0; i < (int)rows.size(); ++i) {
+        int ry = by + 3 + i * 9;
+        scr.draw_text(A.font, bx + 6, ry + 1, rows[i],
+                      i == menu_sel_ ? gold : green);
+        if (i == menu_sel_)   // 1-px hollow row outline (menus.md §6.3 RULING)
+            scr.rect_outline(bx + 2, ry, bw - 4, 9, gold);
+    }
+}
+
+void GameShell::key_menu(int k) {
+    std::vector<std::string> rows = menu_rows(menu_open_);
+    int n = (int)rows.size();
+    if (k == GK_ESC) { menu_open_ = -1; return; }
+    if (k == GK_LEFT)  { menu_open_ = (menu_open_ + 6) % 7; menu_sel_ = 0; return; }
+    if (k == GK_RIGHT) { menu_open_ = (menu_open_ + 1) % 7; menu_sel_ = 0; return; }
+    if (k == GK_UP && menu_sel_ > 0) --menu_sel_;
+    if (k == GK_DOWN && menu_sel_ + 1 < n) ++menu_sel_;
+    if (k == GK_ENTER || k == ' ') {
+        int mi = menu_open_, row = menu_sel_;
+        menu_open_ = -1;
+        menu_action(mi, row);
+    }
+}
+
+void GameShell::click_menu(int mx, int my, int button) {
+    (void)button;
+    if (my < 8) {                            // the bar: switch / toggle menus
+        int i = menu_bar_hit(mx);
+        menu_sel_ = 0;
+        menu_open_ = (menu_open_ == i) ? -1 : i;
+        return;
+    }
+    std::vector<std::string> rows = menu_rows(menu_open_);
+    int bx, by, bw, bh;
+    menu_box(menu_open_, rows, bx, by, bw, bh);
+    if (mx >= bx && mx < bx + bw && my >= by && my < by + bh) {
+        int row = (my - by - 3) / 9;
+        if (row >= 0 && row < (int)rows.size()) {
+            int mi = menu_open_;
+            menu_open_ = -1;
+            menu_action(mi, row);
+        }
+        return;
+    }
+    menu_open_ = -1;                         // click-away closes
+}
+
+void GameShell::menu_action(int mi, int row) {
+    std::vector<std::string> rows = menu_rows(mi);
+    if (row < 0 || row >= (int)rows.size()) return;
+    const std::string& r = rows[row];
+    auto is = [&](const char* w) { return row_is(r, w); };
+    switch (mi) {
+        case 0:                                                  // @GAME
+            if (is("save game")) { game_log(save("viceroy_save.json")); return; }
+            if (is("load game")) { game_log(load("viceroy_save.json")); return; }
+            if (is("declare independence")) {
+                int promoted = 0;
+                std::string why = declare_independence(&promoted);
+                game_log(why.empty()
+                             ? "INDEPENDENCE DECLARED -- " +
+                                   std::to_string(promoted) + " continentals"
+                             : why);
+                return;
+            }
+            if (is("retire")) { open_report(10); return; }   // the score plate
+            if (is("exit")) { quit_requested = true; return; }
+            break;
+        case 1:                                                  // @VIEW
+            if (is("european status")) { open_europe(); return; }
+            if (is("find colony")) {
+                int n = (int)g_world.colonies.size();
+                for (int step = 1; step <= n; ++step) {
+                    int ci = (find_colony_ + step) % n;
+                    const vc::sim::Colony& c = g_world.colonies[ci];
+                    if (c.owner_power == 0 && c.x >= 0) {
+                        find_colony_ = ci;
+                        center_on(c.x, c.y);
+                        game_log(colony_display_name(ci));
+                        return;
+                    }
+                }
+                game_log("no colonies yet");
+                return;
+            }
+            if (is("center view")) {
+                if (sel_ >= 0)
+                    center_on(g_world.units[sel_].x, g_world.units[sel_].y);
+                return;
+            }
+            if (is("zoom")) {
+                game_log("zoom is fixed at 15 x 12 in this build");
+                return;
+            }
+            break;
+        case 2: {                            // @ORDERS -> the order key map
+            // "unload" before "load": "unload cargo" contains "load cargo"
+            static const struct { const char* what; char key; bool shift; }
+                M[] = {{"activate", 'a', false},  {"wait", 'w', false},
+                       {"fortify", 'f', false},   {"sentry", 's', false},
+                       {"build colony", 'b', false}, {"join colony", 'b', false},
+                       {"clear forest", 'p', false}, {"plow", 'p', false},
+                       {"road", 'r', false},      {"unload cargo", 'u', false},
+                       {"load cargo", 'l', false}, {"go to", 'g', false},
+                       {"no orders", ' ', false}, {"overboard", 'o', false},
+                       {"disband", 'd', true}};
+            for (const auto& m : M)
+                if (is(m.what)) { key_map(m.key, m.shift); return; }
+            if (is("pillage")) return;   // vestigial: no handler in the EXE
+                                         // (menus.md §6.5, B-negative)
+            break;
+        }
+        case 3:                                                  // @REPORTS
+            open_report(row + 1);
+            return;
+        case 5:                                                  // @CUP (CHEAT)
+            if (is("reveal map")) {
+                for (uint8_t& fb : g_world.fog) fb |= 0x10;  // player-0 seen bit
+                game_log("cheat: the map is revealed");
+                return;
+            }
+            if (is("kill indians")) {
+                g_engine_extra.settlements.clear();
+                g_engine_extra.braves.clear();
+                game_log("cheat: the tribes are gone");
+                return;
+            }
+            if (is("advance revolution")) {
+                // per-invocation step is not spec'd: +10 national SoL clamped
+                // to 100 (RECONSTRUCTED, same as /api/cheat/revolution)
+                g_engine_extra.national_sol =
+                    std::min(100, g_engine_extra.national_sol + 10);
+                game_log("cheat: rebel sentiment now " +
+                         std::to_string(g_engine_extra.national_sol) + "%");
+                return;
+            }
+            break;
+    }
+    game_log(r + " -- not in this build");
+}
+
 // ----------------------------------------------------------------- map view
 void GameShell::compose_map(vc::Surface& scr, bool flash) {
     vc::NativeAssets& A = game_assets().nat;
@@ -487,6 +704,7 @@ void GameShell::compose_map(vc::Surface& scr, bool flash) {
     }
     if (!status.empty())
         scr.draw_text(A.font, 2, 193, status.substr(0, 52), 15);
+    if (menu_open_ >= 0) compose_menu(scr);
     if (confirm_open_) {
         vc::PopupSpec cs;
         cs.lines = confirm_lines_;
@@ -825,6 +1043,12 @@ void GameShell::key(int k, bool shift) {
         }
         return;
     }
+    // an open pulldown menu takes the keyboard (map view only)
+    if (menu_open_ >= 0 && colony_view_ < 0 && !europe_view_ &&
+        report_view_ == 0) {
+        key_menu(k);
+        return;
+    }
     // F1..F10 advisor reports from anywhere
     if (k >= GK_F1 && k <= GK_F1 + 9) {
         report_view_ = k - GK_F1 + 1;
@@ -926,6 +1150,12 @@ void GameShell::click(int mx, int my, int button) {
                 return;
             }
         }
+        return;
+    }
+    if (menu_open_ >= 0) { click_menu(mx, my, button); return; }
+    if (my < 8) {                            // the pulldown bar (menus.md §6)
+        menu_open_ = menu_bar_hit(mx);
+        menu_sel_ = 0;
         return;
     }
     if (button == 0 && mx < 240 && my >= 8) {

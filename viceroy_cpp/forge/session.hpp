@@ -70,6 +70,15 @@ std::string route_create(const std::string& name, int type,
                          const std::vector<vc::sim::TradeStop>& stops);
 std::string route_delete(int ri);
 
+// Declare independence (the @GAME menu row): the 50% national-SoL gate plus
+// the func_03E2EA Continental-promotion pass. "" on success (promoted count
+// via out param), else the user-facing rejection.
+std::string declare_independence(int* out_promoted = nullptr);
+
+// The colony display name (the NAMES colony-name pool by index, as the
+// colony screen titles it).
+std::string colony_display_name(int ci);
+
 // ---- per-turn history (the Play sparkline / /api/history) ----
 struct HistPoint { long turn; int year; long gold; int sol; long population; };
 extern std::vector<HistPoint> g_history;

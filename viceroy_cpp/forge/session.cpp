@@ -431,7 +431,7 @@ void tutorial_fire_x(uint8_t bit, const std::string& key,  // stepless (engine l
 }
 // The colony display name (the NAMES colony-name pool by index, as the colony
 // screen titles it).
-static std::string tutorial_colony_name(int ci) {
+std::string colony_display_name(int ci) {
     static const char* kPool[4] = {"ENGLISH", "FRENCH", "SPANISH", "DUTCH"};
     std::string name = "Colony " + std::to_string(ci + 1);
     const auto& pool = labels_section(kPool[g_game.nation & 3]);
@@ -441,6 +441,7 @@ static std::string tutorial_colony_name(int ci) {
     }
     return name;
 }
+static std::string tutorial_colony_name(int ci) { return colony_display_name(ci); }
 std::string tutorial_home_port() {                // @HOMEPORT[nation] (NAMES)
     forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
     std::string p = forge::resolve_binding("@HOMEPORT[" + std::to_string(g_game.nation & 3) + "].name", cx).str;
@@ -2790,6 +2791,42 @@ std::string route_create(const std::string& name, int type,
         r.stops.push_back(std::move(st));
     }
     g_game.routes.push_back(std::move(r));
+    return "";
+}
+
+// Declare independence (the @GAME menu row / /api/game/declare): the 50%
+// national-SoL gate, then the Continental-promotion pass (func_03E2EA
+// @0x3E2EA..0x3E440): per colony with SoL >= 50 (@0x03E3F1), budget =
+// max(1, ((SoL-50)*(pop/2))/50) (@0x03E3F6..0x03E425); Veteran (0x15)
+// Soldiers -> Continental Army and Dragoons -> Continental Cavalry stacked
+// on the colony tile, until the budget runs out. No new units are created.
+// Returns "" on success (promoted count via out param), else the rejection.
+std::string declare_independence(int* out_promoted) {
+    if (!g_game_active) return "no active game";
+    if (g_engine_extra.woi_declared) return "independence already declared";
+    if (g_engine_extra.national_sol < 50)
+        return "national Sons of Liberty must reach 50% to declare (now " +
+               std::to_string(g_engine_extra.national_sol) + "%)";
+    g_engine_extra.woi_declared = true;
+    g_engine_extra.rebel_power = 0;
+    if (g_engine_extra.declaration_year == 0)
+        g_engine_extra.declaration_year = g_game.year;
+    int promoted = 0;
+    for (const Colony& c : g_world.colonies) {
+        if (c.owner_power != 0 || !c.human || c.x < 0) continue;
+        const int sol = sol_pct(c, g_engine_extra.ff_owned, true);
+        if (sol < 50) continue;
+        int budget = ((sol - 50) * (c.population / 2)) / 50;
+        if (budget < 1) budget = 1;
+        for (Unit& u : g_world.units) {
+            if (budget <= 0) break;
+            if (!u.alive || u.owner != 0 || u.x != c.x || u.y != c.y) continue;
+            if (u.profession != 0x15) continue;          // Veterans only
+            if (u.type == SOLDIERS)      { u.type = CONT_ARMY; --budget; ++promoted; }
+            else if (u.type == DRAGOONS) { u.type = CONT_CAV;  --budget; ++promoted; }
+        }
+    }
+    if (out_promoted) *out_promoted = promoted;
     return "";
 }
 

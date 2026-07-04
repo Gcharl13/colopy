@@ -1117,34 +1117,9 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // Declare the War of Independence (player command). Requires national Sons of Liberty >= 50
         // (spec revolution gate); sets the war flag so war_resolution_step() runs each turn.
         if (path == "/api/game/declare" && method == "POST") {
-            if (!g_game_active) return err(400, "no active game");
-            if (g_engine_extra.woi_declared) return err(400, "independence already declared");
-            if (g_engine_extra.national_sol < 50)
-                return err(400, "national Sons of Liberty must reach 50% to declare (now " +
-                                std::to_string(g_engine_extra.national_sol) + "%)");
-            g_engine_extra.woi_declared = true; g_engine_extra.rebel_power = 0;
-            if (g_engine_extra.declaration_year == 0) g_engine_extra.declaration_year = g_game.year;
-            // Continental-promotion pass (func_03E2EA @0x3E2EA..0x3E440): per
-            // colony with SoL >= 50 (@0x03E3F1), budget = max(1,
-            // ((SoL-50)*(pop/2))/50) (@0x03E3F6..0x03E425); Veteran (0x15)
-            // Soldiers -> Continental Army and Dragoons -> Continental Cavalry
-            // stacked on the colony tile, until the budget runs out. No new
-            // units are created.
             int promoted = 0;
-            for (const Colony& c : g_world.colonies) {
-                if (c.owner_power != 0 || !c.human || c.x < 0) continue;
-                const int sol = sol_pct(c, g_engine_extra.ff_owned, true);
-                if (sol < 50) continue;
-                int budget = ((sol - 50) * (c.population / 2)) / 50;
-                if (budget < 1) budget = 1;
-                for (Unit& u : g_world.units) {
-                    if (budget <= 0) break;
-                    if (!u.alive || u.owner != 0 || u.x != c.x || u.y != c.y) continue;
-                    if (u.profession != 0x15) continue;          // Veterans only
-                    if (u.type == vc::sim::SOLDIERS)      { u.type = vc::sim::CONT_ARMY; --budget; ++promoted; }
-                    else if (u.type == vc::sim::DRAGOONS) { u.type = vc::sim::CONT_CAV;  --budget; ++promoted; }
-                }
-            }
+            std::string why = declare_independence(&promoted);
+            if (!why.empty()) return err(400, why);
             forge::JsonValue o = game_state_json(); o.obj["declared"] = jbool(true);
             o.obj["continentals"] = forge::json_num(promoted);
             return J(200, o);
