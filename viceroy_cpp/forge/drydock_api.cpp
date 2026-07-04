@@ -5,7 +5,7 @@
 #include "json.hpp"
 #include "../drydock/core/store.hpp"
 #include "../drydock/pack/pack.hpp"
-#include <dirent.h>
+#include "fs_walk.hpp"
 #include <sys/stat.h>
 #include <algorithm>
 #include <fstream>
@@ -28,19 +28,7 @@ static std::string slurp(const std::string& p) {
     return ss.str();
 }
 static void walk(const std::string& dir, std::vector<std::string>& out) {
-    DIR* d = opendir(dir.c_str());
-    if (!d) return;
-    while (dirent* e = readdir(d)) {
-        std::string n = e->d_name;
-        if (n == "." || n == "..") continue;
-        std::string p = dir + "/" + n;
-        struct stat st{};
-        if (stat(p.c_str(), &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) walk(p, out);
-        else if (n.size() > 4 && n.substr(n.size() - 4) == ".rec") out.push_back(p);
-    }
-    closedir(d);
-    std::sort(out.begin(), out.end());
+    walk_rec_files(dir, out);
 }
 static std::string dd_qparam(const std::string& query, const std::string& key) {
     size_t i = 0;

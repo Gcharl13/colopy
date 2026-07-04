@@ -2,9 +2,9 @@
 // (dev-build text loading per spec §4.1). See drydock_bridge.hpp.
 #include "drydock_bridge.hpp"
 #include "cfg_fields.hpp"
+#include "fs_walk.hpp"
 #include "../drydock/text/rec_text.hpp"
 #include "../drydock/schema/schema.hpp"
-#include <dirent.h>
 #include <sys/stat.h>
 #include <algorithm>
 #include <fstream>
@@ -30,19 +30,7 @@ static std::string slurp(const std::string& p) {
 }
 
 static void walk(const std::string& dir, std::vector<std::string>& out) {
-    DIR* d = opendir(dir.c_str());
-    if (!d) return;
-    while (dirent* e = readdir(d)) {
-        std::string n = e->d_name;
-        if (n == "." || n == "..") continue;
-        std::string p = dir + "/" + n;
-        struct stat st{};
-        if (stat(p.c_str(), &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) walk(p, out);
-        else if (n.size() > 4 && n.substr(n.size() - 4) == ".rec") out.push_back(p);
-    }
-    closedir(d);
-    std::sort(out.begin(), out.end());
+    walk_rec_files(dir, out);
 }
 
 static long long geti(const Record& r, const char* f, long long def = 0) {
