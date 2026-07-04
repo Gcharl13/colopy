@@ -33,6 +33,7 @@
 #include "native_assets.hpp"
 #include "surface.hpp"
 #include "mapview.hpp"
+#include "colony_screen.hpp"   // the spec colony-screen composer
 #include "mp.hpp"
 #endif
 
@@ -212,6 +213,7 @@ struct GameView {
     bool tex_ok = false;
     Texture tex;
     int ox = 0, oy = 0, sel = -1;
+    int colony_view = -1;        // >= 0: the colony screen is open
     std::string notice;
 };
 GameView g_gv;
@@ -295,12 +297,62 @@ void game_panel(Driver& drv) {
         if (g_gv.sel >= 0)
             center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
     }
+    // headless/CI hook: FORGE_COLONY=N opens colony N's screen (screenshots)
+    static const char* auto_col = std::getenv("FORGE_COLONY");
+    if (auto_col && g_app.game_active) {
+        g_gv.colony_view = std::atoi(auto_col);
+        auto_col = nullptr;
+    }
     if (g_app.game_active) {
         ImGui::SameLine();
         if (ImGui::Button("End Turn (Enter)")) game_end_turn();
         ImGui::SameLine();
         ImGui::Text("Turn %ld  Gold %lld", (long)g_game.turn,
                     (long long)g_game.powers[0].gold);
+
+        // --- colony screen (spec composer): opened by clicking an own colony
+        if (g_gv.colony_view >= 0 &&
+            g_gv.colony_view < (int)g_world.colonies.size()) {
+            ImGui::SameLine();
+            if (ImGui::Button("Back to map (Esc)") ||
+                (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape)))
+                g_gv.colony_view = -1;
+        }
+        if (g_gv.colony_view >= 0 &&
+            g_gv.colony_view < (int)g_world.colonies.size()) {
+            const vc::sim::Colony& c = g_world.colonies[g_gv.colony_view];
+            const vc::IndexedPng* backdrop = studio::atlas_file("pik/COLONY.png");
+            static vc::Sheet parch;          // PARCH tile from the contact sheet
+            if (parch.nframes == 0)
+                if (const vc::Frame* pf = studio::sheet_window("PARCH")) {
+                    parch.nframes = 1;
+                    parch.frames.push_back(*pf);
+                }
+            if (backdrop && parch.nframes > 0) {
+                vc::Surface scr;
+                scr.set_palette(A.pal);
+                vc::Map m = session_map();
+                int stock[16];
+                for (int i = 0; i < 16; ++i)
+                    stock[i] = i < (int)c.stockpile.size() ? c.stockpile[i] : 0;
+                render_colony_screen(scr, *backdrop, parch, A.woodtile, A.icons,
+                                     A.buildings, A.font, A.terrain, A.phys, &m,
+                                     c.x, c.y, c, (int)g_game.powers[0].gold,
+                                     g_game.powers[0].tax, (int)g_game.year, stock);
+                vc::Image img = scr.to_rgb(1);
+                drv.update_texture(g_gv.tex, img.rgb.data());
+                float availw = ImGui::GetContentRegionAvail().x;
+                float scale = availw / vc::Surface::W;
+                if (scale > 3.0f) scale = 3.0f;
+                if (scale < 1.0f) scale = 1.0f;
+                ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
+                             ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+            } else {
+                ImGui::TextDisabled("COLONY.PIK / PARCH sheet unavailable");
+            }
+            ImGui::End();
+            return;
+        }
 
         // compose the frame from the live session
         vc::Surface scr;
@@ -351,8 +403,19 @@ void game_panel(Driver& drv) {
             int mx = (int)((mp.x - origin.x) / scale), my = (int)((mp.y - origin.y) / scale);
             if (mx < 240 && my >= 8) {
                 int tx = g_gv.ox + mx / 16, ty = g_gv.oy + (my - 8) / 16;
-                int ui = vc::sim::unit_at(g_world, tx, ty);
-                if (ui >= 0 && g_world.units[ui].owner == 0) g_gv.sel = ui;
+                bool opened = false;
+                for (int ci = 0; ci < (int)g_world.colonies.size(); ++ci) {
+                    const vc::sim::Colony& c = g_world.colonies[ci];
+                    if (c.x == tx && c.y == ty && c.owner_power == 0) {
+                        g_gv.colony_view = ci;      // own colony: open its screen
+                        opened = true;
+                        break;
+                    }
+                }
+                if (!opened) {
+                    int ui = vc::sim::unit_at(g_world, tx, ty);
+                    if (ui >= 0 && g_world.units[ui].owner == 0) g_gv.sel = ui;
+                }
             }
         }
         if (ImGui::IsWindowFocused()) {

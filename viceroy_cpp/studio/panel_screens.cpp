@@ -107,6 +107,12 @@ std::string resolve_text(const std::string& s) {
 struct ScreensState {
     std::string sel;             // dlog record id
     int sel_w = -1;              // selected widget index
+    // play mode: buttons fire their onClick events against the live session
+    bool play = false;
+    forge::JsonValue play_graph;     // the running graph (kept for resume)
+    bool play_popup = false;
+    forge::JsonValue popup;          // {title, body, choices, node, _cache}
+    int popup_hover = -1;
     Texture stage{};
     bool dragging = false;
     int drag_dx = 0, drag_dy = 0;
@@ -157,6 +163,70 @@ Value widget_from_buffers() {
     }
     if (g_sc.wclick[0]) d.dict_put("onClick", Value::make_str(g_sc.wclick));
     return d;
+}
+
+// ---- play mode: run an event/graph by id against the live session ----------
+// The same contract as the web /api/graph/run: run to completion or pause at a
+// ShowPopup; the popup carries {node, _cache} and resumes with the choice.
+void play_run(const std::string& id, const std::string& from = "",
+              const std::string& choice = "") {
+    if (from.empty()) {
+        try {
+            g_sc.play_graph = forge::load_graph(id);
+        } catch (const std::exception& e) {
+            app().status = std::string("event: ") + e.what();
+            return;
+        }
+    }
+    if (!g_game_active) {          // same behavior as the web route
+        game_new(0, 1);
+        app().game_active = true;
+    }
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                        g_active_rules, game_rng};
+    forge::JsonValue cache;
+    if (const forge::JsonValue* c = g_sc.popup.find("_cache")) cache = *c;
+    forge::JsonValue r = forge::run_graph(g_sc.play_graph, cx, from, choice, cache);
+    g_sc.play_popup = false;
+    if (const forge::JsonValue* p = r.find("popup")) {
+        if (p->is_object()) {
+            g_sc.popup = *p;
+            g_sc.play_popup = true;
+            g_sc.popup_hover = -1;
+        }
+    }
+    if (const forge::JsonValue* fx = r.find("effects")) {
+        std::string s;
+        for (const forge::JsonValue& e : fx->arr)
+            s += (s.empty() ? "" : "; ") + e.str;
+        if (!s.empty()) app().status = s;
+    }
+}
+
+// dispatch one widget's onClick: goto_<screen> navigates when the screen
+// exists; anything else runs as an event graph
+void play_click(Store& st, const std::string& action) {
+    if (action.rfind("goto_", 0) == 0) {
+        std::string target = "dlog." + action.substr(5);
+        if (drydock::store_find(st, target)) {
+            g_sc.sel = target;
+            g_sc.sel_w = -1;
+            app().status = "-> " + target;
+            return;
+        }
+    }
+    play_run(action);
+}
+
+// the msge record for a popup title key (box geometry + speaker channel)
+const Record* msge_for_key(Store& st, const std::string& key) {
+    auto ti = st.type_index.find("msge");
+    if (ti == st.type_index.end()) return nullptr;
+    for (const Record& r : st.records[ti->second]) {
+        const Value* k = r.find("key");
+        if (k && k->s == key) return &r;
+    }
+    return nullptr;
 }
 
 void load_widget_buffers(const Value& d) {
@@ -239,8 +309,15 @@ void screens_panel(Driver& drv) {
         ImGui::End();
         return;
     }
-    // screen header: name + background picker (every background sprt record)
+    // screen header: play toggle + name + background picker
     {
+        if (ImGui::Checkbox("Play", &g_sc.play)) {
+            g_sc.sel_w = -1;
+            g_sc.play_popup = false;
+            app().status = g_sc.play ? "play mode: buttons fire their events"
+                                     : "edit mode";
+        }
+        ImGui::SameLine();
         char nbuf[64];
         std::snprintf(nbuf, sizeof nbuf, "%s", rstr(*rec, "name").c_str());
         ImGui::SetNextItemWidth(200);
@@ -350,9 +427,46 @@ void screens_panel(Driver& drv) {
                 scr.draw_text(assets().nat.font, r[0], r[1], text, col);
             }
         }
-        if (i == g_sc.sel_w)     // selection flash
+        if (i == g_sc.sel_w && !g_sc.play)     // selection flash (edit mode)
             if (((int)(ImGui::GetTime() * 3)) & 1)
                 scr.rect_outline(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2, 15);
+    }
+
+    // play mode: the running event's popup, in the game's own chrome
+    vc::PopupSpec pp;
+    vc::PopupLayout ppL{};
+    if (g_sc.play && g_sc.play_popup) {
+        std::string pbody, cur;
+        if (const forge::JsonValue* b = g_sc.popup.find("body")) pbody = b->str;
+        for (char c : pbody) {
+            if (c == '\r') continue;
+            if (c == '\n') { pp.lines.push_back(cur); cur.clear(); }
+            else cur += c;
+        }
+        pp.lines.push_back(cur);
+        if (const forge::JsonValue* ch = g_sc.popup.find("choices"))
+            for (const forge::JsonValue& c : ch->arr) pp.choices.push_back(c.str);
+        std::string key;
+        if (const forge::JsonValue* t = g_sc.popup.find("title")) key = t->str;
+        int defi = -1;
+        if (const Record* mr = msge_for_key(*st, key)) {
+            pp.box_w = (int)rint(*mr, "box_w", 0);
+            pp.px = (int)rint(*mr, "x", -1);
+            pp.py = (int)rint(*mr, "y", -1);
+            defi = std::atoi(rstr(*mr, "default").c_str()) - 1;
+            std::string spk = rstr(*mr, "speaker");
+            std::string sheet = spk == "KING1" ? "KING1"
+                                : spk == "IND" ? "IND0A0"
+                                : spk == "MYR" ? "MYR0"
+                                : spk.rfind("MSS", 0) == 0 ? spk : "";
+            if (!sheet.empty()) pp.portrait = sheet_window(sheet);
+        }
+        pp.highlight = g_sc.popup_hover >= 0 ? g_sc.popup_hover
+                       : (defi >= 0 && defi < (int)pp.choices.size() ? defi : -1);
+        ppL = vc::popup_layout(assets().nat.font, pp);
+        static const vc::IndexedPng no_panl;
+        const vc::IndexedPng* panl = atlas_file("pik/WOODPANL.png");
+        render_popup(scr, panl ? *panl : no_panl, assets().nat.font, pp, ppL);
     }
 
     if (!g_sc.stage.id) g_sc.stage = drv.create_texture(vc::Surface::W, vc::Surface::H);
@@ -367,8 +481,48 @@ void screens_panel(Driver& drv) {
     ImGui::Image((ImTextureID)(intptr_t)g_sc.stage.id,
                  ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
 
-    // select on click, move by drag (commit on release)
-    if (ImGui::IsItemHovered() || g_sc.dragging) {
+    // play mode: buttons fire their onClick; popup choices click through
+    if (g_sc.play) {
+        if (ImGui::IsItemHovered()) {
+            ImVec2 mp = ImGui::GetMousePos();
+            int mx = (int)((mp.x - origin.x) / scale);
+            int my = (int)((mp.y - origin.y) / scale);
+            if (g_sc.play_popup) {
+                g_sc.popup_hover = -1;
+                for (int i = 0; i < (int)pp.choices.size(); ++i) {
+                    int cx, cy, cw, ch;
+                    vc::popup_choice_rect(ppL, i, cx, cy, cw, ch);
+                    if (mx >= cx && mx < cx + cw && my >= cy && my < cy + ch) {
+                        g_sc.popup_hover = i;
+                        if (ImGui::IsMouseClicked(0)) {
+                            std::string node;
+                            if (const forge::JsonValue* n = g_sc.popup.find("node"))
+                                node = n->str;
+                            play_run("", node, pp.choices[i]);
+                        }
+                    }
+                }
+                if (pp.choices.empty() && ImGui::IsMouseClicked(0))
+                    g_sc.play_popup = false;             // no-choice box: dismiss
+            } else if (ImGui::IsMouseClicked(0)) {
+                for (int i = nwidgets - 1; i >= 0; --i) {   // topmost first
+                    const Value& d = widgets->list[i];
+                    if (d.kind != ValKind::Dict) continue;
+                    std::string action = dstr(d, "onClick");
+                    if (action.empty()) continue;
+                    int r[4];
+                    drect(d, r);
+                    if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] &&
+                        my < r[1] + r[3]) {
+                        play_click(*st, action);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    // select on click, move by drag (commit on release) -- edit mode only
+    if (!g_sc.play && (ImGui::IsItemHovered() || g_sc.dragging)) {
         ImVec2 mp = ImGui::GetMousePos();
         int mx = (int)((mp.x - origin.x) / scale), my = (int)((mp.y - origin.y) / scale);
         if (ImGui::IsMouseClicked(0) && ImGui::IsItemHovered()) {
@@ -450,7 +604,8 @@ void screens_panel(Driver& drv) {
         ImGui::TextDisabled("(%d,%d)", (int)((mp.x - origin.x) / scale),
                             (int)((mp.y - origin.y) / scale));
     }
-    bool have_nudge = g_sc.sel_w >= 0 && g_sc.sel_w < nwidgets && !g_sc.dragging &&
+    bool have_nudge = !g_sc.play && g_sc.sel_w >= 0 && g_sc.sel_w < nwidgets &&
+                      !g_sc.dragging &&
                       ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) &&
                       !ImGui::GetIO().WantTextInput;
     if (have_nudge) {
