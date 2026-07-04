@@ -126,7 +126,8 @@ int GameShell::next_own_unit(int from) const {
     if (n == 0) return -1;
     for (int k = 1; k <= n; ++k) {
         int i = (from + k) % n;
-        if (g_world.units[i].alive && g_world.units[i].owner == 0) return i;
+        const vc::sim::Unit& u = g_world.units[i];
+        if (u.alive && u.owner == 0 && u.sail == 0 && !u.in_europe) return i;
     }
     return -1;
 }
@@ -144,6 +145,15 @@ bool GameShell::try_step(int ui, int dx, int dy) {
     vc::sim::Unit& u = g_world.units[ui];
     if (!u.alive || u.moves_left <= 0) return false;
     int nx = u.x + dx, ny = u.y + dy;
+    // stepping east off the Sea Lane column sails for Europe (the sea lane is
+    // the right-edge column, map hard rule 2; crossing per session sail_*)
+    if (dx > 0 && nx >= g_world.map_w &&
+        g_world.terrain_id(u.x, u.y) == 26) {
+        std::string why = sail_to_europe(ui);
+        game_log(why.empty() ? "sailing for Europe" : why);
+        if (why.empty() && ui == sel_) sel_ = next_own_unit(sel_);
+        return why.empty();
+    }
     if (nx < 0 || ny < 0 || nx >= g_world.map_w || ny >= g_world.map_h) return false;
     int id = g_world.terrain_id(nx, ny);
     bool water = (id == 25 || id == 26);
@@ -585,9 +595,37 @@ void GameShell::compose_europe(vc::Surface& scr) {
         scr.draw_text(A.font, 146, 117 + s * 9, row, val_c);
     }
     scr.draw_text(A.font, 4, 170, "click a good: sell 1   right-click: buy 1", val_c);
+    // Ships In Port (europe_screen.md docks band: slots x=147+12*slot, y=165;
+    // caption slot [0x2dd2] "No Ships In Port" when empty): the units docked
+    // via the Atlantic crossing. Click a ship to sail it back west.
+    int slot = 0;
+    for (int i = 0; i < (int)g_world.units.size() && slot < 6; ++i) {
+        const vc::sim::Unit& u = g_world.units[i];
+        if (!u.alive || u.owner != 0 || !u.in_europe) continue;
+        if (u.type >= 0 && u.type < A.units.nframes)
+            scr.blit_frame(A.units.frames[u.type], 147 + 12 * slot, 150);
+        ++slot;
+    }
+    scr.draw_text(A.font, 146, 141,
+                  slot ? "In port (click a ship: sail west):" : "No Ships In Port",
+                  title_c);
 }
 
 void GameShell::click_europe(int mx, int my, int button) {
+    if (mx >= 146 && my >= 150 && my < 168 && button == 0) {   // docked ships
+        int slot = 0;
+        for (int i = 0; i < (int)g_world.units.size(); ++i) {
+            const vc::sim::Unit& u = g_world.units[i];
+            if (!u.alive || u.owner != 0 || !u.in_europe) continue;
+            if (mx >= 147 + 12 * slot && mx < 147 + 12 * (slot + 1)) {
+                std::string why = sail_to_new_world(i);
+                game_log(why.empty() ? "the ship sails for the New World" : why);
+                return;
+            }
+            ++slot;
+        }
+        return;
+    }
     if (mx >= 146 && my >= 117 && my < 144 && button == 0) {   // recruit rows
         int s = (my - 117) / 9;
         int cls = s >= 0 && s < 3 ? g_game.powers[0].dock_pool[s] : -1;
@@ -821,7 +859,7 @@ void GameShell::menu_action(int mi, int row) {
                        {"road", 'r', false},      {"unload cargo", 'u', false},
                        {"load cargo", 'l', false}, {"go to", 'g', false},
                        {"no orders", ' ', false}, {"overboard", 'o', false},
-                       {"disband", 'd', true}};
+                       {"return to europe", 'e', false}, {"disband", 'd', true}};
             for (const auto& m : M)
                 if (is(m.what)) { key_map(m.key, m.shift); return; }
             if (is("pillage")) return;   // vestigial: no handler in the EXE
@@ -879,7 +917,8 @@ void GameShell::compose_map(vc::Surface& scr, bool flash) {
     for (int i = 0; i < (int)g_world.units.size(); ++i) {
         const vc::sim::Unit& u = g_world.units[i];
         int px, py;
-        if (!u.alive || !on_screen(u.x, u.y, px, py)) continue;
+        if (!u.alive || u.sail != 0 || u.in_europe) continue;   // off-map
+        if (!on_screen(u.x, u.y, px, py)) continue;
         if (u.type >= 0 && u.type < A.units.nframes)
             scr.blit_frame(A.units.frames[u.type], px, py);
         if (i == sel_ && flash) scr.rect_outline(px, py, 16, 16, 15);
@@ -1278,7 +1317,19 @@ void GameShell::key_map(int k, bool shift) {
         case GK_TAB: case 'w': case ' ': next_unit(); return;
         case GK_ENTER: end_turn(); return;
         case GK_ESC: quit_requested = true; return;
-        case 'e': europe_view_ = true; return;
+        case 'e':
+            // the E accelerator (@ORDERS "Return to Europe"): a selected ship
+            // at sea sails home; otherwise open the Europe screen
+            if (sel_ >= 0) {
+                std::string why = sail_to_europe(sel_);
+                if (why.empty()) {
+                    game_log("sailing for Europe");
+                    sel_ = next_own_unit(sel_);
+                    return;
+                }
+            }
+            europe_view_ = true;
+            return;
     }
     if (sel_ < 0) return;
     auto named = [&](const char* o, const char* what) {

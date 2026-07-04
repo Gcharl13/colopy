@@ -104,6 +104,9 @@ JsonValue dump_unit(const Unit& u) {
     o.obj["heading"]    = json_num(u.heading);
     o.obj["ai_flags"]   = json_num(u.ai_flags);
     o.obj["ai_steps"]   = json_num(u.ai_steps);
+    o.obj["sail"]       = json_num(u.sail);
+    o.obj["sail_dir"]   = json_num(u.sail_dir);
+    o.obj["in_europe"]  = [&]{ JsonValue v; v.type = JsonValue::Bool; v.b = u.in_europe; return v; }();
     JsonValue cg = arr();                       // cargo holds as [good, qty] pairs
     for (int h = 0; h < 6; ++h) {
         JsonValue pr = arr();
@@ -200,6 +203,9 @@ Unit read_unit(const JsonValue& o) {
     u.heading    = gi(o, "heading", 8);
     u.ai_flags   = gi(o, "ai_flags", 0);
     u.ai_steps   = gi(o, "ai_steps", 0);
+    u.sail       = gi(o, "sail", 0);
+    u.sail_dir   = gi(o, "sail_dir", 0);
+    u.in_europe  = gb(o, "in_europe", false);
     if (const JsonValue* cg = o.find("cargo"))
         for (int h = 0; h < 6 && h < (int)cg->arr.size(); ++h) {
             const JsonValue& pr = cg->arr[h];

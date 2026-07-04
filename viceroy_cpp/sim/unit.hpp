@@ -104,6 +104,13 @@ struct Unit {
     // 100 of one good (LOAD primitive func_00B880 caps at 100). good -1 = empty.
     std::array<int, 6> hold_good{{-1, -1, -1, -1, -1, -1}};
     std::array<int, 6> hold_qty{};
+    // --- Atlantic crossing (europe_screen.md sail-states; crossing time = 2
+    // turns, 1 with Magellan, byte-cited @0x41871). sail > 0 = turns until
+    // arrival; sail_dir +1 = sailing to Europe, -1 = to the New World;
+    // in_europe = docked in the home port. A crossing/docked unit is off the
+    // map (skipped by unit_at + renderers); x,y keep the departure tile.
+    int  sail = 0, sail_dir = 0;
+    bool in_europe = false;
 };
 
 } // namespace vc::sim

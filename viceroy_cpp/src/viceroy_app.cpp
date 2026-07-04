@@ -13,6 +13,8 @@
 // The headless mode needs no SDL.
 #include "game_shell.hpp"
 #include "mapview.hpp"       // MAP_MENU_X (the --shot menuN target)
+#include "session.hpp"       // g_world/g_active_rules (the --shot sail target)
+#include "sim/unit.hpp"
 #include "surface.hpp"
 #include "png_io.hpp"
 #include <cstdio>
@@ -79,6 +81,23 @@ int main(int argc, char** argv) {
                 shell.key(forge::GK_DOWN, false);
                 shell.key(forge::GK_ENTER, false);
                 shell.key('b', false);
+            }
+            if (s == "sail") {               // caravel sails east, crosses,
+                int ship = -1;               // then the Europe docks show it
+                for (int i = 0; i < (int)g_world.units.size(); ++i) {
+                    const vc::sim::Unit& u = g_world.units[i];
+                    if (u.alive && u.owner == 0 &&
+                        vc::sim::unit_stats(g_active_rules, u.type).move_class == 99) {
+                        ship = i;
+                        break;
+                    }
+                }
+                for (int t = 0; t < 64 && shell.selected_unit() != ship; ++t)
+                    shell.key(forge::GK_TAB, false);
+                shell.key('e', false);       // Return to Europe (the ship)
+                shell.key(forge::GK_ENTER, false);
+                shell.key(forge::GK_ENTER, false);
+                shell.key('e', false);       // open the Europe docks
             }
         }
         vc::Surface scr;

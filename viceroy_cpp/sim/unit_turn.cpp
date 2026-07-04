@@ -76,6 +76,7 @@ int unit_at(const World& w, int x, int y, int except) {
     for (int i = 0; i < (int)w.units.size(); ++i) {
         if (i == except) continue;
         const Unit& u = w.units[i];
+        if (u.sail != 0 || u.in_europe) continue;  // off-map: crossing/docked
         if (u.alive && u.x == x && u.y == y) return i;
     }
     return -1;

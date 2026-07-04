@@ -978,6 +978,7 @@ void game_step() {
         forge::run_turn(g_game, g_world, game_rng, 0, g_active_rules, g_engine_extra.ff_owned,
                         &villages);
         if (g_engine_extra.woi_declared) { g_game.ref = ref_before; g_game.powers[0].royal_money = rm_before; }
+        sail_step();                                    // Atlantic crossings advance each turn
         auto_export_step();                             // auto-sell over-cap goods to Europe (peacetime)
         // (the per-turn market phase -- drift + republish + volume reset -- runs inside run_turn)
         // Continental Congress: the player's liberty bells accumulate toward the next father.
@@ -2589,6 +2590,12 @@ OrderResult unit_order(int ui, const std::string& o, int tx, int ty,
         }
         u.order = ORDER_TRADE_ROUTE; u.route = route; u.route_stop = 0;
     }
+    else if (o == "E") {                                 // Return to Europe
+        std::string why = sail_to_europe(ui);
+        if (!why.empty()) { r.err = why; return r; }
+        r.ok = true;
+        return r;
+    }
     else if (o == "D") {                                 // Disband (shift-D)
         u.alive = false;
         r.ok = true;
@@ -2792,6 +2799,64 @@ std::string route_create(const std::string& name, int type,
     }
     g_game.routes.push_back(std::move(r));
     return "";
+}
+
+// ---- Atlantic crossing ------------------------------------------------------
+// Crossing time = 2 turns, 1 with Magellan (FF #5) -- byte-cited @0x41871
+// (+@0x418A0). The start gate (any ocean/sea-lane tile) is RECONSTRUCTED; the
+// EXE routes the ship to the sea lane first, which the shell's east-edge step
+// models directly.
+static int crossing_time() {
+    return (g_engine_extra.ff_owned >> 5) & 1u ? 1 : 2;
+}
+
+std::string sail_to_europe(int ui) {
+    if (ui < 0 || ui >= (int)g_world.units.size()) return "bad unit";
+    Unit& u = g_world.units[ui];
+    if (!u.alive) return "bad unit";
+    if (unit_stats(g_active_rules, u.type).move_class != 99)
+        return "only a ship can sail for Europe";
+    if (u.sail != 0 || u.in_europe) return "already at sea";
+    int id = g_world.terrain_id(u.x, u.y);
+    if (id != 25 && id != 26) return "the ship must be at sea";
+    u.sail = crossing_time();
+    u.sail_dir = 1;
+    u.order = ORDER_NONE;
+    return "";
+}
+
+std::string sail_to_new_world(int ui) {
+    if (ui < 0 || ui >= (int)g_world.units.size()) return "bad unit";
+    Unit& u = g_world.units[ui];
+    if (!u.alive || !u.in_europe) return "the ship is not in Europe";
+    u.in_europe = false;
+    u.sail = crossing_time();
+    u.sail_dir = -1;
+    return "";
+}
+
+void sail_step() {
+    auto ship_name = [](int type) {
+        forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                            g_active_rules, game_rng};
+        std::string n = forge::resolve_binding(
+            "@UNIT[" + std::to_string(type) + "].name", cx).str;
+        return n.empty() ? std::string("A ship") : n;
+    };
+    for (int i = 0; i < (int)g_world.units.size(); ++i) {
+        Unit& u = g_world.units[i];
+        if (!u.alive || u.sail <= 0) continue;
+        if (--u.sail > 0) continue;
+        if (u.sail_dir > 0) {                     // arrived in the home port
+            u.in_europe = true;
+            g_turn_notices.push_back(ship_name(u.type) +
+                                     " has arrived safely in Europe.");
+        } else {                                  // back at the departure tile
+            g_turn_notices.push_back(ship_name(u.type) +
+                                     " has arrived from Europe.");
+        }
+        u.sail_dir = 0;
+    }
 }
 
 // ---- colony construction (context_dialogs.md §12) --------------------------

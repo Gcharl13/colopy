@@ -92,6 +92,14 @@ const char* building_ff_requirement(int bid, uint32_t ff_owned);
 // colony screen titles it).
 std::string colony_display_name(int ci);
 
+// Atlantic crossing (europe_screen.md sail-states; time byte-cited @0x41871:
+// 2 turns, 1 with Magellan). Start a ship east ("Return to Europe", the E
+// accelerator) or west (departing the Europe docks); "" on success, else the
+// user-facing reason. sail_step advances crossings each turn (in game_step).
+std::string sail_to_europe(int ui);
+std::string sail_to_new_world(int ui);
+void sail_step();
+
 // ---- per-turn history (the Play sparkline / /api/history) ----
 struct HistPoint { long turn; int year; long gold; int sol; long population; };
 extern std::vector<HistPoint> g_history;
