@@ -6,6 +6,7 @@
 // -> bottom-band panels -> stockpile bar -> title.
 #include "colony_screen.hpp"
 #include "mapview.hpp"     // compose_map_tile (worked-tiles view = exact map terrain)
+#include "popup_render.hpp" // nearest_pal_index (title green / border black / qty navy)
 #include <cstdio>
 #include <string>
 #include <algorithm>
@@ -17,26 +18,9 @@ static const int PLOT[15][2] = {
     {56,5},{145,7},{173,10},{8,33},{37,37},{67,46},{96,45},{6,6},
     {128,45},{10,68},{15,94},{87,3},{66,79},{123,98},{123,47},
 };
-// Building TYPE (NAMES @BUILDING) -> BUILDING.SS frame, per SPRITE_CATALOG.md §BUILDING.SS
-// (the 1:1 wall/dock/civic/church/edu/warehouse/blacksmith frames + the craftsman-chain
-// silhouettes 21-34). -1 = no distinct sprite (custom house / press / newspaper).
-static const signed char TYPE_FRAME[42] = {
-    0,1,2,        // 0-2  Stockade/Fort/Fortress
-    3,4,5,        // 3-5  Armory/Magazine/Arsenal
-    6,7,8,        // 6-8  Docks/Drydock/Shipyard
-    9,9,20,       // 9-11 Town Hall / Town Hall / Colonial Assembly
-    13,13,14,     // 12-14 Schoolhouse/College/University
-    15,47,35,     // 15-17 Warehouse/Expansion/Stable
-    -1,-1,-1,     // 18-20 Custom House/Printing Press/Newspaper (no distinct frame)
-    21,22,23,     // 21-23 Weaver's House/Shop/Textile Mill
-    24,25,26,     // 24-26 Tobacconist's House/Shop/Cigar Factory
-    27,28,29,     // 27-29 Rum Distiller's House/Distillery/Factory
-    9,20,         // 30-31 Capitol/Capitol Expansion (civic)
-    32,33,34,     // 32-34 Fur Trader's House/Post/Factory
-    36,36,        // 35-36 Carpenter's Shop / Lumber Mill
-    37,38,        // 37-38 Church/Cathedral
-    39,40,41,     // 39-41 Blacksmith's House/Shop/Iron Works
-};
+// Occupied-plot frame = def_id in bundle space with def_id 0 -> 16 (func_026DD4
+// @0x026E4E, live-verified colony_screen.md §0.2) -- the old TYPE_FRAME hand-map
+// is superseded by that direct rule.
 // WARNING (2026-06-24): this TYPE_PLOT table is a PLACEHOLDER, not the real placement.
 // The actual which-building-in-which-plot is RNG-driven (func_025D34: random_int within
 // 5 category plot-ranges, seeded per colony) -- see decode §12. This static arrangement
@@ -197,6 +181,39 @@ static void render_worked_tiles(Surface& scr, const Sheet& terrain, const Sheet&
 // palette — the embedded PIK palette is a red herring (a nearest-colour remap onto the
 // gameplay palette mangled every hue). So blit the RAW indices, no remap. [decode §5/§5c,
 // pixel-verified 2026-06-24: raw indices under the BUILDING palette render the scene exactly.]
+// Tiny 3x5 digit face at FONTTINY metrics (4x6 fixed cell, fonts_and_colors.md:
+// FONTTINY is "6 x 4 fixed" and the .FF file is not part of the decoded art set,
+// so these glyph shapes are a RECONSTRUCTED stand-in at the correct cell size --
+// the capture's warehouse digits are ~4x6 dark-navy figures).
+static const uint8_t TINY_ROWS[10][5] = {   // 5 rows x 3 bits per digit, MSB = left
+    {7,5,5,5,7},   // 0
+    {2,6,2,2,7},   // 1
+    {7,1,7,4,7},   // 2
+    {7,1,3,1,7},   // 3
+    {5,5,7,1,1},   // 4
+    {7,4,7,1,7},   // 5
+    {7,4,7,5,7},   // 6
+    {7,1,2,2,2},   // 7
+    {7,5,7,5,7},   // 8
+    {7,5,7,1,7},   // 9
+};
+static int tiny_num_width(const char* s) {
+    int n = 0;
+    for (; *s; ++s) ++n;
+    return n ? n * 4 - 1 : 0;
+}
+static void draw_tiny_num(Surface& scr, int x, int y, const char* s, uint8_t color) {
+    for (; *s; ++s) {
+        if (*s >= '0' && *s <= '9') {
+            const uint8_t* rows = TINY_ROWS[*s - '0'];
+            for (int j = 0; j < 5; ++j)
+                for (int i = 0; i < 3; ++i)
+                    if (rows[j] & (4 >> i)) scr.put(x + i, y + j, color);
+        }
+        x += 4;
+    }
+}
+
 static void blit_pik_raw(Surface& scr, const IndexedPng& pik, int dstY) {
     for (int y = 0; y < pik.h && (dstY + y) < Surface::H; ++y)
         for (int x = 0; x < pik.w && x < Surface::W; ++x)
@@ -206,14 +223,21 @@ static void blit_pik_raw(Surface& scr, const IndexedPng& pik, int dstY) {
 // Parchment colony-scene window (wood chrome with a parchment scene region). Buildings draw
 // at the byte-verified plot coords (x = DS:0x266, y = DS:0x268 + 8; x 6..173, y 13..106 per
 // the layout agent), so the scene region spans the building area, left of the worked-tiles panel.
-constexpr int SCENE_X = 4, SCENE_Y = 8, SCENE_W = 204, SCENE_H = 120;
+// Scene rect + borders are pixel-measured from the live capture
+// docs/screens/colony_live_1505.png: parchment spans (0,8)..(198,127), a 1-px
+// black column at x=199 separates it from the wood, a full-width black rule
+// sits at y=7 (under the title strip) and at y=128 (over the PIK band top),
+// and the field-production panel (224,32,72,72) has a 1-px black outline.
+constexpr int SCENE_X = 0, SCENE_Y = 8, SCENE_W = 199, SCENE_H = 120;
 
 // Plot → category map (func_025D34 flatten of counts [7,4,2,1,1] / bases [0,7,11,13,14]):
 // 0x8D62 = [0×7, 1×4, 2×2, 3, 4]. Byte-verified (agent trace 2026-06-24, flatten @0x025DA3).
 static const int PLOT_CAT[15] = {0,0,0,0,0,0,0, 1,1,1,1, 2,2, 3, 4};
-// Empty / not-yet-built plot sprite per category = BUILDING.SS byte[DS:0x260] = [45,44,43,0,46]
-// (cleared-lot / foundation frames, NOT trees; func_026FF2 @0x026FF9). 0 ⇒ category 3 draws none.
-static const int EMPTY_LOT_FRAME[5] = {45, 44, 43, 0, 46};
+// Empty / not-yet-built plot sprite per category = BUILDING frame DS:0x260[cat] − 1 =
+// [44,43,42,—,45] (tree/grove decorations; spec/ui/colony_screen.md §0.2 plot table +
+// empty-plot painter func_026FF2: "frame = DS:0x260[category] − 1", table [45,44,43,0,46],
+// 0 ⇒ category 3 draws none). The earlier [45,44,43,0,46] here was the RAW table (off by one).
+static const int EMPTY_LOT_FRAME[5] = {44, 43, 42, 0, 45};
 
 void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
                           const Sheet& parch, const Sheet& woodtile, const Sheet& icons,
@@ -235,18 +259,26 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // (seed=(uint16)((y<<8)+x)=0x1914) + the +0x84 produced-good pass gives slot→good 0x8E82 =
     // [27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1]. (Agent-verified; the general algorithm is
     // documented — re-run it if cx/cy or the base seed [0x8D80] change.) ---
+    // Occupied-plot frame = def_id in bundle space (EXE draws def_id+1 in EXE-sheet
+    // space; the ssdec decode cancels it -- func_026DD4 @0x026E4E, live-verified in
+    // spec/ui/colony_screen.md §0.2), with the byte-read special case def_id 0 → 16.
     static const signed char SLOT_GOOD[15] = {27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1};
+    auto def_frame = [](int def_id) { return def_id == 0 ? 16 : def_id; };
     for (int slot = 0; slot < 15; ++slot) {
         int good = (cx == 20 && cy == 25) ? SLOT_GOOD[slot] : -2;    // computed layout for the default founding
         int frame;
-        if (good >= 0 && TYPE_FRAME[good] >= 0) frame = TYPE_FRAME[good];   // built: type-specific sprite
+        if (good >= 0) frame = def_frame(good);                      // built: frame = def_id
         else if (good == -2) {                                       // other colony: fall back to mask+plot
             int bf = -1;
             for (int t = 0; t < 42; ++t)
-                if (TYPE_PLOT[t] == slot && ((c.built_mask >> t) & 1ull) && TYPE_FRAME[t] >= 0) bf = TYPE_FRAME[t];
+                if (TYPE_PLOT[t] == slot && ((c.built_mask >> t) & 1ull)) bf = def_frame(t);
             if (bf >= 0) frame = bf;
             else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }
         } else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }  // cleared lot
+        // The bundle cells are the FULL 56x42 native windows whose in-window sprite
+        // position bakes the frame's own draw offset -- blit at the raw plot-table
+        // (x, y) (PLOT stores table_y-8, so +8 restores it); capture-calibrated:
+        // the frame-9 Town Hall window lands on the live capture at exactly this.
         int x = PLOT[slot][0], y = PLOT[slot][1] + 8;               // byte-verified plot coords (DS:0x266)
         blit_idx_clip(scr, building, frame, x, y,
                       SCENE_X, SCENE_Y, SCENE_X + SCENE_W, SCENE_Y + SCENE_H);
@@ -265,6 +297,26 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // the per-colonist / surrounding-tile model is wired in. ---
     blit_pik_raw(scr, backdrop, PIK_Y);
 
+    // --- Screen-portion separators (capture-measured, colony_live_1505.png): the black
+    // rules that frame the scene / wood / PIK regions and the field panel. ---
+    {
+        uint8_t black = nearest_pal_index(scr.pal, 0, 0, 0);
+        for (int x = 0; x < Surface::W; ++x) {
+            scr.put(x, 7, black);                       // under the title strip
+            scr.put(x, PIK_Y, black);                   // over the PIK band top row
+        }
+        for (int y = SCENE_Y; y < SCENE_Y + SCENE_H; ++y)
+            scr.put(SCENE_X + SCENE_W, y, black);       // scene | wood column (x=199)
+        for (int x = 223; x <= 296; ++x) {              // field-panel 1-px outline
+            scr.put(x, 31, black);
+            scr.put(x, 104, black);
+        }
+        for (int y = 31; y <= 104; ++y) {
+            scr.put(223, y, black);
+            scr.put(297, y, black);
+        }
+    }
+
     // --- Colonist plaza (LEFT panel 0..120, func_0270D0): colonist figures + SoL%/Tory (y=132)
     // + the Food/Crosses/Bells production row (y=163). All drawn HERE (the SoL attribution to
     // func_02814C in decode §7 was an over-read — agent-traced). ---
@@ -272,13 +324,21 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     // 320x200 back buffer with no panel-origin transform — 132/142/163 are screen-y).
     {
         int pop = c.population < 1 ? 1 : c.population;
+        // SoL% = (rebel_A*100)/rebel_B, +20 human latch, clamp 100 (func_008524,
+        // colony_screen.md §0.6). Member count in parens is RECONSTRUCTED as
+        // round-up pop*SoL% (matches the capture's "100% (1)" at pop=1).
+        int sol = c.rebel_B > 0 ? (int)((int64_t)c.rebel_A * 100 / c.rebel_B) : 0;
+        if (c.human) sol += 20;
+        if (sol > 100) sol = 100;
+        if (sol < 0) sol = 0;
+        int members = (pop * sol + 99) / 100;
         // y=132 row: Tory crown (ICONS 0x7C) @ (2,132) + Tory COUNT; SoL% right-aligned @ x=0x75-w.
         blit_idx(scr, icons, 0x7C, 2, 132);
-        char tn[16]; std::snprintf(tn, sizeof tn, "%d", pop);   // Tory count (= pop at 0% SoL)
+        char tn[16]; std::snprintf(tn, sizeof tn, "%d", pop - members);   // Tory count
         scr.draw_text(font, 16, 133, tn, COL_WHITE);
-        const char* sol = "0%";                            // fresh founding SoL = 0%
-        int sw = font.frames.empty() ? 0 : scr.text_width(font, sol);
-        scr.draw_text(font, 0x75 - sw, 133, sol, COL_WHITE);   // right-aligned at x=117-width (@0x027589)
+        char sols[24]; std::snprintf(sols, sizeof sols, "%d%% (%d)", sol, members);
+        int sw = font.frames.empty() ? 0 : scr.text_width(font, sols);
+        scr.draw_text(font, 0x75 - sw, 133, sols, COL_WHITE);  // right-aligned at x=117-width (@0x027589)
         // y=142 row: colonist figures (screen x≈2, y=142; @0x0270FF), facing right (flip).
         if (100 < (int)icons.frames.size()) {
             const Frame& cf = icons.frames[100];
@@ -326,29 +386,34 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
         blit_idx(scr, icons, 67 + i, 303, 132 + i * 15);
 
     // --- Step 8: stockpile bar — 16 commodity cells over the PIK's blue cells. Icon = ICONS
-    // good+0x16 (Food..Muskets), centred in the 19-px cell; quantity centred just below it. ---
-    for (int i = 0; i < BAR_CELLS; ++i) {
-        int cellx = BAR_X0 + i * BAR_PITCH;
-        int fi = ICON_GOOD0 + i;
-        if (fi >= 0 && fi < (int)icons.frames.size()) {
-            int iw = icons.frames[fi].w;
-            blit_idx(scr, icons, fi, cellx + (BAR_PITCH - iw) / 2, BAR_ICON_Y);
+    // good+0x16 (Food..Muskets), centred in the 19-px cell and top-anchored at y=181, clipped
+    // above the quantity row; quantity in the capture's dark navy (#181c7d) FONTTINY-sized
+    // digits at y=193 (colony_screen.md §0.3; the live capture stacks icon OVER number). ---
+    {
+        uint8_t navy = nearest_pal_index(scr.pal, 0x18, 0x1c, 0x7d);
+        for (int i = 0; i < BAR_CELLS; ++i) {
+            int cellx = BAR_X0 + i * BAR_PITCH;
+            int fi = ICON_GOOD0 + i;
+            if (fi >= 0 && fi < (int)icons.frames.size()) {
+                int iw = icons.frames[fi].w;
+                blit_idx_clip(scr, icons, fi, cellx + (BAR_PITCH - iw) / 2, BAR_ICON_Y,
+                              cellx, BAR_ICON_Y, cellx + BAR_PITCH, BAR_NUM_Y - 1);
+            }
+            char q[8]; std::snprintf(q, sizeof q, "%d", stockpile ? stockpile[i] : 0);
+            int tw = tiny_num_width(q);
+            draw_tiny_num(scr, cellx + (BAR_PITCH - tw) / 2, BAR_NUM_Y, q, navy);
         }
-        char q[8]; std::snprintf(q, sizeof q, "%d", stockpile ? stockpile[i] : 0);
-        int tw = font.frames.empty() ? 0 : scr.text_width(font, q);
-        scr.draw_text(font, cellx + (BAR_PITCH - tw) / 2, BAR_NUM_Y, q, COL_WHITE);
     }
 
-    // --- Top banner: a single line "Name, Season Year, Gold: N" — verbatim format from the
-    // DOS session captures (SESSION_UI_CATALOG.md §2: "Plymouth, Spring 1543, Gold: 19200").
-    // Name+season+year are composer-step-5 fields (§9); Gold is the treasury PowerRecord+0x2A
-    // (§10), shown INLINE in this banner (not on the warehouse bar). ---
+    // --- Top banner: "Name.  Season, Year.  Gold: N" in the green title latch at (90,1)
+    // (colony_screen.md §0.5: green FONTTINY x90 y1; glyph green sampled (85,150,52) from
+    // the live capture — the EXE emits it via the screen-latched handle, fonts_and_colors.md). ---
     {
+        uint8_t green = nearest_pal_index(scr.pal, 85, 150, 52);
         std::string season = ((year % 2) == 0) ? "Spring" : "Autumn";
         char line[96];
-        std::snprintf(line, sizeof line, "Jamestown, %s, %d, Gold: %d", season.c_str(), year, gold);
-        int w = font.frames.empty() ? 0 : scr.text_width(font, line);
-        scr.draw_text(font, (Surface::W - w) / 2, 2, line, COL_WHITE);
+        std::snprintf(line, sizeof line, "Jamestown.  %s, %d.  Gold: %d", season.c_str(), year, gold);
+        scr.draw_text(font, 90, 1, line, green);
     }
     (void)tax_pct;
 }

@@ -84,26 +84,59 @@ const vc::Frame* sheet_window(const std::string& sheet) {
         } catch (const std::exception&) {}
     }
     const vc::IndexedPng* img = atlas_file("sprites/atlas_" + sheet + ".png");
-    // The committed contact sheets are 2x with a label band; the first cell's
-    // content window is PNG rect (1,39) 56x42 (the web wfPortrait geometry),
-    // downsampled to native 28x21 by point-sampling every other pixel. The
+    // The committed contact sheets have a label band; the first cell's content
+    // window is PNG rect (1,39) 56x42 (the web wfPortrait geometry). The DRAW
+    // SCALE varies per sheet (measured 2026-07-04): atlas_ICONS is a clean 2x
+    // pixel-double (parity blockiness 1.000) while atlas_BUILDING / atlas_PARCH
+    // are native 1x. Detect via 2x2-block uniformity: >=0.9 means 2x (sample
+    // every second pixel at the best parity), else copy 1:1. Either way the
     // cell pads the real frame with OPAQUE BLACK, so tighten to the non-black
     // bounding box -- otherwise tiles (PARCH) carry black gutters.
     if (img && img->w >= 57 && img->h >= 81) {
-        uint8_t win[28 * 21];
-        for (int y = 0; y < 21; ++y)
-            for (int x = 0; x < 28; ++x)
-                win[y * 28 + x] =
-                    img->idx[(size_t)(39 + y * 2) * img->w + (1 + x * 2)];
+        const int WW = 56, WH = 42;
+        auto at = [&](int x, int y) {
+            return img->idx[(size_t)(39 + y) * img->w + (1 + x)];
+        };
         auto is_pad = [&](uint8_t i) {
             if (i == vc::SS_TRANSPARENT) return true;
             const uint8_t* p = &a.nat.pal[i * 3];
             return p[0] == 0 && p[1] == 0 && p[2] == 0;
         };
-        int x0 = 28, y0 = 21, x1 = -1, y1 = -1;
-        for (int y = 0; y < 21; ++y)
-            for (int x = 0; x < 28; ++x)
-                if (!is_pad(win[y * 28 + x])) {
+        float best = -1.0f;
+        int bdx = 0, bdy = 0;
+        for (int dy = 0; dy < 2; ++dy)
+            for (int dx = 0; dx < 2; ++dx) {
+                int ok = 0, tot = 0;
+                for (int y = dy; y < WH - 1; y += 2)
+                    for (int x = dx; x < WW - 1; x += 2) {
+                        uint8_t v = at(x, y);
+                        tot += 3;
+                        ok += (at(x + 1, y) == v) + (at(x, y + 1) == v) +
+                              (at(x + 1, y + 1) == v);
+                    }
+                float s = tot ? (float)ok / tot : 0.0f;
+                if (s > best) { best = s; bdx = dx; bdy = dy; }
+            }
+        std::vector<uint8_t> win;
+        int ww, wh;
+        if (best >= 0.9f) {              // 2x sheet: parity-aligned downsample
+            ww = (WW - bdx) / 2;
+            wh = (WH - bdy) / 2;
+            win.resize((size_t)ww * wh);
+            for (int y = 0; y < wh; ++y)
+                for (int x = 0; x < ww; ++x)
+                    win[(size_t)y * ww + x] = at(bdx + 2 * x, bdy + 2 * y);
+        } else {                         // native 1x sheet: copy as-is
+            ww = WW; wh = WH;
+            win.resize((size_t)ww * wh);
+            for (int y = 0; y < wh; ++y)
+                for (int x = 0; x < ww; ++x)
+                    win[(size_t)y * ww + x] = at(x, y);
+        }
+        int x0 = ww, y0 = wh, x1 = -1, y1 = -1;
+        for (int y = 0; y < wh; ++y)
+            for (int x = 0; x < ww; ++x)
+                if (!is_pad(win[(size_t)y * ww + x])) {
                     if (x < x0) x0 = x;
                     if (y < y0) y0 = y;
                     if (x > x1) x1 = x;
@@ -116,7 +149,7 @@ const vc::Frame* sheet_window(const std::string& sheet) {
             f.px.resize((size_t)f.w * f.h);
             for (int y = 0; y < f.h; ++y)
                 for (int x = 0; x < f.w; ++x)
-                    f.px[(size_t)y * f.w + x] = win[(y0 + y) * 28 + (x0 + x)];
+                    f.px[(size_t)y * f.w + x] = win[(size_t)(y0 + y) * ww + (x0 + x)];
         }
     }
     auto& slot = a.windows[sheet] = std::move(f);

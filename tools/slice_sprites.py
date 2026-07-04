@@ -107,11 +107,33 @@ def slice_icons(manifest):
         if bbox is None:                      # a genuinely blank frame
             sprite = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
         else:
-            sprite = rgba.crop(bbox)
-            # the contact sheet draws sprites at 2x (see extract_tileset.py):
-            # halve back to native so goods/units sit at original screen scale
-            sprite = sprite.resize((max(1, round(sprite.width / 2)),
-                                    max(1, round(sprite.height / 2))), Image.NEAREST)
+            # atlas_ICONS is a clean 2x pixel-double (parity blockiness 1.000
+            # measured on frame 6 at bbox parity (0,0), 2026-07-04). A plain
+            # PIL half-resize point-samples on the WRONG parity and mushes the
+            # sprite; instead find the 2x-grid parity that maximizes 2x2-block
+            # uniformity and take every second pixel from there.
+            bx0, by0, bx1, by1 = bbox
+            cpx = rgba.load()
+            best, bdx, bdy = -1.0, 0, 0
+            for dy in (0, 1):
+                for dx in (0, 1):
+                    ok = tot = 0
+                    for y in range(by0 + dy, by1 - 1, 2):
+                        for x in range(bx0 + dx, bx1 - 1, 2):
+                            a = cpx[x, y]
+                            tot += 3
+                            ok += ((cpx[x + 1, y] == a) + (cpx[x, y + 1] == a)
+                                   + (cpx[x + 1, y + 1] == a))
+                    score = ok / tot if tot else 0.0
+                    if score > best:
+                        best, bdx, bdy = score, dx, dy
+            nw = max(1, (bx1 - (bx0 + bdx) + 1) // 2)
+            nh = max(1, (by1 - (by0 + bdy) + 1) // 2)
+            sprite = Image.new("RGBA", (nw, nh), (0, 0, 0, 0))
+            spx = sprite.load()
+            for j in range(nh):
+                for i in range(nw):
+                    spx[i, j] = cpx[bx0 + bdx + 2 * i, by0 + bdy + 2 * j]
         label = lab[fr]
         fname = f"{fr:03d}_{slug(label)}.png"
         sprite.save(os.path.join(d, fname))

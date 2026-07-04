@@ -223,8 +223,8 @@
    "sheet": "BUILDING",
    "index": 0,
    "label": "Stockade",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -232,8 +232,8 @@
    "sheet": "BUILDING",
    "index": 1,
    "label": "Fort",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -241,8 +241,8 @@
    "sheet": "BUILDING",
    "index": 2,
    "label": "Fortress",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -250,8 +250,8 @@
    "sheet": "BUILDING",
    "index": 3,
    "label": "Armory",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -259,8 +259,8 @@
    "sheet": "BUILDING",
    "index": 4,
    "label": "Magazine",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -268,8 +268,8 @@
    "sheet": "BUILDING",
    "index": 5,
    "label": "Arsenal",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -277,8 +277,8 @@
    "sheet": "BUILDING",
    "index": 6,
    "label": "Docks",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -286,8 +286,8 @@
    "sheet": "BUILDING",
    "index": 7,
    "label": "Drydock",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -295,8 +295,8 @@
    "sheet": "BUILDING",
    "index": 8,
    "label": "Shipyard",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -304,8 +304,8 @@
    "sheet": "BUILDING",
    "index": 9,
    "label": "Town Hall",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -313,8 +313,8 @@
    "sheet": "BUILDING",
    "index": 10,
    "label": "Town Hall",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": true
   },
   {
@@ -322,8 +322,8 @@
    "sheet": "BUILDING",
    "index": 11,
    "label": "Town Hall",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": true
   },
   {
@@ -331,8 +331,8 @@
    "sheet": "BUILDING",
    "index": 12,
    "label": "Schoolhouse",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -340,8 +340,8 @@
    "sheet": "BUILDING",
    "index": 13,
    "label": "College",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -349,8 +349,8 @@
    "sheet": "BUILDING",
    "index": 14,
    "label": "University",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -358,8 +358,8 @@
    "sheet": "BUILDING",
    "index": 15,
    "label": "Warehouse",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -367,8 +367,8 @@
    "sheet": "BUILDING",
    "index": 16,
    "label": "Warehouse Expansion",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -376,8 +376,8 @@
    "sheet": "BUILDING",
    "index": 17,
    "label": "Stable",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -385,8 +385,8 @@
    "sheet": "BUILDING",
    "index": 18,
    "label": "Custom House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -394,8 +394,8 @@
    "sheet": "BUILDING",
    "index": 19,
    "label": "Printing Press",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -403,8 +403,8 @@
    "sheet": "BUILDING",
    "index": 20,
    "label": "Newspaper",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -412,8 +412,8 @@
    "sheet": "BUILDING",
    "index": 21,
    "label": "Weaver's House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -421,8 +421,8 @@
    "sheet": "BUILDING",
    "index": 22,
    "label": "Weaver's Shop",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -430,8 +430,8 @@
    "sheet": "BUILDING",
    "index": 23,
    "label": "Textile Mill",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -439,8 +439,8 @@
    "sheet": "BUILDING",
    "index": 24,
    "label": "Tobacconist's House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -448,8 +448,8 @@
    "sheet": "BUILDING",
    "index": 25,
    "label": "Tobacconist's Shop",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -457,8 +457,8 @@
    "sheet": "BUILDING",
    "index": 26,
    "label": "Cigar Factory",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -466,8 +466,8 @@
    "sheet": "BUILDING",
    "index": 27,
    "label": "Rum Distiller's House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -475,8 +475,8 @@
    "sheet": "BUILDING",
    "index": 28,
    "label": "Rum Distillery",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -484,8 +484,8 @@
    "sheet": "BUILDING",
    "index": 29,
    "label": "Rum Factory",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -493,8 +493,8 @@
    "sheet": "BUILDING",
    "index": 30,
    "label": "Capitol",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": true
   },
   {
@@ -502,8 +502,8 @@
    "sheet": "BUILDING",
    "index": 31,
    "label": "Capitol Expansion",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": true
   },
   {
@@ -511,8 +511,8 @@
    "sheet": "BUILDING",
    "index": 32,
    "label": "Fur Trader's House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -520,8 +520,8 @@
    "sheet": "BUILDING",
    "index": 33,
    "label": "Fur Trading Post",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -529,8 +529,8 @@
    "sheet": "BUILDING",
    "index": 34,
    "label": "Fur Factory",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -538,8 +538,8 @@
    "sheet": "BUILDING",
    "index": 35,
    "label": "Carpenter's Shop",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -547,8 +547,8 @@
    "sheet": "BUILDING",
    "index": 36,
    "label": "Lumber Mill",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -556,8 +556,8 @@
    "sheet": "BUILDING",
    "index": 37,
    "label": "Church",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -565,8 +565,8 @@
    "sheet": "BUILDING",
    "index": 38,
    "label": "Cathedral",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -574,8 +574,8 @@
    "sheet": "BUILDING",
    "index": 39,
    "label": "Blacksmith's House",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -583,8 +583,8 @@
    "sheet": "BUILDING",
    "index": 40,
    "label": "Blacksmith's Shop",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -592,8 +592,8 @@
    "sheet": "BUILDING",
    "index": 41,
    "label": "Iron Works",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -601,8 +601,8 @@
    "sheet": "BUILDING",
    "index": 42,
    "label": "building #42",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -610,8 +610,8 @@
    "sheet": "BUILDING",
    "index": 43,
    "label": "building #43",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -619,8 +619,8 @@
    "sheet": "BUILDING",
    "index": 44,
    "label": "Building 44",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -628,8 +628,8 @@
    "sheet": "BUILDING",
    "index": 45,
    "label": "Building 45",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -637,8 +637,8 @@
    "sheet": "BUILDING",
    "index": 46,
    "label": "Building 46",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -646,8 +646,8 @@
    "sheet": "BUILDING",
    "index": 47,
    "label": "Building 47",
-   "w": 28,
-   "h": 24,
+   "w": 56,
+   "h": 42,
    "blank": false
   },
   {
@@ -2365,7 +2365,7 @@
    "sheet": "ICONS",
    "index": 24,
    "label": "Tobacco",
-   "w": 10,
+   "w": 11,
    "h": 18,
    "blank": false
   },
@@ -2383,7 +2383,7 @@
    "sheet": "ICONS",
    "index": 26,
    "label": "Furs",
-   "w": 14,
+   "w": 13,
    "h": 15,
    "blank": false
   },
@@ -2429,7 +2429,7 @@
    "index": 31,
    "label": "Rum",
    "w": 8,
-   "h": 14,
+   "h": 13,
    "blank": false
   },
   {
@@ -2447,7 +2447,7 @@
    "index": 33,
    "label": "Cloth",
    "w": 9,
-   "h": 14,
+   "h": 13,
    "blank": false
   },
   {
@@ -2464,7 +2464,7 @@
    "sheet": "ICONS",
    "index": 35,
    "label": "Trade Goods",
-   "w": 10,
+   "w": 11,
    "h": 9,
    "blank": false
   },
@@ -2474,7 +2474,7 @@
    "index": 36,
    "label": "Tools",
    "w": 12,
-   "h": 10,
+   "h": 11,
    "blank": false
   },
   {
@@ -2509,7 +2509,7 @@
    "sheet": "ICONS",
    "index": 40,
    "label": "icon 40 (0x28)",
-   "w": 10,
+   "w": 11,
    "h": 18,
    "blank": false
   },
@@ -2527,8 +2527,8 @@
    "sheet": "ICONS",
    "index": 42,
    "label": "icon 42 (0x2A)",
-   "w": 14,
-   "h": 16,
+   "w": 13,
+   "h": 17,
    "blank": false
   },
   {
@@ -2573,7 +2573,7 @@
    "index": 47,
    "label": "icon 47 (0x2F)",
    "w": 8,
-   "h": 14,
+   "h": 13,
    "blank": false
   },
   {
@@ -2591,7 +2591,7 @@
    "index": 49,
    "label": "icon 49 (0x31)",
    "w": 9,
-   "h": 14,
+   "h": 13,
    "blank": false
   },
   {
@@ -2608,7 +2608,7 @@
    "sheet": "ICONS",
    "index": 51,
    "label": "icon 51 (0x33)",
-   "w": 10,
+   "w": 11,
    "h": 9,
    "blank": false
   },
@@ -2618,7 +2618,7 @@
    "index": 52,
    "label": "icon 52 (0x34)",
    "w": 12,
-   "h": 10,
+   "h": 11,
    "blank": false
   },
   {
@@ -2662,7 +2662,7 @@
    "sheet": "ICONS",
    "index": 57,
    "label": "icon 57 (0x39)",
-   "w": 10,
+   "w": 11,
    "h": 18,
    "blank": false
   },
@@ -3211,7 +3211,7 @@
    "sheet": "ICONS",
    "index": 118,
    "label": "icon 118 (0x76)",
-   "w": 8,
+   "w": 7,
    "h": 6,
    "blank": false
   },
@@ -3220,7 +3220,7 @@
    "sheet": "ICONS",
    "index": 119,
    "label": "icon 119 (0x77)",
-   "w": 8,
+   "w": 7,
    "h": 6,
    "blank": false
   },
@@ -3229,7 +3229,7 @@
    "sheet": "ICONS",
    "index": 120,
    "label": "icon 120 (0x78)",
-   "w": 8,
+   "w": 7,
    "h": 6,
    "blank": false
   },
@@ -3238,7 +3238,7 @@
    "sheet": "ICONS",
    "index": 121,
    "label": "icon 121 (0x79)",
-   "w": 8,
+   "w": 7,
    "h": 6,
    "blank": false
   },
@@ -3257,7 +3257,7 @@
    "index": 123,
    "label": "US flag (unverified)",
    "w": 14,
-   "h": 14,
+   "h": 13,
    "blank": false
   },
   {

@@ -1442,7 +1442,7 @@ let SCR={id:'untitled',name:'Untitled',background:'COLONY',size:[320,200],widget
 // ICONS is the FULL ICONS.SS (131 frames at native size; per-frame rects lazy-loaded from
 // icons.json, frame = ssdec index = EXE sprite id - 1). UNITS/UNIT = the 24 native 16x16 unit crops.
 const SHEETS={
-  BUILDING:{url:'/assets/tileset/buildings.png',cw:28,ch:24,n:48},
+  BUILDING:{url:'/assets/tileset/buildings.png',cw:56,ch:42,n:48},
   UNIT:{url:'/assets/tileset/units.png',cw:16,ch:16,n:24},
   UNITS:{url:'/assets/tileset/units.png',cw:16,ch:16,n:24},
   ICONS:{url:'/assets/tileset/icons.png',rectsUrl:'/assets/tileset/icons.json',n:131}};

@@ -1,8 +1,8 @@
 {
-  "cell_w": 28,
-  "cell_h": 24,
+  "cell_w": 56,
+  "cell_h": 42,
   "count": 48,
   "drawn": 44,
   "source": "docs/atlas/sprites/atlas_BUILDING.png",
-  "note": "strip cell N = @BUILDING def_id N (0-based; cell 0 = Stockade, USER-VERIFIED). EXE draws def_id+1 in EXE-sheet space; the ssdec decode is off-by-one from it so they cancel (spec/ui/colony_screen.md \u00a70.2)"
+  "note": "strip cell N = @BUILDING def_id N (0-based; cell 0 = Stockade, USER-VERIFIED). EXE draws def_id+1 in EXE-sheet space; the ssdec decode is off-by-one from it so they cancel (spec/ui/colony_screen.md 0.2). Cells are the FULL 56x42 native 1x window (atlas_BUILDING is NOT 2x); the in-window sprite position is the frame's own draw offset, so blit windows at the raw plot (x,y) with no extra +8 (capture-calibrated vs docs/screens/colony_live_1505.png)."
 }
