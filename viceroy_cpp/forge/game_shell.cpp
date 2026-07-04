@@ -158,11 +158,21 @@ bool GameShell::try_step(int ui, int dx, int dy) {
     int id = g_world.terrain_id(nx, ny);
     bool water = (id == 25 || id == 26);
     bool naval = vc::sim::unit_stats(g_active_rules, u.type).move_class == 99;
-    if (water != naval) return false;
-    if (vc::sim::unit_at(g_world, nx, ny, ui) >= 0) return false;
+    int occ = vc::sim::unit_at(g_world, nx, ny, ui);
+    if (water != naval) {
+        // a land unit may BOARD an own ship on adjacent water (goes aboard);
+        // disembarking (land unit at sea stepping ashore) passes the check
+        bool board = !naval && water && occ >= 0 &&
+                     g_world.units[occ].owner == u.owner &&
+                     vc::sim::unit_stats(g_active_rules,
+                                         g_world.units[occ].type).move_class == 99;
+        if (!board) return false;
+        occ = -1;                              // stacking aboard is allowed
+    }
+    if (occ >= 0) return false;
     int base = id >= 0 && id < vc::sim::NTERRAIN
                    ? g_active_rules.terrain_move[id % vc::sim::NTERRAIN] : 1;
-    u.x = nx; u.y = ny;
+    vc::sim::move_unit(g_world, g_active_rules, ui, nx, ny);
     u.moves_left -= naval ? 3 : base * 3;
     if (u.moves_left < 0) u.moves_left = 0;
     return true;
@@ -919,7 +929,11 @@ void GameShell::compose_map(vc::Surface& scr, bool flash) {
         int px, py;
         if (!u.alive || u.sail != 0 || u.in_europe) continue;   // off-map
         if (!on_screen(u.x, u.y, px, py)) continue;
-        if (u.type >= 0 && u.type < A.units.nframes)
+        // land units on water are aboard a ship: the hull is what shows
+        bool naval = vc::sim::unit_stats(g_active_rules, u.type).move_class == 99;
+        int tid = g_world.terrain_id(u.x, u.y);
+        bool aboard = !naval && (tid == 25 || tid == 26);
+        if (!aboard && u.type >= 0 && u.type < A.units.nframes)
             scr.blit_frame(A.units.frames[u.type], px, py);
         if (i == sel_ && flash) scr.rect_outline(px, py, 16, 16, 15);
     }
