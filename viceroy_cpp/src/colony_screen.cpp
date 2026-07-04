@@ -21,16 +21,6 @@ static const int PLOT[15][2] = {
 // Occupied-plot frame = def_id in bundle space with def_id 0 -> 16 (func_026DD4
 // @0x026E4E, live-verified colony_screen.md §0.2) -- the old TYPE_FRAME hand-map
 // is superseded by that direct rule.
-// WARNING (2026-06-24): this TYPE_PLOT table is a PLACEHOLDER, not the real placement.
-// The actual which-building-in-which-plot is RNG-driven (func_025D34: random_int within
-// 5 category plot-ranges, seeded per colony) -- see decode §12. This static arrangement
-// is NOT faithful; rendering correct placement requires porting the RNG+seed+frame table.
-static const signed char TYPE_PLOT[42] = {
-    7,7,7, 14,14,14, -1,-1,-1, 0,0,0, 12,12,12, 2,-1,10, -1,-1,-1,
-    4,4,4, 5,5,5, 6,6,6, 1,1, 8,8,8, 3,3, 11,11, 9,9,9,
-};
-// Empty-plot "base tree" / forest sprites (SPRITE_CATALOG.md: frames 42/43/44 = empty land lot).
-static const int TREE_FRAME[3] = {42, 43, 44};
 
 constexpr int PIK_Y = 128;                 // COLONY.PIK bottom band (320x72 → y=200-72).
 // Stockpile bar: 16 cells, pitch 19, start x=1, icon-Y 179 (decode §6). Icon = good+0x16
@@ -233,6 +223,58 @@ constexpr int SCENE_X = 0, SCENE_Y = 8, SCENE_W = 199, SCENE_H = 120;
 // Plot → category map (func_025D34 flatten of counts [7,4,2,1,1] / bases [0,7,11,13,14]):
 // 0x8D62 = [0×7, 1×4, 2×2, 3, 4]. Byte-verified (agent trace 2026-06-24, flatten @0x025DA3).
 static const int PLOT_CAT[15] = {0,0,0,0,0,0,0, 1,1,1,1, 2,2, 3, 4};
+
+// func_025D34 building placement (colony_screen.md §12). Byte-verified (B):
+// the category-per-plot table above, a per-colony-seeded within-category
+// shuffle assigning each upgrade family one plot in its category's range,
+// then the present-gate 0x8E82[plot] = built def-id (later chain members
+// overwrite, so the highest built upgrade shows). The 15 families mirror the
+// engine-coded chain init func_07464C (data_extracted/engine/effects.json
+// building_chains) grouped by the @BUILDING `size` category; category 0 has
+// seven plots for eight candidates, so Stable+Custom House share a slot and
+// Capitol rides the Town Hall slot (RECONSTRUCTED merges). The exact RNG of
+// 0x181F:0xD62/0x4D4 is not reproducible from the spec text (17k candidate
+// streams checked against the colony_jamestown.bin oracle, no byte-match),
+// so the LCG (MSC) + seed = (y<<8)|x are RECONSTRUCTED: stable per colony,
+// category-true, upgrades replace in place -- the documented behavior.
+static void building_placement(uint64_t built_mask, int cx, int cy, int out[15]) {
+    static const struct { uint8_t cat; int8_t members[5]; } SLOT[15] = {
+        {0, {17, 18, -1, -1, -1}}, {0, {19, 20, -1, -1, -1}},
+        {0, {21, 22, 23, -1, -1}}, {0, {24, 25, 26, -1, -1}},
+        {0, {27, 28, 29, -1, -1}}, {0, {32, 33, 34, -1, -1}},
+        {0, {39, 40, 41, -1, -1}},
+        {1, {3, 4, 5, -1, -1}},    {1, {12, 13, 14, -1, -1}},
+        {1, {15, 16, -1, -1, -1}}, {1, {35, 36, -1, -1, -1}},
+        {2, {9, 10, 11, 30, 31}},  {2, {37, 38, -1, -1, -1}},
+        {3, {0, 1, 2, -1, -1}},
+        {4, {6, 7, 8, -1, -1}},
+    };
+    static const int START[5] = {0, 7, 11, 13, 14};
+    uint32_t s = (uint32_t)(uint16_t)(((cy & 0xFF) << 8) | (cx & 0xFF));
+    auto rnd = [&]() { s = s * 214013u + 2531011u; return (s >> 16) & 0x7FFF; };
+    bool used[15] = {};
+    int free_cnt[5] = {7, 4, 2, 1, 1};
+    int plot_of[15];
+    for (int sl = 0; sl < 15; ++sl) {
+        int cat = SLOT[sl].cat;
+        int pick = free_cnt[cat] > 1 ? (int)(rnd() % (uint32_t)free_cnt[cat]) : 0;
+        int p = START[cat];
+        for (;; ++p)
+            if (!used[p]) {
+                if (pick == 0) break;
+                --pick;
+            }
+        used[p] = true;
+        --free_cnt[cat];
+        plot_of[sl] = p;
+    }
+    for (int p = 0; p < 15; ++p) out[p] = -1;
+    for (int sl = 0; sl < 15; ++sl)
+        for (int m = 0; m < 5; ++m) {
+            int d = SLOT[sl].members[m];
+            if (d >= 0 && ((built_mask >> d) & 1ull)) out[plot_of[sl]] = d;
+        }
+}
 // Empty / not-yet-built plot sprite per category = BUILDING frame DS:0x260[cat] − 1 =
 // [44,43,42,—,45] (tree/grove decorations; spec/ui/colony_screen.md §0.2 plot table +
 // empty-plot painter func_026FF2: "frame = DS:0x260[category] − 1", table [45,44,43,0,46],
@@ -254,27 +296,24 @@ void render_colony_screen(Surface& scr, const IndexedPng& backdrop,
     tile_fill(scr, parch, SCENE_X, SCENE_Y, SCENE_W, SCENE_H);
 
     // --- Scene: 15 plots, each drawing its built building (type-specific BUILDING.SS sprite via
-    // func_026DD4) or, if empty, its CATEGORY cleared-lot frame (45/44/43/–/46). PLACEMENT is the
-    // byte-computed result of func_025D34 for THIS colony (20,25): the MSC-LCG claim permutation
-    // (seed=(uint16)((y<<8)+x)=0x1914) + the +0x84 produced-good pass gives slot→good 0x8E82 =
-    // [27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1]. (Agent-verified; the general algorithm is
-    // documented — re-run it if cx/cy or the base seed [0x8D80] change.) ---
+    // func_026DD4) or, if empty, its CATEGORY cleared-lot frame (45/44/43/–/46). PLACEMENT is
+    // the func_025D34 pass for THIS colony (see building_placement above): per-colony seeded
+    // within-category shuffle + the present-gate 0x8E82. ---
     // Occupied-plot frame = def_id in bundle space (EXE draws def_id+1 in EXE-sheet
     // space; the ssdec decode cancels it -- func_026DD4 @0x026E4E, live-verified in
     // spec/ui/colony_screen.md §0.2), with the byte-read special case def_id 0 → 16.
-    static const signed char SLOT_GOOD[15] = {27,-1,24,21,-1,-1,32,39,-1,35,-1,-1,9,-1,-1};
+    int placed[15];
+    building_placement(c.built_mask, cx, cy, placed);
     auto def_frame = [](int def_id) { return def_id == 0 ? 16 : def_id; };
     for (int slot = 0; slot < 15; ++slot) {
-        int good = (cx == 20 && cy == 25) ? SLOT_GOOD[slot] : -2;    // computed layout for the default founding
         int frame;
-        if (good >= 0) frame = def_frame(good);                      // built: frame = def_id
-        else if (good == -2) {                                       // other colony: fall back to mask+plot
-            int bf = -1;
-            for (int t = 0; t < 42; ++t)
-                if (TYPE_PLOT[t] == slot && ((c.built_mask >> t) & 1ull)) bf = def_frame(t);
-            if (bf >= 0) frame = bf;
-            else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }
-        } else { int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]]; if (ef <= 0) continue; frame = ef; }  // cleared lot
+        if (placed[slot] >= 0) {
+            frame = def_frame(placed[slot]);                        // built: frame = def_id
+        } else {
+            int ef = EMPTY_LOT_FRAME[PLOT_CAT[slot]];               // cleared lot
+            if (ef <= 0) continue;                                  // category 3 draws none
+            frame = ef;
+        }
         // The bundle cells are the FULL 56x42 native windows whose in-window sprite
         // position bakes the frame's own draw offset -- blit at the raw plot-table
         // (x, y) (PLOT stores table_y-8, so +8 restores it); capture-calibrated:
