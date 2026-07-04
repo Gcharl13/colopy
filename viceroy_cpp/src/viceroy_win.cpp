@@ -112,7 +112,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
                 case VK_TAB: k = forge::GK_TAB; break;
                 case VK_SPACE: k = ' '; break;
                 case VK_F11:
-                    g_shell.status = g_shell.save("viceroy_save.txt");
+                    g_shell.status = g_shell.save("viceroy_save.json");
                     break;
                 case VK_OEM_MINUS: k = '-'; break;
                 default:

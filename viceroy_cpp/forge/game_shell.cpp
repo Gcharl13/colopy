@@ -7,6 +7,7 @@
 #include "engine.hpp"          // EngineCtx, resolve_binding, job_name,
                                // colony_compute_production
 #include "drydock_api.hpp"     // drydock_store
+#include "savegame.hpp"        // parse_game / LoadedGame (Load Game)
 #include "../drydock/core/store.hpp"
 #include "colony_screen.hpp"
 #include "mapview.hpp"
@@ -16,6 +17,7 @@
 #include "sim/market.hpp"
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 
 using drydock::Record;
 using drydock::Store;
@@ -58,6 +60,29 @@ bool GameShell::active() const { return g_game_active; }
 
 std::string GameShell::save(const std::string& path) {
     return save_game_to(path) ? "saved: " + path : "save failed: " + path;
+}
+
+std::string GameShell::load(const std::string& path) {
+    try {   // the /api/game/load path (same as the editor's File > Load Game)
+        forge::JsonValue root = forge::json_parse_file(path);
+        forge::LoadedGame lg = forge::parse_game(forge::json_dump(root));
+        g_game = lg.g;
+        g_world = lg.w;
+        g_colony_xy.clear();
+        if (const forge::JsonValue* cxy = root.find("colony_xy"))
+            for (const auto& e : cxy->arr)
+                if (e.arr.size() >= 2)
+                    g_colony_xy.push_back({(int)e.arr[0].num, (int)e.arr[1].num});
+        g_engine_extra = forge::EngineExtra{};
+        read_extra(root.find("engine_extra"), g_engine_extra);
+        g_game_active = true;
+        vc::sim::refresh_moves(g_world, g_active_rules);
+        sel_ = next_own_unit(-1);
+        if (sel_ >= 0) center_on(g_world.units[sel_].x, g_world.units[sel_].y);
+        return "game loaded";
+    } catch (const std::exception& e) {
+        return std::string("load failed: ") + e.what();
+    }
 }
 
 void GameShell::game_log(const std::string& s) {
@@ -447,11 +472,301 @@ void GameShell::compose_map(vc::Surface& scr, bool flash) {
     }
 }
 
+// ----------------------------------------------------- boot flow (menus.md)
+// Title menu over OPENING.PIK -> difficulty picker (DIFFICUL.PIK, byte-cited
+// 105c+23/96g+7 grid, cell 67x89) -> nation picker (NATIONS.PIK, 99c+112/
+// 91r+13 grid, cell 87x81) -> the departure scene (LEVN0001..4 + @BUILD1).
+// Item text is the verbatim GAME.TXT @BEGINMENU record; names come from
+// NAMES @DIFFICULTY/@COUNTRY; prompts from LABELS @MISC. Plaque colors are
+// the byte-cited design RGBs (menus.md §3).
+
+static std::vector<std::string> beginmenu_lines() {
+    std::string text = game_message_text("@BEGINMENU");
+    std::vector<std::string> lines;
+    std::string cur;
+    for (char c : text) {
+        if (c == '\r') continue;
+        if (c == '\n') { lines.push_back(cur); cur.clear(); }
+        else cur += c;
+    }
+    if (!cur.empty()) lines.push_back(cur);
+    if (!lines.empty()) {          // title row: fill the %STRING version slots
+        std::string& t = lines[0];
+        auto sub = [&](const char* ph, const char* v) {
+            size_t p = t.find(ph);
+            if (p != std::string::npos) t.replace(p, strlen(ph), v);
+        };
+        sub("%STRING0", "Forge");
+        sub("%STRING1", "export");
+        // strip the {highlight} braces; the plaque draws the row as a bar
+        std::string flat;
+        for (char c : t) if (c != '{' && c != '}') flat += c;
+        t = flat;
+    }
+    return lines;
+}
+
+static std::string first_field(const std::string& s) {   // "England,  12" -> England
+    size_t comma = s.find(',');
+    return comma == std::string::npos ? s : s.substr(0, comma);
+}
+
+static std::string misc_at(int i) {
+    const std::vector<std::string>& m = labels_section("MISC");
+    return i >= 0 && i < (int)m.size() ? m[i] : "";
+}
+
+// byte-cited picker grids (menus.md §7) --------------------------------------
+static void diff_cell(int row, int& x, int& y) {          // 5 cells, (0,0) skipped
+    int m = row + 1;
+    x = (m % 3) * 105 + 23;
+    y = (m / 3) * 96 + 7;
+}
+static void nation_cell(int row, int& x, int& y) {        // 2x2
+    x = (row % 2) * 99 + 112;
+    y = (row / 2) * 91 + 13;
+}
+
+void GameShell::boot_start_game() {
+    // "Start a Game in NEW WORLD" = a generated map; AMERICA = the AMER2 map.
+    game_new(pick_nation_, pick_diff_, /*random_map=*/!world_america_);
+    vc::sim::refresh_moves(g_world, g_active_rules);
+    g_game_active = true;
+    sel_ = next_own_unit(-1);
+    if (sel_ >= 0) center_on(g_world.units[sel_].x, g_world.units[sel_].y);
+    game_log("A new world awaits.");
+}
+
+void GameShell::key_boot(int k) {
+    switch (boot_) {
+        case BOOT_MENU: {
+            std::vector<std::string> lines = beginmenu_lines();
+            int items = (int)lines.size() - 1;             // row 0 = title
+            if (items < 1) { new_game(); return; }
+            if (k == GK_UP && boot_sel_ > 0) --boot_sel_;
+            if (k == GK_DOWN && boot_sel_ + 1 < items) ++boot_sel_;
+            if (k >= '1' && k < '1' + items) boot_sel_ = k - '1';
+            if (k == GK_ESC) quit_requested = true;
+            if (k == GK_ENTER || k == ' ') {
+                switch (boot_sel_) {
+                    case 0: world_america_ = false; boot_ = BOOT_DIFF; break;
+                    case 1: world_america_ = true;  boot_ = BOOT_DIFF; break;
+                    case 3: status = load("viceroy_save.json"); break;
+                    default: status = "not in this build"; break;
+                }
+            }
+            break;
+        }
+        case BOOT_DIFF:
+            if (k == GK_LEFT && pick_diff_ > 0) --pick_diff_;
+            if (k == GK_RIGHT && pick_diff_ < 4) ++pick_diff_;
+            if (k == GK_UP && pick_diff_ >= 2) pick_diff_ -= 2;   // grid feel:
+            if (k == GK_DOWN && pick_diff_ <= 2) pick_diff_ += 2; // rough rows
+            if (pick_diff_ < 0) pick_diff_ = 0;
+            if (pick_diff_ > 4) pick_diff_ = 4;
+            if (k == GK_ESC) boot_ = BOOT_MENU;
+            if (k == GK_ENTER || k == ' ') boot_ = BOOT_NATION;
+            break;
+        case BOOT_NATION:
+            if (k == GK_LEFT || k == GK_RIGHT) pick_nation_ ^= 1;
+            if (k == GK_UP || k == GK_DOWN) pick_nation_ ^= 2;
+            if (k == GK_ESC) boot_ = BOOT_DIFF;
+            if (k == GK_ENTER || k == ' ') { boot_ = BOOT_SCENE; boot_sel_ = 0; }
+            break;
+        case BOOT_SCENE:
+            if (k == GK_ESC) boot_ = BOOT_NATION;
+            else if (k) boot_start_game();
+            break;
+    }
+}
+
+void GameShell::click_boot(int x, int y, int button) {
+    (void)button;
+    switch (boot_) {
+        case BOOT_MENU: {
+            // rows of the plaque (same layout math as compose_boot)
+            std::vector<std::string> lines = beginmenu_lines();
+            int items = (int)lines.size() - 1;
+            int by = 91, row_h = 9;
+            int row = (y - (by + row_h + 2)) / row_h;
+            if (row >= 0 && row < items) {
+                boot_sel_ = row;
+                key_boot(GK_ENTER);
+            }
+            break;
+        }
+        case BOOT_DIFF: {
+            for (int r = 0; r < 5; ++r) {
+                int cx, cy;
+                diff_cell(r, cx, cy);
+                if (x >= cx && x < cx + 67 && y >= cy && y < cy + 89) {
+                    pick_diff_ = r;
+                    return;
+                }
+            }
+            boot_ = BOOT_NATION;                 // "Click Here When Finished"
+            break;
+        }
+        case BOOT_NATION: {
+            for (int r = 0; r < 4; ++r) {
+                int cx, cy;
+                nation_cell(r, cx, cy);
+                if (x >= cx && x < cx + 87 && y >= cy && y < cy + 81) {
+                    pick_nation_ = r;
+                    return;
+                }
+            }
+            boot_ = BOOT_SCENE;
+            boot_sel_ = 0;
+            break;
+        }
+        case BOOT_SCENE:
+            boot_start_game();
+            break;
+    }
+}
+
+void GameShell::compose_boot(vc::Surface& scr) {
+    vc::NativeAssets& A = game_assets().nat;
+    scr.clear(0);
+    // the byte-cited plaque design RGBs (menus.md §3)
+    uint8_t outline = vc::nearest_pal_index(A.pal, 20, 12, 6);
+    uint8_t selbar  = vc::nearest_pal_index(A.pal, 56, 32, 16);
+    uint8_t green   = vc::nearest_pal_index(A.pal, 82, 138, 49);
+    uint8_t gold    = vc::nearest_pal_index(A.pal, 227, 170, 40);
+
+    if (boot_ == BOOT_MENU) {
+        // OPENMENU.PIK is the full-screen menu backdrop (menus.md §2/§4;
+        // OPENING.PIK is the 960-wide scrolling title panorama behind it).
+        if (const vc::IndexedPng* bg = atlas_file("pik/OPENMENU.png"))
+            scr.blit_region(*bg, 0, 0, bg->w, bg->h, 0, 0);
+        else if (const vc::IndexedPng* op = atlas_file("pik/OPENING.png"))
+            scr.blit_region(*op, 0, 0, 320, op->h, 0, 0);
+        // @BEGINMENU plaque: centered x, y=91, width >= 160 (menus.md §2/§4)
+        std::vector<std::string> lines = beginmenu_lines();
+        int items = (int)lines.size() - 1;
+        int row_h = 9, pad = 4;
+        int w = 160;
+        for (const std::string& l : lines) {
+            int tw = scr.text_width(A.font, l) + 10;
+            if (tw > w) w = tw;
+        }
+        int h = row_h * (items + 1) + pad * 2;
+        int bx = (vc::Surface::W - w) / 2, by = 91;
+        // wood fill from the WOODPANL grain + the outline color
+        if (A.woodtile.nframes > 0) {
+            const vc::Frame& f = A.woodtile.frames[0];
+            for (int yy = 0; yy < h; ++yy)
+                for (int xx = 0; xx < w; ++xx)
+                    scr.put(bx + xx, by + yy,
+                            f.px[(size_t)(yy % f.h) * f.w + (xx % f.w)]);
+        }
+        scr.rect_outline(bx, by, w, h, outline);
+        // title row: a darker bar, green text
+        scr.fill_rect(bx + 1, by + 1, w - 2, row_h, selbar);
+        scr.draw_text(A.font, bx + 4, by + 2, lines.empty() ? "" : lines[0], green);
+        for (int i = 0; i < items; ++i) {
+            int ry = by + row_h * (i + 1) + 2;
+            if (i == boot_sel_) {
+                scr.fill_rect(bx + 1, ry - 1, w - 2, row_h, selbar);
+                scr.draw_text(A.font, bx + 4, ry, lines[i + 1], gold);
+            } else {
+                scr.draw_text(A.font, bx + 4, ry, lines[i + 1], green);
+            }
+        }
+        return;
+    }
+    if (boot_ == BOOT_DIFF) {
+        if (const vc::IndexedPng* bg = atlas_file("pik/DIFFICUL.png"))
+            scr.blit_region(*bg, 0, 0, bg->w, bg->h, 0, 0);
+        // prompt (frame-measured position; strings = LABELS @MISC 162/163/161)
+        scr.draw_text(A.font, 24, 10, misc_at(162), green);
+        scr.draw_text(A.font, 16, 19, misc_at(163), green);
+        // the finish caption fits the left margin column in FONTTINY; our
+        // wider stand-in font wraps it to two lines there
+        scr.draw_text(A.font, 4, 56, "(Click Here", green);
+        scr.draw_text(A.font, 4, 65, "When Finished)", green);
+        // selection outline (67x89, per-row color bytes {0xA,9,0xE,0xD,0xC})
+        static const uint8_t SEL[5] = {0x0A, 0x09, 0x0E, 0x0D, 0x0C};
+        const std::vector<std::string>& names = labels_section("DIFFICULTY");
+        int cx, cy;
+        diff_cell(pick_diff_, cx, cy);
+        scr.rect_outline(cx, cy, 67, 89, SEL[pick_diff_]);
+        std::string nm = pick_diff_ < (int)names.size() ? names[pick_diff_] : "";
+        std::string rank = misc_at(165 + pick_diff_);     // Easiest..Toughest
+        int tw = scr.text_width(A.font, nm);
+        scr.draw_text(A.font, cx + (67 - tw) / 2, cy + 2, nm, gold);
+        tw = scr.text_width(A.font, rank);
+        scr.draw_text(A.font, cx + (67 - tw) / 2, cy + 80, rank, gold);
+        return;
+    }
+    if (boot_ == BOOT_NATION) {
+        if (const vc::IndexedPng* bg = atlas_file("pik/NATIONS.png"))
+            scr.blit_region(*bg, 0, 0, bg->w, bg->h, 0, 0);
+        scr.draw_text(A.font, 20, 24, misc_at(170), green);      // Select
+        scr.draw_text(A.font, 8, 33, misc_at(171), green);       // European Power
+        scr.draw_text(A.font, 4, 186, "(" + misc_at(161) + ")", green);
+        // selection outline 87x81; the flag byte color is per-nation
+        // ([bx+0x848], value not literalized) -- approximated from each flag's
+        // dominant color, R-tier.
+        const uint8_t SEL[4] = {vc::nearest_pal_index(A.pal, 200, 40, 40),
+                                vc::nearest_pal_index(A.pal, 70, 70, 200),
+                                vc::nearest_pal_index(A.pal, 220, 180, 40),
+                                vc::nearest_pal_index(A.pal, 230, 120, 40)};
+        const std::vector<std::string>& country = labels_section("COUNTRY");
+        int cx, cy;
+        nation_cell(pick_nation_, cx, cy);
+        scr.rect_outline(cx, cy, 87, 81, SEL[pick_nation_ & 3]);
+        std::string nm = pick_nation_ < (int)country.size()
+                             ? first_field(country[pick_nation_]) : "";
+        std::string style = misc_at(173 + pick_nation_);   // Immigration..Trade
+        int tw = scr.text_width(A.font, nm);
+        scr.draw_text(A.font, cx + (87 - tw) / 2, cy - 8, nm, gold);
+        tw = scr.text_width(A.font, style);
+        scr.draw_text(A.font, cx + (87 - tw) / 2, cy + 82, style, gold);
+        return;
+    }
+    // BOOT_SCENE: the departure harbor (LEVN0001..4 slideshow) + @BUILD1 in a
+    // parchment band, exactly the capture's composition.
+    static const char* LEVN[4] = {"LEVN0001", "LEVN0002", "LEVN0003", "LEVN0004"};
+    int frame = (boot_sel_ / 24) % 4;          // boot_sel_ reused as a tick
+    ++boot_sel_;
+    if (const vc::IndexedPng* bg =
+            atlas_file(std::string("pik/") + LEVN[frame] + ".png"))
+        scr.blit_region(*bg, 0, 0, bg->w, bg->h, 0, 0);
+    std::string line = game_message_text("@BUILD1");
+    std::string flat;
+    for (char c : line) if (c != '^' && c != '\n') flat += c;
+    uint8_t parch = vc::nearest_pal_index(A.pal, 235, 219, 162);
+    uint8_t ink = vc::nearest_pal_index(A.pal, 40, 24, 8);
+    // wrap to the band (the stand-in font is wider than FONTTINY)
+    std::vector<std::string> rows;
+    std::string cur;
+    for (size_t i = 0; i < flat.size(); ++i) {
+        cur += flat[i];
+        if (scr.text_width(A.font, cur) > 300) {
+            size_t sp = cur.rfind(' ');
+            if (sp != std::string::npos) {
+                rows.push_back(cur.substr(0, sp));
+                cur = cur.substr(sp + 1);
+            }
+        }
+    }
+    if (!cur.empty()) rows.push_back(cur);
+    int band_h = 6 + (int)rows.size() * 9;
+    scr.fill_rect(0, 0, vc::Surface::W, band_h, parch);
+    for (int x = 0; x < vc::Surface::W; ++x) scr.put(x, band_h, ink);
+    for (size_t i = 0; i < rows.size(); ++i) {
+        int tw = scr.text_width(A.font, rows[i]);
+        scr.draw_text(A.font, (vc::Surface::W - tw) / 2, 3 + (int)i * 9,
+                      rows[i], ink);
+    }
+}
+
 // -------------------------------------------------------------------- input
 void GameShell::key(int k, bool shift) {
     if (!g_game_active) {
-        if (k == GK_ENTER || k == ' ') new_game();
-        else if (k == GK_ESC) quit_requested = true;
+        key_boot(k);
         return;
     }
     // popup flows take the keyboard first
@@ -561,7 +876,10 @@ void GameShell::key_map(int k, bool shift) {
 }
 
 void GameShell::click(int mx, int my, int button) {
-    if (!g_game_active) return;
+    if (!g_game_active) {
+        click_boot(mx, my, button);
+        return;
+    }
     if (picker_open_) return;                       // keyboard-driven
     if (colony_view_ >= 0) { click_colony(mx, my, button); return; }
     if (europe_view_) { click_europe(mx, my, button); return; }
@@ -609,14 +927,8 @@ void GameShell::click(int mx, int my, int button) {
 void GameShell::compose(vc::Surface& scr, bool flash) {
     vc::NativeAssets& A = game_assets().nat;
     scr.set_palette(A.pal);
-    if (!g_game_active) {                     // minimal title: OPENING art
-        scr.clear(0);
-        if (const vc::IndexedPng* bg = atlas_file("pik/OPENING.png"))
-            scr.blit_region(*bg, 0, 0, bg->w, bg->h, 0, 0);
-        uint8_t c = vc::nearest_pal_index(A.pal, 255, 243, 93);
-        const char* line = "VICEROY  --  press Enter to found the New World";
-        int tw = scr.text_width(A.font, line);
-        scr.draw_text(A.font, (320 - tw) / 2, 184, line, c);
+    if (!g_game_active) {                     // the boot flow (menus.md)
+        compose_boot(scr);
         return;
     }
     if (report_view_ > 0) {

@@ -40,11 +40,24 @@ public:
 
     // Save / load the running game (the frontends bind these to keys).
     std::string save(const std::string& path);
+    std::string load(const std::string& path);
 
     bool quit_requested = false;     // Esc on the map asks the frontend to exit
     std::string status;              // one-line notice for window titles/logs
 
 private:
+    // ---- boot flow (spec/ui/menus.md: title menu -> pickers -> scene) ----
+    enum BootStage { BOOT_MENU, BOOT_DIFF, BOOT_NATION, BOOT_SCENE };
+    BootStage boot_ = BOOT_MENU;
+    int boot_sel_ = 0;               // menu row / picker cell cursor
+    int pick_diff_ = 2;              // Conquistador default
+    int pick_nation_ = 0;            // England default
+    bool world_america_ = false;     // menu item 2: play the AMER2 map
+    void key_boot(int k);
+    void click_boot(int x, int y, int button);
+    void compose_boot(vc::Surface& scr);
+    void boot_start_game();
+
     // ---- view state (mirrors the editor's Game view) ----
     int ox_ = 0, oy_ = 0, sel_ = -1;
     int colony_view_ = -1;           // >=0: colony screen open

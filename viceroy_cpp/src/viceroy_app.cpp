@@ -50,16 +50,27 @@ int main(int argc, char** argv) {
     if (frames_s) {
         int frames = std::atoi(frames_s);
         const char* out = opt(argc, argv, "--out");
-        shell.new_game();
-        if (const char* shot = opt(argc, argv, "--shot")) {
-            std::string s = shot;
+        std::string s = opt(argc, argv, "--shot") ? opt(argc, argv, "--shot") : "";
+        if (s.rfind("boot", 0) == 0) {
+            // boot-flow screenshots: walk the stages without starting a game
+            if (s == "boot-diff") shell.key(forge::GK_ENTER, false);
+            if (s == "boot-nation") {
+                shell.key(forge::GK_ENTER, false);
+                shell.key(forge::GK_ENTER, false);
+            }
+            if (s == "boot-scene")
+                for (int i = 0; i < 3; ++i) shell.key(forge::GK_ENTER, false);
+        } else {
+            shell.new_game();
             if (s == "europe") shell.key('e', false);
             if (s.rfind("report", 0) == 0)
                 shell.key(forge::GK_F1 + std::atoi(s.c_str() + 6) - 1, false);
         }
         vc::Surface scr;
+        bool booted = s.rfind("boot", 0) != 0;
         for (int f = 0; f < frames; ++f) {
-            if (f && (f % 3) == 0) shell.key(forge::GK_ENTER, false);  // end turns
+            if (booted && f && (f % 3) == 0)
+                shell.key(forge::GK_ENTER, false);   // end turns while playing
             shell.compose(scr, (f / 3) & 1);
         }
         if (out) {
@@ -108,7 +119,7 @@ int main(int argc, char** argv) {
                     case SDLK_ESCAPE: k = forge::GK_ESC; break;
                     case SDLK_TAB: k = forge::GK_TAB; break;
                     case SDLK_F11:
-                        shell.status = shell.save("viceroy_save.txt");
+                        shell.status = shell.save("viceroy_save.json");
                         break;
                     default:
                         if (e.key.keysym.sym >= SDLK_F1 &&
