@@ -2768,3 +2768,43 @@ FoundResult found_colony(int ui, const std::vector<std::string>& acks,
     r.ok = true;
     return r;
 }
+
+std::string route_create(const std::string& name, int type,
+                         const std::vector<TradeStop>& stops) {
+    if ((int)g_game.routes.size() >= MAX_TRADE_ROUTES)
+        return "Only 12 trade routes can be defined";        // @TRADEMANY
+    TradeRoute r;
+    r.name = name.substr(0, 31);                             // 32 B name field
+    if (r.name.empty()) return "the route needs a name";
+    for (const TradeRoute& ex : g_game.routes)
+        if (ex.name == r.name) return "route name already in use";
+    r.type = type;
+    for (const TradeStop& so : stops) {
+        if ((int)r.stops.size() >= MAX_ROUTE_STOPS) break;   // 4-stop cap
+        if (so.dest != ROUTE_DEST_EUROPE && so.dest != ROUTE_DEST_NONE &&
+            (so.dest < 0 || so.dest >= (int)g_world.colonies.size()))
+            return "bad stop destination";
+        TradeStop st = so;
+        if ((int)st.load.size() > MAX_LANE_GOODS) st.load.resize(MAX_LANE_GOODS);
+        if ((int)st.unload.size() > MAX_LANE_GOODS) st.unload.resize(MAX_LANE_GOODS);
+        r.stops.push_back(std::move(st));
+    }
+    g_game.routes.push_back(std::move(r));
+    return "";
+}
+
+std::string route_delete(int ri) {
+    if (ri < 0 || ri >= (int)g_game.routes.size()) return "bad route";
+    g_game.routes.erase(g_game.routes.begin() + ri);
+    // Rebind carriers (the EXE shifts records @0x605DB; higher indices slide).
+    for (Unit& u : g_world.units) {
+        if (u.route == ri) {
+            u.route = -1;
+            u.route_stop = 0;
+            if (u.order == ORDER_TRADE_ROUTE) u.order = ORDER_NONE;
+        } else if (u.route > ri) {
+            --u.route;
+        }
+    }
+    return "";
+}

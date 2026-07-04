@@ -63,6 +63,13 @@ struct FoundResult {
 FoundResult found_colony(int ui, const std::vector<std::string>& acks,
                          const std::string& land_choice = "");
 
+// Trade-route CRUD (trade_routes.md 4: func_0610B0 create with the 12-route
+// cap + name uniqueness, func_0612E6 delete with carrier rebinding).
+// Returns "" on success, else the user-facing rejection.
+std::string route_create(const std::string& name, int type,
+                         const std::vector<vc::sim::TradeStop>& stops);
+std::string route_delete(int ri);
+
 // ---- per-turn history (the Play sparkline / /api/history) ----
 struct HistPoint { long turn; int year; long gold; int sol; long population; };
 extern std::vector<HistPoint> g_history;

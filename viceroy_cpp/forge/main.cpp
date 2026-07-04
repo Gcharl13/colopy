@@ -1264,50 +1264,36 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
         // Trade-route editor (trade_routes.md 4): create func_0610B0 (12-route cap
         // @0x610B5 -> @TRADEMANY; name uniqueness @0x611FF), delete func_0612E6.
         if (path == "/api/route/create" && method == "POST") {
-            if ((int)g_game.routes.size() >= MAX_TRADE_ROUTES)
-                return err(400, "Only 12 trade routes can be defined");   // @TRADEMANY
             forge::JsonValue b = forge::json_parse(body);
-            TradeRoute r;
+            std::string name;
             if (const forge::JsonValue* nm = b.find("name"); nm && nm->is_string())
-                r.name = nm->str.substr(0, 31);                           // 32 B name field
-            if (r.name.empty()) return err(400, "need {name}");
-            for (const TradeRoute& ex : g_game.routes)
-                if (ex.name == r.name) return err(400, "route name already in use");
-            r.type = b.find("type") ? b.find("type")->as_int(0) : 0;
+                name = nm->str;
+            std::vector<TradeStop> stops;
             if (const forge::JsonValue* sts = b.find("stops"))
                 for (const forge::JsonValue& so : sts->arr) {
-                    if ((int)r.stops.size() >= MAX_ROUTE_STOPS) break;    // 4-stop cap
                     TradeStop st;
                     st.dest = so.find("dest") ? so.find("dest")->as_int(ROUTE_DEST_NONE)
                                               : ROUTE_DEST_NONE;
-                    if (st.dest != ROUTE_DEST_EUROPE && st.dest != ROUTE_DEST_NONE &&
-                        (st.dest < 0 || st.dest >= (int)g_world.colonies.size()))
-                        return err(400, "bad stop destination");
                     auto lane = [&](const char* key, std::vector<int>& out) {
                         if (const forge::JsonValue* l = so.find(key))
                             for (const forge::JsonValue& v : l->arr) {
                                 int gg = v.as_int(-1);
-                                if (gg >= 0 && gg < NGOODS &&
-                                    (int)out.size() < MAX_LANE_GOODS) out.push_back(gg);
+                                if (gg >= 0 && gg < NGOODS) out.push_back(gg);
                             }
                     };
-                    lane("load", st.load); lane("unload", st.unload);
-                    r.stops.push_back(st);
+                    lane("load", st.load);
+                    lane("unload", st.unload);
+                    stops.push_back(std::move(st));
                 }
-            g_game.routes.push_back(r);
+            std::string e = route_create(name, b.find("type") ? b.find("type")->as_int(0) : 0,
+                                         stops);
+            if (!e.empty()) return err(400, e);
             return J(200, game_state_json());
         }
         if (path == "/api/route/delete" && method == "POST") {
             forge::JsonValue b = forge::json_parse(body);
-            int ri = b.find("route") ? b.find("route")->as_int(-1) : -1;
-            if (ri < 0 || ri >= (int)g_game.routes.size()) return err(400, "bad route");
-            g_game.routes.erase(g_game.routes.begin() + ri);
-            // Rebind carriers (the EXE shifts records @0x605DB; higher indices slide down).
-            for (Unit& u : g_world.units) {
-                if (u.route == ri) { u.route = -1; u.route_stop = 0;
-                                     if (u.order == ORDER_TRADE_ROUTE) u.order = ORDER_NONE; }
-                else if (u.route > ri) --u.route;
-            }
+            std::string e = route_delete(b.find("route") ? b.find("route")->as_int(-1) : -1);
+            if (!e.empty()) return err(400, e);
             return J(200, game_state_json());
         }
 

@@ -222,6 +222,8 @@ struct GameView {
     int report_view = 0;         // 1..10: an advisor report (F1..F10) is open
     int prof_pick_tile = -1;     // colony ring tile awaiting a profession pick
     bool goto_mode = false;      // G: the next map click is a GOTO target
+    float zoom = 0;              // display scale: 0 = fit, else 1..3 (Z/X)
+    bool routes_open = false;    // T: the trade-route picker/editor
     std::string notice;
     std::vector<std::string> log;   // recent turn notices / command feedback
     // found-colony confirmation (the @TUTNO*/@INDIANLAND flow)
@@ -800,9 +802,9 @@ void game_panel(Driver& drv) {
 
         vc::Image img = scr.to_rgb(1);
         drv.update_texture(g_gv.tex, img.rgb.data());
-        // fit: scale to the available width, integer-ish
+        // fit: scale to the available width unless Z/X pinned a zoom level
         float availw = ImGui::GetContentRegionAvail().x;
-        float scale = availw / vc::Surface::W;
+        float scale = g_gv.zoom > 0 ? g_gv.zoom : availw / vc::Surface::W;
         if (scale > 3.0f) scale = 3.0f;
         if (scale < 1.0f) scale = 1.0f;
         ImVec2 sz(vc::Surface::W * scale, vc::Surface::H * scale);
@@ -847,7 +849,8 @@ void game_panel(Driver& drv) {
                 }
             }
         }
-        if (ImGui::IsWindowFocused() && !g_gv.confirm_open) {
+        if (ImGui::IsWindowFocused() && !g_gv.confirm_open &&
+            !ImGui::GetIO().KeyCtrl) {   // Ctrl chords belong to the editor
             int dx = 0, dy = 0;
             if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))    dy = -1;
             if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  dy = 1;
@@ -893,7 +896,24 @@ void game_panel(Driver& drv) {
                     g_gv.goto_mode = true;
                     game_log("go-to: click the target tile");
                 }
+                if (ImGui::IsKeyPressed(ImGuiKey_A))
+                    named("-", "unit activated (orders cleared)");
+                if (ImGui::IsKeyPressed(ImGuiKey_C))
+                    center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
+                if (ImGui::IsKeyPressed(ImGuiKey_T)) g_gv.routes_open = true;
             }
+            // W / Space: wait for the next unit (@ORDERS; works unselected too)
+            if (ImGui::IsKeyPressed(ImGuiKey_W) ||
+                ImGui::IsKeyPressed(ImGuiKey_Space)) {
+                g_gv.sel = next_own_unit(g_gv.sel);
+                if (g_gv.sel >= 0)
+                    center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
+            }
+            // Z / X: display zoom in/out (@VIEW ~Z/~X; native = the stage scale)
+            if (ImGui::IsKeyPressed(ImGuiKey_Z))
+                g_gv.zoom = g_gv.zoom > 0 ? (g_gv.zoom < 3 ? g_gv.zoom + 1 : 3) : 2;
+            if (ImGui::IsKeyPressed(ImGuiKey_X))
+                g_gv.zoom = g_gv.zoom > 1 ? g_gv.zoom - 1 : 1;
         }
         // selected-unit line + the recent-notice log
         if (g_gv.sel >= 0 && g_gv.sel < (int)g_world.units.size() &&
@@ -911,8 +931,208 @@ void game_panel(Driver& drv) {
 }
 #endif  // FORGE_STUDIO_GAME
 
+#if FORGE_STUDIO_GAME
+// --------------------------------------------------------- trade routes (T)
+// The @TRADE editor, natively: list/assign/delete + create (trade_routes.md:
+// 12-route cap, unique names, 4 stops, per-stop load/unload lanes).
+std::string good_name(int idx) {
+    Store* st = forge::drydock_store();
+    if (st) {
+        auto gi = st->type_index.find("good");
+        if (gi != st->type_index.end())
+            for (const Record& r : st->records[gi->second]) {
+                const Value* ix = r.find("index");
+                const Value* nm = r.find("name");
+                if (ix && nm && ix->i == idx) return nm->s;
+            }
+    }
+    return "good " + std::to_string(idx);
+}
+
+void routes_window() {
+    if (!g_gv.routes_open) return;
+    ImGui::SetNextWindowSize(ImVec2(560, 430), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Trade Routes", &g_gv.routes_open)) {
+        ImGui::End();
+        return;
+    }
+    ImGui::TextDisabled("a route needs a cargo carrier: assign it to the "
+                        "selected ship/wagon; stops run on End Turn");
+    for (int ri = 0; ri < (int)g_game.routes.size(); ++ri) {
+        const vc::sim::TradeRoute& r = g_game.routes[ri];
+        ImGui::PushID(ri);
+        ImGui::SeparatorText((r.name + (r.type == 0 ? "  (sea)" : "  (land)")).c_str());
+        for (const vc::sim::TradeStop& st2 : r.stops) {
+            std::string d = st2.dest == vc::sim::ROUTE_DEST_EUROPE ? "Europe"
+                            : st2.dest == vc::sim::ROUTE_DEST_NONE ? "(none)"
+                            : "colony " + std::to_string(st2.dest);
+            std::string lanes;
+            for (int gg : st2.load) lanes += " +" + good_name(gg);
+            for (int gg : st2.unload) lanes += " -" + good_name(gg);
+            ImGui::BulletText("%s%s", d.c_str(), lanes.c_str());
+        }
+        ImGui::BeginDisabled(g_gv.sel < 0);
+        if (ImGui::SmallButton("assign to selected unit")) {
+            OrderResult res = unit_order(g_gv.sel, "T", -1, -1, ri);
+            game_log(res.ok ? "unit follows " + r.name : res.err);
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::SmallButton("delete")) {
+            std::string e = route_delete(ri);
+            game_log(e.empty() ? "route deleted" : e);
+            ImGui::PopID();
+            break;                      // indices shifted; redraw next frame
+        }
+        ImGui::PopID();
+    }
+    if (g_game.routes.empty()) ImGui::TextDisabled("no trade routes yet");
+
+    ImGui::SeparatorText("New route");
+    static char name[32] = {0};
+    static int type = 0;
+    static std::vector<vc::sim::TradeStop> stops;
+    ImGui::SetNextItemWidth(180);
+    ImGui::InputText("name", name, sizeof name);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(90);
+    ImGui::Combo("type", &type, "sea\0land\0");
+    auto lane_combo = [&](const char* label, std::vector<int>& lane) {
+        std::string preview;
+        for (int gg : lane) preview += (preview.empty() ? "" : ", ") + good_name(gg);
+        if (preview.empty()) preview = "(none)";
+        ImGui::SetNextItemWidth(170);
+        if (ImGui::BeginCombo(label, preview.c_str())) {
+            for (int gg = 0; gg < vc::sim::NGOODS; ++gg) {
+                bool on = std::find(lane.begin(), lane.end(), gg) != lane.end();
+                if (ImGui::Checkbox(good_name(gg).c_str(), &on)) {
+                    if (on) {
+                        if ((int)lane.size() < vc::sim::MAX_LANE_GOODS)
+                            lane.push_back(gg);
+                    } else {
+                        lane.erase(std::find(lane.begin(), lane.end(), gg));
+                    }
+                }
+            }
+            ImGui::EndCombo();
+        }
+    };
+    for (int si = 0; si < (int)stops.size(); ++si) {
+        ImGui::PushID(si);
+        vc::sim::TradeStop& st2 = stops[si];
+        std::string dprev = st2.dest == vc::sim::ROUTE_DEST_EUROPE ? "Europe"
+                            : st2.dest == vc::sim::ROUTE_DEST_NONE ? "(pick)"
+                            : "colony " + std::to_string(st2.dest);
+        ImGui::SetNextItemWidth(140);
+        if (ImGui::BeginCombo("stop", dprev.c_str())) {
+            if (ImGui::Selectable("Europe", st2.dest == vc::sim::ROUTE_DEST_EUROPE))
+                st2.dest = vc::sim::ROUTE_DEST_EUROPE;
+            for (int ci = 0; ci < (int)g_world.colonies.size(); ++ci) {
+                if (g_world.colonies[ci].owner_power != 0) continue;
+                char lbl[48];
+                std::snprintf(lbl, sizeof lbl, "colony %d (%d,%d)", ci,
+                              g_world.colonies[ci].x, g_world.colonies[ci].y);
+                if (ImGui::Selectable(lbl, st2.dest == ci)) st2.dest = ci;
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        lane_combo("load", st2.load);
+        ImGui::SameLine();
+        lane_combo("unload", st2.unload);
+        ImGui::SameLine();
+        if (ImGui::SmallButton("x")) {
+            stops.erase(stops.begin() + si);
+            ImGui::PopID();
+            break;
+        }
+        ImGui::PopID();
+    }
+    if ((int)stops.size() < vc::sim::MAX_ROUTE_STOPS && ImGui::Button("+ stop"))
+        stops.push_back({});
+    ImGui::SameLine();
+    if (ImGui::Button("Create route")) {
+        std::string e = route_create(name, type, stops);
+        if (e.empty()) {
+            game_log(std::string("route created: ") + name);
+            name[0] = 0;
+            stops.clear();
+        } else {
+            game_log(e);
+        }
+    }
+    ImGui::End();
+}
+#endif  // FORGE_STUDIO_GAME
+
 // -------------------------------------------------------------------- shell
 bool g_reset_layout = false;   // View > Reset window layout
+bool g_show_help = false;      // Help > Keyboard commands
+
+void help_window() {
+    if (!g_show_help) return;
+    ImGui::SetNextWindowSize(ImVec2(560, 520), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Keyboard commands", &g_show_help)) {
+        ImGui::End();
+        return;
+    }
+    auto row = [](const char* k, const char* what) {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(k);
+        ImGui::TableNextColumn();
+        ImGui::TextWrapped("%s", what);
+    };
+    auto section = [&](const char* title) {
+        ImGui::SeparatorText(title);
+        ImGui::BeginTable(title, 2, ImGuiTableFlags_SizingStretchProp);
+        ImGui::TableSetupColumn("key", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+        ImGui::TableSetupColumn("action");
+    };
+    section("Everywhere");
+    row("Ctrl+S", "save the project (edited records -> data/ as text)");
+    row("Ctrl+Z / Ctrl+Y", "undo / redo record edits");
+    ImGui::EndTable();
+    section("Game view (map)");
+    row("arrows", "move the selected unit");
+    row("Tab / W / Space", "next unit with moves");
+    row("Enter", "end the turn");
+    row("click", "select a unit / open your colony");
+    row("B", "found a colony / join the colony you stand on");
+    row("G", "go-to: click the target tile");
+    row("F / S", "fortify / sentry");
+    row("P / R", "clear-plow / build road (runs over turns)");
+    row("A or -", "activate (clear orders)");
+    row("L / U / O", "load / unload most valuable cargo / dump overboard");
+    row("T", "trade routes (assign / create / delete)");
+    row("Shift+D", "disband the unit");
+    row("E", "Europe: the market + recruit dock");
+    row("F1..F10", "advisor reports");
+    row("Z / X / C", "zoom in / out / center on the unit");
+    row("Esc", "back to the map");
+    ImGui::EndTable();
+    section("Colony screen");
+    row("click ring tile", "assign a farmer there / take the colonist off");
+    row("right-click ring", "pick the profession (all 28 jobs)");
+    row("Esc", "back to the map");
+    ImGui::EndTable();
+    section("Europe");
+    row("click a good", "sell 1 at the bid");
+    row("right-click good", "buy 1 at the ask");
+    row("click dock row", "recruit the waiting immigrant");
+    ImGui::EndTable();
+    section("Screens designer");
+    row("drag widget", "move it (commits on release)");
+    row("arrows / Shift", "nudge 1px / 8px");
+    row("drag empty stage", "move the background PIK");
+    row("Play toggle", "buttons fire their events for real");
+    ImGui::EndTable();
+    section("Map editor");
+    row("left-drag", "paint with the selected brush");
+    row("right-click", "eyedrop the terrain under the cursor");
+    ImGui::EndTable();
+    ImGui::End();
+}
 
 void main_menu() {
     if (ImGui::BeginMainMenuBar()) {
@@ -978,6 +1198,10 @@ void main_menu() {
                 g_reset_layout = true;
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem("Keyboard commands")) g_show_help = true;
+            ImGui::EndMenu();
+        }
         ImGui::Separator();
         ImGui::TextDisabled("project: %s", g_app.project.c_str());
         if (!g_app.status.empty()) {
@@ -1041,7 +1265,9 @@ int studio_run(Driver& drv, const std::string& project_dir) {
         map_panel(drv);
 #if FORGE_STUDIO_GAME
         game_panel(drv);
+        routes_window();
 #endif
+        help_window();
         // headless/CI hook: FORGE_FOCUS=<window> raises a panel (screenshots)
         static const char* focus = std::getenv("FORGE_FOCUS");
         if (focus) { ImGui::SetWindowFocus(focus); focus = nullptr; }
