@@ -14,6 +14,8 @@
 #include "drydock_api.hpp"        // drydock_store / drydock_store_init / save
 #include "drydock_bridge.hpp"     // drydock_apply_records (live-rules sync)
 #include "savegame.hpp"           // parse_game (File > Load Game)
+#include "export_game.hpp"        // Build menu: export the game from data
+#include <filesystem>
 #include "session.hpp"            // the game session (g_game/g_world, game_new/step)
 #include "unit.hpp"
 #include "unit_turn.hpp"
@@ -1062,6 +1064,83 @@ void routes_window() {
 // -------------------------------------------------------------------- shell
 bool g_reset_layout = false;   // View > Reset window layout
 bool g_show_help = false;      // Help > Keyboard commands
+bool g_show_build = false;     // Build > Build game...
+bool g_build_teensy = false;   // which target the Build dialog exports
+std::string g_exe_dir;         // where Forge itself runs from (template lookup)
+
+// Build dialog: export the game FROM THE PROJECT DATA, engine-style. The
+// player executable is a prebuilt export template (shipped next to Forge /
+// found in the build trees); the game is the data being edited here.
+void build_window() {
+    if (!g_show_build) return;
+    ImGui::SetNextWindowSize(ImVec2(560, 360), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin(g_build_teensy ? "Build for Teensy 4.1" : "Build for Windows",
+                      &g_show_build)) {
+        ImGui::End();
+        return;
+    }
+    // the disassembly status: what this project carries, record for record
+    if (Store* st = forge::drydock_store()) {
+        size_t recs = 0;
+        for (const auto& v : st->records) recs += v.size();
+        ImGui::TextDisabled("project: %zu records across %zu types | assets %s",
+                            recs, st->type_index.size(),
+                            studio::assets_ensure() ? "loaded" : "NOT loaded");
+    }
+    ImGui::TextWrapped("%s",
+        g_build_teensy
+            ? "Exports the microSD card image: copy the output folder's "
+              "contents to the card root. The firmware (teensy/, flashed once "
+              "with PlatformIO) reads the card -- rebuilding your game is "
+              "just re-exporting it."
+            : "Exports a standalone game folder: the project data plus the "
+              "Viceroy player. Unsaved record edits are saved first, so the "
+              "build is exactly what you see in the editor.");
+    ImGui::Spacing();
+    static char out[256] = {0};
+    if (!out[0])
+        std::snprintf(out, sizeof out, "%s",
+                      g_build_teensy ? "export/Viceroy-teensy-sd"
+                                     : "export/Viceroy-win64");
+    ImGui::SetNextItemWidth(420);
+    ImGui::InputText("output folder", out, sizeof out);
+    static std::string result, detail;
+    if (ImGui::Button("Build")) {
+        std::string summary;
+        forge::drydock_save_dirty(summary);          // build = what you edited
+        forge::ExportReport r = forge::export_game_data(".", out, g_build_teensy);
+        result = r.message;
+        detail.clear();
+        if (r.ok && !g_build_teensy) {
+            std::string tpl = forge::find_player_template(g_exe_dir, ".");
+            if (!tpl.empty()) {
+                try {
+                    std::filesystem::path dst =
+                        std::filesystem::path(out) /
+                        std::filesystem::path(tpl).filename();
+                    std::filesystem::copy_file(
+                        tpl, dst, std::filesystem::copy_options::overwrite_existing);
+                    detail = "player template: " + tpl;
+                } catch (const std::exception& e) {
+                    detail = std::string("player copy failed: ") + e.what();
+                }
+            } else {
+                detail = "player template not found -- put Viceroy.exe next to "
+                         "Forge (it ships in the Forge zip) and rebuild, or "
+                         "copy it into the output folder by hand.";
+            }
+        }
+        if (r.ok && g_build_teensy)
+            detail = "firmware: flash teensy/ once with `pio run -t upload` "
+                     "(see teensy/README.md), then copy this folder to the SD "
+                     "card root.";
+        g_app.status = result;
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted(result.c_str());
+    if (!detail.empty()) ImGui::TextWrapped("%s", detail.c_str());
+    ImGui::End();
+}
 
 void help_window() {
     if (!g_show_help) return;
@@ -1192,6 +1271,17 @@ void main_menu() {
                 g_reset_layout = true;
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Build")) {
+            if (ImGui::MenuItem("Build game for Windows...")) {
+                g_build_teensy = false;
+                g_show_build = true;
+            }
+            if (ImGui::MenuItem("Build game for Teensy 4.1 (SD card)...")) {
+                g_build_teensy = true;
+                g_show_build = true;
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Keyboard commands")) g_show_help = true;
             ImGui::EndMenu();
@@ -1217,6 +1307,27 @@ void main_menu() {
 
 int studio_run(Driver& drv, const std::string& project_dir) {
     g_app.project = project_dir;
+    // headless/CI hook: FORGE_BUILD=<dir> runs the Build > Windows export
+    // exactly as the dialog would (FORGE_BUILD_TEENSY=1 for the SD layout).
+    if (const char* bo = std::getenv("FORGE_BUILD")) {
+        bool teensy = std::getenv("FORGE_BUILD_TEENSY") != nullptr;
+        std::string summary;
+        forge::drydock_save_dirty(summary);
+        forge::ExportReport r = forge::export_game_data(".", bo, teensy);
+        std::string tpl =
+            !teensy && r.ok ? forge::find_player_template(g_exe_dir, ".") : "";
+        if (!tpl.empty()) {
+            try {
+                std::filesystem::copy_file(
+                    tpl,
+                    std::filesystem::path(bo) /
+                        std::filesystem::path(tpl).filename(),
+                    std::filesystem::copy_options::overwrite_existing);
+            } catch (const std::exception&) {}
+        }
+        std::printf("FORGE_BUILD: %s%s%s\n", r.message.c_str(),
+                    tpl.empty() ? "" : " + player ", tpl.c_str());
+    }
     std::string msg;
     g_app.store_ok = forge::drydock_store_init("data", msg);
     g_app.status = g_app.store_ok ? msg : ("store: " + msg);
@@ -1260,6 +1371,7 @@ int studio_run(Driver& drv, const std::string& project_dir) {
 #if FORGE_STUDIO_GAME
         game_panel(drv);
         routes_window();
+        build_window();
 #endif
         help_window();
         // headless/CI hook: FORGE_FOCUS=<window> raises a panel (screenshots)
@@ -1359,6 +1471,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 #endif
+    studio::g_exe_dir = exe_dir(argv[0]);
     studio::Driver* drv = studio::create_driver("Forge", 1440, 900);
     if (!drv) return 1;
     int rc = studio::studio_run(*drv, proj);

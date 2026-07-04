@@ -121,6 +121,7 @@ add_library(forge_core STATIC
   forge/native_powers.cpp
   forge/store.cpp
   forge/expr.cpp
+  forge/export_game.cpp
 )
 target_include_directories(forge_core PUBLIC forge sim)
 target_link_libraries(forge_core PUBLIC viceroy_sim drydock)
