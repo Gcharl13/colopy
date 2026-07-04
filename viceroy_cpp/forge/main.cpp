@@ -585,15 +585,8 @@ static forge::JsonValue assets_manifest() {
 
 static forge::JsonValue build_game_bundle();   // B13: full-game data bundle (defined below)
 
-// Some buildings need a founding father before they can be built (spec/systems/founding_fathers.md):
-// the Custom House (18) needs Peter Stuyvesant (#3); factory-tier buildings (5/23/26/29/34/41) need
-// Adam Smith (#0). Returns a reason string if the owner lacks the required father, else nullptr.
-static const char* building_ff_requirement(int bid, uint32_t ff_owned) {
-    if (bid == 18 && !((ff_owned >> 3) & 1u)) return "requires Peter Stuyvesant";
-    if ((bid == 5 || bid == 23 || bid == 26 || bid == 29 || bid == 34 || bid == 41) &&
-        !((ff_owned >> 0) & 1u)) return "requires Adam Smith";
-    return nullptr;
-}
+// building_ff_requirement (Stuyvesant / Adam Smith gates) now lives in the
+// shared session (session.hpp) so the native colony build menu uses it too.
 
 static forge::HttpResponse serve_route(const std::string& method, const std::string& path,
                                        const std::string& query, const std::string& body) {
@@ -2217,24 +2210,11 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             if (!g_game_active) game_new();
             int ci = qparam(query, "colony").empty() ? 0 : std::atoi(qparam(query, "colony").c_str());
             if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
-            const Colony& c = g_world.colonies[ci];
-            forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
             forge::JsonValue a = jarr();
-            for (int i = 0; i < 48; ++i) {
-                std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].name", cx).str;
-                if (name.empty()) break;
-                const int fam  = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].size", cx).as_int();
-                const int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].min_colony", cx).as_int();
-                const int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(i) + "].cost", cx).as_int();
-                if ((c.built_mask >> i) & 1ull) continue;               // already built
-                if (i == c.build_target) continue;                      // already in progress
-                if (c.population < minc) continue;                      // size gate (@0xB940)
-                (void)fam;
-                if (building_chain_blocked(c, i, nullptr, nullptr)) continue;   // @0xB97D/@0xB956
-                if (building_ff_requirement(i, g_engine_extra.ff_owned)) continue;   // Smith/Stuyvesant gates
+            for (const BuildOption& bo : colony_build_options(ci)) {
                 forge::JsonValue e = jobj();
-                e.obj["id"] = forge::json_num(i); e.obj["name"] = forge::json_str(name);
-                e.obj["cost"] = forge::json_num(cost); e.obj["min_colony"] = forge::json_num(minc);
+                e.obj["id"] = forge::json_num(bo.id); e.obj["name"] = forge::json_str(bo.name);
+                e.obj["cost"] = forge::json_num(bo.cost); e.obj["min_colony"] = forge::json_num(bo.min_colony);
                 a.arr.push_back(e);
             }
             forge::JsonValue o = jobj(); o.obj["buildable"] = a; return J(200, o);
@@ -2245,32 +2225,14 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             int bid = b.find("building") ? b.find("building")->as_int(-1) : -1;
             if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
             if (bid < 0) return err(400, "bad building");
+            std::string why = colony_start_build(ci, bid);
             forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra, g_active_rules, game_rng};
-            int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
-            int minc = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].min_colony", cx).as_int();
             std::string name = forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].name", cx).str;
-            if (const char* req = building_ff_requirement(bid, g_engine_extra.ff_owned)) {
-                forge::JsonValue o = jobj(); o.obj["ok"] = jbool(false);
-                o.obj["msg"] = forge::json_str(name + " " + req); return J(200, o);
-            }
-            // The func_0B900 chain gate (prereq @0xB97D / supersede @0xB956).
-            {
-                int blocker = -1; bool super2 = false;
-                if (building_chain_blocked(g_world.colonies[ci], bid, &blocker, &super2)) {
-                    std::string bn = forge::resolve_binding(
-                        "@BUILDING[" + std::to_string(blocker) + "].name", cx).str;
-                    forge::JsonValue o = jobj(); o.obj["ok"] = jbool(false);
-                    o.obj["msg"] = forge::json_str(name + (super2
-                        ? " is superseded by the " + bn + " already built"
-                        : " needs its predecessor (" + bn + ") built first"));
-                    return J(200, o);
-                }
-            }
-            bool ok = start_building(g_world.colonies[ci], bid, cost, minc);
-            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok);
+            int cost = (int)forge::resolve_binding("@BUILDING[" + std::to_string(bid) + "].cost", cx).as_int();
+            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(why.empty());
             o.obj["building"] = forge::json_str(name); o.obj["cost"] = forge::json_num(cost);
-            o.obj["msg"] = forge::json_str(ok ? ("Started " + name + " (" + std::to_string(cost) + " hammers)")
-                                              : (name + " unavailable (too small or already built)"));
+            o.obj["msg"] = forge::json_str(why.empty()
+                ? ("Started " + name + " (" + std::to_string(cost) + " hammers)") : why);
             return J(200, o);
         }
 
@@ -2280,15 +2242,12 @@ static forge::HttpResponse serve_route(const std::string& method, const std::str
             forge::JsonValue b = forge::json_parse(body);
             int ci = b.find("colony") ? b.find("colony")->as_int(-1) : -1;
             if (ci < 0 || ci >= (int)g_world.colonies.size()) return err(400, "bad colony");
-            Colony& col = g_world.colonies[ci];
-            if (col.build_target < 0) return err(400, "nothing under construction");
-            long remaining = (long)col.build_cost - (long)col.build_bank;
-            if (remaining < 0) remaining = 0;
-            long gold_cost = remaining * g_active_rules.cfg.rush_gold_per_hammer;   // editable knob (cfg)
-            int owner = col.owner_power;
-            bool ok = (owner >= 0 && owner < 4) && rush_build(col, g_game.powers[owner], gold_cost);
-            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(ok); o.obj["cost"] = forge::json_num((double)gold_cost);
-            o.obj["msg"] = forge::json_str(ok ? "Construction complete" : "Not enough gold");
+            if (g_world.colonies[ci].build_target < 0) return err(400, "nothing under construction");
+            long gold_cost = 0;
+            std::string why = colony_rush_build(ci, &gold_cost);
+            forge::JsonValue o = jobj(); o.obj["ok"] = jbool(why.empty());
+            o.obj["cost"] = forge::json_num((double)gold_cost);
+            o.obj["msg"] = forge::json_str(why.empty() ? "Construction complete" : why);
             return J(200, o);
         }
 

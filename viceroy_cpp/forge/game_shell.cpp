@@ -98,6 +98,7 @@ void GameShell::open_colony(int ci) {
     colony_view_ = ci;
     europe_view_ = false;
     report_view_ = 0;
+    build_open_ = false;
 }
 void GameShell::open_europe() {
     europe_view_ = true;
@@ -114,7 +115,7 @@ void GameShell::resync() {
     colony_view_ = -1;
     europe_view_ = false;
     report_view_ = 0;
-    confirm_open_ = picker_open_ = goto_mode_ = false;
+    confirm_open_ = picker_open_ = goto_mode_ = build_open_ = false;
     menu_open_ = -1;
     sel_ = next_own_unit(-1);
     if (sel_ >= 0) center_on(g_world.units[sel_].x, g_world.units[sel_].y);
@@ -283,6 +284,16 @@ static std::vector<ProfRow> prof_rows() {
 
 void GameShell::click_colony(int mx, int my, int button) {
     if (colony_view_ < 0 || colony_view_ >= (int)g_world.colonies.size()) return;
+    if (build_open_) { click_build(mx, my, button); return; }
+    if (button == 0 && mx < 200 && my >= 8 && my < 128) {
+        // the town view opens the construction menu (context_dialogs.md §12;
+        // the exact colony-screen hotspot is not byte-cited -- RECONSTRUCTED
+        // as the whole SCENE band)
+        build_open_ = true;
+        build_sel_ = 0;
+        build_page_ = 0;
+        return;
+    }
     vc::sim::Colony& c = g_world.colonies[colony_view_];
     int col = (mx - 224) / 24, row = (my - 32) / 24;
     if (mx >= 224 && my >= 32 && col >= 0 && col < 3 && row >= 0 && row < 3 &&
@@ -312,6 +323,176 @@ void GameShell::click_colony(int mx, int my, int button) {
     }
 }
 
+// ------------------------- colony construction (context_dialogs.md §12) ----
+// The build menu runs the verbatim @CTITLE labels ("Select An Item To Build",
+// "(No Production)", "(More)", "Turns)", "BUY") over the func_0B900 buildable
+// list (session colony_build_options). Row highlight = the 1-px hollow
+// outline (§2.1); the dialog is the shared wood-plaque chrome.
+struct BuildRow {
+    std::string text;
+    int action;          // >=0 building id; -1 no production; -2 BUY; -3 more
+};
+static const int BUILD_PAGE_ROWS = 12;
+
+static std::string ctitle_at(int i, const char* fallback) {
+    const std::vector<std::string>& m = labels_section("CTITLE");
+    return i >= 0 && i < (int)m.size() && !m[i].empty() ? m[i] : fallback;
+}
+
+static std::vector<BuildRow> build_rows(int ci, int page, int& pages) {
+    const vc::sim::Colony& c = g_world.colonies[ci];
+    std::vector<BuildRow> all;
+    all.push_back({ctitle_at(5, "(No Production)"), -1});
+    if (c.build_target >= 0) {
+        long remaining = (long)c.build_cost - (long)c.build_bank;
+        if (remaining < 0) remaining = 0;
+        long gold = remaining * g_active_rules.cfg.rush_gold_per_hammer;
+        all.push_back({ctitle_at(2, "BUY") + "  (" + std::to_string(gold) +
+                       " gold to complete)", -2});
+    }
+    int rate = c.hammers_per_turn;
+    for (const BuildOption& o : colony_build_options(ci)) {
+        std::string turns =
+            rate > 0 ? "(" + std::to_string((o.cost + rate - 1) / rate) + " " +
+                           ctitle_at(7, "Turns)")
+                     : "(-- " + ctitle_at(7, "Turns)");
+        all.push_back({o.name + "  " + turns, o.id});
+    }
+    pages = ((int)all.size() + BUILD_PAGE_ROWS - 1) / BUILD_PAGE_ROWS;
+    if (pages < 1) pages = 1;
+    page %= pages;
+    std::vector<BuildRow> rows(
+        all.begin() + page * BUILD_PAGE_ROWS,
+        all.begin() + std::min((page + 1) * BUILD_PAGE_ROWS, (int)all.size()));
+    if (pages > 1) rows.push_back({ctitle_at(6, "(More)"), -3});
+    return rows;
+}
+
+// the centered dialog box (shared geometry engine: centered when @x/@y = -1)
+static void build_box(int ci, const std::vector<BuildRow>& rows,
+                      int& bx, int& by, int& bw, int& bh, std::string& title,
+                      std::string& info) {
+    static vc::Surface meas;
+    vc::NativeAssets& A = game_assets().nat;
+    const vc::sim::Colony& c = g_world.colonies[ci];
+    title = ctitle_at(4, "Select An Item To Build");
+    info.clear();
+    if (c.build_target >= 0) {
+        forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                            g_active_rules, game_rng};
+        std::string bn = forge::resolve_binding(
+            "@BUILDING[" + std::to_string(c.build_target) + "].name", cx).str;
+        info = "Building " + bn + "  (" + std::to_string(c.build_bank) + " of " +
+               std::to_string(c.build_cost) + " hammers)";
+    }
+    bw = 160;
+    int tw = meas.text_width(A.font, title) + 14;
+    if (tw > bw) bw = tw;
+    if (!info.empty() && (tw = meas.text_width(A.font, info) + 14) > bw) bw = tw;
+    for (const BuildRow& r : rows)
+        if ((tw = meas.text_width(A.font, r.text) + 14) > bw) bw = tw;
+    int header = 9 + (info.empty() ? 0 : 9);
+    bh = header + (int)rows.size() * 9 + 6;
+    bx = (vc::Surface::W - bw) / 2;
+    by = (vc::Surface::H - bh) / 2;
+    if (by < 8) by = 8;
+}
+
+void GameShell::compose_build(vc::Surface& scr) {
+    vc::NativeAssets& A = game_assets().nat;
+    int pages = 1;
+    std::vector<BuildRow> rows = build_rows(colony_view_, build_page_, pages);
+    int bx, by, bw, bh;
+    std::string title, info;
+    build_box(colony_view_, rows, bx, by, bw, bh, title, info);
+    uint8_t outline = vc::nearest_pal_index(A.pal, 20, 12, 6);
+    uint8_t selbar  = vc::nearest_pal_index(A.pal, 56, 32, 16);
+    uint8_t green   = vc::nearest_pal_index(A.pal, 82, 138, 49);
+    uint8_t gold    = vc::nearest_pal_index(A.pal, 227, 170, 40);
+    if (A.woodtile.nframes > 0) {
+        const vc::Frame& f = A.woodtile.frames[0];
+        for (int yy = 0; yy < bh; ++yy)
+            for (int xx = 0; xx < bw; ++xx)
+                scr.put(bx + xx, by + yy,
+                        f.px[(size_t)(yy % f.h) * f.w + (xx % f.w)]);
+    }
+    scr.rect_outline(bx, by, bw, bh, outline);
+    scr.fill_rect(bx + 1, by + 1, bw - 2, 9, selbar);
+    scr.draw_text(A.font, bx + 5, by + 2, title, green);
+    int y = by + 9;
+    if (!info.empty()) {
+        scr.draw_text(A.font, bx + 5, y + 2, info, green);
+        y += 9;
+    }
+    for (int i = 0; i < (int)rows.size(); ++i) {
+        int ry = y + 3 + i * 9;
+        scr.draw_text(A.font, bx + 7, ry + 1, rows[i].text,
+                      i == build_sel_ ? gold : green);
+        if (i == build_sel_)   // 1-px hollow row outline (context_dialogs §2.1)
+            scr.rect_outline(bx + 3, ry, bw - 6, 9, gold);
+    }
+}
+
+void GameShell::key_build(int k) {
+    int pages = 1;
+    std::vector<BuildRow> rows = build_rows(colony_view_, build_page_, pages);
+    int n = (int)rows.size();
+    if (k == GK_ESC) { build_open_ = false; return; }
+    if (k == GK_UP && build_sel_ > 0) --build_sel_;
+    if (k == GK_DOWN && build_sel_ + 1 < n) ++build_sel_;
+    if ((k == GK_LEFT || k == GK_RIGHT) && pages > 1) {
+        build_page_ = (build_page_ + (k == GK_RIGHT ? 1 : pages - 1)) % pages;
+        build_sel_ = 0;
+    }
+    if ((k == GK_ENTER || k == ' ') && build_sel_ < n) {
+        const BuildRow& r = rows[build_sel_];
+        vc::sim::Colony& c = g_world.colonies[colony_view_];
+        switch (r.action) {
+            case -3:                                             // (More)
+                build_page_ = (build_page_ + 1) % pages;
+                build_sel_ = 0;
+                return;
+            case -2: {                                           // BUY
+                long cost = 0;
+                std::string why = colony_rush_build(colony_view_, &cost);
+                game_log(why.empty() ? "construction complete (" +
+                                           std::to_string(cost) + " gold)"
+                                     : why);
+                break;
+            }
+            case -1:                                             // (No Production)
+                c.build_target = -1;
+                game_log("construction halted");
+                break;
+            default: {
+                std::string why = colony_start_build(colony_view_, r.action);
+                game_log(why.empty() ? "now building: " + r.text : why);
+                break;
+            }
+        }
+        build_open_ = false;
+    }
+}
+
+void GameShell::click_build(int mx, int my, int button) {
+    (void)button;
+    int pages = 1;
+    std::vector<BuildRow> rows = build_rows(colony_view_, build_page_, pages);
+    int bx, by, bw, bh;
+    std::string title, info;
+    build_box(colony_view_, rows, bx, by, bw, bh, title, info);
+    if (mx < bx || mx >= bx + bw || my < by || my >= by + bh) {
+        build_open_ = false;                     // click-away closes
+        return;
+    }
+    int y0 = by + 9 + (info.empty() ? 0 : 9) + 3;
+    int row = (my - y0) / 9;
+    if (row >= 0 && row < (int)rows.size()) {
+        build_sel_ = row;
+        key_build(GK_ENTER);
+    }
+}
+
 void GameShell::compose_colony(vc::Surface& scr) {
     vc::NativeAssets& A = game_assets().nat;
     vc::sim::Colony& c = g_world.colonies[colony_view_];
@@ -335,6 +516,7 @@ void GameShell::compose_colony(vc::Surface& scr) {
                          A.font, A.terrain, A.phys, &m, c.x, c.y, c,
                          (int)g_game.powers[0].gold, g_game.powers[0].tax,
                          (int)g_game.year, stock);
+    if (build_open_) compose_build(scr);
     if (picker_open_) compose_picker(scr);
 }
 
@@ -1057,6 +1239,13 @@ void GameShell::key(int k, bool shift) {
         return;
     }
     if (colony_view_ >= 0 || europe_view_ || report_view_ > 0) {
+        if (build_open_ && colony_view_ >= 0) { key_build(k); return; }
+        if (colony_view_ >= 0 && k == 'b') {   // open the construction menu
+            build_open_ = true;
+            build_sel_ = 0;
+            build_page_ = 0;
+            return;
+        }
         if (k == GK_ESC) {
             colony_view_ = -1;
             europe_view_ = false;

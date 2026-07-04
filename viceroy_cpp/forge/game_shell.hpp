@@ -89,6 +89,9 @@ private:
     // colony profession picker (right-click on a ring tile)
     bool picker_open_ = false;
     int picker_tile_ = -1, picker_cursor_ = 0;
+    // colony construction menu (context_dialogs.md §12)
+    bool build_open_ = false;
+    int build_sel_ = 0, build_page_ = 0;
 
     void game_log(const std::string& s);
     int  next_own_unit(int from) const;
@@ -105,6 +108,9 @@ private:
     void click_menu(int x, int y, int button);
     void menu_action(int mi, int row);
     void compose_menu(vc::Surface& scr);
+    void key_build(int k);
+    void click_build(int x, int y, int button);
+    void compose_build(vc::Surface& scr);
     void click_colony(int x, int y, int button);
     void click_europe(int x, int y, int button);
     void compose_map(vc::Surface& scr, bool flash);

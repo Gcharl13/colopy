@@ -75,6 +75,19 @@ std::string route_delete(int ri);
 // via out param), else the user-facing rejection.
 std::string declare_independence(int* out_promoted = nullptr);
 
+// Colony construction (context_dialogs.md §12, availability = func_0B900):
+// the buildable list for colony ci (gates: already built, in progress,
+// min-colony @0xB940, chain prereq/supersede @0xB97D/@0xB956, FF requirement),
+// start/stop a build, and the rush-buy (@BUYME1 backend). start/rush return
+// "" on success, else the user-facing reason.
+struct BuildOption { int id = -1; std::string name; int cost = 0; int min_colony = 0; };
+std::vector<BuildOption> colony_build_options(int ci);
+std::string colony_start_build(int ci, int bid);
+std::string colony_rush_build(int ci, long* out_cost = nullptr);
+// FF gates: Custom House (18) needs Peter Stuyvesant (#3); the factory tier
+// (5/23/26/29/34/41) needs Adam Smith (#0). Reason string, or nullptr.
+const char* building_ff_requirement(int bid, uint32_t ff_owned);
+
 // The colony display name (the NAMES colony-name pool by index, as the
 // colony screen titles it).
 std::string colony_display_name(int ci);

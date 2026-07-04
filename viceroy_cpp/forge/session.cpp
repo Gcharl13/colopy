@@ -2794,6 +2794,75 @@ std::string route_create(const std::string& name, int type,
     return "";
 }
 
+// ---- colony construction (context_dialogs.md §12) --------------------------
+const char* building_ff_requirement(int bid, uint32_t ff_owned) {
+    if (bid == 18 && !((ff_owned >> 3) & 1u)) return "requires Peter Stuyvesant";
+    if ((bid == 5 || bid == 23 || bid == 26 || bid == 29 || bid == 34 || bid == 41) &&
+        !((ff_owned >> 0) & 1u)) return "requires Adam Smith";
+    return nullptr;
+}
+
+std::vector<BuildOption> colony_build_options(int ci) {
+    std::vector<BuildOption> out;
+    if (ci < 0 || ci >= (int)g_world.colonies.size()) return out;
+    const Colony& c = g_world.colonies[ci];
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                        g_active_rules, game_rng};
+    for (int i = 0; i < 48; ++i) {
+        std::string is = std::to_string(i);
+        std::string name = forge::resolve_binding("@BUILDING[" + is + "].name", cx).str;
+        if (name.empty()) break;
+        int minc = (int)forge::resolve_binding("@BUILDING[" + is + "].min_colony", cx).as_int();
+        int cost = (int)forge::resolve_binding("@BUILDING[" + is + "].cost", cx).as_int();
+        if ((c.built_mask >> i) & 1ull) continue;               // already built
+        if (i == c.build_target) continue;                      // in progress
+        if (c.population < minc) continue;                      // size gate (@0xB940)
+        if (building_chain_blocked(c, i, nullptr, nullptr)) continue;  // @0xB97D/@0xB956
+        if (building_ff_requirement(i, g_engine_extra.ff_owned)) continue;
+        out.push_back({i, name, cost, minc});
+    }
+    return out;
+}
+
+std::string colony_start_build(int ci, int bid) {
+    if (ci < 0 || ci >= (int)g_world.colonies.size()) return "bad colony";
+    forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
+                        g_active_rules, game_rng};
+    std::string bs = std::to_string(bid);
+    std::string name = forge::resolve_binding("@BUILDING[" + bs + "].name", cx).str;
+    if (name.empty()) return "bad building";
+    if (const char* req = building_ff_requirement(bid, g_engine_extra.ff_owned))
+        return name + " " + req;
+    int blocker = -1;
+    bool super2 = false;
+    if (building_chain_blocked(g_world.colonies[ci], bid, &blocker, &super2)) {
+        std::string bn = forge::resolve_binding(
+            "@BUILDING[" + std::to_string(blocker) + "].name", cx).str;
+        return name + (super2 ? " is superseded by the " + bn + " already built"
+                              : " needs its predecessor (" + bn + ") built first");
+    }
+    int cost = (int)forge::resolve_binding("@BUILDING[" + bs + "].cost", cx).as_int();
+    int minc = (int)forge::resolve_binding("@BUILDING[" + bs + "].min_colony", cx).as_int();
+    if (!start_building(g_world.colonies[ci], bid, cost, minc))
+        return name + " unavailable (too small or already built)";
+    return "";
+}
+
+std::string colony_rush_build(int ci, long* out_cost) {
+    if (ci < 0 || ci >= (int)g_world.colonies.size()) return "bad colony";
+    Colony& col = g_world.colonies[ci];
+    if (col.build_target < 0) return "nothing under construction";
+    long remaining = (long)col.build_cost - (long)col.build_bank;
+    if (remaining < 0) remaining = 0;
+    long gold_cost = remaining * g_active_rules.cfg.rush_gold_per_hammer;
+    if (out_cost) *out_cost = gold_cost;
+    int owner = col.owner_power;
+    if (!(owner >= 0 && owner < 4) ||
+        !rush_build(col, g_game.powers[owner], gold_cost))
+        return "Not enough gold";
+    return "";
+}
+
 // Declare independence (the @GAME menu row / /api/game/declare): the 50%
 // national-SoL gate, then the Continental-promotion pass (func_03E2EA
 // @0x3E2EA..0x3E440): per colony with SoL >= 50 (@0x03E3F1), budget =

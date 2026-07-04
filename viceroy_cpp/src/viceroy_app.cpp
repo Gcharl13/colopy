@@ -68,12 +68,25 @@ int main(int argc, char** argv) {
                 shell.key(forge::GK_F1 + std::atoi(s.c_str() + 6) - 1, false);
             if (s.rfind("menu", 0) == 0)     // menuN: open pulldown N's dropdown
                 shell.click(vc::MAP_MENU_X[std::atoi(s.c_str() + 4)], 3, 0);
+            if (s == "colony") shell.open_colony(0);
+            if (s == "buildmenu") {          // colony 0's construction menu
+                shell.open_colony(0);
+                shell.key('b', false);
+            }
+            if (s == "buildstart") {         // pick row 1, then reopen (shows
+                shell.open_colony(0);        // the progress line + BUY row)
+                shell.key('b', false);
+                shell.key(forge::GK_DOWN, false);
+                shell.key(forge::GK_ENTER, false);
+                shell.key('b', false);
+            }
         }
         vc::Surface scr;
         bool booted = s.rfind("boot", 0) != 0;
-        bool menued = s.rfind("menu", 0) == 0;
+        // end-turn ticks only on views where Enter is not a dialog action
+        bool ticks = s.empty() || s == "europe" || s.rfind("report", 0) == 0;
         for (int f = 0; f < frames; ++f) {
-            if (booted && !menued && f && (f % 3) == 0)
+            if (booted && ticks && f && (f % 3) == 0)
                 shell.key(forge::GK_ENTER, false);   // end turns while playing
             shell.compose(scr, (f / 3) & 1);
         }
