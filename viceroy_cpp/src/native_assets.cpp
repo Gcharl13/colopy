@@ -279,11 +279,17 @@ NativeAssets load_native_assets(const std::string& root) {
     a.terrain = strip_sheet(read_png_quantized(ts + "terrain16.png", a.pal, &a.strays), 16, 16);
     a.phys    = strip_sheet(read_png_quantized(ts + "phys0.png",     a.pal, &a.strays), 16, 16);
     a.units   = strip_sheet(read_png_quantized(ts + "units.png",     a.pal, &a.strays), 16, 16);
-    // buildings.png: 48 cells of the FULL 56x42 native content window (the
-    // BUILDING atlas is 1x, not 2x -- extract_buildingset.py 2026-07-04). The
-    // in-window sprite position is the frame's own draw offset, so consumers
-    // blit cells at the raw plot-table (x,y) with no extra +8.
-    a.buildings = strip_sheet(read_png_quantized(ts + "buildings.png", a.pal, &a.strays), 56, 42);
+    {   // buildings.png: 48 cells of the FULL 56x42 native content window (the
+        // BUILDING atlas is 1x, not 2x -- extract_buildingset.py 2026-07-04).
+        // The in-window sprite position is the frame's own draw offset, so
+        // consumers blit cells at the raw plot-table (x,y) with no extra +8.
+        // The strip is ALWAYS 48 cells, so infer the cell size from the image
+        // itself -- a project carrying the older 28x24-cell strip still loads
+        // (at the old art quality) instead of shredding into misaligned cells.
+        IndexedPng b = read_png_quantized(ts + "buildings.png", a.pal, &a.strays);
+        int cw = b.w / 48;
+        a.buildings = strip_sheet(b, cw > 0 ? cw : 56, b.h > 0 ? b.h : 42);
+    }
 
     {   // icons: variable-width rects from icons.json ("frame","w","h","x" per entry)
         const std::string js = slurp(ts + "icons.json");
