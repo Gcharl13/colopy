@@ -91,6 +91,33 @@ void GameShell::game_log(const std::string& s) {
     status = s;
 }
 
+// ------------------------------------------------------------- host hooks
+void GameShell::open_colony(int ci) {
+    if (ci < 0 || ci >= (int)g_world.colonies.size()) return;
+    colony_view_ = ci;
+    europe_view_ = false;
+    report_view_ = 0;
+}
+void GameShell::open_europe() {
+    europe_view_ = true;
+    colony_view_ = -1;
+    report_view_ = 0;
+}
+void GameShell::open_report(int f) {
+    if (f < 1 || f > 10) return;
+    report_view_ = f;
+    colony_view_ = -1;
+    europe_view_ = false;
+}
+void GameShell::resync() {
+    colony_view_ = -1;
+    europe_view_ = false;
+    report_view_ = 0;
+    confirm_open_ = picker_open_ = goto_mode_ = false;
+    sel_ = next_own_unit(-1);
+    if (sel_ >= 0) center_on(g_world.units[sel_].x, g_world.units[sel_].y);
+}
+
 int GameShell::next_own_unit(int from) const {
     int n = (int)g_world.units.size();
     if (n == 0) return -1;

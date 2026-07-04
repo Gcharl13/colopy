@@ -42,6 +42,7 @@
 #include "engine.hpp"          // colony_compute_production (worker assignment)
 #include "sim/market.hpp"      // market_bid/ask/sell/buy (the Europe screen)
 #include "popup_render.hpp"    // nearest_pal_index
+#include "game_shell.hpp"      // the ONE engine view (shared with the players)
 #endif
 
 using drydock::Record;
@@ -215,162 +216,29 @@ void inspector_panel() {
 }
 
 // ---------------------------------------------------------------- game panel
+// ---------------------------------------------------------------- game panel
 #if FORGE_STUDIO_GAME
-struct GameView {
+// The editor hosts the SAME platform-free GameShell the standalone players
+// run -- one engine view, one implementation, so every fidelity fix lands
+// once. ImGui here only pumps input into the shell and presents its 320x200
+// surface, plus editor conveniences: the asset/boot buttons, the trade-route
+// editor window (T) and the notice log.
+forge::GameShell g_shell;
+struct GameHost {
     bool tex_ok = false;
     Texture tex;
-    int ox = 0, oy = 0, sel = -1;
-    int colony_view = -1;        // >= 0: the colony screen is open
-    bool europe_view = false;    // the Europe harbor/market screen
-    int report_view = 0;         // 1..10: an advisor report (F1..F10) is open
-    int prof_pick_tile = -1;     // colony ring tile awaiting a profession pick
-    bool goto_mode = false;      // G: the next map click is a GOTO target
-    float zoom = 0;              // display scale: 0 = fit, else 1..3 (Z/X)
-    bool routes_open = false;    // T: the trade-route picker/editor
-    std::string notice;
-    std::vector<std::string> log;   // recent turn notices / command feedback
-    // found-colony confirmation (the @TUTNO*/@INDIANLAND flow)
-    bool confirm_open = false;
-    std::string confirm_key;
-    std::vector<std::string> confirm_lines, confirm_choices;
-    std::vector<std::string> found_acks;
-    int confirm_hover = -1;
-};
-GameView g_gv;
-
-int next_own_unit(int from);   // defined below with the view helpers
-
-void game_log(const std::string& s) {
-    g_gv.log.push_back(s);
-    if (g_gv.log.size() > 8) g_gv.log.erase(g_gv.log.begin());
-    g_app.status = s;
-}
-
-// run the found/join command and route the outcome (ok / error / confirm popup)
-void found_attempt(const std::string& land_choice) {
-    FoundResult fr = found_colony(g_gv.sel, g_gv.found_acks, land_choice);
-    if (!fr.confirm.empty()) {
-        g_gv.confirm_key = fr.confirm;
-        g_gv.confirm_lines.clear();
-        g_gv.confirm_choices.clear();
-        std::vector<std::string> lines;
-        std::string cur;
-        for (char c : fr.text) {
-            if (c == '\r') continue;
-            if (c == '\n') { lines.push_back(cur); cur.clear(); }
-            else cur += c;
-        }
-        lines.push_back(cur);
-        while (!lines.empty() && lines.back().empty()) lines.pop_back();
-        int nch = fr.choices > 0 ? fr.choices : 2;      // web default
-        for (size_t i = 0; i < lines.size(); ++i) {
-            if ((int)(lines.size() - i) <= nch) g_gv.confirm_choices.push_back(lines[i]);
-            else g_gv.confirm_lines.push_back(lines[i]);
-        }
-        while (!g_gv.confirm_lines.empty() && g_gv.confirm_lines.back().empty())
-            g_gv.confirm_lines.pop_back();
-        g_gv.confirm_open = true;
-        g_gv.confirm_hover = -1;
-        return;
-    }
-    if (fr.ok) {
-        g_gv.found_acks.clear();
-        game_log("colony founded");
-        g_gv.sel = next_own_unit(g_gv.sel);
-    } else {
-        g_gv.found_acks.clear();
-        game_log(fr.err);
-    }
-}
-
-// a confirm choice was clicked: the web's routing (nvBuild), natively
-void found_choice(const std::string& c) {
-    g_gv.confirm_open = false;
-    auto has = [&](const char* w) {
-        std::string lc = c;
-        for (auto& ch : lc) ch = (char)tolower(ch);
-        return lc.find(w) != std::string::npos;
-    };
-    if (g_gv.confirm_key == "@INDIANLAND") {
-        if (has("offer")) {                    // "We offer you {%NUMBER1$}"
-            g_gv.found_acks.push_back(g_gv.confirm_key);
-            found_attempt("pay");
-        } else if (has("mistaken")) {          // "You are mistaken; this is ours"
-            g_gv.found_acks.push_back(g_gv.confirm_key);
-            found_attempt("claim");
-        } else {
-            g_gv.found_acks.clear();           // "we shall respect your wishes"
-        }
-        return;
-    }
-    if (has("anyway")) {                       // @TUTNO*: "Build colony anyway."
-        g_gv.found_acks.push_back(g_gv.confirm_key);
-        found_attempt("");
-    } else {
-        g_gv.found_acks.clear();
-    }
-}
-
-vc::Map session_map() {
-    vc::Map m;
-    m.w = g_world.map_w;
-    m.h = g_world.map_h;
-    m.tiles = g_world.terrain;
-    return m;
-}
-int next_own_unit(int from) {
-    int n = (int)g_world.units.size();
-    for (int k = 1; k <= n; ++k) {
-        int i = (from + k) % n;
-        if (g_world.units[i].alive && g_world.units[i].owner == 0) return i;
-    }
-    return -1;
-}
-void clamp_view() {
-    if (g_gv.ox < 0) g_gv.ox = 0;
-    if (g_gv.oy < 0) g_gv.oy = 0;
-    if (g_gv.ox > g_world.map_w - 15) g_gv.ox = g_world.map_w - 15;
-    if (g_gv.oy > g_world.map_h - 12) g_gv.oy = g_world.map_h - 12;
-}
-void center_on(int x, int y) { g_gv.ox = x - 7; g_gv.oy = y - 6; clamp_view(); }
-
-bool try_step(int ui, int dx, int dy) {   // the sim's thirds move-credit rules
-    if (ui < 0 || ui >= (int)g_world.units.size()) return false;
-    vc::sim::Unit& u = g_world.units[ui];
-    if (!u.alive || u.moves_left <= 0) return false;
-    int nx = u.x + dx, ny = u.y + dy;
-    if (nx < 0 || ny < 0 || nx >= g_world.map_w || ny >= g_world.map_h) return false;
-    int id = g_world.terrain_id(nx, ny);
-    bool water = (id == 25 || id == 26);
-    bool naval = vc::sim::unit_stats(g_active_rules, u.type).move_class == 99;
-    if (water != naval) return false;
-    if (vc::sim::unit_at(g_world, nx, ny, ui) >= 0) return false;
-    int base = id >= 0 && id < vc::sim::NTERRAIN
-                   ? g_active_rules.terrain_move[id % vc::sim::NTERRAIN] : 1;
-    u.x = nx; u.y = ny;
-    u.moves_left -= naval ? 3 : base * 3;
-    if (u.moves_left < 0) u.moves_left = 0;
-    return true;
-}
-
-void game_end_turn() {
-    game_step();
-    vc::sim::refresh_moves(g_world, g_active_rules);
-    for (const std::string& n : g_turn_notices) game_log(n);   // drain them ALL
-    g_gv.notice = g_turn_notices.empty() ? "" : g_turn_notices.back();
-    g_turn_notices.clear();
-    g_gv.sel = next_own_unit(g_gv.sel);
-    if (g_gv.sel >= 0) center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
-}
+    bool routes_open = false;      // T: the @TRADE editor window
+} g_gh;
 
 void game_panel(Driver& drv) {
     ImGui::Begin("Game");
+    g_app.game_active = g_game_active;     // the shell owns the session state
     static bool auto_game = std::getenv("FORGE_AUTOGAME") != nullptr;
-    if (!g_gv.tex_ok) {
+    if (!g_gh.tex_ok) {
         if (ImGui::Button("Load game assets") || auto_game) {
             if (assets_ensure()) {
-                g_gv.tex = drv.create_texture(vc::Surface::W, vc::Surface::H);
-                g_gv.tex_ok = true;
+                g_gh.tex = drv.create_texture(vc::Surface::W, vc::Surface::H);
+                g_gh.tex_ok = true;
             } else {
                 g_app.status = assets().err;
             }
@@ -380,549 +248,101 @@ void game_panel(Driver& drv) {
         ImGui::End();
         return;
     }
-    vc::NativeAssets& A = assets().nat;
-    bool want_new = ImGui::Button(g_app.game_active ? "New Game" : "New Game##start");
+    // toolbar: quick actions around the live shell
+    bool want_new = ImGui::Button("New Game");
     if (auto_game && !g_app.game_active) { want_new = true; auto_game = false; }
     if (want_new) {
-        game_new(0, 1);
-        vc::sim::refresh_moves(g_world, g_active_rules);
+        g_shell.new_game();
         g_app.game_active = true;
-        g_gv.sel = next_own_unit(-1);
-        if (g_gv.sel >= 0)
-            center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
     }
-    // headless/CI hooks: FORGE_COLONY=N / FORGE_EUROPE=1 open a screen (shots)
+    if (g_app.game_active) {
+        ImGui::SameLine();
+        if (ImGui::Button("End Turn (Enter)")) g_shell.key(forge::GK_ENTER, false);
+        ImGui::SameLine();
+        ImGui::Text("Turn %ld  Gold %lld", (long)g_game.turn,
+                    (long long)g_game.powers[0].gold);
+        ImGui::SameLine();
+        ImGui::TextDisabled("Esc backs out - F1..F10 reports - T trade routes");
+    } else {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(or play the boot flow on the stage below)");
+    }
+    // headless/CI hooks: open a subview for screenshots
     static const char* auto_col = std::getenv("FORGE_COLONY");
     if (auto_col && g_app.game_active) {
-        g_gv.colony_view = std::atoi(auto_col);
+        g_shell.open_colony(std::atoi(auto_col));
         auto_col = nullptr;
     }
     static const char* auto_eur = std::getenv("FORGE_EUROPE");
     if (auto_eur && g_app.game_active) {
-        g_gv.europe_view = true;
+        g_shell.open_europe();
         auto_eur = nullptr;
     }
     static const char* auto_rep = std::getenv("FORGE_REPORT");
     if (auto_rep && g_app.game_active) {
-        g_gv.report_view = std::atoi(auto_rep);
+        g_shell.open_report(std::atoi(auto_rep));
         auto_rep = nullptr;
     }
-    if (g_app.game_active) {
-        ImGui::SameLine();
-        if (ImGui::Button("End Turn (Enter)")) game_end_turn();
-        ImGui::SameLine();
-        ImGui::Text("Turn %ld  Gold %lld", (long)g_game.turn,
-                    (long long)g_game.powers[0].gold);
 
-        ImGui::SameLine();
-        if (g_gv.colony_view < 0 && !g_gv.europe_view && g_gv.report_view == 0) {
-            if (ImGui::Button("Europe (E)")) g_gv.europe_view = true;
-            ImGui::SameLine();
-            ImGui::TextDisabled("F1-F10 reports");
-        } else {
-            if (ImGui::Button("Back to map (Esc)") ||
-                (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Escape))) {
-                g_gv.colony_view = -1;
-                g_gv.europe_view = false;
-                g_gv.report_view = 0;
-            }
-        }
-        // the advisor reports open from anywhere in the game view
-        if (ImGui::IsWindowFocused())
-            for (int fk = 0; fk < 10; ++fk)
-                if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey_F1 + fk))) {
-                    g_gv.report_view = fk + 1;
-                    g_gv.colony_view = -1;
-                    g_gv.europe_view = false;
-                }
-        if (g_gv.report_view > 0) {
-            vc::Surface scr;
-            scr.set_palette(A.pal);
-            if (studio::compose_report(scr, g_gv.report_view)) {
-                vc::Image img = scr.to_rgb(1);
-                drv.update_texture(g_gv.tex, img.rgb.data());
-                float availw = ImGui::GetContentRegionAvail().x;
-                float scale = studio::stage_scale(availw);
-                studio::pixel_image(g_gv.tex,
-                                    ImVec2(vc::Surface::W * scale,
-                                           vc::Surface::H * scale));
-                ImGui::TextDisabled("advisor report F%d -- F1..F10 switch, Esc closes",
-                                    g_gv.report_view);
-            }
-            ImGui::End();
-            return;
-        }
-
-        // --- colony screen (spec composer): opened by clicking an own colony.
-        // Click a ring cell of the worked-tiles grid to assign a colonist
-        // there (Farmer, the /api/colony/assign default) or take one off.
-        if (g_gv.colony_view >= 0 &&
-            g_gv.colony_view < (int)g_world.colonies.size()) {
-            vc::sim::Colony& c = g_world.colonies[g_gv.colony_view];
-            const vc::IndexedPng* backdrop = studio::atlas_file("pik/COLONY.png");
-            static vc::Sheet parch;          // PARCH tile from the contact sheet
-            if (parch.nframes == 0)
-                if (const vc::Frame* pf = studio::sheet_window("PARCH")) {
-                    parch.nframes = 1;
-                    parch.frames.push_back(*pf);
-                }
-            if (backdrop && parch.nframes > 0) {
-                vc::Surface scr;
-                scr.set_palette(A.pal);
-                vc::Map m = session_map();
-                int stock[16];
-                for (int i = 0; i < 16; ++i)
-                    stock[i] = i < (int)c.stockpile.size() ? c.stockpile[i] : 0;
-                render_colony_screen(scr, *backdrop, parch, A.woodtile, A.icons,
-                                     A.buildings, A.font, A.terrain, A.phys, &m,
-                                     c.x, c.y, c, (int)g_game.powers[0].gold,
-                                     g_game.powers[0].tax, (int)g_game.year, stock);
-                vc::Image img = scr.to_rgb(1);
-                drv.update_texture(g_gv.tex, img.rgb.data());
-                float availw = ImGui::GetContentRegionAvail().x;
-                float scale = studio::stage_scale(availw);
-                ImVec2 origin = ImGui::GetCursorScreenPos();
-                studio::pixel_image(g_gv.tex,
-                                    ImVec2(vc::Surface::W * scale,
-                                           vc::Surface::H * scale));
-                // worked-tiles grid hit test (colony_screen.cpp: CELL=24 at
-                // 224,32; ring order = the assign route's RDX/RDY table).
-                // Left-click: quick Farmer assign / take off. Right-click:
-                // pick the profession from the 28 @JOB rows.
-                static const int RDX[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
-                static const int RDY[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
-                auto assign_worker = [&](int tile, int profession, int good) {
-                    for (int w = 0; w < (int)c.workers.size(); ++w)
-                        if (c.workers[w].tile == tile) {
-                            c.workers.erase(c.workers.begin() + w);
-                            break;
-                        }
-                    vc::sim::Colony::Worker wk;
-                    wk.profession = profession;
-                    wk.tile = tile;
-                    wk.good = good;
-                    wk.expert = false;
-                    int tid = g_world.terrain_id(c.x + RDX[tile], c.y + RDY[tile]);
-                    wk.terrain = tid < 0 ? 2 : (tid & 0x1F);
-                    c.workers.push_back(wk);
-                    if ((int)c.workers.size() > c.population)
-                        c.population = (int)c.workers.size();
-                    forge::colony_compute_production(
-                        c, g_game.difficulty, g_active_rules,
-                        g_engine_extra.ff_owned, 0, &g_world, g_game.rumor_seed);
-                };
-                if (ImGui::IsItemHovered() &&
-                    (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
-                    ImVec2 mp = ImGui::GetMousePos();
-                    int mx = (int)((mp.x - origin.x) / scale);
-                    int my = (int)((mp.y - origin.y) / scale);
-                    int col = (mx - 224) / 24, row = (my - 32) / 24;
-                    if (mx >= 224 && my >= 32 && col >= 0 && col < 3 &&
-                        row >= 0 && row < 3 && !(col == 1 && row == 1)) {
-                        int tile = -1;
-                        for (int t = 0; t < 8; ++t)
-                            if (RDX[t] == col - 1 && RDY[t] == row - 1) tile = t;
-                        if (ImGui::IsMouseClicked(1)) {          // profession pick
-                            g_gv.prof_pick_tile = tile;
-                            ImGui::OpenPopup("colprof");
-                        } else {
-                            int existing = -1;
-                            for (int w = 0; w < (int)c.workers.size(); ++w)
-                                if (c.workers[w].tile == tile) existing = w;
-                            if (existing >= 0) {
-                                c.workers.erase(c.workers.begin() + existing);
-                                g_app.status = "colonist taken off the fields";
-                                forge::colony_compute_production(
-                                    c, g_game.difficulty, g_active_rules,
-                                    g_engine_extra.ff_owned, 0, &g_world,
-                                    g_game.rumor_seed);
-                            } else {
-                                assign_worker(tile, 19, 0);   // Farmer default
-                                g_app.status = "farmer assigned to the fields";
-                            }
-                        }
-                    }
-                }
-                // the profession picker: the 28 @JOB rows + the good each makes
-                if (ImGui::BeginPopup("colprof")) {
-                    Store* st = forge::drydock_store();
-                    if (st) {
-                        auto pi = st->type_index.find("prof");
-                        auto gi = st->type_index.find("good");
-                        if (pi != st->type_index.end()) {
-                            // sort by @JOB index for a stable, spec-ordered list
-                            std::vector<const Record*> profs;
-                            for (const Record& p : st->records[pi->second])
-                                profs.push_back(&p);
-                            std::sort(profs.begin(), profs.end(),
-                                      [](const Record* a, const Record* b) {
-                                          const Value* ia = a->find("index");
-                                          const Value* ib = b->find("index");
-                                          return (ia ? ia->i : 0) < (ib ? ib->i : 0);
-                                      });
-                            for (const Record* p : profs) {
-                                const Value* ix = p->find("index");
-                                const Value* nm = p->find("name");
-                                const Value* pr = p->find("produces");
-                                if (!ix || !nm) continue;
-                                int good = 0;
-                                std::string glabel;
-                                if (pr && gi != st->type_index.end())
-                                    for (const Record& gr : st->records[gi->second])
-                                        if (gr.id == pr->s) {
-                                            const Value* gx = gr.find("index");
-                                            const Value* gn = gr.find("name");
-                                            if (gx) good = (int)gx->i;
-                                            if (gn) glabel = gn->s;
-                                        }
-                                std::string label = nm->s;
-                                if (!glabel.empty()) label += "  (" + glabel + ")";
-                                if (ImGui::Selectable(label.c_str())) {
-                                    assign_worker(g_gv.prof_pick_tile, (int)ix->i,
-                                                  good);
-                                    g_app.status = nm->s + " assigned";
-                                }
-                            }
-                        }
-                    }
-                    ImGui::EndPopup();
-                }
-                ImGui::TextDisabled("click a surrounding tile to assign/remove a "
-                                    "colonist (right-click picks the profession)");
-            } else {
-                ImGui::TextDisabled("COLONY.PIK / PARCH sheet unavailable");
-            }
-            ImGui::End();
-            return;
-        }
-
-        // --- Europe screen (europe_screen.md): the harbor + the 16-good
-        // market bar (0,179) stride 19, icons 22..37, bid/ask published from
-        // the live model. Click a good to SELL 1, right-click to BUY 1.
-        if (g_gv.europe_view) {
-            const vc::IndexedPng* backdrop = studio::atlas_file("pik/EUROPE.png");
-            vc::Surface scr;
-            scr.set_palette(A.pal);
-            scr.clear(0);
-            if (backdrop)
-                scr.blit_region(*backdrop, 0, 0, backdrop->w, backdrop->h, 0, 0);
-            uint8_t title_c = vc::nearest_pal_index(A.pal, 255, 255, 190);
-            uint8_t val_c = vc::nearest_pal_index(A.pal, 247, 243, 199);
-            char tl[96];
-            std::snprintf(tl, sizeof tl, "London, England.  Year %d.  Tax: %d%%  Gold: %lld",
-                          (int)g_game.year, g_game.powers[0].tax,
-                          (long long)g_game.powers[0].gold);
-            scr.draw_text(A.font, 8, 1, tl, title_c);
-            for (int gd = 0; gd < 16; ++gd) {           // the market bar
-                int cx = gd * 19;
-                int fi = 22 + gd;                        // goods icons (png ids)
-                if (fi < A.icons.nframes) {
-                    const vc::Frame& f = A.icons.frames[fi];
-                    scr.blit_frame(f, cx + (19 - f.w) / 2, 180);
-                }
-                int bid = vc::sim::market_bid(g_game, 0, gd);
-                int ask = vc::sim::market_ask(g_game, 0, gd, g_active_rules);
-                char pr[16];
-                std::snprintf(pr, sizeof pr, "%d/%d", bid, ask);
-                int tw = scr.text_width(A.font, pr);
-                scr.draw_text(A.font, cx + (19 - tw) / 2, 194, pr, val_c);
-            }
-            // the recruit dock (immigration.md 3): the three waiting slots;
-            // the cost is the class's @CLASS transport_cost (FoY makes free)
-            auto recruit_cost = [&](int cls) -> long {
-                if (g_engine_extra.free_recruits > 0) return 0;
-                forge::EngineCtx cx{g_game, g_world, g_colony_xy, g_engine_extra,
-                                    g_active_rules, game_rng};
-                int row = cls == 0x19 ? 0 : cls == 0x1A ? 1 : 2;
-                long cost = forge::resolve_binding(
-                    "@CLASS[" + std::to_string(row) + "].transport_cost", cx).as_int();
-                return cost < 0 ? 0 : cost;
-            };
-            auto slot_name = [&](int cls) -> std::string {
-                if (cls < 0) return "-";
-                if (cls < vc::sim::NUNITTYPES) {
-                    const char* n = vc::sim::unit_stats(g_active_rules, cls).name;
-                    return n ? n : "colonist";
-                }
-                return forge::job_name(cls, false);
-            };
-            scr.draw_text(A.font, 146, 108, "On the dock (click to recruit):",
-                          title_c);
-            for (int s = 0; s < 3; ++s) {
-                int cls = g_game.powers[0].dock_pool[s];
-                std::string row = std::to_string(s + 1) + ". " + slot_name(cls);
-                if (cls >= 0)
-                    row += "  (" + std::to_string(recruit_cost(cls)) + ")";
-                scr.draw_text(A.font, 146, 117 + s * 9, row, val_c);
-            }
-            vc::Image img = scr.to_rgb(1);
-            drv.update_texture(g_gv.tex, img.rgb.data());
-            float availw = ImGui::GetContentRegionAvail().x;
-            float scale = studio::stage_scale(availw);
-            ImVec2 origin = ImGui::GetCursorScreenPos();
-            ImGui::Image((ImTextureID)(intptr_t)g_gv.tex.id,
-                         ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
-            if (ImGui::IsItemHovered()) {
-                ImVec2 mp = ImGui::GetMousePos();
-                int mx = (int)((mp.x - origin.x) / scale);
-                int my = (int)((mp.y - origin.y) / scale);
-                // dock slots: click recruits (mirrors /api/europe/recruit)
-                if (mx >= 146 && my >= 117 && my < 144 && ImGui::IsMouseClicked(0)) {
-                    int s = (my - 117) / 9;
-                    int cls = s >= 0 && s < 3 ? g_game.powers[0].dock_pool[s] : -1;
-                    if (cls >= 0) {
-                        long cost = recruit_cost(cls);
-                        if (g_engine_extra.free_recruits > 0) {
-                            --g_engine_extra.free_recruits;
-                        } else if (g_game.powers[0].gold < cost) {
-                            g_app.status = "not enough gold to recruit";
-                            cls = -2;
-                        } else {
-                            g_game.powers[0].gold -= cost;
-                        }
-                        if (cls >= 0) {
-                            vc::sim::Unit u;
-                            u.owner = 0;
-                            u.alive = true;
-                            if (cls < vc::sim::NUNITTYPES) u.type = cls;
-                            else { u.type = vc::sim::COLONISTS; u.profession = cls; }
-                            if (!g_colony_xy.empty()) {
-                                u.x = g_colony_xy[0].first;
-                                u.y = g_colony_xy[0].second;
-                            }
-                            g_world.units.push_back(u);
-                            g_game.powers[0].dock_pool[s] = -1;
-                            g_app.status = "recruited " + slot_name(cls) + " for " +
-                                           std::to_string(cost);
-                        }
-                    }
-                }
-                if (my >= 179 && mx < 304) {
-                    int gd = mx / 19;
-                    if (gd >= 0 && gd < 16) {
-                        int bid = vc::sim::market_bid(g_game, 0, gd);
-                        int ask = vc::sim::market_ask(g_game, 0, gd, g_active_rules);
-                        ImGui::SetTooltip("good %d -- pays %d, costs %d\n"
-                                          "click: sell 1   right-click: buy 1",
-                                          gd, bid, ask);
-                        if (ImGui::IsMouseClicked(0)) {
-                            long net = vc::sim::market_sell(g_game, 0, gd, 1,
-                                                            g_active_rules);
-                            g_app.status = "sold 1 for " + std::to_string(net);
-                        }
-                        if (ImGui::IsMouseClicked(1)) {
-                            if (g_game.powers[0].gold >= ask) {
-                                long cost = vc::sim::market_buy(g_game, 0, gd, 1,
-                                                                g_active_rules);
-                                g_app.status = "bought 1 for " + std::to_string(cost);
-                            } else {
-                                g_app.status = "not enough gold";
-                            }
-                        }
-                    }
-                }
-            }
-            // artillery purchase: base + 100 per prior purchase (@0x035282)
-            long art_cost = g_active_rules.cfg.artillery_base_cost +
-                            (long)g_engine_extra.artillery_bought * 100;
-            char abuf[48];
-            std::snprintf(abuf, sizeof abuf, "Buy Artillery (%ld)", art_cost);
-            if (ImGui::Button(abuf)) {
-                if (g_game.powers[0].gold < art_cost) {
-                    g_app.status = "not enough gold for artillery";
-                } else {
-                    g_game.powers[0].gold -= art_cost;
-                    ++g_engine_extra.artillery_bought;
-                    vc::sim::Unit u;
-                    u.type = vc::sim::ARTILLERY;
-                    u.owner = 0;
-                    u.alive = true;
-                    if (!g_colony_xy.empty()) {
-                        u.x = g_colony_xy[0].first;
-                        u.y = g_colony_xy[0].second;
-                    }
-                    g_world.units.push_back(u);
-                    g_app.status = "artillery purchased for " +
-                                   std::to_string(art_cost);
-                }
-            }
-            ImGui::SameLine();
-            ImGui::TextDisabled("market: click sells 1, right-click buys 1; "
-                                "dock rows recruit");
-            ImGui::End();
-            return;
-        }
-
-        // compose the frame from the live session
-        vc::Surface scr;
-        scr.set_palette(A.pal);
-        vc::Map m = session_map();
-        render_mapview(scr, m, A.terrain, A.phys,
-                       A.woodtile, A.font, g_game, g_world,
-                       g_gv.ox, g_gv.oy);
-        auto on_screen = [&](int x, int y, int& px, int& py) {
-            int vx = x - g_gv.ox, vy = y - g_gv.oy;
-            if (vx < 0 || vy < 0 || vx >= 15 || vy >= 12) return false;
-            px = vx * 16; py = 8 + vy * 16;
-            return true;
+    // compose the shell frame + present at an integer scale, nearest-sampled
+    vc::Surface scr;
+    bool flash = ((int)(ImGui::GetTime() * 3)) & 1;
+    g_shell.compose(scr, flash);
+    vc::Image img = scr.to_rgb(1);
+    drv.update_texture(g_gh.tex, img.rgb.data());
+    float scale = studio::stage_scale(ImGui::GetContentRegionAvail().x);
+    ImVec2 origin = ImGui::GetCursorScreenPos();
+    studio::pixel_image(g_gh.tex,
+                        ImVec2(vc::Surface::W * scale, vc::Surface::H * scale));
+    // mouse -> native 320x200 coordinates
+    if (ImGui::IsItemHovered() &&
+        (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) {
+        ImVec2 mp = ImGui::GetMousePos();
+        g_shell.click((int)((mp.x - origin.x) / scale),
+                      (int)((mp.y - origin.y) / scale),
+                      ImGui::IsMouseClicked(1) ? 1 : 0);
+    }
+    // keyboard -> shell keys (Ctrl chords stay with the editor)
+    if (ImGui::IsWindowFocused() && !ImGui::GetIO().KeyCtrl) {
+        bool shift = ImGui::GetIO().KeyShift;
+        auto k = [&](ImGuiKey ik, int gk) {
+            if (ImGui::IsKeyPressed(ik)) g_shell.key(gk, shift);
         };
-        for (const vc::sim::Colony& c : g_world.colonies) {
-            int px, py;
-            if (c.x < 0 || !on_screen(c.x, c.y, px, py)) continue;
-            scr.fill_rect(px + 2, py + 2, 12, 12, 6);
-            scr.rect_outline(px + 2, py + 2, 12, 12, 15);
-            scr.draw_text(A.font, px + 5, py + 5,
-                          std::to_string(c.population), 15);
+        k(ImGuiKey_UpArrow, forge::GK_UP);
+        k(ImGuiKey_DownArrow, forge::GK_DOWN);
+        k(ImGuiKey_LeftArrow, forge::GK_LEFT);
+        k(ImGuiKey_RightArrow, forge::GK_RIGHT);
+        k(ImGuiKey_Enter, forge::GK_ENTER);
+        k(ImGuiKey_KeypadEnter, forge::GK_ENTER);
+        k(ImGuiKey_Escape, forge::GK_ESC);
+        k(ImGuiKey_Tab, forge::GK_TAB);
+        k(ImGuiKey_Space, ' ');
+        k(ImGuiKey_Minus, '-');
+        for (int f = 0; f < 10; ++f)
+            k((ImGuiKey)(ImGuiKey_F1 + f), forge::GK_F1 + f);
+        for (int d = 0; d < 9; ++d)
+            k((ImGuiKey)(ImGuiKey_1 + d), '1' + d);
+        for (int c = 0; c < 26; ++c) {
+            if ('a' + c == 't') continue;          // T = the routes window
+            k((ImGuiKey)(ImGuiKey_A + c), 'a' + c);
         }
-        bool flash = ((int)(ImGui::GetTime() * 3)) & 1;
-        for (int i = 0; i < (int)g_world.units.size(); ++i) {
-            const vc::sim::Unit& u = g_world.units[i];
-            int px, py;
-            if (!u.alive || !on_screen(u.x, u.y, px, py)) continue;
-            if (u.type >= 0 && u.type < A.units.nframes)
-                scr.blit_frame(A.units.frames[u.type], px, py);
-            if (i == g_gv.sel && flash) scr.rect_outline(px, py, 16, 16, 15);
-        }
-        if (!g_gv.notice.empty())
-            scr.draw_text(A.font, 2, 193, g_gv.notice.substr(0, 52), 15);
-
-        // the found-colony confirmation, in the game's popup chrome
-        vc::PopupSpec cs;
-        vc::PopupLayout csL{};
-        if (g_gv.confirm_open) {
-            cs.lines = g_gv.confirm_lines;
-            cs.choices = g_gv.confirm_choices;
-            cs.highlight = g_gv.confirm_hover;
-            csL = vc::popup_layout(A.font, cs);
-            static const vc::IndexedPng no_panl;
-            const vc::IndexedPng* panl = studio::atlas_file("pik/WOODPANL.png");
-            render_popup(scr, panl ? *panl : no_panl, A.font, cs, csL);
-        }
-
-        vc::Image img = scr.to_rgb(1);
-        drv.update_texture(g_gv.tex, img.rgb.data());
-        // fit: scale to the available width unless Z/X pinned a zoom level
-        float availw = ImGui::GetContentRegionAvail().x;
-        float scale = g_gv.zoom > 0 ? g_gv.zoom : studio::stage_scale(availw);
-        ImVec2 sz(vc::Surface::W * scale, vc::Surface::H * scale);
-        ImVec2 origin = ImGui::GetCursorScreenPos();
-        studio::pixel_image(g_gv.tex, sz);
-        // clicks: confirm choices > goto target > open colony > select unit
-        if (ImGui::IsItemHovered()) {
-            ImVec2 mp = ImGui::GetMousePos();
-            int mx = (int)((mp.x - origin.x) / scale), my = (int)((mp.y - origin.y) / scale);
-            if (g_gv.confirm_open) {
-                g_gv.confirm_hover = -1;
-                for (int i = 0; i < (int)cs.choices.size(); ++i) {
-                    int cx, cy, cw, ch;
-                    vc::popup_choice_rect(csL, i, cx, cy, cw, ch);
-                    if (mx >= cx && mx < cx + cw && my >= cy && my < cy + ch) {
-                        g_gv.confirm_hover = i;
-                        if (ImGui::IsMouseClicked(0)) found_choice(cs.choices[i]);
-                    }
-                }
-            } else if (ImGui::IsMouseClicked(0) && mx < 240 && my >= 8) {
-                int tx = g_gv.ox + mx / 16, ty = g_gv.oy + (my - 8) / 16;
-                if (g_gv.goto_mode && g_gv.sel >= 0) {
-                    g_gv.goto_mode = false;
-                    OrderResult r = unit_order(g_gv.sel, "", tx, ty);
-                    game_log(r.ok ? "going to (" + std::to_string(tx) + "," +
-                                        std::to_string(ty) + ") -- moves on End Turn"
-                                  : r.err);
-                } else {
-                    bool opened = false;
-                    for (int ci = 0; ci < (int)g_world.colonies.size(); ++ci) {
-                        const vc::sim::Colony& c = g_world.colonies[ci];
-                        if (c.x == tx && c.y == ty && c.owner_power == 0) {
-                            g_gv.colony_view = ci;   // own colony: open its screen
-                            opened = true;
-                            break;
-                        }
-                    }
-                    if (!opened) {
-                        int ui = vc::sim::unit_at(g_world, tx, ty);
-                        if (ui >= 0 && g_world.units[ui].owner == 0) g_gv.sel = ui;
-                    }
-                }
-            }
-        }
-        if (ImGui::IsWindowFocused() && !g_gv.confirm_open &&
-            !ImGui::GetIO().KeyCtrl) {   // Ctrl chords belong to the editor
-            int dx = 0, dy = 0;
-            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))    dy = -1;
-            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))  dy = 1;
-            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))  dx = -1;
-            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) dx = 1;
-            if ((dx || dy) && g_gv.sel >= 0) {
-                try_step(g_gv.sel, dx, dy);
-                const vc::sim::Unit& u = g_world.units[g_gv.sel];
-                if (u.x < g_gv.ox + 1 || u.x > g_gv.ox + 13 ||
-                    u.y < g_gv.oy + 1 || u.y > g_gv.oy + 10)
-                    center_on(u.x, u.y);
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
-                g_gv.sel = next_own_unit(g_gv.sel);
-                if (g_gv.sel >= 0)
-                    center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
-            }
-            if (ImGui::IsKeyPressed(ImGuiKey_Enter)) game_end_turn();
-            if (ImGui::IsKeyPressed(ImGuiKey_E)) g_gv.europe_view = true;
-            // the @ORDERS accelerators (unit_orders.md) on the selected unit
-            if (g_gv.sel >= 0) {
-                auto named = [&](const char* o, const char* what) {
-                    OrderResult r = unit_order(g_gv.sel, o);
-                    game_log(r.ok ? what : r.err);
-                };
-                if (ImGui::IsKeyPressed(ImGuiKey_F)) named("F", "fortifying");
-                if (ImGui::IsKeyPressed(ImGuiKey_S)) named("S", "sentry");
-                if (ImGui::IsKeyPressed(ImGuiKey_P)) named("P", "clearing / plowing");
-                if (ImGui::IsKeyPressed(ImGuiKey_R)) named("R", "building a road");
-                if (ImGui::IsKeyPressed(ImGuiKey_Minus)) named("-", "orders cleared");
-                if (ImGui::IsKeyPressed(ImGuiKey_L)) named("L", "loaded the most valuable good");
-                if (ImGui::IsKeyPressed(ImGuiKey_U)) named("U", "unloaded the most valuable hold");
-                if (ImGui::IsKeyPressed(ImGuiKey_O)) named("O", "cargo dumped overboard");
-                if (ImGui::GetIO().KeyShift && ImGui::IsKeyPressed(ImGuiKey_D)) {
-                    named("D", "unit disbanded");
-                    g_gv.sel = next_own_unit(-1);
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_B)) {
-                    g_gv.found_acks.clear();
-                    found_attempt("");
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_G)) {
-                    g_gv.goto_mode = true;
-                    game_log("go-to: click the target tile");
-                }
-                if (ImGui::IsKeyPressed(ImGuiKey_A))
-                    named("-", "unit activated (orders cleared)");
-                if (ImGui::IsKeyPressed(ImGuiKey_C))
-                    center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
-                if (ImGui::IsKeyPressed(ImGuiKey_T)) g_gv.routes_open = true;
-            }
-            // W / Space: wait for the next unit (@ORDERS; works unselected too)
-            if (ImGui::IsKeyPressed(ImGuiKey_W) ||
-                ImGui::IsKeyPressed(ImGuiKey_Space)) {
-                g_gv.sel = next_own_unit(g_gv.sel);
-                if (g_gv.sel >= 0)
-                    center_on(g_world.units[g_gv.sel].x, g_world.units[g_gv.sel].y);
-            }
-            // Z / X: display zoom in/out (@VIEW ~Z/~X; native = the stage scale)
-            if (ImGui::IsKeyPressed(ImGuiKey_Z))
-                g_gv.zoom = g_gv.zoom > 0 ? (g_gv.zoom < 3 ? g_gv.zoom + 1 : 3) : 2;
-            if (ImGui::IsKeyPressed(ImGuiKey_X))
-                g_gv.zoom = g_gv.zoom > 1 ? g_gv.zoom - 1 : 1;
-        }
-        // selected-unit line + the recent-notice log
-        if (g_gv.sel >= 0 && g_gv.sel < (int)g_world.units.size() &&
-            g_world.units[g_gv.sel].alive) {
-            const vc::sim::Unit& u = g_world.units[g_gv.sel];
+        if (ImGui::IsKeyPressed(ImGuiKey_T)) g_gh.routes_open = true;
+    }
+    g_shell.clear_quit();      // map-Esc quits the player, not the editor
+    // selected-unit line + the recent-notice log
+    if (g_app.game_active) {
+        int sel = g_shell.selected_unit();
+        if (sel >= 0 && sel < (int)g_world.units.size() &&
+            g_world.units[sel].alive) {
+            const vc::sim::Unit& u = g_world.units[sel];
             const char* nm = vc::sim::unit_stats(g_active_rules, u.type).name;
             ImGui::TextDisabled("%s at (%d,%d)  move credits %d  |  F/S/P/R "
                                 "orders, B found, G goto, L/U/O cargo, "
                                 "Shift-D disband",
                                 nm ? nm : "unit", u.x, u.y, u.moves_left);
         }
-        for (const std::string& s : g_gv.log) ImGui::TextDisabled("%s", s.c_str());
+        for (const std::string& s : g_shell.log())
+            ImGui::TextDisabled("%s", s.c_str());
     }
     ImGui::End();
 }
@@ -947,9 +367,9 @@ std::string good_name(int idx) {
 }
 
 void routes_window() {
-    if (!g_gv.routes_open) return;
+    if (!g_gh.routes_open) return;
     ImGui::SetNextWindowSize(ImVec2(560, 430), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("Trade Routes", &g_gv.routes_open)) {
+    if (!ImGui::Begin("Trade Routes", &g_gh.routes_open)) {
         ImGui::End();
         return;
     }
@@ -968,16 +388,16 @@ void routes_window() {
             for (int gg : st2.unload) lanes += " -" + good_name(gg);
             ImGui::BulletText("%s%s", d.c_str(), lanes.c_str());
         }
-        ImGui::BeginDisabled(g_gv.sel < 0);
+        ImGui::BeginDisabled(g_shell.selected_unit() < 0);
         if (ImGui::SmallButton("assign to selected unit")) {
-            OrderResult res = unit_order(g_gv.sel, "T", -1, -1, ri);
-            game_log(res.ok ? "unit follows " + r.name : res.err);
+            OrderResult res = unit_order(g_shell.selected_unit(), "T", -1, -1, ri);
+            g_shell.note(res.ok ? "unit follows " + r.name : res.err);
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
         if (ImGui::SmallButton("delete")) {
             std::string e = route_delete(ri);
-            game_log(e.empty() ? "route deleted" : e);
+            g_shell.note(e.empty() ? "route deleted" : e);
             ImGui::PopID();
             break;                      // indices shifted; redraw next frame
         }
@@ -1051,11 +471,11 @@ void routes_window() {
     if (ImGui::Button("Create route")) {
         std::string e = route_create(name, type, stops);
         if (e.empty()) {
-            game_log(std::string("route created: ") + name);
+            g_shell.note(std::string("route created: ") + name);
             name[0] = 0;
             stops.clear();
         } else {
-            game_log(e);
+            g_shell.note(e);
         }
     }
     ImGui::End();
@@ -1289,6 +709,7 @@ void main_menu() {
                     read_extra(root.find("engine_extra"), g_engine_extra);
                     g_game_active = true;
                     g_app.game_active = true;
+                    g_shell.resync();
                     g_app.status = "game loaded";
                 } catch (const std::exception& e) {
                     g_app.status = std::string("load failed: ") + e.what();

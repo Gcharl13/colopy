@@ -42,6 +42,17 @@ public:
     std::string save(const std::string& path);
     std::string load(const std::string& path);
 
+    // Host hooks (the editor's Game view + the headless harness): open a
+    // subview directly, inspect state, drop a notice, absorb the map-Esc.
+    void open_colony(int ci);
+    void open_europe();
+    void open_report(int f);
+    int  selected_unit() const { return sel_; }
+    const std::vector<std::string>& log() const { return log_; }
+    void note(const std::string& s) { game_log(s); }
+    void clear_quit() { quit_requested = false; }
+    void resync();                   // after an external game load
+
     bool quit_requested = false;     // Esc on the map asks the frontend to exit
     std::string status;              // one-line notice for window titles/logs
 
