@@ -392,6 +392,41 @@ void screens_panel(Driver& drv) {
                 if (fi >= 0 && fi < sh->nframes)
                     scr.blit_frame(sh->frames[fi], r[0], r[1]);
             }
+        } else if (type == "buildmenu") {
+            // the colony construction menu: buildable rows from the bldg
+            // records (not built + min_colony met; the FF/chain gates live in
+            // the session's build route). Play-click starts the build.
+            uint8_t col = color_idx(assets().nat.pal, dstr(d, "color", "220,220,220"), 15);
+            int ci = (int)dint(d, "colony", 0);
+            if (app().game_active && ci >= 0 && ci < (int)g_world.colonies.size()) {
+                const vc::sim::Colony& cc = g_world.colonies[ci];
+                auto bi = st->type_index.find("bldg");
+                int y = r[1], colx = r[0];
+                if (bi != st->type_index.end())
+                    for (const Record& b : st->records[bi->second]) {
+                        const Value* ix = b.find("index");
+                        const Value* nm = b.find("name");
+                        const Value* cost = b.find("cost");
+                        const Value* minc = b.find("min_colony");
+                        if (!ix || !nm) continue;
+                        if (cc.built_mask >> ix->i & 1) continue;
+                        if (minc && cc.population < minc->i) continue;
+                        std::string row = nm->s + " (" +
+                                          (cost ? std::to_string(cost->i) : "?") + ")";
+                        bool building = cc.build_target == (int)ix->i;
+                        scr.draw_text(assets().nat.font, colx, y, row,
+                                      building ? 15 : col);
+                        y += 9;
+                        if (y + 9 > r[1] + r[3]) {       // next column
+                            y = r[1];
+                            colx += 150;
+                            if (colx + 60 > r[0] + r[2]) break;
+                        }
+                    }
+            } else {
+                scr.draw_text(assets().nat.font, r[0], r[1],
+                              "[buildmenu: start a game to populate]", col);
+            }
         } else if (type == "message") {
             // the game's message-box format: the wood-frame popup engine
             // pinned at the widget rect, box width from the rect
@@ -508,15 +543,49 @@ void screens_panel(Driver& drv) {
                 for (int i = nwidgets - 1; i >= 0; --i) {   // topmost first
                     const Value& d = widgets->list[i];
                     if (d.kind != ValKind::Dict) continue;
-                    std::string action = dstr(d, "onClick");
-                    if (action.empty()) continue;
                     int r[4];
                     drect(d, r);
-                    if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] &&
-                        my < r[1] + r[3]) {
-                        play_click(*st, action);
+                    if (mx < r[0] || mx >= r[0] + r[2] || my < r[1] ||
+                        my >= r[1] + r[3])
+                        continue;
+                    // buildmenu rows: same layout math as the renderer
+                    if (dstr(d, "type", "text") == "buildmenu" &&
+                        app().game_active) {
+                        int ci = (int)dint(d, "colony", 0);
+                        if (ci >= 0 && ci < (int)g_world.colonies.size()) {
+                            vc::sim::Colony& cc = g_world.colonies[ci];
+                            auto bi = st->type_index.find("bldg");
+                            int y = r[1], colx = r[0];
+                            if (bi != st->type_index.end())
+                                for (const Record& b : st->records[bi->second]) {
+                                    const Value* ix = b.find("index");
+                                    const Value* nm = b.find("name");
+                                    const Value* cost = b.find("cost");
+                                    const Value* minc = b.find("min_colony");
+                                    if (!ix || !nm) continue;
+                                    if (cc.built_mask >> ix->i & 1) continue;
+                                    if (minc && cc.population < minc->i) continue;
+                                    if (mx >= colx && mx < colx + 150 &&
+                                        my >= y && my < y + 9) {
+                                        cc.build_target = (int)ix->i;
+                                        cc.build_cost = cost ? (int)cost->i : 0;
+                                        app().status = "now building " + nm->s;
+                                        break;
+                                    }
+                                    y += 9;
+                                    if (y + 9 > r[1] + r[3]) {
+                                        y = r[1];
+                                        colx += 150;
+                                        if (colx + 60 > r[0] + r[2]) break;
+                                    }
+                                }
+                        }
                         break;
                     }
+                    std::string action = dstr(d, "onClick");
+                    if (action.empty()) continue;
+                    play_click(*st, action);
+                    break;
                 }
             }
         }

@@ -184,6 +184,7 @@ if(FORGE_STUDIO_OK)
     studio/panel_screens.cpp
     studio/panel_data.cpp
     studio/panel_map.cpp
+    studio/game_views.cpp
     ${FORGE_STUDIO_DRIVER})
   target_include_directories(forge_studio PRIVATE studio forge sim)
   target_link_libraries(forge_studio PRIVATE imgui forge_core)

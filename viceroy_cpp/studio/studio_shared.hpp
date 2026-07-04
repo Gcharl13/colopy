@@ -70,6 +70,10 @@ Texture* static_texture(Driver& drv, const std::string& key,
                         const std::function<bool(vc::Image&)>& make);
 void invalidate_texture(const std::string& key);
 
+// Compose advisor report F1..F10 (f = 1..10) onto a 320x200 surface from the
+// live session (report_state_json). False when assets are unavailable.
+bool compose_report(vc::Surface& scr, int f);
+
 // ---------------------------------------------------------------- panels
 void sprites_panel(Driver& drv);
 void popups_panel(Driver& drv);
