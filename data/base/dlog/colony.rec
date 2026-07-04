@@ -1,6 +1,7 @@
 record dlog.colony {
   name       = "Colony Screen"
   background = "COLONY"
+  bg_y       = 128
   size       = [320, 200]
   widgets    = [{ color = "82,138,49", id = "title", rect = [70, 1, 240, 8], text = "Jamestown.  Year {game.year}.  Gold: {power0.gold}", type = "text" }, { color = "255,255,255", id = "popl", rect = [10, 14, 120, 8], text = "Population: {colony0.population}", type = "text" }, { color = "255,243,93", id = "soll", rect = [10, 24, 120, 8], text = "Sons of Liberty: {colony0.sol}%", type = "text" }, { frame = 37, id = "church", rect = [24, 40, 32, 32], sheet = "BUILDING", type = "sprite" }, { frame = 9, id = "townh", rect = [64, 40, 32, 32], sheet = "BUILDING", type = "sprite" }, { color = "255,255,255", id = "exit", onClick = "goto_mainmenu", rect = [284, 182, 32, 12], text = "Exit", type = "button" }]
 }

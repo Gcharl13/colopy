@@ -361,8 +361,20 @@ void screens_panel(Driver& drv) {
         ImGui::SetNextItemWidth(70);
         if (ImGui::InputInt("y##bgy", &by, 0, 0, ImGuiInputTextFlags_EnterReturnsTrue))
             commit_int(*rec, "bg_y", by);
+        // band-type PIKs (e.g. COLONY is 320x72): show the size + a one-click
+        // bottom-align so partial backgrounds land where the game puts them
+        if (!bg.empty())
+            if (const vc::IndexedPng* pik = atlas_file("pik/" + bg + ".png")) {
+                ImGui::SameLine();
+                ImGui::TextDisabled("%dx%d", pik->w, pik->h);
+                if (pik->h < 200) {
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("align bottom"))
+                        commit_int(*rec, "bg_y", 200 - pik->h);
+                }
+            }
         ImGui::SameLine();
-        ImGui::TextDisabled("font: %s",
+        ImGui::TextDisabled("| font: %s",
                             assets().nat.font_real ? "FONTTINY.FF"
                                                    : "baked 5x7 (add raw/COLONIZE/FONTTINY.FF)");
     }
