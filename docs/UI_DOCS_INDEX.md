@@ -12,7 +12,7 @@ created during the session-driven analysis (sessions 12, 1777952458,
 |-----|---------|-------------|
 | [`SESSION_UI_CATALOG.md`](SESSION_UI_CATALOG.md) | Master sprite + UI state catalog with frame references | Direct .png inspection of every sprite + frame analysis |
 | [`UI_TASK_PLAN_100.md`](UI_TASK_PLAN_100.md) | 100-task UI resolution plan with progress tracking | — |
-| [`RENDERER_GEOMETRY.md`](RENDERER_GEOMETRY.md) | Pixel-coordinate spec for every UI element | Frame measurement at native 320×200 |
+| `spec/ui/*` (dialog_framework.md, render_primitives.md, fonts_and_colors.md) | Pixel-coordinate spec for every UI element | *(the former RENDERER_GEOMETRY.md never existed — dangling link removed 2026-07-28)* |
 | [`SCREEN_ASSET_REQUIREMENTS.md`](SCREEN_ASSET_REQUIREMENTS.md) | Per-screen list of required sprites + text + memory | Cross-reference of catalogs |
 
 ---
@@ -148,7 +148,7 @@ These require either more game observations OR targeted disasm work:
 
 When fixing a UI rendering bug:
 1. Find the screen in `SESSION_UI_CATALOG.md`
-2. Look up exact pixel coordinates in `RENDERER_GEOMETRY.md`
+2. Look up exact pixel coordinates in the per-screen `spec/ui/*.md`
 3. Look up required sprites in `SCREEN_ASSET_REQUIREMENTS.md`
 4. Look up exact memory addresses for dynamic values in `DATA_MODEL.md`
 5. Look up message-template format in `GAME_TXT_CATALOG.md` /
@@ -167,4 +167,4 @@ When triggering a new event in-game:
 1. Capture frame + memory snapshot
 2. Find the matching @-section in `GAME_TXT_CATALOG.md`
 3. Identify the speaker sprite in `SESSION_UI_CATALOG.md`
-4. Verify popup geometry in `RENDERER_GEOMETRY.md`
+4. Verify popup geometry in `spec/ui/dialog_framework.md`

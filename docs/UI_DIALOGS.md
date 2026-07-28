@@ -1,5 +1,12 @@
 # UI Dialogs — Catalog
 
+> ⚠ **SUPERSEDED (2026-07-28).** Frame/button claims are refuted: the popup frame is a
+> **whole-sprite carved-wood WOODFRAM blit**, not a four-corner + four-edge indexed set
+> (`popups.md` §2.5); OK/Cancel are **FONTTINY text rows**, not FONT-NP/FONTSMAL sprites
+> (`context_dialogs.md`). **Do not build from this file.** Authoritative dialog catalog +
+> geometry: `spec/ui/context_dialogs.md`, `spec/ui/popups.md`, `spec/ui/dialog_framework.md`.
+
+
 Every dialog box in VICEROY.EXE, with trigger function, visual
 composition, and example renders.
 

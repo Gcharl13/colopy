@@ -240,7 +240,9 @@ RTLink-resolved (`REPORTS.md` §1):
 - **F6 Colony** (`func_39218`, retf @0x393F2, N=7 → `@MISC 51`). Per-colony rows (9/page):
   condition **sprite** (`0x2BC` @0x39297), colony icon (`0x2A8` @0x39330), colony NAME
   via `0x13C` **color 0x92** at x=`[bp-0x5a]+0x17`, y=`[bp-0x5e]+7` (@0x3934D),
-  production-rate sprite-strip (`0x35C`→`0x2BC`). Base x=2 (@0x39227), base y=0x14=20,
+  production-rate sprite-strip (drawn via `0x2BC`; the `0x35C` here is **`clamp(v,lo,hi)`
+  `func_0048CC`, NOT a draw** — it bounds the strip index before the `0x2BC` blit; see
+  `render_primitives.md` §2). Base x=2 (@0x39227), base y=0x14=20,
   row pitch **+0x11=17** (@0x392A4), 9 rows/page (@0x392AB). 4 centered captions color
   `0x92` y=27 `(x,box)` = **(2,80)/(82,80)/(162,80)/(242,76)** (@0x3945C/@0x39480/
   @0x394AA/@0x394CE). ColonyRecord stride 0xCA @ base 0x5D60. **NOT bordered cells.**

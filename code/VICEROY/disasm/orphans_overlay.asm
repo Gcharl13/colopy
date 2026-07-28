@@ -1,4 +1,11 @@
 ; ============================================================================
+; SUPERSEDED 2026-07-28 — this is a PRE-RESEGMENTATION decode. Function boundaries
+;   here are stale (e.g. range 0x04E51E.. is really inside func_04E2D6). The
+;   authoritative overlay decode is code/VICEROY/disasm_overlay_reseg/page_*.asm +
+;   code/VICEROY/OVERLAY_RESEGMENTATION_RESULT.md. Use those; this file is kept only
+;   as a raw byte-range reference. ~13.3 MB combined; do not cite for attribution.
+; ============================================================================
+; ============================================================================
 ; orphans — region: overlay
 ; Bytes not claimed by any prologue-detected function. Phase 2 will promote
 ; the real ones into proper func_*.asm files; the rest are data tables, padding,

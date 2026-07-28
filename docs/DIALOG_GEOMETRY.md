@@ -1,5 +1,12 @@
 # Dialog Geometry — Byte-Cited Data Flow
 
+> ⚠ **SUPERSEDED (2026-07-28).** §2 is built on a **misread**: it claims the function at
+> `0x0C36:0x000A` (= file `0x00E76A`, thunk `0x181F:0x254`) *writes* the 4 stack args into
+> `[bx+0]…[bx+6]` and calls its file offset "TBD" — but `func_00E76A` **reads** `[bx]`/`[bx+2]`
+> (sprite w−1/h−1): it is "blit ONE sprite" (`render_primitives.md`), not a geometry writer.
+> **Do not build from this file.** Authoritative: `spec/ui/dialog_framework.md`.
+
+
 This document traces how the popup-window pixel rect at
 `DGROUP:[0x839E..0x83A4]` is computed by VICEROY.EXE, citing every
 file offset of the underlying assembly. It supersedes prior Python

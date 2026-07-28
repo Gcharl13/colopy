@@ -1,5 +1,14 @@
 # UI Renderer Specification — v2 (2026-05-24, post-audit)
 
+> ⚠ **SUPERSEDED (2026-07-28).** This doc is a **pre-resegmentation stub** with load-bearing
+> errors: it sizes `func_06F0F4` at "80 bytes" (actually 1061 B, ENTER 0x168), reads `WIDTH` as a
+> char-column count (it is a **pixel** content-width floor), and presents the cursor-relative
+> `func_067DC8` chain as the "primary" layout path (the GAME.TXT event popups use the centered
+> `@x/@y` path). **Do not build from this file.** The authoritative dialog layout math is
+> `spec/ui/dialog_framework.md`; fonts/metrics are `spec/ui/fonts_and_colors.md` +
+> `data_extracted/fonts/ff_metrics.json`; draw verbs are `spec/ui/render_primitives.md`.
+
+
 Consolidated, byte-cited specification for the Python UI renderer, built
 from THREE parallel disassembly audits run on 2026-05-24:
 

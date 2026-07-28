@@ -1,10 +1,35 @@
 # UI AUDIT TRACKER — byte-verified documentation of the ENTIRE VICEROY UI
 
 > Mandate: `CLAUDE.md` "UI DOCUMENTATION MANDATE". Goal = 100% byte-verified docs of every
-> screen + every element's exact placement/font/string/color, enough to rebuild. No
-> fabrication: every cell cites a `func@offset` or is **TBD** with the blocker named.
-> Status: **DONE** (every element byte-cited or TBD-with-blocker) / **PARTIAL** / **TBD**.
-> Last updated: 2026-06-24 (autonomous scrub).
+> screen + every element's exact placement/font/string/color, enough to rebuild.
+
+> ## ⚠ AUDIT CORRECTION (2026-07-28) — the "DONE" labels below are NOT reliable
+> Three adversarial audits found the UI is **not** rebuild-sufficient and the prior
+> "SCRUB COMPLETE / static layout of every screen is byte-cited / nothing fabricated"
+> conclusion was **false**. The specifics:
+> - **No `spec/ui/*.md` sheet passes the "redraw from spec alone" test.** Systemic blockers:
+>   the glyph-width tables were deleted (now restored — `data_extracted/fonts/ff_metrics.json`,
+>   `fonts_and_colors.md` §1a); the dialog-framework **row-layout math** is missing/wrong
+>   (`box_h = line_count·2+3` is arithmetically impossible); ~100 residuals were **reworded**
+>   ("resolved-as-state", luma-from-one-frame relabeled **B**) instead of solved.
+> - **Coverage: ~300 UI surfaces have zero spec** — the Colonizopedia (166), map editor (23),
+>   options/music/debug dialogs (26), European diplomacy popups (~45), 12 woodcut screens,
+>   tutorial overlays, multiplayer, Combat Analysis. Plus **undocumented in-game screens** in
+>   the disasm: a 4.3 KB text page (`func_05E9B0`, page 0x11) and a 5-member modal family on
+>   page 0x16.
+> - **Integrity defects (now fixed):** `menus.md` had a leaked `</content></invoke>` artifact;
+>   the popup frame-blit was mis-attributed to the colony scene; four framework docs
+>   (`UI_RENDERER_SPEC.md`/`DIALOG_GEOMETRY.md`/`UI_DIALOGS.md` + a dangling `RENDERER_GEOMETRY.md`
+>   link) were stale — all now stamped SUPERSEDED; `0x181F:0x35C` was mis-called a text-draw
+>   (it is `clamp()`, `func_0048CC`).
+>
+> **Treat every row's "DONE" as UNVERIFIED** until re-hardened in the 2026-07 re-decompile
+> (Phase 0 foundation → Phase 2 per-screen rebuild-B → Phase 3 render-and-diff). Attribution
+> is done against the committed `code/VICEROY/disasm_overlay_reseg/page_*.asm` (the local-only
+> `code/VICEROY/flat/` substrate is gitignored/regenerable, not required).
+
+> ~~Status: **DONE** (every element byte-cited or TBD-with-blocker). Last updated: 2026-06-24
+> (autonomous scrub).~~ **← retracted, see above.**
 
 ## Screens & subsystems
 
@@ -77,13 +102,21 @@
   the error-logger, not the entry" pending the real entry being pinned.
 - `func_06083A` = trade-route title, not map menu bar (already noted) — fix map_view.md/menus.md.
 
-## SCRUB COMPLETE — parallel phase (2026-06-24)
-10 byte-verified decode docs cover every screen: MAPVIEW, COLONY, EUROPE, ADVISOR_REPORTS
-(F1–F10), ENDGAME (King/Score/Declaration/Closing), MENUS (boot+in-game), POPUP_INSTANCES
-(~30 families), FONTS, SCREEN_FRAMEWORK, FRONTEND_SCREENS (Nation/Difficulty/Customize).
-**Static layout of every screen is byte-cited.** The ONE consistent remaining TBD class is
-**live game-state + a few overlay-resident HUD blits** (per-row counts/gold/prices/score
-figures; the sidebar/menu-header gold blit; runtime DGROUP string indices; the colony
-RNG-placement sub-source tables) — each TBD names its exact site/blocker. Two adjacent
-binaries (OPENING.EXE, CLOSING.EXE) are out of VICEROY.EXE scope, noted with extract steps.
-Nothing was fabricated.
+## ~~SCRUB COMPLETE — parallel phase (2026-06-24)~~ — RETRACTED 2026-07-28
+The 2026-06-24 "static layout of every screen is byte-cited / nothing was fabricated"
+conclusion did **not** hold (see the AUDIT CORRECTION banner at the top). What was actually
+true: the *systems* spec is solid, and the in-game screens have a partial byte-cited skeleton.
+What was false: rebuild-sufficiency (missing glyph metrics + framework row math), coverage
+(~300 unspec'd surfaces incl. undocumented in-game screens), and ~100 reworded-not-solved
+residuals presented as closed.
+
+### Coverage gap ledger (surfaces with NO spec — 2026-07-28)
+Deferred to the comprehensive phase; **explicitly TBD, not "done":**
+- **Colonizepedia** (166 PEDIA.TXT surfaces — article + 6 index pages) → new `spec/ui/colonizopedia.md`
+- **Map editor** (MAPEDIT: 19 dialogs + 4 pulldowns/25 rows) → new `spec/ui/map_editor.md`
+- **Options/music/debug** (`@GAMEOPTIONS/@COLONYOPTIONS/@SOUNDOPTIONS`, 4 music pickers, 19 DEBUG dialogs) → new `spec/ui/options_dialogs.md` + `debug_screens.md`
+- **European (foreign-power) diplomacy** (~45 `@HELLO*/@PIRACY/@TRIBUTE/@WORTHY/@WITHDRAW…` `{width:220}` templates) → `popups.md` new section
+- **Woodcut event screens** (12 of 17 unspec'd), **tutorial overlays** (`@TUTORIAL1..19` + `@x/@y`), **multiplayer** (`@MULTI/@MULTINEXT/@MULTIREV`), **Combat Analysis** (0 mentions), **trade-route editor** geometry, **Founding-Father pick** (`@WHICHFREEDOM`), **nation briefings** (`@NATION*` 7 of 8), **intro caption cards** (`@BUILD1..10`).
+- **Undocumented in-game render code:** `func_05E9B0` (page 0x11 text screen), the page-0x16 modal family (`func_0694AE/06A700/06AA88/06AE08/06AF1C`), `func_061F02` (0x13), `func_048F34` (0x0C), `func_0452D4` (0x0A). → Phase 1 attribution.
+
+(OPENING.EXE/CLOSING.EXE remain out of VICEROY.EXE scope.)
