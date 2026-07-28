@@ -5593,3 +5593,28 @@ interactive trade screen ("not a separate headless turn phase"), attributing it 
 a mislabel (`func_033C96` is the unrelated ARMOPTIONS fn); `@0x367FC` is the internal call site within
 `func_036574`. Supersedes the "trade-screen-only / no turn phase" claim. **Authority**: `func_036574`,
 `func_0755CC`, `func_0305A8` byte offsets; `spec/systems/market.md` §3.
+
+## 2026-07-28 — .FF glyph-table index mapping is ch−1 (formats/FF.md off-by-one corrected); text-colour LUT located
+
+**Conflict**: `formats/FF.md` documented the `.FF` width/offset tables as `width[char]` for char
+0..127 ("render-validated"). Under that mapping the decoded metrics were nonsense (FONTTINY "6×4
+fixed", `h`/`k` narrower than `i`/`l`, `M` narrower than `L`) and `fonts_and_colors.md` propagated
+"6 × 4 fixed" / "9 × 6 fixed" — while `menus.md` independently observed a *proportional* FONTTINY
+advance. The per-glyph table itself had been deleted with `docs/UI_FONT_REFERENCE.md`, leaving no
+metrics anywhere in spec/ (systemic rebuild blocker #1, 2026-07 audit).
+
+**Resolution (B)**: glyph slot `j` holds ASCII char `j+1` — `width(ch)=table[ch−1]`. Proven by
+bitmap render (under the old mapping 'A' renders as 'B', '0' as '1'; under `ch−1` every glyph is
+the right letter and metrics are sane: FONTTINY space/`i`/`l`=2, `M`/`W`=6; FONT-NP `I`=5,
+`M`/`W`=11) and by the engine: blit_string core `func_00E51C` does `dec dl` @0x00E5DA, width read
+@0x00E5E9 (`font[2+(ch−1)]`), offset read @0x00E606 (`u16 font[0x82+2·(ch−1)]`). All four loaded
+fonts are proportional. Metrics for all 5 fonts committed at `data_extracted/fonts/ff_metrics.json`
+(decoded from col.zip originals, 95/95 size-formula validation per font).
+
+**By-product (B)**: the "glyph-engine colour mapping" is a 4-entry palette-index LUT at far
+`[0x269E]:[0x26A0]` — per-ink-level lookup @0x00E632, `0xFF`=transparent @0x00E637, captured
+@0x00E532. Per-string colour = LUT contents at draw time (setter family `func_00E68A`). This makes
+several "A (RGB needs a pixel sample)" colours statically closable by tracing LUT stores.
+
+**Authority**: rendered bitmaps + `func_00E51C` bytes; supersedes the `width[char]` reading and
+every "fixed-width" metric derived from it.

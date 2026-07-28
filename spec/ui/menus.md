@@ -512,5 +512,3 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
 8. **Scenario-select (LEVN*.PIK) — no grid (CLOSED, §10.1).** The `LEVN*.PIK` are full-screen 320×200
    previews shown one at a time (no tiled thumbnail grid), selected from the `@AMERICA`/`@SCENARIO`
    text list. There is no grid geometry to measure. **A (assets) / B (no-grid, closed).**
-</content>
-</invoke>
