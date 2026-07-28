@@ -5618,3 +5618,30 @@ several "A (RGB needs a pixel sample)" colours statically closable by tracing LU
 
 **Authority**: rendered bitmaps + `func_00E51C` bytes; supersedes the `width[char]` reading and
 every "fixed-width" metric derived from it.
+
+## 2026-07-28 — Dialog framework decoded to rebuild-B; two poisoned claims retracted (frame blit, box_h)
+
+**Conflict**: (1) `popups.md`/`menus.md`/`context_dialogs.md` all cited `lcall 0x181F:0x510 @0x0263D6`
+as the WOODFRAM popup frame painter, while `colony_screen.md` cited the identical site+consts as the
+colony scene blit. (2) The same three sheets gave `box_h = line_count·2 + 3` — arithmetically
+impossible for a 6px font. (3) `fonts_and_colors.md` said the template parser has "exactly 8
+directives".
+
+**Resolution (B, decode→adversarial-verify, 8 agents)**: (1) `0x181F:0x510` is called **exactly once**
+in the binary — `@0x0263D6` inside `func_026374`, the **colony-scene composite blit** (colony struct
+`[0x8542]` @0x026379). The real dialog element painter is **`func_06D938`**, blitting the sprite
+handle at widget-node `+0x68/+0x6A` via `0x181F:0x254` (@0x06D952/56/8B); the WOODFRAM handle is
+bound by the builder (binder TBD). The popup sheets' cite is retracted. (2) The real height seed is
+`[+0x16] = 2·content_cursor[+0x4A] + border[+0x46]` (@0x06D35F/63/69); `+0x4A` is the per-item
+content-height cursor (init 0 @0x06C68D), not line_count. (3) The parser `func_06F0F4` dispatches
+**10** directives (X and Y are separate strcmp entries @0x06F26F/@0x06F227). Full framework spec —
+struct field map, box W/H/X/Y formulas + clamps, return semantics (AX=0 ok / 1 empty), pump hit-test
++ row pitch (= glyph_height + border = 9px FONTTINY), 22-byte row record, parser directive table —
+landed in **`spec/ui/dialog_framework.md`**; supersedes `docs/UI_RENDERER_SPEC.md`/
+`DIALOG_GEOMETRY.md`/`UI_DIALOGS.md` (stamped). Verifier corrections folded: return-semantics
+inversion; text-measure ptr is `+0x80/+0x82` (gated by `+0x54/+0x60`); line-getter is
+`0x191F:0x91C` not `0xD1D:0x91C`; 3 bbox opcode addresses. Six open items each carry an exact
+closer (§7).
+
+**Authority**: `func_06D316`/`func_06F0F4`/`func_06E3D0`/`func_06D938`/`func_044D16`/`func_06C520`
+byte offsets vs raw/COLONIZE/VICEROY.EXE.

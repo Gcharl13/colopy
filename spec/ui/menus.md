@@ -371,13 +371,16 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
   10px @0x06CCE3); text width via `0x181F:0x204`. **B.**
 - **Geometry finalize — `panel_finalize_geometry` `func_06D316` @0x06D316:**
   `content_w = max(80, longest_line_px+10, @width)` (@0x06D392);
-  `box_h = line_count·2 + 3 (+ title rows + Σ option rows)` (@0x06D363);
+  `box_h_seed = 2·content_cursor[+0x4A] + border[+0x46]` (@0x06D35F/63/69 — the old
+  `line_count·2+3` reading is retracted; see `dialog_framework.md` §3);
   `X = (@x==-1)?(320-box_w)/2:@x` (@0x06D522); `Y = (@y==-1)?(200-box_h)/2:@y` (@0x06D53B);
   clamp shifts if `X+box_w>0x140` / `Y+box_h>0xC8`. `@width` keyword string "WIDTH\0" @file
   0x1F989 is a **floor**, not a clamp. **B.**
-- **Frame blit:** `lcall 0x181F:0x510` (WOODFRAM whole-sprite frame) @site 0x0263D6, consts
-  (0x50,0x50,8,0xC8,0,0). **Body font = FONTTINY** (`[0x89E]` engine default) for generic popups;
-  **FONTINTR** for the boot menu/pickers/dropdowns (dialog ctx `[0x268A]`). **B.**
+- **Frame blit (corrected 2026-07-28):** the popup frame is drawn by **`func_06D938`** blitting
+  the sprite handle at widget-node `+0x68` via `0x181F:0x254` (`dialog_framework.md` §6) — the old
+  `0x181F:0x510 @0x0263D6` cite was the **colony-scene blit**, retracted. **Body font = FONTTINY**
+  (`[0x89E]` engine default) for generic popups; **FONTINTR** for the boot menu/pickers/dropdowns
+  (dialog ctx `[0x268A]`). **B.**
 - **OK/Cancel buttons** = FONTTINY text rows (the `@OPTIONS` list), NOT sprites; the modal
   "wait for OK / keypress" loop is `0x181F:0x3C0` (`func_004A80`) which **draws nothing** (the box
   + label are painted by the builder first). **There is NO OK/Cancel button SS sprite:** the modal

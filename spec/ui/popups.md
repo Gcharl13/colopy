@@ -75,7 +75,8 @@ font engine `lcall 0x181F:0x204` (FONTTINY metrics). **B.** Spot-check 0x06CCE3
 ```
 content_w = max(80, longest_line_px + 10, @width)       ; @0x06D392 (max of +0x28,+0x20,+0x34)
 box_w     = content_w + border(3) + per-branch pad(3..6); @0x06D4BA / 0x06D606 / 0x06D61D
-box_h     = line_count·2 + border(3)                    ; @0x06D363 (shl 1; add [bx+0x46])
+box_h_seed = 2·content_cursor[+0x4A] + border[+0x46]     ; @0x06D35F/63/69 — NOT line_count·2+3
+            ; (+0x4A = per-item content-height cursor, init 0 @0x06C68D; see dialog_framework.md §3)
             + (title  ? title_rows·metric + (match?6:3)) ; @0x06D509 (+6) / 0x06D513 (+3)
             + (options? Σ(option_rows + 3) + 3 : 0)      ; @0x06D606 / 0x06D61D
 X = (@x == -1) ? (320 - box_w)/2 : @x                    ; @0x06D522 (sar 1; sub 0xA0; neg)
@@ -118,13 +119,15 @@ when input is expected, `func_06F7F9` (= `LJMP 0x191F:0x16A`, show-and-wait). Th
 section-load core is `func_06F803` (= `LJMP 0x191F:0x182`). **B**
 (`POPUP_TEMPLATE_AUDIT.md` "Convenience wrappers").
 
-### 2.5 Frame blit (WOODFRAM) — **B / A**
+### 2.5 Frame blit (WOODFRAM) — **B** (painter relocated 2026-07-28)
 
-`lcall 0x181F:0x510` (frame painter) @ site **0x0263D6** (`9a 10 05 1f 18`), pushed
-consts **(0x50, 0x50, 8, 0xC8, 0, 0)** + the 4-word rect `[0x839E..0x83A4]` pushed
-**twice** (clip-rect, dest-rect — same coords ⇒ no clipping). WOODFRAM is a
-whole-sprite carved-wood frame, **not** an indexed corner set. **B** (engine /
-call site). Background fill = tiled **WOODPANL.PIK** (some `WOODPAN2.PIK`) +
+**RETRACTED mis-attribution:** `0x181F:0x510 @0x0263D6` is the **colony-scene composite blit**
+(sole `0x510` call site in the binary, inside `func_026374`, colony struct `[0x8542]` @0x026379)
+— it draws no popup. The **real dialog element painter is `func_06D938`**: it blits the sprite
+far-ptr stored at **widget-node `+0x68/+0x6A`** via `0x181F:0x254` (`@0x06D952/0x06D956/0x06D98B`,
+sprite h/w from `sprite+0x0E/+0x0C`). WOODFRAM is a whole-sprite carved-wood frame, **not** an
+indexed corner set, bound into `node+0x68` by the dialog **builder** (binder site TBD — see
+`dialog_framework.md` §6/§7). **B** (painter + mechanism). Background fill = tiled **WOODPANL.PIK** (some `WOODPAN2.PIK`) +
 **NAMEPLAT.SS** speaker title strip; these asset *roles* are **A**
 (`POPUP_TEMPLATE_AUDIT.md` "Frame & body rendering"), and the per-popup
 WOODPANL-vs-WOODPAN2 choice is **RESOLVED (B, negative): gameplay popups never
