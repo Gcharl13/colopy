@@ -163,22 +163,102 @@ dispatch `func_03BC42` @0x03BD26** (shown when a Father joins the Congress) and
 Congress selection screen @0x03C24E.
 
 ## 9. Game Concept page (`func_06AF1C`, idx 0..11) — B
-Text-only. Name from DG 0x935C stride-2 ptr table @0x06AF67 (runtime-filled from
-PEDIA `@MISCELLANEOUS`'s 12 concept names — loader site TBD). Article key
-`"MISCn"`. Only caller = browser. **Open item:** extracted PEDIA.TXT has no
+Text-only. Name from DG 0x935C stride-2 ptr table @0x06AF67 — **loader resolved
+2026-07-30 (B)**: page-1A text-loader @0x07530B–@0x07534B reads section
+"MISCELLANEOUS" (DG 0x22DE) of "PEDIA" via `0x191f:0x928`; line 0 = "12" →
+count `[0x846]` @0x075329; 12 line-pointers → `[0x935C+2i]` @0x07533E. Article
+key `"MISCn"`. Only caller = browser. **Open item:** extracted PEDIA.TXT has no
 `@MISC0..11` sections — resolution of `"MISC5"` by menu_lookup_run is TBD
 (possibly header-only render).
 
-## 10. Browser + index pager (`func_06B398` / `func_06B02A`) — *(pending decode)*
-Known (B): browser uses the same `[0x2E92]` title @0x06B3FA; dispatches to all
-seven pages via near-stub block @0x06B660–@0x06B6BF in `@PEDIA` order; pager
-`func_06B02A` draws `[0x2E94]`="(More)" @0x06B1A3 and `[0x2E96]`="(Exit)"
-@0x06B1D2 footers.
+## 10. Browser + index pager (`func_06B398` / `func_06B02A`) — B
+Decoded 2026-07-30; jump tables, menu-command binding, and section-name strings
+re-verified against raw bytes (menu jump table file 0x023DE8: all eight commands
+0x70..0x77 → handler file 0x023904; DGROUP 0x22DE="MISCELLANEOUS",
+0x22EC="PEDIA", 0x21CE="OTHER_NAMES" byte-read).
+
+### Entry & menu binding
+`func_06B398(category 0..7)`. The category menu is **the standard pulldown**
+built from MENU.TXT `@PEDIA` (8 items: 7 categories + "Complete") — NOT a `0x998`
+list-menu. Menu executor `func_0235D6` dispatches commands 0x1B..0x77 via
+`jmp cs:[bx+0x2F08]` @0x023DE3 (table file 0x023DE8); commands 0x70..0x77 all
+target @0x023904: `category = command − 0x70`, `lcall 0x191f:0x372` @0x02390B →
+browser. **Category 7 = "Complete"** merges all 7 categories into one
+alphabetized index (loop i=0..6 @0x06B3B4–@0x06B3C7) — 162 entries total.
+
+### List build (helpers, all page-0x16-local)
+- `func_068F38` list-init @0x06B39D: allocates 3 far buffers — name handles
+  (0x1B0 B, word/entry → `[0x1EA6]`), category bytes (0xD8 → `[0x1EAA]`),
+  within-category index bytes (0xD8 → `[0x1EAE]`); count `[0xA5AA]`=0.
+  **Capacity 0xD8 = 216 entries** (`cmp [0xa5aa],0xd8` @0x068FA4 in the
+  appender `func_068FA0`).
+- Enumerator `func_06B202(cat)` (dispatch table file 0x06B388) appends per
+  category:
+
+| cat | bound | skips | name table (DG, stride) | source |
+|---|---|---|---|---|
+| 0 Cargo | 16 | — | 0x97C0, 2 | NAMES `@CARGO` 0..15 |
+| 1 Unit | 23 (@0x06B243) | — | 0x5230, 0xE | NAMES `@UNIT` |
+| 2 Terrain | 0x1D (@0x06B279) | ids 0x10..0x17 (@0x06B282) | 0x2F74, 0x10 | 0..7 `@UNFORESTED`, 8..15 `@FORESTED`, 24..28 `@OTHER` |
+| 3 Skill | 0x1C | 0x12 Teacher (@0x06B2BA) | 0x8EA2, 8 | NAMES `@JOB` |
+| 4 Building | 0x2A | 0xA,0xB,0x1E,0x1F (@0x06B2EC) | 0x8F82, 0xC | NAMES `@BUILDING` |
+| 5 Father | 25 | — | 0x9652, 6 | NAMES `@FATHERS` |
+| 6 Concept | `[0x846]`=12 (@0x06B35B) | — | 0x935C, 2 | PEDIA `@MISCELLANEOUS` |
+
+→ sizes 16/23/21/27/38/25/12. Forested terrains (idx 8..15 of cat 2) get a
+display suffix: `func_06921A` appends `" " + [0x2DB0]` ("Forest") @0x069248–
+@0x069270 — "Boreal Forest" etc.; the sort still compares the base name.
+- **Alphabetical sort** `func_069058` @0x06B3E9: gnome/bubble sort, comparator
+  `0xd1d:0x103e` (strcmp-family) on the 0x22-resolved name pointers @0x0690B5.
+- Free on exit: `func_068EE0` (three `0x191f:0x1A8` frees) @0x06B658.
+
+### Index-page layout (`func_06B02A(highlight, present)`)
+- Content clear `0x444` at (0, 0xF, 0x140, 0xB9) — preserves the 15px title
+  strip @0x06B04E.
+- **Grid: 3 columns × 24 rows = 72 entries/screen.** First index =
+  `[0xA5AC]`·0x18 @0x06B05E; cell pos (`func_069156`): row = i%0x18, col =
+  i/0x18 − `[0xA5AC]`; **x = col·0x64 + 5** (5/105/205) @0x069182;
+  **y = row·7 + 0x19** (25..186, **pitch 7**) @0x069190. Font = FONTTINY
+  (`[0x89E]`).
+- Per cell: text at (x+2, y+1), ink `[0x830]` normal / `[0x831]` highlighted;
+  highlight = solid bar `0x181f:0xBA` (w = textwidth+4, h = fontH+1) color
+  `[0x835]` @0x06B14E–@0x06B15E.
+- **"(More)"** (`[0x2E94]`, @MISC 109) at **(5,5)** left, drawn only when
+  count>0x48 @0x06B184; **"(Exit)"** (`[0x2E96]`, 110) always,
+  **right-aligned to x=0x13B (315), y=5** via `0x150` @0x06B1CF (right-align
+  mechanism byte-verified in `func_002B72` @0x002B9F). Both flank the centered
+  title on the title row; hover recolors them to `[0x831]` (params −2/−3).
+- Present `0xE2` when `[bp+8]`≠0.
+- Browser title differs from entry pages: color **0xF literal** @0x06B3F1–
+  @0x06B408 (entry pages use `[0x831]`).
+
+### Input (browser loop @0x06B425)
+- Keys: Up '8'/0x148, Down '2'/0x150 ((cursor±1) mod count), Left '4'/0x14B
+  (−0x18, wrap to right-most column same row), Right '6'/TAB/0x14D (+0x18,
+  wrap to residue mod 0x18; accept test `jle` @0x06B4C5 admits cursor==count —
+  **apparent original off-by-one**), ENTER/SPACE = open article, ESC = exit.
+- Column-granular auto-scroll on `[0xA5AC]` @0x06B470/@0x06B508.
+- Mouse (`func_0691A4` hit-test): y≤0xF & x<0xA0 → "(More)" (−2); y≤0xF &
+  x≥0xA0 → "(Exit)" (−3); else per-entry rect (w=0x64, h=7) via `0x3CA`
+  @0x0691EF. Hover tracks; click on "(More)" pages forward 3 columns
+  (cyclic) @0x06B557–@0x06B57D; click on entry opens it; "(Exit)"/empty
+  space exits.
+- After an article returns, full redraw with cursor/page reset @0x06B3DE;
+  loop until exit.
+
+### Reachability
+`func_06B398` has exactly one caller (whole-corpus grep): `func_0235D6`
+@0x02390B — the Colonizopedia is reachable only from the eight `@PEDIA`
+pulldown items (plus the direct per-page context-help sites of §1).
 
 ## 11. Open items (exact trace sites)
 1. `[0x2E92..]` label-array loader — find the loop filling DG 0x2DBA+2n from
-   LABELS.TXT.
-2. `LCALL 0xd1d:0x7e4/0x7a4` strcpy/strcat — resolve the 0xd1d segment fixup.
+   LABELS.TXT. (Related loaders now pinned nearby: `[0x2DB0]`="Forest" et al.
+   from NAMES `@OTHER_NAMES` filled @0x074AC2–@0x074ADC; `@MISCELLANEOUS`
+   @0x07530B — the `@MISC` label loop is likely in the same page-1A cluster.)
+2. `LCALL 0xd1d:...` C-runtime (0x7e4 strcpy, 0x7a4 strcat, 0x103e strcmp,
+   0x117e strcpy, 0x8f6 atoi — usage-inferred) — resolve the 0xd1d segment
+   fixup; also settles sort case-sensitivity.
 3. Substitution-slot store body near 0x06F7EA.
 4. `"MISCn"` section resolution (§9).
 5. ~~Separator-glyph helpers~~ **RESOLVED 2026-07-30** (§4): strcat wrappers of
