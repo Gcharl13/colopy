@@ -230,7 +230,116 @@ plow) — needs `func_005D32` layer-write sites; (4) identity of the font behind
 
 ## 3. Page-0x16 modal family (`func_0694AE/06A700/06AA88/06AE08/06AF1C`) — TBD (decode in progress)
 
-## 4. `func_048F34` (page 0x0C) — TBD (decode in progress)
+## 4. `func_048F34` (page 0x0C, file 0x048F34..0x0495FF, 1740 B) — native supply/demand model + "Supply and Demand (Indians)" debug dump
+
+**SCREEN:** **debug-only** — `func_048F34` is *not a screen renderer*. It is the
+**native-settlement supply/demand economic model** (computes the 16-good
+buy-interest and sell-supply arrays for the active Indian village); its only
+drawing is the cheat-menu **"Supply and Demand (Indians)" debug dump**, gated on
+`[0x894] & 4`. The "colony-placement band" hint for `[0x8D4A]/[0x8D4E]/[0x8D52]`
+is **refuted**: those are the active native-settlement ptr / tribe-record ptr /
+tribe idx.
+
+**Verification status:** 12 load-bearing cites spot-checked 2026-07-30 — all
+resolve exactly (entry `enter 0xa4,0` @0x048F34, colony select `0x181f:0x9e6`
+@0x04903A, terrain read `0x78c` @0x049185, tribe ptr `[0x8d4e]` @0x0492F4, clamp
+`push 0x32` @0x04943E, debug gate `test byte [0x894],4` @0x0494DA, text draw
+`0x13c` @0x04952F, `(0,0x140,0xC8)` blit @0x0495E5ff, blocking getch `0x3e0`
+@0x0495F7, sole caller `lcall 0x1a1f,0x434` @0x057093, popup-key pushes
+`push 0x181c` @0x05716F / `push 0x1839` @0x0573EB).
+
+### Identity evidence
+- **Debug gate**: `test byte [0x894],4` @0x0494DA and @0x0495DE. `[0x894]` is
+  the 7-bit debug-options bitfield built by `func_02356C` (see §2). DEBUG.TXT
+  `@OPTIONS` item 3 (bit 2, mask 4) = **"~Supply and Demand (Indians)"** — the
+  function's exact subject. Sibling bits 0x10/0x20/0x40 already verified as
+  Close/Far/All Movement (§2).
+- **Debug dump body** @0x0494DA–0x049534: one line per good g (0..15), only if
+  either array entry ≠0 (@0x0494E6–0x0494F2):
+  `sprintf(buf, "%Fs %d %d\n", name, supply, demand)` — fmt at DGROUP 0x154B
+  (file 0x1EEEB), sprintf `func_010118` via `0xD1D:0xB48` @0x049516; good name
+  fetched by `0x181F:0x22` from id table `[0x97C0+2g]` @0x049505; drawn by
+  `0x181F:0x13C` @0x04952F at **x=1, y=8·(g+1), color 0x0F**
+  (@0x04951E–0x04952E). Epilogue: bottom-rule blit `0xE2` with the `(0,0x140,
+  0xC8)` idiom @0x0495E5–0x0495F2, then **blocking getch** `0x3E0` =
+  `func_00D286` @0x0495F7 — a debug pause, not a game screen.
+- **Outputs**: two 16-word DGROUP arrays, zeroed @0x049259–0x04926F:
+  `0x9E58[16]` = per-good **demand**, `0x9E78[16]` = per-good **supply**, good
+  order = NAMES `@CARGO`. Proven by consumers: `func_04A7CA` (village-visit)
+  zeroes last-bought goods @0x04A8C1–0x04A8F0, index-sorts via `0x191F:0xED0`
+  @0x04A8F7, pushes good-name ids @0x04A91D/@0x04A932 (the "especially
+  interested in …" text); `func_056C3E` reads `[0x9E58]−[0x9E78]` food deficit
+  @0x057098–0x05709F → **INDIANBEGFOOD** popup (key DGROUP 0x181C, pushed
+  @0x05716F) and surplus `[0x9E78]>[0x9E58]` @0x05737C → **INDIANGIVEFOOD**
+  (0x1839, pushed @0x0573EB); `func_049600` (haggle/lost-city) subtracts
+  `0x9E78[idx]·4` @0x04A07A.
+
+### Byte-cited structure
+- **Phase A — colony-claimed-tile mask** (@0x048F3C–0x049049): clear 25-byte
+  mask @0x048F6C; for each colony 0..`[0x539E]` (@0x04902F) select via
+  `0x181F:0x9E6` → `[0x8542]` @0x04903A; 5×5 loop maps settlement-relative
+  (a,b) to colony-relative coords @0x048F92–0x048FBA, requires x′,y′∈0..4
+  @0x048FCC–0x048FE2, center (2,2) special-cased @0x048FE4, else worked-slot
+  test `0x181F:0xCE0` = `func_008956` @0x048FF6 (helper matches (dx,dy) against
+  20-entry tables DGROUP 0xC8/0xDE, reads ColonyRecord+0x70+slot); mark
+  mask[a·5+b]=1 @0x049002. **Anomaly (suspected original bug)**: the in-bounds
+  call `0x181F:0x302` = `func_005BFA` @0x048FC0 receives *relative* (x′−2,
+  y′−2), but `func_005BFA` tests absolute `1≤x<[0x853A]−1 ∧ 1≤y<[0x853C]−1`
+  (@0x005BFE–0x005C1F). Phase B passes absolute coords correctly @0x04913D.
+- **Phase B — 5×5 terrain scan** around the settlement (@0x04904A–0x049241):
+  terrain id via `0x181F:0x78C` @0x049185 (hard rule 3 family). Classification
+  per NAMES `@UNFORESTED` 0..7 + `@OTHER` 24=Arctic/25=Ocean/26=Sea Lane/
+  27=Mountains/28=Hills: mountains ctr @0x049190, hills ctr @0x049199, Arctic
+  cold+4 @0x0491A2; forested 8..23 routed @0x0491AB–0x0491C2 (food/game pt
+  @0x0491C5; base=t−8/t−16 @0x0491D2/@0x0491E5; cold-forest base<3 vs
+  warm-forest sugar/tobacco/cotton +2 @0x049206/@0x049211/@0x04921F); open
+  land: Savannah sugar+4 @0x04909F, Swamp sugar+2 @0x0490A5, Grassland
+  tobacco+4 @0x0490AF, Marsh tobacco+2 @0x0490B9, Prairie cotton+4 @0x0490C3,
+  Tundra ore+2 @0x0490CD, Plains cotton+1/food+2 @0x0490D7; Ocean/Sea-Lane fish
+  @0x049066–0x049090 (every 3 rate-pts → food+2).
+- **Phase C — array build** (@0x049242–0x0495DC), N = settle[+4]+1
+  (population+1) @0x049242, tier = tribe[+2]: food supply
+  `+= (tier+N)·foodpts/(7−tier)` @0x049271–0x04928B; food demand `4N²` (halved
+  if tier≥2) @0x04928F–0x0492A7; silver from tribe[+0xC]/K (K per-tribe byte
+  `[0x962A+idx]`) + 4·mountains @0x0492B8–0x0492F0; ore
+  `2·hills+mountains+tundra` (tier≥1) @0x0492F4–0x04930B; furs
+  `(2·coldforest+otherforest/2)/(tier+1)` @0x04930F–0x049328; coats/tobacco/
+  sugar/cotton/cloth supplies @0x04932C–0x049386; demands — tobacco
+  `(6−tier)·N+2·cold+5` @0x04938F, cigars @0x0493A5, coats `8·cold+furs`
+  @0x0493B5, rum @0x0493C2, trade goods `(tier+2)(N+3)+8` @0x0493D5, tools
+  `(tier·N)<<(cold/2+1)` @0x0493EA, muskets `4·(7−tribe[+7]−tier)` @0x0493FC,
+  horses `4·(9−tribe[+8]−tier)` @0x049423; horses supply
+  `tribe[+0xA]/([0x962A+idx]/2+1)` @0x04940D; muskets supply=0 @0x049434.
+  Demand clamp to [0,0x32] via `0x181F:0x35C` = `func_0048CC` clamp
+  @0x04943E–0x049460. Capital boost (settle[+3]&4) @0x049462–0x0494B5:
+  demand[0..7]×2, demand[13..15]×1.5, supply[7..15]×2. Per-good tribe stock
+  `tribe[+0xE+2g]` adjustment @0x0495B9–0x0495D6 / @0x0494C0–0x0494D6; final
+  mutual discount `supply−=demand/2, demand−=supply/2` with ≥1 floors
+  @0x049537–0x049591 (debug dump sits between the two).
+
+### Reachability
+Exactly one stub (`0x01CA24`, type A, = `0x1A1F:0x434`) and exactly one call
+site (whole-file scan): **@0x057093 inside `func_056C3E`** (page 0x0F,
+mission-village event handler: INDIANSCONVERT @0x057341, INDIANBEGFOOD
+@0x05716F, INDIANGIVEFOOD @0x0573EB). `func_056C3E` is entry 9 of a 10-way
+far-jmp trampoline row @0x05A1DB–0x05A20C inside the unit-at-village dispatcher
+`func_059B90`. So the *computation* runs in normal gameplay; the *drawing*
+additionally requires the cheat-menu `@CUP` debug flag.
+
+### Confidence & open items
+HIGH on identity (the gate bit's own DEBUG.TXT label names the function's
+subject; three independent consumers agree on the array semantics). MEDIUM on
+individual accumulator→good attributions inside the dense Phase-C formulas.
+
+**TBD (exact trace sites):** (1) array freshness for the trade dialogs — no
+second call to `func_048F34` exists; confirm the enter-village flow always
+passes through `func_056C3E` first (breakpoints 0x48F34 vs 0x4A8F7). (2) the
+Phase-A `func_005BFA` relative-arg anomaly @0x048FC0 — confirm in-game.
+(3) DGROUP 0x962A per-tribe byte table — name TBD (likely a NAMES `@TRIBES`
+column). (4) 0x97C0 good-name string-id table init site TBD (runtime,
+likely the `@CARGO` load path). (5) tribe bytes +7/+8 semantic names TBD.
+Note: `code/VICEROY/disasm/func_048F34_unknown.asm` is stale (covers 922 of
+1740 bytes).
 
 ## 5. `func_0452D4` (page 0x0A, file 0x0452D4, 1559 B) — pulldown-menu tracking loop of the in-game map menu bar
 
