@@ -80,7 +80,50 @@ frame rec+1).
 - Context-help callers: @0x02BDDC (`[0x32E]`=4), @0x02AFBE, @0x02BABD, @0x0336AB,
   @0x033B4F, @0x035560.
 
-## 4. Unit Type page (`func_0696C6`) — *(pending decode)*
+## 4. Unit Type page (`func_0696C6`, idx 0..0x16) — B
+Signature: `far func(unit_type)`, one word param. Decoded 2026-07-30; 12
+load-bearing cites + the separator literal pool + the type→job byte table
+re-verified against the EXE.
+
+- **Temp preview unit**: creates a throwaway UnitRecord via `0x1a1f:0x1CA` =
+  `func_04007E` (type 0, x=y=−6, nation `[0x5398]`) @0x0696CB–@0x0696DA; sets
+  orders=0, type=param, profession=0x13 @0x0696E7–@0x0696F6; destroyed at exit
+  (`0x181f:0x808` = `func_006E94` on `[0x539C]−1`) @0x069D7B–@0x069D85.
+- **Figures** drawn by `0x181f:0x2BC` = `func_00386A` (per-unit info panel) from
+  the temp record — args (width=0x64, 0, y), AX=unit idx, DX=0, BX=x.
+  **Horizontal pitch 0x12 (18px)**; x home = 8.
+  - Type 0 (Colonists) = full profession gallery: prof 0x1C first, then
+    0x19/0x1A/0x1B, then profs 0..0x16 skipping 0x12 (Teacher) and 0x13
+    (Colonist); **17 figures per row** (`cmp [bp-2],0x11` @0x069864), wrap
+    y+=0x14 — 25 figures total @0x0697C7–@0x069879.
+  - Types 1–5: two figures — prof 0x13 at x=8, then expert job from byte table
+    DG 0x30E (file 0x1DCAE = `13 15 14 18 17 16`: 1→0x15, 2→0x14, 3→0x18,
+    4→0x17, 5→0x16; job 0x17 renders as prof 0x15 @0x0698DB) at x=0x1A
+    @0x06987C–@0x0698FE.
+  - Type 0xB (Artillery): second figure with UnitRecord flags `+0x04 |= 0x80`
+    set @0x069923 then cleared @0x069942 — the "Damaged" state pair.
+- **Name line** at (post-figures x, fig_y+6), color `[0x830]`: UnitName (stride
+  0xE table DG 0x5230, +0) plus — types 1–5: `" (and <ExpertPlural>)"`
+  (`[0x2E8E]`=@MISC 106 "and"; plural = JOB table 0x8EA2 +2); type 0xB:
+  `" (and Damaged <UnitName>"` — **the closing ")" is missing in this branch
+  (original bug, byte fact @0x0699E6–@0x069A62)**. Then y += 0x18.
+- **Stat line** at (8, y), color `[0x830]`, from table 0x5230 (+5=combat,
+  +6=attack, +4=moves×3, +7=cargo holds):
+  `"Combat: N"` (`[0x2F20]`=@MISC 179) — type 0xB adds
+  `"(Attack: +2 Damaged: -2)"` (delta = +6−+5 @0x069B39; literal 2 @0x069B89);
+  types 1/4 add `"(Veteran: N)"` with attack×1.5 (`×3>>1` @0x069BEC);
+  all: `"Moves: N"` = +4 **div 3** (`cl=3` @0x069C46); if +7≠0:
+  `"(Cargo Holds: N)"` @0x069C86–@0x069CF0.
+- **Article**: key `"UNIT"+idx` (push 0x1ED3 @0x069D0C) → PEDIA `@UNIT0..23`;
+  `[0x1F5A]` = stat_y + 0xC @0x069D2B; modal-wait @0x069D76.
+- **Separator helpers resolved (B)**: the `0x181f` string-builder wrappers
+  strcat DGROUP literals (pool byte-read at file 0x1D9F0+): `0x178`=" " (DG
+  0x50), `0x1BE`=": " (0x55), `0x11E`="(" (0x5E), `0x128`=")" (0x60),
+  `0x146`="+" (0x66), `0x15A`="−" (0x68), `0x196`=" "×N, via `0xd1d:0x7a4`.
+- Callers: browser @0x06B5FE; context help @0x02BDCE (`[0x32E]`=2/3);
+  unit-list help sites @0x02AECB, @0x02B355, @0x02B701 (buildable-unit items),
+  @0x03342C tail @0x033570, @0x0339F8, and three sites in the un-resegmented
+  page-04 tail (@0x034305, @0x035263, @0x03559C — containing functions MEDIUM).
 
 ## 5. Terrain Type page (`func_069D8C`) — *(pending decode)*
 
@@ -138,6 +181,11 @@ seven pages via near-stub block @0x06B660–@0x06B6BF in `@PEDIA` order; pager
 2. `LCALL 0xd1d:0x7e4/0x7a4` strcpy/strcat — resolve the 0xd1d segment fixup.
 3. Substitution-slot store body near 0x06F7EA.
 4. `"MISCn"` section resolution (§9).
-5. Separator-glyph helpers `0x181f:0x1BE/0x128/0x178/0x11E` — resolve thunk
-   stubs @0x01A7AE/0x01A718/0x01A72E.
+5. ~~Separator-glyph helpers~~ **RESOLVED 2026-07-30** (§4): strcat wrappers of
+   the DGROUP literal pool at 0x50.. (" ", ": ", "(", ")", "+", "−").
 6. Internal y/baseline of centered-title verb `0x100` (overlay @0x0606C0).
+7. `func_00386A` (0x2BC per-unit info panel) internals — figure sheet + frame
+   math, effect of flags bit 0x80 "Damaged", meaning of prof 0x1C figure
+   (needs full disasm of 0x00386A..~0x003E4x; per-func asm truncated).
+8. NAMES `@UNIT` → DG 0x5230 loader (confirm +4 stored as moves×3); same
+   family as the unlocated 0x8EA2 `@JOB` loader.
