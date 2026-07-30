@@ -5741,3 +5741,33 @@ decide. No doctrine change; do not renumber in other docs yet.
 
 **Authority pending**: VICEROY.EXE coast site bytes. MAPEDIT side: raw/COLONIZE/MAPEDIT.EXE
 @0xC66E–0xC70A, @0xC550.
+
+## 2026-07-30 — PowerRecord+0x40 is the treaty-respect COUNTER, not a relation-bit matrix (diplomacy.md §2 correction); four woodcut attributions in popups.md byte-refuted
+
+**Conflict 1**: `spec/systems/diplomacy.md` §2 attributes the 0x02/0x20/0x40 relation-bit tests in
+`func_057DC0` to a matrix at PowerRecord+0x40.
+
+**Resolution (B)**: those tests are `func_007F34` reads of the **+0x34** matrix (DG 0x883C, row
+stride 0x13C; bits 0x02 war / 0x08 grievance / 0x10 parley-cooldown / 0x20 met / 0x40 treaty /
+0x80 privateer attribution — setter `func_007F96` @, clearer `func_008000`, error strings "Treaty
+on/off error"). **PowerRecord+0x40 (DG 0x8848) is a plain byte counter** — treaty-respect points:
+seeded `2·(6−difficulty)` (Franklin halves) @0x059B00–0x059B31, set 1/0 by `func_057DC0`
+@0x057EC5/@0x057F2D, and while nonzero an AI aborts attacks on its treaty partner (`func_03ECF0`
+@0x03F163). Decrement site not yet found (runtime-open). diplomacy.md §2 to be corrected.
+
+**Conflict 2**: `spec/ui/popups.md` woodcut glosses (tier A, sourced from docs/UI_DIALOGS.md)
+claim WDCUT04 = treasure, WDCUT10 = battle, WDCUT12 = village-raze, WDCUT13 = war dance in
+func_04B036.
+
+**Resolution (B)**: exhaustive byte-scan finds exactly 10 `lcall 0x181F:0x524` sites (the only
+woodcut entry) — none in `func_05C878`/`func_05B2C2`/`func_04A7CA`/`func_04B036`. The true table
+(full decode in `spec/ui/woodcuts_and_intro.md`): 1=first landfall (@0x020F00), 2=first colony
+(@0x040E00), 3/4/5=first tribe contact incl. Aztec/Inca (`func_056C3E` @0x056DA6), 7=enter
+village (@0x04B56C), 8=Fountain of Youth (@0x0618F9), 9=first cargo to Europe (@0x0420EF),
+10=first European contact (@0x057FDF), 11=colony burning ×2 (@0x05DADC/@0x05DFCB — the ONE prior
+gloss that survives), 13=Indian raid on human colony (@0x05D219). **WDCUT 0/6/12/14–16 have no
+caller** (6 even has a wired sound cue — planned, never hooked). popups.md §4/§7/§9/§16 glosses
+struck; §14 confirmed.
+
+**Authority**: raw/COLONIZE/VICEROY.EXE bytes (caller scan re-verified 2026-07-30: 10 sites
+exact) > team docs per notes/TRUTH_HIERARCHY.md.

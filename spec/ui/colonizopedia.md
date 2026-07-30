@@ -321,10 +321,11 @@ display suffix: `func_06921A` appends `" " + [0x2DB0]` ("Forest") @0x069248–
 pulldown items (plus the direct per-page context-help sites of §1).
 
 ## 11. Open items (exact trace sites)
-1. `[0x2E92..]` label-array loader — find the loop filling DG 0x2DBA+2n from
-   LABELS.TXT. (Related loaders now pinned nearby: `[0x2DB0]`="Forest" et al.
-   from NAMES `@OTHER_NAMES` filled @0x074AC2–@0x074ADC; `@MISCELLANEOUS`
-   @0x07530B — the `@MISC` label loop is likely in the same page-1A cluster.)
+1. ~~`[0x2E92..]` label-array loader~~ **RESOLVED 2026-07-30**: the LABELS
+   `@MISC` pointer table (base DG 0x2DBA, 221 entries) is loaded
+   @0x075214–0x07523C (opens section "MISC" DG:0x22B3, stores line ptrs
+   `[0x2DBA+2i]`) — same page-1A loader cluster as `@OTHER_NAMES`
+   (@0x074AC2) and `@MISCELLANEOUS` (@0x07530B).
 2. `LCALL 0xd1d:...` C-runtime (0x7e4 strcpy, 0x7a4 strcat, 0x103e strcmp,
    0x117e strcpy, 0x8f6 atoi — usage-inferred) — resolve the 0xd1d segment
    fixup; also settles sort case-sensitivity.

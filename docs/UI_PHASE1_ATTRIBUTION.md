@@ -15,12 +15,19 @@ before a section is marked verified.
 
 ## 1. `func_05E9B0` (page 0x11, file 0x05E9B0..0x05FAC2, 4371 B) — generic two-column unit-roster modal
 
-**SCREEN:** a full-screen MODAL two-column unit-list/roster panel (user-facing, not
-debug). The *concrete* screen name is **TBD at the byte-verified bar** — the title
-and every column label are runtime BSS pointers supplied by the caller, so this
-function is a **parameterized shared renderer**; identity is caller-determined.
-Low/medium-confidence reading of the data it shows (Soldier/Dragoon special-cases,
-cargo-slot %) suggests a military muster / unit-comparison style report.
+**SCREEN: RESOLVED 2026-07-30 — this is the COMBAT ANALYSIS dialog** (the
+pre-combat odds breakdown gated by the Game Options "Combat Analysis"
+checkbox). The runtime pointers are now pinned: sole caller = land-combat
+resolver `func_05CA7E` @0x05D291 (`lcall 0x1a1f,0x704` → stub 0x1CCF4 →
+0x05E9B0; gate `test [0x5383],2` @0x05D221), and the title/label pointers
+`[0x2E36..0x2EC4]` are slots of the LABELS.TXT `@MISC` pointer table at
+DGROUP 0x2DBA, loaded @0x075214–0x07523C (`[0x2E50]` = line 75 = "COMBAT
+ANALYSIS"; Fatigue/Attack Bonus/Ambush/Terrain/Colony/Fortified/Spain
+Bonus/Drake/Bombard/Tory Unrest/Rebel Unrest…). The two "columns" are
+attacker and defender; the descriptor bitmasks are combat modifier-flag
+words `[col*2+0x8D00]`/`[col*2+0xA156]`. Full row/value decode:
+`spec/ui/combat_analysis.md`. (Original analysis below kept for the layout
+record — it was correct; only the identity was open.)
 
 **Verification status:** 15 load-bearing cites spot-checked against
 `page_11.asm` 2026-07-30 — all resolve exactly (`0x9e6` @0x05E9BE, `0xa4c`

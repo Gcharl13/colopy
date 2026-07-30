@@ -268,7 +268,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **Purpose:** player destroys a native settlement; gold reward + razed message.
 - **Keys (B):** `@CHIEFKILL` (chief executes the player — taboo), `@INDIANGOLD`
   (raze gold reward), `@INDIANBURN`. Raze handler `func_04A7CA` (CHIEFKILL,
-  `docs/UI_DIALOGS.md`, **A**); razed-scene woodcut `WDCUT12` (burning village).
+  `docs/UI_DIALOGS.md`, **A**). ~~razed-scene woodcut `WDCUT12`~~ **REFUTED 2026-07-30** (RULINGS.md): WDCUT12 has no caller in the EXE; no woodcut fires here.
 - **Speaker:** `IND<tribe>A<pose>.SS` via `[0x1F5C]=tribe_idx` (§2.7). **A.**
 - **Tier:** keys **B**; trigger fn **A**; geometry centered **B (engine)**.
 
@@ -305,7 +305,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
   `@INDIANWARFARE`, `@INDIANWAR`, `@INDIANGRUDGE`, `@INDIANSURPRISE` (the prior
   draft cited bare `WARFARE/WAR/GRUDGE/SURPRISE`; the actual JSON keys all carry
   the `@INDIAN` prefix — grep-confirmed). Handler `func_04B036` (sets
-  `[0x1F5C]=tribe_owner`); war-dance woodcut `WDCUT13`. **B.**
+  `[0x1F5C]=tribe_owner`). ~~war-dance woodcut `WDCUT13`~~ **REFUTED 2026-07-30**: WDCUT13 = Indian raid on a human colony, fired from func_05CA7E @0x05D219 (RULINGS.md). **B.**
 - **Tier:** keys **B**; raid count = 6 **B**.
 
 ## 8. Lost City (10 variants)
@@ -333,7 +333,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **Keys (B):** `@DEMOTE`, `@COLONISTCAPTURE`, `@COLONISTCAPTURE2`, `@CARGOCAPTURE`,
   `@WAGONCAPTURE`, `@SHIPDAMAGE`, `@ARTILLERY`, `@ARTILLERY2`, `@VETERAN`, `@VALOR`,
   `@WELLSEASONED`. Handler `func_05B2C2` (`docs/UI_DIALOGS.md`, **A**; thunk
-  0x1CCD0 → func_05B2C2 validated in the RTLink resolver). Battle woodcut `WDCUT10`.
+  0x1CCD0 → func_05B2C2 validated in the RTLink resolver). ~~Battle woodcut `WDCUT10`~~ **REFUTED 2026-07-30**: WDCUT10 = first European contact, fired from func_057F4E @0x057FDF (RULINGS.md).
 - **Tier:** keys **B**.
 
 ## 10. Ship combat / landfall
@@ -383,7 +383,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **Keys (B):** `@BURNED`, `@BURNED2`, `@BURNED3`; `@CAPTURED`, `@CAPTURED2`,
   `@CAPTURED3`; `@INDIANBURNCOLONY`, `@INDIANBURNCOLONY2`, `@INDIANWINCOLONY`,
   `@INDIANWINCOLONY2`; war outcome `@EUROPEWIN`, `@EUROPELOSE`. Handler `func_05CA7E`
-  (`docs/UI_DIALOGS.md`, **A**). Burning-colony woodcut `WDCUT11`.
+  (`docs/UI_DIALOGS.md`, **A**). Burning-colony woodcut `WDCUT11` — **byte-confirmed 2026-07-30 (B)**: fired @0x05DADC and @0x05DFCB in func_05CA7E.
 - **Tier:** keys **B**.
 
 ## 15. Intervention
@@ -400,7 +400,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **Keys (B):** `@CASHTREASURE`, `@KINGGALLEON2`, `@KINGGALLEON3`, `@LOOTCASH`,
   `@LOOT`, `@LOOT2`, `@LOOTFOREIGN`, `@LOOTCAPTURE`, `@NOLOOT`. Handler `func_05C878`
   (King's Galleon, `docs/UI_DIALOGS.md`, **A**). Speaker `[0x1F5C]=8` → `KING1.SS`.
-  Treasure woodcut `WDCUT04`. **Tier:** keys **B**.
+  ~~Treasure woodcut `WDCUT04`~~ **REFUTED 2026-07-30**: WDCUT04 = Aztec first contact (func_056C3E; RULINGS.md). **Tier:** keys **B**.
 
 ## 17. Unit capture / demotion
 - **Purpose:** a unit is captured or demoted after combat.
@@ -463,8 +463,7 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
 - **NAMES tables:** `@ATTITUDE`, `@ACTIONS`, `@TRIBES` (all present in
   `NAMES_sections.json`). **B.** **LABELS:** "Lost City Rumor", "Intervention
   Force" in `LABELS @MISC` (present). **B.**
-- **Woodcuts:** WDCUT04 (treasure), WDCUT10 (battle), WDCUT11 (burning colony),
-  WDCUT12 (burning village), WDCUT13 (war dance) per `docs/UI_DIALOGS.md`. **A.**
+- **Woodcuts:** ~~WDCUT04 (treasure), WDCUT10 (battle), WDCUT12 (burning village), WDCUT13 (war dance)~~ **REFUTED 2026-07-30** — only WDCUT11 (burning colony) survives, byte-confirmed. The true trigger table is in `spec/ui/woodcuts_and_intro.md` (RULINGS.md 2026-07-30). **B.**
 
 ## 21. Evidence
 - `raw/COLONIZE/VICEROY.EXE` — dialog engine `func_06C520` @0x06C520 /
