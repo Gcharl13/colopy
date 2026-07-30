@@ -1,0 +1,7503 @@
+{
+ "source": "MAPEDIT.EXE CodeView NB02 publics at file 0x1BE09",
+ "note": "file_offset = seg*16 + off + 0x1600 (header size)",
+ "symbols": [
+  {
+   "name": "_any_action_this_turn",
+   "seg": 5607,
+   "off": 18928,
+   "file_offset": "0x01BE60",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_game_clock",
+   "seg": 5607,
+   "off": 18964,
+   "file_offset": "0x01BE84",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor_clock",
+   "seg": 5607,
+   "off": 20128,
+   "file_offset": "0x01C310",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor_on",
+   "seg": 5607,
+   "off": 26994,
+   "file_offset": "0x01DDE2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor_x",
+   "seg": 5607,
+   "off": 19282,
+   "file_offset": "0x01BFC2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor_y",
+   "seg": 5607,
+   "off": 19284,
+   "file_offset": "0x01BFC4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_mykey",
+   "seg": 5607,
+   "off": 21100,
+   "file_offset": "0x01C6DC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_key_parsed",
+   "seg": 5607,
+   "off": 19048,
+   "file_offset": "0x01BED8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_mouse_stroke_type",
+   "seg": 5607,
+   "off": 20110,
+   "file_offset": "0x01C2FE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_mouse_current_area",
+   "seg": 5607,
+   "off": 23246,
+   "file_offset": "0x01CF3E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_depth_list_id",
+   "seg": 5607,
+   "off": 19086,
+   "file_offset": "0x01BEFE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_depth_list",
+   "seg": 5607,
+   "off": 19382,
+   "file_offset": "0x01C026",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_europe",
+   "seg": 5607,
+   "off": 20096,
+   "file_offset": "0x01C2F0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_label",
+   "seg": 5607,
+   "off": 21050,
+   "file_offset": "0x01C6AA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_scr_back",
+   "seg": 5607,
+   "off": 18938,
+   "file_offset": "0x01BE6A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_file_names",
+   "seg": 5607,
+   "off": 25840,
+   "file_offset": "0x01D960",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_going",
+   "seg": 5607,
+   "off": 26998,
+   "file_offset": "0x01DDE6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_video_mode",
+   "seg": 5607,
+   "off": 18886,
+   "file_offset": "0x01BE36",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_file_select",
+   "seg": 5607,
+   "off": 18926,
+   "file_offset": "0x01BE5E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_scr_slide",
+   "seg": 5607,
+   "off": 19274,
+   "file_offset": "0x01BFBA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_num_names",
+   "seg": 5607,
+   "off": 21020,
+   "file_offset": "0x01C68C",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_num_screens",
+   "seg": 5607,
+   "off": 20088,
+   "file_offset": "0x01C2E8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_game",
+   "seg": 5607,
+   "off": 24108,
+   "file_offset": "0x01D29C",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_terrain",
+   "seg": 5607,
+   "off": 20198,
+   "file_offset": "0x01C356",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_unit",
+   "seg": 5607,
+   "off": 21022,
+   "file_offset": "0x01C68E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_job_names",
+   "seg": 5607,
+   "off": 19224,
+   "file_offset": "0x01BF88",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cargo_names",
+   "seg": 5607,
+   "off": 18894,
+   "file_offset": "0x01BE3E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_country_names",
+   "seg": 5607,
+   "off": 27002,
+   "file_offset": "0x01DDEA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_nationality",
+   "seg": 5607,
+   "off": 19060,
+   "file_offset": "0x01BEE4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_season_name",
+   "seg": 5607,
+   "off": 18934,
+   "file_offset": "0x01BE66",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_order_names",
+   "seg": 5607,
+   "off": 23258,
+   "file_offset": "0x01CF4A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_terrain_names",
+   "seg": 5607,
+   "off": 19290,
+   "file_offset": "0x01BFCA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_start_new_game",
+   "seg": 0,
+   "off": 9338,
+   "file_offset": "0x003A7A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_human_interface_loop",
+   "seg": 0,
+   "off": 8484,
+   "file_offset": "0x003724",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_active_player",
+   "seg": 5607,
+   "off": 116,
+   "file_offset": "0x0174E4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_info_window_draw",
+   "seg": 0,
+   "off": 2382,
+   "file_offset": "0x001F4E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_flag_parse",
+   "seg": 0,
+   "off": 10354,
+   "file_offset": "0x003E72",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_viewing_keys",
+   "seg": 0,
+   "off": 8062,
+   "file_offset": "0x00357E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_possibly_center",
+   "seg": 0,
+   "off": 5214,
+   "file_offset": "0x002A5E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_add_item_2",
+   "seg": 0,
+   "off": 3486,
+   "file_offset": "0x00239E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_forest_fix",
+   "seg": 0,
+   "off": 182,
+   "file_offset": "0x0016B6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_colony_screen_on",
+   "seg": 5607,
+   "off": 118,
+   "file_offset": "0x0174E6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selection_mouse",
+   "seg": 0,
+   "off": 4590,
+   "file_offset": "0x0027EE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selection_screen_display",
+   "seg": 0,
+   "off": 3604,
+   "file_offset": "0x002414",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_menu_bar",
+   "seg": 5607,
+   "off": 120,
+   "file_offset": "0x0174E8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_area_map",
+   "seg": 0,
+   "off": 8078,
+   "file_offset": "0x00358E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_game_menu",
+   "seg": 5607,
+   "off": 124,
+   "file_offset": "0x0174EC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_main",
+   "seg": 0,
+   "off": 10456,
+   "file_offset": "0x003ED8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selection_screen",
+   "seg": 0,
+   "off": 4646,
+   "file_offset": "0x002826",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_menu_font",
+   "seg": 5607,
+   "off": 128,
+   "file_offset": "0x0174F0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_reset_sprite_memory",
+   "seg": 0,
+   "off": 0,
+   "file_offset": "0x001600",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_execute_menu_event",
+   "seg": 0,
+   "off": 6112,
+   "file_offset": "0x002DE0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_viceroy_game",
+   "seg": 0,
+   "off": 9494,
+   "file_offset": "0x003B16",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_fill_map",
+   "seg": 0,
+   "off": 7464,
+   "file_offset": "0x003328",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_load_main_sprites",
+   "seg": 0,
+   "off": 2,
+   "file_offset": "0x001602",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_move_cursor",
+   "seg": 0,
+   "off": 5396,
+   "file_offset": "0x002B14",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_check_music",
+   "seg": 0,
+   "off": 4,
+   "file_offset": "0x001604",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_human_turn",
+   "seg": 0,
+   "off": 8860,
+   "file_offset": "0x00389C",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_build_check",
+   "seg": 0,
+   "off": 6,
+   "file_offset": "0x001606",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_shift_key",
+   "seg": 0,
+   "off": 390,
+   "file_offset": "0x001786",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "@piece_draw",
+   "seg": 0,
+   "off": 8,
+   "file_offset": "0x001608",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_construct_mapedit_menu",
+   "seg": 0,
+   "off": 406,
+   "file_offset": "0x001796",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_computer_turn",
+   "seg": 0,
+   "off": 8878,
+   "file_offset": "0x0038AE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "@sprite_load",
+   "seg": 0,
+   "off": 10,
+   "file_offset": "0x00160A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_turn_control_loop",
+   "seg": 0,
+   "off": 8880,
+   "file_offset": "0x0038B0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_danger",
+   "seg": 0,
+   "off": 12,
+   "file_offset": "0x00160C",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_perform_save",
+   "seg": 0,
+   "off": 14,
+   "file_offset": "0x00160E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_mads_mode",
+   "seg": 5607,
+   "off": 66,
+   "file_offset": "0x0174B2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_file_set",
+   "seg": 5607,
+   "off": 68,
+   "file_offset": "0x0174B4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_main_keys",
+   "seg": 0,
+   "off": 7606,
+   "file_offset": "0x0033B6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_set_view_mode",
+   "seg": 0,
+   "off": 5498,
+   "file_offset": "0x002B7A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_piss_factor",
+   "seg": 0,
+   "off": 16,
+   "file_offset": "0x001610",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_map_changes",
+   "seg": 5607,
+   "off": 70,
+   "file_offset": "0x0174B6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_make_undo",
+   "seg": 0,
+   "off": 1872,
+   "file_offset": "0x001D50",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_small_map_needs_update",
+   "seg": 5607,
+   "off": 72,
+   "file_offset": "0x0174B8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_load_terrain",
+   "seg": 0,
+   "off": 8932,
+   "file_offset": "0x0038E4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_pissed",
+   "seg": 0,
+   "off": 18,
+   "file_offset": "0x001612",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_fill_radius",
+   "seg": 5607,
+   "off": 74,
+   "file_offset": "0x0174BA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_set_zoom_level",
+   "seg": 0,
+   "off": 5506,
+   "file_offset": "0x002B82",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_map_selected",
+   "seg": 5607,
+   "off": 76,
+   "file_offset": "0x0174BC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_say_country",
+   "seg": 0,
+   "off": 20,
+   "file_offset": "0x001614",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_coastline_protect",
+   "seg": 5607,
+   "off": 78,
+   "file_offset": "0x0174BE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_mouse_area",
+   "seg": 0,
+   "off": 7044,
+   "file_offset": "0x003184",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_undo_available",
+   "seg": 5607,
+   "off": 80,
+   "file_offset": "0x0174C0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_memory_check",
+   "seg": 0,
+   "off": 5580,
+   "file_offset": "0x002BCC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_perform_undo",
+   "seg": 0,
+   "off": 1918,
+   "file_offset": "0x001D7E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cycle_save",
+   "seg": 0,
+   "off": 22,
+   "file_offset": "0x001616",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_undo_active",
+   "seg": 5607,
+   "off": 82,
+   "file_offset": "0x0174C2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_create_me_now",
+   "seg": 5607,
+   "off": 84,
+   "file_offset": "0x0174C4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_load_data",
+   "seg": 0,
+   "off": 9014,
+   "file_offset": "0x003936",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor_update",
+   "seg": 0,
+   "off": 4880,
+   "file_offset": "0x002910",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_game_text_name",
+   "seg": 5607,
+   "off": 132,
+   "file_offset": "0x0174F4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selected_terrain",
+   "seg": 5607,
+   "off": 86,
+   "file_offset": "0x0174C6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selected_physical_and_mask",
+   "seg": 5607,
+   "off": 87,
+   "file_offset": "0x0174C7",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_create_me",
+   "seg": 0,
+   "off": 5628,
+   "file_offset": "0x002BFC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_spot",
+   "seg": 0,
+   "off": 4300,
+   "file_offset": "0x0026CC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_automate",
+   "seg": 5607,
+   "off": 138,
+   "file_offset": "0x0174FA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selected_physical_or_mask",
+   "seg": 5607,
+   "off": 88,
+   "file_offset": "0x0174C8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_info_window_clear",
+   "seg": 0,
+   "off": 1958,
+   "file_offset": "0x001DA6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_sprite_base",
+   "seg": 5607,
+   "off": 140,
+   "file_offset": "0x0174FC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_selected_right_mouse_change",
+   "seg": 5607,
+   "off": 89,
+   "file_offset": "0x0174C9",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_area_mini",
+   "seg": 0,
+   "off": 8322,
+   "file_offset": "0x003682",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_map_undo_memory",
+   "seg": 5607,
+   "off": 90,
+   "file_offset": "0x0174CA",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_map_undo_ems_handle",
+   "seg": 5607,
+   "off": 94,
+   "file_offset": "0x0174CE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_show_logo",
+   "seg": 0,
+   "off": 10206,
+   "file_offset": "0x003DDE",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_change_map",
+   "seg": 0,
+   "off": 7136,
+   "file_offset": "0x0031E0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_main_tile",
+   "seg": 5607,
+   "off": 144,
+   "file_offset": "0x017500",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_load_error",
+   "seg": 5607,
+   "off": 96,
+   "file_offset": "0x0174D0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_info_window_update",
+   "seg": 0,
+   "off": 2092,
+   "file_offset": "0x001E2C",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_basic_color",
+   "seg": 5607,
+   "off": 146,
+   "file_offset": "0x017502",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_exit_value",
+   "seg": 5607,
+   "off": 98,
+   "file_offset": "0x0174D2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_hilite_color",
+   "seg": 5607,
+   "off": 147,
+   "file_offset": "0x017503",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_grey_color",
+   "seg": 5607,
+   "off": 148,
+   "file_offset": "0x017504",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_show_flags",
+   "seg": 0,
+   "off": 10230,
+   "file_offset": "0x003DF6",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_enhance_color",
+   "seg": 5607,
+   "off": 149,
+   "file_offset": "0x017505",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_cursor",
+   "seg": 5607,
+   "off": 100,
+   "file_offset": "0x0174D4",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_shadow_color",
+   "seg": 5607,
+   "off": 150,
+   "file_offset": "0x017506",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_icons",
+   "seg": 5607,
+   "off": 104,
+   "file_offset": "0x0174D8",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_info_terrain",
+   "seg": 0,
+   "off": 2114,
+   "file_offset": "0x001E42",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_select_color",
+   "seg": 5607,
+   "off": 151,
+   "file_offset": "0x017507",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_buildings",
+   "seg": 5607,
+   "off": 108,
+   "file_offset": "0x0174DC",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_parse_mouse_stroke",
+   "seg": 0,
+   "off": 8416,
+   "file_offset": "0x0036E0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_notice_color",
+   "seg": 5607,
+   "off": 152,
+   "file_offset": "0x017508",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_main_screen_refresh",
+   "seg": 0,
+   "off": 3296,
+   "file_offset": "0x0022E0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_border0",
+   "seg": 5607,
+   "off": 153,
+   "file_offset": "0x017509",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_file_menu",
+   "seg": 0,
+   "off": 1386,
+   "file_offset": "0x001B6A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_border1",
+   "seg": 5607,
+   "off": 154,
+   "file_offset": "0x01750A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_myspot",
+   "seg": 5607,
+   "off": 462,
+   "file_offset": "0x01763E",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_border2",
+   "seg": 5607,
+   "off": 155,
+   "file_offset": "0x01750B",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_continent_check",
+   "seg": 0,
+   "off": 5744,
+   "file_offset": "0x002C70",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_set_center",
+   "seg": 0,
+   "off": 5124,
+   "file_offset": "0x002A04",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_popups_normal",
+   "seg": 0,
+   "off": 24,
+   "file_offset": "0x001618",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "@scan_past",
+   "seg": 0,
+   "off": 10280,
+   "file_offset": "0x003E28",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_event_wait",
+   "seg": 0,
+   "off": 96,
+   "file_offset": "0x001660",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_info_terrain_2",
+   "seg": 0,
+   "off": 2274,
+   "file_offset": "0x001EE2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_add_item",
+   "seg": 0,
+   "off": 3370,
+   "file_offset": "0x00232A",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_game_mode",
+   "seg": 5607,
+   "off": 112,
+   "file_offset": "0x0174E0",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_active_unit",
+   "seg": 5607,
+   "off": 114,
+   "file_offset": "0x0174E2",
+   "module": "mapedit.obj"
+  },
+  {
+   "name": "_env_path",
+   "seg": 5607,
+   "off": 20138,
+   "file_offset": "0x01C31A",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "_env_get_path",
+   "seg": 663,
+   "off": 186,
+   "file_offset": "0x00402A",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "@env_open",
+   "seg": 663,
+   "off": 260,
+   "file_offset": "0x004074",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "@env_get_file_size",
+   "seg": 663,
+   "off": 304,
+   "file_offset": "0x0040A0",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "@env_exist",
+   "seg": 663,
+   "off": 322,
+   "file_offset": "0x0040B2",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "_env_search_mode",
+   "seg": 5607,
+   "off": 1178,
+   "file_offset": "0x01790A",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "_env_special_path",
+   "seg": 5607,
+   "off": 1180,
+   "file_offset": "0x01790C",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "@env_catint",
+   "seg": 663,
+   "off": 12,
+   "file_offset": "0x003F7C",
+   "module": "env_1.obj"
+  },
+  {
+   "name": "_map_tile_size_x",
+   "seg": 5607,
+   "off": 20106,
+   "file_offset": "0x01C2FA",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_tile_size_y",
+   "seg": 5607,
+   "off": 20108,
+   "file_offset": "0x01C2FC",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_view_size_x",
+   "seg": 5607,
+   "off": 21204,
+   "file_offset": "0x01C744",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_view_size_y",
+   "seg": 5607,
+   "off": 21208,
+   "file_offset": "0x01C748",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_area_size_x",
+   "seg": 5607,
+   "off": 20080,
+   "file_offset": "0x01C2E0",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_area_size_y",
+   "seg": 5607,
+   "off": 20086,
+   "file_offset": "0x01C2E6",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_area_base_x",
+   "seg": 5607,
+   "off": 23286,
+   "file_offset": "0x01CF66",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_area_base_y",
+   "seg": 5607,
+   "off": 23288,
+   "file_offset": "0x01CF68",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_pixel_size_x",
+   "seg": 5607,
+   "off": 25836,
+   "file_offset": "0x01D95C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_pixel_size_y",
+   "seg": 5607,
+   "off": 25838,
+   "file_offset": "0x01D95E",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_tile_inset_x",
+   "seg": 5607,
+   "off": 23256,
+   "file_offset": "0x01CF48",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_tile_inset_y",
+   "seg": 5607,
+   "off": 23284,
+   "file_offset": "0x01CF64",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_name",
+   "seg": 5607,
+   "off": 18968,
+   "file_offset": "0x01BE88",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_size",
+   "seg": 5607,
+   "off": 20124,
+   "file_offset": "0x01C30C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_file",
+   "seg": 5607,
+   "off": 19218,
+   "file_offset": "0x01BF82",
+   "module": "map.obj"
+  },
+  {
+   "name": "_scr_orig",
+   "seg": 5607,
+   "off": 15100,
+   "file_offset": "0x01AF6C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_scr_map",
+   "seg": 5607,
+   "off": 20114,
+   "file_offset": "0x01C302",
+   "module": "map.obj"
+  },
+  {
+   "name": "_scr_feature",
+   "seg": 5607,
+   "off": 19052,
+   "file_offset": "0x01BEDC",
+   "module": "map.obj"
+  },
+  {
+   "name": "_scr_continent",
+   "seg": 5607,
+   "off": 24250,
+   "file_offset": "0x01D32A",
+   "module": "map.obj"
+  },
+  {
+   "name": "_scr_site",
+   "seg": 5607,
+   "off": 23202,
+   "file_offset": "0x01CF12",
+   "module": "map.obj"
+  },
+  {
+   "name": "_region_size",
+   "seg": 5607,
+   "off": 21104,
+   "file_offset": "0x01C6E0",
+   "module": "map.obj"
+  },
+  {
+   "name": "_land_moves",
+   "seg": 5607,
+   "off": 24344,
+   "file_offset": "0x01D388",
+   "module": "map.obj"
+  },
+  {
+   "name": "_sea_moves",
+   "seg": 5607,
+   "off": 20666,
+   "file_offset": "0x01C52A",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_corner_x",
+   "seg": 5607,
+   "off": 18930,
+   "file_offset": "0x01BE62",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_corner_y",
+   "seg": 5607,
+   "off": 18932,
+   "file_offset": "0x01BE64",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_corner_x2",
+   "seg": 5607,
+   "off": 24614,
+   "file_offset": "0x01D496",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_corner_y2",
+   "seg": 5607,
+   "off": 24638,
+   "file_offset": "0x01D4AE",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_unit",
+   "seg": 683,
+   "off": 792,
+   "file_offset": "0x0043C8",
+   "module": "map.obj"
+  },
+  {
+   "name": "_feature_set",
+   "seg": 683,
+   "off": 354,
+   "file_offset": "0x004212",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_colony",
+   "seg": 683,
+   "off": 838,
+   "file_offset": "0x0043F6",
+   "module": "map.obj"
+  },
+  {
+   "name": "_terrain_fix_2",
+   "seg": 683,
+   "off": 1468,
+   "file_offset": "0x00466C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_continent_loc",
+   "seg": 683,
+   "off": 408,
+   "file_offset": "0x004248",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_scroll_speed",
+   "seg": 5607,
+   "off": 1236,
+   "file_offset": "0x017944",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_colony_mode",
+   "seg": 5607,
+   "off": 1238,
+   "file_offset": "0x017946",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_force",
+   "seg": 5607,
+   "off": 1240,
+   "file_offset": "0x017948",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_view_base_terrain",
+   "seg": 5607,
+   "off": 1242,
+   "file_offset": "0x01794A",
+   "module": "map.obj"
+  },
+  {
+   "name": "_continent_get",
+   "seg": 683,
+   "off": 432,
+   "file_offset": "0x004260",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_base_seed",
+   "seg": 5607,
+   "off": 1244,
+   "file_offset": "0x01794C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_resource_index",
+   "seg": 5607,
+   "off": 1246,
+   "file_offset": "0x01794E",
+   "module": "map.obj"
+  },
+  {
+   "name": "_on_map",
+   "seg": 683,
+   "off": 14,
+   "file_offset": "0x0040BE",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_city",
+   "seg": 683,
+   "off": 954,
+   "file_offset": "0x00446A",
+   "module": "map.obj"
+  },
+  {
+   "name": "_continent_at",
+   "seg": 683,
+   "off": 462,
+   "file_offset": "0x00427E",
+   "module": "map.obj"
+  },
+  {
+   "name": "_continent_set",
+   "seg": 683,
+   "off": 480,
+   "file_offset": "0x004290",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_anything",
+   "seg": 683,
+   "off": 1000,
+   "file_offset": "0x004498",
+   "module": "map.obj"
+  },
+  {
+   "name": "_on_colony_map",
+   "seg": 683,
+   "off": 64,
+   "file_offset": "0x0040F0",
+   "module": "map.obj"
+  },
+  {
+   "name": "_owner_of",
+   "seg": 683,
+   "off": 516,
+   "file_offset": "0x0042B4",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_file_version",
+   "seg": 5607,
+   "off": 1182,
+   "file_offset": "0x01790E",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_hostile",
+   "seg": 683,
+   "off": 1034,
+   "file_offset": "0x0044BA",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_ext",
+   "seg": 5607,
+   "off": 1184,
+   "file_offset": "0x017910",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_error",
+   "seg": 5607,
+   "off": 1188,
+   "file_offset": "0x017914",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_high_memory_mode",
+   "seg": 5607,
+   "off": 1190,
+   "file_offset": "0x017916",
+   "module": "map.obj"
+  },
+  {
+   "name": "_is_village",
+   "seg": 683,
+   "off": 896,
+   "file_offset": "0x004430",
+   "module": "map.obj"
+  },
+  {
+   "name": "_on_screen",
+   "seg": 683,
+   "off": 196,
+   "file_offset": "0x004174",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map",
+   "seg": 5607,
+   "off": 1192,
+   "file_offset": "0x017918",
+   "module": "map.obj"
+  },
+  {
+   "name": "_owner_set",
+   "seg": 683,
+   "off": 556,
+   "file_offset": "0x0042DC",
+   "module": "map.obj"
+  },
+  {
+   "name": "_feature",
+   "seg": 5607,
+   "off": 1196,
+   "file_offset": "0x01791C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_continent",
+   "seg": 5607,
+   "off": 1200,
+   "file_offset": "0x017920",
+   "module": "map.obj"
+  },
+  {
+   "name": "_resource_at",
+   "seg": 683,
+   "off": 1112,
+   "file_offset": "0x004508",
+   "module": "map.obj"
+  },
+  {
+   "name": "_site",
+   "seg": 5607,
+   "off": 1204,
+   "file_offset": "0x017924",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_loc",
+   "seg": 683,
+   "off": 250,
+   "file_offset": "0x0041AA",
+   "module": "map.obj"
+  },
+  {
+   "name": "_land_region_at",
+   "seg": 683,
+   "off": 676,
+   "file_offset": "0x004354",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_get",
+   "seg": 683,
+   "off": 274,
+   "file_offset": "0x0041C2",
+   "module": "map.obj"
+  },
+  {
+   "name": "_terrain_1",
+   "seg": 5607,
+   "off": 1208,
+   "file_offset": "0x017928",
+   "module": "map.obj"
+  },
+  {
+   "name": "_terrain_2",
+   "seg": 5607,
+   "off": 1212,
+   "file_offset": "0x01792C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_tiles",
+   "seg": 5607,
+   "off": 1216,
+   "file_offset": "0x017930",
+   "module": "map.obj"
+  },
+  {
+   "name": "_tiles2",
+   "seg": 5607,
+   "off": 1220,
+   "file_offset": "0x017934",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_center_x",
+   "seg": 5607,
+   "off": 1224,
+   "file_offset": "0x017938",
+   "module": "map.obj"
+  },
+  {
+   "name": "_site_loc",
+   "seg": 683,
+   "off": 740,
+   "file_offset": "0x004394",
+   "module": "map.obj"
+  },
+  {
+   "name": "_feature_loc",
+   "seg": 683,
+   "off": 302,
+   "file_offset": "0x0041DE",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_center_y",
+   "seg": 5607,
+   "off": 1226,
+   "file_offset": "0x01793A",
+   "module": "map.obj"
+  },
+  {
+   "name": "_lost_city_at",
+   "seg": 683,
+   "off": 1344,
+   "file_offset": "0x0045F0",
+   "module": "map.obj"
+  },
+  {
+   "name": "_site_get",
+   "seg": 683,
+   "off": 764,
+   "file_offset": "0x0043AC",
+   "module": "map.obj"
+  },
+  {
+   "name": "_feature_get",
+   "seg": 683,
+   "off": 326,
+   "file_offset": "0x0041F6",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_memory",
+   "seg": 5607,
+   "off": 1228,
+   "file_offset": "0x01793C",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_scale",
+   "seg": 5607,
+   "off": 1232,
+   "file_offset": "0x017940",
+   "module": "map.obj"
+  },
+  {
+   "name": "_map_sprite_scale",
+   "seg": 5607,
+   "off": 1234,
+   "file_offset": "0x017942",
+   "module": "map.obj"
+  },
+  {
+   "name": "_tile_draw",
+   "seg": 779,
+   "off": 72,
+   "file_offset": "0x0046F8",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_tile_draw_mask",
+   "seg": 779,
+   "off": 172,
+   "file_offset": "0x00475C",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_tile_draw_scale",
+   "seg": 779,
+   "off": 286,
+   "file_offset": "0x0047CE",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_tile_allocate",
+   "seg": 779,
+   "off": 6,
+   "file_offset": "0x0046B6",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_tile_draw_scale_mask",
+   "seg": 779,
+   "off": 468,
+   "file_offset": "0x004884",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_tile_id",
+   "seg": 779,
+   "off": 30,
+   "file_offset": "0x0046CE",
+   "module": "tile.obj"
+  },
+  {
+   "name": "_strings_heap",
+   "seg": 5607,
+   "off": 18946,
+   "file_offset": "0x01BE72",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_num_strings",
+   "seg": 5607,
+   "off": 24640,
+   "file_offset": "0x01D4B0",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_strings_init",
+   "seg": 820,
+   "off": 10,
+   "file_offset": "0x00494A",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_strings_shrink",
+   "seg": 820,
+   "off": 44,
+   "file_offset": "0x00496C",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_strings_store",
+   "seg": 820,
+   "off": 54,
+   "file_offset": "0x004976",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_strings",
+   "seg": 820,
+   "off": 108,
+   "file_offset": "0x0049AC",
+   "module": "strings.obj"
+  },
+  {
+   "name": "_king_frame",
+   "seg": 5607,
+   "off": 20094,
+   "file_offset": "0x01C2EE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_king_clock",
+   "seg": 5607,
+   "off": 20102,
+   "file_offset": "0x01C2F6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_start_string",
+   "seg": 5607,
+   "off": 24106,
+   "file_offset": "0x01D29A",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_start_max_len",
+   "seg": 5607,
+   "off": 23248,
+   "file_offset": "0x01CF40",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_text_buffer",
+   "seg": 5607,
+   "off": 19300,
+   "file_offset": "0x01BFD4",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_number",
+   "seg": 5607,
+   "off": 23252,
+   "file_offset": "0x01CF44",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_subst_string",
+   "seg": 5607,
+   "off": 25422,
+   "file_offset": "0x01D7BE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_subst_number",
+   "seg": 5607,
+   "off": 27018,
+   "file_offset": "0x01DDFA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_foreign",
+   "seg": 5607,
+   "off": 1376,
+   "file_offset": "0x0179D0",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_set_width",
+   "seg": 829,
+   "off": 3120,
+   "file_offset": "0x005600",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_hiliting",
+   "seg": 5607,
+   "off": 1378,
+   "file_offset": "0x0179D2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop2f",
+   "seg": 829,
+   "off": 14322,
+   "file_offset": "0x0081C2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_font",
+   "seg": 5607,
+   "off": 1438,
+   "file_offset": "0x017A0E",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_hilite",
+   "seg": 829,
+   "off": 2360,
+   "file_offset": "0x005308",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_pal",
+   "seg": 5607,
+   "off": 1380,
+   "file_offset": "0x0179D4",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_heap",
+   "seg": 5607,
+   "off": 1442,
+   "file_offset": "0x017A12",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_help",
+   "seg": 5607,
+   "off": 1382,
+   "file_offset": "0x0179D6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_off",
+   "seg": 829,
+   "off": 14340,
+   "file_offset": "0x0081D4",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_set_active_sprite",
+   "seg": 829,
+   "off": 9580,
+   "file_offset": "0x006F3C",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_cursor",
+   "seg": 829,
+   "off": 4408,
+   "file_offset": "0x005B08",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_help_me",
+   "seg": 5607,
+   "off": 1384,
+   "file_offset": "0x0179D8",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_string",
+   "seg": 829,
+   "off": 3136,
+   "file_offset": "0x005610",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_no_draw",
+   "seg": 5607,
+   "off": 1386,
+   "file_offset": "0x0179DA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_init",
+   "seg": 829,
+   "off": 12434,
+   "file_offset": "0x007A62",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_big_sprite",
+   "seg": 829,
+   "off": 6902,
+   "file_offset": "0x0064C6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_tile",
+   "seg": 5607,
+   "off": 1388,
+   "file_offset": "0x0179DC",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@popup_exec",
+   "seg": 829,
+   "off": 9614,
+   "file_offset": "0x006F5E",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_release_all_grey",
+   "seg": 829,
+   "off": 2408,
+   "file_offset": "0x005338",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_king_active",
+   "seg": 5607,
+   "off": 1390,
+   "file_offset": "0x0179DE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_sprite_tight",
+   "seg": 5607,
+   "off": 1392,
+   "file_offset": "0x0179E0",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@popup_ask",
+   "seg": 829,
+   "off": 14346,
+   "file_offset": "0x0081DA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_parse_string",
+   "seg": 829,
+   "off": 12458,
+   "file_offset": "0x007A7A",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_say_string",
+   "seg": 829,
+   "off": 990,
+   "file_offset": "0x004DAE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@popup_box",
+   "seg": 829,
+   "off": 14040,
+   "file_offset": "0x0080A8",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_read_check",
+   "seg": 829,
+   "off": 2456,
+   "file_offset": "0x005368",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_say",
+   "seg": 829,
+   "off": 1018,
+   "file_offset": "0x004DCA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@popup_ask_number",
+   "seg": 829,
+   "off": 14422,
+   "file_offset": "0x008226",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop_clear",
+   "seg": 829,
+   "off": 14090,
+   "file_offset": "0x0080DA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_entry",
+   "seg": 829,
+   "off": 3410,
+   "file_offset": "0x005722",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_country",
+   "seg": 829,
+   "off": 1042,
+   "file_offset": "0x004DE2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_read_colors",
+   "seg": 829,
+   "off": 14488,
+   "file_offset": "0x008268",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop_set",
+   "seg": 829,
+   "off": 14098,
+   "file_offset": "0x0080E2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_write_check",
+   "seg": 829,
+   "off": 2504,
+   "file_offset": "0x005398",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_num",
+   "seg": 829,
+   "off": 1082,
+   "file_offset": "0x004E0A",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop_get",
+   "seg": 829,
+   "off": 14140,
+   "file_offset": "0x00810C",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_create",
+   "seg": 829,
+   "off": 1758,
+   "file_offset": "0x0050AE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop",
+   "seg": 829,
+   "off": 14162,
+   "file_offset": "0x008122",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_set_active_item",
+   "seg": 829,
+   "off": 2544,
+   "file_offset": "0x0053C0",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_box_draw",
+   "seg": 829,
+   "off": 8838,
+   "file_offset": "0x006C56",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop2",
+   "seg": 829,
+   "off": 14176,
+   "file_offset": "0x008130",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_item",
+   "seg": 829,
+   "off": 2574,
+   "file_offset": "0x0053DE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_set_font",
+   "seg": 829,
+   "off": 1108,
+   "file_offset": "0x004E24",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popi",
+   "seg": 829,
+   "off": 14190,
+   "file_offset": "0x00813E",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_background_color_0",
+   "seg": 5607,
+   "off": 1340,
+   "file_offset": "0x0179AC",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_start_ask",
+   "seg": 5607,
+   "off": 1544,
+   "file_offset": "0x017A78",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_background_color_1",
+   "seg": 5607,
+   "off": 1342,
+   "file_offset": "0x0179AE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_select_color_0",
+   "seg": 5607,
+   "off": 1344,
+   "file_offset": "0x0179B0",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop2i",
+   "seg": 829,
+   "off": 14214,
+   "file_offset": "0x008156",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_select_color_1",
+   "seg": 5607,
+   "off": 1346,
+   "file_offset": "0x0179B2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_sprite",
+   "seg": 829,
+   "off": 3914,
+   "file_offset": "0x00591A",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_border_color",
+   "seg": 5607,
+   "off": 1348,
+   "file_offset": "0x0179B4",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_border_color_up",
+   "seg": 5607,
+   "off": 1350,
+   "file_offset": "0x0179B6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popk",
+   "seg": 829,
+   "off": 14232,
+   "file_offset": "0x008168",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_border_color_down",
+   "seg": 5607,
+   "off": 1352,
+   "file_offset": "0x0179B8",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@popup_start_box",
+   "seg": 829,
+   "off": 12978,
+   "file_offset": "0x007C82",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_font_main_color",
+   "seg": 5607,
+   "off": 1354,
+   "file_offset": "0x0179BA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_font_grey_color",
+   "seg": 5607,
+   "off": 1356,
+   "file_offset": "0x0179BC",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_font_hilite_color",
+   "seg": 5607,
+   "off": 1358,
+   "file_offset": "0x0179BE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popm",
+   "seg": 829,
+   "off": 14256,
+   "file_offset": "0x008180",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_draw",
+   "seg": 829,
+   "off": 9372,
+   "file_offset": "0x006E6C",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_enhance_color",
+   "seg": 5607,
+   "off": 1360,
+   "file_offset": "0x0179C0",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_shadow_color",
+   "seg": 5607,
+   "off": 1362,
+   "file_offset": "0x0179C2",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_orig_flag",
+   "seg": 5607,
+   "off": 1418,
+   "file_offset": "0x0179FA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "@pop2m",
+   "seg": 829,
+   "off": 14280,
+   "file_offset": "0x008198",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_add_check",
+   "seg": 829,
+   "off": 3062,
+   "file_offset": "0x0055C6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_grey",
+   "seg": 829,
+   "off": 2312,
+   "file_offset": "0x0052D8",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_checkbox",
+   "seg": 5607,
+   "off": 1364,
+   "file_offset": "0x0179C4",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_flags",
+   "seg": 5607,
+   "off": 1366,
+   "file_offset": "0x0179C6",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_x",
+   "seg": 5607,
+   "off": 1368,
+   "file_offset": "0x0179C8",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popf",
+   "seg": 829,
+   "off": 14298,
+   "file_offset": "0x0081AA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_y",
+   "seg": 5607,
+   "off": 1370,
+   "file_offset": "0x0179CA",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_help_draw",
+   "seg": 829,
+   "off": 6790,
+   "file_offset": "0x006456",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_indian",
+   "seg": 5607,
+   "off": 1372,
+   "file_offset": "0x0179CC",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_popup_messenger",
+   "seg": 5607,
+   "off": 1374,
+   "file_offset": "0x0179CE",
+   "module": "popup.obj"
+  },
+  {
+   "name": "_menu_bar_font_main_color",
+   "seg": 5607,
+   "off": 1580,
+   "file_offset": "0x017A9C",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_font_grey_color",
+   "seg": 5607,
+   "off": 1582,
+   "file_offset": "0x017A9E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_font_hilite_color",
+   "seg": 5607,
+   "off": 1584,
+   "file_offset": "0x017AA0",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_release_all_grey",
+   "seg": 1751,
+   "off": 1418,
+   "file_offset": "0x0088FA",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_tile",
+   "seg": 5607,
+   "off": 1586,
+   "file_offset": "0x017AA2",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_draw_bar",
+   "seg": 1751,
+   "off": 2372,
+   "file_offset": "0x008CB4",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_create",
+   "seg": 1751,
+   "off": 766,
+   "file_offset": "0x00866E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "@menu_bar_key_parse",
+   "seg": 1751,
+   "off": 5202,
+   "file_offset": "0x0097C2",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_set_font",
+   "seg": 1751,
+   "off": 30,
+   "file_offset": "0x00838E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_off",
+   "seg": 1751,
+   "off": 1486,
+   "file_offset": "0x00893E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_release_all_off",
+   "seg": 1751,
+   "off": 1534,
+   "file_offset": "0x00896E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_compute_size",
+   "seg": 1751,
+   "off": 2668,
+   "file_offset": "0x008DDC",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_item",
+   "seg": 1751,
+   "off": 1094,
+   "file_offset": "0x0087B6",
+   "module": "menu.obj"
+  },
+  {
+   "name": "@menu_key_parse",
+   "seg": 1751,
+   "off": 5350,
+   "file_offset": "0x009856",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_item",
+   "seg": 1751,
+   "off": 1164,
+   "file_offset": "0x0087FC",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_string_width",
+   "seg": 1751,
+   "off": 182,
+   "file_offset": "0x008426",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_add_bar_item",
+   "seg": 1751,
+   "off": 1602,
+   "file_offset": "0x0089B2",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_draw_menu",
+   "seg": 1751,
+   "off": 2946,
+   "file_offset": "0x008EF2",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_read_colors",
+   "seg": 1751,
+   "off": 5548,
+   "file_offset": "0x00991C",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_string_write",
+   "seg": 1751,
+   "off": 268,
+   "file_offset": "0x00847C",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_add_item",
+   "seg": 1751,
+   "off": 2014,
+   "file_offset": "0x008B4E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_hide",
+   "seg": 1751,
+   "off": 1314,
+   "file_offset": "0x008892",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_background_color_0",
+   "seg": 5607,
+   "off": 1556,
+   "file_offset": "0x017A84",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_background_color_1",
+   "seg": 5607,
+   "off": 1558,
+   "file_offset": "0x017A86",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_background_color_0",
+   "seg": 5607,
+   "off": 1560,
+   "file_offset": "0x017A88",
+   "module": "menu.obj"
+  },
+  {
+   "name": "@menu_bar_mouse_parse",
+   "seg": 1751,
+   "off": 5044,
+   "file_offset": "0x009724",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_background_color_1",
+   "seg": 5607,
+   "off": 1562,
+   "file_offset": "0x017A8A",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_select_color_0",
+   "seg": 5607,
+   "off": 1564,
+   "file_offset": "0x017A8C",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_select_color_1",
+   "seg": 5607,
+   "off": 1566,
+   "file_offset": "0x017A8E",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_get_hotkey",
+   "seg": 1751,
+   "off": 582,
+   "file_offset": "0x0085B6",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_select_color_0",
+   "seg": 5607,
+   "off": 1568,
+   "file_offset": "0x017A90",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_bar_select_color_1",
+   "seg": 5607,
+   "off": 1570,
+   "file_offset": "0x017A92",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_border_color",
+   "seg": 5607,
+   "off": 1572,
+   "file_offset": "0x017A94",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_grey",
+   "seg": 1751,
+   "off": 1370,
+   "file_offset": "0x0088CA",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_font_main_color",
+   "seg": 5607,
+   "off": 1574,
+   "file_offset": "0x017A96",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_font_grey_color",
+   "seg": 5607,
+   "off": 1576,
+   "file_offset": "0x017A98",
+   "module": "menu.obj"
+  },
+  {
+   "name": "@menu_bar_run",
+   "seg": 1751,
+   "off": 3484,
+   "file_offset": "0x00910C",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_menu_font_hilite_color",
+   "seg": 5607,
+   "off": 1578,
+   "file_offset": "0x017A9A",
+   "module": "menu.obj"
+  },
+  {
+   "name": "_text_buffer",
+   "seg": 5607,
+   "off": 24262,
+   "file_offset": "0x01D336",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_item",
+   "seg": 5607,
+   "off": 20940,
+   "file_offset": "0x01C63C",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_pointer",
+   "seg": 5607,
+   "off": 23254,
+   "file_offset": "0x01CF46",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_item_get",
+   "seg": 2114,
+   "off": 350,
+   "file_offset": "0x009B7E",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_item_number",
+   "seg": 2114,
+   "off": 408,
+   "file_offset": "0x009BB8",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_next_line",
+   "seg": 2114,
+   "off": 420,
+   "file_offset": "0x009BC4",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_string",
+   "seg": 2114,
+   "off": 438,
+   "file_offset": "0x009BD6",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_item_string",
+   "seg": 2114,
+   "off": 456,
+   "file_offset": "0x009BE8",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_item_binary",
+   "seg": 2114,
+   "off": 474,
+   "file_offset": "0x009BFA",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_handle",
+   "seg": 5607,
+   "off": 1600,
+   "file_offset": "0x017AB0",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_close",
+   "seg": 2114,
+   "off": 0,
+   "file_offset": "0x009A20",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_search",
+   "seg": 2114,
+   "off": 520,
+   "file_offset": "0x009C28",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_open",
+   "seg": 2114,
+   "off": 26,
+   "file_offset": "0x009A3A",
+   "module": "text.obj"
+  },
+  {
+   "name": "_text_get",
+   "seg": 2114,
+   "off": 262,
+   "file_offset": "0x009B26",
+   "module": "text.obj"
+  },
+  {
+   "name": "_minimax",
+   "seg": 2149,
+   "off": 14,
+   "file_offset": "0x009C5E",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_swap",
+   "seg": 2149,
+   "off": 44,
+   "file_offset": "0x009C7C",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_xy_dist",
+   "seg": 2149,
+   "off": 66,
+   "file_offset": "0x009C92",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_map_dist",
+   "seg": 2149,
+   "off": 126,
+   "file_offset": "0x009CCE",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_xy_dist_2",
+   "seg": 2149,
+   "off": 198,
+   "file_offset": "0x009D16",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_map_dist_2",
+   "seg": 2149,
+   "off": 246,
+   "file_offset": "0x009D46",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_bearing_adjacent",
+   "seg": 2149,
+   "off": 318,
+   "file_offset": "0x009D8E",
+   "module": "stuff.obj"
+  },
+  {
+   "name": "_show_map_gradually",
+   "seg": 2171,
+   "off": 352,
+   "file_offset": "0x009F10",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_show_map",
+   "seg": 2171,
+   "off": 540,
+   "file_offset": "0x009FCC",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_show_map_region",
+   "seg": 2171,
+   "off": 564,
+   "file_offset": "0x009FE4",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_conform_to_view",
+   "seg": 2171,
+   "off": 4,
+   "file_offset": "0x009DB4",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_conform_to_view_size",
+   "seg": 2171,
+   "off": 74,
+   "file_offset": "0x009DFA",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_update_terrain_region",
+   "seg": 2171,
+   "off": 192,
+   "file_offset": "0x009E70",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_update_terrain",
+   "seg": 2171,
+   "off": 298,
+   "file_offset": "0x009EDA",
+   "module": "map_2.obj"
+  },
+  {
+   "name": "_draw_map_region_2",
+   "seg": 2210,
+   "off": 10,
+   "file_offset": "0x00A02A",
+   "module": "map_5.obj"
+  },
+  {
+   "name": "_draw_map_2",
+   "seg": 2210,
+   "off": 104,
+   "file_offset": "0x00A088",
+   "module": "map_5.obj"
+  },
+  {
+   "name": "_percent_string",
+   "seg": 2221,
+   "off": 98,
+   "file_offset": "0x00A132",
+   "module": "write.obj"
+  },
+  {
+   "name": "_string_width",
+   "seg": 2221,
+   "off": 534,
+   "file_offset": "0x00A2E6",
+   "module": "write.obj"
+  },
+  {
+   "name": "_open_string",
+   "seg": 2221,
+   "off": 114,
+   "file_offset": "0x00A142",
+   "module": "write.obj"
+  },
+  {
+   "name": "_string_width_2",
+   "seg": 2221,
+   "off": 562,
+   "file_offset": "0x00A302",
+   "module": "write.obj"
+  },
+  {
+   "name": "_close_string",
+   "seg": 2221,
+   "off": 130,
+   "file_offset": "0x00A152",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_string",
+   "seg": 2221,
+   "off": 590,
+   "file_offset": "0x00A31E",
+   "module": "write.obj"
+  },
+  {
+   "name": "_brace_on",
+   "seg": 2221,
+   "off": 146,
+   "file_offset": "0x00A162",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_in_color",
+   "seg": 2221,
+   "off": 648,
+   "file_offset": "0x00A358",
+   "module": "write.obj"
+  },
+  {
+   "name": "_brace_off",
+   "seg": 2221,
+   "off": 162,
+   "file_offset": "0x00A172",
+   "module": "write.obj"
+  },
+  {
+   "name": "_plus_string",
+   "seg": 2221,
+   "off": 178,
+   "file_offset": "0x00A182",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_right",
+   "seg": 2221,
+   "off": 706,
+   "file_offset": "0x00A392",
+   "module": "write.obj"
+  },
+  {
+   "name": "_minus_string",
+   "seg": 2221,
+   "off": 194,
+   "file_offset": "0x00A192",
+   "module": "write.obj"
+  },
+  {
+   "name": "_times_string",
+   "seg": 2221,
+   "off": 210,
+   "file_offset": "0x00A1A2",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_centered",
+   "seg": 2221,
+   "off": 792,
+   "file_offset": "0x00A3E8",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_string",
+   "seg": 2221,
+   "off": 226,
+   "file_offset": "0x00A1B2",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_big_string",
+   "seg": 2221,
+   "off": 860,
+   "file_offset": "0x00A42C",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_braced",
+   "seg": 2221,
+   "off": 252,
+   "file_offset": "0x00A1CC",
+   "module": "write.obj"
+  },
+  {
+   "name": "_space_string",
+   "seg": 2221,
+   "off": 0,
+   "file_offset": "0x00A0D0",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_number",
+   "seg": 2221,
+   "off": 302,
+   "file_offset": "0x00A1FE",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_big_in_color",
+   "seg": 2221,
+   "off": 922,
+   "file_offset": "0x00A46A",
+   "module": "write.obj"
+  },
+  {
+   "name": "_spacer",
+   "seg": 2221,
+   "off": 16,
+   "file_offset": "0x00A0E0",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_binary",
+   "seg": 2221,
+   "off": 342,
+   "file_offset": "0x00A226",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_big_right",
+   "seg": 2221,
+   "off": 978,
+   "file_offset": "0x00A4A2",
+   "module": "write.obj"
+  },
+  {
+   "name": "_comma_string",
+   "seg": 2221,
+   "off": 50,
+   "file_offset": "0x00A102",
+   "module": "write.obj"
+  },
+  {
+   "name": "_colon_string",
+   "seg": 2221,
+   "off": 66,
+   "file_offset": "0x00A112",
+   "module": "write.obj"
+  },
+  {
+   "name": "_write_big_centered",
+   "seg": 2221,
+   "off": 1072,
+   "file_offset": "0x00A500",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_long",
+   "seg": 2221,
+   "off": 446,
+   "file_offset": "0x00A28E",
+   "module": "write.obj"
+  },
+  {
+   "name": "_period_string",
+   "seg": 2221,
+   "off": 82,
+   "file_offset": "0x00A122",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_terrain",
+   "seg": 2221,
+   "off": 1144,
+   "file_offset": "0x00A548",
+   "module": "write.obj"
+  },
+  {
+   "name": "_say_bucks",
+   "seg": 2221,
+   "off": 488,
+   "file_offset": "0x00A2B8",
+   "module": "write.obj"
+  },
+  {
+   "name": "_load_terrain_tiles",
+   "seg": 2297,
+   "off": 3010,
+   "file_offset": "0x00B152",
+   "module": "vicemisc.obj"
+  },
+  {
+   "name": "_construct_main_menu",
+   "seg": 2297,
+   "off": 4,
+   "file_offset": "0x00A594",
+   "module": "vicemisc.obj"
+  },
+  {
+   "name": "_load_terrain_series",
+   "seg": 2297,
+   "off": 2830,
+   "file_offset": "0x00B09E",
+   "module": "vicemisc.obj"
+  },
+  {
+   "name": "_terrain_at",
+   "seg": 2487,
+   "off": 50,
+   "file_offset": "0x00B1A2",
+   "module": "terrain.obj"
+  },
+  {
+   "name": "_terrain_is_ocean",
+   "seg": 2487,
+   "off": 108,
+   "file_offset": "0x00B1DC",
+   "module": "terrain.obj"
+  },
+  {
+   "name": "_terrain_is_forest",
+   "seg": 2487,
+   "off": 154,
+   "file_offset": "0x00B20A",
+   "module": "terrain.obj"
+  },
+  {
+   "name": "_terrain_type",
+   "seg": 2487,
+   "off": 6,
+   "file_offset": "0x00B176",
+   "module": "terrain.obj"
+  },
+  {
+   "name": "_card_x",
+   "seg": 5607,
+   "off": 1716,
+   "file_offset": "0x017B24",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_card_y",
+   "seg": 5607,
+   "off": 1722,
+   "file_offset": "0x017B2A",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_move_x",
+   "seg": 5607,
+   "off": 1728,
+   "file_offset": "0x017B30",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_move_y",
+   "seg": 5607,
+   "off": 1738,
+   "file_offset": "0x017B3A",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_radius_x",
+   "seg": 5607,
+   "off": 1748,
+   "file_offset": "0x017B44",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_radius_y",
+   "seg": 5607,
+   "off": 1770,
+   "file_offset": "0x017B5A",
+   "module": "compass.obj"
+  },
+  {
+   "name": "_map_find_continents",
+   "seg": 2500,
+   "off": 2,
+   "file_offset": "0x00B242",
+   "module": "map_6.obj"
+  },
+  {
+   "name": "@map_check",
+   "seg": 2553,
+   "off": 300,
+   "file_offset": "0x00B6BC",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "@allocate_map_memory",
+   "seg": 2553,
+   "off": 98,
+   "file_offset": "0x00B5F2",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "@initialize_map_memory",
+   "seg": 2553,
+   "off": 296,
+   "file_offset": "0x00B6B8",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "@map_startup",
+   "seg": 2553,
+   "off": 1086,
+   "file_offset": "0x00B9CE",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "_load_map_file",
+   "seg": 2553,
+   "off": 368,
+   "file_offset": "0x00B700",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "_write_map_file",
+   "seg": 2553,
+   "off": 688,
+   "file_offset": "0x00B840",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "_create_blank_map",
+   "seg": 2553,
+   "off": 954,
+   "file_offset": "0x00B94A",
+   "module": "map_9.obj"
+  },
+  {
+   "name": "_scan_feature",
+   "seg": 5607,
+   "off": 19070,
+   "file_offset": "0x01BEEE",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_map",
+   "seg": 5607,
+   "off": 23290,
+   "file_offset": "0x01CF6A",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_site",
+   "seg": 5607,
+   "off": 21210,
+   "file_offset": "0x01C74A",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_x",
+   "seg": 5607,
+   "off": 24342,
+   "file_offset": "0x01D386",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_y",
+   "seg": 5607,
+   "off": 25420,
+   "file_offset": "0x01D7BC",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_map_player_mask",
+   "seg": 5607,
+   "off": 23210,
+   "file_offset": "0x01CF1A",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_tile_x",
+   "seg": 5607,
+   "off": 19214,
+   "file_offset": "0x01BF7E",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_tile_y",
+   "seg": 5607,
+   "off": 19222,
+   "file_offset": "0x01BF86",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_variation",
+   "seg": 5607,
+   "off": 20112,
+   "file_offset": "0x01C300",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_feature_tile",
+   "seg": 5607,
+   "off": 19562,
+   "file_offset": "0x01C0DA",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_site_tile",
+   "seg": 5607,
+   "off": 27016,
+   "file_offset": "0x01DDF8",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_base_tile",
+   "seg": 5607,
+   "off": 20100,
+   "file_offset": "0x01C2F4",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_gen_map_tile",
+   "seg": 5607,
+   "off": 23244,
+   "file_offset": "0x01CF3C",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_index",
+   "seg": 5607,
+   "off": 26996,
+   "file_offset": "0x01DDE4",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_greater",
+   "seg": 5607,
+   "off": 18884,
+   "file_offset": "0x01BE34",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_less",
+   "seg": 5607,
+   "off": 21102,
+   "file_offset": "0x01C6DE",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_scan_flags",
+   "seg": 5607,
+   "off": 23251,
+   "file_offset": "0x01CF43",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "@generate_colony_map",
+   "seg": 2631,
+   "off": 4264,
+   "file_offset": "0x00CB18",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_map_init",
+   "seg": 2631,
+   "off": 4280,
+   "file_offset": "0x00CB28",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "@compute_view_parameters",
+   "seg": 2631,
+   "off": 6,
+   "file_offset": "0x00BA76",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "@generate_terrain_map_region",
+   "seg": 2631,
+   "off": 3430,
+   "file_offset": "0x00C7D6",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "@generate_terrain_map",
+   "seg": 2631,
+   "off": 4130,
+   "file_offset": "0x00CA92",
+   "module": "map_a.obj"
+  },
+  {
+   "name": "_mini_x",
+   "seg": 5607,
+   "off": 27010,
+   "file_offset": "0x01DDF2",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_mini_y",
+   "seg": 5607,
+   "off": 18882,
+   "file_offset": "0x01BE32",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_terrain_colors",
+   "seg": 5607,
+   "off": 19180,
+   "file_offset": "0x01BF5C",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_blast_mini_region",
+   "seg": 2902,
+   "off": 284,
+   "file_offset": "0x00CC7C",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_new_mini",
+   "seg": 2902,
+   "off": 1226,
+   "file_offset": "0x00D02A",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_blast_mini",
+   "seg": 2902,
+   "off": 628,
+   "file_offset": "0x00CDD4",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_get_a_color",
+   "seg": 2902,
+   "off": 4,
+   "file_offset": "0x00CB64",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_get_a_color_2",
+   "seg": 2902,
+   "off": 56,
+   "file_offset": "0x00CB98",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_show_mini_region",
+   "seg": 2902,
+   "off": 654,
+   "file_offset": "0x00CDEE",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_get_tile_colors",
+   "seg": 2902,
+   "off": 108,
+   "file_offset": "0x00CBCC",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_allocate_mini",
+   "seg": 2902,
+   "off": 216,
+   "file_offset": "0x00CC38",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_generate_mini",
+   "seg": 2902,
+   "off": 220,
+   "file_offset": "0x00CC3C",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_show_mini",
+   "seg": 2902,
+   "off": 948,
+   "file_offset": "0x00CF14",
+   "module": "me_mini.obj"
+  },
+  {
+   "name": "_spot",
+   "seg": 5607,
+   "off": 21258,
+   "file_offset": "0x01C77A",
+   "module": "hspot_1.c"
+  },
+  {
+   "name": "_numspots",
+   "seg": 5607,
+   "off": 1814,
+   "file_offset": "0x017B86",
+   "module": "hspot_1.c"
+  },
+  {
+   "name": "@hspot_add",
+   "seg": 2979,
+   "off": 0,
+   "file_offset": "0x00D030",
+   "module": "hspot_1.c"
+  },
+  {
+   "name": "@hspot_which",
+   "seg": 2986,
+   "off": 2,
+   "file_offset": "0x00D0A2",
+   "module": "HSPOT_7.C"
+  },
+  {
+   "name": "@keys_any",
+   "seg": 2991,
+   "off": 4,
+   "file_offset": "0x00D0F4",
+   "module": "KEYS_1.C"
+  },
+  {
+   "name": "@keys_get",
+   "seg": 2991,
+   "off": 24,
+   "file_offset": "0x00D108",
+   "module": "KEYS_1.C"
+  },
+  {
+   "name": "@keys_flush",
+   "seg": 2991,
+   "off": 46,
+   "file_offset": "0x00D11E",
+   "module": "KEYS_1.C"
+  },
+  {
+   "name": "@keys_fix_alt",
+   "seg": 2994,
+   "off": 14,
+   "file_offset": "0x00D12E",
+   "module": "keys_3.c"
+  },
+  {
+   "name": "@fileio_fix_lf_input",
+   "seg": 3012,
+   "off": 0,
+   "file_offset": "0x00D240",
+   "module": "FILEIO_5.C"
+  },
+  {
+   "name": "@fileio_fix_lf_output",
+   "seg": 3012,
+   "off": 46,
+   "file_offset": "0x00D26E",
+   "module": "FILEIO_5.C"
+  },
+  {
+   "name": "_fileio_suppress_unbuffering",
+   "seg": 5607,
+   "off": 1816,
+   "file_offset": "0x017B88",
+   "module": "fileio_8.c"
+  },
+  {
+   "name": "@fileio_fread_f",
+   "seg": 3018,
+   "off": 0,
+   "file_offset": "0x00D2A0",
+   "module": "fileio_8.c"
+  },
+  {
+   "name": "@fileio_fwrite_f",
+   "seg": 3050,
+   "off": 8,
+   "file_offset": "0x00D4A8",
+   "module": "fileio_9.c"
+  },
+  {
+   "name": "_edata",
+   "seg": 5607,
+   "off": 18842,
+   "file_offset": "0x01BE0A",
+   "module": "fileio_c.ASM"
+  },
+  {
+   "name": "_end",
+   "seg": 5607,
+   "off": 27056,
+   "file_offset": "0x01DE20",
+   "module": "fileio_c.ASM"
+  },
+  {
+   "name": "_fileio_exist",
+   "seg": 3067,
+   "off": 28,
+   "file_offset": "0x00D5CC",
+   "module": "fileio_c.ASM"
+  },
+  {
+   "name": "_FILEIO_CRITICAL_HANDLER",
+   "seg": 3067,
+   "off": 6,
+   "file_offset": "0x00D5B6",
+   "module": "fileio_c.ASM"
+  },
+  {
+   "name": "@fileio_add_ext",
+   "seg": 3076,
+   "off": 14,
+   "file_offset": "0x00D64E",
+   "module": "FILEIO_I.C"
+  },
+  {
+   "name": "@fileio_new_ext",
+   "seg": 3076,
+   "off": 92,
+   "file_offset": "0x00D69C",
+   "module": "FILEIO_I.C"
+  },
+  {
+   "name": "@fileio_join_path",
+   "seg": 3089,
+   "off": 4,
+   "file_offset": "0x00D714",
+   "module": "FILEIO_M.C"
+  },
+  {
+   "name": "@fileio_purge_all_spaces",
+   "seg": 3098,
+   "off": 2,
+   "file_offset": "0x00D7A2",
+   "module": "FILEIO_U.C"
+  },
+  {
+   "name": "_mouse_button",
+   "seg": 5607,
+   "off": 1824,
+   "file_offset": "0x017B90",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_status",
+   "seg": 5607,
+   "off": 1826,
+   "file_offset": "0x017B92",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_x",
+   "seg": 5607,
+   "off": 1828,
+   "file_offset": "0x017B94",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_y",
+   "seg": 5607,
+   "off": 1830,
+   "file_offset": "0x017B96",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_start_stroke",
+   "seg": 5607,
+   "off": 1832,
+   "file_offset": "0x017B98",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_stroke_going",
+   "seg": 5607,
+   "off": 1834,
+   "file_offset": "0x017B9A",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_changed",
+   "seg": 5607,
+   "off": 1836,
+   "file_offset": "0x017B9C",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_latched",
+   "seg": 5607,
+   "off": 1838,
+   "file_offset": "0x017B9E",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_stop_stroke",
+   "seg": 5607,
+   "off": 1840,
+   "file_offset": "0x017BA0",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_old_x",
+   "seg": 5607,
+   "off": 1844,
+   "file_offset": "0x017BA4",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_old_y",
+   "seg": 5607,
+   "off": 1846,
+   "file_offset": "0x017BA6",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_any_stroke",
+   "seg": 5607,
+   "off": 1842,
+   "file_offset": "0x017BA2",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "_mouse_clock",
+   "seg": 5607,
+   "off": 1848,
+   "file_offset": "0x017BA8",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "@mouse_in_box",
+   "seg": 3105,
+   "off": 0,
+   "file_offset": "0x00D810",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "@mouse_init_cycle",
+   "seg": 3105,
+   "off": 42,
+   "file_offset": "0x00D83A",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "@mouse_begin_cycle",
+   "seg": 3105,
+   "off": 66,
+   "file_offset": "0x00D852",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "@mouse_end_cycle",
+   "seg": 3105,
+   "off": 272,
+   "file_offset": "0x00D920",
+   "module": "mouse_2.c"
+  },
+  {
+   "name": "@mouse_video_init",
+   "seg": 3124,
+   "off": 12,
+   "file_offset": "0x00D94C",
+   "module": "mouse_4.c"
+  },
+  {
+   "name": "@mouse_video_update",
+   "seg": 3124,
+   "off": 68,
+   "file_offset": "0x00D984",
+   "module": "mouse_4.c"
+  },
+  {
+   "name": "@screen_dominant_mode",
+   "seg": 3132,
+   "off": 10,
+   "file_offset": "0x00D9CA",
+   "module": "SCREEN_B.C"
+  },
+  {
+   "name": "@buffer_init",
+   "seg": 3134,
+   "off": 10,
+   "file_offset": "0x00D9EA",
+   "module": "buffer_1.c"
+  },
+  {
+   "name": "@buffer_init_name",
+   "seg": 3134,
+   "off": 68,
+   "file_offset": "0x00DA24",
+   "module": "buffer_1.c"
+  },
+  {
+   "name": "@buffer_free",
+   "seg": 3142,
+   "off": 6,
+   "file_offset": "0x00DA66",
+   "module": "BUFFER_2.C"
+  },
+  {
+   "name": "@buffer_fill",
+   "seg": 3145,
+   "off": 14,
+   "file_offset": "0x00DA9E",
+   "module": "BUFFER_3.C"
+  },
+  {
+   "name": "@buffer_rect_copy",
+   "seg": 3148,
+   "off": 0,
+   "file_offset": "0x00DAC0",
+   "module": "buffer_4.c"
+  },
+  {
+   "name": "@buffer_rect_fill",
+   "seg": 3163,
+   "off": 4,
+   "file_offset": "0x00DBB4",
+   "module": "BUFFER_5.C"
+  },
+  {
+   "name": "@buffer_rect_copy_2",
+   "seg": 3175,
+   "off": 0,
+   "file_offset": "0x00DC70",
+   "module": "buffer_6.c"
+  },
+  {
+   "name": "@buffer_put",
+   "seg": 3190,
+   "off": 4,
+   "file_offset": "0x00DD64",
+   "module": "buffer_7.c"
+  },
+  {
+   "name": "@buffer_get",
+   "seg": 3192,
+   "off": 0,
+   "file_offset": "0x00DD80",
+   "module": "buffer_8.c"
+  },
+  {
+   "name": "@buffer_hline",
+   "seg": 3193,
+   "off": 6,
+   "file_offset": "0x00DD96",
+   "module": "buffer_9.c"
+  },
+  {
+   "name": "@buffer_vline",
+   "seg": 3200,
+   "off": 0,
+   "file_offset": "0x00DE00",
+   "module": "buffer_a.c"
+  },
+  {
+   "name": "@buffer_draw_box",
+   "seg": 3206,
+   "off": 12,
+   "file_offset": "0x00DE6C",
+   "module": "buffer_b.c"
+  },
+  {
+   "name": "@buffer_pointer",
+   "seg": 3217,
+   "off": 0,
+   "file_offset": "0x00DF10",
+   "module": "buffer_i.c"
+  },
+  {
+   "name": "@buffer_conform",
+   "seg": 3217,
+   "off": 68,
+   "file_offset": "0x00DF54",
+   "module": "buffer_i.c"
+  },
+  {
+   "name": "@buffer_restore",
+   "seg": 3229,
+   "off": 236,
+   "file_offset": "0x00E0BC",
+   "module": "buffer_t.c"
+  },
+  {
+   "name": "_buffer_restore_keep_flag",
+   "seg": 5607,
+   "off": 1862,
+   "file_offset": "0x017BB6",
+   "module": "buffer_t.c"
+  },
+  {
+   "name": "@buffer_preserve",
+   "seg": 3229,
+   "off": 14,
+   "file_offset": "0x00DFDE",
+   "module": "buffer_t.c"
+  },
+  {
+   "name": "_buffer_tile",
+   "seg": 3257,
+   "off": 0,
+   "file_offset": "0x00E190",
+   "module": "buffer_z.c"
+  },
+  {
+   "name": "_mem_save_free_area",
+   "seg": 5607,
+   "off": 19176,
+   "file_offset": "0x01BF58",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_umb_save_free_area",
+   "seg": 5607,
+   "off": 20936,
+   "file_offset": "0x01C638",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_initialized",
+   "seg": 5607,
+   "off": 1864,
+   "file_offset": "0x017BB8",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_max_free_set",
+   "seg": 5607,
+   "off": 1865,
+   "file_offset": "0x017BB9",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_get",
+   "seg": 3273,
+   "off": 738,
+   "file_offset": "0x00E572",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_umb_max_free_set",
+   "seg": 5607,
+   "off": 1866,
+   "file_offset": "0x017BBA",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_last_alloc_failed",
+   "seg": 5607,
+   "off": 1867,
+   "file_offset": "0x017BBB",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_last_alloc_loader",
+   "seg": 5607,
+   "off": 1868,
+   "file_offset": "0x017BBC",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_last_alloc_size",
+   "seg": 5607,
+   "off": 1870,
+   "file_offset": "0x017BBE",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_last_alloc_avail",
+   "seg": 5607,
+   "off": 1874,
+   "file_offset": "0x017BC2",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_get_block_name",
+   "seg": 3273,
+   "off": 748,
+   "file_offset": "0x00E57C",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_last_alloc_umb",
+   "seg": 5607,
+   "off": 1878,
+   "file_offset": "0x017BC6",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_max_free",
+   "seg": 5607,
+   "off": 1882,
+   "file_offset": "0x017BCA",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_min_free",
+   "seg": 5607,
+   "off": 1886,
+   "file_offset": "0x017BCE",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_umb_max_free",
+   "seg": 5607,
+   "off": 1890,
+   "file_offset": "0x017BD2",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_free",
+   "seg": 3273,
+   "off": 784,
+   "file_offset": "0x00E5A0",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_umb_min_free",
+   "seg": 5607,
+   "off": 1894,
+   "file_offset": "0x017BD6",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_manager_update",
+   "seg": 5607,
+   "off": 1898,
+   "file_offset": "0x017BDA",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "_mem_manager_active",
+   "seg": 5607,
+   "off": 1902,
+   "file_offset": "0x017BDE",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_adjust",
+   "seg": 3273,
+   "off": 864,
+   "file_offset": "0x00E5F0",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_save_free",
+   "seg": 3273,
+   "off": 910,
+   "file_offset": "0x00E61E",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_restore_free",
+   "seg": 3273,
+   "off": 940,
+   "file_offset": "0x00E63C",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_get_name",
+   "seg": 3273,
+   "off": 310,
+   "file_offset": "0x00E3C6",
+   "module": "mem_2.c"
+  },
+  {
+   "name": "@mem_conv_get_avail",
+   "seg": 3336,
+   "off": 104,
+   "file_offset": "0x00E6E8",
+   "module": "mem_4.c"
+  },
+  {
+   "name": "@mem_get_avail",
+   "seg": 3336,
+   "off": 130,
+   "file_offset": "0x00E702",
+   "module": "mem_4.c"
+  },
+  {
+   "name": "@mem_set_video_mode",
+   "seg": 3336,
+   "off": 170,
+   "file_offset": "0x00E72A",
+   "module": "mem_4.c"
+  },
+  {
+   "name": "@stoi",
+   "seg": 3346,
+   "off": 12,
+   "file_offset": "0x00E72C",
+   "module": "btype_5.c"
+  },
+  {
+   "name": "_timer_address",
+   "seg": 5607,
+   "off": 1910,
+   "file_offset": "0x017BE6",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "_timer_rate",
+   "seg": 5607,
+   "off": 1914,
+   "file_offset": "0x017BEA",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "_timer_service_active",
+   "seg": 5607,
+   "off": 1916,
+   "file_offset": "0x017BEC",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "@timer_read",
+   "seg": 3352,
+   "off": 6,
+   "file_offset": "0x00E786",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "@timer_read_dos",
+   "seg": 3352,
+   "off": 18,
+   "file_offset": "0x00E792",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "@timer_read_600",
+   "seg": 3352,
+   "off": 34,
+   "file_offset": "0x00E7A2",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "@timer_read_60",
+   "seg": 3352,
+   "off": 42,
+   "file_offset": "0x00E7AA",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "_timer_hack",
+   "seg": 3352,
+   "off": 50,
+   "file_offset": "0x00E7B2",
+   "module": "TIMER_1.C"
+  },
+  {
+   "name": "_TIMER_LOW_ROUTINE",
+   "seg": 5607,
+   "off": 24102,
+   "file_offset": "0x01D296",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_timer_60_low",
+   "seg": 5607,
+   "off": 20082,
+   "file_offset": "0x01C2E2",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_LOW_DEFERRED",
+   "seg": 5607,
+   "off": 19074,
+   "file_offset": "0x01BEF2",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_LOW_STACKING",
+   "seg": 5607,
+   "off": 19564,
+   "file_offset": "0x01C0DC",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_timer_600_low",
+   "seg": 5607,
+   "off": 20662,
+   "file_offset": "0x01C526",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_LOW_PRIORITY",
+   "seg": 5607,
+   "off": 20136,
+   "file_offset": "0x01C318",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_LOW_SEMAPHORE",
+   "seg": 5607,
+   "off": 19050,
+   "file_offset": "0x01BEDA",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_NOISE_ON",
+   "seg": 5607,
+   "off": 19068,
+   "file_offset": "0x01BEEC",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_SOUND_ON",
+   "seg": 5607,
+   "off": 19084,
+   "file_offset": "0x01BEFC",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_timer_remove",
+   "seg": 3356,
+   "off": 499,
+   "file_offset": "0x00E9B3",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_timer_install",
+   "seg": 3356,
+   "off": 381,
+   "file_offset": "0x00E93D",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_INTERRUPT_8_HANDLER",
+   "seg": 3356,
+   "off": 12,
+   "file_offset": "0x00E7CC",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_GET_INTERRUPT_STACK",
+   "seg": 3356,
+   "off": 621,
+   "file_offset": "0x00EA2D",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_SET_SOUND_FLAG",
+   "seg": 3356,
+   "off": 555,
+   "file_offset": "0x00E9EB",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_ACTIVATE_LOW_PRIORITY",
+   "seg": 3356,
+   "off": 573,
+   "file_offset": "0x00E9FD",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_GET_COPY_PROTECT",
+   "seg": 3356,
+   "off": 628,
+   "file_offset": "0x00EA34",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_TIMER_SET_COPY_PROTECT",
+   "seg": 3356,
+   "off": 369,
+   "file_offset": "0x00E931",
+   "module": "timer_3.ASM"
+  },
+  {
+   "name": "_font_inter",
+   "seg": 5607,
+   "off": 14998,
+   "file_offset": "0x01AF06",
+   "module": "font_1.c"
+  },
+  {
+   "name": "_font_main",
+   "seg": 5607,
+   "off": 15002,
+   "file_offset": "0x01AF0A",
+   "module": "font_1.c"
+  },
+  {
+   "name": "_font_conv",
+   "seg": 5607,
+   "off": 15006,
+   "file_offset": "0x01AF0E",
+   "module": "font_1.c"
+  },
+  {
+   "name": "_font_menu",
+   "seg": 5607,
+   "off": 15010,
+   "file_offset": "0x01AF12",
+   "module": "font_1.c"
+  },
+  {
+   "name": "_font_misc",
+   "seg": 5607,
+   "off": 15014,
+   "file_offset": "0x01AF16",
+   "module": "font_1.c"
+  },
+  {
+   "name": "@font_load",
+   "seg": 3395,
+   "off": 10,
+   "file_offset": "0x00EA3A",
+   "module": "font_1.c"
+  },
+  {
+   "name": "_font_colors",
+   "seg": 5607,
+   "off": 15018,
+   "file_offset": "0x01AF1A",
+   "module": "font_2.c"
+  },
+  {
+   "name": "@font_write",
+   "seg": 3411,
+   "off": 8,
+   "file_offset": "0x00EB38",
+   "module": "font_2.c"
+  },
+  {
+   "name": "@font_set_colors",
+   "seg": 3434,
+   "off": 6,
+   "file_offset": "0x00ECA6",
+   "module": "FONT_3.C"
+  },
+  {
+   "name": "@font_string_width",
+   "seg": 3436,
+   "off": 2,
+   "file_offset": "0x00ECC2",
+   "module": "font_4.c"
+  },
+  {
+   "name": "@mcga_setpal",
+   "seg": 3440,
+   "off": 10,
+   "file_offset": "0x00ED0A",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_retrace_computed",
+   "seg": 5607,
+   "off": 15022,
+   "file_offset": "0x01AF1E",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_retrace_ticks",
+   "seg": 5607,
+   "off": 15024,
+   "file_offset": "0x01AF20",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_retrace_max_colors",
+   "seg": 5607,
+   "off": 15026,
+   "file_offset": "0x01AF22",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_retrace_max_bytes",
+   "seg": 5607,
+   "off": 15028,
+   "file_offset": "0x01AF24",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_palette_update",
+   "seg": 5607,
+   "off": 15030,
+   "file_offset": "0x01AF26",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "_mcga_palette_fast",
+   "seg": 5607,
+   "off": 15032,
+   "file_offset": "0x01AF28",
+   "module": "mcga_7.c"
+  },
+  {
+   "name": "@mcga_time_palette_swap",
+   "seg": 3445,
+   "off": 14,
+   "file_offset": "0x00ED5E",
+   "module": "mcga_c.c"
+  },
+  {
+   "name": "_mcga_compute_retrace_parameters",
+   "seg": 3445,
+   "off": 116,
+   "file_offset": "0x00EDC4",
+   "module": "mcga_c.c"
+  },
+  {
+   "name": "@sprite_draw",
+   "seg": 3471,
+   "off": 0,
+   "file_offset": "0x00EEF0",
+   "module": "sprite_1.c"
+  },
+  {
+   "name": "@sprite_draw_scaled",
+   "seg": 3502,
+   "off": 10,
+   "file_offset": "0x00F0EA",
+   "module": "sprite_2.c"
+  },
+  {
+   "name": "_sprite_force_size",
+   "seg": 5607,
+   "off": 24258,
+   "file_offset": "0x01D332",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "_sprite_last_quantity",
+   "seg": 5607,
+   "off": 23194,
+   "file_offset": "0x01CF0A",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "_sprite_error",
+   "seg": 5607,
+   "off": 15070,
+   "file_offset": "0x01AF4E",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "_put_palette",
+   "seg": 5607,
+   "off": 15072,
+   "file_offset": "0x01AF50",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "_sprite_force_memory",
+   "seg": 5607,
+   "off": 15076,
+   "file_offset": "0x01AF54",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "_color_table",
+   "seg": 5606,
+   "off": 0,
+   "file_offset": "0x017460",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "@sprite_series_load",
+   "seg": 3547,
+   "off": 8,
+   "file_offset": "0x00F3B8",
+   "module": "sprite_e.c"
+  },
+  {
+   "name": "@sprite_draw_black",
+   "seg": 3697,
+   "off": 12,
+   "file_offset": "0x00FD1C",
+   "module": "sprite_l.c"
+  },
+  {
+   "name": "@sprite_draw_scaled_black",
+   "seg": 3730,
+   "off": 10,
+   "file_offset": "0x00FF2A",
+   "module": "sprite_m.c"
+  },
+  {
+   "name": "@pal_load_2",
+   "seg": 3776,
+   "off": 10,
+   "file_offset": "0x01020A",
+   "module": "pal_8.c"
+  },
+  {
+   "name": "_scr_main",
+   "seg": 5607,
+   "off": 15084,
+   "file_offset": "0x01AF5C",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_work",
+   "seg": 5607,
+   "off": 15092,
+   "file_offset": "0x01AF64",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_orig",
+   "seg": 5607,
+   "off": 15100,
+   "file_offset": "0x01AF6C",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_depth",
+   "seg": 5607,
+   "off": 15108,
+   "file_offset": "0x01AF74",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_walk",
+   "seg": 5607,
+   "off": 15116,
+   "file_offset": "0x01AF7C",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_special",
+   "seg": 5607,
+   "off": 15124,
+   "file_offset": "0x01AF84",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_scr_video",
+   "seg": 5607,
+   "off": 15132,
+   "file_offset": "0x01AF8C",
+   "module": "matte_0.c"
+  },
+  {
+   "name": "_video_update",
+   "seg": 3781,
+   "off": 36,
+   "file_offset": "0x010274",
+   "module": "video_1.ASM"
+  },
+  {
+   "name": "_video_init",
+   "seg": 3781,
+   "off": 8,
+   "file_offset": "0x010258",
+   "module": "video_1.ASM"
+  },
+  {
+   "name": "@error_report",
+   "seg": 3792,
+   "off": 982,
+   "file_offset": "0x0106D6",
+   "module": "error_1.c"
+  },
+  {
+   "name": "@error_dump_file",
+   "seg": 3792,
+   "off": 172,
+   "file_offset": "0x0103AC",
+   "module": "error_1.c"
+  },
+  {
+   "name": "_error_service_routine",
+   "seg": 5607,
+   "off": 15144,
+   "file_offset": "0x01AF98",
+   "module": "error_1.c"
+  },
+  {
+   "name": "_error_service_routine_2",
+   "seg": 5607,
+   "off": 15148,
+   "file_offset": "0x01AF9C",
+   "module": "error_1.c"
+  },
+  {
+   "name": "_error_abort",
+   "seg": 5607,
+   "off": 15152,
+   "file_offset": "0x01AFA0",
+   "module": "error_1.c"
+  },
+  {
+   "name": "_error_string",
+   "seg": 5607,
+   "off": 15154,
+   "file_offset": "0x01AFA2",
+   "module": "error_1.c"
+  },
+  {
+   "name": "_pack_enable_pfab",
+   "seg": 3862,
+   "off": 14,
+   "file_offset": "0x01076E",
+   "module": "pack_9.c"
+  },
+  {
+   "name": "_cycling_palette",
+   "seg": 5607,
+   "off": 24648,
+   "file_offset": "0x01D4B8",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycle_list",
+   "seg": 5607,
+   "off": 23294,
+   "file_offset": "0x01CF6E",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycling_threshold",
+   "seg": 5607,
+   "off": 19216,
+   "file_offset": "0x01BF80",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_total_cycle_colors",
+   "seg": 5607,
+   "off": 20122,
+   "file_offset": "0x01C30A",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycle_timing",
+   "seg": 5607,
+   "off": 21224,
+   "file_offset": "0x01C758",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycling_active",
+   "seg": 5607,
+   "off": 15460,
+   "file_offset": "0x01B0D4",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycling_delay",
+   "seg": 5607,
+   "off": 15462,
+   "file_offset": "0x01B0D6",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycle_init",
+   "seg": 3866,
+   "off": 10,
+   "file_offset": "0x0107AA",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_cycle_colors",
+   "seg": 3866,
+   "off": 166,
+   "file_offset": "0x010846",
+   "module": "cycle_1.c"
+  },
+  {
+   "name": "_xms_version",
+   "seg": 5607,
+   "off": 21256,
+   "file_offset": "0x01C778",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_xms_exists",
+   "seg": 5607,
+   "off": 15464,
+   "file_offset": "0x01B0D8",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_xms_disabled",
+   "seg": 5607,
+   "off": 15466,
+   "file_offset": "0x01B0DA",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_xms_controller",
+   "seg": 5607,
+   "off": 15468,
+   "file_offset": "0x01B0DC",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_xms_chain_seg",
+   "seg": 5607,
+   "off": 15472,
+   "file_offset": "0x01B0E0",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_xms_preloaded",
+   "seg": 5607,
+   "off": 15474,
+   "file_offset": "0x01B0E2",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "@xms_detect",
+   "seg": 3894,
+   "off": 10,
+   "file_offset": "0x01096A",
+   "module": "xms_1.c"
+  },
+  {
+   "name": "_himem_shutdown",
+   "seg": 3902,
+   "off": 12,
+   "file_offset": "0x0109EC",
+   "module": "himem_6.c"
+  },
+  {
+   "name": "_himem_startup",
+   "seg": 3902,
+   "off": 90,
+   "file_offset": "0x010A3A",
+   "module": "himem_6.c"
+  },
+  {
+   "name": "@heap_create",
+   "seg": 3909,
+   "off": 0,
+   "file_offset": "0x010A50",
+   "module": "heap_1.c"
+  },
+  {
+   "name": "@heap_declare",
+   "seg": 3909,
+   "off": 144,
+   "file_offset": "0x010AE0",
+   "module": "heap_1.c"
+  },
+  {
+   "name": "@heap_destroy",
+   "seg": 3909,
+   "off": 206,
+   "file_offset": "0x010B1E",
+   "module": "heap_1.c"
+  },
+  {
+   "name": "@heap_get",
+   "seg": 3909,
+   "off": 266,
+   "file_offset": "0x010B5A",
+   "module": "heap_1.c"
+  },
+  {
+   "name": "@heap_shrink",
+   "seg": 3909,
+   "off": 372,
+   "file_offset": "0x010BC4",
+   "module": "heap_1.c"
+  },
+  {
+   "name": "_MOUSE_KNOWN_MODE",
+   "seg": 5607,
+   "off": 21214,
+   "file_offset": "0x01C74E",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_driver",
+   "seg": 5607,
+   "off": 18880,
+   "file_offset": "0x01BE30",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_FORCE_BUTTON",
+   "seg": 5607,
+   "off": 19566,
+   "file_offset": "0x01C0DE",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_X_TEMP",
+   "seg": 5607,
+   "off": 24098,
+   "file_offset": "0x01D292",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_Y_TEMP",
+   "seg": 5607,
+   "off": 24100,
+   "file_offset": "0x01D294",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_SHOWING",
+   "seg": 5607,
+   "off": 23250,
+   "file_offset": "0x01CF42",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_CURSOR_BUFFER",
+   "seg": 5607,
+   "off": 21216,
+   "file_offset": "0x01C750",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_VIDEO_MODE",
+   "seg": 5607,
+   "off": 24646,
+   "file_offset": "0x01D4B6",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_HORIZ_BOUND",
+   "seg": 3941,
+   "off": 1471,
+   "file_offset": "0x01120F",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_check_double",
+   "seg": 3941,
+   "off": 906,
+   "file_offset": "0x010FDA",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_SET_HOTSPOT",
+   "seg": 3941,
+   "off": 500,
+   "file_offset": "0x010E44",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_BEGIN_DOUBLE",
+   "seg": 3941,
+   "off": 638,
+   "file_offset": "0x010ECE",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_freeze",
+   "seg": 3941,
+   "off": 1215,
+   "file_offset": "0x01110F",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_refresh_view_port",
+   "seg": 3941,
+   "off": 1997,
+   "file_offset": "0x01141D",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_TIMING",
+   "seg": 3941,
+   "off": 525,
+   "file_offset": "0x010E5D",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_refresh_done",
+   "seg": 3941,
+   "off": 2307,
+   "file_offset": "0x011553",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_CURSOR",
+   "seg": 3941,
+   "off": 1016,
+   "file_offset": "0x011048",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_set_view_port_loc",
+   "seg": 3941,
+   "off": 1911,
+   "file_offset": "0x0113C7",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_DISABLE_SCALE",
+   "seg": 3941,
+   "off": 2348,
+   "file_offset": "0x01157C",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_CHANGE_CURSOR_BEGIN",
+   "seg": 3941,
+   "off": 1519,
+   "file_offset": "0x01123F",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_DOUBLE_CURSOR",
+   "seg": 3941,
+   "off": 740,
+   "file_offset": "0x010F34",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_double_freedom",
+   "seg": 3941,
+   "off": 707,
+   "file_offset": "0x010F13",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_set_view_port",
+   "seg": 3941,
+   "off": 1960,
+   "file_offset": "0x0113F8",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_GET_VIDEO_MODE",
+   "seg": 3941,
+   "off": 634,
+   "file_offset": "0x010ECA",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_GET_STACK",
+   "seg": 3941,
+   "off": 0,
+   "file_offset": "0x010C50",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_hide",
+   "seg": 3941,
+   "off": 78,
+   "file_offset": "0x010C9E",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_set_work_buffer",
+   "seg": 3941,
+   "off": 1886,
+   "file_offset": "0x0113AE",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_DRAW",
+   "seg": 3941,
+   "off": 1647,
+   "file_offset": "0x0112BF",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_END_DOUBLE",
+   "seg": 3941,
+   "off": 719,
+   "file_offset": "0x010F1F",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_thaw",
+   "seg": 3941,
+   "off": 1233,
+   "file_offset": "0x011121",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_init",
+   "seg": 3941,
+   "off": 134,
+   "file_offset": "0x010CD6",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_WIPE",
+   "seg": 3941,
+   "off": 1610,
+   "file_offset": "0x01129A",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_COPY",
+   "seg": 3941,
+   "off": 1841,
+   "file_offset": "0x011381",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_show",
+   "seg": 3941,
+   "off": 7,
+   "file_offset": "0x010C57",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_VERT_BOUND",
+   "seg": 3941,
+   "off": 1495,
+   "file_offset": "0x011227",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_HARD_CURSOR_MODE",
+   "seg": 3941,
+   "off": 2355,
+   "file_offset": "0x011583",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_mouse_get_status",
+   "seg": 3941,
+   "off": 1404,
+   "file_offset": "0x0111CC",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_FORCE",
+   "seg": 3941,
+   "off": 1280,
+   "file_offset": "0x011150",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_SCALE_COORD",
+   "seg": 3941,
+   "off": 1372,
+   "file_offset": "0x0111AC",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_CHANGE_CURSOR_END",
+   "seg": 3941,
+   "off": 1539,
+   "file_offset": "0x011253",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_SCREEN_SWAP",
+   "seg": 3941,
+   "off": 546,
+   "file_offset": "0x010E72",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_MOUSE_OVERLAY_VGA",
+   "seg": 3941,
+   "off": 1862,
+   "file_offset": "0x011396",
+   "module": "mouse_1.ASM"
+  },
+  {
+   "name": "_KEYS_SPECIAL_BUTTON",
+   "seg": 5607,
+   "off": 19082,
+   "file_offset": "0x01BEFA",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_DISABLE",
+   "seg": 4094,
+   "off": 527,
+   "file_offset": "0x0117EF",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_INSTALL",
+   "seg": 4094,
+   "off": 370,
+   "file_offset": "0x011752",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_9_HANDLER",
+   "seg": 4094,
+   "off": 37,
+   "file_offset": "0x011605",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_CHECK_INSTALLED",
+   "seg": 4094,
+   "off": 514,
+   "file_offset": "0x0117E2",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_1C_HANDLER",
+   "seg": 4094,
+   "off": 164,
+   "file_offset": "0x011684",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_KEYS_ENABLE",
+   "seg": 4094,
+   "off": 520,
+   "file_offset": "0x0117E8",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "_keys_remove",
+   "seg": 4094,
+   "off": 455,
+   "file_offset": "0x0117A7",
+   "module": "keys_4.ASM"
+  },
+  {
+   "name": "@fileio_purge_trailing_spaces",
+   "seg": 4127,
+   "off": 12,
+   "file_offset": "0x0117FC",
+   "module": "FILEIO_1.C"
+  },
+  {
+   "name": "@buffer_to_disk",
+   "seg": 4133,
+   "off": 12,
+   "file_offset": "0x01185C",
+   "module": "buffer_r.c"
+  },
+  {
+   "name": "@buffer_from_disk",
+   "seg": 4133,
+   "off": 234,
+   "file_offset": "0x01193A",
+   "module": "buffer_r.c"
+  },
+  {
+   "name": "_buffer_disk_filename",
+   "seg": 5607,
+   "off": 17388,
+   "file_offset": "0x01B85C",
+   "module": "buffer_r.c"
+  },
+  {
+   "name": "_buffer_accum",
+   "seg": 5607,
+   "off": 17396,
+   "file_offset": "0x01B864",
+   "module": "buffer_r.c"
+  },
+  {
+   "name": "_buffer_tracking",
+   "seg": 5607,
+   "off": 17398,
+   "file_offset": "0x01B866",
+   "module": "buffer_r.c"
+  },
+  {
+   "name": "@buffer_from_ems",
+   "seg": 4157,
+   "off": 158,
+   "file_offset": "0x011A6E",
+   "module": "buffer_s.c"
+  },
+  {
+   "name": "@buffer_to_ems",
+   "seg": 4157,
+   "off": 10,
+   "file_offset": "0x0119DA",
+   "module": "buffer_s.c"
+  },
+  {
+   "name": "@mem_normalize",
+   "seg": 4175,
+   "off": 2,
+   "file_offset": "0x011AF2",
+   "module": "MEM_1.C"
+  },
+  {
+   "name": "@xtoi",
+   "seg": 4176,
+   "off": 10,
+   "file_offset": "0x011B0A",
+   "module": "btype_3.c"
+  },
+  {
+   "name": "@btoi",
+   "seg": 4182,
+   "off": 14,
+   "file_offset": "0x011B6E",
+   "module": "btype_4.c"
+  },
+  {
+   "name": "_TIMER_SET_RATE",
+   "seg": 4187,
+   "off": 6,
+   "file_offset": "0x011BB6",
+   "module": "TIMER_2.C"
+  },
+  {
+   "name": "@mcga_getpal",
+   "seg": 4188,
+   "off": 10,
+   "file_offset": "0x011BCA",
+   "module": "mcga_8.c"
+  },
+  {
+   "name": "@mcga_retrace",
+   "seg": 4193,
+   "off": 10,
+   "file_offset": "0x011C1A",
+   "module": "mcga_b.c"
+  },
+  {
+   "name": "@mcga_setpal_range",
+   "seg": 4193,
+   "off": 30,
+   "file_offset": "0x011C2E",
+   "module": "mcga_b.c"
+  },
+  {
+   "name": "@sprite_color_translate",
+   "seg": 4201,
+   "off": 6,
+   "file_offset": "0x011C96",
+   "module": "SPRITE_H.C"
+  },
+  {
+   "name": "_color_status",
+   "seg": 5607,
+   "off": 25970,
+   "file_offset": "0x01D9E2",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_flag_used",
+   "seg": 5607,
+   "off": 21140,
+   "file_offset": "0x01C704",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_reserved_bottom",
+   "seg": 5607,
+   "off": 24096,
+   "file_offset": "0x01D290",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_reserved_top",
+   "seg": 5607,
+   "off": 21206,
+   "file_offset": "0x01C746",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_low_search_limit",
+   "seg": 5607,
+   "off": 19080,
+   "file_offset": "0x01BEF8",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_high_search_limit",
+   "seg": 5607,
+   "off": 18892,
+   "file_offset": "0x01BE3C",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_master_palette",
+   "seg": 5607,
+   "off": 23328,
+   "file_offset": "0x01CF90",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_master_shadow",
+   "seg": 5607,
+   "off": 17412,
+   "file_offset": "0x01B874",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_locked",
+   "seg": 5607,
+   "off": 17416,
+   "file_offset": "0x01B878",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_palette_ever_initialized",
+   "seg": 5607,
+   "off": 17418,
+   "file_offset": "0x01B87A",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_allocate",
+   "seg": 4212,
+   "off": 1046,
+   "file_offset": "0x012156",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_compact",
+   "seg": 4212,
+   "off": 474,
+   "file_offset": "0x011F1A",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_pal_manager_update",
+   "seg": 5607,
+   "off": 17420,
+   "file_offset": "0x01B87C",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_pal_manager_active",
+   "seg": 5607,
+   "off": 17424,
+   "file_offset": "0x01B880",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_pal_manager_colors",
+   "seg": 5607,
+   "off": 17426,
+   "file_offset": "0x01B882",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_init",
+   "seg": 4212,
+   "off": 44,
+   "file_offset": "0x011D6C",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_get_hash",
+   "seg": 4212,
+   "off": 648,
+   "file_offset": "0x011FC8",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_shadow_sort",
+   "seg": 4212,
+   "off": 686,
+   "file_offset": "0x011FEE",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_init_shadow",
+   "seg": 4212,
+   "off": 818,
+   "file_offset": "0x012072",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_lock",
+   "seg": 4212,
+   "off": 236,
+   "file_offset": "0x011E2C",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_activate_shadow",
+   "seg": 4212,
+   "off": 914,
+   "file_offset": "0x0120D2",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_unlock",
+   "seg": 4212,
+   "off": 314,
+   "file_offset": "0x011E7A",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "@pal_deallocate",
+   "seg": 4212,
+   "off": 346,
+   "file_offset": "0x011E9A",
+   "module": "pal_1.c"
+  },
+  {
+   "name": "_VIDEO_ADDRESS",
+   "seg": 4372,
+   "off": 2,
+   "file_offset": "0x012742",
+   "module": "video_2.ASM"
+  },
+  {
+   "name": "_SOUND_JUMP_TABLE",
+   "seg": 5607,
+   "off": 24618,
+   "file_offset": "0x01D49A",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_sound_driver_null",
+   "seg": 4373,
+   "off": 256,
+   "file_offset": "0x012850",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_SOUND_DRIVER_REMOVE",
+   "seg": 4373,
+   "off": 227,
+   "file_offset": "0x012833",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_sound_initialized",
+   "seg": 4373,
+   "off": 281,
+   "file_offset": "0x012869",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_SOUND_DRIVER_LOAD",
+   "seg": 4373,
+   "off": 4,
+   "file_offset": "0x012754",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_SOUND_DUMMY",
+   "seg": 4373,
+   "off": 253,
+   "file_offset": "0x01284D",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_SOUND_DRIVER_INIT",
+   "seg": 4373,
+   "off": 178,
+   "file_offset": "0x012802",
+   "module": "sound_1.ASM"
+  },
+  {
+   "name": "_SOUND_QUEUE_FLUSH",
+   "seg": 4391,
+   "off": 49,
+   "file_offset": "0x0128A1",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_sound_manager",
+   "seg": 4391,
+   "off": 93,
+   "file_offset": "0x0128CD",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_SOUND_SYSTEM_SETUP",
+   "seg": 4391,
+   "off": 0,
+   "file_offset": "0x012870",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_SOUND_MAKE_NOISE",
+   "seg": 4391,
+   "off": 97,
+   "file_offset": "0x0128D1",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_sound_system_shutdown",
+   "seg": 4391,
+   "off": 89,
+   "file_offset": "0x0128C9",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_SOUND_QUEUE_HOLD",
+   "seg": 4391,
+   "off": 43,
+   "file_offset": "0x01289B",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_sound_queue",
+   "seg": 4391,
+   "off": 4,
+   "file_offset": "0x012874",
+   "module": "sound_2.ASM"
+  },
+  {
+   "name": "_ems_page_stack",
+   "seg": 5607,
+   "off": 17492,
+   "file_offset": "0x01B8C4",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_page",
+   "seg": 5607,
+   "off": 17500,
+   "file_offset": "0x01B8CC",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_name",
+   "seg": 5607,
+   "off": 17516,
+   "file_offset": "0x01B8DC",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "@ems_detect",
+   "seg": 4397,
+   "off": 6,
+   "file_offset": "0x0128D6",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "@ems_shutdown",
+   "seg": 4397,
+   "off": 186,
+   "file_offset": "0x01298A",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_map_page",
+   "seg": 4397,
+   "off": 212,
+   "file_offset": "0x0129A4",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_push",
+   "seg": 4397,
+   "off": 276,
+   "file_offset": "0x0129E4",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_pop",
+   "seg": 4397,
+   "off": 310,
+   "file_offset": "0x012A06",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_unmap_all",
+   "seg": 4397,
+   "off": 350,
+   "file_offset": "0x012A2E",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_driver",
+   "seg": 5607,
+   "off": 17464,
+   "file_offset": "0x01B8A8",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_exists",
+   "seg": 5607,
+   "off": 17466,
+   "file_offset": "0x01B8AA",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_page_frame",
+   "seg": 5607,
+   "off": 17468,
+   "file_offset": "0x01B8AC",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_handle",
+   "seg": 5607,
+   "off": 17470,
+   "file_offset": "0x01B8AE",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_pages",
+   "seg": 5607,
+   "off": 17472,
+   "file_offset": "0x01B8B0",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_high_version",
+   "seg": 5607,
+   "off": 17474,
+   "file_offset": "0x01B8B2",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_low_version",
+   "seg": 5607,
+   "off": 17476,
+   "file_offset": "0x01B8B4",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_disabled",
+   "seg": 5607,
+   "off": 17478,
+   "file_offset": "0x01B8B6",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_page_map_active",
+   "seg": 5607,
+   "off": 17480,
+   "file_offset": "0x01B8B8",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_mapping_changed",
+   "seg": 5607,
+   "off": 17482,
+   "file_offset": "0x01B8BA",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "_ems_page_mapped",
+   "seg": 5607,
+   "off": 17484,
+   "file_offset": "0x01B8BC",
+   "module": "ems_1.c"
+  },
+  {
+   "name": "@ems_paging_setup",
+   "seg": 4421,
+   "off": 54,
+   "file_offset": "0x012A86",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_free_page_handle",
+   "seg": 4421,
+   "off": 160,
+   "file_offset": "0x012AF0",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_get_page_handle",
+   "seg": 4421,
+   "off": 262,
+   "file_offset": "0x012B56",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_next_handle_page",
+   "seg": 4421,
+   "off": 452,
+   "file_offset": "0x012C14",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_paging_shutdown",
+   "seg": 4421,
+   "off": 534,
+   "file_offset": "0x012C66",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_paging_mode",
+   "seg": 4421,
+   "off": 554,
+   "file_offset": "0x012C7A",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "_ems_pages_free",
+   "seg": 5607,
+   "off": 17526,
+   "file_offset": "0x01B8E6",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "_ems_pages_reserved",
+   "seg": 5607,
+   "off": 17528,
+   "file_offset": "0x01B8E8",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "_ems_paging_active",
+   "seg": 5607,
+   "off": 17530,
+   "file_offset": "0x01B8EA",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "_ems_page_flag",
+   "seg": 5607,
+   "off": 17532,
+   "file_offset": "0x01B8EC",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "_ems_paging_reserve",
+   "seg": 5607,
+   "off": 17536,
+   "file_offset": "0x01B8F0",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "@ems_activate_page_map",
+   "seg": 4421,
+   "off": 12,
+   "file_offset": "0x012A5C",
+   "module": "ems_2.c"
+  },
+  {
+   "name": "UnLink",
+   "seg": 4456,
+   "off": 383,
+   "file_offset": "0x012DFF",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "RWinit",
+   "seg": 4456,
+   "off": 97,
+   "file_offset": "0x012CE1",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "Fabrice",
+   "seg": 4456,
+   "off": 529,
+   "file_offset": "0x012E91",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "PFABCOMP",
+   "seg": 4456,
+   "off": 6,
+   "file_offset": "0x012C86",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "RBin",
+   "seg": 4456,
+   "off": 117,
+   "file_offset": "0x012CF5",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "Link",
+   "seg": 4456,
+   "off": 342,
+   "file_offset": "0x012DD6",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "Huff1",
+   "seg": 4456,
+   "off": 310,
+   "file_offset": "0x012DB6",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "Match",
+   "seg": 4456,
+   "off": 410,
+   "file_offset": "0x012E1A",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "WBend",
+   "seg": 4456,
+   "off": 234,
+   "file_offset": "0x012D6A",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "push1",
+   "seg": 4456,
+   "off": 331,
+   "file_offset": "0x012DCB",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "WBout",
+   "seg": 4456,
+   "off": 169,
+   "file_offset": "0x012D29",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "WBput",
+   "seg": 4456,
+   "off": 238,
+   "file_offset": "0x012D6E",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "Packet",
+   "seg": 4456,
+   "off": 258,
+   "file_offset": "0x012D82",
+   "module": "pfabcomp.ASM"
+  },
+  {
+   "name": "RBin_x0",
+   "seg": 4519,
+   "off": 445,
+   "file_offset": "0x01322D",
+   "module": "pfabexp0.ASM"
+  },
+  {
+   "name": "PFABEXP0",
+   "seg": 4519,
+   "off": 0,
+   "file_offset": "0x013070",
+   "module": "pfabexp0.ASM"
+  },
+  {
+   "name": "WBout_x0",
+   "seg": 4519,
+   "off": 497,
+   "file_offset": "0x013261",
+   "module": "pfabexp0.ASM"
+  },
+  {
+   "name": "RBin_x1",
+   "seg": 4519,
+   "off": 1054,
+   "file_offset": "0x01348E",
+   "module": "pfabexp1.ASM"
+  },
+  {
+   "name": "PFABEXP1",
+   "seg": 4519,
+   "off": 590,
+   "file_offset": "0x0132BE",
+   "module": "pfabexp1.ASM"
+  },
+  {
+   "name": "PFABEXP2",
+   "seg": 4519,
+   "off": 1114,
+   "file_offset": "0x0134CA",
+   "module": "pfabexp2.ASM"
+  },
+  {
+   "name": "_pack_read_size",
+   "seg": 5607,
+   "off": 21136,
+   "file_offset": "0x01C700",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_read_count",
+   "seg": 5607,
+   "off": 19210,
+   "file_offset": "0x01BF7A",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_write_size",
+   "seg": 5607,
+   "off": 19076,
+   "file_offset": "0x01BEF4",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_write_count",
+   "seg": 5607,
+   "off": 27012,
+   "file_offset": "0x01DDF4",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_read_routine",
+   "seg": 5607,
+   "off": 24642,
+   "file_offset": "0x01D4B2",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_write_routine",
+   "seg": 5607,
+   "off": 25832,
+   "file_offset": "0x01D958",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_buffer",
+   "seg": 5607,
+   "off": 20132,
+   "file_offset": "0x01C314",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_buffer_size",
+   "seg": 5607,
+   "off": 24616,
+   "file_offset": "0x01D498",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_implode_routine",
+   "seg": 5607,
+   "off": 17550,
+   "file_offset": "0x01B8FE",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_explode_routine",
+   "seg": 5607,
+   "off": 17554,
+   "file_offset": "0x01B902",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_pFABcomp_routine",
+   "seg": 5607,
+   "off": 17558,
+   "file_offset": "0x01B906",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_pFABexp0_routine",
+   "seg": 5607,
+   "off": 17562,
+   "file_offset": "0x01B90A",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_pFABexp1_routine",
+   "seg": 5607,
+   "off": 17566,
+   "file_offset": "0x01B90E",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_pFABexp2_routine",
+   "seg": 5607,
+   "off": 17570,
+   "file_offset": "0x01B912",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "@pack_raw_copy",
+   "seg": 4610,
+   "off": 8,
+   "file_offset": "0x013628",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "@pack_a_packet",
+   "seg": 4610,
+   "off": 134,
+   "file_offset": "0x0136A6",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_mode",
+   "seg": 5607,
+   "off": 17544,
+   "file_offset": "0x01B8F8",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_zip_enabled",
+   "seg": 5607,
+   "off": 17546,
+   "file_offset": "0x01B8FA",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_pfab_enabled",
+   "seg": 5607,
+   "off": 17547,
+   "file_offset": "0x01B8FB",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "_pack_strategy",
+   "seg": 5607,
+   "off": 17548,
+   "file_offset": "0x01B8FC",
+   "module": "pack_5.c"
+  },
+  {
+   "name": "@loader_open",
+   "seg": 4634,
+   "off": 0,
+   "file_offset": "0x0137A0",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "@loader_set_priority",
+   "seg": 4634,
+   "off": 828,
+   "file_offset": "0x013ADC",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "@loader_close",
+   "seg": 4634,
+   "off": 846,
+   "file_offset": "0x013AEE",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_found_in_ems",
+   "seg": 5607,
+   "off": 17602,
+   "file_offset": "0x01B932",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_found_in_xms",
+   "seg": 5607,
+   "off": 17606,
+   "file_offset": "0x01B936",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_found_on_disk",
+   "seg": 5607,
+   "off": 17610,
+   "file_offset": "0x01B93A",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_timing_ems",
+   "seg": 5607,
+   "off": 17614,
+   "file_offset": "0x01B93E",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_timing_xms",
+   "seg": 5607,
+   "off": 17618,
+   "file_offset": "0x01B942",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_timing_disk",
+   "seg": 5607,
+   "off": 17622,
+   "file_offset": "0x01B946",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_size_ems",
+   "seg": 5607,
+   "off": 17626,
+   "file_offset": "0x01B94A",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_size_xms",
+   "seg": 5607,
+   "off": 17630,
+   "file_offset": "0x01B94E",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_size_disk",
+   "seg": 5607,
+   "off": 17634,
+   "file_offset": "0x01B952",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_ems_search_disabled",
+   "seg": 5607,
+   "off": 17638,
+   "file_offset": "0x01B956",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "_loader_last",
+   "seg": 5607,
+   "off": 17640,
+   "file_offset": "0x01B958",
+   "module": "loader_1.c"
+  },
+  {
+   "name": "@loader_read",
+   "seg": 4696,
+   "off": 2,
+   "file_offset": "0x013B82",
+   "module": "loader_2.c"
+  },
+  {
+   "name": "@echo",
+   "seg": 4731,
+   "off": 0,
+   "file_offset": "0x013DB0",
+   "module": "ECHO_1.C"
+  },
+  {
+   "name": "_xms_umb_get_avail",
+   "seg": 4734,
+   "off": 12,
+   "file_offset": "0x013DEC",
+   "module": "XMS_2.C"
+  },
+  {
+   "name": "_xms_umb_list",
+   "seg": 5607,
+   "off": 23212,
+   "file_offset": "0x01CF1C",
+   "module": "XMS_3.C"
+  },
+  {
+   "name": "_xms_umb_mark",
+   "seg": 5607,
+   "off": 17654,
+   "file_offset": "0x01B966",
+   "module": "XMS_3.C"
+  },
+  {
+   "name": "_xms_umb_get",
+   "seg": 4737,
+   "off": 8,
+   "file_offset": "0x013E18",
+   "module": "XMS_3.C"
+  },
+  {
+   "name": "_xms_umb_free",
+   "seg": 4737,
+   "off": 74,
+   "file_offset": "0x013E5A",
+   "module": "XMS_3.C"
+  },
+  {
+   "name": "_xms_umb_purge",
+   "seg": 4745,
+   "off": 0,
+   "file_offset": "0x013E90",
+   "module": "XMS_4.C"
+  },
+  {
+   "name": "@xms_get",
+   "seg": 4747,
+   "off": 4,
+   "file_offset": "0x013EB4",
+   "module": "xms_6.c"
+  },
+  {
+   "name": "@xms_free",
+   "seg": 4747,
+   "off": 64,
+   "file_offset": "0x013EF0",
+   "module": "xms_6.c"
+  },
+  {
+   "name": "_himem_directory_save_area",
+   "seg": 5607,
+   "off": 25742,
+   "file_offset": "0x01D8FE",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_directory",
+   "seg": 5607,
+   "off": 18888,
+   "file_offset": "0x01BE38",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_directory_entry",
+   "seg": 5607,
+   "off": 19286,
+   "file_offset": "0x01BFC6",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_preload_ems_disabled",
+   "seg": 5607,
+   "off": 17656,
+   "file_offset": "0x01B968",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_preload_xms_disabled",
+   "seg": 5607,
+   "off": 17657,
+   "file_offset": "0x01B969",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_directory_allocation",
+   "seg": 5607,
+   "off": 17658,
+   "file_offset": "0x01B96A",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_ems_directory",
+   "seg": 5607,
+   "off": 17660,
+   "file_offset": "0x01B96C",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_directory_xms_handle",
+   "seg": 5607,
+   "off": 17664,
+   "file_offset": "0x01B970",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_directory_ems_active",
+   "seg": 5607,
+   "off": 17666,
+   "file_offset": "0x01B972",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_active",
+   "seg": 5607,
+   "off": 17668,
+   "file_offset": "0x01B974",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "_himem_activate_directory",
+   "seg": 4752,
+   "off": 6,
+   "file_offset": "0x013F06",
+   "module": "HIMEM_1.C"
+  },
+  {
+   "name": "@himem_get_directory_entry",
+   "seg": 4754,
+   "off": 10,
+   "file_offset": "0x013F2A",
+   "module": "HIMEM_2.C"
+  },
+  {
+   "name": "_himem_directory_setup",
+   "seg": 4759,
+   "off": 14,
+   "file_offset": "0x013F7E",
+   "module": "himem_5.c"
+  },
+  {
+   "name": "_STACK_FILL",
+   "seg": 4778,
+   "off": 0,
+   "file_offset": "0x0140A0",
+   "module": "stack_1.ASM"
+  },
+  {
+   "name": "_stack_check",
+   "seg": 4778,
+   "off": 27,
+   "file_offset": "0x0140BB",
+   "module": "stack_1.ASM"
+  },
+  {
+   "name": "_MCGA_SHAKES",
+   "seg": 5607,
+   "off": 17678,
+   "file_offset": "0x01B97E",
+   "module": "mcga_d.c"
+  },
+  {
+   "name": "_MCGA_SHAKE",
+   "seg": 4781,
+   "off": 12,
+   "file_offset": "0x0140DC",
+   "module": "mcga_d.c"
+  },
+  {
+   "name": "@pal_interface",
+   "seg": 4784,
+   "off": 0,
+   "file_offset": "0x014100",
+   "module": "pal_4.c"
+  },
+  {
+   "name": "@pal_white",
+   "seg": 4784,
+   "off": 202,
+   "file_offset": "0x0141CA",
+   "module": "pal_4.c"
+  },
+  {
+   "name": "@pal_grey",
+   "seg": 4784,
+   "off": 256,
+   "file_offset": "0x014200",
+   "module": "pal_4.c"
+  },
+  {
+   "name": "@sort_insertion",
+   "seg": 4807,
+   "off": 14,
+   "file_offset": "0x01427E",
+   "module": "SORT_1.C"
+  },
+  {
+   "name": "@sort_insertion_8",
+   "seg": 4832,
+   "off": 8,
+   "file_offset": "0x014408",
+   "module": "sort_3.c"
+  },
+  {
+   "name": "@ems_copy_it_down",
+   "seg": 4844,
+   "off": 8,
+   "file_offset": "0x0144C8",
+   "module": "EMS_4.C"
+  },
+  {
+   "name": "@ems_map_buffer",
+   "seg": 4859,
+   "off": 6,
+   "file_offset": "0x0145B6",
+   "module": "EMS_5.C"
+  },
+  {
+   "name": "@ems_buffer_to_buffer",
+   "seg": 4866,
+   "off": 10,
+   "file_offset": "0x01462A",
+   "module": "ems_7.c"
+  },
+  {
+   "name": "_pack_special_buffer",
+   "seg": 5607,
+   "off": 17682,
+   "file_offset": "0x01B982",
+   "module": "pack_6.c"
+  },
+  {
+   "name": "_pack_special_function",
+   "seg": 5607,
+   "off": 17686,
+   "file_offset": "0x01B986",
+   "module": "pack_6.c"
+  },
+  {
+   "name": "_far_to_near",
+   "seg": 4873,
+   "off": 10,
+   "file_offset": "0x01469A",
+   "module": "pack_6.c"
+  },
+  {
+   "name": "_pack_set_special_buffer",
+   "seg": 4873,
+   "off": 42,
+   "file_offset": "0x0146BA",
+   "module": "pack_6.c"
+  },
+  {
+   "name": "@pack_data",
+   "seg": 4873,
+   "off": 74,
+   "file_offset": "0x0146DA",
+   "module": "pack_6.c"
+  },
+  {
+   "name": "_magic_hash_color",
+   "seg": 4926,
+   "off": 10,
+   "file_offset": "0x0149EA",
+   "module": "magic_e.c"
+  },
+  {
+   "name": "_xms_copy",
+   "seg": 4931,
+   "off": 4,
+   "file_offset": "0x014A34",
+   "module": "XMS_7.C"
+  },
+  {
+   "name": "_himem_ems_preloaded",
+   "seg": 5607,
+   "off": 17706,
+   "file_offset": "0x01B99A",
+   "module": "himem_4.c"
+  },
+  {
+   "name": "_himem_xms_preloaded",
+   "seg": 5607,
+   "off": 17708,
+   "file_offset": "0x01B99C",
+   "module": "himem_4.c"
+  },
+  {
+   "name": "_himem_resident",
+   "seg": 4933,
+   "off": 10,
+   "file_offset": "0x014A5A",
+   "module": "himem_4.c"
+  },
+  {
+   "name": "@mem_check_overflow",
+   "seg": 4951,
+   "off": 14,
+   "file_offset": "0x014B7E",
+   "module": "MEM_3.C"
+  },
+  {
+   "name": "_pack_read_memory_ptr",
+   "seg": 5607,
+   "off": 25416,
+   "file_offset": "0x01D7B8",
+   "module": "PACK_1.C"
+  },
+  {
+   "name": "PACK_READ_MEMORY",
+   "seg": 4953,
+   "off": 6,
+   "file_offset": "0x014B96",
+   "module": "PACK_1.C"
+  },
+  {
+   "name": "_pack_write_memory_ptr",
+   "seg": 5607,
+   "off": 23198,
+   "file_offset": "0x01CF0E",
+   "module": "PACK_2.C"
+  },
+  {
+   "name": "PACK_WRITE_MEMORY",
+   "seg": 4960,
+   "off": 10,
+   "file_offset": "0x014C0A",
+   "module": "PACK_2.C"
+  },
+  {
+   "name": "_pack_read_file_handle",
+   "seg": 5607,
+   "off": 20092,
+   "file_offset": "0x01C2EC",
+   "module": "PACK_3.C"
+  },
+  {
+   "name": "PACK_READ_FILE",
+   "seg": 4967,
+   "off": 8,
+   "file_offset": "0x014C78",
+   "module": "PACK_3.C"
+  },
+  {
+   "name": "_pack_write_file_handle",
+   "seg": 5607,
+   "off": 20090,
+   "file_offset": "0x01C2EA",
+   "module": "PACK_4.C"
+  },
+  {
+   "name": "PACK_WRITE_FILE",
+   "seg": 4975,
+   "off": 2,
+   "file_offset": "0x014CF2",
+   "module": "PACK_4.C"
+  },
+  {
+   "name": "_pack_ems_page_handle",
+   "seg": 5607,
+   "off": 27000,
+   "file_offset": "0x01DDE8",
+   "module": "PACK_D.C"
+  },
+  {
+   "name": "_pack_ems_page_marker",
+   "seg": 5607,
+   "off": 19380,
+   "file_offset": "0x01C024",
+   "module": "PACK_D.C"
+  },
+  {
+   "name": "_pack_ems_page_offset",
+   "seg": 5607,
+   "off": 20098,
+   "file_offset": "0x01C2F2",
+   "module": "PACK_D.C"
+  },
+  {
+   "name": "PACK_WRITE_EMS",
+   "seg": 4984,
+   "off": 4,
+   "file_offset": "0x014D84",
+   "module": "PACK_D.C"
+  },
+  {
+   "name": "__aexit_rtn",
+   "seg": 5607,
+   "off": 17712,
+   "file_offset": "0x01B9A0",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__nheap_desc",
+   "seg": 5607,
+   "off": 17716,
+   "file_offset": "0x01B9A4",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "___aDBptrchk",
+   "seg": 5607,
+   "off": 18594,
+   "file_offset": "0x01BD12",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "___aDBswpchk",
+   "seg": 5607,
+   "off": 18584,
+   "file_offset": "0x01BD08",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "___aDBswpflg",
+   "seg": 5607,
+   "off": 18582,
+   "file_offset": "0x01BD06",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__aseghi",
+   "seg": 5607,
+   "off": 17736,
+   "file_offset": "0x01B9B8",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__aseglo",
+   "seg": 5607,
+   "off": 17738,
+   "file_offset": "0x01B9BA",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__asizds",
+   "seg": 5607,
+   "off": 17714,
+   "file_offset": "0x01B9A2",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__astart",
+   "seg": 5000,
+   "off": 30,
+   "file_offset": "0x014E9E",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__atopsp",
+   "seg": 5607,
+   "off": 17710,
+   "file_offset": "0x01B99E",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__dataseg",
+   "seg": 5000,
+   "off": 275,
+   "file_offset": "0x014F93",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__cintDIV",
+   "seg": 5000,
+   "off": 225,
+   "file_offset": "0x014F61",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__aDBdoswp",
+   "seg": 0,
+   "off": 54998,
+   "file_offset": "0x00ECD6",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__acrtused",
+   "seg": 0,
+   "off": 39030,
+   "file_offset": "0x00AE76",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "___aDBexit",
+   "seg": 5607,
+   "off": 18588,
+   "file_offset": "0x01BD0C",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "___aDBrterr",
+   "seg": 5607,
+   "off": 18586,
+   "file_offset": "0x01BD0A",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__amsg_exit",
+   "seg": 5000,
+   "off": 241,
+   "file_offset": "0x014F71",
+   "module": "dos\\crt0.asm"
+  },
+  {
+   "name": "__osversion",
+   "seg": 5607,
+   "off": 17776,
+   "file_offset": "0x01B9E0",
+   "module": 125
+  },
+  {
+   "name": "___qczrinit",
+   "seg": 5607,
+   "off": 18580,
+   "file_offset": "0x01BD04",
+   "module": 125
+  },
+  {
+   "name": "_errno",
+   "seg": 5607,
+   "off": 17768,
+   "file_offset": "0x01B9D8",
+   "module": 125
+  },
+  {
+   "name": "__exit",
+   "seg": 5000,
+   "off": 482,
+   "file_offset": "0x015062",
+   "module": 125
+  },
+  {
+   "name": "__child",
+   "seg": 5607,
+   "off": 17814,
+   "file_offset": "0x01BA06",
+   "module": 125
+  },
+  {
+   "name": "__nfile",
+   "seg": 5607,
+   "off": 17781,
+   "file_offset": "0x01B9E5",
+   "module": 125
+  },
+  {
+   "name": "__cinit",
+   "seg": 5000,
+   "off": 278,
+   "file_offset": "0x014F96",
+   "module": 125
+  },
+  {
+   "name": "___argc",
+   "seg": 5607,
+   "off": 17803,
+   "file_offset": "0x01B9FB",
+   "module": 125
+  },
+  {
+   "name": "__cexit",
+   "seg": 5000,
+   "off": 490,
+   "file_offset": "0x01506A",
+   "module": 125
+  },
+  {
+   "name": "__intno",
+   "seg": 5607,
+   "off": 17817,
+   "file_offset": "0x01BA09",
+   "module": 125
+  },
+  {
+   "name": "__dosvermajor",
+   "seg": 5607,
+   "off": 17776,
+   "file_offset": "0x01B9E0",
+   "module": 125
+  },
+  {
+   "name": "__oserr",
+   "seg": 5607,
+   "off": 17779,
+   "file_offset": "0x01B9E3",
+   "module": 125
+  },
+  {
+   "name": "___argv",
+   "seg": 5607,
+   "off": 17805,
+   "file_offset": "0x01B9FD",
+   "module": 125
+  },
+  {
+   "name": "__dosverminor",
+   "seg": 5607,
+   "off": 17777,
+   "file_offset": "0x01B9E1",
+   "module": 125
+  },
+  {
+   "name": "_environ",
+   "seg": 5607,
+   "off": 17807,
+   "file_offset": "0x01B9FF",
+   "module": 125
+  },
+  {
+   "name": "__osfile",
+   "seg": 5607,
+   "off": 17783,
+   "file_offset": "0x01B9E7",
+   "module": 125
+  },
+  {
+   "name": "__osmode",
+   "seg": 5607,
+   "off": 17778,
+   "file_offset": "0x01B9E2",
+   "module": 125
+  },
+  {
+   "name": "__pspadr",
+   "seg": 5607,
+   "off": 17772,
+   "file_offset": "0x01B9DC",
+   "module": 125
+  },
+  {
+   "name": "__fpinit",
+   "seg": 5607,
+   "off": 18598,
+   "file_offset": "0x01BD16",
+   "module": 125
+  },
+  {
+   "name": "__ovlvec",
+   "seg": 5607,
+   "off": 17818,
+   "file_offset": "0x01BA0A",
+   "module": 125
+  },
+  {
+   "name": "__pgmptr",
+   "seg": 5607,
+   "off": 17809,
+   "file_offset": "0x01BA01",
+   "module": 125
+  },
+  {
+   "name": "__c_exit",
+   "seg": 5000,
+   "off": 500,
+   "file_offset": "0x015074",
+   "module": 125
+  },
+  {
+   "name": "__acfinfo",
+   "seg": 5607,
+   "off": 17740,
+   "file_offset": "0x01B9BC",
+   "module": 125
+  },
+  {
+   "name": "__ovlflag",
+   "seg": 5607,
+   "off": 17816,
+   "file_offset": "0x01BA08",
+   "module": 125
+  },
+  {
+   "name": "__aintdiv",
+   "seg": 5607,
+   "off": 17754,
+   "file_offset": "0x01B9CA",
+   "module": 125
+  },
+  {
+   "name": "__osmajor",
+   "seg": 5607,
+   "off": 17776,
+   "file_offset": "0x01B9E0",
+   "module": 125
+  },
+  {
+   "name": "__osminor",
+   "seg": 5607,
+   "off": 17777,
+   "file_offset": "0x01B9E1",
+   "module": 125
+  },
+  {
+   "name": "__umaskval",
+   "seg": 5607,
+   "off": 17770,
+   "file_offset": "0x01B9DA",
+   "module": 125
+  },
+  {
+   "name": "__ctermsub",
+   "seg": 5000,
+   "off": 606,
+   "file_offset": "0x0150DE",
+   "module": 125
+  },
+  {
+   "name": "__doserrno",
+   "seg": 5607,
+   "off": 17779,
+   "file_offset": "0x01B9E3",
+   "module": 125
+  },
+  {
+   "name": "__EmDataSeg",
+   "seg": 5605,
+   "off": 0,
+   "file_offset": "0x017450",
+   "module": 125
+  },
+  {
+   "name": "__fac",
+   "seg": 5607,
+   "off": 17758,
+   "file_offset": "0x01B9CE",
+   "module": 125
+  },
+  {
+   "name": "_exit",
+   "seg": 5000,
+   "off": 475,
+   "file_offset": "0x01505B",
+   "module": 125
+  },
+  {
+   "name": "__psp",
+   "seg": 5607,
+   "off": 17774,
+   "file_offset": "0x01B9DE",
+   "module": 125
+  },
+  {
+   "name": "STKHQQ",
+   "seg": 5607,
+   "off": 17826,
+   "file_offset": "0x01BA12",
+   "module": "chkstk.asm"
+  },
+  {
+   "name": "__aaltstkovr",
+   "seg": 5607,
+   "off": 17822,
+   "file_offset": "0x01BA0E",
+   "module": "chkstk.asm"
+  },
+  {
+   "name": "__chkstk",
+   "seg": 5000,
+   "off": 670,
+   "file_offset": "0x01511E",
+   "module": "chkstk.asm"
+  },
+  {
+   "name": "__aFchkstk",
+   "seg": 5000,
+   "off": 670,
+   "file_offset": "0x01511E",
+   "module": "chkstk.asm"
+  },
+  {
+   "name": "_fclose",
+   "seg": 5000,
+   "off": 706,
+   "file_offset": "0x015142",
+   "module": "fclose.c"
+  },
+  {
+   "name": "__fsopen",
+   "seg": 5000,
+   "off": 892,
+   "file_offset": "0x0151FC",
+   "module": "fopen.c"
+  },
+  {
+   "name": "_fopen",
+   "seg": 5000,
+   "off": 936,
+   "file_offset": "0x015228",
+   "module": "fopen.c"
+  },
+  {
+   "name": "_fread",
+   "seg": 5000,
+   "off": 958,
+   "file_offset": "0x01523E",
+   "module": "fread.asm"
+  },
+  {
+   "name": "_fwrite",
+   "seg": 5000,
+   "off": 1186,
+   "file_offset": "0x015322",
+   "module": "fwrite.asm"
+  },
+  {
+   "name": "_printf",
+   "seg": 5000,
+   "off": 1448,
+   "file_offset": "0x015428",
+   "module": "printf.c"
+  },
+  {
+   "name": "_strcat",
+   "seg": 5000,
+   "off": 1510,
+   "file_offset": "0x015466",
+   "module": "strcat.asm"
+  },
+  {
+   "name": "_strcpy",
+   "seg": 5000,
+   "off": 1574,
+   "file_offset": "0x0154A6",
+   "module": "strcpy.asm"
+  },
+  {
+   "name": "_strcmp",
+   "seg": 5000,
+   "off": 1624,
+   "file_offset": "0x0154D8",
+   "module": "strcmp.asm"
+  },
+  {
+   "name": "_strlen",
+   "seg": 5000,
+   "off": 1668,
+   "file_offset": "0x015504",
+   "module": "strlen.asm"
+  },
+  {
+   "name": "_strncat",
+   "seg": 5000,
+   "off": 1696,
+   "file_offset": "0x015520",
+   "module": "strncat.asm"
+  },
+  {
+   "name": "_strncpy",
+   "seg": 5000,
+   "off": 1750,
+   "file_offset": "0x015556",
+   "module": "strncpy.asm"
+  },
+  {
+   "name": "_strncmp",
+   "seg": 5000,
+   "off": 1790,
+   "file_offset": "0x01557E",
+   "module": "strncmp.asm"
+  },
+  {
+   "name": "_atoi",
+   "seg": 5000,
+   "off": 1848,
+   "file_offset": "0x0155B8",
+   "module": "atoi.asm"
+  },
+  {
+   "name": "_itoa",
+   "seg": 5000,
+   "off": 1852,
+   "file_offset": "0x0155BC",
+   "module": "itoa.asm"
+  },
+  {
+   "name": "_ltoa",
+   "seg": 5000,
+   "off": 1880,
+   "file_offset": "0x0155D8",
+   "module": "ltoa.asm"
+  },
+  {
+   "name": "__ctype",
+   "seg": 5607,
+   "off": 17832,
+   "file_offset": "0x01BA18",
+   "module": "ctype.asm"
+  },
+  {
+   "name": "__ctype_",
+   "seg": 5607,
+   "off": 17832,
+   "file_offset": "0x01BA18",
+   "module": "ctype.asm"
+  },
+  {
+   "name": "__AHINCR",
+   "seg": 0,
+   "off": 4096,
+   "file_offset": "0x002600",
+   "module": "dos\\diffhlp.asm"
+  },
+  {
+   "name": "__AHSHIFT",
+   "seg": 0,
+   "off": 12,
+   "file_offset": "0x00160C",
+   "module": "dos\\diffhlp.asm"
+  },
+  {
+   "name": "_fgetpos",
+   "seg": 5000,
+   "off": 1890,
+   "file_offset": "0x0155E2",
+   "module": "fgetpos.c"
+  },
+  {
+   "name": "_fgets",
+   "seg": 5000,
+   "off": 1930,
+   "file_offset": "0x01560A",
+   "module": "fgets.asm"
+  },
+  {
+   "name": "_fseek",
+   "seg": 5000,
+   "off": 2046,
+   "file_offset": "0x01567E",
+   "module": "fseek.c"
+  },
+  {
+   "name": "_fsetpos",
+   "seg": 5000,
+   "off": 2174,
+   "file_offset": "0x0156FE",
+   "module": "fsetpos.c"
+  },
+  {
+   "name": "_rewind",
+   "seg": 5000,
+   "off": 2200,
+   "file_offset": "0x015718",
+   "module": "rewind.c"
+  },
+  {
+   "name": "_setbuf",
+   "seg": 5000,
+   "off": 2268,
+   "file_offset": "0x01575C",
+   "module": "setbuf.c"
+  },
+  {
+   "name": "_sprintf",
+   "seg": 5000,
+   "off": 2312,
+   "file_offset": "0x015788",
+   "module": "sprintf.c"
+  },
+  {
+   "name": "_filelength",
+   "seg": 5000,
+   "off": 2402,
+   "file_offset": "0x0157E2",
+   "module": "flength.c"
+  },
+  {
+   "name": "_strchr",
+   "seg": 5000,
+   "off": 2536,
+   "file_offset": "0x015868",
+   "module": "strchr.asm"
+  },
+  {
+   "name": "_strnicmp",
+   "seg": 5000,
+   "off": 2578,
+   "file_offset": "0x015892",
+   "module": "strnicmp.asm"
+  },
+  {
+   "name": "_strlwr",
+   "seg": 5000,
+   "off": 2666,
+   "file_offset": "0x0158EA",
+   "module": "strlwr.asm"
+  },
+  {
+   "name": "_strupr",
+   "seg": 5000,
+   "off": 2696,
+   "file_offset": "0x015908",
+   "module": "strupr.asm"
+  },
+  {
+   "name": "_remove",
+   "seg": 5000,
+   "off": 2726,
+   "file_offset": "0x015926",
+   "module": "dos\\unlink.asm"
+  },
+  {
+   "name": "_unlink",
+   "seg": 5000,
+   "off": 2726,
+   "file_offset": "0x015926",
+   "module": "dos\\unlink.asm"
+  },
+  {
+   "name": "__dos_findnext",
+   "seg": 5000,
+   "off": 2740,
+   "file_offset": "0x015934",
+   "module": "dos\\d_find.asm"
+  },
+  {
+   "name": "__dos_findfirst",
+   "seg": 5000,
+   "off": 2751,
+   "file_offset": "0x01593F",
+   "module": "dos\\d_find.asm"
+  },
+  {
+   "name": "__dos_write",
+   "seg": 5000,
+   "off": 2809,
+   "file_offset": "0x015979",
+   "module": "dos\\d_rdwr.asm"
+  },
+  {
+   "name": "__dos_read",
+   "seg": 5000,
+   "off": 2802,
+   "file_offset": "0x015972",
+   "module": "dos\\d_rdwr.asm"
+  },
+  {
+   "name": "__aFldiv",
+   "seg": 5000,
+   "off": 2850,
+   "file_offset": "0x0159A2",
+   "module": "ldiv.asm"
+  },
+  {
+   "name": "__aFlmul",
+   "seg": 5000,
+   "off": 3004,
+   "file_offset": "0x015A3C",
+   "module": "lmul.asm"
+  },
+  {
+   "name": "__aFulmul",
+   "seg": 5000,
+   "off": 3004,
+   "file_offset": "0x015A3C",
+   "module": "lmul.asm"
+  },
+  {
+   "name": "__fmemcmp",
+   "seg": 5000,
+   "off": 3054,
+   "file_offset": "0x015A6E",
+   "module": "hmemcmp.asm"
+  },
+  {
+   "name": "__fmemcpy",
+   "seg": 5000,
+   "off": 3146,
+   "file_offset": "0x015ACA",
+   "module": "hmemcpy.asm"
+  },
+  {
+   "name": "__fstrchr",
+   "seg": 5000,
+   "off": 3240,
+   "file_offset": "0x015B28",
+   "module": "strchr.asm"
+  },
+  {
+   "name": "__fstricmp",
+   "seg": 5000,
+   "off": 3286,
+   "file_offset": "0x015B56",
+   "module": "stricmp.asm"
+  },
+  {
+   "name": "__fstrncmp",
+   "seg": 5000,
+   "off": 3356,
+   "file_offset": "0x015B9C",
+   "module": "strncmp.asm"
+  },
+  {
+   "name": "__fstrncpy",
+   "seg": 5000,
+   "off": 3416,
+   "file_offset": "0x015BD8",
+   "module": "strncpy.asm"
+  },
+  {
+   "name": "__fstrrchr",
+   "seg": 5000,
+   "off": 3458,
+   "file_offset": "0x015C02",
+   "module": "strrchr.asm"
+  },
+  {
+   "name": "__fstrupr",
+   "seg": 5000,
+   "off": 3504,
+   "file_offset": "0x015C30",
+   "module": "strupr.asm"
+  },
+  {
+   "name": "__fstrlen",
+   "seg": 5000,
+   "off": 3540,
+   "file_offset": "0x015C54",
+   "module": "strlen.asm"
+  },
+  {
+   "name": "__fstrcpy",
+   "seg": 5000,
+   "off": 3564,
+   "file_offset": "0x015C6C",
+   "module": "strcpy.asm"
+  },
+  {
+   "name": "__fstrcat",
+   "seg": 5000,
+   "off": 3618,
+   "file_offset": "0x015CA2",
+   "module": "strcat.asm"
+  },
+  {
+   "name": "__fmemset",
+   "seg": 5000,
+   "off": 3688,
+   "file_offset": "0x015CE8",
+   "module": "hmemset.asm"
+  },
+  {
+   "name": "__fmemmove",
+   "seg": 5000,
+   "off": 3760,
+   "file_offset": "0x015D30",
+   "module": "hmemcpy.asm"
+  },
+  {
+   "name": "__FF_MSGBANNER",
+   "seg": 5000,
+   "off": 3962,
+   "file_offset": "0x015DFA",
+   "module": "dos\\crt0msg.asm"
+  },
+  {
+   "name": "__adbgmsg",
+   "seg": 5607,
+   "off": 18090,
+   "file_offset": "0x01BB1A",
+   "module": "dos\\crt0msg.asm"
+  },
+  {
+   "name": "__acrtmsg",
+   "seg": 0,
+   "off": 39030,
+   "file_offset": "0x00AE76",
+   "module": "dos\\crt0msg.asm"
+  },
+  {
+   "name": "__fptrap",
+   "seg": 5000,
+   "off": 3996,
+   "file_offset": "0x015E1C",
+   "module": "crt0fp.asm"
+  },
+  {
+   "name": "__nullcheck",
+   "seg": 5000,
+   "off": 4002,
+   "file_offset": "0x015E22",
+   "module": "chksum.asm"
+  },
+  {
+   "name": "__anullsize",
+   "seg": 5607,
+   "off": 66,
+   "file_offset": "0x0174B2",
+   "module": "chksum.asm"
+  },
+  {
+   "name": "__setargv",
+   "seg": 5000,
+   "off": 4038,
+   "file_offset": "0x015E46",
+   "module": "dos\\stdargv.asm"
+  },
+  {
+   "name": "__setenvp",
+   "seg": 5000,
+   "off": 4440,
+   "file_offset": "0x015FD8",
+   "module": "dos\\stdenvp.asm"
+  },
+  {
+   "name": "__NMSG_TEXT",
+   "seg": 5000,
+   "off": 4566,
+   "file_offset": "0x016056",
+   "module": "dos\\nmsghdr.asm"
+  },
+  {
+   "name": "__NMSG_WRITE",
+   "seg": 5000,
+   "off": 4609,
+   "file_offset": "0x016081",
+   "module": "dos\\nmsghdr.asm"
+  },
+  {
+   "name": "__dosret0",
+   "seg": 5000,
+   "off": 4664,
+   "file_offset": "0x0160B8",
+   "module": "dos\\dosret.asm"
+  },
+  {
+   "name": "__maperror",
+   "seg": 5000,
+   "off": 4698,
+   "file_offset": "0x0160DA",
+   "module": "dos\\dosret.asm"
+  },
+  {
+   "name": "__dosretax",
+   "seg": 5000,
+   "off": 4685,
+   "file_offset": "0x0160CD",
+   "module": "dos\\dosret.asm"
+  },
+  {
+   "name": "__dosreturn",
+   "seg": 5000,
+   "off": 4672,
+   "file_offset": "0x0160C0",
+   "module": "dos\\dosret.asm"
+  },
+  {
+   "name": "__bufin",
+   "seg": 5607,
+   "off": 19568,
+   "file_offset": "0x01C0E0",
+   "module": "_file.c"
+  },
+  {
+   "name": "__iob2",
+   "seg": 5607,
+   "off": 18278,
+   "file_offset": "0x01BBD6",
+   "module": "_file.c"
+  },
+  {
+   "name": "__lastiob",
+   "seg": 5607,
+   "off": 18438,
+   "file_offset": "0x01BC76",
+   "module": "_file.c"
+  },
+  {
+   "name": "__iob",
+   "seg": 5607,
+   "off": 18118,
+   "file_offset": "0x01BB36",
+   "module": "_file.c"
+  },
+  {
+   "name": "__filbuf",
+   "seg": 5000,
+   "off": 4750,
+   "file_offset": "0x01610E",
+   "module": "_filbuf.asm"
+  },
+  {
+   "name": "__flsbuf",
+   "seg": 5000,
+   "off": 4900,
+   "file_offset": "0x0161A4",
+   "module": "_flsbuf.asm"
+  },
+  {
+   "name": "__freebuf",
+   "seg": 5000,
+   "off": 5128,
+   "file_offset": "0x016288",
+   "module": "_freebuf.asm"
+  },
+  {
+   "name": "__openfile",
+   "seg": 5000,
+   "off": 5172,
+   "file_offset": "0x0162B4",
+   "module": "_open.c"
+  },
+  {
+   "name": "__ftbuf",
+   "seg": 5000,
+   "off": 5519,
+   "file_offset": "0x01640F",
+   "module": "_sftbuf.asm"
+  },
+  {
+   "name": "__stbuf",
+   "seg": 5000,
+   "off": 5404,
+   "file_offset": "0x01639C",
+   "module": "_sftbuf.asm"
+  },
+  {
+   "name": "_fflush",
+   "seg": 5000,
+   "off": 5582,
+   "file_offset": "0x01644E",
+   "module": "fflush.c"
+  },
+  {
+   "name": "_flushall",
+   "seg": 5000,
+   "off": 5698,
+   "file_offset": "0x0164C2",
+   "module": "fflush.c"
+  },
+  {
+   "name": "__output",
+   "seg": 5000,
+   "off": 5798,
+   "file_offset": "0x016526",
+   "module": "output.asm"
+  },
+  {
+   "name": "__getstream",
+   "seg": 5000,
+   "off": 7038,
+   "file_offset": "0x0169FE",
+   "module": "stream.c"
+  },
+  {
+   "name": "_close",
+   "seg": 5000,
+   "off": 7090,
+   "file_offset": "0x016A32",
+   "module": "dos\\close.asm"
+  },
+  {
+   "name": "_lseek",
+   "seg": 5000,
+   "off": 7122,
+   "file_offset": "0x016A52",
+   "module": "dos\\lseek.asm"
+  },
+  {
+   "name": "_read",
+   "seg": 5000,
+   "off": 7244,
+   "file_offset": "0x016ACC",
+   "module": "dos\\read.asm"
+  },
+  {
+   "name": "_write",
+   "seg": 5000,
+   "off": 7478,
+   "file_offset": "0x016BB6",
+   "module": "write.asm"
+  },
+  {
+   "name": "__catox",
+   "seg": 5000,
+   "off": 7798,
+   "file_offset": "0x016CF6",
+   "module": "atox.asm"
+  },
+  {
+   "name": "__aFahdiff",
+   "seg": 5000,
+   "off": 7882,
+   "file_offset": "0x016D4A",
+   "module": "dos\\hdiff.asm"
+  },
+  {
+   "name": "_ftell",
+   "seg": 5000,
+   "off": 7926,
+   "file_offset": "0x016D76",
+   "module": "ftell.c"
+  },
+  {
+   "name": "_setvbuf",
+   "seg": 5000,
+   "off": 8300,
+   "file_offset": "0x016EEC",
+   "module": "setvbuf.c"
+  },
+  {
+   "name": "_memcpy",
+   "seg": 5000,
+   "off": 8492,
+   "file_offset": "0x016FAC",
+   "module": "memcpy.asm"
+  },
+  {
+   "name": "__cxtoa",
+   "seg": 5000,
+   "off": 8548,
+   "file_offset": "0x016FE4",
+   "module": "xtoa.asm"
+  },
+  {
+   "name": "__cltoasub",
+   "seg": 5000,
+   "off": 8536,
+   "file_offset": "0x016FD8",
+   "module": "xtoa.asm"
+  },
+  {
+   "name": "__myalloc",
+   "seg": 5000,
+   "off": 8632,
+   "file_offset": "0x017038",
+   "module": "dos\\stdalloc.asm"
+  },
+  {
+   "name": "__cflush",
+   "seg": 5607,
+   "off": 18544,
+   "file_offset": "0x01BCE0",
+   "module": "_cflush.asm"
+  },
+  {
+   "name": "__getbuf",
+   "seg": 5000,
+   "off": 8670,
+   "file_offset": "0x01705E",
+   "module": "_getbuf.asm"
+  },
+  {
+   "name": "_sopen",
+   "seg": 5000,
+   "off": 8738,
+   "file_offset": "0x0170A2",
+   "module": "dos\\open.asm"
+  },
+  {
+   "name": "_open",
+   "seg": 5000,
+   "off": 8764,
+   "file_offset": "0x0170BC",
+   "module": "dos\\open.asm"
+  },
+  {
+   "name": "__cXENIXtoDOSmode",
+   "seg": 5000,
+   "off": 9165,
+   "file_offset": "0x01724D",
+   "module": "dos\\open.asm"
+  },
+  {
+   "name": "_stackavail",
+   "seg": 5000,
+   "off": 9182,
+   "file_offset": "0x01725E",
+   "module": "stackava.asm"
+  },
+  {
+   "name": "_malloc",
+   "seg": 5000,
+   "off": 9202,
+   "file_offset": "0x017272",
+   "module": "malloc.asm"
+  },
+  {
+   "name": "_free",
+   "seg": 5000,
+   "off": 9208,
+   "file_offset": "0x017278",
+   "module": "free.asm"
+  },
+  {
+   "name": "__cfltcvt_tab",
+   "seg": 5607,
+   "off": 18546,
+   "file_offset": "0x01BCE2",
+   "module": "cmiscdat.asm"
+  },
+  {
+   "name": "__asizeC",
+   "seg": 5607,
+   "off": 18574,
+   "file_offset": "0x01BCFE",
+   "module": "cmiscdat.asm"
+  },
+  {
+   "name": "__asizeD",
+   "seg": 5607,
+   "off": 18575,
+   "file_offset": "0x01BCFF",
+   "module": "cmiscdat.asm"
+  },
+  {
+   "name": "__sigintoff",
+   "seg": 5607,
+   "off": 18572,
+   "file_offset": "0x01BCFC",
+   "module": "cmiscdat.asm"
+  },
+  {
+   "name": "__sigintseg",
+   "seg": 5607,
+   "off": 18570,
+   "file_offset": "0x01BCFA",
+   "module": "cmiscdat.asm"
+  },
+  {
+   "name": "__fmode",
+   "seg": 5607,
+   "off": 18576,
+   "file_offset": "0x01BD00",
+   "module": "txtmode.asm"
+  },
+  {
+   "name": "__iomode",
+   "seg": 5607,
+   "off": 18576,
+   "file_offset": "0x01BD00",
+   "module": "txtmode.asm"
+  },
+  {
+   "name": "__nfree",
+   "seg": 5000,
+   "off": 9214,
+   "file_offset": "0x01727E",
+   "module": "nmalloc.asm"
+  },
+  {
+   "name": "__nmalloc",
+   "seg": 5000,
+   "off": 9247,
+   "file_offset": "0x01729F",
+   "module": "nmalloc.asm"
+  },
+  {
+   "name": "__incseg",
+   "seg": 5000,
+   "off": 9428,
+   "file_offset": "0x017354",
+   "module": "growseg.asm"
+  },
+  {
+   "name": "__growseg",
+   "seg": 5000,
+   "off": 9288,
+   "file_offset": "0x0172C8",
+   "module": "growseg.asm"
+  },
+  {
+   "name": "__findlast",
+   "seg": 5000,
+   "off": 9509,
+   "file_offset": "0x0173A5",
+   "module": "growseg.asm"
+  },
+  {
+   "name": "__amblksiz",
+   "seg": 5607,
+   "off": 18578,
+   "file_offset": "0x01BD02",
+   "module": "growseg.asm"
+  },
+  {
+   "name": "__searchseg",
+   "seg": 5000,
+   "off": 9542,
+   "file_offset": "0x0173C6",
+   "module": "searchsg.asm"
+  }
+ ]
+}
