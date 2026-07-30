@@ -5,8 +5,9 @@
 > `raw/COLONIZE/VICEROY.EXE` via `code/VICEROY/disasm_overlay_reseg/page_16.asm`;
 > decode record: `docs/UI_PHASE1_ATTRIBUTION.md` §3, all load-bearing cites
 > independently re-resolved 2026-07-30). Entry TEXT is data (PEDIA.TXT), names are
-> NAMES.TXT — both committed under `data_extracted/text/`. Sections marked
-> *(pending)* are being decoded; treat as TBD until filled.
+> NAMES.TXT — both committed under `data_extracted/text/`. All sections are
+> decoded (2026-07-30); residual TBDs are enumerated in §11 with exact trace
+> sites.
 
 **Canonical primary:** `page_16.asm` (complete listing for all seven entry pages +
 browser; the per-function `code/VICEROY/disasm/func_*_unknown.asm` files are
@@ -35,8 +36,8 @@ category label):
 | n | category (`@PEDIA` line) | function | key | entries |
 |---|---|---|---|---|
 | 0 | Cargo Type | `func_0694AE` | `"CARGO"` | 0..15 |
-| 1 | Unit Type | `func_0696C6` | `"UNIT"` | *(pending)* |
-| 2 | Terrain Type | `func_069D8C` | `"TERRAIN"` | *(pending)* |
+| 1 | Unit Type | `func_0696C6` | `"UNIT"` | 0..22 |
+| 2 | Terrain Type | `func_069D8C` | `"TERRAIN"` | 0..28 |
 | 3 | Colonist Skill | `func_06A700` | `"JOB"` | 0..27 |
 | 4 | Colony Building | `func_06AA88` | `"BUILDING"` | 0..41 |
 | 5 | Founding Father | `func_06AE08` | `"FATHER"` | 0..24 |
@@ -125,7 +126,75 @@ re-verified against the EXE.
   @0x03342C tail @0x033570, @0x0339F8, and three sites in the un-resegmented
   page-04 tail (@0x034305, @0x035263, @0x03559C — containing functions MEDIUM).
 
-## 5. Terrain Type page (`func_069D8C`) — *(pending decode)*
+## 5. Terrain Type page (`func_069D8C`, id 0..28) — B
+Signature: `far func(terrain_id)` — full id space (0–7 unforested, 8–23
+auto-forest, 24–28 `@OTHER`). Decoded 2026-07-30; 10 load-bearing cites + the
+resource table + sheet-name strings re-verified against the EXE. **This decode
+byte-confirms hard rule 5**: the preview's base ground comes from the same
+TERRAIN.SS-derived tile array the map composer uses.
+
+- **Header**: `"(<Name>: Terrain Type)"` centered at y=font_h+7; name from
+  terrain record table **DG 0x2F74, stride 16, field +0** @0x069DE3; ids 8..15
+  get `" Forest"` suffix (`[0x2DB0]`, NAMES `@OTHER_NAMES` line 0) — ids 16..23
+  do NOT. Tile-block top y0 = 2·font_h+9.
+- **Terrain record table** (loader `func_0745F0`/`func_0749E0`): +0 name,
+  +2 move cost, +3 defense factor, +4/+5 numeric cols, **+7..+15 = 9 yield
+  bytes (jobs 0..8)**; `@UNFORESTED`→0..7, `@FORESTED`→8..15, **16..23 =
+  byte-copy of 8..15** (`rep movsw` @0x074A6D), `@OTHER`→24..28.
+- **3×3 tile preview** at frame box (7, y0)–(0x3A, y0+0x33) (52×52, double
+  rect `0x181f:0xce` colors `[0x839]`/`[0x837]`); cells 16×16 at x=9/25/41,
+  y=y0+2+16r:
+  1. Base ground via `0x181f:0x25e` = `func_003460` blitting 256-byte tiles
+     from the flat array `[0x16c]/[0x16e]` @0x06A127 — **12 tiles rasterized
+     at boot by `func_072B9A` from sheet "terrain" (TERRAIN.SS) frames 1..12**
+     (`mov ax,0xc` @0x072BA8; `[0x16c]` write @0x072C5C; placeholder frame 0
+     skipped, hard rule 5). Tile ids: 0..7 base terrains, 8 forest ground,
+     9 Arctic, 10 Ocean, 11 Sea Lane; normalizer `func_003436` (0x11||9→8,
+     ≥8→−15). Ground id: mtn/hills→3 (Prairie), ≥24→id, else id&7; forest with
+     desert base (Scrub) → ground 0x11 + decoration suppressed.
+  2. Forest overlay (ids 8..23): PHYS0.SS (`[0x174]`) frame **0x41 +
+     M[c+3r]**, M = DG 0x1EE4 = [5,7,6,13,15,14,9,11,10] (byte-verified) —
+     the per-cell connection masks. Hills: 0x31+M; Mountains: 0x21+M.
+  3. Plain-land decoration: corner cells get tree clumps (frame 0x41) or, for
+     Desert, forest-ground redraw; bottom-center cell gets shore-base frame
+     **0x96 (150)**.
+  4. Rivers (land, incl. forest): (0,1)→frame 0x17, (0,2)→0x1B (minor-river
+     band 0x11 + masks 6/0xA, hard rule 4). Roads (all but water): (2,0)→
+     0x53+0x56, (2,1)→0x52+0x55.
+  5. Center cell: prime resource frame **0x5A + R[id]** if R[id]≠−1; **R =
+     word table DG 0x192 (file 0x1DB32, re-verified)** =
+     [6,1,2,3,4,5,6,6, 9,1,8,9,10,10,6,6, 9,1,8,9,10,10,6,6, −1,7,−1,12,13]
+     (indexes NAMES `@RESOURCE`: Plains→Wheat, Ocean→Fishery, Mountains→
+     Silver Deposit, Hills→Ore Deposit, Arctic/Sea Lane→none).
+- **Stat rows** (right column, x=63, row pitch 0x10): one row per job j=0..8
+  with nonzero yield byte:
+  - ICONS figure frame 0x52+j at (63, row_y); `"<JobName>: N"` at (75,
+    row_y+6) color `[0x831]` — **N = yield, +1 for Farmer/Fisherman, ×2 for
+    Lumberjack** (@0x06A570–@0x06A582);
+  - `"    <Plow|Road|Coast>/River: +K"` color `[0x830]` — label Plow (j≤3) /
+    Road (j 4..7) / Coast (j=8); K = 1 + (j==4) + (j==5);
+  - resource-bonus line if `0x181f:0xa6a(R[id], j)` ≠ 0 (`func_009AAA`,
+    matrix byte-read: Game/Farmer +2, Beaver/Trapper +3, Fishery/Fisherman
+    +3, prime crops → ×2, Minerals/Ore/Silver bonuses…): inline PHYS0
+    resource icon + name (table DG 0x930C; Prime Tobacco → label "Prime") +
+    `"x2"` for prime crops or `"+r"` (doubled for Lumberjack; `"/2r"` extra
+    for Farmer/Fisherman) color `[0x831]`;
+  - `"    Expert: "` + ("+3" for j∈{0,8}, else "x2") color `[0x830]`.
+- **Movement/defense line**: `"<Move Cost>: M    <Defense or Ambush Bonus>:
+  +D%"` — M = record +2 @0x06A604; **D = 25 × record +3** (`mov al,0x19; mul`
+  @0x06A650); at (63, row_y+6) color `[0x830]`.
+- **Article**: key `"TERRAIN"+raw id` → `@TERRAIN0..28` (all 29 sections
+  exist; forest variants have their own articles); article y = max(stats_y,
+  y0+0x40); substitution slot 0 = name via `0x181f:0x416` = `func_06C220`
+  (slot buffer DG 0x9CD2 + 64·slot); modal-wait @0x06A6F7.
+- **Callers** (id derivation confirmed for all three): browser case 2;
+  `func_02BC72` @0x02BD64 — colony-screen tile: map coords = colony x/y +
+  plot offset − 2 (colony base `*[0x8542]`, hard rule 8), terrain via
+  `0x181f:0x78c` = `func_00627A` (default 25 Ocean off-map); `func_0235D6`
+  @0x023808 — map-screen tile at (`[0x8540]`,`[0x853E]`). Corroborates the
+  2026-07-30 ruling (not a map-editor palette).
+- Static ink inits byte-read at file 0x1E1D0+: `[0x830]`=0x44, `[0x831]`=0x95
+  (runtime rewrites untraced — open item).
 
 ## 6. Colonist Skill page (`func_06A700`, idx 0..27) — B
 - Job name: DG 0x8EA2 stride-8 table +0 (NAMES `@JOB`; +2 = expert-plural)
