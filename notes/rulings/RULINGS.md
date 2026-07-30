@@ -5667,3 +5667,32 @@ superseded on the engine identity. Full decode: `docs/UI_PHASE1_ATTRIBUTION.md` 
 
 **Authority**: `func_0452D4`/`func_0246E2`/`func_072090`/`func_044E7C` byte offsets vs
 raw/COLONIZE/VICEROY.EXE (13 cites re-resolved against disasm_overlay_reseg 2026-07-30).
+
+## 2026-07-30 — func_069D8C (file 0x69D8C) is the Colonizopedia TERRAIN entry page, IN-game — hard rule 7's map-editor clause is refuted (CLAUDE.md amendment PENDING user sign-off)
+
+**Conflict**: CLAUDE.md hard rule 7 states `func_O530` (file 0x69D8C) is "the map-editor
+terrain-palette dialog, confirmed not in-game" (surviving citation chain:
+`viceroy_source/docs/MAP_SYSTEM.md`, `docs/COLONY_RENDER_CHAIN.md`).
+
+**Resolution (B)**: `func_069D8C` is the **Colonizopedia "Terrain Type" entry page**, one of seven
+sibling category-page renderers on overlay page 0x16 (CARGO func_0694AE / UNIT func_0696C6 /
+TERRAIN func_069D8C / JOB func_06A700 / BUILDING func_06AA88 / FATHER func_06AE08 / MISC
+func_06AF1C). Byte evidence, all re-resolved 2026-07-30: (1) it pushes the PEDIA.TXT key
+`"TERRAIN"` (DGROUP 0x1EDC = file 0x1F87C, byte-read) @0x06A6A6 and builds `"TERRAIN"+n` section
+keys rendered via `0x181f:0x998` = menu_lookup_run; (2) it draws the shared runtime title
+`[0x2E92]` = "ENCYCLOPEDIA OF COLONIZATION" @0x069DA3, same slot the browser func_06B398 and all
+six siblings use; (3) it is far-called **in-game**: context-help dispatcher `func_02BC72`
+(`[0x32E]`=0 tile-terrain arm) `lcall 0x191f,0x428` @0x02BD64 and menu-command executor
+`func_0235D6` @0x023808 — segment-0x191f stubs sit at file base 0x1B5F0, so 0x428 → stub 0x1BA18 →
+0x069D8C per `data_extracted/thunk_targets.json` (offsets 0x934/0x942/0x8de/0x372 resolve to the
+CARGO/UNIT/JOB/browser functions consistently). Both clauses of the old claim fall: it is not a
+map-editor dialog, and it IS reachable in-game. The tile-drawing-chain clause of hard rule 7
+(`func_O514 → O513 → O512`) is untouched by this ruling. Full decode:
+`docs/UI_PHASE1_ATTRIBUTION.md` §3.
+
+**CLAUDE.md status**: per the agents-&-workflow rule, hard-rule amendments require user sign-off —
+CLAUDE.md is left unedited; this ruling supersedes rule 7's func_O530 clause in the meantime and
+the amendment is flagged for sign-off.
+
+**Authority**: raw/COLONIZE/VICEROY.EXE bytes (DGROUP string block file 0x1F852–0x1F8A5;
+page_16.asm/page_02.asm listings; thunk_targets.json) > team docs per notes/TRUTH_HIERARCHY.md.

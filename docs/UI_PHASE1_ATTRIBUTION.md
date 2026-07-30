@@ -228,7 +228,185 @@ plow) — needs `func_005D32` layer-write sites; (4) identity of the font behind
 
 ---
 
-## 3. Page-0x16 modal family (`func_0694AE/06A700/06AA88/06AE08/06AF1C`) — TBD (decode in progress)
+## 3. Page-0x16 modal family — the Colonizopedia entry pages
+
+**SCREEN:** the five targets (`func_0694AE/06A700/06AA88/06AE08/06AF1C`) plus two
+siblings on the same page (`func_0696C6`, `func_069D8C`) are the **per-entry
+article screens of the Colonizopedia**, one per category:
+
+| function | key | PEDIA category (`@PEDIA` line n) | entries |
+|---|---|---|---|
+| `func_0694AE` | `"CARGO"` (DGROUP 0x1ECD, push @0x069664) | 0 = Cargo Type | 0..15 |
+| `func_0696C6` | `"UNIT"` (0x1ED3, push @0x069D0C) | 1 = Unit Type | — |
+| `func_069D8C` | `"TERRAIN"` (0x1EDC, push @0x06A6A6) | 2 = Terrain Type | — |
+| `func_06A700` | `"JOB"` (0x1EED, push @0x06AA2A) | 3 = Colonist Skill | 0..27 |
+| `func_06AA88` | `"BUILDING"` (0x1EF1, push @0x06ADA3) | 4 = Colony Building | 0..41 |
+| `func_06AE08` | `"FATHER"` (0x1EFA, push @0x06AEC4) | 5 = Founding Father | 0..24 |
+| `func_06AF1C` | `"MISC"` (0x1F01, push @0x06AFD2) | 6 = Game Concept | 0..11 |
+
+Each builds a PEDIA.TXT section key (`"CARGO12"`, `"FATHER7"`, …) via strcpy +
+`0x181f:0x182` append-number and renders it with the standard text-window engine —
+matching `@CARGO0..15 / @JOB0..27 / @BUILDING0..41 / @FATHER0..24` in
+`data_extracted/text/PEDIA_sections.json`.
+
+**Verification status:** independently re-verified 2026-07-30 — the DGROUP key
+string block byte-read from VICEROY.EXE (file 0x1F852..0x1F8A5: `PEDIA`×3,
+`WOODPANL`, `CARGO`, `UNIT`, `TERRAIN`, `JOB`, `BUILDING`, `FATHER`, `MISC`);
+all seven key pushes + both `[0x2e92]` title pushes (@0x0694C4, @0x069DA3) +
+modal terminator (@0x0696B8/@0x0696BD) resolved in `page_16.asm`; thunk stubs
+resolved via `thunk_targets.json` (01B962→0x06B398, 01BA18→0x069D8C,
+01BECE→0x06A700, 01BEF2→0x06AA88, 01BF24→0x0694AE, 01BF32→0x0696C6,
+01C652→0x06AE08, 01CFA4→0x06AF1C) — with segment-0x191f stub base **file
+0x1B5F0**, so `lcall 0x191f,0x428` @0x02BD64 → 0x1BA18 → `func_069D8C`,
+`0x934`→CARGO, `0x942`→UNIT, `0x8de`→JOB, `0x372`→browser, all consistent.
+
+### Shared skeleton (identical opcode sequence in all seven)
+1. **Wood-panel background** — near stub 0x6B692 → thunk 0x1CFC0 →
+   `func_069304`: `0x191f:0x87A("WOODPANL"@DGROUP 0x1EC4, ctx [0x2DA8], 0)`
+   @0x069319 (same WOODPANL.PIK loader as the front-end); on nonzero → fill
+   color 8 via `0x181f:0x484` @0x069337 + full-screen 320×200 rect op
+   `0x181f:0x444` @0x069365.
+2. **Screen title** — `0x181f:0x22` fetch handle **`[0x2E92]`**, centered via
+   `0x100` (x0=0, w=0x140, y=5, color `[0x831]`), e.g. @0x0694C4–0x0694D2.
+   **`[0x2E92]` = LABELS.TXT `@MISC` line 108 = "ENCYCLOPEDIA OF COLONIZATION"**
+   — no static writer; it is slot 108 of a runtime label-pointer array based at
+   DGROUP 0x2DBA, anchored by 5 independent slot hits ((More)=109, (Exit)=110
+   drawn by pager `func_06B02A` @0x06B1A3/@0x06B1D2; Fish=177; With=178;
+   Prerequisite=188 — deltas all `(addr−0x2E92)/2`).
+3. **Entry header line** — entry name + separator + category label, centered via
+   `0x100` at y = font_height+7 (font far ptr `[0x89E]`). Category label =
+   helper `func_06927C` (stub 0x6B67E → thunk 0x1CF88):
+   `0x181f:0x422("PEDIA","PEDIA", n)` fetches line n of PEDIA.TXT `@PEDIA`
+   @0x06927F–0x069295.
+4. **Body y** = header_y + font_height + 0xE (JOB page: +font_height+3); x = 10.
+5. **Article** — key = `<KEY><idx>`; `[0x1F5A]` = **text-window y-cursor**
+   (word global, static init 0xFFFF at file 0x1F8FA — NOT a string; the earlier
+   "sheet name [0x1F5A]" hint is refuted); `0x181f:0x438` = `func_06C23C`
+   (@0x06C23C) sets text-substitution slot 0 = entry name; helper `func_06929C`
+   (stub 0x6B68D → thunk 0x1CFB2) sets `[0x1F56]|=0x20` @0x0692D2 and runs
+   **`0x181f:0x998` = `func_06F51A` = menu_lookup_run** (the standard TXT window
+   engine) with ("PEDIA"@DGROUP 0x1EBE, key) @0x0692EE.
+6. **Terminate** — present `0xE2` (0, 0x140, 0xC8) + `0x3C0` MODAL-WAIT, RETF
+   (e.g. @0x0696B8–0x0696C4). Full-screen modal for all.
+
+Sprite convention: `0x181f:0x254` AX=frame, DX=x, stacked y + far sheet handle,
+BX=&ctx 0x2DA8. Sheets: **ICONS.SS = `[0x83E]`, BUILDING.SS = `[0x842]`**.
+Cargo icons = ICONS frames 0x17+i; profession figures = ICONS 0x52+job;
+building pictures = BUILDING frames rec+1.
+
+### `func_0694AE` — "Cargo Type" page (idx 0..15)
+- Entry name from cargo-name ptr table DGROUP 0x97C0 (`[bx-0x6840]`) @0x0694FE
+  (runtime-filled from NAMES `@CARGO`; same table as §4's debug dump).
+- **Production-chain rows** (switch @0x069567–0x069633; drawn by `func_06936C`;
+  row pitch y+=0x14 @0x069655): Food → (0,0)+(Fish row: icon 0x3A, job 8
+  Fisherman, name `[0x2F1C]`="Fish" @0x069399–0x0693A8); Sugar/Tobacco/Cotton/
+  Furs → raw+manufactured pairs (i,i)+(i+8,i+8) @0x06960A–0x069630; Lumber →
+  (5,5)+(Hammers 0x10, Carpenter 0xD) @0x0695EE; Ore → 3 rows Ore→Tools→Muskets
+  @0x0695BA–0x0695EC; Silver single @0x0695A4; Horses/Trade Goods single
+  @0x069582–0x0695A1.
+- **Row layout** (`func_06936C`): job figure ICONS frame job+0x52 at (10, y−2),
+  x+=0xE @0x0693B1–0x0693D1; cargo icon frame cargo+0x17 (0x10→0x37 Hammers,
+  <0→0x3A Fish) at x, x+=0x10, then 6 more copies at x+=4 (7-icon stack)
+  @0x0693D5–0x06941D, x+=0xC; text `"<Cargo> With <Expert>"` (`[0x2F1E]`="With")
+  at (x, y+4), color `[0x830]` @0x069423–0x0694A7.
+- Callers: pedia browser `func_06B398` @0x06B5F4; context-help far-call sites
+  @0x02BDDC (`func_02BC72`, case `[0x32E]`=4, cargo id `[0x33A]`), @0x02AFBE,
+  @0x02BABD, @0x0336AB, @0x033B4F, @0x035560.
+
+### `func_06A700` — "Colonist Skill" page (idx 0..27)
+- Job name from **DGROUP 0x8EA2 stride-8 table** field +0 (`shl bx,3;
+  [bx-0x715e]`) @0x06A74F (runtime-filled from NAMES `@JOB`; +2 =
+  expert-plural). This resolves the "stride-8 table 0x8EA2" hint.
+- Workplace lookup `0x181f:0xB00` = `func_008D9C` — signed-byte table DGROUP
+  0x2F4 (file 0x1DC94, 19 entries: jobs 0–8→−1 outdoor, 13→35 Carpenter's Shop,
+  15→3 Armory, 17→9 Town Hall, …); no building → y+=0xB @0x06A7CD.
+- Job figure ICONS frame idx+0x52 (special idx 0x1B→0x43 @0x06A811) at (10,
+  y+voffset), voffset = building_height/2−7 from BUILDING.SS header
+  (`[0x842]`+0x4A+12·b) @0x06A7F5–0x06A805; expert name at (+0xE, fig_y+6)
+  @0x06A86C; x+=0x18.
+- **Building upgrade-chain loop** @0x06A89C–0x06A947: BUILDING frame b+1
+  @0x06A8CB, x += frame_width+3 @0x06A8D4; name from stride-12 table DGROUP
+  0x8F82 @0x06A8E5; next b = byte 0x8F82[b]+4 @0x06A939 while ≥0.
+- Product strip (idx<0x13): cargo icon idx+0x17 with specials 8→0x3A, 0xD→0x37,
+  0x10→0x39, 0x11→0x3F @0x06A95C–0x06A983; name `[0x97C0]` with remap
+  0xD→0x10, 0x10→0x11, 0x11→0x12 @0x06A9B6; idx 8 → `[0x2F1C]`="Fish"
+  @0x06A9E0; text color `[0x831]` @0x06AA11.
+- Callers: browser @0x06B612; context help @0x02BD90 (`[0x32E]`=1, profession
+  via `0x181f:0xC54` field +0x40, remap 0x1C→0x13 @0x02BD83), @0x029721,
+  @0x029D15, @0x02A05B, @0x034984, @0x03500C.
+
+### `func_06AA88` — "Colony Building" page (idx 0..41)
+- Name from DGROUP 0x8F82 stride-12 table +0 @0x06AAD3 (NAMES `@BUILDING`).
+- Big picture: BUILDING frame rec+1 at (10, y), w/h from sheet header
+  @0x06AB6C–0x06ABA1; idx 0x10/0x1F → no picture (h=0x18, w=0) @0x06AB43;
+  idx 0x11 → record 0x2E ⇒ frame 0x2F @0x06AB62 (same override as the colony
+  screen).
+- Header strip: name at (10+w+3, h/2−7+y+6) color `[0x831]` @0x06ABA6; worker
+  job via `0x181f:0xACE` = `func_009786` — byte table DGROUP 0x2CA (file
+  0x1DC6A, 42 entries building→job; verified 3-5→15 Gunsmith, 9-11→17
+  Statesman, 21-23→11 Weaver, 27-29→9 Distiller, 35-36→13 Carpenter, 37-38→16
+  Preacher, 39-41→14 Blacksmith); skip if job==0x12 (Teacher) or 0x15
+  @0x06AC1A; else ICONS figure job+0x52 @0x06AC43 + expert name @0x06AC59;
+  product cargo icon job+0x17 with remaps @0x06AC91–0x06ACC8 + name @0x06ACF3.
+- y += h+0xC @0x06AD27; **Prerequisite line** if byte 0x8F82[idx]+3 ≥ 0
+  @0x06AD3C: `[0x2F32]`="Prerequisite" + separator + prerequisite building
+  name at (10, y) color `[0x830]` @0x06AD47–0x06AD94; y+=0x14.
+- Callers: browser @0x06B61C; @0x02A076, @0x02B6E4.
+
+### `func_06AE08` — "Founding Father" page (idx 0..24)
+- Text-only (no sprites). Name from DGROUP 0x9652 stride-6 table +0
+  (`[bx-0x69ae]`) @0x06AE53; y += font_height+0xE @0x06AEB4; article
+  `@FATHERn`.
+- Callers: browser @0x06B626; **`func_03BC42` (FF-acquire dispatch) @0x03BD26**
+  — shown when a Founding Father joins the Congress; @0x03C24E (Congress
+  selection screen).
+
+### `func_06AF1C` — "Game Concept" page (idx 0..11)
+- Text-only. Name from DGROUP 0x935C stride-2 ptr table @0x06AF67
+  (runtime-filled; source = PEDIA.TXT `@MISCELLANEOUS` 12 concept names —
+  loader site TBD). Article key `"MISCn"`.
+- Callers: **only** the browser @0x06B630 (exhaustive far-call scan: zero other
+  hits). **Open item**: extracted PEDIA.TXT has no `@MISC0..11` sections (only
+  `@MISCELLANEOUS`) — how `menu_lookup_run` resolves `"MISC5"` is TBD (trace
+  `func_06F51A`'s section lookup; possibly empty body, header-only render).
+
+### Caller topology
+- **`func_06B398` (page 0x16) = the Colonizopedia browser** — same `[0x2E92]`
+  title @0x06B3FA; calls all 7 category pages in MENU.TXT `@PEDIA` order via
+  the near-stub block @0x06B660–0x06B6BF (CARGO @0x06B5F4, UNIT @0x06B5FE,
+  TERRAIN @0x06B608, JOB @0x06B612, BUILDING @0x06B61C, FATHER @0x06B626,
+  MISC @0x06B630). Its caller is the menu-command executor `func_0235D6`
+  @0x02390B (`0x191f:0x372` → stub 0x1B962).
+- **`func_02BC72` (page 0x02) = context-sensitive pedia dispatcher**: switch on
+  selection type `[0x32E]` @0x02BD08 → 0 = tile terrain → TERRAIN page
+  @0x02BD64; 1 = unit profession → JOB @0x02BD90; 2/3 = unit type → UNIT
+  @0x02BDCE; 4 = cargo → CARGO @0x02BDDC. These use segment alias `0x191f`
+  (stub base file 0x1B5F0), which is why a naive `0x181f` grep finds no callers.
+
+### Conflict recorded → RULINGS.md 2026-07-30 (touches CLAUDE.md hard rule 7)
+Hard rule 7 states file **0x69D8C** (`func_O530`) is the *map-editor
+terrain-palette dialog, "confirmed not in-game."* Byte evidence refutes both
+clauses: `func_069D8C` pushes pedia key `"TERRAIN"` (0x1EDC @0x06A6A6), draws
+the shared "ENCYCLOPEDIA OF COLONIZATION" title (`[0x2e92]` @0x069DA3), and is
+far-called **in-game** from `func_02BC72` @0x02BD64 (with a terrain id) and
+`func_0235D6` @0x023808, plus the browser @0x06B608. CLAUDE.md itself is NOT
+edited (rule amendments need user sign-off) — see the ruling.
+
+### Runtime-open items (exact trace sites)
+1. `[0x2E92..]` label-array loader — find the loop filling DGROUP 0x2DBA+2n
+   after parsing LABELS.TXT.
+2. `LCALL 0xd1d:0x7e4/0x7a4` = strcpy/strcat (usage-inferred) — resolve the
+   0xd1d segment fixup.
+3. `0x438` substitution-slot store — disassemble near 0x06F7EA to confirm
+   slot-0 semantics.
+4. `"MISCn"` section resolution (see MISC page).
+5. Separator-glyph helpers `0x181f:0x1BE/0x128/0x178/0x11E` — resolve thunk
+   stubs @0x01A7AE/0x01A718/0x01A72E properly.
+6. Internal y/baseline handling of `0x100` (overlay @0x0606C0) — pushed y=5 and
+   header y=font_height+7 are the seed values; internal offset unverified.
+
+Note: `code/VICEROY/disasm/func_06A700_unknown.asm` and siblings are truncated —
+`page_16.asm` is the complete listing.
 
 ## 4. `func_048F34` (page 0x0C, file 0x048F34..0x0495FF, 1740 B) — native supply/demand model + "Supply and Demand (Indians)" debug dump
 
