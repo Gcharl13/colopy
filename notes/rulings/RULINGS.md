@@ -5696,3 +5696,29 @@ the amendment is flagged for sign-off.
 
 **Authority**: raw/COLONIZE/VICEROY.EXE bytes (DGROUP string block file 0x1F852–0x1F8A5;
 page_16.asm/page_02.asm listings; thunk_targets.json) > team docs per notes/TRUTH_HIERARCHY.md.
+
+## 2026-07-30 — .MP format corrected from the actual MAPEDIT.EXE writer (4 errors in the inferred spec)
+
+**Conflict**: `formats/MP_FORMAT.md` (inferred before any editor disasm existed) claimed: 2-word
+header (w,h) with AMER2 "56×70"; tile bits 5/6/7 = river/forest/unknown; and
+ColonyRecord/UnitRecord/NativeSettlement arrays following the tile data.
+
+**Resolution (B)**: First read of the real writer/loader — MAPEDIT.EXE ships CodeView NB02 debug
+info (mined 2026-07-30 → `data_extracted/mapedit_symbols.json`), so the functions are read by their
+true names (`_write_map_file` @0xB840, `_load_map_file` @0xB700, map_9.obj). Actual format:
+**6-byte header (w:u16, h:u16, version:u16 == 4)** + **three w·h layers** (terrain, feature,
+continent/owner), nothing else; file size = 6+3wh (AMER2.MP: 12,534 = 6+3·58·72, header (58,72,4)
+byte-verified). Tile bits: **bit5=mountains/hills, bit6=river, bit7=modifier (set: Mountains/Major
+River; clear: Hills/Minor River)** — paint masks @0x2744–0x2788, reader `_terrain_type` @0xB17C;
+**forest is not a bit** (it is ids 8..23; `_terrain_is_forest` @0xB222). AMER2.MP bit-combo census
+corroborates (0xA0×170 mountains, 0x20×56 hills, 0x40×178 minor, 0xC0×47 major, 0x60×1). The
+"record arrays" section was struck (save-game structures, not .MP). Refinements: header w/h are the
+FULL grid incl. a non-editable 1-tile border ring (`_change_map` bounds @0x31E9–0x320D) — "56×70"
+was the playable interior; **hard rule 2's sea-lane right-edge column = right-most playable column
+x=w−2** (all 70 interior rows of AMER2 column 56 are id 26 — verified); the rule's number 26 is
+unchanged. Editor round-trips are not byte-preserving (`_forest_fix` @0x16B6 normalizes ids
+16..23 → 8..15 on load). `formats/MP_FORMAT.md` rewritten accordingly.
+
+**Authority**: raw/COLONIZE/MAPEDIT.EXE bytes + raw/COLONIZE/AMER2.MP data + CodeView symbols >
+inferred spec, per notes/TRUTH_HIERARCHY.md. Hard rules 1/2/3 all corroborated by the editor
+(NAMES section loads @0x3967–0x39ED; Ocean 25 fill; forest range 8..23).

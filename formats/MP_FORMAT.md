@@ -4,46 +4,102 @@ The Colonization map file format. Read by both VICEROY.EXE (loads
 AMER2.MP at game-start of the standard scenario) and MAPEDIT.EXE
 (creates/edits arbitrary .MP files).
 
+> **REWRITTEN 2026-07-30 from the actual MAPEDIT.EXE writer/loader**
+> (`_write_map_file` @0xB840 / `_load_map_file` @0xB700, map_9.obj,
+> `code/MAPEDIT/disasm_named/map_9.asm` — real symbol names from the EXE's
+> CodeView debug info, `data_extracted/mapedit_symbols.json`). The previous
+> version of this file was inferred without the editor and had four
+> substantive errors (header size, body layout, overlay-bit semantics, and
+> the "record arrays" section — see `notes/rulings/RULINGS.md` 2026-07-30).
+> Every field below is byte-cited and cross-checked against `AMER2.MP`
+> (12,534 bytes = 6 + 3·58·72; header words (58, 72, 4) — verified).
+
 **Files in COLONIZE/**:
 - `AMER2.MP` — the canonical standard-game world (Americas)
-- `AMER2.MP.backup` — backup copy (same format)
 
 **Authoritative source for terrain ID semantics**: NAMES.TXT $TERRAIN
-section. Per CLAUDE.md hard rule, mapedit.c (in any historical archive)
-is NOT to be cited as primary evidence for tile ordering — it has been
-wrong about terrain ordering before.
+section (per CLAUDE.md hard rule 1). MAPEDIT.EXE *agrees*: `_load_data`
+@0x3936 reads `@UNFORESTED` → ids 0..7, `@FORESTED` → ids 8..15 (records
+16..23 memcpy'd from 8..15 @0x39B1–0x39CD), `@OTHER` → ids 24..28.
 
 ---
 
-## Layout
+## Layout (B — from the writer)
 
 ```
-+--- header ---+
-| width:  word (16-bit, little-endian)  ; default 56 for AMER2
-| height: word (16-bit, little-endian)  ; default 70 for AMER2
-+--- tile data ---+
-| width × height bytes; row-major (y outer, x inner)
-| each byte:
-|   bits 0-4: terrain id (0..27)
-|   bit  5  : river overlay (1 = river crossing this tile)
-|   bit  6  : forest/special overlay (1 = forested, applied to land terrains)
-|   bit  7  : ? (possibly "discovered by player 0")
-+--- per-tile additional data (variable) ---+
-| ColonyRecord array
-| UnitRecord array
-| NativeSettlement array
-| (boundaries determined by following the read function in VICEROY,
-|  starting from the *.MP push site)
++--- header: 6 bytes ---+
+| width:   u16 LE   ; AMER2 = 58 (0x3A)
+| height:  u16 LE   ; AMER2 = 72 (0x48)
+| version: u16 LE   ; must be 4 (_map_file_version; loader cmp @0xB76D)
++--- layer 1: terrain, width×height bytes, row-major (y outer, x inner) ---+
+| per byte:
+|   bits 0-4 (0x1F): terrain id 0..28
+|   bit  5   (0x20): mountains/hills overlay
+|   bit  6   (0x40): river overlay
+|   bit  7   (0x80): modifier for bits 5/6:
+|                     with bit5: set = Mountains(27), clear = Hills(28)
+|                     with bit6: set = Major River, clear = Minor River
++--- layer 2: feature, width×height bytes ---+
+| per-tile bit flags (game-side; editor only passes them through):
+|   bit0 = unit present        (_is_unit @0x43C8)
+|   bit1 = settlement          (_is_colony/_is_village/_is_city @0x43F6..)
+|   bit2 = prime resource      (_resource_at @0x45CF)
+|   bits 3/6 tested by _is_hostile @0x44D1 (semantics TBD, game-side)
+| AMER2.MP layer 2 is all zeros.
++--- layer 3: continent/owner, width×height bytes ---+
+|   low nibble  = continent/region id 1..15 (0 = border/none)
+|                 (_continent_at @0x428B; written by _map_find_continents
+|                  @0xB242, labels compressed to 1..15, overflow → 0xF)
+|   high nibble = owner (_owner_of @0x42C5; 0xF = none)
++--- end of file ---+
 ```
 
-The right-edge column is the **sea-lane column** (per CLAUDE.md): base
-terrain id = 26. Never fake as desert.
+**File size = 6 + 3·width·height.** Nothing follows layer 3 — there are
+**no ColonyRecord/UnitRecord/NativeSettlement arrays in .MP files** (those
+belong to save-games). AMER2.MP's size proves it: 12,534 = 6 + 3·4176.
+
+Writer sequence: header 4 bytes @0xB878–0xB885 + version 2 bytes
+@0xB896–0xB8AC, then three `w·h`-byte layer writes (`_map` @0xB8C8,
+`_feature` @0xB8E8, `_continent` @0xB910). Loader `_load_map_file` @0xB700
+mirrors it, requires version==4 @0xB76D–0xB773, and caps `w·h ≤ 0x2EE0`
+(12,000 tiles) @0xB6CE (`_map_error` 9999 on overflow).
+
+Error codes (`_map_error` [0x4A4]): 1 open, 2 header, 3 version,
+4/5/6 layer-1/2/3 I/O, 9999 map too big.
+
+### Bit-combo census of AMER2.MP layer 1 (verified 2026-07-30)
+`0x00`×3724 · `0x20` hills×56 · `0x40` minor river×178 · `0x60`
+hills+minor river×1 · `0xA0` mountains×170 · `0xC0` major river×47.
+Terrain ids used: 0..23, 25, 26.
+
+### Forest is NOT a bit
+Forested terrain is expressed **in the id** (8..23 = auto-forest range,
+hard rule 3). The editor's `_terrain_is_forest` @0xB222 tests 8..0xF and
+0x10..0x17. On every load MAPEDIT runs `_forest_fix` @0x16B6 which
+normalizes ids 0x10..0x17 → id−8 and strips forest under a
+mountains/hills overlay — so a load→save round-trip through MAPEDIT is
+**not byte-preserving** for files (like AMER2.MP) that contain ids 16..23.
+
+### Border ring and the sea-lane column (hard rule 2, refined)
+- The outermost 1-tile ring is **not editable** (`_change_map` bounds
+  x,y ∈ [1..w−2]/[1..h−2] @0x31E9–0x320D) and is skipped by the continent
+  finder. In AMER2.MP the ring is Ocean (25).
+- **Hard rule 2's "right-edge column = Sea Lane 26" refers to the
+  right-most *playable* column x = w−2**: in AMER2.MP all 70 interior rows
+  of column 56 are Sea Lane (verified). Sea lane also spreads over the
+  eastern ocean region and parts of column 1. The rule's *number* (26)
+  stands unchanged.
+- New maps are created **all Ocean (25)**: `_create_blank_map` @0xB94A
+  memsets layer 1 to 0x19, layers 2/3 to 0, sets version=4 @0xB9C2. Size
+  is **hard-coded 58×72** (`push 0x48; push 0x3A` @0x2C53–0x2C55). No
+  sea-lane column is synthesized — it is hand-painted (id 0x1A, paint
+  and-mask 0x40 preserves an existing river bit @0x273C).
 
 ---
 
-## Terrain IDs (0..27)
+## Terrain IDs (0..28)
 
-Per `extracted/text/NAMES_sections.json` ($TERRAIN section), in order:
+Per NAMES.TXT `$TERRAIN` (`@UNFORESTED`/`@FORESTED`/`@OTHER`), in order:
 
 | ID | Hex | Name | Notes |
 |----|-----|------|-------|
@@ -56,111 +112,65 @@ Per `extracted/text/NAMES_sections.json` ($TERRAIN section), in order:
 | 6 | 0x06 | Marsh | wetland |
 | 7 | 0x07 | Swamp | tropical wetland |
 | 8 | 0x08 | Boreal Forest | northern forest (tundra+forest) |
-| ... | ... | ... | (forest variants are auto-mapped in **8..23** per func_006204 BYTE_VERIFIED) |
-| 24 | 0x18 | Arctic | polar ice — generator writes to map top/bottom rows (P5) |
-| 25 | 0x19 | Ocean | open sea — generator's interior background fill (P0) |
-| 26 | 0x1A | Sea Lane | navigable right-edge column (Ocean-class; **hard rule 2**) |
-| 27 | 0x1B | Mountains | impassable rock |
-| 28 | 0x1C | Hills | brown rolling |
+| ... | ... | ... | (forest variants auto-mapped in **8..23** per func_006204 BYTE_VERIFIED; 16..23 are aliases of 8..15) |
+| 24 | 0x18 | Arctic | polar ice |
+| 25 | 0x19 | Ocean | open sea — `_create_blank_map` fill value |
+| 26 | 0x1A | Sea Lane | navigable; right-most playable column (**hard rule 2**) |
+| 27 | 0x1B | Mountains | overlay form: bit5+bit7 (0xA0) |
+| 28 | 0x1C | Hills | overlay form: bit5 alone (0x20) |
 
 > **Corrected 2026-06-20** (`notes/rulings/RULINGS.md`): ids **24–28** were
 > previously listed as Mountains/Hills/Ocean/Lake with Arctic at 16. That table
-> was the outlier — it placed Arctic *inside* the auto-forest range 8..23
-> (impossible per func_006204) and conflated Ocean with Sea Lane. The
-> byte-verified `@OTHER` ordering (**Arctic, Ocean, Sea Lane, Mountains, Hills**)
-> + hard rule 2 (Sea Lane = 26) force the base to 24, and the random-map
-> generator's immediates (0x18 poles / 0x19 interior fill / 0x1A right edge)
-> corroborate it. (There is no separate "Lake" terrain in `@OTHER`.)
+> was the outlier — the byte-verified `@OTHER` ordering (**Arctic, Ocean, Sea
+> Lane, Mountains, Hills**) forces the base to 24. (No "Lake" terrain exists.)
 
-Sources for ID semantics:
-- NAMES.TXT `$TERRAIN` / `@OTHER` section (canonical) — `@OTHER` order
-  **Arctic, Ocean, Sea Lane, Mountains, Hills** → ids 24..28.
-- `func_006204` BYTE_VERIFIED at file 0x6204 — auto-forest range check
-  (terrain id 8..23 = forested variants of base terrains)
-- `notes/rulings/RULINGS.md` 2026-06-20 — id 24–28 conflict resolution.
-
----
-
-## Bit overlays
-
-| Bit | Mask | Meaning |
-|-----|------|---------|
-| 5 | 0x20 | River overlay — sprite added on top of base terrain |
-| 6 | 0x40 | Forest overlay (applied to base land terrains 0..7 to map to 8..15) |
-| 7 | 0x80 | Possibly "explored by player 0" flag (TODO_VERIFY) |
-
-The forest bit is REDUNDANT with terrain id 8..15 since those IDs are
-the auto-forest mapping. The bit may be set for ALL forested tiles to
-make traversal-cost lookups simpler. (TODO_VERIFY against the .MP
-loader function.)
+Note the dual representation of Mountains/Hills: as *ids* 27/28 (how
+`@OTHER` names them and how `_terrain_type` @0xB17C reports them:
+bit5 set → type = 0x1B + (bit7 ? 0 : 1)) and as *overlay bits* on a base
+land terrain (how tiles store them; paint masks: Mountains `or 0xA0 /
+and 0x1F` @0x276C–0x277B, Hills `or 0x20 / and 0x5F` @0x277E–0x2788,
+Major River `or 0xC0 / and 0x1F` @0x2744–0x2753, Minor River `or 0x40 /
+and 0x3F` @0x275A–0x2764).
 
 ---
 
 ## Coast rendering convention
 
-Per CLAUDE.md hard rule (BYTE_VERIFIED via prior pixel work):
-- PHYS0 sprites 0x01 and 0x11 are **rivers**, not coast
+Per CLAUDE.md hard rule 4 (BYTE_VERIFIED via prior pixel work):
+- PHYS0 sprite rows 0x01 and 0x11 are **rivers**, not coast
 - True coasts use sprites 150–153 plus the water-tile beach-halo mechanism
-- Sea-lane column (right edge) base terrain id = 26 (Sea Lane; Ocean is 25 — corrected 2026-06-23, the prior "(Ocean)" label on 26 was wrong)
-
----
-
-## Per-tile metadata (after the tile-data array)
-
-The .MP file contains additional structures after `width × height`
-bytes of tile data:
-
-### ColonyRecord array
-
-Per anchor_map.md (BYTE_VERIFIED stride): each ColonyRecord is **202
-bytes persistent + 174 bytes working buffer = 376 bytes total**. The
-.MP file likely stores only the persistent 202 bytes per colony.
-
-- count: 1 word (number of colonies)
-- per-colony: 202 bytes (TODO: full field layout from the loader)
-
-### UnitRecord array
-
-Per anchor_map.md (BYTE_VERIFIED): each UnitRecord is **0x1C = 28 bytes**.
-
-- count: 1 word (number of units)
-- per-unit: 28 bytes (BYTE_VERIFIED stride; field semantics in
-  [`viceroy_source/include/unit.h`](../include/unit.h))
-
-### NativeSettlement array
-
-Per anchor_map.md (BYTE_VERIFIED): each NativeSettlement is **174 bytes
-working buffer + 202 bytes persistent**. Likely uses the 202-byte
-persistent form on disk.
-
-- count: 1 word
-- per-settlement: 202 bytes (TODO: full field layout from loader)
+- Sea Lane is id 26, Ocean 25 (corrected 2026-06-23)
 
 ---
 
 ## Read/write entry points
 
-**VICEROY.EXE**: the .MP loader is invoked at game-start. Find via the
-`*.MP` PUSH-imm16 sites in VICEROY's overlay region.
+**MAPEDIT.EXE** (all byte-cited): writer `_write_map_file` @0xB840;
+loader `_load_map_file` @0xB700; creator `_create_blank_map` @0xB94A;
+menu paths in `_execute_menu_event` @0x2DE0 — SAVE id 0x1A @0x2F8E,
+SAVE AS id 0x13 @0x2EAC, LOAD id 0x1B @0x2FD4, NEW id 0x14 @0x2F24,
+EXIT id 0x1F @0x305E (with save-on-exit option).
 
-**MAPEDIT.EXE**: load via the LOAD menu (`MAPTOLOAD` dialog) and save
-via the SAVE menu (`MAPTOSAVE` dialog). Both at offsets in the menu
-dispatcher region.
+**VICEROY.EXE**: loads AMER2.MP at game start (the `AMER2.MP` string
+lives in the end-of-turn/setup cluster near `func_0755CC`); its .MP
+loader has not yet been per-line annotated — TODO; it must accept the
+same 6-byte header + 3 layers (AMER2.MP is this format).
 
 ---
 
 ## Round-trip verification
 
-A round-trip extractor (read → modify → write) should produce
-byte-identical output if no fields are modified. The `tools/verify.py`
-script in the parent project's tools/ directory enforces this.
+`tools/verify.py` enforces read→write byte-identity for *our tools*.
+Note MAPEDIT itself is not byte-preserving (see `_forest_fix` above).
 
 ---
 
 ## Open work
 
-- **TODO_VERIFY**: the high bit (0x80) of each tile byte
-- **TODO_VERIFY**: the exact post-tile-array layout (Colony/Unit/Native
-  array order and counts)
-- **Per-line annotation** of the .MP loader function in VICEROY (find
-  via `*.MP` PUSH sites); will pin the exact field layout
+- Layer-2 bits 3/6 exact game-side semantics (`_is_hostile` @0x44D1
+  tests 0x48) — needs the VICEROY reader.
+- Per-line annotation of VICEROY's .MP loader (find via the AMER2.MP
+  string ref) — confirms the game reads the same three layers.
+- One border-ring anomaly in AMER2.MP: a single ring tile with base id 3
+  (Prairie) among the Ocean ring — likely original data quirk; harmless
+  (ring is non-editable).
