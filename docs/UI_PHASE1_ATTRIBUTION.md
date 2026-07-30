@@ -232,4 +232,142 @@ plow) — needs `func_005D32` layer-write sites; (4) identity of the font behind
 
 ## 4. `func_048F34` (page 0x0C) — TBD (decode in progress)
 
-## 5. `func_0452D4` (page 0x0A) — TBD (decode in progress)
+## 5. `func_0452D4` (page 0x0A, file 0x0452D4, 1559 B) — pulldown-menu tracking loop of the in-game map menu bar
+
+**SCREEN:** widget/helper — the **pull-down-menu modal open/navigate/select engine
+of the in-game map-screen menu bar** (GAME/VIEW/ORDERS/REPORTS/TRADE/CHEAT/
+COLONIZOPEDIA from MENU.TXT). Page 0x0A (file base 0x044400) is the whole
+pulldown-menu module; `func_0452D4` is its interaction core.
+
+**Verification status:** 13 load-bearing cites spot-checked 2026-07-30 — all
+resolve exactly (`cmp [0xb96],0` @0x024925, `les bx,[0x896]` @0x024951,
+`lcall 0x191f,0x472` @0x02495D, entry `enter 0x3c,0` @0x0452D4, save-under
+`0x1a1f:0x364` @0x04538C, restore `0x38a` @0x04585F, result write @0x045895,
+right-clamp `cmp [bp-8],0x13e` @0x04505F, bottom-clamp `cmp [bp-2],0xc6`
+@0x04506E, bar y `mov ax,1` @0x0448AE, node alloc `mov ax,0x22` @0x044BD9,
+`[0x896]` writer @0x0720AC, MENU.TXT loader `0x191f:0x928` @0x0720C4).
+
+### Identity evidence
+- Sole cross-page caller: `lcall 0x191f,0x472` @0x02495D (thunk file 0x01BA62 →
+  page 0x0A off 0x0ED4 = `func_0452D4`; byte-scan found no other far call). Call
+  site is in `func_0246E2` (page 0x01, main map input dispatcher):
+  `les bx,[0x896]; push es:[bx+0x3A]; push es:[bx+0x38]` @0x024951–0x02495D —
+  "open first pulldown of the menubar object at DGROUP `[0x896]`" when the
+  Alt-tap flag `[0xB96]` is set (@0x024925/@0x02494C).
+- `[0x896]` is created/written only by `func_072090` @0x0720AC (page 0x1A), which
+  builds the bar from MENU.TXT: section names `"game"` DGROUP:0x2098 (file
+  0x1FA38), `"view"` 0x20A6, `"orders"` 0x20AF, `"reports"` 0x20BA, `"trade"`
+  0x20C5, `"cup"` 0x20CB, `"pedia"` 0x20D3, loaded via `0x191F:0x928` (7 sites,
+  e.g. @0x0720C4, @0x0728CB) — exactly the `@GAME/@VIEW/@ORDERS/@REPORTS/@TRADE/
+  @CUP/@PEDIA` keys in `MENU_sections.json`. 7 add-pulldown calls
+  (`0x1A1F:0x31A`→`func_044B7A`, e.g. @0x0720E4) + 91 add-item calls
+  (`0x1A1F:0x33E`→`func_044D16`).
+- Intra-page callers (via trampoline `call 0x17ED`→`ljmp 0x191f:0x472`
+  @0x045BED): `func_0458EC` @0x04597E (mouse-down on bar row opens menu:
+  `[0x7EC]` down-edge @0x045901, row test @0x04591F–0x045924, per-title x/x+w
+  test @0x04593B–0x045943) and `func_04598A` @0x045A0A (title-hotkey open: key
+  via `0x1A1F:0x380`→`func_00D2AC` @0x0459B2, matched against menu field +8
+  @0x0459D2). Both called only from `func_0246E2` (`0x191F:0x47E`
+  @0x02475D/0x024895, `0x191F:0x496` @0x02481E).
+
+### Structs (offsets byte-cited)
+- **Menubar** (`[0x896]`, created `func_044836`): +0 result command id (@0x045895
+  write / @0x0458C9 zero), +4 bar y=1 @0x0448AE, +6 title gap=0x0C @0x04489C,
+  +8 item leading=3 @0x0448A2, +0xA title x-pad=1 @0x0448B5, +0xE/0x10 bar colors
+  ← `[0x149C]/[0x149E]` @0x0448BF, +0x1A/0x1C highlight colors ←
+  `[0x14A8]/[0x14AA]` @0x0448F6, +0x20/+0x2C two font descriptors (copied
+  @0x0448EA/@0x044947; far strings at +0x28 = title font, +0x34 = item font),
+  +0x38 first menu @0x044894.
+- **Menu node** (0x22 bytes, alloc @0x044BD9): +2 x = prev menu's (x+width) +
+  menubar gap (@0x044BA4–0x044BB7 sum, +gap @0x044BCD–0x044BD1 ⇒ first title
+  x = 0x0C), +4 title width, +6 panel inner width (init 0xA @0x044C96), +8 title
+  hotkey char @0x044C92, +0xC flags (bit0 disabled @0x04541C), +0xE title string
+  @0x044C70, +0x12 owner menubar @0x0452E9, +0x16 next / +0x1A prev menu
+  (@0x045440/@0x0456D1), +0x1E first item @0x0453A1.
+- **Item node**: +0 flags (bit0 disabled @0x0454ED; bit1 hidden @0x0454D2), +2
+  shortcut key @0x045776, +4 command id (returned @0x04588E), +6 label far ptr
+  (empty first byte = separator @0x0454F2–0x0454FA), +0xE next / +0x12 prev
+  (@0x04551E/@0x0455AD).
+
+### Layout (`func_044FA4`, called @0x045357)
+- Panel x = menu.x @0x044FB0; panel y = menubar.y + title-text-height + 3
+  @0x044FC5–0x044FE2; width = menu.+6 + 2 @0x045022–0x045027; height =
+  n_visible·(item-font-height + leading) + leading + 2 @0x045036–0x045053
+  (visible count skips flag-bit1 items @0x045002); first-item y = panel y +
+  leading + 1 @0x045085–0x045092; item x = panel x + 1 @0x04507D.
+- **Screen clamp**: right edge ≥ 0x13E → shift so right = 0x13D (317)
+  @0x04505F–0x04506C; bottom ≥ 0xC6 → shift so bottom = 0xC7 (199)
+  @0x04506E–0x04507B (320×200 mode).
+- **Bar draw** (`func_044E7C`): full-width fill x=0, y=0, w=0x140 (320),
+  h = title-height+bar_y+1 @0x044EB2–0x044EC9; selected title highlight box in
+  colors menubar+0x1A/+0x1C @0x044F04–0x044F41; title text at menu.x + pad,
+  y = bar y @0x044F44–0x044F6B.
+- **Save-under**: rect saved before opening via `0x1A1F:0x364` (ax=0xFFF8,
+  descriptor DGROUP:0x2DA8) @0x04538C → `func_078640` (page 0x1F); restored on
+  close via `0x1A1F:0x38A` @0x04585F → `func_0786FE`, then blit `0x181F:0xE2`
+  @0x045875.
+
+### Interaction loop (`func_0452D4`, retf 4, one far arg = menu node)
+- Entry: highlight title @0x045332 (`func_044E7C`, flag 1); layout @0x045357;
+  row height = item-font-height + owner.leading @0x045368–0x045375; save-under
+  @0x04538C; if `[0x7EE]` (buttons at open) == 0 → keyboard-open: preselect
+  first item @0x045394–0x0453AC. Alt state = BIOS 0x40:0x17 & 8
+  @0x0452FC–0x04530A.
+- Per frame: `0x181F:0x470` begin-frame @0x0453AF, `0x466` (poll/edge
+  `func_00D106`) @0x0453B6, yield `0x45C` @0x045835.
+- **Mouse** (only if `[0x7F6]` any-button-down @0x0453BB): pointer in bar row
+  (@0x0453CA–0x0453E7) → walk bar titles, drag onto a different enabled title
+  switches menus (arg replaced @0x045450–0x045459, panel closed/reopened via
+  outer loop @0x045880); pointer outside panel rect @0x04546A–0x04548E →
+  selection cleared; inside → per-item y hit test @0x0454BA–0x045529 (skips
+  hidden/disabled/separator). Release edge `[0x7F4]` @0x045817: with selection →
+  commit; without: if opened-by-press and release on bar row → stay open
+  (@0x04589A–0x0458C2), else cancel.
+- **Keys** (`0x181F:0xF6` kbhit @0x045532, `0x3E0` getch @0x045550; toupper via
+  ctype `[bx+0x27ED]&2 → −0x20` @0x04555D–0x045569): '8'/scan 0x148 = up (prev
+  via +0x12, skipping flags&3 / separators, wraps @0x04559A–0x045613); '2'/0x150
+  = down (+0xE @0x045664–0x0456CA); 0x14B left / 0x14D right = prev/next enabled
+  menu with wrap through owner+0x38 (@0x0456CE–0x045716 / @0x04571E–0x04574E);
+  Enter 0x0D = accept @0x045750; Esc 0x1B = cancel + clear selection
+  @0x045758–0x045765; any other key = item-shortcut scan against item+2
+  @0x045768–0x0457B8. Dispatch ladder @0x045571–0x0457D8.
+- **Alt-tap release** closes the menu: re-read 0x40:0x17&8 each pass
+  @0x04561A–0x045628, exit arm/trigger @0x04562B–0x04563D, @0x04565B.
+- Selection-change repaint via `func_0450BA` @0x0457FF–0x04580C. Exit: result =
+  selected item's +4 → menubar word 0 @0x04588B–0x045895 (0 if none @0x0458C6);
+  `0x47A` reset latches @0x0458CE; un-highlight title @0x0458D3–0x0458E0.
+
+### Reachability
+Main map turn loop (page 0x01 tail, @0x024A73–0x024B0F) → `func_0246E2` (only
+entry into the menu module; also key 'd'=0x64 swallow @0x0247E2, accelerator scan
+`func_045A1E` @0x024838) → `func_0452D4`. Returned command id consumed
+@0x024886–0x0248C1 → command executor `func_0235D6` (thunk `0x181F:0xF78`,
+switch on id @0x0235E2ff). ORDERS-item enable/disable by unit type:
+@0x0217E2–0x02192x (ids 0x301, 0x330, 0x302, 0x304, 0x310, … against UnitRecord
+`[bx+0x3144]`).
+
+### Conflict recorded → RULINGS.md 2026-07-30
+`docs/MENUS_VICEROY_DECODE.md` §7.1 / tracker row 7 credited **`func_06E3D0`** as
+the in-game dropdown engine. The byte-traced open chain
+(@0x024951→@0x02495D; @0x02475D/@0x024895→`func_0458EC`→@0x04597E) reaches
+`func_0452D4`, not `func_06E3D0` — and the 2026-07-28 dialog-framework ruling
+already identifies `func_06E3D0` as part of the @-directive dialog/list-menu
+framework. Row 7's "bar draw + per-item x = TBD" blocker is resolved here (bar
+draw = `func_044E7C`; per-title x mechanism @0x044BA4–0x044CA0). See the ruling
+for the arbitration.
+
+### Confidence & open items
+HIGH that it is the pulldown-menu modal tracker; HIGH that its only reachable
+instantiation is the main-map menu bar (single construction site `func_072090`,
+single open chain `func_0246E2`).
+
+**TBD (exact trace sites):** (1) bar/highlight colors `[0x149C]..[0x14AC]` and
+font metrics `[0x14B0]..[0x14B8]` are runtime-filled (partially by the page-0A
+init tail @0x045BA6–0x045BD9 from sprite-sheet queries `0x181F:0x254` sprites
+6/7; `MENUCOLR.SS` string at file 126556) — writer chain for the 0x149C block
+TBD. (2) Absolute per-title x/width pixels depend on font text-width
+(`0x181F:0x204` via `func_0445EE` @0x044CB4ff) — need font decode or live trace.
+(3) Panel width source: menu+6 init 0xA @0x044C96, presumed max-item-width
+update inside add-item `func_044D16` — not yet read. (4) Save-under internals
+(mode ax=0xFFF8, pool DGROUP:0x2D28, type const 0x2618) in `func_078640`
+@0x078671–0x0786BF.

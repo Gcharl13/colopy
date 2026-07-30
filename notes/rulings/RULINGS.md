@@ -5645,3 +5645,25 @@ closer (§7).
 
 **Authority**: `func_06D316`/`func_06F0F4`/`func_06E3D0`/`func_06D938`/`func_044D16`/`func_06C520`
 byte offsets vs raw/COLONIZE/VICEROY.EXE.
+
+## 2026-07-30 — In-game menu-bar dropdown engine = func_0452D4 (page 0x0A), NOT func_06E3D0
+
+**Conflict**: `docs/MENUS_VICEROY_DECODE.md` §7.1 and `docs/UI_AUDIT_TRACKER.md` row 7 credited
+`func_06E3D0` as the in-game "dropdown open/run/hit" engine for the map-screen menu bar, with
+"bar draw + per-item x = TBD (overlay-resident)".
+
+**Resolution (B)**: The map menu bar's pulldown tracker is **`func_0452D4`** (page 0x0A, file base
+0x044400 — the whole page is the pulldown-menu module). Byte-traced open chain: main map input
+dispatcher `func_0246E2` → `les bx,[0x896]` @0x024951 + `lcall 0x191F:0x472` @0x02495D (thunk file
+0x01BA62 → page 0x0A off 0x0ED4 = func_0452D4; byte-scan found no other far caller), plus intra-page
+openers `func_0458EC` (mouse-down on bar row) @0x04597E and `func_04598A` (title hotkey) @0x045A0A.
+The menubar object `[0x896]` is built ONLY by `func_072090` @0x0720AC from MENU.TXT sections
+game/view/orders/reports/trade/cup/pedia (7× `0x191F:0x928`, e.g. @0x0720C4). Row-7's TBD blocker is
+resolved: bar draw = `func_044E7C` (full-width fill 320px, h=title_h+2 @0x044EB2–0x044EC9); per-title
+x = chained prev.x+prev.width+gap 0x0C, first title x=0x0C (@0x044BA4–0x044BD1). `func_06E3D0` is
+NOT the map menu bar — per the 2026-07-28 dialog-framework ruling it belongs to the @-directive
+dialog/list-menu framework (`spec/ui/dialog_framework.md`). MENUS doc §7.1 and tracker row 7 are
+superseded on the engine identity. Full decode: `docs/UI_PHASE1_ATTRIBUTION.md` §5.
+
+**Authority**: `func_0452D4`/`func_0246E2`/`func_072090`/`func_044E7C` byte offsets vs
+raw/COLONIZE/VICEROY.EXE (13 cites re-resolved against disasm_overlay_reseg 2026-07-30).
