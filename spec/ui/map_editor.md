@@ -93,15 +93,92 @@ result → `_file_select`.
 | 0x5F | row labeled "How To Use Maps" | `@popup_box("ABOUT")` @0x3170 — **shipped off-by-one, see §5** |
 | 0x21, 0x6A | *(no menu row)* | `_set_view_mode` / `_memory_check` @0x30BA/@0x317C — **dead: nothing emits these ids** |
 
-## 4. Main editor screen — *(pending decode: viewport/info window/mini-map layout, zoom levels, paint interaction, key map)*
+## 4. Main editor screen — B
+Decoded 2026-07-30; screen rects, zoom math, selection grid, and renderer
+frame constants re-verified against the listings.
 
-Known already (B): paint masks in `_parse_spot` — Ocean id 0x19 / Sea Lane
-0x1A with and-mask 0x40 (preserves river bit); Mountains `or 0xA0/and 0x1F`;
-Hills `or 0x20/and 0x5F`; Major River `or 0xC0/and 0x1F`; Minor River
-`or 0x40/and 0x3F` @0x2730–0x2788. Right-click pickup @0x32B7–0x32E9. The
-1-tile border ring is non-editable (`_change_map` bounds @0x31E9–0x320D).
-Info window shows "Coast Protect: ON/OFF" (DS:0x1A8/0x1BA) and river/terrain
-names keyed on the overlay bits (`_info_window_draw` @0x2029–0x2182).
+### Layout (320×200 MCGA; two offscreen 320×200 buffers `_scr_work`/`_scr_orig`)
+| element | rect | cite |
+|---|---|---|
+| Menu bar | y 0..7, full width | `_main_screen_refresh` @0x2317 |
+| **Map viewport** | (0,8)–(240,200); fixed **240×192** px (`_map_pixel_size` = 0xF0/0xC0 @0xB633/@0xB639) | hit-test `_mouse_area` @0x31CA |
+| **Mini-map** | panel (241,8) 79×41; frame (251,8)–(308,48); pixels from (252,9), max 56×39 | `_show_mini` @0xCF14/@0xCF8D |
+| **Info window** | (241,50) 79×150; border (240,49)–(320,200) | `_info_window_clear` @0x1DBD |
+
+**Zoom** (`@compute_view_parameters` @0xBA76): scale 0..3; visible tiles =
+**(15<<scale) × (12<<scale)**; tile px = **16>>scale** — F1=120×96@2px,
+F2=60×48@4px, F3=30×24@8px, F4=15×12@16px (startup default scale 0). Corner
+clamped to [1, dim−view−1]; small maps centered via `_map_tile_inset`;
+sprite scale = 100>>scale percent.
+
+**Info window** (FONTTINY, `_basic_color`, x=242 y=51, line pitch fontH+1):
+"Size: (w, h)" / "Curs: (x, y)" / "Terrain at cursor:" + name (with
+" Forest" for ids 8..0x17, "(Major|Minor River)" from bit 0x40+0x80) /
+"Selected:" + 16×16 tool swatch (tile + PHYS0 forest overlay, or PHYS0
+frames 4/0x14/0x24/0x34 for river/mtn/hill tools) / shift-click help lines /
+"Fill radius: N" / "Coast Protect: ON|OFF" @0x1F4E–0x22D2.
+
+**Mini-map**: 1 px/tile, window = clamp(center−28/−19); color =
+`_terrain_colors[id]` where ids 0..23 sample **pixel (8,8) of the TERRAIN.SS
+tile** and Mountains/Hills sample PHYS0 frames 0x21/0x31 (`_get_tile_colors`
+@0xCBCC); white (0xF) view rectangle @0xCFB4. **Cursor**: ICONS.SS frame
+**0x13+scale**, blink 20 ticks (~1/3s) @0x29C6/@0x372E.
+
+### "Map Tile Select" screen (`_selection_screen` @0x2826)
+Full-screen black; 16×16 items on **17px pitch**: row 0 y=1 = 8 UNFORESTED
+base tiles; row 1 y=18 = forested (base + PHYS0 frame 0x41 overlay; Desert →
+dedicated Scrub tile 0x11); bottom row y=48 = Arctic/Ocean/Sea Lane tiles +
+PHYS0 sprite items frame 4=Major River, 0x14=Minor River, 0x24=Mountains,
+0x34=Hills. White selection box (x−1,y−1)–(x+16,y+16); selected name label
+at (160,10). Arrow keys move ±1/±8 over 24 slots; any other key or
+click-release exits. Tool table (`_parse_spot` @0x26CC):
+
+| tool | sel | and | or | rmc |
+|---|---|---|---|---|
+| terrain id t (rows 0/1, Arctic) | t | 0xFF | 0 | 0 |
+| Ocean / Sea Lane | 0x19/0x1A | 0x40 | 0 | 0 |
+| Major / Minor River | 0 | 0x1F/0x3F | 0xC0/0x40 | 1 |
+| Mountains / Hills | 0 | 0x1F/0x5F | 0xA0/0x20 | 1 |
+
+Startup default = Ocean tool. Also entered by clicking the info window.
+
+### Paint interaction
+- Screen→tile: `tx = mx/tsz − inset_x + corner_x`, `ty = (my−8)/tsz −
+  inset_y + corner_y` @0x35C4–0x35F1.
+- **No shift**: click recenters (`_set_center`). **Shift+left**: paint
+  (`_fill_map`, square brush side 2r+1, r = `_fill_radius` 0..2 → 1×1/3×3/
+  5×5, continuous while dragging, undo snapshot at stroke start).
+  **Shift+right**: terrain tool → eyedropper pick-up; feature tool → remove
+  (and-mask only). Keyboard: Enter/Space paint, Backspace pick-up/remove.
+- `_change_map` @0x31E0: border ring immutable; coastline-protect skips
+  painting terrain onto water; hills/mtn never apply to water; write sets
+  `_map_changes`.
+- **Undo**: single-slot, terrain layer only (12,000-byte copy at stroke
+  start; `_perform_undo` restores). `_small_map_needs_update` is never
+  referenced (mini-map rebuilt on every draw).
+
+### Renderer (terrain byte → sprites; helper @0xC3A2)
+Ground from the 12-tile TERRAIN.SS array (`_tile_id` @0x46CE: 0..7→0..7;
+ids 9 and 0x11→8 Scrub; 0x18/0x19/0x1A→9/10/11), PHYS0 overlays on top —
+**agrees with hard rules 3/5**; BDARK.SS never referenced. PHYS0 frames:
+forest **0x41+mask** (N8|S4|W2|E1 neighbor forests); mountains **0x21+mask**
+/ hills **0x31+mask** (neighbors with equal byte&0xA0); rivers major
+**0x01..0x10** / minor **0x11..0x20** (4-neighbor mask, isolated→0xF —
+**agrees with hard rule 4** rows 0x01/0x11 = rivers); river mouths on water
+**0x8D+dir / 0x91+dir**; unexplored 0x95; straight coasts **0x97..0x9A
+(151..154)** by edge class, otherwise per-quadrant beach-halo **0x6D+quad+
+4·code (109..140)** at 8×8 sub-offsets. ⚠ **Hard-rule-4 numbering flag**:
+rule says coasts "150–153"; MAPEDIT's straight coasts are **151–154**, and
+frame **0x96 (150)** is drawn from *feature*-byte bit 0x40 (dormant in the
+editor) @0xC550 — recorded in RULINGS.md 2026-07-30 for reconciliation
+against VICEROY's coast site; numbers not silently changed.
+Scale-0-only extras (inert on fresh maps): resources 0x5A+idx, lost city
+0x68, roads 0x51/0x52+dir.
+
+### Cursor movement
+Numpad 1–9 and Home/Up/PgUp/Left/Right/End/Down/PgDn = 8-way move
+(jump table file 0x346E), clamp [1, dim−2], auto-scroll when within 2 tiles
+of the view edge (`_possibly_center` @0x2A5E).
 
 ## 5. Menus & dialog engine — B
 Decoded 2026-07-30; dialog-section strings, menu-id pushes, dead-data claims

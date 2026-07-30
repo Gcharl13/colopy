@@ -5722,3 +5722,22 @@ unchanged. Editor round-trips are not byte-preserving (`_forest_fix` @0x16B6 nor
 **Authority**: raw/COLONIZE/MAPEDIT.EXE bytes + raw/COLONIZE/AMER2.MP data + CodeView symbols >
 inferred spec, per notes/TRUTH_HIERARCHY.md. Hard rules 1/2/3 all corroborated by the editor
 (NAMES section loads @0x3967–0x39ED; Ocean 25 fill; forest range 8..23).
+
+## 2026-07-30 — FLAG (not a resolution): coast straight-edge frames 151–154 in MAPEDIT vs hard rule 4's "150–153"
+
+**Observation (B, MAPEDIT.EXE)**: the editor's tile renderer draws straight-edge coasts as PHYS0
+frames **0x97..0x9A (151..154)** (`add ax,0x97` @0xC707, map_a.obj) selected by land-mask edge
+class, with per-quadrant beach-halo frames 0x6D+quad+4·code (109..140); frame **0x96 (150)** is
+drawn from the *feature*-layer bit 0x40 (@0xC550), a VICEROY-side overlay dormant in the editor.
+CLAUDE.md hard rule 4 says "True coasts use sprites **150–153** plus the water-tile beach-halo
+mechanism". The rule's core claim (PHYS0 rows 0x01/0x11 = rivers, NOT coast) is **byte-confirmed**
+by the same renderer (river frames 0x01..0x10 / 0x11..0x20 @0xC584–0xC5C0).
+
+**Status**: DISCREPANCY FLAGGED, not resolved. The rule cites VICEROY's renderer; MAPEDIT is a
+parallel implementation. Before any amendment, re-verify VICEROY's coast draw site (the 150–153
+citation chain in viceroy_source/docs/RENDER_CHAIN.md) — the editor evidence suggests the correct
+straight-coast set is 151–154 with 150 being a different overlay, but VICEROY's own bytes must
+decide. No doctrine change; do not renumber in other docs yet.
+
+**Authority pending**: VICEROY.EXE coast site bytes. MAPEDIT side: raw/COLONIZE/MAPEDIT.EXE
+@0xC66E–0xC70A, @0xC550.
