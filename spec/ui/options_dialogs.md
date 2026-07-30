@@ -86,8 +86,62 @@ plays via `func_00518E`. "Queue tune next" API = `func_0050BC`
   numeric-input dialog from DEBUG.TXT `@SOUND` ("Play what sound #?") via
   `0x191f:0x436`, result `[0x9CC8]` → gated play — arbitrary id playback.
 
-## 6. Game Options (`@GAMEOPTIONS`) — *(pending decode)*
-## 7. Colony Report Options (`@COLONYOPTIONS`) — *(pending decode)*
+## 6. Game Options (`@GAMEOPTIONS`, `func_022FD6` @0x022FD6) — B
+Standard checkbox dialog ({width:190, checkbox, options} directives); state
+lives in **word `[0x5382]`** (bytes 0x5382/0x5383). Flow: reset checkbox
+mask (`0x191f:0x26e`) → seed rows 1–8 → run (`lea bx,[0xa61]`
+"GAMEOPTIONS" @0x023061 + `0x181f:0x3fe`) → `and word [0x5382],0x207F`
+@0x02306A → per-row writeback.
+
+| row | option | bit | polarity |
+|---|---|---|---|
+| 1 | Show Indian Moves | 0x8000 | direct (@0x02307C) |
+| 2 | Show Foreign Moves | 0x4000 | direct |
+| 3 | Fast Piece Slide | 0x1000 | direct (consumer @0x004734: slide step 8 vs 10, shifted by zoom) |
+| 4 | End of Turn | 0x0800 | direct (@0x021E4F) |
+| 5 | Autosave | 0x0400 | direct — turn-loop consumer @0x0058D7/@0x005A29 → helper @0x005642: rolling slot 9 each turn + slot 8 on decade boundaries |
+| 6 | Combat Analysis | 0x0200 | direct (@0x05D221) |
+| 7 | Water Color Cycling | 0x0100 | **INVERTED** (bit set = cycling OFF) @0x02303B/@0x0230E2 |
+| 8 | Tutorial Hints | 0x0080 | direct (@0x024AC6) |
+
+Bit 0x2000 (cheat master, §debug_screens.md) is deliberately preserved by
+the 0x207F clear mask. **Side effect**: water-cycling master `[0x372]` =
+!(bit 0x100); when disabling, a vblank-synced full DAC upload restores the
+base palette (`0x181f:0x3f4` @0x023113 → `func_00D1E4`, A000:FC00 shadow →
+ports 3C8/3C9). Same re-derivation at map palette init @0x03BC29.
+
+## 7. Colony Report Options (`@COLONYOPTIONS`, `func_02311A` @0x02311A) — B
+Checkbox dialog ({width:220}); state in **word `[0x5384]`**; run
+`lea bx,[0xa6d]` @0x0231F3; clear `and word [0x5384],0xFC00` @0x0231FC.
+**All 10 bits are INVERTED — each set bit means "suppress"**:
+
+| row | option | bit |
+|---|---|---|
+| 1 | Labels on buildings | 0x0002 (consumer @0x02BBEB) |
+| 2 | Labels on cargo and terrain | 0x0001 (@0x02BC0E) |
+| 3 | Report when colonists trained | 0x0080 (@0x02DF0B…) |
+| 4 | Report food shortages | 0x0040 (@0x02E321) |
+| 5 | Report raw materials shortages | 0x0020 (@0x02E370) |
+| 6 | Report tools needed | 0x0010 (@0x02E5FF) |
+| 7 | Report inefficient government | 0x0008 (@0x02DCF0) |
+| 8 | Report new cargos available | 0x0004 (@0x02E909) |
+| 9 | Report Sons of Liberty membership | 0x0100 (@0x02DC59) |
+| 10 | Report rebel majorities | 0x0200 (@0x0232A7 write) |
+
+## 7a. Persistence (B)
+`[0x5382]` (game options), `[0x5384/5]` (colony options), `[0x5386]` (sound
+mirror) all live in **save block #3 (base 0x5380, size 0x8E)** written
+verbatim by `func_0734F8` / restored by `func_073BB0` — all three dialogs
+survive save/load. Derived-on-load: `[0xA0]/[0xA2]/[0xA4]` re-expanded from
+`[0x5386]` @0x074249; `[0x372]` from bit 0x100. The debug bitfield
+`[0x894]` is in no save block — **session-only**. No config file exists.
+
+## 7b. Dialog framework confirmation (B)
+Builder verb `0x181f:0x3fe` → wrapper @0x06F594: hardwires file "GAME"
+(DS:0x87C) + section from bx, near-calls the engine core at file 0x06F7EF
+(same core as menu_lookup_run). Checkbox channel = bitmask word
+`[0x1F54]`: reset `0x191f:0x26e` (@0x06F54C), pre-seed `0x262`
+(`func_06F554`), read-back `0x306` (`func_06F57E`).
 
 ## 8. Open items (exact trace sites)
 1. Upstream caller of dispatcher `0x181f:0xf78` (stub 0x01B568) — runtime
