@@ -378,3 +378,17 @@ non-water @0x68524–0x685AC; mask weights N=8/S=4/W=2/E=1 (`func_067B84`); fore
 neighbour 8..0x17 AND `(id&7)≠1` — desert scrub never connects (`func_067C54`); O512 fog ring-walk
 neighbour order is the countdown **W→S→E→N, first non-water wins** (`func_067F50`
 @0x680B5–0x6811E) — the prose above says "first land found" without stating the order.
+
+
+## Phase-3 FINAL land verdict (2026-07-31, live pixels) — see RULINGS batch 6
+
+The live Jamestown land window re-rendered from the chain above matched **100.0000% of
+non-overlay pixels**. Two corrections folded in: (1) **beach-halo ground substitution** —
+`analyse_connections` @0x67AD4 overwrites `[0xA8A1]` with the last cardinal land neighbour's
+folded class (W wins) before O513 grounds the water tile, so coastal water is grounded with
+the NEIGHBOUR'S land terrain, coast frames drawn over, water backfilled through the frames'
+0-holes (code-0 quadrant frames disk 0x6C–0x6F are all-zero punch-throughs); (2) the §3
+"0x8C 16×16-at-subcell" residual is dissolved (engine 0x8C = disk 0x8B, 8×8 — convention
+conflation; live-reachable, pixel-exact). Detail-band internals decoded (salt `[0x190]`,
+table DG:0x192, hash `(x&3)·4+(y&3)` vs `((y>>2)·3+(x>>2)+salt−forest)&0xF`, `^0xA`
+alternate); its L1/L2 gates + hills/rivers/mouths/shore/roads still need a richer capture.

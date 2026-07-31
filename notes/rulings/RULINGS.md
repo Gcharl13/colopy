@@ -5987,3 +5987,37 @@ colony screen → map Spring 1505. Reads:
 
 **Authority**: live emulated RAM + on-screen state > static inference, per TRUTH_HIERARCHY
 (running DOS game is the TOP of the trust order).
+
+## 2026-07-31 — Phase-3 FINAL land-compositor ruling (live pixels): 100.0000% non-overlay match; beach-halo ground substitution discovered; the 0x8C "16×16-at-subcell anomaly" dissolved
+
+The live Jamestown land window (capture + same-moment RAM layers, correlation-located terrain
+plane @phys 0x6ECF2 / fog @0x71885, stride 58) was re-rendered from the byte-cited
+O514→O513→O512 chain: **100.0000% of all 41,540 non-overlay pixels match** (RGB565 + palette-
+cycle phase; overlays = units/colony/label, masked). Live-confirmed: land grounds, auto-forest
+fold + forest masks, mountains masks, clean coast edge (pattern 2), the FULL quadrant-halo
+fallback incl. the q3/code-7 case, fog tile + every fog-edge blend, sea-lane ground + sparkle,
+and (again, everywhere) the 1-based frame ruling. Hills/rivers/river-mouths/shore-0x96/roads/
+detail-0x5A/surf-0x68 remain unexercised (need a richer capture); the detail band is ARMED
+(hash internals now decoded: salt [0x190], per-class table DG:0x192, (x&3)·4+(y&3) vs
+((y>>2)·3+(x>>2)+salt−forest)&0xF, ^0xA alternate) with its L1/L2 gates TBD.
+
+**Corrections:**
+1. **Beach-halo ground substitution**: `analyse_connections` (`func_067A24` @0x67AD4) OVERWRITES
+   `[0xA8A1]` with the last cardinal land neighbour's folded class (N,E,S,W order — W wins) and
+   `@0x67B10` reclassifies `[0xA8A2]` — so O513 grounds a coastal WATER tile with the
+   NEIGHBOUR'S LAND terrain, draws the coast frames over it, and backfills water through the
+   frames' 0-holes (code-0 quadrant frames disk 0x6C–0x6F are all-zero "punch-throughs").
+   The phase-3 `render_mapview.py` grounds water tiles with their own water class — its AMER2
+   full-map coasts are subtly wrong wherever coast frames have holes (flagged in the script).
+2. **map_system.md §3's "table[q]=7,q=3 → 0x8C=140 is a 16×16 frame at an 8×8 sub-cell"
+   residual is DISSOLVED**: engine 0x8C = disk 0x8B (8×8). The note conflated engine index
+   with disk frame (disk 0x8C belongs to the river-mouth band = engine 0x8D). The case is
+   live-reachable and pixel-exact — no anomaly.
+3. World-coord convention pinned: `[0xA5A0]/[0xA5A2]` are engine scroll-space = plane index −1
+   (plane index = sidebar Locat); the O512 bounds test emulates the engine's UNCLAMPED
+   neighbour reads (row-wrap bytes at the east edge — visible in live pixels).
+4. Sea-lane sparkle = VGA palette-rotation band indices 120–127 (capture at phase +2); add to
+   the RGB565 note for future capture diffs.
+
+**Authority**: live pixels + live RAM layers (top of TRUTH_HIERARCHY). Artifacts:
+docs/screens/reports/phase3_frontend/landtest_*.
