@@ -150,9 +150,13 @@ the **count-derivation formula is RESOLVED 2026-06-27** — it is **NOT** in ove
 3. The carpenter shortage good is **Hammers (ICONS 54)**, not Tools (ICONS 36).
 4. SoL reads **"(1)"** (digit), not "(I)".
 5. `TERRAIN.SS` is the **base ground sheet** (loaded at boot + map-enter), **not** an orphan.
-6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`), and the
-   minimap window/scale + work-tile markers (`func_026374`/`func_027DB2`) still need a runtime origin
-   trace. The **field-production count formula is now resolved** (resident `func_00A222 @0x00A222`,
+6. The colony screen is **NOT "COMPLETE"**: building *placement* is RNG-driven (`func_025D34`).
+   The **scene-panel terrain tileset is now RESOLVED (B, 2026-07-31)** — it is the map compositor's
+   own TERRAIN.SS+PHYS0.SS 16×16 render of the colony's 5×5 neighborhood, **×1.5-upscaled with a
+   4×4 ordered dither** by `func_00531C`/`func_005296` (§3.8; deterministic, no RNG — a port must
+   replicate the 2→3 duplication + ramp-dither, not swap in raw 16px or naive-NN 24px tiles). Still
+   runtime-open here: the `[0x890]` flag value (gates the colony name/pop text inside the panel)
+   and `func_027DB2`'s caption slot (§3.6). The **field-production count formula is now resolved** (resident `func_00A222 @0x00A222`,
    writer of `[0xA891]`/`[0xA893]`/`[0xA894]`, §0.5/§3.2). The **SoL% formula is now RESOLVED (B,
    2026-06-27, reseg + writer-trace):** it is NOT in an un-extracted overlay — the percent is computed by the
    resident **`func_008524 @0x008524`** (= thunk `0x181F:0xC86`, role "SoL%/rebel-sentiment compute"):
@@ -430,22 +434,76 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
     the frame-lookup path are all resolved**. **B (positions + algorithm + frame path) / per-colony
     shuffle output = RNG (replayable from the seed, verified against live state).**
 
-### 3.8 Terrain scene — `func_026374 @0x026374`
-- Colony cell from `[0x8542]:[bx+0]` (X→`[0x17C]`) / `+1` (Y→`[0x17E]`) `@0x026381`. **B**
-- Scene-cell ptr via `0x181F:0xC5E` (→`func_03200A`) `@0x02638A`. **B**
-- Three page-21 hops set viewport + per-tile select: `0x191F:0x8A4` (→`func_0678FE` clip),
-  `:0x896` (→`func_066A98` per-tile select), `:0x888` (→`func_06693A` viewport origin)
-  `@0x02639A/0x02639F/0x0263A4`. **B**
-- Scene backdrop blit: `push 0x50,0x50,8,0xC8,0,0` + 8 sheet words `[0x839E..0x83A4]×2;
-  0x181F:0x510 @0x0263A9..0x0263D6`. **B**
-- **scene UNIT/worker loop** `@0x0263E5`: count `colony+0x329`; per-record cell `+0xC8`(col)/`+0xDE`
-  (row); **x = cell·24 + 252 (0xFC)**, **y = cell·24 + 60 (0x3C)** (+90 carried); sprite via
-  `0x181F:0x718` (→`func_0060A0`), sheet `[0x839E]`, blit `0x181F:0x254`. **B**
-- **per-tile blit** (companion `@0x066968`): **x = col − [0x9CCC] + 252**, **y = row − [0x9CCA] + 9**,
-  sheet `[0x2DA8]`, blit `0x181F:0x290`; scroll origin = colony (x=[0x17C]−28, y=[0x853C]−40).
-  16-px terrain pitch vs 24-px unit-cell pitch (both byte-confirmed). **B**
-- per-tile sprite select (`func_066A98`): forest type 0x10→glyph 8; coast via `[bx−0x5A8A]`; special
-  terrain via `[di+0x848]`. **B**
+### 3.8 Terrain scene — `func_026374 @0x026374` — **interior art source RESOLVED (B, 2026-07-31)**
+The scene panel's terrain is **the shared map compositor rendering a 5×5 tile neighborhood of the
+colony at native 16×16 from TERRAIN.SS + PHYS0.SS, then upscaled ×1.5 (2→3 pixel/row duplication
+with a 4×4 ordered dither) to 24×24-per-tile** — there is NO dedicated 24-px tileset. Chain
+(every hop thunk-resolved via `data_extracted/thunk_targets.json`):
+1. Colony cell from `[0x8542]:[bx+0]` (X→`[0x17C]`) / `+1` (Y→`[0x17E]`) `@0x026381`; colony ptr via
+   `0x181F:0xC5E` (resident `0x008720`, mid-func entry) → dx `@0x02638A..0x02638F`. **B**
+2. `@0x02639A` `0x191F:0x8A4` → far stub `@0x06891E`: **sets scene latch `[0x18A]=colony ptr`**,
+   calls `0x191F:0x2A4` = `func_068898`, clears `[0x18A]=0` `@0x068926`. (The spec's prior
+   `func_0678FE/066A98/06693A` attributions for the three hops were wrong — superseded by the
+   thunk table + byte read; RULINGS 2026-07-31 batch 5.) **B**
+3. `func_068898 @0x06889C` → `func_06787C` (viewport calc). **Scene mode (`[0x18A]≠0`)
+   `@0x067894..0x0678A9`: viewport `[0x8544]=[0x8546]=5` (5×5 tiles), zoom `[0x184]=0`** →
+   tile pitch `[0x5AD4]=[0x8326]=16>>0=16` `@0x0678AA..0x0678B6`, scale `[0x186]=100>>0=100`
+   `@0x0679F4..0x0679FD`; **origin `[0x8328]=[0x17C]−2`, `[0x832E]=[0x17E]−2`**
+   `@0x0678B9..0x0678D3` (map-edge clamp skipped in scene mode `@0x0678D7`); screen offset
+   `[0x832A]=[0x832C]=0` `@0x067912`. With offsets 0, `func_068898` skips the backdrop restore
+   `@0x0688A0..0x0688AC` and calls the master tile-rect renderer `0x1A1F:0x968` =
+   `func_0685DC(cx−2, cy−2, 5, 5, power)` `@0x068905..0x068918`. **B**
+4. `func_0685DC` per tile: center-x `[0xA5A4]=(col)·16+8 @0x06875F..0x068771`, baseline-y
+   `[0xA5A6]=(row+1)·16−1 @0x068720`; colony-radius test `0x181F:0x6C8([0x18A],relX,relY)`
+   `@0x0687A2..0x0687C1`; per-tile paint `call 0x1B28` = `func_0681A8` `@0x0687D1`. **B**
+5. `func_0681A8` (same painter the map view uses): terrain id via `0x181F:0x6AA` (the `&0x1F` +
+   auto-forest path, hard rule 3); **base ground = `func_067E28` from sheet ptr `[0x16C:0x16E]` =
+   TERRAIN.SS** (plain 16-px blit `0x181F:0x25E` since `[0x184]=0` `@0x067E3A..0x067E63`; loader
+   proof: `push 0x20DA` = DGROUP string `"terrain"` (file `0x1FA7A`), writer `@0x072C5C`);
+   **overlays (forest/mtn/hill/river/road/resource/village) = `func_067DC8` from `[0x174:0x176]` =
+   PHYS0.SS** (plain blit `0x181F:0x254` since `[0x186]=100` `@0x067DDA..0x067E02`; loader:
+   `lea bx,[0x23D0]` = `"phys0"` (file `0x1FD70`), writer `@0x0765AC`). Map-view unit glyphs
+   (`+0x5A`) are suppressed when `[0x18A]≠0` `@0x0682A8/0x0683ED/0x0685B3`. Everything is drawn to
+   surface `[0x839E..0x83A4]` on a (0,0)-based 16-px grid → an **80×80 render**. **B**
+6. Colony-marker + unit-marker layers land on the same 80×80 (before the upscale), with the 5×5
+   viewport globals still in force but `[0x18A]` already cleared: `@0x02639F` `0x191F:0x896` →
+   stub `@0x0672C8` → `0x1A1F:0x922` = `func_067182` (ColonyRecords `0x5D46` stride `0xCA`,
+   visibility `0x191F:0x996`, fog `0x181F:0x74A`) → marker painter `0x181F:0x2A8` =
+   **`func_004314`**: from **ICONS `[0x83E:0x840]`** — marker sprite `((frame−1)&3)+1` = ICONS 1..4
+   (colony frame byte `record+0xBE` `@0x004385..0x004432`; stockade/fort/fortress level queried ×3
+   `@0x004337..0x00436E`), **pennant sprite `0x77+power`** (blink override `0x83`)
+   `@0x004452..0x00447E`, population number `@0x0044C0..0x0044EF` (color 0xF/0xA/0xB per
+   `record+0x1C` bits `@0x00448B..0x0044A4`), colony-name text (`record+2`) `@0x0044FA..0x004529`;
+   name/number enabled iff `[0x184]==0 && [0x890]==0` `@0x067254..0x067289`. Then `@0x0263A4`
+   `0x191F:0x888` → stub `@0x06716A` → `0x1A1F:0x94C` = `func_067082` (unit table `0x54EC` stride
+   `0x12`, count `[0x539A]`) → unit-marker verb `0x181F:0x2B2` = `func_003E40`. **B**
+7. **The ×1.5 upscale** `@0x0263A9..0x0263D6`: `0x181F:0x510` = **`func_00531C`** — stretch-copy
+   src (0,0,**80×80**) → dst (**200,8**,120×120) within the same surface `[0x839E]` (args:
+   ctx×2, srcXY 0,0, dstXY 0xC8,8, w 0x50, rows 0x50). It duplicates every 2nd pixel
+   (`dl` toggle `@0x005393..0x005397`) and every 2nd row (`ah`/`dh` toggle `@0x0053C2..0x0053D6`)
+   = exact 2→3 scaling, and passes **every written pixel through `func_005296`**
+   (`lcall @0x005389`) — a positional 4×4 dither (`(dstoff&3)+(row&3)·4` `@0x0052A6..0x0052B7`)
+   that jitters the palette index **within its 16-color ramp** for palette rows `0x10..0x87`
+   `@0x0052B9..0x005314`. This dithered 2:3 resample is why the Phase-3 render could not match
+   TERRAIN.SS/PHYS0 under any grid phase — the "runtime-composed tileset" is this upscaler's
+   output. **B**
+8. Geometry: the 120×120 upscaled scene sits at **(200,8)**, tile pitch **24**; the visible
+   **(224,32,72,72) panel = the central 3×3 tiles** of the 5×5 (outer ring overdrawn by the
+   right-panel fill `func_0264A8 @0x0264C3..0x0264E1`: rect (200,8,120,120) color `[0x835]` on
+   surface `[0x2DA8]`, then the field icons — panel composition order per §2.2). **B**
+- **scene UNIT/worker loop** (drawn AFTER the upscale) `@0x0263E5`: count `colony+0x329`; per-unit
+  cell arrays `DS:0xC8+i`(col)/`DS:0xDE+i`(row), **signed** rel −2..+2; **x = cell·24 + 252 (0xFC)**,
+  **y = cell·24 + 60 (0x3C)** `@0x02646A..0x026488` — i.e. 16-px sprites centered +4 in the 24-px
+  cells of the upscaled grid (center cell (252,60) = panel tile (224+4+24, 32+4+24)); sprite via
+  `0x181F:0x718` (→`func_0060A0`) **+0x5A** `@0x02648B`; **sheet = `[0x174:0x176]` = PHYS0.SS**
+  (`push [0x176],[0x174]` `@0x026473..0x026477`), blit `0x181F:0x254` onto surface `[0x839E]`
+  `@0x026492`. (The old "sheet `[0x839E]`" reading was wrong — `[0x839E..0x83A4]` is the
+  **destination surface ctx quartet**, not a sprite sheet.) **B**
+- **Re-attribution:** `func_066968` (and its `@0x066A98` select logic, `[bx−0x5A8A]` LUT,
+  `[0x848]` owner colors, x=col−`[0x9CCC]`+252 / y=row−`[0x9CCA]`+9 onto `[0x2DA8]`) is the **map
+  screen's 1-px-per-tile corner minimap cell writer** (it writes single BYTES per tile, pitch
+  `[0x2DAA]`), **not** part of `func_026374`'s scene — the prior §3.8/§4 attribution is
+  withdrawn (RULINGS 2026-07-31 batch 5). **B**
 
 ### 3.9 Stockpile bar — `func_0281D6` (warehouse twin of Europe's market bar)
 - Background fill `@0x0281DB`: **bar (x=0, y=179, w=320, h=21)**. **B**
@@ -469,8 +527,9 @@ the rect or sprite). Colors are EUROPE/COLONY.PIK palette indices → RGB; fonts
 | Surrounding-tile minimap | (121,130,84,48) | **6× ICONS sprite 0x7B (123)** tiles (or centered caption if `[0x33C]==0`) | — | per-tile | `func_027DB2 @0x027DB7` | B |
 | SoL / cargo / msg panel | (211,130,91,48) | mode-switch on `[0x337]`: 0=SoL/garrison icon bar (`func_0275CE`, no string), 1=cargo+caption `[0x939A]` (`func_027746`), 2=cargo+caption+hammer strip (`func_027BB6`) | FONTTINY | — | `func_02814C @0x02814F` (cases @0x0275CE/0x027746/0x027BB6) | B |
 | Buildings (15 slots) | `DS:0x266` table (stride-4: x@`+0`, y@`+2`, drawn y+8) | **BUILDING.SS** frame (`func_026DD4 @0x026E4E` blit, reseg 2026-06-27): occupied ⇒ **`def_id+1` EXE-sheet** (`=def_id` in lab bundle), special: `def_id 0`+query0==0→`0x11`(bundle 16), `def_id 0xF`/`0x11`→`0x2F`/`0x30`; empty (`byte[0x8E82+i]==255`) ⇒ `DS:0x260[byte[0x8D62+i]]−1` | — | — | `func_02701C @0x02701C` → `func_026DD4 @0x026DD4` | B |
-| Terrain scene tiles | x=col−[0x9CCC]+252, y=row−[0x9CCA]+9 | sheet `[0x2DA8]`, blit `0x181F:0x290` | — | per-tile | `func_026374 @0x066968` | B |
-| Scene units | x=cell·24+252, y=cell·24+60 | sheet `[0x839E]` via `func_0060A0` | — | — | `func_026374 @0x0263E5` | B |
+| Terrain scene tiles | 5×5 tiles @16px rendered at (0,0) of `[0x839E]`, ×1.5-dither-upscaled to (200,8,120,120); visible window = central 3×3 = (224,32,72,72) | TERRAIN.SS `[0x16C:0x16E]` ground + PHYS0.SS `[0x174:0x176]` overlays via `func_0685DC`/`func_0681A8`; upscaler `func_00531C` + dither `func_005296` | — | per-tile | `func_026374 @0x02639A..0x0263D6` (§3.8) | B |
+| Scene colony marker | map colony-marker layer on the pre-upscale 80×80 | ICONS `[0x83E]` marker 1..4 + pennant `0x77+power` (+pop#/name iff `[0x890]==0`) | FONT `[0x89E]`/`[0x268A]` | 0xF/0xA/0xB | `func_067182` → `func_004314` (§3.8 step 6) | B |
+| Scene units | x=cell·24+252, y=cell·24+60 (post-upscale, 24px cells) | PHYS0.SS `[0x174:0x176]`, sprite `func_0060A0`+0x5A | — | — | `func_026374 @0x0263E5` | B |
 | Stockpile strip | (0,179,320,21); 16 cells, pitch 19, icon-Y 181 | ICONS `good+0x17` (23..38); qty | FONTTINY | qty white `0x0F`, **red `0x0C` when over warehouse cap** (`0x181F:0xD3A`) | `func_0281D6 @0x0281DB` | B |
 | Warehouse-bar right readout | (306,179) | heap **string #`[0x2F5E]` = `0x219` (537) = "Sons of Liberty"** (oracle-resolved 2026-06-27; **NOT gold**) | FONTTINY | white `0x0F` | `@0x0283F1` (`push 0xf,0xb3,0x132,[0x2f5e]→0x181F:0x22`) | B |
 | **Gold (treasury)** | **rendered as part of the TITLE** (§3.1 field 7), not a separate colony-composer blit | `PowerRecord+0x2A` via `[0x84FC]`, formatted into title buffer by `0xd1d:0x11b4` `@0x026A61` | FONTTINY (title) | green title latch | title `func_0268CE @0x026A61` (paint `0x181F:0xB0 @0x026AA6`) | B |
@@ -493,8 +552,11 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
 
 ## 5. Assets & text
 - **Sheets:** **BUILDING.SS** (buildings, frame per §0.2 RAM-verified rule), **ICONS.SS** (`[0x83E]`: commodity 0x17..0x26,
-  colonist, flag 0x44, surrounding-tile 0x7B), terrain/scene sheet `[0x2DA8]`, scene-unit sheet
-  `[0x839E]`. Backdrop **COLONY.PIK** (key 0x0BA0) — **a 320×72 *scene strip*, NOT a full-screen
+  colonist, flag 0x44, surrounding-tile 0x7B; also the scene colony-marker 1..4 + pennant
+  `0x77+power`, §3.8 step 6), **TERRAIN.SS via `[0x16C:0x16E]`** (scene ground) and **PHYS0.SS via
+  `[0x174:0x176]`** (scene overlays + scene-unit sprites) — loaders byte-cited in §3.8 step 5.
+  `[0x2DA8..0x2DAE]` and `[0x839E..0x83A4]` are **surface context quartets** (screen resp. map/scene
+  work surface), *not* sprite sheets (2026-07-31 correction). Backdrop **COLONY.PIK** (key 0x0BA0) — **a 320×72 *scene strip*, NOT a full-screen
   background** (build-verified 2026-06-23 from the decoded bundle: `COLONY.png` is 320×72). The lower
   ⅔ of the screen is the composer's wood-pattern region fill (step 4, `func_02633E`), panels over it.
   Note: COLONY.PIK has its **own palette** (≈ VICEROY.PAL), distinct from the **gameplay palette**
@@ -651,7 +713,8 @@ Rebuilt from this sheet + assets + an exact replay of the `func_025D34` placemen
 vs `colony_live_1505.png` (cross-checked vs `11_colony_screen.png`): **every structural element
 matched or produced a recorded correction; all 15 building plots pixel-exact from the RNG
 replay** (global 74.7% — the residual is unmodeled runtime backdrops: the town sand stipple,
-the scene-panel terrain tileset (§0.6 item 6 still open), the saw art, town-edge decor, cursor).
+the scene-panel terrain tileset (**since RESOLVED — §3.8: TERRAIN.SS+PHYS0 16px render,
+×1.5 dither-upscaled by `func_00531C`/`func_005296`**), the saw art, town-edge decor, cursor).
 
 Confirmed: composer order; step-4 fill = WOODTILE.SS from (0,0); title strip (FONTTINY, '$'
 glyph, 100% identical); building frames incl. def0→0x11 forced-stockade and empty-slot frames;
@@ -665,4 +728,5 @@ Corrections (full detail RULINGS.md 2026-07-31 batch 4): placement-chain facts (
 left-aligned at panel origin+2; right panel x=207; "minimap" gloss → cargo-crate dock; hammers
 (15/22/29,104); **the (306,179) heap-537 "Sons of Liberty" resolution refuted — the string is
 "Exit"** (systemic oracle failure, seen in Europe too). Runtime-open: `[0x8D80]` live value; the
-scene-panel tileset origin; the sand-stipple generator; the saw/right-edge decor sprites.
+sand-stipple generator; the saw/right-edge decor sprites. (The scene-panel tileset origin was
+closed 2026-07-31 — §3.8 / RULINGS batch 5.)

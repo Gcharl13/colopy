@@ -5911,3 +5911,45 @@ strip blitted at y=128, NO embedded palette (renders on VICEROY.PAL — supports
 **Authority**: rendered pixels vs live captures + re-disassembled placement chain >
 prior doc claims, per notes/TRUTH_HIERARCHY.md. Artifacts:
 docs/screens/reports/phase3_frontend/colony_*.png.
+
+## 2026-07-31 — Colony scene panel interior (batch 5): art source RESOLVED; three §3.8 thunk attributions overturned
+
+**Question**: where do the colony screen's scene-panel terrain pixels come from (Phase-3 could not
+reproduce them from TERRAIN.SS/PHYS0/AMER2 under any grid phase — "runtime-composed tileset").
+
+**Ruling (B)**: the interior is the **shared map compositor** rendering the colony's **5×5 tile
+neighborhood at native 16×16 from TERRAIN.SS + PHYS0.SS**, then **upscaled ×1.5 (2→3 pixel/row
+duplication) with a positional 4×4 ordered dither** that jitters each written pixel within its
+16-color palette ramp. There is **no dedicated 24-px terrain sheet**; nothing is RNG — the
+resample is fully deterministic. Chain: `func_026374 @0x02639A` → `0x191F:0x8A4` → stub
+`@0x06891E` (sets scene latch `[0x18A]=colony ptr`) → `func_068898` → `func_06787C` (scene mode
+`@0x067894..0x0678A9`: viewport 5×5, `[0x184]=0` → 16px pitch `[0x5AD4]=[0x8326]`, scale
+`[0x186]=100`, origin colony−(2,2), screen offset 0) → `func_0685DC` → per tile `func_0681A8`
+(ground `func_067E28` ← sheet `[0x16C:0x16E]`; overlays `func_067DC8` ← `[0x174:0x176]`) onto
+surface `[0x839E]` at (0,0) = 80×80; then `func_026374 @0x0263A9..D6` `0x181F:0x510` =
+**`func_00531C`** stretch-copies (0,0,80,80)→(200,8,120,120) with per-pixel dither
+**`func_005296`**. Visible (224,32,72,72) panel = central 3×3 of the 5×5 at 24px. Colony markers
+(`func_067182`→`func_004314`, ICONS 1..4 + pennant 0x77+power, pop#/name iff `[0x890]==0`) and
+unit markers (`func_067082`→`func_003E40`) are drawn on the 80×80 BEFORE the upscale; the worker
+sprites are drawn AFTER it at 24px pitch (x=24c+252, y=24r+60) from PHYS0.
+
+**Sheet-handle proof**: `[0x16C:0x16E]` written `@0x072C5C` by a loader called with DGROUP string
+`0x20DA` = `"terrain"` (file 0x1FA7A); `[0x174:0x176]` written `@0x0765AC` with `lea bx,[0x23D0]`
+= `"phys0"` (file 0x1FD70). Independently re-confirms hard rule 5 (TERRAIN.SS = base ground under
+PHYS0 overlays) at the pointer level.
+
+**Overturned (were un-byte-verified glosses)**: §3.8's hop targets "`0x8A4`→`func_0678FE` clip /
+`0x896`→`func_066A98` per-tile select / `0x888`→`func_06693A` viewport origin" — the thunk table
+(`data_extracted/thunk_targets.json`) + byte read resolve them to stubs `0x06891E` (terrain scene
+via `func_068898`), `0x0672C8` (colony layer `func_067182`), `0x06716A` (unit layer
+`func_067082`). Also withdrawn: "`func_026374` per-tile blit companion `@0x066968`, sheet
+`[0x2DA8]`" — `func_066968` is the MAP screen's 1-px-per-tile corner-minimap cell writer (byte
+stores, LUT `[bx−0x5A8A]`, owner colors `[0x848]`), unrelated to the scene; and "scene-unit sheet
+`[0x839E]`" — `[0x839E..0x83A4]` (like `[0x2DA8..0x2DAE]`) is a destination SURFACE context
+quartet, the sprite sheet is PHYS0 `[0x174:0x176]`.
+
+**Runtime-open remainder**: live value of `[0x890]` on the colony screen (gates marker name/pop
+text inside the panel); `func_003E40`'s unit-marker sprite mapping (resident, not yet decoded).
+
+**Authority**: VICEROY.EXE bytes (reseg pages 02/15 + resident raw disasm at the cited offsets) +
+thunk_targets.json > prior spec wording, per notes/TRUTH_HIERARCHY.md.
