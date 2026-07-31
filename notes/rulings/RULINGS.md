@@ -5844,3 +5844,32 @@ text NOT gold in the captured state.
 
 **Authority**: rendered pixels vs live captures + raw asset/EXE bytes (func_00E146 disasm,
 string-absence scans) > prior tier-B doc claims, per notes/TRUTH_HIERARCHY.md.
+
+## 2026-07-31 — Phase-3 pixel rulings (batch 2): SS frame-descriptor anchor = (center-x, bottom-y); King-audience §1 corrections; @LEADERNAME font refinement
+
+Render-and-diff of the leader-name-entry and King-audience screens (pixel-identical rebuilds,
+residual = mouse cursor only; docs/screens/reports/phase3_frontend/):
+1. **GENERAL: the loaded .SS frame descriptor stores an (anchor-x = center-x, anchor-y = bottom-y)
+   pair; on-screen x = ax−⌊w/2⌋, y = ay−h+1.** Evidenced twice independently: KING1.SS desc
+   (94,198), 189×187 → drawn at (0,12) (99.6% match at (0,12) vs 15.7% one px off); ENGLND1.SS
+   desc (118,121), drawn at (32,0) exactly. Resolves ENDGAME §1.5's portrait-y TBD and explains
+   why the `push 0x64` "portrait x=100" was wrong — the placement is asset-anchored, not the
+   pushed literal.
+2. **King audience corrections** (ENDGAME_SCREENS_VICEROY_DECODE §1): backdrop = **KINGLSS1.PIK**
+   (throne room + blank scroll); **KING1.SS is the outcome-selected FOREGROUND figure (king+dog,
+   189×187 at (0,12))**, not the backdrop; nation sheets are **ENGLND1.SS/ENGLND2.SS** (stem+digit
+   — "ENGLND+KINGLOSE" naming refuted; ENGLND1 = throne-canopy banner at (32,0)); the byte-true
+   pen stores (242,47) are register values, NOT the on-screen text origin — actual layout: 4-line
+   header per-line centered on x≈271.5 (y=29..61), 9-line body left-aligned x=232 pitch 8 (=H+1);
+   the glyph runner (func_06F594 chain, still untraced) re-lays-out under flags [0x1F56]|=0x18.
+   FONTKING metrics pixel-perfect.
+3. **@LEADERNAME dialog font = FONTINTR** — refines (does not overturn) the batch-1 "boot font =
+   FONTTINY" ruling: FONTTINY applies only to dialogs carrying the `@smallfont` directive
+   (@BEGINMENU has it; @LEADERNAME does not). "Walter Raleigh" default, the '_' entry cursor, and
+   the engine's X=160−W/2 centering all pixel-confirmed; the @width=300 box draws NOTHING visible
+   on this screen (no frame) — box geometry unverifiable there.
+Measured-not-cited (R): name-entry field outline rect (79,98,167,14) green + text-bbox background
+fill; king text inks (level3 = black idx 0); KINGLSS/ENGLND digit-variant selection untraced.
+
+**Authority**: rendered pixels vs live captures + asset descriptors > prior doc wording, per
+notes/TRUTH_HIERARCHY.md.

@@ -54,7 +54,10 @@
   (`func_070580`, `@DIFFICULTY`) → nation picker (`func_070A1A`,
   `@PICKNATION`; quick-start `[0x828]` randomizes) → WOODPANL backdrop →
   **`@LEADERNAME`** entry (width 300, maxlen 23, default = the nation's
-  leader name `[0x540E+n·0x34]`, result copied back) → briefings A/B →
+  leader name `[0x540E+n·0x34]`, result copied back; **font = FONTINTR** —
+  no `@smallfont` directive, pixel-confirmed 2026-07-31; the '_' entry
+  cursor and X=160−W/2 centering also pixel-confirmed; the @width box
+  draws no visible frame on this screen) → briefings A/B →
   nation records init (all AI, chosen human) → optional `@MULTI` hot-seat
   checkbox dialog (`spec/ui/tutorial.md` §2).
 

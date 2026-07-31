@@ -118,3 +118,22 @@ maps the pair to the backdrop SS:
 <!-- SCORE_SECTION -->
 <!-- DECLARATION_SECTION -->
 <!-- CLOSING_SECTION -->
+
+
+---
+
+## Phase-3 pixel corrections to §1 (2026-07-31, RULINGS.md)
+
+- Backdrop = **KINGLSS1.PIK** (throne room + empty chair + blank scroll) — the "KING1/KINGLOSE/
+  KINGWIN backdrop" wording is corrected: **KING1.SS is the outcome-selected FOREGROUND sheet**
+  (king + dog figure, 189×187), drawn at **(0,12)** via the frame-descriptor anchor convention
+  (desc = center-x/bottom-y; RULING 2026-07-31 batch 2). §1.5's portrait-y TBD is resolved: y=12,
+  bottom-anchored to row 199; the `push 0x64` is not the on-screen x.
+- Nation sheets are **ENGLND1.SS / ENGLND2.SS** (nation stem + digit) — "ENGLND+KINGLOSE" naming
+  refuted. ENGLND1 = the throne-canopy banner at (32,0) (same anchor convention).
+- The pen stores (242,47) @0x075526/@0x07552C are register values, **not** the on-screen text
+  origin: measured layout = 4-line header per-line centered on x≈271.5 (tops y=29..61) + 9-line
+  body left-aligned x=232, pitch 8 (=FONTKING H+1). The glyph runner re-lays-out under
+  `[0x1F56]|=0x18` (func_06F594 chain — open item). FONTKING metrics pixel-perfect.
+- Render evidence: docs/screens/reports/phase3_frontend/king_sidebyside.png (pixel-identical
+  except the mouse cursor).

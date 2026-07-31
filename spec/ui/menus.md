@@ -87,7 +87,8 @@ the OPENBORD decoration, runs `@BEGINMENU`, and dispatches the result.
 
 | step | action | @asm | tier |
 |------|--------|------|------|
-| run `@BEGINMENU` | `lea bx,[0x2345]("BEGINMENU"); lcall 0x181F:0x3FE` (runner → `func_06F594` @0x06F594, page 0x17) returns 1-based index in AX | **@0x075C60** | B |
+| boot color/tile mode | `push cs; call 0x4F0D` → trampoline `@0x07639D` (`ljmp 0x1A1F:0xD74`) → **boot-mode setter `@0x0734BC`**: gold hilite `[0x1F4E]=0xFC`, text `[0x1F4A]=0xFE`, frame ring `[0x1F44]=0x2E`, bevel `[0x1F46]=0xFD`/`[0x1F48]=0x37`, selection `[0x1F40]=0x37`, **plaque tile `[0x1F6C]=0x9400` = the OPENTILE.SS tile record** (§3) | **@0x075C52** | B (Phase-3 promoted 2026-07-31) |
+| run `@BEGINMENU` | `lea bx,[0x2345]("BEGINMENU"); lcall 0x181F:0x3FE` (runner → wrapper `@0x06F594`: ax=section, bx=`[0x87C]`="GAME" → `0x181F:0x998` = `func_06F51A`, which builds via `0x191F:0x182`=`func_06F0F4` and runs via `0x191F:0x16A`=`func_06E3D0`) returns 1-based index in AX | **@0x075C60** | B |
 | `dec ax` ladder | **1=exit** (`jmp 0x75F8D`); **2=load-game**; **3=setup/scenario-list**; **4=new-game** | **@0x075C6D** | B |
 | opt 3 SETUP | `lea bx,[0x234f]("AMERICA"); lcall 0x181F:0x3FE` → `@AMERICA` scenario list; per-power init loop `[bx+0x543F]=1`, `imul 0x34` | @0x075CE5 / @0x075AB4 | B |
 | opt 2 LOAD | re-run `@AMERICA` + MAPTOLOAD file dialog `call 0x763b6` (args "GAME","MAPTOLOAD","\*.MP"); WOODPANL backdrop `push 0x236B; lcall 0x191F:0x87A` | @0x075CE5 / @0x075D14 / @0x075E00 | B |
