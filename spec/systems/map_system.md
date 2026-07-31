@@ -338,3 +338,38 @@ bespoke one. **B (cross-ref to the popup framework).**
    `[0x18e]==3` → **strip** to unforested base `id&7` (0..7) (`@0x6238`); default →
    raw masked id. (Also re-confirms **16 ≠ Arctic** — id 16 is a forest id folding
    to 8.) **B.**
+
+---
+
+## Phase-3 render-and-diff verdict (2026-07-31) — map-view compositor
+
+The compositor chain above was implemented from this sheet alone
+(`docs/screens/reports/phase3_frontend/render_mapview.py`) and verified against the live capture
+`docs/screens/06_ingame_map.png`. Honesty note: **that capture's session played "Start a Game in
+NEW WORLD" — a generated map, NOT AMER2** (its sidebar `Locat:(50,42)` "(Sea Lane)" is impossible
+on AMER2), so window correlation against the AMER2 render is impossible in principle; the
+verification instead re-rendered the capture's own window state (scroll origin (42,35) from the
+sidebar + caravel + the minimap's 15×12 white rect — which independently confirms §minimap
+geometry and zoom-0 span).
+
+**Result: 100.0000% pixel-exact** (45,056/45,056 non-overlay pixels; caravel + cursor excluded)
+after modeling the capture's RGB565 framebuffer (`(v<<2)|(v>>4)` then floor to 5/6/5 bits — anyone
+diffing future captures needs this). Rules CONFIRMED against live pixels: viewport (0,8)–(240,200)
+zoom-0 15×12@16px; fog tile engine 0x95 (disk 0x94); Ocean vs Sea-Lane ground frames 10/11
+(hard-rule-2's 25/26 split visible on screen); the O512 dither-blend (stencil engine 0x69+dir,
+disk 0x68..0x6B N,E,S,W, index-0 dots + backfill) on both the class-boundary and fog-edge paths;
+the 1-based frame ruling (an off-by-one is visibly wrong; zero-mismatch rules it in). Land rules
+(forest/relief/river/coast/halos) were NOT exercisable in this capture (no explored land) — the
+full-map AMER2 render (`docs/screens/reports/phase3_frontend/mapfull_render.png`) is
+self-consistent and produces the correct Americas structure, but a land-window capture is still
+needed for live confirmation.
+
+New byte-facts pinned by the implementation (from the disasm, recorded here):
+`analyse_connections` quadrant codes (own cardinal |=4 = N,E,S,W for q0..q3; next-clockwise |=1;
+diagonal |=2 @0x67ABD–0x67AEF); the quadrant fallback draws all four quadrants unconditionally
+(code 0 ⇒ engine 0x6D+q) for any water tile with ≥1 land neighbour, open water takes the early
+ground+O512 path @0x68274; river mouths gated `terrain&0xC0`, per-cardinal neighbour bit 0x40 and
+non-water @0x68524–0x685AC; mask weights N=8/S=4/W=2/E=1 (`func_067B84`); forest connectivity =
+neighbour 8..0x17 AND `(id&7)≠1` — desert scrub never connects (`func_067C54`); O512 fog ring-walk
+neighbour order is the countdown **W→S→E→N, first non-water wins** (`func_067F50`
+@0x680B5–0x6811E) — the prose above says "first land found" without stating the order.
