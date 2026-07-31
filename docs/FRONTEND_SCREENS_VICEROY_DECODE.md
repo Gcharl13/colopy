@@ -156,7 +156,7 @@ func_070A1A @0x070A1A   enter 0x314
 For nation index `i` (0..3), the cell origin is computed as a **2×2 grid**:
 - **x = (i mod 2)·`0x63`(99) + `0x70`(112)** ⇒ columns at **x=112, 211** (`@0x07079C`/`0x07079F`).
 - **y = (i div 2)·`0x5B`(91) + `0x0D`(13)** ⇒ rows at **y=13, 104** (`@0x0707A7`/`0x0707AA`).
-- Cell hit size **w=`0x52`(82), h=`0x58`(88)** (`@0x070BC0`/`0x070BC2`, §3.5).
+- Cell hit size: pushes `0x52`(82) and `0x58`(88) (`@0x070BC0`/`0x070BC2`, §3.5) — **arg labels CORRECTED by Phase-3 pixel diff (2026-07-31): on screen the cell is 88 WIDE x 82 TALL** (the highlight rect in the live capture starts at (112,13) and extends 88x82; the spec-as-written 82x88 mis-fits by 98.8%->99.9% swap test). The w/h labeling of the hit/draw primitive's args in §0 was transposed; the *values* are right.
 
 | nation | @GAME.TXT | row src | cell (x,y) | w | h |
 |--------|-----------|---------|-----------|---|---|
@@ -232,7 +232,7 @@ For level `i` (0..4), `idx=i+1` is split by **3** (`cx=3` @`0x0702C9`; `idiv` tw
 - **x = (idx mod 3)·`0x69`(105) + `0x17`(23)** (`@0x0702DA`/`0x0702DD`).
 - **y = (idx div 3)·`0x60`(96) + 7** (`@0x0702F2`/`0x0702F7`), with a **−1** row adjust when
   row>1 (`@0x0702E5`).
-- Cell hit/fill size **w=`0x5A`(90), h=`0x44`(68)** (`@0x06FD…`/draw-cell `@0x07033A`/`0x070342`;
+- Cell hit/fill size: pushes `0x5A`(90) and `0x44`(68) (`@0x06FD…`/draw-cell `@0x07033A`/`0x070342` — **arg labels CORRECTED by Phase-3 pixel diff (2026-07-31): on screen the cell is 68 WIDE x 90 TALL** (spec-as-written would run x=233+90=323 off the 320px screen; the swapped rect matches the capture at 99.96%);
   hit-test `@0x0706FD`).
 
 ⇒ a **3-wide layout** for 5 cells (row0: idx1,2 → cols 1,2; row1: idx3,4,5 → cols 0,1,2,
@@ -398,3 +398,32 @@ shape known; per-row contents TBD).
 - **Difficulty:** 5 level literals (`DS:0x8394`), per-level ink switch cases, font, title blit, clip rects.
 - **Customize:** LABELS index→literal bindings, font id, highlight-box color, the two
   Difficulty/Power sub-pop-ups (`func_070302`/`func_070494`), clip rects.
+
+---
+
+## Phase-3 render-and-diff verdicts (2026-07-31) — nation & difficulty screens
+
+Both screens were rebuilt purely from this doc + original assets and pixel-diffed against the
+live captures (`docs/screens/02/03_*.png`, de-scaled from 2× nearest-neighbor 640×400-in-1024×768,
+RGB565-quantized capture path). Result: **99.96% (difficulty) / 99.86% (nation) identical**
+(cursor excluded). Artifacts: `docs/screens/reports/phase3_frontend/`.
+
+**Confirmed (pixel-exact):** PIK identity + full-screen composite (each screen uses its OWN
+embedded PIK palette; the two differ at 157 indices); grid origin math (difficulty (idx%3)·105+23 /
+(idx//3)·96+7; nation (i%2)·99+112 / (i//2)·91+13); label literal sources (@DIFFICULTY row
+uppercased+':'; @PICKNATION row uppercased+':'); the MADSPACK/FAB/.FF codecs and the 2026-07-28
+`ch−1` glyph ruling (glyph-exact text); advance = glyph width.
+
+**Falsified/corrected:** (1) cell w/h arg labels transposed (see §3/§4 corrections above);
+(2) §4.2 "title at y≈4" is not an absolute — measured title tops y=16/29 (difficulty),
+y=36/49 (nation).
+
+**Measured (previously TBD — now measured facts, still needing byte-citation to be B):**
+titles = LABELS.TXT `@MISC` rows 162/163 ("Choose"/"Difficulty Level") and 170/171
+("Select"/"European Power"), FONTINTR, centered over the LEFT margin column (~x 0..112), inks
+level1=254 (80,148,48) / level2=253 / level3=0; finish prompt "(Click Here When Finished)" =
+`@MISC` 161 + parens, FONTTINY ink 254, y=81 (difficulty) / y=182 (nation) — present on BOTH
+screens (draw-all descriptions omitted it); per-level second label = `@MISC` 165–169
+(Easiest..Toughest); per-nation trait label = `@MISC` 173–176 (Immigration/Cooperation/
+Conquest/Trade) at cell bottom; selection highlight = 1px outline, ink 9 (blue) difficulty /
+12 (red) nation; cell labels drawn with black shadow at (1,0),(0,1),(1,1).
