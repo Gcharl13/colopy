@@ -642,3 +642,27 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
 7. **Stockpile bar's position in the composer order — RESOLVED (B), 2026-06-23.** Step 8
    (`call 0x2CA19` → `0x191F:0x654`) is `func_0281D6`; all 12 composer head-calls are now named
    sub-renderers and **no menu/button bar** is drawn — the top is the title strip (§3.1, item 1).
+
+---
+
+## Phase-3 render-and-diff verdict (2026-07-31)
+
+Rebuilt from this sheet + assets + an exact replay of the `func_025D34` placement chain, diffed
+vs `colony_live_1505.png` (cross-checked vs `11_colony_screen.png`): **every structural element
+matched or produced a recorded correction; all 15 building plots pixel-exact from the RNG
+replay** (global 74.7% — the residual is unmodeled runtime backdrops: the town sand stipple,
+the scene-panel terrain tileset (§0.6 item 6 still open), the saw art, town-edge decor, cursor).
+
+Confirmed: composer order; step-4 fill = WOODTILE.SS from (0,0); title strip (FONTTINY, '$'
+glyph, 100% identical); building frames incl. def0→0x11 forced-stockade and empty-slot frames;
+COLONY.PIK at (0,128) under plain VICEROY.PAL; middle-panel caption exactly centered in the
+byte-cited rect; stockpile bar 100.0% identical (icons disk 22..37 at y=181, digits at
+(9+19i,194), selected-cell green box); SoL band sprites all MSE-0; field-production 4-corn
+strip; carpenter colonist+box.
+
+Corrections (full detail RULINGS.md 2026-07-31 batch 4): placement-chain facts (16-bit srand,
+15-group table, `[0x8D80]`≠0 ∈ {56667,1460}); building blit y (drop the extra +8); plaza row
+left-aligned at panel origin+2; right panel x=207; "minimap" gloss → cargo-crate dock; hammers
+(15/22/29,104); **the (306,179) heap-537 "Sons of Liberty" resolution refuted — the string is
+"Exit"** (systemic oracle failure, seen in Europe too). Runtime-open: `[0x8D80]` live value; the
+scene-panel tileset origin; the sand-stipple generator; the saw/right-edge decor sprites.

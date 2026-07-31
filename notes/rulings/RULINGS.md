@@ -5873,3 +5873,41 @@ fill; king text inks (level3 = black idx 0); KINGLSS/ENGLND digit-variant select
 
 **Authority**: rendered pixels vs live captures + asset descriptors > prior doc wording, per
 notes/TRUTH_HIERARCHY.md.
+
+## 2026-07-31 — Phase-3 pixel rulings (batch 4): colony RNG placement validated by replay (with 3 corrections); the "heap-537 = Sons of Liberty" oracle refuted in TWO screens
+
+**Colony building placement (`func_025D34`) — VALIDATED END-TO-END**: replaying the full chain
+(seed → LCG → category shuffle → present gate → BUILDING.SS frames) reproduces the live capture's
+Jamestown layout with every sprite pixel-exact. Corrections recovered by the replay:
+1. **`srand @0x103C2` keeps only the LOW 16 BITS** of the 32-bit seed (`mov [0x28ee],ax;
+   mov word [0x28f0],0`) — effective seed space is 16-bit.
+2. **The group table is NOT floor(id/3)**: the registration block @0x0746BC (42 calls) yields
+   **15 groups** (Capitol 30/31 shares group 3 with Town Hall; Stable 17 with Warehouse in
+   group 5; Custom House 18 alone; Fur Trader opens group 11). Category = NAMES `@BUILDING`
+   numeric column 3 (loaded to `0x8F87+id*12` @0x74D2F); over the 15 group REPRESENTATIVES the
+   histogram is exactly [7,4,2,1,1] — resolving the archived "col3 histogram ≠ counts" objection
+   (that histogram was over all 42 defs).
+3. **The `[0x8D80]` seed term is NONZERO**: the pure map-position seed (41<<8)+46 = 10542 does
+   NOT reproduce the documented plot set; exactly 2 of 65536 seeds do (1673, 12002 — layout-
+   identical), implying `[0x8D80]&0xFFFF` ∈ {56667, 1460}. Pinning which needs a live RAM read
+   of 0x8D80 (runtime-open).
+
+**"Heap string 537 (0x219) = 'Sons of Liberty' at (306,179)" — REFUTED, SYSTEMIC**: in BOTH the
+Europe and colony screens the pixels at the byte-cited draw site are the FONTTINY string
+**"Exit"** (fit IoU 1.0; "Sons of Liberty" cannot fit 15px). The prior heap-slot oracle walk
+read a stale/rebuilt slot — the same failure mode the colony spec itself documents for
+`[0x2DD0]` §3.6. Any other doc claims sourced from that heap-walk method should be treated as
+suspect until pixel- or byte-confirmed.
+
+**Other colony corrections (pixel evidence, sites in spec verdict block)**: building blit y =
+the §0.2 table values as printed (the extra "+8" was a double-count); plaza colonist row is
+left-aligned at panel origin+2, not walking left from x=143; right panel spans x207..301 (not
+211); middle-panel "surrounding-tile minimap, 6× ICONS 0x7B" gloss wrong — EXE 0x7B = disk 122 =
+the cargo CRATE, the 6 slots are the dock's empty cargo boxes; carpenter hammers at (15/22/29,
+104) not (15/21/27, 103); composer step-4 fill = WOODTILE.SS from (0,0); COLONY.PIK = 320×72
+strip blitted at y=128, NO embedded palette (renders on VICEROY.PAL — supports §0.6-DNR-2 over
+§5's "distinct palette" claim).
+
+**Authority**: rendered pixels vs live captures + re-disassembled placement chain >
+prior doc claims, per notes/TRUTH_HIERARCHY.md. Artifacts:
+docs/screens/reports/phase3_frontend/colony_*.png.
