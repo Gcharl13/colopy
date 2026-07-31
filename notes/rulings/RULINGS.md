@@ -5818,3 +5818,29 @@ MAPEDIT.EXE `_selection_screen` @0x2826); (2) the function body terminates at th
 @0x06A6FC–0x06A6FF (2419 B — the old "1934 B" figure was also wrong); (3) the in-game caller
 @0x0237F4–0x023808 pushes the map-cursor tile's terrain id (`0x181f:0x78c` on
 `[0x853E]/[0x8540]`) into it. `docs/COLONY_RENDER_CHAIN.md` row corrected.
+
+## 2026-07-31 — Phase-3 pixel rulings: boot-menu "OPENBORD sprite blits" refuted (= palette remaps); boot plaque fill = OPENTILE.SS; boot font = FONTTINY; frontend cell w/h transposed
+
+Render-and-diff of the boot menu + difficulty/nation screens against live captures
+(docs/screens/reports/phase3_frontend/) falsified and corrected:
+1. **`0x1A1F:0xDF8` = `func_00E146` = full-screen palette-index find-and-replace** (args find/write;
+   loop @0x00E1A5–0x00E1B0). The three boot-menu calls @0x075B8E/BB0/BD2 remap indices 7→6/8→9/15→14
+   (a no-op on OPENMENU.PIK) — NOT "OPENBORD sprite-pair blits". No "OPENBORD" string exists in
+   VICEROY.EXE; OPENBORD.PIK is frameless. The tier-B claim propagated through menus.md §2.1,
+   MENUS_VICEROY_DECODE, and CHROME_AND_DISPATCH_INDEX row 43 is struck (menus.md edited; the other
+   two carry the stale wording — flagged).
+2. **Boot plaque fill = OPENTILE.SS** tiled anchored at the box origin (WOODTILE.SS refuted for this
+   screen — renders cream under the live palette; 100% vs 51% region match).
+3. **Boot menu font = FONTTINY** (menus.md said FONTINTR; glyph-exact spans prove FONTTINY;
+   closes fonts_and_colors.md open item 5).
+4. **dialog box_w = @width + 2·border** (the +4 pad is the option-row indent, not outer width);
+   this dialog's option-row pitch = 8 px (not glyph_h+3=9) — dialog_framework §3/§4 need a
+   per-mode qualifier (runner `func_06F594` disasm will settle; open item).
+5. **Frontend cell w/h transposed** (difficulty 68×90, nation 88×82 on screen) — corrected in
+   FRONTEND_SCREENS_VICEROY_DECODE §3/§4.
+Measured-not-yet-byte-cited (R): boot title gold = idx 0xFC (not 0x54), box outline = black,
+2px interior bevel source unknown, selection bar rect (box_x+2, top−1, 160×7), selected-item
+text NOT gold in the captured state.
+
+**Authority**: rendered pixels vs live captures + raw asset/EXE bytes (func_00E146 disasm,
+string-absence scans) > prior tier-B doc claims, per notes/TRUTH_HIERARCHY.md.

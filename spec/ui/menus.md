@@ -71,9 +71,7 @@ the OPENBORD decoration, runs `@BEGINMENU`, and dispatches the result.
 |---|---------|-----------------|------------------|------|------|
 | 0 | menu backdrop | str `[0x233C]`="OPENMENU" | build via `0x181F:0x44E`; composite to off-screen buf `0x0D1D:0xFB2` | @0x075AE4 / @0x075B1D | B |
 | 0'| new-game backdrop | str `[0x2374]`="OPENMENU" | push @0x075DA3 | @0x075DA3 | B |
-| 1 | OPENBORD pair (6,7) | OPENBORD sprites 6,7 | `push 7; push 6; lcall 0x1A1F:0xDF8`; x via `bx=0x140`, y=0xC8=200 | @0x075B8E | B |
-| 2 | OPENBORD pair (8,9) | OPENBORD sprites 8,9 | `lcall 0x1A1F:0xDF8` | @0x075BB0 | B |
-| 3 | OPENBORD pair (0xE,0xF) | OPENBORD sprites 14,15 | `lcall 0x1A1F:0xDF8` | @0x075BD2 | B |
+| 1–3 | ~~OPENBORD sprite pairs~~ **REFUTED (RULING 2026-07-31)**: `0x1A1F:0xDF8` = `func_00E146` = **full-screen palette-index find-and-replace** (7→6, 8→9, 15→14; loop @0x00E1A5–0x00E1B0). No "OPENBORD" string exists in VICEROY.EXE, OPENBORD.PIK is a frameless 320×200 image, and the remap is a no-op here (OPENMENU.PIK has zero px of idx 7/8/15) — pixel-confirmed by the Phase-3 diff | @0x075B8E/@0x075BB0/@0x075BD2 | B |
 | 4 | OPENBORD cursor decor | sprite-list `[0x2DA8..0x2DAE]` | `lcall 0x181F:0x444` (rect block-copy), y=0xC8 w=0x140 | @0x075C00 | B |
 | 5 | full-screen cell blit | `0x181F:0xE2` = **clipped sprite blit** (sheet `[0x2DA8]`), not a fill | `bx=0; dx=0; push 0xC8(h); push 0x140(w); push 0(x); lcall 0x181F:0xE2` | @0x075C12 | B |
 | 6 | restore composed buffer | off-screen → 0xA000 | `lcall 0x181F:0x3F4` | @0x075C1D | B |
@@ -96,7 +94,7 @@ the OPENBORD decoration, runs `@BEGINMENU`, and dispatches the result.
 | default map | str `[0x2166]`="AMER2.MP" fallback `lcall 0x0D1D:0x816` | @0x075D22 | B |
 | opt 4 NEW-GAME | `lcall 0x191F:0x320` = **`begin_game` @0x072578** (page 0x1A) | **@0x075E5F** | B |
 
-- **Font:** boot menu/title text = **FONTINTR** (`[0x268A]`); build @0x075AE4, run @0x075C60.
+- **Font:** boot menu/title text = ~~FONTINTR~~ **FONTTINY** (Phase-3 pixel test 2026-07-31: FONTINTR's 9px cells cannot fit; FONTTINY reproduces every string span glyph-exact — consistent with `@smallfont` copying the FONTTINY latch `[0x89E]`); build @0x075AE4, run @0x075C60.
   *(Note: GAME.TXT `@BEGINMENU @smallfont` sets `m->smallfont=1`, but **FONTSMAL.FF is never
   loaded** by VICEROY.EXE — RULING 2026-06-21 — so `@smallfont` selects no distinct font; the
   body renders in the active latch.)* **B** (font load) / **A** (exact `@smallfont` metric effect).
@@ -114,7 +112,7 @@ The four plaque colors are passed as **direct RGB** through `mr_color_for(r,g,b)
 which scans the live palette for the nearest entry — design-intent RGBs, not palette-index pushes:
 outline **(20,12,6)**, selection bar **(56,32,16)**, text green **(82,138,49)**, selected gold
 **(227,170,40)** (gold hits OPENMENU idx `0x54` exactly). **B.**
-Wood panel fill = **WOODTILE.SS** tiled (plaques) / **WOODFRAM** whole-sprite frame (dialogs, §11).
+Wood panel fill: the BOOT menu plaque = **OPENTILE.SS** tiled, phase-anchored at the box origin (Phase-3 pixel test 2026-07-31 — WOODTILE.SS renders cream under the OPENMENU palette and was refuted for this screen); in-game plaques = **WOODTILE.SS** tiled / **WOODFRAM** whole-sprite frame (dialogs, §11).
 Nav: ENTER 13 / ESC 27 / SPACE 32 / arrows / digit + first-letter hotkeys. **B.**
 
 ---
