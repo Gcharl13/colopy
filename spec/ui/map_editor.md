@@ -158,6 +158,11 @@ Startup default = Ocean tool. Also entered by clicking the info window.
   referenced (mini-map rebuilt on every draw).
 
 ### Renderer (terrain byte → sprites; helper @0xC3A2)
+> **Frame-numbering convention (RULING 2026-07-31):** the `0xNN` constants below are
+> **engine frame numbers, 1-based over disk descriptors** (`disk sprite = engine
+> frame − 1`); e.g. straight coasts engine 0x97..0x9A = **disk sprites 150–153**
+> (hard rule 4's numbers), and engine 0x96 = disk 149 (the feature-bit wave overlay).
+> Evidence: `docs/screens/phys0_coast_frames.png` + descriptor counts.
 Ground from the 12-tile TERRAIN.SS array (`_tile_id` @0x46CE: 0..7→0..7;
 ids 9 and 0x11→8 Scrub; 0x18/0x19/0x1A→9/10/11), PHYS0 overlays on top —
 **agrees with hard rules 3/5**; BDARK.SS never referenced. PHYS0 frames:
@@ -167,11 +172,11 @@ forest **0x41+mask** (N8|S4|W2|E1 neighbor forests); mountains **0x21+mask**
 **agrees with hard rule 4** rows 0x01/0x11 = rivers); river mouths on water
 **0x8D+dir / 0x91+dir**; unexplored 0x95; straight coasts **0x97..0x9A
 (151..154)** by edge class, otherwise per-quadrant beach-halo **0x6D+quad+
-4·code (109..140)** at 8×8 sub-offsets. ⚠ **Hard-rule-4 numbering flag**:
-rule says coasts "150–153"; MAPEDIT's straight coasts are **151–154**, and
-frame **0x96 (150)** is drawn from *feature*-byte bit 0x40 (dormant in the
-editor) @0xC550 — recorded in RULINGS.md 2026-07-30 for reconciliation
-against VICEROY's coast site; numbers not silently changed.
+4·code (109..140)** at 8×8 sub-offsets. ~~Hard-rule-4 numbering flag~~ **RESOLVED (RULING
+2026-07-31)**: engine frames are 1-based over disk sprites, so the engine's
+151–154 ARE hard rule 4's disk sprites 150–153 — no conflict; engine 0x96
+(= disk 149, feature-byte bit 0x40, dormant in the editor @0xC550) is a
+wave/hatch overlay, not a coast.
 Scale-0-only extras (inert on fresh maps): resources 0x5A+idx, lost city
 0x68, roads 0x51/0x52+dir.
 

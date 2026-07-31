@@ -121,9 +121,18 @@ helpers, role inferred from call context).
 > fog/unexplored sprite, not a coast base; `0x69..0x6C` are fog-edge (and selection-box) sprites,
 > not coast.**
 
+> **Frame-numbering convention (RULING 2026-07-31):** all `0xNN` frame constants in this
+> chain are **engine frame numbers, which are 1-based over the sheet's disk descriptors**
+> (`disk sprite = engine frame − 1`; proven by descriptor counts TERRAIN=12/"frames 1..12",
+> WOODFRAM=1, NAMEPLAT=3, PHYS0=154, + pixel render `docs/screens/phys0_coast_frames.png`).
+> Hard rule 4's coast numbers "150–153" are **disk-sprite** numbers = engine 151–154.
+
 - **Real coast (visible-land path, `func_0681A8`):** after the base ground + forest, a tile with
-  the **shore bit** (`[0xA89F] & 0x40`, `@0x6834F`) draws **shore base `0x96` (150)** (`@0x68356`);
-  the **directional coast edges `0x97 + pattern` (151..153)** (`@0x6850D add ax,0x97`) are selected
+  the **feature bit** (`[0xA89F] & 0x40`, `@0x6834F`) draws **engine frame `0x96` = disk 149**
+  (`@0x68356`) — pixel-verified a **diagonal wave/hatch overlay, NOT a coast sprite** (feature
+  layer is all-zero in AMER2.MP, so unseen in the standard game; semantic name open);
+  the **directional coast edges `0x97 + pattern` (engine 151..154 = disk 150..153, hard rule 4's
+  set)** (`@0x6850D add ax,0x97`) are selected
   from the **4-cardinal connection bitmap `[0xA8A6]`** (pattern matches `&0xDD==0xC1` / `&0x77==0x07`
   / `&0x77==0x70` / `&0xDD==0x1C`, `@0x68479..0x684A8`), each followed by `emit_terrain_sprite`
   (`@0x68518`). Forest/hills overlays use the auto-forest rows `+0x21`/`+0x31`
@@ -139,8 +148,8 @@ helpers, role inferred from call context).
   8-dir order **0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW** (byte-verified from the 8-dir tables at
   DGROUP `0xB4`=dx`[0,1,1,1,0,-1,-1,-1]` / `0xBE`=dy`[-1,-1,0,1,1,1,0,-1]`, file `0x1DA54`/`0x1DA5E`,
   DGROUP base file `0x1D9A0`), so the four patterns are the **NW / NE / SW / SE land-corner edges**.
-  (P3→0x9A is the one-past-end frame; see §3 item 7.) **B** (full chain + frame roles + pattern
-  table byte-enumerated).
+  (Engine 0x97..0x9A = disk sprites 150..153 — all four in bounds; RULING 2026-07-31.) **B**
+  (full chain + frame roles + pattern table byte-enumerated + pixel-verified).
 
 **Per-tile layer dispatch (`func_0681A8` = O513) — BYTE_VERIFIED order.** O513 first
 loads the tile + neighbours from the three layer far-ptrs `[0xA594]`/`[0xA598]`/`[0xA59C]`
@@ -179,16 +188,17 @@ into `[0xA89F]`/`[0xA8A1]`/`[0xA8A2]` (and a fog mask via `[0xA89E]`/`[0xA8A0]`,
    the **8-direction LAND-neighbour bitmap** (each neighbour's terrain read, **water
    neighbours `0x19/0x1A` skipped** `@0x67AA6`, so a bit is set only where a neighbour
    is land) plus a 4-entry per-quadrant diagonal/cardinal table at `[0x2D24]`. Then:
-   - **shore base `0x96` (150)** when `[0xA89F] & 0x40` (`@0x68354/0x68356`);
+   - **feature-bit overlay engine `0x96` = disk 149** when `[0xA89F] & 0x40`
+     (`@0x68354/0x68356`) — wave/hatch pattern, not a coast sprite (RULING 2026-07-31);
    - if `[0xA8A6]` matches a **clean edge pattern** (`&0xDD==0xC1`→0 / `&0x77==0x07`→1 /
      `&0x77==0x70`→2 / `&0xDD==0x1C`→3, `@0x68479..0x684AA`) → one **16×16 edge
-     `0x97 + pattern`** (151..153; pattern 3 would index **154 = 0x9A**, which is
-     **out of bounds — RESOLVED 2026-06-25**: PHYS0.SS holds exactly **154 frames**
-     (valid `0..153` = `0..0x99`), byte-decoded from the sheet's section-0 header
-     `nframes @0x26` via `tools/ssdec.py`; see `data_extracted/SPRITE_SHEET_FRAMES.md`.
-     So `0x97+3` overruns the sheet by one. The residual question is only whether the
-     pattern-3 mask (`&0xDD==0x1C`) is ever satisfied for a real coast tile at runtime;
-     the frame-count itself is now resolved) `@0x6850D`;
+     `0x97 + pattern`** (engine 151..154 = **disk sprites 150..153**, the four
+     shoreline edges, pixel-verified `docs/screens/phys0_coast_frames.png`).
+     ~~pattern 3 would index 154 = 0x9A, out of bounds (2026-06-25)~~ **SUPERSEDED
+     (RULING 2026-07-31)**: engine frames are 1-based over disk descriptors, so engine
+     0x9A = disk 0x99 = 153, in bounds — all four patterns are drawable. (The
+     2026-06-25 frame-count fact — PHYS0.SS = 154 disk frames, 0..153 — stands.)
+     `@0x6850D`;
    - **else** (no clean pattern) → a **4-quadrant 8×8 sub-tile loop** (`@0x684BC..0x684F5`):
      for `q=0..3`, draw frame **`0x6D + table[q]·4 + q`** where `table[q]` (0..7) is the
      per-quadrant land bitmask built in `analyse_connections` (`@0x67AC7..0x67AEF`: diagonal

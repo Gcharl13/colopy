@@ -146,9 +146,11 @@ TERRAIN.SS-derived tile array the map composer uses.
   y=y0+2+16r:
   1. Base ground via `0x181f:0x25e` = `func_003460` blitting 256-byte tiles
      from the flat array `[0x16c]/[0x16e]` @0x06A127 — **12 tiles rasterized
-     at boot by `func_072B9A` from sheet "terrain" (TERRAIN.SS) frames 1..12**
-     (`mov ax,0xc` @0x072BA8; `[0x16c]` write @0x072C5C; placeholder frame 0
-     skipped, hard rule 5). Tile ids: 0..7 base terrains, 8 forest ground,
+     at boot by `func_072B9A` from sheet "terrain" (TERRAIN.SS) engine frames
+     1..12 = ALL 12 disk descriptors 0..11** (`mov ax,0xc` @0x072BA8;
+     `[0x16c]` write @0x072C5C; engine frames are 1-based over disk
+     descriptors per RULING 2026-07-31 — there is no separate on-disk
+     placeholder frame; "frame 0" is simply below the 1-based range). Tile ids: 0..7 base terrains, 8 forest ground,
      9 Arctic, 10 Ocean, 11 Sea Lane; normalizer `func_003436` (0x11||9→8,
      ≥8→−15). Ground id: mtn/hills→3 (Prairie), ≥24→id, else id&7; forest with
      desert base (Scrub) → ground 0x11 + decoration suppressed.

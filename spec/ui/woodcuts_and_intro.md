@@ -7,6 +7,10 @@
 > **Supersedes four popups.md woodcut glosses** (RULINGS.md 2026-07-30):
 > WDCUT04/10/12/13 were misattributed; only WDCUT11 survived.
 
+> **Frame-numbering convention (RULING 2026-07-31):** engine frame numbers are
+> 1-based over disk descriptors (WOODFRAM.SS "frame 1" = its only disk
+> descriptor 0; NAMEPLAT frames 1/2/3 = disk 0/1/2).
+
 ## 1. Woodcut system (B)
 - **Text**: WOODCUT.TXT is ONE section `@WOODCUT` with 17 caption lines
   (0–16; 14–16 placeholders). **Art**: WDCUT01..WDCUT13.SS (no 00/14/15/16);

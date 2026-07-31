@@ -5771,3 +5771,39 @@ struck; §14 confirmed.
 
 **Authority**: raw/COLONIZE/VICEROY.EXE bytes (caller scan re-verified 2026-07-30: 10 sites
 exact) > team docs per notes/TRUTH_HIERARCHY.md.
+
+## 2026-07-31 — RESOLVED: engine sprite-frame numbers are 1-BASED over disk descriptors; hard rule 4's coast numbers 150–153 are CORRECT (coast-frame flag closed; 2026-06-25 "P3 out of bounds" superseded)
+
+**Resolves** the 2026-07-30 coast-frame FLAG. Evidence chain (all re-verified):
+1. **VICEROY's own renderer** (page 0x15) uses the identical constants as MAPEDIT: straight
+   coasts `add ax,0x97` @0x06850D (engine frames 0x97..0x9A = 151..154), beach halos `add ax,0x6D`
+   @0x0684E8, engine frame 0x96 gated by `[0xA89F]&0x40` @0x06834F–0x068359.
+2. **Descriptor counts prove the 1-based convention**: TERRAIN.SS holds exactly **12 disk
+   descriptors** while the engine loads "frames 1..12" (`func_072B9A`); WOODFRAM.SS holds 1
+   ("frame 1"); NAMEPLAT.SS holds 3 (frames 1–3); PHYS0.SS holds **154 (disk 0..153)** — engine
+   frame 154 must therefore be disk sprite 153. The draw verb `func_00E76A` indexes
+   `base + frame·12 + 0x36` with no subtraction — the offset lives in the load/record layout,
+   not the verb. **Disk sprite = engine frame − 1.**
+3. **Pixel render confirms** (`docs/screens/phys0_coast_frames.png`, PHYS0.SS + VICEROY.PAL over
+   the Ocean tile): **disk sprites 150–153 are the four straight-coast shorelines** — exactly
+   hard rule 4's numbers; **disk 149 (= engine "frame 150"/0x96) is a diagonal wave/hatch
+   overlay, NOT a coast** (drawn from feature-layer bit 0x40; all-zero in AMER2.MP, so unseen in
+   the standard game; semantic name still open); disk 148 (= engine 0x95) is the dark
+   unexplored/fog tile.
+
+**Consequences**:
+- CLAUDE.md hard rule 4's coast clause ("sprites 150–153") is **correct in disk-sprite
+  numbering** (how the original pixel work counted); engine-side code cites read one higher.
+  NOTE the rule's river clause ("rows 0x01 and 0x11") is in ENGINE numbering (disk 0x00/0x10) —
+  the rule mixes conventions but both clauses are factually right. No renumbering anywhere.
+- **Supersedes** `spec/systems/map_system.md` §3 item 7's 2026-06-25 residual: "P3 → 0x9A
+  overruns the sheet by one" is wrong — engine 0x9A = disk 0x99 = 153, in bounds; the four
+  clean-edge patterns map exactly onto disk 150–153. (The 2026-06-25 frame-count fact itself —
+  154 frames, 0..153 — was right and is retained.)
+- Docs that cite engine frame constants (map_editor.md §4, woodcuts_and_intro.md,
+  colonizopedia.md §5, map_system.md) now carry a convention gloss: "engine frame N = disk
+  sprite N−1".
+
+**Authority**: raw/COLONIZE/VICEROY.EXE + MAPEDIT.EXE bytes, col.zip sheet headers via
+tools/ssdec.py, rendered pixels (docs/screens/phys0_coast_frames.png) > all prior notes, per
+notes/TRUTH_HIERARCHY.md. User-directed check 2026-07-31 ("show visual examples first" — done).
