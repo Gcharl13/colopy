@@ -15,12 +15,17 @@ river and forest overlays, and may carry a special resource. Terrain determines
 economic yields, movement cost, and combat modifiers (`docs/GAME_MANUAL.md`).
 
 ## 2. State & data
-**`.MP` file layout** (`formats/MP_FORMAT.md`, BYTE_VERIFIED):
-- Header: `width:word`, `height:word` (AMER2 = 56 × 70).
-- Tile data: width × height bytes, row-major (y outer, x inner). Per byte:
-  bits 0–4 = terrain id (0..27); bit 5 = river overlay; bit 6 = forest/special
-  overlay; bit 7 = ? (possibly "discovered").
-- Then ColonyRecord / UnitRecord / NativeSettlement arrays.
+**`.MP` file layout** (`formats/MP_FORMAT.md`, **REWRITTEN 2026-07-30 from the
+actual MAPEDIT writer — RULING; the summary previously here was the refuted
+inferred version**):
+- Header **6 bytes**: `width:u16`, `height:u16`, `version:u16 == 4`
+  (AMER2 = **58 × 72** full grid incl. the non-editable 1-tile border ring;
+  "56×70" was the playable interior).
+- **Three** `w·h` layers, row-major (y outer, x inner): terrain, feature,
+  continent/owner. File size = 6 + 3·w·h. **No record arrays.**
+- Terrain byte: bits 0–4 = id 0..28; **bit 5 = mountains/hills**, **bit 6 =
+  river**, **bit 7 = modifier** (set: Mountains/Major River; clear:
+  Hills/Minor River). **Forest is not a bit** — ids 8..23.
 
 **Runtime map layers** (`colonization-memory-map (1).md`, **RUNTIME-VERIFIED**; live
 play board is **56 × 72**, row-major `tile = y·56 + x`, 4032 bytes/layer):
