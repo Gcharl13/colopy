@@ -5953,3 +5953,37 @@ text inside the panel); `func_003E40`'s unit-marker sprite mapping (resident, no
 
 **Authority**: VICEROY.EXE bytes (reseg pages 02/15 + resident raw disasm at the cited offsets) +
 thunk_targets.json > prior spec wording, per notes/TRUTH_HIERARCHY.md.
+
+## 2026-07-31 — LIVE-SESSION verification (DOSBox RAM reads, in-game): [0x8D80] is per-session; heap-537 oracle fully closed (string-ID table, not pointers); [0x894]=8 default; boot ink 0xFC confirmed
+
+A live DOSBox 0.74-3 session (recipe tools/drive_game.sh; harness tools/runtime_snapshot.py +
+scratch peek_live.py, DGROUP base phys 0x1CFD0 anchor-verified) reached: boot → new game
+(Discoverer/England/"Walter Raleigh") → landfall → colony "Jamestown" founded at (51,29) →
+colony screen → map Spring 1505. Reads:
+
+1. **`[0x8D80]` = 0x2C55 (11349) this session — NEITHER of batch-4's {56667, 1460}; a second
+   fresh boot read 0x5B7C.** The value is set by boot init, constant within a session,
+   different across sessions (dword high word 0x0013 both runs; the low word smells like a
+   heap-allocated segment — hypothesis, not cited). **Batch-4 amendment**: the two candidate
+   values were just the seeds fitting the ORIGINAL capture session; the term itself is
+   session-variable. The placement-chain validation stands (the replay reproduced that
+   session's layout); the open item becomes "which boot-init code writes 0x8D80" (disasm
+   cross-check needed before naming it).
+2. **Heap-537 CLOSED**: `[0x2F5E]` = 537 (0x219) in every state — an INTEGER STRING-ID, slot
+   210 of the 221-entry table DGROUP 0x2DBA..0x2F72 (live values 327..547 sequential). The
+   table holds string IDs resolved via `0x181f:0x22`, NOT near pointers — the old oracle
+   dereferenced 537 as an address and landed mid-"Treaty off error". Slot 210 = LABELS
+   `@MISC` line 210 = "Exit" — fully consistent with both pixel refutations. Docs that call
+   0x2DBA a "label-POINTER array" should read "label string-ID array (fetch via 0x22)".
+3. **`[0x894]` = 8 at boot AND in-game** — the debug bitfield defaults to bit 0x08 set
+   (Foreign-AI plan letters; invisible without the cheat bit, which is 0). Any "=0 default"
+   assumption is refuted.
+4. **`[0x1F4E]` = 0xFC at the boot menu — the runner-disasm boot-ink claim CONFIRMED live**;
+   in-game it reads 0x95 (state-dependent, per the mode setters).
+5. **ColonyRecord head = x,y,name byte-verified live**: `*[0x8542]` → DS:0x606E = `33 1D
+   "Jamestown"` = (51,29). `[0x8542]` is 0 at boot, scratch pre-colony, real after founding.
+6. Artifacts: land-window map capture + same-moment RAM dumps (terrain overlays live test now
+   possible); colony-screen capture + RAM. Session kept alive for follow-ups.
+
+**Authority**: live emulated RAM + on-screen state > static inference, per TRUTH_HIERARCHY
+(running DOS game is the TOP of the trust order).
