@@ -24,7 +24,10 @@ base-names **B** (literal EXE strings). · **Canonical primary:**
 dispatch index rows 1–43), `viceroy_source/docs/SCREEN_LAYOUTS.md` §1/§5/§6/§7,
 `viceroy_source/docs/UI_PRIMITIVES.md` (the `0x181F:NNN` draw-verb Rosetta),
 `raw/COLONIZE/{VICEROY.EXE,GAME.TXT}`, `data_extracted/text/{MENU,GAME,NAMES,LABELS}_sections.json`.
-**Last updated:** 2026-06-23.
+**Last updated:** 2026-07-31 (Phase-3 boot-menu measurements promoted to **B** with byte cites:
+§2.2 boot-mode setter, §2.3 plaque geometry, §3 palette-index color table + OPENTILE tiling —
+the old `mr_color_for` RGB story and the "gold = idx 0x54" claim are retracted; see
+`dialog_framework.md` §6.5 for the full paint-chain decode).
 
 > **Corrections (2026-06-23):** (a) repointed all citations that previously referenced the
 > deleted `docs/RENDERER_GEOMETRY.md` / `docs/RENDER_CHAIN.md` / `docs/UI_FONT_REFERENCE.md`
@@ -102,18 +105,58 @@ the OPENBORD decoration, runs `@BEGINMENU`, and dispatches the result.
 - Menu-row coordinates are **`[layout]`** (the `@BEGINMENU` runner lays them out via the dialog
   geometry engine §11 — no fabricated literal). The box is centered unless `@x/@y` are set
   (`@BEGINMENU @options @width=160 @y=91` pins y=91, centered x, width ≥160). **B (mechanism)**.
+
+### 2.3 Boot-menu plaque geometry — **B (Phase-3 promoted 2026-07-31, byte-cited)**
+
+All from the page-0x17 dialog engine (full site detail: `dialog_framework.md` §3–§4, §6.5):
+
+| element | value | byte cite | tier |
+|---------|-------|-----------|------|
+| box width | **166** = content_w(=@width 160) + 2·3; NO "+pad" term | `func_06D316` `shl @0x06D4D0; add @0x06D4E5/0x06D4E9` | B |
+| box outline | 1-px hollow rect, **palette idx 0 (black), pushed immediate** | `func_06E0C8` `push 0 @0x06E13F`; `0x181F:0xCE @0x06E155` | B |
+| interior bevel band | ring inset 1 color `[0x1F44]`=0x2E + inset-2 bevel spans `[0x1F46]`=0xFD (top/right) / `[0x1F48]`=0x37 (left/bottom) | `@0x06E16E/@0x06E17D`; `@0x06E1AB..0x06E20F`; values `@0x0734CE..0x0734E6` | B |
+| plaque fill | **OPENTILE.SS sprite 1, 32×24, tiled, phase-anchored at box origin**; tiled path taken because fill color `[0x1F3C]`==7 (TEXTCOLR.SS spr-1 pixel `@0x06F720`) and `[0x1F6C]=0x9400` (boot setter `@0x0734E9`; record built `@0x07627C..0x0762A7` from literal "opentile" `[0x23B1]` file `0x1FD51`) | `func_06C18C @0x06C190..0x06C1F3` → `func_00E350` anchor math `@0x00E371..0x00E3A2` | B |
+| title line | x = box_x+**5**, top = box_y+**6** (text painter pens at `+0x2C`=6 with no offset) | `func_06CFBC @0x06CFD4..0x06CFDC`; `func_06CFE8 @0x06D012` | B |
+| option rows | x = box_x+**9**; first option top = box_y+**16** = 107 (seed 6 + border 3 + title-block 6, text at pen+1); **row pitch = 8** (clamped glyph 5 + border 3 — `func_06CD66` clamps FONTTINY 6→5 on bordered dialogs) | `@0x06D9D6..0x06D9E2`; `@0x06D440..0x06D449`; `@0x06DB8C`; `func_06CD66 @0x06CD75..0x06CD81` + `@0x06E469..0x06E476` | B |
+| selection bar | rect **(box_x+4, option_top−1, w=158, h=7)**, flat fill color `[+0x40]`←`[0x1F40]`=**0x37**; ⚠ Phase-3's "(box_x+2, w=160)" left edge is **refuted** (same right edge box_x+161; h/y confirmed) — re-measure | `func_06D9CC @0x06DAA5..0x06DAF0`; color `@0x06DAC3`/`@0x0734E0` | B (rect) / R (left-edge discrepancy) |
 - **Spot-checks (PASS):** 0x075C60 `8d 1e 45 23 9a fe 03 1f 18` (BEGINMENU run);
   0x075E5F `9a 20 03 1f 19` (begin_game); 0x075C12 `9a e2 00 1f 18` (frame cell blit).
 
 ---
 
-## 3. Menu-plaque colors & fonts — **B**
+## 3. Menu-plaque colors & fonts — **B (rewritten 2026-07-31, Phase-3 promoted — byte-cited palette indices)**
 
-The four plaque colors are passed as **direct RGB** through `mr_color_for(r,g,b)` (export 48464),
-which scans the live palette for the nearest entry — design-intent RGBs, not palette-index pushes:
-outline **(20,12,6)**, selection bar **(56,32,16)**, text green **(82,138,49)**, selected gold
-**(227,170,40)** (gold hits OPENMENU idx `0x54` exactly). **B.**
-Wood panel fill: the BOOT menu plaque = **OPENTILE.SS** tiled, phase-anchored at the box origin (Phase-3 pixel test 2026-07-31 — WOODTILE.SS renders cream under the OPENMENU palette and was refuted for this screen); in-game plaques = **WOODTILE.SS** tiled / **WOODFRAM** whole-sprite frame (dialogs, §11).
+> **RETRACTED:** the old "`mr_color_for(r,g,b)` direct-RGB" story for the boot plaque (outline
+> (20,12,6), gold = OPENMENU idx `0x54`, etc.) came from the low-trust C recon and is **refuted
+> by the bytes** — the engine pushes **palette-index immediates/globals**, no RGB scan exists in
+> this path.
+
+The boot plaque colors are the ink globals loaded by the **boot-mode setter `@0x0734BC`**
+(page 0x1A; called from the title composer `func_0759E8 @0x075C52` via trampoline `@0x07639D`
+`ljmp 0x1A1F:0xD74`, right before the `@BEGINMENU` run):
+
+| role | global | boot value | set @ | drawn @ |
+|------|--------|-----------|-------|---------|
+| box outline | (immediate) | **0** (black) | — | `func_06E0C8` `push 0 @0x06E13F` → `0x181F:0xCE @0x06E155` |
+| frame ring (inset 1) | `[0x1F44]` | **0x2E** | @0x0734CE | `@0x06E16E/@0x06E17D` |
+| bevel light (top/right) | `[0x1F46]` | **0xFD** | @0x0734DA | `@0x06E1C0..0x06E1EF` |
+| bevel dark (left/bottom) | `[0x1F48]` | **0x37** | @0x0734E6 | `@0x06E192../@0x06E204..` |
+| body text ink | `[0x1F4A]` | **0xFE** | @0x0734BC | ink record `+0x74+2` (`func_06C346 @0x06C373`) |
+| disabled/alt ink | `[0x1F4C]` | **8** | @0x0734C8 | ink record `+0x74+4` (`@0x06C354`) |
+| **`{…}` hilite (gold)** | `[0x1F4E]` | **0xFC** | **@0x0734C2** | ink record `+0x74+6` (`@0x06C365`); `{`/`}` toggle `[0x1F62]` in `func_06C388 @0x06C3C4/…` |
+| selection bar | `[0x1F40]`(=`[0x1F42]`) | **0x37** | @0x0734DD..0x0734E3 | `func_06D9CC @0x06DAC3→@0x06DAF0` |
+| plaque tile record ptr | `[0x1F6C]` | **0x9400 = OPENTILE** | @0x0734E9 | `func_06C18C @0x06C1D8` → `0x181F:0xC4` |
+
+So the Phase-3 measurements are byte-confirmed: `{COLONIZATION}` span = **idx 0xFC** (the old
+"idx 0x54" claim is retracted), outline = **idx 0** (not RGB (20,12,6)).
+Wood panel fill: the BOOT menu plaque = **OPENTILE.SS** sprite 1 (32×24) tiled, phase-anchored
+at the box origin (`func_00E350` phase = `(fill_xy − box_xy) mod (32,24)` `@0x00E371..0x00E3A2`);
+tiling is enabled because the fill color `[0x1F3C]` (TEXTCOLR.SS spr-1 pixel, `func_06F6DA
+@0x06F720`) is the sentinel **7** (`func_06C18C @0x06C197`). In-game plaques switch to
+**WOODTILE.SS** via the in-game setter `@0x073474` (`[0x1F6C]=0x93F0 @0x0734AF`); the tile
+records are built by the boot asset loader (`[0x93F0]`=WOODTILE `@0x07620F`, `[0x93F8]`=PARCH
+`@0x07624D`, `[0x9400]`=OPENTILE `@0x07627C..0x0762A7`, literal "opentile" DGROUP `0x23B1` =
+file `0x1FD51`). **B.**
 Nav: ENTER 13 / ESC 27 / SPACE 32 / arrows / digit + first-letter hotkeys. **B.**
 
 ---
