@@ -349,3 +349,38 @@ marker is the boycotted good's own ICONS.SS frame `good+0x17` redrawn over the d
 *No runtime residual* — every Europe element (geometry, sprites, price formula,
 boycott marker) is static; only the live values (gold, prices, which goods are
 boycotted, which ships are in port) are game state.
+
+---
+
+## Phase-3 render-and-diff verdict (2026-07-31)
+
+Rebuilt from this sheet + EUROPE.PIK/WOODTILE/ICONS/FONTTINY and diffed against captures 10/09
+(both **100.00% pixel-exact** outside the declared dynamic-sprite masks, after applying the
+capture's water palette-cycle state — indices 54–60 are pure palette animation, zero pixel-index
+changes; artifacts in `docs/screens/reports/phase3_frontend/`). Capture-geometry note: the Europe
+captures are 660×480/(9,29) and 660×420/(9,9) frames, not the 1024×768 format.
+
+**Confirmed**: EUROPE.PIK background (contains the town, dock slots, market grid, AND the red
+"E" — all baked art; no LONDON.PIK exists, no nation overlay composited); WOODTILE header strip +
+black rule y=7; market icons = disk frame 0x16+good (engine=disk+1 ruling corroborated ×16);
+prices ink 0x2F at y=194 (byte-cited value seen on screen); dock slots (147+12·slot, 165) frame
+0x7A; caption panels + centering rule; RECRUIT/PURCHASE/TRAIN boxes (281, 89+11·row, 37, 9) with
+yellow accelerator letters.
+
+**Corrected/falsified**:
+1. **"(306,179) = heap string 537 'Sons of Liberty'" is REFUTED — the drawn string is "Exit"**
+   (the byte-cited draw @0x031261 matches position/ink; the heap-537 resolution was a mis-walk).
+2. §9.9's red-"E" coords were off 10–17px AND the E is PIK background art, not engine-drawn.
+3. Market icon y = **181** (was 180); price display = **bid/ask pairs**, not a single `%d`.
+4. "Loading: <ship>" centers in the dock rect (143,118,81,60), not the in-port ship-list box.
+5. Title band **pinned**: rect (0,0,320,8), text y=1 centered on x=160; ink is state-dependent
+   (idle green 68 / arrival-banner gold 149); literal `Tax:0%` no space; gold suffix = the
+   FONTTINY '$' glyph.
+6. **NEW element**: 1-px selected-good cell outline (yellow 14 / green 10 — runtime
+   `[0x9E12]`-driven; byte hunt open).
+7. Button pitch 11 ≠ "glyphH+2" as written — pitch source needs a re-look (open).
+
+Measured-not-cited (R): wood-tile phase, caption ink 69, button bevel 57/48 unfilled, centering
+rounding rules, palette-cycle displayed values. The old `docs/screens/europe_render.png` attempt
+was graded: right on asset identity/fonts/icon mapping; wrong on registration (borders included),
+RGB-space matching, button geometry, and two price misreads — superseded by this pipeline.
