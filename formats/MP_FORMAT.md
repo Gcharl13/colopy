@@ -174,3 +174,12 @@ Note MAPEDIT itself is not byte-preserving (see `_forest_fix` above).
 - One border-ring anomaly in AMER2.MP: a single ring tile with base id 3
   (Prairie) among the Ocean ring — likely original data quirk; harmless
   (ring is non-editable).
+
+
+## VICEROY loader behavior (live-verified 2026-07-31, RULINGS batch 7)
+
+- **Layer 2 (features) is DISCARDED on load** — VICEROY rebuilds the runtime feature plane
+  (bit0 unit, bit1 settlement); crafted feature bytes never reach the renderer.
+- **Border normalization on load**: rows 0 and h−1 → Arctic; columns 0, 1 and w−1 → Sea Lane
+  for interior rows, overwriting even land (hard rule 2 enforced by the loader itself).
+- Forest alias ids 16..23 are folded to 8..15 at load (matching MAPEDIT's `_forest_fix`).

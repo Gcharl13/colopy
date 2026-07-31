@@ -6021,3 +6021,47 @@ detail-0x5A/surf-0x68 remain unexercised (need a richer capture); the detail ban
 
 **Authority**: live pixels + live RAM layers (top of TRUTH_HIERARCHY). Artifacts:
 docs/screens/reports/phase3_frontend/landtest_*.
+
+## 2026-07-31 — Phase-3 crafted-map live test (hills/rivers/mouths/details): ALL exercised rule classes CONFIRMED at 100.0000%; VICEROY's .MP loader DISCARDS layer 2 and force-normalizes borders; roads formula refined
+
+A crafted 58×72 test AMER2.MP (byte-verified format; 109 targeted placements; original restored,
+md5 = bin/AMER2.MP.b64) was loaded via "Start a Game in AMERICA", revealed with the decoded
+Alt-W-I-N cheat → Reveal Map → Complete Map, and 5 viewport captures (each with same-moment RAM
+dumps) were re-rendered from the compositor spec: **100.0000% of non-overlay pixels in all 5**
+(object sprites the game spawned — villages/units/cursor — masked).
+
+**CONFIRMED live (previously unexercised)**: hills `0x31+mask` (isolated/pairs/plus-15/2×2);
+relief adjacency = equal `(byte&0xA0)` (hills never connect to mountains); mountains masks;
+minor rivers `0x11+mask` incl. isolated→`0xF` (`0x20`), corners, T-junctions; major `0x01+mask`;
+major/minor interconnect via bit 0x40; hills+river stacking order; **river mouths exactly as
+spec'd** (water tile with own 0xC0 bits; `0x8D`/`0x91`+cardinal-with-bit-0x40-and-land; both
+negative controls behave); all four clean coast edges + all-land lake quadrants; forest masks +
+desert-scrub exclusion; ids 16..23 render as 8..15.
+
+**New findings / corrections**:
+1. **VICEROY's .MP loader DISCARDS layer 2 (features)** — all crafted feature bytes read back 0
+   live; the game rebuilds the plane (bit0 unit, bit1 settlement). So shore-0x96/road/resource
+   feature-bit pixels are unreachable via .MP — their gates are byte-cited from fresh disasm
+   instead. MP_FORMAT.md note added.
+2. **Loader border normalization**: rows 0/71 → Arctic; **columns 0, 1 AND 57 → Sea Lane for
+   y=1..70, overwriting even land** — hard rule 2's sea-lane column is ENFORCED by the loader,
+   not just data convention. Forest ids 16..23 folded to 8..15 at load.
+3. **Roads formula refined**: gate feature`&0x0A` + `[0x18E]==0` + non-water; **mask==0 →
+   `0x51`; else ONE FRAME PER SET 8-dir BIT `0x52+d`** (not "0x51+mask"); band 0x51..0x59 only.
+4. **Detail-band classify uses the FULL id decode incl. relief bits → 27/28** (the `&0x1F`
+   reading falsified — mountains draw ore/gold `0x66` = DTAB[27], hills rock `0x67` = DTAB[28]);
+   the position hash IS the prime-resource mechanism (sidebar shows "(Prime Tobacco)" on a
+   hash-hit tile). DTAB duplicates entries for raw 16..23.
+5. **Surf `0x68` = the rumor circle**, with a new gate: continent-plane owner nibble ≠ 0xF
+   suppresses it (func_005DF0-family).
+6. **O512 bounds**: engine coord 0 (plane 1) IS in bounds — the prior landtest's `≥1` model
+   falsified (no spurious blends on the lane column).
+7. Live plane pointers pinned: `[0x15C]`/`[0x160]`/`[0x164]`/`[0x168]` (terrain/feature/
+   continent+owner/flags; low nibble of flags = colony-site value); Reveal-Map = `[0x53A2]=1` +
+   fog mask `[0xA89E]`=0 (per-tile fog bytes untouched).
+
+Still pixel-unexercised (gates byte-cited, sprites known): shore-0x96, roads, feature-bit
+resource suppression — need an in-game state with real roads/shore features (pioneer builds).
+
+**Authority**: live pixels + live RAM + crafted ground truth (top of TRUTH_HIERARCHY).
+Artifacts: docs/screens/reports/phase3_frontend/hillsrivers_* + testmap.mp + verdict doc.

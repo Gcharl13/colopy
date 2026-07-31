@@ -392,3 +392,17 @@ the NEIGHBOUR'S land terrain, coast frames drawn over, water backfilled through 
 conflation; live-reachable, pixel-exact). Detail-band internals decoded (salt `[0x190]`,
 table DG:0x192, hash `(x&3)·4+(y&3)` vs `((y>>2)·3+(x>>2)+salt−forest)&0xF`, `^0xA`
 alternate); its L1/L2 gates + hills/rivers/mouths/shore/roads still need a richer capture.
+
+
+## Phase-3 crafted-map live verdict (2026-07-31, RULINGS batch 7)
+
+Hills/mountains masks, rivers (incl. isolated→0xF and major/minor interconnect), river mouths,
+lake coasts, forest masks and the 16..23 alias fold are ALL live-confirmed at 100.0000%
+(5 crafted-map captures). Corrections folded in: **roads** draw `0x51` when the 8-dir mask is 0,
+else ONE frame per set bit `0x52+d` (band 0x51..0x59 — not "0x51+mask"); **detail-band classify
+= full id decode incl. relief → 27/28** (mountains→DTAB[27] ore/gold `0x66`, hills→DTAB[28] rock
+`0x67`; the hash is the prime-resource mechanism); **surf `0x68`** = rumor circle, suppressed
+when the continent-plane owner nibble ≠ 0xF; **O512 engine coord 0 is in bounds**. Loader facts:
+.MP layer 2 is DISCARDED and rebuilt; borders normalized (rows 0/71 Arctic; cols 0,1,57 Sea Lane
+overwriting land — hard rule 2 enforced at load); live plane ptrs `[0x15C]/[0x160]/[0x164]/
+[0x168]`. Shore-0x96/roads/feature-resource pixels still need an organic in-game state.
