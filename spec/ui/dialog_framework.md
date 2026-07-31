@@ -237,9 +237,11 @@ via `func_06C18C` (`call 0x68c @0x06DAF0`) with rect **x = `+0x24`+inset−1 = b
 pen+1 `@0x06DB8C`), **w = content_w−2 = 158** (`@0x06DAD9..0x06DAEB`: `(1−inset)·2 + [+0x20]`),
 **h = clamped_glyph_h+2 = 7** (`call 0x1266 @0x06DAAB; inc ax; inc ax @0x06DAB1/0x06DAB2`),
 color byte `+0x40` (`@0x06DAC3`) ← `[0x1F40]` = **0x37** on the boot path (tiled instead if the
-byte were 7). ⚠ The Phase-3 measurement `(box_x+2, w=160)` is **refuted on the left edge**: the
-byte math gives `(box_x+4, w=158)` — the right edge (box_x+161) and h=7 and y=option_top−1
-match exactly; the 2-px left-edge difference needs a re-measure, not a code change.
+byte were 7). ⚠ The Phase-3 measurement `(box_x+2, w=160)` left-edge discrepancy **RESOLVED 2026-07-31**: re-measuring the capture
+shows the extra 2px was the box's LEFT BEVEL column, which shares palette idx 0x37 with the
+bar (bevel-dark `[0x1F48]` == bar `[0x1F40]` at boot). The solid bar starts exactly at
+box_x+4 = 81; right edge 238 = 81+158−1. The byte math `(box_x+4, w=158)` is fully
+pixel-confirmed — item CLOSED.
 
 ## 7. Open items (each with its exact closer — honest, not reworded)
 
