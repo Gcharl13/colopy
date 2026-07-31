@@ -238,7 +238,7 @@ Functions that *touch* ColonyRecord fields heavily, examined as potential colony
 | `func_O118` | 0x2EE34 | 274 B | `dec [0x539e]; rep movsw` shifting colony table; `lcall 0x191f:0xa4a` per unit removal. = **colony abandonment** (compacts colony_tbl). |
 | `func_O105` | 0x2C5D4 | 927 B | Reads `[0x8542]` for X,Y; calls `lcall 0x181f:0x78c` adjacency check; sets `[0x890]` = 1 then back to 0; calls `lcall 0x181f:0x652` "BUYME0/SETTLE" message. = **Build-colony / settle-here dialog**. |
 | `func_O106` | 0x2CFD0 | 274 B | Tests `[0xA897]`; calls `lcall 0x191f:0x176/0x16a/0x1a8` (dialog widget add/loop/destroy). = a **popup dialog handler** that uses colony X,Y but is not the screen render. |
-| `func_O530` | 0x69D8C | 1934 B | The map-editor terrain-palette dialog (confirmed not in-game per CLAUDE.md hard rule #5). |
+| `func_069D8C` | 0x69D8C | 2419 B (0x69D8C..0x6A6FF) | ~~map-editor terrain-palette dialog~~ **CORRECTED 2026-07-31 (rule-7 amendment)**: the Colonizopedia "Terrain Type" entry page, in-game (spec/ui/colonizopedia.md §5; RULINGS.md 2026-07-30). |
 | `func_O324` | 0x45AE4 | 259 B (7 blits) | Loads sprites 1..7 from sheet at DS:0x14BC, saves 1-byte results to globals at 0x149C..0x14B4. = **font glyph cache loader** (loading 7 character glyphs). |
 | `func_O593` | 0x6F6DA | 271 B (7 blits) | Same pattern as O324 with sheet at 0x200A, saves to 0x1F3C..0x1F4E. = another font/glyph cache loader. |
 | `func_O077`-`O111` cluster | 0x28xxx-0x2Dxxx | various | Contains the entire tax/production/end-turn pipeline. None are screen-rendering. |

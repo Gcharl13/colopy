@@ -72,9 +72,19 @@ feature's *function*, but EXE bytes win for exact *numbers*.
    *(survives in `notes/SPRITE_CATALOG.md`)*
 
 7. **Tile drawing chain** — each map tile is drawn by
-   `func_O514 → func_O513 → func_O512`. `func_O530` (file `0x69D8C`) is the
-   **map-editor** terrain-palette dialog, confirmed not in-game.
-   *(survives in `viceroy_source/docs/MAP_SYSTEM.md`, `docs/COLONY_RENDER_CHAIN.md`)*
+   `func_O514 → func_O513 → func_O512`. **`func_069D8C` (file `0x69D8C`) is the
+   Colonizopedia "Terrain Type" entry page — IN-game** (pedia key `"TERRAIN"`
+   @0x06A6A6; called from the context-help dispatcher `func_02BC72` @0x02BD64
+   and the menu executor's Terrain-Information command @0x023808, plus the
+   pedia browser).
+   *(Amended 2026-07-31 with user sign-off — the prior "func_O530 = map-editor
+   terrain-palette dialog, confirmed not in-game" was overturned by byte
+   evidence: VICEROY.EXE contains no MAPEDIT strings at all; the real editor
+   is the separate MAPEDIT.EXE, whose actual tile palette is `_selection_screen`
+   @0x2826 per `spec/ui/map_editor.md` §4. See `notes/rulings/RULINGS.md`
+   2026-07-30 and `spec/ui/colonizopedia.md` §5. The stale wording survives in
+   `viceroy_source/docs/MAP_SYSTEM.md` / `docs/COLONY_RENDER_CHAIN.md` — both
+   flagged.)*
 
 8. **Colony data base** — the current-colony struct is at `*(0x8542)`;
    ColonyRecord strides per `notes/rulings/` anchor map.

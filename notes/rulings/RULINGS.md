@@ -5807,3 +5807,14 @@ exact) > team docs per notes/TRUTH_HIERARCHY.md.
 **Authority**: raw/COLONIZE/VICEROY.EXE + MAPEDIT.EXE bytes, col.zip sheet headers via
 tools/ssdec.py, rendered pixels (docs/screens/phys0_coast_frames.png) > all prior notes, per
 notes/TRUTH_HIERARCHY.md. User-directed check 2026-07-31 ("show visual examples first" — done).
+
+## 2026-07-31 — CLAUDE.md hard rule 7 AMENDED (user-directed): func_069D8C clause corrected
+
+The pending amendment from the 2026-07-30 pedia ruling was applied with user sign-off
+(2026-07-31 directive). Rule 7's tile-chain clause is unchanged; the func_O530 clause now reads:
+func_069D8C = the Colonizopedia "Terrain Type" entry page, IN-game. Final verification before the
+edit: (1) VICEROY.EXE contains zero MAPEDIT/MAPMENU strings (the actual editor terrain palette is
+MAPEDIT.EXE `_selection_screen` @0x2826); (2) the function body terminates at the modal-wait+retf
+@0x06A6FC–0x06A6FF (2419 B — the old "1934 B" figure was also wrong); (3) the in-game caller
+@0x0237F4–0x023808 pushes the map-cursor tile's terrain id (`0x181f:0x78c` on
+`[0x853E]/[0x8540]`) into it. `docs/COLONY_RENDER_CHAIN.md` row corrected.
