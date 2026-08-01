@@ -1939,6 +1939,59 @@ cell dual-drawn dark/light for a drop shadow; modal-wait terminator.
 
 ---
 
+### 14.6 After the roll — demotion, capture, promotion
+
+The consequence applier is `func_05B2C2` (0x5B2C2..0x5BE2C), reached from the
+decider through the wrapper `func_05BE30`.
+
+**The demotion ladder** (if-ladder 0x5B5AA..0x5B61F): a defeated land unit
+falls one rung instead of dying — Dragoons→Soldiers (0x5B5B3),
+Soldiers→Colonists (0x5B5C3), Cont. Cavalry→Cont. Army (0x5B5DF),
+Cavalry→Regulars (0x5B5EF), Cont. Army→Colonists (0x5B5CF); anything else is
+destroyed. A demoted-to-Colonist with the Missionary profession byte (0x18)
+becomes a Missionaries unit instead (0x5B60E/0x5B615); a Veteran Soldier
+loses veteran status on the way down (0x05B570..0x05B577). Message `@DEMOTE`
+(0x05B679).
+
+**Capture instead of death**: the loser is capture-eligible only for types
+Colonists, Treasure, and Wagon Train (flag set 0x5B31D..0x5B33D), the loser's
+owner must be European (< 4), and a winning ship needs transport room
+(0x5B410..0x5B428) — then the unit changes hands intact via `set_unit_owner`
+(0x5B4C7). Messages: `@LOOTCAPTURE` (Treasure, 0x05B544), `@WAGONCAPTURE`
+(0x05B566), `@COLONISTCAPTURE`/`@COLONISTCAPTURE2` (0x05B586/0x05B57E).
+
+**Artillery**: on a loss it flips to the "Damaged" display state
+(`+0x04 |= 0x80` at 0x05B6F6, `@ARTILLERY`; the displayed delta is the
+attack−combat column pair 7−5 = "+2 / −2", 0x069B39); a damaged artillery
+that loses again is destroyed (`@ARTILLERY2`, 0x05B740).
+
+**Ships**: ship-vs-ship uses the raw guns/hull columns with no modifier
+chain (`roll = random_int(1, guns_A + hull_D)` at 0x05B844); outcomes are
+`@SHIPDAMAGE` (0x05BC79) or `@SHIPSUNK` (0x05BD0F) — a sinking ship carrying
+cargo (`+0x04 & 0x40`, set at 0x02F37A) scatters its 6 cargo slots
+(loop 0x05BD28, `@CARGOCAPTURE` 0x05B98C on seizure). Only Privateers and
+Frigates may start ship attacks (`@SHIPCOMBAT` guard in the ship dispatcher
+`func_03FDDE`); `@EVASIVE` posts on an evade (0x05D469 — the evade condition
+itself is unmapped). Shore fire from a colony fort is deterministic:
+`strength = artillery_count · fort_level · 4`, no roll (`func_02D3C6`,
+`@FORTFIRE` at 0x02D5D9).
+
+**Promotion**: the winner is promoted with probability
+`winner_strength / S` where `S = atk + def ± difficulty` (human +d, AI −d)
+minus a class penalty (Petty Criminal −10, Indentured Servant −5) — roll
+`random_int(1,S)` at 0x5C764. **George Washington** (FF 11, tested at
+0x5C758) skips the roll: promotion is automatic. The class ladder
+`func_05E714` writes the next rank (0x5C7DD); at the soldier ceiling the unit
+*type* advances instead — Soldier → Continental Army (0x5C7C3). Popups
+`@VETERAN` / `@VALOR` / `@WELLSEASONED`.
+
+In-repo conflicts, flagged: one combat.md bullet calls `func_05CA7E`
+"pre-combat setup, not the roll" — overruled by the wave-9 ruling and the
+roll site 0x05D188; the 0x05CF43 +50% write is glossed both "colony" and
+"Spain-vs-natives"; the profession byte is cited both `+0x17` and record
+`+0x15`. The Combat Analysis gate is written `[0x5383]&2` and "Game-Options
+bit 0x0200" in different sheets.
+
 ## 15. Powers and relations
 
 Four European powers (0 = English, 1 = French, 2 = Spanish, 3 = Dutch) share the New
@@ -2306,6 +2359,43 @@ span 300). No US-flag sprite is drawn anywhere in the F3 body or the reveal
 popup (byte-verified negative).
 
 
+### 17.6 Crosses and immigration
+
+The crosses→immigrant step is `func_0363A2` (0x0363A2..0x036573):
+accumulated crosses live at `PowerRecord +0x2E` (add 0x0363F5, reset
+0x03645E) and the threshold at `+0x30` (written 0x0363EF from the return of
+`func_035D9A`). A new colonist appears on the Europe dock when the
+accumulator exceeds the threshold (0x036404), announced through `@UNREST`
+("Religious unrest in %COUNTRY causes increased emigration…") with tutorial
+T5 chained after.
+
+**The threshold** (`func_035D9A`): `accum` = Σ of the player's colony
+populations (+0x1F, loop 0x035DB0) + 1 per owned unit (0x035DD8..0x035DF8);
+then `if accum < 4000: accum ×= 2` (0x035E35), `+= 8` (0x035E38), hard clamp
+4000 (0x035E44); difficulty scale `×(8−d)/8` for the human (0x035E5D);
+**England ×2/3** (0x035E75..0x035E7B). A bigger empire therefore *slows*
+immigration. The main per-turn crosses *accrual* into `+0x2E`
+(church/cathedral production) is explicitly unidentified in the repo — TBD.
+William Penn multiplies colony cross production ×1.5 (0xA16B).
+
+**Who arrives**: the dock holds 3 candidates at `PowerRecord +0x02..+0x04`;
+the arrival picks slot `random_int(0,2)` (0x036462) and the slot refills from
+the generator (`func_034C24` path): a 3-tier ladder with threshold
+`(lvl+3)>>1` where `lvl` = difficulty for the human — `random_int(1,15)` →
+Petty Criminal 0x1A, else `random_int(1,10)` → Indentured Servant 0x19, else
+`random_int(1,8)` → Free Colonist 0x1C; **William Brewster** (FF 0x14)
+upgrades the criminal/servant results to Free Colonists (0x34C79) and also
+rewrites the standing dock pool (0x3BF85) and unlocks choosing the emigrant
+(0x36437). Harder difficulty ⇒ more low-tier arrivals. Every fourth turn
+(`turn&3 == 0`) the generator instead draws professional types from
+per-power counters. Recruit gold prices come from the pool word
+`0x978C + slot·6 + 4` (reads 0x035114/0x051E52) — a documented in-repo
+conflict flags the same table as the Europe ship/artillery purchase catalog
+(Artillery 500, Caravel 1000, Merchantman 2000, Galleon 3000, Privateer
+2000, Frigate 5000, fills 0x07497E..0x0749D8); only Artillery escalates
+(+100 per unit bought, `+0x1E` counter). The F2 adviser gauge renders
+`+0x2E of +0x30` ("(%d of %d)", `func_037958`).
+
 ## 18. Revolution, the King, and multiplayer
 
 The endgame pivots on one meter, one flag word and one power id: the national
@@ -2591,6 +2681,44 @@ salutation/title pointer (text only); Lost-City-Rumor odds are scout-scaled,
 **not** difficulty-scaled; European recruit prices come from a pre-filled pool
 word (only artillery escalates, +100·bought).
 
+### 18.12 The Tory uprising
+
+Processor `func_03CAC6` (0x3CAC6; its caller is resolved-as-runtime-dispatch —
+no static call site exists). There is **no SoL threshold gate** on the
+trigger path (byte-verified negative); the only gate is the per-call roll
+`random_int(0, d+1) != 0` (0x3CADD) — fire probability `(d+1)/(d+2)`, 50% at
+Discoverer up to ~83% at Viceroy. Target = the rebel colony with the highest
+**tory strength** = `pop·(100−SoL%)·2/100 + d + 1` (0x3CBE6..0x3CC06),
+skipping colonies already hit (`+0x1C` bit 0, set on the winner at 0x3CC3C).
+Militia spawn on the free adjacent tiles: `spawn_unit(type 1 Soldiers,
+owner = the King's power [0x53D2])` at 0x3CCCF, with a random upgrade gate
+promoting a spawn to Dragoons (0x3CD31); if no adjacent tile is free the
+uprising is silently suppressed (0x3CD59). Message `@TORYUPRISING` ("Tory
+uprising near %STRING0! Parliament arms Tory Militia!", 0x3CD94). The
+in-repo wording conflict on militia count (≤ 8 per free tile vs
+strength-counted-down) is unresolved — flagged.
+
+### 18.13 Scoring and the Hall of Fame
+
+Component sum `func_039EE2`, seven terms into the grand total
+(0x03A896..0x03A8AB): **population** (+1 per criminal/servant/convert, +2
+per Free Colonist, +4 per specialist, 0x3A0BE..0x3A113); **Founding
+Fathers** +5 each (0x03A2BE); **rebel sentiment** = the national meter
+`[0x53D0]` ×1 (0x03A561); **razes** = razed-settlement count
+(`PowerRecord +0x18`) × −(1+d) (0x03A4B1..0x03A4C5 — one spec sheet glosses
+this same site as an FF penalty; flagged); **gold** = treasury/1000
+(0x3A3F2); **post-intervention bells** = `+0x0C`/100 gated on the
+intervention flag (0x3A704..0x3A724); **revolution bonus** = `(1780 −
+declaration_year)·2`, additive, only if independence was won and declared
+before 1780 (0x3A5F5..0x3A609 — the retail manual's "×2.0 multiplier"
+framing is byte-refuted). Scaler `func_03A9C0`: multiplier
+`d+4 (+1 if d≥3, +1 if d≥4)` = 4/5/6/8/10 (0x3AA0A..0x3AA27), `score =
+(mult·base)/100 >> 1` (0x3AA31/0x3AA6A), Hall-of-Fame rank = largest n with
+`n²/3 < score`, capped 23 (0x3AA41..0x3AA79). The Hall of Fame renders on
+WOODPAN2/WOODPANL in FONTINTR (title gold 0xFC), persists
+`HALLFAME.DAT` — 5 shown of 6 records, stride 42, score word at `+0x26`,
+descending insertion (`func_03ADA6`).
+
 ## 19. Natives
 
 Eight tribes populate the map with individually tracked villages. The engine
@@ -2763,6 +2891,35 @@ is **gated off during the War of Independence** (`test [0x5382],1` at
 0x05DE11). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
 {%NUMBER0$} plundered!"). No Crown cut exists on this path; `@LOOTCASH`
 belongs to treasure-fleet arrival only.
+
+### 19.9 Alarm, tension, and raids
+
+Two meters exist. Per-settlement **alarm** words sit at `NativeSettlement
++0x0A + power·2` (raid/hostility trigger at ≥ 128, tested 0x4734E/0x4CAD7/
+0x53D4E). The separate **tension** table at `DGROUP:0x5B1C`
+(`word[(row·39 + col)·2]`, getter 0x0082A0, only the 4 European columns ever
+touched) runs 0..100 — hostile at ≥ 75 (0x47328), war at 100 (0x45EB2).
+The applier `func_045DF2` clamps every delta to [0,100] and **halves positive
+deltas** for France (power 1, 0x45E21) and for any power holding
+**Pocahontas** (FF 16, 0x45E30). Documented deltas: per-turn drift ±1
+(0x4857D/0x485A7), trespass +1/+2/+3 by severity (0x4A2E8/0x4A319/0x4A674),
+successful trade −4 (0x5C41E), mission established — computed negative,
+clamped so tension ≤ 70 (0x571EB), mission destroyed + (0x57267),
+incite +100 / rival −100 (0x486F8/0x4870C), **burial-ground desecration
++100** (0x61B84) — instant war footing. The six `@PISS0..5` anger-source
+strings (roads, deforestation, missionaries, unprovoked attack, population
+pressure) carry no documented numeric deltas — TBD.
+
+**Raids** (`native_raid_outcome_dispatch`, `func_05BE84`): gate roll
+`random_int(1,12) − 1`, biased +(d−2) against a human European owner
+(0x5BF1A), versus threshold `3·K + 1` (0x5BEE5; K's meaning unmapped); then
+outcome `random_int(1,4)` (0x5BF35), downgraded while `turn < 40·(2−d)`
+(0x5BF44), dispatched five ways (0x5C026): `@RAIDSTORES` (goods stolen —
+bumps the settlement's raid budget +0x08 and wealth +0x0A, 0x5C3CC),
+`@RAIDWREAK` (0x5C1DE), `@RAIDGOLD` (0x5C5F7), `@RAIDBURN`/`@RAIDSHIP`
+(0x5C50B/0x5C57B), and `@RAIDNOTHING` — "raiding party wiped out"
+(0x5C637). The concrete payloads of WREAK/BURN/GOLD/SHIP beyond their
+messages are unmapped — TBD.
 
 ## 20. Turn flow and persistence
 

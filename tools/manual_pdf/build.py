@@ -1333,7 +1333,8 @@ def flow_svg(nodes):
             _, x, ty, w, h, t = b
             out.append(f'<rect x="{x}" y="{ty}" width="{w}" height="{h}" '
                        f'rx="{h / 2}" fill="{INK}" stroke="none"/>')
-            out.append(svg_text(x + w / 2, ty + h / 2 + 3, t, 8.4,
+            tsz = min(8.4, max(5.6, (w - 20) / (0.52 * max(1, len(t)))))
+            out.append(svg_text(x + w / 2, ty + h / 2 + 3, t, tsz,
                                 fill="#FCFBF8", anchor="middle", weight="bold"))
         elif b[0] == "act":
             _, x, ty, w, h, t, subs = b
@@ -1654,10 +1655,238 @@ def enrich_king(soup):
         "is also reachable from cheat @FORCED stage (a)."))
 
 
+def enrich_movement(soup):
+    _after_h3(soup, "short-range path-step finder", flow_fig(
+        "One step's movement cost", "func_061F02 cost rules, in priority order",
+        [
+            {"k": "dec", "t": "unit's stored moves ≤ 3 ? (one-move unit, 0x061F6B)",
+             "side": ("yes", ["every step costs a flat 3 (0x0622F4)"]),
+             "cont": "no"},
+            {"k": "dec", "t": "road/plow bits 0x0A at BOTH ends ? (0x0622A7)",
+             "side": ("yes", ["cost = 1  (a third of a stored point ×3)"]),
+             "cont": "no"},
+            {"k": "dec", "t": "river bit 0x40, cardinal step ? (0x0622CC)",
+             "side": ("yes", ["cost = 1"]), "cont": "no"},
+            {"k": "act", "t": "cost = terrain Movement × 3",
+             "s": ["byte[terrain·16 + 0x2F76]·3 (0x062300..0x06230C)",
+                   "NAMES values: open land 1 · forests/Hills/Arctic 2 · Mountains 3 · water 1"]},
+            {"k": "act", "t": "occupancy rules", "s": [
+                "tile's power must be −1 or the mover (0x062217); foreign/AI +8 (0x06225E)",
+                "natives (type ≥ 19) reject rumor tiles (0x0621F5)",
+                "ships (types 13..18): water = Ocean/Sea Lane only; mismatch only at endpoints"]},
+            {"k": "end", "t": "16×16-window BFS · cache DS:0xA270 · budget ×3"},
+        ]))
+
+
+def enrich_persistence(soup):
+    _after_h3(soup, "music scheduler", flow_fig(
+        "The background-music rotation", "func_004EE6 — runs from the input-idle loops",
+        [
+            {"k": "dec", "t": "background music [0xA2] on (or one-shot [0x9E]) ?",
+             "side": ("no", ["skip"]), "cont": "yes"},
+            {"k": "dec", "t": "driver still playing ? (poll id 8)",
+             "side": ("yes", ["wait"]), "cont": "no — pick next"},
+            {"k": "dec", "t": "forced-next tune [0x94] set ?",
+             "side": ("yes", ["honor it"]), "cont": "no"},
+            {"k": "act", "t": "seed RNG from tick clock [0x83A8], roll in the state window",
+             "s": ["PEACE ([0x5382]&1 clear): folk 1–12, 1-in-9 excursion into 13–23",
+                   "WAR OF INDEPENDENCE: tunes 13–18, 1-in-5 excursion back to folk",
+                   "re-roll avoids repeating the current tune [0x96]"]},
+            {"k": "act", "t": "event classes preempt via [0x9A]",
+             "s": ["war fanfare, native themes 0x33/0x35/0x36, …; index→id map func_004DF8"]},
+            {"k": "end", "t": "play"},
+        ]))
+    # save-file layout ribbon (principal blocks of the 43; section 20.3 table)
+    segs = [("magic", '"COLONIZE"+0x1A', 9, "text"),
+            ("ver", "2B", 2, "pos"), ("w,h", "4B", 4, "pos"),
+            ("globals", "0x5380 · 0x8E", 0x8E, "flag"),
+            ("AIPers ×4", "0x540E · 0xD0", 0xD0, "num"),
+            ("colonies", "0x5D46 · n·0xCA", 500, "econ"),
+            ("units", "0x3144 · n·0x1C", 400, "arr"),
+            ("powers ×4", "0x8808 · 0x4F0", 0x4F0, "num"),
+            ("natives", "0x54EC · n·0x12", 300, "pos"),
+            ("TribeData", "0x5AD6 · 0x270", 0x270, "pos"),
+            ("word tables + view", "blocks 13..43", 120, "pad")]
+    tw = sum(s[2] for s in segs)
+    W, y0, bh = 660, 30, 34
+    e = [f'<svg viewBox="0 0 {W} 96" xmlns="http://www.w3.org/2000/svg">']
+    x = 2.0
+    px = [max(46, s[2] / tw * 656) for s in segs]
+    scale = 656 / sum(px)
+    for (label, ext, _, cat), w in zip(segs, [p * scale for p in px]):
+        dark, light = CAT[cat]
+        e.append(f'<rect x="{x:.1f}" y="{y0}" width="{w:.1f}" height="{bh}" '
+                 f'fill="{light}" stroke="{dark}" stroke-width="1.1"/>')
+        size = 8.4 if len(label) * 4.6 < w else 6.4
+        lx = min(max(x + w / 2, len(label) * size * 0.26 + 3),
+                 W - len(label) * size * 0.26 - 3)
+        e.append(svg_text(lx, y0 + bh / 2 + 3, label, size, fill=dark,
+                          anchor="middle", weight="bold"))
+        xt = min(max(x + w / 2, len(ext) * 2.2 + 4), W - len(ext) * 2.2 - 4)
+        e.append(svg_text(xt, y0 - 6 - (10 if len(ext) > 12 and x > 60 else 0),
+                          ext, 6.8, fill=MUTED, anchor="middle", face=MONO_FACE))
+        x += w
+    e.append("</svg>")
+    fig = BeautifulSoup(
+        f'<figure><div style="break-inside:avoid"><div class="platehead">'
+        f'<span class="pt">COLONY&lt;slot&gt;.SAV — the save file</span>'
+        f'<span class="ps">serializer func_0734F8 · 43 raw DGROUP blocks, no compression</span></div>'
+        f'<div class="plate-wrap">{"".join(e)}</div>'
+        f'<figcaption>Principal blocks shown; on-disk offset = sum of preceding '
+        f'sizes; within a block the layout is the runtime struct (loader is a '
+        f'1:1 mirror of 43 freads). Variable arrays scale with live counts.'
+        f'</figcaption></div></figure>', "html.parser").figure
+    _after_h3(soup, "The save file", fig)
+
+
+def enrich_combat(soup):
+    _after_h3(soup, "After the roll", flow_fig(
+        "The loser's fate", "func_05B2C2 · 0x5B2C2..0x5BE2C",
+        [
+            {"k": "start", "t": "roll resolved — random_int(1, ATK+DEF) ≤ ATK ? (0x05D188)"},
+            {"k": "dec", "t": "loser is a ship ?",
+             "side": ("yes", ["raw roll random_int(1, guns+hull) (0x05B844)",
+                              "@SHIPDAMAGE (0x05BC79) or @SHIPSUNK (0x05BD0F)",
+                              "cargo bit 0x40 → 6-slot scatter loop (0x05BD28)"]),
+             "cont": "no — land unit"},
+            {"k": "dec", "t": "capture-eligible ? (Colonists / Treasure / Wagon, 0x5B31D)",
+             "side": ("yes", ["European owner < 4 · ship winner needs room (0x5B410)",
+                              "changes hands intact — set_unit_owner (0x5B4C7)",
+                              "@LOOTCAPTURE / @WAGONCAPTURE / @COLONISTCAPTURE"]),
+             "cont": "no"},
+            {"k": "dec", "t": "demotion ladder has a rung ? (0x5B5AA..0x5B61F)",
+             "side": ("yes", ["Dragoons→Soldiers→Colonists · Cavalry→Regulars",
+                              "Cont.Cav→Cont.Army→Colonists · @DEMOTE (0x05B679)",
+                              "Missionary profession → Missionaries unit (0x5B60E)"]),
+             "cont": "no — destroyed"},
+            {"k": "act", "t": "Artillery special: flip to Damaged (+0x04|=0x80, 0x05B6F6)",
+             "s": ["display pair +2/−2 (0x069B39) · damaged loses again → @ARTILLERY2 (0x05B740)"]},
+            {"k": "dec", "t": "winner promotes ? random_int(1,S) ≤ strength (0x5C764)",
+             "side": ("Washington", ["FF 11 (0x5C758): roll skipped —",
+                                     "promotion automatic"]),
+             "cont": "S = atk+def ±difficulty − class penalty"},
+            {"k": "end", "t": "@VETERAN / @VALOR · Soldier ceiling → Continental Army (0x5C7C3)"},
+        ]))
+
+
+def enrich_congress(soup):
+    _after_h3(soup, "Crosses and immigration", flow_fig(
+        "The immigration pipeline", "func_035D9A threshold · func_0363A2 arrival",
+        [
+            {"k": "act", "t": "threshold = f(empire size)",
+             "s": ["accum = Σ colony pops + 1/unit (0x035DB0/0x035DD8)",
+                   "×2 if < 4000, +8, clamp 4000 (0x035E35..0x035E44)",
+                   "×(8−d)/8 human (0x035E5D) · England ×2/3 (0x035E75)"]},
+            {"k": "dec", "t": "crosses +0x2E > threshold +0x30 ? (0x036404)",
+             "side": ("no", ["keep accruing (accrual site itself",
+                             "unidentified in repo — TBD)"]),
+             "cont": "yes — @UNREST"},
+            {"k": "act", "t": "pick dock slot random_int(0,2) (0x036462) — colonist emigrates",
+             "s": ["dock pool = PowerRecord +0x02..+0x04"]},
+            {"k": "dec", "t": "refill roll — 3-tier ladder, threshold (lvl+3)>>1",
+             "side": ("Brewster", ["FF 0x14: criminal/servant results",
+                                   "upgrade to Free Colonists (0x34C79)",
+                                   "+ player may choose the emigrant (0x36437)"]),
+             "cont": "rand(1,15)→Criminal · rand(1,10)→Servant · rand(1,8)→Free"},
+            {"k": "end", "t": "every 4th turn: professional types from per-power counters"},
+        ],
+        "Harder difficulty raises the tier threshold — more criminals and "
+        "servants. A larger empire raises the cross threshold — slower "
+        "immigration."))
+
+
+def enrich_scoring(soup):
+    _after_h3(soup, "Scoring and the Hall of Fame", formula_fig(
+        "The final score", "func_039EE2 components · func_03A9C0 scaler",
+        ["score = (mult · Σ7 terms) / 100  >>  1",
+         "mult = d+4 (+1 if d≥3) (+1 if d≥4)  =  4 / 5 / 6 / 8 / 10"],
+        [("population", "+1 criminal/servant/convert · +2 Free Colonist · +4 specialist", "0x3A0BE..0x3A113"),
+         ("fathers", "+5 per Founding Father", "0x03A2BE"),
+         ("sentiment", "+ national SoL meter [0x53D0]", "0x03A561"),
+         ("razes", "razed-settlement count × −(1+d)", "0x03A4B1..0x03A4C5"),
+         ("gold", "+ treasury / 1000", "0x3A3F2"),
+         ("bells", "+ bells/100, only after foreign intervention", "0x3A704..0x3A724"),
+         ("revolution", "+ (1780 − declaration year)·2 if independence won", "0x3A5F5..0x3A609"),
+         ("rank", "largest n with n²/3 < score, cap 23", "0x3AA41..0x3AA79")],
+        "The retail manual's ×2.0/×1.5 revolution multiplier is byte-refuted — "
+        "the bonus is additive."))
+
+
+def enrich_raids(soup):
+    _after_h3(soup, "Alarm, tension, and raids", flow_fig(
+        "The raid dispatch", "native_raid_outcome_dispatch — func_05BE84",
+        [
+            {"k": "dec", "t": "random_int(1,12) − 1 [+(d−2) vs human] ≥ 3·K+1 ?",
+             "side": ("no", ["no raid this pass (0x5BEFD/0x5BF1A/0x5BEE5)"]),
+             "cont": "yes"},
+            {"k": "act", "t": "outcome = random_int(1,4) (0x5BF35)",
+             "s": ["downgraded while turn < 40·(2−d) (0x5BF44)",
+                   "per-outcome availability gates (0x181F:0x9FC)"]},
+            {"k": "dec", "t": "5-way dispatch (0x5C026)",
+             "side": ("0", ["@RAIDNOTHING — raiding party",
+                            "wiped out (0x5C637)"]),
+             "cont": "1..4"},
+            {"k": "act", "t": "1 @RAIDSTORES — goods stolen (0x5C3CC)",
+             "s": ["settlement raid budget +0x08 and wealth +0x0A bumped (0x5C3E1/0x5C3E4)"]},
+            {"k": "act", "t": "2 @RAIDWREAK · 3 @RAIDGOLD · 4 @RAIDBURN / @RAIDSHIP",
+             "s": ["0x5C1DE · 0x5C5F7 · 0x5C50B / 0x5C57B — payloads beyond the messages unmapped (TBD)"]},
+            {"k": "end", "t": "tension halved for France / Pocahontas on every positive delta"},
+        ]))
+
+
+def enrich_lcr(soup):
+    fig = flow_fig(
+        "The Lost City Rumor cascade", "func_061454 · 0x061454..0x061C9C",
+        [
+            {"k": "start", "t": "unit enters a rumor tile (procedural hash vs seed [0x190])"},
+            {"k": "act", "t": "scout bonus s = 0..3",
+             "s": ["+1 Scout type 5 (0x0614A6) · +1 Seasoned class 0x16 (0x0614BB)",
+                   "+1 De Soto (FF 7) — also arms no-bad-luck (0x0614C6..0x0614E3)"]},
+            {"k": "act", "t": "outcome n = max(floor, random_int(1,9)) (0x0614F6..0x06151A)",
+             "s": ["anti-streak floor rises per reroll, cap 3 (0x061508..0x061514)",
+                   "quality roll q = random_int(1,100) + s·10 (0x06151D)"]},
+            {"k": "dec", "t": "bad outcome (5 or 8) ?",
+             "side": ("escape", ["random_int(1, s+1) roll (0x061551)",
+                                 "De Soto: reroll instead — bad luck",
+                                 "never lands (0x061563/0x06158C)"]),
+             "cont": "gates"},
+            {"k": "act", "t": "special gates", "s": [
+                "Fountain of Youth (1): forest terrain band + early-session only (0x061594)",
+                "Cibola (2): Mountains/Hills/desert band; De Soto rescue 1-in-3 (0x0615E7..0x06162D)",
+                "Cibola sub-band on q: ≤10 → 5 · ≥25 → 6 · else 8 (0x061646..0x061662)"]},
+            {"k": "dec", "t": "outcome table",
+             "side": ("rewards", ["ruins gold = 10·(3d8), ×(s+2)/2 scouted (0x061776)",
+                                  "chief's gift = 2·(4d10) (0x0617C6)",
+                                  "Cibola treasure = 100·(10·(s+2)+1d20) (0x06166A)",
+                                  "burial: @BURIAL1 0 · @BURIAL2 10·(3d8) ·",
+                                  "@BURIAL3 200·(1d8+2s+10) (0x0619F2..0x061A73)"]),
+             "cont": "1 FoY: 8 immigrants · 5 vanish · 6 fizzle · 9 survivors"},
+            {"k": "act", "t": "@SCREWED — desecrating a hostile tribe's grounds",
+             "s": ["tension +100 vs the tribe (0x61B84) — instant war footing; the unit dies"]},
+            {"k": "end", "t": "gold → treasury +0x2A (0x061C4C); treasure spawns type 0xA, value/100 in class byte"},
+        ],
+        "In-repo conflicts flagged: floor per-rumor vs per-call; the one-shot "
+        "per-power bit glossed both FoY and burial; the pre-2026 weight table "
+        "was fabricated and is refuted.")
+    for h in soup.find_all("h3"):
+        if "Lost City" in h.get_text() or "LOSTCITY" in h.get_text():
+            h.insert_after(fig)
+            return
+    for p in soup.find_all("p"):
+        if "LOSTCITY0" in p.get_text() or "Lost City rumour" in p.get_text():
+            p.insert_after(fig)
+            return
+    warn("LCR anchor not found in section 23")
+
+
 ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
              "8": [enrich_sol], "9": [enrich_market], "12": [enrich_units],
-             "18": [enrich_king], "19": [enrich_loot],
-             "20": [enrich_turnflow], "23": [enrich_events],
+             "13": [enrich_movement], "14": [enrich_combat],
+             "17": [enrich_congress],
+             "18": [enrich_king, enrich_scoring],
+             "19": [enrich_loot, enrich_raids],
+             "20": [enrich_turnflow, enrich_persistence],
+             "23": [enrich_events, enrich_lcr],
              "B": [enrich_appendix_b]}
 
 
