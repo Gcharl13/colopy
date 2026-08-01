@@ -1040,10 +1040,59 @@ def goods_plate_fig():
     return BeautifulSoup(fig, "html.parser").figure
 
 
+def food_walkthrough_fig():
+    """The life of the Food price — every step from section 9's own cited
+    text (9.1 display pair, 9.3 drift/init/coupling, 9.4 transactions)."""
+    return flow_fig(
+        "Walkthrough — the life of the Food price",
+        "good 0 · assembled from §9.1 / §9.3 / §9.4",
+        [
+            {"k": "start", "t": "New game"},
+            {"k": "act", "t": "price_seed[Food] = random_int(600, 1000)",
+             "s": ["func_07561C fills all 16 entries (0x75645) — no fixed base-price table",
+                   "price_seed lives at DS:0x53EA (word per good)"]},
+            {"k": "act", "t": "Europe strip shows the bid/ask pair (16-good loop 0x38D40)",
+             "s": ["sell = price_level[Food] − 1   (func_030590, clamp ≥ 0)",
+                   "buy = @CARGO col 1 (Food = 1) + price_level[Food]   (func_030566)",
+                   "so Food's on-screen spread is the constant 1 + 1 = 2"]},
+            {"k": "dec", "t": "you trade Food in Europe",
+             "side": ("BUY", ["untaxed: sub [bx+0x2A],ax; sbb …",
+                              "EU supply +0xBC −= qty @0x3231C",
+                              "accumulator +0xFC −= qty @0x32324"]),
+             "cont": "SELL (func_032914)"},
+            {"k": "act", "t": "SELL: gross = price·qty (0x3249F), tax split 0x32A4A..78",
+             "s": ["tax = gross·tax_rate/100 → King fund +0x22 (0x32A92)",
+                   "net = gross − tax → treasury via the [0,999999] clamp (0x32A82)",
+                   "EU supply +0xBC += qty · accumulator +0xFC += qty (0x323B4/0x323BC)"]},
+            {"k": "act", "t": "immediate single-good re-drift — drift(Food, 0)",
+             "s": ["both handlers call it right after the trade (0x32D99 / 0x32902)"]},
+            {"k": "act", "t": "end of turn — func_036574 @0x757B0 (in func_0755CC)",
+             "s": ["acc = price_seed[Food] + Σ over 4 powers of max(0, accum_FC[Food])",
+                   "price_seed[Food] −= acc >> 8   (proportional decay 0x30618..0x30639)",
+                   "then all per-power accumulators are cleared (0x3670E)"]},
+            {"k": "dec", "t": "price level steps",
+             "side": ("down", ["step-down −= 1, clamp ≥ 0 @0x3228D"]),
+             "cont": "step-up += 1 @0x32272"},
+            {"k": "end", "t": "next turn's bid/ask uses the new level"},
+        ],
+        "Food is not luxury-coupled. Rum/Cigars/Cloth/Coats additionally share "
+        "S_pair = supply[9]+…+supply[12] with target[i] = (S_pair·3)/supply[i] "
+        "(0x030649/0x03074F); raw inputs Sugar/Tobacco/Cotton/Furs use the same "
+        "formula against their own supply (Furs halved; +1 if year<1700, "
+        "+1 more if year<1600, 0x0307C9).")
+
+
 def enrich_market(soup):
     for h in soup.find_all("h3"):
         if "Goods" in h.get_text():
             h.insert_after(goods_plate_fig())
+            break
+    for h in soup.find_all("h3"):
+        if "Buy/sell" in h.get_text():
+            anchor = h.find_next("table")
+            anchor = (anchor.parent if anchor and anchor.parent.name == "div"
+                      else anchor) or h
+            anchor.insert_after(food_walkthrough_fig())
             return
 
 
@@ -1330,6 +1379,32 @@ def flow_fig(title, sub, nodes, caption=""):
            f'<div class="platehead">'
            f'<span class="pt">{esc(title)}</span><span class="ps">{esc(sub)}</span>'
            f'</div><div class="plate-wrap">{flow_svg(nodes)}</div>{cap}</div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def formula_fig(title, sub, formula, factors, caption=""):
+    """Formula plate: the expression set large, one keyed row per factor.
+    factors: (symbol, meaning, cite)."""
+    lines = formula if isinstance(formula, list) else [formula]
+    H = 18 + 24 * len(lines) + 10
+    e = [f'<svg viewBox="0 0 660 {H}" xmlns="http://www.w3.org/2000/svg">']
+    e.append(f'<rect x="2" y="4" width="656" height="{H - 8}" fill="#F4F3EF" '
+             f'stroke="{CAT["num"][0]}" stroke-width="1.4"/>')
+    for i, ln in enumerate(lines):
+        e.append(svg_text(330, 26 + 24 * i, ln, 12.5, fill=INK, anchor="middle",
+                          face=MONO_FACE, weight="bold"))
+    e.append("</svg>")
+    rows = "".join(
+        f'<tr><td class="cmono" style="color:{CAT["num"][0]};font-weight:bold">'
+        f'{esc(sym)}</td><td>{esc(mean)}</td><td class="cmono">{esc(cite)}</td></tr>'
+        for sym, mean, cite in factors)
+    cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""
+    fig = (f'<figure><div style="break-inside:avoid"><div class="platehead">'
+           f'<span class="pt">{esc(title)}</span><span class="ps">{esc(sub)}</span></div>'
+           f'<div class="plate-wrap">{"".join(e)}</div></div>'
+           f'<div class="tablewrap"><table class="keytab"><thead><tr><th>Term</th>'
+           f'<th>Meaning</th><th>Site</th></tr></thead><tbody>{rows}</tbody>'
+           f'</table></div>{cap}</figure>')
     return BeautifulSoup(fig, "html.parser").figure
 
 
