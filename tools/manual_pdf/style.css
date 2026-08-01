@@ -273,3 +273,99 @@ img { max-width: 100%; }
   font-family: "Nimbus Sans Narrow", sans-serif; font-size: 7.6pt;
   color: var(--muted);
 }
+
+/* ---------- v8 reference-sheet primitives (per user example) ---------- */
+.tbd {
+  display: inline-block; font-family: "Nimbus Sans Narrow", sans-serif;
+  font-size: 6.6pt; font-weight: bold; color: #8A6D1A;
+  background: #FCF3D9; border: 0.8px solid #D9BC6A; border-radius: 3px;
+  padding: 0 4px; vertical-align: 0.08em; letter-spacing: 0.04em;
+}
+.meterwrap { margin: 0.5em 0 0.9em 0; }
+.meterhead { display: flex; justify-content: space-between; align-items: baseline; }
+.meterhead .mh1 { font-size: 8.8pt; color: #3A3F47; }
+.meterhead .mh2 {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 8.8pt;
+}
+.meterbar {
+  display: flex; height: 15px; border: 0.9px solid #B9BEC5;
+  border-radius: 3px; overflow: hidden; margin: 3px 0 2px 0;
+}
+.meterbar div { height: 100%; }
+.meterticks { position: relative; height: 11px; }
+.meterticks span {
+  position: absolute; font-family: "Nimbus Sans Narrow", sans-serif;
+  font-size: 6.9pt; color: var(--muted); white-space: nowrap;
+  transform: translateX(-50%);
+}
+.meterticks span:first-child { transform: none; }
+.meterticks span:last-child { transform: translateX(-100%); }
+.pairwrap { display: flex; gap: 18px; margin: 0.6em 0 0.8em 0; }
+.paircol { flex: 1 1 0; }
+.paircol .pchead {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 8.2pt; letter-spacing: 0.06em; color: var(--muted);
+  padding-bottom: 2px;
+}
+.paircol table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+.paircol th {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-size: 6.9pt;
+  letter-spacing: 0.05em; color: var(--faint); text-align: left;
+  border-bottom: 0.9px solid var(--rule); padding: 1px 4px;
+}
+.paircol td { border-bottom: 0.6px solid var(--hair); padding: 2.6px 4px; }
+.paircol td.pd {
+  font-family: "DejaVu Sans Mono", monospace; font-weight: bold;
+  font-size: 8pt; white-space: nowrap;
+}
+.paircol td.pn { font-size: 7.4pt; color: var(--muted); }
+.rulecard {
+  border: 1px solid #C9CDD3; border-radius: 6px; padding: 7px 12px 6px 12px;
+  margin: 0.55em 0; background: #FCFBF8; break-inside: avoid;
+}
+.rulecard .rct {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 9.4pt; margin-bottom: 3px;
+}
+.rulecard .rcf { font-size: 10.6pt; margin: 2px 0 5px 0; color: #191C21; }
+.rulecard .rcd {
+  font-size: 7.6pt; color: #3A3F47; border-top: 0.6px solid var(--hair);
+  padding-top: 3px;
+}
+.rulecard .rcd b { font-family: "Nimbus Sans Narrow", sans-serif; }
+.storyline { margin: 0.5em 0 0.7em 0; }
+.storyline .sstep {
+  display: flex; gap: 8px; align-items: baseline; padding: 2.2px 0;
+  font-size: 8.8pt;
+}
+.storyline .snum {
+  flex: 0 0 auto; display: inline-block; width: 13px; height: 13px;
+  border-radius: 50%; background: #191C21; color: #FCFBF8;
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 7.6pt; text-align: center; line-height: 13px;
+  transform: translateY(1.5px);
+}
+.storyline .sfoot { font-size: 7.6pt; color: var(--muted); padding-top: 3px; }
+.workedcard {
+  border: 1px solid #9CC3B4; background: #EDF6F1; border-radius: 6px;
+  padding: 6px 12px 7px 12px; margin: 0.6em 0; break-inside: avoid;
+}
+.workedcard .wct {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 9.2pt; color: #1E5641; margin-bottom: 3px;
+}
+.workedcard .wrow {
+  display: flex; gap: 10px; align-items: baseline; padding: 1.8px 0;
+  font-size: 8.4pt;
+}
+.workedcard .wtag {
+  flex: 0 0 78px; font-family: "Nimbus Sans Narrow", sans-serif;
+  font-weight: bold; font-size: 7.6pt; color: #1E5641;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.workedcard .wtxt { flex: 1 1 auto; }
+.workedcard .wnum {
+  flex: 0 0 auto; font-family: "DejaVu Sans Mono", monospace;
+  font-size: 8pt; font-weight: bold; color: #1E5641; text-align: right;
+}

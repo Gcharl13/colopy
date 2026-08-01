@@ -2936,20 +2936,7 @@ digit is a banding of the tribe's current tension toward the viewing power
 
 ### 19.3 First contact
 
-A tribe must be met **on land**; ships and wagons are refused with *"We must
-contact the Indians on land first, Excellency."* The meeting itself is driven
-by `native_events()`:
-
-1. A **woodcut** plays on the first meeting, chosen by tribe: *THE INCA
-   NATION* for the Incas, *THE AZTEC EMPIRE* for the Aztecs, and *MEETING THE
-   NATIVES* for the other six — each with its own tune, each latched
-   once-only in a seen-woodcuts bitmask.
-2. The chief then offers the **treaty**: *"The {tribe} welcomes you. We are a
-   glorious nation… we generously offer you the land you now occupy as a
-   gift. Will you accept our treaty and live with us in peace as brothers?"*
-   — Yes / No.
-3. **No** answers with *"Then the mighty {tribe} shall mercilessly drive you
-   from our shores. Prepare for WAR!"*
+The sheet above is the whole sequence; the treaty text and the woodcut titles are quoted verbatim from the game script.
 
 The tribe's starting disposition was already fixed at map creation, when
 `place_native_settlements()` rolled each tribe's per-power anger seed:
@@ -3069,25 +3056,7 @@ excepted), and red-alarm villages refuse all trade.
 
 ### 19.6 Alarm and anger — everything that raises and lowers it
 
-All tension changes flow through the single applier `adjust_tension()`
-(clamp 0..100; positive deltas halved for France and for Pocahontas owners).
-The complete traced ledger:
-
-| source | change | notes |
-|---|---|---|
-| cooling drift (quiet turn) | −1 | fires as the tribe's spread counter crosses −8 |
-| heating drift (pressure turn) | +1 | crosses +8 |
-| normalization sweep | −1 | decay loop over settlements |
-| minor trespass | +1 | crossing tribal land |
-| moderate trespass | +2 | also stamps the village's trespass memory |
-| severe trespass | +3 | |
-| successful trade | −4 | goodwill credit after a closed deal |
-| mission established | −computed | result additionally capped at 70 — a new mission always pulls the meter out of the war band |
-| mission destroyed / missionary expelled | +computed | magnitude formula untraced (TBD) |
-| incite accepted — you are the target | +100 | instant war footing |
-| incite accepted — payer's reward | −100 | paired write for the paying power |
-| burial-ground desecration | +100 | the offending unit is executed |
-| agreeing to an ally's "smite the heathen" request | +100 | diplomacy-meeting row |
+All tension changes flow through the single applier `adjust_tension()` — the sheet above is the complete traced ledger.
 
 Beyond the tribe meter, each village's **alarm word** is what actually arms
 raids (threshold 128) and the Trade/Hostile menu swap (75). The applier's tail
@@ -3190,15 +3159,7 @@ footing (+100).
 
 ### 19.9 Raids
 
-When a village's alarm word toward a power stands at 128 or more it becomes a
-raid source; `native_raid()` runs the outcome machine:
-
-```formula
-raid fires when random(1..12) − 1 [ + (difficulty − 2) versus a human ] ≥ 3·K + 1        K untraced (TBD); severity = random(1..4), downgraded while turn < 40·(2 − difficulty)
-example: at Viceroy a roll of 8 gives 7, +2 human bias = 9, against a threshold of 7 → the raid proceeds; severity rolls random(1..4)
-```
-
-The severity dispatches five ways:
+The five outcomes and their message families:
 
 | roll | outcome | message family |
 |---|---|---|
@@ -3217,16 +3178,6 @@ off. The early-game downgrade above is why the first decades stay survivable
 on the easier difficulties.
 
 ### 19.10 Attacking a village — burn, loot, and extinction
-
-*Attack Village* (or marching a military unit in with hostile intent —
-confirmed by *"Shall we attack the {tribe}, Your Excellency?"*) resolves
-through the standard combat roll — `random(1..ATK+DEF) ≤ ATK` wins — with the
-defence side built from the terrain multiplier chain. **No dedicated
-native-settlement defence formula has been traced** (TBD): what is
-byte-verified is that a **capital doubles** the computed defence bonus, and
-the settlement's display strength scales with the tribe's level. The manual
-fills in the intent: cities are "much better defended… because of the large
-populations", villages less so, camps poorly.
 
 **How many attacks until it burns?** The honest state of the trace:
 
@@ -3247,11 +3198,6 @@ populations", villages less so, camps poorly.
 
 **The payout.** When the village falls, the razing power collects gold on
 the spot:
-
-```formula
-raze gold = ( r₁ + r₂ + r₃ ) × r₄ × 4 × ( size + 1 )        rᵢ = random(1 .. 10−difficulty),  r₄ = random(1..6)
-example: an Explorer razes a size-8 village: rolls 5+7+3 = 15 → ×4 (r₄) = 60 → ×4 = 240 → ×9 = 2 160 gold straight to the treasury
-```
 
 The gold lands as a 32-bit credit in `power.gold` — **no ×100, and no
 Treasure unit on this path**. The *size* operand carries a documented
