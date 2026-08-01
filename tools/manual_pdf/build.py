@@ -1481,6 +1481,28 @@ def enrich_market(soup):
             return
 
 
+_PAL_CACHE = None
+
+
+def pal_entry(idx):
+    """VICEROY.PAL entry {index,r,g,b,hex} from the committed decode."""
+    global _PAL_CACHE
+    if _PAL_CACHE is None:
+        import json
+        _PAL_CACHE = json.load(open(ROOT / "data_extracted/palette.json"))
+    return _PAL_CACHE[idx]
+
+
+def swatch_html(idx):
+    """Inline colour chip for a palette index — the index number printed on
+    the actual colour it names."""
+    ent = pal_entry(idx)
+    lum = 0.299 * ent["r"] + 0.587 * ent["g"] + 0.114 * ent["b"]
+    ink = "#000000" if lum > 128 else "#FFFFFF"
+    return (f'<span class="swatch" style="background:{ent["hex"]};'
+            f'color:{ink}">{idx}</span>')
+
+
 def palette_plate_fig():
     import json
     pal = json.load(open(ROOT / "data_extracted/palette.json"))
