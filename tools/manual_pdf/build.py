@@ -1483,9 +1483,30 @@ def food_walkthrough_fig():
 
 def enrich_market(soup):
     for h in soup.find_all("h3"):
-        if "Goods" in h.get_text():
+        if "goods" in h.get_text().lower():
             h.insert_after(goods_plate_fig())
             break
+    # the big 16-good table: icon per row + compact sizing
+    for tbl in soup.find_all("table"):
+        heads = [th.get_text().strip().lower() for th in tbl.find_all("th")]
+        if not any("net trade" in h for h in heads):
+            continue
+        tbl["class"] = (tbl.get("class") or []) + ["compact"]
+        for tr in tbl.find_all("tr"):
+            td = tr.find("td")
+            if td is None:
+                continue
+            name = td.get_text().strip()
+            if name in SPR.GOODS:
+                img = SPR.goods_icon(SPR.GOODS.index(name))
+                tag = SPR.img_tag(SPR.data_uri(img), img.width, img.height,
+                                  scale=1.15, title=name)
+                cell = BeautifulSoup(
+                    f'<span style="white-space:nowrap">{tag} '
+                    f'{esc(name)}</span>', "html.parser")
+                td.clear()
+                td.append(cell)
+        break
     for h in soup.find_all("h3"):
         if "Buy/sell" in h.get_text():
             anchor = h.find_next("table")
@@ -2383,43 +2404,6 @@ def enrich_king(soup):
                    "Man-O-War carrier at best beach; all land units Veteran"]},
             {"k": "end", "t": "@MERCS — force arrives"},
         ]))
-    _after_h3(soup, "Royal Expeditionary Force schedule", flow_fig(
-        "REF growth — one purchase", "grow_royal_fund(), pre-independence each turn",
-        [
-            {"k": "act", "t": "fund += (8·diff + 10), doubled at 1600/1700/1750",
-             "s": ["PowerRecord +0x22; sale tax feeds the fund"]},
-            {"k": "dec", "t": "fund ≥ 1800 ?",
-             "side": ("no", ["wait — accrue again next turn"]), "cont": "yes"},
-            {"k": "dec", "t": "(reg+2)/3 > cavalry ?",
-             "side": ("yes", ["buy Cavalry ref.cavalry"]), "cont": "no"},
-            {"k": "dec", "t": "reg/4 > artillery ?",
-             "side": ("yes", ["buy Artillery ref.artillery"]), "cont": "no"},
-            {"k": "dec", "t": "(reg+cav+art+5)/10 > ships ?",
-             "side": ("yes", ["buy Man-O-War ref.man_o_war"]), "cont": "no"},
-            {"k": "act", "t": "buy Regulars ref.regulars (default)",
-             "s": ["inc at · fund −= 1800",
-                   "post-declaration: announced as @KINGBUY instead"]},
-            {"k": "end", "t": "army stays in ratio ~ 3:1 cav, 4:1 art, 10:1 naval"},
-        ]))
-    _after_h3(soup, "Spanish Succession merge", flow_fig(
-        "The Succession merge", "spanish_succession() · event id 0x68",
-        [
-            {"k": "dec", "t": "revolution meter below 75 · no power has seceded yet · single-player ?",
-             "side": ("no", ["meter ≥ 75 → the revolution",
-                             "handlers fire instead"]),
-             "cont": "yes (meter game.revolution_meter, REF id game.king_power; gate)"},
-            {"k": "act", "t": "rank powers: 3·[+p] + 2·[+p] + [+p]",
-             "s": [", sort — weakest AI cedes, strongest gains"]},
-            {"k": "act", "t": "@SUCCESSION popup",
-             "s": ['"…Treaty of Utrecht specifies that all {%STRING3} possessions…"']},
-            {"k": "act", "t": "rewrite every owner", "s": [
-                "map-tile owner nibbles",
-                "unit owners · colony owners +0x1A",
-                "third owner-nibble table"]},
-            {"k": "end", "t": "ceding power eliminated — controller:=2"},
-        ],
-        "The enqueue gate for event 0x68 is an unresolved residual; the handler"
-        "is also reachable from cheat @FORCED stage (a)."))
 
 
 def enrich_movement(soup):

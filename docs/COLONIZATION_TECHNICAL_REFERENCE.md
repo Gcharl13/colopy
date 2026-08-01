@@ -1398,40 +1398,79 @@ manufactured luxuries coupled through a shared supply pool.
 
 | field | type | meaning |
 |---|---|---|
-| `+0x01` | u8 | **tax rate** (0..100) — read for the Europe banner; raised by King events |
+| `+0x01` | u8 | **tax rate** (0..100) — read for the Europe banner; raised by King events; hard-clamped at 75 |
 | `+0x1E` | u16 | artillery-bought counter (Europe artillery price escalation: `cost = base + count·100`; incremented on each purchase, zeroed at new game) |
-| `+0x20` | u16 | **boycott bitmask**, bit = good index. Test is_boycotted (`(1<<good) & [bx+0x20]`); set (Tea Party); back-tax lift (`&= ~bit` after paying price×500 into the King fund `+0x22`); **Jakob Fugger** (Founding Father id 1) clears the whole word to 0 |
-| `+0x22` | s32 | King's REF fund (receives sale tax) |
+| `+0x20` | u16 | **boycott bitmask**, bit = good index. Test is_boycotted (`(1<<good) & [bx+0x20]`); set (Tea Party); back-tax lift (`&= ~bit` after paying count×500 into the King fund `+0x22`); **Jakob Fugger** (Founding Father id 1) clears the whole word to 0 |
+| `+0x22` | s32 | King's REF fund (receives sale tax — §18.10) |
 | `+0x26` | s32 | sales tally (net proceeds accumulator) |
 | `+0x2A` | u32 | **gold (treasury)** — every credit goes through a clamp helper: add s32, clamp to [0, 999999] |
-| `+0x4C` | u8[16] | per-good **price level** (indexed by good; step-up `+=1`, step-down `−=1` clamp ≥0) |
-| `+0x5C` | s16[16] | market pool (drift-only; never touched by the transaction path) |
-| `+0x7C` | s32[16] | traded volume (cumulative value) |
-| `+0xBC` | s32[16] | European supply per good |
-| `+0xFC` | s32[16] | per-good trade accumulator — summed by the drift function |
+| `+0x4C` | u8[16] | per-good **price level** — the internal price. Display: sell = level − 1, buy = level + burden |
+| `+0x5C` | s16[16] | per-good **traffic accumulator** ("market pool") — the drift's pressure counter. **Negative → the price is about to rise; positive → about to fall**; steps fire at ±100·(rise\|fall) |
+| `+0x7C` | s32[16] | **traded volume** — cumulative *value* (price×qty; sales net of tax). Write-only in the decoded image — its reader is unlocated (TBD) |
+| `+0xBC` | s32[16] | **European supply** per good, in units (sell +qty / buy −qty). Reader likewise unlocated (TBD) |
+| `+0xFC` | s32[16] | per-good **net-trade accumulator** — summed (clamped ≥ 0) by the drift each turn. **Never cleared during play** — a whole-game counter, which is what makes the seed decay a slow secular drift |
 
-**Displayed bid/ask pair** (Europe price strip, 16-good loop):
-`sell = price_level[good] − 1` (accessor sell_price, clamp ≥ 0) and
-`buy = CARGO_row[good].col1 + price_level[good]` (accessor buy_price). The
-on-screen spread is therefore the per-good constant `@CARGO` column 1 + 1:
-Food 1, Sugar 4, Tobacco 3, Cotton 2, Furs 4, Lumber 2, Ore 3, Silver 20,
-Horses 2, Rum/Cigars/Cloth/Coats 11, Trade Goods 2, Tools 2, Muskets 3.
+The four 16-entry arrays are all zeroed at new game; the price levels are then
+rolled per good — **one roll shared by all four powers** — as
+`level = start1 + random(0 .. start2 − start1)` from the `@CARGO` table below.
 
 ```formula
-sell price = price_level − 1            buy price = price_level + spread_constant
-example: Food at level 9 → sells at 8, buys at 10 (Food's constant is 1, so the visible spread is 2)
+sell price = level − 1
+buy price = level + burden        visible spread = burden + 1
+example: Food at level 9 with burden 7 → sells at 8, buys at 16 — the spread column below is why Food and Lumber feel wide
 ```
 
-### 9.2 Goods — `@CARGO`
+*(Correction 2026-08-01: earlier printings derived the spread from the wrong
+`@CARGO` column — the loader stores nine fields per good and the buy-side
+constant is field 4, "burden", exactly as the NAMES.TXT legend defines it.)*
 
-Good ids 0..15, in NAMES `@CARGO` order (all market arrays use this index):
-0 Food, 1 Sugar, 2 Tobacco, 3 Cotton, 4 Furs, 5 Lumber, 6 Ore, 7 Silver,
-8 Horses, 9 Rum, 10 Cigars, 11 Cloth, 12 Coats, 13 Trade Goods, 14 Tools,
-15 Muskets. Four **extended ids 16..19** are name-only production tokens:
-16 Hammers, 17 Crosses, 18 Liberty Bells, 19 Flags — never traded, used for
-production display (icon remaps 0x0D→0x37, 0x10→0x39, 0x11→0x3F in the
-Colonizopedia product strips). Commodity icons are ICONS frames `good + 0x17`
-in EXE-sheet numbering.
+### 9.2 The sixteen goods — the complete market table
+
+Good ids 0..15 in NAMES `@CARGO` order; every market array uses this index.
+The nine fixed columns come from `@CARGO` itself (parsed at boot — the
+numbers live in NAMES.TXT, not the EXE); the last five are the live
+per-power state, shown with sample values†.
+
+| good | start | low–high | spread | rises at | falls at | drift/turn | shift | price† | pool† | traded† | supply† | net trade† |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Food | 1–3 | 1–6 | 8 | −300 | +200 | −1 | 0 | 1 | −40 | 1,900 | 600 | 450 |
+| Sugar | 4–7 | 3–7 | 2 | −400 | +600 | −8 | 1 | 7 | 310 | 5,200 | 890 | 780 |
+| Tobacco | 3–5 | 2–5 | 2 | −400 | +800 | −10 | 1 | 5 | 150 | 6,000 | 1,140 | 1,210 |
+| Cotton | 2–5 | 2–5 | 2 | −400 | +600 | −11 | 1 | 5 | 85 | 3,100 | 700 | 640 |
+| Furs | 4–6 | 2–6 | 2 | −400 | +2,000 | −13 | 1 | 6 | 990 | 7,400 | 1,530 | 1,480 |
+| Lumber | 2 | 2–2 | 5 | −300 | +200 | 0 | 0 | 2 | 0 | 180 | 90 | 60 |
+| Ore | 3–6 | 2–6 | 3 | −200 | +400 | −7 | 0 | 6 | −25 | 900 | 260 | 210 |
+| Silver | 20 | 2–20 | 1 | −800 | +100 | −8 | 2 | 20 | 60 | 8,100 | 410 | 405 |
+| Horses | 2–3 | 2–11 | 1 | −300 | +200 | −3 | 0 | 5 | −130 | −2,300 | −380 | −460 |
+| Rum | 11–13 | 1–20 | 1 | −400 | +400 | −12 | 1 | 13 | 220 | 9,800 | 820 | 760 |
+| Cigars | 11–13 | 1–20 | 1 | −400 | +400 | −11 | 1 | 11 | 180 | 4,300 | 400 | 390 |
+| Cloth | 11–13 | 1–20 | 1 | −400 | +400 | −13 | 1 | 13 | 140 | 5,600 | 430 | 420 |
+| Coats | 11–13 | 1–20 | 1 | −400 | +400 | −11 | 1 | 9 | 90 | 2,700 | 310 | 300 |
+| Trade Goods | 2–3 | 2–12 | 1 | −200 | +300 | +4 | 0 | 2 | −60 | −1,100 | −540 | −520 |
+| Tools | 2 | 2–9 | 1 | −200 | +200 | +5 | 0 | 2 | −190 | −2,600 | −1,240 | −1,290 |
+| Muskets | 3 | 2–20 | 1 | −200 | +200 | +6 | 0 | 7 | −240 | −5,500 | −900 | −830 |
+
+Column key — **start**: the new-game roll window `[start1, start2]` (one roll
+for all powers). **low–high**: the price floor and ceiling the stepping
+respects. **spread**: burden + 1, the visible bid/ask gap. **rises at /
+falls at**: the traffic-accumulator thresholds ±100·(rise|fall) — the price
+steps 1 and the accumulator gives the threshold back. **drift/turn**: the
+attrition added to the accumulator every turn (negative = drifts toward a
+rise; Trade Goods/Tools/Muskets drift toward *falls* — the Crown's
+manufactures cheapen). **shift**: the volatility exponent — each traded unit
+counts `qty << shift` in the pool. **†sample columns**: *price* is a captured
+mid-game snapshot (a Dutch game); *pool / traded / supply / net trade* have
+no captured values anywhere in the repo (all four start at zero and evolve
+live), so the figures shown are **illustrative samples** on the engine's own
+scales — positive where a colony typically net-sells, negative where it
+net-buys — not byte-verified data (samples needed — TBD).
+
+Idle-market cadence falls straight out of the table: with no trade at all,
+Sugar rises every 400/8 = 50 turns, Furs every ≈31, Silver every 100 —
+while Tools and Muskets *fall* on the same clock. Four **extended ids
+16..19** are name-only production tokens (Hammers, Crosses, Liberty Bells,
+Flags) — never traded, used for production display. Commodity icons are
+ICONS frames `good + 0x17` in EXE-sheet numbering.
 
 ### 9.3 Price drift
 
@@ -1475,6 +1514,25 @@ example: seed 800 and the four powers sold a net 240 Food → 800 − (800+240)�
 example: supplies Rum 400 / Cigars 300 / Cloth 200 / Coats 100 → S_pair 1000 → Rum's target = 3000÷400 = 7
 ```
 
+**The stepping rule** (per good, per power): each turn the accumulator gains
+the drift/turn column; each trade adds `±(qty << shift)` plus a value term.
+When the accumulator reaches **−100·rise** the price steps **up** 1 (max =
+high) and the threshold is credited back; at **+100·fall** it steps **down**
+1 (min = low). Each step fires `@PRICEUP`/`@PRICEDOWN` for a human power —
+so the message cadence in a quiet market is exactly threshold ÷ |drift|.
+
+Per-good specials, all byte-traced: **Tools/Muskets** get a
+time-and-difficulty ceiling bump `(difficulty − 4)·2 + (year − 600)/100`,
+and Horses/Tools/Muskets carry a hard published ceiling
+`max(level, (−(difficulty − 4)·3)/2 + 3)`. **Furs** supply is halved in the
+luxury-coupling pass, +1 before 1700 and +1 more before 1600 — the early fur
+boom. **Food** is excluded from the raw-goods repricing loop entirely; its
+price moves only through the accumulator path. **Lumber** has zero drift —
+its price never moves on its own. **Silver** starts pinned at its ceiling
+of 20. The **Dutch** trade twice as calmly: their sell-pool delta is ×2/3,
+and their attrition is **doubled on odd turns** — prices recover toward the
+Dutch twice as fast (previously undocumented).
+
 ### 9.4 Buy/sell transactions
 
 **SELL** (sell_goods; args good, screen-idx, confirm):
@@ -1498,6 +1556,11 @@ Both paths call a mirror pair of accumulator updaters (good, qty):
 | EU supply `+0xBC` | `−= qty` | `+= qty` |
 | accumulator `+0xFC` | `−= qty` | `+= qty` |
 | traded volume `+0x7C` | `−= price·qty` | `+= price·qty·(100−tax%)/100` |
+
+One asymmetry worth knowing: the colony warehouse **overflow auto-sale**
+(goods over 100 cut to 50, the excess sold and taxed — §18.10) credits gold
+and the King's fund but does **not** run these accumulator updaters — forced
+exports never move the market.
 | DGROUP pool (4 records, stride 0x9E) | `−= scaled_qty` ×4 | `+= scaled_qty` ×4 (4th power ×2/3) |
 
 `scaled_qty = ((price_level−2)·16·qty)/100`; the `@CARGO`
@@ -2575,23 +2638,46 @@ royal pinky ring."), `@KINGRAISE` (punitive raise for demanding lower taxes),
 
 ### 18.7 The War of the Spanish Succession merge
 
-Handler spanish_succession (event id 0x68 in the master event dispatcher; gate:
-`game.revolution_meter` < 75 (clamped), `game.king_power` < 0, single-player
-only). It ranks the four
-powers by a weighted sum of three per-power tables (weights 3, 2, 1),
-picks the weakest eligible AI as ceding and the strongest as
-beneficiary, emits `@SUCCESSION` ("War of the Spanish Succession ends in Europe!
-{%STRING0}, ravaged by war, agrees to cede %STRING1 to the {%STRING2}. Treaty of
-Utrecht specifies that all {%STRING3} possessions in the New World now fall
-under {%STRING2} rule."), then rewrites every map-tile owner nibble,
-every unit owner, every colony owner, and a third owner-nibble table. Aftermath: the
-ceding power's controller := 2 "eliminated" and its id stored to
-`game.king_power`; the power thereafter renders as "(Withdrawn from New
-World)" (LABELS `@MISC`). What transfers is exactly tiles, units, colonies and
-the third owner table — no treasury, father, trade-route or Europe-dock
-transfer is documented. The gate that *enqueues* event 0x68 is an unresolved
-residual (the dispatcher has no located caller); the same
-handler is reachable from cheat `@FORCED` stage (a) (§18.4).
+**How it triggers** (byte-traced 2026-08-01 — this reverses an earlier
+"unresolved residual" verdict; see the ruling). The merge has three ways in:
+
+1. **The real per-turn trigger — update_sol().** Every turn, inside the
+   production phase, the engine recomputes each power's Sons-of-Liberty
+   percentage. For the human (rebel) power it also copies the result into the
+   national revolution meter — and then fires the succession when **both**
+   hold: **SoL ≥ 50 %**, and **no power has withdrawn yet**
+   (`game.king_power` still negative). There is no dice roll and no year or
+   turn test — crossing 50 % rebel sentiment while all four powers still
+   stand is the entire condition. It can only ever happen once: the handler
+   stores the ceding power's id into `game.king_power`, which permanently
+   fails the second gate.
+2. **Forced at the Declaration.** Declaring independence while no power has
+   withdrawn runs the merge immediately — this is how the withdrawn/King's
+   power comes to exist for the war.
+3. **The cheat** — menu id 0x68 `@FORCED` stage (a) (§18.4). The "meter
+   clamped to 75" behaviour belongs to *this* staged advancer, not to the
+   gameplay trigger (the source of the old mis-attribution).
+
+The handler itself runs in single-player only (an entry test).
+
+```formula
+succession fires when SoL% ≥ 50 and no power has withdrawn yet        checked every turn as the meter updates; once ever; single-player only
+example: your rebel sentiment reaches 50 % in 1595 with all four powers alive — the weakest AI cedes its New World to the strongest, that same turn
+```
+
+**What it does.** It ranks the four powers by a weighted score (3 × one
+per-power table + 2 × colony count + 1 × a second table), picks the **weakest
+eligible AI** as the ceding power and the **strongest eligible AI** as the
+beneficiary, emits `@SUCCESSION` ("War of the Spanish Succession ends in
+Europe! {%STRING0}, ravaged by war, agrees to cede %STRING1 to the
+{%STRING2}. Treaty of Utrecht specifies that all {%STRING3} possessions in
+the New World now fall under {%STRING2} rule."), then rewrites every map-tile
+owner nibble, every unit owner, every colony owner, and a third owner-nibble
+table. Aftermath: the ceding power's controller becomes "eliminated", its id
+lands in `game.king_power`, and it thereafter renders as "(Withdrawn from New
+World)". What transfers is exactly tiles, units, colonies and the third owner
+table — **no treasury, no Founding Fathers, no trade routes, no Europe
+dock**.
 
 ### 18.8 The tax petition — how the King eases (or punishes)
 
@@ -2676,30 +2762,68 @@ of Veteran Soldiers/Dragoons in the stack are promoted
 in place — type 1 → 9 Continental Army, type 4 → 7 Continental
 Cavalry; `@MOBILIZE`/`@MOBILIZE2`. No units are created.
 
-### 18.10 The Royal Expeditionary Force schedule
+### 18.10 The King's economy — sales tax, the royal fund, and the REF
 
-Counts live in `ref.regulars` (Regulars), `ref.cavalry` (Cavalry),
-`ref.man_o_war` (Man-O-War) and
-`ref.artillery` (Artillery), user-verified against the F3 display. **New-game seed**
-(`new_game_state_init`, difficulty d): Regulars `8d+15`, Cavalry
-`5(d+1)`, Man-O-War `3d+2`, Artillery `6d+2` — i.e. 15/5/2/2 at Discoverer up
-to 47/25/14/26 at Viceroy. **Growth** (grow_royal_fund, pre-independence
-only): the royal fund `power.royal_fund` accrues `(8d+10)` per turn,
-doubled at each of 1600/1700/1750 — +18/turn at Explorer,
-runtime-verified. At **1800** in the fund one unit is bought
-and 1800 deducted; the slot keeps the army in ratio —
-Cavalry when `(reg+2)/3 > cav`, Artillery when `reg/4 > art`,
-Man-O-War when `(reg+cav+art+5)/10 > ships`, else
-Regulars. Post-declaration the purchase is announced instead (`@KINGBUY`).
-Sale tax funds it: every European sale routes
-`gross·tax%/100` into the royal fund, as do back-tax payments.
+The Crown runs a closed loop: **your taxes fund the army that will one day be
+sent against you.** Every gold piece of tax you pay lands in the royal fund
+(`power.royal_fund`), and every 1,800 banked buys one more Royal
+Expeditionary Force unit.
+
+**Income — the three tax feeds** (all byte-traced; the fund is credited at
+three distinct sites):
+
+| feed | amount into the fund |
+|---|---|
+| every European sale | `gross × tax% / 100` (you keep the net) |
+| colony warehouse overflow auto-sale | the tax share of the forced sale — goods over 100 are cut to 50 and the excess sold on your behalf |
+| paying back taxes to lift a boycott | the whole payment: `boycotted count × 500` |
+
+On top of the taxes the Crown appropriates a **stipend every turn**:
 
 ```formula
-fund += ( 8d + 10 ) per turn, doubling at 1600 / 1700 / 1750   —   one REF unit per 1,800 banked
-starting REF:   Regulars 8d+15 · Cavalry 5(d+1) · Man-O-War 3d+2 · Artillery 6d+2
-example: Explorer → 18/turn, 36/turn after 1600 → a new REF unit roughly every 50 turns
-example: a Viceroy game opens against 47 Regulars, 25 Cavalry, 14 Man-O-War, 26 Artillery
+fund += ( 8·difficulty + 10 ) per turn, doubled at each of 1600 / 1700 / 1750        pre-independence only — the fund stops growing the day you declare
+example: Explorer pays the Crown 18 a turn in 1550, 36 after 1600, 72 after 1700 — one new REF unit roughly every 25–100 turns before your taxes even help
 ```
+
+**Spending — one unit per 1,800.** When the fund reaches **1,800** it buys
+exactly one unit that turn (1,800 is both the gate and the price, and it is
+deducted). Which arm gets it keeps the army in ratio — the checks run in
+sequence and **each later match overrides the earlier**, so the effective
+precedence is Man-O-War over Artillery over Cavalry over Regulars:
+
+```formula
+buy Cavalry when (regulars + 2) / 3 > cavalry · Artillery when regulars / 4 > artillery · Man-O-War when (reg + cav + art + 5) / 10 > ships · else Regulars
+| the tests run in that order and the LAST match wins — a fleet shortage always outranks a gun shortage, which outranks a horse shortage
+example: 24 regulars, 8 cavalry, 5 artillery, 3 ships: cavalry test 8<8 no · artillery 6>5 yes · ships 4>3 yes → the King lays down a Man-O-War
+```
+
+Each purchase is announced with `@KINGBUY` — *"King increases military
+spending. {unit} added to royal expeditionary force. Colonial leaders express
+alarm."* (The `@KINGMOBILIZE` "Parliament votes additional funds" text
+belongs to the other, wartime arm — the two were swapped in an earlier spec
+gloss, corrected 2026-08-01.)
+
+**The force itself.** Counts live in `ref.regulars`, `ref.cavalry`,
+`ref.man_o_war`, `ref.artillery` (user-verified against the F3 display).
+The new-game seed by difficulty d:
+
+| d | difficulty | Regulars `8d+15` | Cavalry `5(d+1)` | Artillery `6d+2` | Man-O-War `3d+2` |
+|---|---|---|---|---|---|
+| 0 | Discoverer | 15 | 5 | 2 | 2 |
+| 1 | Explorer | 23 | 10 | 8 | 5 |
+| 2 | Conquistador | 31 | 15 | 14 | 8 |
+| 3 | Governor | 39 | 20 | 20 | 11 |
+| 4 | Viceroy | 47 | 25 | 26 | 14 |
+
+Three quirks worth knowing: the engine guarantees **at least one Man-O-War**
+(a zero count is bumped to 1 when the force is totalled); your **own
+Man-O-Wars are tallied into the King's ship count** by the unit walker; and
+at the war, units leave the pool **one at a time as they land** — the count
+decrements per landing, population-weighted onto your coastal colonies, every
+land unit arriving as a Veteran. There is no "wave" table — deployment is a
+per-turn eligibility check with budget `(8 − difficulty) × 10` (the landing
+spawn coordinates are still untraced — TBD). **You win the war when the
+King's surviving land force (regulars + cavalry + artillery) drops below 4.**
 
 ### 18.11 The difficulty ledger — every documented d-scaled constant
 
