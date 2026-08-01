@@ -72,7 +72,7 @@ PARTS = [
     ("V", "Politics and powers", ["15", "16", "17", "18", "19", "20", "21"]),
     ("VI", "Events and messages", ["22", "23", "24"]),
     ("VII", "User interface", ["25", "26", "27"]),
-    ("VIII", "The editor and appendices", ["28", "29", "A", "B", "C"]),
+    ("VIII", "The editor and appendices", ["28", "29", "A", "B", "C", "D"]),
 ]
 
 WARNINGS = []
@@ -105,7 +105,7 @@ def load_source():
 
 def split_sections(body):
     """Return ordered [(key, title, md_text)] split on '## N.' / '## A.' heads."""
-    parts = re.split(r"^## (\d+|[ABC])\. (.+)$", body, flags=re.M)
+    parts = re.split(r"^## (\d+|[ABCD])\. (.+)$", body, flags=re.M)
     out = []
     it = iter(parts[1:])
     for key, title, text in zip(it, it, it):

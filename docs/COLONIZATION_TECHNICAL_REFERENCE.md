@@ -6253,3 +6253,390 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `unit.tools` | `UnitRecord +0x15` |
 | `unit.work_done` | `UnitRecord +0x16` |
 
+## D. Appendix — the engine as equations (function flows)
+
+Every named function of the mechanics chapters, written as an equation —
+`result = function(inputs)` — and placed where it runs in the engine's flow.
+Indentation shows who calls whom; `─►` is a call; everything on the right of
+an `=` is the governing math. The binding of every name back to the binary is
+Appendix C; TBD marks what is not yet byte-established. Two catalog
+corrections from this pass: `seed_market` and `cargo_table_load` are inline
+blocks of larger routines (`new_game_setup` and the NAMES walker), not
+functions; `next_rank` and `score_base` are 5-byte trampolines whose real
+bodies live elsewhere; and two path routines take their arguments in
+registers, not on the stack.
+
+### D.1 The per-turn spine
+
+```
+turn_loop()                                        one pass per game turn
+├► native_turn_driver()                            the invisible pass — §19.11, D.2
+└ for each European power, strict index order (skipping the withdrawn):
+  ├► king_phase()            peacetime mercenary offer (historic name — not a phase)
+  ├► orders_phase()          the per-unit orders pump and input loop
+  ├► production_phase()      colonies, SoL → Succession check, REF fund,
+  │                          market drift, immigration — D.4/D.5/D.7
+  ├► diplomacy_phase(power)  the only phase taking an argument — sets the
+  │                          active power · king actions are event-driven here
+  └► periodic_phase()        stats refresh · the Congress · King endgame screens
+  turn tail:  turn += 1 · year cadence (1 turn = 1 year before 1600, ½ after)
+              start 1492 · forced end 1725 · autosave slot 9, decade slot 8
+```
+
+### D.2 The native pass (every turn, before any power moves)
+
+```
+native_turn_driver()
+  tribe.requests[·][·] = 0                          all tribes × powers
+  for each living tribe ─► tribe_turn(tribe)
+
+tribe_turn(tribe)
+  war council — post-Declaration, once ever:
+      fires when tension(tribe, you) ≥ 25 AND ≥ random(1..400) — or the avenge flag
+      at odds 1 in 2·(5 − difficulty) + 1
+      then: tension(you) += 100 · tension(King) −= 100
+            burn_missions(tribe, you)
+            muskets_known = min(villages, muskets_known) · 4
+            horses_stock  = min(villages, horses_known) · 25
+  for each village ─► settlement_tick(village)
+  goods_stock[g] drifts toward 0 by (level + 1) per turn
+  tally_tribes(tribe):  tribe_pop = Σ village populations · regional strengths rebuilt
+  horses_stock = min( horses_stock + horses_known , 2·(tribe_pop + 25) )
+  for each brave ─► brave_ai(unit) → action code (8 = hold · ≤20 actions · logic TBD)
+
+settlement_tick(village)
+  target = settlement_target_size(village) = 2·level + 3      capital: 3·level + 4
+  growth_counter += population
+      at 20 → reset, then population += 1 (below target)
+              or spawn the replacement brave (only if its brave died):
+                  +armed if muskets_known > 0 (a musket spent 1 in difficulty+1)
+                  +mounted if horses_stock ≥ 50 (herd −50)
+  cool-down (pre-Declaration, contacted powers): N = band(tension)² trials at
+      1 in (12 − N) → tension_frac += hits                    (band cut points TBD)
+  mission tick:  M = (expert ? 4 : 1) · 2 if capital · 2 las Casas · ½ Sepúlveda
+      tension_frac[owner] += M       alarm[owner] −= 3·M  (floor 0)
+  colony pressure:  (p, C) = colony_pressure(village)         (C's formula TBD)
+      tension_frac[p] −= C           alarm[p] += C + tension(p)/5
+  every ±8 in tension_frac[p] → tension(p) ∓ 1                the visible drift
+
+the two anger primitives — everything funnels through them:
+  tension = get_tension(tribe, power)                          → 0..100
+  adjust_tension(tribe, power, Δ, category†)
+      Δ = Δ/2 if Δ > 0 and (power is France, or owns Pocahontas)
+      tension = clamp(tension + Δ, 0, 100)          †dead — passed, never read
+  seeded at map creation: tension = random(0..14) + 2·difficulty (human), cap 20
+```
+
+### D.3 Native interactions (player-driven)
+
+```
+unit meets a tribe — on land only
+└► native_events(…)                                 (dispatch contract TBD)
+     woodcut (once, by tribe) → the treaty, Yes / No → No: war
+
+unit enters a village
+└► enter_village(unit) → one of ten actions, gated on alarm < 75, unit type, posture
+   ├► haggle_trade(unit, …, power)
+   │    demand, supply = village_supply_demand()     16 goods from population, terrain
+   │                                                 5×5, tribe stocks; capital ×2
+   │    sell offer = max(1, (seed·demand + 5·mood) · qty / 100 / 2)
+   │                 seed = 2·(base − difficulty − want + mood + 4), mood = random(1..5)
+   │    buy ask = (200 | (8−level)·50) + market·(2·difficulty+15)
+   │              + random(0..ask) − 4·surplus + 4·tension → ·qty/100, floor 50
+   │    on a sale: power.gold += total · alarm[you] −= qty (a 100-load zeroes it)
+   │               goods_stock[g] += qty · muskets/horses ≥25 ⇒ lore +1 (≥50 ⇒ +2)
+   │               herd += qty/4 (horses) · tension −= 4
+   ├► live_among_natives(unit)
+   │    learns when random(1..1000) ≥ 200·difficulty + 100 → unit.profession = skill
+   ├► establish_mission()    mission = you (+expert with Brébeuf) · tension → ≤ 70
+   ├► denounce_heresy()      their mission becomes yours — or yours burns   (roll TBD)
+   ├► demand_tribute()       random(0..your strength) vs random(0..theirs)
+   │                         win ⇒ always 10 units of a good · once per village
+   ├► incite_natives()       gold −= price (TBD) → warpath      (tension writes TBD)
+   └► raze_settlement(unit, power, mode†)   the chief's audience:
+        trade briefing · beads gift · guides · area reveal · execution  († selector TBD)
+
+war
+└► combat: attacker wins when random(1..ATK+DEF) ≤ ATK          capital: DEF ×2
+     each win:  population −= 1
+     the last point: the village burns ─►
+        raze_settlement: power.gold += (r₁+r₂+r₃) · random(1..6) · 4 · (size+1)
+                         rᵢ = random(1..10−difficulty) · size = population
+        remove_settlement(village): compaction · tribe villages −= 1
+            last village → tribe dead      survivor → herd, lore ×= n/(n+1)
+raids — armed while any village's alarm(power) ≥ 128
+└► native_raid: fires when random(1..12) − 1 [+ (difficulty−2) vs a human] ≥ 3·K+1 (K TBD)
+     severity = random(1..4), softened while turn < 40·(2−difficulty)
+     → stores looted · havoc · gold stolen · building/ship burned   (0 = party dies)
+missions, each eligible turn
+└► attempt_conversion(power): a Convert appears when random(0..15) < level + 2 (·2 expert)
+```
+
+### D.4 The colony and production
+
+```
+production_phase()                                  once per power, each turn
+  power.bells_per_turn = 0 · AI unit pass
+  ├► check_immigration(power)                       market drift + crosses — D.5, D.6
+  └ for each owned colony ─► update_colony(colony)
+
+update_colony(colony)                               the whole per-colony turn
+  yields → food & starvation → spoil / over-100 auto-export → school → bells
+  └► update_congress(power, bells)                  D.6
+
+yield = compute_tile_yield(dx, dy, &good, suppress) → clamped ≥ 0
+  base terrain yield → ocean adjacency → river/plow/road → expert bonus
+  → SoL/Tory penalty → resource_bonus → Founding-Father gates
+bonus = resource_bonus(resource, column)            pure table, −1 means DOUBLE:
+  Oasis/Wheat/Game → Food +2 · Beaver → Furs +3 · Game → Furs +2
+  Prime Cotton/Tobacco/Sugar → double · Prime Timber → Lumber +2
+  Minerals → Ore +3, Silver +1 · Silver Deposit → +2 · Ore Deposit → +2
+  Fishery → ocean food +3
+qty = run_colonist_production(slot, &commodity) → ≥ 0
+  building output · expert ×2 · factory tier ×1.5 / ×2 · Tory drag
+slot = worker_at_tile(dx, dy)                       0xFF = nobody there
+good = resolve_worked_good(dx, dy, &expertise)      −1 = no colonist
+SoL% = sons_of_liberty_percent() = bells·100 / divisor
+  (+20 human latch · clamp 100 · 0 when the divisor is empty)
+grow_population(slot, job):  divisor += 100 · population += 1   (cap 32)
+starve_population(slot):     arrays shift down · tile freed · population −= 1
+                             divisor −= 100
+```
+
+### D.5 The market
+
+```
+new_game_setup()                    [contains the block once labelled "seed_market"]
+  price_seed[good] = random(600..1000)                        ×16 goods
+  └► new_game_power_init()  — per power:
+       gold = 1000 / 300 / … by difficulty · fathers, market arrays zeroed
+       level[good] = start1 + random(0..start2−start1)        one roll, all powers
+       drift_prices(announce, all goods)
+
+every turn:  check_immigration(power) ─► drift_prices(silent, all goods)
+  seed[g] −= ( seed[g] + Σ over powers of max(0, net_trade[g]) ) / 256
+  accumulator[g] += attrition[g]
+  level[g] += 1 when accumulator ≤ −100·rise   (ceiling = high)
+  level[g] −= 1 when accumulator ≥ +100·fall   (floor = low)
+  published price[g] = max(level − 1, 0)
+
+you sell:  status = sell_goods(unit, good, confirm)           1 abort · 0 sold
+  gross = price·qty · tax share → royal fund · net → treasury
+  ├► record_sale(good, qty):  supply += qty · net_trade += qty
+  │      traded_value += price·qty·(100−tax)/100 · Dutch pool delta ×2/3
+  └► drift_prices(silent, good)                                immediate re-drift
+you buy:   status = buy_goods(unit, good, confirm)             untaxed debit
+  └► record_purchase(good, qty):  supply −= qty · net_trade −= qty
+         traded_value −= price·qty
+bid = sell_price(good) = level − 1                             clamp 0
+ask = buy_price(good)  = level + burden                        clamp 0
+boycotted(good) = (1 << good) & the boycott mask               nonzero = yes
+```
+
+### D.6 Immigration and the Congress
+
+```
+check_immigration(power)                            rides the production phase
+  threshold = immigration_threshold(power, &delta)
+      = clamp4000( Σ all colony pops, ×2 if < 4000, +8 ) · (8−difficulty)/8
+        England pays only ×2/3
+  crosses += delta            delta = 2 + Σ own colony populations
+  crosses > threshold → @UNREST:
+      dock slot = random(0..2) emigrates
+      refill = next_immigrant_class(0):  tier gate (level+3)/2 against
+          random(1..15) → Criminal · random(1..10) → Servant · random(1..8) → Free
+          Brewster: criminals and servants arrive as Free Colonists
+      unit = place_immigrant(type)                  a Pioneer lands with 100 tools
+
+update_congress(power, bells)
+  progress += bells · lifetime += bells
+  no candidate → pick_father_candidates(power):
+      one weighted-random unowned father per category, weights from the
+      @FATHERS column of current_era()          era = 0 <1600 · 1 <1700 · 2 ≥1700
+  progress > father_cost(power) → acquire_father(power, id) · progress = 0
+
+cost = father_cost(power)
+  = ( (difficulty+3)·2 human | 14−difficulty AI ) · 8
+    · +50 % per era line crossed (1600 / 1650 / 1700 / 1750)
+    · ×(owned + 1) + 1 · halved while none owned
+    post-independence: 1500·difficulty + 2000
+acquire_father(power, id): owned bit set · count += 1 · the immediate effect fires
+  (Fugger clears every boycott · Brewster rewrites the dock · Pocahontas resets
+   the tribes · Brébeuf upgrades every mission · las Casas frees every Convert …)
+```
+
+### D.7 The King, the revolution, and diplomacy
+
+```
+every turn, per power (inside the production phase):
+├► update_sol(power)
+│    power.sol = SoL% · for the rebel power: revolution meter = SoL%
+│    SoL ≥ 50 AND no power withdrawn ─► spanish_succession()      once ever
+└► grow_royal_fund(power)                            pre-independence only
+     fund += (8·difficulty + 10) · 2^(era lines crossed at 1600/1700/1750)
+     fund ≥ 1800 → buy one REF unit · fund −= 1800
+         slot: Cavalry when (reg+2)/3 > cav · Artillery when reg/4 > art
+               Man-O-War when (reg+cav+art+5)/10 > ships · else Regulars
+               — checks run in order, the LAST match wins
+
+spanish_succession()                                 single-player only
+  score(p) = 3·A[p] + 2·colonies[p] + 1·C[p]
+  weakest eligible AI cedes every tile, unit and colony to the strongest
+  king_power = the ceder · its controller = eliminated
+
+the tax flow
+  schedule_king_demand():  cadence 18 → 15/12/9 turns at the era lines,
+      −(difficulty−2) · nothing before turn 30 · skipped once tax > 85
+      pretext = random(1..1000) + (2·SoL − tax)·5 + gold/100 + attitude + turn/30
+  apply_tax_change(?, Δ):  tax += Δ, hard cap 75 · refusal → Tea Party boycott
+  tax_petition():  candidate = ((difficulty & ~1)·2 + 4) · (turn/400 + 1)
+      → punitive raise | "kiss the pinky ring" | ease at 1 in (difficulty+1)
+  pay_back_taxes(good):  cost = boycotted count · 500
+      gold −= cost · royal fund += cost · the boycott bit clears
+
+the declaration flow
+  declaration_gate():  refuses while SoL < 50 → declare_independence()
+  declare_independence():  year stamped · succession forced if needed ·
+      ally picked · intervention force sized · the war bit set
+  mobilize_continentals(power):  each colony with SoL ≥ 50 promotes veterans,
+      budget = ((SoL − 50) · size/2) / 50, at least 1 — no new units
+  tory_uprising(rebel):  fires unless random(0..difficulty+1) = 0
+      militia strength = population·2·(100−SoL)/100 + difficulty + 1
+      (no static caller — cadence needs a live trace, TBD)
+
+mercenaries and the landing
+  king_phase():  peacetime 1-in-21 · fee = ((difficulty+4)·2 + random(0..6)) · 100
+  offer_wartime_mercenaries(power):  1-in-3, one-shot armed on the first call
+      fee = ((difficulty+3)·2 + random(0..6)) · 100 · price = fee · (count+2)
+  land_intervention_force(mode):  population-weighted coastal pick over ≤10
+      colonies · Man-O-War at the best beach · every land unit a Veteran
+      mode 0 = intervention (consumes the force counters) · else mercenary drop
+
+diplomacy
+  outcome = evaluate_contact(unit, x, y)             the arrival resolver
+      → scores the destination, writes the heading, dispatches the arrival —
+        including first contact ─► run_diplomacy_meeting(…)
+        (identity dual-labelled — evaluator vs heading propagator — TBD)
+  run_diplomacy_meeting(self, other, unit, rec†, mode):  the parley dispatcher
+      war/treaty bits · gold and stock transfers · parley cooldown = turn + 16
+  ai_treaty_ticker(A, B):  keyed (A + turn + B) mod 3 — AIs sign and break
+      treaties among themselves
+  ai_war_planner(unit, x, y):  unit-acts-on-tile — humans get the confirm
+      dialogs, AI goes straight to combat
+  cash_in_treasure(unit, power):  gold += 100·carry − cut
+      cut = tax% with Cortés · else max(5·difficulty+50, 2·tax) · cap 90
+      post-independence: no cut at all
+```
+
+### D.8 Combat
+
+```
+a unit acts on a hostile tile
+└► ai_war_planner(unit, x, y)      humans get the confirm dialogs · AI goes straight in
+   └► resolve_attack(unit, x, y, 1†, mode)          †constant, never read (TBD)
+        mode 0 — EVALUATE:  odds = (ATK·8) / (DEF + 1)              the AI's ranking
+        mode 1 — ACT (the attacker pays 3 movement points):
+          ATK = base_strength(attacker, attack)
+          DEF = defence_bonus(defender, attacker)
+              = (bonus + 4) · base_strength(defender, defend) / 4
+              bonus:  colony +2 · fort level ≥2 +4 (with doubling) ·
+                      river/road +(n+1)·2 · else the terrain Defensive column
+          base_strength = base·8 · +50% Veteran · +50% Drake (Privateers)
+                        · −cargo penalty · −2 damaged artillery
+          then: +50% defending a colony · +50% under bombard flag · SoL scaling
+          THE ROLL:  the attacker wins when  random(1..ATK+DEF) ≤ ATK
+          └► combat_result_wrapper(stack…)     every defender in the stack,
+             │                                 indices repaired after removals
+             └► apply_combat_result(attacker, defender, ui, x, y)
+                  ships roll their own fate:  random(1..guns+hull) →
+                      damaged | sunk (a sunk carrier scatters six cargo slots)
+                  capture:  Colonists, Treasure, Wagon Trains change hands intact
+                      └► set_unit_owner(unit, power)        low nibble only
+                  the demotion ladder:  Dragoons → Soldiers → Colonists ·
+                      Cavalry → Regulars · Cont. Cavalry → Cont. Army → Colonists
+                      artillery flips Damaged first · no rung left = destroyed
+        the winner's promotion:  random(1..S) ≤ strength → next_rank(profession)
+             Criminal → Servant → Free Colonist → Veteran
+             (the Soldier ceiling bumps the TYPE: Soldier → Continental Army)
+             George Washington: the roll is skipped
+
+combat_analysis_dialog(13 args)    the itemized modifier modal — option-gated
+shore_bombardment()                deterministic, no roll:
+    firepower = artillery in the fort · defenders · 4
+```
+
+### D.9 Movement, work and the map
+
+```
+direction = find_path_step(target_x, target_y, budget)        REGISTER args
+    → best direction 0..7 toward the path start, −1 = unreachable
+    a bounded 16×16 Dijkstra flood with a reusable cost cache
+    step cost, in priority order:
+        one-move unit → a flat 3        (all costs run in thirds of a move)
+        road or plow at BOTH ends → 1 · a river along a cardinal step → 1
+        else terrain Movement × 3 · a foreign/AI tile costs +8
+
+status = classify_ship_move(unit, x, y)                        REGISTER args
+    → 0 proceed · 1 abort — and writes what the step MEANS:
+      move · board · off-map · rumor tile · raid · dock/enter colony · attack
+move_ship(dx, dy)        acts on that status — landfall, dock, combat, sail home
+
+per-turn order executors (dispatched off the unit's order byte):
+  run_goto(unit)          order 3 — resolve target → path step → arrive & clear
+  run_trade_route(unit)   order 2 — next stop's (x,y); load/unload against the
+                          colony's stores · Europe is the sentinel stop 999
+  work_clear_plow(unit)   order 8 — counter += 1 per turn against the terrain
+                          threshold (Hardy Pioneer: halved) → clear the forest
+                          (lumber to the colony) or plow the field
+  work_road(unit)         order 9 — the same clock → the road bit
+      └► spend_tools(unit):  tools −= 20 · below 20 → tools = 0 and the
+                             Pioneer reverts to a Colonist
+  complete_fortify(unit)  order 5 → 6 (Fortified) — the +50% defence latch
+
+rumor_present = rumor_at_tile(x, y)          procedural — never stored:
+    ((y/4)·19 + (x/4)·17 + map seed + 8) mod 32 − (x mod 4)·4  ==  y mod 4
+outcome = lost_city_rumor(unit, x, y) → 1..9
+    base random(1..9) with a rising anti-streak floor · scout and De Soto
+    gates · the rewards of §23
+```
+
+### D.10 Scoring, dice and the loaders
+
+```
+score = compute_score(show, &rank)
+    base = score_components(render)
+         = Σ population  (1 per criminal/servant/convert · 2 per Free
+                          Colonist · 4 per specialist)
+           + 5 · founding fathers + sentiment + gold + bells/1000
+           + the revolution bonus − razed villages · (difficulty + 1)
+    score = (mult · base) / 100 / 2        mult = 4 / 5 / 6 / 8 / 10
+    rank  = the largest k with k²/3 < score        cap 23
+hall_of_fame(&entry)     HALLFAME.DAT — five 42-byte entries, insertion-sorted,
+                         rewritten in place
+                         (the trigger chain into the score screen: TBD)
+
+r = random_int(lo, hi)          INCLUSIVE both ends:
+    r = lo + (hi − lo + 1) · rng15() / 32768
+    rng15: seed = seed·0x343FD + 0x269EC3  — one generator behind every roll
+placement_seed()         srand( colony_y·256 + colony_x + a per-session boot
+                         word ) — colony layouts replay identically all game
+shuffle_building_plots() the colony screen's 15 lots: flatten the categories →
+                         claim (shuffled within each size class) → assign → place
+
+unit = spawn_unit(type, owner, x, y) → index, −1 at the caps
+    (292 hard · 300 soft · 200 per power) · Pioneers arrive with 100 tools
+select_colony(colony)    makes it current for every ctx-relative read
+new_game_setup(fresh)    the default AMER2 map · REF seeded by difficulty ·
+                         price seeds rolled · year 1492 · starting units
+
+the loaders (boot):  the NAMES walker fills the runtime tables —
+    @UNIT   → 23 stat rows: movement stored ×3 · land attack/defence columns ·
+              ship guns/value columns (land and sea use different columns!)
+    @TERRAIN/@OTHER → per-terrain rows: Movement · Defensive · the work
+              threshold · nine yield columns
+    @CARGO  → the nine market bytes per good (§9.2)
+
+music:  rotate_music()   the idle-loop pump — peace tunes 1–12 with a 1-in-9
+        excursion, war 13–18 with a 1-in-5 excursion back, never repeating
+        · tune_id(index) maps the rotation index to the driver's tune id
+```
