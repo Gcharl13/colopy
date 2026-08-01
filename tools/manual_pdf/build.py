@@ -262,6 +262,121 @@ def esc(s):
     return htmlmod.escape(str(s), quote=True)
 
 
+# Illustrative sample values for the struct key tables (decimal/strings only —
+# presentational examples consistent with each field's documented semantics).
+# Keyed (struct, field-base) with a field-base fallback.
+EXAMPLES = {
+    ("UnitRecord", "map_x"): "31, 18", ("UnitRecord", "map_y"): "",
+    ("UnitRecord", "unit_type"): "13 = Caravel",
+    ("UnitRecord", "owner"): "1 = France", ("UnitRecord", "owner_flags"): "1 = France",
+    ("UnitRecord", "flags"): "128 = draw-active",
+    ("UnitRecord", "scratch_bits"): "8 = tile dirty",
+    ("UnitRecord", "moves_spent"): "3 = one step used",
+    ("UnitRecord", "timer"): "255 = fresh", ("UnitRecord", "countdown"): "255 = fresh",
+    ("UnitRecord", "ai_state"): "'G'", ("UnitRecord", "order"): "5 = Fortify",
+    ("UnitRecord", "goto_x"): "40, 22", ("UnitRecord", "goto_y"): "",
+    ("UnitRecord", "heading"): "2 = East",
+    ("UnitRecord", "cargo_count"): "2 goods aboard",
+    ("UnitRecord", "cargo_ids"): "Furs + Tobacco",
+    ("UnitRecord", "cargo_qty"): "100, 40",
+    ("UnitRecord", "timer_16"): "7", ("UnitRecord", "turn_flag"): "1 = moved",
+    ("UnitRecord", "moved_flag"): "1 = moved",
+    ("UnitRecord", "tools"): "80 tools",
+    ("UnitRecord", "work_counter"): "2 turns in",
+    ("UnitRecord", "profession"): "21 = Veteran Soldier",
+    ("UnitRecord", "class_prof"): "21 = Veteran Soldier",
+    ("UnitRecord", "occ_back"): "record 17", ("UnitRecord", "occ_next"): "record 29",
+    ("ColonyRecord", "map_x"): "34, 27", ("ColonyRecord", "map_y"): "",
+    ("ColonyRecord", "name"): '"Jamestown"',
+    ("ColonyRecord", "owner"): "0 = England",
+    ("ColonyRecord", "owner_power"): "0 = England",
+    ("ColonyRecord", "population"): "6 colonists",
+    ("ColonyRecord", "stockpile"): "Food 120 · Muskets 50",
+    ("ColonyRecord", "hammers"): "34 of 52",
+    ("ColonyRecord", "hammers_b6"): "34",
+    ("ColonyRecord", "warehouse_level"): "1 = Warehouse",
+    ("ColonyRecord", "sol_numerator"): "480",
+    ("ColonyRecord", "sol_denominator"): "800  (= 60% SoL)",
+    ("ColonyRecord", "tile_worker"): "colonist 3 works tile 0",
+    ("ColonyRecord", "tile_workers"): "colonist 3 works tile 0",
+    ("ColonyRecord", "professions"): "farmer, farmer, carpenter…",
+    ("ColonyRecord", "job_skills"): "farmer, farmer, carpenter…",
+    ("ColonyRecord", "buildings"): "Stockade + Docks built",
+    ("ColonyRecord", "bldg_mask_60"): "Stockade + Docks built",
+    ("PowerRecord", "tax_pct"): "12%",
+    ("PowerRecord", "rebel_sentiment_pct"): "45%",
+    ("PowerRecord", "gold"): "1 500 gold",
+    ("PowerRecord", "royal_money"): "936 (→ REF unit at 1 800)",
+    ("PowerRecord", "bells_toward_next_ff"): "88 of 129",
+    ("PowerRecord", "bells_per_turn"): "14",
+    ("PowerRecord", "crosses_per_turn"): "9",
+    ("PowerRecord", "boycott_bitmask"): "Tobacco + Rum boycotted",
+    ("PowerRecord", "boycott_count"): "Tobacco 3",
+    ("PowerRecord", "relations"): "at war with Spain",
+    ("PowerRecord", "treaty_respect"): "8 turns left",
+    ("PowerRecord", "home_x"): "56, 12", ("PowerRecord", "home_y"): "",
+    ("PowerRecord", "artillery_bought"): "2 (price now +200)",
+    ("PowerRecord", "acquired_ff_bitmask"): "Franklin + Penn owned",
+    ("PowerRecord", "founding_father_count"): "2 fathers",
+    ("PowerRecord", "ff_in_progress"): "17 = Thomas Paine",
+    ("PowerRecord", "eu_sales_tally"): "12 400",
+    ("PowerRecord", "market_pool"): "Food +38",
+    ("PowerRecord", "market_traded"): "Food 4 100",
+    ("PowerRecord", "market_eu_supply"): "Food 900",
+    ("PowerRecord", "market_base"): "Food 812",
+    ("NativeSettlement", "map_x"): "23, 41", ("NativeSettlement", "map_y"): "",
+    ("NativeSettlement", "owner"): "7 = Iroquois",
+    ("NativeSettlement", "flags"): "4 = capital",
+    ("NativeSettlement", "population"): "8",
+    ("NativeSettlement", "mission"): "255 = no mission",
+    ("NativeSettlement", "growth_counter"): "3",
+    ("NativeSettlement", "trespass"): "2 incidents",
+    ("NativeSettlement", "last_bought"): "2 = Tobacco",
+    ("NativeSettlement", "last_sold"): "255",
+    ("NativeSettlement", "alarm"): "England 40 · France 12 · Spain 0 · Neth. 5",
+    ("StopRecord", "dest"): "colony 3  (999 = Europe)",
+    ("StopRecord", "counts"): "load 2 · unload 1",
+    ("StopRecord", "load_nib"): "Tools, Muskets",
+    ("StopRecord", "unload_nib"): "Furs",
+    ("RouteRecord", "name"): '"Fur run"',
+    ("RouteRecord", "type"): "1 = sea route",
+    ("RouteRecord", "stop_count"): "3 stops",
+    ("RouteRecord", "stops"): "Jamestown → Boston → Europe",
+    ("TerrainRecord", "name"): "“Prairie” token",
+    ("TerrainRecord", "movement"): "1",
+    ("TerrainRecord", "defensive"): "0 = open",
+    ("TerrainRecord", "improvement"): "3 turns to plow",
+    ("TerrainRecord", "value"): "4",
+    ("TerrainRecord", "yields"): "Food 2 · Cotton 3",
+    ("MPFile", "width"): "58", ("MPFile", "height"): "72",
+    ("MPFile", "version"): "4",
+    ("MPFile", "terrain"): "3 = Prairie, +64 = river…",
+    ("MPFile", "feature"): "0 (unused on disk)",
+    ("MPFile", "continent"): "region 2, owner none",
+}
+RANGE_RE_NOTE = re.compile(r"\b(\d+)\.\.(\d+)\b")
+
+
+def example_for(struct_name, field):
+    base = (field["name"] or "").split("[")[0]
+    if not base or base.startswith(("_pad", "unused", "pad")):
+        return "—"
+    v = EXAMPLES.get((struct_name, base)) or EXAMPLES.get(
+        next((k for k in EXAMPLES if k[1] == base), ("", "")))
+    if v is not None and v != "":
+        return v
+    if v == "":
+        return "↑"  # paired with the field above (e.g. x,y)
+    if field["ctype"].startswith("char"):
+        return '"Jamestown"'
+    m = RANGE_RE_NOTE.search(field["note"] or "")
+    if m:
+        lo, hi = int(m.group(1)), int(m.group(2))
+        return str((lo + hi) // 2)
+    return {1: "7", 2: "1 200", 4: "64 000"}.get(
+        field["size"] if field["size"] in (1, 2, 4) else 0, "…")
+
+
 def svg_text(x, y, s, size, fill=INK, anchor="start", face=HEAD_FACE, weight="normal",
              spacing=None):
     sp = f' letter-spacing="{spacing}"' if spacing else ""
@@ -451,6 +566,7 @@ def struct_figure(st, soup):
             f'<tr><td class="cmono">{esc(off)}</td><td class="cnum">{width}</td>'
             f'<td class="cmono">{esc(f["ctype"])}</td>'
             f'<td class="cmono" style="color:{dark};font-weight:bold">{esc(nm)}</td>'
+            f'<td style="color:{CAT["econ"][0]}">{esc(example_for(st["name"], f))}</td>'
             f'<td>{esc(f["note"])}</td></tr>')
     tall = " tall" if (len(rows) > 12 or (st["total"] or 0) > 128) else ""
     fig = (f'<figure class="structplate{tall}">'
@@ -459,7 +575,7 @@ def struct_figure(st, soup):
            f'<div class="plate-wrap">{plate}</div>'
            f'<figcaption>{esc(cap)}</figcaption></div>'
            f'<div class="tablewrap"><table class="keytab"><thead><tr><th>Offset</th><th>B</th>'
-           f'<th>Type</th><th>Field</th><th>Note</th></tr></thead>'
+           f'<th>Type</th><th>Field</th><th>Example</th><th>Note</th></tr></thead>'
            f'<tbody>{"".join(rows)}</tbody></table></div></figure>')
     return BeautifulSoup(fig, "html.parser").figure
 
@@ -911,6 +1027,67 @@ def dress_tables(soup):
 
 HEX_RE = re.compile(r"\b0x([0-9A-Fa-f]+)\b")
 
+# plain-English names for recurring globals (section 7.7); each entry:
+# address -> (name, context keywords that suppress the annotation as redundant)
+GLOSSARY = {
+    "53D0": ("the revolution meter", ("revolution", "meter", "sol", "sentiment")),
+    "53A6": ("difficulty", ("difficulty",)),
+    "538A": ("the year", ("year",)),
+    "538C": ("the season word", ("season",)),
+    "538E": ("the turn counter", ("turn",)),
+    "5382": ("the game-state flags", ("flag", "game-state", "options")),
+    "53D2": ("the King/REF power id", ("king", "ref power", "power id", "seced")),
+    "5398": ("the rebel power id", ("rebel",)),
+    "5394": ("the current power", ("current", "power")),
+    "9E12": ("the active player index", ("player", "active")),
+    "84FC": ("the active-power record", ("power", "record", "pointer")),
+    "8542": ("the active-colony record", ("colony", "record", "pointer")),
+    "539C": ("the unit count", ("unit", "count")),
+    "539E": ("the colony count", ("colony", "count")),
+    "539A": ("the settlement count", ("settlement", "count")),
+    "53DA": ("REF Regulars", ("regular", "ref")),
+    "53DC": ("REF Cavalry", ("cavalry", "ref")),
+    "53DE": ("REF Man-O-War", ("man-o-war", "naval", "ref")),
+    "53E0": ("REF Artillery", ("artillery", "ref")),
+    "543F": ("the AI-controller byte", ("controller", "human")),
+    "853A": ("map width", ("width",)),
+    "853C": ("map height", ("height",)),
+    "0190": ("the map seed", ("seed",)),
+    "190": ("the map seed", ("seed",)),
+    "894": ("the debug bitfield", ("debug", "cheat")),
+    "1F5C": ("the speaker channel", ("speaker", "channel", "portrait")),
+}
+GLOB_CODE_RE = re.compile(r"\[0x([0-9A-Fa-f]{3,4})\]")
+
+
+def name_globals(soup):
+    """Annotate known global addresses with their plain-English name: after an
+    inline-code token containing e.g. [0x53D0], insert '⟨the revolution
+    meter⟩' unless the surrounding prose already names it. One annotation per
+    address per paragraph."""
+    for para in soup.find_all(["p", "li", "td"]):
+        seen = set()
+        for code in para.find_all("code"):
+            if code.find_parent("pre"):
+                continue
+            m = GLOB_CODE_RE.search(code.get_text())
+            if not m:
+                continue
+            addr = m.group(1).upper().lstrip("0") or "0"
+            key = next((k for k in GLOSSARY
+                        if k.upper().lstrip("0") == addr), None)
+            if key is None or key in seen:
+                continue
+            name, kws = GLOSSARY[key]
+            ctx = para.get_text().lower()
+            if any(kw in ctx for kw in kws):
+                seen.add(key)
+                continue
+            seen.add(key)
+            tag = soup.new_tag("span", attrs={"class": "gname"})
+            tag.string = f" ⟨{name}⟩"
+            code.insert_after(tag)
+
 
 def style_hex_in(soup):
     skip = {"pre", "code", "svg", "script", "style", "text"}
@@ -930,6 +1107,41 @@ def style_hex_in(soup):
             else:
                 frag.append(f'<span class="hex"><span class="pfx">0x</span>{esc(piece)}</span>')
         node.replace_with(BeautifulSoup("".join(frag), "html.parser"))
+
+
+def formula_cards(soup):
+    """```formula fenced blocks -> styled cards: math line(s) large, lines
+    starting with 'example:' as a labelled worked-example row, lines starting
+    with '|' as small annotation lines."""
+    n = 0
+    for pre in list(soup.find_all("pre")):
+        code = pre.find("code")
+        if code is None or "language-formula" not in (code.get("class") or []):
+            continue
+        math, notes, examples = [], [], []
+        for ln in code.get_text().split("\n"):
+            s = ln.rstrip()
+            if not s.strip():
+                continue
+            if s.lstrip().startswith("example:"):
+                examples.append(s.lstrip()[8:].strip())
+            elif s.lstrip().startswith("|"):
+                notes.append(s.lstrip()[1:].strip())
+            else:
+                math.append(s)
+        mh = "<br/>".join(esc(m) for m in math)
+        if notes:
+            mh += "<br/>" + "<br/>".join(
+                f'<span class="fm2">{esc(t)}</span>' for t in notes)
+        eh = "".join(f'<div><span class="flab">example</span>{esc(x)}</div>'
+                     for x in examples)
+        card = BeautifulSoup(
+            f'<figure class="fcard"><div class="fmath">{mh}</div>'
+            f'{f"<div class={chr(34)}fex{chr(34)}>{eh}</div>" if examples else ""}'
+            f'</figure>', "html.parser").figure
+        pre.replace_with(card)
+        n += 1
+    return n
 
 
 def comment_blocks_to_prose(soup):
@@ -992,6 +1204,139 @@ def _int0(s):
         return None
 
 
+def production_walkthrough_fig():
+    """Plain-language worked example of the tile-yield calculation:
+    Expert Cotton Planter, plowed Prairie, minor river — 3 → 4 → 8 → 12.
+    Every number derives from the documented chain in section 5.8; the hex
+    lives there, not here."""
+    tile = SPR.terrain_tile(3)          # Prairie
+    cotton = SPR.goods_icon(3)
+    worker = SPR.unit_icon(101)         # Colonists figure
+    t_uri = SPR.data_uri(tile, 4)
+    c_uri = SPR.data_uri(cotton, 4)
+    w_uri = SPR.data_uri(worker, 4)
+
+    stages = [
+        ("1", "Start from the terrain table", "pos",
+         ["Every terrain has a fixed base for each good.",
+          "Prairie grows Cotton at 3."],
+         "3", "base"),
+        ("2", "Rivers help", "text",
+         ["A minor river on the tile adds +1.",
+          "A Major river would add +1 more."],
+         "4", "+1"),
+        ("3", "The expert doubles it", "num",
+         ["A Master Cotton Planter working their own good",
+          "doubles the yield so far. (Food & Horses get +2",
+          "instead.) Expertise also upgrades every improvement",
+          "bonus below from +1 to +2."],
+         "8", "×2"),
+        ("4", "Prime resource — none here", "econ",
+         ["A Prime Cotton square would add +6,",
+          "doubled to +12 for the expert."],
+         "8", "±0"),
+        ("5", "Improvements", "arr",
+         ["Plowing boosts the crop goods: +2 (the expert tier).",
+          "The river is rewarded again here: +2.",
+          "(Roads instead boost ore, furs and timber —",
+          "they do nothing for crops.)"],
+         "12", "+4"),
+        ("6", "Liberty has the last word", "warn",
+         ["A content colony changes nothing. A colony full",
+          "of Tories subtracts at the very end — but the",
+          "yield never drops below zero."],
+         "12", "±0"),
+    ]
+
+    W = 660
+    head_h = 66
+    row_h = 78
+    foot_h = 74
+    H = head_h + len(stages) * row_h + foot_h
+    e = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">']
+
+    # ---- header: the scenario, with sprites
+    e.append(f'<rect x="2" y="2" width="{W - 4}" height="{head_h - 12}" '
+             f'fill="#F4F3EF" stroke="{INK}" stroke-width="1.2"/>')
+    e.append(f'<image x="16" y="10" width="36" height="36" href="{t_uri}" '
+             f'style="image-rendering:pixelated"/>')
+    e.append(f'<image x="60" y="12" width="26" height="32" href="{w_uri}" '
+             f'style="image-rendering:pixelated"/>')
+    e.append(svg_text(100, 24, "One worked tile, start to finish", 11.5,
+                      weight="bold"))
+    e.append(svg_text(100, 41, "an Expert Cotton Planter on plowed Prairie "
+                      "beside a minor river", 8.6, fill=MUTED))
+    e.append(f'<image x="{W - 90}" y="8" width="28" height="38" href="{c_uri}" '
+             f'style="image-rendering:pixelated"/>')
+    e.append(svg_text(W - 46, 33, "= 12", 15, weight="bold",
+                      fill=CAT["econ"][0]))
+
+    # ---- stage cards + running-total rail
+    rail_cx = 596
+    card_w = 500
+    prev = None
+    for i, (no, title, cat, lines, total, delta) in enumerate(stages):
+        y = head_h + i * row_h
+        dark, light = CAT[cat]
+        e.append(f'<rect x="10" y="{y}" width="{card_w}" height="{row_h - 12}" '
+                 f'fill="{light}" stroke="{dark}" stroke-width="1.3"/>')
+        e.append(f'<circle cx="30" cy="{y + 20}" r="11" fill="{dark}"/>')
+        e.append(svg_text(30, y + 24, no, 10.5, fill="#FFFFFF",
+                          anchor="middle", weight="bold"))
+        e.append(svg_text(50, y + 24, title, 10.2, weight="bold"))
+        for j, ln in enumerate(lines):
+            e.append(svg_text(50, y + 39 + j * 11.5, ln, 7.8, fill="#3A3F47"))
+        # rail badge
+        by = y + (row_h - 12) / 2
+        if prev is not None:
+            e.append(f'<line x1="{rail_cx}" y1="{prev + 21}" x2="{rail_cx}" '
+                     f'y2="{by - 21}" stroke="{MUTED}" stroke-width="1.4" '
+                     f'marker-end="url(#farr)"/>')
+        e.append(f'<line x1="{510}" y1="{by}" x2="{rail_cx - 34}" y2="{by}" '
+                 f'stroke="{RULE}" stroke-width="1" stroke-dasharray="3,3"/>')
+        final = i == len(stages) - 1
+        bw2 = 33 if final else 27
+        e.append(f'<rect x="{rail_cx - bw2}" y="{by - 20}" width="{bw2 * 2}" '
+                 f'height="40" rx="9" fill="{dark if final else light}" '
+                 f'stroke="{dark}" stroke-width="{2 if final else 1.4}"/>')
+        e.append(svg_text(rail_cx, by + 6, total, 17 if final else 15,
+                          fill=("#FFFFFF" if final else dark),
+                          anchor="middle", weight="bold", face=MONO_FACE))
+        e.append(svg_text(rail_cx + bw2 + 6, by + 4, delta, 8.6, fill=dark,
+                          weight="bold"))
+        prev = by
+
+    # ---- footer: the non-expert comparison + other movers
+    fy = head_h + len(stages) * row_h + 2
+    e.append(f'<rect x="10" y="{fy}" width="{W - 20}" height="{foot_h - 10}" '
+             f'fill="#F6F5F1" stroke="{RULE}" stroke-width="1"/>')
+    e.append(svg_text(22, fy + 16, "The same tile with an ordinary colonist:",
+                      8.8, weight="bold"))
+    e.append(svg_text(22, fy + 30, "3 base  →  +1 river  →  no doubling  →  "
+                      "plow +1 and river +1  →  6 Cotton (the expert isn't "
+                      "just double — the bonuses grow too)", 8.2,
+                      fill="#3A3F47"))
+    e.append(svg_text(22, fy + 48,
+                      "Other things that move the number:  coastal crowding "
+                      "hurts fish · Lumber always doubles · Hudson doubles "
+                      "Furs ·", 7.8, fill=MUTED))
+    e.append(svg_text(22, fy + 60,
+                      "silver/ore/fish need their building or father past a "
+                      "point · the colony centre works itself, no colonist "
+                      "needed", 7.8, fill=MUTED))
+    e.append("</svg>")
+
+    fig = (f'<figure class="tall"><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">How a tile\'s yield is '
+           f'computed — a walkthrough</span>'
+           f'<span class="ps">the full byte-cited chain follows below</span></div>'
+           f'<div class="plate-wrap">{"".join(e)}</div>'
+           f'<figcaption>Order matters: the expert doubles before the '
+           f'improvements are added, and the Sons-of-Liberty adjustment lands '
+           f'after everything else.</figcaption></div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
 def enrich_terrain(soup):
     """Section 5: tile image column on every table whose first column is a
     terrain id (5.1 id/hex/Name and the three 5.3 stat tables)."""
@@ -1004,6 +1349,7 @@ def enrich_terrain(soup):
         if head[:1] == ["id"] and ("name" in head or "mv" in head):
             add_sprite_column(soup, table, "tile", tile_for, after_col=0)
             n += 1
+    _after_h3(soup, "worked-tile production", production_walkthrough_fig())
     return n
 
 
@@ -1461,7 +1807,7 @@ def enrich_turnflow(soup):
     fig3 = flow_fig(
         "The autosave chain", "helper 0x5642; consumers 0x58D7 / 0x5A29",
         [
-            {"k": "dec", "t": "Game-Options bit 0x0400 set and [0x826] == 0 ? (gate 0x5AD7)",
+            {"k": "dec", "t": "Autosave option on, and not suppressed ? (bit 0x0400 · [0x826]==0 · gate 0x5AD7)",
              "side": ("no", ["no autosave"]), "cont": "yes"},
             {"k": "act", "t": "rolling autosave → slot 9, every turn",
              "s": ['"most recent save in the last slot"']},
@@ -1638,9 +1984,10 @@ def enrich_king(soup):
     _after_h3(soup, "Spanish Succession merge", flow_fig(
         "The Succession merge", "func_03C638 · event id 0x68",
         [
-            {"k": "dec", "t": "[0x53D0] < 75 and [0x53D2] < 0 and single-player ?",
-             "side": ("no", ["≥75 → revolution handlers instead"]),
-             "cont": "yes (gate 0x2391C..0x02393A)"},
+            {"k": "dec", "t": "revolution meter below 75 · no power has seceded yet · single-player ?",
+             "side": ("no", ["meter ≥ 75 → the revolution",
+                             "handlers fire instead"]),
+             "cont": "yes  (meter [0x53D0], REF id [0x53D2]; gate 0x2391C)"},
             {"k": "act", "t": "rank powers: 3·[0x9418+p] + 2·[0x9298+p] + [0x9410+p]",
              "s": ["0x3C655..0x3C66B, sort 0x3C68E — weakest AI cedes, strongest gains"]},
             {"k": "act", "t": "@SUCCESSION popup (0x3C76A)",
@@ -1923,6 +2270,7 @@ def shape_headings(soup, key, title):
 def build_section(key, title, md_text):
     html = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
     soup = BeautifulSoup(html, "html.parser")
+    formula_cards(soup)
     comment_blocks_to_prose(soup)
     structs_to_plates(soup)
     regions_to_wireframes(soup)
@@ -1933,6 +2281,7 @@ def build_section(key, title, md_text):
             enricher(soup)
         except Exception as e:
             warn(f"enricher {enricher.__name__} failed in section {key}: {e}")
+    name_globals(soup)
     style_hex_in(soup)
     shape_headings(soup, key, title)
     return str(soup)

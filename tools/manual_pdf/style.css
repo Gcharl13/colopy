@@ -201,6 +201,32 @@ figcaption {
 table.keytab { margin-top: 4px; font-size: 7.7pt; }
 table.keytab td { padding: 1.6px 6px 1.6px 2px; }
 
+/* named-global annotations */
+.gname { font-style: italic; color: var(--pos-d); font-size: 0.9em; }
+
+/* ---------- formula cards ---------- */
+figure.fcard {
+  margin: 0.5em 0 0.85em 0; break-inside: avoid;
+  border: 0.8px solid var(--num-d); border-left: 3.5px solid var(--num-d);
+  background: #EFF1F8; padding: 7px 12px 6px 12px;
+}
+.fcard .fmath {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 9.8pt;
+  font-weight: bold; color: var(--ink); line-height: 1.6;
+  padding-bottom: 3px;
+}
+.fcard .fmath .fm2 { font-size: 8.6pt; font-weight: normal; color: var(--muted); }
+.fcard .fex {
+  border-top: 0.7px dotted var(--rule); padding-top: 4px;
+  font-size: 8.8pt; color: #2A2F37; line-height: 1.5;
+}
+.fcard .flab {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 6.8pt; letter-spacing: 0.09em; text-transform: uppercase;
+  color: #FFFFFF; background: var(--num-d); border-radius: 2px;
+  padding: 1px 5px; margin-right: 7px; vertical-align: 1px;
+}
+
 /* ---------- sprites ---------- */
 img.sprite { image-rendering: pixelated; vertical-align: middle; }
 td.sprcell { text-align: center; vertical-align: middle; padding: 1px 4px; }

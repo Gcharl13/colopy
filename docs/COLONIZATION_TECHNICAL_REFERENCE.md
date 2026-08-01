@@ -622,6 +622,11 @@ So the byte-verified per-terrain bonuses are: open land (Tundra/Desert/Plains/Pr
 Grassland/Savannah) +0 %; Marsh/Swamp +25 %; forests +50 % (Rain +75 %); Hills +100 %;
 Mountains +150 %; Arctic/Ocean/Sea Lane +0 %.
 
+```formula
+defence bonus = terrain Defensive value × 25%
+example: a defender on Hills (Defensive 4) fights at +100% — the attacker needs double the strength to keep even odds
+```
+
 ### 5.7 Special resources (`@RESOURCE`) and overlay names (`@OTHER_NAMES`)
 
 The `@RESOURCE` block ("Special resource squares & values") lists each prime-resource
@@ -1073,6 +1078,37 @@ cell −2..+2), sprite `0x5A +` detail value, from PHYS0.SS.
 
 ---
 
+### 7.7 The named globals — quick reference
+
+The DGROUP addresses that recur throughout this volume, with the names this
+manual uses for them. Elsewhere in the book a known address is annotated with
+its name on first use in a paragraph.
+
+| Name | Address | Meaning |
+|---|---|---|
+| difficulty | `[0x53A6]` | 0 Discoverer .. 4 Viceroy |
+| year | `[0x538A]` | current year (starts 1492) |
+| season | `[0x538C]` | Spring/Autumn toggle from 1600 |
+| turn counter | `[0x538E]` | increments every turn |
+| game-state flags | `[0x5382]` | bit 0 war of independence · bit 1 intervention · bit 3 independence won; high byte holds the Game Options |
+| revolution meter | `[0x53D0]` | national Sons-of-Liberty percent 0..100 |
+| King/REF power id | `[0x53D2]` | −1 until the REF power exists |
+| rebel power id | `[0x5398]` | set at the Declaration |
+| current power | `[0x5394]` | power being processed |
+| active player | `[0x9E12]` | index of the power whose record `[0x84FC]` points at |
+| active-power record | `[0x84FC]` | far pointer to the current PowerRecord |
+| active-colony record | `[0x8542]` | far pointer to the current ColonyRecord |
+| unit count | `[0x539C]` | live UnitRecords |
+| colony count | `[0x539E]` | live ColonyRecords (cap 48) |
+| settlement count | `[0x539A]` | live NativeSettlements |
+| REF Regulars / Cavalry / Man-O-War / Artillery | `[0x53DA]`/`[0x53DC]`/`[0x53DE]`/`[0x53E0]` | the four expeditionary-force counts |
+| AI-controller byte | `[0x543F + power·0x34]` | 0 = human-controlled, 2 = eliminated |
+| RNG seed | `[0x28EE]/[0x28F0]` | the MSC 6.0 LCG state dword |
+| map width / height | `[0x853A]`/`[0x853C]` | 58 × 72 in the standard game |
+| map seed | `[0x190]` | terrain-detail / rumor position hash salt |
+| debug bitfield | `[0x894]` | the seven DEBUG.TXT cheat overlays (session-only) |
+| speaker channel | `[0x1F5C]` | which portrait sheet frames the next popup |
+
 ## 8. Colonies
 
 Every colony is a fixed-size 202-byte record in a single DGROUP array. The record
@@ -1161,6 +1197,12 @@ Sons of Liberty percent = `sol_numerator·100 / sol_denominator` (32-bit multipl
 0x008557 + divide 0x00855E in `func_008524`; 0 if the denominator ≤ 0 at
 0x008542), then +20 for a human-controlled colony (latch `add ax,0x14` at
 0x00859F, gated on `owner<4`), clamped to 100 (0x0085A8..0x0085AD).
+
+```formula
+SoL% = ( sol_numerator × 100 ) ÷ sol_denominator   →   +20 if human-owned   →   clamp to 100
+| returns 0 immediately when the denominator is ≤ 0
+example: pool 480 bells, cap 800 → 480×100÷800 = 60% → +20 (human colony) → 80% Sons of Liberty
+```
 
 ### 8.2 Building construction state and upgrade chains
 
@@ -1327,6 +1369,12 @@ production, halved-and-negated for the tory-leader power during the war
 bells (0x2DA12..0x2DA18). Derived steady state: `SoL% → min(100,
 50·bells/pop)` — 100% needs bells ≥ 2·population.
 
+```formula
+each turn:   cap  B → B − B÷64 + 2·pop        pool  A → A + bells/turn − A÷64   (A never exceeds B)
+steady state:   SoL% → min( 100,  50 × bells/turn ÷ population )
+example: 10 bells/turn, population 6 → 50×10÷6 = 83% at equilibrium; unanimity needs 12 bells/turn
+```
+
 **Consumers**, each byte-cited: combat scales strength by `SoL%/100`
 (0x05CF98; analysis rows Rebel Unrest +SoL% / Tory Unrest −(100−SoL%));
 production applies `sol_adj = −(tory_cnt/(10−diff))` with the `+0x1C` latches
@@ -1340,6 +1388,11 @@ the Spanish Succession below 75 (§18.7), takes +20 from Bolívar's acquisition
 (0x3BE64), and feeds the King's demand-severity score (0x361F9) and the final
 score (0x03A561). How the per-colony percents aggregate into `[0x53D0]` is
 behind untraced overlay calls (`0x1A1F:0x134`) — TBD.
+
+```formula
+tory_cnt = ( pop × (100 − SoL%) + 50 ) ÷ 100        sol_adj = −( tory_cnt ÷ (10 − difficulty) )
+example: population 12 at 25% SoL → tory_cnt = (12×75+50)÷100 = 9; at Viceroy (d=4) → 9÷6 = 1 → every worked tile −1
+```
 
 ## 9. Market and trade
 
@@ -1372,6 +1425,11 @@ manufactured luxuries coupled through a shared supply pool.
 on-screen spread is therefore the per-good constant `@CARGO` column 1 + 1:
 Food 1, Sugar 4, Tobacco 3, Cotton 2, Furs 4, Lumber 2, Ore 3, Silver 20,
 Horses 2, Rum/Cigars/Cloth/Coats 11, Trade Goods 2, Tools 2, Muskets 3.
+
+```formula
+sell price = price_level − 1            buy price = price_level + spread_constant
+example: Food at level 9 → sells at 8, buys at 10 (Food's constant is 1, so the visible spread is 2)
+```
 
 ### 9.2 Goods — `@CARGO`
 
@@ -1418,6 +1476,13 @@ their own supply (Furs halved, +1 if year<1700 and +1 if year<1600, at
 0x0307C9). Dumping one luxury lowers its own price and nudges the other three
 up.
 
+```formula
+each turn:  price_seed −= ( price_seed + Σ positive trade accumulators ) ÷ 256
+luxury coupling:  target = ( S_pair × 3 ) ÷ own_supply,   S_pair = Rum + Cigars + Cloth + Coats supply
+example: seed 800 and the four powers sold a net 240 Food → 800 − (800+240)÷256 = 800 − 4 = 796
+example: supplies Rum 400 / Cigars 300 / Cloth 200 / Coats 100 → S_pair 1000 → Rum's target = 3000÷400 = 7
+```
+
 ### 9.4 Buy/sell transactions
 
 **SELL** (`func_032914`; args good, screen-idx, confirm):
@@ -1428,6 +1493,11 @@ through the [0,999999] clamp helper (0x32A82); King fund `+0x22 += tax`
 purchase pages, e.g. Muskets qty 0x32 at 0x526A2, Horses at 0x52790, Tools qty
 0x64 at 0x52866): affordability check then inline debit
 `sub [bx+0x2A],ax; sbb [bx+0x2C],dx` — **buys are untaxed**.
+
+```formula
+tax = gross × tax_rate ÷ 100        you receive gross − tax        the King's fund gains the tax
+example: sell 100 Muskets at 12 gold with tax at 33% → gross 1,200 → 396 to the King, 804 to your treasury
+```
 
 Both paths call a mirror pair of accumulator updaters (good, qty):
 
@@ -1916,6 +1986,12 @@ consequence applier `func_05B2C2` uses the **raw** ship stat pair `+0x0B/+0x0C`
 (`0x523B/0x523C`, no modifier scaling): `roll = random_int(1, A+D)` at
 0x05B844, with independence-war special cases (0x05B87D/0x05BA2D).
 
+```formula
+P( attacker wins ) = ATK ÷ ( ATK + DEF )        AI target ranking = ( ATK × 8 ) ÷ ( DEF + 1 )
+| ATK and DEF are the fully modified strengths after the whole chain above
+example: ATK 24 against DEF 11 → 24÷35 ≈ 69% to win; the AI scores this target (24×8)÷12 = 16
+```
+
 ### 14.4 When the Combat Analysis dialog shows
 
 Gate at 0x05D221 inside `func_05CA7E`, *after* the roll is computed but before
@@ -1984,6 +2060,12 @@ minus a class penalty (Petty Criminal −10, Indentured Servant −5) — roll
 `func_05E714` writes the next rank (0x5C7DD); at the soldier ceiling the unit
 *type* advances instead — Soldier → Continental Army (0x5C7C3). Popups
 `@VETERAN` / `@VALOR` / `@WELLSEASONED`.
+
+```formula
+P( promotion ) = winner_strength ÷ ( ATK + DEF ± difficulty − class penalty )
+| human +d, AI −d · Petty Criminal −10, Indentured Servant −5 · Washington skips the roll entirely
+example: strength 24 of a 35 total, human at Explorer (+1) → 24÷36 = 67% chance to promote
+```
 
 In-repo conflicts, flagged: one combat.md bullet calls `func_05CA7E`
 "pre-combat setup, not the roll" — overruled by the wave-9 ruling and the
@@ -2077,6 +2159,11 @@ seeded `2*(6 - difficulty)`, halved if the power has Benjamin Franklin
 (0x59B00–0x59B31); the AI↔AI treaty handler `func_057DC0` writes it 1/0
 (0x57EC5 / 0x57F2D). While nonzero, an AI aborts planned attacks on its treaty
 partner (`func_03ECF0` @0x3F163). The decrement site is unmapped (runtime).
+
+```formula
+treaty_respect = 2 × ( 6 − difficulty )      (halved when the partner has Franklin)
+example: a treaty at Conquistador (d=2) buys 8 turns of AI restraint; with Franklin only 4
+```
 
 ### 15.5 Per-power scalar tables
 
@@ -2276,6 +2363,12 @@ Cross-check: a human at difficulty 1 holding one father, pre-1600, gives
 "(NN in MM)" is `NN = cost - pool`, `MM = cost` (F3 body call at 0x37B08); there
 is no graphical progress bar anywhere in the game.
 
+```formula
+next father costs = ( fathers_owned + 1 ) × base × 1.5 per era gate passed  + 1
+| base: human (d+3)×16 · AI (14−d)×8 · first father is half price · after the Declaration: d×1500 + 2000
+example: Explorer human, one father, year 1590 → (1+1) × ((1+3)×16) + 1 = 129 bells — the live-verified value
+```
+
 ### 17.3 The pick dialog (`@WHICHFREEDOM`)
 
 Candidate build `func_03BFD2`: the father table is the runtime array 0x9652,
@@ -2377,6 +2470,11 @@ then `if accum < 4000: accum ×= 2` (0x035E35), `+= 8` (0x035E38), hard clamp
 immigration. The main per-turn crosses *accrual* into `+0x2E`
 (church/cathedral production) is explicitly unidentified in the repo — TBD.
 William Penn multiplies colony cross production ×1.5 (0xA16B).
+
+```formula
+threshold = clamp₄₀₀₀( (Σ colony population + units) × 2 + 8 ) × (8 − d) ÷ 8      England: × 2⁄3
+example: 15 population + 8 units = 23 → ×2 +8 = 54 → Explorer 54×7÷8 = 47 → England 47×2÷3 = 31 crosses needed
+```
 
 **Who arrives**: the dock holds 3 candidates at `PowerRecord +0x02..+0x04`;
 the arrival picks slot `random_int(0,2)` (0x036462) and the slot refills from
@@ -2565,6 +2663,12 @@ whose internal tax write is untraced; the per-turn call frequency of
 applied delta lands at `func_034318` 0x03434C with the hard clamp at 75
 (0x03434F).
 
+```formula
+candidate raise = ( ((d & 0xFE) × 2) + 4 ) × ( turn÷400 + 1 )        P( ease ) = 1 ÷ (d + 1)
+ease amount = random( 1 .. 5−d )          punitive raise = random( 1 .. d ) × 2
+example: Conquistador at turn 500 → candidate (2×2+4)×2 = 16; ease odds 1-in-3, easing 1–3 points off the rate
+```
+
 ### 18.9 The King's mercenaries
 
 Two distinct offers, both priced per unit in hundreds of gold. (The manual's
@@ -2582,6 +2686,11 @@ random_int(0,6)) · 100` (0x03E713), `price = gold_per_unit · (count +
 you. / Pay {%NUMBER0$}."); arrival `@MERCS`. Delivered units are Veteran
 Dragoons and Veteran Artillery on a Man-O-War (type table `func_03C4A2`).
 
+```formula
+peacetime fee = ( (d + 4) × 2 + random(0..6) ) × 100 per unit
+example: Conquistador, middle roll 3 → (12+3)×100 = 1,500 gold per Dragoon offered
+```
+
 **Wartime** (`func_03E442`, 0x03E442..0x03E663): a per-power one-shot bit
 (PowerRecord byte 0, bit 0x08 — set on the first eligible call at 0x03E4CD,
 offer possible only from the second call on), then a **1-in-3** gate
@@ -2591,6 +2700,11 @@ plus exactly one of Continental Cavalry or Artillery (0x03E52E..0x03E546).
 `price = gold_per_unit · (count + 2)` (0x03E56B). The offer only appears if
 affordable (`price ≤ treasury +0x2A`, 0x03E5FD); paying debits at 0x03E651.
 Wartime types: Veteran Continental Army + Continental Cavalry / Artillery.
+
+```formula
+wartime fee = ( (d + 3) × 2 + random(0..6) ) × 100 per unit   ×   ( count + 2 )
+example: Conquistador war offer, roll 3 → (10+3)×100 = 1,300 per unit; 3 troops +2 → 6,500 gold total
+```
 
 **Landing** (`func_03D510`, shared with the free intervention force): arrival
 colony is a population-weighted random pick over up to 10 coastal colonies
@@ -2622,6 +2736,13 @@ Regulars. Post-declaration the purchase is announced instead (`@KINGBUY`,
 0x3E262). Sale tax funds it: every European sale routes
 `gross·tax%/100` into `+0x22` (0x32A92), as do back-tax payments (0x033413).
 
+```formula
+fund += ( 8d + 10 ) per turn, doubling at 1600 / 1700 / 1750   —   one REF unit per 1,800 banked
+starting REF:   Regulars 8d+15 · Cavalry 5(d+1) · Man-O-War 3d+2 · Artillery 6d+2
+example: Explorer → 18/turn, 36/turn after 1600 → a new REF unit roughly every 50 turns
+example: a Viceroy game opens against 47 Regulars, 25 Cavalry, 14 Man-O-War, 26 Artillery
+```
+
 ### 18.11 The difficulty ledger — every documented d-scaled constant
 
 Difficulty `d` = `[0x53A6]` (0 Discoverer .. 4 Viceroy; default 2 at 0x7433C,
@@ -2636,6 +2757,11 @@ by a second placement pass (0x0758F5/0x075961); REF seed §18.10; native alarm
 seed `random_int(0,14) + 2d` for the human (0x65DC7/0x65DCE); year 1492
 (0x757E7), map 58×72 (0x75702), price seeds `random_int(600,1000)` ×16
 (0x75645). Initial tax rate: no initializer is byte-cited (UI shows 0%) — TBD.
+
+```formula
+example: Explorer (d=1) → 300 gold · combat +3 · treaty 10 turns · REF 18/turn · native training 70% · first-father base 64
+example: Viceroy (d=4) → 0 gold · combat +0 · treaty 4 turns · REF 42/turn · native training 10% · first-father base 112
+```
 
 | Mechanic | Formula in d | Site |
 |---|---|---|
@@ -2698,6 +2824,11 @@ uprising near %STRING0! Parliament arms Tory Militia!", 0x3CD94). The
 in-repo wording conflict on militia count (≤ 8 per free tile vs
 strength-counted-down) is unresolved — flagged.
 
+```formula
+tory strength = pop × (100 − SoL%) × 2 ÷ 100  +  d + 1        P( fires ) = (d+1) ÷ (d+2)
+example: pop 10 at 30% SoL, Governor (d=3) → 10×70×2÷100 = 14 → +4 = 18 militia strength; fires 4 turns in 5
+```
+
 ### 18.13 Scoring and the Hall of Fame
 
 Component sum `func_039EE2`, seven terms into the grand total
@@ -2718,6 +2849,11 @@ framing is byte-refuted). Scaler `func_03A9C0`: multiplier
 WOODPAN2/WOODPANL in FONTINTR (title gold 0xFC), persists
 `HALLFAME.DAT` — 5 shown of 6 records, stride 42, score word at `+0x26`,
 descending insertion (`func_03ADA6`).
+
+```formula
+score = ( multiplier × Σ seven terms ) ÷ 100 ÷ 2        multiplier by difficulty: 4 / 5 / 6 / 8 / 10
+example: 900 raw points at Conquistador → (6×900)÷100 = 54 → ÷2 = 27; rank = largest n with n²÷3 < 27 → rank 8
+```
 
 ## 19. Natives
 
@@ -2878,6 +3014,11 @@ Cortés does not touch raze gold — his documented effect is the King's cut of
 `max(5·diff+50, 2·tax)` clamped ≤ 90, 0x5C965/0x5C976 — the `@LOOTCASH`
 `%NUMBER1`).
 
+```formula
+raze gold = ( r₁ + r₂ + r₃ ) × r₄ × 4 × ( size + 1 )        rᵢ = random(1 .. 10−d),  r₄ = random(1..6)
+example: Explorer razes a size-8 village: rolls 5+7+3 = 15 → ×4 (r₄) = 60 → ×4 = 240 → ×9 = 2,160 gold
+```
+
 **European colony capture** (inside `func_05CA7E`, math at 0x05DE1E):
 
 `loot = (colony.population · victim.gold) / max(Σ populations of victim's colonies, 1)`
@@ -2891,6 +3032,11 @@ is **gated off during the War of Independence** (`test [0x5382],1` at
 0x05DE11). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
 {%NUMBER0$} plundered!"). No Crown cut exists on this path; `@LOOTCASH`
 belongs to treasure-fleet arrival only.
+
+```formula
+plunder = captured colony's population × victim's whole treasury ÷ victim's total colony population
+example: take a pop-6 colony from a power holding 3,000 gold across 20 population → 6×3000÷20 = 900 gold
+```
 
 ### 19.9 Alarm, tension, and raids
 
@@ -2920,6 +3066,11 @@ bumps the settlement's raid budget +0x08 and wealth +0x0A, 0x5C3CC),
 (0x5C50B/0x5C57B), and `@RAIDNOTHING` — "raiding party wiped out"
 (0x5C637). The concrete payloads of WREAK/BURN/GOLD/SHIP beyond their
 messages are unmapped — TBD.
+
+```formula
+raid fires when   random(1..12) − 1  [ + (d−2) versus a human ]   ≥   3K + 1
+example: at Viceroy a roll of 8 gives 7, +2 bias = 9 against a threshold of 7 → the raid proceeds; severity = random(1..4)
+```
 
 ## 20. Turn flow and persistence
 
