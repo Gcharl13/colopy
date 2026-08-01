@@ -355,6 +355,21 @@ def byte_plate_svg(st):
             if len(label) > maxch:
                 label = label[: maxch - 1] + "…"
             e.append(svg_text(x, y, label, 8.6, fill=dark, anchor="middle", weight="bold"))
+        idx = index_elements_for(f)
+        if idx:
+            n, es = idx
+            for k in range(n):
+                lo = f["off"] + k * es
+                if lo >= total:
+                    break
+                r = lo // 16
+                x0e = gut + (lo % 16) * cw
+                run = min(es, (r + 1) * 16 - lo, total - lo)
+                if k > 0:
+                    e.append(f'<rect x="{x0e}" y="{ruler + r * ch}" width="1.2" '
+                             f'height="{ch}" fill="{dark}" fill-opacity="0.45"/>')
+                e.append(svg_text(x0e + run * cw / 2, ruler + r * ch + ch - 3,
+                                  str(k), 4.9, fill=dark, anchor="middle"))
     e.append(f'<rect x="{gut}" y="{ruler}" width="{16 * cw}" '
              f'height="{rows * ch}" fill="none" stroke="{INK}" stroke-width="1.1"/>')
     # mask final partial row edge
@@ -487,8 +502,8 @@ def structs_to_plates(soup):
                 n += 1
                 if val["name"] in BITSTRIPS and val["name"] not in _bitstrips_done:
                     _bitstrips_done.add(val["name"])
-                    for title, sub, groups in BITSTRIPS[val["name"]]:
-                        frags.append(bit_fig(title, sub, groups))
+                    for spec in BITSTRIPS[val["name"]]:
+                        frags.append(bit_fig(**spec))
             else:
                 p = soup.new_tag("pre")
                 c = soup.new_tag("code")
@@ -507,45 +522,61 @@ def structs_to_plates(soup):
 # 2b. Bit strips (spec 4: visuals.bit_strip) — curated, byte-cited layouts
 # --------------------------------------------------------------------------
 
-def bit_strip_svg(groups):
-    """8 boxes, high bit left. groups: (hi, lo, label, cat, detail)."""
-    bw, bh = 56, 34
-    x0 = (660 - 8 * bw) / 2
+def bit_strip_svg(groups, nbits=8, perbit=None, perbit_cat="econ"):
+    """nbits boxes, high bit left. groups: (hi, lo, label, cat, detail);
+    perbit: {bit: label} for masks where every bit has its own meaning."""
+    bw = 56 if nbits <= 8 else 38
+    bh = 34
+    x0 = (660 - nbits * bw) / 2
     y0 = 16
     covered = {}
     for gi, (hi, lo, label, cat, detail) in enumerate(groups):
         for b in range(lo, hi + 1):
             covered[b] = gi
     legend = [(lab, det) for _, _, lab, _, det in groups if det]
-    H = y0 + bh + 30 + len(legend) * 13 + 4
+    pb_row = 12 if perbit else 0
+    br_row = 24 if groups else 4
+    H = y0 + bh + pb_row + br_row + len(legend) * 13 + 8
     e = [f'<svg viewBox="0 0 660 {H}" xmlns="http://www.w3.org/2000/svg">']
-    for b in range(7, -1, -1):
-        x = x0 + (7 - b) * bw
+    wfmt = "0x{:02X}" if nbits <= 8 else "0x{:04X}"
+    for b in range(nbits - 1, -1, -1):
+        x = x0 + (nbits - 1 - b) * bw
         gi = covered.get(b)
-        dark, light = CAT[groups[gi][3]] if gi is not None else CAT["pad"]
-        if gi is None:
-            light = "#F2F3F4"
+        if gi is not None:
+            dark, light = CAT[groups[gi][3]]
+        elif perbit and b in perbit:
+            dark, light = CAT[perbit_cat]
+        else:
+            dark, light = CAT["pad"][0], "#F2F3F4"
         e.append(f'<rect x="{x}" y="{y0}" width="{bw}" height="{bh}" '
                  f'fill="{light}" stroke="{INK}" stroke-width="0.8"/>')
-        e.append(svg_text(x + bw / 2, y0 - 4, f"bit {b}", 7.4, fill=FAINT,
+        e.append(svg_text(x + bw / 2, y0 - 4, f"{b}", 7.0, fill=FAINT,
                           anchor="middle", face=MONO_FACE))
-        e.append(svg_text(x + bw / 2, y0 + bh / 2 + 3, f"0x{1 << b:02X}", 8.6,
-                          fill=(dark if gi is not None else FAINT),
+        active = gi is not None or (perbit and b in perbit)
+        e.append(svg_text(x + bw / 2, y0 + bh / 2 + 3, wfmt.format(1 << b),
+                          7.6 if nbits > 8 else 8.6,
+                          fill=(dark if active else FAINT),
                           anchor="middle", face=MONO_FACE,
-                          weight="bold" if gi is not None else "normal"))
-    # brackets + labels
-    yb = y0 + bh + 5
+                          weight="bold" if active else "normal"))
+    yb = y0 + bh + 3
+    if perbit:
+        dark, _ = CAT[perbit_cat]
+        for b, lab in perbit.items():
+            x = x0 + (nbits - 1 - b) * bw
+            e.append(svg_text(x + bw / 2, yb + 7, lab, 5.2, fill=dark,
+                              anchor="middle"))
+        yb += pb_row
     for hi, lo, label, cat, detail in groups:
         dark, _ = CAT[cat]
-        xl = x0 + (7 - hi) * bw + 2
-        xr = x0 + (7 - lo + 1) * bw - 2
+        xl = x0 + (nbits - 1 - hi) * bw + 2
+        xr = x0 + (nbits - lo) * bw - 2
         e.append(f'<path d="M {xl} {yb} L {xl} {yb + 4} L {xr} {yb + 4} L {xr} {yb}" '
                  f'fill="none" stroke="{dark}" stroke-width="1.1"/>')
         cx = min(max((xl + xr) / 2, x0 + len(label) * 2.2 + 2),
-                 x0 + 8 * bw - len(label) * 2.2 - 2)
+                 x0 + nbits * bw - len(label) * 2.2 - 2)
         e.append(svg_text(cx, yb + 15, label, 8.2, fill=dark, anchor="middle",
                           weight="bold"))
-    yl = yb + 28
+    yl = yb + br_row + 4
     for lab, det in legend:
         e.append(svg_text(x0, yl, f"{lab} — {det}", 7.6, fill=MUTED))
         yl += 13
@@ -553,42 +584,48 @@ def bit_strip_svg(groups):
     return "\n".join(e)
 
 
-def bit_fig(title, sub, groups):
+def bit_fig(title, sub, groups, nbits=8, perbit=None, perbit_cat="econ"):
     fig = (f'<figure class="bitstrip"><div style="break-inside:avoid">'
            f'<div class="platehead"><span class="pt">{esc(title)}</span>'
            f'<span class="ps">{esc(sub)}</span></div>'
-           f'<div class="plate-wrap">{bit_strip_svg(groups)}</div></div></figure>')
+           f'<div class="plate-wrap">'
+           f'{bit_strip_svg(groups, nbits, perbit, perbit_cat)}</div></div></figure>')
     return BeautifulSoup(fig, "html.parser").figure
 
 
-# (hi, lo, label, cat, detail) per byte — every layout below is transcribed
-# from the struct's own byte-cited field notes / section 3 of the source.
+# dict(title, sub, groups[, nbits, perbit]) per byte/word — every layout below
+# is transcribed from the struct's own byte-cited field notes or the section
+# text it appears in (sections 3, 9, 11, 12, 15, 19).
+def _bs(title, sub, groups, **kw):
+    return dict(title=title, sub=sub, groups=groups, **kw)
+
+
 BITSTRIPS = {
     "MPFile": [
-        ("Layer 1 — terrain byte", "per tile; ids and overlay bits (section 3)", [
+        _bs("Layer 1 — terrain byte", "per tile; ids and overlay bits (section 3)", [
             (4, 0, "terrain id 0..28", "pos", "AND 0x1F fold at 0x620A; 8..23 = forested variants"),
             (5, 5, "mtn/hill", "flag", "with bit 7: set = Mountains (0xA0), clear = Hills (0x20)"),
             (6, 6, "river", "flag", "with bit 7: set = major river (0xC0), clear = minor (0x40)"),
             (7, 7, "modifier", "flag", "qualifies bits 5/6 as above"),
         ]),
-        ("Layer 2 — feature byte", "per tile; VICEROY discards this layer on load and rebuilds it", [
+        _bs("Layer 2 — feature byte", "per tile; VICEROY discards this layer on load and rebuilds it", [
             (0, 0, "unit", "pos", "unit present (MAPEDIT _is_unit @0x43C8)"),
             (1, 1, "settlement", "pos", "colony/village/city (@0x43F6..)"),
             (2, 2, "prime rsrc", "econ", "prime resource (_resource_at @0x45CF)"),
             (3, 3, "hostile A", "warn", "tested with bit 6 by _is_hostile @0x44D1 (mask 0x48)"),
             (6, 6, "hostile B", "warn", None),
         ]),
-        ("Layer 3 — continent byte", "per tile", [
+        _bs("Layer 3 — continent byte", "per tile", [
             (3, 0, "continent 1..15", "pos", "0 = border/none (_continent_at @0x428B)"),
             (7, 4, "owner", "pos", "0xF = none (_owner_of @0x42C5)"),
         ]),
     ],
     "UnitRecord": [
-        ("UnitRecord +0x03 — owner byte", "set_unit_owner @0x738E", [
+        _bs("UnitRecord +0x03 — owner byte", "set_unit_owner @0x738E", [
             (3, 0, "power 0..11", "pos", "0..3 European, 4..11 tribes"),
             (7, 4, "state", "flag", "high-nibble unit state"),
         ]),
-        ("UnitRecord +0x04 — flags byte", "transient per-pass bit register", [
+        _bs("UnitRecord +0x04 — flags byte", "transient per-pass bit register", [
             (7, 7, "draw", "flag", "draw-active / Damaged display pair (set @0x069923; @ARTILLERY @0x05B6F6)"),
             (6, 6, "cargo", "econ", "ship-carrying-cargo (@0x02F37A)"),
             (5, 5, "merch", "pos", "Merchantman tag (@0x04CE44)"),
@@ -597,17 +634,50 @@ BITSTRIPS = {
             (2, 2, "class", "pos", "ship-cargo class (@0x04CDDC)"),
             (1, 1, "fortif", "flag", "was-fortifying (@0x04CEC9)"),
         ]),
+        _bs("UnitRecord +0x0D..+0x0F — cargo_ids packing",
+            "nibble-packed good ids, 2 slots per byte, up to 6 (@0x0B2CB)", [
+                (3, 0, "slot 2k", "econ", "even cargo slot — good id 0..15 (@CARGO)"),
+                (7, 4, "slot 2k+1", "econ", "odd cargo slot"),
+            ]),
+        _bs("UnitRecord +0x17 — profession byte on routed units",
+            "colonist profession 0x13..0x1C otherwise", [
+                (3, 0, "route id", "pos", "trade-route index 0..11"),
+                (7, 4, "stop idx", "pos", "current stop 0..3"),
+            ]),
     ],
     "NativeSettlement": [
-        ("NativeSettlement +0x03 — flags", "", [
+        _bs("NativeSettlement +0x03 — flags", "", [
             (2, 2, "capital", "pos", "set @0x66225; doubles value @0x7DCA"),
             (1, 1, "taught", "num", "already taught (set @0x4A78A)"),
             (0, 0, "w/o", "pad", "write-only bit"),
         ]),
-        ("NativeSettlement +0x05 — mission byte", "0xFF = no mission", [
+        _bs("NativeSettlement +0x05 — mission byte", "0xFF = no mission", [
             (3, 0, "owning power", "pos", "European power holding the mission"),
             (4, 4, "expert", "econ", "expert-mission doubler (Brebeuf; set @0x48C81, tested @0x57300)"),
         ]),
+    ],
+    "StopRecord": [
+        _bs("StopRecord +0x02 — counts byte",
+            "nibble get/set func_0603DA / func_06040A (max 6 each)", [
+                (3, 0, "unload count", "econ", "goods unloaded at this stop"),
+                (7, 4, "load count", "econ", "goods loaded at this stop"),
+            ]),
+    ],
+    "PowerRecord": [
+        _bs("Relations-matrix byte — row base PowerRecord +0x34 (0x883C)",
+            "one byte per subject→target pair; accessors func_007F34/96/008000 (section 15.3)", [
+                (0, 0, "resolved", "num", "resolved/normalised relationship (set 0x5318F)"),
+                (1, 1, "war", "warn", "at war (set 0x58A7B/0x59A61/0x3F0E8; cleared 0x5DE98)"),
+                (3, 3, "grievance", "warn", "pending; → bit 0 when +0x40 timer expires and random_int(0,3)==0 (0x53165)"),
+                (4, 4, "parley", "num", "parley cooldown 16 turns (stamp 0x58075/0x5914C)"),
+                (5, 5, "met", "pos", "met / contacted"),
+                (6, 6, "treaty", "pos", "peace treaty in force (set both ways 0x59139)"),
+                (7, 7, "privateer", "warn", "hidden attribution — privateer attack sets this, not war (0x3F0A1; revealed 0x58BE1)"),
+            ]),
+        _bs("boycott_bitmask — PowerRecord +0x20",
+            "bit g = good g; set on Tea Party @0x34717; back-tax clear @0x33423; Fugger zeroes the word @0x3BD45",
+            [], nbits=16,
+            perbit={g: SPR.GOODS[g] for g in range(16)}),
     ],
 }
 _bitstrips_done = set()
@@ -621,6 +691,17 @@ POWER_FIELDS = {"relations", "treaty_respect", "power_flag", "power_flag2",
                 "alarm"}
 
 
+# section 5.2 legend order (the nine yield columns of the $TERRAIN record)
+YIELDS9 = ["Food", "Sugar", "Tobacco", "Cotton", "Furs", "Lumber", "Ore",
+           "Silver", "Fish"]
+SEMANTIC_ARRAYS = {
+    ("yields", 9): YIELDS9,                       # TerrainRecord, section 5.2
+    ("nums", 9): [f"c{i}" for i in range(4, 13)],  # MapeditTerrainRec: NAMES cols 4-12
+    ("stops", 4): ["stop 0", "stop 1", "stop 2", "stop 3"],  # RouteRecord
+    ("cargo_ids", 3): ["slots 0–1", "slots 2–3", "slots 4–5"],  # 2 per byte @0x0B2CB
+}
+
+
 def enum_labels_for(field):
     """(labels, elem_size) when the element order is documented, else None."""
     name = field["name"] or ""
@@ -631,7 +712,26 @@ def enum_labels_for(field):
         return SPR.GOODS, field["size"] // 16
     if base in POWER_FIELDS and name.endswith("[4]"):
         return SPR.POWERS, field["size"] // 4
+    m = re.match(r"^(\w+)\[(\d+)\]$", name)
+    if m and (m.group(1), int(m.group(2))) in SEMANTIC_ARRAYS:
+        n = int(m.group(2))
+        return SEMANTIC_ARRAYS[(m.group(1), n)], field["size"] // n
     return None
+
+
+def index_elements_for(field):
+    """(count, elem_size) for plain arrays of 2..16 elements — element ticks
+    and index labels; no semantic claim, indices only."""
+    name = field["name"] or ""
+    m = re.match(r"^(\w+)\[(\d+)\]$", name)
+    if not m or not field["size"]:
+        return None
+    base, n = m.group(1), int(m.group(2))
+    if not (2 <= n <= 16) or field["size"] % n:
+        return None
+    if field["ctype"].startswith("char") or base.startswith(("_pad", "unused", "pad")):
+        return None
+    return n, field["size"] // n
 
 
 # --------------------------------------------------------------------------
@@ -1107,8 +1207,244 @@ def enrich_appendix_b(soup):
                 nxt.insert_after(fig)
 
 
+# --------------------------------------------------------------------------
+# 4c. Flow diagrams (spec: flows.flowchart) — hand-transcribed from the
+# sections' own byte-cited text; conditions phrased so the main path stays
+# on the spine, branches exit right.
+# --------------------------------------------------------------------------
+
+def flow_svg(nodes):
+    """nodes: dicts —
+    {k:'start'|'end', t}                     rounded terminal
+    {k:'act',  t, s:[sublines]}              action box
+    {k:'dec',  t, side:(branchlabel, [sidelines]), cont:label}  decision
+    {k:'gopen', t}  {k:'gclose'}             loop/group enclosure
+    """
+    MX, MW = 30, 380          # main column
+    SX, SW = 435, 222         # side boxes
+    e = []
+    y = 8
+    gstack = []
+    boxes = []                # (kind, x, y, w, h, ...) deferred draw
+    centers = []              # spine attachment ys
+    for nd in nodes:
+        k = nd["k"]
+        if k == "gopen":
+            gstack.append((y, nd["t"]))
+            y += 20
+            continue
+        if k == "gclose":
+            gy, gt = gstack.pop()
+            boxes.append(("group", MX - 14, gy, MW + 28, y - gy + 8, gt))
+            y += 16
+            continue
+        ind = 14 if gstack else 0
+        if k in ("start", "end"):
+            h = 24
+            boxes.append(("term", MX + ind + 60, y, MW - 120, h, nd["t"]))
+            centers.append((y, h))
+            y += h + 18
+        elif k == "act":
+            subs = nd.get("s", [])
+            h = 21 + 11 * len(subs)
+            boxes.append(("act", MX + ind, y, MW - 2 * ind, h, nd["t"], subs))
+            centers.append((y, h))
+            y += h + 18
+        elif k == "dec":
+            h = 30
+            boxes.append(("dec", MX + ind, y, MW - 2 * ind, h, nd["t"]))
+            blabel, sidelines = nd["side"]
+            sh = 16 + 11 * len(sidelines)
+            boxes.append(("side", SX, y + h / 2 - sh / 2, SW, sh, sidelines))
+            boxes.append(("sarrow", MX + MW - ind, y + h / 2, SX, blabel))
+            if nd.get("cont"):
+                boxes.append(("clabel", MX + MW / 2 + 6, y + h + 12, nd["cont"]))
+            centers.append((y, h))
+            y += h + 20
+    H = y + 4
+    out = [f'<svg viewBox="0 0 660 {H}" xmlns="http://www.w3.org/2000/svg">',
+           '<defs><marker id="farr" viewBox="0 0 8 8" refX="7" refY="4" '
+           'markerWidth="7" markerHeight="7" orient="auto">'
+           f'<path d="M0,0 L8,4 L0,8 z" fill="{MUTED}"/></marker></defs>']
+    # spine arrows between consecutive main nodes
+    for (y1, h1), (y2, _) in zip(centers, centers[1:]):
+        cx = MX + MW / 2
+        out.append(f'<line x1="{cx}" y1="{y1 + h1}" x2="{cx}" y2="{y2 - 1.5}" '
+                   f'stroke="{MUTED}" stroke-width="1.2" marker-end="url(#farr)"/>')
+    for b in boxes:
+        if b[0] == "group":
+            _, x, gy, w, h, gt = b
+            dark, light = CAT["pos"]
+            out.append(f'<rect x="{x}" y="{gy}" width="{w}" height="{h}" rx="8" '
+                       f'fill="none" stroke="{dark}" stroke-width="1.3" '
+                       f'stroke-dasharray="7,4"/>')
+            out.append(svg_text(x + 8, gy + 13, gt, 7.6, fill=dark, weight="bold"))
+        elif b[0] == "term":
+            _, x, ty, w, h, t = b
+            out.append(f'<rect x="{x}" y="{ty}" width="{w}" height="{h}" '
+                       f'rx="{h / 2}" fill="{INK}" stroke="none"/>')
+            out.append(svg_text(x + w / 2, ty + h / 2 + 3, t, 8.4,
+                                fill="#FCFBF8", anchor="middle", weight="bold"))
+        elif b[0] == "act":
+            _, x, ty, w, h, t, subs = b
+            dark, light = CAT["num"]
+            out.append(f'<rect x="{x}" y="{ty}" width="{w}" height="{h}" '
+                       f'fill="{light}" stroke="{dark}" stroke-width="1.2"/>')
+            out.append(svg_text(x + w / 2, ty + 13, t, 8.4, fill=INK,
+                                anchor="middle", weight="bold"))
+            for i, s in enumerate(subs):
+                out.append(svg_text(x + w / 2, ty + 24 + 11 * i, s, 7.0,
+                                    fill=MUTED, anchor="middle"))
+        elif b[0] == "dec":
+            _, x, ty, w, h, t = b
+            dark, light = CAT["econ"]
+            cx, cy = x + w / 2, ty + h / 2
+            out.append(f'<path d="M {x} {cy} L {cx} {ty} L {x + w} {cy} '
+                       f'L {cx} {ty + h} z" fill="{light}" stroke="{dark}" '
+                       f'stroke-width="1.2"/>')
+            out.append(svg_text(cx, cy + 3, t, 7.6, fill=INK, anchor="middle",
+                                weight="bold"))
+        elif b[0] == "side":
+            _, x, ty, w, h, lines = b
+            dark, light = CAT["arr"]
+            out.append(f'<rect x="{x}" y="{ty}" width="{w}" height="{h}" '
+                       f'fill="{light}" stroke="{dark}" stroke-width="1.1"/>')
+            for i, s in enumerate(lines):
+                out.append(svg_text(x + 7, ty + 13 + 11 * i, s, 7.0, fill=INK))
+        elif b[0] == "sarrow":
+            _, x1, sy, x2, blabel = b
+            out.append(f'<line x1="{x1}" y1="{sy}" x2="{x2 - 2}" y2="{sy}" '
+                       f'stroke="{MUTED}" stroke-width="1.2" marker-end="url(#farr)"/>')
+            out.append(svg_text((x1 + x2) / 2, sy - 4, blabel, 6.8, fill=MUTED,
+                                anchor="middle"))
+        elif b[0] == "clabel":
+            _, x, ty, t = b
+            out.append(svg_text(x, ty, t, 6.8, fill=MUTED))
+    out.append("</svg>")
+    return "\n".join(out)
+
+
+def flow_fig(title, sub, nodes, caption=""):
+    cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""
+    fig = (f'<figure class="tall"><div style="break-inside:avoid">'
+           f'<div class="platehead">'
+           f'<span class="pt">{esc(title)}</span><span class="ps">{esc(sub)}</span>'
+           f'</div><div class="plate-wrap">{flow_svg(nodes)}</div>{cap}</div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def enrich_turnflow(soup):
+    fig1 = flow_fig(
+        "The turn loop", "func_005760 (file 0x5760) — one full pass per turn",
+        [
+            {"k": "start", "t": "Turn begins"},
+            {"k": "gopen",
+             "t": "×4 — once per European power, strict index order"},
+            {"k": "act", "t": "1  King / mercenary — func_03E664 (call 0x58E2)",
+             "s": ["gated [0x5382]&1==0 · peacetime mercenary roll 0x3E707 · King events"]},
+            {"k": "act", "t": "2  Orders / movement — func_024A48 (0x58E7)",
+             "s": ["per-unit orders pump · REF fund accrual func_03E162 via 0x24B42",
+                   "AI moves func_04E2D6; contact evaluator func_059B90 fires diplomacy"]},
+            {"k": "act", "t": "3  Production — func_02F052 (0x59EA)",
+             "s": ["zero bells/turn +0x0E @0x2F23F · per-colony func_02D658:",
+                   "yields, food/starvation/spoilage popups, school, bell accrual (0x2D6A7)"]},
+            {"k": "act", "t": "4  Diplomacy — func_052F7E (0x5A37)",
+             "s": ["king-action dispatch func_034C24 (tax raises event-driven here) · AI diplomacy"]},
+            {"k": "act", "t": "5  Periodic / congress — func_02F3A2 (0x5AE5)",
+             "s": ["colony stats func_042138 · congress func_03B2F8 (gate [0x5382]&0x10==0)",
+                   "King defeat/victory screens 0x2F552/0x2F6A8"]},
+            {"k": "gclose"},
+            {"k": "act", "t": "Market drift — func_036574 (@0x757B0, in func_0755CC)",
+             "s": ["clear per-power 16-good accumulators (0x3670E)",
+                   "4-power loop into func_0305A8: base relaxes by (base + Σ clamped trade)/256"]},
+            {"k": "act", "t": "Immigration crosses — func_035D9A",
+             "s": ["runs immediately after the price recompute (0x363E2)"]},
+            {"k": "act", "t": "Religious-unrest arrivals — @UNREST chain", "s": []},
+            {"k": "act", "t": "Year cadence — inc [0x538E] (loop tail 0x5A9D–0x5ACC)",
+             "s": ["see the cadence diagram below"]},
+            {"k": "act", "t": "Autosave tail (§20.2)", "s": []},
+            {"k": "end", "t": "Next turn"},
+        ],
+        "Natives are not a separate top-level pass — their AI runs inside the "
+        "per-power processing.")
+    fig2 = flow_fig(
+        "Year cadence and end-of-game checks", "loop tail 0x5A9D–0x5ACC",
+        [
+            {"k": "act", "t": "inc [0x538E] — turn counter", "s": []},
+            {"k": "dec", "t": "year < 1600 ?",
+             "side": ("yes", ["one turn = one year"]), "cont": "no — from 1600"},
+            {"k": "act", "t": "season word [0x538C] toggles Spring / Autumn",
+             "s": ["the year steps every second turn · start 1492"]},
+            {"k": "dec", "t": "year reaches 1725 ? (0x5BB5)",
+             "side": ("yes", ["forced end: [0x82B] = 1",
+                              "end-game save fires near 0x5BDB"]),
+             "cont": "no"},
+            {"k": "end", "t": "continue"},
+        ])
+    fig3 = flow_fig(
+        "The autosave chain", "helper 0x5642; consumers 0x58D7 / 0x5A29",
+        [
+            {"k": "dec", "t": "Game-Options bit 0x0400 set and [0x826] == 0 ? (gate 0x5AD7)",
+             "side": ("no", ["no autosave"]), "cont": "yes"},
+            {"k": "act", "t": "rolling autosave → slot 9, every turn",
+             "s": ['"most recent save in the last slot"']},
+            {"k": "dec", "t": "year divisible by 10 ?",
+             "side": ("yes", ["decade autosave → slot 8"]), "cont": "no"},
+            {"k": "end", "t": "done"},
+        ],
+        "Filenames COLONY<slot>.SAV (stem at file 0x1FA82). Manual slots via "
+        "the @SAVEGAME dialog.")
+    tables = soup.find_all("div", class_="tablewrap")
+    if tables:
+        tables[0].insert_after(fig1)
+    for p in soup.find_all("p"):
+        if p.get_text().startswith("Year cadence"):
+            p.insert_after(fig2)
+            break
+    for p in soup.find_all("p"):
+        if "rolling autosave" in p.get_text():
+            p.insert_after(fig3)
+            break
+
+
+def enrich_events(soup):
+    fig = flow_fig(
+        "The tax event, end to end", "@KINGTAX → @TAXOPTIONS → @TEAPARTY (§23.4)",
+        [
+            {"k": "start", "t": "King demands a tax raise"},
+            {"k": "act", "t": "@KINGTAX popup (width 190)",
+             "s": ['"…raise your tax rate by {%NUMBER0%%}. The tax rate is now {%NUMBER1%%}…"',
+                   "options from @TAXOPTIONS"]},
+            {"k": "dec", "t": '"Kiss pinky ring."  /  "Hold \'{%STRING3 Party}.\'"',
+             "side": ("accept", ["tax applied, hard-clamped to 75",
+                                 "at 0x03434F"]),
+             "cont": "refuse"},
+            {"k": "act", "t": "@TEAPARTY fires",
+             "s": ['"Sons of Liberty throw {%NUMBER0} tons of %STRING0 into the sea at %STRING1!"',
+                   "boycott bit set: PowerRecord+0x20 |= (1<<good) @0x034717"]},
+            {"k": "dec", "t": "lift the boycott ?",
+             "side": ("pay back-tax", ["count × 500 gold (count = +0x4C[good]",
+                                       "+ base 0x9700+good·9, clamp ≥0)",
+                                       "gold → royal fund @0x03340D",
+                                       "bit cleared @0x033423"]),
+             "cont": "or acquire Jakob Fugger (FF id 1)"},
+            {"k": "act", "t": "Fugger clears the whole boycott word",
+             "s": ["mov [bx+0x20],0 @0x03BD45"]},
+            {"k": "end", "t": "good tradeable again"},
+        ],
+        "The dashed outcome of refusal — the standing boycott — is what arms "
+        "the back-tax and Fugger events later; the good cannot be traded until "
+        "one of them fires.")
+    for p in soup.find_all("p"):
+        if "kiss our royal pinky ring" in p.get_text():
+            p.insert_after(fig)
+            return
+    warn("tax-event anchor not found in section 23")
+
+
 ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
              "9": [enrich_market], "12": [enrich_units],
+             "20": [enrich_turnflow], "23": [enrich_events],
              "B": [enrich_appendix_b]}
 
 
