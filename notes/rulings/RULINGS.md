@@ -6065,3 +6065,11 @@ resource suppression — need an in-game state with real roads/shore features (p
 
 **Authority**: live pixels + live RAM + crafted ground truth (top of TRUTH_HIERARCHY).
 Artifacts: docs/screens/reports/phase3_frontend/hillsrivers_* + testmap.mp + verdict doc.
+
+## 2026-08-01 — @TRIBES numeric column 5 is the tribe COLOR, not a sprite id (user ruling)
+The manual's §19.1 table glossed @TRIBES column 5 (97/149/54/87/67/111/118/71)
+as "sprite". User correction (2026-08-01, sign-off in session): it is the
+tribe's COLOR NUMBER — a VICEROY.PAL palette index — exactly parallel to
+NAMES @COUNTRY column 2 (England 12 / France 9 / Spain 14 / Netherlands 13,
+the classic power colors). Manual and specs to relabel; render as color
+swatches. Any consumer treating it as a frame id is wrong.
