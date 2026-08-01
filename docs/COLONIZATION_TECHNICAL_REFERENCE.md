@@ -467,7 +467,7 @@ the data-file legend, the full per-terrain statistics, and the runtime record la
 
 ### 5.1 Terrain identifiers 0..28
 
-The id is the low five bits of the stored terrain byte (`AND al,0x1F` at 0x620A).
+The id is the low five bits of the stored terrain byte.
 Ids 8..23 are the forested variants of bases 0..7; ids 16..23 are a second encoding
 of the same eight forest types (see §5.4).
 
@@ -489,7 +489,7 @@ of the same eight forest types (see §5.4).
 | 13 | 0x0D | Tropical | forested Savannah |
 | 14 | 0x0E | Wetland | forested Marsh |
 | 15 | 0x0F | Rain | forested Swamp |
-| 16–23 | 0x10–0x17 | (aliases) | second encoding of 8..15; fold `(id&7)|8` at 0x6225 |
+| 16–23 | 0x10–0x17 | (aliases) | second encoding of 8..15; fold `(id&7)|8` at ⟦addr⟧ |
 | 24 | 0x18 | Arctic | |
 | 25 | 0x19 | Ocean | water |
 | 26 | 0x1A | Sea Lane | water; the right-edge map column is always Sea Lane (id 26, never 25) |
@@ -572,50 +572,49 @@ yields in legend order (Fa Su To Co Fu Lu Or Si Fi).
 
 ### 5.4 The auto-forest rule and the tile-byte encoding
 
-The stored terrain byte is decoded by `get_terrain_id_from_raw` (`func_006204`, file
-0x6204): read the byte, mask `AND 0x1F` (0x620A), then apply the auto-forest conversion.
+The stored terrain byte is decoded by `get_terrain_id_from_raw`: read the byte, mask `AND 0x1F`, then apply the auto-forest conversion.
 Ids 8..23 form the forested band; for any id in that band the decoder (mode global
-`[0x18E]` = 2) normalises to the eight canonical forest ids 8..15 via `(id & 7) | 8`
-(0x6225) — so 16→8 … 23→15: ids 16..23 are a second encoding of the same eight forest
-variants, not distinct terrains. Mode `[0x18E]` = 3 instead strips to the unforested
-base `id & 7` (0x6238); the default mode returns the raw masked id.
+⟦state⟧ = 2) normalises to the eight canonical forest ids 8..15 via `(id & 7) | 8`
+ — so 16→8 … 23→15: ids 16..23 are a second encoding of the same eight forest
+variants, not distinct terrains. Mode ⟦state⟧ = 3 instead strips to the unforested
+base `id & 7`; the default mode returns the raw masked id.
 
-The remaining bits of the terrain byte (per the map-file writer and `func_0624E`):
+The remaining bits of the terrain byte (per the map-file writer and ⟦helper⟧):
 bit 5 (0x20) = relief present; bit 7 (0x80) then selects Mountains (set, id 27) versus
-Hills (clear, id 28) — `AND 0x80; SBB; +0x1B` in `func_0624E`. Bit 6 (0x40) = river,
+Hills (clear, id 28) — `AND 0x80; SBB; +0x1B` in ⟦helper⟧. Bit 6 (0x40) = river,
 with bit 7 doubling as the Major (set) / Minor (clear) river selector on river tiles.
 Bit 7 in isolation (bit 5 clear, bit 6 clear) never occurs in shipped maps and is inert.
 
-### 5.5 The runtime terrain record table (DS:0x2F74, stride 16)
+### 5.5 The runtime terrain record table (DS:⟦addr⟧, stride 16)
 
-At start-up a loader (`func_0745F0`, byte-stream reads via the section reader) fills one
-16-byte record per terrain at `DS:0x2F74 + terrain·16`: first a name-token word, then
+At start-up a loader (load_terrain_table(), byte-stream reads via the section reader) fills one
+16-byte record per terrain at `DS:⟦addr⟧ + terrain·16`: first a name-token word, then
 the four `b)` columns as bytes, then the nine yield bytes.
 
 ```c
-typedef struct {          // DS:0x2F74 + terrain*16, one record per terrain id
-    uint16_t name;        // +0x00 name token (loaded 0x74607; title read [id*16+0x2F74] at 0x69DD1)
-    uint8_t  movement;    // +0x02 Movement        (DS:0x2F76, loaded 0x7460D)
-    uint8_t  defensive;   // +0x03 Defensive       (DS:0x2F77, combat read at 0x7E63)
-    uint8_t  improvement; // +0x04 Improvement     (DS:0x2F78)
-    uint8_t  value;       // +0x05 Value           (DS:0x2F79)
-    uint8_t  yields[9];   // +0x07..+0x0F 9 yields (DS:0x2F7B+good, loop at 0x74633)
+typedef struct {          // DS:⟦addr⟧ + terrain*16, one record per terrain id
+    uint16_t name;        // +0x00 name token (loaded ⟦addr⟧; title read [id*16+⟦addr⟧])
+    uint8_t  movement;    // +0x02 Movement        (DS:the Movement column, loaded ⟦addr⟧)
+    uint8_t  defensive;   // +0x03 Defensive       (DS:the Defensive column, combat read at ⟦addr⟧)
+    uint8_t  improvement; // +0x04 Improvement     (DS:the Improvement column)
+    uint8_t  value;       // +0x05 Value           (DS:⟦addr⟧)
+    uint8_t  yields[9];   // +0x07..+0x0F 9 yields (DS:the yield table+good, loop)
     // +0x06..+0x06 unmapped (1 byte)
 } TerrainRecord;
 ```
 
-The yield read is byte-verified in the colony production calculator at 0x9C15
-(`func_009B9C`): `SHL si,4` (terrain·16), `bx` = good index, `MOV al,[bx+si+0x2F7B]` —
-i.e. `yield = [terrain·16 + 0x2F7B + good]`. The Colonizopedia terrain pages title from
-the same table (`[id·16 + 0x2F74]` at 0x69DD1, with a "(forest)" qualifier appended for
-ids 8..15 at 0x69DF3), and the pedia's terrain category walks ids 0..0x1C skipping
-0x10..0x18 (0x6B26E).
+The yield read is byte-verified in the colony production calculator at ⟦addr⟧
+(compute_tile_yield()): `SHL si,4` (terrain·16), `bx` = good index, `MOV al,[bx+si+the yield table]` —
+i.e. `yield = [terrain·16 + the yield table + good]`. The Colonizopedia terrain pages title from
+the same table (`[id·16 + ⟦addr⟧]`, with a "(forest)" qualifier appended for
+ids 8..15), and the pedia's terrain category walks ids 0..0x1C skipping
+0x10..0x18.
 
 ### 5.6 Terrain defence in combat: Defensive value × 25%
 
-The defence-bonus filler `func_007D3E` reads the Defensive column at
-`[terrain·16 + 0x2F77]` (0x7E63) for the defender's tile and accumulates it into the
-defence-modifier chain. The Combat Analysis dialog (`func_05E9B0`) prints the terrain
+The defence-bonus filler defence_bonus() reads the Defensive column at
+`[terrain·16 + the Defensive column]` for the defender's tile and accumulates it into the
+defence-modifier chain. The Combat Analysis dialog (combat_analysis_dialog()) prints the terrain
 row as **+ (Defensive × 25 %)** — the row is flagged "Terrain" for the defender
 ("Ambush" for the attacker), draws the target tile, and is skipped when the value is 0.
 So the byte-verified per-terrain bonuses are: open land (Tundra/Desert/Plains/Prairie/
@@ -649,72 +648,72 @@ compositor's detail-band position hash (§6.9).
 `@OTHER_NAMES` supplies the five overlay/UI names, in order: **Forest, River,
 Major River, Minor River, Unexplored**.
 
-### 5.8 The worked-tile production calculation (`func_009B9C`, 0x9B9C..0x9FFB)
+### 5.8 The worked-tile production calculation (compute_tile_yield(), ⟦addr⟧..⟦addr⟧)
 
 One function computes what a colonist working a ring tile produces:
 `compute_terrain_yield` — 1,120 bytes, called once per worked tile from the
-5×5 ring scan of the colony turn processor (`CALL 0x9B9C` at 0xA42A). Every
+5×5 ring scan of the colony turn processor. Every
 modifier below is byte-cited; the order is the order the code applies them.
 
-1. **Resolve the good** for this worker slot (`CALL 0x9974` at 0x9BB7; return
-   0 if none), then the tile's feature byte (`0x37F:0x10E` at 0x9BEB), terrain
-   id (`0x3E4:0x0E` at 0x9BF9) and prime resource (`0x37F:0x4B0` at 0x9C0A).
-2. **Base yield** = `[terrain·16 + 0x2F7B + good]` (0x9C15/0x9C1E — the
-   §5.5 table). A base of 0 short-circuits every modifier (0x9C27).
-3. **Sea adjacency** (goods ≥ 8 only, 0x9C2E): count adjacent Ocean/Sea-Lane
-   tiles (0x9C3E) — ≥ 8 → −2 (0x9C4C), 6–7 → −1 (0x9C57), < 6 → +1 (0x9C61).
-   The +2/+3/+4 tails at 0x9C66/0x9C72/0x9C7E are emitted but unreachable.
-4. **Furs road bump**: good 4 with feature bits 0x0A → +1 (0x9C87..0x9C9F).
-   **River bumps**: terrain-byte bit 0x40 → +1 (0x9CA2), Major (bit 0x80) →
-   +1 more (0x9CAB). Clamp ≥ 0 (0x9CB4).
+1. **Resolve the good** for this worker slot (`CALL ⟦addr⟧ at ⟦addr⟧; return
+   0 if none), then the tile's feature byte, terrain
+   id and prime resource.
+2. **Base yield** = `[terrain·16 + the yield table + good]` (⟦addr⟧/⟦addr⟧ — the
+   §5.5 table). A base of 0 short-circuits every modifier.
+3. **Sea adjacency** (goods ≥ 8 only, ⟦addr⟧): count adjacent Ocean/Sea-Lane
+   tiles — ≥ 8 → −2, 6–7 → −1, < 6 → +1.
+   The +2/+3/+4 tails at ⟦addr⟧/⟦addr⟧/⟦addr⟧ are emitted but unreachable.
+4. **Furs road bump**: good 4 with feature bits 0x0A → +1.
+   **River bumps**: terrain-byte bit 0x40 → +1, Major (bit 0x80) →
+   +1 more. Clamp ≥ 0.
 5. **Profession match**: the worked-tile colonist's `@JOB` byte is compared to
-   the good (`func_008956` via tables DS:0xC8/0xDE; compare at 0x9CDC);
-   `era_flag` marks Food/Horses (0x9CFB..0x9D0E).
-6. **Sons-of-Liberty adjustment**: `sol_pct` from `func_008524` (§8.1);
-   `tory_cnt = (pop·(100−sol) + 50)/100` (0x9D27..0x9D30);
+   the good (worker_at_tile() via tables DS:0xC8/0xDE; compare at ⟦addr⟧);
+   `era_flag` marks Food/Horses.
+6. **Sons-of-Liberty adjustment**: `sol_pct` from sons_of_liberty_percent() (§8.1);
+   `tory_cnt = (pop·(100−sol) + 50)/100`;
    `sol_adj = −(tory_cnt / (10 − difficulty))` for an active human colony
-   (divisor 10 otherwise; 0x9D49..0x9D7F), then +1 for each of the
-   ColonyRecord `+0x1C` bit-4 / bit-2 latches (0x9D88..0x9D98). A **positive**
-   `sol_adj` is added here (0x9D9B..0x9DA7); a **negative** one is held back
-   and applied as the very last step with a ≥ 0 clamp (0x9FD8..0x9FF3).
+   (divisor 10 otherwise; ⟦addr⟧..⟦addr⟧), then +1 for each of the
+   ColonyRecord `+0x1C` bit-4 / bit-2 latches. A **positive**
+   `sol_adj` is added here; a **negative** one is held back
+   and applied as the very last step with a ≥ 0 clamp.
 7. **Expert bonus**: on a profession match with nonzero yield — Food/Horses
-   +2 (0x9DBF); every other good **doubles** (`SHL` at 0x9DD2). The expert
-   also doubles the prime-resource bonus (0x9E0A).
-8. **Prime resource**: `rbonus = func_009AAA(resource, good)` (0x9DDE);
-   a negative (penalty) result doubles the yield instead (0x9DFE), otherwise
-   `yield += rbonus` (0x9E0D). The bonus table inside `func_009AAA` is
-   unmapped (TBD). Fishery/yield-0 guard at 0x9DE7.
-9. **Lumber doubles** (good 5, `SHL` at 0x9EAB).
-10. **Improvements** (0x9EB4..0x9F4C, gated yield > 0): bonus magnitude
-    `tier` = 1, raised to 2 in the cited profession/era cases (0x9EC6/0x9EDD).
-    **Road** (feature bits 0x0A, 0x9EF9) adds `tier` only for goods > 3 —
-    the ore/fur/timber band (0x9F05..0x9F0E). **Plow** (feature bit 0x40,
-    0x9F17) adds `tier` only for goods ≤ 3 — the crop band (0x9F23..0x9F2C).
+   +2; every other good **doubles**. The expert
+   also doubles the prime-resource bonus.
+8. **Prime resource**: `rbonus = resource_bonus()(resource, good)`;
+   a negative (penalty) result doubles the yield instead, otherwise
+   `yield += rbonus`. The bonus table inside resource_bonus() is
+   unmapped (TBD). Fishery/yield-0 guard at ⟦addr⟧.
+9. **Lumber doubles** (good 5, `SHL` at ⟦addr⟧).
+10. **Improvements** (⟦addr⟧..⟦addr⟧, gated yield > 0): bonus magnitude
+    `tier` = 1, raised to 2 in the cited profession/era cases.
+    **Road** (feature bits 0x0A, ⟦addr⟧) adds `tier` only for goods > 3 —
+    the ore/fur/timber band. **Plow** (feature bit 0x40,
+    ⟦addr⟧) adds `tier` only for goods ≤ 3 — the crop band.
     **River** adds `tier`, and `tier` again for a Major river
-    (0x9F2F..0x9F46). Food takes `add = tier` directly (0x9EE7).
+. Food takes `add = tier` directly.
 11. **Gates**: goods ≥ 8 need building/father bit 6 or produce 0
-    (0x9F4F..0x9F62); **Henry Hudson** (FF op 8) doubles Furs
-    (0x9F65/0x9F77/0x9F83); the special class 0x1B adds +1 for goods
-    {0,1,2,3,4} and ≥ 8 (0x9F86..0x9FB6). Final clamp ≥ 0, negative
-    `sol_adj`, return (0x9FB9..0x9FF6).
+; **Henry Hudson** (FF op 8) doubles Furs
+; the special class 0x1B adds +1 for goods
+    {0,1,2,3,4} and ≥ 8. Final clamp ≥ 0, negative
+    `sol_adj`, return.
 
 **The colony centre tile** is computed separately in the turn processor with
-**no worker**: a food class 0..3 by terrain band (0xA24C..0xA290) with +2 at
-difficulty 0 / +1 at difficulty 1 (0xA295/0xA2A1), +1 river (0xA2B9), +2 for
-resources 1/9/2 (0xA314), plus the `+0x1C` latches; and the best non-food good
-scanned over goods 1..7 **skipping Lumber** (0xA375), with a penalty resource
-doubling base first (0xA39F) and +1 at difficulty 0 (0xA3AB). Both post at
-0xA3EE..0xA409.
+**no worker**: a food class 0..3 by terrain band with +2 at
+difficulty 0 / +1 at difficulty 1, +1 river, +2 for
+resources 1/9/2, plus the `+0x1C` latches; and the best non-food good
+scanned over goods 1..7 **skipping Lumber**, with a penalty resource
+doubling base first and +1 at difficulty 0. Both post at
+⟦addr⟧..⟦addr⟧.
 
 **Improvement state storage**: roads live in the runtime feature plane
-`[0x160]` as bits 0x0A (write `or es:[bx],8` at 0x040AEC), plowing as bit 0x40
-(`or es:[bx],0x40` at 0x04089F), clearing subtracts 8 from the forested
-terrain id (0x040896, lumber windfall → colony stockpile at 0x04084D,
+⟦state⟧ as bits 0x0A, plowing as bit 0x40
+, clearing subtracts 8 from the forested
+terrain id (⟦addr⟧, lumber windfall → colony stockpile,
 `@CLEARCUT`); rivers are terrain-byte bits 6/7 (§5.4). Work time = the
-Improvement column `[terrain·16 + 0x2F78]` + 2 for clear/plow (0x040727), no
-+2 for roads (0x040A50), counted in `UnitRecord +0x16` (0x04071D/0x040A46),
-halved for Hardy Pioneers (`sar ax,1` at 0x4074A/0x40A59), −20 tools per
-action (0x4060F).
+Improvement column `[terrain·16 + the Improvement column]` + 2 for clear/plow, no
++2 for roads, counted in `unit.work_done`,
+halved for Hardy Pioneers, −20 tools per
+action.
 
 ## 6. The map compositor
 
@@ -1122,81 +1121,79 @@ seeded from the colony's map coordinates.
 
 ### 8.1 ColonyRecord
 
-The colony table lives at `DS:0x5D46`, stride `0xCA` (202 bytes); the live count
-is the word `[0x539E]`, capped at 48 (`cmp [0x539E],0x30` at 0x2EB82). The
-currently-active colony is the **near pointer `[0x8542]`**, written by the
-set-active-colony routine at 0x8302..0x830B (`imul bx,idx,0xCA; add bx,0x5D46;
-mov [0x8542],bx`). Slots are recycled: a razed colony's slot is reused for the
+The colony table lives at `DS:⟦addr⟧, stride `0xCA` (202 bytes); the live count
+is the word `game.colony_count`, capped at 48 (`cmp `game.colony_count`,0x30`). The
+currently-active colony is the **near pointer `colony`**, written by the
+set-active-colony routine at ⟦addr⟧..⟦addr⟧ (`imul bx,idx,0xCA; add bx,⟦addr⟧;
+mov `colony`,bx`). Slots are recycled: a razed colony's slot is reused for the
 next founded colony, and slot validity is determined by a non-empty name at
-`+0x02`. Live-verified in the running game: `*[0x8542]` → a record decoding as
-`(51,29) "Jamestown"`, exactly `0x5D46 + 4·0xCA`.
+`+0x02`. Live-verified in the running game: `*`colony` → a record decoding as
+`(51,29) "Jamestown"`, exactly ⟦addr⟧ + 4·0xCA`.
 
 ```c
-typedef struct {                 // array DS:0x5D46, stride 0xCA; active = *[0x8542]
+typedef struct {                 // array DS:⟦addr⟧, stride 0xCA; active = *`colony`
     uint8_t  map_x;              // +0x00: tile column (live-verified)
     uint8_t  map_y;              // +0x01: tile row
     char     name[24];           // +0x02..+0x19: NUL-terminated colony name
     uint8_t  owner;              // +0x1A: 0 English 1 French 2 Spanish 3 Dutch;
-                                 //        <4 = European test at 0x830F
+                                 //        <4 = European test at ⟦addr⟧
     uint8_t  status_1B;          // +0x1B: numeric prefix of the foreign-title
-                                 //        builder (zero-padded append at 0x26915)
+                                 //        builder (zero-padded append)
     uint8_t  flags_1C;           // +0x1C: bit flags — colony-marker population-number
-                                 //        colour (0x00448B..0x0044A4) and
-                                 //        centre-tile yield bits (0x00A32F/0x00A339)
+                                 //        colour and
+                                 //        centre-tile yield bits
     uint8_t  _pad1D[2];          // +0x1D..+0x1E unmapped (2 bytes)
-    uint8_t  population;         // +0x1F: colonist count (burn-loot formula 0x05DE1E;
-                                 //        plaza-row count 0x0270E6)
-    uint16_t flags_20;           // +0x20: (measured; not byte-cited — observed 0x1002;
+    uint8_t  population;         // +0x1F: colonist count (burn-loot formula ⟦addr⟧;
+                                 //        plaza-row count ⟦addr⟧)
+    uint16_t flags_20;           // +0x20: (measured; not byte-cited — observed ⟦addr⟧;
                                  //        foreign-colony marker byte in low half)
     uint16_t state_22;           // +0x22: (measured; not byte-cited)
     uint8_t  _pad24[0x1C];       // +0x24..+0x3F unmapped (28 bytes)
     uint8_t  professions[0x30];  // +0x40..: one @JOB byte per colonist
                                  //        (live length = population; context-help
                                  //        reads the +0x40 profession field at
-                                 //        0x02BD90; bytes past the roster up to
+                                 //        ⟦addr⟧; bytes past the roster up to
                                  //        +0x6F are unmapped)
     uint8_t  tile_worker[8];     // +0x70..+0x77: colonist index working each
                                  //        surrounding tile, 0xFF = unworked
-                                 //        (worked-slot test func_008956 reads
+                                 //        (worked-slot test worker_at_tile() reads
                                  //        +0x70+slot against the offset tables
                                  //        DS:0xC8/DS:0xDE)
     uint8_t  _pad78[0x0C];       // +0x78..+0x83 unmapped (12 bytes)
     uint8_t  buildings[6];       // +0x84..+0x89: 42-bit constructed mask, bit i =
-                                 //        building id i (reader func_0860E:
+                                 //        building id i (reader ⟦helper⟧:
                                  //        byte = rec+0x84+(id>>3), bit = id&7;
-                                 //        setter func_092E0 at 0x9308;
-                                 //        build-complete write at 0x02D19A)
+                                 //        setter ⟦helper⟧ at ⟦addr⟧;
+                                 //        build-complete write)
     uint8_t  _pad8A[2];          // +0x8A..+0x8B unmapped
     uint8_t  title_num[4];       // +0x8C..+0x8F: four numeric fields appended by the
-                                 //        foreign-owner title builder (0x26942)
+                                 //        foreign-owner title builder
     uint16_t field_90;           // +0x90: (measured; not byte-cited)
     uint8_t  _pad92[2];          // +0x92..+0x93 unmapped
     uint8_t  cargo_94;           // +0x94: cargo-holds datum read by the colony
-                                 //        cargo panel (func_027746)
+                                 //        cargo panel (⟦helper⟧)
     uint8_t  warehouse_level;    // +0x95: Warehouse Expansion counter (building id
                                  //        0x10 has NO bit — it increments this)
     uint8_t  capitol_level;      // +0x96: Capitol Expansion counter (building id 0x1F)
     uint8_t  _pad97[3];          // +0x97..+0x99 unmapped
     uint16_t stockpile[16];      // +0x9A..+0xB9: warehouse quantity per good,
                                  //        @CARGO order (runtime-verified against the
-                                 //        stockpile bar func_0281D6)
+                                 //        stockpile bar ⟦helper⟧)
     uint16_t counter_BA;         // +0xBA: counter pair lo/hi (measured; not byte-cited)
     uint16_t counter_BC;         // +0xBC: (measured; not byte-cited)
     uint8_t  marker_frame;       // +0xBE: map-marker frame byte (marker painter
-                                 //        func_004314 at 0x004385)
+                                 //        ⟦helper⟧)
     uint8_t  _padBF[3];          // +0xBF..+0xC1 unmapped
     int32_t  sol_numerator;      // +0xC2: rebel bell pool (accumulated + clamped to
-                                 //        the cap at 0x02DAC6..0x02DAD4)
+                                 //        the cap)
     int32_t  sol_denominator;    // +0xC6: bell cap = decay + population·2
-                                 //        (0x02DA1C..0x02DA6F); founding init
-                                 //        +0xC6=100, +0xC2=0 at 0x02EC26
+                                 //; founding init
+                                 //        +0xC6=100, +0xC2=0
 } ColonyRecord;                  // sizeof = 0xCA (202)
 ```
 
 Sons of Liberty percent = `sol_numerator·100 / sol_denominator` (32-bit multiply
-0x008557 + divide 0x00855E in `func_008524`; 0 if the denominator ≤ 0 at
-0x008542), then +20 for a human-controlled colony (latch `add ax,0x14` at
-0x00859F, gated on `owner<4`), clamped to 100 (0x0085A8..0x0085AD).
+⟦addr⟧ + divide ⟦addr⟧ in sons_of_liberty_percent(); 0 if the denominator ≤ 0), then +20 for a human-controlled colony (latch `add ax,0x14`, gated on `owner<4`), clamped to 100.
 
 ```formula
 SoL% = ( sol_numerator × 100 ) ÷ sol_denominator   →   +20 if human-owned   →   clamp to 100
@@ -1207,32 +1204,31 @@ example: pool 480 bells, cap 800 → 480×100÷800 = 60% → +20 (human colony) 
 ### 8.2 Building construction state and upgrade chains
 
 The 42 building definitions of NAMES.TXT `@BUILDING` load into a stride-12
-record table at `DS:0x8F82` (name pointer +0, prerequisite/predecessor +3,
-chain successor +4, category byte at `0x8F87+id·12`, loaded at 0x74D2F). A
-constructed building sets its bit in `ColonyRecord +0x84` (`func_092E0`,
-`or [bx],al` at 0x9308) **without clearing the predecessor's bit** — upgrade
+record table at `DS:⟦addr⟧ (name pointer +0, prerequisite/predecessor +3,
+chain successor +4, category byte at ⟦addr⟧+id·12`, loaded). A
+constructed building sets its bit in `colony.buildings` **without clearing the predecessor's bit** — upgrade
 tiers coexist as bits and the highest tier present wins for render and
-production (build-complete handler at 0x02D19A confirms: set only, no clear).
+production (build-complete handler confirms: set only, no clear).
 Two definitions have no bit at all: **Warehouse Expansion (id 0x10)** increments
 the counter `+0x95` and **Capitol Expansion (id 0x1F)** increments `+0x96`.
 School ids: Schoolhouse 0x0C, College 0x0D, University 0x0E.
 
-Chain walking uses the `0x8F82` fields: prerequisite line shown when
-`byte 0x8F82[id]+3 ≥ 0`; the upgrade-chain loop steps `next = byte 0x8F82[b]+4`
-while ≥ 0 (Colonizopedia building/skill pages, 0x06A89C..0x06A947 and
-0x06AD3C..0x06AD9F).
+Chain walking uses the ⟦addr⟧ fields: prerequisite line shown when
+`byte ⟦addr⟧[id]+3 ≥ 0`; the upgrade-chain loop steps `next = byte ⟦addr⟧[b]+4`
+while ≥ 0 (Colonizopedia building/skill pages, ⟦addr⟧..⟦addr⟧ and
+⟦addr⟧..⟦addr⟧).
 
 ### 8.3 Worker/building byte tables
 
 Two static DGROUP byte tables bind buildings to professions:
 
-- **Building → job**: `DS:0x2CA` (file 0x1DC6A), 42 signed bytes, read through
-  `func_009786` (`0x181F:0xACE`). Byte-verified entries: ids 3–5 → 0x0F Gunsmith,
+- **Building → job**: `DS:0x2CA`, 42 signed bytes, read through
+  ⟦helper⟧. Byte-verified entries: ids 3–5 → 0x0F Gunsmith,
   9–11 → 0x11 Statesman, 21–23 → 0x0B Weaver, 27–29 → 0x09 Distiller, 35–36 →
   0x0D Carpenter, 37–38 → 0x10 Preacher, 39–41 → 0x0E Blacksmith. Jobs 0x12
   (Teacher) and 0x15 are skipped by the pedia header renderer.
-- **Job → building**: `DS:0x2F4` (file 0x1DC94), 19 signed bytes, read through
-  `func_008D9C` (`0x181F:0xB00`). Jobs 0–8 (the nine outdoor field jobs) → −1
+- **Job → building**: `DS:0x2F4`, 19 signed bytes, read through
+  ⟦helper⟧. Jobs 0–8 (the nine outdoor field jobs) → −1
   (no workplace building); job 0x0D → 35 Carpenter's Shop, 0x0F → 3 Armory,
   0x11 → 9 Town Hall, etc.
 
@@ -1240,13 +1236,13 @@ Two static DGROUP byte tables bind buildings to professions:
 
 The colony view has **15 fixed plots** in the upper-left town area. Which
 building occupies which plot is computed on every colony-screen paint by
-`func_025D34`, a deterministic random shuffle. The whole chain is byte-verified
+shuffle_building_plots(), a deterministic random shuffle. The whole chain is byte-verified
 and was validated by exact replay: re-implementing the algorithm below
 reproduces the live game's Jamestown layout with every sprite pixel-exact
 (pixel-verified against the running game, 1994 binary under DOSBox).
 
-**Plot position table** — static at `DS:0x266` (file 0x1DC06), 15 × (word x,
-word y); the renderer draws at `(x, y+8)` (the +8 applied once, at 0x02708B —
+**Plot position table** — static at `DS:0x266`, 15 × (word x,
+word y); the renderer draws at `(x, y+8)` (the +8 applied once, —
 applying it twice is a documented replay bug):
 
 | plot | x | y (table) | y on screen | plot | x | y (table) | y on screen |
@@ -1259,37 +1255,37 @@ applying it twice is a documented replay bug):
 | 5 | 67 | 46 | 54 | 13 | 123 | 98 | 106 |
 | 6 | 96 | 45 | 53 | 14 | 123 | 47 | 55 |
 
-**Plot categories** — static counts `byte[0x224] = [7,4,2,1,1]` and bases
-`byte[0x22A] = [0,7,11,13,14]` (file 0x1DBC4/0x1DBCA): category 0 = plots 0–6,
+**Plot categories** — static counts `byte⟦state⟧ = [7,4,2,1,1]` and bases
+`byte⟦state⟧ = [0,7,11,13,14]`: category 0 = plots 0–6,
 1 = plots 7–10, 2 = plots 11–12, 3 = plot 13, 4 = plot 14. The per-plot category
-table `0x8D62` is rebuilt each open as `[0,0,0,0,0,0,0,1,1,1,1,2,2,3,4]`
-(0x025D7B..0x025DB8).
+table ⟦addr⟧ is rebuilt each open as `[0,0,0,0,0,0,0,1,1,1,1,2,2,3,4]`
+.
 
 **The RNG.** Three byte-verified pieces:
 
 ```text
-seed:   func_009726 (0x181F:0xD62; sole caller func_025D34 @0x025D3A)
-        seed32 = (colony_map_y << 8) + colony_map_x + dword[0x8D80]   @0x009736
-        srand @0x103C2 keeps only the LOW 16 BITS of the seed:
-        mov [0x28EE],ax ; mov word [0x28F0],0   -- effective seed space is 16-bit
+seed:   placement_seed() (⟦addr⟧:0xD62; sole caller shuffle_building_plots())
+        seed32 = (colony_map_y << 8) + colony_map_x + dword⟦state⟧
+        srand keeps only the LOW 16 BITS of the seed:
+        mov `rng.seed_lo`,ax ; mov word `rng.seed_hi`,0   -- effective seed space is 16-bit
 
-rand:   @0x103D4 (MSC 6.0 LCG; bytes B8 FD 43 BA 03 00 ... 05 C3 9E / 83 D2 26)
-        state = state·0x000343FD + 0x00269EC3    (32-bit, state at [0x28EE]/[0x28F0])
-        return (state >> 16) & 0x7FFF
+rand: (MSC 6.0 LCG; bytes B8 FD 43 BA 03 00 ... 05 C3 9E / 83 D2 26)
+        state = state·0x000343FD + 0x00269EC3    (32-bit, state at `rng.seed_lo`/`rng.seed_hi`)
+        return (state >> 16) & ⟦addr⟧
 
-random_int(lo,hi):  func_00C322 (0x181F:0x4D4)
-        r = rand(); return lo + ((r · (hi−lo+1)) >> 15)   @0x00C334
+random_int(lo,hi):  random_int()
+        r = rand(); return lo + ((r · (hi−lo+1)) >> 15)
 ```
 
-`[0x8D80]` is a **per-session dword** set at boot init: it read 0x2C55 in one
-live session and 0x5B7C in a fresh boot (its writer is unlocated — runtime-open).
+⟦state⟧ is a **per-session dword** set at boot init: it read ⟦addr⟧ in one
+live session and ⟦addr⟧ in a fresh boot (its writer is unlocated — runtime-open).
 It is constant within a session, so a given colony always lays out the same way
 during play; the pure map-position seed alone does *not* reproduce a layout
 (exactly 2 of 65536 16-bit seeds reproduced the validated capture).
 
-**Registration groups.** The building-definition registration block at 0x0746BC
-issues 42 calls (one per id) through the far trampoline at 0x76384 →
-`func_07464C`, assigning each id to one of **15 groups** — one screen slot per
+**Registration groups.** The building-definition registration block
+issues 42 calls (one per id) through the far trampoline →
+⟦helper⟧, assigning each id to one of **15 groups** — one screen slot per
 group:
 
 | group | ids | buildings | cat |
@@ -1311,62 +1307,61 @@ group:
 | 14 | 39–41 | Blacksmith's House / Shop / Iron Works | 0 |
 
 The **category** of a group is NAMES `@BUILDING` numeric **column 3** of its
-first (representative) id, loaded to `0x8F87+id·12` at 0x74D2F. Over the 15
+first (representative) id, loaded to ⟦addr⟧+id·12`. Over the 15
 representatives the category histogram is exactly `[7,4,2,1,1]` — matching the
 plot counts. (The histogram over all 42 defs is 19/10/7/3/3 and does NOT match;
 an early decode tripped over that.) The group table is *not* `floor(id/3)`:
 Capitol 30/31 shares group 3 with Town Hall, Stable 17 sits with Warehouse in
 group 5, Custom House 18 is alone, and Fur Trader's House 32 opens group 11.
 
-**Placement loop** (0x025DDB / 0x025DBF..0x025E07): after seeding, each of the
+**Placement loop**: after seeding, each of the
 15 work-list slots (flattened category order: 7 cat-0 slots, 4 cat-1, 2 cat-2,
 1 cat-3, 1 cat-4) picks a plot within its category block:
 
 ```text
 plot = base[cat] + random_int(0, count[cat]−1)
-if plot already taken (0x8E92[plot] ≥ 0): retry     -- draw again, same range
-0x8E92[plot] = slot                                 -- plot → slot map
+if plot already taken (⟦addr⟧[plot] ≥ 0): retry     -- draw again, same range
+⟦addr⟧[plot] = slot                                 -- plot → slot map
 ```
 
 i.e. a random permutation within each static category block. Then the 42
-building defs are each mapped to their group's slot (0x025E0E..0x025E5A), and
+building defs are each mapped to their group's slot, and
 for every building the colony actually **has** — the present-gate query
-`0x181F:0x9FC` per id at 0x025E64 — the plot's def table gets
-`0x8E82[plot] = building id` (0x025E9F); unbuilt plots stay `0xFF`.
-**Id 0 (Stockade) is force-included** regardless of the query (0x25E70), so
-every colony renders something on the cat-3 plot. A later pass at 0x025E1A uses
-the `0x8F88` chain/produced-good column to assign goods — it plays no part in
+⟦addr⟧:0x9FC` per id — the plot's def table gets
+⟦addr⟧[plot] = building id`; unbuilt plots stay `0xFF`.
+**Id 0 (Stockade) is force-included** regardless of the query, so
+every colony renders something on the cat-3 plot. A later pass uses
+the ⟦addr⟧ chain/produced-good column to assign goods — it plays no part in
 plot selection.
 
-**Frame selection** (`func_026DD4`, 0x026DD4..0x026FF1): for an occupied plot
-the BUILDING.SS frame is `def_id + 1` in EXE-sheet space (`mov ax,[bp+6]; inc ax`
-at 0x026DE5..0x026DE9), blitted via `0x181F:0x254` at 0x026E4E. Overrides, all
-byte-read: `def_id==0` with build-query(0)==0 ⇒ frame **0x11** (0x026DEC);
+**Frame selection**: for an occupied plot
+the BUILDING.SS frame is `def_id + 1` in EXE-sheet space, blitted via ⟦addr⟧:0x254`. Overrides, all
+byte-read: `def_id==0` with build-query(0)==0 ⇒ frame **0x11**;
 `def_id==0x0F` / `0x11` with garrison queries ⇒ frames **0x2F / 0x30**
-(0x026E05..0x026E34). The Colonizopedia building page applies the same
-`id 0x11 → frame 0x2F` override (0x06AB62). Empty plots (`def < 0`) are drawn by
-`func_026FF2` with the terrain-decoration frame `byte[DS:0x260 + category]`
+. The Colonizopedia building page applies the same
+`id 0x11 → frame 0x2F` override. Empty plots (`def < 0`) are drawn by
+⟦helper⟧ with the terrain-decoration frame `byte[DS:0x260 + category]`
 (table `[45,44,43,0,46]` — category 3 draws nothing), skipped when the byte is 0.
 Live verification (Jamestown): 8 buildings at plots {2,3,4,5,6,10,12,13} with
 def-ids {0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00}, every frame pixel-exact.
 
 ### 8.7 Sons of Liberty — the full pipeline
 
-The displayed percent is `func_008524` (0x8524..0x85B1, thunk `0x181F:0xC86`):
-`SoL% = (sol_numerator · 100) / sol_denominator` (multiply 0x8557, divide
-0x855E; denominator ≤ 0 returns 0), **+20** when the owner is a human European
-holding FF op 0x12 (0x859F; the op is glossed both "Jan de Witt" and
-`@FATHERS` #18 Bolívar in-repo — flagged), clamped to 100 (0x85A8).
+The displayed percent is sons_of_liberty_percent():
+`SoL% = (sol_numerator · 100) / sol_denominator` (multiply ⟦addr⟧, divide
+⟦addr⟧; denominator ≤ 0 returns 0), **+20** when the owner is a human European
+holding FF op 0x12 (⟦addr⟧; the op is glossed both "Jan de Witt" and
+`@FATHERS` #18 Bolívar in-repo — flagged), clamped to 100.
 
-The two accumulators update once per colony turn in `func_02D658`
-(0x2DA1C..0x2DAD8): the cap decays `B −= B>>6`, floors at 1, then
+The two accumulators update once per colony turn in update_colony()
+: the cap decays `B −= B>>6`, floors at 1, then
 `B += 2·population`; the pool decays and accrues `A += new_bells − (A>>6)`,
 floors at 0, and clamps `A ≤ B` — so the percent is structurally ≤ 100.
-Founding init is `B = 100, A = 0` (0x02EC26..0x02EC38; runtime-confirmed
+Founding init is `B = 100, A = 0` (⟦addr⟧..⟦addr⟧; runtime-confirmed
 B = 200 for a pop-1 colony after one turn). `new_bells` is the colony's bell
 production, halved-and-negated for the tory-leader power during the war
-(0x2D9DF..0x2D9F2) and dragged down by `population/20` when population exceeds
-bells (0x2DA12..0x2DA18). Derived steady state: `SoL% → min(100,
+ and dragged down by `population/20` when population exceeds
+bells. Derived steady state: `SoL% → min(100,
 50·bells/pop)` — 100% needs bells ≥ 2·population.
 
 ```formula
@@ -1376,18 +1371,18 @@ example: 10 bells/turn, population 6 → 50×10÷6 = 83% at equilibrium; unanimi
 ```
 
 **Consumers**, each byte-cited: combat scales strength by `SoL%/100`
-(0x05CF98; analysis rows Rebel Unrest +SoL% / Tory Unrest −(100−SoL%));
+(⟦addr⟧; analysis rows Rebel Unrest +SoL% / Tory Unrest −(100−SoL%));
 production applies `sol_adj = −(tory_cnt/(10−diff))` with the `+0x1C` latches
 (§5.8); the colony status messages latch at 50%/100% edges
-(`@REBELMAJORITY` 0x2DB29, `@REBELUNANIMOUS` 0x2DB6E, tory reverses, decade
+(`@REBELMAJORITY` ⟦addr⟧, `@REBELUNANIMOUS` ⟦addr⟧, tory reverses, decade
 `@SONSUP`/`@SONSDOWN`); `INEFFICIENT` fires when the tory count reaches
-`10−diff` (0x2DCE4); the colony screen derives member count =
-`pop − round(tory%·pop/100)` (0x0273F4..0x02740E); and the **national meter
-`[0x53D0]`** gates the Declaration at ≥ 50 (0x3E99E, `@TOOTORY` below), arms
+`10−diff`; the colony screen derives member count =
+`pop − round(tory%·pop/100)`; and the **national meter
+`game.revolution_meter`** gates the Declaration at ≥ 50 (⟦addr⟧, `@TOOTORY` below), arms
 the Spanish Succession below 75 (§18.7), takes +20 from Bolívar's acquisition
-(0x3BE64), and feeds the King's demand-severity score (0x361F9) and the final
-score (0x03A561). How the per-colony percents aggregate into `[0x53D0]` is
-behind untraced overlay calls (`0x1A1F:0x134`) — TBD.
+, and feeds the King's demand-severity score and the final
+score. How the per-colony percents aggregate into `game.revolution_meter` is
+behind untraced overlay calls — TBD.
 
 ```formula
 tory_cnt = ( pop × (100 − SoL%) + 50 ) ÷ 100        sol_adj = −( tory_cnt ÷ (10 − difficulty) )
@@ -1397,7 +1392,7 @@ example: population 12 at 25% SoL → tory_cnt = (12×75+50)÷100 = 9; at Vicero
 ## 9. Market and trade
 
 The European market is per-power state inside the PowerRecord (stride 0x13C,
-European powers at `DS:0x8808` + power·0x13C; active-power pointer `[0x84FC]`).
+European powers at `DS:⟦addr⟧ + power·0x13C; active-power pointer `power`).
 Prices are not a fixed table: the per-good base is random-seeded at game start
 and then driven by a per-turn decay plus per-transaction updates, with the four
 manufactured luxuries coupled through a shared supply pool.
@@ -1406,22 +1401,22 @@ manufactured luxuries coupled through a shared supply pool.
 
 | field | type | meaning |
 |---|---|---|
-| `+0x01` | u8 | **tax rate** (0..100) — read at 0x031043 for the Europe banner; raised by King events |
-| `+0x1E` | u16 | artillery-bought counter (Europe artillery price escalation: `cost = base + count·100`, read ×100 at 0x035124/0x03527B, `inc` at 0x035282, zeroed at new game 0x03662F) |
-| `+0x20` | u16 | **boycott bitmask**, bit = good index. Test `func_030B38` (`(1<<good) & [bx+0x20]`); set at 0x34717 (Tea Party); back-tax lift at 0x3340C (`&= ~bit` after paying price×500 into the King fund `+0x22`); **Jakob Fugger** (Founding Father id 1) clears the whole word to 0 at 0x3BD45 |
+| `+0x01` | u8 | **tax rate** (0..100) — read for the Europe banner; raised by King events |
+| `+0x1E` | u16 | artillery-bought counter (Europe artillery price escalation: `cost = base + count·100`, read ×100/⟦addr⟧, `inc`, zeroed at new game ⟦addr⟧) |
+| `+0x20` | u16 | **boycott bitmask**, bit = good index. Test is_boycotted() (`(1<<good) & [bx+0x20]`); set (Tea Party); back-tax lift (`&= ~bit` after paying price×500 into the King fund `+0x22`); **Jakob Fugger** (Founding Father id 1) clears the whole word to 0 |
 | `+0x22` | s32 | King's REF fund (receives sale tax) |
 | `+0x26` | s32 | sales tally (net proceeds accumulator) |
-| `+0x2A` | u32 | **gold (treasury)** — every credit goes through the clamp helper at 0x8806: add s32, clamp to [0, 999999] |
-| `+0x4C` | u8[16] | per-good **price level** (indexed by good; step-up `+=1` at 0x32272, step-down `−=1` clamp ≥0 at 0x3228D) |
+| `+0x2A` | u32 | **gold (treasury)** — every credit goes through the clamp helper at ⟦addr⟧: add s32, clamp to [0, 999999] |
+| `+0x4C` | u8[16] | per-good **price level** (indexed by good; step-up `+=1`, step-down `−=1` clamp ≥0) |
 | `+0x5C` | s16[16] | market pool (drift-only; never touched by the transaction path) |
 | `+0x7C` | s32[16] | traded volume (cumulative value) |
 | `+0xBC` | s32[16] | European supply per good |
-| `+0xFC` | s32[16] | per-good trade accumulator (`@0x8904` in DGROUP terms) — summed by the drift function |
+| `+0xFC` | s32[16] | per-good trade accumulator ( in DGROUP terms) — summed by the drift function |
 
-**Displayed bid/ask pair** (Europe price strip, 16-good loop 0x38D40..0x38E3B):
-`sell = price_level[good] − 1` (accessor `func_030590`, clamp ≥ 0) and
-`buy = CARGO_row[good].col1 + price_level[good]` (accessor `func_030566`,
-`mov al,[bx-0x6900]` with bx=good·9 at 0x30575, `add ax,cx` at 0x30587). The
+**Displayed bid/ask pair** (Europe price strip, 16-good loop ⟦addr⟧..⟦addr⟧):
+`sell = price_level[good] − 1` (accessor sell_price(), clamp ≥ 0) and
+`buy = CARGO_row[good].col1 + price_level[good]` (accessor buy_price(),
+`mov al,[bx-⟦addr⟧]` with bx=good·9, `add ax,cx`). The
 on-screen spread is therefore the per-good constant `@CARGO` column 1 + 1:
 Food 1, Sugar 4, Tobacco 3, Cotton 2, Furs 4, Lumber 2, Ore 3, Silver 20,
 Horses 2, Rum/Cigars/Cloth/Coats 11, Trade Goods 2, Tools 2, Muskets 3.
@@ -1444,36 +1439,34 @@ in EXE-sheet numbering.
 
 ### 9.3 Price drift
 
-**Per-turn driver**: the end-of-turn processor `func_0755CC` invokes
-`func_036574` at 0x0757B0; it zeroes the per-power accumulators (`+0x5C/+0x7C/
-+0xBC/+0xFC` loop at 0x03670E) and runs a **4-power loop** calling the drift
-function `func_0305A8` (via the JMP-FAR trampoline at 0x368BD) once per power.
-**Per-transaction**: the SELL handler (`func_032914` at 0x32D99) and BUY handler
-(`func_0324F2` at 0x32902) each call `drift(good, 0)` — a single-good re-drift
+**Per-turn driver**: the end-of-turn processor end_of_turn() invokes
+market_day(); it zeroes the per-power accumulators and runs a **4-power loop** calling the drift
+function drift_prices() (via the JMP-FAR trampoline) once per power.
+**Per-transaction**: the SELL handler (sell_goods()) and BUY handler
+(buy_goods()) each call `drift(good, 0)` — a single-good re-drift
 immediately after the trade.
 
-The drift itself (`func_0305A8`, 0x0305A8..0x03064C):
+The drift itself (drift_prices(), ⟦addr⟧..⟦addr⟧):
 
 ```text
-for good in 0..15:                        # @0x305B3
-    acc = price_seed[good]                # word table DS:0x53EA (good·2)  @0x305B8
-    for power in 0..3:                    # @0x305CE
-        v = PowerRecord[power].accum_FC[good]   # @0x305D8
-        if v < 0: v = 0                   # @0x305E0
-        acc += v                          # 32-bit @0x305F0
-    if driver-mode:                       # @0x305FF/0x30605
-        price_seed[good] -= acc >> 8      # proportional decay @0x30618..0x30639
+for good in 0..15:                        #
+    acc = price_seed[good]                # word table DS:⟦addr⟧ (good·2)
+    for power in 0..3:                    #
+        v = PowerRecord[power].accum_FC[good]   #
+        if v < 0: v = 0                   #
+        acc += v                          # 32-bit
+    if driver-mode:                       #/⟦addr⟧
+        price_seed[good] -= acc >> 8      # proportional decay
 ```
 
-`price_seed[16]` at `DS:0x53EA` is **randomized at new-game init**:
-`func_07561C` fills each entry with `random_int(600, 1000)` (0x75645, loop ×16)
-— there is no fixed base-price table. Later phases of `func_0305A8` couple the
+`price_seed[16]` at `DS:⟦addr⟧ is **randomized at new-game init**:
+seed_market() fills each entry with `random_int(600, 1000)`
+— there is no fixed base-price table. Later phases of drift_prices() couple the
 luxuries: `S_pair = supply[9]+supply[10]+supply[11]+supply[12]` (Rum, Cigars,
-Cloth, Coats; 32-bit adds, clamp ≥ 1, at 0x030649), then for each finished good
-`target[i] = (S_pair·3)/supply[i]` (×3 at 0x03074F, 32-bit divide at 0x030759);
+Cloth, Coats; 32-bit adds, clamp ≥ 1,), then for each finished good
+`target[i] = (S_pair·3)/supply[i]` (×3, 32-bit divide);
 the raw inputs 1..4 (Sugar/Tobacco/Cotton/Furs) use the same formula against
-their own supply (Furs halved, +1 if year<1700 and +1 if year<1600, at
-0x0307C9). Dumping one luxury lowers its own price and nudges the other three
+their own supply (Furs halved, +1 if year<1700 and +1 if year<1600,). Dumping one luxury lowers its own price and nudges the other three
 up.
 
 ```formula
@@ -1485,13 +1478,13 @@ example: supplies Rum 400 / Cigars 300 / Cloth 200 / Coats 100 → S_pair 1000 �
 
 ### 9.4 Buy/sell transactions
 
-**SELL** (`func_032914`; args good, screen-idx, confirm):
-`gross = price·qty` (0x3249F); tax split at 0x32A4A..0x32A78:
+**SELL** (sell_goods(); args good, screen-idx, confirm):
+`gross = price·qty`; tax split:
 `tax = gross·tax_rate(+0x01)/100`, `net = gross − tax`; gold credit `+net`
-through the [0,999999] clamp helper (0x32A82); King fund `+0x22 += tax`
-(0x32A92); tally `+0x26 += net` (0x32A9C). **BUY** (six inline sites in the
-purchase pages, e.g. Muskets qty 0x32 at 0x526A2, Horses at 0x52790, Tools qty
-0x64 at 0x52866): affordability check then inline debit
+through the [0,999999] clamp helper; King fund `+0x22 += tax`
+; tally `+0x26 += net`. **BUY** (six inline sites in the
+purchase pages, e.g. Muskets qty 0x32, Horses, Tools qty
+0x64): affordability check then inline debit
 `sub [bx+0x2A],ax; sbb [bx+0x2C],dx` — **buys are untaxed**.
 
 ```formula
@@ -1501,118 +1494,117 @@ example: sell 100 Muskets at 12 gold with tax at 33% → gross 1,200 → 396 to 
 
 Both paths call a mirror pair of accumulator updaters (good, qty):
 
-| field | BUY `func_0322D0` | SELL `func_03234A` |
+| field | BUY record_purchase() | SELL record_sale() |
 |---|---|---|
-| EU supply `+0xBC` | `−= qty` @0x3231C | `+= qty` @0x323B4 |
-| accumulator `+0xFC` | `−= qty` @0x32324 | `+= qty` @0x323BC |
-| traded volume `+0x7C` | `−= price·qty` @0x32340 | `+= price·qty·(100−tax%)/100` @0x32402 |
-| DGROUP pool `[bx−0x779C]` (4 × stride 0x9E) | `−= scaled_qty` ×4 @0x322FF | `+= scaled_qty` ×4 @0x32383 (4th power ×2/3) |
+| EU supply `+0xBC` | `−= qty` | `+= qty` |
+| accumulator `+0xFC` | `−= qty` | `+= qty` |
+| traded volume `+0x7C` | `−= price·qty` | `+= price·qty·(100−tax%)/100` |
+| DGROUP pool `[bx−⟦addr⟧]` (4 × stride 0x9E) | `−= scaled_qty` ×4 | `+= scaled_qty` ×4 (4th power ×2/3) |
 
-`scaled_qty = ((price_level−2)·16·qty)/100` (helper 0x32294); the `@CARGO`
-"spread" column (field 4, `[bx-0x68FC]`) is a per-good left-shift exponent on
-qty inside these updaters (`shl dx,cl` at 0x322EA/0x32360), not the display
+`scaled_qty = ((price_level−2)·16·qty)/100`; the `@CARGO`
+"spread" column (field 4, `[bx-⟦addr⟧]`) is a per-good left-shift exponent on
+qty inside these updaters, not the display
 spread.
 
 On the Europe screen the market bar (0,179,320,21; 16 cells, pitch 0x13, icons
 `good+0x17`, bid price centred at y=194) routes clicks to the sell handler,
 which first tests the boycott bit and blocks with a message if set. Recruit
-gold cost comes from the recruit-pool slot word at `DS:0x978C + slot·6 + 4`
-(read 0x051E52/0x035114) — for Artillery (colonist type 0x0B) it escalates
+gold cost comes from the recruit-pool slot word at `DS:⟦addr⟧ + slot·6 + 4`
+ — for Artillery (colonist type 0x0B) it escalates
 `base + artillery_bought·100`.
 
 ## 10. The native economy
 
 Each Indian settlement prices its trade through a single routine,
-`func_048F34` (file 0x048F34..0x0495FF), which fills two 16-word DGROUP arrays
-— `0x9E58[16]` per-good **demand** and `0x9E78[16]` per-good **supply**, in
+⟦helper⟧, which fills two 16-word DGROUP arrays
+— ⟦addr⟧[16]` per-good **demand** and ⟦addr⟧[16]` per-good **supply**, in
 `@CARGO` order — for the active settlement. It runs in three phases and its
 outputs feed the village trade dialog, the food beg/gift events, and the haggle
 price. The routine also contains the cheat-menu "Supply and Demand (Indians)"
-debug dump, gated on debug bit `[0x894] & 4`.
+debug dump, gated on debug bit `game.debug_flags` & 4`.
 
-Inputs: the active NativeSettlement record (pointer `[0x8D4A]` family; `+0x03`
+Inputs: the active NativeSettlement record (pointer `unit (active native record)` family; `+0x03`
 flags bit 4 = capital, `+0x04` population) and the active TribeData record
-(pointer `[0x8D4E]`; `+0x02` = tribe tier). `N = population + 1` (0x049242),
+(pointer `settlement (active record)`; `+0x02` = tribe tier). `N = population + 1`,
 `tier = tribe[+2]`.
 
-### 10.1 Phase A — colony-claimed-tile mask (0x048F3C..0x049049)
+### 10.1 Phase A — colony-claimed-tile mask
 
 A 25-byte mask marks which tiles of the settlement's 5×5 neighbourhood are
 worked by a European colony (those tiles contribute nothing). For each colony
-0..`[0x539E]` (selected via `0x181F:0x9E6` → `[0x8542]` at 0x04903A), each
+0..`game.colony_count` (selected via ⟦addr⟧:0x9E6` → `colony`), each
 settlement-relative cell (a,b) is mapped to colony-relative coordinates
-(0x048F92..0x048FBA); if within the colony's 5×5 (0x048FCC..0x048FE2) the
-centre (2,2) is special-cased (0x048FE4) and otherwise the worked-slot test
-`func_008956` (`0x181F:0xCE0`, reading `ColonyRecord+0x70+slot`) decides;
-matches set `mask[a·5+b] = 1` (0x049002). **Original bug (byte fact)**: the
-in-bounds call at 0x048FC0 passes *relative* coordinates (x′−2, y′−2) to
-`func_005BFA`, which tests **absolute** bounds `1 ≤ x < map_w−1` — Phase B
-passes absolute coordinates correctly (0x04913D).
+; if within the colony's 5×5 the
+centre (2,2) is special-cased and otherwise the worked-slot test
+worker_at_tile() (⟦addr⟧:0xCE0`, reading `colony.tile_workers`+slot`) decides;
+matches set `mask[a·5+b] = 1`. **Original bug (byte fact)**: the
+in-bounds call passes *relative* coordinates (x′−2, y′−2) to
+⟦helper⟧, which tests **absolute** bounds `1 ≤ x < map_w−1` — Phase B
+passes absolute coordinates correctly.
 
-### 10.2 Phase B — 5×5 terrain point scan (0x04904A..0x049241)
+### 10.2 Phase B — 5×5 terrain point scan
 
-Terrain id per tile via `0x181F:0x78C`. Contributions accumulated per tile:
+Terrain id per tile via ⟦addr⟧:0x78C`. Contributions accumulated per tile:
 
 | terrain | contribution | site |
 |---|---|---|
-| Mountains (27) | mountains counter +1 | 0x049190 |
-| Hills (28) | hills counter +1 | 0x049199 |
-| Arctic (24) | cold +4 | 0x0491A2 |
-| Forested 8..23 | food/game point; base = t−8 (or t−16); base<3 ⇒ cold-forest counter, else warm-forest: sugar/tobacco/cotton +2 | 0x0491AB..0x04921F |
-| Savannah | sugar +4 | 0x04909F |
-| Swamp | sugar +2 | 0x0490A5 |
-| Grassland | tobacco +4 | 0x0490AF |
-| Marsh | tobacco +2 | 0x0490B9 |
-| Prairie | cotton +4 | 0x0490C3 |
-| Tundra | ore +2 | 0x0490CD |
-| Plains | cotton +1, food +2 | 0x0490D7 |
-| Ocean (25) / Sea Lane (26) | fish rate points; every 3 pts ⇒ food +2 | 0x049066..0x049090 |
+| Mountains (27) | mountains counter +1 | ⟦addr⟧ |
+| Hills (28) | hills counter +1 | ⟦addr⟧ |
+| Arctic (24) | cold +4 | ⟦addr⟧ |
+| Forested 8..23 | food/game point; base = t−8 (or t−16); base<3 ⇒ cold-forest counter, else warm-forest: sugar/tobacco/cotton +2 | ⟦addr⟧..⟦addr⟧ |
+| Savannah | sugar +4 | ⟦addr⟧ |
+| Swamp | sugar +2 | ⟦addr⟧ |
+| Grassland | tobacco +4 | ⟦addr⟧ |
+| Marsh | tobacco +2 | ⟦addr⟧ |
+| Prairie | cotton +4 | ⟦addr⟧ |
+| Tundra | ore +2 | ⟦addr⟧ |
+| Plains | cotton +1, food +2 | ⟦addr⟧ |
+| Ocean (25) / Sea Lane (26) | fish rate points; every 3 pts ⇒ food +2 | ⟦addr⟧..⟦addr⟧ |
 
-### 10.3 Phase C — supply/demand arrays (0x049242..0x0495DC)
+### 10.3 Phase C — supply/demand arrays
 
-Both arrays zeroed at 0x049259..0x04926F, then per good (formulas exactly as
+Both arrays zeroed, then per good (formulas exactly as
 decoded; where the manual gives only a site, the term exists but its algebra
 was not transcribed):
 
 | good | supply | demand |
 |---|---|---|
-| Food | `+= (tier+N)·food_pts/(7−tier)` @0x049271 | `4·N²`, halved if tier ≥ 2 @0x04928F..0x0492A7 |
-| Silver | `tribe[+0xC]/K + 4·mountains` (K = per-tribe byte `[0x962A+idx]`) @0x0492B8..0x0492F0 | — |
-| Ore | `2·hills + mountains + tundra` (tier ≥ 1) @0x0492F4..0x04930B | — |
-| Furs | `(2·coldforest + otherforest/2)/(tier+1)` @0x04930F..0x049328 | — |
-| Coats/Tobacco/Sugar/Cotton/Cloth | supply terms @0x04932C..0x049386 | — |
-| Tobacco | — | `(6−tier)·N + 2·cold + 5` @0x04938F |
-| Cigars | — | term @0x0493A5 |
-| Coats | — | `8·cold + furs` @0x0493B5 |
-| Rum | — | term @0x0493C2 |
-| Trade Goods | — | `(tier+2)·(N+3) + 8` @0x0493D5 |
-| Tools | — | `(tier·N) << (cold/2 + 1)` @0x0493EA |
-| Muskets | supply = 0 @0x049434 | `4·(7 − tribe[+7] − tier)` @0x0493FC |
-| Horses | `tribe[+0xA] / ([0x962A+idx]/2 + 1)` @0x04940D | `4·(9 − tribe[+8] − tier)` @0x049423 |
+| Food | `+= (tier+N)·food_pts/(7−tier)` | `4·N²`, halved if tier ≥ 2 |
+| Silver | `tribe[+0xC]/K + 4·mountains` (K = per-tribe byte `[⟦addr⟧+idx]`) | — |
+| Ore | `2·hills + mountains + tundra` (tier ≥ 1) | — |
+| Furs | `(2·coldforest + otherforest/2)/(tier+1)` | — |
+| Coats/Tobacco/Sugar/Cotton/Cloth | supply terms | — |
+| Tobacco | — | `(6−tier)·N + 2·cold + 5` |
+| Cigars | — | term |
+| Coats | — | `8·cold + furs` |
+| Rum | — | term |
+| Trade Goods | — | `(tier+2)·(N+3) + 8` |
+| Tools | — | `(tier·N) << (cold/2 + 1)` |
+| Muskets | supply = 0 | `4·(7 − tribe[+7] − tier)` |
+| Horses | `tribe[+0xA] / ([⟦addr⟧+idx]/2 + 1)` | `4·(9 − tribe[+8] − tier)` |
 
 Then, in order:
 
-1. **Demand clamp to [0, 50]** (0x32) via the clamp helper `0x181F:0x35C`
-   (0x04943E..0x049460).
-2. **Capital boost** (settlement flags `+0x03 & 4`, 0x049462..0x0494B5):
+1. **Demand clamp to [0, 50]** (0x32) via the clamp helper ⟦addr⟧:0x35C`
+.
+2. **Capital boost** (settlement flags `+0x03 & 4`, ⟦addr⟧..⟦addr⟧):
    demand[0..7] ×2, demand[13..15] ×1.5, supply[7..15] ×2.
 3. **Tribe stock adjustment**: per-good tribe stock `tribe[+0xE+2g]` folded into
-   both arrays (0x0494C0..0x0494D6 / 0x0495B9..0x0495D6).
+   both arrays.
 4. **Mutual discount**: `supply −= demand/2; demand −= supply/2`, each floored
-   at ≥ 1 (0x049537..0x049591). The debug dump sits between the two halves.
+   at ≥ 1. The debug dump sits between the two halves.
 
 ### 10.4 Consumers
 
-- **Village trade** (`func_04A7CA`): zeroes last-bought goods
-  (0x04A8C1..0x04A8F0), index-sorts the arrays (`0x191F:0xED0` at 0x04A8F7) and
+- **Village trade** (raze_settlement()): zeroes last-bought goods
+, index-sorts the arrays and
   names the top goods in the "especially interested in …" line
-  (0x04A91D/0x04A932).
-- **Food events** (`func_056C3E`, the mission-village event handler and the sole
-  caller of `func_048F34`, at 0x057093): a food *deficit*
-  `demand[0]−supply[0]` gates the **INDIANBEGFOOD** popup (key pushed at
-  0x05716F); a surplus `supply[0]>demand[0]` gates **INDIANGIVEFOOD** (0x0573EB).
-- **Haggle price** (`func_049600`): subtracts `supply[idx]·4` in the price
-  computation (0x04A07A).
+.
+- **Food events** (⟦helper⟧, the mission-village event handler and the sole
+  caller of ⟦helper⟧,): a food *deficit*
+  `demand[0]−supply[0]` gates the **INDIANBEGFOOD** popup (key pushed); a surplus `supply[0]>demand[0]` gates **INDIANGIVEFOOD**.
+- **Haggle price** (⟦helper⟧): subtracts `supply[idx]·4` in the price
+  computation.
 
 ## 11. Trade routes
 
@@ -1630,38 +1622,38 @@ typedef struct {                 // stride 0x0A
     uint8_t  load_nib[3];        // +0x03..+0x05: load cargo ids, nibble-packed
     uint8_t  unload_nib[3];      // +0x06..+0x08: unload cargo ids, nibble-packed
     uint8_t  pad;                // +0x09: unmapped (save-file diff pending)
-} StopRecord;                    // nibble get/set func_0603DA / func_06040A
+} StopRecord;                    // nibble get/set ⟦helper⟧ / ⟦helper⟧
 
-typedef struct {                 // stride 0x4A; max 12 routes; count word [0x53A0]
+typedef struct {                 // stride 0x4A; max 12 routes; count word ⟦state⟧
     char       name[0x20];       // +0x00
     uint8_t    type;             // +0x20: 1 = sea, 0 = land
     uint8_t    stop_count;       // +0x21: max 4
     StopRecord stops[4];         // +0x22..+0x49
-} RouteRecord;                   // selected route: [0x9E14] = route·0x4A, seg [0x9E16]
-                                 //   (func_05FE60)
+} RouteRecord;                   // selected route: ⟦state⟧ = route·0x4A, seg ⟦state⟧
+                                 //   (⟦helper⟧)
 ```
 
 - **Commands**: menu ids 0x50 Edit / 0x51 Create / 0x52 Delete (MENU.TXT
-  `@TRADE` row order) → `func_060FBC` / `func_0610B0` / `func_0612E6`
-  (0x0238F2/0x0238EA/0x0238FC). Creating past 12 routes posts `@TRADEMANY`
-  (cap check 0x0610B5).
-- **Unit linkage**: unit byte `+0x17` (absolute 0x315B) — **low nibble = route
-  id, high nibble = stop index** (accessors `0x181F:0x858/0x862/0x876/0x8B2`);
+  `@TRADE` row order) → ⟦helper⟧ / ⟦helper⟧ / ⟦helper⟧
+. Creating past 12 routes posts `@TRADEMANY`
+  (cap check ⟦addr⟧).
+- **Unit linkage**: unit byte `+0x17` (absolute ⟦addr⟧) — **low nibble = route
+  id, high nibble = stop index** (accessors ⟦addr⟧:0x858/0x862/0x876/0x8B2`);
   the unit's order code is 2 ("Trade Route").
-- **Assign** ("Begin Trade Route", `func_022D46`): `@TRADENONE` if no routes
+- **Assign** ("Begin Trade Route", ⟦helper⟧): `@TRADENONE` if no routes
   exist; the route menu is filtered sea-only for ships / land-only otherwise
   (`@TRADENONE2` if the filter empties); sets order 2 and steps immediately.
 - **Create flow**: cap check → pick destination 1 → coastal test
-  (`0x181F:0xD12`) → `@TRADETYPE` sea/land choice (or forced land) → default
+ → `@TRADETYPE` sea/land choice (or forced land) → default
   name = colony name + random `@TRADENAMES` word (collision appends " A") →
   `@TRADENAME` entry (max 0x1F chars) → stop count preset 2 → pick destination
-  2 (cancel aborts before `inc [0x53A0]`) → editor. The editor creates a
+  2 (cancel aborts before `inc ⟦state⟧) → editor. The editor creates a
   phantom probe unit at (0xFF,0xFF) to filter reachable destinations, deleted
-  on exit (0x0610A0). Delete compacts the array (`rep movsw` 0x25 words) and
+  on exit. Delete compacts the array (`rep movsw` 0x25 words) and
   decrements higher route ids on all linked units.
-- **Execution**: the per-turn executor for order 2 is `func_041080` (dispatcher
-  jump table at file 0x24A38). A route with only one stop posts **@ROUTELOOP**
-  (0x0413F7), verbatim:
+- **Execution**: the per-turn executor for order 2 is run_trade_route() (dispatcher
+  jump table at file ⟦addr⟧). A route with only one stop posts **@ROUTELOOP**
+, verbatim:
 
 ```text
 Your Excellency, our "{%STRING0}" trade route
@@ -1677,63 +1669,63 @@ cargo nibbles and a handful of per-turn scratch fields; the type indexes a
 
 ### 12.1 UnitRecord
 
-Base `DS:0x3144`, stride 0x1C. (Field addresses below are absolute DGROUP; the
+Base `DS:⟦addr⟧, stride 0x1C. (Field addresses below are absolute DGROUP; the
 record-relative offset is the low nibble progression from +0x00.)
 
 ```c
-typedef struct {                 // array DS:0x3144, stride 0x1C, 300 max
-    uint8_t map_x;               // +0x00 (0x3144): renderer @0x03A63, placer @0x06958
-    uint8_t map_y;               // +0x01 (0x3145)
-    uint8_t unit_type;           // +0x02 (0x3146): @UNIT row 0..22; 694 refs
-    uint8_t owner;               // +0x03 (0x3147): low nibble = power 0..11
-                                 //        (set_unit_owner @0x738E); high nibble state
-    uint8_t flags;               // +0x04 (0x3148): transient bit register — 0x80
+typedef struct {                 // array DS:⟦addr⟧, stride 0x1C, 300 max
+    uint8_t map_x;               // +0x00: renderer, placer
+    uint8_t map_y;               // +0x01
+    uint8_t unit_type;           // +0x02: @UNIT row 0..22; 694 refs
+    uint8_t owner;               // +0x03: low nibble = power 0..11
+                                 //        (set_unit_owner ); high nibble state
+    uint8_t flags;               // +0x04: transient bit register — 0x80
                                  //        draw-active / "Damaged" display pair
-                                 //        (set @0x069923, cleared @0x069942; combat
-                                 //        @ARTILLERY sets it @0x05B6F6); 0x40 ship-
-                                 //        carrying-cargo (@0x02F37A); 0x20 Merchantman
+                                 //        (set, cleared; combat
+                                 //        @ARTILLERY sets it); 0x40 ship-
+                                 //        carrying-cargo; 0x20 Merchantman
                                  //        tag; 0x10 long-path; 0x08 tile-dirty;
                                  //        0x04 ship-cargo; 0x02 was-fortifying
-    uint8_t moves_spent;         // +0x05 (0x3149): move credits spent this turn
-                                 //        (reset @0x005872; +3/step @0x05CAE2)
-    uint8_t timer;               // +0x06 (0x314A): countdown (init 0xFF, dec)
-    uint8_t ai_state;            // +0x07 (0x314B): persistent AI state letter
+    uint8_t moves_spent;         // +0x05: move credits spent this turn
+                                 //        (reset; +3/step)
+    uint8_t timer;               // +0x06: countdown (init 0xFF, dec)
+    uint8_t ai_state;            // +0x07: persistent AI state letter
                                  //        ('X','-','0','1','G','E','R',...)
-    uint8_t order;               // +0x08 (0x314C): order code 0..0x0C (dispatchers
-                                 //        @0x249CB / @0x51DCE)
-    uint8_t goto_x;              // +0x09 (0x314D): Go-To target / route next stop
-    uint8_t goto_y;              // +0x0A (0x314E): (writer @0x22D38)
-    uint8_t heading;             // +0x0B (0x314F): 8-way facing 0..7, 8 = none
-                                 //        (reverse test xor al,4 @0x047AA8)
-    uint8_t cargo_count;         // +0x0C (0x3150): goods in hold (@0x0B2AB)
-    uint8_t cargo_ids[3];        // +0x0D..+0x0F (0x3151..0x3153): nibble-packed
-                                 //        good ids, 2 per byte, up to 6 (@0x0B2CB)
-    uint8_t cargo_qty[2];        // +0x10..+0x11 (0x3154..0x3155): per-slot
-                                 //        quantities (@0x0B2FB)
-    uint16_t timer_16;           // +0x12 (0x3156): overloaded — natives: snapshot of
-                                 //        progress counter [0x538E] (@0x06DB3);
+    uint8_t order;               // +0x08: order code 0..0x0C (dispatchers
+                                 // /)
+    uint8_t goto_x;              // +0x09: Go-To target / route next stop
+    uint8_t goto_y;              // +0x0A:
+    uint8_t heading;             // +0x0B: 8-way facing 0..7, 8 = none
+                                 //        (reverse test xor al,4)
+    uint8_t cargo_count;         // +0x0C: goods in hold
+    uint8_t cargo_ids[3];        // +0x0D..+0x0F: nibble-packed
+                                 //        good ids, 2 per byte, up to 6
+    uint8_t cargo_qty[2];        // +0x10..+0x11: per-slot
+                                 //        quantities
+    uint16_t timer_16;           // +0x12: overloaded — natives: snapshot of
+                                 //        progress counter `game.turn`;
                                  //        player units: byte 0xFF sentinel → random
-                                 //        0..0x13 on first use (@0x50C75)
-    uint8_t turn_flag;           // +0x14 (0x3158): per-turn land-unit boolean
-                                 //        (cleared @0x04968D; read for Wagon Trains
-                                 //        @0x0507E1; exact label runtime-open)
-    uint8_t tools;               // +0x15 (0x3159): pioneer tools 0..100
-                                 //        (−20 per action @0x4060F)
-    uint8_t work_counter;        // +0x16 (0x315A): turns-in-activity
-                                 //        (clear/plow/road/fortify @0x04071D)
-    uint8_t profession;          // +0x17 (0x315B): colonist profession 0x13..0x1C;
+                                 //        0..0x13 on first use
+    uint8_t turn_flag;           // +0x14: per-turn land-unit boolean
+                                 //        (cleared; read for Wagon Trains
+                                 //; exact label runtime-open)
+    uint8_t tools;               // +0x15: pioneer tools 0..100
+                                 //        (−20 per action)
+    uint8_t work_counter;        // +0x16: turns-in-activity
+                                 //        (clear/plow/road/fortify)
+    uint8_t profession;          // +0x17: colonist profession 0x13..0x1C;
                                  //        for routed units: lo nibble = route id,
                                  //        hi nibble = stop index
-    uint16_t occ_back;           // +0x18 (0x315C): per-tile occupancy back link
-    uint16_t occ_next;           // +0x1A (0x315E): next link (placer @0x06968/@0x06976)
+    uint16_t occ_back;           // +0x18: per-tile occupancy back link
+    uint16_t occ_next;           // +0x1A: next link (placer/)
 } UnitRecord;                    // sizeof = 0x1C (28)
 ```
 
 ### 12.2 The `@UNIT` stat table
 
-The loader at 0x074EC3 parses the 23 `@UNIT` rows into a runtime table at
-`DS:0x5230`, stride 14: +0 name ptr, +2 icon, **+4 moves stored ×3**
-(`shl al,1 / add al,cl` at 0x074F04; road cost = 1/3), **+5 combat (defense)**,
+The loader parses the 23 `@UNIT` rows into a runtime table at
+`DS:⟦addr⟧, stride 14: +0 name ptr, +2 icon, **+4 moves stored ×3**
+(`shl al,1 / add al,cl`; road cost = 1/3), **+5 combat (defense)**,
 **+6 attack**, +7 cargo holds, +8 move class (99 = naval), +9 hull, +0x0A size,
 **+0x0B guns**, **+0x0C ai-value** (the ship-combat pair), +0x0D flags. Values
 verbatim from NAMES.TXT:
@@ -1766,7 +1758,7 @@ verbatim from NAMES.TXT:
 
 **Ship types are 0x0D..0x12** (13 Caravel .. 18 Man-O-War) — this range gates
 ship logic everywhere (pathfinder, combat, docks). The Artillery "Damaged"
-display pair is attack +2 / damaged −2 (delta = col atk − col cmb, 0x069B39).
+display pair is attack +2 / damaged −2 (delta = col atk − col cmb, ⟦addr⟧).
 
 ### 12.3 Professions — `@JOB`
 
@@ -1783,10 +1775,10 @@ display pair is attack +2 / damaged −2 (delta = col atk − col cmb, 0x069B39)
 (Veteran, 2, −1), 0x18 Missionary (Jesuit, 3, 1400), and the specials
 **0x19 Ind. Servant, 0x1A Criminal, 0x1B Convert** (all tier 4, −1) plus the
 pseudo-profession **0x1C** used as a display variant and remapped to 0x13 by
-the context-help dispatcher (0x02BD83). The runtime job table is `DS:0x8EA2`,
+the context-help dispatcher. The runtime job table is `DS:⟦addr⟧,
 stride 8 (+0 name, +2 expert plural).
 
-**Unit-type → expert-job table** at `DS:0x30E` (file 0x1DCAE), bytes
+**Unit-type → expert-job table** at `DS:0x30E`, bytes
 `13 15 14 18 17 16` (hex): type 0 Colonists → 0x13 Colonist, 1 Soldiers →
 0x15 (Veteran Soldiers), 2 Pioneers → 0x14 (Hardy Pioneers), 3 Missionaries →
 0x18 (Jesuit Missionaries), 4 Dragoons → 0x17 (Veteran Dragoons), 5 Scouts →
@@ -1794,102 +1786,98 @@ stride 8 (+0 name, +2 expert plural).
 
 ### 12.4 Orders
 
-Order codes live at `UnitRecord +0x08` (0x314C); the per-turn dispatcher at
-0x249CB jump-tables codes 2..9 (table at file 0x24A38). The `@ORDERS` section
+Order codes live at `unit.orders`; the per-turn dispatcher jump-tables codes 2..9 (table at file ⟦addr⟧). The `@ORDERS` section
 carries 13 rows of `name, key-letter`; the accelerator/status-letter array is
-built into `DS:0x54DE` (writer 0x074F96) and read as the on-map status glyph
-indexed by the order code (0x0391D) — the letters are exactly
+built into `DS:⟦addr⟧ and read as the on-map status glyph
+indexed by the order code — the letters are exactly
 `- S T G L F F B P R - - -`:
 
 | code | order | key | init write | per-turn executor |
 |---:|---|:-:|---|---|
-| 0 | No Orders | `-` | @0x21ED7 | — (auto-activate) |
-| 1 | Sentry | `S` | @0x21FEB | — (skip) |
-| 2 | Trade Route | `T` | @0x22E05 | func_041080 |
-| 3 | Go To | `G` | @0x22D2D | func_040E22 |
+| 0 | No Orders | `-` | | — (auto-activate) |
+| 1 | Sentry | `S` | | — (skip) |
+| 2 | Trade Route | `T` | | run_trade_route() |
+| 3 | Go To | `G` | | run_goto() |
 | 4 | Live In Village | `L` | no store site exists (menu row only) | passive |
-| 5 | Fortify | `F` | @0x22105 | func_04101C → writes code 6 @0x41024 |
-| 6 | Fortified | `F` | @0x41024 | passive (+50% defense) |
-| 7 | Build Colony | `B` | @0x2279E | func_040C1E |
-| 8 | Clear/Plow | `P` | @0x22324 | func_040656 |
-| 9 | Build Road | `R` | @0x2250E | func_0409D6 |
+| 5 | Fortify | `F` | | complete_fortify() → writes code 6 |
+| 6 | Fortified | `F` | | passive (+50% defense) |
+| 7 | Build Colony | `B` | | ⟦helper⟧ |
+| 8 | Clear/Plow | `P` | | work_clear_plow() |
+| 9 | Build Road | `R` | | work_road() |
 | 0xA–0xC | No Orders (AI reserved) | `-` | AI-only | AI |
 
-Status-glyph overrides (renderer at 0x0386A): ships not owned by the viewer
-show their cargo count as an ASCII digit (`+0x30` at 0x0393F); 'X' when hidden;
+Status-glyph overrides (renderer): ships not owned by the viewer
+show their cargo count as an ASCII digit; 'X' when hidden;
 the AI state letter `+0x07` for AI units, replaced by 'E' when ≥ 0x80.
 
 ## 13. Movement and pathfinding
 
 Terrain movement cost is data-driven: the `@TERRAIN` `Movement` column is
-loaded to `terrain·16 + 0x2F76` and charged as `Movement·3` against a budget
+loaded to `terrain·16 + the Movement column` and charged as `Movement·3` against a budget
 stored ×3, so a road (cost 1/3) costs exactly one stored point. Short-range
 pathfinding is a bounded 16×16-window BFS with a cost cache, decoded in full
 below together with its three debug overlays.
 
-### 13.1 The short-range path-step finder — `func_061F02` (file 0x061F02)
+### 13.1 The short-range path-step finder — find_path_step()
 
 Register args: `ax` = target_x, `dx` = target_y, `bx` = cost bound; returns
 `ax` = best direction 0..7 *at the target toward the path start*, −1 on failure
-(init at 0x06205A).
+(init).
 
-- **Window**: start tile = (`[0xA14E]`,`[0xA14C]`); window origin = start − 8
-  (0x061F2F/0x061F38); 16×16 tiles.
-- **Cost cache**: 256 bytes at `DS:0xA270`, memset at 0x061FBA..0x061FC7; BFS
-  queues x at `DS:0xA372` / y at `DS:0xA472`, write/read indices
-  `[0x2D16]/[0x2D18]`, capacity 0xE1 (0x062055). The cache is reused when the
-  origin (`[0x2D1A]/[0x2D1C]`) is unchanged (0x061F83..0x061FA9).
-- **Neighbour tables** (file 0x1DA54/0x1DA5E): `DS:0xB4` dx =
+- **Window**: start tile = (⟦state⟧,⟦state⟧); window origin = start − 8
+; 16×16 tiles.
+- **Cost cache**: 256 bytes at `DS:⟦addr⟧, memset; BFS
+  queues x at `DS:⟦addr⟧ / y at `DS:⟦addr⟧, write/read indices
+  ⟦state⟧/⟦state⟧, capacity 0xE1. The cache is reused when the
+  origin (⟦state⟧/⟦state⟧) is unchanged.
+- **Neighbour tables**: `DS:0xB4` dx =
   {0,1,1,1,0,−1,−1,−1}, `DS:0xBE` dy = {−1,−1,0,1,1,1,0,−1} — directions 0..7 =
-  N, NE, E, SE, S, SW, W, NW (applied 0x06210D/0x06211B).
-- **Ship gating**: moving unit type `[0x1DD2]` in 13..18 (0x061F41/0x061F48) =
+  N, NE, E, SE, S, SW, W, NW.
+- **Ship gating**: moving unit type ⟦state⟧ in 13..18 =
   the ship range; tile is water iff terrain id == 0x19 (25 Ocean) or 0x1A
-  (26 Sea Lane) (0x062174..0x06217C); land/water mismatch allowed only at the
-  endpoints (0x0621BE..0x0621E5); water-water extra checks via the helpers at
-  0x06219D/0x0621AF.
-- **One-move units**: if the type's stored moves ≤ 3 (`byte[0x5234+type·14] ≤ 3`
-  at 0x061F6B) every step costs a flat 3 (0x0622F4).
+  (26 Sea Lane); land/water mismatch allowed only at the
+  endpoints; water-water extra checks via the helpers/⟦addr⟧.
+- **One-move units**: if the type's stored moves ≤ 3 (`byte[⟦addr⟧+type·14] ≤ 3`) every step costs a flat 3.
 - **Step costs** (in priority order): road/plow layer mask 0x0A at both ends →
-  **+1** (0x0622A7..0x0622C0); river bit 0x40 on a cardinal step → **+1**
-  (0x0622CC..0x0622EC); otherwise **terrain Movement ×3** —
-  `byte[terrain·16+0x2F76]·3` (0x062300..0x06230C). NAMES values: open land 1,
+  **+1**; river bit 0x40 on a cardinal step → **+1**
+; otherwise **terrain Movement ×3** —
+  `byte[terrain·16+the Movement column]·3`. NAMES values: open land 1,
   forests 2, Hills 2, Arctic 2, Mountains 3, Ocean/Sea Lane 1.
 - **Occupancy/power rules**: occupying power at the tile must be −1 or the
-  moving power `[0x1DD6]` (0x062217); a second ownership probe rejects
-  power ≥ 4 (0x062245) and AI-controlled powers, else adds +8 (0x06225E);
-  native units (type ≥ 19, 0x0621E8) reject rumor tiles (0x0621F5).
+  moving power ⟦state⟧; a second ownership probe rejects
+  power ≥ 4 and AI-controlled powers, else adds +8;
+  native units (type ≥ 19, ⟦addr⟧) reject rumor tiles.
 - **Phase 2**: picks the minimum-cost neighbour of the target (cost init 99 =
-  0x63 at 0x06206B), **tie-break by distance** (`func_00493C` at 0x06259F),
-  pruned against the bound `[0xA370]` (0x06202C/0x062062).
+  0x63), **tie-break by distance** (⟦helper⟧),
+  pruned against the bound ⟦state⟧.
 
 ### 13.2 The movement debug overlays
 
-Three of the seven DEBUG.TXT `@OPTIONS` bits in the cheat bitfield `[0x894]`
-(builder `func_02356C`, exactly 7 checkbox items) are movement overlays:
-**bit 0x10 "Close Moves"** (gate at 0x061F14), **bit 0x20 "Far Moves"**
-(sibling `func_06295E`, 0x062975, format `"Far: %d(%d,%d)…"`), **bit 0x40
-"All Movement"** (`func_062D84`, 0x062D94, sets the latch `[0x1DF2]` that
+Three of the seven DEBUG.TXT `@OPTIONS` bits in the cheat bitfield `game.debug_flags`
+(builder ⟦helper⟧, exactly 7 checkbox items) are movement overlays:
+**bit 0x10 "Close Moves"**, **bit 0x20 "Far Moves"**
+(sibling ⟦helper⟧, ⟦addr⟧, format `"Far: %d(%d,%d)…"`), **bit 0x40
+"All Movement"** (⟦helper⟧, ⟦addr⟧, sets the latch ⟦state⟧ that
 Close Moves honours). The Close-Moves overlay draws over the live map view
-(full redraw via `0x181F:0xE1C(1)`):
+(full redraw via ⟦addr⟧:0xE1C(1)`):
 
-- **Per-tile cost numbers**: for each nonzero cache cell, `func_078068`
-  prints the cost in white (0x0F): px = `(x+[0x832A]−[0x8328])·[0x5AD4]`,
-  py = `(y+[0x832C]−[0x832E])·[0x8326]+8`, nudged `+7>>zoom, +6>>zoom` with
-  zoom = `[0x184]` (0x078081..0x0780E3); at zoom 0 a backing rectangle is drawn
-  behind the digits (0x07810C).
-- **Summary line**: format `"(%d,%d)-(%d,%d) %d == %d"` (DS:0x1DD8, file
-  0x1F778) filled with start x/y, target x/y, bound, best direction; colour 12
+- **Per-tile cost numbers**: for each nonzero cache cell, ⟦helper⟧
+  prints the cost in white (0x0F): px = `(x+⟦state⟧−⟦state⟧)·⟦state⟧,
+  py = `(y+⟦state⟧−⟦state⟧)·⟦state⟧+8`, nudged `+7>>zoom, +6>>zoom` with
+  zoom = ⟦state⟧; at zoom 0 a backing rectangle is drawn
+  behind the digits.
+- **Summary line**: format `"(%d,%d)-(%d,%d) %d == %d"` (DS:⟦addr⟧, file
+  ⟦addr⟧) filled with start x/y, target x/y, bound, best direction; colour 12
   (red); drawn at **(5,190)** directly to the 320×200 VGA surface
-  (0x062683..0x0626B1).
-- **Keys**: 'Z' zoom in (`[0x184]−−`, clamp ≥0), 'X' zoom out (clamp ≤3), each
+.
+- **Keys**: 'Z' zoom in (⟦state⟧−−`, clamp ≥0), 'X' zoom out (clamp ≤3), each
   redraws; ESC clears the latches and exits; any other key exits
-  (0x0626D0..0x062705).
+.
 
 ### 13.3 Go-To orders
 
-Order code 3 with the destination at `UnitRecord +0x09/+0x0A` (writer
-0x22D38/0x22D2D); per-turn executor `func_040E22`. The destination is chosen
-with the shared picker (`func_060026` / `func_022CDC`): headers `@SAILPORT`
+Order code 3 with the destination at ⟦unit field⟧/+0x0A`; per-turn executor run_goto(). The destination is chosen
+with the shared picker (⟦helper⟧ / ⟦helper⟧): headers `@SAILPORT`
 (ship) / `@TRAVELPLACE` (land unit); rows are eligible own colonies filtered by
 water/land region match, plus a Europe row for ships only (choosing Europe
 issues set-sail); pages of 10 with "(More)".
@@ -1902,15 +1890,15 @@ strength comes from the unit stat table; a chain of byte-cited multipliers
 the optional Combat Analysis dialog itemizes exactly those modifiers before the
 result is applied.
 
-### 14.1 Base strength — `func_007C2A`
+### 14.1 Base strength — base_strength()
 
-The root strength calculator writes the per-side base at `[col·2+0x8D06]`
-(0x007CA5): `base = stat_table[type·14 + 0x5235]` (the +5 combat column);
-**carriers add the +6 attack column** (`+0x5236`); a **damaged ship**
+The root strength calculator writes the per-side base at `[col·2+⟦addr⟧]`
+: `base = stat_table[type·14 + ⟦addr⟧]` (the +5 combat column);
+**carriers add the +6 attack column**; a **damaged ship**
 (flag bit) takes **−2**. Modifier-flag words per side: primary
-`F = [col·2+0x8D00]`, secondary `S = [col·2+0xA156]` (cleared at 0x05CB3A);
-producers include Veteran at 0x007CD6, Drake at 0x007CF0/0x007D09, Fatigue
-(`[0x8D01]|=1`) at 0x05CB9B, Bombard (`[0x8D01]|=0x80`) at 0x05CF7D.
+`F = [col·2+⟦addr⟧]`, secondary `S = [col·2+⟦addr⟧]`;
+producers include Veteran, Drake/⟦addr⟧, Fatigue
+(⟦state⟧|=1`), Bombard (⟦state⟧|=0x80`).
 
 ### 14.2 The Combat Analysis modifier table
 
@@ -1920,50 +1908,49 @@ the strength math. Complete row table (labels are LABELS.TXT `@MISC` lines):
 | flag | row label | effect |
 |---|---|---|
 | F&0x200 | unit shown under its veteran-profession name | base strength |
-| F&0x400 | Muskets (good 15 name + icon 0x26) | "+1" (value semantics unresolved, @0x05EBDA) |
+| F&0x400 | Muskets (good 15 name + icon 0x26) | "+1" (value semantics unresolved,) |
 | F&2 | Veteran (types 1/4, profession 0x15) | +50% |
-| F&4 | Cargo | −12.5% per used hold (cargo·100/8, @0x05ED65) |
+| F&4 | Cargo | −12.5% per used hold (cargo·100/8,) |
 | F&0x100 / S&8 | Fatigue | −33% / −66% |
 | F&1 | Attack Bonus | +50% |
-| F&0x8000 | Bombard | +50% |
+| F&⟦addr⟧ | Bombard | +50% |
 | S&2 | Tory Unrest | −(100 − SoL%) |
-| S&4 | Rebel Unrest | +SoL% (SoL from `func_008524`, `0x181F:0xC86`) |
+| S&4 | Rebel Unrest | +SoL% (SoL from sons_of_liberty_percent(), ⟦addr⟧:0xC86`) |
 | F&0x80 | Ambush (attacker) / Terrain (defender) — draws the target tile | +terrain_defense·25% (row skipped if 0) |
-| F&0x40 | Colony | +(fort_level+1)·50% (`0x181F:0x9D2`) |
-| F&8 (+0x10/+0x20) | colony-structure row (building name, table DS:0x9634) | +n·50%, n = 1/2, doubled by F&0x20 |
+| F&0x40 | Colony | +(fort_level+1)·50% |
+| F&8 (+0x10/+0x20) | colony-structure row (building name, table DS:⟦addr⟧) | +n·50%, n = 1/2, doubled by F&0x20 |
 | F&0x800 (S-side) | Artillery In Open | −75% |
 | S&1 | Artillery Vs. Raid | +100% |
-| F&0x2000 | Fortified | +50% |
-| F&0x1000 | Spain Bonus | +50% |
-| F&0x4000 | Drake (privateers, Founding Father 13 owned) | +50% |
-| `[0x5383]&0x20` (cheat) | extra rows: final strengths + the raw roll vs att+def | — |
+| F&⟦addr⟧ | Fortified | +50% |
+| F&⟦addr⟧ | Spain Bonus | +50% |
+| F&⟦addr⟧ | Drake (privateers, Founding Father 13 owned) | +50% |
+| ⟦state⟧&0x20` (cheat) | extra rows: final strengths + the raw roll vs att+def | — |
 
 Terrain defense values are the `$TERRAIN` "Defensive" column (byte-verified):
 open land 0, Marsh/Swamp 1, forests 2 (Rain 3), Hills 4, Mountains 6. The
-defense-bonus filler `func_007D3E` accumulates into `[0x8D04]`: colony +2
-(0x7D8D), fortified building (level ≥ 2) +4 with a doubling condition
-(0x7DBC/0x7DD1), river/road +(n+1)·2 (0x7E12), open terrain + the per-terrain
-byte at `terrain·16+0x2F77` (0x7E63).
+defense-bonus filler defence_bonus() accumulates into ⟦state⟧: colony +2
+, fortified building (level ≥ 2) +4 with a doubling condition
+, river/road +(n+1)·2, open terrain + the per-terrain
+byte at `terrain·16+the Defensive column`.
 
-### 14.3 The strength chain and the roll — `func_05CA7E`
+### 14.3 The strength chain and the roll — resolve_attack()
 
 Attacker strength `[bp-0x90]` (defender `[bp-0xA6]`) is built from the stat
 columns and modified, in order:
 
-1. terrain/fort bonus: `strength·([0x8D04]+4)/4 · 3/2` (0x05CE05, `·3/2` chain
-   at 0x05CE16);
+1. terrain/fort bonus: `strength·(⟦state⟧+4)/4 · 3/2` (⟦addr⟧, `·3/2` chain);
 2. **difficulty handicap**: a human-controlled combatant gets
-   `strength += (4 − difficulty)` on **both** sides (attacker 0x5CE35, defender
-   0x5CE54; +4 at Discoverer down to +0 at Viceroy);
-3. generic terrain multiplier `·[bp-0x96]/3` (0x05CE69);
-4. colony present on the defending tile → +50%, flag `[0x8D01]|0x10`
-   (0x05CF43);
-5. War-of-Independence bombardment (endgame flag `[0x5382]&1`, REF defender) →
-   +50%, flag `[0x8D01]|0x80` (0x05CF7D);
-6. Sons-of-Liberty scaling `strength·SoL%/100` (0x05CF98);
-7. difficulty scaling `strength·difficulty/20` (0x05CFFC);
-8. a further strength **doubling at 0x05D0D9 gated on the difficulty byte
-   `[0x53A6]`** — its exact condition is an open item (runtime).
+   `strength += (4 − difficulty)` on **both** sides (attacker ⟦addr⟧, defender
+   ⟦addr⟧; +4 at Discoverer down to +0 at Viceroy);
+3. generic terrain multiplier `·[bp-0x96]/3`;
+4. colony present on the defending tile → +50%, flag ⟦state⟧|0x10`
+;
+5. War-of-Independence bombardment (endgame flag `game.flags`&1`, REF defender) →
+   +50%, flag ⟦state⟧|0x80`;
+6. Sons-of-Liberty scaling `strength·SoL%/100`;
+7. difficulty scaling `strength·difficulty/20`;
+8. a further strength **doubling gated on the difficulty byte
+   `game.difficulty`** — its exact condition is an open item (runtime).
 
 Fatigue is offered *before* the roll via GAME.TXT `@HALF` — attacking with
 tired troops fights at reduced strength (the −33%/−66% rows above); text
@@ -1978,13 +1965,11 @@ strength}.
 "Then let them rest."
 ```
 
-**The roll** (act mode): `roll = random_int(1, ATK+DEF)` via `func_00C322`
-(`0x181F:0x4D4`) at 0x05D188; **the attacker wins iff `roll ≤ ATK`**
+**The roll** (act mode): `roll = random_int(1, ATK+DEF)` via random_int(); **the attacker wins iff `roll ≤ ATK`**
 (`cmp roll,[bp-0x90]; jg` ⇒ loss). Evaluate mode instead returns the odds score
-`(ATK·8)/(DEF+1)` (0x05D032) for AI ranking. The naval unit-vs-unit roll in the
-consequence applier `func_05B2C2` uses the **raw** ship stat pair `+0x0B/+0x0C`
-(`0x523B/0x523C`, no modifier scaling): `roll = random_int(1, A+D)` at
-0x05B844, with independence-war special cases (0x05B87D/0x05BA2D).
+`(ATK·8)/(DEF+1)` for AI ranking. The naval unit-vs-unit roll in the
+consequence applier apply_combat_result() uses the **raw** ship stat pair `+0x0B/+0x0C`
+(⟦addr⟧/⟦addr⟧, no modifier scaling): `roll = random_int(1, A+D)`, with independence-war special cases.
 
 ```formula
 P( attacker wins ) = ATK ÷ ( ATK + DEF )        AI target ranking = ( ATK × 8 ) ÷ ( DEF + 1 )
@@ -1994,11 +1979,11 @@ example: ATK 24 against DEF 11 → 24÷35 ≈ 69% to win; the AI scores this tar
 
 ### 14.4 When the Combat Analysis dialog shows
 
-Gate at 0x05D221 inside `func_05CA7E`, *after* the roll is computed but before
-resolution renders: Game Options bit **`[0x5383]&2`** ("Combat Analysis"
-checkbox) AND (attacker human OR defender human OR full-view `[0x53A2]≠0`).
-Sole call site 0x05D291, 13 arguments (both unit indices, both positions, both
-owners, both strengths, and the roll). The dialog itself (`func_05E9B0`, page
+Gate inside resolve_attack(), *after* the roll is computed but before
+resolution renders: Game Options bit **⟦state⟧&2`** ("Combat Analysis"
+checkbox) AND (attacker human OR defender human OR full-view ⟦state⟧≠0`).
+Sole call site ⟦addr⟧, 13 arguments (both unit indices, both positions, both
+owners, both strengths, and the roll). The dialog itself (combat_analysis_dialog(), page
 0x11) is a two-pass measure/draw modal: frame x=53, w=214, h=rows·20+6,
 vertically centred; title "COMBAT ANALYSIS" (`@MISC` 75); attacker column
 x=56, defender +80; row pitch 20; values right-aligned at column+0x50; each
@@ -2007,7 +1992,7 @@ cell dual-drawn dark/light for a drop shadow; modal-wait terminator.
 ### 14.5 Naval prompts
 
 - `@HALF` — the pre-attack fatigue prompt above (also flags the −33% row).
-- `@EVASIVE` — posted at 0x05D469 when a ship evades; text verbatim:
+- `@EVASIVE` — posted when a ship evades; text verbatim:
 
 ```text
 {%STRING0 %STRING1} evades {%STRING2 %STRING3}.
@@ -2017,48 +2002,47 @@ cell dual-drawn dark/light for a drop shadow; modal-wait terminator.
 
 ### 14.6 After the roll — demotion, capture, promotion
 
-The consequence applier is `func_05B2C2` (0x5B2C2..0x5BE2C), reached from the
-decider through the wrapper `func_05BE30`.
+The consequence applier is apply_combat_result(), reached from the
+decider through the wrapper combat_result_wrapper().
 
-**The demotion ladder** (if-ladder 0x5B5AA..0x5B61F): a defeated land unit
-falls one rung instead of dying — Dragoons→Soldiers (0x5B5B3),
-Soldiers→Colonists (0x5B5C3), Cont. Cavalry→Cont. Army (0x5B5DF),
-Cavalry→Regulars (0x5B5EF), Cont. Army→Colonists (0x5B5CF); anything else is
+**The demotion ladder** (if-ladder ⟦addr⟧..⟦addr⟧): a defeated land unit
+falls one rung instead of dying — Dragoons→Soldiers,
+Soldiers→Colonists, Cont. Cavalry→Cont. Army,
+Cavalry→Regulars, Cont. Army→Colonists; anything else is
 destroyed. A demoted-to-Colonist with the Missionary profession byte (0x18)
-becomes a Missionaries unit instead (0x5B60E/0x5B615); a Veteran Soldier
-loses veteran status on the way down (0x05B570..0x05B577). Message `@DEMOTE`
-(0x05B679).
+becomes a Missionaries unit instead; a Veteran Soldier
+loses veteran status on the way down. Message `@DEMOTE`
+.
 
 **Capture instead of death**: the loser is capture-eligible only for types
-Colonists, Treasure, and Wagon Train (flag set 0x5B31D..0x5B33D), the loser's
+Colonists, Treasure, and Wagon Train (flag set ⟦addr⟧..⟦addr⟧), the loser's
 owner must be European (< 4), and a winning ship needs transport room
-(0x5B410..0x5B428) — then the unit changes hands intact via `set_unit_owner`
-(0x5B4C7). Messages: `@LOOTCAPTURE` (Treasure, 0x05B544), `@WAGONCAPTURE`
-(0x05B566), `@COLONISTCAPTURE`/`@COLONISTCAPTURE2` (0x05B586/0x05B57E).
+ — then the unit changes hands intact via `set_unit_owner`
+. Messages: `@LOOTCAPTURE` (Treasure, ⟦addr⟧), `@WAGONCAPTURE`
+, `@COLONISTCAPTURE`/`@COLONISTCAPTURE2`.
 
 **Artillery**: on a loss it flips to the "Damaged" display state
-(`+0x04 |= 0x80` at 0x05B6F6, `@ARTILLERY`; the displayed delta is the
-attack−combat column pair 7−5 = "+2 / −2", 0x069B39); a damaged artillery
-that loses again is destroyed (`@ARTILLERY2`, 0x05B740).
+(`+0x04 |= 0x80`, `@ARTILLERY`; the displayed delta is the
+attack−combat column pair 7−5 = "+2 / −2", ⟦addr⟧); a damaged artillery
+that loses again is destroyed (`@ARTILLERY2`, ⟦addr⟧).
 
 **Ships**: ship-vs-ship uses the raw guns/hull columns with no modifier
-chain (`roll = random_int(1, guns_A + hull_D)` at 0x05B844); outcomes are
-`@SHIPDAMAGE` (0x05BC79) or `@SHIPSUNK` (0x05BD0F) — a sinking ship carrying
-cargo (`+0x04 & 0x40`, set at 0x02F37A) scatters its 6 cargo slots
-(loop 0x05BD28, `@CARGOCAPTURE` 0x05B98C on seizure). Only Privateers and
+chain (`roll = random_int(1, guns_A + hull_D)`); outcomes are
+`@SHIPDAMAGE` or `@SHIPSUNK` — a sinking ship carrying
+cargo (`+0x04 & 0x40`, set) scatters its 6 cargo slots
+(loop ⟦addr⟧, `@CARGOCAPTURE` ⟦addr⟧ on seizure). Only Privateers and
 Frigates may start ship attacks (`@SHIPCOMBAT` guard in the ship dispatcher
-`func_03FDDE`); `@EVASIVE` posts on an evade (0x05D469 — the evade condition
+move_ship()); `@EVASIVE` posts on an evade (⟦addr⟧ — the evade condition
 itself is unmapped). Shore fire from a colony fort is deterministic:
-`strength = artillery_count · fort_level · 4`, no roll (`func_02D3C6`,
-`@FORTFIRE` at 0x02D5D9).
+`strength = artillery_count · fort_level · 4`, no roll (shore_bombardment(),
+`@FORTFIRE`).
 
 **Promotion**: the winner is promoted with probability
 `winner_strength / S` where `S = atk + def ± difficulty` (human +d, AI −d)
 minus a class penalty (Petty Criminal −10, Indentured Servant −5) — roll
-`random_int(1,S)` at 0x5C764. **George Washington** (FF 11, tested at
-0x5C758) skips the roll: promotion is automatic. The class ladder
-`func_05E714` writes the next rank (0x5C7DD); at the soldier ceiling the unit
-*type* advances instead — Soldier → Continental Army (0x5C7C3). Popups
+`random_int(1,S)`. **George Washington** (FF 11, tested) skips the roll: promotion is automatic. The class ladder
+next_rank() writes the next rank; at the soldier ceiling the unit
+*type* advances instead — Soldier → Continental Army. Popups
 `@VETERAN` / `@VALOR` / `@WELLSEASONED`.
 
 ```formula
@@ -2067,12 +2051,12 @@ P( promotion ) = winner_strength ÷ ( ATK + DEF ± difficulty − class penalty 
 example: strength 24 of a 35 total, human at Explorer (+1) → 24÷36 = 67% chance to promote
 ```
 
-In-repo conflicts, flagged: one combat.md bullet calls `func_05CA7E`
+In-repo conflicts, flagged: one combat.md bullet calls resolve_attack()
 "pre-combat setup, not the roll" — overruled by the wave-9 ruling and the
-roll site 0x05D188; the 0x05CF43 +50% write is glossed both "colony" and
+roll site ⟦addr⟧; the ⟦addr⟧ +50% write is glossed both "colony" and
 "Spain-vs-natives"; the profession byte is cited both `+0x17` and record
-`+0x15`. The Combat Analysis gate is written `[0x5383]&2` and "Game-Options
-bit 0x0200" in different sheets.
+`+0x15`. The Combat Analysis gate is written ⟦state⟧&2` and "Game-Options
+bit ⟦addr⟧" in different sheets.
 
 ## 15. Powers and relations
 
@@ -2084,81 +2068,81 @@ large 316-byte record holding the economy, diplomacy and Congress state — plus
 handful of per-power scalar tables. Everything in this section is the substrate the
 diplomacy, Congress and revolution machinery of sections 16–18 reads and writes.
 
-### 15.1 The 52-byte personality record (base 0x540E, stride 0x34, count 4)
+### 15.1 The 52-byte personality record (base ⟦addr⟧, stride 0x34, count 4)
 
 ```c
-typedef struct {                    // DGROUP:0x540E + power*0x34 (runtime BSS; loaded from NAMES.TXT / save)
+typedef struct {                    // DGROUP:⟦addr⟧ + power*0x34 (runtime BSS; loaded from NAMES.TXT / save)
     char leader_name[24];           // +0x00 NUL-terminated ("Walter Raleigh"); default for the @LEADERNAME entry box
     char country_name[24];          // +0x18 region name ("New England"); %STRING source for diplomacy popups
-    uint8_t event_flags;            // +0x30 one-time-event bitfield; bit 0x40 test-and-set at 0x61870/0x61877 (burial-ground anger)
-    uint8_t controller;             // +0x31 (abs 0x543F+p*0x34): 0 = human, 1 = AI, 2 = eliminated (set at 0x3C91A)
-    uint16_t colony_name_seq;       // +0x32 default-colony naming counter (INC at 0x4056E, zeroed at 0x75930)
+    uint8_t event_flags;            // +0x30 one-time-event bitfield; bit 0x40 test-and-set/⟦addr⟧ (burial-ground anger)
+    uint8_t controller;             // +0x31 (abs ⟦addr⟧+p*0x34): 0 = human, 1 = AI, 2 = eliminated
+    uint16_t colony_name_seq;       // +0x32 default-colony naming counter (INC, zeroed)
 } AIPersonality;
 ```
 
-The controller byte at `[0x543F + power*0x34]` is the single most-tested per-power
+The controller byte at `[⟦addr⟧ + power*0x34]` is the single most-tested per-power
 flag in the binary (~218 references): the turn loop skips inactive powers on it
-(0x57C5/0x58AA), the parley dispatcher's human-only gate reads it (0x57F8C), the
-Founding-Father cost formula branches on it (0x3C29C), and hot-seat multiplayer
+, the parley dispatcher's human-only gate reads it, the
+Founding-Father cost formula branches on it, and hot-seat multiplayer
 writes it from the `@MULTI` checkbox dialog (section 18.6).
 
-### 15.2 The 316-byte power record (base 0x8808, stride 0x13C, count 4)
+### 15.2 The 316-byte power record (base ⟦addr⟧, stride 0x13C, count 4)
 
-Active record far pointer: `[0x84FC]`. The whole 4×0x13C block is serialized
+Active record far pointer: `power`. The whole 4×0x13C block is serialized
 verbatim as save block #8 (section 20.3).
 
 ```c
-typedef struct {                    // DGROUP:0x8808 + power*0x13C
-    uint8_t  tax_pct;               // +0x01 royal tax rate 0..75 (clamp at 0x3434F)
+typedef struct {                    // DGROUP:⟦addr⟧ + power*0x13C
+    uint8_t  tax_pct;               // +0x01 royal tax rate 0..75 (clamp)
     uint8_t  rebel_sentiment_pct;   // +0x02 Sons-of-Liberty % (F3 display)
-    uint32_t acquired_ff_bitmask;   // +0x07 bit f = Founding Father f owned (byte base 0x880F; reader func_00BC10 @0xBC10)
+    uint32_t acquired_ff_bitmask;   // +0x07 bit f = Founding Father f owned (byte base ⟦addr⟧; reader ⟦helper⟧ )
     uint16_t bells_toward_next_ff;  // +0x0C liberty-bell pool; resets on each acquisition
-    uint16_t bells_per_turn;        // +0x0E bells produced last turn (zeroed at 0x2F23F each production phase)
+    uint16_t bells_per_turn;        // +0x0E bells produced last turn (zeroed each production phase)
     uint16_t crosses_per_turn;      // +0x10 immigration points per turn
-    int16_t  ff_in_progress;        // +0x12 father id being worked toward; 0xFFFF = none (cleared at 0x3BD37)
+    int16_t  ff_in_progress;        // +0x12 father id being worked toward; ⟦addr⟧ = none
     uint16_t founding_father_count; // +0x14 owned-father count (cost-curve input)
-    uint16_t artillery_bought;      // +0x1E Europe artillery escalation counter (read*100 at 0x35124)
-    uint16_t boycott_bitmask;       // +0x20 bit g = good g boycotted after a Tea Party (set 0x34717, cleared 0x33423 / 0x3BD45)
+    uint16_t artillery_bought;      // +0x1E Europe artillery escalation counter (read*100)
+    uint16_t boycott_bitmask;       // +0x20 bit g = good g boycotted after a Tea Party
     int32_t  royal_money;           // +0x22 the King's REF fund; +=(8*diff+10) per turn, era-doubled; buys a REF unit at 1800
-    int32_t  eu_sales_tally;        // +0x26 cumulative net European sales (0x32A9C)
-    uint32_t gold;                  // +0x2A treasury, clamp 0..999999 (add helper 0x181F:0xABA)
-    uint8_t  home_x, home_y;        // +0x32/+0x33 sea-lane spawn/arrival coordinates (read 0x58D72; writers 0x418D0/0x65CCB/0x74D74)
-    uint8_t  relations[4];          // +0x34 relation-bit row vs powers 0..3 (matrix base 0x883C; see 15.3)
-    uint8_t  treaty_respect[4];     // +0x40 treaty-respect counters (base 0x8848; see 15.4)
-    uint8_t  boycott_count[16];     // +0x4C per-good back-tax accumulator (INC 0x32271 / DEC 0x32288); also market sensitivity load
+    int32_t  eu_sales_tally;        // +0x26 cumulative net European sales
+    uint32_t gold;                  // +0x2A treasury, clamp 0..999999
+    uint8_t  home_x, home_y;        // +0x32/+0x33 sea-lane spawn/arrival coordinates
+    uint8_t  relations[4];          // +0x34 relation-bit row vs powers 0..3 (matrix base ⟦addr⟧; see 15.3)
+    uint8_t  treaty_respect[4];     // +0x40 treaty-respect counters (base ⟦addr⟧; see 15.4)
+    uint8_t  boycott_count[16];     // +0x4C per-good back-tax accumulator; also market sensitivity load
     int16_t  market_pool[16];       // +0x5C European supply/demand imbalance
     int32_t  market_traded[16];     // +0x7C cumulative traded volume
     int32_t  market_eu_supply[16];  // +0xBC European stock
-    int32_t  market_base[16];       // +0xFC drift accumulator (buy += at 0x323BC, sell -= at 0x32324)
+    int32_t  market_base[16];       // +0xFC drift accumulator (buy +=, sell -=)
     // +0x03..+0x06, +0x16..+0x1D, +0x38..+0x3F, +0x44..+0x4B unmapped (interleaved gaps)
 } PowerRecord;
 ```
 
-### 15.3 The relations matrix (PowerRecord +0x34, base 0x883C)
+### 15.3 The relations matrix (`power.relations`, base ⟦addr⟧)
 
 Relations between every pair of European powers are one byte at
-`0x883C + subject*0x13C + target` (the code addresses it as `[bx+si-0x77C4]`,
-the wrapped-displacement form of 0x883C — read at 0x58A72). Accessors:
-`func_007F34` get, `func_007F96` symmetric set, `func_008000` symmetric clear
+⟦addr⟧ + subject*0x13C + target` (the code addresses it as `[bx+si-⟦addr⟧]`,
+the wrapped-displacement form of ⟦addr⟧ — read). Accessors:
+⟦helper⟧ get, ⟦helper⟧ symmetric set, ⟦helper⟧ symmetric clear
 (error strings "Treaty on/off error").
 
 | bit  | meaning | evidence |
 |------|---------|----------|
-| 0x01 | resolved/normalised relationship | set 0x5318F |
-| 0x02 | at war | set 0x58A7B / 0x59A61 / 0x3F0E8; cleared 0x5DE98 |
-| 0x08 | grievance pending | set 0x3F0D7 / 0x59AE9; per-turn transition to bit 0x01 when the +0x40 timer expires and `random_int(0,3)==0` (0x53165) |
-| 0x10 | parley cooldown (16 turns; stamp word `[0x53C8+power*2] = turn+0x10` at 0x58075 / 0x5914C) | |
+| 0x01 | resolved/normalised relationship | set ⟦addr⟧ |
+| 0x02 | at war | set ⟦addr⟧ / ⟦addr⟧ / ⟦addr⟧; cleared ⟦addr⟧ |
+| 0x08 | grievance pending | set ⟦addr⟧ / ⟦addr⟧; per-turn transition to bit 0x01 when the +0x40 timer expires and `random_int(0,3)==0` |
+| 0x10 | parley cooldown (16 turns; stamp word `[⟦addr⟧+power*2] = turn+0x10` / ⟦addr⟧) | |
 | 0x20 | met / contacted | |
-| 0x40 | peace treaty in force | set both ways 0x59139 |
-| 0x80 | privateer hidden attribution — a privateer (unit type 0x10) attack sets this instead of the war bit (guard 0x3F092, set 0x3F0A1); cleared/revealed 0x58BE1 | |
+| 0x40 | peace treaty in force | set both ways ⟦addr⟧ |
+| 0x80 | privateer hidden attribution — a privateer (unit type 0x10) attack sets this instead of the war bit (guard ⟦addr⟧, set ⟦addr⟧); cleared/revealed ⟦addr⟧ | |
 
-### 15.4 The treaty-respect counter (PowerRecord +0x40, base 0x8848)
+### 15.4 The treaty-respect counter (`power.treaty_respect`, base ⟦addr⟧)
 
 A plain byte counter, **not** a second bit matrix. On signing a treaty it is
 seeded `2*(6 - difficulty)`, halved if the power has Benjamin Franklin
-(0x59B00–0x59B31); the AI↔AI treaty handler `func_057DC0` writes it 1/0
-(0x57EC5 / 0x57F2D). While nonzero, an AI aborts planned attacks on its treaty
-partner (`func_03ECF0` @0x3F163). The decrement site is unmapped (runtime).
+; the AI↔AI treaty handler ai_treaty_ticker() writes it 1/0
+. While nonzero, an AI aborts planned attacks on its treaty
+partner (ai_war_planner()). The decrement site is unmapped (runtime).
 
 ```formula
 treaty_respect = 2 × ( 6 − difficulty )      (halved when the partner has Franklin)
@@ -2169,63 +2153,62 @@ example: a treaty at Conquistador (d=2) buys 8 turns of AI restraint; with Frank
 
 | address | shape | meaning |
 |---------|-------|---------|
-| 0x940C + p | byte | AI **attitude** toward action (parley willingness input; `(attitude>>2)` vs demand at 0x58C24; target eligibility needs ≥ 8 at 0x57B1A) |
-| 0x941C + p*2 | word | per-power **grievance/finance** word (grievance-score read `[bx-0x6BE4]` in the war-bit path; census writer 0x42245; REF-intervention and succession strength term) |
-| 0x942C + p | byte | per-power **strength/coastal-cargo** census total (succession ranking and SMITE-factor input) |
-| 0x53C8 + p*2 | word | parley-cooldown timestamp (turn + 16) |
-| 0x53DA/0x53DC/0x53DE/0x53E0 | words | REF Regulars / Cavalry / Man-O-War / Artillery counts |
-| 0x53D2 | word | the King/REF (or withdrawn) power id; negative = none (tested 0x23930) |
-| 0x5394 / 0x5396 / 0x5398 | words | current power / render power / human (rebel) power |
+| ⟦addr⟧ + p | byte | AI **attitude** toward action (parley willingness input; `(attitude>>2)` vs demand; target eligibility needs ≥ 8) |
+| ⟦addr⟧ + p*2 | word | per-power **grievance/finance** word (grievance-score read `[bx-⟦addr⟧]` in the war-bit path; census writer ⟦addr⟧; REF-intervention and succession strength term) |
+| ⟦addr⟧ + p | byte | per-power **strength/coastal-cargo** census total (succession ranking and SMITE-factor input) |
+| ⟦addr⟧ + p*2 | word | parley-cooldown timestamp (turn + 16) |
+| ⟦addr⟧/⟦addr⟧/⟦addr⟧/⟦addr⟧ | words | REF Regulars / Cavalry / Man-O-War / Artillery counts |
+| ⟦addr⟧ | word | the King/REF (or withdrawn) power id; negative = none (tested ⟦addr⟧) |
+| ⟦addr⟧ / ⟦addr⟧ / ⟦addr⟧ | words | current power / render power / human (rebel) power |
 
 Power ids 0–3 are the Europeans; ids 4–11 are the tribes in `@TRIBES` order
 (4 = Inca, 5 = Aztec, 6 = Arawak, 7 = Iroquois, 8 = Cherokee, 9 = Apache,
 10 = Sioux, 11 = Tupi — section 19.1). The King's power is not a fifth record: it
-reuses an eliminated European slot, its id held in `[0x53D2]`.
+reuses an eliminated European slot, its id held in `game.king_power`.
 
 
 ## 16. European diplomacy
 
 All power-to-power diplomacy runs through a single 7-kilobyte dispatcher,
-`func_057F4E` (file 0x057F4E, `enter 0xD6`), driving a 48-section GAME.TXT family:
+run_diplomacy_meeting() (file ⟦addr⟧, `enter 0xD6`), driving a 48-section GAME.TXT family:
 42 conversation popups (width 220, rival-leader portrait), 6 announcements/guards
 (width 190, advisor portrait) and 5 support list-sections. Section names are built
-at runtime by strcpy/strcat from a fragment pool at file 0x1F250+ ("MEEK" 0x1F250,
-"MANLY" 0x1F255, "HELLO" 0x1F267, "AHOY" 0x1F26D, "FIRST" 0x1F272, "USA", …),
+at runtime by strcpy/strcat from a fragment pool at file ⟦addr⟧+ ("MEEK" ⟦addr⟧,
+"MANLY" ⟦addr⟧, "HELLO" ⟦addr⟧, "AHOY" ⟦addr⟧, "FIRST" ⟦addr⟧, "USA", …),
 which is why the full names never appear as string literals. Conversations are
-emitted through `func_06F61C` (0x1A1F:0x688), which sets speaker channel 3
-(`[0x1F60]` = power B → portrait sheet MYR0..MYR3.SS); announcements go through
-`func_06F5F2` (0x181F:0x652, advisor channel `[0x1F5E]` → MSS1/MSS2 portraits).
+emitted through ⟦helper⟧, which sets speaker channel 3
+(⟦state⟧ = power B → portrait sheet MYR0..MYR3.SS); announcements go through
+⟦helper⟧ (⟦addr⟧:0x652, advisor channel ⟦state⟧ → MSS1/MSS2 portraits).
 
 ### 16.1 Entry chain
 
 ```text
 unit moves onto a foreign unit/colony tile
-  func_03ECF0 (unit-vs-tile confrontation resolver)  @0x3F82B ──┐
-  func_046FFA (movement processor, unit flag [0x3148]&8) @0x481CB ─┤
+  ai_war_planner() (unit-vs-tile confrontation resolver) ──┐
+  ⟦helper⟧ (movement processor, unit flag ⟦state⟧&8) ─┤
                                                                   ▼
-  func_059B90 (contact evaluator; sole dispatcher call @0x5A2CE)
+  evaluate_contact() (contact evaluator; sole dispatcher call)
                                                                   ▼
-  func_057F4E(humanA, powerB 0..3, unit, neighbor table, force)
-    human-only gate @0x57F8C (cmp [bp+6],4; controller [0x543F+p*0x34]==0)
-    if side A is AI → silently delegates to the AI↔AI ticker func_057DC0 @0x57FA4
+  run_diplomacy_meeting()(humanA, powerB 0..3, unit, neighbor table, force)
+    human-only gate (cmp [bp+6],4; controller [⟦addr⟧+p*0x34]==0)
+    if side A is AI → silently delegates to the AI↔AI ticker ai_treaty_ticker()
 ```
 
 First European-to-European contact also fires woodcut 10 ("MEETING FELLOW
-EUROPEANS") at 0x57FDF, and every WAR*/`@MERCENARY` emission is preceded by the war
-fanfare `func_005108(4)`; first-contact fanfare id is 0x8020+power. String helper
-`func_057A3A` fills `%STRINGn` from `@GREATKINGS`/`@GREATDEEDS`/`@GREATLEADER`/
-`@GREATLEADER2`[power]; `func_057AA2` picks `@MEEKNESS` row 1 "request" / row 2
-"demand". Leader name comes from `0x540E+p*0x34`, region name from `0x5426+p*0x34`,
-and the player's title from the difficulty-rank pointer `[0x8394+diff*2]`.
-Benjamin Franklin (Founding Father 19) — tested via `func_00BC10(p,0x13)` — halves
+EUROPEANS"), and every WAR*/`@MERCENARY` emission is preceded by the war
+fanfare ⟦helper⟧(4)`; first-contact fanfare id is ⟦addr⟧+power. String helper
+⟦helper⟧ fills `%STRINGn` from `@GREATKINGS`/`@GREATDEEDS`/`@GREATLEADER`/
+`@GREATLEADER2`[power]; ⟦helper⟧ picks `@MEEKNESS` row 1 "request" / row 2
+"demand". Leader name comes from ⟦addr⟧+p*0x34`, region name from ⟦addr⟧+p*0x34`,
+and the player's title from the difficulty-rank pointer `[⟦addr⟧+diff*2]`.
+Benjamin Franklin (Founding Father 19) — tested via ⟦helper⟧(p,0x13)` — halves
 demands and prices and cancels AI hostility at 6 sites in this dispatcher
-(e.g. 0x5834E).
+(e.g. ⟦addr⟧).
 
 ### 16.2 Greetings (`@HELLO*`)
 
 Key = `"HELLO"` + (not-met ? (ship ? `"AHOY"` : `"FIRST"`) : tone `"MEEK"`/`"MANLY"`);
-an independent (post-revolution) counterpart selects `"HELLOUSA"`. Key pushes at
-0x588CD–0x58923, emit 0x58939. Representative body (`@HELLOFIRST`):
+an independent (post-revolution) counterpart selects `"HELLOUSA"`. Key pushes–⟦addr⟧, emit ⟦addr⟧. Representative body (`@HELLOFIRST`):
 
 > "Greetings, %STRING0, and welcome to {%STRING1}. We have justly claimed all of
 > this land in the name of {%STRING2}, and we are here to %STRING3. Please do not
@@ -2237,21 +2220,21 @@ Row numbering is the 1-based dialog return. "Row 2" is always the second option
 line of the section text quoted.
 
 **Third-party demands — `@APOSTATES` (attack a European treaty partner) /
-`@HEATHEN` (attack a tribe), key push 0x58989 / 0x589C0, emit 0x58A30:**
+`@HEATHEN` (attack a tribe), key push ⟦addr⟧ / ⟦addr⟧, emit ⟦addr⟧:**
 
 | option | state writes |
 |--------|--------------|
 | row 1 "Never! …" | none (relations with B unchanged; B's attitude worsens via the demand bookkeeping) |
-| row 2 "Yes! We shall crush …" | European target: treaty bit 0x40 cleared + war bit 0x02 set vs the third party (0x58A6A/0x58A7B). Tribe target: tension hit `func_045DF2(tribe, A, +100, 0)` at 0x58A91 |
+| row 2 "Yes! We shall crush …" | European target: treaty bit 0x40 cleared + war bit 0x02 set vs the third party. Tribe target: tension hit adjust_tension()(tribe, A, +100, 0)` |
 
-**Protests — `@PIRACY`(`USA`), push 0x58B0D, emit 0x58B45:**
+**Protests — `@PIRACY`(`USA`), push ⟦addr⟧, emit ⟦addr⟧:**
 
 | option | state writes |
 |--------|--------------|
 | row 1 "What pirates? We have NEVER condoned piracy!" | hidden-attribution bit 0x80 stays set |
-| row 2 "Very well, we shall withdraw our privateers to Europe." | every privateer recalled to Europe and bit 0x80 cleared (0x58B7D–0x58BE1) |
+| row 2 "Very well, we shall withdraw our privateers to Europe." | every privateer recalled to Europe and bit 0x80 cleared |
 
-**Protests — `@SIEGES`(`USA`), push 0x58C99, handler 0x58CD8:** row 2 withdraws
+**Protests — `@SIEGES`(`USA`), push ⟦addr⟧, handler ⟦addr⟧:** row 2 withdraws
 all units adjacent to B's colonies. **Latent bug 1:** `@SIEGESUSA`'s two option
 lines are textually swapped (withdraw is row 1 in the text) but the handler acts
 on row 2 for both sections — so answering "Our forces … shall stay" to an
@@ -2259,67 +2242,67 @@ independent power actually executes the withdrawal.
 
 **Extortion — `@TRIBUTE`(`USA`) / `@WANTSTUFFUSA` / `@PROVOKE` / `@WARMANLY` /
 `@RID`(`USA`):** the AI accumulates a demand from forces-near-colonies, scaled by
-difficulty (16.5). Paying transfers gold at 0x58ED0; a goods demand moves colony
-stock rows at 0x58FB4; refusal escalates to `@PROVOKE`/`@WAR*` ("Prepare for
+difficulty (16.5). Paying transfers gold; a goods demand moves colony
+stock rows; refusal escalates to `@PROVOKE`/`@WAR*` ("Prepare for
 WAR!") and the war bit. **Latent bug 2:** for a non-independent extorter the code
-builds the key `"WANTSTUFF"` at 0x58F56, but GAME.TXT contains no `@WANTSTUFF`
+builds the key `"WANTSTUFF"`, but GAME.TXT contains no `@WANTSTUFF`
 section — only `@WANTSTUFFUSA` exists; the lookup misses.
 
 **Treaty and standing-peace menu — `@WORTHY` (demarcation-treaty proposal,
-0x5911D→0x59120), `@GIVECASH` (0x591D5), `@PEACE*`/`@OLDPEACE*`/`@PEACEUSA`
-(0x59150/0x59283/0x59356 → emit 0x59395):** the peace menu carries four fixed
+⟦addr⟧→⟦addr⟧), `@GIVECASH`, `@PEACE*`/`@OLDPEACE*`/`@PEACEUSA`
+(⟦addr⟧/⟦addr⟧/⟦addr⟧ → emit ⟦addr⟧):** the peace menu carries four fixed
 rows:
 
 | option (`@PEACEMEEK` text) | outcome |
 |----------------------------|---------|
-| "Go in peace, {%STRING1} brothers." | end parley; treaty set both ways (bit 0x40, verb 0x181F:0xA06 @0x59139) + siege stand-down `func_057CE0` + 16-turn cooldown |
-| "First you must withdraw your forces from our colonies!" | withdraw branch → `@WITHDRAW` / `@NOTWITHDRAW` / `@NOTHINGWITHDRAW` / `@MAYBEWITHDRAW` (0x593B7–0x5949B). Withdrawal price = `25*(difficulty+2)*forces`, minimum 100, doubled at war, −50 per unit, halved by Franklin |
-| "How much do you value your worthless lives, heathen swine?" | threat branch → `@GIFTS` ("a gift of {%NUMBER0$} in exchange for your continued forbearance", 0x59700) or `@THREATS` ("We laugh at your feeble threats", 0x59755), possibly `@PROVOKE` war (0x5974C) |
-| "We suggest an alliance." | `@MILITARY` dynamic-row menu (rows built at 0x5976D over lea 0x19FA, shown via `func_06E3D0` @0x59848) → per-target `@NOCONTACT` / `@ALREADYSMITE` / `@SMITEINDIANS` / `@SMITEEUROPE` / `@UNFORTUNATE` (0x5989D–0x59A0F). Purchase: B declares war on target T (bits at 0x59A49–0x59A71), player pays B (0x59AC7), `@MERCENARY` announcement "The {%STRING0} declare war on the {%STRING1}." (0x59AB3). `@UNFORTUNATE` fires when the treasury (+0x2A/+0x2C, 32-bit compare 0x58E1F/0x58E29) cannot cover the promise |
+| "Go in peace, {%STRING1} brothers." | end parley; treaty set both ways (bit 0x40, verb ⟦addr⟧:0xA06) + siege stand-down ⟦helper⟧ + 16-turn cooldown |
+| "First you must withdraw your forces from our colonies!" | withdraw branch → `@WITHDRAW` / `@NOTWITHDRAW` / `@NOTHINGWITHDRAW` / `@MAYBEWITHDRAW`. Withdrawal price = `25*(difficulty+2)*forces`, minimum 100, doubled at war, −50 per unit, halved by Franklin |
+| "How much do you value your worthless lives, heathen swine?" | threat branch → `@GIFTS` ("a gift of {%NUMBER0$} in exchange for your continued forbearance", ⟦addr⟧) or `@THREATS` ("We laugh at your feeble threats", ⟦addr⟧), possibly `@PROVOKE` war |
+| "We suggest an alliance." | `@MILITARY` dynamic-row menu (rows built over lea ⟦addr⟧, shown via ⟦helper⟧) → per-target `@NOCONTACT` / `@ALREADYSMITE` / `@SMITEINDIANS` / `@SMITEEUROPE` / `@UNFORTUNATE`. Purchase: B declares war on target T (bits–⟦addr⟧), player pays B, `@MERCENARY` announcement "The {%STRING0} declare war on the {%STRING1}.". `@UNFORTUNATE` fires when the treasury (+0x2A/+0x2C, 32-bit compare ⟦addr⟧/⟦addr⟧) cannot cover the promise |
 
-### 16.4 The AI↔AI ticker (`func_057DC0`)
+### 16.4 The AI↔AI ticker (ai_treaty_ticker())
 
 Runs every 3rd turn per met pair when the human dispatcher delegates. Peace
 resolution emits `@SIGNTREATY` ("The {%STRING0} and {%STRING1} have signed a
-peace treaty.", 0x57E86, MSS2 advisor), sets bit 0x40 both ways symmetrically
-(0x57EC5/0x57ED0) and seeds treaty-respect = 1; war emits `@DECLAREWAR`
-(0x57F18). Willingness gates: turn ≥ 0x28 (40) at 0x57B10 and at least one of
-the pair's attitude bytes `[0x940C+p] ≥ 8` (0x57B1A/0x57B24). **Latent bug 3:**
-the had-a-treaty branch pushes the key `"CANCELTREATY"` at 0x57F10, which has no
+peace treaty.", ⟦addr⟧, MSS2 advisor), sets bit 0x40 both ways symmetrically
+ and seeds treaty-respect = 1; war emits `@DECLAREWAR`
+. Willingness gates: turn ≥ 0x28 (40) and at least one of
+the pair's attitude bytes `[⟦addr⟧+p] ≥ 8`. **Latent bug 3:**
+the had-a-treaty branch pushes the key `"CANCELTREATY"`, which has no
 GAME.TXT section (only `@CANCELPEACE` exists) — the announcement is silently lost.
 
-### 16.5 Demand accumulation and difficulty scaling (inside `func_057F4E`)
+### 16.5 Demand accumulation and difficulty scaling (inside run_diplomacy_meeting())
 
 ```text
-grace period   : no AI war/refusal before turn 10*(10-diff)          (0x58374)
-demand value   : value * 10*(diff+8) / 100        (×0.8…×1.2)        (0x583A0)
-flat surcharge : += 500*(diff+1)                                     (0x5842B)
-roll term      : (diff+1)*value >> 3 feeds a 0..400 roll             (0x58409)
-attitude term  : += (diff-2)*meeting_value                           (0x58580)
-action gate    : random_int(1,1000) < 200*diff + 100  (10%…90%)      (0x58315)
+grace period   : no AI war/refusal before turn 10*(10-diff)
+demand value   : value * 10*(diff+8) / 100        (×0.8…×1.2)
+flat surcharge : += 500*(diff+1)
+roll term      : (diff+1)*value >> 3 feeds a 0..400 roll
+attitude term  : += (diff-2)*meeting_value
+action gate    : random_int(1,1000) < 200*diff + 100  (10%…90%)
 no-action gate : decline when (attitude>>2) > demand AND
-                 (demand <= 12 OR random_int(0,4) != 0)              (0x58C24)
-afford gate    : demand vs 32-bit gold +0x2A/+0x2C                   (0x58E1F)
+                 (demand <= 12 OR random_int(0,4) != 0)
+afford gate    : demand vs 32-bit gold +0x2A/+0x2C
 ```
 
 ### 16.6 Attacking a treaty partner, movement guards, succession
 
-- Human attacker on a treaty partner (`func_03ECF0`): `@HAVETREATY` ("We have
-  signed a peace treaty… / Cancel Action. / Break Treaty.") at 0x3F130 — row 2
-  sets the war bit (0x3F298), clears the treaty (0x3F2A5) and continues, then the
-  `@CANCELPEACE` announcement (0x3F22F). AI attacker → `@DECLAREWAR` (0x3F262);
+- Human attacker on a treaty partner (ai_war_planner()): `@HAVETREATY` ("We have
+  signed a peace treaty… / Cancel Action. / Break Treaty.") — row 2
+  sets the war bit, clears the treaty and continues, then the
+  `@CANCELPEACE` announcement. AI attacker → `@DECLAREWAR`;
   human victim → `@SNEAK` "Sneak attack by the treacherous {%STRING0}!"
-  (0x3F1B4). A second `@HAVETREATY` site exists in the order-issuing flow
-  `func_021FF2` @0x220CE (UI trigger unmapped).
+. A second `@HAVETREATY` site exists in the order-issuing flow
+  ⟦helper⟧ (UI trigger unmapped).
 - Movement guards: `@NOWARSDURINGREV` ("Foreign colonies cannot be attacked
-  during the {War of Independence}.") emitted at 0x5A912 inside the
-  foreign-colony attack handler `func_05A862`, reached only under the
-  war-declared gate `test [0x5382],1` @0x5A8C8; `@TRADEATWAR` at 0x5A458 and the
-  Jan-de-Witt gate `@TRADEMERCANTILISM` (Founding Father 4) at 0x5A469 in the
-  foreign-colony trade entry `func_05A40E`.
-- `@SUCCESSION` (War of the Spanish Succession, `func_03C638` @0x3C76A, MSS2
+  during the {War of Independence}.") emitted inside the
+  foreign-colony attack handler ⟦helper⟧, reached only under the
+  war-declared gate `test `game.flags`,1`; `@TRADEATWAR` and the
+  Jan-de-Witt gate `@TRADEMERCANTILISM` (Founding Father 4) in the
+  foreign-colony trade entry ⟦helper⟧.
+- `@SUCCESSION` (War of the Spanish Succession, spanish_succession(), MSS2
   advisor): the whole-map power merge of section 18.7. Skipped in multiplayer
-  (gate 0x3C63D).
+.
 
 
 ## 17. Congress, bells, and Founding Fathers
@@ -2328,39 +2311,39 @@ Liberty bells produced by colonies accumulate per power toward the next session
 of the Continental Congress, which appoints one of 25 Founding Fathers. Fathers
 are permanent: nine apply a one-time effect on acquisition; the rest are
 continuous gates tested at each affected mechanic via the owned-bit reader
-`func_00BC10`. The F3 advisor report ("CONTINENTAL CONGRESS ACTIVITIES") shows
+⟦helper⟧. The F3 advisor report ("CONTINENTAL CONGRESS ACTIVITIES") shows
 the running totals.
 
 ### 17.1 Bell accrual
 
-The per-power production phase `func_02F052` first zeroes `bells_per_turn`
-(PowerRecord +0x0E := 0 at 0x2F23F), then loops all colonies owned by the power
-and runs the colony-turn processor `func_02D658` on each. Its sole Congress call
-site, 0x2D6A7, invokes the driver `func_03C322(nation, bells)`: bells accrue
-into `[0x84FC]+0x0C` (pool) and +0x0E (per-turn display). If no candidate is
+The per-power production phase production_phase() first zeroes `bells_per_turn`
+(`power.bells_per_turn` := 0), then loops all colonies owned by the power
+and runs the colony-turn processor update_colony() on each. Its sole Congress call
+site, ⟦addr⟧, invokes the driver update_congress()(nation, bells)`: bells accrue
+into `power`+0x0C` (pool) and +0x0E (per-turn display). If no candidate is
 selected (`+0x12 < 0`) the pick dialog runs; when the pool reaches the cost the
 acquisition runs.
 
-### 17.2 The bell-cost formula (`func_03C282`, file 0x03C282..0x03C322)
+### 17.2 The bell-cost formula (father_cost(), file ⟦addr⟧..⟦addr⟧)
 
 ```text
-diff = [0x53A6]; year = [0x538A]; ff = PowerRecord[power]+0x14
+diff = `game.difficulty`; year = `game.year`; ff = PowerRecord[power]+0x14
 
-if power < 4 and controller [0x543F+power*0x34] == 0:   # human European
-    cost = (diff + 3) * 16                              # 0x3C29C
+if power < 4 and controller [⟦addr⟧+power*0x34] == 0:   # human European
+    cost = (diff + 3) * 16                              # ⟦addr⟧
 else:                                                   # AI
-    cost = (14 - diff) * 8                              # 0x3C2A9
+    cost = (14 - diff) * 8                              # ⟦addr⟧
 for gate in (1600, 1650, 1700, 1750):                   # 0x640/0x672/0x6A4/0x6D6
     if year >= gate: cost += cost >> 1                  # each gate compounds x1.5
-cost = (ff + 1) * cost + 1                              # 0x3C302
-if ff == 0: cost >>= 1                                  # first father half price (0x3C30B)
-if [0x5382] & 1:                                        # after declaring independence
-    cost = diff * 1500 + 2000                           # 0x3C30D (diff*0x5DC + 0x7D0)
+cost = (ff + 1) * cost + 1                              # ⟦addr⟧
+if ff == 0: cost >>= 1                                  # first father half price
+if `game.flags` & 1:                                        # after declaring independence
+    cost = diff * 1500 + 2000                           # ⟦addr⟧ (diff*0x5DC + 0x7D0)
 ```
 
 Cross-check: a human at difficulty 1 holding one father, pre-1600, gives
 `(1+1)*((1+3)*16)+1 = 129` — the observed "Brewster next = 129". The F3 subtitle
-"(NN in MM)" is `NN = cost - pool`, `MM = cost` (F3 body call at 0x37B08); there
+"(NN in MM)" is `NN = cost - pool`, `MM = cost` (F3 body call); there
 is no graphical progress bar anywhere in the game.
 
 ```formula
@@ -2371,34 +2354,34 @@ example: Explorer human, one father, year 1590 → (1+1) × ((1+3)×16) + 1 = 12
 
 ### 17.3 The pick dialog (`@WHICHFREEDOM`)
 
-Candidate build `func_03BFD2`: the father table is the runtime array 0x9652,
+Candidate build pick_father_candidates(): the father table is the runtime array ⟦addr⟧,
 stride 6, loaded from NAMES.TXT `@FATHERS` (25 rows: +0 name id, +2 category,
 +3/+4/+5 era-weight bytes). The era band is year <1600 / 1600–1699 / ≥1700
-(`func_03B95A`, year gates at 0x3B963). For each of the 5 categories
+(current_era(), year gates). For each of the 5 categories
 (Trade/Exploration/Military/Political/Religious, names from NAMES `@FOUNDING`)
 one candidate is drawn by weighted random over the un-owned fathers with nonzero
 current-era weight — `budget = random_int(1, Σweights)`, subtract-walk until
-≤ 0 (0x3BFFC–0x3C046). An empty category produces no row.
+≤ 0. An empty category produces no row.
 
 The dialog (width 190) lists up to five rows "FATHERNAME (Category Adviser)";
 row id = category+1. It **cannot be cancelled** — a result ≤ 0 re-shows the
-dialog (0x3C231). Right-click/help (`[0x1F68]`) opens the Colonizopedia FATHER
-page for the candidate (0x3C24E), then re-shows. The choice is stored to
-`PowerRecord +0x12` (0x3C269). The AI picks its category via `func_03BA5A`
+dialog. Right-click/help (⟦state⟧) opens the Colonizopedia FATHER
+page for the candidate, then re-shows. The choice is stored to
+`power.father_in_progress`. The AI picks its category via ⟦helper⟧
 (internals unmapped).
 
-### 17.4 Acquisition flow (`func_03BC42`)
+### 17.4 Acquisition flow (acquire_father())
 
 On reaching the cost: the owned bit — bit `(f & 7)` of
-`[0x880F + nation*0x13C + (f>>3)]` — is set, and the first-owner byte
-`[0x53A9 + f]` records which power got the father first. Player flow: the
+`[⟦addr⟧ + nation*0x13C + (f>>3)]` — is set, and the first-owner byte
+`[⟦addr⟧ + f]` records which power got the father first. Player flow: the
 `@FREEDOM` popup ("%STRING1 Founding Fathers announce that {%STRING0} has joined
-the Continental Congress!") → the congress splash `func_03BB4A`: full-screen
-CCBKGD.PIK (asset id 0x1253 pushed at 0x3BB6A, no frame/title/OK chrome),
+the Continental Congress!") → the congress splash ⟦helper⟧: full-screen
+CCBKGD.PIK (asset id ⟦addr⟧ pushed, no frame/title/OK chrome),
 portraits drawn **without** the new father, present, then the bit is set and the
 screen redrawn — the new portrait "lights up" — with sound 8 and a wait-key
-(0x3BC14); then the pedia FATHER page (0x3BD26). Bookkeeping: `+0x14`++,
-`+0x12 := 0xFFFF`. Portraits are the 25 sheets CC-00..CC-24.SS (1:1 with
+; then the pedia FATHER page. Bookkeeping: `+0x14`++,
+`+0x12 := ⟦addr⟧. Portraits are the 25 sheets CC-00..CC-24.SS (1:1 with
 `@FATHERS` order); each owned portrait is blitted at the coordinates baked into
 its own sheet frame-0 descriptor (`es:[bx+0x46/0x48]`) — positions live in the
 art, not the code.
@@ -2407,32 +2390,32 @@ Per-father **instant** effects applied by the acquisition dispatcher:
 
 | id | Father | one-time effect (site) |
 |----|--------|------------------------|
-| 1 | Jakob Fugger | clear all boycotts: PowerRecord +0x20 := 0 (0x3BD45) |
-| 6 | Francisco Coronado | reveal every colony on the map (0x3BF54) |
-| 9 | Sieur de La Salle | free Stockade for own colonies of size ≥ 3 (0x3BD4A) |
-| 14 | John Paul Jones | spawn a free Frigate, unit type 0x11 (0x3BD8B) |
-| 16 | Pocahontas | reset all native attitudes to content (0x3BDDD) |
-| 18 | Simón Bolívar | revolution meter [0x53D0] += 20, cap 100 (0x3BE64) |
-| 20 | William Brewster | dock pool: Petty Criminals/Indentured Servants → Free Colonists (0x3BF85) |
-| 22 | Jean de Brébeuf | all own missions become expert: settlement +0x05 \|= 0x10 (0x3BE77) |
-| 24 | Bartolomé de las Casas | all own Indian Converts (class 0x1B) → Free Colonists 0x1C (0x3BEB2) |
+| 1 | Jakob Fugger | clear all boycotts: `power.boycotts` := 0 |
+| 6 | Francisco Coronado | reveal every colony on the map |
+| 9 | Sieur de La Salle | free Stockade for own colonies of size ≥ 3 |
+| 14 | John Paul Jones | spawn a free Frigate, unit type 0x11 |
+| 16 | Pocahontas | reset all native attitudes to content |
+| 18 | Simón Bolívar | revolution meter `game.revolution_meter` += 20, cap 100 |
+| 20 | William Brewster | dock pool: Petty Criminals/Indentured Servants → Free Colonists |
+| 22 | Jean de Brébeuf | all own missions become expert: settlement +0x05 \|= 0x10 |
+| 24 | Bartolomé de las Casas | all own Indian Converts (class 0x1B) → Free Colonists 0x1C |
 
 All other fathers are continuous gates tested at their own mechanic (e.g.
-Washington auto-promotion 0x5C758, Franklin's six diplomacy sites, Penn crosses
-×1.5 at 0xA16B, Jefferson bells +50% via owned-bit 0x0F).
+Washington auto-promotion ⟦addr⟧, Franklin's six diplomacy sites, Penn crosses
+×1.5 at ⟦addr⟧, Jefferson bells +50% via owned-bit 0x0F).
 
 ### 17.5 The F3 Continental Congress screen
 
 Reached from REPORTS → F3 (menu letter 'B') and as the post-acquisition report.
-Body `func_037A20` (file 0x37A10..0x3807D); overlay on CCBKGD.PIK.
+Body ⟦helper⟧; overlay on CCBKGD.PIK.
 
 ```python
 regions = [
     (0,   0, 320, 10, "Title: CONTINENTAL CONGRESS ACTIVITIES", "text", "fill (0,0,320,5) c=0x90; centered"),
     (0,  10, 320, 20, "Next Session subtitle: (<FF>) (NN in MM)", "text", "text-only progress"),
-    (0,  36, 320,  8, "Rebel/Tory Sentiment strip",              "text", "PowerRecord +0x02"),
+    (0,  36, 320,  8, "Rebel/Tory Sentiment strip",              "text", "`power.rebel_sentiment`"),
     (0,  44, 320, 32, "Bell row (bells/turn)",                   "art",  "sprite 0x3F filled / 0x38 empty, span 300"),
-    (0,  76, 320, 40, "REF rows (2 x 4-column count badges)",    "art",  "counts 0x53DA..0x53E8; icons runtime BSS [0x52xx]"),
+    (0,  76, 320, 40, "REF rows (2 x 4-column count badges)",    "art",  "counts ⟦addr⟧..⟦addr⟧; icons runtime BSS [0x52xx]"),
     (0, 116, 320, 60, "Founding Fathers list (plain text)",      "text", "owned-father names, marker sprite 0x61"),
     (290,184, 26, 14, "OK",                                      "hit",  "dismiss"),
 ]  # 320x200 Mode 13h; band rects (measured; not byte-cited), text params byte-cited
@@ -2440,137 +2423,135 @@ regions = [
 
 Fonts and inks: whole body FONTTINY; title color 0x90 (pale yellow), body 0x92
 (bright yellow) against the CCBKGD palette; left margin x=4, y seed 25
-(0x37A4E/0x37A49), line pitch = glyph height 6 + 2 = 8 px (0x37BD1–0x37BDB).
-The bell row uses the shared proportional count-strip verb 0x181F:0x236
-(`func_002EE4`): `stride = (300 - sprite_w)/(count-1)` clamped to
+, line pitch = glyph height 6 + 2 = 8 px.
+The bell row uses the shared proportional count-strip verb ⟦addr⟧:0x236
+(⟦helper⟧): `stride = (300 - sprite_w)/(count-1)` clamped to
 `[1, sprite_w+1]` — many bells overlap toward 1 px pitch; fullness is filled-vs-
-empty sprites, never a gauge. REF land badges at 0x37E1C (counts
-[0x53DA]/[0x53DC]/[0x53E0]/[0x53DE] — the screen draws Artillery before
-Man-O-War), war-stage naval badges at 0x37EFE (counts [0x53E2]..[0x53E8]); each
-row is a 4-column proportional badge layout (open 0x181F:0x218, flush 0x22C,
+empty sprites, never a gauge. REF land badges (counts
+`ref.regulars`/`ref.cavalry`/`ref.artillery`/`ref.man_o_war` — the screen draws Artillery before
+Man-O-War), war-stage naval badges (counts ⟦state⟧..⟦state⟧); each
+row is a 4-column proportional badge layout (open ⟦addr⟧:0x218, flush 0x22C,
 span 300). No US-flag sprite is drawn anywhere in the F3 body or the reveal
 popup (byte-verified negative).
 
 
 ### 17.6 Crosses and immigration
 
-The crosses→immigrant step is `func_0363A2` (0x0363A2..0x036573):
-accumulated crosses live at `PowerRecord +0x2E` (add 0x0363F5, reset
-0x03645E) and the threshold at `+0x30` (written 0x0363EF from the return of
-`func_035D9A`). A new colonist appears on the Europe dock when the
-accumulator exceeds the threshold (0x036404), announced through `@UNREST`
+The crosses→immigrant step is check_immigration():
+accumulated crosses live at `power.crosses` and the threshold at `+0x30` (written ⟦addr⟧ from the return of
+immigration_threshold()). A new colonist appears on the Europe dock when the
+accumulator exceeds the threshold, announced through `@UNREST`
 ("Religious unrest in %COUNTRY causes increased emigration…") with tutorial
 T5 chained after.
 
-**The threshold** (`func_035D9A`): `accum` = Σ of the player's colony
-populations (+0x1F, loop 0x035DB0) + 1 per owned unit (0x035DD8..0x035DF8);
-then `if accum < 4000: accum ×= 2` (0x035E35), `+= 8` (0x035E38), hard clamp
-4000 (0x035E44); difficulty scale `×(8−d)/8` for the human (0x035E5D);
-**England ×2/3** (0x035E75..0x035E7B). A bigger empire therefore *slows*
+**The threshold** (immigration_threshold()): `accum` = Σ of the player's colony
+populations + 1 per owned unit;
+then `if accum < 4000: accum ×= 2`, `+= 8`, hard clamp
+4000; difficulty scale `×(8−d)/8` for the human;
+**England ×2/3**. A bigger empire therefore *slows*
 immigration. The main per-turn crosses *accrual* into `+0x2E`
 (church/cathedral production) is explicitly unidentified in the repo — TBD.
-William Penn multiplies colony cross production ×1.5 (0xA16B).
+William Penn multiplies colony cross production ×1.5.
 
 ```formula
 threshold = clamp₄₀₀₀( (Σ colony population + units) × 2 + 8 ) × (8 − d) ÷ 8      England: × 2⁄3
 example: 15 population + 8 units = 23 → ×2 +8 = 54 → Explorer 54×7÷8 = 47 → England 47×2÷3 = 31 crosses needed
 ```
 
-**Who arrives**: the dock holds 3 candidates at `PowerRecord +0x02..+0x04`;
-the arrival picks slot `random_int(0,2)` (0x036462) and the slot refills from
-the generator (`func_034C24` path): a 3-tier ladder with threshold
+**Who arrives**: the dock holds 3 candidates at `power.rebel_sentiment`..+0x04`;
+the arrival picks slot `random_int(0,2)` and the slot refills from
+the generator (next_immigrant_class() path): a 3-tier ladder with threshold
 `(lvl+3)>>1` where `lvl` = difficulty for the human — `random_int(1,15)` →
 Petty Criminal 0x1A, else `random_int(1,10)` → Indentured Servant 0x19, else
 `random_int(1,8)` → Free Colonist 0x1C; **William Brewster** (FF 0x14)
-upgrades the criminal/servant results to Free Colonists (0x34C79) and also
-rewrites the standing dock pool (0x3BF85) and unlocks choosing the emigrant
-(0x36437). Harder difficulty ⇒ more low-tier arrivals. Every fourth turn
+upgrades the criminal/servant results to Free Colonists and also
+rewrites the standing dock pool and unlocks choosing the emigrant
+. Harder difficulty ⇒ more low-tier arrivals. Every fourth turn
 (`turn&3 == 0`) the generator instead draws professional types from
 per-power counters. Recruit gold prices come from the pool word
-`0x978C + slot·6 + 4` (reads 0x035114/0x051E52) — a documented in-repo
+⟦addr⟧ + slot·6 + 4` (reads ⟦addr⟧/⟦addr⟧) — a documented in-repo
 conflict flags the same table as the Europe ship/artillery purchase catalog
 (Artillery 500, Caravel 1000, Merchantman 2000, Galleon 3000, Privateer
-2000, Frigate 5000, fills 0x07497E..0x0749D8); only Artillery escalates
+2000, Frigate 5000, fills ⟦addr⟧..⟦addr⟧); only Artillery escalates
 (+100 per unit bought, `+0x1E` counter). The F2 adviser gauge renders
-`+0x2E of +0x30` ("(%d of %d)", `func_037958`).
+`+0x2E of +0x30` ("(%d of %d)", ⟦helper⟧).
 
 ## 18. Revolution, the King, and multiplayer
 
 The endgame pivots on one meter, one flag word and one power id: the national
-Sons-of-Liberty meter `[0x53D0]` (0..100), the game-state bits `[0x5382]`, and
-the King/REF power `[0x53D2]`. Declaring independence flips `[0x5382]` bit 0,
+Sons-of-Liberty meter `game.revolution_meter` (0..100), the game-state bits `game.flags`, and
+the King/REF power `game.king_power`. Declaring independence flips `game.flags` bit 0,
 turns the Crown's standing Expeditionary Force into an on-map power, and is won
 by attrition, not by timer.
 
-### 18.1 The revolution meter `[0x53D0]`
+### 18.1 The revolution meter `game.revolution_meter`
 
-Initialized 0 at new game (0x75620); Bolívar adds +20 capped at 100 (0x3BE64);
-the king's tax-severity score reads it (0x361F9). The endgame dispatcher at
-0x2391C clamps it to 75 (0x2392A) and routes: below 75 with `[0x53D2] < 0` → the
+Initialized 0 at new game; Bolívar adds +20 capped at 100;
+the king's tax-severity score reads it. The endgame dispatcher clamps it to 75 and routes: below 75 with `game.king_power` < 0` → the
 Spanish-Succession arm; at/above 75 → the revolution handlers. In hot-seat
-multiplayer (`[0x5381]&0x80`) the pre-war state is held at this 75 cap and the
+multiplayer (⟦state⟧&0x80`) the pre-war state is held at this 75 cap and the
 auto-revolution arms are suppressed.
 
 ### 18.2 Declaring independence
 
 | event_id | string_key | trigger | condition | options | outcomes | arms |
 |---|---|---|---|---|---|---|
-| declare-1 | `@ALREADYREVOLUTION` | Declare-Independence command → `func_03E984` | `[0x5382]&1` already set (0x3E988) | — | none (return) | — |
-| declare-2 | `@TOOTORY` | same | `[0x53D0] < 50` (cmp 0x32 at 0x3E99E) | — | shows "Only {%NUMBER0%%} of the colonists support the independence movement… We cannot start a rebellion against the King until the {majority} is behind us."; return | — |
-| declare-3 | `@MULTIREV` | same, hot-seat only | `[0x5381]&0x80` (0x3E9C5) | "Declare independence" / "Never Mind" | on confirm: `and [0x5381],0x7F` (0x3E9D3) — the game demotes to single-player exactly as the text warns | falls through to declare-4 |
-| declare-4 | `@DECLARE` | same | SoL ≥ 50 | "Never! That would be treasonous! God save the King!" / "Yes! Give me liberty or give me death!" | rebel power `[0x5398] := [0x5394]` (0x3E9D8); on row 2 → `func_03DE46` (0x3EA06) | declaration |
-| declare-5 | `@INDEPENDENCE` | `func_03DE46` | — | — | `[0x5382] \|= 1` (0x3E031); declaration year to `[0x53A7]/[0x53A8]` (0x3DE65); initial REF dispatch | war |
+| declare-1 | `@ALREADYREVOLUTION` | Declare-Independence command → declaration_gate() | `game.flags`&1` already set | — | none (return) | — |
+| declare-2 | `@TOOTORY` | same | `game.revolution_meter` < 50` | — | shows "Only {%NUMBER0%%} of the colonists support the independence movement… We cannot start a rebellion against the King until the {majority} is behind us."; return | — |
+| declare-3 | `@MULTIREV` | same, hot-seat only | ⟦state⟧&0x80` | "Declare independence" / "Never Mind" | on confirm: `and ⟦state⟧,0x7F` — the game demotes to single-player exactly as the text warns | falls through to declare-4 |
+| declare-4 | `@DECLARE` | same | SoL ≥ 50 | "Never! That would be treasonous! God save the King!" / "Yes! Give me liberty or give me death!" | rebel power `game.rebel_power` := `game.current_power`; on row 2 → declare_independence() | declaration |
+| declare-5 | `@INDEPENDENCE` | declare_independence() | — | — | `game.flags` \|= 1`; declaration year to ⟦state⟧/⟦state⟧; initial REF dispatch | war |
 
-### 18.3 Game-state bits `[0x5382]` (word; save block #3)
+### 18.3 Game-state bits `game.flags` (word; save block #3)
 
 | bit | meaning |
 |-----|---------|
-| 0x0001 | War of Independence declared (stage 1) |
-| 0x0002 | foreign intervention active (stage 2; set by `func_03D948` @0x3DA22) |
-| 0x0008 | independence WON (set 0x2F55A; gates the score bonus) |
-| 0x0010 | REF-arrival phase flag (set 0x2FAE0); also gates the Congress driver off |
-| 0x0020 | forced/end-stage flag (set by the dispatcher once SoL≥75+declared+intervention, and by `@FORCED` stage d) |
-| 0x0080..0x8000 | the Game Options word (high-byte rows: Tutorial Hints 0x0080, Water Cycling 0x0100 inverted, Combat Analysis 0x0200, Autosave 0x0400, End of Turn 0x0800, Fast Slide 0x1000, cheat master 0x2000, Show Foreign 0x4000, Show Indian 0x8000) |
+| ⟦addr⟧ | War of Independence declared (stage 1) |
+| ⟦addr⟧ | foreign intervention active (stage 2; set by declare_intervention()) |
+| ⟦addr⟧ | independence WON (set ⟦addr⟧; gates the score bonus) |
+| ⟦addr⟧ | REF-arrival phase flag; also gates the Congress driver off |
+| ⟦addr⟧ | forced/end-stage flag (set by the dispatcher once SoL≥75+declared+intervention, and by `@FORCED` stage d) |
+| ⟦addr⟧..⟦addr⟧ | the Game Options word (high-byte rows: Tutorial Hints ⟦addr⟧, Water Cycling ⟦addr⟧ inverted, Combat Analysis ⟦addr⟧, Autosave ⟦addr⟧, End of Turn ⟦addr⟧, Fast Slide ⟦addr⟧, cheat master ⟦addr⟧, Show Foreign ⟦addr⟧, Show Indian ⟦addr⟧) |
 
-Victory: the per-turn resolver at 0x2F464 (runs while bit 0 set, bit 3 clear)
+Victory: the per-turn resolver (runs while bit 0 set, bit 3 clear)
 counts surviving King-owned units of types {6, 8, 0xB}; when the count falls
-below the threshold (1 normally, 8 when bit 0x40 is set; 0x2F4D2–0x2F4E5) and
-the intervention tally clears, `or [0x5382],8` (0x2F55A) — the rebels win, the
-message built from the rebel record `[0x5398]*0x34+0x540E` (0x2F510). If
+below the threshold (1 normally, 8 when bit 0x40 is set; ⟦addr⟧–⟦addr⟧) and
+the intervention tally clears, `or `game.flags`,8` — the rebels win, the
+message built from the rebel record `game.rebel_power`*0x34+⟦addr⟧. If
 independence is won and was declared before 1780, the score gains
-`(1780 - declaration_year) * 2` (0x3A609).
+`(1780 - declaration_year) * 2`.
 
 ### 18.4 The King's power and the `@FORCED` staged advancer
 
-The REF exists pre-war only as the four count globals (0x53DA..0x53E0), seeded
-at new game by `func_0755CC` (`8d+15 / 5d+5 / 3d+2 / 6d+2` for difficulty d) and
-grown by `func_03E162` (royal fund +0x22 accrues `(8*diff+10)*2^era` per turn;
+The REF exists pre-war only as the four count globals, seeded
+at new game by end_of_turn() (`8d+15 / 5d+5 / 3d+2 / 6d+2` for difficulty d) and
+grown by grow_royal_fund() (royal fund +0x22 accrues `(8*diff+10)*2^era` per turn;
 at ≥ 1800 buy one unit, subtract 1800, slot by ratio). At the war transition the
-Crown becomes a real on-map power whose id lands in `[0x53D2]`.
+Crown becomes a real on-map power whose id lands in `game.king_power`.
 
-Cheat id 0x68 "Advance Revolution Status" (handler 0x2391C, DEBUG.TXT `@FORCED`)
+Cheat id 0x68 "Advance Revolution Status" (handler ⟦addr⟧, DEBUG.TXT `@FORCED`)
 advances one stage per invocation and documents the staging exactly:
 
 | stage | condition | action |
 |-------|-----------|--------|
-| a | `[0x53D0] < 75` | set meter to 75 + create the REF power if none (0x191F:0x364 → `func_03C638`) |
-| b | — | declare independence (0x191F:0x356 → `func_03DE46`, `[0x5382]|=1`) |
-| c | — | next war stage (0x191F:0x348 → `func_03D948`, `|=2`) |
-| d | — | `[0x5382] |= 0x20` + show the `@FORCED` text |
+| a | `game.revolution_meter` < 75` | set meter to 75 + create the REF power if none (⟦addr⟧:0x364 → spanish_succession()) |
+| b | — | declare independence (⟦addr⟧:0x356 → declare_independence(), `game.flags`|=1`) |
+| c | — | next war stage (⟦addr⟧:0x348 → declare_intervention(), `|=2`) |
+| d | — | `game.flags` |= 0x20` + show the `@FORCED` text |
 
-Stages b–d are blocked while `[0x5381]&0x80` (multiplayer).
+Stages b–d are blocked while ⟦state⟧&0x80` (multiplayer).
 
 ### 18.5 The King audience screen
 
-One renderer, `func_075352` (file 0x075352), paints the audience/tax-demand, the
+One renderer, ⟦helper⟧, paints the audience/tax-demand, the
 loss and the win screens. Assets: backdrop **KINGLSS1.PIK** (throne room, empty
 chair, blank scroll); outcome-selected foreground sheet **KING1.SS** (audience) /
 KINGLOSE / KINGWIN — the king-and-dog figure, 189×187 — plus the nation banner
 sheet (nation stem + digit, e.g. ENGLND1.SS, the throne-canopy banner). Variant
-select at 0x75430 from the two stack args; nation prefix from `[0x5398]`
-(switch 0x753BB: ENGLND/FRANCE/SPAIN/DUTCH). Callers: audience sequencer
-`func_075594` (pushes 1,1 → KING1), and the King-event orchestrator `func_02F3A2`
-(loss at 0x2F552, win at 0x2F6A8).
+select from the two stack args; nation prefix from `game.rebel_power`
+(switch ⟦addr⟧: ENGLND/FRANCE/SPAIN/DUTCH). Callers: audience sequencer
+⟦helper⟧ (pushes 1,1 → KING1), and the King-event orchestrator periodic_phase()
+(loss, win).
 
 ```python
 regions = [
@@ -2582,13 +2563,13 @@ regions = [
 ]  # 320x200 Mode 13h
 ```
 
-FONTKING is loaded at 0x754F6; the pen stores (242,47) at 0x75526/0x7552C are
+FONTKING is loaded; the pen stores (242,47)/⟦addr⟧ are
 engine register values, not the on-screen origin — the glyph runner re-lays the
-text under mode flags `[0x1F56]|=0x18` (0x75538). Body text is runtime-built by
-`func_02F3A2` from the GAME.TXT tax family; the pen/ink is restored to the
-FONTINTR color on exit (0x75576). Fade-in via the palette verb at 0x75553.
+text under mode flags ⟦state⟧|=0x18`. Body text is runtime-built by
+periodic_phase() from the GAME.TXT tax family; the pen/ink is restored to the
+FONTINTR color on exit. Fade-in via the palette verb.
 
-Tax-event branch keys (GAME.TXT, `@width=190`, speaker channel `[0x1F5C]=8` →
+Tax-event branch keys (GAME.TXT, `@width=190`, speaker channel ⟦state⟧=8` →
 KING1.SS): `@KINGTAX` ("…we have graciously decided to raise your tax rate by
 {%NUMBER0%%}. The tax rate is now {%NUMBER1%%}. If you wish, you may kiss our
 royal pinky ring."), `@KINGRAISE` (punitive raise for demanding lower taxes),
@@ -2600,68 +2581,67 @@ royal pinky ring."), `@KINGRAISE` (punitive raise for demanding lower taxes),
 ### 18.6 Hot-seat multiplayer
 
 - **Unlock:** environment `SET COLONIZE=MULTI` (`getenv` pair at DGROUP
-  0x2064/0x206D) → `[0x201E]=1` (0x70EDD–0x70EFB; also a CLI switch 0x70D0E),
-  adding a 5th game-start menu entry (mode 4, 0x70B9F).
-- **`@MULTI`** (new-game setup `func_07431E` @0x74531): "Select powers to be
+  ⟦addr⟧/⟦addr⟧) → ⟦state⟧=1` (⟦addr⟧–⟦addr⟧; also a CLI switch ⟦addr⟧),
+  adding a 5th game-start menu entry (mode 4, ⟦addr⟧).
+- **`@MULTI`** (new-game setup ⟦helper⟧): "Select powers to be
   controlled by human players." — a checkbox dialog; each checked power gets
-  controller `[0x543F+p*0x34] = 0` (read from the checkbox bitmask `[0x1F54]`);
-  more than one human sets the hot-seat flag `[0x5381] |= 0x80` (0x745D5); none
+  controller `[⟦addr⟧+p*0x34] = 0` (read from the checkbox bitmask ⟦state⟧);
+  more than one human sets the hot-seat flag ⟦state⟧ |= 0x80`; none
   checked defaults to England.
-- **`@MULTINEXT`** (turn loop @0x597C): between human turns the screen blanks
+- **`@MULTINEXT`** (turn loop ): between human turns the screen blanks
   and shows "^^{%STRING0} Player Turn … Press any key for {%STRING0} player's
   turn." (advisor 2), then the view power switches and re-centers.
-- Consumers of `[0x5381]&0x80`: rebel sentiment clamped to 75 with
-  auto-revolution suppressed (0x2391C region); `@FORCED` stages b–d blocked; the
-  Spanish-Succession merge skipped (0x3C63D); `@MULTIREV` demotes the game to
+- Consumers of ⟦state⟧&0x80`: rebel sentiment clamped to 75 with
+  auto-revolution suppressed; `@FORCED` stages b–d blocked; the
+  Spanish-Succession merge skipped; `@MULTIREV` demotes the game to
   single-player on a confirmed declaration (18.2).
 
 ### 18.7 The War of the Spanish Succession merge
 
-Handler `func_03C638` (event id 0x68 in the master event dispatcher; gate:
-`[0x53D0] < 75` clamped, `[0x53D2] < 0`, single-player only). It ranks the four
-powers by `3*[0x9418+p] + 2*[0x9298+p] + [0x9410+p]` (0x3C655–0x3C66B, sort
-0x3C68E), picks the weakest eligible AI as ceding and the strongest as
+Handler spanish_succession() (event id 0x68 in the master event dispatcher; gate:
+`game.revolution_meter` < 75` clamped, `game.king_power` < 0`, single-player only). It ranks the four
+powers by `3*[⟦addr⟧+p] + 2*[⟦addr⟧+p] + [⟦addr⟧+p]` (⟦addr⟧–⟦addr⟧, sort
+⟦addr⟧), picks the weakest eligible AI as ceding and the strongest as
 beneficiary, emits `@SUCCESSION` ("War of the Spanish Succession ends in Europe!
 {%STRING0}, ravaged by war, agrees to cede %STRING1 to the {%STRING2}. Treaty of
 Utrecht specifies that all {%STRING3} possessions in the New World now fall
-under {%STRING2} rule.", 0x3C76A), then rewrites every map-tile owner nibble
-(0x3C7AF–0x3C80C), every unit owner (0x3C81D), every colony owner (+0x1A,
-0x3C8A0), and a third owner-nibble table (0x3C8CA–0x3C8FE). Aftermath: the
-ceding power's controller := 2 "eliminated" (0x3C91A) and its id stored to
-`[0x53D2]` (0x3C922); the power thereafter renders as "(Withdrawn from New
+under {%STRING2} rule.", ⟦addr⟧), then rewrites every map-tile owner nibble
+, every unit owner, every colony owner, and a third owner-nibble table. Aftermath: the
+ceding power's controller := 2 "eliminated" and its id stored to
+`game.king_power`; the power thereafter renders as "(Withdrawn from New
 World)" (LABELS `@MISC`). What transfers is exactly tiles, units, colonies and
 the third owner table — no treasury, father, trade-route or Europe-dock
 transfer is documented. The gate that *enqueues* event 0x68 is an unresolved
-residual (the dispatcher `func_0235D6` has no located caller); the same
+residual (the dispatcher ⟦helper⟧ has no located caller); the same
 handler is reachable from cheat `@FORCED` stage (a) (§18.4).
 
 ### 18.8 The tax petition — how the King eases (or punishes)
 
-Handler `func_034AE0` (file 0x034AE0..0x034B7D, dispatched as case 4 of the
-king-action switch `func_034C24` at 0x34C05, inside turn phase 4). Three
+Handler tax_petition() (file ⟦addr⟧..⟦addr⟧, dispatched as case 4 of the
+king-action switch next_immigrant_class(), inside turn phase 4). Three
 guards, then a roll, then one of three outcomes:
 
-- **Guard 1** (0x034AE8): return if `tax_pct ≤ 1`. **Candidate** raise =
-  `delta·turn_factor` with `delta = ((diff & 0xFE) << 1) + 4` (0x034AEE) and
-  `turn_factor = turn/400 + 1` (0x034AFC).
-- **Guard 2** (0x034B10): if `candidate + 5 ≥ tax_pct` → **@KINGRAISE** path.
-- **Guard 3** (0x034B1A): if `tax_pct ≤ candidate` → **@KINGNOTHING**
-  (0x034B33: "…kiss our royal pinky ring.", no options).
-- **Roll** (0x034B25): `random_int(1, diff+1)`; result 1 → **@KINGLOWER**
+- **Guard 1**: return if `tax_pct ≤ 1`. **Candidate** raise =
+  `delta·turn_factor` with `delta = ((diff & 0xFE) << 1) + 4` and
+  `turn_factor = turn/400 + 1`.
+- **Guard 2**: if `candidate + 5 ≥ tax_pct` → **@KINGRAISE** path.
+- **Guard 3**: if `tax_pct ≤ candidate` → **@KINGNOTHING**
+  (⟦addr⟧: "…kiss our royal pinky ring.", no options).
+- **Roll**: `random_int(1, diff+1)`; result 1 → **@KINGLOWER**
   (probability `1/(diff+1)` — the Crown eases more readily at low
   difficulty). Lower amount = `random_int(5 − diff, 1)` negated for display
-  (0x034B44..0x034B5C: "…lower your tax rate by {%NUMBER0%%}").
+  (⟦addr⟧..⟦addr⟧: "…lower your tax rate by {%NUMBER0%%}").
 - **@KINGRAISE** amount = `random_int(diff, 1) · 2` — the punitive raise is
-  doubled (0x034B62..0x034B7D: "Your DARE to demand lower taxes!…"), and it
+  doubled (⟦addr⟧..⟦addr⟧: "Your DARE to demand lower taxes!…"), and it
   carries the `@TAXOPTIONS` pair, so it can chain into a Tea Party (§23.4).
 
 Open items, stated plainly: no player-facing "request lower taxes" control is
 documented anywhere in the UI specs (the "player demands" framing is
-narrative); the outbound announce goes through the overlay at `0x191F:0xAE0`
+narrative); the outbound announce goes through the overlay at ⟦addr⟧:0xAE0`
 whose internal tax write is untraced; the per-turn call frequency of
-`func_034AE0` is unmapped. The tax write-site clamp itself is byte-cited: any
-applied delta lands at `func_034318` 0x03434C with the hard clamp at 75
-(0x03434F).
+tax_petition() is unmapped. The tax write-site clamp itself is byte-cited: any
+applied delta lands at apply_tax_change() ⟦addr⟧ with the hard clamp at 75
+.
 
 ```formula
 candidate raise = ( ((d & 0xFE) × 2) + 4 ) × ( turn÷400 + 1 )        P( ease ) = 1 ÷ (d + 1)
@@ -2674,31 +2654,31 @@ example: Conquistador at turn 500 → candidate (2×2+4)×2 = 16; ease odds 1-in
 Two distinct offers, both priced per unit in hundreds of gold. (The manual's
 §23.4 event table has no mercenary row — this subsection is the coverage.)
 
-**Peacetime** (`func_03E664`, 0x03E664..0x03E842, turn phase 1): gated off
-once the revolution starts (`[0x5382]&1`), then a **1-in-21** roll
-(`random_int(0,0x14) != 0` → return, 0x03E66A); the offering power must hold a
-peace treaty (relation bit 0x40, 0x03E6A2). Composition: `count =
+**Peacetime** (king_phase(), ⟦addr⟧..⟦addr⟧, turn phase 1): gated off
+once the revolution starts (`game.flags`&1`), then a **1-in-21** roll
+(`random_int(0,0x14) != 0` → return, ⟦addr⟧); the offering power must hold a
+peace treaty (relation bit 0x40, ⟦addr⟧). Composition: `count =
 random_int(1,3)` plus coin-flips that either add one more or set 1–2
-artillery (0x03E6C8..0x03E703). **Fee**: `gold_per_unit = ((diff + 4)·2 +
-random_int(0,6)) · 100` (0x03E713), `price = gold_per_unit · (count +
-2·artillery)` (0x03E726..0x03E736). Offer dialog `@MERCENARIES` ("The King of
+artillery. **Fee**: `gold_per_unit = ((diff + 4)·2 +
+random_int(0,6)) · 100`, `price = gold_per_unit · (count +
+2·artillery)`. Offer dialog `@MERCENARIES` ("The King of
 %STRING0 has offered to send us a force of trained {mercenaries}… No thank
 you. / Pay {%NUMBER0$}."); arrival `@MERCS`. Delivered units are Veteran
-Dragoons and Veteran Artillery on a Man-O-War (type table `func_03C4A2`).
+Dragoons and Veteran Artillery on a Man-O-War (type table ⟦helper⟧).
 
 ```formula
 peacetime fee = ( (d + 4) × 2 + random(0..6) ) × 100 per unit
 example: Conquistador, middle roll 3 → (12+3)×100 = 1,500 gold per Dragoon offered
 ```
 
-**Wartime** (`func_03E442`, 0x03E442..0x03E663): a per-power one-shot bit
-(PowerRecord byte 0, bit 0x08 — set on the first eligible call at 0x03E4CD,
+**Wartime** (offer_wartime_mercenaries(), ⟦addr⟧..⟦addr⟧): a per-power one-shot bit
+(PowerRecord byte 0, bit 0x08 — set on the first eligible call,
 offer possible only from the second call on), then a **1-in-3** gate
-(0x03E4E8). Composition: `count = random_int(2, (4−diff)/2 + 2)` (0x03E512)
-plus exactly one of Continental Cavalry or Artillery (0x03E52E..0x03E546).
-**Fee**: `gold_per_unit = ((diff + 3)·2 + random_int(0,6)) · 100` (0x03E558),
-`price = gold_per_unit · (count + 2)` (0x03E56B). The offer only appears if
-affordable (`price ≤ treasury +0x2A`, 0x03E5FD); paying debits at 0x03E651.
+. Composition: `count = random_int(2, (4−diff)/2 + 2)`
+plus exactly one of Continental Cavalry or Artillery.
+**Fee**: `gold_per_unit = ((diff + 3)·2 + random_int(0,6)) · 100`,
+`price = gold_per_unit · (count + 2)`. The offer only appears if
+affordable (`price ≤ treasury +0x2A`, ⟦addr⟧); paying debits.
 Wartime types: Veteran Continental Army + Continental Cavalry / Artillery.
 
 ```formula
@@ -2706,35 +2686,35 @@ wartime fee = ( (d + 3) × 2 + random(0..6) ) × 100 per unit   ×   ( count + 2
 example: Conquistador war offer, roll 3 → (10+3)×100 = 1,300 per unit; 3 troops +2 → 6,500 gold total
 ```
 
-**Landing** (`func_03D510`, shared with the free intervention force): arrival
+**Landing** (land_intervention_force(), shared with the free intervention force): arrival
 colony is a population-weighted random pick over up to 10 coastal colonies
-(`+0x1C & 0x40`; weights = size, roll at 0x3D57E), a Man-O-War (type 0x12)
-lands at the best-scored beach tile (0x03D748), troops spawn carried at the
-(−2,−2) sentinel (0x03D8C8), and every land unit is stamped Veteran
-(`+0x17 := 0x15` at 0x03D835).
+(`+0x1C & 0x40`; weights = size, roll), a Man-O-War (type 0x12)
+lands at the best-scored beach tile, troops spawn carried at the
+(−2,−2) sentinel, and every land unit is stamped Veteran
+(`+0x17 := 0x15`).
 
-**Mobilization at the Declaration** (`func_03E2EA`, byte-verified): for every
-colony with SoL ≥ 50 (0x03E3F1), a budget `((SoL−50)·(size/2))/50` clamped ≥ 1
-(0x03E3F6..0x03E425) of Veteran Soldiers/Dragoons in the stack are promoted
-in place — type 1 → 9 Continental Army (0x03E37B), type 4 → 7 Continental
-Cavalry (0x03E306); `@MOBILIZE`/`@MOBILIZE2`. No units are created.
+**Mobilization at the Declaration** (mobilize_continentals(), byte-verified): for every
+colony with SoL ≥ 50, a budget `((SoL−50)·(size/2))/50` clamped ≥ 1
+ of Veteran Soldiers/Dragoons in the stack are promoted
+in place — type 1 → 9 Continental Army, type 4 → 7 Continental
+Cavalry; `@MOBILIZE`/`@MOBILIZE2`. No units are created.
 
 ### 18.10 The Royal Expeditionary Force schedule
 
-Counts live at `[0x53DA]` Regulars, `[0x53DC]` Cavalry, `[0x53DE]` Man-O-War,
-`[0x53E0]` Artillery (user-verified against the F3 display). **New-game seed**
-(`new_game_state_init` at 0x7569B, difficulty d): Regulars `8d+15`, Cavalry
+Counts live at `ref.regulars` Regulars, `ref.cavalry` Cavalry, `ref.man_o_war` Man-O-War,
+`ref.artillery` Artillery (user-verified against the F3 display). **New-game seed**
+(`new_game_state_init`, difficulty d): Regulars `8d+15`, Cavalry
 `5(d+1)`, Man-O-War `3d+2`, Artillery `6d+2` — i.e. 15/5/2/2 at Discoverer up
-to 47/25/14/26 at Viceroy. **Growth** (`func_03E162`, pre-independence only,
-gate 0x3E172): the royal fund `PowerRecord +0x22` accrues `(8d+10)` per turn,
-doubled at each of 1600/1700/1750 (0x3E17C..0x3E1AC) — +18/turn at Explorer,
-runtime-verified. At **1800** in the fund (0x3E1C6) one unit is bought
-(0x3E238) and 1800 deducted (0x3E271); the slot keeps the army in ratio —
-Cavalry when `(reg+2)/3 > cav` (0x3E1D5), Artillery when `reg/4 > art`
-(0x3E1EB), Man-O-War when `(reg+cav+art+5)/10 > ships` (0x3E203), else
+to 47/25/14/26 at Viceroy. **Growth** (grow_royal_fund(), pre-independence only,
+gate ⟦addr⟧): the royal fund `power.royal_fund` accrues `(8d+10)` per turn,
+doubled at each of 1600/1700/1750 — +18/turn at Explorer,
+runtime-verified. At **1800** in the fund one unit is bought
+ and 1800 deducted; the slot keeps the army in ratio —
+Cavalry when `(reg+2)/3 > cav`, Artillery when `reg/4 > art`
+, Man-O-War when `(reg+cav+art+5)/10 > ships`, else
 Regulars. Post-declaration the purchase is announced instead (`@KINGBUY`,
-0x3E262). Sale tax funds it: every European sale routes
-`gross·tax%/100` into `+0x22` (0x32A92), as do back-tax payments (0x033413).
+⟦addr⟧). Sale tax funds it: every European sale routes
+`gross·tax%/100` into `+0x22`, as do back-tax payments.
 
 ```formula
 fund += ( 8d + 10 ) per turn, doubling at 1600 / 1700 / 1750   —   one REF unit per 1,800 banked
@@ -2745,18 +2725,18 @@ example: a Viceroy game opens against 47 Regulars, 25 Cavalry, 14 Man-O-War, 26 
 
 ### 18.11 The difficulty ledger — every documented d-scaled constant
 
-Difficulty `d` = `[0x53A6]` (0 Discoverer .. 4 Viceroy; default 2 at 0x7433C,
-written only by the picker at 0x705D2/0x706A3/0x7071E). The term is almost
+Difficulty `d` = `game.difficulty` (0 Discoverer .. 4 Viceroy; default 2,
+written only by the picker/⟦addr⟧/⟦addr⟧). The term is almost
 always a **human handicap** — most sites gate on the controller byte and use
 a fixed constant for AI powers.
 
-**Starting conditions:** gold 1000 (d=0, 0x036779) / 300 (d=1, 0x036599) /
+**Starting conditions:** gold 1000 (d=0, ⟦addr⟧) / 300 (d=1, ⟦addr⟧) /
 0 (d ≥ 2) — human only; units = Caravel + Pioneers + Soldiers aboard
-(0x07584B..0x0758CD; Dutch ship → Merchantman 0x075875), **doubled at d ≤ 1**
-by a second placement pass (0x0758F5/0x075961); REF seed §18.10; native alarm
-seed `random_int(0,14) + 2d` for the human (0x65DC7/0x65DCE); year 1492
-(0x757E7), map 58×72 (0x75702), price seeds `random_int(600,1000)` ×16
-(0x75645). Initial tax rate: no initializer is byte-cited (UI shows 0%) — TBD.
+(⟦addr⟧..⟦addr⟧; Dutch ship → Merchantman ⟦addr⟧), **doubled at d ≤ 1**
+by a second placement pass; REF seed §18.10; native alarm
+seed `random_int(0,14) + 2d` for the human; year 1492
+, map 58×72, price seeds `random_int(600,1000)` ×16
+. Initial tax rate: no initializer is byte-cited (UI shows 0%) — TBD.
 
 ```formula
 example: Explorer (d=1) → 300 gold · combat +3 · treaty 10 turns · REF 18/turn · native training 70% · first-father base 64
@@ -2765,62 +2745,62 @@ example: Viceroy (d=4) → 0 gold · combat +0 · treaty 4 turns · REF 42/turn 
 
 | Mechanic | Formula in d | Site |
 |---|---|---|
-| Combat: human handicap | strength += (4−d), both sides | 0x5CE35 / 0x5CE54 |
-| Combat: scaling | strength·d/20 | 0x05CFFC |
-| Combat: generic base | d+5 | 0x3F005 |
-| Treaty-respect seed | 2·(6−d), halved w/ Franklin | 0x59B00..0x59B31 |
-| AI war grace period | no AI war before turn 10·(10−d) | 0x58374 |
-| AI demand value | ·10·(d+8)/100, then +500·(d+1) | 0x583A0 / 0x5842B |
-| AI action gate | roll(1,1000) < 200d+100 → 10..90% | 0x58315 |
-| Withdrawal price | 25·(d+2)·forces, min 100, ×2 at war | 0x593B7..0x5949B |
-| King tax-raise delta | ((d&0xFE)<<1)+4, ×(turn/400+1) | 0x034AEE |
-| King demand cadence | interval 18→15/12/9 by era, −(d−2) human | 0x36193 |
-| Tax-lower odds | 1/(d+1); lower amt random(5−d,1) | 0x034B25 / 0x034B44 |
-| Mercenary fee (war) | ((d+3)·2 + rand(0,6))·100 per unit | 0x03E558 |
-| Mercenary fee (peace) | ((d+4)·2 + rand(0,6))·100 per unit | 0x03E713 |
-| Mercenary count (war) | random(2, (4−d)/2 + 2) | 0x03E512 |
-| REF fund accrual | (8d+10)/turn, ×2 per era | 0x3E17C |
-| REF seed | 8d+15 / 5(d+1) / 3d+2 / 6d+2 | 0x7569B |
-| Native attitude (human) | 2·(d+3) + tribe terms, thr 0x41 | 0x46500 |
-| Native attitude (AI) | tribe terms − d + 12, thr 0x32 | 0x46538 |
-| Native training success | roll(1,1000) ≥ 200d+100 → 90..10% | 0x4A72C |
-| Native attack chance | random((5−d)·2) | 0x48697 |
-| Raze gold factor | rolls of random(1, 10−d) | 0x4AAD0 |
-| King treasure cut | max(5d+50, 2·tax) ≤ 90%, tax w/ Cortés | 0x5C976 |
-| Native gift/reward | 2d+15; 10·(d+rand); cap 8−d | 0x4A05A / 0x4A0C2 / 0x4A2A9 |
-| Immigration threshold | ·(8−d)/8 (England then ×2/3) | 0x35E60 / 0x035E6E |
-| Rival-immigration bonus | 100·(d+1) | 0x35FFB |
-| FF bell cost (human) | (d+3)·16 base (§17) | 0x3C29C |
-| FF cost post-declaration | d·1500 + 2000 | 0x3C30D |
-| FF score penalty | ff_count·(−1−d) | 0x3A4B9 |
-| SoL production divisor | 10−d (human; AI fixed 10) | 0x9D49 / 0xA05C |
-| Tory penalty threshold | 10−d as count threshold | 0x27416 |
-| Tory uprising gate | fires with prob (d+1)/(d+2) | 0x3CADD |
+| Combat: human handicap | strength += (4−d), both sides | ⟦addr⟧ / ⟦addr⟧ |
+| Combat: scaling | strength·d/20 | ⟦addr⟧ |
+| Combat: generic base | d+5 | ⟦addr⟧ |
+| Treaty-respect seed | 2·(6−d), halved w/ Franklin | ⟦addr⟧..⟦addr⟧ |
+| AI war grace period | no AI war before turn 10·(10−d) | ⟦addr⟧ |
+| AI demand value | ·10·(d+8)/100, then +500·(d+1) | ⟦addr⟧ / ⟦addr⟧ |
+| AI action gate | roll(1,1000) < 200d+100 → 10..90% | ⟦addr⟧ |
+| Withdrawal price | 25·(d+2)·forces, min 100, ×2 at war | ⟦addr⟧..⟦addr⟧ |
+| King tax-raise delta | ((d&0xFE)<<1)+4, ×(turn/400+1) | ⟦addr⟧ |
+| King demand cadence | interval 18→15/12/9 by era, −(d−2) human | ⟦addr⟧ |
+| Tax-lower odds | 1/(d+1); lower amt random(5−d,1) | ⟦addr⟧ / ⟦addr⟧ |
+| Mercenary fee (war) | ((d+3)·2 + rand(0,6))·100 per unit | ⟦addr⟧ |
+| Mercenary fee (peace) | ((d+4)·2 + rand(0,6))·100 per unit | ⟦addr⟧ |
+| Mercenary count (war) | random(2, (4−d)/2 + 2) | ⟦addr⟧ |
+| REF fund accrual | (8d+10)/turn, ×2 per era | ⟦addr⟧ |
+| REF seed | 8d+15 / 5(d+1) / 3d+2 / 6d+2 | ⟦addr⟧ |
+| Native attitude (human) | 2·(d+3) + tribe terms, thr 0x41 | ⟦addr⟧ |
+| Native attitude (AI) | tribe terms − d + 12, thr 0x32 | ⟦addr⟧ |
+| Native training success | roll(1,1000) ≥ 200d+100 → 90..10% | ⟦addr⟧ |
+| Native attack chance | random((5−d)·2) | ⟦addr⟧ |
+| Raze gold factor | rolls of random(1, 10−d) | ⟦addr⟧ |
+| King treasure cut | max(5d+50, 2·tax) ≤ 90%, tax w/ Cortés | ⟦addr⟧ |
+| Native gift/reward | 2d+15; 10·(d+rand); cap 8−d | ⟦addr⟧ / ⟦addr⟧ / ⟦addr⟧ |
+| Immigration threshold | ·(8−d)/8 (England then ×2/3) | ⟦addr⟧ / ⟦addr⟧ |
+| Rival-immigration bonus | 100·(d+1) | ⟦addr⟧ |
+| FF bell cost (human) | (d+3)·16 base (§17) | ⟦addr⟧ |
+| FF cost post-declaration | d·1500 + 2000 | ⟦addr⟧ |
+| FF score penalty | ff_count·(−1−d) | ⟦addr⟧ |
+| SoL production divisor | 10−d (human; AI fixed 10) | ⟦addr⟧ / ⟦addr⟧ |
+| Tory penalty threshold | 10−d as count threshold | ⟦addr⟧ |
+| Tory uprising gate | fires with prob (d+1)/(d+2) | ⟦addr⟧ |
 | Tory militia strength | pop·tory%·2/100 + d + 1 | (RULINGS batch) |
-| Center-tile food | +2 at d=0, +1 at d=1 | 0xA295 / 0xA2A1 |
-| Score multiplier | [4,5,6,8,10] = d+4+(d≥3)+(d≥4) | 0x3AA0A..0x3AA27 |
-| Indian razes score penalty | razed_count·−(1+d) | 0x3A4B1..0x3A4C3 |
-| Tutorial build warnings | only at d < 2 | 0x22763 |
+| Center-tile food | +2 at d=0, +1 at d=1 | ⟦addr⟧ / ⟦addr⟧ |
+| Score multiplier | [4,5,6,8,10] = d+4+(d≥3)+(d≥4) | ⟦addr⟧..⟦addr⟧ |
+| Indian razes score penalty | razed_count·−(1+d) | ⟦addr⟧..⟦addr⟧ |
+| Tutorial build warnings | only at d < 2 | ⟦addr⟧ |
 
-Non-mechanics, for the record: `[0x8394+2d]` is the per-difficulty king
+Non-mechanics, for the record: `[⟦addr⟧+2d]` is the per-difficulty king
 salutation/title pointer (text only); Lost-City-Rumor odds are scout-scaled,
 **not** difficulty-scaled; European recruit prices come from a pre-filled pool
 word (only artillery escalates, +100·bought).
 
 ### 18.12 The Tory uprising
 
-Processor `func_03CAC6` (0x3CAC6; its caller is resolved-as-runtime-dispatch —
+Processor tory_uprising() (⟦addr⟧; its caller is resolved-as-runtime-dispatch —
 no static call site exists). There is **no SoL threshold gate** on the
 trigger path (byte-verified negative); the only gate is the per-call roll
-`random_int(0, d+1) != 0` (0x3CADD) — fire probability `(d+1)/(d+2)`, 50% at
+`random_int(0, d+1) != 0` — fire probability `(d+1)/(d+2)`, 50% at
 Discoverer up to ~83% at Viceroy. Target = the rebel colony with the highest
-**tory strength** = `pop·(100−SoL%)·2/100 + d + 1` (0x3CBE6..0x3CC06),
-skipping colonies already hit (`+0x1C` bit 0, set on the winner at 0x3CC3C).
+**tory strength** = `pop·(100−SoL%)·2/100 + d + 1`,
+skipping colonies already hit (`+0x1C` bit 0, set on the winner).
 Militia spawn on the free adjacent tiles: `spawn_unit(type 1 Soldiers,
-owner = the King's power [0x53D2])` at 0x3CCCF, with a random upgrade gate
-promoting a spawn to Dragoons (0x3CD31); if no adjacent tile is free the
-uprising is silently suppressed (0x3CD59). Message `@TORYUPRISING` ("Tory
-uprising near %STRING0! Parliament arms Tory Militia!", 0x3CD94). The
+owner = the King's power `game.king_power`)`, with a random upgrade gate
+promoting a spawn to Dragoons; if no adjacent tile is free the
+uprising is silently suppressed. Message `@TORYUPRISING` ("Tory
+uprising near %STRING0! Parliament arms Tory Militia!", ⟦addr⟧). The
 in-repo wording conflict on militia count (≤ 8 per free tile vs
 strength-counted-down) is unresolved — flagged.
 
@@ -2831,24 +2811,24 @@ example: pop 10 at 30% SoL, Governor (d=3) → 10×70×2÷100 = 14 → +4 = 18 m
 
 ### 18.13 Scoring and the Hall of Fame
 
-Component sum `func_039EE2`, seven terms into the grand total
-(0x03A896..0x03A8AB): **population** (+1 per criminal/servant/convert, +2
-per Free Colonist, +4 per specialist, 0x3A0BE..0x3A113); **Founding
-Fathers** +5 each (0x03A2BE); **rebel sentiment** = the national meter
-`[0x53D0]` ×1 (0x03A561); **razes** = razed-settlement count
-(`PowerRecord +0x18`) × −(1+d) (0x03A4B1..0x03A4C5 — one spec sheet glosses
+Component sum score_components(), seven terms into the grand total
+: **population** (+1 per criminal/servant/convert, +2
+per Free Colonist, +4 per specialist, ⟦addr⟧..⟦addr⟧); **Founding
+Fathers** +5 each; **rebel sentiment** = the national meter
+`game.revolution_meter` ×1; **razes** = razed-settlement count
+(`power.razed_count`) × −(1+d) (⟦addr⟧..⟦addr⟧ — one spec sheet glosses
 this same site as an FF penalty; flagged); **gold** = treasury/1000
-(0x3A3F2); **post-intervention bells** = `+0x0C`/100 gated on the
-intervention flag (0x3A704..0x3A724); **revolution bonus** = `(1780 −
+; **post-intervention bells** = `+0x0C`/100 gated on the
+intervention flag; **revolution bonus** = `(1780 −
 declaration_year)·2`, additive, only if independence was won and declared
-before 1780 (0x3A5F5..0x3A609 — the retail manual's "×2.0 multiplier"
-framing is byte-refuted). Scaler `func_03A9C0`: multiplier
-`d+4 (+1 if d≥3, +1 if d≥4)` = 4/5/6/8/10 (0x3AA0A..0x3AA27), `score =
-(mult·base)/100 >> 1` (0x3AA31/0x3AA6A), Hall-of-Fame rank = largest n with
-`n²/3 < score`, capped 23 (0x3AA41..0x3AA79). The Hall of Fame renders on
+before 1780 (⟦addr⟧..⟦addr⟧ — the retail manual's "×2.0 multiplier"
+framing is byte-refuted). Scaler compute_score(): multiplier
+`d+4 (+1 if d≥3, +1 if d≥4)` = 4/5/6/8/10, `score =
+(mult·base)/100 >> 1`, Hall-of-Fame rank = largest n with
+`n²/3 < score`, capped 23. The Hall of Fame renders on
 WOODPAN2/WOODPANL in FONTINTR (title gold 0xFC), persists
 `HALLFAME.DAT` — 5 shown of 6 records, stride 42, score word at `+0x26`,
-descending insertion (`func_03ADA6`).
+descending insertion (hall_of_fame()).
 
 ```formula
 score = ( multiplier × Σ seven terms ) ÷ 100 ÷ 2        multiplier by difficulty: 4 / 5 / 6 / 8 / 10
@@ -2866,10 +2846,10 @@ tribute, war — flows through a 10-entry action menu and the GAME.TXT
 
 ### 19.1 Tribe records and ids
 
-TribeData: base 0x5AD6, stride 0x4E (78), 8 entries, populated at game init from
+TribeData: base ⟦addr⟧, stride 0x4E (78), 8 entries, populated at game init from
 NAMES.TXT `@TRIBES`. Field +2 is the settlement-size/level factor (CHIEFKILL
-byte-trace at 0x4AB24); the byte at +3 carries the **tribe-dead bit 0x80** — the
-cheat-menu tribe list tests `[0x5AD9 + i*0x4E] & 0x80` to grey out dead tribes.
+byte-trace); the byte at +3 carries the **tribe-dead bit 0x80** — the
+cheat-menu tribe list tests `[⟦addr⟧ + i*0x4E] & 0x80` to grey out dead tribes.
 Village owner ids 4..11 follow `@TRIBES` order:
 
 | id | tribe | gift good | level | sprite |
@@ -2887,38 +2867,38 @@ Village owner ids 4..11 follow `@TRIBES` order:
 never instantiate.) Tribe indices 0/1 = Inca/Aztec select the special first-
 contact woodcuts below.
 
-### 19.2 The village array (base 0x54EC, stride 0x12)
+### 19.2 The village array (base ⟦addr⟧, stride 0x12)
 
 ```c
-typedef struct {                    // DGROUP:0x54EC + v*0x12
+typedef struct {                    // DGROUP:⟦addr⟧ + v*0x12
     uint8_t map_x, map_y;           // +0x00/+0x01
-    uint8_t owner;                  // +0x02 tribe/power id 4..11 (scans at 0x37638/0x45D11/0x46078)
-    uint8_t flags;                  // +0x03 bit 0x04 capital (set 0x66225, doubles value 0x7DCA);
-                                    //        bit 0x02 "already taught" (set 0x4A78A); bit 0x01 write-only
+    uint8_t owner;                  // +0x02 tribe/power id 4..11 (scans/⟦addr⟧/⟦addr⟧)
+    uint8_t flags;                  // +0x03 bit 0x04 capital (set ⟦addr⟧, doubles value ⟦addr⟧);
+                                    //        bit 0x02 "already taught"; bit 0x01 write-only
     uint8_t population;             // +0x04 size (CHIEFKILL input)
     uint8_t mission;                // +0x05 0xFF none; low nibble = owning power; bit 0x10 expert-mission
-                                    //        doubler (Brébeuf; set 0x48C81, tested 0x57300)
+                                    //        doubler (Brébeuf; set ⟦addr⟧, tested ⟦addr⟧)
     uint8_t growth_counter;         // +0x06 (runtime cross-ref; no static reader)
-    uint8_t trespass;               // +0x07 escalation counter (0xFE on trespass 0x4A337; bumped on trade 0x5C3F2)
+    uint8_t trespass;               // +0x07 escalation counter (0xFE on trespass ⟦addr⟧; bumped on trade ⟦addr⟧)
     uint8_t last_bought;            // +0x08 cargo id of last good bought
-    uint8_t last_sold;              // +0x09 write-only in the static image (init 0xFF at 0x46EB6)
-    uint16_t alarm[4];              // +0x0A per-European-power anger words (indexed settlement*9+power @0x4734E)
+    uint8_t last_sold;              // +0x09 write-only in the static image (init 0xFF)
+    uint16_t alarm[4];              // +0x0A per-European-power anger words (indexed settlement*9+power)
 } NativeSettlement;
 ```
 
 The per-power **anger words** at `+0x0A + power*2` drive the war state at
-alarm ≥ 128 (raid scan 0x4734E; placement gates 0x4CAD7, 0x53D4E). A parallel
-0..100 **tension table** at 0x5B1C (stride 39 words per village row, only
-columns 0..3 used) is written solely by the applier `func_045DF2`:
+alarm ≥ 128 (raid scan ⟦addr⟧; placement gates ⟦addr⟧, ⟦addr⟧). A parallel
+0..100 **tension table** at ⟦addr⟧ (stride 39 words per village row, only
+columns 0..3 used) is written solely by the applier adjust_tension():
 `tension += delta`, clamped [0,100], with positive deltas halved for the French
-power (0x45E21) and for Pocahontas owners (0x45E30); thresholds 75 = hostile,
-100 = war (0x45E9E/0x45EB2). Notable deltas: ±1 per-turn drift, +1/+2/+3
-trespass, −4 successful trade (0x5C41E), +100 incite/burial-ground desecration
-(0x486F8/0x61B84), mission established negative (clamped so tension ≤ 70).
+power and for Pocahontas owners; thresholds 75 = hostile,
+100 = war. Notable deltas: ±1 per-turn drift, +1/+2/+3
+trespass, −4 successful trade, +100 incite/burial-ground desecration
+, mission established negative (clamped so tension ≤ 70).
 
 ### 19.3 First contact
 
-First contact with a tribe (handler `func_056C3E` @0x56DA6) shows woodcut 3
+First contact with a tribe (handler ⟦helper⟧) shows woodcut 3
 "MEETING THE NATIVES" — or woodcut 4 "THE AZTEC EMPIRE" (tribe 1) / woodcut 5
 "THE INCA NATION" (tribe 0), with tune cues 0x33/0x35/0x36 — then the
 `@INDIANWELCOME` treaty offer:
@@ -2937,14 +2917,14 @@ Indians · Demand Tribute · Attack Village · Cancel Action.
 
 - **Supply/demand**: the trade pricing, the "especially interested in …" line
   and the `@INDIANBEGFOOD`/`@INDIANGIVEFOOD` food events are all driven by the
-  village supply/demand routine `func_048F34` — section 10 documents it in
+  village supply/demand routine ⟦helper⟧ — section 10 documents it in
   full (phases, capital ×2 boost, consumers).
 - **Training** ("Live Among The Natives"): only outdoors skills are learnable;
   Petty Criminals are refused (`@LEARNCRIMINAL`); masters are refused
-  (`@LEARNMASTER`); each village teaches once — the grant at 0x4A782 writes the
+  (`@LEARNMASTER`); each village teaches once — the grant writes the
   profession into the unit's expertise byte and stamps the village flag +0x03
   bit 0x02 (`@LEARNALREADY`). Unskilled colonists succeed on
-  `random_int(1,1000) ≥ 200*difficulty + 100` (0x4A72C), i.e. 90/70/50/30/10 %.
+  `random_int(1,1000) ≥ 200*difficulty + 100`, i.e. 90/70/50/30/10 %.
 - **Chief audience** (`@CHIEFHOWDY`/`@CHIEFGIFT`/`@CHIEFAREA`/`@CHIEFGUIDES`):
   gift beads scaled by tribe, map-area reveal for scouts; `@CHIEFKILL` is the
   taboo execution outcome of razing.
@@ -2953,65 +2933,65 @@ Indians · Demand Tribute · Attack Village · Cancel Action.
 
 `Establish Mission` places a mission: village byte +0x05 = owning power, with
 bit 0x10 (expert) set when the founding power has Jean de Brébeuf
-(`has_father(0x16)` gate at 0x48C71 → `or [bx+5],0x10` at 0x48C81); acquiring
-Brébeuf retroactively upgrades all own missions (0x3BE77). Conversion
-(`func_0572E6`, "INDIANSCONVERT"): each eligible turn rolls `random_int(0,15)`
+(`has_father(0x16)` gate → `or [bx+5],0x10`); acquiring
+Brébeuf retroactively upgrades all own missions. Conversion
+(attempt_conversion(), "INDIANSCONVERT"): each eligible turn rolls `random_int(0,15)`
 against `threshold = TribeData[+2] + 2`, doubled by the expert bit — success
-spawns an Indian Convert (class 0x1B) at the colony (0x57374). A destroyed
+spawns an Indian Convert (class 0x1B) at the colony. A destroyed
 mission or expelled missionary applies a computed positive tension delta
-(0x57267).
+.
 
 ### 19.6 Attitude and anger displays
 
 The village attitude phrase is built from a colonial-presence score banded at
 cutoffs −5 / 0 / 10 into Content / Uneasy / Restless / Angry (builder
-0x48B62–0x48B90); War is the separate alarm ≥ 128 state. The per-power
-European attitude byte `[0x940C+p]` is a distinct diplomacy signal (section 15.5).
+⟦addr⟧–⟦addr⟧); War is the separate alarm ≥ 128 state. The per-power
+European attitude byte `[⟦addr⟧+p]` is a distinct diplomacy signal (section 15.5).
 Pocahontas resets all village attitudes to content on acquisition and halves
-subsequent tension rises. Debug bit 0x01 of `[0x894]` ("Anger & Friction
+subsequent tension rises. Debug bit 0x01 of `game.debug_flags` ("Anger & Friction
 Levels") overlays the live anger word — white number
-`[v*0x12 + 0x54F6 + 2*viewpower]` at village pixel (+2,+9) (0x4241) and appends
-eight per-tribe rows to the map info panel (0x44303).
+`[v*0x12 + ⟦addr⟧ + 2*viewpower]` at village pixel (+2,+9) and appends
+eight per-tribe rows to the map info panel.
 
 ### 19.7 Village destruction (and the Kill-Indians cheat)
 
-Razing (`func_04A7CA`) rolls a village-escape check `random_int(0, 40*scout+100)`
+Razing (raze_settlement()) rolls a village-escape check `random_int(0, 40*scout+100)`
 (scout = Seasoned-Scout attacker bonus) with re-rolls biased by size; on a raze
 the treasure is `(Σ 3×random_int(0,10-diff)) * random_int(0,6) * 4 * (tier+1)`,
-credited straight to the attacker's gold (+0x2A add/adc at 0x4AB66). The
-cheat-menu item 0x67 "Kill Indians" (0x23BDC) exposes the same internals: it
+credited straight to the attacker's gold. The
+cheat-menu item 0x67 "Kill Indians" exposes the same internals: it
 builds the live tribe list from TribeData (stride 0x4E, dead bit 0x80 at +3) and
-calls `func_046FC2`, which destroys every village whose owner equals tribe+4 —
+calls ⟦helper⟧, which destroys every village whose owner equals tribe+4 —
 confirming the owner-id convention and the destroy path used by combat.
 
 
 ### 19.8 Loot — razing settlements and capturing colonies
 
-**Indian settlement raze** (the `@CHIEFKILL` path, `func_04A7CA`; gold block
-0x04AAD0..0x04AB6E):
+**Indian settlement raze** (the `@CHIEFKILL` path, raze_settlement(); gold block
+⟦addr⟧..⟦addr⟧):
 
 `gold = (Σ of 3 rolls of random_int(1, 10−diff)) · random_int(1,6) · 4 · (size+1)`
 
-— the three rolls at 0x04AADD..0x04AB06, the ×`random_int(1,6)` at 0x04AB0B,
-the ×4 at 0x04AB1D, the size factor at 0x04AB20..0x04AB2D, credited 32-bit
-straight to the attacker's treasury `PowerRecord +0x2A` (0x04AB5D..0x04AB6E).
+— the three rolls, the ×`random_int(1,6)`,
+the ×4, the size factor, credited 32-bit
+straight to the attacker's treasury `power.gold`.
 **No ×100 and no Treasure unit on this path.** The size factor carries a
-documented in-repo conflict: the appendix traces it to `TribeData +0x02`
-(0x04AB24), while the 2026-05-30 ruling (user-verified) identifies it as
-`NativeSettlement +0x04` population — the `+0x02` read was the "Apache richer
+documented in-repo conflict: the appendix traces it to `tribe.tribe_id`
+, while the 2026-05-30 ruling (user-verified) identifies it as
+`settlement.population` population — the `+0x02` read was the "Apache richer
 than Aztec" bug. Difficulty ceilings at size factor 21: 15,120 / 13,608 /
 12,096 / 10,584 / 9,072 (Discoverer→Viceroy). The roll *before* the formula is
 the village-survives check, not the payout: scout bonus for Seasoned Scouts
-(0x4A7D9), `random_int(0, 40·scout+100)` (0x4A827) re-rolled against
-settlement size, tribe-2 bound `(8−diff)<<scout` (0x4A84A); size ≥ 75 branches
-to the big-treasure path (0x4A802). Capital razes exceed the formula ceiling
+, `random_int(0, 40·scout+100)` re-rolled against
+settlement size, tribe-2 bound `(8−diff)<<scout`; size ≥ 75 branches
+to the big-treasure path. Capital razes exceed the formula ceiling
 in both captured data points — a capital-only bonus exists whose magnitude is
 unmapped (TBD). The **Treasure-unit spawn** lives on the colony-combat path
-(`func_05CA7E`): `spawn_unit(type 0xA)` at 0x05E4FF, value/100 stored in the
-unit's class byte (0x05E516), ×100 for display (0x05E51A), `@LOOT`/`@LOOT2`.
+(resolve_attack()): `spawn_unit(type 0xA)`, value/100 stored in the
+unit's class byte, ×100 for display, `@LOOT`/`@LOOT2`.
 Cortés does not touch raze gold — his documented effect is the King's cut of
-*transported* treasure (`func_05C878`: cut = tax rate with Cortés, else
-`max(5·diff+50, 2·tax)` clamped ≤ 90, 0x5C965/0x5C976 — the `@LOOTCASH`
+*transported* treasure (cash_in_treasure(): cut = tax rate with Cortés, else
+`max(5·diff+50, 2·tax)` clamped ≤ 90, ⟦addr⟧/⟦addr⟧ — the `@LOOTCASH`
 `%NUMBER1`).
 
 ```formula
@@ -3019,17 +2999,16 @@ raze gold = ( r₁ + r₂ + r₃ ) × r₄ × 4 × ( size + 1 )        rᵢ = ra
 example: Explorer razes a size-8 village: rolls 5+7+3 = 15 → ×4 (r₄) = 60 → ×4 = 240 → ×9 = 2,160 gold
 ```
 
-**European colony capture** (inside `func_05CA7E`, math at 0x05DE1E):
+**European colony capture** (inside resolve_attack(), math):
 
 `loot = (colony.population · victim.gold) / max(Σ populations of victim's colonies, 1)`
 
-— population `+0x1F` read at 0x05DE1F, the victim's whole-empire population
-summed over the colony table (owner match at `0x5D60`, 0x05DDD4..0x05DDFF),
-divisor clamped ≥ 1 (0x05DE05), 32-bit multiply/divide (0x05DE35/0x05DE3C),
-then the gold moves victim → attacker (0x05DE49 / 0x05DE59..0x05DE63) — the
+— population `+0x1F` read, the victim's whole-empire population
+summed over the colony table (owner match at ⟦addr⟧, ⟦addr⟧..⟦addr⟧),
+divisor clamped ≥ 1, 32-bit multiply/divide,
+then the gold moves victim → attacker — the
 victim loses a population-weighted *share of its entire treasury*. The block
-is **gated off during the War of Independence** (`test [0x5382],1` at
-0x05DE11). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
+is **gated off during the War of Independence** (`test `game.flags`,1`). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
 {%NUMBER0$} plundered!"). No Crown cut exists on this path; `@LOOTCASH`
 belongs to treasure-fleet arrival only.
 
@@ -3040,31 +3019,30 @@ example: take a pop-6 colony from a power holding 3,000 gold across 20 populatio
 
 ### 19.9 Alarm, tension, and raids
 
-Two meters exist. Per-settlement **alarm** words sit at `NativeSettlement
-+0x0A + power·2` (raid/hostility trigger at ≥ 128, tested 0x4734E/0x4CAD7/
-0x53D4E). The separate **tension** table at `DGROUP:0x5B1C`
-(`word[(row·39 + col)·2]`, getter 0x0082A0, only the 4 European columns ever
-touched) runs 0..100 — hostile at ≥ 75 (0x47328), war at 100 (0x45EB2).
-The applier `func_045DF2` clamps every delta to [0,100] and **halves positive
-deltas** for France (power 1, 0x45E21) and for any power holding
-**Pocahontas** (FF 16, 0x45E30). Documented deltas: per-turn drift ±1
-(0x4857D/0x485A7), trespass +1/+2/+3 by severity (0x4A2E8/0x4A319/0x4A674),
-successful trade −4 (0x5C41E), mission established — computed negative,
-clamped so tension ≤ 70 (0x571EB), mission destroyed + (0x57267),
-incite +100 / rival −100 (0x486F8/0x4870C), **burial-ground desecration
-+100** (0x61B84) — instant war footing. The six `@PISS0..5` anger-source
+Two meters exist. Per-settlement **alarm** words sit at `settlement.alarm` + power·2` (raid/hostility trigger at ≥ 128, tested ⟦addr⟧/⟦addr⟧/
+⟦addr⟧). The separate **tension** table at `DGROUP:⟦addr⟧
+(`word[(row·39 + col)·2]`, getter ⟦addr⟧, only the 4 European columns ever
+touched) runs 0..100 — hostile at ≥ 75, war at 100.
+The applier adjust_tension() clamps every delta to [0,100] and **halves positive
+deltas** for France (power 1, ⟦addr⟧) and for any power holding
+**Pocahontas**. Documented deltas: per-turn drift ±1
+, trespass +1/+2/+3 by severity,
+successful trade −4, mission established — computed negative,
+clamped so tension ≤ 70, mission destroyed +,
+incite +100 / rival −100, **burial-ground desecration
++100** — instant war footing. The six `@PISS0..5` anger-source
 strings (roads, deforestation, missionaries, unprovoked attack, population
 pressure) carry no documented numeric deltas — TBD.
 
-**Raids** (`native_raid_outcome_dispatch`, `func_05BE84`): gate roll
+**Raids** (`native_raid_outcome_dispatch`, native_raid()): gate roll
 `random_int(1,12) − 1`, biased +(d−2) against a human European owner
-(0x5BF1A), versus threshold `3·K + 1` (0x5BEE5; K's meaning unmapped); then
-outcome `random_int(1,4)` (0x5BF35), downgraded while `turn < 40·(2−d)`
-(0x5BF44), dispatched five ways (0x5C026): `@RAIDSTORES` (goods stolen —
-bumps the settlement's raid budget +0x08 and wealth +0x0A, 0x5C3CC),
-`@RAIDWREAK` (0x5C1DE), `@RAIDGOLD` (0x5C5F7), `@RAIDBURN`/`@RAIDSHIP`
-(0x5C50B/0x5C57B), and `@RAIDNOTHING` — "raiding party wiped out"
-(0x5C637). The concrete payloads of WREAK/BURN/GOLD/SHIP beyond their
+, versus threshold `3·K + 1` (⟦addr⟧; K's meaning unmapped); then
+outcome `random_int(1,4)`, downgraded while `turn < 40·(2−d)`
+, dispatched five ways: `@RAIDSTORES` (goods stolen —
+bumps the settlement's raid budget +0x08 and wealth +0x0A, ⟦addr⟧),
+`@RAIDWREAK`, `@RAIDGOLD`, `@RAIDBURN`/`@RAIDSHIP`
+, and `@RAIDNOTHING` — "raiding party wiped out"
+. The concrete payloads of WREAK/BURN/GOLD/SHIP beyond their
 messages are unmapped — TBD.
 
 ```formula
@@ -3074,7 +3052,7 @@ example: at Viceroy a roll of 8 gives 7, +2 bias = 9 against a threshold of 7 �
 
 ## 20. Turn flow and persistence
 
-A turn is one pass of the resident loop `func_005760` (file 0x5760): for each of
+A turn is one pass of the resident loop turn_loop(): for each of
 the four European powers in strict index order it runs King → Orders →
 Production → Diplomacy → Periodic, then a once-per-turn year-advance and
 autosave tail. Natives are not a separate top-level pass — their AI runs inside
@@ -3085,36 +3063,36 @@ behind a "COLONIZE" magic, no compression, no reordering.
 
 | phase | function | contents |
 |-------|----------|----------|
-| 1 King/mercenary | `func_03E664` (call 0x58E2; gated `[0x5382]&1==0`) | peacetime mercenary roll (0x3E707) and King events |
-| 2 Orders/movement | `func_024A48` (0x58E7) | per-unit orders pump; REF fund accrual `func_03E162` rides here (via 0x24B42); AI unit moves `func_04E2D6` with the contact evaluator `func_059B90` firing diplomacy on unit-vs-tile encounters (section 16.1) |
-| 3 Production | `func_02F052` (0x59EA) | zeroes bells/turn (+0x0E at 0x2F23F); per-colony turn processor `func_02D658` — yields, food/starvation/spoilage report popups, school teaching, bell accrual into the Congress driver `func_03C322` (0x2D6A7) |
-| 4 Diplomacy | `func_052F7E` (0x5A37) | king-action dispatch `func_034C24` (tax raises are event-driven here, not periodic); AI diplomacy |
-| 5 Periodic/congress | `func_02F3A2` (0x5AE5) | colony stats `func_042138`, Founding-Father congress `func_03B2F8` (gated `[0x5382]&0x10==0`), King defeat/victory screens (0x2F552/0x2F6A8) |
+| 1 King/mercenary | king_phase() (call ⟦addr⟧; gated `game.flags`&1==0`) | peacetime mercenary roll and King events |
+| 2 Orders/movement | orders_phase() | per-unit orders pump; REF fund accrual grow_royal_fund() rides here; AI unit moves ⟦helper⟧ with the contact evaluator evaluate_contact() firing diplomacy on unit-vs-tile encounters (section 16.1) |
+| 3 Production | production_phase() | zeroes bells/turn; per-colony turn processor update_colony() — yields, food/starvation/spoilage report popups, school teaching, bell accrual into the Congress driver update_congress() |
+| 4 Diplomacy | diplomacy_phase() | king-action dispatch next_immigrant_class() (tax raises are event-driven here, not periodic); AI diplomacy |
+| 5 Periodic/congress | periodic_phase() | colony stats ⟦helper⟧, Founding-Father congress ⟦helper⟧ (gated `game.flags`&0x10==0`), King defeat/victory screens |
 
 The **market drift** is an end-of-turn phase of its own: the end-of-turn
-processor `func_0755CC` calls the drift driver `func_036574` at 0x757B0, which
+processor end_of_turn() calls the drift driver market_day(), which
 clears the per-power 16-good accumulators and runs the four-power loop into the
-drift function `func_0305A8` (price base relaxes by `(base + Σ clamped trade)/256`
-per good). Immigration crosses (`func_035D9A`) run immediately after the price
-recompute (0x363E2), followed by the religious-unrest arrival chain (`@UNREST`).
+drift function drift_prices() (price base relaxes by `(base + Σ clamped trade)/256`
+per good). Immigration crosses (immigration_threshold()) run immediately after the price
+recompute, followed by the religious-unrest arrival chain (`@UNREST`).
 
-Year cadence (loop tail 0x5A9D–0x5ACC): `inc [0x538E]` every turn; before 1600
-one turn = one year; from 1600 the season word `[0x538C]` toggles Spring/Autumn
+Year cadence (loop tail ⟦addr⟧–⟦addr⟧): `inc `game.turn` every turn; before 1600
+one turn = one year; from 1600 the season word `game.season` toggles Spring/Autumn
 and the year steps every second turn; start 1492, forced-end check at 1725
-(0x5BB5 sets `[0x82B]=1`).
+(⟦addr⟧ sets `game.forced_end`=1`).
 
 ### 20.2 Autosave
 
-Gated by Game-Options bit 0x0400 (row 5 "Autosave") and suppressed while the
-autoplay/suppressor flag `[0x826]` is nonzero (gate 0x5AD7). Turn-loop consumers
-0x58D7/0x5A29 call the helper at 0x5642: a **rolling autosave to slot 9 every
+Gated by Game-Options bit ⟦addr⟧ (row 5 "Autosave") and suppressed while the
+autoplay/suppressor flag `game.suppress_flag` is nonzero. Turn-loop consumers
+⟦addr⟧/⟦addr⟧ call the helper at ⟦addr⟧: a **rolling autosave to slot 9 every
 turn**, plus a **decade autosave to slot 8** when the year is divisible by 10 —
 matching the manual's "most recent save in the last slot, previous decade save
-beside it". A further end-game save fires near the forced 1725 end (0x5BDB,
-gated `[0x82B]`). Manual slots are chosen in the `@SAVEGAME` dialog; filenames
-are `COLONY<slot>.SAV` (stem at file 0x1FA82, extension at 0x1FA89).
+beside it". A further end-game save fires near the forced 1725 end (⟦addr⟧,
+gated `game.forced_end`). Manual slots are chosen in the `@SAVEGAME` dialog; filenames
+are `COLONY<slot>.SAV` (stem at file ⟦addr⟧, extension).
 
-### 20.3 The save file (serializer `func_0734F8`, loader `func_073BB0`)
+### 20.3 The save file (serializer ⟦helper⟧, loader ⟦helper⟧)
 
 Header: the 8 bytes `"COLONIZE"` + 0x1A, mode "wb". Body: **43 raw DGROUP
 blocks**, each a single `fwrite(base,1,size)` — on-disk offset = sum of the
@@ -3124,35 +3102,35 @@ Principal blocks:
 
 | # | base | size | content |
 |---|------|------|---------|
-| 1 | `[0x081A]` | 2 | save format/version word |
-| 2 | 0x853A | 4 | map width + height |
-| 3 | 0x5380 | 0x8E | **game-globals block**: `[0x5382]` game flags + Game Options word, `[0x5384]` colony-report options, `[0x5386]` sound mirror, season/year/turn 0x538A–0x538E, counts 0x539A–0x539E, difficulty 0x53A6, revolution meter 0x53D0, REF power 0x53D2, REF counts 0x53DA–0x53E0 |
-| 4 | 0x540E | 0xD0 | 4× AIPersonality (stride 0x34) |
-| 6 | 0x5D46 | n·0xCA | ColonyRecords |
-| 7 | 0x3144 | n·0x1C | UnitRecords |
-| 8 | 0x8808 | 0x4F0 | 4× PowerRecord (stride 0x13C) |
-| 9 | 0x54EC | n·0x12 | NativeSettlements |
-| 10 | 0x5AD6 | 0x270 | TribeData |
-| 13 | 0x9298 | 4 | per-power colony count |
-| 15–23 | 0x940C … 0x942C | 4–8 each | per-power attitude / AI / economy word tables (incl. 0x940C, 0x941C, 0x942C) |
-| 39–43 | 0x8540 / 0x853E / view words | 2 each | current colony, map cursor, viewport/scroll |
+| 1 | ⟦state⟧ | 2 | save format/version word |
+| 2 | ⟦addr⟧ | 4 | map width + height |
+| 3 | ⟦addr⟧ | 0x8E | **game-globals block**: `game.flags` game flags + Game Options word, `game.colony_report_options` colony-report options, `game.tutorial_seen` sound mirror, season/year/turn ⟦addr⟧–⟦addr⟧, counts ⟦addr⟧–⟦addr⟧, difficulty ⟦addr⟧, revolution meter ⟦addr⟧, REF power ⟦addr⟧, REF counts ⟦addr⟧–⟦addr⟧ |
+| 4 | ⟦addr⟧ | 0xD0 | 4× AIPersonality (stride 0x34) |
+| 6 | ⟦addr⟧ | n·0xCA | ColonyRecords |
+| 7 | ⟦addr⟧ | n·0x1C | UnitRecords |
+| 8 | ⟦addr⟧ | 0x4F0 | 4× PowerRecord (stride 0x13C) |
+| 9 | ⟦addr⟧ | n·0x12 | NativeSettlements |
+| 10 | ⟦addr⟧ | 0x270 | TribeData |
+| 13 | ⟦addr⟧ | 4 | per-power colony count |
+| 15–23 | ⟦addr⟧ … ⟦addr⟧ | 4–8 each | per-power attitude / AI / economy word tables (incl. ⟦addr⟧, ⟦addr⟧, ⟦addr⟧) |
+| 39–43 | ⟦addr⟧ / ⟦addr⟧ / view words | 2 each | current colony, map cursor, viewport/scroll |
 
 Because block 3 carries all three option words, every options dialog survives
 save/load; the sound toggles `[0xA0]/[0xA2]/[0xA4]` are re-expanded from
-`[0x5386]` on load (0x74249). The debug bitfield `[0x894]` is in **no** block —
+`game.tutorial_seen` on load. The debug bitfield `game.debug_flags` is in **no** block —
 debug options are session-only. No configuration file exists.
 
 ### 20.4 The music scheduler
 
-The background rotation pump `func_004EE6` runs from the input-idle loops each
+The background rotation pump rotate_music() runs from the input-idle loops each
 turn-idle: it skips unless background music `[0xA2]` (or a one-shot `[0x9E]`) is
 on, polls the driver ("playing?" id 8), honors a forced-next tune `[0x94]`, then
-seeds the RNG from the tick clock `[0x83A8]` and rolls a tune index inside a
-state window — **peace** (`[0x5382]&1` clear): folk tunes 1–12 with a 1-in-9
+seeds the RNG from the tick clock ⟦state⟧ and rolls a tune index inside a
+state window — **peace** (`game.flags`&1` clear): folk tunes 1–12 with a 1-in-9
 excursion into 13–23; **War of Independence**: independence/military tunes 13–18
 with a 1-in-5 excursion back to folk. Event classes requested by game code
 (war fanfare, native themes 0x33/0x35/0x36, etc.) preempt via `[0x9A]`. The
-index→id map is `func_004DF8`; a re-roll avoids repeating the current tune
+index→id map is tune_id(); a re-roll avoids repeating the current tune
 `[0x96]`.
 
 
@@ -3167,35 +3145,35 @@ replayed from its seed on every screen open.
 ### 21.1 The generator
 
 ```text
-srand(seed)      @0x103C2 : stores only the LOW 16 BITS of the argument —
-                            mov [0x28EE],ax ; mov word [0x28F0],0
+srand(seed) : stores only the LOW 16 BITS of the argument —
+                            mov `rng.seed_lo`,ax ; mov word `rng.seed_hi`,0
                             (effective seed space is 16-bit)
-rand()           @0x103D4 : seed32 = seed32 * 0x343FD + 0x269EC3    ; MSC 6.0 constants
-                            return (seed32 >> 16) & 0x7FFF          ; AND AH,0x7F
-                            seed dword at DGROUP:0x28EE/0x28F0
-random_int(lo,hi)@0x0C322 : r = rand()                              ; 15-bit
+rand() : seed32 = seed32 * ⟦addr⟧ + ⟦addr⟧    ; MSC 6.0 constants
+                            return (seed32 >> 16) & ⟦addr⟧          ; AND AH,0x7F
+                            seed dword at DGROUP:⟦addr⟧/⟦addr⟧
+random_int(lo,hi) : r = rand()                              ; 15-bit
                             return lo + ((r * (hi - lo + 1)) >> 15) ; inclusive range
-                            reached via overlay thunk 0x181F:0x4D4
+                            reached via overlay thunk ⟦addr⟧:0x4D4
 ```
 
-The multiplier 0x343FD (= 214013) occurs exactly once in the binary (byte pair
-`FD 43` at 0x103D5); the `>>15` is implemented as a byte swap plus seven
+The multiplier ⟦addr⟧ (= 214013) occurs exactly once in the binary (byte pair
+`FD 43`); the `>>15` is implemented as a byte swap plus seven
 SAR/RCR pairs.
 
 ### 21.2 Known seeded subsystems
 
 | subsystem | seeding / roll | site |
 |-----------|----------------|------|
-| Colony building placement | per-colony deterministic seed `srand((colony_y<<8) + colony_x + dword[0x8D80])` (seed helper `func_009726`, 0x181F:0xD62, sole caller 0x25D3A); then per-plot `random_int(0, count[cat]-1)` shuffle with occupied-retry — a colony always lays out identically; `[0x8D80]` is a per-session boot value (runtime) | 0x9736 / 0x25DBF |
-| Combat resolution | single inclusive roll `random_int(1, ATK+DEF)`; attacker wins if roll ≤ ATK; separate 50% ambush coin `random_int(0,1)` | 0x5B849 / 0x5D188 |
-| Music shuffle | pump re-seeds from the tick clock `[0x83A8]`, rolls the tune-index window, re-rolls on repeat | `func_004EE6` |
-| Founding-Father pick | weighted walk `budget = random_int(1, Σ era-weights)`, subtract until ≤ 0 | 0x3C0DB / 0x3C035 |
-| Trade-route default name | new route's default name = colony name + a random `@TRADENAMES` word (collision appends " A") | `func_0610B0` |
-| King tax attempt | difficulty roll `random_int(1, diff+1)` gate on the raise | 0x34B25 |
-| Native raid outcome | gate `random_int(1,12)` + base outcome `random_int(1,4)` | 0x5BEFD / 0x5BF35 |
-| Tory uprising | fires when `random_int(0, diff+1) != 0` — probability `(diff+1)/(diff+2)` | 0x3CADD |
-| Mission conversion | `random_int(0,15)` vs `tier+2` (doubled by the expert bit) | 0x5730A |
-| Lost City Rumor gold | ruins `10*3d8` (0x61770); big treasure `2*4d10` (0x617C0) | `func_061454` |
+| Colony building placement | per-colony deterministic seed `srand((colony_y<<8) + colony_x + dword⟦state⟧)` (seed helper placement_seed(), ⟦addr⟧:0xD62, sole caller ⟦addr⟧); then per-plot `random_int(0, count[cat]-1)` shuffle with occupied-retry — a colony always lays out identically; ⟦state⟧ is a per-session boot value (runtime) | ⟦addr⟧ / ⟦addr⟧ |
+| Combat resolution | single inclusive roll `random_int(1, ATK+DEF)`; attacker wins if roll ≤ ATK; separate 50% ambush coin `random_int(0,1)` | ⟦addr⟧ / ⟦addr⟧ |
+| Music shuffle | pump re-seeds from the tick clock ⟦state⟧, rolls the tune-index window, re-rolls on repeat | rotate_music() |
+| Founding-Father pick | weighted walk `budget = random_int(1, Σ era-weights)`, subtract until ≤ 0 | ⟦addr⟧ / ⟦addr⟧ |
+| Trade-route default name | new route's default name = colony name + a random `@TRADENAMES` word (collision appends " A") | ⟦helper⟧ |
+| King tax attempt | difficulty roll `random_int(1, diff+1)` gate on the raise | ⟦addr⟧ |
+| Native raid outcome | gate `random_int(1,12)` + base outcome `random_int(1,4)` | ⟦addr⟧ / ⟦addr⟧ |
+| Tory uprising | fires when `random_int(0, diff+1) != 0` — probability `(diff+1)/(diff+2)` | ⟦addr⟧ |
+| Mission conversion | `random_int(0,15)` vs `tier+2` (doubled by the expert bit) | ⟦addr⟧ |
+| Lost City Rumor gold | ruins `10*3d8`; big treasure `2*4d10` | lost_city_rumor() |
 
 ---
 
@@ -3373,101 +3351,101 @@ An 11th keyword string, `TEXTCOLR` (file 0x1F9AA), is **vestigial as a directive
 
 ## 23. The event catalogue
 
-This chapter is the game's event book: every interrupting event, one row per event, in the schema *event_id / string_key / trigger / condition / options / outcomes (state writes) / arms (downstream)*. All string keys are GAME.TXT sections (verbatim bodies quoted where load-bearing); all popups render through the shared centred-dialog engine of Part V with a speaker channel (`[0x1F5C]` king/tribe, `[0x1F5E]` advisor, `[0x1F60]` missionary), all three reset to 0xFFFF after close at 0x06EE6B. Where a probability or write was not byte-decoded it is marked unmapped rather than estimated.
+This chapter is the game's event book: every interrupting event, one row per event, in the schema *event_id / string_key / trigger / condition / options / outcomes (state writes) / arms (downstream)*. All string keys are GAME.TXT sections (verbatim bodies quoted where load-bearing); all popups render through the shared centred-dialog engine of Part V with a speaker channel (⟦state⟧ king/tribe, ⟦state⟧ advisor, ⟦state⟧ missionary), all three reset to ⟦addr⟧ after close. Where a probability or write was not byte-decoded it is marked unmapped rather than estimated.
 
 ### 23.1 Woodcut event screens (17)
 
-One renderer, `func_06B722` @0x06B722 (`show_woodcut(n)`): black clear, WOODFRAM frame 1 centred, title `"<year>: <CAPTION>"` from `@WOODCUT` line n, NAMEPLAT strip at y=162, caption at y=165 in FONT-NP (ink LUT palette indices 0x5C/0x5D/0x5E), WDCUT art blit, staged fade, modal wait. The wrapper `func_00543C` (0x181F:0x524) enforces **once-only** per game via the shown-bitmask at `[0x540A]` and fires the sound cues. Art = WDCUT01..WDCUT13.SS (no 00/14/15/16); a missing-file check @0x06B79F makes the art-less numbers unshowable. The caller scan is exhaustive: exactly 10 call sites.
+One renderer, ⟦helper⟧ (`show_woodcut(n)`): black clear, WOODFRAM frame 1 centred, title `"<year>: <CAPTION>"` from `@WOODCUT` line n, NAMEPLAT strip at y=162, caption at y=165 in FONT-NP (ink LUT palette indices 0x5C/0x5D/0x5E), WDCUT art blit, staged fade, modal wait. The wrapper ⟦helper⟧ enforces **once-only** per game via the shown-bitmask at ⟦state⟧ and fires the sound cues. Art = WDCUT01..WDCUT13.SS (no 00/14/15/16); a missing-file check makes the art-less numbers unshowable. The caller scan is exhaustive: exactly 10 call sites.
 
 | n | Caption (string = `@WOODCUT` line n) | Trigger | Sound cue | Arms |
 |---|--------------------------------------|---------|-----------|------|
 | 0 | A NEW WORLD | **no caller** (latent save-under popup mode) | music class 2 wired | — |
-| 1 | DISCOVERY OF THE NEW WORLD | first landfall — `func_020EFE` @0x020F00 (sole caller `func_03FDDE`, after `[0x543E]\|=0x80`) | music class 2 | tutorial T2 tail |
-| 2 | BUILDING A COLONY | first colony — build executor `func_040C1E` @0x040E00, human only | sfx 0x54 | — |
-| 3 | MEETING THE NATIVES | first tribe contact, tribe ≥ 2 — `func_056C3E` @0x056DA6 | tune 0x33 | then `@INDIANWELCOME` |
+| 1 | DISCOVERY OF THE NEW WORLD | first landfall — ⟦helper⟧ (sole caller move_ship(), after `ai.once_flags`\|=0x80`) | music class 2 | tutorial T2 tail |
+| 2 | BUILDING A COLONY | first colony — build executor ⟦helper⟧, human only | sfx 0x54 | — |
+| 3 | MEETING THE NATIVES | first tribe contact, tribe ≥ 2 — ⟦helper⟧ | tune 0x33 | then `@INDIANWELCOME` |
 | 4 | THE AZTEC EMPIRE | same site, tribe 1 (Aztec) | tune 0x35 | then `@INDIANWELCOME` |
 | 5 | THE INCA NATION | same site, tribe 0 (Inca) | tune 0x36 | then `@INDIANWELCOME` |
-| 6 | DISCOVERY OF THE PACIFIC OCEAN | **no caller** — sound cue wired @0x0054A2 but never hooked | tune 0x39 (dead) | — |
-| 7 | ENTERING INDIAN VILLAGE | first village entry — `func_04B308` @0x04B56C (human) | — | village-visit dialog |
-| 8 | THE FOUNTAIN OF YOUTH | Lost City outcome 1 — `func_061454` @0x0618F9 | after tune 0x37 | recruit prompt `@LOSTCITY0` |
-| 9 | CARGO FROM THE NEW WORLD | first cargo arrival in Europe — `func_041EEA` @0x0420EF | music class 2 | — |
-| 10 | MEETING FELLOW EUROPEANS | first power-to-power contact — `func_057F4E` @0x057FDF | contact fanfare 0x8020+p (§24.4) | `@HELLO*` greeting |
-| 11 | COLONY BURNING | colony burned — `func_05CA7E` @0x05DADC (with `@BURNED`) and @0x05DFCB | sfx 0x53 + tune 0x32 | — |
+| 6 | DISCOVERY OF THE PACIFIC OCEAN | **no caller** — sound cue wired but never hooked | tune 0x39 (dead) | — |
+| 7 | ENTERING INDIAN VILLAGE | first village entry — ⟦helper⟧ (human) | — | village-visit dialog |
+| 8 | THE FOUNTAIN OF YOUTH | Lost City outcome 1 — lost_city_rumor() | after tune 0x37 | recruit prompt `@LOSTCITY0` |
+| 9 | CARGO FROM THE NEW WORLD | first cargo arrival in Europe — ⟦helper⟧ | music class 2 | — |
+| 10 | MEETING FELLOW EUROPEANS | first power-to-power contact — run_diplomacy_meeting() | contact fanfare ⟦addr⟧+p (§24.4) | `@HELLO*` greeting |
+| 11 | COLONY BURNING | colony burned — resolve_attack() (with `@BURNED`) and | sfx 0x53 + tune 0x32 | — |
 | 12 | COLONY DESTROYED | **no caller** | — | — |
-| 13 | INDIAN RAID | natives attack a human colony — `func_05CA7E` @0x05D219 | — | raid outcome popup (§23.6) |
+| 13 | INDIAN RAID | natives attack a human colony — resolve_attack() | — | raid outcome popup (§23.6) |
 | 14–16 | placeholders | unreachable — no caller *and* no .SS art | — | — |
 
 ### 23.2 Tutorial overlays (`@TUTORIAL1..19`)
 
-All 19 are ordinary GAME.TXT popups emitted through 0x181F:0x652 = `func_06F5F2(name, advisor)` (sets the advisor portrait channel `[0x1F5E]` → MSS<n>.SS) or the 0x3FE wrapper. Gate: Game-Options bit 0x80 "Tutorial Hints" (T18 is ungated). Each step is **event-driven and idempotent**: its site does `test [0x5386/7],bit; jne skip → emit → or [0x5386/7],bit`; new-game init pre-marks `[0x5386]=0x0E`. Sections with literal placement: T1 (10,40), T4 (x=10), T12 (y=5), T16 (5,10 smallfont), T17/T18 (y=10 w=300 smallfont); the rest centre.
+All 19 are ordinary GAME.TXT popups emitted through ⟦addr⟧:0x652 = ⟦helper⟧(name, advisor)` (sets the advisor portrait channel ⟦state⟧ → MSS<n>.SS) or the 0x3FE wrapper. Gate: Game-Options bit 0x80 "Tutorial Hints" (T18 is ungated). Each step is **event-driven and idempotent**: its site does `test [⟦addr⟧/7],bit; jne skip → emit → or [⟦addr⟧/7],bit`; new-game init pre-marks `game.tutorial_seen`=0x0E`. Sections with literal placement: T1 (10,40), T4 (x=10), T12 (y=5), T16 (5,10 smallfont), T17/T18 (y=10 w=300 smallfont); the rest centre.
 
-The unit-focus dispatcher `func_020F50` @0x020F50 (called from the end-of-move handler @0x021E63 and the map idle loop @0x024AC6 after a ~30-tick wait) serves T1, T3, T8–T11, T13–T15, T19 from an if/else chain over the selected unit:
+The unit-focus dispatcher ⟦helper⟧ (called from the end-of-move handler and the map idle loop after a ~30-tick wait) serves T1, T3, T8–T11, T13–T15, T19 from an if/else chain over the selected unit:
 
 | # | Trigger site | Condition | Advisor |
 |---|--------------|-----------|---------|
 | T1 | dispatcher | first turn (%STRING0 = unit-type name) | 0 |
-| T2 | @0x020F43 | land discovered (tail of `func_020EFE`; no once-flag) | 0 |
+| T2 | | land discovered (tail of ⟦helper⟧; no once-flag) | 0 |
 | T3 | dispatcher | pioneer on a ≥5-resource site (%STRING0 = signature good) | 3 |
-| T4 | @0x02C73F | colony open: better job available from the terrain ring (%STRING0/1 = current/alternative goods) | 5 |
-| T5 | @0x036514 | religious-unrest immigration — chained after `@UNREST` | 4 |
-| T6 | @0x02EA41 | goods ready for export at end of turn (%NUMBER0 qty, %STRING0..2 goods/colony/port) | 0 |
-| T7 | @0x028D36 | colony pop ≥ 3 and no stockade | 1 |
+| T4 | | colony open: better job available from the terrain ring (%STRING0/1 = current/alternative goods) | 5 |
+| T5 | | religious-unrest immigration — chained after `@UNREST` | 4 |
+| T6 | | goods ready for export at end of turn (%NUMBER0 qty, %STRING0..2 goods/colony/port) | 0 |
+| T7 | | colony pop ≥ 3 and no stockade | 1 |
 | T8 | dispatcher | petty-criminal/servant near a training village | 5 |
 | T9 | dispatcher | pioneer on unroaded forest/hills near a colony | 3 |
 | T10 | dispatcher | pioneer on a plowable/clearable colony ring tile | 3 |
 | T11 | dispatcher | idle ship, turn < 20 | — |
-| T12 | @0x02C7B1 | colony open with a ship at the tile (%STRING0 = colony name) | 5 |
+| T12 | | colony open with a ship at the tile (%STRING0 = colony name) | 5 |
 | T13 | dispatcher | pioneer before the first colony | 3 |
 | T14 | dispatcher | soldier selected | 1 |
 | T15 | dispatcher | colonist on a colony tile (%STRING0 = colony name) | 5 |
-| T16 | @0x0286F6 | colony food deficit (red-X corn counters) | — |
-| T17 | @0x035C22 | Europe screen first open | — |
-| T18 | @0x032760 | Europe buy: cannot afford 100 units — **ungated** (no hints bit, no once-flag) | — |
+| T16 | | colony food deficit (red-X corn counters) | — |
+| T17 | | Europe screen first open | — |
+| T18 | | Europe buy: cannot afford 100 units — **ungated** (no hints bit, no once-flag) | — |
 | T19 | dispatcher | Indian convert selected | 4 |
 
-Related conditional warnings from the found-colony validator `func_022542` (fire only at difficulty < 2, i.e. `[0x53A6] < 2` @0x22763): `@TUTNOSPACES` when adjacent productive squares < 4 (@0x22772), `@TUTNOLUMBER` when forested squares = 0 (@0x2278A); both are two-option confirms and the build proceeds only on row 2.
+Related conditional warnings from the found-colony validator ⟦helper⟧ (fire only at difficulty < 2, i.e. `game.difficulty` < 2`): `@TUTNOSPACES` when adjacent productive squares < 4, `@TUTNOLUMBER` when forested squares = 0; both are two-option confirms and the build proceeds only on row 2.
 
 ### 23.3 European diplomacy (the 48-section family)
 
-One dispatcher owns the family: **`func_057F4E`** (page 0x0F, 7,151 bytes), entered from the contact evaluator `func_059B90` when a unit meets a foreign power (unit-vs-tile resolver @0x03F82B; movement processor @0x0481CB). AI-to-AI meetings delegate silently to the ticker `func_057DC0` @0x057FA4 — popups run only for the human. Conversations emit via 0x1A1F:0x688 = `func_06F61C` (speaker channel `[0x1F60]` = power B → MYR0..MYR3.SS portrait; returns the 1-based row); announcements via 0x181F:0x652 (advisor portraits MSS1/MSS2). Relation state = the 4×4 matrix at PowerRecord+0x34 (DGROUP 0x883C, row stride 0x13C): bits 0x02 war · **0x08 pending grievance** · 0x10 parley cooldown (16 turns) · 0x20 met · 0x40 peace treaty · **0x80 privateer hidden attribution**. PowerRecord+0x40 is the **treaty-respect counter** (plain byte, seeded `2·(6−difficulty)`, halved with Franklin; a nonzero value makes an AI abort attacks on its treaty partner @0x03F163; the decrement site is unmapped). `%STRING` slots are filled from `@GREATKINGS/@GREATDEEDS/@GREATLEADER*[power]` by `func_057A3A`; `@MEEKNESS` supplies "request"/"demand". Franklin (FF #19) halves demands/prices and cancels AI hostility at 6 cited sites; a war fanfare (`func_005108(4)`) precedes every WAR*/MERCENARY emit.
+One dispatcher owns the family: **run_diplomacy_meeting()** (page 0x0F, 7,151 bytes), entered from the contact evaluator evaluate_contact() when a unit meets a foreign power (unit-vs-tile resolver; movement processor). AI-to-AI meetings delegate silently to the ticker ai_treaty_ticker() — popups run only for the human. Conversations emit via ⟦addr⟧:0x688 = ⟦helper⟧ (speaker channel ⟦state⟧ = power B → MYR0..MYR3.SS portrait; returns the 1-based row); announcements via ⟦addr⟧:0x652 (advisor portraits MSS1/MSS2). Relation state = the 4×4 matrix at `power.relations` (DGROUP ⟦addr⟧, row stride 0x13C): bits 0x02 war · **0x08 pending grievance** · 0x10 parley cooldown (16 turns) · 0x20 met · 0x40 peace treaty · **0x80 privateer hidden attribution**. `power.treaty_respect` is the **treaty-respect counter** (plain byte, seeded `2·(6−difficulty)`, halved with Franklin; a nonzero value makes an AI abort attacks on its treaty partner; the decrement site is unmapped). `%STRING` slots are filled from `@GREATKINGS/@GREATDEEDS/@GREATLEADER*[power]` by ⟦helper⟧; `@MEEKNESS` supplies "request"/"demand". Franklin (FF #19) halves demands/prices and cancels AI hostility at 6 cited sites; a war fanfare (⟦helper⟧(4)`) precedes every WAR*/MERCENARY emit.
 
 | Event / key(s) | Trigger (key-push → emit) | Options & outcomes (state writes) | Armed by / arms |
 |----------------|---------------------------|-----------------------------------|-----------------|
-| Greeting `@HELLOFIRST/@HELLOAHOY/@HELLOMEEK/@HELLOMANLY/@HELLOUSA` | key = "HELLO" + (not-met ? ship ? "AHOY" : "FIRST" : tone "MEEK"/"MANLY"); USA for an independent power; @0x0588CD–0x058923 → @0x058939 | greeting only; leads into the parley menu | first contact also fires woodcut 10 @0x057FDF + fanfare 0x8020+p |
-| Third-party demand `@APOSTATES` (+USA) | AI asks the player to attack its treaty partner; @0x058989 → @0x058A30 | row 2 accepts → player's treaty with the target cleared + war bit 0x02 set @0x058A6A/@0x058A7B | — |
-| Third-party demand `@HEATHEN` (+USA) | AI asks the player to attack a tribe; @0x0589C0 → @0x058A30 | row 2 accepts → tribe tension +100 vs the target tribe (`func_045DF2(t,A,100,0)` @0x058A91) | — |
-| Protest `@PIRACY/@PIRACYUSA` — *"%STRING0 is most displeased with the {%STRING1 pirates} lying in wait off the coast of %STRING2…"* | fires when the war-matrix **privateer bit 0x80** is set for the pair; @0x058B0D → @0x058B45 | row 1 "What pirates? We have NEVER condoned piracy!" — denial; row 2 recalls **all** privateers to Europe and clears bit 0x80 @0x058B7D–0x058BE1 (Europe is the engine's destination sentinel **999/0x3E7**, the same value used by trade-route stops; a ship-type-guarded scan against it sits @0x6013C–0x60146) | armed by `func_03ECF0` @0x03F0A1: a Privateer attack (unit type 0x10 guard @0x03F092) sets 0x80 *instead of* the war bit |
-| Protest `@SIEGES/@SIEGESUSA` | player units besieging B's colonies; @0x058C99 → @0x058CD8 | row 2 withdraws the besieging units. **Latent bug:** `@SIEGESUSA`'s rows are textually swapped but the handler acts on row 2 for both — answering "our forces shall stay" to an independent power executes the withdrawal | — |
-| Extortion `@TRIBUTE/@TRIBUTEUSA` | demand accumulated from forces-near-colonies, difficulty-scaled (`value·10·(diff+8)/100`, surcharge `+500·(diff+1)`); @0x058E7D → @0x058EB8 | pay → gold transfer @0x058ED0; refuse → escalation into the WAR keys below | grievance: bit 0x08 set when the grievance score crosses its threshold @0x3F0D7/@0x59AE9 |
-| Extortion `@WANTSTUFFUSA` — goods demand | @0x058F56 → @0x058F95 | accept → colony stock rows moved to B @0x058FB4. **Latent bug:** the non-USA key "WANTSTUFF" is built @0x058F56 but **has no GAME.TXT section** (only `@WANTSTUFFUSA` exists) | — |
-| War declarations `@WARMEEK`/`@WARMANLY` — *"You reject our generous offer? Then in the name of %STRING0 we shall wipe you from the face of the New World. Prepare for WAR!"* | refusal outcomes of the demand tree; @0x059222/@0x059516 → @0x059274/@0x05957E | war bit 0x02 set for the pair | war fanfare class 4 first |
-| Ultimatum `@RID/@RIDUSA`, provocation `@PROVOKE` | @0x059077 → @0x0590A3; @0x058FEE/@0x05974C | leave-or-war ultimatum; `@PROVOKE` = *"We can no longer tolerate your foul provocations. Prepare for WAR!"* | — |
-| Treaty menu `@WORTHY` → `@PEACEMEEK/@PEACEMANLY/@OLDPEACE*/@PEACEUSA`, `@GIVECASH` | standing-peace proposals; @0x05911D–@0x059395 | treaty set both ways @0x059139 (0x181F:0xA06, bit 0x40) + siege stand-down `func_057CE0`; respect counter set 1 | 16-turn parley cooldown stamp `[0x53C8+p·2]` |
-| Withdraw family `@WITHDRAW/@NOTWITHDRAW/@NOTHINGWITHDRAW/@MAYBEWITHDRAW` | @0x0593B7–@0x05949B | withdraw price = `25·(diff+2)·forces` (min 100, ×2 at war, −50/unit, Franklin ÷2) | `@GIFTS` @0x059700 / `@THREATS` @0x059755 side outcomes |
-| Alliance `@MILITARY` → `@NOCONTACT/@ALREADYSMITE/@SMITEINDIANS/@SMITEEUROPE/@UNFORTUNATE/@MERCENARY` | dynamic row list (lea 0x19FA @0x05976D, shown via the modal pump @0x059848); smite family @0x05989D–@0x059A0F | purchase → B declares war on target T (bits @0x059A49–0x059A71) + player pays B @0x059AC7; `@MERCENARY` = *"The {%STRING0} declare war on the {%STRING1}."* | war fanfare class 4 |
-| AI↔AI ticker `@SIGNTREATY`/`@DECLAREWAR` | `func_057DC0`, every 3rd turn per met pair; @0x057E86 / @0x057F18 | peace → treaty bit 0x40 both ways + respect := 1; war → `@DECLAREWAR`. **Latent bug:** the had-treaty branch pushes key "CANCELTREATY" @0x057F10 which **has no GAME.TXT section** (only `@CANCELPEACE` exists) | — |
-| Attacking a treaty partner `@HAVETREATY` → `@CANCELPEACE`; `@SNEAK` | human attacker → `@HAVETREATY` @0x03F130 (row 2 "Break Treaty." continues) → `@CANCELPEACE` @0x03F22F; AI attacker → `@DECLAREWAR` @0x03F262; human victim → `@SNEAK` @0x03F1B4 | war bit set @0x03F298, treaty cleared @0x03F2A5 | second `@HAVETREATY` site @0x0220CE (order-issuing flow; its UI trigger is unmapped) — that path sets the war bit @0x220E6, clears the treaty via 0x181F:0xA10, plays **SFX 0x58** @0x220F9 and issues attack order 5 before the attack-execution call |
-| `@SUCCESSION` — *"War of the Spanish Succession ends in Europe! {%STRING0}, ravaged by war, agrees to cede %STRING1 to the {%STRING2}…"* | `func_03C638` @0x03C76A (MSS2 advisor), scheduled while the SoL meter `[0x53D0] < 75` and no power has seceded (`[0x53D2] < 0`) | whole-map owner-bit rewrite @0x03C799–0x03C7D1 — the weakest AI power is absorbed | skipped in hot-seat multiplayer @0x03C63D |
-| Movement guards `@NOWARSDURINGREV` / `@TRADEATWAR` / `@TRADEMERCANTILISM` | `@NOWARSDURINGREV` @0x05A916 (also enforcement @0x5A912 in the attack handler, only inside the WoI-declared gate @0x5A8C8: emits and sets the cancel flag, skipping the attack call @0x5A92C); `@TRADEATWAR` @0x05A458 and the **Jan de Witt gate** (FF #4) `@TRADEMERCANTILISM` @0x05A469, both in the foreign-colony trade entry `func_05A40E` | attack/trade cancelled; no state change | — |
+| Greeting `@HELLOFIRST/@HELLOAHOY/@HELLOMEEK/@HELLOMANLY/@HELLOUSA` | key = "HELLO" + (not-met ? ship ? "AHOY" : "FIRST" : tone "MEEK"/"MANLY"); USA for an independent power;–⟦addr⟧ → | greeting only; leads into the parley menu | first contact also fires woodcut 10 + fanfare ⟦addr⟧+p |
+| Third-party demand `@APOSTATES` (+USA) | AI asks the player to attack its treaty partner; → | row 2 accepts → player's treaty with the target cleared + war bit 0x02 set/ | — |
+| Third-party demand `@HEATHEN` (+USA) | AI asks the player to attack a tribe; → | row 2 accepts → tribe tension +100 vs the target tribe (adjust_tension()(t,A,100,0)`) | — |
+| Protest `@PIRACY/@PIRACYUSA` — *"%STRING0 is most displeased with the {%STRING1 pirates} lying in wait off the coast of %STRING2…"* | fires when the war-matrix **privateer bit 0x80** is set for the pair; → | row 1 "What pirates? We have NEVER condoned piracy!" — denial; row 2 recalls **all** privateers to Europe and clears bit 0x80–⟦addr⟧ (Europe is the engine's destination sentinel **999/0x3E7**, the same value used by trade-route stops; a ship-type-guarded scan against it sits–⟦addr⟧) | armed by ai_war_planner(): a Privateer attack (unit type 0x10 guard) sets 0x80 *instead of* the war bit |
+| Protest `@SIEGES/@SIEGESUSA` | player units besieging B's colonies; → | row 2 withdraws the besieging units. **Latent bug:** `@SIEGESUSA`'s rows are textually swapped but the handler acts on row 2 for both — answering "our forces shall stay" to an independent power executes the withdrawal | — |
+| Extortion `@TRIBUTE/@TRIBUTEUSA` | demand accumulated from forces-near-colonies, difficulty-scaled (`value·10·(diff+8)/100`, surcharge `+500·(diff+1)`); → | pay → gold transfer; refuse → escalation into the WAR keys below | grievance: bit 0x08 set when the grievance score crosses its threshold/ |
+| Extortion `@WANTSTUFFUSA` — goods demand | → | accept → colony stock rows moved to B. **Latent bug:** the non-USA key "WANTSTUFF" is built but **has no GAME.TXT section** (only `@WANTSTUFFUSA` exists) | — |
+| War declarations `@WARMEEK`/`@WARMANLY` — *"You reject our generous offer? Then in the name of %STRING0 we shall wipe you from the face of the New World. Prepare for WAR!"* | refusal outcomes of the demand tree;/ →/ | war bit 0x02 set for the pair | war fanfare class 4 first |
+| Ultimatum `@RID/@RIDUSA`, provocation `@PROVOKE` | →;/ | leave-or-war ultimatum; `@PROVOKE` = *"We can no longer tolerate your foul provocations. Prepare for WAR!"* | — |
+| Treaty menu `@WORTHY` → `@PEACEMEEK/@PEACEMANLY/@OLDPEACE*/@PEACEUSA`, `@GIVECASH` | standing-peace proposals;– | treaty set both ways (⟦addr⟧:0xA06, bit 0x40) + siege stand-down ⟦helper⟧; respect counter set 1 | 16-turn parley cooldown stamp `[⟦addr⟧+p·2]` |
+| Withdraw family `@WITHDRAW/@NOTWITHDRAW/@NOTHINGWITHDRAW/@MAYBEWITHDRAW` |– | withdraw price = `25·(diff+2)·forces` (min 100, ×2 at war, −50/unit, Franklin ÷2) | `@GIFTS` / `@THREATS` side outcomes |
+| Alliance `@MILITARY` → `@NOCONTACT/@ALREADYSMITE/@SMITEINDIANS/@SMITEEUROPE/@UNFORTUNATE/@MERCENARY` | dynamic row list (lea ⟦addr⟧, shown via the modal pump); smite family– | purchase → B declares war on target T (bits–⟦addr⟧) + player pays B; `@MERCENARY` = *"The {%STRING0} declare war on the {%STRING1}."* | war fanfare class 4 |
+| AI↔AI ticker `@SIGNTREATY`/`@DECLAREWAR` | ai_treaty_ticker(), every 3rd turn per met pair; / | peace → treaty bit 0x40 both ways + respect := 1; war → `@DECLAREWAR`. **Latent bug:** the had-treaty branch pushes key "CANCELTREATY" which **has no GAME.TXT section** (only `@CANCELPEACE` exists) | — |
+| Attacking a treaty partner `@HAVETREATY` → `@CANCELPEACE`; `@SNEAK` | human attacker → `@HAVETREATY` (row 2 "Break Treaty." continues) → `@CANCELPEACE`; AI attacker → `@DECLAREWAR`; human victim → `@SNEAK` | war bit set, treaty cleared | second `@HAVETREATY` site (order-issuing flow; its UI trigger is unmapped) — that path sets the war bit, clears the treaty via ⟦addr⟧:0xA10, plays **SFX 0x58** and issues attack order 5 before the attack-execution call |
+| `@SUCCESSION` — *"War of the Spanish Succession ends in Europe! {%STRING0}, ravaged by war, agrees to cede %STRING1 to the {%STRING2}…"* | spanish_succession() (MSS2 advisor), scheduled while the SoL meter `game.revolution_meter` < 75` and no power has seceded (`game.king_power` < 0`) | whole-map owner-bit rewrite–⟦addr⟧ — the weakest AI power is absorbed | skipped in hot-seat multiplayer |
+| Movement guards `@NOWARSDURINGREV` / `@TRADEATWAR` / `@TRADEMERCANTILISM` | `@NOWARSDURINGREV` (also enforcement in the attack handler, only inside the WoI-declared gate: emits and sets the cancel flag, skipping the attack call); `@TRADEATWAR` and the **Jan de Witt gate** (FF #4) `@TRADEMERCANTILISM`, both in the foreign-colony trade entry ⟦helper⟧ | attack/trade cancelled; no state change | — |
 
 ### 23.4 King and tax events
 
-The per-turn tax-demand driver is `func_036138`. Cadence: nothing before turn 30; then a demand fires when `turn % interval == 0`, interval 18 shrinking to 15/12/9 as the year crosses 1600/1700/1750, further reduced by `(diff−2)` for the human; skipped once tax > 85. Speaker channel `[0x1F5C]=8` → KING1.SS.
+The per-turn tax-demand driver is schedule_king_demand(). Cadence: nothing before turn 30; then a demand fires when `turn % interval == 0`, interval 18 shrinking to 15/12/9 as the year crosses 1600/1700/1750, further reduced by `(diff−2)` for the human; skipped once tax > 85. Speaker channel ⟦state⟧=8` → KING1.SS.
 
 The **pretext** is chosen by a composite severity score
 ```text
-sev = random_int(1,1000) + (2·SoL[0x53D0] − tax)·5 + gold_term(+0x2A,100)
-    + per_player_const[0x9410+p] + turn/30            ; @0x361CC..0x36221
+sev = random_int(1,1000) + (2·SoL`game.revolution_meter` − tax)·5 + gold_term(+0x2A,100)
+    + per_player_const[⟦addr⟧+p] + turn/30            ;
 ```
 
 | event_id | string_key | Condition (sev) | Message opening |
 |----------|-----------|------------------|-----------------|
-| KING-WIFE | `@KINGWIFE` | `< 0x28A` (and `[0x53A7] < 0x1E`) @0x362C7 | "In honor of our recent wedding to our %STRING2 wife…" |
-| KING-WAR | `@KINGWAR` | `< 0x3B6` @0x362FA (+`random_int(1,8)` war number) | "Because of recent developments in our ongoing war with %STRING2…" |
-| KING-NAVACT | `@KINGNAVACT` | `< 0x44C` @0x36348 (+`random_int(3,4)`) | "…impose a new {Navigation Act}…" |
-| KING-STAMPACT | `@KINGSTAMPACT` | else @0x36371 (+`random_int(5,8)`) | "…teach them proper respect… by imposing a new {Stamp Act}…" |
+| KING-WIFE | `@KINGWIFE` | `< 0x28A` (and ⟦state⟧ < 0x1E`) | "In honor of our recent wedding to our %STRING2 wife…" |
+| KING-WAR | `@KINGWAR` | `< 0x3B6` (+`random_int(1,8)` war number) | "Because of recent developments in our ongoing war with %STRING2…" |
+| KING-NAVACT | `@KINGNAVACT` | `< 0x44C` (+`random_int(3,4)`) | "…impose a new {Navigation Act}…" |
+| KING-STAMPACT | `@KINGSTAMPACT` | else (+`random_int(5,8)`) | "…teach them proper respect… by imposing a new {Stamp Act}…" |
 
-The core demand `@KINGTAX` (width 190): *"It is essential that the Crown receive proper recompense for its efforts on your behalf. Therefore we have graciously decided to raise your tax rate by {%NUMBER0%%}. The tax rate is now {%NUMBER1%%}. If you wish, you may kiss our royal pinky ring."* Options `@TAXOPTIONS`: **"Kiss pinky ring."** (accept — tax applied, hard-clamped to 75 at 0x03434F) / **"Hold '{%STRING3 Party}.'"** (refuse). Refusal fires `@TEAPARTY` — *"{%STRING3 Party}! Sons of Liberty throw {%NUMBER0} tons of %STRING0 into the sea at %STRING1! … %STRING0 cannot be traded in %STRING2 until boycott is lifted."* — and sets the per-good boycott bit `PowerRecord+0x20 |= (1<<good)` @0x034717. The boycott is lifted per-good by paying back-tax = `count × 500` gold (count = `PowerRecord[+0x4C+good] + base_table[0x9700+good·9]`, clamped ≥0; payment @0x03340D moves the gold into the royal fund and clears the bit @0x033423), or wholesale by acquiring Jakob Fugger (FF id 1: `mov [bx+0x20],0` @0x03BD45).
+The core demand `@KINGTAX` (width 190): *"It is essential that the Crown receive proper recompense for its efforts on your behalf. Therefore we have graciously decided to raise your tax rate by {%NUMBER0%%}. The tax rate is now {%NUMBER1%%}. If you wish, you may kiss our royal pinky ring."* Options `@TAXOPTIONS`: **"Kiss pinky ring."** (accept — tax applied, hard-clamped to 75) / **"Hold '{%STRING3 Party}.'"** (refuse). Refusal fires `@TEAPARTY` — *"{%STRING3 Party}! Sons of Liberty throw {%NUMBER0} tons of %STRING0 into the sea at %STRING1! … %STRING0 cannot be traded in %STRING2 until boycott is lifted."* — and sets the per-good boycott bit `power.boycotts` |= (1<<good)`. The boycott is lifted per-good by paying back-tax = `count × 500` gold (count = `PowerRecord[+0x4C+good] + base_table[⟦addr⟧+good·9]`, clamped ≥0; payment moves the gold into the royal fund and clears the bit), or wholesale by acquiring Jakob Fugger (FF id 1: `mov [bx+0x20],0`).
 
 Related rows:
 
@@ -3479,61 +3457,61 @@ Related rows:
 | KING-PURCHASETAX | `@PURCHASETAX` | use of Crown resources (Royal University etc.) | tax raise |
 | KING-GALLEON | `@KINGGALLEON2/3`, `@CASHTREASURE`, `@LOOTCASH` | treasure unit with no Galleon; accept → Crown ships it | cut% = tax (with Cortés, FF #10) else `max(5·diff+50, 2·tax)` clamped ≤ 90; player receives gross − cut |
 | KING-NEWWAR | `@KINGNEWWAR` | Crown declares war on a rival and orders the player in ("…we shall provide you with {%NUMBER0$}…") | peace arrangement cancelled. Portrait = **KING1.SS** (no "KING2.SS" exists anywhere in the binary — byte-refuted) |
-| Tax-level gate | — | `tax ≥ 60` (0x3C, @0x034A1B) branches the king message flow; 75 (0x4B) is the hard cap | — |
+| Tax-level gate | — | `tax ≥ 60` branches the king message flow; 75 (0x4B) is the hard cap | — |
 
-### 23.5 Lost City rumors (`func_061454`)
+### 23.5 Lost City rumors (lost_city_rumor())
 
-Trigger: a unit enters a rumor tile. Rumor presence is **procedural** — predicate `func_006188` @0x6188 computes it from a coordinate hash against the map seed `[0x190]` (`((x>>2)·0x13 + (y>>2)·0x11 + seed + 8) & 0x1F − (y&3)·4 == (x&3)`), gated on terrain ≠ ocean/sea-lane/arctic and feature nibble = "none". Outcome index `n = max(anti_streak_floor, random_int(1,9))` — the floor rises by 1 per rumor and caps at 3, so the good low outcomes are only reachable on the first rumors; a quality roll `random_int(1,100) + scout·10` against thresholds 10/25 demotes/refines; per-game caps `[0x1DC6]/[0x1DC7]` limit Fountain and Cibola to one each; with debug bit `[0x5382]&1` the outcome is forced to 2. `s` = Seasoned-Scout bonus (unit type 5, class 0x16). The key is built literally as `"LOSTCITY"+n` (itoa append @0x618D1).
+Trigger: a unit enters a rumor tile. Rumor presence is **procedural** — predicate rumor_at_tile()  computes it from a coordinate hash against the map seed `map.seed` (`((x>>2)·0x13 + (y>>2)·0x11 + seed + 8) & 0x1F − (y&3)·4 == (x&3)`), gated on terrain ≠ ocean/sea-lane/arctic and feature nibble = "none". Outcome index `n = max(anti_streak_floor, random_int(1,9))` — the floor rises by 1 per rumor and caps at 3, so the good low outcomes are only reachable on the first rumors; a quality roll `random_int(1,100) + scout·10` against thresholds 10/25 demotes/refines; per-game caps `game.rumor_attempts`/`game.rumor_treasures` limit Fountain and Cibola to one each; with debug bit `game.flags`&1` the outcome is forced to 2. `s` = Seasoned-Scout bonus (unit type 5, class 0x16). The key is built literally as `"LOSTCITY"+n` (itoa append).
 
 | n | string_key | Outcome (state writes) | Reward roll |
 |---|-----------|------------------------|-------------|
-| 1 | `@LOSTCITY1` — *"You have discovered a {Fountain of Youth}!…"* | **8 free immigrants** queued on the Europe docks; recruit prompt `@LOSTCITY0`; **woodcut 8** @0x0618F9 after **tune 0x37** @0x618ED; promotes to 2 if `[0x5382]&1` | — |
+| 1 | `@LOSTCITY1` — *"You have discovered a {Fountain of Youth}!…"* | **8 free immigrants** queued on the Europe docks; recruit prompt `@LOSTCITY0`; **woodcut 8** after **tune 0x37**; promotes to 2 if `game.flags`&1` | — |
 | 2 | `@LOSTCITY2` — Seven Cities of Cibola | Treasure unit created (type 0xA); value stored /100 in its class byte; sound 0x3C | `%NUMBER1 = 100·(10·(s+2) + 1d20)` |
-| 3 | `@LOSTCITY3` — ruins of a lost civilization | gold credited to PowerRecord+0x2A @0x61C4C | `10·(3d8)`, scaled `·(s+2)/2` |
-| 4 | `@LOSTCITY4` — burial mounds | options: "Let us search for treasure!" / "Stay clear of those!"; search → sub-dispatch `@BURIAL1` (empty) / `@BURIAL2` gold `10·(3d8)` / `@BURIAL3` treasure `200·(1d8+2s+10)`; a **human** desecrating a **hostile** tribe's grounds appends `@SCREWED` (*"…You have trespassed on sacred land. Now you must die!"*) and the unit is lost; desecration raises that tribe's tension **+100** (`func_045DF2` @0x61B84 → war footing); one special path per power (flag bit 0x40 in `[0x543E]` @0x6186B) | — |
+| 3 | `@LOSTCITY3` — ruins of a lost civilization | gold credited to `power.gold` | `10·(3d8)`, scaled `·(s+2)/2` |
+| 4 | `@LOSTCITY4` — burial mounds | options: "Let us search for treasure!" / "Stay clear of those!"; search → sub-dispatch `@BURIAL1` (empty) / `@BURIAL2` gold `10·(3d8)` / `@BURIAL3` treasure `200·(1d8+2s+10)`; a **human** desecrating a **hostile** tribe's grounds appends `@SCREWED` (*"…You have trespassed on sacred land. Now you must die!"*) and the unit is lost; desecration raises that tribe's tension **+100** (adjust_tension() → war footing); one special path per power (flag bit 0x40 in `ai.once_flags`) | — |
 | 5 | `@LOSTCITY5` | expedition **vanishes** — triggering unit destroyed (downgrades to 6 when disallowed) | — |
 | 6 | `@LOSTCITY6` | nothing but rumors | — |
 | 7 | `@LOSTCITY7` — small friendly tribe | chief's gift of gold | `2·(4d10)` |
 | 8 | `@LOSTCITY8` | trespass near holy shrines — tribe displeased | — |
-| 9 | `@LOSTCITY9` — desperate survivors | colonist(s) spawn and join the nation @0x61809 | — |
+| 9 | `@LOSTCITY9` — desperate survivors | colonist(s) spawn and join the nation | — |
 
 ### 23.6 Native events
 
-Speaker channel `[0x1F5C]` = tribe index (0=Inca … 7=Tupi) → IND<n>A<pose>.SS portrait, read from the settlement's owner byte.
+Speaker channel ⟦state⟧ = tribe index (0=Inca … 7=Tupi) → IND<n>A<pose>.SS portrait, read from the settlement's owner byte.
 
 | event_id | string_key | Trigger / condition | Options | Outcomes / arms |
 |----------|-----------|---------------------|---------|-----------------|
-| NAT-WELCOME | `@INDIANWELCOME` — *"The {%STRING0} tribe welcomes you. We are a glorious nation of {%NUMBER0 %STRING1}… Will you accept our treaty and live with us in peace as brothers?"* | first contact with a tribe (`func_056C3E`, after woodcut 3/4/5) | Yes / No | No → `@INDIANSHUN` ("…Prepare for WAR!"); related `@INDIANBOW`/`@INDIANTREATY`/`@INDIANPEACE`/`@INDIANCOME` |
-| NAT-GIVEFOOD | `@INDIANGIVEFOOD` | supply/demand model in `func_056C3E`: the tribe's per-good **supply array [0x9E78] exceeds demand [0x9E58]** for food @0x05737C, and the player's stores are low — emit @0x0573EB | — | +%NUMBER0 food gifted |
-| NAT-BEGFOOD | `@INDIANBEGFOOD` — *"…Will our brothers of {%STRING1} share the bounty of their harvests…"* | food **deficit** `[0x9E58]−[0x9E78]` @0x057098–0x05709F — emit @0x05716F | "I'm sorry, we gave at the office." / "We offer you {%NUMBER0} of our {%NUMBER1 food}…" | refusal/gift affect tension (delta site unmapped) |
-| NAT-GIVESTUFF / CONVERT | `@INDIANGIVESTUFF`, `@INDIANSCONVERT` | goodwill gift; mission conversion `func_0572E6` — P(convert) = `(TribeData[+2]+2)/15`, doubled by Jean de Brebeuf (FF 0x16) | — | convert unit created at the colony, class 0x1B |
-| NAT-RAID | 6-key block `@RAIDWREAK @RAIDSTORES @RAIDBURN @RAIDSHIP @RAIDGOLD @RAIDNOTHING` (contiguous in the EXE at file 0x1F52A) — e.g. *"Spies report: {%STRING0} raiding party wreaks havoc in the {%STRING3} colony of {%STRING1}."* | raid handler `func_05BE84`: gate roll `random_int(1,12)−1` (+`diff−2` vs a human European) vs threshold `3·K+1`; base outcome `random_int(1,4)` adjusted by turn (`turn < 40·(2−diff)` downgrades) and availability gates; 5-way dispatch @0x5C026 | — | 1→`@RAIDSTORES` (loot cargo, sfx 0x4F), 2→`@RAIDWREAK`, 3→`@RAIDGOLD` (sfx 0x4E), 4→`@RAIDBURN`/`@RAIDSHIP`, 0→`@RAIDNOTHING` (raiders wiped out, sfx 0x5B). `@RAIDSCALP` exists as a section but is **not** in the 6-key block — an orphan, not a 7th outcome. Raid on a human colony also fires **woodcut 13** @0x05D219 |
-| NAT-WARPATH | `@INDIANWARPATH @INDIANWARPATH2 @INDIANWARFARE @INDIANWAR @INDIANGRUDGE @INDIANSURPRISE` | warpath handler `func_04B036` (sets `[0x1F5C]` = tribe owner); `@INDIANGRUDGE` = the Tory-side war-council entry during the revolution | — | war footing; alarm ≥ 128 (per-settlement per-power word at +0x0A+2·p) is the raid state; the parallel tension table (0..100) turns hostile at 75, war at 100 |
-| NAT-EXTORT | `@EXTORTSTUFF @EXTORTPOOR @EXTORTLAUGH @EXTORTNO` | player Demands Tribute (`func_04AC00`) | — | gold clamped to `[10, min(3·tribe_wealth+10, 100)]`, moved from settlement to player |
-| NAT-VILLAGE | `@VILLAGEHAPPY @VILLAGEMEDIUM @VILLAGESAVAGE @VILLAGEBAD @VILLAGEWAR`; `@MADATSHIPS @MADATWAGONS @DONTKNOWSHIPS` | scout enters village (`func_04B308`; attitude words from NAMES `@ATTITUDE`, banded at score cutoffs −5/0/10; War = alarm ≥ 128) | — | display; ship/wagon anger blocks trade |
-| NAT-RAZE | `@CHIEFKILL @INDIANGOLD @INDIANBURN` | player attacks a settlement (`func_04A7CA`); `@CHIEFKILL` = taboo execution | — | raze gold = `(Σ3·random(1,10−diff)) · random(1,6) · 4 · (tribe+1)` → +0x2A; no woodcut fires here (the old "WDCUT12" gloss is byte-refuted — WDCUT12 has no caller) |
-| NAT-TENSION | *(silent)* | tension applier `func_045DF2` (33 call sites): trespass +1/+2/+3, successful trade −4, mission established −(clamped), burial desecration +100, incite ±100, per-turn drift ±1 | — | deltas halved for France and with Pocahontas (FF 16); clamp [0,100] |
+| NAT-WELCOME | `@INDIANWELCOME` — *"The {%STRING0} tribe welcomes you. We are a glorious nation of {%NUMBER0 %STRING1}… Will you accept our treaty and live with us in peace as brothers?"* | first contact with a tribe (⟦helper⟧, after woodcut 3/4/5) | Yes / No | No → `@INDIANSHUN` ("…Prepare for WAR!"); related `@INDIANBOW`/`@INDIANTREATY`/`@INDIANPEACE`/`@INDIANCOME` |
+| NAT-GIVEFOOD | `@INDIANGIVEFOOD` | supply/demand model in ⟦helper⟧: the tribe's per-good **supply array ⟦state⟧ exceeds demand ⟦state⟧** for food, and the player's stores are low — emit | — | +%NUMBER0 food gifted |
+| NAT-BEGFOOD | `@INDIANBEGFOOD` — *"…Will our brothers of {%STRING1} share the bounty of their harvests…"* | food **deficit** ⟦state⟧−⟦state⟧–⟦addr⟧ — emit | "I'm sorry, we gave at the office." / "We offer you {%NUMBER0} of our {%NUMBER1 food}…" | refusal/gift affect tension (delta site unmapped) |
+| NAT-GIVESTUFF / CONVERT | `@INDIANGIVESTUFF`, `@INDIANSCONVERT` | goodwill gift; mission conversion attempt_conversion() — P(convert) = `(TribeData[+2]+2)/15`, doubled by Jean de Brebeuf (FF 0x16) | — | convert unit created at the colony, class 0x1B |
+| NAT-RAID | 6-key block `@RAIDWREAK @RAIDSTORES @RAIDBURN @RAIDSHIP @RAIDGOLD @RAIDNOTHING` (contiguous in the EXE at file ⟦addr⟧) — e.g. *"Spies report: {%STRING0} raiding party wreaks havoc in the {%STRING3} colony of {%STRING1}."* | raid handler native_raid(): gate roll `random_int(1,12)−1` (+`diff−2` vs a human European) vs threshold `3·K+1`; base outcome `random_int(1,4)` adjusted by turn (`turn < 40·(2−diff)` downgrades) and availability gates; 5-way dispatch | — | 1→`@RAIDSTORES` (loot cargo, sfx 0x4F), 2→`@RAIDWREAK`, 3→`@RAIDGOLD` (sfx 0x4E), 4→`@RAIDBURN`/`@RAIDSHIP`, 0→`@RAIDNOTHING` (raiders wiped out, sfx 0x5B). `@RAIDSCALP` exists as a section but is **not** in the 6-key block — an orphan, not a 7th outcome. Raid on a human colony also fires **woodcut 13** |
+| NAT-WARPATH | `@INDIANWARPATH @INDIANWARPATH2 @INDIANWARFARE @INDIANWAR @INDIANGRUDGE @INDIANSURPRISE` | warpath handler ⟦helper⟧ (sets ⟦state⟧ = tribe owner); `@INDIANGRUDGE` = the Tory-side war-council entry during the revolution | — | war footing; alarm ≥ 128 (per-settlement per-power word at +0x0A+2·p) is the raid state; the parallel tension table (0..100) turns hostile at 75, war at 100 |
+| NAT-EXTORT | `@EXTORTSTUFF @EXTORTPOOR @EXTORTLAUGH @EXTORTNO` | player Demands Tribute (demand_tribute()) | — | gold clamped to `[10, min(3·tribe_wealth+10, 100)]`, moved from settlement to player |
+| NAT-VILLAGE | `@VILLAGEHAPPY @VILLAGEMEDIUM @VILLAGESAVAGE @VILLAGEBAD @VILLAGEWAR`; `@MADATSHIPS @MADATWAGONS @DONTKNOWSHIPS` | scout enters village (⟦helper⟧; attitude words from NAMES `@ATTITUDE`, banded at score cutoffs −5/0/10; War = alarm ≥ 128) | — | display; ship/wagon anger blocks trade |
+| NAT-RAZE | `@CHIEFKILL @INDIANGOLD @INDIANBURN` | player attacks a settlement (raze_settlement()); `@CHIEFKILL` = taboo execution | — | raze gold = `(Σ3·random(1,10−diff)) · random(1,6) · 4 · (tribe+1)` → +0x2A; no woodcut fires here (the old "WDCUT12" gloss is byte-refuted — WDCUT12 has no caller) |
+| NAT-TENSION | *(silent)* | tension applier adjust_tension() (33 call sites): trespass +1/+2/+3, successful trade −4, mission established −(clamped), burial desecration +100, incite ±100, per-turn drift ±1 | — | deltas halved for France and with Pocahontas (FF 16); clamp [0,100] |
 
 ### 23.7 Revolution events
 
 | event_id | string_key | Trigger / condition | Options | Outcomes / arms |
 |----------|-----------|---------------------|---------|-----------------|
-| REV-DECLARE | `@DECLARE` — *"Shall we declare our independence from {%STRING0}…? This will end our turn and place us at war with our King!"* | GAME menu "DECLARE INDEPENDENCE" → `func_03E984`; refused with `@ALREADYREVOLUTION` if already at war, or `@TOOTORY` (+%NUMBER0 = SoL) while the national SoL meter `[0x53D0] < 50` (@0x3E99E) | "Never! That would be treasonous!…" / "Yes! Give me liberty or give me death!" | yes → `func_03DE46`: `[0x5382]\|=1`, rebel power `[0x5398]:=[0x5394]`, declaration year stored, initial REF dispatch |
-| REV-INDEPENDENCE | `@INDEPENDENCE` — *"Continental Congress signs {Declaration of Independence}! … General %STRING0 calls for volunteers for new Continental Army!"* | emitted by `func_03DE46` @0x3E104 | — | war begins; veteran soldiers promote (`@MOBILIZE`) |
+| REV-DECLARE | `@DECLARE` — *"Shall we declare our independence from {%STRING0}…? This will end our turn and place us at war with our King!"* | GAME menu "DECLARE INDEPENDENCE" → declaration_gate(); refused with `@ALREADYREVOLUTION` if already at war, or `@TOOTORY` (+%NUMBER0 = SoL) while the national SoL meter `game.revolution_meter` < 50` | "Never! That would be treasonous!…" / "Yes! Give me liberty or give me death!" | yes → declare_independence(): `game.flags`\|=1`, rebel power `game.rebel_power`:=`game.current_power`, declaration year stored, initial REF dispatch |
+| REV-INDEPENDENCE | `@INDEPENDENCE` — *"Continental Congress signs {Declaration of Independence}! … General %STRING0 calls for volunteers for new Continental Army!"* | emitted by declare_independence() | — | war begins; veteran soldiers promote (`@MOBILIZE`) |
 | REV-WARN | `@WARN1/2/3` — *"…the King's forces control all but %NUMBER0 of the ports in %STRING0!…"* / *"…all but %NUMBER1 of our colonies!…"* / *"…%NUMBER2%% of the %STRING0 population. If he ever controls 90%%, the Continental Congress will be unable to continue the war…"* | wartime status warnings (ports / colonies / population thresholds); emit sites unmapped | — | surrender conditions foreshadowed |
 | REV-CONSIDER | `@CONSIDER` — *"%STRING0 is considering intervention on our behalf… If we can generate %NUMBER0 liberty bells, they will join us."* | pre-intervention notice | — | arms the intervention watch |
-| REV-INTERVENTION | `@INTERVENTION` (+ ally names from `@FRIEND`: British General Cornwallis / French General Lafayette / Spanish Generals / Dutch Admiral de Ruyter) | intervention declaration `func_03D948` — picks the strongest eligible foreign ally, sets `[0x5382]\|=2` @0x3DA22; arrival waves `func_03D510` land at a weighted colony pick `random_int(1, Σ weights)` @0x3D57E | — | Intervention Force joins the rebel side |
-| REV-TORY | `@TORYUPRISING` | per-turn roll in `func_03CAC6`: `random_int(0, diff+1) ≠ 0` @0x3CADD ⇒ probability `(diff+1)/(diff+2)` | — | Tory uprising spawns loyalist units |
-| REV-END | `@KINGVICTORY` / win path | per-turn resolver @0x02F464: rebels **win** when surviving REF combatants fall below the threshold (1, or 8 with `[0x5382]&0x40`) → `[0x5382]\|=8` @0x2F55A | — | score bonus `+2·(1780 − declaration_year)` if declared before 1780 |
-| REV-MULTI | `@MULTIREV` — *"The Revolution does not function in multi-player mode…"* | declaring in hot-seat (`[0x5381]&0x80`) @0x03E9C5 | Declare independence / Never Mind | confirm clears the multiplayer flag (`and [0x5381],0x7F` @0x03E9D3) — game continues single-player |
-| REV-GUARDS | `@NOWARSDURINGREV @NOCOLONIESEITHER @NOMAYORSDURINGREV @EUROPENOTAVAIL @FOREIGNNOTAVAIL` | action guards while `[0x5382]&1` (see §23.3 last row for the byte-cited `@NOWARSDURINGREV` enforcement) | — | action cancelled |
+| REV-INTERVENTION | `@INTERVENTION` (+ ally names from `@FRIEND`: British General Cornwallis / French General Lafayette / Spanish Generals / Dutch Admiral de Ruyter) | intervention declaration declare_intervention() — picks the strongest eligible foreign ally, sets `game.flags`\|=2`; arrival waves land_intervention_force() land at a weighted colony pick `random_int(1, Σ weights)` | — | Intervention Force joins the rebel side |
+| REV-TORY | `@TORYUPRISING` | per-turn roll in tory_uprising(): `random_int(0, diff+1) ≠ 0` ⇒ probability `(diff+1)/(diff+2)` | — | Tory uprising spawns loyalist units |
+| REV-END | `@KINGVICTORY` / win path | per-turn resolver: rebels **win** when surviving REF combatants fall below the threshold (1, or 8 with `game.flags`&0x40`) → `game.flags`\|=8` | — | score bonus `+2·(1780 − declaration_year)` if declared before 1780 |
+| REV-MULTI | `@MULTIREV` — *"The Revolution does not function in multi-player mode…"* | declaring in hot-seat (⟦state⟧&0x80`) | Declare independence / Never Mind | confirm clears the multiplayer flag (`and ⟦state⟧,0x7F`) — game continues single-player |
+| REV-GUARDS | `@NOWARSDURINGREV @NOCOLONIESEITHER @NOMAYORSDURINGREV @EUROPENOTAVAIL @FOREIGNNOTAVAIL` | action guards while `game.flags`&1` (see §23.3 last row for the byte-cited `@NOWARSDURINGREV` enforcement) | — | action cancelled |
 
 ### 23.8 Europe arrival and immigration chain
 
 | event_id | string_key | Trigger | Outcome / arms |
 |----------|-----------|---------|----------------|
-| EUR-UNREST | `@UNREST` — *"Religious unrest in %COUNTRY causes increased emigration. Colonists ({%STRING1}) now available in %STRING0."* | crosses-driven immigration event (market/king phase; emit @0x3651F region) | **arms tutorial T5** (chained immediately after, advisor 4, @0x036514); recruit variant `@RECRUITCHOOSE` presents the dock choice |
-| EUR-ARRIVE | *(banner, not a popup)* | ship reaches the Europe port: the header banner is composed by `func_030F76` into the top text band (band rect (x=320,y=7,w=0,h=0) set by `set_text_box` @0x035B2D) from the dock-state strings of LABELS `@MISC` lines 5–8 ("Sailing For" / "Inbound From" / "Now Arriving In" / "Docks At") plus port, season/year and tax/gold state | first cargo sold in Europe fires **woodcut 9** @0x0420EF |
+| EUR-UNREST | `@UNREST` — *"Religious unrest in %COUNTRY causes increased emigration. Colonists ({%STRING1}) now available in %STRING0."* | crosses-driven immigration event (market/king phase; emit region) | **arms tutorial T5** (chained immediately after, advisor 4,); recruit variant `@RECRUITCHOOSE` presents the dock choice |
+| EUR-ARRIVE | *(banner, not a popup)* | ship reaches the Europe port: the header banner is composed by ⟦helper⟧ into the top text band (band rect (x=320,y=7,w=0,h=0) set by `set_text_box`) from the dock-state strings of LABELS `@MISC` lines 5–8 ("Sailing For" / "Inbound From" / "Now Arriving In" / "Docks At") plus port, season/year and tax/gold state | first cargo sold in Europe fires **woodcut 9** |
 | EUR-SAILHOME | `@SAILHOME` — *"We have reached the {high seas}… Shall we sail for Europe?"* (default row 1) | ship enters the sea-lane column | yes → Europe screen on arrival; `@SAILAWAY`/`@SAILPORT` are the return prompts |
 
 ## 24. Music and sound

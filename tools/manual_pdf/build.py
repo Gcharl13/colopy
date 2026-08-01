@@ -28,9 +28,15 @@ from bs4 import BeautifulSoup, NavigableString
 
 try:
     import sprites as SPR
+    import symbols as SYM
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import sprites as SPR
+    import symbols as SYM
+
+# mechanics chapters: named-variable presentation, no byte offsets in body
+MECH_SECTIONS = {"5", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+                 "17", "18", "19", "20", "21", "23"}
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "docs/COLONIZATION_TECHNICAL_REFERENCE.md"
@@ -66,7 +72,7 @@ PARTS = [
     ("V", "Politics and powers", ["15", "16", "17", "18", "19", "20", "21"]),
     ("VI", "Events and messages", ["22", "23", "24"]),
     ("VII", "User interface", ["25", "26", "27"]),
-    ("VIII", "The editor and appendices", ["28", "29", "A", "B"]),
+    ("VIII", "The editor and appendices", ["28", "29", "A", "B", "C"]),
 ]
 
 WARNINGS = []
@@ -99,7 +105,7 @@ def load_source():
 
 def split_sections(body):
     """Return ordered [(key, title, md_text)] split on '## N.' / '## A.' heads."""
-    parts = re.split(r"^## (\d+|[AB])\. (.+)$", body, flags=re.M)
+    parts = re.split(r"^## (\d+|[ABC])\. (.+)$", body, flags=re.M)
     out = []
     it = iter(parts[1:])
     for key, title, text in zip(it, it, it):
@@ -584,7 +590,39 @@ STRUCT_RE = re.compile(
     r"typedef struct\s*\{([^\n]*)\n(.*?)\n\}\s*(\w+)\s*;([^\n]*)", re.S)
 
 
-def structs_to_plates(soup):
+def struct_vars_figure(st):
+    """Mechanics-chapter rendering: a record's fields as named variables —
+    no offsets, no byte plate."""
+    scope = SYM.FIELD_SCOPES.get(st["name"], st["name"].lower())
+    rows = []
+    for f in st["fields"]:
+        if not f["name"] or f["name"].split("[")[0].startswith(
+                ("_pad", "unused", "pad")):
+            continue
+        base = f["name"].split("[")[0]
+        off_key = "0x%02X" % f["off"]
+        friendly = SYM.FIELDS.get((st["name"], off_key), base)
+        arr = f["name"][len(base):]
+        dark = CAT[f["cat"]][0]
+        note = re.sub(r"\s*\((?:@?0x[0-9A-Fa-f]{4,6}[^)]*)\)", "",
+                      f["note"] or "")
+        note = re.sub(r"@?0x[0-9A-Fa-f]{5,6}", "", note).strip(" ;-")
+        rows.append(
+            '<tr><td class="cmono" style="color:%s;font-weight:bold">%s.%s%s</td>'
+            '<td style="color:%s">%s</td><td>%s</td></tr>' % (
+                dark, esc(scope), esc(friendly), esc(arr), CAT["econ"][0],
+                esc(example_for(st["name"], f)), esc(note)))
+    fig = ('<figure class="structplate"><div style="break-inside:avoid">'
+           '<div class="platehead"><span class="pt">%s — the record\'s variables'
+           '</span><span class="ps">storage layout in Appendix A - binding in '
+           'Appendix C</span></div></div>'
+           '<div class="tablewrap"><table class="keytab"><thead><tr>'
+           '<th>Variable</th><th>Example</th><th>Meaning</th></tr></thead>'
+           '<tbody>%s</tbody></table></div></figure>' % (esc(scope), "".join(rows)))
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def structs_to_plates(soup, mech=False):
     n = 0
     for pre in list(soup.find_all("pre")):
         code = pre.find("code")
@@ -614,7 +652,8 @@ def structs_to_plates(soup):
         frags = []
         for kind, val in pieces:
             if kind == "struct":
-                frags.append(struct_figure(val, soup))
+                frags.append(struct_vars_figure(val) if mech
+                             else struct_figure(val, soup))
                 n += 1
                 if val["name"] in BITSTRIPS and val["name"] not in _bitstrips_done:
                     _bitstrips_done.add(val["name"])
@@ -737,61 +776,61 @@ BITSTRIPS = {
         ]),
     ],
     "UnitRecord": [
-        _bs("UnitRecord +0x03 — owner byte", "set_unit_owner @0x738E", [
+        _bs("unit.owner — packed byte", "low nibble + high nibble", [
             (3, 0, "power 0..11", "pos", "0..3 European, 4..11 tribes"),
             (7, 4, "state", "flag", "high-nibble unit state"),
         ]),
-        _bs("UnitRecord +0x04 — flags byte", "transient per-pass bit register", [
-            (7, 7, "draw", "flag", "draw-active / Damaged display pair (set @0x069923; @ARTILLERY @0x05B6F6)"),
-            (6, 6, "cargo", "econ", "ship-carrying-cargo (@0x02F37A)"),
-            (5, 5, "merch", "pos", "Merchantman tag (@0x04CE44)"),
-            (4, 4, "path", "num", "path >= 8 hops (@0x05106E)"),
-            (3, 3, "dirty", "flag", "tile-dirty (@0x0481B0)"),
-            (2, 2, "class", "pos", "ship-cargo class (@0x04CDDC)"),
-            (1, 1, "fortif", "flag", "was-fortifying (@0x04CEC9)"),
+        _bs("unit.flags — transient bit register", "cleared and rebuilt every pass", [
+            (7, 7, "draw", "flag", "draw-active / Damaged display pair"),
+            (6, 6, "cargo", "econ", "ship-carrying-cargo"),
+            (5, 5, "merch", "pos", "Merchantman tag"),
+            (4, 4, "path", "num", "path >= 8 hops"),
+            (3, 3, "dirty", "flag", "tile-dirty"),
+            (2, 2, "class", "pos", "ship-cargo class"),
+            (1, 1, "fortif", "flag", "was-fortifying"),
         ]),
-        _bs("UnitRecord +0x0D..+0x0F — cargo_ids packing",
-            "nibble-packed good ids, 2 slots per byte, up to 6 (@0x0B2CB)", [
+        _bs("unit.cargo_ids — nibble packing",
+            "good ids, two cargo slots per byte, up to six", [
                 (3, 0, "slot 2k", "econ", "even cargo slot — good id 0..15 (@CARGO)"),
                 (7, 4, "slot 2k+1", "econ", "odd cargo slot"),
             ]),
-        _bs("UnitRecord +0x17 — profession byte on routed units",
-            "colonist profession 0x13..0x1C otherwise", [
+        _bs("unit.profession on routed units",
+            "otherwise the colonist profession id", [
                 (3, 0, "route id", "pos", "trade-route index 0..11"),
                 (7, 4, "stop idx", "pos", "current stop 0..3"),
             ]),
     ],
     "NativeSettlement": [
-        _bs("NativeSettlement +0x03 — flags", "", [
-            (2, 2, "capital", "pos", "set @0x66225; doubles value @0x7DCA"),
-            (1, 1, "taught", "num", "already taught (set @0x4A78A)"),
+        _bs("settlement.flags", "", [
+            (2, 2, "capital", "pos", "set; doubles value"),
+            (1, 1, "taught", "num", "already taught"),
             (0, 0, "w/o", "pad", "write-only bit"),
         ]),
-        _bs("NativeSettlement +0x05 — mission byte", "0xFF = no mission", [
+        _bs("settlement.mission", "255 = no mission", [
             (3, 0, "owning power", "pos", "European power holding the mission"),
-            (4, 4, "expert", "econ", "expert-mission doubler (Brebeuf; set @0x48C81, tested @0x57300)"),
+            (4, 4, "expert", "econ", "expert-mission doubler (Brebeuf; set, tested)"),
         ]),
     ],
     "StopRecord": [
-        _bs("StopRecord +0x02 — counts byte",
-            "nibble get/set func_0603DA / func_06040A (max 6 each)", [
+        _bs("stop.counts — load/unload nibbles",
+            "at most six goods each way", [
                 (3, 0, "unload count", "econ", "goods unloaded at this stop"),
                 (7, 4, "load count", "econ", "goods loaded at this stop"),
             ]),
     ],
     "PowerRecord": [
-        _bs("Relations-matrix byte — row base PowerRecord +0x34 (0x883C)",
-            "one byte per subject→target pair; accessors func_007F34/96/008000 (section 15.3)", [
-                (0, 0, "resolved", "num", "resolved/normalised relationship (set 0x5318F)"),
-                (1, 1, "war", "warn", "at war (set 0x58A7B/0x59A61/0x3F0E8; cleared 0x5DE98)"),
-                (3, 3, "grievance", "warn", "pending; → bit 0 when +0x40 timer expires and random_int(0,3)==0 (0x53165)"),
+        _bs("power.relations — one byte per pair of powers",
+            "symmetric set/clear accessors; section 15.3", [
+                (0, 0, "resolved", "num", "resolved/normalised relationship"),
+                (1, 1, "war", "warn", "at war"),
+                (3, 3, "grievance", "warn", "pending; → bit 0 when +0x40 timer expires and random_int(0,3)==0"),
                 (4, 4, "parley", "num", "parley cooldown 16 turns (stamp 0x58075/0x5914C)"),
                 (5, 5, "met", "pos", "met / contacted"),
                 (6, 6, "treaty", "pos", "peace treaty in force (set both ways 0x59139)"),
-                (7, 7, "privateer", "warn", "hidden attribution — privateer attack sets this, not war (0x3F0A1; revealed 0x58BE1)"),
+                (7, 7, "privateer", "warn", "hidden attribution — privateer attack sets this, not war"),
             ]),
-        _bs("boycott_bitmask — PowerRecord +0x20",
-            "bit g = good g; set on Tea Party @0x34717; back-tax clear @0x33423; Fugger zeroes the word @0x3BD45",
+        _bs("power.boycotts — one bit per good",
+            "set by a Tea Party; cleared by back-tax payment; Fugger clears the whole word",
             [], nbits=16,
             perbit={g: SPR.GOODS[g] for g in range(16)}),
     ],
@@ -1395,37 +1434,37 @@ def food_walkthrough_fig():
         [
             {"k": "start", "t": "New game"},
             {"k": "act", "t": "price_seed[Food] = random_int(600, 1000)",
-             "s": ["func_07561C fills all 16 entries (0x75645) — no fixed base-price table",
-                   "price_seed lives at DS:0x53EA (word per good)"]},
-            {"k": "act", "t": "Europe strip shows the bid/ask pair (16-good loop 0x38D40)",
-             "s": ["sell = price_level[Food] − 1   (func_030590, clamp ≥ 0)",
-                   "buy = @CARGO col 1 (Food = 1) + price_level[Food]   (func_030566)",
+             "s": ["seed_market() fills all 16 entries — no fixed base-price table",
+                   "price_seed lives at DS: (word per good)"]},
+            {"k": "act", "t": "Europe strip shows the bid/ask pair (16-good loop)",
+             "s": ["sell = price_level[Food] − 1 (sell_price(), clamp ≥ 0)",
+                   "buy = @CARGO col 1 (Food = 1) + price_level[Food] (buy_price())",
                    "so Food's on-screen spread is the constant 1 + 1 = 2"]},
             {"k": "dec", "t": "you trade Food in Europe",
              "side": ("BUY", ["untaxed: sub [bx+0x2A],ax; sbb …",
-                              "EU supply +0xBC −= qty @0x3231C",
-                              "accumulator +0xFC −= qty @0x32324"]),
-             "cont": "SELL (func_032914)"},
-            {"k": "act", "t": "SELL: gross = price·qty (0x3249F), tax split 0x32A4A..78",
-             "s": ["tax = gross·tax_rate/100 → King fund +0x22 (0x32A92)",
-                   "net = gross − tax → treasury via the [0,999999] clamp (0x32A82)",
-                   "EU supply +0xBC += qty · accumulator +0xFC += qty (0x323B4/0x323BC)"]},
+                              "EU supply +0xBC −= qty",
+                              "accumulator +0xFC −= qty"]),
+             "cont": "SELL (sell_goods())"},
+            {"k": "act", "t": "SELL: gross = price·qty, tax split ..78",
+             "s": ["tax = gross·tax_rate/100 → King fund +0x22",
+                   "net = gross − tax → treasury via the [0,999999] clamp",
+                   "EU supply +0xBC += qty · accumulator +0xFC += qty"]},
             {"k": "act", "t": "immediate single-good re-drift — drift(Food, 0)",
-             "s": ["both handlers call it right after the trade (0x32D99 / 0x32902)"]},
-            {"k": "act", "t": "end of turn — func_036574 @0x757B0 (in func_0755CC)",
+             "s": ["both handlers call it right after the trade"]},
+            {"k": "act", "t": "end of turn — market_day() (in end_of_turn())",
              "s": ["acc = price_seed[Food] + Σ over 4 powers of max(0, accum_FC[Food])",
-                   "price_seed[Food] −= acc >> 8   (proportional decay 0x30618..0x30639)",
-                   "then all per-power accumulators are cleared (0x3670E)"]},
+                   "price_seed[Food] −= acc >> 8 (proportional decay)",
+                   "then all per-power accumulators are cleared"]},
             {"k": "dec", "t": "price level steps",
-             "side": ("down", ["step-down −= 1, clamp ≥ 0 @0x3228D"]),
-             "cont": "step-up += 1 @0x32272"},
+             "side": ("down", ["step-down −= 1, clamp ≥ 0"]),
+             "cont": "step-up += 1"},
             {"k": "end", "t": "next turn's bid/ask uses the new level"},
         ],
         "Food is not luxury-coupled. Rum/Cigars/Cloth/Coats additionally share "
         "S_pair = supply[9]+…+supply[12] with target[i] = (S_pair·3)/supply[i] "
-        "(0x030649/0x03074F); raw inputs Sugar/Tobacco/Cotton/Furs use the same "
+        "; raw inputs Sugar/Tobacco/Cotton/Furs use the same"
         "formula against their own supply (Furs halved; +1 if year<1700, "
-        "+1 more if year<1600, 0x0307C9).")
+        "+1 more if year<1600,).")
 
 
 def enrich_market(soup):
@@ -1518,6 +1557,95 @@ def parse_disk_ranges(spec):
     return out
 
 
+def professions_plate_fig():
+    cells = []
+    for j in range(28):
+        im = SPR.frame_image("ICONS.SS", SPR.JOB_FIGURES[j])
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 3), im.width, im.height, 2.2)}'
+            f'<span class="fi">{j}</span>'
+            f'<span class="fl">{esc(SPR.JOB_NAMES[j])}</span></div>')
+    fig = (f'<figure class="tall"><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">The 28 professions — figure = job id + 81'
+           f'</span><span class="ps">@JOB order · Convert is the exception at disk 66</span></div>'
+           f'<div class="atlas">{"".join(cells)}</div>'
+           f'<figcaption>The figure rule is byte-cited at three Colonizopedia call '
+           f'sites (job+0x52 engine); labels pixel-verified against the decoded '
+           f'sheet.</figcaption></div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def b5_galleries():
+    figs = []
+    # Founding Father portraits — CC-00..CC-24, @FATHERS order
+    import json
+    try:
+        fathers = [ln.split(",")[0].strip() for ln in json.load(
+            open(ROOT / "data_extracted/text/NAMES_sections.json"))["@FATHERS"]
+            .strip().split("\n")][:25]
+    except Exception:
+        fathers = [f"Father {i}" for i in range(25)]
+    cells = []
+    for i in range(25):
+        try:
+            im = SPR.frame_image(f"CC-{i:02d}.SS", 0)
+        except Exception:
+            continue
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 2), im.width, im.height, 0.55)}'
+            f'<span class="fi">{i}</span><span class="fl">{esc(fathers[i])}</span></div>')
+    figs.append(BeautifulSoup(
+        f'<figure class="tall"><div style="break-inside:avoid"><div class="platehead">'
+        f'<span class="pt">The 25 Founding Fathers — CC-00..CC-24</span>'
+        f'<span class="ps">portrait sheets, NAMES @FATHERS order</span></div>'
+        f'<div class="atlas">{"".join(cells)}</div></div></figure>',
+        "html.parser").figure)
+    # advisors + rivals + king figures
+    cells = []
+    groups = [(f"MSS{i}.SS", f"advisor {i}") for i in range(6)] +              [(f"MYR{i}.SS", ["England", "France", "Spain", "Netherlands"][i] +
+               " leader") for i in range(4)] +              [("KING.SS", "King (speaker)"), ("KING1.SS", "King + dog (audience)"),
+              ("KINGLOSE.SS", "king crying — you win"),
+              ("KINGWIN.SS", "king triumphant — you lose")]
+    for name, lab in groups:
+        try:
+            im = SPR.frame_image(name, 0)
+        except Exception:
+            continue
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 2), im.width, im.height, 0.45)}'
+            f'<span class="fi">{esc(name[:-3])}</span><span class="fl">{esc(lab)}</span></div>')
+    figs.append(BeautifulSoup(
+        f'<figure class="tall"><div style="break-inside:avoid"><div class="platehead">'
+        f'<span class="pt">Speakers — advisors, rival leaders, the King</span>'
+        f'<span class="ps">popup portrait channels</span></div>'
+        f'<div class="atlas">{"".join(cells)}</div></div></figure>',
+        "html.parser").figure)
+    # chrome
+    cells = []
+    chrome = [("WOODTILE.SS", 0, "wood fill tile"), ("PARCH.SS", 0, "parchment tile"),
+              ("OPENTILE.SS", 0, "boot plaque tile"), ("CURSOR.SS", 0, "pointer"),
+              ("CURSOR.SS", 1, "pointer 2"), ("NAMEPLAT.SS", 0, "caption cap L"),
+              ("NAMEPLAT.SS", 1, "caption mid"), ("NAMEPLAT.SS", 2, "caption cap R"),
+              ("WOODFRAM.SS", 0, "popup/woodcut frame")]
+    for name, fi, lab in chrome:
+        try:
+            im = SPR.frame_image(name, fi)
+        except Exception:
+            continue
+        sc = 0.7 if im.width > 100 else 2.0
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 2), im.width, im.height, sc)}'
+            f'<span class="fi">{esc(name[:-3])}:{fi}</span><span class="fl">{esc(lab)}</span></div>')
+    figs.append(BeautifulSoup(
+        f'<figure class="tall"><div style="break-inside:avoid"><div class="platehead">'
+        f'<span class="pt">Engine chrome — tiles, cursors, caption strip, the frame</span>'
+        f'<span class="ps">the small sheets the UI is built from</span></div>'
+        f'<div class="atlas">{"".join(cells)}</div></div></figure>',
+        "html.parser").figure)
+    return figs
+
+
+
 def enrich_appendix_b(soup):
     """B.1: tile column + atlas. B.2: band strips + atlas. B.3: band strips +
     atlas. B.4: building column + atlas."""
@@ -1584,12 +1712,19 @@ def enrich_appendix_b(soup):
             "detail, halos, coasts", range(154), 1.9)),
         "ICONS.SS": ("B.3", atlas_fig(
             "ICONS.SS", "ICONS.SS — frame atlas",
-            "131 HUD frames · markers, ships, cursors, goods, units, pennants",
-            range(131), 1.9)),
+            "131 HUD frames · '*' = pixel-verified label only; unlabelled = unidentified",
+            range(131), 1.9,
+            label_of=lambda d: SPR.ICONS_LABELS.get(d, ""))),
         "BUILDING.SS": ("B.4", atlas_fig(
             "BUILDING.SS", "BUILDING.SS — frame atlas",
             "48 colony-building frames · disk = def id", range(48), 1.3,
             label_of=lambda d: building_names.get(d, "")))}
+    for h in soup.find_all("h3"):
+        if "B.5" in h.get_text():
+            anchor = h
+            for fig in [professions_plate_fig()] + b5_galleries():
+                anchor.insert_after(fig)
+                anchor = fig
     for h in soup.find_all("h3"):
         t = h.get_text()
         for name, (subno, fig) in anchors.items():
@@ -1758,32 +1893,32 @@ def formula_fig(title, sub, formula, factors, caption=""):
 
 def enrich_turnflow(soup):
     fig1 = flow_fig(
-        "The turn loop", "func_005760 (file 0x5760) — one full pass per turn",
+        "The turn loop", "turn_loop() — one full pass per turn",
         [
             {"k": "start", "t": "Turn begins"},
             {"k": "gopen",
              "t": "×4 — once per European power, strict index order"},
-            {"k": "act", "t": "1  King / mercenary — func_03E664 (call 0x58E2)",
-             "s": ["gated [0x5382]&1==0 · peacetime mercenary roll 0x3E707 · King events"]},
-            {"k": "act", "t": "2  Orders / movement — func_024A48 (0x58E7)",
-             "s": ["per-unit orders pump · REF fund accrual func_03E162 via 0x24B42",
-                   "AI moves func_04E2D6; contact evaluator func_059B90 fires diplomacy"]},
-            {"k": "act", "t": "3  Production — func_02F052 (0x59EA)",
-             "s": ["zero bells/turn +0x0E @0x2F23F · per-colony func_02D658:",
-                   "yields, food/starvation/spoilage popups, school, bell accrual (0x2D6A7)"]},
-            {"k": "act", "t": "4  Diplomacy — func_052F7E (0x5A37)",
-             "s": ["king-action dispatch func_034C24 (tax raises event-driven here) · AI diplomacy"]},
-            {"k": "act", "t": "5  Periodic / congress — func_02F3A2 (0x5AE5)",
-             "s": ["colony stats func_042138 · congress func_03B2F8 (gate [0x5382]&0x10==0)",
-                   "King defeat/victory screens 0x2F552/0x2F6A8"]},
+            {"k": "act", "t": "1 King / mercenary — king_phase()",
+             "s": ["gated game.flags&1==0 · peacetime mercenary roll · King events"]},
+            {"k": "act", "t": "2 Orders / movement — orders_phase()",
+             "s": ["per-unit orders pump · REF fund accrual grow_royal_fund() via",
+                   "AI moves a helper; contact evaluator evaluate_contact() fires diplomacy"]},
+            {"k": "act", "t": "3 Production — production_phase()",
+             "s": ["zero bells/turn +0x0E · per-colony update_colony():",
+                   "yields, food/starvation/spoilage popups, school, bell accrual"]},
+            {"k": "act", "t": "4 Diplomacy — diplomacy_phase()",
+             "s": ["king-action dispatch next_immigrant_class() (tax raises event-driven here) · AI diplomacy"]},
+            {"k": "act", "t": "5 Periodic / congress — periodic_phase()",
+             "s": ["colony stats a helper · congress a helper (gate game.flags&0x10==0)",
+                   "King defeat/victory screens /"]},
             {"k": "gclose"},
-            {"k": "act", "t": "Market drift — func_036574 (@0x757B0, in func_0755CC)",
-             "s": ["clear per-power 16-good accumulators (0x3670E)",
-                   "4-power loop into func_0305A8: base relaxes by (base + Σ clamped trade)/256"]},
-            {"k": "act", "t": "Immigration crosses — func_035D9A",
-             "s": ["runs immediately after the price recompute (0x363E2)"]},
+            {"k": "act", "t": "Market drift — market_day())",
+             "s": ["clear per-power 16-good accumulators",
+                   "4-power loop into drift_prices(): base relaxes by (base + Σ clamped trade)/256"]},
+            {"k": "act", "t": "Immigration crosses — immigration_threshold()",
+             "s": ["runs immediately after the price recompute"]},
             {"k": "act", "t": "Religious-unrest arrivals — @UNREST chain", "s": []},
-            {"k": "act", "t": "Year cadence — inc [0x538E] (loop tail 0x5A9D–0x5ACC)",
+            {"k": "act", "t": "Year cadence — inc game.turn",
              "s": ["see the cadence diagram below"]},
             {"k": "act", "t": "Autosave tail (§20.2)", "s": []},
             {"k": "end", "t": "Next turn"},
@@ -1791,23 +1926,23 @@ def enrich_turnflow(soup):
         "Natives are not a separate top-level pass — their AI runs inside the "
         "per-power processing.")
     fig2 = flow_fig(
-        "Year cadence and end-of-game checks", "loop tail 0x5A9D–0x5ACC",
+        "Year cadence and end-of-game checks", "loop tail –",
         [
-            {"k": "act", "t": "inc [0x538E] — turn counter", "s": []},
+            {"k": "act", "t": "inc game.turn — turn counter", "s": []},
             {"k": "dec", "t": "year < 1600 ?",
              "side": ("yes", ["one turn = one year"]), "cont": "no — from 1600"},
-            {"k": "act", "t": "season word [0x538C] toggles Spring / Autumn",
+            {"k": "act", "t": "season word game.season toggles Spring / Autumn",
              "s": ["the year steps every second turn · start 1492"]},
-            {"k": "dec", "t": "year reaches 1725 ? (0x5BB5)",
-             "side": ("yes", ["forced end: [0x82B] = 1",
-                              "end-game save fires near 0x5BDB"]),
+            {"k": "dec", "t": "year reaches 1725 ?",
+             "side": ("yes", ["forced end: game.forced_end = 1",
+                              "end-game save fires near"]),
              "cont": "no"},
             {"k": "end", "t": "continue"},
         ])
     fig3 = flow_fig(
-        "The autosave chain", "helper 0x5642; consumers 0x58D7 / 0x5A29",
+        "The autosave chain", "helper; consumers /",
         [
-            {"k": "dec", "t": "Autosave option on, and not suppressed ? (bit 0x0400 · [0x826]==0 · gate 0x5AD7)",
+            {"k": "dec", "t": "Autosave option on, and not suppressed ?",
              "side": ("no", ["no autosave"]), "cont": "yes"},
             {"k": "act", "t": "rolling autosave → slot 9, every turn",
              "s": ['"most recent save in the last slot"']},
@@ -1815,7 +1950,7 @@ def enrich_turnflow(soup):
              "side": ("yes", ["decade autosave → slot 8"]), "cont": "no"},
             {"k": "end", "t": "done"},
         ],
-        "Filenames COLONY<slot>.SAV (stem at file 0x1FA82). Manual slots via "
+        "Filenames COLONY<slot>.SAV (stem at file). Manual slots via"
         "the @SAVEGAME dialog.")
     tables = soup.find_all("div", class_="tablewrap")
     if tables:
@@ -1840,19 +1975,19 @@ def enrich_events(soup):
                    "options from @TAXOPTIONS"]},
             {"k": "dec", "t": '"Kiss pinky ring."  /  "Hold \'{%STRING3 Party}.\'"',
              "side": ("accept", ["tax applied, hard-clamped to 75",
-                                 "at 0x03434F"]),
+                                 "at"]),
              "cont": "refuse"},
             {"k": "act", "t": "@TEAPARTY fires",
              "s": ['"Sons of Liberty throw {%NUMBER0} tons of %STRING0 into the sea at %STRING1!"',
-                   "boycott bit set: PowerRecord+0x20 |= (1<<good) @0x034717"]},
+                   "boycott bit set: PowerRecord+0x20 |= (1<<good)"]},
             {"k": "dec", "t": "lift the boycott ?",
              "side": ("pay back-tax", ["count × 500 gold (count = +0x4C[good]",
-                                       "+ base 0x9700+good·9, clamp ≥0)",
-                                       "gold → royal fund @0x03340D",
-                                       "bit cleared @0x033423"]),
+                                       "+ base +good·9, clamp ≥0)",
+                                       "gold → royal fund",
+                                       "bit cleared"]),
              "cont": "or acquire Jakob Fugger (FF id 1)"},
             {"k": "act", "t": "Fugger clears the whole boycott word",
-             "s": ["mov [bx+0x20],0 @0x03BD45"]},
+             "s": ["mov [bx+0x20],0"]},
             {"k": "end", "t": "good tradeable again"},
         ],
         "The dashed outcome of refusal — the standing boycott — is what arms "
@@ -1876,12 +2011,12 @@ def _after_h3(soup, substr, fig):
 
 def enrich_sol(soup):
     _after_h3(soup, "Sons of Liberty — the full pipeline", formula_fig(
-        "The Sons-of-Liberty percent", "func_008524 · 0x8524..0x85B1",
+        "The Sons-of-Liberty percent", "sons_of_liberty_percent()",
         "SoL% = min(100,  (sol_numerator · 100) / sol_denominator  [+20])",
-        [("sol_numerator", "rebel bell pool, ColonyRecord +0xC2 — decays >>6, += bells/turn, clamped to the cap", "0x2DA73..0x2DAA0"),
-         ("sol_denominator", "bell cap, +0xC6 — decays >>6, floors 1, += 2·population", "0x2DA24..0x2DA6F"),
-         ("+20", "human European owner with FF op 0x12 only", "0x859F (gates 0x8588/0x8593)"),
-         ("min(100)", "final clamp; A ≤ B also enforced structurally", "0x85A8 / 0x2DABE")],
+        [("sol_numerator", "rebel bell pool, ColonyRecord +0xC2 — decays >>6, += bells/turn, clamped to the cap", ""),
+         ("sol_denominator", "bell cap, +0xC6 — decays >>6, floors 1, += 2·population", ""),
+         ("+20", "human European owner with FF op 0x12 only", ""),
+         ("min(100)", "final clamp; A ≤ B also enforced structurally", " /")],
         "Derived steady state: SoL% → min(100, 50·bells/pop); unanimity needs "
         "bells ≥ 2·population."))
 
@@ -1890,23 +2025,23 @@ def enrich_loot(soup):
     for h in soup.find_all("h3"):
         if "Loot — razing" in h.get_text():
             fig2 = formula_fig(
-                "Colony capture plunder", "func_05CA7E · math at 0x05DE1E",
+                "Colony capture plunder", "resolve_attack() · math at",
                 "loot = (pop · victim_gold) / max(Σ victim colony pops, 1)",
-                [("pop", "captured colony's population, ColonyRecord +0x1F", "0x05DE1F"),
-                 ("victim_gold", "the victim power's whole treasury, PowerRecord +0x2A", "0x05DE26"),
-                 ("Σ pops", "all the victim's colonies, summed; clamp ≥ 1", "0x05DDD4..0x05DE0D"),
-                 ("transfer", "victim −loot, attacker +loot (32-bit)", "0x05DE49 / 0x05DE59")],
-                "Gated OFF during the War of Independence (test [0x5382],1 @0x05DE11). "
+                [("pop", "captured colony's population, ColonyRecord +0x1F", ""),
+                 ("victim_gold", "the victim power's whole treasury, PowerRecord +0x2A", ""),
+                 ("Σ pops", "all the victim's colonies, summed; clamp ≥ 1", ""),
+                 ("transfer", "victim −loot, attacker +loot (32-bit)", " /")],
+                "Gated OFF during the War of Independence (test game.flags,1)."
                 "Message @CAPTURED; no Crown cut on this path.")
             h.insert_after(fig2)
             fig1 = formula_fig(
-                "Indian raze gold", "@CHIEFKILL path · func_04A7CA · 0x04AAD0..0x04AB6E",
+                "Indian raze gold", "@CHIEFKILL path · raze_settlement()",
                 "gold = ( r₁ + r₂ + r₃ ) · random_int(1,6) · 4 · (size + 1)",
-                [("r₁..r₃", "three rolls of random_int(1, 10 − difficulty)", "0x04AADD..0x04AB06"),
-                 ("×random_int(1,6)", "the volatility factor", "0x04AB0B"),
-                 ("×4", "constant", "0x04AB1D"),
-                 ("size+1", "settlement size factor (documented conflict: TribeData +0x02 trace vs the 2026-05-30 ruling = NativeSettlement +0x04 population)", "0x04AB20..0x04AB2D"),
-                 ("payout", "credited to attacker treasury +0x2A; no ×100, no Treasure unit", "0x04AB5D..0x04AB6E")],
+                [("r₁..r₃", "three rolls of random_int(1, 10 − difficulty)", ""),
+                 ("×random_int(1,6)", "the volatility factor", ""),
+                 ("×4", "constant", ""),
+                 ("size+1", "settlement size factor (documented conflict: TribeData +0x02 trace vs the 2026-05-30 ruling = NativeSettlement +0x04 population)", ""),
+                 ("payout", "credited to attacker treasury +0x2A; no ×100, no Treasure unit", "")],
                 "Ceilings at size factor 21: 15,120 / 13,608 / 12,096 / 10,584 / "
                 "9,072 by difficulty. Capitals exceed this — bonus unmapped (TBD).")
             h.insert_after(fig1)
@@ -1915,119 +2050,119 @@ def enrich_loot(soup):
 
 def enrich_king(soup):
     _after_h3(soup, "tax petition", flow_fig(
-        "The tax petition — three outcomes", "func_034AE0 · 0x034AE0..0x034B7D",
+        "The tax petition — three outcomes", "tax_petition()",
         [
-            {"k": "start", "t": "king-action case 4 (dispatch 0x34C05)"},
-            {"k": "dec", "t": "tax_pct ≤ 1 ? (0x034AE8)",
+            {"k": "start", "t": "king-action case 4"},
+            {"k": "dec", "t": "tax_pct ≤ 1 ?",
              "side": ("yes", ["return — nothing to ease"]), "cont": "no"},
             {"k": "act", "t": "candidate = (((diff&0xFE)<<1)+4) · (turn/400 + 1)",
-             "s": ["delta 0x034AEE · turn factor 0x034AFC"]},
-            {"k": "dec", "t": "candidate + 5 ≥ tax_pct ? (0x034B10)",
+             "s": ["delta · turn factor"]},
+            {"k": "dec", "t": "candidate + 5 ≥ tax_pct ?",
              "side": ("yes", ["@KINGRAISE — punitive raise",
-                              "amount = random_int(diff,1) · 2 (0x034B62)",
+                              "amount = random_int(diff,1) · 2",
                               "carries @TAXOPTIONS → can Tea Party (§23.4)"]),
              "cont": "no"},
-            {"k": "dec", "t": "tax_pct ≤ candidate ? (0x034B1A)",
+            {"k": "dec", "t": "tax_pct ≤ candidate ?",
              "side": ("yes", ['@KINGNOTHING — "…kiss our royal',
                               'pinky ring." (0x034B33, no options)']),
              "cont": "no"},
-            {"k": "dec", "t": "random_int(1, diff+1) == 1 ? (0x034B25)",
+            {"k": "dec", "t": "random_int(1, diff+1) == 1 ?",
              "side": ("no", ["return — no change this time"]),
              "cont": "yes — probability 1/(diff+1)"},
             {"k": "act", "t": "@KINGLOWER — the Crown eases",
-             "s": ["amount = random_int(5−diff, 1), shown negated (0x034B44..0x034B5C)",
-                   "tax write clamp 75 at func_034318 0x03434F"]},
-            {"k": "end", "t": "announce via 0x191F:0xAE0"},
+             "s": ["amount = random_int(5−diff, 1), shown negated",
+                   "tax write clamp 75 at apply_tax_change()"]},
+            {"k": "end", "t": "announce via :0xAE0"},
         ],
         "No player-facing 'request lower taxes' control is documented; the "
         "announce overlay's internal tax write is untraced (TBD)."))
     _after_h3(soup, "The King's mercenaries", flow_fig(
-        "The mercenary offer", "peacetime func_03E664 · wartime func_03E442",
+        "The mercenary offer", "peacetime king_phase() · wartime offer_wartime_mercenaries()",
         [
-            {"k": "dec", "t": "war of independence declared ? ([0x5382]&1)",
-             "side": ("no — peacetime", ["1-in-21 gate: random_int(0,0x14)==0 (0x03E66A)",
-                                         "offering power must hold treaty bit 0x40 (0x03E6A2)",
-                                         "count = random_int(1,3) + coin flips (0x03E6C8)",
-                                         "fee/unit = ((diff+4)·2 + rand(0,6))·100 (0x03E713)"]),
+            {"k": "dec", "t": "war of independence declared ? (game.flags&1)",
+             "side": ("no — peacetime", ["1-in-21 gate: random_int(0,0x14)==0",
+                                         "offering power must hold treaty bit 0x40",
+                                         "count = random_int(1,3) + coin flips",
+                                         "fee/unit = ((diff+4)·2 + rand(0,6))·100"]),
              "cont": "yes — wartime"},
-            {"k": "act", "t": "one-shot arm: PowerRecord bit 0x08 (0x03E4BC/0x03E4CD)",
+            {"k": "act", "t": "one-shot arm: PowerRecord bit 0x08",
              "s": ["no offer on the first eligible call — only from the second on"]},
-            {"k": "act", "t": "1-in-3 gate (0x03E4E8), then compose",
-             "s": ["count = random_int(2, (4−diff)/2 + 2) (0x03E512)",
-                   "plus exactly one: Cont. Cavalry or Artillery (0x03E52E)"]},
-            {"k": "act", "t": "fee/unit = ((diff+3)·2 + random_int(0,6)) · 100 (0x03E558)",
-             "s": ["price = fee · (count + 2) (0x03E56B)",
-                   "shown only if price ≤ treasury +0x2A (0x03E5FD); debit 0x03E651"]},
-            {"k": "act", "t": "landing — func_03D510",
-             "s": ["population-weighted coastal colony pick (0x3D57E)",
-                   "Man-O-War carrier at best beach (0x03D748); all land units Veteran (0x03D835)"]},
+            {"k": "act", "t": "1-in-3 gate, then compose",
+             "s": ["count = random_int(2, (4−diff)/2 + 2)",
+                   "plus exactly one: Cont. Cavalry or Artillery"]},
+            {"k": "act", "t": "fee/unit = ((diff+3)·2 + random_int(0,6)) · 100",
+             "s": ["price = fee · (count + 2)",
+                   "shown only if price ≤ treasury +0x2A; debit"]},
+            {"k": "act", "t": "landing — land_intervention_force()",
+             "s": ["population-weighted coastal colony pick",
+                   "Man-O-War carrier at best beach; all land units Veteran"]},
             {"k": "end", "t": "@MERCS — force arrives"},
         ]))
     _after_h3(soup, "Royal Expeditionary Force schedule", flow_fig(
-        "REF growth — one purchase", "func_03E162, pre-independence each turn",
+        "REF growth — one purchase", "grow_royal_fund(), pre-independence each turn",
         [
             {"k": "act", "t": "fund += (8·diff + 10), doubled at 1600/1700/1750",
-             "s": ["PowerRecord +0x22 (0x3E17C..0x3E1B5); sale tax feeds the fund (0x32A92)"]},
-            {"k": "dec", "t": "fund ≥ 1800 ? (0x3E1C6)",
+             "s": ["PowerRecord +0x22; sale tax feeds the fund"]},
+            {"k": "dec", "t": "fund ≥ 1800 ?",
              "side": ("no", ["wait — accrue again next turn"]), "cont": "yes"},
-            {"k": "dec", "t": "(reg+2)/3 > cavalry ? (0x3E1D5)",
-             "side": ("yes", ["buy Cavalry [0x53DC]"]), "cont": "no"},
-            {"k": "dec", "t": "reg/4 > artillery ? (0x3E1EB)",
-             "side": ("yes", ["buy Artillery [0x53E0]"]), "cont": "no"},
-            {"k": "dec", "t": "(reg+cav+art+5)/10 > ships ? (0x3E203)",
-             "side": ("yes", ["buy Man-O-War [0x53DE]"]), "cont": "no"},
-            {"k": "act", "t": "buy Regulars [0x53DA] (default)",
-             "s": ["inc at 0x3E238 · fund −= 1800 (0x3E271)",
-                   "post-declaration: announced as @KINGBUY instead (0x3E262)"]},
+            {"k": "dec", "t": "(reg+2)/3 > cavalry ?",
+             "side": ("yes", ["buy Cavalry ref.cavalry"]), "cont": "no"},
+            {"k": "dec", "t": "reg/4 > artillery ?",
+             "side": ("yes", ["buy Artillery ref.artillery"]), "cont": "no"},
+            {"k": "dec", "t": "(reg+cav+art+5)/10 > ships ?",
+             "side": ("yes", ["buy Man-O-War ref.man_o_war"]), "cont": "no"},
+            {"k": "act", "t": "buy Regulars ref.regulars (default)",
+             "s": ["inc at · fund −= 1800",
+                   "post-declaration: announced as @KINGBUY instead"]},
             {"k": "end", "t": "army stays in ratio ~ 3:1 cav, 4:1 art, 10:1 naval"},
         ]))
     _after_h3(soup, "Spanish Succession merge", flow_fig(
-        "The Succession merge", "func_03C638 · event id 0x68",
+        "The Succession merge", "spanish_succession() · event id 0x68",
         [
             {"k": "dec", "t": "revolution meter below 75 · no power has seceded yet · single-player ?",
              "side": ("no", ["meter ≥ 75 → the revolution",
                              "handlers fire instead"]),
-             "cont": "yes  (meter [0x53D0], REF id [0x53D2]; gate 0x2391C)"},
-            {"k": "act", "t": "rank powers: 3·[0x9418+p] + 2·[0x9298+p] + [0x9410+p]",
-             "s": ["0x3C655..0x3C66B, sort 0x3C68E — weakest AI cedes, strongest gains"]},
-            {"k": "act", "t": "@SUCCESSION popup (0x3C76A)",
+             "cont": "yes (meter game.revolution_meter, REF id game.king_power; gate)"},
+            {"k": "act", "t": "rank powers: 3·[+p] + 2·[+p] + [+p]",
+             "s": [", sort — weakest AI cedes, strongest gains"]},
+            {"k": "act", "t": "@SUCCESSION popup",
              "s": ['"…Treaty of Utrecht specifies that all {%STRING3} possessions…"']},
             {"k": "act", "t": "rewrite every owner", "s": [
-                "map-tile owner nibbles (0x3C7AF..0x3C80C)",
-                "unit owners (0x3C81D) · colony owners +0x1A (0x3C8A0, SoL pools zeroed)",
-                "third owner-nibble table (0x3C8CA..0x3C8FE)"]},
-            {"k": "end", "t": "ceding power eliminated — controller:=2 (0x3C91A)"},
+                "map-tile owner nibbles",
+                "unit owners · colony owners +0x1A",
+                "third owner-nibble table"]},
+            {"k": "end", "t": "ceding power eliminated — controller:=2"},
         ],
-        "The enqueue gate for event 0x68 is an unresolved residual; the handler "
+        "The enqueue gate for event 0x68 is an unresolved residual; the handler"
         "is also reachable from cheat @FORCED stage (a)."))
 
 
 def enrich_movement(soup):
     _after_h3(soup, "short-range path-step finder", flow_fig(
-        "One step's movement cost", "func_061F02 cost rules, in priority order",
+        "One step's movement cost", "find_path_step() cost rules, in priority order",
         [
-            {"k": "dec", "t": "unit's stored moves ≤ 3 ? (one-move unit, 0x061F6B)",
-             "side": ("yes", ["every step costs a flat 3 (0x0622F4)"]),
+            {"k": "dec", "t": "unit's stored moves ≤ 3 ? (one-move unit,)",
+             "side": ("yes", ["every step costs a flat 3"]),
              "cont": "no"},
-            {"k": "dec", "t": "road/plow bits 0x0A at BOTH ends ? (0x0622A7)",
+            {"k": "dec", "t": "road/plow bits 0x0A at BOTH ends ?",
              "side": ("yes", ["cost = 1  (a third of a stored point ×3)"]),
              "cont": "no"},
-            {"k": "dec", "t": "river bit 0x40, cardinal step ? (0x0622CC)",
+            {"k": "dec", "t": "river bit 0x40, cardinal step ?",
              "side": ("yes", ["cost = 1"]), "cont": "no"},
             {"k": "act", "t": "cost = terrain Movement × 3",
-             "s": ["byte[terrain·16 + 0x2F76]·3 (0x062300..0x06230C)",
+             "s": ["byte[terrain·16 + ]·3",
                    "NAMES values: open land 1 · forests/Hills/Arctic 2 · Mountains 3 · water 1"]},
             {"k": "act", "t": "occupancy rules", "s": [
-                "tile's power must be −1 or the mover (0x062217); foreign/AI +8 (0x06225E)",
-                "natives (type ≥ 19) reject rumor tiles (0x0621F5)",
+                "tile's power must be −1 or the mover; foreign/AI +8",
+                "natives (type ≥ 19) reject rumor tiles",
                 "ships (types 13..18): water = Ocean/Sea Lane only; mismatch only at endpoints"]},
-            {"k": "end", "t": "16×16-window BFS · cache DS:0xA270 · budget ×3"},
+            {"k": "end", "t": "16×16-window BFS · cache DS: · budget ×3"},
         ]))
 
 
 def enrich_persistence(soup):
     _after_h3(soup, "music scheduler", flow_fig(
-        "The background-music rotation", "func_004EE6 — runs from the input-idle loops",
+        "The background-music rotation", "rotate_music() — runs from the input-idle loops",
         [
             {"k": "dec", "t": "background music [0xA2] on (or one-shot [0x9E]) ?",
              "side": ("no", ["skip"]), "cont": "yes"},
@@ -2035,12 +2170,12 @@ def enrich_persistence(soup):
              "side": ("yes", ["wait"]), "cont": "no — pick next"},
             {"k": "dec", "t": "forced-next tune [0x94] set ?",
              "side": ("yes", ["honor it"]), "cont": "no"},
-            {"k": "act", "t": "seed RNG from tick clock [0x83A8], roll in the state window",
-             "s": ["PEACE ([0x5382]&1 clear): folk 1–12, 1-in-9 excursion into 13–23",
+            {"k": "act", "t": "seed RNG from tick clock internal state, roll in the state window",
+             "s": ["PEACE (game.flags&1 clear): folk 1–12, 1-in-9 excursion into 13–23",
                    "WAR OF INDEPENDENCE: tunes 13–18, 1-in-5 excursion back to folk",
                    "re-roll avoids repeating the current tune [0x96]"]},
             {"k": "act", "t": "event classes preempt via [0x9A]",
-             "s": ["war fanfare, native themes 0x33/0x35/0x36, …; index→id map func_004DF8"]},
+             "s": ["war fanfare, native themes 0x33/0x35/0x36, …; index→id map tune_id()"]},
             {"k": "end", "t": "play"},
         ]))
     # save-file layout ribbon (principal blocks of the 43; section 20.3 table)
@@ -2272,7 +2407,7 @@ def build_section(key, title, md_text):
     soup = BeautifulSoup(html, "html.parser")
     formula_cards(soup)
     comment_blocks_to_prose(soup)
-    structs_to_plates(soup)
+    structs_to_plates(soup, mech=key in MECH_SECTIONS)
     regions_to_wireframes(soup)
     highlight_code(soup)
     dress_tables(soup)
@@ -2281,7 +2416,8 @@ def build_section(key, title, md_text):
             enricher(soup)
         except Exception as e:
             warn(f"enricher {enricher.__name__} failed in section {key}: {e}")
-    name_globals(soup)
+    if key not in MECH_SECTIONS:
+        name_globals(soup)
     style_hex_in(soup)
     shape_headings(soup, key, title)
     return str(soup)

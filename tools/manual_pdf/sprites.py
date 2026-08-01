@@ -139,3 +139,16 @@ def unit_icon(engine_frame):
 def building_sprite(def_id):
     """BUILDING.SS disk frame = def id (B.4)."""
     return frame_image("BUILDING.SS", def_id)
+
+
+# ICONS.SS disk-frame labels (byte-cited or pixel-verified; '*' = pixel-label only,
+# unlisted frames are unidentified — see the v7 sprite fact-pack)
+ICONS_LABELS = {0: 'colony marker', 1: 'colony marker', 2: 'colony marker', 3: 'colony marker', 4: '(1×1)', 5: 'Caravel', 6: 'Merchantman', 7: 'Galleon', 8: 'Wagon Train', 9: 'Artillery', 14: 'Privateer', 15: 'Frigate', 16: 'Treasure', 17: 'capital star *', 18: 'cursor', 19: 'cursor', 20: 'cursor', 21: 'cursor', 38: 'full cargo stack', 54: 'Hammers', 55: 'red X (empty)', 56: 'Cross (filled)', 57: 'Fish', 58: 'pioneer, no tools *', 59: 'soldier, no muskets *', 60: 'scout, no horses *', 62: 'Liberty Bell', 63: 'placeholder', 64: 'placeholder', 65: 'damaged artillery', 66: 'Indian Convert', 67: 'flag plaque', 68: 'flag plaque', 69: 'flag plaque', 73: 'colonist + tools *', 74: 'colonist + muskets *', 75: 'colonist + horses *', 76: 'missionary *', 81: 'Farmer', 82: 'Sugar Planter', 83: 'Tobacco Planter', 84: 'Cotton Planter', 85: 'Fur Trapper', 86: 'Lumberjack', 87: 'Ore Miner', 88: 'Silver Miner', 89: 'Fisherman', 90: 'Distiller', 91: 'Tobacconist', 92: 'Weaver', 93: 'Fur Trader', 94: 'Carpenter', 95: 'Blacksmith', 96: 'Gunsmith', 97: 'Preacher', 98: 'Statesman', 99: 'Teacher', 100: 'Free Colonist', 101: 'Hardy Pioneer', 102: 'Veteran Soldier', 103: 'Seasoned Scout', 104: 'Veteran Dragoon', 105: 'Jesuit Missionary', 106: 'Indentured Servant', 107: 'Petty Criminal', 108: 'unit-on-tile marker', 109: 'Brave', 110: 'Armed Brave', 111: 'Mounted Brave', 112: 'Mounted Warrior', 118: 'pennant', 119: 'pennant', 120: 'pennant', 121: 'pennant', 122: 'cargo crate', 123: 'rebel flag', 124: 'Tory crown', 125: 'REF Regular', 126: 'REF Cavalry', 127: 'Man-O-War', 128: 'Continental Army', 129: 'Continental Cavalry', 130: 'rebel colony flag', 22: 'Food', 23: 'Sugar', 24: 'Tobacco', 25: 'Cotton', 26: 'Furs', 27: 'Lumber', 28: 'Ore', 29: 'Silver', 30: 'Horses', 31: 'Rum', 32: 'Cigars', 33: 'Cloth', 34: 'Coats', 35: 'Trade Goods', 36: 'Tools', 37: 'Muskets'}
+
+JOB_FIGURES = {j: 81 + j for j in range(27)}
+JOB_FIGURES[27] = 66  # Convert exception
+JOB_NAMES = ["Farmer","Sugar Planter","Tobacco Planter","Cotton Planter","Fur Trapper",
+  "Lumberjack","Ore Miner","Silver Miner","Fisherman","Distiller","Tobacconist","Weaver",
+  "Fur Trader","Carpenter","Blacksmith","Gunsmith","Preacher","Statesman","Teacher",
+  "Colonist","Pioneer","Soldier","Scout","Dragoon","Missionary","Ind. Servant",
+  "Criminal","Convert"]
