@@ -1743,6 +1743,173 @@ def enrich_appendix_b(soup):
 # on the spine, branches exit right.
 # --------------------------------------------------------------------------
 
+
+# --------------------------------------------------------------------------
+# 4d. Compact diagram primitives (v8 format: bigger text, no side-stretch)
+# --------------------------------------------------------------------------
+
+def _wrap(t, width):
+    words, lines, cur = t.split(), [], ""
+    for w in words:
+        if len(cur) + len(w) + 1 > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = (cur + " " + w).strip()
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def dense_flow(title, sub, nodes, caption=""):
+    """Compact logic map. nodes:
+      {k:'start'|'end', t}
+      {k:'act', t, s:[lines]}                      full-width tight card
+      {k:'dec', t, yes:(label,[lines]), no:(label,[lines])}  two half cards
+    Text 10/9pt, minimal gaps, branches side-by-side beneath the diamond.
+    """
+    W, MX = 660, 6
+    CW = W - 2 * MX
+    e, y = [], 6
+    centers = []
+
+    def card(x, w, ty, title_t, lines, cat, weight="bold", tsz=10.2):
+        dark, light = CAT[cat]
+        tlines = _wrap(title_t, int(w / 4.2))[:2]
+        wrapped = []
+        for ln in lines:
+            wrapped += _wrap(ln, int(w / 4.6))
+        h = 17 + 12 * (len(tlines) - 1) + 11.5 * len(wrapped) + \
+            (4 if wrapped else 2)
+        e.append(f'<rect x="{x}" y="{ty}" width="{w}" height="{h:.0f}" rx="3" '
+                 f'fill="{light}" stroke="{dark}" stroke-width="1.2"/>')
+        for tl_i, tl in enumerate(tlines):
+            e.append(svg_text(x + 8, ty + 13 + tl_i * 12, tl, tsz, weight=weight))
+        toff = 13 + 12 * len(tlines)
+        for i, ln in enumerate(wrapped):
+            e.append(svg_text(x + 8, ty + toff + 11.5 * i + 1, ln, 8.8,
+                              fill="#2A2F37"))
+        return h
+
+    for nd in nodes:
+        k = nd["k"]
+        if k in ("start", "end"):
+            h = 24
+            e.append(f'<rect x="{W / 2 - 130}" y="{y}" width="260" height="{h}" '
+                     f'rx="12" fill="{INK}"/>')
+            tsz = min(9.6, max(6.5, 250 / (0.52 * max(1, len(nd["t"])))))
+            e.append(svg_text(W / 2, y + h / 2 + 3.2, nd["t"], tsz,
+                              fill="#FCFBF8", anchor="middle", weight="bold"))
+            centers.append((y, h))
+            y += h + 9
+        elif k == "act":
+            h = card(MX, CW, y, nd["t"], nd.get("s", []), nd.get("cat", "num"))
+            centers.append((y, h))
+            y += h + 9
+        elif k == "dec":
+            dark, light = CAT["econ"]
+            dh = 26
+            e.append(f'<path d="M {MX} {y + dh / 2} L {W / 2} {y} '
+                     f'L {W - MX} {y + dh / 2} L {W / 2} {y + dh} z" '
+                     f'fill="{light}" stroke="{dark}" stroke-width="1.2"/>')
+            e.append(svg_text(W / 2, y + dh / 2 + 3.4, nd["t"], 10.0,
+                              anchor="middle", weight="bold"))
+            centers.append((y, dh))
+            y += dh + 8
+            bw = (CW - 10) / 2
+            yl, yr = nd["yes"], nd["no"]
+            h1 = card(MX, bw, y, "✔ " + yl[0], yl[1], "arr", tsz=9.6)
+            h2 = card(MX + bw + 10, bw, y, "✘ " + yr[0], yr[1], "warn",
+                      tsz=9.6)
+            hh = max(h1, h2)
+            e.append(f'<line x1="{MX + bw / 2}" y1="{y - 8}" x2="{MX + bw / 2}" '
+                     f'y2="{y - 1}" stroke="{MUTED}" stroke-width="1.2" '
+                     f'marker-end="url(#farr)"/>')
+            e.append(f'<line x1="{MX + bw + 10 + bw / 2}" y1="{y - 8}" '
+                     f'x2="{MX + bw + 10 + bw / 2}" y2="{y - 1}" '
+                     f'stroke="{MUTED}" stroke-width="1.2" '
+                     f'marker-end="url(#farr)"/>')
+            centers.append((y, hh))
+            y += hh + 9
+    H = y + 2
+    spine = []
+    for (y1, h1), (y2, _) in zip(centers, centers[1:]):
+        if y2 - (y1 + h1) >= 7:
+            spine.append(f'<line x1="{W / 2}" y1="{y1 + h1}" x2="{W / 2}" '
+                         f'y2="{y2 - 1.5}" stroke="{MUTED}" stroke-width="1.2" '
+                         f'marker-end="url(#farr)"/>')
+    svg = (f'<svg viewBox="0 0 {W} {H:.0f}" xmlns="http://www.w3.org/2000/svg">'
+           '<defs><marker id="farr" viewBox="0 0 8 8" refX="7" refY="4" '
+           'markerWidth="7" markerHeight="7" orient="auto">'
+           f'<path d="M0,0 L8,4 L0,8 z" fill="{MUTED}"/></marker></defs>'
+           + "".join(spine) + "".join(e) + "</svg>")
+    cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""
+    fig = (f'<figure class="tall"><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">{esc(title)}</span>'
+           f'<span class="ps">{esc(sub)}</span></div>'
+           f'<div class="plate-wrap">{svg}</div>{cap}</div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def route_map(title, sub, columns, caption=""):
+    """Dialog/route tree: N columns, each {head, img(optional PIL), cards:
+    [(label, lines, cat)]}. Column width = 660/N; text 9.5/8.4."""
+    W = 660
+    n = len(columns)
+    cw = (W - 8 * (n + 1)) / n
+    e = []
+    maxy = 0
+    for ci, col in enumerate(columns):
+        x = 8 + ci * (cw + 8)
+        y = 4
+        dark, light = CAT[col.get("cat", "pos")]
+        hh = 30
+        e.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{hh}" rx="4" '
+                 f'fill="{dark}"/>')
+        img = col.get("img")
+        tx = x + cw / 2
+        if img is not None:
+            uri = SPR.data_uri(img, 3)
+            iw, ih = img.width * 1.4, img.height * 1.4
+            e.append(f'<image x="{x + 4}" y="{y + (hh - ih) / 2:.0f}" '
+                     f'width="{iw:.0f}" height="{ih:.0f}" href="{uri}" '
+                     f'style="image-rendering:pixelated"/>')
+            tx = x + (cw + iw) / 2
+        hsz = min(10.5, max(7.0, (cw - (img.width * 1.4 + 10 if img is not None else 8)) /
+                            (0.52 * max(1, len(col["head"])))))
+        e.append(svg_text(tx, y + hh / 2 + 3.4, col["head"], hsz,
+                          fill="#FFFFFF", anchor="middle", weight="bold"))
+        y += hh + 7
+        for label, lines, cat in col["cards"]:
+            d2, l2 = CAT[cat]
+            tw = _wrap(label, int(cw / 4.4))[:2]
+            body = []
+            for ln in lines:
+                body += _wrap(ln, int(cw / 3.9))
+            ch = 8 + 11 * len(tw) + 9.6 * len(body) + 5
+            e.append(f'<line x1="{x + cw / 2}" y1="{y - 7}" x2="{x + cw / 2}" '
+                     f'y2="{y - 1}" stroke="{MUTED}" stroke-width="1.1"/>')
+            e.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{ch:.0f}" '
+                     f'rx="3" fill="{l2}" stroke="{d2}" stroke-width="1.1"/>')
+            yy = y + 11
+            for tl in tw:
+                e.append(svg_text(x + 5, yy, tl, 9.2, weight="bold"))
+                yy += 11
+            for ln in body:
+                e.append(svg_text(x + 5, yy, ln, 8.2, fill="#2A2F37"))
+                yy += 9.6
+            y += ch + 7
+        maxy = max(maxy, y)
+    svg = (f'<svg viewBox="0 0 {W} {maxy + 2:.0f}" '
+           f'xmlns="http://www.w3.org/2000/svg">' + "".join(e) + "</svg>")
+    cap = f"<figcaption>{esc(caption)}</figcaption>" if caption else ""
+    fig = (f'<figure class="tall"><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">{esc(title)}</span>'
+           f'<span class="ps">{esc(sub)}</span></div>'
+           f'<div class="plate-wrap">{svg}</div>{cap}</div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
 def flow_svg(nodes):
     """nodes: dicts —
     {k:'start'|'end', t}                     rounded terminal
@@ -2660,10 +2827,16 @@ def merge(body_pdf, overlay_pdf, cover_pdf, out_pdf, marks, sections):
 # --------------------------------------------------------------------------
 
 def main():
+    only = None
+    if "--only" in sys.argv:
+        only = set(sys.argv[sys.argv.index("--only") + 1].split(","))
     WORK.mkdir(exist_ok=True)
     print("== load + preprocess")
     about, body = load_source()
     raw_sections = split_sections(body)
+    if only:
+        raw_sections = [s for s in raw_sections if s[0] in only]
+        print(f"   --only {sorted(only)} -> {len(raw_sections)} section(s)")
     print(f"   {len(raw_sections)} sections")
     print("== transform sections")
     sections = []
@@ -2708,7 +2881,8 @@ def main():
                page={"prefer_css_page_size": True})
 
     print("== merge")
-    out = OUTDIR / "Viceroy_Technical_Reference.pdf"
+    out = OUTDIR / ("Viceroy_Technical_Reference.pdf" if not only else
+                    "Viceroy_TR_sec" + "_".join(sorted(only)) + ".pdf")
     merge(WORK / "body2.pdf", WORK / "overlay.pdf", WORK / "cover.pdf",
           out, marks2, sections)
     print(f"   wrote {out} ({out.stat().st_size:,} bytes)")
