@@ -309,6 +309,37 @@ def byte_plate_svg(st):
         if not f["name"]:
             continue
         dark, _ = CAT[f["cat"]]
+        enum = enum_labels_for(f)
+        if enum:
+            labels, es = enum
+            # per-element ticks + text labels drawn inside the grid cells
+            for k, lab in enumerate(labels):
+                lo = f["off"] + k * es
+                hi = min(lo + es, total)
+                if lo >= total:
+                    break
+                r = lo // 16
+                x0e = gut + (lo % 16) * cw
+                run = (min(hi, (r + 1) * 16) - lo)  # cells of this element on its row
+                wpx = run * cw
+                if k > 0:
+                    e.append(f'<rect x="{x0e}" y="{ruler + r * ch}" width="1.4" '
+                             f'height="{ch}" fill="{dark}" fill-opacity="0.55"/>')
+                size = min(6.8, max(4.6, (wpx - 5) / (0.5 * max(1, len(lab)))))
+                txt = lab
+                if 0.5 * len(txt) * size > wpx - 4:
+                    txt = txt[: max(2, int((wpx - 6) / (0.5 * size)))] + "…"
+                e.append(svg_text(x0e + wpx / 2, ruler + r * ch + ch / 2 + 5.5,
+                                  txt, size, fill=dark, anchor="middle",
+                                  weight="bold"))
+            # field name once, small, along the top of the first row segment
+            r0 = f["off"] // 16
+            seg_lo = f["off"]
+            seg_hi = min(f["off"] + f["size"], (r0 + 1) * 16)
+            xn = gut + (seg_lo % 16) * cw + 3
+            e.append(svg_text(xn, ruler + r0 * ch + 7.2, f["name"], 5.8,
+                              fill=dark))
+            continue
         best = None
         for r in range(rows):
             lo = max(f["off"], r * 16)
@@ -406,7 +437,6 @@ def struct_figure(st, soup):
             f'<td class="cmono">{esc(f["ctype"])}</td>'
             f'<td class="cmono" style="color:{dark};font-weight:bold">{esc(nm)}</td>'
             f'<td>{esc(f["note"])}</td></tr>')
-        rows.append(enum_elements_row(f))
     tall = " tall" if (len(rows) > 12 or (st["total"] or 0) > 128) else ""
     fig = (f'<figure class="structplate{tall}">'
            f'<div style="break-inside:avoid"><div class="platehead"><span class="pt">{esc(st["name"])}</span>'
@@ -584,44 +614,24 @@ _bitstrips_done = set()
 
 
 # arrays whose element order is documented in the source (section 9.2 @CARGO;
-# @COUNTRY powers 0..3) — expanded per element in the struct key table
+# @COUNTRY powers 0..3) — labelled per element inside the byte plate
 GOODS_FIELDS = {"stockpile", "market_pool", "market_traded", "market_eu_supply",
                 "market_base", "boycott_count"}
 POWER_FIELDS = {"relations", "treaty_respect", "power_flag", "power_flag2",
                 "alarm"}
 
-_goods_uri = {}
 
-
-def goods_chip_imgs():
-    if not _goods_uri:
-        for g in range(16):
-            im = SPR.goods_icon(g)
-            _goods_uri[g] = (SPR.data_uri(im, scale=2), im.width, im.height)
-    return _goods_uri
-
-
-def enum_elements_row(field):
-    base = (field["name"] or "").split("[")[0]
-    if base in GOODS_FIELDS and field["size"] and field["name"].endswith("[16]"):
-        es = field["size"] // 16
-        chips = []
-        for g in range(16):
-            uri, w, h = goods_chip_imgs()[g]
-            chips.append(
-                f'<span class="chip"><span class="co">+0x{field["off"] + g * es:02X}</span>'
-                f'<img src="{uri}" width="{w * 1.4:.0f}" height="{h * 1.4:.0f}" alt=""/>'
-                f'{esc(SPR.GOODS[g])}</span>')
-        return (f'<tr class="elems"><td></td><td colspan="4">'
-                f'<div class="chips">{"".join(chips)}</div></td></tr>')
-    if base in POWER_FIELDS and field["size"] and field["name"].endswith("[4]"):
-        es = field["size"] // 4
-        chips = [
-            f'<span class="chip"><span class="co">+0x{field["off"] + p * es:02X}</span>'
-            f' {esc(SPR.POWERS[p])}</span>' for p in range(4)]
-        return (f'<tr class="elems"><td></td><td colspan="4">'
-                f'<div class="chips">{"".join(chips)}</div></td></tr>')
-    return ""
+def enum_labels_for(field):
+    """(labels, elem_size) when the element order is documented, else None."""
+    name = field["name"] or ""
+    base = name.split("[")[0]
+    if not field["size"]:
+        return None
+    if base in GOODS_FIELDS and name.endswith("[16]"):
+        return SPR.GOODS, field["size"] // 16
+    if base in POWER_FIELDS and name.endswith("[4]"):
+        return SPR.POWERS, field["size"] // 4
+    return None
 
 
 # --------------------------------------------------------------------------
