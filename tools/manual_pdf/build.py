@@ -1445,43 +1445,37 @@ def goods_plate_fig():
 def food_walkthrough_fig():
     """The life of the Food price — every step from section 9's own cited
     text (9.1 display pair, 9.3 drift/init/coupling, 9.4 transactions)."""
-    return flow_fig(
+    return sheet_fig(
         "Walkthrough — the life of the Food price",
-        "good 0 · assembled from §9.1 / §9.3 / §9.4",
-        [
-            {"k": "start", "t": "New game"},
-            {"k": "act", "t": "price_seed[Food] = random_int(600, 1000)",
-             "s": ["seed_market() fills all 16 entries — no fixed base-price table",
-                   "price_seed lives at DS: (word per good)"]},
-            {"k": "act", "t": "Europe strip shows the bid/ask pair (16-good loop)",
-             "s": ["sell = price_level[Food] − 1 (sell_price(), clamp ≥ 0)",
-                   "buy = @CARGO col 1 (Food = 1) + price_level[Food] (buy_price())",
-                   "so Food's on-screen spread is the constant 1 + 1 = 2"]},
-            {"k": "dec", "t": "you trade Food in Europe",
-             "side": ("BUY", ["untaxed: sub [bx+0x2A],ax; sbb …",
-                              "EU supply +0xBC −= qty",
-                              "accumulator +0xFC −= qty"]),
-             "cont": "SELL (sell_goods())"},
-            {"k": "act", "t": "SELL: gross = price·qty, tax split ..78",
-             "s": ["tax = gross·tax_rate/100 → King fund +0x22",
-                   "net = gross − tax → treasury via the [0,999999] clamp",
-                   "EU supply +0xBC += qty · accumulator +0xFC += qty"]},
-            {"k": "act", "t": "immediate single-good re-drift — drift(Food, 0)",
-             "s": ["both handlers call it right after the trade"]},
-            {"k": "act", "t": "end of turn — market_day() (in end_of_turn())",
-             "s": ["acc = price_seed[Food] + Σ over 4 powers of max(0, accum_FC[Food])",
-                   "price_seed[Food] −= acc >> 8 (proportional decay)",
-                   "then all per-power accumulators are cleared"]},
-            {"k": "dec", "t": "price level steps",
-             "side": ("down", ["step-down −= 1, clamp ≥ 0"]),
-             "cont": "step-up += 1"},
-            {"k": "end", "t": "next turn's bid/ask uses the new level"},
-        ],
-        "Food is not luxury-coupled. Rum/Cigars/Cloth/Coats additionally share "
-        "S_pair = supply[9]+…+supply[12] with target[i] = (S_pair·3)/supply[i] "
-        "; raw inputs Sugar/Tobacco/Cotton/Furs use the same"
-        "formula against their own supply (Furs halved; +1 if year<1700, "
-        "+1 more if year<1600,).")
+        "good 0 · assembled from §9.1 / §9.2 / §9.3 / §9.4",
+        story_steps([
+            ("New game",
+             "the seed rolls random(600..1000); the price level rolls "
+             "1–3, one roll shared by all four powers."),
+            ("The Europe strip",
+             "sell = level − 1, buy = level + 7 (Food's burden) — the "
+             "visible spread is 8, the widest in the game."),
+            ("You sell",
+             "gross = price·qty; the tax share goes to the King's fund, "
+             "the net to your treasury; European supply and the net-trade "
+             "accumulator both gain the quantity."),
+            ("…or you buy",
+             "untaxed debit; supply and the accumulator both lose the "
+             "quantity. Either way a single-good re-drift runs at once."),
+            ("Every turn",
+             "the silent drift (riding the immigration check): seed −= "
+             "(seed + Σ positive net trade)/256, and the traffic "
+             "accumulator gains Food's drift of −1."),
+            ("The step",
+             "at −300 the price rises one (ceiling 6); at +200 it falls "
+             "one (floor 1) — each step announced with @PRICEUP / "
+             "@PRICEDOWN."),
+        ], foot="Food is excluded from the raw-goods repricing loop and is "
+                "not luxury-coupled; Rum/Cigars/Cloth/Coats share the "
+                "S_pair supply pool with target = (S_pair·3)/own supply, "
+                "and the raw inputs Sugar/Tobacco/Cotton/Furs run the same "
+                "formula against their own supply (Furs halved, +1 before "
+                "1700, +1 more before 1600)."))
 
 
 def enrich_market(soup):
@@ -2201,66 +2195,53 @@ def formula_fig(title, sub, formula, factors, caption=""):
 
 
 def enrich_turnflow(soup):
-    fig1 = flow_fig(
-        "The turn loop", "turn_loop() — one full pass per turn",
-        [
-            {"k": "start", "t": "Turn begins"},
-            {"k": "gopen",
-             "t": "×4 — once per European power, strict index order"},
-            {"k": "act", "t": "1 King / mercenary — king_phase()",
-             "s": ["gated game.flags&1==0 · peacetime mercenary roll · King events"]},
-            {"k": "act", "t": "2 Orders / movement — orders_phase()",
-             "s": ["per-unit orders pump · REF fund accrual grow_royal_fund() via",
-                   "AI moves a helper; contact evaluator evaluate_contact() fires diplomacy"]},
-            {"k": "act", "t": "3 Production — production_phase()",
-             "s": ["zero bells/turn +0x0E · per-colony update_colony():",
-                   "yields, food/starvation/spoilage popups, school, bell accrual"]},
-            {"k": "act", "t": "4 Diplomacy — diplomacy_phase()",
-             "s": ["king-action dispatch next_immigrant_class() (tax raises event-driven here) · AI diplomacy"]},
-            {"k": "act", "t": "5 Periodic / congress — periodic_phase()",
-             "s": ["colony stats a helper · congress a helper (gate game.flags&0x10==0)",
-                   "King defeat/victory screens /"]},
-            {"k": "gclose"},
-            {"k": "act", "t": "Market drift — market_day())",
-             "s": ["clear per-power 16-good accumulators",
-                   "4-power loop into drift_prices(): base relaxes by (base + Σ clamped trade)/256"]},
-            {"k": "act", "t": "Immigration crosses — immigration_threshold()",
-             "s": ["runs immediately after the price recompute"]},
-            {"k": "act", "t": "Religious-unrest arrivals — @UNREST chain", "s": []},
-            {"k": "act", "t": "Year cadence — inc game.turn",
-             "s": ["see the cadence diagram below"]},
-            {"k": "act", "t": "Autosave tail (§20.2)", "s": []},
-            {"k": "end", "t": "Next turn"},
-        ],
-        "Natives are not a separate top-level pass — their AI runs inside the "
-        "per-power processing.")
-    fig2 = flow_fig(
-        "Year cadence and end-of-game checks", "loop tail –",
-        [
-            {"k": "act", "t": "inc game.turn — turn counter", "s": []},
-            {"k": "dec", "t": "year < 1600 ?",
-             "side": ("yes", ["one turn = one year"]), "cont": "no — from 1600"},
-            {"k": "act", "t": "season word game.season toggles Spring / Autumn",
-             "s": ["the year steps every second turn · start 1492"]},
-            {"k": "dec", "t": "year reaches 1725 ?",
-             "side": ("yes", ["forced end: game.forced_end = 1",
-                              "end-game save fires near"]),
-             "cont": "no"},
-            {"k": "end", "t": "continue"},
-        ])
-    fig3 = flow_fig(
-        "The autosave chain", "helper; consumers /",
-        [
-            {"k": "dec", "t": "Autosave option on, and not suppressed ?",
-             "side": ("no", ["no autosave"]), "cont": "yes"},
-            {"k": "act", "t": "rolling autosave → slot 9, every turn",
-             "s": ['"most recent save in the last slot"']},
-            {"k": "dec", "t": "year divisible by 10 ?",
-             "side": ("yes", ["decade autosave → slot 8"]), "cont": "no"},
-            {"k": "end", "t": "done"},
-        ],
-        "Filenames COLONY<slot>.SAV (stem at file). Manual slots via"
-        "the @SAVEGAME dialog.")
+    fig1 = sheet_fig(
+        "One full turn", "turn_loop() — one pass per turn",
+        story_steps([
+            ("The native pass runs first",
+             "war councils, village growth, brave AI — the invisible pass "
+             "of §19.11, before any European power moves."),
+            ("Then, once per power in strict index order — King",
+             "king_phase(): peacetime mercenary roll and King events "
+             "(skipped once the war bit is set)."),
+            ("Orders and movement",
+             "orders_phase(): the per-unit orders pump; REF fund accrual "
+             "grow_royal_fund() rides here; the contact evaluator fires "
+             "diplomacy on unit-vs-tile encounters."),
+            ("Production",
+             "production_phase(): per-colony update_colony() — yields, "
+             "food and spoilage popups, schools, bell accrual; the SoL "
+             "update (with its Spanish-Succession check, §18.7) and the "
+             "silent market drift + immigration crosses ride here."),
+            ("Diplomacy",
+             "diplomacy_phase(): king-action dispatch (tax raises are "
+             "event-driven here) and AI diplomacy."),
+            ("Periodic and Congress",
+             "periodic_phase(): colony stats refresh, the Founding-Father "
+             "congress, King defeat/victory screens."),
+            ("The turn tail",
+             "year cadence, religious-unrest arrivals, and the autosave "
+             "chain below."),
+        ], foot="Corrected 2026-08-01: the natives ARE a separate "
+                "top-level pass (it runs before the power loop), and the "
+                "market drift is not an end-of-turn phase."))
+    fig2 = sheet_fig(
+        "Year cadence and the end of the game", "the loop tail",
+        rule_card("The calendar",
+                  "before 1600 one turn = one year — from 1600 the season "
+                  "toggles Spring/Autumn and the year steps every second "
+                  "turn",
+                  [("start", "1492"),
+                   ("forced end", "the 1725 check sets the forced-end "
+                    "flag and fires the end-game save")]))
+    fig3 = sheet_fig(
+        "The autosave chain", "gated by the Autosave option",
+        rule_card("Every turn",
+                  "a rolling autosave to slot 9 — plus a decade autosave "
+                  "to slot 8 when the year divides by 10",
+                  [("suppressed", "while the autoplay flag is set"),
+                   ("filenames", "COLONY<slot>.SAV; manual slots via the "
+                    "@SAVEGAME dialog")]))
     tables = soup.find_all("div", class_="tablewrap")
     if tables:
         tables[0].insert_after(fig1)
@@ -2275,33 +2256,24 @@ def enrich_turnflow(soup):
 
 
 def enrich_events(soup):
-    fig = flow_fig(
-        "The tax event, end to end", "@KINGTAX → @TAXOPTIONS → @TEAPARTY (§23.4)",
-        [
-            {"k": "start", "t": "King demands a tax raise"},
-            {"k": "act", "t": "@KINGTAX popup (width 190)",
-             "s": ['"…raise your tax rate by {%NUMBER0%%}. The tax rate is now {%NUMBER1%%}…"',
-                   "options from @TAXOPTIONS"]},
-            {"k": "dec", "t": '"Kiss pinky ring."  /  "Hold \'{%STRING3 Party}.\'"',
-             "side": ("accept", ["tax applied, hard-clamped to 75",
-                                 "at"]),
-             "cont": "refuse"},
-            {"k": "act", "t": "@TEAPARTY fires",
-             "s": ['"Sons of Liberty throw {%NUMBER0} tons of %STRING0 into the sea at %STRING1!"',
-                   "boycott bit set: PowerRecord+0x20 |= (1<<good)"]},
-            {"k": "dec", "t": "lift the boycott ?",
-             "side": ("pay back-tax", ["count × 500 gold (count = +0x4C[good]",
-                                       "+ base +good·9, clamp ≥0)",
-                                       "gold → royal fund",
-                                       "bit cleared"]),
-             "cont": "or acquire Jakob Fugger (FF id 1)"},
-            {"k": "act", "t": "Fugger clears the whole boycott word",
-             "s": ["mov [bx+0x20],0"]},
-            {"k": "end", "t": "good tradeable again"},
-        ],
-        "The dashed outcome of refusal — the standing boycott — is what arms "
-        "the back-tax and Fugger events later; the good cannot be traded until "
-        "one of them fires.")
+    fig = sheet_fig(
+        "The tax event, end to end",
+        "@KINGTAX → @TAXOPTIONS → @TEAPARTY (§23.4)",
+        story_steps([
+            ("The King demands",
+             "@KINGTAX — “…raise your tax rate by {N%}. The tax rate is "
+             "now {M%}…” with the @TAXOPTIONS rows."),
+            ("Kiss the royal pinky ring",
+             "the raise is applied, hard-clamped at 75."),
+            ("…or hold a Party",
+             "@TEAPARTY — “Sons of Liberty throw {N} tons of {good} into "
+             "the sea!” — and the good's boycott bit is set."),
+            ("Lifting the boycott",
+             "pay back taxes — boycotted count × 500 gold into the royal "
+             "fund — or seat Jakob Fugger, who clears the whole boycott "
+             "word at once. Until one of them fires, the good cannot be "
+             "traded."),
+        ]))
     for p in soup.find_all("p"):
         if "kiss our royal pinky ring" in p.get_text():
             p.insert_after(fig)
@@ -2358,98 +2330,92 @@ def enrich_loot(soup):
 
 
 def enrich_king(soup):
-    _after_h3(soup, "tax petition", flow_fig(
+    _after_h3(soup, "tax petition", sheet_fig(
         "The tax petition — three outcomes", "tax_petition()",
-        [
-            {"k": "start", "t": "king-action case 4"},
-            {"k": "dec", "t": "tax_pct ≤ 1 ?",
-             "side": ("yes", ["return — nothing to ease"]), "cont": "no"},
-            {"k": "act", "t": "candidate = (((diff&0xFE)<<1)+4) · (turn/400 + 1)",
-             "s": ["delta · turn factor"]},
-            {"k": "dec", "t": "candidate + 5 ≥ tax_pct ?",
-             "side": ("yes", ["@KINGRAISE — punitive raise",
-                              "amount = random_int(diff,1) · 2",
-                              "carries @TAXOPTIONS → can Tea Party (§23.4)"]),
-             "cont": "no"},
-            {"k": "dec", "t": "tax_pct ≤ candidate ?",
-             "side": ("yes", ['@KINGNOTHING — "…kiss our royal',
-                              'pinky ring." (0x034B33, no options)']),
-             "cont": "no"},
-            {"k": "dec", "t": "random_int(1, diff+1) == 1 ?",
-             "side": ("no", ["return — no change this time"]),
-             "cont": "yes — probability 1/(diff+1)"},
-            {"k": "act", "t": "@KINGLOWER — the Crown eases",
-             "s": ["amount = random_int(5−diff, 1), shown negated",
-                   "tax write clamp 75 at apply_tax_change()"]},
-            {"k": "end", "t": "announce via :0xAE0"},
-        ],
-        "No player-facing 'request lower taxes' control is documented; the "
-        "announce overlay's internal tax write is untraced (TBD)."))
-    _after_h3(soup, "The King's mercenaries", flow_fig(
-        "The mercenary offer", "peacetime king_phase() · wartime offer_wartime_mercenaries()",
-        [
-            {"k": "dec", "t": "war of independence declared ? (game.flags&1)",
-             "side": ("no — peacetime", ["1-in-21 gate: random_int(0,0x14)==0",
-                                         "offering power must hold treaty bit 0x40",
-                                         "count = random_int(1,3) + coin flips",
-                                         "fee/unit = ((diff+4)·2 + rand(0,6))·100"]),
-             "cont": "yes — wartime"},
-            {"k": "act", "t": "one-shot arm: PowerRecord bit 0x08",
-             "s": ["no offer on the first eligible call — only from the second on"]},
-            {"k": "act", "t": "1-in-3 gate, then compose",
-             "s": ["count = random_int(2, (4−diff)/2 + 2)",
-                   "plus exactly one: Cont. Cavalry or Artillery"]},
-            {"k": "act", "t": "fee/unit = ((diff+3)·2 + random_int(0,6)) · 100",
-             "s": ["price = fee · (count + 2)",
-                   "shown only if price ≤ treasury +0x2A; debit"]},
-            {"k": "act", "t": "landing — land_intervention_force()",
-             "s": ["population-weighted coastal colony pick",
-                   "Man-O-War carrier at best beach; all land units Veteran"]},
-            {"k": "end", "t": "@MERCS — force arrives"},
-        ]))
+        story_steps([
+            ("Nothing to ease",
+             "tax at 1 or below → the petition returns at once."),
+            ("The candidate",
+             "candidate = (((difficulty & ~1) × 2) + 4) × (turn/400 + 1) "
+             "— a delta scaled by the era."),
+            ("Punitive raise",
+             "if candidate + 5 ≥ the tax rate: @KINGRAISE — amount "
+             "random(1..difficulty) × 2, with the @TAXOPTIONS rows (a Tea "
+             "Party is possible, §23.4)."),
+            ("Nothing at all",
+             "if the tax rate ≤ candidate: @KINGNOTHING — “…kiss our "
+             "royal pinky ring,” no options."),
+            ("The Crown eases",
+             "otherwise a 1-in-(difficulty+1) roll: @KINGLOWER, amount "
+             "random(1..5−difficulty); the tax write clamps at 75."),
+        ], foot="No player-facing “request lower taxes” control is "
+                "documented; the announce overlay's internal tax write is "
+                "untraced TBD.")))
+    _after_h3(soup, "The King's mercenaries", sheet_fig(
+        "The mercenary offers",
+        "peacetime king_phase() · wartime offer_wartime_mercenaries()",
+        rule_card("Peacetime",
+                  "a 1-in-21 roll each turn — count = random(1..3) plus "
+                  "coin flips, fee per unit = ((difficulty+4)·2 + "
+                  "random(0..6)) × 100",
+                  [("requires", "the offering power holds your peace-"
+                    "treaty bit"),
+                   ("delivery", "Veteran Dragoons and Artillery")]) +
+        rule_card("Wartime",
+                  "a 1-in-3 roll — count = random(2 .. (4−difficulty)/2 "
+                  "+ 2) plus exactly one Cavalry or Artillery, fee per "
+                  "unit = ((difficulty+3)·2 + random(0..6)) × 100",
+                  [("one-shot arm", "no offer on the first eligible call "
+                    "— only from the second on"),
+                   ("price", "fee × (count + 2), shown only if you can "
+                    "afford it"),
+                   ("landing", "population-weighted coastal pick; a "
+                    "Man-O-War carrier at the best beach; every land "
+                    "unit a Veteran — @MERCS")])))
 
 
 def enrich_movement(soup):
-    _after_h3(soup, "short-range path-step finder", flow_fig(
-        "One step's movement cost", "find_path_step() cost rules, in priority order",
-        [
-            {"k": "dec", "t": "unit's stored moves ≤ 3 ? (one-move unit,)",
-             "side": ("yes", ["every step costs a flat 3"]),
-             "cont": "no"},
-            {"k": "dec", "t": "road/plow bits 0x0A at BOTH ends ?",
-             "side": ("yes", ["cost = 1  (a third of a stored point ×3)"]),
-             "cont": "no"},
-            {"k": "dec", "t": "river bit 0x40, cardinal step ?",
-             "side": ("yes", ["cost = 1"]), "cont": "no"},
-            {"k": "act", "t": "cost = terrain Movement × 3",
-             "s": ["byte[terrain·16 + ]·3",
-                   "NAMES values: open land 1 · forests/Hills/Arctic 2 · Mountains 3 · water 1"]},
-            {"k": "act", "t": "occupancy rules", "s": [
-                "tile's power must be −1 or the mover; foreign/AI +8",
-                "natives (type ≥ 19) reject rumor tiles",
-                "ships (types 13..18): water = Ocean/Sea Lane only; mismatch only at endpoints"]},
-            {"k": "end", "t": "16×16-window BFS · cache DS: · budget ×3"},
-        ]))
+    _after_h3(soup, "short-range path-step finder", sheet_fig(
+        "One step's movement cost — the rules in priority order",
+        "find_path_step()",
+        rule_card("1 · One-move units",
+                  "stored moves of 3 or less — every step costs a flat 3",
+                  [("scale", "costs run in thirds of a movement point, "
+                    "×3")]) +
+        rule_card("2 · Roads and rivers",
+                  "road or plow at BOTH ends → cost 1 · a river along a "
+                  "cardinal step → cost 1",
+                  [("otherwise", "cost = the terrain's Movement column "
+                    "× 3 — open land 1, forests/Hills/Arctic 2, "
+                    "Mountains 3, water 1")]) +
+        rule_card("3 · Occupancy",
+                  "a tile's owner must be nobody or the mover — foreign "
+                  "and AI tiles cost +8",
+                  [("natives", "war parties avoid rumor tiles"),
+                   ("ships", "water means Ocean or Sea Lane only; "
+                    "mismatches allowed only at the endpoints"),
+                   ("search", "a 16×16-window BFS against the ×3 "
+                    "budget")])))
 
 
 def enrich_persistence(soup):
-    _after_h3(soup, "music scheduler", flow_fig(
-        "The background-music rotation", "rotate_music() — runs from the input-idle loops",
-        [
-            {"k": "dec", "t": "background music [0xA2] on (or one-shot [0x9E]) ?",
-             "side": ("no", ["skip"]), "cont": "yes"},
-            {"k": "dec", "t": "driver still playing ? (poll id 8)",
-             "side": ("yes", ["wait"]), "cont": "no — pick next"},
-            {"k": "dec", "t": "forced-next tune [0x94] set ?",
-             "side": ("yes", ["honor it"]), "cont": "no"},
-            {"k": "act", "t": "seed RNG from tick clock internal state, roll in the state window",
-             "s": ["PEACE (game.flags&1 clear): folk 1–12, 1-in-9 excursion into 13–23",
-                   "WAR OF INDEPENDENCE: tunes 13–18, 1-in-5 excursion back to folk",
-                   "re-roll avoids repeating the current tune [0x96]"]},
-            {"k": "act", "t": "event classes preempt via [0x9A]",
-             "s": ["war fanfare, native themes 0x33/0x35/0x36, …; index→id map tune_id()"]},
-            {"k": "end", "t": "play"},
-        ]))
+    _after_h3(soup, "music scheduler", sheet_fig(
+        "The background-music rotation",
+        "rotate_music() — runs from the input-idle loops",
+        story_steps([
+            ("Gate",
+             "background music must be on (or a one-shot pending), and "
+             "the driver idle."),
+            ("Forced next",
+             "a forced-next tune is honored first."),
+            ("The roll",
+             "peacetime: folk tunes 1–12 with a 1-in-9 excursion into "
+             "13–23; at war: tunes 13–18 with a 1-in-5 excursion back — "
+             "re-rolled to avoid repeating the current tune."),
+            ("Events preempt",
+             "war fanfares and the native themes cut in through the "
+             "event channel; the index→id map is tune_id()."),
+        ])))
     # save-file layout ribbon (principal blocks of the 43; section 20.3 table)
     segs = [("magic", '"COLONIZE"+0x1A', 9, "text"),
             ("ver", "2B", 2, "pos"), ("w,h", "4B", 4, "pos"),
@@ -2494,59 +2460,63 @@ def enrich_persistence(soup):
 
 
 def enrich_combat(soup):
-    _after_h3(soup, "After the roll", flow_fig(
-        "The loser's fate", "func_05B2C2 · 0x5B2C2..0x5BE2C",
-        [
-            {"k": "start", "t": "roll resolved — random_int(1, ATK+DEF) ≤ ATK ? (0x05D188)"},
-            {"k": "dec", "t": "loser is a ship ?",
-             "side": ("yes", ["raw roll random_int(1, guns+hull) (0x05B844)",
-                              "@SHIPDAMAGE (0x05BC79) or @SHIPSUNK (0x05BD0F)",
-                              "cargo bit 0x40 → 6-slot scatter loop (0x05BD28)"]),
-             "cont": "no — land unit"},
-            {"k": "dec", "t": "capture-eligible ? (Colonists / Treasure / Wagon, 0x5B31D)",
-             "side": ("yes", ["European owner < 4 · ship winner needs room (0x5B410)",
-                              "changes hands intact — set_unit_owner (0x5B4C7)",
-                              "@LOOTCAPTURE / @WAGONCAPTURE / @COLONISTCAPTURE"]),
-             "cont": "no"},
-            {"k": "dec", "t": "demotion ladder has a rung ? (0x5B5AA..0x5B61F)",
-             "side": ("yes", ["Dragoons→Soldiers→Colonists · Cavalry→Regulars",
-                              "Cont.Cav→Cont.Army→Colonists · @DEMOTE (0x05B679)",
-                              "Missionary profession → Missionaries unit (0x5B60E)"]),
-             "cont": "no — destroyed"},
-            {"k": "act", "t": "Artillery special: flip to Damaged (+0x04|=0x80, 0x05B6F6)",
-             "s": ["display pair +2/−2 (0x069B39) · damaged loses again → @ARTILLERY2 (0x05B740)"]},
-            {"k": "dec", "t": "winner promotes ? random_int(1,S) ≤ strength (0x5C764)",
-             "side": ("Washington", ["FF 11 (0x5C758): roll skipped —",
-                                     "promotion automatic"]),
-             "cont": "S = atk+def ±difficulty − class penalty"},
-            {"k": "end", "t": "@VETERAN / @VALOR · Soldier ceiling → Continental Army (0x5C7C3)"},
-        ]))
+    _after_h3(soup, "After the roll", sheet_fig(
+        "The loser's fate", "apply_combat_result()",
+        rule_card("Ships",
+                  "a raw roll of random(1..guns+hull) decides damage "
+                  "against sinking",
+                  [("damaged", "@SHIPDAMAGE"), ("sunk", "@SHIPSUNK — "
+                    "carried cargo scatters across six slots")]) +
+        rule_card("Capture",
+                  "Colonists, Treasure and Wagon Trains change hands "
+                  "intact",
+                  [("requires", "a European winner — a ship winner needs "
+                    "cargo room"),
+                   ("messages", "@LOOTCAPTURE / @WAGONCAPTURE / "
+                    "@COLONISTCAPTURE")]) +
+        rule_card("The demotion ladder",
+                  "Dragoons → Soldiers → Colonists · Cavalry → Regulars "
+                  "· Continental Cavalry → Continental Army → Colonists",
+                  [("no rung left", "the unit is destroyed"),
+                   ("missionaries", "the profession falls back to a "
+                    "Missionary unit"),
+                   ("artillery", "flips to Damaged Artillery first — "
+                    "losing again destroys it")]) +
+        rule_card("The winner's promotion",
+                  "random(1..S) at or below the winner's strength "
+                  "promotes — S = attack + defence, difficulty-shifted, "
+                  "minus a class penalty",
+                  [("George Washington", "the roll is skipped — "
+                    "promotion is automatic"),
+                   ("ceiling", "a promoted Veteran Soldier tops out as "
+                    "Continental Army — @VETERAN / @VALOR")])))
 
 
 def enrich_congress(soup):
-    _after_h3(soup, "Crosses and immigration", flow_fig(
-        "The immigration pipeline", "func_035D9A threshold · func_0363A2 arrival",
-        [
-            {"k": "act", "t": "threshold = f(empire size)",
-             "s": ["accum = Σ colony pops + 1/unit (0x035DB0/0x035DD8)",
-                   "×2 if < 4000, +8, clamp 4000 (0x035E35..0x035E44)",
-                   "×(8−d)/8 human (0x035E5D) · England ×2/3 (0x035E75)"]},
-            {"k": "dec", "t": "crosses +0x2E > threshold +0x30 ? (0x036404)",
-             "side": ("no", ["keep accruing (accrual site itself",
-                             "unidentified in repo — TBD)"]),
-             "cont": "yes — @UNREST"},
-            {"k": "act", "t": "pick dock slot random_int(0,2) (0x036462) — colonist emigrates",
-             "s": ["dock pool = PowerRecord +0x02..+0x04"]},
-            {"k": "dec", "t": "refill roll — 3-tier ladder, threshold (lvl+3)>>1",
-             "side": ("Brewster", ["FF 0x14: criminal/servant results",
-                                   "upgrade to Free Colonists (0x34C79)",
-                                   "+ player may choose the emigrant (0x36437)"]),
-             "cont": "rand(1,15)→Criminal · rand(1,10)→Servant · rand(1,8)→Free"},
-            {"k": "end", "t": "every 4th turn: professional types from per-power counters"},
-        ],
-        "Harder difficulty raises the tier threshold — more criminals and "
-        "servants. A larger empire raises the cross threshold — slower "
-        "immigration."))
+    _after_h3(soup, "Crosses and immigration", sheet_fig(
+        "The immigration pipeline",
+        "immigration_threshold() · check_immigration()",
+        story_steps([
+            ("The bar to clear",
+             "threshold = f(empire size): colony populations + 1 per "
+             "unit, ×2 under 4000, +8, clamped at 4000 — then "
+             "×(8−difficulty)/8 for a human, and England pays only "
+             "×2/3."),
+            ("Crossing it",
+             "when accumulated crosses exceed the threshold, @UNREST "
+             "fires and a random dock colonist emigrates (the crosses "
+             "accrual site itself is unidentified — TBD)."),
+            ("Refilling the dock",
+             "a three-tier ladder against (level+3)/2: random(1..15) "
+             "→ Petty Criminal, random(1..10) → Indentured Servant, "
+             "random(1..8) → Free Colonist; every 4th turn professional "
+             "types arrive from per-power counters."),
+            ("William Brewster",
+             "criminal and servant results upgrade to Free Colonists — "
+             "and you choose the emigrant yourself."),
+        ], foot="Harder difficulty raises the tier threshold — more "
+                "criminals and servants; a larger empire raises the "
+                "cross threshold — slower immigration.")))
 
 
 def enrich_scoring(soup):
@@ -2589,39 +2559,40 @@ def enrich_raids(soup):
 
 
 def enrich_lcr(soup):
-    fig = flow_fig(
-        "The Lost City Rumor cascade", "func_061454 · 0x061454..0x061C9C",
-        [
-            {"k": "start", "t": "unit enters a rumor tile (procedural hash vs seed [0x190])"},
-            {"k": "act", "t": "scout bonus s = 0..3",
-             "s": ["+1 Scout type 5 (0x0614A6) · +1 Seasoned class 0x16 (0x0614BB)",
-                   "+1 De Soto (FF 7) — also arms no-bad-luck (0x0614C6..0x0614E3)"]},
-            {"k": "act", "t": "outcome n = max(floor, random_int(1,9)) (0x0614F6..0x06151A)",
-             "s": ["anti-streak floor rises per reroll, cap 3 (0x061508..0x061514)",
-                   "quality roll q = random_int(1,100) + s·10 (0x06151D)"]},
-            {"k": "dec", "t": "bad outcome (5 or 8) ?",
-             "side": ("escape", ["random_int(1, s+1) roll (0x061551)",
-                                 "De Soto: reroll instead — bad luck",
-                                 "never lands (0x061563/0x06158C)"]),
-             "cont": "gates"},
-            {"k": "act", "t": "special gates", "s": [
-                "Fountain of Youth (1): forest terrain band + early-session only (0x061594)",
-                "Cibola (2): Mountains/Hills/desert band; De Soto rescue 1-in-3 (0x0615E7..0x06162D)",
-                "Cibola sub-band on q: ≤10 → 5 · ≥25 → 6 · else 8 (0x061646..0x061662)"]},
-            {"k": "dec", "t": "outcome table",
-             "side": ("rewards", ["ruins gold = 10·(3d8), ×(s+2)/2 scouted (0x061776)",
-                                  "chief's gift = 2·(4d10) (0x0617C6)",
-                                  "Cibola treasure = 100·(10·(s+2)+1d20) (0x06166A)",
-                                  "burial: @BURIAL1 0 · @BURIAL2 10·(3d8) ·",
-                                  "@BURIAL3 200·(1d8+2s+10) (0x0619F2..0x061A73)"]),
-             "cont": "1 FoY: 8 immigrants · 5 vanish · 6 fizzle · 9 survivors"},
-            {"k": "act", "t": "@SCREWED — desecrating a hostile tribe's grounds",
-             "s": ["tension +100 vs the tribe (0x61B84) — instant war footing; the unit dies"]},
-            {"k": "end", "t": "gold → treasury +0x2A (0x061C4C); treasure spawns type 0xA, value/100 in class byte"},
-        ],
-        "In-repo conflicts flagged: floor per-rumor vs per-call; the one-shot "
-        "per-power bit glossed both FoY and burial; the pre-2026 weight table "
-        "was fabricated and is refuted.")
+    fig = sheet_fig(
+        "The Lost City Rumor cascade", "lost_city_rumor()",
+        story_steps([
+            ("Enter the tile",
+             "rumor tiles come from a procedural hash against the map "
+             "seed."),
+            ("Scout bonus",
+             "s = 0..3: +1 for a Scout, +1 Seasoned, +1 with De Soto "
+             "(who also arms no-bad-luck)."),
+            ("The outcome roll",
+             "n = max(anti-streak floor, random(1..9)) — the floor "
+             "rises with each re-roll, capped at 3; quality q = "
+             "random(1..100) + 10·s."),
+            ("Bad-luck escape",
+             "outcomes 5 and 8 offer a random(1..s+1) escape; De Soto "
+             "re-rolls instead — bad luck never lands."),
+            ("Special gates",
+             "Fountain of Youth needs forest terrain early in the "
+             "session; Cibola needs Mountains/Hills/desert, with a "
+             "1-in-3 De Soto rescue and a quality sub-band."),
+            ("The rewards",
+             "ruins = 10×(3d8), ×(s+2)/2 scouted · chief's gift = "
+             "2×(4d10) · Cibola treasure = 100×(10·(s+2) + 1d20) · "
+             "burial mounds: nothing / 10×(3d8) / 200×(1d8 + 2s + 10) "
+             "· Fountain of Youth: 8 immigrants."),
+            ("The dark endings",
+             "vanish · fizzle · survivors-tale — and desecrating a "
+             "hostile tribe's burial grounds is +100 tension and the "
+             "unit dies (@SCREWED)."),
+        ], foot="Gold lands in the treasury; big finds spawn a Treasure "
+                "unit (value/100 in the class byte). In-repo conflicts "
+                "stay flagged: floor per-rumor vs per-call; the one-shot "
+                "per-power bit glossed both FoY and burial; the pre-2026 "
+                "weight table is refuted."))
     for h in soup.find_all("h3"):
         if "Lost City" in h.get_text() or "LOSTCITY" in h.get_text():
             h.insert_after(fig)

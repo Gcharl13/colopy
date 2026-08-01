@@ -3447,8 +3447,9 @@ the burn/overrun messages of §19.9 instead.
 A turn is one pass of the resident loop turn_loop: for each of
 the four European powers in strict index order it runs King → Orders →
 Production → Diplomacy → Periodic, then a once-per-turn year-advance and
-autosave tail. Natives are not a separate top-level pass — their AI runs inside
-the per-power processing. Saves are verbatim memory dumps: 43 raw DGROUP blocks
+autosave tail. The natives ARE a separate top-level pass (corrected
+2026-08-01): the native turn driver runs before the four European powers move
+— §19.11. Saves are verbatim memory dumps: 43 raw DGROUP blocks
 behind a "COLONIZE" magic, no compression, no reordering.
 
 ### 20.1 The per-power phase chain
