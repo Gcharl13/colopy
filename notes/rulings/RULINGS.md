@@ -6073,3 +6073,72 @@ tribe's COLOR NUMBER — a VICEROY.PAL palette index — exactly parallel to
 NAMES @COUNTRY column 2 (England 12 / France 9 / Spain 14 / Netherlands 13,
 the classic power colors). Manual and specs to relabel; render as color
 swatches. Any consumer treating it as a frame id is wrong.
+
+## 2026-08-01 — Spanish Succession trigger BYTE-TRACED; 2026-06-23 §1 REVERSED
+The 2026-06-23 entry §1 ("threshold is 75 not 50; func_03E844 has no [0x53D0]
+read; trigger unresolved, needs runtime capture") is REVERSED on byte evidence.
+The 2026-06-20 reading ("auto-fires once when SoL crosses 50, latch
+[0x53D2]<0, func_03E844") was RIGHT. Root cause of the bad 2026-06-23 call:
+the event scanner only follows far `lcall 0x191F:0x364`; two additional
+callers reach func_03C638 through the page-6 near-call thunk island slot
+0x3EA0B (`ea 64 03 1f 19`, local 0x368B) and were invisible to it.
+
+The three call sites (exhaustive byte scan of VICEROY.EXE):
+1. @0x02393A — cheat menu id 0x68 "@FORCED" staged advancer (func_0235D6
+   dispatcher; the 75-clamp + [0x53D2]<0 gate at @0x02391C..@0x023930 belongs
+   to THIS stage, not to the gameplay trigger).
+2. @0x03E8CA — THE REAL PER-TURN TRIGGER, inside func_03E844 (per-power SoL
+   updater, called per power from production_phase func_02F052 @0x02F27E):
+   for the rebel/human power only, [0x53D0] := SoL%, then
+   `cmp ax,0x32; jl skip` (SoL ≥ 50, @0x03E8BD) and
+   `cmp word [0x53D2],0; jge skip` (no withdrawn power yet, @0x03E8C2) →
+   `push cs; call 0x368b` (@0x03E8C9). No RNG, no year/turn test.
+   Once-only: func_03C638 writes the ceding power id to [0x53D2] @0x03C922.
+   Single-player gate at handler entry: `test [0x5381],0x80` @0x03C63D.
+3. @0x03DE85 — forced at the Declaration of Independence (func_03DE46) when
+   [0x53D2] is still negative, creating the withdrawn/REF power.
+
+Also corrected en route (see the 2026-08-01 king's-economy fact-pack,
+tools/manual_pdf/_work/factpacks/kings_economy_succession.md):
+- @KINGBUY (0x1318, @0x3E262) is the PRE-independence REF-purchase announce
+  (immediately before the fund deduction `sub [bx+0x22],0x708` @0x3E271);
+  @KINGMOBILIZE (0x1320, @0x3E2DB) is the other arm. ref_growth.md:112-116
+  has them swapped.
+- REF purchase ladder is LAST-match-wins (Man-O-War > Artillery > Cavalry >
+  default Regulars), and 1800 is both the purchase gate AND the deducted
+  price (pre-independence branch only).
+Stale docs flagged for follow-up: spec/systems/spanish_succession.md §3/§6,
+spec/systems/revolution.md:49-50, viceroy_source/docs/EVENT_DISPATCH.md:58,
+manual §18.4/§18.7/§18.10, functions.json names for func_03E844/func_0235D6.
+
+## 2026-08-01 — Market corrections: @CARGO field indices; func_036574 is NOT market_day
+Byte evidence (2026-08-01 market sweep, full pack at
+tools/manual_pdf/_work/factpacks/market_pergood.md):
+1. @CARGO loads 9 fields/good to DGROUP 0x96FC stride 9 (loader
+   @0x074E05..5E): start1, start2, low, high, BURDEN, rise, fall, attrition,
+   VOLATILITY. buy_price @0x030575 reads field 4 = burden (buy = level +
+   burden; sell = level − 1; spread = burden + 1, per the NAMES.TXT legend);
+   the qty shift in the accumulator updaters (@0x0322EA/@0x032360) is field
+   8 = volatility. market.md §3.1/§6 and manual §9.1 quote fields 0/4 —
+   shifted by 4, wrong.
+2. func_036574 is the NEW-GAME POWER INITIALIZER (boycotts/tax/REF
+   fund/gold/market arrays zeroed, starting gold by difficulty, start
+   prices rolled level = start1 + random_int(0, start2−start1) — same roll
+   for all four powers @0x0367AD..E5), and its caller func_0755CC is the
+   NEW-GAME SETUP (price_seed init @0x075645, REF seed @0x0756A2, starting
+   units @0x07584B). The "market_day / end_of_turn" names and the manual
+   §20.1 "end_of_turn calls market_day" paragraph are wrong. The real
+   per-turn drift driver is func_0363A2 @0x0363D3 (silent all-goods drift +
+   immigration), riding the production phase @0x2F218.
+3. Phase-4 stepping: price rises when the per-good traffic accumulator
+   (+0x5C) ≤ −100·rise (signed imul 0x9C @0x030986) and falls when ≥
+   +100·fall; floors/ceilings = low/high. viceroy_source pricing.c's
+   Phase-4 port has 0x9C unsigned and both comparisons reversed — do not
+   cite it.
+4. PowerRecord +0xFC is a live whole-game net-trade accumulator (cleared at
+   new game only); the memory-map's "market base values at game start"
+   gloss is wrong.
+Symbols renamed: func_036574 market_day → new_game_power_init; func_0755CC
+end_of_turn → new_game_setup; per-turn drift attribution moves to
+func_0363A2. Stale: spec/systems/market.md §3/§3.1/§6/§9.3 refs, manual
+§9.1/§20.1, viceroy_source/data/pricing.c Phase 4.

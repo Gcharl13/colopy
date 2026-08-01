@@ -1435,9 +1435,11 @@ in EXE-sheet numbering.
 
 ### 9.3 Price drift
 
-**Per-turn driver**: the end-of-turn processor end_of_turn invokes
-market_day; it zeroes the per-power accumulators and runs a **4-power loop** calling the drift
-function drift_prices (via the JMP-FAR trampoline) once per power.
+**Per-turn driver**: the silent all-goods drift rides check_immigration()
+inside the production phase — one drift_prices pass for the human power, then
+the immigration crosses check. (The four-power *interactive* drift loop runs
+once at game creation, from new_game_power_init — the routine formerly
+mislabelled "market_day"; see the 2026-08-01 ruling.)
 **Per-transaction**: the SELL handler (sell_goods) and BUY handler
 (buy_goods) each call `drift(good, 0)` — a single-good re-drift
 immediately after the trade.
@@ -2498,7 +2500,7 @@ independence is won and was declared before 1780, the score gains
 ### 18.4 The King's power and the `@FORCED` staged advancer
 
 The REF exists pre-war only as the four count globals, seeded
-at new game by end_of_turn (`8d+15 / 5d+5 / 3d+2 / 6d+2` for difficulty d) and
+at new game by new_game_setup (`8d+15 / 5d+5 / 3d+2 / 6d+2` for difficulty d) and
 grown by grow_royal_fund (the royal fund accrues `(8*diff+10)*2^era` per turn;
 at ≥ 1800 one unit is bought, 1800 subtracted, and the slot chosen by ratio).
 At the war transition the
@@ -3258,12 +3260,15 @@ behind a "COLONIZE" magic, no compression, no reordering.
 | 4 Diplomacy | diplomacy_phase | king-action dispatch next_immigrant_class (tax raises are event-driven here, not periodic); AI diplomacy |
 | 5 Periodic/congress | periodic_phase | colony stats refresh, the Founding-Father congress (skipped once `game.flags` bit 0x10 is set), King defeat/victory screens |
 
-The **market drift** is an end-of-turn phase of its own: the end-of-turn
-processor end_of_turn calls the drift driver market_day, which
-clears the per-power 16-good accumulators and runs the four-power loop into the
-drift function drift_prices (price base relaxes by `(base + Σ clamped trade)/256`
-per good). Immigration crosses (immigration_threshold) run immediately after the price
-recompute, followed by the religious-unrest arrival chain (`@UNREST`).
+The **market drift** is NOT a separate end-of-turn phase (corrected
+2026-08-01): the per-turn silent drift rides check_immigration() inside the
+production phase — drift_prices for the human power (the global 16-word price
+seed relaxes by `(seed + Σ clamped net trade)/256` per good), immediately
+followed by the immigration-crosses check (immigration_threshold) and the
+religious-unrest arrival chain (`@UNREST`). The routine formerly labelled
+"market_day" is in fact the new-game power initializer (new_game_power_init),
+and its caller — formerly "end_of_turn" — is the new-game setup
+(new_game_setup): starting gold, start-price rolls, REF seeding.
 
 Year cadence (turn-loop tail): `game.turn` increments every turn; before 1600
 one turn = one year; from 1600 the season word `game.season` toggles Spring/Autumn
@@ -5835,8 +5840,8 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `denounce_heresy()` | `func_048CA4` (file 048ca4) |
 | `destroy_tribe_villages()` | `func_046FC2` (file 046fc2) |
 | `diplomacy_phase()` | `func_052F7E` (file 052f7e) |
+| `draw_ref_panel()` | `func_037A10` (file 037a10) |
 | `drift_prices()` | `func_0305A8` (file 0305a8) |
-| `end_of_turn()` | `func_0755CC` (file 0755cc) |
 | `enter_village()` | `func_04B308` (file 04b308) |
 | `establish_mission()` | `func_048A3A` (file 048a3a) |
 | `evaluate_contact()` | `func_059B90` (file 059b90) |
@@ -5856,16 +5861,19 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `load_terrain_table()` | `func_0745F0` (file 0745f0) |
 | `load_unit_stats()` | `func_074EC3` (file 074ec3) |
 | `lost_city_rumor()` | `func_061454` (file 061454) |
-| `market_day()` | `func_036574` (file 036574) |
+| `menu_command_dispatch()` | `func_0235D6` (file 0235d6) |
 | `mobilize_continentals()` | `func_03E2EA` (file 03e2ea) |
 | `move_ship()` | `func_03FDDE` (file 03fdde) |
 | `native_attitude()` | `func_046500` (file 046500) |
 | `native_events()` | `func_056C3E` (file 056c3e) |
 | `native_raid()` | `func_05BE84` (file 05be84) |
+| `new_game_power_init()` | `func_036574` (file 036574) |
+| `new_game_setup()` | `func_0755CC` (file 0755cc) |
 | `next_immigrant_class()` | `func_034C24` (file 034c24) |
 | `next_rank()` | `func_05E714` (file 05e714) |
 | `offer_wartime_mercenaries()` | `func_03E442` (file 03e442) |
 | `orders_phase()` | `func_024A48` (file 024a48) |
+| `pay_back_taxes()` | `func_03334E` (file 03334e) |
 | `periodic_phase()` | `func_02F3A2` (file 02f3a2) |
 | `pick_father_candidates()` | `func_03BFD2` (file 03bfd2) |
 | `pick_native_portrait()` | `func_06BE92` (file 06be92) |
@@ -5912,7 +5920,7 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `turn_loop()` | `func_005760` (file 005760) |
 | `update_colony()` | `func_02D658` (file 02d658) |
 | `update_congress()` | `func_03C322` (file 03c322) |
-| `update_power_sentiment()` | `func_03E844` (file 03e844) |
+| `update_sol()` | `func_03E844` (file 03e844) |
 | `village_supply_demand()` | `func_048F34` (file 048f34) |
 | `work_clear_plow()` | `func_040656` (file 040656) |
 | `work_road()` | `func_0409D6` (file 0409d6) |
