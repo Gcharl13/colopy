@@ -26,6 +26,12 @@ from pathlib import Path
 import markdown
 from bs4 import BeautifulSoup, NavigableString
 
+try:
+    import sprites as SPR
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import sprites as SPR
+
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "docs/COLONIZATION_TECHNICAL_REFERENCE.md"
 OUTDIR = ROOT / "docs"
@@ -400,6 +406,7 @@ def struct_figure(st, soup):
             f'<td class="cmono">{esc(f["ctype"])}</td>'
             f'<td class="cmono" style="color:{dark};font-weight:bold">{esc(nm)}</td>'
             f'<td>{esc(f["note"])}</td></tr>')
+        rows.append(enum_elements_row(f))
     tall = " tall" if (len(rows) > 12 or (st["total"] or 0) > 128) else ""
     fig = (f'<figure class="structplate{tall}">'
            f'<div style="break-inside:avoid"><div class="platehead"><span class="pt">{esc(st["name"])}</span>'
@@ -448,6 +455,10 @@ def structs_to_plates(soup):
             if kind == "struct":
                 frags.append(struct_figure(val, soup))
                 n += 1
+                if val["name"] in BITSTRIPS and val["name"] not in _bitstrips_done:
+                    _bitstrips_done.add(val["name"])
+                    for title, sub, groups in BITSTRIPS[val["name"]]:
+                        frags.append(bit_fig(title, sub, groups))
             else:
                 p = soup.new_tag("pre")
                 c = soup.new_tag("code")
@@ -460,6 +471,157 @@ def structs_to_plates(soup):
             anchor = fr
         pre.decompose()
     return n
+
+
+# --------------------------------------------------------------------------
+# 2b. Bit strips (spec 4: visuals.bit_strip) — curated, byte-cited layouts
+# --------------------------------------------------------------------------
+
+def bit_strip_svg(groups):
+    """8 boxes, high bit left. groups: (hi, lo, label, cat, detail)."""
+    bw, bh = 56, 34
+    x0 = (660 - 8 * bw) / 2
+    y0 = 16
+    covered = {}
+    for gi, (hi, lo, label, cat, detail) in enumerate(groups):
+        for b in range(lo, hi + 1):
+            covered[b] = gi
+    legend = [(lab, det) for _, _, lab, _, det in groups if det]
+    H = y0 + bh + 30 + len(legend) * 13 + 4
+    e = [f'<svg viewBox="0 0 660 {H}" xmlns="http://www.w3.org/2000/svg">']
+    for b in range(7, -1, -1):
+        x = x0 + (7 - b) * bw
+        gi = covered.get(b)
+        dark, light = CAT[groups[gi][3]] if gi is not None else CAT["pad"]
+        if gi is None:
+            light = "#F2F3F4"
+        e.append(f'<rect x="{x}" y="{y0}" width="{bw}" height="{bh}" '
+                 f'fill="{light}" stroke="{INK}" stroke-width="0.8"/>')
+        e.append(svg_text(x + bw / 2, y0 - 4, f"bit {b}", 7.4, fill=FAINT,
+                          anchor="middle", face=MONO_FACE))
+        e.append(svg_text(x + bw / 2, y0 + bh / 2 + 3, f"0x{1 << b:02X}", 8.6,
+                          fill=(dark if gi is not None else FAINT),
+                          anchor="middle", face=MONO_FACE,
+                          weight="bold" if gi is not None else "normal"))
+    # brackets + labels
+    yb = y0 + bh + 5
+    for hi, lo, label, cat, detail in groups:
+        dark, _ = CAT[cat]
+        xl = x0 + (7 - hi) * bw + 2
+        xr = x0 + (7 - lo + 1) * bw - 2
+        e.append(f'<path d="M {xl} {yb} L {xl} {yb + 4} L {xr} {yb + 4} L {xr} {yb}" '
+                 f'fill="none" stroke="{dark}" stroke-width="1.1"/>')
+        cx = min(max((xl + xr) / 2, x0 + len(label) * 2.2 + 2),
+                 x0 + 8 * bw - len(label) * 2.2 - 2)
+        e.append(svg_text(cx, yb + 15, label, 8.2, fill=dark, anchor="middle",
+                          weight="bold"))
+    yl = yb + 28
+    for lab, det in legend:
+        e.append(svg_text(x0, yl, f"{lab} — {det}", 7.6, fill=MUTED))
+        yl += 13
+    e.append("</svg>")
+    return "\n".join(e)
+
+
+def bit_fig(title, sub, groups):
+    fig = (f'<figure class="bitstrip"><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">{esc(title)}</span>'
+           f'<span class="ps">{esc(sub)}</span></div>'
+           f'<div class="plate-wrap">{bit_strip_svg(groups)}</div></div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+# (hi, lo, label, cat, detail) per byte — every layout below is transcribed
+# from the struct's own byte-cited field notes / section 3 of the source.
+BITSTRIPS = {
+    "MPFile": [
+        ("Layer 1 — terrain byte", "per tile; ids and overlay bits (section 3)", [
+            (4, 0, "terrain id 0..28", "pos", "AND 0x1F fold at 0x620A; 8..23 = forested variants"),
+            (5, 5, "mtn/hill", "flag", "with bit 7: set = Mountains (0xA0), clear = Hills (0x20)"),
+            (6, 6, "river", "flag", "with bit 7: set = major river (0xC0), clear = minor (0x40)"),
+            (7, 7, "modifier", "flag", "qualifies bits 5/6 as above"),
+        ]),
+        ("Layer 2 — feature byte", "per tile; VICEROY discards this layer on load and rebuilds it", [
+            (0, 0, "unit", "pos", "unit present (MAPEDIT _is_unit @0x43C8)"),
+            (1, 1, "settlement", "pos", "colony/village/city (@0x43F6..)"),
+            (2, 2, "prime rsrc", "econ", "prime resource (_resource_at @0x45CF)"),
+            (3, 3, "hostile A", "warn", "tested with bit 6 by _is_hostile @0x44D1 (mask 0x48)"),
+            (6, 6, "hostile B", "warn", None),
+        ]),
+        ("Layer 3 — continent byte", "per tile", [
+            (3, 0, "continent 1..15", "pos", "0 = border/none (_continent_at @0x428B)"),
+            (7, 4, "owner", "pos", "0xF = none (_owner_of @0x42C5)"),
+        ]),
+    ],
+    "UnitRecord": [
+        ("UnitRecord +0x03 — owner byte", "set_unit_owner @0x738E", [
+            (3, 0, "power 0..11", "pos", "0..3 European, 4..11 tribes"),
+            (7, 4, "state", "flag", "high-nibble unit state"),
+        ]),
+        ("UnitRecord +0x04 — flags byte", "transient per-pass bit register", [
+            (7, 7, "draw", "flag", "draw-active / Damaged display pair (set @0x069923; @ARTILLERY @0x05B6F6)"),
+            (6, 6, "cargo", "econ", "ship-carrying-cargo (@0x02F37A)"),
+            (5, 5, "merch", "pos", "Merchantman tag (@0x04CE44)"),
+            (4, 4, "path", "num", "path >= 8 hops (@0x05106E)"),
+            (3, 3, "dirty", "flag", "tile-dirty (@0x0481B0)"),
+            (2, 2, "class", "pos", "ship-cargo class (@0x04CDDC)"),
+            (1, 1, "fortif", "flag", "was-fortifying (@0x04CEC9)"),
+        ]),
+    ],
+    "NativeSettlement": [
+        ("NativeSettlement +0x03 — flags", "", [
+            (2, 2, "capital", "pos", "set @0x66225; doubles value @0x7DCA"),
+            (1, 1, "taught", "num", "already taught (set @0x4A78A)"),
+            (0, 0, "w/o", "pad", "write-only bit"),
+        ]),
+        ("NativeSettlement +0x05 — mission byte", "0xFF = no mission", [
+            (3, 0, "owning power", "pos", "European power holding the mission"),
+            (4, 4, "expert", "econ", "expert-mission doubler (Brebeuf; set @0x48C81, tested @0x57300)"),
+        ]),
+    ],
+}
+_bitstrips_done = set()
+
+
+# arrays whose element order is documented in the source (section 9.2 @CARGO;
+# @COUNTRY powers 0..3) — expanded per element in the struct key table
+GOODS_FIELDS = {"stockpile", "market_pool", "market_traded", "market_eu_supply",
+                "market_base", "boycott_count"}
+POWER_FIELDS = {"relations", "treaty_respect", "power_flag", "power_flag2",
+                "alarm"}
+
+_goods_uri = {}
+
+
+def goods_chip_imgs():
+    if not _goods_uri:
+        for g in range(16):
+            im = SPR.goods_icon(g)
+            _goods_uri[g] = (SPR.data_uri(im, scale=2), im.width, im.height)
+    return _goods_uri
+
+
+def enum_elements_row(field):
+    base = (field["name"] or "").split("[")[0]
+    if base in GOODS_FIELDS and field["size"] and field["name"].endswith("[16]"):
+        es = field["size"] // 16
+        chips = []
+        for g in range(16):
+            uri, w, h = goods_chip_imgs()[g]
+            chips.append(
+                f'<span class="chip"><span class="co">+0x{field["off"] + g * es:02X}</span>'
+                f'<img src="{uri}" width="{w * 1.4:.0f}" height="{h * 1.4:.0f}" alt=""/>'
+                f'{esc(SPR.GOODS[g])}</span>')
+        return (f'<tr class="elems"><td></td><td colspan="4">'
+                f'<div class="chips">{"".join(chips)}</div></td></tr>')
+    if base in POWER_FIELDS and field["size"] and field["name"].endswith("[4]"):
+        es = field["size"] // 4
+        chips = [
+            f'<span class="chip"><span class="co">+0x{field["off"] + p * es:02X}</span>'
+            f' {esc(SPR.POWERS[p])}</span>' for p in range(4)]
+        return (f'<tr class="elems"><td></td><td colspan="4">'
+                f'<div class="chips">{"".join(chips)}</div></td></tr>')
+    return ""
 
 
 # --------------------------------------------------------------------------
@@ -683,6 +845,264 @@ def comment_blocks_to_prose(soup):
 
 
 # --------------------------------------------------------------------------
+# 4b. Sprite enrichment (images only where the frame mapping is documented)
+# --------------------------------------------------------------------------
+
+def _spr_td(soup, img, scale=2.0, title=""):
+    td = BeautifulSoup(
+        f'<td class="sprcell">{SPR.img_tag(SPR.data_uri(img, 3), img.width, img.height, scale, title=title)}</td>'
+        if img is not None else '<td class="sprcell">—</td>', "html.parser")
+    return td.td
+
+
+def add_sprite_column(soup, table, header, cell_of_row, after_col=0, scale=2.0):
+    """Insert a sprite column after column `after_col`. cell_of_row(cells) ->
+    PIL image or None (None -> em-dash)."""
+    for tr in table.find_all("tr"):
+        ths = tr.find_all("th")
+        if ths:
+            th = soup.new_tag("th")
+            th.string = header
+            ths[after_col].insert_after(th)
+            continue
+        tds = tr.find_all("td")
+        if len(tds) <= after_col:
+            continue
+        try:
+            img = cell_of_row([td.get_text().strip() for td in tds])
+        except Exception:
+            img = None
+        tds[after_col].insert_after(_spr_td(soup, img, scale))
+
+
+def _int0(s):
+    try:
+        return int(s.strip(), 0)
+    except ValueError:
+        return None
+
+
+def enrich_terrain(soup):
+    """Section 5: tile image column on every table whose first column is a
+    terrain id (5.1 id/hex/Name and the three 5.3 stat tables)."""
+    def tile_for(cells):
+        tid = _int0(cells[0])
+        return SPR.terrain_tile(tid) if tid is not None else None
+    n = 0
+    for table in soup.find_all("table"):
+        head = [th.get_text().strip().lower() for th in table.find_all("th")]
+        if head[:1] == ["id"] and ("name" in head or "mv" in head):
+            add_sprite_column(soup, table, "tile", tile_for, after_col=0)
+            n += 1
+    return n
+
+
+def enrich_units(soup):
+    """Section 12.2: sprite from the table's own icon column (engine
+    numbering; disk = engine - 1 per section 29.1)."""
+    for table in soup.find_all("table"):
+        head = [th.get_text().strip().lower() for th in table.find_all("th")]
+        if "icon" in head and "unit" in head:
+            icon_col = head.index("icon")
+
+            def unit_for(cells, ic=icon_col):
+                eng = _int0(cells[ic])
+                return SPR.unit_icon(eng) if eng else None
+            add_sprite_column(soup, table, "", unit_for,
+                              after_col=head.index("unit"))
+
+
+def goods_plate_fig():
+    cells = []
+    for g in range(16):
+        im = SPR.goods_icon(g)
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 3), im.width, im.height, 2.6)}'
+            f'<span class="fi">{g} · 0x{g:X}</span>'
+            f'<span class="fl">{esc(SPR.GOODS[g])}</span></div>')
+    fig = (f'<figure><div style="break-inside:avoid">'
+           f'<div class="platehead"><span class="pt">The 16 goods — ICONS.SS frames good+0x17</span>'
+           f'<span class="ps">NAMES @CARGO order · disk 22–37</span></div>'
+           f'<div class="atlas">{"".join(cells)}</div>'
+           f'<figcaption>Good id indexes every market array, the stockpile bar and '
+           f'the boycott bitmask; icons drawn at colony/Europe bars y=181.</figcaption>'
+           f'</div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def enrich_market(soup):
+    for h in soup.find_all("h3"):
+        if "Goods" in h.get_text():
+            h.insert_after(goods_plate_fig())
+            return
+
+
+def palette_plate_fig():
+    import json
+    pal = json.load(open(ROOT / "data_extracted/palette.json"))
+    cs = 660 / 16
+    H = int(16 * 24 + 18)
+    e = [f'<svg viewBox="0 0 660 {H}" xmlns="http://www.w3.org/2000/svg">']
+    for ent in pal:
+        i = ent["index"]
+        r, c = divmod(i, 16)
+        x, y = c * cs, 14 + r * 24
+        e.append(f'<rect x="{x:.1f}" y="{y}" width="{cs:.1f}" height="24" '
+                 f'fill="{ent["hex"]}" stroke="#FFFFFF" stroke-width="0.4"/>')
+        lum = 0.299 * ent["r"] + 0.587 * ent["g"] + 0.114 * ent["b"]
+        ink = "#000000" if lum > 128 else "#FFFFFF"
+        e.append(svg_text(x + 2.5, y + 8.5, f"{i:02X}", 5.8, fill=ink,
+                          face=MONO_FACE))
+    for c in range(16):
+        e.append(svg_text(c * cs + cs / 2, 10, f"_{c:X}", 6.4, fill=FAINT,
+                          anchor="middle", face=MONO_FACE))
+    e.append("</svg>")
+    fig = (f'<figure><div style="break-inside:avoid"><div class="platehead">'
+           f'<span class="pt">VICEROY.PAL — the 256-colour master palette</span>'
+           f'<span class="ps">6-bit VGA, v8 = (v6&lt;&lt;2)|(v6&gt;&gt;4) · row = high nibble</span></div>'
+           f'<div class="plate-wrap">{"".join(e)}</div></div>'
+           f'<figcaption>Decoded from the shipped VICEROY.PAL. The water ramp, '
+           f'indices 54–60 (0x36–0x3C), palette-cycles at run time; 0xFD is the '
+           f'.SS sprite-transparent index; 0xFC–0xFE are magenta placeholders '
+           f'overridden by per-screen .PIK palettes (§4.4).</figcaption></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+def enrich_palette(soup):
+    for h in soup.find_all(["h3", "h4"]):
+        if "palette" in h.get_text().lower():
+            anchor = h.find_next("table")
+            anchor = (anchor.parent if anchor and anchor.parent.name == "div"
+                      else anchor) or h
+            anchor.insert_after(palette_plate_fig())
+            return
+    soup.append(palette_plate_fig())
+
+
+def atlas_fig(sheet_name, title, sub, indices, scale=2.0, label_of=None,
+              skip_placeholder=True):
+    cells = []
+    for d in indices:
+        im = SPR.frame_image(sheet_name, d)
+        if skip_placeholder and im.width <= 2 and im.height <= 2:
+            cells.append(f'<div class="cell"><span class="fi">{d}</span>'
+                         f'<span class="fl">1×1</span></div>')
+            continue
+        lab = f'<span class="fl">{esc(label_of(d))}</span>' if label_of else ""
+        cells.append(
+            f'<div class="cell">{SPR.img_tag(SPR.data_uri(im, 3), im.width, im.height, scale)}'
+            f'<span class="fi">{d}</span>{lab}</div>')
+    fig = (f'<figure class="tall"><div class="platehead">'
+           f'<span class="pt">{esc(title)}</span><span class="ps">{esc(sub)}</span></div>'
+           f'<div class="atlas">{"".join(cells)}</div>'
+           f'<figcaption>Disk-index numbering (engine frame = disk + 1, '
+           f'section 29.1); decoded from the MADSPACK container, transparent '
+           f'index 0xFD.</figcaption></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+RANGE_RE = re.compile(r"(\d+)(?:[–-](\d+))?")
+
+
+def parse_disk_ranges(spec):
+    out = []
+    for m in RANGE_RE.finditer(spec):
+        lo = int(m.group(1))
+        hi = int(m.group(2)) if m.group(2) else lo
+        out.extend(range(lo, hi + 1))
+    return out
+
+
+def enrich_appendix_b(soup):
+    """B.1: tile column + atlas. B.2: band strips + atlas. B.3: band strips +
+    atlas. B.4: building column + atlas."""
+    building_names = {}
+    for table in soup.find_all("table"):
+        head = [th.get_text().strip().lower() for th in table.find_all("th")]
+        if head[:2] == ["disk", "engine"] and head[-1] == "ground":
+            add_sprite_column(
+                soup, table, "tile",
+                lambda c: SPR.frame_image("TERRAIN.SS", _int0(c[0])), 1)
+        elif head[:2] == ["disk band", "engine"] or (head[:2] == ["disk", "engine"]
+                                                     and "role" in head):
+            hd = table.find_previous("h3")
+            sheet = "PHYS0.SS" if (hd and "PHYS0" in hd.get_text()) else "ICONS.SS"
+
+            def band_td(cells, sh=sheet):
+                disks = parse_disk_ranges(cells[0])[:16]
+                imgs = []
+                for d in disks:
+                    im = SPR.frame_image(sh, d)
+                    if im.width <= 2 and im.height <= 2:
+                        continue
+                    imgs.append(SPR.img_tag(SPR.data_uri(im, 3), im.width,
+                                            im.height, 1.6))
+                return imgs
+            for tr in table.find_all("tr"):
+                ths = tr.find_all("th")
+                if ths:
+                    th = soup.new_tag("th")
+                    ths[-1].insert_after(th)
+                    continue
+                tds = tr.find_all("td")
+                if not tds:
+                    continue
+                try:
+                    imgs = band_td([td.get_text().strip() for td in tds])
+                except Exception:
+                    imgs = []
+                td = BeautifulSoup(
+                    f'<td class="sprcell" style="text-align:left">{"".join(imgs)}</td>',
+                    "html.parser").td
+                tds[-1].insert_after(td)
+        elif head[:1] == ["disk (=def)"]:
+            def bld(cells):
+                d = _int0(cells[0])
+                im = SPR.building_sprite(d) if d is not None else None
+                if im is not None and im.width <= 2:
+                    return None
+                return im
+            add_sprite_column(soup, table, "", bld, after_col=1, scale=1.4)
+            for tr in table.find_all("tr"):
+                tds = tr.find_all("td")
+                if len(tds) >= 4:
+                    d = _int0(tds[0].get_text())
+                    if d is not None:
+                        building_names[d] = tds[3].get_text().strip()
+    # full atlases after each subsection's tables
+    anchors = {"TERRAIN.SS": ("B.1", atlas_fig(
+        "TERRAIN.SS", "TERRAIN.SS — frame atlas", "12 ground frames · 16×16",
+        range(12), 2.4)),
+        "PHYS0.SS": ("B.2", atlas_fig(
+            "PHYS0.SS", "PHYS0.SS — frame atlas",
+            "154 overlay frames · rivers, mountains, hills, forest, roads, "
+            "detail, halos, coasts", range(154), 1.9)),
+        "ICONS.SS": ("B.3", atlas_fig(
+            "ICONS.SS", "ICONS.SS — frame atlas",
+            "131 HUD frames · markers, ships, cursors, goods, units, pennants",
+            range(131), 1.9)),
+        "BUILDING.SS": ("B.4", atlas_fig(
+            "BUILDING.SS", "BUILDING.SS — frame atlas",
+            "48 colony-building frames · disk = def id", range(48), 1.3,
+            label_of=lambda d: building_names.get(d, "")))}
+    for h in soup.find_all("h3"):
+        t = h.get_text()
+        for name, (subno, fig) in anchors.items():
+            if name.split(".")[0] in t and subno in t:
+                nxt = h
+                while nxt.next_sibling is not None and getattr(
+                        nxt.next_sibling, "name", None) in (
+                        None, "p", "table", "div", "ul"):
+                    nxt = nxt.next_sibling
+                nxt.insert_after(fig)
+
+
+ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
+             "9": [enrich_market], "12": [enrich_units],
+             "B": [enrich_appendix_b]}
+
+
+# --------------------------------------------------------------------------
 # 5. Section shaping
 # --------------------------------------------------------------------------
 
@@ -720,6 +1140,11 @@ def build_section(key, title, md_text):
     regions_to_wireframes(soup)
     highlight_code(soup)
     dress_tables(soup)
+    for enricher in ENRICHERS.get(key, []):
+        try:
+            enricher(soup)
+        except Exception as e:
+            warn(f"enricher {enricher.__name__} failed in section {key}: {e}")
     style_hex_in(soup)
     shape_headings(soup, key, title)
     return str(soup)

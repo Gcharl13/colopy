@@ -201,6 +201,31 @@ figcaption {
 table.keytab { margin-top: 4px; font-size: 7.7pt; }
 table.keytab td { padding: 1.6px 6px 1.6px 2px; }
 
+/* ---------- sprites ---------- */
+img.sprite { image-rendering: pixelated; vertical-align: middle; }
+td.sprcell { text-align: center; vertical-align: middle; padding: 1px 4px; }
+.atlas {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end;
+  background: #F4F3EF; border: 0.7px solid var(--hair); padding: 7px;
+}
+.atlas .cell { text-align: center; }
+.atlas .cell .fi {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 6.3pt;
+  color: var(--faint); display: block; margin-top: 1px;
+}
+.atlas .cell .fl {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-size: 6.6pt;
+  color: var(--muted); display: block; max-width: 84px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 3px 10px; padding: 2px 0 3px 0; }
+.chip {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 6.9pt;
+  white-space: nowrap; color: #3A3F47;
+}
+.chip .co { color: var(--faint); }
+.chip img { image-rendering: pixelated; vertical-align: middle; margin: 0 2px; }
+tr.elems td { background: #F7F6F2; border-bottom: 0.6px solid var(--hair); }
+
 /* ---------- misc ---------- */
 hr { border: none; border-top: 0.7px solid var(--rule); margin: 1.1em 0; }
 blockquote {
