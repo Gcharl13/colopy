@@ -1,0 +1,211 @@
+/* Viceroy Technical Manual — print stylesheet.
+ * Implements MANUAL_BUILD_SPEC_1: US Letter, measure 6.85in ≈ 658px,
+ * four-face typography, eight-category palette.
+ * Face substitutions (TeX Gyre unavailable offline): Display = URW Gothic
+ * (ancestor of TeX Gyre Adventor); Heading = Nimbus Sans Narrow (ancestor of
+ * TeX Gyre Heros Cn); Body = Charter RE (Bitstream Charter Type1 → OTF).
+ */
+
+:root {
+  --paper: #FCFBF8; --ink: #191C21; --rule: #C9CDD3; --hair: #DDE0E4;
+  --muted: #6B747D; --faint: #8A939C;
+  --pos-d: #2E6E70;  --pos-l: #DCEBEA;
+  --num-d: #3C4E8F;  --num-l: #E0E4F2;
+  --econ-d: #A2661A; --econ-l: #F4E7D2;
+  --flag-d: #7A3A6B; --flag-l: #EEDFEB;
+  --pad-d: #8A939C;  --pad-l: #E9ECEF;
+  --arr-d: #5F7A3F;  --arr-l: #E6EDDC;
+  --text-d: #1F5F86; --text-l: #DCE9F1;
+  --warn-d: #A93B25; --warn-l: #F5DFD9;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--paper); color: var(--ink);
+  font-family: "Charter RE", "Bitstream Charter", serif;
+  font-size: 9.6pt; line-height: 1.52;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+
+p { margin: 0 0 0.62em 0; text-align: justify; hyphens: auto; }
+strong { font-weight: bold; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- headings ---------- */
+h2.sechead {
+  font-family: "URW Gothic", sans-serif; font-weight: normal;
+  font-size: 17pt; line-height: 1.12; letter-spacing: 0.01em;
+  margin: 1.9em 0 0.55em 0; padding-top: 0.55em;
+  border-top: 2.2px solid var(--ink);
+  break-after: avoid;
+}
+h2.sechead .secno {
+  font-family: "URW Gothic", sans-serif;
+  color: var(--pos-d); margin-right: 0.45em;
+}
+h3 {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 11.4pt; letter-spacing: 0.012em;
+  margin: 1.35em 0 0.35em 0; break-after: avoid;
+}
+h4 {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 9.9pt; letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.15em 0 0.3em 0; break-after: avoid;
+}
+h3 .subno, h4 .subno { color: var(--pos-d); margin-right: 0.4em; }
+
+p.lede {
+  font-size: 10.6pt; line-height: 1.5; color: #2A2F37;
+  margin-bottom: 0.9em; text-align: left; hyphens: none;
+}
+
+/* ---------- part divider ---------- */
+.part-divider {
+  break-before: page; break-after: page;
+  padding-top: 2.6in;
+}
+.part-divider .pno {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 12pt; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--pos-d); margin-bottom: 0.55em;
+}
+.part-divider .ptitle {
+  font-family: "URW Gothic", sans-serif; font-size: 30pt; line-height: 1.1;
+  border-bottom: 2.2px solid var(--ink); padding-bottom: 0.35em;
+  margin-bottom: 0.8em; max-width: 5.4in;
+}
+.part-divider .plist {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-size: 10.5pt;
+  line-height: 1.9; color: var(--muted);
+}
+.part-divider .plist .sn { color: var(--pos-d); font-weight: bold;
+  display: inline-block; min-width: 2em; }
+
+/* ---------- contents ---------- */
+.contents { break-after: page; }
+.contents h2 {
+  font-family: "URW Gothic", sans-serif; font-weight: normal; font-size: 22pt;
+  border-bottom: 2.2px solid var(--ink); padding-bottom: 0.3em;
+  margin: 0 0 0.5em 0;
+}
+.contents .about {
+  font-size: 9.3pt; color: var(--muted); margin-bottom: 1.35em;
+  text-align: left;
+}
+.contents .cpart {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 10.2pt; letter-spacing: 0.06em; text-transform: uppercase;
+  margin: 0.9em 0 0.25em 0; color: var(--pos-d);
+  display: flex; align-items: baseline;
+}
+.contents .centry {
+  display: flex; align-items: baseline;
+  font-size: 9.6pt; line-height: 1.62;
+}
+.contents .centry .cn {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 8.2pt;
+  color: var(--faint); min-width: 2.2em;
+}
+.contents .dots {
+  flex: 1; margin: 0 0.45em;
+  border-bottom: 1px dotted var(--rule); transform: translateY(-3px);
+}
+.contents .cf {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt;
+  font-weight: bold;
+}
+
+/* ---------- tables ---------- */
+.tablewrap { margin: 0.55em 0 0.85em 0; break-inside: auto; }
+table {
+  border-collapse: collapse; width: 100%;
+  font-size: 8.7pt; line-height: 1.38;
+}
+table.compact { font-size: 7.9pt; line-height: 1.3; }
+thead th {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 8.2pt; letter-spacing: 0.03em; text-transform: uppercase;
+  text-align: left; color: var(--ink);
+  border-top: 1.6px solid var(--ink); border-bottom: 0.9px solid var(--ink);
+  padding: 2.5px 7px 2.5px 2px; vertical-align: bottom;
+}
+tbody td {
+  border-bottom: 0.6px solid var(--hair);
+  padding: 2.2px 7px 2.2px 2px; vertical-align: top;
+}
+tbody tr:last-child td { border-bottom: 1.2px solid var(--ink); }
+td.cnum, th.cnum { text-align: right; font-family: "DejaVu Sans Mono", monospace;
+  font-size: 0.94em; }
+td.cmono, th.cmono { font-family: "DejaVu Sans Mono", monospace; font-size: 0.92em; }
+td code, li code, p code {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 0.9em;
+  background: #F1F0EC; padding: 0 2px; border-radius: 2px;
+}
+
+/* ---------- lists ---------- */
+ul, ol { margin: 0.25em 0 0.7em 0; padding-left: 1.5em; }
+li { margin-bottom: 0.18em; }
+
+/* ---------- code ---------- */
+pre {
+  font-family: "DejaVu Sans Mono", monospace; font-size: 7.8pt;
+  line-height: 1.42; background: #F4F3EF;
+  border: 0.7px solid var(--hair); border-left: 2.5px solid var(--rule);
+  padding: 6px 9px; margin: 0.55em 0 0.85em 0;
+  white-space: pre-wrap; overflow-wrap: break-word;
+}
+pre .cmt { color: var(--faint); }
+pre .s { color: var(--text-d); }
+pre .h { color: var(--num-d); }
+pre .kw { color: var(--pos-d); font-weight: bold; }
+
+/* annotation blocks unwrapped from comment listings */
+.annot {
+  border-left: 2.5px solid var(--pos-d); background: #F6F5F1;
+  padding: 6px 12px; margin: 0.55em 0 0.85em 0; font-size: 9.1pt;
+}
+.annot .alabel {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-weight: bold;
+  font-size: 8.6pt; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--pos-d); margin-bottom: 0.25em;
+}
+
+/* ---------- hex ---------- */
+.hex { font-family: "DejaVu Sans Mono", monospace; font-size: 0.92em;
+  white-space: nowrap; }
+.hex .pfx { color: var(--faint); }
+
+/* ---------- figures ---------- */
+figure {
+  margin: 0.9em 0 1.05em 0; break-inside: avoid;
+}
+figure.tall { break-inside: auto; }
+.platehead {
+  font-family: "Nimbus Sans Narrow", sans-serif;
+  border-top: 1.6px solid var(--ink);
+  padding: 3px 0 4px 0; margin-bottom: 2px;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.platehead .pt { font-weight: bold; font-size: 9.6pt; letter-spacing: 0.02em; }
+.platehead .ps { font-size: 8.2pt; color: var(--muted); letter-spacing: 0.02em; }
+.plate-wrap { width: 100%; }
+.plate-wrap svg { width: 100%; height: auto; display: block; }
+figcaption {
+  font-family: "Nimbus Sans Narrow", sans-serif; font-size: 8pt;
+  color: var(--muted); margin-top: 3px; border-bottom: 0.7px solid var(--hair);
+  padding-bottom: 3px;
+}
+table.keytab { margin-top: 4px; font-size: 7.7pt; }
+table.keytab td { padding: 1.6px 6px 1.6px 2px; }
+
+/* ---------- misc ---------- */
+hr { border: none; border-top: 0.7px solid var(--rule); margin: 1.1em 0; }
+blockquote {
+  margin: 0.55em 0 0.85em 0; padding: 4px 12px;
+  border-left: 2.5px solid var(--econ-d); background: #F8F4EC;
+  font-size: 9.1pt; color: #3A3F47;
+}
+img { max-width: 100%; }

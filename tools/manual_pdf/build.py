@@ -1,0 +1,1024 @@
+#!/usr/bin/env python3
+"""Viceroy Technical Manual — PDF builder.
+
+Self-contained implementation of MANUAL_BUILD_SPEC_1 for this repository:
+  source  docs/COLONIZATION_TECHNICAL_REFERENCE.md
+  output  docs/Viceroy_Technical_Reference.pdf
+
+Pipeline: preprocess markdown -> per-section HTML -> DOM transforms
+(struct listings -> byte plates / ribbons, region listings -> UI wireframes,
+dressed tables, hex styling, code highlighting) -> two-pass Chromium render
+(pass 1 measures section folios for the contents list) -> running-head/folio
+overlay -> zero-margin cover -> pypdf merge with bookmarks and metadata.
+
+Faces (TeX Gyre unavailable offline; nearest ancestors substituted):
+  Display  URW Gothic          (ancestor of TeX Gyre Adventor)
+  Heading  Nimbus Sans Narrow  (ancestor of TeX Gyre Heros Cn)
+  Body     Charter RE          (Bitstream Charter, Type1 -> OTF, t1_to_otf.py)
+  Data     DejaVu Sans Mono
+"""
+import html as htmlmod
+import math
+import re
+import sys
+from pathlib import Path
+
+import markdown
+from bs4 import BeautifulSoup, NavigableString
+
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / "docs/COLONIZATION_TECHNICAL_REFERENCE.md"
+OUTDIR = ROOT / "docs"
+WORK = Path(__file__).resolve().parent / "_work"
+CSS = Path(__file__).resolve().parent / "style.css"
+CHROMIUM = "/opt/pw-browsers/chromium"
+
+GAME_TITLE = "SID MEIER'S COLONIZATION"
+DOC_TITLE = "Sid Meier's Colonization — Technical Reference"
+
+MARGINS = {"top": "0.82in", "bottom": "0.78in", "left": "0.90in", "right": "0.75in"}
+
+CAT = {
+    "pos":  ("#2E6E70", "#DCEBEA"),
+    "num":  ("#3C4E8F", "#E0E4F2"),
+    "econ": ("#A2661A", "#F4E7D2"),
+    "flag": ("#7A3A6B", "#EEDFEB"),
+    "pad":  ("#8A939C", "#E9ECEF"),
+    "arr":  ("#5F7A3F", "#E6EDDC"),
+    "text": ("#1F5F86", "#DCE9F1"),
+    "warn": ("#A93B25", "#F5DFD9"),
+}
+INK, MUTED, FAINT, RULE = "#191C21", "#6B747D", "#8A939C", "#C9CDD3"
+HEAD_FACE = "Nimbus Sans Narrow"
+MONO_FACE = "DejaVu Sans Mono"
+
+PARTS = [
+    ("I", "The machine and its files", ["1", "2", "3", "4"]),
+    ("II", "World and terrain", ["5", "6", "7"]),
+    ("III", "Economy and colonies", ["8", "9", "10", "11"]),
+    ("IV", "Units and combat", ["12", "13", "14"]),
+    ("V", "Politics and powers", ["15", "16", "17", "18", "19", "20", "21"]),
+    ("VI", "Events and messages", ["22", "23", "24"]),
+    ("VII", "User interface", ["25", "26", "27"]),
+    ("VIII", "The editor and appendices", ["28", "29", "A", "B"]),
+]
+
+WARNINGS = []
+
+
+def warn(msg):
+    WARNINGS.append(msg)
+    print(f"  [warn] {msg}", file=sys.stderr)
+
+
+# --------------------------------------------------------------------------
+# 1. Load + preprocess source
+# --------------------------------------------------------------------------
+
+def load_source():
+    text = SRC.read_text()
+    # Drop the title block and the hand-written contents list: keep from '## 1.'
+    m = re.search(r"^## 1\. ", text, re.M)
+    preamble = text[: m.start()]
+    body = text[m.start():]
+    about = ""
+    pm = re.search(r"^# .*?\n\n(.*?)\n\n## Contents", preamble, re.S | re.M)
+    if pm:
+        about = " ".join(pm.group(1).split())
+    # Defensive re-implementation strips (per spec §3; source is authored clean)
+    body = body.replace("**Yes** — ", "")
+    body = re.sub(r"\b\w+_ex\(\)", "", body)
+    return about, body
+
+
+def split_sections(body):
+    """Return ordered [(key, title, md_text)] split on '## N.' / '## A.' heads."""
+    parts = re.split(r"^## (\d+|[AB])\. (.+)$", body, flags=re.M)
+    out = []
+    it = iter(parts[1:])
+    for key, title, text in zip(it, it, it):
+        out.append((key, title.strip(), text))
+    return out
+
+
+# --------------------------------------------------------------------------
+# 2. Struct parsing -> byte plates / ribbons
+# --------------------------------------------------------------------------
+
+TYPE_SIZES = {"uint8_t": 1, "int8_t": 1, "char": 1, "uint16_t": 2, "int16_t": 2,
+              "uint32_t": 4, "int32_t": 4, "uint64_t": 8, "int64_t": 8}
+STRUCT_SIZES = {}  # populated in document order; lets e.g. RouteRecord embed StopRecord
+
+FIELD_RE = re.compile(
+    r"^\s*(\w+)((?:\s+far)?\s*\*)?\s*([^;/]+?)\s*;\s*(?://\s*(.*))?$")
+INLINE_RE = re.compile(
+    r"^\s*struct\s*\{([^}]*)\}\s*(\w+)(?:\[(\d+)\])?\s*;\s*(?://\s*(.*))?$")
+UNMAP_RE = re.compile(
+    r"^\s*//\s*\+0x([0-9A-Fa-f]+)(?:\.\.\+0x([0-9A-Fa-f]+))?\s+unmapped\b(.*)$")
+OFF_RE = re.compile(r"^\+0x([0-9A-Fa-f]+)\s*(.*)$", re.S)
+OFF_TAIL_RE = re.compile(r"^(?:(?:\.\.|/)\+0x[0-9A-Fa-f]+)*\s*:?\s*")
+
+
+def clean_note(note):
+    """Drop offset-comment residue: leading '..+0xNN', '/+0xNN', ':'."""
+    return OFF_TAIL_RE.sub("", note.strip(), count=1).strip()
+
+
+def classify(name, ctype, note):
+    n, t = (name or "").lower(), (note or "").lower()
+    if name is None or n.startswith(("unused", "pad")) or "unmapped" in t:
+        return "pad"
+    if any(k in n or k in t for k in ("hostile", "burn", "loot", "combat", "war_")):
+        return "warn"
+    if any(k in n for k in ("cargo", "stock", "price", "gold", "treasur", "tax",
+                            "hammer", "tool", "market", "good")):
+        return "econ"
+    if "flag" in n or "mask" in n or "bits" in n or "bitmask" in t:
+        return "flag"
+    if ctype == "char" or "name" in n or "text" in n or "str" in n:
+        return "text"
+    if re.search(r"\[", name or "") or "array" in t:
+        return "arr"
+    if any(k in n for k in ("map_x", "map_y", "_x", "_y", "type", "idx", "id",
+                            "owner", "seg", "offset", "ptr", "link", "heading",
+                            "next", "back", "num", "slot", "row", "col", "key")):
+        return "pos"
+    return "num"
+
+
+def parse_struct(seg_body, name, closer_note, opener_note):
+    """Return dict(name, total, fields, variable). fields: list of dicts."""
+    fields = []
+    offset = 0
+    variable = False
+    for line in seg_body.splitlines():
+        if not line.strip() or line.strip().startswith("typedef"):
+            continue
+        um = UNMAP_RE.match(line)
+        if um:
+            lo = int(um.group(1), 16)
+            hi = int(um.group(2), 16) if um.group(2) else lo
+            fields.append(dict(off=lo, size=hi - lo + 1, name=None, ctype="—",
+                               note="unmapped" + (um.group(3) or "").strip(" ;"),
+                               cat="pad"))
+            offset = hi + 1
+            continue
+        if line.strip().startswith("//"):
+            continue  # free comment / continuation line
+        im = INLINE_RE.match(line)
+        if im:
+            inner, iname, icount, inote = im.groups()
+            unit = 0
+            for stmt in inner.split(";"):
+                sm = re.match(r"\s*(\w+)\s+(.+?)\s*$", stmt.strip())
+                if sm and sm.group(1) in TYPE_SIZES:
+                    unit += TYPE_SIZES[sm.group(1)] * len(sm.group(2).split(","))
+            inote = inote or ""
+            om = OFF_RE.match(inote.strip())
+            if om:
+                offset = int(om.group(1), 16)
+                inote = om.group(2).strip()
+            n = int(icount) if icount else 1
+            fields.append(dict(off=offset, size=unit * n,
+                               name=f"{iname}[{icount}]" if icount else iname,
+                               ctype=f"struct{{{inner.strip()}}}",
+                               note=clean_note(inote), cat=None))
+            offset += unit * n
+            continue
+        fm = FIELD_RE.match(line)
+        if not fm:
+            return None  # unparseable structural line -> keep as code
+        ctype, ptr, decls, note = (fm.group(1), fm.group(2) or "",
+                                   fm.group(3), fm.group(4) or "")
+        om = OFF_RE.match(note.strip())
+        if om:
+            offset = int(om.group(1), 16)
+            note = om.group(2).strip()
+        names, size = [], 0
+        for decl in decls.split(","):
+            decl = decl.strip()
+            is_ptr = bool(ptr.strip()) or decl.startswith("*")
+            decl = decl.lstrip("*").strip()
+            am = re.match(r"(\w+)(?:\[([^\]]*)\])?$", decl)
+            if not am:
+                return None
+            dname, count = am.group(1), am.group(2)
+            if is_ptr:
+                base = 4 if "far" in ptr else 2  # 16-bit: far seg:off / near
+            elif ctype in TYPE_SIZES:
+                base = TYPE_SIZES[ctype]
+            elif ctype in STRUCT_SIZES:
+                base = STRUCT_SIZES[ctype]
+            else:
+                return None
+            if count is not None and count.strip():
+                try:
+                    dsize = base * int(count.strip(), 0)
+                except ValueError:
+                    dsize = None
+                    variable = True
+                dname = f"{dname}[{count.strip()}]"
+            else:
+                dsize = base
+            names.append(dname)
+            size = None if (dsize is None or size is None) else size + dsize
+        shown_type = ctype + (" far *" if (ptr and "far" in ptr)
+                              else " *" if ptr.strip() else "")
+        fields.append(dict(off=offset, size=size, name=", ".join(names),
+                           ctype=shown_type, note=clean_note(note), cat=None))
+        if size is not None:
+            offset += size
+    for f in fields:
+        if f["cat"] is None:
+            f["cat"] = classify(f["name"], f["ctype"], f["note"])
+    total = None
+    for src in (closer_note or "", opener_note or ""):
+        m = (re.search(r"sizeof\s*=\s*0x([0-9A-Fa-f]+)", src)
+             or re.search(r"stride\s+0x([0-9A-Fa-f]+)", src)
+             or re.search(r"ends exactly at \+0x([0-9A-Fa-f]+)", src)
+             or re.search(r"~?0x([0-9A-Fa-f]+)\+?\s+bytes", src))
+        if m:
+            total = int(m.group(1), 16)
+            break
+        m = re.search(r"(\d+)\s+bytes", src)
+        if m:
+            total = int(m.group(1))
+            break
+    if total is None and not variable:
+        total = max((f["off"] + f["size"]) for f in fields) if fields else 0
+    if total is not None:
+        STRUCT_SIZES[name] = total
+    return dict(name=name, total=total, fields=fields, variable=variable,
+                closer=(closer_note or "").strip(" /"), opener=(opener_note or "").strip(" /"))
+
+
+def esc(s):
+    return htmlmod.escape(str(s), quote=True)
+
+
+def svg_text(x, y, s, size, fill=INK, anchor="start", face=HEAD_FACE, weight="normal",
+             spacing=None):
+    sp = f' letter-spacing="{spacing}"' if spacing else ""
+    return (f'<text x="{x}" y="{y}" font-family="{esc(face)}" font-size="{size}"'
+            f' font-weight="{weight}" fill="{fill}" text-anchor="{anchor}"{sp}>{esc(s)}</text>')
+
+
+def byte_plate_svg(st):
+    """16 bytes per row byte plate."""
+    total = st["total"]
+    gut, cw, ch, ruler = 46, 38, 23, 15
+    rows = max(1, math.ceil(total / 16))
+    W, H = 660, ruler + rows * ch + 4
+    e = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">']
+    # ruler
+    for c in range(16):
+        e.append(svg_text(gut + c * cw + cw / 2, ruler - 5, f"+{c:X}", 8.2,
+                          fill=FAINT, anchor="middle", face=MONO_FACE))
+    # byte->field map
+    cover = {}
+    for i, f in enumerate(st["fields"]):
+        for b in range(f["off"], f["off"] + f["size"]):
+            if b < total:
+                cover[b] = i
+    # cells
+    for r in range(rows):
+        y = ruler + r * ch
+        e.append(svg_text(gut - 6, y + ch / 2 + 3, f"+0x{r * 16:02X}", 8.2,
+                          fill=MUTED, anchor="end", face=MONO_FACE))
+        for c in range(16):
+            b = r * 16 + c
+            if b >= total:
+                break
+            x = gut + c * cw
+            fi = cover.get(b)
+            dark, light = CAT[st["fields"][fi]["cat"]] if fi is not None else CAT["pad"]
+            if fi is None:
+                light = "#F2F3F4"
+            e.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{ch}" '
+                     f'fill="{light}" stroke="{RULE}" stroke-width="0.5"/>')
+            if fi is not None and st["fields"][fi]["off"] == b:
+                e.append(f'<rect x="{x}" y="{y}" width="2.6" height="{ch}" fill="{dark}"/>')
+    # labels on runs of >=4 cells within a row
+    for i, f in enumerate(st["fields"]):
+        if not f["name"]:
+            continue
+        dark, _ = CAT[f["cat"]]
+        best = None
+        for r in range(rows):
+            lo = max(f["off"], r * 16)
+            hi = min(f["off"] + f["size"], (r + 1) * 16)
+            if hi - lo >= 4 and (best is None or hi - lo > best[1] - best[0]):
+                best = (lo, hi, r)
+        if best:
+            lo, hi, r = best
+            x = gut + (lo % 16) * cw + (hi - lo) * cw / 2
+            y = ruler + r * ch + ch / 2 + 3
+            label = f["name"]
+            maxch = int((hi - lo) * cw / 5.2)
+            if len(label) > maxch:
+                label = label[: maxch - 1] + "…"
+            e.append(svg_text(x, y, label, 8.6, fill=dark, anchor="middle", weight="bold"))
+    e.append(f'<rect x="{gut}" y="{ruler}" width="{16 * cw}" '
+             f'height="{rows * ch}" fill="none" stroke="{INK}" stroke-width="1.1"/>')
+    # mask final partial row edge
+    rem = total % 16
+    if rem:
+        x = gut + rem * cw
+        y = ruler + (rows - 1) * ch
+        e.append(f'<rect x="{x - 0.5}" y="{y - 0.6}" width="{(16 - rem) * cw + 2}" height="{ch + 1.2}" '
+                 f'fill="#FCFBF8" stroke="none"/>')
+        e.append(f'<line x1="{x}" y1="{y}" x2="{x}" y2="{y + ch}" stroke="{INK}" stroke-width="1.1"/>')
+        e.append(f'<line x1="{gut}" y1="{y + ch}" x2="{x}" y2="{y + ch}" stroke="{INK}" stroke-width="1.1"/>')
+        e.append(f'<line x1="{x}" y1="{y}" x2="{gut + 16 * cw}" y2="{y}" stroke="{INK}" stroke-width="1.1"/>')
+    e.append("</svg>")
+    return "\n".join(e)
+
+
+def ribbon_svg(st):
+    """Proportional layout for variable-size structs."""
+    fields = [f for f in st["fields"] if f["name"] or f["size"]]
+    weights = []
+    fixed = [f["size"] for f in fields if f["size"]]
+    varw = (sum(fixed) / max(1, len(fixed))) * 6 if fixed else 100
+    for f in fields:
+        weights.append(f["size"] if f["size"] else varw)
+    W, H, y0, bh = 660, 92, 30, 34
+    tw = sum(weights)
+    e = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">']
+    x = 2.0
+    avail = W - 4
+    minw = 58
+    px = [max(minw, w / tw * avail) for w in weights]
+    scale = avail / sum(px)
+    px = [w * scale for w in px]
+    for f, w in zip(fields, px):
+        dark, light = CAT[f["cat"]]
+        e.append(f'<rect x="{x:.1f}" y="{y0}" width="{w:.1f}" height="{bh}" '
+                 f'fill="{light}" stroke="{dark}" stroke-width="1.1"/>')
+        label = f["name"] or "—"
+        size = 9 if len(label) * 5.4 < w else 7.2
+        if len(label) * (size * 0.6) > w:
+            label = label[: max(3, int(w / (size * 0.6)) - 1)] + "…"
+        e.append(svg_text(x + w / 2, y0 + bh / 2 + 3.4, label, size, fill=dark,
+                          anchor="middle", weight="bold"))
+        ext = f"+0x{f['off']:02X}" if f["size"] else "variable"
+        if f["size"]:
+            ext += f" · {f['size']}B"
+        xt = min(max(x + w / 2, len(ext) * 2.4 + 3), W - len(ext) * 2.4 - 3)
+        e.append(svg_text(xt, y0 - 6, ext, 7.6, fill=MUTED, anchor="middle",
+                          face=MONO_FACE))
+        x += w
+    e.append("</svg>")
+    return "\n".join(e)
+
+
+def struct_figure(st, soup):
+    plate = ribbon_svg(st) if st["variable"] else byte_plate_svg(st)
+    mapped = sum(f["size"] or 0 for f in st["fields"] if f["name"])
+    unmapped = sum(f["size"] or 0 for f in st["fields"] if not f["name"])
+    if st["variable"]:
+        cap = "variable length — proportional layout, true extents above each region"
+    else:
+        t = st["total"]
+        cap = f"{t} bytes (0x{t:X}) · mapped {mapped} · unmapped {t - mapped}"
+    note = st["closer"] or st["opener"]
+    sub = esc(note) if note else ""
+    rows = []
+    for f in st["fields"]:
+        if f["size"] is None:
+            off = f"+0x{f['off']:02X}…"
+            width = "var"
+        elif f["size"] == 1:
+            off, width = f"+0x{f['off']:02X}", "1"
+        else:
+            off = f"+0x{f['off']:02X}..+0x{f['off'] + f['size'] - 1:02X}"
+            width = str(f["size"])
+        dark = CAT[f["cat"]][0]
+        nm = f["name"] or "—"
+        rows.append(
+            f'<tr><td class="cmono">{esc(off)}</td><td class="cnum">{width}</td>'
+            f'<td class="cmono">{esc(f["ctype"])}</td>'
+            f'<td class="cmono" style="color:{dark};font-weight:bold">{esc(nm)}</td>'
+            f'<td>{esc(f["note"])}</td></tr>')
+    tall = " tall" if (len(rows) > 12 or (st["total"] or 0) > 128) else ""
+    fig = (f'<figure class="structplate{tall}">'
+           f'<div style="break-inside:avoid"><div class="platehead"><span class="pt">{esc(st["name"])}</span>'
+           f'<span class="ps">{sub}</span></div>'
+           f'<div class="plate-wrap">{plate}</div>'
+           f'<figcaption>{esc(cap)}</figcaption></div>'
+           f'<div class="tablewrap"><table class="keytab"><thead><tr><th>Offset</th><th>B</th>'
+           f'<th>Type</th><th>Field</th><th>Note</th></tr></thead>'
+           f'<tbody>{"".join(rows)}</tbody></table></div></figure>')
+    return BeautifulSoup(fig, "html.parser").figure
+
+
+STRUCT_RE = re.compile(
+    r"typedef struct\s*\{([^\n]*)\n(.*?)\n\}\s*(\w+)\s*;([^\n]*)", re.S)
+
+
+def structs_to_plates(soup):
+    n = 0
+    for pre in list(soup.find_all("pre")):
+        code = pre.find("code")
+        if code is None or "typedef struct" not in code.get_text():
+            continue
+        text = code.get_text()
+        pieces = []
+        last = 0
+        ok = True
+        for m in STRUCT_RE.finditer(text):
+            st = parse_struct(m.group(2), m.group(3),
+                              m.group(4), m.group(1).lstrip(" /"))
+            if st is None:
+                warn(f"struct {m.group(3)}: unparseable line — left as code")
+                ok = False
+                break
+            leftover = text[last:m.start()].strip()
+            if leftover:
+                pieces.append(("code", leftover))
+            pieces.append(("struct", st))
+            last = m.end()
+        if not ok or not pieces:
+            continue
+        tail = text[last:].strip()
+        if tail:
+            pieces.append(("code", tail))
+        frags = []
+        for kind, val in pieces:
+            if kind == "struct":
+                frags.append(struct_figure(val, soup))
+                n += 1
+            else:
+                p = soup.new_tag("pre")
+                c = soup.new_tag("code")
+                c.string = val
+                p.append(c)
+                frags.append(p)
+        anchor = pre
+        for fr in frags:
+            anchor.insert_after(fr)
+            anchor = fr
+        pre.decompose()
+    return n
+
+
+# --------------------------------------------------------------------------
+# 3. UI region listings -> wireframes
+# --------------------------------------------------------------------------
+
+RNUM = r"(-?\d+|0x[0-9A-Fa-f]+)"
+REGION_RE = re.compile(
+    rf'\(\s*{RNUM}\s*,\s*{RNUM}\s*,\s*{RNUM}\s*,\s*{RNUM}\s*,\s*"((?:[^"\\]|\\.)*)"\s*,'
+    r'\s*"(\w+)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')
+
+KIND_CAT = {"panel": "pos", "hit": "warn", "text": "text", "art": "arr",
+            "rect": "flag"}
+
+
+def wireframe_svg(regions):
+    """Draw only fully-determined regions (no -1 coordinate — those are
+    runtime-computed and appear in the key table only, never invented)."""
+    S = 1.9
+    ox, oy = 18, 14
+    W = 660
+    H = int(200 * S + oy + 22)
+    e = [f'<svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">']
+    fx = ox + (W - 2 * ox - 320 * S) / 2
+    e.append(f'<rect x="{fx - 2}" y="{oy - 2}" width="{320 * S + 4}" height="{200 * S + 4}" '
+             f'fill="#FFFFFF" stroke="{INK}" stroke-width="1.6"/>')
+    drawable = [(i, r) for i, r in enumerate(regions, 1)
+                if all(v >= 0 for v in r[:4])]
+    for i, (x, y, w, h, label, kind, note) in drawable:
+        cat = KIND_CAT.get(kind, "pos")
+        dark, light = CAT[cat]
+        dash = ' stroke-dasharray="5,3"' if kind == "hit" else ""
+        fill = light if kind in ("panel", "art") else "none"
+        op = ' fill-opacity="0.45"' if fill != "none" else ""
+        e.append(f'<rect x="{fx + x * S:.1f}" y="{oy + y * S:.1f}" width="{w * S:.1f}" '
+                 f'height="{h * S:.1f}" fill="{fill}"{op} stroke="{dark}" '
+                 f'stroke-width="1.3"{dash}/>')
+    for i, (x, y, w, h, label, kind, note) in drawable:
+        cat = KIND_CAT.get(kind, "pos")
+        dark, _ = CAT[cat]
+        cx = fx + x * S + 8
+        cy = oy + y * S + 8
+        cx = min(max(cx, fx + 8), fx + 320 * S - 8)
+        cy = min(max(cy, oy + 8), oy + 200 * S - 8)
+        e.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="7.2" fill="{dark}"/>')
+        e.append(svg_text(cx, cy + 3.1, str(i), 8.6, fill="#FFFFFF",
+                          anchor="middle", weight="bold"))
+    # scale note
+    e.append(svg_text(fx, oy + 200 * S + 14, "0,0", 7.6, fill=FAINT, face=MONO_FACE))
+    e.append(svg_text(fx + 320 * S, oy + 200 * S + 14, "320×200", 7.6,
+                      fill=FAINT, anchor="end", face=MONO_FACE))
+    e.append("</svg>")
+    return "\n".join(e)
+
+
+def regions_to_wireframes(soup):
+    n = 0
+    for pre in list(soup.find_all("pre")):
+        code = pre.find("code")
+        if code is None:
+            continue
+        text = code.get_text()
+        if "regions = [" not in text:
+            continue
+        regions = [(int(a, 0), int(b, 0), int(c, 0), int(d, 0),
+                    lab.replace('\\"', '"'), kind, note.replace('\\"', '"'))
+                   for a, b, c, d, lab, kind, note in REGION_RE.findall(text)]
+        if not regions:
+            warn("region block with no parseable tuples — left as code")
+            continue
+        nlisted = len([l for l in text.splitlines() if l.strip().startswith("(")])
+        if nlisted != len(regions):
+            warn(f"region block: {nlisted - len(regions)} of {nlisted} tuples "
+                 f"unparsed (kept in table? no — left out); check source")
+        # title from nearest previous heading
+        hd = pre.find_previous(["h3", "h4", "h2"])
+        title = hd.get_text().strip() if hd else "Screen"
+        title = re.sub(r"^[\d.§ ]+", "", title)
+        tailnote = ""
+        tm = re.search(r"\]\s*#\s*320x200 Mode 13h[;,]?\s*(.*)$", text, re.M)
+        if tm and tm.group(1).strip():
+            tailnote = " · " + tm.group(1).strip()
+        rows = []
+        for i, (x, y, w, h, lab, kind, note) in enumerate(regions, 1):
+            dark = CAT[KIND_CAT.get(kind, "pos")][0]
+            fv = lambda v: "·" if v < 0 else str(v)
+            bounds = f"({fv(x)},{fv(y)}) {fv(w)}×{fv(h)}"
+            if -1 in (x, y, w, h):
+                bounds += " ᴿ"  # runtime-computed, not drawn
+            rows.append(
+                f'<tr><td class="cnum" style="color:{dark};font-weight:bold">{i}</td>'
+                f'<td class="cmono">{esc(bounds)}</td>'
+                f'<td style="color:{dark}">{esc(kind)}</td>'
+                f'<td>{esc(lab)}</td><td>{esc(note)}</td></tr>')
+        tall = " tall" if len(rows) > 10 else ""
+        fig = (f'<figure class="wireframe{tall}">'
+               f'<div style="break-inside:avoid"><div class="platehead"><span class="pt">{esc(title)}</span>'
+               f'<span class="ps">320×200 · Mode 13h{esc(tailnote)}</span></div>'
+               f'<div class="plate-wrap">{wireframe_svg(regions)}</div></div>'
+               f'<div class="tablewrap"><table class="keytab"><thead><tr><th>#</th>'
+               f'<th>Bounds</th><th>Kind</th><th>Region</th><th>Note</th></tr></thead>'
+               f'<tbody>{"".join(rows)}</tbody></table></div></figure>')
+        pre.replace_with(BeautifulSoup(fig, "html.parser"))
+        n += 1
+    return n
+
+
+# --------------------------------------------------------------------------
+# 4. Remaining code, tables, hex
+# --------------------------------------------------------------------------
+
+KEYWORDS = r"\b(typedef|struct|uint8_t|uint16_t|uint32_t|int8_t|int16_t|char|if|else|while|for|return|void)\b"
+
+
+def highlight_code(soup):
+    for pre in soup.find_all("pre"):
+        code = pre.find("code")
+        node = code if code else pre
+        raw = node.get_text()
+        out = []
+        for line in raw.split("\n"):
+            if "//" in line:
+                idx = line.index("//")
+                body, cmt = line[:idx], line[idx:]
+            else:
+                body, cmt = line, ""
+            body = esc(body)
+            body = re.sub(r"\b0x[0-9A-Fa-f]+\b", r'<span class="h">\g<0></span>', body)
+            body = re.sub(KEYWORDS, r'<span class="kw">\g<0></span>', body)
+            body = re.sub(r"&quot;.*?&quot;", r'<span class="s">\g<0></span>', body)
+            if cmt:
+                body += f'<span class="cmt">{esc(cmt)}</span>'
+            out.append(body)
+        new = BeautifulSoup(f"<pre>{'<br/>'.join(out)}</pre>", "html.parser")
+        # preserve any classes
+        pre.replace_with(new.pre)
+
+
+NUM_CELL = re.compile(r"^[\s\d,.\-–+%×·/:()]*\d[\s\d,.\-–+%×·/:()]*$")
+MONO_CELL = re.compile(r"(0x[0-9A-Fa-f]+|func_\w+|@0x|\$|^[0-9A-F]{2,4}$|\.EXE|\.SS\b|\.PIK|\.MP\b)")
+
+
+def dress_tables(soup):
+    for table in soup.find_all("table"):
+        rows = table.find_all("tr")
+        if len(rows) > 18:
+            table["class"] = table.get("class", []) + ["compact"]
+        # column stats
+        bodyrows = [r for r in rows if r.find("td")]
+        if not bodyrows:
+            continue
+        ncols = max(len(r.find_all(["td", "th"])) for r in bodyrows)
+        for c in range(ncols):
+            cells = []
+            for r in bodyrows:
+                tds = r.find_all(["td", "th"])
+                if c < len(tds):
+                    cells.append(tds[c].get_text().strip())
+            filled = [x for x in cells if x and x not in ("—", "-", "·")]
+            if not filled:
+                continue
+            numish = sum(1 for x in filled if NUM_CELL.match(x))
+            monoish = sum(1 for x in filled if MONO_CELL.search(x))
+            cls = None
+            if numish / len(filled) >= 0.7:
+                cls = "cnum"
+            elif monoish / len(filled) >= 0.6:
+                cls = "cmono"
+            if cls:
+                for r in rows:
+                    tds = r.find_all(["td", "th"])
+                    if c < len(tds):
+                        tds[c]["class"] = tds[c].get("class", []) + [cls]
+        if table.parent and "tablewrap" not in (table.parent.get("class") or []):
+            table.wrap(soup.new_tag("div", attrs={"class": "tablewrap"}))
+
+
+HEX_RE = re.compile(r"\b0x([0-9A-Fa-f]+)\b")
+
+
+def style_hex_in(soup):
+    skip = {"pre", "code", "svg", "script", "style", "text"}
+    for node in list(soup.find_all(string=True)):
+        if any(p.name in skip for p in node.parents):
+            continue
+        s = str(node)
+        if "0x" not in s:
+            continue
+        parts = HEX_RE.split(s)
+        if len(parts) == 1:
+            continue
+        frag = []
+        for i, piece in enumerate(parts):
+            if i % 2 == 0:
+                frag.append(esc(piece))
+            else:
+                frag.append(f'<span class="hex"><span class="pfx">0x</span>{esc(piece)}</span>')
+        node.replace_with(BeautifulSoup("".join(frag), "html.parser"))
+
+
+def comment_blocks_to_prose(soup):
+    n = 0
+    for pre in list(soup.find_all("pre")):
+        text = pre.get_text()
+        lines = [l for l in text.split("\n") if l.strip()]
+        if not lines:
+            continue
+        cm = [l for l in lines if l.strip().startswith("//")]
+        if len(cm) / len(lines) < 0.85 or len(lines) < 3:
+            continue
+        items = [re.sub(r"^\s*//\s?", "", l) for l in lines]
+        label = ""
+        if items and items[0].endswith(":") and len(items[0]) < 60:
+            label = items.pop(0).rstrip(":")
+        body = "".join(f"<p>{esc(it)}</p>" for it in items)
+        lab = f'<div class="alabel">{esc(label)}</div>' if label else ""
+        pre.replace_with(BeautifulSoup(f'<div class="annot">{lab}{body}</div>',
+                                       "html.parser"))
+        n += 1
+    return n
+
+
+# --------------------------------------------------------------------------
+# 5. Section shaping
+# --------------------------------------------------------------------------
+
+def shape_headings(soup, key, title):
+    h2 = soup.new_tag("h2", attrs={"class": "sechead", "id": f"sec-{key}"})
+    sn = soup.new_tag("span", attrs={"class": "secno"})
+    sn.string = f"§{key}"
+    h2.append(sn)
+    h2.append(NavigableString(title))
+    first = soup.find(True)
+    if first:
+        first.insert_before(h2)
+    else:
+        soup.append(h2)
+    for h in soup.find_all(["h3", "h4"]):
+        t = h.get_text()
+        m = re.match(r"^([\dAB]+(?:\.\d+)*)\.?\s+(.*)$", t)
+        if m:
+            h.clear()
+            sp = soup.new_tag("span", attrs={"class": "subno"})
+            sp.string = m.group(1)
+            h.append(sp)
+            h.append(NavigableString(m.group(2)))
+    # lede
+    p = h2.find_next("p")
+    if p and len(p.get_text()) > 120:
+        p["class"] = p.get("class", []) + ["lede"]
+
+
+def build_section(key, title, md_text):
+    html = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
+    soup = BeautifulSoup(html, "html.parser")
+    comment_blocks_to_prose(soup)
+    structs_to_plates(soup)
+    regions_to_wireframes(soup)
+    highlight_code(soup)
+    dress_tables(soup)
+    style_hex_in(soup)
+    shape_headings(soup, key, title)
+    return str(soup)
+
+
+# --------------------------------------------------------------------------
+# 6. Assembly
+# --------------------------------------------------------------------------
+
+def part_divider(roman, ptitle, seclist):
+    items = "".join(
+        f'<div><span class="sn">§{esc(k)}</span> {esc(t)}</div>'
+        for k, t in seclist)
+    return (f'<div class="part-divider" id="part-{roman}">'
+            f'<div class="pno">Part {roman}</div>'
+            f'<div class="ptitle">{esc(ptitle)}</div>'
+            f'<div class="plist">{items}</div></div>')
+
+
+def contents_html(about, entries):
+    """entries: list of ('part',roman,title,folio) / ('sec',key,title,folio)."""
+    out = ['<div class="contents" id="contents"><h2>Contents</h2>']
+    if about:
+        out.append(f'<p class="about">{esc(about)}</p>')
+    for kind, key, title, folio in entries:
+        f = str(folio) if folio else ""
+        if kind == "part":
+            out.append(f'<div class="cpart"><span>Part {esc(key)} — {esc(title)}</span>'
+                       f'<span class="dots"></span><span class="cf">{f}</span></div>')
+        else:
+            out.append(f'<div class="centry"><span class="cn">§{esc(key)}</span>'
+                       f'<span>{esc(title)}</span><span class="dots"></span>'
+                       f'<span class="cf">{f}</span></div>')
+    out.append("</div>")
+    return "".join(out)
+
+
+def assemble(about, sections, folios=None):
+    sec_titles = {s[0]: s[1] for s in sections}
+    entries = []
+    for roman, ptitle, keys in PARTS:
+        entries.append(("part", roman, ptitle,
+                        (folios or {}).get(f"part-{roman}")))
+        for k in keys:
+            entries.append(("sec", k, sec_titles[k], (folios or {}).get(f"sec-{k}")))
+    body = [contents_html(about, entries)]
+    built = {s[0]: s[3] for s in sections}
+    for roman, ptitle, keys in PARTS:
+        body.append(part_divider(roman, ptitle, [(k, sec_titles[k]) for k in keys]))
+        for k in keys:
+            body.append(built[k])
+    css = CSS.read_text()
+    return (f"<!DOCTYPE html><html><head><meta charset='utf-8'>"
+            f"<title>{esc(DOC_TITLE)}</title><style>{css}</style></head>"
+            f"<body>{''.join(body)}</body></html>")
+
+
+# --------------------------------------------------------------------------
+# 7. Rendering
+# --------------------------------------------------------------------------
+
+def render_pdf(html_path, pdf_path, margins=None, page=None):
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(executable_path=CHROMIUM)
+        pg = b.new_page()
+        pg.goto(f"file://{html_path}")
+        pg.wait_for_timeout(250)
+        kw = dict(path=str(pdf_path), format="Letter", print_background=True,
+                  display_header_footer=False)
+        if margins:
+            kw["margin"] = margins
+        if page:
+            kw.update(page)
+        pg.pdf(**kw)
+        b.close()
+
+
+def measure(pdf_path, sections):
+    """Find the printed page of each part divider and section head."""
+    import pdfplumber
+    import unicodedata
+
+    def norm(s):
+        # ligatures (fi/fl) come back composed; spaces are unreliable
+        return "".join(unicodedata.normalize("NFKD", s).split())
+
+    marks = {}
+    sec_titles = {s[0]: s[1] for s in sections}
+    # Chromium writes PDF font sizes at ~0.75x the CSS pt value:
+    # 17pt section heads -> ~12.6, 30pt part titles -> ~22.2
+    with pdfplumber.open(pdf_path) as pdf:
+        for pno, page in enumerate(pdf.pages, 1):
+            big = [c for c in page.chars if c.get("size", 0) >= 11.5]
+            if not big:
+                continue
+            txt = "".join(c["text"] for c in sorted(
+                big, key=lambda c: (round(c["top"]), c["x0"])))
+            flat = norm(txt)
+            huge = any(c.get("size", 0) >= 20 for c in big)  # part-divider titles
+            for k, t in sec_titles.items():
+                sid = f"sec-{k}"
+                if sid in marks:
+                    continue
+                if norm(f"§{k}{t}")[:26] in flat:
+                    marks[sid] = pno
+            for roman, ptitle, _ in PARTS:
+                pid = f"part-{roman}"
+                if pid not in marks and huge and norm(ptitle)[:20] in flat:
+                    marks[pid] = pno
+        npages = len(pdf.pages)
+    return marks, npages
+
+
+def overlay_html(npages, marks, sections):
+    """One 11in page per body page carrying running head + folio."""
+    sec_titles = {f"sec-{s[0]}": s[1] for s in sections}
+    # page -> event
+    starts = sorted(((p, mid) for mid, p in marks.items()))
+    divider_pages = {p for mid, p in marks.items() if mid.startswith("part-")}
+    part_of = {}
+    for roman, ptitle, keys in PARTS:
+        for k in keys:
+            part_of[f"sec-{k}"] = ptitle
+    pages = []
+    cur = None
+    for p in range(1, npages + 1):
+        for sp, mid in starts:
+            if sp == p and mid.startswith("sec-"):
+                cur = mid
+        if p in divider_pages:
+            head_l = ""
+        elif cur is None:
+            head_l = "CONTENTS"
+        else:
+            t = sec_titles[cur]
+            head_l = f"§{cur.split('-')[1]} · {t}".upper()
+        outer_right = (p % 2 == 1)
+        folio_style = ("right:0.75in;text-align:right" if outer_right
+                       else "left:0.90in;text-align:left")
+        head = ""
+        if head_l:
+            head = (f'<div style="position:absolute;top:0.40in;left:0.90in;right:0.75in;'
+                    f'display:flex;justify-content:space-between;'
+                    f'font-family:\'{HEAD_FACE}\';font-size:6.4pt;letter-spacing:0.14em;'
+                    f'color:{MUTED}">'
+                    f'<span>{esc(head_l)}</span><span>{GAME_TITLE}</span></div>')
+        folio = (f'<div style="position:absolute;bottom:0.40in;{folio_style};'
+                 f'font-family:\'{HEAD_FACE}\';font-weight:bold;font-size:8.5pt;'
+                 f'color:{INK}">{p}</div>')
+        pages.append(f'<div class="opage">{head}{folio}</div>')
+    css = ("@page{size:Letter;margin:0}"
+           "html,body{margin:0;padding:0}"
+           ".opage{position:relative;width:8.5in;height:10.97in;"
+           "page-break-after:always;overflow:hidden}"
+           ".opage:last-child{page-break-after:auto}")
+    return (f"<!DOCTYPE html><html><head><meta charset='utf-8'><style>{css}</style>"
+            f"</head><body>{''.join(pages)}</body></html>")
+
+
+def cover_html():
+    strip = "".join(
+        f'<div style="flex:1;background:{CAT[c][0]}"></div>'
+        for c in ("pos", "num", "econ", "flag", "arr", "text", "warn", "pad"))
+    return f"""<!DOCTYPE html><html><head><meta charset='utf-8'><style>
+@page {{ size: Letter; margin: 0 }}
+html, body {{ margin: 0; padding: 0; width: 8.5in; height: 10.97in;
+  background: {INK}; color: #FCFBF8;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+.wrap {{ position: relative; width: 8.5in; height: 10.97in; overflow: hidden; }}
+</style></head><body><div class="wrap">
+<div style="position:absolute;top:1.05in;left:0.95in;right:0.95in;
+  border-top:3px solid #FCFBF8;padding-top:0.28in;
+  font-family:'{HEAD_FACE}';font-size:11pt;letter-spacing:0.34em;color:#B8BEC6">
+  MICROPROSE · 1994 · MS-DOS</div>
+<div style="position:absolute;top:1.75in;left:0.95in;right:0.95in;
+  font-family:'URW Gothic';font-size:34pt;line-height:1.14">
+  Sid Meier's<br>COLONIZATION</div>
+<div style="position:absolute;top:3.55in;left:0.95in;right:0.95in;display:flex;height:0.14in">{strip}</div>
+<div style="position:absolute;top:3.95in;left:0.95in;right:0.95in;
+  font-family:'URW Gothic';font-size:19pt;color:#DCEBEA">Technical Reference</div>
+<div style="position:absolute;top:4.75in;left:0.95in;right:2.0in;
+  font-family:'Charter RE';font-size:10.5pt;line-height:1.6;color:#C9CDD3">
+  The shipped MS-DOS release, documented from its binaries and data files.
+  Executables and overlay architecture · asset containers · terrain and the map
+  compositor · colonies, market, and the native economy · units, movement, and
+  combat · powers, diplomacy, and revolution · events and strings · the UI
+  engine, screen by screen · the map editor · data structures.</div>
+<div style="position:absolute;bottom:1.0in;left:0.95in;right:0.95in;
+  border-top:1px solid #4A505A;padding-top:0.18in;
+  font-family:'{HEAD_FACE}';font-size:8.5pt;letter-spacing:0.16em;color:#8A939C">
+  RECONSTRUCTED BY DISASSEMBLY OF VICEROY.EXE AND MAPEDIT.EXE · EVERY FIGURE
+  TRACED TO A FILE OFFSET, A DATA-FILE FIELD, OR LIVE GAME MEMORY — OR MARKED
+  UNMAPPED</div>
+</div></body></html>"""
+
+
+# --------------------------------------------------------------------------
+# 8. Merge
+# --------------------------------------------------------------------------
+
+def merge(body_pdf, overlay_pdf, cover_pdf, out_pdf, marks, sections):
+    from pypdf import PdfReader, PdfWriter
+    body = PdfReader(str(body_pdf))
+    over = PdfReader(str(overlay_pdf))
+    cover = PdfReader(str(cover_pdf))
+    w = PdfWriter()
+    w.add_page(cover.pages[0])
+    for i, page in enumerate(body.pages):
+        if i < len(over.pages):
+            page.merge_page(over.pages[i])
+        w.add_page(page)
+    for page in w.pages:  # merge_page leaves content streams uncompressed
+        page.compress_content_streams(level=6)
+    sec_titles = {s[0]: s[1] for s in sections}
+    w.add_outline_item("Contents", 1)
+    for roman, ptitle, keys in PARTS:
+        pp = marks.get(f"part-{roman}")
+        node = w.add_outline_item(f"Part {roman} — {ptitle}", (pp or 1))
+        for k in keys:
+            sp = marks.get(f"sec-{k}")
+            if sp:
+                w.add_outline_item(f"§{k}  {sec_titles[k]}", sp, parent=node)
+    try:
+        w.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+    except Exception as e:
+        warn(f"object dedup skipped: {e}")
+    w.add_metadata({
+        "/Title": DOC_TITLE,
+        "/Author": "Reconstructed from the shipped 1994 binaries",
+        "/Subject": "Byte-verified technical reference for the MS-DOS release",
+        "/Creator": "colopy manual pipeline (MANUAL_BUILD_SPEC_1)",
+    })
+    with open(out_pdf, "wb") as fh:
+        w.write(fh)
+
+
+# --------------------------------------------------------------------------
+# main
+# --------------------------------------------------------------------------
+
+def main():
+    WORK.mkdir(exist_ok=True)
+    print("== load + preprocess")
+    about, body = load_source()
+    raw_sections = split_sections(body)
+    print(f"   {len(raw_sections)} sections")
+    print("== transform sections")
+    sections = []
+    for key, title, md_text in raw_sections:
+        html = build_section(key, title, md_text)
+        sections.append((key, title, md_text, html))
+        sys.stdout.write(".")
+        sys.stdout.flush()
+    print()
+
+    print("== pass 1 render (folio measurement)")
+    html1 = assemble(about, sections, folios=None)
+    (WORK / "body1.html").write_text(html1)
+    render_pdf(WORK / "body1.html", WORK / "body1.pdf", margins=MARGINS)
+    marks, npages = measure(WORK / "body1.pdf", sections)
+    missing = [f"sec-{k}" for k, _, _, _ in sections if f"sec-{k}" not in marks]
+    if missing:
+        warn(f"unmeasured section heads: {missing}")
+    print(f"   {npages} pages; {len(marks)} marks")
+
+    print("== pass 2 render (real contents)")
+    html2 = assemble(about, sections, folios=marks)
+    (WORK / "body2.html").write_text(html2)
+    render_pdf(WORK / "body2.html", WORK / "body2.pdf", margins=MARGINS)
+    marks2, npages2 = measure(WORK / "body2.pdf", sections)
+    if npages2 != npages or marks2 != marks:
+        print("   pagination shifted; pass 3 with fresh folios")
+        html3 = assemble(about, sections, folios=marks2)
+        (WORK / "body2.html").write_text(html3)
+        render_pdf(WORK / "body2.html", WORK / "body2.pdf", margins=MARGINS)
+        marks2, npages2 = measure(WORK / "body2.pdf", sections)
+    print(f"   final body: {npages2} pages")
+
+    print("== overlay + cover")
+    (WORK / "overlay.html").write_text(overlay_html(npages2, marks2, sections))
+    render_pdf(WORK / "overlay.html", WORK / "overlay.pdf",
+               margins={"top": "0", "bottom": "0", "left": "0", "right": "0"},
+               page={"prefer_css_page_size": True})
+    (WORK / "cover.html").write_text(cover_html())
+    render_pdf(WORK / "cover.html", WORK / "cover.pdf",
+               margins={"top": "0", "bottom": "0", "left": "0", "right": "0"},
+               page={"prefer_css_page_size": True})
+
+    print("== merge")
+    out = OUTDIR / "Viceroy_Technical_Reference.pdf"
+    merge(WORK / "body2.pdf", WORK / "overlay.pdf", WORK / "cover.pdf",
+          out, marks2, sections)
+    print(f"   wrote {out} ({out.stat().st_size:,} bytes)")
+    if WARNINGS:
+        print(f"== {len(WARNINGS)} warnings (see stderr)")
+    else:
+        print("== no warnings")
+
+
+if __name__ == "__main__":
+    main()
