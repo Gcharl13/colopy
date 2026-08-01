@@ -2137,7 +2137,7 @@ example: a treaty at Conquistador (d=2) buys 8 turns of AI restraint; with Frank
 
 Power ids 0–3 are the Europeans; ids 4–11 are the tribes in `@TRIBES` order
 (4 = Inca, 5 = Aztec, 6 = Arawak, 7 = Iroquois, 8 = Cherokee, 9 = Apache,
-10 = Sioux, 11 = Tupi — section 19.1). The King's power is not a fifth record: it
+10 = Sioux, 11 = Tupi — section 19.2). The King's power is not a fifth record: it
 reuses an eliminated European slot, its id held in `game.king_power`.
 
 
@@ -2815,216 +2815,483 @@ example: 900 raw points at Conquistador → (6×900)÷100 = 54 → ÷2 = 27; ran
 ```
 ## 19. Natives
 
-Eight tribes populate the map with individually tracked villages. The engine
-keeps three layers of native state: a 78-byte per-tribe record, an 18-byte
-per-village record, and two per-power anger signals (a per-village alarm word
-and a 0..100 tension meter). Village interaction — trade, missions, training,
-tribute, war — flows through a 10-entry action menu and the GAME.TXT
-`@CHIEF*`/`@VILLAGE*`/`@INDIAN*` families.
+Eight tribes populate the map with individually tracked villages. This chapter
+covers the whole native system in one place: the variables first, then every
+interaction in play order — meeting a tribe, entering its villages, trading,
+anger and alarm, missions, demands and hired wars, raids, and finally attacking
+and burning settlements. Everything here traces to the shipped binary or the
+original manual; where the binary has not yet given up a number, the item says
+so plainly (TBD) instead of guessing.
 
-### 19.1 Tribe records and ids
+### 19.1 The native state model — every variable
 
-TribeData holds eight 78-byte records, populated at game init from
-NAMES.TXT `@TRIBES`. Each record's level field is the settlement-size/level
-factor (the CHIEFKILL input); a status byte carries the **tribe-dead flag**,
-which the cheat-menu tribe list tests to grey out dead tribes.
-Village owner ids 4..11 follow `@TRIBES` order:
+The engine keeps native state in three layers:
 
-| id | tribe | gift good | level | sprite |
-|----|-------|-----------|-------|--------|
-| 4 | Incas | Jewelled Relics | 3 | 97 |
-| 5 | Aztecs | Gold Bars | 2 | 149 |
-| 6 | Arawaks | Bone Jewelry | 1 | 54 |
-| 7 | Iroquois | Wood Carvings | 1 | 87 |
-| 8 | Cherokee | Turquoise | 1 | 67 |
-| 9 | Apache | Beads | 0 | 111 |
-| 10 | Sioux | Beads | 0 | 118 |
-| 11 | Tupi | Gems | 0 | 71 |
+1. **One record per tribe** (eight live records) — the tribe's advancement
+   level, its life/death status, its trade stocks, and the per-power anger
+   seed rolled at map generation.
+2. **One 18-byte record per village** (up to 84, live count in
+   `game.settlement_count`) — position, owner, population, mission, trespass
+   memory, trade memory, and a per-European-power **alarm** word.
+3. **A per-(tribe, power) tension table** — a 0..100 anger meter read through
+   `get_tension()` and written only by the single applier `adjust_tension()`.
 
-(Reserve name-only tribes — Maya, Toltecs, Kiowa, … — follow in `@TRIBES` but
-never instantiate.) Tribe indices 0/1 = Inca/Aztec select the special first-
-contact woodcuts below.
-
-### 19.2 The village array (18-byte records)
+While a native event is being processed the engine keeps four context
+variables current: the active settlement record, the active tribe record, the
+tribe's index, and the tribe's power id (always the tribe index + 4).
 
 ```c
 typedef struct {                    // one 18-byte record per village
-    uint8_t map_x, map_y;           // +0x00/+0x01
-    uint8_t owner;                  // +0x02 tribe/power id 4..11
-    uint8_t flags;                  // +0x03 bit 0x04 capital (doubles value);
-                                    //        bit 0x02 "already taught"; bit 0x01 write-only
-    uint8_t population;             // +0x04 size (CHIEFKILL input)
-    uint8_t mission;                // +0x05 0xFF none; low nibble = owning power; bit 0x10 expert-mission
-                                    //        doubler (Brébeuf)
-    uint8_t growth_counter;         // +0x06 (runtime cross-ref; no static reader)
-    uint8_t trespass;               // +0x07 escalation counter (0xFE on trespass; bumped on trade)
-    uint8_t last_bought;            // +0x08 cargo id of last good bought
-    uint8_t last_sold;              // +0x09 write-only in the static image (init 0xFF)
-    uint16_t alarm[4];              // +0x0A per-European-power anger words (indexed settlement*9+power)
+    uint8_t map_x;                  // tile position
+    uint8_t map_y;                  //
+    uint8_t owner;                  // power id 4..11 = tribe index + 4
+    uint8_t flags;                  // 0x04 capital; 0x02 taught; 0x01 write-only bit
+    uint8_t population;             // village size — the raze-payout input (2026-05-30 ruling)
+    uint8_t mission;                // 0xFF none; low nibble owner; 0x10 expert (Brébeuf)
+    uint8_t unused_6;               // never accessed (stale "growth counter" gloss withdrawn)
+    uint8_t trespass;               // escalation memory: set on trespass, bumped by trade
+    uint8_t last_bought;            // cargo id of the last good bought here
+    uint8_t last_sold;              // write-only (initialised, never read)
+    uint16_t alarm[4];              // per-power anger words — war and raids at 128+
 } NativeSettlement;
 ```
 
-The per-power **anger words** (`alarm[power]`) drive the war state at
-alarm ≥ 128. A parallel 0..100 **tension table** (39 words per village
-row, only columns 0..3 used) is written solely by the applier adjust_tension:
-`tension += delta`, clamped [0,100], with positive deltas halved for the French
-power and for Pocahontas owners; thresholds 75 = hostile,
-100 = war. Notable deltas: ±1 per-turn drift, +1/+2/+3
-trespass, −4 successful trade, +100 incite/burial-ground desecration,
-mission established a computed negative (clamped so tension ≤ 70).
+```c
+typedef struct {                    // one record per tribe (8 live)
+    uint8_t _pad0[2];               // unmapped
+    uint8_t level;                  // tech level 0..3 — the camp/village/city class
+    uint8_t status;                 // bit 0x80 = tribe wiped out
+    uint8_t _pad1[3];               // unmapped
+    uint8_t muskets_known;          // haggle: musket sell price scales on 12 - this
+    uint8_t horses_known;           // haggle: horse sell price scales on 10 - this
+    uint8_t _pad2;                  // unmapped
+    uint16_t horses_stock;          // village-supply model input
+    uint16_t silver_stock;          // village-supply model input
+    uint16_t goods_stock[16];       // per-good stock folded into supply/demand
+    uint8_t _pad3[24];              // unmapped
+    uint16_t alarm_seed[4];         // per-power starting anger, rolled at map creation
+} TribeData;
+```
+
+**The two anger meters.** They are separate and both matter:
+
+- `settlement.alarm[power]` — a per-village word. At **128 or more** the
+  village is on a war footing toward that power: it becomes a raid source and
+  poisons colony-site desirability. This is also the number the village-entry
+  code uses to swap *Trade With Village* for *Enter Hostile Village* at **75**.
+- **tension(tribe, power)** — the 0..100 tribe-level meter. **75 and above is
+  hostile; 100 is war.** Every change goes through `adjust_tension()`, which
+  clamps the result to 0..100 and **halves every positive (angering) delta**
+  for France and for any power that has **Pocahontas** in Congress. (The
+  applier's fourth "category" argument is passed by all 33 callers and read by
+  none — it is dead.)
+
+The visible **attitude phrase** (Content / Uneasy / Restless / Angry, dressed
+with Extremely / Very / Rather / Somewhat / Slightly) is a display banding of a
+colonial-presence score at cutoffs −5 / 0 / 10; *War* is the separate
+alarm ≥ 128 state. The presence score's exact composition is multi-term and not
+fully decomposed — TBD.
+
+*Data-model corrections carried by this chapter:* byte 6 of the village record
+is dead (the "growth counter" gloss in Appendix A.7 is stale), the alarm block
+is four 16-bit words (not byte pairs), and the old "visited"/"event-eligible"
+flag labels are withdrawn — no instruction sets or tests them.
+
+### 19.2 The eight tribes
+
+Tribe identity loads from NAMES.TXT `@TRIBES` at game start. The **color**
+column is the tribe's palette index — the tint of its orders boxes and map
+markings, exactly parallel to the European powers' colors (England 12,
+France 9, Spain 14, Netherlands 13) per the 2026-08-01 ruling. The
+**settlement** column shows the map art each tribe's class draws: camps for
+semi-nomadic tribes, long-houses for agrarian villages, and the two unique
+city sets; a tribe's **capital** carries a golden star overlay on the same
+art. (The art classes are hand-verified from the shipped sheets; the exact
+code site that selects the frame per tribe is not yet traced — TBD.)
+
+| id | tribe | class | gift good | color | settlement |
+|----|-------|-------|-----------|-------|------------|
+| 4 | Incas | 3 — Civilized (Cities) | Jewelled Relics | 97 | Inca city |
+| 5 | Aztecs | 2 — Advanced (Cities) | Gold Bars | 149 | Aztec city |
+| 6 | Arawaks | 1 — Agrarian (Villages) | Bone Jewelry | 54 | village |
+| 7 | Iroquois | 1 — Agrarian (Villages) | Wood Carvings | 87 | village |
+| 8 | Cherokee | 1 — Agrarian (Villages) | Turquoise | 67 | village |
+| 9 | Apache | 0 — Semi-Nomadic (Camps) | Beads | 111 | camp |
+| 10 | Sioux | 0 — Semi-Nomadic (Camps) | Beads | 118 | camp |
+| 11 | Tupi | 0 — Semi-Nomadic (Camps) | Gems | 71 | camp |
+
+The id column is the village record's `settlement.owner` value — tribe index
+plus 4, a convention both the destroy path and the display path agree on.
+`@TRIBES` continues with eighteen reserve, name-only tribes that never
+instantiate (Maya, Toltecs, Kiowa, Hurons, Hopi, Navajo, Cheyenne, Cree,
+Algonquin, Powhatan, Delaware, Shawnee, Illinois, Chickasaw, Choctaw,
+Seminole, Mohicans, Zapotec). The class row "Capital" in NAMES `@LEVELS` is a
+settlement *type*, not a fifth tech level.
+
+When a native speaks, the dialog portrait sheet is chosen by name —
+`IND<tribe><pose>` — via `pick_native_portrait()`: the speaker channel holds
+the tribe index (values above 7 switch to the King's portraits), and the pose
+digit is a banding of the tribe's current tension toward the viewing power
+(the banding helper's exact cut points are unresolved — TBD).
 
 ### 19.3 First contact
 
-First contact with a tribe shows woodcut 3
-"MEETING THE NATIVES" — or woodcut 4 "THE AZTEC EMPIRE" (tribe 1) / woodcut 5
-"THE INCA NATION" (tribe 0), with tune cues 0x33/0x35/0x36 — then the
-`@INDIANWELCOME` treaty offer:
+A tribe must be met **on land**; ships and wagons are refused with *"We must
+contact the Indians on land first, Excellency."* The meeting itself is driven
+by `native_events()`:
 
-> "The {%STRING0} tribe welcomes you. We are a glorious nation of
-> {%NUMBER0 %STRING1}. To celebrate our friendship, we generously offer you the
-> land you now occupy as a gift. Will you accept our treaty and live with us in
-> peace as brothers?"  — Yes / No
+1. A **woodcut** plays on the first meeting, chosen by tribe: *THE INCA
+   NATION* for the Incas, *THE AZTEC EMPIRE* for the Aztecs, and *MEETING THE
+   NATIVES* for the other six — each with its own tune, each latched
+   once-only in a seen-woodcuts bitmask.
+2. The chief then offers the **treaty**: *"The {tribe} welcomes you. We are a
+   glorious nation… we generously offer you the land you now occupy as a
+   gift. Will you accept our treaty and live with us in peace as brothers?"*
+   — Yes / No.
+3. **No** answers with *"Then the mighty {tribe} shall mercilessly drive you
+   from our shores. Prepare for WAR!"*
 
-### 19.4 Village visits
-
-Entering a village (woodcut 7 on the first) offers the NAMES `@ACTIONS` menu:
-Trade With Village · Enter Hostile Village · Establish Mission · Denounce Heresy
-of %Fs Mission · Live Among The Natives · Ask to Speak With Chief · Incite
-Indians · Demand Tribute · Attack Village · Cancel Action.
-
-- **Supply/demand**: the trade pricing, the "especially interested in …" line
-  and the `@INDIANBEGFOOD`/`@INDIANGIVEFOOD` food events are all driven by the
-  village supply/demand routine — section 10 documents it in
-  full (phases, capital ×2 boost, consumers).
-- **Training** ("Live Among The Natives"): only outdoors skills are learnable;
-  Petty Criminals are refused (`@LEARNCRIMINAL`); masters are refused
-  (`@LEARNMASTER`); each village teaches once — the grant writes the
-  profession into the unit's expertise byte and stamps the village's
-  already-taught flag (`@LEARNALREADY`). Unskilled colonists succeed on
-  `random_int(1,1000) ≥ 200*difficulty + 100`, i.e. 90/70/50/30/10 %.
-- **Chief audience** (`@CHIEFHOWDY`/`@CHIEFGIFT`/`@CHIEFAREA`/`@CHIEFGUIDES`):
-  gift beads scaled by tribe, map-area reveal for scouts; `@CHIEFKILL` is the
-  taboo execution outcome of razing.
-
-### 19.5 Missions
-
-`Establish Mission` places a mission: the village's mission field records the
-owning power, with the expert bit set when the founding power has Jean de
-Brébeuf; acquiring Brébeuf retroactively upgrades all own missions. Conversion
-(attempt_conversion, "INDIANSCONVERT"): each eligible turn rolls `random_int(0,15)`
-against `threshold = tribe_level + 2`, doubled by the expert bit — success
-spawns an Indian Convert (class 0x1B) at the colony. A destroyed
-mission or expelled missionary applies a computed positive tension delta.
-
-### 19.6 Attitude and anger displays
-
-The village attitude phrase is built from a colonial-presence score banded at
-cutoffs −5 / 0 / 10 into Content / Uneasy / Restless / Angry; War is the
-separate alarm ≥ 128 state. The per-power
-European attitude byte is a distinct diplomacy signal (section 15.5).
-Pocahontas resets all village attitudes to content on acquisition and halves
-subsequent tension rises. Debug bit 0x01 of `game.debug_flags` ("Anger & Friction
-Levels") overlays the live anger word for the viewing power — a white number
-at village pixel (+2,+9) — and appends
-eight per-tribe rows to the map info panel.
-
-### 19.7 Village destruction (and the Kill-Indians cheat)
-
-Razing (raze_settlement) rolls a village-escape check `random_int(0, 40*scout+100)`
-(scout = Seasoned-Scout attacker bonus) with re-rolls biased by size; on a raze
-the treasure is `(Σ 3×random_int(0,10-diff)) * random_int(0,6) * 4 * (tier+1)`,
-credited straight to the attacker's gold. The
-cheat-menu item 0x67 "Kill Indians" exposes the same internals: it
-builds the live tribe list from TribeData (skipping tribes with the dead flag
-set) and calls a helper routine that destroys every village whose owner equals
-tribe+4 — confirming the owner-id convention and the destroy path used by combat.
-
-
-### 19.8 Loot — razing settlements and capturing colonies
-
-**Indian settlement raze** (the `@CHIEFKILL` path, raze_settlement):
-
-`gold = (Σ of 3 rolls of random_int(1, 10−diff)) · random_int(1,6) · 4 · (size+1)`
-
-— three rolls summed, times `random_int(1,6)`,
-times 4, times the size factor, credited as a 32-bit value
-straight to the attacker's treasury `power.gold`.
-**No ×100 and no Treasure unit on this path.** The size factor carries a
-documented in-repo conflict: the appendix traces it to `tribe.tribe_id`,
-while the 2026-05-30 ruling (user-verified) identifies it as
-`settlement.population` population — the tribe-id read was the "Apache richer
-than Aztec" bug. Difficulty ceilings at size factor 21: 15,120 / 13,608 /
-12,096 / 10,584 / 9,072 (Discoverer→Viceroy). The roll *before* the formula is
-the village-survives check, not the payout: scout bonus for Seasoned Scouts,
-`random_int(0, 40·scout+100)` re-rolled against
-settlement size, tribe-2 bound `(8−diff)<<scout`; size ≥ 75 branches
-to the big-treasure path. Capital razes exceed the formula ceiling
-in both captured data points — a capital-only bonus exists whose magnitude is
-unmapped (TBD). The **Treasure-unit spawn** lives on the colony-combat path
-(resolve_attack): `spawn_unit(type 0xA)`, value/100 stored in the
-unit's class byte, ×100 for display, `@LOOT`/`@LOOT2`.
-Cortés does not touch raze gold — his documented effect is the King's cut of
-*transported* treasure (cash_in_treasure: cut = tax rate with Cortés, else
-`max(5·diff+50, 2·tax)` clamped ≤ 90 — the `@LOOTCASH`
-`%NUMBER1`).
+The tribe's starting disposition was already fixed at map creation, when
+`place_native_settlements()` rolled each tribe's per-power anger seed:
 
 ```formula
-raze gold = ( r₁ + r₂ + r₃ ) × r₄ × 4 × ( size + 1 )        rᵢ = random(1 .. 10−d),  r₄ = random(1..6)
-example: Explorer razes a size-8 village: rolls 5+7+3 = 15 → ×4 (r₄) = 60 → ×4 = 240 → ×9 = 2,160 gold
+starting anger(power) = random(0..14) + 2·difficulty        the +2·difficulty applies to HUMAN powers only; result saturates at 20
+example: at Conquistador (difficulty 2) a roll of 9 seeds the tribe's anger toward you at 9 + 4 = 13; toward an AI rival the same roll stays 9
 ```
 
-**European colony capture** (inside resolve_attack, math):
+Two greeting variants (a *worthy* tone and a *ruthless* tone) and a separate
+treaty text exist in the game's script with no traced trigger — the condition
+that selects them is TBD. There is also **no tribe-side "met" latch** in the
+decoded state (the European powers keep one in their relation matrix); how the
+engine remembers a tribe has been met is untraced — TBD.
 
-`loot = (colony.population · victim.gold) / max(Σ populations of victim's colonies, 1)`
+### 19.4 Entering a village — the ten actions
 
-— the captured colony's population field is read, the victim's whole-empire
-population summed over the colony table (owner-matched),
-the divisor clamped ≥ 1, the arithmetic done as a 32-bit multiply/divide,
-and the gold then moves from victim to attacker — the
-victim loses a population-weighted *share of its entire treasury*. The block
-is **gated off during the War of Independence** (the `game.flags` war
-bit). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
-{%NUMBER0$} plundered!"). No Crown cut exists on this path; `@LOOTCASH`
-belongs to treasure-fleet arrival only.
+Moving a unit onto a village (first time: the *ENTERING INDIAN VILLAGE*
+woodcut, human players only) greets you with an attitude line — *"Your
+expedition has reached a %s of {tribe}…"* dressed as Happy / Medium / Savage /
+Bad / War — and opens the NAMES `@ACTIONS` menu. `enter_village()` is the only
+consumer of that menu; it enables rows like this:
+
+| # | action | offered when |
+|---|--------|--------------|
+| 1 | Trade With Village | village alarm toward you below 75 |
+| 2 | Enter Hostile Village | replaces Trade at alarm 75 and above |
+| 3 | Establish Mission | unit is a Missionary and no mission stands here |
+| 4 | Denounce Heresy of %F's Mission | a foreign power's mission stands here |
+| 5 | Live Among The Natives | relations ≥ 0, tribe posture below 2, unit is not a Scout |
+| 6 | Ask to Speak With Chief | unit is a Scout |
+| 7 | Incite Indians | tribe posture nonzero |
+| 8 | Demand Tribute | tribe posture nonzero, and the unit is not a ship |
+| 9 | Attack Village | tribe posture above 1 |
+| 10 | Cancel Action | always |
+
+("Tribe posture" is a per-tribe state byte the gate code reads; its storage is
+traced but its semantic — likely a peace/war stance — is not yet decoded, TBD.)
+Angry villages turn traders away outright: ships get *"mad at ships"*, wagon
+trains get warned, then killed outright — *"Our wagon train has disappeared
+without a trace in {tribe} country."*
+
+**The chief's audience (Scouts).** Speaking with the chief runs through the
+same handler that later computes raze loot, `raze_settlement()`. Documented
+outcomes: the trade briefing (*"known for our {craft}. We would gladly trade
+if you bring us {good}…"* — built by sorting the village's live demand), the
+offer of **guides**, the **map-area reveal** ("tales of nearby lands"), the
+**beads gift** (*"Please take these valuable beads (worth {N})"*), a polite
+nothing, and — for taboo-breakers — *"You have broken sacred taboos… We shall
+tie you up for target practice."* Which arm fires is steered by a sub-mode
+argument whose selector is untraced (TBD); the beads amount and the reveal
+radius are likewise TBD. The manual warns a scout can die in the attempt,
+"influenced by the mood of the tribe" — no odds are traced.
+
+**Living among the natives (training).** `live_among_natives()` teaches only
+outdoor skills — Expert Farmer, Fisherman, Fur Trapper, Silver Miner, the
+three Master Planters, Seasoned Scout. Petty Criminals are refused
+("even the greatest teacher must have suitable material"), colonists who
+already master a profession are refused, and **each village teaches exactly
+once** — the grant writes the profession into the unit and stamps the
+village's already-taught flag. Unskilled colonists learn at once on a
+difficulty roll:
+
+```formula
+learn succeeds when random(1..1000) ≥ 200·difficulty + 100        = 90 / 70 / 50 / 30 / 10 %  from Discoverer down to Viceroy
+example: at Explorer (difficulty 1) a Free Colonist needs 300+ on the thousand-roll — 70 % — otherwise "you must live among us longer" and may retry
+```
+
+Which skill a given village offers is stored nowhere that has been mapped —
+the per-settlement skill field is TBD.
+
+### 19.5 Trading with a village
+
+**What the village wants** is recomputed by `village_supply_demand()` — the
+full three-phase model (claimed-tile mask, 5×5 terrain scan, tribe-level
+supply and demand formulas) is documented in §10. Its outputs are two 16-good
+arrays, *demand* and *supply*, with two headline behaviours: a **capital
+doubles** its demand for raw goods (×1.5 for tools/muskets/trade goods) and
+doubles its supply of manufactures; and a village whose computed food demand
+outruns supply begs food from a visiting cargo (*"our people are hungry"*),
+while a fat surplus triggers the corn gift (*"accept this gift of corn"*).
+The chief's *"especially interested in…"* line names the top of the sorted
+demand list.
+
+**Selling.** The village prices your cargo in one pass, then haggles:
+
+```formula
+sell offer = max( 1, ( max(0, seed·demand) + 5·mood ) · qty / 100 / 2 )        seed = 2·( base − difficulty − want + mood + 4 ),  mood = random(1..5)
+| base is 6 for raw goods and 7 for manufactures, then per-good colour: Furs −random(0..7) · Muskets +(12 − tribe.muskets_known) · Horses +(10 − tribe.horses_known) · Trade Goods +1
+| want = the village's interest rank in the good, halved once its stock of it reaches 20, forced to 0 for muskets and horses
+example: 100 Cloth to a village with demand-stock 10, mood 4, at Explorer: seed = 2·(7−1−2+4+4) = 24 → (24·10 + 20)·100/100 = 260 → halved = 130 gold offered
+```
+
+```formula
+haggle budget = random(1..rounds) + qty/4        rounds = min( 3, (demand − want + 4)/10 )
+example: demand-stock 10, want 2 → rounds = 1; selling 100 units gives a budget of 1 + 25 = 26 — the village walks away when the budget is spent
+```
+
+**Buying.** The village prices its own goods the other way up:
+
+```formula
+buy price = max( 50, qty·ask/100 + ( difficulty + random(0..2) )·10 )
+| ask starts at 200 — for horses and manufactures it is (8 − tribe.level)·50 instead — then, for silver and better: + market price · (2·difficulty + 15)
+| then + random(0..ask),  − 4 · (village's surplus of the good),  + 4 · (tribe's tension toward you)
+example: 100 Horses from an Agrarian village (level 1): ask = 350, +34 market term, +200 rolled, −24 surplus, +52 tension = 612 → 612 + 20 = 632 gold
+```
+
+A closed deal moves the gold through your treasury (`power.gold`, 32-bit both
+ways, with an honest can't-afford check), records the good in
+`settlement.last_bought`, adds 25 to the village's wealth word, bumps its
+trade counter — and credits **−4 goodwill** on the tribe's tension. The
+haggle script also carries a *"No, let the goods be our gift to you"* row;
+the gift's tension credit is untraced (TBD), though the original manual says
+gifts cool anger faster than sales. Two manual-attested behaviours round out
+the loop: a village will not buy the same good twice in a row (muskets
+excepted), and red-alarm villages refuse all trade.
+
+### 19.6 Alarm and anger — everything that raises and lowers it
+
+All tension changes flow through the single applier `adjust_tension()`
+(clamp 0..100; positive deltas halved for France and for Pocahontas owners).
+The complete traced ledger:
+
+| source | change | notes |
+|---|---|---|
+| cooling drift (quiet turn) | −1 | fires as the tribe's spread counter crosses −8 |
+| heating drift (pressure turn) | +1 | crosses +8 |
+| normalization sweep | −1 | decay loop over settlements |
+| minor trespass | +1 | crossing tribal land |
+| moderate trespass | +2 | also stamps the village's trespass memory |
+| severe trespass | +3 | |
+| successful trade | −4 | goodwill credit after a closed deal |
+| mission established | −computed | result additionally capped at 70 — a new mission always pulls the meter out of the war band |
+| mission destroyed / missionary expelled | +computed | magnitude formula untraced (TBD) |
+| incite accepted — you are the target | +100 | instant war footing |
+| incite accepted — payer's reward | −100 | paired write for the paying power |
+| burial-ground desecration | +100 | the offending unit is executed |
+| agreeing to an ally's "smite the heathen" request | +100 | diplomacy-meeting row |
+
+Beyond the tribe meter, each village's **alarm word** is what actually arms
+raids (threshold 128) and the Trade/Hostile menu swap (75). The applier's tail
+also **propagates alarm to neighbouring settlements of the same owner**,
+clamping their words to two fixed levels — the trigger and semantics of that
+clamp are still undecoded (TBD).
+
+Six scripted anger notices (`@PISS0..5`) name the classic causes — road
+building, deforestation, foreign missionaries, unprovoked attacks, population
+pressure — but none carries a traced numeric delta (TBD). The original manual
+adds, at function level: colony size, building density and proximity raise
+alarm; muskets and cannon in a colony raise it; soldiers moved near a
+settlement raise it; a missionary working the settlement lowers it over time;
+everything is amplified when a capital is involved. The map shows the state
+as exclamation marks over the village, ramping pale green → blue → yellow →
+brown → red (a rival's alarm draws on that nation's colour).
+
+At map generation each tribe also received the per-power **starting seed** of
+§19.3 — difficulty's only other finger on the scale is the attitude evaluator,
+which spots the human a harsher demand threshold than any AI.
+
+### 19.7 Missions and conversion
+
+*Establish Mission* (Missionaries only, one mission per village) writes the
+founding power into the village's mission byte — with the **expert bit** set
+when the founding power holds **Jean de Brébeuf** in Congress; acquiring
+Brébeuf later retroactively upgrades every mission you own. Founding also
+applies the anger *reduction* of §19.6 (capped so the meter lands at 70 or
+below), and the map marks the village with a cross in the owner's colour (the
+manual: a brighter cross for expert missions).
+
+Each eligible turn the mission rolls for a convert via
+`attempt_conversion()`:
+
+```formula
+convert fires when random(0..15) < tribe.level + 2        the threshold doubles with Jean de Brébeuf
+example: an Aztec village (level 2) converts on 4 of the 16 roll values — one convert roughly every 4 turns; 8 of 16 with Brébeuf seated
+```
+
+A success spawns an **Indian Convert** at your colony (the colonist class
+that also enjoys the +1 staple bonus in the fields, §11). Converts that fail
+to join a colony within **eight turns** are eliminated "for loss of faith".
+Two Founding Fathers tune the pipeline: **Juan de Sepúlveda** adds +4 to the
+conversion metric; **Bartolomé de las Casas** subtracts 4 — and, on
+acquisition, upgrades every existing Convert to a Free Colonist. The
+per-turn scheduler (exactly when "each eligible turn" fires) is untraced —
+TBD.
+
+Losing a mission hurts twice: the tribe's computed anger *increase* of §19.6,
+and the church's outrage — *"{tribe} burn {power} missions!"* — when a
+war-footing tribe torches them. *Denounce Heresy* against a rival's mission
+resolves to one of two endings — your denouncing power wins (*"converts burn
+the {rival} mission and erect a new, {yours} one!"*) or loses (*"Loyal
+worshipers burn the {missionary} at the stake!"*); the win/lose roll is
+untraced (TBD; the manual ties it to the two powers' standing with the
+tribe).
+
+### 19.8 Demands, tribute, and hired wars
+
+**You demand tribute.** `demand_tribute()` derives an amount from the
+village's stores and clamps it:
+
+```formula
+tribute = clamp( raw, 10, min( 3·village wealth + 10, 100 ) )
+example: a village with wealth 12 yields at most min(46,100) = 46 units of the good — and never less than 10 when it yields at all
+```
+
+Outcomes run from goods handed over, through *"our people are poor"*, to the
+two refusals (laughter, or dark warnings). The raw pre-clamp derivation
+beyond "reads the settlement's stock" is TBD.
+
+**They demand from you.** War-footing tribes press claims: reparations in
+gold (*"The {tribe} people cry out for justice"* — trigger and amount
+untraced, TBD), the contents of passing **wagon trains** (hand them over or
+circle the wagons), or goods straight from a colony's stores (man the
+stockade / hand them over). Land, road-building and deforestation objections
+arrive with a **buy-off row** — pay the named compensation and the tribe
+withdraws the objection ("Very well, we withdraw our objection."). **Peter
+Minuit** in Congress zeroes all land payments.
+
+**Incite.** A unit in the village (posture permitting) can pay the tribe to
+take the warpath against a rival — *"We will gladly drive the {rival} from
+our ancestral lands in exchange for {N}."* Payment applies the +100/−100
+tension pair of §19.6: the tribe goes to instant war footing against the
+victim and warms to you. The asking price's formula is untraced (TBD); the
+manual names its three factors — your missions with the tribe, their attitude
+toward you, and their attitude toward the target.
+
+**Hired wars, the other direction.** In a European diplomacy meeting you can
+pay a rival power to *"ruthlessly smite the heathen"*:
+
+```formula
+smite fee = clamp( factor · their treasury / 2500, 10, 200 ) · 50        halved when the hired power carries a certain attribute bit (meaning untraced)
+example: hiring a power with factor 6 while they hold 30 000 gold: clamp(72, 10, 200) · 50 = 3 600 gold — and they declare war on the tribe
+```
+
+And an AI ally busy "subduing the notorious heathen {tribe}" may ask *you* to
+join — accepting instantly sets that tribe's tension toward you to war
+footing (+100).
+
+### 19.9 Raids
+
+When a village's alarm word toward a power stands at 128 or more it becomes a
+raid source; `native_raid()` runs the outcome machine:
+
+```formula
+raid fires when random(1..12) − 1 [ + (difficulty − 2) versus a human ] ≥ 3·K + 1        K untraced (TBD); severity = random(1..4), downgraded while turn < 40·(2 − difficulty)
+example: at Viceroy a roll of 8 gives 7, +2 human bias = 9, against a threshold of 7 → the raid proceeds; severity rolls random(1..4)
+```
+
+The severity dispatches five ways:
+
+| roll | outcome | message family |
+|---|---|---|
+| wiped out | the raiding party dies on the approach | "raiding party wiped out" |
+| 1 | stores looted — goods stolen from the colony; the village banks the haul | @RAIDSTORES |
+| 2 | havoc wreaked in the colony | @RAIDWREAK |
+| 3 | gold stolen | @RAIDGOLD |
+| 4 | a building burned — or a ship in port burned | @RAIDBURN / @RAIDSHIP |
+
+The concrete payloads behind wreak/gold/burn/ship beyond their messages are
+unmapped (TBD). A raid against a human colony plays the *INDIAN RAID*
+woodcut. When native war parties win in the field the aftermath messages take
+over — colonies overrun or burned outright, units lost with muskets or horses
+seized (feeding the tribe's armament state), or your soldiers driving them
+off. The early-game downgrade above is why the first decades stay survivable
+on the easier difficulties.
+
+### 19.10 Attacking a village — burn, loot, and extinction
+
+*Attack Village* (or marching a military unit in with hostile intent —
+confirmed by *"Shall we attack the {tribe}, Your Excellency?"*) resolves
+through the standard combat roll — `random(1..ATK+DEF) ≤ ATK` wins — with the
+defence side built from the terrain multiplier chain. **No dedicated
+native-settlement defence formula has been traced** (TBD): what is
+byte-verified is that a **capital doubles** the computed defence bonus, and
+the settlement's display strength scales with the tribe's level. The manual
+fills in the intent: cities are "much better defended… because of the large
+populations", villages less so, camps poorly.
+
+**How many attacks until it burns?** The honest state of the trace:
+
+- Each victorious attack enters `raze_settlement()`, which fetches the
+  village's hostility/size value and rolls the **survive-or-burn check**:
+  `random(0 .. 100)` — widened to 140 by a **Seasoned Scout** attacker.
+  Larger villages bias the check upward (the roll is re-rolled while
+  value/4 still exceeds it), one tribe gets a difficulty-scaled special
+  bound, and values of 75+ divert to a big-treasure branch.
+- The **per-attack population decrement has not been located in the
+  binary** — no instruction that lowers `settlement.population` on an attack
+  has been found anywhere in the decoded image (TBD), and the exact wiring
+  from the check to the destroy path is likewise untraced (TBD). What a
+  closure needs: a DOSBox trace watching the population byte across repeated
+  attacks. Until then: the *size* input below is the population per the
+  2026-05-30 ruling, and bigger populations demonstrably survive more
+  attacks — but the decrement rule itself is not yet byte-verified.
+
+**The payout.** When the village falls, the razing power collects gold on
+the spot:
+
+```formula
+raze gold = ( r₁ + r₂ + r₃ ) × r₄ × 4 × ( size + 1 )        rᵢ = random(1 .. 10−difficulty),  r₄ = random(1..6)
+example: an Explorer razes a size-8 village: rolls 5+7+3 = 15 → ×4 (r₄) = 60 → ×4 = 240 → ×9 = 2 160 gold straight to the treasury
+```
+
+The gold lands as a 32-bit credit in `power.gold` — **no ×100, and no
+Treasure unit on this path**. The *size* operand carries a documented
+conflict: the raw instruction reads the tribe's level byte, while the
+user-verified 2026-05-30 ruling identifies the true input as the village's
+population — the level read is the "Apache richer than Aztec" bug. Formula
+ceilings at size factor 21 run 15 120 / 13 608 / 12 096 / 10 584 / 9 072 from
+Discoverer to Viceroy — yet both captured **capital** razes exceed their
+ceiling, so a capital-only bonus exists whose magnitude is unmapped (TBD).
+The chief's execution scene (*"You have broken sacred taboos…"*) is the
+scripted send-off. Treasure **units** — the wagons a Galleon hauls home —
+spawn only on the colony-combat path, with the King's cut on arrival
+governed by `cash_in_treasure()` (§18).
+
+**What the map does next.** `remove_settlement()` retires the record:
+native units of the village are detached, the settlement table is compacted
+(every later record shifts down one slot, links repaired), the live count
+drops, and the tribe's settlement count falls. If it was the tribe's **last
+village**, the tribe's dead bit is set and *"The {tribe} tribe has been wiped
+out."* announces the extinction; a surviving tribe instead has the removed
+village's wealth fields scaled down by n/(n+1) — a correction of the older
+"spread across survivors" reading. (The debug menu's *Kill Indians* item
+drives exactly this machinery tribe-wide, greying out already-dead tribes.)
+Villages are born through `create_settlement()` — capped at 84 live
+records — and placed at map creation by `place_native_settlements()` from
+the dispersal chart.
+
+### 19.11 Aside — plundering European colonies
+
+For contrast with raze gold: capturing a **European** colony (the
+colony-combat path, disabled during the War of Independence) transfers a
+population-weighted share of the victim's whole treasury:
 
 ```formula
 plunder = captured colony's population × victim's whole treasury ÷ victim's total colony population
-example: take a pop-6 colony from a power holding 3,000 gold across 20 population → 6×3000÷20 = 900 gold
+example: taking a population-6 colony from a power holding 3 000 gold across 20 total population: 6 × 3000 ÷ 20 = 900 gold
 ```
 
-### 19.9 Alarm, tension, and raids
-
-Two meters exist. Per-settlement **alarm** words sit in `settlement.alarm`,
-indexed by power (raid/hostility trigger at ≥ 128).
-The separate **tension** table
-(39 words per village row, only the 4 European columns ever
-touched) runs 0..100 — hostile at ≥ 75, war at 100.
-The applier adjust_tension clamps every delta to [0,100] and **halves positive
-deltas** for France (power 1) and for any power holding
-**Pocahontas**. Documented deltas: per-turn drift ±1,
-trespass +1/+2/+3 by severity,
-successful trade −4, mission established — computed negative,
-clamped so tension ≤ 70; mission destroyed — computed positive;
-incite +100 / rival −100; **burial-ground desecration
-+100** — instant war footing. The six `@PISS0..5` anger-source
-strings (roads, deforestation, missionaries, unprovoked attack, population
-pressure) carry no documented numeric deltas — TBD.
-
-**Raids** (native_raid_outcome_dispatch, native_raid): gate roll
-`random_int(1,12) − 1`, biased +(d−2) against a human European owner,
-versus threshold `3·K + 1` (K's meaning is unmapped); then
-outcome `random_int(1,4)`, downgraded while `turn < 40·(2−d)`,
-dispatched five ways: `@RAIDSTORES` (goods stolen —
-bumps the settlement's raid-budget and wealth fields),
-`@RAIDWREAK`, `@RAIDGOLD`, `@RAIDBURN`/`@RAIDSHIP`,
-and `@RAIDNOTHING` — "raiding party wiped out".
-The concrete payloads of WREAK/BURN/GOLD/SHIP beyond their
-messages are unmapped — TBD.
-
-```formula
-raid fires when   random(1..12) − 1  [ + (d−2) versus a human ]   ≥   3K + 1
-example: at Viceroy a roll of 8 gives 7, +2 bias = 9 against a threshold of 7 → the raid proceeds; severity = random(1..4)
-```
+Natives never collect plunder this way — a native victory over a colony runs
+the burn/overrun messages of §19.9 instead.
 
 ## 20. Turn flow and persistence
 
@@ -5593,101 +5860,117 @@ The mechanics chapters use friendly names. This table binds every name back to t
 
 | Name | Binary routine |
 |---|---|
-| `acquire_father` | `func_03BC42` (file 03bc42) |
-| `adjust_tension` | `func_045DF2` (file 045df2) |
-| `ai_treaty_ticker` | `func_057DC0` (file 057dc0) |
-| `ai_war_planner` | `func_03ECF0` (file 03ecf0) |
-| `apply_combat_result` | `func_05B2C2` (file 05b2c2) |
-| `apply_tax_change` | `func_034318` (file 034318) |
-| `attempt_conversion` | `func_0572E6` (file 0572e6) |
-| `base_strength` | `func_007C2A` (file 007c2a) |
-| `buy_goods` | `func_0324F2` (file 0324f2) |
-| `buy_price` | `func_030566` (file 030566) |
-| `cash_in_treasure` | `func_05C878` (file 05c878) |
-| `check_immigration` | `func_0363A2` (file 0363a2) |
-| `classify_ship_move` | `func_03FA9C` (file 03fa9c) |
-| `combat_analysis_dialog` | `func_05E9B0` (file 05e9b0) |
-| `combat_result_wrapper` | `func_05BE30` (file 05be30) |
-| `complete_fortify` | `func_04101C` (file 04101c) |
-| `compute_score` | `func_03A9C0` (file 03a9c0) |
-| `compute_tile_yield` | `func_009B9C` (file 009b9c) |
-| `current_era` | `func_03B95A` (file 03b95a) |
-| `declaration_gate` | `func_03E984` (file 03e984) |
-| `declare_independence` | `func_03DE46` (file 03de46) |
-| `declare_intervention` | `func_03D948` (file 03d948) |
-| `defence_bonus` | `func_007D3E` (file 007d3e) |
-| `demand_tribute` | `func_04AC00` (file 04ac00) |
-| `diplomacy_phase` | `func_052F7E` (file 052f7e) |
-| `drift_prices` | `func_0305A8` (file 0305a8) |
-| `end_of_turn` | `func_0755CC` (file 0755cc) |
-| `evaluate_contact` | `func_059B90` (file 059b90) |
-| `father_cost` | `func_03C282` (file 03c282) |
-| `find_path_step` | `func_061F02` (file 061f02) |
-| `grow_population` | `func_009318` (file 009318) |
-| `grow_royal_fund` | `func_03E162` (file 03e162) |
-| `hall_of_fame` | `func_03ADA6` (file 03ada6) |
-| `immigration_threshold` | `func_035D9A` (file 035d9a) |
-| `is_boycotted` | `func_030B38` (file 030b38) |
-| `king_phase` | `func_03E664` (file 03e664) |
-| `land_intervention_force` | `func_03D510` (file 03d510) |
-| `load_terrain_table` | `func_0745F0` (file 0745f0) |
-| `load_unit_stats` | `func_074EC3` (file 074ec3) |
-| `lost_city_rumor` | `func_061454` (file 061454) |
-| `market_day` | `func_036574` (file 036574) |
-| `mobilize_continentals` | `func_03E2EA` (file 03e2ea) |
-| `move_ship` | `func_03FDDE` (file 03fdde) |
-| `native_attitude` | `func_046500` (file 046500) |
-| `native_raid` | `func_05BE84` (file 05be84) |
-| `next_immigrant_class` | `func_034C24` (file 034c24) |
-| `next_rank` | `func_05E714` (file 05e714) |
-| `offer_wartime_mercenaries` | `func_03E442` (file 03e442) |
-| `orders_phase` | `func_024A48` (file 024a48) |
-| `periodic_phase` | `func_02F3A2` (file 02f3a2) |
-| `pick_father_candidates` | `func_03BFD2` (file 03bfd2) |
-| `place_immigrant` | `func_030C68` (file 030c68) |
-| `place_native_settlements` | `func_065D26` (file 065d26) |
-| `placement_seed` | `func_009726` (file 009726) |
-| `production_phase` | `func_02F052` (file 02f052) |
-| `random_int` | `func_00C322` (file 00c322) |
-| `raze_settlement` | `func_04A7CA` (file 04a7ca) |
-| `record_purchase` | `func_0322D0` (file 0322d0) |
-| `record_sale` | `func_03234A` (file 03234a) |
-| `resolve_attack` | `func_05CA7E` (file 05ca7e) |
-| `resolve_worked_good` | `func_009974` (file 009974) |
-| `resource_bonus` | `func_009AAA` (file 009aaa) |
-| `rotate_music` | `func_004EE6` (file 004ee6) |
-| `rumor_at_tile` | `func_006188` (file 006188) |
-| `run_colonist_production` | `func_009FFC` (file 009ffc) |
-| `run_diplomacy_meeting` | `func_057F4E` (file 057f4e) |
-| `run_goto` | `func_040E22` (file 040e22) |
-| `run_trade_route` | `func_041080` (file 041080) |
-| `scan_raid_targets` | `func_047320` (file 047320) |
-| `schedule_king_demand` | `func_036138` (file 036138) |
-| `score_base` | `func_03B36A` (file 03b36a) |
-| `score_components` | `func_039EE2` (file 039ee2) |
-| `seed_market` | `func_07561C` (file 07561c) |
-| `select_colony` | `func_0082DC` (file 0082dc) |
-| `sell_goods` | `func_032914` (file 032914) |
-| `sell_price` | `func_030590` (file 030590) |
-| `set_unit_owner` | `func_00738E` (file 00738e) |
-| `shore_bombardment` | `func_02D3C6` (file 02d3c6) |
-| `shuffle_building_plots` | `func_025D34` (file 025d34) |
-| `sons_of_liberty_percent` | `func_008524` (file 008524) |
-| `spanish_succession` | `func_03C638` (file 03c638) |
-| `spawn_unit` | `func_006D24` (file 006d24) |
-| `spend_tools` | `func_040608` (file 040608) |
-| `starve_population` | `func_008FB4` (file 008fb4) |
-| `tax_level_warning` | `func_0349F4` (file 0349f4) |
-| `tax_petition` | `func_034AE0` (file 034ae0) |
-| `tory_uprising` | `func_03CAC6` (file 03cac6) |
-| `tune_id` | `func_004DF8` (file 004df8) |
-| `turn_loop` | `func_005760` (file 005760) |
-| `update_colony` | `func_02D658` (file 02d658) |
-| `update_congress` | `func_03C322` (file 03c322) |
-| `update_power_sentiment` | `func_03E844` (file 03e844) |
-| `work_clear_plow` | `func_040656` (file 040656) |
-| `work_road` | `func_0409D6` (file 0409d6) |
-| `worker_at_tile` | `func_008956` (file 008956) |
+| `acquire_father()` | `func_03BC42` (file 03bc42) |
+| `adjust_tension()` | `func_045DF2` (file 045df2) |
+| `ai_treaty_ticker()` | `func_057DC0` (file 057dc0) |
+| `ai_war_planner()` | `func_03ECF0` (file 03ecf0) |
+| `apply_combat_result()` | `func_05B2C2` (file 05b2c2) |
+| `apply_tax_change()` | `func_034318` (file 034318) |
+| `attempt_conversion()` | `func_0572E6` (file 0572e6) |
+| `base_strength()` | `func_007C2A` (file 007c2a) |
+| `burn_missions()` | `func_045D00` (file 045d00) |
+| `buy_goods()` | `func_0324F2` (file 0324f2) |
+| `buy_price()` | `func_030566` (file 030566) |
+| `cash_in_treasure()` | `func_05C878` (file 05c878) |
+| `check_immigration()` | `func_0363A2` (file 0363a2) |
+| `classify_ship_move()` | `func_03FA9C` (file 03fa9c) |
+| `combat_analysis_dialog()` | `func_05E9B0` (file 05e9b0) |
+| `combat_result_wrapper()` | `func_05BE30` (file 05be30) |
+| `complete_fortify()` | `func_04101C` (file 04101c) |
+| `compute_score()` | `func_03A9C0` (file 03a9c0) |
+| `compute_tile_yield()` | `func_009B9C` (file 009b9c) |
+| `create_settlement()` | `func_046E18` (file 046e18) |
+| `current_era()` | `func_03B95A` (file 03b95a) |
+| `declaration_gate()` | `func_03E984` (file 03e984) |
+| `declare_independence()` | `func_03DE46` (file 03de46) |
+| `declare_intervention()` | `func_03D948` (file 03d948) |
+| `defence_bonus()` | `func_007D3E` (file 007d3e) |
+| `demand_tribute()` | `func_04AC00` (file 04ac00) |
+| `denounce_heresy()` | `func_048CA4` (file 048ca4) |
+| `destroy_tribe_villages()` | `func_046FC2` (file 046fc2) |
+| `diplomacy_phase()` | `func_052F7E` (file 052f7e) |
+| `drift_prices()` | `func_0305A8` (file 0305a8) |
+| `end_of_turn()` | `func_0755CC` (file 0755cc) |
+| `enter_village()` | `func_04B308` (file 04b308) |
+| `establish_mission()` | `func_048A3A` (file 048a3a) |
+| `evaluate_contact()` | `func_059B90` (file 059b90) |
+| `father_cost()` | `func_03C282` (file 03c282) |
+| `find_path_step()` | `func_061F02` (file 061f02) |
+| `get_tension()` | `func_0082A0` (file 0082a0) |
+| `grow_population()` | `func_009318` (file 009318) |
+| `grow_royal_fund()` | `func_03E162` (file 03e162) |
+| `haggle_trade()` | `func_049600` (file 049600) |
+| `hall_of_fame()` | `func_03ADA6` (file 03ada6) |
+| `immigration_threshold()` | `func_035D9A` (file 035d9a) |
+| `incite_natives()` | `func_04AF5E` (file 04af5e) |
+| `is_boycotted()` | `func_030B38` (file 030b38) |
+| `king_phase()` | `func_03E664` (file 03e664) |
+| `land_intervention_force()` | `func_03D510` (file 03d510) |
+| `live_among_natives()` | `func_04A426` (file 04a426) |
+| `load_terrain_table()` | `func_0745F0` (file 0745f0) |
+| `load_unit_stats()` | `func_074EC3` (file 074ec3) |
+| `lost_city_rumor()` | `func_061454` (file 061454) |
+| `market_day()` | `func_036574` (file 036574) |
+| `mobilize_continentals()` | `func_03E2EA` (file 03e2ea) |
+| `move_ship()` | `func_03FDDE` (file 03fdde) |
+| `native_attitude()` | `func_046500` (file 046500) |
+| `native_events()` | `func_056C3E` (file 056c3e) |
+| `native_raid()` | `func_05BE84` (file 05be84) |
+| `next_immigrant_class()` | `func_034C24` (file 034c24) |
+| `next_rank()` | `func_05E714` (file 05e714) |
+| `offer_wartime_mercenaries()` | `func_03E442` (file 03e442) |
+| `orders_phase()` | `func_024A48` (file 024a48) |
+| `periodic_phase()` | `func_02F3A2` (file 02f3a2) |
+| `pick_father_candidates()` | `func_03BFD2` (file 03bfd2) |
+| `pick_native_portrait()` | `func_06BE92` (file 06be92) |
+| `place_immigrant()` | `func_030C68` (file 030c68) |
+| `place_native_settlements()` | `func_065D26` (file 065d26) |
+| `placement_seed()` | `func_009726` (file 009726) |
+| `production_phase()` | `func_02F052` (file 02f052) |
+| `random_int()` | `func_00C322` (file 00c322) |
+| `raze_settlement()` | `func_04A7CA` (file 04a7ca) |
+| `record_purchase()` | `func_0322D0` (file 0322d0) |
+| `record_sale()` | `func_03234A` (file 03234a) |
+| `remove_settlement()` | `func_046EC0` (file 046ec0) |
+| `resolve_attack()` | `func_05CA7E` (file 05ca7e) |
+| `resolve_worked_good()` | `func_009974` (file 009974) |
+| `resource_bonus()` | `func_009AAA` (file 009aaa) |
+| `rotate_music()` | `func_004EE6` (file 004ee6) |
+| `rumor_at_tile()` | `func_006188` (file 006188) |
+| `run_colonist_production()` | `func_009FFC` (file 009ffc) |
+| `run_diplomacy_meeting()` | `func_057F4E` (file 057f4e) |
+| `run_goto()` | `func_040E22` (file 040e22) |
+| `run_trade_route()` | `func_041080` (file 041080) |
+| `scan_raid_targets()` | `func_047320` (file 047320) |
+| `schedule_king_demand()` | `func_036138` (file 036138) |
+| `score_base()` | `func_03B36A` (file 03b36a) |
+| `score_components()` | `func_039EE2` (file 039ee2) |
+| `seed_market()` | `func_07561C` (file 07561c) |
+| `select_colony()` | `func_0082DC` (file 0082dc) |
+| `sell_goods()` | `func_032914` (file 032914) |
+| `sell_price()` | `func_030590` (file 030590) |
+| `set_active_tribe()` | `func_0081C6` (file 0081c6) |
+| `set_unit_owner()` | `func_00738E` (file 00738e) |
+| `settlement_display_value()` | `func_046DE0` (file 046de0) |
+| `shore_bombardment()` | `func_02D3C6` (file 02d3c6) |
+| `shuffle_building_plots()` | `func_025D34` (file 025d34) |
+| `sons_of_liberty_percent()` | `func_008524` (file 008524) |
+| `spanish_succession()` | `func_03C638` (file 03c638) |
+| `spawn_unit()` | `func_006D24` (file 006d24) |
+| `spend_tools()` | `func_040608` (file 040608) |
+| `starve_population()` | `func_008FB4` (file 008fb4) |
+| `tax_level_warning()` | `func_0349F4` (file 0349f4) |
+| `tax_petition()` | `func_034AE0` (file 034ae0) |
+| `tory_uprising()` | `func_03CAC6` (file 03cac6) |
+| `tune_id()` | `func_004DF8` (file 004df8) |
+| `turn_loop()` | `func_005760` (file 005760) |
+| `update_colony()` | `func_02D658` (file 02d658) |
+| `update_congress()` | `func_03C322` (file 03c322) |
+| `update_power_sentiment()` | `func_03E844` (file 03e844) |
+| `village_supply_demand()` | `func_048F34` (file 048f34) |
+| `work_clear_plow()` | `func_040656` (file 040656) |
+| `work_road()` | `func_0409D6` (file 0409d6) |
+| `worker_at_tile()` | `func_008956` (file 008956) |
 
 ### C.2 Globals
 
@@ -5720,6 +6003,7 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `game.turn` | DGROUP `[0x538E]` |
 | `game.tutorial_seen` | DGROUP `[0x5386]` |
 | `game.unit_count` | DGROUP `[0x539C]` |
+| `game.woodcut_seen_mask` | DGROUP `[0x540A]` |
 | `game.year` | DGROUP `[0x538A]` |
 | `map.height` | DGROUP `[0x853C]` |
 | `map.seed` | DGROUP `[0x190]` |
@@ -5736,8 +6020,11 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `ref.regulars` | DGROUP `[0x53DA]` |
 | `rng.seed_hi` | DGROUP `[0x28F0]` |
 | `rng.seed_lo` | DGROUP `[0x28EE]` |
-| `settlement (active record)` | DGROUP `[0x8D4E]` |
-| `unit (active native record)` | DGROUP `[0x8D4A]` |
+| `settlement (active record)` | DGROUP `[0x8D4A]` |
+| `tribe (active index)` | DGROUP `[0x8D52]` |
+| `tribe (active record)` | DGROUP `[0x8D4E]` |
+| `tribe.power_id` | DGROUP `[0x8D50]` |
+| `ui.speaker_tribe` | DGROUP `[0x1F5C]` |
 
 ### C.3 Record fields
 
@@ -5756,10 +6043,11 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `colony.warehouse_level` | `ColonyRecord +0x95` |
 | `settlement.alarm` | `NativeSettlement +0x0A` |
 | `settlement.flags` | `NativeSettlement +0x03` |
+| `settlement.last_bought` | `NativeSettlement +0x08` |
 | `settlement.mission` | `NativeSettlement +0x05` |
+| `settlement.owner` | `NativeSettlement +0x02` |
 | `settlement.population` | `NativeSettlement +0x04` |
 | `settlement.trespass` | `NativeSettlement +0x07` |
-| `settlement.tribe` | `NativeSettlement +0x02` |
 | `power.artillery_bought` | `PowerRecord +0x1E` |
 | `power.back_tax` | `PowerRecord +0x4C` |
 | `power.bells_per_turn` | `PowerRecord +0x0E` |
@@ -5786,7 +6074,8 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `power.tax_rate` | `PowerRecord +0x01` |
 | `power.treaty_respect` | `PowerRecord +0x40` |
 | `tribe.alarm_seed` | `TribeData +0x46` |
-| `tribe.tribe_id` | `TribeData +0x02` |
+| `tribe.level` | `TribeData +0x02` |
+| `tribe.status` | `TribeData +0x03` |
 | `unit.flags` | `UnitRecord +0x04` |
 | `unit.kind` | `UnitRecord +0x02` |
 | `unit.moves_spent` | `UnitRecord +0x05` |

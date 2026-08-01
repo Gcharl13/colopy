@@ -340,6 +340,15 @@ EXAMPLES = {
     ("NativeSettlement", "last_bought"): "2 = Tobacco",
     ("NativeSettlement", "last_sold"): "255",
     ("NativeSettlement", "alarm"): "England 40 · France 12 · Spain 0 · Neth. 5",
+    ("NativeSettlement", "unused_6"): "—",
+    ("TribeData", "level"): "2 = Advanced (Aztecs)",
+    ("TribeData", "status"): "128 = tribe wiped out",
+    ("TribeData", "muskets_known"): "5",
+    ("TribeData", "horses_known"): "3",
+    ("TribeData", "horses_stock"): "40",
+    ("TribeData", "silver_stock"): "120",
+    ("TribeData", "goods_stock"): "Furs 60 · Tobacco 25…",
+    ("TribeData", "alarm_seed"): "England 13 · France 6 · Spain 9 · Neth. 4",
     ("StopRecord", "dest"): "colony 3  (999 = Europe)",
     ("StopRecord", "counts"): "load 2 · unload 1",
     ("StopRecord", "load_nib"): "Tools, Muskets",
@@ -1167,7 +1176,12 @@ def formula_cards(soup):
             elif s.lstrip().startswith("|"):
                 notes.append(s.lstrip()[1:].strip())
             else:
-                math.append(s)
+                # a run of 6+ spaces splits the math from a trailing
+                # annotation, which renders as a small note line
+                parts = re.split(r"\s{6,}", s, maxsplit=1)
+                math.append(parts[0])
+                if len(parts) > 1 and parts[1].strip():
+                    notes.append(parts[1].strip())
         mh = "<br/>".join(esc(m) for m in math)
         if notes:
             mh += "<br/>" + "<br/>".join(
@@ -2550,12 +2564,343 @@ def enrich_lcr(soup):
     warn("LCR anchor not found in section 23")
 
 
+TRIBE_SETTLEMENT_FRAMES = {  # notes/rulings/icon_catalog_verified.json
+    "camp": (10, "camp"), "village": (11, "village"),
+    "Aztec city": (12, "Aztec city"), "Inca city": (13, "Inca city")}
+
+
+def enrich_tribe_table(soup):
+    """§19.2 tribe table: colour numbers -> real palette swatches; the
+    settlement column -> the hand-verified ICONS.SS map art + capital star."""
+    for tbl in soup.find_all("table"):
+        heads = [th.get_text().strip().lower() for th in tbl.find_all("th")]
+        if "color" not in heads or "settlement" not in heads:
+            continue
+        ci, si = heads.index("color"), heads.index("settlement")
+        for tr in tbl.find_all("tr"):
+            tds = tr.find_all("td")
+            if len(tds) <= max(ci, si):
+                continue
+            ctext = tds[ci].get_text().strip()
+            if ctext.isdigit():
+                cell = BeautifulSoup(swatch_html(int(ctext)),
+                                     "html.parser")
+                tds[ci].clear()
+                tds[ci].append(cell)
+            stext = tds[si].get_text().strip()
+            if stext in TRIBE_SETTLEMENT_FRAMES:
+                disk, label = TRIBE_SETTLEMENT_FRAMES[stext]
+                img = SPR.frame_image("ICONS.SS", disk)
+                tag = SPR.img_tag(SPR.data_uri(img), img.width, img.height,
+                                  scale=1.6, title=label)
+                cell = BeautifulSoup(
+                    f'<span class="spcell">{tag}<span class="splab">'
+                    f'{esc(label)}</span></span>', "html.parser")
+                tds[si].clear()
+                tds[si].append(cell)
+        star = SPR.frame_image("ICONS.SS", 17)
+        cap = soup.new_tag("p")
+        cap.append(BeautifulSoup(
+            '<em>Capital overlay:</em> ' +
+            SPR.img_tag(SPR.data_uri(star), star.width, star.height,
+                        scale=1.6, title="capital star") +
+            ' <em>— the golden star drawn over the settlement art on each '
+            'tribe’s one capital.</em>', "html.parser"))
+        tbl.insert_after(cap)
+        return
+    warn("tribe colour/settlement table not found in section 19")
+
+
+def enrich_natives(soup):
+    enrich_tribe_table(soup)
+
+    _after_h3(soup, "First contact", dense_flow(
+        "First contact — from landfall to treaty", "native_events()",
+        [
+            {"k": "start", "t": "A UNIT MEETS A TRIBE — ON LAND ONLY"},
+            {"k": "act", "t": "ships and wagons are turned away", "cat": "pad",
+             "s": ["“We must contact the Indians on land first, "
+                   "Excellency.”"]},
+            {"k": "dec", "t": "first meeting with this tribe?",
+             "yes": ("woodcut plays, once ever",
+                     ["Inca → THE INCA NATION · Aztec → THE "
+                      "AZTEC EMPIRE",
+                      "all others → MEETING THE NATIVES",
+                      "latched in the seen-woodcuts mask"]),
+             "no": ("already met",
+                    ["straight to the village routes — §19.4"])},
+            {"k": "act", "t": "the treaty offer", "cat": "text",
+             "s": ["“We generously offer you the land you now occupy as "
+                   "a gift. Will you accept our treaty and live with us in "
+                   "peace as brothers?” — Yes / No"]},
+            {"k": "dec", "t": "accept the treaty?",
+             "yes": ("peace — for now",
+                     ["anger starts from the map-creation seed:",
+                      "random(0..14) + 2·difficulty (human only), "
+                      "capped 20"]),
+             "no": ("WAR",
+                    ["“Then the mighty {tribe} shall mercilessly drive "
+                     "you from our shores. Prepare for WAR!”"])},
+            {"k": "end", "t": "village interactions unlock — §19.4"},
+        ],
+        "Greeting variants (worthy/ruthless tone) and a separate treaty text "
+        "exist in the script with untraced triggers (TBD); no tribe-side "
+        "“met” latch has been decoded."))
+
+    _after_h3(soup, "Entering a village", route_map(
+        "The village menu — four routes through ten actions",
+        "enter_village() · gates as decoded from the row-enable code",
+        [
+            {"head": "TRADE & LIVE", "cat": "econ",
+             "img": SPR.frame_image("ICONS.SS", 8),
+             "cards": [
+                 ("Trade With Village",
+                  ["offered while village alarm < 75",
+                   "supply/demand pricing — §19.5"], "econ"),
+                 ("Enter Hostile Village",
+                  ["replaces Trade at alarm ≥ 75",
+                   "red-alarm villages refuse all trade"], "warn"),
+                 ("Live Among The Natives",
+                  ["not Scouts · posture < 2 · relations ≥ 0",
+                   "learn an outdoor skill; one teach per village",
+                   "success: roll ≥ 200·difficulty+100 of 1000"],
+                  "pos")]},
+            {"head": "SCOUT", "cat": "text",
+             "img": SPR.frame_image("ICONS.SS", 103),
+             "cards": [
+                 ("Ask to Speak With Chief",
+                  ["Scouts only — the chief’s audience"], "text"),
+                 ("→ trade briefing",
+                  ["“known for our {craft}… gladly trade if you "
+                   "bring us {good}”"], "text"),
+                 ("→ beads gift · guides · area reveal",
+                  ["gift amount and reveal radius untraced (TBD)"], "text"),
+                 ("→ taboo execution",
+                  ["“tie you up for target practice”",
+                   "arm selector untraced (TBD)"], "warn")]},
+            {"head": "MISSIONARY", "cat": "pos",
+             "img": SPR.frame_image("ICONS.SS", 105),
+             "cards": [
+                 ("Establish Mission",
+                  ["Missionaries only, none standing here",
+                   "anger pulled to ≤ 70",
+                   "expert bit with Brébeuf"], "pos"),
+                 ("Denounce Heresy",
+                  ["a foreign mission stands here",
+                   "win: their mission burns —",
+                   "lose: your missionary burns"], "flag")]},
+            {"head": "PRESSURE & WAR", "cat": "warn",
+             "img": SPR.frame_image("ICONS.SS", 109),
+             "cards": [
+                 ("Incite Indians",
+                  ["posture ≠ 0 — pay for a warpath",
+                   "tension +100 victim / −100 you"], "warn"),
+                 ("Demand Tribute",
+                  ["posture ≠ 0, never from ships",
+                   "clamp(raw, 10, min(3·wealth+10, 100))"], "econ"),
+                 ("Attack Village",
+                  ["posture > 1 — combat, then the",
+                   "burn check of §19.10"], "warn"),
+                 ("Cancel Action", ["always available"], "pad")]},
+        ],
+        "“Posture” is a traced-but-undecoded per-tribe state byte "
+        "(TBD). Wagon trains that press an angry village vanish without a "
+        "trace."))
+
+    _after_h3(soup, "Trading with a village", dense_flow(
+        "A trade session", "village_supply_demand() · haggle_trade()",
+        [
+            {"k": "start", "t": "TRADE WITH VILLAGE"},
+            {"k": "act", "t": "the village prices the moment", "cat": "num",
+             "s": ["demand & supply recomputed per good (§10 model)",
+                   "capital: demand ×2 raw, ×1.5 tools/muskets/"
+                   "trade goods; supply ×2 manufactures",
+                   "“especially interested in…” = top of the "
+                   "sorted demand"]},
+            {"k": "dec", "t": "which way is the deal?",
+             "yes": ("you sell",
+                     ["offer = max(1, (seed·demand + 5·mood)·"
+                      "qty/100/2)",
+                      "seed = 2·(base − difficulty − want + "
+                      "mood + 4), mood = random(1..5)"]),
+             "no": ("you buy",
+                    ["ask = 200, or (8−level)·50 for horses/"
+                     "manufactures",
+                     "+ market term + random(0..ask) − 4·surplus "
+                     "+ 4·tension, floor 50"])},
+            {"k": "act", "t": "the haggle", "cat": "econ",
+             "s": ["budget = random(1..rounds) + qty/4, rounds = min(3, "
+                   "(demand−want+4)/10)",
+                   "counter-offers until the budget runs dry — four "
+                   "refusal scripts"]},
+            {"k": "dec", "t": "deal closed?",
+             "yes": ("settle up",
+                     ["gold moves 32-bit both ways (honest afford check)",
+                      "last-bought set · wealth +25 · tension "
+                      "−4 goodwill"]),
+             "no": ("no deal",
+                    ["the village walks away; it never buys the same good "
+                     "twice running (muskets excepted)"])},
+            {"k": "end",
+             "t": "same visit: food-beg on deficit · corn gift on surplus"},
+        ],
+        "The “let it be our gift” row’s tension credit is "
+        "untraced (TBD); the manual says gifts cool anger faster than "
+        "sales."))
+
+    _after_h3(soup, "Alarm and anger", dense_flow(
+        "The anger pipeline — one applier, two meters",
+        "adjust_tension() · get_tension()",
+        [
+            {"k": "start", "t": "EVERY TENSION CHANGE FUNNELS THROUGH ONE "
+             "APPLIER"},
+            {"k": "act", "t": "what heats", "cat": "warn",
+             "s": ["trespass +1 / +2 / +3 · mission destroyed "
+                   "+computed · heating drift +1",
+                   "incite against you +100 · burial-ground desecration "
+                   "+100 · ally’s smite request +100",
+                   "scripted causes (roads · deforestation · "
+                   "missionaries · attacks · crowding): numbers "
+                   "TBD"]},
+            {"k": "act", "t": "what cools", "cat": "arr",
+             "s": ["successful trade −4 · cooling drift −1 "
+                   "· normalization −1",
+                   "mission established −computed, result capped at 70",
+                   "incite reward −100 · Pocahontas on acquire: "
+                   "full reset to Content"]},
+            {"k": "act", "t": "the applier’s gate", "cat": "num",
+             "s": ["positive deltas HALVED for France and for Pocahontas "
+                   "owners",
+                   "result clamped 0..100 · the “category” "
+                   "argument is dead (never read)"]},
+            {"k": "dec", "t": "where does the meter stand?",
+             "yes": ("below 75 — at peace",
+                     ["display bands Content / Uneasy / Restless / Angry",
+                      "cut at −5 / 0 / 10 of the presence score"]),
+             "no": ("75+ hostile · 100 war",
+                    ["the village alarm word ≥ 128 arms raids",
+                     "and swaps Trade → Enter Hostile at 75"])},
+            {"k": "end", "t": "neighbour villages get clamped too — "
+             "semantics TBD"},
+        ],
+        "Manual-attested (numbers untraced): colony size, buildings and "
+        "proximity heat; muskets/cannon heat; soldiers nearby heat; a "
+        "working missionary cools; capitals amplify everything. Map display: "
+        "exclamation marks ramp pale green → blue → yellow → "
+        "brown → red."))
+
+    _after_h3(soup, "Missions and conversion", dense_flow(
+        "The mission life cycle",
+        "establish_mission() · attempt_conversion() · "
+        "denounce_heresy()",
+        [
+            {"k": "start", "t": "ESTABLISH MISSION — MISSIONARY AT THE "
+             "VILLAGE"},
+            {"k": "act", "t": "found it", "cat": "pos",
+             "s": ["mission byte = your power · village anger pulled "
+                   "to ≤ 70",
+                   "expert bit with Brébeuf — retroactive when he "
+                   "joins Congress",
+                   "map: a cross in your colour (brighter when expert)"]},
+            {"k": "act", "t": "each eligible turn: the conversion roll",
+             "cat": "num",
+             "s": ["fires when random(0..15) < tribe.level + 2 "
+                   "(doubled expert)",
+                   "success: an Indian Convert appears at your colony",
+                   "unplaced converts die of lost faith after 8 turns"]},
+            {"k": "act", "t": "Congress tuning", "cat": "flag",
+             "s": ["Sepúlveda +4 conversion metric · las Casas "
+                   "−4",
+                   "las Casas on acquire: every Convert → Free "
+                   "Colonist"]},
+            {"k": "dec", "t": "how missions end",
+             "yes": ("burned or expelled",
+                     ["war-footing tribes burn missions — church "
+                      "outraged",
+                      "tension +computed (formula TBD)"]),
+             "no": ("denounced by a rival",
+                    ["heresy duel: their converts burn your mission —",
+                     "or your missionary burns at the stake (roll TBD)"])},
+            {"k": "end", "t": "mission byte returns to none"},
+        ]))
+
+    _after_h3(soup, "Raids", dense_flow(
+        "A raid, end to end", "native_raid() · scan_raid_targets()",
+        [
+            {"k": "start", "t": "A VILLAGE’S ALARM WORD REACHES 128"},
+            {"k": "act", "t": "the gate", "cat": "num",
+             "s": ["random(1..12) − 1, biased +(difficulty−2) "
+                   "against a human",
+                   "the raid proceeds at ≥ 3·K + 1 (K untraced, "
+                   "TBD)"]},
+            {"k": "act", "t": "severity", "cat": "econ",
+             "s": ["random(1..4), downgraded while turn < 40·"
+                   "(2−difficulty)",
+                   "— the early game pulls its punches"]},
+            {"k": "dec", "t": "what happens to the colony?",
+             "yes": ("the colony bleeds",
+                     ["1 stores looted (the village banks the haul) · "
+                      "2 havoc wreaked",
+                      "3 gold stolen · 4 a building burned / a ship in "
+                      "port burned"]),
+             "no": ("the raid fails",
+                    ["“raiding party wiped out”"])},
+            {"k": "end", "t": "against a human colony the INDIAN RAID "
+             "woodcut plays"},
+        ],
+        "Concrete payloads behind wreak/gold/burn/ship beyond their messages "
+        "are unmapped (TBD)."))
+
+    _after_h3(soup, "Attacking a village", dense_flow(
+        "Attack → burn → loot → the map moves on",
+        "raze_settlement() · remove_settlement()",
+        [
+            {"k": "start", "t": "ATTACK VILLAGE — “Shall we attack "
+             "the {tribe}?”"},
+            {"k": "act", "t": "the battle", "cat": "num",
+             "s": ["random(1..ATK+DEF) ≤ ATK → attacker wins",
+                   "a capital DOUBLES the defence bonus · no dedicated "
+                   "village-defence formula traced (TBD)",
+                   "manual: cities ≫ villages ≫ camps"]},
+            {"k": "dec", "t": "attacker victorious?",
+             "yes": ("the survive-or-burn check",
+                     ["roll random(0..100) — 140 with a Seasoned Scout",
+                      "big villages bias the check upward (value/4 re-roll)",
+                      "values 75+ divert to the big-treasure branch"]),
+             "no": ("repelled",
+                    ["standard combat loss for the attacker"])},
+            {"k": "act", "t": "population attrition — the honest gap",
+             "cat": "warn",
+             "s": ["NO population-decrement instruction has been located "
+                   "image-wide,",
+                   "and the check’s destroy wiring is untraced (TBD). "
+                   "Needs: a DOSBox",
+                   "trace of the size byte across repeated attacks."]},
+            {"k": "act", "t": "the village falls — raze gold",
+             "cat": "econ",
+             "s": ["(r₁+r₂+r₃) · random(1..6) · 4 "
+                   "· (size+1) → straight to the treasury",
+                   "size = population (2026-05-30 ruling; the level-byte "
+                   "read is the bug)",
+                   "capitals exceed the ceiling — bonus unmapped (TBD)"]},
+            {"k": "act", "t": "the map moves on", "cat": "pad",
+             "s": ["record compacted · unit links repaired · "
+                   "tribe count −1",
+                   "last village → “The {tribe} tribe has been "
+                   "wiped out.”",
+                   "survivor: the removed village’s wealth scaled "
+                   "n/(n+1)"]},
+            {"k": "end", "t": "Treasure UNITS spawn only on the "
+             "colony-combat path"},
+        ]))
+
+
 ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
              "8": [enrich_sol], "9": [enrich_market], "12": [enrich_units],
              "13": [enrich_movement], "14": [enrich_combat],
              "17": [enrich_congress],
              "18": [enrich_king, enrich_scoring],
-             "19": [enrich_loot, enrich_raids],
+             "19": [enrich_natives],
              "20": [enrich_turnflow, enrich_persistence],
              "23": [enrich_events, enrich_lcr],
              "B": [enrich_appendix_b]}
@@ -2646,15 +2991,18 @@ def contents_html(about, entries):
 
 def assemble(about, sections, folios=None):
     sec_titles = {s[0]: s[1] for s in sections}
+    parts = [(r, p, [k for k in keys if k in sec_titles])
+             for r, p, keys in PARTS]
+    parts = [(r, p, keys) for r, p, keys in parts if keys]
     entries = []
-    for roman, ptitle, keys in PARTS:
+    for roman, ptitle, keys in parts:
         entries.append(("part", roman, ptitle,
                         (folios or {}).get(f"part-{roman}")))
         for k in keys:
             entries.append(("sec", k, sec_titles[k], (folios or {}).get(f"sec-{k}")))
     body = [contents_html(about, entries)]
     built = {s[0]: s[3] for s in sections}
-    for roman, ptitle, keys in PARTS:
+    for roman, ptitle, keys in parts:
         body.append(part_divider(roman, ptitle, [(k, sec_titles[k]) for k in keys]))
         for k in keys:
             body.append(built[k])
