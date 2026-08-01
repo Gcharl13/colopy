@@ -644,6 +644,73 @@ compositor's detail-band position hash (§6.9).
 `@OTHER_NAMES` supplies the five overlay/UI names, in order: **Forest, River,
 Major River, Minor River, Unexplored**.
 
+### 5.8 The worked-tile production calculation (`func_009B9C`, 0x9B9C..0x9FFB)
+
+One function computes what a colonist working a ring tile produces:
+`compute_terrain_yield` — 1,120 bytes, called once per worked tile from the
+5×5 ring scan of the colony turn processor (`CALL 0x9B9C` at 0xA42A). Every
+modifier below is byte-cited; the order is the order the code applies them.
+
+1. **Resolve the good** for this worker slot (`CALL 0x9974` at 0x9BB7; return
+   0 if none), then the tile's feature byte (`0x37F:0x10E` at 0x9BEB), terrain
+   id (`0x3E4:0x0E` at 0x9BF9) and prime resource (`0x37F:0x4B0` at 0x9C0A).
+2. **Base yield** = `[terrain·16 + 0x2F7B + good]` (0x9C15/0x9C1E — the
+   §5.5 table). A base of 0 short-circuits every modifier (0x9C27).
+3. **Sea adjacency** (goods ≥ 8 only, 0x9C2E): count adjacent Ocean/Sea-Lane
+   tiles (0x9C3E) — ≥ 8 → −2 (0x9C4C), 6–7 → −1 (0x9C57), < 6 → +1 (0x9C61).
+   The +2/+3/+4 tails at 0x9C66/0x9C72/0x9C7E are emitted but unreachable.
+4. **Furs road bump**: good 4 with feature bits 0x0A → +1 (0x9C87..0x9C9F).
+   **River bumps**: terrain-byte bit 0x40 → +1 (0x9CA2), Major (bit 0x80) →
+   +1 more (0x9CAB). Clamp ≥ 0 (0x9CB4).
+5. **Profession match**: the worked-tile colonist's `@JOB` byte is compared to
+   the good (`func_008956` via tables DS:0xC8/0xDE; compare at 0x9CDC);
+   `era_flag` marks Food/Horses (0x9CFB..0x9D0E).
+6. **Sons-of-Liberty adjustment**: `sol_pct` from `func_008524` (§8.1);
+   `tory_cnt = (pop·(100−sol) + 50)/100` (0x9D27..0x9D30);
+   `sol_adj = −(tory_cnt / (10 − difficulty))` for an active human colony
+   (divisor 10 otherwise; 0x9D49..0x9D7F), then +1 for each of the
+   ColonyRecord `+0x1C` bit-4 / bit-2 latches (0x9D88..0x9D98). A **positive**
+   `sol_adj` is added here (0x9D9B..0x9DA7); a **negative** one is held back
+   and applied as the very last step with a ≥ 0 clamp (0x9FD8..0x9FF3).
+7. **Expert bonus**: on a profession match with nonzero yield — Food/Horses
+   +2 (0x9DBF); every other good **doubles** (`SHL` at 0x9DD2). The expert
+   also doubles the prime-resource bonus (0x9E0A).
+8. **Prime resource**: `rbonus = func_009AAA(resource, good)` (0x9DDE);
+   a negative (penalty) result doubles the yield instead (0x9DFE), otherwise
+   `yield += rbonus` (0x9E0D). The bonus table inside `func_009AAA` is
+   unmapped (TBD). Fishery/yield-0 guard at 0x9DE7.
+9. **Lumber doubles** (good 5, `SHL` at 0x9EAB).
+10. **Improvements** (0x9EB4..0x9F4C, gated yield > 0): bonus magnitude
+    `tier` = 1, raised to 2 in the cited profession/era cases (0x9EC6/0x9EDD).
+    **Road** (feature bits 0x0A, 0x9EF9) adds `tier` only for goods > 3 —
+    the ore/fur/timber band (0x9F05..0x9F0E). **Plow** (feature bit 0x40,
+    0x9F17) adds `tier` only for goods ≤ 3 — the crop band (0x9F23..0x9F2C).
+    **River** adds `tier`, and `tier` again for a Major river
+    (0x9F2F..0x9F46). Food takes `add = tier` directly (0x9EE7).
+11. **Gates**: goods ≥ 8 need building/father bit 6 or produce 0
+    (0x9F4F..0x9F62); **Henry Hudson** (FF op 8) doubles Furs
+    (0x9F65/0x9F77/0x9F83); the special class 0x1B adds +1 for goods
+    {0,1,2,3,4} and ≥ 8 (0x9F86..0x9FB6). Final clamp ≥ 0, negative
+    `sol_adj`, return (0x9FB9..0x9FF6).
+
+**The colony centre tile** is computed separately in the turn processor with
+**no worker**: a food class 0..3 by terrain band (0xA24C..0xA290) with +2 at
+difficulty 0 / +1 at difficulty 1 (0xA295/0xA2A1), +1 river (0xA2B9), +2 for
+resources 1/9/2 (0xA314), plus the `+0x1C` latches; and the best non-food good
+scanned over goods 1..7 **skipping Lumber** (0xA375), with a penalty resource
+doubling base first (0xA39F) and +1 at difficulty 0 (0xA3AB). Both post at
+0xA3EE..0xA409.
+
+**Improvement state storage**: roads live in the runtime feature plane
+`[0x160]` as bits 0x0A (write `or es:[bx],8` at 0x040AEC), plowing as bit 0x40
+(`or es:[bx],0x40` at 0x04089F), clearing subtracts 8 from the forested
+terrain id (0x040896, lumber windfall → colony stockpile at 0x04084D,
+`@CLEARCUT`); rivers are terrain-byte bits 6/7 (§5.4). Work time = the
+Improvement column `[terrain·16 + 0x2F78]` + 2 for clear/plow (0x040727), no
++2 for roads (0x040A50), counted in `UnitRecord +0x16` (0x04071D/0x040A46),
+halved for Hardy Pioneers (`sar ax,1` at 0x4074A/0x40A59), −20 tools per
+action (0x4060F).
+
 ## 6. The map compositor
 
 Every visible map tile is composed at render time by a three-function chain: the
@@ -1240,6 +1307,39 @@ byte-read: `def_id==0` with build-query(0)==0 ⇒ frame **0x11** (0x026DEC);
 (table `[45,44,43,0,46]` — category 3 draws nothing), skipped when the byte is 0.
 Live verification (Jamestown): 8 buildings at plots {2,3,4,5,6,10,12,13} with
 def-ids {0x20,0x1B,0x27,0x18,0x15,0x23,0x09,0x00}, every frame pixel-exact.
+
+### 8.7 Sons of Liberty — the full pipeline
+
+The displayed percent is `func_008524` (0x8524..0x85B1, thunk `0x181F:0xC86`):
+`SoL% = (sol_numerator · 100) / sol_denominator` (multiply 0x8557, divide
+0x855E; denominator ≤ 0 returns 0), **+20** when the owner is a human European
+holding FF op 0x12 (0x859F; the op is glossed both "Jan de Witt" and
+`@FATHERS` #18 Bolívar in-repo — flagged), clamped to 100 (0x85A8).
+
+The two accumulators update once per colony turn in `func_02D658`
+(0x2DA1C..0x2DAD8): the cap decays `B −= B>>6`, floors at 1, then
+`B += 2·population`; the pool decays and accrues `A += new_bells − (A>>6)`,
+floors at 0, and clamps `A ≤ B` — so the percent is structurally ≤ 100.
+Founding init is `B = 100, A = 0` (0x02EC26..0x02EC38; runtime-confirmed
+B = 200 for a pop-1 colony after one turn). `new_bells` is the colony's bell
+production, halved-and-negated for the tory-leader power during the war
+(0x2D9DF..0x2D9F2) and dragged down by `population/20` when population exceeds
+bells (0x2DA12..0x2DA18). Derived steady state: `SoL% → min(100,
+50·bells/pop)` — 100% needs bells ≥ 2·population.
+
+**Consumers**, each byte-cited: combat scales strength by `SoL%/100`
+(0x05CF98; analysis rows Rebel Unrest +SoL% / Tory Unrest −(100−SoL%));
+production applies `sol_adj = −(tory_cnt/(10−diff))` with the `+0x1C` latches
+(§5.8); the colony status messages latch at 50%/100% edges
+(`@REBELMAJORITY` 0x2DB29, `@REBELUNANIMOUS` 0x2DB6E, tory reverses, decade
+`@SONSUP`/`@SONSDOWN`); `INEFFICIENT` fires when the tory count reaches
+`10−diff` (0x2DCE4); the colony screen derives member count =
+`pop − round(tory%·pop/100)` (0x0273F4..0x02740E); and the **national meter
+`[0x53D0]`** gates the Declaration at ≥ 50 (0x3E99E, `@TOOTORY` below), arms
+the Spanish Succession below 75 (§18.7), takes +20 from Bolívar's acquisition
+(0x3BE64), and feeds the King's demand-severity score (0x361F9) and the final
+score (0x03A561). How the per-colony percents aggregate into `[0x53D0]` is
+behind untraced overlay calls (`0x1A1F:0x134`) — TBD.
 
 ## 9. Market and trade
 
@@ -2341,8 +2441,155 @@ under {%STRING2} rule.", 0x3C76A), then rewrites every map-tile owner nibble
 0x3C8A0), and a third owner-nibble table (0x3C8CA–0x3C8FE). Aftermath: the
 ceding power's controller := 2 "eliminated" (0x3C91A) and its id stored to
 `[0x53D2]` (0x3C922); the power thereafter renders as "(Withdrawn from New
-World)" (LABELS `@MISC`).
+World)" (LABELS `@MISC`). What transfers is exactly tiles, units, colonies and
+the third owner table — no treasury, father, trade-route or Europe-dock
+transfer is documented. The gate that *enqueues* event 0x68 is an unresolved
+residual (the dispatcher `func_0235D6` has no located caller); the same
+handler is reachable from cheat `@FORCED` stage (a) (§18.4).
 
+### 18.8 The tax petition — how the King eases (or punishes)
+
+Handler `func_034AE0` (file 0x034AE0..0x034B7D, dispatched as case 4 of the
+king-action switch `func_034C24` at 0x34C05, inside turn phase 4). Three
+guards, then a roll, then one of three outcomes:
+
+- **Guard 1** (0x034AE8): return if `tax_pct ≤ 1`. **Candidate** raise =
+  `delta·turn_factor` with `delta = ((diff & 0xFE) << 1) + 4` (0x034AEE) and
+  `turn_factor = turn/400 + 1` (0x034AFC).
+- **Guard 2** (0x034B10): if `candidate + 5 ≥ tax_pct` → **@KINGRAISE** path.
+- **Guard 3** (0x034B1A): if `tax_pct ≤ candidate` → **@KINGNOTHING**
+  (0x034B33: "…kiss our royal pinky ring.", no options).
+- **Roll** (0x034B25): `random_int(1, diff+1)`; result 1 → **@KINGLOWER**
+  (probability `1/(diff+1)` — the Crown eases more readily at low
+  difficulty). Lower amount = `random_int(5 − diff, 1)` negated for display
+  (0x034B44..0x034B5C: "…lower your tax rate by {%NUMBER0%%}").
+- **@KINGRAISE** amount = `random_int(diff, 1) · 2` — the punitive raise is
+  doubled (0x034B62..0x034B7D: "Your DARE to demand lower taxes!…"), and it
+  carries the `@TAXOPTIONS` pair, so it can chain into a Tea Party (§23.4).
+
+Open items, stated plainly: no player-facing "request lower taxes" control is
+documented anywhere in the UI specs (the "player demands" framing is
+narrative); the outbound announce goes through the overlay at `0x191F:0xAE0`
+whose internal tax write is untraced; the per-turn call frequency of
+`func_034AE0` is unmapped. The tax write-site clamp itself is byte-cited: any
+applied delta lands at `func_034318` 0x03434C with the hard clamp at 75
+(0x03434F).
+
+### 18.9 The King's mercenaries
+
+Two distinct offers, both priced per unit in hundreds of gold. (The manual's
+§23.4 event table has no mercenary row — this subsection is the coverage.)
+
+**Peacetime** (`func_03E664`, 0x03E664..0x03E842, turn phase 1): gated off
+once the revolution starts (`[0x5382]&1`), then a **1-in-21** roll
+(`random_int(0,0x14) != 0` → return, 0x03E66A); the offering power must hold a
+peace treaty (relation bit 0x40, 0x03E6A2). Composition: `count =
+random_int(1,3)` plus coin-flips that either add one more or set 1–2
+artillery (0x03E6C8..0x03E703). **Fee**: `gold_per_unit = ((diff + 4)·2 +
+random_int(0,6)) · 100` (0x03E713), `price = gold_per_unit · (count +
+2·artillery)` (0x03E726..0x03E736). Offer dialog `@MERCENARIES` ("The King of
+%STRING0 has offered to send us a force of trained {mercenaries}… No thank
+you. / Pay {%NUMBER0$}."); arrival `@MERCS`. Delivered units are Veteran
+Dragoons and Veteran Artillery on a Man-O-War (type table `func_03C4A2`).
+
+**Wartime** (`func_03E442`, 0x03E442..0x03E663): a per-power one-shot bit
+(PowerRecord byte 0, bit 0x08 — set on the first eligible call at 0x03E4CD,
+offer possible only from the second call on), then a **1-in-3** gate
+(0x03E4E8). Composition: `count = random_int(2, (4−diff)/2 + 2)` (0x03E512)
+plus exactly one of Continental Cavalry or Artillery (0x03E52E..0x03E546).
+**Fee**: `gold_per_unit = ((diff + 3)·2 + random_int(0,6)) · 100` (0x03E558),
+`price = gold_per_unit · (count + 2)` (0x03E56B). The offer only appears if
+affordable (`price ≤ treasury +0x2A`, 0x03E5FD); paying debits at 0x03E651.
+Wartime types: Veteran Continental Army + Continental Cavalry / Artillery.
+
+**Landing** (`func_03D510`, shared with the free intervention force): arrival
+colony is a population-weighted random pick over up to 10 coastal colonies
+(`+0x1C & 0x40`; weights = size, roll at 0x3D57E), a Man-O-War (type 0x12)
+lands at the best-scored beach tile (0x03D748), troops spawn carried at the
+(−2,−2) sentinel (0x03D8C8), and every land unit is stamped Veteran
+(`+0x17 := 0x15` at 0x03D835).
+
+**Mobilization at the Declaration** (`func_03E2EA`, byte-verified): for every
+colony with SoL ≥ 50 (0x03E3F1), a budget `((SoL−50)·(size/2))/50` clamped ≥ 1
+(0x03E3F6..0x03E425) of Veteran Soldiers/Dragoons in the stack are promoted
+in place — type 1 → 9 Continental Army (0x03E37B), type 4 → 7 Continental
+Cavalry (0x03E306); `@MOBILIZE`/`@MOBILIZE2`. No units are created.
+
+### 18.10 The Royal Expeditionary Force schedule
+
+Counts live at `[0x53DA]` Regulars, `[0x53DC]` Cavalry, `[0x53DE]` Man-O-War,
+`[0x53E0]` Artillery (user-verified against the F3 display). **New-game seed**
+(`new_game_state_init` at 0x7569B, difficulty d): Regulars `8d+15`, Cavalry
+`5(d+1)`, Man-O-War `3d+2`, Artillery `6d+2` — i.e. 15/5/2/2 at Discoverer up
+to 47/25/14/26 at Viceroy. **Growth** (`func_03E162`, pre-independence only,
+gate 0x3E172): the royal fund `PowerRecord +0x22` accrues `(8d+10)` per turn,
+doubled at each of 1600/1700/1750 (0x3E17C..0x3E1AC) — +18/turn at Explorer,
+runtime-verified. At **1800** in the fund (0x3E1C6) one unit is bought
+(0x3E238) and 1800 deducted (0x3E271); the slot keeps the army in ratio —
+Cavalry when `(reg+2)/3 > cav` (0x3E1D5), Artillery when `reg/4 > art`
+(0x3E1EB), Man-O-War when `(reg+cav+art+5)/10 > ships` (0x3E203), else
+Regulars. Post-declaration the purchase is announced instead (`@KINGBUY`,
+0x3E262). Sale tax funds it: every European sale routes
+`gross·tax%/100` into `+0x22` (0x32A92), as do back-tax payments (0x033413).
+
+### 18.11 The difficulty ledger — every documented d-scaled constant
+
+Difficulty `d` = `[0x53A6]` (0 Discoverer .. 4 Viceroy; default 2 at 0x7433C,
+written only by the picker at 0x705D2/0x706A3/0x7071E). The term is almost
+always a **human handicap** — most sites gate on the controller byte and use
+a fixed constant for AI powers.
+
+**Starting conditions:** gold 1000 (d=0, 0x036779) / 300 (d=1, 0x036599) /
+0 (d ≥ 2) — human only; units = Caravel + Pioneers + Soldiers aboard
+(0x07584B..0x0758CD; Dutch ship → Merchantman 0x075875), **doubled at d ≤ 1**
+by a second placement pass (0x0758F5/0x075961); REF seed §18.10; native alarm
+seed `random_int(0,14) + 2d` for the human (0x65DC7/0x65DCE); year 1492
+(0x757E7), map 58×72 (0x75702), price seeds `random_int(600,1000)` ×16
+(0x75645). Initial tax rate: no initializer is byte-cited (UI shows 0%) — TBD.
+
+| Mechanic | Formula in d | Site |
+|---|---|---|
+| Combat: human handicap | strength += (4−d), both sides | 0x5CE35 / 0x5CE54 |
+| Combat: scaling | strength·d/20 | 0x05CFFC |
+| Combat: generic base | d+5 | 0x3F005 |
+| Treaty-respect seed | 2·(6−d), halved w/ Franklin | 0x59B00..0x59B31 |
+| AI war grace period | no AI war before turn 10·(10−d) | 0x58374 |
+| AI demand value | ·10·(d+8)/100, then +500·(d+1) | 0x583A0 / 0x5842B |
+| AI action gate | roll(1,1000) < 200d+100 → 10..90% | 0x58315 |
+| Withdrawal price | 25·(d+2)·forces, min 100, ×2 at war | 0x593B7..0x5949B |
+| King tax-raise delta | ((d&0xFE)<<1)+4, ×(turn/400+1) | 0x034AEE |
+| King demand cadence | interval 18→15/12/9 by era, −(d−2) human | 0x36193 |
+| Tax-lower odds | 1/(d+1); lower amt random(5−d,1) | 0x034B25 / 0x034B44 |
+| Mercenary fee (war) | ((d+3)·2 + rand(0,6))·100 per unit | 0x03E558 |
+| Mercenary fee (peace) | ((d+4)·2 + rand(0,6))·100 per unit | 0x03E713 |
+| Mercenary count (war) | random(2, (4−d)/2 + 2) | 0x03E512 |
+| REF fund accrual | (8d+10)/turn, ×2 per era | 0x3E17C |
+| REF seed | 8d+15 / 5(d+1) / 3d+2 / 6d+2 | 0x7569B |
+| Native attitude (human) | 2·(d+3) + tribe terms, thr 0x41 | 0x46500 |
+| Native attitude (AI) | tribe terms − d + 12, thr 0x32 | 0x46538 |
+| Native training success | roll(1,1000) ≥ 200d+100 → 90..10% | 0x4A72C |
+| Native attack chance | random((5−d)·2) | 0x48697 |
+| Raze gold factor | rolls of random(1, 10−d) | 0x4AAD0 |
+| King treasure cut | max(5d+50, 2·tax) ≤ 90%, tax w/ Cortés | 0x5C976 |
+| Native gift/reward | 2d+15; 10·(d+rand); cap 8−d | 0x4A05A / 0x4A0C2 / 0x4A2A9 |
+| Immigration threshold | ·(8−d)/8 (England then ×2/3) | 0x35E60 / 0x035E6E |
+| Rival-immigration bonus | 100·(d+1) | 0x35FFB |
+| FF bell cost (human) | (d+3)·16 base (§17) | 0x3C29C |
+| FF cost post-declaration | d·1500 + 2000 | 0x3C30D |
+| FF score penalty | ff_count·(−1−d) | 0x3A4B9 |
+| SoL production divisor | 10−d (human; AI fixed 10) | 0x9D49 / 0xA05C |
+| Tory penalty threshold | 10−d as count threshold | 0x27416 |
+| Tory uprising gate | fires with prob (d+1)/(d+2) | 0x3CADD |
+| Tory militia strength | pop·tory%·2/100 + d + 1 | (RULINGS batch) |
+| Center-tile food | +2 at d=0, +1 at d=1 | 0xA295 / 0xA2A1 |
+| Score multiplier | [4,5,6,8,10] = d+4+(d≥3)+(d≥4) | 0x3AA0A..0x3AA27 |
+| Indian razes score penalty | razed_count·−(1+d) | 0x3A4B1..0x3A4C3 |
+| Tutorial build warnings | only at d < 2 | 0x22763 |
+
+Non-mechanics, for the record: `[0x8394+2d]` is the per-difficulty king
+salutation/title pointer (text only); Lost-City-Rumor odds are scout-scaled,
+**not** difficulty-scaled; European recruit prices come from a pre-filled pool
+word (only artillery escalates, +100·bought).
 
 ## 19. Natives
 
@@ -2473,6 +2720,49 @@ builds the live tribe list from TribeData (stride 0x4E, dead bit 0x80 at +3) and
 calls `func_046FC2`, which destroys every village whose owner equals tribe+4 —
 confirming the owner-id convention and the destroy path used by combat.
 
+
+### 19.8 Loot — razing settlements and capturing colonies
+
+**Indian settlement raze** (the `@CHIEFKILL` path, `func_04A7CA`; gold block
+0x04AAD0..0x04AB6E):
+
+`gold = (Σ of 3 rolls of random_int(1, 10−diff)) · random_int(1,6) · 4 · (size+1)`
+
+— the three rolls at 0x04AADD..0x04AB06, the ×`random_int(1,6)` at 0x04AB0B,
+the ×4 at 0x04AB1D, the size factor at 0x04AB20..0x04AB2D, credited 32-bit
+straight to the attacker's treasury `PowerRecord +0x2A` (0x04AB5D..0x04AB6E).
+**No ×100 and no Treasure unit on this path.** The size factor carries a
+documented in-repo conflict: the appendix traces it to `TribeData +0x02`
+(0x04AB24), while the 2026-05-30 ruling (user-verified) identifies it as
+`NativeSettlement +0x04` population — the `+0x02` read was the "Apache richer
+than Aztec" bug. Difficulty ceilings at size factor 21: 15,120 / 13,608 /
+12,096 / 10,584 / 9,072 (Discoverer→Viceroy). The roll *before* the formula is
+the village-survives check, not the payout: scout bonus for Seasoned Scouts
+(0x4A7D9), `random_int(0, 40·scout+100)` (0x4A827) re-rolled against
+settlement size, tribe-2 bound `(8−diff)<<scout` (0x4A84A); size ≥ 75 branches
+to the big-treasure path (0x4A802). Capital razes exceed the formula ceiling
+in both captured data points — a capital-only bonus exists whose magnitude is
+unmapped (TBD). The **Treasure-unit spawn** lives on the colony-combat path
+(`func_05CA7E`): `spawn_unit(type 0xA)` at 0x05E4FF, value/100 stored in the
+unit's class byte (0x05E516), ×100 for display (0x05E51A), `@LOOT`/`@LOOT2`.
+Cortés does not touch raze gold — his documented effect is the King's cut of
+*transported* treasure (`func_05C878`: cut = tax rate with Cortés, else
+`max(5·diff+50, 2·tax)` clamped ≤ 90, 0x5C965/0x5C976 — the `@LOOTCASH`
+`%NUMBER1`).
+
+**European colony capture** (inside `func_05CA7E`, math at 0x05DE1E):
+
+`loot = (colony.population · victim.gold) / max(Σ populations of victim's colonies, 1)`
+
+— population `+0x1F` read at 0x05DE1F, the victim's whole-empire population
+summed over the colony table (owner match at `0x5D60`, 0x05DDD4..0x05DDFF),
+divisor clamped ≥ 1 (0x05DE05), 32-bit multiply/divide (0x05DE35/0x05DE3C),
+then the gold moves victim → attacker (0x05DE49 / 0x05DE59..0x05DE63) — the
+victim loses a population-weighted *share of its entire treasury*. The block
+is **gated off during the War of Independence** (`test [0x5382],1` at
+0x05DE11). Message `@CAPTURED` ("{%STRING0} march into {%STRING2}!
+{%NUMBER0$} plundered!"). No Crown cut exists on this path; `@LOOTCASH`
+belongs to treasure-fleet arrival only.
 
 ## 20. Turn flow and persistence
 

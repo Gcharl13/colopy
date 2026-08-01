@@ -1304,7 +1304,8 @@ def flow_svg(nodes):
             boxes.append(("dec", MX + ind, y, MW - 2 * ind, h, nd["t"]))
             blabel, sidelines = nd["side"]
             sh = 16 + 11 * len(sidelines)
-            boxes.append(("side", SX, y + h / 2 - sh / 2, SW, sh, sidelines))
+            boxes.append(("side", SX, max(2, y + h / 2 - sh / 2), SW, sh,
+                          sidelines))
             boxes.append(("sarrow", MX + MW - ind, y + h / 2, SX, blabel))
             if nd.get("cont"):
                 boxes.append(("clabel", MX + MW / 2 + 6, y + h + 12, nd["cont"]))
@@ -1517,8 +1518,145 @@ def enrich_events(soup):
     warn("tax-event anchor not found in section 23")
 
 
+def _after_h3(soup, substr, fig):
+    for h in soup.find_all("h3"):
+        if substr in h.get_text():
+            h.insert_after(fig)
+            return True
+    warn(f"anchor '{substr}' not found for figure")
+    return False
+
+
+def enrich_sol(soup):
+    _after_h3(soup, "Sons of Liberty — the full pipeline", formula_fig(
+        "The Sons-of-Liberty percent", "func_008524 · 0x8524..0x85B1",
+        "SoL% = min(100,  (sol_numerator · 100) / sol_denominator  [+20])",
+        [("sol_numerator", "rebel bell pool, ColonyRecord +0xC2 — decays >>6, += bells/turn, clamped to the cap", "0x2DA73..0x2DAA0"),
+         ("sol_denominator", "bell cap, +0xC6 — decays >>6, floors 1, += 2·population", "0x2DA24..0x2DA6F"),
+         ("+20", "human European owner with FF op 0x12 only", "0x859F (gates 0x8588/0x8593)"),
+         ("min(100)", "final clamp; A ≤ B also enforced structurally", "0x85A8 / 0x2DABE")],
+        "Derived steady state: SoL% → min(100, 50·bells/pop); unanimity needs "
+        "bells ≥ 2·population."))
+
+
+def enrich_loot(soup):
+    for h in soup.find_all("h3"):
+        if "Loot — razing" in h.get_text():
+            fig2 = formula_fig(
+                "Colony capture plunder", "func_05CA7E · math at 0x05DE1E",
+                "loot = (pop · victim_gold) / max(Σ victim colony pops, 1)",
+                [("pop", "captured colony's population, ColonyRecord +0x1F", "0x05DE1F"),
+                 ("victim_gold", "the victim power's whole treasury, PowerRecord +0x2A", "0x05DE26"),
+                 ("Σ pops", "all the victim's colonies, summed; clamp ≥ 1", "0x05DDD4..0x05DE0D"),
+                 ("transfer", "victim −loot, attacker +loot (32-bit)", "0x05DE49 / 0x05DE59")],
+                "Gated OFF during the War of Independence (test [0x5382],1 @0x05DE11). "
+                "Message @CAPTURED; no Crown cut on this path.")
+            h.insert_after(fig2)
+            fig1 = formula_fig(
+                "Indian raze gold", "@CHIEFKILL path · func_04A7CA · 0x04AAD0..0x04AB6E",
+                "gold = ( r₁ + r₂ + r₃ ) · random_int(1,6) · 4 · (size + 1)",
+                [("r₁..r₃", "three rolls of random_int(1, 10 − difficulty)", "0x04AADD..0x04AB06"),
+                 ("×random_int(1,6)", "the volatility factor", "0x04AB0B"),
+                 ("×4", "constant", "0x04AB1D"),
+                 ("size+1", "settlement size factor (documented conflict: TribeData +0x02 trace vs the 2026-05-30 ruling = NativeSettlement +0x04 population)", "0x04AB20..0x04AB2D"),
+                 ("payout", "credited to attacker treasury +0x2A; no ×100, no Treasure unit", "0x04AB5D..0x04AB6E")],
+                "Ceilings at size factor 21: 15,120 / 13,608 / 12,096 / 10,584 / "
+                "9,072 by difficulty. Capitals exceed this — bonus unmapped (TBD).")
+            h.insert_after(fig1)
+            return
+
+
+def enrich_king(soup):
+    _after_h3(soup, "tax petition", flow_fig(
+        "The tax petition — three outcomes", "func_034AE0 · 0x034AE0..0x034B7D",
+        [
+            {"k": "start", "t": "king-action case 4 (dispatch 0x34C05)"},
+            {"k": "dec", "t": "tax_pct ≤ 1 ? (0x034AE8)",
+             "side": ("yes", ["return — nothing to ease"]), "cont": "no"},
+            {"k": "act", "t": "candidate = (((diff&0xFE)<<1)+4) · (turn/400 + 1)",
+             "s": ["delta 0x034AEE · turn factor 0x034AFC"]},
+            {"k": "dec", "t": "candidate + 5 ≥ tax_pct ? (0x034B10)",
+             "side": ("yes", ["@KINGRAISE — punitive raise",
+                              "amount = random_int(diff,1) · 2 (0x034B62)",
+                              "carries @TAXOPTIONS → can Tea Party (§23.4)"]),
+             "cont": "no"},
+            {"k": "dec", "t": "tax_pct ≤ candidate ? (0x034B1A)",
+             "side": ("yes", ['@KINGNOTHING — "…kiss our royal',
+                              'pinky ring." (0x034B33, no options)']),
+             "cont": "no"},
+            {"k": "dec", "t": "random_int(1, diff+1) == 1 ? (0x034B25)",
+             "side": ("no", ["return — no change this time"]),
+             "cont": "yes — probability 1/(diff+1)"},
+            {"k": "act", "t": "@KINGLOWER — the Crown eases",
+             "s": ["amount = random_int(5−diff, 1), shown negated (0x034B44..0x034B5C)",
+                   "tax write clamp 75 at func_034318 0x03434F"]},
+            {"k": "end", "t": "announce via 0x191F:0xAE0"},
+        ],
+        "No player-facing 'request lower taxes' control is documented; the "
+        "announce overlay's internal tax write is untraced (TBD)."))
+    _after_h3(soup, "The King's mercenaries", flow_fig(
+        "The mercenary offer", "peacetime func_03E664 · wartime func_03E442",
+        [
+            {"k": "dec", "t": "war of independence declared ? ([0x5382]&1)",
+             "side": ("no — peacetime", ["1-in-21 gate: random_int(0,0x14)==0 (0x03E66A)",
+                                         "offering power must hold treaty bit 0x40 (0x03E6A2)",
+                                         "count = random_int(1,3) + coin flips (0x03E6C8)",
+                                         "fee/unit = ((diff+4)·2 + rand(0,6))·100 (0x03E713)"]),
+             "cont": "yes — wartime"},
+            {"k": "act", "t": "one-shot arm: PowerRecord bit 0x08 (0x03E4BC/0x03E4CD)",
+             "s": ["no offer on the first eligible call — only from the second on"]},
+            {"k": "act", "t": "1-in-3 gate (0x03E4E8), then compose",
+             "s": ["count = random_int(2, (4−diff)/2 + 2) (0x03E512)",
+                   "plus exactly one: Cont. Cavalry or Artillery (0x03E52E)"]},
+            {"k": "act", "t": "fee/unit = ((diff+3)·2 + random_int(0,6)) · 100 (0x03E558)",
+             "s": ["price = fee · (count + 2) (0x03E56B)",
+                   "shown only if price ≤ treasury +0x2A (0x03E5FD); debit 0x03E651"]},
+            {"k": "act", "t": "landing — func_03D510",
+             "s": ["population-weighted coastal colony pick (0x3D57E)",
+                   "Man-O-War carrier at best beach (0x03D748); all land units Veteran (0x03D835)"]},
+            {"k": "end", "t": "@MERCS — force arrives"},
+        ]))
+    _after_h3(soup, "Royal Expeditionary Force schedule", flow_fig(
+        "REF growth — one purchase", "func_03E162, pre-independence each turn",
+        [
+            {"k": "act", "t": "fund += (8·diff + 10), doubled at 1600/1700/1750",
+             "s": ["PowerRecord +0x22 (0x3E17C..0x3E1B5); sale tax feeds the fund (0x32A92)"]},
+            {"k": "dec", "t": "fund ≥ 1800 ? (0x3E1C6)",
+             "side": ("no", ["wait — accrue again next turn"]), "cont": "yes"},
+            {"k": "dec", "t": "(reg+2)/3 > cavalry ? (0x3E1D5)",
+             "side": ("yes", ["buy Cavalry [0x53DC]"]), "cont": "no"},
+            {"k": "dec", "t": "reg/4 > artillery ? (0x3E1EB)",
+             "side": ("yes", ["buy Artillery [0x53E0]"]), "cont": "no"},
+            {"k": "dec", "t": "(reg+cav+art+5)/10 > ships ? (0x3E203)",
+             "side": ("yes", ["buy Man-O-War [0x53DE]"]), "cont": "no"},
+            {"k": "act", "t": "buy Regulars [0x53DA] (default)",
+             "s": ["inc at 0x3E238 · fund −= 1800 (0x3E271)",
+                   "post-declaration: announced as @KINGBUY instead (0x3E262)"]},
+            {"k": "end", "t": "army stays in ratio ~ 3:1 cav, 4:1 art, 10:1 naval"},
+        ]))
+    _after_h3(soup, "Spanish Succession merge", flow_fig(
+        "The Succession merge", "func_03C638 · event id 0x68",
+        [
+            {"k": "dec", "t": "[0x53D0] < 75 and [0x53D2] < 0 and single-player ?",
+             "side": ("no", ["≥75 → revolution handlers instead"]),
+             "cont": "yes (gate 0x2391C..0x02393A)"},
+            {"k": "act", "t": "rank powers: 3·[0x9418+p] + 2·[0x9298+p] + [0x9410+p]",
+             "s": ["0x3C655..0x3C66B, sort 0x3C68E — weakest AI cedes, strongest gains"]},
+            {"k": "act", "t": "@SUCCESSION popup (0x3C76A)",
+             "s": ['"…Treaty of Utrecht specifies that all {%STRING3} possessions…"']},
+            {"k": "act", "t": "rewrite every owner", "s": [
+                "map-tile owner nibbles (0x3C7AF..0x3C80C)",
+                "unit owners (0x3C81D) · colony owners +0x1A (0x3C8A0, SoL pools zeroed)",
+                "third owner-nibble table (0x3C8CA..0x3C8FE)"]},
+            {"k": "end", "t": "ceding power eliminated — controller:=2 (0x3C91A)"},
+        ],
+        "The enqueue gate for event 0x68 is an unresolved residual; the handler "
+        "is also reachable from cheat @FORCED stage (a)."))
+
+
 ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
-             "9": [enrich_market], "12": [enrich_units],
+             "8": [enrich_sol], "9": [enrich_market], "12": [enrich_units],
+             "18": [enrich_king], "19": [enrich_loot],
              "20": [enrich_turnflow], "23": [enrich_events],
              "B": [enrich_appendix_b]}
 
