@@ -6142,3 +6142,42 @@ Symbols renamed: func_036574 market_day → new_game_power_init; func_0755CC
 end_of_turn → new_game_setup; per-turn drift attribution moves to
 func_0363A2. Stale: spec/systems/market.md §3/§3.1/§6/§9.3 refs, manual
 §9.1/§20.1, viceroy_source/data/pricing.c Phase 4.
+
+## 2026-08-01 — Native background economy: tension table is per-TRIBE; population decrement FOUND; several "RESOLVED-static" verdicts reversed
+Byte evidence in tools/manual_pdf/_work/factpacks/natives_background.md.
+Method finding first: the prior full-image disp16 scans that produced the
+natives.md §6 "no accessor image-wide" verdicts were UNSOUND — settlement
+fields are accessed through the resolved record pointer [0x8D4A] as [bx+N],
+which a disp16 scan for 0x54F0-family absolutes cannot see.
+1. The 0x5B1C tension table is TribeData +0x46 (0x5B1C = 0x5AD6 + 0x46):
+   per-TRIBE × power, stride 0x4E = the "39 words". The applier's first arg
+   is the tribe index [0x8D52]. natives.md §3's settlement-row model is
+   wrong. TribeData +0x36+p is its fractional feeder (±8 = one tick).
+2. Population decrement FOUND @0x5D67A (combat resolution func_05CA7E):
+   each victorious attack does pop−− while pop>1 (message 0x48); at the
+   last point the village is destroyed (human attacker also sets the
+   tribe's avenge flag +0x03|=0x40 @0x5D6A1) → remove_settlement @0x5D6A9.
+   Reverses the earlier "no decrement site anywhere" finding — attacks-to-
+   burn IS the population, as the user maintained.
+3. Settlement byte relabels: +0x06 = growth/spawn accumulator (+=pop per
+   turn, acts at 20 — not dead); flags 0x01 = brave-respawn request (set on
+   a brave's death in unit removal, tested/cleared in the settlement tick);
+   flags 0x10 = tribute-once latch; +0x07/+0x08/+0x09 = traded-good memory
+   (gift/trespass marker; last good sold to the village; last good bought).
+4. func_046DE0 = settlement TARGET SIZE (2·level+3; capital 3·level+4), the
+   growth cap — not a display-only value.
+5. func_046EC0's n/(n+1) removal scaling targets the TRIBE's horses_known/
+   horses_stock ([0x8D4E] is the tribe pointer), not settlement "wealth".
+6. @0x486F8/@0x4870C (+100/−100) are the post-Declaration @INDIANGRUDGE
+   war-council sites (tribes side with the Crown), not "incite".
+7. Tribute (func_04AC00) demands GOODS, and its ceiling operand [0x9E96] is
+   only ever written 0 → the demand is always exactly 10 units.
+8. New per-turn model recorded: native pass runs before the power phases
+   (func_04891A → func_0485F6 → func_04830E); mission tick M=(expert?4:1)
+   ×2 capital, ×2 FF 0x18, ÷2 FF 0x17 → tension_frac += M and alarm[owner]
+   −= 3M; selling qty cools the village alarm by qty (100 zeroes it);
+   herds grow by horses_known/turn capped 2·(tribe pop+25); good stocks
+   drift to 0 by level+1; braves: one per village, respawn only on death.
+Stale: spec/systems/natives.md §3/§6, viceroy_source/src/native/
+settlement.c (native_tick fiction), manual §19 (being updated in v8),
+2026-06-26/27 "RESOLVED-static" entries as they touch these bytes.

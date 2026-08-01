@@ -2971,31 +2971,34 @@ typedef struct {                    // one 18-byte record per village
     uint8_t map_x;                  // tile position
     uint8_t map_y;                  //
     uint8_t owner;                  // power id 4..11 = tribe index + 4
-    uint8_t flags;                  // 0x04 capital; 0x02 taught; 0x01 write-only bit
-    uint8_t population;             // village size — the raze-payout input (2026-05-30 ruling)
+    uint8_t flags;                  // 0x04 capital; 0x02 taught; 0x01 rebuild-a-brave; 0x10 tribute-once
+    uint8_t population;             // village size — grows to the tribe cap; −1 per lost battle
     uint8_t mission;                // 0xFF none; low nibble owner; 0x10 expert (Brébeuf)
-    uint8_t unused_6;               // never accessed (stale "growth counter" gloss withdrawn)
-    uint8_t trespass;               // escalation memory: set on trespass, bumped by trade
-    uint8_t last_bought;            // cargo id of the last good bought here
-    uint8_t last_sold;              // write-only (initialised, never read)
+    uint8_t growth_counter;         // += population each turn; acts at 20 (grow or spawn)
+    uint8_t trade_marker;           // gift/trespass memory: the gifted good, or the trespass stamp
+    uint8_t last_sold;              // last good the player sold to the village
+    uint8_t last_bought;            // last good the player bought from it
     uint16_t alarm[4];              // per-power anger words — war and raids at 128+
 } NativeSettlement;
 ```
 
 ```c
 typedef struct {                    // one record per tribe (8 live)
-    uint8_t _pad0[2];               // unmapped
+    uint8_t capital_x;              // the capital's tile
+    uint8_t capital_y;              //
     uint8_t level;                  // tech level 0..3 — the camp/village/city class
-    uint8_t status;                 // bit 0x80 = tribe wiped out
+    uint8_t status;                 // 0x20 armed for war; 0x40 avenge-a-razing; 0x80 wiped out
     uint8_t _pad1[3];               // unmapped
-    uint8_t muskets_known;          // haggle: musket sell price scales on 12 - this
-    uint8_t horses_known;           // haggle: horse sell price scales on 10 - this
+    uint8_t muskets_known;          // musket lore — an armory that depletes arming braves
+    uint8_t horses_known;           // horse lore — a pure breeding rate, never spent
     uint8_t _pad2;                  // unmapped
-    uint16_t horses_stock;          // village-supply model input
-    uint16_t silver_stock;          // village-supply model input
-    uint16_t goods_stock[16];       // per-good stock folded into supply/demand
-    uint8_t _pad3[24];              // unmapped
-    uint16_t alarm_seed[4];         // per-power starting anger, rolled at map creation
+    uint16_t horses_stock;          // the herd: +horses_known per turn, cap 2·(tribe pop+25)
+    uint16_t silver_stock;          // map-creation endowment (no runtime reader — TBD)
+    int16_t goods_stock[16];        // net trade balance per good; drifts to 0 by level+1 per turn
+    uint16_t requests[4];           // per-power request words, cleared each turn (codes TBD)
+    int8_t tension_frac[4];         // fractional anger accumulator — every ±8 is one tension tick
+    uint8_t _pad3[12];              // unmapped
+    uint16_t tension[4];            // per-power anger 0..100 — THE tension table, seeded at map creation
 } TribeData;
 ```
 
@@ -3018,10 +3021,12 @@ colonial-presence score at cutoffs −5 / 0 / 10; *War* is the separate
 alarm ≥ 128 state. The presence score's exact composition is multi-term and not
 fully decomposed — TBD.
 
-*Data-model corrections carried by this chapter:* byte 6 of the village record
-is dead (the "growth counter" gloss in Appendix A.7 is stale), the alarm block
-is four 16-bit words (not byte pairs), and the old "visited"/"event-eligible"
-flag labels are withdrawn — no instruction sets or tests them.
+*Data-model corrections carried by this chapter (2026-08-01 ruling):* the
+tension table physically lives at the tail of each tribe record — it is
+per-tribe, not per-village; the village growth counter is real (an earlier
+"never accessed" verdict came from a scan that could not see pointer-relative
+access); the alarm block is four 16-bit words; and bytes 7–9 are the
+village's traded-good memory, not a wealth account.
 
 ### 19.2 The eight tribes
 
@@ -3171,9 +3176,14 @@ example: 100 Horses from an Agrarian village (level 1): ask = 350, +34 market te
 ```
 
 A closed deal moves the gold through your treasury (`power.gold`, 32-bit both
-ways, with an honest can't-afford check), records the good in
-`settlement.last_bought`, adds 25 to the village's wealth word, bumps its
-trade counter — and credits **−4 goodwill** on the tribe's tension. The
+ways, with an honest can't-afford check) and records the good in the
+village's trade memory. Selling has two quieter effects, both byte-traced:
+**every unit sold cools the village directly** — its alarm toward you drops
+by the quantity, and a full 100-load zeroes it outright — and **selling
+Muskets or Horses arms the tribe**: +1 lore at 25 units, +2 at 50 (horses
+also add a quarter of the load to the tribal herd). A −4 goodwill credit on
+the tribe's tension is also on record (its site sits inside the raid
+handler's range — flagged). The
 haggle script also carries a *"No, let the goods be our gift to you"* row;
 the gift's tension credit is untraced (TBD), though the original manual says
 gifts cool anger faster than sales. Two manual-attested behaviours round out
@@ -3242,17 +3252,19 @@ tribe).
 
 ### 19.8 Demands, tribute, and hired wars
 
-**You demand tribute.** `demand_tribute()` derives an amount from the
-village's stores and clamps it:
+**You demand tribute.** `demand_tribute()` stages a strength contest — your
+regional military score against the tribe's, each side rolling
+`random(0..strength)` (Spain and Hernán Cortés owners count ×1.5) — and each
+village pays **once ever** (a one-shot flag). The demand is in **goods, not
+gold**, and the coded clamp collapses in practice:
 
 ```formula
-tribute = clamp( raw, 10, min( 3·village wealth + 10, 100 ) )
-example: a village with wealth 12 yields at most min(46,100) = 46 units of the good — and never less than 10 when it yields at all
+tribute = clamp( raw, 10, min( 3·wealth-word + 10, 100 ) )        the wealth word is only ever written zero → the ceiling is always 10
+example: every successful tribute demand in the shipped game is exactly 10 units of the chosen good, taken from the village's ledger
 ```
 
 Outcomes run from goods handed over, through *"our people are poor"*, to the
-two refusals (laughter, or dark warnings). The raw pre-clamp derivation
-beyond "reads the settlement's stock" is TBD.
+two refusals (laughter, or dark warnings).
 
 **They demand from you.** War-footing tribes press claims: reparations in
 gold (*"The {tribe} people cry out for justice"* — trigger and amount
@@ -3265,9 +3277,9 @@ Minuit** in Congress zeroes all land payments.
 
 **Incite.** A unit in the village (posture permitting) can pay the tribe to
 take the warpath against a rival — *"We will gladly drive the {rival} from
-our ancestral lands in exchange for {N}."* Payment applies the +100/−100
-tension pair of §19.6: the tribe goes to instant war footing against the
-victim and warms to you. The asking price's formula is untraced (TBD); the
+our ancestral lands in exchange for {N}."* The asking price's formula and the
+payment's tension writes are untraced (TBD — the +100/−100 pair once filed
+here belongs to the post-Declaration war council, §19.11); the
 manual names its three factors — your missions with the tribe, their attitude
 toward you, and their attitude toward the target.
 
@@ -3305,22 +3317,23 @@ on the easier difficulties.
 
 ### 19.10 Attacking a village — burn, loot, and extinction
 
-**How many attacks until it burns?** The honest state of the trace:
+**How many attacks until it burns? The population *is* the counter**
+(byte-located 2026-08-01, closing what an earlier scan wrongly declared
+absent). Inside the combat resolution, every battle the village loses does
+exactly one of two things:
 
-- Each victorious attack enters `raze_settlement()`, which fetches the
-  village's hostility/size value and rolls the **survive-or-burn check**:
-  `random(0 .. 100)` — widened to 140 by a **Seasoned Scout** attacker.
-  Larger villages bias the check upward (the roll is re-rolled while
-  value/4 still exceeds it), one tribe gets a difficulty-scaled special
-  bound, and values of 75+ divert to a big-treasure branch.
-- The **per-attack population decrement has not been located in the
-  binary** — no instruction that lowers `settlement.population` on an attack
-  has been found anywhere in the decoded image (TBD), and the exact wiring
-  from the check to the destroy path is likewise untraced (TBD). What a
-  closure needs: a DOSBox trace watching the population byte across repeated
-  attacks. Until then: the *size* input below is the population per the
-  2026-05-30 ruling, and bigger populations demonstrably survive more
-  attacks — but the decrement rule itself is not yet byte-verified.
+- population above 1 → **population − 1**, with the village-shrinks
+  message; or
+- population at its last point → **the village is destroyed** — a human
+  attacker also stamps the tribe's avenge flag (feeding the post-Declaration
+  war council of §19.11) — and the removal path of this section runs.
+
+So a size-8 village takes **eight lost battles** to erase. The separate roll
+inside `raze_settlement()` — `random(0..100)`, widened to 140 by a
+**Seasoned Scout**, biased upward for big villages (re-rolled while value/4
+exceeds it), with a big-treasure branch at 75+ — governs the treasure/escape
+outcome of the raze; its exact wiring to the payout timing is the one piece
+still untraced (TBD).
 
 **The payout.** When the village falls, the razing power collects gold on
 the spot:
@@ -3343,15 +3356,79 @@ native units of the village are detached, the settlement table is compacted
 (every later record shifts down one slot, links repaired), the live count
 drops, and the tribe's settlement count falls. If it was the tribe's **last
 village**, the tribe's dead bit is set and *"The {tribe} tribe has been wiped
-out."* announces the extinction; a surviving tribe instead has the removed
-village's wealth fields scaled down by n/(n+1) — a correction of the older
-"spread across survivors" reading. (The debug menu's *Kill Indians* item
+out."* announces the extinction; a surviving tribe instead has its **horse
+herd and horse lore** scaled down by n/(n+1) — the record scaled is the
+tribe's, not the dead village's (corrected 2026-08-01). (The debug menu's *Kill Indians* item
 drives exactly this machinery tribe-wide, greying out already-dead tribes.)
 Villages are born through `create_settlement()` — capped at 84 live
 records — and placed at map creation by `place_native_settlements()` from
 the dispersal chart.
 
-### 19.11 Aside — plundering European colonies
+### 19.11 The background economy — growth, herds, and war parties
+
+Every turn — **before** the four European powers move — the engine runs the
+native pass: it walks each living tribe, then each of that tribe's villages,
+and does all of the following invisibly.
+
+**Villages grow toward a class cap.** Each village accumulates its own
+population into a growth counter every turn; at 20 the counter resets and
+the village either grows by one (if below its cap) or replaces a fallen
+brave. The cap is set by the tribe's class:
+
+| class | villages | the capital |
+|---|---|---|
+| 0 — Semi-Nomadic camps | 3 | 4 |
+| 1 — Agrarian villages | 5 | 7 |
+| 2 — Advanced cities (Aztecs) | 7 | 10 |
+| 3 — Civilized cities (Incas) | 9 | 13 |
+
+```formula
+growth fires every ceil( 20 ÷ population ) turns        big villages tick fast; a brave-replacement request preempts the growth
+example: a size-5 Iroquois village ticks every 4 turns and stops at 5 — its capital keeps going to 7
+```
+
+**One brave per village.** Map creation spawns exactly one Brave per
+village, linked to it. A village only builds another when **its own brave
+dies** — the unit-removal code stamps the rebuild-request flag, and the next
+20-tick produces the replacement instead of growth. What marches out depends
+on the armory:
+
+```formula
+new brave: +armed if muskets lore > 0 (a musket is consumed 1 time in difficulty+1) · +mounted if the herd holds 50 (−50 horses)
+example: a Sioux village with musket lore 2 and herd 120 fields a Mounted Warrior — the herd drops to 70
+```
+
+**Lore and herds.** `tribe.muskets_known` is an armory that your musket
+sales (+1 at 25, +2 at 50), battlefield seizures, colony plunder and raids
+fill — and arming braves slowly drains. `tribe.horses_known` is a **breeding
+rate**: it is never spent, and the herd grows by it every turn, capped at
+2·(tribe population + 25). Horse sales add a quarter of the load straight to
+the herd. This is why selling the tribes muskets and horses is remembered as
+the classic blunder — the goods become *war parties*.
+
+**Stocks fade.** The per-good trade balance a village haggles against drifts
+back toward zero by (class + 1) per turn — a tribe forgets both gluts and
+shortages in a few dozen turns.
+
+**The war council (after the Declaration).** Once independence is declared,
+each tribe checks every turn: if its anger toward the rebels is 25+ (rolled
+against random(1..400)) — or you ever razed one of its villages (the avenge
+flag) — then with odds 1 in 2·(5 − difficulty)+1 it holds the
+`@INDIANGRUDGE` war council: anger versus you jumps +100, anger toward the
+Crown drops −100, your missions in its villages burn, the armory is rescaled
+for war (musket lore ×4, the herd set to 25 per lore point) and the tribe is
+latched armed. This is the +100/−100 pair once mis-filed under "incite".
+
+**Missions and colonies push every turn.** A standing mission cools its
+village continuously — alarm falls by 3× the mission strength each turn
+(strength: 1, or 4 for an expert mission, doubled in a capital; doubled
+again with las Casas seated, halved with Sepúlveda) — while nearby colony
+pressure heats it. Both feed a fractional per-power accumulator on the tribe;
+every ±8 in it becomes one visible ∓1 tension tick — that is the "drift" of
+§19.6. (The colony-pressure magnitude formula and the cool-down band helper
+are the remaining TBDs here.)
+
+### 19.12 Aside — plundering European colonies
 
 For contrast with raze gold: capturing a **European** colony (the
 colony-combat path, disabled during the War of Independence) transfers a
@@ -5943,12 +6020,14 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `apply_tax_change()` | `func_034318` (file 034318) |
 | `attempt_conversion()` | `func_0572E6` (file 0572e6) |
 | `base_strength()` | `func_007C2A` (file 007c2a) |
+| `brave_ai()` | `func_046FFA` (file 046ffa) |
 | `burn_missions()` | `func_045D00` (file 045d00) |
 | `buy_goods()` | `func_0324F2` (file 0324f2) |
 | `buy_price()` | `func_030566` (file 030566) |
 | `cash_in_treasure()` | `func_05C878` (file 05c878) |
 | `check_immigration()` | `func_0363A2` (file 0363a2) |
 | `classify_ship_move()` | `func_03FA9C` (file 03fa9c) |
+| `colony_pressure()` | `func_0460F8` (file 0460f8) |
 | `combat_analysis_dialog()` | `func_05E9B0` (file 05e9b0) |
 | `combat_result_wrapper()` | `func_05BE30` (file 05be30) |
 | `complete_fortify()` | `func_04101C` (file 04101c) |
@@ -5991,6 +6070,7 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `native_attitude()` | `func_046500` (file 046500) |
 | `native_events()` | `func_056C3E` (file 056c3e) |
 | `native_raid()` | `func_05BE84` (file 05be84) |
+| `native_turn_driver()` | `func_04891A` (file 04891a) |
 | `new_game_power_init()` | `func_036574` (file 036574) |
 | `new_game_setup()` | `func_0755CC` (file 0755cc) |
 | `next_immigrant_class()` | `func_034C24` (file 034c24) |
@@ -6029,7 +6109,8 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `sell_price()` | `func_030590` (file 030590) |
 | `set_active_tribe()` | `func_0081C6` (file 0081c6) |
 | `set_unit_owner()` | `func_00738E` (file 00738e) |
-| `settlement_display_value()` | `func_046DE0` (file 046de0) |
+| `settlement_target_size()` | `func_046DE0` (file 046de0) |
+| `settlement_tick()` | `func_04830E` (file 04830e) |
 | `shore_bombardment()` | `func_02D3C6` (file 02d3c6) |
 | `shuffle_building_plots()` | `func_025D34` (file 025d34) |
 | `sons_of_liberty_percent()` | `func_008524` (file 008524) |
@@ -6037,9 +6118,11 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `spawn_unit()` | `func_006D24` (file 006d24) |
 | `spend_tools()` | `func_040608` (file 040608) |
 | `starve_population()` | `func_008FB4` (file 008fb4) |
+| `tally_tribes()` | `func_0427D6` (file 0427d6) |
 | `tax_level_warning()` | `func_0349F4` (file 0349f4) |
 | `tax_petition()` | `func_034AE0` (file 034ae0) |
 | `tory_uprising()` | `func_03CAC6` (file 03cac6) |
+| `tribe_turn()` | `func_0485F6` (file 0485f6) |
 | `tune_id()` | `func_004DF8` (file 004df8) |
 | `turn_loop()` | `func_005760` (file 005760) |
 | `update_colony()` | `func_02D658` (file 02d658) |
@@ -6121,11 +6204,13 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `colony.warehouse_level` | `ColonyRecord +0x95` |
 | `settlement.alarm` | `NativeSettlement +0x0A` |
 | `settlement.flags` | `NativeSettlement +0x03` |
-| `settlement.last_bought` | `NativeSettlement +0x08` |
+| `settlement.growth_counter` | `NativeSettlement +0x06` |
+| `settlement.last_bought` | `NativeSettlement +0x09` |
+| `settlement.last_sold` | `NativeSettlement +0x08` |
 | `settlement.mission` | `NativeSettlement +0x05` |
 | `settlement.owner` | `NativeSettlement +0x02` |
 | `settlement.population` | `NativeSettlement +0x04` |
-| `settlement.trespass` | `NativeSettlement +0x07` |
+| `settlement.trade_marker` | `NativeSettlement +0x07` |
 | `power.artillery_bought` | `PowerRecord +0x1E` |
 | `power.back_tax` | `PowerRecord +0x4C` |
 | `power.bells_per_turn` | `PowerRecord +0x0E` |
@@ -6151,9 +6236,13 @@ The mechanics chapters use friendly names. This table binds every name back to t
 | `power.sol_percent` | `PowerRecord +0x19` |
 | `power.tax_rate` | `PowerRecord +0x01` |
 | `power.treaty_respect` | `PowerRecord +0x40` |
-| `tribe.alarm_seed` | `TribeData +0x46` |
+| `tribe.horses_known` | `TribeData +0x08` |
+| `tribe.horses_stock` | `TribeData +0x0A` |
 | `tribe.level` | `TribeData +0x02` |
+| `tribe.muskets_known` | `TribeData +0x07` |
 | `tribe.status` | `TribeData +0x03` |
+| `tribe.tension` | `TribeData +0x46` |
+| `tribe.tension_frac` | `TribeData +0x36` |
 | `unit.flags` | `UnitRecord +0x04` |
 | `unit.kind` | `UnitRecord +0x02` |
 | `unit.moves_spent` | `UnitRecord +0x05` |

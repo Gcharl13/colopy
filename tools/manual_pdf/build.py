@@ -336,9 +336,9 @@ EXAMPLES = {
     ("NativeSettlement", "population"): "8",
     ("NativeSettlement", "mission"): "255 = no mission",
     ("NativeSettlement", "growth_counter"): "3",
-    ("NativeSettlement", "trespass"): "2 incidents",
+    ("NativeSettlement", "trade_marker"): "254 = trespass stamped",
     ("NativeSettlement", "last_bought"): "2 = Tobacco",
-    ("NativeSettlement", "last_sold"): "255",
+    ("NativeSettlement", "last_sold"): "255 = nothing yet",
     ("NativeSettlement", "alarm"): "England 40 · France 12 · Spain 0 · Neth. 5",
     ("NativeSettlement", "unused_6"): "—",
     ("TribeData", "level"): "2 = Advanced (Aztecs)",
@@ -348,7 +348,10 @@ EXAMPLES = {
     ("TribeData", "horses_stock"): "40",
     ("TribeData", "silver_stock"): "120",
     ("TribeData", "goods_stock"): "Furs 60 · Tobacco 25…",
-    ("TribeData", "alarm_seed"): "England 13 · France 6 · Spain 9 · Neth. 4",
+    ("TribeData", "tension"): "England 40 · France 12 · Spain 0 · Neth. 5",
+    ("TribeData", "tension_frac"): "England +5 of ±8",
+    ("TribeData", "requests"): "—",
+    ("TribeData", "capital_x"): "23, 41", ("TribeData", "capital_y"): "",
     ("StopRecord", "dest"): "colony 3  (999 = Europe)",
     ("StopRecord", "counts"): "load 2 · unload 1",
     ("StopRecord", "load_nib"): "Tools, Muskets",
@@ -2749,10 +2752,12 @@ def enrich_natives(soup):
              "cards": [
                  ("Incite Indians",
                   ["posture \u2260 0 \u2014 pay for a warpath",
-                   "tension +100 victim / \u2212100 you"], "warn"),
+                   "price & tension writes untraced (TBD)"], "warn"),
                  ("Demand Tribute",
-                  ["posture \u2260 0, never from ships",
-                   "clamp(raw, 10, min(3\u00b7wealth+10, 100))"], "econ"),
+                  ["posture \u2260 0, never from ships \u00b7 once per "
+                   "village",
+                   "strength contest \u2014 always 10 units in practice"],
+                  "econ"),
                  ("Attack Village",
                   ["posture > 1 \u2014 combat, then the",
                    "burn check of \u00a719.10"], "warn"),
@@ -2783,8 +2788,10 @@ def enrich_natives(soup):
              "(demand\u2212want+4)/10) \u2014 counter-offers until the "
              "budget runs dry."),
             ("Settle up",
-             "gold moves 32-bit both ways \u00b7 last-bought remembered "
-             "\u00b7 village wealth +25 \u00b7 tension \u22124 goodwill."),
+             "gold moves 32-bit both ways \u00b7 selling qty cools the "
+             "village: alarm \u2212qty, a 100-load zeroes it \u00b7 "
+             "muskets/horses sold arm the tribe (+1 lore at 25, +2 at 50) "
+             "\u00b7 tension \u22124."),
         ], foot="Same visit: food-beg on a computed deficit, the corn gift "
                 "on a fat surplus. The \u201clet it be our gift\u201d "
                 "row\u2019s tension credit is untraced TBD; a village never "
@@ -2820,8 +2827,10 @@ def enrich_natives(soup):
                 ("Trespass, severe", "+3", CAT["warn"][0], ""),
                 ("Mission destroyed / expelled", "+comp", CAT["warn"][0],
                  "amount TBD"),
-                ("Incite accepted vs you", "+100", CAT["warn"][0],
-                 "instant war footing"),
+                ("War council joins the Crown", "+100", CAT["warn"][0],
+                 "post-Declaration; razing them guarantees it"),
+                ("Colony pressure nearby", "+frac", CAT["warn"][0],
+                 "fills the \u00b18 fractional meter"),
                 ("Burial-ground desecration", "+100", CAT["warn"][0],
                  "the unit is executed"),
                 ("Ally\u2019s smite pact", "+100", CAT["warn"][0],
@@ -2836,8 +2845,10 @@ def enrich_natives(soup):
                  "goodwill after a closed deal"),
                 ("Mission founded", "\u2212comp", CAT["arr"][0],
                  "result capped at 70"),
-                ("Incite reward", "\u2212100", CAT["arr"][0],
-                 "paid to the paying power"),
+                ("War council, toward the King", "\u2212100",
+                 CAT["arr"][0], "the same event\u2019s paired write"),
+                ("A standing mission, every turn", "\u2212frac",
+                 CAT["arr"][0], "alarm \u22123\u00d7strength too"),
                 ("Pocahontas acquired", "reset", CAT["arr"][0],
                  "all attitudes \u2192 Content"),
             ]),
@@ -2912,13 +2923,15 @@ def enrich_natives(soup):
                   [("DEF", "defence bonus, doubled for a capital"),
                    ("village base defence formula", "TBD"),
                    ("manual", "cities \u226b villages \u226b camps")]) +
-        rule_card("2 \u00b7 Burn check \u2014 each victorious attack",
-                  "a roll of random(0..100) \u2014 the village falls when "
-                  "hostility \u00f7 4 stays at or below the roll",
-                  [("Seasoned Scout", "widens the roll to random(0..140)"),
-                   ("size bias", "big villages re-roll the check upward"),
-                   ("75+", "diverts to the big-treasure branch"),
-                   ("population decrement", "not located in the binary TBD")]) +
+        rule_card("2 \u00b7 Attrition \u2014 each victorious attack",
+                  "population \u2212 1 \u2014 the village burns when its "
+                  "last point falls",
+                  [("so", "a size-8 village takes 8 lost battles to erase"),
+                   ("last point", "a human attacker also stamps the "
+                    "tribe\u2019s avenge flag (\u00a719.11)"),
+                   ("escape roll", "random(0..100), 140 with a Seasoned "
+                    "Scout, big villages re-roll upward \u2014 the "
+                    "treasure branch (wiring TBD)")]) +
         rule_card("3 \u00b7 Raze gold \u2014 paid the moment the village "
                   "falls",
                   "three dice added together \u00d7 a roll of random(1..6) "
@@ -2931,27 +2944,57 @@ def enrich_natives(soup):
             ("March in", "posture must allow war \u2014 \u201cShall we "
              "attack the {tribe}, Your Excellency?\u201d"),
             ("The battle", "random(1..ATK+DEF) \u2264 ATK wins."),
-            ("Survive or burn", "hostility/4 vs random(0..100)."),
+            ("Attrition", "each win takes one population; the last "
+             "point burns the village."),
             ("Raze gold", "straight to the treasury \u2014 no \u00d7100, "
              "no Treasure unit on this path."),
             ("Aftermath", "the last village falling wipes the tribe; a "
-             "survivor\u2019s wealth scales n/(n+1)."),
-        ], foot="Each victorious attack re-runs steps 2\u20133; the "
-                "sequence ends only when the burn check finally fails the "
-                "village.") +
+             "survivor\u2019s horse herd and lore scale n/(n+1)."),
+        ], foot="Each victorious attack re-runs steps 2\u20133; a size-N "
+                "village dies on its N-th lost battle.") +
         worked_card("Worked example \u2014 a size-8 Iroquois village, "
                     "Explorer difficulty, turn 96",
                     [("Battle", "attack 6 vs defence 3, random(1..9) "
                       "rolls 4", "4 \u2264 6, succeeds"),
-                     ("Burn check", "hostility 38, random(0..100) rolls 52",
-                      "38/4 = 9 \u2264 52, falls"),
+                     ("Attrition", "the village\u2019s eighth lost "
+                      "battle \u2014 its last point falls",
+                      "pop 1 \u2192 razed"),
                      ("Raze gold", "rolls 5+7+3 = 15, \u00d74, \u00d74, "
                       "\u00d79", "2,160 gold"),
                      ("Aftermath", "Iroquois still hold 4 villages \u2014 "
-                      "no extinction", "wealth \u00d7 4/5"),
+                      "no extinction", "herd \u00d7 4/5"),
                      ("Tension", "unprovoked attack heats the tribe",
                       "delta TBD")]))
     _after_h3(soup, "Attacking a village", fig1910)
+
+    _after_h3(soup, "The background economy", sheet_fig(
+        "One native turn \u2014 the invisible pass",
+        "native_turn_driver() \u00b7 tribe_turn() \u00b7 "
+        "settlement_tick()",
+        story_steps([
+            ("Before the powers move",
+             "the native pass runs first, every turn, for each living "
+             "tribe."),
+            ("War-council check",
+             "post-Declaration only: anger \u2265 25 vs random(1..400), or "
+             "the avenge flag \u2014 then 1 in 2\u00b7(5\u2212"
+             "difficulty)+1 \u2192 @INDIANGRUDGE: +100 vs you, "
+             "\u2212100 the Crown, missions burn, armory rescaled."),
+            ("Each village ticks",
+             "growth counter += population; at 20 \u2192 grow toward the "
+             "class cap, or field the replacement brave (armed by the "
+             "armory, mounted for 50 horses)."),
+            ("Missions cool, colonies heat",
+             "alarm \u2212 3\u00d7mission strength per turn; colony "
+             "pressure pushes back; every \u00b18 of fractional anger "
+             "becomes one visible tick."),
+            ("Stocks and herds",
+             "trade balances drift to zero by class+1 per turn; the herd "
+             "grows by horse lore, capped at 2\u00b7(tribe pop + 25)."),
+            ("The braves move",
+             "each war party takes up to 20 AI actions per turn; the "
+             "brave decision logic is still undecoded (TBD)."),
+        ])))
 
 
 ENRICHERS = {"4": [enrich_palette], "5": [enrich_terrain],
