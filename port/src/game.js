@@ -243,6 +243,10 @@ const G = {
   // The engine blinks the active unit's selection ring; ~2 Hz at 60 fps.
   blink: true,
   tick: 0,
+  dialog: null,           // active modal popup, see openDialog()
+  landHo: false,          // @LANDHO fires once per game
+  newLand: '',            // what the player named the New World
+  woodcut: 1,             // @WOODCUT index on the woodcut screen
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -250,12 +254,23 @@ const G = {
 const UNITS = {};
 for (const r of DATA.units) {
   UNITS[r.name] = { name: r.name, icon: r.icon - 1, movement: r.movement,
-                    attack: r.attack, combat: r.combat, cargo: r.cargo };
+                    attack: r.attack, combat: r.combat, cargo: r.cargo,
+                    hull: r.hull };
 }
 const unit = (n) => UNITS[n];
 
 // Starting conditions, §18.11: gold 1000 (d=0) / 300 (d=1) / 0 (d>=2), human only.
 const START_GOLD = [1000, 300, 0, 0, 0];
+
+// @UNIT hull is the ship predicate: every vessel has hull > 0, and it is the
+// only column that separates them from the Wagon Train (which carries cargo but
+// sails nowhere).
+function mkUnit(name, x, y, cargo) {
+  const t = unit(name);
+  return { type: t.name, icon: t.icon, x, y,
+           moves: t.movement, movesLeft: t.movement,
+           ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [] };
+}
 
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
@@ -267,13 +282,11 @@ function beginGame() {
   const [sx, sy] = DATA.starts[G.nation];
   const mk = () => {
     const u = unit(dutch ? 'Merchantman' : 'Caravel');
-    return { type: u.name, icon: u.icon, x: sx, y: sy,
-             moves: u.movement, movesLeft: u.movement,
-             nation: G.nation, orders: 0,
-             cargo: ['Pioneers', 'Soldiers'] };
+    return mkUnit(u.name, sx, sy, ['Pioneers', 'Soldiers']);
   };
   G.units = (G.difficulty <= 1) ? [mk(), mk()] : [mk()];
   G.sel = 0;
+  G.landHo = false; G.newLand = '';
   centerOn(sx, sy);
   G.msg = `${DATA.nations[G.nation].homeport}, ${DATA.nations[G.nation].country}.`;
 }
@@ -307,6 +320,95 @@ function hollowRect(ctx, x, y, w, h, colorIdx) {
   ctx.fillStyle = ink(colorIdx);
   ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
   ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h);
+}
+
+// ---------------------------------------------------------------- dialogs
+// Popup geometry is the builder math of spec/ui/dialog_framework.md §3
+// (func_06D316 @0x06D316): content_w = max(@width, longest line px); box_w =
+// content_w + 2*inset'(3); centred at X = 160 - W/2, Y = 100 - H/2. Body lines
+// pen from box_y+6 at box_x+5 with pitch glyph_h+1 = 6. When a body block is
+// present the option seed bumps by border(3) + text_h; rows sit at box_x+9 with
+// their text at row_y+1, pitch 8, and the selected row wears the +0x40 band
+// colour 0x37. Checked against the worked boot-menu example in that spec:
+// @y=91, one title line -> title top 97, first option top 107, box_h 58.
+function layoutDialog(d) {
+  let cw = d.width;
+  for (const l of d.body.concat(d.tail)) cw = Math.max(cw, FONT.tiny.width(l));
+  const w = cw + 6;
+  const textH = d.body.length * 6;
+  const rows = d.opts ? d.opts.length * 8 : 11;   // entry field: label + box
+  const h = 6 + textH + 3 + rows + 3;
+  return { x: Math.round(160 - w / 2), y: Math.round(100 - h / 2), w, h, textH };
+}
+// '{...}' spans switch to the hilite ink (struct +0x74 ink record, func_06C388).
+function spanText(ctx, line, x, y, base, hi) {
+  for (const part of line.split(/(\{[^}]*\})/)) {
+    if (!part) continue;
+    x = FONT.tiny.draw(ctx, part.replace(/[{}]/g, ''),
+                       x, y, lut(part.startsWith('{') ? hi : base));
+  }
+  return x;
+}
+function drawDialog(ctx) {
+  const d = G.dialog;
+  if (!d) return;
+  const b = layoutDialog(d);
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  const seed = b.y + 6 + b.textH + 3;
+  if (d.opts) {
+    d.opts.forEach((o, k) => {
+      const oy = seed + k * 8;
+      if (k === d.sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 4, oy, b.w - 8, 7); }
+      FONT.tiny.draw(ctx, o, b.x + 9, oy + 1, lut(k === d.sel ? 0xFC : 0xFE));
+    });
+  } else {
+    // Entry popup (@LANDHO): the tail line is the field label, the box follows.
+    const label = d.tail[0] || '';
+    FONT.tiny.draw(ctx, label, b.x + 5, seed + 2, lut(0xFE));
+    const fx = b.x + 5 + FONT.tiny.width(label) + 4;
+    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 11, 0xFE);
+    const caret = (Math.floor(G.tick / 24) % 2) ? '_' : '';
+    FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(0xFC));
+  }
+}
+// A numeric @default is the highlighted option row; a text @default pre-fills
+// an entry field (GAME.TXT @LANDHO carries "America").
+function openDialog(key, onDone) {
+  const t = DATA.dialogs[key];
+  const numeric = /^\d+$/.test(t.default);
+  G.dialog = {
+    body: t.body, tail: t.tail, width: t.width, onDone,
+    opts: numeric ? t.tail : null,
+    sel: numeric ? +t.default : 0,
+    entry: numeric ? undefined : t.default,
+  };
+}
+function closeDialog(result) {
+  const d = G.dialog;
+  G.dialog = null;
+  if (d && d.onDone) d.onDone(result);
+}
+function dialogKey(k) {
+  const d = G.dialog;
+  if (d.opts) {
+    if (k === 'ArrowUp') d.sel = (d.sel + d.opts.length - 1) % d.opts.length;
+    else if (k === 'ArrowDown') d.sel = (d.sel + 1) % d.opts.length;
+    else if (k === 'Enter' || k === ' ') closeDialog(d.sel);
+    else if (k === 'Escape') closeDialog(-1);
+  } else {
+    if (k === 'Enter') closeDialog(d.entry);
+    else if (k === 'Backspace') d.entry = d.entry.slice(0, -1);
+    else if (k.length === 1 && d.entry.length < 23) d.entry += k;
+  }
+}
+function dialogClick(mx, my) {
+  const d = G.dialog, b = layoutDialog(d);
+  if (!d.opts) { closeDialog(d.entry); return; }
+  const seed = b.y + 6 + b.textH + 3;
+  for (let k = 0; k < d.opts.length; k++) {
+    if (hit(mx, my, { x: b.x + 4, y: seed + k * 8, w: b.w - 8, h: 8 })) { closeDialog(k); return; }
+  }
 }
 
 // ---------------------------------------------------------------- screens
@@ -457,6 +559,37 @@ function sheetAnchored(ctx, sheet, idx) {
   if (!f) return;
   sheetFrame(ctx, sheet, idx, f.hx - (f.w >> 1), f.hy - f.h + 1);
 }
+// §26.14 -- woodcut event plates. Black clear, WOODFRAM frame 1, the WDCUT<n>
+// art, a NAMEPLAT caption strip at y=162 (left cap + N mid tiles + right cap,
+// centred on x=160) and the @WOODCUT caption at y=165 in FONT-NP with the ink
+// LUT 0x5C/0x5D/0x5E. Frame and art are placed by their own sheet-header
+// anchors, which put WOODFRAM at (23,15) and WDCUT01 at (63,40).
+//
+// The manual has the caption prefixed "<year>: "; the DOS capture
+// docs/screens/12_discovery_cinematic.png shows the bare caption, and pixels
+// outrank team docs, so the bare form is what is drawn here. Conflict logged in
+// notes/rulings/RULINGS.md (2026-08-04) rather than settled silently.
+function drawWoodcut(ctx) {
+  // Every .SS ships its own 768-byte palette, and the woodcut sheets' is not
+  // the master VICEROY.PAL: in it 0x5C/0x5D/0x5E are the dark caption browns,
+  // where the master's are pale wood tones that would be invisible on the
+  // plate. Adopting WOODFRAM's palette is what makes the quoted LUT resolve.
+  usePalette('WOODFRAM');
+  ctx.fillStyle = ink(0); ctx.fillRect(0, 0, W, H);
+  sheetAnchored(ctx, 'WOODFRAM', 0);
+  sheetAnchored(ctx, 'WDCUT' + String(G.woodcut).padStart(2, '0'), 0);
+  const caption = DATA.woodcuts[G.woodcut] || '';
+  const npLut = [ink(0x5C), ink(0x5D), ink(0x5E)];
+  const capW = FONT.np.width(caption);
+  const [lw] = frameSize('NAMEPLAT', 0), [mw] = frameSize('NAMEPLAT', 1);
+  const n = Math.max(1, Math.ceil((capW + 8 - 2 * lw) / mw));
+  let sx = Math.round(160 - (2 * lw + n * mw) / 2);
+  sheetFrame(ctx, 'NAMEPLAT', 0, sx, 162); sx += lw;
+  for (let i = 0; i < n; i++, sx += mw) sheetFrame(ctx, 'NAMEPLAT', 1, sx, 162);
+  sheetFrame(ctx, 'NAMEPLAT', 2, sx, 162);
+  FONT.np.center(ctx, caption, 160, 165, npLut);
+}
+
 // The scroll is GAME.TXT @VICEROY (@VICEROY2 for the Netherlands) laid out by
 // its own directives @width=78 @x=232 @y=21: one 8px line per source line —
 // blank `^` lines consume a slot — with `^^` lines centred in the column and
@@ -626,14 +759,17 @@ function drawMap(ctx) {
       drawTile(ctx, mx, my, px, py);
     }
   }
-  // units
-  for (const u of G.units) {
+  // Units, selected one last so a stack draws it on top.
+  const order = G.units.map((u, i) => i).sort((a, b) => (a === G.sel) - (b === G.sel));
+  for (const i of order) {
+    const u = G.units[i];
     const tx = u.x - G.view.x, ty = u.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= VIEW_TILES_X || ty >= VIEW_TILES_Y) continue;
     drawUnit(ctx, u, VP.x + tx * TILE, VP.y + ty * TILE);
   }
   drawMenuBar(ctx);
   drawSidebar(ctx);
+  drawDialog(ctx);
 }
 
 // The bar is not a filled strip: the wood panel shows straight through, with a
@@ -733,25 +869,76 @@ function endTurn() {
   G.msg = '';
 }
 
-function moveSel(dx, dy) {
-  const u = G.units[G.sel];
-  if (!u) return;
-  if (u.movesLeft <= 0) { G.msg = 'No moves left.'; return; }
-  const nx = u.x + dx, ny = u.y + dy;
-  if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) return;
-  const t = tileTerrain(at(nx, ny));
-  const water = (t === TERR.OCEAN || t === TERR.SEALANE);
-  if (!water) { G.msg = 'Land ho! (landfall next milestone)'; return; }
+function step(u, nx, ny) {
   u.x = nx; u.y = ny; u.movesLeft -= 1;
   G.msg = '';
   if (nx - G.view.x < 3 || nx - G.view.x > VIEW_TILES_X - 4 ||
       ny - G.view.y < 3 || ny - G.view.y > VIEW_TILES_Y - 4) centerOn(nx, ny);
 }
 
+// "Land Ho! What shall we call this new land, Your Excellency?" -- the naming
+// prompt that follows the discovery woodcut (GAME.TXT @LANDHO, @default=America).
+function askLandName() {
+  openDialog('LANDHO', (name) => {
+    G.newLand = (name || '').trim() || DATA.dialogs.LANDHO.default;
+    G.msg = `${G.newLand}!`;
+  });
+}
+
+// A ship carrying land units that is ordered onto a land tile gets @LANDFALL:
+// "Shall we make landfall, Your Excellency, and leave the ships behind?"
+// Row 1 (Make Landfall, the @default) puts the cargo ashore on that tile and
+// leaves the ship where it is; row 0 cancels the move.
+function landfall(ship, nx, ny) {
+  openDialog('LANDFALL', (choice) => {
+    if (choice !== 1) return;
+    const first = G.units.length;
+    for (const name of ship.cargo) G.units.push(mkUnit(name, nx, ny));
+    ship.cargo = [];
+    ship.movesLeft = 0;
+    G.sel = first;
+    // First landfall fires woodcut 1, DISCOVERY OF THE NEW WORLD
+    // (spec/ui/woodcuts_and_intro.md trigger table, func_020EFE @0x020F00),
+    // and it is shown once per game.
+    if (!G.landHo) {
+      G.landHo = true;
+      G.woodcut = 1;
+      G.screen = 'woodcut';
+    }
+  });
+}
+
+function moveSel(dx, dy) {
+  const u = G.units[G.sel];
+  if (!u) return;
+  if (u.movesLeft <= 0) { G.msg = 'No moves left.'; return; }
+  const nx = u.x + dx, ny = u.y + dy;
+  if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) return;
+  const water = tileWater(at(nx, ny));
+  if (u.ship && !water) {
+    // Ships never enter a land square. With land units aboard the attempt is
+    // the landfall offer; empty, the order is simply illegal (the engine has no
+    // message for it).
+    if (u.cargo.length) landfall(u, nx, ny);
+    return;
+  }
+  if (!u.ship && water) return;   // land units cannot walk onto water
+  step(u, nx, ny);
+}
+
+// Cycle to the next unit that still has moves -- the engine's Tab/next-unit.
+function nextUnit() {
+  for (let i = 1; i <= G.units.length; i++) {
+    const k = (G.sel + i) % G.units.length;
+    if (G.units[k].movesLeft > 0) { G.sel = k; centerOn(G.units[k].x, G.units[k].y); return; }
+  }
+}
+
 // ---------------------------------------------------------------- input
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
 
 function onClick(mx, my) {
+  if (G.dialog) { dialogClick(mx, my); return; }
   switch (G.screen) {
     case 'title': {
       const b = MENU_BOX;
@@ -781,12 +968,15 @@ function onClick(mx, my) {
       else G.screen = 'king';
       break;
     case 'king': beginGame(); G.screen = 'map'; break;
+    case 'woodcut': G.screen = 'map'; askLandName(); break;
     case 'map': {
       if (hit(mx, my, VP)) {
         const tx = G.view.x + Math.floor((mx - VP.x) / TILE);
         const ty = G.view.y + Math.floor((my - VP.y) / TILE);
-        const u = G.units.findIndex(u => u.x === tx && u.y === ty);
-        if (u >= 0) G.sel = u; else centerOn(tx, ty);
+        // Clicking a stack cycles through the units standing on that tile.
+        const on = G.units.map((u, i) => i).filter(i => G.units[i].x === tx && G.units[i].y === ty);
+        if (on.length) G.sel = on[(on.indexOf(G.sel) + 1) % on.length];
+        else centerOn(tx, ty);
       }
       break;
     }
@@ -801,6 +991,7 @@ function commitMenu() {
 
 function onKey(e) {
   const k = e.key;
+  if (G.dialog) { dialogKey(k); e.preventDefault(); return; }
   if (G.screen === 'name') {
     if (k === 'Enter') { if (!G.leader) G.leader = DATA.nations[G.nation].leader;
                          G.briefPage = 0; G.screen = 'briefing'; }
@@ -831,6 +1022,7 @@ function onKey(e) {
     case 'briefing':
     case 'cards':
     case 'king':
+    case 'woodcut':
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'king';
       break;
@@ -840,9 +1032,10 @@ function onKey(e) {
       if (k === 'ArrowUp') moveSel(0, -1);
       if (k === 'ArrowDown') moveSel(0, 1);
       if (k === ' ') endTurn();
+      if (k === 'Tab') nextUnit();
       break;
   }
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab'].includes(k)) e.preventDefault();
 }
 
 // ---------------------------------------------------------------- main loop
@@ -865,7 +1058,7 @@ function frame() {
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,
-     king: drawKing, map: drawMap }[G.screen])(ctx);
+     king: drawKing, map: drawMap, woodcut: drawWoodcut }[G.screen])(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;

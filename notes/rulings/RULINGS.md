@@ -6244,3 +6244,36 @@ for "land ground under both paths" and 7.48 for "ocean ground under both".
 
 **Follow-up**: the residual ~15% pixel mismatch on that frame is the unimplemented O512
 biome-edge dither (§6.11), not the coast rule.
+
+---
+
+## 2026-08-04 — Woodcut caption ink resolves through the sheet's own palette; no year prefix
+
+**Conflict**: §26.14 (woodcut event screens) states the caption is `"<year>: <CAPTION>"` drawn
+in FONT-NP with "ink LUT palette indices 0x5C/0x5D/0x5E". Rendering that literally produces a
+caption that is *invisible* — in `data_extracted/palette.json` (master VICEROY.PAL) indices
+0x5C/0x5D/0x5E are pale wood tones (134,113,81)/(117,97,69)/(101,81,52), i.e. the same family
+as the NAMEPLAT strip they are drawn on.
+
+**Source A** — the manual's index triplet, and its `"<year>: "` prefix from `[0x538A]`.
+
+**Source B** — the DOS capture `docs/screens/12_discovery_cinematic.png`: the caption reads a
+bare **"DISCOVERY OF THE NEW WORLD"** with **no year prefix**, in dark brown ink sampled at
+(64,40,24)/(64,36,24)/(48,28,16) on a (160,124,48) gold plate.
+
+**Source C** — the container: every `.SS` carries its **own 768-byte palette** in MADSPACK
+section 2, and `tools/ssdec.load_sheet` already returns it. In WOODFRAM/NAMEPLAT/WDCUT01's
+shared palette, indices 0x5C/0x5D/0x5E are **(117,89,36)/(44,32,12)/(97,65,28)** — the dark
+browns the capture shows. 158 of 256 entries differ from master.
+
+**Ruling**: the manual's **index triplet is correct**; the error was assuming it indexes the
+master palette. The woodcut screen adopts the woodcut sheets' own palette, exactly as the
+`.PIK` screens already adopt theirs. The **year prefix is not drawn** — pixels outrank team
+docs per `notes/TRUTH_HIERARCHY.md`, and the capture has no prefix. Whether the prefix is
+conditional (and on what) is **TBD**: it needs the caller of `func_06B722` traced for the
+`[0x538A]` read. The §26.14 wording is left standing but is now known to be incomplete on the
+palette point.
+
+**Action taken**:
+- `port/tools/build_assets.py` — exports WOODFRAM.SS's own palette into the manifest.
+- `port/src/game.js` `drawWoodcut()` — `usePalette('WOODFRAM')`, caption drawn bare.

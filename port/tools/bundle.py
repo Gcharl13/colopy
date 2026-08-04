@@ -53,8 +53,29 @@ def build_data():
     D["units"] = [{
         "name": r["name"],
         **{c: int(r[c]) for c in ("icon", "movement", "attack", "combat",
-                                  "cargo", "size", "cost")},
+                                  "cargo", "size", "cost", "hull")},
     } for r in rows("@UNIT")]
+
+    # Popup templates, verbatim from GAME.TXT with their @directives (the box
+    # builder needs @width; @default is the highlighted row, or the pre-filled
+    # text for an entry field). Body and tail are split on the blank line the
+    # parser treats as a paragraph break.
+    full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
+    D["dialogs"] = {}
+    for key in ("@LANDHO", "@LANDFALL"):
+        sec = full[key]
+        para = sec["body"].split("\n\n")
+        D["dialogs"][key.lstrip("@")] = {
+            "body": para[0].split("\n"),
+            "tail": para[1].split("\n") if len(para) > 1 else [],
+            "width": int(sec["directives"].get("width", 0x50)),
+            "default": sec["directives"].get("default", "0"),
+        }
+
+    # Woodcut captions: the single @WOODCUT section, one caption per line, index
+    # = woodcut number (1 = DISCOVERY OF THE NEW WORLD, the first-landfall plate).
+    wc = json.load(open(ROOT / "data_extracted/text/WOODCUT_sections.json"))
+    D["woodcuts"] = wc["@WOODCUT"].split("\n")
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
@@ -86,6 +107,10 @@ def build_data():
     # Each .PIK carries its own palette, which overrides the master VICEROY.PAL
     # placeholders (0xFC-0xFE are magenta there) -- see manual App. B.
     D["palettes"] = {k: v["pal"] for k, v in man["backgrounds"].items()}
+    # Sheets that carry a palette the renderer must adopt (woodcut screen).
+    for k, v in man["sheets"].items():
+        if "pal" in v:
+            D["palettes"][k] = v["pal"]
     D["fonts"] = {}
     alias = {"FONTINTR": "intr", "FONTTINY": "tiny", "FONTKING": "king",
              "FONT-NP": "np", "FONTSMAL": "smal"}

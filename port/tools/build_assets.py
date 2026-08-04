@@ -149,7 +149,9 @@ def main():
                 "KINGLSS1", "KINGLSS2"] + \
         [f"LEVN{i:04d}" for i in range(1, 11)]
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
-               "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1"]
+               "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
+               # Woodcut event plates: the frame, plus WDCUT01 (first landfall).
+               "WOODFRAM", "WDCUT01"]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"
@@ -182,6 +184,14 @@ def main():
             atlas, recs = sheet_to_png(p, fallback)
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}
+            # Sheet pixels always resolve through the sheet's own palette (see
+            # sheet_to_png). Text drawn *over* a sheet has to resolve through it
+            # too, so the woodcut screen -- whose FONT-NP caption ink is quoted
+            # as palette indices 0x5C/0x5D/0x5E -- needs the table exported.
+            if nm in ("WOODFRAM",):
+                sp = ssdec.load_sheet(str(p))["pal"]
+                bundle["sheets"][nm]["pal"] = [[sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]]
+                                               for i in range(256)]
             print(f"  {nm}.SS -> {len(recs)} frames, atlas {atlas.width}x{atlas.height}")
             if nm == "PHYS0":
                 a2, r2 = sheet_to_png(p, fallback, zero_transparent=True)
