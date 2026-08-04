@@ -198,6 +198,17 @@ rather than hidden. Rows with no handler render greyed and report themselves.
   Which goods a village offers is derived from its 5×5 yield (the same PARTIAL demand model).
 - Raids, missions and converts are still not built.
 
+### Rival European powers
+- The three other powers start at their own `@SCENARIO` positions — the same table that gives
+  the human theirs — found colonies from their own COLONY.TXT name pools (Quebec, Isabella,
+  New Amsterdam …), and render in their `@COUNTRY` colours with the settlement/pennant chrome.
+- **First contact** fires woodcut 10, MEETING FELLOW EUROPEANS (`func_057F4E @0x057FDF`), once
+  per game, and F8 Foreign Affairs reports each power's status.
+- **PARTIAL — rival turn logic is a stand-in.** The engine's AI (`func_059B90`, the heading
+  planner, the colony-site scorer) is largely unmapped in this repo; rivals here sail west,
+  plant on the first free coast they reach, and otherwise hold. No diplomacy, no war, no trade
+  between powers.
+
 ### Continental Congress (§17)
 - **Cost formula byte-exact** and cross-checked against the manual's live-verified value:
   base = human `(d+3)·16`, each era gate 1600/1650/1700/1750 compounding ×1.5,

@@ -290,6 +290,39 @@ SCRIPT = """() => {
       europeansUseCountry: ownerColour(G.units[0]) === DATA.nations[G.nation].color,
     };
 
+    // Rival powers start at their own @SCENARIO positions, found colonies from
+    // their own COLONY.TXT name pools, and never plant in water.
+    {
+      out.rivals = {
+        three: G.rivals.length === 3,
+        notPlayer: G.rivals.every(r => r.nation !== G.nation),
+        atScenarioStart: G.rivals.every(r =>
+          r.units[0].x === DATA.starts[r.nation][0] &&
+          r.units[0].y === DATA.starts[r.nation][1]),
+      };
+      for (let t = 0; t < 40; t++) runRivals();
+      out.rivalGrowth = {
+        founded: G.rivals.some(r => r.colonies.length > 0),
+        onLand: G.rivals.every(r => r.colonies.every(c => !tileWater(at(c.x, c.y)))),
+        ownNames: G.rivals.every(r => r.colonies.every(c =>
+          DATA.colonynames[r.nation].includes(c.name))),
+      };
+      // First contact fires woodcut 10, once.
+      const r0 = G.rivals[0];
+      G.metAnyone = false; r0.met = false;
+      const scout = mkUnit('Scouts', r0.units[0].x + 1, r0.units[0].y);
+      G.units.push(scout);
+      checkContact();
+      out.contact = { met: r0.met, woodcut: G.woodcut === 10, screen: G.screen === 'woodcut' };
+      G.screen = 'map';
+      // and it does not fire a second time
+      const r1 = G.rivals[1]; r1.met = false; G.woodcut = 1;
+      const scout2 = mkUnit('Scouts', r1.units[0].x + 1, r1.units[0].y);
+      G.units.push(scout2);
+      checkContact();
+      out.contactOnce = r1.met && G.screen === 'map';
+    }
+
     // Continental Congress: the cost formula must reproduce the manual's
     // live-verified cross-check -- Explorer human, one father, pre-1600 = 129.
     {
@@ -537,6 +570,12 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("three rivals start at their @SCENARIO positions",
+         all(r["rivals"].values()), r["rivals"]),
+        ("rivals found colonies on land from their own name pools",
+         all(r["rivalGrowth"].values()), r["rivalGrowth"]),
+        ("first contact fires woodcut 10", all(r["contact"].values()), r["contact"]),
+        ("the contact woodcut fires only once", r["contactOnce"], r["contactOnce"]),
         ("father cost reproduces the manual's 129 cross-check",
          r["fatherCost129"], r["fatherCost129"]),
         ("first father is half price", r["firstFatherHalf"], r["firstFatherHalf"]),

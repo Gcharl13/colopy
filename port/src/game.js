@@ -259,6 +259,7 @@ const G = {
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
   crosses: 0,             // immigration accumulator
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
+  rivals: [], metAnyone: false,
   report: null,           // open F-key report
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
@@ -323,6 +324,8 @@ function beginGame() {
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
   seedNatives();
+  seedRivals();
+  G.metAnyone = false;
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
   G.dock = [0, 0, 0].map(() => rollImmigrant());
@@ -956,6 +959,23 @@ function drawMap(ctx) {
     nationPlate(tgt, px, py, ownerColour(n), n.orders);
     const [fw, fh] = frameSize('ICONS', n.icon);
     sheetFrame(tgt, 'ICONS', n.icon, px + TILE - fw, py + TILE - fh);
+  }
+
+  // Rival powers: their colonies and units, in their own @COUNTRY colours.
+  for (const r of G.rivals) {
+    for (const rc of r.colonies) {
+      const tx = rc.x - G.view.x, ty = rc.y - G.view.y;
+      if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+      drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, rc.level, rc.nation, 0);
+    }
+    for (const ru of r.units) {
+      const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
+      if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+      const px = ox + tx * TILE, py = oy + ty * TILE;
+      nationPlate(tgt, px, py, ownerColour(ru), ru.orders);
+      const [fw, fh] = frameSize('ICONS', ru.icon);
+      sheetFrame(tgt, 'ICONS', ru.icon, px + TILE - fw, py + TILE - fh);
+    }
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -2232,6 +2252,71 @@ function resolveAttack(att, def) {
   return { A, D, roll, win };
 }
 
+// ---------------------------------------------------- rival European powers
+// The other three powers start at their own @SCENARIO position -- the same
+// table that gives the human theirs -- and found colonies as the game runs.
+// First contact with one fires woodcut 10, MEETING FELLOW EUROPEANS
+// (spec/ui/woodcuts_and_intro.md, func_057F4E @0x057FDF), once per game.
+//
+// Their turn logic is a deliberate stand-in: the engine's AI (func_059B90 and
+// the heading planner) is largely unmapped, so rivals here sail inland, plant a
+// colony when they reach a coast, and otherwise hold. Flagged in the tracker.
+function seedRivals() {
+  G.rivals = [];
+  for (let n = 0; n < 4; n++) {
+    if (n === G.nation) continue;
+    const [sx, sy] = DATA.starts[n];
+    G.rivals.push({
+      nation: n, met: false,
+      colonies: [], nextColony: 0,
+      units: [{ type: n === 3 ? 'Merchantman' : 'Caravel',
+                icon: unit(n === 3 ? 'Merchantman' : 'Caravel').icon,
+                x: sx, y: sy, nation: n, orders: 0, ship: true }],
+    });
+  }
+}
+// A rival is "met" once any of its units or colonies is within sight of
+// something of yours.
+function checkContact() {
+  for (const r of G.rivals) {
+    if (r.met) continue;
+    const near = (a, b) => Math.abs(a.x - b.x) <= 2 && Math.abs(a.y - b.y) <= 2;
+    const seen = r.units.some(ru => G.units.some(u => near(u, ru)) ||
+                                    G.colonies.some(c => near(c, ru))) ||
+                 r.colonies.some(rc => G.units.some(u => near(u, rc)) ||
+                                       G.colonies.some(c => near(c, rc)));
+    if (!seen) continue;
+    r.met = true;
+    G.msg = `We have made contact with the ${DATA.nations[r.nation].adjective}.`;
+    if (!G.metAnyone) { G.metAnyone = true; G.woodcut = 10; G.screen = 'woodcut'; }
+  }
+}
+// One rival turn: ships work west until they find a coast, then plant.
+function runRivals() {
+  for (const r of G.rivals) {
+    for (const u of r.units) {
+      if (!u.ship) continue;
+      const landAhead = [[-1, 0], [0, -1], [0, 1]]
+        .map(([dx, dy]) => [u.x + dx, u.y + dy])
+        .find(([x, y]) => !tileWater(at(x, y)));
+      if (landAhead && r.colonies.length < 6 &&
+          !G.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
+          !r.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
+          !G.villages.some(v => v.x === landAhead[0] && v.y === landAhead[1])) {
+        const names = DATA.colonynames[r.nation];
+        r.colonies.push({ x: landAhead[0], y: landAhead[1], nation: r.nation,
+                          name: names[r.nextColony++ % names.length], level: 0 });
+        u.x = Math.min(MAP.w - 1, u.x + 3);      // stand off and look for another site
+        continue;
+      }
+      const nx = u.x - 1;
+      if (nx >= 0 && tileWater(at(nx, u.y))) u.x = nx;
+      else u.y += (u.y % 2) ? 1 : -1;
+    }
+  }
+  checkContact();
+}
+
 // -------------------------------------------------- Continental Congress
 // §17. Liberty bells accrue per turn from every colony; when the pool reaches
 // the next father's cost he joins.
@@ -2345,6 +2430,14 @@ const REPORTS = {
     if (!G.fathersOwned.length) l.push('No Founding Fathers have joined yet.');
     else { l.push('In Congress:'); for (const f of G.fathersOwned) l.push(`  ${f}`); }
     return l;
+  } },
+  F8: { title: 'Foreign Affairs Adviser', adviser: 'MSS0', body: () => {
+    if (!G.rivals.length) return ['No other powers are in the New World.'];
+    return G.rivals.map(r => {
+      const n = DATA.nations[r.nation];
+      if (!r.met) return `${n.country}: ${DATA.text.misc[0] ? '' : ''}no contact`;
+      return `${n.country}: ${r.colonies.length} colonies, ${r.units.length} units`;
+    });
   } },
   F9: { title: 'Indian Adviser', adviser: 'MSS3', body: () => {
     const band = (n) => n >= TENSION_WAR ? 'War'
@@ -2560,6 +2653,7 @@ function endTurn() {
   for (const c of G.colonies) advanceConstruction(c);
   checkImmigration();
   updateCongress();
+  runRivals();
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -2787,6 +2881,7 @@ const COMMANDS = {
   'F5 Economic Adviser': () => { G.report = 'F5'; G.screen = 'report'; },
   'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
   'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
+  'F8 Foreign Affairs Advisor': () => { G.report = 'F8'; G.screen = 'report'; },
   'F9 Indian Adviser': () => { G.report = 'F9'; G.screen = 'report'; },
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
   // GAME
@@ -2847,7 +2942,8 @@ function onClick(mx, my) {
       // Woodcut 1 is the discovery plate and hands over to the naming prompt;
       // woodcut 2 is BUILDING A COLONY and hands over to the new colony.
       if (G.woodcut === 1) { G.screen = 'map'; askLandName(); }
-      else G.screen = 'colony';
+      else if (G.woodcut === 2) G.screen = 'colony';
+      else G.screen = 'map';
       break;
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
