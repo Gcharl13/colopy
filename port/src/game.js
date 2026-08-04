@@ -619,9 +619,9 @@ function onKey(e) {
 let ctx, screenCanvas, scale = 1, offX = 0, offY = 0;
 
 function resize() {
-  const host = document.getElementById('host');
-  const r = host.getBoundingClientRect();
-  scale = Math.max(1, Math.floor(Math.min(r.width / W, r.height / H)));
+  // Integer-scale only: this is pixel art, so a fractional scale would blur it.
+  const availW = window.innerWidth - 60, availH = window.innerHeight - 90;
+  scale = Math.max(1, Math.floor(Math.min(availW / W, availH / H)));
   const cv = document.getElementById('screen');
   cv.width = W * scale; cv.height = H * scale;
   cv.style.width = (W * scale) + 'px'; cv.style.height = (H * scale) + 'px';

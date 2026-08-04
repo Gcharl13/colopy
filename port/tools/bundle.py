@@ -104,17 +104,47 @@ def main():
     js = (SRC / "game.js").read_text()
     html = f"""<title>Colonization</title>
 <style>
-  html,body {{ margin:0; height:100%; background:#0b0b0d; overflow:hidden; }}
-  #host {{ position:fixed; inset:0; display:flex; align-items:center;
-           justify-content:center; }}
-  #screen {{ image-rendering:pixelated; image-rendering:crisp-edges;
-             touch-action:manipulation; box-shadow:0 0 40px #000; }}
-  #loading {{ position:fixed; inset:0; display:flex; align-items:center;
-              justify-content:center; color:#c8b98a;
-              font:14px ui-monospace,monospace; }}
+  /* Deliberately single-theme: this is a 320x200 DOS screen in a cabinet
+     bezel. Palette is the game's own -- wood browns and the 0xFC gold. */
+  :root {{
+    --ground:#0B0908; --bezel:#2A1B12; --rule:#6B4A2F;
+    --gold:#C7A220; --muted:#8A7A5C;
+  }}
+  * {{ box-sizing:border-box; }}
+  html,body {{ margin:0; height:100%; background:var(--ground); overflow:hidden; }}
+  body {{
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:14px; padding:16px;
+  }}
+  #cabinet {{
+    padding:10px; background:var(--bezel);
+    border:1px solid var(--rule); border-radius:2px;
+    box-shadow:0 0 0 1px #00000080, 0 24px 60px -12px #000;
+    line-height:0;
+  }}
+  #screen {{
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    touch-action:manipulation; display:block; background:#000;
+  }}
+  #hint {{
+    font:11px/1.4 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    text-align:center; max-width:60ch;
+  }}
+  #hint b {{ color:var(--gold); font-weight:600; }}
+  #loading {{
+    position:fixed; inset:0; display:flex; align-items:center;
+    justify-content:center; color:var(--gold); background:var(--ground);
+    font:12px/1 ui-monospace,monospace; letter-spacing:.2em;
+    text-transform:uppercase;
+  }}
+  canvas:focus-visible {{ outline:2px solid var(--gold); outline-offset:6px; }}
+  @media (prefers-reduced-motion:reduce) {{ * {{ animation:none !important; }} }}
 </style>
-<div id="host"><canvas id="screen"></canvas></div>
-<div id="loading">loading…</div>
+<div id="cabinet"><canvas id="screen" tabindex="0"></canvas></div>
+<p id="hint"><b>Arrows</b> choose &amp; move &nbsp;·&nbsp; <b>Enter</b> confirm
+&nbsp;·&nbsp; <b>Space</b> end turn &nbsp;·&nbsp; or click</p>
+<div id="loading">Loading&#8230;</div>
 <script>
 const ASSETS = {json.dumps(assets)};
 const DATA = {json.dumps(D, separators=(',', ':'))};
