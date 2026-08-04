@@ -299,6 +299,78 @@ SCRIPT = """() => {
     }
   }
 
+  // ---- pioneer terrain improvement ----
+  {
+    beginGame(); G.screen = 'map';
+    // Find a land tile and drop a Pioneer on it.
+    let px = -1, py = -1;
+    for (let y = 10; y < 60 && px < 0; y++)
+      for (let x = 10; x < 50; x++)
+        if (!tileWater(at(x, y)) && !isForested(tileTerrain(at(x, y)))) { px = x; py = y; break; }
+    const pio = mkUnit('Pioneers', px, py);
+    G.units.push(pio);
+    G.sel = G.units.indexOf(pio);
+    out.pioneerTools = pio.tools === 100;
+    // Movement budgets are in thirds.
+    out.thirds = { budget: pio.moves === unit('Pioneers').movement * 3,
+                   costsThree: moveCost(pio, px, py, px, py + 1) % 3 === 0 };
+    // Build Road: the work threshold is the terrain's own improvement column,
+    // and the road only appears when the counter reaches it.
+    improveOrder(ORDER_ROAD);
+    const need = workThreshold(pio, true);
+    out.roadWork = { ordered: pio.orders === ORDER_ROAD, threshold: need >= 1 };
+    for (let t = 0; t < need; t++) advanceImprovements();
+    out.roadWork.built = hasRoad(px, py);
+    out.roadWork.orderCleared = pio.orders === 0;
+    out.roadWork.toolsSpent = pio.tools === 80;
+    // A road at both ends costs a single third.
+    IMPROVE[py * MAP.w + px + 1] |= ROAD_BIT;
+    out.roadWork.cheapStep = moveCost(pio, px, py, px + 1, py) === 1;
+    // Plow: same unit, same tile, and the plow bit is separate from the road.
+    G.sel = G.units.indexOf(pio);
+    improveOrder(ORDER_CLEAR);
+    const need2 = workThreshold(pio, false);
+    for (let t = 0; t < need2; t++) advanceImprovements();
+    out.plow = { set: hasPlow(px, py), roadKept: hasRoad(px, py),
+                 costsMore: need2 > need || need2 === Math.max(1, need + 2 >> (0)) };
+    // The yield deltas: plow lifts crops (good <= 3), road lifts the rest.
+    out.impBonus = { plowLiftsFood: improvementBonus(px, py, 0) > 0,
+                     plowNotOre: improvementBonus(px, py, 6) > 0,   // road is here too
+                     roadOnly: improvementBonus(px + 1, py, 6) > 0 &&
+                               improvementBonus(px + 1, py, 0) === 0 };
+    // Clearing a forest drops the tile id by 8 and pays lumber to a colony.
+    let fx = -1, fy = -1;
+    for (let y = 10; y < 60 && fx < 0; y++)
+      for (let x = 10; x < 50; x++)
+        if (isForested(tileTerrain(at(x, y)))) { fx = x; fy = y; break; }
+    const pio2 = mkUnit('Pioneers', fx, fy);
+    G.units.push(pio2);
+    G.sel = G.units.indexOf(pio2);
+    const before = at(fx, fy) & 0x1F;
+    G.colonies = [{ name: 'Test', x: fx + 1, y: fy, nation: G.nation, colonists: [],
+                    stock: DATA.cargo.map(() => 0), buildings: STARTING_BUILDINGS.slice(),
+                    hammers: 0, building: null, sol: 0 }];
+    improveOrder(ORDER_CLEAR);
+    for (let t = 0; t < workThreshold(pio2, false); t++) advanceImprovements();
+    // The -8 lands on the FOLDED id: raw 16..23 folds to 8..15 first, so both
+    // halves of the forest band end on their 0..7 unforested base.
+    const folded = (before >= 16 && before <= 23) ? ((before & 7) | 8) : before;
+    out.clear = { droppedEight: (at(fx, fy) & 0x1F) === folded - 8,
+                  noLongerForest: !isForested(tileTerrain(at(fx, fy))),
+                  lumberPaid: G.colonies[0].stock[5] > 0 };
+    // Tools run out and the Pioneer reverts to a Colonist.
+    pio2.tools = 20;
+    G.sel = G.units.indexOf(pio2);
+    let guard = 0;
+    while (pio2.type === 'Pioneers' && guard++ < 40) {
+      if (!canImprove(pio2)) break;
+      pio2.orders = ORDER_ROAD; pio2.work = 0;
+      if (hasRoad(pio2.x, pio2.y)) { IMPROVE[pio2.y * MAP.w + pio2.x] &= ~ROAD_BIT; }
+      for (let t = 0; t < workThreshold(pio2, true); t++) advanceImprovements();
+    }
+    out.usedUpTools = pio2.type === 'Colonists' && pio2.tools === 0;
+  }
+
   // ---- combat, natives, immigration, pedia, save/load ----
   {
     beginGame(); G.screen = 'map';
@@ -900,6 +972,17 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("a Pioneer carries 100 tools", r["pioneerTools"], r["pioneerTools"]),
+        ("movement budgets are stored in thirds", all(r["thirds"].values()), r["thirds"]),
+        ("building a road takes the terrain's improvement turns and 20 tools",
+         all(r["roadWork"].values()), r["roadWork"]),
+        ("plowing sets its own bit and leaves the road alone",
+         all(r["plow"].values()), r["plow"]),
+        ("plow lifts crops, road lifts everything else",
+         all(r["impBonus"].values()), r["impBonus"]),
+        ("clearing drops the tile id by 8 and pays lumber",
+         all(r["clear"].values()), r["clear"]),
+        ("a Pioneer out of tools reverts to a Colonist", r["usedUpTools"], r["usedUpTools"]),
         ("settlement target size is 2*level+3 (capital 3*level+4)",
          all(r["settlementCap"].values()), r["settlementCap"]),
         ("exactly one brave per village, linked to it",

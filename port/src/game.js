@@ -167,6 +167,7 @@ const PHYS = {
   COAST_EDGE: 0x96,    // engine 0x97, + clean-edge pattern 0..3
   QUADRANT: 0x6C,      // engine 0x6D, + code*4 + quadrant
   DETAIL: 0x59,        // engine 0x5A, + DTAB[class]
+  ROAD: 0x50,          // engine 0x51, stub; +1+dir for the eight spokes
 };
 
 // §6.4-6.6 — the 4-cardinal connection mask. Weights N=8, S=4, W=2, E=1.
@@ -219,8 +220,23 @@ function terrainName(v) {
 }
 
 // ---------------------------------------------------------------- map
-const MAP = { w: DATA.map.w, h: DATA.map.h, tiles: DATA.map.tiles };
+// The terrain plane is mutable: clearing a forest rewrites the tile id in place
+// (the executor's `sub es:[bx],8`), so the port works on a copy of the shipped
+// AMER2 array and restores it on a new game.
+const MAP = { w: DATA.map.w, h: DATA.map.h, tiles: DATA.map.tiles.slice() };
 const at = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ? 25 : MAP.tiles[y * MAP.w + x];
+// The IMPROVEMENT layer is the engine's map layer #2 (DGROUP [0x160]/[0x162]),
+// the one compute_terrain_yield reads and the pioneer executors write:
+//   road = bit 0x08 (func_0409D6 @0x40AEC `or es:[bx],8`)
+//   plow = bit 0x40 (func_040656 @0x04089F `or es:[bx],0x40`)
+// It is a separate plane from the terrain byte, which is why plow's 0x40 does
+// not collide with the terrain plane's river bit of the same value.
+const IMPROVE = new Uint8Array(MAP.w * MAP.h);
+const ROAD_BIT = 0x08, PLOW_BIT = 0x40;
+const impAt = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h)
+  ? 0 : IMPROVE[y * MAP.w + x];
+const hasRoad = (x, y) => (impAt(x, y) & ROAD_BIT) !== 0;
+const hasPlow = (x, y) => (impAt(x, y) & PLOW_BIT) !== 0;
 
 // ---------------------------------------------------------------- game state
 const G = {
@@ -296,15 +312,23 @@ const unit = (n) => UNITS[n];
 
 // Starting conditions, §18.11: gold 1000 (d=0) / 300 (d=1) / 0 (d>=2), human only.
 const START_GOLD = [1000, 300, 0, 0, 0];
+// One whole move = three movement points.
+const MOVE_UNIT = 3;
 
 // @UNIT hull is the ship predicate: every vessel has hull > 0, and it is the
 // only column that separates them from the Wagon Train (which carries cargo but
 // sails nowhere).
 function mkUnit(name, x, y, cargo) {
   const t = unit(name);
-  return { type: t.name, icon: t.icon, x, y,
-           moves: t.movement, movesLeft: t.movement,
-           ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [] };
+  // Movement budgets are stored in THIRDS: the @UNIT loader multiplies the
+  // column by 3 (`SHL al,1 / ADD al,cl` @0x074F04, unit.md §3), which is what
+  // makes a road step cost 1/3 of a move.
+  const u = { type: t.name, icon: t.icon, x, y,
+              moves: t.movement * MOVE_UNIT, movesLeft: t.movement * MOVE_UNIT,
+              ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [] };
+  // A Pioneer is a colonist carrying tools; UnitRecord +0x15 starts at 100.
+  if (name === 'Pioneers') u.tools = PIONEER_TOOLS;
+  return u;
 }
 
 function beginGame() {
@@ -327,6 +351,9 @@ function beginGame() {
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
+  // Both mutable map planes go back to their shipped state.
+  MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
+  IMPROVE.fill(0);
   seedNatives();
   seedRivals();
   G.metAnyone = false;
@@ -857,6 +884,7 @@ function drawTile(ctx, mx, my, px, py) {
     }
     const df = detailFrame(mx, my, v);
     if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
+    drawImprovements(ctx, mx, my, px, py);
     return;
   }
 
@@ -894,6 +922,31 @@ function drawTile(ctx, mx, my, px, py) {
   }
   const df = detailFrame(mx, my, v);
   if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
+  drawImprovements(ctx, mx, my, px, py);
+}
+// Roads are their own layer (@0x6842B, base engine 0x51 + an 8-direction
+// connectivity mask, func_067D54 -- brown, and empty on a new map). On disk
+// that base is 0x50: 0x50 is the isolated junction stub, 0x51..0x58 are the
+// eight spokes in the N, NE, E, SE, S, SW, W, NW order the sheet itself shows
+// (rendered and read off the art). A colony counts as a road end, which is what
+// makes a road into a colony connect.
+//
+// A plowed field has no dedicated frame anywhere in PHYS0, so the port marks it
+// with furrow dots in the ploughed-earth tone rather than borrowing a sprite
+// that means something else. Flagged in docs/UI_AUDIT_TRACKER.md.
+function drawImprovements(ctx, mx, my, px, py) {
+  if (hasRoad(mx, my)) {
+    sheetFrame(ctx, 'PHYS0', PHYS.ROAD, px, py);
+    for (let d = 0; d < 8; d++) {
+      const nx = mx + DIR8[d][0], ny = my + DIR8[d][1];
+      if (hasRoad(nx, ny) || colonyAt(nx, ny))
+        sheetFrame(ctx, 'PHYS0', PHYS.ROAD + 1 + d, px, py);
+    }
+  }
+  if (hasPlow(mx, my)) {
+    ctx.fillStyle = ink(0x55);
+    for (let k = 0; k < 4; k++) ctx.fillRect(px + 3 + k * 3, py + 12, 2, 1);
+  }
 }
 
 // §26.7 — viewport (0,8,240,192) 15x12 @16px; sidebar right; menu bar on top.
@@ -1143,7 +1196,10 @@ function drawSidebar(ctx) {
     const [fw, fh] = frameSize('ICONS', u.icon);
     sheetFrame(ctx, 'ICONS', u.icon, 244 + (24 - fw) / 2, 72 + (20 - fh) / 2);
     nationPlate(ctx, 244, 72, ownerColour(u), u.orders);
-    FONT.tiny.draw(ctx, `Moves: ${u.movesLeft}`, 270, 74, lut(HUD_INK));
+    // The budget is in thirds; the HUD shows whole moves, with the odd third
+    // spelled out so a road march reads correctly.
+    const whole = Math.floor(u.movesLeft / MOVE_UNIT), frac = u.movesLeft % MOVE_UNIT;
+    FONT.tiny.draw(ctx, `Moves: ${whole}${frac ? ` ${frac}/3` : ''}`, 270, 74, lut(HUD_INK));
     FONT.tiny.draw(ctx, `Locat: (${u.x}, ${u.y})`, 270, 84, lut(HUD_INK));
     // The HUD uses NAMES @NATIONABBREV ("Eng.", "Fr.", ...), not the adjective.
     FONT.tiny.draw(ctx, `${DATA.nations[G.nation].abbrev} ${u.type}`, 244, 96, lut(HUD_INK));
@@ -1225,6 +1281,97 @@ const STARTING_BUILDINGS = DATA.buildings
   .filter(b => b.upkeep === 0 && b.min_colony === 1)
   .map(b => b.name);
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
+
+// -------------------------------------------------- terrain improvement
+// spec/systems/terrain_improvement.md, byte-verified throughout:
+//   order 8 Clear/Plow -> func_040656, order 9 Build Road -> func_0409D6
+//   (dispatcher @0x051D56, sel = UnitRecord[+0x08] - 7)
+//   work counter UnitRecord +0x16, incremented each turn the order is held
+//   (@0x04071D clear, @0x040A46 road)
+//   threshold = @TERRAIN improvement column (+0x2F78): clear/plow = col + 2
+//   (@0x040727/@0x04072D), road = col (@0x040A50); HALVED for a Hardy Pioneer
+//   (@0x04074A/@0x040A59)
+//   completion writes the tile: clear = id - 8 (@0x040896), plow = |= 0x40
+//   (@0x04089F), road = |= 0x08 (@0x040AEC)
+//   and debits 20 tools (func_040608 @0x4060F `sub byte[bx+0x3159],0x14`);
+//   below 20 the Pioneer reverts to a plain Colonist (@USEDUPTOOLS).
+const ORDER_CLEAR = 8, ORDER_ROAD = 9;
+const PIONEER_TOOLS = 100, TOOLS_PER_JOB = 20;
+// Look a terrain id up in one of the three @TERRAIN bands. Same folding as the
+// yield tables (CLAUDE.md rule 3: 16..23 are the forested variants).
+function terrainCol(v, table) {
+  let t = v & 0x1F;
+  if (t >= 16 && t <= 23) t = (t & 7) | 8;
+  return t <= 7 ? table.unforested[t] : t <= 15 ? table.forested[t - 8]
+       : (table.other[t - 24] || 0);
+}
+const improveWork = (v) => terrainCol(v, DATA.improvework) || 0;
+const terrainMove = (v) => terrainCol(v, DATA.terrainmove) || 1;
+const isHardy = (u) => u.profession === 'Hardy Pioneers';
+function canImprove(u) { return u && !u.ship && (u.tools || 0) >= TOOLS_PER_JOB; }
+// The work threshold this unit faces on its tile.
+function workThreshold(u, road) {
+  const v = at(u.x, u.y);
+  let n = improveWork(v) + (road ? 0 : 2);
+  if (isHardy(u)) n = n >> 1;
+  return Math.max(1, n);
+}
+// One turn of pioneer work for every unit holding an improvement order.
+function advanceImprovements() {
+  for (const u of G.units.slice()) {
+    if (u.orders !== ORDER_CLEAR && u.orders !== ORDER_ROAD) continue;
+    const road = u.orders === ORDER_ROAD;
+    const i = u.y * MAP.w + u.x;
+    // The job may already be done by someone else, or impossible here.
+    if (road && hasRoad(u.x, u.y)) { u.orders = 0; u.work = 0; continue; }
+    u.work = (u.work || 0) + 1;
+    if (u.work < workThreshold(u, road)) continue;
+    u.work = 0;
+    u.orders = 0;
+    if (road) {
+      IMPROVE[i] |= ROAD_BIT;
+      G.msg = 'Pioneers complete a road.';
+    } else if (isForested(tileTerrain(at(u.x, u.y)))) {
+      // Clear: the tile id drops by 8 to its unforested base, and the lumber
+      // the forest was worth goes to the nearest colony. The grant's column
+      // carries a CONFLICT -- the spec cites +0x2F80, which by this table's own
+      // column arithmetic is y_ore, while the grant is plainly lumber. The port
+      // reads the LUMBERJACK column as the coherent one and scales it x10 to
+      // land in the original's familiar range; both choices are flagged in
+      // docs/UI_AUDIT_TRACKER.md.
+      const LUMBER_COL = 5, CLEAR_SCALE = 10;
+      const lumber = tileYield(at(u.x, u.y), LUMBER_COL) * CLEAR_SCALE;
+      // `sub es:[bx],8` is applied to the FOLDED id. Raw ids 16..23 fold to
+      // 8..15 first (CLAUDE.md hard rule 3), so a straight -8 on the raw byte
+      // would leave a 16..23 tile still forested; folding first lands both
+      // halves of the band on their 0..7 unforested base. The non-terrain bits
+      // (hills, river) ride through untouched.
+      let t = tileTerrain(MAP.tiles[i]);
+      if (t >= 16 && t <= 23) t = (t & 7) | 8;
+      MAP.tiles[i] = (MAP.tiles[i] & ~0x1F) | (t - 8);
+      const c = G.colonies.slice().sort((a, b) =>
+        (Math.abs(a.x - u.x) + Math.abs(a.y - u.y)) - (Math.abs(b.x - u.x) + Math.abs(b.y - u.y)))[0];
+      if (c && lumber > 0) {
+        c.stock[GOOD.LUMBER] += lumber;
+        showEvent('CLEARCUT', { STRING0: c.name, NUMBER0: lumber });
+      } else G.msg = 'Pioneers clear the forest.';
+    } else {
+      IMPROVE[i] |= PLOW_BIT;
+      G.msg = 'Pioneers plow the field.';
+    }
+    spendTools(u);
+  }
+}
+// -20 tools, and below 20 the Pioneer reverts to a plain Colonist.
+function spendTools(u) {
+  u.tools = (u.tools || 0) - TOOLS_PER_JOB;
+  if (u.tools >= TOOLS_PER_JOB) return;
+  u.tools = 0;
+  const t = unit('Colonists');
+  u.type = t.name; u.icon = t.icon;
+  u.moves = t.movement * 3;
+  showEvent('USEDUPTOOLS', {});
+}
 
 // ------------------------------------------------------- colony production
 // §3 of spec/systems/colony.md, whose core is byte-verified:
@@ -1332,6 +1479,19 @@ function isExpert(p, job) {
   const i = jobIndex(job);
   return i >= 0 && p.profession === DATA.jobexpert[i];
 }
+// The plow/road yield deltas, byte-verified in compute_terrain_yield: the ROAD
+// bit adds `bonus` iff the good index is > 3 (@0x9F01/@0x9F05 -- ore, furs,
+// timber and up), the PLOW bit adds it iff the good index is <= 3 (@0x9F1F/
+// @0x9F23 -- food and the three planter crops). `bonus` is 1, or 2 for good
+// index 5 or a river-adjacent tile (@0x9EC6/@0x9EDD).
+function improvementBonus(x, y, g) {
+  const imp = impAt(x, y);
+  if (!imp) return 0;
+  const bonus = (g === 5 || tileRiver(at(x, y))) ? 2 : 1;
+  if ((imp & ROAD_BIT) && g > 3) return bonus;
+  if ((imp & PLOW_BIT) && g <= 3) return bonus;
+  return 0;
+}
 // compute_terrain_yield for one field worker.
 function fieldYield(c, p) {
   const job = p.job, g = JOB_GOOD[jobIndex(job)];
@@ -1342,6 +1502,7 @@ function fieldYield(c, p) {
   const col = tileWater(v) ? 8 : g;
   let y = tileYield(v, col);
   if (y <= 0) return 0;
+  y += improvementBonus(c.x + p.cell[0], c.y + p.cell[1], g);
   y += toryPenalty(c);
   // The expert match: the "era" goods Food and Horses take a flat +2, every
   // other good DOUBLES (@0x9DAD..0x9DD2).
@@ -1395,6 +1556,7 @@ function colonyProduce(c) {
   let centre = tileYield(cv, JOB_FARMER);
   if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
   if (tileRiver(cv)) centre += 1;
+  centre += improvementBonus(c.x, c.y, GOOD.FOOD);
   out[GOOD.FOOD] += centre;
   const indoor = [];
   for (const p of c.colonists) {
@@ -3616,6 +3778,7 @@ function endTurn() {
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
   for (const c of G.colonies) colonyTurn(c);
+  advanceImprovements();
   checkImmigration();
   updateCongress();
   // §19.11: the native pass runs BEFORE the European powers move
@@ -3631,8 +3794,21 @@ function endTurn() {
   if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
 }
 
+// What one step costs, in thirds. The terrain table's `movement` column is the
+// cost in whole moves; a road at BOTH ends, or a cardinal step along a river
+// that runs through both tiles, costs a single third.
+function moveCost(u, fx, fy, tx, ty) {
+  if (u.ship) return MOVE_UNIT;
+  if (hasRoad(fx, fy) && hasRoad(tx, ty)) return 1;
+  if (tileRiver(at(fx, fy)) && tileRiver(at(tx, ty)) && (fx === tx || fy === ty)) return 1;
+  return MOVE_UNIT * terrainMove(at(tx, ty));
+}
 function step(u, nx, ny) {
-  u.x = nx; u.y = ny; u.movesLeft -= 1;
+  // A unit that has not moved yet may always take one step, however dear the
+  // ground -- otherwise a one-move unit could never enter a mountain.
+  const cost = moveCost(u, u.x, u.y, nx, ny);
+  u.movesLeft = (cost > u.movesLeft) ? 0 : u.movesLeft - cost;
+  u.x = nx; u.y = ny;
   G.msg = '';
   if (nx - G.view.x < 3 || nx - G.view.x > VIEW_COLS() - 4 ||
       ny - G.view.y < 3 || ny - G.view.y > VIEW_ROWS() - 4) centerOn(nx, ny);
@@ -3742,6 +3918,28 @@ function setOrder(n) {
   u.movesLeft = 0;
   advance();
 }
+// Clear/Plow and Build Road are only open to a unit carrying tools, and the
+// tile has to be worth the work: no road where one already runs, no plow on a
+// tile already plowed or still forested (that is a clear), no work at sea.
+function improveOrder(n) {
+  const u = G.units[G.sel];
+  if (!u) return;
+  if (!canImprove(u)) {
+    G.msg = u && u.ship ? 'Ships cannot work the land.'
+                        : 'Only a unit carrying tools can do that.';
+    return;
+  }
+  if (tileWater(at(u.x, u.y))) { G.msg = 'Nothing to improve at sea.'; return; }
+  if (n === ORDER_ROAD && hasRoad(u.x, u.y)) { G.msg = 'A road already runs here.'; return; }
+  if (n === ORDER_CLEAR && !isForested(tileTerrain(at(u.x, u.y))) && hasPlow(u.x, u.y)) {
+    G.msg = 'This field is already plowed.'; return;
+  }
+  u.orders = n;
+  u.work = 0;
+  u.movesLeft = 0;
+  G.msg = `${DATA.orders[n].name}: ${workThreshold(u, n === ORDER_ROAD)} turns.`;
+  advance();
+}
 // ORDERS "Return to Europe" (E) sends the selected ship home; VIEW "European
 // Status" (also E, one level down) opens the harbour. E does both here: the
 // ship is ordered home AND the harbour comes up, so the crossing is visible in
@@ -3822,9 +4020,9 @@ const COMMANDS = {
   'Sentry': () => setOrder(1),
   'Build Colony': buildColony,
   'Join Colony (B)': buildColony,
-  'Clear Forest (P)': () => setOrder(8),
-  'Plow Fields  (P)': () => setOrder(8),
-  'Build Road': () => setOrder(9),
+  'Clear Forest (P)': () => improveOrder(ORDER_CLEAR),
+  'Plow Fields  (P)': () => improveOrder(ORDER_CLEAR),
+  'Build Road': () => improveOrder(ORDER_ROAD),
   'Load Cargo': loadCargo,
   'Unload Cargo': unloadCargo,
   'Go to Port': returnToEurope,

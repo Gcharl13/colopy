@@ -127,6 +127,14 @@ def build_data():
     # hills 4, mountains 6 -- the +25%-per-point defender bonus.
     D["defensive"] = {k.lstrip("@").lower(): [int(r["defensive"]) for r in rows(k)]
                       for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
+    # The terrain table's `movement` column is the tile's move cost in whole
+    # moves (unit budgets are stored in THIRDS, unit.md §3), and `improvement`
+    # is the pioneer work threshold at +0x2F78 -- the byte the clear/plow/road
+    # executors compare their work counter against.
+    D["terrainmove"] = {k.lstrip("@").lower(): [int(r["movement"]) for r in rows(k)]
+                        for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
+    D["improvework"] = {k.lstrip("@").lower(): [int(r["improvement"]) for r in rows(k)]
+                        for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
     D["yields"] = {k.lstrip("@").lower():
                    [[int(r[c] or 0) for c in YIELDS] for r in rows(k)]
                    for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}

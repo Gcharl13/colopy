@@ -29,6 +29,16 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("roads",
+     "beginGame();G.screen='map';"
+     "(()=>{let bx=-1,by=-1;"
+     "for(let y=8;y<60&&bx<0;y++)for(let x=8;x<44;x++){"
+     "let ok=true;for(let k=0;k<6;k++)if(tileWater(at(x+k,y))||tileWater(at(x+k,y+1)))ok=false;"
+     "if(ok){bx=x;by=y;break;}}"
+     "for(let k=0;k<6;k++)IMPROVE[by*MAP.w+bx+k]|=ROAD_BIT;"
+     "IMPROVE[(by+1)*MAP.w+bx+2]|=ROAD_BIT;IMPROVE[(by+2)*MAP.w+bx+2]|=ROAD_BIT;"
+     "for(let k=0;k<4;k++)IMPROVE[(by+1)*MAP.w+bx+3+k]|=PLOW_BIT;"
+     "centerOn(bx+3,by+1);})()"),
     ("colony_production",
      "beginGame();sailToLand();makeColony();"
      "(()=>{const c=G.colonies[0];"
