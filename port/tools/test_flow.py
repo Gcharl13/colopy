@@ -153,8 +153,15 @@ SCRIPT = """() => {
   out.dockFromLadder = G.dock.every(c =>
     ladder.includes(c.name) || DATA.jobtrain.some(j => j.expert === c.name));
 
-  // The advisor portrait sheet is loaded and has a frame to draw.
+  // The advisor portrait sheet is loaded, and he speaks for RECRUIT and
+  // PURCHASE only -- TRAIN is a bare list with no speaker.
   out.adviser = !!(DATA.sheets.MSS2 && DATA.sheets.MSS2.frames.length);
+  out.adviserScope = {};
+  for (const [k, name] of [[0, 'recruit'], [1, 'purchase'], [2, 'train']]) {
+    openEuroMenu(k);
+    out.adviserScope[name] = hasAdviser();
+  }
+  G.euroMenu = null;
 
   // Sail home: three turns back to the lane, then the ship is on the map again.
   const units0 = G.units.length;
@@ -287,6 +294,9 @@ def main():
          r["dockShape"] and r["dockFromLadder"],
          {"shape": r["dockShape"], "ladder": r["dockFromLadder"]}),
         ("economic adviser portrait is available", r["adviser"], r["adviser"]),
+        ("adviser speaks for recruit and purchase, not train",
+         r["adviserScope"] == {"recruit": True, "purchase": True, "train": False},
+         r["adviserScope"]),
         ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
         ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
         ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),

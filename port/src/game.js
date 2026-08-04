@@ -1479,7 +1479,12 @@ function euroMenuRows() {
 // hat, identified by rendering all six MSS sheets) sits above the box, which is
 // where func_06BF66 draws the speaker.
 const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null };
+// The economic adviser speaks for RECRUIT and PURCHASE -- the two menus with a
+// GAME.TXT body he is quoting -- and not for TRAIN, which is a bare list. He
+// sits 4px lower than the box top, not flush against it.
 const ADVISER_ECONOMIC = 'MSS2';
+const ADVISER_DROP = 4;
+const hasAdviser = () => EURO_MENU_KEY[G.euroMenu] !== null;
 function euroMenuBox() {
   const rows = euroMenuRows();
   const key = EURO_MENU_KEY[G.euroMenu];
@@ -1497,16 +1502,21 @@ function euroMenuBox() {
   const w = cw + 6;
   const textH = body.length * 6;
   const h = 6 + textH + 3 + rows.length * 8 + 3;
-  // Keep the whole thing on screen: the portrait needs headroom above the box.
+  // Keep the whole thing on screen: where the adviser speaks he needs headroom
+  // above the box, less the 4px he is dropped by. TRAIN has no portrait, so it
+  // just centres.
   const [, ph] = frameSize(ADVISER_ECONOMIC, 0);
-  const y = Math.max(ph + 2, Math.round(100 - h / 2));
+  const need = hasAdviser() ? ph - ADVISER_DROP + 2 : 2;
+  const y = Math.max(need, Math.round(100 - h / 2));
   return { x: Math.round(160 - w / 2), y: Math.min(y, H - h - 2), w, h, textH, body, rows };
 }
 function drawEuroMenu(ctx) {
   const b = euroMenuBox();
-  // Portrait above the box, right-aligned to it the way the speaker channel is.
+  // Portrait above the box, right-aligned to it the way the speaker channel is,
+  // dropped 4px so he overlaps the frame rather than floating clear of it.
   const [pw, ph] = frameSize(ADVISER_ECONOMIC, 0);
-  if (pw) sheetFrame(ctx, ADVISER_ECONOMIC, 0, b.x + b.w - pw - 4, b.y - ph);
+  if (pw && hasAdviser())
+    sheetFrame(ctx, ADVISER_ECONOMIC, 0, b.x + b.w - pw - 4, b.y - ph + ADVISER_DROP);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
   b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
   const seed = b.y + 6 + b.textH + 3;
