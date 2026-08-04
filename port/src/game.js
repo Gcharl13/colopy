@@ -259,6 +259,8 @@ const G = {
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
   crosses: 0,             // immigration accumulator
   report: null,           // open F-key report
+  natives: [],            // native units on the map
+  villages: [], tribes: [], fathersOwned: [],
   accum: [],              // per-good traffic accumulator
   kingsFund: 0,           // the tax the Crown has taken
   dock: [],               // three immigration candidate slots
@@ -316,6 +318,8 @@ function beginGame() {
   G.colonies = []; G.europe = []; G.builtColony = false;
   G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
   G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
+  G.fathersOwned = [];
+  seedNatives();
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
   G.dock = [0, 0, 0].map(() => rollImmigrant());
@@ -925,6 +929,22 @@ function drawMap(ctx) {
     const [fw, fh] = frameSize('ICONS', c.nation);
     sheetFrame(tgt, 'ICONS', c.nation, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
     if (G.zoom === 0) FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
+  }
+
+  // Native settlements and units.
+  for (const v of G.villages) {
+    const tx = v.x - G.view.x, ty = v.y - G.view.y;
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    // ICONS band 0-3 are the settlement markers; frame 3 stands for a village.
+    const [fw, fh] = frameSize('ICONS', 3);
+    sheetFrame(tgt, 'ICONS', 3, ox + tx * TILE + (TILE - fw) / 2,
+               oy + ty * TILE + (TILE - fh) / 2);
+  }
+  for (const n of G.natives) {
+    const tx = n.x - G.view.x, ty = n.y - G.view.y;
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    const [fw, fh] = frameSize('ICONS', n.icon);
+    sheetFrame(tgt, 'ICONS', n.icon, ox + tx * TILE + TILE - fw, oy + ty * TILE + TILE - fh);
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -1822,6 +1842,124 @@ function euroMenuCommit() {
   G.euroMenu = null;
 }
 
+// ------------------------------------------------------------ natives
+// §19. Each tribe carries a tension meter toward the player, 0..100: **75 and
+// above is hostile, 100 is war**, and the village-entry code swaps "Trade With
+// Village" for "Enter Hostile Village" at 75. Every change goes through
+// adjust_tension, which clamps to 0..100 and HALVES every positive (angering)
+// delta for France and for anyone holding Pocahontas.
+//
+// Settlement seeding: the alarm seed is byte-cited as random_int(0,14) + 2d for
+// the human (§18.11). The PLACEMENT itself (func_065D26, up to 84 settlements
+// from the map seed) is not in the evidence here, so villages are scattered on
+// land by a deterministic hash -- flagged in docs/UI_AUDIT_TRACKER.md.
+const TENSION_HOSTILE = 75, TENSION_WAR = 100;
+function adjustTension(tribe, delta) {
+  const t = G.tribes[tribe];
+  if (!t) return;
+  // France, and Pocahontas, halve anger.
+  if (delta > 0 && (G.nation === 1 || G.fathersOwned.includes('Pocahontas')))
+    delta = Math.floor(delta / 2);
+  t.tension = Math.max(0, Math.min(TENSION_WAR, t.tension + delta));
+}
+function seedNatives() {
+  G.tribes = DATA.tribes.map(t => ({
+    name: t.name, singular: t.singular, level: t.level,
+    tension: Math.floor(Math.random() * 15) + 2 * G.difficulty,
+  }));
+  G.villages = [];
+  G.natives = [];
+  for (let i = 0; i < 84; i++) {
+    const h = (i * 2654435761) >>> 0;
+    const x = 4 + (h % (MAP.w - 8)), y = 4 + ((h >>> 8) % (MAP.h - 8));
+    if (tileWater(at(x, y))) continue;
+    if (G.villages.some(v => Math.abs(v.x - x) < 3 && Math.abs(v.y - y) < 3)) continue;
+    const tribe = i % G.tribes.length;
+    G.villages.push({ x, y, tribe, name: G.tribes[tribe].name });
+    // A brave stands with roughly every third village.
+    if (i % 3 === 0)
+      G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x: x + 1, y,
+                       tribe, orders: 0, nation: -1 });
+  }
+}
+// Walking into a village opens it: trade below the hostile line, a warning at
+// or above it (§19, the 75 cutoff).
+function enterVillage(v) {
+  const t = G.tribes[v.tribe];
+  G.msg = t.tension >= TENSION_HOSTILE
+    ? `The ${t.name} are hostile. Enter at your peril.`
+    : `The ${t.name} welcome you and offer to trade.`;
+}
+
+// ------------------------------------------------------------ combat
+// §14. One attack, one roll over two fully modified strengths.
+//
+//  base            @UNIT combat column; carriers add the attack column;
+//                  a damaged ship takes -2
+//  terrain/fort    strength*(bonus+4)/4 * 3/2, where bonus accumulates
+//                  colony +2, fortified +4, river/road +(n+1)*2 and the
+//                  terrain's own Defensive value
+//  handicap        a HUMAN combatant gets += (4 - difficulty) on BOTH sides
+//  colony          defender on a colony tile: +50%
+//  SoL             strength * SoL%/100
+//  difficulty      strength * difficulty/20
+//  roll            random_int(1, ATK+DEF); the attacker wins iff roll <= ATK
+//
+// Step 8 of §14.3 -- "a further doubling gated on game.difficulty, exact
+// condition an open item" -- is NOT implemented: the condition is unknown, so
+// applying it would be a guess.
+function terrainDefence(v) {
+  let t = v & 0x1F;
+  if (t >= 16 && t <= 23) t = (t & 7) | 8;
+  const d = DATA.defensive;
+  const row = t <= 7 ? d.unforested[t] : t <= 15 ? d.forested[t - 8] : d.other[t - 24];
+  return row || 0;
+}
+function defenceBonus(u) {
+  let bonus = terrainDefence(at(u.x, u.y));
+  if (colonyAt(u.x, u.y)) bonus += 2;
+  if (u.orders === 5 || u.orders === 6) bonus += 4;      // Fortify / Fortified
+  if (tileRiver(at(u.x, u.y))) bonus += 2;
+  return bonus;
+}
+function combatStrength(u, isDefender) {
+  const t = unit(u.type);
+  if (!t) return 1;
+  let s = t.combat + (t.cargo && t.hull ? t.attack : 0);
+  if (u.damaged) s -= 2;
+  s = Math.floor(Math.floor(s * (defenceBonus(u) + 4) / 4) * 3 / 2);
+  s += (4 - G.difficulty);                                // human handicap
+  if (isDefender && colonyAt(u.x, u.y)) s = Math.floor(s * 3 / 2);
+  if (u.orders === 5 || u.orders === 6) s = Math.floor(s * 3 / 2);   // Fortified +50%
+  s += Math.floor(s * G.difficulty / 20);
+  return Math.max(1, s);
+}
+// The attacker wins iff roll <= ATK. The loser is destroyed; a losing ship is
+// damaged first and only sunk if it was already damaged.
+function resolveAttack(att, def) {
+  const A = combatStrength(att, false), D = combatStrength(def, true);
+  const roll = 1 + Math.floor(Math.random() * (A + D));
+  const win = roll <= A;
+  const loser = win ? def : att;
+  const t = unit(loser.type);
+  if (t && t.hull > 0 && !loser.damaged) {
+    loser.damaged = true;
+    G.msg = `${loser.type} damaged.`;
+  } else {
+    const i = G.units.indexOf(loser);
+    if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
+    const j = G.natives.indexOf(loser);
+    if (j >= 0) G.natives.splice(j, 1);
+    G.msg = `${loser.type} destroyed.`;
+  }
+  if (win && !colonyAt(def.x, def.y) && !G.units.some(u => u.x === def.x && u.y === def.y)
+      && !G.natives.some(u => u.x === def.x && u.y === def.y)) {
+    att.x = def.x; att.y = def.y;                         // move into the emptied tile
+  }
+  att.movesLeft = 0;
+  return { A, D, roll, win };
+}
+
 // ------------------------------------------------------------ reports
 // The F-key adviser ladder (§27.1). Four of the nine can be populated from
 // state this build actually keeps; the rest name themselves rather than showing
@@ -1852,6 +1990,15 @@ const REPORTS = {
       return `${c.name}: ${c.colonists.length} colonists, food ` +
              `${f.net >= 0 ? '+' : ''}${f.net}, ${colonyHammers(c)} hammers` +
              (c.building ? `, building ${c.building}` : '');
+    });
+  } },
+  F9: { title: 'Indian Adviser', adviser: 'MSS3', body: () => {
+    const band = (n) => n >= TENSION_WAR ? 'War'
+                     : n >= TENSION_HOSTILE ? 'Hostile'
+                     : n >= 40 ? 'Restless' : n >= 20 ? 'Uneasy' : 'Content';
+    return G.tribes.map(t => {
+      const villages = G.villages.filter(v => G.tribes[v.tribe] === t).length;
+      return `${t.name}: ${band(t.tension)} (${t.tension})  ${villages} settlements`;
     });
   } },
   F7: { title: 'Naval Adviser', adviser: 'MSS0', body: () => {
@@ -2136,6 +2283,16 @@ function moveSel(dx, dy) {
     return;
   }
   if (!u.ship && water) return;   // land units cannot walk onto water
+  // Moving onto a tile held by a native or rival unit is an attack (§14).
+  const foe = G.natives.find(n => n.x === nx && n.y === ny);
+  if (foe) {
+    resolveAttack(u, foe);
+    adjustTension(foe.tribe, 100);          // attacking a tribe is an act of war
+    advance();
+    return;
+  }
+  const vil = G.villages.find(v => v.x === nx && v.y === ny);
+  if (vil) { enterVillage(vil); u.movesLeft = 0; advance(); return; }
   // The right-edge sea-lane column is the route home: a ship that enters it
   // sails for Europe and leaves the map (CLAUDE.md hard rule 2, terrain 26).
   if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) { sailForEurope(u); return; }
@@ -2274,6 +2431,7 @@ const COMMANDS = {
   'F5 Economic Adviser': () => { G.report = 'F5'; G.screen = 'report'; },
   'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
   'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
+  'F9 Indian Adviser': () => { G.report = 'F9'; G.screen = 'report'; },
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
   // GAME
   'Save Game': saveGame,

@@ -223,6 +223,57 @@ SCRIPT = """() => {
     out.built = { done: c.buildings.includes('Docks'), targetCleared: c.building === null };
   }
 
+  // ---- combat, natives, immigration, pedia, save/load ----
+  {
+    beginGame(); G.screen = 'map';
+    out.natives = { villages: G.villages.length > 0, tribes: G.tribes.length === DATA.tribes.length,
+                    seeded: G.tribes.every(t => t.tension >= 0 && t.tension <= 100) };
+
+    // Attacking a tribe is an act of war: tension jumps and the loser dies.
+    const sold = mkUnit('Soldiers', 10, 10); G.units.push(sold);
+    const brave = { type: 'Braves', icon: unit('Braves').icon, x: 11, y: 10,
+                    tribe: 0, orders: 0, nation: -1 };
+    G.natives.push(brave);
+    const before = G.units.length + G.natives.length, t0 = G.tribes[0].tension;
+    G.sel = G.units.indexOf(sold); sold.movesLeft = 1; moveSel(1, 0);
+    out.combat = { someoneDied: G.units.length + G.natives.length === before - 1,
+                   tensionRose: G.tribes[0].tension > t0 };
+
+    // adjust_tension halves positive deltas for France, not for others.
+    G.nation = 1; G.tribes[1].tension = 0; adjustTension(1, 10);
+    const fr = G.tribes[1].tension;
+    G.nation = 0; G.tribes[2].tension = 0; adjustTension(2, 10);
+    out.tensionHalving = { france: fr === 5, other: G.tribes[2].tension === 10 };
+    // and it clamps at 0..100
+    adjustTension(2, 500); const hi = G.tribes[2].tension;
+    adjustTension(2, -500); out.tensionClamp = hi === 100 && G.tribes[2].tension === 0;
+
+    // Fortifying raises defence, per the +50% and the +4 bonus term.
+    const a = mkUnit('Soldiers', 12, 12), d = mkUnit('Soldiers', 12, 12);
+    const plain = combatStrength(d, true);
+    d.orders = 6;
+    out.fortifyHelps = combatStrength(d, true) > plain;
+
+    // Immigration threshold shrinks as the empire grows.
+    const thrSmall = immigrationThreshold();
+    G.colonies.push({ name: 'X', x: 5, y: 5, nation: 0, colonists: [{}, {}, {}, {}, {}],
+                      stock: [], buildings: [], hammers: 0, tools: 0, building: null, sol: 0 });
+    out.thresholdGrows = immigrationThreshold() > thrSmall;
+
+    // Colonizopedia: every category has entries and Complete merges them.
+    out.pedia = {};
+    let total = 0;
+    for (let c = 0; c < 7; c++) { G.pediaCat = c; const n = pediaList().length; total += n;
+                                  out.pedia['cat' + c] = n > 0; }
+    G.pediaCat = 7;
+    out.pedia.complete = pediaList().length === total;
+    out.pedia.article = (pediaBody(5, 0) || '').includes('Adam Smith');
+
+    // Save / load round trip.
+    G.gold = 4242; saveGame(); G.gold = 0; loadGame();
+    out.saveLoad = G.gold === 4242;
+  }
+
   // ---- menu bar and key commands (§27.1) ----
   const press = (k, mod) => onKey(Object.assign(
     { key: k, preventDefault() {}, altKey: false, shiftKey: false }, mod || {}));
@@ -393,6 +444,19 @@ def main():
         ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
+        ("natives seeded with villages and per-tribe tension",
+         all(r["natives"].values()), r["natives"]),
+        ("attacking kills a combatant and angers the tribe",
+         all(r["combat"].values()), r["combat"]),
+        ("adjust_tension halves anger for France only",
+         all(r["tensionHalving"].values()), r["tensionHalving"]),
+        ("tension clamps to 0..100", r["tensionClamp"], r["tensionClamp"]),
+        ("fortifying raises defence", r["fortifyHelps"], r["fortifyHelps"]),
+        ("immigration threshold grows with the empire",
+         r["thresholdGrows"], r["thresholdGrows"]),
+        ("pedia: all 7 categories populated, Complete merges them",
+         all(r["pedia"].values()), r["pedia"]),
+        ("save/load round-trips", r["saveLoad"], r["saveLoad"]),
         ("dialog frame is outline + ring + bevel in paint order",
          all(r["frame"].values()), r["frame"]),
     ]

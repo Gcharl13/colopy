@@ -154,6 +154,25 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 - Terrain names come from `@UNFORESTED`+`@FORESTED`+`@OTHER`+`@OTHER_NAMES` = 26, but PEDIA.TXT ships 29 TERRAIN articles; ids 26–28 are shown by index rather than given invented names.
 - Game Concept entries have index names in `@MISCELLANEOUS` but **no article** anywhere in PEDIA.TXT; the page says so rather than filling the space.
 
+### Combat (§14)
+- Implemented: base from the `@UNIT` combat column (carriers add attack, damaged ships −2), the
+  `strength·(bonus+4)/4·3/2` terrain/fort term with the cited defence accumulator, the human
+  `+(4−difficulty)` handicap on **both** sides, colony +50%, fortified +50%, `·difficulty/20`,
+  and the roll `random_int(1, ATK+DEF)` won by the attacker iff `roll ≤ ATK`.
+- **NOT implemented**: §14.3 step 8, "a further doubling gated on `game.difficulty`, exact
+  condition an open item". Guessing at it would change every fight, so it is left out.
+- The Combat Analysis dialog (§26.10) is not built; combat resolves silently with a message.
+
+### Natives (§19)
+- Tension per tribe 0..100 with the cited bands (**75 hostile, 100 war**), all changes through
+  `adjustTension`, which clamps and **halves positive deltas for France and Pocahontas**.
+  Alarm seed `random_int(0,14) + 2d` per §18.11. Attacking a tribe applies +100.
+- **Settlement PLACEMENT is a placeholder**: `func_065D26` seeds up to 84 settlements from the
+  map seed and that logic is not in the evidence here, so villages are scattered by a
+  deterministic hash on land. **PARTIAL.**
+- Village trade, raids, missions and converts are **not built** — entering a village only
+  reports whether the tribe is hostile.
+
 ### Immigration
 - **Threshold is byte-cited** and implemented exactly: `clamp4000((Σ pop + units) × 2 + 8) × (8−d)/8`, England ×2/3.
 - **Cross accrual rate is a flagged placeholder**: 1 per colony per turn, +1 per Church, +1 per Cathedral. §17.6 states the real accrual site is unidentified in the repo. **PARTIAL.**

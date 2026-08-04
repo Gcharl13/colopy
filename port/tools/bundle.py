@@ -123,6 +123,10 @@ def build_data():
     # runtime terrain id within each band.
     YIELDS = ["y_farmer", "y_planter_sugar", "y_planter_tobacco", "y_planter_cotton",
               "y_trapper", "y_lumberjack", "y_ore", "y_silver", "y_fisherman"]
+    # Terrain Defensive column (§5.6 / §14.2): open land 0, marsh 1, forests 2,
+    # hills 4, mountains 6 -- the +25%-per-point defender bonus.
+    D["defensive"] = {k.lstrip("@").lower(): [int(r["defensive"]) for r in rows(k)]
+                      for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
     D["yields"] = {k.lstrip("@").lower():
                    [[int(r[c] or 0) for c in YIELDS] for r in rows(k)]
                    for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
@@ -139,6 +143,9 @@ def build_data():
     D["pedia"] = {"categories": [l for l in ped["@PEDIA"].split("\n") if l.strip()],
                   "entries": {k.lstrip("@"): v for k, v in ped.items() if k != "@PEDIA"}}
     D["fathers"] = [r["name"] for r in rows("@FATHERS")] if "@FATHERS" in nt else []
+    D["tribes"] = [{"name": r["name"], "singular": r["singular"],
+                    "level": int(r["level"] or 0)} for r in rows("@TRIBES")
+                   if r["level"] != ""]
 
     # MENU.TXT: one section per pulldown. The first line is the bar title, the
     # rest are rows. "~" marks the accelerator letter -- the menu engine parses
