@@ -228,6 +228,15 @@ SCRIPT = """() => {
     beginGame(); G.screen = 'map';
     out.natives = { villages: G.villages.length > 0, tribes: G.tribes.length === DATA.tribes.length,
                     seeded: G.tribes.every(t => t.tension >= 0 && t.tension <= 100) };
+    // Braves are land units and villages are land settlements: neither may sit
+    // on water.
+    out.nothingOnWater = G.natives.every(n => !tileWater(at(n.x, n.y))) &&
+                         G.villages.every(v => !tileWater(at(v.x, v.y)));
+    // Native settlements use their OWN sprite band (disk 10..13, no pennant),
+    // never the colony band (disk 0..3, which carries one).
+    out.settlementBands = { native: NATIVE_FRAME_BASE === 10,
+                            colonyDistinct: !COLONY_FRAME.some(f => f >= 10),
+                            levelsSeen: [...new Set(G.villages.map(v => v.level))].sort().join(',') };
 
     // Attacking a tribe is an act of war: tension jumps and the loser dies.
     const sold = mkUnit('Soldiers', 10, 10); G.units.push(sold);
@@ -444,6 +453,10 @@ def main():
         ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
+        ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("native settlements use their own sprite band, not the colony one",
+         r["settlementBands"]["native"] and r["settlementBands"]["colonyDistinct"]
+         and r["settlementBands"]["levelsSeen"] == "0,1,2,3", r["settlementBands"]),
         ("natives seeded with villages and per-tribe tension",
          all(r["natives"].values()), r["natives"]),
         ("attacking kills a combatant and angers the tribe",

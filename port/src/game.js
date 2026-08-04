@@ -926,8 +926,7 @@ function drawMap(ctx) {
     const tx = c.x - G.view.x, ty = c.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     const px = ox + tx * TILE, py = oy + ty * TILE;
-    const [fw, fh] = frameSize('ICONS', c.nation);
-    sheetFrame(tgt, 'ICONS', c.nation, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
+    drawSettlement(tgt, px, py, colonyLevel(c), c.nation);
     if (G.zoom === 0) FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
   }
 
@@ -935,10 +934,7 @@ function drawMap(ctx) {
   for (const v of G.villages) {
     const tx = v.x - G.view.x, ty = v.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
-    // ICONS band 0-3 are the settlement markers; frame 3 stands for a village.
-    const [fw, fh] = frameSize('ICONS', 3);
-    sheetFrame(tgt, 'ICONS', 3, ox + tx * TILE + (TILE - fw) / 2,
-               oy + ty * TILE + (TILE - fh) / 2);
+    drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1);
   }
   for (const n of G.natives) {
     const tx = n.x - G.view.x, ty = n.y - G.view.y;
@@ -1854,6 +1850,36 @@ function euroMenuCommit() {
 // from the map seed) is not in the evidence here, so villages are scattered on
 // land by a deterministic hash -- flagged in docs/UI_AUDIT_TRACKER.md.
 const TENSION_HOSTILE = 75, TENSION_WAR = 100;
+// There are TWO parallel settlement bands in ICONS, both 21x16:
+//   disk 0..3   -- European colonies. Every one carries a blue PENNANT, and
+//                  they run bare logs (3), low fence (0), wooden palisade (1),
+//                  stone walls (2): the stockade / fort / fortress progression.
+//   disk 10..13 -- NATIVE settlements, no pennant: conical tipi camp (10),
+//                  pueblo (11), stepped pyramid (12), terraced stone city (13).
+//                  That is exactly @TRIBES.level 0..3 -- Apache/Sioux/Tupi are
+//                  level 0 camps, Arawak/Iroquois/Cherokee 1, Aztec 2, Inca 3.
+// Identified by rendering the whole sheet as a grid; the level -> frame order
+// follows the art's own progression.
+const COLONY_FRAME = [3, 0, 1, 2];
+const NATIVE_FRAME_BASE = 10;
+const PENNANT_BASE = 118;
+// A colony's own level: no stockade, Stockade, Fort, Fortress.
+function colonyLevel(c) {
+  if (c.buildings.includes('Fortress')) return 3;
+  if (c.buildings.includes('Fort')) return 2;
+  if (c.buildings.includes('Stockade')) return 1;
+  return 0;
+}
+function drawSettlement(ctx, px, py, level, nation) {
+  const lv = Math.max(0, Math.min(3, level));
+  const frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
+  const [fw, fh] = frameSize('ICONS', frame);
+  sheetFrame(ctx, 'ICONS', frame, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
+  if (nation >= 0) {
+    const [pw2] = frameSize('ICONS', PENNANT_BASE + nation);
+    sheetFrame(ctx, 'ICONS', PENNANT_BASE + nation, px + TILE - pw2 - 1, py + 1);
+  }
+}
 function adjustTension(tribe, delta) {
   const t = G.tribes[tribe];
   if (!t) return;
@@ -1875,10 +1901,16 @@ function seedNatives() {
     if (tileWater(at(x, y))) continue;
     if (G.villages.some(v => Math.abs(v.x - x) < 3 && Math.abs(v.y - y) < 3)) continue;
     const tribe = i % G.tribes.length;
-    G.villages.push({ x, y, tribe, name: G.tribes[tribe].name });
-    // A brave stands with roughly every third village.
-    if (i % 3 === 0)
-      G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x: x + 1, y,
+    G.villages.push({ x, y, tribe, name: G.tribes[tribe].name,
+                      level: G.tribes[tribe].level });
+    // A brave stands beside roughly every third village -- on LAND. Braves are
+    // land units and must never be placed on water.
+    if (i % 3 !== 0) continue;
+    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+      .map(([dx, dy]) => [x + dx, y + dy])
+      .find(([bx, by]) => !tileWater(at(bx, by)) && !G.villages.some(v => v.x === bx && v.y === by));
+    if (spot)
+      G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x: spot[0], y: spot[1],
                        tribe, orders: 0, nation: -1 });
   }
 }

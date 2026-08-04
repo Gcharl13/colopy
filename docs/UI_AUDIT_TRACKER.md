@@ -167,6 +167,12 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 - Tension per tribe 0..100 with the cited bands (**75 hostile, 100 war**), all changes through
   `adjustTension`, which clamps and **halves positive deltas for France and Pocahontas**.
   Alarm seed `random_int(0,14) + 2d` per §18.11. Attacking a tribe applies +100.
+- **Settlement sprites resolved 2026-08-04**: ICONS has two parallel 21×16 settlement bands.
+  **disk 0–3 are European colonies** — every one carries a blue pennant, running bare logs /
+  low fence / wooden palisade / stone walls, i.e. the stockade→fort→fortress progression.
+  **disk 10–13 are the NATIVE settlements**, pennant-free: tipi camp, pueblo, stepped pyramid,
+  terraced stone city — exactly `@TRIBES.level` 0–3. Found by rendering the whole sheet as a
+  grid; the manual's ICONS catalogue lists 10–13 as "not yet role-assigned".
 - **Settlement PLACEMENT is a placeholder**: `func_065D26` seeds up to 84 settlements from the
   map seed and that logic is not in the evidence here, so villages are scattered by a
   deterministic hash on land. **PARTIAL.**
