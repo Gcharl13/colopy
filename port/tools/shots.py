@@ -40,6 +40,16 @@ SHOTS = [
     ("map_mission",
      "beginGame();G.screen='map';G.villages[0].mission={power:0,expert:false};"
      "G.villages[1].mission={power:1,expert:true};centerOn(G.villages[0].x,G.villages[0].y)"),
+    ("village_scout",
+     "beginGame();enterVillage(G.villages[0], mkUnit('Scouts',G.villages[0].x-1,G.villages[0].y))"),
+    ("learn_offer",
+     "beginGame();G.screen='map';liveAmong(G.villages[0], mkUnit('Colonists',0,0))"),
+    ("tribute",
+     "beginGame();G.screen='map';G.units.push(mkUnit('Soldiers',0,0));"
+     "G.villages[0].tributePaid=false;for(let i=0;i<40&&!G.villages[0].tributePaid;i++)"
+     "demandTribute(G.villages[0], null)"),
+    ("attack_village",
+     "beginGame();G.screen='map';attackVillage(G.villages[0], mkUnit('Dragoons',0,0))"),
     ("event_raid",
      "beginGame();G.screen='map';showEvent('RAIDSTORES',{STRING0:G.tribes[0].name,"
      "STRING1:'Jamestown',STRING2:'Furs',STRING3:DATA.nations[0].adjective})"),

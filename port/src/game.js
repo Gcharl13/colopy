@@ -2021,19 +2021,24 @@ function seedNatives() {
       if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) return;
       // mission: null, or {power, expert} -- the engine's settlement +0x05
       // byte, low nibble = owning power, bit 0x10 = expert (Jean de Brebeuf).
-      G.villages.push({ x, y, tribe: ti, name: t.name, level: t.level,
-                        alarm: t.tension, mission: null, tributePaid: false });
-      // A brave stands beside roughly every third settlement, on LAND.
-      if (k % 3) return;
-      const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
-        .map(([dx, dy]) => [x + dx, y + dy])
-        .find(([bx, by]) => !tileWater(at(bx, by)) &&
-                            !G.villages.some(v => v.x === bx && v.y === by));
-      if (spot)
-        G.natives.push({ type: 'Braves', icon: unit('Braves').icon,
-                         x: spot[0], y: spot[1], tribe: ti, orders: 0, nation: -1 });
+      // The CAPITAL is @LEVELS row 4 and carries the bigger growth cap; which
+      // site is the capital is not in TRIBE.TXT, so the port takes the tribe's
+      // first listed site. Flagged.
+      // Starting population is likewise not in the evidence -- villages open at
+      // their target size (func_046DE0: 2*level+3, capital 3*level+4), which is
+      // where a long-settled village would already sit.
+      const v = { x, y, tribe: ti, name: t.name, level: t.level,
+                  alarm: t.tension, mission: null, tributePaid: false,
+                  capital: k === 0, growth: 0, taught: false, chiefSeen: false,
+                  braveOwed: false, pop: 1 };
+      v.pop = settlementCap(v);
+      G.villages.push(v);
     });
   });
+  // §19.11: map creation spawns exactly ONE brave per village, linked to it;
+  // a village only builds another when its own dies. Done in a second pass so a
+  // brave never lands on a site that has not been placed yet.
+  for (const v of G.villages) spawnBrave(v);
 }
 
 // §19.5 -- what a village wants. The engine's village_supply_demand is a
@@ -2094,9 +2099,11 @@ function villageSell(v, good, qty) {
   G.gold += paid;
   v.stock = v.stock || DATA.cargo.map(() => 0);
   v.stock[good] += qty;
-  // The goodwill credit for a successful trade is byte-verified as -4
-  // (@0x5C41E) and it is the whole of it -- the quantity does not scale it, and
-  // it does not zero the alarm word (an earlier invented rule, struck).
+  // TWO separate credits, and they land on the two separate meters:
+  //   * the TRIBE's tension meter takes the flat -4 goodwill credit (@0x5C41E);
+  //   * the VILLAGE's alarm word drops by the QUANTITY sold, and a full 100-load
+  //     zeroes it outright (RULINGS.md 2026-08-01 native-economy pass, item 8).
+  v.alarm = qty >= 100 ? 0 : Math.max(0, (v.alarm || 0) - qty);
   adjustTension(v.tribe, -4);
   if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
   if (good === 8) {
@@ -2332,19 +2339,323 @@ function nativeRaids() {
   }
 }
 
+// ------------------------------------------- the native background economy
+// §19.11, and RULINGS.md 2026-08-01 (the native-background-economy pass, which
+// supersedes natives.md §3/§6 -- that section's per-settlement tension model is
+// recorded there as WRONG: the 0x5B1C table is TribeData +0x46, per TRIBE x
+// power, stride 0x4E, and the applier's first arg is the tribe index [0x8D52].
+// The port's per-tribe tension meter is therefore the right shape).
+//
+// Per village, per turn:
+//   * growth accumulator += population, acting at 20 (settlement +0x06);
+//   * on acting: replace a fallen brave if one is owed (flags 0x01), else grow
+//     by one while below the TARGET SIZE from func_046DE0 --
+//       cap = 2*level + 3, or 3*level + 4 for a capital;
+//   * a standing mission ticks: M = (expert ? 4 : 1), doubled in a capital,
+//     doubled again with Bartolome de las Casas (FF 0x18) and halved with Juan
+//     de Sepulveda (FF 0x17); the tribe's fractional feeder gains M and every 8
+//     of it becomes one visible -1 tension tick, while the village's alarm word
+//     falls by 3*M.
+// That last rule is what binds Sepulveda and las Casas to the conversion
+// pipeline -- the manual's "+4/-4 on the conversion metric" is this doubler,
+// so the earlier TBD on their binding is closed.
+function settlementCap(v) {
+  const lv = G.tribes[v.tribe] ? G.tribes[v.tribe].level : 0;
+  return v.capital ? 3 * lv + 4 : 2 * lv + 3;
+}
+function missionStrength(v) {
+  if (!v.mission) return 0;
+  let m = v.mission.expert ? 4 : 1;
+  if (v.capital) m *= 2;
+  if (G.fathersOwned.includes('Bartolome de las Casas')) m *= 2;
+  if (G.fathersOwned.includes('Juan de Sepulveda')) m = Math.floor(m / 2);
+  return m;
+}
+function nativeTick() {
+  for (const v of G.villages) {
+    // Growth.
+    v.growth = (v.growth || 0) + v.pop;
+    if (v.growth >= 20) {
+      v.growth = 0;
+      if (v.braveOwed) {
+        v.braveOwed = false;
+        spawnBrave(v);
+      } else if (v.pop < settlementCap(v)) v.pop += 1;
+    }
+    // The mission tick.
+    const m = missionStrength(v);
+    if (!m || v.mission.power !== G.nation) continue;
+    const t = G.tribes[v.tribe];
+    t.frac = (t.frac || 0) + m;
+    while (t.frac >= 8) { t.frac -= 8; adjustTension(v.tribe, -1); }
+    v.alarm = Math.max(0, (v.alarm || 0) - 3 * m);
+  }
+}
+// One brave per village, and a village only builds another when its own dies
+// (the unit-removal path stamps the request; the next 20-tick fills it).
+function spawnBrave(v) {
+  const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+    .map(([dx, dy]) => [v.x + dx, v.y + dy])
+    .find(([bx, by]) => !tileWater(at(bx, by)) &&
+                        !G.villages.some(w => w.x === bx && w.y === by) &&
+                        !G.natives.some(n => n.x === bx && n.y === by));
+  if (!spot) return;
+  G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x: spot[0], y: spot[1],
+                   tribe: v.tribe, orders: 0, nation: -1, home: v });
+}
+
+// --------------------------------------------- the five remaining @ACTIONS
+// §19.4. Live Among The Natives, Ask to Speak With Chief, Incite Indians,
+// Demand Tribute and Attack Village.
+
+// --- r4 Live Among The Natives -------------------------------------------
+// Teaches OUTDOOR skills only: Expert Farmer, Fisherman, Fur Trapper, Silver
+// Miner, the three Master Planters, Seasoned Scout -- @JOB rows 0..4, 7, 8, 22.
+// Petty Criminals are refused, a colonist who already masters a profession is
+// refused, and each village teaches exactly once. The roll is byte-cited:
+//   learn succeeds when random_int(1,1000) >= 200*difficulty + 100
+// = 90/70/50/30/10 % from Discoverer to Viceroy.
+// WHICH skill a village offers is stored nowhere that has been mapped, so the
+// port derives it from the site's coordinates -- deterministic, and flagged.
+const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
+function villageSkill(v) {
+  return OUTDOOR_JOBS[(v.x * 7 + v.y * 13) % OUTDOOR_JOBS.length];
+}
+function liveAmong(v, u) {
+  const t = G.tribes[v.tribe];
+  const job = villageSkill(v);
+  const S = { STRING0: t.name, STRING1: DATA.jobs[job] };
+  if (u.profession === 'Petty Criminals') { showEvent('LEARNCRIMINAL', S); return; }
+  if (u.profession && u.profession !== 'Free Colonists' &&
+      u.profession !== 'Indentured Servants') {
+    showEvent('LEARNMASTER', S); return;
+  }
+  if (v.taught) { showEvent('LEARNALREADY', S); return; }
+  askEvent('LEARNSTAY', S, (choice) => {
+    if (choice !== 0) { showEvent('LEARNLATER', S); return; }
+    if (1 + Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
+      showEvent('LEARNSLOW', S);                    // unskilled -- may retry
+      return;
+    }
+    v.taught = true;
+    u.profession = DATA.jobexpert[job];
+    showEvent('LEARNDONE', S);
+  });
+}
+
+// --- r5 Ask to Speak With Chief ------------------------------------------
+// Six documented arms. WHICH one fires is steered by a sub-mode argument whose
+// selector is untraced (TBD), and the beads amount, the reveal radius and the
+// taboo odds are all untraced too. The port rolls uniformly over the arms the
+// village can actually offer and says so; a second audience at the same village
+// gets the polite nothing.
+function speakToChief(v, u) {
+  const t = G.tribes[v.tribe];
+  const S = { STRING0: t.name, STRING1: DATA.nations[G.nation].adjective };
+  if (v.chiefSeen) { showEvent('CHIEFBORED', S); return; }
+  v.chiefSeen = true;
+  const arms = ['CHIEFHOWDY', 'CHIEFGUIDES', 'CHIEFAREA', 'CHIEFGIFT', 'CHIEFBORED'];
+  // A tribe already on a war footing can execute the scout instead.
+  if ((v.alarm || 0) >= ALARM_RAID) arms.push('CHIEFKILL', 'CHIEFKILL');
+  const arm = arms[Math.floor(Math.random() * arms.length)];
+  if (arm === 'CHIEFHOWDY') {
+    // The briefing is built by sorting the village's live demand.
+    const d = villageDemand(v);
+    const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0]).map(r => r[1]);
+    showEvent('CHIEFHOWDY', { STRING0: t.treasure || DATA.cargo[top[0]].name,
+                              STRING1: DATA.cargo[top[0]].name,
+                              STRING2: DATA.cargo[top[1]].name,
+                              STRING3: DATA.cargo[top[2]].name });
+  } else if (arm === 'CHIEFGUIDES') {
+    // "Guides to aid your passage" -- the scout gets its moves back.
+    u.movesLeft = u.moves;
+    showEvent('CHIEFGUIDES', { ...S, STRING1: DATA.levelname[v.level].toLowerCase() });
+  } else if (arm === 'CHIEFAREA') {
+    // The map-area reveal has nothing to reveal yet: this build draws the whole
+    // map, with no fog model. The line still plays.
+    showEvent('CHIEFAREA', S);
+  } else if (arm === 'CHIEFGIFT') {
+    // Beads amount untraced -- the port rolls a modest purse and flags it.
+    const gold = 50 + Math.floor(Math.random() * 150);
+    G.gold += gold;
+    showEvent('CHIEFGIFT', { ...S, NUMBER0: gold });
+  } else if (arm === 'CHIEFKILL') {
+    const i = G.units.indexOf(u);
+    if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+    showEvent('CHIEFKILL', S);
+  } else showEvent('CHIEFBORED', S);
+}
+
+// --- r6 Incite Indians ----------------------------------------------------
+// "We will gladly drive the {rival} from our ancestral lands in exchange for
+// {N}" (@INDIANWARPATH2). The asking price's formula and the payment's tension
+// writes are BOTH untraced -- and the +100/-100 pair once filed here belongs to
+// the post-Declaration war council instead (RULINGS.md 2026-08-01 item 6), so
+// it is deliberately NOT used. The manual names the three factors (your
+// missions with the tribe, their attitude to you, their attitude to the target)
+// without a formula; the port prices it off those three and flags it.
+function incitePrice(v, target) {
+  const t = G.tribes[v.tribe];
+  const missions = G.villages.filter(w => w.mission && w.mission.power === G.nation &&
+                                          w.tribe === v.tribe).length;
+  const base = 1000 + 20 * (t.tension || 0) - 100 * missions;
+  return Math.max(100, Math.floor(base / 100) * 100 + 100 * target);
+}
+function inciteIndians(v, u) {
+  const t = G.tribes[v.tribe];
+  const target = G.rivals.find(r => r.met);
+  if (!target) { G.msg = 'We have met no other power to incite them against.'; return; }
+  const price = incitePrice(v, target.nation);
+  askEvent('INDIANWARPATH2', { STRING0: DATA.nations[target.nation].adjective,
+                               NUMBER0: price }, (choice) => {
+    if (choice !== 0) return;
+    if (G.gold < price) { G.msg = 'The treasury cannot bear it, Your Excellency.'; return; }
+    G.gold -= price;
+    t.warWith = target.nation;
+    G.msg = `The ${t.name} take the warpath against the ${DATA.nations[target.nation].adjective}.`;
+  });
+}
+
+// --- r7 Demand Tribute ----------------------------------------------------
+// func_04AC00. The demand is in GOODS, not gold, and the coded clamp collapses:
+//   tribute = clamp(raw, 10, min(3*wealth_word + 10, 100))
+// with the wealth word only ever written zero, so the ceiling is always 10 and
+// every successful demand in the shipped game is exactly TEN units
+// (RULINGS.md 2026-08-01 item 7; ceiling @0x4AEA2, floor @0x4AEB0). Each
+// village pays once ever -- settlement flags bit 0x10, the tribute-once latch.
+// The strength contest that decides success is described but not traced: your
+// regional military score against the tribe's, each side rolling
+// random(0..strength), with Spain and Hernan Cortes counting x1.5. The port
+// implements exactly that shape and flags the score's own definition.
+const TRIBUTE_UNITS = 10;
+function militaryScore() {
+  let s = G.units.filter(u => !u.ship).reduce((n, u) => n + unit(u.type).combat, 0);
+  if (G.nation === 2 || G.fathersOwned.includes('Hernan Cortes')) s = Math.floor(s * 3 / 2);
+  return s;
+}
+function demandTribute(v, u) {
+  const t = G.tribes[v.tribe];
+  const S = { STRING0: G.leader || DATA.nations[G.nation].leader, STRING1: t.name,
+              STRING2: t.name };
+  if (v.tributePaid) { showEvent('EXTORTPOOR', S); return; }
+  const mine = Math.floor(Math.random() * (militaryScore() + 1));
+  const theirs = Math.floor(Math.random() * (2 * v.pop * (t.level + 1) + 1));
+  adjustTension(v.tribe, 3);
+  if (mine <= theirs) {
+    showEvent(t.tension >= TENSION_HOSTILE ? 'EXTORTLAUGH' : 'EXTORTNO',
+              { ...S, STRING0: DATA.nations[G.nation].adjective, STRING1: G.leader,
+                STRING2: t.name });
+    return;
+  }
+  v.tributePaid = true;
+  // The goods land in the visitor's hold if it carries one, else in the nearest
+  // colony's stores; the good is the village's best surplus.
+  const surplus = villageSurplus(v);
+  const good = surplus.length ? surplus[0].good : 4;      // Furs by default
+  const dest = G.colonies.slice().sort((a, b) =>
+    (Math.abs(a.x - v.x) + Math.abs(a.y - v.y)) - (Math.abs(b.x - v.x) + Math.abs(b.y - v.y)))[0];
+  if (u && u.hold) holdAdd(u, good, TRIBUTE_UNITS);
+  else if (dest) dest.stock[good] += TRIBUTE_UNITS;
+  showEvent('EXTORTSTUFF', { ...S, NUMBER0: TRIBUTE_UNITS,
+                             STRING2: DATA.cargo[good].name,
+                             STRING3: dest ? dest.name : DATA.nations[G.nation].homeport });
+}
+
+// --- r8 Attack Village ----------------------------------------------------
+// §19.10. The POPULATION IS THE COUNTER: byte-located @0x5D67A inside the
+// combat resolution func_05CA7E -- every battle the village loses does pop--
+// while pop > 1, and at the last point the village is destroyed (a human
+// attacker also stamps the tribe's avenge flag +0x03 |= 0x40 @0x5D6A1) and
+// remove_settlement @0x5D6A9 runs. So a size-8 village takes eight lost
+// battles to erase.
+//
+// The raze payout is byte-verified and cross-checks against the manual's own
+// ceiling table (size factor 21 at Discoverer -> 30*6*4*21 = 15 120):
+//   gold = (SUM of 3 x random_int(0, 10 - difficulty)) * random_int(0,6) * 4 * (size + 1)
+// credited straight to the attacker's gold (32-bit add @0x4AB66) -- no x100 and
+// no Treasure unit on this path. The size operand is the VILLAGE POPULATION per
+// the user-verified 2026-05-30 ruling (the raw instruction reads the tribe's
+// level byte -- the "Apache richer than Aztec" bug). A capital-only bonus
+// exists whose magnitude is unmapped, so it is not applied.
+function razeGold(v) {
+  const d = G.difficulty;
+  let sum = 0;
+  for (let i = 0; i < 3; i++) sum += Math.floor(Math.random() * (11 - d));
+  return sum * Math.floor(Math.random() * 7) * 4 * (v.pop + 1);
+}
+function removeVillage(v) {
+  // Native units of the village are detached, then the record is retired. If it
+  // was the tribe's last village the tribe is extinct (@EXTINCT), and a
+  // surviving tribe has its horse herd and horse lore scaled by n/(n+1) --
+  // the TRIBE's record, not the dead village's (corrected 2026-08-01).
+  const t = G.tribes[v.tribe];
+  for (let i = G.natives.length - 1; i >= 0; i--)
+    if (G.natives[i].home === v) G.natives.splice(i, 1);
+  G.villages.splice(G.villages.indexOf(v), 1);
+  const left = G.villages.filter(w => w.tribe === v.tribe).length;
+  if (!left) { t.dead = true; showEvent('EXTINCT', { STRING0: t.name }); return; }
+  const n = left;
+  t.herd = Math.floor((t.herd || 0) * n / (n + 1));
+  t.horsesKnown = Math.floor((t.horsesKnown || 0) * n / (n + 1));
+}
+function attackVillage(v, u) {
+  askEvent('WHACKINDIANS', { STRING0: G.tribes[v.tribe].name }, (choice) => {
+    if (choice !== 0) return;
+    const t = G.tribes[v.tribe];
+    adjustTension(v.tribe, 100);                    // an attack is an act of war
+    // The village defends with a brave's strength on its own tile, plus the
+    // settlement's own standing -- the port uses the settlement level as the
+    // fortification the engine's colony bonus would supply.
+    const defender = { type: 'Braves', x: v.x, y: v.y, orders: 6, nation: -1,
+                       tribe: v.tribe };
+    const A = combatStrength(u, false);
+    const D = Math.floor(combatStrength(defender, true) * (4 + v.level) / 4);
+    const win = 1 + Math.floor(Math.random() * (A + D)) <= A;
+    if (!win) {
+      const i = G.units.indexOf(u);
+      if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+      G.msg = `${u.type} destroyed attacking the ${t.name}.`;
+      return;
+    }
+    u.movesLeft = 0;
+    if (v.pop > 1) { v.pop -= 1; G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is reduced.`; return; }
+    const gold = razeGold(v);
+    G.gold += gold;
+    t.avenge = true;                                // the post-Declaration flag
+    G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is destroyed. ${gold}$ in plunder.`;
+    removeVillage(v);
+  });
+}
+
 // ------------------------------------------------------------ event popups
 // The GAME.TXT event templates render through the same centred-dialog engine as
 // everything else (@width=190 on all of these). They carry no option rows: the
 // engine shows the body and waits for an acknowledgement. Several can fire in
 // one turn, so they queue.
-function showEvent(key, subs) {
-  const t = DATA.events[key];
-  if (!t) return;
-  const fill = (s) => s.replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
+function fillTemplate(line, subs) {
+  return line.replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
     const v = subs[`${kind}${n}`];
     return v === undefined ? '' : String(v);
   });
-  G.eventQueue.push({ lines: t.body.map(fill), width: t.width });
+}
+function showEvent(key, subs) {
+  const t = DATA.events[key];
+  if (!t) return;
+  G.eventQueue.push({ lines: t.body.map(l => fillTemplate(l, subs || {})),
+                      width: t.width });
+}
+// A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
+// runs through the ordinary dialog framework instead of the notice queue.
+function askEvent(key, subs, onDone) {
+  const t = DATA.events[key];
+  if (!t) { if (onDone) onDone(-1); return; }
+  G.dialog = {
+    body: t.body.map(l => fillTemplate(l, subs || {})),
+    tail: t.tail.map(l => fillTemplate(l, subs || {})),
+    width: t.width, onDone,
+    opts: t.tail.map(l => fillTemplate(l, subs || {})),
+    sel: t.default && /^\d+$/.test(t.default) ? +t.default : 0,
+  };
 }
 function drawEvent(ctx) {
   const e = G.eventQueue[0];
@@ -2405,14 +2716,12 @@ function runVillageAction(id) {
     case 0: case 1: G.villageMode = 'trade'; G.villageRow = 0; return;
     case 2: G.screen = 'map'; G.village = null; establishMission(v, u); advance(); return;
     case 3: G.screen = 'map'; G.village = null; denounceHeresy(v, u); advance(); return;
-    case 9: G.screen = 'map'; G.village = null; advance(); return;
-    default:
-      // Live Among The Natives, Ask to Speak With Chief, Incite Indians,
-      // Demand Tribute and Attack Village are specced but not yet built; the
-      // row is shown because the shipped menu shows it, and it says so rather
-      // than doing nothing quietly.
-      G.msg = `${DATA.actions[id]} is not in this build yet.`;
-      G.screen = 'map'; G.village = null; advance();
+    case 4: G.screen = 'map'; G.village = null; liveAmong(v, u); advance(); return;
+    case 5: G.screen = 'map'; G.village = null; speakToChief(v, u); advance(); return;
+    case 6: G.screen = 'map'; G.village = null; inciteIndians(v, u); advance(); return;
+    case 7: G.screen = 'map'; G.village = null; demandTribute(v, u); advance(); return;
+    case 8: G.screen = 'map'; G.village = null; attackVillage(v, u); return;
+    default: G.screen = 'map'; G.village = null; advance(); return;   // 9 Cancel
   }
 }
 
@@ -2594,7 +2903,12 @@ function resolveAttack(att, def) {
     const i = G.units.indexOf(loser);
     if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
     const j = G.natives.indexOf(loser);
-    if (j >= 0) G.natives.splice(j, 1);
+    if (j >= 0) {
+      // §19.11: a brave's death stamps its village's rebuild request (flags
+      // 0x01); the next 20-tick produces the replacement instead of growth.
+      if (loser.home) loser.home.braveOwed = true;
+      G.natives.splice(j, 1);
+    }
     G.msg = `${loser.type} destroyed.`;
   }
   if (win && !colonyAt(def.x, def.y) && !G.units.some(u => u.x === def.x && u.y === def.y)
@@ -3060,6 +3374,9 @@ function endTurn() {
   for (const c of G.colonies) advanceConstruction(c);
   checkImmigration();
   updateCongress();
+  // §19.11: the native pass runs BEFORE the European powers move
+  // (func_04891A -> func_0485F6 -> func_04830E).
+  nativeTick();
   attemptConversions();
   ageConverts();
   nativeRaids();

@@ -131,6 +131,9 @@ def build_data():
                    [[int(r[c] or 0) for c in YIELDS] for r in rows(k)]
                    for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
     D["jobs"] = [r["name"] for r in rows("@JOB")]
+    # The master/expert title for each @JOB row, parallel to D["jobs"] -- what a
+    # village grants when it teaches (Live Among The Natives, §19.4).
+    D["jobexpert"] = [r["expert_name"] for r in rows("@JOB")]
     # @ACTIONS: the ten rows of the native-village action menu, in runtime
     # order (spec/ui/context_dialogs.md §6 -- func_04B308 is their sole
     # consumer). @MISSION: the four per-power mission-name prefixes.
@@ -223,19 +226,35 @@ def build_data():
     # native handlers (§19.7/§19.9): the four mission-founding lines banded by
     # attitude, the two heresy endings, the six raid outcomes, the conversion
     # notice and the loss-of-faith notice.
+    # Bodies split on the blank line exactly as the dialogs above: the first
+    # paragraph is the notice, a second paragraph (where present) is the option
+    # rows, so a choice popup and a plain notice come from the same shape.
     D["events"] = {}
     for k in ("@MISSION0", "@MISSION1", "@MISSION2", "@MISSION3",
               "@HERESY0", "@HERESY1",
               "@RAIDSTORES", "@RAIDWREAK", "@RAIDGOLD", "@RAIDBURN", "@RAIDSHIP",
               "@RAIDNOTHING", "@INDIANSCONVERT", "@DEADCONVERTS",
               "@VILLAGEHAPPY", "@VILLAGEMEDIUM", "@VILLAGESAVAGE",
-              "@VILLAGEBAD", "@VILLAGEWAR"):
+              "@VILLAGEBAD", "@VILLAGEWAR",
+              # Live Among The Natives
+              "@LEARNSTAY", "@LEARNDONE", "@LEARNSLOW", "@LEARNMASTER",
+              "@LEARNCRIMINAL", "@LEARNALREADY", "@LEARNLATER", "@LEARNMAD",
+              # Ask to Speak With Chief
+              "@CHIEFHOWDY", "@CHIEFGUIDES", "@CHIEFAREA", "@CHIEFGIFT",
+              "@CHIEFBORED", "@CHIEFKILL",
+              # Demand Tribute / Incite / Attack
+              "@EXTORTSTUFF", "@EXTORTPOOR", "@EXTORTLAUGH", "@EXTORTNO",
+              "@INDIANWARPATH2", "@WHACKINDIANS", "@EXTINCT",
+              "@MADATSHIPS", "@MADATWAGONS"):
         if k not in full:
             continue
         sec = full[k]
+        para = sec["body"].split("\n\n")
         D["events"][k.lstrip("@")] = {
-            "body": sec["body"].split("\n"),
+            "body": para[0].split("\n"),
+            "tail": para[1].split("\n") if len(para) > 1 else [],
             "width": int(sec["directives"].get("width", 0x50)),
+            "default": sec["directives"].get("default"),
         }
     D["text"] = {
         "beginmenu": game["@BEGINMENU"].split("\n"),

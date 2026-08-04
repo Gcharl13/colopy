@@ -6649,11 +6649,22 @@ the port at all:
    otherwise subtracted the quantity from it.
 2. `villageGift()` set `v.alarm = 0` outright.
 
-**Ruling.** Both are **struck**. The only traced goodwill credit for a
-successful trade is **−4** (`@0x5C41E`), and it does not scale with quantity.
-The gift's own credit is untraced (the manual only says gifts cool anger faster
-than sales), so the port keeps its doubled-credit placeholder on the tension
-meter and lets the alarm word follow the same delta — it does not zero it.
+**Ruling.** Both are **struck**.
+
+> **CORRECTION, same day.** Item 1 was struck in error and is **restored**. The
+> strike rested on `spec/systems/natives.md` §3, which records only the flat −4
+> goodwill credit `@0x5C41E` — but that section is explicitly marked **stale** by
+> the *2026-08-01 native-background-economy* ruling further up this file, whose
+> item 8 records the quantity rule as byte-traced: *"selling qty cools the
+> village alarm by qty (100 zeroes it)"*. Manual §19.5 states the same and calls
+> it byte-traced. Higher source wins. The two credits are separate and land on
+> **separate meters**: the flat −4 on the **tribe's** tension, the quantity on
+> the **village's** alarm word.
+
+Item 2 (the gift zeroing the alarm word) **stays struck** — the gift's credit is
+untraced (the manual only says gifts cool anger faster than sales), so the port
+keeps its doubled-credit placeholder on the tension meter and lets the alarm word
+follow the same delta rather than zeroing it.
 
 **Consequence for the model.** The engine keeps **two** parallel per-(settlement,
 power) meters and they are not interchangeable:
@@ -6690,3 +6701,34 @@ show, flagged as inferred.
 **Also fixed in passing:** `onClick`'s `village` and `pedia` cases had been
 copy-pasted from `onKey` and referenced an undefined `k`, so clicking either
 screen threw. Both now hit-test real geometry.
+
+## 2026-08-04 — The mission tick binds Sepúlveda and las Casas (TBD closed)
+
+The previous entry recorded Juan de Sepúlveda's **+4** and Bartolomé de las
+Casas' **−4** (`@0x5E20B` / `@0x5E221`) as landing on a "conversion metric"
+whose consumer was untraced, and the port therefore left both unimplemented.
+
+**Closed.** The *2026-08-01 native-background-economy* ruling (item 8) records
+the per-turn mission tick in full:
+
+```
+M = (expert ? 4 : 1) × 2 if capital × 2 with FF 0x18 ÷ 2 with FF 0x17
+tribe.tension_frac += M        (every ±8 becomes one visible ∓1 tension tick)
+settlement.alarm[owner] -= 3·M
+```
+
+`@FATHERS` row `0x17` = **Juan de Sepúlveda**, row `0x18` = **Bartolomé de las
+Casas** — so the ±4 pair *is* this ×2 / ÷2 doubler, and the direction matches
+(las Casas helps the mission, Sepúlveda hinders it). Both are now implemented in
+the port's `missionStrength()`, along with the capital doubler and the expert
+(Brébeuf) bit.
+
+Two further consequences taken from the same ruling and now in the port:
+
+- **The tension table is per-TRIBE × power** (`TribeData +0x46`, stride `0x4E`),
+  not per settlement — `natives.md` §3's settlement-row model is stale. The
+  port's per-tribe meter was already the right shape.
+- **Attacks-to-burn IS the population** (`@0x5D67A` in `func_05CA7E`), and the
+  growth cap is `func_046DE0`'s target size `2·level+3` / `3·level+4` for a
+  capital. Both are implemented; the raze payout cross-checks the manual's own
+  ceiling table exactly (`30·6·4·21 = 15 120` at Discoverer).

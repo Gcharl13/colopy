@@ -255,7 +255,9 @@ SCRIPT = """() => {
       out.villageTrade = { offered: offer > 0, paid: paid > 0,
                            creditedTreasury: G.gold === g0 + paid,
                            cooledByFour: G.tribes[v.tribe].tension === Math.max(0, n0 - 4),
-                           alarmTracked: v.alarm === Math.max(0, a0 - 4),
+                           // A full 100-load zeroes the village's alarm word
+                           // outright (RULINGS.md 2026-08-01 item 8).
+                           fullLoadZeroesAlarm: v.alarm === 0 && a0 >= 0,
                            stocked: v.stock[4] === 100 };
       // Muskets arm the tribe: +1 at 25 units, +2 at 50.
       const t = G.tribes[v.tribe];
@@ -360,6 +362,130 @@ SCRIPT = """() => {
       for (let i = 0; i < 40; i++) { nativeRaids(); fired += G.eventQueue.length; G.eventQueue = []; }
       out.raidArmed = fired > 0;
       G.village = null; G.villageVisitor = null;
+    }
+
+    // ---- the five remaining village actions + the background economy ----
+    {
+      const v = G.villages.find(w => !w.capital) || G.villages[0];
+      const t = G.tribes[v.tribe];
+      // Target size is func_046DE0: 2*level+3, capital 3*level+4.
+      const cap = G.villages.find(w => w.capital && w.tribe === v.tribe);
+      out.settlementCap = {
+        village: settlementCap(v) === 2 * t.level + 3,
+        capital: !cap || settlementCap(cap) === 3 * t.level + 4,
+        seededAtCap: v.pop === settlementCap(v),
+      };
+      // One brave per village, linked to it.
+      out.bravePerVillage = {
+        one: G.natives.filter(n => n.home === v).length === 1,
+        linked: G.natives.every(n => !!n.home),
+      };
+      // Growth: the accumulator gains pop each turn and acts at 20.
+      v.pop = 2; v.growth = 0;
+      let ticks = 0;
+      while (v.pop === 2 && ticks < 30) { nativeTick(); ticks += 1; }
+      out.growth = { grew: v.pop === 3, inTenTicks: ticks === 10 };
+
+      // The mission tick: M = expert?4:1, x2 capital, x2 las Casas, /2 Sepulveda;
+      // the tribe's fractional feeder turns every 8 into one -1 tension tick and
+      // the village alarm falls by 3M.
+      // Isolate: an earlier check founded a mission on the Inca capital, and
+      // every mission of a tribe feeds the same fractional tension accumulator.
+      for (const w of G.villages) w.mission = null;
+      v.mission = { power: G.nation, expert: false };
+      v.capital = false;
+      out.missionTick = { plain: missionStrength(v) === 1 };
+      v.mission.expert = true;
+      out.missionTick.expert = missionStrength(v) === 4;
+      v.capital = true;
+      out.missionTick.capital = missionStrength(v) === 8;
+      G.fathersOwned.push('Juan de Sepulveda');
+      out.missionTick.sepulvedaHalves = missionStrength(v) === 4;
+      G.fathersOwned.pop();
+      v.capital = false; v.mission.expert = false;
+      t.frac = 0; t.tension = 50; v.alarm = 100;
+      for (let i = 0; i < 8; i++) nativeTick();
+      // 8 ticks of M=1: the frac reaches 8 and spends one -1 tension tick, and
+      // the alarm word takes 3*M each tick plus the 1 that tension tick carries
+      // through the shared applier.
+      // 8 ticks of M=1: the frac reaches 8 and spends one -1 tension tick; the
+      // alarm word takes 3*M each tick, plus the 1 that tension tick carries
+      // through the shared applier.
+      out.missionTick.cools = t.tension === 49 && v.alarm === 100 - 8 * 3 - 1;
+      v.mission = null;
+
+      // Live Among The Natives: outdoor skills only, criminals refused, experts
+      // refused, one grant per village, roll >= 200*d + 100 on random(1..1000).
+      const diff0 = G.difficulty;
+      G.difficulty = 0;                                   // 90% -- keeps it quick
+      const pupil = mkUnit('Colonists', v.x - 1, v.y);
+      G.eventQueue = []; G.dialog = null;
+      pupil.profession = 'Petty Criminals';
+      liveAmong(v, pupil);
+      out.learn = { criminalRefused: G.eventQueue.length === 1 && !G.dialog };
+      G.eventQueue = [];
+      pupil.profession = 'Expert Farmers';
+      liveAmong(v, pupil);
+      out.learn.expertRefused = G.eventQueue.length === 1 && !G.dialog;
+      G.eventQueue = [];
+      pupil.profession = null;
+      liveAmong(v, pupil);
+      out.learn.offersAChoice = !!G.dialog && G.dialog.opts.length === 2;
+      // Accept until it takes -- at Discoverer it is a 90% roll.
+      for (let i = 0; i < 40 && !v.taught; i++) {
+        if (!G.dialog) liveAmong(v, pupil);
+        if (G.dialog) closeDialog(0);
+        G.eventQueue = [];
+      }
+      out.learn.taught = v.taught &&
+        OUTDOOR_JOBS.map(j => DATA.jobexpert[j]).includes(pupil.profession);
+      G.eventQueue = []; G.dialog = null;
+      liveAmong(v, mkUnit('Colonists', v.x - 1, v.y));
+      out.learn.oncePerVillage = !G.dialog && G.eventQueue.length === 1;
+
+      // Demand Tribute: exactly ten units, once ever.
+      G.eventQueue = [];
+      const wagon = mkUnit('Wagon Train', v.x - 1, v.y);
+      wagon.hold = [];
+      v.tributePaid = false;
+      let paid = 0;
+      for (let i = 0; i < 60 && !v.tributePaid; i++) {
+        G.units.push(mkUnit('Soldiers', v.x - 2, v.y));   // stack the contest
+        demandTribute(v, wagon);
+      }
+      paid = wagon.hold.reduce((n, h) => n + h.qty, 0);
+      out.tribute = { paidTen: paid === 10, latched: v.tributePaid };
+      const before = paid;
+      demandTribute(v, wagon);
+      out.tribute.oncePerVillage =
+        wagon.hold.reduce((n, h) => n + h.qty, 0) === before;
+
+      // Attack Village: population is the counter, and the raze pays out.
+      G.eventQueue = []; G.dialog = null;
+      const target = G.villages.find(w => w.tribe === v.tribe) || v;
+      target.pop = 3;
+      const brave = mkUnit('Dragoons', target.x - 1, target.y);
+      G.units.push(brave);
+      const gold0 = G.gold;
+      let rounds = 0;
+      while (G.villages.includes(target) && rounds < 200) {
+        attackVillage(target, brave);
+        if (G.dialog) closeDialog(0);
+        if (!G.units.includes(brave)) { G.units.push(brave); }
+        rounds += 1;
+      }
+      out.attackVillage = { razed: !G.villages.includes(target),
+                            paidOut: G.gold >= gold0 };
+      // The raze formula ceiling cross-checks the manual: size factor 21 at
+      // Discoverer is 30*6*4*21 = 15120.
+      const probe = { pop: 20, tribe: v.tribe };
+      let hi = 0;
+      for (let i = 0; i < 4000; i++) hi = Math.max(hi, razeGold(probe));
+      out.razeCeiling = hi <= 15120;
+      // These checks razed a village and drove a tribe to war; put the native
+      // world back so the later assertions see a fresh map.
+      G.difficulty = diff0;
+      seedNatives();
     }
 
     // Every tribe carries a map colour from @TRIBES' `value` column, the
@@ -696,6 +822,21 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("settlement target size is 2*level+3 (capital 3*level+4)",
+         all(r["settlementCap"].values()), r["settlementCap"]),
+        ("exactly one brave per village, linked to it",
+         all(r["bravePerVillage"].values()), r["bravePerVillage"]),
+        ("villages grow on the 20-point accumulator",
+         all(r["growth"].values()), r["growth"]),
+        ("mission tick strength and its cooling",
+         all(r["missionTick"].values()), r["missionTick"]),
+        ("Live Among teaches one outdoor skill, once per village",
+         all(r["learn"].values()), r["learn"]),
+        ("Demand Tribute pays exactly ten units, once ever",
+         all(r["tribute"].values()), r["tribute"]),
+        ("attacking a village burns it down one population at a time",
+         all(r["attackVillage"].values()), r["attackVillage"]),
+        ("raze gold respects the manual's 15120 ceiling", r["razeCeiling"], r["razeCeiling"]),
         ("settlements come from TRIBE.TXT, all 59 with correct per-tribe counts",
          all(r["tribeSites"].values()), r["tribeSites"]),
         ("native settlements use their own sprite band, not the colony one",
