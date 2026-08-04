@@ -212,6 +212,31 @@ SCRIPT = """() => {
   G.menuSel = 0; runMenuRow();
   out.menuAbsent = /not in this build/.test(G.msg);
 
+  // ---- dialog frame (func_06E0C8) ----
+  // Paint a box on a scratch canvas and read back the four rings: black
+  // outline, ring 2 inset 1, bevel inset 2 with the top-left LIGHT and the
+  // bottom-right DARK (the engine's left/right/top/bottom paint order).
+  {
+    const c = document.createElement('canvas');
+    c.width = 60; c.height = 40;
+    const g = c.getContext('2d');
+    usePalette('WOODPANL');
+    plaque(g, 5, 5, 40, 24, 'WOODTILE');
+    const px = (x, y) => { const d = g.getImageData(x, y, 1, 1).data; return [d[0], d[1], d[2]]; };
+    const eq = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+    const rgb = (i) => { const m = ink(i).match(/\d+/g); return m.map(Number); };
+    out.frame = {
+      outline: eq(px(5, 5), [0, 0, 0]),
+      ring: eq(px(6, 6), rgb(FRAME_GAME.ring)),
+      topLeftLight: eq(px(7, 7), rgb(FRAME_GAME.light)),
+      // Bevel is inset 2, so its right span is at x+w-3 = 42 and its bottom
+      // span at y+h-3 = 26 -- x=43 / y=27 are still ring 2.
+      bottomRightDark: eq(px(42, 26), rgb(FRAME_GAME.dark)),
+      leftDark: eq(px(7, 16), rgb(FRAME_GAME.dark)),
+      rightLight: eq(px(42, 16), rgb(FRAME_GAME.light)),
+    };
+  }
+
   // Every menu row either has a command or is reported absent -- no silent rows.
   out.everyRowAccounted = DATA.menus.every(m => m.rows.every(r =>
     COMMANDS[r.label] !== undefined || r.label.length > 0));
@@ -310,6 +335,8 @@ def main():
         ("menu rows dispatch and close", r["menuDispatch"], r["menuDispatch"]),
         ("unimplemented rows say so", r["menuAbsent"], r["menuAbsent"]),
         ("no silently-dead menu rows", r["everyRowAccounted"], r["everyRowAccounted"]),
+        ("dialog frame is outline + ring + bevel in paint order",
+         all(r["frame"].values()), r["frame"]),
     ]
     bad = 0
     for name, ok, got in checks:

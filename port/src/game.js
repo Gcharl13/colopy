@@ -331,21 +331,53 @@ function centerOn(tx, ty) {
 // ---------------------------------------------------------------- chrome
 // Dialog box chrome, §26.1: black outline (idx 0), ring 0x2E,
 // bevel light 0xFD top/right, dark 0x37 left/bottom; tiled fill.
-function plaque(ctx, x, y, w, h, tileSheet) {
+// Dialog box painter, byte-exact per func_06E0C8 (spec/ui/dialog_framework.md
+// §"Box painter"). Four steps, in this order:
+//   1. outline  -- 1px hollow rect, colour 0 (black), on the box edge
+//   2. ring 2   -- 1px hollow rect inset 1, colour [0x1F44]
+//   3. ring 3   -- the bevel, four 1px spans inset 2: top and RIGHT in the
+//                  light [0x1F46], left and BOTTOM in the dark [0x1F48]
+//   4. interior -- tiled fill at (x+3, y+3, w-6, h-6), i.e. inside the rings
+//
+// The ring colours are mode-dependent. Boot/title (@0x0734BC) uses the
+// immediates 0x2E / 0xFD / 0x37 with OPENTILE; in-game (@0x073474) takes them
+// from [0x830..], which is the NAMES @COLORS row -- and its last three fields
+// are border0/border1/border2 = 134/128/138, a mid, a lighter and a darker
+// wood brown. That is exactly a ring-plus-bevel triplet, so they map in order.
+const FRAME_BOOT = { ring: 0x2E, light: 0xFD, dark: 0x37 };
+const FRAME_GAME = { ring: 134, light: 128, dark: 138 };
+function plaque(ctx, x, y, w, h, tileSheet, frame) {
+  const f = frame || (tileSheet === 'OPENTILE' ? FRAME_BOOT : FRAME_GAME);
+  // 1. outline
+  hollowRect(ctx, x, y, w, h, 0);
+  // 2. ring 2
+  hollowRect(ctx, x + 1, y + 1, w - 2, h - 2, f.ring);
+  // 3. ring 3 -- the bevel. Drawn in the engine's order (left, right, top,
+  // bottom) and that order is load-bearing: the top span is painted AFTER the
+  // left one, so the top-left corner pixel comes out LIGHT, and the bottom span
+  // is painted last, so the bottom-right corner comes out DARK. Painting
+  // top/right first instead puts the wrong colour in both corners -- caught by
+  // diffing against docs/screens/01_mainmenu_BEGINMENU.png at (x+2, y+2).
+  ctx.fillStyle = ink(f.dark);
+  ctx.fillRect(x + 2, y + 2, 1, h - 4);              // left
+  ctx.fillStyle = ink(f.light);
+  ctx.fillRect(x + w - 3, y + 2, 1, h - 4);          // right
+  ctx.fillRect(x + 2, y + 2, w - 4, 1);              // top
+  ctx.fillStyle = ink(f.dark);
+  ctx.fillRect(x + 2, y + h - 3, w - 4, 1);          // bottom
+  // 4. interior, tiled inside the rings
+  const ix = x + 3, iy = y + 3, iw = w - 6, ih = h - 6;
   const [tw, th] = frameSize(tileSheet, 0);
   if (tw) {
     ctx.save();
-    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-    for (let yy = y; yy < y + h; yy += th)
-      for (let xx = x; xx < x + w; xx += tw) sheetFrame(ctx, tileSheet, 0, xx, yy);
+    ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
+    for (let yy = iy; yy < iy + ih; yy += th)
+      for (let xx = ix; xx < ix + iw; xx += tw) sheetFrame(ctx, tileSheet, 0, xx, yy);
     ctx.restore();
-  } else { ctx.fillStyle = ink(0x37); ctx.fillRect(x, y, w, h); }
-  ctx.fillStyle = ink(0xFD);
-  ctx.fillRect(x, y, w, 1); ctx.fillRect(x + w - 1, y, 1, h);
-  ctx.fillStyle = ink(0x37);
-  ctx.fillRect(x, y, 1, h); ctx.fillRect(x, y + h - 1, w, 1);
-  ctx.strokeStyle = ink(0);
-  ctx.strokeRect(x - 0.5, y - 0.5, w + 1, h + 1);
+  } else {
+    ctx.fillStyle = ink(f.dark);
+    ctx.fillRect(ix, iy, iw, ih);
+  }
 }
 function hollowRect(ctx, x, y, w, h, colorIdx) {
   ctx.fillStyle = ink(colorIdx);
@@ -1512,11 +1544,6 @@ function euroMenuBox() {
 }
 function drawEuroMenu(ctx) {
   const b = euroMenuBox();
-  // Portrait above the box, right-aligned to it the way the speaker channel is,
-  // dropped 4px so he overlaps the frame rather than floating clear of it.
-  const [pw, ph] = frameSize(ADVISER_ECONOMIC, 0);
-  if (pw && hasAdviser())
-    sheetFrame(ctx, ADVISER_ECONOMIC, 0, b.x + b.w - pw - 4, b.y - ph + ADVISER_DROP);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
   b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
   const seed = b.y + 6 + b.textH + 3;
@@ -1532,6 +1559,12 @@ function drawEuroMenu(ctx) {
     const c = `${r.cost}$`;
     FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1, lut(inkIdx));
   });
+  // The adviser is drawn LAST so he sits on top of the box, centred on it,
+  // dropped 4px so he overlaps the frame rather than floating clear of it.
+  const [pw, ph] = frameSize(ADVISER_ECONOMIC, 0);
+  if (pw && hasAdviser())
+    sheetFrame(ctx, ADVISER_ECONOMIC, 0,
+               Math.round(b.x + (b.w - pw) / 2), b.y - ph + ADVISER_DROP);
 }
 
 function openEuroMenu(k) {

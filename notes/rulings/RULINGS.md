@@ -6480,3 +6480,33 @@ cited (281, 89+11r, 37, 9). Calibrating against two known landmarks (the title t
 market bar's top edge) recovers scale ≈2.0 with those offsets, and the rows then land at
 x=281, pitch 11 — **the spec was right and the measurement was wrong**. The buttons are drawn
 as a 1px border with the panel showing through, not a filled bar.
+
+---
+
+## 2026-08-04 — Dialog frame: the bevel paint order is load-bearing
+
+`func_06E0C8` paints a dialog box in four steps (dialog_framework.md §"Box painter"):
+1-px black outline on the box edge; ring 2 inset 1 in `[0x1F44]`; ring 3 — the bevel — as four
+1-px spans inset 2; then the tiled interior at `(x+3, y+3, w−6, h−6)`.
+
+**In-game ring colours resolve to NAMES `@COLORS`.** The in-game mode setter `@0x073474` takes
+its inks from `[0x830..]`, and `[0x830..0x833]` is already known to be the `@COLORS` row (the
+minimap owner dots read it). That row's **last three fields are `border0`/`border1`/`border2` =
+134 / 128 / 138** — (89,52,36), (121,73,52), (60,32,24): a mid, a lighter and a darker wood
+brown, i.e. exactly a ring-plus-bevel triplet. They map in order: ring 2 = border0, bevel light
+= border1, bevel dark = border2. Verified against `docs/screens/01_mainmenu_BEGINMENU.png`: the
+ring pixel reads (88,48,40) in the capture against 134 = (89,48,40).
+
+**The paint order decides the corners.** The engine draws left, then right, then top, then
+bottom (`@0x06E192` / `@0x06E1C0` / `@0x06E1E4` / `@0x06E204`). Because the top span lands after
+the left one, the **top-left corner pixel is LIGHT**; because the bottom span is last, the
+**bottom-right corner is DARK**. Painting top/right first — the intuitive order for a bevel —
+puts the wrong colour in both corners. Caught by diffing (x+2, y+2) against the capture:
+real (120,72,48) = the light band, not the dark one.
+
+After the correction the four frame bands of the boot menu score 0.76 / 0.11 / 0.12 / 0.72 mean
+channel error against the capture — the residual is the capture's own colour reproduction.
+
+**Action taken**: `port/src/game.js` `plaque()` rewritten to the four-step recipe with
+`FRAME_BOOT` (0x2E / 0xFD / 0x37, OPENTILE) and `FRAME_GAME` (134 / 128 / 138, WOODTILE);
+`port/tools/test_flow.py` samples the rings and both corners off a scratch canvas.
