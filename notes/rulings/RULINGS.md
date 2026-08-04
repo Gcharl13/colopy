@@ -6379,3 +6379,36 @@ The Europe market bar inherits the same icon-centring rule.
 **Still open** (tracked in `docs/UI_AUDIT_TRACKER.md`): the starting-building set and the
 `func_025D34` plot shuffle. The field's remaining mismatch against the capture is dominated by
 those two, not by geometry.
+
+---
+
+## 2026-08-04 — Colony screen: separator rules, scene tile origin, field ground ramp
+
+Three more measurements off `docs/screens/11_colony_screen.png` (same normalisation as the
+entry above).
+
+**1. Black separator rules exist and are not in §26.8's region table.** Scanning for rows and
+columns that are ≥60% black gives exactly three: a full-width row at **y=7** (under the title
+strip), a full-width row at **y=128** (above the COLONY.PIK town strip), and the column at
+**x=199** (between the building field and the wood panel), spanning y 7..128. The town strip's
+internal panel borders are *not* black — they are light-green and come from the PIK art, which
+is why only these three show up.
+
+**2. The 5x5 scene's tile origin is the panel origin, with no half-tile offset.** Composing the
+80x80 with tiles at `tx·16 − 8` (as the port first did) shifts the whole scene 12 screen px
+after the ×1.5 stretch, so the colony does not land in the centre tile. Tiles go at `tx·16`:
+tile 2 then spans source 32..48 → 48..72 after the stretch → screen 248..272, which is exactly
+the cited `(248,56,24,24)` centre-tile rect. This is what made the "outside colony view" look
+off-centre.
+
+**3. The building field's ground is a dithered ramp, not a flat colour.** The field samples as
+three tones only — (232,216,160) / (240,228,176) / (224,200,144) — which map to the
+**contiguous palette indices 0x63 / 0x62 / 0x64**, in ~52/30/18 proportion over a clean patch.
+A contiguous triplet in those proportions is a 3-level dither. The **generator is unidentified**
+and is recorded as TBD in `docs/UI_AUDIT_TRACKER.md`; the port uses a deterministic positional
+hash tuned to the measured proportions (it reproduces the tones and their ratios to within a
+percent, not the engine's exact pixel pattern).
+
+**Action taken**: `port/src/game.js` `drawColony()` — the three rules drawn, scene tile origin
+corrected, `groundSpeckle()` replaces the flat fill. Colony and unit markers now land on the
+correct tiles as a result of (2).

@@ -969,10 +969,13 @@ function drawColony(ctx) {
   for (let y = 0; y < H; y += th)
     for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
 
-  // Building field: (0,8,199,120) over the colony's ground -- measured from
-  // docs/screens/11_colony_screen.png, where the sand runs x 0..198, y 8..127.
-  ctx.fillStyle = 'rgb(232,216,160)';
-  ctx.fillRect(0, 8, 199, 120);
+  // Building field (0,8,199,120). The ground is not a flat fill: the capture
+  // shows a per-pixel speckle over the contiguous palette ramp 0x62/0x63/0x64,
+  // in roughly 30/52/17 proportion (0x63 base, 0x62 highlight, 0x64 shadow).
+  // The engine's noise source is unidentified, so this is a deterministic
+  // positional hash matched to those measured proportions -- an approximation
+  // of the texture, not a reproduction of the generator. Tracked as TBD.
+  groundSpeckle(ctx, 0, 8, 199, 120);
   PLOTS.forEach(([px, py], i) => {
     const b = c.buildings[i];
     const frame = (b === undefined) ? EMPTY_PLOT_FRAME[PLOT_CATEGORY[i]]
@@ -994,20 +997,20 @@ function drawColony(ctx) {
   const sg = scene.getContext('2d');
   for (let ty = 0; ty < 5; ty++)
     for (let tx = 0; tx < 5; tx++)
-      drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16 - 8, ty * 16 - 8);
+      drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16, ty * 16);
   // Colony and unit markers go on the 80x80 BEFORE the upscale, so they are
   // stretched with the terrain rather than drawn crisp over it.
   for (const o of G.colonies) {
     const dx = o.x - c.x + 2, dy = o.y - c.y + 2;
     if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
     const [fw, fh] = frameSize('ICONS', o.nation);
-    sheetFrame(sg, 'ICONS', o.nation, dx * 16 - 8 + (16 - fw) / 2, dy * 16 - 8 + (16 - fh) / 2);
+    sheetFrame(sg, 'ICONS', o.nation, dx * 16 + (16 - fw) / 2, dy * 16 + (16 - fh) / 2);
   }
   for (const u of G.units) {
     const dx = u.x - c.x + 2, dy = u.y - c.y + 2;
     if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
     const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(sg, 'ICONS', u.icon, dx * 16 - 8 + 16 - fw, dy * 16 - 8 + 16 - fh);
+    sheetFrame(sg, 'ICONS', u.icon, dx * 16 + 16 - fw, dy * 16 + 16 - fh);
   }
   ctx.imageSmoothingEnabled = false;
   ctx.save();
@@ -1043,6 +1046,32 @@ function drawColony(ctx) {
     FONT.tiny.center(ctx, String(c.stock[i]), 9 + 19 * i, 194, lut(STOCK_INK));
   });
   FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x31));
+
+  // Black separator rules, measured: a full-width row at y=7 under the title,
+  // a full-width row at y=128 above the town strip, and the column at x=199
+  // between the building field and the wood panel, spanning those two rows.
+  ctx.fillStyle = ink(0);
+  ctx.fillRect(0, 7, W, 1);
+  ctx.fillRect(0, 128, W, 1);
+  ctx.fillRect(199, 7, 1, 122);
+}
+
+// Positional-hash speckle over a 3-entry palette ramp. Deterministic so the
+// screen does not shimmer between frames.
+function groundSpeckle(ctx, x, y, w, h, base) {
+  const ramp = base || [0x63, 0x62, 0x64];
+  ctx.fillStyle = ink(ramp[0]);
+  ctx.fillRect(x, y, w, h);
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      const n = ((i * 73856093) ^ (j * 19349663)) >>> 0;
+      const r = (n >>> 8) % 100;
+      if (r < 30) ctx.fillStyle = ink(ramp[1]);
+      else if (r < 47) ctx.fillStyle = ink(ramp[2]);
+      else continue;
+      ctx.fillRect(x + i, y + j, 1, 1);
+    }
+  }
 }
 
 // ------------------------------------------------------------ Europe screen
