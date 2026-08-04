@@ -249,10 +249,13 @@ SCRIPT = """() => {
       wagon.hold = [{ good: 4, qty: 100 }];      // 100 Furs
       const offer = villageOffer(v, 4, 100);
       const g0 = G.gold;
+      const a0 = v.alarm;
+      const n0 = G.tribes[v.tribe].tension;
       const paid = villageSell(v, 4, 100);
       out.villageTrade = { offered: offer > 0, paid: paid > 0,
                            creditedTreasury: G.gold === g0 + paid,
-                           fullLoadZeroesAlarm: v.alarm === 0,
+                           cooledByFour: G.tribes[v.tribe].tension === Math.max(0, n0 - 4),
+                           alarmTracked: v.alarm === Math.max(0, a0 - 4),
                            stocked: v.stock[4] === 100 };
       // Muskets arm the tribe: +1 at 25 units, +2 at 50.
       const t = G.tribes[v.tribe];
@@ -272,10 +275,91 @@ SCRIPT = """() => {
                            cooled: G.tribes[v.tribe].tension <= t1 };
         G.gold = gB;
       }
-      // A gift cools further than a sale.
+      // A gift cools further than a sale, and the alarm word tracks the same
+      // delta -- it is not zeroed (that was an invented behaviour, struck).
       v.alarm = 100; G.tribes[v.tribe].tension = 50;
       villageGift(v, 13, 20);
-      out.gift = { alarmCleared: v.alarm === 0, tensionFell: G.tribes[v.tribe].tension < 50 };
+      out.gift = { alarmFell: v.alarm < 100, tensionFell: G.tribes[v.tribe].tension < 50 };
+    }
+
+    // ---- missions, converts and raids (§19.7 / §19.9) ----
+    {
+      const v = G.villages[0], t = G.tribes[v.tribe];
+      // The @ACTIONS menu gates Establish Mission on a MISSIONARY in a village
+      // that carries no mission, and Denounce Heresy on a foreign one.
+      G.village = v; G.villageVisitor = mkUnit('Colonists', v.x - 1, v.y);
+      G.villageMode = 'actions';
+      const asColonist = villageActions().map(r => r.id);
+      G.villageVisitor = mkUnit('Missionaries', v.x - 1, v.y);
+      const asMissionary = villageActions().map(r => r.id);
+      out.actionGating = {
+        colonistHasNoMission: !asColonist.includes(2),
+        missionaryHasMission: asMissionary.includes(2),
+        noHeresyWithoutOne: !asMissionary.includes(3),
+        cancelAlways: asColonist.includes(9) && asMissionary.includes(9),
+        tradeRow: asColonist.includes(0),
+      };
+
+      // Founding: the missionary is spent, the byte carries the power, and the
+      // anger clamp lands the meter at 70 or below.
+      t.tension = 95;
+      const u = mkUnit('Missionaries', v.x - 1, v.y);
+      G.units.push(u);
+      const before = G.units.length;
+      G.eventQueue = [];
+      establishMission(v, u);
+      out.mission = {
+        written: !!v.mission && v.mission.power === G.nation,
+        missionarySpent: G.units.length === before - 1,
+        angerCapped: t.tension <= 70,
+        announced: G.eventQueue.length === 1,
+        popupNamesTribe: (G.eventQueue[0] || {lines:['']}).lines.join(' ').includes(t.name),
+      };
+
+      // The conversion roll: threshold = @TRIBES level + 2, doubled by the
+      // expert (Brebeuf) bit.
+      const plain = conversionThreshold(v);
+      v.mission.expert = true;
+      const expert = conversionThreshold(v);
+      v.mission.expert = false;
+      out.convertRoll = { plain: plain === t.level + 2, doubled: expert === 2 * plain };
+
+      // Brebeuf upgrades missions already standing; las Casas turns every
+      // convert into a Free Colonist.
+      applyFatherEffect('Jean de Brebeuf');
+      out.brebeuf = v.mission.expert === true;
+      const conv = mkUnit('Colonists', v.x - 2, v.y);
+      conv.profession = 'Indian Converts'; conv.faith = 8;
+      G.units.push(conv);
+      applyFatherEffect('Bartolome de las Casas');
+      out.lasCasas = conv.profession === 'Free Colonists' && conv.faith === undefined;
+
+      // The eight-turn loss-of-faith timer.
+      const doomed = mkUnit('Colonists', v.x - 2, v.y + 1);
+      doomed.profession = 'Indian Converts'; doomed.faith = 1;
+      G.units.push(doomed);
+      const n0 = G.units.length;
+      G.eventQueue = [];
+      ageConverts();
+      out.faith = { eliminated: G.units.length === n0 - 1,
+                    notified: G.eventQueue.length === 1 };
+
+      // Raids arm at alarm 128 and not below it.
+      G.colonies = [{ name: 'Test', x: v.x + 3, y: v.y, nation: G.nation,
+                      colonists: [], stock: DATA.cargo.map(() => 0),
+                      buildings: STARTING_BUILDINGS.slice(), hammers: 0, tools: 0,
+                      building: null, sol: 0 }];
+      G.colonies[0].stock[4] = 100;
+      for (const w of G.villages) w.alarm = 0;
+      G.eventQueue = []; G.raidSeen = true;
+      for (let i = 0; i < 20; i++) nativeRaids();
+      out.raidBelow = G.eventQueue.length === 0;
+      v.alarm = 200;
+      G.eventQueue = [];
+      let fired = 0;
+      for (let i = 0; i < 40; i++) { nativeRaids(); fired += G.eventQueue.length; G.eventQueue = []; }
+      out.raidArmed = fired > 0;
+      G.village = null; G.villageVisitor = null;
     }
 
     // Every tribe carries a map colour from @TRIBES' `value` column, the
@@ -599,7 +683,19 @@ def main():
         ("selling 50 muskets arms the tribe by 2", r["armsTribe"], r["armsTribe"]),
         ("buying from a village charges the treasury and cools the tribe",
          all(r["villageBuy"].values()), r["villageBuy"]),
-        ("a gift clears alarm and cools tension", all(r["gift"].values()), r["gift"]),
+        ("a gift cools tension and the alarm word with it", all(r["gift"].values()), r["gift"]),
+        ("village action menu gates its rows per @ACTIONS",
+         all(r["actionGating"].values()), r["actionGating"]),
+        ("establishing a mission spends the missionary and caps anger at 70",
+         all(r["mission"].values()), r["mission"]),
+        ("conversion threshold is tribe level + 2, doubled by the expert bit",
+         all(r["convertRoll"].values()), r["convertRoll"]),
+        ("Brebeuf upgrades standing missions to expert", r["brebeuf"], r["brebeuf"]),
+        ("las Casas turns every convert into a Free Colonist", r["lasCasas"], r["lasCasas"]),
+        ("converts are eliminated after eight turns unjoined",
+         all(r["faith"].values()), r["faith"]),
+        ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
+        ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
         ("settlements come from TRIBE.TXT, all 59 with correct per-tribe counts",
          all(r["tribeSites"].values()), r["tribeSites"]),
         ("native settlements use their own sprite band, not the colony one",

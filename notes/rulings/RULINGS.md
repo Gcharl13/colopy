@@ -6636,3 +6636,57 @@ The port routes F1 to the pedia.
 **Action taken**: `port/tools/build_assets.py` extracts REPORT1–9; `port/src/game.js` gains
 `REPORT_PIK` and each report draws over its own plate; F1 opens the pedia; F4 Labor and F10
 Score are built.
+
+---
+
+## 2026-08-04 — Two invented native-alarm rules struck from the port
+
+**Context.** The HTML port carried two behaviours on the village alarm word that
+no evidence supports, both introduced before the alarm word had any semantics in
+the port at all:
+
+1. `villageSell()` set `v.alarm = 0` on a sale of 100 units or more, and
+   otherwise subtracted the quantity from it.
+2. `villageGift()` set `v.alarm = 0` outright.
+
+**Ruling.** Both are **struck**. The only traced goodwill credit for a
+successful trade is **−4** (`@0x5C41E`), and it does not scale with quantity.
+The gift's own credit is untraced (the manual only says gifts cool anger faster
+than sales), so the port keeps its doubled-credit placeholder on the tension
+meter and lets the alarm word follow the same delta — it does not zero it.
+
+**Consequence for the model.** The engine keeps **two** parallel per-(settlement,
+power) meters and they are not interchangeable:
+
+| meter | storage | range | thresholds |
+|---|---|---|---|
+| tension | DGROUP `0x5B1C`, `(row·39 + col)·2` | 0..100 | hostile 75, war 100 |
+| alarm | DGROUP `0x54F6`, `(settlement·9 + power)·2` | word | **raids at 128** (`cmp [..+0x54F6],0x80` @0x04734E, @0x04CAD7, @0x053D4E) |
+
+Both thresholds are byte-verified and the port uses them as such. What *drives*
+the alarm word up is **not** traced — only the applier's own tail (neighbour
+propagation, clamps to 0x20/0x60) is. So the port runs the alarm word off the
+same delta ledger as the tension meter and records that coupling as the port's
+own in `docs/UI_AUDIT_TRACKER.md`. That is a placeholder, not a finding.
+
+## 2026-08-04 — The native-village interaction is a popup, not a screen
+
+The port had built the village interaction as a full-screen WOODPANL page with
+an invented greeting line ("The Inca welcome you to their city."). Both are
+wrong. `spec/ui/context_dialogs.md` §6 states the `@ACTIONS` menu is sized by the
+§2 builder and run by the §3 dialog runner (`func_06E3D0`) — i.e. a centred
+popup over the map — and GAME.TXT ships the greeting itself in five attitude
+variants, `@VILLAGEHAPPY` / `@VILLAGEMEDIUM` / `@VILLAGESAVAGE` / `@VILLAGEBAD` /
+`@VILLAGEWAR`, each *"Your expedition has reached a %STRING0 of {%STRING1}…"*.
+
+**Ruling.** The port now renders the village as a §3 popup with the shipped
+greeting as its body block and the chief on the tribe speaker channel
+(`[0x1F5C]` → `IND<tribe>A<pose>.SS`). The **portrait's position remains
+untraced** — `popups.md` §2.7.1 resolved that there is no box-relative formula
+anywhere in `func_06BF66`/`06BE92`/`06BF12`/`06BF3C`, and pinning it needs a
+running-game capture — so it takes the bottom-right placement the DOS captures
+show, flagged as inferred.
+
+**Also fixed in passing:** `onClick`'s `village` and `pedia` cases had been
+copy-pasted from `onKey` and referenced an undefined `k`, so clicking either
+screen threw. Both now hit-test real geometry.

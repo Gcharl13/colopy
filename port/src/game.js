@@ -264,6 +264,9 @@ const G = {
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
   village: null, villageVisitor: null, villageRow: 0,
+  villageMode: 'actions',  // @ACTIONS menu, or the trade list below it
+  eventQueue: [],          // GAME.TXT event popups waiting to be acknowledged
+  raidSeen: false,         // woodcut 13 (INDIAN RAID) fires once
   accum: [],              // per-good traffic accumulator
   kingsFund: 0,           // the tax the Crown has taken
   dock: [],               // three immigration candidate slots
@@ -323,6 +326,7 @@ function beginGame() {
   G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
+  G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
   seedNatives();
   seedRivals();
   G.metAnyone = false;
@@ -941,7 +945,7 @@ function drawMap(ctx) {
     const tx = v.x - G.view.x, ty = v.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1,
-                   (G.tribes[v.tribe] || {}).color || 8);
+                   (G.tribes[v.tribe] || {}).color || 8, v.mission);
     // §19.6: the map shows alarm as exclamation marks over the village,
     // ramping pale green -> blue -> yellow -> brown -> red.
     const alarm = v.alarm || 0;
@@ -1167,7 +1171,20 @@ function buildColony() {
   const u = G.units[G.sel];
   if (!u || u.ship) return;
   if (tileWater(at(u.x, u.y))) return;
-  if (colonyAt(u.x, u.y)) { G.msg = 'There is already a colony here.'; return; }
+  // @ORDERS "Join Colony (B)" is the same key on a tile that already holds one:
+  // the unit walks in and becomes a colonist. That is what saves an Indian
+  // Convert from the eight-turn loss-of-faith timer (§19.7).
+  const here = colonyAt(u.x, u.y);
+  if (here) {
+    here.colonists.push({ type: u.type, profession: u.profession || null,
+                          job: null, cell: null });
+    G.units.splice(G.sel, 1);
+    G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+    G.msg = `${u.profession || u.type} joins ${here.name}.`;
+    G.colony = G.colonies.indexOf(here);
+    G.screen = 'colony';
+    return;
+  }
   const names = DATA.colonynames[G.nation];
   const suggested = names[G.colonies.length % names.length];
   openDialog('COLONY', (name) => {
@@ -1928,7 +1945,7 @@ function colonyLevel(c) {
   if (c.buildings.includes('Stockade')) return 1;
   return 0;
 }
-function drawSettlement(ctx, px, py, level, nation, tribeColour) {
+function drawSettlement(ctx, px, py, level, nation, tribeColour, mission) {
   const lv = Math.max(0, Math.min(3, level));
   const frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
   const [fw, fh] = frameSize('ICONS', frame);
@@ -1943,7 +1960,33 @@ function drawSettlement(ctx, px, py, level, nation, tribeColour) {
     ctx.fillStyle = ink(0); ctx.fillRect(px + TILE - 8, py, 8, 7);
     ctx.fillStyle = ink(tribeColour); ctx.fillRect(px + TILE - 7, py + 1, 6, 5);
   }
+  // §19.7: a village carrying a mission is marked with a CROSS in the founding
+  // power's colour, and the manual notes a BRIGHTER cross for an expert
+  // (Brebeuf) mission. The cross is drawn from primitives -- no dedicated
+  // sprite for it has been located in ICONS, so its art is the port's own; the
+  // colour, the placement rule and the expert distinction are the spec's.
+  if (mission) {
+    const c = DATA.nations[mission.power] ? DATA.nations[mission.power].color : 0xFE;
+    ctx.fillStyle = ink(0);
+    ctx.fillRect(px, py, 5, 7);
+    ctx.fillStyle = ink(mission.expert ? 0xFD : c);
+    ctx.fillRect(px + 2, py + 1, 1, 5);
+    ctx.fillRect(px + 1, py + 2, 3, 1);
+  }
 }
+// The engine keeps TWO parallel anger meters, and they are not the same scale:
+//   * the per-(settlement, power) TENSION word at DGROUP 0x5B1C, range 0..100,
+//     hostile at 75 and war at 100 -- the one the village-entry menu reads;
+//   * the per-(settlement, power) ALARM word at DGROUP 0x54F6, which arms RAIDS
+//     at 128 (byte-verified: the raid-target scan @0x04734E and the two
+//     colony-placement gates @0x04CAD7 / @0x053D4E all test `cmp [..+0x54F6],0x80`).
+// Only the applier's own tail (neighbour propagation, clamps to 0x20/0x60) is
+// traced for the alarm word; what drives it up in the first place is NOT in the
+// evidence. So the port runs the alarm word off the SAME delta ledger as the
+// tension meter, on the 0..255 scale -- the port's own coupling, flagged in
+// docs/UI_AUDIT_TRACKER.md, not a byte-verified rule. The two thresholds
+// themselves (75/100 and 128) are byte-verified and are used as such.
+const ALARM_RAID = 0x80;
 function adjustTension(tribe, delta) {
   const t = G.tribes[tribe];
   if (!t) return;
@@ -1951,6 +1994,8 @@ function adjustTension(tribe, delta) {
   if (delta > 0 && (G.nation === 1 || G.fathersOwned.includes('Pocahontas')))
     delta = Math.floor(delta / 2);
   t.tension = Math.max(0, Math.min(TENSION_WAR, t.tension + delta));
+  for (const v of G.villages)
+    if (v.tribe === tribe) v.alarm = Math.max(0, Math.min(255, (v.alarm || 0) + delta));
 }
 // Settlement placement is NOT procedural: TRIBE.TXT ships the exact site list,
 // one @<TRIBE> section per tribe with "x,y" per line -- 59 sites across the
@@ -1974,7 +2019,10 @@ function seedNatives() {
     sites.forEach(([sx, sy], k) => {
       const x = sx + TRIBE_SITE_DX, y = sy + TRIBE_SITE_DY;
       if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) return;
-      G.villages.push({ x, y, tribe: ti, name: t.name, level: t.level });
+      // mission: null, or {power, expert} -- the engine's settlement +0x05
+      // byte, low nibble = owning power, bit 0x10 = expert (Jean de Brebeuf).
+      G.villages.push({ x, y, tribe: ti, name: t.name, level: t.level,
+                        alarm: t.tension, mission: null, tributePaid: false });
       // A brave stands beside roughly every third settlement, on LAND.
       if (k % 3) return;
       const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
@@ -2046,7 +2094,9 @@ function villageSell(v, good, qty) {
   G.gold += paid;
   v.stock = v.stock || DATA.cargo.map(() => 0);
   v.stock[good] += qty;
-  v.alarm = qty >= 100 ? 0 : Math.max(0, (v.alarm || 0) - qty);
+  // The goodwill credit for a successful trade is byte-verified as -4
+  // (@0x5C41E) and it is the whole of it -- the quantity does not scale it, and
+  // it does not zero the alarm word (an earlier invented rule, struck).
   adjustTension(v.tribe, -4);
   if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
   if (good === 8) {
@@ -2093,16 +2143,277 @@ function villageBuy(v, good, qty) {
 function villageGift(v, good, qty) {
   v.stock = v.stock || DATA.cargo.map(() => 0);
   v.stock[good] += qty;
-  v.alarm = 0;
   adjustTension(v.tribe, -8);
 }
-// Walking into a village opens its menu: trade below the hostile line, a
-// warning at or above it (§19, the 75 cutoff).
+
+// ------------------------------------------------- missions and conversion
+// §19.7. Establish Mission is @ACTIONS row 2, offered to a MISSIONARY standing
+// in a village that carries no mission (settlement +0x05 < 0). Founding writes
+// the power into that byte, with bit 0x10 -- the EXPERT bit -- set when the
+// founder holds Jean de Brebeuf (`or [bx+5],0x10` @0x48C81, gated on
+// has_father(0x16) @0x48C71; FF row 0x16 = Brebeuf). Acquiring Brebeuf later
+// upgrades every mission you already own (@0x3BE77).
+//
+// Founding also applies a NEGATIVE tension delta (@0x571EB) whose magnitude is
+// the one residual the applier study never resolved -- what IS byte-verified is
+// the clamp: the delta is trimmed so the resulting meter lands at 70 or below
+// (`cmp ax,0x46; jg` @0x571DA). The port applies exactly that clamp and nothing
+// more, so no invented magnitude enters the model.
+const MISSION_ANGER_CAP = 0x46;          // 70
+function missionBand(v) {
+  // Which of @MISSION0..3 the founding announcement uses. The engine bands the
+  // settlement's colonial-presence score at -5 / 0 / 10 into Content / Uneasy /
+  // Restless / Angry (@0x048B62..0x048B90, byte-verified cutoffs); the score's
+  // own composition is multi-term and NOT decomposed, so the port bands the
+  // tension meter it does keep. Flagged in docs/UI_AUDIT_TRACKER.md.
+  const t = G.tribes[v.tribe];
+  const n = t ? t.tension : 0;
+  return n >= TENSION_HOSTILE ? 3 : n >= 40 ? 2 : n >= 20 ? 1 : 0;
+}
+function establishMission(v, u) {
+  const band = missionBand(v);
+  v.mission = { power: G.nation, expert: G.fathersOwned.includes('Jean de Brebeuf') };
+  const t = G.tribes[v.tribe];
+  if (t && t.tension > MISSION_ANGER_CAP) {
+    adjustTension(v.tribe, MISSION_ANGER_CAP - t.tension);
+  }
+  // The missionary is spent into the mission -- it leaves the map.
+  const k = G.units.indexOf(u);
+  if (k >= 0) { G.units.splice(k, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+  showEvent(`MISSION${band}`, {
+    STRING0: DATA.missionpre[G.nation],
+    STRING1: t ? t.singular : '',
+    STRING2: `${t ? t.name : ''} ${DATA.levelname[v.level]}`,
+    STRING3: t ? t.name : '',
+    NUMBER0: G.year,
+  });
+}
+// @ACTIONS row 3. Two endings, @HERESY0 (you win the flock and the mission
+// changes hands) and @HERESY1 (your missionary burns at the stake). The
+// win/lose roll is UNTRACED -- the manual says so and ties it only loosely to
+// the two powers' standing with the tribe. The port uses a fair coin rather
+// than inventing a weighting, and says so here and in the tracker. Either way
+// the missionary is spent: it founds the new mission or it dies.
+function denounceHeresy(v, u) {
+  const t = G.tribes[v.tribe];
+  const rival = v.mission.power;
+  const win = Math.random() < 0.5;
+  const k = G.units.indexOf(u);
+  if (k >= 0) { G.units.splice(k, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+  if (win) v.mission = { power: G.nation, expert: G.fathersOwned.includes('Jean de Brebeuf') };
+  showEvent(win ? 'HERESY0' : 'HERESY1', {
+    STRING0: DATA.nations[G.nation].adjective,
+    STRING1: DATA.nations[rival] ? DATA.nations[rival].adjective : 'foreign',
+    STRING2: t ? t.name : '',
+  });
+}
+
+// The conversion roll, byte-verified (func_0572E6 @0x572E6):
+//   threshold = TribeData[+2] + 2         -- the @TRIBES level column
+//   threshold *= 2  when the mission carries the expert bit (Brebeuf)
+//   roll = random_int(0, 15)              -- bound 0x0F @0x5730A
+//   convert fires when roll < threshold   -- fails on roll >= threshold @0x57316
+// On success a unit is created at the colony and stamped class 0x1B, the Indian
+// Convert (@JOB row 27) -- the half-rate worker with the +1 staple bonus.
+// WHEN the roll fires ("each eligible turn") is untraced; the port rolls once
+// per mission per turn. Flagged in docs/UI_AUDIT_TRACKER.md.
+const CONVERT_CLASS = 'Indian Converts';
+const CONVERT_FAITH = 8;                 // turns before loss of faith
+function conversionThreshold(v) {
+  const t = G.tribes[v.tribe];
+  let th = (t ? t.level : 0) + 2;
+  if (v.mission && v.mission.expert) th *= 2;
+  return th;
+}
+function attemptConversions() {
+  for (const v of G.villages) {
+    if (!v.mission || v.mission.power !== G.nation) continue;
+    if (!G.colonies.length) continue;
+    if (Math.floor(Math.random() * 16) >= conversionThreshold(v)) continue;
+    // "created at the colony" -- the handler is passed a ColonyRecord's map_x /
+    // map_y / owner, so the convert appears on a colony tile. The port picks the
+    // colony nearest the village.
+    const c = G.colonies.slice().sort((a, b) =>
+      (Math.abs(a.x - v.x) + Math.abs(a.y - v.y)) - (Math.abs(b.x - v.x) + Math.abs(b.y - v.y)))[0];
+    const u = mkUnit('Colonists', c.x, c.y);
+    u.profession = CONVERT_CLASS;
+    u.faith = CONVERT_FAITH;
+    G.units.push(u);
+    showEvent('INDIANSCONVERT', { STRING0: c.name });
+  }
+}
+// "Converts who do not join colonies within eight turns of their conversion are
+// eliminated for loss of faith" (@DEADCONVERTS). Joining a colony is what
+// clears the timer -- a convert standing on the map keeps counting down.
+function ageConverts() {
+  let lost = 0;
+  for (let i = G.units.length - 1; i >= 0; i--) {
+    const u = G.units[i];
+    if (u.profession !== CONVERT_CLASS || u.faith === undefined) continue;
+    u.faith -= 1;
+    if (u.faith > 0) continue;
+    G.units.splice(i, 1);
+    lost += 1;
+  }
+  if (lost) {
+    G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+    showEvent('DEADCONVERTS', {});
+  }
+}
+
+// ------------------------------------------------------------ native raids
+// §19.9 / func_05BE84. A settlement whose alarm toward a power has reached 128
+// is on a war footing and becomes a raid source (@0x04734E). The dispatch:
+//   gate roll  = random_int(1,12) - 1, plus (difficulty - 2) against a human
+//                European owner, tested against threshold 3*K + 1 (@0x5BEE5).
+//                K IS UNTRACED -- the manual says so in as many words. The port
+//                carries it as RAID_GATE_K below with a placeholder of 0, so the
+//                gate is `roll >= 1`, i.e. a 1-in-12 miss. Flagged.
+//   outcome    = random_int(1,4), downgraded while turn < 40*(2-difficulty)
+//                (the early-game softener), then dispatched 5 ways:
+//                1 STORES, 2 WREAK, 3 GOLD, 4 BURN/SHIP, 0 NOTHING.
+// The payloads behind wreak / gold / burn / ship are unmapped in the evidence;
+// what each one takes is the port's own, and every one of them is flagged.
+const RAID_GATE_K = 0;                   // TBD -- threshold is 3*K+1 @0x5BEE5
+function raidOutcome() {
+  let out = 1 + Math.floor(Math.random() * 4);
+  if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
+  return Math.max(0, out);
+}
+function nativeRaids() {
+  if (!G.colonies.length) return;
+  for (const v of G.villages) {
+    if ((v.alarm || 0) < ALARM_RAID) continue;
+    const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
+    if (gate < 3 * RAID_GATE_K + 1) continue;
+    const c = G.colonies.slice().sort((a, b) =>
+      (Math.abs(a.x - v.x) + Math.abs(a.y - v.y)) - (Math.abs(b.x - v.x) + Math.abs(b.y - v.y)))[0];
+    const t = G.tribes[v.tribe];
+    const S = { STRING0: t ? t.name : '', STRING1: c.name,
+                STRING3: DATA.nations[G.nation].adjective };
+    switch (raidOutcome()) {
+      case 1: {                                    // @RAIDSTORES
+        const g = c.stock.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
+        if (!g || !g[0]) { showEvent('RAIDNOTHING', S); break; }
+        c.stock[g[1]] = 0;
+        // "the village banks the haul" -- settlement raid-budget +0x08 and
+        // wealth +0x0A += 0x19 (@0x5C3E1 / @0x5C3E4).
+        v.stock = v.stock || DATA.cargo.map(() => 0);
+        v.stock[g[1]] += g[0];
+        v.wealth = (v.wealth || 0) + 0x19;
+        showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[g[1]].name });
+        break;
+      }
+      case 2:                                      // @RAIDWREAK -- payload TBD
+        showEvent('RAIDWREAK', S);
+        break;
+      case 3: {                                    // @RAIDGOLD -- amount TBD
+        const take = Math.min(G.gold, Math.floor(G.gold / 4));
+        G.gold -= take;
+        showEvent('RAIDGOLD', { ...S, NUMBER0: take });
+        break;
+      }
+      case 4: {                                    // @RAIDBURN / @RAIDSHIP
+        const ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y);
+        if (ship) { ship.damaged = true; showEvent('RAIDSHIP', { ...S, STRING2: ship.type }); break; }
+        const burnable = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
+        if (!burnable.length) { showEvent('RAIDWREAK', S); break; }
+        const b = burnable[Math.floor(Math.random() * burnable.length)];
+        c.buildings.splice(c.buildings.indexOf(b), 1);
+        showEvent('RAIDBURN', { ...S, STRING2: b });
+        break;
+      }
+      default:                                     // @RAIDNOTHING
+        showEvent('RAIDNOTHING', S);
+        break;
+    }
+    // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
+    if (!G.raidSeen) { G.raidSeen = true; G.woodcut = 13; G.screen = 'woodcut'; }
+  }
+}
+
+// ------------------------------------------------------------ event popups
+// The GAME.TXT event templates render through the same centred-dialog engine as
+// everything else (@width=190 on all of these). They carry no option rows: the
+// engine shows the body and waits for an acknowledgement. Several can fire in
+// one turn, so they queue.
+function showEvent(key, subs) {
+  const t = DATA.events[key];
+  if (!t) return;
+  const fill = (s) => s.replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
+    const v = subs[`${kind}${n}`];
+    return v === undefined ? '' : String(v);
+  });
+  G.eventQueue.push({ lines: t.body.map(fill), width: t.width });
+}
+function drawEvent(ctx) {
+  const e = G.eventQueue[0];
+  if (!e) return;
+  let cw = e.width;
+  for (const l of e.lines) cw = Math.max(cw, FONT.tiny.width(l));
+  const w = cw + 6, h = 6 + e.lines.length * 6 + 3 + 8 + 3;
+  const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  plaque(ctx, x, y, w, h, 'WOODTILE');
+  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
+  FONT.tiny.center(ctx, '(Continue)', 160, y + h - 10, lut(0xFC));
+}
+
+// Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
+// context_dialogs.md §6 -- func_04B308 is that table's only consumer).
 function enterVillage(v, visitor) {
   G.village = v;
   G.villageVisitor = visitor;
   G.villageRow = 0;
+  G.villageMode = 'actions';
   G.screen = 'village';
+}
+// The per-row show/enable predicates, all byte-cited in that spec section. Rows
+// whose gate reads the tribe-record POSTURE byte (+0x5236) cannot be reproduced
+// -- that byte is traced but its semantic is not decoded -- so those rows are
+// offered unconditionally and the gap is flagged.
+function villageActions() {
+  const v = G.village, u = G.villageVisitor, t = G.tribes[v.tribe] || {};
+  const hostile = (t.tension || 0) >= TENSION_HOSTILE;
+  const mine = v.mission && v.mission.power === G.nation;
+  const rows = [];
+  rows.push({ id: hostile ? 1 : 0 });                       // r0 / r1, exclusive
+  if (u && u.type === 'Missionaries' && !v.mission) rows.push({ id: 2 });
+  if (v.mission && !mine) rows.push({ id: 3 });
+  if (!hostile && u && u.type !== 'Scouts') rows.push({ id: 4 });
+  if (u && u.type === 'Scouts') rows.push({ id: 5 });
+  rows.push({ id: 6 });
+  if (u && !u.ship) rows.push({ id: 7 });
+  rows.push({ id: 8 });
+  rows.push({ id: 9 });
+  return rows.map(r => ({ ...r, label: actionLabel(r.id) }));
+}
+function villageRowCount() {
+  return G.villageMode === 'trade' ? villageRows().length : villageActions().length;
+}
+function actionLabel(id) {
+  const v = G.village;
+  // Row 3's label carries the rival's name: "Denounce Heresy of %Fs Mission".
+  if (id === 3 && v.mission) {
+    const n = DATA.nations[v.mission.power];
+    return DATA.actions[3].replace('%Fs', `${n ? n.adjective : 'foreign'}`);
+  }
+  return DATA.actions[id];
+}
+function runVillageAction(id) {
+  const v = G.village, u = G.villageVisitor;
+  switch (id) {
+    case 0: case 1: G.villageMode = 'trade'; G.villageRow = 0; return;
+    case 2: G.screen = 'map'; G.village = null; establishMission(v, u); advance(); return;
+    case 3: G.screen = 'map'; G.village = null; denounceHeresy(v, u); advance(); return;
+    case 9: G.screen = 'map'; G.village = null; advance(); return;
+    default:
+      // Live Among The Natives, Ask to Speak With Chief, Incite Indians,
+      // Demand Tribute and Attack Village are specced but not yet built; the
+      // row is shown because the shipped menu shows it, and it says so rather
+      // than doing nothing quietly.
+      G.msg = `${DATA.actions[id]} is not in this build yet.`;
+      G.screen = 'map'; G.village = null; advance();
+  }
 }
 
 // The village screen: the chief's greeting, what he is "especially interested
@@ -2127,41 +2438,83 @@ function villageRows() {
   rows.push({ kind: 'leave', label: 'Take our leave', note: '' });
   return rows;
 }
-function drawVillage(ctx) {
+// The village interaction is a §3 POPUP over the map, not a screen of its own
+// (spec/ui/context_dialogs.md §6: the enabled rows are sized by §2 and run by
+// §3, func_06E3D0). The greeting is the popup's body block -- one of the five
+// GAME.TXT @VILLAGE* bodies, banded by attitude -- and the chief speaks through
+// the tribe channel [0x1F5C] -> IND<tribe>A<pose>.SS (popups.md §2.7). The
+// engine's exact portrait position is NOT traced (§2.7.1: no box-relative
+// formula survives; it would need a running capture), so it takes the same
+// centred-above-the-box placement the economic adviser uses.
+const VILLAGE_GREETING = ['VILLAGEHAPPY', 'VILLAGEMEDIUM', 'VILLAGESAVAGE',
+                          'VILLAGEBAD', 'VILLAGEWAR'];
+function villageBand(v) {
+  // Band 4 (War) is the alarm >= 128 state, not a tension band.
+  return (v.alarm || 0) >= ALARM_RAID ? 4 : missionBand(v);
+}
+function villageBody() {
   const v = G.village, t = G.tribes[v.tribe];
-  usePalette('WOODPANL');
-  ctx.drawImage(IMG.WOODPANL, 0, 0);
-  FONT.tiny.center(ctx, `${t.name.toUpperCase()} ${['CAMP', 'VILLAGE', 'CITY', 'CITY'][v.level]}`,
-                   160, 6, lut(HUD_INK));
-  const hostile = t.tension >= TENSION_HOSTILE;
-  const greeting = hostile
-    ? `The ${t.singular} regard you with open hostility.`
-    : `The ${t.singular} welcome you to their ${['camp', 'village', 'city', 'city'][v.level]}.`;
-  FONT.tiny.draw(ctx, greeting, 12, 22, lut(0xFE));
-  // "especially interested in" -- the top of the sorted demand list.
-  const d = villageDemand(v);
-  const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
-  if (top && top[0] > 0)
-    FONT.tiny.draw(ctx, `We are especially interested in ${DATA.cargo[top[1]].name}.`,
-                   12, 32, lut(0xFC));
-  FONT.tiny.draw(ctx, `Attitude: ${t.tension} of 100`, 12, 42, lut(hostile ? 0x0C : 0x0E));
-
-  const rows = villageRows();
-  rows.forEach((r, k) => {
-    const y = 58 + k * 9, sel = k === G.villageRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(10, y - 1, 300, 9); }
-    FONT.tiny.draw(ctx, r.label, 14, y, lut(sel ? 0xFC : 0xFE));
-    if (r.note) FONT.tiny.draw(ctx, r.note, 300 - FONT.tiny.width(r.note), y,
-                               lut(sel ? 0xFC : 0x0E));
-  });
-  // The tribe's own portrait: IND<tribe>A<attitude>, attitude banded by tension.
-  const att = t.tension >= TENSION_HOSTILE ? 3 : t.tension >= 40 ? 2 : t.tension >= 20 ? 1 : 0;
-  const sheet = `IND${v.tribe % 8}A${att}`;
+  if (G.villageMode === 'trade') {
+    const d = villageDemand(v);
+    const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
+    const lines = [`"The ${t.name} welcome your trade."`];
+    if (top && top[0] > 0)
+      lines.push(`"We are especially interested in {${DATA.cargo[top[1]].name}}."`);
+    return lines;
+  }
+  const e = DATA.events[VILLAGE_GREETING[villageBand(v)]];
+  const lines = (e ? e.body : ['']).map(l => l
+    .replace('%STRING0', DATA.levelname[v.level])
+    .replace(/%STRING1/g, t.name));
+  if (v.mission) {
+    const n = DATA.nations[v.mission.power];
+    lines.push(`A {${n ? n.adjective : 'foreign'}} mission stands here` +
+               `${v.mission.expert ? ' (expert)' : ''}.`);
+  }
+  return lines;
+}
+function villageBox() {
+  const rows = G.villageMode === 'trade' ? villageRows() : villageActions();
+  const body = villageBody();
+  let cw = 190;                                   // @width=190 on the @VILLAGE* keys
+  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const r of rows)
+    cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(r.note || '') + 20);
+  const w = cw + 6, textH = body.length * 6;
+  const h = 6 + textH + 3 + rows.length * 8 + 3;
+  // Box placement is the byte-cited builder math: centred, X = 160 - W/2. The
+  // chief stands behind it at the bottom-right (his own position is untraced,
+  // §2.7.1), so the box overlaps him rather than being squeezed beside him.
+  return { x: Math.round(160 - w / 2), y: Math.max(10, Math.round(100 - h / 2)),
+           w, h, textH, body, rows };
+}
+function villageSpeaker() {
+  const v = G.village;
+  return `IND${v.tribe % 8}A${Math.min(3, villageBand(v))}`;
+}
+function drawVillage(ctx) {
+  drawMap(ctx);                                   // the map stays underneath
+  const b = villageBox();
+  const sheet = villageSpeaker();
   const [pw, ph] = frameSize(sheet, 0);
-  if (pw) sheetFrame(ctx, sheet, 0, 320 - pw - 8, 200 - ph);
-  FONT.tiny.center(ctx, '(Esc to leave)', 160, 190, lut(0x5D));
+  if (pw) sheetFrame(ctx, sheet, 0, W - pw, H - ph);
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  const seed = b.y + 6 + b.textH + 3;
+  b.rows.forEach((r, k) => {
+    const y = seed + k * 8, sel = k === G.villageRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    FONT.tiny.draw(ctx, r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
+    if (r.note) FONT.tiny.draw(ctx, r.note, b.x + b.w - 9 - FONT.tiny.width(r.note),
+                               y + 1, lut(sel ? 0xFC : 0x0E));
+  });
 }
 function villageCommit() {
+  if (G.villageMode !== 'trade') {
+    const a = villageActions()[G.villageRow];
+    if (a) runVillageAction(a.id);
+    return;
+  }
   const r = villageRows()[G.villageRow];
   if (!r || r.kind === 'leave') { G.screen = 'map'; G.village = null; advance(); return; }
   const v = G.village, u = G.villageVisitor;
@@ -2387,6 +2740,20 @@ function updateCongress() {
 // state this build keeps are wired; the rest are inert but recorded as owned.
 function applyFatherEffect(name) {
   if (name === 'Jakob Fugger') G.boycotts = [];      // clear all boycotts
+  // Jean de Brebeuf: every mission you already own becomes expert
+  // (settlement +5 |= 0x10, @0x3BE77).
+  if (name === 'Jean de Brebeuf')
+    for (const v of G.villages)
+      if (v.mission && v.mission.power === G.nation) v.mission.expert = true;
+  // Bartolome de las Casas: every Indian Convert you own becomes a Free
+  // Colonist on the spot (class 0x1B -> 0x1C, @0x3BEB2).
+  if (name === 'Bartolome de las Casas') {
+    for (const u of G.units)
+      if (u.profession === CONVERT_CLASS) { u.profession = 'Free Colonists'; delete u.faith; }
+    for (const c of G.colonies)
+      for (const p of c.colonists)
+        if (p.profession === CONVERT_CLASS) p.profession = 'Free Colonists';
+  }
 }
 
 // ------------------------------------------------------------ reports
@@ -2693,6 +3060,9 @@ function endTurn() {
   for (const c of G.colonies) advanceConstruction(c);
   checkImmigration();
   updateCongress();
+  attemptConversions();
+  ageConverts();
+  nativeRaids();
   runRivals();
   driftMarket();
   advanceCrossings();
@@ -2947,6 +3317,7 @@ function openPedia(cat) {
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
 
 function onClick(mx, my) {
+  if (G.eventQueue.length) { G.eventQueue.shift(); return; }
   if (G.dialog) { dialogClick(mx, my); return; }
   switch (G.screen) {
     case 'title': {
@@ -2989,30 +3360,23 @@ function onClick(mx, my) {
       else G.screen = 'map';
       break;
     case 'report':
-      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
+      G.screen = 'map';
       break;
     case 'village': {
-      const n = villageRows().length;
-      if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
-      if (k === 'ArrowDown') G.villageRow = (G.villageRow + 1) % n;
-      if (k === 'Enter' || k === ' ') villageCommit();
-      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.village = null; advance(); }
+      const b = villageBox(), seed = b.y + 6 + b.textH + 3;
+      for (let r = 0; r < b.rows.length; r++)
+        if (hit(mx, my, { x: b.x + 3, y: seed + r * 8, w: b.w - 6, h: 8 })) {
+          G.villageRow = r; villageCommit(); return;
+        }
       break;
     }
     case 'pedia': {
+      // The index is two columns of 22 rows; a click on an entry page returns
+      // to the index, which is what Esc does from there too.
+      if (G.pediaMode !== 'index') { G.pediaMode = 'index'; return; }
       const n = pediaList().length;
-      if (G.pediaMode === 'index') {
-        if (k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
-        if (k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
-        if (k === 'ArrowLeft') G.pediaSel = Math.max(0, G.pediaSel - 22);
-        if (k === 'ArrowRight') G.pediaSel = Math.min(n - 1, G.pediaSel + 22);
-        if (k === 'Enter' || k === ' ') G.pediaMode = 'entry';
-        if (k === 'Escape' || k === 'x') G.screen = 'map';
-      } else {
-        if (k === 'ArrowLeft' || k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
-        if (k === 'ArrowRight' || k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
-        if (k === 'Escape' || k === 'x') G.pediaMode = 'index';
-      }
+      const r = Math.floor((my - 24) / 7), i = (mx >= 160 ? 22 : 0) + r;
+      if (r >= 0 && r < 22 && i < n) { G.pediaSel = i; G.pediaMode = 'entry'; }
       break;
     }
     case 'colony': {
@@ -3128,6 +3492,8 @@ function commitMenu() {
 
 function onKey(e) {
   const k = e.key;
+  // An event popup is modal: it swallows the next key and pops itself.
+  if (G.eventQueue.length) { G.eventQueue.shift(); e.preventDefault(); return; }
   if (G.dialog) { dialogKey(k); e.preventDefault(); return; }
   if (G.screen === 'name') {
     if (k === 'Enter') { if (!G.leader) G.leader = DATA.nations[G.nation].leader;
@@ -3167,11 +3533,16 @@ function onKey(e) {
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
     case 'village': {
-      const n = villageRows().length;
+      const n = villageRowCount();
       if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
       if (k === 'ArrowDown') G.villageRow = (G.villageRow + 1) % n;
       if (k === 'Enter' || k === ' ') villageCommit();
-      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.village = null; advance(); }
+      // Esc backs out of the trade list to the action menu, and out of the
+      // action menu to the map.
+      if (k === 'Escape' || k === 'x') {
+        if (G.villageMode === 'trade') { G.villageMode = 'actions'; G.villageRow = 0; }
+        else { G.screen = 'map'; G.village = null; advance(); }
+      }
       break;
     }
     case 'pedia': {
@@ -3325,6 +3696,8 @@ function frame() {
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage }[G.screen])(ctx);
+  // Event popups sit over whatever screen is up when they fire.
+  drawEvent(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;

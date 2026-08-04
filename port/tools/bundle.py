@@ -131,6 +131,14 @@ def build_data():
                    [[int(r[c] or 0) for c in YIELDS] for r in rows(k)]
                    for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
     D["jobs"] = [r["name"] for r in rows("@JOB")]
+    # @ACTIONS: the ten rows of the native-village action menu, in runtime
+    # order (spec/ui/context_dialogs.md §6 -- func_04B308 is their sole
+    # consumer). @MISSION: the four per-power mission-name prefixes.
+    # @ATTITUDE / @LEVELS: the attitude band names and the settlement nouns.
+    D["actions"] = [r["name"] for r in rows("@ACTIONS")]
+    D["missionpre"] = [r["name"] for r in rows("@MISSION")]
+    D["attitude"] = [r["name"] for r in rows("@ATTITUDE")]
+    D["levelname"] = [r["settlement_singular"] for r in rows("@LEVELS")]
     D["regionname"] = [r["name"] for r in rows("@COLONYNAME")]
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
@@ -211,6 +219,24 @@ def build_data():
         head = parse_row(lines[0])
         D["menus"].append({"title": head["label"], "accel": head["accel"],
                            "rows": [parse_row(l) for l in lines[1:]]})
+    # Event popup bodies, verbatim from GAME.TXT. These are emitted by the
+    # native handlers (§19.7/§19.9): the four mission-founding lines banded by
+    # attitude, the two heresy endings, the six raid outcomes, the conversion
+    # notice and the loss-of-faith notice.
+    D["events"] = {}
+    for k in ("@MISSION0", "@MISSION1", "@MISSION2", "@MISSION3",
+              "@HERESY0", "@HERESY1",
+              "@RAIDSTORES", "@RAIDWREAK", "@RAIDGOLD", "@RAIDBURN", "@RAIDSHIP",
+              "@RAIDNOTHING", "@INDIANSCONVERT", "@DEADCONVERTS",
+              "@VILLAGEHAPPY", "@VILLAGEMEDIUM", "@VILLAGESAVAGE",
+              "@VILLAGEBAD", "@VILLAGEWAR"):
+        if k not in full:
+            continue
+        sec = full[k]
+        D["events"][k.lstrip("@")] = {
+            "body": sec["body"].split("\n"),
+            "width": int(sec["directives"].get("width", 0x50)),
+        }
     D["text"] = {
         "beginmenu": game["@BEGINMENU"].split("\n"),
         "leadername": game["@LEADERNAME"],

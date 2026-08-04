@@ -29,6 +29,20 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("village_actions",
+     "beginGame();enterVillage(G.villages[0], mkUnit('Missionaries',G.villages[0].x-1,G.villages[0].y))"),
+    ("village_trade",
+     "beginGame();enterVillage(G.villages[0], mkUnit('Wagon Train',G.villages[0].x-1,G.villages[0].y));"
+     "G.villageVisitor.hold=[{good:4,qty:100}];G.villageMode='trade'"),
+    ("event_mission",
+     "beginGame();G.screen='map';showEvent('MISSION0',{STRING0:DATA.missionpre[0],"
+     "STRING1:G.tribes[0].singular,STRING2:G.tribes[0].name+' Camp',STRING3:G.tribes[0].name,NUMBER0:1502})"),
+    ("map_mission",
+     "beginGame();G.screen='map';G.villages[0].mission={power:0,expert:false};"
+     "G.villages[1].mission={power:1,expert:true};centerOn(G.villages[0].x,G.villages[0].y)"),
+    ("event_raid",
+     "beginGame();G.screen='map';showEvent('RAIDSTORES',{STRING0:G.tribes[0].name,"
+     "STRING1:'Jamestown',STRING2:'Furs',STRING3:DATA.nations[0].adjective})"),
 ]
 
 
