@@ -259,6 +259,19 @@ SCRIPT = """() => {
       t.musketsKnown = 0;
       villageSell(v, 15, 50);
       out.armsTribe = t.musketsKnown === 2;
+      // Buying from the village: priced the other way up, charged to the
+      // treasury, and it cools the tribe a little.
+      {
+        const w2 = mkUnit('Wagon Train', v.x - 1, v.y);
+        const surplus = villageSurplus(v);
+        const gB = G.gold; G.gold = 20000;
+        const t1 = G.tribes[v.tribe].tension;
+        const cost = surplus.length ? villageBuy(v, surplus[0].good, surplus[0].qty) : 0;
+        out.villageBuy = { hasSurplus: surplus.length > 0, charged: cost >= 50,
+                           goldFell: G.gold === 20000 - cost,
+                           cooled: G.tribes[v.tribe].tension <= t1 };
+        G.gold = gB;
+      }
       // A gift cools further than a sale.
       v.alarm = 100; G.tribes[v.tribe].tension = 50;
       villageGift(v, 13, 20);
@@ -276,6 +289,23 @@ SCRIPT = """() => {
       })(),
       europeansUseCountry: ownerColour(G.units[0]) === DATA.nations[G.nation].color,
     };
+
+    // Continental Congress: the cost formula must reproduce the manual's
+    // live-verified cross-check -- Explorer human, one father, pre-1600 = 129.
+    {
+      const d0 = G.difficulty, y0 = G.year, own = G.fathersOwned.slice();
+      G.difficulty = 1; G.year = 1590; G.fathersOwned = ['X'];
+      out.fatherCost129 = fatherCost() === 129;
+      G.fathersOwned = [];
+      out.firstFatherHalf = fatherCost() === 32;
+      G.year = 1650; G.fathersOwned = ['X'];
+      out.eraGateCompounds = fatherCost() > 129;
+      G.year = 1590; G.fathersOwned = [];
+      const cands = fatherCandidates();
+      out.candidates = { count: cands.length === 5,
+                         oneEach: new Set(cands.map(f => f.category)).size === cands.length };
+      G.difficulty = d0; G.year = y0; G.fathersOwned = own;
+    }
 
     // Native settlements use their OWN sprite band (disk 10..13, no pennant),
     // never the colony band (disk 0..3, which carries one).
@@ -507,11 +537,18 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("father cost reproduces the manual's 129 cross-check",
+         r["fatherCost129"], r["fatherCost129"]),
+        ("first father is half price", r["firstFatherHalf"], r["firstFatherHalf"]),
+        ("era gates compound the cost", r["eraGateCompounds"], r["eraGateCompounds"]),
+        ("one father candidate per category", all(r["candidates"].values()), r["candidates"]),
         ("tribes carry distinct map colours, used like the nation colours",
          all(r["tribeColours"].values()), r["tribeColours"]),
         ("village prices, pays and cools on a sale",
          all(r["villageTrade"].values()), r["villageTrade"]),
         ("selling 50 muskets arms the tribe by 2", r["armsTribe"], r["armsTribe"]),
+        ("buying from a village charges the treasury and cools the tribe",
+         all(r["villageBuy"].values()), r["villageBuy"]),
         ("a gift clears alarm and cools tension", all(r["gift"].values()), r["gift"]),
         ("settlements come from TRIBE.TXT, all 59 with correct per-tribe counts",
          all(r["tribeSites"].values()), r["tribeSites"]),

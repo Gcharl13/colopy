@@ -142,7 +142,20 @@ def build_data():
     ped = json.load(open(ROOT / "data_extracted/text/PEDIA_sections.json"))
     D["pedia"] = {"categories": [l for l in ped["@PEDIA"].split("\n") if l.strip()],
                   "entries": {k.lstrip("@"): v for k, v in ped.items() if k != "@PEDIA"}}
-    D["fathers"] = [r["name"] for r in rows("@FATHERS")] if "@FATHERS" in nt else []
+    # @FATHERS: name, category (0..4 over @FOUNDING), then three ERA WEIGHT
+    # bytes -- year <1600 / 1600-1699 / >=1700. A father with weight 0 in the
+    # current era cannot be drawn (§17.3).
+    fath_raw = [l for l in json.load(
+        open(ROOT / "data_extracted/text/NAMES_sections.json"))["@FATHERS"].split("\n")
+        if l.strip()]
+    D["fathers"] = []
+    for line in fath_raw:
+        parts = [p.strip() for p in line.split(";")[0].split(",")]
+        if len(parts) < 5:
+            continue
+        D["fathers"].append({"name": parts[0], "category": int(parts[1]),
+                             "weights": [int(parts[2]), int(parts[3]), int(parts[4])]})
+    D["founding"] = [r["name"] for r in rows("@FOUNDING")]
     # @TRIBES' `value` column is the tribe's MAP COLOUR -- a palette index, the
     # native counterpart of @COUNTRY.color for the European powers. The eight
     # resolve to visually distinct entries (cream, gold, blue, brown, green,

@@ -192,8 +192,25 @@ rather than hidden. Rows with no handler render greyed and report themselves.
   tools/muskets/trade goods, and doubles manufactured supply) but not phases 1 and 3.
 - **Gift credit is untraced**: §19.5 records the haggle "gift" row but its tension credit is TBD.
   The port uses twice the sale credit (−8) as a stated stand-in.
-- The **buy** side (buying the village's own goods), raids, missions and converts are still not
-  built.
+- **Buying built 2026-08-04** to §19.5's other formula: `ask` 200, or `(8 − tribe.level)·50` for
+  horses and manufactures, plus `market·(2d+15)` for silver and better; price
+  `max(50, qty·ask/100 + (d + random(0..2))·10) + random(0..ask) − 4·surplus + 4·tension`.
+  Which goods a village offers is derived from its 5×5 yield (the same PARTIAL demand model).
+- Raids, missions and converts are still not built.
+
+### Continental Congress (§17)
+- **Cost formula byte-exact** and cross-checked against the manual's live-verified value:
+  base = human `(d+3)·16`, each era gate 1600/1650/1700/1750 compounding ×1.5,
+  `cost = (owned+1)·base + 1`, first father half price, `d·1500 + 2000` after the Declaration.
+  Explorer human with one father pre-1600 → **129**, exactly as recorded.
+- **Candidate draw** per §17.3: one per category over the un-owned fathers with a nonzero weight
+  in the current era band (<1600 / 1600–1699 / ≥1700), weighted `random_int(1, Σw)` subtract-walk.
+  The `@FATHERS` era-weight columns are now parsed and exported.
+- **PARTIAL — bell accrual rate**: the per-building bell production is not in the evidence here,
+  so the port uses Town Hall 1 + 3 per working Statesman. Same class of placeholder as the
+  crosses rate.
+- **PARTIAL — the pick dialog** (`@WHICHFREEDOM`) is not built: the port auto-selects the first
+  candidate. Per-father effects are recorded as owned but only Fugger's boycott clear is wired.
 
 ### Immigration
 - **Threshold is byte-cited** and implemented exactly: `clamp4000((Σ pop + units) × 2 + 8) × (8−d)/8`, England ×2/3.

@@ -258,6 +258,7 @@ const G = {
   colonistSel: 0,
   pediaCat: 0, pediaSel: 0, pediaMode: 'index',
   crosses: 0,             // immigration accumulator
+  bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   report: null,           // open F-key report
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
@@ -319,7 +320,8 @@ function beginGame() {
   G.colonies = []; G.europe = []; G.builtColony = false;
   G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
   G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
-  G.fathersOwned = [];
+  G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
+  G.fatherInProgress = null; G.declared = false; G.boycotts = [];
   seedNatives();
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
@@ -2033,6 +2035,39 @@ function villageSell(v, good, qty) {
   }
   return paid;
 }
+// §19.5 buying -- the village prices its own goods the other way up:
+//   ask = 200, or (8 - tribe.level)*50 for horses and manufactures
+//   for silver and better: + market price * (2*difficulty + 15)
+//   price = max(50, qty*ask/100 + (difficulty + random(0..2))*10)
+//           + random(0..ask) - 4*(village surplus) + 4*(tribe tension)
+function villageAsk(v, good, qty) {
+  const t = G.tribes[v.tribe];
+  let ask = (good === 8 || MANUFACTURES.includes(good)) ? (8 - t.level) * 50 : 200;
+  if (good >= 7) ask += G.market[good] * (2 * G.difficulty + 15);
+  let price = Math.max(50, Math.floor(qty * ask / 100) +
+                          (G.difficulty + Math.floor(Math.random() * 3)) * 10);
+  price += Math.floor(Math.random() * (ask + 1));
+  price -= 4 * ((v.stock && v.stock[good]) || 0);
+  price += 4 * t.tension;
+  return Math.max(50, price);
+}
+// What the village will part with: the goods its land yields a surplus of.
+function villageSurplus(v) {
+  const d = villageDemand(v);
+  return d.map((n, i) => ({ good: i, qty: Math.min(100, n * 5) }))
+          .filter(r => r.qty >= 25 && RAW_GOODS.includes(r.good))
+          .slice(0, 3);
+}
+function villageBuy(v, good, qty) {
+  const price = villageAsk(v, good, qty);
+  if (price > G.gold) return 0;
+  G.gold -= price;
+  v.stock = v.stock || DATA.cargo.map(() => 0);
+  v.stock[good] = Math.max(0, (v.stock[good] || 0) - qty);
+  adjustTension(v.tribe, -2);
+  return price;
+}
+
 // A gift cools anger faster than a sale (manual-attested; the exact credit is
 // untraced, so the port uses twice the sale credit and says so).
 function villageGift(v, good, qty) {
@@ -2064,6 +2099,11 @@ function villageRows() {
   for (const h of hold)
     rows.push({ kind: 'gift', good: h.good, qty: h.qty,
                 label: `Give ${h.qty} ${DATA.cargo[h.good].name} as a gift`, note: '' });
+  // What the village offers in return.
+  for (const r of villageSurplus(v))
+    rows.push({ kind: 'buy', good: r.good, qty: r.qty,
+                label: `Buy ${r.qty} ${DATA.cargo[r.good].name}`,
+                note: `${villageAsk(v, r.good, r.qty)}$` });
   rows.push({ kind: 'leave', label: 'Take our leave', note: '' });
   return rows;
 }
@@ -2109,6 +2149,12 @@ function villageCommit() {
     const paid = villageSell(v, r.good, r.qty);
     holdAdd(u, r.good, -r.qty);
     G.msg = `Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`;
+  } else if (r.kind === 'buy') {
+    const cost = villageBuy(v, r.good, r.qty);
+    if (!cost) { G.msg = 'We cannot afford that, Your Excellency.'; return; }
+    u.hold = u.hold || [];
+    holdAdd(u, r.good, r.qty);
+    G.msg = `Bought ${r.qty} ${DATA.cargo[r.good].name} for ${cost}$`;
   } else {
     villageGift(v, r.good, r.qty);
     holdAdd(u, r.good, -r.qty);
@@ -2186,6 +2232,78 @@ function resolveAttack(att, def) {
   return { A, D, roll, win };
 }
 
+// -------------------------------------------------- Continental Congress
+// §17. Liberty bells accrue per turn from every colony; when the pool reaches
+// the next father's cost he joins.
+//
+// father_cost (§17.2), byte-cited:
+//   base   = human (d+3)*16   [AI (14-d)*8]
+//   each era gate 1600/1650/1700/1750 passed compounds it x1.5
+//   cost   = (fathers_owned + 1) * base + 1
+//   first father is half price; after the Declaration, cost = d*1500 + 2000
+// Cross-check from the manual: Explorer human, one father, pre-1600 ->
+// (1+1)*((1+3)*16)+1 = 129, the live-verified "Brewster next = 129".
+function fatherCost() {
+  let base = (G.difficulty + 3) * 16;
+  for (const gate of [1600, 1650, 1700, 1750])
+    if (G.year >= gate) base += base >> 1;
+  let cost = (G.fathersOwned.length + 1) * base + 1;
+  if (G.fathersOwned.length === 0) cost >>= 1;
+  if (G.declared) cost = G.difficulty * 1500 + 2000;
+  return cost;
+}
+const currentEra = () => G.year < 1600 ? 0 : G.year < 1700 ? 1 : 2;
+// Bells: the Town Hall is the base producer, and a colonist working as a
+// Statesman adds his own. (The per-building bell rates are not in the evidence
+// here, so this is the same flagged-placeholder shape as the cross accrual.)
+function bellsPerTurn() {
+  return G.colonies.reduce((n, c) => n
+    + (c.buildings.includes('Town Hall') ? 1 : 0)
+    + c.colonists.filter(p => p.job === 'Statesman').length * 3, 0);
+}
+// One candidate per category, drawn by weighted random over the un-owned
+// fathers with a nonzero weight in the current era (§17.3): budget =
+// random_int(1, sum of weights), then subtract-walk until <= 0.
+function fatherCandidates() {
+  const era = currentEra();
+  const out = [];
+  for (let cat = 0; cat < 5; cat++) {
+    const pool = DATA.fathers.filter(f => f.category === cat &&
+      f.weights[era] > 0 && !G.fathersOwned.includes(f.name));
+    if (!pool.length) continue;
+    const total = pool.reduce((n, f) => n + f.weights[era], 0);
+    let budget = 1 + Math.floor(Math.random() * total);
+    let pick = pool[pool.length - 1];
+    for (const f of pool) { budget -= f.weights[era]; if (budget <= 0) { pick = f; break; } }
+    out.push(pick);
+  }
+  return out;
+}
+function updateCongress() {
+  G.bellsPerTurn = bellsPerTurn();
+  if (!G.bellsPerTurn) return;
+  G.bells += G.bellsPerTurn;
+  if (!G.fatherInProgress) {
+    const cands = fatherCandidates();
+    if (!cands.length) return;
+    // The pick dialog cannot be cancelled; with no UI turn yet the port takes
+    // the first candidate, which is the Trade category when one exists.
+    G.fatherInProgress = cands[0].name;
+  }
+  const cost = fatherCost();
+  if (G.bells < cost) return;
+  G.bells -= cost;
+  G.fathersOwned.push(G.fatherInProgress);
+  G.msg = `${G.fatherInProgress} has joined the Continental Congress!`;
+  applyFatherEffect(G.fatherInProgress);
+  G.fatherInProgress = null;
+}
+// The instant effects the acquisition dispatcher applies. Only the ones whose
+// state this build keeps are wired; the rest are inert but recorded as owned.
+function applyFatherEffect(name) {
+  if (name === 'Jakob Fugger') G.boycotts = [];      // clear all boycotts
+}
+
 // ------------------------------------------------------------ reports
 // The F-key adviser ladder (§27.1). Four of the nine can be populated from
 // state this build actually keeps; the rest name themselves rather than showing
@@ -2217,6 +2335,16 @@ const REPORTS = {
              `${f.net >= 0 ? '+' : ''}${f.net}, ${colonyHammers(c)} hammers` +
              (c.building ? `, building ${c.building}` : '');
     });
+  } },
+  F3: { title: 'Continental Congress', adviser: 'MSS1', body: () => {
+    const cost = fatherCost();
+    const l = [`Liberty bells: (${cost - G.bells} in ${cost})`,
+               `Produced per turn: ${bellsPerTurn()}`,
+               G.fatherInProgress ? `Working toward: ${G.fatherInProgress}` : 'No candidate chosen',
+               ''];
+    if (!G.fathersOwned.length) l.push('No Founding Fathers have joined yet.');
+    else { l.push('In Congress:'); for (const f of G.fathersOwned) l.push(`  ${f}`); }
+    return l;
   } },
   F9: { title: 'Indian Adviser', adviser: 'MSS3', body: () => {
     const band = (n) => n >= TENSION_WAR ? 'War'
@@ -2335,7 +2463,7 @@ function pediaNames(cat) {
                          ['Terrain 26', 'Terrain 27', 'Terrain 28']);
     case 3: return DATA.jobs;
     case 4: return DATA.buildings.map(b => b.name);
-    case 5: return DATA.fathers;
+    case 5: return DATA.fathers.map(f => f.name);
     // @MISCELLANEOUS opens with a COUNT, then that many concept names; the
     // rest of the section is comment lines belonging to later sections.
     case 6: {
@@ -2431,6 +2559,7 @@ function endTurn() {
   for (const u of G.units) u.movesLeft = u.moves;
   for (const c of G.colonies) advanceConstruction(c);
   checkImmigration();
+  updateCongress();
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -2654,6 +2783,7 @@ const COMMANDS = {
   'Center View': centreView,
   // REPORTS -- the four advisers this build can populate from real state.
   'F2 Religious Adviser': () => { G.report = 'F2'; G.screen = 'report'; },
+  'F3 Continental Congress': () => { G.report = 'F3'; G.screen = 'report'; },
   'F5 Economic Adviser': () => { G.report = 'F5'; G.screen = 'report'; },
   'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
   'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
