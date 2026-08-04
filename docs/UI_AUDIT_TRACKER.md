@@ -177,8 +177,23 @@ rather than hidden. Rows with no handler render greyed and report themselves.
   ships the exact site list, 59 across eight tribes. Its x coordinates need **+2** to index the
   stored map plane; that offset puts 0 of 59 in water where every other offset tested leaves at
   least 6 (RULINGS.md 2026-08-04).
-- Village trade, raids, missions and converts are **not built** — entering a village only
-  reports whether the tribe is hostile.
+- **Village trade built 2026-08-04.** Walking into a settlement opens its screen: the chief's
+  greeting, the "especially interested in" line (top of the sorted demand list), the tribe's own
+  `IND<t>A<attitude>` portrait, and one row per good in the visitor's hold with its offer. The
+  sell price is §19.5's formula — `mood = random(1..5)`, `base` 6 raw / 7 manufactured with the
+  per-good colour (Furs −random(0..7), Muskets +(12−known), Horses +(10−known), Trade Goods +1),
+  `seed = 2·(base − difficulty − want + mood + 4)`, offer `max(1, (max(0, seed·demand) + 5·mood)·qty/100/2)`.
+  Selling cools the village by the quantity and a **full 100-load zeroes its alarm**; muskets and
+  horses **arm the tribe** (+1 at 25 units, +2 at 50, horses adding a quarter of the load to the
+  herd); a −4 tension credit rides along. Alarm shows on the map as the cited exclamation ramp.
+- **Village demand is PARTIAL**: the engine's `village_supply_demand` is a three-phase model
+  (claimed-tile mask, 5×5 terrain scan, tribe-level formulas). The port runs the 5×5 scan and
+  applies the two cited headline behaviours (a capital doubles raw-goods demand, ×1.5 for
+  tools/muskets/trade goods, and doubles manufactured supply) but not phases 1 and 3.
+- **Gift credit is untraced**: §19.5 records the haggle "gift" row but its tension credit is TBD.
+  The port uses twice the sale credit (−8) as a stated stand-in.
+- The **buy** side (buying the village's own goods), raids, missions and converts are still not
+  built.
 
 ### Immigration
 - **Threshold is byte-cited** and implemented exactly: `clamp4000((Σ pop + units) × 2 + 8) × (8−d)/8`, England ×2/3.

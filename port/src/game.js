@@ -261,6 +261,7 @@ const G = {
   report: null,           // open F-key report
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
+  village: null, villageVisitor: null, villageRow: 0,
   accum: [],              // per-good traffic accumulator
   kingsFund: 0,           // the tax the Crown has taken
   dock: [],               // three immigration candidate slots
@@ -935,6 +936,15 @@ function drawMap(ctx) {
     const tx = v.x - G.view.x, ty = v.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1);
+    // §19.6: the map shows alarm as exclamation marks over the village,
+    // ramping pale green -> blue -> yellow -> brown -> red.
+    const alarm = v.alarm || 0;
+    if (alarm > 0 && G.zoom === 0) {
+      const ramp = [0x44, 0x36, 0x0E, 0x86, 0x0C];
+      const step = Math.min(4, Math.floor(alarm / 32));
+      FONT.tiny.draw(ctx, '!'.repeat(step + 1), ox + tx * TILE + 1, oy + ty * TILE - 1,
+                     lut(ramp[step]), ink(0));
+    }
   }
   for (const n of G.natives) {
     const tx = n.x - G.view.x, ty = n.y - G.view.y;
@@ -1924,13 +1934,155 @@ function seedNatives() {
   });
 }
 
-// Walking into a village opens it: trade below the hostile line, a warning at
-// or above it (§19, the 75 cutoff).
-function enterVillage(v) {
+// §19.5 -- what a village wants. The engine's village_supply_demand is a
+// three-phase model (claimed-tile mask, 5x5 terrain scan, tribe-level
+// formulas); this reads the same 5x5 neighbourhood for the raw goods the land
+// yields, then applies the two cited headline behaviours: a CAPITAL doubles
+// demand for raw goods (x1.5 for tools/muskets/trade goods) and doubles its
+// supply of manufactures. The exact phase-1/3 formulas are not reproduced, so
+// this is PARTIAL and flagged in the tracker.
+const RAW_GOODS = [0, 1, 2, 3, 4, 5, 6, 7];        // Food..Silver
+const MANUFACTURES = [9, 10, 11, 12];              // Rum, Cigars, Cloth, Coats
+function villageDemand(v) {
+  if (v.demand) return v.demand;
+  const d = DATA.cargo.map(() => 0);
+  for (let dy = -2; dy <= 2; dy++)
+    for (let dx = -2; dx <= 2; dx++) {
+      const tv = at(v.x + dx, v.y + dy);
+      if (tileWater(tv)) continue;
+      for (let j = 0; j < 9; j++) d[j] += tileYield(tv, j);
+    }
+  const capital = v.level >= 2;
+  for (const g of RAW_GOODS) d[g] = Math.floor(d[g] * (capital ? 2 : 1));
+  for (const g of [13, 14, 15]) d[g] = Math.floor((d[g] + 4) * (capital ? 1.5 : 1));
+  for (const g of MANUFACTURES) d[g] = Math.max(d[g], capital ? 8 : 4);
+  v.demand = d;
+  return d;
+}
+// The sell offer, §19.5:
+//   mood = random(1..5)
+//   base = 6 raw / 7 manufactured, plus per-good colour
+//   seed = 2*(base - difficulty - want + mood + 4)
+//   offer = max(1, (max(0, seed*demand) + 5*mood) * qty/100 / 2)
+// want is the village's interest rank in the good, halved once its stock
+// reaches 20 and forced to 0 for muskets and horses.
+function villageOffer(v, good, qty) {
   const t = G.tribes[v.tribe];
-  G.msg = t.tension >= TENSION_HOSTILE
-    ? `The ${t.name} are hostile. Enter at your peril.`
-    : `The ${t.name} welcome you and offer to trade.`;
+  const demand = villageDemand(v)[good] || 0;
+  const mood = 1 + Math.floor(Math.random() * 5);
+  let base = MANUFACTURES.includes(good) || good >= 13 ? 7 : 6;
+  if (good === 4) base -= Math.floor(Math.random() * 8);              // Furs
+  if (good === 15) base += 12 - (t.musketsKnown || 0);                // Muskets
+  if (good === 8) base += 10 - (t.horsesKnown || 0);                  // Horses
+  if (good === 13) base += 1;                                        // Trade Goods
+  const stock = (v.stock && v.stock[good]) || 0;
+  let want = Math.min(8, Math.floor(demand / 4));
+  if (stock >= 20) want = Math.floor(want / 2);
+  if (good === 15 || good === 8) want = 0;
+  const seed = 2 * (base - G.difficulty - want + mood + 4);
+  return Math.max(1, Math.floor((Math.max(0, seed * demand) + 5 * mood) * qty / 100 / 2));
+}
+// Selling cools the village directly -- alarm drops by the quantity and a full
+// 100-load zeroes it -- and muskets or horses ARM the tribe: +1 lore at 25
+// units, +2 at 50, with horses also adding a quarter of the load to the herd.
+// A -4 tension credit rides along.
+function villageSell(v, good, qty) {
+  const t = G.tribes[v.tribe];
+  const paid = villageOffer(v, good, qty);
+  G.gold += paid;
+  v.stock = v.stock || DATA.cargo.map(() => 0);
+  v.stock[good] += qty;
+  v.alarm = qty >= 100 ? 0 : Math.max(0, (v.alarm || 0) - qty);
+  adjustTension(v.tribe, -4);
+  if (good === 15) t.musketsKnown = (t.musketsKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
+  if (good === 8) {
+    t.horsesKnown = (t.horsesKnown || 0) + (qty >= 50 ? 2 : qty >= 25 ? 1 : 0);
+    t.herd = (t.herd || 0) + Math.floor(qty / 4);
+  }
+  return paid;
+}
+// A gift cools anger faster than a sale (manual-attested; the exact credit is
+// untraced, so the port uses twice the sale credit and says so).
+function villageGift(v, good, qty) {
+  v.stock = v.stock || DATA.cargo.map(() => 0);
+  v.stock[good] += qty;
+  v.alarm = 0;
+  adjustTension(v.tribe, -8);
+}
+// Walking into a village opens its menu: trade below the hostile line, a
+// warning at or above it (§19, the 75 cutoff).
+function enterVillage(v, visitor) {
+  G.village = v;
+  G.villageVisitor = visitor;
+  G.villageRow = 0;
+  G.screen = 'village';
+}
+
+// The village screen: the chief's greeting, what he is "especially interested
+// in" (the top of the sorted demand list), and one row per good in the
+// visitor's hold with the offer beside it.
+function villageRows() {
+  const v = G.village, u = G.villageVisitor;
+  const rows = [];
+  const hold = (u && u.hold) || [];
+  for (const h of hold)
+    rows.push({ kind: 'sell', good: h.good, qty: h.qty,
+                label: `Sell ${h.qty} ${DATA.cargo[h.good].name}`,
+                note: `${villageOffer(v, h.good, h.qty)}$` });
+  for (const h of hold)
+    rows.push({ kind: 'gift', good: h.good, qty: h.qty,
+                label: `Give ${h.qty} ${DATA.cargo[h.good].name} as a gift`, note: '' });
+  rows.push({ kind: 'leave', label: 'Take our leave', note: '' });
+  return rows;
+}
+function drawVillage(ctx) {
+  const v = G.village, t = G.tribes[v.tribe];
+  usePalette('WOODPANL');
+  ctx.drawImage(IMG.WOODPANL, 0, 0);
+  FONT.tiny.center(ctx, `${t.name.toUpperCase()} ${['CAMP', 'VILLAGE', 'CITY', 'CITY'][v.level]}`,
+                   160, 6, lut(HUD_INK));
+  const hostile = t.tension >= TENSION_HOSTILE;
+  const greeting = hostile
+    ? `The ${t.singular} regard you with open hostility.`
+    : `The ${t.singular} welcome you to their ${['camp', 'village', 'city', 'city'][v.level]}.`;
+  FONT.tiny.draw(ctx, greeting, 12, 22, lut(0xFE));
+  // "especially interested in" -- the top of the sorted demand list.
+  const d = villageDemand(v);
+  const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
+  if (top && top[0] > 0)
+    FONT.tiny.draw(ctx, `We are especially interested in ${DATA.cargo[top[1]].name}.`,
+                   12, 32, lut(0xFC));
+  FONT.tiny.draw(ctx, `Attitude: ${t.tension} of 100`, 12, 42, lut(hostile ? 0x0C : 0x0E));
+
+  const rows = villageRows();
+  rows.forEach((r, k) => {
+    const y = 58 + k * 9, sel = k === G.villageRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(10, y - 1, 300, 9); }
+    FONT.tiny.draw(ctx, r.label, 14, y, lut(sel ? 0xFC : 0xFE));
+    if (r.note) FONT.tiny.draw(ctx, r.note, 300 - FONT.tiny.width(r.note), y,
+                               lut(sel ? 0xFC : 0x0E));
+  });
+  // The tribe's own portrait: IND<tribe>A<attitude>, attitude banded by tension.
+  const att = t.tension >= TENSION_HOSTILE ? 3 : t.tension >= 40 ? 2 : t.tension >= 20 ? 1 : 0;
+  const sheet = `IND${v.tribe % 8}A${att}`;
+  const [pw, ph] = frameSize(sheet, 0);
+  if (pw) sheetFrame(ctx, sheet, 0, 320 - pw - 8, 200 - ph);
+  FONT.tiny.center(ctx, '(Esc to leave)', 160, 190, lut(0x5D));
+}
+function villageCommit() {
+  const r = villageRows()[G.villageRow];
+  if (!r || r.kind === 'leave') { G.screen = 'map'; G.village = null; advance(); return; }
+  const v = G.village, u = G.villageVisitor;
+  if (r.kind === 'sell') {
+    const paid = villageSell(v, r.good, r.qty);
+    holdAdd(u, r.good, -r.qty);
+    G.msg = `Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`;
+  } else {
+    villageGift(v, r.good, r.qty);
+    holdAdd(u, r.good, -r.qty);
+    G.msg = `The ${G.tribes[v.tribe].singular} accept your gift.`;
+  }
+  G.villageRow = 0;
 }
 
 // ------------------------------------------------------------ combat
@@ -2334,7 +2486,7 @@ function moveSel(dx, dy) {
     return;
   }
   const vil = G.villages.find(v => v.x === nx && v.y === ny);
-  if (vil) { enterVillage(vil); u.movesLeft = 0; advance(); return; }
+  if (vil) { u.movesLeft = 0; enterVillage(vil, u); return; }
   // The right-edge sea-lane column is the route home: a ship that enters it
   // sails for Europe and leaves the map (CLAUDE.md hard rule 2, terrain 26).
   if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) { sailForEurope(u); return; }
@@ -2538,6 +2690,14 @@ function onClick(mx, my) {
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
+    case 'village': {
+      const n = villageRows().length;
+      if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
+      if (k === 'ArrowDown') G.villageRow = (G.villageRow + 1) % n;
+      if (k === 'Enter' || k === ' ') villageCommit();
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.village = null; advance(); }
+      break;
+    }
     case 'pedia': {
       const n = pediaList().length;
       if (G.pediaMode === 'index') {
@@ -2705,6 +2865,14 @@ function onKey(e) {
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
+    case 'village': {
+      const n = villageRows().length;
+      if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
+      if (k === 'ArrowDown') G.villageRow = (G.villageRow + 1) % n;
+      if (k === 'Enter' || k === ' ') villageCommit();
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.village = null; advance(); }
+      break;
+    }
     case 'pedia': {
       const n = pediaList().length;
       if (G.pediaMode === 'index') {
@@ -2852,7 +3020,7 @@ function frame() {
      name: drawName, briefing: drawBriefing, cards: drawCards,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
-     report: drawReport }[G.screen])(ctx);
+     report: drawReport, village: drawVillage }[G.screen])(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;

@@ -39,9 +39,14 @@ SCRIPT = """() => {
   dialogKey('Enter');                        // accept the default land name
   out.afterNaming = { screen: G.screen, newLand: G.newLand, dialog: !!G.dialog };
 
-  // A unit ashore walks on land and is refused by the sea.
+  // A unit ashore walks on land and is refused by the sea. Clear any natives or
+  // villages around the landing site first: TRIBE.TXT puts a brave next to this
+  // beach, and walking into one is an ATTACK, which this movement test is not
+  // about (combat has its own checks below).
   const pio = G.units[1];
   G.sel = 1;
+  G.natives = G.natives.filter(n => Math.abs(n.x - pio.x) > 2 || Math.abs(n.y - pio.y) > 2);
+  G.villages = G.villages.filter(v => Math.abs(v.x - pio.x) > 2 || Math.abs(v.y - pio.y) > 2);
   const at0 = [pio.x, pio.y];
   pio.movesLeft = 1; moveSel(1, 0);          // east, back toward the water
   out.seaRefused = (pio.x === at0[0] && pio.y === at0[1]);
@@ -182,6 +187,9 @@ SCRIPT = """() => {
     for (let i = 0; i < 25 && !G.dialog; i++) { sh.movesLeft = 9; moveSel(-1, 0); }
     closeDialog(1); onClick(-1, -1); dialogKey('Enter');
     G.sel = G.units.findIndex(u => !u.ship);
+    const f0 = G.units[G.sel];
+    G.natives = G.natives.filter(n => Math.abs(n.x - f0.x) > 2 || Math.abs(n.y - f0.y) > 2);
+    G.villages = G.villages.filter(v => Math.abs(v.x - f0.x) > 2 || Math.abs(v.y - f0.y) > 2);
     buildColony(); closeDialog('Jamestown');
     G.screen = 'colony';
     const c = G.colonies[0];
@@ -232,6 +240,31 @@ SCRIPT = """() => {
     // on water.
     out.nothingOnWater = G.natives.every(n => !tileWater(at(n.x, n.y))) &&
                          G.villages.every(v => !tileWater(at(v.x, v.y)));
+    // Village trade: an offer is priced, selling pays and cools the village,
+    // and a gift zeroes its alarm outright.
+    {
+      const v = G.villages[0];
+      v.alarm = 200;
+      const wagon = mkUnit('Wagon Train', v.x - 1, v.y);
+      wagon.hold = [{ good: 4, qty: 100 }];      // 100 Furs
+      const offer = villageOffer(v, 4, 100);
+      const g0 = G.gold;
+      const paid = villageSell(v, 4, 100);
+      out.villageTrade = { offered: offer > 0, paid: paid > 0,
+                           creditedTreasury: G.gold === g0 + paid,
+                           fullLoadZeroesAlarm: v.alarm === 0,
+                           stocked: v.stock[4] === 100 };
+      // Muskets arm the tribe: +1 at 25 units, +2 at 50.
+      const t = G.tribes[v.tribe];
+      t.musketsKnown = 0;
+      villageSell(v, 15, 50);
+      out.armsTribe = t.musketsKnown === 2;
+      // A gift cools further than a sale.
+      v.alarm = 100; G.tribes[v.tribe].tension = 50;
+      villageGift(v, 13, 20);
+      out.gift = { alarmCleared: v.alarm === 0, tensionFell: G.tribes[v.tribe].tension < 50 };
+    }
+
     // Native settlements use their OWN sprite band (disk 10..13, no pennant),
     // never the colony band (disk 0..3, which carries one).
     // Every settlement comes from TRIBE.TXT, not a scatter: 59 sites, and the
@@ -462,6 +495,10 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("village prices, pays and cools on a sale",
+         all(r["villageTrade"].values()), r["villageTrade"]),
+        ("selling 50 muskets arms the tribe by 2", r["armsTribe"], r["armsTribe"]),
+        ("a gift clears alarm and cools tension", all(r["gift"].values()), r["gift"]),
         ("settlements come from TRIBE.TXT, all 59 with correct per-tribe counts",
          all(r["tribeSites"].values()), r["tribeSites"]),
         ("native settlements use their own sprite band, not the colony one",

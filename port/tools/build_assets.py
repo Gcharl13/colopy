@@ -153,7 +153,8 @@ def main():
                # Woodcut event plates: the frame, plus WDCUT01 (first landfall).
                "WOODFRAM", "WDCUT01", "WDCUT02", "BUILDING",
                # Advisor portraits: speaker channel [0x1F5E] 0..5.
-               "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5"]
+               "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5"] + \
+              [f"IND{t}A{a}" for t in range(8) for a in range(4)]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"
