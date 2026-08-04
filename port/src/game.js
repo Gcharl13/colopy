@@ -261,6 +261,11 @@ const G = {
   euroShip: 0,            // selected ship in port
   euroMsg: '',
   marketSel: -1,          // highlighted market cell
+  openMenu: -1,           // open pulldown index, -1 = none
+  menuSel: 0,
+  zoom: 0,                // §26.7 zoom level 0..3
+  viewMode: false,        // View Pieces vs Move Pieces
+  showHidden: false,
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -299,7 +304,7 @@ function beginGame() {
   G.units = [mkUnit(G.nation === 3 ? 'Merchantman' : 'Caravel', sx, sy,
                     ['Pioneers', 'Soldiers'])];
   G.sel = 0;
-  G.landHo = false; G.newLand = '';
+  G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
   G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
   seedMarket();
@@ -309,10 +314,15 @@ function beginGame() {
   G.msg = `${DATA.nations[G.nation].homeport}, ${DATA.nations[G.nation].country}.`;
 }
 
-const VIEW_TILES_X = 15, VIEW_TILES_Y = 12, TILE = 16;   // §26.7 zoom 0
+// §26.7: zoom z spans (0xF << z) x (0xC << z) tiles at (0x10 >> z) pixels, so
+// the viewport is always 240x192. Level 0 is 15x12 at 16px.
+const TILE = 16;
+const VIEW_COLS = () => 0xF << G.zoom;
+const VIEW_ROWS = () => 0xC << G.zoom;
+const TILE_PX = () => 0x10 >> G.zoom;
 function centerOn(tx, ty) {
-  G.view.x = Math.max(0, Math.min(MAP.w - VIEW_TILES_X, tx - (VIEW_TILES_X >> 1)));
-  G.view.y = Math.max(0, Math.min(MAP.h - VIEW_TILES_Y, ty - (VIEW_TILES_Y >> 1)));
+  G.view.x = Math.max(0, Math.min(MAP.w - VIEW_COLS(), tx - (VIEW_COLS() >> 1)));
+  G.view.y = Math.max(0, Math.min(MAP.h - VIEW_ROWS(), ty - (VIEW_ROWS() >> 1)));
 }
 
 // ---------------------------------------------------------------- chrome
@@ -765,6 +775,18 @@ function drawTile(ctx, mx, my, px, py) {
 
 // §26.7 — viewport (0,8,240,192) 15x12 @16px; sidebar right; menu bar on top.
 const VP = { x: 0, y: 8, w: 240, h: 192 };
+let _zoomBuf = null;
+function zoomBuffer(cols, rows) {
+  const w = cols * TILE, h = rows * TILE;
+  if (!_zoomBuf || _zoomBuf.canvas.width !== w || _zoomBuf.canvas.height !== h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    _zoomBuf = c.getContext('2d');
+  }
+  _zoomBuf.clearRect(0, 0, w, h);
+  return _zoomBuf;
+}
+
 function drawMap(ctx) {
   // The map screen's chrome is WOODTILE.SS frame 0 (32x24) tiled from the
   // screen origin -- a fine, repeating grain -- NOT the big-swirl WOODPANL.PIK
@@ -778,21 +800,22 @@ function drawMap(ctx) {
     for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
   ctx.fillStyle = ink(0);
   ctx.fillRect(VP.x, VP.y, VP.w, VP.h);
-  for (let ty = 0; ty < VIEW_TILES_Y; ty++) {
-    for (let tx = 0; tx < VIEW_TILES_X; tx++) {
-      const mx = G.view.x + tx, my = G.view.y + ty;
-      const px = VP.x + tx * TILE, py = VP.y + ty * TILE;
-      drawTile(ctx, mx, my, px, py);
-    }
-  }
+  const cols = VIEW_COLS(), rows = VIEW_ROWS();
+  // Tiles are only drawn at their native 16px, so a zoomed-out view composes
+  // the whole span offscreen and scales it into the same 240x192 viewport.
+  const tgt = G.zoom === 0 ? ctx : zoomBuffer(cols, rows);
+  const ox = G.zoom === 0 ? VP.x : 0, oy = G.zoom === 0 ? VP.y : 0;
+  for (let ty = 0; ty < rows; ty++)
+    for (let tx = 0; tx < cols; tx++)
+      drawTile(tgt, G.view.x + tx, G.view.y + ty, ox + tx * TILE, oy + ty * TILE);
   // Colonies: ICONS disk band 0-3 are the colony map markers, frame = nation.
   for (const c of G.colonies) {
     const tx = c.x - G.view.x, ty = c.y - G.view.y;
-    if (tx < 0 || ty < 0 || tx >= VIEW_TILES_X || ty >= VIEW_TILES_Y) continue;
-    const px = VP.x + tx * TILE, py = VP.y + ty * TILE;
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    const px = ox + tx * TILE, py = oy + ty * TILE;
     const [fw, fh] = frameSize('ICONS', c.nation);
-    sheetFrame(ctx, 'ICONS', c.nation, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
-    FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
+    sheetFrame(tgt, 'ICONS', c.nation, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
+    if (G.zoom === 0) FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -800,8 +823,12 @@ function drawMap(ctx) {
   for (const i of order) {
     const u = G.units[i];
     const tx = u.x - G.view.x, ty = u.y - G.view.y;
-    if (tx < 0 || ty < 0 || tx >= VIEW_TILES_X || ty >= VIEW_TILES_Y) continue;
-    drawUnit(ctx, u, VP.x + tx * TILE, VP.y + ty * TILE);
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    drawUnit(tgt, u, ox + tx * TILE, oy + ty * TILE);
+  }
+  if (G.zoom !== 0) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tgt.canvas, 0, 0, cols * TILE, rows * TILE, VP.x, VP.y, VP.w, VP.h);
   }
   drawMenuBar(ctx);
   drawSidebar(ctx);
@@ -838,7 +865,54 @@ const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
                     ['REPORTS', 119], ['TRADE', 161], ['COLONIZOPEDIA', 259]];
 function drawMenuBar(ctx) {
   ctx.fillStyle = ink(0); ctx.fillRect(0, 7, W, 1);
-  for (const [t, x] of BAR_TITLES) FONT.tiny.draw(ctx, t, x, 1, lut(HUD_INK));
+  BAR_TITLES.forEach(([t, x], i) => {
+    if (i === G.openMenu) {
+      ctx.fillStyle = ink(0x37);
+      ctx.fillRect(x - 2, 0, FONT.tiny.width(t) + 4, 7);
+    }
+    FONT.tiny.draw(ctx, t, x, 1, lut(HUD_INK));
+  });
+  if (G.openMenu >= 0) drawPulldown(ctx);
+}
+// The pulldown itself: rows from MENU.TXT, the "~" accelerator letter picked
+// out in gold, greyed rows dimmed. Width fits the longest label.
+function pulldownBox(mi) {
+  const m = DATA.menus[mi];
+  let w = 0;
+  for (const r of m.rows) w = Math.max(w, FONT.tiny.width(r.label));
+  w += 16;
+  const x = Math.min(BAR_TITLES[mi][1] - 2, W - w - 2);
+  return { x, y: 8, w, h: m.rows.length * 8 + 4 };
+}
+function drawPulldown(ctx) {
+  const m = DATA.menus[G.openMenu], b = pulldownBox(G.openMenu);
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  m.rows.forEach((r, k) => {
+    const y = b.y + 2 + k * 8;
+    const sel = k === G.menuSel;
+    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 2, y, b.w - 4, 8); }
+    const dim = r.disabled || !COMMANDS[r.label];
+    const base = dim ? 0x2F : (sel ? 0xFC : 0xFE);
+    // Draw the accelerator letter in gold where the row is live.
+    const ai = r.accel ? r.label.toUpperCase().indexOf(r.accel) : -1;
+    let x = b.x + 6;
+    if (ai < 0 || dim) FONT.tiny.draw(ctx, r.label, x, y + 1, lut(base));
+    else {
+      x = FONT.tiny.draw(ctx, r.label.slice(0, ai), x, y + 1, lut(base));
+      x = FONT.tiny.draw(ctx, r.label[ai], x, y + 1, lut(0x0E));
+      FONT.tiny.draw(ctx, r.label.slice(ai + 1), x, y + 1, lut(base));
+    }
+  });
+}
+function openMenu(mi) { G.openMenu = mi; G.menuSel = 0; }
+function runMenuRow() {
+  const m = DATA.menus[G.openMenu];
+  const r = m && m.rows[G.menuSel];
+  G.openMenu = -1;
+  if (!r) return;
+  const fn = COMMANDS[r.label];
+  if (fn) fn();
+  else G.msg = `${r.label} - not in this build.`;
 }
 
 function drawSidebar(ctx) {
@@ -860,7 +934,7 @@ function drawSidebar(ctx) {
     ctx.fillRect(mm.x + x, mm.y + y, 1, 1);
   }
   hollowRect(ctx, mm.x + (G.view.x - sx), mm.y + (G.view.y - sy),
-             VIEW_TILES_X, VIEW_TILES_Y, 0x0F);
+             VIEW_COLS(), VIEW_ROWS(), 0x0F);
 
   // Sidebar B (240,72,80,64): season/year, gold, tax. All HUD text is the
   // green ink 68, pixel-measured from docs/screens/06_ingame_map.png.
@@ -1448,8 +1522,8 @@ function endTurn() {
 function step(u, nx, ny) {
   u.x = nx; u.y = ny; u.movesLeft -= 1;
   G.msg = '';
-  if (nx - G.view.x < 3 || nx - G.view.x > VIEW_TILES_X - 4 ||
-      ny - G.view.y < 3 || ny - G.view.y > VIEW_TILES_Y - 4) centerOn(nx, ny);
+  if (nx - G.view.x < 3 || nx - G.view.x > VIEW_COLS() - 4 ||
+      ny - G.view.y < 3 || ny - G.view.y > VIEW_ROWS() - 4) centerOn(nx, ny);
   if (u.movesLeft <= 0) advance();
 }
 
@@ -1532,6 +1606,125 @@ function nextUnit() {
   }
   return false;
 }
+
+// ------------------------------------------------------------ commands
+// One entry per MENU.TXT row label. Rows with no entry render greyed and report
+// themselves as absent rather than silently doing nothing -- the menu tree is
+// the shipped one, so every row the real game has is visible here whether or
+// not this build implements it.
+function setOrder(n) {
+  const u = G.units[G.sel];
+  if (!u) return;
+  u.orders = n;
+  G.msg = DATA.orders[n].name;
+  u.movesLeft = 0;
+  advance();
+}
+// ORDERS "Return to Europe" (E) sends the selected ship home; VIEW "European
+// Status" (also E, one level down) opens the harbour. E does both here: the
+// ship is ordered home AND the harbour comes up, so the crossing is visible in
+// the Bound For panel straight away.
+function returnToEurope() {
+  const u = G.units[G.sel];
+  if (u && u.ship) {
+    sailForEurope(u);
+    G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
+  }
+  G.screen = 'europe';
+}
+function centreView() { const u = G.units[G.sel]; if (u) centerOn(u.x, u.y); }
+function activateUnit() {
+  const u = G.units[G.sel];
+  if (!u) return;
+  u.orders = 0;
+  if (!u.movesLeft) u.movesLeft = u.moves;
+  G.msg = 'Activated.';
+}
+function loadCargo() {
+  // Load a colony's stockpile into a ship sharing its tile.
+  const u = G.units[G.sel];
+  if (!u || !u.ship) { G.msg = 'Only a ship can load cargo.'; return; }
+  const c = colonyAt(u.x, u.y);
+  if (!c) { G.msg = 'No colony here.'; return; }
+  u.hold = u.hold || [];
+  let moved = 0;
+  c.stock.forEach((q, i) => {
+    if (q <= 0) return;
+    const slot = u.hold.find(h => h.good === i);
+    if (slot) slot.qty += q; else u.hold.push({ good: i, qty: q });
+    moved += q; c.stock[i] = 0;
+  });
+  G.msg = moved ? `Loaded ${moved} goods.` : 'Nothing to load.';
+}
+function unloadCargo() {
+  const u = G.units[G.sel];
+  if (!u || !u.ship) { G.msg = 'Only a ship can unload cargo.'; return; }
+  const c = colonyAt(u.x, u.y);
+  if (!c) { G.msg = 'No colony here.'; return; }
+  let moved = 0;
+  for (const h of (u.hold || [])) { c.stock[h.good] += h.qty; moved += h.qty; }
+  u.hold = [];
+  G.msg = moved ? `Unloaded ${moved} goods.` : 'Nothing to unload.';
+}
+function dumpCargo() {
+  const u = G.units[G.sel];
+  if (!u || !(u.hold || []).length) { G.msg = 'Nothing to dump.'; return; }
+  u.hold = [];
+  G.msg = 'Cargo dumped overboard.';
+}
+function disbandUnit() {
+  if (!G.units.length) return;
+  G.msg = `${G.units[G.sel].type} disbanded.`;
+  G.units.splice(G.sel, 1);
+  G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+}
+function findColony() {
+  if (!G.colonies.length) { G.msg = 'No colonies yet.'; return; }
+  G.colonyFind = ((G.colonyFind || 0) + 1) % G.colonies.length;
+  const c = G.colonies[G.colonyFind];
+  centerOn(c.x, c.y);
+  G.msg = c.name;
+}
+// §26.7 zoom: spans 0xF<<z by 0xC<<z tiles at 0x10>>z pixels.
+function setZoom(z) {
+  G.zoom = Math.max(0, Math.min(3, z));
+  const u = G.units[G.sel];
+  if (u) centerOn(u.x, u.y); else centerOn(G.view.x + 7, G.view.y + 6);
+  G.msg = `Zoom ${VIEW_COLS()} x ${VIEW_ROWS()}`;
+}
+const COMMANDS = {
+  // ORDERS
+  'Activate unit': activateUnit,
+  'Wait for next unit': () => nextUnit(),
+  'Fortify': () => setOrder(5),
+  'Sentry': () => setOrder(1),
+  'Build Colony': buildColony,
+  'Join Colony (B)': buildColony,
+  'Clear Forest (P)': () => setOrder(8),
+  'Plow Fields  (P)': () => setOrder(8),
+  'Build Road': () => setOrder(9),
+  'Load Cargo': loadCargo,
+  'Unload Cargo': unloadCargo,
+  'Go to Port': returnToEurope,
+  'Return to Europe': returnToEurope,
+  'No Orders (space bar)': skipUnit,
+  'Dump Cargo Overboard': dumpCargo,
+  'Disband Unit (shift-D)': disbandUnit,
+  // VIEW
+  'Move Pieces': () => { G.viewMode = false; G.msg = 'Move mode.'; },
+  'View Pieces': () => { G.viewMode = true; G.msg = 'View mode.'; },
+  'European Status': () => { G.screen = 'europe'; },
+  'Find Colony': findColony,
+  'Zoom In': () => setZoom(G.zoom - 1),
+  'Zoom Out': () => setZoom(G.zoom + 1),
+  'Zoom Level 15 x 12': () => setZoom(0),
+  'Zoom Level 30 x 24': () => setZoom(1),
+  'Zoom Level 60 x 48': () => setZoom(2),
+  'Zoom Level 120 x 96': () => setZoom(3),
+  'Show Hidden Terrain': () => { G.showHidden = !G.showHidden;
+                                 G.msg = `Hidden terrain ${G.showHidden ? 'on' : 'off'}.`; },
+  'Center View': centreView,
+};
 
 // ---------------------------------------------------------------- input
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
@@ -1617,9 +1810,25 @@ function onClick(mx, my) {
       break;
     }
     case 'map': {
+      if (G.openMenu >= 0) {
+        const b = pulldownBox(G.openMenu);
+        if (hit(mx, my, b)) {
+          G.menuSel = Math.max(0, Math.min(DATA.menus[G.openMenu].rows.length - 1,
+                                           Math.floor((my - b.y - 2) / 8)));
+          runMenuRow();
+        } else G.openMenu = -1;
+        return;
+      }
+      if (my < 8) {
+        for (let i = 0; i < BAR_TITLES.length; i++) {
+          const [t, x] = BAR_TITLES[i];
+          if (mx >= x - 2 && mx < x + FONT.tiny.width(t) + 2) { openMenu(i); return; }
+        }
+        return;
+      }
       if (hit(mx, my, VP)) {
-        const tx = G.view.x + Math.floor((mx - VP.x) / TILE);
-        const ty = G.view.y + Math.floor((my - VP.y) / TILE);
+        const tx = G.view.x + Math.floor((mx - VP.x) / TILE_PX());
+        const ty = G.view.y + Math.floor((my - VP.y) / TILE_PX());
         // Clicking your own colony opens its screen; clicking a stack cycles
         // through the units standing on that tile.
         const ci = G.colonies.findIndex(c => c.x === tx && c.y === ty);
@@ -1704,16 +1913,68 @@ function onKey(e) {
       if (k === 'Escape' || k === 'x' || k === 'e' || k === 'E') G.screen = 'map';
       break;
     }
-    case 'map':
-      if (k === 'ArrowLeft') moveSel(-1, 0);
-      if (k === 'ArrowRight') moveSel(1, 0);
-      if (k === 'ArrowUp') moveSel(0, -1);
-      if (k === 'ArrowDown') moveSel(0, 1);
-      if (k === ' ') skipUnit();
-      if (k === 'Tab') nextUnit();
-      if (k === 'b' || k === 'B') buildColony();
-      if (k === 'Escape' && G.colonies.length) { /* no-op on the map */ }
+    case 'map': {
+      // An open pulldown owns the keyboard.
+      if (G.openMenu >= 0) {
+        const rows = DATA.menus[G.openMenu].rows;
+        if (k === 'ArrowUp') G.menuSel = (G.menuSel + rows.length - 1) % rows.length;
+        else if (k === 'ArrowDown') G.menuSel = (G.menuSel + 1) % rows.length;
+        else if (k === 'ArrowLeft') openMenu((G.openMenu + DATA.menus.length - 1) % DATA.menus.length);
+        else if (k === 'ArrowRight') openMenu((G.openMenu + 1) % DATA.menus.length);
+        else if (k === 'Enter' || k === ' ') runMenuRow();
+        else if (k === 'Escape') G.openMenu = -1;
+        else if (k.length === 1) {
+          // Accelerator: the "~" letter parsed from the MENU.TXT row.
+          const K = k.toUpperCase();
+          const i = rows.findIndex(r => r.accel === K);
+          if (i >= 0) { G.menuSel = i; runMenuRow(); }
+        }
+        break;
+      }
+      // Alt+letter opens that pulldown (§27.1).
+      if (e.altKey && k.length === 1) {
+        const i = DATA.menus.findIndex(m => m.accel === k.toUpperCase());
+        if (i >= 0) { openMenu(i); e.preventDefault(); return; }
+      }
+      // F1-F10 report ladder. The advisor screens are not built, so each names
+      // itself rather than pretending to open.
+      if (/^F\d+$/.test(k)) {
+        const row = DATA.menus[3].rows[+k.slice(1) - 1];
+        if (row) G.msg = `${row.label} - not in this build.`;
+        e.preventDefault();
+        return;
+      }
+      // 8-way movement: arrows plus the numeric keypad diagonals.
+      const DIR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1],
+                    ArrowDown: [0, 1], '7': [-1, -1], '9': [1, -1],
+                    '1': [-1, 1], '3': [1, 1] };
+      if (DIR[k]) { const [dx, dy] = DIR[k]; if (G.viewMode) centerOn(G.view.x + 7 + dx * 3, G.view.y + 6 + dy * 3); else moveSel(dx, dy); }
+      switch (k) {
+        case ' ': skipUnit(); break;
+        case 'Tab': nextUnit(); break;
+        case 'a': case 'A': activateUnit(); break;
+        case 'w': case 'W': nextUnit(); break;
+        case 'f': case 'F': setOrder(5); break;
+        case 's': case 'S': setOrder(1); break;
+        case 'b': case 'B': buildColony(); break;
+        case 'p': case 'P': setOrder(8); break;
+        case 'r': case 'R': setOrder(9); break;
+        case 'c': case 'C': centreView(); break;
+        case 'e': case 'E': returnToEurope(); break;
+        case 'l': case 'L': loadCargo(); break;
+        case 'u': case 'U': unloadCargo(); break;
+        case 'o': case 'O': dumpCargo(); break;
+        case 'g': case 'G': G.msg = 'Go to - not in this build.'; break;
+        case 't': case 'T': G.msg = 'Trade routes - not in this build.'; break;
+        case 'v': case 'V': G.viewMode = true; G.msg = 'View mode.'; break;
+        case 'm': case 'M': G.viewMode = false; G.msg = 'Move mode.'; break;
+        case 'h': case 'H': COMMANDS['Show Hidden Terrain'](); break;
+        case 'z': case 'Z': setZoom(G.zoom - 1); break;
+        case 'x': case 'X': setZoom(G.zoom + 1); break;
+        case 'D': if (e.shiftKey) disbandUnit(); break;
+      }
       break;
+    }
   }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab'].includes(k)) e.preventDefault();
 }

@@ -134,6 +134,21 @@ Deferred to the comprehensive phase; **explicitly TBD, not "done":**
 
 (OPENING.EXE/CLOSING.EXE remain out of VICEROY.EXE scope.)
 
+## Port: menu bar and key commands (2026-08-04)
+
+The six pulldowns are built from MENU.TXT verbatim — every row the shipped game
+has is present and shows its `~` accelerator, so the gaps are visible in the UI
+rather than hidden. Rows with no handler render greyed and report themselves.
+
+| Group | Status | Note |
+|---|---|---|
+| ORDERS | **MOSTLY DONE** | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live. **Absent**: Pillage, Go to Place, Begin Trade Route. |
+| VIEW | **DONE** | Move/View Pieces, European Status, Find Colony, Zoom In/Out, the four zoom levels, Show Hidden Terrain, Center View. Zoom spans verified as `(0xF<<z) × (0xC<<z)` at `(0x10>>z)` px. |
+| GAME | **TBD** | Options/save/load/retire dialogs are specified in `options_dialogs.md` but not built. |
+| REPORTS | **TBD** | The F1–F10 ladder is bound and each key names its report; the nine advisor screens are not built. |
+| TRADE | **TBD** | Trade-route editor not built. |
+| COLONIZOPEDIA | **TBD** | `colonizopedia.md` is specified; the browser is not built. |
+
 ## Port implementation gaps (2026-08-04)
 
 Tracked because the HTML port now renders these screens and the gaps are

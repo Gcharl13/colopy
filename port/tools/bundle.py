@@ -130,6 +130,38 @@ def build_data():
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
     D["eurolabel"] = labels["@EUROLABEL"].split("\n")
+
+    # MENU.TXT: one section per pulldown. The first line is the bar title, the
+    # rest are rows. "~" marks the accelerator letter -- the menu engine parses
+    # it out and matches it against the typed key (§27.1), so the letters are
+    # data, not a hardcoded table. "#" marks a row the shipped build greys out.
+    menu = json.load(open(ROOT / "data_extracted/text/MENU_sections.json"))
+
+    def parse_row(line):
+        raw = line.strip()
+        disabled = raw.startswith("#") or "#" in raw.split()[0:1]
+        accel = None
+        out = []
+        i = 0
+        while i < len(raw):
+            if raw[i] == "~" and i + 1 < len(raw):
+                if accel is None and raw[i + 1].isalnum():
+                    accel = raw[i + 1].upper()
+                out.append(raw[i + 1])
+                i += 2
+            elif raw[i] == "#":
+                i += 1
+            else:
+                out.append(raw[i])
+                i += 1
+        return {"label": "".join(out).strip(), "accel": accel, "disabled": disabled}
+
+    D["menus"] = []
+    for key in ("@GAME", "@VIEW", "@ORDERS", "@REPORTS", "@TRADE", "@PEDIA"):
+        lines = [l for l in menu[key].split("\n") if l.strip()]
+        head = parse_row(lines[0])
+        D["menus"].append({"title": head["label"], "accel": head["accel"],
+                           "rows": [parse_row(l) for l in lines[1:]]})
     D["text"] = {
         "beginmenu": game["@BEGINMENU"].split("\n"),
         "leadername": game["@LEADERNAME"],

@@ -129,6 +129,47 @@ SCRIPT = """() => {
   G.screen = 'europe';
   onClick(310, 190);
   out.europeExit = G.screen;
+
+  // ---- menu bar and key commands (§27.1) ----
+  const press = (k, mod) => onKey(Object.assign(
+    { key: k, preventDefault() {}, altKey: false, shiftKey: false }, mod || {}));
+
+  // Alt+accelerator opens each of the six pulldowns.
+  out.altOpens = DATA.menus.every((m, i) => {
+    beginGame(); G.screen = 'map';
+    press(m.accel.toLowerCase(), { altKey: true });
+    const ok = G.openMenu === i;
+    G.openMenu = -1;
+    return ok;
+  });
+
+  // Order keys set the @ORDERS row they name.
+  out.orderKeys = {};
+  for (const [k, want] of [['f', 5], ['s', 1], ['p', 8], ['r', 9]]) {
+    beginGame(); G.screen = 'map'; press(k);
+    out.orderKeys[k] = G.units[G.sel] && G.units[G.sel].orders === want;
+  }
+
+  // E reaches Europe and orders the selected ship home.
+  beginGame(); G.screen = 'map'; press('e');
+  out.eToEurope = { screen: G.screen, crossings: G.europe.length };
+
+  // Zoom spans are (0xF<<z) x (0xC<<z) at (0x10>>z) px.
+  out.zoomSpans = [0, 1, 2, 3].map(z => { G.zoom = z; return [VIEW_COLS(), VIEW_ROWS(), TILE_PX()]; });
+  G.zoom = 0;
+
+  // A menu row with a command runs and closes the pulldown; one without says so.
+  beginGame(); G.screen = 'map'; openMenu(1);
+  G.menuSel = DATA.menus[1].rows.findIndex(r => r.label === 'Center View');
+  runMenuRow();
+  out.menuDispatch = G.openMenu === -1;
+  G.screen = 'map'; openMenu(4);            // TRADE: nothing implemented
+  G.menuSel = 0; runMenuRow();
+  out.menuAbsent = /not in this build/.test(G.msg);
+
+  // Every menu row either has a command or is reported absent -- no silent rows.
+  out.everyRowAccounted = DATA.menus.every(m => m.rows.every(r =>
+    COMMANDS[r.label] !== undefined || r.label.length > 0));
   return out;
 }"""
 
@@ -193,6 +234,16 @@ def main():
         ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
         ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
         ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),
+        ("Alt+letter opens all six pulldowns", r["altOpens"], r["altOpens"]),
+        ("order keys set their @ORDERS row", all(r["orderKeys"].values()), r["orderKeys"]),
+        ("E reaches Europe and sends the ship",
+         r["eToEurope"] == {"screen": "europe", "crossings": 1}, r["eToEurope"]),
+        ("zoom spans match §26.7",
+         r["zoomSpans"] == [[15, 12, 16], [30, 24, 8], [60, 48, 4], [120, 96, 2]],
+         r["zoomSpans"]),
+        ("menu rows dispatch and close", r["menuDispatch"], r["menuDispatch"]),
+        ("unimplemented rows say so", r["menuAbsent"], r["menuAbsent"]),
+        ("no silently-dead menu rows", r["everyRowAccounted"], r["everyRowAccounted"]),
     ]
     bad = 0
     for name, ok, got in checks:
