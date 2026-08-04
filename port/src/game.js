@@ -253,6 +253,9 @@ const G = {
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
   colonyView: 2,          // right-panel mode: buildings / units / production
+  colonyPopup: null,      // 'build' | 'jobs'
+  colonyPopupRow: 0,
+  colonistSel: 0,
   accum: [],              // per-good traffic accumulator
   kingsFund: 0,           // the tax the Crown has taken
   dock: [],               // three immigration candidate slots
@@ -1102,6 +1105,9 @@ function buildColony() {
       colonists: [{ type: u.type, job: null, cell: null }],
       stock: DATA.cargo.map(() => 0),
       buildings: STARTING_BUILDINGS.slice(),
+      hammers: 0,          // construction points banked
+      tools: 0,            // tools on hand for the tools_x10 part of a cost
+      building: null,      // @BUILDING row being constructed
       sol: 0,
     });
     // The founder joins the colony, so it leaves the map.
@@ -1162,6 +1168,30 @@ function colonyFood(c) {
   const eaten = 2 * c.colonists.length;
   return { centre, fields, produced, eaten, net: produced - eaten };
 }
+// What a colony may build: an @BUILDING row it does not already have, whose
+// min_colony gate its population meets. Cost is the hammers column; tools_x10
+// is the tools requirement in tens (§26.8 / @BUILDING).
+function buildOptions(c) {
+  const pop = c.colonists.length;
+  return DATA.buildings
+    .map((b, i) => ({ i, ...b }))
+    .filter(b => !c.buildings.includes(b.name) && b.min_colony <= pop);
+}
+// One turn of construction: bank this colony's hammers, then finish the target
+// if it is paid for. Tools are consumed with the hammers.
+function advanceConstruction(c) {
+  c.hammers += colonyHammers(c);
+  const b = c.building && DATA.buildings.find(d => d.name === c.building);
+  if (!b) return;
+  const needTools = b.tools_x10 * 10;
+  if (c.hammers < b.cost || c.tools < needTools) return;
+  c.hammers -= b.cost;
+  c.tools -= needTools;
+  c.buildings.push(b.name);
+  c.building = null;
+  G.msg = `${c.name} completes the ${b.name}.`;
+}
+
 // Hammers come from colonists working AS CARPENTERS in a Carpenter's Shop --
 // the building alone produces nothing.
 function colonyHammers(c) {
@@ -1315,9 +1345,12 @@ function drawColony(ctx) {
   ctx.drawImage(IMG.COLONY, 0, 128);
   // Plaza (0,130,120,48): the colonists, left-aligned at the panel origin + 2.
   // Plaza: colonists with no field assignment stand here.
-  c.colonists.filter(p => !p.cell).forEach((p, i) => {
+  const idlers = c.colonists.map((p, i) => i).filter(i => !c.colonists[i].cell);
+  idlers.forEach((ci, i) => {
+    const p = c.colonists[ci];
     const u = unit(p.type) || unit('Colonists');
     if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
+    if (ci === G.colonistSel) hollowRect(ctx, 1 + i * 14, 148, 14, 18, 0x0E);
   });
   drawColonyPanel(ctx, c);
   // SoL band, with the crown (ICONS disk 124) to its right at the measured
@@ -1337,6 +1370,7 @@ function drawColony(ctx) {
     FONT.tiny.center(ctx, String(c.stock[i]), 9 + 19 * i, 194, lut(STOCK_INK));
   });
   FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x31));
+  if (G.colonyPopup) drawColonyPopup(ctx);
 
   // Black separator rules, measured: a full-width row at y=7 under the title,
   // a full-width row at y=128 above the town strip, and the column at x=199
@@ -1363,6 +1397,69 @@ function groundSpeckle(ctx, x, y, w, h, base) {
       ctx.fillRect(x + i, y + j, 1, 1);
     }
   }
+}
+
+// ---- colony popups: construction (C) and the jobs menu (Enter) ----
+// Both use the §3 dialog framework, same as the Europe menus.
+function colonyPopupRows() {
+  const c = G.colonies[G.colony];
+  if (G.colonyPopup === 'build')
+    return buildOptions(c).map(b => ({
+      label: b.name,
+      note: b.tools_x10 ? `${b.cost}h ${b.tools_x10 * 10}t` : `${b.cost}h`,
+    }));
+  // Jobs: the colony's buildings are the workplaces, plus a way back to the
+  // plaza. Working a FIELD is done by clicking a cell in the scene panel.
+  return [{ label: 'No job (plaza)', note: '' }]
+    .concat(c.buildings.map(b => ({ label: b, note: '' })));
+}
+function colonyPopupBox() {
+  const rows = colonyPopupRows();
+  let cw = 0x50;
+  for (const r of rows) cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(r.note) + 20);
+  const w = cw + 6, h = 6 + 6 + 3 + rows.length * 8 + 3;
+  return { x: Math.round(160 - w / 2), y: Math.max(2, Math.round(100 - h / 2)), w, h, rows };
+}
+function drawColonyPopup(ctx) {
+  const c = G.colonies[G.colony], b = colonyPopupBox();
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  const title = G.colonyPopup === 'build'
+    ? `Construction  (${c.hammers} hammers, ${c.tools} tools)`
+    : 'Assign this colonist';
+  FONT.tiny.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
+  const seed = b.y + 6 + 6 + 3;
+  b.rows.forEach((r, k) => {
+    const y = seed + k * 8, sel = k === G.colonyPopupRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    const on = G.colonyPopup === 'build' && r.label === c.building;
+    FONT.tiny.draw(ctx, (on ? '* ' : '') + r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
+    if (r.note) FONT.tiny.draw(ctx, r.note, b.x + b.w - 8 - FONT.tiny.width(r.note), y + 1,
+                               lut(sel ? 0xFC : 0x5D));
+  });
+}
+function colonyPopupCommit() {
+  const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
+  if (!r) { G.colonyPopup = null; return; }
+  if (G.colonyPopup === 'build') {
+    c.building = r.label;
+    G.msg = `${c.name} begins the ${r.label}.`;
+  } else {
+    const p = c.colonists[G.colonistSel];
+    if (p) {
+      p.job = G.colonyPopupRow === 0 ? null : jobForBuilding(r.label);
+      p.cell = null;                        // a building job means leaving the fields
+      G.msg = p.job ? `${p.type}: ${p.job}` : `${p.type}: no job`;
+    }
+  }
+  G.colonyPopup = null;
+}
+// A building's job is the @JOB row whose name the building is built around --
+// "Carpenter's Shop" -> Carpenter, "Blacksmith's House" -> Blacksmith, and so
+// on. Matching on the job name as a prefix of the building name covers every
+// production chain in @BUILDING.
+function jobForBuilding(name) {
+  const j = DATA.jobs.find(job => name.toLowerCase().startsWith(job.toLowerCase()));
+  return j || null;
 }
 
 // Right panel (207,130,95,48) plus the three view buttons beside it.
@@ -1398,6 +1495,12 @@ function drawColonyPanel(ctx, c) {
     for (let i = 0; i < hammers; i++) sheetFrame(ctx, 'ICONS', 54, px + i * 8, py + 26);
     FONT.tiny.draw(ctx, hammers ? `${hammers} hammers` : 'No carpenter',
                    px + hammers * 8 + 4, py + 29, lut(hammers ? SOL_INK : 0x0C));
+    const target = c.building;
+    if (target) {
+      const b = DATA.buildings.find(d => d.name === target);
+      FONT.tiny.draw(ctx, target, px, py + 36, lut(PANEL_INK));
+      FONT.tiny.draw(ctx, `${c.hammers}/${b.cost}`, px, py + 43, lut(SOL_INK));
+    } else FONT.tiny.draw(ctx, 'Building nothing', px, py + 36, lut(PANEL_INK));
   }
   // View buttons.
   for (let k = 0; k < 3; k++) {
@@ -1724,6 +1827,7 @@ function endTurn() {
   if (G.year < 1600) G.year += 1;
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
+  for (const c of G.colonies) advanceConstruction(c);
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -1981,13 +2085,47 @@ function onClick(mx, my) {
       if (G.woodcut === 1) { G.screen = 'map'; askLandName(); }
       else G.screen = 'colony';
       break;
-    case 'colony':
+    case 'colony': {
+      if (G.colonyPopup) {
+        const b = colonyPopupBox(), seed = b.y + 6 + 6 + 3;
+        for (let k = 0; k < b.rows.length; k++)
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * 8, w: b.w - 6, h: 8 })) {
+            G.colonyPopupRow = k; colonyPopupCommit(); return;
+          }
+        G.colonyPopup = null;
+        return;
+      }
+      const c = G.colonies[G.colony];
+      // Scene panel: a click on one of the nine visible cells puts the selected
+      // plaza colonist to work that field, or calls a worker back in.
+      if (c && hit(mx, my, { x: 224, y: 32, w: 72, h: 72 })) {
+        const cx = Math.floor((mx - 224) / 24) - 1, cy = Math.floor((my - 32) / 24) - 1;
+        if (cx === 0 && cy === 0) return;                 // the centre works itself
+        const on = c.colonists.find(p => p.cell && p.cell[0] === cx && p.cell[1] === cy);
+        if (on) { on.cell = null; on.job = null; G.msg = `${on.type} returns to the plaza.`; }
+        else {
+          const idle = c.colonists.find(p => !p.cell);
+          if (idle) { idle.cell = [cx, cy]; idle.job = 'Farmer'; G.msg = `${idle.type}: Farmer`; }
+        }
+        return;
+      }
+      // Plaza: click a colonist to select, click again for the jobs menu.
+      if (c && hit(mx, my, { x: 0, y: 130, w: 120, h: 48 })) {
+        const idlers = c.colonists.map((p, i) => i).filter(i => !c.colonists[i].cell);
+        const k = Math.floor((mx - 2) / 14);
+        if (k >= 0 && k < idlers.length) {
+          if (G.colonistSel === idlers[k]) { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
+          else G.colonistSel = idlers[k];
+        }
+        return;
+      }
       for (let k = 0; k < 3; k++) {
         if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
                           w: VIEW_BTN.w, h: VIEW_BTN.h })) { G.colonyView = k; return; }
       }
       if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
       break;
+    }
     case 'europe': {
       if (G.euroMenu) {
         const b = euroMenuBox();
@@ -2095,11 +2233,23 @@ function onKey(e) {
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
-    case 'colony':
-      // Keys 1/2/3 select the right-panel view, matching the three buttons.
+    case 'colony': {
+      if (G.colonyPopup) {
+        const n = colonyPopupRows().length;
+        if (k === 'ArrowUp') G.colonyPopupRow = (G.colonyPopupRow + n - 1) % n;
+        if (k === 'ArrowDown') G.colonyPopupRow = (G.colonyPopupRow + 1) % n;
+        if (k === 'Enter' || k === ' ') colonyPopupCommit();
+        if (k === 'Escape') G.colonyPopup = null;
+        break;
+      }
+      // §26.8 keys: 1/2/3 select the right-panel view, C opens the construction
+      // menu, Enter the jobs menu for the selected colonist, ESC/x exits.
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
+      if (k === 'c' || k === 'C') { G.colonyPopup = 'build'; G.colonyPopupRow = 0; }
+      if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
+    }
     case 'europe': {
       if (G.euroMenu) {
         const n = euroMenuRows().length;

@@ -153,8 +153,10 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 
 | Item | Status | Note |
 |---|---|---|
-| Construction menu (build a building) | **TBD** | The C / "construction menu" command opens a popup in the real game; not built. The `@BUILDING` costs, tools and `min_colony` gates are all exported and ready. |
-| Field-work assignment UI | **TBD** | Colonists now carry a `job` and an optional worked `cell`, and both food and hammers read them, but there is no UI to assign a colonist to a field or a building yet. |
+| Construction menu (build a building) | **DONE** 2026-08-04 | `C` opens a popup listing every `@BUILDING` row the colony lacks and whose `min_colony` gate its population meets, with the hammers/tools cost. Hammers bank each turn from working carpenters; the building completes when hammers and tools are both paid. |
+| Field-work assignment | **DONE** 2026-08-04 | Click a cell in the 3×3 scene window to put an idle colonist on that field (or click a worker to recall them); `Enter` opens the jobs menu to put one into a building. Food and hammers both read the assignments. |
+| Job → building mapping | **PARTIAL** | A building's job is taken as the `@JOB` row whose name prefixes the building name (Carpenter's Shop → Carpenter). That covers every production chain in `@BUILDING`, but the engine's own building→job table is unread. |
+| Per-job field yields | **PARTIAL** | Field workers are assigned as Farmers, so only the `y_farmer` column is exercised. The other eight yield columns are exported and the tile lookup is general, but there is no UI to pick a non-food profession for a field. |
 
 ## Port implementation gaps (2026-08-04)
 

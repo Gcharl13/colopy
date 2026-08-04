@@ -114,7 +114,8 @@ def build_data():
     # a size-1 colony is the Stockade (min_colony 3), so "upkeep 0 AND
     # min_colony 1" selects the seven starting buildings exactly.
     D["buildings"] = [{"name": r["name"], "cost": int(r["cost"]),
-                       "min_colony": int(r["min_colony"]), "upkeep": int(r["upkeep"])}
+                       "min_colony": int(r["min_colony"]), "upkeep": int(r["upkeep"]),
+                       "tools_x10": int(r["tools_x10"])}
                       for r in rows("@BUILDING")]
 
     # Per-terrain job yields, used for colony production. Row order is the

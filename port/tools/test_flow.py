@@ -175,6 +175,54 @@ SCRIPT = """() => {
   onClick(310, 190);
   out.europeExit = G.screen;
 
+  // ---- colony work assignment and construction ----
+  {
+    beginGame(); G.screen = 'map';
+    const sh = G.units[0];
+    for (let i = 0; i < 25 && !G.dialog; i++) { sh.movesLeft = 9; moveSel(-1, 0); }
+    closeDialog(1); onClick(-1, -1); dialogKey('Enter');
+    G.sel = G.units.findIndex(u => !u.ship);
+    buildColony(); closeDialog('Jamestown');
+    G.screen = 'colony';
+    const c = G.colonies[0];
+    c.colonists.push({ type: 'Colonists', job: null, cell: null });
+    c.colonists.push({ type: 'Colonists', job: null, cell: null });
+
+    // A new colony makes no hammers: it has the shop but nobody in it.
+    out.hammersBeforeCarpenter = colonyHammers(c);
+
+    // Click a scene cell to put an idle colonist on that field.
+    onClick(224 + 12, 32 + 12);                     // cell (-1,-1)
+    const worker = c.colonists.find(p => p.cell);
+    out.fieldWork = !!worker && worker.job === 'Farmer' &&
+                    worker.cell[0] === -1 && worker.cell[1] === -1;
+    const f = colonyFood(c);
+    out.food = { centre: f.centre > 0, fields: f.fields > 0, eaten: f.eaten === 2 * c.colonists.length };
+
+    // Jobs menu puts a colonist in the Carpenter's Shop, and only then do
+    // hammers appear.
+    G.colonistSel = c.colonists.findIndex(p => !p.cell);
+    G.colonyPopup = 'jobs';
+    G.colonyPopupRow = colonyPopupRows().findIndex(r => r.label === "Carpenter's Shop");
+    colonyPopupCommit();
+    out.hammersAfterCarpenter = colonyHammers(c);
+
+    // Construction menu offers only ungated, unbuilt rows, and banks hammers
+    // until the target is paid for.
+    G.colonyPopup = 'build';
+    const opts = colonyPopupRows();
+    out.buildGated = opts.every(r => {
+      const b = DATA.buildings.find(d => d.name === r.label);
+      return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
+    });
+    G.colonyPopupRow = opts.findIndex(r => r.label === 'Docks');
+    colonyPopupCommit();
+    out.buildTarget = c.building;
+    const cost = DATA.buildings.find(b => b.name === 'Docks').cost;
+    for (let t = 0; t < cost + 2; t++) endTurn();
+    out.built = { done: c.buildings.includes('Docks'), targetCleared: c.building === null };
+  }
+
   // ---- menu bar and key commands (§27.1) ----
   const press = (k, mod) => onKey(Object.assign(
     { key: k, preventDefault() {}, altKey: false, shiftKey: false }, mod || {}));
@@ -335,6 +383,16 @@ def main():
         ("menu rows dispatch and close", r["menuDispatch"], r["menuDispatch"]),
         ("unimplemented rows say so", r["menuAbsent"], r["menuAbsent"]),
         ("no silently-dead menu rows", r["everyRowAccounted"], r["everyRowAccounted"]),
+        ("a new colony makes no hammers without a carpenter",
+         r["hammersBeforeCarpenter"] == 0, r["hammersBeforeCarpenter"]),
+        ("clicking a scene cell assigns field work", r["fieldWork"], r["fieldWork"]),
+        ("food = centre tile + worked fields, eaten = 2*pop",
+         all(r["food"].values()), r["food"]),
+        ("a carpenter in the shop produces hammers",
+         r["hammersAfterCarpenter"] == 1, r["hammersAfterCarpenter"]),
+        ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
+        ("construction banks hammers and completes the building",
+         r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("dialog frame is outline + ring + bevel in paint order",
          all(r["frame"].values()), r["frame"]),
     ]
