@@ -6510,3 +6510,34 @@ channel error against the capture — the residual is the capture's own colour r
 **Action taken**: `port/src/game.js` `plaque()` rewritten to the four-step recipe with
 `FRAME_BOOT` (0x2E / 0xFD / 0x37, OPENTILE) and `FRAME_GAME` (134 / 128 / 138, WOODTILE);
 `port/tools/test_flow.py` samples the rings and both corners off a scratch canvas.
+
+---
+
+## 2026-08-04 — Selection-band ink is palette-scoped; O512 stencils are index-0 holes
+
+**1. The in-game selection band is @COLORS `select` (138), not 0x37.** The boot mode setter
+(`@0x0734BC`) ties `[0x1F40]/[0x1F42]` to **0x37**, which through OPENMENU's palette is
+(56,32,24) — confirmed against the highlighted row of
+`docs/screens/01_mainmenu_BEGINMENU.png`. The in-game setter (`@0x073474`) instead takes its
+inks from `[0x830..]` = NAMES `@COLORS`, and that row carries a field literally named
+**`select` = 138 = (60,32,24)** — the same dark brown. Carrying 0x37 onto an in-game screen is
+wrong: through the wood/Europe palettes 0x37 is a **blue** (93,121,186), which is exactly what
+every in-game pulldown, dialog and Europe menu was showing. Third instance of the same class of
+bug (see the woodcut caption and the Europe button border): **an ink index is meaningless
+without the palette it indexes.**
+
+**2. The O512 edge stencils are index-0 HOLES, not dots.** §6.11 calls PHYS0 `0x68..0x6B` "a
+sparse index-0 dot stencil". Decoding frame 0x68 gives **241 pixels of index 253 and 15 of
+index 0**, the 15 forming a dither along the north edge. So the index-0 pixels are the holes
+the neighbour's terrain shows through, and the mask is the *inverse* of the PHYS0C atlas
+(which renders index 0 transparent) — a `destination-out` composite, not `source-in`. Reading
+"dot stencil" as "the dots are drawn" produces a fully transparent stencil and no blend at all.
+
+**3. Map-screen black separators.** Scanning `docs/screens/06_ingame_map.png` for rows/columns
+≥60% black gives exactly two: the full-width row at **y=7** under the menu bar and the
+full-height column at **x=240** between viewport and sidebar.
+
+**Action taken**: `port/src/game.js` — `SELECT_BOOT`/`SELECT_GAME` split; `edgeBlend()` +
+`stencilBlit()` implement O512 for land centres (including the W→S→E→N ring-walk that produces
+the beach dither); the two map separators drawn; the pulldown moved after the sidebar so
+COLONIZOPEDIA's menu is not covered by the minimap.

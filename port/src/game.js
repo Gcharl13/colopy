@@ -344,6 +344,14 @@ function centerOn(tx, ty) {
 // from [0x830..], which is the NAMES @COLORS row -- and its last three fields
 // are border0/border1/border2 = 134/128/138, a mid, a lighter and a darker
 // wood brown. That is exactly a ring-plus-bevel triplet, so they map in order.
+// Selection band: the boot setter ties [0x1F40]/[0x1F42] to 0x37, which
+// resolves through OPENMENU's palette to (56,32,24) -- confirmed against the
+// selected row in docs/screens/01_mainmenu_BEGINMENU.png. The in-game setter
+// takes its inks from [0x830..] = NAMES @COLORS, whose `select` field is 138 =
+// (60,32,24), the same dark brown. Using 0x37 on an in-game screen is wrong:
+// through the wood palettes it is a BLUE (93,121,186), which is what the
+// landfall dialog and every pulldown were showing.
+const SELECT_BOOT = 0x37, SELECT_GAME = 138;
 const FRAME_BOOT = { ring: 0x2E, light: 0xFD, dark: 0x37 };
 const FRAME_GAME = { ring: 134, light: 128, dark: 138 };
 function plaque(ctx, x, y, w, h, tileSheet, frame) {
@@ -422,7 +430,7 @@ function drawDialog(ctx) {
   if (d.opts) {
     d.opts.forEach((o, k) => {
       const oy = seed + k * 8;
-      if (k === d.sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 4, oy, b.w - 8, 7); }
+      if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, 7); }
       FONT.tiny.draw(ctx, o, b.x + 9, oy + 1, lut(k === d.sel ? 0xFC : 0xFE));
     });
   } else {
@@ -495,7 +503,7 @@ function drawTitle(ctx) {
   // Options: x=box+9, tops y=107+8k (pitch 8); selection bar (box+4, top-1, 158, 7).
   MENU_OPTS.forEach((opt, k) => {
     const oy = 107 + 8 * k;
-    if (k === G.menuRow) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 4, oy - 1, 158, 7); }
+    if (k === G.menuRow) { ctx.fillStyle = ink(SELECT_BOOT); ctx.fillRect(b.x + 4, oy - 1, 158, 7); }
     FONT.tiny.draw(ctx, opt, b.x + 9, oy, lut(k === G.menuRow ? 0xFC : 0xFE));
   });
 }
@@ -694,6 +702,63 @@ function wrapText(font, s, width) {
   return out;
 }
 
+// §6.11 -- O512 (func_067F50), the biome-edge blend. For each of the four
+// cardinals N,E,S,W (dir 0..3) it compares the neighbour's terrain class with
+// the centre's; where they differ it stamps stencil PHYS0 disk 0x68+dir and
+// masked-blits the NEIGHBOUR's ground through it, so the neighbour bleeds into
+// this tile's edge as a dither gradient. Every biome transition on the map comes
+// from this one composer.
+//
+// The stencil is an INDEX-0 DOT stencil: decoding PHYS0 frame 0x68 gives 241
+// pixels of index 253 and 15 of index 0, the 15 forming a sparse dither along
+// the north edge. The holes are where the neighbour shows, so the mask is the
+// inverse of the PHYS0C atlas (which makes index 0 transparent) -- hence
+// destination-out rather than source-in.
+//
+// Water centres skip it: their edges are the §6.7 coast composition. When a
+// land centre's neighbour is water, the engine ring-walks that neighbour's
+// cardinals W -> S -> E -> N and takes the first non-water class, which is what
+// produces the dithered land-side beach.
+const O512_DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];        // N, E, S, W
+const O512_RING = [[-1, 0], [0, 1], [1, 0], [0, -1]];        // W, S, E, N
+const STENCIL_BASE = 0x68;
+let _stencil = null;
+function stencilBlit(ctx, dir, groundIdx, px, py) {
+  if (!_stencil) {
+    const c = document.createElement('canvas');
+    c.width = TILE; c.height = TILE;
+    _stencil = c.getContext('2d');
+  }
+  _stencil.globalCompositeOperation = 'source-over';
+  _stencil.clearRect(0, 0, TILE, TILE);
+  sheetFrame(_stencil, 'TERRAIN', groundIdx, 0, 0);
+  _stencil.globalCompositeOperation = 'destination-out';
+  sheetFrame(_stencil, 'PHYS0C', STENCIL_BASE + dir, 0, 0);
+  _stencil.globalCompositeOperation = 'source-over';
+  ctx.drawImage(_stencil.canvas, px, py);
+}
+function edgeBlend(ctx, mx, my, px, py) {
+  const v = at(mx, my);
+  if (tileWater(v)) return;
+  const cls = groundFrame(v);
+  for (let d = 0; d < 4; d++) {
+    const [dx, dy] = O512_DIRS[d];
+    let nv = at(mx + dx, my + dy);
+    if (tileWater(nv)) {
+      let found = null;
+      for (const [rx, ry] of O512_RING) {
+        const w = at(mx + dx + rx, my + dy + ry);
+        if (!tileWater(w)) { found = w; break; }
+      }
+      if (found === null) continue;              // still water: no edge
+      nv = found;
+    }
+    const ncls = groundFrame(nv);
+    if (ncls === cls) continue;                  // same class: no edge
+    stencilBlit(ctx, d, ncls, px, py);
+  }
+}
+
 // ------------------------------------------------------------ tile compositor
 // The O514 -> O513 -> O512 chain of §6.3-6.11. Implemented here: ground fold,
 // the adjacency-masked forest / relief / river bands, river mouths, the coastal
@@ -753,6 +818,9 @@ function drawTile(ctx, mx, my, px, py) {
 
   if (!water) {
     sheetFrame(ctx, 'TERRAIN', ocean, px, py);
+    // O512 runs right after the ground so the neighbour dither sits under the
+    // overlays, not over them (§6.11, call site 0x68315).
+    edgeBlend(ctx, mx, my, px, py);
     // §6.4 forest, §6.5 relief, §6.6 river -- in O513's draw order.
     if (forestConnects(v)) {
       sheetFrame(ctx, 'PHYS0', PHYS.FOREST + mask4(mx, my, forestConnects), px, py);
@@ -867,6 +935,9 @@ function drawMap(ctx) {
   }
   drawMenuBar(ctx);
   drawSidebar(ctx);
+  // The pulldown is drawn AFTER the sidebar: COLONIZOPEDIA's menu overhangs the
+  // minimap panel, and drawing it with the bar put the minimap on top of it.
+  if (G.openMenu >= 0) drawPulldown(ctx);
   drawDialog(ctx);
 }
 
@@ -899,7 +970,12 @@ function drawUnit(ctx, u, px, py) {
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
                     ['REPORTS', 119], ['TRADE', 161], ['COLONIZOPEDIA', 259]];
 function drawMenuBar(ctx) {
-  ctx.fillStyle = ink(0); ctx.fillRect(0, 7, W, 1);
+  // Black separators, measured on docs/screens/06_ingame_map.png: a full-width
+  // row at y=7 under the menu bar, and a full-height column at x=240 between
+  // the viewport and the sidebar. Those are the only two on this screen.
+  ctx.fillStyle = ink(0);
+  ctx.fillRect(0, 7, W, 1);
+  ctx.fillRect(240, 8, 1, H - 8);
   BAR_TITLES.forEach(([t, x], i) => {
     if (i === G.openMenu) {
       ctx.fillStyle = ink(0x37);
@@ -907,7 +983,6 @@ function drawMenuBar(ctx) {
     }
     FONT.tiny.draw(ctx, t, x, 1, lut(HUD_INK));
   });
-  if (G.openMenu >= 0) drawPulldown(ctx);
 }
 // The pulldown itself: rows from MENU.TXT, the "~" accelerator letter picked
 // out in gold, greyed rows dimmed. Width fits the longest label.
@@ -925,7 +1000,7 @@ function drawPulldown(ctx) {
   m.rows.forEach((r, k) => {
     const y = b.y + 2 + k * 8;
     const sel = k === G.menuSel;
-    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 2, y, b.w - 4, 8); }
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 2, y, b.w - 4, 8); }
     const dim = r.disabled || !COMMANDS[r.label];
     const base = dim ? 0x2F : (sel ? 0xFC : 0xFE);
     // Draw the accelerator letter in gold where the row is live.
@@ -1021,7 +1096,10 @@ function buildColony() {
       name: nm, x: u.x, y: u.y, nation: G.nation,
       // A new colony starts with its founder in the plaza and an empty
       // warehouse; the fixed starting buildings are the three no-cost rows.
-      colonists: [u.type],
+      // Colonists carry a job and, if they work a field, the cell they work
+      // (signed -2..+2 from the colony centre). The founder starts in the
+      // plaza with no job -- which is why a new colony makes no hammers.
+      colonists: [{ type: u.type, job: null, cell: null }],
       stock: DATA.cargo.map(() => 0),
       buildings: STARTING_BUILDINGS.slice(),
       sol: 0,
@@ -1069,12 +1147,26 @@ function tileYield(v, job) {
 // documented modifiers that ARE cited are applied: +2 at difficulty 0, +1 at
 // difficulty 1, +1 for a river. The band function is TBD.
 function colonyFood(c) {
+  // The CENTRE TILE produces with no worker -- that is the whole point of it --
+  // and every colonist working a field adds their own tile's farmer yield.
   const v = at(c.x, c.y);
-  let produced = tileYield(v, JOB_FARMER);
-  if (G.difficulty === 0) produced += 2; else if (G.difficulty === 1) produced += 1;
-  if (tileRiver(v)) produced += 1;
+  let centre = tileYield(v, JOB_FARMER);
+  if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
+  if (tileRiver(v)) centre += 1;
+  let fields = 0;
+  for (const p of c.colonists) {
+    if (!p.cell || p.job !== 'Farmer') continue;
+    fields += tileYield(at(c.x + p.cell[0], c.y + p.cell[1]), JOB_FARMER);
+  }
+  const produced = centre + fields;
   const eaten = 2 * c.colonists.length;
-  return { produced, eaten, net: produced - eaten };
+  return { centre, fields, produced, eaten, net: produced - eaten };
+}
+// Hammers come from colonists working AS CARPENTERS in a Carpenter's Shop --
+// the building alone produces nothing.
+function colonyHammers(c) {
+  if (!c.buildings.includes("Carpenter's Shop")) return 0;
+  return c.colonists.filter(p => p.job === 'Carpenter').length;
 }
 
 // A ship entering the sea lane leaves the map for the home port. Ships carry a
@@ -1199,26 +1291,22 @@ function drawColony(ctx) {
   for (let ty = 0; ty < 5; ty++)
     for (let tx = 0; tx < 5; tx++)
       drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16, ty * 16);
-  // Colony and unit markers go on the 80x80 BEFORE the upscale, so they are
-  // stretched with the terrain rather than drawn crisp over it.
-  for (const o of G.colonies) {
-    const dx = o.x - c.x + 2, dy = o.y - c.y + 2;
-    if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
-    const [fw, fh] = frameSize('ICONS', o.nation);
-    sheetFrame(sg, 'ICONS', o.nation, dx * 16 + (16 - fw) / 2, dy * 16 + (16 - fh) / 2);
-  }
-  for (const u of G.units) {
-    const dx = u.x - c.x + 2, dy = u.y - c.y + 2;
-    if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(sg, 'ICONS', u.icon, dx * 16 + 16 - fw, dy * 16 + 16 - fh);
-  }
   ctx.imageSmoothingEnabled = false;
   ctx.save();
   ctx.beginPath(); ctx.rect(224, 32, 72, 72); ctx.clip();
   ctx.drawImage(scene, 0, 0, 80, 80, 200, 8, 120, 120);
   ctx.restore();
   hollowRect(ctx, 223, 31, 74, 74, 0);
+  // Scene workers are drawn AFTER the upscale, at (cell*24+252, cell*24+60)
+  // with cell signed -2..+2 (§26.8). Nothing else goes in this panel: the map's
+  // units and colony markers do NOT appear here.
+  for (const p of c.colonists) {
+    if (!p.cell) continue;
+    const u = unit(p.type) || unit('Colonists');
+    const [fw, fh] = frameSize('ICONS', u.icon);
+    sheetFrame(ctx, 'ICONS', u.icon,
+               p.cell[0] * 24 + 252 - (fw >> 1), p.cell[1] * 24 + 60 - (fh >> 1));
+  }
   // The white rectangle marks the COLONY-CENTRE TILE, not the 3x3 window:
   // measured at x 248..271, y 56..79 in the capture = the cited (248,56,24,24).
   hollowRect(ctx, 248, 56, 24, 24, 0x0F);
@@ -1226,8 +1314,9 @@ function drawColony(ctx) {
   // COLONY.PIK town strip, 320x72 at y=128, then the panel captions over it.
   ctx.drawImage(IMG.COLONY, 0, 128);
   // Plaza (0,130,120,48): the colonists, left-aligned at the panel origin + 2.
-  c.colonists.forEach((n, i) => {
-    const u = unit(n);
+  // Plaza: colonists with no field assignment stand here.
+  c.colonists.filter(p => !p.cell).forEach((p, i) => {
+    const u = unit(p.type) || unit('Colonists');
     if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
   });
   drawColonyPanel(ctx, c);
@@ -1304,11 +1393,11 @@ function drawColonyPanel(ctx, c) {
     FONT.tiny.draw(ctx, `-${f.eaten}`, px + 24, py + 12, lut(0x0C));
     FONT.tiny.draw(ctx, `= ${f.net >= 0 ? '+' : ''}${f.net}`, px + 40, py + 12,
                    lut(f.net < 0 ? 0x0C : SOL_INK));
-    // Hammers: the Carpenter's Shop turns lumber into construction points, one
-    // hammer sprite (ICONS 54) per point -- the documented hammer strip.
-    const hammers = c.buildings.includes("Carpenter's Shop") ? 3 : 0;
+    // Hammers: one sprite (ICONS 54) per carpenter actually working the shop.
+    const hammers = colonyHammers(c);
     for (let i = 0; i < hammers; i++) sheetFrame(ctx, 'ICONS', 54, px + i * 8, py + 26);
-    FONT.tiny.draw(ctx, `${hammers} hammers`, px + hammers * 8 + 4, py + 29, lut(SOL_INK));
+    FONT.tiny.draw(ctx, hammers ? `${hammers} hammers` : 'No carpenter',
+                   px + hammers * 8 + 4, py + 29, lut(hammers ? SOL_INK : 0x0C));
   }
   // View buttons.
   for (let k = 0; k < 3; k++) {
@@ -1515,7 +1604,7 @@ const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null };
 // GAME.TXT body he is quoting -- and not for TRAIN, which is a bare list. He
 // sits 4px lower than the box top, not flush against it.
 const ADVISER_ECONOMIC = 'MSS2';
-const ADVISER_DROP = 4;
+const ADVISER_DROP = 5;
 const hasAdviser = () => EURO_MENU_KEY[G.euroMenu] !== null;
 function euroMenuBox() {
   const rows = euroMenuRows();
@@ -1550,7 +1639,7 @@ function drawEuroMenu(ctx) {
   b.rows.forEach((r, k) => {
     const y = seed + k * 8;
     const sel = k === G.euroMenuRow;
-    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
     // Unaffordable rows are DIMMED, not blacked out -- they still have to be
     // readable so you can see what you are saving up for.
     const afford = r.cost <= G.gold;

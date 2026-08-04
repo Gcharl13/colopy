@@ -149,6 +149,13 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 | TRADE | **TBD** | Trade-route editor not built. |
 | COLONIZOPEDIA | **TBD** | `colonizopedia.md` is specified; the browser is not built. |
 
+## Port: colony mechanics still open (2026-08-04)
+
+| Item | Status | Note |
+|---|---|---|
+| Construction menu (build a building) | **TBD** | The C / "construction menu" command opens a popup in the real game; not built. The `@BUILDING` costs, tools and `min_colony` gates are all exported and ready. |
+| Field-work assignment UI | **TBD** | Colonists now carry a `job` and an optional worked `cell`, and both food and hammers read them, but there is no UI to assign a colonist to a field or a building yet. |
+
 ## Port implementation gaps (2026-08-04)
 
 Tracked because the HTML port now renders these screens and the gaps are
