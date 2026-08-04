@@ -2393,6 +2393,23 @@ function applyFatherEffect(name) {
 // The F-key adviser ladder (§27.1). Four of the nine can be populated from
 // state this build actually keeps; the rest name themselves rather than showing
 // an empty frame. Each is a WOODPANL page with the adviser's own portrait.
+// Each report composites over its own REPORT<N>.PIK, not WOODPANL. The N is
+// NOT simply the F-key number: matching every shipped REPORT<N>.PIK against the
+// DOS captures in docs/screens/reports/ over the full frame gives
+//   F2 -> REPORT2 (2.7)   F3 -> REPORT3 (6.6)   F5 -> REPORT5 (14.5)
+//   F6 -> REPORT6 (2.4)   F8 -> REPORT8 (5.4)   F9 -> REPORT1 (3.3)
+// each at least 15 points clear of its runner-up. F9 taking REPORT1 is the
+// surprise, and it cross-checks: advisor_reports.md says the shared palette is
+// "identical across REPORT2/3/4/5/7/8/9" -- the two plates left out of that
+// group are 1 and 6, and 1 and 6 are exactly the two this matching assigns to
+// the two visually distinct reports (Indian and Colony).
+// F4 -> REPORT4 is the spec's own N=4; F7 -> REPORT7 by elimination. Their
+// captures could not be used: F4_labor.png and F7_naval.png are both map
+// screenshots, not reports.
+// F1 is not a report at all -- it is the Colonizopedia TERRAIN page
+// (CLAUDE.md hard rule 7), so it routes there.
+const REPORT_PIK = { F2: 'REPORT2', F3: 'REPORT3', F4: 'REPORT4', F5: 'REPORT5',
+                     F6: 'REPORT6', F7: 'REPORT7', F8: 'REPORT8', F9: 'REPORT1' };
 const REPORTS = {
   F2: { title: 'Religious Adviser', adviser: 'MSS4', body: () => {
     const thr = immigrationThreshold();
@@ -2431,6 +2448,28 @@ const REPORTS = {
     else { l.push('In Congress:'); for (const f of G.fathersOwned) l.push(`  ${f}`); }
     return l;
   } },
+  F4: { title: 'Labor Adviser', adviser: 'MSS5', body: () => {
+    if (!G.colonies.length) return ['You have no colonies.'];
+    const l = [];
+    for (const c of G.colonies) {
+      l.push(`${c.name}: ${c.colonists.length} colonists`);
+      const jobs = {};
+      for (const p of c.colonists) {
+        const k = p.cell ? `${p.job} (field)` : (p.job || 'idle');
+        jobs[k] = (jobs[k] || 0) + 1;
+      }
+      for (const k of Object.keys(jobs)) l.push(`   ${jobs[k]} x ${k}`);
+    }
+    return l;
+  } },
+  F10: { title: 'Colonization Score', adviser: 'MSS1', body: () => [
+    `Colonies:        ${G.colonies.length}`,
+    `Colonists:       ${G.colonies.reduce((n, c) => n + c.colonists.length, 0)}`,
+    `Units:           ${G.units.length}`,
+    `Treasury:        ${G.gold} gold`,
+    `Founding Fathers:${G.fathersOwned.length}`,
+    `Paid the Crown:  ${G.kingsFund} gold`,
+  ] },
   F8: { title: 'Foreign Affairs Adviser', adviser: 'MSS0', body: () => {
     if (!G.rivals.length) return ['No other powers are in the New World.'];
     return G.rivals.map(r => {
@@ -2458,8 +2497,9 @@ const REPORTS = {
 };
 function drawReport(ctx) {
   const r = REPORTS[G.report];
-  usePalette('WOODPANL');
-  ctx.drawImage(IMG.WOODPANL, 0, 0);
+  const pik = REPORT_PIK[G.report] || 'WOODPANL';
+  usePalette(pik);
+  ctx.drawImage(IMG[pik] || IMG.WOODPANL, 0, 0);
   if (!r) { FONT.tiny.center(ctx, 'Not in this build.', 160, 96, lut(0xFE)); return; }
   FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 6, lut(HUD_INK));
   const [pw, ph] = frameSize(r.adviser, 0);
@@ -2876,13 +2916,16 @@ const COMMANDS = {
                                  G.msg = `Hidden terrain ${G.showHidden ? 'on' : 'off'}.`; },
   'Center View': centreView,
   // REPORTS -- the four advisers this build can populate from real state.
+  'F1 Terrain Information': () => openPedia(2),
   'F2 Religious Adviser': () => { G.report = 'F2'; G.screen = 'report'; },
   'F3 Continental Congress': () => { G.report = 'F3'; G.screen = 'report'; },
   'F5 Economic Adviser': () => { G.report = 'F5'; G.screen = 'report'; },
   'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
   'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
+  'F4 Labor Adviser': () => { G.report = 'F4'; G.screen = 'report'; },
   'F8 Foreign Affairs Advisor': () => { G.report = 'F8'; G.screen = 'report'; },
   'F9 Indian Adviser': () => { G.report = 'F9'; G.screen = 'report'; },
+  'F10 Colonization Score': () => { G.report = 'F10'; G.screen = 'report'; },
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
   // GAME
   'Save Game': saveGame,
@@ -3213,6 +3256,9 @@ function onKey(e) {
       // F1-F10 report ladder. The advisor screens are not built, so each names
       // itself rather than pretending to open.
       if (/^F\d+$/.test(k)) {
+        // F1 "Terrain Information" is the Colonizopedia TERRAIN page, not a
+        // report -- CLAUDE.md hard rule 7.
+        if (k === 'F1') { openPedia(2); e.preventDefault(); return; }
         if (REPORTS[k]) { G.report = k; G.screen = 'report'; }
         else {
           const row = DATA.menus[3].rows[+k.slice(1) - 1];

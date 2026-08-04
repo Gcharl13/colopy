@@ -290,6 +290,15 @@ SCRIPT = """() => {
       europeansUseCountry: ownerColour(G.units[0]) === DATA.nations[G.nation].color,
     };
 
+    // Every built report has its own REPORT<N>.PIK, and F1 is not a report at
+    // all -- it is the Colonizopedia terrain page.
+    out.reportPiks = {
+      allLoaded: Object.values(REPORT_PIK).every(p => !!IMG[p]),
+      distinct: new Set(Object.values(REPORT_PIK)).size === Object.keys(REPORT_PIK).length,
+      f9UsesReport1: REPORT_PIK.F9 === 'REPORT1',
+      f1NotAReport: REPORTS.F1 === undefined,
+    };
+
     // Rival powers start at their own @SCENARIO positions, found colonies from
     // their own COLONY.TXT name pools, and never plant in water.
     {
@@ -570,6 +579,8 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("each report has its own REPORT<N>.PIK background",
+         all(r["reportPiks"].values()), r["reportPiks"]),
         ("three rivals start at their @SCENARIO positions",
          all(r["rivals"].values()), r["rivals"]),
         ("rivals found colonies on land from their own name pools",

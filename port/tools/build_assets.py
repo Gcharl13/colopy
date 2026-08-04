@@ -147,6 +147,7 @@ def main():
 
     want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
                 "KINGLSS1", "KINGLSS2", "COLONY", "EUROPE"] + \
+        [f"REPORT{i}" for i in range(1, 10)] + \
         [f"LEVN{i:04d}" for i in range(1, 11)]
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",

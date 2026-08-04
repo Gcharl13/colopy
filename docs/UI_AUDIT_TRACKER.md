@@ -145,7 +145,7 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 | ORDERS | **MOSTLY DONE** | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live. **Absent**: Pillage, Go to Place, Begin Trade Route. |
 | VIEW | **DONE** | Move/View Pieces, European Status, Find Colony, Zoom In/Out, the four zoom levels, Show Hidden Terrain, Center View. Zoom spans verified as `(0xF<<z) × (0xC<<z)` at `(0x10>>z)` px. |
 | GAME | **PARTIAL** | Save Game / Load Game work (localStorage; the whole of `G` is the save). Options, Pick Music, Retire and Exit are still absent. |
-| REPORTS | **PARTIAL** | F2 Religious, F5 Economic, F6 Colony and F7 Naval are built from real state, each with its own adviser portrait. F1/F3/F4/F8/F9/F10 name themselves — the state they report on (congress, labour allocation, foreign powers, natives, score) does not exist yet. |
+| REPORTS | **MOSTLY DONE** | F2 Religious, F3 Congress, F4 Labor, F5 Economic, F6 Colony, F7 Naval, F8 Foreign Affairs, F9 Indian and F10 Score are all built from real state, each over **its own REPORT&lt;N&gt;.PIK** (mapping established by matching the plates against the DOS captures — RULINGS.md 2026-08-04) with its own adviser portrait. F1 routes to the Colonizopedia terrain page, which is what it actually is. **PARTIAL**: the per-report body layouts are the port's own, not the byte-cited x-columns and y-flow in `advisor_reports.md`. |
 | TRADE | **TBD** | Trade-route editor not built. |
 | COLONIZOPEDIA | **DONE** 2026-08-04 | All seven categories plus Complete, articles straight from PEDIA.TXT, three-column index pager, stat blocks from the NAMES tables. |
 

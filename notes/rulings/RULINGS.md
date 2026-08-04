@@ -6598,3 +6598,41 @@ European colony flies its pennant sprite (disk 118+power); and the minimap dots 
 **Action taken**: `port/tools/bundle.py` exports `color` per tribe; `port/src/game.js` gains
 `ownerColour(u)` (nation ≥ 0 → `@COUNTRY.color`, else the tribe's), and `nationPlate` takes a
 colour index rather than a nation id.
+
+---
+
+## 2026-08-04 — Advisor reports use REPORT&lt;N&gt;.PIK, and N is not the F-key number
+
+**Finding**: the advisor screens composite over their own `REPORT<N>.PIK`, not WOODPANL
+(`spec/ui/advisor_reports.md`: *"the true art is `REPORT<N>.PIK` with N = the report's title
+number"*). Nine plates ship. The spec gives some N values in passing but not a complete table,
+and the N is **not** the F-key number.
+
+**Method**: match every shipped plate against the DOS captures in `docs/screens/reports/`,
+cropping each capture's 640×400 content box and comparing the full frame:
+
+| report | plate | error | runner-up |
+|---|---|---|---|
+| F2 Religious | **REPORT2** | 2.7 | 29.5 |
+| F3 Congress | **REPORT3** | 6.6 | 29.5 |
+| F5 Economic | **REPORT5** | 14.5 | 38.8 |
+| F6 Colony | **REPORT6** | 2.4 | 26.1 |
+| F8 Foreign Affairs | **REPORT8** | 5.4 | 24.8 |
+| F9 Indian | **REPORT1** | 3.3 | 20.1 |
+
+Every one is at least 15 points clear of its runner-up. **F9 → REPORT1** is the surprise, and it
+cross-checks against the spec: advisor_reports.md notes the shared palette is *"identical across
+REPORT2/3/4/5/7/8/9"* — the two plates excluded from that group are **1 and 6**, and 1 and 6 are
+exactly the two this matching assigns to the two visually distinct reports (Indian and Colony).
+
+**Unmatched**: `F4_labor.png` and `F7_naval.png` are **map screenshots, not reports** — both
+score ~90 against every plate. F4 → REPORT4 is taken from the spec's own `N=4`; F7 → REPORT7 by
+elimination. Recorded as inferred.
+
+**F1 is not a report.** "Terrain Information" is the Colonizopedia TERRAIN page (CLAUDE.md hard
+rule 7), which is why its capture is named `F1_terrain_colonopedia.png` and matches no plate.
+The port routes F1 to the pedia.
+
+**Action taken**: `port/tools/build_assets.py` extracts REPORT1–9; `port/src/game.js` gains
+`REPORT_PIK` and each report draws over its own plate; F1 opens the pedia; F4 Labor and F10
+Score are built.
