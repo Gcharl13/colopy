@@ -188,7 +188,7 @@ def main():
             # sheet_to_png). Text drawn *over* a sheet has to resolve through it
             # too, so the woodcut screen -- whose FONT-NP caption ink is quoted
             # as palette indices 0x5C/0x5D/0x5E -- needs the table exported.
-            if nm in ("WOODFRAM",):
+            if nm in ("WOODFRAM", "WOODTILE"):
                 sp = ssdec.load_sheet(str(p))["pal"]
                 bundle["sheets"][nm]["pal"] = [[sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]]
                                                for i in range(256)]

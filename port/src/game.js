@@ -275,16 +275,15 @@ function mkUnit(name, x, y, cargo) {
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
   G.tax = 0; G.year = 1492; G.season = 0; G.turn = 0;
-  // Starting force (§18.11 / new_game_setup): a Caravel carrying Pioneers +
-  // Soldiers, at the nation's start tile from NAMES @SCENARIO. The Dutch ship
-  // is upgraded to a Merchantman. At difficulty <= 1 the placement runs twice.
-  const dutch = G.nation === 3;
+  // Starting force (new_game_setup): ONE ship carrying Pioneers + Soldiers, at
+  // the nation's start tile from NAMES @SCENARIO, at every difficulty. The
+  // Dutch ship is a Merchantman. (§18.11 claims the force is "doubled at d <= 1
+  // by a second placement pass"; that claim carries no function cite anywhere
+  // in the tree and play shows one ship at every level -- see RULINGS.md
+  // 2026-08-04. Difficulty scales starting gold, not hulls.)
   const [sx, sy] = DATA.starts[G.nation];
-  const mk = () => {
-    const u = unit(dutch ? 'Merchantman' : 'Caravel');
-    return mkUnit(u.name, sx, sy, ['Pioneers', 'Soldiers']);
-  };
-  G.units = (G.difficulty <= 1) ? [mk(), mk()] : [mk()];
+  G.units = [mkUnit(G.nation === 3 ? 'Merchantman' : 'Caravel', sx, sy,
+                    ['Pioneers', 'Soldiers'])];
   G.sel = 0;
   G.landHo = false; G.newLand = '';
   centerOn(sx, sy);
@@ -471,7 +470,6 @@ function drawNation(ctx) {
   FONT.tiny.center(ctx, n.country.toUpperCase() + ':', c.x + c.w / 2, c.y + 2, lut(254), ink(0));
   FONT.tiny.center(ctx, DATA.text.misc[173 + G.nation], c.x + c.w / 2, c.y + c.h - 9,
                    lut(n.color), ink(0));
-  FONT.tiny.center(ctx, n.leader, 56, 70, lut(0xFC), ink(0));
   FONT.tiny.center(ctx, '(' + DATA.text.misc[161] + ')', 56, 182, lut(254));
 }
 
@@ -748,8 +746,16 @@ function drawTile(ctx, mx, my, px, py) {
 // §26.7 — viewport (0,8,240,192) 15x12 @16px; sidebar right; menu bar on top.
 const VP = { x: 0, y: 8, w: 240, h: 192 };
 function drawMap(ctx) {
-  usePalette('WOODPANL');
-  ctx.drawImage(IMG.WOODPANL, 0, 0);
+  // The map screen's chrome is WOODTILE.SS frame 0 (32x24) tiled from the
+  // screen origin -- a fine, repeating grain -- NOT the big-swirl WOODPANL.PIK
+  // panel used by the full-screen dialogs. Scored against
+  // docs/screens/06_ingame_map.png over a text-free sidebar patch: WOODTILE
+  // tiled at phase (0,0) = 2.90 mean channel error, WOODPANL = 11.91,
+  // OPENTILE = 8.05. (map_view.md's "Sidebar bg: WOODPANL.PIK" is wrong.)
+  usePalette('WOODTILE');
+  const [tw, th] = frameSize('WOODTILE', 0);
+  for (let y = 0; y < H; y += th)
+    for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
   ctx.fillStyle = ink(0);
   ctx.fillRect(VP.x, VP.y, VP.w, VP.h);
   for (let ty = 0; ty < VIEW_TILES_Y; ty++) {
@@ -970,15 +976,19 @@ function onClick(mx, my) {
       break;
     }
     case 'name': G.briefPage = 0; G.screen = 'briefing'; break;
+    // The audience commissions the voyage, so it precedes it: the @BUILD cards
+    // narrate the expedition already under way ("Commissioned and Blessed by
+    // the King of England", "A Ship loaded with Pioneers and Soldiers Set
+    // Sail"), which only follows the throne room.
     case 'briefing':
       if (G.briefPage === 0) G.briefPage = 1;
-      else { G.card = 0; G.screen = 'cards'; }
-      break;
-    case 'cards':
-      if (G.card < 9) G.card++;
       else G.screen = 'king';
       break;
-    case 'king': beginGame(); G.screen = 'map'; break;
+    case 'king': G.card = 0; G.screen = 'cards'; break;
+    case 'cards':
+      if (G.card < 9) G.card++;
+      else { beginGame(); G.screen = 'map'; }
+      break;
     case 'woodcut': G.screen = 'map'; askLandName(); break;
     case 'map': {
       if (hit(mx, my, VP)) {
@@ -1035,7 +1045,7 @@ function onKey(e) {
     case 'king':
     case 'woodcut':
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
-      if (k === 'Escape' && G.screen === 'cards') G.screen = 'king';
+      if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
     case 'map':
       if (k === 'ArrowLeft') moveSel(-1, 0);

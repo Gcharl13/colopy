@@ -36,7 +36,11 @@ confirms hard rule #3 byte-for-byte: `and al,0x1f` (`@0x620A`) then auto-forest 
 (`and ax,7; or al,8` `@0x6225`). **B**.
 
 ## 3. Assets & text
-- **Tiles:** **TERRAIN.SS = base ground**, composited under **PHYS0.SS overlays** (forest/river/mountain/hill/resource + the **water-tile coast composition**: shore `0x96` + 16×16 edges `0x97..0x99` or the 8×8 quadrant sub-tiles `0x6D..0x8B`); BDARK.SS is the only orphan (CLAUDE.md #5, amended 2026-06-22). **No road overlay** — the `0x6D` band once labelled "roads" is the coast sub-tile set (`map_system.md` §3, corrected 2026-06-22). Map units/colonies: ICONS.SS. Sidebar bg: WOODPANL.PIK. Cursor: CURSOR.SS. **A/B**
+- **Tiles:** **TERRAIN.SS = base ground**, composited under **PHYS0.SS overlays** (forest/river/mountain/hill/resource + the **water-tile coast composition**: shore `0x96` + 16×16 edges `0x97..0x99` or the 8×8 quadrant sub-tiles `0x6D..0x8B`); BDARK.SS is the only orphan (CLAUDE.md #5, amended 2026-06-22). **No road overlay** — the `0x6D` band once labelled "roads" is the coast sub-tile set (`map_system.md` §3, corrected 2026-06-22). Map units/colonies: ICONS.SS. Sidebar bg: ~~WOODPANL.PIK~~ **CORRECTED
+2026-08-04 — the map screen's chrome is `WOODTILE.SS` frame 0 (32x24) tiled from
+the screen origin**; scored against `docs/screens/06_ingame_map.png` it is 2.90
+mean channel error vs 11.91 for WOODPANL.PIK (RULINGS.md 2026-08-04). WOODPANL
+remains correct for the full-screen dialog backdrops. Cursor: CURSOR.SS. **A/B**
 - **Menu text** (verified present in `data_extracted/text/MENU_sections.json`): keys `@GAME`, `@VIEW`, `@ORDERS`, `@REPORTS`, `@TRADE`, `@CUP` (CHEAT), `@PEDIA` (COLONIZOPEDIA). **B**
 - **Sidebar labels** (verified in `LABELS_sections.json`): `@INFO` ("Moves:\nLocat:"), `@MISC` ("Gold", "Road", order statuses). Season from NAMES `@SEASONS`; terrain from NAMES `@FORESTED`/`@UNFORESTED`; unit type NAMES `@UNIT`, skill NAMES `@JOB`. All keys verified present. **B**
   - **RUNTIME-CONFIRMED 2026-06-25** (`docs/screens/06_ingame_map.png`): the live sidebar renders exactly this layout — `Spring 1498` (season/year), `Gold: 1000e Tax: 0%`, and the active-unit panel `Moves: 4 / Locat: (50, 42) / Eng. Caravel / No Orders / (Sea Lane)` with cargo `Veteran` + `100 Tools`. Visually validates the §6.3 positions and the `(Sea Lane)` base-terrain label (CLAUDE.md hard rule 2).

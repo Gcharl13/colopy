@@ -6277,3 +6277,67 @@ palette point.
 **Action taken**:
 - `port/tools/build_assets.py` — exports WOODFRAM.SS's own palette into the manifest.
 - `port/src/game.js` `drawWoodcut()` — `usePalette('WOODFRAM')`, caption drawn bare.
+
+---
+
+## 2026-08-04 — Starting force is ONE ship at every difficulty
+
+**Conflict**: §18.11's starting-conditions paragraph says the starting units are
+"Caravel + Pioneers + Soldiers aboard (Dutch ship → Merchantman), **doubled at d ≤ 1** by a
+second placement pass."
+
+**Source A** — that sentence. It is the **only** occurrence of the claim in the tree
+(`grep -rn "doubled at d\|second placement\|placement pass" docs/ spec/ notes/ viceroy_source/`
+returns exactly one hit besides the map-generation entry below) and it carries **no function
+name, no file offset, and no cite tier** — unlike every other row of that ledger.
+
+**Source B** — `spec/systems/map_generation.md` §4, the BYTE_VERIFIED post-mapgen placement
+passes orchestrated by `func_0755CC`: native settlements `func_065D26`, the resource /
+land-value layer `func_063F3C`, and the two fixed rumour-feature tiles. **No pass places the
+human's starting units, and none is difficulty-gated.** The "second placement pass" the
+sentence appeals to is not among them.
+
+**Source C** — the running DOS game (user report, 2026-08-04): one ship at every difficulty
+level.
+
+**Ruling**: **one ship, always.** Difficulty scales starting *gold* (1000/300/0/0/0), which is
+byte-cited and stands; it does not scale hulls. Source C is the top of
+`notes/TRUTH_HIERARCHY.md` and Source A is an uncited prose claim in a team doc, so this is not
+a close call. Per CLAUDE.md's prime directive the claim should never have been carried into an
+implementation without a cite.
+
+**Action taken**:
+- `port/src/game.js` `beginGame()` — always one ship.
+- `docs/COLONIZATION_TECHNICAL_REFERENCE.md` §18.11 — claim struck and flagged.
+
+**Follow-up**: if a difficulty-gated unit-placement site is ever found, reopen with the offset.
+
+---
+
+## 2026-08-04 — Map screen chrome is WOODTILE.SS tiled, not WOODPANL.PIK
+
+**Conflict**: `spec/ui/map_view.md` item 4 lists "Sidebar bg: WOODPANL.PIK". WOODPANL is a
+320x200 photographic panel with large swirls and a bevelled dark edge; the map sidebar in
+`docs/screens/06_ingame_map.png` is a fine, obviously *repeating* horizontal grain.
+
+**Test**: mean per-channel error against a text-free sidebar patch of that capture, over every
+tiling phase:
+
+| candidate | mean channel error |
+|---|---|
+| **WOODTILE.SS frame 0 (32x24), tiled from screen (0,0)** | **2.90** |
+| OPENTILE.SS frame 0, best phase | 8.05 |
+| WOODPANL.PIK (as documented) | 11.91 |
+
+The best-fit phase resolves to exactly 0 mod 32 horizontally and 0 mod 24 vertically, i.e. the
+tiling starts at the screen origin with no offset.
+
+**Ruling**: the map screen is **WOODTILE.SS frame 0 tiled from (0,0)**. WOODPANL.PIK remains
+correct for the full-screen dialog backdrops (name entry, briefings, intro cards) — the DOS
+captures for those do show the swirled panel. The `map_view.md` line is wrong and is flagged.
+After the change a text-free strip of the port's sidebar scores **1.2** against the capture.
+
+**Action taken**:
+- `port/src/game.js` `drawMap()` — tiles WOODTILE.SS and adopts its own sheet palette.
+- `port/tools/build_assets.py` — exports WOODTILE.SS's palette.
+- `spec/ui/map_view.md` — line flagged.

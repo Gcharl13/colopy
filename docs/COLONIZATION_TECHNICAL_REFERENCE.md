@@ -2847,8 +2847,11 @@ a fixed constant for AI powers.
 
 **Starting conditions:** gold 1000 (d=0) / 300 (d=1) /
 0 (d ≥ 2) — human only; units = Caravel + Pioneers + Soldiers aboard
-(Dutch ship → Merchantman), **doubled at d ≤ 1**
-by a second placement pass; REF seed §18.10; native alarm
+(Dutch ship → Merchantman) — ~~**doubled at d ≤ 1** by a second placement
+pass~~ **STRUCK 2026-08-04**: uncited, and contradicted by play — the force is
+**one ship at every difficulty**; no placement pass in `map_generation.md` §4
+places starting units or is difficulty-gated (RULINGS.md 2026-08-04);
+REF seed §18.10; native alarm
 seed `random_int(0,14) + 2d` for the human; year 1492,
 map 58×72, price seeds `random_int(600,1000)` ×16.
 Initial tax rate: no initializer is byte-cited (UI shows 0%) — TBD.
