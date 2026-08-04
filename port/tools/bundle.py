@@ -62,7 +62,7 @@ def build_data():
     # parser treats as a paragraph break.
     full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
     D["dialogs"] = {}
-    for key in ("@LANDHO", "@LANDFALL", "@COLONY"):
+    for key in ("@LANDHO", "@LANDFALL", "@COLONY", "@RECRUIT", "@PURCHASE"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {

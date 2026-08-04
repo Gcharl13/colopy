@@ -133,10 +133,28 @@ SCRIPT = """() => {
   // Sailing west boards whoever is waiting on the dock.
   const pax0 = boat.passengers.length, waiting = G.dockUnits.length;
 
-  // Train: 17 trainable jobs, priced from @JOB europe_value.
+  // Train: all 17 trainable @JOB rows, priced from europe_value, price-sorted.
   openEuroMenu(2);
-  out.trainRows = euroMenuRows().length === 17;
+  const tr = euroMenuRows();
+  out.train = {
+    count: tr.length,
+    sorted: tr.every((r, i) => i === 0 || tr[i - 1].cost <= r.cost),
+    cheapest: tr[0] && tr[0].cost,
+    dearest: tr[tr.length - 1] && tr[tr.length - 1].cost,
+  };
   G.euroMenu = null;
+
+  // Recruit candidates are UNIT TYPES from the §17.6 ladder, each carrying the
+  // @CLASS band its passage is priced from -- not three @CLASS names.
+  out.dockShape = G.dock.every(c => typeof c.name === 'string' &&
+                                    typeof c.band === 'number' &&
+                                    c.band >= 0 && c.band < DATA.classes.length);
+  const ladder = ['Petty Criminals', 'Indentured Servants', 'Free Colonists'];
+  out.dockFromLadder = G.dock.every(c =>
+    ladder.includes(c.name) || DATA.jobtrain.some(j => j.expert === c.name));
+
+  // The advisor portrait sheet is loaded and has a frame to draw.
+  out.adviser = !!(DATA.sheets.MSS2 && DATA.sheets.MSS2.frames.length);
 
   // Sail home: three turns back to the lane, then the ship is on the map again.
   const units0 = G.units.length;
@@ -262,7 +280,13 @@ def main():
         ("a purchased ship joins the fleet in port", r["shipJoinsFleet"],
          r["shipJoinsFleet"]),
         ("sailing boards everyone waiting on the dock", r["boarded"], r["boarded"]),
-        ("train offers the 17 @JOB rows", r["trainRows"], r["trainRows"]),
+        ("train offers all 17 @JOB rows, price-sorted",
+         r["train"]["count"] == 17 and r["train"]["sorted"]
+         and r["train"]["cheapest"] == 600 and r["train"]["dearest"] == 2000, r["train"]),
+        ("dock candidates are unit types with a price band",
+         r["dockShape"] and r["dockFromLadder"],
+         {"shape": r["dockShape"], "ladder": r["dockFromLadder"]}),
+        ("economic adviser portrait is available", r["adviser"], r["adviser"]),
         ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
         ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
         ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),

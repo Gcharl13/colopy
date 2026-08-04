@@ -151,7 +151,9 @@ def main():
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
                # Woodcut event plates: the frame, plus WDCUT01 (first landfall).
-               "WOODFRAM", "WDCUT01", "WDCUT02", "BUILDING"]
+               "WOODFRAM", "WDCUT01", "WDCUT02", "BUILDING",
+               # Advisor portraits: speaker channel [0x1F5E] 0..5.
+               "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5"]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"

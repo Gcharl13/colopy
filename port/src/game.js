@@ -1286,14 +1286,39 @@ function drawColonyPanel(ctx, c) {
   }
 }
 
-// The dock's candidate ladder (§17.6): harder difficulty yields more low-tier
-// arrivals. The three-tier roll is the cited one; the class list is @CLASS.
+// The dock's candidate ladder, §17.6. Three slots; each holds a UNIT TYPE, not
+// a price band. The cited roll, with threshold (lvl+3)>>1 and lvl = difficulty:
+//   random(1,15) <= thr -> Petty Criminal
+//   else random(1,10) <= thr -> Indentured Servant
+//   else Free Colonist
+// so harder difficulty really does crowd the dock with low-tier arrivals. Every
+// fourth turn (turn & 3 == 0) the generator draws a PROFESSIONAL instead.
+//
+// Passage price comes from @CLASS.transport_cost. Rows 0 and 1 of that table
+// are literally named "Petty Criminals" and "Indentured Servants", matching the
+// first two ladder outcomes exactly; the remaining six rows are profession
+// bands (600..2000). Free Colonists and the professionals are mapped onto those
+// bands by nearest @JOB europe_value -- a mapping between two shipped tables,
+// but INFERRED, not cited. Tracked in docs/UI_AUDIT_TRACKER.md.
+const CLASS_CRIMINAL = 0, CLASS_SERVANT = 1, CLASS_FREE = 2;
+function bandFor(europeValue) {
+  let best = 2;
+  for (let i = 2; i < DATA.classes.length; i++)
+    if (Math.abs(DATA.classes[i].cost - europeValue) <
+        Math.abs(DATA.classes[best].cost - europeValue)) best = i;
+  return best;
+}
 function rollImmigrant() {
-  const lvl = G.difficulty;
-  const thr = (lvl + 3) >> 1;
-  if (Math.floor(Math.random() * 15) + 1 <= thr) return 0;      // Petty Criminals
-  if (Math.floor(Math.random() * 10) + 1 <= thr) return 1;      // Indentured Servants
-  return 2 + Math.floor(Math.random() * (DATA.classes.length - 2));
+  const thr = (G.difficulty + 3) >> 1;
+  if ((G.turn & 3) === 0 && G.turn > 0) {
+    const j = DATA.jobtrain[Math.floor(Math.random() * DATA.jobtrain.length)];
+    return { name: j.expert, band: bandFor(j.cost) };
+  }
+  if (Math.floor(Math.random() * 15) + 1 <= thr)
+    return { name: DATA.classes[CLASS_CRIMINAL].name, band: CLASS_CRIMINAL };
+  if (Math.floor(Math.random() * 10) + 1 <= thr)
+    return { name: DATA.classes[CLASS_SERVANT].name, band: CLASS_SERVANT };
+  return { name: 'Free Colonists', band: CLASS_FREE };
 }
 
 // ------------------------------------------------------------ the market
@@ -1440,28 +1465,63 @@ function drawEurope(ctx) {
 // the affordable ones lit and the rest dimmed.
 function euroMenuRows() {
   if (G.euroMenu === 'recruit')
-    return G.dock.map(ci => ({ label: DATA.classes[ci].name, cost: DATA.classes[ci].cost }));
+    return G.dock.map(c => ({ label: c.name, cost: DATA.classes[c.band].cost }));
+  // TRAIN lists every @JOB row with a real europe_value -- all 17 of them -- in
+  // price order, cheapest first.
   if (G.euroMenu === 'train')
-    return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }));
+    return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }))
+                        .sort((a, b) => a.cost - b.cost);
   return PURCHASE_CATALOG.map(r => ({ label: r.unit, cost: purchasePrice(r) }));
 }
-function drawEuroMenu(ctx) {
+// The sub-menus are dialogs in the §3 framework, not ad-hoc lists: body text
+// from the GAME.TXT section, option rows below it, box_w = content + 2*inset,
+// centred. The ECONOMIC ADVISER portrait (MSS2 -- the merchant in the plumed
+// hat, identified by rendering all six MSS sheets) sits above the box, which is
+// where func_06BF66 draws the speaker.
+const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null };
+const ADVISER_ECONOMIC = 'MSS2';
+function euroMenuBox() {
   const rows = euroMenuRows();
-  const visible = Math.min(rows.length, 10);
-  const b = { x: 60, y: 30, w: 200, h: 14 + visible * 9 };
-  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  FONT.tiny.draw(ctx, G.euroMenu.toUpperCase(), b.x + 5, b.y + 4, lut(0xFC));
-  const top = Math.max(0, Math.min(G.euroMenuRow - visible + 1, rows.length - visible));
-  for (let k = 0; k < visible; k++) {
-    const r = rows[top + k], y = b.y + 13 + k * 9;
-    const sel = (top + k) === G.euroMenuRow;
-    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
-    const afford = r.cost <= G.gold;
-    FONT.tiny.draw(ctx, r.label, b.x + 6, y + 1, lut(afford ? (sel ? 0xFC : 0xFE) : 0x2F));
-    const c = `${r.cost}$`;
-    FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1,
-                   lut(afford ? (sel ? 0xFC : 0xFE) : 0x2F));
+  const key = EURO_MENU_KEY[G.euroMenu];
+  let body = key ? DATA.dialogs[key].body : [G.euroMenu.toUpperCase()];
+  // @RECRUIT quotes the passage in its body ("{%NUMBER0 gold}") -- fill it from
+  // the highlighted candidate, which is the one that slot would cost.
+  if (key === 'RECRUIT') {
+    const rows0 = euroMenuRows();
+    const price = rows0[G.euroMenuRow] ? rows0[G.euroMenuRow].cost : 0;
+    body = body.map(l => l.replace('%NUMBER0', String(price)));
   }
+  let cw = key ? DATA.dialogs[key].width : 0x50;
+  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const r of rows) cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(`${r.cost}$`) + 20);
+  const w = cw + 6;
+  const textH = body.length * 6;
+  const h = 6 + textH + 3 + rows.length * 8 + 3;
+  // Keep the whole thing on screen: the portrait needs headroom above the box.
+  const [, ph] = frameSize(ADVISER_ECONOMIC, 0);
+  const y = Math.max(ph + 2, Math.round(100 - h / 2));
+  return { x: Math.round(160 - w / 2), y: Math.min(y, H - h - 2), w, h, textH, body, rows };
+}
+function drawEuroMenu(ctx) {
+  const b = euroMenuBox();
+  // Portrait above the box, right-aligned to it the way the speaker channel is.
+  const [pw, ph] = frameSize(ADVISER_ECONOMIC, 0);
+  if (pw) sheetFrame(ctx, ADVISER_ECONOMIC, 0, b.x + b.w - pw - 4, b.y - ph);
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  const seed = b.y + 6 + b.textH + 3;
+  b.rows.forEach((r, k) => {
+    const y = seed + k * 8;
+    const sel = k === G.euroMenuRow;
+    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    // Unaffordable rows are DIMMED, not blacked out -- they still have to be
+    // readable so you can see what you are saving up for.
+    const afford = r.cost <= G.gold;
+    const inkIdx = !afford ? 0x5D : (sel ? 0xFC : 0xFE);
+    FONT.tiny.draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
+    const c = `${r.cost}$`;
+    FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1, lut(inkIdx));
+  });
 }
 
 function openEuroMenu(k) {
@@ -1502,11 +1562,11 @@ function euroMenuCommit() {
   G.gold -= r.cost;
   if (G.euroMenu === 'recruit') {
     // Recruits and trainees wait ON THE DOCK until a ship carries them over.
-    G.dockUnits.push('Colonists');
+    G.dockUnits.push(r.label);
     G.dock[G.euroMenuRow] = rollImmigrant();
     G.euroMsg = `${r.label} recruited.`;
   } else if (G.euroMenu === 'train') {
-    G.dockUnits.push(DATA.jobtrain[G.euroMenuRow].name);
+    G.dockUnits.push(r.label);
     G.euroMsg = `${r.label} trained.`;
   } else {
     const buy = PURCHASE_CATALOG[G.euroMenuRow];
@@ -1798,12 +1858,11 @@ function onClick(mx, my) {
       break;
     case 'europe': {
       if (G.euroMenu) {
-        const rows = euroMenuRows(), visible = Math.min(rows.length, 10);
-        const b = { x: 60, y: 30, w: 200, h: 14 + visible * 9 };
-        const top = Math.max(0, Math.min(G.euroMenuRow - visible + 1, rows.length - visible));
-        for (let k = 0; k < visible; k++) {
-          if (hit(mx, my, { x: b.x + 3, y: b.y + 13 + k * 9, w: b.w - 6, h: 9 })) {
-            G.euroMenuRow = top + k; euroMenuCommit(); return;
+        const b = euroMenuBox();
+        const seed = b.y + 6 + b.textH + 3;
+        for (let k = 0; k < b.rows.length; k++) {
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * 8, w: b.w - 6, h: 8 })) {
+            G.euroMenuRow = k; euroMenuCommit(); return;
           }
         }
         G.euroMenu = null;                       // click outside closes it
