@@ -260,6 +260,8 @@ const G = {
   euroMenuRow: 0,
   euroShip: 0,            // selected ship in port
   euroMsg: '',
+  dockUnits: [],          // recruits/trainees waiting on the Europe dock
+  artilleryBought: 0,
   marketSel: -1,          // highlighted market cell
   openMenu: -1,           // open pulldown index, -1 = none
   menuSel: 0,
@@ -307,6 +309,7 @@ function beginGame() {
   G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
   G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
+  G.dockUnits = []; G.artilleryBought = 0;
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
   G.dock = [0, 0, 0].map(() => rollImmigrant());
@@ -1055,7 +1058,10 @@ function sailForEurope(ship) {
   G.msg = '';
 }
 // Sail the other way: the ship leaves the dock and reappears on the sea lane.
+// Anyone standing on the dock boards first -- that is what the dock queue is
+// waiting for.
 function sailForNewWorld(e) {
+  while (G.dockUnits.length && e.passengers.length < 6) e.passengers.push(G.dockUnits.shift());
   e.state = 'toNewWorld';
   e.turns = SAIL_TURNS;
   G.euroMsg = `${e.type} sets sail.`;
@@ -1341,11 +1347,18 @@ function buyGoods(i, qty) {
 // engine draws the title band, the market prices, the dock/panel captions and
 // the recruit menu.
 const EURO_ROWS = DATA.eurolabel.slice(0, 3);
-// PURCHASE's cited content is the goods pages -- Muskets in 50s, Horses, Tools
-// in 100s (§9.4 names those three explicitly). Ship and Artillery prices are
-// NOT in the shipped tables (Artillery only as "base + artillery_bought*100",
-// with no base), so those rows are omitted rather than invented.
-const PURCHASE_ROWS = [{ good: 15, qty: 50 }, { good: 8, qty: 100 }, { good: 14, qty: 100 }];
+// The Europe purchase catalog is byte-cited in §17.6: Artillery 500, Caravel
+// 1000, Merchantman 2000, Galleon 3000, Privateer 2000, Frigate 5000 -- and
+// only Artillery escalates, +100 per unit already bought.
+const PURCHASE_CATALOG = [
+  { unit: 'Artillery', price: 500, escalates: true },
+  { unit: 'Caravel', price: 1000 },
+  { unit: 'Merchantman', price: 2000 },
+  { unit: 'Galleon', price: 3000 },
+  { unit: 'Privateer', price: 2000 },
+  { unit: 'Frigate', price: 5000 },
+];
+const purchasePrice = (r) => r.price + (r.escalates ? G.artilleryBought * 100 : 0);
 
 function shipsInPort() { return G.europe.filter(e => e.state === 'port'); }
 function activeShip() { return shipsInPort()[G.euroShip] || null; }
@@ -1372,30 +1385,32 @@ function drawEurope(ctx) {
 
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
+  // Panel captions. The screen names ships and states in the panel ink -- it
+  // does NOT annotate them with turn counters or quantity readouts, so nothing
+  // of that sort is drawn here.
   FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
   G.europe.filter(e => e.state === 'toEurope').slice(0, 3).forEach((e, k) =>
-    FONT.tiny.draw(ctx, `${e.type} (${e.turns})`, 16, 128 + k * 7, lut(0x0A)));
+    FONT.tiny.draw(ctx, e.type, 16, 128 + k * 7, lut(HUD_INK)));
   FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
   FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
   G.europe.filter(e => e.state === 'toNewWorld').slice(0, 3).forEach((e, k) =>
-    FONT.tiny.draw(ctx, `${e.type} (${e.turns})`, 87, 135 + k * 7, lut(0x0A)));
+    FONT.tiny.draw(ctx, e.type, 87, 135 + k * 7, lut(HUD_INK)));
 
   const ship = activeShip();
-  FONT.tiny.draw(ctx, 'Loading:', 150, 120, lut(HUD_INK));
-  FONT.tiny.draw(ctx, ship ? ship.type : DATA.text.misc[339] || 'No Ships In Port',
-                 186, 120, lut(0x0A));
-  if (ship) {
-    ship.hold.slice(0, 6).forEach((h, k) => {
-      const [fw] = frameSize('ICONS', 0x16 + h.good);
-      sheetFrame(ctx, 'ICONS', 0x16 + h.good, 152 + k * 12 - (fw >> 1) + 5, 128);
-      FONT.tiny.center(ctx, String(h.qty), 152 + k * 12 + 5, 142, lut(0x0F));
-    });
-    ship.passengers.slice(0, 4).forEach((pName, k) => {
-      const u = unit(pName);
-      if (u) sheetFrame(ctx, 'ICONS', u.icon, 150 + k * 15, 148);
-    });
-  }
-  // Six dock slots hold the ships in port.
+  FONT.tiny.draw(ctx, ship ? 'Loading:' : 'No Ships In Port', 150, 120, lut(HUD_INK));
+  if (ship) FONT.tiny.draw(ctx, ship.type, 186, 120, lut(HUD_INK));
+
+  // Units waiting on the dock: recruits, trainees and purchased land units
+  // stand here until a ship carries them across.
+  G.dockUnits.slice(0, 6).forEach((name, k) => {
+    const u = unit(name) || unit('Colonists');
+    const [fw, fh] = frameSize('ICONS', u.icon);
+    const x = 232 + k * 14;
+    sheetFrame(ctx, 'ICONS', u.icon, x, 152 - fh);
+    nationPlate(ctx, x - 2, 142, G.nation, 1);
+  });
+
+  // Ships in port occupy the six dock slots; the hold rides with the ship.
   shipsInPort().forEach((e, k) => {
     if (k >= 6) return;
     sheetFrame(ctx, 'ICONS', 122, 147 + 12 * k, 165);
@@ -1403,14 +1418,17 @@ function drawEurope(ctx) {
   });
 
   // Recruit menu rows (281, 89+11r, 37, 9); accelerator letter yellow.
+  // Buttons at (281, 89+11r, 37, 9): a 1px dark-blue border with the PIK panel
+  // showing through -- NOT a filled bar. Text is white with the accelerator
+  // (first) letter in yellow. Border colour 0x7D and text 0x10 sampled from
+  // docs/screens/10_europe_screen.png; the geometry is the cited one, confirmed
+  // against the capture once its 10px/29px letterbox offsets are taken out.
   EURO_ROWS.forEach((r, k) => {
     const y = 89 + 11 * k;
-    ctx.fillStyle = ink(k === G.euroRow ? 57 : 48);
-    ctx.fillRect(281, y, 37, 9);
+    hollowRect(ctx, 281, y, 37, 9, k === G.euroRow ? 0x0F : 0x7D);
     const w = FONT.tiny.width(r), x0 = 281 + (37 - w) / 2;
-    FONT.tiny.draw(ctx, r[0], x0, y + 1, lut(0x0E));
-    FONT.tiny.draw(ctx, r.slice(1), x0 + FONT.tiny.width(r[0]), y + 1,
-                   lut(k === G.euroRow ? 0x0F : 0x00));
+    FONT.tiny.draw(ctx, r[0], x0, y + 2, lut(0x0E));
+    FONT.tiny.draw(ctx, r.slice(1), x0 + FONT.tiny.width(r[0]), y + 2, lut(0x10));
   });
 
   if (G.euroMenu) drawEuroMenu(ctx);
@@ -1425,8 +1443,7 @@ function euroMenuRows() {
     return G.dock.map(ci => ({ label: DATA.classes[ci].name, cost: DATA.classes[ci].cost }));
   if (G.euroMenu === 'train')
     return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }));
-  return PURCHASE_ROWS.map(r => ({
-    label: `${DATA.cargo[r.good].name} x${r.qty}`, cost: askPrice(r.good) * r.qty }));
+  return PURCHASE_CATALOG.map(r => ({ label: r.unit, cost: purchasePrice(r) }));
 }
 function drawEuroMenu(ctx) {
   const rows = euroMenuRows();
@@ -1484,23 +1501,25 @@ function euroMenuCommit() {
   if (r.cost > G.gold) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
   G.gold -= r.cost;
   if (G.euroMenu === 'recruit') {
-    // The recruit boards a ship in port if there is one, else waits on the dock.
-    const ship = activeShip();
-    if (ship) ship.passengers.push('Colonists');
+    // Recruits and trainees wait ON THE DOCK until a ship carries them over.
+    G.dockUnits.push('Colonists');
     G.dock[G.euroMenuRow] = rollImmigrant();
-    G.euroMsg = `${r.label.replace(/s$/, '')} recruited.`;
+    G.euroMsg = `${r.label} recruited.`;
   } else if (G.euroMenu === 'train') {
-    const ship = activeShip();
-    if (ship) ship.passengers.push('Colonists');
+    G.dockUnits.push(DATA.jobtrain[G.euroMenuRow].name);
     G.euroMsg = `${r.label} trained.`;
   } else {
-    const buy = PURCHASE_ROWS[G.euroMenuRow];
-    const ship = activeShip();
-    // The gold was already taken above, so move the goods without re-charging.
-    G.accum[buy.good] -= buy.qty << DATA.cargo[buy.good].volatility;
-    stepPrice(buy.good);
-    if (ship) holdAdd(ship, buy.good, buy.qty);
-    G.euroMsg = `${buy.qty} ${DATA.cargo[buy.good].name} purchased.`;
+    const buy = PURCHASE_CATALOG[G.euroMenuRow];
+    if (buy.escalates) G.artilleryBought += 1;
+    if (unit(buy.unit).hull > 0) {
+      // A purchased ship joins the fleet at the dock, empty.
+      G.europe.push({ type: buy.unit, icon: unit(buy.unit).icon,
+                      hold: [], passengers: [], state: 'port' });
+      G.euroShip = shipsInPort().length - 1;
+    } else {
+      G.dockUnits.push(buy.unit);
+    }
+    G.euroMsg = `${buy.unit} purchased.`;
   }
   G.euroMenu = null;
 }

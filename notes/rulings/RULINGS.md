@@ -6451,3 +6451,32 @@ from the shipped table instead of hardcoding names.
 **Action taken**: `port/tools/bundle.py` exports cost/min_colony/upkeep; `port/src/game.js`
 `STARTING_BUILDINGS` is a filter over them. The `STARTING_BUILDINGS_UNVERIFIED` placeholder is
 gone.
+
+---
+
+## 2026-08-04 — Europe purchase catalog, button chrome, and palette-scoped ink indices
+
+**1. The purchase catalog is byte-cited after all.** A previous entry recorded the Europe
+PURCHASE page as unimplementable because "no price table exists in the shipped data". That was
+a search failure, not an evidence gap: the catalog is in **§17.6** (the immigration section,
+not the market one) — *"the same table as the Europe ship/artillery purchase catalog (Artillery
+500, Caravel 1000, Merchantman 2000, Galleon 3000, Privateer 2000, Frigate 5000); only
+Artillery escalates (+100 per unit bought, tracked in `artillery_bought`)."* PURCHASE buys
+**units**, not goods; the "Muskets 50 / Horses / Tools 100" sites in §9.4 are the separate
+inline goods buys. The tracker entry is corrected to DONE.
+
+**2. Ink indices are palette-scoped, and matching against the master palette silently
+lies.** The Europe buttons' border sampled as (56,72,144). Matched against
+`data_extracted/palette.json` that is index 0x7D; matched against **EUROPE.PIK's own palette**
+it is **0x3B**. Drawing 0x7D through the loaded Europe palette produced black. This is the same
+class of error as the 2026-08-04 woodcut-caption ruling: *the index means nothing without the
+palette it indexes.* Any colour sampled off a capture must be resolved against the palette that
+screen actually loads.
+
+**3. Capture geometry needs its letterbox removed before measuring.** `10_europe_screen.png` is
+660x480 with a ~10px horizontal and ~29px vertical border, so a naive full-frame resize to
+320x200 misplaces everything: the button rows measured at pitch 9 and x=277, contradicting the
+cited (281, 89+11r, 37, 9). Calibrating against two known landmarks (the title text row and the
+market bar's top edge) recovers scale ≈2.0 with those offsets, and the rows then land at
+x=281, pitch 11 — **the spec was right and the measurement was wrong**. The buttons are drawn
+as a 1px border with the panel showing through, not a filled bar.

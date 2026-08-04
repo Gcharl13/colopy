@@ -109,10 +109,29 @@ SCRIPT = """() => {
   const rows = euroMenuRows();
   out.recruitRows = rows.length === 3 && rows.every(r => r.cost >= 300 && r.cost <= 2000);
   G.gold = 5000; G.euroMenuRow = 0;
-  const pax0 = boat.passengers.length, g2 = G.gold;
+  const dock0 = G.dockUnits.length, g2 = G.gold;
   euroMenuCommit();
-  out.recruited = { paid: g2 - G.gold > 0, boarded: boat.passengers.length === pax0 + 1,
+  out.recruited = { paid: g2 - G.gold > 0, onDock: G.dockUnits.length === dock0 + 1,
                     menuClosed: G.euroMenu === null };
+
+  // Purchase is the §17.6 catalog, not goods; Artillery escalates by 100.
+  openEuroMenu(1);
+  const pcat = euroMenuRows();
+  out.purchase = {
+    labels: pcat.map(r => r.label),
+    prices: pcat.map(r => r.cost),
+  };
+  G.gold = 20000; G.euroMenuRow = 0;
+  euroMenuCommit();                            // buy Artillery
+  out.artilleryEscalates = euroMenuRows()[0].cost === 600;
+  out.artilleryOnDock = G.dockUnits.includes('Artillery');
+  G.euroMenuRow = 1; openEuroMenu(1); G.euroMenuRow = 1;
+  const fleet0 = shipsInPort().length;
+  euroMenuCommit();                            // buy a Caravel
+  out.shipJoinsFleet = shipsInPort().length === fleet0 + 1;
+
+  // Sailing west boards whoever is waiting on the dock.
+  const pax0 = boat.passengers.length, waiting = G.dockUnits.length;
 
   // Train: 17 trainable jobs, priced from @JOB europe_value.
   openEuroMenu(2);
@@ -122,9 +141,10 @@ SCRIPT = """() => {
   // Sail home: three turns back to the lane, then the ship is on the map again.
   const units0 = G.units.length;
   sailForNewWorld(boat);
-  out.outbound = G.europe[0].state === 'toNewWorld';
+  out.boarded = boat.passengers.length === pax0 + waiting && G.dockUnits.length === 0;
+  out.outbound = boat.state === 'toNewWorld';
   for (let t = 0; t < 3; t++) endTurn();
-  out.returned = { onMap: G.units.length === units0 + 1, inPort: shipsInPort().length === 0 };
+  out.returned = { onMap: G.units.length === units0 + 1 };
 
   G.screen = 'europe';
   onClick(310, 190);
@@ -228,8 +248,20 @@ def main():
          all(r["accumMoved"].values()), r["accumMoved"]),
         ("recruit offers 3 dock slots priced from @CLASS",
          r["recruitRows"], r["recruitRows"]),
-        ("recruiting charges and boards the ship",
+        ("recruiting charges and puts the colonist on the dock",
          all(r["recruited"].values()), r["recruited"]),
+        ("purchase lists the §17.6 catalog at its cited prices",
+         r["purchase"]["labels"] == ["Artillery", "Caravel", "Merchantman",
+                                     "Galleon", "Privateer", "Frigate"]
+         and r["purchase"]["prices"] == [500, 1000, 2000, 3000, 2000, 5000],
+         r["purchase"]),
+        ("Artillery escalates +100 per unit bought", r["artilleryEscalates"],
+         r["artilleryEscalates"]),
+        ("a purchased land unit waits on the dock", r["artilleryOnDock"],
+         r["artilleryOnDock"]),
+        ("a purchased ship joins the fleet in port", r["shipJoinsFleet"],
+         r["shipJoinsFleet"]),
+        ("sailing boards everyone waiting on the dock", r["boarded"], r["boarded"]),
         ("train offers the 17 @JOB rows", r["trainRows"], r["trainRows"]),
         ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
         ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
