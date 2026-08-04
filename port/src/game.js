@@ -247,6 +247,11 @@ const G = {
   landHo: false,          // @LANDHO fires once per game
   newLand: '',            // what the player named the New World
   woodcut: 1,             // @WOODCUT index on the woodcut screen
+  colonies: [],           // founded colonies
+  colony: 0,              // active colony on the colony screen
+  europe: [],             // ships in port / on the high seas
+  market: [],             // per-good bid price
+  euroRow: 0,             // recruit-menu row
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -286,6 +291,8 @@ function beginGame() {
                     ['Pioneers', 'Soldiers'])];
   G.sel = 0;
   G.landHo = false; G.newLand = '';
+  G.colonies = []; G.europe = []; G.builtColony = false;
+  G.market = DATA.cargo.map(c => c.bid);
   centerOn(sx, sy);
   G.msg = `${DATA.nations[G.nation].homeport}, ${DATA.nations[G.nation].country}.`;
 }
@@ -371,16 +378,17 @@ function drawDialog(ctx) {
     FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(0xFC));
   }
 }
-// A numeric @default is the highlighted option row; a text @default pre-fills
-// an entry field (GAME.TXT @LANDHO carries "America").
-function openDialog(key, onDone) {
+function openDialog(key, onDone, prefill) {
   const t = DATA.dialogs[key];
-  const numeric = /^\d+$/.test(t.default);
+  // A numeric @default names the highlighted option row; a text @default
+  // prefills an entry field; no @default at all is an entry field with no
+  // prefill (GAME.TXT @COLONY carries no directives).
+  const numeric = typeof t.default === 'string' && /^\d+$/.test(t.default);
   G.dialog = {
     body: t.body, tail: t.tail, width: t.width, onDone,
     opts: numeric ? t.tail : null,
     sel: numeric ? +t.default : 0,
-    entry: numeric ? undefined : t.default,
+    entry: numeric ? undefined : (prefill !== undefined ? prefill : (t.default || '')),
   };
 }
 function closeDialog(result) {
@@ -765,6 +773,16 @@ function drawMap(ctx) {
       drawTile(ctx, mx, my, px, py);
     }
   }
+  // Colonies: ICONS disk band 0-3 are the colony map markers, frame = nation.
+  for (const c of G.colonies) {
+    const tx = c.x - G.view.x, ty = c.y - G.view.y;
+    if (tx < 0 || ty < 0 || tx >= VIEW_TILES_X || ty >= VIEW_TILES_Y) continue;
+    const px = VP.x + tx * TILE, py = VP.y + ty * TILE;
+    const [fw, fh] = frameSize('ICONS', c.nation);
+    sheetFrame(ctx, 'ICONS', c.nation, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
+    FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
+  }
+
   // Units, selected one last so a stack draws it on top.
   const order = G.units.map((u, i) => i).sort((a, b) => (a === G.sel) - (b === G.sel));
   for (const i of order) {
@@ -864,6 +882,185 @@ function drawSidebar(ctx) {
   if (G.msg) FONT.tiny.draw(ctx, G.msg, 244, 182, lut(HUD_INK));
 }
 
+// ---------------------------------------------------------------- colonies
+// Build Colony (@ORDERS row 7, status letter "B"). A land unit standing on a
+// land tile with no colony already on it founds one; @COLONY -- "What shall we
+// name this colony?" -- carries no @default directive, so the field is prefilled
+// from COLONY.TXT's per-nation list in founding order instead.
+function buildColony() {
+  const u = G.units[G.sel];
+  if (!u || u.ship) return;
+  if (tileWater(at(u.x, u.y))) return;
+  if (colonyAt(u.x, u.y)) { G.msg = 'There is already a colony here.'; return; }
+  const names = DATA.colonynames[G.nation];
+  const suggested = names[G.colonies.length % names.length];
+  openDialog('COLONY', (name) => {
+    const nm = (name || '').trim() || suggested;
+    G.colonies.push({
+      name: nm, x: u.x, y: u.y, nation: G.nation,
+      // A new colony starts with its founder in the plaza and an empty
+      // warehouse; the fixed starting buildings are the three no-cost rows.
+      colonists: [u.type],
+      stock: DATA.cargo.map(() => 0),
+      buildings: STARTING_BUILDINGS_UNVERIFIED.slice(),
+      sol: 0,
+    });
+    // The founder joins the colony, so it leaves the map.
+    G.units.splice(G.sel, 1);
+    G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+    G.colony = G.colonies.length - 1;
+    // First colony fires woodcut 2, BUILDING A COLONY (human only) --
+    // spec/ui/woodcuts_and_intro.md, func_040C1E @0x040E00.
+    if (!G.builtColony) { G.builtColony = true; G.woodcut = 2; G.screen = 'woodcut'; }
+    else G.screen = 'colony';
+  }, suggested);
+}
+// UNVERIFIED -- which @BUILDING rows a brand-new colony starts with is not
+// byte-cited anywhere in the tree. The def table 0x8E82 is a runtime array and
+// its initialiser is not traced, so this list is a placeholder chosen from the
+// min_colony==1, tools==0 rows to keep the screen legible. It is NOT evidence.
+// Closing it needs that initialiser traced, or a shipped COLONY??.SAV parsed.
+const STARTING_BUILDINGS_UNVERIFIED =
+  ['Town Hall', 'Carpenter\'s Shop', 'Blacksmith\'s House',
+   'Tobacconist\'s House', 'Weaver\'s House', 'Rum Distiller\'s House',
+   'Fur Trader\'s House'];
+const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
+
+// A ship entering the sea lane leaves the map for the home port.
+function sailForEurope(ship) {
+  G.europe.push({ type: ship.type, icon: ship.icon, cargo: ship.cargo, state: 'port' });
+  G.units.splice(G.units.indexOf(ship), 1);
+  G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+  G.screen = 'europe';
+  G.msg = '';
+}
+
+// ------------------------------------------------------------ colony screen
+// §26.8. Composed in the documented order: WOODTILE region fill from (0,0),
+// the building field, the COLONY.PIK town strip at y=128, the 5x5 scene window,
+// the three panels, and the stockpile bar. Geometry is the byte-cited region
+// table; the field's sand ground is sampled from docs/screens/11_colony_screen.png.
+//
+// The 15 building plots are the cited DS:0x266 positions. Which buildings a
+// BRAND-NEW colony starts with is **TBD** -- it is not byte-cited anywhere in
+// the tree (the def table 0x8E82 is a runtime array and its initialiser is not
+// traced), so every plot renders as the empty-plot scenery the engine draws
+// when 0x8E82[i]==255. Resolving it needs that initialiser traced or a shipped
+// COLONY??.SAV parsed. Likewise the per-colony RNG plot shuffle (func_025D34)
+// is unresolved, so plots are used in table order.
+const PLOTS = [[56,13],[145,15],[173,18],[8,41],[37,45],[67,54],[96,53],[6,14],
+               [128,53],[10,76],[15,102],[87,11],[66,87],[123,106],[123,55]];
+const PLOT_CATEGORY = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4];
+// Empty-plot scenery per category: BUILDING.SS frames 42/43/44 are tree
+// clusters, 45 the wooded shore, 47 the outbuilding -- identified by rendering
+// the sheet tail, and matching the scenery in the capture.
+const EMPTY_PLOT_FRAME = [42, 43, 44, 45, 47];
+
+function drawColony(ctx) {
+  const c = G.colonies[G.colony];
+  if (!c) { G.screen = 'map'; return; }
+  usePalette('WOODTILE');
+  const [tw, th] = frameSize('WOODTILE', 0);
+  for (let y = 0; y < H; y += th)
+    for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
+
+  // Building field (0,8,200,120) over the colony's ground.
+  ctx.fillStyle = 'rgb(232,216,160)';
+  ctx.fillRect(0, 8, 200, 120);
+  PLOTS.forEach(([px, py], i) => {
+    const b = c.buildings[i];
+    const frame = (b === undefined) ? EMPTY_PLOT_FRAME[PLOT_CATEGORY[i]]
+                                    : DATA.buildings.indexOf(b) + 1;
+    sheetFrame(ctx, 'BUILDING', frame, px, py + 8);
+  });
+
+  // Title strip (0,0,320,7): name, season, year, gold -- green FONTTINY.
+  const title = `${c.name}, ${DATA.seasons[G.season]}, ${G.year}, Gold: ${G.gold}$`;
+  FONT.tiny.center(ctx, title, 160, 1, lut(HUD_INK));
+
+  // 5x5 neighbourhood at (200,8,120,120): rendered 80x80 at 16px, then the
+  // documented x1.5 stretch (2 source px -> 3 destination px).
+  const scene = document.createElement('canvas');
+  scene.width = 80; scene.height = 80;
+  const sg = scene.getContext('2d');
+  for (let ty = 0; ty < 5; ty++)
+    for (let tx = 0; tx < 5; tx++)
+      drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16 - 8, ty * 16 - 8);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(scene, 0, 0, 80, 80, 200, 8, 120, 120);
+  hollowRect(ctx, 224, 32, 72, 72, 0x0F);
+
+  // COLONY.PIK town strip, 320x72 at y=128, then the panel captions over it.
+  ctx.drawImage(IMG.COLONY, 0, 128);
+  // Plaza (0,130,120,48): the colonists, left-aligned at the panel origin + 2.
+  c.colonists.forEach((n, i) => {
+    const u = unit(n);
+    if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
+  });
+  // SoL band and the middle panel's caption (@MISC "No Ships In Port").
+  FONT.tiny.draw(ctx, `${c.sol}% (${c.colonists.length})`, 75, 133, lut(0x0F));
+  FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(0x0F));
+
+  // Stockpile bar (0,179,320,21): 16 cells pitch 19, icon = ICONS good+0x17
+  // (engine) at y=181, quantity centred at (9+19i, 194).
+  DATA.cargo.forEach((g, i) => {
+    sheetFrame(ctx, 'ICONS', 0x17 + i - 1, 1 + 19 * i, 181);
+    FONT.tiny.center(ctx, String(c.stock[i]), 9 + 19 * i, 194, lut(0x0F));
+  });
+  FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x0F));
+}
+
+// ------------------------------------------------------------ Europe screen
+// §26.9. EUROPE.PIK carries the dock town, market grid and the red "E"; the
+// engine draws the title band, the market prices, the dock/panel captions and
+// the recruit menu.
+const EURO_ROWS = ['RECRUIT', 'PURCHASE', 'TRAIN'];
+function drawEurope(ctx) {
+  usePalette('EUROPE');
+  ctx.drawImage(IMG.EUROPE, 0, 0);
+  // The play area is the PIK from y=8 down; the title band above it is wood,
+  // the same strip the map screen wears.
+  const [tw2, th2] = frameSize('WOODTILE', 0);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 8); ctx.clip();
+  for (let x = 0; x < W; x += tw2) sheetFrame(ctx, 'WOODTILE', 0, x, 0);
+  ctx.restore();
+  const n = DATA.nations[G.nation];
+  // Title band, text y=1 centred on x=160. The literal has no space in "Tax:0%"
+  // and the gold suffix is the FONTTINY '$' glyph.
+  const band = `${n.homeport}, ${n.country}. ${DATA.seasons[G.season]}, ${G.year}.` +
+               `  Tax:${G.tax}%  Gold: ${G.gold}$`;
+  FONT.tiny.center(ctx, band, 160, 1, lut(HUD_INK));
+
+  // Market bar (0,179,320,21): icons at x=1+19i y=181, bid/ask pair at y=194.
+  // ask = bid + @CARGO.Burden + 1.
+  DATA.cargo.forEach((g, i) => {
+    sheetFrame(ctx, 'ICONS', 0x17 + i - 1, 1 + 19 * i, 181);
+    // Printed as a bid/ask pair; ask = bid + @CARGO.Burden + 1.
+    const bid = G.market[i], ask = bid + g.burden + 1;
+    FONT.tiny.center(ctx, `${bid}/${ask}`, 9 + 19 * i, 194, lut(0x2F));
+  });
+
+  // Panel captions -- fixed @MISC string-id slots at the measured origins.
+  FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
+  FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
+  FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
+  const loading = G.europe.find(e => e.state === 'port');
+  FONT.tiny.draw(ctx, 'Loading:', 150, 120, lut(HUD_INK));
+  FONT.tiny.draw(ctx, loading ? loading.type : '', 186, 120, lut(0x0A));
+  // Ships in port occupy the six dock slots at (147+12k, 165).
+  G.europe.filter(e => e.state === 'port').forEach((e, k) => {
+    if (k < 6) sheetFrame(ctx, 'ICONS', 122, 147 + 12 * k, 165);
+  });
+
+  // Recruit menu: rows (281, 89+11r, 37, 9), accelerator letter yellow.
+  EURO_ROWS.forEach((r, k) => {
+    const y = 89 + 11 * k;
+    if (k === G.euroRow) { ctx.fillStyle = ink(57); ctx.fillRect(281, y, 37, 9); }
+    FONT.tiny.center(ctx, r, 299, y + 1, lut(k === G.euroRow ? 0x0F : 0x00));
+  });
+  FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x0F));
+}
+
 // ---------------------------------------------------------------- turn
 function endTurn() {
   G.turn += 1;
@@ -889,6 +1086,16 @@ function step(u, nx, ny) {
 // unit again.
 function advance() {
   if (!nextUnit()) { endTurn(); nextUnit(); }
+}
+
+// Space passes on the active unit: it keeps its position, gives up the rest of
+// its moves for this turn, and play moves on.
+function skipUnit() {
+  const u = G.units[G.sel];
+  if (!u) return;
+  u.movesLeft = 0;
+  G.msg = '';
+  advance();
 }
 
 // "Land Ho! What shall we call this new land, Your Excellency?" -- the naming
@@ -938,6 +1145,9 @@ function moveSel(dx, dy) {
     return;
   }
   if (!u.ship && water) return;   // land units cannot walk onto water
+  // The right-edge sea-lane column is the route home: a ship that enters it
+  // sails for Europe and leaves the map (CLAUDE.md hard rule 2, terrain 26).
+  if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) { sailForEurope(u); return; }
   step(u, nx, ny);
 }
 
@@ -989,14 +1199,26 @@ function onClick(mx, my) {
       if (G.card < 9) G.card++;
       else { beginGame(); G.screen = 'map'; }
       break;
-    case 'woodcut': G.screen = 'map'; askLandName(); break;
+    case 'woodcut':
+      // Woodcut 1 is the discovery plate and hands over to the naming prompt;
+      // woodcut 2 is BUILDING A COLONY and hands over to the new colony.
+      if (G.woodcut === 1) { G.screen = 'map'; askLandName(); }
+      else G.screen = 'colony';
+      break;
+    case 'colony':
+    case 'europe':
+      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
+      break;
     case 'map': {
       if (hit(mx, my, VP)) {
         const tx = G.view.x + Math.floor((mx - VP.x) / TILE);
         const ty = G.view.y + Math.floor((my - VP.y) / TILE);
-        // Clicking a stack cycles through the units standing on that tile.
+        // Clicking your own colony opens its screen; clicking a stack cycles
+        // through the units standing on that tile.
+        const ci = G.colonies.findIndex(c => c.x === tx && c.y === ty);
         const on = G.units.map((u, i) => i).filter(i => G.units[i].x === tx && G.units[i].y === ty);
-        if (on.length) G.sel = on[(on.indexOf(G.sel) + 1) % on.length];
+        if (ci >= 0 && !on.length) { G.colony = ci; G.screen = 'colony'; }
+        else if (on.length) G.sel = on[(on.indexOf(G.sel) + 1) % on.length];
         else centerOn(tx, ty);
       }
       break;
@@ -1047,13 +1269,24 @@ function onKey(e) {
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
+    case 'colony':
+      if (k === 'Escape' || k === 'x') G.screen = 'map';
+      break;
+    case 'europe':
+      // Recruit menu rows; ESC/E/x close the screen (§26.9 keys).
+      if (k === 'ArrowUp') G.euroRow = (G.euroRow + EURO_ROWS.length - 1) % EURO_ROWS.length;
+      if (k === 'ArrowDown') G.euroRow = (G.euroRow + 1) % EURO_ROWS.length;
+      if (k === 'Escape' || k === 'x' || k === 'e' || k === 'E') G.screen = 'map';
+      break;
     case 'map':
       if (k === 'ArrowLeft') moveSel(-1, 0);
       if (k === 'ArrowRight') moveSel(1, 0);
       if (k === 'ArrowUp') moveSel(0, -1);
       if (k === 'ArrowDown') moveSel(0, 1);
-      if (k === ' ') endTurn();
+      if (k === ' ') skipUnit();
       if (k === 'Tab') nextUnit();
+      if (k === 'b' || k === 'B') buildColony();
+      if (k === 'Escape' && G.colonies.length) { /* no-op on the map */ }
       break;
   }
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab'].includes(k)) e.preventDefault();
@@ -1079,7 +1312,8 @@ function frame() {
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,
-     king: drawKing, map: drawMap, woodcut: drawWoodcut }[G.screen])(ctx);
+     king: drawKing, map: drawMap, woodcut: drawWoodcut,
+     colony: drawColony, europe: drawEurope }[G.screen])(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;

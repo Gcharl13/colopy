@@ -146,12 +146,12 @@ def main():
         fallback += [e["r"], e["g"], e["b"]]
 
     want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
-                "KINGLSS1", "KINGLSS2"] + \
+                "KINGLSS1", "KINGLSS2", "COLONY", "EUROPE"] + \
         [f"LEVN{i:04d}" for i in range(1, 11)]
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
                # Woodcut event plates: the frame, plus WDCUT01 (first landfall).
-               "WOODFRAM", "WDCUT01"]
+               "WOODFRAM", "WDCUT01", "WDCUT02", "BUILDING"]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"

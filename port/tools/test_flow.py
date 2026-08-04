@@ -47,6 +47,41 @@ SCRIPT = """() => {
   out.seaRefused = (pio.x === at0[0] && pio.y === at0[1]);
   pio.movesLeft = 1; moveSel(-1, 0);         // west, inland
   out.walkedInland = (pio.x === at0[0] - 1);
+
+  // Space passes on the active unit without moving it.
+  G.sel = 1; pio.movesLeft = 1;
+  const held = [pio.x, pio.y];
+  skipUnit();
+  out.skipHeldPosition = (pio.x === held[0] && pio.y === held[1]);
+
+  // Build Colony on the tile the party is standing on.
+  G.sel = G.units.findIndex(u => !u.ship);
+  const founder = G.units[G.sel];
+  buildColony();
+  out.colonyPrompt = G.dialog ? G.dialog.entry : null;
+  const before = G.units.length;
+  closeDialog(G.dialog.entry);
+  out.colony = G.colonies.length === 1 && {
+    name: G.colonies[0].name,
+    onFounderTile: G.colonies[0].x === founder.x && G.colonies[0].y === founder.y,
+    founderConsumed: G.units.length === before - 1,
+    stockSlots: G.colonies[0].stock.length,
+  };
+  out.colonyWoodcut = { screen: G.screen, n: G.woodcut };
+  onClick(-1, -1);
+  out.afterColonyWoodcut = G.screen;
+  onClick(310, 190);                          // Exit zone
+  out.colonyExit = G.screen;
+
+  // A ship entering the sea lane leaves for the home port.
+  const vessel = G.units.find(u => u.ship);
+  G.sel = G.units.indexOf(vessel);
+  vessel.x = MAP.w - 2; vessel.movesLeft = 9;
+  moveSel(1, 0);
+  out.europe = { screen: G.screen, inPort: G.europe.length,
+                 shipLeftMap: !G.units.includes(vessel) };
+  onClick(310, 190);
+  out.europeExit = G.screen;
   return out;
 }"""
 
@@ -81,6 +116,20 @@ def main():
          r["afterNaming"]),
         ("land unit refused by the sea", r["seaRefused"], r["seaRefused"]),
         ("land unit walks inland", r["walkedInland"], r["walkedInland"]),
+        ("space passes without moving", r["skipHeldPosition"], r["skipHeldPosition"]),
+        ("@COLONY prefilled from COLONY.TXT",
+         r["colonyPrompt"] == "Jamestown", r["colonyPrompt"]),
+        ("colony founded on the founder's tile, founder consumed",
+         r["colony"] and r["colony"]["onFounderTile"] and r["colony"]["founderConsumed"]
+         and r["colony"]["stockSlots"] == 16, r["colony"]),
+        ("first colony fires woodcut 2",
+         r["colonyWoodcut"] == {"screen": "woodcut", "n": 2}, r["colonyWoodcut"]),
+        ("woodcut 2 opens the colony screen",
+         r["afterColonyWoodcut"] == "colony", r["afterColonyWoodcut"]),
+        ("colony Exit returns to the map", r["colonyExit"] == "map", r["colonyExit"]),
+        ("sea lane sails the ship to Europe",
+         r["europe"] == {"screen": "europe", "inPort": 1, "shipLeftMap": True}, r["europe"]),
+        ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),
     ]
     bad = 0
     for name, ok, got in checks:

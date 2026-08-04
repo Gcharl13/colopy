@@ -27,6 +27,8 @@ SHOTS = [
     ("landfall", "beginGame();G.screen='map';openDialog('LANDFALL',()=>{})"),
     ("woodcut", "G.screen='woodcut';G.woodcut=1"),
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
+    ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
+    ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
 ]
 
 
@@ -52,6 +54,11 @@ def main():
             s.movesLeft = 9; moveSel(-1, 0);
             if (G.dialog) closeDialog(G.dialog.opts ? 1 : 'America');
           }
+        }; }""")
+        pg.evaluate("""() => { window.makeColony = () => {
+          const p = G.units[1]; G.sel = 1;
+          buildColony(); closeDialog(G.dialog.entry);
+          G.screen = 'colony';
         }; }""")
         for name, setup in SHOTS:
             # Pin the active-unit blink to its visible phase so map shots are

@@ -133,3 +133,17 @@ Deferred to the comprehensive phase; **explicitly TBD, not "done":**
   - `func_0452D4` = the in-game menu-bar pulldown engine (page 0x0A module) — §5. **Ruling 2026-07-30: supersedes the `func_06E3D0` dropdown-engine claim in row 7 / MENUS decode §7.1** and resolves row 7's "bar draw + per-item x" TBD (`func_044E7C`; x-chain @0x044BA4–0x044CA0).
 
 (OPENING.EXE/CLOSING.EXE remain out of VICEROY.EXE scope.)
+
+## Port implementation gaps (2026-08-04)
+
+Tracked because the HTML port now renders these screens and the gaps are
+load-bearing render inputs, not cosmetics. Per the UI mandate rule 2 neither
+screen is "COMPLETE" while these stand.
+
+| Screen | Item | Status | Blocker |
+|---|---|---|---|
+| Colony (§26.8) | Starting-building set for a brand-new colony | **TBD** | Not byte-cited anywhere. The def table `0x8E82` is a runtime array and its initialiser is untraced. Closing it needs that initialiser found, or a shipped `COLONY??.SAV` parsed. The port draws an explicitly-labelled placeholder (`STARTING_BUILDINGS_UNVERIFIED`). |
+| Colony (§26.8) | Per-colony plot assignment | **TBD** | `func_025D34` is a 16-bit-seeded RNG shuffle (already flagged in CLAUDE.md). The port uses the `DS:0x266` plots in table order. |
+| Colony (§26.8) | Empty-plot placeholder frames | **PARTIAL** | `DS:0x260[category]−1` — the table values are unknown. BUILDING.SS frames 42/43/44/45/47 were identified as the scenery by rendering the sheet tail and matching `docs/screens/11_colony_screen.png`; the category→frame mapping is inferred, not cited. |
+| Europe (§26.9) | Market price movement | **TBD** | Prices are seeded from `@CARGO.price_start1` and held; the per-turn drift/volatility walk is specified but not implemented. |
+| Europe (§26.9) | Recruit/Purchase/Train actions | **TBD** | Menu rows render and highlight; the handlers are not implemented. |

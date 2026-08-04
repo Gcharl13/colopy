@@ -62,20 +62,37 @@ def build_data():
     # parser treats as a paragraph break.
     full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
     D["dialogs"] = {}
-    for key in ("@LANDHO", "@LANDFALL"):
+    for key in ("@LANDHO", "@LANDFALL", "@COLONY"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {
             "body": para[0].split("\n"),
             "tail": para[1].split("\n") if len(para) > 1 else [],
             "width": int(sec["directives"].get("width", 0x50)),
-            "default": sec["directives"].get("default", "0"),
+            # No @default at all means a plain entry field with no prefill --
+            # do NOT substitute "0", which would read as an option index.
+            "default": sec["directives"].get("default"),
         }
 
     # Woodcut captions: the single @WOODCUT section, one caption per line, index
     # = woodcut number (1 = DISCOVERY OF THE NEW WORLD, the first-landfall plate).
     wc = json.load(open(ROOT / "data_extracted/text/WOODCUT_sections.json"))
     D["woodcuts"] = wc["@WOODCUT"].split("\n")
+
+    # Colony names: COLONY.TXT carries one list per nation, "<name>[,<year>]"
+    # per line, used in order as colonies are founded.
+    col = json.load(open(ROOT / "data_extracted/text/COLONY_sections.json"))
+    D["colonynames"] = [[ln.split(",")[0] for ln in col[k].split("\n") if ln.strip()]
+                        for k in ("@ENGLISH", "@FRENCH", "@SPANISH", "@DUTCH")]
+
+    # @CARGO in table order -- the 16 tradeable goods drive both the colony
+    # stockpile bar and the Europe market bar; bid/ask come from the record.
+    D["cargo"] = [{"name": r["name"],
+                   "bid": int(r["price_start1"] or 0),
+                   "burden": int(r["burden"] or 0)}
+                  for r in rows("@CARGO")[:16]]
+    D["buildings"] = [r["name"] for r in rows("@BUILDING")]
+    D["regionname"] = [r["name"] for r in rows("@COLONYNAME")]
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
