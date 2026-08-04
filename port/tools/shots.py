@@ -29,6 +29,19 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("declare",
+     "beginGame();G.screen='map';"
+     "G.colonies=[{name:'Boston',x:G.units[0].x,y:G.units[0].y,nation:G.nation,"
+     "colonists:[{type:'Colonists',profession:null,job:null,cell:null}],"
+     "stock:DATA.cargo.map(()=>0),buildings:STARTING_BUILDINGS.slice(),hammers:0,"
+     "building:null,sol:80}];declareIndependence()"),
+    ("score",
+     "beginGame();G.screen='map';G.gold=4200;G.bellsTotal=9000;"
+     "G.fathersOwned=['Adam Smith','Simon Bolivar'];"
+     "G.colonies=[{name:'Boston',x:20,y:20,nation:0,colonists:["
+     "{profession:null},{profession:'Expert Farmers'},{profession:'Petty Criminals'}],"
+     "stock:DATA.cargo.map(()=>0),buildings:[],hammers:0,building:null,sol:64}];"
+     "G.report='F10';G.screen='report'"),
     ("roads",
      "beginGame();G.screen='map';"
      "(()=>{let bx=-1,by=-1;"

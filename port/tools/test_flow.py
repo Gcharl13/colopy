@@ -371,6 +371,84 @@ SCRIPT = """() => {
     out.usedUpTools = pio2.type === 'Colonists' && pio2.tools === 0;
   }
 
+  // ---- the Declaration, the REF and the score ----
+  {
+    beginGame(); G.screen = 'map';
+    // The REF seed is difficulty-scaled 8d+15 / 5d+5 / 3d+2 / 6d+2.
+    const d = G.difficulty;
+    out.refSeed = { reg: G.ref.Regulars === 8 * d + 15, cav: G.ref.Cavalry === 5 * d + 5,
+                    mow: G.ref['Man-O-War'] === 3 * d + 2, art: G.ref.Artillery === 6 * d + 2 };
+    // The royal fund accrues (8d+10)*2^era and buys a unit every 1800.
+    G.royalFund = 0;
+    const before = G.ref.Regulars + G.ref.Cavalry + G.ref['Man-O-War'] + G.ref.Artillery;
+    growREF();
+    out.refAccrue = G.royalFund === (8 * d + 10) * (1 << refEra());
+    G.royalFund = 1800 * 3;
+    growREF();
+    const after = G.ref.Regulars + G.ref.Cavalry + G.ref['Man-O-War'] + G.ref.Artillery;
+    out.refBuys = after >= before + 3 && G.royalFund < 1800;
+
+    // Declaring below 50% is refused with @TOOTORY, and no flag is set.
+    G.colonies = [{ name: 'Rebel', x: G.units[0].x, y: G.units[0].y, nation: G.nation,
+                    colonists: [{ type: 'Colonists', profession: null, job: null, cell: null },
+                                { type: 'Colonists', profession: null, job: null, cell: null }],
+                    stock: DATA.cargo.map(() => 0), buildings: STARTING_BUILDINGS.slice(),
+                    hammers: 0, building: null, sol: 10 }];
+    G.eventQueue = []; G.dialog = null;
+    declareIndependence();
+    out.tooTory = { refused: !(G.flags & 1), warned: G.eventQueue.length === 1 && !G.dialog };
+
+    // At 50% or better it asks, and only the second row declares.
+    G.colonies[0].sol = 80;
+    out.meter = nationalSoL() === 80;
+    G.eventQueue = []; G.dialog = null;
+    declareIndependence();
+    out.declareAsks = !!G.dialog && G.dialog.opts.length === 2;
+    closeDialog(0);                                   // "Never! ... God save the King!"
+    out.declareRefusable = !(G.flags & 1);
+    // Put a veteran soldier in the colony so mobilisation has something to promote.
+    const sold = mkUnit('Soldiers', G.colonies[0].x, G.colonies[0].y);
+    G.units.push(sold);
+    G.eventQueue = []; G.dialog = null;
+    declareIndependence();
+    closeDialog(1);
+    out.declared = { flagSet: (G.flags & 1) === 1, yearRecorded: G.declaredYear === G.year,
+                     mobilised: sold.type === 'Cont. Army' };
+    // The first wave lands.
+    out.refLanded = G.refUnits.length > 0;
+    // Fighting the REF: a REF unit is a legal target and dies like any other.
+    {
+      const target = G.refUnits.find(u => !u.ship);
+      if (target) {
+        const n0 = G.refUnits.length;
+        let guard = 0;
+        while (G.refUnits.includes(target) && guard++ < 200) {
+          const att = mkUnit('Cont. Army', target.x, target.y - 1);
+          G.units.push(att);
+          resolveAttack(att, target);
+        }
+        out.refKillable = G.refUnits.length < n0;
+      } else out.refKillable = true;
+    }
+    // The score: seven components and the computed multiplier {4,5,6,8,10}.
+    const sp = scoreParts();
+    out.score = {
+      sevenParts: ['population', 'fathers', 'sentiment', 'razed', 'gold',
+                   'liberty', 'revolution'].every(k => k in sp),
+      mult: sp.mult === [4, 5, 6, 8, 10][G.difficulty],
+      popTiers: (() => {
+        const c = G.colonies[0];
+        c.colonists = [{ profession: 'Petty Criminals' }, { profession: null },
+                       { profession: 'Expert Farmers' }];
+        return scoreParts().population === 1 + 2 + 4;
+      })(),
+      revolutionBonus: (() => {
+        G.flags |= 8; G.declaredYear = 1700;
+        return scoreParts().revolution === (1780 - 1700) * 2;
+      })(),
+    };
+  }
+
   // ---- combat, natives, immigration, pedia, save/load ----
   {
     beginGame(); G.screen = 'map';
@@ -972,6 +1050,19 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the REF seed is difficulty-scaled", all(r["refSeed"].values()), r["refSeed"]),
+        ("the royal fund accrues per era", r["refAccrue"], r["refAccrue"]),
+        ("every 1800 in the royal fund buys a REF unit", r["refBuys"], r["refBuys"]),
+        ("declaring below 50%% is refused", all(r["tooTory"].values()), r["tooTory"]),
+        ("the national SoL meter is the colony mean", r["meter"], r["meter"]),
+        ("declaring asks first and can be refused",
+         r["declareAsks"] and r["declareRefusable"], [r["declareAsks"], r["declareRefusable"]]),
+        ("declaring sets the war flag and mobilises Continentals",
+         all(r["declared"].values()), r["declared"]),
+        ("the first REF wave lands", r["refLanded"], r["refLanded"]),
+        ("REF units can be fought and killed", r["refKillable"], r["refKillable"]),
+        ("the score has seven components and the right multiplier",
+         all(r["score"].values()), r["score"]),
         ("a Pioneer carries 100 tools", r["pioneerTools"], r["pioneerTools"]),
         ("movement budgets are stored in thirds", all(r["thirds"].values()), r["thirds"]),
         ("building a road takes the terrain's improvement turns and 20 tools",

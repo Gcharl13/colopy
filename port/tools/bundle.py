@@ -253,7 +253,11 @@ def build_data():
               # Demand Tribute / Incite / Attack
               "@EXTORTSTUFF", "@EXTORTPOOR", "@EXTORTLAUGH", "@EXTORTNO",
               "@INDIANWARPATH2", "@WHACKINDIANS", "@EXTINCT",
-              "@MADATSHIPS", "@MADATWAGONS"):
+              "@MADATSHIPS", "@MADATWAGONS",
+              # Declaration, the REF war and its endings
+              "@DECLARE", "@TOOTORY", "@ALREADYREVOLUTION", "@INDEPENDENCE",
+              "@MOBILIZE", "@MOBILIZE2", "@WARN1", "@WARN2", "@WARN3",
+              "@CONSIDER", "@INTERVENTION", "@KINGLOSE", "@KINGWIN"):
         if k not in full:
             continue
         sec = full[k]

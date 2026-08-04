@@ -276,6 +276,8 @@ const G = {
   crosses: 0,             // immigration accumulator
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   rivals: [], metAnyone: false,
+  ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
+  razed: 0, bellsTotal: 0, lostWar: false,
   report: null,           // open F-key report
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
@@ -356,6 +358,8 @@ function beginGame() {
   IMPROVE.fill(0);
   seedNatives();
   seedRivals();
+  seedREF();
+  G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
   G.metAnyone = false;
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
@@ -1035,6 +1039,18 @@ function drawMap(ctx) {
     }
   }
 
+  // The King's Royal Expeditionary Force. It is not one of the four European
+  // powers -- the Crown becomes its own power at the war transition -- so it
+  // wears its own plate colour rather than a @COUNTRY one.
+  for (const ru of G.refUnits) {
+    const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
+    if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    const px = ox + tx * TILE, py = oy + ty * TILE;
+    nationPlate(tgt, px, py, KING_COLOUR, ru.orders);
+    const [fw, fh] = frameSize('ICONS', ru.icon);
+    sheetFrame(tgt, 'ICONS', ru.icon, px + TILE - fw, py + TILE - fh);
+  }
+
   // Units, selected one last so a stack draws it on top.
   const order = G.units.map((u, i) => i).sort((a, b) => (a === G.sel) - (b === G.sel));
   for (const i of order) {
@@ -1071,7 +1087,12 @@ const HUD_INK = 68;
 // 13 orange); the tribes use @TRIBES' `value` column, which is the same kind of
 // palette index and resolves to eight distinct colours. Natives get the plate
 // too, so ownership reads the same way across the map.
+// The Crown's own plate colour. It is not in @COUNTRY -- the King is a fifth
+// power that only exists once the war starts -- so the port uses the @COLORS
+// border white, which is what the REF plates read as in the DOS captures.
+const KING_COLOUR = 128;
 function ownerColour(u) {
+  if (u.nation === -2) return KING_COLOUR;
   if (u.nation >= 0) return DATA.nations[u.nation].color;
   const t = G.tribes[u.tribe];
   return t ? t.color : 8;
@@ -3308,6 +3329,8 @@ function resolveAttack(att, def) {
   } else {
     const i = G.units.indexOf(loser);
     if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
+    const k = G.refUnits.indexOf(loser);
+    if (k >= 0) G.refUnits.splice(k, 1);
     const j = G.natives.indexOf(loser);
     if (j >= 0) {
       // §19.11: a brave's death stamps its village's rebuild request (flags
@@ -3439,6 +3462,7 @@ function updateCongress() {
   G.bellsPerTurn = bellsPerTurn();
   if (!G.bellsPerTurn) return;
   G.bells += G.bellsPerTurn;
+  G.bellsTotal += G.bellsPerTurn;
   if (!G.fatherInProgress) {
     const cands = fatherCandidates();
     if (!cands.length) return;
@@ -3472,6 +3496,232 @@ function applyFatherEffect(name) {
       for (const p of c.colonists)
         if (p.profession === CONVERT_CLASS) p.profession = 'Free Colonists';
   }
+}
+
+// ------------------------------------- the Declaration and the REF war
+// spec/systems/revolution.md + king.md + ref_growth.md + scoring.md.
+//
+// The national SoL meter [0x53D0] is a 0..100 "Bolivar meter" separate from the
+// per-colony percentages. Its own per-turn driver is not in the evidence here,
+// so the port takes the population-weighted mean of the colony meters -- which
+// is what the F3 screen shows and what the declare gate reads. The +20 from
+// Simon Bolivar IS byte-cited (`add [0x53D0],0x14` @0x3BE64, capped 100).
+function nationalSoL() {
+  const pop = G.colonies.reduce((n, c) => n + c.colonists.length, 0);
+  let m = 0;
+  if (pop) m = Math.floor(G.colonies.reduce((n, c) => n + c.sol * c.colonists.length, 0) / pop);
+  if (G.fathersOwned.includes('Simon Bolivar')) m += 20;
+  return Math.max(0, Math.min(100, m));
+}
+// game.flags [0x5382]: bit 0 War of Independence declared, bit 1 foreign
+// intervention active, bit 3 independence WON.
+const WOI_DECLARED = 1, WOI_INTERVENTION = 2, WOI_WON = 8;
+const REF_TYPES = ['Regulars', 'Cavalry', 'Man-O-War', 'Artillery'];
+// New-game REF seed, byte-verified in new_game_setup: 8d+15 Regulars,
+// 5d+5 Cavalry, 3d+2 Man-O-War, 6d+2 Artillery for difficulty d.
+function seedREF() {
+  const d = G.difficulty;
+  G.ref = { Regulars: 8 * d + 15, Cavalry: 5 * d + 5,
+            'Man-O-War': 3 * d + 2, Artillery: 6 * d + 2 };
+  G.refUnits = [];
+  G.royalFund = 0;
+  G.flags = 0;
+  G.declaredYear = 0;
+}
+// The royal fund accrues (8*difficulty + 10) * 2^era per turn, and every 1800
+// banked buys one REF unit (func_03E162: accrue @0x3E181, gate `>= 0x708`
+// @0x3E1C6, `SUB [bx+0x22],0x708` @0x3E271). Era doubles as the year passes
+// 1600 / 1700 / 1750. The port's own sales tax feeds the same fund, which is
+// the point of the loop: your taxes buy the army sent against you.
+function refEra() {
+  return G.year >= 1750 ? 3 : G.year >= 1700 ? 2 : G.year >= 1600 ? 1 : 0;
+}
+const REF_UNIT_COST = 1800;
+function growREF() {
+  G.royalFund += (8 * G.difficulty + 10) * (1 << refEra());
+  while (G.royalFund >= REF_UNIT_COST) {
+    G.royalFund -= REF_UNIT_COST;
+    // The slot is chosen by ratio; the port buys into the type that is furthest
+    // below its share of the seeded mix.
+    const seed = { Regulars: 8 * G.difficulty + 15, Cavalry: 5 * G.difficulty + 5,
+                   'Man-O-War': 3 * G.difficulty + 2, Artillery: 6 * G.difficulty + 2 };
+    const total = REF_TYPES.reduce((n, t) => n + G.ref[t], 0) || 1;
+    const seedTotal = REF_TYPES.reduce((n, t) => n + seed[t], 0);
+    let pick = REF_TYPES[0], worst = Infinity;
+    for (const t of REF_TYPES) {
+      const gap = G.ref[t] / total - seed[t] / seedTotal;
+      if (gap < worst) { worst = gap; pick = t; }
+    }
+    G.ref[pick] += 1;
+  }
+}
+// GAME menu "DECLARE INDEPENDENCE" -> the declaration gate (func_03E984).
+// Three steps, all byte-cited: already-revolting, then the SoL floor of 50,
+// then the @DECLARE confirm.
+function declareIndependence() {
+  if (G.flags & WOI_DECLARED) { showEvent('ALREADYREVOLUTION', {}); return; }
+  const meter = nationalSoL();
+  if (meter < 50) { showEvent('TOOTORY', { NUMBER0: meter }); return; }
+  askEvent('DECLARE', { STRING0: DATA.nations[G.nation].country }, (choice) => {
+    // @DECLARE row 0 is the loyal refusal, row 1 the declaration.
+    if (choice !== 1) return;
+    G.flags |= WOI_DECLARED;
+    G.declared = true;
+    G.declaredYear = G.year;
+    mobilizeContinentals();
+    // There is no Declaration woodcut: @WOODCUT's 17 captions have none, and
+    // 11/12 are COLONY BURNING / COLONY DESTROYED. So the declaration is the
+    // popup alone.
+    showEvent('INDEPENDENCE', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    // The Crown becomes a real power on the map, and the first wave sails.
+    refWave();
+  });
+}
+// mobilize_continentals, byte-verified: for every colony with SoL >= 50 a budget
+// of ((SoL - 50) * (size / 2)) / 50, clamped to at least 1, of the veteran
+// Soldiers and Dragoons standing in that colony are promoted IN PLACE --
+// @UNIT type 1 Soldiers -> 9 Cont. Army, type 4 Dragoons -> 7 Cont. Cav. No
+// units are created.
+const CONTINENTAL_OF = { Soldiers: 'Cont. Army', Dragoons: 'Cont. Cav.' };
+function mobilizeContinentals() {
+  let promoted = 0;
+  for (const c of G.colonies) {
+    if (c.sol < 50) continue;
+    let budget = Math.max(1, Math.floor((c.sol - 50) * Math.floor(c.colonists.length / 2) / 50));
+    for (const u of G.units) {
+      if (budget <= 0) break;
+      if (u.x !== c.x || u.y !== c.y) continue;
+      const to = CONTINENTAL_OF[u.type];
+      if (!to) continue;
+      const t = unit(to);
+      u.type = t.name; u.icon = t.icon; u.moves = t.movement * MOVE_UNIT;
+      u.movesLeft = Math.min(u.movesLeft, u.moves);
+      budget -= 1; promoted += 1;
+    }
+  }
+  if (promoted) showEvent('MOBILIZE2', { STRING0: G.colonies[0].name, NUMBER0: promoted });
+}
+// A REF wave lands at a population-weighted pick over the coastal colonies, the
+// same land_intervention_force the free intervention force uses: a Man-O-War
+// makes the beach, the troops come ashore carried, and every land unit is a
+// veteran.
+const REF_WAVE = 6;
+function coastalColonies() {
+  return G.colonies.filter(c =>
+    HALO_DIRS.some(([dx, dy]) => tileWater(at(c.x + dx, c.y + dy))));
+}
+function refWave() {
+  const pool = coastalColonies();
+  if (!pool.length || !G.colonies.length) return;
+  const weights = pool.map(c => Math.max(1, c.colonists.length));
+  let roll = 1 + Math.floor(Math.random() * weights.reduce((a, b) => a + b, 0));
+  let target = pool[0];
+  for (let i = 0; i < pool.length; i++) { roll -= weights[i]; if (roll <= 0) { target = pool[i]; break; } }
+  // The beach: a water tile beside the colony for the Man-O-War, and the
+  // troops come ashore onto the colony's own tile.
+  const beach = HALO_DIRS.map(([dx, dy]) => [target.x + dx, target.y + dy])
+    .find(([x, y]) => tileWater(at(x, y)));
+  let landed = 0;
+  for (const type of ['Regulars', 'Cavalry', 'Artillery']) {
+    for (let k = 0; k < REF_WAVE && G.ref[type] > 0 && landed < REF_WAVE; k++) {
+      G.ref[type] -= 1;
+      const u = mkUnit(type, target.x, target.y);
+      u.nation = -2;                      // the King's own power, not a rival
+      u.veteran = true;
+      G.refUnits.push(u);
+      landed += 1;
+    }
+  }
+  if (beach && G.ref['Man-O-War'] > 0) {
+    G.ref['Man-O-War'] -= 1;
+    const s = mkUnit('Man-O-War', beach[0], beach[1]);
+    s.nation = -2;
+    G.refUnits.push(s);
+  }
+  if (landed) showEvent('WARN2', { NUMBER1: G.colonies.length, STRING0: target.name });
+}
+// The per-turn war resolver. It runs while the declared bit is set and the won
+// bit is clear: it counts the King's surviving land units and, when they are
+// spent and no more can sail, the rebels have won.
+function runWar() {
+  if (!(G.flags & WOI_DECLARED) || (G.flags & WOI_WON)) return;
+  growREF();
+  // REF units march on the nearest colony; contact resolves as ordinary combat.
+  for (let i = G.refUnits.length - 1; i >= 0; i--) {
+    const u = G.refUnits[i];
+    u.movesLeft = u.moves;
+    if (u.ship) continue;
+    const c = G.colonies.slice().sort((a, b) =>
+      (Math.abs(a.x - u.x) + Math.abs(a.y - u.y)) - (Math.abs(b.x - u.x) + Math.abs(b.y - u.y)))[0];
+    if (!c) continue;
+    const dx = Math.sign(c.x - u.x), dy = Math.sign(c.y - u.y);
+    if (dx === 0 && dy === 0) {
+      // Standing in a rebel colony: fight whatever defends it, and take it if
+      // nothing does.
+      const def = G.units.find(d => d.x === c.x && d.y === c.y && !d.ship);
+      if (def) { resolveAttack(u, def); continue; }
+      G.colonies.splice(G.colonies.indexOf(c), 1);
+      G.razed += 1;
+      // @WOODCUT 12, COLONY DESTROYED.
+      G.woodcut = 12; G.screen = 'woodcut';
+      showEvent('WARN2', { NUMBER1: G.colonies.length,
+                           STRING0: DATA.nations[G.nation].adjective });
+      continue;
+    }
+    if (!tileWater(at(u.x + dx, u.y + dy))) { u.x += dx; u.y += dy; }
+    else if (!tileWater(at(u.x + dx, u.y))) u.x += dx;
+    else if (!tileWater(at(u.x, u.y + dy))) u.y += dy;
+  }
+  // Fresh waves keep sailing while the Crown has troops left.
+  const afloat = REF_TYPES.reduce((n, t) => n + G.ref[t], 0);
+  if (afloat > 0 && G.refUnits.filter(u => !u.ship).length === 0) refWave();
+  // Victory: the King's land units are gone and none remain to send.
+  const landed = G.refUnits.filter(u => !u.ship).length;
+  if (landed === 0 && afloat === 0) {
+    G.flags |= WOI_WON;
+    showEvent('KINGLOSE', {});
+  }
+  // Defeat: the King holds every colony. @KINGWIN is the Crown's own gloat --
+  // @KINGVICTORY belongs to the European-war tax cut, not to this.
+  if (!G.colonies.length && !(G.flags & WOI_WON) && !G.lostWar) {
+    G.lostWar = true;
+    showEvent('KINGWIN', { STRING0: DATA.nations[G.nation].country });
+  }
+}
+// ------------------------------------------------------------------ score
+// func_039EE2's seven components, byte-verified 2026-06-28, then the difficulty
+// multiplier of func_03A9C0.
+//   1 population   per colonist: +1 for an Indentured Servant / Petty Criminal /
+//                  Indian Convert, +2 for a Free Colonist, +4 for anyone with a
+//                  real profession
+//   2 fathers      +5 each
+//   3 sentiment    the national SoL meter, x1
+//   4 razed        razed colonies x -(1 + difficulty)
+//   5 gold         min(gold/100, 100)
+//   6 liberty      the bell pool / 1000
+//   7 revolution   (1780 - the declaration year) x 2, only once independence is won
+// The multiplier is computed, not tabled: difficulty + 4, +1 at 3, +1 at 4 ->
+// {4, 5, 6, 8, 10}.
+const SCORE_PLAIN = ['Indentured Servants', 'Petty Criminals', 'Indian Converts'];
+function scoreParts() {
+  let population = 0;
+  for (const c of G.colonies)
+    for (const p of c.colonists) {
+      if (SCORE_PLAIN.includes(p.profession)) population += 1;
+      else if (!p.profession || p.profession === 'Free Colonists') population += 2;
+      else population += 4;
+    }
+  const fathers = G.fathersOwned.length * 5;
+  const sentiment = nationalSoL();
+  const razed = (G.razed || 0) * -(1 + G.difficulty);
+  const gold = Math.min(Math.floor(G.gold / 100), 100);
+  const liberty = Math.floor(G.bellsTotal / 1000);
+  const revolution = (G.flags & WOI_WON) && G.declaredYear
+    ? (1780 - G.declaredYear) * 2 : 0;
+  const base = population + fathers + sentiment + razed + gold + liberty + revolution;
+  const mult = G.difficulty + 4 + (G.difficulty >= 3 ? 1 : 0) + (G.difficulty >= 4 ? 1 : 0);
+  return { population, fathers, sentiment, razed, gold, liberty, revolution,
+           base, mult, total: Math.floor(mult * base / 100) >> 1 };
 }
 
 // ------------------------------------------------------------ reports
@@ -3547,14 +3797,22 @@ const REPORTS = {
     }
     return l;
   } },
-  F10: { title: 'Colonization Score', adviser: 'MSS1', body: () => [
-    `Colonies:        ${G.colonies.length}`,
-    `Colonists:       ${G.colonies.reduce((n, c) => n + c.colonists.length, 0)}`,
-    `Units:           ${G.units.length}`,
-    `Treasury:        ${G.gold} gold`,
-    `Founding Fathers:${G.fathersOwned.length}`,
-    `Paid the Crown:  ${G.kingsFund} gold`,
-  ] },
+  // The seven byte-verified score components (func_039EE2) and the computed
+  // difficulty multiplier {4,5,6,8,10}.
+  F10: { title: 'Colonization Score', adviser: 'MSS1', body: () => {
+    const s = scoreParts();
+    return [
+      `Population        ${s.population}`,
+      `Founding Fathers  ${s.fathers}`,
+      `Rebel sentiment   ${s.sentiment}`,
+      `Colonies razed    ${s.razed}`,
+      `Gold              ${s.gold}`,
+      `Liberty bells     ${s.liberty}`,
+      `Revolution bonus  ${s.revolution}`,
+      '',
+      `Difficulty x${s.mult}   TOTAL ${s.total}`,
+    ];
+  } },
   F8: { title: 'Foreign Affairs Adviser', adviser: 'MSS0', body: () => {
     if (!G.rivals.length) return ['No other powers are in the New World.'];
     return G.rivals.map(r => {
@@ -3788,6 +4046,7 @@ function endTurn() {
   ageConverts();
   nativeRaids();
   runRivals();
+  runWar();
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -3879,11 +4138,13 @@ function moveSel(dx, dy) {
     return;
   }
   if (!u.ship && water) return;   // land units cannot walk onto water
-  // Moving onto a tile held by a native or rival unit is an attack (§14).
-  const foe = G.natives.find(n => n.x === nx && n.y === ny);
+  // Moving onto a tile held by a native, a rival or the King's expeditionary
+  // force is an attack (§14).
+  const foe = G.natives.find(n => n.x === nx && n.y === ny) ||
+              G.refUnits.find(n => n.x === nx && n.y === ny);
   if (foe) {
     resolveAttack(u, foe);
-    adjustTension(foe.tribe, 100);          // attacking a tribe is an act of war
+    if (foe.tribe !== undefined) adjustTension(foe.tribe, 100);   // an act of war
     advance();
     return;
   }
@@ -4057,6 +4318,7 @@ const COMMANDS = {
   'F10 Colonization Score': () => { G.report = 'F10'; G.screen = 'report'; },
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
   // GAME
+  'DECLARE INDEPENDENCE': declareIndependence,
   'Save Game': saveGame,
   'Load Game': loadGame,
   'Cargo Types': () => openPedia(0),
