@@ -6341,3 +6341,41 @@ After the change a text-free strip of the port's sidebar scores **1.2** against 
 - `port/src/game.js` `drawMap()` — tiles WOODTILE.SS and adopts its own sheet palette.
 - `port/tools/build_assets.py` — exports WOODTILE.SS's palette.
 - `spec/ui/map_view.md` — line flagged.
+
+---
+
+## 2026-08-04 — Colony screen: scene window, centre-tile outline, stockpile inks
+
+Four corrections to §26.8, all measured off `docs/screens/11_colony_screen.png` (normalised to
+320x200 by cropping the capture's content box 192,184–832,584 and NEAREST-resizing 2:1).
+
+**1. The 5x5 scene's outer ring really is overdrawn.** §26.8 lists both
+`(200,8,120,120) "5x5 scene"` and `(224,32,72,72) "Visible 3x3 scene window … outer ring
+overdrawn"`. Measured: the non-wood window in the capture's right panel is exactly
+x 224..295, y 32..103, inside a 1px dark border at 223/296 and 31/104. So the 5x5 is composed
+and stretched into the larger rect, but only the central 3x3 is visible. Rendering the full
+5x5 (as the port first did) is wrong.
+
+**2. The white rectangle is the colony-centre tile, not the 3x3 window.** Measured white
+outline: x 248..271, y 56..79 — 24x24, i.e. the cited `(248,56,24,24)` "Colony-centre tile"
+region, and consistent with 24px tiles in a 72px window.
+
+**3. Stockpile icons are centred in their cell, not flush left.** §26.8 gives "icons y=181"
+with the digits "centred at (9+19i,194)". The icons share that centre axis: the 13px-wide
+horses sprite sits at x 156..167 in a cell whose left edge is 1+19·8 = 153. All 16 frames are
+12 tall and y=181 is confirmed.
+
+**4. Stockpile digits are ink 0x31, not white 0x0F.** §26.8 says "digits … white 0x0F". The
+capture's quantity cells contain **no pure white at all**; the digit ink samples as
+(195,219,243) = palette index **0x31**. The capture is a clean 2:1 NEAREST reduction, so this
+is not resampling. The SoL band nearby *is* near-white — (248,252,248) = **0x10** — and the
+panel caption is (152,184,216) = **0x33**, so the three are genuinely different inks and the
+"white" gloss collapsed them.
+
+**Action taken**: `port/src/game.js` `drawColony()` — scene clipped to the 3x3 window, outline
+moved to the centre tile, icons centred on 9+19i, `STOCK_INK`/`SOL_INK`/`PANEL_INK` split out.
+The Europe market bar inherits the same icon-centring rule.
+
+**Still open** (tracked in `docs/UI_AUDIT_TRACKER.md`): the starting-building set and the
+`func_025D34` plot shuffle. The field's remaining mismatch against the capture is dominated by
+those two, not by geometry.

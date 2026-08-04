@@ -955,6 +955,11 @@ const PLOT_CATEGORY = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4];
 // clusters, 45 the wooded shore, 47 the outbuilding -- identified by rendering
 // the sheet tail, and matching the scenery in the capture.
 const EMPTY_PLOT_FRAME = [42, 43, 44, 45, 47];
+// Stockpile digits are NOT white 0x0F as §26.8 states: sampling the capture's
+// quantity cells gives (195,219,243) with no pure white anywhere, which is
+// palette index 0x31. The SoL band really is near-white (0x10) and the panel
+// caption is 0x33, so the three are genuinely different inks.
+const STOCK_INK = 0x31, SOL_INK = 0x10, PANEL_INK = 0x33;
 
 function drawColony(ctx) {
   const c = G.colonies[G.colony];
@@ -964,9 +969,10 @@ function drawColony(ctx) {
   for (let y = 0; y < H; y += th)
     for (let x = 0; x < W; x += tw) sheetFrame(ctx, 'WOODTILE', 0, x, y);
 
-  // Building field (0,8,200,120) over the colony's ground.
+  // Building field: (0,8,199,120) over the colony's ground -- measured from
+  // docs/screens/11_colony_screen.png, where the sand runs x 0..198, y 8..127.
   ctx.fillStyle = 'rgb(232,216,160)';
-  ctx.fillRect(0, 8, 200, 120);
+  ctx.fillRect(0, 8, 199, 120);
   PLOTS.forEach(([px, py], i) => {
     const b = c.buildings[i];
     const frame = (b === undefined) ? EMPTY_PLOT_FRAME[PLOT_CATEGORY[i]]
@@ -978,17 +984,40 @@ function drawColony(ctx) {
   const title = `${c.name}, ${DATA.seasons[G.season]}, ${G.year}, Gold: ${G.gold}$`;
   FONT.tiny.center(ctx, title, 160, 1, lut(HUD_INK));
 
-  // 5x5 neighbourhood at (200,8,120,120): rendered 80x80 at 16px, then the
-  // documented x1.5 stretch (2 source px -> 3 destination px).
+  // 5x5 neighbourhood: rendered 80x80 at 16px, stretched x1.5 into
+  // (200,8,120,120) -- then the OUTER RING IS OVERDRAWN, so only the central
+  // 3x3 shows through at (224,32,72,72) with 24px tiles. Both bounds are
+  // confirmed against the capture: the non-wood window there is exactly
+  // x 224..295, y 32..103 inside a 1px dark border.
   const scene = document.createElement('canvas');
   scene.width = 80; scene.height = 80;
   const sg = scene.getContext('2d');
   for (let ty = 0; ty < 5; ty++)
     for (let tx = 0; tx < 5; tx++)
       drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16 - 8, ty * 16 - 8);
+  // Colony and unit markers go on the 80x80 BEFORE the upscale, so they are
+  // stretched with the terrain rather than drawn crisp over it.
+  for (const o of G.colonies) {
+    const dx = o.x - c.x + 2, dy = o.y - c.y + 2;
+    if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
+    const [fw, fh] = frameSize('ICONS', o.nation);
+    sheetFrame(sg, 'ICONS', o.nation, dx * 16 - 8 + (16 - fw) / 2, dy * 16 - 8 + (16 - fh) / 2);
+  }
+  for (const u of G.units) {
+    const dx = u.x - c.x + 2, dy = u.y - c.y + 2;
+    if (dx < 0 || dy < 0 || dx > 4 || dy > 4) continue;
+    const [fw, fh] = frameSize('ICONS', u.icon);
+    sheetFrame(sg, 'ICONS', u.icon, dx * 16 - 8 + 16 - fw, dy * 16 - 8 + 16 - fh);
+  }
   ctx.imageSmoothingEnabled = false;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(224, 32, 72, 72); ctx.clip();
   ctx.drawImage(scene, 0, 0, 80, 80, 200, 8, 120, 120);
-  hollowRect(ctx, 224, 32, 72, 72, 0x0F);
+  ctx.restore();
+  hollowRect(ctx, 223, 31, 74, 74, 0);
+  // The white rectangle marks the COLONY-CENTRE TILE, not the 3x3 window:
+  // measured at x 248..271, y 56..79 in the capture = the cited (248,56,24,24).
+  hollowRect(ctx, 248, 56, 24, 24, 0x0F);
 
   // COLONY.PIK town strip, 320x72 at y=128, then the panel captions over it.
   ctx.drawImage(IMG.COLONY, 0, 128);
@@ -997,17 +1026,23 @@ function drawColony(ctx) {
     const u = unit(n);
     if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
   });
-  // SoL band and the middle panel's caption (@MISC "No Ships In Port").
-  FONT.tiny.draw(ctx, `${c.sol}% (${c.colonists.length})`, 75, 133, lut(0x0F));
-  FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(0x0F));
+  // SoL band, with the crown (ICONS disk 124) to its right at the measured
+  // (105,131); the count is a digit in parens, not the letter I.
+  FONT.tiny.draw(ctx, `${c.sol}% (${c.colonists.length})`, 75, 133, lut(SOL_INK));
+  sheetFrame(ctx, 'ICONS', 124, 105, 131);
+  FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(PANEL_INK));
 
   // Stockpile bar (0,179,320,21): 16 cells pitch 19, icon = ICONS good+0x17
   // (engine) at y=181, quantity centred at (9+19i, 194).
   DATA.cargo.forEach((g, i) => {
-    sheetFrame(ctx, 'ICONS', 0x17 + i - 1, 1 + 19 * i, 181);
-    FONT.tiny.center(ctx, String(c.stock[i]), 9 + 19 * i, 194, lut(0x0F));
+    // Icons are CENTRED in their cell on 9+19i (the same axis as the digits),
+    // not flush at 1+19i: the capture puts the 13px horses sprite at x 156..167
+    // in a cell starting at 153. All 16 frames are 12 tall and sit at y=181.
+    const [fw] = frameSize('ICONS', 0x16 + i);
+    sheetFrame(ctx, 'ICONS', 0x16 + i, 9 + 19 * i - (fw >> 1), 181);
+    FONT.tiny.center(ctx, String(c.stock[i]), 9 + 19 * i, 194, lut(STOCK_INK));
   });
-  FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x0F));
+  FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x31));
 }
 
 // ------------------------------------------------------------ Europe screen
@@ -1034,7 +1069,8 @@ function drawEurope(ctx) {
   // Market bar (0,179,320,21): icons at x=1+19i y=181, bid/ask pair at y=194.
   // ask = bid + @CARGO.Burden + 1.
   DATA.cargo.forEach((g, i) => {
-    sheetFrame(ctx, 'ICONS', 0x17 + i - 1, 1 + 19 * i, 181);
+    const [fw] = frameSize('ICONS', 0x16 + i);
+    sheetFrame(ctx, 'ICONS', 0x16 + i, 9 + 19 * i - (fw >> 1), 181);
     // Printed as a bid/ask pair; ask = bid + @CARGO.Burden + 1.
     const bid = G.market[i], ask = bid + g.burden + 1;
     FONT.tiny.center(ctx, `${bid}/${ask}`, 9 + 19 * i, 194, lut(0x2F));
