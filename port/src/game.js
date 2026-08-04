@@ -240,6 +240,9 @@ const G = {
   units: [],
   sel: 0,
   msg: '',
+  // The engine blinks the active unit's selection ring; ~2 Hz at 60 fps.
+  blink: true,
+  tick: 0,
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -266,6 +269,7 @@ function beginGame() {
     const u = unit(dutch ? 'Merchantman' : 'Caravel');
     return { type: u.name, icon: u.icon, x: sx, y: sy,
              moves: u.movement, movesLeft: u.movement,
+             nation: G.nation, orders: 0,
              cargo: ['Pioneers', 'Soldiers'] };
   };
   G.units = (G.difficulty <= 1) ? [mk(), mk()] : [mk()];
@@ -626,10 +630,7 @@ function drawMap(ctx) {
   for (const u of G.units) {
     const tx = u.x - G.view.x, ty = u.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= VIEW_TILES_X || ty >= VIEW_TILES_Y) continue;
-    const px = VP.x + tx * TILE, py = VP.y + ty * TILE;
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(ctx, 'ICONS', u.icon, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
-    if (G.units[G.sel] === u) hollowRect(ctx, px, py, TILE, TILE, DATA.nations[G.nation].color);
+    drawUnit(ctx, u, VP.x + tx * TILE, VP.y + ty * TILE);
   }
   drawMenuBar(ctx);
   drawSidebar(ctx);
@@ -641,6 +642,26 @@ function drawMap(ctx) {
 // are pixel-measured from docs/screens/06_ingame_map.png (§ map_view.md item 4
 // notes the C-recon x-table is low trust; pixels win per the trust hierarchy).
 const HUD_INK = 68;
+// Every unit on the map wears its owner's nation plate: an 8x9 box at the
+// tile's top-left, 1px black outline, filled with the power's @COLORS byte and
+// carrying the @ORDERS status letter ("-" No Orders, "S" Sentry, "F" Fortified,
+// ...). The unit sprite sits bottom-right in the tile, overlapping the plate's
+// right edge. Geometry pixel-measured from docs/screens/06_ingame_map.png.
+function nationPlate(ctx, x, y, nation, orders) {
+  ctx.fillStyle = ink(0); ctx.fillRect(x, y, 8, 9);
+  ctx.fillStyle = ink(DATA.nations[nation].color); ctx.fillRect(x + 1, y + 1, 6, 7);
+  const key = (DATA.orders[orders] || DATA.orders[0]).key;
+  FONT.tiny.center(ctx, key, x + 4, y + 2, [ink(0), ink(0), ink(0)]);
+}
+function drawUnit(ctx, u, px, py) {
+  nationPlate(ctx, px, py, u.nation, u.orders);
+  const [fw, fh] = frameSize('ICONS', u.icon);
+  sheetFrame(ctx, 'ICONS', u.icon, px + TILE - fw, py + TILE - fh);
+  if (G.units[G.sel] === u && G.blink) {
+    hollowRect(ctx, px, py, TILE, TILE, DATA.nations[u.nation].color);
+  }
+}
+
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
                     ['REPORTS', 119], ['TRADE', 161], ['COLONIZOPEDIA', 259]];
 function drawMenuBar(ctx) {
@@ -681,16 +702,18 @@ function drawSidebar(ctx) {
   if (u) {
     const [fw, fh] = frameSize('ICONS', u.icon);
     sheetFrame(ctx, 'ICONS', u.icon, 244 + (24 - fw) / 2, 72 + (20 - fh) / 2);
+    nationPlate(ctx, 244, 72, u.nation, u.orders);
     FONT.tiny.draw(ctx, `Moves: ${u.movesLeft}`, 270, 74, lut(HUD_INK));
     FONT.tiny.draw(ctx, `Locat: (${u.x}, ${u.y})`, 270, 84, lut(HUD_INK));
     // The HUD uses NAMES @NATIONABBREV ("Eng.", "Fr.", ...), not the adjective.
     FONT.tiny.draw(ctx, `${DATA.nations[G.nation].abbrev} ${u.type}`, 244, 96, lut(HUD_INK));
-    FONT.tiny.draw(ctx, u.movesLeft ? 'No Orders' : 'Fortified', 244, 104, lut(HUD_INK));
+    FONT.tiny.draw(ctx, DATA.orders[u.orders].name, 244, 104, lut(HUD_INK));
     FONT.tiny.draw(ctx, `(${terrainName(at(u.x, u.y))})`, 244, 112, lut(HUD_INK));
     let cy = 128;
     for (const c of u.cargo) {
       const cu = unit(c);
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 244, cy - 4);
+      nationPlate(ctx, 244, cy - 4, G.nation, 1);
       FONT.tiny.draw(ctx, c, 268, cy, lut(HUD_INK));
       FONT.tiny.draw(ctx, 'Sentry', 268, cy + 8, lut(HUD_INK));
       cy += 20;
@@ -837,6 +860,8 @@ function resize() {
 }
 
 function frame() {
+  G.tick += 1;
+  G.blink = (G.tick % 32) < 20;
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,

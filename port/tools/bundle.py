@@ -46,6 +46,9 @@ def build_data():
         "abbrev": rows("@NATIONABBREV")[i]["name"],
     } for i in range(4)]
 
+    # @ORDERS: order name + the status letter shown on the unit's nation plate.
+    D["orders"] = [{"name": r["name"], "key": r["key"]} for r in rows("@ORDERS")]
+
     # @UNIT: 23 rows of stats. Keep the numeric columns numeric for the port.
     D["units"] = [{
         "name": r["name"],
