@@ -256,6 +256,9 @@ const G = {
   colonyPopup: null,      // 'build' | 'jobs'
   colonyPopupRow: 0,
   colonistSel: 0,
+  pediaCat: 0, pediaSel: 0, pediaMode: 'index',
+  crosses: 0,             // immigration accumulator
+  report: null,           // open F-key report
   accum: [],              // per-good traffic accumulator
   kingsFund: 0,           // the tax the Crown has taken
   dock: [],               // three immigration candidate slots
@@ -312,7 +315,7 @@ function beginGame() {
   G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
   G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
-  G.dockUnits = []; G.artilleryBought = 0;
+  G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
   G.dock = [0, 0, 0].map(() => rollImmigrant());
@@ -1819,6 +1822,232 @@ function euroMenuCommit() {
   G.euroMenu = null;
 }
 
+// ------------------------------------------------------------ reports
+// The F-key adviser ladder (§27.1). Four of the nine can be populated from
+// state this build actually keeps; the rest name themselves rather than showing
+// an empty frame. Each is a WOODPANL page with the adviser's own portrait.
+const REPORTS = {
+  F2: { title: 'Religious Adviser', adviser: 'MSS4', body: () => {
+    const thr = immigrationThreshold();
+    return [`Crosses: (${G.crosses} of ${thr})`,
+            `Produced per turn: ${crossesPerTurn()}`,
+            '',
+            'A larger empire needs more crosses:',
+            'the threshold counts every colonist',
+            'and every unit you own.'];
+  } },
+  F5: { title: 'Economic Adviser', adviser: 'MSS2', body: () => {
+    const l = [`Treasury: ${G.gold} gold`, `Tax rate: ${G.tax}%`,
+               `Paid to the Crown: ${G.kingsFund} gold`, '', 'Market  bid / ask'];
+    DATA.cargo.forEach((g, i) => {
+      if (i % 2 === 0) l.push('');
+      l[l.length - 1] += `  ${g.name} ${G.market[i]}/${askPrice(i)}`;
+    });
+    return l;
+  } },
+  F6: { title: 'Colony Adviser', adviser: 'MSS5', body: () => {
+    if (!G.colonies.length) return ['You have founded no colonies.'];
+    return G.colonies.map(c => {
+      const f = colonyFood(c);
+      return `${c.name}: ${c.colonists.length} colonists, food ` +
+             `${f.net >= 0 ? '+' : ''}${f.net}, ${colonyHammers(c)} hammers` +
+             (c.building ? `, building ${c.building}` : '');
+    });
+  } },
+  F7: { title: 'Naval Adviser', adviser: 'MSS0', body: () => {
+    const l = [];
+    for (const u of G.units) if (u.ship) l.push(`${u.type} at (${u.x}, ${u.y})`);
+    for (const e of G.europe)
+      l.push(`${e.type} ${e.state === 'port' ? 'in port' : 'at sea'}`);
+    return l.length ? l : ['You have no ships.'];
+  } },
+};
+function drawReport(ctx) {
+  const r = REPORTS[G.report];
+  usePalette('WOODPANL');
+  ctx.drawImage(IMG.WOODPANL, 0, 0);
+  if (!r) { FONT.tiny.center(ctx, 'Not in this build.', 160, 96, lut(0xFE)); return; }
+  FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 6, lut(HUD_INK));
+  const [pw, ph] = frameSize(r.adviser, 0);
+  if (pw) sheetFrame(ctx, r.adviser, 0, 320 - pw - 6, 200 - ph);
+  let y = 22;
+  for (const line of r.body()) {
+    for (const l2 of wrapText(FONT.tiny, line, 200)) {
+      FONT.tiny.draw(ctx, l2, 10, y, lut(0xFE));
+      y += FONT.tiny.height + 2;
+    }
+    if (!line) y += 2;
+  }
+  FONT.tiny.center(ctx, '(Esc to close)', 160, 190, lut(0x5D));
+}
+
+// ------------------------------------------------------------ immigration
+// §17.6. The THRESHOLD is byte-cited:
+//   accum = Σ colony populations + 1 per owned unit
+//   if accum < 4000: accum *= 2 ; accum += 8 ; clamp 4000
+//   difficulty scale x(8-d)/8 for the human; England x2/3
+// A bigger empire therefore SLOWS immigration. When the cross accumulator
+// passes it a colonist appears on the Europe dock, announced through @UNREST.
+//
+// The per-turn cross ACCRUAL site (church/cathedral production) is explicitly
+// unidentified in the repo, so the rate below is a flagged placeholder: one
+// cross per colony per turn, plus one more per Church and per Cathedral.
+// Tracked in docs/UI_AUDIT_TRACKER.md.
+function immigrationThreshold() {
+  let accum = G.colonies.reduce((n, c) => n + c.colonists.length, 0) + G.units.length;
+  if (accum < 4000) accum *= 2;
+  accum += 8;
+  accum = Math.min(4000, accum);
+  accum = Math.floor(accum * (8 - G.difficulty) / 8);
+  if (G.nation === 0) accum = Math.floor(accum * 2 / 3);      // England
+  return accum;
+}
+function crossesPerTurn() {
+  return G.colonies.reduce((n, c) => n + 1
+    + (c.buildings.includes('Church') ? 1 : 0)
+    + (c.buildings.includes('Cathedral') ? 1 : 0), 0);
+}
+function checkImmigration() {
+  G.crosses += crossesPerTurn();
+  const thr = immigrationThreshold();
+  if (G.crosses < thr) return;
+  G.crosses -= thr;
+  // The arrival takes one of the three dock slots at random and that slot
+  // refills from the generator.
+  const slot = Math.floor(Math.random() * 3);
+  G.dockUnits.push(G.dock[slot].name);
+  G.dock[slot] = rollImmigrant();
+  G.msg = `Religious unrest in ${DATA.nations[G.nation].country} brings new colonists.`;
+  G.euroMsg = G.msg;
+}
+
+// ------------------------------------------------------------ save / load
+// The whole of G is the save: it holds the map view, the units, the colonies,
+// the market and the Europe state, and nothing is derived from anything outside
+// it except the immutable DATA tables.
+const SAVE_KEY = 'colonization.save';
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+    G.msg = 'Game saved.';
+  } catch (e) { G.msg = 'Could not save.'; }
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { G.msg = 'No saved game.'; return; }
+    Object.assign(G, JSON.parse(raw));
+    G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
+    G.msg = 'Game loaded.';
+  } catch (e) { G.msg = 'Could not load.'; }
+}
+
+// ------------------------------------------------------- Colonizopedia
+// spec/ui/colonizopedia.md. WOODPANL background; screen title
+// "ENCYCLOPEDIA OF COLONIZATION" centred at y=5; entry header
+// "<name>  <category>" centred at y = font_h + 7; body seeded at
+// header_y + font_h + 0xE with x = 10. Seven categories from MENU.TXT @PEDIA
+// plus "Complete", which merges them all into one alphabetised index.
+const PEDIA_KEYS = ['CARGO', 'UNIT', 'TERRAIN', 'JOB', 'BUILDING', 'FATHER', null];
+function pediaNames(cat) {
+  switch (cat) {
+    case 0: return DATA.cargo.map(c => c.name);
+    case 1: return DATA.units.map(u => u.name);
+    // Terrain names come from four NAMES tables in the engine's id order:
+    // @UNFORESTED(8) + @FORESTED(8) + @OTHER(5) + @OTHER_NAMES(5) = 26.
+    // PEDIA.TXT ships 29 TERRAIN articles, so ids 26..28 have an article but no
+    // name in the shipped tables -- shown by index rather than invented.
+    case 2: return DATA.terrain.unforested
+                 .concat(DATA.terrain.forested, DATA.terrain.other, DATA.terrain.othernames,
+                         ['Terrain 26', 'Terrain 27', 'Terrain 28']);
+    case 3: return DATA.jobs;
+    case 4: return DATA.buildings.map(b => b.name);
+    case 5: return DATA.fathers;
+    // @MISCELLANEOUS opens with a COUNT, then that many concept names; the
+    // rest of the section is comment lines belonging to later sections.
+    case 6: {
+      const lines = DATA.pedia.entries.MISCELLANEOUS.split('\n');
+      const n = parseInt(lines[0], 10) || 0;
+      return lines.slice(1, 1 + n).map(l => l.trim());
+    }
+    default: return [];
+  }
+}
+// "Complete" (category 7) is every entry, alphabetised, each remembering the
+// category and index it came from.
+function pediaComplete() {
+  const all = [];
+  for (let c = 0; c < 7; c++) pediaNames(c).forEach((n, i) => all.push({ name: n, cat: c, idx: i }));
+  return all.sort((a, b) => a.name.localeCompare(b.name));
+}
+function pediaList() {
+  if (G.pediaCat === 7) return pediaComplete();
+  return pediaNames(G.pediaCat).map((n, i) => ({ name: n, cat: G.pediaCat, idx: i }));
+}
+function pediaBody(cat, idx) {
+  const key = PEDIA_KEYS[cat];
+  if (!key) return null;                      // Game Concept: no article shipped
+  return DATA.pedia.entries[key + idx] || null;
+}
+// The stat block each page adds under its article, from the NAMES tables.
+function pediaStats(cat, idx) {
+  if (cat === 0) { const c = DATA.cargo[idx];
+    return [`Price ${c.start1}-${c.start2} gold`, `Spread ${c.burden + 1}`]; }
+  if (cat === 1) { const u = DATA.units[idx]; if (!u) return [];
+    return [`Moves ${u.movement}   Attack ${u.attack}   Defend ${u.combat}`,
+            u.cargo ? `Cargo ${u.cargo}` : '', u.hull ? `Hull ${u.hull}` : ''].filter(Boolean); }
+  if (cat === 4) { const b = DATA.buildings[idx]; if (!b) return [];
+    return [`${b.cost} hammers` + (b.tools_x10 ? `, ${b.tools_x10 * 10} tools` : ''),
+            `Needs ${b.min_colony} colonists`, b.upkeep ? `Upkeep ${b.upkeep}` : 'No upkeep']; }
+  return [];
+}
+function drawPedia(ctx) {
+  usePalette('WOODPANL');
+  ctx.drawImage(IMG.WOODPANL, 0, 0);
+  const fh = FONT.tiny.height;
+  FONT.tiny.center(ctx, DATA.text.misc[108] || 'ENCYCLOPEDIA OF COLONIZATION',
+                   160, 5, lut(HUD_INK));
+  const list = pediaList();
+  if (G.pediaMode === 'index') {
+    // Index pager: three columns of names, the selected one highlighted.
+    const perCol = 22, cols = 3;
+    const page = Math.floor(G.pediaSel / (perCol * cols)) * (perCol * cols);
+    FONT.tiny.center(ctx, DATA.pedia.categories[G.pediaCat] || 'Complete',
+                     160, fh + 7, lut(0xFC));
+    for (let k = 0; k < perCol * cols && page + k < list.length; k++) {
+      const x = 10 + (k / perCol | 0) * 104, y = fh + 18 + (k % perCol) * 7;
+      const sel = page + k === G.pediaSel;
+      if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x - 2, y - 1, 102, 7); }
+      FONT.tiny.draw(ctx, list[page + k].name, x, y, lut(sel ? 0xFC : 0xFE));
+    }
+    FONT.tiny.center(ctx, '(Arrows to browse, Enter to read, Esc to close)',
+                     160, 190, lut(0x5D));
+    return;
+  }
+  // Entry page.
+  const e = list[G.pediaSel];
+  if (!e) { G.pediaMode = 'index'; return; }
+  FONT.tiny.center(ctx, `${e.name}   ${DATA.pedia.categories[e.cat]}`,
+                   160, fh + 7, lut(0xFC));
+  let y = fh + 7 + fh + 0xE;
+  const body = pediaBody(e.cat, e.idx);
+  if (body) {
+    for (const para of body.split('\n')) {
+      if (!para.trim()) { y += 4; continue; }
+      for (const line of wrapText(FONT.tiny, para.trim(), 300)) {
+        spanText(ctx, line, 10, y, 0xFE, 0xFC);
+        y += fh + 1;
+      }
+    }
+  } else {
+    FONT.tiny.draw(ctx, '(no article in PEDIA.TXT for this entry)', 10, y, lut(0x5D));
+    y += fh + 4;
+  }
+  y += 4;
+  for (const l of pediaStats(e.cat, e.idx)) { FONT.tiny.draw(ctx, l, 10, y, lut(0x0E)); y += fh + 1; }
+  FONT.tiny.center(ctx, '(Esc back)', 160, 190, lut(0x5D));
+}
+
 // ---------------------------------------------------------------- turn
 function endTurn() {
   G.turn += 1;
@@ -1828,6 +2057,7 @@ function endTurn() {
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
   for (const c of G.colonies) advanceConstruction(c);
+  checkImmigration();
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -2039,7 +2269,27 @@ const COMMANDS = {
   'Show Hidden Terrain': () => { G.showHidden = !G.showHidden;
                                  G.msg = `Hidden terrain ${G.showHidden ? 'on' : 'off'}.`; },
   'Center View': centreView,
+  // REPORTS -- the four advisers this build can populate from real state.
+  'F2 Religious Adviser': () => { G.report = 'F2'; G.screen = 'report'; },
+  'F5 Economic Adviser': () => { G.report = 'F5'; G.screen = 'report'; },
+  'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
+  'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
+  // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
+  // GAME
+  'Save Game': saveGame,
+  'Load Game': loadGame,
+  'Cargo Types': () => openPedia(0),
+  'Unit Types': () => openPedia(1),
+  'Terrain Types': () => openPedia(2),
+  'Colonist Skills': () => openPedia(3),
+  'Colony Buildings': () => openPedia(4),
+  'Founding Fathers': () => openPedia(5),
+  'Miscellaneous': () => openPedia(6),
+  'Complete': () => openPedia(7),
 };
+function openPedia(cat) {
+  G.pediaCat = cat; G.pediaSel = 0; G.pediaMode = 'index'; G.screen = 'pedia';
+}
 
 // ---------------------------------------------------------------- input
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
@@ -2085,6 +2335,25 @@ function onClick(mx, my) {
       if (G.woodcut === 1) { G.screen = 'map'; askLandName(); }
       else G.screen = 'colony';
       break;
+    case 'report':
+      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
+      break;
+    case 'pedia': {
+      const n = pediaList().length;
+      if (G.pediaMode === 'index') {
+        if (k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
+        if (k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
+        if (k === 'ArrowLeft') G.pediaSel = Math.max(0, G.pediaSel - 22);
+        if (k === 'ArrowRight') G.pediaSel = Math.min(n - 1, G.pediaSel + 22);
+        if (k === 'Enter' || k === ' ') G.pediaMode = 'entry';
+        if (k === 'Escape' || k === 'x') G.screen = 'map';
+      } else {
+        if (k === 'ArrowLeft' || k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
+        if (k === 'ArrowRight' || k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
+        if (k === 'Escape' || k === 'x') G.pediaMode = 'index';
+      }
+      break;
+    }
     case 'colony': {
       if (G.colonyPopup) {
         const b = colonyPopupBox(), seed = b.y + 6 + 6 + 3;
@@ -2233,6 +2502,25 @@ function onKey(e) {
       if (k === 'Enter' || k === ' ') onClick(-1, -1);
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
+    case 'report':
+      if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
+      break;
+    case 'pedia': {
+      const n = pediaList().length;
+      if (G.pediaMode === 'index') {
+        if (k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
+        if (k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
+        if (k === 'ArrowLeft') G.pediaSel = Math.max(0, G.pediaSel - 22);
+        if (k === 'ArrowRight') G.pediaSel = Math.min(n - 1, G.pediaSel + 22);
+        if (k === 'Enter' || k === ' ') G.pediaMode = 'entry';
+        if (k === 'Escape' || k === 'x') G.screen = 'map';
+      } else {
+        if (k === 'ArrowLeft' || k === 'ArrowUp') G.pediaSel = (G.pediaSel + n - 1) % n;
+        if (k === 'ArrowRight' || k === 'ArrowDown') G.pediaSel = (G.pediaSel + 1) % n;
+        if (k === 'Escape' || k === 'x') G.pediaMode = 'index';
+      }
+      break;
+    }
     case 'colony': {
       if (G.colonyPopup) {
         const n = colonyPopupRows().length;
@@ -2299,8 +2587,11 @@ function onKey(e) {
       // F1-F10 report ladder. The advisor screens are not built, so each names
       // itself rather than pretending to open.
       if (/^F\d+$/.test(k)) {
-        const row = DATA.menus[3].rows[+k.slice(1) - 1];
-        if (row) G.msg = `${row.label} - not in this build.`;
+        if (REPORTS[k]) { G.report = k; G.screen = 'report'; }
+        else {
+          const row = DATA.menus[3].rows[+k.slice(1) - 1];
+          if (row) G.msg = `${row.label} - not in this build.`;
+        }
         e.preventDefault();
         return;
       }
@@ -2360,7 +2651,8 @@ function frame() {
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
-     colony: drawColony, europe: drawEurope }[G.screen])(ctx);
+     colony: drawColony, europe: drawEurope, pedia: drawPedia,
+     report: drawReport }[G.screen])(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;

@@ -144,10 +144,19 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 |---|---|---|
 | ORDERS | **MOSTLY DONE** | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live. **Absent**: Pillage, Go to Place, Begin Trade Route. |
 | VIEW | **DONE** | Move/View Pieces, European Status, Find Colony, Zoom In/Out, the four zoom levels, Show Hidden Terrain, Center View. Zoom spans verified as `(0xF<<z) × (0xC<<z)` at `(0x10>>z)` px. |
-| GAME | **TBD** | Options/save/load/retire dialogs are specified in `options_dialogs.md` but not built. |
-| REPORTS | **TBD** | The F1–F10 ladder is bound and each key names its report; the nine advisor screens are not built. |
+| GAME | **PARTIAL** | Save Game / Load Game work (localStorage; the whole of `G` is the save). Options, Pick Music, Retire and Exit are still absent. |
+| REPORTS | **PARTIAL** | F2 Religious, F5 Economic, F6 Colony and F7 Naval are built from real state, each with its own adviser portrait. F1/F3/F4/F8/F9/F10 name themselves — the state they report on (congress, labour allocation, foreign powers, natives, score) does not exist yet. |
 | TRADE | **TBD** | Trade-route editor not built. |
-| COLONIZOPEDIA | **TBD** | `colonizopedia.md` is specified; the browser is not built. |
+| COLONIZOPEDIA | **DONE** 2026-08-04 | All seven categories plus Complete, articles straight from PEDIA.TXT, three-column index pager, stat blocks from the NAMES tables. |
+
+### Colonizopedia notes
+- Entry counts: Cargo 16, Unit 23, Terrain 29, Skill 28, Building 42, Father 25, Concept 12 → **175** in Complete. The spec says the engine's merged index holds **162**, so ~13 rows are skipped by the enumerator's per-category skip list, which is not in the evidence here. **PARTIAL.**
+- Terrain names come from `@UNFORESTED`+`@FORESTED`+`@OTHER`+`@OTHER_NAMES` = 26, but PEDIA.TXT ships 29 TERRAIN articles; ids 26–28 are shown by index rather than given invented names.
+- Game Concept entries have index names in `@MISCELLANEOUS` but **no article** anywhere in PEDIA.TXT; the page says so rather than filling the space.
+
+### Immigration
+- **Threshold is byte-cited** and implemented exactly: `clamp4000((Σ pop + units) × 2 + 8) × (8−d)/8`, England ×2/3.
+- **Cross accrual rate is a flagged placeholder**: 1 per colony per turn, +1 per Church, +1 per Cathedral. §17.6 states the real accrual site is unidentified in the repo. **PARTIAL.**
 
 ## Port: colony mechanics still open (2026-08-04)
 

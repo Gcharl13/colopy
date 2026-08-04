@@ -32,6 +32,7 @@ def build_data():
         "unforested": [r["name"] for r in rows("@UNFORESTED")],
         "forested": [r["name"] for r in rows("@FORESTED")],
         "other": [r["name"] for r in rows("@OTHER")],
+        "othernames": [r["name"] for r in rows("@OTHER_NAMES")],
     }
     country = rows("@COUNTRY")
     leaders = rows("@LEADERNAME")
@@ -131,6 +132,13 @@ def build_data():
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
     D["eurolabel"] = labels["@EUROLABEL"].split("\n")
+
+    # PEDIA.TXT: @PEDIA lists the seven category names; the rest are entry
+    # bodies keyed @<CATEGORY><index>. Comment lines (@;) are already stripped.
+    ped = json.load(open(ROOT / "data_extracted/text/PEDIA_sections.json"))
+    D["pedia"] = {"categories": [l for l in ped["@PEDIA"].split("\n") if l.strip()],
+                  "entries": {k.lstrip("@"): v for k, v in ped.items() if k != "@PEDIA"}}
+    D["fathers"] = [r["name"] for r in rows("@FATHERS")] if "@FATHERS" in nt else []
 
     # MENU.TXT: one section per pulldown. The first line is the bar title, the
     # rest are rows. "~" marks the accelerator letter -- the menu engine parses
