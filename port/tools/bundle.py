@@ -91,7 +91,22 @@ def build_data():
                    "bid": int(r["price_start1"] or 0),
                    "burden": int(r["burden"] or 0)}
                   for r in rows("@CARGO")[:16]]
-    D["buildings"] = [r["name"] for r in rows("@BUILDING")]
+    # @BUILDING carries upkeep in the last column. Upkeep 0 marks the free base
+    # tier every colony has from the start; the only zero-upkeep row gated above
+    # a size-1 colony is the Stockade (min_colony 3), so "upkeep 0 AND
+    # min_colony 1" selects the seven starting buildings exactly.
+    D["buildings"] = [{"name": r["name"], "cost": int(r["cost"]),
+                       "min_colony": int(r["min_colony"]), "upkeep": int(r["upkeep"])}
+                      for r in rows("@BUILDING")]
+
+    # Per-terrain job yields, used for colony production. Row order is the
+    # runtime terrain id within each band.
+    YIELDS = ["y_farmer", "y_planter_sugar", "y_planter_tobacco", "y_planter_cotton",
+              "y_trapper", "y_lumberjack", "y_ore", "y_silver", "y_fisherman"]
+    D["yields"] = {k.lstrip("@").lower():
+                   [[int(r[c] or 0) for c in YIELDS] for r in rows(k)]
+                   for k in ("@UNFORESTED", "@FORESTED", "@OTHER")}
+    D["jobs"] = [r["name"] for r in rows("@JOB")]
     D["regionname"] = [r["name"] for r in rows("@COLONYNAME")]
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))

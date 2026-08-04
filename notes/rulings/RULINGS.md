@@ -6412,3 +6412,42 @@ percent, not the engine's exact pixel pattern).
 **Action taken**: `port/src/game.js` `drawColony()` — the three rules drawn, scene tile origin
 corrected, `groundSpeckle()` replaces the flat fill. Colony and unit markers now land on the
 correct tiles as a result of (2).
+
+---
+
+## 2026-08-04 — Starting buildings are the upkeep-0 rows of NAMES.TXT @BUILDING
+
+**Question**: which buildings does a brand-new colony have? Previously logged as TBD on the
+grounds that the def table `0x8E82`'s initialiser is untraced.
+
+**Source**: NAMES.TXT `@BUILDING`, columns `name, cost, tools_x10, size, min_colony, upkeep`.
+The **upkeep** column (last) had been ignored. Exactly **eight** of the 42 rows carry upkeep 0:
+
+| row | name | cost | min_colony |
+|---|---|---|---|
+| 0 | Stockade | 64 | **3** |
+| 9 | Town Hall | 64 | 1 |
+| 21 | Weaver's House | 64 | 1 |
+| 24 | Tobacconist's House | 64 | 1 |
+| 27 | Rum Distiller's House | 64 | 1 |
+| 32 | Fur Trader's House | 56 | 1 |
+| 35 | Carpenter's Shop | 39 | 1 |
+| 39 | Blacksmith's House | 64 | 1 |
+
+Every other row — every second and third tier of every chain — carries upkeep 5, 10, 15 or 20.
+Zero upkeep marks the free base tier that costs nothing to maintain.
+
+**Ruling**: the starting set is **`upkeep == 0 AND min_colony == 1`** — the seven base-tier
+buildings. The Stockade is the one zero-upkeep row gated above a size-1 colony (`min_colony` 3),
+so it cannot be present at founding, which is exactly why the predicate needs both clauses.
+This is consistent with the base tier of each production chain (weaving, tobacco, rum, furs,
+carpentry, smithing) plus the Town Hall.
+
+**Tier**: derived from NAMES.TXT, which sits high in `notes/TRUTH_HIERARCHY.md`. It is an
+inference from the table's semantics rather than a traced initialiser, so `0x8E82` stays
+unread; but it is data-grounded, not a guess, and the port now computes the list at runtime
+from the shipped table instead of hardcoding names.
+
+**Action taken**: `port/tools/bundle.py` exports cost/min_colony/upkeep; `port/src/game.js`
+`STARTING_BUILDINGS` is a filter over them. The `STARTING_BUILDINGS_UNVERIFIED` placeholder is
+gone.

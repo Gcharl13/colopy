@@ -252,6 +252,7 @@ const G = {
   europe: [],             // ships in port / on the high seas
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
+  colonyView: 2,          // right-panel mode: buildings / units / production
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -902,7 +903,7 @@ function buildColony() {
       // warehouse; the fixed starting buildings are the three no-cost rows.
       colonists: [u.type],
       stock: DATA.cargo.map(() => 0),
-      buildings: STARTING_BUILDINGS_UNVERIFIED.slice(),
+      buildings: STARTING_BUILDINGS.slice(),
       sol: 0,
     });
     // The founder joins the colony, so it leaves the map.
@@ -915,16 +916,46 @@ function buildColony() {
     else G.screen = 'colony';
   }, suggested);
 }
-// UNVERIFIED -- which @BUILDING rows a brand-new colony starts with is not
-// byte-cited anywhere in the tree. The def table 0x8E82 is a runtime array and
-// its initialiser is not traced, so this list is a placeholder chosen from the
-// min_colony==1, tools==0 rows to keep the screen legible. It is NOT evidence.
-// Closing it needs that initialiser traced, or a shipped COLONY??.SAV parsed.
-const STARTING_BUILDINGS_UNVERIFIED =
-  ['Town Hall', 'Carpenter\'s Shop', 'Blacksmith\'s House',
-   'Tobacconist\'s House', 'Weaver\'s House', 'Rum Distiller\'s House',
-   'Fur Trader\'s House'];
+// The starting-building set falls straight out of NAMES.TXT @BUILDING once you
+// read the last column: UPKEEP. Exactly eight rows have upkeep 0 -- the free
+// base tier that costs nothing to maintain -- and seven of those are available
+// to a size-1 colony. The eighth, the Stockade, is gated at min_colony 3, so it
+// cannot be present when a colony is founded. That leaves Town Hall,
+// Carpenter's Shop, Blacksmith's House, Weaver's House, Tobacconist's House,
+// Rum Distiller's House and Fur Trader's House -- derived from the table, not
+// guessed. (Every later tier of each chain carries upkeep 5/10/15/20.)
+const STARTING_BUILDINGS = DATA.buildings
+  .filter(b => b.upkeep === 0 && b.min_colony === 1)
+  .map(b => b.name);
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
+
+// Per-terrain job yields from NAMES @UNFORESTED/@FORESTED/@OTHER. The three
+// bands are indexed by the folded terrain id: 0..7 unforested, 8..15 forested
+// (16..23 fold into it, CLAUDE.md rule 3), 24..26 the @OTHER rows.
+const JOB_FARMER = 0;
+function tileYield(v, job) {
+  let t = v & 0x1F;
+  if (t >= 16 && t <= 23) t = (t & 7) | 8;
+  const y = DATA.yields;
+  const row = t <= 7 ? y.unforested[t]
+            : t <= 15 ? y.forested[t - 8]
+            : y.other[t - 24];
+  return row ? (row[job] || 0) : 0;
+}
+// Food: consumption is byte-verified as `eaten = 2*pop` (spec/systems/colony.md
+// §152, @0xA5F2). The centre tile produces with no worker; the engine derives
+// its food from a terrain BAND CLASS 0..3 whose mapping is not in the evidence
+// here, so the farmer column of the terrain's own row stands in for it. The
+// documented modifiers that ARE cited are applied: +2 at difficulty 0, +1 at
+// difficulty 1, +1 for a river. The band function is TBD.
+function colonyFood(c) {
+  const v = at(c.x, c.y);
+  let produced = tileYield(v, JOB_FARMER);
+  if (G.difficulty === 0) produced += 2; else if (G.difficulty === 1) produced += 1;
+  if (tileRiver(v)) produced += 1;
+  const eaten = 2 * c.colonists.length;
+  return { produced, eaten, net: produced - eaten };
+}
 
 // A ship entering the sea lane leaves the map for the home port.
 function sailForEurope(ship) {
@@ -960,6 +991,15 @@ const EMPTY_PLOT_FRAME = [42, 43, 44, 45, 47];
 // palette index 0x31. The SoL band really is near-white (0x10) and the panel
 // caption is 0x33, so the three are genuinely different inks.
 const STOCK_INK = 0x31, SOL_INK = 0x10, PANEL_INK = 0x33;
+// The three stacked buttons at the strip's right edge are the right-panel view
+// selectors: region (303,132,17,45), three rows of pitch 15 drawing ICONS disk
+// 67/68/69 -- the 14x13 "button plaque" band, confirmed by rendering it against
+// the capture: a house, a musket and a hammer, in that order. They drive the
+// panel mode [0x337], whose three documented states are the SoL/garrison icon
+// bar, cargo+caption, and cargo+caption+hammer strip. Which button selects
+// which mode is inferred from the icons, not cited.
+const VIEW_BTN = { x: 303, y: 132, w: 15, h: 13, pitch: 15 };
+const VIEW_BUILDINGS = 0, VIEW_UNITS = 1, VIEW_PRODUCTION = 2;
 
 function drawColony(ctx) {
   const c = G.colonies[G.colony];
@@ -979,7 +1019,7 @@ function drawColony(ctx) {
   PLOTS.forEach(([px, py], i) => {
     const b = c.buildings[i];
     const frame = (b === undefined) ? EMPTY_PLOT_FRAME[PLOT_CATEGORY[i]]
-                                    : DATA.buildings.indexOf(b) + 1;
+                                    : DATA.buildings.findIndex(d => d.name === b) + 1;
     sheetFrame(ctx, 'BUILDING', frame, px, py + 8);
   });
 
@@ -1029,6 +1069,7 @@ function drawColony(ctx) {
     const u = unit(n);
     if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
   });
+  drawColonyPanel(ctx, c);
   // SoL band, with the crown (ICONS disk 124) to its right at the measured
   // (105,131); the count is a digit in parens, not the letter I.
   FONT.tiny.draw(ctx, `${c.sol}% (${c.colonists.length})`, 75, 133, lut(SOL_INK));
@@ -1071,6 +1112,48 @@ function groundSpeckle(ctx, x, y, w, h, base) {
       else continue;
       ctx.fillRect(x + i, y + j, 1, 1);
     }
+  }
+}
+
+// Right panel (207,130,95,48) plus the three view buttons beside it.
+function drawColonyPanel(ctx, c) {
+  const px = 209, py = 132;
+  if (G.colonyView === VIEW_BUILDINGS) {
+    FONT.tiny.draw(ctx, 'Buildings', px, py, lut(PANEL_INK));
+    c.buildings.slice(0, 5).forEach((b, i) =>
+      FONT.tiny.draw(ctx, b, px, py + 8 + i * 7, lut(SOL_INK)));
+    if (c.buildings.length > 5)
+      FONT.tiny.draw(ctx, `+${c.buildings.length - 5} more`, px, py + 8 + 5 * 7, lut(PANEL_INK));
+  } else if (G.colonyView === VIEW_UNITS) {
+    FONT.tiny.draw(ctx, 'Garrison', px, py, lut(PANEL_INK));
+    const inside = G.units.filter(u => u.x === c.x && u.y === c.y);
+    if (!inside.length) FONT.tiny.draw(ctx, 'None', px, py + 9, lut(SOL_INK));
+    inside.slice(0, 6).forEach((u, i) => {
+      const [fw, fh] = frameSize('ICONS', u.icon);
+      sheetFrame(ctx, 'ICONS', u.icon, px + i * 15, py + 22 - fh);
+      nationPlate(ctx, px + i * 15, py + 10, u.nation, u.orders);
+    });
+  } else {
+    // Production. Food is the only line with a byte-verified consumption rule
+    // (eaten = 2*pop); the rest read the terrain's own job-yield columns.
+    const f = colonyFood(c);
+    FONT.tiny.draw(ctx, 'Production', px, py, lut(PANEL_INK));
+    sheetFrame(ctx, 'ICONS', 0x16, px, py + 9);
+    FONT.tiny.draw(ctx, `${f.produced}`, px + 10, py + 12, lut(SOL_INK));
+    FONT.tiny.draw(ctx, `-${f.eaten}`, px + 24, py + 12, lut(0x0C));
+    FONT.tiny.draw(ctx, `= ${f.net >= 0 ? '+' : ''}${f.net}`, px + 40, py + 12,
+                   lut(f.net < 0 ? 0x0C : SOL_INK));
+    // Hammers: the Carpenter's Shop turns lumber into construction points, one
+    // hammer sprite (ICONS 54) per point -- the documented hammer strip.
+    const hammers = c.buildings.includes("Carpenter's Shop") ? 3 : 0;
+    for (let i = 0; i < hammers; i++) sheetFrame(ctx, 'ICONS', 54, px + i * 8, py + 26);
+    FONT.tiny.draw(ctx, `${hammers} hammers`, px + hammers * 8 + 4, py + 29, lut(SOL_INK));
+  }
+  // View buttons.
+  for (let k = 0; k < 3; k++) {
+    const by = VIEW_BTN.y + k * VIEW_BTN.pitch;
+    sheetFrame(ctx, 'ICONS', 67 + k, VIEW_BTN.x, by);
+    if (k === G.colonyView) hollowRect(ctx, VIEW_BTN.x - 1, by - 1, 16, 15, 0x0F);
   }
 }
 
@@ -1271,6 +1354,12 @@ function onClick(mx, my) {
       else G.screen = 'colony';
       break;
     case 'colony':
+      for (let k = 0; k < 3; k++) {
+        if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
+                          w: VIEW_BTN.w, h: VIEW_BTN.h })) { G.colonyView = k; return; }
+      }
+      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
+      break;
     case 'europe':
       if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
       break;
@@ -1335,6 +1424,8 @@ function onKey(e) {
       if (k === 'Escape' && G.screen === 'cards') G.screen = 'briefing';
       break;
     case 'colony':
+      // Keys 1/2/3 select the right-panel view, matching the three buttons.
+      if (k >= '1' && k <= '3') G.colonyView = +k - 1;
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
     case 'europe':
