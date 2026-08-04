@@ -87,10 +87,28 @@ def build_data():
 
     # @CARGO in table order -- the 16 tradeable goods drive both the colony
     # stockpile bar and the Europe market bar; bid/ask come from the record.
+    # @CARGO drives the whole market: the start window, the price floor/ceiling
+    # the stepping respects, the visible bid/ask spread (burden+1), the
+    # traffic-accumulator thresholds +-100*(rise|fall), the per-turn attrition
+    # drift, and the volatility left-shift on traded quantity (§9.2).
     D["cargo"] = [{"name": r["name"],
-                   "bid": int(r["price_start1"] or 0),
-                   "burden": int(r["burden"] or 0)}
+                   "start1": int(r["price_start1"] or 0),
+                   "start2": int(r["price_start2"] or 0),
+                   "low": int(r["drift_low"] or 0),
+                   "high": int(r["drift_high"] or 0),
+                   "burden": int(r["burden"] or 0),
+                   "rise": int(r["rise"] or 0),
+                   "fall": int(r["fall"] or 0),
+                   "attrition": int(r["attrition"] or 0),
+                   "volatility": int(r["volatility"] or 0)}
                   for r in rows("@CARGO")[:16]]
+    # Recruit passage prices per colonist class, and training prices per job
+    # (europe_value -1 = not trainable in Europe).
+    D["classes"] = [{"name": r["name"], "cost": int(r["transport_cost"])}
+                    for r in rows("@CLASS")]
+    D["jobtrain"] = [{"name": r["name"], "expert": r["expert_name"],
+                      "cost": int(r["europe_value"])}
+                     for r in rows("@JOB") if r["europe_value"] != "-1"]
     # @BUILDING carries upkeep in the last column. Upkeep 0 marks the free base
     # tier every colony has from the start; the only zero-upkeep row gated above
     # a size-1 colony is the Stockade (min_colony 3), so "upkeep 0 AND
@@ -111,6 +129,7 @@ def build_data():
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
+    D["eurolabel"] = labels["@EUROLABEL"].split("\n")
     D["text"] = {
         "beginmenu": game["@BEGINMENU"].split("\n"),
         "leadername": game["@LEADERNAME"],

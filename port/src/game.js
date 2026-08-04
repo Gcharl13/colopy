@@ -253,6 +253,14 @@ const G = {
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
   colonyView: 2,          // right-panel mode: buildings / units / production
+  accum: [],              // per-good traffic accumulator
+  kingsFund: 0,           // the tax the Crown has taken
+  dock: [],               // three immigration candidate slots
+  euroMenu: null,         // open Europe sub-menu: recruit / purchase / train
+  euroMenuRow: 0,
+  euroShip: 0,            // selected ship in port
+  euroMsg: '',
+  marketSel: -1,          // highlighted market cell
 };
 
 // NAMES @UNIT drives every unit stat. The "Icon" column is an ENGINE sprite
@@ -293,7 +301,10 @@ function beginGame() {
   G.sel = 0;
   G.landHo = false; G.newLand = '';
   G.colonies = []; G.europe = []; G.builtColony = false;
-  G.market = DATA.cargo.map(c => c.bid);
+  G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
+  seedMarket();
+  // The dock holds three candidate slots; each refills from the @CLASS ladder.
+  G.dock = [0, 0, 0].map(() => rollImmigrant());
   centerOn(sx, sy);
   G.msg = `${DATA.nations[G.nation].homeport}, ${DATA.nations[G.nation].country}.`;
 }
@@ -957,13 +968,51 @@ function colonyFood(c) {
   return { produced, eaten, net: produced - eaten };
 }
 
-// A ship entering the sea lane leaves the map for the home port.
+// A ship entering the sea lane leaves the map for the home port. Ships carry a
+// hold of {good, qty} slots plus passenger units; the crossing takes three
+// turns, which is what the sail-state 1/2/3 bands in §26.9 count down.
+const SAIL_TURNS = 3;
 function sailForEurope(ship) {
-  G.europe.push({ type: ship.type, icon: ship.icon, cargo: ship.cargo, state: 'port' });
+  G.europe.push({ type: ship.type, icon: ship.icon, hold: ship.hold || [],
+                  passengers: ship.cargo || [], state: 'toEurope', turns: SAIL_TURNS,
+                  lane: { x: ship.x, y: ship.y } });
   G.units.splice(G.units.indexOf(ship), 1);
   G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
-  G.screen = 'europe';
   G.msg = '';
+}
+// Sail the other way: the ship leaves the dock and reappears on the sea lane.
+function sailForNewWorld(e) {
+  e.state = 'toNewWorld';
+  e.turns = SAIL_TURNS;
+  G.euroMsg = `${e.type} sets sail.`;
+}
+// Advance every crossing by one turn; arrivals dock or make landfall.
+function advanceCrossings() {
+  for (let k = G.europe.length - 1; k >= 0; k--) {
+    const e = G.europe[k];
+    if (e.state === 'port') continue;
+    if (--e.turns > 0) continue;
+    // Docking in Europe brings up the harbour, the way arriving does in game.
+    if (e.state === 'toEurope') {
+      e.state = 'port';
+      G.euroShip = shipsInPort().indexOf(e);
+      G.euroMsg = `${e.type} arrives in ${DATA.nations[G.nation].homeport}.`;
+      G.screen = 'europe';
+      continue;
+    }
+    // Back on the map, on the sea lane it left from.
+    const u = mkUnit(e.type, e.lane ? e.lane.x : MAP.w - 1, e.lane ? e.lane.y : 20,
+                     e.passengers);
+    u.hold = e.hold;
+    G.units.push(u);
+    G.europe.splice(k, 1);
+  }
+}
+const holdQty = (e, i) => { const s = e.hold.find(h => h.good === i); return s ? s.qty : 0; };
+function holdAdd(e, i, qty) {
+  const s = e.hold.find(h => h.good === i);
+  if (s) { s.qty += qty; if (s.qty <= 0) e.hold.splice(e.hold.indexOf(s), 1); }
+  else if (qty > 0) e.hold.push({ good: i, qty });
 }
 
 // ------------------------------------------------------------ colony screen
@@ -1157,56 +1206,229 @@ function drawColonyPanel(ctx, c) {
   }
 }
 
+// The dock's candidate ladder (§17.6): harder difficulty yields more low-tier
+// arrivals. The three-tier roll is the cited one; the class list is @CLASS.
+function rollImmigrant() {
+  const lvl = G.difficulty;
+  const thr = (lvl + 3) >> 1;
+  if (Math.floor(Math.random() * 15) + 1 <= thr) return 0;      // Petty Criminals
+  if (Math.floor(Math.random() * 10) + 1 <= thr) return 1;      // Indentured Servants
+  return 2 + Math.floor(Math.random() * (DATA.classes.length - 2));
+}
+
+// ------------------------------------------------------------ the market
+// §9.2-9.4. Each good carries a price with a floor/ceiling, a visible bid/ask
+// spread of burden+1, and a traffic accumulator. The accumulator gains the
+// attrition drift every turn and +-(qty << volatility) per trade; when it
+// reaches -100*rise the price steps up, at +100*fall it steps down, and the
+// threshold is handed back each time.
+function seedMarket() {
+  G.market = DATA.cargo.map(c => c.start1 + Math.floor(Math.random() * (c.start2 - c.start1 + 1)));
+  G.accum = DATA.cargo.map(() => 0);
+}
+const askPrice = (i) => G.market[i] + DATA.cargo[i].burden + 1;
+function stepPrice(i) {
+  const c = DATA.cargo[i];
+  while (G.accum[i] <= -100 * c.rise && G.market[i] < c.high) {
+    G.market[i] += 1; G.accum[i] += 100 * c.rise;
+  }
+  while (G.accum[i] >= 100 * c.fall && G.market[i] > c.low) {
+    G.market[i] -= 1; G.accum[i] -= 100 * c.fall;
+  }
+}
+function driftMarket() {
+  DATA.cargo.forEach((c, i) => { G.accum[i] += c.attrition; stepPrice(i); });
+}
+// SELL: gross = price*qty, tax = gross*rate/100, you keep the rest and the
+// King's fund gains the tax. Selling floods the market, so the accumulator
+// rises and the price falls.
+function sellGoods(i, qty) {
+  if (qty <= 0) return 0;
+  const gross = G.market[i] * qty;
+  const tax = Math.floor(gross * G.tax / 100);
+  G.gold += gross - tax;
+  G.kingsFund += tax;
+  G.accum[i] += qty << DATA.cargo[i].volatility;
+  stepPrice(i);
+  return gross - tax;
+}
+// BUY is untaxed and pays the ask; buying drains the market, so the price rises.
+function buyGoods(i, qty) {
+  const cost = askPrice(i) * qty;
+  if (cost > G.gold) return 0;
+  G.gold -= cost;
+  G.accum[i] -= qty << DATA.cargo[i].volatility;
+  stepPrice(i);
+  return cost;
+}
+
 // ------------------------------------------------------------ Europe screen
 // §26.9. EUROPE.PIK carries the dock town, market grid and the red "E"; the
 // engine draws the title band, the market prices, the dock/panel captions and
 // the recruit menu.
-const EURO_ROWS = ['RECRUIT', 'PURCHASE', 'TRAIN'];
+const EURO_ROWS = DATA.eurolabel.slice(0, 3);
+// PURCHASE's cited content is the goods pages -- Muskets in 50s, Horses, Tools
+// in 100s (§9.4 names those three explicitly). Ship and Artillery prices are
+// NOT in the shipped tables (Artillery only as "base + artillery_bought*100",
+// with no base), so those rows are omitted rather than invented.
+const PURCHASE_ROWS = [{ good: 15, qty: 50 }, { good: 8, qty: 100 }, { good: 14, qty: 100 }];
+
+function shipsInPort() { return G.europe.filter(e => e.state === 'port'); }
+function activeShip() { return shipsInPort()[G.euroShip] || null; }
+
 function drawEurope(ctx) {
   usePalette('EUROPE');
   ctx.drawImage(IMG.EUROPE, 0, 0);
-  // The play area is the PIK from y=8 down; the title band above it is wood,
-  // the same strip the map screen wears.
-  const [tw2, th2] = frameSize('WOODTILE', 0);
+  const [tw2] = frameSize('WOODTILE', 0);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 8); ctx.clip();
   for (let x = 0; x < W; x += tw2) sheetFrame(ctx, 'WOODTILE', 0, x, 0);
   ctx.restore();
   const n = DATA.nations[G.nation];
-  // Title band, text y=1 centred on x=160. The literal has no space in "Tax:0%"
-  // and the gold suffix is the FONTTINY '$' glyph.
   const band = `${n.homeport}, ${n.country}. ${DATA.seasons[G.season]}, ${G.year}.` +
                `  Tax:${G.tax}%  Gold: ${G.gold}$`;
   FONT.tiny.center(ctx, band, 160, 1, lut(HUD_INK));
 
-  // Market bar (0,179,320,21): icons at x=1+19i y=181, bid/ask pair at y=194.
-  // ask = bid + @CARGO.Burden + 1.
+  // Market bar: icons centred on 9+19i at y=181, bid/ask at y=194.
   DATA.cargo.forEach((g, i) => {
     const [fw] = frameSize('ICONS', 0x16 + i);
     sheetFrame(ctx, 'ICONS', 0x16 + i, 9 + 19 * i - (fw >> 1), 181);
-    // Printed as a bid/ask pair; ask = bid + @CARGO.Burden + 1.
-    const bid = G.market[i], ask = bid + g.burden + 1;
-    FONT.tiny.center(ctx, `${bid}/${ask}`, 9 + 19 * i, 194, lut(0x2F));
+    FONT.tiny.center(ctx, `${G.market[i]}/${askPrice(i)}`, 9 + 19 * i, 194, lut(0x2F));
+    if (i === G.marketSel) hollowRect(ctx, 19 * i, 179, 19, 21, 0x0E);
   });
 
-  // Panel captions -- fixed @MISC string-id slots at the measured origins.
+  // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
+  // ones outbound, "Loading" the ship at the dock and its hold.
   FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
+  G.europe.filter(e => e.state === 'toEurope').slice(0, 3).forEach((e, k) =>
+    FONT.tiny.draw(ctx, `${e.type} (${e.turns})`, 16, 128 + k * 7, lut(0x0A)));
   FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
   FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
-  const loading = G.europe.find(e => e.state === 'port');
+  G.europe.filter(e => e.state === 'toNewWorld').slice(0, 3).forEach((e, k) =>
+    FONT.tiny.draw(ctx, `${e.type} (${e.turns})`, 87, 135 + k * 7, lut(0x0A)));
+
+  const ship = activeShip();
   FONT.tiny.draw(ctx, 'Loading:', 150, 120, lut(HUD_INK));
-  FONT.tiny.draw(ctx, loading ? loading.type : '', 186, 120, lut(0x0A));
-  // Ships in port occupy the six dock slots at (147+12k, 165).
-  G.europe.filter(e => e.state === 'port').forEach((e, k) => {
-    if (k < 6) sheetFrame(ctx, 'ICONS', 122, 147 + 12 * k, 165);
+  FONT.tiny.draw(ctx, ship ? ship.type : DATA.text.misc[339] || 'No Ships In Port',
+                 186, 120, lut(0x0A));
+  if (ship) {
+    ship.hold.slice(0, 6).forEach((h, k) => {
+      const [fw] = frameSize('ICONS', 0x16 + h.good);
+      sheetFrame(ctx, 'ICONS', 0x16 + h.good, 152 + k * 12 - (fw >> 1) + 5, 128);
+      FONT.tiny.center(ctx, String(h.qty), 152 + k * 12 + 5, 142, lut(0x0F));
+    });
+    ship.passengers.slice(0, 4).forEach((pName, k) => {
+      const u = unit(pName);
+      if (u) sheetFrame(ctx, 'ICONS', u.icon, 150 + k * 15, 148);
+    });
+  }
+  // Six dock slots hold the ships in port.
+  shipsInPort().forEach((e, k) => {
+    if (k >= 6) return;
+    sheetFrame(ctx, 'ICONS', 122, 147 + 12 * k, 165);
+    if (k === G.euroShip) hollowRect(ctx, 146 + 12 * k, 164, 12, 14, 0x0E);
   });
 
-  // Recruit menu: rows (281, 89+11r, 37, 9), accelerator letter yellow.
+  // Recruit menu rows (281, 89+11r, 37, 9); accelerator letter yellow.
   EURO_ROWS.forEach((r, k) => {
     const y = 89 + 11 * k;
-    if (k === G.euroRow) { ctx.fillStyle = ink(57); ctx.fillRect(281, y, 37, 9); }
-    FONT.tiny.center(ctx, r, 299, y + 1, lut(k === G.euroRow ? 0x0F : 0x00));
+    ctx.fillStyle = ink(k === G.euroRow ? 57 : 48);
+    ctx.fillRect(281, y, 37, 9);
+    const w = FONT.tiny.width(r), x0 = 281 + (37 - w) / 2;
+    FONT.tiny.draw(ctx, r[0], x0, y + 1, lut(0x0E));
+    FONT.tiny.draw(ctx, r.slice(1), x0 + FONT.tiny.width(r[0]), y + 1,
+                   lut(k === G.euroRow ? 0x0F : 0x00));
   });
+
+  if (G.euroMenu) drawEuroMenu(ctx);
+  if (G.euroMsg) FONT.tiny.center(ctx, G.euroMsg, 160, 172, lut(0x0E), ink(0));
   FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x0F));
+}
+
+// The three sub-menus. Each is a plaque list: rows of "<label> <price>" with
+// the affordable ones lit and the rest dimmed.
+function euroMenuRows() {
+  if (G.euroMenu === 'recruit')
+    return G.dock.map(ci => ({ label: DATA.classes[ci].name, cost: DATA.classes[ci].cost }));
+  if (G.euroMenu === 'train')
+    return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }));
+  return PURCHASE_ROWS.map(r => ({
+    label: `${DATA.cargo[r.good].name} x${r.qty}`, cost: askPrice(r.good) * r.qty }));
+}
+function drawEuroMenu(ctx) {
+  const rows = euroMenuRows();
+  const visible = Math.min(rows.length, 10);
+  const b = { x: 60, y: 30, w: 200, h: 14 + visible * 9 };
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  FONT.tiny.draw(ctx, G.euroMenu.toUpperCase(), b.x + 5, b.y + 4, lut(0xFC));
+  const top = Math.max(0, Math.min(G.euroMenuRow - visible + 1, rows.length - visible));
+  for (let k = 0; k < visible; k++) {
+    const r = rows[top + k], y = b.y + 13 + k * 9;
+    const sel = (top + k) === G.euroMenuRow;
+    if (sel) { ctx.fillStyle = ink(0x37); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    const afford = r.cost <= G.gold;
+    FONT.tiny.draw(ctx, r.label, b.x + 6, y + 1, lut(afford ? (sel ? 0xFC : 0xFE) : 0x2F));
+    const c = `${r.cost}$`;
+    FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1,
+                   lut(afford ? (sel ? 0xFC : 0xFE) : 0x2F));
+  }
+}
+
+function openEuroMenu(k) {
+  G.euroMenu = ['recruit', 'purchase', 'train'][k];
+  G.euroRow = k;
+  G.euroMenuRow = 0;
+  G.euroMsg = '';
+}
+// Selling empties the hold of that good; buying fills it. Both need a ship at
+// the dock -- there is nowhere else in Europe to put goods.
+function sellFromShip(i) {
+  if (i < 0) return;
+  const ship = activeShip();
+  if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+  const qty = holdQty(ship, i);
+  if (!qty) { G.euroMsg = `No ${DATA.cargo[i].name} aboard.`; return; }
+  const net = sellGoods(i, qty);
+  holdAdd(ship, i, -qty);
+  G.euroMsg = `Sold ${qty} ${DATA.cargo[i].name} for ${net}$` +
+              (G.tax ? ` (${G.tax}% tax)` : '');
+}
+function buyToShip(i, qty) {
+  if (i < 0) return;
+  const ship = activeShip();
+  if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+  const paid = buyGoods(i, qty);
+  if (!paid) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+  holdAdd(ship, i, qty);
+  G.euroMsg = `Bought ${qty} ${DATA.cargo[i].name} for ${paid}$`;
+}
+
+// Committing a sub-menu row.
+function euroMenuCommit() {
+  const rows = euroMenuRows();
+  const r = rows[G.euroMenuRow];
+  if (!r) return;
+  if (r.cost > G.gold) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+  G.gold -= r.cost;
+  if (G.euroMenu === 'recruit') {
+    // The recruit boards a ship in port if there is one, else waits on the dock.
+    const ship = activeShip();
+    if (ship) ship.passengers.push('Colonists');
+    G.dock[G.euroMenuRow] = rollImmigrant();
+    G.euroMsg = `${r.label.replace(/s$/, '')} recruited.`;
+  } else if (G.euroMenu === 'train') {
+    const ship = activeShip();
+    if (ship) ship.passengers.push('Colonists');
+    G.euroMsg = `${r.label} trained.`;
+  } else {
+    const buy = PURCHASE_ROWS[G.euroMenuRow];
+    const ship = activeShip();
+    // The gold was already taken above, so move the goods without re-charging.
+    G.accum[buy.good] -= buy.qty << DATA.cargo[buy.good].volatility;
+    stepPrice(buy.good);
+    if (ship) holdAdd(ship, buy.good, buy.qty);
+    G.euroMsg = `${buy.qty} ${DATA.cargo[buy.good].name} purchased.`;
+  }
+  G.euroMenu = null;
 }
 
 // ---------------------------------------------------------------- turn
@@ -1217,6 +1439,8 @@ function endTurn() {
   if (G.year < 1600) G.year += 1;
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
+  driftMarket();
+  advanceCrossings();
   G.msg = '';
   if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
 }
@@ -1360,9 +1584,38 @@ function onClick(mx, my) {
       }
       if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
       break;
-    case 'europe':
-      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
+    case 'europe': {
+      if (G.euroMenu) {
+        const rows = euroMenuRows(), visible = Math.min(rows.length, 10);
+        const b = { x: 60, y: 30, w: 200, h: 14 + visible * 9 };
+        const top = Math.max(0, Math.min(G.euroMenuRow - visible + 1, rows.length - visible));
+        for (let k = 0; k < visible; k++) {
+          if (hit(mx, my, { x: b.x + 3, y: b.y + 13 + k * 9, w: b.w - 6, h: 9 })) {
+            G.euroMenuRow = top + k; euroMenuCommit(); return;
+          }
+        }
+        G.euroMenu = null;                       // click outside closes it
+        return;
+      }
+      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) { G.screen = 'map'; return; }
+      // Menu buttons.
+      for (let k = 0; k < 3; k++) {
+        if (hit(mx, my, { x: 281, y: 89 + 11 * k, w: 37, h: 9 })) {
+          G.euroRow = k; openEuroMenu(k); return;
+        }
+      }
+      // Dock slots select the ship being loaded.
+      const ships = shipsInPort();
+      for (let k = 0; k < Math.min(ships.length, 6); k++) {
+        if (hit(mx, my, { x: 146 + 12 * k, y: 164, w: 12, h: 14 })) { G.euroShip = k; return; }
+      }
+      // The market bar routes clicks to the SELL handler (§9.4).
+      if (my >= 179) {
+        const i = Math.floor(mx / 19);
+        if (i >= 0 && i < 16) { G.marketSel = i; sellFromShip(i); }
+      }
       break;
+    }
     case 'map': {
       if (hit(mx, my, VP)) {
         const tx = G.view.x + Math.floor((mx - VP.x) / TILE);
@@ -1428,12 +1681,29 @@ function onKey(e) {
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
-    case 'europe':
-      // Recruit menu rows; ESC/E/x close the screen (§26.9 keys).
-      if (k === 'ArrowUp') G.euroRow = (G.euroRow + EURO_ROWS.length - 1) % EURO_ROWS.length;
-      if (k === 'ArrowDown') G.euroRow = (G.euroRow + 1) % EURO_ROWS.length;
+    case 'europe': {
+      if (G.euroMenu) {
+        const n = euroMenuRows().length;
+        if (k === 'ArrowUp') G.euroMenuRow = (G.euroMenuRow + n - 1) % n;
+        if (k === 'ArrowDown') G.euroMenuRow = (G.euroMenuRow + 1) % n;
+        if (k === 'Enter' || k === ' ') euroMenuCommit();
+        if (k === 'Escape') G.euroMenu = null;
+        break;
+      }
+      // §26.9 keys: arrows move the market cursor, L/= buy full, U/-/_ sell,
+      // R/1 recruit, P/2 purchase, T/3 train, S sail, ESC/E/x exit.
+      if (k === 'ArrowLeft') G.marketSel = (G.marketSel + 15) % 16;
+      if (k === 'ArrowRight') G.marketSel = (G.marketSel + 1) % 16;
+      if (k === 'l' || k === 'L' || k === '=') buyToShip(G.marketSel, 100);
+      if (k === '+') buyToShip(G.marketSel, 10);
+      if (k === 'u' || k === 'U' || k === '-' || k === '_') sellFromShip(G.marketSel);
+      if (k === 'r' || k === 'R' || k === '1') openEuroMenu(0);
+      if (k === 'p' || k === 'P' || k === '2') openEuroMenu(1);
+      if (k === 't' || k === 'T' || k === '3') openEuroMenu(2);
+      if (k === 's' || k === 'S') { const e = activeShip(); if (e) sailForNewWorld(e); }
       if (k === 'Escape' || k === 'x' || k === 'e' || k === 'E') G.screen = 'map';
       break;
+    }
     case 'map':
       if (k === 'ArrowLeft') moveSel(-1, 0);
       if (k === 'ArrowRight') moveSel(1, 0);

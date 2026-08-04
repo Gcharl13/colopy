@@ -78,8 +78,55 @@ SCRIPT = """() => {
   G.sel = G.units.indexOf(vessel);
   vessel.x = MAP.w - 2; vessel.movesLeft = 9;
   moveSel(1, 0);
-  out.europe = { screen: G.screen, inPort: G.europe.length,
-                 shipLeftMap: !G.units.includes(vessel) };
+  out.crossing = { state: G.europe[0] && G.europe[0].state, turns: G.europe[0] && G.europe[0].turns,
+                   shipLeftMap: !G.units.includes(vessel) };
+  for (let t = 0; t < 3; t++) endTurn();
+  out.europe = { screen: G.screen, inPort: shipsInPort().length };
+
+  // Market: buy 100 Tools into the hold, then sell them back with tax.
+  G.tax = 10;
+  G.gold = 5000;                               // a treasury to trade with
+  const boat = activeShip();
+  const gold0 = G.gold, tools = 14;
+  const accum0 = G.accum[tools];
+  buyToShip(tools, 100);
+  out.bought = { held: holdQty(boat, tools), spent: gold0 - G.gold,
+                 wasAsk: gold0 - G.gold > 0 };
+  const accumAfterBuy = G.accum[tools];
+  const gold1 = G.gold, king0 = G.kingsFund;
+  sellFromShip(tools);
+  out.sold = { held: holdQty(boat, tools), gained: G.gold - gold1,
+               kingTook: G.kingsFund - king0 };
+
+  // Buying drains the market and selling floods it, so the accumulator moves
+  // in opposite directions and a matched round trip nets back to where it was.
+  out.accumMoved = { drainedOnBuy: accumAfterBuy < accum0,
+                     floodedOnSell: G.accum[tools] > accumAfterBuy,
+                     roundTripNeutral: G.accum[tools] === accum0 };
+
+  // Recruit: the dock has three candidates priced from @CLASS.
+  openEuroMenu(0);
+  const rows = euroMenuRows();
+  out.recruitRows = rows.length === 3 && rows.every(r => r.cost >= 300 && r.cost <= 2000);
+  G.gold = 5000; G.euroMenuRow = 0;
+  const pax0 = boat.passengers.length, g2 = G.gold;
+  euroMenuCommit();
+  out.recruited = { paid: g2 - G.gold > 0, boarded: boat.passengers.length === pax0 + 1,
+                    menuClosed: G.euroMenu === null };
+
+  // Train: 17 trainable jobs, priced from @JOB europe_value.
+  openEuroMenu(2);
+  out.trainRows = euroMenuRows().length === 17;
+  G.euroMenu = null;
+
+  // Sail home: three turns back to the lane, then the ship is on the map again.
+  const units0 = G.units.length;
+  sailForNewWorld(boat);
+  out.outbound = G.europe[0].state === 'toNewWorld';
+  for (let t = 0; t < 3; t++) endTurn();
+  out.returned = { onMap: G.units.length === units0 + 1, inPort: shipsInPort().length === 0 };
+
+  G.screen = 'europe';
   onClick(310, 190);
   out.europeExit = G.screen;
   return out;
@@ -127,8 +174,24 @@ def main():
         ("woodcut 2 opens the colony screen",
          r["afterColonyWoodcut"] == "colony", r["afterColonyWoodcut"]),
         ("colony Exit returns to the map", r["colonyExit"] == "map", r["colonyExit"]),
-        ("sea lane sails the ship to Europe",
-         r["europe"] == {"screen": "europe", "inPort": 1, "shipLeftMap": True}, r["europe"]),
+        ("sea lane starts a 3-turn crossing",
+         r["crossing"] == {"state": "toEurope", "turns": 3, "shipLeftMap": True}, r["crossing"]),
+        ("crossing docks and opens the harbour",
+         r["europe"] == {"screen": "europe", "inPort": 1}, r["europe"]),
+        ("buying loads the hold at the ask price",
+         r["bought"]["held"] == 100 and r["bought"]["wasAsk"], r["bought"]),
+        ("selling empties the hold and the King takes the tax",
+         r["sold"]["held"] == 0 and r["sold"]["gained"] > 0 and r["sold"]["kingTook"] > 0,
+         r["sold"]),
+        ("buying drains and selling floods the price accumulator",
+         all(r["accumMoved"].values()), r["accumMoved"]),
+        ("recruit offers 3 dock slots priced from @CLASS",
+         r["recruitRows"], r["recruitRows"]),
+        ("recruiting charges and boards the ship",
+         all(r["recruited"].values()), r["recruited"]),
+        ("train offers the 17 @JOB rows", r["trainRows"], r["trainRows"]),
+        ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
+        ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
         ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),
     ]
     bad = 0
