@@ -846,6 +846,13 @@ therefore grounds a coastal water tile with the *neighbour's land terrain*, draw
 coast frames over it, and finally backfills water through the frames' 0-index holes
 (`func_067EEC` masked fill). The code-0 quadrant frames (disk 0x6C–0x6F) are all-zero
 "punch-throughs" that exist precisely to punch water through the substituted ground.
+**Which frames the substitution actually shows through** (ruling of 2026-08-04): the four
+clean-edge frames carry a sand/water wedge with a large hole on the *land* side — frame 150's
+hole is the NW corner and pattern 0 is exactly `land at N, W, NW` — so the substituted ground
+reads through those. The 8×8 quadrant frames instead carry their own sand-and-water shore
+across the whole cell and hole out on the *water* side, so they composite over plain ocean.
+Rendering the two alternatives against `docs/screens/colony_sites_live.png` scores 6.44 mean
+channel error for this split vs 7.48/7.55 for the uniform readings.
 
 **Clean edges** (0x68474..0x6850D): default pattern −1, then four tests on `[0xA8A6]`
 assign the pattern and the draw is `0x97 + pattern`:
@@ -863,8 +870,14 @@ a 2×2 lake exercises all four, pixel-exact.
 **Quadrant fallback** (no clean pattern, 0x684BC..0x684F5): for q = 0..3
 (TL, TR, BR, BL) draw the 8×8 frame **`0x6D + code[q]·4 + q`** at the quadrant's
 sub-cell offset. The quadrant code (built at 0x67ABD..0x67AEF) ORs, per quadrant:
-**|=4** for its own cardinal (N,E,S,W for q0..q3), **|=1** for the next-clockwise
-cardinal, **|=2** for its diagonal — maximum 7. All four quadrants draw
+**|=4** for its own cardinal (N,E,S,W for q0..q3), **|=1** for the adjoining
+**counter-clockwise** cardinal (W,N,E,S for q0..q3), **|=2** for its diagonal —
+maximum 7. (Corrected 2026-08-04: this middle term was previously written as
+"next-clockwise". The code-1 frames paint q0's *west* edge, q1's *north* edge,
+q2's *east* and q3's *south* — counter-clockwise in every case — and the
+clockwise reading breaks the shoreline into square blocks when rendered against
+the live frame `docs/screens/colony_sites_live.png`. See `notes/rulings/RULINGS.md`
+2026-08-04.) All four quadrants draw
 unconditionally (code 0 ⇒ frame `0x6D + q`, the punch-throughs) for any water tile
 with ≥1 land neighbour that escapes the clean patterns. The reachable band is
 0x6D..0x8C, all 8×8; a single-tile lake yields codes 7,7,7,7 → frames

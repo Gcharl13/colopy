@@ -42,3 +42,4 @@ code/VICEROY/flat/
 # Port: regenerable from the user's own col.zip; contains original game art.
 port/assets/
 port/dist/
+port/_shots/

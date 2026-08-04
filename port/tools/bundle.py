@@ -43,7 +43,15 @@ def build_data():
         "leader": leaders[i]["name"],
         "homeport": ports[i]["name"],
         "adjective": nat[i]["name"],
+        "abbrev": rows("@NATIONABBREV")[i]["name"],
     } for i in range(4)]
+
+    # @UNIT: 23 rows of stats. Keep the numeric columns numeric for the port.
+    D["units"] = [{
+        "name": r["name"],
+        **{c: int(r[c]) for c in ("icon", "movement", "attack", "combat",
+                                  "cargo", "size", "cost")},
+    } for r in rows("@UNIT")]
 
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))

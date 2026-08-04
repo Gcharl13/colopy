@@ -6181,3 +6181,66 @@ which a disp16 scan for 0x54F0-family absolutes cannot see.
 Stale: spec/systems/natives.md §3/§6, viceroy_source/src/native/
 settlement.c (native_tick fiction), manual §19 (being updated in v8),
 2026-06-26/27 "RESOLVED-static" entries as they touch these bytes.
+
+---
+
+## 2026-08-04 — Coast quadrant code: the `|=1` bit is the COUNTER-clockwise cardinal
+
+**Conflict**: manual §6.7 (and `notes/SPRITE_CATALOG.md` row 0x6D–0x8B) describe the
+per-quadrant coast code as *"|=4 for its own cardinal (N,E,S,W for q0..q3), **|=1 for the
+next-clockwise cardinal**, |=2 for its diagonal"*. Implementing that literally produced
+coastlines that do not match the running game.
+
+**Source A** — the manual/disasm wording: `|=1` = next-clockwise, i.e. N→E, E→S, S→W, W→N.
+
+**Source B** — the sprite pixels themselves (`PHYS0.SS` frames disk 0x6C..0x8B, the band the
+manual itself names): the code-1 frames (own cardinal absent, `|=1` bit only) paint
+**q0 = the TL cell's WEST edge, q1 = the TR cell's NORTH edge, q2 = the BR cell's EAST edge,
+q3 = the BL cell's SOUTH edge** — the counter-clockwise neighbour in every case. The
+clockwise reading would place q0's band on the tile's east side, inside the TL cell, which
+is geometrically impossible.
+
+**Ruling**: **counter-clockwise** (`|=1` weights W, N, E, S for q0..q3). Pixels outrank both
+the preprocessed disasm note and the C reconstruction per `notes/TRUTH_HIERARCHY.md`.
+Independently confirmed by rendering `AMER2.MP` at view (35,8) with both readings and
+diffing against the live DOSBox frame `docs/screens/colony_sites_live.png`: mean channel
+error 6.44 counter-clockwise vs 8.57 clockwise, and the clockwise render visibly breaks the
+shoreline into square blocks.
+
+**Action taken**:
+- `port/src/game.js` — `Q_NEXT = [6, 0, 2, 4]` (W, N, E, S) with the derivation in a comment.
+- `docs/COLONIZATION_TECHNICAL_REFERENCE.md` §6.7 — wording corrected + cross-ref to this ruling.
+
+**Follow-up**: the `0x67ABD..0x67AEF` code-builder should be re-read to confirm the direction
+tables at the instruction level; the ruling rests on pixels + a whole-frame diff, not on a
+re-reading of that loop.
+
+---
+
+## 2026-08-04 — Coastal beach halo applies to the clean-edge frames, not the quadrant frames
+
+**Conflict**: §6.7 says a coastal water tile is grounded with a cardinal land neighbour's
+terrain and that water is then *"backfilled through the frames' 0-index holes"*. Those two
+statements cannot both hold for every frame — if every hole becomes water, the substituted
+ground is never visible and the substitution is pointless.
+
+**Source A** — literal reading: every index-0 hole becomes water (substitution invisible).
+
+**Source B** — the frame pixels: the four clean-edge frames (disk 150–153) carry a sand/water
+wedge with a **large transparent region on the land side** (frame 150's hole is the NW corner,
+and pattern 0 is exactly `land at N, W, NW`) — that hole is the substituted ground. The 8×8
+quadrant frames (disk 0x6C..0x8B) instead carry their **own** sand-and-water shore across the
+full cell, with holes on the open-water side; a code-4 quadrant (own cardinal only) is
+transparent on the side with no land at all.
+
+**Ruling**: the halo substitution shows through the **clean-edge** frames; the **quadrant**
+frames composite over plain ocean ground. Decided on pixels plus a whole-frame diff against
+`docs/screens/colony_sites_live.png` — this rule scored 6.44 mean channel error against 7.55
+for "land ground under both paths" and 7.48 for "ocean ground under both".
+
+**Action taken**:
+- `port/src/game.js` `drawTile()` — clean-edge path grounds on `haloGround()`, quadrant path
+  grounds on the tile's own ocean frame.
+
+**Follow-up**: the residual ~15% pixel mismatch on that frame is the unimplemented O512
+biome-edge dither (§6.11), not the coast rule.

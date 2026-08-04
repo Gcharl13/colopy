@@ -45,8 +45,13 @@ def pik_to_png(data, fallback_pal):
     return im.convert("RGB")
 
 
-def sheet_to_png(path, pal):
-    """One .SS -> a single-row atlas PNG + frame rects."""
+def sheet_to_png(path, pal, zero_transparent=False):
+    """One .SS -> a single-row atlas PNG + frame rects.
+
+    The coast bands are drawn over a substituted ground and punch water through
+    their index-0 holes, so those frames need index 0 treated as transparent
+    (manual 6.7); every other sheet keeps 0 as black.
+    """
     sh = ssdec.load_sheet(str(path))
     frames = sh["frames"]
     p = sh["pal"]
@@ -61,7 +66,8 @@ def sheet_to_png(path, pal):
         for j in range(h):
             for i in range(w):
                 v = pixels[j * w + i]
-                px[i, j] = (0, 0, 0, 0) if v == TRANSPARENT else (
+                clear = (v == TRANSPARENT) or (zero_transparent and v == 0)
+                px[i, j] = (0, 0, 0, 0) if clear else (
                     p[v * 3], p[v * 3 + 1], p[v * 3 + 2], 255)
         atlas.paste(img, (x, pad))
         recs.append({"x": x, "y": pad, "w": w, "h": h, "hx": hx, "hy": hy})
@@ -139,9 +145,11 @@ def main():
     for e in pal_json:
         fallback += [e["r"], e["g"], e["b"]]
 
-    want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2"] + \
+    want_pik = ["OPENMENU", "NATIONS", "DIFFICUL", "WOODPANL", "WOODPAN2",
+                "KINGLSS1", "KINGLSS2"] + \
         [f"LEVN{i:04d}" for i in range(1, 11)]
-    want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING"]
+    want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
+               "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1"]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
     tmp = OUT / "_tmp"
@@ -175,6 +183,11 @@ def main():
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}
             print(f"  {nm}.SS -> {len(recs)} frames, atlas {atlas.width}x{atlas.height}")
+            if nm == "PHYS0":
+                a2, r2 = sheet_to_png(p, fallback, zero_transparent=True)
+                a2.save(OUT / "PHYS0C.png")
+                bundle["sheets"]["PHYS0C"] = {"atlas": "PHYS0C.png", "frames": r2}
+                print("  PHYS0.SS -> PHYS0C (index-0 transparent, coast bands)")
         bundle["fonts"] = {}
         for nm in want_ff:
             key = nm + ".FF"

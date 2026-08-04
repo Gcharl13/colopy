@@ -19,8 +19,8 @@ the 10-card intro slideshow → the King's audience → the map view.
 | Leader name | §26.4 | `WOODPANL.PIK`, FONTINTR, default = the nation's leader, maxlen 23 |
 | Briefings | §26.5 | `@NATIONnA` history + `@NATIONnB` bonus, `{}` spans gold |
 | Intro cards | woodcuts_and_intro §2 | `LEVN0001..0010.PIK` + `@BUILD1..10`, ink 0x0E, `%STRING` substitution per card |
-| King's audience | §26.13 | `@VICEROY` / `@VICEROY2` (Netherlands), FONTKING |
-| Map view | §26.7 | viewport (0,8,240,192) 15x12 @16px; minimap (241,8,79,41); sidebar season/gold/tax + unit panel |
+| King's audience | §18.5 / §26.13 | `KINGLSS1.PIK` throne room + `KING1.SS` king-and-dog + the nation canopy banner (`ENGLND1`/`FRANCE1`/`SPAIN1`/`DUTCH1`), both placed by their frame descriptors' (centre-x, bottom-y) anchor; `@VICEROY` / `@VICEROY2` scroll in FONTKING at `@width=78 @x=232 @y=21`, 8px pitch, `^^` lines centred |
+| Map view | §26.7 | viewport (0,8,240,192) 15x12 @16px; minimap well (252,9,56,39) in a 1px orange frame; menu bar = wood + FONTTINY titles in HUD green with COLONIZOPEDIA at x=259; sidebar season/gold/tax + unit panel |
 
 Rules already wired: starting gold by difficulty (1000/300/0/0/0), the
 `@SCENARIO` start tiles (England 34,20 · France 39,10 · Spain 47,61 ·
@@ -28,12 +28,38 @@ Netherlands 50,33), the Dutch Caravel→Merchantman upgrade, the doubled
 starting force at difficulty ≤ 1, and the year cadence (1 turn = 1 year
 before 1600, then seasons).
 
+### Terrain compositor (§6.3–6.11)
+
+Tiles go through the O514 → O513 → O512 chain. Implemented: the ground fold
+(`func_006204`), the **adjacency-masked** overlay bands — forest `0x40+mask`,
+mountains `0x20+mask`, hills `0x30+mask`, rivers `0x00`/`0x10 + mask` with an
+isolated river forced to `0xF` — river mouths, the coastal beach halo (clean
+edges 150–153 plus the 8×8 quadrant fallback) and the prime-resource detail
+band. Masks weight **N=8, S=4, W=2, E=1**; the sprite index on disk is the
+manual's engine frame **minus one**.
+
+Two coast details were settled by rendering `AMER2.MP` and diffing against the
+live DOSBox frame `docs/screens/colony_sites_live.png` — both are written up in
+`notes/rulings/RULINGS.md` (2026-08-04): the quadrant code's `|=1` bit is the
+**counter-clockwise** cardinal (not clockwise, as the manual read), and the halo
+ground substitution shows through the **clean-edge** frames only, the quadrant
+frames compositing over open water.
+
+Not yet implemented: the O512 biome-edge dither (§6.11) — which is most of the
+residual ~15% pixel difference against that frame — roads (§6.8, the loader
+discards the feature plane anyway) and fog of war.
+
 ## Build
 
 ```sh
 python3 port/tools/build_assets.py   # col.zip -> port/assets/ (PNG + manifest)
 python3 port/tools/bundle.py         # -> port/dist/colonization.html (one file)
+python3 port/tools/shots.py          # -> port/_shots/*.png, one per screen
 ```
+
+`shots.py` drives the bundle headlessly in Chromium and dumps each screen at
+the logical 320×200, so output can be diffed pixel-for-pixel against the DOSBox
+captures in `docs/screens/`.
 
 `build_assets.py` reuses the byte-verified codec in `tools/ssdec.py`
 (MADSPACK/FAB); the `.PIK` layout follows `viceroy_cpp/src/pik.cpp` and the
