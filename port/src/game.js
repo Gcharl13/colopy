@@ -790,12 +790,12 @@ function nationPlate(ctx, x, y, nation, orders) {
   FONT.tiny.center(ctx, key, x + 4, y + 2, [ink(0), ink(0), ink(0)]);
 }
 function drawUnit(ctx, u, px, py) {
+  // The active unit blinks: the engine flashes the unit graphic itself on and
+  // off so the tile beneath shows through. There is no selection outline.
+  if (G.units[G.sel] === u && !G.blink) return;
   nationPlate(ctx, px, py, u.nation, u.orders);
   const [fw, fh] = frameSize('ICONS', u.icon);
   sheetFrame(ctx, 'ICONS', u.icon, px + TILE - fw, py + TILE - fh);
-  if (G.units[G.sel] === u && G.blink) {
-    hollowRect(ctx, px, py, TILE, TILE, DATA.nations[u.nation].color);
-  }
 }
 
 const BAR_TITLES = [['GAME', 17], ['VIEW', 49], ['ORDERS', 81],
@@ -867,6 +867,7 @@ function endTurn() {
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
   G.msg = '';
+  if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
 }
 
 function step(u, nx, ny) {
@@ -874,6 +875,14 @@ function step(u, nx, ny) {
   G.msg = '';
   if (nx - G.view.x < 3 || nx - G.view.x > VIEW_TILES_X - 4 ||
       ny - G.view.y < 3 || ny - G.view.y > VIEW_TILES_Y - 4) centerOn(nx, ny);
+  if (u.movesLeft <= 0) advance();
+}
+
+// Once a unit has spent its moves the turn passes to the next one that still
+// has some; when none do, the turn is over and the new one starts on the first
+// unit again.
+function advance() {
+  if (!nextUnit()) { endTurn(); nextUnit(); }
 }
 
 // "Land Ho! What shall we call this new land, Your Excellency?" -- the naming
@@ -896,7 +905,7 @@ function landfall(ship, nx, ny) {
     for (const name of ship.cargo) G.units.push(mkUnit(name, nx, ny));
     ship.cargo = [];
     ship.movesLeft = 0;
-    G.sel = first;
+    G.sel = first;   // the party ashore takes over from the ship
     // First landfall fires woodcut 1, DISCOVERY OF THE NEW WORLD
     // (spec/ui/woodcuts_and_intro.md trigger table, func_020EFE @0x020F00),
     // and it is shown once per game.
@@ -927,11 +936,13 @@ function moveSel(dx, dy) {
 }
 
 // Cycle to the next unit that still has moves -- the engine's Tab/next-unit.
+// Returns false when every unit is spent.
 function nextUnit() {
   for (let i = 1; i <= G.units.length; i++) {
     const k = (G.sel + i) % G.units.length;
-    if (G.units[k].movesLeft > 0) { G.sel = k; centerOn(G.units[k].x, G.units[k].y); return; }
+    if (G.units[k].movesLeft > 0) { G.sel = k; centerOn(G.units[k].x, G.units[k].y); return true; }
   }
+  return false;
 }
 
 // ---------------------------------------------------------------- input
@@ -1053,8 +1064,8 @@ function resize() {
 }
 
 function frame() {
-  G.tick += 1;
   G.blink = (G.tick % 32) < 20;
+  G.tick += 1;
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,

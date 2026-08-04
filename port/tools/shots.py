@@ -54,7 +54,9 @@ def main():
           }
         }; }""")
         for name, setup in SHOTS:
-            pg.evaluate(f"() => {{ {setup}; }}")
+            # Pin the active-unit blink to its visible phase so map shots are
+            # deterministic frame to frame.
+            pg.evaluate(f"() => {{ {setup}; G.tick = 0; }}")
             pg.wait_for_timeout(120)
             # Grab the logical 320x200 frame, not the upscaled canvas.
             data = pg.evaluate("""() => {
