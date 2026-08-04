@@ -38,3 +38,7 @@ coverage_map.html
 # matched outputs are committed under docs/screens/ (colony_live_1505.png etc.)
 scratchpad/dbx/
 code/VICEROY/flat/
+
+# Port: regenerable from the user's own col.zip; contains original game art.
+port/assets/
+port/dist/
