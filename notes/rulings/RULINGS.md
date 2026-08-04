@@ -6541,3 +6541,32 @@ full-height column at **x=240** between viewport and sidebar.
 `stencilBlit()` implement O512 for land centres (including the W→S→E→N ring-walk that produces
 the beach dither); the two map separators drawn; the pulldown moved after the sidebar so
 COLONIZOPEDIA's menu is not covered by the minimap.
+
+---
+
+## 2026-08-04 — Native settlements come from TRIBE.TXT; its x needs +2
+
+**Finding**: native settlement placement is **not procedural**. `TRIBE.TXT` — listed in the
+resource table as *"native-settlement coordinate lists per tribe"* but never used until now —
+ships one `@<TRIBE>` section per tribe with an `x,y` pair per line. Eight playable tribes,
+**59 sites**: Iroquois 11, Tupi 16, Apache 7, Sioux 7, Inca 5, Arawak 5, Cherokee 4, Aztec 4.
+`@STOP` is a terminator, not a tribe. Section names match `@TRIBES`' **`singular`** column.
+
+**Coordinate convention**: the pairs are two columns left of the stored map plane. Testing
+every offset in dx −1..+3 × dy −2..+2 against AMER2.MP:
+
+| offset | sites landing in water |
+|---|---|
+| **dx=+2, dy=0** | **0 / 59** |
+| dx=+1, dy=0 | 7 |
+| dx=+3, dy=0 | 6 |
+| dx=+2, dy=±1 | 8 |
+| dx=0, dy=0 (raw) | 17 |
+
+A clean sweep over 59 independent points settles it. `formats/MP_FORMAT.md` and §13.1 both note
+a leading plane column (*"engine coordinate 0 IS in bounds — plane column 1"*), so an origin
+shift is expected; the exact derivation of **2** is not in the evidence, only its result.
+
+**Action taken**: `port/tools/bundle.py` exports `tribesites`; `port/src/game.js`
+`seedNatives()` reads it instead of the deterministic-hash placeholder. The tracker entry
+"Settlement PLACEMENT is a placeholder" is closed.

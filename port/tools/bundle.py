@@ -147,6 +147,22 @@ def build_data():
                     "level": int(r["level"] or 0)} for r in rows("@TRIBES")
                    if r["level"] != ""]
 
+    # TRIBE.TXT is the native-settlement coordinate list: one @<TRIBE> section
+    # per tribe, "x,y" per line. @STOP is a terminator, not a tribe.
+    tribe_txt = json.load(open(ROOT / "data_extracted/text/TRIBE_sections.json"))
+    D["tribesites"] = {}
+    for key, body in tribe_txt.items():
+        if key == "@STOP":
+            continue
+        pts = []
+        for line in body.split("\n"):
+            line = line.strip()
+            if not line or "," not in line:
+                continue
+            x, y = line.split(",")[:2]
+            pts.append([int(x), int(y)])
+        D["tribesites"][key.lstrip("@")] = pts
+
     # MENU.TXT: one section per pulldown. The first line is the bar title, the
     # rest are rows. "~" marks the accelerator letter -- the menu engine parses
     # it out and matches it against the typed key (§27.1), so the letters are

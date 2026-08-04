@@ -234,6 +234,14 @@ SCRIPT = """() => {
                          G.villages.every(v => !tileWater(at(v.x, v.y)));
     // Native settlements use their OWN sprite band (disk 10..13, no pennant),
     // never the colony band (disk 0..3, which carries one).
+    // Every settlement comes from TRIBE.TXT, not a scatter: 59 sites, and the
+    // per-tribe counts must match the shipped section lengths exactly.
+    out.tribeSites = {
+      total: G.villages.length === 59,
+      perTribe: G.tribes.every(t =>
+        G.villages.filter(v => v.name === t.name).length ===
+        (DATA.tribesites[t.singular.toUpperCase()] || []).length),
+    };
     out.settlementBands = { native: NATIVE_FRAME_BASE === 10,
                             colonyDistinct: !COLONY_FRAME.some(f => f >= 10),
                             levelsSeen: [...new Set(G.villages.map(v => v.level))].sort().join(',') };
@@ -454,6 +462,8 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("settlements come from TRIBE.TXT, all 59 with correct per-tribe counts",
+         all(r["tribeSites"].values()), r["tribeSites"]),
         ("native settlements use their own sprite band, not the colony one",
          r["settlementBands"]["native"] and r["settlementBands"]["colonyDistinct"]
          and r["settlementBands"]["levelsSeen"] == "0,1,2,3", r["settlementBands"]),

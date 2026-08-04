@@ -1888,6 +1888,16 @@ function adjustTension(tribe, delta) {
     delta = Math.floor(delta / 2);
   t.tension = Math.max(0, Math.min(TENSION_WAR, t.tension + delta));
 }
+// Settlement placement is NOT procedural: TRIBE.TXT ships the exact site list,
+// one @<TRIBE> section per tribe with "x,y" per line -- 59 sites across the
+// eight playable tribes. Its x coordinates sit TWO columns left of the stored
+// map plane: testing every offset in dx -1..+3, dy -2..+2 against AMER2.MP,
+// dx=+2 puts 0 of 59 sites in water where the next best leaves 7. A clean sweep
+// over 59 independent points settles it. (The MP format notes a leading plane
+// column, so an origin shift of this kind is expected; the exact derivation of
+// 2 is not in the evidence.) Tribes are matched by @TRIBES' `singular` column,
+// which is what TRIBE.TXT's section names are.
+const TRIBE_SITE_DX = 2, TRIBE_SITE_DY = 0;
 function seedNatives() {
   G.tribes = DATA.tribes.map(t => ({
     name: t.name, singular: t.singular, level: t.level,
@@ -1895,25 +1905,25 @@ function seedNatives() {
   }));
   G.villages = [];
   G.natives = [];
-  for (let i = 0; i < 84; i++) {
-    const h = (i * 2654435761) >>> 0;
-    const x = 4 + (h % (MAP.w - 8)), y = 4 + ((h >>> 8) % (MAP.h - 8));
-    if (tileWater(at(x, y))) continue;
-    if (G.villages.some(v => Math.abs(v.x - x) < 3 && Math.abs(v.y - y) < 3)) continue;
-    const tribe = i % G.tribes.length;
-    G.villages.push({ x, y, tribe, name: G.tribes[tribe].name,
-                      level: G.tribes[tribe].level });
-    // A brave stands beside roughly every third village -- on LAND. Braves are
-    // land units and must never be placed on water.
-    if (i % 3 !== 0) continue;
-    const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
-      .map(([dx, dy]) => [x + dx, y + dy])
-      .find(([bx, by]) => !tileWater(at(bx, by)) && !G.villages.some(v => v.x === bx && v.y === by));
-    if (spot)
-      G.natives.push({ type: 'Braves', icon: unit('Braves').icon, x: spot[0], y: spot[1],
-                       tribe, orders: 0, nation: -1 });
-  }
+  G.tribes.forEach((t, ti) => {
+    const sites = DATA.tribesites[t.singular.toUpperCase()] || [];
+    sites.forEach(([sx, sy], k) => {
+      const x = sx + TRIBE_SITE_DX, y = sy + TRIBE_SITE_DY;
+      if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) return;
+      G.villages.push({ x, y, tribe: ti, name: t.name, level: t.level });
+      // A brave stands beside roughly every third settlement, on LAND.
+      if (k % 3) return;
+      const spot = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .map(([dx, dy]) => [x + dx, y + dy])
+        .find(([bx, by]) => !tileWater(at(bx, by)) &&
+                            !G.villages.some(v => v.x === bx && v.y === by));
+      if (spot)
+        G.natives.push({ type: 'Braves', icon: unit('Braves').icon,
+                         x: spot[0], y: spot[1], tribe: ti, orders: 0, nation: -1 });
+    });
+  });
 }
+
 // Walking into a village opens it: trade below the hostile line, a warning at
 // or above it (§19, the 75 cutoff).
 function enterVillage(v) {
