@@ -143,9 +143,13 @@ def build_data():
     D["pedia"] = {"categories": [l for l in ped["@PEDIA"].split("\n") if l.strip()],
                   "entries": {k.lstrip("@"): v for k, v in ped.items() if k != "@PEDIA"}}
     D["fathers"] = [r["name"] for r in rows("@FATHERS")] if "@FATHERS" in nt else []
+    # @TRIBES' `value` column is the tribe's MAP COLOUR -- a palette index, the
+    # native counterpart of @COUNTRY.color for the European powers. The eight
+    # resolve to visually distinct entries (cream, gold, blue, brown, green,
+    # tan, dark red, dark green).
     D["tribes"] = [{"name": r["name"], "singular": r["singular"],
-                    "level": int(r["level"] or 0)} for r in rows("@TRIBES")
-                   if r["level"] != ""]
+                    "level": int(r["level"] or 0), "color": int(r["value"])}
+                   for r in rows("@TRIBES") if r["level"] != ""]
 
     # TRIBE.TXT is the native-settlement coordinate list: one @<TRIBE> section
     # per tribe, "x,y" per line. @STOP is a terminator, not a tribe.

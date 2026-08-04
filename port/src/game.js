@@ -927,7 +927,7 @@ function drawMap(ctx) {
     const tx = c.x - G.view.x, ty = c.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
     const px = ox + tx * TILE, py = oy + ty * TILE;
-    drawSettlement(tgt, px, py, colonyLevel(c), c.nation);
+    drawSettlement(tgt, px, py, colonyLevel(c), c.nation, 0);
     if (G.zoom === 0) FONT.tiny.center(ctx, c.name, px + TILE / 2, py + TILE, lut(0x0F), ink(0));
   }
 
@@ -935,7 +935,8 @@ function drawMap(ctx) {
   for (const v of G.villages) {
     const tx = v.x - G.view.x, ty = v.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
-    drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1);
+    drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1,
+                   (G.tribes[v.tribe] || {}).color || 8);
     // §19.6: the map shows alarm as exclamation marks over the village,
     // ramping pale green -> blue -> yellow -> brown -> red.
     const alarm = v.alarm || 0;
@@ -949,8 +950,10 @@ function drawMap(ctx) {
   for (const n of G.natives) {
     const tx = n.x - G.view.x, ty = n.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    const px = ox + tx * TILE, py = oy + ty * TILE;
+    nationPlate(tgt, px, py, ownerColour(n), n.orders);
     const [fw, fh] = frameSize('ICONS', n.icon);
-    sheetFrame(tgt, 'ICONS', n.icon, ox + tx * TILE + TILE - fw, oy + ty * TILE + TILE - fh);
+    sheetFrame(tgt, 'ICONS', n.icon, px + TILE - fw, py + TILE - fh);
   }
 
   // Units, selected one last so a stack draws it on top.
@@ -984,9 +987,19 @@ const HUD_INK = 68;
 // carrying the @ORDERS status letter ("-" No Orders, "S" Sentry, "F" Fortified,
 // ...). The unit sprite sits bottom-right in the tile, overlapping the plate's
 // right edge. Geometry pixel-measured from docs/screens/06_ingame_map.png.
-function nationPlate(ctx, x, y, nation, orders) {
+// The plate identifies the owner by colour. European powers use
+// @COUNTRY.color (England 12 red, France 9 blue, Spain 14 yellow, Netherlands
+// 13 orange); the tribes use @TRIBES' `value` column, which is the same kind of
+// palette index and resolves to eight distinct colours. Natives get the plate
+// too, so ownership reads the same way across the map.
+function ownerColour(u) {
+  if (u.nation >= 0) return DATA.nations[u.nation].color;
+  const t = G.tribes[u.tribe];
+  return t ? t.color : 8;
+}
+function nationPlate(ctx, x, y, colourIdx, orders) {
   ctx.fillStyle = ink(0); ctx.fillRect(x, y, 8, 9);
-  ctx.fillStyle = ink(DATA.nations[nation].color); ctx.fillRect(x + 1, y + 1, 6, 7);
+  ctx.fillStyle = ink(colourIdx); ctx.fillRect(x + 1, y + 1, 6, 7);
   const key = (DATA.orders[orders] || DATA.orders[0]).key;
   FONT.tiny.center(ctx, key, x + 4, y + 2, [ink(0), ink(0), ink(0)]);
 }
@@ -994,7 +1007,7 @@ function drawUnit(ctx, u, px, py) {
   // The active unit blinks: the engine flashes the unit graphic itself on and
   // off so the tile beneath shows through. There is no selection outline.
   if (G.units[G.sel] === u && !G.blink) return;
-  nationPlate(ctx, px, py, u.nation, u.orders);
+  nationPlate(ctx, px, py, ownerColour(u), u.orders);
   const [fw, fh] = frameSize('ICONS', u.icon);
   sheetFrame(ctx, 'ICONS', u.icon, px + TILE - fw, py + TILE - fh);
 }
@@ -1075,6 +1088,19 @@ function drawSidebar(ctx) {
     ctx.fillStyle = ink(c);
     ctx.fillRect(mm.x + x, mm.y + y, 1, 1);
   }
+  // Owner dots: colonies in their @COUNTRY colour, settlements in the tribe's.
+  for (const v of G.villages) {
+    const dx = v.x - sx, dy = v.y - sy;
+    if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) continue;
+    ctx.fillStyle = ink((G.tribes[v.tribe] || {}).color || 8);
+    ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
+  }
+  for (const c of G.colonies) {
+    const dx = c.x - sx, dy = c.y - sy;
+    if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) continue;
+    ctx.fillStyle = ink(DATA.nations[c.nation].color);
+    ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
+  }
   hollowRect(ctx, mm.x + (G.view.x - sx), mm.y + (G.view.y - sy),
              VIEW_COLS(), VIEW_ROWS(), 0x0F);
 
@@ -1090,7 +1116,7 @@ function drawSidebar(ctx) {
   if (u) {
     const [fw, fh] = frameSize('ICONS', u.icon);
     sheetFrame(ctx, 'ICONS', u.icon, 244 + (24 - fw) / 2, 72 + (20 - fh) / 2);
-    nationPlate(ctx, 244, 72, u.nation, u.orders);
+    nationPlate(ctx, 244, 72, ownerColour(u), u.orders);
     FONT.tiny.draw(ctx, `Moves: ${u.movesLeft}`, 270, 74, lut(HUD_INK));
     FONT.tiny.draw(ctx, `Locat: (${u.x}, ${u.y})`, 270, 84, lut(HUD_INK));
     // The HUD uses NAMES @NATIONABBREV ("Eng.", "Fr.", ...), not the adjective.
@@ -1101,7 +1127,7 @@ function drawSidebar(ctx) {
     for (const c of u.cargo) {
       const cu = unit(c);
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 244, cy - 4);
-      nationPlate(ctx, 244, cy - 4, G.nation, 1);
+      nationPlate(ctx, 244, cy - 4, DATA.nations[G.nation].color, 1);
       FONT.tiny.draw(ctx, c, 268, cy, lut(HUD_INK));
       FONT.tiny.draw(ctx, 'Sentry', 268, cy + 8, lut(HUD_INK));
       cy += 20;
@@ -1507,7 +1533,7 @@ function drawColonyPanel(ctx, c) {
     inside.slice(0, 6).forEach((u, i) => {
       const [fw, fh] = frameSize('ICONS', u.icon);
       sheetFrame(ctx, 'ICONS', u.icon, px + i * 15, py + 22 - fh);
-      nationPlate(ctx, px + i * 15, py + 10, u.nation, u.orders);
+      nationPlate(ctx, px + i * 15, py + 10, ownerColour(u), u.orders);
     });
   } else {
     // Production. Food is the only line with a byte-verified consumption rule
@@ -1685,7 +1711,7 @@ function drawEurope(ctx) {
     const [fw, fh] = frameSize('ICONS', u.icon);
     const x = 232 + k * 14;
     sheetFrame(ctx, 'ICONS', u.icon, x, 152 - fh);
-    nationPlate(ctx, x - 2, 142, G.nation, 1);
+    nationPlate(ctx, x - 2, 142, DATA.nations[G.nation].color, 1);
   });
 
   // Ships in port occupy the six dock slots; the hold rides with the ship.
@@ -1880,14 +1906,20 @@ function colonyLevel(c) {
   if (c.buildings.includes('Stockade')) return 1;
   return 0;
 }
-function drawSettlement(ctx, px, py, level, nation) {
+function drawSettlement(ctx, px, py, level, nation, tribeColour) {
   const lv = Math.max(0, Math.min(3, level));
   const frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
   const [fw, fh] = frameSize('ICONS', frame);
   sheetFrame(ctx, 'ICONS', frame, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
   if (nation >= 0) {
+    // European colonies fly the 6x5 nation pennant (disk 118 + power).
     const [pw2] = frameSize('ICONS', PENNANT_BASE + nation);
     sheetFrame(ctx, 'ICONS', PENNANT_BASE + nation, px + TILE - pw2 - 1, py + 1);
+  } else {
+    // Tribes have no pennant sprite, so they get the same 6x5 patch in their
+    // own @TRIBES colour -- ownership reads identically for both.
+    ctx.fillStyle = ink(0); ctx.fillRect(px + TILE - 8, py, 8, 7);
+    ctx.fillStyle = ink(tribeColour); ctx.fillRect(px + TILE - 7, py + 1, 6, 5);
   }
 }
 function adjustTension(tribe, delta) {
@@ -1910,7 +1942,7 @@ function adjustTension(tribe, delta) {
 const TRIBE_SITE_DX = 2, TRIBE_SITE_DY = 0;
 function seedNatives() {
   G.tribes = DATA.tribes.map(t => ({
-    name: t.name, singular: t.singular, level: t.level,
+    name: t.name, singular: t.singular, level: t.level, color: t.color,
     tension: Math.floor(Math.random() * 15) + 2 * G.difficulty,
   }));
   G.villages = [];

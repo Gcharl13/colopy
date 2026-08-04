@@ -265,6 +265,18 @@ SCRIPT = """() => {
       out.gift = { alarmCleared: v.alarm === 0, tensionFell: G.tribes[v.tribe].tension < 50 };
     }
 
+    // Every tribe carries a map colour from @TRIBES' `value` column, the
+    // native counterpart of @COUNTRY.color, and they are all distinct.
+    out.tribeColours = {
+      allSet: G.tribes.every(t => typeof t.color === 'number' && t.color > 0),
+      distinct: new Set(G.tribes.map(t => t.color)).size === G.tribes.length,
+      nativesUseIt: (() => {
+        const n = G.natives[0];
+        return n && ownerColour(n) === G.tribes[n.tribe].color;
+      })(),
+      europeansUseCountry: ownerColour(G.units[0]) === DATA.nations[G.nation].color,
+    };
+
     // Native settlements use their OWN sprite band (disk 10..13, no pennant),
     // never the colony band (disk 0..3, which carries one).
     // Every settlement comes from TRIBE.TXT, not a scatter: 59 sites, and the
@@ -495,6 +507,8 @@ def main():
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
+        ("tribes carry distinct map colours, used like the nation colours",
+         all(r["tribeColours"].values()), r["tribeColours"]),
         ("village prices, pays and cools on a sale",
          all(r["villageTrade"].values()), r["villageTrade"]),
         ("selling 50 muskets arms the tribe by 2", r["armsTribe"], r["armsTribe"]),

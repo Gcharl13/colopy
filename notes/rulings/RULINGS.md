@@ -6570,3 +6570,31 @@ shift is expected; the exact derivation of **2** is not in the evidence, only it
 **Action taken**: `port/tools/bundle.py` exports `tribesites`; `port/src/game.js`
 `seedNatives()` reads it instead of the deterministic-hash placeholder. The tracker entry
 "Settlement PLACEMENT is a placeholder" is closed.
+
+---
+
+## 2026-08-04 — `@TRIBES.value` is the tribe's map colour
+
+**Finding**: the `value` column of NAMES.TXT `@TRIBES` — carried in the table but never
+assigned a role — is a **palette index**, the native counterpart of `@COUNTRY.color` for the
+European powers. The eight playable tribes resolve to eight visually distinct entries:
+
+| tribe | idx | colour | | tribe | idx | colour |
+|---|---|---|---|---|---|---|
+| Incas | 97 | cream (247,243,199) | | Cherokee | 67 | green (117,166,77) |
+| Aztecs | 149 | gold (199,162,32) | | Apache | 111 | tan (195,174,134) |
+| Arawaks | 54 | blue (105,138,195) | | Sioux | 118 | dark red (146,0,0) |
+| Iroquois | 87 | brown (109,60,24) | | Tupi | 71 | dark green (4,93,4) |
+
+For comparison `@COUNTRY.color` gives England 12 red, France 9 blue, Spain 14 yellow,
+Netherlands 13 orange — the same kind of index, same role. Unlike most colour indices in this
+codebase these resolve **identically** in the master and WOODTILE palettes, so no
+palette-scoping trap here.
+
+**Ruling**: ownership is drawn the same way for both. Native units get the same 8×9 owner plate
+the European units wear, in the tribe colour; native settlements get a 6×5 colour patch where a
+European colony flies its pennant sprite (disk 118+power); and the minimap dots both.
+
+**Action taken**: `port/tools/bundle.py` exports `color` per tribe; `port/src/game.js` gains
+`ownerColour(u)` (nation ≥ 0 → `@COUNTRY.color`, else the tribe's), and `nationPlate` takes a
+colour index rather than a nation id.
