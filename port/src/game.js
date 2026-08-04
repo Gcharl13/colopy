@@ -1200,7 +1200,6 @@ function buildColony() {
       stock: DATA.cargo.map(() => 0),
       buildings: STARTING_BUILDINGS.slice(),
       hammers: 0,          // construction points banked
-      tools: 0,            // tools on hand for the tools_x10 part of a cost
       building: null,      // @BUILDING row being constructed
       sol: 0,
     });
@@ -1227,6 +1226,11 @@ const STARTING_BUILDINGS = DATA.buildings
   .map(b => b.name);
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
 
+// ------------------------------------------------------- colony production
+// §3 of spec/systems/colony.md, whose core is byte-verified:
+// compute_terrain_yield (file 0x9B9C..0x9FFB), the per-turn driver
+// colony_turn_update (0xA222..0xA6A1) and the five raw->finished chains.
+//
 // Per-terrain job yields from NAMES @UNFORESTED/@FORESTED/@OTHER. The three
 // bands are indexed by the folded terrain id: 0..7 unforested, 8..15 forested
 // (16..23 fold into it, CLAUDE.md rule 3), 24..26 the @OTHER rows.
@@ -1240,27 +1244,240 @@ function tileYield(v, job) {
             : y.other[t - 24];
   return row ? (row[job] || 0) : 0;
 }
-// Food: consumption is byte-verified as `eaten = 2*pop` (spec/systems/colony.md
-// §152, @0xA5F2). The centre tile produces with no worker; the engine derives
-// its food from a terrain BAND CLASS 0..3 whose mapping is not in the evidence
-// here, so the farmer column of the terrain's own row stands in for it. The
-// documented modifiers that ARE cited are applied: +2 at difficulty 0, +1 at
-// difficulty 1, +1 for a river. The band function is TBD.
-function colonyFood(c) {
-  // The CENTRE TILE produces with no worker -- that is the whole point of it --
-  // and every colonist working a field adds their own tile's farmer yield.
-  const v = at(c.x, c.y);
-  let centre = tileYield(v, JOB_FARMER);
-  if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
-  if (tileRiver(v)) centre += 1;
-  let fields = 0;
-  for (const p of c.colonists) {
-    if (!p.cell || p.job !== 'Farmer') continue;
-    fields += tileYield(at(c.x + p.cell[0], c.y + p.cell[1]), JOB_FARMER);
+// The 16 @CARGO goods, by id.
+const GOOD = { FOOD: 0, SUGAR: 1, TOBACCO: 2, COTTON: 3, FURS: 4, LUMBER: 5,
+               ORE: 6, SILVER: 7, HORSES: 8, RUM: 9, CIGARS: 10, CLOTH: 11,
+               COATS: 12, TRADE: 13, TOOLS: 14, MUSKETS: 15 };
+// The non-cargo tallies @CARGO lists after the 16 goods -- hammers, crosses and
+// liberty bells are accumulators, not warehouse stock, so they get negative ids.
+const HAMMERS = -1, BELLS = -2, CROSSES = -3, TEACHING = -4;
+// @JOB row -> what that job produces. Rows 0..7 are the eight outdoor columns
+// of the terrain tables in order; row 8 (Fisherman) is the ninth column and
+// produces FOOD from water. 9..12 and 14..15 are the indoor manufactures,
+// 13/16/17/18 the three accumulators and the schoolhouse.
+const JOB_GOOD = {
+  0: GOOD.FOOD, 1: GOOD.SUGAR, 2: GOOD.TOBACCO, 3: GOOD.COTTON, 4: GOOD.FURS,
+  5: GOOD.LUMBER, 6: GOOD.ORE, 7: GOOD.SILVER, 8: GOOD.FOOD,
+  9: GOOD.RUM, 10: GOOD.CIGARS, 11: GOOD.CLOTH, 12: GOOD.COATS,
+  13: HAMMERS, 14: GOOD.TOOLS, 15: GOOD.MUSKETS, 16: CROSSES, 17: BELLS,
+  18: TEACHING,
+};
+const jobIndex = (name) => DATA.jobs.indexOf(name);
+// The workplaces. Each row of @BUILDING belongs to a CHAIN -- the table is laid
+// out chain by chain -- and a chain's third link is the FACTORY tier the
+// production code tests for (count_building_chain_present > 2, @0x8EA9).
+// The five raw->finished pairs are byte-verified from the conversion call sites
+// (@0xA660..0xA68C): Ore->Tools, Tobacco->Cigars, Cotton->Cloth, Furs->Coats,
+// Sugar->Rum. Muskets<-Tools is the Armory chain: it is NOT one of those five
+// call sites, so it is the port's own and flagged. The building->job binding
+// itself is inferred from the names; the engine's own table is unread.
+const WORKPLACES = [
+  { chain: ["Weaver's House", "Weaver's Shop", 'Textile Mill'], job: 'Weaver' },
+  { chain: ["Tobacconist's House", "Tobacconist's Shop", 'Cigar Factory'], job: 'Tobacconist' },
+  { chain: ["Rum Distiller's House", 'Rum Distillery', 'Rum Factory'], job: 'Distiller' },
+  { chain: ["Fur Trader's House", 'Fur Trading Post', 'Fur Factory'], job: 'Fur Trader' },
+  { chain: ["Blacksmith's House", "Blacksmith's Shop", 'Iron Works'], job: 'Blacksmith' },
+  { chain: ['Armory', 'Magazine', 'Arsenal'], job: 'Gunsmith' },
+  { chain: ["Carpenter's Shop", 'Lumber Mill'], job: 'Carpenter' },
+  { chain: ['Town Hall'], job: 'Statesman' },
+  { chain: ['Church', 'Cathedral'], job: 'Preacher' },
+  { chain: ['Schoolhouse', 'College', 'University'], job: 'Teacher' },
+];
+// Raw input per finished good. The five cited chains, plus hammers from lumber
+// (PEDIA @BUILDING35: "the carpenter needs lumber to create hammers") and
+// muskets from tools (@BUILDING3, the Armory).
+const RAW_FOR = { [GOOD.RUM]: GOOD.SUGAR, [GOOD.CIGARS]: GOOD.TOBACCO,
+                  [GOOD.CLOTH]: GOOD.COTTON, [GOOD.COATS]: GOOD.FURS,
+                  [GOOD.TOOLS]: GOOD.ORE, [GOOD.MUSKETS]: GOOD.TOOLS,
+                  [HAMMERS]: GOOD.LUMBER };
+function workplaceFor(building) {
+  return WORKPLACES.find(w => w.chain.includes(building));
+}
+function jobForBuilding(name) {
+  const w = workplaceFor(name);
+  return w ? w.job : null;
+}
+// How many links of a job's chain the colony owns. > 2 is the factory tier.
+function chainCount(c, job) {
+  const w = WORKPLACES.find(x => x.job === job);
+  if (!w) return 0;
+  return w.chain.filter(b => c.buildings.includes(b)).length;
+}
+// The base an indoor worker converts per turn. NOT in the evidence: no
+// production-rate column exists in @BUILDING (its `size` column is the colony
+// screen's category slot, 0..4), and no rate is quoted in PEDIA. The port uses
+// the original game's familiar 3 at the base tier and 6 once the second link is
+// built; the FACTORY behaviour on top of that IS byte-verified -- the third
+// link makes the same output cost only 2/3 of the raw (@0x8EB1).
+const INDOOR_BASE = 3;
+function indoorRate(c, job) {
+  const n = chainCount(c, job);
+  return n >= 2 ? INDOOR_BASE * 2 : INDOOR_BASE;
+}
+// The Sons-of-Liberty / Tory production penalty, byte-verified at
+// @0x9D14..0x9D98: every `10 - difficulty` Tories costs one unit of every
+// worker's output, and the rebel-majority / rebel-unanimous latches give one
+// back each.
+function toryPenalty(c) {
+  const pop = c.colonists.length;
+  const tories = Math.round(pop * (100 - c.sol) / 100);
+  let d = -Math.floor(tories / (10 - G.difficulty));
+  if (c.sol >= 50) d += 1;
+  if (c.sol >= 100) d += 1;
+  return d;
+}
+// Does this colonist master the job they are doing? @JOB's expert column is the
+// title; a colonist carries it as their profession.
+function isExpert(p, job) {
+  const i = jobIndex(job);
+  return i >= 0 && p.profession === DATA.jobexpert[i];
+}
+// compute_terrain_yield for one field worker.
+function fieldYield(c, p) {
+  const job = p.job, g = JOB_GOOD[jobIndex(job)];
+  if (g === undefined || g < 0) return 0;
+  const v = at(c.x + p.cell[0], c.y + p.cell[1]);
+  // The Fisherman column (8) is the water column; everyone else reads the
+  // column that matches the good.
+  const col = tileWater(v) ? 8 : g;
+  let y = tileYield(v, col);
+  if (y <= 0) return 0;
+  y += toryPenalty(c);
+  // The expert match: the "era" goods Food and Horses take a flat +2, every
+  // other good DOUBLES (@0x9DAD..0x9DD2).
+  if (isExpert(p, job)) {
+    if (g === GOOD.FOOD || g === GOOD.HORSES) y += 2; else y *= 2;
   }
-  const produced = centre + fields;
-  const eaten = 2 * c.colonists.length;
-  return { centre, fields, produced, eaten, net: produced - eaten };
+  return Math.max(0, y);
+}
+// The eight OUTDOOR jobs: @JOB rows 0..4, 7, 8 (the terrain-table columns) plus
+// 22, Scout. This is also the list a native village will teach from (§19.4).
+const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
+// Which of the eight outdoor jobs pays best on the cell this colonist is on.
+// A colonist who already masters an outdoor skill keeps it if the tile yields
+// anything at all -- that is what makes an Expert Fur Trapper worth moving.
+const OUTDOOR_JOB_NAMES = OUTDOOR_JOBS.map(i => DATA.jobs[i]);
+function bestFieldJob(c, p) {
+  const cell = p.cell;
+  let best = 'Farmer', bestY = -1;
+  for (const job of OUTDOOR_JOB_NAMES) {
+    const probe = { ...p, job };
+    const y = fieldYield(c, probe);
+    if (y > bestY) { bestY = y; best = job; }
+  }
+  if (p.profession) {
+    const own = OUTDOOR_JOB_NAMES.find(j => isExpert(p, j));
+    if (own && fieldYield(c, { ...p, job: own }) > 0) return own;
+  }
+  void cell;
+  return best;
+}
+// One colonist inside a building. Returns what they COULD make; the raw check
+// happens in the chain step.
+function indoorYield(c, p) {
+  const job = p.job, g = JOB_GOOD[jobIndex(job)];
+  if (g === undefined) return 0;
+  let y = indoorRate(c, job) + toryPenalty(c);
+  if (isExpert(p, job)) y *= 2;
+  return Math.max(0, y);
+}
+// The whole colony's output for one turn, before anything is banked. The order
+// is colony_turn_update's: zero the accumulator, run the tiles, then apply the
+// raw->finished chains.
+function colonyProduce(c) {
+  const out = DATA.cargo.map(() => 0);
+  const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 0, [TEACHING]: 0 };
+  // The CENTRE TILE produces with no worker. The engine derives its food from a
+  // terrain BAND CLASS 0..3 whose mapping is not in the evidence here, so the
+  // farmer column of the terrain's own row stands in for it; the modifiers that
+  // ARE cited are applied (+2 at difficulty 0, +1 at difficulty 1, +1 river).
+  const cv = at(c.x, c.y);
+  let centre = tileYield(cv, JOB_FARMER);
+  if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
+  if (tileRiver(cv)) centre += 1;
+  out[GOOD.FOOD] += centre;
+  const indoor = [];
+  for (const p of c.colonists) {
+    if (!p.job) continue;
+    if (p.cell) { const g = JOB_GOOD[jobIndex(p.job)]; if (g >= 0) out[g] += fieldYield(c, p); }
+    else indoor.push(p);
+  }
+  // The chains. Each indoor worker's output is capped by the raw on hand plus
+  // whatever the fields brought in this turn; the factory tier (3rd link) buys
+  // the same output for 2/3 of the raw.
+  const consumed = DATA.cargo.map(() => 0);
+  for (const p of indoor) {
+    const job = p.job, g = JOB_GOOD[jobIndex(job)];
+    if (g === undefined) continue;
+    let want = indoorYield(c, p);
+    const raw = RAW_FOR[g];
+    if (raw !== undefined) {
+      const factory = chainCount(c, job) > 2;
+      const avail = c.stock[raw] + out[raw] - consumed[raw];
+      const cost = (n) => factory ? Math.floor(n * 2 / 3) : n;
+      while (want > 0 && cost(want) > avail) want -= 1;
+      consumed[raw] += cost(want);
+    }
+    if (g >= 0) out[g] += want; else tally[g] += want;
+  }
+  for (let i = 0; i < consumed.length; i++) out[i] -= consumed[i];
+  const eaten = 2 * c.colonists.length;                   // BYTE_VERIFIED @0xA5F2
+  return { out, tally, centre, eaten, netFood: out[GOOD.FOOD] - eaten };
+}
+// Kept for the panel and the tests: the food line only.
+function colonyFood(c) {
+  const r = colonyProduce(c);
+  return { centre: r.centre, fields: r.out[GOOD.FOOD] - r.centre,
+           produced: r.out[GOOD.FOOD], eaten: r.eaten, net: r.netFood };
+}
+function colonyHammers(c) { return colonyProduce(c).tally[HAMMERS]; }
+
+// --------------------------------------------------------- the colony turn
+// Sons of Liberty, byte-verified (sol_membership_pct 0x8524..0x85B1 and the
+// per-turn accumulator func_02D658 @0x2DA1C..0x2DAD8). Both terms are 32-bit
+// exponential moving averages with a fixed 1/64 decay:
+//   B -= B >> 6;  B = max(B, 1);  B += 2*pop            (capacity)
+//   A += new_bells - (A >> 6);  A = max(A, 0);  A = min(A, B)
+//   sol = A*100/B, +20 with Jan de Witt, capped at 100
+// A just-founded colony seeds B = 200, A = 0 -- runtime-confirmed against a
+// captured pop-1 Jamestown record.
+const REBEL_DIVISOR_SEED = 200;
+function updateSoL(c, bells) {
+  const pop = c.colonists.length;
+  c.rebelB = Math.max(1, (c.rebelB || REBEL_DIVISOR_SEED) - ((c.rebelB || REBEL_DIVISOR_SEED) >> 6));
+  c.rebelB += 2 * pop;
+  c.rebelA = Math.max(0, (c.rebelA || 0) + bells - ((c.rebelA || 0) >> 6));
+  c.rebelA = Math.min(c.rebelA, c.rebelB);
+  let sol = Math.floor(c.rebelA * 100 / c.rebelB);
+  if (G.fathersOwned.includes('Jan de Witt')) sol += 20;
+  c.sol = Math.min(100, sol);
+}
+// Food store and growth. The store is ColonyRecord +0xAA, bounded by the
+// warehouse capacity (level+1)*100 (func_008D00) -- which the corrected spec
+// says bounds ONLY this reserve, not per-good stock. The 199-cap / 200-for-a-
+// colonist numbers are the manual's, tier R, not byte-located: flagged.
+const FOOD_FOR_COLONIST = 200;
+function warehouseLevel(c) {
+  return (c.buildings.includes('Warehouse') ? 1 : 0) +
+         (c.buildings.includes('Warehouse Expansion') ? 1 : 0);
+}
+// The over-100 disposal step, byte-verified at func_02D658 @0x2D6F7: for each
+// tradeable good with stock >= 100 the stock is cut to 50 and the EXCESS IS
+// SOLD, net of tax, to the treasury (@0x2D785) -- unless independence has been
+// declared ([0x5382]&1 @0x2D728), in which case it is wasted instead.
+// OPEN: whether a Custom-House gate sits in the caller. None is recorded, so
+// none is applied. Flagged in docs/UI_AUDIT_TRACKER.md.
+function autoExport(c) {
+  for (let i = 0; i < c.stock.length; i++) {
+    if (i === GOOD.FOOD || c.stock[i] < 100) continue;
+    const excess = c.stock[i] - 50;
+    c.stock[i] = 50;
+    if (G.declared) continue;                             // wasted, not sold
+    const gross = excess * G.market[i];
+    const tax = Math.floor(gross * G.tax / 100);
+    G.gold += gross - tax;
+    G.kingsFund += tax;
+  }
 }
 // What a colony may build: an @BUILDING row it does not already have, whose
 // min_colony gate its population meets. Cost is the hammers column; tools_x10
@@ -1271,26 +1488,42 @@ function buildOptions(c) {
     .map((b, i) => ({ i, ...b }))
     .filter(b => !c.buildings.includes(b.name) && b.min_colony <= pop);
 }
+// One colony's whole turn: produce, bank, eat, grow, build, then dispose of the
+// overflow.
+function colonyTurn(c) {
+  const r = colonyProduce(c);
+  for (let i = 0; i < r.out.length; i++)
+    c.stock[i] = Math.max(0, c.stock[i] + r.out[i]);      // banked with a floor at 0
+  // Food: eat first, then the surplus feeds the growth store.
+  c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
+  if (r.netFood < 0 && c.stock[GOOD.FOOD] === 0 && c.colonists.length > 1) {
+    c.colonists.pop();
+    G.msg = `${c.name} is starving! A colonist has been lost.`;
+  }
+  if (c.stock[GOOD.FOOD] >= FOOD_FOR_COLONIST) {
+    c.stock[GOOD.FOOD] -= FOOD_FOR_COLONIST;
+    c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
+    G.msg = `${c.name} has grown to ${c.colonists.length}.`;
+  }
+  c.crossesTurn = r.tally[CROSSES];
+  c.bellsTurn = r.tally[BELLS];
+  updateSoL(c, r.tally[BELLS]);
+  advanceConstruction(c, r.tally[HAMMERS]);
+  autoExport(c);
+}
 // One turn of construction: bank this colony's hammers, then finish the target
 // if it is paid for. Tools are consumed with the hammers.
-function advanceConstruction(c) {
-  c.hammers += colonyHammers(c);
+function advanceConstruction(c, hammers) {
+  c.hammers += hammers === undefined ? colonyHammers(c) : hammers;
   const b = c.building && DATA.buildings.find(d => d.name === c.building);
   if (!b) return;
   const needTools = b.tools_x10 * 10;
-  if (c.hammers < b.cost || c.tools < needTools) return;
+  if (c.hammers < b.cost || c.stock[GOOD.TOOLS] < needTools) return;
   c.hammers -= b.cost;
-  c.tools -= needTools;
+  c.stock[GOOD.TOOLS] -= needTools;
   c.buildings.push(b.name);
   c.building = null;
   G.msg = `${c.name} completes the ${b.name}.`;
-}
-
-// Hammers come from colonists working AS CARPENTERS in a Carpenter's Shop --
-// the building alone produces nothing.
-function colonyHammers(c) {
-  if (!c.buildings.includes("Carpenter's Shop")) return 0;
-  return c.colonists.filter(p => p.job === 'Carpenter').length;
 }
 
 // A ship entering the sea lane leaves the map for the home port. Ships carry a
@@ -1504,8 +1737,16 @@ function colonyPopupRows() {
     }));
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
-  return [{ label: 'No job (plaza)', note: '' }]
-    .concat(c.buildings.map(b => ({ label: b, note: '' })));
+  // Only buildings that actually employ a colonist are offered, and each one
+  // names the job and what it makes.
+  return [{ label: 'No job (plaza)', note: '' }].concat(
+    c.buildings.filter(b => workplaceFor(b)).map(b => {
+      const job = jobForBuilding(b), g = JOB_GOOD[jobIndex(job)];
+      const made = g >= 0 ? DATA.cargo[g].name
+                 : g === HAMMERS ? 'Hammers' : g === BELLS ? 'Bells'
+                 : g === CROSSES ? 'Crosses' : 'Teaching';
+      return { label: b, note: `${job} - ${made}` };
+    }));
 }
 function colonyPopupBox() {
   const rows = colonyPopupRows();
@@ -1518,7 +1759,7 @@ function drawColonyPopup(ctx) {
   const c = G.colonies[G.colony], b = colonyPopupBox();
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
   const title = G.colonyPopup === 'build'
-    ? `Construction  (${c.hammers} hammers, ${c.tools} tools)`
+    ? `Construction  (${c.hammers} hammers, ${c.stock[GOOD.TOOLS]} tools)`
     : 'Assign this colonist';
   FONT.tiny.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
   const seed = b.y + 6 + 6 + 3;
@@ -1547,14 +1788,6 @@ function colonyPopupCommit() {
   }
   G.colonyPopup = null;
 }
-// A building's job is the @JOB row whose name the building is built around --
-// "Carpenter's Shop" -> Carpenter, "Blacksmith's House" -> Blacksmith, and so
-// on. Matching on the job name as a prefix of the building name covers every
-// production chain in @BUILDING.
-function jobForBuilding(name) {
-  const j = DATA.jobs.find(job => name.toLowerCase().startsWith(job.toLowerCase()));
-  return j || null;
-}
 
 // Right panel (207,130,95,48) plus the three view buttons beside it.
 function drawColonyPanel(ctx, c) {
@@ -1575,26 +1808,38 @@ function drawColonyPanel(ctx, c) {
       nationPlate(ctx, px + i * 15, py + 10, ownerColour(u), u.orders);
     });
   } else {
-    // Production. Food is the only line with a byte-verified consumption rule
-    // (eaten = 2*pop); the rest read the terrain's own job-yield columns.
-    const f = colonyFood(c);
+    // Production. Food carries the byte-verified consumption rule (eaten =
+    // 2*pop); every other line is one good this colony actually makes this turn,
+    // net of what the chains consume.
+    const r = colonyProduce(c);
     FONT.tiny.draw(ctx, 'Production', px, py, lut(PANEL_INK));
-    sheetFrame(ctx, 'ICONS', 0x16, px, py + 9);
-    FONT.tiny.draw(ctx, `${f.produced}`, px + 10, py + 12, lut(SOL_INK));
-    FONT.tiny.draw(ctx, `-${f.eaten}`, px + 24, py + 12, lut(0x0C));
-    FONT.tiny.draw(ctx, `= ${f.net >= 0 ? '+' : ''}${f.net}`, px + 40, py + 12,
-                   lut(f.net < 0 ? 0x0C : SOL_INK));
-    // Hammers: one sprite (ICONS 54) per carpenter actually working the shop.
-    const hammers = colonyHammers(c);
-    for (let i = 0; i < hammers; i++) sheetFrame(ctx, 'ICONS', 54, px + i * 8, py + 26);
-    FONT.tiny.draw(ctx, hammers ? `${hammers} hammers` : 'No carpenter',
-                   px + hammers * 8 + 4, py + 29, lut(hammers ? SOL_INK : 0x0C));
+    // Food, with its consumption, on the first line.
+    sheetFrame(ctx, 'ICONS', 0x16, px, py + 8);
+    const net = r.netFood;
+    FONT.tiny.draw(ctx, `${r.out[GOOD.FOOD]}-${r.eaten}=${net >= 0 ? '+' : ''}${net}`,
+                   px + 10, py + 11, lut(net < 0 ? 0x0C : SOL_INK));
+    // Then every other good with a nonzero net, two per row. The panel is only
+    // 95x48, so these are named rather than iconned -- the 16px warehouse icons
+    // (good + 0x17) collide at this pitch.
+    let k = 0;
+    for (let i = 1; i < r.out.length && k < 6; i++) {
+      if (!r.out[i]) continue;
+      const gx = px + (k % 2) * 47, gy = py + 17 + Math.floor(k / 2) * 6;
+      const n = r.out[i];
+      FONT.tiny.draw(ctx, `${DATA.cargo[i].name.slice(0, 6)} ${n > 0 ? '+' : ''}${n}`,
+                     gx, gy, lut(n < 0 ? 0x0C : SOL_INK));
+      k += 1;
+    }
+    // Hammers and the build target.
+    const hammers = r.tally[HAMMERS];
+    const ty = py + 18 + Math.ceil(k / 2) * 6;
     const target = c.building;
     if (target) {
       const b = DATA.buildings.find(d => d.name === target);
-      FONT.tiny.draw(ctx, target, px, py + 36, lut(PANEL_INK));
-      FONT.tiny.draw(ctx, `${c.hammers}/${b.cost}`, px, py + 43, lut(SOL_INK));
-    } else FONT.tiny.draw(ctx, 'Building nothing', px, py + 36, lut(PANEL_INK));
+      FONT.tiny.draw(ctx, `${target} ${c.hammers}/${b.cost}`, px, ty, lut(PANEL_INK));
+      FONT.tiny.draw(ctx, hammers ? `+${hammers} hammers` : 'no hammers', px, ty + 7,
+                     lut(hammers ? SOL_INK : 0x0C));
+    } else FONT.tiny.draw(ctx, 'Building nothing', px, ty, lut(PANEL_INK));
   }
   // View buttons.
   for (let k = 0; k < 3; k++) {
@@ -2417,7 +2662,6 @@ function spawnBrave(v) {
 // = 90/70/50/30/10 % from Discoverer to Viceroy.
 // WHICH skill a village offers is stored nowhere that has been mapped, so the
 // port derives it from the site's coordinates -- deterministic, and flagged.
-const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
 function villageSkill(v) {
   return OUTDOOR_JOBS[(v.x * 7 + v.y * 13) % OUTDOOR_JOBS.length];
 }
@@ -3009,9 +3253,7 @@ const currentEra = () => G.year < 1600 ? 0 : G.year < 1700 ? 1 : 2;
 // Statesman adds his own. (The per-building bell rates are not in the evidence
 // here, so this is the same flagged-placeholder shape as the cross accrual.)
 function bellsPerTurn() {
-  return G.colonies.reduce((n, c) => n
-    + (c.buildings.includes('Town Hall') ? 1 : 0)
-    + c.colonists.filter(p => p.job === 'Statesman').length * 3, 0);
+  return G.colonies.reduce((n, c) => n + (c.bellsTurn || 0), 0);
 }
 // One candidate per category, drawn by weighted random over the un-owned
 // fathers with a nonzero weight in the current era (§17.3): budget =
@@ -3217,10 +3459,12 @@ function immigrationThreshold() {
   if (G.nation === 0) accum = Math.floor(accum * 2 / 3);      // England
   return accum;
 }
+// Crosses now come from the production pass -- a Preacher in a Church makes
+// them, exactly like any other indoor job -- plus the flat one per colony the
+// engine grants regardless. The per-building cross rate is still not in the
+// evidence, so the flat 1 stays a flagged placeholder.
 function crossesPerTurn() {
-  return G.colonies.reduce((n, c) => n + 1
-    + (c.buildings.includes('Church') ? 1 : 0)
-    + (c.buildings.includes('Cathedral') ? 1 : 0), 0);
+  return G.colonies.reduce((n, c) => n + 1 + (c.crossesTurn || 0), 0);
 }
 function checkImmigration() {
   G.crosses += crossesPerTurn();
@@ -3371,7 +3615,7 @@ function endTurn() {
   if (G.year < 1600) G.year += 1;
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
-  for (const c of G.colonies) advanceConstruction(c);
+  for (const c of G.colonies) colonyTurn(c);
   checkImmigration();
   updateCongress();
   // §19.11: the native pass runs BEFORE the European powers move
@@ -3716,7 +3960,14 @@ function onClick(mx, my) {
         if (on) { on.cell = null; on.job = null; G.msg = `${on.type} returns to the plaza.`; }
         else {
           const idle = c.colonists.find(p => !p.cell);
-          if (idle) { idle.cell = [cx, cy]; idle.job = 'Farmer'; G.msg = `${idle.type}: Farmer`; }
+          // The engine puts a colonist on the field's BEST job, and a second
+          // click on an occupied cell cycles them off. Ties go to the earlier
+          // @JOB row, which puts Farmer first.
+          if (idle) {
+            idle.cell = [cx, cy];
+            idle.job = bestFieldJob(c, idle);
+            G.msg = `${idle.type}: ${idle.job}`;
+          }
         }
         return;
       }

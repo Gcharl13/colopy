@@ -29,6 +29,16 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("colony_production",
+     "beginGame();sailToLand();makeColony();"
+     "(()=>{const c=G.colonies[0];"
+     "for(let i=0;i<5;i++)c.colonists.push({type:'Colonists',profession:null,job:null,cell:null});"
+     "c.stock[5]=100;c.stock[1]=100;c.stock[6]=100;"
+     "c.buildings.push(\"Rum Distiller's House\",\"Blacksmith's House\");"
+     "const cells=[[-1,-1],[0,-1],[1,0],[-1,1]];"
+     "cells.forEach((cell,i)=>{c.colonists[i].cell=cell;c.colonists[i].job=bestFieldJob(c,c.colonists[i]);});"
+     "c.colonists[4].job='Distiller';c.colonists[5].job='Carpenter';"
+     "c.building='Docks';G.colonyView=2;})();G.screen='colony'"),
     ("village_actions",
      "beginGame();enterVillage(G.villages[0], mkUnit('Missionaries',G.villages[0].x-1,G.villages[0].y))"),
     ("village_trade",

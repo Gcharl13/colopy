@@ -312,3 +312,28 @@ the port already had.
 | Capital raze bonus | **TBD** | Both captured capital razes exceed the formula ceiling, so a capital-only bonus exists; its magnitude is unmapped, so none is applied. |
 | Settlement removal | **DONE** | Native units of the village are detached, the record retired; the tribe's **last** village sets the dead bit and announces `@EXTINCT`, while a surviving tribe has its horse herd and horse lore scaled by `n/(n+1)` — the **tribe's** record, not the dead village's (corrected 2026-08-01). |
 | Village defence strength | **PARTIAL** | The engine resolves village attacks in the ordinary combat path; what the settlement itself contributes to the defender is not traced. The port defends with a Brave's strength on the village tile, scaled by `(4 + level)/4`. |
+
+## Port: the colony production loop (2026-08-04)
+
+Before this pass a colony produced only food (farmers only) and hammers
+(carpenters, with no input). It now runs the whole `colony_turn_update`
+pipeline. `spec/systems/colony.md` §3 is the source; the core of it is
+byte-verified.
+
+| Item | Status | Note |
+|---|---|---|
+| Per-tile yield | **DONE** | `compute_terrain_yield` (0x9B9C..0x9FFB). A field worker reads the column of the terrain table that matches the good they work, across all eight outdoor jobs — Fisherman is the ninth column and produces Food from water. Clicking a scene cell now assigns the cell's **best** job, not always Farmer. |
+| Sons-of-Liberty / Tory production penalty | **DONE** | Byte-verified @0x9D14..0x9D98: `tories = round(pop·(100−SoL)/100)`, and every `10 − difficulty` of them costs one unit of every worker's output; the rebel-majority and rebel-unanimous latches give one back each. |
+| Expert match | **DONE** | @0x9DAD..0x9DD2: Food and Horses take a flat **+2**, every other good **doubles**. |
+| Raw→finished chains | **DONE** | The five byte-cited conversion call sites (@0xA660..0xA68C): Ore→Tools, Tobacco→Cigars, Cotton→Cloth, Furs→Coats, Sugar→Rum, all 1:1. An indoor worker's output is capped by the raw on hand plus what the fields brought in this turn. |
+| Factory tier | **DONE** | `count_building_chain_present > 2` (@0x8EA9) is the factory condition, and the factory makes the same output cost **2/3** of the raw (@0x8EB1). |
+| Indoor production rate | **PARTIAL** | **Not in the evidence.** `@BUILDING` has no production column (its `size` column is the colony screen's category slot 0..4) and PEDIA quotes no numbers. The port uses 3 at the base tier and 6 once the second link is built — the original game's familiar rates, but the port's own. |
+| Carpenter needs lumber | **DONE** | PEDIA `@BUILDING35` is explicit: *"the carpenter needs lumber to create hammers."* The port previously made hammers from nothing. |
+| Muskets ← Tools | **PARTIAL** | The Armory chain is **not** one of the five byte-cited conversion sites; PEDIA `@BUILDING3` describes it. Implemented, flagged. |
+| Building → job binding | **PARTIAL** | Still inferred from the `@BUILDING` name grouping (the table is laid out chain by chain) rather than the engine's own table, which is unread. The previous prefix match silently missed every chain whose building name does not start with the job name ("Rum Distiller's House" → Distiller). |
+| Sons of Liberty % | **DONE** | `sol = A·100/B` (`sol_membership_pct` 0x8524..0x85B1), +20 with Jan de Witt, capped 100. Both terms are 32-bit EMAs with 1/64 decay: `B -= B>>6; B = max(B,1); B += 2·pop` and `A += bells − (A>>6); A = max(A,0); A = min(A,B)` (@0x2DA1C..0x2DAD8). A new colony seeds **B = 200, A = 0** — runtime-confirmed against a captured pop-1 Jamestown record. |
+| Liberty bells | **DONE** | Now produced per colony by Statesmen through the same production pass instead of a flat guess, and fed to both the SoL EMA and the Continental Congress pool. |
+| Crosses | **PARTIAL** | Preachers now produce them through the production pass; the flat +1 per colony stays a flagged placeholder, as the per-building cross rate is still unlocated. |
+| Food consumption / growth | **PARTIAL** | `eaten = 2·pop` is byte-verified (@0xA5F2). The **199-cap / 200-food-for-a-colonist** numbers are the manual's, tier **R**, not located in any resident function — flagged as such in `warehousing.md` §6. A colony that cannot feed itself loses a colonist. |
+| Over-100 disposal | **DONE (with an open question)** | Byte-verified at `func_02D658` @0x2D6F7: a good at **100 or more** is cut to **50** and the excess is **sold** net of tax to the treasury (@0x2D785) — or **wasted** if independence has been declared (`[0x5382]&1` @0x2D728). **OPEN:** whether a Custom-House gate sits in the caller. None is recorded in the spec, so none is applied; if play shows goods auto-selling when they should not, that gate is where to look. |
+| Warehouse capacity | **NOTED** | `(level+1)·100` (`func_008D00`) is implemented but, per the 2026-06-27 correction, it bounds **only** the food growth reserve — not per-good stock. |

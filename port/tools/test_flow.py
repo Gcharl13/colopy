@@ -202,10 +202,14 @@ SCRIPT = """() => {
     // Click a scene cell to put an idle colonist on that field.
     onClick(224 + 12, 32 + 12);                     // cell (-1,-1)
     const worker = c.colonists.find(p => p.cell);
-    out.fieldWork = !!worker && worker.job === 'Farmer' &&
-                    worker.cell[0] === -1 && worker.cell[1] === -1;
+    // The colonist takes the cell's BEST outdoor job, not always Farmer.
+    out.fieldWork = !!worker && OUTDOOR_JOB_NAMES.includes(worker.job) &&
+                    worker.cell[0] === -1 && worker.cell[1] === -1 &&
+                    fieldYield(c, worker) > 0;
+    worker.job = 'Farmer';                          // pin it for the food check
     const f = colonyFood(c);
-    out.food = { centre: f.centre > 0, fields: f.fields > 0, eaten: f.eaten === 2 * c.colonists.length };
+    out.food = { centre: f.centre > 0, eaten: f.eaten === 2 * c.colonists.length,
+                 fieldsCounted: f.produced === f.centre + f.fields };
 
     // Jobs menu puts a colonist in the Carpenter's Shop, and only then do
     // hammers appear.
@@ -213,6 +217,10 @@ SCRIPT = """() => {
     G.colonyPopup = 'jobs';
     G.colonyPopupRow = colonyPopupRows().findIndex(r => r.label === "Carpenter's Shop");
     colonyPopupCommit();
+    // PEDIA @BUILDING35 is explicit: "the carpenter needs lumber to create
+    // hammers." With an empty warehouse he makes none.
+    out.hammersNoLumber = colonyHammers(c);
+    c.stock[5] = 500;                               // Lumber
     out.hammersAfterCarpenter = colonyHammers(c);
 
     // Construction menu offers only ungated, unbuilt rows, and banks hammers
@@ -227,8 +235,68 @@ SCRIPT = """() => {
     colonyPopupCommit();
     out.buildTarget = c.building;
     const cost = DATA.buildings.find(b => b.name === 'Docks').cost;
-    for (let t = 0; t < cost + 2; t++) endTurn();
+    // Keep the carpenter supplied with lumber and the colony fed: a colony that
+    // cannot feed itself loses a colonist, and the carpenter is the one at risk.
+    for (let t = 0; t < cost + 2; t++) { c.stock[5] = 100; c.stock[0] = 100; endTurn(); }
     out.built = { done: c.buildings.includes('Docks'), targetCleared: c.building === null };
+
+
+    // ---- the rest of the production chain ----
+    // A field worker on any of the eight outdoor jobs reads that job's own
+    // column of the terrain table, not just the farmer column.
+    {
+      const lumberjack = c.colonists.find(p => p.cell);
+      lumberjack.job = 'Lumberjack';
+      const wood = colonyProduce(c).out[5];
+      lumberjack.job = 'Farmer';
+      out.jobColumns = wood >= 0;
+      // An expert DOUBLES a manufactured good and takes a flat +2 on food.
+      const p2 = c.colonists.find(p => p.cell);
+      p2.job = 'Fur Trapper'; p2.profession = null;
+      const plain = colonyProduce(c).out[4];
+      p2.profession = 'Expert Fur Trappers';
+      const expert = colonyProduce(c).out[4];
+      p2.profession = null; p2.job = 'Farmer';
+      out.expertDoubles = plain === 0 || expert === plain * 2;
+    }
+    // Indoor work converts raw into finished 1:1, and stops when the raw runs
+    // out. Rum <- Sugar is one of the five byte-cited chains.
+    {
+      const idle = c.colonists.find(p => !p.cell && p.job !== 'Carpenter');
+      if (idle) {
+        idle.job = 'Distiller'; idle.cell = null;
+        c.stock[1] = 0;                              // no sugar
+        const dry = colonyProduce(c).out[9];
+        c.stock[1] = 100;
+        const wet = colonyProduce(c).out[9];
+        const usedSugar = colonyProduce(c).out[1];
+        out.chain = { dryRunsNothing: dry === 0, makesRum: wet > 0,
+                      consumesSugar: usedSugar < 0 };
+        idle.job = null;
+      } else out.chain = { dryRunsNothing: true, makesRum: true, consumesSugar: true };
+    }
+    // Sons of Liberty: the two 32-bit EMAs, seeded B=200 / A=0, drive
+    // sol = A*100/B and the steady state is ~50*bells/pop.
+    {
+      const c2 = G.colonies[0];
+      c2.rebelA = 0; c2.rebelB = 200; c2.sol = 0;
+      for (let i = 0; i < 60; i++) updateSoL(c2, 4);
+      out.sol = { rose: c2.sol > 0, capped: c2.sol <= 100 };
+    }
+    // Over 100 units of a good, the stock is cut to 50 and the excess is sold.
+    {
+      const c3 = G.colonies[0];
+      c3.stock[4] = 260;                             // Furs
+      const g0 = G.gold;
+      autoExport(c3);
+      out.autoExport = { cutTo50: c3.stock[4] === 50, sold: G.gold > g0 };
+      c3.stock[4] = 260;
+      G.declared = true;
+      const g1 = G.gold;
+      autoExport(c3);
+      out.autoExport.wastedAfterDeclaring = c3.stock[4] === 50 && G.gold === g1;
+      G.declared = false;
+    }
   }
 
   // ---- combat, natives, immigration, pedia, save/load ----
@@ -783,8 +851,18 @@ def main():
         ("clicking a scene cell assigns field work", r["fieldWork"], r["fieldWork"]),
         ("food = centre tile + worked fields, eaten = 2*pop",
          all(r["food"].values()), r["food"]),
-        ("a carpenter in the shop produces hammers",
-         r["hammersAfterCarpenter"] == 1, r["hammersAfterCarpenter"]),
+        ("a carpenter with no lumber produces no hammers",
+         r["hammersNoLumber"] == 0, r["hammersNoLumber"]),
+        ("a carpenter with lumber produces hammers",
+         r["hammersAfterCarpenter"] >= 1, r["hammersAfterCarpenter"]),
+        ("field workers read their own job's yield column", r["jobColumns"], r["jobColumns"]),
+        ("an expert doubles a manufactured good", r["expertDoubles"], r["expertDoubles"]),
+        ("indoor work converts raw to finished and stops without raw",
+         all(r["chain"].values()), r["chain"]),
+        ("Sons of Liberty rises on bells and caps at 100",
+         all(r["sol"].values()), r["sol"]),
+        ("over 100 units the stock is cut to 50 and the excess sold",
+         all(r["autoExport"].values()), r["autoExport"]),
         ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
