@@ -445,3 +445,19 @@ are a demotion or a capture, not a death.
 | Sight radius | **DONE** | A **(2R+1)² square** (`func_006468`), with R from `func_006608`: land **1**, Scout **2**, Galleon/Privateer/Frigate **2**, any naval hull **2** with **Hernando de Soto** (the ability-#7 test is the has-father helper), other ships **1**. |
 | Show Hidden Terrain | **DONE** | Now a real toggle: it reveals the map for viewing without writing the layer, so turning it off restores the fog exactly. |
 | Not modelled | **NOTED** | The naval/water reveal flag that governs *which* tiles are eligible (distinct from R) is not reproduced; the port reveals the whole square. |
+
+## Port: diplomacy (2026-08-05)
+
+`spec/systems/diplomacy.md`. Rivals existed but there was no way to talk to them.
+
+| Item | Status | Note |
+|---|---|---|
+| War matrix | **DONE** | The byte-verified bit catalogue on the per-pair matrix: `0x01` resolved, **`0x02` at war**, `0x08` pending grievance, `0x20` peace-pending, **`0x40` met/contacted**, and `0x80` **Privateer hidden-attribution** — set *instead of* the war bit so the aggression is not openly imputed. |
+| Treaty matrix | **DONE** | A second per-pair matrix written **symmetrically** (`matrix[A][B] = matrix[B][A]`), with `0x40` the existing treaty. Signing clears the war bit both ways. `@SIGNTREATY` / `@DECLAREWAR`. |
+| Re-parley lockout | **DONE** | Signing writes `turn + 0x10` — a 16-turn lockout before that power will parley again. |
+| Target eligibility | **DONE** | Byte-verified @0x57B1A: the turn must be at least **0x28 (40)** and at least one side's attitude byte must be **≥ 8**. |
+| AI action probability | **DONE** | `random_int(1000) < 200·difficulty + 100` (10% at Discoverer to 90% at Viceroy) gates whether the AI accepts peace or pays tribute. |
+| Demand value | **DONE** | Scaled `value · 10·(difficulty+8) / 100` (×0.8…×1.2) with a flat surcharge of `500·(difficulty+1)`. The final gate is an affordability compare against the AI's gold. |
+| The parley | **DONE** | Moving onto a rival's unit or colony at peace opens the option tree — propose a demarcation treaty (`@WORTHY`), renounce it, declare war, sue for peace (`@WITHDRAW` / `@THREATS`), demand tribute (`@GIVECASH`) — and at war it is an attack instead. |
+| No wars during the revolution | **DONE** | Byte-verified enforcement (`func_05A862` @0x5A912): once the War of Independence is declared, foreign colonies cannot be attacked — `@NOWARSDURINGREV`, and the attack is cancelled. |
+| Not modelled | **NOTED** | The grievance timer's per-turn transition to the resolved bit, the AI's own initiative (it never opens a parley with you), the full `func_057F4E` topic tree (PIRACY / SIEGES / WANTSTUFF / PROVOKE / …), unit-ownership transfer on a paid treaty, and SIEGE production restriction. There is no naval blockade mechanic in the engine at all — 0 `blockad*` strings — so none is invented. |

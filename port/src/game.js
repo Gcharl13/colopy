@@ -276,6 +276,8 @@ const G = {
   crosses: 0,             // immigration accumulator
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   rivals: [], metAnyone: false,
+  warMatrix: {}, treatyMatrix: {}, parleyLock: {}, attitude: 8,
+  parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
   combat: null,            // the Combat Analysis panel's live figures
@@ -362,6 +364,8 @@ function beginGame() {
   IMPROVE.fill(0);
   seedNatives();
   seedRivals();
+  G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
+  G.parley = null; G.attitude = 8;
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -3683,6 +3687,10 @@ function checkContact() {
                                        G.colonies.some(c => near(c, rc)));
     if (!seen) continue;
     r.met = true;
+    setWar(G.nation, r.nation, REL.MET, true);
+    setWar(r.nation, G.nation, REL.MET, true);
+    if (r.attitude === undefined) r.attitude = 8;
+    if (r.gold === undefined) r.gold = 1000 + Math.floor(Math.random() * 4000);
     G.msg = `We have made contact with the ${DATA.nations[r.nation].adjective}.`;
     if (!G.metAnyone) { G.metAnyone = true; G.woodcut = 10; G.screen = 'woodcut'; }
   }
@@ -3796,6 +3804,144 @@ function applyFatherEffect(name) {
       for (const p of c.colonists)
         if (p.profession === CONVERT_CLASS) p.profession = 'Free Colonists';
   }
+}
+
+// ---------------------------------------------------------- diplomacy
+// spec/systems/diplomacy.md. Two 4x4 per-pair byte matrices, both byte-verified:
+//   the WAR matrix (PowerRecord +0x34): 0x01 resolved, 0x02 AT WAR, 0x08 pending
+//     grievance, 0x20 peace-pending, 0x40 met/contacted, 0x80 privateer
+//     hidden-attribution (set INSTEAD of the war bit when the attacker is a
+//     Privateer, so the aggression is not openly imputed);
+//   the TREATY matrix (PowerRecord +0x40), written SYMMETRICALLY: 0x02 hostile,
+//     0x20 peace-pending, 0x40 existing treaty.
+// A treaty cooldown of turn + 0x10 is a 16-turn re-parley lockout.
+const REL = { RESOLVED: 0x01, WAR: 0x02, GRIEVANCE: 0x08, PEACE_PENDING: 0x20,
+              MET: 0x40, PRIVATEER: 0x80, TREATY: 0x40 };
+const PARLEY_LOCKOUT = 0x10;
+function relKey(a, b) { return `${a},${b}`; }
+const relWar = (a, b) => (G.warMatrix[relKey(a, b)] || 0);
+const relTreaty = (a, b) => (G.treatyMatrix[relKey(a, b)] || 0);
+function setWar(a, b, bits, on) {
+  const k = relKey(a, b);
+  G.warMatrix[k] = on ? ((G.warMatrix[k] || 0) | bits) : ((G.warMatrix[k] || 0) & ~bits);
+}
+// The treaty matrix is written both ways round -- matrix[A][B] = matrix[B][A].
+function setTreaty(a, b, bits, on) {
+  for (const k of [relKey(a, b), relKey(b, a)])
+    G.treatyMatrix[k] = on ? ((G.treatyMatrix[k] || 0) | bits) : ((G.treatyMatrix[k] || 0) & ~bits);
+}
+const atWar = (a, b) => (relWar(a, b) & REL.WAR) !== 0 || (relWar(b, a) & REL.WAR) !== 0;
+const haveTreaty = (a, b) => (relTreaty(a, b) & REL.TREATY) !== 0;
+function declareWarOn(a, b) {
+  setWar(a, b, REL.WAR, true);
+  setTreaty(a, b, REL.TREATY, false);
+  showEvent('DECLAREWAR', { STRING0: DATA.nations[a].adjective,
+                            STRING1: DATA.nations[b].adjective });
+}
+function signTreaty(a, b) {
+  setWar(a, b, REL.WAR, false);
+  setWar(b, a, REL.WAR, false);
+  setTreaty(a, b, REL.TREATY, true);
+  G.parleyLock[b] = G.turn + PARLEY_LOCKOUT;
+  showEvent('SIGNTREATY', { STRING0: DATA.nations[a].adjective,
+                            STRING1: DATA.nations[b].adjective });
+}
+// Target eligibility for a parley, byte-verified @0x57B1A: the turn must be at
+// least 0x28 (40) and at least one side's attitude byte must be >= 8. The port
+// keeps a per-rival attitude that first contact seeds and treaties raise.
+const PARLEY_FIRST_TURN = 0x28, PARLEY_ATTITUDE = 8;
+function parleyEligible(r) {
+  if (G.turn < PARLEY_FIRST_TURN) return false;
+  if ((G.parleyLock[r.nation] || 0) > G.turn) return false;
+  return (r.attitude || 0) >= PARLEY_ATTITUDE || (G.attitude || 0) >= PARLEY_ATTITUDE;
+}
+// The tribute/demand value, scaled by the byte-cited difficulty terms: the
+// value is scaled 10*(diff+8)/100 (x0.8 .. x1.2) and carries a flat surcharge
+// of 500*(diff+1).
+function demandValue(base) {
+  return Math.floor(base * 10 * (G.difficulty + 8) / 100) + 500 * (G.difficulty + 1);
+}
+// The parley itself. Meeting a rival you are not at war with opens the option
+// tree rather than an attack.
+function openParley(r) {
+  G.parley = r;
+  G.parleyRow = 0;
+  G.screen = 'parley';
+}
+function parleyRows() {
+  const r = G.parley;
+  const rows = [];
+  if (!atWar(G.nation, r.nation) && !haveTreaty(G.nation, r.nation))
+    rows.push({ id: 'treaty', label: 'Propose a demarcation treaty' });
+  if (haveTreaty(G.nation, r.nation))
+    rows.push({ id: 'cancel', label: 'Renounce our treaty' });
+  if (!atWar(G.nation, r.nation)) rows.push({ id: 'war', label: 'Declare war' });
+  else rows.push({ id: 'peace', label: 'Sue for peace' });
+  rows.push({ id: 'demand', label: `Demand tribute (${demandValue(500)}$)` });
+  rows.push({ id: 'leave', label: 'Take our leave' });
+  return rows;
+}
+function parleyCommit() {
+  const r = G.parley, row = parleyRows()[G.parleyRow];
+  const close = () => { G.screen = 'map'; G.parley = null; advance(); };
+  if (!row || row.id === 'leave') { close(); return; }
+  const adj = DATA.nations[r.nation].adjective;
+  if (row.id === 'treaty') {
+    close();
+    askEvent('WORTHY', { STRING0: DATA.nations[r.nation].country,
+                         STRING1: DATA.nations[G.nation].adjective, STRING2: adj },
+      (choice) => { if (choice === 0) signTreaty(G.nation, r.nation); });
+    return;
+  }
+  if (row.id === 'war') { close(); declareWarOn(G.nation, r.nation); return; }
+  if (row.id === 'cancel') {
+    close();
+    setTreaty(G.nation, r.nation, REL.TREATY, false);
+    G.msg = `Our treaty with the ${adj} is renounced.`;
+    return;
+  }
+  if (row.id === 'peace') {
+    close();
+    // The AI acts on the byte-cited probability gate random_int(1000) <
+    // 200*difficulty + 100.
+    if (Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
+      setWar(G.nation, r.nation, REL.WAR, false);
+      setWar(r.nation, G.nation, REL.WAR, false);
+      showEvent('WITHDRAW', {});
+    } else showEvent('THREATS', {});
+    return;
+  }
+  // Demand tribute: the AI pays only what it can afford (the final gate is an
+  // affordability compare against its gold).
+  close();
+  const want = demandValue(500);
+  if ((r.gold || 0) >= want && Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
+    r.gold -= want;
+    G.gold += want;
+    showEvent('GIVECASH', { NUMBER0: want });
+  } else showEvent('THREATS', {});
+}
+function drawParley(ctx) {
+  drawMap(ctx);
+  const r = G.parley, rows = parleyRows();
+  const body = [`The ${DATA.nations[r.nation].adjective} envoy attends you.`,
+                atWar(G.nation, r.nation) ? 'We are at {war}.'
+                : haveTreaty(G.nation, r.nation) ? 'We are bound by {treaty}.'
+                : 'We are at {peace}.'];
+  let cw = 190;
+  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const row of rows) cw = Math.max(cw, FONT.tiny.width(row.label) + 20);
+  const w = cw + 6, textH = body.length * 6;
+  const h = 6 + textH + 3 + rows.length * 8 + 3;
+  const x = Math.round(160 - w / 2), y = Math.max(10, Math.round(100 - h / 2));
+  plaque(ctx, x, y, w, h, 'WOODTILE');
+  body.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
+  const seed = y + 6 + textH + 3;
+  rows.forEach((row, k) => {
+    const ry = seed + k * 8, sel = k === G.parleyRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, 8); }
+    FONT.tiny.draw(ctx, row.label, x + 9, ry + 1, lut(sel ? 0xFC : 0xFE));
+  });
 }
 
 // ------------------------------------------------- treasure transport
@@ -4760,6 +4906,30 @@ function moveSel(dx, dy) {
     strike();
     return;
   }
+  // Moving onto a rival power's unit or colony. At peace that opens the parley;
+  // at war it is an attack. During the War of Independence foreign colonies
+  // cannot be attacked at all (@NOWARSDURINGREV, enforcement byte-verified at
+  // func_05A862 @0x5A912).
+  const rival = G.rivals.find(r => r.met &&
+    (r.units.some(ru => ru.x === nx && ru.y === ny) ||
+     r.colonies.some(rc => rc.x === nx && rc.y === ny)));
+  if (rival) {
+    const isColony = rival.colonies.some(rc => rc.x === nx && rc.y === ny);
+    if (atWar(G.nation, rival.nation)) {
+      if (isColony && (G.flags & WOI_DECLARED)) { showEvent('NOWARSDURINGREV', {}); return; }
+      const ru = rival.units.find(x => x.x === nx && x.y === ny);
+      if (ru) { resolveAttack(u, ru); advance(); return; }
+      G.msg = `The ${DATA.nations[rival.nation].adjective} colony holds.`;
+      u.movesLeft = 0; advance(); return;
+    }
+    if (!parleyEligible(rival)) {
+      G.msg = `The ${DATA.nations[rival.nation].adjective} will not receive us yet.`;
+      return;
+    }
+    u.movesLeft = 0;
+    openParley(rival);
+    return;
+  }
   const vil = G.villages.find(v => v.x === nx && v.y === ny);
   if (vil) { u.movesLeft = 0; enterVillage(vil, u); return; }
   // The right-edge sea-lane column is the route home: a ship that enters it
@@ -5187,6 +5357,14 @@ function onKey(e) {
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
+    case 'parley': {
+      const n = parleyRows().length;
+      if (k === 'ArrowUp') G.parleyRow = (G.parleyRow + n - 1) % n;
+      if (k === 'ArrowDown') G.parleyRow = (G.parleyRow + 1) % n;
+      if (k === 'Enter' || k === ' ') parleyCommit();
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.parley = null; advance(); }
+      break;
+    }
     case 'village': {
       const n = villageRowCount();
       if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
@@ -5350,7 +5528,7 @@ function frame() {
      name: drawName, briefing: drawBriefing, cards: drawCards,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
-     report: drawReport, village: drawVillage }[G.screen])(ctx);
+     report: drawReport, village: drawVillage, parley: drawParley }[G.screen])(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

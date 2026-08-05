@@ -454,6 +454,58 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- diplomacy ----
+  {
+    beginGame(); G.screen = 'map';
+    const r = G.rivals[0];
+    r.met = true; r.attitude = 10; r.gold = 20000;
+    G.turn = 60;
+    // The war matrix bits and the symmetric treaty matrix.
+    out.diplo = { startsAtPeace: !atWar(G.nation, r.nation) };
+    declareWarOn(G.nation, r.nation);
+    out.diplo.warSet = atWar(G.nation, r.nation) && atWar(r.nation, G.nation);
+    signTreaty(G.nation, r.nation);
+    out.diplo.treatyClearsWar = !atWar(G.nation, r.nation);
+    out.diplo.treatySymmetric = haveTreaty(G.nation, r.nation) &&
+                                haveTreaty(r.nation, G.nation);
+    // Signing sets the 16-turn re-parley lockout.
+    out.diplo.lockout = G.parleyLock[r.nation] === G.turn + 16;
+    out.diplo.lockedOut = !parleyEligible(r);
+    G.parleyLock[r.nation] = 0;
+    // Eligibility: not before turn 40, and it needs an attitude of 8.
+    G.turn = 10;
+    out.diplo.tooEarly = !parleyEligible(r);
+    G.turn = 60; r.attitude = 0; G.attitude = 0;
+    out.diplo.needsAttitude = !parleyEligible(r);
+    r.attitude = 10;
+    out.diplo.eligible = parleyEligible(r);
+    // The demand value carries the difficulty surcharge.
+    out.diplo.demandScales = demandValue(500) ===
+      Math.floor(500 * 10 * (G.difficulty + 8) / 100) + 500 * (G.difficulty + 1);
+    // The parley menu offers a treaty at peace and peace at war.
+    setTreaty(G.nation, r.nation, 0x40, false);
+    openParley(r);
+    const peaceRows = parleyRows().map(x => x.id);
+    declareWarOn(G.nation, r.nation);
+    const warRows = parleyRows().map(x => x.id);
+    out.diplo.menuAdapts = peaceRows.includes('treaty') && peaceRows.includes('war') &&
+                           warRows.includes('peace') && !warRows.includes('war');
+    G.screen = 'map'; G.parley = null;
+    // Foreign colonies cannot be attacked during the revolution.
+    G.flags |= 1;
+    const rc = r.colonies[0];
+    if (rc) {
+      const sold = mkUnit('Soldiers', rc.x - 1, rc.y);
+      G.units.push(sold); G.sel = G.units.indexOf(sold);
+      sold.movesLeft = sold.moves;
+      G.eventQueue = [];
+      moveSel(1, 0);
+      out.diplo.noWarsDuringRev = G.eventQueue.length === 1 &&
+                                  r.colonies.includes(rc);
+    } else out.diplo.noWarsDuringRev = true;
+    G.flags = 0;
+  }
+
   // ---- treasure transport and fog of war ----
   {
     beginGame(); G.screen = 'map';
@@ -1339,6 +1391,8 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("diplomacy: war/treaty matrices, lockout, eligibility, and the rev ban",
+         all(r["diplo"].values()), r["diplo"]),
         ("the King's cut is max(5d+50, 2*tax) capped at 90, or the tax with Cortes",
          all(r["kingsCut"].values()), r["kingsCut"]),
         ("treasure in a colony draws the galleon offer and pays out",

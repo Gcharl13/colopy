@@ -29,6 +29,9 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("parley",
+     "beginGame();G.screen='map';G.turn=60;"
+     "(()=>{const r=G.rivals[0];r.met=true;r.attitude=10;r.gold=9000;openParley(r);})()"),
     ("fog",
      "beginGame();G.screen='map';"
      "(()=>{const s=G.units[0];for(let i=0;i<12;i++){s.movesLeft=99;moveSel(-1,0);}"

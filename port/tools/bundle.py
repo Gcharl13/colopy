@@ -270,7 +270,10 @@ def build_data():
               "@LOOTCAPTURE", "@ARTILLERY", "@ARTILLERY2", "@SHIPDAMAGE",
               "@SHIPSUNK", "@VETERAN", "@VALOR", "@WELLSEASONED", "@HALF",
               # Treasure transport
-              "@KINGGALLEON2", "@KINGGALLEON3", "@LOOTCASH", "@CASHTREASURE"):
+              "@KINGGALLEON2", "@KINGGALLEON3", "@LOOTCASH", "@CASHTREASURE",
+              # Diplomacy
+              "@SIGNTREATY", "@DECLAREWAR", "@WORTHY", "@THREATS", "@WITHDRAW",
+              "@GIVECASH", "@TRIBUTE", "@NOWARSDURINGREV"):
         if k not in full:
             continue
         sec = full[k]
