@@ -157,9 +157,30 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 | COLONIZOPEDIA | **DONE** 2026-08-04 | All seven categories plus Complete, articles straight from PEDIA.TXT, three-column index pager, stat blocks from the NAMES tables. |
 
 ### Colonizopedia notes
-- Entry counts: Cargo 16, Unit 23, Terrain 29, Skill 28, Building 42, Father 25, Concept 12 → **175** in Complete. The spec says the engine's merged index holds **162**, so ~13 rows are skipped by the enumerator's per-category skip list, which is not in the evidence here. **PARTIAL.**
-- Terrain names come from `@UNFORESTED`+`@FORESTED`+`@OTHER`+`@OTHER_NAMES` = 26, but PEDIA.TXT ships 29 TERRAIN articles; ids 26–28 are shown by index rather than given invented names.
-- Game Concept entries have index names in `@MISCELLANEOUS` but **no article** anywhere in PEDIA.TXT; the page says so rather than filling the space.
+- **Terrain index SOLVED 2026-08-05 against the live game** (`docs/LIVE_UI_CHECK_2026-08-05.md` §4,
+  RULINGS 2026-08-05). It is **21 rows**, alphabetised: `@UNFORESTED`(8) + `@FORESTED`(8) each
+  suffixed with **`@OTHER_NAMES[0]` = the literal string `"Forest"`** + `@OTHER`(5) — reconstructed
+  from the shipped tables and matched name-for-name against the capture. `@OTHER_NAMES` is a
+  **suffix/label table** (Forest, River, Major River, Minor River, Unexplored), *not* five more
+  terrain entries; the old reading produced 26 names plus three invented `Terrain 26..28` rows.
+  **The spec was already correct** (`spec/ui/colonizopedia.md`: ids 8..15 take the `" Forest"`
+  suffix from `@OTHER_NAMES` line 0, 16..23 are a byte-copy that does not) — this was the **port**
+  drifting from a correct spec, which is exactly what a live render-and-diff is for.
+- **The 29-articles-vs-21-rows gap is id sparseness, not a skip list.** `PEDIA.TXT` keys TERRAIN
+  articles by **engine terrain id**: `@UNFORESTED` 0–7, `@FORESTED` 8–15, `@OTHER` 24–28. Ids
+  **16–23 are the auto-forest variants** (hard rule 3) — articles but no index row. The earlier note
+  that "~13 rows are skipped by the enumerator's per-category skip list, which is not in the
+  evidence here" is **withdrawn for TERRAIN**; whether the other six categories are similarly
+  explained by id sparseness is still **TBD** (the total-count question, 175 vs the spec's 162,
+  remains open for Cargo/Unit/Skill/Building/Father/Concept).
+- **Index layout confirmed**: column-major, **22 rows per column**, up to 3 columns, pitch 7, first
+  row y=26, left column x=7. A 21-row category renders as ONE column simply because it never
+  overflows — the three-column layout in `spec/ui/colonizopedia.md` stands.
+- **Chrome**: the live index has **no category sub-heading and no keyboard hint**. The only chrome is
+  `(Exit)` (`@MISC` 110) top-right and `(More)` (`@MISC` 109) when paging. The masthead is **white**
+  (WOODPANL index 15), not HUD green. Both extra lines the port drew were its own.
+- Game Concept entries have index names in `@MISCELLANEOUS` but **no article** anywhere in PEDIA.TXT;
+  the page says so rather than filling the space.
 
 ### Combat (§14)
 - Implemented: base from the `@UNIT` combat column (carriers add attack, damaged ships −2), the

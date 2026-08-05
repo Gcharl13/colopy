@@ -421,8 +421,11 @@ function beginGame() {
   // in the tree and play shows one ship at every level -- see RULINGS.md
   // 2026-08-04. Difficulty scales starting gold, not hulls.)
   const [sx, sy] = DATA.starts[G.nation];
+  // Manifest order is Soldiers then Pioneers: the live opening turn lists
+  // "Veteran" above "100 Tools" in the sidebar
+  // (docs/screens/live_2026-08-05/07_map_opening_turn.png).
   G.units = [mkUnit(G.nation === 3 ? 'Merchantman' : 'Caravel', sx, sy,
-                    ['Pioneers', 'Soldiers'])];
+                    ['Soldiers', 'Pioneers'])];
   G.sel = 0;
   G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
@@ -668,12 +671,19 @@ function drawDifficulty(ctx) {
   const c = DIFF_CELL(G.difficulty);
   // 1-px hollow rect over the selected cell, colour per row (§26.2).
   hollowRect(ctx, c.x, c.y, c.w - 1, c.h - 1, DIFF_OUTLINE[G.difficulty]);
-  // Level name uppercased + ':' at the cell top, rank word at the bottom —
-  // both drawn for the selected row only, with a black shadow.
+  // Level name uppercased + ':' and the rank word, drawn for the selected row
+  // only, with a black shadow. Unlike the nation picker (which splits its two
+  // lines to the top and bottom of the cell), the difficulty picker stacks
+  // BOTH lines together in the middle, 8px apart, and draws both in the row's
+  // own ink -- measured off the live DOSBox frame
+  // docs/screens/live_2026-08-05/03_difficulty.png: for the (128,7,68,90)
+  // Discoverer cell the glyph rows start at y=45 and y=53 and both are 0x0A
+  // (4,182,16), not 254/0xFC.
+  const dInk = lut(DIFF_OUTLINE[G.difficulty]);
   FONT.tiny.center(ctx, DATA.difficulty[G.difficulty].toUpperCase() + ':',
-                   c.x + c.w / 2, c.y + 2, lut(254), ink(0));
+                   c.x + c.w / 2, c.y + 38, dInk, ink(0));
   FONT.tiny.center(ctx, DATA.text.misc[165 + G.difficulty],
-                   c.x + c.w / 2, c.y + c.h - 9, lut(0xFC), ink(0));
+                   c.x + c.w / 2, c.y + 46, dInk, ink(0));
   FONT.tiny.center(ctx, '(' + DATA.text.misc[161] + ')', 56, 81, lut(254));
 }
 
@@ -686,7 +696,11 @@ function drawNation(ctx) {
   FONT.intr.center(ctx, DATA.text.misc[171], 56, 49, lut(254), ink(0));
   const n = DATA.nations[G.nation], c = NAT_CELL(G.nation);
   hollowRect(ctx, c.x, c.y, c.w - 1, c.h - 1, n.color);
-  FONT.tiny.center(ctx, n.country.toUpperCase() + ':', c.x + c.w / 2, c.y + 2, lut(254), ink(0));
+  // Both lines take the nation's own colour -- live frame
+  // docs/screens/live_2026-08-05/04_nation.png has "ENGLAND:" and
+  // "Immigration" alike at (247,0,0) = @COUNTRY.color 12, not 254 for the name.
+  FONT.tiny.center(ctx, n.country.toUpperCase() + ':', c.x + c.w / 2, c.y + 2,
+                   lut(n.color), ink(0));
   FONT.tiny.center(ctx, DATA.text.misc[173 + G.nation], c.x + c.w / 2, c.y + c.h - 9,
                    lut(n.color), ink(0));
   FONT.tiny.center(ctx, '(' + DATA.text.misc[161] + ')', 56, 182, lut(254));
@@ -1319,6 +1333,26 @@ function runMenuRow() {
   else G.msg = `${r.label}: no handler for this MENU.TXT row.`;
 }
 
+// The original labels a unit riding in a hold by its EQUIPMENT or veteran
+// status, not by its @UNIT type name: the opening turn's caravel manifest reads
+//     Veteran      Sentry
+//     100 Tools    Sentry
+// not "Soldiers"/"Pioneers" (live DOSBox frame
+// docs/screens/live_2026-08-05/07_map_opening_turn.png). "Veteran" is @MISC 65
+// -- the first of the three expertise words Veteran/Seasoned/Learned -- and
+// "Tools" is @CARGO 14, so the tools line is `<count> <cargo name>`.
+//
+// Verified for the two units of the starting force only. What a *non*-veteran
+// Soldiers or some other carried type shows is TBD, so anything else falls
+// back to the type name rather than being guessed at.
+const TOOLS_CARGO = 14, MISC_VETERAN = 65;
+function carriedLabel(typeName) {
+  if (typeName === 'Pioneers')
+    return `${PIONEER_TOOLS} ${DATA.cargo[TOOLS_CARGO].name}`;
+  if (typeName === 'Soldiers') return DATA.text.misc[MISC_VETERAN];
+  return typeName;
+}
+
 function drawSidebar(ctx) {
   // Minimap: 1px per tile in a 56x39 black well inside a 1px orange frame.
   // Frame (251,8)-(308,48) and interior origin (252,9) are pixel-measured from
@@ -1384,7 +1418,7 @@ function drawSidebar(ctx) {
       const cu = unit(c);
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 244, cy - 4);
       nationPlate(ctx, 244, cy - 4, DATA.nations[G.nation].color, 1);
-      FONT.tiny.draw(ctx, c, 268, cy, lut(HUD_INK));
+      FONT.tiny.draw(ctx, carriedLabel(c), 268, cy, lut(HUD_INK));
       FONT.tiny.draw(ctx, 'Sentry', 268, cy + 8, lut(HUD_INK));
       cy += 20;
     }
@@ -5590,17 +5624,38 @@ function loadGame() {
 // header_y + font_h + 0xE with x = 10. Seven categories from MENU.TXT @PEDIA
 // plus "Complete", which merges them all into one alphabetised index.
 const PEDIA_KEYS = ['CARGO', 'UNIT', 'TERRAIN', 'JOB', 'BUILDING', 'FATHER', null];
+// The pedia's terrain rows, alphabetised, each keeping the ENGINE terrain id
+// its PEDIA.TXT article is keyed by. Those ids are NOT contiguous: @UNFORESTED
+// is 0..7, @FORESTED 8..15 and @OTHER 24..28. Ids 16..23 are the auto-forest
+// variants (CLAUDE.md hard rule 3) -- they have articles but no index row,
+// which is exactly why PEDIA.TXT ships 29 TERRAIN articles behind a 21-row
+// index. 21 = 8 + 8 + 5, confirmed against the live capture.
+let _terrainPedia = null;
+Object.defineProperty(globalThis, 'TERRAIN_PEDIA', { get() {
+  if (_terrainPedia) return _terrainPedia;
+  const t = DATA.terrain, suffix = t.othernames[0];
+  const rows = t.unforested.map((n, i) => ({ name: n, id: i }))
+    .concat(t.forested.map((n, i) => ({ name: `${n} ${suffix}`, id: 8 + i })),
+            t.other.map((n, i) => ({ name: n, id: 24 + i })));
+  rows.sort((a, b) => a.name.localeCompare(b.name));
+  _terrainPedia = rows;
+  return rows;
+} });
+
 function pediaNames(cat) {
   switch (cat) {
     case 0: return DATA.cargo.map(c => c.name);
     case 1: return DATA.units.map(u => u.name);
-    // Terrain names come from four NAMES tables in the engine's id order:
-    // @UNFORESTED(8) + @FORESTED(8) + @OTHER(5) + @OTHER_NAMES(5) = 26.
-    // PEDIA.TXT ships 29 TERRAIN articles, so ids 26..28 have an article but no
-    // name in the shipped tables -- shown by index rather than invented.
-    case 2: return DATA.terrain.unforested
-                 .concat(DATA.terrain.forested, DATA.terrain.other, DATA.terrain.othernames,
-                         ['Terrain 26', 'Terrain 27', 'Terrain 28']);
+    // Terrain: @UNFORESTED(8) + @FORESTED(8) each suffixed with @OTHER_NAMES[0]
+    // -- the literal string "Forest", which is what that entry is for -- plus
+    // @OTHER(5) = 21 names, which the index then sorts alphabetically. Verified
+    // name-for-name against the live index
+    // (docs/screens/live_2026-08-05/40_pedia_terrain_index.png).
+    //
+    // The earlier reading treated @OTHER_NAMES as five more terrain entries and
+    // padded to 29 with invented "Terrain 26..28" rows. It is a suffix/label
+    // table: Forest, River, Major River, Minor River, Unexplored.
+    case 2: return TERRAIN_PEDIA.map(t => t.name);
     case 3: return DATA.jobs;
     case 4: return DATA.buildings.map(b => b.name);
     case 5: return DATA.fathers.map(f => f.name);
@@ -5616,14 +5671,19 @@ function pediaNames(cat) {
 }
 // "Complete" (category 7) is every entry, alphabetised, each remembering the
 // category and index it came from.
+// Terrain rows carry the engine id their article is keyed by; every other
+// category keys its article by row position.
+const pediaArticleId = (cat, row) => (cat === 2 ? TERRAIN_PEDIA[row].id : row);
 function pediaComplete() {
   const all = [];
-  for (let c = 0; c < 7; c++) pediaNames(c).forEach((n, i) => all.push({ name: n, cat: c, idx: i }));
+  for (let c = 0; c < 7; c++)
+    pediaNames(c).forEach((n, i) => all.push({ name: n, cat: c, idx: pediaArticleId(c, i) }));
   return all.sort((a, b) => a.name.localeCompare(b.name));
 }
 function pediaList() {
   if (G.pediaCat === 7) return pediaComplete();
-  return pediaNames(G.pediaCat).map((n, i) => ({ name: n, cat: G.pediaCat, idx: i }));
+  return pediaNames(G.pediaCat)
+    .map((n, i) => ({ name: n, cat: G.pediaCat, idx: pediaArticleId(G.pediaCat, i) }));
 }
 function pediaBody(cat, idx) {
   const key = PEDIA_KEYS[cat];
@@ -5646,23 +5706,32 @@ function drawPedia(ctx) {
   usePalette('WOODPANL');
   ctx.drawImage(IMG.WOODPANL, 0, 0);
   const fh = FONT.tiny.height;
+  // The masthead is WHITE (255,255,255) in the live frame, not the HUD green
+  // the rest of the browser uses -- WOODPANL index 15.
   FONT.tiny.center(ctx, DATA.text.misc[108] || 'ENCYCLOPEDIA OF COLONIZATION',
-                   160, 5, lut(HUD_INK));
+                   160, 5, lut(15));
   const list = pediaList();
   if (G.pediaMode === 'index') {
-    // Index pager: three columns of names, the selected one highlighted.
+    // Index: column-major, 22 rows per column, up to three columns, pitch 7,
+    // first row at y=26 and left column at x=7. Measured off the live index
+    // (docs/screens/live_2026-08-05/40_pedia_terrain_index.png): rows run
+    // 26,33,40,…,166 for the 21 terrain entries, which is why a short category
+    // renders as ONE column -- the fill only spills right when it overflows.
+    //
+    // The live screen carries no category sub-heading and no keyboard hint; the
+    // only chrome is "(Exit)" at the top right (and "(More)" when the list
+    // pages), both @MISC strings. Both of the removed lines were the port's own.
     const perCol = 22, cols = 3;
     const page = Math.floor(G.pediaSel / (perCol * cols)) * (perCol * cols);
-    FONT.tiny.center(ctx, DATA.pedia.categories[G.pediaCat] || 'Complete',
-                     160, fh + 7, lut(0xFC));
     for (let k = 0; k < perCol * cols && page + k < list.length; k++) {
-      const x = 10 + (k / perCol | 0) * 104, y = fh + 18 + (k % perCol) * 7;
+      const x = 7 + (k / perCol | 0) * 104, y = 26 + (k % perCol) * 7;
       const sel = page + k === G.pediaSel;
       if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x - 2, y - 1, 102, 7); }
       FONT.tiny.draw(ctx, list[page + k].name, x, y, lut(sel ? 0xFC : 0xFE));
     }
-    FONT.tiny.center(ctx, '(Arrows to browse, Enter to read, Esc to close)',
-                     160, 190, lut(0x5D));
+    if (page + perCol * cols < list.length)
+      FONT.tiny.draw(ctx, DATA.text.misc[109], 246, 5, lut(HUD_INK));
+    FONT.tiny.draw(ctx, DATA.text.misc[110], 295, 5, lut(HUD_INK));
     return;
   }
   // Entry page.

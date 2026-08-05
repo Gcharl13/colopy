@@ -1720,6 +1720,55 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- live-DOSBox corrections (docs/LIVE_UI_CHECK_2026-08-05.md) ----
+  {
+    const LIVE_TERRAIN = ['Arctic','Boreal Forest','Broadleaf Forest','Conifer Forest',
+      'Desert','Grassland','Hills','Marsh','Mixed Forest','Mountains','Ocean','Plains',
+      'Prairie','Rain Forest','Savannah','Scrub Forest','Sea Lane','Swamp',
+      'Tropical Forest','Tundra','Wetland Forest'];
+    const wasCat = G.pediaCat;
+    G.pediaCat = 2;
+    const names = pediaList().map(e => e.name);
+    // Article ids stay the ENGINE terrain ids through the alphabetical sort:
+    // Arctic is @OTHER[0] = 24, Boreal Forest is @FORESTED[0] = 8.
+    const byName = Object.fromEntries(pediaList().map(e => [e.name, e.idx]));
+    G.pediaCat = wasCat;
+    out.liveFixes = {
+      terrainNames: names.length === 21 && names.every((n, i) => n === LIVE_TERRAIN[i]),
+      terrainIds: byName['Arctic'] === 24 && byName['Boreal Forest'] === 8
+                  && byName['Tundra'] === 0 && byName['Sea Lane'] === 26,
+      // Carried units are labelled by equipment / veteran status.
+      carriedLabels: carriedLabel('Pioneers') === '100 Tools'
+                     && carriedLabel('Soldiers') === 'Veteran'
+                     && carriedLabel('Caravel') === 'Caravel',
+    };
+  }
+  {
+    // Difficulty picker: both label lines stacked in the middle of the selected
+    // cell (cell.y+38 and +46) in that row's own ink, not split top/bottom.
+    const c = document.createElement('canvas'); c.width = 320; c.height = 200;
+    const g = c.getContext('2d');
+    const was = G.difficulty;
+    G.difficulty = 0;
+    drawDifficulty(g);
+    G.difficulty = was;
+    const d = g.getImageData(0, 0, 320, 200).data;
+    const cell = DIFF_CELL(0);
+    const greenRows = [];
+    for (let y = cell.y + 1; y < cell.y + cell.h - 1; y++) {
+      let n = 0;
+      for (let x = cell.x + 1; x < cell.x + cell.w - 1; x++) {
+        const o = (y * 320 + x) * 4;
+        if (d[o + 1] > 120 && d[o + 1] > d[o] + 40 && d[o + 1] > d[o + 2] + 40) n++;
+      }
+      if (n > 3) greenRows.push(y);
+    }
+    out.liveFixes.diffLabelRows =
+      greenRows.length > 0 && greenRows[0] === cell.y + 38
+      && greenRows.includes(cell.y + 46)
+      && !greenRows.some(y => y < cell.y + 30);   // nothing at the cell top
+  }
+
   // ---- fog path (§6.11: O513 @0x68212 -> O512 @0x68244) ----
   // Render single tiles onto a scratch canvas with exactly one map square
   // explored, and read back what the fog composer put down. Every expectation
@@ -1818,8 +1867,11 @@ def main():
          r["offer"] == ["Stay With Ships", "Make Landfall"], r["offer"]),
         ("@LANDFALL highlights the cautious row (@default is 1-based)",
          r["offerDefault"] == 0, r["offerDefault"]),
-        ("cargo goes ashore as units",
-         r["afterLandfall"]["units"] == ["Caravel", "Pioneers", "Soldiers"]
+        # Manifest order is Soldiers then Pioneers -- the live opening turn
+        # lists "Veteran" above "100 Tools" in the sidebar
+        # (docs/screens/live_2026-08-05/07_map_opening_turn.png).
+        ("cargo goes ashore as units, in manifest order",
+         r["afterLandfall"]["units"] == ["Caravel", "Soldiers", "Pioneers"]
          and r["afterLandfall"]["cargoLeft"] == 0, r["afterLandfall"]),
         ("woodcut 1 shown",
          r["afterLandfall"]["screen"] == "woodcut" and r["afterLandfall"]["woodcut"] == 1,
@@ -2106,6 +2158,13 @@ def main():
          and r["fogPath"]["biomeEdgeNeedsAnExploredNeighbour"], r["fogPath"]),
         ("CYCLE.DAT: one band of 8 from index 120, one step per 35 ticks at 60.8766 Hz",
          r["cycle"]["band"] and r["cycle"]["hz"] and r["cycle"]["sheets"], r["cycle"]),
+        ("pedia terrain index = 21 alphabetised names, article ids kept (live check)",
+         r["liveFixes"]["terrainNames"] and r["liveFixes"]["terrainIds"],
+         r["liveFixes"]),
+        ("carried units are labelled by equipment/veteran status (live check)",
+         r["liveFixes"]["carriedLabels"], r["liveFixes"]),
+        ("difficulty label stacks both lines mid-cell in the row ink (live check)",
+         r["liveFixes"]["diffLabelRows"], r["liveFixes"]),
         ("a cycle step moves each colour one index up, and 8 steps wrap to the start",
          all(r["cycle"][k] for k in ("phase0IsIdentity", "wrapsAtLen",
                                      "allDistinct", "walksUpOneIndexPerStep")),

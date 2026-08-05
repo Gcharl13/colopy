@@ -7099,3 +7099,70 @@ shorter than MAPEDIT's flags a **bad boundary** in the VICEROY inventory.
 **Follow-up**: whether to bulk-apply the 76 new names into
 `code/VICEROY/functions.json` — it is a generated artifact, so this needs a
 decision about provenance rather than more evidence. Deliberately not done here.
+
+## 2026-08-05 — Live DOSBox check: the pedia terrain index is 21 rows, and `@OTHER_NAMES` is a suffix table
+
+**Source**: the real game booted under DOSBox in-container and captured through
+its own framebuffer dump — `docs/screens/live_2026-08-05/`, method and harness
+in `docs/LIVE_UI_CHECK_2026-08-05.md` and `tools/dosbox_harness/`.
+
+**Ruling 1 — `@OTHER_NAMES` is a suffix/label table, not terrain entries.** Its
+five rows are `Forest`, `River`, `Major River`, `Minor River`, `Unexplored`. Row
+0, the literal string `"Forest"`, is what composes `@FORESTED`'s `Boreal` into
+the displayed `Boreal Forest`. The port had been concatenating all five onto the
+terrain index as if they were terrain names.
+
+**This was not a gap in the specification.** `spec/ui/colonizopedia.md` §
+already had it right — "ids 8..15 get `" Forest"` suffix (`[0x2DB0]`, NAMES
+`@OTHER_NAMES` line 0) — ids 16..23 do NOT", and the terrain record table entry
+"`@UNFORESTED`→0..7, `@FORESTED`→8..15, **16..23 = byte-copy of 8..15**
+(`rep movsw` @0x074A6D), `@OTHER`→24..28". The **port failed to implement what
+the spec documented**, and then papered over the shortfall with three invented
+rows. Rulings 2 and 3 below are therefore confirmations of the existing spec
+against a live frame, not new decode — the value of the live check here was
+catching an implementation that had drifted from a correct spec.
+
+**Ruling 2 — the Colonizopedia terrain index is 21 rows, alphabetised.**
+`@UNFORESTED`(8) + `@FORESTED`(8) suffixed as above + `@OTHER`(5) = 21, sorted.
+Reconstructed from the shipped tables and compared name-for-name against the
+live index: **exact match, all 21**.
+
+**Ruling 3 — the 29-articles-vs-21-rows gap is id sparseness, not a skip list.**
+`PEDIA.TXT` keys TERRAIN articles by **engine terrain id**, and those ids are
+not contiguous: `@UNFORESTED` 0–7, `@FORESTED` 8–15, `@OTHER` 24–28. Ids
+**16–23 are the auto-forest variants** (`CLAUDE.md` hard rule 3) — they own
+articles but no index row. This closes the standing "the enumerator has a
+per-category skip list that is not in the evidence" note in
+`docs/UI_AUDIT_TRACKER.md`: there is no skip list for TERRAIN.
+
+**Ruling 4 — the index fills column-major, 22 rows per column.** The live
+terrain index is a single column only because 21 < 22. The three-column layout
+in `spec/ui/colonizopedia.md` stands; it shows when a category is long enough.
+The live index carries **no category sub-heading and no keyboard hint** — the
+only chrome is `(Exit)` (`@MISC` 110) top-right and `(More)` (`@MISC` 109) when
+paging — and the masthead is **white**, not HUD green.
+
+**Ruling 5 — carried units are labelled by equipment/veteran status.** The
+opening turn's caravel manifest reads `Veteran` / `100 Tools`, not
+`Soldiers` / `Pioneers`. `"Veteran"` is `@MISC` 65, `"Tools"` is `@CARGO` 14.
+Manifest order is Soldiers then Pioneers. Verified for the starting force only;
+the rule for other carried types is **TBD** and the port falls back to the type
+name.
+
+**Ruling 6 — the difficulty picker stacks its two label lines mid-cell.** Lines
+at `cell.y+38` and `cell.y+46`, both in the row's own outline ink (`0x0A` for
+Discoverer), horizontally centred. That is *not* the nation picker's layout,
+which does split its two lines to the cell's top and bottom — and where both
+lines take the nation colour, not `254` for the name. The port had applied the
+nation layout to both screens.
+
+**Correction to the first write-up of this check**: I initially reported the
+difficulty picker as drawing its caption in the wrong *cell* and losing a
+portrait. That was an artifact of comparing two different selections (live on
+Discoverer, port on its default Conquistador). Re-rendered at matching
+difficulty, all five portraits are present and the caption is on the right cell.
+The real defect was only the within-cell placement and ink above.
+
+**Action taken**: all six fixed in `port/src/game.js`; three new assertions in
+`port/tools/test_flow.py` (170/170). `spec/ui/colonizopedia.md` and
+`docs/UI_AUDIT_TRACKER.md` updated.

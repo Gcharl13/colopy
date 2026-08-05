@@ -51,19 +51,39 @@ Side-by-side sheets: `_compare_boot_sequence.png`, `_compare_in_game.png`.
 
 **Not reached: the colony screen.** See §7 — this is an honest gap, not a pass.
 
-## 2. Difficulty picker — the label is drawn in the wrong place
+## 2. Difficulty picker — both label lines belong in the middle of the cell
+
+> **Corrected after the first write-up.** I originally read this as the port
+> drawing a plaque in the wrong *cell* and losing a portrait. That was wrong:
+> the two screenshots were at different selections (live on Discoverer, the port
+> on its default Conquistador), so the caption appeared in different cells for
+> an innocent reason. Re-rendering the port at Discoverer showed all five
+> portraits present and the caption on the correct cell. The real difference is
+> smaller and purely positional.
 
 Both render the same 3×2 grid with the title text in cell 0 and the five levels
 in cells 1–5, and the per-level outline ink matches (`{0x0A, 9, 0x0E, 0x0D,
 0x0C}` — Discoverer green, Explorer blue, confirmed live by clicking between
 them).
 
-The difference: **the real game paints the selected level's name over the
-selected portrait itself** (green text across the top of the portrait art). The
-port instead draws a separate framed plaque reading `CONQUISTADOR / Moderate` in
-the **bottom-left grid cell**, which in the real game holds the Conquistador
-*portrait*. So the port both loses a portrait and puts the caption somewhere the
-original never puts it.
+The difference: the **nation** picker splits its two lines to the top and bottom
+of the cell (`ENGLAND:` at the top edge, `Immigration` at the bottom), and the
+port applied that same layout to the **difficulty** picker. The original stacks
+the difficulty picker's two lines **together in the middle**, 8px apart:
+
+| | live | port (before) |
+|---|---|---|
+| line 1 `DISCOVERER:` | glyph row **45** = `cell.y + 38` | `cell.y + 2` |
+| line 2 `Easiest` | glyph row **53** = `cell.y + 46` | `cell.y + h - 9` |
+| both inks | **0x0A** `(4,182,16)`, the row's own colour | `254` and `0xFC` |
+
+Both lines are horizontally centred on the cell centre (measured 161.0 and
+161.5 against a cell centre of 161.5). The nation picker's own colours were also
+slightly off — live has **both** `ENGLAND:` and `Immigration` at `(247,0,0)` =
+`@COUNTRY.color` 12, where the port drew the name line in `254`.
+
+Fixed; the port's green rows now land on exactly 45–49 and 53–57, matching the
+live frame row for row.
 
 ## 3. Map sidebar — cargo units are labelled by equipment, not by type
 
@@ -82,8 +102,21 @@ Pioneers     Sentry
 ```
 
 The original labels a carried unit by its **veteran status / equipment load**
-("Veteran", "100 Tools"), not by the unit-type name. The port uses `@UNIT`
-names. Everything else in the sidebar — season+year, `Gold:`, `Tax:%`, the
+("Veteran", "100 Tools"), not by the unit-type name. The port used `@UNIT`
+names. `"Veteran"` is `@MISC` 65 (first of Veteran/Seasoned/Learned) and
+`"Tools"` is `@CARGO` 14, so the tools line is `<count> <cargo name>`.
+
+The **order** is also fixed: live lists Veteran above 100 Tools, i.e. the
+manifest is Soldiers-then-Pioneers, where the port had Pioneers first.
+
+Fixed for the two units of the starting force, which is all the capture proves.
+What a *non*-veteran Soldiers or another carried type shows is **TBD** and falls
+back to the type name rather than being guessed at. Still open: the carried
+unit's **icon + nation-plate composition** differs (the original puts the sprite
+flush left with a small plate beside it; the port draws a larger plate with the
+sprite offset). Not fixed — I would be inventing offsets.
+
+Everything else in the sidebar — season+year, `Gold:`, `Tax:%`, the
 active unit's moves and location, the `(Ocean)`/`Sea Lane` terrain line — lines
 up.
 
@@ -100,11 +133,39 @@ The port builds its terrain index from `@UNFORESTED`+`@FORESTED`+`@OTHER`+
 `@OTHER_NAMES` = 26 names against 29 `PEDIA.TXT` TERRAIN articles, shows ids
 26–28 by number, and lays the index out in **three columns**.
 
-This gives the standing "175 vs the spec's 162" question its first hard data:
-the enumerator drops entries **and** sorts alphabetically, and at least for the
-TERRAIN category the per-category index is **one column**, not three. The
-three-column layout in `spec/ui/colonizopedia.md` presumably belongs to the
-merged *Complete* index. Both need re-checking against this capture.
+**Solved.** The list is exactly
+
+```
+@UNFORESTED (8)  +  @FORESTED (8) each suffixed with @OTHER_NAMES[0]  +  @OTHER (5)
+```
+
+= **21**, sorted alphabetically — reconstructed from the shipped tables and
+compared name-for-name against the capture: **exact match, all 21**.
+
+Two errors fell out of it:
+
+- **`@OTHER_NAMES` is a suffix/label table, not five more terrain entries.** Its
+  first row is the literal string `"Forest"`, which is what turns `@FORESTED`'s
+  `Boreal` into `Boreal Forest`; the rest are `River`, `Major River`,
+  `Minor River`, `Unexplored`. The port had been appending all five as index
+  rows and then padding to 29 with invented `Terrain 26/27/28` entries.
+- **The 29-vs-21 gap is not a skip list.** `PEDIA.TXT` keys TERRAIN articles by
+  **engine terrain id**, and the ids the index shows are not contiguous:
+  `@UNFORESTED` is 0–7, `@FORESTED` 8–15, `@OTHER` 24–28. Ids **16–23 are the
+  auto-forest variants** (`CLAUDE.md` hard rule 3) — they have articles but no
+  index row. 21 rows over 29 articles, with nothing dropped arbitrarily.
+
+The single column is not special either: the index fills **column-major, 22 rows
+per column**, so a 21-row category never spills into column 2. The three-column
+layout in `spec/ui/colonizopedia.md` is right; it only shows when a category is
+long enough.
+
+The live index also carries **no category sub-heading and no keyboard hint** —
+the only chrome is `(Exit)` at the top right (`@MISC` 110) and `(More)` when the
+list pages (`@MISC` 109). Both of the port's extra lines were its own invention.
+The masthead is **white**, not the HUD green the rest of the browser uses.
+
+All of this is fixed in the port and asserted in `test_flow.py`.
 
 ## 5. `@LANDFALL` — the port omits the speaker portrait
 
