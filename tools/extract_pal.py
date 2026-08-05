@@ -30,7 +30,12 @@ def extract(pal_path: Path, out_dir: Path):
         r = data[i * 3 + 0]
         g = data[i * 3 + 1]
         b = data[i * 3 + 2]
-        pad = 0
+        # Byte 768+i: one flag per palette index, NOT padding. It holds only 0 or 5
+        # in the shipped file (5 across indices 0..151 and 252..255, 0 between), so
+        # it is real content and the extract is lossy without it -- which is what
+        # broke the encode_pal round-trip from 2026-06-27 to 2026-08-05. Its
+        # meaning is TBD; the loader is unidentified (docs/PALETTE_AND_CYCLING.md).
+        flag = data[768 + i] if len(data) >= 1024 else 0
         # Scale 6-bit -> 8-bit
         r8 = (r * 255 + 31) // 63
         g8 = (g * 255 + 31) // 63
@@ -39,7 +44,9 @@ def extract(pal_path: Path, out_dir: Path):
             "index": i,
             "vga_6bit": [r, g, b],
             "rgb_8bit": [r8, g8, b8],
-            "padding": pad,
+            # Kept under the old key so existing readers keep working; the value is
+            # now the real byte instead of a hardcoded 0.
+            "padding": flag,
         })
 
     sha = hashlib.sha256(data).hexdigest()
@@ -47,6 +54,8 @@ def extract(pal_path: Path, out_dir: Path):
         "source_file": pal_path.name,
         "source_sha256": sha,
         "format_spec": "formats/PAL.md",
+        "layout": "768 bytes of RGB triples, then one flag byte per index (768+i)",
+        "trailing_bytes": len(data) - 768,
         "entries": entries,
     }
     json_path = out_dir / "viceroy.pal.json"

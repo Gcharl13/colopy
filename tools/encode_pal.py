@@ -20,15 +20,18 @@ def encode(json_path: Path, out_path: Path) -> bytes:
     entries = obj["entries"]
     if len(entries) != 256:
         print(f"WARN: expected 256 entries, got {len(entries)}", file=sys.stderr)
+    # 768 bytes of RGB triples, then one flag byte per index. NOT a 4-byte
+    # interleave -- that reading was corrected on 2026-06-27 (formats/PAL.md),
+    # but this encoder kept the old stride until 2026-08-05, so the round-trip
+    # gate had been failing silently while STATUS.md reported it green.
     blob = bytearray(1024)
     for e in entries:
         i = e["index"]
         r, g, b = e["vga_6bit"]
-        pad = e["padding"]
-        blob[i * 4 + 0] = r
-        blob[i * 4 + 1] = g
-        blob[i * 4 + 2] = b
-        blob[i * 4 + 3] = pad
+        blob[i * 3 + 0] = r
+        blob[i * 3 + 1] = g
+        blob[i * 3 + 2] = b
+        blob[768 + i] = e["padding"]
     out_path.write_bytes(bytes(blob))
     return bytes(blob)
 

@@ -1,0 +1,9 @@
+{
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "original_filename": "AMER2.MP",
+  "sha256": "ea928f06e70564be997aa56575096c86cd7a985d41e584ba818c5c853b399dcc",
+  "format_spec": "formats/MP_FORMAT.md",
+  "extracted_to": "assets/maps/amer2.json"
+}

@@ -1,0 +1,9 @@
+{
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "original_filename": "VICEROY.PAL",
+  "sha256": "8ea9b23a1c8510da7dba91d5f0ca5761d0d36cc99ad03831e9c2e96439430ec9",
+  "format_spec": "formats/PAL.md",
+  "extracted_to": "assets/palettes/viceroy.pal.json"
+}
