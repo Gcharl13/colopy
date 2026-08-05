@@ -29,6 +29,12 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("fatigue",
+     "beginGame();sailToLand();"
+     "(()=>{const p=G.units[1];G.sel=1;p.movesLeft=p.moves-1;"
+     "const d=[[1,0],[0,1],[-1,0],[0,-1]].find(([dx,dy])=>!tileWater(at(p.x+dx,p.y+dy)));"
+     "G.natives.push({type:'Braves',icon:unit('Braves').icon,x:p.x+d[0],y:p.y+d[1],"
+     "tribe:0,orders:0,nation:-1});moveSel(d[0],d[1]);})();"),
     ("combat",
      "beginGame();sailToLand();"
      "(()=>{const p=G.units[1];G.sel=1;p.profession='Veteran Soldiers';"

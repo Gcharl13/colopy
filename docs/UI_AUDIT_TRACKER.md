@@ -415,3 +415,20 @@ silently with only a one-line status message.
 | Gate | **DONE** | Game Options bit **0x0200** "Combat Analysis". The full options dialog is not built, so the GAME menu's "Game Options" row toggles the one option this build honours. |
 | Ordering | **NOTED** | The engine shows the panel *after* the roll but *before* resolution renders. The port applies the result first and then shows the same figures over the map. The arithmetic is identical; only the moment the loser's sprite vanishes differs. |
 | The roll line | **NOTED** | The engine prints the raw roll only in cheat mode (`[0x5383]&0x20`). The port shows it always — it is the whole point of the panel for a player learning the odds — which is a deliberate deviation, not an oversight. |
+
+## Port: the combat aftermath (2026-08-05)
+
+§14.6, `apply_combat_result`. The port previously deleted whichever unit lost.
+That is not what the engine does, and the difference is large: most land defeats
+are a demotion or a capture, not a death.
+
+| Item | Status | Note |
+|---|---|---|
+| The demotion ladder | **DONE** | A beaten land unit falls one rung instead of dying: Dragoons→Soldiers, Soldiers→Colonists, Cont. Cav.→Cont. Army, Cavalry→Regulars, Cont. Army→Colonists. Anything with no rung below it is destroyed. `@DEMOTE`. |
+| Missionary special case | **DONE** | A unit demoting to Colonist while carrying the Missionary profession becomes a **Missionaries** unit instead. |
+| Veteran status | **DONE** | Lost on the way down — which is what `@COLONISTCAPTURE2` ("Soldiers lose Veteran status") announces on the capture path. |
+| Capture instead of death | **DONE** | Only **Colonists, Treasure and Wagon Trains** are capture-eligible, and only from a European owner: the unit changes hands intact. `@COLONISTCAPTURE` / `@COLONISTCAPTURE2` / `@WAGONCAPTURE` / `@LOOTCAPTURE`. **Not modelled:** the winning ship's transport-room requirement. |
+| Artillery damage states | **DONE** | A loss flips it to Damaged (`@ARTILLERY`, "Further damage will destroy it"); a damaged piece that loses again is destroyed (`@ARTILLERY2`). |
+| Ships | **DONE** | Damaged first (`@SHIPDAMAGE`, returns to port for repairs), sunk only if already damaged (`@SHIPSUNK`). **Not modelled:** the separate raw guns/hull roll for ship-vs-ship, cargo scatter on sinking, and the Privateer/Frigate-only guard on starting a ship attack. |
+| Promotion | **DONE** | `P = winner_strength / (ATK + DEF ± difficulty − class penalty)`, rolled `random_int(1,S)`; a human gets +difficulty, Petty Criminals cost 10 and Indentured Servants 5, and **George Washington skips the roll entirely**. The class ladder walks Petty Criminal → Indentured Servant → Free Colonist → Veteran, a Scout hardens to Seasoned (`@WELLSEASONED`), and at the soldier ceiling the **type** advances to Continental once the war has begun. `@VETERAN` / `@VALOR`. |
+| Fatigue | **PARTIAL** | Attacking with a part-spent unit now raises the byte-cited `@HALF` prompt **before the roll** — *"these men are tired… they will fight at 2/3 strength"* — with Charge! / Then let them rest. The penalty then shows as a **Fatigue** row in the Combat Analysis panel. The engine has two fatigue flags (`F&0x100` −33% and `S&8` −66%) but the evidence read does not give the rule that picks between them; the port uses "less than a third of the budget left" for the heavier penalty and flags that threshold as its own. |

@@ -264,7 +264,11 @@ def build_data():
               # Lost City Rumours
               "@LOSTCITY1", "@LOSTCITY2", "@LOSTCITY3", "@LOSTCITY4", "@LOSTCITY5",
               "@LOSTCITY6", "@LOSTCITY7", "@LOSTCITY8", "@LOSTCITY9",
-              "@BURIAL1", "@BURIAL2", "@BURIAL3"):
+              "@BURIAL1", "@BURIAL2", "@BURIAL3",
+              # Combat aftermath
+              "@DEMOTE", "@COLONISTCAPTURE", "@COLONISTCAPTURE2", "@WAGONCAPTURE",
+              "@LOOTCAPTURE", "@ARTILLERY", "@ARTILLERY2", "@SHIPDAMAGE",
+              "@SHIPSUNK", "@VETERAN", "@VALOR", "@WELLSEASONED", "@HALF"):
         if k not in full:
             continue
         sec = full[k]

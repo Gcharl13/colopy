@@ -449,6 +449,88 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- the combat aftermath: demotion, capture, promotion, fatigue ----
+  {
+    beginGame(); G.screen = 'map';
+    const foe = () => ({ type: 'Braves', icon: unit('Braves').icon, x: 0, y: 0,
+                         tribe: 0, orders: 0, nation: -1 });
+    // The demotion ladder: a beaten land unit falls one rung instead of dying.
+    const drag = mkUnit('Dragoons', 5, 5); G.units.push(drag);
+    applyDefeat(drag, foe());
+    const step1 = drag.type;
+    applyDefeat(drag, foe());
+    const step2 = drag.type;
+    out.ladder = { dragoonToSoldier: step1 === 'Soldiers',
+                   soldierToColonist: step2 === 'Colonists',
+                   stillAlive: G.units.includes(drag) };
+    // A Veteran loses veteran status on the way down.
+    const vet = mkUnit('Soldiers', 6, 6); vet.profession = 'Veteran Soldiers';
+    G.units.push(vet);
+    applyDefeat(vet, foe());
+    out.ladder.veteranLost = vet.profession === null;
+    // A Missionary profession demotes to a Missionaries unit, not a colonist.
+    const miss = mkUnit('Soldiers', 7, 7); miss.profession = 'Jesuit Missionaries';
+    G.units.push(miss);
+    applyDefeat(miss, foe());
+    out.ladder.missionary = miss.type === 'Missionaries';
+    // Anything with no rung below it is destroyed.
+    const art = mkUnit('Artillery', 8, 8); G.units.push(art);
+    applyDefeat(art, foe());
+    const damaged = art.damaged === true && G.units.includes(art);
+    applyDefeat(art, foe());
+    out.artillery = { damagedFirst: damaged, destroyedSecond: !G.units.includes(art) };
+
+    // Capture: a Wagon Train changes hands instead of dying.
+    const wag = mkUnit('Wagon Train', 9, 9); G.units.push(wag);
+    G.eventQueue = [];
+    const captor = { type: 'Braves', icon: 0, x: 9, y: 9, tribe: 0, nation: -1 };
+    applyDefeat(wag, captor);
+    out.capture = { changedHands: wag.nation === -1,
+                    leftYourUnits: !G.units.includes(wag),
+                    announced: G.eventQueue.length === 1 };
+
+    // Ships are damaged before they sink.
+    const ship = mkUnit('Caravel', 10, 10); G.units.push(ship);
+    applyDefeat(ship, foe());
+    const shipDamaged = ship.damaged === true && G.units.includes(ship);
+    applyDefeat(ship, foe());
+    out.ships = { damagedFirst: shipDamaged, sunkSecond: !G.units.includes(ship) };
+
+    // Promotion: George Washington skips the roll entirely.
+    G.fathersOwned = ['George Washington'];
+    const green = mkUnit('Soldiers', 11, 11); green.profession = 'Petty Criminals';
+    G.units.push(green);
+    G.eventQueue = [];
+    tryPromote(green, 1, 100);
+    out.promotion = { washingtonAuto: green.profession === 'Indentured Servants' };
+    const scout = mkUnit('Scouts', 12, 12); G.units.push(scout);
+    tryPromote(scout, 1, 100);
+    out.promotion.scoutSeasons = scout.profession === 'Seasoned Scouts';
+    G.fathersOwned = [];
+
+    // Fatigue: attacking with a part-spent unit offers @HALF first.
+    const tired = mkUnit('Soldiers', 20, 20); G.units.push(tired);
+    const brave2 = { type: 'Braves', icon: unit('Braves').icon, x: 21, y: 20,
+                     tribe: 0, orders: 0, nation: -1 };
+    G.natives.push(brave2);
+    G.sel = G.units.indexOf(tired);
+    tired.movesLeft = tired.moves - 1;           // a third of the budget spent
+    G.dialog = null;
+    moveSel(1, 0);
+    out.fatigue = { asks: !!G.dialog && G.dialog.opts.length === 2 };
+    if (G.dialog) {
+      closeDialog(1);                            // "Then let them rest."
+      out.fatigue.restStops = tired.movesLeft === 0 && G.natives.includes(brave2);
+    }
+    // Charging applies the penalty to the analysis.
+    tired.fatigue = 1;
+    const withF = combatAnalysis(tired, false);
+    tired.fatigue = 0;
+    const without = combatAnalysis(tired, false);
+    out.fatigue.costsStrength = withF.total < without.total &&
+                                withF.rows.some(r => r.label === 'Fatigue');
+  }
+
   // ---- the Combat Analysis panel ----
   {
     beginGame(); G.screen = 'map';
@@ -927,8 +1009,12 @@ SCRIPT = """() => {
                     tribe: 0, orders: 0, nation: -1 };
     G.natives.push(brave);
     const before = G.units.length + G.natives.length, t0 = G.tribes[0].tension;
-    G.sel = G.units.indexOf(sold); sold.movesLeft = 1; moveSel(1, 0);
-    out.combat = { someoneDied: G.units.length + G.natives.length === before - 1,
+    // Full moves, so no fatigue prompt intervenes.
+    G.sel = G.units.indexOf(sold); sold.movesLeft = sold.moves; moveSel(1, 0);
+    // §14.6: the loser does not necessarily die -- a beaten Soldier DEMOTES to
+    // Colonists instead. Either the brave died or the soldier fell a rung.
+    out.combat = { resolved: G.units.length + G.natives.length === before - 1 ||
+                             sold.type === 'Colonists',
                    tensionRose: G.tribes[0].tension > t0 };
 
     // adjust_tension halves positive deltas for France, not for others.
@@ -1180,6 +1266,16 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("a beaten land unit falls a rung instead of dying",
+         all(r["ladder"].values()), r["ladder"]),
+        ("artillery is damaged before it is destroyed",
+         all(r["artillery"].values()), r["artillery"]),
+        ("a Wagon Train is captured, not killed", all(r["capture"].values()), r["capture"]),
+        ("ships are damaged before they sink", all(r["ships"].values()), r["ships"]),
+        ("promotion walks the class ladder, and Washington skips the roll",
+         all(r["promotion"].values()), r["promotion"]),
+        ("tired troops are offered @HALF before the roll",
+         all(r["fatigue"].values()), r["fatigue"]),
         ("the combat chain itemises its own modifiers",
          all(r["analysis"].values()), r["analysis"]),
         ("the Combat Analysis panel shows, dismisses, and can be turned off",
@@ -1241,7 +1337,7 @@ def main():
          and r["settlementBands"]["levelsSeen"] == "0,1,2,3", r["settlementBands"]),
         ("natives seeded with villages and per-tribe tension",
          all(r["natives"].values()), r["natives"]),
-        ("attacking kills a combatant and angers the tribe",
+        ("attacking resolves and angers the tribe",
          all(r["combat"].values()), r["combat"]),
         ("adjust_tension halves anger for France only",
          all(r["tensionHalving"].values()), r["tensionHalving"]),

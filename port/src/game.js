@@ -3354,6 +3354,13 @@ function combatAnalysis(u, isDefender) {
     rows.push({ label: MISC(65), value: '+50%' });
     s = Math.floor(s * 3 / 2);
   }
+  // Fatigue: attacking with troops that have already spent their moves costs
+  // a third of their strength, and two thirds if they are truly spent. The
+  // @HALF prompt below offers the choice before the roll.
+  if (u.fatigue) {
+    rows.push({ label: MISC(76), value: u.fatigue === 2 ? '-66%' : '-33%' });
+    s = Math.floor(s * (u.fatigue === 2 ? 1 : 2) / 3);
+  }
   // Cargo aboard costs -12.5% per used hold.
   const holds = (u.cargo ? u.cargo.length : 0) + (u.hold ? u.hold.length : 0);
   if (holds) {
@@ -3410,8 +3417,151 @@ function combatAnalysis(u, isDefender) {
   return { base, rows, total: Math.max(1, s) };
 }
 function combatStrength(u, isDefender) { return combatAnalysis(u, isDefender).total; }
-// The attacker wins iff roll <= ATK. The loser is destroyed; a losing ship is
-// damaged first and only sunk if it was already damaged.
+// ------------------------------------------------- the combat aftermath
+// §14.6, apply_combat_result. A defeated land unit does NOT simply die.
+//
+// THE DEMOTION LADDER: it falls one rung instead. A demoted-to-Colonist with
+// the Missionary profession becomes a Missionaries unit instead, and a Veteran
+// Soldier loses veteran status on the way down (@DEMOTE / @COLONISTCAPTURE2).
+const DEMOTES_TO = {
+  'Dragoons': 'Soldiers',
+  'Soldiers': 'Colonists',
+  'Cont. Cav.': 'Cont. Army',
+  'Cavalry': 'Regulars',
+  'Cont. Army': 'Colonists',
+};
+// CAPTURE INSTEAD OF DEATH: only these three types are capture-eligible, and
+// only from a European owner.
+const CAPTURABLE = { 'Colonists': 'COLONISTCAPTURE', 'Treasure': 'LOOTCAPTURE',
+                     'Wagon Train': 'WAGONCAPTURE' };
+const ownerAdjective = (u) => u.nation >= 0 && DATA.nations[u.nation]
+  ? DATA.nations[u.nation].adjective
+  : u.tribe !== undefined && G.tribes[u.tribe] ? G.tribes[u.tribe].name : 'the King';
+function removeUnit(u) {
+  const i = G.units.indexOf(u);
+  if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
+  const k = G.refUnits.indexOf(u);
+  if (k >= 0) G.refUnits.splice(k, 1);
+  const j = G.natives.indexOf(u);
+  if (j >= 0) {
+    // §19.11: a brave's death stamps its village's rebuild request (flags 0x01);
+    // the next 20-tick produces the replacement instead of growth.
+    if (u.home) u.home.braveOwed = true;
+    G.natives.splice(j, 1);
+  }
+}
+function becomeType(u, name) {
+  const t = unit(name);
+  if (!t) return;
+  u.type = t.name; u.icon = t.icon;
+  u.moves = t.movement * MOVE_UNIT;
+  u.movesLeft = Math.min(u.movesLeft, u.moves);
+  u.ship = t.hull > 0;
+}
+// The whole aftermath for one loser. Returns nothing; it mutates the world.
+function applyDefeat(loser, winner) {
+  const t = unit(loser.type);
+  const S = { STRING0: ownerAdjective(loser), STRING1: loser.type,
+              STRING2: '', STRING3: winner.type };
+  // SHIPS: damaged first, sunk only if already damaged.
+  if (t && t.hull > 0) {
+    if (!loser.damaged) {
+      loser.damaged = true;
+      showEvent('SHIPDAMAGE', { ...S, STRING2: DATA.nations[G.nation].homeport });
+      return;
+    }
+    removeUnit(loser);
+    showEvent('SHIPSUNK', { ...S, STRING2: ownerAdjective(winner), STRING3: winner.type });
+    return;
+  }
+  // ARTILLERY: a loss flips it to Damaged; a damaged piece that loses again is
+  // destroyed.
+  if (loser.type === 'Artillery') {
+    if (!loser.damaged) {
+      loser.damaged = true;
+      showEvent('ARTILLERY', S);
+      return;
+    }
+    removeUnit(loser);
+    showEvent('ARTILLERY2', S);
+    return;
+  }
+  // CAPTURE: Colonists, Treasure and Wagon Trains change hands intact rather
+  // than dying -- but only from a European owner.
+  const capKey = CAPTURABLE[loser.type];
+  if (capKey && loser.nation >= 0) {
+    const veteranLost = loser.profession === 'Veteran Soldiers';
+    loser.nation = winner.nation;
+    loser.orders = 0;
+    if (veteranLost) loser.profession = null;
+    // A captured unit passes to the winner's side of the world.
+    removeUnit(loser);
+    if (winner.nation === G.nation) G.units.push(loser);
+    else if (winner.nation === -2) G.refUnits.push(loser);
+    else G.natives.push(loser);
+    const key = (capKey === 'COLONISTCAPTURE' && veteranLost) ? 'COLONISTCAPTURE2' : capKey;
+    showEvent(key, { STRING0: S.STRING0, STRING1: ownerAdjective(winner),
+                     NUMBER0: (loser.treasure || 0) * 100 });
+    return;
+  }
+  // THE DEMOTION LADDER.
+  const down = DEMOTES_TO[loser.type];
+  if (down) {
+    const wasVeteran = loser.profession === 'Veteran Soldiers' ||
+                       loser.profession === 'Veteran Dragoons';
+    // A demoted-to-Colonist carrying the Missionary profession becomes a
+    // Missionaries unit instead of a plain colonist.
+    if (down === 'Colonists' && loser.profession === 'Jesuit Missionaries')
+      becomeType(loser, 'Missionaries');
+    else becomeType(loser, down);
+    if (wasVeteran) loser.profession = null;              // veteran status is lost
+    showEvent('DEMOTE', { STRING0: S.STRING0, STRING1: S.STRING1, STRING2: loser.type });
+    return;
+  }
+  removeUnit(loser);
+  G.msg = `${loser.type} destroyed.`;
+}
+// PROMOTION, §14.6: P = winner_strength / (ATK + DEF +/- difficulty - class
+// penalty), rolled as random_int(1, S); a human gets +difficulty, an AI -it,
+// and Petty Criminals cost 10, Indentured Servants 5. George Washington skips
+// the roll entirely. The class ladder walks the winner up one rung; at the
+// soldier ceiling the unit TYPE advances instead.
+const RANK_LADDER = { 'Petty Criminals': 'Indentured Servants',
+                      'Indentured Servants': 'Free Colonists',
+                      'Free Colonists': 'Veteran Soldiers',
+                      null: 'Veteran Soldiers' };
+function tryPromote(winner, wStrength, total) {
+  if (winner.nation !== G.nation) return;                 // only your own men
+  const penalty = winner.profession === 'Petty Criminals' ? 10
+                : winner.profession === 'Indentured Servants' ? 5 : 0;
+  const S = Math.max(1, total + G.difficulty - penalty);
+  const auto = G.fathersOwned.includes('George Washington');
+  if (!auto && 1 + Math.floor(Math.random() * S) > wStrength) return;
+  // A Scout hardens to Seasoned rather than climbing the soldier ladder.
+  if (winner.type === 'Scouts' && winner.profession !== 'Seasoned Scouts') {
+    winner.profession = 'Seasoned Scouts';
+    showEvent('WELLSEASONED', {});
+    return;
+  }
+  const from = winner.profession;
+  const next = RANK_LADDER[from === undefined ? null : from];
+  if (next && from !== 'Veteran Soldiers') {
+    winner.profession = next;
+    if (next === 'Veteran Soldiers') showEvent('VETERAN', { STRING0: winner.type });
+    else showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
+                              STRING1: from || 'Free Colonists', STRING2: next });
+    return;
+  }
+  // At the ceiling the TYPE advances -- but only once the war has begun, which
+  // is what a Continental Army is.
+  if ((G.flags & WOI_DECLARED) && CONTINENTAL_OF[winner.type]) {
+    const to = CONTINENTAL_OF[winner.type];
+    becomeType(winner, to);
+    showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
+                         STRING1: 'Veteran', STRING2: to });
+  }
+}
+// The attacker wins iff roll <= ATK.
 function resolveAttack(att, def) {
   const AA = combatAnalysis(att, false), DD = combatAnalysis(def, true);
   const A = AA.total, D = DD.total;
@@ -3426,28 +3576,14 @@ function resolveAttack(att, def) {
                  def: { type: def.type, icon: def.icon, ...DD },
                  roll, win };
   }
-  const loser = win ? def : att;
-  const t = unit(loser.type);
-  if (t && t.hull > 0 && !loser.damaged) {
-    loser.damaged = true;
-    G.msg = `${loser.type} damaged.`;
-  } else {
-    const i = G.units.indexOf(loser);
-    if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
-    const k = G.refUnits.indexOf(loser);
-    if (k >= 0) G.refUnits.splice(k, 1);
-    const j = G.natives.indexOf(loser);
-    if (j >= 0) {
-      // §19.11: a brave's death stamps its village's rebuild request (flags
-      // 0x01); the next 20-tick produces the replacement instead of growth.
-      if (loser.home) loser.home.braveOwed = true;
-      G.natives.splice(j, 1);
-    }
-    G.msg = `${loser.type} destroyed.`;
-  }
+  const loser = win ? def : att, winner = win ? att : def;
+  applyDefeat(loser, winner);
+  tryPromote(winner, win ? A : D, A + D);
+  // The winner takes the emptied tile.
   if (win && !colonyAt(def.x, def.y) && !G.units.some(u => u.x === def.x && u.y === def.y)
-      && !G.natives.some(u => u.x === def.x && u.y === def.y)) {
-    att.x = def.x; att.y = def.y;                         // move into the emptied tile
+      && !G.natives.some(u => u.x === def.x && u.y === def.y)
+      && !G.refUnits.some(u => u.x === def.x && u.y === def.y)) {
+    att.x = def.x; att.y = def.y;
   }
   att.movesLeft = 0;
   return { A, D, roll, win };
@@ -4487,9 +4623,31 @@ function moveSel(dx, dy) {
   const foe = G.natives.find(n => n.x === nx && n.y === ny) ||
               G.refUnits.find(n => n.x === nx && n.y === ny);
   if (foe) {
-    resolveAttack(u, foe);
-    if (foe.tribe !== undefined) adjustTension(foe.tribe, 100);   // an act of war
-    advance();
+    // §14.3: tired troops are offered the choice BEFORE the roll -- charge at
+    // reduced strength, or rest. A unit that has already spent its budget this
+    // turn is the tired case.
+    const tired = u.movesLeft < u.moves;
+    const strike = () => {
+      resolveAttack(u, foe);
+      if (foe.tribe !== undefined) adjustTension(foe.tribe, 100);   // an act of war
+      u.fatigue = 0;
+      advance();
+    };
+    if (tired && !u.ship) {
+      // -33% or -66%: the engine has two fatigue flags (F&0x100 and S&8) but
+      // not, in the evidence read, the rule that picks between them. The port
+      // uses "less than a third of the budget left" for the heavier penalty
+      // and flags the threshold as its own.
+      u.fatigue = u.movesLeft * 3 <= u.moves ? 2 : 1;
+      askEvent('HALF', { NUMBER0: u.fatigue === 2 ? 1 : 2 }, (choice) => {
+        // Row 0 "Charge!", row 1 "Then let them rest."
+        if (choice !== 0) { u.fatigue = 0; u.movesLeft = 0; advance(); return; }
+        strike();
+      });
+      return;
+    }
+    u.fatigue = 0;
+    strike();
     return;
   }
   const vil = G.villages.find(v => v.x === nx && v.y === ny);
