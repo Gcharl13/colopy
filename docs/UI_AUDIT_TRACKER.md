@@ -149,11 +149,11 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 
 | Group | Status | Note |
 |---|---|---|
-| ORDERS | **MOSTLY DONE** | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live. **Absent**: Pillage, Go to Place, Begin Trade Route. |
+| ORDERS | **DONE** (2026-08-05 recheck) | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live, plus **Pillage** (`pillage`, game.js:1490), **Go to Place** (`beginGoTo`, deferred map-click destination) and **Begin Trade Route** (`openTradeMenu('assign')`). The earlier "Absent: Pillage, Go to Place, Begin Trade Route" note was stale — all three landed in the 2026-08-04 commits. |
 | VIEW | **DONE** | Move/View Pieces, European Status, Find Colony, Zoom In/Out, the four zoom levels, Show Hidden Terrain, Center View. Zoom spans verified as `(0xF<<z) × (0xC<<z)` at `(0x10>>z)` px. |
 | GAME | **DONE** | All nine rows bound: Save/Load (localStorage; the whole of `G` is the save), the three options dialogs, Pick Music, DECLARE INDEPENDENCE, Retire and Exit to DOS. |
 | REPORTS | **MOSTLY DONE** | F2 Religious, F3 Congress, F4 Labor, F5 Economic, F6 Colony, F7 Naval, F8 Foreign Affairs, F9 Indian and F10 Score are all built from real state, each over **its own REPORT&lt;N&gt;.PIK** (mapping established by matching the plates against the DOS captures — RULINGS.md 2026-08-04) with its own adviser portrait. F1 routes to the Colonizopedia terrain page, which is what it actually is. **PARTIAL**: the per-report body layouts are the port's own, not the byte-cited x-columns and y-flow in `advisor_reports.md`. |
-| TRADE | **TBD** | Trade-route editor not built. |
+| TRADE | **DONE** (2026-08-05 recheck) | Trade-route editor built — `openTradeMenu` create/assign/delete, stop list, destination picker; `shots.py` captures it as `traderoute`. The earlier "not built" note was stale. |
 | COLONIZOPEDIA | **DONE** 2026-08-04 | All seven categories plus Complete, articles straight from PEDIA.TXT, three-column index pager, stat blocks from the NAMES tables. |
 
 ### Colonizopedia notes
