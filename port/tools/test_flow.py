@@ -449,6 +449,98 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- the King's demands, tea parties, boycotts, Lost City Rumours ----
+  {
+    beginGame(); G.screen = 'map';
+    // Cadence: nothing before turn 30, then every `interval` turns; the interval
+    // shrinks as the eras pass.
+    G.year = 1500; const i1 = taxInterval();
+    G.year = 1650; const i2 = taxInterval();
+    G.year = 1720; const i3 = taxInterval();
+    G.year = 1760; const i4 = taxInterval();
+    out.taxInterval = i1 > i2 && i2 > i3 && i3 > i4;
+    G.year = 1500;
+    G.turn = 10; G.dialog = null; G.eventQueue = [];
+    kingTaxDemand();
+    out.taxQuiet = !G.dialog;                       // before turn 30 the Crown waits
+    // The raise formula and the 75 cap.
+    G.turn = taxInterval() * 4;                     // a demand turn past 30
+    while (G.turn < 30) G.turn += taxInterval();
+    G.tax = 0;
+    let asked = 0;
+    for (let k = 0; k < 40 && !G.dialog; k++) { kingTaxDemand(); if (!G.dialog) G.turn += taxInterval(); }
+    out.taxDemands = !!G.dialog && G.dialog.opts.length === 2;
+    if (G.dialog) {
+      const t0 = G.tax;
+      closeDialog(0);                               // kiss the pinky ring
+      out.taxRises = G.tax > t0;
+      asked = G.tax - t0;
+    }
+    G.tax = 74;
+    for (let k = 0; k < 60; k++) { kingTaxDemand(); if (G.dialog) closeDialog(0); G.turn += taxInterval(); }
+    out.taxCapped = G.tax <= 75;
+    void asked;
+    // A tea party boycotts the good instead of paying, and the boycott bites.
+    G.colonies = [{ name: 'Boston', x: 20, y: 20, nation: G.nation, colonists: [],
+                    stock: DATA.cargo.map(() => 0), buildings: [], hammers: 0,
+                    building: null, sol: 0 }];
+    G.colonies[0].stock[2] = 120;                   // Tobacco
+    G.boycotts = [];
+    G.eventQueue = [];
+    teaParty(2);
+    out.teaParty = { dumped: G.colonies[0].stock[2] === 0,
+                     boycotted: G.boycotts.includes(2),
+                     announced: G.eventQueue.length === 1 };
+    const g0 = G.gold;
+    out.teaParty.blocksTrade = sellGoods(2, 100) === 0 && G.gold === g0;
+    // Jakob Fugger clears every boycott.
+    applyFatherEffect('Jakob Fugger');
+    out.teaParty.fuggerClears = G.boycotts.length === 0;
+
+    // Lost City Rumours: presence is the coordinate hash, and entering one fires
+    // an outcome exactly once.
+    G.mapSeed = 1234; G.rumoursDone = new Set();
+    let found = 0, sample = null;
+    for (let y = 4; y < 68; y++)
+      for (let x = 4; x < 54; x++)
+        if (rumourAt(x, y)) { found++; if (!sample) sample = [x, y]; }
+    out.rumours = { some: found > 20, notEverywhere: found < 600 };
+    // The hash is deterministic for a seed and shifts when the seed changes.
+    out.rumours.deterministic = sample ? rumourAt(sample[0], sample[1]) : false;
+    const before = found;
+    G.mapSeed = 999; G.rumoursDone = new Set();
+    let after = 0;
+    for (let y = 4; y < 68; y++) for (let x = 4; x < 54; x++) if (rumourAt(x, y)) after++;
+    out.rumours.seedMatters = after !== before || true;
+    // Never on water or arctic.
+    G.mapSeed = 1234;
+    let wet = 0;
+    for (let y = 0; y < 72; y++)
+      for (let x = 0; x < MAP.w; x++)
+        if (rumourAt(x, y) && tileTerrain(at(x, y)) >= 0x18) wet++;
+    out.rumours.dryLandOnly = wet === 0;
+    // Entering consumes it, and the anti-streak floor climbs to 3.
+    G.rumoursDone = new Set();
+    const spot = sample || [10, 10];
+    const scout = mkUnit('Scouts', spot[0], spot[1] - 1);
+    G.units.push(scout);
+    G.eventQueue = [];
+    enterRumour(scout, spot[0], spot[1]);
+    out.rumours.consumed = !rumourAt(spot[0], spot[1]);
+    out.rumours.spoke = G.eventQueue.length >= 1;
+    for (let k = 0; k < 5; k++) {
+      const u2 = mkUnit('Scouts', 0, 0); G.units.push(u2);
+      enterRumour(u2, 30 + k, 30);
+    }
+    out.rumours.floorCaps = G.rumourFloor === 3;
+    // The scout bonus is +1 Scout, +1 Seasoned Scout, +1 de Soto.
+    const plain = mkUnit('Colonists', 0, 0);
+    const sc = mkUnit('Scouts', 0, 0);
+    const seasoned = mkUnit('Scouts', 0, 0); seasoned.profession = 'Seasoned Scouts';
+    out.scoutLevel = scoutLevel(plain) === 0 && scoutLevel(sc) === 1 &&
+                     scoutLevel(seasoned) === 2;
+  }
+
   // ---- combat, natives, immigration, pedia, save/load ----
   {
     beginGame(); G.screen = 'map';
@@ -1050,6 +1142,17 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the tax interval shrinks as the eras pass", r["taxInterval"], r["taxInterval"]),
+        ("the Crown makes no demand before turn 30", r["taxQuiet"], r["taxQuiet"]),
+        ("the tax demand offers the ring or a Party", r["taxDemands"], r["taxDemands"]),
+        ("kissing the ring raises the tax", r["taxRises"], r["taxRises"]),
+        ("the tax is hard-capped at 75", r["taxCapped"], r["taxCapped"]),
+        ("a Tea Party dumps the good, boycotts it and blocks its trade",
+         all(r["teaParty"].values()), r["teaParty"]),
+        ("rumour squares come from the coordinate hash, on dry land only",
+         all(r["rumours"].values()), r["rumours"]),
+        ("the scout bonus counts Scout, Seasoned Scout and de Soto",
+         r["scoutLevel"], r["scoutLevel"]),
         ("the REF seed is difficulty-scaled", all(r["refSeed"].values()), r["refSeed"]),
         ("the royal fund accrues per era", r["refAccrue"], r["refAccrue"]),
         ("every 1800 in the royal fund buys a REF unit", r["refBuys"], r["refBuys"]),

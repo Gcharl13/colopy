@@ -29,6 +29,14 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("kingtax",
+     "beginGame();G.screen='map';G.tax=12;G.gold=3000;G.turn=taxInterval()*4;"
+     "G.colonies=[{name:'Boston',x:20,y:20,nation:0,colonists:[],"
+     "stock:DATA.cargo.map((_,i)=>i===2?140:0),buildings:[],hammers:0,building:null,sol:20}];"
+     "for(let k=0;k<40&&!G.dialog;k++){kingTaxDemand();if(!G.dialog)G.turn+=1;}"),
+    ("lostcity",
+     "beginGame();G.screen='map';G.rumourFloor=3;"
+     "showEvent('LOSTCITY3',{NUMBER0:180})"),
     ("declare",
      "beginGame();G.screen='map';"
      "G.colonies=[{name:'Boston',x:G.units[0].x,y:G.units[0].y,nation:G.nation,"

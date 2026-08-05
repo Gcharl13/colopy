@@ -278,6 +278,8 @@ const G = {
   rivals: [], metAnyone: false,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
+  mapSeed: 0, rumoursDone: new Set(), rumourFloor: 1,
+  foundFountain: false, foundCibola: false,
   report: null,           // open F-key report
   natives: [],            // native units on the map
   villages: [], tribes: [], fathersOwned: [],
@@ -360,6 +362,11 @@ function beginGame() {
   seedRivals();
   seedREF();
   G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
+  // The map generator's first act is to store random_int(0, 0x7FFF) as the seed
+  // the rumour hash reads (@0x64A23).
+  G.mapSeed = Math.floor(Math.random() * 0x8000);
+  G.rumoursDone = new Set(); G.rumourFloor = 1;
+  G.foundFountain = false; G.foundCibola = false;
   G.metAnyone = false;
   seedMarket();
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
@@ -927,7 +934,13 @@ function drawTile(ctx, mx, my, px, py) {
   const df = detailFrame(mx, my, v);
   if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
   drawImprovements(ctx, mx, my, px, py);
+  // A Lost City Rumour square. Its presence is computed, not stored, so the
+  // marker is drawn wherever the hash says one stands. ICONS 17 is the gold
+  // sunburst that reads as the rumour marker on the DOS map; no catalogue entry
+  // names it, so the identification is by eye -- flagged.
+  if (rumourAt(mx, my)) sheetFrame(ctx, 'ICONS', RUMOUR_ICON, px, py);
 }
+const RUMOUR_ICON = 17;
 // Roads are their own layer (@0x6842B, base engine 0x51 + an 8-direction
 // connectivity mask, func_067D54 -- brown, and empty on a new map). On disk
 // that base is 0x50: 0x50 is the isolated junction stub, 0x51..0x58 are the
@@ -1655,7 +1668,7 @@ function autoExport(c) {
     if (i === GOOD.FOOD || c.stock[i] < 100) continue;
     const excess = c.stock[i] - 50;
     c.stock[i] = 50;
-    if (G.declared) continue;                             // wasted, not sold
+    if (G.declared || isBoycotted(i)) continue;           // wasted, not sold
     const gross = excess * G.market[i];
     const tax = Math.floor(gross * G.tax / 100);
     G.gold += gross - tax;
@@ -2093,8 +2106,12 @@ function driftMarket() {
 // SELL: gross = price*qty, tax = gross*rate/100, you keep the rest and the
 // King's fund gains the tax. Selling floods the market, so the accumulator
 // rises and the price falls.
+// A boycotted good cannot be traded in Europe at all -- the mask is tested on
+// every trade (@0x030B47), and only paying the back tax or seating Jakob Fugger
+// clears it.
+const isBoycotted = (i) => G.boycotts.includes(i);
 function sellGoods(i, qty) {
-  if (qty <= 0) return 0;
+  if (qty <= 0 || isBoycotted(i)) return 0;
   const gross = G.market[i] * qty;
   const tax = Math.floor(gross * G.tax / 100);
   G.gold += gross - tax;
@@ -2105,6 +2122,7 @@ function sellGoods(i, qty) {
 }
 // BUY is untaxed and pays the ask; buying drains the market, so the price rises.
 function buyGoods(i, qty) {
+  if (isBoycotted(i)) return 0;
   const cost = askPrice(i) * qty;
   if (cost > G.gold) return 0;
   G.gold -= cost;
@@ -2293,6 +2311,10 @@ function sellFromShip(i) {
   if (i < 0) return;
   const ship = activeShip();
   if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+  if (isBoycotted(i)) {
+    G.euroMsg = `${DATA.cargo[i].name} is under boycott.`;
+    return;
+  }
   const qty = holdQty(ship, i);
   if (!qty) { G.euroMsg = `No ${DATA.cargo[i].name} aboard.`; return; }
   const net = sellGoods(i, qty);
@@ -3073,14 +3095,16 @@ function showEvent(key, subs) {
 }
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
-function askEvent(key, subs, onDone) {
+function askEvent(key, subs, onDone, optsKey) {
   const t = DATA.events[key];
   if (!t) { if (onDone) onDone(-1); return; }
+  // Most event popups carry their own rows in a second paragraph; the King's
+  // tax demand instead pairs its pretext body with the shared @TAXOPTIONS rows.
+  const rowsFrom = optsKey && DATA.events[optsKey] ? DATA.events[optsKey].body : t.tail;
+  const rows = rowsFrom.map(l => fillTemplate(l, subs || {}));
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
-    tail: t.tail.map(l => fillTemplate(l, subs || {})),
-    width: t.width, onDone,
-    opts: t.tail.map(l => fillTemplate(l, subs || {})),
+    tail: rows, width: t.width, onDone, opts: rows,
     sel: t.default && /^\d+$/.test(t.default) ? +t.default : 0,
   };
 }
@@ -3496,6 +3520,198 @@ function applyFatherEffect(name) {
       for (const p of c.colonists)
         if (p.profession === CONVERT_CLASS) p.profession = 'Free Colonists';
   }
+}
+
+// ------------------------------------------ the King's tax demands
+// spec/systems/king.md, byte-verified throughout.
+//
+// CADENCE (func_036138 @0x36150..0x361BA): nothing before turn 30; then a demand
+// fires only when turn % interval == 0, where interval starts at 18 and shrinks
+// to 15 / 12 / 9 as the year crosses 1600 / 1700 / 1750, further reduced by a
+// human-player difficulty term (difficulty - 2). Skipped once tax > 85.
+function taxInterval() {
+  const base = G.year >= 1750 ? 9 : G.year >= 1700 ? 12 : G.year >= 1600 ? 15 : 18;
+  return Math.max(2, base - (G.difficulty - 2));
+}
+// RAISE (func_034AE0, read instruction by instruction):
+//   delta       = ((difficulty & 0xFE) << 1) + 4
+//   turn_factor = (turn / 400) + 1
+//   candidate   = delta * turn_factor
+//   no demand if candidate + 5 >= tax; below candidate it also needs a
+//   random_int(1, difficulty + 1) roll to come up non-1.
+// The raise is applied to tax_pct and hard-clamped at 75 (func_034318 @0x03434F).
+const TAX_CAP = 75;
+function taxRaise() {
+  const delta = ((G.difficulty & 0xFE) << 1) + 4;
+  const turnFactor = Math.floor(G.turn / 400) + 1;
+  return delta * turnFactor;
+}
+// PRETEXT (func_036138 @0x361CC..0x36221): a severity score picks which excuse
+// the Crown gives, and it escalates with unrest, tax and treasure.
+//   sev = random_int(1,1000) + (2*rebel_sentiment - tax)*5 + gold/100 + turn/30
+// wedding < 0x28A, war < 0x3B6, Navigation Acts < 0x44C, else the Stamp Act.
+function taxPretext() {
+  const sev = 1 + Math.floor(Math.random() * 1000)
+    + (2 * nationalSoL() - G.tax) * 5
+    + Math.floor(G.gold / 100)
+    + Math.floor(G.turn / 30);
+  if (sev < 0x28A) return 'KINGWIFE';
+  if (sev < 0x3B6) return 'KINGWAR';
+  if (sev < 0x44C) return 'KINGNAVACT';
+  return 'KINGSTAMPACT';
+}
+// The Crown addresses you by your difficulty rank -- [0x8394] is a 5-entry table
+// of salutation strings, one per difficulty (RESOLVED 2026-06-20). @DIFFICULTY
+// carries exactly those five names.
+const kingSalutation = () => DATA.difficulty[G.difficulty];
+function kingTaxDemand() {
+  if (G.flags & WOI_DECLARED) return;              // no King to obey any more
+  if (G.turn < 30 || G.tax > 85) return;
+  if (G.turn % taxInterval() !== 0) return;
+  const candidate = taxRaise();
+  if (candidate + 5 >= G.tax) { /* the gate below still applies */ }
+  if (G.tax <= candidate && 1 + Math.floor(Math.random() * (G.difficulty + 1)) === 1) return;
+  const raise = Math.max(1, Math.min(TAX_CAP - G.tax, candidate));
+  if (raise <= 0) return;
+  // The good the Sons of Liberty would throw into the sea: the one your colonies
+  // hold most of, which is what a Party costs you.
+  const stock = DATA.cargo.map((_, i) =>
+    G.colonies.reduce((n, c) => n + c.stock[i], 0));
+  let good = 0;
+  for (let i = 1; i < 16; i++) if (stock[i] > stock[good]) good = i;
+  const party = DATA.cargo[good].name;
+  const subs = { STRING0: kingSalutation(), STRING1: G.leader || DATA.nations[G.nation].leader,
+                 STRING2: DATA.nations[G.nation].adjective, STRING3: party,
+                 NUMBER0: raise, NUMBER1: G.tax + raise };
+  askEvent(taxPretext(), subs, (choice) => {
+    // @TAXOPTIONS row 0 kisses the ring, row 1 holds the Party.
+    if (choice === 1) {
+      teaParty(good);
+      return;
+    }
+    G.tax = Math.min(TAX_CAP, G.tax + raise);
+  }, 'TAXOPTIONS');
+}
+// The Tea Party: the good is thrown into the sea at one colony, the tax is NOT
+// raised, and the good is boycotted -- PowerRecord +0x20 is a 16-bit mask, bit i
+// per good (`or [bx+0x20], 1<<good` @0x034717), tested on every trade
+// (@0x030B47) and cleared in full by Jakob Fugger (@0x03BD45).
+function teaParty(good) {
+  const c = G.colonies.find(x => x.stock[good] > 0) || G.colonies[0];
+  const tons = c ? c.stock[good] : 0;
+  if (c) c.stock[good] = 0;
+  if (!G.boycotts.includes(good)) G.boycotts.push(good);
+  showEvent('TEAPARTY', { STRING0: DATA.cargo[good].name,
+                          STRING1: c ? c.name : DATA.nations[G.nation].homeport,
+                          STRING3: DATA.cargo[good].name, NUMBER0: tons });
+}
+
+// ------------------------------------------------ Lost City Rumours
+// spec/systems/events.md. Rumour PRESENCE is procedural, not a stored marker:
+// func_006188 hashes the coordinates against the map seed [0x190] --
+//   ((x>>2)*0x13 + (y>>2)*0x11 + seed + 8) & 0x1F - (y&3)*4 == (x&3)
+// gated on the terrain not being Arctic / Ocean / Sea Lane (0x18/0x19/0x1A).
+// The engine adds a third gate on the tile's feature high-nibble being 0xF
+// ("none"); the port has no feature-nibble plane, so that gate is not
+// reproduced -- flagged. The seed is rolled per game, as the map generator does.
+function rumourAt(x, y) {
+  const t = tileTerrain(at(x, y));
+  if (t >= 0x18) return false;                     // Arctic, Ocean, Sea Lane
+  const h = ((x >> 2) * 0x13 + (y >> 2) * 0x11 + G.mapSeed + 8) & 0x1F;
+  return h - (y & 3) * 4 === (x & 3) && !G.rumoursDone.has(y * MAP.w + x);
+}
+// The scout bonus, byte-verified in func_061454: +1 for a Scout, +1 for a
+// Seasoned Scout, +1 if the power holds Hernando de Soto (who also forces a
+// positive-outcome reroll).
+function scoutLevel(u) {
+  let s = 0;
+  if (u.type === 'Scouts') s += 1;
+  if (u.profession === 'Seasoned Scouts') s += 1;
+  if (G.fathersOwned.includes('Hernando de Soto')) s += 1;
+  return s;
+}
+const d = (n) => 1 + Math.floor(Math.random() * n);
+const dsum = (k, n) => { let t = 0; for (let i = 0; i < k; i++) t += d(n); return t; };
+// The outcome index is random_int(1,9) raised to an ANTI-STREAK FLOOR that
+// climbs by one per rumour and caps at 3 -- so the two good low outcomes
+// (1 Fountain of Youth, 2 Cibola) are only reachable on the first rumours.
+// A quality roll random_int(1,100) + scout*10 against thresholds 10/25 then
+// demotes them, and each is capped once per game.
+function enterRumour(u, x, y) {
+  G.rumoursDone.add(y * MAP.w + x);
+  const s = scoutLevel(u);
+  let n = Math.max(G.rumourFloor, d(9));
+  G.rumourFloor = Math.min(G.rumourFloor + 1, 3);
+  const quality = d(100) + s * 10;
+  if (n === 1 && (G.foundFountain || quality < 10)) n = quality < 10 ? 5 : 6;
+  if (n === 2 && (G.foundCibola || quality < 25)) n = 4;
+  const tribe = G.tribes[Math.floor(Math.random() * G.tribes.length)];
+  switch (n) {
+    case 1: {                                      // Fountain of Youth: 8 immigrants
+      G.foundFountain = true;
+      for (let k = 0; k < 8; k++) G.dockUnits.push(rollImmigrant().type || 'Colonists');
+      showEvent('LOSTCITY1', {});
+      break;
+    }
+    case 2: {                                      // Cibola: a Treasure unit
+      G.foundCibola = true;
+      const value = 10 * (s + 2) + d(20);
+      const t = mkUnit('Treasure', x, y);
+      t.treasure = value;                          // the class byte holds value/100
+      G.units.push(t);
+      showEvent('LOSTCITY2', { NUMBER1: value * 100 });
+      break;
+    }
+    case 3: {                                      // ruins: gold = 10 * 3d8, scaled
+      const gold = Math.floor(10 * dsum(3, 8) * (s + 2) / 2);
+      G.gold += gold;
+      showEvent('LOSTCITY3', { NUMBER0: gold });
+      break;
+    }
+    case 4: {                                      // burial mounds
+      const roll = d(3);
+      if (roll === 1) showEvent('BURIAL1', {});
+      else if (roll === 2) {
+        const gold = 10 * dsum(3, 8);
+        G.gold += gold;
+        showEvent('BURIAL2', { NUMBER0: gold });
+      } else {
+        const value = 2 * (d(8) + 2 * (s + 5));
+        const t = mkUnit('Treasure', x, y);
+        t.treasure = value;
+        G.units.push(t);
+        showEvent('BURIAL3', { NUMBER1: value * 100 });
+      }
+      break;
+    }
+    case 5: {                                      // the expedition vanishes
+      const i = G.units.indexOf(u);
+      if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+      showEvent('LOSTCITY5', {});
+      return false;                                // the unit is gone: do not step
+    }
+    case 6:
+      showEvent('LOSTCITY6', {});
+      break;
+    case 7: {                                      // a friendly tribe's gift
+      const gold = 2 * dsum(4, 10);
+      G.gold += gold;
+      showEvent('LOSTCITY7', { NUMBER0: gold });
+      break;
+    }
+    case 8:                                        // trespass on holy ground
+      if (tribe) adjustTension(G.tribes.indexOf(tribe), 20);
+      showEvent('LOSTCITY8', { STRING0: tribe ? tribe.name : '' });
+      break;
+    default: {                                     // survivors swear allegiance
+      const c = G.colonies[0];
+      if (c) c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
+      else G.units.push(mkUnit('Colonists', x, y));
+      showEvent('LOSTCITY9', { STRING0: DATA.nations[G.nation].country });
+      break;
+    }
+  }
+  return true;
 }
 
 // ------------------------------------- the Declaration and the REF war
@@ -4046,6 +4262,7 @@ function endTurn() {
   ageConverts();
   nativeRaids();
   runRivals();
+  kingTaxDemand();
   runWar();
   driftMarket();
   advanceCrossings();
@@ -4153,6 +4370,9 @@ function moveSel(dx, dy) {
   // The right-edge sea-lane column is the route home: a ship that enters it
   // sails for Europe and leaves the map (CLAUDE.md hard rule 2, terrain 26).
   if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) { sailForEurope(u); return; }
+  // A land unit entering a rumour square triggers the exploration event, and
+  // one outcome destroys the unit before it ever arrives.
+  if (!u.ship && rumourAt(nx, ny)) { if (!enterRumour(u, nx, ny)) { advance(); return; } }
   step(u, nx, ny);
 }
 

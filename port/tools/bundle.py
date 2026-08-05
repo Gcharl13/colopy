@@ -257,7 +257,14 @@ def build_data():
               # Declaration, the REF war and its endings
               "@DECLARE", "@TOOTORY", "@ALREADYREVOLUTION", "@INDEPENDENCE",
               "@MOBILIZE", "@MOBILIZE2", "@WARN1", "@WARN2", "@WARN3",
-              "@CONSIDER", "@INTERVENTION", "@KINGLOSE", "@KINGWIN"):
+              "@CONSIDER", "@INTERVENTION", "@KINGLOSE", "@KINGWIN",
+              # The King's tax demands and the tea party
+              "@KINGTAX", "@KINGWIFE", "@KINGWAR", "@KINGNAVACT", "@KINGSTAMPACT",
+              "@TAXOPTIONS", "@TEAPARTY",
+              # Lost City Rumours
+              "@LOSTCITY1", "@LOSTCITY2", "@LOSTCITY3", "@LOSTCITY4", "@LOSTCITY5",
+              "@LOSTCITY6", "@LOSTCITY7", "@LOSTCITY8", "@LOSTCITY9",
+              "@BURIAL1", "@BURIAL2", "@BURIAL3"):
         if k not in full:
             continue
         sec = full[k]
