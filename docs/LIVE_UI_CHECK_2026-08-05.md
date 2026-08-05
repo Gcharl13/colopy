@@ -191,6 +191,61 @@ Arawak first-contact popup (`61`), which shows the chief portrait on the right.
 - Starting gold **1000** at Discoverer matches the difficulty table.
 - The `Original America / Map Editor` prompt fires before difficulty select.
 
+## 6a. Advisor reports — rebuilt (2026-08-05, second pass)
+
+The first pass captured F2/F3/F4 as references but did not compare them against
+the port. Doing so found the port's reports were wrong in kind, not degree:
+
+- **There is no advisor portrait.** The port blitted an `MSS0`–`MSS5` sprite
+  into the corner of every report. The shared draw chain
+  (`spec/ui/advisor_reports.md` §2.1) is plate → title → footer rule → OK, and
+  the painted scene in `REPORT<N>.PIK` *is* the advisor. The portrait was
+  invented. Removed from all ten.
+- **The bodies are tables and sprite rows, not wrapped paragraphs.** The port
+  drew each report as a text stack.
+
+Rebuilt against the captures, with the spec's byte cites confirmed by pixels:
+
+| element | value | source |
+|---|---|---|
+| title ink | `0x90` = (255,255,190), glyph top y=5, centred | measured, matches spec |
+| subtitle | `@MISC` 56 "(Click on item to zoom)" at y=12 | measured |
+| row label ink | `0x92` = (255,243,93) | measured = spec |
+| value ink | `0x61` = (247,243,199) | measured = spec |
+| rule ink | `0x77` = (134,0,0) | spec |
+
+**F4 Labor** is a three-column occupation matrix: column bases x = **2 / 107 /
+212**, name at base+12, count centred at base+39 eight pixels below it, first
+row y=**26**, row pitch **18**, icon at (base+2, y−2). The icon is **ICONS frame
+81 + job index** — found by matching the live pixels against every frame in the
+sheet: Farmer→81, Sugar Planter→82, Fisherman (job 8)→89, all at score 1.000.
+Column split 8/9/10 follows `@JOB`'s own grouping (the eight field jobs that
+have yield columns, then the indoor trades, then the classes).
+
+**F2 Religious** is one crosses gauge. The segments are **spaced, not packed**:
+six filled crosses (ICONS 56 = engine 0x39) at x = 10, 43, 76, 110, 143, 177 —
+x-start `0x0A` exactly as the spec says, pitch ≈33.
+
+### Residuals, explicitly not guessed
+
+- **The gauge slot count.** Pitch 33 over a 300-wide span implies 9 slots, but a
+  single frame cannot separate "9 slots" from some other derivation, so `9` is a
+  measured constant in the code, flagged as such.
+- **F4's occupation tail.** The live grid fills 27 rows; `@JOB` has 28 entries
+  plus a "Free Colonists" row. The port's column 3 order therefore diverges from
+  the capture (it shows Veteran Dragoons, the live one does not). The grid stops
+  when it runs out of entries rather than inventing any.
+- **F3 Continental Congress** has the right elements — session line, bell gauge
+  (sprite `0x3F`), rebel/tory strip (`0x7C`/`0x7D`), REF quartet, FF name grid at
+  columns {4,82,160,238} — but its **vertical rhythm is wrong**: the sections
+  overlap where the original spaces them out. The per-section y advance is the
+  font-height flow accumulator the spec marks **R**, and I have one frame, so it
+  is left visibly imperfect rather than fudged to match a single screenshot.
+- **F5–F10 are not rebuilt.** They are portrait-free and use the byte-cited
+  title/inks, but their bodies are still the port's own text stacks. The spec
+  has full column geometry for F7 (4-column ruled table), F8, F6 and F5; that is
+  the obvious next unit of work.
+
 ## 7. Not reached — the colony screen
 
 Three attempts. The colony screen needs a landed colonist to execute Build

@@ -5442,7 +5442,7 @@ function scoreParts() {
 const REPORT_PIK = { F2: 'REPORT2', F3: 'REPORT3', F4: 'REPORT4', F5: 'REPORT5',
                      F6: 'REPORT6', F7: 'REPORT7', F8: 'REPORT8', F9: 'REPORT1' };
 const REPORTS = {
-  F2: { title: 'Religious Adviser', adviser: 'MSS4', body: () => {
+  F2: { title: DATA.text.misc[30], draw: drawReligiousReport, body: () => {
     const thr = immigrationThreshold();
     return [`Crosses: (${G.crosses} of ${thr})`,
             `Produced per turn: ${crossesPerTurn()}`,
@@ -5451,7 +5451,7 @@ const REPORTS = {
             'the threshold counts every colonist',
             'and every unit you own.'];
   } },
-  F5: { title: 'Economic Adviser', adviser: 'MSS2', body: () => {
+  F5: { title: 'Economic Adviser', body: () => {
     const l = [`Treasury: ${G.gold} gold`, `Tax rate: ${G.tax}%`,
                `Paid to the Crown: ${G.kingsFund} gold`, '', 'Market  bid / ask'];
     DATA.cargo.forEach((g, i) => {
@@ -5460,7 +5460,7 @@ const REPORTS = {
     });
     return l;
   } },
-  F6: { title: 'Colony Adviser', adviser: 'MSS5', body: () => {
+  F6: { title: 'Colony Adviser', body: () => {
     if (!G.colonies.length) return ['You have founded no colonies.'];
     return G.colonies.map(c => {
       const f = colonyFood(c);
@@ -5469,7 +5469,7 @@ const REPORTS = {
              (c.building ? `, building ${c.building}` : '');
     });
   } },
-  F3: { title: 'Continental Congress', adviser: 'MSS1', body: () => {
+  F3: { title: DATA.text.misc[37], draw: drawCongressReport, body: () => {
     const cost = fatherCost();
     const l = [`Liberty bells: (${cost - G.bells} in ${cost})`,
                `Produced per turn: ${bellsPerTurn()}`,
@@ -5479,7 +5479,8 @@ const REPORTS = {
     else { l.push('In Congress:'); for (const f of G.fathersOwned) l.push(`  ${f}`); }
     return l;
   } },
-  F4: { title: 'Labor Adviser', adviser: 'MSS5', body: () => {
+  F4: { title: DATA.text.misc[49], subtitle: DATA.text.misc[56],
+        draw: drawLaborReport, body: () => {
     if (!G.colonies.length) return ['You have no colonies.'];
     const l = [];
     for (const c of G.colonies) {
@@ -5495,7 +5496,7 @@ const REPORTS = {
   } },
   // The seven byte-verified score components (func_039EE2) and the computed
   // difficulty multiplier {4,5,6,8,10}.
-  F10: { title: 'Colonization Score', adviser: 'MSS1', body: () => {
+  F10: { title: 'Colonization Score', body: () => {
     const s = scoreParts();
     return [
       `Population        ${s.population}`,
@@ -5509,7 +5510,7 @@ const REPORTS = {
       `Difficulty x${s.mult}   TOTAL ${s.total}`,
     ];
   } },
-  F8: { title: 'Foreign Affairs Adviser', adviser: 'MSS0', body: () => {
+  F8: { title: 'Foreign Affairs Adviser', body: () => {
     if (!G.rivals.length) return ['No other powers are in the New World.'];
     return G.rivals.map(r => {
       const n = DATA.nations[r.nation];
@@ -5517,7 +5518,7 @@ const REPORTS = {
       return `${n.country}: ${r.colonies.length} colonies, ${r.units.length} units`;
     });
   } },
-  F9: { title: 'Indian Adviser', adviser: 'MSS3', body: () => {
+  F9: { title: 'Indian Adviser', body: () => {
     const band = (n) => n >= TENSION_WAR ? 'War'
                      : n >= TENSION_HOSTILE ? 'Hostile'
                      : n >= 40 ? 'Restless' : n >= 20 ? 'Uneasy' : 'Content';
@@ -5526,7 +5527,7 @@ const REPORTS = {
       return `${t.name}: ${band(t.tension)} (${t.tension})  ${villages} settlements`;
     });
   } },
-  F7: { title: 'Naval Adviser', adviser: 'MSS0', body: () => {
+  F7: { title: 'Naval Adviser', body: () => {
     const l = [];
     for (const u of G.units) if (u.ship) l.push(`${u.type} at (${u.x}, ${u.y})`);
     for (const e of G.europe)
@@ -5534,24 +5535,189 @@ const REPORTS = {
     return l.length ? l : ['You have no ships.'];
   } },
 };
+// ---- advisor reports: the shared frame (spec/ui/advisor_reports.md §2.1) ----
+// Background plate + centred title + OK button. There is NO advisor portrait:
+// the shared draw chain is plate / title / footer rule / OK, and the painted
+// scene in REPORT<N>.PIK *is* the advisor. The port used to blit an MSS0-5
+// portrait over the plate -- that was invented, and the live captures
+// (docs/screens/live_2026-08-05/2*_report_*.png) show no such sprite.
+//
+// Title colour 0x90 = (255,255,190), glyph top y=5, centred on 160; the
+// subtitle sits at y=12. Both measured off 20_report_F4_labor.png, and both
+// match the spec's byte cites.
+const REPORT_TITLE_INK = 0x90;
+const REPORT_NAME_INK = 0x92;    // (255,243,93) -- row labels
+const REPORT_VALUE_INK = 0x61;   // (247,243,199) -- counts
+const REPORT_RULE_INK = 0x77;    // (134,0,0) dark red -- separators
+
 function drawReport(ctx) {
   const r = REPORTS[G.report];
   const pik = REPORT_PIK[G.report] || 'WOODPANL';
   usePalette(pik);
   ctx.drawImage(IMG[pik] || IMG.WOODPANL, 0, 0);
   if (!r) { FONT.tiny.center(ctx, 'Not in this build.', 160, 96, lut(0xFE)); return; }
-  FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 6, lut(HUD_INK));
-  const [pw, ph] = frameSize(r.adviser, 0);
-  if (pw) sheetFrame(ctx, r.adviser, 0, 320 - pw - 6, 200 - ph);
-  let y = 22;
-  for (const line of r.body()) {
-    for (const l2 of wrapText(FONT.tiny, line, 200)) {
-      FONT.tiny.draw(ctx, l2, 10, y, lut(0xFE));
-      y += FONT.tiny.height + 2;
+  FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 5, lut(REPORT_TITLE_INK), ink(0));
+  if (r.subtitle) FONT.tiny.center(ctx, r.subtitle, 160, 12, lut(REPORT_TITLE_INK), ink(0));
+  // Per-report body: a byte-cited table where we have one, else the old text
+  // stack (still portrait-free) for the reports not yet rebuilt.
+  if (r.draw) r.draw(ctx);
+  else {
+    let y = 26;
+    for (const line of r.body()) {
+      for (const l2 of wrapText(FONT.tiny, line, 300)) {
+        FONT.tiny.draw(ctx, l2, 2, y, lut(REPORT_NAME_INK), ink(0));
+        y += FONT.tiny.height + 2;
+      }
+      if (!line) y += 2;
     }
-    if (!line) y += 2;
   }
-  FONT.tiny.center(ctx, '(Esc to close)', 160, 190, lut(0x5D));
+  okButton(ctx);
+}
+
+// The OK widget the shared chain closes with (@MISC 46), bottom right.
+function okButton(ctx) {
+  const w = 24, h = 11, x = 320 - w - 6, y = 200 - h - 4;
+  ctx.fillStyle = ink(REPORT_RULE_INK); ctx.fillRect(x, y, w, h);
+  hollowRect(ctx, x, y, w - 1, h - 1, REPORT_VALUE_INK);
+  FONT.tiny.center(ctx, DATA.text.misc[46] || 'OK', x + w / 2, y + 3,
+                   lut(REPORT_VALUE_INK), ink(0));
+}
+
+// ---- F4 Labor: the occupation matrix -------------------------------------
+// Three columns of [unit sprite][expert name] with the count under the name.
+// All of this is measured off the live frame and cross-checked with the spec:
+//   column bases x = 2 / 107 / 212        (spec: profession column di, name di+0xC)
+//   name x = base + 12, ink 0x92          (spec @0x3889F)
+//   count x = base + 39, ink 0x61         (spec: label_x + 0x27, @0x38675)
+//   first row y = 26, row pitch 18, count 8px under its name
+//   icon at (base + 2, y - 2)
+// The icon is ICONS frame **81 + job index** -- found by matching the live
+// pixels against every ICONS frame: Farmer->81, Sugar Planter->82,
+// Fisherman(job 8)->89, all three at score 1.000.
+//
+// Column split is 8 / 9 / 10, which is @JOB's own grouping: 0..7 the field
+// jobs (the eight that have yield columns), 8..16 the indoor trades, then the
+// classes. TBD: the live frame shows 27 filled rows where @JOB has 28 entries
+// plus a "Free Colonists" row -- the exact tail of the list is unresolved, so
+// the grid simply stops when it runs out of entries rather than inventing any.
+const F4_COLS = [2, 107, 212];
+const F4_SPLIT = [8, 9, 10];
+const F4_ICON_BASE = 81;
+const F4_ROW0 = 26, F4_PITCH = 18;
+
+function drawLaborReport(ctx) {
+  const experts = DATA.jobexpert || [];
+  let job = 0;
+  for (let c = 0; c < F4_COLS.length; c++) {
+    const base = F4_COLS[c];
+    for (let row = 0; row < F4_SPLIT[c]; row++, job++) {
+      const name = experts[job];
+      if (!name) return;
+      const y = F4_ROW0 + row * F4_PITCH;
+      sheetFrame(ctx, 'ICONS', F4_ICON_BASE + job, base + 2, y - 2);
+      FONT.tiny.draw(ctx, name, base + 12, y, lut(REPORT_NAME_INK), ink(0));
+      FONT.tiny.center(ctx, String(countProfession(job)), base + 39, y + 8,
+                       lut(REPORT_VALUE_INK), ink(0));
+    }
+  }
+}
+
+// ---- shared report primitives --------------------------------------------
+// `0x236` (func_002EE4): a segment-sprite GAUGE. It tiles the FILLED sprite
+// across `span` up to the value, then the EMPTY sprite 0x38 past the
+// threshold. Not a coloured bar -- a row of little sprites.
+// Engine sprite numbers are one ahead of the atlas index (port README), so an
+// engine 0x39 is disk frame 0x38.
+// The segments are SPACED across the span, not packed edge to edge. Measured
+// on the live F2 gauge (21_report_F2_religious.png): six filled crosses --
+// ICONS frame 56, i.e. engine 0x39 -- at x = 10, 43, 76, 110, 143, 177. That
+// is x-start 0x0A exactly as the spec says, at a pitch of ~33 = span/slots.
+// TBD: what sets the slot count. 300/33.4 gives 9, but one frame cannot
+// separate "9 slots" from "pitch derived some other way", so SLOTS is a
+// measured constant here rather than a decoded one.
+const GAUGE_EMPTY = 0x38 - 1;
+const GAUGE_SLOTS = 9;
+function gauge(ctx, x, y, span, filledEngineSprite, value, max) {
+  const disk = filledEngineSprite - 1;
+  const [fw] = frameSize('ICONS', disk);
+  if (!fw) return;
+  const pitch = Math.max(fw, Math.floor(span / GAUGE_SLOTS));
+  const on = max > 0 ? Math.min(GAUGE_SLOTS, Math.round(GAUGE_SLOTS * value / max)) : 0;
+  for (let i = 0; i < on; i++) sheetFrame(ctx, 'ICONS', disk, x + i * pitch, y);
+}
+
+// `0x222` enqueue + `0x22C` flush: lay `count` copies of each sprite out
+// left-to-right within the span, in order.
+function spriteStrip(ctx, x, y, span, items) {
+  let cx = x;
+  for (const [engineSprite, count] of items) {
+    const disk = engineSprite - 1;
+    const [fw] = frameSize('ICONS', disk);
+    if (!fw) continue;
+    for (let i = 0; i < count && cx + fw <= x + span; i++, cx += fw)
+      sheetFrame(ctx, 'ICONS', disk, cx, y);
+  }
+}
+
+// ---- F2 Religious: one crosses gauge -------------------------------------
+// spec §4: X=0xA, Y=0x19, span 0x12C, FILLED sprite 0x39, EMPTY 0x38.
+function drawReligiousReport(ctx) {
+  gauge(ctx, 0x0A, 0x19, 0x12C, 0x39, G.crosses, immigrationThreshold());
+  FONT.tiny.draw(ctx, `${G.crosses} / ${immigrationThreshold()}`, 0x0A, 0x19 + 20,
+                 lut(REPORT_VALUE_INK), ink(0));
+}
+
+// ---- F3 Continental Congress ---------------------------------------------
+// spec §4: bell gauge (X=4, span 0x12C, FILLED 0x3F); rebel/tory sprite strip
+// (rebel 0x7C x rebel-count, tory 0x7D x tory-count, x=4); FF name grid at
+// columns {4,82,160,238}, step 0x4E, 4 per row, colour 0x61.
+const F3_FF_COLS = [4, 82, 160, 238];
+function drawCongressReport(ctx) {
+  const fh = FONT.tiny.height + 2;
+  let y = 24;
+  FONT.tiny.draw(ctx, DATA.text.misc[112] || 'Next Continental Congress Session:',
+                 4, y, lut(REPORT_NAME_INK), ink(0));
+  y += fh;
+  gauge(ctx, 4, y, 0x12C, 0x3F, G.bells, fatherCost());
+  y += 12;
+  // Rebel sentiment = the mean Sons-of-Liberty percentage across colonies.
+  const rebel = G.colonies.length
+    ? Math.round(G.colonies.reduce((a, c) => a + (c.sol || 0), 0) / G.colonies.length)
+    : 0;
+  FONT.tiny.draw(ctx, `${DATA.text.misc[70] || 'Rebel'} ${rebel}%   ` +
+                      `${DATA.text.misc[71] || 'Tory'} ${100 - rebel}%`,
+                 4, y, lut(REPORT_NAME_INK), ink(0));
+  y += fh;
+  spriteStrip(ctx, 4, y, 0x12C,
+              [[0x7C, Math.round(rebel / 10)], [0x7D, Math.round((100 - rebel) / 10)]]);
+  y += 12;
+  FONT.tiny.draw(ctx, DATA.text.misc[85] || 'Expeditionary Force:', 4, y,
+                 lut(REPORT_NAME_INK), ink(0));
+  y += fh;
+  // REF quartet: engine icons 126/127/10/128 (spec §4, oracle DGROUP read).
+  spriteStrip(ctx, 4, y, 0x12C,
+              [[126, G.ref.Regulars || 0], [127, G.ref.Cavalry || 0],
+               [10, G.ref.Artillery || 0], [128, G.ref['Man-O-War'] || 0]]);
+  y += 14;
+  FONT.tiny.draw(ctx, DATA.text.misc[86] || 'Founding Fathers:', 4, y,
+                 lut(REPORT_NAME_INK), ink(0));
+  y += fh;
+  G.fathersOwned.forEach((name, i) => {
+    FONT.tiny.draw(ctx, name, F3_FF_COLS[i % 4], y + Math.floor(i / 4) * fh,
+                   lut(REPORT_VALUE_INK), ink(0));
+  });
+}
+
+// Colonists working that job, across every colony, plus units in the field
+// carrying the matching profession.
+function countProfession(job) {
+  const expert = (DATA.jobexpert || [])[job];
+  let n = 0;
+  for (const col of G.colonies)
+    for (const c of col.colonists)
+      if (c.job === job || c.profession === expert) n++;
+  for (const u of G.units) if (u.profession === expert) n++;
+  return n;
 }
 
 // ------------------------------------------------------------ immigration
