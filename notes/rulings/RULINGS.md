@@ -6878,3 +6878,142 @@ part7 §29.4), but the tick rate and rotation direction are TBD — the cycle-ti
 function is unidentified and `CYCLE.DAT`'s 34 bytes are undecoded
 (`docs/PALETTE_AND_CYCLING.md`). The port therefore renders the water static, at
 the master palette's phase, which is the phase the live map capture shows.
+
+## 2026-08-05 — CYCLE.DAT decoded: one band of 8 from index 120, rotating up every 35 ticks of a 60.8766 Hz timer
+
+**Question**: `docs/PALETTE_AND_CYCLING.md` carried three open items — the
+cycle-tick function was "not yet annotated", `CYCLE.DAT`'s 34 bytes were
+undecoded (and guessed to be "a tiny code patch / animation script" because they
+"plausibly decode as x86 instructions"), and the rate and direction of the
+rotation were unknown. `port/README.md` recorded the same gap: the port rendered
+water static because it could not name a tick rate.
+
+**Source**. `MAPEDIT.EXE` ships CodeView symbols, and among them is a module
+`cycle_1.c.obj` exporting **`_cycle_init`** (file `0x0107AA`, `0xF1A:0x00A`) and
+**`_cycle_colors`** (file `0x010846`, `0xF1A:0x0A6`) —
+`code/MAPEDIT/disasm_named/cycle_1.c.asm`, symbols in
+`data_extracted/mapedit_symbols.json`. VICEROY links the same C module: its
+`cycle_init` is at file **`0x0C4A4`** (`0x0A0A:0x004`, reached through thunk
+`0x181F:0x0EAE`) and its `cycle_colors` at file **`0x0C51A`** (`0x0A0A:0x07A`).
+The two compilations differ only in memory model — MAPEDIT holds the palette in
+a near buffer at `0x6048`, VICEROY behind a far pointer at `[0x36E]` — and are
+otherwise instruction-for-instruction identical.
+
+### The format
+
+`CYCLE.DAT` is **not code**. It is
+
+```c
+struct { uint16 count; struct { uint8 len, phase, start, delay; } band[8]; };
+```
+
+= 2 + 8×4 = **34 bytes**, exactly the shipped size. `cycle_init` reads the count
+from `[0x929E]` (`cmp [0x929e], ax` @`0x0C4F9`) and walks `band[i]` at
+`0x92A0 + 4i` (`shl bx,2` then `[bx-0x6D60]`, i.e. DGROUP `0x92A0`, @`0x0C4E5`).
+Field roles, each from its use site in `cycle_colors`:
+
+| off | field | site | role |
+|---|---|---|---|
+| +0 | `len` | `[bx-0x6D60]` @`0x0C58F` | entries in the band; also the `3*len` copy length and the phase modulus |
+| +1 | `phase` | `[bx-0x6D5F]` @`0x0C60D` | runtime rotation counter — `cycle_init` zeroes it (@`0x0C4EF`) |
+| +2 | `start` | `[bx-0x6D5E]` @`0x0C598` | first palette index; also the upload base (`[0x92A2]` @`0x0C62E`) |
+| +3 | `delay` | `[bx-0x6D5D]` @`0x0C55F` | ticks between rotations |
+
+The shipped file is `01 00 | 08 3D 78 23 | …`: **count = 1**, and
+`band[0] = { len 8, start 0x78 = 120, delay 0x23 = 35 }`. Bands 1..7 are
+uninitialised bytes from whatever tool wrote the file — which is precisely why
+the tail "plausibly decodes as x86": it *is* stray code, but it is dead, never
+read (the loop bound is `count`), and carries no meaning. The `phase` byte in
+`band[0]` (`0x3D`) is likewise dead, overwritten with 0 at init.
+
+### The rate
+
+`timer_install` programs the PIT with divisor **`0x7A8` = 1960**
+(`push 0x7a8` @`0x0C843` → `TIMER_SET_RATE` @`0x0E508`, `out 0x43,0x36` /
+`out 0x40`), so IRQ0 fires at 1193182/1960 = **608.766 Hz**. The ISR gates twice:
+`test [0x8338],1` @`0x0C6A5` drops the odd ticks (**/2**), and
+`dec byte [0x376]` @`0x0C6F5` with its reload of **5** @`0x0C70B` divides again,
+giving the 32-bit counter at `[0x92E8]` incremented at
+608.766/2/5 = **60.8766 Hz**. `timer_install` points the timer-read vector at
+that counter (`[0x267A] = 0x92E8` @`0x0C857`), and `cycle_colors` reads it
+through `@timer_read` (`lcall 0xC0C:6` @`0x0C544`). MAPEDIT names the same three
+counters `@timer_read_dos` / `@timer_read_600` / `@timer_read_60`, confirming
+the intended tiers.
+
+So one rotation step = **35 / 60.8766 = 0.5749 s**, and a full 8-entry round
+trip = **4.5995 s**. The period is wall-clock, not frame-count: `cycle_colors`
+fires when `last + delay <= now` and then sets `last = now`, so the animation
+runs at the same speed whatever the frame rate.
+
+### The direction
+
+`cycle_colors` @`0x0C5B2`–`0x0C5F3` sets `STD` and runs three descending
+`rep movsb`: 3 bytes of the band's **last** colour into a temp, then `3*len-3`
+bytes shifting the band up one slot, then the temp into the **first** slot.
+Each colour therefore moves to the **next higher index**, and the last wraps to
+the first. After `p` steps, palette index `start+k` shows the colour authored at
+`start + ((k-p) mod len)`.
+
+### How it runs
+
+`cycle_colors` has **no static caller**. It is installed as the timer ISR's
+low-priority callback: `push 0x0A0A; push 0x007A; lcall 0x0A29:0x21B` @`0x04B62`
+(MAPEDIT's `_TIMER_ACTIVATE_LOW_PRIORITY` @`0xD1C:0x23D`; the two timer modules
+are offset by a constant `0x22`), and the ISR calls it via `lcall [0x92E4]`
+@`0x0C795` — i.e. at the full 60.8766 Hz. Two guards: `[0x372]`, the enable set
+by `cycle_init(([0x5383] & 1) ? 0 : 1)` @`0x076314`–`0x076323` as the map screen
+comes up; and `[0x808]`, a DAC-busy lock set at the head of every routine that
+streams the palette ports directly (@`0x0D1E9`, `0x0E71C`, `0x07854D`), which
+keeps the interrupt off the hardware mid-transfer. The upload is
+`mcga_setpal_range(pal, band[0].start, total)` (`lcall 0x0C2E:0x22` @`0x0C637`),
+where `total` is the summed length of all bands — correct for one band, and a
+latent assumption that multiple bands would be contiguous.
+
+### What actually animates
+
+Band 120..127 is a monotone blue ramp in `VICEROY.PAL`, and it is a **duplicate**
+of part of the static ocean ramp: index 120 == index 56 and index 127 == index 59,
+byte for byte. The duplicate exists so the band can rotate without disturbing the
+ocean's own shades. Scanning every `.SS` for band pixels, the map view's sheets
+use it like this:
+
+| sheet | frames | band pixels |
+|---|---|---|
+| `TERRAIN` | 11 (Sea Lane) | 62 |
+| `TERRAIN` | 7 | 2 |
+| `PHYS0` | 1..31 (rivers), 150..153 (clean coast edges) | 475 |
+| `ICONS` | 123 | 3 |
+
+**Ocean (`TERRAIN` frame 10) has zero band pixels.** The open sea in this game
+does not shimmer — what moves is the sea-lane column, the rivers, and the clean
+coast edges. `PHYS0` and `ICONS` carry master-palette colours across the whole
+band already (measured: 0 differing entries), and `TERRAIN` is forced to the
+master by the previous ruling, so all three are consistent.
+
+**Ruling**: `CYCLE.DAT` is the struct above; the shipped band is
+`{start 120, len 8, delay 35}`; rotation is one index up per step with wraparound
+at 60.8766 Hz / 35 ticks. The doc's "tiny code patch / custom VM" reading is
+**refuted**, and so is the claim (`port/README.md`, manual part1 "Palette
+animation" / part7 §29.4) that **bands 54–60 and 120–127** both cycle: 54–60 has
+no entry in `CYCLE.DAT` and is static.
+
+**Action taken**:
+- `docs/PALETTE_AND_CYCLING.md` rewritten from the disassembly; all four "Open
+  work" items closed.
+- `data_extracted/data/CYCLE_DAT.json` — the old `cycles` array was a naive
+  pair-scan over all 34 bytes and pure noise; replaced with the real decode.
+- `port/tools/build_assets.py` — `CYCLE` + `CYCLED_SHEETS`; `sheet_to_png` also
+  emits a band mask (`<SHEET>.cycle.png`, source index in R) for TERRAIN/PHYS0/
+  PHYS0C/ICONS.
+- `port/src/game.js` — `cycAtlas()` builds one re-tinted atlas per phase on
+  demand; `sheetFrame` selects by `cyclePhase()` off the wall clock, seeded at
+  map entry as `cycle_init` does. `G.cyclePhase` pins it for tests and shots.
+- `port/tools/test_flow.py` — the band/period/rate, phase-0 identity, wrap at
+  `len`, all-8-distinct, and the up-one-index-per-step direction. 167/167.
+
+**Follow-up**: the live capture `docs/screens/06_ingame_map.png` is at **phase 0**
+— re-measured against all 8 phases with the now-correct band and direction, and
+phase 0 wins 3/256 against 60–62/256 for every other phase. That independently
+confirms the previous ruling's phase-0 finding and leaves its **3-pixel residual
+unexplained and still TBD**: it is not a palette question, not a capture
+artifact, and now demonstrably not a cycle-phase artifact either.

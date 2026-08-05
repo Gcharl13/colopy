@@ -338,6 +338,10 @@ def build_data():
 
     man = json.load(open(ASSETS / "manifest.json"))
     D["sheets"] = {k: {"frames": v["frames"]} for k, v in man["sheets"].items()}
+    # VGA colour cycling: the band, its step period, and which atlases carry a
+    # mask the renderer can re-tint per phase (CYCLE.DAT, build_assets.CYCLE).
+    D["cycle"] = dict(man["cycle"])
+    D["cycle"]["sheets"] = sorted(k for k, v in man["sheets"].items() if "cycle" in v)
     # Each .PIK carries its own palette, which overrides the master VICEROY.PAL
     # placeholders (0xFC-0xFE are magenta there) -- see manual App. B.
     D["palettes"] = {k: v["pal"] for k, v in man["backgrounds"].items()}
@@ -365,8 +369,10 @@ def main():
     assets = {}
     for bg in man["backgrounds"]:
         assets[bg] = uri(ASSETS / f"{bg}.png")
-    for sh in man["sheets"]:
+    for sh, meta in man["sheets"].items():
         assets["SS_" + sh] = uri(ASSETS / f"{sh}.png")
+        if "cycle" in meta:
+            assets["CYC_" + sh] = uri(ASSETS / meta["cycle"])
     for f in man["fonts"]:
         for lvl in (1, 2, 3):
             assets[f"FONT_{f}_L{lvl}"] = uri(ASSETS / f"FONT_{f}_L{lvl}.png")

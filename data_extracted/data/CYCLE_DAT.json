@@ -1,122 +1,129 @@
 {
-  "size": 34,
-  "hex": "0100083d782374103d05007503e913013d0700741ae90b01ff760a57569a00002a2d",
-  "bytes": [
-    1,
-    0,
-    8,
-    61,
-    120,
-    35,
-    116,
-    16,
-    61,
-    5,
-    0,
-    117,
-    3,
-    233,
-    19,
-    1,
-    61,
-    7,
-    0,
-    116,
-    26,
-    233,
-    11,
-    1,
-    255,
-    118,
-    10,
-    87,
-    86,
-    154,
-    0,
-    0,
-    42,
-    45
+ "source": "COLONIZE/CYCLE.DAT",
+ "size": 34,
+ "hex": "0100083d782374103d05007503e913013d0700741ae90b01ff760a57569a00002a2d",
+ "bytes": [
+  1,
+  0,
+  8,
+  61,
+  120,
+  35,
+  116,
+  16,
+  61,
+  5,
+  0,
+  117,
+  3,
+  233,
+  19,
+  1,
+  61,
+  7,
+  0,
+  116,
+  26,
+  233,
+  11,
+  1,
+  255,
+  118,
+  10,
+  87,
+  86,
+  154,
+  0,
+  0,
+  42,
+  45
+ ],
+ "_doc": "VGA colour-cycling table. Layout `{uint16 count; struct {uint8 len, phase, start, delay;} band[8];}` = 34 bytes, decoded from cycle_init (VICEROY file 0x0C4A4) and cycle_colors (file 0x0C51A) -- the same cycle_1.c module MAPEDIT.EXE carries CodeView symbols for. Only the first `count` bands are read; the rest are uninitialised authoring-tool bytes, which is why the tail of the file disassembles as stray x86. `phase` is runtime state, zeroed by cycle_init, so its value on disk is dead too. See docs/PALETTE_AND_CYCLING.md and notes/rulings/RULINGS.md 2026-08-05.",
+ "count": 1,
+ "bands": [
+  {
+   "len": 8,
+   "phase": 61,
+   "start": 120,
+   "delay": 35,
+   "active": true
+  },
+  {
+   "len": 116,
+   "phase": 16,
+   "start": 61,
+   "delay": 5,
+   "active": false
+  },
+  {
+   "len": 0,
+   "phase": 117,
+   "start": 3,
+   "delay": 233,
+   "active": false
+  },
+  {
+   "len": 19,
+   "phase": 1,
+   "start": 61,
+   "delay": 7,
+   "active": false
+  },
+  {
+   "len": 0,
+   "phase": 116,
+   "start": 26,
+   "delay": 233,
+   "active": false
+  },
+  {
+   "len": 11,
+   "phase": 1,
+   "start": 255,
+   "delay": 118,
+   "active": false
+  },
+  {
+   "len": 10,
+   "phase": 87,
+   "start": 86,
+   "delay": 154,
+   "active": false
+  },
+  {
+   "len": 0,
+   "phase": 0,
+   "start": 42,
+   "delay": 45,
+   "active": false
+  }
+ ],
+ "timer": {
+  "pit_divisor": 1960,
+  "irq0_hz": 608.7663265306122,
+  "isr_dividers": [
+   2,
+   5
   ],
-  "cycles": [
-    {
-      "start": 1,
-      "end": 0,
-      "count": 0
-    },
-    {
-      "start": 8,
-      "end": 61,
-      "count": 54
-    },
-    {
-      "start": 120,
-      "end": 35,
-      "count": 0
-    },
-    {
-      "start": 116,
-      "end": 16,
-      "count": 0
-    },
-    {
-      "start": 61,
-      "end": 5,
-      "count": 0
-    },
-    {
-      "start": 0,
-      "end": 117,
-      "count": 118
-    },
-    {
-      "start": 3,
-      "end": 233,
-      "count": 231
-    },
-    {
-      "start": 19,
-      "end": 1,
-      "count": 0
-    },
-    {
-      "start": 61,
-      "end": 7,
-      "count": 0
-    },
-    {
-      "start": 0,
-      "end": 116,
-      "count": 117
-    },
-    {
-      "start": 26,
-      "end": 233,
-      "count": 208
-    },
-    {
-      "start": 11,
-      "end": 1,
-      "count": 0
-    },
-    {
-      "start": 255,
-      "end": 118,
-      "count": 0
-    },
-    {
-      "start": 10,
-      "end": 87,
-      "count": 78
-    },
-    {
-      "start": 86,
-      "end": 154,
-      "count": 69
-    },
-    {
-      "start": 42,
-      "end": 45,
-      "count": 4
-    }
-  ]
+  "tick_hz": 60.87663265306122,
+  "_doc": "cycle_colors reads the 60 Hz counter [0x92E8]: PIT divisor 0x7A8 (push 0x7a8 @0x0C843), the ISR's even-tick gate (@0x0C6A5) and its [0x376] reload of 5 (@0x0C70B)."
+ },
+ "rotation": {
+  "direction": "up",
+  "_doc": "STD + three descending rep movsb @0x0C5B2-0x0C5F3: each colour moves to the next HIGHER index, the last wraps into the first. After p steps index start+k shows the colour authored at start + ((k-p) mod len)."
+ },
+ "derived": {
+  "indices": [
+   120,
+   121,
+   122,
+   123,
+   124,
+   125,
+   126,
+   127
+  ],
+  "seconds_per_step": 0.5749332457244578,
+  "seconds_per_cycle": 4.5994659657956625
+ }
 }

@@ -167,9 +167,10 @@ def main():
           G.screen = 'colony';
         }; }""")
         for name, setup in SHOTS:
-            # Pin the active-unit blink to its visible phase so map shots are
-            # deterministic frame to frame.
-            pg.evaluate(f"() => {{ {setup}; G.tick = 0; }}")
+            # Pin the active-unit blink to its visible phase, and the colour
+            # cycle to phase 0 -- the phase the DOSBox captures were taken at --
+            # so map shots are deterministic frame to frame.
+            pg.evaluate(f"() => {{ {setup}; G.tick = 0; G.cyclePhase = 0; }}")
             pg.wait_for_timeout(120)
             # Grab the logical 320x200 frame, not the upscaled canvas.
             data = pg.evaluate("""() => {

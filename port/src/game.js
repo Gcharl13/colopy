@@ -112,13 +112,64 @@ const lut = (i) => [ink(i), ink(i - 1), ink(0)];
 
 const FONT = {};
 
+// ---------------------------------------------------------------- colour cycling
+// CYCLE.DAT ships one band: 8 entries from index 120, stepped every 35 ticks of
+// the engine's 60.8766 Hz timer (~0.575 s/step, 4.60 s round trip). Each step
+// moves every colour one index UP and wraps the last into the first, so after
+// `phase` steps palette index 120+k shows the colour authored at 120+(k-phase).
+// The DAC is global, so this animates the water wherever it appears: TERRAIN's
+// Ocean/Sea Lane grounds, PHYS0's river bands and clean coast edges, ICONS 123.
+// Cited in notes/rulings/RULINGS.md 2026-08-05; band and period come through
+// the manifest from build_assets.CYCLE.
+const CYC = DATA.cycle;
+const CYCLED = new Set(CYC.sheets);
+const _cycAtlas = new Map();
+
+function cyclePhase() {
+  // A pinned phase keeps shots.py and the render probes deterministic.
+  if (G.cyclePhase !== null && G.cyclePhase !== undefined) return G.cyclePhase;
+  const ticks = (performance.now() - G.cycleT0) * CYC.hz / 1000;
+  return Math.floor(ticks / CYC.delay) % CYC.len;
+}
+
+// The band always resolves through the MASTER palette -- the map view streams
+// VICEROY.PAL, not whatever backdrop palette `PAL` currently points at.
+function cycAtlas(sheet, phase) {
+  const base = IMG['SS_' + sheet];
+  if (!phase || !base || !CYCLED.has(sheet)) return base;
+  const key = sheet + '|' + phase;
+  const hit = _cycAtlas.get(key);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = base.width; c.height = base.height;
+  const g = c.getContext('2d');
+  g.drawImage(base, 0, 0);
+  const out = g.getImageData(0, 0, c.width, c.height);
+  const mc = document.createElement('canvas');
+  mc.width = base.width; mc.height = base.height;
+  const mg = mc.getContext('2d');
+  mg.drawImage(IMG['CYC_' + sheet], 0, 0);
+  const m = mg.getImageData(0, 0, c.width, c.height).data;
+  for (let i = 0; i < m.length; i += 4) {
+    if (!m[i + 3]) continue;
+    const k = m[i] - CYC.start;
+    const src = DATA.palette[CYC.start + (((k - phase) % CYC.len) + CYC.len) % CYC.len];
+    out.data[i] = src[0]; out.data[i + 1] = src[1]; out.data[i + 2] = src[2];
+  }
+  g.putImageData(out, 0, 0);
+  _cycAtlas.set(key, c);
+  return c;
+}
+
 // ---------------------------------------------------------------- sprites
 function sheetFrame(ctx, sheet, idx, x, y) {
   const sh = DATA.sheets[sheet];
   if (!sh) return;
   const f = sh.frames[idx];
   if (!f) return;
-  ctx.drawImage(IMG['SS_' + sheet], f.x, f.y, f.w, f.h, Math.round(x), Math.round(y), f.w, f.h);
+  const atlas = cycAtlas(sheet, cyclePhase());
+  if (!atlas) return;
+  ctx.drawImage(atlas, f.x, f.y, f.w, f.h, Math.round(x), Math.round(y), f.w, f.h);
 }
 function frameSize(sheet, idx) {
   const f = DATA.sheets[sheet] && DATA.sheets[sheet].frames[idx];
@@ -260,6 +311,11 @@ const G = {
   // The engine blinks the active unit's selection ring; ~2 Hz at 60 fps.
   blink: true,
   tick: 0,
+  // VGA colour cycling. cycle_init seeds every band's timestamp with the clock
+  // as the map screen is entered, so the run starts at phase 0; cyclePhase is
+  // an override that pins it (null = free-running off the wall clock).
+  cycleT0: 0,
+  cyclePhase: null,
   dialog: null,           // active modal popup, see openDialog()
   landHo: false,          // @LANDHO fires once per game
   newLand: '',            // what the player named the New World
@@ -354,6 +410,10 @@ function mkUnit(name, x, y, cargo) {
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
   G.tax = 0; G.year = 1492; G.season = 0; G.turn = 0;
+  // cycle_init stamps every band's last-rotation time with the clock as the map
+  // screen comes up, so the first frame of a game is always phase 0 -- which is
+  // the phase docs/screens/06_ingame_map.png was captured at.
+  G.cycleT0 = performance.now();
   // Starting force (new_game_setup): ONE ship carrying Pioneers + Soldiers, at
   // the nation's start tile from NAMES @SCENARIO, at every difficulty. The
   // Dutch ship is a Merchantman. (§18.11 claims the force is "doubled at d <= 1

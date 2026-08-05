@@ -61,37 +61,68 @@ def pik_to_png(data, fallback_pal):
 # (WOODFRAM/KING1/the flags/WDCUT: ~100% of pixels).
 MASTER_PALETTE_SHEETS = {"TERRAIN"}
 
+# ---- VGA colour cycling (CYCLE.DAT) -------------------------------------
+# CYCLE.DAT is `{u16 count; struct {u8 len, phase, start, delay;} band[8];}`.
+# The shipped file is count=1, band[0] = {len 8, start 120, delay 35} -- bands
+# 1..7 are uninitialised authoring-tool bytes (which is why the tail reads as
+# stray x86). cycle_colors (VICEROY file 0x0C51A) rotates the band one step
+# toward HIGHER indices, wrapping the last colour into the first, every `delay`
+# ticks of the engine's 60.8766 Hz timer. See notes/rulings/RULINGS.md
+# 2026-08-05 and docs/PALETTE_AND_CYCLING.md.
+CYCLE = {"start": 120, "len": 8, "delay": 35, "hz": 1193182.0 / 1960 / 2 / 5}
+
+# The band rotates in the DAC, so it animates whatever is on screen. These are
+# the sheets the map view composites, and all three carry master-palette colours
+# in 120..127 (TERRAIN via MASTER_PALETTE_SHEETS; PHYS0 and ICONS because their
+# embedded palettes agree with the master across the whole band -- measured, 0
+# differing entries). Between them they cover exactly the water: TERRAIN frames
+# 7/11 (Ocean, Sea Lane), PHYS0 frames 1..31 (rivers) and 150..153 (clean coast
+# edges), ICONS frame 123.
+CYCLED_SHEETS = {"TERRAIN", "PHYS0", "PHYS0C", "ICONS"}
+
 
 def sheet_to_png(path, pal, zero_transparent=False):
-    """One .SS -> a single-row atlas PNG + frame rects.
+    """One .SS -> a single-row atlas PNG + frame rects + a cycle mask.
 
     `pal` overrides the sheet's embedded palette; pass None to keep it.
 
     The coast bands are drawn over a substituted ground and punch water through
     their index-0 holes, so those frames need index 0 treated as transparent
     (manual 6.7); every other sheet keeps 0 as black.
+
+    The mask is a same-geometry RGBA image carrying the source palette index in
+    R (opaque) wherever a pixel falls in the cycled band, transparent elsewhere;
+    it is None when the sheet has no band pixels at all.
     """
     sh = ssdec.load_sheet(str(path))
     frames = sh["frames"]
     p = sh["pal"] if pal is None else pal
+    lo, hi = CYCLE["start"], CYCLE["start"] + CYCLE["len"] - 1
     pad = 1
     W = sum(f[2] + pad for f in frames) + pad
     H = max(f[3] for f in frames) + 2 * pad
     atlas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    mask = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    banded = False
     recs, x = [], pad
     for (hx, hy, w, h, pixels) in frames:
         img = Image.new("RGBA", (w, h))
-        px = img.load()
+        msk = Image.new("RGBA", (w, h))
+        px, mx = img.load(), msk.load()
         for j in range(h):
             for i in range(w):
                 v = pixels[j * w + i]
                 clear = (v == TRANSPARENT) or (zero_transparent and v == 0)
                 px[i, j] = (0, 0, 0, 0) if clear else (
                     p[v * 3], p[v * 3 + 1], p[v * 3 + 2], 255)
+                if not clear and lo <= v <= hi:
+                    mx[i, j] = (v, 0, 0, 255)
+                    banded = True
         atlas.paste(img, (x, pad))
+        mask.paste(msk, (x, pad))
         recs.append({"x": x, "y": pad, "w": w, "h": h, "hx": hx, "hy": hy})
         x += w + pad
-    return atlas, recs
+    return atlas, recs, (mask if banded else None)
 
 
 
@@ -205,9 +236,14 @@ def main():
             p = tmp / key
             p.write_bytes(z.read(names[key]))
             override = fallback if nm in MASTER_PALETTE_SHEETS else None
-            atlas, recs = sheet_to_png(p, override)
+            atlas, recs, mask = sheet_to_png(p, override)
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}
+            if mask is not None and nm in CYCLED_SHEETS:
+                mask.save(OUT / f"{nm}.cycle.png")
+                bundle["sheets"][nm]["cycle"] = f"{nm}.cycle.png"
+                print(f"  {nm}.SS -> cycle mask (band "
+                      f"{CYCLE['start']}..{CYCLE['start'] + CYCLE['len'] - 1})")
             # Text drawn *over* a sheet resolves through that sheet's palette,
             # so the woodcut screen -- whose FONT-NP caption ink is quoted as
             # palette indices 0x5C/0x5D/0x5E -- needs the table exported. (Both
@@ -219,9 +255,12 @@ def main():
                                                for i in range(256)]
             print(f"  {nm}.SS -> {len(recs)} frames, atlas {atlas.width}x{atlas.height}")
             if nm == "PHYS0":
-                a2, r2 = sheet_to_png(p, override, zero_transparent=True)
+                a2, r2, m2 = sheet_to_png(p, override, zero_transparent=True)
                 a2.save(OUT / "PHYS0C.png")
                 bundle["sheets"]["PHYS0C"] = {"atlas": "PHYS0C.png", "frames": r2}
+                if m2 is not None:
+                    m2.save(OUT / "PHYS0C.cycle.png")
+                    bundle["sheets"]["PHYS0C"]["cycle"] = "PHYS0C.cycle.png"
                 print("  PHYS0.SS -> PHYS0C (index-0 transparent, coast bands)")
         bundle["fonts"] = {}
         for nm in want_ff:
@@ -233,6 +272,7 @@ def main():
                 img.save(OUT / f"FONT_{nm}_L{lvl}.png")
             bundle["fonts"][nm] = meta
             print(f"  {nm}.FF -> h={meta['h']}, {len(meta['glyphs'])} glyphs, 3 levels")
+    bundle["cycle"] = CYCLE
     json.dump(bundle, open(OUT / "manifest.json", "w"), indent=1)
     print("wrote", OUT / "manifest.json")
 

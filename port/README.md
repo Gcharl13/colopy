@@ -60,12 +60,32 @@ also fixes.
 
 Not yet implemented: roads as a terrain band (§6.8 — the loader discards the
 feature plane anyway; player-built roads come from the improvement layer
-instead), and **water palette cycling** — bands 54–60 and 120–127 are pure
-rotation in the original, but the tick rate and direction are undecoded, so the
-port renders the water static at the master palette's phase (which is the phase
-the live map capture shows). The base water tile itself is now **253/256 pixels
-exact** against that capture; see the 2026-08-05 palette ruling for the three
-that are not, and why they are not a palette question.
+instead). The base water tile is **253/256 pixels exact** against the live
+capture; see the 2026-08-05 palette ruling for the three that are not, and why
+they are neither a palette nor a cycle-phase question.
+
+### Water colour cycling (CYCLE.DAT)
+
+`CYCLE.DAT` decodes as `{u16 count; struct {u8 len, phase, start, delay;}
+band[8];}` and ships **one** band: 8 entries from index **120**, one step every
+**35** ticks of the engine's **60.8766 Hz** timer — 0.575 s per step, 4.60 s
+round trip. A step moves every colour one index **up** and wraps the last into
+the first. All of it is byte-cited in `docs/PALETTE_AND_CYCLING.md` and
+`notes/rulings/RULINGS.md` (2026-08-05); the break was that `MAPEDIT.EXE` ships
+CodeView symbols for the same `cycle_1.c` module VICEROY links.
+
+The port implements it: `build_assets.py` emits a band mask per affected sheet
+and `cycAtlas()` re-tints one atlas per phase on demand, driven off the wall
+clock and seeded at map entry the way `cycle_init` is.
+
+Worth knowing, because it is not what "water shimmer" suggests: **the open ocean
+does not animate.** `TERRAIN` frame 10 (Ocean) has no pixels in the band at all.
+What moves is the **sea-lane column** (frame 11, 62 px), the **rivers** (`PHYS0`
+1..31) and the **clean coast edges** (`PHYS0` 150..153) — 6232 pixels of a
+sea-lane view, 294 of a river view. The old note here that bands 54–60 *and*
+120–127 cycle was wrong: 54–60 is the static ocean ramp and has no `CYCLE.DAT`
+entry. Band 120–127 is a byte-for-byte duplicate of part of it, which is exactly
+why it can rotate without disturbing the ocean.
 
 ## Build
 
@@ -107,8 +127,10 @@ every row of all six MENU.TXT pulldowns (`test_flow.py` asserts the binding).
 
 What is left:
 
-- **The base ocean sprite.** The largest remaining pixel gap against the DOSBox
-  captures — see the fog-path section above and the 2026-08-05 ruling.
+- **Three pixels of the Sea Lane tile.** The last measured gap against the
+  DOSBox captures: 253/256 exact, and the three that are not are not explained
+  by the palette, the capture, or the cycle phase (all eight were tried). It
+  needs a second capture, not another theory. See the two 2026-08-05 rulings.
 - **AI opponents**, deliberately last: `spec/systems/ai.md` is the thinnest area
   in the spec and real opponents would mean inventing behaviour rather than
   porting it. The rival powers exist as diplomatic actors, not as players.

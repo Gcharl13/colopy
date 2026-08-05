@@ -1672,6 +1672,54 @@ SCRIPT = """() => {
     out.seaLanePalette = { master: has(81, 105, 178), notSheet: !has(93, 121, 178) };
   }
 
+  // ---- VGA colour cycling (CYCLE.DAT) ----
+  // One band: 8 entries from index 120, one step every 35 ticks of the engine's
+  // 60.8766 Hz timer. A step moves each colour one index UP and wraps the last
+  // into the first, so at phase p index 120+k shows the colour authored at
+  // 120+(k-p mod 8). Sea Lane (TERRAIN frame 11) is the cleanest read: it uses
+  // all eight band entries.
+  {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    const g = c.getContext('2d');
+    const shot = (ph) => {
+      const was = G.cyclePhase;
+      G.cyclePhase = ph;
+      g.clearRect(0, 0, 16, 16);
+      sheetFrame(g, 'TERRAIN', 11, 0, 0);
+      G.cyclePhase = was;
+      return Array.from(g.getImageData(0, 0, 16, 16).data);
+    };
+    const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+    const P = DATA.palette;
+    // Frame 11 pixel (12,0) is band index 121 (see the offline probe in
+    // scratchpad/cycle_phase_probe.py); at phase p it must show 120+(1-p mod 8).
+    const at = (d, x, y) => [d[(y * 16 + x) * 4], d[(y * 16 + x) * 4 + 1],
+                             d[(y * 16 + x) * 4 + 2]];
+    const frames = [];
+    for (let p = 0; p < 8; p++) frames.push(shot(p));
+    let walks = true;
+    for (let p = 0; p < 8; p++) {
+      const want = P[120 + (((1 - p) % 8) + 8) % 8];
+      const got = at(frames[p], 12, 0);
+      if (got[0] !== want[0] || got[1] !== want[1] || got[2] !== want[2]) walks = false;
+    }
+    out.cycle = {
+      band: CYC.start === 120 && CYC.len === 8 && CYC.delay === 35,
+      // 1193182 / 1960 / 2 / 5 -- PIT divisor 0x7a8, the ISR's even-tick gate
+      // and its [0x376] reload of 5.
+      hz: Math.abs(CYC.hz - 60.8766) < 0.001,
+      // Phase 0 must leave the atlas exactly as built -- nothing has rotated.
+      phase0IsIdentity: same(frames[0], shot(0)) && same(frames[0], shot(null)),
+      // Rotating the full band length returns to the start.
+      wrapsAtLen: same(frames[0], shot(8)),
+      // Every phase is distinct, i.e. the band really is 8 different colours.
+      allDistinct: frames.every((f, i) => frames.every((h, j) => i === j || !same(f, h))),
+      walksUpOneIndexPerStep: walks,
+      // The mask ships for every sheet the map view composites water from.
+      sheets: ['ICONS', 'PHYS0', 'PHYS0C', 'TERRAIN'].every(s => CYC.sheets.includes(s)),
+    };
+  }
+
   // ---- fog path (§6.11: O513 @0x68212 -> O512 @0x68244) ----
   // Render single tiles onto a scratch canvas with exactly one map square
   // explored, and read back what the fog composer put down. Every expectation
@@ -2056,6 +2104,12 @@ def main():
         ("the biome dither needs an EXPLORED neighbour -- fog contributes nothing",
          r["fogPath"]["foundBiomeEdge"]
          and r["fogPath"]["biomeEdgeNeedsAnExploredNeighbour"], r["fogPath"]),
+        ("CYCLE.DAT: one band of 8 from index 120, one step per 35 ticks at 60.8766 Hz",
+         r["cycle"]["band"] and r["cycle"]["hz"] and r["cycle"]["sheets"], r["cycle"]),
+        ("a cycle step moves each colour one index up, and 8 steps wrap to the start",
+         all(r["cycle"][k] for k in ("phase0IsIdentity", "wrapsAtLen",
+                                     "allDistinct", "walksUpOneIndexPerStep")),
+         r["cycle"]),
     ]
     bad = 0
     for name, ok, got in checks:
