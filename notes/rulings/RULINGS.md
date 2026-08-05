@@ -6808,3 +6808,73 @@ because the port's own ocean base already differs from the live ocean tile at
 91/256 pixels — an unrelated, pre-existing gap in the base ocean sprite. Settle
 the base ocean tile first, then re-measure; until then the port blends the
 neighbour's ground frame.
+
+---
+
+## 2026-08-05 — TERRAIN.SS resolves through VICEROY.PAL, not its own embedded palette (closes the previous entry's follow-up)
+
+**Conflict**: the 2026-08-05 fog-path entry above left open why the port's ocean
+tile differed from the live capture at 91/256 pixels, and flagged a suspicion
+that O512 blends the neighbour's *composed* tile rather than its class ground
+sprite. Both turn out to be the same single cause, and it is neither of those.
+
+**Source A** — `port/tools/build_assets.py` asserted in a comment that "sheet
+pixels always resolve through the sheet's own palette", and `sheet_to_png`
+accordingly ignored the master palette its caller was already passing in.
+
+**Source B** — the live frame. In DOS the VGA palette is global hardware state:
+a `.SS` file's embedded palette is only whatever was loaded when the artist
+saved it, and what actually reaches the screen is the palette the *screen*
+streams. On the map screen that is the master `VICEROY.PAL`.
+
+**Evidence**. `TERRAIN.SS`'s embedded palette disagrees with `VICEROY.PAL` on 12
+entries, of which exactly **121–126 — the sea-lane sparkle band** — are used by
+any frame at all (53 of 3072 sheet pixels; only frames 7 and 11 touch them).
+Rendering frame 11 (Sea Lane) and diffing against `docs/screens/06_ingame_map.png`
+tile (8,6), through the emulator's RGB565 quantisation:
+
+| palette used | pixels wrong |
+|---|---|
+| the sheet's own | **50 / 256** |
+| master `VICEROY.PAL` | **3 / 256** |
+
+The same numbers come out of tile (8,8), the other clean sea-lane square in that
+capture. A brute force over both cycling bands × both rotation directions ×
+every phase never beat phase 0, so this is not a cycle-phase artifact — the
+sheet copy simply holds different colours.
+
+**Ruling**: TERRAIN's pixels bake against the master palette. Scoped to that one
+sheet, and measured rather than assumed: `PHYS0`, `ICONS` and `WOODTILE` differ
+from the master on **zero used indices** (so the choice is a no-op for them),
+while `WOODFRAM`, `KING1`, the four nation flags and the `WDCUT` plates are
+screen-specific palettes where ~100% of pixels depend on keeping the embedded
+copy. `sheet_to_png` now takes an explicit override and `MASTER_PALETTE_SHEETS`
+names the exception.
+
+This also **withdraws the previous entry's follow-up**: the fog-edge dots looked
+like they matched the neighbour's *composed* tile only because the bare ground
+frame was being coloured wrong. The blend source is the class ground sprite, as
+`emit_terrain_sprite(nb_class)` says.
+
+**Action taken**:
+- `port/tools/build_assets.py`: `MASTER_PALETTE_SHEETS = {"TERRAIN"}`;
+  `sheet_to_png(path, pal, …)` honours `pal` instead of discarding it; the stale
+  "always resolve through the sheet's own palette" comment replaced.
+- `port/tools/test_flow.py`: Sea Lane must contain master index 121
+  `(81,105,178)` and must not contain the sheet's `(93,121,178)`. 165/165.
+
+**Follow-up**: **3 pixels of 256** remain on that tile — two carrying sheet index
+124 and one index 126, where the live game shows the base blue (index 59/127).
+It is *not* a palette question: 9 of the 11 index-124 pixels in the same tile
+match exactly, so entry 124's colour is right. It is not a capture artifact
+either — the capture is a clean 2× and all three of those 2×2 blocks are
+uniform. Both clean sea-lane tiles in the frame show it at the same three
+positions. Unexplained; needs a second capture at a different cycle phase, or a
+trace of what else writes those pixels. **TBD, not guessed at.**
+
+**Still open, unchanged**: water palette cycling itself. Bands 54–60 and
+120–127 are pixel-verified as pure rotation (manual part1 §"Palette animation",
+part7 §29.4), but the tick rate and rotation direction are TBD — the cycle-tick
+function is unidentified and `CYCLE.DAT`'s 34 bytes are undecoded
+(`docs/PALETTE_AND_CYCLING.md`). The port therefore renders the water static, at
+the master palette's phase, which is the phase the live map capture shows.

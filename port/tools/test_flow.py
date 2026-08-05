@@ -1652,6 +1652,26 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- TERRAIN resolves through the master VICEROY.PAL ----
+  // TERRAIN.SS carries an embedded palette that disagrees with VICEROY.PAL on
+  // the sea-lane sparkle band; the live map screen streams the master. Sea Lane
+  // (frame 11) is the only frame that shows the difference, so read it back.
+  // master 121 = (81,105,178); the sheet's own 121 = (93,121,178).
+  {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    const g = c.getContext('2d');
+    sheetFrame(g, 'TERRAIN', 11, 0, 0);
+    const d = g.getImageData(0, 0, 16, 16).data;
+    const has = (r, gr, b) => {
+      for (let i = 0; i < 256; i++) {
+        const o = i * 4;
+        if (d[o] === r && d[o + 1] === gr && d[o + 2] === b) return true;
+      }
+      return false;
+    };
+    out.seaLanePalette = { master: has(81, 105, 178), notSheet: !has(93, 121, 178) };
+  }
+
   // ---- fog path (§6.11: O513 @0x68212 -> O512 @0x68244) ----
   // Render single tiles onto a scratch canvas with exactly one map square
   // explored, and read back what the fog composer put down. Every expectation
@@ -2025,6 +2045,8 @@ def main():
         ("save/load round-trips", r["saveLoad"], r["saveLoad"]),
         ("dialog frame is outline + ring + bevel in paint order",
          all(r["frame"].values()), r["frame"]),
+        ("Sea Lane resolves through VICEROY.PAL, not TERRAIN.SS's own palette",
+         all(r["seaLanePalette"].values()), r["seaLanePalette"]),
         ("an unexplored tile is fog sprite 0x95, flat until it touches explored land",
          r["fogPath"]["flatField"] and r["fogPath"]["diagonalUntouched"], r["fogPath"]),
         ("the fog edge dithers its explored cardinal in, on that cardinal's band",

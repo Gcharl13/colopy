@@ -60,9 +60,12 @@ also fixes.
 
 Not yet implemented: roads as a terrain band (§6.8 — the loader discards the
 feature plane anyway; player-built roads come from the improvement layer
-instead). The residual pixel difference against the live frames is now the base
-ocean sprite itself, which is off by 91/256 pixels on the tile measured above —
-tracked as the follow-up on that same ruling.
+instead), and **water palette cycling** — bands 54–60 and 120–127 are pure
+rotation in the original, but the tick rate and direction are undecoded, so the
+port renders the water static at the master palette's phase (which is the phase
+the live map capture shows). The base water tile itself is now **253/256 pixels
+exact** against that capture; see the 2026-08-05 palette ruling for the three
+that are not, and why they are not a palette question.
 
 ## Build
 

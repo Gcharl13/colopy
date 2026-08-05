@@ -45,8 +45,27 @@ def pik_to_png(data, fallback_pal):
     return im.convert("RGB")
 
 
+# Sheets whose pixels resolve through the MASTER VICEROY.PAL rather than the
+# palette embedded in the .SS. In DOS the VGA palette is global -- a sheet's
+# embedded copy is only what happened to be loaded when the artist saved it --
+# so the right palette is the one the *screen* streams. TERRAIN is measured, not
+# assumed: its embedded palette disagrees with the master on 12 entries, of
+# which only 121-126 (the sea-lane sparkle band, manual 29.4/part7) are used by
+# any frame, and the live map capture picks the master. Rendering TERRAIN frame
+# 11 (Sea Lane) against docs/screens/06_ingame_map.png tile (8,6):
+#     sheet palette  50/256 pixels wrong
+#     master palette   3/256   -- and those three are the capture's own
+#                                 near-duplicate blue, so this is exact.
+# Every other sheet either differs from the master on no *used* index (PHYS0,
+# ICONS, WOODTILE: 0 pixels) or is a screen-specific palette that must stay
+# (WOODFRAM/KING1/the flags/WDCUT: ~100% of pixels).
+MASTER_PALETTE_SHEETS = {"TERRAIN"}
+
+
 def sheet_to_png(path, pal, zero_transparent=False):
     """One .SS -> a single-row atlas PNG + frame rects.
+
+    `pal` overrides the sheet's embedded palette; pass None to keep it.
 
     The coast bands are drawn over a substituted ground and punch water through
     their index-0 holes, so those frames need index 0 treated as transparent
@@ -54,7 +73,7 @@ def sheet_to_png(path, pal, zero_transparent=False):
     """
     sh = ssdec.load_sheet(str(path))
     frames = sh["frames"]
-    p = sh["pal"]
+    p = sh["pal"] if pal is None else pal
     pad = 1
     W = sum(f[2] + pad for f in frames) + pad
     H = max(f[3] for f in frames) + 2 * pad
@@ -185,20 +204,22 @@ def main():
                 print("  MISSING", key); continue
             p = tmp / key
             p.write_bytes(z.read(names[key]))
-            atlas, recs = sheet_to_png(p, fallback)
+            override = fallback if nm in MASTER_PALETTE_SHEETS else None
+            atlas, recs = sheet_to_png(p, override)
             atlas.save(OUT / f"{nm}.png")
             bundle["sheets"][nm] = {"atlas": f"{nm}.png", "frames": recs}
-            # Sheet pixels always resolve through the sheet's own palette (see
-            # sheet_to_png). Text drawn *over* a sheet has to resolve through it
-            # too, so the woodcut screen -- whose FONT-NP caption ink is quoted
-            # as palette indices 0x5C/0x5D/0x5E -- needs the table exported.
+            # Text drawn *over* a sheet resolves through that sheet's palette,
+            # so the woodcut screen -- whose FONT-NP caption ink is quoted as
+            # palette indices 0x5C/0x5D/0x5E -- needs the table exported. (Both
+            # of these keep their embedded palette; see MASTER_PALETTE_SHEETS
+            # for the one sheet that does not.)
             if nm in ("WOODFRAM", "WOODTILE"):
                 sp = ssdec.load_sheet(str(p))["pal"]
                 bundle["sheets"][nm]["pal"] = [[sp[i * 3], sp[i * 3 + 1], sp[i * 3 + 2]]
                                                for i in range(256)]
             print(f"  {nm}.SS -> {len(recs)} frames, atlas {atlas.width}x{atlas.height}")
             if nm == "PHYS0":
-                a2, r2 = sheet_to_png(p, fallback, zero_transparent=True)
+                a2, r2 = sheet_to_png(p, override, zero_transparent=True)
                 a2.save(OUT / "PHYS0C.png")
                 bundle["sheets"]["PHYS0C"] = {"atlas": "PHYS0C.png", "frames": r2}
                 print("  PHYS0.SS -> PHYS0C (index-0 transparent, coast bands)")
