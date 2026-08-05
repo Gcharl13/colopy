@@ -278,6 +278,7 @@ const G = {
   rivals: [], metAnyone: false,
   warMatrix: {}, treatyMatrix: {}, parleyLock: {}, attitude: 8,
   routes: [], trade: null,
+  mercSeen: false, interventionWatch: false,
   parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
@@ -368,6 +369,7 @@ function beginGame() {
   G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
   G.parley = null; G.attitude = 8;
   G.routes = []; G.trade = null;
+  G.mercSeen = false; G.interventionWatch = false;
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -1778,6 +1780,7 @@ function colonyTurn(c) {
   c.crossesTurn = r.tally[CROSSES];
   c.bellsTurn = r.tally[BELLS];
   updateSoL(c, r.tally[BELLS]);
+  solAnnounce(c);
   advanceConstruction(c, r.tally[HAMMERS]);
   runSchool(c);
   autoExport(c);
@@ -2791,6 +2794,83 @@ function ageConverts() {
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
     showEvent('DEADCONVERTS', {});
   }
+}
+
+// --------------------------------------------- what the natives demand of you
+// §19.8. War-footing tribes press claims, and the land/road objections carry a
+// BUY-OFF row: pay the named compensation and the tribe withdraws it. Peter
+// Minuit in Congress zeroes every land payment.
+//   @INDIANGOLD   reparations in gold        (trigger and amount untraced)
+//   @INDIANWAGONS the contents of a wagon train passing through their land
+//   @INDIANCITY   goods from a colony's stores
+//   @INDIANROAD   an objection to a road, with its compensation row
+// The triggers and amounts are NOT traced -- the manual names the claims and
+// their texts, not their numbers -- so the port fires them off the tribe's own
+// tension and prices them off the demand it is making. Flagged.
+function nativeDemands() {
+  if (!G.colonies.length) return;
+  for (const t of G.tribes) {
+    if (!t || t.dead) continue;
+    if ((t.tension || 0) < TENSION_HOSTILE) continue;
+    if (Math.floor(Math.random() * 24) !== 0) continue;   // rare, per tribe, per turn
+    const ti = G.tribes.indexOf(t);
+    // A wagon train in their country is the easiest claim to press.
+    const wagon = G.units.find(u => u.type === 'Wagon Train' && (u.hold || []).length &&
+      G.villages.some(v => v.tribe === ti && Math.abs(v.x - u.x) <= 3 && Math.abs(v.y - u.y) <= 3));
+    if (wagon) {
+      const h = wagon.hold[0];
+      askEvent('INDIANWAGONS', { STRING0: DATA.nations[G.nation].adjective,
+                                 STRING1: t.name, STRING2: DATA.cargo[h.good].name,
+                                 NUMBER0: h.qty }, (choice) => {
+        // Row 0 hands them over, row 1 circles the wagons.
+        if (choice === 0) { holdAdd(wagon, h.good, -h.qty); adjustTension(ti, -10); }
+        else adjustTension(ti, 15);
+      });
+      return;
+    }
+    // Otherwise: goods from a colony's stores, or gold in reparations.
+    const c = G.colonies[Math.floor(Math.random() * G.colonies.length)];
+    const stocked = c.stock.map((n, i) => [n, i]).filter(r => r[0] >= 20)
+                     .sort((a, b) => b[0] - a[0])[0];
+    if (stocked) {
+      const qty = Math.min(stocked[0], 20 + 10 * G.difficulty);
+      askEvent('INDIANCITY', { STRING0: DATA.nations[G.nation].adjective,
+                               STRING1: t.name, STRING2: DATA.cargo[stocked[1]].name,
+                               STRING3: c.name, NUMBER0: qty }, (choice) => {
+        // Row 0 mans the stockade, row 1 hands them over.
+        if (choice === 1) { c.stock[stocked[1]] -= qty; adjustTension(ti, -10); }
+        else adjustTension(ti, 15);
+      });
+      return;
+    }
+    const gold = demandValue(200);
+    askEvent('INDIANGOLD', { STRING0: t.name, NUMBER0: gold }, (choice) => {
+      // Row 0 refuses, row 1 pays.
+      if (choice === 1 && G.gold >= gold) { G.gold -= gold; adjustTension(ti, -10); }
+      else adjustTension(ti, 15);
+    });
+    return;
+  }
+}
+// A road cut through their land draws an objection with a buy-off. Peter Minuit
+// zeroes the payment.
+function roadObjection(u) {
+  const near = G.villages.find(v => Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+  if (!near) return false;
+  const t = G.tribes[near.tribe];
+  if (!t || (t.tension || 0) < 40) return false;
+  const pay = G.fathersOwned.includes('Peter Minuit') ? 0 : demandValue(100);
+  askEvent('INDIANROAD', { STRING0: t.name, NUMBER1: pay }, (choice) => {
+    // Row 0 stops the work, row 1 pays, row 2 builds anyway.
+    if (choice === 0) { u.orders = 0; u.work = 0; return; }
+    if (choice === 1) {
+      if (G.gold >= pay) { G.gold -= pay; adjustTension(near.tribe, -5); }
+      else { u.orders = 0; u.work = 0; G.msg = 'We cannot afford the compensation.'; }
+      return;
+    }
+    adjustTension(near.tribe, 10);
+  });
+  return true;
 }
 
 // ------------------------------------------------------------ native raids
@@ -4646,6 +4726,123 @@ function runWar() {
     showEvent('KINGWIN', { STRING0: DATA.nations[G.nation].country });
   }
 }
+// ------------------------------------------------------------ mercenaries
+// spec/systems/mercenary.md. Both offer paths share one price shape, and it is
+// byte-verified:
+//   gold_per_unit = ((difficulty + K)*2 + random_int(0,6)) * 100
+//   qty           = (catA + catC)*2 + count
+//   price         = gold_per_unit * qty
+// with K = 4 on the PEACETIME path and K = 3 on the WARTIME path.
+// Wartime: count = random_int(2, (4-difficulty)/2 + 2), and a single coin picks
+// exactly one category, so qty = count + 2. The offer only appears if you can
+// afford it, and paying debits the treasury.
+function mercPrice(K, count, cats) {
+  const perUnit = ((G.difficulty + K) * 2 + Math.floor(Math.random() * 7)) * 100;
+  return perUnit * (cats * 2 + count);
+}
+const MERC_WARTIME = ['Cont. Cav.', 'Artillery'];
+function offerMercenaries() {
+  if (!(G.flags & WOI_DECLARED)) return;
+  // A per-power one-shot bit: an offer is possible only from the second call on,
+  // and then on a 1-in-3 gate.
+  if (!G.mercSeen) { G.mercSeen = true; return; }
+  if (Math.floor(Math.random() * 3) !== 0) return;
+  const hi = Math.floor((4 - G.difficulty) / 2) + 2;
+  const count = 2 + Math.floor(Math.random() * Math.max(1, hi - 1));
+  const price = mercPrice(3, count, 1);
+  if (price > G.gold) return;                        // only offered if affordable
+  const extra = MERC_WARTIME[Math.floor(Math.random() * MERC_WARTIME.length)];
+  askEvent('KINGRECRUIT', { NUMBER0: price, STRING0: extra }, (choice) => {
+    if (choice !== 0 || G.gold < price) return;
+    G.gold -= price;
+    const c = G.colonies[0];
+    const x = c ? c.x : G.units[0].x, y = c ? c.y : G.units[0].y;
+    for (let i = 0; i < count; i++) {
+      const u = mkUnit('Cont. Army', x, y);
+      u.veteran = true;
+      G.units.push(u);
+    }
+    G.units.push(mkUnit(extra, x, y));
+    G.msg = `${count + 1} mercenaries join us for ${price}$.`;
+  });
+}
+
+// ---------------------------------------------- Tory uprising and sentiment
+// The four SoL hysteresis announcements, byte-verified in func_02D658 with
+// their latch bits on ColonyRecord +0x1C (0x04 = rebel-majority announced,
+// 0x02 = rebel-unanimous announced). Each fires ONCE per crossing.
+//   rises to >= 50   @REBELMAJORITY    set 0x04
+//   rises to  = 100  @REBELUNANIMOUS   set 0x02
+//   falls  <  95     @TORYMINORITY     clear 0x02
+//   falls  <  50     @TORYMAJORITY     clear 0x04
+function solAnnounce(c) {
+  c.latch = c.latch || 0;
+  if (c.sol >= 50 && !(c.latch & 0x04)) {
+    c.latch |= 0x04; showEvent('REBELMAJORITY', { STRING0: c.name });
+  }
+  if (c.sol >= 100 && !(c.latch & 0x02)) {
+    c.latch |= 0x02; showEvent('REBELUNANIMOUS', { STRING0: c.name });
+  }
+  if (c.sol < 95 && (c.latch & 0x02)) {
+    c.latch &= ~0x02; showEvent('TORYMINORITY', { STRING0: c.name });
+  }
+  if (c.sol < 50 && (c.latch & 0x04)) {
+    c.latch &= ~0x04; showEvent('TORYMAJORITY', { STRING0: c.name });
+  }
+}
+// The uprising's own gate is byte-exact: random_int(0, difficulty+1), and it
+// proceeds on a NONZERO roll -- so probability (difficulty+1)/(difficulty+2),
+// 50% at Discoverer rising to ~83% at Viceroy. How often the war loop calls it
+// is not pinned, so the port calls it once a turn per Tory-majority colony.
+function toryUprising() {
+  if (!(G.flags & WOI_DECLARED) || (G.flags & WOI_WON)) return;
+  for (const c of G.colonies) {
+    if (c.sol >= 50) continue;                        // a rebel colony has no Tories to rise
+    if (Math.floor(Math.random() * (G.difficulty + 2)) === 0) continue;
+    if (Math.floor(Math.random() * 12) !== 0) continue;   // the call frequency is the port's
+    const u = mkUnit('Regulars', c.x, c.y);
+    u.nation = -2;                                    // Tory militia fights for the Crown
+    G.refUnits.push(u);
+    showEvent('TORYUPRISING', { STRING0: c.name });
+    return;
+  }
+}
+
+// -------------------------------------------------- foreign intervention
+// §18.3 bit 1. A foreign power watches the war and joins on the rebel side once
+// you have generated enough liberty bells (@CONSIDER names the figure, and the
+// arrival is the same population-weighted coastal landing the REF uses). The
+// bell threshold itself is not in the evidence here, so the port sets it from
+// the same 1000-bell scale the score uses and flags it.
+const INTERVENTION_BELLS = 2000;
+function checkIntervention() {
+  if (!(G.flags & WOI_DECLARED) || (G.flags & WOI_INTERVENTION)) return;
+  const ally = G.rivals.find(r => r.met && !atWar(G.nation, r.nation));
+  if (!ally) return;
+  if (!G.interventionWatch) {
+    G.interventionWatch = true;
+    showEvent('CONSIDER', { STRING0: DATA.nations[ally.nation].country,
+                            NUMBER0: INTERVENTION_BELLS });
+    return;
+  }
+  if (G.bellsTotal < INTERVENTION_BELLS) return;
+  G.flags |= WOI_INTERVENTION;
+  showEvent('INTERVENTION', { STRING0: DATA.nations[ally.nation].country,
+                              STRING1: DATA.nations[G.nation].country,
+                              STRING2: DATA.nations[ally.nation].adjective,
+                              STRING3: G.colonies.length ? G.colonies[0].name : '',
+                              STRING4: DATA.nations[ally.nation].adjective });
+  // The intervention force lands like the REF, but on your side.
+  const pool = coastalColonies();
+  const target = pool[0] || G.colonies[0];
+  if (!target) return;
+  for (let i = 0; i < 4; i++) {
+    const u = mkUnit(i === 3 ? 'Artillery' : 'Cont. Army', target.x, target.y);
+    u.veteran = true;
+    G.units.push(u);
+  }
+}
+
 // ------------------------------------------------------------------ score
 // func_039EE2's seven components, byte-verified 2026-06-28, then the difficulty
 // multiplier of func_03A9C0.
@@ -5002,6 +5199,7 @@ function endTurn() {
   // §19.11: the native pass runs BEFORE the European powers move
   // (func_04891A -> func_0485F6 -> func_04830E).
   nativeTick();
+  nativeDemands();
   attemptConversions();
   ageConverts();
   nativeRaids();
@@ -5009,6 +5207,9 @@ function endTurn() {
   kingTaxDemand();
   advanceTradeRoutes();
   runWar();
+  toryUprising();
+  offerMercenaries();
+  checkIntervention();
   driftMarket();
   advanceCrossings();
   G.msg = '';
@@ -5211,6 +5412,8 @@ function improveOrder(n) {
   u.work = 0;
   u.movesLeft = 0;
   G.msg = `${DATA.orders[n].name}: ${workThreshold(u, n === ORDER_ROAD)} turns.`;
+  // A road cut near a settlement draws the tribe's objection, with its buy-off.
+  if (n === ORDER_ROAD) roadObjection(u);
   advance();
 }
 // ORDERS "Return to Europe" (E) sends the selected ship home; VIEW "European

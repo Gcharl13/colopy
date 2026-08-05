@@ -454,6 +454,85 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- native demands, Tory uprising, mercenaries, intervention ----
+  {
+    beginGame(); G.screen = 'map';
+    G.colonies = [{ name: 'Boston', x: 20, y: 20, nation: G.nation, colonists: [],
+                    stock: DATA.cargo.map(() => 0), buildings: [], hammers: 0,
+                    building: null, sol: 20, latch: 0 }];
+    // A hostile tribe presses a claim on a colony's stores.
+    G.tribes[0].tension = 100;
+    for (let i = 1; i < G.tribes.length; i++) G.tribes[i].tension = 0;
+    G.colonies[0].stock[4] = 200;
+    G.dialog = null;
+    let tries = 0;
+    while (!G.dialog && tries++ < 400) nativeDemands();
+    out.demands = { asked: !!G.dialog, hasRows: !!G.dialog && G.dialog.opts.length >= 2 };
+    if (G.dialog) {
+      const s0 = G.colonies[0].stock[4];
+      closeDialog(1);                                  // hand them over
+      out.demands.tookGoods = G.colonies[0].stock[4] < s0;
+    }
+    // The SoL hysteresis announcements fire once per crossing.
+    const c = G.colonies[0];
+    c.sol = 60; c.latch = 0;
+    G.eventQueue = [];
+    solAnnounce(c); solAnnounce(c);
+    out.sentiment = { majorityOnce: G.eventQueue.length === 1 };
+    c.sol = 100; G.eventQueue = [];
+    solAnnounce(c);
+    out.sentiment.unanimous = G.eventQueue.length === 1;
+    c.sol = 40; G.eventQueue = [];
+    solAnnounce(c);
+    out.sentiment.fallsBack = G.eventQueue.length === 2;   // minority AND majority lost
+    // The Tory uprising gate is (difficulty+1)/(difficulty+2), and it only
+    // fires in a Tory-majority colony during the war.
+    G.flags = 0; c.sol = 10;
+    G.refUnits = [];
+    for (let i = 0; i < 50; i++) toryUprising();
+    out.tory = { quietBeforeWar: G.refUnits.length === 0 };
+    G.flags |= 1;
+    G.eventQueue = [];
+    for (let i = 0; i < 400 && !G.refUnits.length; i++) toryUprising();
+    out.tory.risesInWar = G.refUnits.length > 0;
+    c.sol = 80;
+    const n0 = G.refUnits.length;
+    for (let i = 0; i < 100; i++) toryUprising();
+    out.tory.notInRebelColony = G.refUnits.length === n0;
+
+    // The mercenary price shape: ((difficulty + K)*2 + 0..6)*100 * qty.
+    const p1 = mercPrice(3, 3, 1);
+    out.merc = { shape: p1 % 100 === 0 && p1 > 0,
+                 // qty = cats*2 + count = 5 here, so the per-unit price divides out
+                 divides: [0, 1, 2, 3, 4, 5, 6].some(r =>
+                   p1 === ((G.difficulty + 3) * 2 + r) * 100 * 5) };
+    // The offer needs the war, the second call, and affordability.
+    G.mercSeen = false; G.gold = 0; G.dialog = null;
+    offerMercenaries();
+    out.merc.firstCallSilent = !G.dialog;
+    G.gold = 200000;
+    let m = 0;
+    while (!G.dialog && m++ < 400) offerMercenaries();
+    out.merc.offers = !!G.dialog;
+    if (G.dialog) {
+      const g0 = G.gold, u0 = G.units.length;
+      closeDialog(0);
+      out.merc.hires = G.gold < g0 && G.units.length > u0;
+    }
+
+    // Foreign intervention: the watch first, then the landing on the bell total.
+    G.flags = 1; G.interventionWatch = false; G.bellsTotal = 0;
+    G.rivals[0].met = true;
+    G.eventQueue = [];
+    checkIntervention();
+    out.intervention = { watches: G.eventQueue.length === 1 && !(G.flags & 2) };
+    G.bellsTotal = 5000;
+    G.eventQueue = [];
+    checkIntervention();
+    out.intervention.joins = (G.flags & 2) !== 0 && G.eventQueue.length === 1;
+    G.flags = 0;
+  }
+
   // ---- schoolhouse teaching and trade routes ----
   {
     beginGame(); G.screen = 'map';
@@ -1466,6 +1545,16 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("a hostile tribe presses claims you can pay or refuse",
+         all(r["demands"].values()), r["demands"]),
+        ("the four SoL announcements fire once per crossing",
+         all(r["sentiment"].values()), r["sentiment"]),
+        ("Tory militia rise only in a Tory colony, only during the war",
+         all(r["tory"].values()), r["tory"]),
+        ("the mercenary price follows its byte-verified shape",
+         all(r["merc"].values()), r["merc"]),
+        ("a foreign power watches, then joins on the bell total",
+         all(r["intervention"].values()), r["intervention"]),
         ("the schoolhouse teaches on the byte-cited 4/6/8 turn clock",
          all(r["school"].values()), r["school"]),
         ("trade routes: 12-route cap, stop list, and the automation",

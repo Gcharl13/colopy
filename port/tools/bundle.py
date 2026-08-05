@@ -285,7 +285,12 @@ def build_data():
               "@TRAINPROFESSION", "@TRAINFAIL", "@NOTEACHER",
               # Trade routes
               "@TRADETYPE", "@TRADESTART", "@TRADESELECT", "@TRADEDELETE",
-              "@TRADEMANY", "@TRADENONE", "@TRADENAME"):
+              "@TRADEMANY", "@TRADENONE", "@TRADENAME",
+              # Native demands on you, Tory uprising, mercenaries
+              "@INDIANGOLD", "@INDIANWAGONS", "@INDIANCITY", "@INDIANLAND",
+              "@INDIANROAD", "@REBELMAJORITY", "@REBELUNANIMOUS",
+              "@TORYMINORITY", "@TORYMAJORITY", "@TORYUPRISING",
+              "@KINGRECRUIT"):
         if k not in full:
             continue
         sec = full[k]
