@@ -454,6 +454,78 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- schoolhouse teaching and trade routes ----
+  {
+    beginGame(); G.screen = 'map';
+    const c = { name: 'Boston', x: 20, y: 20, nation: G.nation,
+                colonists: [], stock: DATA.cargo.map(() => 0),
+                buildings: ['Schoolhouse'], hammers: 0, building: null, sol: 0 };
+    G.colonies = [c];
+    // A Schoolhouse teaches class 1 only, and its faculty is one.
+    out.school = { levels: schoolLevel(c) === 1 };
+    c.buildings = ['University'];
+    out.school.university = schoolLevel(c) === 3;
+    c.buildings = ['Schoolhouse'];
+    // Only a mastered profession may teach, and the tier caps what it may teach.
+    const teacher = { type: 'Colonists', profession: 'Expert Farmers', job: 'Teacher' };
+    const pupil = { type: 'Colonists', profession: 'Free Colonists', job: null };
+    c.colonists = [teacher, pupil];
+    out.school.classOfFarmer = professionClass('Expert Farmers') === 1;
+    out.school.notTeachable = professionClass('Indian Converts') >= 4;
+    // Four turns for a class-1 profession, then the pupil takes it.
+    G.eventQueue = [];
+    for (let i = 0; i < 3; i++) runSchool(c);
+    out.school.notYet = pupil.profession === 'Free Colonists';
+    runSchool(c);
+    out.school.graduated = pupil.profession === 'Expert Farmers';
+    // A criminal climbs one rung instead of taking the expertise.
+    const crim = { type: 'Colonists', profession: 'Petty Criminals', job: null };
+    c.colonists = [teacher, crim];
+    for (let i = 0; i < 4; i++) runSchool(c);
+    out.school.rung = crim.profession === 'Indentured Servants';
+    // A teacher with no student reports it.
+    c.colonists = [teacher];
+    G.eventQueue = [];
+    runSchool(c);
+    out.school.noStudent = G.eventQueue.length === 1;
+
+    // Trade routes: the caps, the record shape, and the automation.
+    // Both colonies need to sit on real land with land between them, or the
+    // wagon has nowhere to drive.
+    let lx = -1, ly = -1;
+    for (let y = 10; y < 60 && lx < 0; y++)
+      for (let x = 10; x < 48; x++) {
+        let ok = true;
+        for (let k = 0; k <= 4; k++) if (tileWater(at(x + k, y))) ok = false;
+        if (ok) { lx = x; ly = y; break; }
+      }
+    c.x = lx; c.y = ly;
+    G.colonies = [c, { name: 'Salem', x: lx + 4, y: ly, nation: G.nation, colonists: [],
+                       stock: DATA.cargo.map(() => 0), buildings: [], hammers: 0,
+                       building: null, sol: 0 }];
+    G.routes = [];
+    const r = createRoute([0, 1], false);
+    out.routes = { created: !!r && r.stops.length === 2,
+                   named: !!r && r.name.length > 0,
+                   stopNames: routeStopName(999) === DATA.nations[G.nation].homeport };
+    // Twelve is the cap.
+    for (let i = 0; i < 20; i++) createRoute([0, 1], false);
+    out.routes.capped = G.routes.length === 12;
+    // A wagon put on a route drives to the stop, loads, and moves on.
+    G.routes = [{ name: 'test', sea: false, stops: [0, 1], cursor: 0 }];
+    c.stock[4] = 200;                                  // Furs at Boston
+    const wag = mkUnit('Wagon Train', c.x, c.y);
+    wag.hold = []; wag.route = 0; wag.stopIndex = 0; wag.orders = 2;
+    G.units.push(wag);
+    advanceTradeRoutes();                              // at Boston: load
+    out.routes.loaded = wag.hold.length > 0 && c.stock[4] < 200;
+    const firstStop = wag.stopIndex;
+    for (let i = 0; i < 12; i++) advanceTradeRoutes(); // drive to Salem
+    out.routes.delivered = G.colonies[1].stock[4] > 0;
+    out.routes.advanced = wag.stopIndex !== firstStop || G.colonies[1].stock[4] > 0;
+
+  }
+
   // ---- diplomacy ----
   {
     beginGame(); G.screen = 'map';
@@ -1210,8 +1282,11 @@ SCRIPT = """() => {
   G.menuSel = DATA.menus[1].rows.findIndex(r => r.label === 'Center View');
   runMenuRow();
   out.menuDispatch = G.openMenu === -1;
-  G.screen = 'map'; openMenu(4);            // TRADE: nothing implemented
-  G.menuSel = 0; runMenuRow();
+  // GAME "Sound Options" has no command and must say so rather than doing
+  // nothing quietly. (TRADE used to be the example; every TRADE row is built now.)
+  G.screen = 'map'; openMenu(0);
+  G.menuSel = DATA.menus[0].rows.findIndex(r => r.label === 'Sound Options');
+  runMenuRow();
   out.menuAbsent = /not in this build/.test(G.msg);
 
   // ---- dialog frame (func_06E0C8) ----
@@ -1391,6 +1466,10 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the schoolhouse teaches on the byte-cited 4/6/8 turn clock",
+         all(r["school"].values()), r["school"]),
+        ("trade routes: 12-route cap, stop list, and the automation",
+         all(r["routes"].values()), r["routes"]),
         ("diplomacy: war/treaty matrices, lockout, eligibility, and the rev ban",
          all(r["diplo"].values()), r["diplo"]),
         ("the King's cut is max(5d+50, 2*tax) capped at 90, or the tax with Cortes",

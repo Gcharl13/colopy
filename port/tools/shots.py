@@ -29,6 +29,13 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("traderoute",
+     "beginGame();G.screen='map';"
+     "G.colonies=[{name:'Boston',x:20,y:20,nation:0,colonists:[],stock:DATA.cargo.map(()=>0),"
+     "buildings:[],hammers:0,building:null,sol:0},"
+     "{name:'Salem',x:24,y:20,nation:0,colonists:[],stock:DATA.cargo.map(()=>0),"
+     "buildings:[],hammers:0,building:null,sol:0}];"
+     "openTradeMenu('create');G.trade.stops=[0];"),
     ("parley",
      "beginGame();G.screen='map';G.turn=60;"
      "(()=>{const r=G.rivals[0];r.met=true;r.attitude=10;r.gold=9000;openParley(r);})()"),

@@ -277,6 +277,7 @@ const G = {
   bells: 0, bellsPerTurn: 0, fatherInProgress: null, declared: false, boycotts: [],
   rivals: [], metAnyone: false,
   warMatrix: {}, treatyMatrix: {}, parleyLock: {}, attitude: 8,
+  routes: [], trade: null,
   parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
@@ -366,6 +367,7 @@ function beginGame() {
   seedRivals();
   G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
   G.parley = null; G.attitude = 8;
+  G.routes = []; G.trade = null;
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -1648,6 +1650,58 @@ function colonyFood(c) {
 }
 function colonyHammers(c) { return colonyProduce(c).tally[HAMMERS]; }
 
+// ------------------------------------------------- schoolhouse teaching
+// spec/systems/training.md, byte-verified inside func_02D658 -- the per-colony
+// turn processor, not a separate UI routine (a 2026-06-21 correction).
+//   faculty cap = 3 per colony: Schoolhouse 1 / College 2 / University 3
+//   only a colonist who has MASTERED a profession may teach (@NOTEACHER)
+//   eligible students are Free Colonists, Indentured Servants, Petty Criminals
+//   turns to graduate = 4 / 6 / 8 by the profession's @JOB skill class 1/2/3;
+//     class 4 is not teachable at all (criminals, converts, teachers)
+//   the building's level caps the class it may teach (S/C/U = 1/2/3)
+//   a per-student counter ticks each turn and resets on graduation
+//   @TRAINPROFESSION on graduation, @TRAINFAIL when a teacher has no student
+const SCHOOL_LEVEL = { 'Schoolhouse': 1, 'College': 2, 'University': 3 };
+const TEACH_TURNS = { 1: 4, 2: 6, 3: 8 };
+const STUDENT_TIERS = ['Petty Criminals', 'Indentured Servants', 'Free Colonists'];
+function schoolLevel(c) {
+  let lv = 0;
+  for (const [b, n] of Object.entries(SCHOOL_LEVEL))
+    if (c.buildings.includes(b)) lv = Math.max(lv, n);
+  return lv;
+}
+// The teacher's own skill class, from the @JOB row their expert title belongs to.
+function professionClass(profession) {
+  const i = DATA.jobexpert.indexOf(profession);
+  return i < 0 ? 4 : DATA.jobtier[i];
+}
+function runSchool(c) {
+  const level = schoolLevel(c);
+  if (!level) return;
+  // Teachers: mastered professions only, capped at the building's faculty.
+  const faculty = c.colonists.filter(p => p.job === 'Teacher' && p.profession &&
+                                          professionClass(p.profession) <= level)
+                             .slice(0, level);
+  if (!faculty.length) return;
+  for (const teacher of faculty) {
+    const need = TEACH_TURNS[professionClass(teacher.profession)];
+    if (!need) continue;
+    const student = c.colonists.find(p => p !== teacher && p.job !== 'Teacher' &&
+      (!p.profession || STUDENT_TIERS.includes(p.profession)));
+    if (!student) { showEvent('TRAINFAIL', {}); continue; }
+    student.taught = (student.taught || 0) + 1;
+    if (student.taught < need) continue;
+    student.taught = 0;
+    // A student below expert climbs one tier; a Free Colonist takes the
+    // teacher's own expertise.
+    const rung = STUDENT_TIERS.indexOf(student.profession);
+    if (rung >= 0 && rung < STUDENT_TIERS.length - 1)
+      student.profession = STUDENT_TIERS[rung + 1];
+    else student.profession = teacher.profession;
+    showEvent('TRAINPROFESSION', { STRING0: student.profession, STRING1: c.name });
+  }
+}
+
 // --------------------------------------------------------- the colony turn
 // Sons of Liberty, byte-verified (sol_membership_pct 0x8524..0x85B1 and the
 // per-turn accumulator func_02D658 @0x2DA1C..0x2DAD8). Both terms are 32-bit
@@ -1725,6 +1779,7 @@ function colonyTurn(c) {
   c.bellsTurn = r.tally[BELLS];
   updateSoL(c, r.tally[BELLS]);
   advanceConstruction(c, r.tally[HAMMERS]);
+  runSchool(c);
   autoExport(c);
 }
 // One turn of construction: bank this colony's hammers, then finish the target
@@ -3806,6 +3861,177 @@ function applyFatherEffect(name) {
   }
 }
 
+// -------------------------------------------------------- trade routes
+// spec/systems/trade_routes.md. The route table is byte-verified: a record per
+// route, MAX 12 (@TRADEMANY "Only 12 routes"), each carrying a 32-byte name, a
+// type byte (0 = sea, 1 = land), a stop cursor, and UP TO FOUR STOPS. A stop's
+// destination is a colony id or 999 = Europe; each stop carries a load list and
+// an unload list. A unit is bound to a route through its own record: the low
+// nibble is the route index and the high nibble the current stop.
+//
+// The port keeps the same shape and the same caps. What it does NOT reproduce
+// is the per-stop good-list editor: the engine lets you name each good to load
+// and unload at each stop, and this build uses the natural default -- load a
+// colony's surplus, unload everything at Europe and sell it. Flagged.
+const MAX_ROUTES = 12, MAX_STOPS = 4, STOP_EUROPE = 999;
+const ORDER_TRADE = 2;
+function routeStopName(stop) {
+  if (stop === STOP_EUROPE) return DATA.nations[G.nation].homeport;
+  const c = G.colonies[stop];
+  return c ? c.name : '?';
+}
+// The engine names a route from @TRADENAMES -- Run / Ferry / Cargo / Transport
+// / Triangle -- and the port picks by stop count, which is what makes a
+// three-stop route a Triangle.
+function routeName(stops) {
+  const n = DATA.tradenames;
+  const noun = stops.length >= 3 ? n[4] : n[G.routes.length % 3];
+  return `${routeStopName(stops[0])} ${noun}`;
+}
+function createRoute(stops, sea) {
+  if (G.routes.length >= MAX_ROUTES) {
+    showEvent('TRADEMANY', { NUMBER0: MAX_ROUTES });
+    return null;
+  }
+  const r = { name: routeName(stops), sea, stops: stops.slice(0, MAX_STOPS), cursor: 0 };
+  G.routes.push(r);
+  return r;
+}
+// One turn of automation for a unit running a route: sail or drive toward the
+// current stop, and on arrival unload, load, and advance the cursor.
+function runTradeRoute(u) {
+  const r = G.routes[u.route];
+  if (!r) { u.orders = 0; return; }
+  const stop = r.stops[u.stopIndex % r.stops.length];
+  if (stop === STOP_EUROPE) {
+    // Europe: the ship sails for the sea lane and sells what it carries on
+    // arrival, which the crossing code already does.
+    if (!u.ship) { u.orders = 0; return; }
+    sailForEurope(u);
+    return;
+  }
+  const c = G.colonies[stop];
+  if (!c) { u.orders = 0; return; }
+  if (u.x === c.x && u.y === c.y) {
+    // The engine gives every stop its own load list and unload list. This build
+    // uses the simplest default that does not chase its own tail: the FIRST
+    // stop loads, every other stop unloads. Loading at every stop would have a
+    // wagon pick straight back up what it had just set down.
+    u.hold = u.hold || [];
+    const isOrigin = (u.stopIndex % r.stops.length) === 0;
+    if (isOrigin) {
+      const cap = unit(u.type).cargo || 0;
+      for (let i = 0; i < c.stock.length && (u.hold.length < cap); i++) {
+        if (i === GOOD.FOOD || c.stock[i] < 50) continue;
+        const take = Math.min(100, c.stock[i]);
+        c.stock[i] -= take;
+        holdAdd(u, i, take);
+      }
+    } else {
+      for (const h of u.hold.slice()) { c.stock[h.good] += h.qty; holdAdd(u, h.good, -h.qty); }
+    }
+    u.stopIndex = (u.stopIndex + 1) % r.stops.length;
+    return;
+  }
+  // Step toward the stop, one tile a turn, respecting the unit's element.
+  const dx = Math.sign(c.x - u.x), dy = Math.sign(c.y - u.y);
+  const tries = [[dx, dy], [dx, 0], [0, dy]];
+  for (const [mx, my] of tries) {
+    if (!mx && !my) continue;
+    const nx = u.x + mx, ny = u.y + my;
+    if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;
+    const water = tileWater(at(nx, ny));
+    if (u.ship !== water && !(colonyAt(nx, ny) && !u.ship)) continue;
+    u.x = nx; u.y = ny;
+    reveal(nx, ny, sightRadius(u));
+    return;
+  }
+}
+function advanceTradeRoutes() {
+  for (const u of G.units) if (u.orders === ORDER_TRADE && u.route !== undefined) runTradeRoute(u);
+}
+// The TRADE menu. Creating a route walks the stop list; the port asks for the
+// stops one at a time from a menu of your colonies plus Europe.
+function tradeStopChoices() {
+  return G.colonies.map((c, i) => ({ id: i, label: c.name }))
+    .concat([{ id: STOP_EUROPE, label: DATA.nations[G.nation].homeport }]);
+}
+function openTradeMenu(mode) {
+  if (mode !== 'create' && !G.routes.length) { showEvent('TRADENONE', {}); return; }
+  if (mode === 'create' && !G.colonies.length) {
+    G.msg = 'We have no colonies to trade between.';
+    return;
+  }
+  G.trade = { mode, stops: [], row: 0 };
+  G.screen = 'trade';
+}
+function tradeRows() {
+  const t = G.trade;
+  if (t.mode === 'create') {
+    const rows = tradeStopChoices().map(s => ({ id: s.id, label: s.label }));
+    if (t.stops.length >= 2) rows.push({ id: 'done', label: 'Done -- create the route' });
+    return rows;
+  }
+  return G.routes.map((r, i) => ({ id: i, label: `${r.name} (${r.stops.map(routeStopName).join(' - ')})` }));
+}
+function tradeCommit() {
+  const t = G.trade, row = tradeRows()[t.row];
+  if (!row) { G.screen = 'map'; G.trade = null; return; }
+  if (t.mode === 'create') {
+    if (row.id === 'done') {
+      const sea = t.stops.includes(STOP_EUROPE) ||
+                  t.stops.some(i => G.colonies[i] && coastalColonies().includes(G.colonies[i]));
+      const r = createRoute(t.stops, sea);
+      G.screen = 'map'; G.trade = null;
+      if (r) G.msg = `Trade route "${r.name}" created.`;
+      return;
+    }
+    if (t.stops.length < MAX_STOPS && !t.stops.includes(row.id)) t.stops.push(row.id);
+    return;
+  }
+  if (t.mode === 'delete') {
+    const r = G.routes.splice(row.id, 1)[0];
+    for (const u of G.units) if (u.route === row.id) { u.route = undefined; u.orders = 0; }
+    G.screen = 'map'; G.trade = null;
+    G.msg = `Trade route "${r.name}" deleted.`;
+    return;
+  }
+  // 'assign' -- put the selected unit on this route.
+  const u = G.units[G.sel];
+  G.screen = 'map'; G.trade = null;
+  if (!u || (!u.ship && u.type !== 'Wagon Train')) {
+    G.msg = 'Only ships and wagon trains can run a trade route.';
+    return;
+  }
+  u.route = row.id; u.stopIndex = 0; u.orders = ORDER_TRADE; u.movesLeft = 0;
+  G.msg = `${u.type} joins the ${G.routes[row.id].name}.`;
+  advance();
+}
+function drawTrade(ctx) {
+  drawMap(ctx);
+  const t = G.trade, rows = tradeRows();
+  const head = t.mode === 'create'
+    ? [`Select destination number ${t.stops.length + 1} for route`,
+       t.stops.length ? `So far: ${t.stops.map(routeStopName).join(' - ')}` : '']
+    : t.mode === 'delete' ? ['Which trade route should we {delete}:']
+    : ['Select a trade route:'];
+  const body = head.filter(Boolean);
+  let cw = 190;
+  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const r of rows) cw = Math.max(cw, FONT.tiny.width(r.label) + 20);
+  const w = cw + 6, textH = body.length * 6;
+  const h = 6 + textH + 3 + rows.length * 8 + 3;
+  const x = Math.round(160 - w / 2), y = Math.max(10, Math.round(100 - h / 2));
+  plaque(ctx, x, y, w, h, 'WOODTILE');
+  body.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
+  const seed = y + 6 + textH + 3;
+  rows.forEach((r, k) => {
+    const ry = seed + k * 8, sel = k === t.row;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, 8); }
+    FONT.tiny.draw(ctx, r.label, x + 9, ry + 1, lut(sel ? 0xFC : 0xFE));
+  });
+}
+
 // ---------------------------------------------------------- diplomacy
 // spec/systems/diplomacy.md. Two 4x4 per-pair byte matrices, both byte-verified:
 //   the WAR matrix (PowerRecord +0x34): 0x01 resolved, 0x02 AT WAR, 0x08 pending
@@ -4781,6 +5007,7 @@ function endTurn() {
   nativeRaids();
   runRivals();
   kingTaxDemand();
+  advanceTradeRoutes();
   runWar();
   driftMarket();
   advanceCrossings();
@@ -5094,6 +5321,11 @@ const COMMANDS = {
   'Show Hidden Terrain': () => { G.showHidden = !G.showHidden;
                                  G.msg = `Hidden terrain ${G.showHidden ? 'on' : 'off'}.`; },
   'Center View': centreView,
+  // TRADE
+  'Create Trade Route': () => openTradeMenu('create'),
+  'Edit Trade Route': () => openTradeMenu('assign'),
+  'Delete Trade Route': () => openTradeMenu('delete'),
+  'Begin Trade Route': () => openTradeMenu('assign'),
   // REPORTS -- the four advisers this build can populate from real state.
   'F1 Terrain Information': () => openPedia(2),
   'F2 Religious Adviser': () => { G.report = 'F2'; G.screen = 'report'; },
@@ -5357,6 +5589,14 @@ function onKey(e) {
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
+    case 'trade': {
+      const n = tradeRows().length;
+      if (k === 'ArrowUp') G.trade.row = (G.trade.row + n - 1) % n;
+      if (k === 'ArrowDown') G.trade.row = (G.trade.row + 1) % n;
+      if (k === 'Enter' || k === ' ') tradeCommit();
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.trade = null; }
+      break;
+    }
     case 'parley': {
       const n = parleyRows().length;
       if (k === 'ArrowUp') G.parleyRow = (G.parleyRow + n - 1) % n;
@@ -5528,7 +5768,8 @@ function frame() {
      name: drawName, briefing: drawBriefing, cards: drawCards,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
-     report: drawReport, village: drawVillage, parley: drawParley }[G.screen])(ctx);
+     report: drawReport, village: drawVillage, parley: drawParley,
+     trade: drawTrade }[G.screen])(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

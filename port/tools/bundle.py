@@ -142,6 +142,10 @@ def build_data():
     # The master/expert title for each @JOB row, parallel to D["jobs"] -- what a
     # village grants when it teaches (Live Among The Natives, §19.4).
     D["jobexpert"] = [r["expert_name"] for r in rows("@JOB")]
+    # @JOB's third column is the SKILL CLASS the schoolhouse reads: 1/2/3 take
+    # 4/6/8 turns to teach and need Schoolhouse/College/University; class 4 is
+    # not teachable at all (criminals, converts, teachers).
+    D["jobtier"] = [int(r["school_tier"] or 4) for r in rows("@JOB")]
     # @ACTIONS: the ten rows of the native-village action menu, in runtime
     # order (spec/ui/context_dialogs.md §6 -- func_04B308 is their sole
     # consumer). @MISSION: the four per-power mission-name prefixes.
@@ -155,6 +159,9 @@ def build_data():
     game = json.load(open(ROOT / "data_extracted/text/GAME_sections.json"))
     labels = json.load(open(ROOT / "data_extracted/text/LABELS_sections.json"))
     D["eurolabel"] = labels["@EUROLABEL"].split("\n")
+    # @TRADENAMES: a leading count then the five route-name nouns the engine
+    # picks from when naming a route (Run / Ferry / Cargo / Transport / Triangle).
+    D["tradenames"] = [l for l in game["@TRADENAMES"].split("\n")[1:] if l.strip()]
 
     # PEDIA.TXT: @PEDIA lists the seven category names; the rest are entry
     # bodies keyed @<CATEGORY><index>. Comment lines (@;) are already stripped.
@@ -273,7 +280,12 @@ def build_data():
               "@KINGGALLEON2", "@KINGGALLEON3", "@LOOTCASH", "@CASHTREASURE",
               # Diplomacy
               "@SIGNTREATY", "@DECLAREWAR", "@WORTHY", "@THREATS", "@WITHDRAW",
-              "@GIVECASH", "@TRIBUTE", "@NOWARSDURINGREV"):
+              "@GIVECASH", "@TRIBUTE", "@NOWARSDURINGREV",
+              # Schoolhouse teaching
+              "@TRAINPROFESSION", "@TRAINFAIL", "@NOTEACHER",
+              # Trade routes
+              "@TRADETYPE", "@TRADESTART", "@TRADESELECT", "@TRADEDELETE",
+              "@TRADEMANY", "@TRADENONE", "@TRADENAME"):
         if k not in full:
             continue
         sec = full[k]
