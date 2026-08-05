@@ -28,7 +28,9 @@ SCRIPT = """() => {
   out.offer = G.dialog ? G.dialog.opts : null;
   out.offerDefault = G.dialog ? G.dialog.sel : null;
 
-  closeDialog(G.dialog.sel);                 // take the @default, "Make Landfall"
+  // @default is ONE-BASED and names the cautious row: @LANDFALL's `@default=1`
+  // highlights "Stay With Ships". Landing is the player's deliberate choice.
+  closeDialog(1);                            // "Make Landfall"
   out.afterLandfall = { screen: G.screen, woodcut: G.woodcut,
                         cargoLeft: ship.cargo.length,
                         units: G.units.map(u => u.type) };
@@ -452,6 +454,105 @@ SCRIPT = """() => {
         return scoreParts().revolution === (1780 - 1700) * 2;
       })(),
     };
+  }
+
+  // ---- building effects, upkeep, colonial authority, orders ----
+  {
+    beginGame(); G.screen = 'map';
+    const mk = (name, x, y, buildings) => ({ name, x, y, nation: G.nation,
+      colonists: [], stock: DATA.cargo.map(() => 0), buildings: buildings || [],
+      hammers: 0, building: null, sol: 0, latch: 0 });
+    const c = mk('Boston', 20, 20, ['Church', 'Fort']);
+    G.colonies = [c];
+    // Upkeep is the @BUILDING column, summed, and charged per turn.
+    const due = DATA.buildings.find(b => b.name === 'Church').upkeep +
+                DATA.buildings.find(b => b.name === 'Fort').upkeep;
+    out.upkeep = { sums: colonyUpkeep(c) === due };
+    G.gold = 1000; G.upkeepUnpaid = false;
+    payUpkeep();
+    out.upkeep.charged = G.gold === 1000 - due && !G.upkeepUnpaid;
+    G.gold = 0; G.eventQueue = [];
+    payUpkeep();
+    out.upkeep.unpaidWarns = G.upkeepUnpaid && G.eventQueue.length === 1;
+    // Unpaid upkeep halves indoor work.
+    c.buildings.push("Rum Distiller's House");
+    const worker = { type: 'Colonists', profession: null, job: 'Distiller' };
+    c.colonists = [worker];
+    const half = indoorYield(c, worker);
+    G.upkeepUnpaid = false;
+    const full = indoorYield(c, worker);
+    out.upkeep.halves = half < full;
+
+    // Printing Press +50% bells, Newspaper x2.
+    const bells = (blds) => {
+      const b = mk('B', 20, 20, blds.concat(['Town Hall']));
+      b.colonists = [{ type: 'Colonists', profession: null, job: 'Statesman' }];
+      b.stock[GOOD.FOOD] = 500;
+      colonyTurn(b);
+      return b.bellsTurn;
+    };
+    const base = bells([]), press = bells(['Printing Press']), news = bells(['Newspaper']);
+    out.press = { press: base === 0 || press === Math.floor(base * 3 / 2),
+                  news: base === 0 || news === base * 2 };
+    // The Stable lowers the horse-breeding threshold from 50 to 25.
+    const h1 = mk('H', 20, 20, []); h1.stock[GOOD.HORSES] = 30; h1.stock[GOOD.FOOD] = 500;
+    colonyTurn(h1);
+    const h2 = mk('H', 20, 20, ['Stable']); h2.stock[GOOD.HORSES] = 30; h2.stock[GOOD.FOOD] = 500;
+    colonyTurn(h2);
+    out.stable = { noStableIdle: h1.stock[GOOD.HORSES] === 30,
+                   stableBreeds: h2.stock[GOOD.HORSES] > 30 };
+    // Peter Stuyvesant gates the Custom House, and a Custom House is what keeps
+    // the export running after independence.
+    G.colonies = [c]; c.colonists = [];
+    G.fathersOwned = [];
+    out.customs = { gated: !buildOptions(c).some(b => b.name === 'Custom House') };
+    G.fathersOwned = ['Peter Stuyvesant'];
+    c.buildings = ['Town Hall'];
+    c.colonists = [{ type: 'Colonists', profession: null, job: null }];
+    out.customs.enabled = buildOptions(c).some(b => b.name === 'Custom House');
+    // After declaring, the excess is still cut to 50 -- but it is WASTED unless
+    // a Custom House is standing, in which case it is sold as before.
+    G.declared = true; c.stock[4] = 300;
+    const g0 = G.gold;
+    autoExport(c);
+    out.customs.wastedWithout = c.stock[4] === 50 && G.gold === g0;
+    c.buildings.push('Custom House');
+    c.stock[4] = 300;
+    autoExport(c);
+    out.customs.soldWith = c.stock[4] === 50 && G.gold > g0;
+    G.declared = false; G.fathersOwned = [];
+
+    // Colonial authority: abandon defaults to the refusal, rename works.
+    G.colonies = [mk('Plymouth', 20, 20, [])];
+    G.colony = 0; G.screen = 'colony';
+    G.dialog = null;
+    abandonColony();
+    out.authority = { asks: !!G.dialog,
+                      defaultsToRefusal: !!G.dialog && G.dialog.sel === 1 };
+    if (G.dialog) { closeDialog(1); out.authority.refusalKeeps = G.colonies.length === 1; }
+    abandonColony();
+    if (G.dialog) closeDialog(0);
+    out.authority.abandons = G.colonies.length === 0;
+
+    // Pillage tears out an improvement; Go To walks a unit over turns.
+    G.colonies = [];
+    beginGame(); G.screen = 'map';
+    let px = -1, py = -1;
+    for (let y = 10; y < 60 && px < 0; y++)
+      for (let x = 10; x < 48; x++)
+        if (!tileWater(at(x, y)) && !tileWater(at(x + 3, y))) { px = x; py = y; break; }
+    const sold = mkUnit('Soldiers', px, py);
+    G.units.push(sold); G.sel = G.units.indexOf(sold);
+    IMPROVE[py * MAP.w + px] |= ROAD_BIT;
+    pillage();
+    out.orders2 = { pillaged: !hasRoad(px, py) };
+    // Go To.
+    G.sel = G.units.indexOf(sold);
+    beginGoTo();
+    setGoTo(sold, px + 3, py);
+    out.orders2.goToSet = sold.orders === 3;
+    for (let i = 0; i < 10; i++) advanceGoTo();
+    out.orders2.arrived = sold.x === px + 3 || sold.orders === 0;
   }
 
   // ---- native demands, Tory uprising, mercenaries, intervention ----
@@ -1416,7 +1517,8 @@ def main():
         ("ship sails on water", r["sailedOnWater"], r["sailedOnWater"]),
         ("@LANDFALL offered at the coast",
          r["offer"] == ["Stay With Ships", "Make Landfall"], r["offer"]),
-        ("@default row is Make Landfall", r["offerDefault"] == 1, r["offerDefault"]),
+        ("@LANDFALL highlights the cautious row (@default is 1-based)",
+         r["offerDefault"] == 0, r["offerDefault"]),
         ("cargo goes ashore as units",
          r["afterLandfall"]["units"] == ["Caravel", "Pioneers", "Soldiers"]
          and r["afterLandfall"]["cargoLeft"] == 0, r["afterLandfall"]),
@@ -1545,6 +1647,18 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("building upkeep is charged, and unpaid halves indoor work",
+         all(r["upkeep"].values()), r["upkeep"]),
+        ("Printing Press adds half the bells, Newspaper doubles them",
+         all(r["press"].values()), r["press"]),
+        ("a Stable lowers the horse-breeding threshold to 25",
+         all(r["stable"].values()), r["stable"]),
+        ("Stuyvesant gates the Custom House, which keeps trade after declaring",
+         all(r["customs"].values()), r["customs"]),
+        ("abandoning a colony defaults to the refusal",
+         all(r["authority"].values()), r["authority"]),
+        ("Pillage destroys an improvement and Go To walks there",
+         all(r["orders2"].values()), r["orders2"]),
         ("a hostile tribe presses claims you can pay or refuse",
          all(r["demands"].values()), r["demands"]),
         ("the four SoL announcements fire once per crossing",

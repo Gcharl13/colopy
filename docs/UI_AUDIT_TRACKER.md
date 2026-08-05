@@ -482,3 +482,24 @@ are a demotion or a capture, not a death.
 | Tory uprising | **PARTIAL** | The gate is byte-exact — `random_int(0, difficulty+1)` proceeding on a **nonzero** roll, so `(difficulty+1)/(difficulty+2)`: 50% at Discoverer rising to ~83% at Viceroy. Militia raised by an uprising fight for the Crown. **The call frequency is not pinned in the evidence**, so the port calls it per Tory-majority colony per turn behind its own rarity roll. |
 | Mercenaries | **DONE** | The byte-verified price shape: `gold_per_unit = ((difficulty + K)·2 + random_int(0,6))·100`, `qty = (catA + catC)·2 + count`, `price = gold_per_unit · qty`, with **K = 3 wartime** and **K = 4 peacetime**. Wartime `count = random_int(2, (4−difficulty)/2 + 2)` and a single coin picks one category, so `qty = count + 2`. The one-shot bit means no offer on the first eligible call, then a **1-in-3** gate, and the offer only appears if you can afford it. |
 | Foreign intervention | **PARTIAL** | `@CONSIDER` arms the watch and `@INTERVENTION` lands the force on the rebel side, setting game-flag bit 1. **The bell threshold is not in the evidence here**, so the port uses 2000 on the same 1000-bell scale the score component uses, and flags it. The landing reuses the coastal pick. |
+
+## Port: building effects, upkeep, colonial authority, remaining orders (2026-08-05)
+
+| Item | Status | Note |
+|---|---|---|
+| Building upkeep | **DONE** | `@BUILDING`'s last column is a per-turn gold charge, and `@UPKEEP` states the consequence of not paying it: *"colonists in the buildings will produce at half efficiency"* until you do. The free base tier (upkeep 0) is why a new colony costs nothing to run. |
+| Printing Press / Newspaper | **DONE** | Per-colony building bits `0x13` **+50% bells** and `0x14` **×2 bells** (`founding_fathers.md` §3). |
+| Stable | **DONE** | Horses breed in a colony holding them, and the per-turn growth threshold is **25 with a Stable / 50 without** — byte-verified at `func_00A3E1` @0xA5BB/@0xA5C0/@0xA5CD, which also corrected an earlier "difficulty flag" gloss: the toggle is the building. |
+| Custom House | **DONE — closes an open question** | **Peter Stuyvesant** is what makes it constructible (`func_00B900` @0xBA37), and `market.md` says what it does: *"Custom Houses allow trade after independence."* That resolves the open question left when the over-100 export step went in — the export is unconditional **before** declaring, and a Custom House is what keeps it running **after**. Without one, the excess is still cut to 50 but wasted. |
+| Abandon / rename | **DONE** | `@ABANDON` (shift-A on the colony screen) and `@RENAMECOLONY` (R). The colonists walk back out onto the map when a colony is abandoned. |
+| Pillage | **PARTIAL** | Tears the improvement out of the tile. Its own gating is not in the evidence read, so the port allows it on any improved tile that is not yours. |
+| Go to Place | **DONE** | Sets a destination and walks the unit toward it a step a turn, giving up if it is boxed in. The engine caches the next step per unit; from the player's side the behaviour is the same. |
+
+### Bug found: `@default` is ONE-BASED
+
+The dialog framework read `@default` as a 0-based row index. It is **1-based** —
+`@ABANDON`'s `@default=2` over two rows is *"Never! That would be folly."*, and
+`@LANDFALL`'s `@default=1` is *"Stay With Ships"*. The engine highlights the
+**cautious** row in both cases; the port had been highlighting "Make Landfall".
+Fixed in both `openDialog` and `askEvent`, and the landfall regression check now
+chooses the landing row deliberately instead of taking the default.

@@ -63,7 +63,8 @@ def build_data():
     # parser treats as a paragraph break.
     full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
     D["dialogs"] = {}
-    for key in ("@LANDHO", "@LANDFALL", "@COLONY", "@RECRUIT", "@PURCHASE"):
+    for key in ("@LANDHO", "@LANDFALL", "@COLONY", "@RECRUIT", "@PURCHASE",
+                "@RENAMECOLONY"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {
@@ -290,7 +291,8 @@ def build_data():
               "@INDIANGOLD", "@INDIANWAGONS", "@INDIANCITY", "@INDIANLAND",
               "@INDIANROAD", "@REBELMAJORITY", "@REBELUNANIMOUS",
               "@TORYMINORITY", "@TORYMAJORITY", "@TORYUPRISING",
-              "@KINGRECRUIT"):
+              "@KINGRECRUIT", "@UPKEEP", "@ABANDON", "@RENAMECOLONY",
+              "@TOONEAR", "@NOPORT"):
         if k not in full:
             continue
         sec = full[k]

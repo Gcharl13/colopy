@@ -281,6 +281,8 @@ const G = {
   mercSeen: false, interventionWatch: false,
   parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
+  upkeepUnpaid: false,
+  goTo: null,
   razed: 0, bellsTotal: 0, lostWar: false,
   combat: null,            // the Combat Analysis panel's live figures
   combatAnalysis: true,    // Game Options bit 0x0200
@@ -523,7 +525,11 @@ function openDialog(key, onDone, prefill) {
   G.dialog = {
     body: t.body, tail: t.tail, width: t.width, onDone,
     opts: numeric ? t.tail : null,
-    sel: numeric ? +t.default : 0,
+    // @default names the highlighted row ONE-BASED: @ABANDON's `@default=2`
+    // over two rows is "Never! That would be folly." -- the engine highlights
+    // the cautious answer. @LANDFALL's `@default=1` is "Stay With Ships" for
+    // the same reason. (The port read it as a 0-based index until 2026-08-05.)
+    sel: numeric ? Math.max(0, Math.min(t.tail.length - 1, +t.default - 1)) : 0,
     entry: numeric ? undefined : (prefill !== undefined ? prefill : (t.default || '')),
   };
 }
@@ -1340,6 +1346,94 @@ const STARTING_BUILDINGS = DATA.buildings
   .map(b => b.name);
 const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
 
+// ------------------------------------------- colonial authority + orders
+// spec/ui/context_dialogs.md §7. @ABANDON carries `@default=2`, so the
+// highlighted row is "Never! That would be folly." -- the engine defends you
+// against a stray keypress, and the port keeps that default.
+function abandonColony() {
+  const c = G.colonies[G.colony];
+  if (!c) return;
+  askEvent('ABANDON', { STRING0: c.name }, (choice) => {
+    // Row 0 abandons ("Yes, it is God's will."), row 1 refuses -- and row 1 is
+    // the @default.
+    if (choice !== 0) return;
+    // The colonists walk back out onto the map.
+    for (const p of c.colonists) {
+      const u = mkUnit('Colonists', c.x, c.y);
+      u.profession = p.profession || null;
+      G.units.push(u);
+    }
+    G.colonies.splice(G.colonies.indexOf(c), 1);
+    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
+    G.screen = 'map';
+    G.msg = `${c.name} is abandoned.`;
+  });
+}
+function renameColony() {
+  const c = G.colonies[G.colony];
+  if (!c) return;
+  openDialog('RENAMECOLONY', (name) => {
+    const nm = (name || '').trim();
+    if (nm) { G.msg = `${c.name} is renamed ${nm}.`; c.name = nm; }
+  }, c.name);
+}
+// @ORDERS row 12, Pillage: a unit standing on a rival's improvement tears it
+// out. Its own gating is not in the evidence read, so the port allows it on any
+// improved tile that is not yours and says what it destroyed.
+function pillage() {
+  const u = G.units[G.sel];
+  if (!u || u.ship) return;
+  const i = u.y * MAP.w + u.x;
+  if (colonyAt(u.x, u.y)) { G.msg = 'We will not pillage our own colony.'; return; }
+  if (!IMPROVE[i]) { G.msg = 'There is nothing here to destroy.'; return; }
+  const what = (IMPROVE[i] & ROAD_BIT) ? 'road' : 'plowed field';
+  IMPROVE[i] = 0;
+  u.movesLeft = 0;
+  G.msg = `The ${what} is destroyed.`;
+  advance();
+}
+// @ORDERS row 3, Go To: the unit walks toward a chosen tile over as many turns
+// as it takes. The engine caches the next step per unit; the port keeps the
+// destination and steps toward it each turn, which is the same behaviour from
+// the player's side.
+function beginGoTo() {
+  const u = G.units[G.sel];
+  if (!u) return;
+  G.goTo = u;
+  G.msg = 'Click the tile to travel to.';
+}
+function setGoTo(u, x, y) {
+  u.goal = [x, y];
+  u.orders = 3;
+  G.goTo = null;
+  G.msg = `Travelling to (${x}, ${y}).`;
+  advance();
+}
+function advanceGoTo() {
+  for (const u of G.units) {
+    if (u.orders !== 3 || !u.goal) continue;
+    const [gx, gy] = u.goal;
+    if (u.x === gx && u.y === gy) { u.orders = 0; u.goal = null; continue; }
+    // One step a turn toward the goal, respecting the unit's element.
+    const dx = Math.sign(gx - u.x), dy = Math.sign(gy - u.y);
+    const tries = [[dx, dy], [dx, 0], [0, dy]];
+    let moved = false;
+    for (const [mx, my] of tries) {
+      if (!mx && !my) continue;
+      const nx = u.x + mx, ny = u.y + my;
+      if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;
+      const water = tileWater(at(nx, ny));
+      if (u.ship !== water && !(colonyAt(nx, ny) && !u.ship)) continue;
+      if (G.natives.some(n => n.x === nx && n.y === ny)) continue;
+      u.x = nx; u.y = ny;
+      reveal(nx, ny, sightRadius(u));
+      moved = true;
+      break;
+    }
+    if (!moved) { u.orders = 0; u.goal = null; G.msg = `${u.type} can go no further.`; }
+  }
+}
+
 // -------------------------------------------------- terrain improvement
 // spec/systems/terrain_improvement.md, byte-verified throughout:
 //   order 8 Clear/Plow -> func_040656, order 9 Build Road -> func_0409D6
@@ -1508,6 +1602,24 @@ function chainCount(c, job) {
   if (!w) return 0;
   return w.chain.filter(b => c.buildings.includes(b)).length;
 }
+// BUILDING UPKEEP. @BUILDING's last column is a per-turn gold charge, and
+// @UPKEEP says what happens when you cannot pay it: "colonists in the buildings
+// will produce at half efficiency" until you do. The base tier (upkeep 0) is
+// free, which is why a new colony costs nothing to run.
+function colonyUpkeep(c) {
+  return c.buildings.reduce((n, b) => {
+    const row = DATA.buildings.find(d => d.name === b);
+    return n + (row ? row.upkeep : 0);
+  }, 0);
+}
+function totalUpkeep() { return G.colonies.reduce((n, c) => n + colonyUpkeep(c), 0); }
+function payUpkeep() {
+  const due = totalUpkeep();
+  if (!due) { G.upkeepUnpaid = false; return; }
+  if (G.gold >= due) { G.gold -= due; G.upkeepUnpaid = false; return; }
+  G.upkeepUnpaid = true;
+  showEvent('UPKEEP', { NUMBER0: due });
+}
 // The base an indoor worker converts per turn. NOT in the evidence: no
 // production-rate column exists in @BUILDING (its `size` column is the colony
 // screen's category slot, 0..4), and no rate is quoted in PEDIA. The port uses
@@ -1598,6 +1710,8 @@ function indoorYield(c, p) {
   if (g === undefined) return 0;
   let y = indoorRate(c, job) + toryPenalty(c);
   if (isExpert(p, job)) y *= 2;
+  // @UPKEEP: with the bill unpaid, colonists in the buildings work at half.
+  if (G.upkeepUnpaid) y = Math.floor(y / 2);
   return Math.max(0, y);
 }
 // The whole colony's output for one turn, before anything is banked. The order
@@ -1744,7 +1858,11 @@ function autoExport(c) {
     if (i === GOOD.FOOD || c.stock[i] < 100) continue;
     const excess = c.stock[i] - 50;
     c.stock[i] = 50;
-    if (G.declared || isBoycotted(i)) continue;           // wasted, not sold
+    // Custom Houses allow trade after independence (market.md); without one the
+    // excess is wasted rather than sold once you have declared. Peter
+    // Stuyvesant is what makes the building available at all.
+    if (isBoycotted(i)) continue;
+    if (G.declared && !c.buildings.includes('Custom House')) continue;
     const gross = excess * G.market[i];
     const tax = Math.floor(gross * G.tax / 100);
     G.gold += gross - tax;
@@ -1758,7 +1876,10 @@ function buildOptions(c) {
   const pop = c.colonists.length;
   return DATA.buildings
     .map((b, i) => ({ i, ...b }))
-    .filter(b => !c.buildings.includes(b.name) && b.min_colony <= pop);
+    .filter(b => !c.buildings.includes(b.name) && b.min_colony <= pop)
+    // Peter Stuyvesant enables the Custom House and nothing else does
+    // (func_00B900 @0xBA37).
+    .filter(b => b.name !== 'Custom House' || G.fathersOwned.includes('Peter Stuyvesant'));
 }
 // One colony's whole turn: produce, bank, eat, grow, build, then dispose of the
 // overflow.
@@ -1777,8 +1898,20 @@ function colonyTurn(c) {
     c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
     G.msg = `${c.name} has grown to ${c.colonists.length}.`;
   }
+  // Horses breed in a colony that holds them: the per-turn growth threshold is
+  // 25 with a Stable (building 0x11) and 50 without -- byte-verified at
+  // func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD.
+  const herd = c.stock[GOOD.HORSES];
+  if (herd >= (c.buildings.includes('Stable') ? 25 : 50))
+    c.stock[GOOD.HORSES] = herd + Math.max(1, Math.floor(herd / 10));
   c.crossesTurn = r.tally[CROSSES];
-  c.bellsTurn = r.tally[BELLS];
+  // Printing Press adds 50% to the colony's bells and a Newspaper doubles them
+  // (per-colony building bits 0x13 / 0x14, founding_fathers.md §3).
+  let bells = r.tally[BELLS];
+  if (c.buildings.includes('Newspaper')) bells *= 2;
+  else if (c.buildings.includes('Printing Press')) bells = Math.floor(bells * 3 / 2);
+  c.bellsTurn = bells;
+  r.tally[BELLS] = bells;
   updateSoL(c, r.tally[BELLS]);
   solAnnounce(c);
   advanceConstruction(c, r.tally[HAMMERS]);
@@ -3260,7 +3393,9 @@ function askEvent(key, subs, onDone, optsKey) {
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
-    sel: t.default && /^\d+$/.test(t.default) ? +t.default : 0,
+    // Same one-based @default as openDialog above.
+    sel: t.default && /^\d+$/.test(t.default)
+      ? Math.max(0, Math.min(rows.length - 1, +t.default - 1)) : 0,
   };
 }
 function drawEvent(ctx) {
@@ -5191,6 +5326,7 @@ function endTurn() {
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
   revealAll();
+  payUpkeep();
   for (const c of G.colonies) colonyTurn(c);
   advanceImprovements();
   checkImmigration();
@@ -5206,6 +5342,7 @@ function endTurn() {
   runRivals();
   kingTaxDemand();
   advanceTradeRoutes();
+  advanceGoTo();
   runWar();
   toryUprising();
   offerMercenaries();
@@ -5529,6 +5666,8 @@ const COMMANDS = {
   'Edit Trade Route': () => openTradeMenu('assign'),
   'Delete Trade Route': () => openTradeMenu('delete'),
   'Begin Trade Route': () => openTradeMenu('assign'),
+  'Pillage': pillage,
+  'Go to Place': beginGoTo,
   // REPORTS -- the four advisers this build can populate from real state.
   'F1 Terrain Information': () => openPedia(2),
   'F2 Religious Adviser': () => { G.report = 'F2'; G.screen = 'report'; },
@@ -5729,6 +5868,8 @@ function onClick(mx, my) {
       if (hit(mx, my, VP)) {
         const tx = G.view.x + Math.floor((mx - VP.x) / TILE_PX());
         const ty = G.view.y + Math.floor((my - VP.y) / TILE_PX());
+        // A pending "Go to Place" takes the next map click as its destination.
+        if (G.goTo) { setGoTo(G.goTo, tx, ty); return; }
         // Clicking your own colony opens its screen; clicking a stack cycles
         // through the units standing on that tile.
         const ci = G.colonies.findIndex(c => c.x === tx && c.y === ty);
@@ -5851,6 +5992,10 @@ function onKey(e) {
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
       if (k === 'c' || k === 'C') { G.colonyPopup = 'build'; G.colonyPopupRow = 0; }
       if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
+      // Colonial authority: R renames, shift-A abandons (@ABANDON defaults to
+      // the refusal, so a stray press cannot lose you a colony).
+      if (k === 'r' || k === 'R') renameColony();
+      if (k === 'A') abandonColony();
       if (k === 'Escape' || k === 'x') G.screen = 'map';
       break;
     }
