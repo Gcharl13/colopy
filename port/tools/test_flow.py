@@ -449,6 +449,44 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- the Combat Analysis panel ----
+  {
+    beginGame(); G.screen = 'map';
+    const att = mkUnit('Soldiers', 20, 20);
+    att.profession = 'Veteran Soldiers';
+    const def = { type: 'Braves', icon: unit('Braves').icon, x: 21, y: 20,
+                  tribe: 0, orders: 6, nation: -1 };
+    const A = combatAnalysis(att, false), D = combatAnalysis(def, true);
+    out.analysis = {
+      // The base is the @UNIT combat column, and the panel itemises what
+      // followed it.
+      baseIsUnitColumn: A.base === unit('Soldiers').combat,
+      veteranRow: A.rows.some(r => r.label === 'Veteran' && r.value === '+50%'),
+      fortifiedRow: D.rows.some(r => r.label === 'Fortified' && r.value === '+50%'),
+      totalsPositive: A.total > 0 && D.total > 0,
+      // combatStrength must agree with the itemised total -- one chain, run once.
+      agrees: combatStrength(att, false) === A.total,
+    };
+    // A resolved attack fills the panel, and dismissing clears it.
+    G.combat = null; G.combatAnalysis = true;
+    G.units.push(att); G.natives.push(def);
+    resolveAttack(att, def);
+    out.panel = { shown: !!G.combat,
+                  hasRoll: !!G.combat && G.combat.roll >= 1,
+                  hasBothSides: !!G.combat && !!G.combat.att && !!G.combat.def };
+    onClick(160, 100);
+    out.panel.dismissed = G.combat === null;
+    // With the option off, no panel.
+    G.combatAnalysis = false;
+    const a2 = mkUnit('Soldiers', 30, 30);
+    const d2 = { type: 'Braves', icon: unit('Braves').icon, x: 31, y: 30,
+                 tribe: 0, orders: 0, nation: -1 };
+    G.units.push(a2); G.natives.push(d2);
+    resolveAttack(a2, d2);
+    out.panel.optional = G.combat === null;
+    G.combatAnalysis = true;
+  }
+
   // ---- the King's demands, tea parties, boycotts, Lost City Rumours ----
   {
     beginGame(); G.screen = 'map';
@@ -1142,6 +1180,10 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the combat chain itemises its own modifiers",
+         all(r["analysis"].values()), r["analysis"]),
+        ("the Combat Analysis panel shows, dismisses, and can be turned off",
+         all(r["panel"].values()), r["panel"]),
         ("the tax interval shrinks as the eras pass", r["taxInterval"], r["taxInterval"]),
         ("the Crown makes no demand before turn 30", r["taxQuiet"], r["taxQuiet"]),
         ("the tax demand offers the ring or a Party", r["taxDemands"], r["taxDemands"]),

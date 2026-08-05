@@ -399,3 +399,19 @@ The recurring event layer. Sources: `spec/systems/king.md` and
 | Reward magnitudes | **DONE** | Byte-verified dice: ruins `10·3d8` scaled by `(s+2)/2`; friendly tribe `2·4d10`; Cibola `10·(s+2) + 1d20` shown ×100; `@BURIAL2` `10·3d8`; `@BURIAL3` `2·(1d8 + 2·(s+5))` shown ×100. The Fountain queues **8** immigrants. |
 | Burial sub-dispatch | **PARTIAL** | The three `@BURIAL` outcomes are wired but the port picks between them with a flat roll; the engine's own selector for `[bp-0x38]` is not in the evidence read. `@SCREWED` (desecration) is not wired. |
 | Rumour marker | **PARTIAL** | ICONS **17** is a gold sunburst that reads as the rumour marker; no catalogue entry names it, so the identification is by eye and flagged. |
+
+## Port: the Combat Analysis dialog (2026-08-05)
+
+`spec/ui/combat_analysis.md` (`func_05E9B0`, page 0x11) — the panel that
+itemises a fight's modifiers. It was specced and unbuilt; combat resolved
+silently with only a one-line status message.
+
+| Item | Status | Note |
+|---|---|---|
+| Geometry | **DONE** | Byte-cited: **x = 53, w = 214, h = rows·20 + 6, vertically centred**; title "COMBAT ANALYSIS"; attacker column pens at **x = 56**, defender at **x = 160**, each value right-aligned at **col_x + 0x50**; **row pitch 20**. |
+| Labels | **DONE** | Every row label is a LABELS.TXT `@MISC` line through the pointer table at DG 0x2DBA — 62 Cargo, 65 Veteran, 75 COMBAT ANALYSIS, 76 Fatigue, 77 Attack Bonus, 78 Ambush, 79 Terrain, 80 Colony, 81 Fortified, 82 Spain Bonus, 84 Artillery In Open, 90 Drake, 104 Bombard, 129 Artillery Vs. Raid, 132 Tory Unrest, 133 Rebel Unrest. No label is hardcoded. |
+| The chain is itemised, not re-derived | **DONE** | `combatAnalysis()` runs the §14.3 chain **once** and records a row as each modifier fires; `combatStrength()` is now just its total, so the panel can never disagree with the arithmetic that decided the fight. A regression check asserts that agreement. |
+| Rows implemented | **PARTIAL** | Veteran +50%, Cargo −12.5%/hold, Ambush/Terrain +def·25%, Colony +(fort+1)·50%, Fortified +50%, Artillery In Open −75%, Drake +50%, Spain Bonus +50%, Bombard +50%, and Tory/Rebel Unrest. **Not implemented:** Fatigue (the `@HALF` pre-roll prompt is not built), the Muskets row (its "+1" value semantics are an open item in the spec itself), Artillery Vs. Raid, and the colony-structure row (its building-name table DG 0x9634 is unread). |
+| Gate | **DONE** | Game Options bit **0x0200** "Combat Analysis". The full options dialog is not built, so the GAME menu's "Game Options" row toggles the one option this build honours. |
+| Ordering | **NOTED** | The engine shows the panel *after* the roll but *before* resolution renders. The port applies the result first and then shows the same figures over the map. The arithmetic is identical; only the moment the loser's sprite vanishes differs. |
+| The roll line | **NOTED** | The engine prints the raw roll only in cheat mode (`[0x5383]&0x20`). The port shows it always — it is the whole point of the panel for a player learning the odds — which is a deliberate deviation, not an oversight. |

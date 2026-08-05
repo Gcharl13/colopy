@@ -29,6 +29,12 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("combat",
+     "beginGame();sailToLand();"
+     "(()=>{const p=G.units[1];G.sel=1;p.profession='Veteran Soldiers';"
+     "const foe={type:'Braves',icon:unit('Braves').icon,x:p.x,y:p.y,"
+     "tribe:0,orders:6,nation:-1};G.natives.push(foe);"
+     "resolveAttack(p,foe);})();G.screen='map'"),
     ("kingtax",
      "beginGame();G.screen='map';G.tax=12;G.gold=3000;G.turn=taxInterval()*4;"
      "G.colonies=[{name:'Boston',x:20,y:20,nation:0,colonists:[],"

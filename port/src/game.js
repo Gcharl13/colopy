@@ -278,6 +278,8 @@ const G = {
   rivals: [], metAnyone: false,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
+  combat: null,            // the Combat Analysis panel's live figures
+  combatAnalysis: true,    // Game Options bit 0x0200
   mapSeed: 0, rumoursDone: new Set(), rumourFloor: 1,
   foundFountain: false, foundCibola: false,
   report: null,           // open F-key report
@@ -364,6 +366,7 @@ function beginGame() {
   G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
   // The map generator's first act is to store random_int(0, 0x7FFF) as the seed
   // the rumour hash reads (@0x64A23).
+  G.combat = null;
   G.mapSeed = Math.floor(Math.random() * 0x8000);
   G.rumoursDone = new Set(); G.rumourFloor = 1;
   G.foundFountain = false; G.foundCibola = false;
@@ -3327,24 +3330,102 @@ function defenceBonus(u) {
   if (tileRiver(at(u.x, u.y))) bonus += 2;
   return bonus;
 }
-function combatStrength(u, isDefender) {
+// §14.1-14.3. The chain is run ONCE and itemised as it goes, because the
+// Combat Analysis dialog (§14.4) prints exactly the modifiers that drove it --
+// one row per modifier that fires, labelled from LABELS.TXT @MISC.
+//   @MISC 62 Cargo   65 Veteran   76 Fatigue   77 Attack Bonus   78 Ambush
+//        79 Terrain  80 Colony    81 Fortified 82 Spain Bonus    84 Artillery
+//        In Open     90 Drake     104 Bombard  129 Artillery Vs. Raid
+//        132 Tory Unrest  133 Rebel Unrest
+const MISC = (n) => (DATA.text.misc[n] || '').trim();
+function combatAnalysis(u, isDefender) {
   const t = unit(u.type);
-  if (!t) return 1;
+  const rows = [];
+  if (!t) return { base: 1, rows, total: 1 };
+  // §14.1: base is the combat column, carriers add the attack column, and a
+  // damaged ship takes -2.
   let s = t.combat + (t.cargo && t.hull ? t.attack : 0);
   if (u.damaged) s -= 2;
+  const base = Math.max(1, s);
+  s = base;
+  // A veteran fights at +50%.
+  if (u.profession === 'Veteran Soldiers' || u.profession === 'Veteran Dragoons' ||
+      u.veteran) {
+    rows.push({ label: MISC(65), value: '+50%' });
+    s = Math.floor(s * 3 / 2);
+  }
+  // Cargo aboard costs -12.5% per used hold.
+  const holds = (u.cargo ? u.cargo.length : 0) + (u.hold ? u.hold.length : 0);
+  if (holds) {
+    rows.push({ label: MISC(62), value: `-${holds * 12}%` });
+    s = Math.floor(s * (8 - Math.min(8, holds)) / 8);
+  }
+  // §14.3 step 1: the accumulated terrain/fort bonus, then the flat 3/2.
+  const terr = terrainDefence(at(u.x, u.y));
+  if (terr) {
+    rows.push({ label: MISC(isDefender ? 79 : 78), value: `+${terr * 25}%` });
+  }
   s = Math.floor(Math.floor(s * (defenceBonus(u) + 4) / 4) * 3 / 2);
-  s += (4 - G.difficulty);                                // human handicap
-  if (isDefender && colonyAt(u.x, u.y)) s = Math.floor(s * 3 / 2);
-  if (u.orders === 5 || u.orders === 6) s = Math.floor(s * 3 / 2);   // Fortified +50%
+  // §14.3 step 2: the difficulty handicap, applied to BOTH sides.
+  s += (4 - G.difficulty);
+  // §14.3 step 4: a colony on the defending tile.
+  if (isDefender && colonyAt(u.x, u.y)) {
+    const c = colonyAt(u.x, u.y);
+    rows.push({ label: MISC(80), value: `+${(colonyLevel(c) + 1) * 50}%` });
+    s = Math.floor(s * 3 / 2);
+  }
+  // Fortified.
+  if (u.orders === 5 || u.orders === 6) {
+    rows.push({ label: MISC(81), value: '+50%' });
+    s = Math.floor(s * 3 / 2);
+  }
+  // Artillery caught in the open defends at a quarter.
+  if (isDefender && u.type === 'Artillery' && !colonyAt(u.x, u.y)) {
+    rows.push({ label: MISC(84), value: '-75%' });
+    s = Math.floor(s / 4);
+  }
+  // Sir Francis Drake's privateers.
+  if (u.type === 'Privateer' && G.fathersOwned.includes('Francis Drake')) {
+    rows.push({ label: MISC(90), value: '+50%' });
+    s = Math.floor(s * 3 / 2);
+  }
+  // Spain's bonus against the natives.
+  if (G.nation === 2 && u.nation === G.nation && isDefender === false) {
+    rows.push({ label: MISC(82), value: '+50%' });
+    s = Math.floor(s * 3 / 2);
+  }
+  // §14.3 step 5: wartime bombardment of the King's landed force.
+  if ((G.flags & WOI_DECLARED) && u.nation === -2) {
+    rows.push({ label: MISC(104), value: '+50%' });
+    s = Math.floor(s * 3 / 2);
+  }
+  // Tory / Rebel unrest, off the colony the unit stands in.
+  const home = colonyAt(u.x, u.y);
+  if (home) {
+    if (home.sol >= 50) rows.push({ label: MISC(133), value: `+${home.sol}%` });
+    else rows.push({ label: MISC(132), value: `-${100 - home.sol}%` });
+  }
+  // §14.3 step 7.
   s += Math.floor(s * G.difficulty / 20);
-  return Math.max(1, s);
+  return { base, rows, total: Math.max(1, s) };
 }
+function combatStrength(u, isDefender) { return combatAnalysis(u, isDefender).total; }
 // The attacker wins iff roll <= ATK. The loser is destroyed; a losing ship is
 // damaged first and only sunk if it was already damaged.
 function resolveAttack(att, def) {
-  const A = combatStrength(att, false), D = combatStrength(def, true);
+  const AA = combatAnalysis(att, false), DD = combatAnalysis(def, true);
+  const A = AA.total, D = DD.total;
   const roll = 1 + Math.floor(Math.random() * (A + D));
   const win = roll <= A;
+  // §14.4: the Combat Analysis dialog itemises the modifiers that drove the
+  // roll. The engine shows it after the roll but BEFORE resolution renders;
+  // the port applies the result first and then shows the same numbers over the
+  // map, which changes nothing about the arithmetic. Flagged in the tracker.
+  if (G.combatAnalysis) {
+    G.combat = { att: { type: att.type, icon: att.icon, ...AA },
+                 def: { type: def.type, icon: def.icon, ...DD },
+                 roll, win };
+  }
   const loser = win ? def : att;
   const t = unit(loser.type);
   if (t && t.hull > 0 && !loser.damaged) {
@@ -3370,6 +3451,52 @@ function resolveAttack(att, def) {
   }
   att.movesLeft = 0;
   return { A, D, roll, win };
+}
+
+// ------------------------------------------------- Combat Analysis dialog
+// spec/ui/combat_analysis.md (func_05E9B0, page 0x11). Byte-cited geometry:
+// x = 53, w = 214, h = rows*20 + 6, VERTICALLY CENTRED; the title is
+// "COMBAT ANALYSIS" (LABELS @MISC 75); the attacker column pens at x = 56 and
+// the defender at x = 160, each value right-aligned at col_x + 0x50 (+80);
+// row pitch 20. Each column shows its unit sprite and then one row per
+// modifier that fired.
+const CA = { x: 53, w: 214, colA: 56, colB: 160, valOff: 0x50, pitch: 20 };
+function combatBox() {
+  const c = G.combat;
+  const rows = 1 + Math.max(c.att.rows.length, c.def.rows.length) + 1;  // head + mods + total
+  const h = rows * CA.pitch + 6;
+  return { x: CA.x, y: Math.round(100 - h / 2), w: CA.w, h, rows };
+}
+function drawCombat(ctx) {
+  const c = G.combat;
+  if (!c) return;
+  const b = combatBox();
+  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  FONT.tiny.center(ctx, MISC(75), 160, b.y + 3, lut(0xFC));
+  const cols = [[CA.colA, c.att], [CA.colB, c.def]];
+  for (const [cx, side] of cols) {
+    // The unit itself, over its name and base strength.
+    const [fw, fh] = frameSize('ICONS', side.icon);
+    if (fw) sheetFrame(ctx, 'ICONS', side.icon, cx, b.y + 11);
+    FONT.tiny.draw(ctx, side.type, cx + 18, b.y + 13, lut(0xFE));
+    const bs = String(side.base);
+    FONT.tiny.draw(ctx, bs, cx + CA.valOff - FONT.tiny.width(bs), b.y + 13, lut(0xFC));
+    side.rows.forEach((r, i) => {
+      const y = b.y + 11 + (i + 1) * CA.pitch;
+      FONT.tiny.draw(ctx, r.label, cx, y, lut(0xFE));
+      FONT.tiny.draw(ctx, r.value, cx + CA.valOff - FONT.tiny.width(r.value), y, lut(0x0E));
+    });
+    // The fully modified strength closes the column.
+    const ty = b.y + 11 + (b.rows - 1) * CA.pitch;
+    FONT.tiny.draw(ctx, 'Strength', cx, ty, lut(0xFC));
+    const tt = String(side.total);
+    FONT.tiny.draw(ctx, tt, cx + CA.valOff - FONT.tiny.width(tt), ty, lut(0xFC));
+  }
+  // The roll itself, which the engine prints only in cheat mode -- shown here
+  // because it is the whole point of the panel for a player learning the odds.
+  const line = `Roll ${c.roll} of ${c.att.total + c.def.total}  --  ` +
+               `${c.win ? 'attacker' : 'defender'} wins`;
+  FONT.tiny.center(ctx, line, 160, b.y + b.h - 9, lut(c.win ? 0x0E : 0x0C));
 }
 
 // ---------------------------------------------------- rival European powers
@@ -4539,6 +4666,11 @@ const COMMANDS = {
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
   // GAME
   'DECLARE INDEPENDENCE': declareIndependence,
+  // Game Options bit 0x0200 is the Combat Analysis checkbox
+  // (spec/ui/options_dialogs.md §6). The full options dialog is not built, so
+  // the row toggles the one option this build honours.
+  'Game Options': () => { G.combatAnalysis = !G.combatAnalysis;
+                          G.msg = `Combat Analysis ${G.combatAnalysis ? 'on' : 'off'}.`; },
   'Save Game': saveGame,
   'Load Game': loadGame,
   'Cargo Types': () => openPedia(0),
@@ -4558,6 +4690,7 @@ function openPedia(cat) {
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
 
 function onClick(mx, my) {
+  if (G.combat) { G.combat = null; return; }
   if (G.eventQueue.length) { G.eventQueue.shift(); return; }
   if (G.dialog) { dialogClick(mx, my); return; }
   switch (G.screen) {
@@ -4740,7 +4873,9 @@ function commitMenu() {
 
 function onKey(e) {
   const k = e.key;
-  // An event popup is modal: it swallows the next key and pops itself.
+  // The combat panel and the event popups are modal: each swallows the next key
+  // and pops itself.
+  if (G.combat) { G.combat = null; e.preventDefault(); return; }
   if (G.eventQueue.length) { G.eventQueue.shift(); e.preventDefault(); return; }
   if (G.dialog) { dialogKey(k); e.preventDefault(); return; }
   if (G.screen === 'name') {
@@ -4944,7 +5079,9 @@ function frame() {
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage }[G.screen])(ctx);
-  // Event popups sit over whatever screen is up when they fire.
+  // The Combat Analysis panel and the event popups sit over whatever screen is
+  // up when they fire; the panel is read first and dismissed first.
+  if (G.combat) drawCombat(ctx);
   drawEvent(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
