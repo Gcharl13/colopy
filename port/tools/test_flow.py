@@ -183,6 +183,9 @@ SCRIPT = """() => {
   for (let t = 0; t < 3; t++) endTurn();
   out.returned = { onMap: G.units.length === units0 + 1 };
 
+  // Any popup queued by those turns is modal and would swallow the click, which
+  // is the intended behaviour -- clear it so this checks the Exit button.
+  G.eventQueue = []; G.combat = null; G.dialog = null;
   G.screen = 'europe';
   onClick(310, 190);
   out.europeExit = G.screen;
@@ -454,6 +457,73 @@ SCRIPT = """() => {
         return scoreParts().revolution === (1780 - 1700) * 2;
       })(),
     };
+  }
+
+  // ---- naval combat, scouts at a colony, the Spanish Succession ----
+  {
+    beginGame(); G.screen = 'map';
+    const r = G.rivals[0];
+    r.met = true;
+    declareWarOn(G.nation, r.nation);
+    // Only Privateers, Frigates and Men-O-War may start a ship attack.
+    const caravel = mkUnit('Caravel', 30, 30);
+    const foe = mkUnit('Merchantman', 31, 30); foe.nation = r.nation;
+    G.eventQueue = [];
+    out.naval = { caravelRefused: navalAttack(caravel, foe) === false &&
+                                  G.eventQueue.length === 1 };
+    const priv = mkUnit('Privateer', 30, 30);
+    G.units.push(priv); r.units.push(foe);
+    G.eventQueue = [];
+    out.naval.privateerMay = navalAttack(priv, foe) !== false;
+    // Shore guns fire without a roll, and need both a fort and artillery.
+    const c = { name: 'Boston', x: 40, y: 40, nation: G.nation, colonists: [],
+                stock: DATA.cargo.map(() => 0), buildings: ['Fort'], hammers: 0,
+                building: null, sol: 0, latch: 0 };
+    G.colonies = [c];
+    const enemy = mkUnit('Frigate', 41, 40); enemy.nation = r.nation;
+    r.units = [enemy];
+    G.eventQueue = [];
+    shoreBombardment();
+    out.naval.noGunsNoFire = G.eventQueue.length === 0;
+    G.units.push(mkUnit('Artillery', 40, 40));
+    shoreBombardment();
+    out.naval.firesWithGuns = enemy.damaged === true;
+
+    // A Scout at a foreign colony gets the four-option dialog.
+    const scout = mkUnit('Scouts', 0, 0);
+    G.dialog = null;
+    scoutColony(scout, { x: 5, y: 5, colonists: [] }, 'Quebec');
+    out.scout = { fourOptions: !!G.dialog && G.dialog.opts.length === 4 };
+    // Meeting the mayor is blocked during the revolution.
+    G.flags |= 1;
+    G.eventQueue = [];
+    closeDialog(0);
+    out.scout.mayorBlocked = G.eventQueue.length === 1;
+    G.flags = 0;
+
+    // The Spanish Succession transfers everything from the weakest to the
+    // strongest, and fires at most once.
+    beginGame(); G.screen = 'map';
+    G.succession = false;
+    const a = G.rivals[0], b = G.rivals[1];
+    a.colonies = [{ name: 'Weak', x: 5, y: 5, nation: a.nation }];
+    a.units = [mkUnit('Soldiers', 5, 5)];
+    b.colonies = [{ name: 'S1', x: 8, y: 8 }, { name: 'S2', x: 9, y: 9 }];
+    b.units = [mkUnit('Soldiers', 8, 8), mkUnit('Soldiers', 9, 9)];
+    // The other two must sit BETWEEN them, or one of them is the weakest and
+    // the succession picks a different pair.
+    for (const rr of G.rivals.slice(2)) {
+      rr.colonies = [{ name: 'M', x: 12, y: 12 }, { name: 'M2', x: 13, y: 13 }];
+      rr.units = [];
+    }
+    let guard = 0;
+    while (!G.succession && guard++ < 20000) spanishSuccession();
+    out.succession = { fired: G.succession,
+                       cedingEmptied: a.colonies.length === 0 && a.units.length === 0,
+                       beneficiaryGrew: b.colonies.length >= 3 };
+    const before = b.colonies.length;
+    for (let i = 0; i < 5000; i++) spanishSuccession();
+    out.succession.onlyOnce = b.colonies.length === before;
   }
 
   // ---- building effects, upkeep, colonial authority, orders ----
@@ -1647,6 +1717,12 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("only Privateers and Frigates start ship fights; shore guns need both",
+         all(r["naval"].values()), r["naval"]),
+        ("a Scout at a foreign colony gets four options, mayor barred in war",
+         all(r["scout"].values()), r["scout"]),
+        ("the Spanish Succession transfers everything, once",
+         all(r["succession"].values()), r["succession"]),
         ("building upkeep is charged, and unpaid halves indoor work",
          all(r["upkeep"].values()), r["upkeep"]),
         ("Printing Press adds half the bells, Newspaper doubles them",

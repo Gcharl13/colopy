@@ -282,7 +282,7 @@ const G = {
   parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   upkeepUnpaid: false,
-  goTo: null,
+  goTo: null, succession: false,
   razed: 0, bellsTotal: 0, lostWar: false,
   combat: null,            // the Combat Analysis panel's live figures
   combatAnalysis: true,    // Game Options bit 0x0200
@@ -371,7 +371,7 @@ function beginGame() {
   G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
   G.parley = null; G.attitude = 8;
   G.routes = []; G.trade = null;
-  G.mercSeen = false; G.interventionWatch = false;
+  G.mercSeen = false; G.interventionWatch = false; G.succession = false;
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -3704,6 +3704,120 @@ function combatAnalysis(u, isDefender) {
   return { base, rows, total: Math.max(1, s) };
 }
 function combatStrength(u, isDefender) { return combatAnalysis(u, isDefender).total; }
+// ---------------------------------------------------------- naval combat
+// §14.5. Ship-vs-ship does NOT run the modifier chain: the roll uses the RAW
+// guns/hull columns -- `roll = random_int(1, guns_A + hull_D)`. Only Privateers
+// and Frigates may START a ship attack (@SHIPCOMBAT). A sinking ship carrying
+// cargo scatters it (@CARGOCAPTURE on seizure).
+const SHIP_ATTACKERS = ['Privateer', 'Frigate', 'Man-O-War'];
+function navalAttack(att, def) {
+  if (!SHIP_ATTACKERS.includes(att.type)) { showEvent('SHIPCOMBAT', {}); return false; }
+  const A = unit(att.type).attack || unit(att.type).combat;
+  const D = unit(def.type).hull || unit(def.type).combat;
+  const win = 1 + Math.floor(Math.random() * (A + D)) <= A;
+  const loser = win ? def : att, winner = win ? att : def;
+  // A hold going down is seized rather than simply lost.
+  if ((loser.hold || []).length && loser.damaged) {
+    const h = loser.hold[0];
+    showEvent('CARGOCAPTURE', { STRING0: ownerAdjective(loser),
+                                NUMBER0: h.qty, STRING1: DATA.cargo[h.good].name,
+                                STRING2: ownerAdjective(winner), STRING3: winner.type });
+    holdAdd(winner, h.good, h.qty);
+  }
+  applyDefeat(loser, winner);
+  att.movesLeft = 0;
+  return true;
+}
+// Shore fire from a colony's fort is DETERMINISTIC -- no roll:
+//   strength = artillery in the colony x fort level x 4
+// A ship of a power you are at war with that ends its move beside the colony
+// takes it (@FORTFIRE).
+function shoreBombardment() {
+  for (const c of G.colonies) {
+    const level = colonyLevel(c);
+    if (!level) continue;
+    const guns = G.units.filter(u => u.type === 'Artillery' && u.x === c.x && u.y === c.y).length;
+    if (!guns) continue;
+    const strength = guns * level * 4;
+    for (const r of G.rivals) {
+      if (!atWar(G.nation, r.nation)) continue;
+      const ship = r.units.find(u => u.ship &&
+        Math.abs(u.x - c.x) <= 1 && Math.abs(u.y - c.y) <= 1);
+      if (!ship || !strength) continue;
+      showEvent('FORTFIRE', { STRING0: level >= 2 ? 'Fortress guns' : 'Fort guns',
+                              STRING1: c.name, STRING2: ownerAdjective(ship),
+                              STRING3: ship.type });
+      if (!ship.damaged) ship.damaged = true;
+      else r.units.splice(r.units.indexOf(ship), 1);
+      return;
+    }
+  }
+}
+
+// -------------------------------------------------------- scout at a colony
+// spec/systems/exploration.md §3, func_05A20E: a FOUR-option @SCOUTCOLONY
+// dialog. Meet With Mayor is blocked during the revolution
+// (@NOMAYORSDURINGREV). Infiltrate succeeds on random_int(1,36) <= (X+6)*2,
+// HALVED for a Seasoned Scout, with +(difficulty-2) against a human target;
+// success reveals the colony, failure loses the scout.
+function scoutColony(u, target, name) {
+  askEvent('SCOUTCOLONY', { STRING0: name }, (choice) => {
+    if (choice === 3 || choice < 0) return;
+    if (choice === 0) {
+      if (G.flags & WOI_DECLARED) { showEvent('NOMAYORSDURINGREV', {}); return; }
+      reveal(target.x, target.y, 3);
+      G.msg = `The mayor of ${name} receives our scout.`;
+      return;
+    }
+    if (choice === 1) {
+      const X = (target.colonists ? target.colonists.length : 3);
+      let need = (X + 6) * 2 + (G.difficulty - 2);
+      if (u.profession === 'Seasoned Scouts') need = need >> 1;
+      if (1 + Math.floor(Math.random() * 36) <= need) {
+        reveal(target.x, target.y, 4);
+        G.msg = `Our scout returns with a full account of ${name}.`;
+      } else {
+        removeUnit(u);
+        G.msg = 'Our scout was caught and is lost.';
+      }
+      return;
+    }
+    // Attack Colony.
+    G.msg = `${name} is defended.`;
+  });
+}
+
+// -------------------------------------------- the War of the Spanish Succession
+// func_03C638. Single-player only. It ranks the four powers, picks the WEAKEST
+// eligible AI as the ceding power and the STRONGEST as the beneficiary, then
+// transfers every map tile, unit and colony from one to the other -- the Treaty
+// of Utrecht. The dispatcher calls it while the national SoL meter is BELOW 75
+// and no power has seceded yet.
+function powerStrength(r) {
+  return (r.colonies ? r.colonies.length * 3 : 0) + (r.units ? r.units.length : 0);
+}
+function spanishSuccession() {
+  if (G.succession) return;
+  if (G.flags & WOI_DECLARED) return;
+  if (nationalSoL() >= 75) return;
+  const live = G.rivals.filter(r => r.met !== undefined);
+  if (live.length < 2) return;
+  if (Math.floor(Math.random() * 600) !== 0) return;      // rare; the cadence is the port's
+  const sorted = live.slice().sort((a, b) => powerStrength(a) - powerStrength(b));
+  const ceding = sorted[0], winner = sorted[sorted.length - 1];
+  if (ceding === winner) return;
+  G.succession = true;
+  showEvent('SUCCESSION', { STRING0: DATA.nations[ceding.nation].country,
+                            STRING1: DATA.nations[ceding.nation].adjective,
+                            STRING2: DATA.nations[winner.nation].adjective,
+                            STRING3: DATA.nations[ceding.nation].adjective });
+  // The full asset transfer, loser to winner.
+  for (const c of ceding.colonies) { c.nation = winner.nation; winner.colonies.push(c); }
+  for (const u of ceding.units) { u.nation = winner.nation; winner.units.push(u); }
+  ceding.colonies = []; ceding.units = [];
+  ceding.dead = true;
+}
+
 // ------------------------------------------------- the combat aftermath
 // §14.6, apply_combat_result. A defeated land unit does NOT simply die.
 //
@@ -5345,6 +5459,8 @@ function endTurn() {
   advanceGoTo();
   runWar();
   toryUprising();
+  shoreBombardment();
+  spanishSuccession();
   offerMercenaries();
   checkIntervention();
   driftMarket();
@@ -5483,9 +5599,20 @@ function moveSel(dx, dy) {
     if (atWar(G.nation, rival.nation)) {
       if (isColony && (G.flags & WOI_DECLARED)) { showEvent('NOWARSDURINGREV', {}); return; }
       const ru = rival.units.find(x => x.x === nx && x.y === ny);
+      // Ship against ship runs the raw guns/hull roll, not the modifier chain.
+      if (ru && u.ship && ru.ship) { if (navalAttack(u, ru)) advance(); return; }
       if (ru) { resolveAttack(u, ru); advance(); return; }
       G.msg = `The ${DATA.nations[rival.nation].adjective} colony holds.`;
       u.movesLeft = 0; advance(); return;
+    }
+    // A SCOUT at a foreign colony gets its own four-option dialog instead of
+    // the parley (func_05A20E).
+    if (isColony && u.type === 'Scouts') {
+      const rc = rival.colonies.find(x => x.x === nx && x.y === ny);
+      u.movesLeft = 0;
+      scoutColony(u, rc, rc.name || DATA.nations[rival.nation].adjective);
+      advance();
+      return;
     }
     if (!parleyEligible(rival)) {
       G.msg = `The ${DATA.nations[rival.nation].adjective} will not receive us yet.`;

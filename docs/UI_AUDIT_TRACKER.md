@@ -503,3 +503,13 @@ The dialog framework read `@default` as a 0-based row index. It is **1-based** �
 **cautious** row in both cases; the port had been highlighting "Make Landfall".
 Fixed in both `openDialog` and `askEvent`, and the landfall regression check now
 chooses the landing row deliberately instead of taking the default.
+
+## Port: naval combat, scouts at a colony, the Spanish Succession (2026-08-05)
+
+| Item | Status | Note |
+|---|---|---|
+| Ship vs ship | **DONE** | §14.5: the roll uses the **raw guns/hull columns with no modifier chain** — `random_int(1, guns_A + hull_D)` — and only **Privateers and Frigates** may start one (`@SHIPCOMBAT`). A hold going down is seized (`@CARGOCAPTURE`) rather than simply lost. |
+| Shore bombardment | **DONE** | **Deterministic, no roll**: `strength = artillery × fort level × 4`. A hostile ship beside a fortified colony with guns in it takes fire (`@FORTFIRE`); both a fort and artillery are required. |
+| Scout at a foreign colony | **DONE** | `func_05A20E`'s **four**-option `@SCOUTCOLONY` dialog (a spec correction from an earlier "3 options"). Meet With Mayor is blocked during the revolution (`@NOMAYORSDURINGREV`); Infiltrate succeeds on `random_int(1,36) ≤ (X+6)·2`, **halved for a Seasoned Scout**, `+(difficulty−2)` against a human target, and failure **loses the scout**. |
+| Spanish Succession | **PARTIAL** | `func_03C638`: ranks the four powers, picks the **weakest** eligible AI as the ceding power and the **strongest** as the beneficiary, then transfers every colony and unit — the Treaty of Utrecht. Gated below a national SoL of 75 and fires once. **The cadence is the port's** (a rare per-turn roll); the engine's dispatcher condition is byte-cited but its call frequency is not. Map-tile ownership is not transferred because the port has no per-tile owner nibble. |
+| `@EVASIVE` | **TBD** | The evade condition itself is recorded as unmapped in the spec, so it is not invented. |

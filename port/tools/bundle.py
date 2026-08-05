@@ -292,7 +292,10 @@ def build_data():
               "@INDIANROAD", "@REBELMAJORITY", "@REBELUNANIMOUS",
               "@TORYMINORITY", "@TORYMAJORITY", "@TORYUPRISING",
               "@KINGRECRUIT", "@UPKEEP", "@ABANDON", "@RENAMECOLONY",
-              "@TOONEAR", "@NOPORT"):
+              "@TOONEAR", "@NOPORT",
+              # Naval combat, scouts, the Spanish Succession
+              "@SHIPCOMBAT", "@FORTFIRE", "@CARGOCAPTURE", "@EVASIVE",
+              "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION"):
         if k not in full:
             continue
         sec = full[k]
