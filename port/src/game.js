@@ -5306,7 +5306,7 @@ const REPORTS = {
     if (!G.rivals.length) return ['No other powers are in the New World.'];
     return G.rivals.map(r => {
       const n = DATA.nations[r.nation];
-      if (!r.met) return `${n.country}: ${DATA.text.misc[0] ? '' : ''}no contact`;
+      if (!r.met) return `${n.country}: no contact`;
       return `${n.country}: ${r.colonies.length} colonies, ${r.units.length} units`;
     });
   } },
@@ -6301,8 +6301,8 @@ function onKey(e) {
         case 'l': case 'L': loadCargo(); break;
         case 'u': case 'U': unloadCargo(); break;
         case 'o': case 'O': dumpCargo(); break;
-        case 'g': case 'G': G.msg = 'Go to - not in this build.'; break;
-        case 't': case 'T': G.msg = 'Trade routes - not in this build.'; break;
+        case 'g': case 'G': beginGoTo(); break;
+        case 't': case 'T': openTradeMenu('assign'); break;
         case 'v': case 'V': G.viewMode = true; G.msg = 'View mode.'; break;
         case 'm': case 'M': G.viewMode = false; G.msg = 'Move mode.'; break;
         case 'h': case 'H': COMMANDS['Show Hidden Terrain'](); break;

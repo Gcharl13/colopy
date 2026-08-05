@@ -459,6 +459,24 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- the map keyboard shortcuts reach what is actually built ----
+  {
+    // 'g' (Go To) and 't' (trade routes) used to say "not in this build" long
+    // after both were built. Nothing on the map keyboard may claim that.
+    beginGame(); G.screen = 'map'; G.sel = 0;
+    const tap = (c) => onKey({ key: c, preventDefault() {}, altKey: false, shiftKey: false });
+    tap('g');
+    out.keyGoTo = G.goTo === G.units[0] && !/not in this build/.test(G.msg || '');
+    G.goTo = null;
+    // With no routes yet, 't' correctly raises @TRADENONE rather than opening an
+    // empty screen -- either way it must not be the old stub message.
+    G.dialog = null; G.msg = '';
+    tap('t');
+    out.keyTrade = (G.screen === 'trade' || !!G.dialog || G.eventQueue.length > 0) &&
+                   !/not in this build/.test(G.msg || '');
+    G.dialog = null; G.screen = 'map'; G.trade = null;
+  }
+
   // ---- options dialogs and Retire ----
   {
     beginGame(); G.screen = 'map';
@@ -1752,6 +1770,8 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the g and t map keys reach Go To and trade routes, not a stub",
+         r["keyGoTo"] and r["keyTrade"], [r["keyGoTo"], r["keyTrade"]]),
         ("the three options dialogs read their real bit layouts",
          all(r["options"].values()), r["options"]),
         ("Retire defaults to No and ends on the score",

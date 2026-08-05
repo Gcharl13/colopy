@@ -529,3 +529,16 @@ first body line the title and the rest the rows, so nothing is hardcoded.
 | Which options act | **PARTIAL** | Only **Combat Analysis** changes behaviour; the rest are stored and displayed truthfully but unconsumed (there is no piece-slide animation, no autosave, no tutorial hints, no water cycling in the port). |
 | Retire | **DONE** | `@RETIRE` (`@default=2` → "No" highlighted) ends the game on the score screen. |
 | Still absent | **NOTED** | GAME "Pick Music" (no audio) and "Exit to DOS" — both say so rather than doing nothing quietly. |
+
+### Stale stubs cleared (2026-08-05)
+
+Two map keyboard shortcuts still answered **"not in this build"** long after the
+features behind them were built, which is exactly the kind of dishonest surface
+this tracker exists to catch:
+
+| Key | Was | Now |
+|---|---|---|
+| `g` | "Go to - not in this build." | `beginGoTo()` — the @ORDERS row-3 Go To it already had |
+| `t` | "Trade routes - not in this build." | the trade-route menu (with no routes yet it correctly raises `@TRADENONE`) |
+
+A regression check now asserts neither key can say "not in this build" again.
