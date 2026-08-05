@@ -1,0 +1,3399 @@
+{
+ "_doc": "Carry MAPEDIT.EXE's CodeView function names across to VICEROY.EXE.\n\nMAPEDIT ships an NB02 CodeView publics table (1071 names, 203 modules --\n`data_extracted/mapedit_symbols.json`); VICEROY ships none. The two programs\nwere built by the same team against the same in-house C library, so a large\nnumber of MAPEDIT's named functions are the *same compiled C* sitting in\nVICEROY under no name at all. That was established by hand for `menu.obj`\n(RULINGS 2026-07-30) and `cycle_1.c` / `timer_1.c` / `timer_3.ASM`\n(RULINGS 2026-08-05, both traced instruction for instruction). This does it\nsystematically.\n\n## Method\n\nThe two builds differ in memory model and in every absolute address: DGROUP\noffsets, segment values in far calls, and any address-valued immediate. What\ndoes NOT differ, for the same source through the same compiler, is the\ninstruction sequence -- opcode, ModRM and SIB, in order. So an instruction is\nfingerprinted as its encoding with the displacement and immediate fields\n*deleted* (deleted, not zeroed, so a 2-byte and 4-byte form of the same operand\nstill compare equal).\n\nMatching is two stages:\n\n1. **Candidates** -- index both sides by the fingerprint of their first 16\n   instructions. Cheap, and narrows 606 x 1250 to a handful per function.\n\n2. **Verification by extension** -- for each candidate, disassemble both sides\n   forward from their entry points, ignoring the recorded function boundaries\n   entirely, and count how many leading instructions agree. This is the whole\n   point: VICEROY's boundaries come from a scan and are often wrong, while a\n   shared compiler prologue makes unrelated functions look alike for a dozen\n   instructions. The agreed run length is a measurement, not an assumption.\n\nA match is `exact` when the agreed run covers MAPEDIT's entire function -- i.e.\nVICEROY contains that function's complete instruction stream, byte structure for\nbyte structure. Anything shorter is reported as `partial` with its run length\nand is NOT a name assignment; those are leads, most of them shared prologues.\nBoth sides must also be unique: one MAPEDIT function and one VICEROY function\nper fingerprint.\n\n## Status of the output\n\nPer CLAUDE.md this is EVIDENCE, not a ruling. An `exact` match says \"these two\nfunctions are the same code\", which is a fact about bytes. It does not by itself\nsay the VICEROY copy is *called* the same way -- that still needs the call-site\ntrace, exactly as `cycle_colors` did (same code as MAPEDIT's, but reached\nthrough a different thunk and installed by a different caller).",
+ "generated_by": "tools/xmatch_mapedit_viceroy.py",
+ "candidate_window_instructions": 16,
+ "counts": {
+  "mapedit_named": 606,
+  "viceroy_functions": 1250,
+  "exact": 89,
+  "partial": 110,
+  "ambiguous": 13
+ },
+ "exact": [
+  {
+   "mapedit": {
+    "name": "__output",
+    "module": "output.asm.obj",
+    "file_offset": "0x016526",
+    "size": 1240,
+    "instructions": 518
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010F3E",
+    "size": 448,
+    "region": "load_image"
+   },
+   "agreed_instructions": 518,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "PFABEXP2",
+    "module": "pfabexp2.ASM.obj",
+    "file_offset": "0x0134CA",
+    "size": 350,
+    "instructions": 166
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0132B0",
+    "size": 26,
+    "region": "load_image"
+   },
+   "agreed_instructions": 166,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_open",
+    "module": "dos_open.asm.obj",
+    "file_offset": "0x0170BC",
+    "size": 401,
+    "instructions": 157
+   },
+   "viceroy": {
+    "name": "rt_dos_open",
+    "file_offset": "0x011D30",
+    "size": 105,
+    "region": "load_image"
+   },
+   "agreed_instructions": 157,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__flsbuf",
+    "module": "_flsbuf.asm.obj",
+    "file_offset": "0x0161A4",
+    "size": 228,
+    "instructions": 103
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010BBC",
+    "size": 151,
+    "region": "load_image"
+   },
+   "agreed_instructions": 103,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@sort_insertion_8",
+    "module": "sort_3.c.obj",
+    "file_offset": "0x014408",
+    "size": 192,
+    "instructions": 100
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00F450",
+    "size": 44,
+    "region": "load_image"
+   },
+   "agreed_instructions": 100,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_read",
+    "module": "dos_read.asm.obj",
+    "file_offset": "0x016ACC",
+    "size": 234,
+    "instructions": 94
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0114E4",
+    "size": 125,
+    "region": "load_image"
+   },
+   "agreed_instructions": 94,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@pack_a_packet",
+    "module": "pack_5.c.obj",
+    "file_offset": "0x0136A6",
+    "size": 250,
+    "instructions": 88
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x077772",
+    "size": 255,
+    "region": "overlay"
+   },
+   "agreed_instructions": 88,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_SOUND_DRIVER_LOAD",
+    "module": "sound_1.ASM.obj",
+    "file_offset": "0x012754",
+    "size": 174,
+    "instructions": 79
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01287A",
+    "size": 136,
+    "region": "load_image"
+   },
+   "agreed_instructions": 79,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@menu_key_parse",
+    "module": "menu.obj",
+    "file_offset": "0x009856",
+    "size": 198,
+    "instructions": 75
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x045A1E",
+    "size": 198,
+    "region": "overlay"
+   },
+   "agreed_instructions": 75,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__aFldiv",
+    "module": "ldiv.asm.obj",
+    "file_offset": "0x0159A2",
+    "size": 154,
+    "instructions": 73
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010496",
+    "size": 154,
+    "region": "load_image"
+   },
+   "agreed_instructions": 73,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_draw",
+    "module": "popup.obj",
+    "file_offset": "0x006E6C",
+    "size": 208,
+    "instructions": 73
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06E2DE",
+    "size": 207,
+    "region": "overlay"
+   },
+   "agreed_instructions": 73,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__filbuf",
+    "module": "_filbuf.asm.obj",
+    "file_offset": "0x01610E",
+    "size": 150,
+    "instructions": 65
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010B26",
+    "size": 149,
+    "region": "load_image"
+   },
+   "agreed_instructions": 65,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_conform",
+    "module": "buffer_i.c.obj",
+    "file_offset": "0x00DF54",
+    "size": 138,
+    "instructions": 65
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C8FC",
+    "size": 88,
+    "region": "load_image"
+   },
+   "agreed_instructions": 65,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__setenvp",
+    "module": "dos_stdenvp.asm.obj",
+    "file_offset": "0x015FD8",
+    "size": 126,
+    "instructions": 65
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0109F0",
+    "size": 15,
+    "region": "load_image"
+   },
+   "agreed_instructions": 65,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_fgets",
+    "module": "fgets.asm.obj",
+    "file_offset": "0x01560A",
+    "size": 116,
+    "instructions": 65
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00FF9A",
+    "size": 34,
+    "region": "load_image"
+   },
+   "agreed_instructions": 65,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@menu_bar_mouse_parse",
+    "module": "menu.obj",
+    "file_offset": "0x009724",
+    "size": 158,
+    "instructions": 64
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0458EC",
+    "size": 158,
+    "region": "overlay"
+   },
+   "agreed_instructions": 64,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_item",
+    "module": "menu.obj",
+    "file_offset": "0x0087FC",
+    "size": 150,
+    "instructions": 59
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0449C4",
+    "size": 149,
+    "region": "overlay"
+   },
+   "agreed_instructions": 59,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_conform_to_view_size",
+    "module": "map_2.obj",
+    "file_offset": "0x009DFA",
+    "size": 118,
+    "instructions": 52
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066E52",
+    "size": 118,
+    "region": "overlay"
+   },
+   "agreed_instructions": 52,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@mcga_setpal_range",
+    "module": "mcga_b.c.obj",
+    "file_offset": "0x011C2E",
+    "size": 104,
+    "instructions": 52
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E702",
+    "size": 21,
+    "region": "load_image"
+   },
+   "agreed_instructions": 52,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@pack_raw_copy",
+    "module": "pack_5.c.obj",
+    "file_offset": "0x013628",
+    "size": 126,
+    "instructions": 51
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0776F4",
+    "size": 125,
+    "region": "overlay"
+   },
+   "agreed_instructions": 51,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fmemcpy",
+    "module": "hmemcpy.asm.obj",
+    "file_offset": "0x015ACA",
+    "size": 94,
+    "instructions": 50
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010582",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 50,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@heap_shrink",
+    "module": "heap_1.c.obj",
+    "file_offset": "0x010BC4",
+    "size": 140,
+    "instructions": 49
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x078CB2",
+    "size": 137,
+    "region": "overlay"
+   },
+   "agreed_instructions": 49,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_on_colony_map",
+    "module": "map.obj",
+    "file_offset": "0x0040F0",
+    "size": 132,
+    "instructions": 49
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005C2C",
+    "size": 132,
+    "region": "load_image"
+   },
+   "agreed_instructions": 49,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_vline",
+    "module": "buffer_a.c.obj",
+    "file_offset": "0x00DE00",
+    "size": 108,
+    "instructions": 48
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E036",
+    "size": 24,
+    "region": "load_image"
+   },
+   "agreed_instructions": 48,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strnicmp",
+    "module": "strnicmp.asm.obj",
+    "file_offset": "0x015892",
+    "size": 88,
+    "instructions": 48
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010292",
+    "size": 54,
+    "region": "load_image"
+   },
+   "agreed_instructions": 48,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__catox",
+    "module": "atox.asm.obj",
+    "file_offset": "0x016CF6",
+    "size": 84,
+    "instructions": 47
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01180C",
+    "size": 46,
+    "region": "load_image"
+   },
+   "agreed_instructions": 47,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_hline",
+    "module": "buffer_9.c.obj",
+    "file_offset": "0x00DD96",
+    "size": 106,
+    "instructions": 47
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00DFCC",
+    "size": 39,
+    "region": "load_image"
+   },
+   "agreed_instructions": 47,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_lseek",
+    "module": "dos_lseek.asm.obj",
+    "file_offset": "0x016A52",
+    "size": 122,
+    "instructions": 46
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01146A",
+    "size": 122,
+    "region": "load_image"
+   },
+   "agreed_instructions": 46,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@xtoi",
+    "module": "btype_3.c.obj",
+    "file_offset": "0x011B0A",
+    "size": 100,
+    "instructions": 44
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012DAA",
+    "size": 99,
+    "region": "load_image"
+   },
+   "agreed_instructions": 44,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@mcga_getpal",
+    "module": "mcga_8.c.obj",
+    "file_offset": "0x011BCA",
+    "size": 80,
+    "instructions": 40
+   },
+   "viceroy": {
+    "name": "vga_palette_dac_write",
+    "file_offset": "0x078548",
+    "size": 77,
+    "region": "overlay"
+   },
+   "agreed_instructions": 40,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_write_big_centered",
+    "module": "write.obj",
+    "file_offset": "0x00A500",
+    "size": 72,
+    "instructions": 38
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x002CE0",
+    "size": 71,
+    "region": "load_image"
+   },
+   "agreed_instructions": 38,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstricmp",
+    "module": "stricmp.asm.obj",
+    "file_offset": "0x015B56",
+    "size": 70,
+    "instructions": 36
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01060E",
+    "size": 69,
+    "region": "load_image"
+   },
+   "agreed_instructions": 36,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_write_centered",
+    "module": "write.obj",
+    "file_offset": "0x00A3E8",
+    "size": 68,
+    "instructions": 36
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x002BC8",
+    "size": 68,
+    "region": "load_image"
+   },
+   "agreed_instructions": 36,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_say_terrain",
+    "module": "write.obj",
+    "file_offset": "0x00A548",
+    "size": 76,
+    "instructions": 36
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x002D28",
+    "size": 75,
+    "region": "load_image"
+   },
+   "agreed_instructions": 36,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fmemset",
+    "module": "hmemset.asm.obj",
+    "file_offset": "0x015CE8",
+    "size": 72,
+    "instructions": 35
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0107CA",
+    "size": 49,
+    "region": "load_image"
+   },
+   "agreed_instructions": 35,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_xy_dist",
+    "module": "stuff.obj",
+    "file_offset": "0x009C92",
+    "size": 60,
+    "instructions": 35
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x004900",
+    "size": 15,
+    "region": "load_image"
+   },
+   "agreed_instructions": 35,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_terrain_fix_2",
+    "module": "map.obj",
+    "file_offset": "0x00466C",
+    "size": 74,
+    "instructions": 34
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x006204",
+    "size": 46,
+    "region": "load_image"
+   },
+   "agreed_instructions": 34,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrcat",
+    "module": "strcat.asm.obj",
+    "file_offset": "0x015CA2",
+    "size": 70,
+    "instructions": 34
+   },
+   "viceroy": {
+    "name": "strcat_far",
+    "file_offset": "0x010784",
+    "size": 70,
+    "region": "load_image"
+   },
+   "agreed_instructions": 34,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_bar_item",
+    "module": "menu.obj",
+    "file_offset": "0x0087B6",
+    "size": 70,
+    "instructions": 33
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x04497E",
+    "size": 69,
+    "region": "overlay"
+   },
+   "agreed_instructions": 33,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strncmp",
+    "module": "strncmp.asm.obj",
+    "file_offset": "0x01557E",
+    "size": 58,
+    "instructions": 32
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00FE8C",
+    "size": 27,
+    "region": "load_image"
+   },
+   "agreed_instructions": 32,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrncmp",
+    "module": "strncmp.asm.obj",
+    "file_offset": "0x015B9C",
+    "size": 60,
+    "instructions": 32
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010654",
+    "size": 26,
+    "region": "load_image"
+   },
+   "agreed_instructions": 32,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strcat",
+    "module": "strcat.asm.obj",
+    "file_offset": "0x015466",
+    "size": 64,
+    "instructions": 30
+   },
+   "viceroy": {
+    "name": "strcat_near",
+    "file_offset": "0x00FD74",
+    "size": 63,
+    "region": "load_image"
+   },
+   "agreed_instructions": 30,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strncat",
+    "module": "strncat.asm.obj",
+    "file_offset": "0x015520",
+    "size": 54,
+    "instructions": 30
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00FE2E",
+    "size": 51,
+    "region": "load_image"
+   },
+   "agreed_instructions": 30,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__ftbuf",
+    "module": "_sftbuf.asm.obj",
+    "file_offset": "0x01640F",
+    "size": 63,
+    "instructions": 29
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010E27",
+    "size": 63,
+    "region": "load_image"
+   },
+   "agreed_instructions": 29,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_conform_to_view",
+    "module": "map_2.obj",
+    "file_offset": "0x009DB4",
+    "size": 70,
+    "instructions": 29
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066E0C",
+    "size": 70,
+    "region": "overlay"
+   },
+   "agreed_instructions": 29,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrcpy",
+    "module": "strcpy.asm.obj",
+    "file_offset": "0x015C6C",
+    "size": 54,
+    "instructions": 29
+   },
+   "viceroy": {
+    "name": "strcpy_far",
+    "file_offset": "0x01074E",
+    "size": 54,
+    "region": "load_image"
+   },
+   "agreed_instructions": 29,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_xms_umb_get",
+    "module": "XMS_3.C.obj",
+    "file_offset": "0x013E18",
+    "size": 66,
+    "instructions": 28
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01343A",
+    "size": 65,
+    "region": "load_image"
+   },
+   "agreed_instructions": 28,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__dos_findfirst",
+    "module": "dos_d_find.asm.obj",
+    "file_offset": "0x01593F",
+    "size": 51,
+    "instructions": 28
+   },
+   "viceroy": {
+    "name": "find_file",
+    "file_offset": "0x010433",
+    "size": 79,
+    "region": "load_image"
+   },
+   "agreed_instructions": 28,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_mouse_get_status",
+    "module": "mouse_1.ASM.obj",
+    "file_offset": "0x0111CC",
+    "size": 67,
+    "instructions": 27
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00CD0B",
+    "size": 67,
+    "region": "load_image"
+   },
+   "agreed_instructions": 27,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_xy_dist_2",
+    "module": "stuff.obj",
+    "file_offset": "0x009D16",
+    "size": 48,
+    "instructions": 27
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x004984",
+    "size": 12,
+    "region": "load_image"
+   },
+   "agreed_instructions": 27,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__NMSG_TEXT",
+    "module": "dos_nmsghdr.asm.obj",
+    "file_offset": "0x016056",
+    "size": 43,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010A6E",
+    "size": 18,
+    "region": "load_image"
+   },
+   "agreed_instructions": 26,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strcpy",
+    "module": "strcpy.asm.obj",
+    "file_offset": "0x0154A6",
+    "size": 50,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "strcpy_near",
+    "file_offset": "0x00FDB4",
+    "size": 50,
+    "region": "load_image"
+   },
+   "agreed_instructions": 26,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrrchr",
+    "module": "strrchr.asm.obj",
+    "file_offset": "0x015C02",
+    "size": 46,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "strrchr_far",
+    "file_offset": "0x0106BA",
+    "size": 42,
+    "region": "load_image"
+   },
+   "agreed_instructions": 26,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_text_search",
+    "module": "text.obj",
+    "file_offset": "0x009C28",
+    "size": 54,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06FAE8",
+    "size": 74,
+    "region": "overlay"
+   },
+   "agreed_instructions": 26,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__NMSG_WRITE",
+    "module": "dos_nmsghdr.asm.obj",
+    "file_offset": "0x016081",
+    "size": 55,
+    "instructions": 25
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010A99",
+    "size": 12,
+    "region": "load_image"
+   },
+   "agreed_instructions": 25,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_SOUND_DRIVER_INIT",
+    "module": "sound_1.ASM.obj",
+    "file_offset": "0x012802",
+    "size": 49,
+    "instructions": 25
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012928",
+    "size": 49,
+    "region": "load_image"
+   },
+   "agreed_instructions": 25,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrncpy",
+    "module": "strncpy.asm.obj",
+    "file_offset": "0x015BD8",
+    "size": 42,
+    "instructions": 25
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010690",
+    "size": 33,
+    "region": "load_image"
+   },
+   "agreed_instructions": 25,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_xms_umb_free",
+    "module": "XMS_3.C.obj",
+    "file_offset": "0x013E5A",
+    "size": 54,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01347C",
+    "size": 21,
+    "region": "load_image"
+   },
+   "agreed_instructions": 24,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_bar_hide",
+    "module": "menu.obj",
+    "file_offset": "0x008892",
+    "size": 56,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044A5A",
+    "size": 56,
+    "region": "overlay"
+   },
+   "agreed_instructions": 24,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strchr",
+    "module": "strchr.asm.obj",
+    "file_offset": "0x015868",
+    "size": 42,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "strchr_near",
+    "file_offset": "0x010226",
+    "size": 42,
+    "region": "load_image"
+   },
+   "agreed_instructions": 24,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrchr",
+    "module": "strchr.asm.obj",
+    "file_offset": "0x015B28",
+    "size": 46,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0105E0",
+    "size": 42,
+    "region": "load_image"
+   },
+   "agreed_instructions": 24,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strncpy",
+    "module": "strncpy.asm.obj",
+    "file_offset": "0x015556",
+    "size": 40,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00FE64",
+    "size": 34,
+    "region": "load_image"
+   },
+   "agreed_instructions": 24,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__aFulmul",
+    "module": "lmul.asm.obj",
+    "file_offset": "0x015A3C",
+    "size": 50,
+    "instructions": 23
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010530",
+    "size": 25,
+    "region": "load_image"
+   },
+   "agreed_instructions": 23,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@mem_adjust",
+    "module": "mem_2.c.obj",
+    "file_offset": "0x00E5F0",
+    "size": 46,
+    "instructions": 23
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x078A4A",
+    "size": 168,
+    "region": "overlay"
+   },
+   "agreed_instructions": 23,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_memcpy",
+    "module": "memcpy.asm.obj",
+    "file_offset": "0x016FAC",
+    "size": 44,
+    "instructions": 23
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010352",
+    "size": 44,
+    "region": "load_image"
+   },
+   "agreed_instructions": 23,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_feature_set",
+    "module": "map.obj",
+    "file_offset": "0x004212",
+    "size": 54,
+    "instructions": 22
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005D4E",
+    "size": 40,
+    "region": "load_image"
+   },
+   "agreed_instructions": 22,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_add_check",
+    "module": "popup.obj",
+    "file_offset": "0x0055C6",
+    "size": 58,
+    "instructions": 22
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06CA38",
+    "size": 58,
+    "region": "overlay"
+   },
+   "agreed_instructions": 22,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_terrain_type",
+    "module": "terrain.obj",
+    "file_offset": "0x00B176",
+    "size": 44,
+    "instructions": 22
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00624E",
+    "size": 8,
+    "region": "load_image"
+   },
+   "agreed_instructions": 22,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_xms_umb_get_avail",
+    "module": "XMS_2.C.obj",
+    "file_offset": "0x013DEC",
+    "size": 44,
+    "instructions": 21
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01340E",
+    "size": 32,
+    "region": "load_image"
+   },
+   "agreed_instructions": 21,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__nmalloc",
+    "module": "nmalloc.asm.obj",
+    "file_offset": "0x01729F",
+    "size": 41,
+    "instructions": 21
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012235",
+    "size": 40,
+    "region": "load_image"
+   },
+   "agreed_instructions": 21,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_strcmp",
+    "module": "strcmp.asm.obj",
+    "file_offset": "0x0154D8",
+    "size": 44,
+    "instructions": 21
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00FDE6",
+    "size": 43,
+    "region": "load_image"
+   },
+   "agreed_instructions": 21,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@map_check",
+    "module": "map_9.obj",
+    "file_offset": "0x00B6BC",
+    "size": 68,
+    "instructions": 20
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0710C2",
+    "size": 68,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@pop_set",
+    "module": "popup.obj",
+    "file_offset": "0x0080E2",
+    "size": 42,
+    "instructions": 20
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06F554",
+    "size": 42,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrupr",
+    "module": "strupr.asm.obj",
+    "file_offset": "0x015C30",
+    "size": 36,
+    "instructions": 20
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0106E8",
+    "size": 36,
+    "region": "load_image"
+   },
+   "agreed_instructions": 20,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_text_item_binary",
+    "module": "text.obj",
+    "file_offset": "0x009BFA",
+    "size": 46,
+    "instructions": 20
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06FABA",
+    "size": 46,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@heap_declare",
+    "module": "heap_1.c.obj",
+    "file_offset": "0x010AE0",
+    "size": 62,
+    "instructions": 19
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x078BCE",
+    "size": 62,
+    "region": "overlay"
+   },
+   "agreed_instructions": 19,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_on_map",
+    "module": "map.obj",
+    "file_offset": "0x0040BE",
+    "size": 50,
+    "instructions": 19
+   },
+   "viceroy": {
+    "name": "is_xy_in_map_bounds",
+    "file_offset": "0x005BFA",
+    "size": 49,
+    "region": "load_image"
+   },
+   "agreed_instructions": 19,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "@mouse_in_box",
+    "module": "mouse_2.c.obj",
+    "file_offset": "0x00D810",
+    "size": 42,
+    "instructions": 19
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00D0B6",
+    "size": 35,
+    "region": "load_image"
+   },
+   "agreed_instructions": 19,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_TIMER_ACTIVATE_LOW_PRIORITY",
+    "module": "timer_3.ASM.obj",
+    "file_offset": "0x00E9FD",
+    "size": 48,
+    "instructions": 19
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C8AB",
+    "size": 48,
+    "region": "load_image"
+   },
+   "agreed_instructions": 19,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_spacer",
+    "module": "write.obj",
+    "file_offset": "0x00A0E0",
+    "size": 34,
+    "instructions": 19
+   },
+   "viceroy": {
+    "name": "rt_emit_repeat_n",
+    "file_offset": "0x0028C0",
+    "size": 33,
+    "region": "load_image"
+   },
+   "agreed_instructions": 19,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_far_to_near",
+    "module": "pack_6.c.obj",
+    "file_offset": "0x01469A",
+    "size": 32,
+    "instructions": 18
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0772BA",
+    "size": 10,
+    "region": "overlay"
+   },
+   "agreed_instructions": 18,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_read_check",
+    "module": "popup.obj",
+    "file_offset": "0x005368",
+    "size": 48,
+    "instructions": 18
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C7DA",
+    "size": 47,
+    "region": "overlay"
+   },
+   "agreed_instructions": 18,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_bearing_adjacent",
+    "module": "stuff.obj",
+    "file_offset": "0x009D8E",
+    "size": 38,
+    "instructions": 18
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0049FC",
+    "size": 20,
+    "region": "load_image"
+   },
+   "agreed_instructions": 18,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_tile_id",
+    "module": "tile.obj",
+    "file_offset": "0x0046CE",
+    "size": 42,
+    "instructions": 18
+   },
+   "viceroy": {
+    "name": "terrain_id_normalize_to_8",
+    "file_offset": "0x003436",
+    "size": 25,
+    "region": "load_image"
+   },
+   "agreed_instructions": 18,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__nfree",
+    "module": "nmalloc.asm.obj",
+    "file_offset": "0x01727E",
+    "size": 33,
+    "instructions": 17
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012214",
+    "size": 33,
+    "region": "load_image"
+   },
+   "agreed_instructions": 17,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_release_all_grey",
+    "module": "popup.obj",
+    "file_offset": "0x005338",
+    "size": 48,
+    "instructions": 17
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C7AA",
+    "size": 48,
+    "region": "overlay"
+   },
+   "agreed_instructions": 17,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__FF_MSGBANNER",
+    "module": "dos_crt0msg.asm.obj",
+    "file_offset": "0x015DFA",
+    "size": 34,
+    "instructions": 16
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010812",
+    "size": 34,
+    "region": "load_image"
+   },
+   "agreed_instructions": 16,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "__dos_write",
+    "module": "dos_d_rdwr.asm.obj",
+    "file_offset": "0x015979",
+    "size": 41,
+    "instructions": 16
+   },
+   "viceroy": {
+    "name": "_write",
+    "file_offset": "0x01046D",
+    "size": 5,
+    "region": "load_image"
+   },
+   "agreed_instructions": 16,
+   "kind": "exact"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_write_check",
+    "module": "popup.obj",
+    "file_offset": "0x005398",
+    "size": 40,
+    "instructions": 16
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C80A",
+    "size": 39,
+    "region": "overlay"
+   },
+   "agreed_instructions": 16,
+   "kind": "exact"
+  }
+ ],
+ "partial": [
+  {
+   "mapedit": {
+    "name": "@compute_view_parameters",
+    "module": "map_a.obj",
+    "file_offset": "0x00BA76",
+    "size": 3424,
+    "instructions": 1212
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06787C",
+    "size": 423,
+    "region": "overlay"
+   },
+   "agreed_instructions": 200,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_compute_size",
+    "module": "menu.obj",
+    "file_offset": "0x008DDC",
+    "size": 278,
+    "instructions": 109
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044FA4",
+    "size": 278,
+    "region": "overlay"
+   },
+   "agreed_instructions": 104,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_draw_bar",
+    "module": "menu.obj",
+    "file_offset": "0x008CB4",
+    "size": 296,
+    "instructions": 107
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044E7C",
+    "size": 296,
+    "region": "overlay"
+   },
+   "agreed_instructions": 103,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@generate_terrain_map_region",
+    "module": "map_a.obj",
+    "file_offset": "0x00C7D6",
+    "size": 700,
+    "instructions": 242
+   },
+   "viceroy": {
+    "name": "map_view_render_O514",
+    "file_offset": "0x0685DC",
+    "size": 699,
+    "region": "overlay"
+   },
+   "agreed_instructions": 97,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_mouse_refresh_view_port",
+    "module": "mouse_1.ASM.obj",
+    "file_offset": "0x01141D",
+    "size": 310,
+    "instructions": 121
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00CF3E",
+    "size": 134,
+    "region": "load_image"
+   },
+   "agreed_instructions": 94,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_show_mini_region",
+    "module": "me_mini.obj",
+    "file_offset": "0x00CDEE",
+    "size": 294,
+    "instructions": 108
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066BB0",
+    "size": 293,
+    "region": "overlay"
+   },
+   "agreed_instructions": 88,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_buffer_tile",
+    "module": "buffer_z.c.obj",
+    "file_offset": "0x00E190",
+    "size": 566,
+    "instructions": 228
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E350",
+    "size": 43,
+    "region": "load_image"
+   },
+   "agreed_instructions": 81,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_video_update",
+    "module": "video_1.ASM.obj",
+    "file_offset": "0x010274",
+    "size": 312,
+    "instructions": 131
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00F52C",
+    "size": 35,
+    "region": "load_image"
+   },
+   "agreed_instructions": 69,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__astart",
+    "module": "dos_crt0.asm.obj",
+    "file_offset": "0x014E9E",
+    "size": 195,
+    "instructions": 81
+   },
+   "viceroy": {
+    "name": "dos_version_check_stub",
+    "file_offset": "0x00F720",
+    "size": 13,
+    "region": "load_image"
+   },
+   "agreed_instructions": 67,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@menu_bar_run",
+    "module": "menu.obj",
+    "file_offset": "0x00910C",
+    "size": 1560,
+    "instructions": 520
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0452D4",
+    "size": 1559,
+    "region": "overlay"
+   },
+   "agreed_instructions": 65,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__openfile",
+    "module": "_open.c.obj",
+    "file_offset": "0x0162B4",
+    "size": 232,
+    "instructions": 93
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010CCC",
+    "size": 180,
+    "region": "load_image"
+   },
+   "agreed_instructions": 64,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_resource_at",
+    "module": "map.obj",
+    "file_offset": "0x004508",
+    "size": 232,
+    "instructions": 82
+   },
+   "viceroy": {
+    "name": "tile_terrain_variant_hash",
+    "file_offset": "0x0060A0",
+    "size": 128,
+    "region": "load_image"
+   },
+   "agreed_instructions": 56,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_box_draw",
+    "module": "popup.obj",
+    "file_offset": "0x006C56",
+    "size": 534,
+    "instructions": 188
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06E0C8",
+    "size": 534,
+    "region": "overlay"
+   },
+   "agreed_instructions": 49,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_show_map_gradually",
+    "module": "map_2.obj",
+    "file_offset": "0x009F10",
+    "size": 188,
+    "instructions": 66
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066F68",
+    "size": 211,
+    "region": "overlay"
+   },
+   "agreed_instructions": 43,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_draw_menu",
+    "module": "menu.obj",
+    "file_offset": "0x008EF2",
+    "size": 538,
+    "instructions": 198
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0450BA",
+    "size": 537,
+    "region": "overlay"
+   },
+   "agreed_instructions": 41,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_set_font",
+    "module": "menu.obj",
+    "file_offset": "0x00838E",
+    "size": 152,
+    "instructions": 56
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044556",
+    "size": 52,
+    "region": "overlay"
+   },
+   "agreed_instructions": 40,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_add_bar_item",
+    "module": "menu.obj",
+    "file_offset": "0x0089B2",
+    "size": 412,
+    "instructions": 147
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044B7A",
+    "size": 411,
+    "region": "overlay"
+   },
+   "agreed_instructions": 39,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_write",
+    "module": "write.asm.obj",
+    "file_offset": "0x016BB6",
+    "size": 320,
+    "instructions": 145
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0115CE",
+    "size": 185,
+    "region": "load_image"
+   },
+   "agreed_instructions": 38,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "PACK_READ_MEMORY",
+    "module": "PACK_1.C.obj",
+    "file_offset": "0x014B96",
+    "size": 116,
+    "instructions": 45
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012A66",
+    "size": 29,
+    "region": "load_image"
+   },
+   "agreed_instructions": 37,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "PACK_WRITE_MEMORY",
+    "module": "PACK_2.C.obj",
+    "file_offset": "0x014C0A",
+    "size": 110,
+    "instructions": 45
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012ADA",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 37,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_menu_add_item",
+    "module": "menu.obj",
+    "file_offset": "0x008B4E",
+    "size": 358,
+    "instructions": 138
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x044D16",
+    "size": 357,
+    "region": "overlay"
+   },
+   "agreed_instructions": 37,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__stbuf",
+    "module": "_sftbuf.asm.obj",
+    "file_offset": "0x01639C",
+    "size": 115,
+    "instructions": 47
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010DB4",
+    "size": 115,
+    "region": "load_image"
+   },
+   "agreed_instructions": 35,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_fflush",
+    "module": "fflush.c.obj",
+    "file_offset": "0x01644E",
+    "size": 116,
+    "instructions": 50
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010E66",
+    "size": 116,
+    "region": "load_image"
+   },
+   "agreed_instructions": 35,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@mcga_time_palette_swap",
+    "module": "mcga_c.c.obj",
+    "file_offset": "0x00ED5E",
+    "size": 102,
+    "instructions": 51
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x077ED0",
+    "size": 106,
+    "region": "overlay"
+   },
+   "agreed_instructions": 35,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_update_terrain_region",
+    "module": "map_2.obj",
+    "file_offset": "0x009E70",
+    "size": 106,
+    "instructions": 36
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066EC8",
+    "size": 159,
+    "region": "overlay"
+   },
+   "agreed_instructions": 32,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_add_entry",
+    "module": "popup.obj",
+    "file_offset": "0x005722",
+    "size": 504,
+    "instructions": 173
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06CB94",
+    "size": 465,
+    "region": "overlay"
+   },
+   "agreed_instructions": 32,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "PACK_WRITE_FILE",
+    "module": "PACK_4.C.obj",
+    "file_offset": "0x014CF2",
+    "size": 146,
+    "instructions": 54
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012BC2",
+    "size": 145,
+    "region": "load_image"
+   },
+   "agreed_instructions": 30,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_add_item",
+    "module": "popup.obj",
+    "file_offset": "0x0053DE",
+    "size": 488,
+    "instructions": 160
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C850",
+    "size": 488,
+    "region": "overlay"
+   },
+   "agreed_instructions": 30,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_add_string",
+    "module": "popup.obj",
+    "file_offset": "0x005610",
+    "size": 274,
+    "instructions": 95
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06CA82",
+    "size": 274,
+    "region": "overlay"
+   },
+   "agreed_instructions": 30,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_add_sprite",
+    "module": "popup.obj",
+    "file_offset": "0x00591A",
+    "size": 494,
+    "instructions": 165
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06CD8C",
+    "size": 494,
+    "region": "overlay"
+   },
+   "agreed_instructions": 30,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "PACK_READ_FILE",
+    "module": "PACK_3.C.obj",
+    "file_offset": "0x014C78",
+    "size": 122,
+    "instructions": 46
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012B48",
+    "size": 121,
+    "region": "load_image"
+   },
+   "agreed_instructions": 28,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_rect_copy",
+    "module": "buffer_4.c.obj",
+    "file_offset": "0x00DAC0",
+    "size": 244,
+    "instructions": 98
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00DCF6",
+    "size": 11,
+    "region": "load_image"
+   },
+   "agreed_instructions": 28,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_set_font",
+    "module": "popup.obj",
+    "file_offset": "0x004E24",
+    "size": 650,
+    "instructions": 235
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C296",
+    "size": 63,
+    "region": "overlay"
+   },
+   "agreed_instructions": 28,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_rect_copy_2",
+    "module": "buffer_6.c.obj",
+    "file_offset": "0x00DC70",
+    "size": 244,
+    "instructions": 97
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00DEA6",
+    "size": 152,
+    "region": "load_image"
+   },
+   "agreed_instructions": 27,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_draw_box",
+    "module": "buffer_b.c.obj",
+    "file_offset": "0x00DE6C",
+    "size": 164,
+    "instructions": 61
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E0A2",
+    "size": 14,
+    "region": "load_image"
+   },
+   "agreed_instructions": 27,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_big_sprite",
+    "module": "popup.obj",
+    "file_offset": "0x0064C6",
+    "size": 1936,
+    "instructions": 663
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06D938",
+    "size": 148,
+    "region": "overlay"
+   },
+   "agreed_instructions": 27,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@fileio_fread_f",
+    "module": "fileio_8.c.obj",
+    "file_offset": "0x00D2A0",
+    "size": 520,
+    "instructions": 208
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00D41E",
+    "size": 29,
+    "region": "load_image"
+   },
+   "agreed_instructions": 26,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@generate_terrain_map",
+    "module": "map_a.obj",
+    "file_offset": "0x00CA92",
+    "size": 134,
+    "instructions": 45
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x068898",
+    "size": 149,
+    "region": "overlay"
+   },
+   "agreed_instructions": 26,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@pack_data",
+    "module": "pack_6.c.obj",
+    "file_offset": "0x0146DA",
+    "size": 784,
+    "instructions": 260
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0772FA",
+    "size": 754,
+    "region": "overlay"
+   },
+   "agreed_instructions": 26,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_help_draw",
+    "module": "popup.obj",
+    "file_offset": "0x006456",
+    "size": 112,
+    "instructions": 39
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06D8C8",
+    "size": 112,
+    "region": "overlay"
+   },
+   "agreed_instructions": 26,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_strings",
+    "module": "strings.obj",
+    "file_offset": "0x0049AC",
+    "size": 1026,
+    "instructions": 347
+   },
+   "viceroy": {
+    "name": "rt_far_strlen",
+    "file_offset": "0x002462",
+    "size": 45,
+    "region": "load_image"
+   },
+   "agreed_instructions": 26,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@xms_detect",
+    "module": "xms_1.c.obj",
+    "file_offset": "0x01096A",
+    "size": 130,
+    "instructions": 41
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x012CC8",
+    "size": 130,
+    "region": "load_image"
+   },
+   "agreed_instructions": 25,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__c_exit",
+    "module": "125.obj",
+    "file_offset": "0x015074",
+    "size": 106,
+    "instructions": 44
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00F8F6",
+    "size": 106,
+    "region": "load_image"
+   },
+   "agreed_instructions": 23,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_setvbuf",
+    "module": "setvbuf.c.obj",
+    "file_offset": "0x016EEC",
+    "size": 192,
+    "instructions": 69
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0119D6",
+    "size": 157,
+    "region": "load_image"
+   },
+   "agreed_instructions": 23,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_ftell",
+    "module": "ftell.c.obj",
+    "file_offset": "0x016D76",
+    "size": 374,
+    "instructions": 147
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x011860",
+    "size": 172,
+    "region": "load_image"
+   },
+   "agreed_instructions": 22,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_show_map_region",
+    "module": "map_2.obj",
+    "file_offset": "0x009FE4",
+    "size": 70,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06703C",
+    "size": 69,
+    "region": "overlay"
+   },
+   "agreed_instructions": 22,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@allocate_map_memory",
+    "module": "map_9.obj",
+    "file_offset": "0x00B5F2",
+    "size": 198,
+    "instructions": 57
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x070FF8",
+    "size": 202,
+    "region": "overlay"
+   },
+   "agreed_instructions": 22,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@font_write",
+    "module": "font_2.c.obj",
+    "file_offset": "0x00EB38",
+    "size": 366,
+    "instructions": 165
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E51C",
+    "size": 24,
+    "region": "load_image"
+   },
+   "agreed_instructions": 21,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_create_blank_map",
+    "module": "map_9.obj",
+    "file_offset": "0x00B94A",
+    "size": 132,
+    "instructions": 42
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x071350",
+    "size": 131,
+    "region": "overlay"
+   },
+   "agreed_instructions": 21,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@buffer_to_disk",
+    "module": "buffer_r.c.obj",
+    "file_offset": "0x01185C",
+    "size": 222,
+    "instructions": 91
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E1D2",
+    "size": 221,
+    "region": "load_image"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@fileio_fwrite_f",
+    "module": "fileio_9.c.obj",
+    "file_offset": "0x00D4A8",
+    "size": 270,
+    "instructions": 111
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0775EC",
+    "size": 263,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_fileio_exist",
+    "module": "fileio_c.ASM.obj",
+    "file_offset": "0x00D5CC",
+    "size": 130,
+    "instructions": 56
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00D642",
+    "size": 129,
+    "region": "load_image"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@heap_get",
+    "module": "heap_1.c.obj",
+    "file_offset": "0x010B5A",
+    "size": 106,
+    "instructions": 38
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x078C48",
+    "size": 105,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@popup_exec",
+    "module": "popup.obj",
+    "file_offset": "0x006F5E",
+    "size": 2820,
+    "instructions": 895
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06E3D0",
+    "size": 2820,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@popup_ask",
+    "module": "popup.obj",
+    "file_offset": "0x0081DA",
+    "size": 76,
+    "instructions": 26
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06F64C",
+    "size": 75,
+    "region": "overlay"
+   },
+   "agreed_instructions": 20,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_filelength",
+    "module": "flength.c.obj",
+    "file_offset": "0x0157E2",
+    "size": 134,
+    "instructions": 57
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010172",
+    "size": 134,
+    "region": "load_image"
+   },
+   "agreed_instructions": 19,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@env_catint",
+    "module": "env_1.obj",
+    "file_offset": "0x003F7C",
+    "size": 174,
+    "instructions": 70
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C362",
+    "size": 173,
+    "region": "load_image"
+   },
+   "agreed_instructions": 18,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_setbuf",
+    "module": "setbuf.c.obj",
+    "file_offset": "0x01575C",
+    "size": 44,
+    "instructions": 22
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0100EC",
+    "size": 44,
+    "region": "load_image"
+   },
+   "agreed_instructions": 18,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_say_bucks",
+    "module": "write.obj",
+    "file_offset": "0x00A2B8",
+    "size": 46,
+    "instructions": 24
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x002A98",
+    "size": 46,
+    "region": "load_image"
+   },
+   "agreed_instructions": 18,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_env_get_path",
+    "module": "env_1.obj",
+    "file_offset": "0x00402A",
+    "size": 74,
+    "instructions": 35
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C410",
+    "size": 73,
+    "region": "load_image"
+   },
+   "agreed_instructions": 17,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_fseek",
+    "module": "fseek.c.obj",
+    "file_offset": "0x01567E",
+    "size": 128,
+    "instructions": 48
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x01000E",
+    "size": 127,
+    "region": "load_image"
+   },
+   "agreed_instructions": 17,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@popup_start_box",
+    "module": "popup.obj",
+    "file_offset": "0x007C82",
+    "size": 1062,
+    "instructions": 370
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06F0F4",
+    "size": 1061,
+    "region": "overlay"
+   },
+   "agreed_instructions": 17,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@error_report",
+    "module": "error_1.c.obj",
+    "file_offset": "0x0106D6",
+    "size": 152,
+    "instructions": 62
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x077D5E",
+    "size": 162,
+    "region": "overlay"
+   },
+   "agreed_instructions": 16,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@loader_close",
+    "module": "loader_1.c.obj",
+    "file_offset": "0x013AEE",
+    "size": 148,
+    "instructions": 56
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x07706C",
+    "size": 148,
+    "region": "overlay"
+   },
+   "agreed_instructions": 16,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_map_find_continents",
+    "module": "map_6.obj",
+    "file_offset": "0x00B242",
+    "size": 944,
+    "instructions": 323
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x063880",
+    "size": 855,
+    "region": "overlay"
+   },
+   "agreed_instructions": 16,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_sprintf",
+    "module": "sprintf.c.obj",
+    "file_offset": "0x015788",
+    "size": 90,
+    "instructions": 37
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010118",
+    "size": 90,
+    "region": "load_image"
+   },
+   "agreed_instructions": 16,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_owner_of",
+    "module": "map.obj",
+    "file_offset": "0x0042B4",
+    "size": 40,
+    "instructions": 15
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005DF0",
+    "size": 40,
+    "region": "load_image"
+   },
+   "agreed_instructions": 15,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_is_anything",
+    "module": "map.obj",
+    "file_offset": "0x004498",
+    "size": 34,
+    "instructions": 15
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x006018",
+    "size": 33,
+    "region": "load_image"
+   },
+   "agreed_instructions": 15,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_set_active_sprite",
+    "module": "popup.obj",
+    "file_offset": "0x006F3C",
+    "size": 34,
+    "instructions": 15
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06E3AE",
+    "size": 34,
+    "region": "overlay"
+   },
+   "agreed_instructions": 15,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_strlen",
+    "module": "strlen.asm.obj",
+    "file_offset": "0x015504",
+    "size": 28,
+    "instructions": 15
+   },
+   "viceroy": {
+    "name": "strlen_near",
+    "file_offset": "0x00FE12",
+    "size": 27,
+    "region": "load_image"
+   },
+   "agreed_instructions": 15,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_minimax",
+    "module": "stuff.obj",
+    "file_offset": "0x009C5E",
+    "size": 30,
+    "instructions": 15
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0048CC",
+    "size": 13,
+    "region": "load_image"
+   },
+   "agreed_instructions": 15,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@keys_get",
+    "module": "KEYS_1.C.obj",
+    "file_offset": "0x00D108",
+    "size": 22,
+    "instructions": 14
+   },
+   "viceroy": {
+    "name": "getch",
+    "file_offset": "0x00D286",
+    "size": 15,
+    "region": "load_image"
+   },
+   "agreed_instructions": 14,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_continent_set",
+    "module": "map.obj",
+    "file_offset": "0x004290",
+    "size": 36,
+    "instructions": 14
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005DCC",
+    "size": 36,
+    "region": "load_image"
+   },
+   "agreed_instructions": 14,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@keys_any",
+    "module": "KEYS_1.C.obj",
+    "file_offset": "0x00D0F4",
+    "size": 20,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "kbhit",
+    "file_offset": "0x00D272",
+    "size": 13,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_close",
+    "module": "dos_close.asm.obj",
+    "file_offset": "0x016A32",
+    "size": 32,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "_close",
+    "file_offset": "0x01144A",
+    "size": 32,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_itoa",
+    "module": "itoa.asm.obj",
+    "file_offset": "0x0155BC",
+    "size": 28,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "itoa_radix_dispatch",
+    "file_offset": "0x00FECA",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_mouse_set_view_port",
+    "module": "mouse_1.ASM.obj",
+    "file_offset": "0x0113F8",
+    "size": 37,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00CF19",
+    "size": 25,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_pack_set_special_buffer",
+    "module": "pack_6.c.obj",
+    "file_offset": "0x0146BA",
+    "size": 32,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0772DA",
+    "size": 31,
+    "region": "overlay"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_set_active_item",
+    "module": "popup.obj",
+    "file_offset": "0x0053C0",
+    "size": 30,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C832",
+    "size": 29,
+    "region": "overlay"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__fstrlen",
+    "module": "strlen.asm.obj",
+    "file_offset": "0x015C54",
+    "size": 24,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "strlen_far",
+    "file_offset": "0x01070C",
+    "size": 23,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_swap",
+    "module": "stuff.obj",
+    "file_offset": "0x009C7C",
+    "size": 22,
+    "instructions": 13
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x0048EA",
+    "size": 21,
+    "region": "load_image"
+   },
+   "agreed_instructions": 13,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@mcga_retrace",
+    "module": "mcga_b.c.obj",
+    "file_offset": "0x011C1A",
+    "size": 20,
+    "instructions": 12
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E6EE",
+    "size": 20,
+    "region": "load_image"
+   },
+   "agreed_instructions": 12,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_blast_mini",
+    "module": "me_mini.obj",
+    "file_offset": "0x00CDD4",
+    "size": 26,
+    "instructions": 12
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x066B96",
+    "size": 26,
+    "region": "overlay"
+   },
+   "agreed_instructions": 12,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_video_init",
+    "module": "video_1.ASM.obj",
+    "file_offset": "0x010258",
+    "size": 28,
+    "instructions": 12
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00F510",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 12,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@font_set_colors",
+    "module": "FONT_3.C.obj",
+    "file_offset": "0x00ECA6",
+    "size": 28,
+    "instructions": 11
+   },
+   "viceroy": {
+    "name": "set_global_269E_byte_pair",
+    "file_offset": "0x00E68A",
+    "size": 15,
+    "region": "load_image"
+   },
+   "agreed_instructions": 11,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_continent_get",
+    "module": "map.obj",
+    "file_offset": "0x004260",
+    "size": 30,
+    "instructions": 11
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005D9C",
+    "size": 29,
+    "region": "load_image"
+   },
+   "agreed_instructions": 11,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_mouse_set_work_buffer",
+    "module": "mouse_1.ASM.obj",
+    "file_offset": "0x0113AE",
+    "size": 25,
+    "instructions": 11
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00CECF",
+    "size": 25,
+    "region": "load_image"
+   },
+   "agreed_instructions": 11,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_num",
+    "module": "popup.obj",
+    "file_offset": "0x004E0A",
+    "size": 26,
+    "instructions": 11
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06C27C",
+    "size": 25,
+    "region": "overlay"
+   },
+   "agreed_instructions": 11,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@pop_get",
+    "module": "popup.obj",
+    "file_offset": "0x00810C",
+    "size": 22,
+    "instructions": 11
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06F57E",
+    "size": 49,
+    "region": "overlay"
+   },
+   "agreed_instructions": 11,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_sopen",
+    "module": "dos_open.asm.obj",
+    "file_offset": "0x0170A2",
+    "size": 26,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x011D16",
+    "size": 26,
+    "region": "load_image"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_map_get",
+    "module": "map.obj",
+    "file_offset": "0x0041C2",
+    "size": 28,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "map_tile_read_layer_15C",
+    "file_offset": "0x005CFE",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_feature_get",
+    "module": "map.obj",
+    "file_offset": "0x0041F6",
+    "size": 28,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "map_tile_read_layer_160",
+    "file_offset": "0x005D32",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_continent_at",
+    "module": "map.obj",
+    "file_offset": "0x00427E",
+    "size": 18,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005DBA",
+    "size": 17,
+    "region": "load_image"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_site_get",
+    "module": "map.obj",
+    "file_offset": "0x0043AC",
+    "size": 28,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005EE8",
+    "size": 28,
+    "region": "load_image"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popk",
+    "module": "popup.obj",
+    "file_offset": "0x008168",
+    "size": 24,
+    "instructions": 10
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06F5DA",
+    "size": 24,
+    "region": "overlay"
+   },
+   "agreed_instructions": 10,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@loader_set_priority",
+    "module": "loader_1.c.obj",
+    "file_offset": "0x013ADC",
+    "size": 18,
+    "instructions": 9
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x07705A",
+    "size": 18,
+    "region": "overlay"
+   },
+   "agreed_instructions": 9,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_continent_loc",
+    "module": "map.obj",
+    "file_offset": "0x004248",
+    "size": 24,
+    "instructions": 9
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005D84",
+    "size": 23,
+    "region": "load_image"
+   },
+   "agreed_instructions": 9,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_MOUSE_SET_HOTSPOT",
+    "module": "mouse_1.ASM.obj",
+    "file_offset": "0x010E44",
+    "size": 25,
+    "instructions": 9
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00CB59",
+    "size": 25,
+    "region": "load_image"
+   },
+   "agreed_instructions": 9,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@font_string_width",
+    "module": "font_4.c.obj",
+    "file_offset": "0x00ECC2",
+    "size": 20,
+    "instructions": 8
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00E6A6",
+    "size": 72,
+    "region": "load_image"
+   },
+   "agreed_instructions": 8,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_map_loc",
+    "module": "map.obj",
+    "file_offset": "0x0041AA",
+    "size": 24,
+    "instructions": 8
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x005CE6",
+    "size": 24,
+    "region": "load_image"
+   },
+   "agreed_instructions": 8,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_popup_set_width",
+    "module": "popup.obj",
+    "file_offset": "0x005600",
+    "size": 16,
+    "instructions": 8
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x06CA72",
+    "size": 15,
+    "region": "overlay"
+   },
+   "agreed_instructions": 8,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__cexit",
+    "module": "125.obj",
+    "file_offset": "0x01506A",
+    "size": 10,
+    "instructions": 6
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00F8EC",
+    "size": 10,
+    "region": "load_image"
+   },
+   "agreed_instructions": 6,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__dos_findnext",
+    "module": "dos_d_find.asm.obj",
+    "file_offset": "0x015934",
+    "size": 11,
+    "instructions": 6
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x010428",
+    "size": 11,
+    "region": "load_image"
+   },
+   "agreed_instructions": 6,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_unlink",
+    "module": "dos_unlink.asm.obj",
+    "file_offset": "0x015926",
+    "size": 14,
+    "instructions": 6
+   },
+   "viceroy": {
+    "name": "unlink",
+    "file_offset": "0x01041A",
+    "size": 14,
+    "region": "load_image"
+   },
+   "agreed_instructions": 6,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_TIMER_SET_SOUND_FLAG",
+    "module": "timer_3.ASM.obj",
+    "file_offset": "0x00E9EB",
+    "size": 18,
+    "instructions": 6
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C899",
+    "size": 18,
+    "region": "load_image"
+   },
+   "agreed_instructions": 6,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_TIMER_SET_COPY_PROTECT",
+    "module": "timer_3.ASM.obj",
+    "file_offset": "0x00E931",
+    "size": 12,
+    "instructions": 5
+   },
+   "viceroy": {
+    "name": "unknown",
+    "file_offset": "0x00C7DF",
+    "size": 12,
+    "region": "load_image"
+   },
+   "agreed_instructions": 5,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "_exit",
+    "module": "125.obj",
+    "file_offset": "0x01505B",
+    "size": 7,
+    "instructions": 4
+   },
+   "viceroy": {
+    "name": "exit",
+    "file_offset": "0x00F8DD",
+    "size": 7,
+    "region": "load_image"
+   },
+   "agreed_instructions": 4,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__exit",
+    "module": "125.obj",
+    "file_offset": "0x015062",
+    "size": 8,
+    "instructions": 4
+   },
+   "viceroy": {
+    "name": "exit_abort",
+    "file_offset": "0x00F8E4",
+    "size": 8,
+    "region": "load_image"
+   },
+   "agreed_instructions": 4,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "@timer_read",
+    "module": "TIMER_1.C.obj",
+    "file_offset": "0x00E786",
+    "size": 12,
+    "instructions": 4
+   },
+   "viceroy": {
+    "name": "read_far_dword_via_267A",
+    "file_offset": "0x00E4C6",
+    "size": 12,
+    "region": "load_image"
+   },
+   "agreed_instructions": 4,
+   "kind": "partial"
+  },
+  {
+   "mapedit": {
+    "name": "__dos_read",
+    "module": "dos_d_rdwr.asm.obj",
+    "file_offset": "0x015972",
+    "size": 7,
+    "instructions": 4
+   },
+   "viceroy": {
+    "name": "_read",
+    "file_offset": "0x010466",
+    "size": 7,
+    "region": "load_image"
+   },
+   "agreed_instructions": 4,
+   "kind": "partial"
+  }
+ ]
+}

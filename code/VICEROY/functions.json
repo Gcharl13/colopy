@@ -11034,7 +11034,8 @@
       "size": 77,
       "instructions": 23,
       "region": "overlay",
-      "name": "vga_palette_dac_write",
+      "name": "mcga_getpal",
+      "name_source": "MAPEDIT CodeView @mcga_getpal (mcga_8.c), exact instruction match. Corrected 2026-08-05 from vga_palette_dac_write: out 0x3C7 is the DAC READ index and the transfer is insb (port->memory). See docs/VICEROY_NAMES_FROM_MAPEDIT.md section 4.",
       "asm_file": "disasm/func_078548_unknown.asm",
       "status": "AUDITED"
     },

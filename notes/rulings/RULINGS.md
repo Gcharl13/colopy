@@ -7017,3 +7017,85 @@ phase 0 wins 3/256 against 60–62/256 for every other phase. That independently
 confirms the previous ruling's phase-0 finding and leaves its **3-pixel residual
 unexplained and still TBD**: it is not a palette question, not a capture
 artifact, and now demonstrably not a cycle-phase artifact either.
+
+## 2026-08-05 — MAPEDIT's CodeView table names 89 VICEROY functions; `func_078548` is a palette READ, not a write
+
+**Question**: `MAPEDIT.EXE` ships an NB02 CodeView publics table (1071 names,
+203 modules, `data_extracted/mapedit_symbols.json`) and `VICEROY.EXE` ships
+none. Three times now a VICEROY function has been identified by noticing it was
+the *same compiled C* as a named MAPEDIT one — `menu.obj` (ruling 2026-07-30),
+then `cycle_1.c` / `timer_1.c` / `timer_3.ASM` (ruling 2026-08-05, earlier
+today). Can that be done systematically rather than by hand?
+
+**Method** (`tools/xmatch_mapedit_viceroy.py`). The builds differ in memory
+model and in every absolute address; the instruction *sequence* does not. So
+fingerprint each instruction as its encoding with the displacement and immediate
+fields **deleted**, index both sides on the first 16 instructions to get
+candidates, then — and this is the part that carries the ruling — **verify by
+extension**: disassemble both sides forward from their entry points, *ignoring
+the recorded function boundaries*, and count how many leading instructions
+agree. A match counts only when the agreed run covers MAPEDIT's whole function
+and the fingerprint is unique on both sides.
+
+Stage 2 is not decoration. Both boundary sources are unreliable — VICEROY's
+extents come from a scan and are often short, MAPEDIT's are exact — while a
+shared compiler prologue makes unrelated functions look identical for a dozen
+instructions. Before verification the tool reported **153** matches on
+whole-function and prefix fingerprints; verification cut it to **89**. The
+clearest casualty: `_strings` (1026 bytes) "matched" `rt_far_strlen` (45 bytes)
+on a 16-instruction prologue.
+
+**Result**: **89 exact matches** — 76 onto VICEROY functions that had no name,
+13 onto functions that already had one. Recorded in
+`data_extracted/viceroy_named_from_mapedit.json` and
+`docs/VICEROY_NAMES_FROM_MAPEDIT.md`.
+
+**Validation.** Twelve of the 13 overlaps **agree** with names derived
+independently by earlier passes (`_strcat`/`strcat_near`, `_open`/`rt_dos_open`,
+`__dos_findfirst`/`find_file`, `_on_map`/`is_xy_in_map_bounds`,
+`_tile_id`/`terrain_id_normalize_to_8`, and so on). Four more land on addresses
+the tree already cites and corroborate them from a symbol table rather than a
+trace:
+
+| VICEROY | CodeView name | corroborates |
+|---|---|---|
+| `0x006204` | `_terrain_fix_2` (`map.obj`) | **`CLAUDE.md` hard rule 3**, the auto-forest fold "byte-verified at file `0x6204`" |
+| `0x00C8AB` | `_TIMER_ACTIVATE_LOW_PRIORITY` | this morning's cycling ruling, which derived the address by hand from `lcall 0x0A29:0x21B` @`0x04B62` |
+| `0x00E702` | `@mcga_setpal_range` | the same ruling's `lcall 0x0C2E:0x22` @`0x0C637` upload |
+| `0x044A5A` | `_menu_bar_hide` (`menu.obj`) | `spec/ui/debug_screens.md`, where the cheat-bit-clear path calls `func_044A5A` via `0x191F:0x45C` |
+
+**Ruling 1**: the 89 exact matches are **evidence, not rulings**. An exact match
+is a fact about bytes — these two functions are the same code. It does not
+establish that the VICEROY copy is *reached* the same way; that still needs the
+call-site trace. `cycle_colors` is the standing example: same C, different thunk,
+different installer. The names are therefore recorded in their own artifact and
+have **not** been bulk-applied to `code/VICEROY/functions.json`.
+
+**Ruling 2 — a correction.** `func_078548` was named `vga_palette_dac_write`
+and rated **B** in `docs/RAW_FUNCTION_AUDIT.md` with the gloss "writes the
+256-colour palette to the DAC (OUT 0x3C7/0x3C9)". CodeView calls it
+`@mcga_getpal`, and the bytes side with CodeView: `0x3C7` is the DAC **read**
+index (`0x3C8` is write), and the transfer at `0x07857E` is **`insb`**, which
+moves port → memory into the caller's `es:di` buffer. The function **reads** the
+palette back out. Its writing counterpart is `@mcga_setpal_range` @`0x00E702`
+(`out 0x3C8` @`0x00E730`, then `outsb`). The prior audit noticed port `0x3C7`
+and drew the opposite conclusion. Corrected in `code/VICEROY/functions.json`
+(with `name_source`) and in `docs/RAW_FUNCTION_AUDIT.md`.
+
+**Coverage and its limits**. 606 MAPEDIT functions have usable extents against
+1250 VICEROY functions; 212 candidate fingerprints; 89 exact, 110 partial
+(prologue-only leads, explicitly not names), 13 ambiguous. Coverage is bounded
+by three honest limits: MAPEDIT only links what MAPEDIT needs; a function
+compiled in a different memory model is genuinely different code (VICEROY's
+`cycle_colors` reaches its palette via `lds si,[0x36E]` where MAPEDIT uses
+`mov si,0x6048`, so it correctly does *not* match, despite being the same
+source); and functions under 16 instructions are skipped because stubs collide.
+
+**Side effect worth keeping**: an exact match whose VICEROY extent is far
+shorter than MAPEDIT's flags a **bad boundary** in the VICEROY inventory.
+`0x00E702` is recorded as 21 bytes and is really 52 instructions; `0x011D30`
+(`_open`) is recorded as 105 bytes against 401.
+
+**Follow-up**: whether to bulk-apply the 76 new names into
+`code/VICEROY/functions.json` — it is a generated artifact, so this needs a
+decision about provenance rather than more evidence. Deliberately not done here.

@@ -71,6 +71,11 @@
 
 ## Method (every agent/pass follows)
 - Disasm tool: `scratchpad/disv.py 0xADDR N`; thunks: `tools/follow_thunk.py SEG OFF`.
+- **Named functions**: VICEROY ships no symbols, but MAPEDIT ships a CodeView
+  table and the two share an in-house C library. `docs/VICEROY_NAMES_FROM_MAPEDIT.md`
+  carries 89 whole-function-verified name transfers (generator
+  `tools/xmatch_mapedit_viceroy.py`) — check it before naming a function `func_XXXXXX`.
+  Treat a match as evidence of shared *code*, not of shared call path.
 - Cite every coordinate to the push/mov site. Runtime/RNG/BSS → TBD + the exact site.
 - Output: a code-anchored decode section/doc; update this tracker honestly.
 
