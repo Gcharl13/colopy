@@ -4801,8 +4801,12 @@ const COMMANDS = {
   'View Pieces': () => { G.viewMode = true; G.msg = 'View mode.'; },
   'European Status': () => { G.screen = 'europe'; },
   'Find Colony': findColony,
+  // MENU.TXT spells these rows "Zoom In#   ~Z" / "Zoom Out   ~X", so the parsed
+  // label carries the accelerator letter and both spellings must resolve.
   'Zoom In': () => setZoom(G.zoom - 1),
   'Zoom Out': () => setZoom(G.zoom + 1),
+  'Zoom In   Z': () => setZoom(G.zoom - 1),
+  'Zoom Out   X': () => setZoom(G.zoom + 1),
   'Zoom Level 15 x 12': () => setZoom(0),
   'Zoom Level 30 x 24': () => setZoom(1),
   'Zoom Level 60 x 48': () => setZoom(2),
