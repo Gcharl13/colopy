@@ -513,3 +513,19 @@ chooses the landing row deliberately instead of taking the default.
 | Scout at a foreign colony | **DONE** | `func_05A20E`'s **four**-option `@SCOUTCOLONY` dialog (a spec correction from an earlier "3 options"). Meet With Mayor is blocked during the revolution (`@NOMAYORSDURINGREV`); Infiltrate succeeds on `random_int(1,36) ≤ (X+6)·2`, **halved for a Seasoned Scout**, `+(difficulty−2)` against a human target, and failure **loses the scout**. |
 | Spanish Succession | **PARTIAL** | `func_03C638`: ranks the four powers, picks the **weakest** eligible AI as the ceding power and the **strongest** as the beneficiary, then transfers every colony and unit — the Treaty of Utrecht. Gated below a national SoL of 75 and fires once. **The cadence is the port's** (a rare per-turn roll); the engine's dispatcher condition is byte-cited but its call frequency is not. Map-tile ownership is not transferred because the port has no per-tile owner nibble. |
 | `@EVASIVE` | **TBD** | The evade condition itself is recorded as unmapped in the spec, so it is not invented. |
+
+## Port: the options dialogs and Retire (2026-08-05)
+
+`spec/ui/options_dialogs.md`. All three are **checkbox** dialogs — their
+GAME.TXT `@directives` say so outright (`checkbox=true options=true`) — with the
+first body line the title and the rest the rows, so nothing is hardcoded.
+
+| Item | Status | Note |
+|---|---|---|
+| Game Options | **DONE** | The byte-verified bit layout on word `[0x5383]`: 0x8000 Show Indian Moves, 0x4000 Show Foreign Moves, 0x1000 Fast Piece Slide, 0x0800 End of Turn, 0x0400 Autosave, **0x0200 Combat Analysis**, 0x0100 Water Color Cycling, 0x0080 Tutorial Hints. |
+| Inverted polarity | **DONE** | **Water Color Cycling is inverted** — a *set* bit means cycling is OFF — and **every one of the ten Colony Report bits is inverted**, a set bit meaning "suppress this report". The port reads both correctly, so a fresh game shows every report and cycles the water. |
+| Colony Report Options | **DONE** | All ten rows on word `[0x5384]`, running from bit 0x0002 upward. |
+| Sound Options | **DONE** | Three rows. Nothing consumes them: this build has no audio. |
+| Which options act | **PARTIAL** | Only **Combat Analysis** changes behaviour; the rest are stored and displayed truthfully but unconsumed (there is no piece-slide animation, no autosave, no tutorial hints, no water cycling in the port). |
+| Retire | **DONE** | `@RETIRE` (`@default=2` → "No" highlighted) ends the game on the score screen. |
+| Still absent | **NOTED** | GAME "Pick Music" (no audio) and "Exit to DOS" — both say so rather than doing nothing quietly. |

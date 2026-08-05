@@ -282,7 +282,11 @@ const G = {
   parley: null, parleyRow: 0,
   ref: {}, refUnits: [], royalFund: 0, flags: 0, declaredYear: 0,
   upkeepUnpaid: false,
-  goTo: null, succession: false,
+  goTo: null, succession: false, retired: false,
+  // The three option words. Game Options defaults with Combat Analysis on and
+  // water cycling enabled (its bit is inverted, so clear = on).
+  gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x07,
+  options: null,
   razed: 0, bellsTotal: 0, lostWar: false,
   combat: null,            // the Combat Analysis panel's live figures
   combatAnalysis: true,    // Game Options bit 0x0200
@@ -372,6 +376,7 @@ function beginGame() {
   G.parley = null; G.attitude = 8;
   G.routes = []; G.trade = null;
   G.mercSeen = false; G.interventionWatch = false; G.succession = false;
+  G.retired = false; G.options = null;
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -4361,6 +4366,86 @@ function drawTrade(ctx) {
   });
 }
 
+// -------------------------------------------------------- options dialogs
+// spec/ui/options_dialogs.md. Each is a CHECKBOX dialog (the @directives say so:
+// `checkbox=true options=true`), the first body line is the title and the rest
+// are the rows. The bit layout is byte-verified per dialog:
+//   Game Options   word [0x5383]: 0x8000 Show Indian Moves, 0x4000 Show Foreign
+//                  Moves, 0x1000 Fast Piece Slide, 0x0800 End of Turn,
+//                  0x0400 Autosave, 0x0200 Combat Analysis,
+//                  0x0100 Water Color Cycling (INVERTED -- set means OFF),
+//                  0x0080 Tutorial Hints
+//   Colony Report Options word [0x5384]: ALL TEN BITS INVERTED -- a set bit
+//                  means "suppress this report"
+//   Sound Options  three rows
+const GAME_OPTION_BITS = [0x8000, 0x4000, 0x1000, 0x0800, 0x0400, 0x0200, 0x0100, 0x0080];
+const GAME_OPTION_INVERTED = [0x0100];
+const OPTION_KEYS = { game: 'GAMEOPTIONS', colony: 'COLONYOPTIONS', sound: 'SOUNDOPTIONS' };
+function optionWord(which) {
+  return which === 'colony' ? G.colonyOptions : which === 'sound' ? G.soundOptions : G.gameOptions;
+}
+function setOptionWord(which, v) {
+  if (which === 'colony') G.colonyOptions = v;
+  else if (which === 'sound') G.soundOptions = v;
+  else G.gameOptions = v;
+}
+function optionBit(which, row) {
+  if (which === 'game') return GAME_OPTION_BITS[row] || 0;
+  return 1 << (row + 1);              // Colony Report bits run 0x0002 upward
+}
+// A row reads CHECKED when its bit means "on". Water cycling and every colony
+// report row are inverted, so a set bit reads as unchecked.
+function optionChecked(which, row) {
+  const bit = optionBit(which, row);
+  const on = (optionWord(which) & bit) !== 0;
+  const inverted = which === 'colony' || GAME_OPTION_INVERTED.includes(bit);
+  return inverted ? !on : on;
+}
+function openOptions(which) {
+  const t = DATA.events[OPTION_KEYS[which]];
+  if (!t) return;
+  G.options = { which, rows: t.body.slice(1), title: t.body[0], row: 0 };
+  G.screen = 'options';
+}
+function optionsCommit() {
+  const o = G.options;
+  setOptionWord(o.which, optionWord(o.which) ^ optionBit(o.which, o.row));
+  // Combat Analysis is the one option this build acts on beyond display.
+  if (o.which === 'game') G.combatAnalysis = optionChecked('game', 5);
+}
+function drawOptions(ctx) {
+  drawMap(ctx);
+  const o = G.options;
+  let cw = 190;
+  for (const r of o.rows) cw = Math.max(cw, FONT.tiny.width(r) + 24);
+  const w = cw + 6, h = 6 + 6 + 3 + o.rows.length * 8 + 3;
+  const x = Math.round(160 - w / 2), y = Math.max(10, Math.round(100 - h / 2));
+  plaque(ctx, x, y, w, h, 'WOODTILE');
+  FONT.tiny.draw(ctx, o.title, x + 5, y + 6, lut(0xFC));
+  const seed = y + 6 + 6 + 3;
+  o.rows.forEach((label, k) => {
+    const ry = seed + k * 8, sel = k === o.row;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, 8); }
+    // The checkbox itself: a 5x5 well with a tick when the option is on.
+    hollowRect(ctx, x + 6, ry + 1, 6, 6, 0xFE);
+    if (optionChecked(o.which, k)) {
+      ctx.fillStyle = ink(0x0E);
+      ctx.fillRect(x + 8, ry + 3, 2, 2);
+    }
+    spanText(ctx, label, x + 16, ry + 1, sel ? 0xFC : 0xFE, 0x0E);
+  });
+}
+// GAME "Retire": @RETIRE carries `@default=2`, so "No" is highlighted.
+function retire() {
+  askEvent('RETIRE', {}, (choice) => {
+    if (choice !== 0) return;
+    G.report = 'F10';
+    G.screen = 'report';
+    G.retired = true;
+    G.msg = 'We retire from the New World.';
+  });
+}
+
 // ---------------------------------------------------------- diplomacy
 // spec/systems/diplomacy.md. Two 4x4 per-pair byte matrices, both byte-verified:
 //   the WAR matrix (PowerRecord +0x34): 0x01 resolved, 0x02 AT WAR, 0x08 pending
@@ -5812,8 +5897,10 @@ const COMMANDS = {
   // Game Options bit 0x0200 is the Combat Analysis checkbox
   // (spec/ui/options_dialogs.md §6). The full options dialog is not built, so
   // the row toggles the one option this build honours.
-  'Game Options': () => { G.combatAnalysis = !G.combatAnalysis;
-                          G.msg = `Combat Analysis ${G.combatAnalysis ? 'on' : 'off'}.`; },
+  'Game Options': () => openOptions('game'),
+  'Colony Report Options': () => openOptions('colony'),
+  'Sound Options': () => openOptions('sound'),
+  'Retire': retire,
   'Save Game': saveGame,
   'Load Game': loadGame,
   'Cargo Types': () => openPedia(0),
@@ -6060,6 +6147,14 @@ function onKey(e) {
     case 'report':
       if (k === 'Escape' || k === 'x' || /^F\d+$/.test(k)) G.screen = 'map';
       break;
+    case 'options': {
+      const n = G.options.rows.length;
+      if (k === 'ArrowUp') G.options.row = (G.options.row + n - 1) % n;
+      if (k === 'ArrowDown') G.options.row = (G.options.row + 1) % n;
+      if (k === 'Enter' || k === ' ') optionsCommit();
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.options = null; }
+      break;
+    }
     case 'trade': {
       const n = tradeRows().length;
       if (k === 'ArrowUp') G.trade.row = (G.trade.row + n - 1) % n;
@@ -6244,7 +6339,7 @@ function frame() {
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage, parley: drawParley,
-     trade: drawTrade }[G.screen])(ctx);
+     trade: drawTrade, options: drawOptions }[G.screen])(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

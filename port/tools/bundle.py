@@ -295,7 +295,9 @@ def build_data():
               "@TOONEAR", "@NOPORT",
               # Naval combat, scouts, the Spanish Succession
               "@SHIPCOMBAT", "@FORTFIRE", "@CARGOCAPTURE", "@EVASIVE",
-              "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION"):
+              "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION",
+              # Options dialogs and Retire
+              "@GAMEOPTIONS", "@COLONYOPTIONS", "@SOUNDOPTIONS", "@RETIRE"):
         if k not in full:
             continue
         sec = full[k]

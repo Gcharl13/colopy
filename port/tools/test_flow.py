@@ -459,6 +459,40 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- options dialogs and Retire ----
+  {
+    beginGame(); G.screen = 'map';
+    // Each dialog's rows come from its GAME.TXT body, title first.
+    openOptions('game');
+    out.options = { gameRows: G.options.rows.length === 8,
+                    titled: G.options.title === 'Set Game Options' };
+    // Combat Analysis is bit 0x0200 and starts on; toggling it flips the flag
+    // the combat panel reads.
+    G.options.row = 5;
+    out.options.combatOn = optionChecked('game', 5) && G.combatAnalysis;
+    optionsCommit();
+    out.options.combatOff = !optionChecked('game', 5) && !G.combatAnalysis;
+    optionsCommit();
+    out.options.combatBack = G.combatAnalysis;
+    // Water Color Cycling is INVERTED: a clear bit reads as on.
+    out.options.waterInverted = optionChecked('game', 6) === true &&
+                                (G.gameOptions & 0x0100) === 0;
+    // Every Colony Report bit is inverted too, so a fresh game reports
+    // everything.
+    openOptions('colony');
+    out.options.colonyRows = G.options.rows.length === 10;
+    out.options.colonyAllOn = G.options.rows.every((_, i) => optionChecked('colony', i));
+    openOptions('sound');
+    out.options.soundRows = G.options.rows.length === 3;
+    G.screen = 'map'; G.options = null;
+    // Retire defaults to "No" (@default=2 over two rows, one-based).
+    G.dialog = null;
+    retire();
+    out.retireAsks = !!G.dialog && G.dialog.sel === 1;
+    if (G.dialog) { closeDialog(0); }
+    out.retireScores = G.retired === true && G.screen === 'report';
+  }
+
   // ---- naval combat, scouts at a colony, the Spanish Succession ----
   {
     beginGame(); G.screen = 'map';
@@ -1532,10 +1566,11 @@ SCRIPT = """() => {
   G.menuSel = DATA.menus[1].rows.findIndex(r => r.label === 'Center View');
   runMenuRow();
   out.menuDispatch = G.openMenu === -1;
-  // GAME "Sound Options" has no command and must say so rather than doing
-  // nothing quietly. (TRADE used to be the example; every TRADE row is built now.)
+  // GAME "Pick Music" has no command -- this build has no audio -- and must say
+  // so rather than doing nothing quietly. (TRADE, then Sound Options, used to be
+  // the example; both are built now.)
   G.screen = 'map'; openMenu(0);
-  G.menuSel = DATA.menus[0].rows.findIndex(r => r.label === 'Sound Options');
+  G.menuSel = DATA.menus[0].rows.findIndex(r => r.label === 'Pick Music');
   runMenuRow();
   out.menuAbsent = /not in this build/.test(G.msg);
 
@@ -1717,6 +1752,10 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the three options dialogs read their real bit layouts",
+         all(r["options"].values()), r["options"]),
+        ("Retire defaults to No and ends on the score",
+         r["retireAsks"] and r["retireScores"], [r["retireAsks"], r["retireScores"]]),
         ("only Privateers and Frigates start ship fights; shore guns need both",
          all(r["naval"].values()), r["naval"]),
         ("a Scout at a foreign colony gets four options, mayor barred in war",
