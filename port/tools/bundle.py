@@ -297,7 +297,12 @@ def build_data():
               "@SHIPCOMBAT", "@FORTFIRE", "@CARGOCAPTURE", "@EVASIVE",
               "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION",
               # Options dialogs and Retire
-              "@GAMEOPTIONS", "@COLONYOPTIONS", "@SOUNDOPTIONS", "@RETIRE"):
+              "@GAMEOPTIONS", "@COLONYOPTIONS", "@SOUNDOPTIONS", "@RETIRE",
+              # Pick Music: one main picker plus the three class sub-pickers,
+              # all driven by func_023344 (spec/ui/options_dialogs.md §3), and
+              # the GAME menu's Exit to DOS confirmation.
+              "@PICKMUSIC", "@PICKINDEPENDENCE", "@PICKMILITARY", "@PICKINDIAN",
+              "@DOS"):
         if k not in full:
             continue
         sec = full[k]

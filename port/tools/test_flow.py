@@ -1584,13 +1584,48 @@ SCRIPT = """() => {
   G.menuSel = DATA.menus[1].rows.findIndex(r => r.label === 'Center View');
   runMenuRow();
   out.menuDispatch = G.openMenu === -1;
-  // GAME "Pick Music" has no command -- this build has no audio -- and must say
-  // so rather than doing nothing quietly. (TRADE, then Sound Options, used to be
-  // the example; both are built now.)
+  // Every MENU.TXT row across all six pulldowns now resolves to a command --
+  // there is no row left that runMenuRow can only name back at you.
+  out.menuBound = DATA.menus.every(m => m.rows.every(r => !!COMMANDS[r.label]));
+
+  // GAME "Pick Music" (func_023344). The picker is the 15-row @PICKMUSIC menu;
+  // rows 1-12 set a tune id directly, 13/14/15 open a class sub-picker.
   G.screen = 'map'; openMenu(0);
   G.menuSel = DATA.menus[0].rows.findIndex(r => r.label === 'Pick Music');
   runMenuRow();
-  out.menuAbsent = /not in this build/.test(G.msg);
+  out.musicOpens = !!G.dialog && G.dialog.opts.length === 15;
+  // Preselect: [0x96] -> row, via the 28-entry table at file 0x0233E4. A folk
+  // tune highlights its own row; a tune reached through a sub-picker (0x2B is
+  // Washington Artillery March) highlights the submenu row 13, index 12.
+  G.tune = 0x3A; G.dialog = null; pickMusic();
+  out.musicPreselectFolk = G.dialog.sel === 10;        // Hole In The Wall
+  G.tune = 0x2B; G.dialog = null; pickMusic();
+  out.musicPreselectClass = G.dialog.sel === 12;       // "Independence Tunes"
+  // Rows 9-12 are the discontiguous folk block 0x39/0x38/0x3A/0x3B.
+  G.tune = 0; G.dialog = null; pickMusic();
+  dialogKey('ArrowDown'); dialogKey('ArrowDown'); dialogKey('ArrowDown');
+  dialogKey('ArrowDown'); dialogKey('ArrowDown'); dialogKey('ArrowDown');
+  dialogKey('ArrowDown'); dialogKey('ArrowDown'); dialogKey('Enter');
+  out.musicFolkId = G.tune;                            // row 9 = Hornpipe 0x39
+  // The Indian sub-picker skips event-only id 0x34: its third row is 0x35
+  // (Tenochtitlan), not 0x34. Row 15 is index 14.
+  G.tune = 0; G.dialog = null; pickMusic();
+  G.dialog.sel = 14; dialogKey('Enter');
+  out.musicSubOpens = !!G.dialog && G.dialog.opts.length === 4;
+  G.dialog.sel = 2; dialogKey('Enter');
+  out.musicSkip34 = G.tune;                            // 0x35, never 0x34
+  // Cancelling the picker leaves the tune alone.
+  G.tune = 0x22; pickMusic(); dialogKey('Escape');
+  out.musicCancel = G.tune === 0x22 && !G.dialog;
+
+  // GAME "Exit to DOS": @DOS asks first, and only Yes unwinds to the title.
+  beginGame(); G.screen = 'map'; exitToDos();
+  out.dosAsks = !!G.dialog && G.dialog.opts.length === 2 && G.screen === 'map';
+  G.dialog.sel = G.dialog.opts.findIndex(o => /^No/i.test(o));
+  dialogKey('Enter');
+  out.dosNoStays = G.screen === 'map';
+  exitToDos(); G.dialog.sel = 0; dialogKey('Enter');   // "Yes"
+  out.dosYesQuits = G.screen === 'title';
 
   // ---- dialog frame (func_06E0C8) ----
   // Paint a box on a scratch canvas and read back the four rings: black
@@ -1617,9 +1652,6 @@ SCRIPT = """() => {
     };
   }
 
-  // Every menu row either has a command or is reported absent -- no silent rows.
-  out.everyRowAccounted = DATA.menus.every(m => m.rows.every(r =>
-    COMMANDS[r.label] !== undefined || r.label.length > 0));
   return out;
 }"""
 
@@ -1714,8 +1746,25 @@ def main():
          r["zoomSpans"] == [[15, 12, 16], [30, 24, 8], [60, 48, 4], [120, 96, 2]],
          r["zoomSpans"]),
         ("menu rows dispatch and close", r["menuDispatch"], r["menuDispatch"]),
-        ("unimplemented rows say so", r["menuAbsent"], r["menuAbsent"]),
-        ("no silently-dead menu rows", r["everyRowAccounted"], r["everyRowAccounted"]),
+        ("every MENU.TXT row in all six pulldowns is bound",
+         r["menuBound"], r["menuBound"]),
+        ("Pick Music opens the 15-row @PICKMUSIC picker",
+         r["musicOpens"], r["musicOpens"]),
+        ("a folk tune preselects its own row (id->row table @0x0233E4)",
+         r["musicPreselectFolk"], r["musicPreselectFolk"]),
+        ("a class tune preselects its submenu row, not the tune",
+         r["musicPreselectClass"], r["musicPreselectClass"]),
+        ("picker row 9 is Hornpipe id 0x39, not 0x28",
+         r["musicFolkId"] == 0x39, hex(r["musicFolkId"])),
+        ("the Indian sub-picker opens its four rows",
+         r["musicSubOpens"], r["musicSubOpens"]),
+        ("the Indian sub-picker skips event-only id 0x34",
+         r["musicSkip34"] == 0x35, hex(r["musicSkip34"])),
+        ("cancelling Pick Music leaves the tune alone",
+         r["musicCancel"], r["musicCancel"]),
+        ("Exit to DOS asks @DOS before quitting", r["dosAsks"], r["dosAsks"]),
+        ("Exit to DOS / No stays in the game", r["dosNoStays"], r["dosNoStays"]),
+        ("Exit to DOS / Yes unwinds to the title", r["dosYesQuits"], r["dosYesQuits"]),
         ("a new colony makes no hammers without a carpenter",
          r["hammersBeforeCarpenter"] == 0, r["hammersBeforeCarpenter"]),
         ("clicking a scene cell assigns field work", r["fieldWork"], r["fieldWork"]),

@@ -287,6 +287,9 @@ const G = {
   // water cycling enabled (its bit is inverted, so clear = on).
   gameOptions: 0x0200, colonyOptions: 0, soundOptions: 0x07,
   options: null,
+  // [0x96], the current tune id. The rotation that would set it lives in the
+  // external sound driver, which does not port; Pick Music still writes it.
+  tune: 0,
   razed: 0, bellsTotal: 0, lostWar: false,
   combat: null,            // the Combat Analysis panel's live figures
   combatAnalysis: true,    // Game Options bit 0x0200
@@ -1209,9 +1212,11 @@ function runMenuRow() {
   const r = m && m.rows[G.menuSel];
   G.openMenu = -1;
   if (!r) return;
+  // Every MENU.TXT row across the six pulldowns is bound (test_flow asserts
+  // it), so the guard is only here to keep an edited MENU.TXT from throwing.
   const fn = COMMANDS[r.label];
   if (fn) fn();
-  else G.msg = `${r.label} - not in this build.`;
+  else G.msg = `${r.label}: no handler for this MENU.TXT row.`;
 }
 
 function drawSidebar(ctx) {
@@ -4435,6 +4440,74 @@ function drawOptions(ctx) {
     spanText(ctx, label, x + 16, ry + 1, sel ? 0xFC : 0xFE, 0x0E);
   });
 }
+// GAME "Pick Music" -- func_023344 @0x023344 drives the main picker and all
+// three class sub-pickers off one switch (spec/ui/options_dialogs.md §3).
+//
+// Both of that function's jump tables were byte-read for this port. The
+// dispatch is `dec ax; cmp ax,0x0E; ja default; shl ax,1; jmp cs:[bx+0x265A]`
+// (file 0x023530), so the table at file 0x02353A holds 15 near targets, one
+// per @PICKMUSIC row; segment offset + 0x020EE0 = file offset. Rows 1-12 are
+// each a bare `mov word [bp-8],imm16` -- the tune id below. Note rows 9-12 are
+// NOT contiguous with rows 1-8: the picker lists the four late folk tunes in
+// the order Hornpipe / Bonny Morn / Hole In The Wall / Nightingale, whose ids
+// run 0x39, 0x38, 0x3A, 0x3B (files 0x0234C0/0x0234C8/0x0234D0/0x0234D8).
+const MUSIC_ROW_ID = [0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+                      0x39, 0x38, 0x3A, 0x3B];
+// Rows 13/14/15 open a class sub-picker and bias the row it returns. Each
+// handler is `lea bx,<section>; call 0x181f:0x3fe; test ax,ax; jz cancel;
+// add ax,<bias>` at files 0x0234E0 / 0x0234F8 / 0x02350E. The Indian handler
+// carries one extra step, `cmp ax,2; jle +4; inc ax` (file 0x02351A): id 0x34
+// is event-only and has no row, so selections past the second skip over it.
+const MUSIC_SUBMENU = [
+  { key: 'PICKINDEPENDENCE', bias: 0x28 },
+  { key: 'PICKMILITARY', bias: 0x2D },
+  { key: 'PICKINDIAN', bias: 0x31, skipAfter: 2 },
+];
+// The reverse table -- id -> highlighted row -- is the 28-entry jump table at
+// file 0x0233E4, indexed `sub ax,0x20; cmp ax,0x1B; ja default`. Ids 0x28-0x2D
+// all preselect row 13, 0x2E-0x31 row 14, and 0x32/0x33/0x35/0x36 row 15: a
+// tune picked from a sub-picker highlights its submenu row, not the tune.
+// Ids 0x34 and 0x37 fall through to the default with no row at all.
+function musicRow(id) {
+  const i = MUSIC_ROW_ID.indexOf(id);
+  if (i >= 0) return i;
+  if (id >= 0x28 && id <= 0x2D) return 12;
+  if (id >= 0x2E && id <= 0x31) return 13;
+  if (id === 0x32 || id === 0x33 || id === 0x35 || id === 0x36) return 14;
+  return 0;                       // 0x34 / 0x37 / unset: no row preselected
+}
+// Setting the tune is all this build can do with it: playback is the external
+// "$sound$" driver overlay (§5), which has no port. The id is real state --
+// the same [0x96] the picker preselects from -- so the round trip is honest.
+function playTune(id) {
+  G.tune = id;
+  G.msg = `Music: ${DATA.events.PICKMUSIC.tail[musicRow(id)]} (no audio in this build).`;
+}
+function pickMusic() {
+  askEvent('PICKMUSIC', {}, (choice) => {
+    if (choice < 0) return;
+    if (choice < MUSIC_ROW_ID.length) { playTune(MUSIC_ROW_ID[choice]); return; }
+    const sub = MUSIC_SUBMENU[choice - MUSIC_ROW_ID.length];
+    askEvent(sub.key, {}, (pick) => {
+      if (pick < 0) return;
+      let row = pick + 1;                       // the picker returns 1-based
+      if (sub.skipAfter && row > sub.skipAfter) row++;
+      playTune(row + sub.bias);
+    });
+  });
+  G.dialog.sel = musicRow(G.tune);
+}
+// GAME "Exit to DOS": @DOS is the confirmation, and there is no DOS to exit
+// to, so Yes unwinds to the main menu the way quitting and relaunching would.
+function exitToDos() {
+  askEvent('DOS', {}, (choice) => {
+    if (choice !== 0) return;
+    G.screen = 'title';
+    G.menuRow = 0;
+    G.msg = '';
+  });
+}
+
 // GAME "Retire": @RETIRE carries `@default=2`, so "No" is highlighted.
 function retire() {
   askEvent('RETIRE', {}, (choice) => {
@@ -5900,6 +5973,8 @@ const COMMANDS = {
   'Game Options': () => openOptions('game'),
   'Colony Report Options': () => openOptions('colony'),
   'Sound Options': () => openOptions('sound'),
+  'Pick Music': pickMusic,
+  'Exit to DOS': exitToDos,
   'Retire': retire,
   'Save Game': saveGame,
   'Load Game': loadGame,
@@ -6267,19 +6342,13 @@ function onKey(e) {
         const i = DATA.menus.findIndex(m => m.accel === k.toUpperCase());
         if (i >= 0) { openMenu(i); e.preventDefault(); return; }
       }
-      // F1-F10 report ladder. The advisor screens are not built, so each names
-      // itself rather than pretending to open.
+      // F1-F10 report ladder, the whole @REPORTS menu: F1 is the Colonizopedia
+      // TERRAIN page rather than an adviser (CLAUDE.md hard rule 7), F2-F10 are
+      // the nine advisers, each of which reads live game state.
       if (/^F\d+$/.test(k)) {
-        // F1 "Terrain Information" is the Colonizopedia TERRAIN page, not a
-        // report -- CLAUDE.md hard rule 7.
         if (k === 'F1') { openPedia(2); e.preventDefault(); return; }
-        if (REPORTS[k]) { G.report = k; G.screen = 'report'; }
-        else {
-          const row = DATA.menus[3].rows[+k.slice(1) - 1];
-          if (row) G.msg = `${row.label} - not in this build.`;
-        }
-        e.preventDefault();
-        return;
+        if (REPORTS[k]) { G.report = k; G.screen = 'report'; e.preventDefault(); return; }
+        return;                              // F11/F12 are not the game's keys
       }
       // 8-way movement: arrows plus the numeric keypad diagonals.
       const DIR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1],

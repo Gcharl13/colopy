@@ -31,6 +31,13 @@ SHOTS = [
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
     ("options",
      "beginGame();G.screen='map';openOptions('game')"),
+    # The 15-row @PICKMUSIC picker, preselected on Hole In The Wall (id 0x3A,
+    # row 11) to show the id->row table at work.
+    ("pickmusic",
+     "beginGame();G.screen='map';G.tune=0x3A;pickMusic()"),
+    ("pickmusic_indian",
+     "beginGame();G.screen='map';pickMusic();G.dialog.sel=14;dialogKey('Enter')"),
+    ("exitdos", "beginGame();G.screen='map';exitToDos()"),
     ("traderoute",
      "beginGame();G.screen='map';"
      "G.colonies=[{name:'Boston',x:20,y:20,nation:0,colonists:[],stock:DATA.cargo.map(()=>0),"

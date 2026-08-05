@@ -40,6 +40,40 @@ PICKINDIAN 0xAB0; files 0x1E428–0x1E450, byte-read):
   gated play `0x181f:0x4c0` @0x023556ff. No persistent lock — normal
   rotation resumes when the tune ends.
 
+#### Both jump tables, resolved (byte-read 2026-08-05)
+
+Each table holds near targets in the same code segment; **file = segment
+offset + 0x020EE0**, fixed by the two dispatch sites (`jmp cs:[bx+0x2504]` at
+file 0x0233DF, `jmp cs:[bx+0x265A]` at file 0x023535).
+
+**Selection→id** (`dec ax; cmp ax,0x0E; ja default; shl ax,1`, 15 entries).
+Rows 1–12 are each a bare `mov word [bp-8],imm16`:
+
+| row | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| id | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | **39** | **38** | **3A** | **3B** |
+| file | 0x023480 | 0x023488 | 0x023490 | 0x023498 | 0x0234A0 | 0x0234A8 | 0x0234B0 | 0x0234B8 | 0x0234C0 | 0x0234C8 | 0x0234D0 | 0x0234D8 |
+
+The ids are **not contiguous**: @PICKMUSIC lists the four late folk tunes as
+Hornpipe / Bonny Morn / Hole In The Wall / Nightingale = 0x39 / 0x38 / 0x3A /
+0x3B, so rows 9 and 10 are transposed relative to id order.
+
+Rows 13/14/15 (files 0x0234E0 / 0x0234F8 / 0x02350E) are
+`lea bx,<section>; call 0x181f:0x3fe; test ax,ax; jz cancel; add ax,<bias>`
+with sections 0xA92 / 0xAA3 / 0xAB0 and biases 0x28 / 0x2D / 0x31. The Indian
+handler alone inserts `cmp ax,2; jle +4; inc ax` (file 0x02351A) before the
+bias, stepping the third and fourth rows over event-only id 0x34 → 0x35/0x36.
+A sub-picker returning 0 (cancel) leaves `[bp-8]` zero, and the tail
+`cmp word [bp-8],0; je` (file 0x023558) then skips the write to `[0x96]`
+entirely — cancelling changes nothing.
+
+**Id→row** (`sub ax,0x20; cmp ax,0x1B; ja default`, 28 entries), each target a
+`mov word [bp-2],imm16`: ids 0x20–0x27 → rows 1–8; **0x28–0x2D → row 13**,
+**0x2E–0x31 → row 14**, **0x32/0x33/0x35/0x36 → row 15** (a tune reached
+through a sub-picker preselects its *submenu* row, not the tune); 0x38 → row
+10, 0x39 → row 9, 0x3A → row 11, 0x3B → row 12; 0x34 and 0x37 fall to the
+default at 0x02341C with no row set.
+
 ### Tune-id table (byte-verified row↔id)
 0x20 Bird Song · 0x21 Smoky Tune · 0x22 Cornwall · 0x23 Shady Grove ·
 0x24 Fiddler's Dance · 0x25 Jine the Cavalry · 0x26 Joe Clark ·

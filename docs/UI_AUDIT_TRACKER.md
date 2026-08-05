@@ -144,7 +144,7 @@ rather than hidden. Rows with no handler render greyed and report themselves.
 |---|---|---|
 | ORDERS | **MOSTLY DONE** | Activate/Wait/Fortify/Sentry/Build Colony/Clear-Plow/Road/Load/Unload/Return to Europe/No Orders/Dump Cargo/Disband all live. **Absent**: Pillage, Go to Place, Begin Trade Route. |
 | VIEW | **DONE** | Move/View Pieces, European Status, Find Colony, Zoom In/Out, the four zoom levels, Show Hidden Terrain, Center View. Zoom spans verified as `(0xF<<z) × (0xC<<z)` at `(0x10>>z)` px. |
-| GAME | **PARTIAL** | Save Game / Load Game work (localStorage; the whole of `G` is the save). Options, Pick Music, Retire and Exit are still absent. |
+| GAME | **DONE** | All nine rows bound: Save/Load (localStorage; the whole of `G` is the save), the three options dialogs, Pick Music, DECLARE INDEPENDENCE, Retire and Exit to DOS. |
 | REPORTS | **MOSTLY DONE** | F2 Religious, F3 Congress, F4 Labor, F5 Economic, F6 Colony, F7 Naval, F8 Foreign Affairs, F9 Indian and F10 Score are all built from real state, each over **its own REPORT&lt;N&gt;.PIK** (mapping established by matching the plates against the DOS captures — RULINGS.md 2026-08-04) with its own adviser portrait. F1 routes to the Colonizopedia terrain page, which is what it actually is. **PARTIAL**: the per-report body layouts are the port's own, not the byte-cited x-columns and y-flow in `advisor_reports.md`. |
 | TRADE | **TBD** | Trade-route editor not built. |
 | COLONIZOPEDIA | **DONE** 2026-08-04 | All seven categories plus Complete, articles straight from PEDIA.TXT, three-column index pager, stat blocks from the NAMES tables. |
@@ -528,7 +528,9 @@ first body line the title and the rest the rows, so nothing is hardcoded.
 | Sound Options | **DONE** | Three rows. Nothing consumes them: this build has no audio. |
 | Which options act | **PARTIAL** | Only **Combat Analysis** changes behaviour; the rest are stored and displayed truthfully but unconsumed (there is no piece-slide animation, no autosave, no tutorial hints, no water cycling in the port). |
 | Retire | **DONE** | `@RETIRE` (`@default=2` → "No" highlighted) ends the game on the score screen. |
-| Still absent | **NOTED** | GAME "Pick Music" (no audio) and "Exit to DOS" — both say so rather than doing nothing quietly. |
+| Pick Music | **DONE** | `func_023344`'s two jump tables were byte-read and are now in `spec/ui/options_dialogs.md` §3: the 15-row selection→id table (file 0x02353A) with its transposed rows 9/10, the three sub-picker biases 0x28/0x2D/0x31, the Indian handler's skip over event-only id 0x34, and the 28-entry id→row preselect table (file 0x0233E4). The port drives all of it against `G.tune` = `[0x96]`. **Playback is the one thing missing** — the tune ids resolve inside the external `"$sound$"` driver overlay (§5), which has no port, so selecting a tune reports the choice and says so. |
+| Exit to DOS | **DONE** | `@DOS` confirms first; Yes unwinds to the main menu, which is what quitting and relaunching amounts to here. |
+| Menu coverage | **DONE** | **Every row of all six MENU.TXT pulldowns (60 rows) is now bound to a command**, asserted by a regression check. No row can answer only with its own name. |
 
 ### Stale stubs cleared (2026-08-05)
 
