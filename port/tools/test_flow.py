@@ -47,6 +47,11 @@ SCRIPT = """() => {
   G.sel = 1;
   G.natives = G.natives.filter(n => Math.abs(n.x - pio.x) > 2 || Math.abs(n.y - pio.y) > 2);
   G.villages = G.villages.filter(v => Math.abs(v.x - pio.x) > 2 || Math.abs(v.y - pio.y) > 2);
+  // A Lost City Rumour on the target tile is also not a movement question --
+  // one of its outcomes destroys the unit outright. Consume any nearby.
+  for (let dy = -2; dy <= 2; dy++)
+    for (let dx = -2; dx <= 2; dx++)
+      G.rumoursDone.add((pio.y + dy) * MAP.w + pio.x + dx);
   const at0 = [pio.x, pio.y];
   pio.movesLeft = 1; moveSel(1, 0);          // east, back toward the water
   out.seaRefused = (pio.x === at0[0] && pio.y === at0[1]);
@@ -447,6 +452,74 @@ SCRIPT = """() => {
         return scoreParts().revolution === (1780 - 1700) * 2;
       })(),
     };
+  }
+
+  // ---- treasure transport and fog of war ----
+  {
+    beginGame(); G.screen = 'map';
+    // The King's cut: max(5*difficulty + 50, 2*tax), capped at 90 -- or the tax
+    // rate itself with Hernan Cortes.
+    G.tax = 10; G.fathersOwned = [];
+    const plain = kingsCut();
+    G.tax = 60;
+    const highTax = kingsCut();
+    G.fathersOwned = ['Hernan Cortes'];
+    const cortes = kingsCut();
+    G.fathersOwned = []; G.tax = 10;
+    out.kingsCut = { floor: plain === 5 * G.difficulty + 50,
+                     doubleTax: highTax === Math.min(90, Math.max(5 * G.difficulty + 50, 120)),
+                     capped: highTax <= 90, cortesUsesTax: cortes === 60 };
+    // Accepting the offer credits the net and the Crown's share.
+    G.colonies = [{ name: 'Boston', x: 20, y: 20, nation: G.nation, colonists: [],
+                    stock: DATA.cargo.map(() => 0), buildings: [], hammers: 0,
+                    building: null, sol: 0 }];
+    const tre = mkUnit('Treasure', 20, 20); tre.treasure = 40;   // 4000 gold
+    G.units.push(tre);
+    const g0 = G.gold, k0 = G.kingsFund;
+    G.dialog = null; G.eventQueue = [];
+    checkTreasure();
+    out.treasure = { offered: !!G.dialog };
+    if (G.dialog) {
+      const cut = kingsCut();
+      closeDialog(0);
+      out.treasure.paid = G.gold === g0 + 4000 - Math.floor(4000 * cut / 100);
+      out.treasure.crownTook = G.kingsFund === k0 + Math.floor(4000 * cut / 100);
+      out.treasure.consumed = !G.units.includes(tre);
+    }
+    // After independence there is no Crown to take a share.
+    const tre2 = mkUnit('Treasure', 20, 20); tre2.treasure = 10;
+    G.units.push(tre2);
+    G.flags |= 1;
+    const g1 = G.gold;
+    offerGalleon(tre2);
+    out.treasure.fullAfterDeclaring = G.gold === g1 + 1000 && !G.units.includes(tre2);
+    G.flags = 0;
+
+    // Fog: the visibility layer is sticky and its radius is unit-typed.
+    beginGame(); G.screen = 'map';
+    const ship = G.units[0];
+    out.fog = {
+      // A new game reveals only what you can see from the start tile.
+      startSeen: isSeen(ship.x, ship.y),
+      farHidden: !isSeen(0, 0) || !isSeen(MAP.w - 1, MAP.h - 1),
+      // Radii: land 1, Scout 2, Galleon/Privateer/Frigate 2, other ships 1.
+      landRadius: sightRadius(mkUnit('Soldiers', 0, 0)) === 1,
+      scoutRadius: sightRadius(mkUnit('Scouts', 0, 0)) === 2,
+      galleonRadius: sightRadius(mkUnit('Galleon', 0, 0)) === 2,
+      caravelRadius: sightRadius(mkUnit('Caravel', 0, 0)) === 1,
+    };
+    // de Soto lifts every naval hull to 2.
+    G.fathersOwned = ['Hernando de Soto'];
+    out.fog.deSoto = sightRadius(mkUnit('Caravel', 0, 0)) === 2;
+    G.fathersOwned = [];
+    // The bit is sticky: reveal a tile, walk away, it stays seen.
+    reveal(40, 40, 1);
+    out.fog.sticky = isSeen(40, 40) && isSeen(41, 41) && !isSeen(43, 40);
+    // Show Hidden Terrain reveals everything without touching the layer.
+    G.showHidden = true;
+    out.fog.showHidden = isSeen(0, 0);
+    G.showHidden = false;
+    out.fog.showHiddenIsView = !isSeen(0, 0);
   }
 
   // ---- the combat aftermath: demotion, capture, promotion, fatigue ----
@@ -1266,6 +1339,12 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the King's cut is max(5d+50, 2*tax) capped at 90, or the tax with Cortes",
+         all(r["kingsCut"].values()), r["kingsCut"]),
+        ("treasure in a colony draws the galleon offer and pays out",
+         all(r["treasure"].values()), r["treasure"]),
+        ("fog of war is sticky and its radius is unit-typed",
+         all(r["fog"].values()), r["fog"]),
         ("a beaten land unit falls a rung instead of dying",
          all(r["ladder"].values()), r["ladder"]),
         ("artillery is damaged before it is destroyed",

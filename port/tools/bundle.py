@@ -268,7 +268,9 @@ def build_data():
               # Combat aftermath
               "@DEMOTE", "@COLONISTCAPTURE", "@COLONISTCAPTURE2", "@WAGONCAPTURE",
               "@LOOTCAPTURE", "@ARTILLERY", "@ARTILLERY2", "@SHIPDAMAGE",
-              "@SHIPSUNK", "@VETERAN", "@VALOR", "@WELLSEASONED", "@HALF"):
+              "@SHIPSUNK", "@VETERAN", "@VALOR", "@WELLSEASONED", "@HALF",
+              # Treasure transport
+              "@KINGGALLEON2", "@KINGGALLEON3", "@LOOTCASH", "@CASHTREASURE"):
         if k not in full:
             continue
         sec = full[k]

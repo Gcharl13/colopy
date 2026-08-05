@@ -432,3 +432,16 @@ are a demotion or a capture, not a death.
 | Ships | **DONE** | Damaged first (`@SHIPDAMAGE`, returns to port for repairs), sunk only if already damaged (`@SHIPSUNK`). **Not modelled:** the separate raw guns/hull roll for ship-vs-ship, cargo scatter on sinking, and the Privateer/Frigate-only guard on starting a ship attack. |
 | Promotion | **DONE** | `P = winner_strength / (ATK + DEF ± difficulty − class penalty)`, rolled `random_int(1,S)`; a human gets +difficulty, Petty Criminals cost 10 and Indentured Servants 5, and **George Washington skips the roll entirely**. The class ladder walks Petty Criminal → Indentured Servant → Free Colonist → Veteran, a Scout hardens to Seasoned (`@WELLSEASONED`), and at the soldier ceiling the **type** advances to Continental once the war has begun. `@VETERAN` / `@VALOR`. |
 | Fatigue | **PARTIAL** | Attacking with a part-spent unit now raises the byte-cited `@HALF` prompt **before the roll** — *"these men are tired… they will fight at 2/3 strength"* — with Charge! / Then let them rest. The penalty then shows as a **Fatigue** row in the Combat Analysis panel. The engine has two fatigue flags (`F&0x100` −33% and `S&8` −66%) but the evidence read does not give the rule that picks between them; the port uses "less than a third of the budget left" for the heavier penalty and flags that threshold as its own. |
+
+## Port: treasure transport and fog of war (2026-08-05)
+
+| Item | Status | Note |
+|---|---|---|
+| Treasure value | **DONE** | `100 × UnitRecord[+0x15]` — the class byte holds value/100 (`func_05C878` @0x5C882). Cibola and `@BURIAL3` already created these units; they now have somewhere to go. |
+| The King's cut | **DONE** | With **Hernán Cortés** (FF #10) the cut is your **tax rate**; without, `max(5·difficulty + 50, 2·tax)` clamped to **≤ 90** (@0x5C976 / @0x5C9A3). The player receives `treasure − cut`. |
+| Post-independence | **DONE** | `[0x5382]&1` — no Crown, so the treasure is cashed **in full**, no cut (@0x5C88B). `@CASHTREASURE`. |
+| The offer | **DONE** | `@KINGGALLEON3` when you own a galleon fleet, `@KINGGALLEON2` when you do not; `@LOOTCASH` reports the arrival with the share and the net. Refusing keeps the unit — you ship it yourself. |
+| Visibility layer | **DONE** | Its own map layer, **one bit per power** (bit `player + 4`), **sticky** once set (`func_00631A`). Unexplored tiles draw black in both the main view and the minimap, and nothing standing on one is drawn. |
+| Sight radius | **DONE** | A **(2R+1)² square** (`func_006468`), with R from `func_006608`: land **1**, Scout **2**, Galleon/Privateer/Frigate **2**, any naval hull **2** with **Hernando de Soto** (the ability-#7 test is the has-father helper), other ships **1**. |
+| Show Hidden Terrain | **DONE** | Now a real toggle: it reveals the map for viewing without writing the layer, so turning it off restores the fog exactly. |
+| Not modelled | **NOTED** | The naval/water reveal flag that governs *which* tiles are eligible (distinct from R) is not reproduced; the port reveals the whole square. |

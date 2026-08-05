@@ -29,6 +29,16 @@ SHOTS = [
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
     ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    ("fog",
+     "beginGame();G.screen='map';"
+     "(()=>{const s=G.units[0];for(let i=0;i<12;i++){s.movesLeft=99;moveSel(-1,0);}"
+     "centerOn(s.x+3,s.y);})()"),
+    ("treasure",
+     "beginGame();G.screen='map';G.tax=15;"
+     "G.colonies=[{name:'Boston',x:G.units[0].x,y:G.units[0].y,nation:0,colonists:[],"
+     "stock:DATA.cargo.map(()=>0),buildings:[],hammers:0,building:null,sol:0}];"
+     "(()=>{const t=mkUnit('Treasure',G.colonies[0].x,G.colonies[0].y);t.treasure=45;"
+     "G.units.push(t);checkTreasure();})()"),
     ("fatigue",
      "beginGame();sailToLand();"
      "(()=>{const p=G.units[1];G.sel=1;p.movesLeft=p.moves-1;"

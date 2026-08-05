@@ -363,6 +363,8 @@ function beginGame() {
   seedNatives();
   seedRivals();
   seedREF();
+  SEEN.fill(0);
+  revealAll();
   G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
   // The map generator's first act is to store random_int(0, 0x7FFF) as the seed
   // the rumour hash reads (@0x64A23).
@@ -873,6 +875,9 @@ function haloGround(mx, my) {
 }
 
 function drawTile(ctx, mx, my, px, py) {
+  // An unexplored tile is black. The visibility bit is sticky, so once seen a
+  // tile stays drawn even with nothing standing near it.
+  if (!isSeen(mx, my)) { ctx.fillStyle = ink(0); ctx.fillRect(px, py, TILE, TILE); return; }
   const v = at(mx, my);
   const water = tileWater(v);
   const ocean = groundFrame(tileTerrain(v));
@@ -1017,6 +1022,7 @@ function drawMap(ctx) {
   for (const v of G.villages) {
     const tx = v.x - G.view.x, ty = v.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    if (!isSeen(v.x, v.y)) continue;
     drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1,
                    (G.tribes[v.tribe] || {}).color || 8, v.mission);
     // §19.6: the map shows alarm as exclamation marks over the village,
@@ -1032,6 +1038,7 @@ function drawMap(ctx) {
   for (const n of G.natives) {
     const tx = n.x - G.view.x, ty = n.y - G.view.y;
     if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+    if (!isSeen(n.x, n.y)) continue;
     const px = ox + tx * TILE, py = oy + ty * TILE;
     nationPlate(tgt, px, py, ownerColour(n), n.orders);
     const [fw, fh] = frameSize('ICONS', n.icon);
@@ -1043,11 +1050,13 @@ function drawMap(ctx) {
     for (const rc of r.colonies) {
       const tx = rc.x - G.view.x, ty = rc.y - G.view.y;
       if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+      if (!isSeen(rc.x, rc.y)) continue;
       drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, rc.level, rc.nation, 0);
     }
     for (const ru of r.units) {
       const tx = ru.x - G.view.x, ty = ru.y - G.view.y;
       if (tx < 0 || ty < 0 || tx >= cols || ty >= rows) continue;
+      if (!isSeen(ru.x, ru.y)) continue;
       const px = ox + tx * TILE, py = oy + ty * TILE;
       nationPlate(tgt, px, py, ownerColour(ru), ru.orders);
       const [fw, fh] = frameSize('ICONS', ru.icon);
@@ -1196,6 +1205,9 @@ function drawSidebar(ctx) {
   const sx = Math.max(0, Math.min(MAP.w - mm.w, G.view.x - 20));
   const sy = Math.max(0, Math.min(MAP.h - mm.h, G.view.y - 13));
   for (let y = 0; y < mm.h; y++) for (let x = 0; x < mm.w; x++) {
+    // The minimap reads the same sticky visibility layer as the main view:
+    // unexplored ground is simply not there.
+    if (!isSeen(sx + x, sy + y)) continue;
     const v = at(sx + x, sy + y), t = tileTerrain(v);
     let c = 0x38;                                  // ocean blue-ish
     if (t === TERR.SEALANE) c = 0x36;
@@ -1208,6 +1220,7 @@ function drawSidebar(ctx) {
   for (const v of G.villages) {
     const dx = v.x - sx, dy = v.y - sy;
     if (dx < 0 || dy < 0 || dx >= mm.w || dy >= mm.h) continue;
+    if (!isSeen(v.x, v.y)) continue;
     ctx.fillStyle = ink((G.tribes[v.tribe] || {}).color || 8);
     ctx.fillRect(mm.x + dx, mm.y + dy, 1, 1);
   }
@@ -3785,6 +3798,100 @@ function applyFatherEffect(name) {
   }
 }
 
+// ------------------------------------------------- treasure transport
+// func_05C878, fully byte-verified (2026-06-19).
+//   treasure gold = 100 * UnitRecord[+0x15]   (the class byte holds value/100)
+//   post-independence ([0x5382]&1): no King -- cashed IN FULL, no cut
+//   pre-independence: the King offers to ship it, and his cut is
+//     with Hernan Cortes (FF #10)  -> cut% = your tax rate
+//     without                      -> cut% = max(5*difficulty + 50, 2*tax), <= 90
+//   the player receives treasure - cut.
+// @KINGGALLEON3 is the offer when you own a galleon fleet, @KINGGALLEON2 when
+// you do not; @LOOTCASH reports the arrival, @CASHTREASURE the King-less sale.
+function kingsCut() {
+  if (G.fathersOwned.includes('Hernan Cortes')) return G.tax;
+  return Math.min(90, Math.max(5 * G.difficulty + 50, 2 * G.tax));
+}
+const treasureValue = (u) => (u.treasure || 0) * 100;
+const hasGalleon = () => G.units.some(u => u.type === 'Galleon') ||
+                         G.europe.some(e => e.type === 'Galleon');
+// Cash a treasure the player shipped home themselves: no cut at all, which is
+// the whole point of owning a Galleon.
+function cashTreasureInFull(u) {
+  const gold = treasureValue(u);
+  G.gold += gold;
+  removeUnit(u);
+  showEvent('CASHTREASURE', { NUMBER0: gold });
+}
+// The King's offer, raised once per treasure unit standing in one of your
+// colonies.
+function offerGalleon(u) {
+  u.offered = true;
+  const gross = treasureValue(u);
+  // With independence declared there is no Crown to take a share.
+  if (G.flags & WOI_DECLARED) { cashTreasureInFull(u); return; }
+  const cut = kingsCut();
+  askEvent(hasGalleon() ? 'KINGGALLEON3' : 'KINGGALLEON2', {
+    STRING0: kingSalutation(), STRING1: G.leader || DATA.nations[G.nation].leader,
+    STRING2: DATA.nations[G.nation].country, NUMBER0: cut,
+  }, (choice) => {
+    // Row 0 accepts the Crown's share, row 1 refuses.
+    if (choice !== 0) return;                        // ship it yourself, then
+    const take = Math.floor(gross * cut / 100);
+    G.gold += gross - take;
+    G.kingsFund += take;
+    removeUnit(u);
+    showEvent('LOOTCASH', { STRING0: DATA.nations[G.nation].adjective,
+                            STRING1: DATA.nations[G.nation].homeport,
+                            NUMBER0: gross, NUMBER1: cut, NUMBER2: gross - take });
+  });
+}
+// Per turn: any treasure sitting in one of your colonies draws the offer once.
+function checkTreasure() {
+  for (const u of G.units.slice()) {
+    if (u.type !== 'Treasure' || u.offered) continue;
+    if (colonyAt(u.x, u.y)) { offerGalleon(u); return; }   // one offer per turn
+  }
+}
+
+// ------------------------------------------------------------- fog of war
+// spec/systems/exploration.md, byte-verified. Visibility is its own map layer
+// (far-ptr [0x168]) with ONE BIT PER POWER -- bit (player + 4) -- and the bit is
+// STICKY once set. The reveal is a (2R+1)x(2R+1) SQUARE centred on the unit
+// (func_006468's double loop), with R from func_006608:
+//   normal land unit                            R = 1
+//   Scout (@UNIT type 5)                        R = 2
+//   Galleon / Privateer / Frigate (0x0F..0x11)  R = 2
+//   any naval (0x0D..0x12) with de Soto (FF 7)  R = 2
+//   other ships without de Soto                 R = 1
+const SEEN = new Uint8Array(MAP.w * MAP.h);
+const SEEN_BIT = () => 1 << (G.nation + 4);
+const isSeen = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ||
+                         G.showHidden || (SEEN[y * MAP.w + x] & SEEN_BIT()) !== 0;
+const NAVAL_LO = 13, NAVAL_HI = 18;                  // @UNIT rows 0x0D..0x12
+function sightRadius(u) {
+  const idx = DATA.units.findIndex(r => r.name === u.type);
+  if (u.type === 'Scouts') return 2;
+  if (idx >= 15 && idx <= 17) return 2;              // Galleon, Privateer, Frigate
+  if (idx >= NAVAL_LO && idx <= NAVAL_HI &&
+      G.fathersOwned.includes('Hernando de Soto')) return 2;
+  return 1;
+}
+function reveal(x, y, r) {
+  const bit = SEEN_BIT();
+  for (let dy = -r; dy <= r; dy++)
+    for (let dx = -r; dx <= r; dx++) {
+      const tx = x + dx, ty = y + dy;
+      if (tx < 0 || ty < 0 || tx >= MAP.w || ty >= MAP.h) continue;
+      SEEN[ty * MAP.w + tx] |= bit;
+    }
+}
+// Everything you own reveals its surroundings, every turn and after every move.
+function revealAll() {
+  for (const u of G.units) reveal(u.x, u.y, sightRadius(u));
+  for (const c of G.colonies) reveal(c.x, c.y, 2);
+}
+
 // ------------------------------------------ the King's tax demands
 // spec/systems/king.md, byte-verified throughout.
 //
@@ -4514,10 +4621,12 @@ function endTurn() {
   if (G.year < 1600) G.year += 1;
   else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
   for (const u of G.units) u.movesLeft = u.moves;
+  revealAll();
   for (const c of G.colonies) colonyTurn(c);
   advanceImprovements();
   checkImmigration();
   updateCongress();
+  checkTreasure();
   // §19.11: the native pass runs BEFORE the European powers move
   // (func_04891A -> func_0485F6 -> func_04830E).
   nativeTick();
@@ -4548,6 +4657,7 @@ function step(u, nx, ny) {
   const cost = moveCost(u, u.x, u.y, nx, ny);
   u.movesLeft = (cost > u.movesLeft) ? 0 : u.movesLeft - cost;
   u.x = nx; u.y = ny;
+  reveal(nx, ny, sightRadius(u));
   G.msg = '';
   if (nx - G.view.x < 3 || nx - G.view.x > VIEW_COLS() - 4 ||
       ny - G.view.y < 3 || ny - G.view.y > VIEW_ROWS() - 4) centerOn(nx, ny);
