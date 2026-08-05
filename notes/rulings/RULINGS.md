@@ -6732,3 +6732,79 @@ Two further consequences taken from the same ruling and now in the port:
   growth cap is `func_046DE0`'s target size `2·level+3` / `3·level+4` for a
   capital. Both are implemented; the raze payout cross-checks the manual's own
   ceiling table exactly (`30·6·4·21 = 15 120` at Discoverer).
+
+---
+
+## 2026-08-05 — The fog path (§6.11): unexplored tiles are frame 0x95, and the O512 dither stencil was reading an empty atlas
+
+**Conflict**: the port drew unexplored tiles as solid black and its comment
+header claimed "the O512 biome-edge dither (§6.11)" was not implemented, while
+`spec/systems/map_system.md` §3 and the 2026-06-22 O512 ruling both say a hidden
+tile draws fog sprite `0x95` and then calls `func_067F50` for the fog-edge
+blend. A live frame settles it and closes three sub-questions at once.
+
+**Evidence** — `docs/screens/06_ingame_map.png` is the opening turn: an
+all-ocean map, one caravel, a 3×3 explored patch, everything else fogged. It is
+a 2× capture of the 320×200 screen at image offset (192,184), so every logical
+pixel is recoverable. Measured against the extracted sheets:
+
+1. **Every fog tile that touches no explored square is PHYS0 disk frame `0x94`
+   (engine `0x95`) pixel-for-pixel** — 86 of them, zero mismatching pixels once
+   the 6-bit palette scaling is normalised. Fog is *not* black.
+2. **Each fog tile cardinally adjacent to the patch differs from `0x94` by
+   11–14 pixels**, and those pixels sit exactly on the dot positions of stencil
+   disk `0x68+dir` — bottom three rows for the tile N of the patch (blended from
+   its S neighbour), top three for the tile S of it, right three columns for the
+   tile W of it, left three for the tile E. Diagonal neighbours are untouched,
+   confirming the 4-cardinal loop.
+3. **At all 15 stencil positions the fog tile's pixel equals the corresponding
+   pixel of its explored neighbour** (14 exact, one off by 4 in one channel —
+   capture noise). The blend really is the neighbour's terrain, and the "11–14"
+   of item 2 is just dots whose blended value happens to match the fog colour.
+4. **Explored tiles take nothing from the fog they touch**: the patch's N-edge
+   tile (8,6) and S-edge tile (8,8) are pixel-identical to each other, so
+   neither picked up a fogged neighbour.
+
+**Ruling** — the skip test in O512 (`@0x68120`/`@0x68153`) is:
+
+```
+if (neighbour is unexplored)                 skip   # item 4
+if (nb_class == centre_class && !centre_hidden) skip  # "same class with no fog"
+```
+
+The second clause is qualified by the **centre's** hidden flag (`[bp+4]`), which
+is why a fogged tile still dithers a *same-class* explored neighbour in — the
+all-ocean boundary of item 2 — while the open fog field stays flat. The spec's
+"neighbour is still water after the walk" skip lives inside the ring-walk
+block's tail and so does not fire when the ring is disabled (`[bp+6]≠0`);
+otherwise item 2 could not happen, since that centre is ocean.
+
+**Bug found and fixed**: `stencilBlit` masked with the **`PHYS0C`** atlas. That
+atlas keys out index 0 *and* index 253, which leaves stencil frames `0x68..0x6B`
+with **zero opaque pixels** — the `destination-out` erased nothing and the
+neighbour's *whole tile* was blitted. On the old code this only ran on visible
+land tiles, where it silently overpainted them; turning on the fog path made it
+render the entire fog field as open terrain. The plain **`PHYS0`** atlas already
+is the mask (index 253 keyed out, the 15 index-0 dots opaque), so the composite
+is `destination-in` against `PHYS0`.
+
+**Action taken**:
+- `port/src/game.js`: `PHYS.FOG = 0x94`; the unexplored branch of `drawTile`
+  draws it and calls `edgeBlend(..., hidden=true)`; `edgeBlend` gained the
+  `hidden` argument, an explicit in-bounds test, the two skip clauses above, and
+  the ring-walk gate stated as "centre is not water"; `stencilBlit` fixed.
+- `port/tools/test_flow.py`: three render probes — flat field + untouched
+  diagonals, per-cardinal stencil band, and "the biome dither needs an explored
+  neighbour". 164/164.
+- `port/README.md`: the compositor's not-implemented list and the stale
+  milestone list.
+
+**Follow-up (TBD, do not guess)**: item 3 says the blend source is the
+neighbour's **composed** tile, not the bare class ground sprite —
+`emit_terrain_sprite(nb_class)` is documented as taking a class, yet the live
+fog tile's 15 dots match the neighbour's rendered tile 15/15 and the bare
+`TERRAIN` ocean frame only 9/15. This cannot be resolved from this frame,
+because the port's own ocean base already differs from the live ocean tile at
+91/256 pixels — an unrelated, pre-existing gap in the base ocean sprite. Settle
+the base ocean tile first, then re-measure; until then the port blends the
+neighbour's ground frame.

@@ -1652,6 +1652,82 @@ SCRIPT = """() => {
     };
   }
 
+  // ---- fog path (§6.11: O513 @0x68212 -> O512 @0x68244) ----
+  // Render single tiles onto a scratch canvas with exactly one map square
+  // explored, and read back what the fog composer put down. Every expectation
+  // here is measured off docs/screens/06_ingame_map.png.
+  {
+    const saved = SEEN.slice();
+    const wasHidden = G.showHidden;
+    G.showHidden = false;
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    const g = c.getContext('2d');
+    const r = document.createElement('canvas'); r.width = 16; r.height = 16;
+    const rg = r.getContext('2d');
+    sheetFrame(rg, 'PHYS0', PHYS.FOG, 0, 0);
+    const fogPx = rg.getImageData(0, 0, 16, 16).data;
+    const render = (mx, my) => {
+      g.clearRect(0, 0, 16, 16);
+      drawTile(g, mx, my, 0, 0);
+      return g.getImageData(0, 0, 16, 16).data;
+    };
+    const dotsVsFog = (mx, my) => {
+      const d = render(mx, my), pts = [];
+      for (let i = 0; i < 256; i++) {
+        const o = i * 4;
+        if (d[o] !== fogPx[o] || d[o + 1] !== fogPx[o + 1] || d[o + 2] !== fogPx[o + 2])
+          pts.push([i % 16, (i / 16) | 0]);
+      }
+      return pts;
+    };
+    const X = 20, Y = 20;
+    SEEN.fill(0); reveal(X, Y, 0);
+    const deep = dotsVsFog(X, Y - 4);
+    const diag = dotsVsFog(X - 1, Y - 1);
+    const north = dotsVsFog(X, Y - 1);      // blended from its S neighbour
+    const west = dotsVsFog(X - 1, Y);       // blended from its E neighbour
+    // The main path must ignore unexplored neighbours: in the live frame the
+    // explored patch's N-edge and S-edge tiles are pixel-identical, so neither
+    // took anything from the fog it touches. Find a tile whose N neighbour is a
+    // different ground class, render it with that neighbour fogged and then
+    // explored, and require the biome dither to appear only in the second --
+    // confined to the N stencil's top three rows.
+    let L = null;
+    for (let y = 2; y < MAP.h - 2 && !L; y++)
+      for (let x = 2; x < MAP.w - 2; x++)
+        if (!tileWater(at(x, y)) && groundFrame(at(x, y - 1)) !== groundFrame(at(x, y))
+            && !tileWater(at(x, y - 1))) { L = [x, y]; break; }
+    let dueToFog = [];
+    if (L) {
+      SEEN.fill(0); reveal(L[0], L[1], 0);
+      const fogged = render(L[0], L[1]).slice();
+      reveal(L[0], L[1] - 1, 0);
+      const lit = render(L[0], L[1]);
+      for (let i = 0; i < 256; i++) {
+        const o = i * 4;
+        if (fogged[o] !== lit[o] || fogged[o + 1] !== lit[o + 1] || fogged[o + 2] !== lit[o + 2])
+          dueToFog.push([i % 16, (i / 16) | 0]);
+      }
+    }
+    out.fogPath = {
+      // A fog tile with no explored cardinal is frame 0x95 and nothing else.
+      flatField: deep.length === 0,
+      diagonalUntouched: diag.length === 0,
+      // The S-direction stencil lives in the bottom three rows, the W-direction
+      // one in the right three columns (0x69+dir, disk 0x68+dir).
+      northBlends: north.length > 0 && north.length <= 15,
+      northInBottomBand: north.length > 0 && north.every(([, y]) => y >= 13),
+      westBlends: west.length > 0 && west.length <= 15,
+      westInRightBand: west.length > 0 && west.every(([x]) => x >= 13),
+      foundBiomeEdge: !!L,
+      biomeEdgeNeedsAnExploredNeighbour:
+        dueToFog.length > 0 && dueToFog.length <= 15
+        && dueToFog.every(([, y]) => y <= 2),
+    };
+    SEEN.set(saved);
+    G.showHidden = wasHidden;
+  }
+
   return out;
 }"""
 
@@ -1949,6 +2025,15 @@ def main():
         ("save/load round-trips", r["saveLoad"], r["saveLoad"]),
         ("dialog frame is outline + ring + bevel in paint order",
          all(r["frame"].values()), r["frame"]),
+        ("an unexplored tile is fog sprite 0x95, flat until it touches explored land",
+         r["fogPath"]["flatField"] and r["fogPath"]["diagonalUntouched"], r["fogPath"]),
+        ("the fog edge dithers its explored cardinal in, on that cardinal's band",
+         all(r["fogPath"][k] for k in
+             ("northBlends", "northInBottomBand", "westBlends", "westInRightBand")),
+         r["fogPath"]),
+        ("the biome dither needs an EXPLORED neighbour -- fog contributes nothing",
+         r["fogPath"]["foundBiomeEdge"]
+         and r["fogPath"]["biomeEdgeNeedsAnExploredNeighbour"], r["fogPath"]),
     ]
     bad = 0
     for name, ok, got in checks:

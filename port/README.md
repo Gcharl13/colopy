@@ -45,9 +45,24 @@ live DOSBox frame `docs/screens/colony_sites_live.png` — both are written up i
 ground substitution shows through the **clean-edge** frames only, the quadrant
 frames compositing over open water.
 
-Not yet implemented: the O512 biome-edge dither (§6.11) — which is most of the
-residual ~15% pixel difference against that frame — roads (§6.8, the loader
-discards the feature plane anyway) and fog of war.
+### The fog path (§6.11)
+
+An unexplored tile is **not black**: it draws PHYS0 engine frame `0x95`
+(disk `0x94`), then runs O512 so explored neighbours dither into its edge.
+Both halves are pixel-verified against `docs/screens/06_ingame_map.png`
+(the opening turn: one caravel, a 3×3 explored patch, everything else fogged):
+every fog tile away from the patch matches frame `0x94` exactly, each fog tile
+cardinally touching it carries the stencil's dots on that cardinal's band, the
+diagonals are untouched, and the patch's own tiles take nothing back from the
+fog. The skip rule that produces all four is in `notes/rulings/RULINGS.md`
+(2026-08-05), along with the `PHYS0C`-vs-`PHYS0` stencil-atlas bug that entry
+also fixes.
+
+Not yet implemented: roads as a terrain band (§6.8 — the loader discards the
+feature plane anyway; player-built roads come from the improvement layer
+instead). The residual pixel difference against the live frames is now the base
+ocean sprite itself, which is off by 91/256 pixels on the tile measured above —
+tracked as the follow-up on that same ruling.
 
 ## Build
 
@@ -83,7 +98,15 @@ Nothing copyrighted is committed. Run the two build steps above to produce them.
 
 ## Next milestones
 
-M1 land movement + fog · M2 found a colony and the production loop ·
-M3 Europe and the market · M4 combat and natives · M5 King/REF/Congress.
-AI opponents are deliberately last — `spec/systems/ai.md` is the thinnest area
-and real opponents would mean inventing behaviour rather than porting it.
+M1 land movement + fog, M2 colonies and the production loop, M3 Europe and the
+market, M4 combat and natives, and M5 King/REF/Congress are **done**, as is
+every row of all six MENU.TXT pulldowns (`test_flow.py` asserts the binding).
+
+What is left:
+
+- **The base ocean sprite.** The largest remaining pixel gap against the DOSBox
+  captures — see the fog-path section above and the 2026-08-05 ruling.
+- **AI opponents**, deliberately last: `spec/systems/ai.md` is the thinnest area
+  in the spec and real opponents would mean inventing behaviour rather than
+  porting it. The rival powers exist as diplomatic actors, not as players.
+- **Audio**, out of fidelity scope by user decision (`docs/AUDIO_SPIKE.md`).

@@ -168,6 +168,7 @@ const PHYS = {
   QUADRANT: 0x6C,      // engine 0x6D, + code*4 + quadrant
   DETAIL: 0x59,        // engine 0x5A, + DTAB[class]
   ROAD: 0x50,          // engine 0x51, stub; +1+dir for the eight spokes
+  FOG: 0x94,           // engine 0x95, the unexplored-tile sprite (§6.11)
 };
 
 // §6.4-6.6 — the 4-cardinal connection mask. Weights N=8, S=4, W=2, E=1.
@@ -796,9 +797,12 @@ function wrapText(font, s, width) {
 //
 // The stencil is an INDEX-0 DOT stencil: decoding PHYS0 frame 0x68 gives 241
 // pixels of index 253 and 15 of index 0, the 15 forming a sparse dither along
-// the north edge. The holes are where the neighbour shows, so the mask is the
-// inverse of the PHYS0C atlas (which makes index 0 transparent) -- hence
-// destination-out rather than source-in.
+// the north edge. Those 15 are the mask -- and the plain PHYS0 atlas already IS
+// that mask, because it keys out 253 and keeps index 0 opaque, so the frame
+// arrives as 15 opaque dots on transparent. Compose with destination-in.
+// (The PHYS0C atlas keys out BOTH 0 and 253, which leaves these four frames
+// completely empty; using it here erased nothing and blitted the neighbour's
+// whole tile -- which is what made the fog field render as open terrain.)
 //
 // Water centres skip it: their edges are the §6.7 coast composition. When a
 // land centre's neighbour is water, the engine ring-walks that neighbour's
@@ -817,29 +821,53 @@ function stencilBlit(ctx, dir, groundIdx, px, py) {
   _stencil.globalCompositeOperation = 'source-over';
   _stencil.clearRect(0, 0, TILE, TILE);
   sheetFrame(_stencil, 'TERRAIN', groundIdx, 0, 0);
-  _stencil.globalCompositeOperation = 'destination-out';
-  sheetFrame(_stencil, 'PHYS0C', STENCIL_BASE + dir, 0, 0);
+  _stencil.globalCompositeOperation = 'destination-in';
+  sheetFrame(_stencil, 'PHYS0', STENCIL_BASE + dir, 0, 0);
   _stencil.globalCompositeOperation = 'source-over';
   ctx.drawImage(_stencil.canvas, px, py);
 }
-function edgeBlend(ctx, mx, my, px, py) {
+// `hidden` is O512's [bp+4]: 0 on the main path (0x68315), 1 on the fog path
+// (0x68244, right after the 0x95 draw). It only enters the skip test — an edge
+// is suppressed when the neighbour matches the centre in BOTH class and fog
+// state, which is why a fogged tile still dithers an explored same-class
+// neighbour into its edge, and why the open fog field stays flat.
+function edgeBlend(ctx, mx, my, px, py, hidden) {
   const v = at(mx, my);
-  if (tileWater(v)) return;
+  const centreWater = tileWater(v);
+  // Visible water centres skip the blend: their coast is the §6.7 composition
+  // (shore + clean edges + 8x8 quadrants) that the 2026-08-04 ruling settled.
+  if (centreWater && !hidden) return;
   const cls = groundFrame(v);
   for (let d = 0; d < 4; d++) {
     const [dx, dy] = O512_DIRS[d];
-    let nv = at(mx + dx, my + dy);
-    if (tileWater(nv)) {
+    const nx = mx + dx, ny = my + dy;
+    if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;   // is_xy_in_bounds
+    let nv = at(nx, ny);
+    // The ring walk is gated on [bp+6] = "centre is water", so it runs for land
+    // centres only -- that is the land-side beach dither.
+    if (tileWater(nv) && !centreWater) {
       let found = null;
       for (const [rx, ry] of O512_RING) {
-        const w = at(mx + dx + rx, my + dy + ry);
+        const w = at(nx + rx, ny + ry);
         if (!tileWater(w)) { found = w; break; }
       }
       if (found === null) continue;              // still water: no edge
       nv = found;
     }
+    // The "still water" skip lives in the ring block's tail (@0x68120), so it
+    // does not fire when the ring is disabled: an all-ocean fog boundary still
+    // dithers, which is exactly what docs/screens/06_ingame_map.png shows.
+    // An unexplored neighbour contributes nothing -- the fog path is defined as
+    // blending EXPLORED neighbours in. Pinned on the live frame: the explored
+    // patch's N-edge and S-edge tiles are pixel-identical to each other there,
+    // so neither picked up anything from the fog they touch.
+    if (!isSeen(nx, ny)) continue;
+    // The class-equality skip is qualified by the centre's own fog state
+    // ("same class with no fog", @0x68153). A fogged centre therefore still
+    // dithers a same-class explored neighbour in, which is the all-ocean
+    // boundary visible around the starting caravel.
     const ncls = groundFrame(nv);
-    if (ncls === cls) continue;                  // same class: no edge
+    if (ncls === cls && !hidden) continue;
     stencilBlit(ctx, d, ncls, px, py);
   }
 }
@@ -847,9 +875,10 @@ function edgeBlend(ctx, mx, my, px, py) {
 // ------------------------------------------------------------ tile compositor
 // The O514 -> O513 -> O512 chain of §6.3-6.11. Implemented here: ground fold,
 // the adjacency-masked forest / relief / river bands, river mouths, the coastal
-// beach halo (clean edges + quadrant fallback) and the prime-resource detail
-// band. Not implemented yet: the O512 biome-edge dither (§6.11) and roads
-// (§6.8 — the loader discards the feature plane anyway).
+// beach halo (clean edges + quadrant fallback), the O512 biome-edge dither and
+// its fog path (§6.11), and the prime-resource detail band. Not implemented:
+// roads as a terrain band (§6.8 — the loader discards the feature plane anyway;
+// player-built roads come from drawImprovements instead).
 
 // §6.7 — 8-direction land bitmap, bit d in order N, NE, E, SE, S, SW, W, NW.
 const DIR8 = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
@@ -899,7 +928,18 @@ function haloGround(mx, my) {
 function drawTile(ctx, mx, my, px, py) {
   // An unexplored tile is black. The visibility bit is sticky, so once seen a
   // tile stays drawn even with nothing standing near it.
-  if (!isSeen(mx, my)) { ctx.fillStyle = ink(0); ctx.fillRect(px, py, TILE, TILE); return; }
+  // §6.11 fog path (O513 @0x68212 -> @0x68244). An unexplored tile is NOT black:
+  // it draws the fog sprite -- engine frame 0x95, a flat dark-blue mottle whose
+  // striped hatching is what once got it mistaken for a plough overlay -- and
+  // then runs O512 so explored neighbours dither into its edge. Both halves are
+  // pixel-verified against docs/screens/06_ingame_map.png: every fog tile away
+  // from the explored patch matches frame 0x94 exactly, and each fog tile
+  // cardinally touching it differs by the stencil's ~15 dots.
+  if (!isSeen(mx, my)) {
+    sheetFrame(ctx, 'PHYS0', PHYS.FOG, px, py);
+    edgeBlend(ctx, mx, my, px, py, true);
+    return;
+  }
   const v = at(mx, my);
   const water = tileWater(v);
   const ocean = groundFrame(tileTerrain(v));
@@ -908,7 +948,7 @@ function drawTile(ctx, mx, my, px, py) {
     sheetFrame(ctx, 'TERRAIN', ocean, px, py);
     // O512 runs right after the ground so the neighbour dither sits under the
     // overlays, not over them (§6.11, call site 0x68315).
-    edgeBlend(ctx, mx, my, px, py);
+    edgeBlend(ctx, mx, my, px, py, false);
     // §6.4 forest, §6.5 relief, §6.6 river -- in O513's draw order.
     if (forestConnects(v)) {
       sheetFrame(ctx, 'PHYS0', PHYS.FOREST + mask4(mx, my, forestConnects), px, py);
