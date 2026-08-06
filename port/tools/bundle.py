@@ -406,7 +406,7 @@ def main():
   /* Fixed width, and resize() subtracts the same number so the screen and the
      panel never fight over the same pixels. Keep the two in step. */
   #debug {{
-    flex:0 0 400px;
+    flex:0 0 430px;
     height:100%; overflow-y:auto; overflow-x:hidden;
     background:#0F0C0A; border-left:1px solid var(--rule);
     font:11px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -420,33 +420,52 @@ def main():
     text-transform:uppercase; color:var(--gold);
     display:flex; justify-content:space-between; align-items:center;
   }}
-  #debug h1 span {{ display:flex; gap:4px; }}
   #debug h1 button {{
     background:none; border:1px solid var(--rule); color:var(--muted);
     font:inherit; cursor:pointer; padding:2px 6px; border-radius:2px;
   }}
-  #debug section {{ border-bottom:1px solid #241A12; }}
-  #debug h2 {{
-    margin:0; padding:6px 10px 4px; color:var(--gold);
-    font:600 10px/1 ui-monospace,monospace; letter-spacing:.16em;
-    text-transform:uppercase; cursor:pointer; user-select:none;
+  #debug #dbgbody {{ display:flex; flex-direction:column; height:calc(100% - 29px); }}
+  /* Tabs. A single row that wraps rather than scrolling, so no tab can hide. */
+  #dbgtabs {{
+    display:flex; flex-wrap:wrap; gap:2px; padding:6px 6px 4px;
+    border-bottom:1px solid var(--rule); background:#140F0B;
   }}
-  #debug h2::before {{ content:"\25be "; color:var(--muted); }}
-  #debug section.closed h2::before {{ content:"\25b8 "; }}
-  #debug section.closed .body {{ display:none; }}
-  #debug .body {{ padding:0 10px 8px; }}
-  /* Flex rows rather than a table: a table with a shrink-to-fit key column and
-     a percentage value column overflows a narrow panel and gets clipped, and
-     `overflow-x:hidden` then silently eats the numbers. A flex row with
-     `min-width:0` on the value can never do that. */
+  #dbgtabs .tab {{
+    background:none; border:1px solid transparent; color:var(--muted);
+    font:inherit; cursor:pointer; padding:2px 7px; border-radius:2px;
+    letter-spacing:.04em;
+  }}
+  #dbgtabs .tab:hover {{ color:#E4DCC6; }}
+  #dbgtabs .tab.on {{ color:#14100C; background:var(--gold); font-weight:600; }}
+  #dbgpane {{ flex:1 1 auto; overflow-y:auto; padding:0 0 24px; }}
+  #debug .sub {{
+    color:var(--gold); padding:8px 8px 3px; letter-spacing:.06em;
+    border-bottom:1px solid #241A12;
+  }}
+  #debug .none {{ color:#5C5344; padding:6px 8px; }}
+  #debug .note {{ color:#5C5344; padding:6px 8px; line-height:1.5; }}
+  /* Key/value, for genuine scalars only. */
+  #debug .kv {{ padding:4px 8px 6px; }}
   #debug .row {{ display:flex; gap:8px; align-items:baseline; }}
-  #debug .row .k {{ flex:0 0 118px; color:var(--muted); }}
+  #debug .row .k {{ flex:0 0 132px; color:var(--muted); }}
   #debug .row .v {{
     flex:1 1 auto; min-width:0; color:#E4DCC6;
     white-space:pre-wrap; overflow-wrap:break-word;
   }}
-  #debug .sub {{ color:var(--gold); margin-top:6px; }}
-  #debug .empty {{ color:#5C5344; }}
+  /* Tables. The wrapper scrolls sideways on its own so a wide table can never
+     widen the panel or get silently clipped. */
+  #debug .tw {{ overflow-x:auto; padding:2px 0 8px; }}
+  #debug table {{ border-collapse:collapse; font-size:10px; white-space:nowrap; }}
+  #debug thead th {{
+    position:sticky; top:0; background:#1A130E; color:var(--muted);
+    text-align:left; font-weight:400; padding:3px 7px;
+    border-bottom:1px solid var(--rule); letter-spacing:.05em;
+  }}
+  #debug tbody td {{ padding:2px 7px; color:#E4DCC6; border-bottom:1px solid #1C1510; }}
+  #debug tbody tr:hover td {{ background:#191309; }}
+  #debug th.n, #debug td.n {{ text-align:right; }}
+  #debug td.dim {{ color:#6E6350; }}
+  #debug td.hot {{ color:#E0A33A; }}
   #cabinet {{
     padding:10px; background:var(--bezel);
     border:1px solid var(--rule); border-radius:2px;
@@ -478,8 +497,7 @@ def main():
 &nbsp;·&nbsp; <b>Space</b> end turn &nbsp;·&nbsp; or click
 &nbsp;·&nbsp; <b>`</b> debug panel</p>
 </div>
-<aside id="debug"><h1>State <span><button id="dbgall" title="collapse / expand all">&#9776;</button>
-<button id="dbgclose" title="hide (`)">&times;</button></span></h1>
+<aside id="debug"><h1>State <button id="dbgclose" title="hide (`)">&times;</button></h1>
 <div id="dbgbody"></div></aside>
 <div id="loading">Loading&#8230;</div>
 <script>
