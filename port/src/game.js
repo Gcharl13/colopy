@@ -2290,13 +2290,13 @@ function holdAdd(e, i, qty) {
 // the three panels, and the stockpile bar. Geometry is the byte-cited region
 // table; the field's sand ground is sampled from docs/screens/11_colony_screen.png.
 //
-// The 15 building plots are the cited DS:0x266 positions. Which buildings a
-// BRAND-NEW colony starts with is **TBD** -- it is not byte-cited anywhere in
-// the tree (the def table 0x8E82 is a runtime array and its initialiser is not
-// traced), so every plot renders as the empty-plot scenery the engine draws
-// when 0x8E82[i]==255. Resolving it needs that initialiser traced or a shipped
-// COLONY??.SAV parsed. Likewise the per-colony RNG plot shuffle (func_025D34)
-// is unresolved, so plots are used in table order.
+// The 15 building plots are the DS:0x266 positions, RAM-read 2026-08-06. The
+// per-colony RNG shuffle (func_025D34) that decides WHICH plot each building
+// lands on is simulated and verified against two live colonies -- see
+// colonyPlacement() below. What a BRAND-NEW colony starts with is still the
+// port's own STARTING_BUILDINGS list rather than a byte-cited one: the def
+// table 0x8E82 is filled at runtime and its initialiser is untraced, so that
+// set would need either the initialiser read or a shipped COLONY??.SAV parsed.
 // Plot positions, RAM-READ 2026-08-06 from `[0x266]` (x,y word pairs, stride 4)
 // with tools/colony_seed_probe.py -- these are the raw table values; the
 // painters blit at (x, y+8), which is why they used to be stored pre-offset.
