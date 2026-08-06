@@ -316,6 +316,8 @@ const G = {
   // an override that pins it (null = free-running off the wall clock).
   cycleT0: 0,
   cyclePhase: null,
+  // F6's caption row selects one of four views; live default = Military Garrisons.
+  f6View: 2,
   dialog: null,           // active modal popup, see openDialog()
   landHo: false,          // @LANDHO fires once per game
   newLand: '',            // what the player named the New World
@@ -5460,7 +5462,7 @@ const REPORTS = {
     });
     return l;
   } },
-  F6: { title: DATA.text.misc[51], subtitle: DATA.text.misc[56],
+  F6: { title: DATA.text.misc[51], get subtitle() { return DATA.text.misc[206 + (G.f6View || 0)]; },
         draw: drawColonyReport, body: () => {
     if (!G.colonies.length) return ['You have founded no colonies.'];
     return G.colonies.map(c => {
@@ -5740,9 +5742,13 @@ function drawColonyReport(ctx) {
   // @MISC 206 European Trade / 207 Cargo in Port / 208 Military Garrisons /
   // 209 Sons of Liberty -- the four consecutive strings that exist for exactly
   // this row of captions.
-  const caps = [206, 207, 208, 209].map(i => DATA.text.misc[i]);
-  F6_CAPS.forEach(([x, w], i) =>
-    FONT.tiny.center(ctx, caps[i], x + w / 2, 20, lut(REPORT_NAME_INK), ink(0)));
+  // The four captions are the report's VIEW MODES, not a static header row:
+  // the live frame's subtitle line reads "Military Garrisons"
+  // (docs/screens/live_2026-08-05/71_report_F6.png), i.e. caption[2]. They are
+  // drawn as a selector strip with the active one highlighted.
+  // No caption strip is drawn: the live frame shows the active view's name in
+  // the SUBTITLE line only ("Military Garrisons"), with the body under it.
+  // F6_CAPS keeps the cited box geometry for when the selector is wired up.
   G.colonies.slice(0, 9).forEach((c, i) => {
     const y = 32 + i * 17;
     // ICONS disk band 0-3 are the colony markers, frame = nation.
@@ -5790,49 +5796,38 @@ function drawNavalReport(ctx) {
 }
 
 // ---- F8 Foreign Affairs ---------------------------------------------------
-// spec §4: gated on [0x5382] bit 0 -- CLEAR draws the body. Strength labels
-// @MISC 95-100 ink 0x91 at x=2; per-power value columns ink 0x91.
-// The spec's first value column reads 0xD=13, which collides with a label drawn
-// at x=2; the other three (80/160/240) are used as given and the first column is
-// placed to keep the label readable. TBD -- needs a live F8 capture.
-const F8_COLS = [96, 160, 224, 288];
-const F8_INK = 0x91;
+// REBUILT against the live frame (docs/screens/live_2026-08-05/70_report_F8.png).
+// It is NOT the 6-row Colonies/Population/... strength table I first built from
+// the spec's label list -- with no colonies founded the report is four per-power
+// blocks, and the geometry is exact:
+//     separator rule   y = 10 + 45*i   (full width, dark)
+//     power header     y = 16 + 45*i   "<Leader>'s <Nationality>:" at x=2
+//     counts           y = 27 + 45*i   "Rebels: N" at x=2, "Tories: N" at x=80
+// Block pitch 45, four powers. Whether the strength labels @MISC 95-100 appear
+// in this same body once colonies exist is UNVERIFIED -- the capture was taken
+// on turn 1.
+const F8_BLOCK = 45, F8_RULE0 = 10, F8_HEAD0 = 16, F8_ROW0 = 27, F8_TORY_X = 80;
 function drawForeignReport(ctx) {
-  if (G.declared) {
-    FONT.tiny.center(ctx, DATA.text.misc[93], 160, 96, lut(F8_INK), ink(0));
-    return;
-  }
-  const labels = [95, 96, 97, 98, 99, 100].map(i => DATA.text.misc[i]);
-  const powers = DATA.nations.map((n, i) => ({ n, r: G.rivals.find(r => r.nation === i) }));
-  powers.forEach((p, i) =>
-    FONT.tiny.center(ctx, p.n.abbrev || p.n.country, F8_COLS[i], 22,
-                     lut(REPORT_NAME_INK), ink(0)));
-  labels.forEach((lab, row) => {
-    const y = 32 + row * 10;
-    FONT.tiny.draw(ctx, lab, 2, y, lut(F8_INK), ink(0));
-    powers.forEach((p, i) => {
-      const v = foreignStat(p, row);
-      FONT.tiny.center(ctx, v, F8_COLS[i], y, lut(F8_INK), ink(0));
-    });
-    ctx.fillStyle = ink(REPORT_RULE_INK);
-    ctx.fillRect(0, y + 7, 320, 1);
+  DATA.nations.forEach((n, i) => {
+    const ry = F8_RULE0 + i * F8_BLOCK;
+    ctx.fillStyle = ink(0); ctx.fillRect(0, ry, 320, 1);
+    const r = G.rivals.find(v => v.nation === i);
+    const leader = (i === G.nation ? G.leader : '') || DATA.nations[i].leader;
+    FONT.tiny.draw(ctx, `${leader}'s ${n.adjective}:`, 2, F8_HEAD0 + i * F8_BLOCK,
+                   lut(REPORT_NAME_INK), ink(0));
+    const y = F8_ROW0 + i * F8_BLOCK;
+    const mine = i === G.nation;
+    const rebels = mine ? G.colonies.filter(c => (c.sol || 0) >= 50).length
+                        : ((r && r.colonies) || []).length;
+    const tories = mine ? G.colonies.filter(c => (c.sol || 0) < 50).length
+                        : ((r && r.units) || []).length;
+    // @MISC 86 'Rebels' / 87 'Tories' -- the plurals, which is what the live
+    // frame prints (69/70 are the singular 'Rebel'/'Tory' used by F3's strip).
+    FONT.tiny.draw(ctx, `${DATA.text.misc[86]}: ${rebels}`, 2, y,
+                   lut(REPORT_VALUE_INK), ink(0));
+    FONT.tiny.draw(ctx, `${DATA.text.misc[87]}: ${tories}`, F8_TORY_X, y,
+                   lut(REPORT_VALUE_INK), ink(0));
   });
-}
-function foreignStat(p, row) {
-  const me = !p.r;
-  const colonies = me ? G.colonies.length : (p.r.colonies || []).length;
-  const units = me ? G.units.filter(u => !u.ship).length : (p.r.units || []).length;
-  const ships = me ? G.units.filter(u => u.ship).length : 0;
-  const pop = me ? G.colonies.reduce((a, c) => a + c.colonists.length, 0) : colonies * 3;
-  if (!me && !p.r.met) return '?';
-  switch (row) {
-    case 0: return String(colonies);
-    case 1: return String(pop);
-    case 2: return String(colonies ? Math.round(pop / colonies) : 0);
-    case 3: return String(units);
-    case 4: return String(ships);
-    default: return String(ships);
-  }
 }
 
 // ---- F9 Indian ------------------------------------------------------------

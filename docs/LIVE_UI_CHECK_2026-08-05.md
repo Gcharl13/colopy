@@ -253,10 +253,34 @@ x-start `0x0A` exactly as the spec says, pitch ≈33.
   | F9 Indian | y-start 0x18=24, columns x=16 → +72 → +20, cell text in the `@COLORS` "basic" green (85,150,52) the spec resolves from `[0x830]`. |
   | F10 Score | `@MISC` 115/116/117/120/121 with FONTTINY labels and FONTINTR figures. |
 
-  Two residuals stay flagged in the code: F8's first value column (the spec reads
-  `0xD`=13, which collides with a label drawn at x=2 — needs a live F8 capture),
-  and F10's `SCORE<panel>.SS` band plate, which is not bundled (24 sheets for one
-  screen).
+### Second capture run — F8 was wrong, and only half the reports are verified
+
+Going back for live references (captures `70`–`72`) found that building F5–F10
+from the spec's label lists was not good enough:
+
+- **F8 is not a strength table.** I built the six `@MISC` 95–100 rows
+  (Colonies/Population/Average Colony/Military Power/Naval Power/Merchant
+  Marine) the spec lists. The live report is **four per-power blocks**, and the
+  geometry is exact: separator rule `y = 10 + 45i`, power header
+  `"<Leader>'s <Nationality>:"` at x=2 `y = 16 + 45i`, then `Rebels: N` at x=2
+  and `Tories: N` at x=80 on `y = 27 + 45i`. Rebuilt; it now matches. The labels
+  are `@MISC` **86/87** (the plurals), not 69/70. Whether the strength rows
+  appear in the same body once colonies exist is **unverified** — the capture is
+  from turn 1.
+- **F6 draws no caption strip.** The four captions are the report's **view
+  modes**; the live frame carries the active one ("Military Garrisons") in the
+  *subtitle* line and nothing else. My header row was wrong.
+
+**Verified against a live frame: F2, F3 (structure), F4, F6 (frame), F8.**
+**Still unverified: F5, F7, F9, F10** — they are built from the spec's
+byte-cited columns and render as plausible tables, but I have no capture of
+them, and F8 is the proof that a plausible table built from the spec's label
+list can still be the wrong screen. Two capture attempts failed: enabling cheat
+mode inserts a "View Whose Report?" power picker in front of every report, and
+without cheats the run needs colonies and ships that turn 1 does not have.
+
+Also still open: **F3's vertical rhythm** overlaps, and F10's
+`SCORE<panel>.SS` band plate is not bundled.
 
 ## 7. Not reached — the colony screen
 
