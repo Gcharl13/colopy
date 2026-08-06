@@ -2375,44 +2375,77 @@ function drawColonyPanel(ctx, c) {
       nationPlate(ctx, px + i * 15, py + 10, ownerColour(u), u.orders);
     });
   } else {
-    // Production. Food carries the byte-verified consumption rule (eaten =
-    // 2*pop); every other line is one good this colony actually makes this turn,
-    // net of what the chains consume.
-    const r = colonyProduce(c);
-    FONT.tiny.draw(ctx, 'Production', px, py, lut(PANEL_INK));
-    // Food, with its consumption, on the first line.
-    sheetFrame(ctx, 'ICONS', 0x16, px, py + 8);
-    const net = r.netFood;
-    FONT.tiny.draw(ctx, `${r.out[GOOD.FOOD]}-${r.eaten}=${net >= 0 ? '+' : ''}${net}`,
-                   px + 10, py + 11, lut(net < 0 ? 0x0C : SOL_INK));
-    // Then every other good with a nonzero net, two per row. The panel is only
-    // 95x48, so these are named rather than iconned -- the 16px warehouse icons
-    // (good + 0x17) collide at this pitch.
-    let k = 0;
-    for (let i = 1; i < r.out.length && k < 6; i++) {
-      if (!r.out[i]) continue;
-      const gx = px + (k % 2) * 47, gy = py + 17 + Math.floor(k / 2) * 6;
-      const n = r.out[i];
-      FONT.tiny.draw(ctx, `${DATA.cargo[i].name.slice(0, 6)} ${n > 0 ? '+' : ''}${n}`,
-                     gx, gy, lut(n < 0 ? 0x0C : SOL_INK));
-      k += 1;
-    }
-    // Hammers and the build target.
-    const hammers = r.tally[HAMMERS];
-    const ty = py + 18 + Math.ceil(k / 2) * 6;
-    const target = c.building;
-    if (target) {
-      const b = DATA.buildings.find(d => d.name === target);
-      FONT.tiny.draw(ctx, `${target} ${c.hammers}/${b.cost}`, px, ty, lut(PANEL_INK));
-      FONT.tiny.draw(ctx, hammers ? `+${hammers} hammers` : 'no hammers', px, ty + 7,
-                     lut(hammers ? SOL_INK : 0x0C));
-    } else FONT.tiny.draw(ctx, 'Building nothing', px, ty, lut(PANEL_INK));
+    drawProductionStrips(ctx, c);
   }
   // View buttons.
   for (let k = 0; k < 3; k++) {
     const by = VIEW_BTN.y + k * VIEW_BTN.pitch;
     sheetFrame(ctx, 'ICONS', 67 + k, VIEW_BTN.x, by);
     if (k === G.colonyView) hollowRect(ctx, VIEW_BTN.x - 1, by - 1, 16, 15, 0x0F);
+  }
+}
+
+// ---- the production panel: count badge + sprite strip ---------------------
+// REBUILT from the live frame (docs/screens/live_1653_save/colony_curacao.png).
+// It is NOT the text list the port had ("Production / Food +12 -8 / Sugar -3").
+// The panel is three rows of flowing entries, each entry a white count badge
+// followed by a run of that good's ICONS sprite, drawn OVERLAPPING so a big
+// number still fits -- the same count-badge-plus-strip verb F3 uses for its
+// REF rows (`0x222` x N -> `0x22C`).
+//
+// Measured on that frame:
+//   rows            y = 133 + 14*i, three of them
+//   entries         flow left to right from x = 213 to the button column at 301
+//   badge           FONTTINY digits, white with a black outline, at row y + 4
+//   goods sprite    ICONS 22 + commodity (furs matched frame 26, ore frame 28,
+//                   both at score 0)
+//   hammers         ICONS 54; the red cancel mark is ICONS 55 (8x12), laid over
+//                   a strip to mark what is being consumed
+//
+// TBD -- the exact strip pitch. The furs (2 sprites) and ore (8 sprites) runs
+// on that frame both fit a pitch of 4, but the hammer and red-X runs in the
+// same frame fit 6, so the spacing is probably per sprite band and one capture
+// cannot separate the two. 4 is used here.
+const PROD_X0 = 213, PROD_X1 = 301, PROD_Y0 = 133, PROD_PITCH = 14;
+const PROD_ROWS = 3, PROD_STEP = 4, PROD_GAP = 3;
+const PROD_HAMMER_ICON = 54, PROD_CANCEL_ICON = 55, PROD_GOOD_ICON = 22;
+
+function prodEntry(ctx, x, y, icon, count, cancelled) {
+  // The badge is outlined on all four sides, not drop-shadowed: it has to stay
+  // readable over whatever sprite it lands on.
+  const badge = String(count);
+  const black = [ink(0), ink(0), ink(0)];
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]])
+    FONT.tiny.draw(ctx, badge, x + dx, y + 4 + dy, black);
+  FONT.tiny.draw(ctx, badge, x, y + 4, [ink(0x0F), ink(0x0F), ink(0x0F)]);
+  let cx = x + FONT.tiny.width(badge) + 1;
+  const [fw] = frameSize('ICONS', icon);
+  if (!fw) return cx;
+  const n = Math.min(count, Math.floor((PROD_X1 - cx - fw) / PROD_STEP) + 1);
+  for (let i = 0; i < n; i++) sheetFrame(ctx, 'ICONS', icon, cx + i * PROD_STEP, y);
+  if (cancelled)
+    for (let i = 0; i < n; i++)
+      sheetFrame(ctx, 'ICONS', PROD_CANCEL_ICON, cx + i * PROD_STEP, y);
+  return cx + (n - 1) * PROD_STEP + fw + PROD_GAP;
+}
+
+function drawProductionStrips(ctx, c) {
+  const r = colonyProduce(c);
+  // What the colony makes this turn, then what it eats. Food is netted against
+  // the byte-verified 2*pop consumption; a shortfall shows as a cancelled run.
+  const entries = [];
+  const net = r.netFood;
+  if (net) entries.push([PROD_GOOD_ICON + GOOD.FOOD, Math.abs(net), net < 0]);
+  for (let i = 1; i < r.out.length; i++)
+    if (r.out[i]) entries.push([PROD_GOOD_ICON + i, Math.abs(r.out[i]), r.out[i] < 0]);
+  const hammers = r.tally[HAMMERS];
+  if (hammers) entries.push([PROD_HAMMER_ICON, hammers, false]);
+  let row = 0, x = PROD_X0;
+  for (const [icon, n, cancelled] of entries) {
+    if (row >= PROD_ROWS) break;
+    const y = PROD_Y0 + row * PROD_PITCH;
+    const nx = prodEntry(ctx, x, y, icon, n, cancelled);
+    if (nx >= PROD_X1 - 8) { row += 1; x = PROD_X0; } else x = nx;
   }
 }
 
