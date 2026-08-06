@@ -390,11 +390,63 @@ def main():
     --gold:#C7A220; --muted:#8A7A5C;
   }}
   * {{ box-sizing:border-box; }}
-  html,body {{ margin:0; height:100%; background:var(--ground); overflow:hidden; }}
-  body {{
+  html,body {{ margin:0; height:100%; background:var(--ground);
+                overflow-y:hidden; overflow-x:auto; }}
+  body {{ display:flex; flex-direction:row; align-items:stretch; }}
+  /* #stage never shrinks below the screen it holds, so the canvas keeps its
+     size and the page scrolls sideways instead if the window is too narrow. */
+  #stage {{
+    flex:0 0 auto;
     display:flex; flex-direction:column; align-items:center;
     justify-content:center; gap:14px; padding:16px;
   }}
+  /* The debug column. It reserves its own width so it never overlaps the
+     screen; hiding it (backtick, or the x) gives the game the space back and
+     rescales it to exactly what it was before the panel existed. */
+  /* The panel takes whatever is left beside the screen -- the screen's size is
+     fixed first and never traded away for it. Below the minimum the page
+     scrolls sideways rather than the game shrinking. */
+  #debug {{
+    flex:1 1 auto; min-width:240px; max-width:560px;
+    height:100%; overflow-y:auto; overflow-x:hidden;
+    background:#0F0C0A; border-left:1px solid var(--rule);
+    font:11px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    color:#C9BFA8; padding:0 0 24px;
+  }}
+  #debug.hidden {{ display:none; }}
+  #debug h1 {{
+    position:sticky; top:0; margin:0; padding:8px 10px;
+    background:#1A130E; border-bottom:1px solid var(--rule);
+    font:600 10px/1 ui-monospace,monospace; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--gold);
+    display:flex; justify-content:space-between; align-items:center;
+  }}
+  #debug h1 button {{
+    background:none; border:1px solid var(--rule); color:var(--muted);
+    font:inherit; cursor:pointer; padding:2px 6px; border-radius:2px;
+  }}
+  #debug section {{ border-bottom:1px solid #241A12; }}
+  #debug h2 {{
+    margin:0; padding:6px 10px 4px; color:var(--gold);
+    font:600 10px/1 ui-monospace,monospace; letter-spacing:.16em;
+    text-transform:uppercase; cursor:pointer; user-select:none;
+  }}
+  #debug h2::before {{ content:"\25be "; color:var(--muted); }}
+  #debug section.closed h2::before {{ content:"\25b8 "; }}
+  #debug section.closed .body {{ display:none; }}
+  #debug .body {{ padding:0 10px 8px; }}
+  /* Flex rows rather than a table: a table with a shrink-to-fit key column and
+     a percentage value column overflows a narrow panel and gets clipped, and
+     `overflow-x:hidden` then silently eats the numbers. A flex row with
+     `min-width:0` on the value can never do that. */
+  #debug .row {{ display:flex; gap:8px; align-items:baseline; }}
+  #debug .row .k {{ flex:0 0 118px; color:var(--muted); }}
+  #debug .row .v {{
+    flex:1 1 auto; min-width:0; color:#E4DCC6;
+    white-space:pre-wrap; overflow-wrap:break-word;
+  }}
+  #debug .sub {{ color:var(--gold); margin-top:6px; }}
+  #debug .empty {{ color:#5C5344; }}
   #cabinet {{
     padding:10px; background:var(--bezel);
     border:1px solid var(--rule); border-radius:2px;
@@ -420,9 +472,14 @@ def main():
   canvas:focus-visible {{ outline:2px solid var(--gold); outline-offset:6px; }}
   @media (prefers-reduced-motion:reduce) {{ * {{ animation:none !important; }} }}
 </style>
+<div id="stage">
 <div id="cabinet"><canvas id="screen" tabindex="0"></canvas></div>
 <p id="hint"><b>Arrows</b> choose &amp; move &nbsp;·&nbsp; <b>Enter</b> confirm
-&nbsp;·&nbsp; <b>Space</b> end turn &nbsp;·&nbsp; or click</p>
+&nbsp;·&nbsp; <b>Space</b> end turn &nbsp;·&nbsp; or click
+&nbsp;·&nbsp; <b>`</b> debug panel</p>
+</div>
+<aside id="debug"><h1>State <button id="dbgclose" title="hide (`)">&times;</button></h1>
+<div id="dbgbody"></div></aside>
 <div id="loading">Loading&#8230;</div>
 <script>
 const ASSETS = {json.dumps(assets)};

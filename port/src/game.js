@@ -7418,6 +7418,9 @@ function commitMenu() {
 
 function onKey(e) {
   const k = e.key;
+  // Backtick toggles the debug column. Checked first so it works even while a
+  // popup is modal -- that is exactly when you want to look at the state.
+  if (k === '`' || k === '~') { dbgToggle(); e.preventDefault(); return; }
   // The combat panel and the event popups are modal: each swallows the next key
   // and pops itself.
   if (G.combat) { G.combat = null; e.preventDefault(); return; }
@@ -7628,6 +7631,11 @@ let ctx, screenCanvas, scale = 1, offX = 0, offY = 0;
 
 function resize() {
   // Integer-scale only: this is pixel art, so a fractional scale would blur it.
+  // NOTE the debug column is deliberately NOT subtracted here: the game keeps
+  // exactly the size it had before the panel existed, whether the panel is open
+  // or shut. The panel takes the space to its right and the page scrolls
+  // sideways if the window cannot hold both -- shrinking the screen to make room
+  // for a debug tool is the wrong trade.
   const availW = window.innerWidth - 60, availH = window.innerHeight - 90;
   scale = Math.max(1, Math.floor(Math.min(availW / W, availH / H)));
   const cv = document.getElementById('screen');
@@ -7656,6 +7664,7 @@ function frame() {
   c2.imageSmoothingEnabled = false;
   c2.clearRect(0, 0, cv.width, cv.height);
   c2.drawImage(screenCanvas, 0, 0, W * scale, H * scale);
+  if (debugOpen && (_dbgTick++ % 10) === 0) dbgRender();
   requestAnimationFrame(frame);
 }
 
@@ -7685,7 +7694,264 @@ async function main() {
   cv.addEventListener('touchstart', (ev) => {
     const [x, y] = toLogical(ev); onClick(x, y); ev.preventDefault();
   }, { passive: false });
+  dbgInit();
+  dbgRender();
   document.getElementById('loading').style.display = 'none';
   requestAnimationFrame(frame);
 }
 main();
+
+// ---------------------------------------------------------------- debug panel
+// A live read-out of everything the simulation carries: the player's power
+// record, every rival's, every colony (including its per-turn production, which
+// is computed not stored), the tribes and their villages, units, the Europe
+// dock and market, and the map/session scalars. It is a VIEW -- it never writes
+// to G -- so it is safe to leave open while playing.
+//
+// The last section dumps every key of G that no section above claimed, so
+// anything added to the state later shows up here without this file being
+// touched. That is deliberate: a debug panel that silently omits new state is
+// worse than none.
+let debugOpen = true, _dbgLast = '', _dbgTick = 0;
+
+const DBG_SECTIONS = [];          // filled below; each {title, rows()}
+const dbgKeysShown = new Set();   // G keys a section has claimed
+
+function dbgClaim(...keys) { keys.forEach(k => dbgKeysShown.add(k)); return keys; }
+function dbgSection(title, keys, rows) {
+  dbgClaim(...keys);
+  DBG_SECTIONS.push({ title, rows });
+}
+const dbgNum = (v) => (v === undefined || v === null) ? '--' : String(v);
+const dbgList = (a) => (!a || !a.length) ? null : a.join(', ');
+
+dbgSection('Session', ['screen', 'turn', 'year', 'season', 'difficulty', 'nation',
+                       'leader', 'tick', 'blink', 'mapSeed', 'plotSeedBase',
+                       'cycleT0', 'cyclePhase', 'msg', 'dialog', 'report',
+                       'woodcut', 'newLand', 'landHo'], () => [
+  ['screen', G.screen + (G.report ? ' / ' + G.report : '')],
+  ['turn', `${G.turn}   ${DATA.seasons[G.season]} ${G.year}`],
+  ['difficulty', `${G.difficulty} ${DATA.difficulty[G.difficulty]}`],
+  ['nation', `${G.nation} ${DATA.nations[G.nation].country} (${G.leader})`],
+  ['new land', G.newLand || '--'],
+  ['tick / blink', `${G.tick}  ${G.blink ? 'on' : 'off'}`],
+  ['map seed', dbgNum(G.mapSeed)],
+  ['plot seed base', dbgNum(G.plotSeedBase)],
+  ['cycle phase', G.cyclePhase === null ? 'free-running' : String(G.cyclePhase)],
+  ['dialog', G.dialog ? (G.dialog.entry !== undefined ? 'entry' : 'options') : '--'],
+  ['message', G.msg || '--'],
+]);
+
+dbgSection('Power record - player', ['gold', 'tax', 'crosses', 'bells',
+    'bellsPerTurn', 'bellsTotal', 'fatherInProgress', 'fathersOwned', 'boycotts',
+    'declared', 'declaredYear', 'royalFund', 'kingsFund', 'ref', 'refUnits',
+    'razed', 'lostWar', 'upkeepUnpaid', 'attitude', 'artilleryBought',
+    'foundFountain', 'foundCibola', 'retired', 'succession', 'flags'], () => [
+  ['gold', `${G.gold}$`],
+  ['tax rate', `${G.tax}%`],
+  ['crosses', `${G.crosses} / ${typeof immigrationThreshold === 'function'
+                                ? immigrationThreshold() : '?'}`],
+  ['bells', `${G.bells} / ${typeof fatherCost === 'function' ? fatherCost() : '?'}` +
+            `   (+${G.bellsPerTurn}/turn)`],
+  ['lifetime bells', dbgNum(G.bellsTotal)],
+  ['next father', G.fatherInProgress || '--'],
+  ['fathers owned', dbgList(G.fathersOwned) || 'none'],
+  ['boycotts', dbgList((G.boycotts || []).map(i => DATA.cargo[i] && DATA.cargo[i].name)) || 'none'],
+  ['declared', G.declared ? `yes, ${G.declaredYear}` : 'no'],
+  ['royal fund', dbgNum(G.royalFund)],
+  ['crown taken', dbgNum(G.kingsFund)],
+  ['REF', Object.keys(G.ref || {}).length
+          ? Object.entries(G.ref).map(([k, v]) => `${k} ${v}`).join('  ') : '--'],
+  ['REF on map', String((G.refUnits || []).length)],
+  ['razed', dbgNum(G.razed)],
+  ['upkeep unpaid', G.upkeepUnpaid ? 'YES' : 'no'],
+  ['artillery buys', dbgNum(G.artilleryBought)],
+  ['fountain/cibola', `${G.foundFountain ? 'yes' : 'no'} / ${G.foundCibola ? 'yes' : 'no'}`],
+]);
+
+dbgSection('Power records - rivals', ['rivals', 'metAnyone', 'warMatrix',
+    'treatyMatrix', 'parleyLock', 'mercSeen', 'interventionWatch',
+    'parley', 'parleyRow'], () => {
+  if (!G.rivals || !G.rivals.length) return [['rivals', 'none']];
+  const out = [];
+  for (const r of G.rivals) {
+    const n = DATA.nations[r.nation];
+    out.push([`__sub`, `${n.country} (${n.abbrev})`]);
+    out.push(['  met', r.met ? 'yes' : 'no']);
+    out.push(['  attitude', dbgNum(r.attitude)]);
+    out.push(['  gold', dbgNum(r.gold)]);
+    out.push(['  colonies', String((r.colonies || []).length)]);
+    out.push(['  units', String((r.units || []).length)]);
+    out.push(['  at war', G.warMatrix && G.warMatrix[r.nation] ? 'YES' : 'no']);
+    out.push(['  treaty', G.treatyMatrix && G.treatyMatrix[r.nation] ? 'yes' : 'no']);
+  }
+  return out;
+});
+
+dbgSection('Colony records', ['colonies', 'colony', 'colonyView', 'colonyPopup',
+    'colonyPopupRow', 'colonistSel'], () => {
+  if (!G.colonies.length) return [['colonies', 'none founded']];
+  const out = [];
+  G.colonies.forEach((c, i) => {
+    out.push(['__sub', `${i === G.colony ? '> ' : ''}${c.name}  (${c.x},${c.y})`]);
+    out.push(['  population', String(c.colonists.length)]);
+    out.push(['  SoL/tory', `${c.sol}% / ${100 - c.sol}%`]);
+    out.push(['  hammers', `${c.hammers}${c.building ? ' -> ' + c.building : ''}`]);
+    out.push(['  buildings', dbgList(c.buildings) || 'none']);
+    // Production is derived, not stored -- show the same tables the colony
+    // screen's three rows are built from.
+    let r = null;
+    try { r = colonyProduce(c); } catch (e) { /* mid-construction state */ }
+    if (r) {
+      const named = (arr) => arr.map((v, g) => v ? `${DATA.cargo[g].name} ${v}` : null)
+                                .filter(Boolean).join(', ') || 'none';
+      out.push(['  produced', named(r.gross)]);
+      out.push(['  consumed', named(r.consumed)]);
+      out.push(['  centre tile', `${r.centre} food`]);
+      out.push(['  food', `+${r.gross[GOOD.FOOD]} -${r.eaten} = ${r.netFood}`]);
+      out.push(['  hammers/bells/crosses',
+                `${r.tally[HAMMERS]} / ${r.tally[BELLS]} / ${r.tally[CROSSES]}`]);
+    }
+    out.push(['  stock', c.stock.map((v, g) => v ? `${DATA.cargo[g].name} ${v}` : null)
+                                .filter(Boolean).join(', ') || 'empty']);
+    c.colonists.forEach((p, k) => out.push([`  colonist ${k}`,
+      `${p.type}${p.profession ? ' (' + p.profession + ')' : ''} - ` +
+      `${p.job || 'idle'}${p.cell ? ' @ ' + p.cell[0] + ',' + p.cell[1] : ' in plaza'}`]));
+  });
+  return out;
+});
+
+dbgSection('Indian tribes', ['tribes', 'villages', 'natives', 'village',
+    'villageVisitor', 'villageRow', 'villageMode', 'raidSeen'], () => {
+  if (!G.tribes || !G.tribes.length) return [['tribes', 'none']];
+  const out = [];
+  G.tribes.forEach((t, ti) => {
+    const vs = G.villages.filter(v => v.tribe === ti);
+    const br = G.natives.filter(u => u.tribe === ti);
+    out.push(['__sub', t.name]);
+    out.push(['  level/colour', `${t.level} / ${t.color}`]);
+    out.push(['  tension', dbgNum(t.tension)]);
+    out.push(['  camps', String(vs.length)]);
+    out.push(['  braves on map', String(br.length)]);
+    vs.forEach((v, k) => out.push([`  camp ${k}`,
+      `(${v.x},${v.y})${v.capital ? ' capital' : ''}` +
+      `${v.mission ? '  mission:' + DATA.nations[v.mission.power].abbrev +
+                     (v.mission.expert ? ' (expert)' : '') : ''}` +
+      `${v.taught ? '  taught' : ''}`]));
+  });
+  return out;
+});
+
+dbgSection('Units', ['units', 'sel', 'goTo', 'viewMode', 'showHidden'], () => {
+  if (!G.units.length) return [['units', 'none']];
+  return G.units.map((u, i) => [`${i === G.sel ? '> ' : ''}${i}`,
+    `${u.type} (${u.x},${u.y})  mv ${u.movesLeft}/${u.moves}` +
+    `  ord ${DATA.orders[u.orders] ? DATA.orders[u.orders].name : u.orders}` +
+    `${u.cargo && u.cargo.length ? '  carrying ' + u.cargo.join('+') : ''}` +
+    `${u.hold && u.hold.length ? '  hold ' +
+       u.hold.map(h => DATA.cargo[h.good].name + ' ' + h.qty).join('+') : ''}` +
+    `${u.tools ? '  tools ' + u.tools : ''}`]);
+});
+
+dbgSection('Europe', ['europe', 'dock', 'dockUnits', 'euroRow', 'euroMenu',
+    'euroMenuRow', 'euroShip', 'euroMsg', 'market', 'marketSel', 'accum',
+    'routes', 'trade'], () => {
+  const out = [];
+  out.push(['__sub', 'harbour']);
+  if (!G.europe.length) out.push(['  ships', 'none']);
+  G.europe.forEach((e, k) => out.push([`  ship ${k}`,
+    `${e.type}  ${e.state}${e.turns !== undefined ? ' ' + e.turns + 't' : ''}` +
+    `${e.hold && e.hold.length ? '  hold ' +
+       e.hold.map(h => DATA.cargo[h.good].name + ' ' + h.qty).join('+') : ''}`]));
+  out.push(['  on the dock', dbgList(G.dockUnits) || 'nobody']);
+  out.push(['  recruits', dbgList((G.dock || []).map(d => d && d.name)) || '--']);
+  out.push(['__sub', 'market  (bid / ask)']);
+  DATA.cargo.forEach((g, i) => out.push([`  ${g.name}`,
+    `${G.market[i]} / ${typeof askPrice === 'function' ? askPrice(i) : '?'}` +
+    `${(G.boycotts || []).includes(i) ? '   BOYCOTT' : ''}` +
+    `${G.accum && G.accum[i] ? '   traffic ' + G.accum[i] : ''}`]));
+  if (G.routes && G.routes.length)
+    G.routes.forEach((r, k) => out.push([`  route ${k}`,
+      (r.stops || []).map(s => G.colonies[s] && G.colonies[s].name).join(' -> ')]));
+  return out;
+});
+
+dbgSection('Map & options', ['view', 'zoom', 'rumoursDone', 'rumourFloor',
+    'gameOptions', 'colonyOptions', 'soundOptions', 'options', 'tune',
+    'combat', 'combatAnalysis', 'eventQueue', 'openMenu', 'menuSel', 'menuRow',
+    'briefPage', 'card', 'f6View', 'pediaCat', 'pediaSel', 'pediaMode'], () => [
+  ['map', typeof MAP !== 'undefined' ? `${MAP.w} x ${MAP.h}` : '--'],
+  ['viewport', `(${G.view.x},${G.view.y})  zoom ${G.zoom}`],
+  ['rumours', String((G.rumoursDone || new Set()).size) + `  floor ${G.rumourFloor}`],
+  ['game options', '0x' + G.gameOptions.toString(16).toUpperCase()],
+  ['colony options', '0x' + G.colonyOptions.toString(16).toUpperCase()],
+  ['sound options', '0x' + G.soundOptions.toString(16).toUpperCase()],
+  ['tune', dbgNum(G.tune)],
+  ['combat panel', G.combat ? 'OPEN' : (G.combatAnalysis ? 'enabled' : 'off')],
+  ['events', String((G.eventQueue || []).length)],
+]);
+
+// Anything in G that no section above claimed. Keeps the panel honest as the
+// state grows.
+function dbgUnclaimed() {
+  const out = [];
+  for (const k of Object.keys(G)) {
+    if (dbgKeysShown.has(k)) continue;
+    const v = G[k];
+    let s;
+    if (v === null || v === undefined) s = String(v);
+    else if (v instanceof Set) s = `Set(${v.size})`;
+    else if (Array.isArray(v)) s = `[${v.length}] ` + JSON.stringify(v).slice(0, 90);
+    else if (typeof v === 'object') s = JSON.stringify(v).slice(0, 110);
+    else s = String(v);
+    out.push([k, s]);
+  }
+  return out.length ? out : [['', 'every key is covered above']];
+}
+
+function dbgRender() {
+  const esc = (s) => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const part = [];
+  const sections = DBG_SECTIONS.concat([{ title: 'Unclaimed state', rows: dbgUnclaimed }]);
+  sections.forEach((sec, i) => {
+    let rows;
+    try { rows = sec.rows(); } catch (e) { rows = [['error', String(e.message || e)]]; }
+    const body = rows.map(([k, v]) => k === '__sub'
+      ? `<div class="sub">${esc(v)}</div>`
+      : `<div class="row"><span class="k">${esc(k)}</span>` +
+        `<span class="v">${esc(v)}</span></div>`).join('');
+    part.push(`<section data-i="${i}"><h2>${esc(sec.title)}</h2>` +
+              `<div class="body">${body}</div></section>`);
+  });
+  const html = part.join('');
+  if (html === _dbgLast) return;
+  _dbgLast = html;
+  const host = document.getElementById('dbgbody');
+  if (!host) return;
+  const closed = new Set([...host.querySelectorAll('section.closed')]
+                          .map(s => s.dataset.i));
+  const scroll = host.parentElement ? host.parentElement.scrollTop : 0;
+  host.innerHTML = html;
+  closed.forEach(i => {
+    const s = host.querySelector(`section[data-i="${i}"]`);
+    if (s) s.classList.add('closed');
+  });
+  if (host.parentElement) host.parentElement.scrollTop = scroll;
+}
+
+function dbgToggle(on) {
+  debugOpen = (on === undefined) ? !debugOpen : on;
+  const el = document.getElementById('debug');
+  if (el) el.classList.toggle('hidden', !debugOpen);
+  resize();
+}
+
+function dbgInit() {
+  const host = document.getElementById('dbgbody');
+  if (host) host.addEventListener('click', (ev) => {
+    const h = ev.target.closest('h2');
+    if (h) h.parentElement.classList.toggle('closed');
+  });
+  const x = document.getElementById('dbgclose');
+  if (x) x.addEventListener('click', () => dbgToggle(false));
+}
