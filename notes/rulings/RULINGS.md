@@ -7166,3 +7166,86 @@ The real defect was only the within-cell placement and ink above.
 **Action taken**: all six fixed in `port/src/game.js`; three new assertions in
 `port/tools/test_flow.py` (170/170). `spec/ui/colonizopedia.md` and
 `docs/UI_AUDIT_TRACKER.md` updated.
+
+---
+
+## 2026-08-06 — F5/F7/F9 read off the live game: five spec corrections
+
+**Conflict**: the port's Economic (F5), Naval (F7) and Indian (F9) advisers were
+built from `spec/ui/advisor_reports.md` §4 alone, because no live capture of any
+of the three existed. Captured at last under DOSBox — first from a fresh
+England/Discoverer run with a colony at Jamestown, then from the shipped
+`COLONY00.SAV` (Dutch, Autumn 1653) which has seven tribes contacted, seven
+ships and a full market — the frames disagree with the spec on five points.
+
+**Source A** — `spec/ui/advisor_reports.md` §4, byte-cited from
+`func_38A50` / `func_3954C` / `func_39EE2`.
+
+**Source B** — the running DOS game: `docs/screens/live_2026-08-05/74_report_F5_economic.png`,
+`75_report_F7_naval.png`, `76_report_F9_indian.png` and the richer set in
+`docs/screens/live_1653_save/`.
+
+**Ruling**: the running game wins on every point (`notes/TRUTH_HIERARCHY.md`
+puts it at the top). Five corrections:
+
+1. **F7 has a grid.** The spec says "Exactly ONE rule per page = footer (no
+   header/row/column rules)". The live frame has eight full-width rules at
+   `y = 40 + 20i` spanning x 2..314 and three column separators at
+   **x = 82 / 162 / 242** running y 25..180. Its four headers centre in those
+   columns — **42 / 122 / 202 / 280** — not over the field x's the spec cites.
+   (280, not 278, because the Destination *box* is 242 w=76 and runs past the
+   grid's right rule.)
+
+2. **F5 is a four-column price table with no icons.** Headers `@MISC` 58 Tons /
+   59 Gold / 203 Bid Price / 204 Ask Price drawn left at x = 76 / 131 / 170 /
+   220 at y=25; 17 rules at `y = 33 + 8i` across x 2..312; the good's name at
+   **x=2** (the port had been indenting it behind an ICONS sprite that is not
+   there); values right-aligned at the advance edges **92 / 145 / 200 / 251**,
+   Tons and Gold in `0x0A` bright green and the two prices in `0x61`, with a
+   trailing `'$'` on all but Tons. Subtitle `@MISC` 206 "European Trade" —
+   which names a *view*; `@MISC` 91/92 "(Building Upkeep)"/"TOTAL UPKEEP"
+   belong to a second page this capture did not reach. **TBD: the view switch.**
+
+3. **F9's cell colour is the tribe's own colour, not `@COLORS` "basic".** The
+   spec reads the runtime global `[0x830]` (index 68) as the cell ink. The 1653
+   frame prints each tribe's name and tech level in **the last column of
+   `@TRIBES`** — Incas 97 cream, Aztecs 149 gold, Arawaks 54 blue, Cherokee 67
+   green, Apache 111 tan, Sioux 118 dark red, Tupi 71 dark green — all seven
+   pixel-exact under the REPORT1.PIK palette. `data_extracted/tables/names_tables.json`
+   glosses that column as "capital-raze treasure base"; that gloss is
+   unsupported by this frame and should be re-derived. The settlement-count line
+   under each name is drawn in **black**.
+
+4. **F9's block pitch is 21.** Portrait 16×16 at `(10, 25 + 21i)`, name at
+   x=30 y=`28 + 21i`, count at x=40 y=`36 + 21i`, tech level right-aligned at
+   x=311. Seven blocks fill the plate. Only *contacted* tribes are listed: the
+   Dutch save shows Incas/Aztecs/Tupi as "Extinct" (`@MISC` 130) but omits the
+   Iroquois entirely.
+
+5. **Shared chrome.** The subtitle ink is **`0x91`** (255,255,142), not the
+   title's `0x90`. Report text carries **no drop shadow** — only the font's own
+   level-3 dark core. Centring is on the **ink** width, i.e. `advance - 1`:
+   seven independent strings (five report titles, "European Trade", and the four
+   F7 headers) all land at `cx - (w-1)/2` and none at `cx - w/2`. The OK button
+   is a **hollow** 30×14 box at (286,184) in the rule ink `0x77` with a `0x92`
+   caption at y=188 — the port had been painting it solid.
+
+**Action taken**:
+- `port/src/game.js`: F5, F7, F9 rebuilt; `Font.center` re-derived; `Font.right`
+  added; `okButton` rebuilt; the shadow argument dropped throughout the reports.
+- `port/tools/test_flow.py`: six new assertions (177/177).
+- `port/tools/shots.py`: `report_F5` / `report_F7` / `report_F9` shots.
+- captures committed under `docs/screens/live_2026-08-05/` and
+  `docs/screens/live_1653_save/`.
+
+**Follow-up**:
+- ICONS **113..117** are five near-identical native portraits. The 1653 frame
+  uses 116 on five rows, 115 for the Apache and 113 for the Sioux, with no rule
+  derivable from tribe index, tech level or settlement count — consistent with
+  an animation counter. **UNRESOLVED**; the port draws 116.
+- F9 pagination (`func_039E98`) is not wired up; an eighth contacted tribe would
+  be dropped rather than paged.
+- The port has no native first-contact flag, so "has explored a tile holding one
+  of that tribe's settlements" stands in for it. That is the port's own rule.
+- The F5 muskets/horses cells on F9's count line (x=152 and x=209) rest on a
+  single sample each — the Apache row.
