@@ -396,18 +396,17 @@ def main():
   /* #stage never shrinks below the screen it holds, so the canvas keeps its
      size and the page scrolls sideways instead if the window is too narrow. */
   #stage {{
-    flex:0 0 auto;
+    flex:1 1 auto; min-width:0;
     display:flex; flex-direction:column; align-items:center;
     justify-content:center; gap:14px; padding:16px;
   }}
   /* The debug column. It reserves its own width so it never overlaps the
      screen; hiding it (backtick, or the x) gives the game the space back and
      rescales it to exactly what it was before the panel existed. */
-  /* The panel takes whatever is left beside the screen -- the screen's size is
-     fixed first and never traded away for it. Below the minimum the page
-     scrolls sideways rather than the game shrinking. */
+  /* Fixed width, and resize() subtracts the same number so the screen and the
+     panel never fight over the same pixels. Keep the two in step. */
   #debug {{
-    flex:1 1 auto; min-width:240px; max-width:560px;
+    flex:0 0 400px;
     height:100%; overflow-y:auto; overflow-x:hidden;
     background:#0F0C0A; border-left:1px solid var(--rule);
     font:11px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -421,6 +420,7 @@ def main():
     text-transform:uppercase; color:var(--gold);
     display:flex; justify-content:space-between; align-items:center;
   }}
+  #debug h1 span {{ display:flex; gap:4px; }}
   #debug h1 button {{
     background:none; border:1px solid var(--rule); color:var(--muted);
     font:inherit; cursor:pointer; padding:2px 6px; border-radius:2px;
@@ -478,7 +478,8 @@ def main():
 &nbsp;·&nbsp; <b>Space</b> end turn &nbsp;·&nbsp; or click
 &nbsp;·&nbsp; <b>`</b> debug panel</p>
 </div>
-<aside id="debug"><h1>State <button id="dbgclose" title="hide (`)">&times;</button></h1>
+<aside id="debug"><h1>State <span><button id="dbgall" title="collapse / expand all">&#9776;</button>
+<button id="dbgclose" title="hide (`)">&times;</button></span></h1>
 <div id="dbgbody"></div></aside>
 <div id="loading">Loading&#8230;</div>
 <script>
