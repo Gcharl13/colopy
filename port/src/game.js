@@ -240,20 +240,7 @@ function stripPitch(w, count, span) {
 // (@0x00301B-0x00302C) and the consumed count at the first marked icon in red
 // (@0x003032-0x003043).
 function proportionalStrip(ctx, frame, count, sub, x, y, span) {
-  if (count <= 0) return;
-  const [w] = frameSize('ICONS', frame);
-  if (!w) return;
-  const pitch = stripPitch(w, count, span);
-  const filled = count - sub;
-  let markX = null;
-  for (let i = 0; i < count; i++) {
-    const ix = x + i * pitch;
-    sheetFrame(ctx, 'ICONS', frame, ix, y + 1);
-    if (i === filled) markX = ix;
-    if (i >= filled) sheetFrame(ctx, 'ICONS', GAUGE_MARK, ix, y + 1);
-  }
-  countBadge(ctx, filled, x + 2, y, 0x0F);
-  if (markX !== null) countBadge(ctx, sub, markX + 2, y, 0x0C);
+  gauge(ctx, frame, count, sub, count, x, y, span, 0, 0);
 }
 
 // `func_0033F2 @0x0033F2` (enqueue) + `func_003104 @0x003104` (flush) -- a row of
@@ -6134,43 +6121,82 @@ function drawLaborReport(ctx) {
 // threshold. Not a coloured bar -- a row of little sprites.
 // Engine sprite numbers are one ahead of the atlas index (port README), so an
 // engine 0x39 is disk frame 0x38.
-// The segments are SPACED across the span, not packed edge to edge. Measured
-// on the live F2 gauge (21_report_F2_religious.png): six filled crosses --
-// ICONS frame 56, i.e. engine 0x39 -- at x = 10, 43, 76, 110, 143, 177. That
-// is x-start 0x0A exactly as the spec says, at a pitch of ~33 = span/slots.
-// TBD: what sets the slot count. 300/33.4 gives 9, but one frame cannot
-// separate "9 slots" from "pitch derived some other way", so SLOTS is a
-// measured constant here rather than a decoded one.
-const GAUGE_EMPTY = 0x38 - 1;
-const GAUGE_SLOTS = 9;
-function gauge(ctx, x, y, span, filledEngineSprite, value, max) {
-  const disk = filledEngineSprite - 1;
-  const [fw] = frameSize('ICONS', disk);
-  if (!fw) return;
-  const pitch = Math.max(fw, Math.floor(span / GAUGE_SLOTS));
-  const on = max > 0 ? Math.min(GAUGE_SLOTS, Math.round(GAUGE_SLOTS * value / max)) : 0;
-  for (let i = 0; i < on; i++) sheetFrame(ctx, 'ICONS', disk, x + i * pitch, y);
+//
+// REBUILT 2026-08-06 on the byte-read verb (`func_002EE4` + its geometry helper
+// `func_002D74`), replacing the old "9 slots at span/9, measured off one frame"
+// stand-in. The two report call sites push `flags = 1`, and bit 0 is what turns
+// a flat pitch into the spread row those screens show:
+//
+//   pitch    = clamp((span - w) / (slots - 1), 1, w + 1)     @0x002DCB-0x002DDA
+//   totalRun = (slots - 1) * pitch >> shift, + w             @0x002DFF
+//   shift    grows while totalRun would overflow the span    @0x002DF6-0x002E12
+//   leftover = span - totalRun                               @0x002E25
+//   per icon x += pitch, then a Bresenham pass spreads `leftover`
+//            over `slots` steps                              @0x002FBA-0x002FD4
+//   when the caller passes a non-zero `centre` arg the row is also shifted
+//            right by leftover/2                             @0x002E36-0x002E44
+//
+// `slots` is the DENOMINATOR (crosses needed, bells needed) and `drawn` is how
+// many icons actually appear -- the row grows toward a fixed layout rather than
+// rescaling. Verified against the live F2 row: 6 crosses, 9 slots, span 300,
+// w 8 reproduces x = 10, 43, 76, 110, 143, 177 exactly, and 8 or 10 slots do
+// not. That also retires the old GAUGE_SLOTS constant: 9 was the live
+// threshold, not a property of the widget. The overlay sprite is GAUGE_MARK,
+// declared with the other strip primitives above -- it is the same EXE 0x38.
+
+function gaugeLayout(frame, slots, span, flags, centreArg) {
+  const [w0] = frameSize('ICONS', frame);
+  const w = (flags & 2) ? w0 + 2 : w0;
+  const pitch = slots <= 1 ? 1
+    : Math.max(1, Math.min(w + 1, Math.trunc((span - w) / (slots - 1))));
+  const run = (slots - 1) * pitch;
+  let shift = 0;
+  while ((run >> shift) > span - w && shift < 16) shift += 1;
+  const totalRun = (run >> shift) + w;
+  const base = (centreArg - 1 > totalRun) ? centreArg : span;
+  const leftover = base - totalRun;
+  return { w, pitch, shift, leftover,
+           x0: centreArg ? (leftover >> 1) : 0 };
 }
 
-// `0x222` enqueue + `0x22C` flush: lay `count` copies of each sprite out
-// left-to-right within the span, in order.
-function spriteStrip(ctx, x, y, span, items) {
-  let cx = x;
-  for (const [engineSprite, count] of items) {
-    const disk = engineSprite - 1;
-    const [fw] = frameSize('ICONS', disk);
-    if (!fw) continue;
-    for (let i = 0; i < count && cx + fw <= x + span; i++, cx += fw)
-      sheetFrame(ctx, 'ICONS', disk, cx, y);
+// `0x181F:0x236` in full. `drawn` icons of `frame`, laid out as if there were
+// `slots` of them; icons past `drawn - sub` also take GAUGE_MARK.
+// `numbers` is the engine's `[0x336]` -> `[0x70]` gate (@0x002FFE): the colony
+// panels run with it set and the reports with it clear, which is why the live F2
+// row carries no count badge. A pitch of 1 with a count above 1 forces the badge
+// on regardless, since the icons are then stacked and unreadable (@0x003004).
+function gauge(ctx, frame, drawn, sub, slots, x, y, span, flags, centreArg, numbers) {
+  if (drawn <= 0 || slots <= 0) return;
+  flags = flags || 0;
+  if (numbers === undefined) numbers = 1;
+  const g = gaugeLayout(frame, slots, span, flags, centreArg || 0);
+  const n = drawn >> g.shift, filled = (drawn - sub) >> g.shift;
+  const b = slots >> g.shift;
+  let cx = x + g.x0, acc = 0, markX = null;
+  for (let i = 0; i < n; i++) {
+    sheetFrame(ctx, 'ICONS', frame, cx, y + 1);
+    if (i === filled) markX = cx;
+    if (i >= filled) sheetFrame(ctx, 'ICONS', GAUGE_MARK, cx, y + 1);
+    cx += g.pitch;
+    if (flags & 1) {
+      acc += g.leftover;
+      while (b > 0 && acc >= b) { acc -= b; cx += 1; }
+    }
   }
+  if (!numbers && !(g.pitch === 1 && drawn > 1)) return;
+  countBadge(ctx, drawn - sub, x + g.x0 + 2, y, 0x0F);
+  if (markX !== null) countBadge(ctx, sub, markX + 2, y, 0x0C);
 }
 
 // ---- F2 Religious: one crosses gauge -------------------------------------
 // spec §4: X=0xA, Y=0x19, span 0x12C, FILLED sprite 0x39, EMPTY 0x38.
 function drawReligiousReport(ctx) {
-  gauge(ctx, 0x0A, 0x19, 0x12C, 0x39, G.crosses, immigrationThreshold());
-  FONT.tiny.draw(ctx, `${G.crosses} / ${immigrationThreshold()}`, 0x0A, 0x19 + 20,
-                 lut(REPORT_VALUE_INK));
+  // (x=0xA, y=0x19, span=0x12C, flags=1, sprite EXE 0x39, drawn = crosses so
+  // far `[bx+0x2E]`, slots = crosses needed `[bx+0x30]`) -- @0x037990-0x0379B4.
+  // The live frame carries NO count badge and no "n / m" caption -- the strip is
+  // the whole readout -- so numbers are off and the caption the port used to add
+  // is gone.
+  gauge(ctx, 0x39 - 1, G.crosses, 0, immigrationThreshold(), 0x0A, 0x19, 0x12C, 1, 0, 0);
 }
 
 // ---- F3 Continental Congress ---------------------------------------------
@@ -6184,7 +6210,8 @@ function drawCongressReport(ctx) {
   FONT.tiny.draw(ctx, DATA.text.misc[112] || 'Next Continental Congress Session:',
                  4, y, lut(REPORT_NAME_INK));
   y += fh;
-  gauge(ctx, 4, y, 0x12C, 0x3F, G.bells, fatherCost());
+  // Same shape at x=4, sprite EXE 0x3F (@0x037BE2-0x037BF5).
+  gauge(ctx, 0x3F - 1, G.bells, 0, fatherCost(), 4, y, 0x12C, 1, 0, 0);
   y += 12;
   // Rebel sentiment = the mean Sons-of-Liberty percentage across colonies.
   const rebel = G.colonies.length

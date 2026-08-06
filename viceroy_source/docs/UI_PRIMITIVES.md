@@ -291,6 +291,33 @@ Cite: `func_002EE4_unknown.asm` lines 62–112.
 > segments, never by a rectangle fill. (This is why none of the screens have graphical
 > fill bars.)
 
+> **FULL GEOMETRY — byte-read 2026-08-06, and it is not "count icons at a fixed
+> pitch".** The helper `func_002D74` takes **two** counts from the caller: `dx` is
+> the number of **slots** the row is laid out for and `bx` is how many icons are
+> actually **drawn**. So the row grows toward a fixed layout rather than rescaling
+> into it — a progress bar made of icons. In full:
+> ```
+> pitch    = clamp((span − w) / (slots − 1), 1, w + 1)        @0x002DCB-0x002DDA
+> shift    grows while ((slots−1)·pitch >> shift) > span − w  @0x002DF6-0x002E12
+> totalRun = ((slots−1)·pitch >> shift) + w                   @0x002DFF
+> base     = (arg[bp+0xA] − 1 > totalRun) ? arg[bp+0xA] : span
+> leftover = base − totalRun                                  @0x002E25
+> if arg[bp+0xA] ≠ 0:  x += leftover / 2   (CENTRING)         @0x002E36-0x002E44
+> ```
+> and in the body, when **flag bit 0** is set, each icon's advance is `pitch` plus
+> a Bresenham share of `leftover` spread over `slots` steps (`acc += leftover;
+> while acc ≥ slots: acc −= slots; x++`) `@0x002FBA-0x002FD4`.
+>
+> **Live-verified**: the F2 crosses row (`@0x0379B4`, x=0xA, y=0x19, span=0x12C,
+> flags=1, sprite EXE 0x39, drawn `[bx+0x2E]`, slots `[bx+0x30]`) reproduces
+> `x = 10, 43, 76, 110, 143, 177` exactly at **9 slots** and at no other slot
+> count, against `docs/screens/live_2026-08-05/21_report_F2_religious.png`. The
+> port's old "9 slots at span/9" stand-in got the right answer for the wrong
+> reason: 9 was that session's cross threshold, not a property of the widget.
+> The count badges are gated on `[0x336]`→`[0x70]` `@0x002FFE`, which the reports
+> run clear and the colony panels set — which is why the live F2 row carries no
+> number.
+
 > **The flag-bit-0 fractional path — byte-read 2026-08-06 (`@0x002FBA..0x002FD4`).** When
 > the caller sets bit 0 of `[bp+6]`, the per-icon advance is not a flat `pitch`: an
 > accumulator runs `acc += (count−1)·pitch` per icon and, while `acc ≥ span − sprite_w`,

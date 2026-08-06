@@ -158,6 +158,11 @@ SHOTS = [
     # to match the state its capture was taken in -- one colony, one ship, one
     # tribe met -- so port/_shots/report_F*.png diffs directly against
     # docs/screens/live_2026-08-05/7[456]_report_*.png.
+    # F2 staged at the live frame's own state: 6 crosses toward a 9-cross
+    # threshold, which is what 21_report_F2_religious.png shows.
+    ("report_F2",
+     "beginGame();G.screen='map';G.crosses=6;"
+     "window.immigrationThreshold=()=>9;G.report='F2';G.screen='report'"),
     ("report_F5",
      "beginGame();sailToLand();makeColony();G.report='F5';G.screen='report'"),
     ("report_F7",

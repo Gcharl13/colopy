@@ -624,3 +624,39 @@ whenever it crosses `span − w` — which is where the F2 crosses row's alterna
 33/34 comes from. No colony call site sets that flag, so the colony strips are
 flat-pitch; the report gauges are the only consumers, and folding them onto this
 verb is the next thing rather than this one.
+
+## 13. The shared strip gauge, folded onto one verb (2026-08-06)
+
+The thread I left open last section. `func_002EE4`'s geometry helper turns out to
+be doing considerably more than "count icons at a fixed pitch", and reading it to
+the end made the F2 crosses row fall into place exactly.
+
+**It takes two counts, not one.** `dx` is the number of **slots** the row is laid
+out for — the denominator, crosses *needed* — and `bx` is how many icons actually
+get **drawn**. A report gauge is therefore a progress bar built out of icons: the
+row grows toward a fixed layout rather than rescaling into it. On top of that the
+helper computes a `leftover` against the span, optionally **centres** the row by
+half of it, and can right-shift the counts until a long row fits. With flag bit 0
+— which both report call sites set and no colony call site does — each icon's
+advance is the pitch plus a Bresenham share of that leftover.
+
+Put together, it reproduces the live F2 row exactly: 6 crosses at
+x = 10, 43, 76, 110, 143, 177, **at 9 slots and at no other slot count**.
+Rendering the port at that state and diffing against the capture gives **0
+differing pixels** across the whole crosses band.
+
+Two things in the port were wrong and are now right. The `GAUGE_SLOTS = 9`
+constant had been measured off this very frame and flagged as a guess — it got
+the right answer for the wrong reason, because 9 was that session's cross
+threshold, not a property of the widget. And the count badges are gated on
+`[0x336]`, which the reports run clear and the colony panels set: the port had
+been drawing a badge over the first cross *and* an invented "6 / 9" caption
+underneath, neither of which is in the original.
+
+The colony strips and the report gauges are now the same function, which is what
+the primitives index said they should be all along.
+
+**Not verified:** the F3 bell row. Both shipped F3 captures sit at 0 bells — no
+bell sprite anywhere in either — so its geometry is ported by analogy with F2 and
+is unchecked. Getting a frame with bells on it is the cheap next step now that
+the harness reaches the reports.

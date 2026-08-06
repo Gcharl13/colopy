@@ -1967,6 +1967,27 @@ SCRIPT = """() => {
     })();
   }
 
+  // ---- the F2 crosses gauge, against its live frame ----
+  // docs/screens/live_2026-08-05/21_report_F2_religious.png: ICONS bundle 56
+  // template-matches at x = 10, 43, 76, 110, 143, 177 and y = 26 (the gauge
+  // blits at y+1 for the pushed y=0x19). Replaying `func_002D74`'s geometry plus
+  // the flag-bit-0 Bresenham reproduces every one, and ONLY at 9 slots -- which
+  // is what shows the slot count is the caller's threshold, not a constant.
+  out.f2Gauge = (() => {
+    const run = (slots) => {
+      const g = gaugeLayout(0x39 - 1, slots, 0x12C, 1, 0);
+      const xs = []; let cx = 0x0A + g.x0, acc = 0;
+      for (let i = 0; i < 6; i++) {
+        xs.push(cx); cx += g.pitch;
+        acc += g.leftover;
+        while (acc >= slots) { acc -= slots; cx += 1; }
+      }
+      return xs;
+    };
+    return { at9: run(9), at8: run(8), at10: run(10),
+             pitch: gaugeLayout(0x39 - 1, 9, 0x12C, 1, 0).pitch };
+  })();
+
   // ---- the three production rows, against live DOSBox production tables ----
   // Curacao's own [0x8DC8] produced / [0x8E32] consumed, RAM-read while its
   // colony screen was open. What the rows should come out as, read off the same
@@ -2094,6 +2115,14 @@ def main():
         ("the plaza pack solves to gap 1, second colonist at x=11",
          r["plazaPack"]["gap"] == 1 and r["plazaPack"]["second"] == 11,
          r["plazaPack"]),
+        # The shared gauge verb, against the live F2 crosses row.
+        ("F2 crosses land where the live frame has them, and only at 9 slots",
+         r["f2Gauge"]["at9"] == [10, 43, 76, 110, 143, 177]
+         and r["f2Gauge"]["at8"] != [10, 43, 76, 110, 143, 177]
+         and r["f2Gauge"]["at10"] != [10, 43, 76, 110, 143, 177],
+         r["f2Gauge"]),
+        ("the gauge pitch is clamped to sprite width + 1, not span/slots",
+         r["f2Gauge"]["pitch"] == 9, r["f2Gauge"]["pitch"]),
         # The row-selection rules, against Curacao's own live production tables.
         ("production row 0 is furs/ore/silver -- consumed-only cotton is skipped",
          r["prodRows"][0] == [[4, 3, 0, 0], [6, 8, 0, 0], [7, 3, 0, 0]],

@@ -7403,3 +7403,45 @@ strips are flat-pitch and only the reports need it.
 
 Also: `UI_PRIMITIVES.md` §0x222 had the enqueue arrays swapped; `[0x2CF4]` is the
 sprite and `[0x2CCE]` the count.
+
+## 2026-08-06d — the shared strip gauge `0x181F:0x236`: full geometry, F2 pixel-exact
+
+`func_002EE4`'s geometry helper `func_002D74` read to the end. It is **not**
+"count icons at a fixed pitch", and it takes **two** counts:
+
+- `dx` = the number of **slots** the row is laid out for (the denominator:
+  crosses needed, bells needed, a tile's yield).
+- `bx` = how many icons are actually **drawn**.
+
+So a report gauge is a progress bar built out of icons — the row grows toward a
+fixed layout instead of rescaling into it.
+
+```
+pitch    = clamp((span − w) / (slots − 1), 1, w + 1)        @0x002DCB-0x002DDA
+shift    grows while ((slots−1)·pitch >> shift) > span − w  @0x002DF6-0x002E12
+totalRun = ((slots−1)·pitch >> shift) + w                   @0x002DFF
+base     = (arg[bp+0xA] − 1 > totalRun) ? arg[bp+0xA] : span
+leftover = base − totalRun                                  @0x002E25
+if arg[bp+0xA] ≠ 0:  x += leftover / 2      (CENTRING)      @0x002E36-0x002E44
+```
+and with **flag bit 0**, each icon advances `pitch` plus a Bresenham share of
+`leftover` spread over `slots` steps (`acc += leftover; while acc ≥ slots:
+acc −= slots; x++`) `@0x002FBA-0x002FD4`.
+
+**Live-verified.** The F2 crosses row (`@0x0379B4`: x=0xA, y=0x19, span=0x12C,
+flags=1, sprite EXE 0x39, drawn `[bx+0x2E]`, slots `[bx+0x30]`) reproduces
+`x = 10, 43, 76, 110, 143, 177` **exactly at 9 slots and at no other slot count**
+— template matches at score 0 in `21_report_F2_religious.png`, y=26 for the
+pushed y=0x19 because the gauge blits at y+1. Rendering the port at that state
+gives **0 differing pixels** across the whole crosses band.
+
+Two consequences for the port, both fixed:
+- The old `GAUGE_SLOTS = 9` constant got the right answer for the wrong reason:
+  9 was that session's cross threshold, not a property of the widget.
+- Count badges are gated on `[0x336]`→`[0x70]` `@0x002FFE` — the reports run it
+  clear and the colony panels set it, which is why the live F2 row carries no
+  number. The port had been drawing a badge *and* an invented "n / m" caption.
+
+**Not verified:** the F3 bell row. Both shipped F3 captures are at 0 bells (no
+ICONS bundle-62 sprite anywhere in either), so its geometry is ported by analogy
+with F2 and is unchecked.
