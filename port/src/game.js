@@ -5451,7 +5451,7 @@ const REPORTS = {
             'the threshold counts every colonist',
             'and every unit you own.'];
   } },
-  F5: { title: 'Economic Adviser', body: () => {
+  F5: { title: DATA.text.misc[50], draw: drawEconomicReport, body: () => {
     const l = [`Treasury: ${G.gold} gold`, `Tax rate: ${G.tax}%`,
                `Paid to the Crown: ${G.kingsFund} gold`, '', 'Market  bid / ask'];
     DATA.cargo.forEach((g, i) => {
@@ -5460,7 +5460,8 @@ const REPORTS = {
     });
     return l;
   } },
-  F6: { title: 'Colony Adviser', body: () => {
+  F6: { title: DATA.text.misc[51], subtitle: DATA.text.misc[56],
+        draw: drawColonyReport, body: () => {
     if (!G.colonies.length) return ['You have founded no colonies.'];
     return G.colonies.map(c => {
       const f = colonyFood(c);
@@ -5496,7 +5497,7 @@ const REPORTS = {
   } },
   // The seven byte-verified score components (func_039EE2) and the computed
   // difficulty multiplier {4,5,6,8,10}.
-  F10: { title: 'Colonization Score', body: () => {
+  F10: { title: DATA.text.misc[114], draw: drawScoreReport, body: () => {
     const s = scoreParts();
     return [
       `Population        ${s.population}`,
@@ -5510,7 +5511,7 @@ const REPORTS = {
       `Difficulty x${s.mult}   TOTAL ${s.total}`,
     ];
   } },
-  F8: { title: 'Foreign Affairs Adviser', body: () => {
+  F8: { title: DATA.text.misc[93], draw: drawForeignReport, body: () => {
     if (!G.rivals.length) return ['No other powers are in the New World.'];
     return G.rivals.map(r => {
       const n = DATA.nations[r.nation];
@@ -5518,7 +5519,7 @@ const REPORTS = {
       return `${n.country}: ${r.colonies.length} colonies, ${r.units.length} units`;
     });
   } },
-  F9: { title: 'Indian Adviser', body: () => {
+  F9: { title: DATA.text.misc[29], draw: drawIndianReport, body: () => {
     const band = (n) => n >= TENSION_WAR ? 'War'
                      : n >= TENSION_HOSTILE ? 'Hostile'
                      : n >= 40 ? 'Restless' : n >= 20 ? 'Uneasy' : 'Content';
@@ -5527,7 +5528,7 @@ const REPORTS = {
       return `${t.name}: ${band(t.tension)} (${t.tension})  ${villages} settlements`;
     });
   } },
-  F7: { title: 'Naval Adviser', body: () => {
+  F7: { title: DATA.text.misc[52], draw: drawNavalReport, body: () => {
     const l = [];
     for (const u of G.units) if (u.ship) l.push(`${u.type} at (${u.x}, ${u.y})`);
     for (const e of G.europe)
@@ -5705,6 +5706,170 @@ function drawCongressReport(ctx) {
   G.fathersOwned.forEach((name, i) => {
     FONT.tiny.draw(ctx, name, F3_FF_COLS[i % 4], y + Math.floor(i / 4) * fh,
                    lut(REPORT_VALUE_INK), ink(0));
+  });
+}
+
+// ---- F5 Economic ----------------------------------------------------------
+// spec §4: header x = 76/170/220 at y=25; commodity rows x=2, y-start 33,
+// pitch 8; value columns x=150/250. Treasury = PowerRecord +0x2A, tax = +0x01.
+function drawEconomicReport(ctx) {
+  // @MISC 59 Gold, 140 '% Tax', 203 'Bid Price', 204 'Ask Price'.
+  FONT.tiny.draw(ctx, `${DATA.text.misc[59]} ${G.gold}`, 2, 25,
+                 lut(REPORT_NAME_INK), ink(0));
+  FONT.tiny.draw(ctx, `${DATA.text.misc[140]} ${G.tax}`, 76, 25,
+                 lut(REPORT_NAME_INK), ink(0));
+  FONT.tiny.draw(ctx, DATA.text.misc[203], 140, 25, lut(REPORT_NAME_INK), ink(0));
+  FONT.tiny.draw(ctx, DATA.text.misc[204], 240, 25, lut(REPORT_NAME_INK), ink(0));
+  DATA.cargo.forEach((g, i) => {
+    const y = 33 + i * 8;
+    sheetFrame(ctx, 'ICONS', 0x16 + i, 2, y - 2);
+    FONT.tiny.draw(ctx, g.name, 16, y, lut(REPORT_NAME_INK), ink(0));
+    FONT.tiny.draw(ctx, String(G.market[i]), 150, y, lut(REPORT_VALUE_INK), ink(0));
+    FONT.tiny.draw(ctx, String(askPrice(i)), 250, y, lut(REPORT_VALUE_INK), ink(0));
+  });
+}
+
+// ---- F6 Colony ------------------------------------------------------------
+// spec §4: base x=2, rows pitch 0x11=17, 9 per page, colony NAME ink 0x92 at
+// x=base+0x17=25 and y=row+7; four centred captions ink 0x92 in boxes
+// (2,80)/(82,80)/(162,80)/(242,76). The spec cites the caption band at y=27 and
+// the row base at y=0x14=20, which cannot both hold -- captions are treated as
+// the column header here and the rows start under them. TBD.
+const F6_CAPS = [[2, 80], [82, 80], [162, 80], [242, 76]];
+function drawColonyReport(ctx) {
+  // @MISC 206 European Trade / 207 Cargo in Port / 208 Military Garrisons /
+  // 209 Sons of Liberty -- the four consecutive strings that exist for exactly
+  // this row of captions.
+  const caps = [206, 207, 208, 209].map(i => DATA.text.misc[i]);
+  F6_CAPS.forEach(([x, w], i) =>
+    FONT.tiny.center(ctx, caps[i], x + w / 2, 20, lut(REPORT_NAME_INK), ink(0)));
+  G.colonies.slice(0, 9).forEach((c, i) => {
+    const y = 32 + i * 17;
+    // ICONS disk band 0-3 are the colony markers, frame = nation.
+    drawSettlement(ctx, 2, y - 2, colonyLevel(c), c.nation, 0);
+    FONT.tiny.draw(ctx, c.name, 25, y + 7, lut(REPORT_NAME_INK), ink(0));
+    FONT.tiny.draw(ctx, String(c.colonists.length), 122, y + 7, lut(REPORT_VALUE_INK), ink(0));
+    // Cargo in port: one goods sprite per stocked commodity.
+    let cx = 162;
+    c.stock.forEach((n, g) => {
+      if (n > 0 && cx < 238) { sheetFrame(ctx, 'ICONS', 0x16 + g, cx, y); cx += 10; }
+    });
+    FONT.tiny.draw(ctx, String(garrisonOf(c)), 250, y + 7, lut(REPORT_VALUE_INK), ink(0));
+  });
+}
+const garrisonOf = (c) =>
+  G.units.filter(u => !u.ship && u.x === c.x && u.y === c.y).length;
+
+// ---- F7 Naval -------------------------------------------------------------
+// spec §4, fully decoded: headers @MISC 61-64 centred; first row y=0x2A=42,
+// pitch 0x14=20, 7 ships per page, base x=2. Ship name LEFT ink 0x61 at
+// x=base+0x18=26; cargo = a sprite row; Location CENTRED in box x=162 w=80;
+// Destination CENTRED in box x=242 w=76. Exactly one rule, the footer.
+const F7_ROW0 = 42, F7_PITCH = 20, F7_PER_PAGE = 7;
+function drawNavalReport(ctx) {
+  const hd = [[26, 84, 61], [112, 50, 62], [162, 80, 63], [242, 76, 64]];
+  hd.forEach(([x, w, mi]) =>
+    FONT.tiny.center(ctx, DATA.text.misc[mi], x + w / 2, 30, lut(REPORT_NAME_INK), ink(0)));
+  const ships = G.units.filter(u => u.ship)
+    .map(u => ({ u, loc: `(${u.x}, ${u.y})`, dest: '' }))
+    .concat(G.europe.map(e => ({
+      u: e,
+      loc: DATA.nations[G.nation].homeport,
+      dest: e.state === 'port' ? '' : (DATA.text.misc[10] || 'Bound For'),
+    })));
+  ships.slice(0, F7_PER_PAGE).forEach((s, i) => {
+    const y = F7_ROW0 + i * F7_PITCH;
+    const cu = unit(s.u.type);
+    if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 2, y);
+    FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK), ink(0));
+    let cx = 112;
+    (s.u.cargo || []).forEach(() => { sheetFrame(ctx, 'ICONS', 0x17, cx, y); cx += 10; });
+    FONT.tiny.center(ctx, s.loc, 162 + 40, y + 6, lut(REPORT_VALUE_INK), ink(0));
+    FONT.tiny.center(ctx, s.dest, 242 + 38, y + 6, lut(REPORT_VALUE_INK), ink(0));
+  });
+}
+
+// ---- F8 Foreign Affairs ---------------------------------------------------
+// spec §4: gated on [0x5382] bit 0 -- CLEAR draws the body. Strength labels
+// @MISC 95-100 ink 0x91 at x=2; per-power value columns ink 0x91.
+// The spec's first value column reads 0xD=13, which collides with a label drawn
+// at x=2; the other three (80/160/240) are used as given and the first column is
+// placed to keep the label readable. TBD -- needs a live F8 capture.
+const F8_COLS = [96, 160, 224, 288];
+const F8_INK = 0x91;
+function drawForeignReport(ctx) {
+  if (G.declared) {
+    FONT.tiny.center(ctx, DATA.text.misc[93], 160, 96, lut(F8_INK), ink(0));
+    return;
+  }
+  const labels = [95, 96, 97, 98, 99, 100].map(i => DATA.text.misc[i]);
+  const powers = DATA.nations.map((n, i) => ({ n, r: G.rivals.find(r => r.nation === i) }));
+  powers.forEach((p, i) =>
+    FONT.tiny.center(ctx, p.n.abbrev || p.n.country, F8_COLS[i], 22,
+                     lut(REPORT_NAME_INK), ink(0)));
+  labels.forEach((lab, row) => {
+    const y = 32 + row * 10;
+    FONT.tiny.draw(ctx, lab, 2, y, lut(F8_INK), ink(0));
+    powers.forEach((p, i) => {
+      const v = foreignStat(p, row);
+      FONT.tiny.center(ctx, v, F8_COLS[i], y, lut(F8_INK), ink(0));
+    });
+    ctx.fillStyle = ink(REPORT_RULE_INK);
+    ctx.fillRect(0, y + 7, 320, 1);
+  });
+}
+function foreignStat(p, row) {
+  const me = !p.r;
+  const colonies = me ? G.colonies.length : (p.r.colonies || []).length;
+  const units = me ? G.units.filter(u => !u.ship).length : (p.r.units || []).length;
+  const ships = me ? G.units.filter(u => u.ship).length : 0;
+  const pop = me ? G.colonies.reduce((a, c) => a + c.colonists.length, 0) : colonies * 3;
+  if (!me && !p.r.met) return '?';
+  switch (row) {
+    case 0: return String(colonies);
+    case 1: return String(pop);
+    case 2: return String(colonies ? Math.round(pop / colonies) : 0);
+    case 3: return String(units);
+    case 4: return String(ships);
+    default: return String(ships);
+  }
+}
+
+// ---- F9 Indian ------------------------------------------------------------
+// spec §4: y-start 0x18=24, status column x=0x10=16 then +0x48=72 then +0x14=20.
+// Cell text colour is the runtime global [0x830] = @COLORS "basic" = green
+// (85,150,52); the title uses [0x831] "hilite" gold.
+const F9_GREEN = 68;
+function drawIndianReport(ctx) {
+  G.tribes.forEach((t, i) => {
+    const y = 24 + i * 18;
+    const villages = G.villages.filter(v => v.tribe === i).length;
+    FONT.tiny.draw(ctx, t.name, 16, y, lut(F9_GREEN), ink(0));
+    FONT.tiny.draw(ctx, String(villages), 16 + 72, y, lut(F9_GREEN), ink(0));
+    FONT.tiny.draw(ctx, tensionBand(t.tension), 16 + 72 + 20, y, lut(F9_GREEN), ink(0));
+    const missions = G.villages.filter(v => v.tribe === i && v.mission).length;
+    if (missions)
+      FONT.tiny.draw(ctx, `${missions} ${DATA.text.misc[missions > 1 ? 28 : 27]}`,
+                     220, y, lut(F9_GREEN), ink(0));
+  });
+}
+const tensionBand = (n) => n >= TENSION_WAR ? 'War'
+  : n >= TENSION_HOSTILE ? 'Hostile' : n >= 40 ? 'Restless'
+  : n >= 20 ? 'Uneasy' : 'Content';
+
+// ---- F10 Colonization Score ----------------------------------------------
+// spec §4: WOODPAN2 plate, FONTTINY labels + FONTINTR figures, body lines from
+// @MISC 115 Citizens / 116 Independence / 117 Villages Burned / 120 Foreign
+// Recognition / 121 Total Score. The SCORE<panel>.SS band plate is NOT bundled
+// (24 extra sheets for one screen), so the band art is absent -- TBD.
+function drawScoreReport(ctx) {
+  const s = scoreParts();
+  const rows = [[115, s.population], [116, s.revolution], [117, s.razed],
+                [120, s.fathers], [121, s.total]];
+  rows.forEach(([mi, v], i) => {
+    const y = 40 + i * 22;
+    FONT.tiny.draw(ctx, DATA.text.misc[mi], 12, y, lut(REPORT_NAME_INK), ink(0));
+    FONT.intr.draw(ctx, String(v), 200, y - 4, lut(REPORT_VALUE_INK), ink(0));
   });
 }
 

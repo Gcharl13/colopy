@@ -1744,6 +1744,36 @@ SCRIPT = """() => {
     };
   }
   {
+    // Advisor reports: every one is a byte-cited table now, and none of them
+    // blits an advisor portrait -- the shared draw chain has no such step.
+    const keys = ['F2','F3','F4','F5','F6','F7','F8','F9','F10'];
+    out.reports = {
+      allHaveTables: keys.every(k => typeof (REPORTS[k] || {}).draw === 'function'),
+      noAdviserField: keys.every(k => !('adviser' in (REPORTS[k] || {}))),
+      // Titles come from @MISC, not hardcoded English.
+      titlesFromMisc: REPORTS.F4.title === DATA.text.misc[49]
+                      && REPORTS.F7.title === DATA.text.misc[52]
+                      && REPORTS.F9.title === DATA.text.misc[29],
+    };
+    // No MSS portrait pixels anywhere on a rendered report.
+    const c = document.createElement('canvas'); c.width = 320; c.height = 200;
+    const g = c.getContext('2d');
+    const wasR = G.report, wasS = G.screen;
+    G.report = 'F4'; G.screen = 'report';
+    drawReport(g);
+    G.report = wasR; G.screen = wasS;
+    const d = g.getImageData(0, 0, 320, 200).data;
+    // F4's grid must have put row labels at the byte-cited first row y=26 in
+    // ink 0x92 (255,243,93) starting at column base 2 + 12.
+    let labelRow = false;
+    for (let y = 26; y < 32 && !labelRow; y++)
+      for (let x = 14; x < 105; x++) {
+        const o = (y * 320 + x) * 4;
+        if (d[o] > 230 && d[o + 1] > 220 && d[o + 2] < 140) { labelRow = true; break; }
+      }
+    out.reports.f4GridAtCitedRow = labelRow;
+  }
+  {
     // Difficulty picker: both label lines stacked in the middle of the selected
     // cell (cell.y+38 and +46) in that row's own ink, not split top/bottom.
     const c = document.createElement('canvas'); c.width = 320; c.height = 200;
@@ -2158,6 +2188,11 @@ def main():
          and r["fogPath"]["biomeEdgeNeedsAnExploredNeighbour"], r["fogPath"]),
         ("CYCLE.DAT: one band of 8 from index 120, one step per 35 ticks at 60.8766 Hz",
          r["cycle"]["band"] and r["cycle"]["hz"] and r["cycle"]["sheets"], r["cycle"]),
+        ("every advisor report is a table, none blits an advisor portrait",
+         r["reports"]["allHaveTables"] and r["reports"]["noAdviserField"]
+         and r["reports"]["titlesFromMisc"], r["reports"]),
+        ("F4 labor grid lands on the byte-cited first row and column",
+         r["reports"]["f4GridAtCitedRow"], r["reports"]),
         ("pedia terrain index = 21 alphabetised names, article ids kept (live check)",
          r["liveFixes"]["terrainNames"] and r["liveFixes"]["terrainIds"],
          r["liveFixes"]),

@@ -241,10 +241,22 @@ x-start `0x0A` exactly as the spec says, pitch ≈33.
   overlap where the original spaces them out. The per-section y advance is the
   font-height flow accumulator the spec marks **R**, and I have one frame, so it
   is left visibly imperfect rather than fudged to match a single screenshot.
-- **F5–F10 are not rebuilt.** They are portrait-free and use the byte-cited
-  title/inks, but their bodies are still the port's own text stacks. The spec
-  has full column geometry for F7 (4-column ruled table), F8, F6 and F5; that is
-  the obvious next unit of work.
+- ~~**F5–F10 are not rebuilt.**~~ **Done** — all ten now draw a table from the
+  spec's byte-cited geometry:
+
+  | report | geometry used |
+  |---|---|
+  | F5 Economic | headers y=25; 16 commodity rows x=2 y=33 pitch 8 with goods sprites; bid x=140/150, ask x=240/250. Captions `@MISC` 59/140/203/204. |
+  | F6 Colony | four captions in boxes (2,80)/(82,80)/(162,80)/(242,76) — `@MISC` 206–209, the four consecutive strings that exist for exactly this row; rows pitch 17, 9/page, name ink 0x92 at base+0x17. |
+  | F7 Naval | the fully-decoded 4-column ruled table: headers `@MISC` 61–64, first row y=0x2A=42, pitch 0x14=20, 7/page, ship name at x=26, Location box x=162 w=80, Destination box x=242 w=76. |
+  | F8 Foreign | gate on the declaration flag; strength labels `@MISC` 95–100 ink 0x91 at x=2, four power columns, per-row rule ink 0x77. |
+  | F9 Indian | y-start 0x18=24, columns x=16 → +72 → +20, cell text in the `@COLORS` "basic" green (85,150,52) the spec resolves from `[0x830]`. |
+  | F10 Score | `@MISC` 115/116/117/120/121 with FONTTINY labels and FONTINTR figures. |
+
+  Two residuals stay flagged in the code: F8's first value column (the spec reads
+  `0xD`=13, which collides with a label drawn at x=2 — needs a live F8 capture),
+  and F10's `SCORE<panel>.SS` band plate, which is not bundled (24 sheets for one
+  screen).
 
 ## 7. Not reached — the colony screen
 
