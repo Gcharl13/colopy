@@ -32,6 +32,23 @@ byte-cited draw list, RTLink-resolver-validated 2026-05-31), `viceroy_source/doc
 > The Naval geometry it carried is now byte-verified independently in `REPORTS.md` §6
 > (func_3954C), so the Naval table below upgrades **A→B**.
 
+> **Correction (2026-08-06, RULING — live capture):** F5, F7 and F9 were captured
+> from the running game for the first time
+> (`docs/screens/live_2026-08-05/74..76_report_*.png`, plus a seven-tribe /
+> seven-ship / full-market set from the shipped `COLONY00.SAV` in
+> `docs/screens/live_1653_save/`). The running game overrules §4 on five points:
+> **F7 does have a grid** (rules `y=40+20i` x 2..314, separators x=82/162/242,
+> headers centred on 42/122/202/280 — not the "exactly ONE rule, the footer"
+> below); **F5** has four columns Tons/Gold/Bid/Ask right-aligned at 92/145/200/251
+> with the good's name at x=2 and **no** commodity icon, over 17 rules at
+> `y=33+8i`; **F9's cell ink is the tribe's own `@TRIBES` colour**, not the
+> `@COLORS` "basic" 68 cited below, its block **pitch is 21**, and only contacted
+> tribes are listed. Shared chrome: the **subtitle ink is `0x91`**, report text
+> has **no drop shadow**, centring is on the **ink** width (`advance-1`), and the
+> **OK button is hollow** (30×14 at (286,184), rule ink `0x77`, caption `0x92` at
+> y=188). See `notes/rulings/RULINGS.md` 2026-08-06. The byte cites below are left
+> as written; where they disagree with the capture, the capture wins.
+
 ## 1. Purpose
 The F-key advisor screens: ten full-screen reports reached from the **REPORTS** pulldown
 or the F1–F10 hotkeys, each a single 320×200 (mode 13h) page composited over a

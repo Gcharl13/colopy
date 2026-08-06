@@ -334,3 +334,82 @@ pulldown menus** match the port closely in layout, colour and text. The Europe
 screen in particular — dock buildings, sky, the RECRUIT/PURCHASE/TRAIN button
 stack, the three status panels, the bottom goods bar and the Exit button — is a
 close match.
+
+---
+
+## 9. Second pass, 2026-08-06 — F5, F7 and F9 captured
+
+### 9.0 What went wrong the first time, and the fix
+
+The retry harness from §6b reported all ten reports `ok (attempt 0)` and
+captured **ten copies of the Europe screen**. Its discriminator was the absence
+of the map's green menu bar at the top left — and the Europe screen has no menu
+bar either, so every frame passed. The run had drifted into Europe rather than
+founding a colony, and nothing in the check could tell.
+
+Two harness rules came out of this:
+
+* **Test positively, not negatively.** Every advisor report draws its centred
+  title in ink `0x90` = (255,255,190) inside the top ten rows, and nothing else
+  in the game does. Counting those pixels is the check.
+* **Never press Escape.** On the map, Escape quits to DOS. The old retry loop
+  pressed it after each failure and eventually killed the process mid-run.
+  Reports close on their OK button at (300,190); popups close with a click.
+
+The replay also **saves the game** (`COLONY05.SAV`, England/Discoverer,
+Jamestown founded 1495), so the state is reproducible without replaying the
+whole opening. And the shipped `COLONY00.SAV` — "Discoverer Willem De Ruyter of
+the Dutch, Autumn 1653" — turns out to be a real late-game save: seven tribes
+contacted, seven ships, four colonies, 271,473 gold. It is the best fixture in
+the box for any report that needs data, and the whole set is captured in
+`docs/screens/live_1653_save/`.
+
+### 9.1 The three reports
+
+| | live frame | what the port had wrong |
+|---|---|---|
+| **F5 Economic** | `74_report_F5_economic.png` | drew a commodity icon that is not there and indented the name behind it; two value columns instead of four; left-aligned values instead of right-aligned; no rules |
+| **F7 Naval** | `75_report_F7_naval.png` | no grid at all (the spec says there is only a footer rule; there are eight rules and three separators); Ship and Cargo headers centred on the field x's instead of their columns |
+| **F9 Indian** | `76_report_F9_indian.png` | a status grid at pitch 18 in one fixed green; the real screen is a per-tribe block at pitch 21 with a portrait, and each tribe's name is in **its own colour** |
+
+Geometry, inks and the corrections to `spec/ui/advisor_reports.md` §4 are
+recorded in `notes/rulings/RULINGS.md` 2026-08-06.
+
+### 9.2 Shared chrome — four things wrong on every report
+
+Found by diffing the port's render against the live frame rather than by reading
+the spec, and all four were wrong on screens previously called verified:
+
+1. the subtitle line is ink `0x91`, not the title's `0x90`;
+2. report text has **no drop shadow** — the port was drawing the whole string
+   three more times in black, which is what made its titles look heavy;
+3. centring is on the **ink** width (`advance − 1`). Seven independent strings
+   agree and none matches `advance / 2`;
+4. the OK button is a **hollow** dark-red box, not a filled one with a cream
+   border.
+
+### 9.3 Where it stands
+
+Port-vs-live pixel diff over the whole 320×200 frame, after the fixes:
+
+| report | before | after | what is left |
+|---|---|---|---|
+| F7 | 1305 | **75** | the nation plate's colour index and orders letter, and the ship's map position |
+| F5 | 3608 | **299** | the bid/ask columns — the two games have different market rolls |
+| F9 | 3838 | **576** | the port's shot has a different tribe contacted |
+
+Nothing structural is left in any of the three. **Live-verified now: F2, F3
+(structure), F4, F5, F6 (frame), F7, F8, F9, F10** — every advisor report.
+
+### 9.4 Still open
+
+* ICONS **113..117** are five near-identical native portraits; the 1653 frame
+  uses three of them across seven rows with no derivable rule. The port draws
+  116. **Unresolved.**
+* F9 pagination (`func_039E98`) is not wired up.
+* The port has no native first-contact flag; "has explored a tile holding one of
+  that tribe's settlements" stands in for it.
+* F5's second view — `@MISC` 91/92 "(Building Upkeep)" / "TOTAL UPKEEP" — was
+  never reached, so how the view is switched is **TBD**.
+* The colony screen (§7) is captured at last — `79_colony_screen_fresh.png` and
+  the 1653 set — but **not yet diffed** against the port.

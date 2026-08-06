@@ -7247,5 +7247,5 @@ puts it at the top). Five corrections:
   be dropped rather than paged.
 - The port has no native first-contact flag, so "has explored a tile holding one
   of that tribe's settlements" stands in for it. That is the port's own rule.
-- The F5 muskets/horses cells on F9's count line (x=152 and x=209) rest on a
+- The muskets/horses cells on F9's count line (x=152 and x=209) rest on a
   single sample each — the Apache row.
