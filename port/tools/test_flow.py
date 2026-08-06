@@ -1937,6 +1937,36 @@ SCRIPT = """() => {
     G.showHidden = wasHidden;
   }
 
+  // ---- the count-strip layout, replayed against the live colony frame ----
+  // docs/screens/live_1653_save/colony_curacao.png, Curacao 1653. The counts
+  // below are read off that frame; the x positions asserted in main() are where
+  // the ICONS templates actually match in it. This is the check that settled the
+  // strip pitch: one shared solve produces 5 on the top row and 6 on the bottom.
+  {
+    const lay = (cells, x0, span, gap) =>
+      countRowLayout(cells, x0, span, gap).map(e => ({ x: e.x, last: e.last, step: e.step }));
+    const c = (frame, count, sub, flags) => ({ frame, count, sub, flags: flags || 0 });
+    out.stripRows = {
+      // row 0: furs 3, ore 8, silver 3
+      raw: lay([c(26, 3, 0), c(28, 8, 0), c(29, 3, 0)], 213, 89, 2),
+      // row 1: horses (good 8, the 13px sprite and the first of the 8..15
+      // slice) x4 all consumed, then cloth 6 and tools 6
+      made: lay([c(30, 4, 4), c(33, 6, 0), c(36, 6, 0)], 213, 89, 2),
+      // row 2: lumber 6 all consumed, hammers 6
+      work: lay([c(27, 6, 0, 0x8000), c(54, 6, 0)], 213, 89, 4),
+    };
+    // The plaza colonist pack from the same frame: 11 sprites, the second at 11.
+    out.plazaPack = (() => {
+      const widths = [8, 6, 6, 6, 6, 6, 6, 8, 8, 6, 8];
+      const total = widths.reduce((a, b) => a + b, 0);
+      let gap = 2;
+      while (gap * (widths.length - 1) + 4 + total >= 96) gap -= 1;
+      let x = 2; const xs = [];
+      for (const w of widths) { xs.push(x); x += Math.max(1, w + gap); }
+      return { gap, second: xs[1], total };
+    })();
+  }
+
   return out;
 }"""
 
@@ -1986,6 +2016,24 @@ def main():
         ("woodcut 2 opens the colony screen",
          r["afterColonyWoodcut"] == "colony", r["afterColonyWoodcut"]),
         ("colony Exit returns to the map", r["colonyExit"] == "map", r["colonyExit"]),
+        # The count-strip solve, checked against where the ICONS templates match
+        # in docs/screens/live_1653_save/colony_curacao.png. Every one of these
+        # is a template hit at score 0, not an eyeballed reading.
+        ("production row 0 lands furs/ore/silver where the live frame has them",
+         [e["last"] for e in r["stripRows"]["raw"]] == [223, 269, 291]
+         and [e["step"] for e in r["stripRows"]["raw"]] == [5, 5, 5],
+         r["stripRows"]["raw"]),
+        ("production row 1 lands cloth and tools where the live frame has them",
+         [e["last"] for e in r["stripRows"]["made"]] == [225, 260, 290]
+         and [e["step"] for e in r["stripRows"]["made"]] == [4, 4, 4],
+         r["stripRows"]["made"]),
+        ("production row 2 solves to pitch 6, lumber ending 243 and hammers 287",
+         [e["last"] for e in r["stripRows"]["work"]] == [243, 287]
+         and [e["step"] for e in r["stripRows"]["work"]] == [6, 6],
+         r["stripRows"]["work"]),
+        ("the plaza pack solves to gap 1, second colonist at x=11",
+         r["plazaPack"]["gap"] == 1 and r["plazaPack"]["second"] == 11,
+         r["plazaPack"]),
         ("sea lane starts a 3-turn crossing",
          r["crossing"] == {"state": "toEurope", "turns": 3, "shipLeftMap": True}, r["crossing"]),
         ("crossing docks and opens the harbour",

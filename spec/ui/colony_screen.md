@@ -292,8 +292,41 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
 - Scene strip blit `(0x78,0x78,8,[0x835])` via `0x181F:0x506` `@0x0264E1`; two `0x181F:0xCE`
   glyph-rules at `(0xC7,7,0x140)` `@0x026517` and `(0xDF,0x1F,0x128)` `@0x026539` (scene divider
   lines). **B**
-- Per-field-worker loop: commodity icon index `= good + 0x17` (`add ax,0x17 @0x026573`), h=0xC,
-  sheet `[0x2DA8]`. **B**
+- **CORRECTED 2026-08-06 — this is the TILE panel, and it is a 3×3 grid, byte-read in full.**
+  The loop is `[bp-0x12]`=col × `[bp-0x14]`=row, both 0..4, but **all four borders are skipped**
+  (`cmp [bp-0x12],0 / ,4` and the same for `[bp-0x14]`, `@0x0267A8..0x0267BE`), so only the
+  inner 3×3 ever draws — which is exactly the window the black rect at (223,31)-(296,104)
+  frames. Cell origin **x = 200 + 24·col** (`imul ax,[bp-0x12],0x18 / add ax,0xC8 @0x027694`),
+  **y = 8 + 24·row** (`imul ax,[bp-0x14],0x18 / add ax,8 @0x02769E`); the map cell is
+  `(colony.x + col − 2, colony.y + row − 2)` (`@0x0265CA..0x0265E6`). **B**
+- **The prior "commodity icon index = good + 0x17 (`add ax,0x17 @0x026573`)" line was a
+  MISREAD** — `@0x026573` is `x + 23`, the far edge of a **24×24 rect outline** drawn by
+  `0x181F:0xCE` in colour `0x0C` when flag bit 6 is set. `0x181F:0xCE`'s signature is
+  `(ax=x0, dx=y0, bx=x1, [bp+8]=y1, [bp+6]=colour)` — a **rectangle outline**, not a glyph
+  row: the two "divider" calls above are the panel border **(199,7)-(320,128)** and the scene
+  border **(223,31)-(296,104)**, both black, both pixel-confirmed in the live frame. **B**
+- Per-cell contents, in draw order (all **B**):
+  - **flag byte** `[0x8DF0 + col·5 + row]` (`@0x026553`) gates everything below.
+  - bit 6 → 24×24 outline, colour `0x0C` (`@0x026584`).
+  - flags == 0 and `[0x8D9E + col·5 + row] ≥ 0` → sprite **EXE 0x6D** at `(x+8, y+4)`
+    (`@0x0265A3..0x0265BF`).
+  - bit 7 → the unit standing on the map cell (found via `0x181F:0x7E0`, walked with
+    `0x181F:0x2E4`, filtered on `byte[type·14 + 0x5236] ≤ 1`) drawn by the unit-panel verb
+    `0x181F:0x2BC` at `(x+4, y+4)` (`@0x026639`).
+  - bit 3 → two `0x181F:0x236` strips across a **24px span**: food (`ax=0x17`, count
+    `[0xA891]`) at `(x, y)` and `[0xA893]+0x17` (count `[0xA894]`) at `(x, y+13)`
+    (`@0x02665D` / `@0x02668A`).
+  - the cell's own yield: `0x181F:0xB3C(col, row, &good, 1)` returns the amount
+    (`@0x02669B`); sprite = `good + 0x17`, or **0x3A** when `0x181F:0xC0E(tile)` is 8
+    (`@0x0266D2`). Amount > 0 → a `0x236` strip at `(x, y)` (`@0x026700`). Amount ≤ 0 →
+    the good's icon centred in 16px at `(x + (16−w)/2, y+1)` with sprite **EXE 0x41** laid
+    over it at `(x, y)` (`@0x02673E` / `@0x026758`).
+  - selection boxes: colour **0x0A** when the cell is `[0x8D7C]`'s (`push 0xa @0x0267EC`),
+    colour **0x0F** on the separate cursor cell `[0x330]`/`[0x332]` (`push 0xf @0x02686D`).
+  **Live-verified** against `docs/screens/live_1653_save/colony_curacao.png`: the green
+  `0x0A` box sits at x 224..247, y 32..55, and there is **no white box anywhere in that
+  frame** — which retires the port's old "white rectangle marks the centre tile" reading
+  (that came from the 1024×768 rescale of `11_colony_screen.png`, not from a 320×200 frame).
 - **Production yield indicators use the SHARED proportional sprite-strip primitive
   `0x181F:0x236`** (`func_002EE4`, calls `@0x02665D`/`@0x02668A`/`@0x026700`) — a count shown
   as a row of filled/empty icons fitted to a fixed span at pitch `(span−w)/(count−1)` clamped
@@ -310,6 +343,19 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
 - **Row x-origin = 0x8F = 143** (`mov [bp-0x60],0x8F @0x0270FA`); the row walks **LEFT**
   (`dec [bp-0x60] @0x027178`), y = `0x0A` (10). Per-colonist sprite from the far-ptr table
   `[0x83E]:[0x840]`, **stride 12**: `+0x3E` = sprite width, `+0x40` = x/anchor.
+- **AXIS CORRECTION, 2026-08-06.** `[bp-0x60]` (init `0x8F`) is the row's **Y**, not its X, and
+  `[bp-0x5c]` (init 1) is the **X**; the row therefore runs **left to right from x=2 at y=142**,
+  not right to left from x=143. Derived from the selection-box call `@0x0271AE..0x0271EC`, whose
+  `0x181F:0xCE` args are `(x0=[bp-0x5c]−1, y0=[bp-0x60]+1, x1=w+[bp-0x5c], y1=h+[bp-0x60],
+  colour)`: the live frame's green box is **x 1..10, y 143..158**, which solves to
+  `[bp-0x5c]=2`, `[bp-0x60]=142`, sprite w=8 h=16 — and ICONS frame 100 template-matches the
+  second colonist at **x=11, y=142** in the same frame. The sprite blit is
+  `0x181F:0x254` at `(dx=[bp-0x5c], y=[bp-0x60])` `@0x0272D5..0x0272E7`. Also: the record
+  fields are **+0x3E = width, +0x40 = height** (the old "+0x40 = x/anchor" was wrong).
+- **The row is colonists AND garrison.** Count = `colony+0x1F` + `[0x8D72]`; the extra 4px
+  (`[bp-0x5a]`) is spent **after the last colonist**, `colony+0x1F − i − 1 == 0`
+  (`@0x02729E..0x0272AC`) — the visible break between the two groups. Selection colour is
+  `0x0A` for `[0x8D7C]` and `0x0F` for `[0x8D7E]` (`[bp-0x64]`, `@0x027186` / `@0x027316`).
 - **Per-colonist pitch — RESOLVED 2026-06-26 (code-derived + snapshot-confirmed; was open).**
   It is an **adaptive fit-to-span pack**, not a fixed pitch:
   1. **Pass 1** (`@0x02710A..0x027141`) sums every colonist's sprite width into `[bp-0x7E]`
@@ -325,6 +371,46 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
   (a real colonist row carries `+0x3E`=15 width). **B.** (Per-colonist *index* comes from the
   colony enumerator `0x181F:0xA74`.)
 - Scene-row marker sprite via `0x181F:0xC0E`/`0xA74` lookups. **B**
+- **The plaza panel also carries the food row and the SoL band (byte-read 2026-08-06).**
+  - **Food row** `@0x02731E..0x0273D7`: an enqueue/flush row (§3.6a) flushed at **x=2, span
+    118 (`0x76`), y=163 (`0xA3`), gap 4** (`ax=2 / bx=0x76 / [bp-0x60]=0xa3`). Cells: food
+    (`ax=0x4017` — sprite `0x17` with **bit 14**), count `[0x8DC8]`, sub `[0x8DC8]−[0xA895]`;
+    then the shortfall `ax=0x8017` count `[0x8E32]` (**bit 15**); then crosses `ax=0x39` count
+    `[0x8DEA]` and bells `ax=0x3F` count `[0x8DEC]`. **B**
+    *Live cross-check:* in `colony_curacao.png` that row template-matches ICONS **bundle 57 at
+    x=14** and **bundle 22 (food) at x=18,22,…,62** — pitch 4 from x=2, so the first **4** icons
+    are the bit-14 alternate. The scene panel's **centre cell in the same frame reads 4**, so
+    `[0xA895]` is read as the centre-tile food. One frame, one reading — flagged as such.
+  - **SoL band** `@0x0273DC..0x0275A6`: `0x181F:0xC86` returns the SoL percentage
+    (`[bp-0x70]`); Tory = `100 − it` (`[bp-0x7a]`); the headcount split is
+    `round(pct·pop/100)` (`imul / add 0x32 / idiv 0x64 @0x0273FE..0x027407`) with the
+    remainder on the other side. Sprites and text, all **B**:
+    **EXE 0x7C (flag) at (2,132)**, its text `"<sol>% (<n>)"` at `x = width(0x7C)+2`, `y=133`;
+    **EXE 0x7D (crown)** with its **right edge pinned to x=117** (`mov ax,0x75 / sub ax,width
+    @0x027551`), its text right-aligned against that x via the measure verb `0x181F:0x204`.
+    Ink `[bp-0x7c]` = `0x0F`, → `4` when the difficulty-derived threshold `10−[0x53A6]` ≤ the
+    Tory count, → `0x0C` at twice that (`@0x02743C..0x02745D`).
+
+### 3.6a Count rows — `func_0033F2` (enqueue) + `func_003104` (flush), `0x181F:0x222`/`0x22C`
+The verb behind every "N icons with a number on them" row on this screen. **Byte-read in full
+2026-08-06 and reproduced to the pixel** against `colony_curacao.png`.
+- **Enqueue** `(ax=sprite, bx=sub, dx=count)` → `[0x2CF4]`/`[0x2CE2]`/`[0x2CCE]` (`@0x003405..
+  0x003413`). Note the arrays: `[0x2CF4]` is the **sprite**, `[0x2CCE]` the **count** — the
+  earlier `UI_PRIMITIVES.md` note had those two swapped.
+- **Flush** `(ax=x0, dx=y, bx=span, [bp+6]=gap)`; the solve, verbatim (`@0x00317C..0x0031ED`):
+  `avail = span − (N−1)·gap − max(0, ΣspriteW − N·spacing)`, shrinking `gap` first and then
+  growing `spacing` until `avail ≥ #{count>1}`; then **`pitch = avail / Σ(count−1)`**
+  (`idiv @0x0031D5`), and if that is 0 a right-shift is applied to every count until it fits.
+  Per cell **`step = min(spriteW + 1, pitch)`** (`@0x0033D1..0x0033DE`) and after a cell
+  **`x += spriteW − spacing + gap`** (`@0x00339A`).
+- Sprite **EXE 0x38** is blitted OVER an icon from index `count−sub` on (`@0x003265`), or over
+  **every** icon when the sprite word carries **bit 15**. **Bit 14** instead swaps the first
+  `count−sub` icons for **EXE 0x3A**, makes the leading badge show the *whole* count and
+  suppresses the trailing one (`add [bp-0x1a],ax / mov [bp-6],0 @0x00331E`).
+- Badges are `func_002E4E`: values ≤ 0 draw nothing; `y += 2`; a **black plate
+  (textwidth+1) × 7**; digits at **+1,+1** inside it. Leading badge `0x0F` (`0x0C` under bit
+  15), trailing badge `0x0C` (`0x0F` under bit 14). *Pixel-confirmed:* production row 0's
+  first badge is a black plate at **(215,136) 5×7** with white digits at **(216,137)**.
 
 ### 3.4 Flag panel — `func_02853C @0x02853C`
 - Background fill `@0x028540`: `push 0x2D,0x11,0x84,0x12F → func_02633E` ⇒ **rect (x=303, y=132,
@@ -364,6 +450,24 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
   SoL/garrison **icon-bar** rows (table `[bx−0x7238]` via `0x181F:0x222`) — **no @MISC string fetch**;
   case 1 `0x027746` reads cargo holds `colony+0x94` (`0x181F:0xAC4/0xD4E`) and, when `[0xB98]==0`,
   draws a centered caption from **string-index `[0x939A]`** via `0x181F:0x22`+`0x100`.
+- **Case 0 (`func_0275CE`) fully read 2026-08-06 — it is the PRODUCTION panel, three fixed
+  rows**, not a free flow and not an "SoL/garrison icon bar". Each row is one §3.6a
+  enqueue/flush pass over a contiguous slice of the commodity table, flushed at
+  **x=213 (`0xD5`), span 89 (`0x59`)**, row y starting at **134 (`0x86`)** and stepping **14**
+  (`add [bp-4],0xe @0x027630`). All **B**:
+  | row | y | slice | cell | gap |
+  |----|----|-------|------|-----|
+  | 0 | 134 | goods 1..7, **skipping 0 (food) and 5 (lumber)** — they have rows of their own (`cmp ax,5 / or ax,ax @0x0275F8`) | count `[0x8DC8+i·2] + [0x8E32+i·2]`, sub `[0x8E32+i·2]` (`@0x027604..0x027612`) | 2 |
+  | 1 | 148 | goods 8..15, each paired with the raw it eats: source `byte[0x2A2+i]`, amount `word[0x8E5A + src·2]` (`@0x027646..0x027656`) | count `max(made, eaten)`, sub `eaten` (`@0x02767D`) | 2 |
+  | 2 | 162 | lumber then hammers, surplus then consumed | sprite `0x1C`/`0x37` plain, `0x801C`/`0x8037` (**bit 15**) for the consumed run (`@0x0276F1`, `@0x02771F`) | 4 |
+  **Live-verified to the pixel** on `colony_curacao.png`: feeding that frame's own counts
+  through the §3.6a solve puts furs' last icon at **223**, ore at **234..269**, silver at
+  **281..291** (row 0, pitch 5); horses at **213..225**, cloth at **240..260**, tools at
+  **270..290** (row 1, pitch 4); lumber ending **243** and hammers **257..287** (row 2, pitch
+  6). Every one of those is an ICONS template match at score 0 in the capture. **This is what
+  settles the old "strip pitch is 4 or 6?" question — one solve, per row, from the counts.**
+  Residual: the engine splits the lumber surplus again against `[0x8E14]`
+  (`@0x0276AF..0x0276D8`); what that slot holds is **TBD**.
 - **@MISC index → string mechanism RESOLVED + ORACLE-CONFIRMED 2026-06-26.** The panel/minimap
   captions resolve a **global string index** through **`0x181F:0x22` = `func_002462 @0x002462`**: it
   loads the string-heap far ptr from **`[0x2D42:0x2D44]`**, then walks N NUL-terminated strings

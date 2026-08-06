@@ -27,7 +27,26 @@ SHOTS = [
     ("landfall", "beginGame();G.screen='map';openDialog('LANDFALL',()=>{})"),
     ("woodcut", "G.screen='woodcut';G.woodcut=1"),
     ("ashore", "beginGame();G.screen='map';sailToLand()"),
-    ("colony", "beginGame();sailToLand();makeColony();G.screen='colony'"),
+    # The old one called sailToLand()/makeColony(), neither of which exists --
+    # it threw and silently left the map on screen. This is the real sequence,
+    # then the colony is stocked to roughly the live Curacao frame (eight
+    # workers out on the fields, a carpenter indoors, a full warehouse) so the
+    # shot exercises the tile panel, the plaza pack and all three strip rows.
+    ("colony",
+     "beginGame();G.screen='map';"
+     "(()=>{const sh=G.units[0];"
+     "for(let i=0;i<25&&!G.dialog;i++){sh.movesLeft=9;moveSel(-1,0);}"
+     "closeDialog(1);onClick(-1,-1);dialogKey('Enter');"
+     "G.sel=G.units.findIndex(u=>!u.ship);const f=G.units[G.sel];"
+     "G.natives=G.natives.filter(n=>Math.abs(n.x-f.x)>2||Math.abs(n.y-f.y)>2);"
+     "G.villages=G.villages.filter(v=>Math.abs(v.x-f.x)>2||Math.abs(v.y-f.y)>2);"
+     "buildColony();closeDialog('Curacao');"
+     "const c=G.colonies[0];"
+     "for(let i=0;i<8;i++)c.colonists.push({type:'Colonists',job:null,cell:null});"
+     "for(const d of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]){"
+     "  onClick(224+12+24*(d[0]+1),32+12+24*(d[1]+1));}"
+     "c.stock=c.stock.map((v,i)=>[16,3,0,0,3,6,8,3,4,0,0,6,0,0,6,0][i]);"
+     "c.sol=6;G.screen='colony';})()"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
     ("options",
      "beginGame();G.screen='map';openOptions('game')"),

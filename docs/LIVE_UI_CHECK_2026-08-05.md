@@ -460,3 +460,58 @@ the code comment and the commit.
   marks fit 6, and one capture cannot tell a per-band rule from a global one.
 * Building placement in the scene panel is RNG-driven (`func_025D34`) and stays
   TBD, as it has been since 2026-06-24.
+
+## 10.4 The four open items, closed from the EXE (2026-08-06)
+
+All four went the same way: the answer was in the disassembly, and the live frame
+was the check on it rather than the source of it. Details and citations are in
+`spec/ui/colony_screen.md` §3.2 / §3.3 / §3.6 / §3.6a; the short version:
+
+**The pitch was never a constant.** `func_002D74 @0x002D74` and the row flush
+`func_003104 @0x003104` both compute it: a row's icons are fitted into a fixed
+span, `pitch = avail / Σ(count−1)`, then clamped per sprite to `min(w+1, pitch)`.
+Feeding the Curacao frame's own counts through that solve reproduces **every**
+icon position in all three production rows — 223 / 269 / 291 at pitch 5 on the
+top row, 225 / 260 / 290 at pitch 4 on the middle, 243 / 287 at pitch 6 on the
+bottom. So "4 on one row and 6 on another" was the formula working, not two
+different rules. That solve is now `countRowLayout()` in the port, with the
+positions above asserted in `port/tools/test_flow.py`.
+
+**The tile panel is a 3×3, byte-exact.** `func_0264A8` loops 5×5 but skips all
+four borders, so cells land at `x = 200+24·col`, `y = 8+24·row` for col/row 1..3.
+Per cell: the unit at (x+4, y+4), a yield strip across a 24px span, and — when a
+tile yields nothing — the good's icon centred in 16px with EXE sprite 0x41 over
+it. Two selection boxes exist, green `0x0A` on the selected colonist's tile and
+white `0x0F` on a separate cursor cell; the live frame has the green one at
+x 224..247, y 32..55 and **no white box at all**, which is what retired the
+port's "white rectangle on the centre tile" (that had been measured off the
+1024×768 rescale of the 1504 capture, not off a 320×200 frame).
+
+**The colonist row's axes were transposed in the spec.** `[bp-0x60]`, which §3.3
+called the x-origin walking left from 143, is the **y** — the row runs left to
+right from x=2 at y=142. The green box's own geometry proves it: measured at
+x 1..10, y 143..158, which only solves if `[bp-0x5c]=2` is x and `[bp-0x60]=142`
+is y. ICONS frame 100 then template-matches the second colonist at exactly
+x=11 — the position the adaptive pack predicts for a gap of 1. The row also
+draws the **garrison**, not just colonists: the count is `colony+0x1F` plus
+`[0x8D72]`, with the 4px break spent after the last colonist.
+
+**The SoL band is two figures with two end-caps.** EXE sprite 0x7C (the flag) at
+(2,132) with the SoL figure beside it, EXE 0x7D (the crown) with its right edge
+pinned to x=117 and the Tory figure right-aligned against it. The headcount in
+each pair is `round(pct·pop/100)`, remainder to the other side.
+
+**One thing found on the way.** The red mark is not a "cancel" sprite the panel
+owns — it is EXE 0x38, the *empty segment* of the shared strip verb, blitted over
+an icon whose index is past the filled count. A second flag (bit 14) swaps the
+filled icons for EXE 0x3A instead and moves the badge. That is what the plaza
+food row does: bundle 57 template-matches at x=14 and bundle 22 from x=18 on, so
+the first four icons of a 16-food run are the alternate sprite — and the scene
+panel's centre cell in the same frame reads 4, the food the centre tile makes
+with nobody on it.
+
+**Still open on this screen**, unchanged: building placement is RNG
+(`func_025D34`); the lumber surplus split against `[0x8E14]`; and the report
+gauges in `drawReligiousReport`/`drawCongressReport` still use their own measured
+helper rather than this one — their alternating 33/34 pitch needs the
+flag-bit-0 fractional path in `func_002EE4 @0x002FBA` read first.

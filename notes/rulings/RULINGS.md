@@ -7249,3 +7249,50 @@ puts it at the top). Five corrections:
   of that tribe's settlements" stands in for it. That is the port's own rule.
 - The muskets/horses cells on F9's count line (x=152 and x=209) rest on a
   single sample each — the Apache row.
+
+## 2026-08-06 — colony screen: the four open UI items, closed from the EXE
+
+Context: the 2026-08-06 live diff (`docs/LIVE_UI_CHECK_2026-08-05.md` §10.3) left
+four items open on the colony screen. All four are now byte-read and checked
+against `docs/screens/live_1653_save/colony_curacao.png`.
+
+1. **Strip pitch is a formula, not a constant.** `func_002D74 @0x002D74` /
+   `func_003104 @0x003104`: icons are fitted to a fixed span,
+   `pitch = avail / Σ(count−1)`, clamped per sprite to `min(w+1, pitch)`. The
+   "4 on one row, 6 on another" reading was the same formula on different rows.
+   Replaying the live frame's counts reproduces every icon x in all three
+   production rows at score-0 template matches.
+
+2. **`func_0264A8` is the TILE panel and draws a 3×3.** The 5×5 loop skips all
+   four borders (`@0x0267A8..0x0267BE`). The old spec line
+   "commodity icon index = good + 0x17 (`add ax,0x17 @0x026573`)" was a misread:
+   `@0x026573` is `x + 23`, the far edge of a 24×24 rect outline. **`0x181F:0xCE`
+   is a rectangle-outline verb** `(ax=x0, dx=y0, bx=x1, [bp+8]=y1, [bp+6]=colour)`,
+   not a glyph row — its two calls in this function are the panel border
+   (199,7)-(320,128) and the scene border (223,31)-(296,104), both black, both
+   pixel-confirmed.
+
+3. **`func_0270D0`'s axes were transposed in spec §3.3.** `[bp-0x60]` (init
+   `0x8F`) is the row **Y**; `[bp-0x5c]` (init 1) is the **X**. The row runs left
+   to right from x=2 at y=142. Proof: the selection box's own args solve to
+   (x 1..10, y 143..158) for an 8×16 sprite at (2,142), which is exactly where
+   the live frame's green box is, and ICONS frame 100 matches the second
+   colonist at x=11. Sprite record fields are **+0x3E = width, +0x40 = height**
+   (the prior "+0x40 = x/anchor" was wrong). The row also includes the garrison
+   (`colony+0x1F` + `[0x8D72]`, 4px break after the last colonist).
+
+4. **Panel mode 0 (`func_0275CE`) is the production panel**, three fixed rows at
+   x=213 / span 89 / y=134+14i over contiguous slices of the commodity table —
+   not the "SoL/garrison icon bar" §3.6 called it. The SoL band lives in the
+   plaza panel instead, as two figures between sprite EXE 0x7C (flag, at (2,132))
+   and EXE 0x7D (crown, right edge at x=117).
+
+Also settled: the red mark is **EXE sprite 0x38**, the shared strip verb's *empty
+segment*, blitted over icons past the filled count — not a panel-owned "cancel"
+sprite. `UI_PRIMITIVES.md` §0x222 had the enqueue arrays swapped: `[0x2CF4]` is
+the sprite, `[0x2CCE]` the count.
+
+Still TBD: RNG building placement (`func_025D34`, unchanged); the `[0x8E14]`
+lumber-surplus split; `func_002EE4`'s flag-bit-0 fractional pitch, which the F2
+crosses row needs (33/34 alternating) before the report gauges can fold onto this
+same verb.

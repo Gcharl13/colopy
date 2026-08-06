@@ -190,6 +190,147 @@ function frameSize(sheet, idx) {
   return f ? [f.w, f.h] : [0, 0];
 }
 
+// ------------------------------------------------- count strips (engine verbs)
+// Three shared primitives the colony screen (and the reports) are built out of.
+// All three are byte-read out of VICEROY.EXE; every constant below cites the
+// instruction that supplies it. Sprite indices here are EXE-sheet indices minus
+// one -- the lab bundle is off by one from the EXE's ICONS numbering (the same
+// off-by-one recorded for the building frames in spec/ui/colony_screen.md §3.7).
+//   EXE 0x38 (56) empty/consumed overlay -> bundle 55, the red cross
+//   EXE 0x3A (58) alternate overlay      -> bundle 57
+const GAUGE_MARK = 55, GAUGE_ALT = 57;
+
+// `func_002E4E @0x002E4E` -- the count badge. Values <= 0 draw nothing
+// (`cmp [bp+6],0 / jg` @0x002E52). y is advanced by 2 (`add [bp+0xa],2`
+// @0x002E5B), a black plate of (textwidth+1) x 7 is filled there
+// (`push 7 / push 0 / bx = w+2` @0x002E9E-0x002EA6), and the digits land at
+// +1,+1 inside it (`inc ax / inc dx` @0x002ED3/0x002ED7).
+function countBadge(ctx, value, x, y, colorIdx) {
+  if (value <= 0) return;
+  const s = String(value);
+  ctx.fillStyle = ink(0);
+  ctx.fillRect(Math.round(x), Math.round(y) + 2, FONT.tiny.width(s) + 1, 7);
+  const flat = [ink(colorIdx), ink(colorIdx), ink(colorIdx)];
+  FONT.tiny.draw(ctx, s, x + 1, y + 3, flat);
+}
+
+// `func_002D74 @0x002D74` -- the strip pitch every count row uses:
+//   pitch = (span - spritewidth) / (count - 1)      idiv @0x002DCB
+// clamped to [1, spritewidth+1]                     cap @0x002DD1, floor @0x002DDA
+// so a small count spaces the icons out to just touching and a large one floors
+// at 1px and stacks them. This single formula is why one live frame shows a
+// pitch of 4 on one row and 6 on another -- it is per row, not a constant.
+function stripPitch(w, count, span) {
+  if (count <= 1) return 1;
+  let p = Math.trunc((span - w) / (count - 1));
+  if (p > w + 1) p = w + 1;
+  return p < 1 ? 1 : p;
+}
+
+// `func_002EE4 @0x002EE4` (thunk `0x181F:0x236`) -- the proportional strip.
+// (Named `proportionalStrip` and not `spriteStrip` because the advisor reports
+// already own that name for their own, separately measured, strip helper. Those
+// gauges are the SAME engine verb and should fold into this one, but the F2
+// crosses row shows an alternating 33/34 pitch that only the flag-bit-0
+// fractional path in `func_002EE4` @0x002FBA explains, and that path is not read
+// yet -- so the report code is left alone rather than half-converted.)
+// `count` copies of `frame` at the pitch above, drawn at y+1 (`inc ax` @0x002F71);
+// every icon from index `count-sub` on also gets GAUGE_MARK laid over it
+// (`mov ax,0x38` @0x002FA5). Then two badges: the filled count at x+2 in white
+// (@0x00301B-0x00302C) and the consumed count at the first marked icon in red
+// (@0x003032-0x003043).
+function proportionalStrip(ctx, frame, count, sub, x, y, span) {
+  if (count <= 0) return;
+  const [w] = frameSize('ICONS', frame);
+  if (!w) return;
+  const pitch = stripPitch(w, count, span);
+  const filled = count - sub;
+  let markX = null;
+  for (let i = 0; i < count; i++) {
+    const ix = x + i * pitch;
+    sheetFrame(ctx, 'ICONS', frame, ix, y + 1);
+    if (i === filled) markX = ix;
+    if (i >= filled) sheetFrame(ctx, 'ICONS', GAUGE_MARK, ix, y + 1);
+  }
+  countBadge(ctx, filled, x + 2, y, 0x0F);
+  if (markX !== null) countBadge(ctx, sub, markX + 2, y, 0x0C);
+}
+
+// `func_0033F2 @0x0033F2` (enqueue) + `func_003104 @0x003104` (flush) -- a row of
+// several strips fitted into one span. Each cell is {frame, count, sub, flags}:
+// flags bit 15 marks EVERY icon with GAUGE_MARK and turns the leading badge red
+// (`test ah,0x80` @0x003253, colour `add ax,0xc` @0x00333C); bit 14 swaps the
+// filled icons for GAUGE_ALT (`test byte[bx+0x2cf5],0x40` @0x0032C2).
+//
+// The layout solve (@0x00317C-0x0031ED), verbatim:
+//   avail = span - (N-1)*gap - max(0, totalspritewidth - N*spacing)
+//   while avail < (cells with count>1): shrink gap, then grow spacing
+//   pitch = avail / sum(count-1)          idiv @0x0031D5
+//   per cell: step = min(spritewidth+1, pitch)   @0x0033D1-0x0033DE
+//   after a cell: x += spritewidth - spacing + gap               @0x00339A
+// Reproduces the live frame's three rows to the pixel -- see the check in
+// docs/LIVE_UI_CHECK_2026-08-05.md §10.4.
+function countRowLayout(cells, x0, span, gap0) {
+  const row = cells.filter(c => c.count > 0 || c.sub > 0);
+  const n = row.length;
+  if (!n) return [];
+  let multi = 0, extras = 0, totalW = 0;
+  for (const c of row) {
+    if (c.count > 1) { multi += 1; extras += c.count - 1; }
+    totalW += frameSize('ICONS', c.frame)[0];
+  }
+  let gap = gap0, spacing = 0, avail = 0;
+  for (let guard = 0; guard < 4096; guard++) {
+    const slack = Math.max(0, totalW - n * spacing);
+    avail = span - (n - 1) * gap - slack;
+    if (avail < multi) {
+      if (gap > 0) { gap -= 1; continue; }
+      if (slack > 0) { spacing += 1; continue; }
+      avail = multi;
+    }
+    if (multi <= avail) break;
+  }
+  let shift = 0, pitch = 0;
+  if (extras) {
+    pitch = Math.trunc(avail / extras);
+    if (pitch === 0) do { shift += 1; } while ((extras >> shift) > avail && shift < 16);
+  }
+  const out = [];
+  let x = x0;
+  for (const c of row) {
+    const [w] = frameSize('ICONS', c.frame);
+    const step = pitch === 0 ? 1 : Math.min(w + 1, pitch);
+    const total = c.count >> shift, filled = (c.count - c.sub) >> shift;
+    out.push({ cell: c, x, step, total, filled, w,
+               last: x + Math.max(0, total - 1) * step });
+    x += Math.max(0, total - 1) * step + w - spacing + gap;
+  }
+  return out;
+}
+
+function drawCountRow(ctx, cells, x0, y, span, gap0) {
+  for (const e of countRowLayout(cells, x0, span, gap0)) {
+    const always = (e.cell.flags & 0x8000) !== 0, alt = (e.cell.flags & 0x4000) !== 0;
+    let markX = null, x = e.x;
+    for (let i = 0; i < e.total; i++) {
+      if (alt && i < e.filled) sheetFrame(ctx, 'ICONS', GAUGE_ALT, x, y);
+      else {
+        sheetFrame(ctx, 'ICONS', e.cell.frame, x, y);
+        if (always || (i >= e.filled && !alt)) sheetFrame(ctx, 'ICONS', GAUGE_MARK, x, y);
+      }
+      if (i === e.filled) markX = x;
+      x += e.step;
+    }
+    // Bit 14 also rewrites the badges: the leading one shows the WHOLE count
+    // and the trailing one is suppressed (`add [bp-0x1a],ax / mov [bp-6],0`
+    // @0x00331E-0x003321). That is why the live food row reads "16" over a run
+    // whose first four icons are the alternate sprite.
+    countBadge(ctx, alt ? e.cell.count : e.cell.count - e.cell.sub,
+               e.x + 2, y, always ? 0x0C : 0x0F);
+    if (markX !== null && !alt) countBadge(ctx, e.cell.sub, markX + 2, y, 0x0C);
+  }
+}
+
 // ---------------------------------------------------------------- terrain decode
 // Tile byte: bits 0-4 terrain id; high bits (v & 0xE0):
 //   0x20 hills · 0xA0 mountains · 0x40 minor river · 0xC0 major river  (formats/MP_FORMAT.md)
@@ -1914,9 +2055,15 @@ function colonyProduce(c) {
     }
     if (g >= 0) out[g] += want; else tally[g] += want;
   }
+  // The colony panels want the two halves separately, not just the net: the
+  // engine keeps a produced table (`[0x8DC8]`) and a consumed table (`[0x8E32]`)
+  // and draws BOTH -- the consumed run is the part that gets the red overlay
+  // (spec/ui/colony_screen.md §3.6). Snapshot `gross` before netting.
+  const gross = out.slice();
   for (let i = 0; i < consumed.length; i++) out[i] -= consumed[i];
   const eaten = 2 * c.colonists.length;                   // BYTE_VERIFIED @0xA5F2
-  return { out, tally, centre, eaten, netFood: out[GOOD.FOOD] - eaten };
+  return { out, gross, consumed, tally, centre, eaten,
+           netFood: out[GOOD.FOOD] - eaten };
 }
 // Kept for the panel and the tests: the food line only.
 function colonyFood(c) {
@@ -2221,36 +2368,12 @@ function drawColony(ctx) {
   ctx.drawImage(scene, 0, 0, 80, 80, 200, 8, 120, 120);
   ctx.restore();
   hollowRect(ctx, 223, 31, 74, 74, 0);
-  // Scene workers are drawn AFTER the upscale, at (cell*24+252, cell*24+60)
-  // with cell signed -2..+2 (§26.8). Nothing else goes in this panel: the map's
-  // units and colony markers do NOT appear here.
-  for (const p of c.colonists) {
-    if (!p.cell) continue;
-    const u = unit(p.type) || unit('Colonists');
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    sheetFrame(ctx, 'ICONS', u.icon,
-               p.cell[0] * 24 + 252 - (fw >> 1), p.cell[1] * 24 + 60 - (fh >> 1));
-  }
-  // The white rectangle marks the COLONY-CENTRE TILE, not the 3x3 window:
-  // measured at x 248..271, y 56..79 in the capture = the cited (248,56,24,24).
-  hollowRect(ctx, 248, 56, 24, 24, 0x0F);
+  drawColonyTiles(ctx, c);
 
   // COLONY.PIK town strip, 320x72 at y=128, then the panel captions over it.
   ctx.drawImage(IMG.COLONY, 0, 128);
-  // Plaza (0,130,120,48): the colonists, left-aligned at the panel origin + 2.
-  // Plaza: colonists with no field assignment stand here.
-  const idlers = c.colonists.map((p, i) => i).filter(i => !c.colonists[i].cell);
-  idlers.forEach((ci, i) => {
-    const p = c.colonists[ci];
-    const u = unit(p.type) || unit('Colonists');
-    if (u) sheetFrame(ctx, 'ICONS', u.icon, 2 + i * 14, 150);
-    if (ci === G.colonistSel) hollowRect(ctx, 1 + i * 14, 148, 14, 18, 0x0E);
-  });
+  drawColonyPlaza(ctx, c);
   drawColonyPanel(ctx, c);
-  // SoL band, with the crown (ICONS disk 124) to its right at the measured
-  // (105,131); the count is a digit in parens, not the letter I.
-  FONT.tiny.draw(ctx, `${c.sol}% (${c.colonists.length})`, 75, 133, lut(SOL_INK));
-  sheetFrame(ctx, 'ICONS', 124, 105, 131);
   FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(PANEL_INK));
 
   // Stockpile bar (0,179,320,21): 16 cells pitch 19, icon = ICONS good+0x17
@@ -2273,6 +2396,155 @@ function drawColony(ctx) {
   ctx.fillRect(0, 7, W, 1);
   ctx.fillRect(0, 128, W, 1);
   ctx.fillRect(199, 7, 1, 122);
+}
+
+// ---- the tile panel: `func_0264A8 @0x0264A8` -----------------------------
+// The loop runs 5x5 but the four border rows/columns are skipped outright
+// (`cmp [bp-0x12],0 / ,4` and the same for [bp-0x14], @0x0267A8-0x0267BE), so
+// only the inner 3x3 is ever drawn -- which is exactly the window the 1px black
+// border at (223,31)-(296,104) frames. Cell origin:
+//   x = 200 + 24*col   (`imul ax,[bp-0x12],0x18 / add ax,0xc8` @0x027694)
+//   y =   8 + 24*row   (`imul ax,[bp-0x14],0x18 / add ax,8`    @0x02769E)
+// The map cell each one stands for is (colony.x + col - 2, colony.y + row - 2)
+// (@0x0265CA-0x0265E6), so col/row 1..3 are the eight neighbours plus the centre.
+//
+// Per cell the engine draws, in this order:
+//   the worker      `0x181F:0x2BC` at (x+4, y+4)                    @0x026639
+//   the yield strip `0x181F:0x236` at (x, y) across a 24px span     @0x026700
+//   a zero yield    the good's icon centred in 16px + EXE 0x41 over it
+//                                                        @0x02673E/@0x026758
+//   selection box   `0x181F:0xCE` rect (x, y)-(x+23, y+23):
+//                     colour 0x0A when the cell is the selected colonist's
+//                       (`[0x8D7C]`, push 0xa @0x0267EC) -- the green box
+//                     colour 0x0F on the separate cursor cell
+//                       (`[0x330]`/`[0x332]`, push 0xf @0x02686D)
+// The port has no second cursor, so only the green box is drawn; the white one
+// needs `[0x330]/[0x332]` modelled and is left out rather than faked. Both were
+// checked against the live frame, where the green box sits on the top-left
+// worked tile at x 224..247, y 32..55 and no white box is present at all --
+// which is what retired the port's old "white rectangle on the centre tile".
+function drawColonyTiles(ctx, c) {
+  const sel = c.colonists[G.colonistSel];
+  for (let row = 1; row <= 3; row++) {
+    for (let col = 1; col <= 3; col++) {
+      const x = 200 + 24 * col, y = 8 + 24 * row;
+      const dx = col - 2, dy = row - 2;
+      const p = c.colonists.find(q => q.cell && q.cell[0] === dx && q.cell[1] === dy);
+      if (p) {
+        const u = unit(p.type) || unit('Colonists');
+        if (u) sheetFrame(ctx, 'ICONS', u.icon, x + 4, y + 4);
+      }
+      // The centre tile yields without a worker; a worked tile yields its job's
+      // good. Both take the same strip.
+      const good = (dx === 0 && dy === 0) ? GOOD.FOOD
+                 : p ? JOB_GOOD[jobIndex(p.job)] : undefined;
+      const amount = (dx === 0 && dy === 0) ? colonyProduce(c).centre
+                   : p ? fieldYield(c, p) : 0;
+      if (good !== undefined && good >= 0) {
+        if (amount > 0) proportionalStrip(ctx, 22 + good, amount, 0, x, y, 24);
+        else {
+          const [fw] = frameSize('ICONS', 22 + good);
+          sheetFrame(ctx, 'ICONS', 22 + good, x + ((16 - fw) >> 1), y + 1);
+          sheetFrame(ctx, 'ICONS', 64, x, y);        // EXE 0x41, the "none" mark
+        }
+      }
+      if (p && p === sel) hollowRect(ctx, x, y, 24, 24, 0x0A);
+    }
+  }
+}
+
+// ---- the plaza panel: `func_0270D0 @0x0270D0` ----------------------------
+// Fill (0,130,120,48) (`push 0x30,0x78,0x82,0` @0x0270D6), then three things.
+//
+// 1. THE COLONIST ROW. Every colonist AND every unit garrisoned in the colony
+//    gets a sprite -- the count is `colony+0x1F` plus `[0x8D72]` (@0x0270E6),
+//    not just the unassigned ones the port used to draw. y = 142 and the row
+//    runs LEFT to RIGHT from x = 2. The pitch is not fixed: pass 1 sums every
+//    sprite's width (@0x02710A-0x027141), then the gap starts at 2 and is
+//    DECREMENTED -- signed, so it goes negative and the sprites overlap -- until
+//      gap*(count-1) + extra + totalwidth < 96          (@0x027160-0x027173)
+//    where `extra` is the 4px break between the colonists and the garrison
+//    (@0x027148/0x027154). That break is spent after the last colonist
+//    (`colony+0x1F - i - 1 == 0`, @0x02729E-0x0272AC).
+//    Live check: 11 sprites totalling ~76px solve to gap 1, putting the second
+//    sprite at x=11 -- which is where frame 100 matches the capture exactly.
+// 2. THE SELECTION BOX, `0x181F:0xCE` rect (x-1, y+1)-(x+w, y+h): colour 0x0A
+//    for the selected colonist (@0x0271AE), 0x0F for `[0x8D7E]` (@0x02720F).
+//    Measured green box in the live frame: x 1..10, y 143..158, for an 8px
+//    sprite at x=2 -- which is what pinned the +/-1 insets above.
+// 3. THE FOOD ROW at y=163, x from 2 across a 118px span, gap 4
+//    (`ax=2 / bx=0x76 / [bp-0x60]=0xa3` @0x0273CC-0x0273D7): food produced with
+//    the eaten part marked, then crosses (EXE 0x39) and bells (EXE 0x3F).
+const PLAZA_ROW_Y = 142, PLAZA_ROW_X = 2, PLAZA_ROW_BUDGET = 96, PLAZA_GARRISON_GAP = 4;
+const PLAZA_FOOD_Y = 163, PLAZA_FOOD_X = 2, PLAZA_FOOD_SPAN = 118;
+// EXE 0x7C/0x7D, the two SoL end-caps: the rebel flag and the king's crown.
+const SOL_FLAG = 123, SOL_CROWN = 124, SOL_CROWN_RIGHT = 117;
+
+// The solved row, shared by the painter and the click test so a click always
+// lands on the sprite it looks like it landed on.
+function plazaRow(c) {
+  const people = c.colonists.map(p => (unit(p.type) || unit('Colonists')).icon);
+  const garrison = G.units.filter(u => u.x === c.x && u.y === c.y).map(u => u.icon);
+  const icons = people.concat(garrison);
+  if (!icons.length) return [];
+  const totalW = icons.reduce((a, i) => a + frameSize('ICONS', i)[0], 0);
+  const extra = garrison.length ? PLAZA_GARRISON_GAP : 0;
+  let gap = 2;
+  while (gap * (icons.length - 1) + extra + totalW >= PLAZA_ROW_BUDGET) gap -= 1;
+  const out = [];
+  let x = PLAZA_ROW_X;
+  icons.forEach((icon, i) => {
+    const [w, h] = frameSize('ICONS', icon);
+    out.push({ icon, x, w, h, colonist: i < people.length ? i : -1 });
+    x += Math.max(1, w + gap);
+    if (i === people.length - 1) x += PLAZA_GARRISON_GAP;
+  });
+  return out;
+}
+
+function drawColonyPlaza(ctx, c) {
+  // --- the colonist + garrison row ---
+  for (const e of plazaRow(c)) {
+    sheetFrame(ctx, 'ICONS', e.icon, e.x, PLAZA_ROW_Y);
+    if (e.colonist === G.colonistSel)
+      hollowRect(ctx, e.x - 1, PLAZA_ROW_Y + 1, e.w + 2, e.h, 0x0A);
+  }
+
+  // --- the food / crosses / bells row ---
+  const r = colonyProduce(c);
+  const food = r.gross[GOOD.FOOD];
+  // The engine's food cell is (count = produced, sub = produced - [0xA895])
+  // with bit 14 (@0x027378-0x027388), so the first [0xA895] icons draw as the
+  // alternate sprite. On the live frame that alternate run is exactly 4 long --
+  // and the scene panel's centre cell in the SAME frame reads 4, the food the
+  // centre tile makes with nobody on it. So [0xA895] is read as the centre-tile
+  // yield here; it is the only reading the frame supports, and it is one frame.
+  drawCountRow(ctx, [
+    { frame: 22 + GOOD.FOOD, count: food, sub: Math.max(0, food - r.centre), flags: 0x4000 },
+    { frame: 22 + GOOD.FOOD, count: Math.max(0, r.eaten - food), sub: 0, flags: 0x8000 },
+    { frame: 56, count: r.tally[CROSSES], sub: 0, flags: 0 },   // EXE 0x39
+    { frame: 62, count: r.tally[BELLS], sub: 0, flags: 0 },     // EXE 0x3F
+  ], PLAZA_FOOD_X, PLAZA_FOOD_Y, PLAZA_FOOD_SPAN, 4);
+
+  // --- the SoL band ---
+  // `0x181F:0xC86` gives the SoL percentage (@0x0273DC); the Tory figure is
+  // 100 minus it, and the headcount split is round(pct*pop/100) with the
+  // remainder going to the other side (@0x0273F0-0x02740E). The flag is EXE
+  // sprite 0x7C at (2,132) with its text at width+2; the crown is EXE 0x7D with
+  // its RIGHT edge pinned to x=117 (`mov ax,0x75 / sub ax,width` @0x027551) and
+  // its text right-aligned against it. Both baselines are y=133.
+  const pop = c.colonists.length;
+  const solPct = c.sol, toryPct = 100 - solPct;
+  const toryN = Math.trunc((toryPct * pop + 50) / 100);
+  const solN = pop - toryN;
+  const band = lut(SOL_INK);
+  const [fw] = frameSize('ICONS', SOL_FLAG);
+  const [cw] = frameSize('ICONS', SOL_CROWN);
+  sheetFrame(ctx, 'ICONS', SOL_FLAG, 2, 132);
+  FONT.tiny.draw(ctx, `${solPct}% (${solN})`, fw + 2, 133, band);
+  const crownX = SOL_CROWN_RIGHT - cw;
+  FONT.tiny.right(ctx, `${toryPct}% (${toryN})`, crownX, 133, band);
+  sheetFrame(ctx, 'ICONS', SOL_CROWN, crownX, 132);
 }
 
 // Positional-hash speckle over a 3-entry palette ramp. Deterministic so the
@@ -2385,68 +2657,61 @@ function drawColonyPanel(ctx, c) {
   }
 }
 
-// ---- the production panel: count badge + sprite strip ---------------------
-// REBUILT from the live frame (docs/screens/live_1653_save/colony_curacao.png).
-// It is NOT the text list the port had ("Production / Food +12 -8 / Sugar -3").
-// The panel is three rows of flowing entries, each entry a white count badge
-// followed by a run of that good's ICONS sprite, drawn OVERLAPPING so a big
-// number still fits -- the same count-badge-plus-strip verb F3 uses for its
-// REF rows (`0x222` x N -> `0x22C`).
+// ---- the production panel: `func_0275CE` (panel mode 0 of `func_02814C`) ---
+// Three FIXED rows, not a free flow -- each one is an enqueue/flush pass over a
+// contiguous slice of the commodity table, so a good always lands in the same
+// row whatever else the colony makes:
+//   row 0  y=134  raw goods 1..7, skipping food (0) and lumber (5), which have
+//                 rows of their own    (loop `cmp [bp-6],7` @0x0275EA-0x02761E)
+//   row 1  y=148  manufactured goods 8..15, each paired with the raw it eats
+//                 (`byte[bx+0x2a2]` names the source, @0x027646)
+//   row 2  y=162  lumber and hammers, surplus then consumed
+// All three flush at x=213 across an 89px span (`ax=0xd5 / bx=0x59`
+// @0x027620-0x02762B); the row y starts at 0x86=134 and steps 14
+// (`add [bp-4],0xe` @0x027630). Rows 0 and 1 pass gap 2, row 2 passes gap 4.
 //
-// Measured on that frame:
-//   rows            y = 133 + 14*i, three of them
-//   entries         flow left to right from x = 213 to the button column at 301
-//   badge           FONTTINY digits, white with a black outline, at row y + 4
-//   goods sprite    ICONS 22 + commodity (furs matched frame 26, ore frame 28,
-//                   both at score 0)
-//   hammers         ICONS 54; the red cancel mark is ICONS 55 (8x12), laid over
-//                   a strip to mark what is being consumed
-//
-// TBD -- the exact strip pitch. The furs (2 sprites) and ore (8 sprites) runs
-// on that frame both fit a pitch of 4, but the hammer and red-X runs in the
-// same frame fit 6, so the spacing is probably per sprite band and one capture
-// cannot separate the two. 4 is used here.
-const PROD_X0 = 213, PROD_X1 = 301, PROD_Y0 = 133, PROD_PITCH = 14;
-const PROD_ROWS = 3, PROD_STEP = 4, PROD_GAP = 3;
-const PROD_HAMMER_ICON = 54, PROD_CANCEL_ICON = 55, PROD_GOOD_ICON = 22;
-
-function prodEntry(ctx, x, y, icon, count, cancelled) {
-  // The badge is outlined on all four sides, not drop-shadowed: it has to stay
-  // readable over whatever sprite it lands on.
-  const badge = String(count);
-  const black = [ink(0), ink(0), ink(0)];
-  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]])
-    FONT.tiny.draw(ctx, badge, x + dx, y + 4 + dy, black);
-  FONT.tiny.draw(ctx, badge, x, y + 4, [ink(0x0F), ink(0x0F), ink(0x0F)]);
-  let cx = x + FONT.tiny.width(badge) + 1;
-  const [fw] = frameSize('ICONS', icon);
-  if (!fw) return cx;
-  const n = Math.min(count, Math.floor((PROD_X1 - cx - fw) / PROD_STEP) + 1);
-  for (let i = 0; i < n; i++) sheetFrame(ctx, 'ICONS', icon, cx + i * PROD_STEP, y);
-  if (cancelled)
-    for (let i = 0; i < n; i++)
-      sheetFrame(ctx, 'ICONS', PROD_CANCEL_ICON, cx + i * PROD_STEP, y);
-  return cx + (n - 1) * PROD_STEP + fw + PROD_GAP;
-}
+// Verified against docs/screens/live_1653_save/colony_curacao.png: feeding the
+// frame's own counts through drawCountRow puts furs at 223, ore at 234..269,
+// silver at 281..291 (row 0), cloth at 240..260 and tools at 270..290 (row 1),
+// and the lumber/hammer runs at pitch 6 with their last marks at 243 and 287
+// (row 2) -- every one of those matches a template hit in the capture exactly.
+const PROD_X0 = 213, PROD_SPAN = 89, PROD_Y0 = 134, PROD_PITCH = 14;
+const PROD_GOOD_ICON = 22, PROD_HAMMER_ICON = 54;
 
 function drawProductionStrips(ctx, c) {
   const r = colonyProduce(c);
-  // What the colony makes this turn, then what it eats. Food is netted against
-  // the byte-verified 2*pop consumption; a shortfall shows as a cancelled run.
-  const entries = [];
-  const net = r.netFood;
-  if (net) entries.push([PROD_GOOD_ICON + GOOD.FOOD, Math.abs(net), net < 0]);
-  for (let i = 1; i < r.out.length; i++)
-    if (r.out[i]) entries.push([PROD_GOOD_ICON + i, Math.abs(r.out[i]), r.out[i] < 0]);
-  const hammers = r.tally[HAMMERS];
-  if (hammers) entries.push([PROD_HAMMER_ICON, hammers, false]);
-  let row = 0, x = PROD_X0;
-  for (const [icon, n, cancelled] of entries) {
-    if (row >= PROD_ROWS) break;
-    const y = PROD_Y0 + row * PROD_PITCH;
-    const nx = prodEntry(ctx, x, y, icon, n, cancelled);
-    if (nx >= PROD_X1 - 8) { row += 1; x = PROD_X0; } else x = nx;
+  const cell = (i, count, sub, flags) =>
+    ({ frame: PROD_GOOD_ICON + i, count, sub, flags: flags || 0 });
+  // Row 0: raw goods. count = produced + consumed, sub = consumed, so the
+  // consumed tail is what takes the red mark (`dx = [0x8DC8+i] + [0x8E32+i]`,
+  // `bx = [0x8E32+i]`, @0x027604-0x027612).
+  const raw = [];
+  for (let i = 1; i <= 7; i++) {
+    if (i === 5) continue;                              // lumber has its own row
+    raw.push(cell(i, r.gross[i] + r.consumed[i], r.consumed[i]));
   }
+  drawCountRow(ctx, raw, PROD_X0, PROD_Y0, PROD_SPAN, 2);
+  // Row 1: manufactures. count = max(made, raw eaten), sub = raw eaten
+  // (`cmp dx,[bp-2] / jge` @0x02767D-0x027685).
+  const made = [];
+  for (let i = 8; i < r.gross.length; i++) {
+    const src = RAW_FOR[i];
+    const eaten = src === undefined ? 0 : r.consumed[src];
+    made.push(cell(i, Math.max(r.gross[i], eaten), eaten));
+  }
+  drawCountRow(ctx, made, PROD_X0, PROD_Y0 + PROD_PITCH, PROD_SPAN, 2);
+  // Row 2: lumber then hammers, each split surplus / consumed. Bit 15 marks
+  // every icon of the consumed run and reddens its badge (`ax=0x801c` @0x0276F1,
+  // `ax=0x8037` @0x02771F). The engine splits the lumber surplus again against
+  // `[0x8E14]` (@0x0276AF-0x0276D8); what that slot holds is unread, so the port
+  // draws the surplus as one run and says so rather than inventing the split.
+  const lumberUsed = r.consumed[GOOD.LUMBER];
+  const hammers = r.tally[HAMMERS];
+  drawCountRow(ctx, [
+    cell(GOOD.LUMBER, r.gross[GOOD.LUMBER] - lumberUsed, 0),
+    cell(GOOD.LUMBER, lumberUsed, 0, 0x8000),
+    { frame: PROD_HAMMER_ICON, count: hammers, sub: 0, flags: 0 },
+  ], PROD_X0, PROD_Y0 + 2 * PROD_PITCH, PROD_SPAN, 4);
 }
 
 // The dock's candidate ladder, §17.6. Three slots; each holds a UNIT TYPE, not
@@ -6798,11 +7063,15 @@ function onClick(mx, my) {
       }
       // Plaza: click a colonist to select, click again for the jobs menu.
       if (c && hit(mx, my, { x: 0, y: 130, w: 120, h: 48 })) {
-        const idlers = c.colonists.map((p, i) => i).filter(i => !c.colonists[i].cell);
-        const k = Math.floor((mx - 2) / 14);
-        if (k >= 0 && k < idlers.length) {
-          if (G.colonistSel === idlers[k]) { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
-          else G.colonistSel = idlers[k];
+        // The row is the solved pack, so hit-test the sprites themselves. The
+        // garrison entries are units, not colonists, and have no jobs menu.
+        for (const e of plazaRow(c)) {
+          if (e.colonist < 0) continue;
+          if (mx < e.x || mx >= e.x + e.w) continue;
+          if (my < PLAZA_ROW_Y || my >= PLAZA_ROW_Y + e.h) continue;
+          if (G.colonistSel === e.colonist) { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
+          else G.colonistSel = e.colonist;
+          return;
         }
         return;
       }
