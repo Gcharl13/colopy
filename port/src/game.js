@@ -5853,19 +5853,37 @@ const tensionBand = (n) => n >= TENSION_WAR ? 'War'
   : n >= 20 ? 'Uneasy' : 'Content';
 
 // ---- F10 Colonization Score ----------------------------------------------
-// spec §4: WOODPAN2 plate, FONTTINY labels + FONTINTR figures, body lines from
-// @MISC 115 Citizens / 116 Independence / 117 Villages Burned / 120 Foreign
-// Recognition / 121 Total Score. The SCORE<panel>.SS band plate is NOT bundled
-// (24 extra sheets for one screen), so the band art is absent -- TBD.
+// REBUILT from the live frame (docs/screens/live_2026-08-05/73_report_F10.png).
+// Not a table of big FONTINTR figures -- it is a green score BREAKDOWN with a
+// sprite row under each component:
+//     title      y=5   centred, gold
+//     subtitle   y=13  centred, gold:
+//                "<Difficulty> <Leader> of the <Nationality>: <Season> <Year>"
+//     component  x=16  green, "<Nationality> <Component>: +N", pitch 28,
+//                with a row of the counted sprites under it
+//     tail             Gold and Total Score at the bottom
+// Measured green rows: 24, 52, 150.
+const F10_X = 16, F10_ROW0 = 24, F10_PITCH = 28, F10_GREEN = 68;
 function drawScoreReport(ctx) {
   const s = scoreParts();
-  const rows = [[115, s.population], [116, s.revolution], [117, s.razed],
-                [120, s.fathers], [121, s.total]];
-  rows.forEach(([mi, v], i) => {
-    const y = 40 + i * 22;
-    FONT.tiny.draw(ctx, DATA.text.misc[mi], 12, y, lut(REPORT_NAME_INK), ink(0));
-    FONT.intr.draw(ctx, String(v), 200, y - 4, lut(REPORT_VALUE_INK), ink(0));
+  const nat = DATA.nations[G.nation];
+  FONT.tiny.center(ctx,
+    `${DATA.difficulty[G.difficulty]} ${G.leader} of the ${nat.adjective}: ` +
+    `${DATA.seasons[G.season] || ''} ${G.year}`,
+    160, 13, lut(REPORT_TITLE_INK), ink(0));
+  // Citizens, then the Continental Congress contribution.
+  const rows = [[DATA.text.misc[115], s.population, 0x66],
+                [DATA.text.misc[196] || 'Continental Congress', s.fathers, 0x3F]];
+  rows.forEach(([label, value, sprite], i) => {
+    const y = F10_ROW0 + i * F10_PITCH;
+    FONT.tiny.draw(ctx, `${nat.adjective} ${label}: +${value}`, F10_X, y,
+                   lut(F10_GREEN), ink(0));
+    spriteStrip(ctx, F10_X, y + 8, 0x12C, [[sprite, Math.min(value, 12)]]);
   });
+  FONT.tiny.draw(ctx, `${DATA.text.misc[59]}: (${G.gold}$ x${s.mult})`,
+                 F10_X, 150, lut(F10_GREEN), ink(0));
+  FONT.tiny.draw(ctx, `${DATA.text.misc[121]}: ${s.total}`, F10_X, 162,
+                 lut(F10_GREEN), ink(0));
 }
 
 // Colonists working that job, across every colony, plus units in the field

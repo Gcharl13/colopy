@@ -49,7 +49,8 @@ map-pan cinematic.
 
 Side-by-side sheets: `_compare_boot_sequence.png`, `_compare_in_game.png`.
 
-**Not reached: the colony screen.** See §7 — this is an honest gap, not a pass.
+**The colony screen was reached on the third run** — `80_colony_screen.png`,
+see §6b. §7 below records the two attempts that failed and why.
 
 ## 2. Difficulty picker — both label lines belong in the middle of the cell
 
@@ -281,6 +282,35 @@ without cheats the run needs colonies and ships that turn 1 does not have.
 
 Also still open: **F3's vertical rhythm** overlaps, and F10's
 `SCORE<panel>.SS` band plate is not bundled.
+
+## 6b. Third capture run — the colony screen, and F10
+
+A full no-cheat playthrough (sail west → @LANDHO → @LANDFALL → step ashore →
+accept the Iroquois treaty → Build Colony) reached **Jamestown, Spring 1495**.
+
+- **`80_colony_screen.png` — the colony screen is captured at last.** This is the
+  screen §7 recorded as an honest gap through two earlier attempts. It shows the
+  building scene, the 5×5 tile panel with worker markers, the field strip and the
+  goods bar. Not yet diffed against the port — that is the next unit of work, and
+  it now has a reference to work against.
+- **`73_report_F10_score.png` — F10 is a green breakdown, not a figure table.**
+  Title y=5, subtitle y=13 centred
+  (`"<Difficulty> <Leader> of the <Nationality>: <Season> <Year>"`), then score
+  components in **green at x=16, pitch 28**, each followed by a row of the
+  counted sprites, with Gold and Total Score at the bottom. Measured green rows
+  24 / 52 / 150. Rebuilt.
+- **`14_menu_reports_measured.png`** — the REPORTS dropdown, measured properly at
+  last: **F1=17, F2=33, F3=42, F4=50, F5=59, F6=74, F7=82, F8=91, F9=99,
+  F10=114**. Every earlier capture run had been guessing these, which is why
+  several landed on the wrong report.
+
+**F5, F7 and F9 are still uncaptured.** All three attempts were intercepted by
+event popups that fire on the turns the run passes through — an Iroquois raid, a
+Founding Father election, an immigration notice. They are not hard, just noisy;
+the fix is to dismiss-and-retry per report rather than assume a clean frame.
+
+Live-verified now: **F2, F3 (structure), F4, F6 (frame), F8, F10**.
+Still unverified: **F5, F7, F9**.
 
 ## 7. Not reached — the colony screen
 
