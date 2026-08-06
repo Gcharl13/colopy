@@ -43,3 +43,10 @@ code/VICEROY/flat/
 port/assets/
 port/dist/
 port/_shots/
+
+# DOSBox harness working files (game/ is extracted from col.zip, see its README)
+tools/dosbox_harness/game/
+tools/dosbox_harness/shots/
+tools/dosbox_harness/cap/
+tools/dosbox_harness/dosbox.conf
+tools/dosbox_harness/dosbox.log

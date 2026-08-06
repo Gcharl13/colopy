@@ -7296,3 +7296,56 @@ Still TBD: RNG building placement (`func_025D34`, unchanged); the `[0x8E14]`
 lumber-surplus split; `func_002EE4`'s flag-bit-0 fractional pitch, which the F2
 crosses row needs (33/34 alternating) before the report gauges can fold onto this
 same verb.
+
+## 2026-08-06b — colony building placement: the RNG is simulated, and verified against live RAM
+
+The plot layout has been TBD since 2026-06-24 on the grounds that it is "RNG
+(replayable from the seed)". It is replayable, and now it is replayed: the whole
+chain is byte-read and reproduces two live colonies element for element.
+
+**The RNG is the Microsoft C runtime's**, byte-read at file `0x0103D4` /
+`0x0103C2`:
+`state = state*214013 + 2531011`, `rand() = (state >> 16) & 0x7FFF`.
+`random_int(lo,hi)` = `func_00C322 @0x00C322` (`0x181F:0x4D4`) =
+`lo + ((rand()*(hi−lo+1)) >> 15)` — the shift is `>>8` via the `al=ah/ah=dl/dl=dh`
+byte shuffle `@0x00C336` plus seven `sar dx,1 / rcr ax,1` pairs `@0x00C340..0x00C35A`.
+
+**The seed** is `func_009726 @0x009726`:
+`seed32 = (colony_y << 8) + colony_x + dword[0x8D80]`, and the srand wrapper
+`@0x00C30A` passes **only the low word, masked `and ah,0x7f`** — so the LCG starts
+from 15 bits. `dword[0x8D80]` is the BIOS clock captured once at startup
+(`mov [0x8d80],ax / mov [0x8d82],dx @0x075FF5`), i.e. **per-session, not
+per-save**: the same colony in the same save lays out differently between two
+launches of the game.
+
+**Verified live.** `tools/colony_seed_probe.py` reads the tables straight out of a
+running DOSBox (`/proc/<pid>/mem`, DGROUP anchored on the section-name table).
+With COLONY00.SAV loaded and session base `[0x8D80] = 1410965`:
+
+| colony | (x,y) | live `[0x8E92]` shuffle | live `[0x8E82]` plot→def |
+|---|---|---|---|
+| Jamestown | (50,51) | `6 5 4 0 3 2 1 7 10 8 9 12 11 13 14` | `24 39 32 27 21 · · 3 17 36 13 · 9 2 7` |
+| Curacao | (21,30) | `4 1 3 6 5 2 0 10 7 9 8 12 11 13 14` | `39 · 32 21 · 27 24 · 35 15 · · 9 0 6` |
+
+Both reproduce **exactly** from the simulation, in both phases. Asserted in
+`port/tools/test_flow.py`.
+
+Table findings, all RAM-read:
+- `[0x224]` counts `[7,4,2,1,1]`, `[0x22A]` starts `[0,7,11,13,14]`,
+  `[0x260]` empty-plot decor `[45,44,43,0,46,0]` — all confirm the prior spec.
+- `[0x266]` plot positions are stored **without** the +8 the painters add.
+- **The plot category at `[0x8F87 + id*12]` IS the @BUILDING `size` column** —
+  checked against all 42 rows. That column was never a building size.
+- The group byte at `[0x8F88 + id*12]` puts every upgrade chain on one plot
+  (Town Hall and Capitol share group 3, so the Capitol replaces the Town Hall in
+  place). It is **not** one of the five columns the @BUILDING loader parses and
+  its writer is unidentified — the table is committed as measured, not derived.
+- **Phase D reads `[0x8E92]` by SLOT while phase C wrote it by PLOT.** The engine
+  uses the permutation both ways round. Reproducing that quirk is the only way to
+  get the same layout, so the port reproduces it rather than "fixing" it.
+
+**Frame index corrected.** Rendering the port at Curacao's own seed, position and
+building set and template-matching every plot against the live frame gives
+**bundle frame = def_id** (EXE `def_id+1`), and empty plots at bundle 44/43/42
+against the RAM table's 45/44/43 — the same EXE−1 offset the ICONS sheet has. The
+port had been drawing `def_id+1`.

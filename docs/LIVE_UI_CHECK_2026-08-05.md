@@ -515,3 +515,57 @@ with nobody on it.
 gauges in `drawReligiousReport`/`drawCongressReport` still use their own measured
 helper rather than this one — their alternating 33/34 pitch needs the
 flag-bit-0 fractional path in `func_002EE4 @0x002FBA` read first.
+
+## 11. Colony building placement — simulated, 2026-08-06
+
+The one thing on this screen that had been TBD since June because it is "RNG".
+It is RNG, but the RNG is a plain LCG seeded from a value the port can hold, so
+it simulates exactly. Full citations in `spec/ui/colony_screen.md` §3.7 and
+`notes/rulings/RULINGS.md` 2026-08-06b.
+
+**The chain.** `rand`/`srand` are the Microsoft C runtime's (file `0x0103D4` /
+`0x0103C2`): `state = state*214013 + 2531011`, result `(state >> 16) & 0x7FFF`.
+`random_int(lo,hi)` is `lo + ((rand()*(hi−lo+1)) >> 15)`. The seed is
+`(colony_y << 8) + colony_x + dword[0x8D80]`, of which only the low word survives
+— the srand wrapper masks it with `and ah,0x7f`, so the whole layout of a colony
+comes out of 15 bits.
+
+`dword[0x8D80]` is the BIOS clock read once at startup, which is the part worth
+knowing: it is **per-session, not per-save**. The same colony in the same save
+file lays out differently between two launches of the original game. The port
+draws it once per game and keeps it in `G`, so it survives save/load — a
+deliberate difference, and the friendlier one.
+
+**Verified against the real thing.** `tools/colony_seed_probe.py` reads the
+placement tables straight out of a running DOSBox (`/proc/<pid>/mem`, DGROUP
+anchored on the section-name table). Booting COLONY00.SAV and opening two
+colonies gave session base 1410965 and:
+
+    Jamestown (50,51)  shuffle 6 5 4 0 3 2 1 7 10 8 9 12 11 13 14
+                       plots   24 39 32 27 21 · · 3 17 36 13 · 9 2 7
+    Curacao   (21,30)  shuffle 4 1 3 6 5 2 0 10 7 9 8 12 11 13 14
+                       plots   39 · 32 21 · 27 24 · 35 15 · · 9 0 6
+
+The simulation reproduces all four arrays exactly. They are now regression
+assertions in `port/tools/test_flow.py`, so the port is checked against the real
+engine's output rather than against itself.
+
+**Two things the RAM read corrected.** The plot **category** the placement reads
+at `[0x8F87 + id*12]` is the @BUILDING **`size` column** — identical for all 42
+rows. That column was never a building size. And phase D indexes the shuffle
+array by *slot* where phase C wrote it by *plot*; the engine reads the same
+permutation both ways round, and reproducing that quirk is the only way to get
+the same layout.
+
+**And one the render corrected.** Feeding the port Curacao's own seed, position
+and building set and template-matching every plot against the live frame puts
+BUILDING **frame = def_id** in the lab bundle, not `def_id + 1` — the same EXE−1
+offset the ICONS sheet carries. Empty plots likewise draw 44/43/42 for the RAM
+table's 45/44/43. Side by side, every building and every tree cluster now lands
+on the same pixel; what differs is only what the live frame has drawn *over* the
+field — the animated flag, two colonists, the "Town Hal" tooltip and the cursor.
+New capture: `docs/screens/live_1653_save/colony_curacao_1656.png`.
+
+Still TBD here: the `0xF`/`0x11` garrison frame cases (`@0x026E05`) need a
+garrison count the port does not track, and the ground speckle's noise source is
+still unidentified.

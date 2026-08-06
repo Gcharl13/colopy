@@ -567,6 +567,13 @@ function mkUnit(name, x, y, cargo) {
 function beginGame() {
   G.gold = START_GOLD[G.difficulty];
   G.tax = 0; G.year = 1492; G.season = 0; G.turn = 0;
+  // The colony-layout seed base. In the real game `dword[0x8D80]` is the BIOS
+  // clock read once at startup (`mov [0x8d80],ax / mov [0x8d82],dx` @0x075FF5),
+  // so it is per-SESSION, not per-save: the same colony laid out differently
+  // between two launches of the same save. The port draws it once per game and
+  // keeps it in G, which round-trips through save/load -- a deliberate
+  // difference, and the friendlier one.
+  G.plotSeedBase = (Math.random() * 0x100000000) >>> 0;
   // cycle_init stamps every band's last-rotation time with the clock as the map
   // screen comes up, so the first frame of a game is always phase 0 -- which is
   // the phase docs/screens/06_ingame_map.png was captured at.
@@ -2303,13 +2310,97 @@ function holdAdd(e, i, qty) {
 // when 0x8E82[i]==255. Resolving it needs that initialiser traced or a shipped
 // COLONY??.SAV parsed. Likewise the per-colony RNG plot shuffle (func_025D34)
 // is unresolved, so plots are used in table order.
-const PLOTS = [[56,13],[145,15],[173,18],[8,41],[37,45],[67,54],[96,53],[6,14],
-               [128,53],[10,76],[15,102],[87,11],[66,87],[123,106],[123,55]];
-const PLOT_CATEGORY = [0,0,0,0,0,0,0,1,1,1,1,2,2,3,4];
-// Empty-plot scenery per category: BUILDING.SS frames 42/43/44 are tree
-// clusters, 45 the wooded shore, 47 the outbuilding -- identified by rendering
-// the sheet tail, and matching the scenery in the capture.
-const EMPTY_PLOT_FRAME = [42, 43, 44, 45, 47];
+// Plot positions, RAM-READ 2026-08-06 from `[0x266]` (x,y word pairs, stride 4)
+// with tools/colony_seed_probe.py -- these are the raw table values; the
+// painters blit at (x, y+8), which is why they used to be stored pre-offset.
+const PLOTS = [[56,5],[145,7],[173,10],[8,33],[37,37],[67,46],[96,45],[6,6],
+               [128,45],[10,68],[15,94],[87,3],[66,79],[123,98],[123,47]];
+// `[0x224]` counts and `[0x22A]` starts, same read. The category-per-plot table
+// is rebuilt from them each time a colony opens (@0x025D7B).
+const PLOT_COUNTS = [7,4,2,1,1], PLOT_STARTS = [0,7,11,13,14];
+const PLOT_CATEGORY = PLOT_COUNTS.flatMap((n, cat) => Array(n).fill(cat));
+// `[0x260]`: the scenery frame drawn on an empty plot of each category, 0 = none.
+const PLOT_DECOR = [45,44,43,0,46,0];
+// Which plot each BUILDING GROUP occupies. RAM-read from `[0x8F88 + id*12]`
+// (the record's +1 byte; +0 is the category, which is exactly the @BUILDING
+// `size` column -- checked against all 42 rows). Buildings in one upgrade chain
+// share a group, so an upgrade replaces its predecessor on the same plot; Town
+// Hall and Capitol share group 3 for the same reason. This byte is NOT one of
+// the five columns the @BUILDING loader parses and its writer is unidentified,
+// so the table below is measured, not derived -- flagged as such.
+const BUILDING_GROUP = [
+  0,0,0, 1,1,1, 2,2,2, 3,3,3, 4,4,4, 5,5,5, 6, 7,7, 8,8,8, 9,9,9,
+  10,10,10, 3,3, 11,11,11, 12,12, 13,13, 14,14,14,
+];
+
+// ---- colony building placement: `func_025D34 @0x025D34`, simulated ---------
+// This was TBD from 2026-06-24 to 2026-08-06 on the grounds that it is "RNG".
+// It is -- but the RNG is a plain LCG seeded from a value the port can hold, so
+// it simulates exactly. Verified against live DOSBox RAM (two colonies, both
+// phases, every element): see notes/rulings/RULINGS.md 2026-08-06b.
+//
+// `rand`/`srand` are the Microsoft C runtime's, byte-read at file 0x0103D4 /
+// 0x0103C2: state = state*214013 + 2531011, result = (state >> 16) & 0x7FFF.
+function ColonyRng(seed) { this.s = seed >>> 0; }
+ColonyRng.prototype.next = function () {
+  // 32-bit multiply in two halves -- JS numbers lose the low bits above 2^53.
+  const lo = (this.s & 0xFFFF) * 214013;
+  const hi = ((this.s >>> 16) * 214013) & 0xFFFF;
+  this.s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+  return (this.s >>> 16) & 0x7FFF;
+};
+// `func_00C322 @0x00C322` (0x181F:0x4D4): lo + ((rand*(hi-lo+1)) >> 15).
+ColonyRng.prototype.range = function (lo, hi) {
+  return lo + ((this.next() * (hi - lo + 1)) >> 15);
+};
+
+// Returns 15 entries, one per plot: the index into DATA.buildings of the
+// building standing there, or -1 for an empty plot.
+function colonyPlacement(c) {
+  // `func_009726 @0x009726`: seed = (y<<8) + x + dword[0x8D80]; the srand
+  // wrapper @0x00C30A passes only the low word and masks it (`and ah,0x7f`).
+  const seed = (((c.y << 8) + c.x + (G.plotSeedBase >>> 0)) >>> 0) & 0x7FFF;
+  const rng = new ColonyRng(seed);
+  // Phase C @0x025DBF: each of the 15 slots draws a plot inside its own
+  // category, retrying while that plot is taken.
+  const shuffle = new Array(15).fill(-1);
+  for (let i = 0; i < 15; i++) {
+    const cat = PLOT_CATEGORY[i];
+    let plot;
+    do { plot = rng.range(0, PLOT_COUNTS[cat] - 1) + PLOT_STARTS[cat]; }
+    while (shuffle[plot] >= 0);
+    shuffle[plot] = i;
+  }
+  // Phase D loop 1 @0x025E0E: the first building def of each group claims the
+  // next free slot within that group's category.
+  const groupSlot = new Array(15).fill(-1), nextInCat = [0, 0, 0, 0, 0];
+  DATA.buildings.forEach((b, id) => {
+    const g = BUILDING_GROUP[id];
+    if (groupSlot[g] < 0) {
+      const cat = Number(b.size);
+      groupSlot[g] = PLOT_STARTS[cat] + nextInCat[cat]++;
+    }
+  });
+  // Phase D loop 2 @0x025E61: for every building the colony HAS (def 0 always),
+  // present[ shuffle[slot] ] = def id. Note the engine indexes `[0x8E92]` by
+  // SLOT here and by PLOT in phase C -- it reads the permutation both ways
+  // round. That is the engine's own quirk, and reproducing it is the only way
+  // to get the same layout, so it is reproduced rather than "fixed".
+  // @BUILDING has THREE rows literally named "Town Hall" (ids 9/10/11), so a
+  // name lookup is ambiguous where the engine's def-id query is not. The port
+  // stores building names, so a name resolves to its LOWEST def id -- which is
+  // what the live colonies show (Jamestown and Curacao both sit on id 9). A
+  // colony that had built one of the higher rows would draw the wrong frame,
+  // and fixing that properly means storing def ids on the colony, not names.
+  const have = new Set(c.buildings.map(n => DATA.buildings.findIndex(d => d.name === n)));
+  have.add(0);
+  const present = new Array(15).fill(-1);
+  DATA.buildings.forEach((b, id) => {
+    if (!have.has(id)) return;
+    present[shuffle[groupSlot[BUILDING_GROUP[id]]]] = id;
+  });
+  return present;
+}
 // Stockpile digits are NOT white 0x0F as §26.8 states: sampling the capture's
 // quantity cells gives (195,219,243) with no pure white anywhere, which is
 // palette index 0x31. The SoL band really is near-white (0x10) and the panel
@@ -2340,10 +2431,28 @@ function drawColony(ctx) {
   // positional hash matched to those measured proportions -- an approximation
   // of the texture, not a reproduction of the generator. Tracked as TBD.
   groundSpeckle(ctx, 0, 8, 199, 120);
+  // Both painters blit at (plotX, plotY+8). An occupied plot draws EXE frame
+  // def_id+1, an empty one its category's scenery frame, skipped when that
+  // table byte is 0 (`func_026FF2 @0x26FF2`). Both are EXE-sheet indices and
+  // the lab bundle is one lower, so both lose a 1 here -- confirmed by matching
+  // the live Curacao frame at every plot: buildings hit at bundle frame ==
+  // def_id (plots 2/5/6/9/14 at score 0, the rest best-matched there too, their
+  // residual pixels being the tooltip and colonists drawn over them), and empty
+  // plots at 44/43/42 against the RAM table's 45/44/43.
+  const present = colonyPlacement(c);
   PLOTS.forEach(([px, py], i) => {
-    const b = c.buildings[i];
-    const frame = (b === undefined) ? EMPTY_PLOT_FRAME[PLOT_CATEGORY[i]]
-                                    : DATA.buildings.findIndex(d => d.name === b) + 1;
+    const id = present[i];
+    if (id < 0) {
+      const decor = PLOT_DECOR[PLOT_CATEGORY[i]];
+      if (decor) sheetFrame(ctx, 'BUILDING', decor - 1, px, py + 8);
+      return;
+    }
+    // `func_026DD4 @0x026DE5`: def 0 drawn with no Stockade actually built is
+    // EXE frame 0x11 instead. (Curacao passes the normal path -- it is building
+    // a Fort, which means it already holds the Stockade.) The 0xF/0x11 garrison
+    // cases at @0x026E05 need a garrison count the port does not track.
+    const frame = (id === 0 && !c.buildings.includes(DATA.buildings[0].name))
+                  ? 0x11 - 1 : id;
     sheetFrame(ctx, 'BUILDING', frame, px, py + 8);
   });
 

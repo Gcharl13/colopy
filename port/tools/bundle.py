@@ -115,9 +115,12 @@ def build_data():
     # tier every colony has from the start; the only zero-upkeep row gated above
     # a size-1 colony is the Stockade (min_colony 3), so "upkeep 0 AND
     # min_colony 1" selects the seven starting buildings exactly.
+    # `size` is carried through because it IS the plot category the placement
+    # RNG reads at [0x8F87 + id*12] -- verified against a live RAM read of that
+    # table for all 42 rows (RULINGS.md 2026-08-06b).
     D["buildings"] = [{"name": r["name"], "cost": int(r["cost"]),
                        "min_colony": int(r["min_colony"]), "upkeep": int(r["upkeep"]),
-                       "tools_x10": int(r["tools_x10"])}
+                       "tools_x10": int(r["tools_x10"]), "size": int(r["size"])}
                       for r in rows("@BUILDING")]
 
     # Per-terrain job yields, used for colony production. Row order is the

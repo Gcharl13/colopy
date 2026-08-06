@@ -537,6 +537,27 @@ The verb behind every "N icons with a number on them" row on this screen. **Byte
     and cannot be a fixed table — but the **mechanism, the table semantics, the building set, and
     the frame-lookup path are all resolved**. **B (positions + algorithm + frame path) / per-colony
     shuffle output = RNG (replayable from the seed, verified against live state).**
+  - **SIMULATED AND LIVE-VERIFIED 2026-08-06** (RULINGS 2026-08-06b). The RNG is the Microsoft C
+    runtime's, byte-read at file **`0x0103D4`/`0x0103C2`**: `state = state*214013 + 2531011`,
+    `rand() = (state>>16) & 0x7FFF`; `random_int(lo,hi) = lo + ((rand()*(hi−lo+1))>>15)`
+    (`func_00C322 @0x00C322`, shift = `>>8` byte-shuffle `@0x00C336` + seven `sar/rcr` pairs
+    `@0x00C340..0x00C35A`). The seed is `func_009726 @0x009726`:
+    `(colony_y<<8) + colony_x + dword[0x8D80]`, of which the srand wrapper `@0x00C30A` keeps only
+    the **low word masked `and ah,0x7f`**. `dword[0x8D80]` is the **BIOS clock read once at
+    startup** (`@0x075FF5`) — per-session, so a colony re-lays-out between launches of the same
+    save. Replaying this against a live DOSBox (`tools/colony_seed_probe.py`, session base
+    1410965) reproduces **both** phases exactly for Jamestown (50,51) and Curacao (21,30);
+    the arrays are in RULINGS and asserted in `port/tools/test_flow.py`.
+  - **Two corrections from that read.** (1) The plot **category** at `[0x8F87 + id*12]` **is the
+    @BUILDING `size` column** — verified for all 42 rows; it was never a building size. The group
+    byte at `[0x8F88 + id*12]` puts each upgrade chain on one plot (Town Hall and Capitol share
+    group 3), is not one of the loader's five columns, and its writer is **TBD**. (2) Phase D
+    indexes `[0x8E92]` by **slot** while phase C wrote it by **plot** — the engine reads the
+    permutation both ways round, and that quirk has to be reproduced to get the same layout.
+  - **Frame index:** rendering the port at Curacao's own seed/position/building set and
+    template-matching every plot against the live frame gives **bundle frame = def_id**
+    (EXE `def_id+1`), empty plots at bundle 44/43/42 for the table's 45/44/43 — the same EXE−1
+    offset the ICONS sheet carries.
 
 ### 3.8 Terrain scene — `func_026374 @0x026374` — **interior art source RESOLVED (B, 2026-07-31)**
 The scene panel's terrain is **the shared map compositor rendering a 5×5 tile neighborhood of the

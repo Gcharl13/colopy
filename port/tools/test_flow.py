@@ -1967,6 +1967,48 @@ SCRIPT = """() => {
     })();
   }
 
+  // ---- colony building placement, replayed against live DOSBox RAM ----
+  // Two colonies read out of a running game with tools/colony_seed_probe.py
+  // (session seed base 1410965): Jamestown at (50,51) and Curacao at (21,30).
+  // Both the RNG shuffle and the resulting plot->building map are asserted
+  // element for element, so the simulation is checked against the real engine's
+  // own output rather than against itself.
+  {
+    const cases = [
+      { x: 50, y: 51,
+        shuffle: [6,5,4,0,3,2,1,7,10,8,9,12,11,13,14],
+        present: [24,39,32,27,21,255,255,3,17,36,13,255,9,2,7] },
+      { x: 21, y: 30,
+        shuffle: [4,1,3,6,5,2,0,10,7,9,8,12,11,13,14],
+        present: [39,255,32,21,255,27,24,255,35,15,255,255,9,0,6] },
+    ];
+    const savedSeed = G.plotSeedBase;
+    G.plotSeedBase = 1410965;
+    out.placement = cases.map(t => {
+      // The shuffle on its own, straight out of the ported RNG.
+      const seed = (((t.y << 8) + t.x + 1410965) >>> 0) & 0x7FFF;
+      const rng = new ColonyRng(seed);
+      const shuffle = new Array(15).fill(-1);
+      for (let i = 0; i < 15; i++) {
+        const cat = PLOT_CATEGORY[i];
+        let plot;
+        do { plot = rng.range(0, PLOT_COUNTS[cat] - 1) + PLOT_STARTS[cat]; }
+        while (shuffle[plot] >= 0);
+        shuffle[plot] = i;
+      }
+      // Then the whole placement, given the building set the live colony had.
+      const have = t.present.filter(v => v !== 255);
+      const colony = { x: t.x, y: t.y,
+                       buildings: have.map(id => DATA.buildings[id].name) };
+      const present = colonyPlacement(colony).map(v => (v < 0 ? 255 : v));
+      return { shuffle, present };
+    });
+    G.plotSeedBase = savedSeed;
+    // The @BUILDING `size` column IS the plot category the engine reads at
+    // [0x8F87 + id*12] -- checked against the live table for all 42 rows.
+    out.plotCategoryIsSize = DATA.buildings.map(b => Number(b.size));
+  }
+
   return out;
 }"""
 
@@ -2034,6 +2076,24 @@ def main():
         ("the plaza pack solves to gap 1, second colonist at x=11",
          r["plazaPack"]["gap"] == 1 and r["plazaPack"]["second"] == 11,
          r["plazaPack"]),
+        # Building placement, replayed against live DOSBox RAM.
+        ("colony RNG reproduces Jamestown's live plot shuffle",
+         r["placement"][0]["shuffle"] == [6,5,4,0,3,2,1,7,10,8,9,12,11,13,14],
+         r["placement"][0]["shuffle"]),
+        ("colony RNG reproduces Jamestown's live plot->building map",
+         r["placement"][0]["present"] == [24,39,32,27,21,255,255,3,17,36,13,255,9,2,7],
+         r["placement"][0]["present"]),
+        ("colony RNG reproduces Curacao's live plot shuffle",
+         r["placement"][1]["shuffle"] == [4,1,3,6,5,2,0,10,7,9,8,12,11,13,14],
+         r["placement"][1]["shuffle"]),
+        ("colony RNG reproduces Curacao's live plot->building map",
+         r["placement"][1]["present"] == [39,255,32,21,255,27,24,255,35,15,255,255,9,0,6],
+         r["placement"][1]["present"]),
+        ("@BUILDING size column is the live plot-category table",
+         r["plotCategoryIsSize"] ==
+         [3,3,3,1,1,1,4,4,4,2,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,
+          2,2,0,0,0,1,1,2,2,0,0,0],
+         r["plotCategoryIsSize"]),
         ("sea lane starts a 3-turn crossing",
          r["crossing"] == {"state": "toEurope", "turns": 3, "shipLeftMap": True}, r["crossing"]),
         ("crossing docks and opens the harbour",
