@@ -135,6 +135,21 @@ SHOTS = [
     ("event_raid",
      "beginGame();G.screen='map';showEvent('RAIDSTORES',{STRING0:G.tribes[0].name,"
      "STRING1:'Jamestown',STRING2:'Furs',STRING3:DATA.nations[0].adjective})"),
+    # The three adviser reports rebuilt from live DOSBox frames. Each is set up
+    # to match the state its capture was taken in -- one colony, one ship, one
+    # tribe met -- so port/_shots/report_F*.png diffs directly against
+    # docs/screens/live_2026-08-05/7[456]_report_*.png.
+    ("report_F5",
+     "beginGame();sailToLand();makeColony();G.report='F5';G.screen='report'"),
+    ("report_F7",
+     "beginGame();sailToLand();makeColony();G.report='F7';G.screen='report'"),
+    # F9 lists only tribes whose settlements the player has found, so reveal one
+    # Tupi camp -- the same single-tribe state 76_report_F9_indian.png was taken in.
+    ("report_F9",
+     "beginGame();sailToLand();makeColony();"
+     "(()=>{const ti=G.tribes.findIndex(t=>t.singular==='Tupi');"
+     "G.villages.filter(v=>v.tribe===ti).forEach(v=>{SEEN[v.y*MAP.w+v.x]|=SEEN_BIT();});})();"
+     "G.report='F9';G.screen='report'"),
 ]
 
 

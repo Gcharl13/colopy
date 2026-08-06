@@ -103,8 +103,22 @@ class Font {
     }
     return cx;
   }
+  // Centring is on the INK width, which is one pixel less than the advance
+  // width -- the last glyph's trailing spacing column does not count. Derived
+  // from seven live report strings whose ink extents were measured exactly:
+  //   ECONOMIC ADVISER REPORT  w=90 -> x=116      European Trade w=54 -> 134
+  //   RELIGIOUS ADVISER REPORT w=92 -> x=115      Ship   w=14 -> 36
+  //   LABOR/NAVAL ADVISER ...  w=76 -> x=123      Cargo  w=20 -> 113
+  //   INDIAN ADVISER REPORT    w=80 -> x=121      Location w=29 -> 188
+  // Every one of them is cx - (w-1)/2 rounded, and none is cx - w/2.
   center(ctx, s, cx, y, lut, shadow) {
-    this.draw(ctx, s, Math.round(cx - this.width(s) / 2), y, lut, shadow);
+    this.draw(ctx, s, Math.round(cx - (this.width(s) - 1) / 2), y, lut, shadow);
+  }
+  // Right-aligned: the engine's `anchor - strwidth` numeric placement
+  // (spec/ui/advisor_reports.md §4, `0x181F:0x204`). `rx` is the advance edge,
+  // so the last glyph's ink lands at rx-2 for a 3-of-4 wide digit.
+  right(ctx, s, rx, y, lut, shadow) {
+    this.draw(ctx, s, Math.round(rx - this.width(s)), y, lut, shadow);
   }
 }
 // Ink helper: build the level LUT from a single palette index.
@@ -5453,7 +5467,9 @@ const REPORTS = {
             'the threshold counts every colonist',
             'and every unit you own.'];
   } },
-  F5: { title: DATA.text.misc[50], draw: drawEconomicReport, body: () => {
+  // @MISC 206 'European Trade' -- the view the live capture shows.
+  F5: { title: DATA.text.misc[50], subtitle: DATA.text.misc[206],
+        draw: drawEconomicReport, body: () => {
     const l = [`Treasury: ${G.gold} gold`, `Tax rate: ${G.tax}%`,
                `Paid to the Crown: ${G.kingsFund} gold`, '', 'Market  bid / ask'];
     DATA.cargo.forEach((g, i) => {
@@ -5549,9 +5565,11 @@ const REPORTS = {
 // subtitle sits at y=12. Both measured off 20_report_F4_labor.png, and both
 // match the spec's byte cites.
 const REPORT_TITLE_INK = 0x90;
+const REPORT_SUB_INK = 0x91;     // (255,255,142) -- the subtitle line at y=12
 const REPORT_NAME_INK = 0x92;    // (255,243,93) -- row labels
 const REPORT_VALUE_INK = 0x61;   // (247,243,199) -- counts
 const REPORT_RULE_INK = 0x77;    // (134,0,0) dark red -- separators
+const REPORT_GREEN_INK = 0x0A;   // (85,255,85) -- F5's Tons/Gold columns
 
 function drawReport(ctx) {
   const r = REPORTS[G.report];
@@ -5559,8 +5577,11 @@ function drawReport(ctx) {
   usePalette(pik);
   ctx.drawImage(IMG[pik] || IMG.WOODPANL, 0, 0);
   if (!r) { FONT.tiny.center(ctx, 'Not in this build.', 160, 96, lut(0xFE)); return; }
-  FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 5, lut(REPORT_TITLE_INK), ink(0));
-  if (r.subtitle) FONT.tiny.center(ctx, r.subtitle, 160, 12, lut(REPORT_TITLE_INK), ink(0));
+  FONT.tiny.center(ctx, r.title.toUpperCase(), 160, 5, lut(REPORT_TITLE_INK));
+  // The subtitle is a different ink from the title: 0x91 (255,255,142), not
+  // 0x90. Measured on both 20_report_F4_labor.png and 74_report_F5_economic.png
+  // -- the two live frames that have one.
+  if (r.subtitle) FONT.tiny.center(ctx, r.subtitle, 160, 12, lut(REPORT_SUB_INK));
   // Per-report body: a byte-cited table where we have one, else the old text
   // stack (still portrait-free) for the reports not yet rebuilt.
   if (r.draw) r.draw(ctx);
@@ -5568,7 +5589,7 @@ function drawReport(ctx) {
     let y = 26;
     for (const line of r.body()) {
       for (const l2 of wrapText(FONT.tiny, line, 300)) {
-        FONT.tiny.draw(ctx, l2, 2, y, lut(REPORT_NAME_INK), ink(0));
+        FONT.tiny.draw(ctx, l2, 2, y, lut(REPORT_NAME_INK));
         y += FONT.tiny.height + 2;
       }
       if (!line) y += 2;
@@ -5578,12 +5599,16 @@ function drawReport(ctx) {
 }
 
 // The OK widget the shared chain closes with (@MISC 46), bottom right.
+// Measured off the live frames: a ONE-pixel hollow rectangle in the rule ink
+// 0x77 at x=286..315 (w=30) y=184..197 (h=14), with no fill -- the report plate
+// shows through -- and the caption in 0x92 at y=188, centred on the box. The
+// port used to paint the box solid dark red with a cream border and cream text.
+const OK_BOX = [286, 184, 30, 14];
 function okButton(ctx) {
-  const w = 24, h = 11, x = 320 - w - 6, y = 200 - h - 4;
-  ctx.fillStyle = ink(REPORT_RULE_INK); ctx.fillRect(x, y, w, h);
-  hollowRect(ctx, x, y, w - 1, h - 1, REPORT_VALUE_INK);
-  FONT.tiny.center(ctx, DATA.text.misc[46] || 'OK', x + w / 2, y + 3,
-                   lut(REPORT_VALUE_INK), ink(0));
+  const [x, y, w, h] = OK_BOX;
+  hollowRect(ctx, x, y, w, h, REPORT_RULE_INK);
+  FONT.tiny.center(ctx, DATA.text.misc[46] || 'OK', x + w / 2, y + 4,
+                   lut(REPORT_NAME_INK));
 }
 
 // ---- F4 Labor: the occupation matrix -------------------------------------
@@ -5618,9 +5643,9 @@ function drawLaborReport(ctx) {
       if (!name) return;
       const y = F4_ROW0 + row * F4_PITCH;
       sheetFrame(ctx, 'ICONS', F4_ICON_BASE + job, base + 2, y - 2);
-      FONT.tiny.draw(ctx, name, base + 12, y, lut(REPORT_NAME_INK), ink(0));
+      FONT.tiny.draw(ctx, name, base + 12, y, lut(REPORT_NAME_INK));
       FONT.tiny.center(ctx, String(countProfession(job)), base + 39, y + 8,
-                       lut(REPORT_VALUE_INK), ink(0));
+                       lut(REPORT_VALUE_INK));
     }
   }
 }
@@ -5667,7 +5692,7 @@ function spriteStrip(ctx, x, y, span, items) {
 function drawReligiousReport(ctx) {
   gauge(ctx, 0x0A, 0x19, 0x12C, 0x39, G.crosses, immigrationThreshold());
   FONT.tiny.draw(ctx, `${G.crosses} / ${immigrationThreshold()}`, 0x0A, 0x19 + 20,
-                 lut(REPORT_VALUE_INK), ink(0));
+                 lut(REPORT_VALUE_INK));
 }
 
 // ---- F3 Continental Congress ---------------------------------------------
@@ -5679,7 +5704,7 @@ function drawCongressReport(ctx) {
   const fh = FONT.tiny.height + 2;
   let y = 24;
   FONT.tiny.draw(ctx, DATA.text.misc[112] || 'Next Continental Congress Session:',
-                 4, y, lut(REPORT_NAME_INK), ink(0));
+                 4, y, lut(REPORT_NAME_INK));
   y += fh;
   gauge(ctx, 4, y, 0x12C, 0x3F, G.bells, fatherCost());
   y += 12;
@@ -5689,13 +5714,13 @@ function drawCongressReport(ctx) {
     : 0;
   FONT.tiny.draw(ctx, `${DATA.text.misc[70] || 'Rebel'} ${rebel}%   ` +
                       `${DATA.text.misc[71] || 'Tory'} ${100 - rebel}%`,
-                 4, y, lut(REPORT_NAME_INK), ink(0));
+                 4, y, lut(REPORT_NAME_INK));
   y += fh;
   spriteStrip(ctx, 4, y, 0x12C,
               [[0x7C, Math.round(rebel / 10)], [0x7D, Math.round((100 - rebel) / 10)]]);
   y += 12;
   FONT.tiny.draw(ctx, DATA.text.misc[85] || 'Expeditionary Force:', 4, y,
-                 lut(REPORT_NAME_INK), ink(0));
+                 lut(REPORT_NAME_INK));
   y += fh;
   // REF quartet: engine icons 126/127/10/128 (spec §4, oracle DGROUP read).
   spriteStrip(ctx, 4, y, 0x12C,
@@ -5703,33 +5728,62 @@ function drawCongressReport(ctx) {
                [10, G.ref.Artillery || 0], [128, G.ref['Man-O-War'] || 0]]);
   y += 14;
   FONT.tiny.draw(ctx, DATA.text.misc[86] || 'Founding Fathers:', 4, y,
-                 lut(REPORT_NAME_INK), ink(0));
+                 lut(REPORT_NAME_INK));
   y += fh;
   G.fathersOwned.forEach((name, i) => {
     FONT.tiny.draw(ctx, name, F3_FF_COLS[i % 4], y + Math.floor(i / 4) * fh,
-                   lut(REPORT_VALUE_INK), ink(0));
+                   lut(REPORT_VALUE_INK));
   });
 }
 
 // ---- F5 Economic ----------------------------------------------------------
-// spec §4: header x = 76/170/220 at y=25; commodity rows x=2, y-start 33,
-// pitch 8; value columns x=150/250. Treasury = PowerRecord +0x2A, tax = +0x01.
+// REBUILT from the live frame (docs/screens/live_2026-08-05/74_report_F5_economic.png).
+// It is a 16-row ruled price table with FOUR right-aligned numeric columns and
+// NO commodity icons -- the good's name starts at the very left margin.
+//
+//   subtitle    @MISC 206 'European Trade', centred y=12, ink 0x91
+//   headers     y=25, ink 0x92, drawn LEFT at x = 76 / 131 / 170 / 220
+//               (@MISC 58 Tons / 59 Gold / 203 Bid Price / 204 Ask Price;
+//               the spec's cited 76/170/220 are three of those four x's)
+//   rules       y = 33 + 8*i for i=0..16, x 2..312 inclusive, ink 0x77
+//   good name   x=2, y = 35 + 8*i, ink 0x92
+//   values      right-aligned (advance edge) at x = 92 / 145 / 200 / 251;
+//               Tons and Gold in 0x0A bright green, the two prices in 0x61
+//   the Gold column and both price columns carry a trailing '$'
+//
+// The subtitle names a VIEW: @MISC 91 '(Building Upkeep)' / 92 'TOTAL UPKEEP'
+// belong to a second page of this report that the capture did not reach, so
+// only the European Trade view is drawn. TBD: how the view is switched.
+const F5_RULE0 = 33, F5_PITCH = 8;
+const F5_HEAD_X = [76, 131, 170, 220];
+const F5_VAL_X = [92, 145, 200, 251];
+const F5_HEAD_MISC = [58, 59, 203, 204];
+
 function drawEconomicReport(ctx) {
-  // @MISC 59 Gold, 140 '% Tax', 203 'Bid Price', 204 'Ask Price'.
-  FONT.tiny.draw(ctx, `${DATA.text.misc[59]} ${G.gold}`, 2, 25,
-                 lut(REPORT_NAME_INK), ink(0));
-  FONT.tiny.draw(ctx, `${DATA.text.misc[140]} ${G.tax}`, 76, 25,
-                 lut(REPORT_NAME_INK), ink(0));
-  FONT.tiny.draw(ctx, DATA.text.misc[203], 140, 25, lut(REPORT_NAME_INK), ink(0));
-  FONT.tiny.draw(ctx, DATA.text.misc[204], 240, 25, lut(REPORT_NAME_INK), ink(0));
+  F5_HEAD_MISC.forEach((mi, c) =>
+    FONT.tiny.draw(ctx, DATA.text.misc[mi], F5_HEAD_X[c], 25,
+                   lut(REPORT_NAME_INK)));
+  ctx.fillStyle = ink(REPORT_RULE_INK);
+  for (let i = 0; i <= DATA.cargo.length; i++)
+    ctx.fillRect(2, F5_RULE0 + i * F5_PITCH, 311, 1);
   DATA.cargo.forEach((g, i) => {
-    const y = 33 + i * 8;
-    sheetFrame(ctx, 'ICONS', 0x16 + i, 2, y - 2);
-    FONT.tiny.draw(ctx, g.name, 16, y, lut(REPORT_NAME_INK), ink(0));
-    FONT.tiny.draw(ctx, String(G.market[i]), 150, y, lut(REPORT_VALUE_INK), ink(0));
-    FONT.tiny.draw(ctx, String(askPrice(i)), 250, y, lut(REPORT_VALUE_INK), ink(0));
+    const y = F5_RULE0 + 2 + i * F5_PITCH;
+    FONT.tiny.draw(ctx, g.name, 2, y, lut(REPORT_NAME_INK));
+    const cells = [
+      [String(europeTons(i)), REPORT_GREEN_INK],
+      [`${europeGold(i)}$`, REPORT_GREEN_INK],
+      [`${G.market[i]}$`, REPORT_VALUE_INK],
+      [`${askPrice(i)}$`, REPORT_VALUE_INK],
+    ];
+    cells.forEach(([s, k], c) =>
+      FONT.tiny.right(ctx, s, F5_VAL_X[c], y, lut(k)));
   });
 }
+// Tons held and gold realised per commodity. The engine keeps these on the
+// PowerRecord (vol_accum +0x5C per the spec); this build tracks what it has:
+// the tonnage sitting in colony warehouses, and the running sale total.
+const europeTons = (g) => G.colonies.reduce((n, c) => n + (c.stock[g] || 0), 0);
+const europeGold = (g) => (G.tradeGold && G.tradeGold[g]) || 0;
 
 // ---- F6 Colony ------------------------------------------------------------
 // spec §4: base x=2, rows pitch 0x11=17, 9 per page, colony NAME ink 0x92 at
@@ -5753,29 +5807,51 @@ function drawColonyReport(ctx) {
     const y = 32 + i * 17;
     // ICONS disk band 0-3 are the colony markers, frame = nation.
     drawSettlement(ctx, 2, y - 2, colonyLevel(c), c.nation, 0);
-    FONT.tiny.draw(ctx, c.name, 25, y + 7, lut(REPORT_NAME_INK), ink(0));
-    FONT.tiny.draw(ctx, String(c.colonists.length), 122, y + 7, lut(REPORT_VALUE_INK), ink(0));
+    FONT.tiny.draw(ctx, c.name, 25, y + 7, lut(REPORT_NAME_INK));
+    FONT.tiny.draw(ctx, String(c.colonists.length), 122, y + 7, lut(REPORT_VALUE_INK));
     // Cargo in port: one goods sprite per stocked commodity.
     let cx = 162;
     c.stock.forEach((n, g) => {
       if (n > 0 && cx < 238) { sheetFrame(ctx, 'ICONS', 0x16 + g, cx, y); cx += 10; }
     });
-    FONT.tiny.draw(ctx, String(garrisonOf(c)), 250, y + 7, lut(REPORT_VALUE_INK), ink(0));
+    FONT.tiny.draw(ctx, String(garrisonOf(c)), 250, y + 7, lut(REPORT_VALUE_INK));
   });
 }
 const garrisonOf = (c) =>
   G.units.filter(u => !u.ship && u.x === c.x && u.y === c.y).length;
 
 // ---- F7 Naval -------------------------------------------------------------
-// spec §4, fully decoded: headers @MISC 61-64 centred; first row y=0x2A=42,
-// pitch 0x14=20, 7 ships per page, base x=2. Ship name LEFT ink 0x61 at
-// x=base+0x18=26; cargo = a sprite row; Location CENTRED in box x=162 w=80;
-// Destination CENTRED in box x=242 w=76. Exactly one rule, the footer.
+// CORRECTED against the live frame (docs/screens/live_2026-08-05/75_report_F7_naval.png).
+// The spec's row geometry holds -- first row y=0x2A=42, pitch 0x14=20, 7 ships
+// per page, name LEFT ink 0x61 at x=26, Location/Destination centred in the
+// boxes at 162 w=80 and 242 w=76 -- but two of its statements do not:
+//
+//   * "Exactly ONE rule per page = footer" is WRONG. The live report is a full
+//     grid: horizontal rules at y = 40 + 20*i for i=0..7 spanning x 2..314, and
+//     three column separators at x = 82 / 162 / 242 running y=25..180.
+//   * the four headers are centred in THOSE columns, not over the fields:
+//     Ship (2..82) -> 42, Cargo (82..162) -> 122, Location (162..242) -> 202,
+//     Destination (242..314) -> 278. Header glyph top y=27, ink 0x92.
+//
+// The port previously centred Ship on 68 and Cargo on 137, which is what the
+// spec's field x's imply; the frame says otherwise.
 const F7_ROW0 = 42, F7_PITCH = 20, F7_PER_PAGE = 7;
+const F7_COLX = [2, 82, 162, 242, 314];   // column edges, left to right
+// Header/value centres. The first three are their columns' midpoints; the last
+// is 280, i.e. the midpoint of the spec's Destination BOX (x=242 w=76 -> 318),
+// which runs past the grid's right rule at 314. Measured: the "Destination"
+// header's ink starts at x=262, which is 280-centred, not 278-centred.
+const F7_CENTRE = [42, 122, 202, 280];
+const F7_GRID_TOP = 25, F7_GRID_BOT = 180, F7_RULE0 = 40;
 function drawNavalReport(ctx) {
-  const hd = [[26, 84, 61], [112, 50, 62], [162, 80, 63], [242, 76, 64]];
-  hd.forEach(([x, w, mi]) =>
-    FONT.tiny.center(ctx, DATA.text.misc[mi], x + w / 2, 30, lut(REPORT_NAME_INK), ink(0)));
+  ctx.fillStyle = ink(REPORT_RULE_INK);
+  for (let y = F7_RULE0; y <= F7_GRID_BOT; y += F7_PITCH)
+    ctx.fillRect(F7_COLX[0], y, F7_COLX[4] - F7_COLX[0] + 1, 1);
+  for (let c = 1; c < 4; c++)
+    ctx.fillRect(F7_COLX[c], F7_GRID_TOP, 1, F7_GRID_BOT - F7_GRID_TOP + 1);
+  [61, 62, 63, 64].forEach((mi, c) =>
+    FONT.tiny.center(ctx, DATA.text.misc[mi], F7_CENTRE[c], 27,
+                     lut(REPORT_NAME_INK)));
   const ships = G.units.filter(u => u.ship)
     .map(u => ({ u, loc: `(${u.x}, ${u.y})`, dest: '' }))
     .concat(G.europe.map(e => ({
@@ -5786,14 +5862,33 @@ function drawNavalReport(ctx) {
   ships.slice(0, F7_PER_PAGE).forEach((s, i) => {
     const y = F7_ROW0 + i * F7_PITCH;
     const cu = unit(s.u.type);
-    if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 2, y);
-    FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK), ink(0));
-    let cx = 112;
-    (s.u.cargo || []).forEach(() => { sheetFrame(ctx, 'ICONS', 0x17, cx, y); cx += 10; });
-    FONT.tiny.center(ctx, s.loc, 162 + 40, y + 6, lut(REPORT_VALUE_INK), ink(0));
-    FONT.tiny.center(ctx, s.dest, 242 + 38, y + 6, lut(REPORT_VALUE_INK), ink(0));
+    // Ship cell: the nation plate at the row's own x,y and the hull sprite
+    // right-aligned in a 16-wide box, exactly as drawUnit places them on the
+    // map. Measured on the 1653 frame: plate (2,42) 8x9, Merchantman (ICONS 6,
+    // 13 wide) at x=5 and Galleon (ICONS 7, 14 wide) at x=4 -- i.e. 2+16-w.
+    // The Frigate (ICONS 15, also 13 wide) sits at x=4 there, one pixel left of
+    // what that rule predicts; unexplained, and left as the rule.
+    nationPlate(ctx, 2, y, DATA.nations[G.nation].color, s.u.orders || 0);
+    if (cu) {
+      const [fw] = frameSize('ICONS', cu.icon);
+      sheetFrame(ctx, 'ICONS', cu.icon, 2 + 16 - fw, y);
+    }
+    FONT.tiny.draw(ctx, s.u.type, 26, y + 6, lut(REPORT_VALUE_INK));
+    // Cargo: one goods sprite per laden hold, ICONS frame 22 + commodity,
+    // first at x=88 and pitch 12, y = row + 3 (template-matched at score 0 on
+    // the Merchantman's two bales of furs).
+    let cx = F7_CARGO_X;
+    (s.u.cargo || []).forEach((c) => {
+      const g = (c && c.good !== undefined) ? c.good : c;
+      sheetFrame(ctx, 'ICONS', F7_CARGO_ICON + (typeof g === 'number' ? g : 0),
+                 cx, y + 3);
+      cx += F7_CARGO_PITCH;
+    });
+    FONT.tiny.center(ctx, s.loc, F7_CENTRE[2], y + 6, lut(REPORT_VALUE_INK));
+    FONT.tiny.center(ctx, s.dest, F7_CENTRE[3], y + 6, lut(REPORT_VALUE_INK));
   });
 }
+const F7_CARGO_X = 88, F7_CARGO_PITCH = 12, F7_CARGO_ICON = 22;
 
 // ---- F8 Foreign Affairs ---------------------------------------------------
 // REBUILT against the live frame (docs/screens/live_2026-08-05/70_report_F8.png).
@@ -5814,7 +5909,7 @@ function drawForeignReport(ctx) {
     const r = G.rivals.find(v => v.nation === i);
     const leader = (i === G.nation ? G.leader : '') || DATA.nations[i].leader;
     FONT.tiny.draw(ctx, `${leader}'s ${n.adjective}:`, 2, F8_HEAD0 + i * F8_BLOCK,
-                   lut(REPORT_NAME_INK), ink(0));
+                   lut(REPORT_NAME_INK));
     const y = F8_ROW0 + i * F8_BLOCK;
     const mine = i === G.nation;
     const rebels = mine ? G.colonies.filter(c => (c.sol || 0) >= 50).length
@@ -5824,30 +5919,96 @@ function drawForeignReport(ctx) {
     // @MISC 86 'Rebels' / 87 'Tories' -- the plurals, which is what the live
     // frame prints (69/70 are the singular 'Rebel'/'Tory' used by F3's strip).
     FONT.tiny.draw(ctx, `${DATA.text.misc[86]}: ${rebels}`, 2, y,
-                   lut(REPORT_VALUE_INK), ink(0));
+                   lut(REPORT_VALUE_INK));
     FONT.tiny.draw(ctx, `${DATA.text.misc[87]}: ${tories}`, F8_TORY_X, y,
-                   lut(REPORT_VALUE_INK), ink(0));
+                   lut(REPORT_VALUE_INK));
   });
 }
 
 // ---- F9 Indian ------------------------------------------------------------
-// spec §4: y-start 0x18=24, status column x=0x10=16 then +0x48=72 then +0x14=20.
-// Cell text colour is the runtime global [0x830] = @COLORS "basic" = green
-// (85,150,52); the title uses [0x831] "hilite" gold.
-const F9_GREEN = 68;
+// REBUILT from the live frame (docs/screens/live_2026-08-05/76_report_F9_indian.png).
+// A per-tribe block, not a status grid. For the one tribe met on the capture
+// turn (Tupi):
+//
+//   tribe portrait   16x16 at (10, 25)
+//   tribe name       x=30, glyph top y=28, ink 0x47 = (4,93,4) dark green
+//   settlement count x=41, y=36, ink BLACK -- "13 Camps", the @LEVELS plural
+//   tech level       right-aligned at x=311, y=28, ink 0x47 ("Semi-Nomadic")
+//
+// Two things the spec gets differently and the frame overrules:
+//   * cell colour is index 0x47, not the @COLORS "basic" 68. Under the
+//     REPORT1.PIK palette 68 is (85,150,52) and 71 is (4,93,4); only the
+//     latter appears in the frame.
+//   * the count line is drawn in black, with no dark-core shadow of its own.
+//
+// Row geometry, measured on the 1653 frame (docs/screens/live_1653_save/
+// report_F9.png), which has seven tribes on it:
+//   icon bands 25..40, 46..61, 67..82, 88..103, 109..124, 130..145, 151..166
+//   -> icon top y = 25 + 21*i, so the block PITCH is 21, not the 18 guessed
+//   before. Name y = 28 + 21*i, count line y = 36 + 21*i.
+//
+// A tribe with no settlements left prints "<Name>: Extinct" (@MISC 130) on the
+// name line and nothing else. A tribe holding muskets or horses adds two more
+// cells on the count line, at x=152 and x=209 (one sample each: the Apache row
+// reads "50 Muskets" and "1 Horse Herds").
+const F9_ICON_X = 10, F9_NAME_X = 30, F9_COUNT_X = 40, F9_LEVEL_RX = 311;
+const F9_MUSKET_X = 152, F9_HORSE_X = 209;
+// Seven blocks fill the plate (25 + 7*21 = 172, and the OK box starts at 184),
+// which is why the 1653 frame stops at seven. The spec calls F9 "multi-page via
+// paginator func_039E98"; that paginator is NOT wired up here, so an eighth
+// contacted tribe would simply not be shown. TBD.
+const F9_ICON_Y = 25, F9_ROW0 = 28, F9_PITCH = 21, F9_PER_PAGE = 7;
+// ICONS 113..117 are five near-identical native portraits. The 1653 frame uses
+// 116 for five of its seven rows, 115 for the Apache and 113 for the Sioux --
+// no rule derivable from tribe index, tech level or settlement count, which is
+// what an animation counter looks like. UNRESOLVED; 116 is the modal frame.
+const F9_PORTRAIT = 116;
 function drawIndianReport(ctx) {
-  G.tribes.forEach((t, i) => {
-    const y = 24 + i * 18;
-    const villages = G.villages.filter(v => v.tribe === i).length;
-    FONT.tiny.draw(ctx, t.name, 16, y, lut(F9_GREEN), ink(0));
-    FONT.tiny.draw(ctx, String(villages), 16 + 72, y, lut(F9_GREEN), ink(0));
-    FONT.tiny.draw(ctx, tensionBand(t.tension), 16 + 72 + 20, y, lut(F9_GREEN), ink(0));
-    const missions = G.villages.filter(v => v.tribe === i && v.mission).length;
-    if (missions)
-      FONT.tiny.draw(ctx, `${missions} ${DATA.text.misc[missions > 1 ? 28 : 27]}`,
-                     220, y, lut(F9_GREEN), ink(0));
+  const black = [ink(0), ink(0), ink(0)];
+  // Only tribes the player has actually run into appear. On the 1653 frame the
+  // Dutch list seven of the eight -- Incas, Aztecs and Tupi are there marked
+  // "Extinct", but the Iroquois are absent entirely, i.e. wiped-out-after-
+  // contact is listed and never-contacted is not. The port has no contact
+  // flag, so "has explored a tile holding one of that tribe's settlements"
+  // stands in for it; that is the port's own rule and is flagged here.
+  const listed = G.tribes
+    .map((t, i) => [t, i])
+    .filter(([, i]) => G.villages.some(v => v.tribe === i && isSeen(v.x, v.y)));
+  listed.slice(0, F9_PER_PAGE).forEach(([t, i], row) => {
+    const y = F9_ROW0 + row * F9_PITCH;
+    const n = G.villages.filter(v => v.tribe === i).length;
+    const lv = tribeLevel(t);
+    sheetFrame(ctx, 'ICONS', F9_PORTRAIT, F9_ICON_X, F9_ICON_Y + row * F9_PITCH);
+    // The name ink is the tribe's OWN colour -- @TRIBES' last column, the same
+    // palette index the minimap uses. Verified pixel-exact for all seven tribes
+    // on the 1653 frame (Inca 97 cream, Aztec 149 gold, Arawak 54 blue,
+    // Cherokee 67 green, Apache 111 tan, Sioux 118 dark red, Tupi 71 dark
+    // green). The spec's "cell colour = @COLORS basic 68" does not hold.
+    const tk = lut(t.color);
+    if (!n) {
+      FONT.tiny.draw(ctx, `${t.name}: ${DATA.text.misc[130]}`, F9_NAME_X, y, tk);
+      return;
+    }
+    FONT.tiny.draw(ctx, t.name + ':', F9_NAME_X, y, tk);
+    FONT.tiny.right(ctx, lv.name, F9_LEVEL_RX, y, tk);
+    FONT.tiny.draw(ctx, `${n} ${n === 1 ? lv.one : lv.many}`, F9_COUNT_X, y + 8, black);
+    const muskets = tribeStock(i, 15), horses = tribeStock(i, 8);
+    if (muskets)
+      FONT.tiny.draw(ctx, `${muskets} ${DATA.cargo[15].name}`, F9_MUSKET_X, y + 8, black);
+    if (horses)
+      FONT.tiny.draw(ctx, `${horses} ${DATA.text.misc[45]}`, F9_HORSE_X, y + 8, black);
   });
 }
+// NAMES @LEVELS: "<tech name>, <settlement singular>, <settlement plural>".
+const TRIBE_LEVELS = [
+  { name: 'Semi-Nomadic', one: 'Camp', many: 'Camps' },
+  { name: 'Agrarian', one: 'Village', many: 'Villages' },
+  { name: 'Advanced', one: 'City', many: 'Cities' },
+  { name: 'Civilized', one: 'City', many: 'Cities' },
+];
+const tribeLevel = (t) => TRIBE_LEVELS[Math.min(t.level || 0, 3)];
+const tribeStock = (ti, good) =>
+  G.villages.reduce((n, v) => n + (v.tribe === ti && v.stock ? (v.stock[good] || 0) : 0), 0);
 const tensionBand = (n) => n >= TENSION_WAR ? 'War'
   : n >= TENSION_HOSTILE ? 'Hostile' : n >= 40 ? 'Restless'
   : n >= 20 ? 'Uneasy' : 'Content';
@@ -5870,20 +6031,20 @@ function drawScoreReport(ctx) {
   FONT.tiny.center(ctx,
     `${DATA.difficulty[G.difficulty]} ${G.leader} of the ${nat.adjective}: ` +
     `${DATA.seasons[G.season] || ''} ${G.year}`,
-    160, 13, lut(REPORT_TITLE_INK), ink(0));
+    160, 13, lut(REPORT_TITLE_INK));
   // Citizens, then the Continental Congress contribution.
   const rows = [[DATA.text.misc[115], s.population, 0x66],
                 [DATA.text.misc[196] || 'Continental Congress', s.fathers, 0x3F]];
   rows.forEach(([label, value, sprite], i) => {
     const y = F10_ROW0 + i * F10_PITCH;
     FONT.tiny.draw(ctx, `${nat.adjective} ${label}: +${value}`, F10_X, y,
-                   lut(F10_GREEN), ink(0));
+                   lut(F10_GREEN));
     spriteStrip(ctx, F10_X, y + 8, 0x12C, [[sprite, Math.min(value, 12)]]);
   });
   FONT.tiny.draw(ctx, `${DATA.text.misc[59]}: (${G.gold}$ x${s.mult})`,
-                 F10_X, 150, lut(F10_GREEN), ink(0));
+                 F10_X, 150, lut(F10_GREEN));
   FONT.tiny.draw(ctx, `${DATA.text.misc[121]}: ${s.total}`, F10_X, 162,
-                 lut(F10_GREEN), ink(0));
+                 lut(F10_GREEN));
 }
 
 // Colonists working that job, across every colony, plus units in the field

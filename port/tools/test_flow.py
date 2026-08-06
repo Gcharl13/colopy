@@ -1772,6 +1772,68 @@ SCRIPT = """() => {
         if (d[o] > 230 && d[o + 1] > 220 && d[o + 2] < 140) { labelRow = true; break; }
       }
     out.reports.f4GridAtCitedRow = labelRow;
+
+    // --- the three reports rebuilt from live DOSBox frames -----------------
+    const px = (dd, x, y) => { const o = (y * 320 + x) * 4;
+                               return [dd[o], dd[o + 1], dd[o + 2]]; };
+    const eq = (c, r, g2, b) => c[0] === r && c[1] === g2 && c[2] === b;
+    const render = (key, pre) => {
+      const cv = document.createElement('canvas'); cv.width = 320; cv.height = 200;
+      const gg = cv.getContext('2d');
+      const rr = G.report, ss = G.screen;
+      if (pre) pre();
+      G.report = key; G.screen = 'report';
+      drawReport(gg);
+      G.report = rr; G.screen = ss;
+      return gg.getImageData(0, 0, 320, 200).data;
+    };
+    // The report title is centred on the INK width, one pixel narrower than the
+    // advance width. ECONOMIC ADVISER REPORT lands with its first lit column at
+    // x=116 on the live frame; anything centred on w/2 starts at 115.
+    const d5 = render('F5');
+    let titleX = -1;
+    for (let x = 100; x < 160 && titleX < 0; x++)
+      for (let y = 5; y < 10; y++)
+        if (eq(px(d5, x, y), 255, 255, 190)) { titleX = x; break; }
+    out.reports.titleCentredOnInk = titleX === 116;
+    // F5: 17 dark-red rules at y = 33 + 8i spanning x 2..312.
+    const ruleAt = (dd, y) => eq(px(dd, 2, y), 134, 0, 0) && eq(px(dd, 312, y), 134, 0, 0);
+    out.reports.f5Rules = [...Array(17).keys()].every(i => ruleAt(d5, 33 + 8 * i))
+                          && !ruleAt(d5, 34);
+    // F5: the good's name starts at the left margin, no commodity icon.
+    let f5Name = false;
+    for (let y = 35; y < 40 && !f5Name; y++)
+      if (eq(px(d5, 2, y), 255, 243, 93)) f5Name = true;
+    out.reports.f5NameAtMargin = f5Name;
+    // F7: the grid the spec says does not exist -- three column separators and
+    // eight full-width rules.
+    const d7 = render('F7');
+    const colAt = (x) => eq(px(d7, x, 30), 134, 0, 0) && eq(px(d7, x, 170), 134, 0, 0);
+    out.reports.f7Grid = [82, 162, 242].every(colAt)
+                         && [40, 60, 80, 100, 120, 140, 160, 180]
+                            .every(y => eq(px(d7, 3, y), 134, 0, 0))
+                         && !colAt(112);
+    // F9: block pitch 21, and the tribe's name in the tribe's OWN colour.
+    const tupi = G.tribes.findIndex(t => t.singular === 'Tupi');
+    const d9 = render('F9', () => {
+      G.villages.forEach(v => { SEEN[v.y * MAP.w + v.x] &= ~SEEN_BIT(); });
+      G.villages.filter(v => v.tribe === tupi)
+                .forEach(v => { SEEN[v.y * MAP.w + v.x] |= SEEN_BIT(); });
+    });
+    // Some TRIBE.TXT sites coincide after the +2 column shift, so revealing the
+    // Tupi camps can light another tribe's row too. Find whatever row the Tupi
+    // colour lands on and assert it starts at the name column and sits on the
+    // 21-pixel block grid.
+    const tc = PAL[G.tribes[tupi].color];
+    let nameX = -1, nameY = -1;
+    for (let y = 20; y < 180 && nameY < 0; y++)
+      for (let x = 20; x < 120; x++)
+        if (eq(px(d9, x, y), tc[0], tc[1], tc[2])) { nameX = x; nameY = y; break; }
+    out.reports.f9TribeColour = nameX === 30 && (nameY - F9_ROW0) % F9_PITCH === 0;
+    out.reports.f9Pitch = F9_PITCH === 21 && F9_ROW0 === 28 && F9_ICON_Y === 25;
+    // The OK button is a hollow dark-red box, not a filled one.
+    out.reports.okHollow = eq(px(d7, 286, 184), 134, 0, 0)
+                           && !eq(px(d7, 300, 186), 134, 0, 0);
   }
   {
     // Difficulty picker: both label lines stacked in the middle of the selected
@@ -2193,6 +2255,16 @@ def main():
          and r["reports"]["titlesFromMisc"], r["reports"]),
         ("F4 labor grid lands on the byte-cited first row and column",
          r["reports"]["f4GridAtCitedRow"], r["reports"]),
+        ("report titles centre on the ink width, not the advance width (live check)",
+         r["reports"]["titleCentredOnInk"], r["reports"]),
+        ("F5 economic: 17 rules at y=33+8i and the good name at the margin (live check)",
+         r["reports"]["f5Rules"] and r["reports"]["f5NameAtMargin"], r["reports"]),
+        ("F7 naval is a ruled grid: separators at 82/162/242 (live check)",
+         r["reports"]["f7Grid"], r["reports"]),
+        ("F9 indian: block pitch 21, tribe name in the tribe's own colour (live check)",
+         r["reports"]["f9Pitch"] and r["reports"]["f9TribeColour"], r["reports"]),
+        ("the report OK button is a hollow dark-red box (live check)",
+         r["reports"]["okHollow"], r["reports"]),
         ("pedia terrain index = 21 alphabetised names, article ids kept (live check)",
          r["liveFixes"]["terrainNames"] and r["liveFixes"]["terrainIds"],
          r["liveFixes"]),
