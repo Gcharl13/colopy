@@ -7445,3 +7445,37 @@ Two consequences for the port, both fixed:
 **Not verified:** the F3 bell row. Both shipped F3 captures are at 0 bells (no
 ICONS bundle-62 sprite anywhere in either), so its geometry is ported by analogy
 with F2 and is unchecked.
+
+## 2026-08-06e — F3's bell row does NOT fit the gauge model (open discrepancy)
+
+Follow-up to 2026-08-06d, which closed the F2 crosses row to the pixel and left
+the F3 bell row "ported by analogy, unchecked" for want of a frame with bells in
+it. `docs/screens/live_1653_save/report_F3.png` — the 1653 save, which the two
+2026-08-05 F3 captures are not — has one. It does not fit.
+
+**What the live row measures.** A count badge reading **252** at the left of the
+strip, then **22** bell icons whose inter-icon steps are
+`[4 ×11, 3, 4 ×9]` (marker pixels at y=42 colour 7:
+9,13,…,53,**56**,60,…,92 — the single 3-step is real and appears identically in
+the y=40 row). The one fully unoccluded bell template-matches ICONS bundle 62 at
+x=89.
+
+**Why it cannot be the gauge as read.** The badge value is `bx − arg[bp+8]`
+taken *before* the shift (`@0x002F29`) and the drawn count is `bx >> shift`
+(`@0x002F3D`), so a badge of 252 implies `drawn = 252` and an icon count in
+`{252,126,63,31,15,…}` — never 22. Independently, a search over 6000 slot counts
+(and every `drawn` up to 300, all shifts) produced **no** parameter set whose
+step sequence is `[4 ×11, 3, 4 ×9]`; the closest, 74 slots, puts its single
+3-step **first** rather than twelfth, which needs the accumulator to start near
+33 where `func_002EE4` clears it to 0 (`@0x002F16`).
+
+So either the call site's arguments differ from the reading at
+`@0x037BCE..0x037BF5` (x from `[bp-0x56]`, y from `[bp-0x5A]`, span `0x12C`,
+flags 1, sprite `0x3F`, slots `[bp-0x54]`, drawn `[bp-0x66]`), or that row is
+drawn somewhere else entirely. **Unresolved.** The port keeps the F2 analogy with
+the discrepancy stated in the code rather than tuned to fit.
+
+Next step for whoever picks this up: the two locals are stack values, so the RAM
+probe cannot read them — this needs either a breakpoint trace or the F3 body
+disassembled forward from `func_037A20` to find what fills `[bp-0x54]` and
+`[bp-0x66]`.

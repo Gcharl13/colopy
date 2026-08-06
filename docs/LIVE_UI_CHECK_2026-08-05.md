@@ -660,3 +660,30 @@ the primitives index said they should be all along.
 bell sprite anywhere in either — so its geometry is ported by analogy with F2 and
 is unchecked. Getting a frame with bells on it is the cheap next step now that
 the harness reaches the reports.
+
+
+## 14. F3's bells: the frame exists, and it refutes the analogy (2026-08-06)
+
+§13 closed F2 to the pixel and left F3's bell row unverified for want of a frame
+with bells in it. The 1653 save has one — `report_F3.png` in
+`docs/screens/live_1653_save/` — and it does not fit.
+
+The live row is a **252** badge followed by **22** bell icons whose steps are
+`[4 x11, 3, 4 x9]`. That single 3-step is real: it shows identically in two
+different pixel rows of the sprite. And it cannot be produced by the gauge as
+read. A badge of 252 means `drawn = 252`, which makes the icon count one of
+252/126/63/31/15 — never 22. Searching 6000 slot counts, every `drawn` up to 300
+and every shift produced no parameter set with that step sequence; the closest
+candidate puts its 3-step first rather than twelfth, which would need the
+accumulator to start near 33 where the code clears it to zero.
+
+So either the call site's arguments differ from what I read at `@0x037BCE`, or
+that row is drawn somewhere else. Recorded as an open discrepancy in
+`notes/rulings/RULINGS.md`; the port keeps the F2 analogy with the mismatch
+stated in the code rather than tuned until it matched. Resolving it needs the F3
+body traced forward from `func_037A20` — the two counts are stack locals, so the
+RAM probe cannot reach them.
+
+This is the first thing in this pass where having the live frame made the answer
+*less* certain rather than more, which seems worth saying plainly: the F2 result
+stands on its own evidence and does not transfer to F3.

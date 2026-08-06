@@ -6210,7 +6210,17 @@ function drawCongressReport(ctx) {
   FONT.tiny.draw(ctx, DATA.text.misc[112] || 'Next Continental Congress Session:',
                  4, y, lut(REPORT_NAME_INK));
   y += fh;
-  // Same shape at x=4, sprite EXE 0x3F (@0x037BE2-0x037BF5).
+  // Same shape, sprite EXE 0x3F, x from `[bp-0x56]` and y from `[bp-0x5A]`
+  // (@0x037BCE-0x037BF5).
+  //
+  // UNVERIFIED, and known not to match the one live frame that has bells on it.
+  // `docs/screens/live_1653_save/report_F3.png` shows a "252" badge and 22 bell
+  // icons whose steps are [4 x11, 3, 4 x9] -- and no (slots, drawn) pair
+  // reproduces that sequence under the byte-read gauge geometry; 6000 slot
+  // counts were searched and none fits, and 252 cannot be any `drawn >> shift`
+  // that yields 22 icons. So either the call site's arguments differ from the
+  // reading above or a different path draws that row. Left as the F2 analogy
+  // with the discrepancy recorded rather than tuned to fit.
   gauge(ctx, 0x3F - 1, G.bells, 0, fatherCost(), 4, y, 0x12C, 1, 0, 0);
   y += 12;
   // Rebel sentiment = the mean Sons-of-Liberty percentage across colonies.
