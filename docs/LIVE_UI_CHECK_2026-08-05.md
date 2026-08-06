@@ -413,3 +413,50 @@ Nothing structural is left in any of the three. **Live-verified now: F2, F3
   never reached, so how the view is switched is **TBD**.
 * The colony screen (§7) is captured at last — `79_colony_screen_fresh.png` and
   the 1653 set — but **not yet diffed** against the port.
+
+---
+
+## 10. The colony screen, 2026-08-06
+
+### 10.1 How to reach it
+
+Not by clicking the colony on the map — with a unit active every map click is a
+move order, and the click just sails the ship. F6's rows do not zoom either;
+clicking one pages the report. What works is the **`Zoom to colony.` option on
+a colony event popup** (`@MISC` 36), e.g. the food-shortage warning. The 1653
+save throws one on the first turn advance.
+
+Two screens fell out of the same run, both captured for the first time:
+`docs/screens/live_1653_save/combat_analysis.png` (the modifier stack:
+Attack Bonus +50%, Stockade +100%, Fortified +50%) and the colony
+food-shortage popup.
+
+### 10.2 What the diff found
+
+The frame is `docs/screens/live_1653_save/colony_curacao.png` — Curacao,
+population 8, five buildings, eight worked tiles.
+
+**Header, stockpile bar, panel boxes and the black separators all match.**
+Word-for-word: the port's title lays out `<name>, <Season>, <Year>, Gold: <n>$`
+with identical word widths, and the whole string is centred, so the only offset
+between the two frames is the width of the gold figure.
+
+**The production panel was wrong in kind, not degree.** The port drew a text
+list; the real panel is three rows of *count badge + overlapping sprite strip*,
+with a red cancel sprite laid over a run to mark consumption — the same verb
+F3 uses for its REF rows. Rebuilt; geometry and sprite identifications are in
+the code comment and the commit.
+
+### 10.3 Still to do on this screen
+
+* The **tile panel** (top right) draws a colonist sprite and a yield badge in
+  each worked cell, with a green selection box on the active one. The port draws
+  the terrain and a single white centre-tile rectangle.
+* The **colonist row** in the bottom-left panel is one sprite per colonist; the
+  port draws only the unassigned ones.
+* The **SoL band** carries *two* figures — "6% (1)" at the left and "94% (8)"
+  right of it, with the crown between — where the port draws one.
+* The strip **pitch** is unresolved: furs and ore fit 4, hammers and the cancel
+  marks fit 6, and one capture cannot tell a per-band rule from a global one.
+* Building placement in the scene panel is RNG-driven (`func_025D34`) and stays
+  TBD, as it has been since 2026-06-24.
