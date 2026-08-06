@@ -2004,6 +2004,18 @@ SCRIPT = """() => {
                                   centre: 4, eaten: 18, netFood: -2 });
     out.prodRows = rows.map(row => row.filter(c => c.count > 0 || c.sub > 0)
                                      .map(c => [c.frame - 22, c.count, c.sub, c.flags]));
+
+    // A SECOND live colony, Vlissingen (25,34), read the same way. Its lumber is
+    // produced 8 / consumed 4 where Curacao's was produced 0 / consumed 6, which
+    // is what resolved both [0x8E5A] and [0x8E14].
+    const g2 = zero(), c2 = zero();
+    [19,0,0,0,0,8,13,0,4,0,0,0,0,0,6,0].forEach((v,i) => g2[i] = v);
+    [0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0].forEach((v,i) => c2[i] = v);
+    const rows2 = productionRows({ gross: g2, consumed: c2, out: g2,
+                                   tally: { [HAMMERS]: 12, [BELLS]: 1, [CROSSES]: 1 },
+                                   centre: 4, eaten: 18, netFood: 1 });
+    out.prodRows2 = rows2.map(row => row.filter(c => c.count > 0 || c.sub > 0)
+                                        .map(c => [c.frame - 22, c.count, c.sub, c.flags]));
   }
 
   // ---- colony building placement, replayed against live DOSBox RAM ----
@@ -2127,9 +2139,21 @@ def main():
         ("production row 0 is furs/ore/silver -- consumed-only cotton is skipped",
          r["prodRows"][0] == [[4, 3, 0, 0], [6, 8, 0, 0], [7, 3, 0, 0]],
          r["prodRows"][0]),
-        ("production row 1 marks the horses run and leaves cloth/tools clean",
-         r["prodRows"][1] == [[8, 4, 4, 0], [11, 6, 0, 0], [14, 6, 0, 0]],
+        # Cloth and tools are the verified part of the [0x8E5A] rule: both were
+        # made from raws the colony did NOT produce that turn, and both draw
+        # unmarked in the live frame. The horses entry is KNOWINGLY wrong here --
+        # live Curacao marks all 4 and the port marks none, because the Horses
+        # slot is the one that does not fit min(consumed, produced) and no second
+        # rule has been earned. Asserted as-is so the divergence cannot drift
+        # unnoticed.
+        ("production row 1 leaves cloth and tools clean (horses under-marked, known)",
+         r["prodRows"][1] == [[8, 4, 0, 0], [11, 6, 0, 0], [14, 6, 0, 0]],
          r["prodRows"][1]),
+        ("Vlissingen row 1: horses and tools, both from the same [0x8E5A] rule",
+         r["prodRows2"][1] == [[8, 4, 0, 0], [14, 6, 0, 0]], r["prodRows2"][1]),
+        ("Vlissingen row 2: 8 lumber produced plain, 4 consumed marked",
+         [c[:3] for c in r["prodRows2"][2]] == [[5, 8, 0], [5, 4, 0], [32, 12, 0]]
+         and r["prodRows2"][2][1][3] == 0x8000, r["prodRows2"][2]),
         ("production row 2 is the consumed lumber (bit 15) then the hammers",
          [c[:3] for c in r["prodRows"][2]] == [[5, 6, 0], [32, 6, 0]]
          and r["prodRows"][2][0][3] == 0x8000, r["prodRows"][2]),

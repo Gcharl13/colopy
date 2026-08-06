@@ -7479,3 +7479,48 @@ Next step for whoever picks this up: the two locals are stack values, so the RAM
 probe cannot read them — this needs either a breakpoint trace or the F3 body
 disassembled forward from `func_037A20` to find what fills `[bp-0x54]` and
 `[bp-0x66]`.
+
+## 2026-08-06f — a second colony closes two open slots; Europe's first real diff
+
+**Vlissingen (25,34)** read with `tools/colony_seed_probe.py` while its colony
+screen was open — a different production state from Curacao's, which is what
+these two needed.
+
+- **`[0x8E5A]` RESOLVED.** It is the part of a raw's consumption met from **this
+  turn's output**, not the total consumed: Curacao lumber produced 0 / consumed 6
+  reads **0**; Vlissingen lumber produced 8 / consumed 4 reads **4**; Curacao
+  cotton produced 0 / consumed 6 reads **0** (and its cloth run draws unmarked).
+  `min(consumed, produced)` fits all three.
+  **Except Horses**, the one good that sources itself: 4 against produced 4 in
+  Curacao but **3** against produced 4 in Vlissingen. No rule earned; the port
+  under-marks that single entry rather than inventing one, and the divergence is
+  asserted in the tests so it cannot drift unnoticed.
+- **`[0x8E14]` RESOLVED: it is HAMMERS PRODUCED.** 6 against 6 hammers in
+  Curacao, 12 against 12 in Vlissingen. The branch at `@0x0276AF` compares it
+  with lumber produced, so in the common case the **whole lumber-produced figure**
+  is enqueued plain — Vlissingen draws 8 plain lumber and 4 marked having made 8
+  and eaten 4. The port had been drawing produced-minus-consumed. Fixed.
+- Still open there: `[0x8E64]` (hammers consumed, 0 and 4 in the two colonies) —
+  the port banks hammers rather than spending them per turn, so it draws the
+  whole run plain and leaves the marked part out.
+
+**Europe, first proper diff** against `docs/screens/live_2026-08-05/30_europe.png`
+(the previous pass called it a "close match" and never measured it). Three real
+defects:
+
+1. **Ships in port were not drawn at all.** A ship occupies an **18×18 slot with
+   a hollow GREEN 0x0A rect** and its own icon inside: slot 0 box
+   **(145,145)-(162,162)**, ICONS frame 5 at **(149,146)** — sprite at box+(3,1).
+   The port drew a fixed crate frame in a 12px slot instead.
+2. **Dock units** use the same 18×18 green slot: box **(232,137)-(249,154)**,
+   ICONS frame 102 at **(235,138)**. The port drew a nation plate and no box.
+3. **The cargo row is the SELECTED SHIP'S HOLD, not one crate per ship.** Six
+   slots at **x = 147 + 12k, y = 165** (frame 122 matches the live row at
+   171/183/195/207 at score 0, i.e. pitch 12 back to 147). The ship's own
+   `@UNIT.cargo` holds draw dark and the slots beyond its capacity carry frame
+   122's cross — the live caravel shows exactly 2 dark + 4 crossed.
+
+Unmeasured, and left at the port's previous values: the **slot pitch** for both
+ships and dock units (the frame has one of each). Also unresolved: the live ship
+carries a **red nation flag** the port does not draw, and the two dark hold cells
+match no ICONS frame better than 0.62 — they are drawn as a plain dark cell.

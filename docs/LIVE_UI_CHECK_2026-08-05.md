@@ -687,3 +687,41 @@ RAM probe cannot reach them.
 This is the first thing in this pass where having the live frame made the answer
 *less* certain rather than more, which seems worth saying plainly: the F2 result
 stands on its own evidence and does not transfer to F3.
+
+
+## 15. Europe, diffed properly at last (2026-08-06)
+
+§1 recorded Europe as a "close match" and never measured it. Measured, it had
+three real defects — and the diff also handed over a second colony's production
+tables, which closed the two items §12 left open.
+
+**Ships in port were not drawn at all.** A ship sits in an **18x18 slot with a
+hollow green rect** and its own icon inside — slot 0 at (145,145)-(162,162) with
+ICONS frame 5 at (149,146). The port drew a fixed crate frame in a 12px slot.
+
+**Dock units use the same 18x18 green slot** at (232,137)-(249,154). The port
+drew a nation plate and no box.
+
+**The cargo row is the selected ship's hold, not one crate per ship.** Six slots
+at x = 147 + 12k, y = 165 — geometry the port already had right, applied to the
+wrong thing. The ship's own `@UNIT.cargo` holds draw dark and the slots beyond
+its capacity carry frame 122's cross; the live caravel shows exactly 2 dark and
+4 crossed, which the port now reproduces.
+
+Left unmeasured because the frame has one ship and one dock unit: the **slot
+pitch** for either. And two things seen but unexplained — the live ship carries a
+red nation flag the port does not draw, and the two dark hold cells match no
+ICONS frame better than 0.62.
+
+**The colony bonus.** Steering toward Europe went through a colony popup and
+landed in **Vlissingen**, whose production state differs from Curacao's in
+exactly the way the two open slots needed. `[0x8E5A]` is the part of a raw's
+consumption met from *this turn's* output — `min(consumed, produced)`, which fits
+all three available data points — and `[0x8E14]` is simply **hammers produced**.
+The second of those means the lumber run draws the whole produced figure, not
+produced-minus-consumed as the port had it.
+
+One thing did not resolve: the Horses slot, the only good that sources itself,
+reads 4 against produced 4 in one colony and 3 against produced 4 in the other.
+The port under-marks that single entry rather than inventing a second rule, and
+the test asserts the wrong-but-known value so it cannot drift silently.

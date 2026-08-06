@@ -2853,29 +2853,44 @@ function productionRows(r) {
   // that (@0x027646-0x027688). The source table is RAM-read below and matches
   // the port's own chain map -- except slot 8, where Horses source THEMSELVES.
   //
-  // `[0x8E5A]` is NOT the consumed-raw table: live Curacao ate 6 cotton to make
-  // 6 cloth, yet reads 0 there and draws the cloth run unmarked. The only
-  // non-zero entry in that frame is Horses' own 4. So the port reproduces the
-  // one case the evidence covers and leaves the rest at 0 rather than guessing
-  // what fills that array -- the slot is 20 words past `[0x8E32]`, i.e. a
-  // second bank of the consumed table, and its writer is unread.
+  // `[0x8E5A]` RESOLVED 2026-08-06 by a second live colony. It is the part of a
+  // raw's consumption met from THIS TURN'S output, not the total consumed:
+  //   Curacao   lumber produced 0, consumed 6 -> reads 0
+  //   Vlissingen lumber produced 8, consumed 4 -> reads 4
+  //   Curacao   cotton produced 0, consumed 6 -> reads 0 (cloth draws unmarked)
+  // i.e. min(consumed, produced), which fits all three.
+  //
+  // The Horses slot -- the one good that sources itself -- does NOT fit that
+  // rule: it reads 4 against produced 4 in Curacao but 3 against produced 4 in
+  // Vlissingen, so its filler is still unknown and this rule under-marks that
+  // one entry rather than inventing a second rule for it.
   const SRC = { 8: 8, 9: GOOD.SUGAR, 10: GOOD.TOBACCO, 11: GOOD.COTTON,
                 12: GOOD.FURS, 14: GOOD.ORE, 15: GOOD.TOOLS };
   const made = [];
   for (let i = 8; i < r.gross.length; i++) {
-    const amt = SRC[i] === i ? r.gross[i] : 0;
+    const src = SRC[i];
+    const amt = src === undefined ? 0
+              : Math.min(r.consumed[src] || 0, r.gross[src] || 0);
     made.push(cell(i, Math.max(r.gross[i], amt), amt));
   }
-  // Row 2: lumber then hammers, each split surplus / consumed. Bit 15 marks
-  // every icon of the consumed run and reddens its badge (`ax=0x801c` @0x0276F1,
-  // `ax=0x8037` @0x02771F). The engine splits the lumber surplus again against
-  // `[0x8E14]` (@0x0276AF-0x0276D8); what that slot holds is unread, so the port
-  // draws the surplus as one run and says so rather than inventing the split.
+  // Row 2: lumber then hammers. Bit 15 marks every icon of a consumed run and
+  // reddens its badge (`ax=0x801c` @0x0276F1, `ax=0x8037` @0x02771F).
+  //
+  // `[0x8E14]` RESOLVED 2026-08-06: it is HAMMERS PRODUCED -- it reads 6 against
+  // 6 hammers in Curacao and 12 against 12 in Vlissingen. The branch at
+  // @0x0276AF compares it with lumber produced and, in the common case where
+  // hammers >= lumber, enqueues the lumber PRODUCED figure whole. So the plain
+  // run is lumber produced, not produced-minus-consumed as the port had it:
+  // Vlissingen shows 8 plain lumber and 4 marked, having produced 8 and eaten 4.
   const lumberUsed = r.consumed[GOOD.LUMBER];
   const hammers = r.tally[HAMMERS];
   const work = [
-    cell(GOOD.LUMBER, r.gross[GOOD.LUMBER] - lumberUsed, 0),
+    cell(GOOD.LUMBER, r.gross[GOOD.LUMBER], 0),
     cell(GOOD.LUMBER, lumberUsed, 0, 0x8000),
+    // Hammers split the same way against `[0x8E64]`, which read 0 in Curacao and
+    // 4 in Vlissingen -- hammers spent on construction this turn. The port banks
+    // hammers rather than spending them per turn and has no equivalent, so the
+    // whole run draws plain and the marked part is left out rather than faked.
     { frame: PROD_HAMMER_ICON, count: hammers, sub: 0, flags: 0 },
   ];
   return [raw, made, work];
@@ -3025,22 +3040,52 @@ function drawEurope(ctx) {
   FONT.tiny.draw(ctx, ship ? 'Loading:' : 'No Ships In Port', 150, 120, lut(HUD_INK));
   if (ship) FONT.tiny.draw(ctx, ship.type, 186, 120, lut(HUD_INK));
 
-  // Units waiting on the dock: recruits, trainees and purchased land units
-  // stand here until a ship carries them across.
+  // Dock units and ships in port, REBUILT 2026-08-06 from the live frame
+  // (docs/screens/live_2026-08-05/30_europe.png). Both are drawn the same way:
+  // an 18x18 hollow rect in GREEN 0x0A with the unit's own sprite inside.
+  // Measured there:
+  //   dock slot 0   box (232,137)-(249,154), ICONS frame 102 at (235,138)
+  //   ship slot 0   box (145,145)-(162,162), ICONS frame   5 at (149,146)
+  // so the sprite sits at box + (3, 1), the extra pixel on the ship being its
+  // own 13px width against the unit's 8. The port had been drawing a nation
+  // plate for dock units and a fixed crate sprite for ships, and no box at all.
+  //
+  // The frame has ONE ship and ONE dock unit, so the SLOT PITCH is unmeasured;
+  // the port keeps its previous 14 (units) and 12 (ships) rather than inventing
+  // new numbers, and a capture with several of each would settle it.
+  const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
+  const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
   G.dockUnits.slice(0, 6).forEach((name, k) => {
     const u = unit(name) || unit('Colonists');
-    const [fw, fh] = frameSize('ICONS', u.icon);
-    const x = 232 + k * 14;
-    sheetFrame(ctx, 'ICONS', u.icon, x, 152 - fh);
-    nationPlate(ctx, x - 2, 142, DATA.nations[G.nation].color, 1);
+    const x = EURO_DOCK.x + k * EURO_DOCK.pitch;
+    sheetFrame(ctx, 'ICONS', u.icon, x + 3, EURO_DOCK.y + 1);
+    hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
-
-  // Ships in port occupy the six dock slots; the hold rides with the ship.
   shipsInPort().forEach((e, k) => {
     if (k >= 6) return;
-    sheetFrame(ctx, 'ICONS', 122, 147 + 12 * k, 165);
-    if (k === G.euroShip) hollowRect(ctx, 146 + 12 * k, 164, 12, 14, 0x0E);
+    const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
+    sheetFrame(ctx, 'ICONS', e.icon, x + 3, EURO_SHIP.y + 1);
+    if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
   });
+
+  // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That
+  // geometry was already right (frame 122 template-matches the live row at
+  // 171/183/195/207 at score 0, i.e. pitch 12 back to 147); what was wrong is
+  // that the port drew it FOR the ships, one crate per ship, instead of drawing
+  // the selected ship's hold. In the live frame the caravel's own two holds are
+  // dark and the four slots beyond its capacity carry frame 122's cross.
+  //
+  // The dark hold is not a sprite I can name: nothing in ICONS matches those two
+  // cells better than 0.62, so they are drawn as a plain dark cell here and the
+  // real source is left open.
+  if (ship) {
+    const holds = Number((unit(ship.type) || {}).cargo) || 0;
+    for (let k = 0; k < 6; k++) {
+      const x = 147 + 12 * k;
+      if (k < holds) { ctx.fillStyle = ink(0); ctx.fillRect(x, 165, 10, 12); }
+      else sheetFrame(ctx, 'ICONS', 122, x, 165);
+    }
+  }
 
   // Recruit menu rows (281, 89+11r, 37, 9); accelerator letter yellow.
   // Buttons at (281, 89+11r, 37, 9): a 1px dark-blue border with the PIK panel
