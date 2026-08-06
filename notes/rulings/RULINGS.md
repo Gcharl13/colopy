@@ -7349,3 +7349,57 @@ building set and template-matching every plot against the live frame gives
 **bundle frame = def_id** (EXE `def_id+1`), and empty plots at bundle 44/43/42
 against the RAM table's 45/44/43 — the same EXE−1 offset the ICONS sheet has. The
 port had been drawing `def_id+1`.
+
+## 2026-08-06c — colony panels: what the live RAM said, and three corrections
+
+`tools/colony_seed_probe.py` extended to read the panel state as well as the
+placement tables. Read with live Curacao's colony screen open (the same frame as
+`docs/screens/live_1653_save/colony_curacao.png`).
+
+**1. The worker sprite is not the `0x2BC` call.** The tile panel's `0x2BC` at
+`(x+4, y+4)` `@0x026639` belongs to **flag bit 7** — a map unit standing on the
+tile. Every inner cell of live Curacao reads flags **0**, yet six of them show a
+colonist. The colonist is the **last** step of the cell, `0x181F:0xA74(tile,3)`
+→ `0x181F:0x24A` `@0x026763..0x02677C`, pushed anchor `(x+0xC, y+6)`. ICONS
+frame 100 template-matches at **(x+14, y+6)** at score 0 — y exact, x two further
+out than the push, so `0x24A` adds an inset of its own. Measured, mechanism TBD.
+
+**2. Flag-byte semantics.** `[0x8DF0]` by `col*5+row` reads `0x10` for the whole
+outer ring, `0x00` for the inner 3×3, and `0x08` for the centre. Bit 4 marks the
+border cells the loop skips anyway; **bit 3 is the colony's own centre tile**,
+whose two strips are its unworked yield — `[0xA891]`=4 food and `[0xA893]`=4
+(furs) ×`[0xA894]`=3, which is exactly the "4" and "3" the live scene shows
+there. `[0x8D9E]` is `0xFF` throughout, so the sprite-`0x6D` path never fires in
+that frame.
+
+**3. The `0xF`/`0x11` frame cases are BUILDING-PRESENCE queries, not garrison
+counts** (`@0x026E05..0x026E34`, all through `0x181F:0x9FC`): no Warehouse
+(`0x0F`) ⇒ frame `0x2F`; Warehouse **and** Stable (`0x11`) ⇒ `0x30`; Warehouse
+without Stable keeps `def_id+1`. Warehouse / Warehouse Expansion / Stable share
+**group 5**, i.e. one plot, so it draws a combined sprite for whichever pair is
+standing. Curacao holds the Warehouse and no Stable and keeps the plain frame —
+which is what the template match found.
+
+**`[0xA895]` resolved.** The plaza food row's split reads 4, and `[0xA891]` — the
+centre cell's own food strip — is also 4. Two independent paths to the same
+number pin it as the centre tile's food; it had been a one-frame guess.
+
+**Production-row rules, confirmed against `[0x8DC8]`/`[0x8E32]`:**
+- Row 0 **skips a good with `produced == 0` even when it was consumed**
+  (`@0x0275F1`). Curacao eats 6 cotton, produces none, and shows no cotton entry.
+- Row 1's source table is `byte[0x2A2+i]` = `[…,8,1,2,3,4,255,6,14]` — the chain
+  map, plus **slot 8, where Horses source themselves**. The amount comes from
+  `word[0x8E5A + src*2]`, which is **not** the consumed-raw table (6 cotton eaten
+  for 6 cloth reads 0 there and draws unmarked). Its only non-zero entry that
+  frame is Horses' own 4. `[0x8E5A]` is 20 words past `[0x8E32]` — a second bank
+  of the consumed table — and its writer is unread. **TBD.**
+- `[0x8E14]` read equal to the consumed lumber in the one sample. Still TBD.
+
+**`0x236`'s fractional path** (`@0x002FBA..0x002FD4`) is a Bresenham remainder
+distributor: `acc += (count−1)·pitch` per icon, and while `acc ≥ span − w`,
+subtract and add one pixel to x. That is the alternating 33/34 on the F2 crosses
+row. **No colony call site sets the flag** — all three push 0 — so the colony
+strips are flat-pitch and only the reports need it.
+
+Also: `UI_PRIMITIVES.md` §0x222 had the enqueue arrays swapped; `[0x2CF4]` is the
+sprite and `[0x2CCE]` the count.

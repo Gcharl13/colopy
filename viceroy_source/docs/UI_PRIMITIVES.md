@@ -291,6 +291,22 @@ Cite: `func_002EE4_unknown.asm` lines 62–112.
 > segments, never by a rectangle fill. (This is why none of the screens have graphical
 > fill bars.)
 
+> **The flag-bit-0 fractional path — byte-read 2026-08-06 (`@0x002FBA..0x002FD4`).** When
+> the caller sets bit 0 of `[bp+6]`, the per-icon advance is not a flat `pitch`: an
+> accumulator runs `acc += (count−1)·pitch` per icon and, while `acc ≥ span − sprite_w`,
+> subtracts `span − sprite_w` and adds **one extra pixel** to x. A plain Bresenham remainder
+> distributor, which is what produces the alternating 33/34 spacing measured on the F2
+> crosses row. **No colony-screen call site sets it** — every one of them pushes 0 for that
+> arg (`@0x026650`, `@0x026679`, `@0x0266F4`) — so the colony strips are flat-pitch and the
+> report gauges are the only consumers. That is what still has to be pinned before
+> `drawReligiousReport`/`drawCongressReport` can fold onto this verb instead of their own
+> measured `GAUGE_SLOTS` constant.
+
+> **Arg correction (2026-08-06):** the `0x222` enqueue arrays are the other way round from the
+> table above — `[0x2CF4]` holds the **sprite** word and `[0x2CCE]` the **count**, with
+> `[0x2CE2]` the sub-count (`@0x003405..0x003413`). The flush reads the sprite from `[0x2CF4]`
+> to measure its width (`@0x003154`) and the count from `[0x2CCE]` (`@0x003126`).
+
 > **Call-site map (all 7 — this is shared chrome, recognise it everywhere):**
 > | site | screen / panel | what it counts |
 > |------|----------------|----------------|

@@ -65,7 +65,7 @@ element was verified*. Do not regress past the mistakes listed at the end. Every
 - **RESOLVED 2026-06-27 (reseg, was R/open):** the building-frame selector is **`func_026DD4 @0x026DD4`**
   (NOT `func_026CC2` — that path computes the production/garrison strip). The frame is `[bp-0x58]`,
   set to **`def_id + 1`** in EXE-sheet space `@0x026DE5..0x026DE9`, with byte-read special cases:
-  `def_id==0` & build-query0==0 ⇒ `0x11` (`@0x026DEC`); `def_id==0xF`/`0x11` garrison ⇒ `0x2F`/`0x30`
+  `def_id==0` & build-query0==0 ⇒ `0x11` (`@0x026DEC`); `def_id==0xF`/`0x11` **Warehouse/Stable presence** ⇒ `0x2F`/`0x30`
   (`@0x026E05`). The building blit is `0x181F:0x254 @0x026E4E`. The lab's "frame = def_id" works because
   the bundle `.SS` decoder is the **same off-by-one** as the stockpile (bundle`[def_id]` = EXE`[def_id+1]`),
   and def_id-0→16 is the `def_id==0` special branch. So `def_id+1` (EXE) IS the static rule — **no runtime
@@ -312,7 +312,10 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
     (`@0x0265A3..0x0265BF`).
   - bit 7 → the unit standing on the map cell (found via `0x181F:0x7E0`, walked with
     `0x181F:0x2E4`, filtered on `byte[type·14 + 0x5236] ≤ 1`) drawn by the unit-panel verb
-    `0x181F:0x2BC` at `(x+4, y+4)` (`@0x026639`).
+    `0x181F:0x2BC` at `(x+4, y+4)` (`@0x026639`). **This is NOT the colonist working the
+    tile** — see the `0x24A` step below. RAM-read 2026-08-06: every inner cell of live
+    Curacao reads flags **0**, so nothing takes this path there even though six cells are
+    worked.
   - bit 3 → two `0x181F:0x236` strips across a **24px span**: food (`ax=0x17`, count
     `[0xA891]`) at `(x, y)` and `[0xA893]+0x17` (count `[0xA894]`) at `(x, y+13)`
     (`@0x02665D` / `@0x02668A`).
@@ -321,8 +324,21 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
     (`@0x0266D2`). Amount > 0 → a `0x236` strip at `(x, y)` (`@0x026700`). Amount ≤ 0 →
     the good's icon centred in 16px at `(x + (16−w)/2, y+1)` with sprite **EXE 0x41** laid
     over it at `(x, y)` (`@0x02673E` / `@0x026758`).
+  - **the worker sprite, drawn LAST** (`@0x026763..0x02677C`): `0x181F:0xA74(tile,3)` looks
+    the colonist up through the colony enumerator and `0x181F:0x24A` blits it, pushed anchor
+    `(x+0xC, y+6)`. **Measured at (x+14, y+6)** — ICONS frame 100 matches there at score 0 in
+    the live frame; the y is exact and the x lands 2 further out than the pushed value, so
+    `0x24A` applies an inset of its own. One clean cell to measure (the others are occluded
+    by their yield strips), so the offset is **measured, mechanism TBD**.
   - selection boxes: colour **0x0A** when the cell is `[0x8D7C]`'s (`push 0xa @0x0267EC`),
     colour **0x0F** on the separate cursor cell `[0x330]`/`[0x332]` (`push 0xf @0x02686D`).
+  - **Flag-byte semantics, RAM-read 2026-08-06** (live Curacao, `[0x8DF0]` by `col*5+row`):
+    the whole outer ring reads **`0x10`** and the inner 3×3 reads **`0x00`** except the
+    centre, which reads **`0x08`**. So bit 4 marks the border cells the loop skips anyway,
+    and **bit 3 is the colony's own centre tile**: its two strips are the centre tile's
+    unworked yield — `[0xA891]`=4 food and `[0xA893]`=4 (furs) ×`[0xA894]`=3, exactly the
+    "4" and "3" the live scene shows in that cell. `[0x8D9E]` reads `0xFF` throughout, so
+    the sprite-`0x6D` path is inactive in that frame.
   **Live-verified** against `docs/screens/live_1653_save/colony_curacao.png`: the green
   `0x0A` box sits at x 224..247, y 32..55, and there is **no white box anywhere in that
   frame** — which retires the port's old "white rectangle marks the centre tile" reading
@@ -366,7 +382,9 @@ confirmed for name+season+year+gold); only the inter-field punctuation glyphs fr
      row fits the **96-px budget**.
   3. **Pass 2** (`@0x027186..`): draws each colonist (sprite blit `0x181F:0xCE`) at the running
      x `[bp-0x60]` (from 143, advanced left by `sprite_width + gap` per colonist), y = 10.
-  So **pitch = per-colonist `sprite_width(+0x3E)` + adaptive `gap` (2→0, fit-to-96px)**. The
+  So **pitch = per-colonist `sprite_width(+0x3E)` + adaptive `gap` (2→0, fit-to-96px)**.
+  **RAM-confirmed 2026-08-06:** with the live colony open, `[0xA890]` — the solved gap — reads
+  **1**, and `colony+0x1F` = 9 with `[0x8D72]` = 2 gives the **11** sprites the frame shows. The
   width table `[0x83E]` (stride 12) and `[0xA890]=2` are oracle-confirmed in `colony_jamestown.bin`
   (a real colonist row carries `+0x3E`=15 width). **B.** (Per-colonist *index* comes from the
   colony enumerator `0x181F:0xA74`.)
@@ -467,7 +485,29 @@ The verb behind every "N icons with a number on them" row on this screen. **Byte
   6). Every one of those is an ICONS template match at score 0 in the capture. **This is what
   settles the old "strip pitch is 4 or 6?" question — one solve, per row, from the counts.**
   Residual: the engine splits the lumber surplus again against `[0x8E14]`
-  (`@0x0276AF..0x0276D8`); what that slot holds is **TBD**.
+  (`@0x0276AF..0x0276D8`); what that slot holds is **TBD** — it read **equal to the consumed
+  figure** in the one live sample.
+
+  **Row rules confirmed against the live production tables (RAM-read 2026-08-06, the same
+  Curacao frame).** `[0x8DC8]` produced = `[16,0,0,0,3,0,8,3,4,0,0,6,0,0,6,0]`,
+  `[0x8E32]` consumed = `[2,0,0,6,0,6,0,0,…]`:
+  - **Row 0 skips a good with `produced == 0` even when it was consumed**
+    (`cmp word[bx-0x7238],0 / je @0x0275F1`). Cotton is eaten 6 and produced 0, and the live
+    row shows **no cotton entry at all** — furs 3, ore 8, silver 3, which is exactly the
+    three-item row whose pixel positions the layout solve reproduces.
+  - **Row 1's source table is `byte[0x2A2+i]`** = `[…,8,1,2,3,4,255,6,14]` for goods 8..15 —
+    the port's own chain map, plus **slot 8, where Horses source THEMSELVES**. The amount
+    comes from `word[0x8E5A + src*2]`, which is **not** the consumed-raw table: Curacao ate
+    6 cotton to make 6 cloth yet reads 0 there and draws the cloth run unmarked. Its only
+    non-zero entry that frame is Horses' own 4, giving `count = max(4,4) = 4, sub = 4` — the
+    all-marked 13px run at the head of the middle row. `[0x8E5A]` sits 20 words past
+    `[0x8E32]`, i.e. a second bank of the consumed table; **its writer is unread**.
+  - **Row 2** reads `[0x8DD2]`=0 lumber produced, `[0x8E3C]`=6 consumed, `[0x8DE8]`=6
+    hammers, `[0x8E64]`=0 — giving the two items (6 marked lumber, 6 hammers) whose pitch-6
+    positions the solve reproduces.
+  - The plaza food row's `[0xA895]` = **4**, and `[0xA891]` — the centre cell's own food
+    strip — is **also 4**. Two independent paths to the same number, which is what pins
+    `[0xA895]` as the centre tile's food (it had been a one-frame guess).
 - **@MISC index → string mechanism RESOLVED + ORACLE-CONFIRMED 2026-06-26.** The panel/minimap
   captions resolve a **global string index** through **`0x181F:0x22` = `func_002462 @0x002462`**: it
   loads the string-heap far ptr from **`[0x2D42:0x2D44]`**, then walks N NUL-terminated strings
@@ -518,8 +558,13 @@ The verb behind every "N icons with a number on them" row on this screen. **Byte
      **`0x181F:0x254 @0x026E4E`**, frame = local `[bp-0x58]` set at **`@0x026DE5..0x026DE9` to
      `def_id + 1`** (`mov ax,[bp+6]; inc ax; mov [bp-0x58],ax`, EXE-sheet space). Special cases, all
      byte-read: **(a)** `def_id==0` AND build-query `0x181F:0x9FC(0)==0` (`@0x026DEC..0x026E00`) ⇒ frame
-     `0x11`; **(b)** `def_id==0xF`/`0x11` with garrison queries (`@0x026E05..0x026E34`) ⇒ frame
-     `0x2F`/`0x30`. Otherwise **frame = def_id+1** (EXE) = **def_id** in the lab's off-by-one bundle.
+     `0x11`; **(b) CORRECTED 2026-08-06 — these are BUILDING-PRESENCE queries, not garrison
+     counts.** `def_id==0xF`/`0x11` (`@0x026E05..0x026E34`): no Warehouse (`0x0F`) ⇒ frame
+     `0x2F`; Warehouse **and** Stable (`0x11`) ⇒ frame `0x30`; Warehouse without Stable keeps
+     `def_id+1`. Warehouse / Warehouse Expansion / Stable all sit in **group 5**, i.e. they
+     share one plot, so it draws a combined sprite for whichever pair is standing. (Live
+     Curacao holds the Warehouse but no Stable and keeps the plain frame — which is what the
+     template match found.) Otherwise **frame = def_id+1** (EXE) = **def_id** in the lab's off-by-one bundle.
      **Live-verified** (Jamestown): plot 2 `0x20`→0x21/bundle 32 ✓, plot 12 `0x09`→0x0A/bundle 9 ✓,
      plot 13 `0x00`→`0x11`/bundle 16 ✓ (the `def_id==0` special case). So **`def_id+1` IS the frame**
      (EXE-sheet), reducible to a static rule — no runtime AX trace needed. **B (reseg + live-verified).**
@@ -812,7 +857,7 @@ no literal for them, so the live origin needs a runtime trace (§8 item 1).
    `word[id*2−0x7238]` attribution was also wrong (that path is the production strip). The real painter
    is **`func_026DD4 @0x026DD4`** (reseg'd from VICEROY.EXE): building blit `0x181F:0x254 @0x026E4E`,
    **frame = `def_id + 1`** (EXE-sheet, `[bp-0x58]` set `@0x026DE5..0x026DE9`), special cases
-   `def_id==0`+query0==0 ⇒ `0x11` (`@0x026DEC`), `def_id==0xF`/`0x11` garrison ⇒ `0x2F`/`0x30`
+   `def_id==0`+query0==0 ⇒ `0x11` (`@0x026DEC`), `def_id==0xF`/`0x11` **Warehouse/Stable presence** ⇒ `0x2F`/`0x30`
    (`@0x026E05`). In the lab's off-by-one bundle this is **frame = def_id** (def_id 0→16 via the
    special case). **Live-verified** against the Jamestown capture for every occupied plot (plots
    2/12/13 etc.). Empty-plot frame = `DS:0x260[category]−1` (B). No runtime AX trace needed — the rule

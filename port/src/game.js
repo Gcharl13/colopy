@@ -2354,6 +2354,27 @@ ColonyRng.prototype.range = function (lo, hi) {
   return lo + ((this.next() * (hi - lo + 1)) >> 15);
 };
 
+// Which BUILDING frame a plot's occupant draws -- `func_026DD4 @0x026DD4`.
+// Base frame is def_id+1 (@0x026DE5), with three overrides, all of which are
+// **building-presence queries** through `0x181F:0x9FC`, not garrison counts as
+// the spec used to gloss them:
+//   def 0 and no Stockade built      -> EXE 0x11   (@0x026DEC-0x026E00)
+//   def 0x0F/0x11 and no Warehouse   -> EXE 0x2F   (@0x026E11-0x026E1D)
+//   ...with Warehouse AND Stable     -> EXE 0x30   (@0x026E1F-0x026E2D)
+// Warehouse (0x0F), Warehouse Expansion (0x10) and Stable (0x11) all sit in
+// group 5, i.e. they share one plot, so that plot draws a combined sprite for
+// whichever pair is standing. Returned in bundle space (EXE-1).
+function buildingFrame(c, id) {
+  const has = (n) => c.buildings.includes(DATA.buildings[n].name);
+  let frame = id + 1;
+  if (id === 0 && !has(0)) frame = 0x11;
+  if (id === 0x0F || id === 0x11) {
+    if (!has(0x0F)) frame = 0x2F;
+    else if (has(0x11)) frame = 0x30;
+  }
+  return frame - 1;
+}
+
 // Returns 15 entries, one per plot: the index into DATA.buildings of the
 // building standing there, or -1 for an empty plot.
 function colonyPlacement(c) {
@@ -2447,13 +2468,7 @@ function drawColony(ctx) {
       if (decor) sheetFrame(ctx, 'BUILDING', decor - 1, px, py + 8);
       return;
     }
-    // `func_026DD4 @0x026DE5`: def 0 drawn with no Stockade actually built is
-    // EXE frame 0x11 instead. (Curacao passes the normal path -- it is building
-    // a Fort, which means it already holds the Stockade.) The 0xF/0x11 garrison
-    // cases at @0x026E05 need a garrison count the port does not track.
-    const frame = (id === 0 && !c.buildings.includes(DATA.buildings[0].name))
-                  ? 0x11 - 1 : id;
-    sheetFrame(ctx, 'BUILDING', frame, px, py + 8);
+    sheetFrame(ctx, 'BUILDING', buildingFrame(c, id), px, py + 8);
   });
 
   // Title strip (0,0,320,7): name, season, year, gold -- green FONTTINY.
@@ -2534,21 +2549,24 @@ function drawColony(ctx) {
 // which is what retired the port's old "white rectangle on the centre tile".
 function drawColonyTiles(ctx, c) {
   const sel = c.colonists[G.colonistSel];
+  const centre = centreYield(c);
   for (let row = 1; row <= 3; row++) {
     for (let col = 1; col <= 3; col++) {
       const x = 200 + 24 * col, y = 8 + 24 * row;
       const dx = col - 2, dy = row - 2;
-      const p = c.colonists.find(q => q.cell && q.cell[0] === dx && q.cell[1] === dy);
-      if (p) {
-        const u = unit(p.type) || unit('Colonists');
-        if (u) sheetFrame(ctx, 'ICONS', u.icon, x + 4, y + 4);
+      if (dx === 0 && dy === 0) {
+        // The centre tile is the flag-bit-3 case: it works itself, and it draws
+        // TWO strips -- food at (x,y) from `[0xA891]` and a second good at
+        // (x, y+13) from `[0xA893]`/`[0xA894]`. Live Curacao reads 4 and furs 3,
+        // and its scene cell shows exactly those two rows.
+        proportionalStrip(ctx, 22 + GOOD.FOOD, centre.food, 0, x, y, 24);
+        if (centre.good >= 0)
+          proportionalStrip(ctx, 22 + centre.good, centre.amount, 0, x, y + 13, 24);
+        continue;
       }
-      // The centre tile yields without a worker; a worked tile yields its job's
-      // good. Both take the same strip.
-      const good = (dx === 0 && dy === 0) ? GOOD.FOOD
-                 : p ? JOB_GOOD[jobIndex(p.job)] : undefined;
-      const amount = (dx === 0 && dy === 0) ? colonyProduce(c).centre
-                   : p ? fieldYield(c, p) : 0;
+      const p = c.colonists.find(q => q.cell && q.cell[0] === dx && q.cell[1] === dy);
+      const good = p ? JOB_GOOD[jobIndex(p.job)] : undefined;
+      const amount = p ? fieldYield(c, p) : 0;
       if (good !== undefined && good >= 0) {
         if (amount > 0) proportionalStrip(ctx, 22 + good, amount, 0, x, y, 24);
         else {
@@ -2557,9 +2575,43 @@ function drawColonyTiles(ctx, c) {
           sheetFrame(ctx, 'ICONS', 64, x, y);        // EXE 0x41, the "none" mark
         }
       }
+      // The WORKER is the last thing the cell draws, through `0x181F:0x24A`
+      // fed by the colony enumerator `0x181F:0xA74` (@0x026763-0x02677C) -- NOT
+      // the `0x2BC` unit-panel call above it, which belongs to flag bit 7 (a
+      // map unit standing on the tile; every inner cell reads flags 0 in the
+      // live frame, so nothing takes that path there and the port omits it).
+      // The pushed anchor is (x+12, y+6); the sprite lands at (x+14, y+6) --
+      // ICONS frame 100 matches there at score 0 in the live frame. The y is
+      // exact and the x is 2 further out than the push, so `0x24A` adds an
+      // inset of its own; with one clean cell to measure, the offset is used as
+      // measured and the mechanism is left open.
+      if (p) {
+        const u = unit(p.type) || unit('Colonists');
+        if (u) sheetFrame(ctx, 'ICONS', u.icon, x + 14, y + 6);
+      }
       if (p && p === sel) hollowRect(ctx, x, y, 24, 24, 0x0A);
     }
   }
+}
+
+// What the colony's own tile makes with nobody on it: food, plus one other
+// good. Both are live-read for Curacao (`[0xA891]`=4 food, `[0xA893]`=4 furs
+// with `[0xA894]`=3), and its `[0x8DC8]` shows those 3 furs entering the
+// colony's output -- so the centre tile really does produce a second good, not
+// just food. WHICH good is not cited anywhere: the best-yielding non-food
+// column is used, which fits the live frame but is inferred, not derived.
+function centreYield(c) {
+  const v = at(c.x, c.y);
+  let food = tileYield(v, JOB_FARMER);
+  if (G.difficulty === 0) food += 2; else if (G.difficulty === 1) food += 1;
+  if (tileRiver(v)) food += 1;
+  food += improvementBonus(c.x, c.y, GOOD.FOOD);
+  let good = -1, amount = 0;
+  for (let col = 1; col <= 7; col++) {
+    const y = tileYield(v, col);
+    if (y > amount) { amount = y; good = JOB_GOOD[col]; }
+  }
+  return { food, good, amount };
 }
 
 // ---- the plaza panel: `func_0270D0 @0x0270D0` ----------------------------
@@ -2788,27 +2840,45 @@ const PROD_X0 = 213, PROD_SPAN = 89, PROD_Y0 = 134, PROD_PITCH = 14;
 const PROD_GOOD_ICON = 22, PROD_HAMMER_ICON = 54;
 
 function drawProductionStrips(ctx, c) {
-  const r = colonyProduce(c);
+  const rows = productionRows(colonyProduce(c));
+  drawCountRow(ctx, rows[0], PROD_X0, PROD_Y0, PROD_SPAN, 2);
+  drawCountRow(ctx, rows[1], PROD_X0, PROD_Y0 + PROD_PITCH, PROD_SPAN, 2);
+  drawCountRow(ctx, rows[2], PROD_X0, PROD_Y0 + 2 * PROD_PITCH, PROD_SPAN, 4);
+}
+
+// The three rows' cells, split out from the painter so the byte-read rules can
+// be replayed against the live production tables in the tests.
+function productionRows(r) {
   const cell = (i, count, sub, flags) =>
     ({ frame: PROD_GOOD_ICON + i, count, sub, flags: flags || 0 });
   // Row 0: raw goods. count = produced + consumed, sub = consumed, so the
   // consumed tail is what takes the red mark (`dx = [0x8DC8+i] + [0x8E32+i]`,
-  // `bx = [0x8E32+i]`, @0x027604-0x027612).
+  // `bx = [0x8E32+i]`, @0x027604-0x027612). A good with NOTHING produced is
+  // skipped outright even if it was consumed (`cmp word[bx-0x7238],0 / je`
+  // @0x0275F1) -- live Curacao eats 6 cotton and shows no cotton entry at all.
   const raw = [];
   for (let i = 1; i <= 7; i++) {
-    if (i === 5) continue;                              // lumber has its own row
+    if (i === 5 || r.gross[i] === 0) continue;          // lumber has its own row
     raw.push(cell(i, r.gross[i] + r.consumed[i], r.consumed[i]));
   }
-  drawCountRow(ctx, raw, PROD_X0, PROD_Y0, PROD_SPAN, 2);
-  // Row 1: manufactures. count = max(made, raw eaten), sub = raw eaten
-  // (`cmp dx,[bp-2] / jge` @0x02767D-0x027685).
+  // Row 1: manufactures. Each good i names a source good in `byte[0x2A2+i]` and
+  // reads an amount from `word[0x8E5A + src*2]`; count = max(made, that), sub =
+  // that (@0x027646-0x027688). The source table is RAM-read below and matches
+  // the port's own chain map -- except slot 8, where Horses source THEMSELVES.
+  //
+  // `[0x8E5A]` is NOT the consumed-raw table: live Curacao ate 6 cotton to make
+  // 6 cloth, yet reads 0 there and draws the cloth run unmarked. The only
+  // non-zero entry in that frame is Horses' own 4. So the port reproduces the
+  // one case the evidence covers and leaves the rest at 0 rather than guessing
+  // what fills that array -- the slot is 20 words past `[0x8E32]`, i.e. a
+  // second bank of the consumed table, and its writer is unread.
+  const SRC = { 8: 8, 9: GOOD.SUGAR, 10: GOOD.TOBACCO, 11: GOOD.COTTON,
+                12: GOOD.FURS, 14: GOOD.ORE, 15: GOOD.TOOLS };
   const made = [];
   for (let i = 8; i < r.gross.length; i++) {
-    const src = RAW_FOR[i];
-    const eaten = src === undefined ? 0 : r.consumed[src];
-    made.push(cell(i, Math.max(r.gross[i], eaten), eaten));
+    const amt = SRC[i] === i ? r.gross[i] : 0;
+    made.push(cell(i, Math.max(r.gross[i], amt), amt));
   }
-  drawCountRow(ctx, made, PROD_X0, PROD_Y0 + PROD_PITCH, PROD_SPAN, 2);
   // Row 2: lumber then hammers, each split surplus / consumed. Bit 15 marks
   // every icon of the consumed run and reddens its badge (`ax=0x801c` @0x0276F1,
   // `ax=0x8037` @0x02771F). The engine splits the lumber surplus again against
@@ -2816,11 +2886,12 @@ function drawProductionStrips(ctx, c) {
   // draws the surplus as one run and says so rather than inventing the split.
   const lumberUsed = r.consumed[GOOD.LUMBER];
   const hammers = r.tally[HAMMERS];
-  drawCountRow(ctx, [
+  const work = [
     cell(GOOD.LUMBER, r.gross[GOOD.LUMBER] - lumberUsed, 0),
     cell(GOOD.LUMBER, lumberUsed, 0, 0x8000),
     { frame: PROD_HAMMER_ICON, count: hammers, sub: 0, flags: 0 },
-  ], PROD_X0, PROD_Y0 + 2 * PROD_PITCH, PROD_SPAN, 4);
+  ];
+  return [raw, made, work];
 }
 
 // The dock's candidate ladder, §17.6. Three slots; each holds a UNIT TYPE, not

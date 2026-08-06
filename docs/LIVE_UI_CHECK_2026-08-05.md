@@ -569,3 +569,58 @@ New capture: `docs/screens/live_1653_save/colony_curacao_1656.png`.
 Still TBD here: the `0xF`/`0x11` garrison frame cases (`@0x026E05`) need a
 garrison count the port does not track, and the ground speckle's noise source is
 still unidentified.
+
+## 12. Reading the panels out of RAM, 2026-08-06
+
+Having a probe that reads DGROUP out of a running game changes what "TBD" means
+on this screen, so I extended `tools/colony_seed_probe.py` to dump the panel
+state too and re-opened Curacao — the same colony `colony_curacao.png` was taken
+from. Full citations in `spec/ui/colony_screen.md` §3.2/§3.3/§3.6 and
+`notes/rulings/RULINGS.md` 2026-08-06c. Three of them were things the port had
+wrong.
+
+**The colonist in a worked tile is not drawn by the call I thought.** The tile
+panel's `0x2BC` at `(x+4, y+4)` belongs to flag bit 7 — a *map unit* standing on
+the tile — and every inner cell of the live frame reads flags `0` while six of
+them plainly show a colonist. The colonist is the cell's **last** step: the
+colony enumerator `0xA74` feeding `0x24A`. Pushed anchor `(x+12, y+6)`, and ICONS
+frame 100 matches at **(x+14, y+6)** at score 0 — y exact, x two out, so `0x24A`
+adds an inset of its own. Fixed to the measured position, mechanism left open.
+
+**The centre tile draws two strips, and that settled `[0xA895]`.** The flag byte
+is `0x10` around the whole outer ring, `0x00` on the inner 3×3, and `0x08` on the
+centre — so bit 3 *is* the colony's own tile, and its two strips are what it
+yields with nobody on it: `[0xA891]` = 4 food and `[0xA893]` = furs ×
+`[0xA894]` = 3. That is the "4" and "3" visible in the middle cell. It also
+resolves the guess I flagged last pass: the plaza food row's `[0xA895]` is 4 and
+the centre cell's food strip is 4, two independent paths to the same number.
+
+Following that through, the centre tile really does produce a second good — those
+3 furs show up in `[0x8DC8]` as the colony's whole fur output — which the port's
+production model did not do at all. Added; *which* good is the best-yielding
+non-food column, which fits this frame but is inferred, and says so.
+
+**The `0xF`/`0x11` frame cases are not garrison counts.** They are
+building-presence queries: no Warehouse → frame `0x2F`; Warehouse *and* Stable →
+`0x30`; Warehouse without Stable keeps its own frame. Warehouse, Warehouse
+Expansion and Stable share group 5 — one plot — so it draws a combined sprite for
+whichever pair is standing. Curacao holds the Warehouse and no Stable, keeps the
+plain frame, and that is what the template match found. Wired in; the "needs a
+garrison count the port does not track" note from last pass was wrong.
+
+**Production rows, against the real tables.** Row 0 skips a good with
+`produced == 0` even when it was consumed — Curacao eats 6 cotton, produces none,
+and shows no cotton entry. Row 1's source table is `byte[0x2A2+i]`, the chain map
+plus a slot where Horses source *themselves*, which is the all-marked 13px run at
+the head of that row. The amount comes from `[0x8E5A]`, which is **not** the
+consumed-raw table — 6 cotton eaten for 6 cloth reads 0 there and draws unmarked
+— so the port reproduces the one case the evidence covers and leaves the rest
+alone rather than guessing what fills that array. All three rows are regression
+assertions now, built from Curacao's own numbers.
+
+**And one thing that stays shut for now.** `0x236`'s flag-bit-0 path is a
+Bresenham remainder distributor — `acc += (count−1)·pitch` per icon, add a pixel
+whenever it crosses `span − w` — which is where the F2 crosses row's alternating
+33/34 comes from. No colony call site sets that flag, so the colony strips are
+flat-pitch; the report gauges are the only consumers, and folding them onto this
+verb is the next thing rather than this one.

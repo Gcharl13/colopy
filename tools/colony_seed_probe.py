@@ -76,6 +76,32 @@ def probe(buf):
         # The 42 building-def records, stride 12 based at 0x8F87: +0 category,
         # +1 group (`[bx-0x7079]` / `[bx-0x7078]` @0x025E1A/0x025E2C).
         'defs': [[u8(0x8F87 + i * 12), u8(0x8F88 + i * 12)] for i in range(42)],
+
+        # ---- panel state, for the tile / production / plaza rows ----
+        # Per-cell tables the tile panel reads, indexed col*5 + row
+        # (`[bx+si-0x7210]` @0x026553, `[bx+si-0x7262]` @0x02659C).
+        'cell_flags': [u8(0x8DF0 + i) for i in range(25)],
+        'cell_alt': [u8(0x8D9E + i) for i in range(25)],
+        # The two extra yield strips at @0x026652/@0x02667B, and the food-row
+        # split at @0x02737E.
+        'A891': u8(0xA891), 'A893': u8(0xA893), 'A894': u8(0xA894), 'A895': u8(0xA895),
+        'A890_gap': u8(0xA890),
+        # Selection / cursor state (@0x0267D8, @0x02686D, @0x0272F6, @0x0271F4).
+        'sel_tile': u16(0x8D7C), 'sel_colonist': u16(0x8D7E),
+        'cursor_col': u16(0x330), 'cursor_row': u16(0x332),
+        'mode_334': u16(0x334), 'mode_32E': u16(0x32E), 'mode_7EE': u16(0x7EE),
+        'mode_8D54': u16(0x8D54), 'numbers_336': u8(0x336), 'panel_337': u8(0x337),
+        'tiles_33C': u16(0x33C), 'cargo_B98': u16(0xB98), 'garrison_8D72': u16(0x8D72),
+        # Production tables: produced [0x8DC8], consumed [0x8E32], source-good
+        # amounts [0x8E5A], source-good index [0x2A2] (@0x027604, @0x027646).
+        'produced': [u16(0x8DC8 + i * 2) for i in range(16)],
+        'consumed': [u16(0x8E32 + i * 2) for i in range(16)],
+        'src_amount': [u16(0x8E5A + i * 2) for i in range(16)],
+        'src_index': [u8(0x2A2 + i) for i in range(16)],
+        # The row-2 slots (@0x0276AF..0x02771F).
+        'lumber_8DD2': u16(0x8DD2), 'lumber_8E14': u16(0x8E14), 'lumber_8E3C': u16(0x8E3C),
+        'hammers_8DE8': u16(0x8DE8), 'hammers_8E64': u16(0x8E64),
+        'crosses_8DEA': u16(0x8DEA), 'bells_8DEC': u16(0x8DEC),
     }
     if colony:
         out['colony'] = {'x': u8(colony), 'y': u8(colony + 1), 'pop': u8(colony + 0x1F)}

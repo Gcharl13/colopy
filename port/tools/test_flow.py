@@ -1967,6 +1967,24 @@ SCRIPT = """() => {
     })();
   }
 
+  // ---- the three production rows, against live DOSBox production tables ----
+  // Curacao's own [0x8DC8] produced / [0x8E32] consumed, RAM-read while its
+  // colony screen was open. What the rows should come out as, read off the same
+  // frame: row 0 furs 3 / ore 8 / silver 3 (cotton is CONSUMED 6 but produced
+  // 0, and the engine skips it); row 1 horses 4 all marked / cloth 6 / tools 6;
+  // row 2 lumber 6 all marked / hammers 6.
+  {
+    const zero = () => DATA.cargo.map(() => 0);
+    const gross = zero(), consumed = zero();
+    [16,0,0,0,3,0,8,3,4,0,0,6,0,0,6,0].forEach((v,i) => gross[i] = v);
+    [2,0,0,6,0,6,0,0,0,0,0,0,0,0,0,0].forEach((v,i) => consumed[i] = v);
+    const rows = productionRows({ gross, consumed, out: gross,
+                                  tally: { [HAMMERS]: 6, [BELLS]: 1, [CROSSES]: 1 },
+                                  centre: 4, eaten: 18, netFood: -2 });
+    out.prodRows = rows.map(row => row.filter(c => c.count > 0 || c.sub > 0)
+                                     .map(c => [c.frame - 22, c.count, c.sub, c.flags]));
+  }
+
   // ---- colony building placement, replayed against live DOSBox RAM ----
   // Two colonies read out of a running game with tools/colony_seed_probe.py
   // (session seed base 1410965): Jamestown at (50,51) and Curacao at (21,30).
@@ -2076,6 +2094,16 @@ def main():
         ("the plaza pack solves to gap 1, second colonist at x=11",
          r["plazaPack"]["gap"] == 1 and r["plazaPack"]["second"] == 11,
          r["plazaPack"]),
+        # The row-selection rules, against Curacao's own live production tables.
+        ("production row 0 is furs/ore/silver -- consumed-only cotton is skipped",
+         r["prodRows"][0] == [[4, 3, 0, 0], [6, 8, 0, 0], [7, 3, 0, 0]],
+         r["prodRows"][0]),
+        ("production row 1 marks the horses run and leaves cloth/tools clean",
+         r["prodRows"][1] == [[8, 4, 4, 0], [11, 6, 0, 0], [14, 6, 0, 0]],
+         r["prodRows"][1]),
+        ("production row 2 is the consumed lumber (bit 15) then the hammers",
+         [c[:3] for c in r["prodRows"][2]] == [[5, 6, 0], [32, 6, 0]]
+         and r["prodRows"][2][0][3] == 0x8000, r["prodRows"][2]),
         # Building placement, replayed against live DOSBox RAM.
         ("colony RNG reproduces Jamestown's live plot shuffle",
          r["placement"][0]["shuffle"] == [6,5,4,0,3,2,1,7,10,8,9,12,11,13,14],
