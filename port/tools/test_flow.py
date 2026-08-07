@@ -1580,7 +1580,7 @@ SCRIPT = """() => {
           r.units[0].x === DATA.starts[r.nation][0] &&
           r.units[0].y === DATA.starts[r.nation][1]),
       };
-      for (let t = 0; t < 40; t++) runRivals();
+      for (let t = 0; t < 40; t++) rivalTurn();
       out.rivalGrowth = {
         founded: G.rivals.some(r => r.colonies.length > 0),
         onLand: G.rivals.every(r => r.colonies.every(c => !tileWater(at(c.x, c.y)))),
@@ -2192,6 +2192,62 @@ SCRIPT = """() => {
     out.plotCategoryIsSize = DATA.buildings.map(b => Number(b.size));
   }
 
+  // ---- the COLONY##.SAV importer, against the bundled 1653 save ----
+  // Ground truth is the shipped COLONY00.SAV: the same file the live DOSBox
+  // captures were taken from, so its figures are known independently.
+  {
+    const ok = importSav(b64bytes(DATA.sav1653));
+    const j = G.colonies.find(c => c.name === 'Jamestown');
+    out.sav = {
+      ok,
+      head: G.year === 1653 && G.season === 1 && G.turn === 215 &&
+            G.nation === 3 && G.tax === 2 && G.gold === 21147,
+      curacao: G.colonies.some(c => c.name === 'Curacao' && c.x === 21 && c.y === 30),
+      colonies: G.colonies.length === 13,
+      jamestown: !!j && j.colonists.length === 10 &&
+                 j.colonists.filter(p => p.cell).length === 6 &&
+                 j.colonists.some(p => p.job === 'Statesman') &&
+                 j.stock[0] === 65 && j.stock[1] === 191 && j.sol === 12,
+      market: G.market.join() === '1,7,5,5,6,2,6,14,8,8,16,15,10,2,2,10',
+      fathers: G.fathersOwned.length === 7,
+      europe: G.europe.length === 1 && (G.europe[0].passengers || []).length === 3,
+      onMapClean: G.units.every(u => u.x < MAP.w && u.y < MAP.h),
+      fog: (() => { let n = 0; for (let i = 0; i < SEEN.length; i++)
+                    if (SEEN[i] & SEEN_BIT()) n++;
+                    return n > SEEN.length / 4 && n < SEEN.length; })(),
+      villages: G.villages.length === 27 && G.natives.length > 0,
+    };
+    // The map and a colony screen render from the imported state.
+    try {
+      const probe = document.createElement('canvas');
+      probe.width = 320; probe.height = 200;
+      const p = probe.getContext('2d');
+      drawMap(p);
+      G.colony = G.colonies.indexOf(j); G.screen = 'colony'; drawColony(p);
+      G.screen = 'map';
+      out.sav.renders = true;
+    } catch (e) { out.sav.renders = 'THREW ' + e.message; }
+    // Rival AI: at war, garrisons raise and soldiers march.
+    const r = G.rivals.find(q => q.colonies.length);
+    declareWarOn(G.nation, r.nation);
+    const before = JSON.stringify(r.units.filter(u => !u.ship).map(u => [u.x, u.y]));
+    for (let t = 0; t < 6; t++) { G.eventQueue.length = 0; rivalTurn(); }
+    out.rivalAI = {
+      marched: JSON.stringify(r.units.filter(u => !u.ship).map(u => [u.x, u.y])) !== before,
+      garrisoned: r.units.filter(u => !u.ship).length > 0,
+    };
+    // The v2 browser save round-trips the map planes and the rumour set.
+    saveGame();
+    const y0 = G.year, t0 = MAP.tiles[100];
+    beginGame();
+    out.saveV2 = loadGame() && G.year === y0 && MAP.tiles[100] === t0 &&
+                 (G.rumoursDone instanceof Set);
+    // The main-menu LOAD GAME row opens the picker.
+    G.dialog = null; G.menuRow = 3; commitMenu();
+    out.loadMenu = !!G.dialog && G.dialog.opts.length === 4;
+    G.dialog = null;
+  }
+
   return out;
 }"""
 
@@ -2618,6 +2674,30 @@ def main():
          all(r["cycle"][k] for k in ("phase0IsIdentity", "wrapsAtLen",
                                      "allDistinct", "walksUpOneIndexPerStep")),
          r["cycle"]),
+        ("the 1653 save imports: header, gold 21147, tax 2, autumn 1653 turn 215",
+         r["sav"]["ok"] and r["sav"]["head"], r["sav"]),
+        ("all 13 colonies restore, Curacao at (21,30)",
+         r["sav"]["colonies"] and r["sav"]["curacao"], r["sav"]),
+        ("Jamestown restores: 10 colonists, 6 on fields, a Statesman, stock and SoL",
+         r["sav"]["jamestown"], r["sav"]),
+        ("the market imports from PowerRecord +0x4C as the live bid prices",
+         r["sav"]["market"], r["sav"]),
+        ("seven Founding Fathers restore from the FF bitmask",
+         r["sav"]["fathers"], r["sav"]),
+        ("off-map units dock in Europe with their passengers; the map holds none",
+         r["sav"]["europe"] and r["sav"]["onMapClean"], r["sav"]),
+        ("the fog plane drops into SEEN (same 1<<(power+4) bit convention)",
+         r["sav"]["fog"], r["sav"]),
+        ("all 27 villages and their braves restore",
+         r["sav"]["villages"], r["sav"]),
+        ("the imported state renders the map and the colony screen",
+         r["sav"]["renders"] is True, r["sav"]),
+        ("rival AI: garrisons raise, and soldiers march once at war",
+         r["rivalAI"]["marched"] and r["rivalAI"]["garrisoned"], r["rivalAI"]),
+        ("the v2 browser save round-trips the map planes and the rumour set",
+         r["saveV2"], r["saveV2"]),
+        ("main-menu LOAD GAME opens the three-source picker",
+         r["loadMenu"], r["loadMenu"]),
     ]
     bad = 0
     for name, ok, got in checks:

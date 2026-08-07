@@ -5714,6 +5714,22 @@ frame); the rebuild keeps 14/12.
 - **Native settlements come from TRIBE.TXT** with x offset +2;
   `@TRIBES.value` is the tribe's map colour (not a sprite id).
 
+### 30.9 The save file's tail, and two field labels corrected (2026-08-07)
+
+The COLONY##.SAV serializer's 43 raw DGROUP blocks (§20) are followed by the
+**four map planes** — terrain `[0x15C]`, improvements `[0x160]`,
+resource/region `[0x164]`, and the per-power fog plane `[0x168]` (bit
+`1<<(power+4)` = explored), each w·h bytes through the stream verb
+`0x1A1F:0xC9C` (@0x73938–0x739B0) — then two 0x10E scratch blocks and two
+0x20 arrays. Round-tripping the ten shipped saves through this layout
+corrected two field labels: **PowerRecord +0x4C is the current price array**
+(the live bid per good — the "market_sensitivity" gloss doesn't fit), and
+**ColonyRecord +0x20 is the per-colonist current-job array** (`@JOB` row,
+parallel to the +0x40 specialty array; the +0x70 tile-worker table binds
+field workers to their tiles). Off-map unit coordinates are the "in Europe /
+high seas" state. The rebuild's LOAD GAME restores a shipped save from this
+walk, checked field-for-field against the 1653 Dutch game.
+
 ## A. Appendix — data structures
 
 This appendix collects every record layout established for the shipped

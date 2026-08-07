@@ -323,6 +323,13 @@ def build_data():
         "leadername": game["@LEADERNAME"],
         "misc": labels["@MISC"].split("\n"),
     }
+
+    # The shipped 1653 Dutch save, bundled so LOAD GAME can restore it without
+    # a file picker. Raw bytes; the importer walks the byte-verified 43-block
+    # sequence of spec/systems/save.md.
+    sav = ROOT / "tools/dosbox_harness/game/COLONY00.SAV"
+    if sav.exists():
+        D["sav1653"] = base64.b64encode(sav.read_bytes()).decode()
     # Per-nation history (A) + gameplay-bonus (B) briefing pages.
     D["briefings"] = [[game.get(f"@NATION{i}A", ""), game.get(f"@NATION{i}B", "")]
                       for i in range(4)]

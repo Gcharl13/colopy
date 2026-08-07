@@ -7946,3 +7946,49 @@ share it.
 Behavioural suite: 203/203 (10 new checks: arm menu contents and pricing,
 arm commit, armed/profession landfall, ship menu, jitter-click select/keep/
 menu, scene-panel colony pixels, raid fort gate ×2, speaker channels).
+
+## 2026-08-07d — the save file's map planes; two SAV field labels corrected; the port gains rival AI and LOAD GAME
+
+### The .SAV does not end at block 43
+
+`func_0734F8`'s tail (@0x73938–0x73A1D) writes the four MAP PLANES through
+`0x1A1F:0xC9C` — terrain `[0x15C]`, improvements `[0x160]`, resource/region
+`[0x164]`, per-power fog `[0x168]`, each w·h bytes — then two 0x10E scratch
+blocks (0x86F6/0x85E8) and two 0x20 arrays (0x945E/0x85C8). The spec's
+43-block table stopped short; `spec/systems/save.md` now carries the full
+sequence. Validated against all ten shipped COLONY0#.SAV: sizes reconcile
+exactly, and the fog plane uses the same `1<<(power+4)` bit the render
+chain's SEEN test already established.
+
+### Two labels corrected by round-tripping the 1653 save
+
+* **PowerRecord +0x4C = the CURRENT PRICE array** (the live bid per good),
+  not "market_sensitivity" — the imported values reproduce the 1653 Dutch
+  game's market verbatim.
+* **ColonyRecord +0x20 = the per-colonist CURRENT-JOB array** (@JOB row,
+  parallel to the +0x40 specialty array; 28 = none) — Jamestown-1653's ten
+  bytes decode to its exact roster, with the +0x70 tile-worker table binding
+  six of them to their fields.
+* Off-map UnitRecord coordinates (231,231-style) are the "in Europe / high
+  seas" state; riders stack on the ship's sentinel tile.
+
+### What the port gained
+
+* **LOAD GAME** (main-menu row 3) — three sources: the browser save (now v2:
+  it round-trips the three map planes and the rumour set, which the old
+  G-only serialization silently lost), the shipped 1653 Dutch game bundled
+  into the page, and any COLONY##.SAV picked off disk. The importer walks
+  the byte-verified block sequence; what it cannot see (crossings, routes,
+  the diplomacy matrices, hold quantities past slot 2) loads empty and is
+  flagged in the code.
+* **Rival-power AI** (R-tier, flagged): colonies grow on a 16-turn
+  accumulator, fortify by size, and keep soldier garrisons; at war the
+  surplus marches on our nearest colony one tile a turn and strikes through
+  the same resolveAttack the player uses; an undefended foreign colony can
+  now be CAPTURED by the player (@CAPTURED, with plunder) and an undefended
+  player colony falls to the AI (@BURNED — the engine transfers ownership
+  instead; the difference is flagged). The full strategic pipeline
+  (func_04CC50/func_04E2D6) remains the evidence ceiling in ai.md.
+
+Suite: 215/215 (12 new checks on the importer, the rival AI, save v2, and
+the Load picker).

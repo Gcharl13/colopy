@@ -5028,6 +5028,10 @@ function removeUnit(u) {
   if (i >= 0) { G.units.splice(i, 1); if (G.sel >= G.units.length) G.sel = 0; }
   const k = G.refUnits.indexOf(u);
   if (k >= 0) G.refUnits.splice(k, 1);
+  for (const r of G.rivals) {
+    const m = r.units.indexOf(u);
+    if (m >= 0) r.units.splice(m, 1);
+  }
   const j = G.natives.indexOf(u);
   if (j >= 0) {
     // §19.11: a brave's death stamps its village's rebuild request (flags 0x01);
@@ -5265,26 +5269,88 @@ function checkContact() {
   }
 }
 // One rival turn: ships work west until they find a coast, then plant.
-function runRivals() {
+// The rival-power turn. The engine drives every AI power through the
+// strategic planner func_04CC50 (per-power mission assignment over the plan
+// map) and the per-unit pipeline func_04E2D6 -- both decoded in
+// spec/systems/ai.md but far larger than the port carries. What runs here is
+// a REDUCED shape of that machine, R-tier and flagged: colonies grow and
+// fortify on fixed cadences, each keeps a garrison sized to its people, and a
+// power at war marches its soldiers at our nearest colony one tile a turn,
+// striking through the same resolveAttack the player's own attacks use. The
+// scoring terms this drops are §3 of ai.md.
+function rivalTurn() {
   for (const r of G.rivals) {
-    for (const u of r.units) {
-      if (!u.ship) continue;
-      const landAhead = [[-1, 0], [0, -1], [0, 1]]
-        .map(([dx, dy]) => [u.x + dx, u.y + dy])
-        .find(([x, y]) => !tileWater(at(x, y)));
-      if (landAhead && r.colonies.length < 6 &&
-          !G.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
-          !r.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
-          !G.villages.some(v => v.x === landAhead[0] && v.y === landAhead[1])) {
-        const names = DATA.colonynames[r.nation];
-        r.colonies.push({ x: landAhead[0], y: landAhead[1], nation: r.nation,
-                          name: names[r.nextColony++ % names.length], level: 0 });
-        u.x = Math.min(MAP.w - 1, u.x + 3);      // stand off and look for another site
+    // Colonies: population on a growth accumulator, fortification tier from
+    // size, and a garrison of soldiers raised at home.
+    for (const rc of r.colonies) {
+      rc.pop = rc.pop || 1;
+      rc.grow = (rc.grow || 0) + 1;
+      if (rc.grow >= 16) { rc.grow = 0; rc.pop += 1; }
+      rc.level = Math.min(3, rc.pop >> 2);
+      const want = Math.min(3, 1 + (rc.pop >> 2));
+      const home = r.units.filter(u => !u.ship && u.x === rc.x && u.y === rc.y).length;
+      if (home < want && (G.turn & 3) === 0)
+        r.units.push({ type: 'Soldiers', icon: unit('Soldiers').icon,
+                       x: rc.x, y: rc.y, nation: r.nation, orders: 0, home: rc });
+    }
+    const war = atWar(G.nation, r.nation);
+    for (const u of r.units.slice()) {
+      if (u.ship) {
+        const landAhead = [[-1, 0], [0, -1], [0, 1]]
+          .map(([dx, dy]) => [u.x + dx, u.y + dy])
+          .find(([x, y]) => !tileWater(at(x, y)));
+        if (landAhead && r.colonies.length < 6 &&
+            !G.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
+            !r.colonies.some(c => c.x === landAhead[0] && c.y === landAhead[1]) &&
+            !G.villages.some(v => v.x === landAhead[0] && v.y === landAhead[1])) {
+          const names = DATA.colonynames[r.nation];
+          r.colonies.push({ x: landAhead[0], y: landAhead[1], nation: r.nation,
+                            name: names[r.nextColony++ % names.length],
+                            level: 0, pop: 1, grow: 0 });
+          u.x = Math.min(MAP.w - 1, u.x + 3);    // stand off and look for another site
+          continue;
+        }
+        const nx = u.x - 1;
+        if (nx >= 0 && tileWater(at(nx, u.y))) u.x = nx;
+        else u.y += (u.y % 2) ? 1 : -1;
         continue;
       }
-      const nx = u.x - 1;
-      if (nx >= 0 && tileWater(at(nx, u.y))) u.x = nx;
-      else u.y += (u.y % 2) ? 1 : -1;
+      // Land units. At peace they hold their garrison; at war, surplus
+      // soldiers (beyond one holding each colony) march on our nearest colony
+      // and strike whatever of ours stands in the ring around it.
+      if (!war) continue;
+      const holds = u.home && r.units.some(v => v !== u && !v.ship &&
+                                          v.x === u.x && v.y === u.y);
+      if (u.home && u.x === u.home.x && u.y === u.home.y && !holds) continue;
+      const target = G.colonies.slice().sort((a, b) =>
+        (Math.abs(a.x - u.x) + Math.abs(a.y - u.y)) -
+        (Math.abs(b.x - u.x) + Math.abs(b.y - u.y)))[0];
+      if (!target) continue;
+      const foe = G.units.find(p => !p.ship &&
+        Math.abs(p.x - u.x) <= 1 && Math.abs(p.y - u.y) <= 1);
+      if (foe) { resolveAttack(u, foe); continue; }
+      if (Math.max(Math.abs(target.x - u.x), Math.abs(target.y - u.y)) <= 1) {
+        // At the palisade with no defender outside: the colony's garrison
+        // inside defends; an EMPTY colony falls and is burned (the engine's
+        // capture path moves it to the attacker -- the port burns it and
+        // flags the difference, since rival colony management of our records
+        // is not modelled).
+        const inside = G.units.find(p => p.x === target.x && p.y === target.y && !p.ship);
+        if (inside) { resolveAttack(u, inside); continue; }
+        G.colonies.splice(G.colonies.indexOf(target), 1);
+        showEvent('BURNED', { STRING0: DATA.nations[r.nation].adjective,
+                              STRING1: target.name });
+        continue;
+      }
+      const step = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+        .map(([dx, dy]) => [u.x + dx, u.y + dy])
+        .filter(([x, y]) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
+                !tileWater(at(x, y)) &&
+                !r.units.some(v => v !== u && v.x === x && v.y === y) &&
+                !G.villages.some(v => v.x === x && v.y === y))
+        .sort((a, b) => (Math.abs(target.x - a[0]) + Math.abs(target.y - a[1])) -
+                        (Math.abs(target.x - b[0]) + Math.abs(target.y - b[1])))[0];
+      if (step) { u.x = step[0]; u.y = step[1]; }
     }
   }
   checkContact();
@@ -7201,20 +7267,292 @@ function checkImmigration() {
 // the market and the Europe state, and nothing is derived from anything outside
 // it except the immutable DATA tables.
 const SAVE_KEY = 'colonization.save';
+
+// ------------------------------------------------ the COLONY##.SAV importer
+// The shipped save format is BYTE-VERIFIED end to end (spec/systems/save.md):
+// "COLONIZE"+0x1A, a version word, map w/h, then 43 raw DGROUP blocks written
+// by func_0734F8 -- game globals 0x5380, 4x AIPersonality, the four record
+// tables (ColonyRecord 0xCA / UnitRecord 0x1C / PowerRecord 0x13C /
+// NativeSettlement 0x12), TribeData, and a tail of AI arrays -- followed by
+// the FOUR MAP PLANES the spec's block table stopped short of (the writer's
+// tail @0x73938-0x739BC: terrain [0x15C], improvements [0x160], resources
+// [0x164], per-power fog [0x168], each w*h bytes). Offsets used here are the
+// runtime record layouts of spec/systems/unit.md and docs/DATA_MODEL.md, all
+// re-validated against the ten shipped COLONY0#.SAV files before this was
+// written. Two labels were CORRECTED by that validation: PowerRecord +0x4C is
+// the CURRENT PRICE array (the js-dos "market_sensitivity" gloss does not fit
+// the values -- they are the live bid prices), and ColonyRecord +0x20 is the
+// per-colonist CURRENT-JOB array (@JOB row), parallel to the +0x40 specialty
+// array. What the importer cannot see it does not invent: europe crossings,
+// trade routes, and the diplomacy matrices load empty/at peace, flagged.
+const SAV_PROFESSION = (v) =>
+  (v >= 1 && v < (DATA.jobexpert || []).length) ? DATA.jobexpert[v] : null;
+function importSav(bytes) {
+  const d = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const u16 = (o) => d[o] | (d[o + 1] << 8);
+  const i32 = (o) => (d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24)) | 0;
+  const str = (o, n) => {
+    let s = '';
+    for (let i = 0; i < n && d[o + i]; i++) s += String.fromCharCode(d[o + i]);
+    return s;
+  };
+  if (str(0, 8) !== 'COLONIZE' || d[9] !== 0x1A) { G.msg = 'Not a COLONIZE save.'; return false; }
+  let o = 10 + 2;
+  const w = u16(o), h = u16(o + 2); o += 4;
+  if (w !== MAP.w || h !== MAP.h) { G.msg = `Unsupported map size ${w}x${h}.`; return false; }
+  const g = o; o += 0x8E;
+  const year = u16(g + 0x0A), season = u16(g + 0x0C), turn = u16(g + 0x0E);
+  const nation = u16(g + 0x14) & 3, diff = d[g + 0x26];
+  const nvill = u16(g + 0x1A), nunit = u16(g + 0x1C), ncol = u16(g + 0x1E);
+  o += 0xD0 + 0x18;
+  const colBase = o; o += ncol * 0xCA;
+  const unitBase = o; o += nunit * 0x1C;
+  const powBase = o; o += 0x4F0;
+  const villBase = o; o += nvill * 0x12;
+  const tribeBase = o; o += 0x270;
+  o += 727;                                   // blocks 11-43, all fixed sizes
+  const planeBase = o, plane = w * h;
+  if (planeBase + 4 * plane > d.length) { G.msg = 'Save file truncated.'; return false; }
+
+  // Fresh state in the save's shoes, then overwrite what the file carries.
+  G.nation = nation;
+  beginGame();
+  G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
+  G.landHo = true; G.builtColony = true; G.metAnyone = true;
+
+  // Map planes: terrain verbatim; improvements masked to the road/plow bits
+  // the port models; fog verbatim -- SEEN already uses the engine's own
+  // 1<<(power+4) bit convention, so the plane drops straight in.
+  const terr = d.subarray(planeBase, planeBase + plane);
+  MAP.tiles.set ? MAP.tiles.set(terr) : MAP.tiles.splice(0, MAP.tiles.length, ...terr);
+  for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x48;
+  SEEN.set(d.subarray(planeBase + 3 * plane, planeBase + 4 * plane));
+
+  // The player's PowerRecord.
+  const pb = powBase + nation * 0x13C;
+  G.tax = d[pb + 1];
+  G.gold = i32(pb + 0x2A);
+  G.kingsFund = i32(pb + 0x22);
+  G.bells = u16(pb + 0x0C);
+  G.artilleryBought = u16(pb + 0x1E);
+  const boy = u16(pb + 0x20);
+  G.boycotts = [];
+  for (let i = 0; i < 16; i++) if (boy & (1 << i)) G.boycotts.push(i);
+  const ffbits = i32(pb + 0x07) >>> 0;
+  G.fathersOwned = (DATA.fathers || [])
+    .filter((f, i) => ffbits & (1 << i)).map(f => f.name);
+  G.market = [];
+  for (let i = 0; i < 16; i++) G.market.push(Math.max(1, d[pb + 0x4C + i]));
+
+  // Tribes: level from the record's +0x02 byte ([0x5AD8], stride 0x4E) and
+  // tension toward the player from the +0x46 per-power word (the 0x5B1C
+  // table, RULINGS 2026-08-01).
+  G.tribes.forEach((t, i) => {
+    const tb = tribeBase + i * 0x4E;
+    t.level = d[tb + 2];
+    t.tension = Math.max(0, Math.min(100, u16(tb + 0x46 + nation * 2)));
+  });
+
+  // Villages.
+  G.villages = []; G.natives = [];
+  for (let i = 0; i < nvill; i++) {
+    const b = villBase + i * 0x12;
+    const tribe = Math.max(0, d[b + 2] - 4);
+    const m = d[b + 5];
+    G.villages.push({
+      x: d[b], y: d[b + 1], tribe, name: (G.tribes[tribe] || {}).name,
+      level: (G.tribes[tribe] || {}).level || 0,
+      capital: !!(d[b + 3] & 0x04), chiefSeen: !!(d[b + 3] & 0x08),
+      pop: d[b + 4], growth: d[b + 6],
+      mission: m === 0xFF ? null : { power: m & 0x0F, expert: !!(m & 0x10) },
+      alarm: d[b + 0x0A + nation * 2],
+      tributePaid: false, taught: false, braveOwed: false,
+    });
+  }
+
+  // Colonies -- ours in full, everyone else's as rival colonies.
+  G.colonies = [];
+  G.rivals = [];
+  for (let n = 0; n < 4; n++) {
+    if (n === nation) continue;
+    G.rivals.push({ nation: n, met: true, attitude: 8,
+                    gold: i32(powBase + n * 0x13C + 0x2A),
+                    colonies: [], nextColony: 0, units: [] });
+  }
+  const rivalOf = (n) => G.rivals.find(r => r.nation === n);
+  const CELL_OF_WORKER = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+  for (let i = 0; i < ncol; i++) {
+    const b = colBase + i * 0xCA;
+    const owner = d[b + 0x1A] & 3, pop = d[b + 0x1F];
+    const name = str(b + 2, 24);
+    const buildings = [];
+    for (let k = 0; k < (DATA.buildings || []).length; k++)
+      if (d[b + 0x60 + (k >> 3)] & (1 << (k & 7))) buildings.push(DATA.buildings[k].name);
+    if (owner !== nation) {
+      const r = rivalOf(owner);
+      if (r) r.colonies.push({
+        x: d[b], y: d[b + 1], nation: owner, name, pop, grow: 0,
+        level: ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) >= 0
+          ? 3 - ['Fortress', 'Fort', 'Stockade'].findIndex(f => buildings.includes(f)) : 0,
+      });
+      continue;
+    }
+    const colonists = [];
+    for (let k = 0; k < pop; k++) {
+      const occ = d[b + 0x20 + k];
+      colonists.push({ type: 'Colonists',
+                       profession: SAV_PROFESSION(d[b + 0x40 + k]),
+                       job: occ < (DATA.jobs || []).length ? DATA.jobs[occ] : null,
+                       cell: null });
+    }
+    for (let k = 0; k < 8; k++) {
+      const wkr = d[b + 0x70 + k];
+      if (wkr !== 0xFF && colonists[wkr]) colonists[wkr].cell = CELL_OF_WORKER[k];
+    }
+    // A field job needs a field: a cell-less colonist whose job is an outdoor
+    // column rests in the plaza instead of producing from nowhere.
+    for (const p of colonists)
+      if (!p.cell && p.job && FIELD_JOB_NAMES.includes(p.job)) p.job = null;
+    const dividend = i32(b + 0xC2), divisor = i32(b + 0xC6);
+    const c = { name, x: d[b], y: d[b + 1], nation, colonists,
+                stock: [], buildings, hammers: 0, building: null,
+                sol: divisor > 0 ? Math.max(0, Math.min(100,
+                     Math.round(100 * dividend / divisor))) : 0 };
+    for (let k = 0; k < 16; k++) c.stock.push(u16(b + 0x9A + k * 2));
+    G.colonies.push(c);
+  }
+
+  // Units: ours to G.units (a land unit standing on water is cargo aboard the
+  // ship there), rival powers' to their lists, natives to the brave list.
+  G.units = [];
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < nunit; i++) {
+      const b = unitBase + i * 0x1C;
+      const type = DATA.units[d[b + 2]];
+      if (!type) continue;
+      const own = d[b + 3] & 0x0F;
+      const x = d[b], y = d[b + 1];
+      const isShip = Number(type.hull) > 0;
+      if (pass === 0 !== isShip) continue;          // ships first, riders second
+      if (own >= 4) {
+        if (pass === 1) {
+          const home = G.villages.filter(v => v.tribe === own - 4)
+            .sort((a, q) => (Math.abs(a.x - x) + Math.abs(a.y - y)) -
+                            (Math.abs(q.x - x) + Math.abs(q.y - y)))[0];
+          G.natives.push({ type: type.name, icon: unit(type.name).icon, x, y,
+                          tribe: own - 4, orders: 0, nation: -1, home });
+        }
+        continue;
+      }
+      if (own !== nation) {
+        const r = rivalOf(own);
+        if (r) r.units.push({ type: type.name, icon: unit(type.name).icon, x, y,
+                              nation: own, orders: 0, ship: isShip });
+        continue;
+      }
+      // Coordinates off the map are the engine's "in Europe / on the high
+      // seas" sentinel: those ships dock in the harbour, their riders stay
+      // aboard as passengers, and a landless walker waits on the dock.
+      const offMap = x >= MAP.w || y >= MAP.h;
+      if (!isShip && (offMap || tileWater(at(x, y)))) {
+        const prof = SAV_PROFESSION(d[b + 0x17]);
+        const entry = prof ? { name: prof, type: type.name } : type.name;
+        const ship = G.units.find(s => s.ship && s.x === x && s.y === y);
+        if (ship) ship.cargo.push(entry);
+        else if (offMap) G.dockUnits.push(entry);
+        continue;
+      }
+      const u = mkUnit(type.name, x, y);
+      const prof = SAV_PROFESSION(d[b + 0x17]);
+      if (prof) u.profession = prof;
+      if (d[b + 0x15]) u.tools = d[b + 0x15];
+      if (isShip) {
+        u.hold = [];
+        const n = Math.min(6, d[b + 0x0C]);
+        for (let k = 0; k < n; k++) {
+          const good = (d[b + 0x0D + (k >> 1)] >> ((k & 1) ? 4 : 0)) & 0x0F;
+          // Only the first two quantity bytes are mapped; further slots load
+          // as full holds. Flagged.
+          const qty = k < 2 ? d[b + 0x10 + k] : 100;
+          if (qty) holdAdd(u, good, qty);
+        }
+      }
+      G.units.push(u);
+    }
+  }
+  // Ships parked at the off-map sentinel dock in Europe with their riders.
+  for (let i = G.units.length - 1; i >= 0; i--) {
+    const u = G.units[i];
+    if (u.x < MAP.w && u.y < MAP.h) continue;
+    G.units.splice(i, 1);
+    if (u.ship) G.europe.push({ type: u.type, icon: u.icon, hold: u.hold || [],
+                                passengers: u.cargo || [], state: 'port' });
+  }
+  G.euroShip = 0;
+  G.sel = Math.max(0, G.units.findIndex(u => !u.ship));
+  if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
+  else if (G.colonies[0]) centerOn(G.colonies[0].x, G.colonies[0].y);
+  G.screen = 'map';
+  G.msg = `${DATA.seasons[G.season]} ${G.year} — the ${DATA.nations[nation].adjective} game restored.`;
+  return true;
+}
+const b64bytes = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+// The main-menu LOAD GAME flow: the browser save, the shipped 1653 save
+// bundled with the port, or any COLONY##.SAV picked off disk.
+function openLoadMenu() {
+  const rows = ['Saved game (browser)',
+                'Autumn 1653 - the shipped Dutch game (COLONY00.SAV)',
+                'Import a COLONY##.SAV file...',
+                'Cancel'];
+  G.dialog = {
+    body: ['Load which game?'], tail: rows, opts: rows, width: 0x50, sel: 0,
+    onDone: (i) => {
+      if (i === 0) {
+        if (loadGame()) G.screen = 'map';
+      } else if (i === 1) {
+        if (DATA.sav1653) importSav(b64bytes(DATA.sav1653));
+      } else if (i === 2) {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = '.SAV,.sav';
+        inp.onchange = () => {
+          const f = inp.files && inp.files[0];
+          if (!f) return;
+          f.arrayBuffer().then(buf => importSav(new Uint8Array(buf)));
+        };
+        inp.click();
+      }
+    },
+  };
+}
+// The browser save now carries the three MAP PLANES and the rumour set --
+// the old one serialized G alone, so a load came back with a fresh map, no
+// fog history, and a broken (JSON-emptied) rumoursDone Set.
 function saveGame() {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v: 2, G, tiles: Array.from(MAP.tiles), improve: Array.from(IMPROVE),
+      seen: Array.from(SEEN), rumours: Array.from(G.rumoursDone || []),
+    }));
     G.msg = 'Game saved.';
   } catch (e) { G.msg = 'Could not save.'; }
 }
 function loadGame() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) { G.msg = 'No saved game.'; return; }
-    Object.assign(G, JSON.parse(raw));
+    if (!raw) { G.msg = 'No saved game.'; return false; }
+    const s = JSON.parse(raw);
+    if (s.v !== 2) { G.msg = 'Old save format - not loadable.'; return false; }
+    Object.assign(G, s.G);
+    MAP.tiles.set ? MAP.tiles.set(s.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...s.tiles);
+    IMPROVE.set(s.improve);
+    SEEN.set(s.seen);
+    G.rumoursDone = new Set(s.rumours || []);
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
     G.msg = 'Game loaded.';
-  } catch (e) { G.msg = 'Could not load.'; }
+    return true;
+  } catch (e) { G.msg = 'Could not load.'; return false; }
 }
 
 // ------------------------------------------------------- Colonizopedia
@@ -7384,7 +7722,7 @@ function endTurn() {
   // many turns to come as the ground takes to cross -- the old
   // every-village-every-turn raid loop is gone with its RAID_GATE_K stub.
   nativeMoveAI();
-  runRivals();
+  rivalTurn();
   kingTaxDemand();
   advanceTradeRoutes();
   advanceGoTo();
@@ -7533,6 +7871,27 @@ function moveSel(dx, dy) {
       // Ship against ship runs the raw guns/hull roll, not the modifier chain.
       if (ru && u.ship && ru.ship) { if (navalAttack(u, ru)) advance(); return; }
       if (ru) { resolveAttack(u, ru); advance(); return; }
+      if (isColony && !u.ship) {
+        // An undefended foreign colony FALLS: @CAPTURED, with a plunder of its
+        // treasury share. The engine transfers the whole ColonyRecord; the
+        // port re-founds it as ours at the same site with its people as plain
+        // colonists -- the interior (buildings/stock) is not visible to us
+        // pre-capture and is not invented. Flagged.
+        const rc = rival.colonies.find(x => x.x === nx && x.y === ny);
+        rival.colonies.splice(rival.colonies.indexOf(rc), 1);
+        const loot = 10 * (1 + Math.floor(Math.random() * 10)) * (1 + (rc.pop || 1));
+        G.gold += loot;
+        const c = { name: rc.name, x: nx, y: ny, nation: G.nation,
+                    colonists: Array.from({ length: Math.max(1, Math.min(3, rc.pop || 1)) },
+                      () => ({ type: 'Colonists', profession: null, job: null, cell: null })),
+                    stock: DATA.cargo.map(() => 0),
+                    buildings: STARTING_BUILDINGS.slice(),
+                    hammers: 0, building: null, sol: 0 };
+        G.colonies.push(c);
+        showEvent('CAPTURED', { STRING0: DATA.nations[G.nation].adjective,
+                                STRING2: rc.name, NUMBER0: loot });
+        u.movesLeft = 0; advance(); return;
+      }
       G.msg = `The ${DATA.nations[rival.nation].adjective} colony holds.`;
       u.movesLeft = 0; advance(); return;
     }
@@ -8506,8 +8865,10 @@ function onClick(mx, my) {
 
 function commitMenu() {
   // Real dispatch ladder @0x075C6D: rows 0-2 all enter the new-game setup path;
-  // 3 = LOAD Game, 4 = View Hall of Fame (neither implemented yet).
+  // 3 = LOAD Game (browser save / the shipped 1653 save / a .SAV off disk);
+  // 4 = View Hall of Fame (not implemented).
   if (G.menuRow <= 2) G.screen = 'difficulty';
+  else if (G.menuRow === 3) openLoadMenu();
 }
 
 function onKey(e) {
@@ -8762,6 +9123,9 @@ function frame() {
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);
+  // drawMap paints its own dialog layer; every other screen gets it here so a
+  // dialog opened off-map (the title screen's Load Game picker) still shows.
+  if (G.screen !== 'map' && G.dialog) drawDialog(ctx);
   drawEvent(ctx);
   drawDragGhost(ctx);
   const cv = document.getElementById('screen');

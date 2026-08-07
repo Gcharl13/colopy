@@ -98,6 +98,43 @@ resolves §6.1–6.3.
 
 (Sites: blocks at `@0x7353C..0x73929`; variable counts via `imul [count],stride`.)
 
+#### After block 43: the MAP PLANES + trailing blocks — BYTE_VERIFIED 2026-08-07
+
+The 43-block table above is not the end of the file. The serializer's tail
+(`@0x73938..0x73A1D`) writes, through the far-pointer stream verb
+`0x1A1F:0xC9C` (size = `[0x180]/[0x182]` = the w·h dword for the planes):
+
+| # | source | size | content |
+|---|--------|------|---------|
+| 44 | `[0x15C]` | w·h | **terrain plane** (the .MP layer-1 byte format) |
+| 45 | `[0x160]` | w·h | **improvement plane** (road bit 0x08, plow 0x40, + other bits) |
+| 46 | `[0x164]` | w·h | resource/region plane |
+| 47 | `[0x168]` | w·h | **per-power fog plane** (bit `1<<(power+4)` = explored) |
+| 48–49 | `0x86F6` / `0x85E8` | 0x10E each | pathfinding/region scratch |
+| 50–51 | `0x945E` / `0x85C8` | 0x20 each | AI word arrays |
+
+Validated against all ten shipped `COLONY0#.SAV` (tools/dosbox_harness/game/):
+header + version 73 + 58×72 + the four planes account for the file sizes
+exactly; the terrain plane's tile histogram matches AMER2-family maps.
+
+**Two field-label corrections from that validation** (both cross-checked
+against the game the live 1653 captures came from):
+- **PowerRecord `+0x4C` is the CURRENT PRICE array** (16 bytes, the live bid
+  per good) — the js-dos "market_sensitivity" gloss does not fit the values,
+  which reproduce the 1653 game's market exactly.
+- **ColonyRecord `+0x20` is the per-colonist CURRENT-JOB array** (`@JOB` row,
+  one byte per colonist, parallel to the `+0x40` specialty array; 28 = no
+  specialty). Jamestown-1653's ten bytes decode to its exact worker roster
+  (2 Farmers, Sugar Planter, 2 Lumberjacks, Distiller, Fisherman, Fur Trader,
+  Carpenter, Statesman).
+- **Off-map coordinates** in a UnitRecord (e.g. 231,231) are the engine's
+  "in Europe / high seas" state: such ships carry their passengers as
+  co-located rider records.
+
+The HTML port's `importSav()` (port/src/game.js) walks this whole layout and
+restores a shipped save into the playable rebuild; `port/tools/test_flow.py`
+asserts the 1653 game's figures field by field.
+
 - **Load deserializer `func_073BB0`** (file `0x73BB0`) — mirror read path (same block order).
 - **Autosave — BYTE_VERIFIED 2026-06-20.** The serializer is also reached via the
   filename-arg helper **`func_072CA4`** (`0x181F:0x5B6`), called **7×**, four from the

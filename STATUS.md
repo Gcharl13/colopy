@@ -9,11 +9,12 @@
 > [`METHODOLOGY.md`](METHODOLOGY.md). The specification (`spec/README.md`) is
 > the source of truth; `viceroy_source/` is evidence (`viceroy_source/ROLE.md`).
 
-**Last refreshed: 2026-08-05.** The previous refresh was 2026-06-18 — it
-predated the whole UI documentation mandate, the Colonizopedia / map-editor /
-diplomacy / options specs, the entire HTML port, and every ruling from July
-onward. Treat any figure elsewhere in the tree dated before 2026-08-05 as
-unverified.
+**Last refreshed: 2026-08-07.** (Previous refreshes: 2026-08-05, 2026-06-18.)
+The 2026-08-07 pass fixed the six player-reported defects, closed the
+raid-gate K TBD, added rival-power AI and LOAD GAME (including a full
+COLONY##.SAV importer — the shipped 1653 game restores field-for-field), and
+folded the whole port-era harvest into the technical reference (§30). Treat
+any figure elsewhere in the tree dated before 2026-08-05 as unverified.
 
 ---
 
@@ -25,7 +26,7 @@ Three layers, in the order `METHODOLOGY.md` defines them.
 |---|---|
 | **Evidence** (disassembly, asset decode) | 1,241 VICEROY functions inventoried; **156 named**, 1,094 not. All 13 container formats decoded. |
 | **Specification** (`spec/`, 64 sheets) | The mature layer. **17 open TBD lines across 10 sheets**, each named with its blocker. Every game-system formula is byte-closed. |
-| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **167/167 tests**, ~6.5k lines, 2.8 MB single-file bundle. Main gap: no AI opponents. |
+| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **215/215 tests**, ~9.5k lines, 3.0 MB single-file bundle. Drag-and-drop, popup speakers, native + rival AI (both reduced/R-tier — the full func_04E2D6 pipeline is the ceiling), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: Hall of Fame, sound, tutorial. |
 
 The honest one-line summary: **the spec is close to done, the port is the
 working proof of it, and the raw per-line annotation of the binary is not and
