@@ -909,8 +909,9 @@ SCRIPT = """() => {
     while (!G.dialog && m++ < 400) offerMercenaries();
     out.merc.offers = !!G.dialog;
     if (G.dialog) {
+      // @MERCENARIES rows: 0 "No thank you.", 1 "Pay {N$}."
       const g0 = G.gold, u0 = G.units.length;
-      closeDialog(0);
+      closeDialog(1);
       out.merc.hires = G.gold < g0 && G.units.length > u0;
     }
 
@@ -2395,6 +2396,38 @@ SCRIPT = """() => {
     out.tradeCounters = { soldOK, boughtOK: G.tradeTons[5] === -50 && G.tradeGold[5] === -ask0 * 50 };
   }
 
+  // ---- woodcut triggers: first contact, first village, first cargo ----
+  {
+    beginGame();
+    const r = {};
+    r.sheets = ['WDCUT03', 'WDCUT04', 'WDCUT05', 'WDCUT07', 'WDCUT08',
+                'WDCUT09', 'WDCUT11', 'WDCUT13'].every(s => !!DATA.sheets[s]);
+    const v = G.villages.find(w => w.tribe === 1) || G.villages[0];
+    const expect = v.tribe === 0 ? 5 : v.tribe === 1 ? 4 : 3;
+    const u = mkUnit('Scouts', v.x, v.y);
+    enterVillage(v, u);
+    r.contactPlate = G.screen === 'woodcut' && G.woodcut === expect;
+    onClick(-1, -1);
+    r.welcome = G.screen === 'village' && !!G.dialog &&
+                G.dialog.body.join(' ').includes('welcomes you');
+    closeDialog(1); G.dialog = null; G.screen = 'map';
+    enterVillage(v, u);
+    r.villagePlate = G.screen === 'woodcut' && G.woodcut === 7;
+    onClick(-1, -1);
+    G.screen = 'map';
+    enterVillage(v, u);
+    r.thirdQuiet = G.screen === 'village';
+    G.screen = 'map'; G.eventQueue = [];
+    G.europe.push({ type: 'Galleon', icon: unit('Galleon').icon, state: 'toEurope',
+                    turns: 1, passengers: [], hold: [{ good: 4, qty: 50 }] });
+    advanceCrossings();
+    r.cargoPlate = G.screen === 'woodcut' && G.woodcut === 9;
+    onClick(-1, -1);
+    r.cargoEurope = G.screen === 'europe';
+    G.screen = 'map';
+    out.woodcuts = r;
+  }
+
   // ---- the 1653 save's F5 columns match the live frame ----
   {
     importSav(b64bytes(DATA.sav1653));
@@ -2903,6 +2936,8 @@ def main():
         ("the 1653 import's F5 columns equal the live frame: sugar 1031/6071, muskets 0/351, silver 20619",
          r["sav1653F5"] == {"sugar": True, "muskets": True, "silverK": True},
          r["sav1653F5"]),
+        ("woodcuts: tribe plate + @INDIANWELCOME, village plate once, cargo plate to Europe",
+         all(r["woodcuts"].values()), r["woodcuts"]),
     ]
     bad = 0
     for name, ok, got in checks:

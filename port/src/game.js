@@ -682,6 +682,7 @@ function beginGame() {
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
+  G.wcSeen = 0; G.wcAfter = null;    // woodcut shown-bitmask ([0x540A])
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
@@ -771,14 +772,18 @@ function plaque(ctx, x, y, w, h, tileSheet, frame) {
   ctx.fillRect(x + 2, y + 2, w - 4, 1);              // top
   ctx.fillStyle = ink(f.dark);
   ctx.fillRect(x + 2, y + h - 3, w - 4, 1);          // bottom
-  // 4. interior, tiled inside the rings
+  // 4. interior, tiled inside the rings. The engine's fill (func_00E350)
+  // anchors the tile grid on the BOX ORIGIN, not the fill rect: phase =
+  // |fill_x0 - anchor_x| mod tile_w with fill at +3, so the first tile shows
+  // its columns from 3 on (@0x00E371-A2). Starting the grid at ix-3/iy-3
+  // reproduces that under the clip.
   const ix = x + 3, iy = y + 3, iw = w - 6, ih = h - 6;
   const [tw, th] = frameSize(tileSheet, 0);
   if (tw) {
     ctx.save();
     ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
-    for (let yy = iy; yy < iy + ih; yy += th)
-      for (let xx = ix; xx < ix + iw; xx += tw) sheetFrame(ctx, tileSheet, 0, xx, yy);
+    for (let yy = iy - 3; yy < iy + ih; yy += th)
+      for (let xx = ix - 3; xx < ix + iw; xx += tw) sheetFrame(ctx, tileSheet, 0, xx, yy);
     ctx.restore();
   } else {
     ctx.fillStyle = ink(f.dark);
@@ -801,13 +806,25 @@ function hollowRect(ctx, x, y, w, h, colorIdx) {
 // colour 0x37. Checked against the worked boot-menu example in that spec:
 // @y=91, one title line -> title top 97, first option top 107, box_h 58.
 function layoutDialog(d) {
+  // Every measured line carries the +10 body margin (`add ax,0x0A`
+  // @0x06CCE3); @width is a FLOOR under that, and 190 in practice.
   let cw = d.width;
-  for (const l of d.body.concat(d.tail)) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const l of d.body.concat(d.tail))
+    cw = Math.max(cw, FONT.tiny.width(l.replace(/[{}]/g, '')) + 10);
   const w = cw + 6;
   const textH = d.body.length * 6;
   const rows = d.opts ? d.opts.length * 8 : 11;   // entry field: label + box
   const h = 6 + textH + 3 + rows + 3;
   return { x: Math.round(160 - w / 2), y: Math.round(100 - h / 2), w, h, textH };
+}
+// The two ink sets: the boot/title setter (@0x0734BC) uses the immediates
+// 0xFE base / 0xFC gold hilite; the IN-GAME setter (@0x073474) reads the
+// NAMES @COLORS row -- slot 0 = 68 basic text, slot 1 = 149 gold hilite (the
+// same [0x830]/[0x831] pair the F9 report decodes; the slot mapping is the
+// spec's reading, its two anchors being slot 3 = 8 = boot's disabled ink and
+// the F9 decode -- @0x073474's own body is unread, flagged).
+function dialogInks() {
+  return G.screen === 'title' ? { base: 0xFE, hi: 0xFC } : { base: 68, hi: 149 };
 }
 // '{...}' spans switch to the hilite ink (struct +0x74 ink record, func_06C388).
 function spanText(ctx, line, x, y, base, hi) {
@@ -822,24 +839,28 @@ function drawDialog(ctx) {
   const d = G.dialog;
   if (!d) return;
   const b = layoutDialog(d);
+  const ik = dialogInks();
   if (d.speaker) drawSpeakerSheet(ctx, d.speaker);
-  plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  plaque(ctx, b.x, b.y, b.w, b.h, G.screen === 'title' ? 'OPENTILE' : 'WOODTILE');
+  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, ik.base, ik.hi));
   const seed = b.y + 6 + b.textH + 3;
   if (d.opts) {
     d.opts.forEach((o, k) => {
       const oy = seed + k * 8;
+      // Selection is the +0x40 band ONLY -- the hilite ink is gated on the
+      // {brace} flag (func_06C346 @0x06C365), never on the row being
+      // selected, so every row's text runs through the same span painter.
       if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, 7); }
-      FONT.tiny.draw(ctx, o, b.x + 9, oy + 1, lut(k === d.sel ? 0xFC : 0xFE));
+      spanText(ctx, o, b.x + 9, oy + 1, ik.base, ik.hi);
     });
   } else {
     // Entry popup (@LANDHO): the tail line is the field label, the box follows.
     const label = d.tail[0] || '';
-    FONT.tiny.draw(ctx, label, b.x + 5, seed + 2, lut(0xFE));
-    const fx = b.x + 5 + FONT.tiny.width(label) + 4;
-    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 11, 0xFE);
+    spanText(ctx, label, b.x + 5, seed + 2, ik.base, ik.hi);
+    const fx = b.x + 5 + FONT.tiny.width(label.replace(/[{}]/g, '')) + 4;
+    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 11, ik.base);
     const caret = (Math.floor(G.tick / 24) % 2) ? '_' : '';
-    FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(0xFC));
+    FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
   }
 }
 function openDialog(key, onDone, prefill) {
@@ -1073,6 +1094,41 @@ function drawWoodcut(ctx) {
   for (let i = 0; i < n; i++, sx += mw) sheetFrame(ctx, 'NAMEPLAT', 1, sx, 162);
   sheetFrame(ctx, 'NAMEPLAT', 2, sx, 162);
   FONT.np.center(ctx, caption, 160, 165, npLut);
+}
+
+// Once-only woodcut gate, modelling the engine's shown-bitmask [0x540A]
+// (test func_005418 / set func_0053DE, wrapper func_00543C): each plate fires
+// once per game. `after` is where the dismissal lands -- a screen name, or a
+// function for chains (the tribe-welcome popup); default is the map.
+function woodcutOnce(n, after) {
+  G.wcSeen = G.wcSeen || 0;
+  if (G.wcSeen & (1 << n)) return false;
+  G.wcSeen |= 1 << n;
+  G.woodcut = n;
+  G.wcAfter = after || null;
+  G.screen = 'woodcut';
+  return true;
+}
+// Tribe first contact (func_056C3E @0x056DA6): the plate is per TRIBE ID --
+// Inca (0) 5, Aztec (1) 4, everyone else 3 -- followed by @INDIANWELCOME.
+function firstTribeContact(v) {
+  const t = G.tribes[v.tribe];
+  if (t.met) return;
+  t.met = true;
+  const n = v.tribe === 0 ? 5 : v.tribe === 1 ? 4 : 3;
+  G.eventTribe = v.tribe;
+  woodcutOnce(n, () => {
+    G.screen = 'village';
+    // "We are a glorious nation of {N <settlements>}" -- the engine's plural
+    // string is unread; levelname+'s' is the port's phrasing. The treaty
+    // offer's mechanical effect is likewise unread: accepting records
+    // nothing beyond the flag, and that omission is flagged here.
+    const count = G.villages.filter(w => w.tribe === v.tribe).length;
+    askEvent('INDIANWELCOME', {
+      STRING0: t.name, NUMBER0: count,
+      STRING1: `${DATA.levelname[t.level] || 'Camp'}s`,
+    }, (choice) => { if (choice === 0) t.treaty = true; });
+  });
 }
 
 // The scroll is GAME.TXT @VICEROY (@VICEROY2 for the Netherlands) laid out by
@@ -1769,7 +1825,7 @@ function buildColony() {
     G.colony = G.colonies.length - 1;
     // First colony fires woodcut 2, BUILDING A COLONY (human only) --
     // spec/ui/woodcuts_and_intro.md, func_040C1E @0x040E00.
-    if (!G.builtColony) { G.builtColony = true; G.woodcut = 2; G.screen = 'woodcut'; }
+    if (!G.builtColony) { G.builtColony = true; woodcutOnce(2); }
     else G.screen = 'colony';
   }, suggested);
 }
@@ -2511,6 +2567,9 @@ function advanceCrossings() {
       G.euroShip = shipsInPort().indexOf(e);
       G.euroMsg = `${e.type} arrives in ${DATA.nations[G.nation].homeport}.`;
       G.screen = 'europe';
+      // The FIRST arrival carrying cargo plays CARGO FROM THE NEW WORLD
+      // (func_041EEA @0x0420EF), then hands back to the harbour.
+      if ((e.hold || []).some(h => h.qty > 0)) woodcutOnce(9, 'europe');
       continue;
     }
     // Back on the map, on the sea lane it left from.
@@ -4504,7 +4563,7 @@ function nativeRaid(v, c) {
         break;
     }
     // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
-    if (!G.raidSeen) { G.raidSeen = true; G.woodcut = 13; G.screen = 'woodcut'; }
+    if (!G.raidSeen) { G.raidSeen = true; woodcutOnce(13); }
   }
 }
 
@@ -4778,10 +4837,13 @@ function inciteIndians(v, u) {
   askEvent('INDIANWARPATH2', { STRING0: DATA.nations[target.nation].adjective,
                                NUMBER0: price }, (choice) => {
     if (choice !== 0) return;
-    if (G.gold < price) { notice('The treasury cannot bear it, Your Excellency.'); return; }
+    if (G.gold < price) { showEvent('NOTENOUGH', { NUMBER0: G.gold }); return; }
     G.gold -= price;
     t.warWith = target.nation;
-    notice(`The ${t.name} take the warpath against the ${DATA.nations[target.nation].adjective}.`);
+    showEvent('INDIANWARFARE', {
+      STRING0: t.name, STRING1: DATA.nations[G.nation].adjective,
+      STRING2: t.name, STRING3: DATA.nations[target.nation].adjective,
+    });
   });
 }
 
@@ -4902,7 +4964,9 @@ function attackVillage(v, u) {
 // engine shows the body and waits for an acknowledgement. Several can fire in
 // one turn, so they queue.
 function fillTemplate(line, subs) {
-  return line.replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
+  // %COUNTRY is the engine's own-nation substitution (@UNREST uses it).
+  return line.replace(/%COUNTRY/g, DATA.nations[G.nation].country)
+             .replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
     const v = subs[`${kind}${n}`];
     return v === undefined ? '' : String(v);
   });
@@ -4972,10 +5036,14 @@ function showEvent(key, subs, speaker) {
 // audit ledger) and for port-status notices (save/load). Identical
 // back-to-back notices collapse ("No moves left." mashed twice).
 function notice(s) {
-  const lines = wrapText(FONT.tiny, s, 150);
+  // The engine never wraps -- GAME.TXT lines come pre-broken -- so this wrap
+  // exists only because port-authored strings arrive as one line. It breaks
+  // at the 190px @width every gameplay popup carries (histogram 190:336),
+  // less the +10 line margin, so the box comes out the canonical 196 wide.
+  const lines = wrapText(FONT.tiny, s, 180);
   const tail = G.eventQueue[G.eventQueue.length - 1];
   if (tail && !tail.speaker && tail.lines.join('\n') === lines.join('\n')) return;
-  G.eventQueue.push({ lines, width: 0x50, speaker: null });
+  G.eventQueue.push({ lines, width: 190, speaker: null });
 }
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
@@ -4998,14 +5066,19 @@ function askEvent(key, subs, onDone, optsKey) {
 function drawEvent(ctx) {
   const e = G.eventQueue[0];
   if (!e) return;
+  // Body-only box: the option block ("+3 + rows*8 + 3") exists only when
+  // there ARE rows (dialog_framework.md §3), and there is no OK / Cancel /
+  // Continue anywhere in the EXE -- dismissal is any key/click or the modal
+  // loop's 120-tick timeout (func_004A80 @0x4ADD), which blits nothing.
   let cw = e.width;
-  for (const l of e.lines) cw = Math.max(cw, FONT.tiny.width(l));
-  const w = cw + 6, h = 6 + e.lines.length * 6 + 3 + 8 + 3;
+  for (const l of e.lines)
+    cw = Math.max(cw, FONT.tiny.width(l.replace(/[{}]/g, '')) + 10);
+  const w = cw + 6, h = 6 + e.lines.length * 6 + 3;
   const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  const ik = dialogInks();
   drawSpeakerSheet(ctx, e.speaker);
   plaque(ctx, x, y, w, h, 'WOODTILE');
-  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
-  FONT.tiny.center(ctx, '(Continue)', 160, y + h - 10, lut(0xFC));
+  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, ik.base, ik.hi));
 }
 
 // Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
@@ -5017,6 +5090,11 @@ function enterVillage(v, visitor) {
   G.villageRow = 0;
   G.villageMode = 'actions';
   G.screen = 'village';
+  // First contact with this TRIBE fires its welcome plate + @INDIANWELCOME
+  // (func_056C3E); the first village ever entered fires ENTERING INDIAN
+  // VILLAGE (func_04B308 @0x04B56C). Contact outranks the generic plate.
+  firstTribeContact(v);
+  if (G.screen === 'village') woodcutOnce(7, 'village');
 }
 // The per-row show/enable predicates, all byte-cited in that spec section. Rows
 // whose gate reads the tribe-record POSTURE byte (+0x5236) cannot be reproduced
@@ -5173,7 +5251,7 @@ function villageCommit() {
     notice(`Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`);
   } else if (r.kind === 'buy') {
     const cost = villageBuy(v, r.good, r.qty);
-    if (!cost) { notice('We cannot afford that, Your Excellency.'); return; }
+    if (!cost) { showEvent('NOTENOUGH', { NUMBER0: G.gold }); return; }
     u.hold = u.hold || [];
     holdAdd(u, r.good, r.qty);
     notice(`Bought ${r.qty} ${DATA.cargo[r.good].name} for ${cost}$`);
@@ -5679,7 +5757,7 @@ function checkContact() {
     if (r.attitude === undefined) r.attitude = 8;
     if (r.gold === undefined) r.gold = 1000 + Math.floor(Math.random() * 4000);
     G.msg = `We have made contact with the ${DATA.nations[r.nation].adjective}.`;
-    if (!G.metAnyone) { G.metAnyone = true; G.woodcut = 10; G.screen = 'woodcut'; }
+    if (!G.metAnyone) { G.metAnyone = true; woodcutOnce(10); }
   }
 }
 // One rival turn: ships work west until they find a coast, then plant.
@@ -6261,7 +6339,7 @@ function parleyCommit() {
   if (row.id === 'cancel') {
     close();
     setTreaty(G.nation, r.nation, REL.TREATY, false);
-    notice(`Our treaty with the ${adj} is renounced.`);
+    showEvent('CANCELPEACE', { STRING0: DATA.nations[G.nation].adjective, STRING1: adj });
     return;
   }
   if (row.id === 'peace') {
@@ -6280,9 +6358,14 @@ function parleyCommit() {
   close();
   const want = demandValue(500);
   if ((r.gold || 0) >= want && Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
-    r.gold -= want;
-    G.gold += want;
-    showEvent('GIVECASH', { NUMBER0: want });
+    // @GIVECASH carries the player's two responses ("Very well, you shall be
+    // spared." / "Alas, it is God's will.") -- the cash moves only on the
+    // sparing row; what refusing sets in the relation matrix is unread.
+    askEvent('GIVECASH', { NUMBER0: want }, (choice) => {
+      if (choice !== 0) return;
+      r.gold -= want;
+      G.gold += want;
+    });
   } else showEvent('THREATS', {});
 }
 function drawParley(ctx) {
@@ -6550,6 +6633,9 @@ function enterRumour(u, x, y) {
     case 1: {                                      // Fountain of Youth: 8 immigrants
       G.foundFountain = true;
       for (let k = 0; k < 8; k++) G.dockUnits.push(rollImmigrant().name || 'Colonists');
+      // THE FOUNTAIN OF YOUTH plate precedes the message (func_061454
+      // @0x0618F9); the queued @LOSTCITY1 popup shows once the map is back.
+      woodcutOnce(8);
       showEvent('LOSTCITY1', {});
       break;
     }
@@ -6783,7 +6869,11 @@ function runWar() {
       // EXE -- the port had been firing the caller-less 12 here). @BURNED is
       // the message; STRING3 is the colony (the body reads "{%STRING0} burn
       // {%STRING3} to the ground!").
-      G.woodcut = 11; G.screen = 'woodcut';
+      // COLONY BURNING is once-only like every plate ([0x540A] bitmask); the
+      // engine fires it from resolve_attack for ANY burned colony
+      // (func_05CA7E @0x05DADC/@0x05DFCB) -- the REF razing loop is the only
+      // path in this build that burns one.
+      woodcutOnce(11);
       showEvent('BURNED', { STRING0: DATA.nations[G.refNation !== undefined
                               ? G.refNation : G.nation].adjective,
                             STRING3: c.name });
@@ -6835,8 +6925,18 @@ function offerMercenaries() {
   const price = mercPrice(3, count, 1);
   if (price > G.gold) return;                        // only offered if affordable
   const extra = MERC_WARTIME[Math.floor(Math.random() * MERC_WARTIME.length)];
-  askEvent('KINGRECRUIT', { NUMBER0: price, STRING0: extra }, (choice) => {
-    if (choice !== 0 || G.gold < price) return;
+  // The offer body is @MERCENARIES -- "The King of %STRING0 has offered to
+  // send us a force of trained {mercenaries} (%STRING1) in exchange for
+  // {%NUMBER0$}" -- with its own rows: 0 "No thank you.", 1 "Pay {N$}.".
+  // (@KINGRECRUIT belongs to the Europe TRAIN chooser, where the audit sends
+  // it back.) WHICH King offers is unread; a met rival's is the port's pick.
+  const seller = G.rivals.find(r => r.met) || null;
+  askEvent('MERCENARIES', {
+    NUMBER0: price,
+    STRING0: seller ? DATA.nations[seller.nation].country : 'Europe',
+    STRING1: `${count} Cont. Army, 1 ${extra}`,
+  }, (choice) => {
+    if (choice !== 1 || G.gold < price) return;
     G.gold -= price;
     const c = G.colonies[0];
     const x = c ? c.x : G.units[0].x, y = c ? c.y : G.units[0].y;
@@ -6846,7 +6946,9 @@ function offerMercenaries() {
       G.units.push(u);
     }
     G.units.push(mkUnit(extra, x, y));
-    G.msg = `${count + 1} mercenaries join us for ${price}$.`;
+    // @MERCS -- "%STRING1 mercenaries arrive in %STRING0."
+    showEvent('MERCS', { STRING0: c ? c.name : DATA.nations[G.nation].homeport,
+                         STRING1: count + 1 });
   });
 }
 
@@ -7699,8 +7801,8 @@ function checkImmigration() {
   const slot = Math.floor(Math.random() * 3);
   G.dockUnits.push(G.dock[slot].name);
   G.dock[slot] = rollImmigrant();
-  G.msg = `Religious unrest in ${DATA.nations[G.nation].country} brings new colonists.`;
-  G.euroMsg = G.msg;
+  showEvent('UNREST', { STRING0: DATA.nations[G.nation].homeport,
+                        STRING1: G.dock[0] && (G.dock[0].name || G.dock[0]) || 'Colonists' });
 }
 
 // ------------------------------------------------------------ save / load
@@ -7760,6 +7862,11 @@ function importSav(bytes) {
   beginGame();
   G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
   G.landHo = true; G.builtColony = true; G.metAnyone = true;
+  // A restored mid-game has seen its first-time plates: mark the whole
+  // shown-bitmask and every tribe as contacted. (The engine's own [0x540A]
+  // word is in the save but its block index is unread -- TBD.)
+  G.wcSeen = 0x3FFF;
+  G.tribes.forEach(t => { t.met = true; });
 
   // Map planes: terrain verbatim; improvements masked to the road/plow bits
   // the port models; fog verbatim -- SEEN already uses the engine's own
@@ -8261,8 +8368,7 @@ function landfall(ship, nx, ny) {
     // and it is shown once per game.
     if (!G.landHo) {
       G.landHo = true;
-      G.woodcut = 1;
-      G.screen = 'woodcut';
+      woodcutOnce(1);
     }
   });
 }
@@ -9170,13 +9276,19 @@ function onClick(mx, my) {
       if (G.card < 9) G.card++;
       else { beginGame(); G.screen = 'map'; }
       break;
-    case 'woodcut':
+    case 'woodcut': {
       // Woodcut 1 is the discovery plate and hands over to the naming prompt;
       // woodcut 2 is BUILDING A COLONY and hands over to the new colony.
+      // Everything else lands wherever its trigger parked in G.wcAfter (the
+      // village behind the first-contact plates, Europe behind CARGO FROM THE
+      // NEW WORLD), or back on the map.
+      const after = G.wcAfter; G.wcAfter = null;
       if (G.woodcut === 1) { G.screen = 'map'; askLandName(); }
       else if (G.woodcut === 2) G.screen = 'colony';
-      else G.screen = 'map';
+      else if (typeof after === 'function') after();
+      else G.screen = after || 'map';
       break;
+    }
     case 'report':
       G.screen = 'map';
       break;

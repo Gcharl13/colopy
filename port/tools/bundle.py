@@ -250,7 +250,13 @@ def build_data():
     # rows, so a choice popup and a plain notice come from the same shape.
     D["events"] = {}
     for k in ("@MISSION0", "@MISSION1", "@MISSION2", "@MISSION3",
-              "@HERESY0", "@HERESY1",
+              "@HERESY0", "@HERESY1", "@INDIANWELCOME",
+              # Keys the port calls (or that replace ad-hoc notices) that were
+              # never exported -- each silently no-opped at showEvent's !t
+              # guard (popup audit 2026-08-08 + framework sweep 2026-08-07).
+              "@BURNED", "@CAPTURED", "@CLEARCUT", "@USEDUPTOOLS",
+              "@NOTENOUGH", "@CANCELPEACE", "@INDIANWARFARE", "@MERCS",
+              "@UNREST", "@MERCENARIES",
               "@RAIDSTORES", "@RAIDWREAK", "@RAIDGOLD", "@RAIDBURN", "@RAIDSHIP",
               "@RAIDNOTHING", "@INDIANSCONVERT", "@DEADCONVERTS",
               "@VILLAGEHAPPY", "@VILLAGEMEDIUM", "@VILLAGESAVAGE",

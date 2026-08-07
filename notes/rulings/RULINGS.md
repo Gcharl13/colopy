@@ -8214,3 +8214,52 @@ Suite: 220/220 (new regression: convert + stale-drop + dedupe).
   bands, schooling) stay bare per the evidence.
 
 Suite: 226/226 (seven new regressions).
+
+## 2026-08-07k — batch 4 (part 1): popup framework to the byte-decoded math; woodcut triggers completed
+
+**Popup framework** (dialog_framework.md §3, correcting the port's inventions):
+* `notice()` boxes were 80-156px wide with an invented 150px wrap; every
+  gameplay popup in GAME.TXT is `@width=190` (histogram 190:336, 220:99), so
+  notices now wrap at 180 and carry width 190 -> the canonical 196-wide box
+  at x=62.
+* The event box no longer reserves an option block it does not have (the
+  "+3+rows+3" term is conditional @0x06D606) and the invented "(Continue)"
+  row is deleted -- byte-cited negative: no OK/Cancel/Continue string exists
+  in the EXE; the modal loop func_004A80 blits nothing and times out at 120
+  ticks (the timeout itself is still unimplemented, flagged).
+* Every measured line now carries the engine's +10 margin (@0x06CCE3).
+* {brace} spans now highlight in OPTION ROWS and entry labels too (the
+  [0x1F62] toggle is in the shared painter func_06C388; the port printed
+  literal braces in @TAXOPTIONS/@MERCENARIES/@TRADE0...), and the selected
+  row is marked by the +0x40 band ONLY -- the hilite ink is gated on the
+  brace flag (func_06C346 @0x06C365), never on selection.
+* In-game dialogs take the NAMES @COLORS inks (slot 0 = 68 basic, slot 1 =
+  149 hilite -- the same [0x830]/[0x831] pair the F9 report reads; the slot
+  mapping is a flagged reading, @0x073474's body being unread). Title-screen
+  dialogs keep the boot immediates 0xFE/0xFC and now tile OPENTILE.
+* The plaque's wood tiling now anchors on the box origin (phase 3,
+  func_00E350 @0x00E371-A2).
+* Bundled the keys the port called into the void (showEvent's !t guard ate
+  them): @BURNED, @CAPTURED, @CLEARCUT, @USEDUPTOOLS -- plus @NOTENOUGH,
+  @CANCELPEACE, @INDIANWARFARE, @MERCS, @UNREST, @MERCENARIES, and the
+  ad-hoc notices at those sites now fire the keyed popups. @GIVECASH shows
+  its two response rows (cash moves only on the sparing row; the refusal's
+  relation-matrix effect is unread). The mercenary offer body is
+  @MERCENARIES with its own rows (pay = row 1); @KINGRECRUIT is freed for
+  its real Europe TRAIN site (still to do, ledger L180).
+
+**Woodcuts** (spec/ui/woodcuts_and_intro.md §1 caller table): the port had 5
+of 10 live call sites and only 3 plates in the asset bundle.
+* All 10 caller-cited plates are bundled now (WDCUT01-05, 07-11, 13; the
+  caller-less 00/06/12/14-16 stay out per the exhaustive scan).
+* New triggers wired: tribe first contact -> plate 3/4/5 by tribe id
+  (Inca 5 / Aztec 4 / others 3, func_056C3E @0x056DA6) + @INDIANWELCOME
+  (treaty effect unread, flagged); first village entered -> 7
+  (func_04B308 @0x04B56C); Fountain of Youth -> 8 (func_061454 @0x0618F9);
+  first cargo arrival in Europe -> 9 (func_041EEA @0x0420EF).
+* Woodcut 11 now runs through the once-only gate (it re-fired per razed
+  colony) -- all sites share woodcutOnce(), modelling the [0x540A]
+  shown-bitmask; a restored save marks the whole mask seen (the save's own
+  [0x540A] block index is unread, TBD).
+
+Suite: 227/227.

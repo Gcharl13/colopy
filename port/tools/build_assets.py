@@ -201,8 +201,15 @@ def main():
         [f"LEVN{i:04d}" for i in range(1, 11)]
     want_ss = ["TERRAIN", "PHYS0", "ICONS", "NAMEPLAT", "OPENTILE", "WOODTILE", "KING", "KING1",
                "ENGLND1", "FRANCE1", "SPAIN1", "DUTCH1",
-               # Woodcut event plates: the frame, plus WDCUT01 (first landfall).
-               "WOODFRAM", "WDCUT01", "WDCUT02", "WDCUT10", "BUILDING",
+               # Woodcut event plates: the frame plus every plate with a live
+               # byte-cited caller (spec/ui/woodcuts_and_intro.md §1) --
+               # 01 landfall, 02 first colony, 03/04/05 tribe first contact,
+               # 07 first village, 08 fountain of youth, 09 first cargo home,
+               # 10 meeting Europeans, 11 colony burning, 13 indian raid.
+               # 00/06/12/14-16 are caller-less and stay out.
+               "WOODFRAM", "WDCUT01", "WDCUT02", "WDCUT03", "WDCUT04",
+               "WDCUT05", "WDCUT07", "WDCUT08", "WDCUT09", "WDCUT10",
+               "WDCUT11", "WDCUT13", "BUILDING",
                # Advisor portraits: speaker channel [0x1F5E] 0..5.
                "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5"] + \
               [f"IND{t}A{a}" for t in range(8) for a in range(4)]
