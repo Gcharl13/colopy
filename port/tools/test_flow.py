@@ -367,6 +367,8 @@ SCRIPT = """() => {
       /^\(\d+ Hammers\)( \(\d+ Tools\))?$/.test(opts[1].note) &&
       opts.slice(1).every(r => {
         const b = DATA.buildings.find(d => d.name === r.label);
+        // Colony-built UNITS (Wagon Train etc.) carry no min_colony gate.
+        if (!b) return BUILDABLE_UNITS.includes(r.label);
         return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
       });
     G.colonyPopupRow = opts.findIndex(r => r.label === 'Docks');
@@ -1184,6 +1186,92 @@ SCRIPT = """() => {
                     DATA.events.ONLYPIO && DATA.events.NOPLOW &&
                     DATA.events.NOROAD && DATA.events.LANDFIRST);
     out.wire1 = w1;
+
+    // ---- Phase 2 batch 1: outage latches, VANISH, unit builds, rush-buy,
+    // back-tax, REFIT ----
+    const w2 = {};
+    // A manned distiller with no sugar posts @CANESUGAR once, latched.
+    const oc = { name: 'O', x: 9, y: 9, nation: G.nation,
+                 colonists: [{ type: 'Colonists', profession: null, job: 'Distiller', cell: null }],
+                 stock: DATA.cargo.map(() => 0), hammers: 0, building: null,
+                 sol: 0, buildings: STARTING_BUILDINGS.concat(["Rum Distiller's House"]) };
+    oc.stock[GOOD.FOOD] = 100;
+    G.eventQueue = []; colonyTurn(oc);
+    const fired1 = /run out of.*sugar/i.test(q());
+    oc.stock[GOOD.FOOD] = 100;
+    G.eventQueue = []; colonyTurn(oc);
+    w2.outageLatch = fired1 && !/run out of/i.test(q());
+    // The last colonist starving takes the colony with it (@VANISH). The
+    // centre tile is pinned to Arctic so it cannot feed the colony.
+    const vi = 9 * MAP.w + 9, vsv = MAP.tiles[vi];
+    MAP.tiles[vi] = 24;
+    const vc = { name: 'V', x: 9, y: 9, nation: G.nation,
+                 colonists: [{ type: 'Colonists', profession: null, job: null, cell: null }],
+                 stock: DATA.cargo.map(() => 0), hammers: 0, building: null,
+                 sol: 0, buildings: STARTING_BUILDINGS.slice() };
+    G.eventQueue = []; colonyTurn(vc); colonyTurn(vc);
+    w2.vanish = vc.vanished === true && /vanished/i.test(q());
+    MAP.tiles[vi] = vsv;
+    // Colony-built units: a Wagon Train completes into a map unit; the cap
+    // (wagons >= colonies) stalls with @NOMOREWAGONS.
+    const uc = { name: 'U', x: 9, y: 9, nation: G.nation,
+                 colonists: [{ type: 'Colonists', profession: null, job: null, cell: null }],
+                 stock: DATA.cargo.map(() => 0), hammers: 0, building: 'Wagon Train',
+                 sol: 0, buildings: STARTING_BUILDINGS.slice() };
+    G.colonies.push(uc);
+    const beforeUnits = G.units.length;
+    G.eventQueue = []; advanceConstruction(uc, 9999);
+    w2.buildWagon = G.units.length === beforeUnits + 1 &&
+                    G.units[G.units.length - 1].type === 'Wagon Train' &&
+                    uc.building === null;
+    uc.building = 'Wagon Train'; uc.hammers = 0;
+    const spare = G.units.filter(u => u.type === 'Wagon Train').length;
+    for (let k = G.colonies.length; k <= spare; k++)
+      G.units.push(mkUnit('Wagon Train', 8, 8));
+    G.eventQueue = []; advanceConstruction(uc, 9999);
+    w2.wagonCap = /wagon trains than we have colonies/i.test(q()) &&
+                  uc.building === 'Wagon Train';
+    G.units = G.units.filter(u => u.type !== 'Wagon Train');
+    // Ships need the Shipyard; artillery the Armory chain.
+    w2.unitGates = !buildOptions(uc).some(b => b.name === 'Caravel') &&
+                   (uc.buildings.push('Shipyard'),
+                    buildOptions(uc).some(b => b.name === 'Caravel')) &&
+                   buildOptions(uc).some(b => b.name === 'Wagon Train');
+    // Rush-buy: @BUYME1 asks, row 2 completes the target now.
+    uc.building = 'Stockade'; uc.hammers = 0; uc.colonists.push({}, {}, {});
+    G.colony = G.colonies.indexOf(uc); G.gold = 99999;
+    G.eventQueue = []; G.dialog = null; rushBuy();
+    w2.rushAsked = !!(G.dialog && /Cost to complete/i.test(G.dialog.body.join(' ')));
+    closeDialog(1);
+    w2.rushBuilt = uc.buildings.includes('Stockade');
+    w2.rushPaid = G.gold < 99999;
+    G.colonies.pop();
+    // Back-tax: selling a boycotted good asks @KISSUP (price x 500); paying
+    // clears the boycott and feeds the King's fund.
+    G.europe.push({ type: 'Caravel', state: 'port', hold: [{ good: 3, qty: 10 }],
+                    passengers: [], cargo: [] });
+    G.euroShip = shipsInPort().indexOf(G.europe[G.europe.length - 1]);
+    G.boycotts = [3]; G.gold = 99999;
+    const fund0 = G.kingsFund, expect = G.market[3] * 500;
+    G.eventQueue = []; sellFromShip(3);
+    const askedTax = G.dialog && /back taxes/i.test(G.dialog.body.join(' '));
+    closeDialog(1);
+    w2.backTax = askedTax && !G.boycotts.includes(3) &&
+                 G.kingsFund === fund0 + expect;
+    G.europe.pop();
+    // @REFIT: a damaged ship over a Drydock colony repairs at end of turn.
+    const rc2 = { name: 'R', x: 4, y: 4, nation: G.nation,
+                  colonists: [{ type: 'Colonists', profession: null, job: null, cell: null }],
+                  stock: DATA.cargo.map(() => 0), hammers: 0, building: null,
+                  sol: 0, buildings: STARTING_BUILDINGS.concat(['Drydock']) };
+    rc2.stock[GOOD.FOOD] = 500;
+    G.colonies.push(rc2);
+    const hurt = mkUnit('Caravel', 4, 4); hurt.damaged = true;
+    G.units.push(hurt);
+    G.eventQueue = []; endTurn();
+    w2.refit = hurt.damaged === false;
+    G.units.splice(G.units.indexOf(hurt), 1); G.colonies.pop();
+    out.wire2 = w2;
   }
 
   // ---- treasure transport and fog of war ----
@@ -3112,6 +3200,9 @@ def main():
         ("wire-only sweep: prices, teacher guards, graduation rungs, siting, "
          "movement guards, spoilage, evasion, trade bodies",
          all(r["wire1"].values()), r["wire1"]),
+        ("small mechanics: outage latch, VANISH, colony-built units + caps, "
+         "rush-buy, back-tax, REFIT",
+         all(r["wire2"].values()), r["wire2"]),
     ]
     bad = 0
     for name, ok, got in checks:

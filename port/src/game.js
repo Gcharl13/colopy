@@ -604,6 +604,9 @@ const UNITS = {};
 for (const r of DATA.units) {
   UNITS[r.name] = { name: r.name, icon: r.icon - 1, movement: r.movement,
                     attack: r.attack, combat: r.combat, cargo: r.cargo,
+                    // Build materials (@UNIT Cost/Tools/Guns columns) for the
+                    // colony-built units.
+                    cost: r.cost, tools: r.tools, guns: r.guns,
                     hull: r.hull };
 }
 const unit = (n) => UNITS[n];
@@ -2310,6 +2313,7 @@ function colonyProduce(c) {
   // whatever the fields brought in this turn; the factory tier (3rd link) buys
   // the same output for 2/3 of the raw.
   const consumed = DATA.cargo.map(() => 0);
+  const outages = new Set();
   for (const p of indoor) {
     const job = p.job, g = JOB_GOOD[jobIndex(job)];
     if (g === undefined) continue;
@@ -2319,7 +2323,11 @@ function colonyProduce(c) {
       const factory = chainCount(c, job) > 2;
       const avail = c.stock[raw] + out[raw] - consumed[raw];
       const cost = (n) => factory ? Math.floor(n * 2 / 3) : n;
+      // A manned converter starved to a standstill is a per-good outage --
+      // colonyTurn latches it into the @CANESUGAR/.../@TOOLS notice.
+      const potential = want;
       while (want > 0 && cost(want) > avail) want -= 1;
+      if (potential > 0 && want === 0) outages.add(raw);
       consumed[raw] += cost(want);
     }
     if (g >= 0) out[g] += want; else tally[g] += want;
@@ -2331,7 +2339,7 @@ function colonyProduce(c) {
   const gross = out.slice();
   for (let i = 0; i < consumed.length; i++) out[i] -= consumed[i];
   const eaten = 2 * c.colonists.length;                   // BYTE_VERIFIED @0xA5F2
-  return { out, gross, consumed, tally, centre, eaten,
+  return { out, gross, consumed, tally, centre, eaten, outages,
            netFood: out[GOOD.FOOD] - eaten };
 }
 // Kept for the panel and the tests: the food line only.
@@ -2486,7 +2494,9 @@ function autoExport(c) {
     // Custom Houses allow trade after independence (market.md); without one the
     // excess is wasted rather than sold once you have declared. Peter
     // Stuyvesant is what makes the building available at all.
-    if (isBoycotted(i) || (G.declared && !c.buildings.includes('Custom House'))) {
+    const hasCustom = c.buildings.includes('Custom House');
+    if (isBoycotted(i) || (G.declared && !hasCustom) ||
+        (hasCustom && (c.customOff || {})[i])) {
       spoiled.push({ good: i, qty: excess });
       continue;
     }
@@ -2564,12 +2574,54 @@ function buildOptions(c) {
     // Peter Stuyvesant enables the Custom House and nothing else does
     // (func_00B900 @0xBA37).
     .filter(b => b.name !== 'Custom House' || G.fathersOwned.includes('Peter Stuyvesant'))
-    .filter(b => !BUILDING_FACTORY.has(b.name) || G.fathersOwned.includes('Adam Smith'));
+    .filter(b => !BUILDING_FACTORY.has(b.name) || G.fathersOwned.includes('Adam Smith'))
+    .concat(unitBuildRows(c));
+}
+// Colony-built UNITS. The manual (HIGH trust for function) gates them: a
+// Wagon Train anywhere, Artillery once an Armory-chain building stands
+// ("an armory also allows your carpenters to make artillery units"), ships
+// once the Shipyard is up. Materials come from the @UNIT Cost/Tools columns
+// ("build materials", GAME_INDEX_TABLES) -- tools scale x10 like @BUILDING's
+// tools_x10; the x32 HAMMER scale is inferred from the six known ship costs
+// (Caravel 4->128 ... Frigate 16->512) and is flagged, not byte-verified.
+// Man-O-War is the King's own and is never offered.
+const UNIT_HAMMER_SCALE = 32;
+const BUILDABLE_UNITS = ['Wagon Train', 'Artillery', 'Caravel', 'Merchantman',
+                         'Galleon', 'Privateer', 'Frigate'];
+function unitBuildRow(name) {
+  const u = unit(name);
+  return u && { name, cost: u.cost * UNIT_HAMMER_SCALE, tools_x10: u.tools,
+                isUnit: true };
+}
+function unitBuildRows(c) {
+  return BUILDABLE_UNITS.filter(n => {
+    if (n === 'Wagon Train') return true;
+    if (n === 'Artillery')
+      return ['Armory', 'Magazine', 'Arsenal'].some(b => c.buildings.includes(b));
+    return c.buildings.includes('Shipyard');
+  }).map(unitBuildRow).filter(Boolean);
 }
 // One colony's whole turn: produce, bank, eat, grow, build, then dispose of the
 // overflow.
+// The seven per-good input-outage keys -- each raw feeding a converter chain
+// has its own "has run out of X" body (@TOOLS is the gunsmiths').
+const OUTAGE_KEY = { [GOOD.SUGAR]: 'CANESUGAR', [GOOD.TOBACCO]: 'TOBACCO',
+                     [GOOD.COTTON]: 'COTTON', [GOOD.FURS]: 'FURS',
+                     [GOOD.LUMBER]: 'LUMBER', [GOOD.ORE]: 'ORE',
+                     [GOOD.TOOLS]: 'TOOLS' };
 function colonyTurn(c) {
   const r = colonyProduce(c);
+  // Input-outage latches: a manned converter starved of its raw announces
+  // once, and re-arms when the chain runs again. The engine's latch site is
+  // unread; the once-per-outage cadence is the port's reading, flagged.
+  c.outageLatch = c.outageLatch || {};
+  for (const raw of r.outages) {
+    if (!OUTAGE_KEY[raw] || c.outageLatch[raw]) continue;
+    c.outageLatch[raw] = true;
+    showEvent(OUTAGE_KEY[raw], { STRING0: c.name });
+  }
+  for (const k of Object.keys(c.outageLatch))
+    if (!r.outages.has(Number(k))) delete c.outageLatch[k];
   for (let i = 0; i < r.out.length; i++)
     c.stock[i] = Math.max(0, c.stock[i] + r.out[i]);      // banked with a floor at 0
   // Food: eat first, then the surplus feeds the growth store. The engine posts
@@ -2593,6 +2645,11 @@ function colonyTurn(c) {
       c.colonists.pop();
       showEvent(preWinter ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
       c.foodWarned = false;
+    } else {
+      // @VANISH: the LAST colonist starves and the colony is gone. Flagged
+      // for removal after the colony loop (endTurn), not mid-iteration.
+      c.vanished = true;
+      showEvent('VANISH', { STRING0: c.name });
     }
   } else if (r.netFood < 0 && c.stock[GOOD.FOOD] < FOOD_FOR_COLONIST && !c.foodWarned) {
     c.foodWarned = true;
@@ -2641,10 +2698,33 @@ function colonyTurn(c) {
 // if it is paid for. Tools are consumed with the hammers.
 function advanceConstruction(c, hammers) {
   c.hammers += hammers === undefined ? colonyHammers(c) : hammers;
-  const b = c.building && DATA.buildings.find(d => d.name === c.building);
+  const b = c.building && (DATA.buildings.find(d => d.name === c.building) ||
+                           (BUILDABLE_UNITS.includes(c.building) &&
+                            unitBuildRow(c.building)));
   if (!b) return;
   const needTools = b.tools_x10 * 10;
   if (c.hammers < b.cost) { c.toolWarned = false; return; }
+  // Completion-time guards. @NOMOREWAGONS: wagons are capped at the colony
+  // count (the PEDIA/manual rule) -- the build stalls, announced once.
+  if (b.isUnit && b.name === 'Wagon Train') {
+    const wagons = G.units.filter(u => u.type === 'Wagon Train').length;
+    if (wagons >= G.colonies.length) {
+      if (!c.capWarned) {
+        c.capWarned = true;
+        showEvent('NOMOREWAGONS', { STRING0: c.name, NUMBER0: G.colonies.length });
+      }
+      return;
+    }
+  }
+  c.capWarned = false;
+  // @ALREADYHAVE / @NOMOREWAREHOUSE: the target already stands (reachable
+  // when circumstances changed after the pick); the target is cleared.
+  if (!b.isUnit && c.buildings.includes(b.name)) {
+    showEvent(b.name === 'Warehouse Expansion' ? 'NOMOREWAREHOUSE' : 'ALREADYHAVE',
+              { STRING0: c.name, STRING1: b.name });
+    c.building = null;
+    return;
+  }
   // Hammers are ready but the tools are short: the engine posts @NEEDTOOLS /
   // @NEEDTOOLS0 (STRING0=colony, STRING1=building, NUMBER0=needed, NUMBER1=on
   // hand) and the building waits. Once per stall, not every turn.
@@ -2660,11 +2740,58 @@ function advanceConstruction(c, hammers) {
   c.toolWarned = false;
   c.hammers -= b.cost;
   c.stock[GOOD.TOOLS] -= needTools;
-  c.buildings.push(b.name);
+  if (b.isUnit) {
+    // A finished unit steps onto the colony square (ships sit in port there,
+    // the same tile colonyShip reads).
+    G.units.push(mkUnit(b.name, c.x, c.y));
+  } else {
+    c.buildings.push(b.name);
+  }
   c.building = null;
   // @BUILT: "%STRING0 colony produces {%STRING1}." (STRING0=colony, STRING1=the
   // building) -- a popup, not a status line.
   showEvent('BUILT', { STRING0: c.name, STRING1: b.name });
+}
+
+// The rush-buy (@BUYME0 info / @BUYME1 confirm, width 160, live frame
+// 81_colony_build_prompt: "Cost to complete Docks: 1552$. Treasury: 1000$."):
+// pay gold to finish the construction target now. The engine's AMOUNT
+// formula is unread -- the flagged stand-in prices remaining hammers at 30$
+// and remaining tools at the market ask (the capture's 1552$ vs this
+// formula's 1560$ for a fresh Docks is the open calibration, Phase 4).
+// @CUSTOM "Which cargos shall our {Custom House} export?" -- the per-good
+// export toggle. The engine's picker format (runtime rows) is unread; the
+// port re-opens the single-pick popup per toggle, '*' marking exported
+// goods, flagged. autoExport consults the toggles when the house stands.
+function customHouseMenu() {
+  const c = G.colonies[G.colony];
+  if (!c || !c.buildings.includes('Custom House')) return;
+  c.customOff = c.customOff || {};
+  const rows = DATA.cargo.map((g, i) => `${c.customOff[i] ? '  ' : '* '}${g.name}`)
+                         .concat(['Done']);
+  askEvent('CUSTOM', {}, (choice) => {
+    if (choice < 0 || choice >= DATA.cargo.length) return;
+    c.customOff[choice] = !c.customOff[choice];
+    customHouseMenu();
+  }, rows);
+}
+function rushBuy() {
+  const c = G.colonies[G.colony];
+  const b = c && c.building && (DATA.buildings.find(d => d.name === c.building) ||
+            (BUILDABLE_UNITS.includes(c.building) && unitBuildRow(c.building)));
+  if (!b) return;
+  const remH = Math.max(0, b.cost - c.hammers);
+  const remT = Math.max(0, b.tools_x10 * 10 - c.stock[GOOD.TOOLS]);
+  const cost = 30 * remH + askPrice(GOOD.TOOLS) * remT;
+  const S = { STRING0: b.name, NUMBER0: cost, NUMBER1: G.gold };
+  if (cost > G.gold) { showEvent('BUYME0', S); return; }
+  askEvent('BUYME1', S, (choice) => {
+    if (choice !== 1) return;                    // row 2 = "Complete it."
+    G.gold -= cost;
+    c.hammers = Math.max(c.hammers, b.cost);
+    c.stock[GOOD.TOOLS] = Math.max(c.stock[GOOD.TOOLS], b.tools_x10 * 10);
+    advanceConstruction(c, 0);
+  });
 }
 
 // A ship entering the sea lane leaves the map for the home port. Ships carry a
@@ -2708,11 +2835,23 @@ function advanceCrossings() {
     // and boarding/sailing takes them back aboard.
     if (e.state === 'toEurope') {
       e.state = 'port';
+      // @REFIT covers the home port too: damage clears on docking (the
+      // engine's repair timer is unread; same flagged stand-in as colonies).
+      if (e.damaged) {
+        e.damaged = false;
+        showEvent('REFIT', { STRING0: e.type,
+                             STRING1: DATA.nations[G.nation].homeport });
+      }
       for (const p of (e.passengers || [])) G.dockUnits.push(p);
       e.passengers = [];
       G.euroShip = shipsInPort().indexOf(e);
       G.euroMsg = `${e.type} arrives in ${DATA.nations[G.nation].homeport}.`;
       G.screen = 'europe';
+      // @SOMEBOYCOTT belongs HERE, not to the interactive sell: the
+      // arrival/auto-unload handler func_03314E posts it @0x3331A when the
+      // docking hold carries a boycotted good.
+      if ((e.hold || []).some(h => h.qty > 0 && isBoycotted(h.good)))
+        showEvent('SOMEBOYCOTT');
       // The FIRST arrival carrying cargo plays CARGO FROM THE NEW WORLD
       // (func_041EEA @0x0420EF), then hands back to the harbour.
       if ((e.hold || []).some(h => h.qty > 0)) woodcutOnce(9, 'europe');
@@ -3998,9 +4137,21 @@ function sellFromShip(i) {
   const ship = activeShip();
   if (!ship) { G.euroMsg = 'No ships in port.'; return; }
   if (isBoycotted(i)) {
-    // @SOMEBOYCOTT (the engine's boycott-blocked-unload message; the mask is
-    // tested on every trade @0x030B47). Replaces the ad-hoc status text.
-    showEvent('SOMEBOYCOTT');
+    // Interactive sell of a boycotted good = the @KISSUP back-tax dialog
+    // (byte-verified: sell handler @0x415A6 -> lift dialog @0x415B5; amount
+    // = sell_price x 500 @0x333AF; pay -> treasury-, king's fund+, bit
+    // cleared @0x3340C..0x33423; can't afford -> not lifted @0x333DD, the
+    // @KISSSORRY shortfall). Row 2 pays.
+    const tax = G.market[i] * 500;
+    askEvent('KISSUP', { STRING0: DATA.cargo[i].name,
+                         STRING1: DATA.nations[G.nation].homeport,
+                         NUMBER0: tax }, (choice) => {
+      if (choice !== 1) return;
+      if (G.gold < tax) { showEvent('KISSSORRY', { NUMBER0: G.gold }); return; }
+      G.gold -= tax;
+      G.kingsFund += tax;
+      G.boycotts = G.boycotts.filter(g => g !== i);
+    });
     return;
   }
   const qty = holdQty(ship, i);
@@ -8758,6 +8909,23 @@ function endTurn() {
   revealAll();
   payUpkeep();
   for (const c of G.colonies) colonyTurn(c);
+  // @VANISH removals, deferred out of the loop above.
+  if (G.colonies.some(c => c.vanished)) {
+    G.colonies = G.colonies.filter(c => !c.vanished);
+    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
+  }
+  // @REFIT: a damaged ship spending the turn in a port with repair
+  // facilities is fixed. The manual: a Drydock/Shipyard "enables your colony
+  // to repair any damaged ships" (the mother country always can). The
+  // engine's repair TIMER is unread -- one full turn is the port's flagged
+  // stand-in (u.damaged was previously never cleared at all).
+  for (const u of G.units) {
+    const home = u.ship && u.damaged && colonyAt(u.x, u.y);
+    if (home && ['Drydock', 'Shipyard'].some(b => home.buildings.includes(b))) {
+      u.damaged = false;
+      showEvent('REFIT', { STRING0: u.type, STRING1: home.name });
+    }
+  }
   advanceImprovements();
   checkImmigration();
   updateCongress();
@@ -10140,6 +10308,10 @@ function onKey(e) {
       // menu, Enter the jobs menu for the selected colonist, ESC/x exits.
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
       if (k === 'c' || k === 'C') { G.colonyPopup = 'build'; G.colonyPopupRow = 0; }
+      // B = rush-buy the construction target (@BUYME0/1); E = the Custom
+      // House export picker (@CUSTOM).
+      if (k === 'b' || k === 'B') rushBuy();
+      if (k === 'e' || k === 'E') customHouseMenu();
       if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
       // Colonial authority: R renames, shift-A abandons (@ABANDON defaults to
       // the refusal, so a stray press cannot lose you a colony).

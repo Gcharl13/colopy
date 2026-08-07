@@ -54,7 +54,8 @@ def build_data():
     D["units"] = [{
         "name": r["name"],
         **{c: int(r[c]) for c in ("icon", "movement", "attack", "combat",
-                                  "cargo", "size", "cost", "hull")},
+                                  "cargo", "size", "cost", "tools", "guns",
+                                  "hull")},
     } for r in rows("@UNIT")]
 
     # Popup templates, verbatim from GAME.TXT with their @directives (the box
@@ -279,6 +280,10 @@ def build_data():
               "@EFFICIENT", "@INEFFICIENT", "@CONTINENTAL", "@TIMECHANGE",
               # Trade-route editor bodies (previously paraphrased literals).
               "@TRADESELECT", "@TRADESTART", "@TRADETYPE", "@TRADEDELETE",
+              # Phase 2: rush-buy, repairs, build caps.
+              "@BUYME0", "@BUYME1", "@REFIT",
+              "@NOMOREWAGONS", "@NOMOREWAREHOUSE", "@ALREADYHAVE",
+              "@KISSUP", "@KISSSORRY", "@VANISH", "@CUSTOM",
               # The village haggle loop (func_049600).
               "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
               "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",

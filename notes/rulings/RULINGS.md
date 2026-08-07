@@ -8439,3 +8439,50 @@ Suite: 230/230 (new "wire-only sweep" block: prices, teacher guards,
 graduation rungs, siting, movement guards, spoilage, evasion, trade bodies).
 Ledger: DONE 222 (+46), DONE-VIA-DATA 16, PARAPHRASED 0 (-5),
 BUNDLED-UNWIRED 42, MISSING 172 (-32), N/A 23, SUPPORT 24.
+
+## 2026-08-07p — Phase 2 batch 1: input-outage latches, VANISH, colony-built units, rush-buy, back-tax, REFIT, CUSTOM
+
+- **Input outages (7 keys).** colonyProduce reports converters starved to a
+  standstill; colonyTurn latches @CANESUGAR/@COTTON/@FURS/@LUMBER/@ORE/
+  @TOBACCO/@TOOLS once per outage, re-arming when the chain runs (the
+  engine's latch cadence is unread -- flagged).
+- **@VANISH.** The last colonist starving (after the @FOOD1/2 warning turn)
+  removes the colony, deferred out of the colony loop.
+- **Colony-built units.** buildOptions now appends Wagon Train (anywhere),
+  Artillery (Armory chain standing) and the five ships (Shipyard) -- the
+  manual's gates (HIGH trust for function). Materials from the @UNIT
+  Cost/Tools columns: tools x10 (as @BUILDING), hammers x32 -- the scale
+  INFERRED from the six known ship costs (Caravel 4->128 ... Frigate
+  16->512), flagged, not byte-verified. Completion drops the unit on the
+  colony square. Guards: @NOMOREWAGONS (wagons capped at the colony count,
+  the PEDIA rule; stalls, announced once), @ALREADYHAVE/@NOMOREWAREHOUSE
+  when the target already stands (clears the target). Man-O-War never
+  offered.
+- **Rush-buy.** Colony key B -> @BUYME0 (short purse) / @BUYME1 (2-row,
+  @default row "Complete it." pays). AMOUNT formula unread: the flagged
+  stand-in prices remaining hammers at 30$ + tools at market ask; the live
+  frame 81_colony_build_prompt ("Docks: 1552$") vs this formula's 1560$ is
+  the open calibration (Phase 4 capture).
+- **Back-tax (@KISSUP/@KISSSORRY).** CORRECTS the batch-1 placement: the
+  interactive sell of a boycotted good runs the @KISSUP pay-or-abort dialog
+  (byte-verified sell handler @0x415A6 -> @0x415B5), amount = sell_price x
+  500 (@0x333AF), pay -> treasury- / king's fund+ / bit cleared
+  (@0x3340C..23), short purse -> @KISSSORRY and no lift (@0x333DD).
+  @SOMEBOYCOTT moved to its byte-cited site: the Europe ARRIVAL handler
+  (func_03314E @0x3331A) when the docking hold carries a boycotted good.
+- **@REFIT.** Damage clears in a Drydock/Shipyard colony (the manual's
+  repair rule; the mother country always repairs) at end of turn, and on
+  docking in Europe. The engine's repair TIMER and the auto-teleport-to-
+  nearest-drydock behaviour are unread -- one-turn-in-place repair is the
+  flagged stand-in.
+- **@CUSTOM.** Colony key E opens the Custom House per-good export toggle
+  ('*' = exported; picker format unread, single-pick-per-toggle flagged);
+  autoExport consults the toggles when the house stands.
+
+Suite: 232 checks (new "small mechanics" block).
+
+(2026-08-07p addendum: the UNITS[] transform was silently dropping the
+@UNIT Cost/Tools/Guns columns, so the first unit build NaN'd the colony's
+tools stock and the treasury -- fixed by carrying the three columns
+through; caught by the new suite block. Suite 231/231. Ledger: DONE 239,
+BUNDLED-UNWIRED 34, MISSING 163.)
