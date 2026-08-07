@@ -3643,6 +3643,16 @@ function buyToShip(i, qty) {
   if (i < 0) return;
   const ship = activeShip();
   if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+  // The transfer executor's space clamp (func_02A8EC, see colonyDrop): a
+  // purchase never overfills the holds -- capacity*100 less what is aboard,
+  // with the merge slot's headroom.
+  const cap = Number((unit(ship.type) || {}).cargo) || 0;
+  const slot = (ship.hold || []).find(h => h.good === i);
+  const used = (ship.passengers || []).length + (ship.hold || []).length;
+  const space = Math.max(0, cap - used) * 100 +
+                (slot ? Math.max(0, 100 - slot.qty) : 0);
+  if (space <= 0) { G.euroMsg = `The ${ship.type}'s holds are full.`; return; }
+  qty = Math.min(qty, space);
   const paid = buyGoods(i, qty);
   if (!paid) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
   holdAdd(ship, i, qty);
@@ -8748,12 +8758,21 @@ function colonyDrop(d, target, mx, my) {
       // Warehouse -> ship. Needs a ship and a hold: units aboard occupy holds
       // too, and a same-good slot merges (holdAdd) rather than taking a second
       // slot -- the port's own convention, shared with the trade routes.
+      //
+      // The engine's transfer executor func_02A8EC (byte-read 2026-08-07f)
+      // clamps the moved amount at 0x64 = 100 AND at the destination's free
+      // space before anything moves (the 0x181F:0xB96/0xC68 pair), refusing
+      // with a timed message when there is no room -- so a hold slot never
+      // exceeds a 100-load. Under the merge convention that space is
+      // (free slots)*100 plus the headroom in the merge slot.
       if (!ship) { G.msg = 'No ships in port.'; return; }
       const cap = Number((unit(ship.type) || {}).cargo) || 0;
+      const slot = (ship.hold || []).find(h => h.good === d.good);
       const used = (ship.cargo || []).length + (ship.hold || []).length;
-      const merge = (ship.hold || []).some(h => h.good === d.good);
-      if (used >= cap && !merge) { G.msg = `The ${ship.type}'s holds are full.`; return; }
-      const qty = Math.min(d.amount, c.stock[d.good]);
+      const space = Math.max(0, cap - used) * 100 +
+                    (slot ? Math.max(0, 100 - slot.qty) : 0);
+      if (space <= 0) { G.msg = `The ${ship.type}'s holds are full.`; return; }
+      const qty = Math.min(d.amount, c.stock[d.good], space);
       if (!qty) return;
       c.stock[d.good] -= qty;
       ship.hold = ship.hold || [];

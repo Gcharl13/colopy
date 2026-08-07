@@ -8052,3 +8052,31 @@ and dim rules; capitals sparkle; the brave AI targets the scorer's pick.
 On the 1653 board exactly one village scores (the Iroquois capital eyeing
 Roanoke at score 0 — one dim green mark), which matches that game's quiet
 state. Suite: 216/216.
+
+## 2026-08-07f — the drop-action bodies read: func_02A8EC is the goods-transfer executor, func_02A6A6 its hover-label twin
+
+The two functions on the open-items ledger since the drag pass are decoded:
+
+* **`func_02A8EC(src_unit, dst_unit, good, interactive)`** is the
+  goods-transfer executor. Order of operations, each at its site:
+  quantity = the source slot's load via `0x181F:0xBE6`, **clamped at 0x64 =
+  100** (@0x2A92F); the DESTINATION SPACE test `0x181F:0xB96`/`0xC68` runs
+  BEFORE anything moves, refusing with a timed message (dwell 0x78 = 120
+  ticks, i.e. 1.97 s) when there is no room (@0x2A916-0x2A92A);
+  qty = min(qty, space) (@0x2A948-0x2A95B); the interactive path formats an
+  amount prompt (cargo-name table `[bx-0x6840]`, `@UNIT` +0x5230 capacity
+  words, format_int32) and re-clamps to the entered number, aborting on ≤ 0
+  (@0x2A967-0x2AA1E); the move itself is remove-slot `0x181F:0xAEC` +
+  cargo-load `0x181F:0xD58`, with the REMAINDER PUT BACK on the source when
+  less than the slot held was taken (@0x2AA40-0x2AA6C).
+* **`func_02A6A6`** is the matching hover-label builder (gated by the
+  `[0x890]` label flag -- the §29 unknown, now identified as the label gate),
+  formatting the same cargo-name/capacity/amount trio; its negative-result
+  path expires the armed tooltip (`0x181F:0x56`) rather than transferring.
+
+**Port adoption:** the space clamp was the missing piece -- the port's merged
+hold slots could grow without bound. colonyDrop's warehouse->ship leg and
+Europe's buyToShip now clamp to (free slots)·100 + merge-slot headroom and
+refuse when full, which is the executor's arithmetic expressed under the
+port's one-slot-per-good convention (flagged as such in place). The 100 cap
+and the refusal-as-timed-message shape were already right. Suite: 216/216.
