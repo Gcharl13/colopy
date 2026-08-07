@@ -2540,7 +2540,14 @@ function sailForEurope(ship) {
 // Anyone standing on the dock boards first -- that is what the dock queue is
 // waiting for.
 function sailForNewWorld(e) {
-  while (G.dockUnits.length && e.passengers.length < 6) e.passengers.push(G.dockUnits.shift());
+  // Dock units board the sailing ship in order -- EXCEPT any held back by the
+  // @ARMOPTIONS "Don't get on next ship" flag, which wait for a later one.
+  for (let i = 0; i < G.dockUnits.length && e.passengers.length < 6; ) {
+    const u = G.dockUnits[i];
+    if (u && typeof u === 'object' && u.noBoard) { i++; continue; }
+    e.passengers.push(u);
+    G.dockUnits.splice(i, 1);
+  }
   e.state = 'toNewWorld';
   e.turns = SAIL_TURNS;
   G.euroMsg = `${e.type} sets sail.`;
@@ -3611,7 +3618,11 @@ function dockUnitRows() {
   if (e === undefined) return [];
   const t = entryType(e);
   const rows = [];
-  rows.push({ label: 'Board next ship.', act: 'board' });
+  // @ARMOPTIONS row 0/1: the auto-board flag. A dock unit boards the next
+  // ship that sails UNLESS it is held back; both rows always show so you can
+  // set either state (the engine offers the pair -- func_04B308 family).
+  if (e && e.noBoard) rows.push({ label: 'Board next ship.', act: 'board' });
+  else rows.push({ label: "Don't get on next ship.", act: 'noboard' });
   rows.push({ label: 'Move to front of dock.', act: 'front' });
   for (const v of ARM_VERBS) {
     const to = v.map[t];
@@ -3790,8 +3801,17 @@ function euroContextCommit(r) {
       ship.passengers = ship.passengers || [];
       if (ship.passengers.length >= 6) { G.euroMsg = 'That ship is full.'; return; }
       G.dockUnits.splice(k, 1);
-      ship.passengers.push(e);
+      // Boarding clears any "wait on the dock" hold.
+      const board = (typeof e === 'object' && e.noBoard) ? { ...e, noBoard: false } : e;
+      ship.passengers.push(board);
       G.euroMsg = `${entryName(e)} boards the ${ship.type}.`;
+      return;
+    }
+    case 'noboard': {
+      const held = typeof e === 'object' ? { ...e, noBoard: true }
+                 : { name: e, type: entryType(e), noBoard: true };
+      G.dockUnits[k] = held;
+      G.euroMsg = `${entryName(e)} will wait on the dock.`;
       return;
     }
     case 'front':

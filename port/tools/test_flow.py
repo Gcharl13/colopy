@@ -184,7 +184,7 @@ SCRIPT = """() => {
     const rows0 = euroMenuRows();
     const arm = rows0.find(r => r.act === 'arm' && r.verb.buy && r.verb.good === GOOD.MUSKETS);
     out.armMenu = {
-      hasBoard: rows0.some(r => r.act === 'board'),
+      hasBoard: rows0.some(r => r.act === 'board' || r.act === 'noboard'),
       hasFront: rows0.some(r => r.act === 'front'),
       muskets: !!arm, tools: rows0.some(r => r.act === 'arm' && r.verb.good === GOOD.TOOLS),
       horses: rows0.some(r => r.act === 'arm' && r.verb.good === GOOD.HORSES),
@@ -197,6 +197,32 @@ SCRIPT = """() => {
       named: entryName(G.dockUnits[0]) === 'Colonists',
       charged: G.gold < g0,
     };
+    // @ARMOPTIONS row 0: "Don't get on next ship." holds a dock unit back;
+    // sailing then leaves it behind, and the row flips to "Board next ship."
+    {
+      G.dockUnits.length = 0;
+      G.dockUnits.push('Colonists', 'Expert Farmers');
+      G.euroDockSel = 0; G.euroMenu = 'dockunit';
+      const r0 = euroMenuRows()[0].label;
+      G.euroMenuRow = 0; euroContextCommit(euroMenuRows()[0]);
+      const held = !!(G.dockUnits[0] && G.dockUnits[0].noBoard);
+      G.euroDockSel = 0; G.euroMenu = 'dockunit';
+      const r0b = euroMenuRows()[0].label;
+      G.euroMenu = null;
+      G.europe.push({ type: 'Caravel', icon: unit('Caravel').icon,
+                      hold: [], passengers: [], state: 'port' });
+      const boat = G.europe[G.europe.length - 1];
+      sailForNewWorld(boat);
+      out.dontBoard = {
+        rowShown: r0 === "Don't get on next ship.",
+        heldSet: held,
+        rowFlips: r0b === 'Board next ship.',
+        leftBehind: G.dockUnits.map(entryName).join() === 'Colonists' &&
+                    boat.passengers.map(entryName).join() === 'Expert Farmers',
+      };
+      G.dockUnits.length = 0;
+      G.europe.pop();
+    }
     // An armed profession lands as its armed type CARRYING the profession.
     const landedVet = mkUnit({ name: 'Expert Farmers', type: 'Dragoons' }, 5, 5);
     out.armedLandfall = landedVet.type === 'Dragoons' &&
@@ -2419,6 +2445,8 @@ def main():
          all(r["armMenu"].values()), r["armMenu"]),
         ("arming a dock Colonist makes a Soldiers entry and charges gold",
          all(r["armCommit"].values()), r["armCommit"]),
+        ("@ARMOPTIONS 'Don't get on next ship' holds a unit back and the row flips",
+         all(r["dontBoard"].values()), r["dontBoard"]),
         ("an armed profession lands as its armed type carrying the profession",
          r["armedLandfall"], r["armedLandfall"]),
         ("a bare profession name lands without throwing (Europe-sailing crash)",
