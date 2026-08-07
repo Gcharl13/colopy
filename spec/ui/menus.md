@@ -457,12 +457,30 @@ this centered-dialog engine (`CHROME_AND_DISPATCH_INDEX.md` §B8; `SCREEN_LAYOUT
 
 ---
 
-## 12. Hall of Fame — **B**
+## 12. Hall of Fame — **B / CAPTURE-PINNED 2026-08-07**
 
 - **Purpose:** high-score / retired-leader roster.
-- **Title/columns (B):** `LABELS @MISC` "COLONIZATION HALL OF FAME"; columns "President",
-  "General, Continental Army", "Leader", "Score", "Colonization_Rating", "A.D.". Retirement keys
-  `GAME @RETIRE @RETIRING @RETIRING2 @SOONRETIRING0/1` (bodies present in JSON). **B.**
+- **Live layout (capture, crafted HALLFAME.DAT —
+  `docs/screens/live_2026-08-07/hof_crafted_dat.png` + `hof_round1.png`):** the table is
+  **NOT columns** — each record renders as **three text lines**. Measured (native 320×200):
+  title glyph-top **y=3** centred on x=160; record k at **y=20+36k**, lines at **+0/+11/+22**;
+  rank "N." at **x=10**, text at **x=25**; line 3 centred on x=160; single ink **68**
+  (85,150,52) throughout (no gold title in the idle state). Line templates (fragments =
+  `@MISC` 191–199 + NAMES `@INDEPENDENT`):
+  1. `<k>.  <difficulty-title> <NAME> of the [Free ]<nation-adjective>` — "Free" (@MISC 191)
+     iff the declared flag is set; difficulty-title = Discoverer…Viceroy.
+  2. `President, <@INDEPENDENT[nation]>` (won) | `General, Continental Army` (declared only)
+     | `Leader, <adjective> Colonies` (neither), then `to A.D. <year>.  Score: <points>`.
+  3. `--- Colonization Rating: <rating>% ---` (@MISC 199's underscore renders as a space).
+  `@INDEPENDENT` (NAMES.TXT): United States of America / Republic of Quebec / Republic of
+  Mexico / Republic of Surinam. An empty slot (name byte 0 / sentinel 0xFFFF) draws nothing.
+- **Record fields (crafted-DAT pinned, two rounds):** `+0x18` **nation** (doubles as the
+  0xFFFF empty sentinel), `+0x1a` declared-independence flag, `+0x1c` independence-won flag,
+  `+0x1e` **year**, `+0x20` unused/undisplayed, `+0x22` **difficulty**, `+0x24` **score
+  points**, `+0x26` **Colonization Rating %** (the int16 ranking key), `+0x28` undisplayed.
+  (Corrects the pre-capture guesses "+0x22 nation / +0x24 year / +0x26 score".)
+- Retirement keys `GAME @RETIRE @RETIRING @RETIRING2 @SOONRETIRING0/1` (bodies present in
+  JSON). **B.**
 - **Background/geometry (B):** there is **no HoF PIK** — `func_03A9C0` @0x03A9C0 (`@file 0x3AC..`,
   `SCREEN_LAYOUTS.md` §6) draws the score-reveal on the procedural **WOODPAN2** (str `0x11D7`) and
   the table on **WOODPANL** (str `0x11FF`). Font = **FONTINTR** (`[0x268A]`; not FONTKING — RULING

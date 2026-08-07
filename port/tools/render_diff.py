@@ -36,6 +36,9 @@ PAIRS = [
     ("report_F7.png", "live_2026-08-05/75_report_F7_naval.png", 2000),
     ("report_F9.png", "live_2026-08-05/76_report_F9_indian.png", 4000),
     ("europe.png", "live_2026-08-05/30_europe.png", 12000),
+    # Hall of Fame vs the crafted-HALLFAME.DAT capture (2026-08-07; the DOS
+    # frame carries a mouse cursor, ~250 px of the residual).
+    ("hof.png", "live_2026-08-07/hof_crafted_dat.png", 4000),
     # The imported 1653 Dutch game vs its capture set.
     ("1653_report_F2.png", "live_1653_save/report_F2.png", 4000),
     ("1653_report_F3.png", "live_1653_save/report_F3.png", 12000),

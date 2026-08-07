@@ -8773,3 +8773,49 @@ type figure.
 
 Spec updated: `spec/ui/europe_screen.md` §0.2. Suite 233/233; render-diff
 14/14 (the europe pair at 11410/12000).
+
+## 2026-08-07z — Phase 4 capture 1: the Hall of Fame, closed from a crafted HALLFAME.DAT
+
+The dosbox_harness is live in this container (Xvfb + xdotool + Ctrl-F5
+framebuffer dumps). First Phase 4 target: the HoF layout TBD.
+
+**Method.** Hand-authored `HALLFAME.DAT` (5×42-byte records), booted
+`VICEROY -g`, menu row 5, dumped the frame; two rounds with disjoint
+field values to disambiguate every word. Captures filed as
+`docs/screens/live_2026-08-07/hof_crafted_dat.png` (round 2, the
+reference) and `hof_round1.png`.
+
+**Findings (all capture-pinned):**
+- The screen is NOT a column table: each record is THREE lines --
+  "N.  <difficulty> <NAME> of the [Free ]<adjective>" /
+  "<career> to A.D. <year>.  Score: <points>" /
+  "--- Colonization Rating: <rating>% ---" (career = "President,
+  <@INDEPENDENT[nation]>" when independence is won, "General,
+  Continental Army" when only declared, else "Leader, <adjective>
+  Colonies"). NAMES `@INDEPENDENT` = United States of America / Republic
+  of Quebec / Republic of Mexico / Republic of Surinam -- now bundled as
+  DATA.independent.
+- Geometry: title glyph-top y=3 centred x=160; record k at y=20+36k,
+  lines +0/+11/+22; rank x=10, text x=25; line 3 centred; single ink 68
+  (85,150,52) = HUD_INK. No gold title in the idle state.
+- Record fields (corrects the pre-capture static guesses): +0x18 nation
+  (doubles as the 0xFFFF empty sentinel), +0x1a declared flag, +0x1c won
+  flag, +0x1e year, +0x22 difficulty, +0x24 score POINTS, +0x26 the
+  Colonization Rating % = the byte-verified int16 ranking key. +0x20 and
+  +0x28 never display.
+- Empty slots (name byte 0 / sentinel 0xFFFF) draw nothing -- 4-record
+  file rendered exactly 4 entries.
+
+**Port.** drawHof rebuilt to the measured three-line format (flag
+REMOVED -- the layout TBD is closed); hofWrite now ranks on rating;
+endGameSequence writes score=scoreParts().base, rating=scoreParts().total
++ difficulty. spec/ui/menus.md §12 and spec/systems/save.md §6.5
+rewritten to the pinned reading (save.md's old "+0x22 nation SHL-1
+power-name" walk corrected; the @0x3B16E table is the difficulty-title
+list by inference from the render -- window not re-read).
+
+**Regression.** New shots.py 'hof' scenario seeds the exact round-2
+records; render_diff pair "hof.png vs live_2026-08-07/hof_crafted_dat.png"
+passes at 1947/4000 px (residual = the DOS mouse cursor + glyph AA).
+15/15 pairs green, 47/47 shots (makeColony hardened: pinned Plains tile,
+calmed tribes, walks the founding confirm chain), suite 233/233.

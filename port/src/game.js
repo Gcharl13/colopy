@@ -7448,9 +7448,12 @@ function endGameSequence() {
   G.retired = true;
   const s = scoreParts();
   // The Hall of Fame entry (HALLFAME.DAT record semantics).
+  // HALLFAME.DAT semantics (capture-pinned 2026-08-07): score = the POINTS
+  // (+0x24, scoreParts base), rating = the Colonization Rating % (+0x26,
+  // scoreParts total -- the ranking key), plus year/difficulty/flags.
   hofWrite({ name: G.leader || DATA.nations[G.nation].leader,
-             nation: G.nation, year: G.year, score: s.total,
-             rating: Math.min(100, Math.max(0, s.total)),
+             nation: G.nation, year: G.year, difficulty: G.difficulty,
+             score: s.base, rating: s.total,
              declared: !!(G.flags & WOI_DECLARED),
              independent: !!(G.flags & WOI_WON) });
   const name = G.leader || DATA.nations[G.nation].leader;
@@ -11363,39 +11366,56 @@ function hofLoad() {
 }
 function hofWrite(rec) {
   const list = hofLoad();
-  // Descending insertion on the +0x26 score (func_03ADA6 @0x3AECD), max 6.
+  // Descending insertion on the +0x26 RATING word (func_03ADA6 @0x3AECD --
+  // the int16 the screen prints as "Colonization Rating: N%"), max 6.
   let k = 0;
-  while (k < list.length && list[k].score >= rec.score) k++;
+  while (k < list.length && (list[k].rating || 0) >= (rec.rating || 0)) k++;
   list.splice(k, 0, rec);
   while (list.length > 6) list.pop();
   try { localStorage.setItem(HOF_KEY, JSON.stringify(list)); } catch (e) {}
 }
+// The Hall of Fame table, REBUILT 2026-08-07 from a live capture driven by a
+// hand-authored HALLFAME.DAT (tools/dosbox_harness/shots/hof_01_table.png /
+// hof_02_round2.png -- the Phase 4 capture that closed drawHof's column TBD).
+// The real screen is NOT a column table: each record is THREE text lines.
+// Measured geometry (native 320x200): title glyph-top y=3 centred on x=160;
+// record k at y=20+36k, lines at +0/+11/+22; rank "N." at x=10, text at x=25;
+// line 3 centred on x=160; every glyph in the single green ink 68 (85,150,52)
+// = HUD_INK. Field semantics pinned by the two crafted-DAT rounds:
+//   +0x18 nation (doubles as the 0xFFFF empty sentinel)   +0x1a declared flag
+//   +0x1c independence-won flag   +0x1e year   +0x22 difficulty
+//   +0x24 score points   +0x26 Colonization Rating % (the ranking key)
+// Line templates (all fragments are @MISC / NAMES data):
+//   1: "<k>.  <difficulty> <NAME> of the [Free ]<adjective>"
+//   2: "President, <@INDEPENDENT[nation]>" | "General, Continental Army"
+//      | "Leader, <adjective> Colonies", then "to A.D. <year>.  Score: <pts>"
+//   3: "--- Colonization Rating: <rating>% ---"
 function drawHof(ctx) {
   usePalette('WOODPANL');
   if (IMG.WOODPANL) ctx.drawImage(IMG.WOODPANL, 0, 0);
   else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
-  const m = DATA.text.misc;
-  FONT.intr.center(ctx, m[192] || 'COLONIZATION HALL OF FAME', 160, 8, lut(0xFC));
+  const m = DATA.text.misc, ink = lut(HUD_INK);
+  FONT.intr.center(ctx, m[192] || 'COLONIZATION HALL OF FAME', 160, 3, ink);
   const list = hofLoad().slice(0, 5);
-  let y = 0x10 + 16;
-  if (!list.length)
-    FONT.tiny.center(ctx, '--- ' + (m[3] || 'None') + ' ---', 160, 96, lut(0xFE));
-  for (const rec of list) {
-    // The title by career: President (independence won) / General,
-    // Continental Army (declared) / Leader -- the port's reading, flagged.
-    const title = rec.independent ? (m[195] || 'President')
-                : rec.declared ? (m[196] || 'General, Continental Army')
-                : (m[197] || 'Leader');
-    FONT.tiny.center(ctx, '--- ' + title + ' ---', 160, y, lut(0xFC));
-    FONT.intr.center(ctx, rec.name, 160, y + 8, lut(0xFE));
-    FONT.tiny.center(ctx,
-      `${DATA.nations[rec.nation] ? DATA.nations[rec.nation].adjective : ''}  ` +
-      `${m[198] || 'Score'}: ${rec.score}   ` +
-      `${m[199] || 'Colonization_Rating'}: ${rec.rating}%   ` +
-      `${rec.year} ${m[194] || 'A.D.'}`, 160, y + 22, lut(0xFE));
-    y += 34;
-  }
-  FONT.tiny.center(ctx, '(Esc back)', 160, 190, lut(0x5D));
+  list.forEach((rec, k) => {
+    const y = 20 + 36 * k;
+    const adj = DATA.nations[rec.nation] ? DATA.nations[rec.nation].adjective : '';
+    const diff = DATA.difficulty[rec.difficulty || 0] || '';
+    FONT.intr.draw(ctx, `${k + 1}.`, 10, y, ink);
+    FONT.intr.draw(ctx,
+      `${diff} ${rec.name} of the ${rec.declared ? (m[191] || 'Free') + ' ' : ''}${adj}`,
+      25, y, ink);
+    const career = rec.independent
+      ? `${m[195] || 'President'}, ${(DATA.independent || [])[rec.nation] || ''}`
+      : rec.declared ? (m[196] || 'General, Continental Army')
+      : `${m[197] || 'Leader'}, ${adj} Colonies`;
+    FONT.intr.draw(ctx,
+      `${career} ${m[193] || 'to'} ${m[194] || 'A.D.'} ${rec.year}.  ` +
+      `${m[198] || 'Score'}: ${rec.score}`, 25, y + 11, ink);
+    FONT.intr.center(ctx,
+      `--- ${(m[199] || 'Colonization_Rating').replace(/_/g, ' ')}: ` +
+      `${rec.rating}% ---`, 160, y + 22, ink);
+  });
 }
 function commitMenu() {
   // Real dispatch ladder @0x075C6D: rows 0-2 all enter the new-game setup path;

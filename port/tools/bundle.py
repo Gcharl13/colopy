@@ -197,6 +197,11 @@ def build_data():
         D["fathers"].append({"name": parts[0], "category": int(parts[1]),
                              "weights": [int(parts[2]), int(parts[3]), int(parts[4])]})
     D["founding"] = [r["name"] for r in rows("@FOUNDING")]
+    # @INDEPENDENT: the four per-nation republic names the Hall of Fame's
+    # "President, <republic>" line uses (capture hof_02_round2.png).
+    D["independent"] = [l for l in json.load(
+        open(ROOT / "data_extracted/text/NAMES_sections.json"))["@INDEPENDENT"].split("\n")
+        if l.strip()]
     # @TRIBES' `value` column is the tribe's MAP COLOUR -- a palette index, the
     # native counterpart of @COUNTRY.color for the European powers. The eight
     # resolve to visually distinct entries (cream, gold, blue, brown, green,

@@ -52,6 +52,20 @@ SHOTS = [
      "c.stock=c.stock.map((v,i)=>[16,3,0,0,3,6,8,3,4,0,0,6,0,0,6,0][i]);"
      "c.sol=6;G.screen='colony';})()"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
+    # The crafted-DAT Hall of Fame records that produced the DOS reference
+    # capture (live_2026-08-07/hof_crafted_dat.png) -- same four entries, so
+    # the pair diffs pixel-for-pixel.
+    ("hof",
+     "localStorage.removeItem('colonization.hof');"
+     "hofWrite({name:'MEASUREMENT LONGNAME XY',nation:0,year:1111,difficulty:4,"
+     "score:9999,rating:3000,declared:false,independent:false});"
+     "hofWrite({name:'CORTES',nation:2,year:1492,difficulty:0,"
+     "score:1234,rating:250,declared:true,independent:true});"
+     "hofWrite({name:'VAN DER DONCK',nation:3,year:1777,difficulty:1,"
+     "score:555,rating:100,declared:false,independent:true});"
+     "hofWrite({name:'CHAMPLAIN',nation:1,year:1650,difficulty:2,"
+     "score:42,rating:50,declared:true,independent:false});"
+     "G.screen='hof'"),
     ("options",
      "beginGame();G.screen='map';openOptions('game')"),
     # The 15-row @PICKMUSIC picker, preselected on Hole In The Wall (id 0x3A,
@@ -242,7 +256,19 @@ def main():
         }; }""")
         pg.evaluate("""() => { window.makeColony = () => {
           const p = G.units[1]; G.sel = 1;
-          buildColony(); closeDialog(G.dialog.entry);
+          // Pin the founding tile to bare Plains so no siting guard
+          // (TOOMOUNTAIN etc.) can refuse on an unlucky map seed, and calm
+          // every tribe so the land-claim takes the always-proceeding
+          // bow/treaty branch (INDIANLAND's pay row dead-ends without gold).
+          MAP.tiles[p.y * MAP.w + p.x] = 2;
+          G.tribes.forEach(t => { t.tension = 0; });
+          buildColony();
+          // Walk the confirm/land-claim chain (rows dialogs) to the name
+          // entry, same as the founding-flow tests.
+          for (let i = 0; i < 4 && G.dialog && G.dialog.entry === undefined; i++)
+            closeDialog(1);
+          if (G.dialog) closeDialog(G.dialog.entry);
+          G.eventQueue.length = 0;
           G.screen = 'colony';
         }; }""")
         for name, setup in SHOTS:
