@@ -2595,20 +2595,34 @@ function warehouseLevel(c) {
 // OPEN: whether a Custom-House gate sits in the caller. None is recorded, so
 // none is applied. Flagged in docs/UI_AUDIT_TRACKER.md.
 function autoExport(c) {
+  // The disposal gate -- the thunk 0x191F:0x9C0 RESOLVED to func_02D606
+  // (follow_thunk, RULINGS 2026-08-07z12): goods 0/5/8/14/15 (Food, Lumber,
+  // Horses, Tools, Muskets) are NEVER disposed; Ore (6) is protected while
+  // building-check 0x9FC(3) holds or its accumulators [0x8DE4/6] are live
+  // (id 3 = the smithy tier, inferred). Capacity does NOT gate the 100-cut.
+  // The port's old food-only skip over-sold Lumber/Horses/Tools/Muskets.
+  const PROTECTED_GOODS = [0, 5, 8, 14, 15];
   const spoiled = [];
   for (let i = 0; i < c.stock.length; i++) {
-    if (i === GOOD.FOOD || c.stock[i] < 100) continue;
+    if (c.stock[i] < 100) continue;
+    c.cargoReady = c.cargoReady || {};
+    if (PROTECTED_GOODS.includes(i) ||
+        (i === GOOD.ORE && c.buildings.some(b => /Blacksmith/.test(b)))) {
+      // @CARGOREADY0 -- the PLAIN "a new cargo is ready" notice: a protected
+      // good tops a full hold with nothing disposed. Latched like its
+      // capacity twins. Food stays quiet (the colonist-growth path owns it).
+      if (i !== GOOD.FOOD && !c.cargoReady[i]) {
+        c.cargoReady[i] = true;
+        showEvent('CARGOREADY0',
+                  { STRING0: c.name, STRING1: DATA.cargo[i].name });
+      }
+      continue;
+    }
     // @CARGOREADY1/2 -- "A new cargo of Y is ready at X ... reached its
     // storage capacity" -- announced as the good tops the 100-ton overflow
     // threshold, variant 1 while a larger warehouse could still be built.
     // The engine's trigger site and its per-good latch are unread; announcing
     // here, latched until the stock falls back, is the port's reading.
-    // (@CARGOREADY0, the plain variant: func_008D00 is now READ -- colony
-    // capacity = (warehouse level + 1) * 100, COLONY-WIDE, per-good refuted;
-    // its callers are the colony-screen drawers. Whether that capacity gates
-    // the 100-cut disposal hides behind the thunk 0x191F:0x9C0, still
-    // unread, so CARGOREADY0 stays unwired rather than guessed.)
-    c.cargoReady = c.cargoReady || {};
     if (!c.cargoReady[i]) {
       c.cargoReady[i] = true;
       showEvent(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',

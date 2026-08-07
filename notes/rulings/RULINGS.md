@@ -9116,3 +9116,28 @@ flake tripped one intermediate run, documented).
   noise) -- the walled loop now re-arms each iteration.
 
 Ledger: DONE 405, BLOCKED 10, N/A 31. Suite 234/234 twice.
+
+## 2026-08-07z12 — Phase 4 batch 5: the disposal gate resolved, USA suffix, orphans
+
+- **The thunk 0x191F:0x9C0 RESOLVED to func_02D606** (follow_thunk): the
+  over-100 disposal SKIP predicate. Goods 0/5/8/14/15 (Food, Lumber,
+  Horses, Tools, Muskets) are never disposed; Ore (6) is spared while the
+  smithy-tier check 0x9FC(3) or its accumulators [0x8DE4/6] hold.
+  Capacity does NOT gate the 100-cut (func_008D00's number is display
+  only). @CARGOREADY0 wired at last: a protected good tops a full hold
+  with nothing sold (Food stays quiet, owned by the growth path). This
+  also FIXES a real bug -- the port's food-only skip was over-selling
+  Lumber/Horses/Tools/Muskets every turn.
+- **USA-suffix keys** (APOSTATESUSA/HEATHENUSA/PIRACYUSA/RIDUSA/
+  SIEGESUSA/TRIBUTEUSA/WANTSTUFFUSA): the meeting chain's usa() helper
+  appends them at runtime; message_status.py now recognises the pattern
+  (base key wired + the helper present) -> DONE, not BLOCKED.
+- **TOOMANYCOLONIES/TOOMANYUNITS/HOWMUCH3**: the systematic emit-site
+  scan finds NO caller for any of the three (the estimated GAME.TXT
+  handle neighbourhood 0xF93/0x103D has no push in the disasm; HOWMUCH3's
+  ship-to-ship prompt likewise). Reclassified N/A as cut content, ceiling
+  named.
+- **FULL** stays the sole BLOCKED: the join-colony crowding threshold
+  hides behind func_02883E's jump table (the key + %STRING0 are read).
+
+Ledger: DONE 411, BLOCKED 1, MISSING 0, N/A 34. Suite 234/234.

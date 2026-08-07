@@ -10,7 +10,7 @@ certify trigger/format fidelity - flagged readings live in
 notes/rulings/RULINGS.md and the popup audit.  The completion
 roadmap is docs/COMPLETION_PLAN.md.
 
-## DONE (405)
+## DONE (411)
 
 - ABANDON
 - ABANDON2
@@ -19,6 +19,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - ALREADYSMITE
 - AMBUSHHINT
 - APOSTATES
+- APOSTATESUSA
 - ARTILLERY
 - ARTILLERY2
 - BADCARGO
@@ -48,6 +49,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - CAPTURED3
 - CARGOCAPTURE
 - CARGOLOAD
+- CARGOREADY0
 - CARGOREADY1
 - CARGOREADY2
 - CARGOUNLOAD
@@ -102,6 +104,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - HALF
 - HAVETREATY
 - HEATHEN
+- HEATHENUSA
 - HELLOAHOY
 - HELLOFIRST
 - HELLOMANLY
@@ -297,6 +300,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - RETIRING
 - RETIRING2
 - RID
+- RIDUSA
 - ROUTELOOP
 - SAILAWAY
 - SAILHOME
@@ -317,6 +321,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - SHIPSUNK
 - SIEGE
 - SIEGES
+- SIEGESUSA
 - SIGNTREATY
 - SMITEEUROPE
 - SMITEINDIANS
@@ -367,6 +372,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - TRAINPROFESSION
 - TRAVELPLACE
 - TRIBUTE
+- TRIBUTEUSA
 - TUTNOLUMBER
 - TUTNOSPACES
 - TUTORIAL1
@@ -456,23 +462,14 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## BUNDLED-UNWIRED (0)
 
 
-## BLOCKED (named blocker) (10)
+## BLOCKED (named blocker) (1)
 
-- APOSTATESUSA - reachable only via the USA suffix at runtime
-- CARGOREADY0 - func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, colony-wide (per-good refuted); remaining blocker = the disposal gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)
 - FULL - join-colony crowding refusal (func_02883E @0x288C3, %STRING0 = the colony name); the threshold hides behind the jump table, unread
-- HEATHENUSA - ditto
-- HOWMUCH3 - no carrier-to-carrier transfer site in the port
-- RIDUSA - ditto
-- SIEGESUSA - ditto
-- TOOMANYCOLONIES - engine cap value unread (disasm)
-- TOOMANYUNITS - ditto
-- TRIBUTEUSA - ditto
 
 ## MISSING (0)
 
 
-## N/A (31)
+## N/A (34)
 
 - AMERICA - custom-world generator UI (port ships AMER2 only)
 - CCLIM - custom-world label
@@ -482,6 +479,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - COLONYUNIT - debug locator
 - CTEMP - custom-world label
 - FINDCITY - debug locator
+- HOWMUCH3 - ditto (the carrier-to-carrier prompt was cut)
 - KINGBLESS - orphan -- no emit site in the EXE (2026-08-07z11)
 - KINGFUND - ditto
 - KINGLAUGH - ditto
@@ -503,6 +501,8 @@ roadmap is docs/COMPLETION_PLAN.md.
 - SAVEERROR - ditto
 - SAVEGAME - port saves to localStorage, own UI
 - SAVEGOOD - ditto
+- TOOMANYCOLONIES - orphan -- no emit site in the EXE scan (2026-08-07z12)
+- TOOMANYUNITS - ditto
 - TOONEARBUILD - engine checks other units holding the pending-build order 7 (@0x22644); the port founds instantly so the state cannot arise
 - UNITFLAG - engine internal assertion string
 

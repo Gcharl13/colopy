@@ -320,7 +320,7 @@ def build_data():
               # The Crown (batch 4): the tax petition ladder, the muskets
               # gate, the post-declaration REF-growth notice.
               "@KINGLOWER", "@KINGRAISE", "@KINGNOTHING",
-              "@KINGMOBILIZE", "@CANTMOBILIZE",
+              "@KINGMOBILIZE", "@CANTMOBILIZE", "@CARGOREADY0",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               # War of Independence completion: sentiment, losses, siege,

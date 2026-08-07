@@ -46,17 +46,8 @@ PARAPHRASED = {}
 # These stay out deliberately (never guessed) until the Phase 4 capture or
 # disasm window resolves them.
 BLOCKED = {
-    'CARGOREADY0': 'func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, '
-                   'colony-wide (per-good refuted); remaining blocker = the disposal '
-                   'gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)',
     'FULL': 'join-colony crowding refusal (func_02883E @0x288C3, %STRING0 = the '
             'colony name); the threshold hides behind the jump table, unread',
-    'TOOMANYCOLONIES': 'engine cap value unread (disasm)',
-    'TOOMANYUNITS': 'ditto',
-    'HOWMUCH3': 'no carrier-to-carrier transfer site in the port',
-    'APOSTATESUSA': 'reachable only via the USA suffix at runtime',
-    'HEATHENUSA': 'ditto', 'RIDUSA': 'ditto', 'SIEGESUSA': 'ditto',
-    'TRIBUTEUSA': 'ditto', 'WANTSTUFFUSA': 'ditto', 'PIRACYUSA': 'ditto',
 }
 # Structurally out of scope for the port -- each with the reason.
 NA = {
@@ -80,6 +71,8 @@ NA = {
     'KINGBLESS': 'orphan -- no emit site in the EXE (2026-08-07z11)',
     'KINGNO': 'ditto', 'KINGFUND': 'ditto',
     'KINGLAUGH': 'ditto', 'KINGWELCOME0': 'ditto',
+    'TOOMANYCOLONIES': 'orphan -- no emit site in the EXE scan (2026-08-07z12)',
+    'TOOMANYUNITS': 'ditto', 'HOWMUCH3': 'ditto (the carrier-to-carrier prompt was cut)',
     'TOONEARBUILD': 'engine checks other units holding the pending-build order 7 '
                     '(@0x22644); the port founds instantly so the state cannot arise',
 }
@@ -93,6 +86,11 @@ DYN_FAMILIES = ('MISSION', 'LOSTCITY', 'BURIAL', 'HERESY', 'VILLAGE',
 
 def wired(key):
     if key in quoted:
+        return True
+    # The meeting chain's usa() helper appends 'USA' at runtime (game.js
+    # `const usa = (k) => ... k + 'USA'`), so a KUSA key is live whenever its
+    # base key is wired.
+    if key.endswith('USA') and key[:-3] in quoted and 'const usa =' in src:
         return True
     return any(key.startswith(p) and len(key) <= len(p) + 2 and p in DYN_FAMILIES
                for p in dyn)
