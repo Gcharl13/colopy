@@ -888,6 +888,25 @@ function openDialog(key, onDone, prefill) {
     entry: numeric ? undefined : (prefill !== undefined ? prefill : (t.default || '')),
   };
 }
+// The bounded numeric-entry dialog behind @HOWMUCH1-5 ("Amount:", body
+// carries the 0-N bound). Digits only; the result is clamped to [0, max].
+// Enter on an empty field takes the FULL amount -- the port's own
+// convenience reading, flagged (the engine's empty-entry behaviour is
+// unread).
+function askAmount(key, subs, max, onDone) {
+  const t = DATA.dialogs[key];
+  if (!t) { onDone(max); return; }
+  G.dialog = {
+    body: t.body.map(l => fillTemplate(l, { ...subs, NUMBER0: max })),
+    width: t.width, entry: '', numeric: true,
+    onDone: (v) => {
+      if (v === -1) { onDone(0); return; }        // Escape cancels
+      const n = String(v).trim() === '' ? max
+              : Math.max(0, Math.min(max, parseInt(v, 10) || 0));
+      onDone(n);
+    },
+  };
+}
 function closeDialog(result) {
   const d = G.dialog;
   G.dialog = null;
@@ -902,8 +921,10 @@ function dialogKey(k) {
     else if (k === 'Escape') closeDialog(-1);
   } else {
     if (k === 'Enter') closeDialog(d.entry);
+    else if (k === 'Escape' && d.numeric) closeDialog(-1);
     else if (k === 'Backspace') d.entry = d.entry.slice(0, -1);
-    else if (k.length === 1 && d.entry.length < 23) d.entry += k;
+    else if (k.length === 1 && d.entry.length < 23 &&
+             (!d.numeric || /\d/.test(k))) d.entry += k;
   }
 }
 function dialogClick(mx, my) {
@@ -4142,7 +4163,7 @@ function openEuroMenu(k) {
 }
 // Selling empties the hold of that good; buying fills it. Both need a ship at
 // the dock -- there is nowhere else in Europe to put goods.
-function sellFromShip(i) {
+function sellFromShip(i, qty) {
   if (i < 0) return;
   const ship = activeShip();
   if (!ship) { G.euroMsg = 'No ships in port.'; return; }
@@ -4164,12 +4185,21 @@ function sellFromShip(i) {
     });
     return;
   }
-  const qty = holdQty(ship, i);
-  if (!qty) { G.euroMsg = `No ${DATA.cargo[i].name} aboard.`; return; }
-  const net = sellGoods(i, qty);
-  holdAdd(ship, i, -qty);
-  G.euroMsg = `Sold ${qty} ${DATA.cargo[i].name} for ${net}$` +
-              (G.tax ? ` (${G.tax}% tax)` : '');
+  const have = holdQty(ship, i);
+  if (!have) { G.euroMsg = `No ${DATA.cargo[i].name} aboard.`; return; }
+  const finish = (qty) => {
+    if (!qty) return;
+    const net = sellGoods(i, qty);
+    holdAdd(ship, i, -qty);
+    G.euroMsg = `Sold ${qty} ${DATA.cargo[i].name} for ${net}$` +
+                (G.tax ? ` (${G.tax}% tax)` : '');
+  };
+  // An explicit qty (the trade routes' automated stop) sells without asking;
+  // the interactive path runs @HOWMUCH5 "sold (at N$) to %STRING2 (0-N)".
+  if (qty !== undefined) { finish(Math.min(qty, have)); return; }
+  askAmount('HOWMUCH5', { STRING0: DATA.cargo[i].name, NUMBER1: G.market[i],
+                          STRING2: DATA.nations[G.nation].homeport },
+            have, finish);
 }
 function buyToShip(i, qty) {
   if (i < 0) return;
@@ -4257,7 +4287,7 @@ function euroContextCommit(r) {
     case 'sellall': {
       const ship = activeShip();
       if (!ship) return;
-      for (const h of (ship.hold || []).slice()) sellFromShip(h.good);
+      for (const h of (ship.hold || []).slice()) sellFromShip(h.good, h.qty);
       return;
     }
     default:
@@ -10002,21 +10032,30 @@ function colonyDrop(d, target, mx, my) {
       const space = Math.max(0, cap - used) * 100 +
                     (slot ? Math.max(0, 100 - slot.qty) : 0);
       if (space <= 0) { notice(`The ${ship.type}'s holds are full.`); return; }
-      const qty = Math.min(d.amount, c.stock[d.good], space);
-      if (!qty) return;
-      c.stock[d.good] -= qty;
-      ship.hold = ship.hold || [];
-      holdAdd(ship, d.good, qty);
+      // @HOWMUCH1 "How much X should be loaded onto Y (0-N)" -- the bounded
+      // amount entry (shift-drag keeps the old grab-all fast path).
+      const most = Math.min(c.stock[d.good], space, 100);
+      if (!most) return;
+      askAmount('HOWMUCH1', { STRING0: DATA.cargo[d.good].name,
+                              STRING1: ship.type }, most, (qty) => {
+        if (!qty) return;
+        c.stock[d.good] -= qty;
+        ship.hold = ship.hold || [];
+        holdAdd(ship, d.good, qty);
+      });
       return;
     }
     if (target === 5 && d.srcKind === 0) {
-      // Ship -> warehouse.
+      // Ship -> warehouse: @HOWMUCH2 "unloaded from Y to Z (0-N)".
       if (!ship) return;
       const have = holdQty(ship, d.good);
-      const qty = Math.min(d.amount, have);
-      if (!qty) return;
-      holdAdd(ship, d.good, -qty);
-      c.stock[d.good] += qty;
+      if (!have) return;
+      askAmount('HOWMUCH2', { STRING0: DATA.cargo[d.good].name,
+                              STRING1: ship.type, STRING2: c.name }, have, (qty) => {
+        if (!qty) return;
+        holdAdd(ship, d.good, -qty);
+        c.stock[d.good] += qty;
+      });
     }
   }
 }
@@ -10031,7 +10070,18 @@ function europeDrop(d, target, mx, my) {
         G.euroMsg = `${DATA.cargo[d.good].name} is under boycott.`;
         return;
       }
-      buyToShip(d.good, d.amount);
+      // @HOWMUCH4 "How much X (at N$) should be purchased and loaded onto
+      // Y (0-N)" -- bounded by hold space and the treasury.
+      const cap = Number((unit(ship.type) || {}).cargo) || 0;
+      const slot = (ship.hold || []).find(h => h.good === d.good);
+      const used = (ship.passengers || []).length + (ship.hold || []).length;
+      const space = Math.max(0, cap - used) * 100 +
+                    (slot ? Math.max(0, 100 - slot.qty) : 0);
+      const most = Math.min(space, Math.floor(G.gold / askPrice(d.good)), 100);
+      if (most <= 0) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+      askAmount('HOWMUCH4', { STRING0: DATA.cargo[d.good].name,
+                              STRING1: ship.type, NUMBER1: askPrice(d.good) },
+                most, (qty) => { if (qty) buyToShip(d.good, qty); });
       return;
     }
     // Market -> market, or hold -> hold: nothing moves.

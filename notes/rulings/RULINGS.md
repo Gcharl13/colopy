@@ -8526,3 +8526,21 @@ BUNDLED-UNWIRED 34, MISSING 163.)
 Suite: 232/232 (new "natives + endgame" block).
 
 (2026-08-07q ledger: DONE 254 (+15), BUNDLED-UNWIRED 37, MISSING 145.)
+
+## 2026-08-07r — Phase 2 batch 3: the bounded numeric-entry dialog (@HOWMUCH1-5); @BUILD1-10 already live
+
+- **askAmount()** -- the engine's bounded amount entry ("Amount:", body
+  carries the 0-N bound, digits only, result clamped). Enter on an empty
+  field takes the FULL amount and Escape cancels -- both the port's own
+  readings, flagged (the engine's empty-entry behaviour is unread). Wired:
+  @HOWMUCH1 warehouse->ship drop, @HOWMUCH2 ship->warehouse drop,
+  @HOWMUCH4 the Europe market->ship purchase drop (bounded by hold space
+  and treasury), @HOWMUCH5 the interactive Europe sell (the market-bar
+  click, the hold drop and the U key; trade-route automation passes its
+  explicit quantity and never asks). @HOWMUCH3 (move between carriers) has
+  no port site yet -- bundled, unwired, noted.
+- **@BUILD1-10**: no work needed -- the opening cards were already fully
+  live via DATA.cards/drawCards over the LEVN plates; the ledger's MISSING
+  claim was a DATA-channel false negative, now annotated DONE-VIA-DATA.
+
+Suite: 232/232 (the sell check now walks the @HOWMUCH5 entry).

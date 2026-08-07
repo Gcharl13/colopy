@@ -10,7 +10,7 @@ certify trigger/format fidelity - flagged readings live in
 notes/rulings/RULINGS.md and the popup audit.  The completion
 roadmap is docs/COMPLETION_PLAN.md.
 
-## DONE (254)
+## DONE (258)
 
 - ABANDON
 - ALREADYHAVE
@@ -82,6 +82,10 @@ roadmap is docs/COMPLETION_PLAN.md.
 - HELLOUSA
 - HERESY0
 - HERESY1
+- HOWMUCH1
+- HOWMUCH2
+- HOWMUCH4
+- HOWMUCH5
 - INDEPENDENCE
 - INDIANBEGFOOD
 - INDIANCITY
@@ -267,9 +271,19 @@ roadmap is docs/COMPLETION_PLAN.md.
 - WITHDRAW
 - WORTHY
 
-## DONE-VIA-DATA (16)
+## DONE-VIA-DATA (26)
 
 - BEGINMENU - DATA.text.beginmenu (main menu rows)
+- BUILD1 - DATA.cards (drawCards/cardText)
+- BUILD10 - DATA.cards (drawCards/cardText)
+- BUILD2 - DATA.cards (drawCards/cardText)
+- BUILD3 - DATA.cards (drawCards/cardText)
+- BUILD4 - DATA.cards (drawCards/cardText)
+- BUILD5 - DATA.cards (drawCards/cardText)
+- BUILD6 - DATA.cards (drawCards/cardText)
+- BUILD7 - DATA.cards (drawCards/cardText)
+- BUILD8 - DATA.cards (drawCards/cardText)
+- BUILD9 - DATA.cards (drawCards/cardText)
 - DIFFICULTY - DATA.difficulty (drawDifficulty cells)
 - LEADERNAME - DATA.text.leadername (name-entry prefill)
 - NATION0A - DATA.briefings (drawBriefing page A)
@@ -289,7 +303,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## PARAPHRASED (0)
 
 
-## BUNDLED-UNWIRED (37)
+## BUNDLED-UNWIRED (38)
 
 - APOSTATES
 - APOSTATESUSA
@@ -300,6 +314,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - HAVETREATY
 - HEATHEN
 - HEATHENUSA
+- HOWMUCH3
 - INDIANLAND
 - KINGRECRUIT
 - KINGTAX
@@ -329,21 +344,11 @@ roadmap is docs/COMPLETION_PLAN.md.
 - WARN1
 - WARN3
 
-## MISSING (145)
+## MISSING (130)
 
 - ABANDON2
 - AMBUSHHINT
 - BRING
-- BUILD1
-- BUILD10
-- BUILD2
-- BUILD3
-- BUILD4
-- BUILD5
-- BUILD6
-- BUILD7
-- BUILD8
-- BUILD9
 - BURNED2
 - BURNED3
 - CANTMOBILIZE
@@ -365,11 +370,6 @@ roadmap is docs/COMPLETION_PLAN.md.
 - FREEDOM
 - FULL
 - GRUDGEWAGONS
-- HOWMUCH1
-- HOWMUCH2
-- HOWMUCH3
-- HOWMUCH4
-- HOWMUCH5
 - HOWTOWIN
 - INDIANBOW
 - INDIANBRIBE

@@ -110,7 +110,12 @@ SCRIPT = """() => {
                  wasAsk: gold0 - G.gold > 0 };
   const accumAfterBuy = G.accum[tools];
   const gold1 = G.gold, king0 = G.kingsFund;
+  // The interactive sell now runs the @HOWMUCH5 bounded entry -- Enter on
+  // the empty field takes the full amount.
   sellFromShip(tools);
+  out.howmuchAsk = !!(G.dialog && G.dialog.numeric &&
+                      /How much/i.test(G.dialog.body.join(' ')));
+  dialogKey('Enter');
   out.sold = { held: holdQty(boat, tools), gained: G.gold - gold1,
                kingTook: G.kingsFund - king0 };
 
@@ -2880,9 +2885,10 @@ def main():
          r["europe"] == {"screen": "europe", "inPort": 1}, r["europe"]),
         ("buying loads the hold at the ask price",
          r["bought"]["held"] == 100 and r["bought"]["wasAsk"], r["bought"]),
-        ("selling empties the hold and the King takes the tax",
-         r["sold"]["held"] == 0 and r["sold"]["gained"] > 0 and r["sold"]["kingTook"] > 0,
-         r["sold"]),
+        ("selling asks @HOWMUCH5, empties the hold, and the King takes the tax",
+         r["howmuchAsk"] and r["sold"]["held"] == 0 and r["sold"]["gained"] > 0
+         and r["sold"]["kingTook"] > 0,
+         (r["howmuchAsk"], r["sold"])),
         ("buying drains and selling floods the price accumulator",
          all(r["accumMoved"].values()), r["accumMoved"]),
         ("recruit offers 3 dock slots priced from @CLASS",

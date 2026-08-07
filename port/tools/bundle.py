@@ -66,7 +66,8 @@ def build_data():
     D["dialogs"] = {}
     for key in ("@LANDHO", "@LANDFALL", "@LANDFALL2", "@COLONY", "@RECRUIT",
                 "@PURCHASE", "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME",
-                "@TRADENAME"):
+                "@TRADENAME", "@HOWMUCH1", "@HOWMUCH2", "@HOWMUCH3",
+                "@HOWMUCH4", "@HOWMUCH5"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {

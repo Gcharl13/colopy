@@ -31,6 +31,8 @@ WIRED_VIA_DATA = {
     'TRADESELECT': 'drawTrade (DATA.events body)',
     'TRADESTART': 'drawTrade (DATA.events body)',
     'TRADEDELETE': 'drawTrade (DATA.events body)',
+    # The opening cinematic cards, consumed as DATA.cards by drawCards.
+    **{f'BUILD{i}': 'DATA.cards (drawCards/cardText)' for i in range(1, 11)},
 }
 # Keys whose BODIES the port paraphrases in its own UI -- swap these for the
 # bundled text as they are found. (Emptied 2026-08-07: the five trade-route
