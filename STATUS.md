@@ -9,12 +9,37 @@
 > [`METHODOLOGY.md`](METHODOLOGY.md). The specification (`spec/README.md`) is
 > the source of truth; `viceroy_source/` is evidence (`viceroy_source/ROLE.md`).
 
-**Last refreshed: 2026-08-07.** (Previous refreshes: 2026-08-05, 2026-06-18.)
-The 2026-08-07 pass fixed the six player-reported defects, closed the
-raid-gate K TBD, added rival-power AI and LOAD GAME (including a full
-COLONY##.SAV importer — the shipped 1653 game restores field-for-field), and
-folded the whole port-era harvest into the technical reference (§30). Treat
-any figure elsewhere in the tree dated before 2026-08-05 as unverified.
+**Last refreshed: 2026-08-07 (evening pass).** (Previous refreshes:
+2026-08-07 morning, 2026-08-05, 2026-06-18.) The 2026-08-07 passes: fixed the
+six player-reported defects, closed the raid-gate K TBD, added rival-power AI
+and LOAD GAME (full COLONY##.SAV importer — the shipped 1653 game restores
+field-for-field), folded the port-era harvest into the technical reference
+(§30); then the play-test batches — map messages all popups (ruling i), the
+F3 freeze + report sprites + F5 trade columns + sail confirms + Europe cells
+(j), the popup framework to the byte-decoded math + all live woodcut
+triggers (k), the colony surrounding-tiles panel (l), and the two HIGH
+invented-flow rebuilds: the village haggle and the European meeting chain
+(m). Treat any figure elsewhere dated before 2026-08-05 as unverified.
+
+## Build tracker (the port)
+
+Where the port's work is tracked, in the order to consult them:
+
+| Document | Role |
+|---|---|
+| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status (DONE / bundled-unwired / missing), regenerated mechanically by `python3 port/tools/message_status.py`. Current: 176 done, 64 bundled-unwired, 235 missing, 24 support lists. |
+| **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
+| **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |
+| **`docs/UI_AUDIT_TRACKER.md`** | Per-screen byte-verification coverage (the standing UI mandate in CLAUDE.md). |
+| `port/tools/test_flow.py` | The behavioural gate: **229/229**. |
+
+Open work, in rough priority: wire the 64 bundled-unwired keys (meeting
+sub-branches PIRACY/SIEGES/WANTSTUFF/HAVETREATY/GIVECASH/CANCELPEACE, the
+colony notice family FOOD/STARVE2/SPOIL/WAREHOUSEFULL, KINGRECRUIT's real
+TRAIN site); PRICEDOWN/PRICEUP + SOMEBOYCOTT market notices; @BUYME rush-buy;
+BUILD1-10 completion variants; @UNITOPTIONS/@SHIPOPTIONS map orders menus;
+Hall of Fame (main menu row 4); tutorial family; sound; the colony-panel
+ramp dither and popup 120-tick timeout (both flagged TBD in rulings).
 
 ---
 
@@ -26,7 +51,7 @@ Three layers, in the order `METHODOLOGY.md` defines them.
 |---|---|
 | **Evidence** (disassembly, asset decode) | 1,241 VICEROY functions inventoried; **156 named**, 1,094 not. All 13 container formats decoded. |
 | **Specification** (`spec/`, 64 sheets) | The mature layer. **17 open TBD lines across 10 sheets**, each named with its blocker. Every game-system formula is byte-closed. |
-| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **215/215 tests**, ~9.5k lines, 3.0 MB single-file bundle. Drag-and-drop, popup speakers, native + rival AI (both reduced/R-tier — the full func_04E2D6 pipeline is the ceiling), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: Hall of Fame, sound, tutorial. |
+| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **229/229 tests**, ~10k lines, 3.5 MB single-file bundle. Drag-and-drop, byte-decoded popup framework, all live woodcut triggers, popup speakers incl. MYR meeting portraits, the village haggle loop, the European meeting chain, native + rival AI (reduced/R-tier), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: see the Build tracker above. |
 
 The honest one-line summary: **the spec is close to done, the port is the
 working proof of it, and the raw per-line annotation of the binary is not and

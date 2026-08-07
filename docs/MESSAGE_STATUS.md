@@ -1,9 +1,10 @@
 # GAME.TXT message keys - implementation status (generated 2026-08-07)
 
-Status is mechanical: DONE = text bundled AND a live call site exists;
+Regenerate with `python3 port/tools/message_status.py`.  Status is
+mechanical: DONE = text bundled AND a live call site exists;
 BUNDLED-UNWIRED = text exported, no trigger yet; MISSING = not in the
-port at all. DONE does not certify trigger/format fidelity - flagged
-readings are recorded in notes/rulings/RULINGS.md and the popup audit.
+port at all.  DONE does not certify trigger/format fidelity - flagged
+readings live in notes/rulings/RULINGS.md and the popup audit.
 
 ## DONE (176)
 
@@ -515,4 +516,3 @@ readings are recorded in notes/rulings/RULINGS.md and the popup audit.
 - TAXOPTIONS [wired]
 - TRADENAMES [wired]
 - UNITOPTIONS
-
