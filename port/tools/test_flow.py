@@ -371,6 +371,46 @@ SCRIPT = """() => {
     for (let t = 0; t < cost + 2; t++) { c.stock[5] = 100; c.stock[0] = 100; endTurn(); }
     out.built = { done: c.buildings.includes('Docks'), targetCleared: c.building === null };
 
+    // Construction prereq/supersede/factory gating and the per-turn popups.
+    {
+      const t = { name: 'GT', x: 6, y: 6, nation: G.nation,
+        colonists: Array.from({ length: 8 }, () => ({ type: 'Colonists', job: null, cell: null })),
+        stock: DATA.cargo.map(() => 0), buildings: STARTING_BUILDINGS.slice(),
+        building: null, hammers: 0, sol: 0, latch: 0 };
+      const names = () => buildOptions(t).map(b => b.name);
+      out.buildGating = {
+        noFortWithoutStockade: !names().includes('Fort'),
+        noCathedralWithoutChurch: !names().includes('Cathedral'),
+        stableIndependent: names().includes('Stable'),
+      };
+      t.buildings.push('Stockade');
+      out.buildGating.fortAfterStockade = names().includes('Fort') && !names().includes('Stockade');
+      t.buildings.push("Weaver's Shop");
+      out.buildGating.factoryNeedsSmith = !names().includes('Textile Mill');
+      G.fathersOwned.push('Adam Smith');
+      out.buildGating.factoryWithSmith = names().includes('Textile Mill');
+      G.fathersOwned.pop();
+      // The per-turn colony popups: starvation, construction complete, tools stall.
+      const p = { name: 'P', x: 7, y: 7, nation: G.nation,
+        colonists: [{ type: 'Colonists', job: null, cell: null }, { type: 'Colonists', job: null, cell: null }],
+        stock: DATA.cargo.map(() => 0), buildings: STARTING_BUILDINGS.slice(),
+        building: null, hammers: 0, sol: 0, latch: 0 };
+      G.colonies = [p];
+      p.stock[GOOD.FOOD] = 0;
+      G.eventQueue = []; colonyTurn(p);
+      const starveFired = G.eventQueue.some(e => /run out of food/i.test(e.lines.join(' ')));
+      p.building = 'Stockade'; p.hammers = 9999; p.stock[GOOD.TOOLS] = 0;
+      G.eventQueue = []; advanceConstruction(p, 0);
+      const builtFired = G.eventQueue.some(e => /produces/i.test(e.lines.join(' '))) &&
+                         p.buildings.includes('Stockade');
+      p.building = 'Fur Trading Post'; p.hammers = 9999; p.stock[GOOD.TOOLS] = 0;
+      G.eventQueue = []; advanceConstruction(p, 0);
+      const toolsFired = G.eventQueue.some(e => /tools/i.test(e.lines.join(' ')));
+      G.eventQueue = []; advanceConstruction(p, 0);
+      const toolsOnce = G.eventQueue.length === 0;
+      out.colonyPopups = { starveFired, builtFired, toolsFired, toolsOnce };
+    }
+
 
     // ---- the rest of the production chain ----
     // A field worker on any of the eight outdoor jobs reads that job's own
@@ -817,18 +857,26 @@ SCRIPT = """() => {
       closeDialog(1);                                  // hand them over
       out.demands.tookGoods = G.colonies[0].stock[4] < s0;
     }
-    // The SoL hysteresis announcements fire once per crossing.
+    // The SoL hysteresis announcements fire once per crossing. Count only the
+    // threshold latches here (the incremental @SONSUP/@SONSDOWN band notices
+    // are checked separately below), so seed solBand to the current band first.
+    // Seed solBand to the current band so the incremental @SONSUP/@SONSDOWN
+    // notices don't fire during the threshold-latch counts (checked separately).
     const c = G.colonies[0];
-    c.sol = 60; c.latch = 0;
+    c.sol = 60; c.latch = 0; c.solBand = 6;
     G.eventQueue = [];
     solAnnounce(c); solAnnounce(c);
     out.sentiment = { majorityOnce: G.eventQueue.length === 1 };
-    c.sol = 100; G.eventQueue = [];
+    c.sol = 100; c.solBand = 10; G.eventQueue = [];
     solAnnounce(c);
     out.sentiment.unanimous = G.eventQueue.length === 1;
-    c.sol = 40; G.eventQueue = [];
+    c.sol = 40; c.solBand = 4; G.eventQueue = [];
     solAnnounce(c);
     out.sentiment.fallsBack = G.eventQueue.length === 2;   // minority AND majority lost
+    // The incremental band notice: crossing a 10% boundary up posts @SONSUP.
+    c.sol = 55; c.solBand = 4; c.latch = 0x04; G.eventQueue = [];
+    solAnnounce(c);
+    out.sentiment.bandUp = G.eventQueue.some(e => /up to/i.test(e.lines.join(' ')));
     // The Tory uprising gate is (difficulty+1)/(difficulty+2), and it only
     // fires in a Tory-majority colony during the war.
     G.flags = 0; c.sol = 10;
@@ -2505,6 +2553,10 @@ def main():
         ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
+        ("construction gates on the prereq tier, supersede, and Adam Smith factories",
+         all(r["buildGating"].values()), r["buildGating"]),
+        ("colony posts real popups: starvation, construction complete, tools stall (once)",
+         all(r["colonyPopups"].values()), r["colonyPopups"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
         ("each report has its own REPORT<N>.PIK background",
          all(r["reportPiks"].values()), r["reportPiks"]),
@@ -2571,7 +2623,7 @@ def main():
          all(r["orders2"].values()), r["orders2"]),
         ("a hostile tribe presses claims you can pay or refuse",
          all(r["demands"].values()), r["demands"]),
-        ("the four SoL announcements fire once per crossing",
+        ("SoL threshold latches + @SONSUP/@SONSDOWN band notices fire once per crossing",
          all(r["sentiment"].values()), r["sentiment"]),
         ("Tory militia rise only in a Tory colony, only during the war",
          all(r["tory"].values()), r["tory"]),

@@ -285,6 +285,12 @@ def build_data():
               # Diplomacy
               "@SIGNTREATY", "@DECLAREWAR", "@WORTHY", "@THREATS", "@WITHDRAW",
               "@GIVECASH", "@TRIBUTE", "@NOWARSDURINGREV",
+              # Per-turn colony messages (func_02D658 poster)
+              "@FOODLOW", "@FOOD1", "@FOOD2", "@STARVE1", "@STARVE2", "@VANISH",
+              "@BUILT", "@NEEDTOOLS", "@NEEDTOOLS0", "@NEWCOLONIST",
+              "@SONSUP", "@SONSDOWN", "@NODOCKS",
+              "@LUMBER", "@COTTON", "@TOBACCO", "@CANESUGAR", "@FURS", "@ORE", "@TOOLS",
+              "@WAREHOUSEFULL", "@SPOIL1", "@SPOIL2", "@CARGOREADY1",
               # Schoolhouse teaching
               "@TRAINPROFESSION", "@TRAINFAIL", "@NOTEACHER",
               # Trade routes

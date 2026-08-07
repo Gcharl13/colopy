@@ -2277,7 +2277,11 @@ function runSchool(c) {
     if (rung >= 0 && rung < STUDENT_TIERS.length - 1)
       student.profession = STUDENT_TIERS[rung + 1];
     else student.profession = teacher.profession;
-    showEvent('TRAINPROFESSION', { STRING0: student.profession, STRING1: c.name });
+    // @TRAINPROFESSION body: "A colonist in {%STRING0} has learned the
+    // specialty profession {%STRING1}." -- STRING0 is the COLONY, STRING1 the
+    // profession. (The two were transposed: every graduation showed the colony
+    // and profession in each other's slots.)
+    showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: student.profession });
   }
 }
 
@@ -2332,17 +2336,59 @@ function autoExport(c) {
     G.kingsFund += tax;
   }
 }
+// The upgrade CHAINS: @BUILDING is laid out chain by chain (the same grouping
+// BUILDING_GROUP uses for plot sharing), and within a chain each tier requires
+// the one below it and hides it once built -- the engine's prereq/supersede
+// gates (func_0B900: min_colony @0xB940, prereq entry+3, supersede entry+2).
+// Derived from the group table; the Stable shares Warehouse's plot but is NOT
+// a Warehouse tier, so it is excluded from the chain logic.
+const BUILDING_INDEPENDENT = new Set(['Stable']);
+let _buildingChain = null;
+function buildingChain() {
+  // Lazy: BUILDING_GROUP is defined later in the file than this helper.
+  if (_buildingChain) return _buildingChain;
+  const byGroup = {};
+  DATA.buildings.forEach((b, i) => {
+    if (BUILDING_INDEPENDENT.has(b.name)) return;
+    const g = BUILDING_GROUP[i];
+    (byGroup[g] = byGroup[g] || []).push(b.name);
+  });
+  const prereq = {}, supersededBy = {};
+  for (const g in byGroup) {
+    const seq = byGroup[g].filter((n, k, a) => k === 0 || a[k - 1] !== n);
+    seq.forEach((n, k) => {
+      if (k > 0) prereq[n] = seq[k - 1];
+      if (k < seq.length - 1) supersededBy[n] = seq.slice(k + 1);
+    });
+  }
+  _buildingChain = { prereq, supersededBy };
+  return _buildingChain;
+}
+// The FACTORY tier (chain link 3 of the manufacturing chains, plus the Arsenal)
+// needs Adam Smith -- GAME_MANUAL.md, the "factory-level buildings require the
+// services of Adam Smith" rule.
+const BUILDING_FACTORY = new Set(['Textile Mill', 'Cigar Factory', 'Rum Factory',
+  'Fur Factory', 'Iron Works', 'Arsenal']);
+
 // What a colony may build: an @BUILDING row it does not already have, whose
-// min_colony gate its population meets. Cost is the hammers column; tools_x10
+// min_colony gate its population meets, whose predecessor tier is built, that
+// is not superseded by a higher tier already up, and whose special prerequisite
+// (Peter Stuyvesant / Adam Smith) is met. Cost is the hammers column; tools_x10
 // is the tools requirement in tens (§26.8 / @BUILDING).
 function buildOptions(c) {
   const pop = c.colonists.length;
+  const built = (n) => c.buildings.includes(n);
+  const chain = buildingChain();
   return DATA.buildings
     .map((b, i) => ({ i, ...b }))
-    .filter(b => !c.buildings.includes(b.name) && b.min_colony <= pop)
+    .filter(b => !built(b.name) && b.min_colony <= pop)
+    // The predecessor tier must already stand, and no higher tier may.
+    .filter(b => !chain.prereq[b.name] || built(chain.prereq[b.name]))
+    .filter(b => !(chain.supersededBy[b.name] || []).some(built))
     // Peter Stuyvesant enables the Custom House and nothing else does
     // (func_00B900 @0xBA37).
-    .filter(b => b.name !== 'Custom House' || G.fathersOwned.includes('Peter Stuyvesant'));
+    .filter(b => b.name !== 'Custom House' || G.fathersOwned.includes('Peter Stuyvesant'))
+    .filter(b => !BUILDING_FACTORY.has(b.name) || G.fathersOwned.includes('Adam Smith'));
 }
 // One colony's whole turn: produce, bank, eat, grow, build, then dispose of the
 // overflow.
@@ -2350,16 +2396,25 @@ function colonyTurn(c) {
   const r = colonyProduce(c);
   for (let i = 0; i < r.out.length; i++)
     c.stock[i] = Math.max(0, c.stock[i] + r.out[i]);      // banked with a floor at 0
-  // Food: eat first, then the surplus feeds the growth store.
+  // Food: eat first, then the surplus feeds the growth store. The engine posts
+  // real popups here (func_02D658), not status-bar lines: a low-food WARNING
+  // (@FOODLOW, once, while stores are thin), then STARVATION (@STARVE1) when a
+  // colonist is lost, and a BIRTH (@NEWCOLONIST) on growth.
   c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
   if (r.netFood < 0 && c.stock[GOOD.FOOD] === 0 && c.colonists.length > 1) {
     c.colonists.pop();
-    G.msg = `${c.name} is starving! A colonist has been lost.`;
+    showEvent('STARVE1', { STRING0: c.name });
+    c.foodWarned = false;
+  } else if (r.netFood < 0 && c.stock[GOOD.FOOD] < FOOD_FOR_COLONIST && !c.foodWarned) {
+    c.foodWarned = true;
+    showEvent('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
+  } else if (r.netFood >= 0) {
+    c.foodWarned = false;
   }
   if (c.stock[GOOD.FOOD] >= FOOD_FOR_COLONIST) {
     c.stock[GOOD.FOOD] -= FOOD_FOR_COLONIST;
     c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
-    G.msg = `${c.name} has grown to ${c.colonists.length}.`;
+    showEvent('NEWCOLONIST', { STRING0: c.name });
   }
   // Horses breed in a colony that holds them: the per-turn growth threshold is
   // 25 with a Stable (building 0x11) and 50 without -- byte-verified at
@@ -2388,12 +2443,27 @@ function advanceConstruction(c, hammers) {
   const b = c.building && DATA.buildings.find(d => d.name === c.building);
   if (!b) return;
   const needTools = b.tools_x10 * 10;
-  if (c.hammers < b.cost || c.stock[GOOD.TOOLS] < needTools) return;
+  if (c.hammers < b.cost) { c.toolWarned = false; return; }
+  // Hammers are ready but the tools are short: the engine posts @NEEDTOOLS /
+  // @NEEDTOOLS0 (STRING0=colony, STRING1=building, NUMBER0=needed, NUMBER1=on
+  // hand) and the building waits. Once per stall, not every turn.
+  if (c.stock[GOOD.TOOLS] < needTools) {
+    if (!c.toolWarned) {
+      c.toolWarned = true;
+      const have = c.stock[GOOD.TOOLS];
+      showEvent(have > 0 ? 'NEEDTOOLS' : 'NEEDTOOLS0',
+                { STRING0: c.name, STRING1: b.name, NUMBER0: needTools, NUMBER1: have });
+    }
+    return;
+  }
+  c.toolWarned = false;
   c.hammers -= b.cost;
   c.stock[GOOD.TOOLS] -= needTools;
   c.buildings.push(b.name);
   c.building = null;
-  G.msg = `${c.name} completes the ${b.name}.`;
+  // @BUILT: "%STRING0 colony produces {%STRING1}." (STRING0=colony, STRING1=the
+  // building) -- a popup, not a status line.
+  showEvent('BUILT', { STRING0: c.name, STRING1: b.name });
 }
 
 // A ship entering the sea lane leaves the map for the home port. Ships carry a
@@ -6644,10 +6714,15 @@ function runWar() {
       if (def) { resolveAttack(u, def); continue; }
       G.colonies.splice(G.colonies.indexOf(c), 1);
       G.razed += 1;
-      // @WOODCUT 12, COLONY DESTROYED.
-      G.woodcut = 12; G.screen = 'woodcut';
-      showEvent('WARN2', { NUMBER1: G.colonies.length,
-                           STRING0: DATA.nations[G.nation].adjective });
+      // A burning colony plays WDCUT11 (byte-confirmed 2026-07-30: WDCUT11 is
+      // fired @0x05DADC/@0x05DFCB in func_05CA7E; WDCUT12 has NO caller in the
+      // EXE -- the port had been firing the caller-less 12 here). @BURNED is
+      // the message; STRING3 is the colony (the body reads "{%STRING0} burn
+      // {%STRING3} to the ground!").
+      G.woodcut = 11; G.screen = 'woodcut';
+      showEvent('BURNED', { STRING0: DATA.nations[G.refNation !== undefined
+                              ? G.refNation : G.nation].adjective,
+                            STRING3: c.name });
       continue;
     }
     if (!tileWater(at(u.x + dx, u.y + dy))) { u.x += dx; u.y += dy; }
@@ -6721,6 +6796,12 @@ function offerMercenaries() {
 //   falls  <  50     @TORYMAJORITY     clear 0x04
 function solAnnounce(c) {
   c.latch = c.latch || 0;
+  // The incremental "Sons of Liberty is up/down to N%" notices (@SONSUP /
+  // @SONSDOWN) fire on crossing a 10% band, in whichever direction moved.
+  const band = Math.floor(c.sol / 10);
+  if (c.solBand === undefined) c.solBand = band;
+  else if (band > c.solBand) { showEvent('SONSUP', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
+  else if (band < c.solBand) { showEvent('SONSDOWN', { STRING0: c.name, NUMBER0: c.sol }); c.solBand = band; }
   if (c.sol >= 50 && !(c.latch & 0x04)) {
     c.latch |= 0x04; showEvent('REBELMAJORITY', { STRING0: c.name });
   }
