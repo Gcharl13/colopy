@@ -5581,19 +5581,27 @@ slot draws nothing (@0x280B7–0x2812B). Hold hit index
   `min(level,3)+0x0B` (@0x3E9D–0x3EB6), level from the tribe record's first
   byte (`[bx+0x5AD8]`, stride 0x4E) — bundle 10..13: tipi camp, pueblo,
   pyramid, terraced city.
-- **Village alarm strip:** level = `min(3, alarm>>5)` (@0x40C6, `sar di,5`),
-  forced to 3 at tension ≥ 75 (@0x40DD); colours by level 0..3 = 0x0A green,
-  0x0B cyan, 0x0E yellow, 0x0C red; each mark a 3×7 backing rect with a 1×5
-  bar and a dot, from x+6 stepping +2 (@0x4126–0x419F); trailing marks
-  dimmed −8 while the remaining count ≤ 2 (@0x412F). The mark *count* is an
-  out-param of `0x181F:0x316`, still unread — the rebuild draws level+1.
+- **Village alarm strip — fully resolved (2026-08-07e):** the mark COUNT is
+  the output of the **raid-target scorer** `0x181F:0x316` = `func_0460F8`:
+  per village it scores the best human-controlled colony within distance 6
+  (area military strength over the village's 20-tile work ring, a
+  fortification term weighted by difficulty, size, distance, region, France
+  and Pocahontas halvings, and a mission adjustment — full formula in
+  RULINGS.md 2026-08-07e), and the painter draws `floor(score/4)+1` marks
+  (`score -= 4` per mark @0x419F–0x41A7), none when no target scores. The
+  ALARM picks only the colour: level = `min(3, alarm>>5)` (@0x40C6), forced
+  to 3 at tension ≥ 75 (@0x40DD), colours 0x0A/0x0B/0x0E/0x0C; a mark drawn
+  while the remaining score ≤ 2 dims −8 (@0x412F). Each mark is a 3×7
+  backing rect with a 1×5 bar and a dot, from x+6 stepping +2. A village
+  whose best target belongs to an AI power draws a single mark in that
+  power's @COUNTRY colour.
 - **Mission crosses:** the colour table at DGROUP `0x848` dumps as
   `0C 09 0E 0D` — the four @COUNTRY colours by owning power; an expert
   mission draws the bright colour, an ordinary one colour−8.
-- **ICONS 17** (the sparkle) is a *village* overlay drawn on flag bit 0x04
-  of the settlement record (`[0x54EF]`) — not a rumour marker; the bit's
-  meaning is still open. Lost City Rumours have **no map sprite of their
-  own** in the shipped game beyond the detail band.
+- **ICONS 17** (the sparkle) is the **CAPITAL marker** — drawn on settlement
+  flags bit 0x04 (`test [0x54EF],4` @0x4051), the byte the runtime dumps
+  identify as the capital flag. Lost City Rumours have **no map sprite of
+  their own** in the shipped game beyond the detail band.
 - The map screen's chrome is **WOODTILE.SS frame 0 tiled**, not
   WOODPANL.PIK (scored against capture: mean channel error 2.90 vs 11.91).
 

@@ -2227,6 +2227,14 @@ SCRIPT = """() => {
       G.screen = 'map';
       out.sav.renders = true;
     } catch (e) { out.sav.renders = 'THREW ' + e.message; }
+    // The raid-target scorer (func_0460F8 = 0x181F:0x316, byte-ported): on
+    // the 1653 board it finds at least one scoreable village, every scoring
+    // village names a real colony, and capitals carry the sparkle flag.
+    out.sav.raidScorer = (() => {
+      const scored = G.villages.map(v => raidTargetScore(v)).filter(rt => rt.score >= 0);
+      return scored.length >= 1 && scored.every(rt => !!rt.colony) &&
+             G.villages.some(v => v.capital);
+    })();
     // Rival AI: at war, garrisons raise and soldiers march.
     const r = G.rivals.find(q => q.colonies.length);
     declareWarOn(G.nation, r.nation);
@@ -2694,6 +2702,8 @@ def main():
          r["sav"]["renders"] is True, r["sav"]),
         ("rival AI: garrisons raise, and soldiers march once at war",
          r["rivalAI"]["marched"] and r["rivalAI"]["garrisoned"], r["rivalAI"]),
+        ("the raid-target scorer scores 1653's villages and capitals sparkle",
+         r["sav"]["raidScorer"], r["sav"]),
         ("the v2 browser save round-trips the map planes and the rumour set",
          r["saveV2"], r["saveV2"]),
         ("main-menu LOAD GAME opens the three-source picker",

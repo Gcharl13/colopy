@@ -7992,3 +7992,63 @@ chain's SEEN test already established.
 
 Suite: 215/215 (12 new checks on the importer, the rival AI, save v2, and
 the Load picker).
+
+## 2026-08-07e — 0x181F:0x316 is the RAID-TARGET SCORER; the alarm strip's mark count and the ICONS-17 sparkle are both closed
+
+### func_0460F8 (0x181F:0x316), disassembled in full
+
+Signature `(settlement_idx, &out_score) -> best_target_owner`. Per village it
+scores every HUMAN-controlled colony within taxi distance 6
+(AIPersonality.controller == 0 gate @0x46429) and returns the best score
+through the out-param:
+
+* **Area strength** @0x4616E–0x46280: over the village's 20-tile work ring
+  (delta tables DGROUP:0xC8/0xDE — read out of the EXE image at +0x1D9A0:
+  the 5×5 neighbourhood minus centre and the four (±2,±2) corners), sum the
+  @UNIT attack column (>1 only; ship types 0x0D..0x12 excluded) of each land
+  tile's units, halved on a layer-2 bit-0x02 tile (0x181F:0x6BE =
+  file 0x5FD4) and halved again beyond ring distance 1; banked per owning
+  power (owners ≥ 4 skipped).
+* **Per-colony score** @0x4630E–0x4636A:
+  `fort = (Σ set-bits(colony+0x84 bitset)·w / div − 8) >> 2`, (w,div) by
+  difficulty from `{(1,2),(3,4),(1,1),(3,2),(2,1)}` (@0x46425 switch);
+  `score = ((2·max(0,pop−6) + min(pop/2, tribeLevel) + min(pop,6) + fort)·2
+  − dist − 1) / (dist+4)`, halved when the village and colony sit in
+  different map REGIONS (0x181F:0x722 = file 0x5E90, a low-nibble region id
+  off a map layer), then `+ areaStrength[owner]`, halved for FRANCE
+  (@0x46388) and halved under power-attribute bit 0x10 (@0x46391 —
+  Pocahontas's flag).
+* **Mission tail** @0x4645E–0x464AD: ANOTHER power's mission on the village
+  makes raiding the target MORE attractive (expert ×2, plain ×1.5); the
+  target power's own mission protects it (expert ÷2, plain −25%).
+
+### What the map strip actually shows (the old TBD)
+
+The village painter's marks are NOT the alarm level: the count is this
+scorer's output — `draw; XB += 2; score −= 4` while score ≥ 0
+(@0x419F–0x41A7), so **marks = floor(score/4) + 1**, none at all when the
+scorer returns < 0 (@0x409F). The ALARM word picks only the COLOUR
+(level = min(3, alarm>>5), tension ≥ 75 forces red), and a mark drawn while
+the remaining score ≤ 2 dims −8 (@0x412F) — the "trailing marks dim" rule,
+now with its real driver. When the best target belongs to an AI power the
+strip is a single mark in that power's @COUNTRY colour ([0x848+power],
+@0x4110–0x411A).
+
+### The sparkle
+
+`test [0x54EF],4` @0x4051 draws engine frame 0x12 (bundle ICONS 17) —
+settlement flags byte +0x03, bit 0x04, which `spec/systems/natives.md` §2
+already carries BYTE_VERIFIED as the **CAPITAL** flag (set once per tribe at
+settlement generation @0x66225, boosts defence/growth @0x07DCA/@0x46E05).
+The sparkle marks a tribe's capital. TBD closed — the painter test site
+@0x4051 was simply never joined to the flag's existing identification.
+
+### Port
+
+`raidTargetScore()` is the byte-ported scorer (region check omitted — no
+region plane — and the +0x84 bitset counted as the building list; both
+flagged); the map strip now draws score-many marks with the byte-exact count
+and dim rules; capitals sparkle; the brave AI targets the scorer's pick.
+On the 1653 board exactly one village scores (the Iroquois capital eyeing
+Roanoke at score 0 — one dim green mark), which matches that game's quiet
+state. Suite: 216/216.

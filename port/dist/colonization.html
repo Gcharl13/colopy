@@ -1503,39 +1503,45 @@ function drawMap(ctx) {
     if (!isSeen(v.x, v.y)) continue;
     drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1,
                    (G.tribes[v.tribe] || {}).color || 8, v.mission);
-    // §19.6: the map shows alarm as exclamation marks over the village. The
-    // whole strip is byte-read off the village painter (2026-08-07b):
-    //   * level = min(3, alarm >> 5)               @0x40C6-0x40CE (`sar di,5`)
-    //   * tension >= 75 forces level 3             @0x40DD (`cmp ax,0x4b`)
-    //   * colours by level 0..3: 0x0A green, 0x0B cyan, 0x0E yellow, 0x0C red
-    //                                              @0x40F8/@0x40FE/@0x4104/@0x40F1
-    //   * each mark, at (XB, py+4): a 3x7 backing rect in the outline colour,
-    //     a 1x5 bar at (XB+1, py+5) and a 1x1 dot at (XB+1, py+9) in the level
-    //     colour, XB starting px+6 and stepping +2 per mark
-    //                                              @0x4126-0x419F
-    //   * the trailing marks are DIMMED -8 while the remaining count is <= 2
-    //                                              @0x412F-0x4135
-    // The MARK COUNT comes from an out-param of lcall 0x181F:0x316 whose
-    // semantics are still unread -- the port draws level+1 marks, which is its
-    // own choice pending that read. TBD (blocker: disassemble 0x181F:0x316).
-    const alarm = v.alarm || 0;
-    if (alarm > 0 && G.zoom === 0) {
-      const tension = (G.tribes[v.tribe] || {}).tension || 0;
-      const level = tension >= 75 ? 3 : Math.min(3, alarm >> 5);
-      const colour = [0x0A, 0x0B, 0x0E, 0x0C][level];
-      const px2 = ox + tx * TILE, py2 = oy + ty * TILE;
-      let xb = px2 + 6;
-      for (let m = level; m >= 0; m--) {
-        // The engine dims a mark when its remaining count is <= 2 -- with the
-        // count semantics unread, the port dims only the final mark, the case
-        // the byte rule always produces on a partial remainder.
-        const c2 = (m === 0 && level > 0) ? colour - 8 : colour;
-        ctx.fillStyle = ink(0);
-        ctx.fillRect(xb, py2 + 4, 3, 7);
-        ctx.fillStyle = ink(c2);
-        ctx.fillRect(xb + 1, py2 + 5, 1, 4);
-        ctx.fillRect(xb + 1, py2 + 9, 1, 1);
-        xb += 2;
+    // §19.6: the map shows the village's war stance as exclamation marks. The
+    // strip is byte-read off the village painter, and the MARK COUNT is now
+    // RESOLVED (2026-08-07e -- 0x181F:0x316 = func_0460F8, disassembled):
+    //   * the marks show the RAID-TARGET SCORE, not the alarm: the painter
+    //     calls the scorer and loops `draw; XB += 2; score -= 4` while the
+    //     score stays >= 0 (@0x419F-0x41A7), so count = floor(score/4) + 1
+    //   * no viable target (scorer returns < 0) -> no marks at all @0x409F
+    //   * the ALARM picks only the COLOUR: level = min(3, alarm >> 5)
+    //     (@0x40C6, the alarm word [0x54F6]), tension >= 75 forces level 3
+    //     (@0x40DD via 0x5DC:0xE0), colours 0x0A/0x0B/0x0E/0x0C
+    //   * a mark drawn while the REMAINING score is <= 2 dims -8 (@0x412F)
+    //   * mark shape: 3x7 backing rect at (XB, py+4), 1x5 bar + dot inside,
+    //     from XB = px+6 (@0x4126-0x419F)
+    if (G.zoom === 0) {
+      const rt = raidTargetScore(v);
+      if (rt.score >= 0) {
+        const alarm = v.alarm || 0;
+        const tension = (G.tribes[v.tribe] || {}).tension || 0;
+        const level = tension >= 75 ? 3 : Math.min(3, alarm >> 5);
+        const colour = [0x0A, 0x0B, 0x0E, 0x0C][level];
+        const px2 = ox + tx * TILE, py2 = oy + ty * TILE;
+        let xb = px2 + 6;
+        for (let s = rt.score; s >= 0; s -= 4) {
+          const c2 = s <= 2 ? colour - 8 : colour;
+          ctx.fillStyle = ink(0);
+          ctx.fillRect(xb, py2 + 4, 3, 7);
+          ctx.fillStyle = ink(c2);
+          ctx.fillRect(xb + 1, py2 + 5, 1, 4);
+          ctx.fillRect(xb + 1, py2 + 9, 1, 1);
+          xb += 2;
+        }
+      }
+      // The ICONS-17 sparkle overlay is the CAPITAL marker: the painter tests
+      // settlement flags bit 0x04 (`test [0x54EF],4` @0x4051), the byte
+      // DATA_MODEL's runtime dumps identify as the capital flag -- which
+      // closes the old "sparkle trigger unknown" TBD.
+      if (v.capital) {
+        const px2 = ox + tx * TILE, py2 = oy + ty * TILE;
+        sheetFrame(tgt, 'ICONS', 17, px2, py2);
       }
     }
   }
@@ -4245,6 +4251,82 @@ function raidOutcome() {
   if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
   return Math.max(0, out);
 }
+// ---- the raid-target scorer: func_0460F8 = 0x181F:0x316, byte-ported ------
+// Disassembled 2026-08-07e (RULINGS.md). Per settlement it scores the best
+// human-controlled colony within taxi distance 6 and returns that score --
+// which is exactly what the map's exclamation strip shows, and what the raid
+// AI targets. The pieces, each at its site in func_0460F8:
+//   * AREA STRENGTH: over the village's 20-tile work ring (the DGROUP:0xC8/
+//     0xDE delta tables, read out of the EXE image at +0x1D9A0), sum the
+//     @UNIT attack column (>1 only, ships excluded @0x46172-0x4617E) of the
+//     units on each land tile; halve on a layer-2 bit-0x02 tile (0x181F:0x6BE
+//     -- approximated here as "a settlement stands there", flagged) and halve
+//     again beyond ring distance 1 (@0x461CC-0x46207); bank per owning power.
+//   * PER-COLONY SCORE @0x4630E-0x4636A:
+//       fort  = (buildings*w/div - 8) >> 2, (w,div) by difficulty from
+//               {(1,2),(3,4),(1,1),(3,2),(2,1)} (@0x46425 switch) -- the
+//               engine counts the +0x84 bitset; the port counts the colony's
+//               building list, flagged
+//       score = ((2*max(0,pop-6) + min(pop/2, tribeLevel) + min(pop,6)
+//                + fort) * 2 - dist - 1) / (dist + 4)
+//       halved when village and colony sit in different map regions
+//       (0x181F:0x722 region nibble -- the port has no region plane; omitted,
+//       flagged), then + areaStrength[owner]; halved for FRANCE (@0x46388,
+//       the byte behind the French tension break) and halved again under
+//       power-attribute bit 0x10 (@0x46391 -- Pocahontas's flag).
+//   * MISSION TAIL @0x4645E-0x464AD: another power's mission on the village
+//     makes raiding the owner MORE attractive (expert x2, plain x1.5); the
+//     owner's own mission protects (expert /2, plain -25%).
+// Returns { colony, score }; score < 0 = no viable target.
+const RAID_RING_DX = [0, 1, 0, -1, -1, 1, 1, -1, 0, 2, 0, -2, -1, 1, -1, 1, -2, -2, 2, 2];
+const RAID_RING_DY = [-1, 0, 1, 0, -1, -1, 1, 1, -2, 0, 2, 0, -2, -2, 2, 2, -1, 1, -1, 1];
+const RAID_FORT_WEIGHT = [[1, 2], [3, 4], [1, 1], [3, 2], [2, 1]];
+function raidTargetScore(v) {
+  const area = [0, 0, 0, 0];
+  for (let k = 0; k < 20; k++) {
+    const x = v.x + RAID_RING_DX[k], y = v.y + RAID_RING_DY[k];
+    if (x < 1 || y < 1 || x >= MAP.w - 1 || y >= MAP.h - 1) continue;
+    if (tileWater(at(x, y))) continue;
+    let s = 0, owner = -1;
+    const take = (u, own) => {
+      if (u.ship) return;
+      const a = Number((unit(u.type) || {}).attack) || 0;
+      if (a > 1) s += a;
+      if (owner < 0) owner = own;
+    };
+    for (const u of G.units) if (u.x === x && u.y === y) take(u, G.nation);
+    for (const r of G.rivals)
+      for (const u of r.units) if (u.x === x && u.y === y) take(u, r.nation);
+    if (owner < 0 || !s) continue;
+    if (colonyAt(x, y) ||
+        G.rivals.some(r => r.colonies.some(c => c.x === x && c.y === y))) s >>= 1;
+    if (Math.abs(RAID_RING_DX[k]) > 1 || Math.abs(RAID_RING_DY[k]) > 1) s >>= 1;
+    area[owner] += s;
+  }
+  const [w, dv] = RAID_FORT_WEIGHT[Math.max(0, Math.min(4, G.difficulty))];
+  const lvl = (G.tribes[v.tribe] || {}).level || 0;
+  let best = null, bestScore = -1;
+  for (const c of G.colonies) {
+    const dist = Math.abs(c.x - v.x) + Math.abs(c.y - v.y);
+    if (dist > 6) continue;
+    const pop = c.colonists.length;
+    const fort = (Math.floor(c.buildings.length * w / dv) - 8) >> 2;
+    let s = Math.floor(((2 * Math.max(0, pop - 6) + Math.min(pop >> 1, lvl) +
+                         Math.min(pop, 6) + fort) * 2 - dist - 1) / (dist + 4));
+    s += area[G.nation];
+    if (G.nation === 1) s >>= 1;
+    if (G.fathersOwned.includes('Pocahontas')) s >>= 1;
+    if (s > bestScore) { bestScore = s; best = c; }
+  }
+  if (best && bestScore > 0 && v.mission) {
+    if (v.mission.power !== G.nation)
+      bestScore = v.mission.expert ? bestScore << 1 : bestScore + (bestScore >> 1);
+    else
+      bestScore = v.mission.expert ? bestScore >> 1 : bestScore - (bestScore >> 2);
+  }
+  return { colony: best, score: best ? bestScore : -1 };
+}
+
 // One raid ATTEMPT by village v against colony c. The gate is func_05BE84's:
 // roll random_int(1,12)-1 (@0x5BEFD), +(difficulty-2) for a human owner
 // (@0x5BF1A), against threshold 3*K+1 (@0x5BEE5) -- and K is now BYTE-READ
@@ -4327,7 +4409,9 @@ function nativeMoveAI() {
     if (!v) continue;
     const hostile = (v.alarm || 0) >= ALARM_RAID && G.colonies.length;
     if (hostile) {
-      const c = G.colonies.slice().sort((a, b) =>
+      // The engine's raid AI targets the SCORER's pick (func_0460F8); a
+      // village with no scoreable colony in reach falls back to the nearest.
+      const c = raidTargetScore(v).colony || G.colonies.slice().sort((a, b) =>
         (Math.abs(a.x - n.x) + Math.abs(a.y - n.y)) -
         (Math.abs(b.x - n.x) + Math.abs(b.y - n.y)))[0];
       if (Math.max(Math.abs(c.x - n.x), Math.abs(c.y - n.y)) <= 1) {
