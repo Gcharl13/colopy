@@ -8651,3 +8651,21 @@ rumour check accepts the @LOSTCITY4 ask).
   surface the trigger.
 
 Suite: 232/232. Ledger: DONE 313, MISSING 84.
+
+## 2026-08-07w — Phase 3: privateer attribution, treaty-break guard, the @PIRACY census
+
+- **Privateer hidden attribution (byte-verified).** A Privateer striking
+  rival SHIPPING at peace no longer opens the meeting: the attack runs and
+  war_matrix bit 0x80 is set INSTEAD of the war bit -- exactly the
+  resolver's `cmp [bx+0x3146],0x10 @0x3F092 -> or 0x80 @0x3F0A1`
+  (spec/systems/diplomacy.md). The previously declared-and-dead
+  REL.PRIVATEER now has its writer.
+- **@PIRACY / @PIRACYUSA.** The next meeting with the wronged power leads
+  with the accusation (2-row ask: deny / withdraw -- withdrawal sails the
+  player's Privateers home), STRING3 = the @MEEKNESS request/demand verb
+  by tone; the bit clears on the census. Topic priority flagged.
+- **@HAVETREATY / @CANCELPEACE.** Moving onto a treaty partner's unit asks
+  the 2-row treaty guard; Break Treaty announces @CANCELPEACE and opens
+  the war through declareWarOn.
+
+Suite: 232/232. Ledger: DONE 318, MISSING 84, BUNDLED-UNWIRED 24.

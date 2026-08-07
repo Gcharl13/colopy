@@ -7197,6 +7197,26 @@ function meetingTopic(r) {
   const myr = `MYR${r.nation}`;
   const gate = () => Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100;
   const inGrace = G.turn < 10 * (10 - G.difficulty);
+  // @PIRACY: B's accusation when the Privateer hidden-attribution bit is
+  // set against him (the census the spec names; topic priority flagged).
+  // Rows: deny ("NEVER condoned piracy!") / withdraw -- withdrawal sends
+  // the player's Privateers home. STRING3 = the @MEEKNESS request/demand
+  // verb by B's tone (attitude>=8 reused, flagged).
+  if ((relWar(G.nation, r.nation) & REL.PRIVATEER) && !atWar(G.nation, r.nation)) {
+    setWar(G.nation, r.nation, REL.PRIVATEER, false);
+    askEvent((G.flags & WOI_DECLARED) ? 'PIRACYUSA' : 'PIRACY',
+             { STRING0: DATA.diplotext.GREATLEADER[r.nation],
+               STRING1: DATA.nations[G.nation].adjective,
+               STRING2: DATA.regionname[r.nation],
+               STRING3: DATA.diplotext.MEEKNESS[meetingTone(r) ? 0 : 1] },
+             (k) => {
+      if (k === 1)
+        for (const pu of G.units.filter(x => x.type === 'Privateer').slice())
+          sailForEurope(pu);
+      meetingPeaceHub(r);
+    }, undefined, myr);
+    return;
+  }
   // B's gold extortion (@TRIBUTE -- and note ACCEPT IS ROW 2 in the text).
   if (!inGrace && !atWar(G.nation, r.nation) && gate()) {
     const want = demandValue(500);
@@ -9605,6 +9625,30 @@ function moveSel(dx, dy) {
      r.colonies.some(rc => rc.x === nx && rc.y === ny)));
   if (rival) {
     const isColony = rival.colonies.some(rc => rc.x === nx && rc.y === ny);
+    // The Privateer's HIDDEN attribution (byte-verified: the war-declaration
+    // resolver checks unit type 0x10 @0x3F092 and sets war_matrix 0x80
+    // @0x3F0A1 INSTEAD of the war bit): a Privateer may strike rival
+    // shipping at peace without an open declaration.
+    const ruP = rival.units.find(x => x.x === nx && x.y === ny);
+    if (!atWar(G.nation, rival.nation) && u.ship && u.type === 'Privateer' &&
+        ruP && ruP.ship) {
+      setWar(G.nation, rival.nation, REL.PRIVATEER, true);
+      if (navalAttack(u, ruP)) advance();
+      return;
+    }
+    // @HAVETREATY: attacking a treaty partner asks first ("Cancel Action."
+    // / "Break Treaty."); breaking announces @CANCELPEACE and opens the war.
+    if (!atWar(G.nation, rival.nation) && haveTreaty(G.nation, rival.nation) &&
+        ruP && !(u.ship !== !!ruP.ship)) {
+      askEvent('HAVETREATY', { STRING0: DATA.nations[rival.nation].adjective },
+               (choice) => {
+        if (choice !== 1) return;
+        showEvent('CANCELPEACE', { STRING0: DATA.nations[G.nation].adjective,
+                                   STRING1: DATA.nations[rival.nation].adjective });
+        declareWarOn(G.nation, rival.nation);
+      });
+      return;
+    }
     if (atWar(G.nation, rival.nation)) {
       if (isColony && (G.flags & WOI_DECLARED)) { showEvent('NOWARSDURINGREV', {}); return; }
       // @CANNOTATTACK, same data-driven rating gate as the native branch.
