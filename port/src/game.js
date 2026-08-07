@@ -703,6 +703,9 @@ function beginGame() {
   // Tutorial mask seed 0x0E (@0x755EB); TUTORIAL1 fires with the fleet on
   // the high seas -- the game's very first event.
   G.tutMask = 0x0E; G.tutSide = {}; G.scored = false;
+  // The other two once-flag homes in the globals block (func_020F50 read,
+  // RULINGS 2026-08-07z6): [0x5380] and [0x5382].
+  G.onceFlags = 0; G.phaseFlags = 0;
   G.soonWarned = false; G.soonWarned2 = false; G.timeChanged = false;
   tutOnce(1, { STRING0: G.units[0].type });
   seedREF();
@@ -7437,19 +7440,33 @@ function exitToDos() {
 // TUTORIAL1=0x0010 (func_020F50 @0x20FFB), TUTORIAL4=0x0080 / TUTORIAL12=
 // 0x8000 (func_02C5D4 @0x2C74A/@0x2C7BC), TUTORIAL5=0x0100 (func_033F6A
 // @0x3651F), TUTORIAL6=0x0200 (func_02D658 @0x2EA4C), TUTORIAL7=0x0400
-// (func_02883E @0x28D41). The OTHER steps' bits live in the undisassembled
-// func_020F50 window (0x20FF0..0x215D0, Phase 4) -- the port tracks those in
-// its own side set, and the seed's three pre-marked bits (1..3) are
-// therefore unbound here: both flagged. The difficulty gate is the sibling
-// TUT keys' [0x53A6]<2 (Discoverer/Explorer), flagged for TUTORIALn itself.
-const TUT_BIT = { 1: 0x0010, 4: 0x0080, 5: 0x0100, 6: 0x0200, 7: 0x0400,
+// (func_02883E @0x28D41). The func_020F50 window is now READ (2026-08-07,
+// RULINGS 2026-08-07z6): steps 1 and 3..12 occupy CONSECUTIVE bits 4..15 of
+// the [0x5386/7] word (bit 5 / 0x0020 is unassigned there -- possibly one of
+// the emitter-less 16..18); steps 13/14/15/19 guard on the [0x5380]
+// once-flags byte (0x01/0x02/0x08/0x80, or-ed at @0x210C4/@0x021104/
+// @0x21157/@0x215FA); step 2 guards on [0x5382]&0x80 (func_020EE0
+// @0x20F3A). Every guard bit is byte-cited; only 16/17/18 remain in the
+// side set (no emitter found for them in the EXE). The seed's 0x0E marks
+// the SOUND switches (the shared-word reading), not tutorial steps.
+// The difficulty gate is the sibling TUT keys' [0x53A6]<2, flagged for
+// TUTORIALn itself.
+const TUT_BIT = { 1: 0x0010, 3: 0x0040, 4: 0x0080, 5: 0x0100, 6: 0x0200,
+                  7: 0x0400, 8: 0x0800, 9: 0x1000, 10: 0x2000, 11: 0x4000,
                   12: 0x8000 };
+const TUT_FLAG = { 13: 0x01, 14: 0x02, 15: 0x08, 19: 0x80 };   // [0x5380]
+const TUT_PHASE = { 2: 0x80 };                                 // [0x5382]
 function tutOnce(n, subs) {
   if (G.difficulty >= 2) return;
-  const bit = TUT_BIT[n];
-  if (bit) {
-    if (G.tutMask & bit) return;
-    G.tutMask |= bit;
+  if (TUT_BIT[n]) {
+    if (G.tutMask & TUT_BIT[n]) return;
+    G.tutMask |= TUT_BIT[n];
+  } else if (TUT_FLAG[n]) {
+    if (G.onceFlags & TUT_FLAG[n]) return;
+    G.onceFlags |= TUT_FLAG[n];
+  } else if (TUT_PHASE[n]) {
+    if (G.phaseFlags & TUT_PHASE[n]) return;
+    G.phaseFlags |= TUT_PHASE[n];
   } else {
     G.tutSide = G.tutSide || {};
     if (G.tutSide[n]) return;
@@ -9515,8 +9532,12 @@ function importSav(bytes) {
   //            the port ignores; the two readings of 0x5386 coexist).
   //   g+0x8A = [0x540A] the woodcut shown-bitmask, same 1<<plate convention.
   G.tutMask = u16(g + 0x06);
-  // The 13 side-set steps' bit positions await the func_020F50 read; a
-  // restored game keeps them marked shown so none re-fire mid-game.
+  // The other two once-flag homes (func_020F50/020EE0 read): g+0 = [0x5380]
+  // (steps 13/14/15/19 + other once-flags), g+2 = [0x5382] (step 2 at 0x80).
+  G.onceFlags = d[g];
+  G.phaseFlags = u16(g + 0x02);
+  // Only 16/17/18 remain side-set (no emitter in the EXE); keep them marked
+  // shown on import so none re-fire mid-game.
   G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
   G.wcSeen = u16(g + 0x8A);
   G.tribes.forEach(t => { t.met = true; });

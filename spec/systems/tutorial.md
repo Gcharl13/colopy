@@ -57,7 +57,33 @@ from the manual / observed strings; trigger wiring not byte-traced).
   | TUTORIAL6 (`0xEC7`) | `[0x5387]&0x02` | `func_02D658` — colony processor / found colony (`@0x2EA4C`) |
   | TUTORIAL7 (`0xC99`) | `[0x5387]&0x04` | `func_02883E` — unit-movement event (`@0x28D41`) |
   | TUTORIAL4/12 (`0xD3D`/`0xD47`) | `[0x5386]&0x80` / `[0x5387]&0x80` | `func_02C5D4` — Europe/docks (`@0x2C74A`/`@0x2C7BC`) |
-  | TUTORIAL3/8–11/13–15/19 | other `[0x5386]/[0x5387]` bits | `func_020F50` (`@0x21350`/`@0x213E9`/`@0x21481`/`@0x215CD`/…) |
+
+- **The func_020F50 window — READ 2026-08-07** (the whole 0x20F50..0x21601 body walked;
+  RULINGS 2026-08-07z6). It is the **unit-FOCUS tutorial dispatcher**: entry preconditions
+  are active unit valid, owner = current player, position visible (helper `0x181f:0x302`);
+  it then walks a ladder and emits AT MOST ONE step per focus. Steps 1 and 3..12 occupy
+  **consecutive bits 4..15 of the `[0x5386/7]` word** (bit 5 = 0x0020 is unassigned —
+  possibly one of the emitter-less 16..18); steps 13/14/15/19 guard on the **`[0x5380]`
+  once-flags byte**; step 2 guards on **`[0x5382]&0x80`** (`func_020EE0 @0x20F3A`).
+
+  | Step | Guard (byte-cited or) | Trigger conditions (byte-read) |
+  |---|---|---|
+  | T1 | `[0x5386]|=0x10 @0x20FFB` | turn==0 AND difficulty==0; %STRING0 = unit-type name (`[0x5230+type·14]`) |
+  | T11 | `[0x5387]|=0x40 @0x21079` | turn<20, unit type 0x0D..0x12 (naval), `+0x3150`==0, `+0x315C`<0 AND `+0x315E`<0 (no orders/goto); subs = unit name + nation word `[-0x7C74]` |
+  | T13 | `[0x5380]|=0x01 @0x210C4` | turn<20, type 2 (Pioneers), per-player flag `[-0x6D68]`==0, helper `0x768(x,y)`==0 |
+  | T14 | `[0x5380]|=0x02 @0x21104` | turn<20, type 1 (Soldiers), helper `0x768(x,y)`==0 |
+  | T15 | `[0x5380]|=0x08 @0x21157` | turn<40, type 0 (Colonists) with cargo focus at a colony (`0x7BE(x,y)`≥0); %STRING0 = that colony's name (`0x5D48+i·0xCA`) |
+  | T3 | `[0x5386]|=0x40 @0x21350` | `[-0x6D68]`==0, type 2 (Pioneers), tile terrain ∉ {0x19..0x1C}, NOT colony-adjacent (`0x614`→`[0x8DB8]`≠1), water checks (`0xD12`/`0x6B4`); 3×3 ring scan: ≥5 cells with yield byte `[0x2F7B+t·16]`≠0 (+ small-region bonus via `0x718`/`[-0x7A38]`<7) and a best DIRECTION; %STRING0 = the direction word `[-0x6840]` |
+  | T8 | `[0x5387]|=0x08 @0x213E9` | type 0 with profession `+0x315B` ∈ {0x19, 0x1C}, and any k=4..11 of `0xA38(player,k)&0x20` set; %STRING0 = profession name `[-0x715E+id·8]` (0x1C aliased to 0x13 for the name) |
+  | T9 | `[0x5387]|=0x10 @0x21481` | type 2, adjacent OWN colony (`0x614`/`[0x8DB8]`==1, `[0x8542]+0x1A` owner match), improve bits `0x754(x,y)` !&0x0A, terrain forested (8..15 / 16..23) or 0x1B/0x1C |
+  | T10 | `[0x5387]|=0x20 @0x215CD` | type 2, adjacent OWN colony, `0x754(x,y)` !&0x40 (no road), terrain-band + base 2..5 checks, turn≥16, 3×3 scan of the COLONY ring counting forested ≥2 |
+  | T19 | `[0x5380]|=0x80 @0x215FA` | type 0 with profession `+0x315B`==0x1B |
+  | T2 | `[0x5382]|=0x80` (`func_020EE0`) | (its own dispatcher; site `@0x20F43`) |
+
+  The port binds every guard bit exactly (TUT_BIT/TUT_FLAG/TUT_PHASE) and restores all
+  three flag homes from an imported SAV's globals block; its trigger SITES remain the
+  port's flagged approximations of the conditions above (full condition-for-condition
+  rewiring is open).
 
 - No numeric formulas.
 

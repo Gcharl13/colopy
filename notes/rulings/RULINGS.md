@@ -8933,3 +8933,32 @@ COLONY00.SAV: tutMask 0xFF9E (sound bits set, consistent with the
 shared-word reading), REF 19/7/3/4, woodcut mask 0x177F, year 1653.
 
 Suite 233/233; shots 47/47; render-diff 15/15.
+
+## 2026-08-07z6 — func_020F50 read: every tutorial guard bit is now byte-cited
+
+Walked the whole func_020F50 body (0x20F50..0x21601) plus func_020EE0's
+guard. It is the unit-FOCUS tutorial dispatcher (active unit = current
+player, visible; emits at most one step per focus). Findings:
+
+- Steps 1 and 3..12 occupy CONSECUTIVE bits 4..15 of the [0x5386/7] word
+  (T3 0x0040, T8 0x0800, T9 0x1000, T10 0x2000, T11 0x4000 newly bound;
+  bit 5 = 0x0020 unassigned -- possibly one of the emitter-less 16..18).
+- Steps 13/14/15/19 guard on the [0x5380] once-flags BYTE
+  (0x01/0x02/0x08/0x80, or-ed @0x210C4/@0x21104/@0x21157/@0x215FA).
+- Step 2 guards on [0x5382]&0x80 (func_020EE0 @0x20F3A).
+- Per-step trigger conditions byte-read and tabled in
+  spec/systems/tutorial.md §3 (T11 = idle naval focus, T13/14 = early
+  pioneer/soldier focus, T15 = laden colonist at a colony with the colony
+  name substituted, T3 = pioneer on good ground with a >=5-cell 3x3 site
+  scan and a DIRECTION word from [-0x6840], T8 = convert/servant focus
+  with the profession name, T9 = pioneer beside an own colony on
+  unimproved forest, T10 = the road variant, T19 = criminal-profession
+  focus).
+
+Port: TUT_BIT extended to all eleven word bits; new TUT_FLAG ([0x5380])
+and TUT_PHASE ([0x5382]) homes with G.onceFlags/G.phaseFlags, seeded 0
+and restored VERBATIM from an imported SAV's globals block (g+0 / g+2).
+Only 16/17/18 remain side-set (no emitter exists in the EXE). The port's
+trigger SITES stay flagged approximations; the guard BITS are closed.
+
+Suite 233/233.
