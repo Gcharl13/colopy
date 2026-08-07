@@ -304,6 +304,12 @@ def build_data():
               "@VIOLATE",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
+              # War of Independence completion: sentiment, losses, siege,
+              # arrivals and the screen lockouts.
+              "@REBELUP", "@REBELUP50", "@REBELDOWN",
+              "@LOSING1", "@LOSING2", "@LOSING3", "@WARN1", "@WARN3",
+              "@SIEGE", "@INVASION", "@INTERVENE", "@WINNING",
+              "@EUROPENOTAVAIL", "@EUROPENOTLEAVE", "@FOREIGNNOTAVAIL",
               "@SOONRETIRING0", "@SOONRETIRING1", "@RETIRING", "@RETIRING2",
               "@EXPLOITS", "@SCORED",
               # The tutorial lessons (spec/systems/tutorial.md -- bitmask

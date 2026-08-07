@@ -2688,8 +2688,26 @@ const OUTAGE_KEY = { [GOOD.SUGAR]: 'CANESUGAR', [GOOD.TOBACCO]: 'TOBACCO',
                      [GOOD.COTTON]: 'COTTON', [GOOD.FURS]: 'FURS',
                      [GOOD.LUMBER]: 'LUMBER', [GOOD.ORE]: 'ORE',
                      [GOOD.TOOLS]: 'TOOLS' };
+// @SIEGE: "enemy combat units outnumber friendly combat units in the
+// area" -- the land-adjacency siege (diplomacy.md: no blockade mechanic
+// exists; SIEGE restricts a besieged colony's production to military
+// units). "Area" = radius 1 is the port's reading, flagged; the port
+// builds neither Soldiers nor Dragoons in colonies, so the restriction
+// lands as construction waiting out the siege.
+function colonyBesieged(c) {
+  const near = (u) => !u.ship && Math.abs(u.x - c.x) <= 1 && Math.abs(u.y - c.y) <= 1;
+  const enemies = G.refUnits.filter(near).length +
+    G.rivals.reduce((n, r) => n + (atWar(G.nation, r.nation)
+      ? r.units.filter(near).length : 0), 0);
+  const friends = G.units.filter(u => near(u) &&
+    Number((unit(u.type) || {}).attack) > 0).length;
+  return enemies > friends;
+}
 function colonyTurn(c) {
   const r = colonyProduce(c);
+  if (colonyBesieged(c)) {
+    if (!c.sieged) { c.sieged = true; showEvent('SIEGE'); }
+  } else c.sieged = false;
   // Input-outage latches: a manned converter starved of its raw announces
   // once, and re-arms when the chain runs again. The engine's latch site is
   // unread; the once-per-outage cadence is the port's reading, flagged.
@@ -2792,6 +2810,7 @@ function advanceConstruction(c, hammers) {
                             unitBuildRow(c.building)));
   if (!b) return;
   const needTools = b.tools_x10 * 10;
+  if (c.sieged) return;                     // @SIEGE halts completion
   if (c.hammers < b.cost) { c.toolWarned = false; return; }
   // Completion-time guards. @NOMOREWAGONS: wagons are capped at the colony
   // count (the PEDIA/manual rule) -- the build stalls, announced once.
@@ -7052,6 +7071,12 @@ function endGameSequence() {
     if (choice === 0) { G.screen = 'title'; G.menuRow = 0; }
   });
 }
+// The War-of-Independence screen lockouts: Europe and the Foreign Affairs
+// report close for the duration (@EUROPENOTAVAIL is byte-cited to push
+// MSS1; the others share the family).
+function woiLocked() {
+  return (G.flags & WOI_DECLARED) && !(G.flags & WOI_WON);
+}
 // GAME "Retire": @RETIRE carries `@default=2`, so "No" is highlighted.
 function retire() {
   askEvent('RETIRE', {}, (choice) => {
@@ -7761,6 +7786,8 @@ function refWave() {
   // troops come ashore onto the colony's own tile.
   const beach = HALO_DIRS.map(([dx, dy]) => [target.x + dx, target.y + dy])
     .find(([x, y]) => tileWater(at(x, y)));
+  // @INVASION: "Royal Expeditionary Force lands near {colony}!"
+  showEvent('INVASION', { STRING0: target.name });
   let landed = 0;
   for (const type of ['Regulars', 'Cavalry', 'Artillery']) {
     for (let k = 0; k < REF_WAVE && G.ref[type] > 0 && landed < REF_WAVE; k++) {
@@ -7786,6 +7813,41 @@ function refWave() {
 function runWar() {
   if (!(G.flags & WOI_DECLARED) || (G.flags & WOI_WON)) return;
   growREF();
+  // The NATIONAL rebel-sentiment announcements (@REBELUP/@REBELUP50/
+  // @REBELDOWN), the solAnnounce band pattern at the national mirror --
+  // the 10%-band trigger is the port's reading, flagged.
+  const natPct = nationalSoL();
+  const natBand = Math.floor(natPct / 10);
+  if (G.natBand === undefined) G.natBand = natBand;
+  else if (natBand > G.natBand) {
+    showEvent(natPct >= 50 && G.natBand < 5 ? 'REBELUP50' : 'REBELUP',
+              { NUMBER0: natPct });
+    G.natBand = natBand;
+  } else if (natBand < G.natBand) {
+    showEvent('REBELDOWN', { NUMBER0: natPct });
+    G.natBand = natBand;
+  }
+  // The three loss conditions + their warnings (the manual's capitulation
+  // ladder; the port razes rather than occupies, so "control" reads as
+  // colonies LOST -- flagged): all ports (@LOSING1, warned by @WARN1 at
+  // one left), all colonies (@LOSING2), 90% of the population (@LOSING3,
+  // warned by @WARN3 from 75%) with pct = razed/(razed+alive), flagged.
+  const S = { STRING0: DATA.nations[G.nation].country };
+  const ports = coastalColonies().length;
+  if (G.colonies.length && ports === 1 && !G.warnedPorts) {
+    G.warnedPorts = true;
+    showEvent('WARN1', { ...S, NUMBER0: 1 });
+  }
+  const popPct = Math.floor(100 * (G.razed || 0) /
+                            Math.max(1, (G.razed || 0) + G.colonies.length));
+  if (popPct >= 75 && popPct < 90 && !G.warnedPop) {
+    G.warnedPop = true;
+    showEvent('WARN3', { ...S, NUMBER2: popPct });
+  }
+  if (!G.lostWar && G.colonies.length) {
+    if (ports === 0) { G.lostWar = true; showEvent('LOSING1', S); endGameSequence(); return; }
+    if (popPct >= 90) { G.lostWar = true; showEvent('LOSING3', S); endGameSequence(); return; }
+  }
   // REF units march on the nearest colony; contact resolves as ordinary combat.
   for (let i = G.refUnits.length - 1; i >= 0; i--) {
     const u = G.refUnits[i];
@@ -7829,12 +7891,16 @@ function runWar() {
   if (landed === 0 && afloat === 0) {
     G.flags |= WOI_WON;
     showEvent('KINGLOSE', {});
+    // @WINNING: Parliament's declaration, with the General's name.
+    showEvent('WINNING', { STRING0: G.leader || DATA.nations[G.nation].leader });
   }
   // Defeat: the King holds every colony. @KINGWIN is the Crown's own gloat --
   // @KINGVICTORY belongs to the European-war tax cut, not to this.
   if (!G.colonies.length && !(G.flags & WOI_WON) && !G.lostWar) {
     G.lostWar = true;
+    showEvent('LOSING2', { STRING0: DATA.nations[G.nation].country });
     showEvent('KINGWIN', { STRING0: DATA.nations[G.nation].country });
+    endGameSequence();
   }
 }
 // ------------------------------------------------------------ mercenaries
@@ -7965,6 +8031,9 @@ function checkIntervention() {
   const pool = coastalColonies();
   const target = pool[0] || G.colonies[0];
   if (!target) return;
+  // @INTERVENE: the ally's force arriving at the landing colony.
+  showEvent('INTERVENE', { STRING0: target.name,
+                           STRING1: DATA.nations[ally.nation].adjective });
   for (let i = 0; i < 4; i++) {
     const u = mkUnit(i === 3 ? 'Artillery' : 'Cont. Army', target.x, target.y);
     u.veteran = true;
@@ -9522,6 +9591,9 @@ function moveSel(dx, dy) {
   // ask-on-entry binding is the manual's description of the high seas, the
   // engine's own trigger site being unread.
   if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) {
+    // During the War of Independence the crossing is closed
+    // (@EUROPENOTLEAVE); otherwise the @SAILHOME ask.
+    if (woiLocked()) { showEvent('EUROPENOTLEAVE'); return; }
     openDialog('SAILHOME', (choice) => { if (choice === 0) sailForEurope(u); });
     return;
   }
@@ -9584,6 +9656,7 @@ function improveOrder(n) {
 // ship is ordered home AND the harbour comes up, so the crossing is visible in
 // the Bound For panel straight away.
 function returnToEurope() {
+  if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
   const u = G.units[G.sel];
   if (u && u.ship) {
     sailForEurope(u);
@@ -9691,7 +9764,10 @@ const COMMANDS = {
   // VIEW
   'Move Pieces': () => { G.viewMode = false; },
   'View Pieces': () => { G.viewMode = true; },
-  'European Status': () => { G.screen = 'europe'; },
+  'European Status': () => {
+    if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
+    G.screen = 'europe';
+  },
   'Find Colony': findColony,
   // MENU.TXT spells these rows "Zoom In#   ~Z" / "Zoom Out   ~X", so the parsed
   // label carries the accelerator letter and both spellings must resolve.
@@ -9720,7 +9796,10 @@ const COMMANDS = {
   'F6 Colony Adviser': () => { G.report = 'F6'; G.screen = 'report'; },
   'F7 Naval Adviser': () => { G.report = 'F7'; G.screen = 'report'; },
   'F4 Labor Adviser': () => { G.report = 'F4'; G.screen = 'report'; },
-  'F8 Foreign Affairs Advisor': () => { G.report = 'F8'; G.screen = 'report'; },
+  'F8 Foreign Affairs Advisor': () => {
+    if (woiLocked()) { showEvent('FOREIGNNOTAVAIL'); return; }
+    G.report = 'F8'; G.screen = 'report';
+  },
   'F9 Indian Adviser': () => { G.report = 'F9'; G.screen = 'report'; },
   'F10 Colonization Score': () => { G.report = 'F10'; G.screen = 'report'; },
   // COLONIZOPEDIA -- the seven categories plus Complete (category 7).
@@ -10748,6 +10827,7 @@ function onKey(e) {
       // the nine advisers, each of which reads live game state.
       if (/^F\d+$/.test(k)) {
         if (k === 'F1') { openPedia(2); e.preventDefault(); return; }
+        if (k === 'F8' && woiLocked()) { showEvent('FOREIGNNOTAVAIL'); e.preventDefault(); return; }
         if (REPORTS[k]) { G.report = k; G.screen = 'report'; e.preventDefault(); return; }
         return;                              // F11/F12 are not the game's keys
       }

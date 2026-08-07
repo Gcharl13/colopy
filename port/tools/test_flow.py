@@ -945,7 +945,8 @@ SCRIPT = """() => {
     G.bellsTotal = 5000;
     G.eventQueue = [];
     checkIntervention();
-    out.intervention.joins = (G.flags & 2) !== 0 && G.eventQueue.length === 1;
+    // The landing now posts @INTERVENTION plus the @INTERVENE arrival.
+    out.intervention.joins = (G.flags & 2) !== 0 && G.eventQueue.length === 2;
     G.flags = 0;
   }
 
@@ -1632,7 +1633,9 @@ SCRIPT = """() => {
     G.eventQueue = [];
     enterRumour(scout, spot[0], spot[1]);
     out.rumours.consumed = !rumourAt(spot[0], spot[1]);
-    out.rumours.spoke = G.eventQueue.length >= 1;
+    // Outcome 4 (burial mounds) now ASKS @LOSTCITY4 instead of posting.
+    out.rumours.spoke = G.eventQueue.length >= 1 || !!G.dialog;
+    if (G.dialog) closeDialog(1);
     for (let k = 0; k < 5; k++) {
       const u2 = mkUnit('Scouts', 0, 0); G.units.push(u2);
       enterRumour(u2, 30 + k, 30);

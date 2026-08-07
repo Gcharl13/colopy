@@ -8598,3 +8598,31 @@ the woodcut block drains the fresh-game lesson it now begins with).
 
 Suite: 233 checks (landClaim in the wire3 block; the basic-founding walk
 clears claim-radius villages first).
+
+## 2026-08-07u — Phase 3: War of Independence completion (15 keys)
+
+- **National sentiment**: @REBELUP/@REBELUP50/@REBELDOWN on 10%-band
+  crossings of nationalSoL() during the war (the solAnnounce pattern at the
+  national mirror; the trigger band is the port's reading, flagged).
+- **The capitulation ladder**: @LOSING1 (all ports lost -- coastal
+  colonies = ports), @LOSING2 (all colonies, alongside the existing
+  @KINGWIN), @LOSING3 (90% of the population), each ending the game via
+  endGameSequence; warnings @WARN1 (one port left) and @WARN3 (75%+).
+  The port RAZES rather than occupies, so "control" reads as colonies
+  lost and pct = razed/(razed+alive) -- both flagged.
+- **@SIEGE**: land-adjacency siege (diplomacy.md: no blockade exists;
+  production restricted to military units). Radius-1 count of hostile vs
+  friendly combat units, announced once per siege; construction waits out
+  the siege (the port colony-builds neither Soldiers nor Dragoons, so the
+  "only Soldier and Dragoon" restriction lands as a halt). Flagged.
+- **Arrivals**: @INVASION on each REF wave's landing colony; @INTERVENE
+  with the ally's force (alongside the existing @INTERVENTION card);
+  @WINNING (Parliament's declaration, the General's name) alongside
+  @KINGLOSE on victory.
+- **Lockouts**: woiLocked() closes the Europe screen (@EUROPENOTAVAIL,
+  the byte-cited MSS1 key), the crossing (@EUROPENOTLEAVE at the sea-lane
+  and the sail commands) and the F8 Foreign Affairs report
+  (@FOREIGNNOTAVAIL) for the war's duration.
+
+Suite: 232/232 (the intervention check now expects the arrival pair; the
+rumour check accepts the @LOSTCITY4 ask).
