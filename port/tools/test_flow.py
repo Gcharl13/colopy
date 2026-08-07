@@ -2334,6 +2334,28 @@ SCRIPT = """() => {
     G.dialog = null;
   }
 
+  // ---- the map screen has no status line: G.msg becomes a notice popup ----
+  {
+    G.screen = 'map'; G.dialog = null; G.eventQueue = [];
+    flushMapMsg();                       // prime the screen tracker
+    G.eventQueue = [];
+    G.msg = 'Test notice for the popup channel.';
+    flushMapMsg();
+    const converted = G.eventQueue.length === 1 && G.msg === '' &&
+                      G.eventQueue[0].speaker === null &&
+                      G.eventQueue[0].lines.join(' ').includes('Test notice');
+    // A message left behind on another screen drops on the way out -- the old
+    // status line showed exactly that leakage.
+    G.eventQueue = []; G.screen = 'colony'; flushMapMsg();
+    G.msg = 'stale colony caption'; G.screen = 'map'; flushMapMsg();
+    const dropped = G.eventQueue.length === 0 && G.msg === '';
+    // Identical back-to-back notices collapse.
+    notice('No moves left.'); notice('No moves left.');
+    const deduped = G.eventQueue.length === 1;
+    G.eventQueue = [];
+    out.mapMsgPopups = { converted, dropped, deduped };
+  }
+
   return out;
 }"""
 
@@ -2792,6 +2814,9 @@ def main():
          r["saveV2"], r["saveV2"]),
         ("main-menu LOAD GAME opens the three-source picker",
          r["loadMenu"], r["loadMenu"]),
+        ("map screen: G.msg converts to a popup, stale captions drop, dupes collapse",
+         r["mapMsgPopups"] == {"converted": True, "dropped": True, "deduped": True},
+         r["mapMsgPopups"]),
     ]
     bad = 0
     for name, ok, got in checks:

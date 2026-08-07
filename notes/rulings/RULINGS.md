@@ -8134,3 +8134,32 @@ near their villages in the original — the port's old hand-rolled 2-tile box
 was accidentally the right radius, and is now the engine's own arithmetic.
 
 Suite: 216/216.
+
+## 2026-08-07i — the map screen carries no status line; every message is a popup
+
+**User directive:** "on the map screen no messages should show up in the map
+view, they all need to be pop up windows."
+
+**Evidence:** every live DOS capture of the map screen
+(docs/screens/live_2026-08-05/*, docs/screens/live_1653_save/*) shows the
+sidebar ending at the unit panel — the engine draws no free-text status
+caption anywhere on the map view; player-facing text arrives through the
+dialog/notice framework (§2.7).
+
+**Port change:** the invented `G.msg` status line (drawn at 244,182) is
+removed. A per-frame flush (`flushMapMsg`) converts any message raised while
+the map is up into a notice popup on the §2.7 queue via a new `notice()`
+helper (no speaker, wrapped at 150px, identical consecutive notices collapse);
+a message left behind by another screen is dropped on the way out instead of
+leaking onto the map — the old status line showed exactly that leakage.
+Meaningful off-map results (village trade/gift, incite, treaty renounced,
+abandon colony, save/load/import results, colony-dock refusals) now call
+`notice()` directly at the site. Pure state echoes with no engine counterpart
+(order-name echo, "Activated.", zoom size, Move/View mode, hidden-terrain
+toggle, job-assignment echoes, load/unload success echoes, rename echo, the
+game-start homeport caption) are deleted outright: the state change is already
+visible, and the engine raises no message there. The ad-hoc `notice()` texts
+remain port phrasing — their byte-cited GAME.TXT keys, where they exist, stay
+on the popup-audit ledger (docs/POPUP_AUDIT_2026-08-08.md).
+
+Suite: 220/220 (new regression: convert + stale-drop + dedupe).

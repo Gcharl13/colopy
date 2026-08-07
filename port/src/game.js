@@ -713,7 +713,6 @@ function beginGame() {
   // The dock holds three candidate slots; each refills from the @CLASS ladder.
   G.dock = [0, 0, 0].map(() => rollImmigrant());
   centerOn(sx, sy);
-  G.msg = `${DATA.nations[G.nation].homeport}, ${DATA.nations[G.nation].country}.`;
 }
 
 // §26.7: zoom z spans (0xF << z) x (0xC << z) tiles at (0x10 >> z) pixels, so
@@ -1719,7 +1718,8 @@ function drawSidebar(ctx) {
       cy += 20;
     }
   }
-  if (G.msg) FONT.tiny.draw(ctx, G.msg, 244, 182, lut(HUD_INK));
+  // No status line here: the engine's map sidebar carries only the unit panel
+  // (live DOS captures) -- anything the player must read arrives as a popup.
 }
 
 // ---------------------------------------------------------------- colonies
@@ -1806,7 +1806,7 @@ function abandonColony() {
     G.colonies.splice(G.colonies.indexOf(c), 1);
     G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
     G.screen = 'map';
-    G.msg = `${c.name} is abandoned.`;
+    notice(`${c.name} is abandoned.`);
   });
 }
 function renameColony() {
@@ -1814,7 +1814,7 @@ function renameColony() {
   if (!c) return;
   openDialog('RENAMECOLONY', (name) => {
     const nm = (name || '').trim();
-    if (nm) { G.msg = `${c.name} is renamed ${nm}.`; c.name = nm; }
+    if (nm) c.name = nm;
   }, c.name);
 }
 // @ORDERS row 12, Pillage: a unit standing on a rival's improvement tears it
@@ -1846,7 +1846,6 @@ function setGoTo(u, x, y) {
   u.goal = [x, y];
   u.orders = 3;
   G.goTo = null;
-  G.msg = `Travelling to (${x}, ${y}).`;
   advance();
 }
 function advanceGoTo() {
@@ -3065,19 +3064,14 @@ function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
   if (!r) { G.colonyPopup = null; return; }
   if (G.colonyPopup === 'build') {
-    if (r.stop) {
-      c.building = null;
-      G.msg = `${c.name} builds nothing.`;
-    } else {
-      c.building = r.label;
-      G.msg = `${c.name} begins the ${r.label}.`;
-    }
+    // The construction panel itself shows the new target; the engine raises no
+    // message here.
+    c.building = r.stop ? null : r.label;
   } else if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];
     if (p) {
       if (r.job === null) { p.cell = null; p.job = null; }
       else p.job = r.job;
-      G.msg = r.job ? `${p.type}: ${r.job}` : `${p.type} returns to the fence.`;
     }
   } else {
     const p = c.colonists[G.colonistSel];
@@ -3091,7 +3085,6 @@ function colonyPopupCommit() {
       }
       p.job = job;
       p.cell = null;                        // a building job means leaving the fields
-      G.msg = p.job ? `${p.type}: ${p.job}` : `${p.type}: no job`;
     }
   }
   G.colonyPopup = null;
@@ -4744,15 +4737,15 @@ function incitePrice(v, target) {
 function inciteIndians(v, u) {
   const t = G.tribes[v.tribe];
   const target = G.rivals.find(r => r.met);
-  if (!target) { G.msg = 'We have met no other power to incite them against.'; return; }
+  if (!target) { notice('We have met no other power to incite them against.'); return; }
   const price = incitePrice(v, target.nation);
   askEvent('INDIANWARPATH2', { STRING0: DATA.nations[target.nation].adjective,
                                NUMBER0: price }, (choice) => {
     if (choice !== 0) return;
-    if (G.gold < price) { G.msg = 'The treasury cannot bear it, Your Excellency.'; return; }
+    if (G.gold < price) { notice('The treasury cannot bear it, Your Excellency.'); return; }
     G.gold -= price;
     t.warWith = target.nation;
-    G.msg = `The ${t.name} take the warpath against the ${DATA.nations[target.nation].adjective}.`;
+    notice(`The ${t.name} take the warpath against the ${DATA.nations[target.nation].adjective}.`);
   });
 }
 
@@ -4911,6 +4904,16 @@ function showEvent(key, subs, speaker) {
   G.eventQueue.push({ lines: t.body.map(l => fillTemplate(l, subs || {})),
                       width: t.width,
                       speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
+}
+// Ad-hoc notice popup: port phrasing, NOT a GAME.TXT event -- used where the
+// engine's own message key is not yet byte-identified (flagged in the popup
+// audit ledger) and for port-status notices (save/load). Identical
+// back-to-back notices collapse ("No moves left." mashed twice).
+function notice(s) {
+  const lines = wrapText(FONT.tiny, s, 150);
+  const tail = G.eventQueue[G.eventQueue.length - 1];
+  if (tail && !tail.speaker && tail.lines.join('\n') === lines.join('\n')) return;
+  G.eventQueue.push({ lines, width: 0x50, speaker: null });
 }
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
@@ -5105,17 +5108,17 @@ function villageCommit() {
   if (r.kind === 'sell') {
     const paid = villageSell(v, r.good, r.qty);
     holdAdd(u, r.good, -r.qty);
-    G.msg = `Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`;
+    notice(`Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`);
   } else if (r.kind === 'buy') {
     const cost = villageBuy(v, r.good, r.qty);
-    if (!cost) { G.msg = 'We cannot afford that, Your Excellency.'; return; }
+    if (!cost) { notice('We cannot afford that, Your Excellency.'); return; }
     u.hold = u.hold || [];
     holdAdd(u, r.good, r.qty);
-    G.msg = `Bought ${r.qty} ${DATA.cargo[r.good].name} for ${cost}$`;
+    notice(`Bought ${r.qty} ${DATA.cargo[r.good].name} for ${cost}$`);
   } else {
     villageGift(v, r.good, r.qty);
     holdAdd(u, r.good, -r.qty);
-    G.msg = `The ${G.tribes[v.tribe].singular} accept your gift.`;
+    notice(`The ${G.tribes[v.tribe].singular} accept your gift.`);
   }
   G.villageRow = 0;
 }
@@ -6102,7 +6105,6 @@ function retire() {
     G.report = 'F10';
     G.screen = 'report';
     G.retired = true;
-    G.msg = 'We retire from the New World.';
   });
 }
 
@@ -6197,7 +6199,7 @@ function parleyCommit() {
   if (row.id === 'cancel') {
     close();
     setTreaty(G.nation, r.nation, REL.TREATY, false);
-    G.msg = `Our treaty with the ${adj} is renounced.`;
+    notice(`Our treaty with the ${adj} is renounced.`);
     return;
   }
   if (row.id === 'peace') {
@@ -7653,10 +7655,10 @@ function importSav(bytes) {
     for (let i = 0; i < n && d[o + i]; i++) s += String.fromCharCode(d[o + i]);
     return s;
   };
-  if (str(0, 8) !== 'COLONIZE' || d[9] !== 0x1A) { G.msg = 'Not a COLONIZE save.'; return false; }
+  if (str(0, 8) !== 'COLONIZE' || d[9] !== 0x1A) { notice('Not a COLONIZE save.'); return false; }
   let o = 10 + 2;
   const w = u16(o), h = u16(o + 2); o += 4;
-  if (w !== MAP.w || h !== MAP.h) { G.msg = `Unsupported map size ${w}x${h}.`; return false; }
+  if (w !== MAP.w || h !== MAP.h) { notice(`Unsupported map size ${w}x${h}.`); return false; }
   const g = o; o += 0x8E;
   const year = u16(g + 0x0A), season = u16(g + 0x0C), turn = u16(g + 0x0E);
   const nation = u16(g + 0x14) & 3, diff = d[g + 0x26];
@@ -7669,7 +7671,7 @@ function importSav(bytes) {
   const tribeBase = o; o += 0x270;
   o += 727;                                   // blocks 11-43, all fixed sizes
   const planeBase = o, plane = w * h;
-  if (planeBase + 4 * plane > d.length) { G.msg = 'Save file truncated.'; return false; }
+  if (planeBase + 4 * plane > d.length) { notice('Save file truncated.'); return false; }
 
   // Fresh state in the save's shoes, then overwrite what the file carries.
   G.nation = nation;
@@ -7857,7 +7859,7 @@ function importSav(bytes) {
   if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
   else if (G.colonies[0]) centerOn(G.colonies[0].x, G.colonies[0].y);
   G.screen = 'map';
-  G.msg = `${DATA.seasons[G.season]} ${G.year} — the ${DATA.nations[nation].adjective} game restored.`;
+  notice(`${DATA.seasons[G.season]} ${G.year} — the ${DATA.nations[nation].adjective} game restored.`);
   return true;
 }
 const b64bytes = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -7900,15 +7902,15 @@ function saveGame() {
       seen: Array.from(SEEN), region: Array.from(REGION),
       rumours: Array.from(G.rumoursDone || []),
     }));
-    G.msg = 'Game saved.';
-  } catch (e) { G.msg = 'Could not save.'; }
+    notice('Game saved.');
+  } catch (e) { notice('Could not save.'); }
 }
 function loadGame() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) { G.msg = 'No saved game.'; return false; }
+    if (!raw) { notice('No saved game.'); return false; }
     const s = JSON.parse(raw);
-    if (s.v !== 2) { G.msg = 'Old save format - not loadable.'; return false; }
+    if (s.v !== 2) { notice('Old save format - not loadable.'); return false; }
     Object.assign(G, s.G);
     MAP.tiles.set ? MAP.tiles.set(s.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...s.tiles);
     IMPROVE.set(s.improve);
@@ -7916,9 +7918,9 @@ function loadGame() {
     if (s.region) REGION.set(s.region); else buildRegions();
     G.rumoursDone = new Set(s.rumours || []);
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
-    G.msg = 'Game loaded.';
+    notice('Game loaded.');
     return true;
-  } catch (e) { G.msg = 'Could not load.'; return false; }
+  } catch (e) { notice('Could not load.'); return false; }
 }
 
 // ------------------------------------------------------- Colonizopedia
@@ -8311,7 +8313,6 @@ function setOrder(n) {
   const u = G.units[G.sel];
   if (!u) return;
   u.orders = n;
-  G.msg = DATA.orders[n].name;
   u.movesLeft = 0;
   advance();
 }
@@ -8357,7 +8358,6 @@ function activateUnit() {
   if (!u) return;
   u.orders = 0;
   if (!u.movesLeft) u.movesLeft = u.moves;
-  G.msg = 'Activated.';
 }
 function loadCargo() {
   // Load a colony's stockpile into a ship sharing its tile.
@@ -8402,14 +8402,12 @@ function findColony() {
   G.colonyFind = ((G.colonyFind || 0) + 1) % G.colonies.length;
   const c = G.colonies[G.colonyFind];
   centerOn(c.x, c.y);
-  G.msg = c.name;
 }
 // §26.7 zoom: spans 0xF<<z by 0xC<<z tiles at 0x10>>z pixels.
 function setZoom(z) {
   G.zoom = Math.max(0, Math.min(3, z));
   const u = G.units[G.sel];
   if (u) centerOn(u.x, u.y); else centerOn(G.view.x + 7, G.view.y + 6);
-  G.msg = `Zoom ${VIEW_COLS()} x ${VIEW_ROWS()}`;
 }
 const COMMANDS = {
   // ORDERS
@@ -8430,8 +8428,8 @@ const COMMANDS = {
   'Dump Cargo Overboard': dumpCargo,
   'Disband Unit (shift-D)': disbandUnit,
   // VIEW
-  'Move Pieces': () => { G.viewMode = false; G.msg = 'Move mode.'; },
-  'View Pieces': () => { G.viewMode = true; G.msg = 'View mode.'; },
+  'Move Pieces': () => { G.viewMode = false; },
+  'View Pieces': () => { G.viewMode = true; },
   'European Status': () => { G.screen = 'europe'; },
   'Find Colony': findColony,
   // MENU.TXT spells these rows "Zoom In#   ~Z" / "Zoom Out   ~X", so the parsed
@@ -8444,8 +8442,7 @@ const COMMANDS = {
   'Zoom Level 30 x 24': () => setZoom(1),
   'Zoom Level 60 x 48': () => setZoom(2),
   'Zoom Level 120 x 96': () => setZoom(3),
-  'Show Hidden Terrain': () => { G.showHidden = !G.showHidden;
-                                 G.msg = `Hidden terrain ${G.showHidden ? 'on' : 'off'}.`; },
+  'Show Hidden Terrain': () => { G.showHidden = !G.showHidden; },
   'Center View': centreView,
   // TRADE
   'Create Trade Route': () => openTradeMenu('create'),
@@ -8885,7 +8882,6 @@ function colonyDrop(d, target, mx, my) {
       if (on) { on.cell = null; on.job = null; }
       p.cell = cell;
       p.job = bestFieldJob(c, p);
-      G.msg = `${p.type}: ${p.job}`;
       return;
     }
     if (target === 0) {
@@ -8894,7 +8890,6 @@ function colonyDrop(d, target, mx, my) {
       // (Port's own reading; the engine's drop-action bodies are unread.)
       if (d.from === 'plaza') return;
       p.cell = null; p.job = null;
-      G.msg = `${p.type} returns to the plaza.`;
       return;
     }
     if (target === 2) {
@@ -8910,7 +8905,6 @@ function colonyDrop(d, target, mx, my) {
       }
       p.cell = null;
       p.job = jobForBuilding(b);
-      G.msg = `${p.type}: ${p.job}`;
     }
     return;
   }
@@ -8932,19 +8926,18 @@ function colonyDrop(d, target, mx, my) {
       // with a timed message when there is no room -- so a hold slot never
       // exceeds a 100-load. Under the merge convention that space is
       // (free slots)*100 plus the headroom in the merge slot.
-      if (!ship) { G.msg = 'No ships in port.'; return; }
+      if (!ship) { notice('No ships in port.'); return; }
       const cap = Number((unit(ship.type) || {}).cargo) || 0;
       const slot = (ship.hold || []).find(h => h.good === d.good);
       const used = (ship.cargo || []).length + (ship.hold || []).length;
       const space = Math.max(0, cap - used) * 100 +
                     (slot ? Math.max(0, 100 - slot.qty) : 0);
-      if (space <= 0) { G.msg = `The ${ship.type}'s holds are full.`; return; }
+      if (space <= 0) { notice(`The ${ship.type}'s holds are full.`); return; }
       const qty = Math.min(d.amount, c.stock[d.good], space);
       if (!qty) return;
       c.stock[d.good] -= qty;
       ship.hold = ship.hold || [];
       holdAdd(ship, d.good, qty);
-      G.msg = `${qty} ${DATA.cargo[d.good].name} loaded aboard the ${ship.type}.`;
       return;
     }
     if (target === 5 && d.srcKind === 0) {
@@ -8955,7 +8948,6 @@ function colonyDrop(d, target, mx, my) {
       if (!qty) return;
       holdAdd(ship, d.good, -qty);
       c.stock[d.good] += qty;
-      G.msg = `${qty} ${DATA.cargo[d.good].name} unloaded from the ${ship.type}.`;
     }
   }
 }
@@ -9128,7 +9120,6 @@ function onClick(mx, my) {
           if (who) {
             who.cell = [cx, cy];
             who.job = bestFieldJob(c, who);
-            G.msg = `${who.type}: ${who.job}`;
           }
         }
         return;
@@ -9473,8 +9464,8 @@ function onKey(e) {
         case 'o': case 'O': dumpCargo(); break;
         case 'g': case 'G': beginGoTo(); break;
         case 't': case 'T': openTradeMenu('assign'); break;
-        case 'v': case 'V': G.viewMode = true; G.msg = 'View mode.'; break;
-        case 'm': case 'M': G.viewMode = false; G.msg = 'Move mode.'; break;
+        case 'v': case 'V': G.viewMode = true; break;
+        case 'm': case 'M': G.viewMode = false; break;
         case 'h': case 'H': COMMANDS['Show Hidden Terrain'](); break;
         case 'z': case 'Z': setZoom(G.zoom - 1); break;
         case 'x': case 'X': setZoom(G.zoom + 1); break;
@@ -9510,10 +9501,24 @@ function resize() {
   c2.imageSmoothingEnabled = false;
 }
 
+// The engine's map screen has no status line -- the live DOS captures show
+// only the unit panel in the sidebar -- so any message raised while the map is
+// up is delivered as an ordinary notice popup instead. A message set on some
+// other screen is dropped when the screen changes rather than leaking onto the
+// map (the old status line showed exactly that leakage).
+let _prevScreen = null;
+function flushMapMsg() {
+  if (G.screen !== _prevScreen) { G.msg = ''; _prevScreen = G.screen; }
+  if (G.screen !== 'map' || !G.msg) return;
+  notice(G.msg);
+  G.msg = '';
+}
+
 function frame() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
+  flushMapMsg();
   // A colonist armed on the down-edge lifts once the hold deadline passes, even
   // if the pointer is being held perfectly still -- so poll it here as well as
   // on move, the way the engine's per-frame dispatcher does.
