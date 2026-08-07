@@ -7,23 +7,23 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 
 ## Combat and diplomacy popups: combat aftermath (@DEMOTE/@*CAPTURE*/@SHIPDAMAGE/@SHIPSUNK/@VETERAN/@VALOR/@WELLSEASONED/@ARTILLERY*/@HALF/@PICKACARGO/@LOOT*), naval (@SHIPCOMBAT/@EVASIVE/@FORTFIRE/@SHIPRUN/@SHIPSLOW/@OVERBOARD), European diplomacy/parley (func_057F4E meeting flow), @SCOUTCOLONY, colony capture/burn (@CAPTURED*/@BURNED*)
 
-- **[HIGH] European meeting flow entry + @HELLO* greetings (@MEEK/@MANLY/@AHOY/@FIRST/@HELLOUSA)** — WRONG-FORMAT — the meeting exists in skeleton (gates, woodcut) but its entire GAME.TXT conversation surface (greetings, tone, option rows, portraits) is replaced by an invented menu, and the engine's AI-initiated trigger direction is absent.
-- **[HIGH] @PEACEMANLY/@PEACEMEEK/@OLDPEACE*/@PEACEUSA standing-peace menus** — MISSING — the core player-facing diplomacy menu of the meeting flow does not exist.
-- **[HIGH] @CAPTURED** — WRONG-FORMAT — the call exists with a correct template fill but the key was never bundled, so colony capture happens with no popup at all; plunder amount is an acknowledged placeholder.
-- **[HIGH] @BURNED** — MISSING in effect — call site exists but key unbundled, wrong substitution slot, and the byte-verified WDCUT11 pairing absent (meanwhile the port fires the engine's caller-less WDCUT12 on REF colony falls, ~6668, contradicting RULINGS 2026-07-30).
+- **[HIGH] European meeting flow entry + @HELLO* greetings (@MEEK/@MANLY/@AHOY/@FIRST/@HELLOUSA)** — WRONG-FORMAT — the meeting exists in skeleton (gates, woodcut) but its entire GAME.TXT conversation surface (greetings, tone, option rows, portraits) is replaced by an invented menu, and the engine's AI-initiated trigger direction is absent. — RESOLVED → RULINGS 2026-08-07m
+- **[HIGH] @PEACEMANLY/@PEACEMEEK/@OLDPEACE*/@PEACEUSA standing-peace menus** — MISSING — the core player-facing diplomacy menu of the meeting flow does not exist. — RESOLVED → RULINGS 2026-08-07m
+- **[HIGH] @CAPTURED** — WRONG-FORMAT — the call exists with a correct template fill but the key was never bundled, so colony capture happens with no popup at all; plunder amount is an acknowledged placeholder. — RESOLVED → RULINGS 2026-08-07k
+- **[HIGH] @BURNED** — MISSING in effect — call site exists but key unbundled, wrong substitution slot, and the byte-verified WDCUT11 pairing absent (meanwhile the port fires the engine's caller-less WDCUT12 on REF colony falls, ~6668, contradicting RULINGS 2026-07-30). — RESOLVED → RULINGS 2026-08-07k
 - **[MEDIUM] @CARGOCAPTURE** — PARTIAL — only the first hold slot is ever seized and only when the loser entered the fight damaged; the engine's multi-slot handling (and its @PICKACARGO choice, see that row) is absent.
 - **[MEDIUM] @SHIPDAMAGE** — PARTIAL — popup fires on a naval loss, but the 'returns to {port}' behaviour is not implemented and the port name is wrong for non-player ships; the damaged-first/sunk-second rule is the port's own (flagged nowhere).
 - **[MEDIUM] @SHIPSUNK** — PARTIAL — message and removal exist; the byte-verified cargo-scatter on sink and the engine's actual damage/sink branch conditions are not reproduced.
 - **[MEDIUM] @HALF** — PARTIAL — correct 2-row format and consequence, honest TBD on the undecoded picker, but inconsistently triggered: never offered against European foes.
 - **[MEDIUM] @LOOT** — MISSING — the loot-and-burn popup (and its treasure-train branch) is absent; partly excused by the unread trigger.
 - **[MEDIUM] @FORTFIRE** — PARTIAL — deterministic no-roll firing is right, but the no-artillery case never fires (wrong trigger subset), only one colony fires per turn, and the sink/damage rule is the port's own.
-- **[MEDIUM] @SIGNTREATY** — WRONG-TRIGGER — the popup exists but fires on the player's action (uncited) while its byte-verified trigger (AI-AI ticker) is missing.
+- **[MEDIUM] @SIGNTREATY** — WRONG-TRIGGER — the popup exists but fires on the player's action (uncited) while its byte-verified trigger (AI-AI ticker) is missing. — RESOLVED → RULINGS 2026-08-07m
 - **[MEDIUM] @DECLAREWAR** — WRONG-TRIGGER — player-side reuse of an announcement whose byte-verified triggers are both absent.
-- **[MEDIUM] @WORTHY** — PARTIAL — right dialog, right rows, right treaty-bit consequence, but player-initiated instead of AI-proposed and with an uncited SIGNTREATY announcement appended.
-- **[MEDIUM] @WITHDRAW (+ @NOTWITHDRAW / @NOTHINGWITHDRAW / @MAYBEWITHDRAW)** — WRONG-TRIGGER for @WITHDRAW and MISSING for the other three — the whole demand-withdrawal mechanic is absent.
+- **[MEDIUM] @WORTHY** — PARTIAL — right dialog, right rows, right treaty-bit consequence, but player-initiated instead of AI-proposed and with an uncited SIGNTREATY announcement appended. — RESOLVED → RULINGS 2026-08-07m
+- **[MEDIUM] @WITHDRAW (+ @NOTWITHDRAW / @NOTHINGWITHDRAW / @MAYBEWITHDRAW)** — WRONG-TRIGGER for @WITHDRAW and MISSING for the other three — the whole demand-withdrawal mechanic is absent. — RESOLVED → RULINGS 2026-08-07m
 - **[MEDIUM] @GIVECASH** — WRONG-TRIGGER + WRONG-FORMAT — right general direction (AI pays player) but the AI-initiated offer and its two option rows are gone; shown as a plain notice after the fact.
-- **[MEDIUM] @TRIBUTE / @TRIBUTEUSA** — MISSING — the AI-initiated extortion popup (the key's actual use) never fires; @TRIBUTEUSA is not bundled at all.
-- **[MEDIUM] @MILITARY alliance branch (-> @NOCONTACT/@ALREADYSMITE/@SMITEINDIANS/@SMITEEUROPE/@UNFORTUNATE/@MERCENARY)** — MISSING — the entire paid-alliance subfamily is absent.
+- **[MEDIUM] @TRIBUTE / @TRIBUTEUSA** — MISSING — the AI-initiated extortion popup (the key's actual use) never fires; @TRIBUTEUSA is not bundled at all. — RESOLVED → RULINGS 2026-08-07m
+- **[MEDIUM] @MILITARY alliance branch (-> @NOCONTACT/@ALREADYSMITE/@SMITEINDIANS/@SMITEEUROPE/@UNFORTUNATE/@MERCENARY)** — MISSING — the entire paid-alliance subfamily is absent. — RESOLVED → RULINGS 2026-08-07m
 - **[MEDIUM] @HAVETREATY / @CANCELPEACE / @SNEAK (attacking a treaty partner)** — MISSING — the treaty-breach guard dialog, its announcement and the sneak-attack victim message are all absent.
 - **[MEDIUM] @SCOUTCOLONY** — PARTIAL — dialog and rows correct, but the Seasoned modifier is inverted, the difficulty term is misdirected, and two of the four rows lead to stubs.
 - **[LOW] @COLONISTCAPTURE** — PARTIAL — capture path and European-owner gate match, but the byte-verified ship-victor-without-room destroy branch is absent, so a full ship still captures.
@@ -38,32 +38,32 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[LOW] @SHIPRUN** — MISSING — with the engine trigger itself unread.
 - **[LOW] @SHIPSLOW** — MISSING — engine trigger unread.
 - **[LOW] @OVERBOARD** — MISSING — engine trigger unread.
-- **[LOW] @THREATS** — WRONG-TRIGGER — shown as a peace/tribute refusal instead of the response to a threat (the threat row itself is missing).
-- **[LOW] @GIFTS** — MISSING — no AI gift events.
+- **[LOW] @THREATS** — WRONG-TRIGGER — shown as a peace/tribute refusal instead of the response to a threat (the threat row itself is missing). — RESOLVED → RULINGS 2026-08-07m
+- **[LOW] @GIFTS** — MISSING — no AI gift events. — RESOLVED → RULINGS 2026-08-07m
 - **[LOW] @CAPTURED2 / @CAPTURED3** — MISSING — no spy-report variants.
 - **[LOW] @BURNED2 / @BURNED3** — MISSING.
 - **[LOW] @SUCCESSION (War of the Spanish Succession)** — PARTIAL — event and transfer implemented; the trigger cadence is honestly the port's own because the engine's scheduler is unread.
 
 ## Native popups: raids, demands, village action menu + outcomes, warpath, gifts, trade/haggle, WHACKINDIANS/EXTINCT/INDIANBURNCOLONY
 
-- **[HIGH] @BUY0/@BUY1 (buy-price haggle)** — MISSING - the entire buy-side haggle loop (counter-offers, escalating quotes) is absent; buying is a single fixed-price click.
-- **[HIGH] @TRADE0/@TRADE1 (sell-price haggle incl. gift row)** — MISSING - sell haggle absent (fixed price only); the gift option exists but in the port's own row format with an invented credit.
-- **[HIGH] @BADHAGGLE0..@BADHAGGLE3 (patience exhausted)** — MISSING - follows from the missing haggle loop; the no-longer-want-your-goods lockout has no counterpart.
+- **[HIGH] @BUY0/@BUY1 (buy-price haggle)** — MISSING - the entire buy-side haggle loop (counter-offers, escalating quotes) is absent; buying is a single fixed-price click. — RESOLVED → RULINGS 2026-08-07m
+- **[HIGH] @TRADE0/@TRADE1 (sell-price haggle incl. gift row)** — MISSING - sell haggle absent (fixed price only); the gift option exists but in the port's own row format with an invented credit. — RESOLVED → RULINGS 2026-08-07m
+- **[HIGH] @BADHAGGLE0..@BADHAGGLE3 (patience exhausted)** — MISSING - follows from the missing haggle loop; the no-longer-want-your-goods lockout has no counterpart. — RESOLVED → RULINGS 2026-08-07m
 - **[HIGH] @INDIANBURNCOLONY / @INDIANBURNCOLONY2 (natives burn a colony)** — MISSING - the natives' ultimate threat (colony destruction) is entirely absent; the byte-verified burn outcome and both message keys have no counterpart.
 - **[MEDIUM] @INDIANLAND (trespass demand, 3 rows)** — MISSING - the key is shipped in the data bundle but unreachable; no trespass interaction exists.
 - **[MEDIUM] @PISS0..@PISS5 (attitude-change notices; task names PISS1-3)** — MISSING - the entire notice family is absent even though the port models every named cause (roads, attacks, missions, population).
 - **[MEDIUM] @BURIAL1/@BURIAL2/@BURIAL3 (burial mounds)** — PARTIAL - the three notices fire with real texts, but the byte-cited burial-grounds anger (+0x40 flag / +100 tension) and the @SCREWED arm are absent from the burial path.
 - **[MEDIUM] @INDIANWARPATH (warpath target menu)** — MISSING - the target-pick step is absent; the player cannot choose whom the tribe attacks.
 - **[MEDIUM] @INDIANWARPATH2 (paid warpath offer)** — PARTIAL - the offer popup and pay/decline flow exist; the byte-verified price chain is replaced by a flagged heuristic and the guard/announce keys are dropped.
-- **[MEDIUM] @INDIANWARFARE (war-council incite announcement)** — MISSING - the announcement popup is replaced by a status-bar string.
+- **[MEDIUM] @INDIANWARFARE (war-council incite announcement)** — MISSING - the announcement popup is replaced by a status-bar string. — RESOLVED → RULINGS 2026-08-07k
 - **[MEDIUM] @INDIANWAR (tribe declares war)** — MISSING - the war-declaration moment is invisible in the port.
 - **[MEDIUM] @INDIANGRUDGE (post-Declaration Tory-side war council)** — MISSING - the avenge flag is write-only in the port; the entire post-Declaration native war-council mechanic and its popup are absent.
 - **[MEDIUM] @INDIANSURPRISE (surprise raid, chief denies involvement)** — MISSING - the deniable-surprise-raid event (distinct from the 6-outcome colony raid) does not exist.
 - **[MEDIUM] @INDIANGIVEFOOD (tribe gifts food)** — MISSING - the friendly-gift arm of native relations is entirely absent.
 - **[MEDIUM] @INDIANBEGFOOD (tribe begs food, 2 rows)** — MISSING - no beg-for-food interaction.
 - **[MEDIUM] @INDIANGIVESTUFF (tribe gifts goods)** — MISSING - tribe-to-player goods gifts absent.
-- **[MEDIUM] @BUYWHICH (which good to buy, 4 rows)** — WRONG-FORMAT - the good-selection function survives but as the port's own list rows, not the engine's 4-row popup, and it skips the haggle it should lead into.
-- **[MEDIUM] @BADCARGO (village refuses a glutted good)** — MISSING - the refusal/steering half of native trade does not exist.
+- **[MEDIUM] @BUYWHICH (which good to buy, 4 rows)** — WRONG-FORMAT - the good-selection function survives but as the port's own list rows, not the engine's 4-row popup, and it skips the haggle it should lead into. — RESOLVED → RULINGS 2026-08-07m
+- **[MEDIUM] @BADCARGO (village refuses a glutted good)** — MISSING - the refusal/steering half of native trade does not exist. — RESOLVED → RULINGS 2026-08-07m
 - **[MEDIUM] @WHACKINDIANS (attack confirmation + war declaration)** — WRONG-TRIGGER - the confirm exists but only on the village-menu path; the engine's not-yet-at-war gate and the relation-matrix war declaration are absent, and field attacks skip the popup entirely.
 - **[LOW] Raid 6-key block (@RAIDWREAK/@RAIDSTORES/@RAIDBURN/@RAIDSHIP/@RAIDGOLD/@RAIDNOTHING)** — PARTIAL - keys, gate, outcome roll and dispatch match the byte evidence; payload amounts (WREAK/GOLD), the 0x181F:0x9FC availability gates and the dispatch cadence are port inventions where the evidence is silent (all flagged in-code).
 - **[LOW] @INDIANGOLD (gold reparations demand)** — PARTIAL - popup, rows and consequences shaped correctly, but the trigger cadence and amount are port-invented (evidence gives neither).
@@ -80,9 +80,9 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[LOW] @MISSION0..@MISSION3 (mission founded)** — PARTIAL - founding mechanics and clamp match the bytes; only the 0..3 band selection runs on invented cutoffs (flagged).
 - **[LOW] @HERESY0/@HERESY1 (Denounce Heresy)** — PARTIAL - both endings and the mission flip implemented; the outcome weighting is an acknowledged coin-flip stand-in for an untraced roll.
 - **[LOW] @INDIANSCONVERT (converts join a colony)** — PARTIAL - mechanism matches the bytes exactly; only the per-turn cadence is an acknowledged stand-in.
-- **[LOW] @TRADEWHICH (which cargo to offer)** — WRONG-FORMAT - function covered by the port's list UI, engine popup itself absent (and its engine trigger is unestablished).
-- **[LOW] @TRADENOCARGO (nothing to trade)** — MISSING - but the engine emitter itself is catalogued unreachable, so the observable loss is nil-to-minimal.
-- **[LOW] @NOTENOUGH (treasury cannot back the promise)** — WRONG-FORMAT - the affordability refusal exists but with an invented message instead of the GAME.TXT key/body.
+- **[LOW] @TRADEWHICH (which cargo to offer)** — WRONG-FORMAT - function covered by the port's list UI, engine popup itself absent (and its engine trigger is unestablished). — RESOLVED → RULINGS 2026-08-07m
+- **[LOW] @TRADENOCARGO (nothing to trade)** — MISSING - but the engine emitter itself is catalogued unreachable, so the observable loss is nil-to-minimal. — RESOLVED → RULINGS 2026-08-07m
+- **[LOW] @NOTENOUGH (treasury cannot back the promise)** — WRONG-FORMAT - the affordability refusal exists but with an invented message instead of the GAME.TXT key/body. — RESOLVED → RULINGS 2026-08-07m
 - **[LOW] @EXTINCT (tribe wiped out)** — PARTIAL - mechanics and message match the evidence; but only player razes can remove villages (no inter-power/native attrition path), so EXTINCT can only ever fire from the player's own campaign.
 
 ## Per-turn colony messages (food/starvation, spoilage/warehouse, cargo-ready, raw-material and tools shortages, construction, SoL/rebel sentiment, schooling, upkeep, docks, births) — engine poster func_02D658 + colony-screen guard dispatcher func_02883E
@@ -140,7 +140,7 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[HIGH] @UNITOPTIONS (colony land-unit orders menu)** — MISSING — the entire per-unit orders menu (and its five order actions) does not exist in the port.
 - **[HIGH] @SHIPOPTIONS (colony/harbour ship orders menu)** — MISSING — the ship orders menu and all six row actions are absent from the colony screen.
 - **[MEDIUM] @EUROPESHIPOPTIONS (+ @EUROPESHIPCLICK caption)** — PARTIAL — rows, caption and dispatch present; trigger cadence (first-click vs second-click, Enter key) and the byte-read row gating are not honoured.
-- **[MEDIUM] @SAILHOME (and its EUROPENOTLEAVE guard)** — MISSING — the confirm is skipped and behaviour is a forced Yes; the player cannot decline the crossing.
+- **[MEDIUM] @SAILHOME (and its EUROPENOTLEAVE guard)** — MISSING — the confirm is skipped and behaviour is a forced Yes; the player cannot decline the crossing. — RESOLVED → RULINGS 2026-08-07j
 - **[MEDIUM] @OVERBOARD** — WRONG-FORMAT — right trigger (O / menu row), but the GAME.TXT picker dialog and the one-slot-per-choice semantics are replaced by a silent dump-everything.
 - **[MEDIUM] @TOONEAR** — MISSING — the spacing gate and its refusal message are absent.
 - **[MEDIUM] @NOPORT** — MISSING — the landlocked-site confirm is absent.
@@ -149,7 +149,7 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[MEDIUM] @SEACOLONY / @TOOMOUNTAIN (same-validator site refusals, adjacent to the listed family)** — PARTIAL (sea: right refusal, missing message) / MISSING (mountains: no gate at all).
 - **[LOW] @LANDFALL** — PARTIAL — trigger, rows, default and proceed-on-row-2 all match; adjacent-order-clearing and the empty-ship refusal messages are absent.
 - **[LOW] @LANDFALL2** — MISSING — the river variant and the classifier state that selects it do not exist (dependent on the port's absent navigable-river model).
-- **[LOW] @SAILAWAY** — MISSING — the confirm text exists in GAME.TXT but the port never shows it; engine trigger itself is UNREAD, so only the key's non-use (not the exact cadence) can be asserted.
+- **[LOW] @SAILAWAY** — MISSING — the confirm text exists in GAME.TXT but the port never shows it; engine trigger itself is UNREAD, so only the key's non-use (not the exact cadence) can be asserted. — RESOLVED → RULINGS 2026-08-07j
 - **[LOW] goto keys (G / 'Go to Port' / 'Go to Place')** — PARTIAL — a goto exists (port's own click-a-tile scheme, engine picker UNREAD); 'Go to Port' is conflated with 'Return to Europe'.
 - **[LOW] orders keys (space, F, S, B, P, R, L, U, T, E, O, shift-D, W)** — OK — the key set and order vocabulary match the runtime-confirmed accelerators; only the E-doubling and T shortcut deviate.
 - **[LOW] @TOONEARBUILD** — MISSING — condition and message absent (dependent on the port's instant-founding model).
@@ -159,14 +159,14 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[HIGH] TRAIN button → @KINGRECRUIT (and the port's misuse of the key)** — WRONG-FORMAT — the TRAIN chooser drops its byte-verified body/smallfont, and @KINGRECRUIT is repurposed for the mercenary event whose real key is @MERCENARIES.
 - **[HIGH] @KISSUP — boycott-lift back-tax dialog** — MISSING — the entire byte-verified pay-back-taxes-to-lift interaction is absent, so a boycott is permanent unless Fugger joins.
 - **[MEDIUM] Ship arrives in Europe — screen auto-open + what happens to passengers** — PARTIAL — auto-open is right, but the disembark-everyone-to-dock is the port's own model resting on a colony-screen key; the save-format evidence suggests engine passengers stay aboard as rider records.
-- **[MEDIUM] @SAILHOME (outbound counterpart, context for the flow)** — MISSING — the byte-located confirm is skipped entirely.
-- **[MEDIUM] @SAILAWAY — 'Shall we set sail for the New World?'** — MISSING — the confirm dialog never fires; sailing is instant and cannot be declined.
+- **[MEDIUM] @SAILHOME (outbound counterpart, context for the flow)** — MISSING — the byte-located confirm is skipped entirely. — RESOLVED → RULINGS 2026-08-07j
+- **[MEDIUM] @SAILAWAY — 'Shall we set sail for the New World?'** — MISSING — the confirm dialog never fires; sailing is instant and cannot be declined. — RESOLVED → RULINGS 2026-08-07j
 - **[MEDIUM] @SOMEBOYCOTT — 'Some of the cargo could not be unloaded…'** — MISSING — replaced with an ad-hoc status line; the pointer to the boycott-lift interaction is lost.
 - **[MEDIUM] @ARMOPTIONS — the 12-row dock-unit order menu** — PARTIAL — 11 of 12 rows with the right quantities and live prices; the sentry/don't-board mechanic (manual-cited) is missing, changing gameplay.
 - **[MEDIUM] RECRUIT button → @RECRUIT chooser** — PARTIAL — trigger, 3-slot shape, refill and dock placement match; the price source is the @CLASS table, not the engine's stored pool word, and there is no per-recruit escalation (docs/UI_AUDIT_TRACKER.md L284 already flags this).
 - **[MEDIUM] @RECRUITCHOOSE — religious-unrest / Brewster dock choice** — MISSING — no choose-your-immigrant path and no Brewster effect.
 - **[MEDIUM] @REALLYBUY — purchase confirm** — MISSING — purchases commit without the engine's confirmation dialog.
-- **[MEDIUM] @UNREST — immigrant-arrival announcement (+TUTORIAL5 chain)** — WRONG-FORMAT — the announcement exists only as a status-bar line, not the keyed popup with its byte-cited speaker channel and tutorial chain.
+- **[MEDIUM] @UNREST — immigrant-arrival announcement (+TUTORIAL5 chain)** — WRONG-FORMAT — the announcement exists only as a status-bar line, not the keyed popup with its byte-cited speaker channel and tutorial chain. — RESOLVED → RULINGS 2026-08-07k
 - **[MEDIUM] Ship-arrival announcement in Europe (EUR-ARRIVE banner) + woodcut 9** — PARTIAL — an announcement exists but not through the engine's banner caption mechanism, and the byte-cited first-sale woodcut is MISSING.
 - **[LOW] @SAILPORT — 'Select a port to sail to:'** — MISSING — the picker is absent (low impact given single-home-port play).
 - **[LOW] @EUROPESHIPCLICK — ship context-menu caption** — WRONG-TRIGGER (mild) — the byte-verified handler opens the menu on the ship click itself; the port requires a double-click.
@@ -179,7 +179,7 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[HIGH] Boycott lift / @KISSUP + @SOMEBOYCOTT (back-tax payment)** — MISSING — the entire byte-verified back-tax lift flow is absent, so a Tea-Partied good is locked for the rest of the game unless Fugger appears.
 - **[HIGH] @KINGRECRUIT (Royal University specialist chooser)** — WRONG-TRIGGER — absent from its real site (Europe TRAIN) and misappropriated as the mercenary-offer body, whose real key is @MERCENARIES.
 - **[HIGH] REF growth driver cadence (func_03E162) — trigger engine for @KINGBUY/@KINGMOBILIZE** — WRONG-TRIGGER — accrual timing is the opposite of the byte evidence, the tax→REF-fund loop is not actually wired, and the ratio ladder is approximated.
-- **[HIGH] @MERCENARIES (wartime King's mercenary offer)** — WRONG-FORMAT — right byte-verified trigger and price, wrong body key (real one not even exported), broken option rows, simplified delivery.
+- **[HIGH] @MERCENARIES (wartime King's mercenary offer)** — WRONG-FORMAT — right byte-verified trigger and price, wrong body key (real one not even exported), broken option rows, simplified delivery. — RESOLVED → RULINGS 2026-08-07k
 - **[MEDIUM] @KINGTAX (core tax-demand body)** — MISSING — the plain/core demand body is dead data; every demand in the port carries a pretext, whereas the engine has both the func_02F052-emitted @KINGTAX and the func_036138 pretext demands.
 - **[MEDIUM] @MERCANTILISM (manufactory tax raise)** — MISSING — key and its trigger both unimplemented (engine trigger itself only A-tier).
 - **[MEDIUM] @PURCHASETAX (Crown-resource tax raise)** — MISSING — key and trigger unimplemented (engine trigger A-tier only).
@@ -203,4 +203,4 @@ menu missing/wrong; MEDIUM = a message or branch missing; LOW = cosmetic.
 - **[LOW] @WARN3 (population warning)** — MISSING — the 90% surrender axis is entirely absent (engine emit site also unread).
 - **[LOW] @CONSIDER (pre-intervention notice)** — PARTIAL — right shape (one-shot watch-arming notice) but from the war loop rather than the bell driver, with an invented figure; engine's own figure is unread.
 - **[LOW] @KINGMERCY (tax cut after Royal unit loss)** — MISSING — but the engine trigger is itself unread.
-- **[LOW] @MERCS (mercenary arrival message)** — MISSING — replaced by an ad-hoc status message outside the popup framework.
+- **[LOW] @MERCS (mercenary arrival message)** — MISSING — replaced by an ad-hoc status message outside the popup framework. — RESOLVED → RULINGS 2026-08-07k
