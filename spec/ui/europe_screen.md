@@ -76,6 +76,18 @@ is this section + the reference PNG.
   frame), drawn as his PROFESSION FIGURE (template-matched 1.0: Expert Farmer 81, Master
   Distiller 90, Master Gunsmith 96), passenger pitch ~17-18 (single capture; port uses 17).
   No hollow cell and no progress bar on the manifest row.
+  **Slot geometry + the nation sack (capture-pinned 2026-08-07 round 2 —
+  `europe_dock_3units.png` / `europe_port_2ships.png` / `europe_reallybuy_confirm.png`):**
+  three live recruits stand at figure x=235+17k (cell x=232+17k, 18×18, figure at cell+3) —
+  **dock pitch 17**; two bought ships sit at sprite x=149+18k (cell x=145+18k, sprite at
+  cell+4) — **ship pitch 18**. The two-ship frame boxes exactly the "Loading:" caption's ship
+  (selection cell = caption ship). EVERY waiting entity — dock unit, in-port ship, crossing
+  passenger — carries a 7×9 "nation sack" (black outline, fill = the nation colour, folds =
+  its EGA dark partner colour−8, verified pixel-exact for the Dutch 13→5): dock at cell+(9,8),
+  ship at cell+(1,1), crossing passenger at figure+(5,7). The sack matches no decoded ICONS
+  frame exactly (nearest shape: the furs bundle, 0.86) — the port embeds the observed pixel
+  block, source frame TBD. The engine also confirms a Yes/No purchase confirm ("Purchase
+  Merchantman for 2000$?") — the port's @REALLYBUY wiring.
 - Market **prices** and the **title** string are the *displayed* values of this specific capture
   (read from the screenshot), not a decoded snapshot.
 

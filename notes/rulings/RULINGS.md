@@ -8877,3 +8877,32 @@ Port: crossingCell rebuilt (ship + manifest, slot->band y as a flagged
 approximation of the per-state layout). Spec: europe_screen.md §0.2.
 Suite 233/233 (one run tripped the documented Fortress-raid flake, clean
 on re-run); render-diff 15/15.
+
+## 2026-08-07z4 — Phase 4 capture 5: Europe slot pitches, the nation sack, REALLYBUY confirmed
+
+Drove the live 1653 Europe screen: recruited three units and bought two
+ships (docs/screens/live_2026-08-07/europe_dock_3units.png,
+europe_port_2ships.png, europe_reallybuy_confirm.png).
+
+- **Dock pitch = 17** (figures template-matched 1.0 at x=235/252/269),
+  cell x=232+17k, figure at cell+3. The port's 14 was wrong.
+- **Ship pitch = 18** (Merchantman 1.0 @(149,146), Caravel 1.0
+  @(167,146)), cell x=145+18k, sprite at cell+4 (the old +3 was 1px
+  off). The green cell sits on exactly the "Loading:" caption's ship --
+  selection cell = selected ship, confirmed with two ships.
+- **The nation sack**: every waiting entity (dock unit, in-port ship,
+  crossing passenger) carries a 7x9 marker -- black outline, fill = the
+  NATION COLOUR, fold pixels = its EGA dark partner (colour-8; Dutch
+  13->5 verified pixel-exact). It matches no decoded ICONS frame
+  (nearest shape 0.86 = the furs bundle), so the port embeds the
+  observed pixel block (drawSack), source frame TBD. Anchors: dock
+  cell+(9,8), ship cell+(1,1), crossing figure+(5,7).
+- The engine asks "Purchase Merchantman for 2000$? Yes/No" -- the
+  @REALLYBUY confirm the port wired in Phase 2 is engine-real.
+- The selected ship's CARGO ROW in the frame shows 4 dark holds + 2
+  crossed crates for the 4-hold Merchantman -- the port's existing
+  holds-of-the-selected-ship model, confirmed.
+
+Port: EURO_DOCK/EURO_SHIP pitches corrected, drawSack added at all three
+sites. Suite 233/233; shots 47/47; render-diff 15/15 (europe pair
+improved 11336 -> 11215). Spec: europe_screen.md §0.2.

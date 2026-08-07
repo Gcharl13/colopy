@@ -4120,12 +4120,37 @@ function activeShip() { return shipsInPort()[G.euroShip] || null; }
 // Dock-unit and ship-in-harbour box layouts. Module scope, because the click
 // handler hit-tests the same boxes the painter draws -- keeping them local was
 // how the Europe hit-test ended up carrying a different rect from the art.
-const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
-const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
+// Slot geometry CAPTURE-PINNED 2026-08-07 with three recruits + two bought
+// ships live (docs/screens/live_2026-08-07/europe_dock_3units.png /
+// europe_port_2ships.png): dock figures at x=235+17k (cell x=232+17k, 18x18,
+// figure at cell+3) -- pitch 17, not the old 14 guess; in-port ships at
+// sprite x=149+18k (cell x=145+18k, sprite at cell+4) -- pitch 18, not 12.
+// The selected ship's cell tracks the "Loading:" caption (the boxed ship IS
+// the caption's ship in the two-ship frame).
+const EURO_DOCK = { x: 232, y: 137, pitch: 17 };
+const EURO_SHIP = { x: 145, y: 145, pitch: 18 };
 
-// (The 2026-08-07 half-scale trade-icon badge lived here for a few hours; it
-// was superseded the same day by the real profession FIGURES found in
-// ICONS.SS via the F4 Labor capture -- see professionIcon.)
+// The little NATION SACK every waiting entity carries -- dock units, in-port
+// ships and crossing passengers all wear it (all three captures above).
+// It matches no decoded ICONS frame exactly (nearest shape: the furs bundle
+// at 0.86), so this is the OBSERVED 7x9 pixel block itself, capture-derived:
+// N = the nation colour (the Dutch 13 in the captures), b = its EGA dark
+// partner (colour-8: 13->5 = (170,73,0), verified pixel-exact), K = black.
+const SACK_ROWS = [
+  '.KKKKK.', 'KNNNNNK', 'KNNbbNK', 'KNbNNNK', 'KNNbNNK',
+  'KNNNbNK', 'KNbbNNK', 'KNNNNNK', 'KKKKKKK',
+];
+function drawSack(ctx, x, y) {
+  const c = DATA.nations[G.nation].color;
+  const cols = { K: ink(0), N: lut(c), b: lut(c - 8) };
+  SACK_ROWS.forEach((row, dy) => {
+    for (let dx = 0; dx < row.length; dx++) {
+      if (row[dx] === '.') continue;
+      ctx.fillStyle = cols[row[dx]];
+      ctx.fillRect(x + dx, y + dy, 1, 1);
+    }
+  });
+}
 function drawEurope(ctx) {
   // TUTORIAL17: the first European Status visit (binding flagged).
   tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
@@ -4169,10 +4194,10 @@ function drawEurope(ctx) {
     sheetFrame(ctx, 'ICONS', e.icon, x + 3, y);
     (e.passengers || []).slice(0, 3).forEach((p, i) => {
       const px = x + 20 + i * 17;
-      ctx.fillStyle = ink(0);
-      ctx.fillRect(px - 2, y + 1, 13, 15);
-      ctx.fillStyle = lut(DATA.nations[G.nation].color);
-      ctx.fillRect(px - 1, y + 2, 11, 13);
+      // Each passenger = his profession figure + the nation sack at his
+      // side (fig2 (110,146) / sack (115,153) in the capture -> +5/+7;
+      // the sack draws first so the figure overlaps it, as observed).
+      drawSack(ctx, px + 5, y + 7);
       const fig = typeof p === 'string' ? professionIconByName(p) : null;
       const u = unit(entryType(p)) || unit('Colonists');
       sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
@@ -4219,6 +4244,9 @@ function drawEurope(ctx) {
     // Labor report (professionIcon, RULINGS 2026-08-07z2: @JOB 0..17 = png
     // 81+i, class tail 58-61/66/100/106/107). Once ARMED ({name,type}) he
     // draws as what he is equipped as, the @UNIT sprite.
+    // The nation sack at his side (slot2 figure (269,138) / sack (275,145)
+    // in europe_dock_3units.png -> cell+9/+8), then the figure over it.
+    drawSack(ctx, x + 9, EURO_DOCK.y + 8);
     const fig = typeof e === 'string' ? professionIconByName(e) : null;
     sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
                x + 3, EURO_DOCK.y + 1);
@@ -4228,9 +4256,12 @@ function drawEurope(ctx) {
   shipsInPort().forEach((e, k) => {
     if (k >= 6) return;
     const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
-    sheetFrame(ctx, 'ICONS', e.icon, x + 3, EURO_SHIP.y + 1);
-    // Only the SELECTED ship wears the green cell (the live frame's boxed
-    // ship was the active one; [0x9E12]-driven).
+    // Nation sack at cell+(1,1), ship sprite at cell+(4,1) -- both from
+    // europe_port_2ships.png (Merchantman (149,146), Caravel (167,146)).
+    drawSack(ctx, x + 1, EURO_SHIP.y + 1);
+    sheetFrame(ctx, 'ICONS', e.icon, x + 4, EURO_SHIP.y + 1);
+    // Only the SELECTED ship wears the green cell (the two-ship frame boxes
+    // exactly the "Loading:" ship; [0x9E12]-driven).
     if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
   });
 
@@ -11426,7 +11457,7 @@ function onClick(mx, my) {
         }
       }
       // Ship boxes select the ship being loaded. These are the boxes the port
-      // actually PAINTS (EURO_SHIP, 18x18 at pitch 12) -- the rect here used to
+      // actually PAINTS (EURO_SHIP, 18x18 at its pitch) -- the rect here used to
       // be the CARGO-HOLD strip's geometry wearing a ship-select action, so a
       // click meant for a hold silently re-picked a ship instead.
       //
