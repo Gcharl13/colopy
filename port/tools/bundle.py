@@ -393,12 +393,16 @@ def main():
   html,body {{ margin:0; height:100%; background:var(--ground);
                 overflow-y:hidden; overflow-x:auto; }}
   body {{ display:flex; flex-direction:row; align-items:stretch; }}
-  /* #stage never shrinks below the screen it holds, so the canvas keeps its
-     size and the page scrolls sideways instead if the window is too narrow. */
+  /* `safe center` is load-bearing, not a flourish: plain `center` on an
+     over-wide child splits the overflow BOTH ways, and the left half then sits
+     outside the scroll origin where overflow-x:auto can never reach it -- the
+     plaza colonist row at logical x 0..33 became unclickable. `safe` falls back
+     to flex-start the moment the child would overflow. resize() also subtracts
+     the panel width, so this is the second line of defence. */
   #stage {{
     flex:1 1 auto; min-width:0;
-    display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:14px; padding:16px;
+    display:flex; flex-direction:column; align-items:safe center;
+    justify-content:safe center; gap:14px; padding:16px;
   }}
   /* The debug column. It reserves its own width so it never overlaps the
      screen; hiding it (backtick, or the x) gives the game the space back and

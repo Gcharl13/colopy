@@ -362,6 +362,15 @@ const PHYS = {
   DETAIL: 0x59,        // engine 0x5A, + DTAB[class]
   ROAD: 0x50,          // engine 0x51, stub; +1+dir for the eight spokes
   FOG: 0x94,           // engine 0x95, the unexplored-tile sprite (§6.11)
+  // engine 0x68 -- the Lost City Rumour stone ring. `mov ax,0x68` @0x68411,
+  // then the same emit primitive the detail band uses, `call 0x67dc8` @0x68414.
+  // The byte pattern b8 68 00 occurs EXACTLY ONCE in the 494910-byte
+  // VICEROY.EXE, so the frame number is not ambiguous. Disk frame 103 dumps as
+  // a 16x16 concentric brown-and-tan stone ring, which is what it should be.
+  // This supersedes the port's old by-eye "ICONS 17 gold sunburst", which had
+  // no catalogue entry behind it (notes/SPRITE_CATALOG.md:497 -- ICONS indices
+  // 16+ are uncatalogued).
+  RUMOUR: 0x67,
 };
 
 // §6.4-6.6 — the 4-cardinal connection mask. Weights N=8, S=4, W=2, E=1.
@@ -388,6 +397,15 @@ const DTAB = [6, 1, 2, 3, 4, 5, 6, 6,
 // The salt word [0x190] is rolled per game (0 disables the band). The engine
 // value for a given save is runtime state we do not have, so the port fixes one
 // -- the layout is stable for a session, which is all the hash guarantees.
+//
+// UNCITED, and a known divergence: the engine reads ONE word at [0x190] for
+// BOTH hashes -- `add cl, byte[0x190]` @0x6129 here and `add cx, word[0x190]`
+// @0x61E1 for rumours -- where the port splits it into this fixed 1 and the
+// per-game G.mapSeed. (The byte-vs-word difference is itself inert: `and cx,0xF`
+// @0x612D means only the low 4 bits can ever reach a detail tile, so the honest
+// unification is `DETAIL_SALT = G.mapSeed & 0xF`.) Not done here because it
+// MOVES EVERY PRIME-RESOURCE TILE in the current build, which is a deliberate
+// decision with a before/after diff, not a drive-by edit. TBD.
 const DETAIL_SALT = 1;
 function detailClass(v) {
   if (tileMountains(v)) return 27;
@@ -599,10 +617,14 @@ function beginGame() {
   SEEN.fill(0);
   revealAll();
   G.razed = 0; G.bellsTotal = 0; G.lostWar = false;
-  // The map generator's first act is to store random_int(0, 0x7FFF) as the seed
-  // the rumour hash reads (@0x64A23).
+  // The map generator's first act is to store the seed the rumour hash reads.
+  // func_064A10 @0x64A16 is `push 0x7fff; push 1; lcall random_int`, so the
+  // range is random_int(1, 0x7FFF) -- the LOWER BOUND IS 1, not 0. A zero salt
+  // would disable both the detail band and rumours outright (gates @0x60A9 and
+  // @0x6191). Push order confirmed against the known random_int(1,9) at
+  // @0x614F6 (`push 9; push 1`). Stored @0x64A23 into word [0x190].
   G.combat = null;
-  G.mapSeed = Math.floor(Math.random() * 0x8000);
+  G.mapSeed = 1 + Math.floor(Math.random() * 0x7FFF);
   G.rumoursDone = new Set(); G.rumourFloor = 1;
   G.foundFountain = false; G.foundCibola = false;
   G.metAnyone = false;
@@ -1190,6 +1212,20 @@ function drawTile(ctx, mx, my, px, py) {
     }
     const df = detailFrame(mx, my, v);
     if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
+    // A Lost City Rumour square. Presence is computed, not stored, so the marker
+    // is drawn wherever the hash says one stands.
+    //
+    // This used to sit at the very END of drawTile, on the tail the WATER branch
+    // falls through to -- past the `return` above. Since rumourAt() rejects
+    // water outright, the marker could never be drawn on any tile at all.
+    //
+    // Draw order detail (0x5A+v) -> rumour (0x68) -> roads (0x51+d) is byte-read
+    // from O513: @0x683F7 detail, @0x68405..@0x68414 rumour, @0x68417 roads.
+    // Land-only is behaviourally exact rather than a branch the engine has:
+    // O513 @0x683C9 gates on [0x184]/[0x18E], NOT on the water flag [bp-4], so a
+    // COASTAL water tile does reach the call at 0x68405 -- it just returns 0,
+    // because func_006188's own class gate @0x61A6/@0x61AB rejects 0x19/0x1A.
+    if (rumourAt(mx, my)) sheetFrame(ctx, 'PHYS0', PHYS.RUMOUR, px, py);
     drawImprovements(ctx, mx, my, px, py);
     return;
   }
@@ -1229,13 +1265,7 @@ function drawTile(ctx, mx, my, px, py) {
   const df = detailFrame(mx, my, v);
   if (df >= 0) sheetFrame(ctx, 'PHYS0', df, px, py);
   drawImprovements(ctx, mx, my, px, py);
-  // A Lost City Rumour square. Its presence is computed, not stored, so the
-  // marker is drawn wherever the hash says one stands. ICONS 17 is the gold
-  // sunburst that reads as the rumour marker on the DOS map; no catalogue entry
-  // names it, so the identification is by eye -- flagged.
-  if (rumourAt(mx, my)) sheetFrame(ctx, 'ICONS', RUMOUR_ICON, px, py);
 }
-const RUMOUR_ICON = 17;
 // Roads are their own layer (@0x6842B, base engine 0x51 + an 8-direction
 // connectivity mask, func_067D54 -- brown, and empty on a new map). On disk
 // that base is 0x50: 0x50 is the isolated junction stub, 0x51..0x58 are the
@@ -1976,23 +2006,40 @@ function fieldYield(c, p) {
   }
   return Math.max(0, y);
 }
-// The eight OUTDOOR jobs: @JOB rows 0..4, 7, 8 (the terrain-table columns) plus
-// 22, Scout. This is also the list a native village will teach from (§19.4).
+// The list a native village will teach from (§19.4). Whether Scout (row 22)
+// belongs here is UNCITED -- JOB_GOOD has no entry for it and fieldYield returns
+// 0, so it is inert as a field job, and spec/systems/natives.md has no entry
+// either way. TBD.
 const OUTDOOR_JOBS = [0, 1, 2, 3, 4, 7, 8, 22];
-// Which of the eight outdoor jobs pays best on the cell this colonist is on.
+// The NINE FIELD jobs are the nine terrain yield columns, one for one: Farmer,
+// Planter (sugar / tobacco / cotton), Fur Trapper, Lumberjack, Ore Miner,
+// Silver Miner, Fisherman -- NAMES.TXT:17-19 is the yield-column legend and
+// @JOB rows 224+ are the jobs, with Lumberjack row 5 and Ore Miner row 6.
+// Corroborated by the engine's job->building table at DS:0x2F4 (func_008D9C,
+// file 0x1DC94, 19 signed bytes), where jobs 0..8 are all -1 = outdoor, no
+// workplace building.
+//
+// This is DELIBERATELY a separate array from OUTDOOR_JOBS above, which omits
+// rows 5 and 6: villageSkill() indexes OUTDOOR_JOBS *modulo its length*, so
+// growing that array in place would silently reshuffle every native village's
+// taught skill. The omission was a real bug on the field side -- a forest cell
+// yields lumber 3 against furs 2, so bestFieldJob could never return Lumberjack
+// and every forest worker came out a Fur Trapper.
+const FIELD_JOBS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+// Which of the nine field jobs pays best on the cell this colonist is on.
 // A colonist who already masters an outdoor skill keeps it if the tile yields
 // anything at all -- that is what makes an Expert Fur Trapper worth moving.
-const OUTDOOR_JOB_NAMES = OUTDOOR_JOBS.map(i => DATA.jobs[i]);
+const FIELD_JOB_NAMES = FIELD_JOBS.map(i => DATA.jobs[i]);
 function bestFieldJob(c, p) {
   const cell = p.cell;
   let best = 'Farmer', bestY = -1;
-  for (const job of OUTDOOR_JOB_NAMES) {
+  for (const job of FIELD_JOB_NAMES) {
     const probe = { ...p, job };
     const y = fieldYield(c, probe);
     if (y > bestY) { bestY = y; best = job; }
   }
   if (p.profession) {
-    const own = OUTDOOR_JOB_NAMES.find(j => isExpert(p, j));
+    const own = FIELD_JOB_NAMES.find(j => isExpert(p, j));
     if (own && fieldYield(c, { ...p, job: own }) > 0) return own;
   }
   void cell;
@@ -3003,6 +3050,11 @@ const purchasePrice = (r) => r.price + (r.escalates ? G.artilleryBought * 100 : 
 function shipsInPort() { return G.europe.filter(e => e.state === 'port'); }
 function activeShip() { return shipsInPort()[G.euroShip] || null; }
 
+// Dock-unit and ship-in-harbour box layouts. Module scope, because the click
+// handler hit-tests the same boxes the painter draws -- keeping them local was
+// how the Europe hit-test ended up carrying a different rect from the art.
+const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
+const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
 function drawEurope(ctx) {
   usePalette('EUROPE');
   ctx.drawImage(IMG.EUROPE, 0, 0);
@@ -3053,8 +3105,6 @@ function drawEurope(ctx) {
   // The frame has ONE ship and ONE dock unit, so the SLOT PITCH is unmeasured;
   // the port keeps its previous 14 (units) and 12 (ships) rather than inventing
   // new numbers, and a capture with several of each would settle it.
-  const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
-  const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
   G.dockUnits.slice(0, 6).forEach((name, k) => {
     const u = unit(name) || unit('Colonists');
     const x = EURO_DOCK.x + k * EURO_DOCK.pitch;
@@ -3279,30 +3329,69 @@ function colonyLevel(c) {
 function drawSettlement(ctx, px, py, level, nation, tribeColour, mission) {
   const lv = Math.max(0, Math.min(3, level));
   const frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
-  const [fw, fh] = frameSize('ICONS', frame);
-  sheetFrame(ctx, 'ICONS', frame, px + (TILE - fw) / 2, py + (TILE - fh) / 2);
+  // The marker frames are 21x16 in a 16px tile, so they hang 2px off the left.
+  // func_004314 @0x0043D2 sets D=0x10 and @0x0043D5-0x0043E5 anchors at
+  // (X + D/2, Y + D - 1); the blit verb 0x0C56:0x0004 = file 0x00E964 turns an
+  // anchor into a top-left with x -= w>>1 @0x00EA38 and y -= h, y += 1
+  // @0x00EA45 -- for a 21x16 frame that is (X-2, Y). Written out rather than
+  // left as a fractional (TILE-fw)/2 leaning on sheetFrame's rounding. (That
+  // the engine's X equals the port's tile origin px is NOT independently
+  // established -- func_067182 is unread. The pennant below does not depend on
+  // it: (5,0) is a marker-relative delta.)
+  sheetFrame(ctx, 'ICONS', frame, px - 2, py);
   if (nation >= 0) {
-    // European colonies fly the 6x5 nation pennant (disk 118 + power).
-    const [pw2] = frameSize('ICONS', PENNANT_BASE + nation);
-    sheetFrame(ctx, 'ICONS', PENNANT_BASE + nation, px + TILE - pw2 - 1, py + 1);
+    // The nation pennant goes ON THE FLAGPOLE, not beside it. ICONS colony
+    // frames 0-3 ship with FRANCE'S BLUE PENNANT BAKED INTO THEIR PIXELS at
+    // frame-local (5,0) -- sliding frame 119 over each of frames 0/1/2/3 finds
+    // exactly one offset where all 15 of its opaque pixels match, (5,0), on all
+    // four levels. The engine's blit lands there and overwrites it, so exactly
+    // one flag is ever visible. The port was anchoring to the tile's right edge
+    // (px+9, py+1) = frame-local (11,1), which left the baked blue standing and
+    // stamped a second flag beside it: France looked right by coincidence and
+    // every other power flew two flags.
+    //
+    // (px+3, py) is the same point reached from the bytes: func_004314 @0x0043FB
+    // (X+6 -> [bp-0x0a]) and @0x004404-0x004409 + @0x00441A (Y+4 -> [bp-0x0c])
+    // on the si==0x64 100%-scale branch, through the same anchor->top-left
+    // conversion as above: (X+6-3, Y+4-4) = (X+3, Y).
+    //
+    // Frames 118-121 are red/blue/yellow/orange = England/France/Spain/
+    // Netherlands, so PENNANT_BASE + nation was already right; only the
+    // placement was wrong. Frames 0-3 encode LEVEL, not nation
+    // (func_004314 @0x004455 `add cx,0x77` applies to the pennant alone), so
+    // per-nation marker frames are not the answer.
+    sheetFrame(ctx, 'ICONS', PENNANT_BASE + nation, px + 3, py);
   } else {
-    // Tribes have no pennant sprite, so they get the same 6x5 patch in their
-    // own @TRIBES colour -- ownership reads identically for both.
+    // UNCITED -- port-invented art. No engine equivalent: nothing in the
+    // village painter draws an ownership patch, and the native marker frames
+    // 10-13 carry no baked pennant (the same slide test finds no match at any
+    // offset). The engine's real per-village overlays are the alarm marks and
+    // the mission cross, both rect primitives.
     ctx.fillStyle = ink(0); ctx.fillRect(px + TILE - 8, py, 8, 7);
     ctx.fillStyle = ink(tribeColour); ctx.fillRect(px + TILE - 7, py + 1, 6, 5);
   }
   // §19.7: a village carrying a mission is marked with a CROSS in the founding
-  // power's colour, and the manual notes a BRIGHTER cross for an expert
-  // (Brebeuf) mission. The cross is drawn from primitives -- no dedicated
-  // sprite for it has been located in ICONS, so its art is the port's own; the
-  // colour, the placement rule and the expert distinction are the spec's.
+  // power's colour. The SHAPE and the Y offsets are byte-read off the village
+  // painter, func_0041AD-func_00423C, all relative to a base XB = [bp-2]:
+  //   backing rect (XB,   py+5, 5, 6)  colour 0   @0x0041D7
+  //   vertical bar (XB+2, py+6, 1, 4)             @0x004203
+  //   horizontal   (XB+1, py+7, 3, 1)             @0x004222
   if (mission) {
+    // XB IS TBD. The engine's base is px+6 (@0x00407D `mov ax,[bp-0x64]; add
+    // ax,6`) on the path that skips its alarm-mark loop, and px+8+2*marks on
+    // the path through it. The port draws its alarm strip elsewhere (drawMap),
+    // so px+6 mirrors the no-marks path -- that CHOICE is UNCITED.
+    const XB = px + 6;
+    // The 0xFD "expert" brightness is UNCITED. The engine's rule is
+    // table[power] MINUS 8 when the mission byte's 0x10 bit is clear
+    // (@0x0041C6-0x0041D4); the port has no such bit and the colour table at
+    // DGROUP 0x848 has not been dumped, so the table itself is TBD.
     const c = DATA.nations[mission.power] ? DATA.nations[mission.power].color : 0xFE;
     ctx.fillStyle = ink(0);
-    ctx.fillRect(px, py, 5, 7);
+    ctx.fillRect(XB, py + 5, 5, 6);
     ctx.fillStyle = ink(mission.expert ? 0xFD : c);
-    ctx.fillRect(px + 2, py + 1, 1, 5);
-    ctx.fillRect(px + 1, py + 2, 3, 1);
+    ctx.fillRect(XB + 2, py + 6, 1, 4);
+    ctx.fillRect(XB + 1, py + 7, 3, 1);
   }
 }
 // The engine keeps TWO parallel anger meters, and they are not the same scale:
@@ -5496,18 +5585,38 @@ function teaParty(good) {
 }
 
 // ------------------------------------------------ Lost City Rumours
-// spec/systems/events.md. Rumour PRESENCE is procedural, not a stored marker:
-// func_006188 hashes the coordinates against the map seed [0x190] --
-//   ((x>>2)*0x13 + (y>>2)*0x11 + seed + 8) & 0x1F - (y&3)*4 == (x&3)
-// gated on the terrain not being Arctic / Ocean / Sea Lane (0x18/0x19/0x1A).
-// The engine adds a third gate on the tile's feature high-nibble being 0xF
-// ("none"); the port has no feature-nibble plane, so that gate is not
-// reproduced -- flagged. The seed is rolled per game, as the map generator does.
+// Rumour PRESENCE is procedural, not a stored marker. func_006188 @0x6188:
+//   [0x190] != 0                                      gate @0x6191
+//   terrain class not in {0x18, 0x19, 0x1A}           gate @0x61A6/@0x61AB/@0x61B0
+//   func_005DF0 >= 0 suppresses                       gate @0x61BC/@0x61C5
+//   (((y>>2)*0x13 + (x>>2)*0x11 + word[0x190] + 8) & 0x1F) - ((x&3)<<2) == (y&3)
+//                                                     hash @0x61C7-0x61F6
+//
+// THE AXES WERE TRANSPOSED. arg1 = [bp+6] is X, arg2 = [bp+8] is Y, anchored at
+// the CALL SITE rather than inferred: the call pushes [0xa5a2] then [0xa5a0],
+// and the only write to [0xa5a0] is the inner loop variable @0x68803, bounded
+// @0x6880D-0x68812 against word[0x853a]-1 = the map WIDTH. So [0xa5a0] is the
+// column. Transposing x and y is not cosmetic -- measured over AMER2 (58x72),
+// the two orientations pick 33-44 tiles each and overlap on 0-3 of them.
+// docs/manual_src/part2.md 6.10 has it right; spec/systems/events.md,
+// docs/manual_src/part5.md:285 and docs/UI_AUDIT_TRACKER.md:424 are transposed
+// and are corrected with this change. See RULINGS.md 2026-08-07.
+//
+// NOT REPRODUCED: the func_005DF0 gate. The port carries no owner/feature plane
+// (the .MP loader discards it), and the plane's own identity is unresolved --
+// spec/systems/events.md:187-192 calls it the tile feature nibble,
+// tools/hillsrivers_render.py:195 calls it the continent-plane owner nibble.
+// Consequence: rumours appear on some tiles the DOS game suppresses. TBD.
 function rumourAt(x, y) {
+  if (!G.mapSeed) return false;             // [0x190] == 0 disables them @0x6191
   const t = tileTerrain(at(x, y));
+  // The engine gates on the classify thunk 0x3E4:0x3A, not on the raw id; the
+  // two agree on every id the .MP loader can produce.
   if (t >= 0x18) return false;                     // Arctic, Ocean, Sea Lane
-  const h = ((x >> 2) * 0x13 + (y >> 2) * 0x11 + G.mapSeed + 8) & 0x1F;
-  return h - (y & 3) * 4 === (x & 3) && !G.rumoursDone.has(y * MAP.w + x);
+  const h = ((y >> 2) * 0x13 + (x >> 2) * 0x11 + G.mapSeed + 8) & 0x1F;
+  // `rumoursDone` is the port's own consumed-rumour bookkeeping -- UNCITED. The
+  // engine consumes a rumour by writing the tile's high nibble at 0x5DCC.
+  return h - (x & 3) * 4 === (y & 3) && !G.rumoursDone.has(y * MAP.w + x);
 }
 // The scout bonus, byte-verified in func_061454: +1 for a Scout, +1 for a
 // Seasoned Scout, +1 if the power holds Hernando de Soto (who also forces a
@@ -7309,16 +7418,28 @@ function onClick(mx, my) {
         const cx = Math.floor((mx - 224) / 24) - 1, cy = Math.floor((my - 32) / 24) - 1;
         if (cx === 0 && cy === 0) return;                 // the centre works itself
         const on = c.colonists.find(p => p.cell && p.cell[0] === cx && p.cell[1] === cy);
+        // UNCITED (port's own choice): evicting whoever already holds the cell.
+        // The manual only describes clicking an EMPTY location, and the colony
+        // region-id -> action switch is overlay-resident and undecoded
+        // (spec/ui/input.md:526-529), so nothing here is byte-verified.
         if (on) { on.cell = null; on.job = null; G.msg = `${on.type} returns to the plaza.`; }
         else {
-          const idle = c.colonists.find(p => !p.cell);
-          // The engine puts a colonist on the field's BEST job, and a second
-          // click on an occupied cell cycles them off. Ties go to the earlier
+          // Move the SELECTED colonist. This used to grab the first colonist
+          // with no cell, which broke the interaction two ways: a different
+          // colonist than the one you picked would walk out to the field, and
+          // once everyone held a cell `find` returned undefined and the click
+          // did nothing at all -- so a working colonist could never be moved.
+          //
+          // GAME_MANUAL.md: "you may move a colonist within the colony area or
+          // settlement views simply by clicking the location to which you want
+          // him to move." Manual-tier, not byte-verified: see the note above.
+          // The engine puts him on the field's BEST job; ties go to the earlier
           // @JOB row, which puts Farmer first.
-          if (idle) {
-            idle.cell = [cx, cy];
-            idle.job = bestFieldJob(c, idle);
-            G.msg = `${idle.type}: ${idle.job}`;
+          const who = c.colonists[G.colonistSel];
+          if (who) {
+            who.cell = [cx, cy];
+            who.job = bestFieldJob(c, who);
+            G.msg = `${who.type}: ${who.job}`;
           }
         }
         return;
@@ -7341,7 +7462,13 @@ function onClick(mx, my) {
         if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
                           w: VIEW_BTN.w, h: VIEW_BTN.h })) { G.colonyView = k; return; }
       }
-      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) G.screen = 'map';
+      // x=305, not 306: func_0299A0 @0x299C8 pushes 0x15,0x0F,0xB3,0x131 =
+      // h=21,w=15,y=179,x=0x131=305 for colony region 9. (spec/ui/input.md:522
+      // carries the off-by-one.) That this region EXITS is the port's own
+      // reading -- UNCITED; the spec glosses region 9 as the warehouse/gold
+      // readout built on heap string [0x2F5E], and the region-id -> action
+      // switch is overlay-resident and undecoded.
+      if (hit(mx, my, { x: 305, y: 179, w: 15, h: 21 })) G.screen = 'map';
       break;
     }
     case 'europe': {
@@ -7356,17 +7483,34 @@ function onClick(mx, my) {
         G.euroMenu = null;                       // click outside closes it
         return;
       }
-      if (hit(mx, my, { x: 306, y: 179, w: 15, h: 21 })) { G.screen = 'map'; return; }
+      // x=305 -- func_03200A @0x3200E pushes 0x15,0x0F,0xB3,0x131 for Europe
+      // region 0xB. Note spec/ui/input.md:571 is wrong twice over: it gives 306
+      // AND cites @0x032034, which is the id-5 block. Exit semantics UNCITED,
+      // as for the colony twin above.
+      if (hit(mx, my, { x: 305, y: 179, w: 15, h: 21 })) { G.screen = 'map'; return; }
       // Menu buttons.
       for (let k = 0; k < 3; k++) {
         if (hit(mx, my, { x: 281, y: 89 + 11 * k, w: 37, h: 9 })) {
           G.euroRow = k; openEuroMenu(k); return;
         }
       }
-      // Dock slots select the ship being loaded.
+      // Ship boxes select the ship being loaded. These are the boxes the port
+      // actually PAINTS (EURO_SHIP, 18x18 at pitch 12) -- the rect here used to
+      // be the CARGO-HOLD strip's geometry wearing a ship-select action, so a
+      // click meant for a hold silently re-picked a ship instead.
+      //
+      // The engine splits its region 1 (143,118,81,60) on the sub-rect
+      // (147,165,72,12): inside = the selected ship's six holds, outside = the
+      // ships-in-harbour list. func_033716 @0x03371A pushes 0x0C,0x48,0xA5,0x93
+      // = h,w,y,x; the hold index is (mx-0x93)/12 @0x033610. The port had the
+      // two inverted. The 145/145/12/18x18 box layout itself is UNCITED (the
+      // engine lays the list out through func_031298 @0x0312E5, which the port
+      // does not implement); the holds are drag targets and are wired below.
       const ships = shipsInPort();
       for (let k = 0; k < Math.min(ships.length, 6); k++) {
-        if (hit(mx, my, { x: 146 + 12 * k, y: 164, w: 12, h: 14 })) { G.euroShip = k; return; }
+        if (hit(mx, my, { x: EURO_SHIP.x + EURO_SHIP.pitch * k, y: EURO_SHIP.y, w: 18, h: 18 })) {
+          G.euroShip = k; return;
+        }
       }
       // The market bar routes clicks to the SELL handler (§9.4).
       if (my >= 179) {
@@ -7631,12 +7775,17 @@ let ctx, screenCanvas, scale = 1, offX = 0, offY = 0;
 
 function resize() {
   // Integer-scale only: this is pixel art, so a fractional scale would blur it.
-  // NOTE the debug column is deliberately NOT subtracted here: the game keeps
-  // exactly the size it had before the panel existed, whether the panel is open
-  // or shut. The panel takes the space to its right and the page scrolls
-  // sideways if the window cannot hold both -- shrinking the screen to make room
-  // for a debug tool is the wrong trade.
-  const availW = window.innerWidth - 60, availH = window.innerHeight - 90;
+  //
+  // The debug column IS subtracted. The earlier trade -- keep the game at full
+  // size and let the page scroll sideways -- does not survive contact: #stage
+  // CENTRES an over-wide child, so the overflow splits both ways and the left
+  // half goes behind the viewport edge, where `overflow-x:auto` cannot reach it
+  // (it only scrolls right). Measured with the panel open: canvas left edge at
+  // -135px at 1440x900, hiding logical x 0..33 -- the whole plaza colonist row,
+  // which is exactly the region the colony-screen clicks needed. Port's own
+  // choice (UNCITED); no DOS analogue for any of it.
+  const availW = window.innerWidth - 60 - (debugOpen ? DEBUG_W : 0),
+        availH = window.innerHeight - 90;
   scale = Math.max(1, Math.floor(Math.min(availW / W, availH / H)));
   const cv = document.getElementById('screen');
   cv.width = W * scale; cv.height = H * scale;
