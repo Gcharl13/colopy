@@ -310,6 +310,9 @@ def build_data():
               "@LOSING1", "@LOSING2", "@LOSING3", "@WARN1", "@WARN3",
               "@SIEGE", "@INVASION", "@INTERVENE", "@WINNING",
               "@EUROPENOTAVAIL", "@EUROPENOTLEAVE", "@FOREIGNNOTAVAIL",
+              # The Crown: REF growth surface, purchase taxes, the war cycle.
+              "@KINGBUY", "@PURCHASETAX", "@MERCANTILISM",
+              "@KINGNEWWAR", "@KINGVICTORY", "@KINGMERCY", "@KINGFRIGATE",
               "@SOONRETIRING0", "@SOONRETIRING1", "@RETIRING", "@RETIRING2",
               "@EXPLOITS", "@SCORED",
               # The tutorial lessons (spec/systems/tutorial.md -- bitmask

@@ -2854,6 +2854,14 @@ function advanceConstruction(c, hammers) {
     G.units.push(mkUnit(b.name, c.x, c.y));
   } else {
     c.buildings.push(b.name);
+    // @MERCANTILISM: a profit-taking manufactory draws the Crown's tax raise
+    // (manual-cited pretext; the rate/amount are flagged stand-ins).
+    if (BUILDING_FACTORY.has(b.name) && G.tax < 75 && !(G.flags & WOI_DECLARED)) {
+      G.tax += 1;
+      showEvent('MERCANTILISM', { STRING0: b.name,
+                                  STRING1: DATA.nations[G.nation].adjective,
+                                  NUMBER0: 1, NUMBER1: G.tax });
+    }
   }
   c.building = null;
   // @BUILT: "%STRING0 colony produces {%STRING1}." (STRING0=colony, STRING1=the
@@ -4396,6 +4404,13 @@ function euroMenuCommit() {
   } else if (G.euroMenu === 'train') {
     G.dockUnits.push(r.label);
     G.euroMsg = `${r.label} trained.`;
+    // @PURCHASETAX: "use of Crown resources" (the Royal University) draws a
+    // tax raise. The engine's trigger rate is unread -- a 1-in-3 roll and a
+    // +1 raise are the port's flagged stand-ins.
+    if (Math.floor(Math.random() * 3) === 0 && G.tax < 75) {
+      G.tax += 1;
+      showEvent('PURCHASETAX', { NUMBER0: 1, NUMBER1: G.tax });
+    }
   } else {
     const buy = PURCHASE_CATALOG[G.euroMenuRow];
     if (buy.escalates) G.artilleryBought += 1;
@@ -7718,6 +7733,68 @@ function growREF() {
       if (gap < worst) { worst = gap; pick = t; }
     }
     G.ref[pick] += 1;
+    // @KINGBUY -- "King increases military spending. {unit} added to royal
+    // expeditionary force." -- the REF-growth surface (ref_growth.md).
+    showEvent('KINGBUY', { STRING0: pick });
+  }
+}
+// The Crown's European-war cycle (COMPLETION_PLAN Phase 3). Only the
+// KINGWAR/KINGNAVACT tax pretexts are byte-cited (func_036138's severity
+// table); the CYCLE here is a flagged reconstruction of the engine
+// behaviour the keys describe: a background war starts rarely
+// (@KINGNEWWAR -- the King declares war on a rival, cancels your peace
+// arrangement, orders you in with a grant and Veteran Soldiers), runs
+// some turns with occasional @KINGMERCY tax relief and the @KINGFRIGATE
+// escort offer, and ends with @KINGVICTORY's tax cut. Every rate, length
+// and amount is the port's flagged parameter.
+function kingWarCycle() {
+  if ((G.flags & WOI_DECLARED) || G.retired) return;
+  const S = { STRING0: DATA.difficulty[G.difficulty],
+              STRING1: G.leader || DATA.nations[G.nation].leader };
+  if (!G.kingWar) {
+    if (G.turn < 40 || Math.floor(Math.random() * 40) !== 0) return;
+    const foes = G.rivals.filter(r => r.met);
+    const foe = foes[Math.floor(Math.random() * foes.length)];
+    if (!foe) return;
+    G.kingWar = { rival: foe.nation, turns: 8 + Math.floor(Math.random() * 8) };
+    const grant = 300, soldiers = 2;
+    G.gold += grant;
+    for (let k = 0; k < soldiers; k++) {
+      const c0 = G.colonies[0];
+      if (c0) {
+        const u = mkUnit('Soldiers', c0.x, c0.y);
+        u.profession = 'Veteran Soldiers';
+        G.units.push(u);
+      }
+    }
+    setTreaty(G.nation, foe.nation, REL.TREATY, false);
+    setWar(G.nation, foe.nation, REL.WAR, true);
+    showEvent('KINGNEWWAR', { ...S, STRING2: DATA.nations[foe.nation].adjective,
+                              NUMBER0: grant, NUMBER1: soldiers });
+    return;
+  }
+  G.kingWar.turns -= 1;
+  const rivalAdj = DATA.nations[G.kingWar.rival].adjective;
+  if (G.kingWar.turns <= 0) {
+    G.tax = Math.max(0, G.tax - 2);
+    showEvent('KINGVICTORY', { ...S, STRING2: rivalAdj, NUMBER0: 2, NUMBER1: G.tax });
+    setWar(G.nation, G.kingWar.rival, REL.WAR, false);
+    G.kingWar = null;
+    return;
+  }
+  const roll = Math.floor(Math.random() * 24);
+  if (roll === 0) {
+    G.tax = Math.max(0, G.tax - 1);
+    showEvent('KINGMERCY', { ...S, STRING2: 'Frigate', NUMBER0: 1, NUMBER1: G.tax });
+  } else if (roll === 1 && !G.kingFrigate &&
+             (G.units.some(u => u.ship) || G.europe.length)) {
+    askEvent('KINGFRIGATE', { ...S, STRING2: DATA.nations[G.nation].adjective },
+             (choice) => {
+      if (choice !== 0) return;
+      G.kingFrigate = true;
+      G.europe.push({ type: 'Frigate', icon: unit('Frigate').icon,
+                      hold: [], passengers: [], state: 'port' });
+    });
   }
 }
 // GAME menu "DECLARE INDEPENDENCE" -> the declaration gate (func_03E984).
@@ -9327,6 +9404,7 @@ function endTurn() {
   nativeMoveAI();
   rivalTurn();
   newsTick();
+  kingWarCycle();
   kingTaxDemand();
   advanceTradeRoutes();
   advanceGoTo();

@@ -8626,3 +8626,28 @@ clears claim-radius villages first).
 
 Suite: 232/232 (the intervention check now expects the arrival pair; the
 rumour check accepts the @LOSTCITY4 ask).
+
+## 2026-08-07v — Phase 3: the Crown cluster (KINGBUY, purchase taxes, the European-war cycle)
+
+- **@KINGBUY** on each REF unit the royal fund buys -- the REF-growth
+  surface (ref_growth.md).
+- **@PURCHASETAX** on Royal University training (1-in-3 roll, +1 tax --
+  the engine's rate is unread, flagged); **@MERCANTILISM** on completing
+  a factory-tier building (+1 tax, flagged) -- both hard-capped at 75.
+- **The European-war cycle (kingWarCycle, flagged reconstruction).** Only
+  the KINGWAR/KINGNAVACT tax pretexts are byte-cited; the cycle the other
+  keys describe is reconstructed: rare @KINGNEWWAR start (declares the
+  Crown's war on a met rival, cancels your peace arrangement, orders you
+  in with a 300$ grant and 2 Veteran Soldiers -- the body's own list),
+  8-16 turns with occasional @KINGMERCY (-1 tax) and the one-shot
+  @KINGFRIGATE escort offer (row 1 = a Frigate in the home port), ending
+  with @KINGVICTORY (-2 tax) and the war bit cleared. Every rate/length/
+  amount flagged. @SEIZURE/@CONFISCATE (wartime shipping seizures) left
+  unwired -- no shipping-interdiction model, noted.
+- The player-initiated audience (@KINGBLESS/@KINGNO/@KINGLOWER/
+  @KINGNOTHING/@KINGRAISE/@KINGFUND/@KINGLAUGH) stays unwired: its
+  ENTRY POINT is not byte-mapped and inventing a UI for it would violate
+  the no-invented-flows directive. Phase 4's func window sweep may
+  surface the trigger.
+
+Suite: 232/232. Ledger: DONE 313, MISSING 84.
