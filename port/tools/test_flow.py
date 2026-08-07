@@ -600,9 +600,11 @@ SCRIPT = """() => {
     out.declareAsks = !!G.dialog && G.dialog.opts.length === 2;
     closeDialog(0);                                   // "Never! ... God save the King!"
     out.declareRefusable = !(G.flags & 1);
-    // Put a veteran soldier in the colony so mobilisation has something to promote.
+    // Put a veteran soldier in the colony so mobilisation has something to
+    // promote -- and stock the CANTMOBILIZE muskets gate's 50.
     const sold = mkUnit('Soldiers', G.colonies[0].x, G.colonies[0].y);
     G.units.push(sold);
+    G.colonies[0].stock[GOOD.MUSKETS] = 50;
     G.eventQueue = []; G.dialog = null;
     declareIndependence();
     closeDialog(1);
@@ -1862,19 +1864,26 @@ SCRIPT = """() => {
       // count (func_00864E via 0x181F:0xAB0), so a Fortress (K=3) repels raids
       // a bare colony (K=0) takes. Compare attempt-for-attempt.
       {
+        // A raid can BURN the Fortress (RAIDBURN removes buildings), which
+        // used to degrade the walled half of this comparison mid-loop and
+        // flake the check -- re-arm the colony every iteration.
         let bare = 0, walled = 0;
         for (let i = 0; i < 300; i++) {
           G.eventQueue = [];
+          G.colonies[0].vanished = false;
           nativeRaid(v, G.colonies[0]);
           bare += G.eventQueue.length ? 1 : 0;
         }
-        G.colonies[0].buildings.push('Fortress');
         for (let i = 0; i < 300; i++) {
           G.eventQueue = [];
+          G.colonies[0].vanished = false;
+          if (!G.colonies[0].buildings.includes('Fortress'))
+            G.colonies[0].buildings.push('Fortress');
           nativeRaid(v, G.colonies[0]);
           walled += G.eventQueue.length ? 1 : 0;
         }
-        G.colonies[0].buildings.pop();
+        G.colonies[0].buildings = G.colonies[0].buildings
+          .filter(b => b !== 'Fortress');
         G.eventQueue = [];
         out.raidFortGate = { bareRaids: bare > 0, fortressRepels: walled < bare };
       }

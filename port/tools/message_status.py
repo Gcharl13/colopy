@@ -46,19 +46,13 @@ PARAPHRASED = {}
 # These stay out deliberately (never guessed) until the Phase 4 capture or
 # disasm window resolves them.
 BLOCKED = {
-    'CANTMOBILIZE': 'muskets gate absent from the byte-read mobilize (disasm)',
-    'KINGMOBILIZE': 'REF-side mobilize announcement site unread (disasm)',
     'CARGOREADY0': 'func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, '
                    'colony-wide (per-good refuted); remaining blocker = the disposal '
                    'gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)',
-    'FULL': 'no colony size cap model; threshold unread',
-    'KINGBLESS': 'player-initiated audience entry point not byte-mapped',
-    'KINGFUND': 'ditto', 'KINGLAUGH': 'ditto', 'KINGLOWER': 'ditto',
-    'KINGNO': 'ditto', 'KINGNOTHING': 'ditto', 'KINGRAISE': 'ditto',
-    'KINGWELCOME0': 'ditto',
+    'FULL': 'join-colony crowding refusal (func_02883E @0x288C3, %STRING0 = the '
+            'colony name); the threshold hides behind the jump table, unread',
     'TOOMANYCOLONIES': 'engine cap value unread (disasm)',
     'TOOMANYUNITS': 'ditto',
-    'TOONEARBUILD': 'port founds instantly; no pending-build state',
     'HOWMUCH3': 'no carrier-to-carrier transfer site in the port',
     'APOSTATESUSA': 'reachable only via the USA suffix at runtime',
     'HEATHENUSA': 'ditto', 'RIDUSA': 'ditto', 'SIEGESUSA': 'ditto',
@@ -83,6 +77,11 @@ NA = {
     'RAIDSCALP': 'orphan -- no caller in the EXE (manual_src part5 22.x)',
     'RECRUIT2': 'orphan-or-dynamic -- the systematic emitter scan finds no emit site '
                 '(2026-08-07z9)',
+    'KINGBLESS': 'orphan -- no emit site in the EXE (2026-08-07z11)',
+    'KINGNO': 'ditto', 'KINGFUND': 'ditto',
+    'KINGLAUGH': 'ditto', 'KINGWELCOME0': 'ditto',
+    'TOONEARBUILD': 'engine checks other units holding the pending-build order 7 '
+                    '(@0x22644); the port founds instantly so the state cannot arise',
 }
 
 exported = set(re.findall(r'"@([A-Z0-9]+)"', bnd))

@@ -9085,3 +9085,34 @@ Suite 234/234.
 
 Ledger: DONE 400, BLOCKED 21. Suite 234/234 (twice; the Fortress-raid
 flake tripped one intermediate run, documented).
+
+## 2026-08-07z11 — Phase 4 batch 4: the Crown
+
+- **The tax petition (func_034AE0) READ.** The KINGRAISE body ("You DARE
+  to demand lower taxes!") identifies the handler: tax <= 1 ->
+  @KINGRAISE, tax += 2*random(1,difficulty) (@0x34B62); tax above
+  cap = ((difficulty&~1)*2+4)*(turn/400+1) -> 1/(difficulty+1) chance of
+  @KINGLOWER, tax -= random(1,5-difficulty) (@0x34B44); otherwise the
+  no-change dialog (0x109C = @KINGNOTHING by page-table neighbourhood,
+  inferred). The ENGINE'S ENTRY POINT is unmapped (no menu row, no
+  caller edge) -- the port surfaces the petition on the Europe screen
+  key K, a port-authored entry, flagged; the ladder is byte-exact.
+- **@KINGMOBILIZE (func_03E162 @0x3E2DB)**: the post-declaration REF-
+  growth announcement ("Parliament votes additional funds...") -- growREF
+  now splits @KINGBUY/@KINGMOBILIZE on WOI_DECLARED, subs byte-read.
+- **@CANTMOBILIZE**: the muskets gate the byte-read mobilize lacked --
+  wired at mobilizeContinentals with the 50-musket equip cost as the
+  flagged threshold (no emit site survives in the scan to read N from).
+- **@FULL (func_02883E @0x288C3)**: the join-colony crowding refusal,
+  %STRING0 = the colony name; the threshold hides behind the jump table
+  -- blocker NARROWED, stays deliberately unwired.
+- **@TOONEARBUILD (@0x22644)**: the engine checks OTHER UNITS holding
+  the pending-build order 7; the port founds instantly, so the state
+  cannot arise -> reclassified N/A with the byte-read reason.
+- **KINGBLESS/KINGNO/KINGFUND/KINGLAUGH/KINGWELCOME0**: NO emit site
+  anywhere in the systematic scan -> orphans (cut content), N/A.
+- Also de-flaked the Fortress-repels raid test for real: the flake was
+  RAIDBURN eating the Fortress mid-loop (a genuine mechanic, not RNG
+  noise) -- the walled loop now re-arms each iteration.
+
+Ledger: DONE 405, BLOCKED 10, N/A 31. Suite 234/234 twice.

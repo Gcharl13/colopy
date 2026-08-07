@@ -317,6 +317,10 @@ def build_data():
               # Shipping (batch 3): the interception pair, the lake guard,
               # the treasure-fleet bulletin.
               "@SHIPRUN", "@SHIPSLOW", "@SHIPLAKE", "@LOOTFOREIGN",
+              # The Crown (batch 4): the tax petition ladder, the muskets
+              # gate, the post-declaration REF-growth notice.
+              "@KINGLOWER", "@KINGRAISE", "@KINGNOTHING",
+              "@KINGMOBILIZE", "@CANTMOBILIZE",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               # War of Independence completion: sentiment, losses, siege,

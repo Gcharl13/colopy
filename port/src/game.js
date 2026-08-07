@@ -8393,6 +8393,36 @@ function seedREF() {
 function refEra() {
   return G.year >= 1750 ? 3 : G.year >= 1700 ? 2 : G.year >= 1600 ? 1 : 0;
 }
+// The tax PETITION (func_034AE0, READ 2026-08-07z11 -- the KINGRAISE body
+// "You DARE to demand lower taxes!" identifies the handler as the player's
+// demand-lower-taxes request). Byte-read outcome ladder:
+//   tax <= 1            -> @KINGRAISE, tax += 2*random(1, difficulty)
+//   tax >  cap          -> 1/(difficulty+1) chance of @KINGLOWER,
+//                          tax -= random(1, 5-difficulty), where
+//                          cap = ((difficulty&~1)*2+4)*(turn/400 + 1)
+//   otherwise           -> the no-change dialog (0x109C = @KINGNOTHING by
+//                          the page-table neighbourhood, inferred)
+// The ENGINE'S ENTRY POINT is unmapped (no menu row, no caller in the
+// graph) -- the port surfaces the petition on the Europe screen, key K:
+// a port-authored entry, flagged; the ladder itself is byte-exact.
+function petitionLowerTaxes() {
+  if (G.tax <= 1) {
+    const delta = 2 * (1 + Math.floor(Math.random() * Math.max(1, G.difficulty)));
+    G.tax += delta;
+    showEvent('KINGRAISE', { NUMBER0: delta, NUMBER1: G.tax });
+    return;
+  }
+  const cap = ((G.difficulty & ~1) * 2 + 4) * (Math.floor(G.turn / 400) + 1);
+  if (G.tax > cap + 5 &&
+      1 + Math.floor(Math.random() * (G.difficulty + 1)) === 1) {
+    const delta = Math.min(G.tax,
+      1 + Math.floor(Math.random() * Math.max(1, 5 - G.difficulty)));
+    G.tax -= delta;
+    showEvent('KINGLOWER', { NUMBER0: delta, NUMBER1: G.tax });
+    return;
+  }
+  showEvent('KINGNOTHING', {});
+}
 const REF_UNIT_COST = 1800;
 function growREF() {
   G.royalFund += (8 * G.difficulty + 10) * (1 << refEra());
@@ -8410,9 +8440,18 @@ function growREF() {
       if (gap < worst) { worst = gap; pick = t; }
     }
     G.ref[pick] += 1;
-    // @KINGBUY -- "King increases military spending. {unit} added to royal
-    // expeditionary force." -- the REF-growth surface (ref_growth.md).
-    showEvent('KINGBUY', { STRING0: pick });
+    // The REF-growth surface splits on the declaration (func_03E162
+    // @0x3E2DB, RULINGS 2026-08-07z11): before it, @KINGBUY ("King
+    // increases military spending"); after it, @KINGMOBILIZE ("Parliament
+    // votes additional funds to suppress revolution in X. {unit} mobilized
+    // in Y" -- subs byte-read: the power's home region, the unit name, the
+    // nation word).
+    if (G.flags & WOI_DECLARED)
+      showEvent('KINGMOBILIZE', { STRING0: DATA.regionname[G.nation],
+                                  STRING1: pick,
+                                  STRING2: DATA.nations[G.nation].country });
+    else
+      showEvent('KINGBUY', { STRING0: pick });
   }
 }
 // The Crown's European-war cycle (COMPLETION_PLAN Phase 3). Only the
@@ -8517,8 +8556,18 @@ function declareIndependence() {
 // units are created.
 const CONTINENTAL_OF = { Soldiers: 'Cont. Army', Dragoons: 'Cont. Cav.' };
 function mobilizeContinentals() {
+  // @CANTMOBILIZE: "Continental Army can mobilize in colonies which contain
+  // at least {N muskets} only" -- the muskets gate the byte-read mobilize
+  // lacked. No emit site survives in the EXE scan; the threshold here is
+  // the standard 50-musket equip cost, flagged.
+  const NEED_MUSKETS = 50;
+  if (!G.colonies.some(c => (c.stock[GOOD.MUSKETS] || 0) >= NEED_MUSKETS)) {
+    showEvent('CANTMOBILIZE', { NUMBER0: NEED_MUSKETS });
+    return;
+  }
   let promoted = 0;
   for (const c of G.colonies) {
+    if ((c.stock[GOOD.MUSKETS] || 0) < NEED_MUSKETS) continue;
     if (c.sol < 50) continue;
     let budget = Math.max(1, Math.floor((c.sol - 50) * Math.floor(c.colonists.length / 2) / 50));
     for (const u of G.units) {
@@ -11839,6 +11888,7 @@ function onKey(e) {
       if (k === 'p' || k === 'P' || k === '2') openEuroMenu(1);
       if (k === 't' || k === 'T' || k === '3') openEuroMenu(2);
       if (k === 's' || k === 'S') { const e = activeShip(); if (e) confirmSailAway(e); }
+      if (k === 'k' || k === 'K') petitionLowerTaxes();
       if (k === 'Escape' || k === 'x' || k === 'e' || k === 'E') G.screen = 'map';
       break;
     }
