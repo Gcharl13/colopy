@@ -57,7 +57,6 @@ BLOCKED = {
     'KINGNO': 'ditto', 'KINGNOTHING': 'ditto', 'KINGRAISE': 'ditto',
     'KINGWELCOME0': 'ditto',
     'LOOTFOREIGN': 'no rival treasure-fleet model',
-    'RECRUIT2': 'native specialist-recruit site unclear (disasm)',
     'SHIPRUN': 'evade/blockade-run condition unmapped (disasm)',
     'SHIPSLOW': 'ditto',
     'SHIPLAKE': 'no inland-lake connectivity model',
@@ -86,6 +85,8 @@ NA = {
     'FINDCITY': 'debug locator', 'NOCITY': 'debug locator',
     'COLONYUNIT': 'debug locator',
     'RAIDSCALP': 'orphan -- no caller in the EXE (manual_src part5 22.x)',
+    'RECRUIT2': 'orphan-or-dynamic -- the systematic emitter scan finds no emit site '
+                '(2026-08-07z9)',
 }
 
 exported = set(re.findall(r'"@([A-Z0-9]+)"', bnd))

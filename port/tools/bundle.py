@@ -163,6 +163,9 @@ def build_data():
     # @ATTITUDINAL: the "Extremely/Very/Rather/Somewhat/Slightly" modifiers
     # the @PISS* announcements compose with the band word.
     D["attitudinal"] = [r["name"] for r in rows("@ATTITUDINAL")]
+    # @VALUES: the four-step goods-quality ladder the haggle's @TRADE0
+    # %STRING0 indexes (func_049600 tail @0x49AE6, RULINGS 2026-08-07z9).
+    D["values"] = [r["name"] for r in rows("@VALUES")]
     # GAME.TXT @SCORE: the endgame joke-name lines ("%STRING0 Fever" ...),
     # one drawn on the @EXPLOITS rating card.
     D["scorenames"] = [l for l in

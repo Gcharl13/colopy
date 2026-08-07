@@ -447,7 +447,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## BUNDLED-UNWIRED (0)
 
 
-## BLOCKED (named blocker) (26)
+## BLOCKED (named blocker) (25)
 
 - APOSTATESUSA - reachable only via the USA suffix at runtime
 - CANTMOBILIZE - muskets gate absent from the byte-read mobilize (disasm)
@@ -465,7 +465,6 @@ roadmap is docs/COMPLETION_PLAN.md.
 - KINGRAISE - ditto
 - KINGWELCOME0 - ditto
 - LOOTFOREIGN - no rival treasure-fleet model
-- RECRUIT2 - native specialist-recruit site unclear (disasm)
 - RIDUSA - ditto
 - SHIPLAKE - no inland-lake connectivity model
 - SHIPRUN - evade/blockade-run condition unmapped (disasm)
@@ -479,7 +478,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## MISSING (0)
 
 
-## N/A (24)
+## N/A (25)
 
 - AMERICA - custom-world generator UI (port ships AMER2 only)
 - CCLIM - custom-world label
@@ -501,6 +500,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - MULTIREV - ditto
 - NOCITY - debug locator
 - RAIDSCALP - orphan -- no caller in the EXE (manual_src part5 22.x)
+- RECRUIT2 - orphan-or-dynamic -- the systematic emitter scan finds no emit site (2026-08-07z9)
 - SAVEERROR - ditto
 - SAVEGAME - port saves to localStorage, own UI
 - SAVEGOOD - ditto

@@ -1166,13 +1166,21 @@ function firstTribeContact(v) {
     G.screen = 'village';
     // "We are a glorious nation of {N <settlements>}" -- the engine's plural
     // string is unread; levelname+'s' is the port's phrasing. The treaty
-    // offer's mechanical effect is likewise unread: accepting records
-    // nothing beyond the flag, and that omission is flagged here.
+    // effect is now BYTE-READ (func_056C3E @0x56DCB, RULINGS 2026-08-07z9):
+    // answering NO adjusts the tribe's tension by +100 -- straight to the
+    // war band -- and fires @INDIANSHUN with the power's name (0xD6C(tribe,
+    // ..., 0x64) @0x56DEF, emit 0x1811 @0x56E11); YES continues peacefully
+    // (t.treaty). The per-tribe plate split (Inca 5 / Aztec 4 / else 3) is
+    // also byte-confirmed at @0x56D95.
     const count = G.villages.filter(w => w.tribe === v.tribe).length;
     askEvent('INDIANWELCOME', {
       STRING0: t.name, NUMBER0: count,
       STRING1: `${DATA.levelname[t.level] || 'Camp'}s`,
-    }, (choice) => { if (choice === 0) t.treaty = true; });
+    }, (choice) => {
+      if (choice === 0) { t.treaty = true; return; }
+      adjustTension(v.tribe, 100, 0);
+      showEvent('INDIANSHUN', { STRING0: DATA.nations[G.nation].country });
+    });
   });
 }
 
@@ -5297,15 +5305,35 @@ function nativeRaid(v, c) {
         v.stock = v.stock || DATA.cargo.map(() => 0);
         v.stock[g[1]] += g[0];
         v.wealth = (v.wealth || 0) + 0x19;
+        // The sated-raid tension credit, byte-read: -4 for a stores raid
+        // (push -4 @0x5C416; the gold raid's is -16).
+        adjustTension(v.tribe, -4, 0);
         showEvent('RAIDSTORES', { ...S, STRING2: DATA.cargo[g[1]].name });
         break;
       }
-      case 2:                                      // @RAIDWREAK -- payload TBD
+      case 2: {                                    // @RAIDWREAK
+        // Payload byte-read (func_05BE84 @0x5C42A..): the raid DECREMENTS a
+        // building tier (dec ColonyRecord+0x95/+0x96 by target id, name
+        // substituted). The port's flat building list models the decrement
+        // as removing one non-starting building.
+        const smash = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
+        if (smash.length) {
+          const b = smash[Math.floor(Math.random() * smash.length)];
+          c.buildings.splice(c.buildings.indexOf(b), 1);
+        }
         showEvent('RAIDWREAK', S);
         break;
-      case 3: {                                    // @RAIDGOLD -- amount TBD
-        const take = Math.min(G.gold, Math.floor(G.gold / 4));
+      }
+      case 3: {                                    // @RAIDGOLD
+        // Amount byte-read (@0x5C2D4..0x5C2F1): random(0x32, min(gold,
+        // 0x7FFF)) -- 50 up to the whole treasury -- followed by the -16
+        // tension credit (push -0x10 @0x5C5BC, the raid is sated).
+        const cap = Math.min(G.gold, 0x7FFF);
+        const take = cap >= 0x32
+          ? 0x32 + Math.floor(Math.random() * (cap - 0x32 + 1))
+          : G.gold;
         G.gold -= take;
+        adjustTension(v.tribe, -16, 0);
         showEvent('RAIDGOLD', { ...S, NUMBER0: take });
         break;
       }
@@ -5564,46 +5592,66 @@ function liveAmong(v, u) {
 }
 
 // --- r5 Ask to Speak With Chief ------------------------------------------
-// Six documented arms. WHICH one fires is steered by a sub-mode argument whose
-// selector is untraced (TBD), and the beads amount, the reveal radius and the
-// taboo odds are all untraced too. The port rolls uniformly over the arms the
-// village can actually offer and says so; a second audience at the same village
-// gets the polite nothing.
+// REBUILT 2026-08-07 from func_04A7CA (the real chief handler; RULINGS
+// 2026-08-07z9). Byte-read ladder, in the engine's order:
+//   1. seasoned = (profession byte == 0x16, Seasoned Scouts)
+//   2. tension >= 75: the scout is taken (attribute-bit-6 exemption unread;
+//      the exempt path falls to the polite nothing)
+//   3. ONE roll = random(0, 100 + 40*seasoned) serves two gates:
+//      roll <= tension/4 (only at tension >= 25)  -> @CHIEFKILL
+//      (Aztec extra: tribe idx 2, random(0,(8-difficulty)<<seasoned)==0
+//       -> kill too, @0x4A843)
+//   4. the @CHIEFHOWDY demand briefing plays on every surviving audience
+//   5. roll <= tension -> the polite nothing (@CHIEFBORED)
+//   6. settlement once-flag bit 8 (v.chiefSeen) -> @CHIEFBORED; else set it
+//   7. random(1,3): 1 -> @CHIEFGUIDES, and the scout BECOMES a Seasoned
+//      Scout (profession write @0x4A9DD; a seasoned scout falls to arm 2)
+//      2 -> @CHIEFAREA + the map reveal (helper 0xE08(x,y,0); its radius
+//           is inside the helper, unread -- the port has no fog to lift)
+//      3 -> @CHIEFGIFT, amount = random(1,6) * (3d(10-difficulty)) * 4
+//           * (tribeLevel+1)   (@0x4AAD0..0x4AB2D, byte-exact)
 function speakToChief(v, u) {
   const t = G.tribes[v.tribe];
   const S = { STRING0: t.name, STRING1: DATA.nations[G.nation].adjective };
-  if (v.chiefSeen) { showEvent('CHIEFBORED', S); return; }
-  v.chiefSeen = true;
-  const arms = ['CHIEFHOWDY', 'CHIEFGUIDES', 'CHIEFAREA', 'CHIEFGIFT', 'CHIEFBORED'];
-  // A tribe already on a war footing can execute the scout instead.
-  if ((v.alarm || 0) >= ALARM_RAID) arms.push('CHIEFKILL', 'CHIEFKILL');
-  const arm = arms[Math.floor(Math.random() * arms.length)];
-  if (arm === 'CHIEFHOWDY') {
-    // The briefing is built by sorting the village's live demand.
-    const d = villageDemand(v);
-    const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0]).map(r => r[1]);
-    showEvent('CHIEFHOWDY', { STRING0: t.treasure || DATA.cargo[top[0]].name,
-                              STRING1: DATA.cargo[top[0]].name,
-                              STRING2: DATA.cargo[top[1]].name,
-                              STRING3: DATA.cargo[top[2]].name });
-  } else if (arm === 'CHIEFGUIDES') {
-    // "Guides to aid your passage" -- the scout gets its moves back.
-    u.movesLeft = u.moves;
-    showEvent('CHIEFGUIDES', { ...S, STRING1: DATA.levelname[v.level].toLowerCase() });
-  } else if (arm === 'CHIEFAREA') {
-    // The map-area reveal has nothing to reveal yet: this build draws the whole
-    // map, with no fog model. The line still plays.
-    showEvent('CHIEFAREA', S);
-  } else if (arm === 'CHIEFGIFT') {
-    // Beads amount untraced -- the port rolls a modest purse and flags it.
-    const gold = 50 + Math.floor(Math.random() * 150);
-    G.gold += gold;
-    showEvent('CHIEFGIFT', { ...S, NUMBER0: gold });
-  } else if (arm === 'CHIEFKILL') {
+  const seasoned = u.profession === 'Seasoned Scouts' ? 1 : 0;
+  const ten = t.tension || 0;
+  const kill = () => {
     const i = G.units.indexOf(u);
     if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
     showEvent('CHIEFKILL', S);
-  } else showEvent('CHIEFBORED', S);
+  };
+  const roll = Math.floor(Math.random() * (101 + 40 * seasoned));
+  if (ten >= TENSION_HOSTILE) { kill(); return; }
+  if (ten >= 25 && roll <= (ten >> 2)) { kill(); return; }
+  if (v.tribe === 2 &&
+      Math.floor(Math.random() * (((8 - G.difficulty) << seasoned) + 1)) === 0) {
+    kill(); return;
+  }
+  // The demand briefing plays on every surviving audience.
+  const d = villageDemand(v);
+  const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0]).map(r => r[1]);
+  showEvent('CHIEFHOWDY', { STRING0: t.treasure || DATA.cargo[top[0]].name,
+                            STRING1: DATA.cargo[top[0]].name,
+                            STRING2: DATA.cargo[top[1]].name,
+                            STRING3: DATA.cargo[top[2]].name });
+  if (roll <= ten) { showEvent('CHIEFBORED', S); return; }
+  if (v.chiefSeen) { showEvent('CHIEFBORED', S); return; }
+  v.chiefSeen = true;
+  let arm = 1 + Math.floor(Math.random() * 3);
+  if (arm === 1 && seasoned) arm = 2;
+  if (arm === 1) {
+    u.profession = 'Seasoned Scouts';
+    showEvent('CHIEFGUIDES', { ...S, STRING1: DATA.levelname[v.level].toLowerCase() });
+  } else if (arm === 2) {
+    showEvent('CHIEFAREA', S);
+  } else {
+    const n = 10 - G.difficulty;
+    const d3 = () => 1 + Math.floor(Math.random() * n);
+    const gold = (1 + Math.floor(Math.random() * 6)) * (d3() + d3() + d3()) * 4 *
+                 ((v.level || 0) + 1);
+    G.gold += gold;
+    showEvent('CHIEFGIFT', { ...S, NUMBER0: gold });
+  }
 }
 
 // --- r6 Incite Indians ----------------------------------------------------
@@ -6087,10 +6135,14 @@ function tradeSellRound(v, u, h, st) {
   const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
   const counter = st.offer + Math.max(1, st.offer >> 1);        // TBD stand-in
   // @TRADE0 rows: accept / fairer price / gift / never mind; @TRADE1 drops
-  // the gift row. %STRING0 (the "some %STRING0 {goods}" modifier) has no
-  // decoded source -- passed empty, flagged.
+  // the gift row. %STRING0 is the @VALUES quality ladder ("low quality /
+  // good / fine / excellent"), byte-found at the emit (@0x49AE6: the word
+  // table indexed by clamp((v+4)/10, ..3) -- the port banks the index off
+  // the OFFER, the exact operand pair being one register deep, flagged).
+  const quality = (DATA.values || [])[
+    Math.max(0, Math.min(3, Math.floor((st.offer + 4) / 10)))] || '';
   askEvent(st.round === 0 ? 'TRADE0' : 'TRADE1',
-           { STRING0: '', STRING1: name, NUMBER0: st.offer, NUMBER1: counter },
+           { STRING0: quality, STRING1: name, NUMBER0: st.offer, NUMBER1: counter },
            (k) => {
     const giftRow = st.round === 0 ? 2 : -1;
     if (k === 0) {

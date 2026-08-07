@@ -9023,3 +9023,45 @@ war DRIVERS stay omitted per 2026-08-07m) emitting
 @CAPTURED2/@BURNED3 for third-party colony falls. G.rivalWars persists.
 
 Ledger: DONE 396 (+7), BLOCKED 26, MISSING 0. Suite 234/234 (new wire5).
+
+## 2026-08-07z9 — Phase 4 batch 2: the village windows read
+
+**func_04A7CA (the real Speak-with-Chief handler; 04B308 is the action
+dispatcher) — CLOSED.** speakToChief rebuilt to the byte ladder:
+ONE roll = random(0, 100+40*seasoned) gates both death (roll <=
+tension/4, only at tension >= 25; tension >= 75 is fatal outright, an
+attribute-bit-6 exemption unread) and boredom (roll <= tension); the
+Aztec extra execution roll random(0,(8-difficulty)<<seasoned)==0
+(@0x4A843); @CHIEFHOWDY briefs every surviving audience; the once-flag
+is settlement bit 8; the arm selector is random(1,3) with GUIDES
+converting the scout to a SEASONED SCOUT (profession write @0x4A9DD --
+the port's moves-refund stand-in is replaced) and a seasoned scout
+falling to the AREA arm; @CHIEFGIFT beads = random(1,6) *
+(3d(10-difficulty)) * 4 * (tribeLevel+1), byte-exact
+(@0x4AAD0..0x4AB2D). The AREA reveal calls helper 0xE08(x,y,0) -- its
+radius stays inside the helper (the port has no fog to lift).
+
+**func_049600 tail** — @TRADE0's %STRING0 is the NAMES @VALUES quality
+ladder ("low quality/good/fine/excellent"), the 4-word table at the
+emit (@0x49AE6, idx clamp((v+4)/10,..3)); bundled as DATA.values and
+wired (the exact operand pair is one register deep -- the port banks off
+the offer, flagged). Opening offer floor min 1 (@0x49A8B) matches.
+
+**func_05BE84** — @RAIDGOLD amount = random(0x32, min(gold, 0x7FFF))
+(@0x5C2E5), i.e. 50 up to the whole treasury, with a -16 tension credit
+(@0x5C5BC); @RAIDSTORES carries a -4 credit (@0x5C416); @RAIDWREAK's
+payload = a building-tier DECREMENT (dec ColonyRecord+0x95/+0x96 with
+the name substituted, @0x5C44A/@0x5C474) -- the port removes one
+non-starting building. All three TBDs closed.
+
+**func_056C3E** — the @INDIANWELCOME treaty effect: answering NO sets
+the tribe's tension +100 (war) and fires @INDIANSHUN with the power
+name (@0x56DEF/@0x56E11); YES continues peacefully. The per-tribe
+first-contact plate split (Inca 5/Aztec 4/else 3) is byte-confirmed
+@0x56D95.
+
+**RECRUIT/RECRUIT2**: the systematic emitter scan finds NO emit site
+anywhere in the EXE -- reclassified as orphans-or-dynamic (ceiling
+named), alongside RAIDSCALP.
+
+Suite 234/234.
