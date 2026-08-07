@@ -1,0 +1,14 @@
+{
+  "source_file": "SCORE06.SS",
+  "sha256": "3014668c60275794cc93a9599bc1e2a15abb0b9670242ebf9b3d68bbbd9ca69f",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/SCORE06",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

@@ -1,0 +1,14 @@
+{
+  "source_file": "LEVN0007.PIK",
+  "sha256": "be86460329d73bda3eb0a8945c130327ed854f1f8c7567b31608ed0ab2f7e03b",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/LEVN0007",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

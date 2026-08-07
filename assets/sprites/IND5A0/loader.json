@@ -1,0 +1,14 @@
+{
+  "source_file": "IND5A0.SS",
+  "sha256": "31f34f8937c1d3191631b2d9e3e7c8a8a95327245679e3a39898473eb1f50c8c",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/IND5A0",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

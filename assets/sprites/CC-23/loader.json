@@ -1,0 +1,14 @@
+{
+  "source_file": "CC-23.SS",
+  "sha256": "199015c84025125c9697eec2b968e34701a447a29426c1db66242c869ffd7136",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/CC-23",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

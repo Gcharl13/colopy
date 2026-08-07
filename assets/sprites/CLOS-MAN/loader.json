@@ -1,0 +1,14 @@
+{
+  "source_file": "CLOS-MAN.SS",
+  "sha256": "414b156c3e3d5e83acec340d8ee20cd22db0d0910263f23297d69f0f1386381a",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/CLOS-MAN",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

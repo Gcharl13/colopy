@@ -1,0 +1,14 @@
+{
+  "source_file": "IND4A1.SS",
+  "sha256": "0accc1b42418d69c84dfbc80e415bf8b2b71c97e0e3cd88c52f6c55119a0fdef",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/IND4A1",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

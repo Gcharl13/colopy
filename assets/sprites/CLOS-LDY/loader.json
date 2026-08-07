@@ -1,0 +1,14 @@
+{
+  "source_file": "CLOS-LDY.SS",
+  "sha256": "6210710541602a8d48c12b064d3caf46c7b07dcd9bf2a8251a2a691f4a642564",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/CLOS-LDY",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

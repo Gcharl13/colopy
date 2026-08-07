@@ -1,0 +1,14 @@
+{
+  "source_file": "DEC-UPPM.SS",
+  "sha256": "5cfd20c39d63c20fe5a1238b5fa3bf9179556bdd8a3d8fc132e4542f797cc10a",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/DEC-UPPM",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

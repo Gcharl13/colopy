@@ -1,0 +1,14 @@
+{
+  "source_file": "REPORT4.PIK",
+  "sha256": "dbdcd1d98c8eddd1a979a4d60e4e03721de2ecc79444dd9b08db80c8d2fe0bd1",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/REPORT4",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

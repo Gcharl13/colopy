@@ -1,0 +1,14 @@
+{
+  "source_file": "NAMEPLAT.SS",
+  "sha256": "98d0052eb5eb5500d26c506eb8a1d8dad5aa591758ec37d4dd2e18ffae7a7a42",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/NAMEPLAT",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

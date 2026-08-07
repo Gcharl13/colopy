@@ -1,0 +1,14 @@
+{
+  "source_file": "MSS0.SS",
+  "sha256": "8966f5680e2281ce2f3311e25199b7984d5fac1c4d9361ac21cfa08011b4b8a4",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/MSS0",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

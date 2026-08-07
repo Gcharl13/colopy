@@ -1,0 +1,14 @@
+{
+  "source_file": "CC-10.SS",
+  "sha256": "88fa743b94357a62185d3fa74a14cf8f3a11a48b81556fb9f89af35491236757",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/CC-10",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

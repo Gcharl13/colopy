@@ -299,6 +299,25 @@ scramble; under −1 every name matches its art. This also reconciles
 those ARE the VICEROY `@UNIT` indices minus 1, i.e. they are already PORT png
 indices. **So the renderer should index PNGs at `VICEROY_idx − 1`.**
 
+### Profession FIGURES (capture-pinned 2026-08-07 — RULINGS 2026-08-07z2)
+
+The previously unaccounted mid-sheet runs are the **colonist profession
+figures**, proven by template-matching every row of the live F4 Labor report
+(`docs/screens/live_2026-08-07/f4_labor.png`) against the decoded sheet at
+score 1.0:
+
+- **PORT png 81..98** = `@JOB` rows 0..17 contiguously: Expert Farmers 81,
+  Master Sugar Planters 82, … Firebrand Preachers 97, Elder Statesmen 98.
+  (png 99 would be Expert Teachers by the same run, but the engine's report
+  omits that row — pattern extension, unobserved.)
+- **Class-tail cluster** (scattered): Hardy Pioneers **58**, Veteran Soldiers
+  **59**, Seasoned Scouts **60**, Jesuit Missionaries **61**, Indian Converts
+  **66**, Free Colonists **100** (= the Colonist unit art), Indentured
+  Servants **106**, Petty Criminals **107**. Veteran Dragoons is omitted by
+  the report and has no observed figure.
+- Consumers: the F4 Labor report rows, and (port) the Europe dock's waiting
+  recruits/trainees via `professionIcon()`.
+
 ### Report-screen gauge / row segment sprites (byte-cited roles → PORT png)
 
 Roles are byte-verified in `.../drawlist/REPORTS.md` (gauge

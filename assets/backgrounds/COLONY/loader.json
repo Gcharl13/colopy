@@ -1,0 +1,14 @@
+{
+  "source_file": "COLONY.PIK",
+  "sha256": "faaa637d528641a5f098eb4b1975696de182bd2d586b5f089d5a0d51320f5465",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/COLONY",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

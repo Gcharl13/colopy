@@ -1,0 +1,14 @@
+{
+  "source_file": "OPENFISH.SS",
+  "sha256": "ee656204f4800cdd14c79a40894bd5285b6e20e0b41c574fea26c1535ce35f20",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/OPENFISH",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

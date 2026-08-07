@@ -4123,35 +4123,9 @@ function activeShip() { return shipsInPort()[G.euroShip] || null; }
 const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
 const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
 
-// Profession -> badge frame (PORT png index) for the Europe dock. Goods icons
-// are engine `good+0x17` = png `0x16+good` (the market-bar mapping); crosses
-// and bells are the F2/F3 gauge fills (png 56 / 62, byte-cited in
-// SPRITE_CATALOG). @JOB rows with no icon of their own (Teachers, the
-// non-experts, the five roled professions that already draw as their unit)
-// are absent and draw unbadged. Port-authored UI -- see drawEurope.
-const PROFESSION_BADGE = {
-  'Expert Farmers': 22, 'Expert Fishermen': 22,
-  'Master Sugar Planters': 23, 'Master Tobacco Planters': 24,
-  'Master Cotton Planters': 25, 'Expert Fur Trappers': 26,
-  'Expert Lumberjacks': 27, 'Master Carpenters': 27,
-  'Expert Ore Miners': 28, 'Expert Silver Miners': 29,
-  'Master Distiller': 31, 'Master Distillers': 31,
-  'Master Tobacconists': 32, 'Master Weavers': 33,
-  'Master Fur Traders': 34, 'Master Blacksmiths': 36,
-  'Master Gunsmiths': 37,
-  'Firebrand Preachers': 56, 'Elder Statesmen': 62,
-};
-// Half-scale sprite blit (nearest-neighbour) for the badge overlay.
-function sheetHalf(ctx, sheet, idx, x, y) {
-  const sh = DATA.sheets[sheet];
-  const f = sh && sh.frames[idx];
-  if (!f) return;
-  const atlas = cycAtlas(sheet, cyclePhase());
-  if (!atlas) return;
-  ctx.drawImage(atlas, f.x, f.y, f.w, f.h,
-                Math.round(x), Math.round(y),
-                Math.max(1, f.w >> 1), Math.max(1, f.h >> 1));
-}
+// (The 2026-08-07 half-scale trade-icon badge lived here for a few hours; it
+// was superseded the same day by the real profession FIGURES found in
+// ICONS.SS via the F4 Labor capture -- see professionIcon.)
 function drawEurope(ctx) {
   // TUTORIAL17: the first European Status visit (binding flagged).
   tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
@@ -4223,16 +4197,14 @@ function drawEurope(ctx) {
   G.dockUnits.slice(0, 6).forEach((e, k) => {
     const u = unit(entryType(e)) || unit('Colonists');
     const x = EURO_DOCK.x + k * EURO_DOCK.pitch;
-    sheetFrame(ctx, 'ICONS', u.icon, x + 3, EURO_DOCK.y + 1);
-    // Profession badge: ICONS has no expert FIGURES (131 frames, all
-    // accounted -- units/goods/HUD), so a waiting specialist is told apart by
-    // his trade's own icon, half-scale at his feet: the engine's own idiom
-    // for "mark a slot with a good" (the boycott marker redraws `good+0x17`
-    // over the dock slot, @0x031A73..0x031AB4). The badge itself is
-    // port-authored UI, flagged (the DOS dock shows the bare type figure).
-    const badge = PROFESSION_BADGE[entryName(e)];
-    if (badge !== undefined)
-      sheetHalf(ctx, 'ICONS', badge, x + 10, EURO_DOCK.y + 11);
+    // A waiting recruit/trainee (a plain profession string) draws his
+    // PROFESSION FIGURE -- the game's own art, capture-pinned from the F4
+    // Labor report (professionIcon, RULINGS 2026-08-07z2: @JOB 0..17 = png
+    // 81+i, class tail 58-61/66/100/106/107). Once ARMED ({name,type}) he
+    // draws as what he is equipped as, the @UNIT sprite.
+    const fig = typeof e === 'string' ? professionIconByName(e) : null;
+    sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
+               x + 3, EURO_DOCK.y + 1);
     if (k === G.euroDockSel)
       hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
@@ -8971,31 +8943,52 @@ function okButton(ctx) {
 // pixels against every ICONS frame: Farmer->81, Sugar Planter->82,
 // Fisherman(job 8)->89, all three at score 1.000.
 //
-// Column split is 8 / 9 / 10, which is @JOB's own grouping: 0..7 the field
-// jobs (the eight that have yield columns), 8..16 the indoor trades, then the
-// classes. TBD: the live frame shows 27 filled rows where @JOB has 28 entries
-// plus a "Free Colonists" row -- the exact tail of the list is unresolved, so
-// the grid simply stops when it runs out of entries rather than inventing any.
+// Profession -> ICONS figure, CAPTURE-PINNED 2026-08-07: every row of the
+// live F4 report (docs/screens/live_2026-08-07/f4_labor.png) template-matched
+// against the decoded sheet at score 1.0. @JOB rows 0..17 run contiguously at
+// png 81+i (Expert Farmers 81 .. Elder Statesmen 98); the class tail uses a
+// scattered cluster: Free Colonists 100 (= the Colonist unit art), Hardy
+// Pioneers 58, Veteran Soldiers 59, Seasoned Scouts 60, Jesuit Missionaries
+// 61, Indentured Servants 106, Petty Criminals 107, Indian Converts 66.
+// Expert Teachers (99) extends the 81+i run but the engine's report omits the
+// row, so 99 is a pattern extension, unobserved; Veteran Dragoons is also
+// omitted and has no observed figure -- it falls back to the Dragoons unit
+// sprite (104) rather than inventing one.
+const PROFESSION_FIGURE = { 18: 99, 19: 100, 20: 58, 21: 59, 22: 60, 23: 104,
+                            24: 61, 25: 106, 26: 107, 27: 66 };
+function professionIcon(job) {
+  if (job < 0 || job == null) return null;
+  if (job <= 17) return 81 + job;
+  return PROFESSION_FIGURE[job] !== undefined ? PROFESSION_FIGURE[job] : null;
+}
+const professionIconByName = (name) =>
+  professionIcon((DATA.jobexpert || []).indexOf(name));
+
+// The capture also fixes the ROW ORDER: 8 field jobs / 9 indoor trades /
+// 9 class rows with Free Colonists LAST -- Expert Teachers and Veteran
+// Dragoons are omitted by the engine's own report (26 rows, not 28).
 const F4_COLS = [2, 107, 212];
-const F4_SPLIT = [8, 9, 10];
-const F4_ICON_BASE = 81;
+const F4_ORDER = [
+  [0, 1, 2, 3, 4, 5, 6, 7],
+  [8, 9, 10, 11, 12, 13, 14, 15, 16],
+  [17, 20, 21, 22, 24, 25, 26, 27, 19],
+];
 const F4_ROW0 = 26, F4_PITCH = 18;
 
 function drawLaborReport(ctx) {
   const experts = DATA.jobexpert || [];
-  let job = 0;
-  for (let c = 0; c < F4_COLS.length; c++) {
+  F4_ORDER.forEach((jobs, c) => {
     const base = F4_COLS[c];
-    for (let row = 0; row < F4_SPLIT[c]; row++, job++) {
+    jobs.forEach((job, row) => {
       const name = experts[job];
       if (!name) return;
       const y = F4_ROW0 + row * F4_PITCH;
-      sheetFrame(ctx, 'ICONS', F4_ICON_BASE + job, base + 2, y - 2);
+      sheetFrame(ctx, 'ICONS', professionIcon(job), base + 2, y - 2);
       FONT.tiny.draw(ctx, name, base + 12, y, lut(REPORT_NAME_INK));
       FONT.tiny.center(ctx, String(countProfession(job)), base + 39, y + 8,
                        lut(REPORT_VALUE_INK));
-    }
-  }
+    });
+  });
 }
 
 // ---- shared report primitives --------------------------------------------
@@ -9197,9 +9190,10 @@ function drawEconomicReport(ctx) {
 // +0x7C net value -- sale proceeds after tax minus purchase costs.
 const europeTons = (g) => (G.tradeTons && G.tradeTons[g]) || 0;
 const europeGold = (g) => (G.tradeGold && G.tradeGold[g]) || 0;
-// The live frame prints 13K$/16K$/20K$ but 6071$ in full, so large values
-// abbreviate; the exact threshold is unobserved between 6072 and 12999 --
-// 10000 is the port's reading.
+// Large values abbreviate at EXACTLY 10000, floor-truncated -- CAPTURE-PINNED
+// 2026-08-07 with 16 probe values patched into a save's net-trade array
+// (docs/screens/live_2026-08-07/f5_k_probe.png): 9999 prints in full, 10000
+// prints "10K", 12999 prints "12K". The old 6072..12999 uncertainty is closed.
 const f5Gold = (v) => Math.abs(v) >= 10000 ? `${Math.trunc(v / 1000)}K` : String(v);
 
 // ---- F6 Colony ------------------------------------------------------------

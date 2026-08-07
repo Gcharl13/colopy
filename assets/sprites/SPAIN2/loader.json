@@ -1,0 +1,14 @@
+{
+  "source_file": "SPAIN2.SS",
+  "sha256": "a5dae565f5fa6e2f46c35029564fbab761af64bcfcee4b2909e22dae28f55d2c",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/SPAIN2",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

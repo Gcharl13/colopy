@@ -1,0 +1,14 @@
+{
+  "source_file": "OPENMENU.PIK",
+  "sha256": "f25c313c66a8f49bf79487fcecbcf76dafff2a81b713f2f3cb2e2d4349fd2004",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/OPENMENU",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

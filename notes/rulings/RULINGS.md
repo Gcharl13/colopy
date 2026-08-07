@@ -8819,3 +8819,40 @@ records; render_diff pair "hof.png vs live_2026-08-07/hof_crafted_dat.png"
 passes at 1947/4000 px (residual = the DOS mouse cursor + glyph AA).
 15/15 pairs green, 47/47 shots (makeColony hardened: pinned Plains tile,
 calmed tribes, walks the founding confirm chain), suite 233/233.
+
+## 2026-08-07z2 — Phase 4 captures 2-3: the K-threshold and the profession figures
+
+**K-threshold CLOSED.** Patched 16 probe values (6100..13000) into the 1653
+save's PowerRecord +0x7C net-trade array, loaded it live, captured F5
+(`docs/screens/live_2026-08-07/f5_k_probe.png`): 9999 prints in full, 10000
+prints "10K", 12500 and 12999 print "12K". The abbreviation threshold is
+EXACTLY 10000 with floor truncation -- the port's flagged reading was right
+and the flag is removed. (The probe also exercised the loader end-to-end:
+the crafted array survived the round trip verbatim.)
+
+**Profession figures FOUND -- the ICONS.SS mystery rows.** The F4 Labor
+report capture (`f4_labor.png`) shows a distinct figure per profession.
+Template-matching every row against the decoded sheet scores 1.0 exact:
+@JOB rows 0..17 run contiguously at png 81+i (Expert Farmers 81 .. Elder
+Statesmen 98); the class tail is a scattered cluster -- Hardy Pioneers 58,
+Veteran Soldiers 59, Seasoned Scouts 60, Jesuit Missionaries 61, Indian
+Converts 66, Free Colonists 100 (the Colonist unit art), Indentured
+Servants 106, Petty Criminals 107. The engine's report omits Expert
+Teachers and Veteran Dragoons (26 rows, not 28); png 99 is Teachers by
+pattern extension (unobserved), Dragoons falls back to the unit sprite 104.
+This resolves most of SPRITE_CATALOG's unaccounted 57..99 range.
+
+**Port.** professionIcon()/professionIconByName() added; drawLaborReport
+now renders the capture's exact row order (8/9/9, Free Colonists last) and
+figures; the Europe dock's waiting recruits draw their PROFESSION FIGURE
+(the same-day trade-icon badge is superseded and removed) -- the user's
+"dock colonists must match their profession" request is now satisfied with
+the game's own art. f5Gold's flag removed. SPRITE_CATALOG updated.
+
+**Also captured this batch** (filed under docs/screens/live_2026-08-07/,
+reconciliation pending): f5_cargo_in_port.png (the F5 second view -- a
+colony x 16-goods stock grid), f6_page1-4.png (F6 paginates; garrison unit
+icons beside colony rows), f9_indian.png (single page; Extinct tribes keep
+their row; right column = @LEVELS words; centre = tribute tally).
+
+Suite 233/233; render-diff 15/15.

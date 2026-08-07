@@ -1,0 +1,14 @@
+{
+  "source_file": "CLOS-BKG.PIK",
+  "sha256": "7f0bd6cf88fb47466f2866ba652f2506a5ad3c5423756399fe7383033e7c4b79",
+  "format": "PIK",
+  "format_spec": "formats/PIK.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/backgrounds/CLOS-BKG",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

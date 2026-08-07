@@ -1,0 +1,14 @@
+{
+  "source_file": "SCORE11.SS",
+  "sha256": "9cfa319e571a4452d2fab5376928dbb282c911c454de28190112df263c7a31e9",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/SCORE11",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}

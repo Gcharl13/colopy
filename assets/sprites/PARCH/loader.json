@@ -1,0 +1,14 @@
+{
+  "source_file": "PARCH.SS",
+  "sha256": "5ba57f44f97e5616dc0fb3d4755de9d1dd75a7e060f4e601c286230d17b72113",
+  "format": "SS",
+  "format_spec": "formats/SS.md",
+  "loader_function": "TBD",
+  "loader_offset": "TBD",
+  "called_with_args": [],
+  "extracted_to": "assets/sprites/PARCH",
+  "frames_or_glyphs_count": 0,
+  "metadata_count": 0,
+  "extraction_tool": "mpskit",
+  "round_trip": "lossless_decoded (FAB compression is non-deterministic)"
+}
