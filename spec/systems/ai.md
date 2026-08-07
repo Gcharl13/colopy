@@ -74,11 +74,12 @@ dx `@0x047399`):
 | **Base** | **+200** (0xC8) | `@0x0473A4` | every candidate seeds `[bp-0x24]=200` |
 | Water/Arctic reject | drop candidate | `@0x0473BB` | tile id (`0x181F:0x78C`) == 0x19 Ocean / 0x1A Sea-Lane / 0x18 Arctic |
 | Heading continuity | **+4** | `@0x047A79` | candidate dir == current heading `0x314F` |
-| Turn cost | `−` (helper) | `@0x047A8D` | `0x181F:0x384(curHeading,candDir)` nonzero (reverse ≈ −6) |
+| Heading adjacency | **+3** | `@0x047A99` | `0x181F:0x384(cand,cur)` = `func_0049FC`, true iff `(cur±1)&7 == cand` — an adjacent-compass test (resolved 2026-08-07h) |
+| Heading reverse | **−6** | `@0x047AB0` | candidate == `heading XOR 4` |
 | Enemy on tile | reject | `@0x047A1D` | unit occupies dest (`0x181F:0x7E0`) and terrain flag `<0` |
 | Colony proximity (stay) | **+40** (0x28·bool) | `@0x047A33` | `0x181F:0x8BC(2,unit)` |
 | Settlement bonus | **+20** (0x14) | `@0x0479C0` | unit-type test |
-| Target distance | **×3** | `@0x047AEC` | goto record `[bp-0x78]≥0`: `0x181F:0x370(dx,dy)` dist >2 ⇒ score = 3·dist |
+| Home-settlement leash | **−3·d** | `@0x047AD0–0x047B39` | `[bp-0x78]` is a NATIVE-SETTLEMENT index (the `imul 0x12`/`[0x54EC]` reads): d = dist from the CANDIDATE tile to that settlement; `d > 2` ⇒ `score −= 3·d` (`sub [bp-0x24],ax` @0x047B39 — the old "score = 3·dist" gloss had the sign and the target wrong; corrected 2026-08-07h). Halved under `0x902`, quartered more under `0x8D0` (unit-state predicates, unread) |
 | Frontier/reveal | reject if 0 | `@0x047B46` | `0x181F:0x984(power,y,x)`==0 drops the candidate |
 | Early-era terrain | **+50** (0x32) | `@0x047B76` | era `[0x8cfa]<4` and `!(0x181F:0xA38(era,power) & 0x20)` |
 | Resource/yield | **+16** (0x10) | `@0x047C52` | `0x181F:0x30C(power yield) ≥ 0x5F` (branch on dir bit-0) |

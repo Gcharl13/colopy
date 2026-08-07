@@ -8094,3 +8094,43 @@ landmass flood fill for a fresh map (the engine's own region builder is
 unread — that reconstruction is R-tier, flagged), saved in the v2 browser
 save, and used by raidTargetScore. The plane's HIGH nibble is still open
 (prime-resource/river-mouth candidates). Suite: 216/216.
+
+## 2026-08-07h — AI fidelity pass (user directive): no invented behaviour; the func_046FFA idle scorer ported term-by-term; two ai.md §3 corrections
+
+**User directive:** the port's AI must match the original's operation — no
+invented roles or cadences for the rivals or the natives; where the engine's
+rule is unread, OMIT and flag, do not approximate with made-up numbers.
+
+**Applied:**
+
+* The invented rival-colony cadences are REMOVED (pop +1 every 16 turns,
+  fortify tier = pop/4, a soldier spawned every 4th turn — none of it had a
+  cite). Rival colonies no longer grow or raise troops out of nothing: a
+  fresh game's rivals field what their ships landed with, an imported save's
+  rivals field exactly what the save carries. AI colony development runs
+  through planner missions (func_04CC50) that are not yet decoded — omitted.
+* The invented brave wander (a 50% coin and a hard 2-tile box) is replaced
+  by **func_046FFA's own idle scorer, term by term**: 9 candidates (8 dirs +
+  stay), base 200 (@0x0473A4), Ocean/Sea-Lane/Arctic dest reject
+  (@0x0473BB), occupied-dest reject (@0x047A1D), heading continuity +4
+  (@0x047A79) / adjacent +3 (@0x047A99) / reverse −6 (@0x047AB0), the
+  home-settlement leash −3·d beyond distance 2 (@0x047AD0–0x047B39), jitter
+  +rand(1,5) (@0x047F44), clamp and strict max (@0x047F6E). Omitted (unread,
+  listed in place): the flag pair +4 @0x047AC6, the leash-halving predicates
+  0x902/0x8D0, the frontier gate 0x984, and the era/resource/colony-site
+  terms that don't apply to braves.
+* The war-march step (both braves-to-raid and rival soldiers) remains a
+  straight-line stand-in for the goto executor's path scoring (func_04E2D6
+  step 5, unported) — now flagged as exactly that, in both places. The
+  colony-capture plunder roll is flagged as a placeholder (formula unread).
+
+**Two byte corrections to ai.md §3 from this pass:** `0x181F:0x384` =
+`func_0049FC` is an adjacent-compass test (`(cur±1)&7 == cand`), giving the
+three-tier heading term +4/+3/−6; and the "target distance ×3" row was
+wrong twice — `[bp-0x78]` indexes a NATIVE SETTLEMENT (not a goto record)
+and the term is a PENALTY (`sub` @0x047B39): the unit pays −3·d for
+straying beyond 2 tiles of its settlement. That leash is what keeps braves
+near their villages in the original — the port's old hand-rolled 2-tile box
+was accidentally the right radius, and is now the engine's own arithmetic.
+
+Suite: 216/216.

@@ -2700,7 +2700,7 @@ def main():
          r["sav"]["villages"], r["sav"]),
         ("the imported state renders the map and the colony screen",
          r["sav"]["renders"] is True, r["sav"]),
-        ("rival AI: garrisons raise, and soldiers march once at war",
+        ("rival AI: the save's real soldiers hold at peace and march once at war",
          r["rivalAI"]["marched"] and r["rivalAI"]["garrisoned"], r["rivalAI"]),
         ("the raid-target scorer scores 1653's villages and capitals sparkle",
          r["sav"]["raidScorer"], r["sav"]),

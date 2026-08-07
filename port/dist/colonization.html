@@ -4427,62 +4427,104 @@ function nativeRaid(v, c) {
   }
 }
 
-// ---- the brave mover -------------------------------------------------------
+// ---- the native unit mover -------------------------------------------------
 // The engine drives every native unit through the per-unit order pipeline
-// (func_04E2D6) and the 9-candidate heading scorer func_046FFA -- both decoded
-// in spec/systems/ai.md. The port runs a REDUCED version of that scorer's
-// visible behaviour, R-tier and flagged as such: a brave whose village is on a
-// war footing (alarm >= 0x80, the @0x04734E hostility test) marches one tile a
-// turn toward the nearest colony of ours and delivers func_05BE84's raid when
-// he arrives, then turns for home; a brave at peace stays within two tiles of
-// his village, wandering on the scorer's rand(1,5)-jitter rhythm. What this
-// keeps from the byte evidence is the RATE (one move of one tile per turn --
-// Braves are @UNIT movement 1), the hostility threshold, and the raid dispatch
-// itself; the scoring terms it drops are listed in ai.md §3.
-function nativeMoveAI() {
+// (func_04E2D6); its idle-movement half is the 9-candidate heading scorer
+// func_046FFA, whose terms are byte-decoded and REPRODUCED here term by term:
+//   * 9 candidates: the 8 compass tiles + stay ([bp-0x34] 0..8 @0x047371)
+//   * base 200 per candidate                                     @0x0473A4
+//   * dest Ocean / Sea Lane / Arctic (engine ids 0x19/0x1A/0x18): reject
+//                                                                @0x0473BB
+//   * dest occupied by another unit: reject                      @0x047A1D
+//   * heading continuity, against the unit's stored heading 0x314F:
+//       same direction +4      @0x047A79
+//       ADJACENT direction +3  @0x047A99 (0x181F:0x384 = func_0049FC,
+//                              `(a±1)&7 == b` -- an adjacent-compass test)
+//       REVERSE (xor 4) -6     @0x047AB0
+//   * the HOME-SETTLEMENT LEASH @0x047AD0-0x047B39: d = distance from the
+//     CANDIDATE tile to the unit's settlement; d > 2 costs -3*d. (ai.md §3's
+//     "score = 3*dist" gloss had the sign wrong -- `sub [bp-0x24],ax`
+//     @0x047B39 is a penalty. The table's halving predicates 0x902/0x8D0 are
+//     unread and OMITTED, as are the +4 flag pair @0x047AC6, the frontier
+//     gate 0x984, and the era/resource/colony-site terms -- omitted, not
+//     replaced.)
+//   * RNG jitter +random_int(1,5)                                @0x047F44
+//   * clamp at 0, strict max wins, 8 = no move                   @0x047F6E
+// A village on a war footing (alarm >= 0x80, the @0x04734E test) instead has
+// its brave EXECUTE the planner's raid mission: goto-target = the raid
+// scorer's colony (func_0460F8), stepped one tile a turn -- the port's
+// straight-line step stands in for the goto executor's own path scoring
+// (func_04E2D6 step 5, unported) -- and func_05BE84's raid dispatch fires on
+// arrival.
+function headingScore(u, home) {
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-  const open = (x, y) =>
-    x >= 0 && y >= 0 && x < MAP.w && y < MAP.h && !tileWater(at(x, y)) &&
-    !G.villages.some(w => w.x === x && w.y === y) &&
-    !G.natives.some(n => n.x === x && n.y === y) &&
-    !G.units.some(u => u.x === x && u.y === y) &&
-    !G.colonies.some(c => c.x === x && c.y === y);
+  const occupied = (x, y) =>
+    G.natives.some(q => q !== u && q.x === x && q.y === y) ||
+    G.units.some(q => q.x === x && q.y === y) ||
+    G.rivals.some(r => r.units.some(q => q.x === x && q.y === y)) ||
+    G.villages.some(w => w.x === x && w.y === y) ||
+    G.colonies.some(c => c.x === x && c.y === y);
+  let best = 8, bestScore = -1;
+  for (let cand = 0; cand <= 8; cand++) {
+    const x = cand === 8 ? u.x : u.x + DIRS[cand][0];
+    const y = cand === 8 ? u.y : u.y + DIRS[cand][1];
+    if (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) continue;
+    const t = tileTerrain(at(x, y));
+    if (t === TERR.OCEAN || t === TERR.SEALANE || t === 24) continue;  // 24 = Arctic
+    if (cand !== 8 && occupied(x, y)) continue;
+    let s = 200;
+    if (cand !== 8 && u.heading !== undefined && u.heading < 8) {
+      if (cand === u.heading) s += 4;
+      else if (((u.heading + 1) & 7) === cand || ((u.heading + 7) & 7) === cand) s += 3;
+      else if ((u.heading ^ 4) === cand) s -= 6;
+    }
+    if (home) {
+      const d = Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
+      if (d > 2) s -= 3 * d;
+    }
+    s += 1 + Math.floor(Math.random() * 5);
+    if (s < 0) s = 0;
+    if (s > bestScore) { bestScore = s; best = cand; }
+  }
+  if (best < 8) {
+    u.x += DIRS[best][0];
+    u.y += DIRS[best][1];
+    u.heading = best;
+  }
+}
+function nativeMoveAI() {
   for (const n of G.natives) {
     const v = n.home;
     if (!v) continue;
     const hostile = (v.alarm || 0) >= ALARM_RAID && G.colonies.length;
     if (hostile) {
-      // The engine's raid AI targets the SCORER's pick (func_0460F8); a
-      // village with no scoreable colony in reach falls back to the nearest.
       const c = raidTargetScore(v).colony || G.colonies.slice().sort((a, b) =>
         (Math.abs(a.x - n.x) + Math.abs(a.y - n.y)) -
         (Math.abs(b.x - n.x) + Math.abs(b.y - n.y)))[0];
       if (Math.max(Math.abs(c.x - n.x), Math.abs(c.y - n.y)) <= 1) {
         // At the palisade: the raid fires, and the party turns for home.
         nativeRaid(v, c);
-        n.raiding = false;
         n.x = v.x; n.y = v.y + 1;
         if (tileWater(at(n.x, n.y))) { n.x = v.x + 1; n.y = v.y; }
+        n.heading = undefined;
         continue;
       }
-      n.raiding = true;
+      const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
       const step = DIRS
         .map(([dx, dy]) => [n.x + dx, n.y + dy])
-        .filter(([x, y]) => open(x, y))
+        .filter(([x, y]) => x >= 0 && y >= 0 && x < MAP.w && y < MAP.h &&
+                !tileWater(at(x, y)) &&
+                !G.villages.some(w => w.x === x && w.y === y) &&
+                !G.natives.some(q => q !== n && q.x === x && q.y === y) &&
+                !G.units.some(q => q.x === x && q.y === y) &&
+                !G.colonies.some(q => q.x === x && q.y === y))
         .sort((a, b) => (Math.abs(c.x - a[0]) + Math.abs(c.y - a[1])) -
                         (Math.abs(c.x - b[0]) + Math.abs(c.y - b[1])))[0];
       if (step) { n.x = step[0]; n.y = step[1]; }
       continue;
     }
-    // At peace: a short wander that keeps the brave near his village.
-    n.raiding = false;
-    if (Math.random() < 0.5) continue;               // the stay candidate wins
-    const step = DIRS
-      .map(([dx, dy]) => [n.x + dx, n.y + dy])
-      .filter(([x, y]) => open(x, y) &&
-              Math.abs(x - v.x) <= 2 && Math.abs(y - v.y) <= 2)
-      .sort(() => Math.random() - 0.5)[0];
-    if (step) { n.x = step[0]; n.y = step[1]; }
+    // At peace: the func_046FFA scorer decides, including the stay candidate.
+    headingScore(n, v);
   }
 }
 
@@ -5527,27 +5569,22 @@ function checkContact() {
 // The rival-power turn. The engine drives every AI power through the
 // strategic planner func_04CC50 (per-power mission assignment over the plan
 // map) and the per-unit pipeline func_04E2D6 -- both decoded in
-// spec/systems/ai.md but far larger than the port carries. What runs here is
-// a REDUCED shape of that machine, R-tier and flagged: colonies grow and
-// fortify on fixed cadences, each keeps a garrison sized to its people, and a
-// power at war marches its soldiers at our nearest colony one tile a turn,
-// striking through the same resolveAttack the player's own attacks use. The
-// scoring terms this drops are §3 of ai.md.
+// spec/systems/ai.md but far larger than the port carries. Under the
+// no-invented-behaviour rule, the port runs ONLY what the evidence supports:
+// ships explore westward and found colonies (the settler role the planner's
+// +500 colony-site term drives, ai.md §3); land units garrison in place at
+// peace (the engine's sentry state, order 5) and at war execute the attack
+// mission -- goto the nearest enemy colony, striking through resolveAttack.
+// AI colony DEVELOPMENT (growth, construction, unit production) runs through
+// the engine's colony machinery under planner missions that are NOT yet
+// decoded, so rival colonies here do not grow or raise troops out of
+// nothing -- a fresh game's rivals field only what their ships landed with,
+// and an imported save's rivals field exactly what the save carries. The
+// straight-line war march stands in for the goto executor's path scoring
+// (func_04E2D6 step 5, unported); both stand-ins are flagged here rather
+// than papered over with invented cadences.
 function rivalTurn() {
   for (const r of G.rivals) {
-    // Colonies: population on a growth accumulator, fortification tier from
-    // size, and a garrison of soldiers raised at home.
-    for (const rc of r.colonies) {
-      rc.pop = rc.pop || 1;
-      rc.grow = (rc.grow || 0) + 1;
-      if (rc.grow >= 16) { rc.grow = 0; rc.pop += 1; }
-      rc.level = Math.min(3, rc.pop >> 2);
-      const want = Math.min(3, 1 + (rc.pop >> 2));
-      const home = r.units.filter(u => !u.ship && u.x === rc.x && u.y === rc.y).length;
-      if (home < want && (G.turn & 3) === 0)
-        r.units.push({ type: 'Soldiers', icon: unit('Soldiers').icon,
-                       x: rc.x, y: rc.y, nation: r.nation, orders: 0, home: rc });
-    }
     const war = atWar(G.nation, r.nation);
     for (const u of r.units.slice()) {
       if (u.ship) {
@@ -5561,7 +5598,7 @@ function rivalTurn() {
           const names = DATA.colonynames[r.nation];
           r.colonies.push({ x: landAhead[0], y: landAhead[1], nation: r.nation,
                             name: names[r.nextColony++ % names.length],
-                            level: 0, pop: 1, grow: 0 });
+                            level: 0, pop: 1 });
           u.x = Math.min(MAP.w - 1, u.x + 3);    // stand off and look for another site
           continue;
         }
@@ -5570,13 +5607,15 @@ function rivalTurn() {
         else u.y += (u.y % 2) ? 1 : -1;
         continue;
       }
-      // Land units. At peace they hold their garrison; at war, surplus
-      // soldiers (beyond one holding each colony) march on our nearest colony
-      // and strike whatever of ours stands in the ring around it.
+      // Land units. At peace they hold their garrison (the engine's sentry
+      // state, order 5); at war they take the attack mission. A soldier
+      // standing in one of his power's colonies stays as its garrison unless
+      // another already holds it -- the planner's garrison-first shape.
       if (!war) continue;
-      const holds = u.home && r.units.some(v => v !== u && !v.ship &&
-                                          v.x === u.x && v.y === u.y);
-      if (u.home && u.x === u.home.x && u.y === u.home.y && !holds) continue;
+      const inOwnColony = r.colonies.some(c => c.x === u.x && c.y === u.y);
+      const stacked = r.units.some(v => v !== u && !v.ship &&
+                                        v.x === u.x && v.y === u.y);
+      if (inOwnColony && !stacked) continue;
       const target = G.colonies.slice().sort((a, b) =>
         (Math.abs(a.x - u.x) + Math.abs(a.y - u.y)) -
         (Math.abs(b.x - u.x) + Math.abs(b.y - u.y)))[0];
@@ -8139,6 +8178,9 @@ function moveSel(dx, dy) {
         // pre-capture and is not invented. Flagged.
         const rc = rival.colonies.find(x => x.x === nx && x.y === ny);
         rival.colonies.splice(rival.colonies.indexOf(rc), 1);
+        // The plunder AMOUNT formula is unread -- this roll is the port's
+        // own placeholder, flagged (the raze formula in §19 is the native
+        // villages', not this one).
         const loot = 10 * (1 + Math.floor(Math.random() * 10)) * (1 + (rc.pop || 1));
         G.gold += loot;
         const c = { name: rc.name, x: nx, y: ny, nation: G.nation,
