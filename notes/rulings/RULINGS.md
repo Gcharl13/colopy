@@ -8669,3 +8669,67 @@ Suite: 232/232. Ledger: DONE 313, MISSING 84.
   the war through declareWarOn.
 
 Suite: 232/232. Ledger: DONE 318, MISSING 84, BUNDLED-UNWIRED 24.
+
+## 2026-08-07x — the pre-capture completion sweep: every remaining wirable key + the Hall of Fame
+
+**User directive: "finish out all the items before the DOSBox capture
+phase."** Every GAME.TXT key with a reachable port site is now wired; the
+ledger reads MISSING 0 -- what remains is 33 BLOCKED keys, each annotated
+with its named blocker (Phase 4 capture or disasm window), plus the 24 N/A.
+
+Wired in this sweep (all trigger models flagged where the engine's own is
+unread):
+- **Diplomacy**: the @SIEGES / @APOSTATES / @HEATHEN meeting topics (with
+  the engine's SIEGESUSA row-swap bug replicated -- the handler acts on
+  row 2 regardless), @WARMEEK/@WARMANLY as the refusal escalation
+  (replacing the misplaced @PROVOKE), @PEACEUSA/@TRIBUTEUSA and the USA
+  suffix helper, @SNEAK surprise attacks, @GIVECASH the AI colony's
+  buy-off, the foreign-colony trade entry (@TRADEATWAR byte-cited,
+  @TRADEMERCANTILISM = the Jan de Witt gate, @DEFICIT no-cargo,
+  @TRADEWITH the goods-or-gold barter).
+- **The Crown**: @KINGWIFE once-per-game with the @KINGTAX core-demand
+  fallback; @SEIZURE (declaration seizes every ship in Europe/crossing),
+  @SEIZURELAND/@SEIZURESEA (the REF's captures), @AMBUSHHINT and
+  @HOWTOWIN one-shot war cards, @LOSENOCOLONIES (the post-1600 charter
+  revocation @ABANDON2 itself warns of).
+- **Congress**: the @WHICHFREEDOM Founding-Father picker (Escape keeps
+  the first candidate -- the engine's dialog cannot be cancelled);
+  @FREEDOM replaces the joined-status line; @RECRUITCHOOSE = William
+  Brewster's documented pick-your-immigrant.
+- **Natives**: @WANTSTUFF reparations demand + @RID expulsion order,
+  @INDIANWAR/@INDIANPEACE at the War band's two edges, @INDIANSHUN
+  first-attack defiance, @INDIANHELLO1/2 the once-per-village greeting
+  (second village on -- first contact keeps the woodcut chain),
+  @DONTKNOWSHIPS (ships cannot open a village), @GRUDGEWAGONS /
+  @CONFISCATE trade responses by band, @INDIANWARPATH the incite target
+  picker, @INDIANBURN mission burning, @INDIANSURPRISE the calm-tribe
+  denial bulletin, @INDIANBURNCOLONY the raid razing of a bare colony,
+  @INDIANWIN0/1/2 ambush bulletins (muskets/horses by the demotion type),
+  @INDIANSLAVES, @LOOT/@LOOT2/@NOLOOT razing bulletins,
+  @LOSTOURSCOUTS/@LOSTTHEIRSCOUTS, @KILLWAGONS/@LOOTWAGONS route perils,
+  @BRING the post-sale demand hint, @SCREWED the byte-cited burial
+  desecration death (+100 to war footing).
+- **UX confirms/pickers**: @SUREDISBAND, @SUREDELETE, @REALLYBUY,
+  @LOBOTOMIZE (colony key L), @OVERBOARD, @CARGOLOAD/@CARGOUNLOAD (the
+  width-120 pickers chained into @HOWMUCH1/2), @PICKACARGO,
+  @TRAVELPLACE/@SAILPORT (the Go To destination pickers, Escape falls
+  back to click-to-target), @ROUTELOOP, @TRADENONE2, @NODOCKS,
+  @NOCOLONIESEITHER (byte-sited to func_022542's home), @ABANDON2,
+  @KINGRECRUIT (the TRAIN caption via DATA.events), @MOBILIZE per colony.
+- **Systems**: @DEPLETION (port depleted-mine bit IMPROVE 0x80 dropping a
+  worked silver cell to 1 -- the real resource plane stays the Phase 4
+  read), @DEFOREST, and the rival-independence race
+  (@OTHERMIGHT/@OTHERLESS/@OTHERGRANTED over a flagged random-walk
+  stand-in for the engine's real PowerRecord +0x02 sentiment).
+- **The Hall of Fame (menu row 4, LIVE).** localStorage roster with the
+  byte-verified HALLFAME.DAT record semantics (name/nation/year/flags,
+  int16 score, descending insertion @0x3AECD, 6 kept 5 shown), written by
+  endGameSequence; the screen renders WOODPANL + FONTINTR + the @MISC
+  192/194-199 labels with the byte-cited 5-row ranked table -- the COLUMN
+  X POSITIONS remain the sole open TBD (flagged in drawHof; Phase 4's
+  hand-authored-DAT capture pins them).
+
+Suite: 233/233 (new completion-sweep + Hall of Fame block; the claims
+test pins bystander tribes to the quiet band; the purchase tests answer
+@REALLYBUY). Ledger: DONE 390, DONE-VIA-DATA 29, BLOCKED 33 (annotated),
+MISSING 0, N/A 24.

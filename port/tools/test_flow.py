@@ -147,12 +147,12 @@ SCRIPT = """() => {
     prices: pcat.map(r => r.cost),
   };
   G.gold = 20000; G.euroMenuRow = 0;
-  euroMenuCommit();                            // buy Artillery
+  euroMenuCommit(); closeDialog(0);            // buy Artillery (@REALLYBUY Yes)
   out.artilleryEscalates = euroMenuRows()[0].cost === 600;
   out.artilleryOnDock = G.dockUnits.includes('Artillery');
   G.euroMenuRow = 1; openEuroMenu(1); G.euroMenuRow = 1;
   const fleet0 = shipsInPort().length;
-  euroMenuCommit();                            // buy a Caravel
+  euroMenuCommit(); closeDialog(0);            // buy a Caravel (@REALLYBUY Yes)
   out.shipJoinsFleet = shipsInPort().length === fleet0 + 1;
 
   // Sailing west boards whoever is waiting on the dock.
@@ -869,7 +869,9 @@ SCRIPT = """() => {
                     building: null, sol: 20, latch: 0 }];
     // A hostile tribe presses a claim on a colony's stores.
     G.tribes[0].tension = 100;
-    for (let i = 1; i < G.tribes.length; i++) G.tribes[i].tension = 0;
+    // 25 = the quiet band: neither the friendly-gift branch (Content, <20)
+    // nor the hostile claims -- so only tribe 0's claim can ask.
+    for (let i = 1; i < G.tribes.length; i++) G.tribes[i].tension = 25;
     G.colonies[0].stock[4] = 200;
     G.dialog = null;
     let tries = 0;
@@ -1365,6 +1367,38 @@ SCRIPT = """() => {
       return asked && left;
     })();
     out.wire3 = w3;
+
+    // ---- the pre-capture completion sweep + the Hall of Fame ----
+    const w4 = {};
+    w4.bundled = !!(DATA.events.FREEDOM && DATA.events.WHICHFREEDOM &&
+      DATA.events.LOOT && DATA.events.INDIANWAR && DATA.events.INDIANPEACE &&
+      DATA.events.SEIZURE && DATA.events.HOWTOWIN && DATA.events.AMBUSHHINT &&
+      DATA.events.TRADEWITH && DATA.events.SUREDISBAND && DATA.events.REALLYBUY &&
+      DATA.events.LOBOTOMIZE && DATA.events.CARGOLOAD && DATA.events.OVERBOARD &&
+      DATA.events.PICKACARGO && DATA.events.SCREWED && DATA.events.DEPLETION &&
+      DATA.events.DEFOREST && DATA.events.INDIANSHUN && DATA.events.OTHERGRANTED &&
+      DATA.events.TRAVELPLACE && DATA.events.CONFISCATE && DATA.events.KILLWAGONS &&
+      DATA.events.SIEGES && DATA.events.APOSTATES && DATA.events.HEATHEN &&
+      DATA.events.WARMEEK && DATA.events.INDIANHELLO1 && DATA.events.BRING);
+    // @SUREDISBAND: disbanding asks first; Yes removes the unit.
+    beginGame();
+    const du = mkUnit('Soldiers', 3, 3); G.units.push(du);
+    G.sel = G.units.indexOf(du);
+    const nu0 = G.units.length;
+    G.dialog = null; disbandUnit();
+    const dAsked = !!(G.dialog && /disband/i.test(G.dialog.body.join(' ')));
+    closeDialog(0);
+    w4.disbandAsks = dAsked && G.units.length === nu0 - 1;
+    // The Hall of Fame: descending insertion, menu row 4 opens the screen.
+    try { localStorage.removeItem('colonization.hof'); } catch (e) {}
+    hofWrite({ name: 'A', nation: 0, year: 1700, score: 10, rating: 10 });
+    hofWrite({ name: 'B', nation: 1, year: 1710, score: 99, rating: 99 });
+    hofWrite({ name: 'C', nation: 2, year: 1720, score: 50, rating: 50 });
+    w4.hofSorted = hofLoad().map(x => x.name).join('') === 'BCA';
+    G.screen = 'title'; G.menuRow = 4; commitMenu();
+    w4.hofOpens = G.screen === 'hof';
+    G.screen = 'map';
+    out.wire4 = w4;
   }
 
   // ---- treasure transport and fog of war ----
@@ -3306,6 +3340,9 @@ def main():
         ("natives + endgame: PISS bands, trade refusals, LEARNMAD, the "
          "1800 retirement and SCORED lock",
          all(r["wire3"].values()), r["wire3"]),
+        ("completion sweep bundled + SUREDISBAND asks + Hall of Fame sorts "
+         "and opens from menu row 4",
+         all(r["wire4"].values()), r["wire4"]),
     ]
     bad = 0
     for name, ok, got in checks:

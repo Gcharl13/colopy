@@ -1834,6 +1834,9 @@ function buildColony() {
     return;
   }
   if (NOT_COLONISTS.includes(u.type)) { showEvent('ONLYCOL'); return; }
+  // @NOCOLONIESEITHER: "New colonies cannot be founded during the {War of
+  // Independence}."
+  if (woiLocked() && !colonyAt(u.x, u.y)) { showEvent('NOCOLONIESEITHER'); return; }
   if (tileMountains(at(u.x, u.y))) { showEvent('TOOMOUNTAIN'); return; }
   // @TOONEAR: too close to an existing colony. The engine's radius is unread;
   // the port refuses ADJACENT tiles (chebyshev <= 1), flagged.
@@ -1979,7 +1982,7 @@ function abandonColony() {
   // population of a colony that has a stockade, fort, or fortress."
   // Abandoning always reduces below three, so any stockade level refuses.
   if (colonyLevel(c) > 0) { showEvent('KEEPSTOCKADE'); return; }
-  askEvent('ABANDON', { STRING0: c.name }, (choice) => {
+  askEvent(G.year >= 1600 ? 'ABANDON2' : 'ABANDON', { STRING0: c.name }, (choice) => {
     // Row 0 abandons ("Yes, it is God's will."), row 1 refuses -- and row 1 is
     // the @default.
     if (choice !== 0) return;
@@ -2025,6 +2028,17 @@ function pillage() {
 function beginGoTo() {
   const u = G.units[G.sel];
   if (!u) return;
+  // @TRAVELPLACE (land) / @SAILPORT (ships): "Select a colony/port to
+  // travel to" -- the destination picker; Escape leaves click-to-target.
+  const dests = u.ship ? coastalColonies() : G.colonies;
+  if (dests.length) {
+    askEvent(u.ship ? 'SAILPORT' : 'TRAVELPLACE', {}, (k) => {
+      if (k >= 0 && k < dests.length) { setGoTo(u, dests[k].x, dests[k].y); return; }
+      G.goTo = u;
+      G.msg = 'Click the tile to travel to.';
+    }, dests.map(c => c.name));
+    return;
+  }
   G.goTo = u;
   G.msg = 'Click the tile to travel to.';
 }
@@ -2131,6 +2145,12 @@ function advanceImprovements() {
       if (c && lumber > 0) {
         c.stock[GOOD.LUMBER] += lumber;
         showEvent('CLEARCUT', { STRING0: c.name, NUMBER0: lumber });
+        // @DEFOREST: the cut that leaves no forest standing around the
+        // square (adjacency reading, flagged).
+        let woods = 0;
+        for (let dy2 = -1; dy2 <= 1; dy2++) for (let dx2 = -1; dx2 <= 1; dx2++)
+          if (isForested(tileTerrain(at(u.x + dx2, u.y + dy2)))) woods++;
+        if (!woods) showEvent('DEFOREST', { STRING0: c.name });
         // @INDIANFOREST2: the completed cut near a settlement is the
         // colony-encroachment notice (no rows), with its tension cost.
         const nearV = G.villages.find(v =>
@@ -2307,6 +2327,10 @@ function fieldYield(c, p) {
   const col = tileWater(v) ? 8 : g;
   let y = tileYield(v, col);
   if (y <= 0) return 0;
+  // @DEPLETION: a depleted mine (port bit IMPROVE 0x80; the engine's
+  // resource plane is unread, flagged) yields 1 silver at most.
+  if (g === GOOD.SILVER &&
+      (IMPROVE[(c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0])] & 0x80)) y = 1;
   y += improvementBonus(c.x + p.cell[0], c.y + p.cell[1], g);
   y += toryPenalty(c);
   // The expert match: the "era" goods Food and Horses take a flat +2, every
@@ -2776,6 +2800,16 @@ function colonyTurn(c) {
                  STRING1: c.name, STRING2: DATA.nations[G.nation].homeport });
   if (c.colonists.length >= 3) tutOnce(7, { STRING0: c.name });
   if (r.netFood < 0) tutOnce(16);
+  // @DEPLETION roll: each worked silver cell may play out (1/50 per turn,
+  // flagged -- the engine's odds live with the unread resource plane).
+  for (const p of c.colonists) {
+    if (!p.cell || p.job !== 'Silver Miner') continue;
+    const mi = (c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0]);
+    if (!(IMPROVE[mi] & 0x80) && Math.floor(Math.random() * 50) === 0) {
+      IMPROVE[mi] |= 0x80;
+      showEvent('DEPLETION', { STRING0: c.name });
+    }
+  }
   c.crossesTurn = r.tally[CROSSES];
   // Printing Press adds 50% to the colony's bells and a Newspaper doubles them
   // (per-colony building bits 0x13 / 0x14, founding_fathers.md §3).
@@ -4173,6 +4207,8 @@ function euroMenuRows() {
 // where func_06BF66 draws the speaker.
 const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null,
                         dockunit: null, ship: null };
+const TRAIN_CAPTION = () => (DATA.events.KINGRECRUIT || {}).body ||
+                            ['Which skill shall we request?'];
 // The economic adviser speaks for RECRUIT and PURCHASE -- the two menus with a
 // GAME.TXT body he is quoting -- and not for TRAIN, which is a bare list. He
 // sits 4px lower than the box top, not flush against it.
@@ -4183,6 +4219,8 @@ function euroMenuBox() {
   const rows = euroMenuRows();
   const key = EURO_MENU_KEY[G.euroMenu];
   let body = key ? DATA.dialogs[key].body : [G.euroMenu.toUpperCase()];
+  // TRAIN quotes @KINGRECRUIT (the Royal University body, smallfont).
+  if (G.euroMenu === 'train') body = TRAIN_CAPTION();
   // The two harbour context menus carry their own GAME.TXT caption sections.
   if (G.euroMenu === 'dockunit') {
     const e = G.dockUnits[G.euroDockSel];
@@ -4413,16 +4451,21 @@ function euroMenuCommit() {
     }
   } else {
     const buy = PURCHASE_CATALOG[G.euroMenuRow];
-    if (buy.escalates) G.artilleryBought += 1;
-    if (unit(buy.unit).hull > 0) {
-      // A purchased ship joins the fleet at the dock, empty.
-      G.europe.push({ type: buy.unit, icon: unit(buy.unit).icon,
-                      hold: [], passengers: [], state: 'port' });
-      G.euroShip = shipsInPort().length - 1;
-    } else {
-      G.dockUnits.push(buy.unit);
-    }
-    G.euroMsg = `${buy.unit} purchased.`;
+    // @REALLYBUY: "Purchase %STRING0 for %NUMBER0$?" -- Yes/No.
+    askEvent('REALLYBUY', { STRING0: buy.unit, NUMBER0: purchasePrice(buy) },
+             (k) => {
+      if (k !== 0) return;
+      if (buy.escalates) G.artilleryBought += 1;
+      if (unit(buy.unit).hull > 0) {
+        // A purchased ship joins the fleet at the dock, empty.
+        G.europe.push({ type: buy.unit, icon: unit(buy.unit).icon,
+                        hold: [], passengers: [], state: 'port' });
+        G.euroShip = shipsInPort().length - 1;
+      } else {
+        G.dockUnits.push(buy.unit);
+      }
+      G.euroMsg = `${buy.unit} purchased.`;
+    });
   }
   G.euroMenu = null;
 }
@@ -4574,7 +4617,18 @@ function adjustTension(tribe, delta, cause) {
   const before = tensionBandIdx(t.tension);
   t.tension = Math.max(0, Math.min(TENSION_WAR, t.tension + delta));
   const after = tensionBandIdx(t.tension);
-  if (after > before && DATA.attitudinal) {
+  // @INDIANWAR: reaching the War band is the tribe's own declaration
+  // ("your crimes cry out for vengeance"); @INDIANPEACE marks the climb
+  // back down from it (the peace pipe). Both replace the generic @PISS
+  // band message at those two edges; every other crossing keeps @PISS.
+  if (after === 4 && before < 4) {
+    G.eventTribe = tribe;
+    showEvent('INDIANWAR', { STRING0: t.name });
+  } else if (before === 4 && after < 4) {
+    G.eventTribe = tribe;
+    showEvent('INDIANPEACE', { STRING0: t.name,
+                               STRING1: DATA.nations[G.nation].adjective });
+  } else if (after > before && DATA.attitudinal) {
     const spans = [[0, 20], [20, 40], [40, 75], [75, 100], [100, 101]];
     const [lo, hi] = spans[after];
     const depth = Math.min(4, Math.floor((t.tension - lo) * 5 / (hi - lo)));
@@ -4920,6 +4974,44 @@ function nativeDemands() {
     if ((t.tension || 0) < TENSION_HOSTILE) continue;
     if (Math.floor(Math.random() * 24) !== 0) continue;   // rare, per tribe, per turn
     const ti = G.tribes.indexOf(t);
+    // @WANTSTUFF: the land-befouling reparations demand (rows: refuse /
+    // share). Pressed when a colony sits in their country; the goods picked
+    // are the colony's largest stock. USA suffix once independent.
+    const wantC = G.colonies.find(cc => G.villages.some(v =>
+      v.tribe === ti && Math.abs(v.x - cc.x) <= 3 && Math.abs(v.y - cc.y) <= 3));
+    if (wantC && Math.random() < 0.4) {
+      const top = wantC.stock.map((n, i) => [n, i]).filter(s => s[0] >= 10)
+                       .sort((a, b) => b[0] - a[0])[0];
+      if (top) {
+        const qty = Math.min(top[0], 15 + 5 * G.difficulty);
+        askEvent((G.flags & WOI_DECLARED) ? 'WANTSTUFFUSA' : 'WANTSTUFF',
+                 { STRING0: t.name, NUMBER0: qty,
+                   STRING1: DATA.cargo[top[1]].name, STRING2: t.name }, (k) => {
+          if (k === 1) { wantC.stock[top[1]] -= qty; adjustTension(ti, -10); }
+          else adjustTension(ti, 15, 5);
+        });
+        return;
+      }
+    }
+    // @INDIANBURN: at war the tribe burns our missions (rare, flagged).
+    if ((t.tension || 0) >= TENSION_WAR && Math.random() < 0.2) {
+      const mv = G.villages.find(v => v.tribe === ti && v.mission &&
+                                      v.mission.power === G.nation);
+      if (mv) {
+        mv.mission = null;
+        showEvent('INDIANBURN', { STRING0: t.name,
+                                  STRING1: DATA.nations[G.nation].adjective });
+        return;
+      }
+    }
+    // @RID: at the top of the War band the tribe orders the player out of
+    // the region outright (a notice; the drive-them-into-the-sea raids are
+    // the raid engine's job).
+    if ((t.tension || 0) >= TENSION_WAR && Math.random() < 0.25) {
+      showEvent('RID' + ((G.flags & WOI_DECLARED) ? 'USA' : ''),
+                { STRING0: t.name, STRING1: DATA.regionname[G.nation] });
+      return;
+    }
     // A wagon train in their country is the easiest claim to press.
     const wagon = G.units.find(u => u.type === 'Wagon Train' && (u.hold || []).length &&
       G.villages.some(v => v.tribe === ti && Math.abs(v.x - u.x) <= 3 && Math.abs(v.y - u.y) <= 3));
@@ -5014,6 +5106,15 @@ function roadObjection(u) {
 //                1 STORES, 2 WREAK, 3 GOLD, 4 BURN/SHIP, 0 NOTHING.
 // The payloads behind wreak / gold / burn / ship are unmapped in the evidence;
 // what each one takes is the port's own, and every one of them is flagged.
+// @INDIANSURPRISE: a raid from a village whose TRIBE is still calm is the
+// "chief denies involvement" bulletin (band < restless, flagged).
+function surpriseRaidCheck(v, target) {
+  const t = G.tribes[v.tribe];
+  if (t && tensionBandIdx(t.tension || 0) < 2)
+    showEvent('INDIANSURPRISE', { STRING0: t.name,
+                                  STRING1: target ? target.name : '',
+                                  STRING2: t.name });
+}
 function raidOutcome() {
   let out = 1 + Math.floor(Math.random() * 4);
   if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
@@ -5110,6 +5211,7 @@ function nativeRaid(v, c) {
   G.eventTribe = v.tribe;
   const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
   if (gate < 3 * colonyLevel(c) + 1) return;
+  surpriseRaidCheck(v, c);
   {
     const t = G.tribes[v.tribe];
     const S = { STRING0: t ? t.name : '', STRING1: c.name,
@@ -5140,6 +5242,16 @@ function nativeRaid(v, c) {
         const ship = G.units.find(u => u.ship && u.x === c.x && u.y === c.y);
         if (ship) { ship.damaged = true; showEvent('RAIDSHIP', { ...S, STRING2: ship.type }); break; }
         const burnable = c.buildings.filter(b => !STARTING_BUILDINGS.includes(b));
+        // @INDIANBURNCOLONY: a burn raid on an undefended one-man colony
+        // razes it outright ("Colony burned to the ground! King demands
+        // explanation!") -- the threshold reading is flagged.
+        if (!burnable.length && c.colonists.length <= 1 &&
+            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
+          showEvent('INDIANBURNCOLONY',
+                    { STRING0: S.STRING0, STRING1: S.STRING3, STRING3: c.name });
+          c.vanished = true;
+          break;
+        }
         if (!burnable.length) { showEvent('RAIDWREAK', S); break; }
         const b = burnable[Math.floor(Math.random() * burnable.length)];
         c.buildings.splice(c.buildings.indexOf(b), 1);
@@ -5426,8 +5538,21 @@ function incitePrice(v, target) {
 }
 function inciteIndians(v, u) {
   const t = G.tribes[v.tribe];
-  const target = G.rivals.find(r => r.met);
-  if (!target) { notice('We have met no other power to incite them against.'); return; }
+  const mets = G.rivals.filter(r => r.met);
+  if (!mets.length) { notice('We have met no other power to incite them against.'); return; }
+  // @INDIANWARPATH: "Whom would you like us to attack?" -- the target
+  // picker, when there is a choice to make.
+  if (mets.length > 1) {
+    G.eventTribe = v.tribe;
+    askEvent('INDIANWARPATH', { STRING0: t.name }, (k) => {
+      if (k >= 0 && k < mets.length) inciteAgainst(v, u, mets[k]);
+    }, mets.map(r => DATA.nations[r.nation].adjective));
+    return;
+  }
+  inciteAgainst(v, u, mets[0]);
+}
+function inciteAgainst(v, u, target) {
+  const t = G.tribes[v.tribe];
   const price = incitePrice(v, target.nation);
   askEvent('INDIANWARPATH2', { STRING0: DATA.nations[target.nation].adjective,
                                NUMBER0: price }, (choice) => {
@@ -5528,6 +5653,13 @@ function attackVillage(v, u) {
   askEvent('WHACKINDIANS', { STRING0: G.tribes[v.tribe].name }, (choice) => {
     if (choice !== 0) return;
     const t = G.tribes[v.tribe];
+    // @INDIANSHUN: the tribe's defiance the first time this power attacks
+    // them -- "Prepare for WAR!" (binding flagged; once per tribe).
+    if (!t.shunned) {
+      t.shunned = true;
+      G.eventTribe = v.tribe;
+      showEvent('INDIANSHUN', { STRING0: t.name });
+    }
     adjustTension(v.tribe, 100, 4);                 // an attack is an act of war (@PISS4)
     // The village defends with a brave's strength on its own tile, plus the
     // settlement's own standing -- the port uses the settlement level as the
@@ -5548,7 +5680,25 @@ function attackVillage(v, u) {
     const gold = razeGold(v);
     G.gold += gold;
     t.avenge = true;                                // the post-Declaration flag
-    G.msg = `The ${t.name} ${DATA.levelname[v.level].toLowerCase()} is destroyed. ${gold}$ in plunder.`;
+    // @LOOT (with the recovered treasure) / @NOLOOT (nothing found); @LOOT2
+    // is kept for the mission-present variant -- which body maps to which
+    // razing state is unread, this split is flagged.
+    const razeS = { STRING0: DATA.nations[G.nation].adjective,
+                    STRING1: t.name, STRING2: DATA.levelname[v.level],
+                    NUMBER0: gold };
+    G.eventTribe = v.tribe;
+    showEvent(gold > 0 ? 'LOOT' : (v.mission ? 'LOOT2' : 'NOLOOT'), razeS);
+    // @INDIANSLAVES: with a mission of ours at the razed village the
+    // frightened flock converts (flagged reading of the body).
+    if (v.mission && v.mission.power === G.nation) {
+      const cnear = G.colonies[0];
+      if (cnear) {
+        cnear.colonists.push({ type: 'Colonists', profession: 'Indian Converts',
+                               job: null, cell: null });
+        showEvent('INDIANSLAVES', { STRING0: t.name,
+                                    STRING1: DATA.nations[G.nation].adjective });
+      }
+    }
     removeVillage(v);
   });
 }
@@ -5682,6 +5832,21 @@ function drawEvent(ctx) {
 // Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
 // context_dialogs.md §6 -- func_04B308 is that table's only consumer).
 function enterVillage(v, visitor) {
+  // @DONTKNOWSHIPS: "We must contact the Indians on land first" -- a ship
+  // cannot open the village.
+  if (visitor && visitor.ship) { showEvent('DONTKNOWSHIPS'); return; }
+  // @INDIANHELLO1/2: the once-per-village greeting -- "most worthy" below
+  // the restless band, "most ruthless" at it and above (band split flagged).
+  // The very first TRIBE contact takes the woodcut + @INDIANWELCOME chain
+  // instead; the greeting begins with the second village.
+  if (!v.greeted && (G.tribes[v.tribe] || {}).met) {
+    v.greeted = true;
+    const gt = G.tribes[v.tribe] || {};
+    G.eventTribe = v.tribe;
+    showEvent((gt.tension || 0) < 40 ? 'INDIANHELLO1' : 'INDIANHELLO2',
+              { STRING0: gt.name || '', STRING1: G.leader || DATA.nations[G.nation].leader,
+                STRING2: DATA.nations[G.nation].adjective });
+  }
   // TUTORIAL8: an unskilled COLONIST at a village can learn (flagged --
   // scouts and other unit kinds cannot, per the live-among rules).
   if (visitor && visitor.type === 'Colonists' && !visitor.profession)
@@ -5767,6 +5932,15 @@ function openVillageTrade(v, u) {
   // the F9 thresholds, flagged.
   const t = G.tribes[v.tribe] || {};
   if ((t.tension || 0) >= TENSION_HOSTILE) {
+    const laden = u && u.type === 'Wagon Train' && (u.hold || []).some(h => h.qty > 0);
+    if (laden) {
+      // @CONFISCATE: "we shall confiscate all the {goods} in these wagons."
+      const h0 = u.hold.find(h => h.qty > 0);
+      showEvent('CONFISCATE', { STRING0: t.name,
+                                STRING1: DATA.cargo[h0.good].name }, tradeSpeaker(v));
+      u.hold = [];
+      return;
+    }
     showEvent('MADATWAGONS', { STRING0: t.name }, tradeSpeaker(v));
     return;
   }
@@ -5774,6 +5948,8 @@ function openVillageTrade(v, u) {
     showEvent('MADATSHIPS', { STRING0: t.name }, tradeSpeaker(v));
     return;
   }
+  if ((t.tension || 0) >= 40 && u && u.type === 'Wagon Train')
+    showEvent('GRUDGEWAGONS', { STRING0: t.name }, tradeSpeaker(v));
   const cargo = ((u && u.hold) || []).filter(h => h.qty > 0);
   if (!cargo.length) { showEvent('TRADENOCARGO', {}, tradeSpeaker(v)); return; }
   tradeSellPick(v, u);
@@ -5821,6 +5997,7 @@ function tradeSellOffer(v, u, h) {
     budget: 1 + Math.floor(Math.random() * rounds) + (qty >> 2),
   });
 }
+// @BRING rides the sell completion (see tradeSellRound's caller sites).
 function tradeSellRound(v, u, h, st) {
   const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
   const counter = st.offer + Math.max(1, st.offer >> 1);        // TBD stand-in
@@ -5833,6 +6010,16 @@ function tradeSellRound(v, u, h, st) {
     const giftRow = st.round === 0 ? 2 : -1;
     if (k === 0) {
       villageSell(v, good, qty, st.offer);
+      // @BRING: "We are in need of X and Y" -- the demand top-2, rare so
+      // it does not nag (rate flagged).
+      if (Math.floor(Math.random() * 4) === 0) {
+        const dW = villageDemand(v).map((n, i) => [n, i])
+          .sort((a, b) => b[0] - a[0]);
+        showEvent('BRING', { STRING0: DATA.cargo[dW[0][1]].name,
+                             STRING1: DATA.cargo[dW[1][1]].name,
+                             STRING2: DATA.cargo[dW[0][1]].name },
+                  tradeSpeaker(v));
+      }
       holdAdd(u, good, -qty);
       v.lastBought = good;
       v.haggleBuy = false;
@@ -6120,13 +6307,20 @@ function navalAttack(att, def) {
     return true;
   }
   const loser = win ? def : att, winner = win ? att : def;
-  // A hold going down is seized rather than simply lost.
-  if ((loser.hold || []).length && loser.damaged) {
-    const h = loser.hold[0];
+  // A hold going down is seized rather than simply lost -- and a MULTI-slot
+  // hold runs @PICKACARGO ("Which cargo shall we capture?") first.
+  const spoils = (loser.hold || []).filter(h => h.qty > 0);
+  const seize = (h) => {
     showEvent('CARGOCAPTURE', { STRING0: ownerAdjective(loser),
                                 NUMBER0: h.qty, STRING1: DATA.cargo[h.good].name,
                                 STRING2: ownerAdjective(winner), STRING3: winner.type });
     holdAdd(winner, h.good, h.qty);
+  };
+  if (spoils.length && loser.damaged) {
+    if (spoils.length === 1 || winner.nation !== G.nation) seize(spoils[0]);
+    else askEvent('PICKACARGO', {}, (k) => {
+      seize(spoils[k >= 0 && k < spoils.length ? k : 0]);
+    }, spoils.map(h => `${h.qty} ${DATA.cargo[h.good].name}`));
   }
   applyDefeat(loser, winner);
   att.movesLeft = 0;
@@ -6269,6 +6463,12 @@ function becomeType(u, name) {
 }
 // The whole aftermath for one loser. Returns nothing; it mutates the world.
 function applyDefeat(loser, winner) {
+  // @HOWTOWIN: the one-shot "road to freedom" strategy card, after the
+  // player's first victory over the King's forces.
+  if (loser.nation === -2 && winner.nation === G.nation && !G.howToWon) {
+    G.howToWon = true;
+    showEvent('HOWTOWIN');
+  }
   const t = unit(loser.type);
   const S = { STRING0: ownerAdjective(loser), STRING1: loser.type,
               STRING2: '', STRING3: winner.type };
@@ -6308,6 +6508,12 @@ function applyDefeat(loser, winner) {
     if (winner.nation === G.nation) G.units.push(loser);
     else if (winner.nation === -2) G.refUnits.push(loser);
     else G.natives.push(loser);
+    if (winner.nation === -2) {
+      // @SEIZURELAND / @SEIZURESEA: the Crown's own captures.
+      showEvent(loser.ship ? 'SEIZURESEA' : 'SEIZURELAND',
+                { STRING0: loser.type });
+      return;
+    }
     const key = (capKey === 'COLONISTCAPTURE' && veteranLost) ? 'COLONISTCAPTURE2' : capKey;
     showEvent(key, { STRING0: S.STRING0, STRING1: ownerAdjective(winner),
                      NUMBER0: (loser.treasure || 0) * 100 });
@@ -6315,6 +6521,42 @@ function applyDefeat(loser, winner) {
   }
   // THE DEMOTION LADDER.
   const down = DEMOTES_TO[loser.type];
+  // @LOSTOURSCOUTS: a Scout party captured by the tribe.
+  if (loser.type === 'Scouts' && loser.nation === G.nation &&
+      winner.tribe !== undefined) {
+    const wt2 = G.tribes[winner.tribe];
+    const near2 = G.colonies[0];
+    G.eventTribe = winner.tribe;
+    showEvent('LOSTOURSCOUTS', { STRING0: (wt2 && wt2.name) || '',
+                                 STRING1: near2 ? near2.name : DATA.regionname[G.nation] });
+  }
+  // @LOSTTHEIRSCOUTS: taking a rival's Scouts yields their horses (50 --
+  // the equip quantum, flagged).
+  if (loser.type === 'Scouts' && loser.nation >= 0 &&
+      loser.nation !== G.nation && winner.nation === G.nation) {
+    const c2 = G.colonies[0];
+    if (c2) c2.stock[GOOD.HORSES] += EQUIP_HORSES;
+    showEvent('LOSTTHEIRSCOUTS', { STRING0: ownerAdjective(loser),
+                                   STRING1: c2 ? c2.name : DATA.regionname[G.nation],
+                                   NUMBER0: EQUIP_HORSES });
+  }
+  // @INDIANWIN0/1/2: braves ambush the player's men -- Muskets/Horses seized
+  // by the demotion from Soldiers/Dragoons, the plain body otherwise. The
+  // engine's fills: STRING0 tribe, STRING1/2 the victim, STRING3 the place,
+  // STRING4 the tribe again.
+  if (down && loser.nation === G.nation && winner.tribe !== undefined) {
+    const wt = G.tribes[winner.tribe];
+    const place = G.colonies.slice().sort((a, b) =>
+      (Math.abs(a.x - loser.x) + Math.abs(a.y - loser.y)) -
+      (Math.abs(b.x - loser.x) + Math.abs(b.y - loser.y)))[0];
+    const key = loser.type === 'Soldiers' ? 'INDIANWIN1'
+              : loser.type === 'Dragoons' ? 'INDIANWIN2' : 'INDIANWIN0';
+    G.eventTribe = winner.tribe;
+    showEvent(key, { STRING0: (wt && wt.name) || '', STRING1: S.STRING0,
+                     STRING2: loser.type,
+                     STRING3: place ? place.name : DATA.regionname[G.nation],
+                     STRING4: (wt && wt.name) || '' });
+  }
   if (down) {
     const wasVeteran = loser.profession === 'Veteran Soldiers' ||
                        loser.profession === 'Veteran Dragoons';
@@ -6522,6 +6764,26 @@ function checkContact() {
 function newsTick() {
   for (const r of G.rivals) {
     if (!r.met) continue;
+    // The independence race: PowerRecord +0x02 is real engine state the
+    // port does not model -- a slow flagged random walk stands in.
+    if (G.year >= 1650 && !r.independent && !(G.flags & WOI_DECLARED)) {
+      r.rebelPct = Math.max(0, (r.rebelPct || 0) +
+                            (Math.random() < 0.6 ? 1 : -1));
+      const S2 = { STRING0: DATA.nations[r.nation].country,
+                   STRING1: DATA.nations[r.nation].adjective,
+                   STRING2: DATA.nations[r.nation].leader,
+                   NUMBER0: r.rebelPct, NUMBER1: 100 };
+      if (r.rebelPct >= 40 && !r.mightWarned) {
+        r.mightWarned = true;
+        showEvent('OTHERMIGHT', S2);
+      } else if (r.mightWarned && r.rebelPct < 35 && !r.lessNoted) {
+        r.lessNoted = true;
+        showEvent('OTHERLESS', S2);
+      } else if (r.rebelPct >= 60) {
+        r.independent = true;
+        showEvent('OTHERGRANTED', S2);
+      }
+    }
     // @VIOLATE: a rival unit loitering beside one of our colonies at peace.
     if (!atWar(G.nation, r.nation) && Math.floor(Math.random() * 24) === 0) {
       const tres = r.units.find(u => G.colonies.some(c =>
@@ -6532,6 +6794,34 @@ function newsTick() {
         showEvent('VIOLATE', { STRING0: DATA.nations[r.nation].adjective,
                                STRING1: DATA.nations[G.nation].adjective,
                                STRING2: nearC.name });
+    }
+    // @SNEAK: a rival unit beside the player's people opens hostilities
+    // without a declaration (rare, flagged) -- war is set as it lands.
+    if (!atWar(G.nation, r.nation) && Math.floor(Math.random() * 60) === 0) {
+      const agg = r.units.find(x => !x.ship && G.units.some(pu =>
+        !pu.ship && Math.abs(pu.x - x.x) <= 1 && Math.abs(pu.y - x.y) <= 1));
+      const prey = agg && G.units.find(pu => !pu.ship &&
+        Math.abs(pu.x - agg.x) <= 1 && Math.abs(pu.y - agg.y) <= 1);
+      if (agg && prey) {
+        showEvent('SNEAK', { STRING0: DATA.nations[r.nation].adjective });
+        setWar(r.nation, G.nation, REL.WAR, true);
+        resolveAttack(agg, prey);
+        continue;
+      }
+    }
+    // @GIVECASH: a threatened AI colony buys the player off (rows: spare /
+    // "it is God's will"). Once per colony, purse flagged.
+    if (atWar(G.nation, r.nation)) {
+      const scared = r.colonies.find(rc => !rc.spared && G.units.some(pu =>
+        !pu.ship && Number((unit(pu.type) || {}).attack) > 0 &&
+        Math.abs(pu.x - rc.x) <= 1 && Math.abs(pu.y - rc.y) <= 1));
+      if (scared && Math.floor(Math.random() * 6) === 0) {
+        scared.spared = true;
+        const purse = 100 + 50 * (scared.pop || 1);
+        askEvent('GIVECASH', { NUMBER0: purse }, (k) => {
+          if (k === 0) { G.gold += purse; r.gold = Math.max(0, (r.gold || 0) - purse); }
+        });
+      }
     }
     if (!r.colonies.length || Math.floor(Math.random() * 24) !== 0) continue;
     const rc = r.colonies[Math.floor(Math.random() * r.colonies.length)];
@@ -6684,15 +6974,22 @@ function updateCongress() {
   if (!G.fatherInProgress) {
     const cands = fatherCandidates();
     if (!cands.length) return;
-    // The pick dialog cannot be cancelled; with no UI turn yet the port takes
-    // the first candidate, which is the Trade category when one exists.
+    // @WHICHFREEDOM: "Which Founding Father shall we appoint as its next
+    // member?" -- the pick dialog, rows = the category candidates. The
+    // engine's dialog cannot be cancelled; Escape keeps the first candidate.
     G.fatherInProgress = cands[0].name;
+    askEvent('WHICHFREEDOM', {}, (k) => {
+      if (k >= 0 && k < cands.length) G.fatherInProgress = cands[k].name;
+    }, cands.map(c => c.name));
   }
   const cost = fatherCost();
   if (G.bells < cost) return;
   G.bells -= cost;
   G.fathersOwned.push(G.fatherInProgress);
-  G.msg = `${G.fatherInProgress} has joined the Continental Congress!`;
+  // @FREEDOM: "%STRING1 Founding Fathers announce that {%STRING0} has
+  // joined the Continental Congress!"
+  showEvent('FREEDOM', { STRING0: G.fatherInProgress,
+                         STRING1: DATA.nations[G.nation].adjective });
   applyFatherEffect(G.fatherInProgress);
   G.fatherInProgress = null;
 }
@@ -6757,6 +7054,32 @@ function createRoute(stops, sea, name) {
 function runTradeRoute(u) {
   const r = G.routes[u.route];
   if (!r) { u.orders = 0; return; }
+  // @ROUTELOOP: a route reduced to one stop cannot run.
+  if (r.stops.length < 2) {
+    showEvent('ROUTELOOP', { STRING0: r.name });
+    u.route = undefined; u.orders = 0;
+    return;
+  }
+  // @KILLWAGONS / @LOOTWAGONS: a wagon crossing a war-band tribe's country
+  // may vanish without a trace or lose its cargo (1/40 each side, flagged).
+  if (u.type === 'Wagon Train') {
+    const hostileV = G.villages.find(v => (v.alarm || 0) >= ALARM_RAID &&
+      Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+    if (hostileV && Math.floor(Math.random() * 40) === 0) {
+      const ht = G.tribes[hostileV.tribe] || {};
+      G.eventTribe = hostileV.tribe;
+      if (Math.random() < 0.5) {
+        showEvent('KILLWAGONS', { STRING0: ht.name || '' });
+        const i = G.units.indexOf(u);
+        if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+        return;
+      }
+      const near3 = G.colonies[0];
+      showEvent('LOOTWAGONS', { STRING0: ht.name || '',
+                                STRING3: near3 ? near3.name : DATA.regionname[G.nation] });
+      u.hold = [];
+    }
+  }
   const stop = r.stops[u.stopIndex % r.stops.length];
   if (stop === STOP_EUROPE) {
     // Europe: the ship sails for the sea lane and sells what it carries on
@@ -6853,15 +7176,28 @@ function tradeCommit() {
     return;
   }
   if (t.mode === 'delete') {
-    const r = G.routes.splice(row.id, 1)[0];
-    for (const u of G.units) if (u.route === row.id) { u.route = undefined; u.orders = 0; }
+    // @SUREDELETE: "Are you sure you want to delete the {%STRING0}?"
+    const victim = G.routes[row.id];
     G.screen = 'map'; G.trade = null;
-    G.msg = `Trade route "${r.name}" deleted.`;
+    askEvent('SUREDELETE', { STRING0: victim.name }, (k) => {
+      if (k !== 0) return;
+      const idx = G.routes.indexOf(victim);
+      if (idx < 0) return;
+      G.routes.splice(idx, 1);
+      for (const u of G.units) if (u.route === idx) { u.route = undefined; u.orders = 0; }
+      G.msg = `Trade route "${victim.name}" deleted.`;
+    });
     return;
   }
   // 'assign' -- put the selected unit on this route.
   const u = G.units[G.sel];
   G.screen = 'map'; G.trade = null;
+  if (u && (u.ship || u.type === 'Wagon Train') &&
+      !G.routes.some(rt => !!rt.sea === !!u.ship)) {
+    // @TRADENONE2: "You have not yet defined any {sea|land} trade routes."
+    showEvent('TRADENONE2', { STRING0: u.ship ? 'sea' : 'land' });
+    return;
+  }
   if (!u || (!u.ship && u.type !== 'Wagon Train')) {
     G.msg = 'Only ships and wagon trains can run a trade route.';
     return;
@@ -7072,6 +7408,12 @@ function endGameSequence() {
   if (G.scored) return;
   G.retired = true;
   const s = scoreParts();
+  // The Hall of Fame entry (HALLFAME.DAT record semantics).
+  hofWrite({ name: G.leader || DATA.nations[G.nation].leader,
+             nation: G.nation, year: G.year, score: s.total,
+             rating: Math.min(100, Math.max(0, s.total)),
+             declared: !!(G.flags & WOI_DECLARED),
+             independent: !!(G.flags & WOI_WON) });
   const name = G.leader || DATA.nations[G.nation].leader;
   showEvent('EXPLOITS', { NUMBER0: s.total,
                           STRING0: DATA.nations[G.nation].country });
@@ -7217,10 +7559,65 @@ function meetingTopic(r) {
     }, undefined, myr);
     return;
   }
+  const usa = (k) => (G.flags & WOI_DECLARED) ? k + 'USA' : k;
+  // @SIEGES: B objects to player forces beside HIS colonies. Rows stay(0) /
+  // withdraw(1) -- and the handler acts on ROW 2 even for SIEGESUSA, whose
+  // rows are swapped in the data (the engine's own latent bug, replicated).
+  const besiegers = !atWar(G.nation, r.nation) && G.units.filter(u => !u.ship &&
+    Number((unit(u.type) || {}).attack) > 0 && r.colonies.some(rc =>
+      Math.abs(rc.x - u.x) <= 1 && Math.abs(rc.y - u.y) <= 1));
+  if (besiegers && besiegers.length && gate()) {
+    askEvent(usa('SIEGES'), { STRING0: DATA.diplotext.GREATLEADER[r.nation],
+                              STRING1: DATA.nations[G.nation].adjective,
+                              STRING2: DATA.nations[r.nation].adjective,
+                              STRING3: DATA.diplotext.MEEKNESS[meetingTone(r) ? 0 : 1] },
+             (k) => {
+      if (k === 1) {
+        // Withdrawal pulls the offending units back to the nearest own
+        // colony (the engine sends them "to Europe" -- the port's nearest-
+        // colony recall is the flagged stand-in).
+        for (const bu of besiegers) {
+          const home = G.colonies.slice().sort((a, b) =>
+            (Math.abs(a.x - bu.x) + Math.abs(a.y - bu.y)) -
+            (Math.abs(b.x - bu.x) + Math.abs(b.y - bu.y)))[0];
+          if (home) { bu.x = home.x; bu.y = home.y; }
+        }
+      }
+      meetingPeaceHub(r);
+    }, undefined, myr);
+    return;
+  }
+  // @APOSTATES: B demands you cancel your treaty with a third power. Rows:
+  // refuse / "crush the foul-smelling X together" (break + join B's side).
+  const third = G.rivals.find(x => x !== r && x.met &&
+    haveTreaty(G.nation, x.nation) && atWar(r.nation, x.nation));
+  if (third && gate()) {
+    askEvent(usa('APOSTATES'), { STRING0: DATA.nations[third.nation].adjective,
+                                 STRING1: DATA.diplotext.MEEKNESS[meetingTone(r) ? 0 : 1] },
+             (k) => {
+      if (k === 1) {
+        setTreaty(G.nation, third.nation, REL.TREATY, false);
+        declareWarOn(G.nation, third.nation);
+      }
+      meetingPeaceHub(r);
+    }, undefined, myr);
+    return;
+  }
+  // @HEATHEN: B recruits you against a tribe he is subduing. The port has no
+  // tribe-vs-rival relations -- a hostile-band tribe stands in, flagged.
+  const heathen = G.tribes.find(t => t && !t.dead && (t.tension || 0) >= 40);
+  if (heathen && !atWar(G.nation, r.nation) && gate() && Math.random() < 0.34) {
+    askEvent(usa('HEATHEN'), { STRING0: heathen.name, STRING1: heathen.name },
+             (k) => {
+      if (k === 1) adjustTension(G.tribes.indexOf(heathen), 100, 4);
+      meetingPeaceHub(r);
+    }, undefined, myr);
+    return;
+  }
   // B's gold extortion (@TRIBUTE -- and note ACCEPT IS ROW 2 in the text).
   if (!inGrace && !atWar(G.nation, r.nation) && gate()) {
     const want = demandValue(500);
-    askEvent('TRIBUTE', { STRING0: DATA.diplotext.GREATLEADER[r.nation],
+    askEvent(usa('TRIBUTE'), { STRING0: DATA.diplotext.GREATLEADER[r.nation],
                           STRING1: DATA.nations[G.nation].adjective,
                           STRING2: DATA.regionname[r.nation], NUMBER0: want }, (k) => {
       if (k === 1) {
@@ -7228,9 +7625,12 @@ function meetingTopic(r) {
         else { G.gold -= want; r.gold = (r.gold || 0) + want; }
         meetingPeaceHub(r);
       } else if (gate()) {
-        // The refusal-escalation ladder's exact rule is TBD; the action gate
-        // decides whether the provocation turns to war.
-        showEvent('PROVOKE', {}, myr);
+        // The refusal escalation: B declares war with the tone-keyed body
+        // (@WARMEEK/@WARMANLY -- "Prepare for WAR!"). Which refusal escalates
+        // is the action gate's roll; the ladder's exact rule stays flagged.
+        showEvent(meetingTone(r) ? 'WARMEEK' : 'WARMANLY',
+                  { STRING0: DATA.diplotext.GREATKINGS[r.nation],
+                    STRING1: DATA.regionname[r.nation] }, myr);
         declareWarOn(r.nation, G.nation);
       } else meetingPeaceHub(r);
     }, undefined, myr);
@@ -7255,7 +7655,10 @@ function meetingTopic(r) {
 // alliance -- from @PEACE*/@OLDPEACE* by tone and standing treaty.
 function meetingPeaceHub(r) {
   const myr = `MYR${r.nation}`;
-  const key = haveTreaty(G.nation, r.nation)
+  // Once independent the hub takes its own body (@PEACEUSA), like the
+  // HELLOUSA greeting.
+  const key = (G.flags & WOI_DECLARED) ? 'PEACEUSA'
+    : haveTreaty(G.nation, r.nation)
     ? (meetingTone(r) ? 'OLDPEACEMEEK' : 'OLDPEACEMANLY')
     : (meetingTone(r) ? 'PEACEMEEK' : 'PEACEMANLY');
   askEvent(key, { STRING0: DATA.nations[G.nation].adjective,
@@ -7498,7 +7901,13 @@ function taxPretext() {
     + (2 * nationalSoL() - G.tax) * 5
     + Math.floor(G.gold / 100)
     + Math.floor(G.turn / 30);
-  if (sev < 0x28A) return 'KINGWIFE';
+  if (sev < 0x28A) {
+    // The wedding pretext carries a second gate ([0x53A7] < 0x1E @0x362C7)
+    // the port reads as once-per-game; after it, the plain @KINGTAX core
+    // demand serves the band. Flagged reading.
+    if (!G.kingWed) { G.kingWed = true; return 'KINGWIFE'; }
+    return 'KINGTAX';
+  }
   if (sev < 0x3B6) return 'KINGWAR';
   if (sev < 0x44C) return 'KINGNAVACT';
   return 'KINGSTAMPACT';
@@ -7664,6 +8073,16 @@ function enterRumour(u, x, y) {
           t.treasure = value;
           G.units.push(t);
           showEvent('BURIAL3', { NUMBER1: value * 100 });
+        }
+        // @SCREWED (byte-cited, func_061454 map): desecrating a HOSTILE
+        // tribe's grounds -- "Now you must die!" -- the unit is lost and
+        // the tribe goes +100 to the war footing (func_045DF2 @0x61B84).
+        if (tribe && (tribe.tension || 0) >= TENSION_HOSTILE) {
+          G.eventTribe = G.tribes.indexOf(tribe);
+          showEvent('SCREWED', { STRING0: tribe.name });
+          const i = G.units.indexOf(u);
+          if (i >= 0) { G.units.splice(i, 1); G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1)); }
+          adjustTension(G.tribes.indexOf(tribe), 100, 4);
         }
       });
       break;
@@ -7831,10 +8250,24 @@ function declareIndependence() {
     G.declared = true;
     G.declaredYear = G.year;
     mobilizeContinentals();
+    // @INDIANGRUDGE: tribes on the war footing hold War Council and join
+    // the Tory side (the body's own terms; the muskets/horses subsidy is
+    // narrative -- the raid engine already runs their war).
+    for (const t of G.tribes)
+      if (t && !t.dead && (t.tension || 0) >= TENSION_HOSTILE) {
+        G.eventTribe = G.tribes.indexOf(t);
+        showEvent('INDIANGRUDGE', { STRING0: t.name,
+                                    STRING1: DATA.nations[G.nation].adjective });
+      }
     // There is no Declaration woodcut: @WOODCUT's 17 captions have none, and
     // 11/12 are COLONY BURNING / COLONY DESTROYED. So the declaration is the
     // popup alone.
     showEvent('INDEPENDENCE', { STRING0: G.leader || DATA.nations[G.nation].leader });
+    // @SEIZURE: every ship in the home port or on the crossing is seized
+    // by the Royal Navy at the declaration (the wartime-seizure family).
+    for (const e of G.europe)
+      showEvent('SEIZURE', { STRING0: e.type });
+    G.europe = [];
     // The Crown becomes a real power on the map, and the first wave sails.
     refWave();
   });
@@ -7858,7 +8291,12 @@ function mobilizeContinentals() {
       const t = unit(to);
       u.type = t.name; u.icon = t.icon; u.moves = t.movement * MOVE_UNIT;
       u.movesLeft = Math.min(u.movesLeft, u.moves);
-      budget -= 1; promoted += 1;
+      budget -= 1; promoted += 1; c.mobilized = (c.mobilized || 0) + 1;
+    }
+    // @MOBILIZE: the per-colony mobilization card.
+    if (c.mobilized) {
+      showEvent('MOBILIZE', { STRING0: c.name, STRING1: 'Soldiers' });
+      c.mobilized = 0;
     }
   }
   if (promoted) showEvent('MOBILIZE2', { STRING0: G.colonies[0].name, NUMBER0: promoted });
@@ -7883,8 +8321,10 @@ function refWave() {
   // troops come ashore onto the colony's own tile.
   const beach = HALO_DIRS.map(([dx, dy]) => [target.x + dx, target.y + dy])
     .find(([x, y]) => tileWater(at(x, y)));
-  // @INVASION: "Royal Expeditionary Force lands near {colony}!"
+  // @INVASION: "Royal Expeditionary Force lands near {colony}!" -- and the
+  // first landing carries the @AMBUSHHINT tactics card (one-shot).
   showEvent('INVASION', { STRING0: target.name });
+  if (!G.ambushHinted) { G.ambushHinted = true; showEvent('AMBUSHHINT'); }
   let landed = 0;
   for (const type of ['Regulars', 'Cavalry', 'Artillery']) {
     for (let k = 0; k < REF_WAVE && G.ref[type] > 0 && landed < REF_WAVE; k++) {
@@ -8902,6 +9342,20 @@ function checkImmigration() {
   G.crosses -= thr;
   // The arrival takes one of the three dock slots at random and that slot
   // refills from the generator.
+  if (G.fathersOwned.includes('William Brewster')) {
+    // @RECRUITCHOOSE -- Brewster's documented function: "Whom shall we
+    // recruit?" over the three dock candidates.
+    const pool = G.dock.map(d => d.name);
+    askEvent('RECRUITCHOOSE', { STRING0: DATA.nations[G.nation].homeport },
+             (k) => {
+      const slot2 = (k >= 0 && k < 3) ? k : 0;
+      G.dockUnits.push(G.dock[slot2].name);
+      tutOnce(5, { STRING0: DATA.nations[G.nation].homeport,
+                   STRING1: G.dockUnits[G.dockUnits.length - 1] });
+      G.dock[slot2] = rollImmigrant();
+    }, pool);
+    return;
+  }
   const slot = Math.floor(Math.random() * 3);
   G.dockUnits.push(G.dock[slot].name);
   // TUTORIAL5 (func_033F6A @0x3651F): recruits are waiting on the docks.
@@ -9422,6 +9876,11 @@ function endTurn() {
   // many turns to come as the ground takes to cross -- the old
   // every-village-every-turn raid loop is gone with its RAID_GATE_K stub.
   nativeMoveAI();
+  // Raid-razed colonies (@INDIANBURNCOLONY) leave here, like the starved.
+  if (G.colonies.some(c => c.vanished)) {
+    G.colonies = G.colonies.filter(c => !c.vanished);
+    G.colony = Math.max(0, Math.min(G.colony, G.colonies.length - 1));
+  }
   rivalTurn();
   newsTick();
   kingWarCycle();
@@ -9446,6 +9905,14 @@ function endTurn() {
                 STRING1: G.leader || DATA.nations[G.nation].leader,
                 STRING2: DATA.nations[G.nation].homeport };
     if (!(G.flags & WOI_DECLARED)) {
+      // @LOSENOCOLONIES: "our efforts have proven fruitless" -- the King
+      // revokes the charter when no colonies stand after 1600 (@ABANDON2's
+      // own warning names the rule).
+      if (G.year >= 1600 && !G.colonies.length && G.turn > 30) {
+        showEvent('LOSENOCOLONIES', S);
+        endGameSequence();
+        return;
+      }
       if (G.year >= 1790 && !G.soonWarned) { G.soonWarned = true; showEvent('SOONRETIRING0', S); }
       if (G.year >= 1800) { showEvent('RETIRING', S); endGameSequence(); }
     } else if (!(G.flags & WOI_WON)) {
@@ -9684,8 +10151,42 @@ function moveSel(dx, dy) {
                                 STRING2: rc.name, NUMBER0: loot });
         u.movesLeft = 0; advance(); return;
       }
+      if (isColony && u.ship) {
+        // @TRADEATWAR (byte-cited @0x05A458): ships cannot enter the
+        // colonies of powers at war.
+        showEvent('TRADEATWAR');
+        return;
+      }
       G.msg = `The ${DATA.nations[rival.nation].adjective} colony holds.`;
       u.movesLeft = 0; advance(); return;
+    }
+    // Foreign-colony TRADE (func_05A40E): a cargo carrier at a rival colony
+    // at peace. Requires Jan de Witt (the byte-cited mercantilism gate
+    // @0x05A469); no cargo aboard is the @DEFICIT refusal; the @TRADEWITH
+    // barter offers goods or gold for the first hold slot (both offers the
+    // port's flagged pricing: goods 2:1 by value, gold = market +25%).
+    if (isColony && (u.ship || u.type === 'Wagon Train')) {
+      const hold = (u.hold || []).filter(h => h.qty > 0);
+      if (!G.fathersOwned.includes('Jan de Witt')) {
+        showEvent('TRADEMERCANTILISM',
+                  { STRING0: DATA.diplotext.GREATKINGS[rival.nation] });
+        return;
+      }
+      if (!hold.length) { showEvent('DEFICIT'); return; }
+      const h = hold[0];
+      const myVal = G.market[h.good] * h.qty;
+      const offerGold = Math.floor(myVal * 5 / 4);
+      let og = (h.good + 1) % 16;
+      while (og === h.good || askPrice(og) <= 0) og = (og + 1) % 16;
+      const offerQty = Math.max(1, Math.floor(myVal * 2 / askPrice(og)));
+      askEvent('TRADEWITH', { NUMBER0: offerQty, STRING0: DATA.cargo[og].name,
+                              NUMBER1: h.qty, STRING1: DATA.cargo[h.good].name,
+                              NUMBER2: offerGold }, (k) => {
+        if (k === 0) { holdAdd(u, h.good, -h.qty); holdAdd(u, og, offerQty); }
+        else if (k === 1) { holdAdd(u, h.good, -h.qty); G.gold += offerGold; }
+      });
+      u.movesLeft = 0;
+      return;
     }
     // A SCOUT at a foreign colony gets its own four-option dialog instead of
     // the parley (func_05A20E).
@@ -9794,20 +10295,26 @@ function activateUnit() {
   if (!u.movesLeft) u.movesLeft = u.moves;
 }
 function loadCargo() {
-  // Load a colony's stockpile into a ship sharing its tile.
+  // The Load order at a colony runs the engine's pickers: @CARGOLOAD
+  // (width 120) chooses the good, @HOWMUCH1 the amount.
   const u = G.units[G.sel];
   if (!u || !u.ship) { G.msg = 'Only a ship can load cargo.'; return; }
   const c = colonyAt(u.x, u.y);
   if (!c) { G.msg = 'No colony here.'; return; }
   u.hold = u.hold || [];
-  let moved = 0;
-  c.stock.forEach((q, i) => {
-    if (q <= 0) return;
-    const slot = u.hold.find(h => h.good === i);
-    if (slot) slot.qty += q; else u.hold.push({ good: i, qty: q });
-    moved += q; c.stock[i] = 0;
-  });
-  G.msg = moved ? `Loaded ${moved} goods.` : 'Nothing to load.';
+  const stocked = c.stock.map((q, i) => [q, i]).filter(s => s[0] > 0);
+  if (!stocked.length) { G.msg = 'Nothing to load.'; return; }
+  askEvent('CARGOLOAD', { STRING0: c.name }, (k) => {
+    if (k < 0 || k >= stocked.length) return;
+    const [q, i] = stocked[k];
+    askAmount('HOWMUCH1', { STRING0: DATA.cargo[i].name, STRING1: u.type },
+              Math.min(q, 100), (qty) => {
+      if (!qty) return;
+      c.stock[i] -= qty;
+      holdAdd(u, i, qty);
+      G.msg = `Loaded ${qty} ${DATA.cargo[i].name}.`;
+    });
+  }, stocked.map(s => `${s[0]} ${DATA.cargo[s[1]].name}`));
 }
 function unloadCargo() {
   const u = G.units[G.sel];
@@ -9815,10 +10322,20 @@ function unloadCargo() {
   const c = colonyAt(u.x, u.y);
   if (!c) { G.msg = 'No colony here.'; return; }
   const doUnload = () => {
-    let moved = 0;
-    for (const h of (u.hold || [])) { c.stock[h.good] += h.qty; moved += h.qty; }
-    u.hold = [];
-    G.msg = moved ? `Unloaded ${moved} goods.` : 'Nothing to unload.';
+    // @CARGOUNLOAD (width 120) chooses the slot, @HOWMUCH2 the amount.
+    const slots = (u.hold || []).filter(h => h.qty > 0);
+    if (!slots.length) { G.msg = 'Nothing to unload.'; return; }
+    askEvent('CARGOUNLOAD', { STRING0: c.name }, (k) => {
+      if (k < 0 || k >= slots.length) return;
+      const h = slots[k];
+      askAmount('HOWMUCH2', { STRING0: DATA.cargo[h.good].name,
+                              STRING1: u.type, STRING2: c.name }, h.qty, (qty) => {
+        if (!qty) return;
+        holdAdd(u, h.good, -qty);
+        c.stock[h.good] += qty;
+        G.msg = `Unloaded ${qty} ${DATA.cargo[h.good].name}.`;
+      });
+    }, slots.map(h => `${h.qty} ${DATA.cargo[h.good].name}`));
   };
   // @WAREHOUSEFULL: the pre-unload spoilage warning, a 2-row confirm ("Never
   // mind." / "Unload the %STRING1 anyway."). Capacity = the byte-read 100-ton
@@ -9837,8 +10354,14 @@ function unloadCargo() {
 function dumpCargo() {
   const u = G.units[G.sel];
   if (!u || !(u.hold || []).length) { G.msg = 'Nothing to dump.'; return; }
-  u.hold = [];
-  G.msg = 'Cargo dumped overboard.';
+  // @OVERBOARD: "What cargo shall we throw overboard?" -- rows = the hold.
+  const slots = u.hold.filter(h => h.qty > 0);
+  askEvent('OVERBOARD', {}, (k) => {
+    if (k < 0 || k >= slots.length) return;
+    const i = u.hold.indexOf(slots[k]);
+    if (i >= 0) u.hold.splice(i, 1);
+    G.msg = 'Cargo dumped overboard.';
+  }, slots.map(h => `${h.qty} ${DATA.cargo[h.good].name}`));
 }
 function disbandUnit() {
   if (!G.units.length) return;
@@ -9849,9 +10372,14 @@ function disbandUnit() {
     showEvent('DISBANDSHIP');
     return;
   }
-  G.msg = `${u.type} disbanded.`;
-  G.units.splice(G.sel, 1);
-  G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+  // @SUREDISBAND: "Really {disband} %STRING0?" -- Yes/No.
+  askEvent('SUREDISBAND', { STRING0: u.type }, (k) => {
+    if (k !== 0) return;
+    G.msg = `${u.type} disbanded.`;
+    const i = G.units.indexOf(u);
+    if (i >= 0) G.units.splice(i, 1);
+    G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
+  });
 }
 function findColony() {
   if (!G.colonies.length) { G.msg = 'No colonies yet.'; return; }
@@ -10352,6 +10880,12 @@ function colonyDrop(d, target, mx, my) {
       if (!cell) return;
       // Evicting whoever holds the target cell is UNCITED -- the manual only
       // describes dropping on an empty location.
+      // @NODOCKS: no fishing boats without Docks.
+      if (tileWater(at(c.x + cell[0], c.y + cell[1])) &&
+          !c.buildings.includes('Docks')) {
+        showEvent('NODOCKS', { STRING0: c.name });
+        return;
+      }
       const on = c.colonists.find(q => q !== p && q.cell &&
                                        q.cell[0] === cell[0] && q.cell[1] === cell[1]);
       if (on) { on.cell = null; on.job = null; }
@@ -10637,6 +11171,11 @@ function onClick(mx, my) {
           // @JOB row, which puts Farmer first.
           const who = c.colonists[G.colonistSel];
           if (who) {
+            // @NODOCKS: no fishing boats without Docks.
+            if (tileWater(at(c.x + cx, c.y + cy)) && !c.buildings.includes('Docks')) {
+              showEvent('NODOCKS', { STRING0: c.name });
+              return;
+            }
             who.cell = [cx, cy];
             who.job = bestFieldJob(c, who);
           }
@@ -10778,12 +11317,54 @@ function onClick(mx, my) {
   }
 }
 
+const HOF_KEY = 'colonization.hof';
+function hofLoad() {
+  try { return JSON.parse(localStorage.getItem(HOF_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function hofWrite(rec) {
+  const list = hofLoad();
+  // Descending insertion on the +0x26 score (func_03ADA6 @0x3AECD), max 6.
+  let k = 0;
+  while (k < list.length && list[k].score >= rec.score) k++;
+  list.splice(k, 0, rec);
+  while (list.length > 6) list.pop();
+  try { localStorage.setItem(HOF_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function drawHof(ctx) {
+  usePalette('WOODPANL');
+  if (IMG.WOODPANL) ctx.drawImage(IMG.WOODPANL, 0, 0);
+  else { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+  const m = DATA.text.misc;
+  FONT.intr.center(ctx, m[192] || 'COLONIZATION HALL OF FAME', 160, 8, lut(0xFC));
+  const list = hofLoad().slice(0, 5);
+  let y = 0x10 + 16;
+  if (!list.length)
+    FONT.tiny.center(ctx, '--- ' + (m[3] || 'None') + ' ---', 160, 96, lut(0xFE));
+  for (const rec of list) {
+    // The title by career: President (independence won) / General,
+    // Continental Army (declared) / Leader -- the port's reading, flagged.
+    const title = rec.independent ? (m[195] || 'President')
+                : rec.declared ? (m[196] || 'General, Continental Army')
+                : (m[197] || 'Leader');
+    FONT.tiny.center(ctx, '--- ' + title + ' ---', 160, y, lut(0xFC));
+    FONT.intr.center(ctx, rec.name, 160, y + 8, lut(0xFE));
+    FONT.tiny.center(ctx,
+      `${DATA.nations[rec.nation] ? DATA.nations[rec.nation].adjective : ''}  ` +
+      `${m[198] || 'Score'}: ${rec.score}   ` +
+      `${m[199] || 'Colonization_Rating'}: ${rec.rating}%   ` +
+      `${rec.year} ${m[194] || 'A.D.'}`, 160, y + 22, lut(0xFE));
+    y += 34;
+  }
+  FONT.tiny.center(ctx, '(Esc back)', 160, 190, lut(0x5D));
+}
 function commitMenu() {
   // Real dispatch ladder @0x075C6D: rows 0-2 all enter the new-game setup path;
   // 3 = LOAD Game (browser save / the shipped 1653 save / a .SAV off disk);
-  // 4 = View Hall of Fame (not implemented).
+  // 4 = View Hall of Fame.
   if (G.menuRow <= 2) G.screen = 'difficulty';
   else if (G.menuRow === 3) openLoadMenu();
+  else if (G.menuRow === 4) G.screen = 'hof';
 }
 
 function onKey(e) {
@@ -10805,6 +11386,9 @@ function onKey(e) {
     return;
   }
   switch (G.screen) {
+    case 'hof':
+      if (k === 'Escape' || k === 'Enter' || k === ' ') { G.screen = 'title'; G.menuRow = 0; }
+      break;
     case 'title':
       if (k === 'ArrowUp') G.menuRow = (G.menuRow + MENU_OPTS.length - 1) % MENU_OPTS.length;
       if (k === 'ArrowDown') G.menuRow = (G.menuRow + 1) % MENU_OPTS.length;
@@ -10887,9 +11471,18 @@ function onKey(e) {
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
       if (k === 'c' || k === 'C') { G.colonyPopup = 'build'; G.colonyPopupRow = 0; }
       // B = rush-buy the construction target (@BUYME0/1); E = the Custom
-      // House export picker (@CUSTOM).
+      // House export picker (@CUSTOM); L = clear the selected colonist's
+      // specialty (@LOBOTOMIZE).
       if (k === 'b' || k === 'B') rushBuy();
       if (k === 'e' || k === 'E') customHouseMenu();
+      if (k === 'l' || k === 'L') {
+        const cc = G.colonies[G.colony];
+        const who = cc && cc.colonists[G.colonistSel];
+        if (who && who.profession)
+          askEvent('LOBOTOMIZE', { STRING0: who.profession }, (ch) => {
+            if (ch === 0) who.profession = null;
+          });
+      }
       if (k === 'Enter') { G.colonyPopup = 'jobs'; G.colonyPopupRow = 0; }
       // Colonial authority: R renames, shift-A abandons (@ABANDON defaults to
       // the refusal, so a stray press cannot lose you a colony).
@@ -11046,7 +11639,7 @@ function frameBody() {
   if (G.dragArm && PTR.down) onPointerMove(PTR.x, PTR.y);
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
-     name: drawName, briefing: drawBriefing, cards: drawCards,
+     name: drawName, briefing: drawBriefing, cards: drawCards, hof: drawHof,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
      report: drawReport, village: drawVillage,

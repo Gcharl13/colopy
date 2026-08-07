@@ -33,11 +33,45 @@ WIRED_VIA_DATA = {
     'TRADEDELETE': 'drawTrade (DATA.events body)',
     # The opening cinematic cards, consumed as DATA.cards by drawCards.
     **{f'BUILD{i}': 'DATA.cards (drawCards/cardText)' for i in range(1, 11)},
+    # The Europe harbour menu captions, read as DATA.events.<KEY>.body.
+    'EUROPEARM': 'euroMenuBox (DATA.events body)',
+    'EUROPESHIPCLICK': 'euroMenuBox (DATA.events body)',
+    'KINGRECRUIT': 'euroMenuBox TRAIN caption (DATA.events body)',
 }
 # Keys whose BODIES the port paraphrases in its own UI -- swap these for the
 # bundled text as they are found. (Emptied 2026-08-07: the five trade-route
 # keys were the last, wired in the Phase 1 sweep.)
 PARAPHRASED = {}
+# Blocked on evidence that is NOT yet read -- each with the named blocker.
+# These stay out deliberately (never guessed) until the Phase 4 capture or
+# disasm window resolves them.
+BLOCKED = {
+    'BURNED2': 'caller attribution vs INDIANBURNCOLONY2 unread (disasm)',
+    'BURNED3': 'ditto', 'CAPTURED2': 'ditto', 'CAPTURED3': 'ditto',
+    'CANTMOBILIZE': 'muskets gate absent from the byte-read mobilize (disasm)',
+    'KINGMOBILIZE': 'REF-side mobilize announcement site unread (disasm)',
+    'CARGOREADY0': 'per-good capacity model func_008D00 unread (disasm)',
+    'EUROPEWIN': 'needs AI-vs-AI battles (omitted with the AI-AI war drivers)',
+    'EUROPELOSE': 'ditto',
+    'FULL': 'no colony size cap model; threshold unread',
+    'KINGBLESS': 'player-initiated audience entry point not byte-mapped',
+    'KINGFUND': 'ditto', 'KINGLAUGH': 'ditto', 'KINGLOWER': 'ditto',
+    'KINGNO': 'ditto', 'KINGNOTHING': 'ditto', 'KINGRAISE': 'ditto',
+    'KINGWELCOME0': 'ditto',
+    'LOOTFOREIGN': 'no rival treasure-fleet model',
+    'RECRUIT2': 'native specialist-recruit site unclear (disasm)',
+    'SHIPRUN': 'evade/blockade-run condition unmapped (disasm)',
+    'SHIPSLOW': 'ditto',
+    'SHIPLAKE': 'no inland-lake connectivity model',
+    'TOOMANYCOLONIES': 'engine cap value unread (disasm)',
+    'TOOMANYUNITS': 'ditto',
+    'TOONEARBUILD': 'port founds instantly; no pending-build state',
+    'INDIANWINCOLONY': 'player-visible massacre variant: attribution unread',
+    'HOWMUCH3': 'no carrier-to-carrier transfer site in the port',
+    'APOSTATESUSA': 'reachable only via the USA suffix at runtime',
+    'HEATHENUSA': 'ditto', 'RIDUSA': 'ditto', 'SIEGESUSA': 'ditto',
+    'TRIBUTEUSA': 'ditto', 'WANTSTUFFUSA': 'ditto', 'PIRACYUSA': 'ditto',
+}
 # Structurally out of scope for the port -- each with the reason.
 NA = {
     'SAVEGAME': 'port saves to localStorage, own UI', 'SAVEGOOD': 'ditto',
@@ -54,6 +88,7 @@ NA = {
     'UNITFLAG': 'engine internal assertion string',
     'FINDCITY': 'debug locator', 'NOCITY': 'debug locator',
     'COLONYUNIT': 'debug locator',
+    'RAIDSCALP': 'orphan -- no caller in the EXE (manual_src part5 22.x)',
 }
 
 exported = set(re.findall(r'"@([A-Z0-9]+)"', bnd))
@@ -71,12 +106,14 @@ def wired(key):
 
 
 cats = {'DONE': [], 'DONE-VIA-DATA': [], 'PARAPHRASED': [],
-        'BUNDLED-UNWIRED': [], 'MISSING': [], 'N/A': [],
-        'SUPPORT (no @width - lists/menus)': []}
+        'BUNDLED-UNWIRED': [], 'BLOCKED (named blocker)': [], 'MISSING': [],
+        'N/A': [], 'SUPPORT (no @width - lists/menus)': []}
 for k in sorted(full):
     key = k.lstrip('@')
     if key in NA:
         cats['N/A'].append(f"{key} - {NA[key]}")
+    elif key in BLOCKED and not (key in exported and wired(key)):
+        cats['BLOCKED (named blocker)'].append(f"{key} - {BLOCKED[key]}")
     elif key in WIRED_VIA_DATA:
         cats['DONE-VIA-DATA'].append(f"{key} - {WIRED_VIA_DATA[key]}")
     elif key in PARAPHRASED:
