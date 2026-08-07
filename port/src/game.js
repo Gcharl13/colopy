@@ -443,6 +443,35 @@ const at = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h) ? 25 : MAP.til
 // It is a separate plane from the terrain byte, which is why plow's 0x40 does
 // not collide with the terrain plane's river bit of the same value.
 const IMPROVE = new Uint8Array(MAP.w * MAP.h);
+// The REGION plane: map layer 3 ([0x164]), whose LOW NIBBLE is a landmass/
+// region id -- byte-read at func_005D9C (the reader behind 0x181F:0x722,
+// resolved 2026-08-07f). A shipped save carries the plane verbatim; a fresh
+// game rebuilds the same semantic by flood-filling the land components (the
+// engine's own region builder is unread -- R-tier, flagged).
+const REGION = new Uint8Array(MAP.w * MAP.h);
+function buildRegions() {
+  REGION.fill(0);
+  let next = 1;
+  const stack = [];
+  for (let seed = 0; seed < REGION.length; seed++) {
+    if (REGION[seed] || tileWater(MAP.tiles[seed])) continue;
+    REGION[seed] = next;
+    stack.length = 0;
+    stack.push(seed);
+    while (stack.length) {
+      const t = stack.pop(), x = t % MAP.w, y = (t / MAP.w) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) continue;
+        const n = ny * MAP.w + nx;
+        if (REGION[n] || tileWater(MAP.tiles[n])) continue;
+        REGION[n] = next;
+        stack.push(n);
+      }
+    }
+    if (next < 15) next += 1;                 // the id lives in a nibble
+  }
+}
 const ROAD_BIT = 0x08, PLOW_BIT = 0x40;
 const impAt = (x, y) => (x < 0 || y < 0 || x >= MAP.w || y >= MAP.h)
   ? 0 : IMPROVE[y * MAP.w + x];
@@ -638,6 +667,7 @@ function beginGame() {
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
   IMPROVE.fill(0);
+  buildRegions();
   seedNatives();
   seedRivals();
   G.warMatrix = {}; G.treatyMatrix = {}; G.parleyLock = {};
@@ -4152,8 +4182,9 @@ function raidOutcome() {
 //       score = ((2*max(0,pop-6) + min(pop/2, tribeLevel) + min(pop,6)
 //                + fort) * 2 - dist - 1) / (dist + 4)
 //       halved when village and colony sit in different map regions
-//       (0x181F:0x722 region nibble -- the port has no region plane; omitted,
-//       flagged), then + areaStrength[owner]; halved for FRANCE (@0x46388,
+//       (0x181F:0x722 = the layer-3 low nibble, func_005D9C -- imported from
+//       a save, flood-filled for a fresh map), then + areaStrength[owner];
+//       halved for FRANCE (@0x46388,
 //       the byte behind the French tension break) and halved again under
 //       power-attribute bit 0x10 (@0x46391 -- Pocahontas's flag).
 //   * MISSION TAIL @0x4645E-0x464AD: another power's mission on the village
@@ -4195,6 +4226,8 @@ function raidTargetScore(v) {
     const fort = (Math.floor(c.buildings.length * w / dv) - 8) >> 2;
     let s = Math.floor(((2 * Math.max(0, pop - 6) + Math.min(pop >> 1, lvl) +
                          Math.min(pop, 6) + fort) * 2 - dist - 1) / (dist + 4));
+    // Different region (0x181F:0x722 = layer-3 low nibble) halves the score.
+    if (REGION[v.y * MAP.w + v.x] !== REGION[c.y * MAP.w + c.x]) s >>= 1;
     s += area[G.nation];
     if (G.nation === 1) s >>= 1;
     if (G.fathersOwned.includes('Pocahontas')) s >>= 1;
@@ -7420,6 +7453,9 @@ function importSav(bytes) {
   const terr = d.subarray(planeBase, planeBase + plane);
   MAP.tiles.set ? MAP.tiles.set(terr) : MAP.tiles.splice(0, MAP.tiles.length, ...terr);
   for (let i = 0; i < plane; i++) IMPROVE[i] = d[planeBase + plane + i] & 0x48;
+  // Plane 3's LOW NIBBLE is the region id (func_005D9C reads [0x164]) --
+  // carried verbatim, replacing the flood-fill approximation.
+  for (let i = 0; i < plane; i++) REGION[i] = d[planeBase + 2 * plane + i] & 0x0F;
   SEEN.set(d.subarray(planeBase + 3 * plane, planeBase + 4 * plane));
 
   // The player's PowerRecord.
@@ -7627,7 +7663,8 @@ function saveGame() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       v: 2, G, tiles: Array.from(MAP.tiles), improve: Array.from(IMPROVE),
-      seen: Array.from(SEEN), rumours: Array.from(G.rumoursDone || []),
+      seen: Array.from(SEEN), region: Array.from(REGION),
+      rumours: Array.from(G.rumoursDone || []),
     }));
     G.msg = 'Game saved.';
   } catch (e) { G.msg = 'Could not save.'; }
@@ -7642,6 +7679,7 @@ function loadGame() {
     MAP.tiles.set ? MAP.tiles.set(s.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...s.tiles);
     IMPROVE.set(s.improve);
     SEEN.set(s.seen);
+    if (s.region) REGION.set(s.region); else buildRegions();
     G.rumoursDone = new Set(s.rumours || []);
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
     G.msg = 'Game loaded.';

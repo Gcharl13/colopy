@@ -8080,3 +8080,17 @@ Europe's buyToShip now clamp to (free slots)·100 + merge-slot headroom and
 refuse when full, which is the executor's arithmetic expressed under the
 port's one-slot-per-good convention (flagged as such in place). The 100 cap
 and the refusal-as-timed-message shape were already right. Suite: 216/216.
+
+## 2026-08-07g — map plane 3's low nibble is the REGION id (func_005D9C); the scorer's region check lands
+
+`0x181F:0x722` resolves through `func_005E90` to the raw reader
+`func_005D9C`: `byte [ [0x164] + y*width + x ]` — **map plane 3** (the block
+the save spec called "resource/region") — masked `& 0x0F` by the 0x5DBA
+wrapper. So the plane's LOW NIBBLE is a landmass/region id (1 = the main
+continent in the shipped saves, 0 = ocean), and the raid-target scorer's
+"different region halves the score" test is now fully grounded. The port
+carries a REGION plane: imported verbatim from a .SAV, rebuilt by a
+landmass flood fill for a fresh map (the engine's own region builder is
+unread — that reconstruction is R-tier, flagged), saved in the v2 browser
+save, and used by raidTargetScore. The plane's HIGH nibble is still open
+(prime-resource/river-mouth candidates). Suite: 216/216.
