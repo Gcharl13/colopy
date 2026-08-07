@@ -224,9 +224,18 @@ AL,9 … INT 21h`, and no direct IVT poke to offsets `0x24`/`0x26` (`es:[9*4]`).
 The third `INT 16h` "hit" at `0x5ABEC` is likewise data (zero-padded table), not
 code. **Conclusion: keyboard handling is 100% BIOS INT 16h polling; the BIOS's
 own INT 09h ISR fills the buffer, the game never replaces it, and there is no
-game-side ctrl/shift-state ISR.** Shift/Alt state, where needed, would come from
-`INT 16h AH=02h` — but no such call exists in the resident image either, so the
-game relies solely on the cooked AX (scan:ASCII) from `getch`.
+game-side ctrl/shift-state ISR.**
+
+> **CORRECTED 2026-08-07** (see `notes/rulings/RULINGS.md`): the earlier claim
+> here that shift state "would come from `INT 16h AH=02h` — but no such call
+> exists, so the game relies solely on the cooked AX" was **over-broad**. It is
+> true of `INT 16h AH=02h` specifically, but the game DOES read live shift
+> state another way: `func_004A22 @0x04A22` reads the **BIOS Data Area flag
+> byte directly** (`0040:0017 & 3`) and passes it as the last argument to every
+> cargo-transfer routine (`@0x2AF3E`, `@0x2BA0B`, `@0x2AE2C`, `@0x33AA0`,
+> `@0x3367E`, `@0x334D1`, `@0x33516`) — that is the **shift-drag = partial
+> amount** modifier for the drag-and-drop paths. Keyboard *keystrokes* remain
+> cooked-AX only.
 
 ### 3. In-game key dispatch
 
@@ -568,8 +577,8 @@ row is `push h; push w; push y; push x; lcall 0x181F:0x3CA`:
 | (1,118,70,51) | 3 | "Loading" panel | B | `@0x032034` |
 | (224,120,96,59) | 4 | "Expected" panel | B | `@0x032034` |
 | (0,179,305,21) | 0 | Market price row (buy/sell cell; sell handler @0x32914) | B | `@0x032034`; `europe_screen.md §6` |
-| (306,179,15,21) | 0xB | Stockpile/gold readout zone | B | `@0x032034` |
-| (Exit) | — | leave Europe | B (clickable) / B (paint mechanism) / A (pixel) | click-rect @0x032034; paint = framework chrome from the generic screen-view runner `func_077D5E` (region load_image), reached via `0x181F:0x772` (screen-view id 0x2B) — NOT a Europe-page draw, so the Europe composer paints no Exit button (RESOLVED 2026-06-27, `europe_screen.md` §0 lines 15-19). On-screen position white "Exit" `(306,179)` + red "E" `(308,187)`, measured from live capture `docs/screens/10_europe_screen.png` (A) |
+| (305,179,15,21) | 0xB | Stockpile/gold readout zone | B | `@0x3200E-0x3201A` (`push 0x15; push 0x0F; push 0xB3; push 0x131` — x = **0x131 = 305**; CORRECTED 2026-08-07: this row previously read 306 with the citation `@0x032034`, which is the id-**5** block, not id 0xB) |
+| (Exit) | — | leave Europe | B (clickable) / B (paint mechanism) / A (pixel) | click-rect = region 0xB `@0x3200E-0x3201A` (x=305; the old `@0x032034` cite was the id-5 block); paint = framework chrome from the generic screen-view runner `func_077D5E` (region load_image), reached via `0x181F:0x772` (screen-view id 0x2B) — NOT a Europe-page draw, so the Europe composer paints no Exit button (RESOLVED 2026-06-27, `europe_screen.md` §0 lines 15-19). On-screen position white "Exit" `(306,179)` + red "E" `(308,187)`, measured from live capture `docs/screens/10_europe_screen.png` (A) |
 
 ---
 

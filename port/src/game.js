@@ -394,29 +394,28 @@ const DTAB = [6, 1, 2, 3, 4, 5, 6, 6,
               9, 1, 8, 9, 10, 10, 6, 6,
               9, 1, 8, 9, 10, 10, 6, 6,
               -1, 7, -1, 12, 13];
-// The salt word [0x190] is rolled per game (0 disables the band). The engine
-// value for a given save is runtime state we do not have, so the port fixes one
-// -- the layout is stable for a session, which is all the hash guarantees.
-//
-// UNCITED, and a known divergence: the engine reads ONE word at [0x190] for
-// BOTH hashes -- `add cl, byte[0x190]` @0x6129 here and `add cx, word[0x190]`
-// @0x61E1 for rumours -- where the port splits it into this fixed 1 and the
-// per-game G.mapSeed. (The byte-vs-word difference is itself inert: `and cx,0xF`
-// @0x612D means only the low 4 bits can ever reach a detail tile, so the honest
-// unification is `DETAIL_SALT = G.mapSeed & 0xF`.) Not done here because it
-// MOVES EVERY PRIME-RESOURCE TILE in the current build, which is a deliberate
-// decision with a before/after diff, not a drive-by edit. TBD.
-const DETAIL_SALT = 1;
+// The salt is the SAME word [0x190] the rumour hash reads -- `add cl,
+// byte[0x190]` @0x6129 here, `add cx, word[0x190]` @0x61E1 there -- so the port
+// now feeds both from G.mapSeed rather than the fixed 1 it used to hold here.
+// Unified 2026-08-07 as the recorded deliberate decision (RULINGS.md): the
+// byte-vs-word read difference is inert because `and cx,0xF` @0x612D lets only
+// the low 4 bits reach a detail tile, and since (a+b)&0xF depends only on each
+// addend's low nibble, adding the full seed is equivalent to adding seed&0xF.
+// Before/after diff over AMER2: 399 detail tiles at the old fixed salt 1,
+// 396-439 across other salts, 188/399 positions shared between salts 1 and 7 --
+// the density holds, the layout moves per game, which is what the engine does.
+// The gate is on the WHOLE word being zero (@0x60A9), matching the rumour gate
+// @0x6191, and beginGame rolls 1..0x7FFF so it never fires in play.
 function detailClass(v) {
   if (tileMountains(v)) return 27;
   if (tileHills(v)) return 28;
   return v & 0x1F;
 }
 function detailFrame(mx, my, v) {
-  if (!DETAIL_SALT) return -1;
+  if (!G.mapSeed) return -1;                  // word [0x190] == 0 disables @0x60A9
   const forest = forestConnects(v) || isScrub(v) ? 1 : 0;
   const q = (mx & 3) * 4 + (my & 3);
-  const h = ((my >> 2) * 3 + (mx >> 2) + DETAIL_SALT - forest) & 0xF;
+  const h = ((my >> 2) * 3 + (mx >> 2) + (G.mapSeed & 0xF) - forest) & 0xF;
   if (h !== q && (h ^ 0xA) !== q) return -1;
   const d = DTAB[detailClass(v)];
   return d < 0 ? -1 : PHYS.DETAIL + d;
@@ -481,6 +480,9 @@ const G = {
   // deadline; see the drag-and-drop section for the full byte trail.
   drag: null,
   dragArm: null,
+  // Which ship in the colony's port the dock panel shows. Clamped by
+  // colonyShip() whenever the list shrinks.
+  colonyShipSel: 0,
   // VGA colour cycling. cycle_init seeds every band's timestamp with the clock
   // as the map screen is entered, so the run starts at phase 0; cyclePhase is
   // an override that pins it (null = free-running off the wall clock).
@@ -1352,14 +1354,40 @@ function drawMap(ctx) {
     if (!isSeen(v.x, v.y)) continue;
     drawSettlement(tgt, ox + tx * TILE, oy + ty * TILE, v.level, -1,
                    (G.tribes[v.tribe] || {}).color || 8, v.mission);
-    // §19.6: the map shows alarm as exclamation marks over the village,
-    // ramping pale green -> blue -> yellow -> brown -> red.
+    // §19.6: the map shows alarm as exclamation marks over the village. The
+    // whole strip is byte-read off the village painter (2026-08-07b):
+    //   * level = min(3, alarm >> 5)               @0x40C6-0x40CE (`sar di,5`)
+    //   * tension >= 75 forces level 3             @0x40DD (`cmp ax,0x4b`)
+    //   * colours by level 0..3: 0x0A green, 0x0B cyan, 0x0E yellow, 0x0C red
+    //                                              @0x40F8/@0x40FE/@0x4104/@0x40F1
+    //   * each mark, at (XB, py+4): a 3x7 backing rect in the outline colour,
+    //     a 1x5 bar at (XB+1, py+5) and a 1x1 dot at (XB+1, py+9) in the level
+    //     colour, XB starting px+6 and stepping +2 per mark
+    //                                              @0x4126-0x419F
+    //   * the trailing marks are DIMMED -8 while the remaining count is <= 2
+    //                                              @0x412F-0x4135
+    // The MARK COUNT comes from an out-param of lcall 0x181F:0x316 whose
+    // semantics are still unread -- the port draws level+1 marks, which is its
+    // own choice pending that read. TBD (blocker: disassemble 0x181F:0x316).
     const alarm = v.alarm || 0;
     if (alarm > 0 && G.zoom === 0) {
-      const ramp = [0x44, 0x36, 0x0E, 0x86, 0x0C];
-      const step = Math.min(4, Math.floor(alarm / 32));
-      FONT.tiny.draw(ctx, '!'.repeat(step + 1), ox + tx * TILE + 1, oy + ty * TILE - 1,
-                     lut(ramp[step]), ink(0));
+      const tension = (G.tribes[v.tribe] || {}).tension || 0;
+      const level = tension >= 75 ? 3 : Math.min(3, alarm >> 5);
+      const colour = [0x0A, 0x0B, 0x0E, 0x0C][level];
+      const px2 = ox + tx * TILE, py2 = oy + ty * TILE;
+      let xb = px2 + 6;
+      for (let m = level; m >= 0; m--) {
+        // The engine dims a mark when its remaining count is <= 2 -- with the
+        // count semantics unread, the port dims only the final mark, the case
+        // the byte rule always produces on a partial remainder.
+        const c2 = (m === 0 && level > 0) ? colour - 8 : colour;
+        ctx.fillStyle = ink(0);
+        ctx.fillRect(xb, py2 + 4, 3, 7);
+        ctx.fillStyle = ink(c2);
+        ctx.fillRect(xb + 1, py2 + 5, 1, 4);
+        ctx.fillRect(xb + 1, py2 + 9, 1, 1);
+        xb += 2;
+      }
     }
   }
   for (const n of G.natives) {
@@ -2542,7 +2570,7 @@ function drawColony(ctx) {
   ctx.drawImage(IMG.COLONY, 0, 128);
   drawColonyPlaza(ctx, c);
   drawColonyPanel(ctx, c);
-  FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(PANEL_INK));
+  drawColonyDock(ctx, c);
 
   // Stockpile bar (0,179,320,21): 16 cells pitch 19, icon = ICONS good+0x17
   // (engine) at y=181, quantity centred at (9+19i, 194).
@@ -2831,6 +2859,99 @@ function colonyPopupCommit() {
     }
   }
   G.colonyPopup = null;
+}
+
+// ---- the ships-in-port dock: engine region 8 (121,130,84,48) --------------
+// Built 2026-08-07 so colony goods drags have somewhere to LAND (drop mode 7's
+// byte-cited targets are {5, 8}, and until now the port drew nothing here but
+// a caption). Byte-cited pieces:
+//   * the hold sub-rect (127,165,72,22)          func_02AFCE @0x2AFEA
+//   * six hold cells x = 0x7F + 12i = 127+12i,
+//     y = 0xA5 = 165, w = 0x0A = 10, h = 0x16    func_027D84 @0x027D87-0x027DAC,
+//     = 22, six-slot loop                        @0x027DF7
+//   * the beyond-capacity slot sprite, ICONS
+//     engine 0x7B = bundle 122 (the crossed
+//     crate the Europe row already uses)         @0x027E25
+//   * hold hit index clamp(mx-0x7F,0,0x47)/0x0C  func_02AEDA @0x2AEE9
+// The SHIPS LIST is byte-read from func_027DB2 (2026-08-07b):
+//   * frame box (121,130,84,48)                  @0x27DB7-0x27DC1
+//   * NO SHIPS ([0x33C]==0): the caption string, then ICONS engine 0x7B (the
+//     crossed crate, bundle 122) on ALL SIX hold cells
+//                                                @0x27DC7-0x27E34 (`mov ax,0x7b` @0x27E25)
+//   * ships row: 16x16 cells from x=0x82=130, PITCH 18, up to 4
+//     (`mov [bp-0x74],4` @0x27EB9; advance `sbb/and 0xD/add 5` = +18 on row 0
+//     @0x27FA2-0x27FAE), unit blit y = 147 with a 1px lift for a ship and one
+//     more for slots past the first
+//                                                @0x27EAB/@0x28014/@0x2801E-0x2803D
+//   * ships 5+ overflow to a 3x4-pip row at (124,139), pitch 5, up to 16 --
+//     the "implausible 5px pitch" of the old open item, real after all
+//                                                @0x27FE2-0x27FF6
+//   * selection box: colour 0x0A on the selected ship [0x33E]; 0x0F as the
+//     DROP highlight while the button is held over the dock mid-drag
+//                                                @0x27F15-0x27F4E, rect verb @0x27F9D
+//   * hold cells: slot >= @UNIT cargo capacity -> the 0x7B cross; an occupied
+//     slot -> the goods icon CENTRED, engine 0x17+good full / 0x27+good
+//     partial (bundle 0x16/0x26+good); an EMPTY in-capacity slot draws
+//     NOTHING -- no dark fill
+//                                                @0x280B7-0x2812B
+const COLONY_DOCK = { shipX: 130, shipY: 147, shipPitch: 18 };
+function colonyShips(c) {
+  return G.units.filter(u => u.ship && u.x === c.x && u.y === c.y);
+}
+function colonyShip(c) {
+  const ships = colonyShips(c);
+  if (!ships.length) return null;
+  if (G.colonyShipSel >= ships.length) G.colonyShipSel = 0;
+  return ships[G.colonyShipSel];
+}
+function drawColonyDock(ctx, c) {
+  const ships = colonyShips(c);
+  if (!ships.length) {
+    FONT.tiny.center(ctx, 'No Ships In Port', 160, 130, lut(PANEL_INK));
+    for (let k = 0; k < 6; k++) sheetFrame(ctx, 'ICONS', 122, 127 + 12 * k, 165);
+    return;
+  }
+  FONT.tiny.center(ctx, `Loading: ${colonyShip(c).type}`, 160, 130, lut(PANEL_INK));
+  ships.slice(0, 4).forEach((u, k) => {
+    const x = COLONY_DOCK.shipX + k * COLONY_DOCK.shipPitch;
+    const y = COLONY_DOCK.shipY - 1 - (k > 0 ? 1 : 0);
+    const [fw, fh] = frameSize('ICONS', u.icon);
+    sheetFrame(ctx, 'ICONS', u.icon, x + ((16 - fw) >> 1), y + 16 - fh);
+    if (k === G.colonyShipSel)
+      hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0A);
+    // The drop highlight while a goods payload is over the dock. The engine's
+    // test reads its hover word ([0x8D54]==8 with the button held) -- the
+    // port's equivalent condition is a live goods drag; INFERRED, flagged.
+    if (G.drag && G.drag.kind === 'good' && k === G.colonyShipSel &&
+        hit(PTR.x, PTR.y, { x: 121, y: 130, w: 84, h: 48 }))
+      hollowRect(ctx, x - 1, COLONY_DOCK.shipY - 1, 18, 18, 0x0F);
+  });
+  // Overflow ships 5+ as 3x4 pips at (124,139) pitch 5, in the owner colour.
+  ships.slice(4, 20).forEach((u, k) => {
+    ctx.fillStyle = ink(ownerColour(u));
+    ctx.fillRect(124 + 5 * k, 139, 3, 4);
+  });
+  const ship = colonyShip(c);
+  const cap = Number((unit(ship.type) || {}).cargo) || 0;
+  const hold = ship.hold || [];
+  const taken = (ship.cargo || []).length;         // units aboard occupy holds too
+  for (let k = 0; k < 6; k++) {
+    const x = 127 + 12 * k;
+    if (k >= cap) { sheetFrame(ctx, 'ICONS', 122, x, 165); continue; }
+    if (k < taken) {
+      // A carried unit's own icon marks its hold -- the port's convention;
+      // which query the engine answers for a unit-held slot is unread.
+      const cu = unit(ship.cargo[k]);
+      if (cu) sheetFrame(ctx, 'ICONS', cu.icon, x, 168);
+      continue;
+    }
+    const slot = hold[k - taken];
+    if (slot) {
+      const f = (slot.qty >= 100 ? 0x16 : 0x26) + slot.good;
+      const [fw, fh] = frameSize('ICONS', f);
+      sheetFrame(ctx, 'ICONS', f, x + ((10 - fw) >> 1), 165 + ((22 - fh) >> 1));
+    }
+  }
 }
 
 // Right panel (207,130,95,48) plus the three view buttons beside it.
@@ -3326,7 +3447,18 @@ const TENSION_HOSTILE = 75, TENSION_WAR = 100;
 //                  level 0 camps, Arawak/Iroquois/Cherokee 1, Aztec 2, Inca 3.
 // Identified by rendering the whole sheet as a grid; the level -> frame order
 // follows the art's own progression.
+// BYTE-CITED (2026-08-07b): func_004314 counts the colony's fortifications
+// with verb 0x5EB:0x35E -- resident file 0x860E, a plain bitset membership
+// test, bit id&7 of byte [colony*0xCA + (id>>3) + 0x5DCA] -- then maps the
+// count with `mov ax,di; dec al; and ax,3` @0x43AE-0x43B5 and draws engine
+// sprite di+1. Count 0 -> (0-1)&3 = 3 -> engine 4 -> bundle 3; count 1 -> 0
+// -> bundle 0; and so on. That is exactly this table, indexed by tier.
 const COLONY_FRAME = [3, 0, 1, 2];
+// BYTE-CITED (2026-08-07b): the village painter's body blit is `min(level,3) +
+// 0x0B; lcall 0xC56:4` @0x3E9D-0x3EB6, the level read from the tribe record's
+// first byte ([bx+0x5AD8], stride 0x4E) via the village's tribe byte
+// [0x54EE]-4. Engine 0x0B..0x0E = bundle 10..13, which is this base + level --
+// the old by-eye identification, now anchored at the draw site.
 const NATIVE_FRAME_BASE = 10;
 const PENNANT_BASE = 118;
 // A colony's own level: no stockade, Stockade, Fort, Fortress.
@@ -3387,19 +3519,22 @@ function drawSettlement(ctx, px, py, level, nation, tribeColour, mission) {
   //   vertical bar (XB+2, py+6, 1, 4)             @0x004203
   //   horizontal   (XB+1, py+7, 3, 1)             @0x004222
   if (mission) {
-    // XB IS TBD. The engine's base is px+6 (@0x00407D `mov ax,[bp-0x64]; add
-    // ax,6`) on the path that skips its alarm-mark loop, and px+8+2*marks on
-    // the path through it. The port draws its alarm strip elsewhere (drawMap),
-    // so px+6 mirrors the no-marks path -- that CHOICE is UNCITED.
+    // XB: the engine's base is px+6 (@0x00407D `mov ax,[bp-0x64]; add ax,6`),
+    // stepped +2 per alarm mark plus a final +2 after the mark loop
+    // (@0x419F/@0x41A9) -- so px+6 with no marks, px+8+2*marks with them. The
+    // port draws its alarm strip elsewhere, so px+6 is the matching case.
     const XB = px + 6;
-    // The 0xFD "expert" brightness is UNCITED. The engine's rule is
-    // table[power] MINUS 8 when the mission byte's 0x10 bit is clear
-    // (@0x0041C6-0x0041D4); the port has no such bit and the colour table at
-    // DGROUP 0x848 has not been dumped, so the table itself is TBD.
-    const c = DATA.nations[mission.power] ? DATA.nations[mission.power].color : 0xFE;
+    // Colours RESOLVED (2026-08-07b): DGROUP:0x848 dumps as 0C 09 0E 0D = the
+    // four @COUNTRY colours (England 12, France 9, Spain 14, Netherlands 13),
+    // and @0x41C6-0x41D4 (`sbb al,al; and al,0xF8; add al,[bx+0x848]`) SUBTRACTS
+    // 8 when the mission byte's 0x10 bit is clear. So an expert (Brebeuf)
+    // mission draws the bright nation colour and an ordinary one draws
+    // colour-8, the dim half of the same ramp. DATA.nations[].color IS that
+    // table, checked value for value.
+    const base = DATA.nations[mission.power] ? DATA.nations[mission.power].color : 0x0F;
     ctx.fillStyle = ink(0);
     ctx.fillRect(XB, py + 5, 5, 6);
-    ctx.fillStyle = ink(mission.expert ? 0xFD : c);
+    ctx.fillStyle = ink(mission.expert ? base : base - 8);
     ctx.fillRect(XB + 2, py + 6, 1, 4);
     ctx.fillRect(XB + 1, py + 7, 3, 1);
   }
@@ -7384,12 +7519,22 @@ const PTR = {
 };
 
 // How long the button must be held over a colonist before the drag arms.
-// func_02C5D4 @0x2C87A sets the deadline to `timer + 8` and @0x2C887 raises the
-// armed flag; the consumers are @0x29C9F-0x29CB7, @0x29FE5-0x29FFC and
-// @0x2A28A-0x2A2AE. The TICK RATE of that timer (`lcall 0xC0C:6`) is UNRESOLVED,
-// so 8 ticks cannot be converted to milliseconds -- this wall-clock number is
-// the port's own and is UNCITED. TBD, blocker: disassemble the 0xC0C:6 entry.
-const DRAG_HOLD_MS = 120;
+// func_02C5D4 @0x2C87A sets the deadline to `timer + 8` (@0x2C887 arms it), and
+// the tick rate is now BYTE-RESOLVED (RULINGS.md 2026-08-07b), the whole chain:
+//   * the timer getter is lcall 0xC0C:6 (bytes 9a 06 00 0c 0c @0x2C868) ->
+//     resident file 0xE4C6, which returns the dword behind far ptr [0x267A];
+//   * install @0xC824-0xC860 hooks INT 8 (AH=35h/25h int 21h), reprograms the
+//     PIT with divisor 0x7A8 = 1960 (`push 0x7a8; lcall 0xC10:8` @0xC843, the
+//     setter `mov al,0x36; out 0x43` at file 0xE508) -> 1193182/1960 =
+//     608.766 Hz raw, and points [0x267A] at DGROUP [0x92E8];
+//   * the ISR (entry file 0xC694) counts [0x8338]++ every interrupt, exits on
+//     odd ticks (`test [0x8338],1` @0xC6A5 -> /2), and a reload-5 divider
+//     [0x376] (@0xC6F5, reload @0xC70B) gates the rest -> [0x92E8]++ @0xC741
+//     at 608.766 / 2 / 5 = 60.8766 Hz -- EXACTLY the engine timer CYCLE.DAT
+//     already established, which is the cross-check.
+// So 8 ticks = 8 / 60.8766 Hz = 131.4 ms. (Sanity: the same loop's repaint
+// cadence +0x14 = 20 ticks = 329 ms, message dwell 0x78 = 120 ticks = 1.97 s.)
+const DRAG_HOLD_MS = 131;
 
 // Region tables, byte-exact and IN THE ENGINE'S OWN TEST ORDER -- the order is
 // load-bearing, not cosmetic: id 5 is tested before id 8, so any y >= 179
@@ -7493,14 +7638,21 @@ function goodCellAt(mx) {
 }
 
 function dragGhostFrame(kind, good, amount, icon) {
-  // Goods: ICONS 0x17 + good for a full load, 0x27 + good for a part load --
-  // func_029BBE @0x29BD0/@0x29BD6/@0x29BD9, Europe twin func_0320EE
-  // @0x32100/@0x32106/@0x32109.
-  if (kind === 'good') return (amount >= 100 ? 0x17 : 0x27) + good;
-  // The unit ghost frame is TBD. The colony path calls lcall 0x181F:0xA74, and
-  // the thunk record at file 0x1B064 resolves to file 0x0091CC, which is
-  // documented as reading unit fields +0x20/+0x40 (worked-tile slot, profession)
-  // rather than as a sprite lookup. Using the port's own u.icon is UNCITED.
+  // Goods: ICONS ENGINE 0x17 + good for a full load, 0x27 + good for a part
+  // load -- func_029BBE @0x29BD0/@0x29BD6/@0x29BD9, Europe twin func_0320EE
+  // @0x32100/@0x32106/@0x32109. The bundle is engine MINUS ONE (the same
+  // off-by-one the stockpile bar's 0x16+i already carries), so 0x16/0x26 here;
+  // pixel-checked: bundle 0x16 is the food corn icon, 0x17 is tobacco.
+  if (kind === 'good') return (amount >= 100 ? 0x16 : 0x26) + good;
+  // Units: the Europe drag paths read byte [0x5232 + 14*type] (@0x321D6 and
+  // @0x3221E) -- the runtime @UNIT record array NAMES.TXT fills (stride 14;
+  // the file image holds unrelated code at that DGROUP offset, confirming it
+  // is runtime-loaded data). Its icon field IS the @UNIT icon column, which is
+  // exactly what u.icon carries -- so the port's frame is the engine's, with
+  // the read site byte-cited and the table content NAMES-tier. (The colony
+  // path's lcall 0x181F:0xA74 = file 0x0091CC turned out to resolve unit
+  // NAMES/professions, not sprites -- disassembled 2026-08-07, it maps
+  // profession ids through +0x52/+0x36 string bands.)
   return icon;
 }
 
@@ -7558,6 +7710,22 @@ function colonyPointerDown(mx, my, shift) {
     beginDrag({ screen: 'colony', mode: 7, kind: 'good', good: g, amount,
                 srcKind: 1, srcRegion: region,
                 frame: dragGhostFrame('good', g, amount) });
+    return;
+  }
+  // The dock: goods lifted OFF a hold cell start on the down-edge, like the
+  // Europe hold path (func_02AEDA @0x2AF5A cmp [0x7EC],0). Cell math is the
+  // byte-cited clamp(mx-0x7F,0,0x47)/0x0C @0x2AEE9; slots holding a carried
+  // UNIT are skipped -- unloading units is the map's landfall path, not a
+  // colony drag the evidence names.
+  if (region === 8) {
+    const ship = colonyShip(c);
+    if (!ship || !hit(mx, my, { x: 127, y: 165, w: 72, h: 22 })) return;
+    const cell = Math.min(5, Math.floor(Math.min(Math.max(mx - 127, 0), 0x47) / 12));
+    const slot = (ship.hold || [])[cell - (ship.cargo || []).length];
+    if (!slot) return;
+    beginDrag({ screen: 'colony', mode: 7, kind: 'good', good: slot.good,
+                amount: slot.qty, srcKind: 0, srcRegion: region,
+                frame: dragGhostFrame('good', slot.good, slot.qty) });
   }
 }
 
@@ -7700,10 +7868,41 @@ function colonyDrop(d, target, mx, my) {
     }
     return;
   }
-  // Goods. Both allowed targets are unreachable in the port today: region 5 is
-  // the strip the drag came from, and region 8 is the ships-in-port dock the
-  // port does not draw. Left as an explicit no-op so the gap is visible rather
-  // than looking like a bug when the dock lands.
+  // Goods. Mode 7's byte-cited targets are {5, 8}: the warehouse strip and the
+  // ships-in-port dock. What each PAIRING does (load vs unload) is the port's
+  // reading of the obvious direction -- the drop-action bodies func_02A6A6 /
+  // func_02A8EC are on the open-items ledger and their refusal conditions are
+  // not yet byte-read.
+  if (d.kind === 'good') {
+    const ship = colonyShip(c);
+    if (target === 8 && d.srcKind === 1) {
+      // Warehouse -> ship. Needs a ship and a hold: units aboard occupy holds
+      // too, and a same-good slot merges (holdAdd) rather than taking a second
+      // slot -- the port's own convention, shared with the trade routes.
+      if (!ship) { G.msg = 'No ships in port.'; return; }
+      const cap = Number((unit(ship.type) || {}).cargo) || 0;
+      const used = (ship.cargo || []).length + (ship.hold || []).length;
+      const merge = (ship.hold || []).some(h => h.good === d.good);
+      if (used >= cap && !merge) { G.msg = `The ${ship.type}'s holds are full.`; return; }
+      const qty = Math.min(d.amount, c.stock[d.good]);
+      if (!qty) return;
+      c.stock[d.good] -= qty;
+      ship.hold = ship.hold || [];
+      holdAdd(ship, d.good, qty);
+      G.msg = `${qty} ${DATA.cargo[d.good].name} loaded aboard the ${ship.type}.`;
+      return;
+    }
+    if (target === 5 && d.srcKind === 0) {
+      // Ship -> warehouse.
+      if (!ship) return;
+      const have = holdQty(ship, d.good);
+      const qty = Math.min(d.amount, have);
+      if (!qty) return;
+      holdAdd(ship, d.good, -qty);
+      c.stock[d.good] += qty;
+      G.msg = `${qty} ${DATA.cargo[d.good].name} unloaded from the ${ship.type}.`;
+    }
+  }
 }
 
 function europeDrop(d, target, mx, my) {
@@ -7740,13 +7939,16 @@ function europeDrop(d, target, mx, my) {
 // CURSOR SPRITE (the mouse module's 16x16 software cursor, blit @0xCE98), so
 // there is exactly one image following the pointer. Same here.
 //
-// The hotspot is TBD: the module's hotspot globals [0x590]/[0x592] are written
-// by set_hotspot @0xCB59 masking & 0xF, but the value the drag-begin paths push
-// was not located, so this draws at the pointer with no offset rather than
-// inventing one. Blocker: disassemble func_00DB80 @0x00DB80.
+// The hotspot is RESOLVED (2026-08-07b): func_00DB80 reads the frame
+// descriptor's dimension words and HALVES them -- `mov ax,es:[si+0x3e]; sar
+// ax,1` / `mov cx,es:[si+0x40]; sar cx,1` @0xDC09-0xDC18 -- caches the pair in
+// [0x262C]/[0x262E] @0xDC65-0xDC68 and pushes them to lcall 0xA58:0x1D9
+// @0xDC71-0xDC77, which is file 0xCB59 = the mouse module's set_hotspot. So
+// the ghost is CENTRED on the pointer.
 function drawDragGhost(ctx) {
   if (!G.drag || G.drag.frame === undefined) return;
-  sheetFrame(ctx, 'ICONS', G.drag.frame, PTR.x, PTR.y);
+  const [fw, fh] = frameSize('ICONS', G.drag.frame);
+  sheetFrame(ctx, 'ICONS', G.drag.frame, PTR.x - (fw >> 1), PTR.y - (fh >> 1));
 }
 
 // Which pulldown row the cursor is over, or -1. Reads the same pulldownBox()
@@ -7830,8 +8032,11 @@ function onClick(mx, my) {
           if (hit(mx, my, { x: b.x + 3, y: seed + k * 8, w: b.w - 6, h: 8 })) {
             G.colonyPopupRow = k; colonyPopupCommit(); return;
           }
+        // A click outside the rows dismisses the popup and FALLS THROUGH to
+        // the normal colony hit-tests, so the click is not wasted. UNCITED --
+        // dismissal semantics are the port's own choice; the reopen-on-reclick
+        // below is the manual's (GAME_MANUAL.md 1930-1931).
         G.colonyPopup = null;
-        return;
       }
       const c = G.colonies[G.colony];
       // Scene panel: a click on one of the nine visible cells puts the selected
@@ -7879,6 +8084,18 @@ function onClick(mx, my) {
           return;
         }
         return;
+      }
+      // Dock: click a ship box to make it the one the hold row shows. Boxes
+      // are the byte-cited 16x16 cells at x = 130 + 18k, y = 147 (see
+      // drawColonyDock's citations).
+      if (c) {
+        const ships = colonyShips(c);
+        for (let k = 0; k < Math.min(ships.length, 4); k++) {
+          if (hit(mx, my, { x: COLONY_DOCK.shipX + k * COLONY_DOCK.shipPitch,
+                            y: COLONY_DOCK.shipY, w: 16, h: 16 })) {
+            G.colonyShipSel = k; return;
+          }
+        }
       }
       for (let k = 0; k < 3; k++) {
         if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
@@ -8681,6 +8898,7 @@ dbgAddTab('Raw', () => {
     'parley', 'tribes', 'villages', 'natives', 'europe', 'dock', 'dockUnits',
     'euroShip', 'routes', 'marketSel', 'menuRow', 'briefPage', 'card', 'woodcut',
     'landHo', 'colonyView', 'colonyPopup', 'colonyPopupRow', 'colonistSel',
+    'colonyShipSel',
     'pediaCat', 'pediaSel', 'pediaMode', 'euroRow', 'euroMenu', 'euroMenuRow',
     'euroMsg', 'openMenu', 'menuSel', 'showHidden', 'f6View', 'options',
     'metAnyone', 'attitude', 'parleyLock', 'parleyRow', 'trade', 'village',

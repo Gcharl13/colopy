@@ -7713,3 +7713,157 @@ globals do exist elsewhere in the 0x6xxxx range, at 0x6107E and
 - `input.md:571` is wrong twice: Europe region 0xB's x-origin is **305**
   (`0x131`), not 306, *and* the cited block `@0x032034` is the id-5 block; the
   correct citation is `@0x3200E-0x3201A`. The colony twin `@0x299C8` gives 305 too.
+
+## 2026-08-07b — the drag/marker TBD ledger, worked off the bytes
+
+The open items the 2026-08-07 entry left behind, resolved by direct disassembly
+of `raw/COLONIZE/VICEROY.EXE` (capstone, CS_MODE_16). Where an item stays open
+it says so.
+
+### The engine timer, end to end — 8 hold ticks = 131.4 ms
+
+The drag deadline's clock (`lcall 0xC0C:6`, bytes `9a 06 00 0c 0c` @0x2C868) is
+resident file `0xE4C6`: it returns the dword behind far pointer `[0x267A]`.
+The install path @0xC824-0xC860 hooks INT 8 (`AH=35h`/`AH=25h` int 21h),
+reprograms the PIT with **divisor 0x7A8 = 1960** (`push 0x7a8; lcall 0xC10:8`
+@0xC843; the setter at file 0xE508 is `mov al,0x36; out 0x43,al; out 0x40 ×2`)
+and points `[0x267A]` at DGROUP `[0x92E8]`. The un-install @0xC861-0xC898
+restores the vector, pushes divisor 0 and repoints at BIOS `0040:006C`.
+
+The ISR (entry file 0xC694, `push ax; push ds`):
+- `[0x8338]` += 1 **every** interrupt @0xC69B — 1193182/1960 = **608.766 Hz**;
+- odd ticks exit at once (`test word [0x8338],1` @0xC6A5) — ÷2;
+- a reload-5 countdown `[0x376]` (dec @0xC6F5, reload @0xC70B) gates the rest —
+  ÷5 — before `[0x92E8]` += 1 @0xC741.
+
+So `[0x92E8]` ticks at 608.766/2/5 = **60.8766 Hz — the exact CYCLE.DAT engine
+rate**, which is the independent cross-check. The colonist hold-to-drag
+deadline `timer + 8` is therefore **131.4 ms**; the +0x14 repaint cadence is
+329 ms and the 0x78 message dwell 1.97 s. The port's guessed 120 ms is replaced
+by 131. (Chaining: a reload-3 divider `[0x377]` forwards to the BIOS handler
+via `ljmp cs:[0]` @0xC7DA.)
+
+### The drag-ghost hotspot — centre of the frame
+
+`func_00DB80` halves the frame descriptor's dimension words (`mov ax,es:[si+
+0x3e]; sar ax,1` / `mov cx,es:[si+0x40]; sar cx,1` @0xDC09-0xDC18, 12-byte
+descriptor stride), caches them in `[0x262C]/[0x262E]` @0xDC65-0xDC68 and
+pushes them to `lcall 0xA58:0x1D9` @0xDC71-0xDC77 = file 0xCB59 =
+`set_hotspot`. **The ghost is centred on the pointer.** Ported.
+
+### The unit ghost frame — the @UNIT icon
+
+The colony path's `lcall 0x181F:0xA74` = file 0x0091CC turned out to resolve
+unit NAMES/professions (profession ids ≥ 0x14 through +0x52/+0x36 string
+bands), not sprites. The sprite source is the Europe paths' read `byte [0x5232
++ 14*type]` (@0x321D6/@0x3221E) — the runtime @UNIT record array (stride 14;
++0 word = name ref @0x27E7A, **+2 byte = icon** @0x27EFE/@0x280ED, +5 byte =
+cargo capacity @0x280ED's guard, +7 read at @0x280F3's path). The file image
+holds unrelated code at that DGROUP offset, confirming NAMES.TXT fills it at
+load. So the ghost frame IS the @UNIT icon — the port's `u.icon`.
+
+### DGROUP 0x848 — the mission/ownership colour table
+
+DGROUP segment = **0x1B5A** (read off `mov ax,0x1b5a; mov ds,ax` in the ISR),
+so DGROUP:0x848 = file 0x1E1E8: bytes **`0C 09 0E 0D`** = England 12, France
+9, Spain 14, Netherlands 13 — the @COUNTRY colours, value for value. The cross
+colour math @0x41C6-0x41D4 is `sbb al,al; and al,0xF8; add al,[bx+0x848]`:
+**expert missions (byte bit 0x10 SET) draw the bright colour, ordinary ones
+draw colour−8** — the dim half of the same ramp. The port's invented "0xFD for
+expert" is replaced.
+
+### The village alarm strip — fully byte-read
+
+In the village painter (head @0x3E40): level = `min(3, alarm >> 5)`
+(@0x40C6-0x40CE, alarm word `[village*18 + power]*2 + 0x54F6` clamped ≥0), and
+tension ≥ 75 forces level 3 (`lcall 0x5DC:0xE0` then `cmp ax,0x4b` @0x40DD).
+Level colours @0x40F8/@0x40FE/@0x4104/@0x40F1: **0x0A green / 0x0B cyan / 0x0E
+yellow / 0x0C red**. Each mark at (XB, py+4): 3×7 backing rect in the outline
+colour, 1×5 bar at (XB+1, py+5), 1×1 dot at (XB+1, py+9); XB starts px+6,
+steps +2 per mark, and takes a final +2 after the loop (@0x419F/@0x41A9) — so
+the mission cross lands at px+6 with no marks and px+8+2·marks with them.
+Marks with remaining count ≤ 2 dim −8 (@0x412F-0x4135). Ported (rect marks
+replace the port's '!' glyphs and its five-step ramp). **Still open:** the
+mark COUNT is an out-param of `lcall 0x181F:0x316` (@0x408D) whose semantics
+are unread — the port draws level+1 marks, flagged. Alarm marks only draw for
+the power matching `[0x5396]` (@0x40A4); for another power's mission the strip
+degenerates to a single mark in `table[power]` colour (@0x410E-0x411A).
+
+### COLONY_FRAME — the port's [3,0,1,2] is confirmed
+
+Verb `0x5EB:0x35E` = resident file 0x860E is a plain **bitset membership
+test**: bit `id&7` of byte `[colony*0xCA + (id>>3) + 0x5DCA]`. func_004314
+counts fortification ids and then maps `di = (count−1) & 3` @0x43AE-0x43B5,
+drawing engine sprite di+1: count 0→bundle 3, 1→0, 2→1, 3→2 — exactly
+`COLONY_FRAME = [3,0,1,2]`. Upgraded from UNCITED to byte-cited; the old
+"has exactly vs at least" question is dissolved (it is neither — it is a
+count of members).
+
+### The colony dock (region 8) rows — func_027DB2 read in full
+
+- Frame box (121,130,84,48) @0x27DB7-0x27DC1.
+- **No ships** (`[0x33C]==0`): the caption plus ICONS **engine 0x7B** (bundle
+  122, the crossed crate) on all six hold cells @0x27DC7-0x27E34.
+- **Ships row**: 16×16 cells from x=130, y=147, **pitch 18, max 4**
+  (@0x27EAB-0x27EB9, advance `sbb ax,ax; and ax,0xD; add ax,5` @0x27FA2 = +18
+  row 0, +5 later rows); a ship's blit rides 1px high, 2px past slot 0
+  (@0x2801E-0x2803D). Ships 5+ overflow to a 3×4 row at (124,139), pitch 5, up
+  to 16 (@0x27FE2-0x27FF6) — the old "implausible 5px pitch" was real, it is
+  the overflow row. Selection box colour 0x0A on `[0x33E]`; **0x0F as the
+  drop highlight** while the button is held mid-drag (@0x27F35-0x27F4A).
+- **Hold cells**: slot ≥ @UNIT cargo capacity (record byte +5, `[bx+0x5237]`
+  @0x280ED) → the 0x7B cross; an occupied slot → the goods icon **centred**,
+  engine 0x17+good full / 0x27+good if qty < 100 (@0x28120-0x2812B — the same
+  band the drag ghost uses); an empty in-capacity slot draws **nothing**.
+- Caption with a ship: "…" + the selected ship's @UNIT name (@0x27E36-0x27EA8).
+The port's dock is rebuilt on these numbers; its interim (123,140,20) layout
+lasted one commit.
+
+### ICONS bundle 17 — the sparkle's real role
+
+`mov ax,0x12; lcall 0xC56:4` @0x4066-0x406F in the village painter: engine
+sprite 0x12 = **bundle 17 is a VILLAGE overlay**, drawn iff the village flag
+byte `[0x54EF]` has bit **0x04** set (@0x4051). What that bit means (capital?
+visited?) is **TBD** — do not guess; finding the bit's writer would settle it.
+Either way the sparkle was never the rumour marker.
+
+### Native settlement markers — ICONS 10-13 byte-anchored
+
+The village body blit is `min(level, 3) + 0x0B` → `lcall 0xC56:4`
+(@0x3E9D-0x3EB6), the level being the tribe record's first byte
+(`[bx+0x5AD8]`, stride 0x4E, indexed by the village's tribe byte `[0x54EE]`−4).
+Engine 0x0B..0x0E = bundle 10..13 — the port's `NATIVE_FRAME_BASE = 10` was
+right and is now anchored at the draw site (closing the tracker's "find the
+village body blit" item).
+
+### func_002544 — not a beep; and [0x5384]
+
+`0x181F:0x56` = file 0x2544 is the **tooltip dwell/redraw/expire** routine: no
+OUT/INT anywhere in its body; a 30-tick dwell loop (deadline `tick+0x1E`
+@0x24E3) broken by a key or button, a final redraw/erase through the
+save-under machinery (`lcall 0xB70:0x3A` @0x25DE), a one-tick wait
+(@0x25E3-0x25FB spins on the 0xC0C:6 dword), then clears the arm flags
+[0x4A..0x4C] and the text buffer at DS:0x2D54. On a rejected drop it simply
+expires any armed hover label. (A ghidra comment mapping 0x181F:0x56 to
+0x2287E is wrong; the validated thunk table wins.)
+
+`[0x5384]` bits 0/1 are the **@COLONYOPTIONS "Labels on …" suppression bits**
+(set = unchecked = suppress): bit 1 (0x02) = "Labels on buildings" — gates the
+zone-2 hover handler in func_02BB8A @0x2BBEB; bit 0 (0x01) = "Labels on cargo
+and terrain" — gates zones 5 and 1 @0x2BC0E, and the Europe zone 0 in
+func_0353DE @0x35446. Written only by the @COLONYOPTIONS dialog (func_02311A;
+rows OR in 0x02/0x01/0x80/0x40/0x20/0x10/0x08/0x04, rows 9-10 use [0x5385]).
+Suppression applies to hover labels only — an active drag bypasses the tests
+(@0x2BBDE). **Correction:** func_022F08 is NOT the reader — it is the Find
+Colony command (dialog keys "FINDCITY"/"NOCITY").
+
+### Still open after this pass
+
+| Item | Blocker |
+|---|---|
+| Colony drop-action bodies (`func_02A6A6`/`func_02A8EC`) — quantities, refusal conditions, messages | Unread; the port's load/unload conventions are flagged in drawColonyDock/colonyDrop |
+| Colony region-id → action switch | Overlay-resident, unchanged |
+| Alarm mark count (out-param of `0x181F:0x316`) | Disassemble that verb |
+| `[0x54EF]` bit 0x04 meaning (the bundle-17 sparkle's trigger) | Find the bit's writer |
+| Whether natives teach Lumberjack / Scout's place in OUTDOOR_JOBS | No evidence either way |
+| Rumour third gate / feature-plane identity | Unchanged (the .MP loader discards the plane) |

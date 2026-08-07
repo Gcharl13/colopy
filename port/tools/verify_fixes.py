@@ -260,6 +260,29 @@ def main() -> int:
         drags["dockToShip"] = page.evaluate(
             "({dock: G.dockUnits.slice(), pax: G.europe[0].passengers || [], msg: G.euroMsg})")
 
+        # 6b. Colony dock: warehouse -> ship loads, hold -> warehouse unloads.
+        page.evaluate(SETUP_COLONY + r""";
+        (() => {
+          const c = G.colonies[0];
+          c.stock = c.stock.map(() => 80);
+          // The starting caravel carries two passengers, so its two holds are
+          // legitimately full -- give the dock an EMPTY ship to load instead.
+          G.units = [mkUnit('Caravel', c.x, c.y)];
+          G.colonyShipSel = 0;
+        })()""")
+        # Drag good 2 (tobacco) from stockpile cell 2 (x=9+19*2) onto a hold cell.
+        drag(page, geom, 9 + 19 * 2, 185, 127 + 6, 172, hold_ms=40)
+        drags["warehouseToShip"] = page.evaluate(
+            "(() => { const s = colonyShip(G.colonies[0]);"
+            " return { hold: (s.hold||[]).map(h=>({...h})),"
+            " stock2: G.colonies[0].stock[2], msg: G.msg }; })()")
+        # Drag it back off the hold onto the warehouse strip.
+        drag(page, geom, 127 + 6, 172, 9 + 19 * 5, 185, hold_ms=40)
+        drags["shipToWarehouse"] = page.evaluate(
+            "(() => { const s = colonyShip(G.colonies[0]);"
+            " return { hold: (s.hold||[]).map(h=>({...h})),"
+            " stock2: G.colonies[0].stock[2] }; })()")
+
         # 7. A press-and-release with no motion must stay a CLICK, not a drop.
         page.evaluate(SETUP_COLONY)
         s, left, top = geom["scale"], geom["left"], geom["top"]
@@ -348,6 +371,16 @@ def main() -> int:
     ds = d["dockToShip"]
     if ds["dock"] or "Expert Farmer" not in ds["pax"]:
         fails.append(f"drag dock->ship did not board the unit: {ds}")
+    ws = d["warehouseToShip"]
+    if not any(h["good"] == 2 and h["qty"] == 80 for h in ws["hold"]):
+        fails.append(f"warehouse->ship drag did not load: {ws}")
+    if ws["stock2"] != 0:
+        fails.append(f"warehouse->ship drag did not debit the stock: {ws}")
+    sw = d["shipToWarehouse"]
+    if sw["hold"]:
+        fails.append(f"ship->warehouse drag did not empty the hold: {sw}")
+    if sw["stock2"] != 80:
+        fails.append(f"ship->warehouse drag did not credit the stock: {sw}")
     hn = d["holdNoMove"]
     if hn["cell"] is not None or hn["job"] is not None:
         fails.append(f"a press-and-release with no motion acted as a drop: {hn}")
