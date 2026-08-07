@@ -2917,17 +2917,22 @@ function occupationRows(c, p) {
 function colonyPopupRows() {
   const c = G.colonies[G.colony];
   if (G.colonyPopup === 'build') {
-    // The engine's construction picker: LABELS @CTITLE row 4 titles it, the
-    // first row is @MISC 32 "Nothing", and each entry carries the @MISC 13/14
-    // "(Cost: ... )" pair with the hammer/tool numbers.
-    const nothing = (DATA.text.misc || [])[32] || 'Nothing';
-    return [{ label: nothing, note: '', stop: true }].concat(
+    // The engine's construction picker, format read off the live DOSBox frame
+    // (docs/screens/... construction_dialog): LABELS @CTITLE 4 titles it,
+    // the first row is @CTITLE 5 "(No Production)", and each entry's cost is
+    // TWO parenthesised groups "(N Hammers) (M Tools)" -- no "Cost:", no
+    // comma, the tools group present only when the building needs tools.
+    const none = (DATA.text.ctitle || [])[5] || '(No Production)';
+    return [{ label: none, note: '', stop: true }].concat(
       buildOptions(c).map(b => ({
         label: b.name,
-        note: `${(DATA.text.misc || [])[13] || '(Cost:'} ${b.cost} Hammers` +
-              (b.tools_x10 ? `, ${b.tools_x10 * 10} Tools` : '') +
-              `${(DATA.text.misc || [])[14] || ')'}`,
+        note: `(${b.cost} Hammers)` +
+              (b.tools_x10 ? ` (${b.tools_x10 * 10} Tools)` : ''),
       })));
+    // NOTE: the real list also offers BUILDABLE UNITS (Artillery, Wagon Train,
+    // and ships with a Drydock/Shipyard) below the buildings; their per-colony
+    // hammer/tool costs are not in a byte-verified table here, so they are
+    // omitted rather than invented. Flagged (open item).
   }
   if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];

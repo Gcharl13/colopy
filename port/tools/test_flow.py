@@ -328,11 +328,14 @@ SCRIPT = """() => {
     // until the target is paid for.
     G.colonyPopup = 'build';
     const opts = colonyPopupRows();
-    // Row 0 is the engine's @MISC 32 "Nothing"; the rest are gated buildings.
-    out.buildGated = opts[0].label === 'Nothing' && opts.slice(1).every(r => {
-      const b = DATA.buildings.find(d => d.name === r.label);
-      return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
-    });
+    // Row 0 is the engine's @CTITLE 5 "(No Production)"; the rest gated builds
+    // in the byte-read "(N Hammers) (M Tools)" format.
+    out.buildGated = opts[0].label === '(No Production)' &&
+      /^\(\d+ Hammers\)( \(\d+ Tools\))?$/.test(opts[1].note) &&
+      opts.slice(1).every(r => {
+        const b = DATA.buildings.find(d => d.name === r.label);
+        return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
+      });
     G.colonyPopupRow = opts.findIndex(r => r.label === 'Docks');
     colonyPopupCommit();
     out.buildTarget = c.building;
