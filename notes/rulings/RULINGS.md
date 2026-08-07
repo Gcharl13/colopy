@@ -8339,3 +8339,38 @@ which the engine never shows). layoutDialog gains the engine's screen clamps
 (@0x06D563/71).
 
 Suite: 229/229 (haggle chain + meeting chain regressions).
+
+## 2026-08-07n — completion plan adopted; Phase 0 infrastructure (render-diff oracle, ledger upgrade, audit reconciliation)
+
+**Decision (user-approved plan).** The remaining work to "finished" is now a
+standing 6-phase roadmap in `docs/COMPLETION_PLAN.md` (linked from STATUS.md's
+Build tracker). User scope rulings recorded there: sound/music OUT of scope
+(AUDIO_SPIKE NO-GO stands), tutorial IN scope, byte-closure required only for
+player-visible stand-ins (cosmetic approximations may stay flagged).
+
+**Phase 0 delivered:**
+
+1. **`port/tools/render_diff.py`** — pixel-diff oracle. 14 standing
+   port-shot : DOS-capture pairs, each with a threshold that DOCUMENTS the
+   known residual (not "allowed error"): e.g. F7 fresh = 50 px, F5 fresh =
+   308 px, the 1653 colony = 25.9k px (unimplemented func_005296 dither +
+   RNG buildings + worker cells, per 2026-08-07l). Any regression shows as
+   growth past the documented number. `--pairs` gates the set; single-pair
+   mode emits a red-over-dimmed mask PNG. `shots.py` gained a 1653-save shot
+   set (8 reports + colony) so the imported-game captures are paired too;
+   its stale "parley" entry (deleted flow) now shoots the meeting hub.
+2. **`port/tools/message_status.py`** — three hand-verified annotation maps
+   so the ledger stops lying: DONE-VIA-DATA (13 keys consumed through DATA
+   channels: BEGINMENU, DIFFICULTY, LEADERNAME, VICEROY/2, NATION0A-3B),
+   PARAPHRASED (5 trade-route keys the port hardcodes — Phase 1 swaps them),
+   N/A (23 structurally out-of-scope keys, each with the reason: DOS
+   save/load UI, MAPTOLOAD, custom-world generator labels, MULTI*, engine
+   assertion strings, debug locators). New counts: DONE 176, DONE-VIA-DATA
+   13, PARAPHRASED 5, BUNDLED-UNWIRED 54, MISSING 204, N/A 23, SUPPORT 24
+   (of 499). The dyn-prefix matcher is tightened to the five real template
+   families so `IND${...}` no longer false-claims INDIAN* keys.
+3. **`docs/POPUP_AUDIT_2026-08-08.md`** reconciled: rows fixed by rulings
+   2026-08-07 i–m carry RESOLVED → ruling pointers so the file reads as a
+   live queue (counts in the file's header).
+
+Suite: 229/229. render_diff --pairs: 14/14 PASS.

@@ -68,9 +68,12 @@ SHOTS = [
      "{name:'Salem',x:24,y:20,nation:0,colonists:[],stock:DATA.cargo.map(()=>0),"
      "buildings:[],hammers:0,building:null,sol:0}];"
      "openTradeMenu('create');G.trade.stops=[0];"),
-    ("parley",
-     "beginGame();G.screen='map';G.turn=60;"
-     "(()=>{const r=G.rivals[0];r.met=true;r.attitude=10;r.gold=9000;openParley(r);})()"),
+    # The parley screen no longer exists: the meeting is a popup chain. This
+    # shot lands on the standing-peace hub with the MYR portrait.
+    ("meeting",
+     "beginGame();G.screen='map';G.turn=60;G.parleyLock={};"
+     "(()=>{const r=G.rivals[0];r.met=true;r.attitude=10;r.gold=9000;"
+     "r.greeted=true;meetingPeaceHub(r);})()"),
     ("fog",
      "beginGame();G.screen='map';"
      "(()=>{const s=G.units[0];for(let i=0;i<12;i++){s.movesLeft=99;moveSel(-1,0);}"
@@ -200,6 +203,18 @@ SHOTS = [
      "G.villages.filter(v=>v.tribe===ti).forEach(v=>{SEEN[v.y*MAP.w+v.x]|=SEEN_BIT();});})();"
      "G.report='F9';G.screen='report'"),
 ]
+
+# The 1653-save states, for diffing against docs/screens/live_1653_save/*.
+# Each imports the shipped Dutch game and lands on the same screen the DOS
+# capture shows; the event queue is cleared so the "game restored" popup does
+# not sit over the frame.
+SAV1653 = "G.screen='map';importSav(b64bytes(DATA.sav1653));G.eventQueue=[];"
+SHOTS += [(f"1653_report_{r}", SAV1653 + f"G.report='{r}';G.screen='report'")
+          for r in ("F2", "F3", "F5", "F6", "F7", "F8", "F9", "F10")]
+SHOTS.append(("1653_colony",
+              SAV1653 +
+              "(()=>{const c=G.colonies.find(x=>x.name==='Curacao');"
+              "G.colony=G.colonies.indexOf(c);G.screen='colony';})()"))
 
 
 def main():

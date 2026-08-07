@@ -23,6 +23,10 @@ invented-flow rebuilds: the village haggle and the European meeting chain
 
 ## Build tracker (the port)
 
+**The completion roadmap is [`docs/COMPLETION_PLAN.md`](docs/COMPLETION_PLAN.md)** —
+six phases from infrastructure to release, approved 2026-08-07. Work items
+below are superseded by that plan's phase lists.
+
 Where the port's work is tracked, in the order to consult them:
 
 | Document | Role |

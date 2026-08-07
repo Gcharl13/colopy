@@ -1,10 +1,14 @@
 # GAME.TXT message keys - implementation status (generated 2026-08-07)
 
-Regenerate with `python3 port/tools/message_status.py`.  Status is
-mechanical: DONE = text bundled AND a live call site exists;
+Regenerate with `python3 port/tools/message_status.py`.  DONE = text
+bundled AND a live call site exists; DONE-VIA-DATA = consumed through
+a DATA channel (annotated with the consumer); PARAPHRASED = the port
+renders its own copy of the body (swap for the bundled text);
 BUNDLED-UNWIRED = text exported, no trigger yet; MISSING = not in the
-port at all.  DONE does not certify trigger/format fidelity - flagged
-readings live in notes/rulings/RULINGS.md and the popup audit.
+port; N/A = structurally out of scope (annotated).  DONE does not
+certify trigger/format fidelity - flagged readings live in
+notes/rulings/RULINGS.md and the popup audit.  The completion
+roadmap is docs/COMPLETION_PLAN.md.
 
 ## DONE (176)
 
@@ -185,16 +189,38 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - WITHDRAW
 - WORTHY
 
-## BUNDLED-UNWIRED (64)
+## DONE-VIA-DATA (13)
+
+- BEGINMENU - DATA.text.beginmenu (main menu rows)
+- DIFFICULTY - DATA.difficulty (drawDifficulty cells)
+- LEADERNAME - DATA.text.leadername (name-entry prefill)
+- NATION0A - DATA.briefings (drawBriefing page A)
+- NATION0B - DATA.briefings (drawBriefing page B)
+- NATION1A - DATA.briefings
+- NATION1B - DATA.briefings
+- NATION2A - DATA.briefings
+- NATION2B - DATA.briefings
+- NATION3A - DATA.briefings
+- NATION3B - DATA.briefings
+- VICEROY - DATA.viceroy (drawKing scroll)
+- VICEROY2 - DATA.viceroy (drawKing scroll, Dutch)
+
+## PARAPHRASED (5)
+
+- TRADEDELETE - openTradeMenu (hardcoded copy)
+- TRADENAME - openTradeMenu (hardcoded copy)
+- TRADESELECT - tradeCommit (hardcoded copy)
+- TRADESTART - openTradeMenu (hardcoded copy)
+- TRADETYPE - openTradeMenu (hardcoded copy)
+
+## BUNDLED-UNWIRED (54)
 
 - APOSTATES
 - APOSTATESUSA
-- BEGINMENU
 - CANCELPEACE
 - CANESUGAR
 - CARGOREADY1
 - COTTON
-- DIFFICULTY
 - EUROPEARM
 - EUROPESHIPCLICK
 - EVASIVE
@@ -208,7 +234,6 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - INDIANLAND
 - KINGRECRUIT
 - KINGTAX
-- LEADERNAME
 - LEARNMAD
 - LOSTCITY4
 - LUMBER
@@ -234,16 +259,9 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - TOOLS
 - TOONEAR
 - TRADEATWAR
-- TRADEDELETE
 - TRADEMERCANTILISM
-- TRADENAME
-- TRADESELECT
-- TRADESTART
-- TRADETYPE
 - TRIBUTEUSA
 - VANISH
-- VICEROY
-- VICEROY2
 - WANTSTUFF
 - WANTSTUFFUSA
 - WAREHOUSEFULL
@@ -252,12 +270,11 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - WARN1
 - WARN3
 
-## MISSING (235)
+## MISSING (204)
 
 - ABANDON2
 - ALREADYHAVE
 - AMBUSHHINT
-- AMERICA
 - BRING
 - BUILD1
 - BUILD10
@@ -281,15 +298,9 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - CARGOREADY0
 - CARGOREADY2
 - CARGOUNLOAD
-- CCLIM
-- CCONT
-- CLAND
 - COLLEGE2
-- COLONYFLAG
-- COLONYUNIT
 - CONFISCATE
 - CONTINENTAL
-- CTEMP
 - CUSTOM
 - DEFICIT
 - DEFOREST
@@ -301,7 +312,6 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - EUROPENOTAVAIL
 - EUROPENOTLEAVE
 - EUROPEWIN
-- FINDCITY
 - FOREIGNNOTAVAIL
 - FREEDOM
 - FULL
@@ -363,12 +373,6 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - KISSUP
 - LANDFALL2
 - LANDFIRST
-- LOADERROR
-- LOADGAME
-- LOADGOOD
-- LOADNOT
-- LOADOLD
-- LOADSIZE
 - LOBOTOMIZE
 - LOOT
 - LOOT2
@@ -381,22 +385,9 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - LOSTCITY0
 - LOSTOURSCOUTS
 - LOSTTHEIRSCOUTS
-- MAPTOLOAD
 - MERCANTILISM
-- MULTI
-- MULTINEXT
-- MULTIREV
-- NATION0A
-- NATION0B
-- NATION1A
-- NATION1B
-- NATION2A
-- NATION2B
-- NATION3A
-- NATION3B
 - NEEDCOLLEGE
 - NEEDUNIVERSITY
-- NOCITY
 - NOCOLONIESEITHER
 - NOLOOT
 - NOMOREWAGONS
@@ -431,9 +422,6 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - RETIRING2
 - ROUTELOOP
 - SAILPORT
-- SAVEERROR
-- SAVEGAME
-- SAVEGOOD
 - SCHOOL1
 - SCORED
 - SCREWED
@@ -484,11 +472,36 @@ readings live in notes/rulings/RULINGS.md and the popup audit.
 - TUTORIAL7
 - TUTORIAL8
 - TUTORIAL9
-- UNITFLAG
 - UNIV3
 - VIOLATE
 - WHICHFREEDOM
 - WINNING
+
+## N/A (23)
+
+- AMERICA - custom-world generator UI (port ships AMER2 only)
+- CCLIM - custom-world label
+- CCONT - custom-world label
+- CLAND - custom-world label
+- COLONYFLAG - engine internal assertion string
+- COLONYUNIT - debug locator
+- CTEMP - custom-world label
+- FINDCITY - debug locator
+- LOADERROR - ditto
+- LOADGAME - ditto
+- LOADGOOD - ditto
+- LOADNOT - ditto
+- LOADOLD - ditto
+- LOADSIZE - DOS disk-space check, no analogue
+- MAPTOLOAD - DOS map-file picker, no analogue
+- MULTI - hot-seat multiplayer, out of scope
+- MULTINEXT - ditto
+- MULTIREV - ditto
+- NOCITY - debug locator
+- SAVEERROR - ditto
+- SAVEGAME - port saves to localStorage, own UI
+- SAVEGOOD - ditto
+- UNITFLAG - engine internal assertion string
 
 ## SUPPORT (no @width - lists/menus) (24)
 
