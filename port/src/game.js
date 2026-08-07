@@ -2481,6 +2481,7 @@ function sailForEurope(ship) {
 // Anyone standing on the dock boards first -- that is what the dock queue is
 // waiting for.
 function sailForNewWorld(e) {
+  e.passengers = e.passengers || [];
   // Dock units board the sailing ship in order -- EXCEPT any held back by the
   // @ARMOPTIONS "Don't get on next ship" flag, which wait for a later one.
   for (let i = 0; i < G.dockUnits.length && e.passengers.length < 6; ) {
@@ -3347,6 +3348,10 @@ function rollImmigrant() {
 function seedMarket() {
   G.market = DATA.cargo.map(c => c.start1 + Math.floor(Math.random() * (c.start2 - c.start1 + 1)));
   G.accum = DATA.cargo.map(() => 0);
+  // The whole-game PowerRecord trade counters the F5 report reads: net units
+  // (+0xBC) and net value (+0x7C), zeroed at game start (func @0x366E7).
+  G.tradeTons = DATA.cargo.map(() => 0);
+  G.tradeGold = DATA.cargo.map(() => 0);
 }
 const askPrice = (i) => G.market[i] + DATA.cargo[i].burden + 1;
 function stepPrice(i) {
@@ -3374,6 +3379,14 @@ function sellGoods(i, qty) {
   const tax = Math.floor(gross * G.tax / 100);
   G.gold += gross - tax;
   G.kingsFund += tax;
+  // PowerRecord trade counters (byte-cited updater table, §PowerRecord):
+  // EU supply +0xBC += qty; traded value +0x7C += price*qty*(100-tax)/100,
+  // truncated PER LOT (which is why the F5 gold column undershoots
+  // tons x bid on goods sold in many small lots). Warehouse-overflow forced
+  // exports never run these updaters -- and the port's overflow discards
+  // rather than sells, so that asymmetry holds here by construction.
+  G.tradeTons[i] = (G.tradeTons[i] || 0) + qty;
+  G.tradeGold[i] = (G.tradeGold[i] || 0) + Math.floor(gross * (100 - G.tax) / 100);
   G.accum[i] += qty << DATA.cargo[i].volatility;
   stepPrice(i);
   return gross - tax;
@@ -3384,6 +3397,9 @@ function buyGoods(i, qty) {
   const cost = askPrice(i) * qty;
   if (cost > G.gold) return 0;
   G.gold -= cost;
+  // Purchases run the counters the other way: supply -= qty, value -= ask*qty.
+  G.tradeTons[i] = (G.tradeTons[i] || 0) - qty;
+  G.tradeGold[i] = (G.tradeGold[i] || 0) - cost;
   G.accum[i] -= qty << DATA.cargo[i].volatility;
   stepPrice(i);
   return cost;
@@ -3437,16 +3453,32 @@ function drawEurope(ctx) {
 
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
-  // Panel captions. The screen names ships and states in the panel ink -- it
-  // does NOT annotate them with turn counters or quantity readouts, so nothing
-  // of that sort is drawn here.
+  //
+  // A crossing draws as the same 18x18 hollow green cell the piers use, the
+  // ship's ICON inside at +(3,1), with the engine's sail-progress bar under it
+  // -- func_031366's bar is `0x64 >> state` px wide (@0x0313A4), state = turns
+  // still to sail (3..1), so the bar grows as the ship closes in. The band
+  // y=146/137/132 by state is byte-read (func_031298 @0x031298); the port
+  // keeps the entries stacked inside its own panel columns instead, flagged.
+  const crossingCell = (e, x, y) => {
+    hollowRect(ctx, x, y, 18, 18, 0x0A);
+    sheetFrame(ctx, 'ICONS', e.icon, x + 3, y + 1);
+    const s = Math.max(1, Math.min(3, e.turns || 1));
+    ctx.fillStyle = lut(0x0A);
+    ctx.fillRect(x, y + 19, Math.min(48, 0x64 >> s), 2);
+  };
   FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
-  G.europe.filter(e => e.state === 'toEurope').slice(0, 3).forEach((e, k) =>
-    FONT.tiny.draw(ctx, e.type, 16, 128 + k * 7, lut(HUD_INK)));
+  G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
+    crossingCell(e, 16 + k * 24, 128));
+  // While a ship is being dragged, the Bound For panel lights up as the drop
+  // target (engine region 2, rect @0x32094; the highlight itself is port UI).
+  if (G.drag && G.drag.kind === 'ship' &&
+      hit(PTR.x, PTR.y, { x: 72, y: 118, w: 70, h: 51 }))
+    hollowRect(ctx, 72, 118, 70, 51, 0x0F);
   FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
   FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
-  G.europe.filter(e => e.state === 'toNewWorld').slice(0, 3).forEach((e, k) =>
-    FONT.tiny.draw(ctx, e.type, 87, 135 + k * 7, lut(HUD_INK)));
+  G.europe.filter(e => e.state === 'toNewWorld').slice(0, 2).forEach((e, k) =>
+    crossingCell(e, 87 + k * 24, 135));
 
   const ship = activeShip();
   FONT.tiny.draw(ctx, ship ? 'Loading:' : 'No Ships In Port', 150, 120, lut(HUD_INK));
@@ -3475,7 +3507,11 @@ function drawEurope(ctx) {
     if (k >= 6) return;
     const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
     sheetFrame(ctx, 'ICONS', e.icon, x + 3, EURO_SHIP.y + 1);
-    if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
+    // Every harbour ship wears the green cell; the SELECTED one flips to
+    // yellow -- the same 0x0A/0x0E runtime pair the market cell uses
+    // ([0x9E12]-driven; the one-ship captures cannot split the two rules,
+    // so the pairing is the port's reading).
+    hollowRect(ctx, x, EURO_SHIP.y, 18, 18, k === G.euroShip ? 0x0E : 0x0A);
   });
 
   // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That
@@ -3785,7 +3821,7 @@ function euroContextCommit(r) {
     }
     case 'sail': {
       const ship = activeShip();
-      if (ship) sailForNewWorld(ship);
+      if (ship) confirmSailAway(ship);
       return;
     }
     case 'sellall': {
@@ -4880,14 +4916,40 @@ function fillTemplate(line, subs) {
 // (POPUP_TEMPLATE_AUDIT.md caller map), so the port routes by KEY FAMILY --
 // its own reading of that map, flagged as such. Native families read the tribe
 // from G.eventTribe, which every native dispatcher stamps before it fires.
-const SPEAKER_KING = /^(KING|TAXOPTIONS|UPKEEP)/;
+// KING1: the tax/boycott region sets [0x1F5C]=8 (func_06F5DA; orphan sites
+// @0x03457A/0x0345D8 cover @TAXOPTIONS/@TEAPARTY), and the treasure-delivery
+// family is byte-cited to the same channel (spec/ui/popups.md:398-402), so
+// @CASHTREASURE/@LOOT*/@NOLOOT join it. LOOTCAPTURE stays military.
+const SPEAKER_KING = /^(KING|TAXOPTIONS|TEAPARTY|UPKEEP|CASHTREASURE|LOOT(?!CAPTURE)|NOLOOT|MERCENARIES|REFIT)/;
 const SPEAKER_MILITARY = /^(DEMOTE|COLONISTCAPTURE|WAGONCAPTURE|CARGOCAPTURE|LOOTCAPTURE|ARTILLERY|SHIPDAMAGE|SHIPSUNK|VETERAN|VALOR|WELLSEASONED|SHIPCOMBAT|EVASIVE|FORTFIRE|MOBILIZE|WARN)/;
 const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS)/;
+// MSS2 merchant: price/trade wrapper func_034DD4 sets 2 @0x034E98 and the
+// live @PRICEDOWN/@PRICERISE frames wear it; @SUCCESSION is cited to MSS2
+// directly. @UNREST's index is unread -- MSS2 is the port's reading (the
+// immigration adviser the Europe RECRUIT menu already uses).
+const SPEAKER_TRADE = /^(PRICE|SOMEBOYCOTT|SUCCESSION|UNREST)/;
+// MSS3 pioneer: colony-siting warnings from func_022542 -- @TUTNOSPACES /
+// @TUTNOLUMBER push arg 3 (@0x22772/@0x2278A); the live @NOOCEANCOLONY frame
+// wears the same fur-hat portrait. Family routing beyond the two TUT keys is
+// the port's reading.
+const SPEAKER_SITE = /^(TOONEAR|NOPORT|SEACOLONY|TOOMOUNTAIN|TUTNO|NOOCEAN)/;
+// MSS1: @FOREIGNNOTAVAIL pushes 1 (spec/ui/advisor_reports.md:283); the
+// diplomacy ANNOUNCEMENT family (width-190 keys) is cited to the advisor
+// channel "MSS1/MSS2" without a per-key split -- MSS1 is the port's pick.
+const SPEAKER_DIPLO = /^(FOREIGNNOTAVAIL|DECLAREWAR|SIGNTREATY|WITHDRAW|THREATS|GIVECASH|TRIBUTE|WORTHY)/;
+// MSS0: the colony-event wrapper func_032FE2 sets 0 @0x03300D; which keys
+// route through it is unread, so the colony production/food family here is
+// the port's reading of "colony-event popup".
+const SPEAKER_COLONY = /^(BUILT|NEWCOLONIST|CLEARCUT|USEDUPTOOLS|FOODLOW|FOOD\d|STARVE|SPOIL|NEEDTOOLS|WAREHOUSEFULL|CARGOREADY)/;
 function eventSpeaker(key) {
+  if (SPEAKER_MILITARY.test(key)) return 'MSS5';
   if (SPEAKER_KING.test(key)) return 'KING1';
   if (SPEAKER_NATIVE.test(key))
     return G.eventTribe >= 0 ? `IND${G.eventTribe % 8}A0` : null;
-  if (SPEAKER_MILITARY.test(key)) return 'MSS5';
+  if (SPEAKER_TRADE.test(key)) return 'MSS2';
+  if (SPEAKER_SITE.test(key)) return 'MSS3';
+  if (SPEAKER_DIPLO.test(key)) return 'MSS1';
+  if (SPEAKER_COLONY.test(key)) return 'MSS0';
   return null;
 }
 // The speaker sits at the screen's bottom-right UNDER the plaque -- the same
@@ -7211,8 +7273,11 @@ function drawReligiousReport(ctx) {
 const F3_FF_COLS = [4, 82, 160, 238];
 function drawCongressReport(ctx) {
   const fh = FONT.tiny.height + 2;
+  const m = DATA.text.misc;
   let y = 24;
-  FONT.tiny.draw(ctx, DATA.text.misc[112] || 'Next Continental Congress Session:',
+  // Live frame names the father under debate: "...Session: (Adam Smith)".
+  FONT.tiny.draw(ctx, `${m[112] || 'Next Continental Congress Session'}:` +
+                      (G.fatherInProgress ? ` (${G.fatherInProgress})` : ''),
                  4, y, lut(REPORT_NAME_INK));
   y += fh;
   // Same shape, sprite EXE 0x3F, x from `[bp-0x56]` and y from `[bp-0x5A]`
@@ -7232,22 +7297,33 @@ function drawCongressReport(ctx) {
   const rebel = G.colonies.length
     ? Math.round(G.colonies.reduce((a, c) => a + (c.sol || 0), 0) / G.colonies.length)
     : 0;
-  FONT.tiny.draw(ctx, `${DATA.text.misc[70] || 'Rebel'} ${rebel}%   ` +
-                      `${DATA.text.misc[71] || 'Tory'} ${100 - rebel}%`,
+  // @MISC 69/70/71 = Rebel / Tory / Sentiment -- the live frame reads
+  // "Rebel Sentiment: 10%  Tory Sentiment: 90%".
+  FONT.tiny.draw(ctx, `${m[69] || 'Rebel'} ${m[71] || 'Sentiment'}: ${rebel}%  ` +
+                      `${m[70] || 'Tory'} ${m[71] || 'Sentiment'}: ${100 - rebel}%`,
                  4, y, lut(REPORT_NAME_INK));
   y += fh;
-  spriteStrip(ctx, 4, y, 0x12C,
-              [[0x7C, Math.round(rebel / 10)], [0x7D, Math.round((100 - rebel) / 10)]]);
+  // One icon PER PERCENT (the live tory row is a dense ~90-crown run). The
+  // spec's sprite ids 0x7C/0x7D are 1-based like every other report sprite
+  // (F2's crosses pass 0x39-1): rebel = flag frame 0x7B, tory = crown 0x7C.
+  drawCountRow(ctx, [{ frame: 0x7B, count: rebel, sub: 0, flags: 0 },
+                     { frame: 0x7C, count: 100 - rebel, sub: 0, flags: 0 }],
+               4, y, 0x12C, 2);
   y += 12;
-  FONT.tiny.draw(ctx, DATA.text.misc[85] || 'Expeditionary Force:', 4, y,
-                 lut(REPORT_NAME_INK));
+  FONT.tiny.draw(ctx, `${DATA.nations[G.nation].adjective} ${m[85] || 'Expeditionary Force'}:`,
+                 4, y, lut(REPORT_NAME_INK));
   y += fh;
-  // REF quartet: engine icons 126/127/10/128 (spec §4, oracle DGROUP read).
-  spriteStrip(ctx, 4, y, 0x12C,
-              [[126, G.ref.Regulars || 0], [127, G.ref.Cavalry || 0],
-               [10, G.ref.Artillery || 0], [128, G.ref['Man-O-War'] || 0]]);
+  // REF quartet -- @UNIT icon column (1-based; UNITS[] already holds icon-1):
+  // Regulars 126->125 red-coat, Cavalry 127->126 mounted, Artillery 10->9
+  // cannon, Man-O-War 128->127 warship. Verified against the live 1653 frame.
+  drawCountRow(ctx,
+    [{ frame: unit('Regulars').icon, count: G.ref.Regulars || 0, sub: 0, flags: 0 },
+     { frame: unit('Cavalry').icon, count: G.ref.Cavalry || 0, sub: 0, flags: 0 },
+     { frame: unit('Artillery').icon, count: G.ref.Artillery || 0, sub: 0, flags: 0 },
+     { frame: unit('Man-O-War').icon, count: G.ref['Man-O-War'] || 0, sub: 0, flags: 0 }],
+    4, y, 0x12C, 2);
   y += 14;
-  FONT.tiny.draw(ctx, DATA.text.misc[86] || 'Founding Fathers:', 4, y,
+  FONT.tiny.draw(ctx, `${m[89] || 'Founding Fathers'}:`, 4, y,
                  lut(REPORT_NAME_INK));
   y += fh;
   G.fathersOwned.forEach((name, i) => {
@@ -7291,7 +7367,7 @@ function drawEconomicReport(ctx) {
     FONT.tiny.draw(ctx, g.name, 2, y, lut(REPORT_NAME_INK));
     const cells = [
       [String(europeTons(i)), REPORT_GREEN_INK],
-      [`${europeGold(i)}$`, REPORT_GREEN_INK],
+      [`${f5Gold(europeGold(i))}$`, REPORT_GREEN_INK],
       [`${G.market[i]}$`, REPORT_VALUE_INK],
       [`${askPrice(i)}$`, REPORT_VALUE_INK],
     ];
@@ -7299,11 +7375,16 @@ function drawEconomicReport(ctx) {
       FONT.tiny.right(ctx, s, F5_VAL_X[c], y, lut(k)));
   });
 }
-// Tons held and gold realised per commodity. The engine keeps these on the
-// PowerRecord (vol_accum +0x5C per the spec); this build tracks what it has:
-// the tonnage sitting in colony warehouses, and the running sale total.
-const europeTons = (g) => G.colonies.reduce((n, c) => n + (c.stock[g] || 0), 0);
+// Tons and Gold are the PowerRecord's whole-game NET TRADE counters, resolved
+// 2026-08-07 against the 1653 frame (report_F5.png): Tons = +0xBC net units
+// through Europe (Muskets 0t / 351$ rules out any inventory reading), Gold =
+// +0x7C net value -- sale proceeds after tax minus purchase costs.
+const europeTons = (g) => (G.tradeTons && G.tradeTons[g]) || 0;
 const europeGold = (g) => (G.tradeGold && G.tradeGold[g]) || 0;
+// The live frame prints 13K$/16K$/20K$ but 6071$ in full, so large values
+// abbreviate; the exact threshold is unobserved between 6072 and 12999 --
+// 10000 is the port's reading.
+const f5Gold = (v) => Math.abs(v) >= 10000 ? `${Math.trunc(v / 1000)}K` : String(v);
 
 // ---- F6 Colony ------------------------------------------------------------
 // spec §4: base x=2, rows pitch 0x11=17, 9 per page, colony NAME ink 0x92 at
@@ -7559,7 +7640,8 @@ function drawScoreReport(ctx) {
     const y = F10_ROW0 + i * F10_PITCH;
     FONT.tiny.draw(ctx, `${nat.adjective} ${label}: +${value}`, F10_X, y,
                    lut(F10_GREEN));
-    spriteStrip(ctx, F10_X, y + 8, 0x12C, [[sprite, Math.min(value, 12)]]);
+    drawCountRow(ctx, [{ frame: sprite, count: Math.min(value, 12), sub: 0, flags: 0 }],
+                 F10_X, y + 8, 0x12C, 2);
   });
   FONT.tiny.draw(ctx, `${DATA.text.misc[59]}: (${G.gold}$ x${s.mult})`,
                  F10_X, 150, lut(F10_GREEN));
@@ -7705,6 +7787,13 @@ function importSav(bytes) {
     .filter((f, i) => ffbits & (1 << i)).map(f => f.name);
   G.market = [];
   for (let i = 0; i < 16; i++) G.market.push(Math.max(1, d[pb + 0x4C + i]));
+  // The whole-game net-trade counters the F5 report reads: +0xBC units,
+  // +0x7C value (s32[16] each).
+  G.tradeTons = []; G.tradeGold = [];
+  for (let i = 0; i < 16; i++) {
+    G.tradeTons.push(i32(pb + 0xBC + i * 4));
+    G.tradeGold.push(i32(pb + 0x7C + i * 4));
+  }
 
   // Tribes: level from the record's +0x02 byte ([0x5AD8], stride 0x4E) and
   // tension toward the player from the +0x46 per-power word (the 0x5B1C
@@ -7917,6 +8006,7 @@ function loadGame() {
     SEEN.set(s.seen);
     if (s.region) REGION.set(s.region); else buildRegions();
     G.rumoursDone = new Set(s.rumours || []);
+    if (!G.tradeTons) { G.tradeTons = DATA.cargo.map(() => 0); G.tradeGold = DATA.cargo.map(() => 0); }
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
     notice('Game loaded.');
     return true;
@@ -8285,9 +8375,16 @@ function moveSel(dx, dy) {
   }
   const vil = G.villages.find(v => v.x === nx && v.y === ny);
   if (vil) { u.movesLeft = 0; enterVillage(vil, u); return; }
-  // The right-edge sea-lane column is the route home: a ship that enters it
-  // sails for Europe and leaves the map (CLAUDE.md hard rule 2, terrain 26).
-  if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) { sailForEurope(u); return; }
+  // The right-edge sea-lane column is the route home. Entering it asks
+  // @SAILHOME -- "We have reached the high seas ... Shall we sail for Europe?"
+  // (@default=1 highlights "Yes, steady as she goes."); declining leaves the
+  // ship in these waters. The tile itself is hard rule 2 (terrain 26); the
+  // ask-on-entry binding is the manual's description of the high seas, the
+  // engine's own trigger site being unread.
+  if (u.ship && tileTerrain(at(nx, ny)) === TERR.SEALANE) {
+    openDialog('SAILHOME', (choice) => { if (choice === 0) sailForEurope(u); });
+    return;
+  }
   // A land unit entering a rumour square triggers the exploration event, and
   // one outcome destroys the unit before it ever arrives.
   if (!u.ship && rumourAt(nx, ny)) { if (!enterRumour(u, nx, ny)) { advance(); return; } }
@@ -8778,6 +8875,19 @@ function europePointerDown(mx, my, shift) {
       beginDrag({ screen: 'europe', mode: 0xA, kind: 'good', good: slot.good,
                   amount: slot.qty, srcKind: 0, srcHold: h, srcRegion: region,
                   frame: dragGhostFrame('good', slot.good, slot.qty) });
+      return;
+    }
+    // A ship lifted out of the harbour list is the engine's unit mode 9,
+    // whose legal targets are {2, 3} (drop table func_0353DE @0x35464).
+    // Dropping it on the Bound For panel asks @SAILAWAY before the crossing.
+    const ships = shipsInPort();
+    for (let k = 0; k < Math.min(ships.length, 6); k++) {
+      if (!hit(mx, my, { x: EURO_SHIP.x + EURO_SHIP.pitch * k, y: EURO_SHIP.y, w: 18, h: 18 }))
+        continue;
+      beginDrag({ screen: 'europe', mode: 9, kind: 'ship', shipSlot: k,
+                  srcRegion: region,
+                  frame: dragGhostFrame('unit', 0, 0, ships[k].icon) });
+      return;
     }
     return;
   }
@@ -8979,7 +9089,22 @@ function europeDrop(d, target, mx, my) {
     ship.passengers.push(e);
     G.euroMsg = `${entryName(e)} boards the ${ship.type}.`;
     void mx; void my;
+    return;
   }
+  // A ship dropped on the Bound For panel (region 2): @SAILAWAY -- "Shall we
+  // set sail for the New World?" -- then the crossing. The drop's legality is
+  // byte-cited (mode 9 -> {2,3}); the confirm-on-drop binding is the port's.
+  if (d.kind === 'ship' && target === 2) {
+    const s = shipsInPort()[d.shipSlot];
+    if (s) confirmSailAway(s);
+  }
+}
+
+// @SAILAWAY (GAME.TXT @width=190 @default=1): row 0 "Yes, steady as she goes."
+// is the highlighted default; row 1 declines. Every route west -- Bound For
+// drop, ship menu row, the S key -- goes through this one confirm.
+function confirmSailAway(e) {
+  openDialog('SAILAWAY', (choice) => { if (choice === 0) sailForNewWorld(e); });
 }
 
 // The engine does not draw a second sprite for the payload -- it SWAPS THE
@@ -9407,7 +9532,7 @@ function onKey(e) {
       if (k === 'r' || k === 'R' || k === '1') openEuroMenu(0);
       if (k === 'p' || k === 'P' || k === '2') openEuroMenu(1);
       if (k === 't' || k === 'T' || k === '3') openEuroMenu(2);
-      if (k === 's' || k === 'S') { const e = activeShip(); if (e) sailForNewWorld(e); }
+      if (k === 's' || k === 'S') { const e = activeShip(); if (e) confirmSailAway(e); }
       if (k === 'Escape' || k === 'x' || k === 'e' || k === 'E') G.screen = 'map';
       break;
     }
@@ -9515,6 +9640,16 @@ function flushMapMsg() {
 }
 
 function frame() {
+  // A draw error must not kill the loop: rAF only continues if this callback
+  // returns, so an uncaught throw froze the whole game (the F3 report did
+  // exactly that). Log it once per distinct message and keep drawing.
+  try { frameBody(); } catch (e) {
+    if (e && e.message !== _frameErr) { _frameErr = e.message; console.error(e); }
+  }
+  requestAnimationFrame(frame);
+}
+let _frameErr = null;
+function frameBody() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
@@ -9544,7 +9679,6 @@ function frame() {
   c2.clearRect(0, 0, cv.width, cv.height);
   c2.drawImage(screenCanvas, 0, 0, W * scale, H * scale);
   if (debugOpen && (_dbgTick++ % 10) === 0) dbgRender();
-  requestAnimationFrame(frame);
 }
 
 async function main() {

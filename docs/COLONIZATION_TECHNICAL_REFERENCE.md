@@ -1420,8 +1420,8 @@ manufactured luxuries coupled through a shared supply pool.
 | `+0x2A` | u32 | **gold (treasury)** — every credit goes through a clamp helper: add s32, clamp to [0, 999999] |
 | `+0x4C` | u8[16] | per-good **price level** — the internal price. Display: sell = level − 1, buy = level + burden |
 | `+0x5C` | s16[16] | per-good **traffic accumulator** ("market pool") — the drift's pressure counter. **Negative → the price is about to rise; positive → about to fall**; steps fire at ±100·(rise\|fall) |
-| `+0x7C` | s32[16] | **traded volume** — cumulative *value* (price×qty; sales net of tax). Write-only in the decoded image — its reader is unlocated (TBD) |
-| `+0xBC` | s32[16] | **European supply** per good, in units (sell +qty / buy −qty). Reader likewise unlocated (TBD) |
+| `+0x7C` | s32[16] | **traded volume** — cumulative *value* (price×qty; sales net of tax). Reader RESOLVED 2026-08-07: the F5 Economic report's **Gold** column (`[bx-0x777c]` = DGROUP +0x8884, per ADVISOR_REPORTS_AUDIT F5) — confirmed by importing the 1653 save and matching its live F5 frame value-for-value (Sugar 6071, Muskets 351, Silver 20619 "20K") |
+| `+0xBC` | s32[16] | **European supply** per good, in units (sell +qty / buy −qty). Reader RESOLVED 2026-08-07: the F5 report's **Tons** column (`[bx-0x773c]` = DGROUP +0x88C4) — 1653 frame match (Ore 3700 t rules out any inventory reading; Muskets 0 t / 351$ is decisive) |
 | `+0xFC` | s32[16] | per-good **net-trade accumulator** — summed (clamped ≥ 0) by the drift each turn. **Never cleared during play** — a whole-game counter, which is what makes the seed decay a slow secular drift |
 
 The four 16-entry arrays are all zeroed at new game; the price levels are then

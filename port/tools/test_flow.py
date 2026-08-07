@@ -85,11 +85,12 @@ SCRIPT = """() => {
   onClick(310, 190);                          // Exit zone
   out.colonyExit = G.screen;
 
-  // A ship entering the sea lane leaves for the home port.
+  // A ship entering the sea lane asks @SAILHOME, then leaves for the home port.
   const vessel = G.units.find(u => u.ship);
   G.sel = G.units.indexOf(vessel);
   vessel.x = MAP.w - 2; vessel.movesLeft = 9;
   moveSel(1, 0);
+  closeDialog(0);                              // "Yes, steady as she goes."
   out.crossing = { state: G.europe[0] && G.europe[0].state, turns: G.europe[0] && G.europe[0].turns,
                    shipLeftMap: !G.units.includes(vessel) };
   for (let t = 0; t < 3; t++) endTurn();
@@ -240,6 +241,7 @@ SCRIPT = """() => {
     const srows = euroMenuRows();
     out.shipMenuRows = srows.map(r => r.act).join(',') === 'shipfront,sail,sellall,close';
     G.euroMenuRow = 1; euroMenuCommit();
+    closeDialog(0);                            // @SAILAWAY: "Yes, steady as she goes."
     out.shipMenuSails = s.state === 'toNewWorld';
     s.state = 'port';                          // put it back for the next block
     G.euroMenu = null;
@@ -2334,6 +2336,75 @@ SCRIPT = """() => {
     G.dialog = null;
   }
 
+  // ---- playtest batch 3: sail confirms, F5 counters, F3 sprites, speakers --
+  {
+    // Bound For drop -> @SAILAWAY confirm (default row 0 = Yes); decline
+    // keeps the ship in port, accept sails it.
+    G.screen = 'europe';
+    const savedEurope = G.europe;
+    G.europe = [{ type: 'Caravel', icon: unit('Caravel').icon, hold: [], passengers: [],
+                  state: 'port', turns: 0 }];
+    G.euroShip = 0; G.dialog = null;
+    europeDrop({ screen: 'europe', mode: 9, kind: 'ship', shipSlot: 0 }, 2, 100, 130);
+    const saConfirm = !!G.dialog && G.dialog.body.join(' ').includes('New World') &&
+                      G.dialog.sel === 0;
+    closeDialog(1);
+    const saDeclined = G.europe[0].state === 'port';
+    europeDrop({ screen: 'europe', mode: 9, kind: 'ship', shipSlot: 0 }, 2, 100, 130);
+    closeDialog(0);
+    out.sailAway = { confirm: saConfirm, declined: saDeclined,
+                     sailed: G.europe[0].state === 'toNewWorld',
+                     mode9Legal: dropAllowed('europe', 9, 2) && dropAllowed('europe', 9, 3) &&
+                                 !dropAllowed('europe', 9, 0) };
+    G.europe = savedEurope;
+    // @SAILHOME asks on the sea lane; declining leaves the ship in place.
+    G.screen = 'map'; G.dialog = null;
+    const sh = mkUnit('Caravel', 0, 0); G.units.push(sh);
+    let lx = -1;
+    for (let x = MAP.w - 1; x >= 0 && lx < 0; x--)
+      if (tileTerrain(at(x, 30)) === TERR.SEALANE) lx = x;
+    sh.x = lx - 1; sh.y = 30; sh.movesLeft = 9; G.sel = G.units.indexOf(sh);
+    moveSel(1, 0);
+    const shAsk = !!G.dialog && G.dialog.body.join(' ').includes('high seas');
+    closeDialog(1);
+    const shStayed = G.units.includes(sh) && sh.x === lx - 1;
+    moveSel(1, 0); closeDialog(0);
+    out.sailHome = { asked: shAsk, stayed: shStayed, wentHome: !G.units.includes(sh) };
+    // F3 REF sprites come from @UNIT's 1-based icon column (UNITS holds -1).
+    out.refIcons = [unit('Regulars').icon, unit('Cavalry').icon,
+                    unit('Artillery').icon, unit('Man-O-War').icon];
+    // Extended speaker families.
+    out.speakerMap = {
+      trade: eventSpeaker('PRICEDOWN') === 'MSS2',
+      site: eventSpeaker('TOONEAR') === 'MSS3',
+      treasure: eventSpeaker('CASHTREASURE') === 'KING1',
+      colony: eventSpeaker('BUILT') === 'MSS0',
+      diplo: eventSpeaker('SIGNTREATY') === 'MSS1',
+      lootCaptureStaysMilitary: eventSpeaker('LOOTCAPTURE') === 'MSS5',
+    };
+    // F5 trade counters: selling logs net units + net value after tax;
+    // buying logs both negative. (The importer check against the 1653 frame's
+    // transcribed values lives with the other sav assertions.)
+    G.tax = 10; G.tradeTons = DATA.cargo.map(() => 0); G.tradeGold = DATA.cargo.map(() => 0);
+    const bid = G.market[4];
+    sellGoods(4, 100);
+    const soldOK = G.tradeTons[4] === 100 &&
+                   G.tradeGold[4] === Math.floor(bid * 100 * 90 / 100);
+    const ask0 = askPrice(5); G.gold += 100000;
+    buyGoods(5, 50);
+    out.tradeCounters = { soldOK, boughtOK: G.tradeTons[5] === -50 && G.tradeGold[5] === -ask0 * 50 };
+  }
+
+  // ---- the 1653 save's F5 columns match the live frame ----
+  {
+    importSav(b64bytes(DATA.sav1653));
+    out.sav1653F5 = {
+      sugar: G.tradeTons[1] === 1031 && G.tradeGold[1] === 6071,
+      muskets: G.tradeTons[15] === 0 && G.tradeGold[15] === 351,
+      silverK: G.tradeGold[7] === 20619,
+    };
+  }
+
   // ---- the map screen has no status line: G.msg becomes a notice popup ----
   {
     G.screen = 'map'; G.dialog = null; G.eventQueue = [];
@@ -2817,6 +2888,21 @@ def main():
         ("map screen: G.msg converts to a popup, stale captions drop, dupes collapse",
          r["mapMsgPopups"] == {"converted": True, "dropped": True, "deduped": True},
          r["mapMsgPopups"]),
+        ("Bound For drop asks @SAILAWAY (Yes default), decline holds, accept sails",
+         r["sailAway"] == {"confirm": True, "declined": True, "sailed": True,
+                           "mode9Legal": True}, r["sailAway"]),
+        ("the sea lane asks @SAILHOME; declining stays, accepting sails home",
+         r["sailHome"] == {"asked": True, "stayed": True, "wentHome": True},
+         r["sailHome"]),
+        ("F3 REF sprites are @UNIT icons-1: red-coat 125, cavalry 126, cannon 9, warship 127",
+         r["refIcons"] == [125, 126, 9, 127], r["refIcons"]),
+        ("speaker families route: MSS2 trade, MSS3 site, MSS0 colony, MSS1 diplo, KING1 treasure",
+         all(r["speakerMap"].values()), r["speakerMap"]),
+        ("trade counters log net units and net value after tax, both ways",
+         r["tradeCounters"] == {"soldOK": True, "boughtOK": True}, r["tradeCounters"]),
+        ("the 1653 import's F5 columns equal the live frame: sugar 1031/6071, muskets 0/351, silver 20619",
+         r["sav1653F5"] == {"sugar": True, "muskets": True, "silverK": True},
+         r["sav1653F5"]),
     ]
     bad = 0
     for name, ok, got in checks:

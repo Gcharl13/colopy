@@ -8163,3 +8163,54 @@ remain port phrasing — their byte-cited GAME.TXT keys, where they exist, stay
 on the popup-audit ledger (docs/POPUP_AUDIT_2026-08-08.md).
 
 Suite: 220/220 (new regression: convert + stale-drop + dedupe).
+
+## 2026-08-07j — playtest batch 3: F3 freeze, report sprites, F5 columns, sail confirms, Europe cells, speaker families
+
+* **F3/F10 froze the whole game**: `drawCongressReport`/`drawScoreReport` called
+  a `spriteStrip()` helper that never existed; the ReferenceError killed the
+  rAF loop (frame() only rescheduled at the end of its own body). Fixed with
+  the real `drawCountRow` verb, and `frame()` now wraps its body in try/catch
+  so no draw error can ever freeze the port again (error logged once).
+* **Report sprite ids are 1-based**, like the F2 crosses' `0x39-1`: the F3 REF
+  quartet now draws @UNIT icons-1 (Regulars 126→125 red-coat, Cavalry 127→126
+  mounted, Artillery 10→9 cannon, Man-O-War 128→127 warship — via the UNITS[]
+  table, which already stores icon-1), and the rebel/tory strip is flag 0x7B /
+  crown 0x7C at ONE ICON PER PERCENT — all verified against
+  docs/screens/live_1653_save/report_F3.png. Labels corrected off the @MISC
+  strip (69 Rebel / 70 Tory / 71 Sentiment / 89 Founding Fathers; the port had
+  been printing "Tory … Sentiment …" and "Rebels"), the force line takes the
+  nation adjective, and the title names the father under debate.
+* **F5 Tons/Gold RESOLVED = PowerRecord +0xBC/+0x7C**, the whole-game net-trade
+  counters (units / value net of per-lot tax). The 1653 frame is decisive
+  (Muskets 0 t / 351$; Ore 3700 t) and the importer now reads both arrays —
+  matching the live frame value-for-value, including the "K" abbreviations
+  (13594/16771/20619). Port: sellGoods/buyGoods run the byte-cited updaters
+  (sale += floor(price*qty*(100-tax)/100) PER LOT, purchase -= ask*qty);
+  warehouse overflow never touches them (byte-cited asymmetry — the port's
+  overflow discards, so it holds by construction). K-abbreviation threshold
+  unobserved between 6072 and 12999; 10000 is the port's reading.
+* **@SAILAWAY / @SAILHOME wired** (both were MISSING per the popup audit):
+  a ship dragged from the harbour list (engine unit mode 9 — the drop table
+  func_0353DE @0x35416-64 already lists targets {2,3}) onto the Bound For
+  panel (region 2) asks @SAILAWAY, as do the ship-menu row and the S key;
+  a ship entering the sea-lane column asks @SAILHOME, declining stays put.
+  The ask-on-entry binding for @SAILHOME is manual-tier (engine trigger site
+  unread); the confirm texts/widths/defaults are GAME.TXT verbatim.
+* **Europe panels**: Bound For / Expected Soon entries now draw as the 18x18
+  hollow-green cells (0x0A) with the ship icon at +(3,1) and the engine's
+  sail-progress bar (width 0x64>>state @0x0313A4, state = turns left) instead
+  of bare text names; every harbour ship wears the green cell with the
+  selected one flipped to yellow 0x0E (the 0x0A/0x0E runtime pair the market
+  cell uses — the one-ship captures cannot split the rule; port reading).
+  Stacked panel placement is port layout; the engine's band y=146/137/132 by
+  state (func_031298) is recorded for a future exact rebuild.
+* **Speaker families extended** per the byte-cited caller map
+  (POPUP_TEMPLATE_AUDIT caller table + spec/ui/popups.md §2.7): MSS2 trade
+  (@PRICE*/@SOMEBOYCOTT/@SUCCESSION; @UNREST is a flagged reading), MSS3
+  colony-siting warnings (func_022542 arg 3), MSS1 diplomacy announcements +
+  @FOREIGNNOTAVAIL (byte push 1), MSS0 colony events (func_032FE2), KING1
+  gains the treasure-delivery family (@CASHTREASURE/@LOOT* excl. LOOTCAPTURE)
+  + @TEAPARTY. Families with no cited channel (Lost City, revolution, SoL
+  bands, schooling) stay bare per the evidence.
+
+Suite: 226/226 (seven new regressions).

@@ -64,7 +64,7 @@ def build_data():
     full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
     D["dialogs"] = {}
     for key in ("@LANDHO", "@LANDFALL", "@COLONY", "@RECRUIT", "@PURCHASE",
-                "@RENAMECOLONY"):
+                "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {
