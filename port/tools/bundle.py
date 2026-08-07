@@ -296,6 +296,8 @@ def build_data():
               "@TORYMINORITY", "@TORYMAJORITY", "@TORYUPRISING",
               "@KINGRECRUIT", "@UPKEEP", "@ABANDON", "@RENAMECOLONY",
               "@TOONEAR", "@NOPORT",
+              # The Europe harbour context menus (dock units and ships)
+              "@EUROPEARM", "@EUROPESHIPCLICK", "@ARMOPTIONS", "@EUROPESHIPOPTIONS",
               # Naval combat, scouts, the Spanish Succession
               "@SHIPCOMBAT", "@FORTFIRE", "@CARGOCAPTURE", "@EVASIVE",
               "@SCOUTCOLONY", "@NOMAYORSDURINGREV", "@SUCCESSION",

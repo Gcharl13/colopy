@@ -568,16 +568,35 @@ const MOVE_UNIT = 3;
 // @UNIT hull is the ship predicate: every vessel has hull > 0, and it is the
 // only column that separates them from the Wagon Train (which carries cargo but
 // sails nowhere).
-function mkUnit(name, x, y, cargo) {
-  const t = unit(name);
+//
+// A dock/hold entry may be a PROFESSION name ('Expert Farmers', 'Veteran
+// Soldiers', a @CLASS immigrant band), not a @UNIT type: the five professions
+// with a unit of their own land as that unit, everyone else walks ashore as a
+// plain Colonist CARRYING the profession. The old code threw on any profession
+// name, which is what killed making landfall with recruits or trainees aboard
+// -- the whole "sail out of Europe with an armed party" chain died there.
+// The profession -> type pairs are the @JOB expert_name column against the
+// @UNIT rows that share the trade (Soldier/Veteran Soldiers etc.).
+const PROFESSION_UNIT = {
+  'Veteran Soldiers': 'Soldiers', 'Veteran Dragoons': 'Dragoons',
+  'Hardy Pioneers': 'Pioneers', 'Seasoned Scouts': 'Scouts',
+  'Jesuit Missionaries': 'Missionaries',
+};
+function mkUnit(spec, x, y, cargo) {
+  // spec: a string, or Europe's armed { name, type } pair.
+  const name = typeof spec === 'object' ? spec.name : spec;
+  const profession = unit(name) ? null : name;
+  const t = unit(typeof spec === 'object' ? spec.type
+          : profession ? (PROFESSION_UNIT[name] || 'Colonists') : name);
   // Movement budgets are stored in THIRDS: the @UNIT loader multiplies the
   // column by 3 (`SHL al,1 / ADD al,cl` @0x074F04, unit.md §3), which is what
   // makes a road step cost 1/3 of a move.
   const u = { type: t.name, icon: t.icon, x, y,
               moves: t.movement * MOVE_UNIT, movesLeft: t.movement * MOVE_UNIT,
               ship: t.hull > 0, nation: G.nation, orders: 0, cargo: cargo || [] };
+  if (profession) u.profession = profession;
   // A Pioneer is a colonist carrying tools; UnitRecord +0x15 starts at 100.
-  if (name === 'Pioneers') u.tools = PIONEER_TOOLS;
+  if (t.name === 'Pioneers') u.tools = PIONEER_TOOLS;
   return u;
 }
 
@@ -615,6 +634,7 @@ function beginGame() {
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
+  G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
   // Both mutable map planes go back to their shipped state.
   MAP.tiles.set ? MAP.tiles.set(DATA.map.tiles) : MAP.tiles.splice(0, MAP.tiles.length, ...DATA.map.tiles);
   IMPROVE.fill(0);
@@ -754,6 +774,7 @@ function drawDialog(ctx) {
   const d = G.dialog;
   if (!d) return;
   const b = layoutDialog(d);
+  if (d.speaker) drawSpeakerSheet(ctx, d.speaker);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
   d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
   const seed = b.y + 6 + b.textH + 3;
@@ -1565,11 +1586,12 @@ function runMenuRow() {
 // Soldiers or some other carried type shows is TBD, so anything else falls
 // back to the type name rather than being guessed at.
 const TOOLS_CARGO = 14, MISC_VETERAN = 65;
-function carriedLabel(typeName) {
+function carriedLabel(entry) {
+  const typeName = typeof entry === 'object' ? entry.type : entry;
   if (typeName === 'Pioneers')
     return `${PIONEER_TOOLS} ${DATA.cargo[TOOLS_CARGO].name}`;
   if (typeName === 'Soldiers') return DATA.text.misc[MISC_VETERAN];
-  return typeName;
+  return typeof entry === 'object' ? entry.name : typeName;
 }
 
 function drawSidebar(ctx) {
@@ -1634,7 +1656,7 @@ function drawSidebar(ctx) {
     FONT.tiny.draw(ctx, `(${terrainName(at(u.x, u.y))})`, 244, 112, lut(HUD_INK));
     let cy = 128;
     for (const c of u.cargo) {
-      const cu = unit(c);
+      const cu = unit(entryType(c));
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, 244, cy - 4);
       nationPlate(ctx, 244, cy - 4, DATA.nations[G.nation].color, 1);
       FONT.tiny.draw(ctx, carriedLabel(c), 268, cy, lut(HUD_INK));
@@ -2556,8 +2578,19 @@ function drawColony(ctx) {
   scene.width = 80; scene.height = 80;
   const sg = scene.getContext('2d');
   for (let ty = 0; ty < 5; ty++)
-    for (let tx = 0; tx < 5; tx++)
-      drawTile(sg, c.x - 2 + tx, c.y - 2 + ty, tx * 16, ty * 16);
+    for (let tx = 0; tx < 5; tx++) {
+      const wx = c.x - 2 + tx, wy = c.y - 2 + ty;
+      drawTile(sg, wx, wy, tx * 16, ty * 16);
+      drawImprovements(sg, wx, wy, tx * 16, ty * 16);
+      // The scene is the same composited map the main view shows, so the
+      // settlements land on their tiles too -- above all, THE COLONY ITSELF on
+      // the centre tile, which the panel used to leave as bare terrain.
+      const oc = G.colonies.find(q => q.x === wx && q.y === wy);
+      if (oc) drawSettlement(sg, tx * 16, ty * 16, colonyLevel(oc), oc.nation, 0);
+      const ov = G.villages.find(q => q.x === wx && q.y === wy);
+      if (ov) drawSettlement(sg, tx * 16, ty * 16, ov.level, -1,
+                             (G.tribes[ov.tribe] || {}).color || 8, ov.mission);
+    }
   ctx.imageSmoothingEnabled = false;
   ctx.save();
   ctx.beginPath(); ctx.rect(224, 32, 72, 72); ctx.clip();
@@ -2941,7 +2974,7 @@ function drawColonyDock(ctx, c) {
     if (k < taken) {
       // A carried unit's own icon marks its hold -- the port's convention;
       // which query the engine answers for a unit-held slot is unread.
-      const cu = unit(ship.cargo[k]);
+      const cu = unit(entryType(ship.cargo[k]));
       if (cu) sheetFrame(ctx, 'ICONS', cu.icon, x, 168);
       continue;
     }
@@ -3236,8 +3269,8 @@ function drawEurope(ctx) {
   // The frame has ONE ship and ONE dock unit, so the SLOT PITCH is unmeasured;
   // the port keeps its previous 14 (units) and 12 (ships) rather than inventing
   // new numbers, and a capture with several of each would settle it.
-  G.dockUnits.slice(0, 6).forEach((name, k) => {
-    const u = unit(name) || unit('Colonists');
+  G.dockUnits.slice(0, 6).forEach((e, k) => {
+    const u = unit(entryType(e)) || unit('Colonists');
     const x = EURO_DOCK.x + k * EURO_DOCK.pitch;
     sheetFrame(ctx, 'ICONS', u.icon, x + 3, EURO_DOCK.y + 1);
     hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
@@ -3287,6 +3320,72 @@ function drawEurope(ctx) {
   FONT.tiny.draw(ctx, 'Exit', 306, 181, lut(0x0F));
 }
 
+// A dock/passenger entry is a plain string (a @UNIT type or a profession name)
+// until Europe ARMS it, after which it is { name, type }: name is what the man
+// IS (his profession or class), type what he is equipped AS. Both readers below
+// accept either form, and mkUnit consumes either on landfall.
+const entryName = (e) => typeof e === 'object' ? e.name : e;
+const entryType = (e) => typeof e === 'object' ? e.type
+  : unit(e) ? e : (PROFESSION_UNIT[e] || 'Colonists');
+
+// ---- the Europe dock-unit menu: GAME @EUROPEARM + @ARMOPTIONS -------------
+// The 12 @ARMOPTIONS rows are grep-verified GAME.TXT (spec/ui/context_dialogs.md
+// §4); the quantities are the manual's (GAME_MANUAL.md 1962-1971: 50 muskets,
+// 50 horses, 50+50 for a dragoon; tools cap 100 = the Pioneer's UnitRecord
+// +0x15 start). Which rows the engine SHOWS per unit state is unread, so the
+// port offers the applicable ones -- its own gating, flagged as such. Prices
+// are the live market: buying charges the ask (buyGoods), selling returns the
+// bid less tax (sellGoods), both moving the price like any other trade.
+const EQUIP_MUSKETS = 50, EQUIP_HORSES = 50, EQUIP_TOOLS = 100;
+// type -> type under each equip/unequip verb.
+const ARM_VERBS = [
+  { rowFmt: 'Arm with Muskets (costs %N$).', good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
+    buy: true, map: { Colonists: 'Soldiers', Scouts: 'Dragoons' } },
+  { rowFmt: 'Sell Muskets (save %N$).', good: GOOD.MUSKETS, qty: EQUIP_MUSKETS,
+    buy: false, map: { Soldiers: 'Colonists', Dragoons: 'Scouts' } },
+  { rowFmt: 'Equip with Tools (costs %N$).', good: GOOD.TOOLS, qty: EQUIP_TOOLS,
+    buy: true, map: { Colonists: 'Pioneers' } },
+  { rowFmt: 'Sell Tools (save %N$).', good: GOOD.TOOLS, qty: EQUIP_TOOLS,
+    buy: false, map: { Pioneers: 'Colonists' } },
+  { rowFmt: 'Equip with Horses (costs %N$).', good: GOOD.HORSES, qty: EQUIP_HORSES,
+    buy: true, map: { Colonists: 'Scouts', Soldiers: 'Dragoons' } },
+  { rowFmt: 'Sell Horses (save %N$).', good: GOOD.HORSES, qty: EQUIP_HORSES,
+    buy: false, map: { Scouts: 'Colonists', Dragoons: 'Soldiers' } },
+];
+function dockUnitRows() {
+  const e = G.dockUnits[G.euroDockSel];
+  if (e === undefined) return [];
+  const t = entryType(e);
+  const rows = [];
+  rows.push({ label: 'Board next ship.', act: 'board' });
+  rows.push({ label: 'Move to front of dock.', act: 'front' });
+  for (const v of ARM_VERBS) {
+    const to = v.map[t];
+    if (!to) continue;
+    const price = v.buy ? askPrice(v.good) * v.qty
+                : Math.floor(G.market[v.good] * v.qty * (100 - G.tax) / 100);
+    rows.push({ label: v.rowFmt.replace('%N', String(price)),
+                act: 'arm', verb: v, to,
+                dim: v.buy && (price > G.gold || isBoycotted(v.good)) });
+  }
+  if (t === 'Colonists') rows.push({ label: 'Bless as Missionaries.', act: 'bless' });
+  if (t === 'Missionaries') rows.push({ label: 'Cancel Missionary Status.', act: 'unbless' });
+  rows.push({ label: 'No changes.', act: 'close' });
+  return rows;
+}
+// The Europe harbour ship menu: GAME @EUROPESHIPCLICK + @EUROPESHIPOPTIONS
+// ("Move to front. / Set sail for the New World. / Unload all cargo. / No
+// changes.") -- both grep-verified (spec/ui/context_dialogs.md §4). "Unload"
+// in Europe means selling: the market is the only place cargo can go.
+function euroShipRows() {
+  return [
+    { label: 'Move to front.', act: 'shipfront' },
+    { label: 'Set sail for the New World.', act: 'sail' },
+    { label: 'Unload all cargo.', act: 'sellall' },
+    { label: 'No changes.', act: 'close' },
+  ];
+}
+
 // The three sub-menus. Each is a plaque list: rows of "<label> <price>" with
 // the affordable ones lit and the rest dimmed.
 function euroMenuRows() {
@@ -3297,6 +3396,8 @@ function euroMenuRows() {
   if (G.euroMenu === 'train')
     return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }))
                         .sort((a, b) => a.cost - b.cost);
+  if (G.euroMenu === 'dockunit') return dockUnitRows();
+  if (G.euroMenu === 'ship') return euroShipRows();
   return PURCHASE_CATALOG.map(r => ({ label: r.unit, cost: purchasePrice(r) }));
 }
 // The sub-menus are dialogs in the §3 framework, not ad-hoc lists: body text
@@ -3304,7 +3405,8 @@ function euroMenuRows() {
 // centred. The ECONOMIC ADVISER portrait (MSS2 -- the merchant in the plumed
 // hat, identified by rendering all six MSS sheets) sits above the box, which is
 // where func_06BF66 draws the speaker.
-const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null };
+const EURO_MENU_KEY = { recruit: 'RECRUIT', purchase: 'PURCHASE', train: null,
+                        dockunit: null, ship: null };
 // The economic adviser speaks for RECRUIT and PURCHASE -- the two menus with a
 // GAME.TXT body he is quoting -- and not for TRAIN, which is a bare list. He
 // sits 4px lower than the box top, not flush against it.
@@ -3315,6 +3417,19 @@ function euroMenuBox() {
   const rows = euroMenuRows();
   const key = EURO_MENU_KEY[G.euroMenu];
   let body = key ? DATA.dialogs[key].body : [G.euroMenu.toUpperCase()];
+  // The two harbour context menus carry their own GAME.TXT caption sections.
+  if (G.euroMenu === 'dockunit') {
+    const e = G.dockUnits[G.euroDockSel];
+    const cap = DATA.events.EUROPEARM;
+    body = cap ? cap.body.slice() : ['European dock options:'];
+    if (e !== undefined) body.push(`{${entryName(e)}}` +
+      (entryType(e) !== entryName(e) ? ` (${entryType(e)})` : ''));
+  } else if (G.euroMenu === 'ship') {
+    const cap = DATA.events.EUROPESHIPCLICK;
+    const ship = activeShip();
+    body = (cap ? cap.body : ['European harbor options for {%STRING0}:'])
+      .map(l => fillTemplate(l, { STRING0: ship ? ship.type : '' }));
+  }
   // @RECRUIT quotes the passage in its body ("{%NUMBER0 gold}") -- fill it from
   // the highlighted candidate, which is the one that slot would cost.
   if (key === 'RECRUIT') {
@@ -3324,7 +3439,9 @@ function euroMenuBox() {
   }
   let cw = key ? DATA.dialogs[key].width : 0x50;
   for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
-  for (const r of rows) cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(`${r.cost}$`) + 20);
+  for (const r of rows)
+    cw = Math.max(cw, FONT.tiny.width(r.label) +
+                      (r.cost === undefined ? 0 : FONT.tiny.width(`${r.cost}$`)) + 20);
   const w = cw + 6;
   const textH = body.length * 6;
   const h = 6 + textH + 3 + rows.length * 8 + 3;
@@ -3346,12 +3463,16 @@ function drawEuroMenu(ctx) {
     const sel = k === G.euroMenuRow;
     if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
     // Unaffordable rows are DIMMED, not blacked out -- they still have to be
-    // readable so you can see what you are saving up for.
-    const afford = r.cost <= G.gold;
+    // readable so you can see what you are saving up for. Action rows (the
+    // harbour context menus) carry their price inside the label and dim on
+    // their own `dim` flag instead.
+    const afford = r.cost === undefined ? !r.dim : r.cost <= G.gold;
     const inkIdx = !afford ? 0x5D : (sel ? 0xFC : 0xFE);
     FONT.tiny.draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
-    const c = `${r.cost}$`;
-    FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1, lut(inkIdx));
+    if (r.cost !== undefined) {
+      const c = `${r.cost}$`;
+      FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1, lut(inkIdx));
+    }
   });
   // The adviser is drawn LAST so he sits on top of the box, centred on it,
   // dropped 4px so he overlaps the frame rather than floating clear of it.
@@ -3394,11 +3515,77 @@ function buyToShip(i, qty) {
   G.euroMsg = `Bought ${qty} ${DATA.cargo[i].name} for ${paid}$`;
 }
 
+// Committing a harbour context-menu row (@ARMOPTIONS / @EUROPESHIPOPTIONS).
+function euroContextCommit(r) {
+  G.euroMenu = null;
+  const k = G.euroDockSel, e = G.dockUnits[k];
+  switch (r.act) {
+    case 'board': {
+      const ship = activeShip();
+      if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+      ship.passengers = ship.passengers || [];
+      if (ship.passengers.length >= 6) { G.euroMsg = 'That ship is full.'; return; }
+      G.dockUnits.splice(k, 1);
+      ship.passengers.push(e);
+      G.euroMsg = `${entryName(e)} boards the ${ship.type}.`;
+      return;
+    }
+    case 'front':
+      G.dockUnits.splice(k, 1);
+      G.dockUnits.unshift(e);
+      return;
+    case 'arm': {
+      const v = r.verb;
+      if (v.buy) {
+        if (r.dim) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+        const paid = buyGoods(v.good, v.qty);
+        if (!paid) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+        G.euroMsg = `${entryName(e)} equipped (${paid}$).`;
+      } else {
+        const net = sellGoods(v.good, v.qty);
+        G.euroMsg = `Equipment sold for ${net}$.`;
+      }
+      G.dockUnits[k] = { name: entryName(e), type: r.to };
+      return;
+    }
+    case 'bless':
+      G.dockUnits[k] = { name: entryName(e), type: 'Missionaries' };
+      G.euroMsg = `${entryName(e)} blessed as a Missionary.`;
+      return;
+    case 'unbless':
+      G.dockUnits[k] = { name: entryName(e), type: 'Colonists' };
+      G.euroMsg = 'Missionary status cancelled.';
+      return;
+    case 'shipfront': {
+      const ship = activeShip();
+      if (!ship) return;
+      G.europe.splice(G.europe.indexOf(ship), 1);
+      G.europe.unshift(ship);
+      G.euroShip = 0;
+      return;
+    }
+    case 'sail': {
+      const ship = activeShip();
+      if (ship) sailForNewWorld(ship);
+      return;
+    }
+    case 'sellall': {
+      const ship = activeShip();
+      if (!ship) return;
+      for (const h of (ship.hold || []).slice()) sellFromShip(h.good);
+      return;
+    }
+    default:
+      return;
+  }
+}
+
 // Committing a sub-menu row.
 function euroMenuCommit() {
   const rows = euroMenuRows();
   const r = rows[G.euroMenuRow];
   if (!r) return;
+  if (G.euroMenu === 'dockunit' || G.euroMenu === 'ship') { euroContextCommit(r); return; }
   if (r.cost > G.gold) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
   G.gold -= r.cost;
   if (G.euroMenu === 'recruit') {
@@ -3799,6 +3986,7 @@ function conversionThreshold(v) {
 }
 function attemptConversions() {
   for (const v of G.villages) {
+    G.eventTribe = v.tribe;
     if (!v.mission || v.mission.power !== G.nation) continue;
     if (!G.colonies.length) continue;
     if (Math.floor(Math.random() * 16) >= conversionThreshold(v)) continue;
@@ -3848,6 +4036,7 @@ function nativeDemands() {
   if (!G.colonies.length) return;
   for (const t of G.tribes) {
     if (!t || t.dead) continue;
+    G.eventTribe = G.tribes.indexOf(t);
     if ((t.tension || 0) < TENSION_HOSTILE) continue;
     if (Math.floor(Math.random() * 24) !== 0) continue;   // rare, per tribe, per turn
     const ti = G.tribes.indexOf(t);
@@ -3893,6 +4082,7 @@ function nativeDemands() {
 // zeroes the payment.
 function roadObjection(u) {
   const near = G.villages.find(v => Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+  if (near) G.eventTribe = near.tribe;
   if (!near) return false;
   const t = G.tribes[near.tribe];
   if (!t || (t.tension || 0) < 40) return false;
@@ -3914,29 +4104,32 @@ function roadObjection(u) {
 // §19.9 / func_05BE84. A settlement whose alarm toward a power has reached 128
 // is on a war footing and becomes a raid source (@0x04734E). The dispatch:
 //   gate roll  = random_int(1,12) - 1, plus (difficulty - 2) against a human
-//                European owner, tested against threshold 3*K + 1 (@0x5BEE5).
-//                K IS UNTRACED -- the manual says so in as many words. The port
-//                carries it as RAID_GATE_K below with a placeholder of 0, so the
-//                gate is `roll >= 1`, i.e. a 1-in-12 miss. Flagged.
+//                European owner, tested against threshold 3*K + 1 (@0x5BEE5),
+//                where K = the target colony's fortification count (see
+//                nativeRaid below -- the old RAID_GATE_K=0 TBD is CLOSED).
 //   outcome    = random_int(1,4), downgraded while turn < 40*(2-difficulty)
 //                (the early-game softener), then dispatched 5 ways:
 //                1 STORES, 2 WREAK, 3 GOLD, 4 BURN/SHIP, 0 NOTHING.
 // The payloads behind wreak / gold / burn / ship are unmapped in the evidence;
 // what each one takes is the port's own, and every one of them is flagged.
-const RAID_GATE_K = 0;                   // TBD -- threshold is 3*K+1 @0x5BEE5
 function raidOutcome() {
   let out = 1 + Math.floor(Math.random() * 4);
   if (G.turn < 40 * (2 - G.difficulty)) out -= 1;
   return Math.max(0, out);
 }
-function nativeRaids() {
-  if (!G.colonies.length) return;
-  for (const v of G.villages) {
-    if ((v.alarm || 0) < ALARM_RAID) continue;
-    const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
-    if (gate < 3 * RAID_GATE_K + 1) continue;
-    const c = G.colonies.slice().sort((a, b) =>
-      (Math.abs(a.x - v.x) + Math.abs(a.y - v.y)) - (Math.abs(b.x - v.x) + Math.abs(b.y - v.y)))[0];
+// One raid ATTEMPT by village v against colony c. The gate is func_05BE84's:
+// roll random_int(1,12)-1 (@0x5BEFD), +(difficulty-2) for a human owner
+// (@0x5BF1A), against threshold 3*K+1 (@0x5BEE5) -- and K is now BYTE-READ
+// (RULINGS.md 2026-08-07c): the `push 0; lcall 0x181f,0xab0` @0x5BED9 resolves
+// to func_00864E, which walks the BUILDING UPGRADE CHAIN from id 0 counting the
+// links the colony has -- chain 0 is Stockade -> Fort -> Fortress, so K is the
+// colony's FORTIFICATION COUNT, exactly what colonyLevel() already computes.
+// A raid that fails the gate simply does not happen (the @0x5BF32 exit).
+function nativeRaid(v, c) {
+  G.eventTribe = v.tribe;
+  const gate = 1 + Math.floor(Math.random() * 12) - 1 + (G.difficulty - 2);
+  if (gate < 3 * colonyLevel(c) + 1) return;
+  {
     const t = G.tribes[v.tribe];
     const S = { STRING0: t ? t.name : '', STRING1: c.name,
                 STRING3: DATA.nations[G.nation].adjective };
@@ -3978,6 +4171,63 @@ function nativeRaids() {
     }
     // A raid on a HUMAN colony plays woodcut 13, INDIAN RAID (@0x05D219).
     if (!G.raidSeen) { G.raidSeen = true; G.woodcut = 13; G.screen = 'woodcut'; }
+  }
+}
+
+// ---- the brave mover -------------------------------------------------------
+// The engine drives every native unit through the per-unit order pipeline
+// (func_04E2D6) and the 9-candidate heading scorer func_046FFA -- both decoded
+// in spec/systems/ai.md. The port runs a REDUCED version of that scorer's
+// visible behaviour, R-tier and flagged as such: a brave whose village is on a
+// war footing (alarm >= 0x80, the @0x04734E hostility test) marches one tile a
+// turn toward the nearest colony of ours and delivers func_05BE84's raid when
+// he arrives, then turns for home; a brave at peace stays within two tiles of
+// his village, wandering on the scorer's rand(1,5)-jitter rhythm. What this
+// keeps from the byte evidence is the RATE (one move of one tile per turn --
+// Braves are @UNIT movement 1), the hostility threshold, and the raid dispatch
+// itself; the scoring terms it drops are listed in ai.md §3.
+function nativeMoveAI() {
+  const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const open = (x, y) =>
+    x >= 0 && y >= 0 && x < MAP.w && y < MAP.h && !tileWater(at(x, y)) &&
+    !G.villages.some(w => w.x === x && w.y === y) &&
+    !G.natives.some(n => n.x === x && n.y === y) &&
+    !G.units.some(u => u.x === x && u.y === y) &&
+    !G.colonies.some(c => c.x === x && c.y === y);
+  for (const n of G.natives) {
+    const v = n.home;
+    if (!v) continue;
+    const hostile = (v.alarm || 0) >= ALARM_RAID && G.colonies.length;
+    if (hostile) {
+      const c = G.colonies.slice().sort((a, b) =>
+        (Math.abs(a.x - n.x) + Math.abs(a.y - n.y)) -
+        (Math.abs(b.x - n.x) + Math.abs(b.y - n.y)))[0];
+      if (Math.max(Math.abs(c.x - n.x), Math.abs(c.y - n.y)) <= 1) {
+        // At the palisade: the raid fires, and the party turns for home.
+        nativeRaid(v, c);
+        n.raiding = false;
+        n.x = v.x; n.y = v.y + 1;
+        if (tileWater(at(n.x, n.y))) { n.x = v.x + 1; n.y = v.y; }
+        continue;
+      }
+      n.raiding = true;
+      const step = DIRS
+        .map(([dx, dy]) => [n.x + dx, n.y + dy])
+        .filter(([x, y]) => open(x, y))
+        .sort((a, b) => (Math.abs(c.x - a[0]) + Math.abs(c.y - a[1])) -
+                        (Math.abs(c.x - b[0]) + Math.abs(c.y - b[1])))[0];
+      if (step) { n.x = step[0]; n.y = step[1]; }
+      continue;
+    }
+    // At peace: a short wander that keeps the brave near his village.
+    n.raiding = false;
+    if (Math.random() < 0.5) continue;               // the stay candidate wins
+    const step = DIRS
+      .map(([dx, dy]) => [n.x + dx, n.y + dy])
+      .filter(([x, y]) => open(x, y) &&
+              Math.abs(x - v.x) <= 2 && Math.abs(y - v.y) <= 2)
+      .sort(() => Math.random() - 0.5)[0];
+    if (step) { n.x = step[0]; n.y = step[1]; }
   }
 }
 
@@ -4279,11 +4529,39 @@ function fillTemplate(line, subs) {
     return v === undefined ? '' : String(v);
   });
 }
-function showEvent(key, subs) {
+// ---- popup speaker channels (spec/ui/popups.md §2.7) ----------------------
+// The engine dispatches the portrait through three DGROUP words: [0x1F5C] = 8
+// -> KING1.SS (func_06F5DA @0x06F5DD), [0x1F5C] = tribe -> IND<n>A<pose>.SS
+// (func_06BE92), [0x1F5E] = n -> MSS<n>.SS (func_06BF12; the military wrapper
+// func_040C1E pushes 5 @0x040CD3, the trade popups 2/3/4 @0x034E5E-98). Which
+// message key runs through which wrapper is only partially byte-mapped
+// (POPUP_TEMPLATE_AUDIT.md caller map), so the port routes by KEY FAMILY --
+// its own reading of that map, flagged as such. Native families read the tribe
+// from G.eventTribe, which every native dispatcher stamps before it fires.
+const SPEAKER_KING = /^(KING|TAXOPTIONS|UPKEEP)/;
+const SPEAKER_MILITARY = /^(DEMOTE|COLONISTCAPTURE|WAGONCAPTURE|CARGOCAPTURE|LOOTCAPTURE|ARTILLERY|SHIPDAMAGE|SHIPSUNK|VETERAN|VALOR|WELLSEASONED|SHIPCOMBAT|EVASIVE|FORTFIRE|MOBILIZE|WARN)/;
+const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS)/;
+function eventSpeaker(key) {
+  if (SPEAKER_KING.test(key)) return 'KING1';
+  if (SPEAKER_NATIVE.test(key))
+    return G.eventTribe >= 0 ? `IND${G.eventTribe % 8}A0` : null;
+  if (SPEAKER_MILITARY.test(key)) return 'MSS5';
+  return null;
+}
+// The speaker sits at the screen's bottom-right UNDER the plaque -- the same
+// placement the village screen already uses for its chief portrait; the
+// engine's own landing pixel is runtime cel state (§2.7.1), not a literal.
+function drawSpeakerSheet(ctx, sheet) {
+  if (!sheet) return;
+  const [pw, ph] = frameSize(sheet, 0);
+  if (pw) sheetFrame(ctx, sheet, 0, W - pw, H - ph);
+}
+function showEvent(key, subs, speaker) {
   const t = DATA.events[key];
   if (!t) return;
   G.eventQueue.push({ lines: t.body.map(l => fillTemplate(l, subs || {})),
-                      width: t.width });
+                      width: t.width,
+                      speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
 }
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
@@ -4297,6 +4575,7 @@ function askEvent(key, subs, onDone, optsKey) {
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
+    speaker: eventSpeaker(key),
     // Same one-based @default as openDialog above.
     sel: t.default && /^\d+$/.test(t.default)
       ? Math.max(0, Math.min(rows.length - 1, +t.default - 1)) : 0,
@@ -4309,6 +4588,7 @@ function drawEvent(ctx) {
   for (const l of e.lines) cw = Math.max(cw, FONT.tiny.width(l));
   const w = cw + 6, h = 6 + e.lines.length * 6 + 3 + 8 + 3;
   const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  drawSpeakerSheet(ctx, e.speaker);
   plaque(ctx, x, y, w, h, 'WOODTILE');
   e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
   FONT.tiny.center(ctx, '(Continue)', 160, y + h - 10, lut(0xFC));
@@ -4318,6 +4598,7 @@ function drawEvent(ctx) {
 // context_dialogs.md §6 -- func_04B308 is that table's only consumer).
 function enterVillage(v, visitor) {
   G.village = v;
+  G.eventTribe = v.tribe;                          // the popup speaker channel
   G.villageVisitor = visitor;
   G.villageRow = 0;
   G.villageMode = 'actions';
@@ -5792,7 +6073,7 @@ function enterRumour(u, x, y) {
   switch (n) {
     case 1: {                                      // Fountain of Youth: 8 immigrants
       G.foundFountain = true;
-      for (let k = 0; k < 8; k++) G.dockUnits.push(rollImmigrant().type || 'Colonists');
+      for (let k = 0; k < 8; k++) G.dockUnits.push(rollImmigrant().name || 'Colonists');
       showEvent('LOSTCITY1', {});
       break;
     }
@@ -7098,7 +7379,11 @@ function endTurn() {
   nativeDemands();
   attemptConversions();
   ageConverts();
-  nativeRaids();
+  // Raids now arrive on foot: nativeMoveAI marches each war-footing brave at
+  // his target and fires nativeRaid when he gets there, so a raid takes as
+  // many turns to come as the ground takes to cross -- the old
+  // every-village-every-turn raid loop is gone with its RAID_GATE_K stub.
+  nativeMoveAI();
   runRivals();
   kingTaxDemand();
   advanceTradeRoutes();
@@ -7764,7 +8049,7 @@ function europePointerDown(mx, my, shift) {
     for (let k = 0; k < Math.min(G.dockUnits.length, 6); k++) {
       if (!hit(mx, my, { x: EURO_DOCK.x + k * EURO_DOCK.pitch, y: EURO_DOCK.y, w: 18, h: 18 }))
         continue;
-      const u = unit(G.dockUnits[k]) || unit('Colonists');
+      const u = unit(entryType(G.dockUnits[k])) || unit('Colonists');
       beginDrag({ screen: 'europe', mode: 8, kind: 'unit', dockSlot: k,
                   srcRegion: region, frame: dragGhostFrame('unit', 0, 0, u.icon) });
       return;
@@ -7823,7 +8108,16 @@ function onPointerUp(mx, my, right) {
   // through to onClick rather than "dropping" the payload where it started.
   // (The engine has no equivalent because it has no synthetic click event --
   // this is the port reconciling the two input models. UNCITED.)
+  //
+  // And a press that WOBBLED A PIXEL OR TWO is a click as well. The engine's
+  // own moved flag has no threshold (@0xD16F), but its 320x200 mouse moved in
+  // whole coarse pixels; the port's cursor runs at 2-3x scale, where the jitter
+  // inside an ordinary click crosses a logical pixel easily. Without the
+  // allowance, every deliberate click on a plaza colonist resolved as a
+  // zero-distance drag-and-drop back onto the plaza -- which both swallowed the
+  // click AND cleared the man's job. Port reconciliation, UNCITED.
   if (!PTR.moved) return;
+  if (Math.abs(mx - PTR.downX) <= 2 && Math.abs(my - PTR.downY) <= 2) return;
   PTR.suppressClick = true;
   const target = d.screen === 'colony' ? colonyRegionAt(mx, my) : europeRegionAt(mx, my);
   if (!dropAllowed(d.screen, d.mode, target)) return;   // refused: payload dropped
@@ -7852,6 +8146,10 @@ function colonyDrop(d, target, mx, my) {
       return;
     }
     if (target === 0) {
+      // Lifting a man out of the plaza and putting him back down is identity,
+      // not an unassignment: only a drop FROM THE FIELDS clears his work.
+      // (Port's own reading; the engine's drop-action bodies are unread.)
+      if (d.from === 'plaza') return;
       p.cell = null; p.job = null;
       G.msg = `${p.type} returns to the plaza.`;
       return;
@@ -7926,11 +8224,11 @@ function europeDrop(d, target, mx, my) {
     if (!ship) { G.euroMsg = 'No ships in port.'; return; }
     ship.passengers = ship.passengers || [];
     if (ship.passengers.length >= 6) { G.euroMsg = 'That ship is full.'; return; }
-    const name = G.dockUnits[d.dockSlot];
-    if (name === undefined) return;
+    const e = G.dockUnits[d.dockSlot];
+    if (e === undefined) return;
     G.dockUnits.splice(d.dockSlot, 1);
-    ship.passengers.push(name);
-    G.euroMsg = `${name} boards the ${ship.type}.`;
+    ship.passengers.push(e);
+    G.euroMsg = `${entryName(e)} boards the ${ship.type}.`;
     void mx; void my;
   }
 }
@@ -8148,7 +8446,20 @@ function onClick(mx, my) {
       const ships = shipsInPort();
       for (let k = 0; k < Math.min(ships.length, 6); k++) {
         if (hit(mx, my, { x: EURO_SHIP.x + EURO_SHIP.pitch * k, y: EURO_SHIP.y, w: 18, h: 18 })) {
-          G.euroShip = k; return;
+          // Click selects; a click on the ship already selected opens its
+          // @EUROPESHIPOPTIONS menu (Set sail / Unload / Move to front) -- the
+          // same select-then-menu rhythm the colony plaza uses.
+          if (G.euroShip === k) { G.euroMenu = 'ship'; G.euroMenuRow = 0; G.euroMsg = ''; }
+          else G.euroShip = k;
+          return;
+        }
+      }
+      // A unit waiting on the dock: its @ARMOPTIONS context menu (board, move
+      // to front, arm with muskets / tools / horses, missionary status).
+      for (let k = 0; k < Math.min(G.dockUnits.length, 6); k++) {
+        if (hit(mx, my, { x: EURO_DOCK.x + k * EURO_DOCK.pitch, y: EURO_DOCK.y, w: 18, h: 18 })) {
+          G.euroDockSel = k; G.euroMenu = 'dockunit'; G.euroMenuRow = 0; G.euroMsg = '';
+          return;
         }
       }
       // The market bar routes clicks to the SELL handler (§9.4).
@@ -8842,7 +9153,7 @@ dbgAddTab('Units', () => {
     i === G.sel ? '▸' : '', String(i), u.type, `${u.x},${u.y}`,
     `${u.movesLeft}/${u.moves}`,
     (DATA.orders[u.orders] && DATA.orders[u.orders].name) || String(u.orders),
-    [(u.cargo || []).join('+'),
+    [(u.cargo || []).map(entryName).join('+'),
      (u.hold || []).map(x => dbgGood(x.good) + ' ' + x.qty).join('+'),
      u.tools ? u.tools + ' tools' : ''].filter(Boolean).join('  ') || dim('--'),
   ]));
@@ -8861,7 +9172,8 @@ dbgAddTab('Europe', () => {
   ]));
   h += dbgH(`On the dock  (${(G.dockUnits || []).length})`);
   h += dbgTable([{ h: '#', num: 1 }, { h: 'unit' }],
-    (G.dockUnits || []).map((n, k) => [String(k), n]));
+    (G.dockUnits || []).map((n, k) => [String(k),
+      entryName(n) + (entryType(n) !== entryName(n) ? ` (${entryType(n)})` : '')]));
   h += dbgH('Recruit slots');
   h += dbgTable([{ h: 'slot', num: 1 }, { h: 'candidate' }, { h: 'passage', num: 1 }],
     (G.dock || []).map((d, k) => [String(k), d ? (d.name || dbgVal(d)) : dim('empty'),

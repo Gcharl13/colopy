@@ -175,10 +175,56 @@ SCRIPT = """() => {
   }
   G.euroMenu = null;
 
+  // The dock-unit context menu (@ARMOPTIONS): arm a Colonist with muskets at
+  // the market ask, and get a Soldiers-typed entry that keeps his name.
+  {
+    G.dockUnits.length = 0;
+    G.dockUnits.push('Colonists', 'Expert Farmers');
+    G.euroDockSel = 0; G.euroMenu = 'dockunit';
+    const rows0 = euroMenuRows();
+    const arm = rows0.find(r => r.act === 'arm' && r.verb.buy && r.verb.good === GOOD.MUSKETS);
+    out.armMenu = {
+      hasBoard: rows0.some(r => r.act === 'board'),
+      hasFront: rows0.some(r => r.act === 'front'),
+      muskets: !!arm, tools: rows0.some(r => r.act === 'arm' && r.verb.good === GOOD.TOOLS),
+      horses: rows0.some(r => r.act === 'arm' && r.verb.good === GOOD.HORSES),
+      priceIsMarket: arm && arm.label.includes(String(askPrice(GOOD.MUSKETS) * 50)),
+    };
+    const g0 = G.gold;
+    G.euroMenuRow = rows0.indexOf(arm); euroMenuCommit();
+    out.armCommit = {
+      typed: entryType(G.dockUnits[0]) === 'Soldiers',
+      named: entryName(G.dockUnits[0]) === 'Colonists',
+      charged: G.gold < g0,
+    };
+    // An armed profession lands as its armed type CARRYING the profession.
+    const landedVet = mkUnit({ name: 'Expert Farmers', type: 'Dragoons' }, 5, 5);
+    out.armedLandfall = landedVet.type === 'Dragoons' &&
+                        landedVet.profession === 'Expert Farmers';
+    // A bare profession name no longer throws -- the old Europe-sailing crash.
+    out.professionLands = mkUnit('Veteran Soldiers', 5, 5).type === 'Soldiers' &&
+                          mkUnit('Free Colonists', 5, 5).type === 'Colonists';
+    G.euroMenu = null; G.dockUnits.length = 0;
+  }
+
+  // The harbour ship menu (@EUROPESHIPOPTIONS): "Set sail" from the mouse path.
+  {
+    const s = shipsInPort()[G.euroShip];
+    G.euroMenu = 'ship';
+    const srows = euroMenuRows();
+    out.shipMenuRows = srows.map(r => r.act).join(',') === 'shipfront,sail,sellall,close';
+    G.euroMenuRow = 1; euroMenuCommit();
+    out.shipMenuSails = s.state === 'toNewWorld';
+    s.state = 'port';                          // put it back for the next block
+    G.euroMenu = null;
+  }
+
   // Sail home: three turns back to the lane, then the ship is on the map again.
+  // (Recapture the dock count here -- the context-menu block above emptied it.)
+  const pax1 = boat.passengers.length, waiting1 = G.dockUnits.length;
   const units0 = G.units.length;
   sailForNewWorld(boat);
-  out.boarded = boat.passengers.length === pax0 + waiting && G.dockUnits.length === 0;
+  out.boarded = boat.passengers.length === pax1 + waiting1 && G.dockUnits.length === 0;
   out.outbound = boat.state === 'toNewWorld';
   for (let t = 0; t < 3; t++) endTurn();
   out.returned = { onMap: G.units.length === units0 + 1 };
@@ -223,6 +269,48 @@ SCRIPT = """() => {
     const f = colonyFood(c);
     out.food = { centre: f.centre > 0, eaten: f.eaten === 2 * c.colonists.length,
                  fieldsCounted: f.produced === f.centre + f.fields };
+
+    // A CLICK WITH ONE PIXEL OF WOBBLE is still a click: the drag layer must
+    // not turn it into a zero-length drop that eats the click and clears the
+    // job. Exercised through the real pointer entry points.
+    {
+      const e0 = plazaRow(c).find(e => e.colonist >= 0);
+      const jitter = (x, y) => {
+        PTR.down = true; PTR.x = PTR.downX = x; PTR.y = PTR.downY = y; PTR.moved = false;
+        onPointerDown(x, y, false, false);
+        PTR.x = x + 1; PTR.y = y + 1; PTR.moved = true;
+        onPointerUp(x + 1, y + 1, false);
+        PTR.down = false;
+        if (PTR.suppressClick) { PTR.suppressClick = false; return; }
+        onClick(x, y);
+      };
+      G.colonistSel = -1;
+      c.colonists[e0.colonist].job = 'Statesman';
+      jitter(e0.x + 2, PLAZA_ROW_Y + 3);
+      const kept = c.colonists[e0.colonist].job === 'Statesman';
+      jitter(e0.x + 2, PLAZA_ROW_Y + 3);
+      out.jitterClick = { keptJob: kept, openedMenu: G.colonyPopup === 'jobs' };
+      G.colonyPopup = null;
+      c.colonists[e0.colonist].job = null;
+    }
+
+    // The scene panel composites the map proper, so the COLONY ITSELF shows on
+    // the centre tile -- pixel-checked: the centre cell must differ from the
+    // bare terrain tile it sits on.
+    {
+      const probe = document.createElement('canvas');
+      probe.width = 320; probe.height = 200;
+      const pctx = probe.getContext('2d');
+      drawColony(pctx);
+      const withColony = pctx.getImageData(248, 56, 24, 24).data.join();
+      const cx0 = c.x;
+      c.x = -99;                                 // move it off-world and redraw
+      pctx.clearRect(0, 0, 320, 200);
+      drawColony(pctx);
+      const without = pctx.getImageData(248, 56, 24, 24).data.join();
+      c.x = cx0;
+      out.sceneShowsColony = withColony !== without;
+    }
 
     // Jobs menu puts a colonist in the Carpenter's Shop, and only then do
     // hammers appear.
@@ -1286,13 +1374,54 @@ SCRIPT = """() => {
       G.colonies[0].stock[4] = 100;
       for (const w of G.villages) w.alarm = 0;
       G.eventQueue = []; G.raidSeen = true;
-      for (let i = 0; i < 20; i++) nativeRaids();
+      for (let i = 0; i < 20; i++) nativeMoveAI();
       out.raidBelow = G.eventQueue.length === 0;
+      // Armed, the brave has to WALK there: raids arrive on foot now, so give
+      // the march the turns it needs and count what lands.
       v.alarm = 200;
       G.eventQueue = [];
       let fired = 0;
-      for (let i = 0; i < 40; i++) { nativeRaids(); fired += G.eventQueue.length; G.eventQueue = []; }
+      for (let i = 0; i < 60; i++) { nativeMoveAI(); fired += G.eventQueue.length; G.eventQueue = []; }
       out.raidArmed = fired > 0;
+      // func_05BE84's gate: threshold 3*K+1 with K = the colony's fortification
+      // count (func_00864E via 0x181F:0xAB0), so a Fortress (K=3) repels raids
+      // a bare colony (K=0) takes. Compare attempt-for-attempt.
+      {
+        let bare = 0, walled = 0;
+        for (let i = 0; i < 300; i++) {
+          G.eventQueue = [];
+          nativeRaid(v, G.colonies[0]);
+          bare += G.eventQueue.length ? 1 : 0;
+        }
+        G.colonies[0].buildings.push('Fortress');
+        for (let i = 0; i < 300; i++) {
+          G.eventQueue = [];
+          nativeRaid(v, G.colonies[0]);
+          walled += G.eventQueue.length ? 1 : 0;
+        }
+        G.colonies[0].buildings.pop();
+        G.eventQueue = [];
+        out.raidFortGate = { bareRaids: bare > 0, fortressRepels: walled < bare };
+      }
+      // Popup speakers ride the §2.7 channels: native keys the tribe's IND
+      // sheet, the military family MSS5, the king keys KING1 -- and all three
+      // sheets are in the bundle to draw.
+      {
+        G.eventTribe = v.tribe; G.eventQueue = [];
+        showEvent('RAIDGOLD', { STRING0: 'x', STRING1: 'y', NUMBER0: 1 });
+        const spInd = G.eventQueue[0] && G.eventQueue[0].speaker;
+        G.eventQueue = []; showEvent('VETERAN', { STRING0: 'x' });
+        const spMil = G.eventQueue[0] && G.eventQueue[0].speaker;
+        G.eventQueue = []; showEvent('KINGWIN', {});
+        const spKing = G.eventQueue[0] && G.eventQueue[0].speaker;
+        G.eventQueue = [];
+        out.speakers = {
+          ind: spInd === `IND${v.tribe % 8}A0`, mil: spMil === 'MSS5',
+          king: spKing === 'KING1',
+          sheets: !!(DATA.sheets.KING1 && DATA.sheets.MSS5 &&
+                     DATA.sheets[`IND${v.tribe % 8}A0`]),
+        };
+      }
       G.village = null; G.villageVisitor = null;
     }
 
@@ -2218,6 +2347,17 @@ def main():
         ("sailing west starts an outbound crossing", r["outbound"], r["outbound"]),
         ("the ship returns to the map", all(r["returned"].values()), r["returned"]),
         ("Europe Exit returns to the map", r["europeExit"] == "map", r["europeExit"]),
+        ("@ARMOPTIONS menu offers board/front + muskets/tools/horses at market price",
+         all(r["armMenu"].values()), r["armMenu"]),
+        ("arming a dock Colonist makes a Soldiers entry and charges gold",
+         all(r["armCommit"].values()), r["armCommit"]),
+        ("an armed profession lands as its armed type carrying the profession",
+         r["armedLandfall"], r["armedLandfall"]),
+        ("a bare profession name lands without throwing (Europe-sailing crash)",
+         r["professionLands"], r["professionLands"]),
+        ("@EUROPESHIPOPTIONS: front/sail/unload/no-changes, and sail sails",
+         r["shipMenuRows"] and r["shipMenuSails"],
+         {"rows": r["shipMenuRows"], "sails": r["shipMenuSails"]}),
         ("Alt+letter opens all six pulldowns", r["altOpens"], r["altOpens"]),
         ("order keys set their @ORDERS row", all(r["orderKeys"].values()), r["orderKeys"]),
         ("E reaches Europe and sends the ship",
@@ -2248,6 +2388,10 @@ def main():
         ("a new colony makes no hammers without a carpenter",
          r["hammersBeforeCarpenter"] == 0, r["hammersBeforeCarpenter"]),
         ("clicking a scene cell assigns field work", r["fieldWork"], r["fieldWork"]),
+        ("a one-pixel-wobble click still selects, keeps the job, and opens the jobs menu",
+         all(r["jitterClick"].values()), r["jitterClick"]),
+        ("the colony draws on its own tile in the scene panel",
+         r["sceneShowsColony"], r["sceneShowsColony"]),
         ("food = centre tile + worked fields, eaten = 2*pop",
          all(r["food"].values()), r["food"]),
         ("a carpenter with no lumber produces no hammers",
@@ -2299,6 +2443,12 @@ def main():
          all(r["faith"].values()), r["faith"]),
         ("no raid below alarm 128", r["raidBelow"], r["raidBelow"]),
         ("raids fire at alarm 128 and above", r["raidArmed"], r["raidArmed"]),
+        ("the raid gate is 3*fortifications+1: a bare colony is raided",
+         r["raidFortGate"]["bareRaids"], r["raidFortGate"]),
+        ("a Fortress repels raids a bare colony takes",
+         r["raidFortGate"]["fortressRepels"], r["raidFortGate"]),
+        ("popup speakers: IND<tribe> for raids, MSS5 military, KING1 king keys",
+         all(r["speakers"].values()), r["speakers"]),
         ("the g and t map keys reach Go To and trade routes, not a stub",
          r["keyGoTo"] and r["keyTrade"], [r["keyGoTo"], r["keyTrade"]]),
         ("the three options dialogs read their real bit layouts",

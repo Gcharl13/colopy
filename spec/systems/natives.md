@@ -64,7 +64,11 @@ Native tribes occupy settlements the player can trade with, send missionaries to
   (`@0x5C5F7`), `RAIDNOTHING` (`@0x5C637`) — i.e. raze havoc / steal stores / burn a
   building / sink a docked ship / steal gold / no effect. Selection: a **gate roll**
   `random_int(1,12)−1` `@0x5BEFD` (biased `+(difficulty−2)` for a human-European
-  owner `@0x5BF1A`) vs threshold `3·K+1` `@0x5BEE5`; a **base outcome**
+  owner `@0x5BF1A`) vs threshold `3·K+1` `@0x5BEE5`, where **K = the target
+  colony's fortification count** — the `push 0; lcall 0x181f,0xab0` @0x5BED9
+  resolves to `func_00864E`, the building-chain counter (membership bitset per
+  link, next id from `[id·12−0x707A]`), and chain 0 is Stockade→Fort→Fortress
+  (RULINGS.md 2026-08-07c; the old "K untraced" TBD is closed); a **base outcome**
   `random_int(1,4)` `@0x5BF35` adjusted by turn/difficulty (`turn < 40·(2−diff)`
   downgrades `@0x5BF44`) and per-outcome availability gates (thunk `0x181F:0x9FC`);
   a **5-way dispatch** `@0x5C026` (`dec ax` ladder) — **outcome→key now

@@ -24,6 +24,7 @@ Part VI — Events and messages: §22 The string files · §23 The event catalog
 Part VII — User interface: §25 UI engine · §26 Screens · §27 Input, cheats,
 and options
 Part VIII — The editor and appendices: §28 The map editor · §29 Verification ·
+§30 Findings from the playable rebuild (2026-08) ·
 §A Data structures · §B Sprite sheets and palette
 
 ## 1. Executables and overlay architecture
@@ -3896,7 +3897,7 @@ The speaker channel is set to the tribe index (0=Inca … 7=Tupi) → IND<n>A<po
 | NAT-GIVEFOOD | `@INDIANGIVEFOOD` | the supply/demand model: the tribe's food **supply exceeds its demand**, and the player's stores are low — emit | — | +%NUMBER0 food gifted |
 | NAT-BEGFOOD | `@INDIANBEGFOOD` — *"…Will our brothers of {%STRING1} share the bounty of their harvests…"* | food **deficit** (supply below demand) — emit | "I'm sorry, we gave at the office." / "We offer you {%NUMBER0} of our {%NUMBER1 food}…" | refusal/gift affect tension (delta site unmapped) |
 | NAT-GIVESTUFF / CONVERT | `@INDIANGIVESTUFF`, `@INDIANSCONVERT` | goodwill gift; mission conversion attempt_conversion — P(convert) = `(tribe_level+2)/15`, doubled by Jean de Brebeuf (FF #22) | — | convert unit created at the colony, class 0x1B |
-| NAT-RAID | 6-key block `@RAIDWREAK @RAIDSTORES @RAIDBURN @RAIDSHIP @RAIDGOLD @RAIDNOTHING` (contiguous in the EXE) — e.g. *"Spies report: {%STRING0} raiding party wreaks havoc in the {%STRING3} colony of {%STRING1}."* | raid handler native_raid: gate roll `random_int(1,12)−1` (+`diff−2` vs a human European) vs threshold `3·K+1`; base outcome `random_int(1,4)` adjusted by turn (`turn < 40·(2−diff)` downgrades) and availability gates; 5-way dispatch | — | 1→`@RAIDSTORES` (loot cargo, sfx 0x4F), 2→`@RAIDWREAK`, 3→`@RAIDGOLD` (sfx 0x4E), 4→`@RAIDBURN`/`@RAIDSHIP`, 0→`@RAIDNOTHING` (raiders wiped out, sfx 0x5B). `@RAIDSCALP` exists as a section but is **not** in the 6-key block — an orphan, not a 7th outcome. Raid on a human colony also fires **woodcut 13** |
+| NAT-RAID | 6-key block `@RAIDWREAK @RAIDSTORES @RAIDBURN @RAIDSHIP @RAIDGOLD @RAIDNOTHING` (contiguous in the EXE) — e.g. *"Spies report: {%STRING0} raiding party wreaks havoc in the {%STRING3} colony of {%STRING1}."* | raid handler native_raid: gate roll `random_int(1,12)−1` (+`diff−2` vs a human European) vs threshold `3·K+1`, where **K = the target colony's fortification count** (0..3 — the building-chain counter walks Stockade→Fort→Fortress; §30.6); base outcome `random_int(1,4)` adjusted by turn (`turn < 40·(2−diff)` downgrades) and availability gates; 5-way dispatch | — | 1→`@RAIDSTORES` (loot cargo, sfx 0x4F), 2→`@RAIDWREAK`, 3→`@RAIDGOLD` (sfx 0x4E), 4→`@RAIDBURN`/`@RAIDSHIP`, 0→`@RAIDNOTHING` (raiders wiped out, sfx 0x5B). `@RAIDSCALP` exists as a section but is **not** in the 6-key block — an orphan, not a 7th outcome. Raid on a human colony also fires **woodcut 13** |
 | NAT-WARPATH | `@INDIANWARPATH @INDIANWARPATH2 @INDIANWARFARE @INDIANWAR @INDIANGRUDGE @INDIANSURPRISE` | the warpath handler (speaker = tribe owner); `@INDIANGRUDGE` = the Tory-side war-council entry during the revolution | — | war footing; alarm ≥ 128 (the per-settlement per-power alarm word) is the raid state; the parallel tension table (0..100) turns hostile at 75, war at 100 |
 | NAT-EXTORT | `@EXTORTSTUFF @EXTORTPOOR @EXTORTLAUGH @EXTORTNO` | player Demands Tribute (demand_tribute) | — | gold clamped to `[10, min(3·tribe_wealth+10, 100)]`, moved from settlement to player |
 | NAT-VILLAGE | `@VILLAGEHAPPY @VILLAGEMEDIUM @VILLAGESAVAGE @VILLAGEBAD @VILLAGEWAR`; `@MADATSHIPS @MADATWAGONS @DONTKNOWSHIPS` | scout enters village (attitude words from NAMES `@ATTITUDE`, banded at score cutoffs −5/0/10; War = alarm ≥ 128) | — | display; ship/wagon anger blocks trade |
@@ -5465,6 +5466,253 @@ Stated honestly, in the open:
   colony scene panel — is undecoded.
 - The live value of **`[0x890]`** on the colony screen (it gates the
   marker name/population text inside the scene panel) has not been read.
+
+---
+
+## 30. Findings from the playable rebuild (2026-08)
+
+Building and play-testing the HTML rebuild forced a last sweep of questions
+the static passes had left open. Everything below was settled between
+2026-08-04 and 2026-08-07 (full evidence trails in `notes/rulings/RULINGS.md`
+under those dates) and is byte-cited to VICEROY.EXE file offsets, live DOSBox
+frames, or live RAM reads. Where the rebuild had to choose in the absence of
+evidence, the choice is marked as such here and flagged in the source.
+
+### 30.1 The engine clock, end to end
+
+The mouse/UI timer chain is fully decoded. The install path (@0xC824–0xC860)
+hooks INT 8 and reprograms the PIT with divisor **0x7A8 = 1960**
+(`push 0x7a8` @0xC843; the `mov al,0x36 / out 0x43` setter at file 0xE508),
+giving 1193182/1960 = **608.766 Hz** raw. The ISR (entry file 0xC694) exits on
+odd ticks (`test [0x8338],1` @0xC6A5 → ÷2) and a reload-5 divider `[0x376]`
+(@0xC6F5) gates the rest, so the engine tick counter `[0x92E8]` advances at
+608.766/2/5 = **60.8766 Hz** — exactly the CYCLE.DAT rotation clock, which is
+the cross-check. Everything timed reads that counter through `0xC0C:6`
+(file 0xE4C6, returns the dword behind far ptr `[0x267A]`):
+
+| interval | ticks | wall time |
+|---|---|---|
+| drag-arm hold deadline (`func_02C5D4` @0x2C887, `timer+8`) | 8 | **131.4 ms** |
+| held-drag repaint cadence (+0x14) | 20 | 329 ms |
+| status-message dwell (0x78) | 120 | 1.97 s |
+| tooltip dwell (`0x181F:0x56` = file 0x2544, deadline `tick+0x1E` @0x24E3) | 30 | 493 ms |
+| CYCLE.DAT palette step | 35 | 575 ms |
+
+`0x181F:0x56` is the tooltip dwell/redraw/expire routine (no OUT/INT in its
+body — a prior "beep" gloss is wrong), ending in a save-under restore
+(`lcall 0xB70:0x3A` @0x25DE) and clearing the arm flags `[0x4A..0x4C]`.
+
+### 30.2 Drag-and-drop, byte-complete
+
+The mouse module (`func_00D106` @0x0D106–0x0D1C9) publishes five booleans per
+poll — down-edge `[0x7EC]`, press latch `[0x7F2]`, release edge `[0x7F4]`,
+any-button `[0x7F6]`, moved `[0x7F0]` — plus cursor `[0x7E8]/[0x7EA]`. There
+is **no pixel threshold**: @0xD16F compares the poll-start snapshot against
+the current position, so one pixel counts as moved. Left-vs-right is
+`[0x7E4] = !(buttons & 1)`.
+
+The carried payload overwrites the region word — `[0x8D54]` in the colony
+screen, `[0x9E3A]` in Europe — with a mode id; the payload detail rides
+beside it (source kind `[0xA88C]/[0x9E22]`, good `[0xA88D]/[0x9E24]`, amount
+`[0xA88E]/[0x9E26]`, source hold `[0xA88F]/[0x9E1E]`). Legal drop targets are
+literal tables: colony `func_02BB8A` @0x2BBBD–0x2BBF9 (unit mode 6 → regions
+{0,1,2}; goods mode 7 → {5,8}), Europe `func_0353DE` @0x35416–0x35464 (goods
+mode 0xA → {0,1}; unit modes 8/9 → {1,2,3}/{2,3}). A refused drop is not
+snapped back — the mode word is overwritten with the no-region id
+(`mov [0x8D54],0x14` @0x2A4BA; Europe @0x32555/@0x32718): the payload drops
+on the floor.
+
+The drag ghost is not a second sprite: the engine **swaps the 16×16 software
+cursor**. `func_00DB80` halves the frame descriptor's dimension words
+(`mov ax,es:[si+0x3e]; sar ax,1` @0xDC09–0xDC18) and pushes the pair to the
+mouse module's set_hotspot (`lcall 0xA58:0x1D9` @0xDC71 → file 0xCB59), so
+the ghost is **centred on the pointer**. Ghost frames: goods = ICONS engine
+`0x17+good` full / `0x27+good` part load (`func_029BBE` @0x29BD0/D6/D9;
+Europe twin `func_0320EE` @0x32100/06/09) — the shipped bundle is engine
+minus one; units = the @UNIT icon column via the runtime record array
+`[0x5232 + 14·type]` (@0x321D6, @0x3221E).
+
+Goods amounts: a lift takes `min(stock, 100)` (@0x2BB10 `cmp ax,0x64`); the
+BIOS shift state (BDA 0040:0017 & 3, read by `func_004A22` @0x04A22) is
+passed to every transfer routine and takes a part load.
+
+Region tables, byte-exact and in the engine's own test order (the order is
+load-bearing): colony `func_0299A0` @0x0299A0–0x029ABE — tile panel
+(200,8,120,120)=1, exit (305,179,15,21)=9, plaza (0,130,120,48)=0, building
+field (0,8,199,120)=2, view buttons (303,132,17,45)=3, warehouse strip
+(0,179,305,21)=5, right panel (211,130,91,48)=4, units-in-port
+(121,130,84,48)=8, title (0,0,320,7)=0xA; Europe `func_03200A`
+@0x03200A–0x0320EC — exit (305,179,15,21)=0xB, menu buttons (281,89,37,32)=5,
+market (0,179,305,21)=0, ships+holds (143,118,81,60)=1 split on the hold
+sub-rect (147,165,72,12) with hold index `(mx−0x93)/12` (@0x033610),
+bound-for (72,118,70,51)=2, expected (1,118,70,51)=3, dock list
+(224,120,96,59)=4. The market/warehouse cell is
+`clamp(mx,0,0x131)/0x13`, rejected at ≥16 (@0x33AB6; colony twin @0x2BA24).
+
+`[0x5384]` bits 0/1 are the @COLONYOPTIONS "Labels on …" suppression bits
+(bit 1 buildings, bit 0 cargo/terrain), gating hover labels only — an active
+drag bypasses the tests (@0x2BBDE). Written only by the @COLONYOPTIONS
+dialog (`func_02311A`).
+
+### 30.3 The colony ships-in-port dock (`func_027DB2`)
+
+The colony screen's region-8 dock, read in full: frame box (121,130,84,48)
+@0x27DB7; with no ships (`[0x33C]`=0) the caption plus the crossed-crate
+ICONS engine 0x7B on all six hold cells (@0x27DC7–0x27E34); ships in 16×16
+cells from x=130, **pitch 18**, up to 4 (`mov [bp-0x74],4` @0x27EB9), unit
+blit y=147 with a 1px lift for a ship and one more past slot 0
+(@0x28014–0x2803D); ships 5+ overflow to a 3×4 pip row at (124,139),
+**pitch 5**, up to 16 (@0x27FE2–0x27FF6); selection rect colour 0x0A on the
+selected ship `[0x33E]`, 0x0F as the live drop highlight (@0x27F15–0x27F4E).
+Hold cells: six at x=127+12i, y=165, 10×22 (`func_027D84` @0x027D87–0x027DAC);
+a slot past the ship's @UNIT cargo capacity draws the 0x7B cross, an occupied
+slot its goods icon centred (engine 0x17/0x27+good), an empty in-capacity
+slot draws nothing (@0x280B7–0x2812B). Hold hit index
+`clamp(mx−0x7F,0,0x47)/0x0C` (`func_02AEDA` @0x2AEE9).
+
+### 30.4 Map-view markers settled
+
+- **Colony sprite tier:** `func_004314` counts the colony's fortifications
+  through the resident bitset test at file 0x860E (bit `id&7` of byte
+  `[colony·0xCA + (id>>3) + 0x5DCA]`), then maps `(count−1)&3`
+  (@0x43AE–0x43B5) and draws engine sprite `di+1` — bundle frames
+  `[3,0,1,2]` indexed by tier: bare logs, low fence, palisade, stone walls.
+- **Native settlement sprite:** the village painter blits
+  `min(level,3)+0x0B` (@0x3E9D–0x3EB6), level from the tribe record's first
+  byte (`[bx+0x5AD8]`, stride 0x4E) — bundle 10..13: tipi camp, pueblo,
+  pyramid, terraced city.
+- **Village alarm strip:** level = `min(3, alarm>>5)` (@0x40C6, `sar di,5`),
+  forced to 3 at tension ≥ 75 (@0x40DD); colours by level 0..3 = 0x0A green,
+  0x0B cyan, 0x0E yellow, 0x0C red; each mark a 3×7 backing rect with a 1×5
+  bar and a dot, from x+6 stepping +2 (@0x4126–0x419F); trailing marks
+  dimmed −8 while the remaining count ≤ 2 (@0x412F). The mark *count* is an
+  out-param of `0x181F:0x316`, still unread — the rebuild draws level+1.
+- **Mission crosses:** the colour table at DGROUP `0x848` dumps as
+  `0C 09 0E 0D` — the four @COUNTRY colours by owning power; an expert
+  mission draws the bright colour, an ordinary one colour−8.
+- **ICONS 17** (the sparkle) is a *village* overlay drawn on flag bit 0x04
+  of the settlement record (`[0x54EF]`) — not a rumour marker; the bit's
+  meaning is still open. Lost City Rumours have **no map sprite of their
+  own** in the shipped game beyond the detail band.
+- The map screen's chrome is **WOODTILE.SS frame 0 tiled**, not
+  WOODPANL.PIK (scored against capture: mean channel error 2.90 vs 11.91).
+
+### 30.5 Colony screen: placement, plots, panels
+
+- **Building placement is deterministic per session.** `func_025D34` shuffles
+  plot assignments with the Microsoft C runtime LCG (byte-read at file
+  0x0103D4/0x0103C2: `state = state·214013 + 2531011`,
+  `result = (state>>16) & 0x7FFF`; `random_int(lo,hi)` = `func_00C322`,
+  `lo + ((rand·range)>>15)`), seeded from the colony plus the boot-time
+  dword `[0x8D80]` (BIOS clock @0x075FF5) — simulated and verified against
+  live RAM for two colonies, both phases, every element.
+- Plot positions are the DS:`[0x266]` x,y word pairs (RAM-read); category
+  counts `[0x224]`/starts `[0x22A]`; empty-plot scenery frames `[0x260]`
+  (45/44/43/0/46/0). Occupied plots draw EXE frame def_id+1 (bundle def_id).
+- **Starting buildings** are the upkeep-0 rows of NAMES @BUILDING whose
+  min_colony is 1 — seven of them; the Stockade is the only zero-upkeep row
+  gated above size 1.
+- The 5×5 scene panel renders at 16px into an 80×80 buffer, stretched ×1.5
+  into (200,8,120,120) with the outer ring overdrawn so only the central 3×3
+  shows at (224,32,72,72); cell origin x=200+24·col, y=8+24·row
+  (@0x027694/@0x02769E); the centre tile works itself and draws two strips
+  (food `[0xA891]`, second good `[0xA893]/[0xA894]`).
+- The shared strip gauge `0x181F:0x236` geometry is solved (pitch fitting,
+  bit 14 alternate-sprite runs, bit 15 red-deficit) — F2 is pixel-exact from
+  it.
+
+### 30.6 Natives: the raid gate closed, raids on foot
+
+`native_raid`'s (func_05BE84) gate threshold `3·K+1` (@0x5BEE5) reads K from
+`push 0; lcall 0x181f,0xab0` @0x5BED9 → resident **`func_00864E`**, the
+generic **building-chain counter**: it walks a chain of building ids through
+the same membership bitset `func_004314` uses, counting the links the colony
+has, following `[id·12 − 0x707A]` (the stride-12 building record table at
+DGROUP 0x8F86) until the link goes negative. Called with id 0 that chain is
+**Stockade → Fort → Fortress**, so:
+
+    raid proceeds  iff  random_int(1,12) − 1 (+ difficulty−2 vs a human)  ≥  3·fortifications + 1
+
+A bare colony fails only the lowest rolls; a Fortress (K=3, threshold 10)
+repels almost everything. The raid-stores branch banks the haul in the
+settlement: raid-budget +0x08 and wealth `+0x0A += 0x19` (@0x5C3E1/@0x5C3E4).
+A raid on a human colony fires woodcut 13 (@0x05D219).
+
+In the engine, raid *cadence* comes from the native unit AI physically
+reaching the colony (the per-unit pipeline `func_04E2D6` and 9-candidate
+heading scorer `func_046FFA`, §19/ai.md) — there is no per-village-per-turn
+raid roll. The rebuild mirrors that shape with a reduced mover (flagged
+R-tier): a war-footing brave (settlement alarm ≥ 0x80, the @0x04734E
+hostility test) marches one tile a turn at the nearest colony, the raid
+dispatch runs on arrival, and he turns for home.
+
+The mission tick binds Sepúlveda and las Casas: M = (expert ? 4 : 1),
+doubled in a capital, doubled by las Casas (FF 0x18) and halved by Sepúlveda
+(FF 0x17); every 8 fractional points is one −1 tension tick and the village
+alarm word falls 3·M per turn.
+
+### 30.7 Europe: the harbour context menus
+
+The dock-unit menu is GAME `@EUROPEARM` ("European dock options:") +
+`@ARMOPTIONS` — twelve rows, grep-verified: don't board / board / move to
+front / arm-with & sell {Muskets} / equip-with & sell {Tools} / equip-with &
+sell {Horses} / bless as & cancel {Missionaries} / no changes, with
+`%NUMBER0..2` price slots. The ship menu is `@EUROPESHIPCLICK` ("European
+harbor options for {%STRING0}:") + `@EUROPESHIPOPTIONS` (move to front / set
+sail for the New World / unload all cargo / no changes). Equip quantities are
+the manual's: **50 muskets** make a soldier, **50 horses** a scout, both
+together a dragoon, tools cap at **100** (the Pioneer's UnitRecord +0x15
+start). Prices ride the live market (buy at ask, sell at bid less tax).
+Which rows the engine hides per unit state is unread; the rebuild offers the
+applicable rows and marks that gating as its own.
+
+Profession ↔ unit-type resolution (the @JOB expert_name column against
+@UNIT): Veteran Soldiers→Soldiers, Veteran Dragoons→Dragoons, Hardy
+Pioneers→Pioneers, Seasoned Scouts→Scouts, Jesuit Missionaries→Missionaries;
+every other profession or immigrant class travels as a Colonist carrying the
+profession. A carried unit is labelled by its equipment or veteran status in
+the hold manifest ("Veteran", "100 Tools"), not by its type name (live frame
+30_europe.png).
+
+Live-frame dock geometry (2026-08-06): dock units and harbour ships both
+draw as 18×18 hollow green (0x0A) boxes with the unit sprite at box+(3,1) —
+dock slot 0 at (232,137), ship slot 0 at (145,145); the selected ship's six
+hold cells at x=147+12k, y=165, dark for a real hold, crossed crate 122 past
+capacity. Slot pitches beyond the first are unmeasured (one of each in the
+frame); the rebuild keeps 14/12.
+
+### 30.8 Popup speakers, fog, and sundries
+
+- **Speaker channels** (§25): the king wrapper hard-codes `[0x1F5C]=8` →
+  KING1.SS (@0x06F5DD); the military popup wrapper `func_040C1E` sets
+  advisor 5 → MSS5 (@0x040CD3); trade popups set 2/3/4 (@0x034E5E/74/98);
+  native dispatchers pass the tribe → `IND<n>A<pose>`. KING2.SS does not
+  exist (byte-refuted). The landing pixel is runtime cel state produced by
+  the page-27 blitter (§2.7.1) — not a coordinate literal.
+- **The fog path:** an unexplored tile draws PHYS0 engine frame 0x95 (bundle
+  0x94), then O512 dithers explored cardinal neighbours into its edge; the
+  diagonals take nothing, and explored tiles take nothing back from fog.
+  The dither stencils are index-0 holes in the *PHYS0C* atlas (the port had
+  been reading an empty PHYS0 atlas — both halves pixel-verified against the
+  opening-turn capture).
+- **Coasts:** the quadrant code's `|=1` bit is the **counter-clockwise**
+  cardinal, and the beach-halo ground substitution shows through the
+  clean-edge frames 150–153 only — quadrant frames composite over open
+  water (both settled by rendering AMER2.MP against a live frame).
+- **CYCLE.DAT:** one band of 8 palette entries from index 120, rotating up
+  one step per 35 ticks of the 60.8766 Hz clock.
+- **Starting force:** ONE ship at every difficulty (Soldiers + Pioneers;
+  Dutch Merchantman) — the doubled-force claim carries no cite and live play
+  refutes it. Difficulty scales starting gold (1000/300/0/0/0), not hulls.
+- **@default is one-based** and names the cautious row (@LANDFALL row 1 =
+  "Stay With Ships"; @ABANDON row 2 = "Never!").
+- **Advisor reports** use REPORT&lt;N&gt;.PIK backdrops where N is not the
+  F-key number; every report is a table and none blits an MSS portrait.
+- **TERRAIN.SS resolves through VICEROY.PAL**, not its embedded palette;
+  woodcut caption ink resolves through the sheet's own palette with no year
+  prefix.
+- **Native settlements come from TRIBE.TXT** with x offset +2;
+  `@TRIBES.value` is the tribe's map colour (not a sprite id).
 
 ## A. Appendix — data structures
 

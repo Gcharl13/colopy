@@ -7867,3 +7867,82 @@ Colony command (dialog keys "FINDCITY"/"NOCITY").
 | `[0x54EF]` bit 0x04 meaning (the bundle-17 sparkle's trigger) | Find the bit's writer |
 | Whether natives teach Lumberjack / Scout's place in OUTDOOR_JOBS | No evidence either way |
 | Rumour third gate / feature-plane identity | Unchanged (the .MP loader discards the plane) |
+
+## 2026-08-07c — the raid-gate K is the colony's fortification count (TBD closed); six player-reported defects fixed in the port
+
+### The raid gate's K, byte-read
+
+`func_05BE84`'s gate threshold `3·K+1` (@0x5BEE5 `shl ax,1 / add ax,cx /
+inc ax`) takes K from `push 0; lcall 0x181f,0xab0` @0x5BED9. The validated
+thunk table resolves `0x181F:0xAB0` to resident **`func_00864E`** — a
+chain-walker: for an id it tests colony membership through the 0x860E
+bitset helper (the same resident bitset `func_004314` counts fortifications
+with), counts a hit, then follows the next id from the stride-12 building
+record table at DGROUP `0x8F86` (`[bx-0x707A]`, bx = id·12) until the link
+goes negative. Called with id 0 it walks building chain 0 — **Stockade →
+Fort → Fortress** — so **K = the target colony's fortification count
+(0..3)**, and the gate is:
+
+    raid proceeds iff  random_int(1,12) − 1 (+ difficulty−2 vs a human)  ≥  3·fortifications + 1
+
+A bare colony is raided on all but the lowest rolls; a Fortress repels all
+but the highest. The port's `RAID_GATE_K = 0` placeholder (flagged TBD since
+the §19 natives pass) is retired; `nativeRaid()` now reads `colonyLevel(c)`.
+This also cross-anchors `func_00864E` as the *generic building-chain
+counter* — the fortification sprite mapper `func_004314` and the raid gate
+share it.
+
+### The six reported defects, and what each fix is
+
+1. **Sailing out of Europe with recruits/trainees aboard crashed at
+   landfall.** `mkUnit` looked the passenger name up in @UNIT and threw on
+   any PROFESSION name ('Expert Farmers', 'Veteran Soldiers'…). It now
+   resolves the five unit-bearing professions to their @UNIT types
+   (Veteran Soldiers→Soldiers, Veteran Dragoons→Dragoons, Hardy
+   Pioneers→Pioneers, Seasoned Scouts→Scouts, Jesuit
+   Missionaries→Missionaries — the @JOB expert_name column against @UNIT)
+   and lands everyone else as Colonists CARRYING the profession.
+2. **No way to arm dock units or sail ships by mouse.** The two harbour
+   context menus are built: clicking a dock unit opens GAME `@EUROPEARM` +
+   `@ARMOPTIONS` (grep-verified 12-row section) — board / move to front /
+   arm-with & sell Muskets, Tools, Horses / bless & cancel Missionary;
+   clicking the selected ship opens `@EUROPESHIPCLICK` +
+   `@EUROPESHIPOPTIONS` (move to front / set sail / unload all / no
+   changes). Quantities are the manual's (50 muskets, 50 horses, 100
+   tools; GAME_MANUAL.md 1962-1971); prices are the live market through
+   buyGoods/sellGoods, so arming moves prices and pays tax like any trade.
+   Which rows the engine gates per state is unread — the port offers the
+   applicable rows, flagged as its own. An armed entry is `{name, type}`
+   (the man's profession + his equipment), which landfall resolves to a
+   typed unit carrying the profession.
+3. **Job assignment was unusable by mouse.** Root cause found in the drag
+   layer: the engine's moved flag has no pixel threshold (@0xD16F), and at
+   the port's 2-3x cursor scale the jitter inside an ordinary click crossed
+   a logical pixel — so every deliberate click on a plaza colonist resolved
+   as a zero-length drag that dropped him back on the plaza, swallowing the
+   click AND clearing his job. Two reconciliations, both flagged UNCITED:
+   a release within 2px of the press is a click, and a plaza-sourced unit
+   dropped back on the plaza keeps his job.
+4. **The colony did not appear in its own scene panel.** The 5×5 scene
+   buffer drew bare terrain only. It now composites the same layers the
+   map view draws: improvements (roads/plow), other colonies and villages
+   in the window, and the colony itself on the centre tile.
+5. **Raids repeated every turn, several per turn; the AI stood still.**
+   The per-village-per-turn raid loop is gone. `nativeMoveAI()` (R-tier,
+   a reduced func_046FFA/func_04E2D6 — the reduction is flagged in the
+   code) marches each war-footing brave (alarm ≥ 0x80, the @0x04734E
+   test) one tile a turn at the nearest colony; the raid fires when he
+   arrives, through the byte-cited gate above, and he turns for home — so
+   raid cadence is travel time, and braves at peace visibly wander near
+   their villages.
+6. **Popups had no speaker portraits.** The §2.7 channels are wired:
+   native-family keys draw `IND<tribe>A0` (tribe from the dispatcher via
+   G.eventTribe), the military family MSS5 (func_040C1E @0x040CD3), king
+   keys KING1 ([0x1F5C]=8 @0x06F5DD), placed bottom-right under the plaque
+   — the same convention the village screen already used, since the
+   engine's landing pixel is runtime cel state (§2.7.1). The key→family
+   routing beyond the byte-cited wrappers is the port's reading, flagged.
+
+Behavioural suite: 203/203 (10 new checks: arm menu contents and pricing,
+arm commit, armed/profession landfall, ship menu, jitter-click select/keep/
+menu, scene-panel colony pixels, raid fort gate ×2, speaker channels).
