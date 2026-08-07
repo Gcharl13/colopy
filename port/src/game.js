@@ -6947,6 +6947,17 @@ function newsTick() {
         continue;
       }
     }
+    // @LOOTFOREIGN (func_04E2D6 @0x5099E): a rival treasure fleet reaches
+    // home. The engine's treasure trains ride real conquests; the port
+    // SIMULATES the arrival on the news bus (rate 1/60 and the amount
+    // 100 x random(2..12) both flagged; the bulletin subs are the body's).
+    if (Math.floor(Math.random() * 60) === 0 && r.colonies.length) {
+      const booty = 100 * (2 + Math.floor(Math.random() * 11));
+      r.gold = (r.gold || 0) + booty;
+      showEvent('LOOTFOREIGN', { STRING0: DATA.nations[r.nation].adjective,
+                                 STRING1: DATA.nations[r.nation].homeport,
+                                 NUMBER0: booty });
+    }
     // @GIVECASH: a threatened AI colony buys the player off (rows: spare /
     // "it is God's will"). Once per colony, purse flagged.
     if (atWar(G.nation, r.nation)) {
@@ -10100,7 +10111,7 @@ function endTurn() {
     G.season = (G.season + 1) % 2;
     if (G.season === 0) G.year += 1;
   }
-  for (const u of G.units) u.movesLeft = u.moves;
+  for (const u of G.units) { u.movesLeft = u.moves; u.slipChecked = false; }
   revealAll();
   payUpkeep();
   for (const c of G.colonies) colonyTurn(c);
@@ -10305,6 +10316,42 @@ function moveSel(dx, dy) {
     return;
   }
   if (!u.ship && water) return;   // land units cannot walk onto water
+  if (u.ship && water) {
+    // @SHIPLAKE (func_03FDDE @0x3FF2A): ships cannot enter inland LAKE
+    // squares -- water disconnected from the ocean. The engine's test is
+    // region-based; the port compares the destination's region id against
+    // the sea lane's (the right-edge column is always ocean-connected).
+    const seaRegion = REGION[(ny) * MAP.w + (MAP.w - 1)];
+    const dstRegion = REGION[ny * MAP.w + nx];
+    if (dstRegion !== seaRegion &&
+        REGION[u.y * MAP.w + u.x] === seaRegion) {
+      showEvent('SHIPLAKE');
+      return;
+    }
+    // The interception zone (func_059B90): sailing beside a HOSTILE warship
+    // either slips past (@SHIPRUN) or is slowed (@SHIPSLOW -- the byte-read
+    // effect is a movement-counter penalty, add [unit+0x3149] @0x59DD7).
+    // The engine's odds are upstream of the emits, unread -- 50/50 flagged.
+    const menace = G.rivals.flatMap(r =>
+      (r.met && atWar(G.nation, r.nation)) ? r.units : [])
+      .find(ru => ru.ship && Math.abs(ru.x - nx) <= 1 && Math.abs(ru.y - ny) <= 1 &&
+                  Number((unit(ru.type) || {}).attack) > 0);
+    if (menace && !u.slipChecked) {
+      u.slipChecked = true;   // once per move order, not per step
+      const owner = G.rivals.find(r => r.units.includes(menace));
+      if (Math.random() < 0.5) {
+        showEvent('SHIPRUN', { STRING0: u.type,
+                               STRING1: DATA.nations[owner.nation].adjective,
+                               STRING2: DATA.nations[G.nation].adjective,
+                               STRING3: menace.type });
+      } else {
+        u.movesLeft = Math.max(0, u.movesLeft - MOVE_UNIT);
+        showEvent('SHIPSLOW', { STRING0: u.type,
+                                STRING1: DATA.nations[owner.nation].adjective,
+                                STRING2: menace.type });
+      }
+    }
+  }
   // Moving onto a tile held by a native, a rival or the King's expeditionary
   // force is an attack (§14).
   const foe = G.natives.find(n => n.x === nx && n.y === ny) ||

@@ -10,7 +10,7 @@ certify trigger/format fidelity - flagged readings live in
 notes/rulings/RULINGS.md and the popup audit.  The completion
 roadmap is docs/COMPLETION_PLAN.md.
 
-## DONE (396)
+## DONE (400)
 
 - ABANDON
 - ABANDON2
@@ -190,6 +190,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - LOOT2
 - LOOTCAPTURE
 - LOOTCASH
+- LOOTFOREIGN
 - LOOTWAGONS
 - LOSENOCOLONIES
 - LOSING1
@@ -305,6 +306,9 @@ roadmap is docs/COMPLETION_PLAN.md.
 - SEIZURESEA
 - SHIPCOMBAT
 - SHIPDAMAGE
+- SHIPLAKE
+- SHIPRUN
+- SHIPSLOW
 - SHIPSUNK
 - SIEGE
 - SIEGES
@@ -447,7 +451,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## BUNDLED-UNWIRED (0)
 
 
-## BLOCKED (named blocker) (25)
+## BLOCKED (named blocker) (21)
 
 - APOSTATESUSA - reachable only via the USA suffix at runtime
 - CANTMOBILIZE - muskets gate absent from the byte-read mobilize (disasm)
@@ -464,11 +468,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - KINGNOTHING - ditto
 - KINGRAISE - ditto
 - KINGWELCOME0 - ditto
-- LOOTFOREIGN - no rival treasure-fleet model
 - RIDUSA - ditto
-- SHIPLAKE - no inland-lake connectivity model
-- SHIPRUN - evade/blockade-run condition unmapped (disasm)
-- SHIPSLOW - ditto
 - SIEGESUSA - ditto
 - TOOMANYCOLONIES - engine cap value unread (disasm)
 - TOOMANYUNITS - ditto

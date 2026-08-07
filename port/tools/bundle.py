@@ -314,6 +314,9 @@ def build_data():
               # human/third-party variant splits are byte-read.
               "@BURNED2", "@BURNED3", "@CAPTURED2", "@CAPTURED3",
               "@EUROPEWIN", "@EUROPELOSE", "@INDIANWINCOLONY",
+              # Shipping (batch 3): the interception pair, the lake guard,
+              # the treasure-fleet bulletin.
+              "@SHIPRUN", "@SHIPSLOW", "@SHIPLAKE", "@LOOTFOREIGN",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               # War of Independence completion: sentiment, losses, siege,

@@ -9065,3 +9065,23 @@ anywhere in the EXE -- reclassified as orphans-or-dynamic (ceiling
 named), alongside RAIDSCALP.
 
 Suite 234/234.
+
+## 2026-08-07z10 — Phase 4 batch 3: shipping
+
+- **@SHIPRUN/@SHIPSLOW** (func_059B90 @0x59DBC/@0x59E48): the interception
+  pair. The byte-read EFFECT of SHIPSLOW is a movement-counter penalty
+  (add [unit+0x3149] @0x59DD7); the subs are the two powers' words + both
+  ship type names. Wired at ship movement beside a hostile warship; the
+  engine's odds sit upstream of the emits (unread) -- 50/50 flagged, one
+  check per turn (u.slipChecked).
+- **@SHIPLAKE** (func_03FDDE @0x3FF2A): ships cannot enter inland lakes.
+  The engine's test is region-based; the port compares the destination's
+  REGION id against the sea lane column's (regions imported verbatim from
+  the SAV plane / built by flood fill). Wired as a movement guard.
+- **@LOOTFOREIGN** (func_04E2D6 @0x5099E): rival treasure fleet arrives
+  home. Simulated on the news bus (rate 1/60 and amount 100*random(2..12)
+  flagged; the engine's fleets ride real conquests the port does not
+  model).
+
+Ledger: DONE 400, BLOCKED 21. Suite 234/234 (twice; the Fortress-raid
+flake tripped one intermediate run, documented).
