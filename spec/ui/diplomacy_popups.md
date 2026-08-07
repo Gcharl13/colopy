@@ -49,6 +49,12 @@
 - **Greetings `@HELLO*`**: key = "HELLO" + (not-met ? ship?"AHOY":"FIRST"
   : tone "MEEK"/"MANLY"); independent power → "HELLOUSA". %STRINGs =
   rank+leader, region, @GREATKINGS, @GREATDEEDS.
+  **Tone predicate READ 2026-08-07z14** (func_057F4E @0x5881F): B speaks
+  **MEEK** when B's per-power strength word `[0x941C + power·2]` is BELOW the
+  player's, **MANLY** when `>=` (`cmp; jae` → MANLY). It is a
+  military-strength comparison, not attitude — the same suffix drives
+  `@PEACE*`/`@WAR*`/`@OLDPEACE*`. The port compares a force proxy (Σ unit
+  combat + 3·colonies) as a stand-in for `[0x941C]`.
 - **Third-party demands `@APOSTATES/@HEATHEN` (+USA)**: AI asks the player
   to attack a treaty partner (European) or a tribe. Row 2 accepts →
   treaty cleared + war bit set (European @0x058A6A/@0x058A7B) or tribe

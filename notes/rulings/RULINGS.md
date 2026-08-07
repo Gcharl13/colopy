@@ -9157,3 +9157,19 @@ Ledger: DONE 411, BLOCKED 1, MISSING 0, N/A 34. Suite 234/234.
   gate is now cited.
 
 Suite 234/234; render-diff 15/15.
+
+## 2026-08-07z14 — Phase 4 batch 7: the meeting tone predicate read
+
+func_057F4E's MEEK/MANLY suffix (@0x5881F) is a MILITARY-STRENGTH
+comparison, not attitude: B speaks MEEK when B's per-power strength word
+[0x941C+power*2] is below the player's, MANLY when >= (cmp; jae ->
+MANLY). The same suffix drives @HELLO*/@PEACE*/@WAR*/@OLDPEACE*. The
+port replaced its "attitude >= 8" stand-in with a force proxy (sum of
+unit combat + 3*colonies per side) as [0x941C]'s stand-in -- flagged as
+a proxy, but the COMPARISON is now byte-faithful (weaker B grovels,
+stronger B blusters). spec/ui/diplomacy_popups.md §2 updated. The
+remaining meeting flags (PEACE-vs-OLDPEACE = standing treaty, topic
+priority order, withdraw/threat sub-branch, smite price) are refinements
+to a working system with no new keys, left flagged.
+
+Suite 234/234.

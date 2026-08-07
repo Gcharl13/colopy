@@ -7767,11 +7767,24 @@ function demandValue(base) {
 // 10*(10-diff) turns (@0x58374), demandValue's scaler (@0x583A0/@0x5842B),
 // the withdraw price 25*(diff+2)*forces min 100 x2-at-war -50/unit
 // Franklin/2, and the greeting key build (@0x0588CD-0x058939).
-// FLAGGED READINGS (no byte cite exists): the MEEK/MANLY tone predicate
-// (attitude >= 8 reused), PEACE-vs-OLDPEACE = standing treaty, the
-// per-meeting topic priority, the withdraw/threat sub-branch selection, and
-// the smite price (demandValue(1000) stand-in).
-const meetingTone = (r) => (r.attitude === undefined ? 8 : r.attitude) >= 8;
+// The MEEK/MANLY tone predicate is READ (func_057F4E @0x5881F, RULINGS
+// 2026-08-07z14): B speaks MEEKLY when B's power metric ([0x941C+power·2],
+// the per-power strength word) is BELOW the player's, MANLY when it is
+// >= (jae -> MANLY). It is a MILITARY-STRENGTH comparison, not attitude.
+// The port has no single strength word, so it compares a FORCE PROXY --
+// total combat power of each side's units plus colonies -- flagged as a
+// proxy for [0x941C]. Still FLAGGED with no byte cite: PEACE-vs-OLDPEACE =
+// standing treaty, the per-meeting topic priority, the withdraw/threat
+// sub-branch selection, and the smite price (demandValue(1000) stand-in).
+function powerMetric(power) {
+  const isMe = power === G.nation;
+  const r = isMe ? null : G.rivals.find(x => x.nation === power);
+  const units = isMe ? G.units : (r ? r.units : []);
+  const colonies = isMe ? G.colonies : (r ? r.colonies : []);
+  return units.reduce((n, u) => n + Number((unit(u.type) || {}).combat || 0), 0) +
+         colonies.length * 3;
+}
+const meetingTone = (r) => powerMetric(r.nation) < powerMetric(G.nation);
 function meetingSubs(r) {
   return {
     STRING0: `${DATA.difficulty[G.difficulty]} ${G.leader || DATA.nations[G.nation].leader}`,
