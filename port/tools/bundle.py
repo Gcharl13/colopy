@@ -63,8 +63,9 @@ def build_data():
     # parser treats as a paragraph break.
     full = json.load(open(ROOT / "data_extracted/text/GAME.full.json"))["sections"]
     D["dialogs"] = {}
-    for key in ("@LANDHO", "@LANDFALL", "@COLONY", "@RECRUIT", "@PURCHASE",
-                "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME"):
+    for key in ("@LANDHO", "@LANDFALL", "@LANDFALL2", "@COLONY", "@RECRUIT",
+                "@PURCHASE", "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME",
+                "@TRADENAME"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {
@@ -257,6 +258,27 @@ def build_data():
               "@BURNED", "@CAPTURED", "@CLEARCUT", "@USEDUPTOOLS",
               "@NOTENOUGH", "@CANCELPEACE", "@INDIANWARFARE", "@MERCS",
               "@UNREST", "@MERCENARIES",
+              # Market price movement (func_0305A8) + the boycott-blocked
+              # unload (Phase 1 wire-only sweep).
+              "@PRICEUP", "@PRICEDOWN", "@SOMEBOYCOTT",
+              # Schooling guards + the two lower graduation rungs
+              # (func_02D658 teaching block, spec/systems/training.md).
+              "@SCHOOL1", "@COLLEGE2", "@UNIV3",
+              "@NEEDCOLLEGE", "@NEEDUNIVERSITY", "@NOTEACHER",
+              "@TEACHCONVERT", "@TRAINCRIMINAL", "@TRAININDENTURED",
+              # Pioneer / colony-siting / movement guards (func_022542 +
+              # order predicates; Phase 1). TOONEARBUILD, SHIPLAKE and the
+              # TOOMANY* caps are deliberately unwired -- see RULINGS.
+              "@NOPLOW", "@NOROAD", "@ONLYCOL", "@ONLYPIO",
+              "@TOOMOUNTAIN", "@TOONEAR", "@SEACOLONY", "@NOPORT",
+              "@KEEPSTOCKADE", "@LANDFIRST", "@CANNOTATTACK", "@DISBANDSHIP",
+              "@TUTNOLUMBER", "@TUTNOSPACES",
+              # Warehouse / colony-turn notices + the misc wire-only set.
+              "@SPOIL1", "@SPOIL2", "@SPOIL3", "@SPOIL4", "@WAREHOUSEFULL",
+              "@CARGOREADY1", "@CARGOREADY2", "@FOOD1", "@FOOD2", "@STARVE2",
+              "@EFFICIENT", "@INEFFICIENT", "@CONTINENTAL", "@TIMECHANGE",
+              # Trade-route editor bodies (previously paraphrased literals).
+              "@TRADESELECT", "@TRADESTART", "@TRADETYPE", "@TRADEDELETE",
               # The village haggle loop (func_049600).
               "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
               "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",
@@ -299,6 +321,7 @@ def build_data():
               "@KINGTAX", "@KINGWIFE", "@KINGWAR", "@KINGNAVACT", "@KINGSTAMPACT",
               "@TAXOPTIONS", "@TEAPARTY",
               # Lost City Rumours
+              "@LOSTCITY0",
               "@LOSTCITY1", "@LOSTCITY2", "@LOSTCITY3", "@LOSTCITY4", "@LOSTCITY5",
               "@LOSTCITY6", "@LOSTCITY7", "@LOSTCITY8", "@LOSTCITY9",
               "@BURIAL1", "@BURIAL2", "@BURIAL3",
@@ -344,8 +367,11 @@ def build_data():
             continue
         sec = full[k]
         para = sec["body"].split("\n\n")
+        # '^'-prefixed lines are GAME.TXT's help-card format ('^^' = centred
+        # title, '^' = blank) -- @TIMECHANGE is the only event key using it.
+        # The port renders help cards as plain popup lines, carets stripped.
         D["events"][k.lstrip("@")] = {
-            "body": para[0].split("\n"),
+            "body": [l.lstrip("^") for l in para[0].split("\n")],
             "tail": para[1].split("\n") if len(para) > 1 else [],
             "width": int(sec["directives"].get("width", 0x50)),
             "default": sec["directives"].get("default"),

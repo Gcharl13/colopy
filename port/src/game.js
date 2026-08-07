@@ -1788,10 +1788,29 @@ function drawSidebar(ctx) {
 // land tile with no colony already on it founds one; @COLONY -- "What shall we
 // name this colony?" -- carries no @default directive, so the field is prefilled
 // from COLONY.TXT's per-nation list in founding order instead.
+// The units that cannot found (or join) a colony -- @ONLYCOL "That function
+// can be performed only by colonists." The engine's predicate site is unread;
+// excluding the three non-person unit kinds is the port's reading, flagged.
+const NOT_COLONISTS = ['Wagon Train', 'Artillery', 'Treasure'];
 function buildColony() {
   const u = G.units[G.sel];
-  if (!u || u.ship) return;
-  if (tileWater(at(u.x, u.y))) return;
+  if (!u) return;
+  // Founding-colony validation (func_022542, page 01 -- home of the NOPORT /
+  // TUTNOSPACES / TUTNOLUMBER emitters; spec/systems/tutorial.md §2). The
+  // hard-guard ORDER below is the port's reading (unread in the EXE); the
+  // TUT gate + row semantics are byte-cited.
+  if (u.ship || tileWater(at(u.x, u.y))) {
+    // @SEACOLONY, the engine's own joke key (@width=140).
+    showEvent('SEACOLONY');
+    return;
+  }
+  if (NOT_COLONISTS.includes(u.type)) { showEvent('ONLYCOL'); return; }
+  if (tileMountains(at(u.x, u.y))) { showEvent('TOOMOUNTAIN'); return; }
+  // @TOONEAR: too close to an existing colony. The engine's radius is unread;
+  // the port refuses ADJACENT tiles (chebyshev <= 1), flagged.
+  const near = !colonyAt(u.x, u.y) && G.colonies.find(c =>
+    Math.max(Math.abs(c.x - u.x), Math.abs(c.y - u.y)) <= 1);
+  if (near) { showEvent('TOONEAR', { STRING0: near.name }); return; }
   // @ORDERS "Join Colony (B)" is the same key on a tile that already holds one:
   // the unit walks in and becomes a colonist. That is what saves an Indian
   // Convert from the eight-turn loss-of-faith timer (§19.7).
@@ -1808,6 +1827,35 @@ function buildColony() {
   }
   const names = DATA.colonynames[G.nation];
   const suggested = names[G.colonies.length % names.length];
+  // The pre-founding confirms, chained ahead of the name dialog.
+  // @NOPORT (landlocked; row 2 proceeds) then the two tutorial site scans
+  // (func_022542, byte-cited: gate [0x53A6]<2 @0x22763; @TUTNOSPACES fires on
+  // adjacent productive count < 4 @0x2276A, @TUTNOLUMBER on forested count
+  // == 0 @0x22782; each proceeds only on row 2 "Build colony anyway").
+  // The port's readings, flagged: the relative ORDER of the three confirms,
+  // "ocean access" = any adjacent water tile (the engine's lake/ocean split
+  // is unmodelled), and "productive" = land that is not mountains/arctic.
+  let water = 0, productive = 0, forested = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    const v = at(u.x + dx, u.y + dy);
+    if (v === undefined) continue;
+    if (tileWater(v)) { water++; continue; }
+    if (isForested(tileTerrain(v))) forested++;
+    if (!tileMountains(v) && tileTerrain(v) !== TERR.ARCTIC) productive++;
+  }
+  const scans = [];
+  if (!water) scans.push('NOPORT');
+  if (G.difficulty < 2 && productive < 4) scans.push('TUTNOSPACES');
+  if (G.difficulty < 2 && !forested) scans.push('TUTNOLUMBER');
+  const askScans = (k, then) => {
+    if (k >= scans.length) { then(); return; }
+    askEvent(scans[k], {}, (choice) => {
+      if (choice === 1) askScans(k + 1, then);   // row 2 = proceed
+    });
+  };
+  askScans(0, () => nameAndFound());
+  function nameAndFound() {
   openDialog('COLONY', (name) => {
     const nm = (name || '').trim() || suggested;
     G.colonies.push({
@@ -1833,6 +1881,7 @@ function buildColony() {
     if (!G.builtColony) { G.builtColony = true; woodcutOnce(2); }
     else G.screen = 'colony';
   }, suggested);
+  }
 }
 // The starting-building set falls straight out of NAMES.TXT @BUILDING once you
 // read the last column: UPKEEP. Exactly eight rows have upkeep 0 -- the free
@@ -1854,6 +1903,10 @@ const colonyAt = (x, y) => G.colonies.find(c => c.x === x && c.y === y);
 function abandonColony() {
   const c = G.colonies[G.colony];
   if (!c) return;
+  // @KEEPSTOCKADE (@width=220): "We cannot voluntarily reduce below three the
+  // population of a colony that has a stockade, fort, or fortress."
+  // Abandoning always reduces below three, so any stockade level refuses.
+  if (colonyLevel(c) > 0) { showEvent('KEEPSTOCKADE'); return; }
   askEvent('ABANDON', { STRING0: c.name }, (choice) => {
     // Row 0 abandons ("Yes, it is God's will."), row 1 refuses -- and row 1 is
     // the @default.
@@ -2314,6 +2367,31 @@ function professionClass(profession) {
   const i = DATA.jobexpert.indexOf(profession);
   return i < 0 ? 4 : DATA.jobtier[i];
 }
+// Teacher-assignment guards. The rules are byte-verified in the teaching
+// block of func_02D658 (spec/systems/training.md §3: faculty cap = building
+// level @0x02DE5B, tier cap = @JOB column 3, class >= 4 not teachable
+// @0x02DE7D) and each has its own GAME.TXT refusal; WHERE the engine tests
+// them (assignment-time vs turn-time) is unread -- guarding at assignment,
+// and this guard ORDER, are the port's reading, flagged.
+function teacherGuard(c, p) {
+  const lvl = schoolLevel(c);
+  if (!lvl) return false;
+  const cls = professionClass(p.profession);
+  // @NOTEACHER: "Only colonists who have mastered a profession may teach."
+  if (!p.profession || cls >= 4) { showEvent('NOTEACHER'); return true; }
+  // @NEEDCOLLEGE / @NEEDUNIVERSITY: the profession's tier exceeds the school.
+  if (cls > lvl) {
+    showEvent(cls === 2 ? 'NEEDCOLLEGE' : 'NEEDUNIVERSITY',
+              { STRING0: p.profession });
+    return true;
+  }
+  // @SCHOOL1/@COLLEGE2/@UNIV3: the faculty is full (cap = building level).
+  if (c.colonists.filter(q => q !== p && q.job === 'Teacher').length >= lvl) {
+    showEvent(['SCHOOL1', 'COLLEGE2', 'UNIV3'][lvl - 1]);
+    return true;
+  }
+  return false;
+}
 function runSchool(c) {
   const level = schoolLevel(c);
   if (!level) return;
@@ -2333,15 +2411,21 @@ function runSchool(c) {
     student.taught = 0;
     // A student below expert climbs one tier; a Free Colonist takes the
     // teacher's own expertise.
+    // Graduation ladder (byte-verified @0x02DF00/@0x02DF35/@0x02DF70): a
+    // student below expert climbs one tier, a Free Colonist takes the
+    // teacher's own expertise -- each rung with its own message.
     const rung = STUDENT_TIERS.indexOf(student.profession);
-    if (rung >= 0 && rung < STUDENT_TIERS.length - 1)
-      student.profession = STUDENT_TIERS[rung + 1];
-    else student.profession = teacher.profession;
-    // @TRAINPROFESSION body: "A colonist in {%STRING0} has learned the
-    // specialty profession {%STRING1}." -- STRING0 is the COLONY, STRING1 the
-    // profession. (The two were transposed: every graduation showed the colony
-    // and profession in each other's slots.)
-    showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: student.profession });
+    if (rung === 0) {
+      student.profession = STUDENT_TIERS[1];
+      showEvent('TRAINCRIMINAL', { STRING0: c.name });
+    } else if (rung === 1) {
+      student.profession = STUDENT_TIERS[2];
+      showEvent('TRAININDENTURED', { STRING0: c.name });
+    } else {
+      student.profession = teacher.profession;
+      // @TRAINPROFESSION: STRING0 is the COLONY, STRING1 the profession.
+      showEvent('TRAINPROFESSION', { STRING0: c.name, STRING1: student.profession });
+    }
   }
 }
 
@@ -2381,19 +2465,51 @@ function warehouseLevel(c) {
 // OPEN: whether a Custom-House gate sits in the caller. None is recorded, so
 // none is applied. Flagged in docs/UI_AUDIT_TRACKER.md.
 function autoExport(c) {
+  const spoiled = [];
   for (let i = 0; i < c.stock.length; i++) {
     if (i === GOOD.FOOD || c.stock[i] < 100) continue;
+    // @CARGOREADY1/2 -- "A new cargo of Y is ready at X ... reached its
+    // storage capacity" -- announced as the good tops the 100-ton overflow
+    // threshold, variant 1 while a larger warehouse could still be built.
+    // The engine's trigger site and its per-good latch are unread; announcing
+    // here, latched until the stock falls back, is the port's reading.
+    // (@CARGOREADY0, the below-capacity variant, needs the per-good capacity
+    // model func_008D00 -- unwired until that is byte-read.)
+    c.cargoReady = c.cargoReady || {};
+    if (!c.cargoReady[i]) {
+      c.cargoReady[i] = true;
+      showEvent(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
+                { STRING0: c.name, STRING1: DATA.cargo[i].name, NUMBER0: 100 });
+    }
     const excess = c.stock[i] - 50;
     c.stock[i] = 50;
     // Custom Houses allow trade after independence (market.md); without one the
     // excess is wasted rather than sold once you have declared. Peter
     // Stuyvesant is what makes the building available at all.
-    if (isBoycotted(i)) continue;
-    if (G.declared && !c.buildings.includes('Custom House')) continue;
+    if (isBoycotted(i) || (G.declared && !c.buildings.includes('Custom House'))) {
+      spoiled.push({ good: i, qty: excess });
+      continue;
+    }
     const gross = excess * G.market[i];
     const tax = Math.floor(gross * G.tax / 100);
     G.gold += gross - tax;
     G.kingsFund += tax;
+  }
+  for (const i of Object.keys(c.cargoReady || {}))
+    if (c.stock[i] < 100) delete c.cargoReady[i];
+  // @SPOIL1-4: goods actually thrown away (the sale paths above never spoil).
+  // Variant pick -- qty+name when one good spoiled (1/3), the generic body for
+  // several (2/4); the "a larger warehouse could hold another 100 tons" tail
+  // only while one can still be built. The engine's variant selector is
+  // unread; this reading is flagged.
+  if (spoiled.length) {
+    const hint = warehouseLevel(c) < 2;
+    if (spoiled.length === 1)
+      showEvent(hint ? 'SPOIL1' : 'SPOIL3',
+                { STRING0: c.name, STRING1: DATA.cargo[spoiled[0].good].name,
+                  NUMBER0: spoiled[0].qty });
+    else
+      showEvent(hint ? 'SPOIL2' : 'SPOIL4', { STRING0: c.name });
   }
 }
 // The upgrade CHAINS: @BUILDING is laid out chain by chain (the same grouping
@@ -2461,15 +2577,29 @@ function colonyTurn(c) {
   // (@FOODLOW, once, while stores are thin), then STARVATION (@STARVE1) when a
   // colonist is lost, and a BIRTH (@NEWCOLONIST) on growth.
   c.stock[GOOD.FOOD] = Math.max(0, c.stock[GOOD.FOOD] - r.eaten);
-  if (r.netFood < 0 && c.stock[GOOD.FOOD] === 0 && c.colonists.length > 1) {
-    c.colonists.pop();
-    showEvent('STARVE1', { STRING0: c.name });
-    c.foodWarned = false;
+  // The winter split: from the 1600 time-scale change the FALL turn is the
+  // "winter is coming soon" variant of each food message (@FOOD2/@STARVE2 vs
+  // @FOOD1/@STARVE1). Which turn the engine treats as pre-winter is unread --
+  // fall-after-1600 is the port's reading of the seasons, flagged.
+  const preWinter = G.year >= 1600 && G.season === 1;
+  if (r.netFood < 0 && c.stock[GOOD.FOOD] === 0) {
+    if (!c.foodDepleted) {
+      // The turn stores hit bottom: @FOOD1/@FOOD2 ("we MAY starve"), latched.
+      // Death starts the NEXT hungry turn -- the depletion warning first,
+      // then starvation, is the port's reading of the two keys' tenses.
+      c.foodDepleted = true;
+      showEvent(preWinter ? 'FOOD2' : 'FOOD1', { STRING0: c.name });
+    } else if (c.colonists.length > 1) {
+      c.colonists.pop();
+      showEvent(preWinter ? 'STARVE2' : 'STARVE1', { STRING0: c.name });
+      c.foodWarned = false;
+    }
   } else if (r.netFood < 0 && c.stock[GOOD.FOOD] < FOOD_FOR_COLONIST && !c.foodWarned) {
     c.foodWarned = true;
     showEvent('FOODLOW', { STRING0: c.name, NUMBER0: c.stock[GOOD.FOOD] });
   } else if (r.netFood >= 0) {
     c.foodWarned = false;
+    c.foodDepleted = false;
   }
   if (c.stock[GOOD.FOOD] >= FOOD_FOR_COLONIST) {
     c.stock[GOOD.FOOD] -= FOOD_FOR_COLONIST;
@@ -2492,6 +2622,17 @@ function colonyTurn(c) {
   r.tally[BELLS] = bells;
   updateSoL(c, r.tally[BELLS]);
   solAnnounce(c);
+  // @INEFFICIENT/@EFFICIENT: the tory production-penalty latch, announced on
+  // each crossing (the solAnnounce latch pattern). NUMBER0 = the byte-cited
+  // 10-difficulty tories-per-penalty divisor.
+  const pen = toryPenalty(c);
+  if (pen < 0 && !c.ineffLatch) {
+    c.ineffLatch = true;
+    showEvent('INEFFICIENT', { STRING0: c.name, NUMBER0: 10 - G.difficulty });
+  } else if (pen >= 0 && c.ineffLatch) {
+    c.ineffLatch = false;
+    showEvent('EFFICIENT', { STRING0: c.name });
+  }
   advanceConstruction(c, r.tally[HAMMERS]);
   runSchool(c);
   autoExport(c);
@@ -3179,7 +3320,10 @@ function colonyPopupCommit() {
     const p = c.colonists[G.colonistSel];
     if (p) {
       if (r.job === null) { p.cell = null; p.job = null; }
-      else p.job = r.job;
+      else if (r.job === 'Teacher' && teacherGuard(c, p)) {
+        G.colonyPopup = null;
+        return;
+      } else p.job = r.job;
     }
   } else {
     const p = c.colonists[G.colonistSel];
@@ -3188,6 +3332,10 @@ function colonyPopupCommit() {
       // @MORETHANTHREE: at most three colonists in any one building.
       if (job && buildingCrew(c, r.label) >= 3 && p.job !== job) {
         showEvent('MORETHANTHREE', {});
+        G.colonyPopup = null;
+        return;
+      }
+      if (job === 'Teacher' && p.job !== 'Teacher' && teacherGuard(c, p)) {
         G.colonyPopup = null;
         return;
       }
@@ -3463,12 +3611,24 @@ function seedMarket() {
 const askPrice = (i) => G.market[i] + DATA.cargo[i].burden + 1;
 function stepPrice(i) {
   const c = DATA.cargo[i];
+  const before = G.market[i];
   while (G.accum[i] <= -100 * c.rise && G.market[i] < c.high) {
     G.market[i] += 1; G.accum[i] += 100 * c.rise;
   }
   while (G.accum[i] >= 100 * c.fall && G.market[i] > c.low) {
     G.market[i] -= 1; G.accum[i] -= 100 * c.fall;
   }
+  // @PRICEUP/@PRICEDOWN fire from the drift fn itself (func_0305A8, RULINGS
+  // 2026-06-19), so BOTH movement paths announce: the end-of-turn recompute
+  // (func_036574 @0x367FC) and the single-good re-drift after a buy/sell
+  // (@0x32902/@0x32D99). Live frames wear MSS2 with the good + number
+  // hilited (SESSION_UI_CATALOG frames 1310280609..). FLAGGED reading: the
+  // announced number is the port's bid (sell) price -- whether the engine
+  // prints bid or ask is unread.
+  if (G.market[i] !== before && G.eventQueue)
+    showEvent(G.market[i] > before ? 'PRICEUP' : 'PRICEDOWN',
+              { STRING0: c.name, STRING1: DATA.nations[G.nation].homeport,
+                NUMBER0: G.market[i] });
 }
 function driftMarket() {
   DATA.cargo.forEach((c, i) => { G.accum[i] += c.attrition; stepPrice(i); });
@@ -3838,7 +3998,9 @@ function sellFromShip(i) {
   const ship = activeShip();
   if (!ship) { G.euroMsg = 'No ships in port.'; return; }
   if (isBoycotted(i)) {
-    G.euroMsg = `${DATA.cargo[i].name} is under boycott.`;
+    // @SOMEBOYCOTT (the engine's boycott-blocked-unload message; the mask is
+    // tested on every trade @0x030B47). Replaces the ad-hoc status text.
+    showEvent('SOMEBOYCOTT');
     return;
   }
   const qty = holdQty(ship, i);
@@ -4804,6 +4966,10 @@ function liveAmong(v, u) {
   const job = villageSkill(v);
   const S = { STRING0: t.name, STRING1: DATA.jobs[job] };
   if (u.profession === 'Petty Criminals') { showEvent('LEARNCRIMINAL', S); return; }
+  // @TEACHCONVERT: "Indian converts already know the Indian ways." -- the
+  // convert refusal is its own key (training.md §Native learning), not the
+  // generic @LEARNMASTER a convert would otherwise fall into.
+  if (u.profession === CONVERT_CLASS) { showEvent('TEACHCONVERT', S); return; }
   if (u.profession && u.profession !== 'Free Colonists' &&
       u.profession !== 'Indentured Servants') {
     showEvent('LEARNMASTER', S); return;
@@ -5547,6 +5713,16 @@ function navalAttack(att, def) {
   const A = unit(att.type).attack || unit(att.type).combat;
   const D = unit(def.type).hull || unit(def.type).combat;
   const win = 1 + Math.floor(Math.random() * (A + D)) <= A;
+  // @EVASIVE: "%STRING0 %STRING1 evades %STRING2 %STRING3." The engine's
+  // evade condition is unmapped (COLONIZATION_TECHNICAL_REFERENCE §14.6) --
+  // the port's flagged stand-in: a gunless ship (not a SHIP_ATTACKER) that
+  // survives the roll ESCAPES rather than damaging the attacker.
+  if (!win && !SHIP_ATTACKERS.includes(def.type)) {
+    showEvent('EVASIVE', { STRING0: ownerAdjective(def), STRING1: def.type,
+                           STRING2: ownerAdjective(att), STRING3: att.type });
+    att.movesLeft = 0;
+    return true;
+  }
   const loser = win ? def : att, winner = win ? att : def;
   // A hold going down is seized rather than simply lost.
   if ((loser.hold || []).length && loser.damaged) {
@@ -5793,9 +5969,11 @@ function tryPromote(winner, wStrength, total) {
   // is what a Continental Army is.
   if ((G.flags & WOI_DECLARED) && CONTINENTAL_OF[winner.type]) {
     const to = CONTINENTAL_OF[winner.type];
+    const from = winner.type;
     becomeType(winner, to);
-    showEvent('VALOR', { STRING0: DATA.nations[G.nation].adjective,
-                         STRING1: 'Veteran', STRING2: to });
+    // @CONTINENTAL "Our {Veteran %STRING0} have hardened to {Continental
+    // Army} status" -- the type-advance has its own key, not @VALOR.
+    showEvent('CONTINENTAL', { STRING0: from });
   }
 }
 // The attacker wins iff roll <= ATK.
@@ -6122,12 +6300,12 @@ function routeName(stops) {
   const noun = stops.length >= 3 ? n[4] : n[G.routes.length % 3];
   return `${routeStopName(stops[0])} ${noun}`;
 }
-function createRoute(stops, sea) {
+function createRoute(stops, sea, name) {
   if (G.routes.length >= MAX_ROUTES) {
     showEvent('TRADEMANY', { NUMBER0: MAX_ROUTES });
     return null;
   }
-  const r = { name: routeName(stops), sea, stops: stops.slice(0, MAX_STOPS), cursor: 0 };
+  const r = { name: name || routeName(stops), sea, stops: stops.slice(0, MAX_STOPS), cursor: 0 };
   G.routes.push(r);
   return r;
 }
@@ -6213,11 +6391,19 @@ function tradeCommit() {
   if (!row) { G.screen = 'map'; G.trade = null; return; }
   if (t.mode === 'create') {
     if (row.id === 'done') {
-      const sea = t.stops.includes(STOP_EUROPE) ||
-                  t.stops.some(i => G.colonies[i] && coastalColonies().includes(G.colonies[i]));
-      const r = createRoute(t.stops, sea);
+      // The engine ASKS the route class (@TRADETYPE: "Sea route" / "Land
+      // route") and then names it through the @TRADENAME entry dialog --
+      // replacing the port's old infer-from-stops + auto-name shortcut.
+      const stops = t.stops;
       G.screen = 'map'; G.trade = null;
-      if (r) G.msg = `Trade route "${r.name}" created.`;
+      askEvent('TRADETYPE', {}, (choice) => {
+        if (choice < 0) return;
+        openDialog('TRADENAME', (name) => {
+          const r = createRoute(stops, choice === 0,
+                                (name || '').trim() || routeName(stops));
+          if (r) G.msg = `Trade route "${r.name}" created.`;
+        }, routeName(stops));
+      });
       return;
     }
     if (t.stops.length < MAX_STOPS && !t.stops.includes(row.id)) t.stops.push(row.id);
@@ -6244,11 +6430,14 @@ function tradeCommit() {
 function drawTrade(ctx) {
   drawMap(ctx);
   const t = G.trade, rows = tradeRows();
+  // Titles are the bundled GAME.TXT bodies (@TRADESTART/@TRADEDELETE/
+  // @TRADESELECT), no longer paraphrased copies; the create mode's "So far"
+  // line is the port's own running summary, kept.
   const head = t.mode === 'create'
-    ? [`Select destination number ${t.stops.length + 1} for route`,
+    ? [fillTemplate(DATA.events.TRADESTART.body[0], { NUMBER0: t.stops.length + 1 }),
        t.stops.length ? `So far: ${t.stops.map(routeStopName).join(' - ')}` : '']
-    : t.mode === 'delete' ? ['Which trade route should we {delete}:']
-    : ['Select a trade route:'];
+    : t.mode === 'delete' ? [DATA.events.TRADEDELETE.body[0]]
+    : [DATA.events.TRADESELECT.body[0]];
   const body = head.filter(Boolean);
   let cw = 190;
   for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
@@ -6905,11 +7094,24 @@ function enterRumour(u, x, y) {
   switch (n) {
     case 1: {                                      // Fountain of Youth: 8 immigrants
       G.foundFountain = true;
-      for (let k = 0; k < 8; k++) G.dockUnits.push(rollImmigrant().name || 'Colonists');
       // THE FOUNTAIN OF YOUTH plate precedes the message (func_061454
       // @0x0618F9); the queued @LOSTCITY1 popup shows once the map is back.
       woodcutOnce(8);
       showEvent('LOSTCITY1', {});
+      // @LOSTCITY0 "Which of the following individuals shall we recruit?" --
+      // the engine lets you PICK each arrival. Three candidates per pick (the
+      // Europe recruit-pool convention) and the pick count = the 8 arrivals;
+      // the engine's list size is unread, flagged.
+      const pickOne = (k) => {
+        if (k >= 8) return;
+        const cands = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
+        askEvent('LOSTCITY0', {}, (choice) => {
+          const who = cands[choice] || cands[0];
+          G.dockUnits.push(who.name || 'Colonists');
+          pickOne(k + 1);
+        }, cands.map(x => x.name || 'Colonists'));
+      };
+      pickOne(0);
       break;
     }
     case 2: {                                      // Cibola: a Treasure unit
@@ -6928,19 +7130,24 @@ function enterRumour(u, x, y) {
       break;
     }
     case 4: {                                      // burial mounds
-      const roll = d(3);
-      if (roll === 1) showEvent('BURIAL1', {});
-      else if (roll === 2) {
-        const gold = 10 * dsum(3, 8);
-        G.gold += gold;
-        showEvent('BURIAL2', { NUMBER0: gold });
-      } else {
-        const value = 2 * (d(8) + 2 * (s + 5));
-        const t = mkUnit('Treasure', x, y);
-        t.treasure = value;
-        G.units.push(t);
-        showEvent('BURIAL3', { NUMBER1: value * 100 });
-      }
+      // @LOSTCITY4 asks FIRST ("Let us search for treasure!" / "Stay clear
+      // of those!"); the burial roll only runs if the expedition digs.
+      askEvent('LOSTCITY4', {}, (choice) => {
+        if (choice !== 0) return;                  // stayed clear
+        const roll = d(3);
+        if (roll === 1) showEvent('BURIAL1', {});
+        else if (roll === 2) {
+          const gold = 10 * dsum(3, 8);
+          G.gold += gold;
+          showEvent('BURIAL2', { NUMBER0: gold });
+        } else {
+          const value = 2 * (d(8) + 2 * (s + 5));
+          const t = mkUnit('Treasure', x, y);
+          t.treasure = value;
+          G.units.push(t);
+          showEvent('BURIAL3', { NUMBER1: value * 100 });
+        }
+      });
       break;
     }
     case 5: {                                      // the expedition vanishes
@@ -8540,7 +8747,13 @@ function endTurn() {
   // Year cadence (§20.1): 1 turn = 1 year before 1600; from 1600 seasons toggle
   // and the year steps every second turn.
   if (G.year < 1600) G.year += 1;
-  else { G.season = (G.season + 1) % 2; if (G.season === 0) G.year += 1; }
+  else {
+    // @TIMECHANGE, the one-shot help card at the 1600 time-scale change
+    // ("from one turn per year to two turns per year").
+    if (!G.timeChanged) { G.timeChanged = true; showEvent('TIMECHANGE'); }
+    G.season = (G.season + 1) % 2;
+    if (G.season === 0) G.year += 1;
+  }
   for (const u of G.units) u.movesLeft = u.moves;
   revealAll();
   payUpkeep();
@@ -8630,7 +8843,10 @@ function askLandName() {
 // Row 1 (Make Landfall, the @default) puts the cargo ashore on that tile and
 // leaves the ship where it is; row 0 cancels the move.
 function landfall(ship, nx, ny) {
-  openDialog('LANDFALL', (choice) => {
+  // @LANDFALL2 is the river-mouth variant ("Our ships cannot navigate up
+  // this river") -- same two rows, row 1 makes landfall. Picked when the
+  // landing tile carries a river; the engine's own key selector is unread.
+  openDialog(tileRiver(at(nx, ny)) ? 'LANDFALL2' : 'LANDFALL', (choice) => {
     if (choice !== 1) return;
     const first = G.units.length;
     for (const name of ship.cargo) G.units.push(mkUnit(name, nx, ny));
@@ -8658,7 +8874,18 @@ function moveSel(dx, dy) {
     // Ships never enter a land square. With land units aboard the attempt is
     // the landfall offer; empty, the order is simply illegal (the engine has no
     // message for it).
-    if (u.cargo.length) landfall(u, nx, ny);
+    if (u.cargo.length) {
+      // @LANDFIRST: "Land units cannot enter an enemy occupied square from on
+      // board a ship." -- the landing square must be empty or friendly.
+      const hostile =
+        G.natives.some(n => n.x === nx && n.y === ny) ||
+        G.refUnits.some(n => n.x === nx && n.y === ny) ||
+        G.rivals.some(r => r.met && atWar(G.nation, r.nation) &&
+          (r.units.some(ru => ru.x === nx && ru.y === ny) ||
+           r.colonies.some(rc => rc.x === nx && rc.y === ny)));
+      if (hostile) { showEvent('LANDFIRST'); return; }
+      landfall(u, nx, ny);
+    }
     return;
   }
   if (!u.ship && water) return;   // land units cannot walk onto water
@@ -8667,6 +8894,12 @@ function moveSel(dx, dy) {
   const foe = G.natives.find(n => n.x === nx && n.y === ny) ||
               G.refUnits.find(n => n.x === nx && n.y === ny);
   if (foe) {
+    // @CANNOTATTACK: a unit whose @UNIT attack rating is 0 cannot attack --
+    // data-driven from the same column combat reads.
+    if (!u.ship && !(Number((unit(u.type) || {}).attack) > 0)) {
+      showEvent('CANNOTATTACK');
+      return;
+    }
     // §14.3: tired troops are offered the choice BEFORE the roll -- charge at
     // reduced strength, or rest. A unit that has already spent its budget this
     // turn is the tired case.
@@ -8705,6 +8938,11 @@ function moveSel(dx, dy) {
     const isColony = rival.colonies.some(rc => rc.x === nx && rc.y === ny);
     if (atWar(G.nation, rival.nation)) {
       if (isColony && (G.flags & WOI_DECLARED)) { showEvent('NOWARSDURINGREV', {}); return; }
+      // @CANNOTATTACK, same data-driven rating gate as the native branch.
+      if (!u.ship && !(Number((unit(u.type) || {}).attack) > 0)) {
+        showEvent('CANNOTATTACK');
+        return;
+      }
       const ru = rival.units.find(x => x.x === nx && x.y === ny);
       // Ship against ship runs the raw guns/hull roll, not the modifier chain.
       if (ru && u.ship && ru.ship) { if (navalAttack(u, ru)) advance(); return; }
@@ -8799,15 +9037,15 @@ function setOrder(n) {
 function improveOrder(n) {
   const u = G.units[G.sel];
   if (!u) return;
-  if (!canImprove(u)) {
-    G.msg = u && u.ship ? 'Ships cannot work the land.'
-                        : 'Only a unit carrying tools can do that.';
-    return;
-  }
-  if (tileWater(at(u.x, u.y))) { G.msg = 'Nothing to improve at sea.'; return; }
-  if (n === ORDER_ROAD && hasRoad(u.x, u.y)) { G.msg = 'A road already runs here.'; return; }
+  // @ONLYPIO (@width=120): improvement orders need a pioneer (a unit carrying
+  // tools). The engine's predicate site is unread; refusing every non-pioneer,
+  // ships included, is the port's reading, flagged.
+  if (!canImprove(u)) { showEvent('ONLYPIO'); return; }
+  if (tileWater(at(u.x, u.y))) { showEvent('ONLYPIO'); return; }
+  // @NOROAD / @NOPLOW: the already-improved refusals, keyed.
+  if (n === ORDER_ROAD && hasRoad(u.x, u.y)) { showEvent('NOROAD'); return; }
   if (n === ORDER_CLEAR && !isForested(tileTerrain(at(u.x, u.y))) && hasPlow(u.x, u.y)) {
-    G.msg = 'This field is already plowed.'; return;
+    showEvent('NOPLOW'); return;
   }
   u.orders = n;
   u.work = 0;
@@ -8857,10 +9095,25 @@ function unloadCargo() {
   if (!u || !u.ship) { G.msg = 'Only a ship can unload cargo.'; return; }
   const c = colonyAt(u.x, u.y);
   if (!c) { G.msg = 'No colony here.'; return; }
-  let moved = 0;
-  for (const h of (u.hold || [])) { c.stock[h.good] += h.qty; moved += h.qty; }
-  u.hold = [];
-  G.msg = moved ? `Unloaded ${moved} goods.` : 'Nothing to unload.';
+  const doUnload = () => {
+    let moved = 0;
+    for (const h of (u.hold || [])) { c.stock[h.good] += h.qty; moved += h.qty; }
+    u.hold = [];
+    G.msg = moved ? `Unloaded ${moved} goods.` : 'Nothing to unload.';
+  };
+  // @WAREHOUSEFULL: the pre-unload spoilage warning, a 2-row confirm ("Never
+  // mind." / "Unload the %STRING1 anyway."). Capacity = the byte-read 100-ton
+  // overflow threshold; asked once for the first over-full good even when
+  // several are (the engine's per-good behaviour is unread), flagged.
+  const full = (u.hold || []).find(h => c.stock[h.good] + h.qty > 100);
+  if (full) {
+    askEvent('WAREHOUSEFULL',
+             { STRING0: c.name, STRING1: DATA.cargo[full.good].name,
+               NUMBER0: c.stock[full.good], NUMBER1: 100, NUMBER2: full.qty },
+             (choice) => { if (choice === 1) doUnload(); });
+    return;
+  }
+  doUnload();
 }
 function dumpCargo() {
   const u = G.units[G.sel];
@@ -8870,7 +9123,14 @@ function dumpCargo() {
 }
 function disbandUnit() {
   if (!G.units.length) return;
-  G.msg = `${G.units[G.sel].type} disbanded.`;
+  const u = G.units[G.sel];
+  // @DISBANDSHIP: "We cannot disband a ship at sea while it is carrying
+  // units." In port (a colony square) the men step ashore instead.
+  if (u.ship && (u.cargo || []).length && !colonyAt(u.x, u.y)) {
+    showEvent('DISBANDSHIP');
+    return;
+  }
+  G.msg = `${u.type} disbanded.`;
   G.units.splice(G.sel, 1);
   G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
 }
@@ -9393,6 +9653,8 @@ function colonyDrop(d, target, mx, my) {
         showEvent('MORETHANTHREE', {});
         return;
       }
+      if (jobForBuilding(b) === 'Teacher' && p.job !== 'Teacher' &&
+          teacherGuard(c, p)) return;
       p.cell = null;
       p.job = jobForBuilding(b);
     }

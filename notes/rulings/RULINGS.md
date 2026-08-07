@@ -8374,3 +8374,68 @@ player-visible stand-ins (cosmetic approximations may stay flagged).
    live queue (counts in the file's header).
 
 Suite: 229/229. render_diff --pairs: 14/14 PASS.
+
+## 2026-08-07o — Phase 1 wire-only sweep, batch 1: market, schooling, siting/movement guards, colony notices, trade-route bodies
+
+**~45 GAME.TXT keys wired at existing mechanics** (docs/COMPLETION_PLAN.md
+Phase 1). Byte-cited anchors, with every unread predicate flagged in code:
+
+- **@PRICEUP/@PRICEDOWN** emit from stepPrice on a level change -- the drift
+  fn (func_0305A8) is reached from BOTH the end-of-turn recompute
+  (func_036574 @0x367FC) and the per-transaction re-drift (@0x32902/@0x32D99),
+  so both paths announce; live frames (SESSION_UI_CATALOG, Sugar 17/20-23)
+  wear MSS2 with the good + number hilited. FLAGGED: the announced number is
+  the port's bid price (bid-vs-ask unread). %STRING1 = @HOMEPORT city.
+  **@SOMEBOYCOTT** replaces the ad-hoc sell refusal (mask test @0x030B47).
+- **Schooling (9 keys).** teacherGuard() at the three assignment paths
+  (occupation menu, building pick, building drop): @NOTEACHER (class>=4 not
+  teachable @0x02DE7D), @NEEDCOLLEGE/@NEEDUNIVERSITY (tier > building level,
+  @JOB col 3), @SCHOOL1/@COLLEGE2/@UNIV3 (faculty cap = level @0x02DE5B).
+  FLAGGED: assignment-time placement + guard order (the engine tests in
+  func_02D658's turn loop). Graduation rungs @0x02DF00/35/70 now emit
+  @TRAINCRIMINAL / @TRAININDENTURED / @TRAINPROFESSION per rung.
+  @TEACHCONVERT wired as the convert's live-among refusal (training.md
+  §Native learning), before the generic @LEARNMASTER.
+- **Colony siting (func_022542).** buildColony guard chain: @SEACOLONY,
+  @ONLYCOL (NOT_COLONISTS = wagon/artillery/treasure, flagged reading),
+  @TOOMOUNTAIN, @TOONEAR (radius unread -- port refuses chebyshev<=1,
+  flagged), then the confirm chain @NOPORT (no adjacent water, lake split
+  unmodelled, flagged) and the byte-cited tutorial scans (gate [0x53A6]<2
+  @0x22763; @TUTNOSPACES productive<4 @0x2276A, @TUTNOLUMBER forested==0
+  @0x22782; row 2 proceeds, matching `cmp ax,2`). "Productive" = land not
+  mountain/arctic, flagged. DELIBERATELY UNWIRED: @TOONEARBUILD (the port
+  founds instantly -- no pending-build state), @TOOMANYCOLONIES /
+  @TOOMANYUNITS (engine cap values unread; no invented caps), @SHIPLAKE
+  (no lake connectivity model). Each stays MISSING with this pointer.
+- **Movement/order guards.** @ONLYPIO + @NOPLOW/@NOROAD in improveOrder;
+  @LANDFIRST (hostile landing square from shipboard); @CANNOTATTACK
+  (attack rating 0, data-driven from @UNIT); @DISBANDSHIP (laden ship at
+  sea); @KEEPSTOCKADE (any stockade level blocks abandon).
+- **Colony notices.** @FOOD1/@FOOD2 depletion warning the turn stores hit 0,
+  death (@STARVE1/@STARVE2) from the next hungry turn -- the two keys'
+  tenses read as warning-then-loss, flagged; winter variants = fall turn
+  after 1600, flagged. @SPOIL1-4 on the discard paths only (boycott /
+  declared-without-Custom-House -- the byte-read @0x2D785 auto-sale never
+  spoils): single-good = 1/3, several = 2/4, warehouse hint while level<2,
+  flagged. @CARGOREADY1/2 latched at the 100-ton threshold (@CARGOREADY0
+  blocked on the per-good capacity model, func_008D00 unread).
+  @WAREHOUSEFULL = the 2-row pre-unload confirm (first over-full good only,
+  flagged). @EFFICIENT/@INEFFICIENT latch on toryPenalty crossing 0
+  (NUMBER0 = the byte-cited 10-difficulty divisor).
+- **Misc.** @LOSTCITY4 asks before the burial roll; @LOSTCITY0 fountain
+  recruit picker (3 candidates x 8 picks, list size flagged); @EVASIVE =
+  gunless defender surviving the roll escapes (condition unmapped in the
+  EXE -- flagged stand-in); @CONTINENTAL replaces @VALOR on the type
+  advance; @TIMECHANGE one-shot at the 1600 cadence switch (carets of its
+  help-card format stripped by the bundler, flagged); @LANDFALL2 on river
+  landing tiles.
+- **Trade-route editor**: the five paraphrased literals replaced by the
+  bundled bodies -- @TRADESTART/@TRADESELECT/@TRADEDELETE as the picker
+  titles (via DATA.events), @TRADETYPE now ASKED (sea/land row), @TRADENAME
+  as the name-entry dialog prefilled with the auto-name. PARAPHRASED
+  category emptied.
+
+Suite: 230/230 (new "wire-only sweep" block: prices, teacher guards,
+graduation rungs, siting, movement guards, spoilage, evasion, trade bodies).
+Ledger: DONE 222 (+46), DONE-VIA-DATA 16, PARAPHRASED 0 (-5),
+BUNDLED-UNWIRED 42, MISSING 172 (-32), N/A 23, SUPPORT 24.

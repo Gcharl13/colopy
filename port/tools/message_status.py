@@ -26,16 +26,16 @@ WIRED_VIA_DATA = {
     'NATION1A': 'DATA.briefings', 'NATION1B': 'DATA.briefings',
     'NATION2A': 'DATA.briefings', 'NATION2B': 'DATA.briefings',
     'NATION3A': 'DATA.briefings', 'NATION3B': 'DATA.briefings',
+    # drawTrade reads these through DATA.events.<KEY>.body (Phase 1 swapped
+    # the paraphrased literals for the bundled bodies).
+    'TRADESELECT': 'drawTrade (DATA.events body)',
+    'TRADESTART': 'drawTrade (DATA.events body)',
+    'TRADEDELETE': 'drawTrade (DATA.events body)',
 }
-# Trade-route editor keys whose BODIES the port paraphrases in its own picker
-# UI (drawTrade/openTradeMenu) -- flagged so Phase 1 swaps the literals in.
-PARAPHRASED = {
-    'TRADENAME': 'openTradeMenu (hardcoded copy)',
-    'TRADESELECT': 'tradeCommit (hardcoded copy)',
-    'TRADESTART': 'openTradeMenu (hardcoded copy)',
-    'TRADETYPE': 'openTradeMenu (hardcoded copy)',
-    'TRADEDELETE': 'openTradeMenu (hardcoded copy)',
-}
+# Keys whose BODIES the port paraphrases in its own UI -- swap these for the
+# bundled text as they are found. (Emptied 2026-08-07: the five trade-route
+# keys were the last, wired in the Phase 1 sweep.)
+PARAPHRASED = {}
 # Structurally out of scope for the port -- each with the reason.
 NA = {
     'SAVEGAME': 'port saves to localStorage, own UI', 'SAVEGOOD': 'ditto',

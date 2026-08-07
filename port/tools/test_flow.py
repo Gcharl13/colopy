@@ -70,6 +70,9 @@ SCRIPT = """() => {
   G.sel = G.units.findIndex(u => !u.ship);
   const founder = G.units[G.sel];
   buildColony();
+  // The founding-validation confirms (@NOPORT / @TUTNOSPACES / @TUTNOLUMBER,
+  // func_022542) may precede the name dialog; row 2 proceeds through each.
+  for (let i = 0; i < 3 && G.dialog && G.dialog.entry === undefined; i++) closeDialog(1);
   out.colonyPrompt = G.dialog ? G.dialog.entry : null;
   const before = G.units.length;
   closeDialog(G.dialog.entry);
@@ -274,7 +277,9 @@ SCRIPT = """() => {
     const f0 = G.units[G.sel];
     G.natives = G.natives.filter(n => Math.abs(n.x - f0.x) > 2 || Math.abs(n.y - f0.y) > 2);
     G.villages = G.villages.filter(v => Math.abs(v.x - f0.x) > 2 || Math.abs(v.y - f0.y) > 2);
-    buildColony(); closeDialog('Jamestown');
+    buildColony();
+    for (let i = 0; i < 3 && G.dialog && G.dialog.entry === undefined; i++) closeDialog(1);
+    closeDialog('Jamestown');
     G.screen = 'colony';
     const c = G.colonies[0];
     c.colonists.push({ type: 'Colonists', job: null, cell: null });
@@ -399,8 +404,13 @@ SCRIPT = """() => {
         building: null, hammers: 0, sol: 0, latch: 0 };
       G.colonies = [p];
       p.stock[GOOD.FOOD] = 0;
+      // Turn 1 at empty stores posts the @FOOD1/@FOOD2 depletion warning;
+      // starvation (a colonist lost) starts the NEXT hungry turn.
       G.eventQueue = []; colonyTurn(p);
-      const starveFired = G.eventQueue.some(e => /run out of food/i.test(e.lines.join(' ')));
+      const depletedFired = G.eventQueue.some(e => /depleted/i.test(e.lines.join(' ')));
+      p.stock[GOOD.FOOD] = 0;
+      G.eventQueue = []; colonyTurn(p);
+      const starveFired = G.eventQueue.some(e => /run out of food|starving/i.test(e.lines.join(' ')));
       p.building = 'Stockade'; p.hammers = 9999; p.stock[GOOD.TOOLS] = 0;
       G.eventQueue = []; advanceConstruction(p, 0);
       const builtFired = G.eventQueue.some(e => /produces/i.test(e.lines.join(' '))) &&
@@ -410,7 +420,7 @@ SCRIPT = """() => {
       const toolsFired = G.eventQueue.some(e => /tools/i.test(e.lines.join(' ')));
       G.eventQueue = []; advanceConstruction(p, 0);
       const toolsOnce = G.eventQueue.length === 0;
-      out.colonyPopups = { starveFired, builtFired, toolsFired, toolsOnce };
+      out.colonyPopups = { depletedFired, starveFired, builtFired, toolsFired, toolsOnce };
     }
 
 
@@ -1064,6 +1074,116 @@ SCRIPT = """() => {
                                   r.colonies.includes(rc);
     } else out.diplo.noWarsDuringRev = true;
     G.flags = 0;
+  }
+
+  // ---- Phase 1 wire-only sweep: market, schooling, guards, notices ----
+  {
+    beginGame(); G.screen = 'map';
+    const q = () => G.eventQueue.map(e => e.lines.join(' ')).join(' | ');
+    const w1 = {};
+    // @PRICEDOWN / @PRICEUP fire from stepPrice on a level change.
+    const c0 = DATA.cargo[0];
+    G.market[0] = c0.low + 2; G.accum[0] = 100 * c0.fall;
+    G.eventQueue = []; stepPrice(0);
+    w1.priceDown = /has fallen to/.test(q());
+    G.market[0] = c0.low; G.accum[0] = -100 * c0.rise;
+    G.eventQueue = []; stepPrice(0);
+    w1.priceUp = /has risen to/.test(q());
+    w1.priceSpeaker = eventSpeaker('PRICEUP') === 'MSS2' &&
+                      eventSpeaker('SOMEBOYCOTT') === 'MSS2' &&
+                      !!DATA.events.SOMEBOYCOTT;
+    // Teacher guards: @NOTEACHER, @NEEDCOLLEGE, @SCHOOL1 faculty cap.
+    const sc = { name: 'S', x: 1, y: 1, nation: G.nation, colonists: [],
+                 stock: DATA.cargo.map(() => 0), hammers: 0, building: null,
+                 sol: 0, buildings: STARTING_BUILDINGS.concat(['Schoolhouse']) };
+    const t1 = DATA.jobexpert[DATA.jobtier.findIndex(t => t === 1)];
+    const t2 = DATA.jobexpert[DATA.jobtier.findIndex(t => t === 2)];
+    G.eventQueue = [];
+    w1.noTeacher = teacherGuard(sc, { profession: null }) &&
+                   /mastered a profession/.test(q());
+    G.eventQueue = [];
+    w1.needCollege = teacherGuard(sc, { profession: t2 }) && /college/i.test(q());
+    sc.colonists.push({ job: 'Teacher', profession: t1, type: 'Colonists', cell: null });
+    G.eventQueue = [];
+    w1.facultyCap = teacherGuard(sc, { profession: t1 }) &&
+                    /faculty of only/.test(q());
+    // Graduation rungs: a criminal climbs to servant with @TRAINCRIMINAL.
+    const crim = { profession: 'Petty Criminals', job: null, cell: null,
+                   type: 'Colonists', taught: 99 };
+    sc.colonists.push(crim);
+    G.eventQueue = []; runSchool(sc);
+    w1.gradCriminal = crim.profession === 'Indentured Servants' &&
+                      /indentured/i.test(q());
+    // Founding guards: @TOOMOUNTAIN and @TOONEAR.
+    const gv = G.villages; const gn = G.natives;
+    G.villages = []; G.natives = [];
+    const settler = mkUnit('Colonists', 2, 2);
+    G.units.push(settler); G.sel = G.units.indexOf(settler);
+    const ti = 2 * MAP.w + 2, sv = MAP.tiles[ti];
+    MAP.tiles[ti] = 3 | 0xA0;
+    G.eventQueue = []; buildColony();
+    w1.tooMountain = /mountains/i.test(q());
+    MAP.tiles[ti] = 3;
+    G.colonies.push({ name: 'Near', x: 3, y: 2, nation: G.nation, colonists: [],
+                      stock: DATA.cargo.map(() => 0), buildings: [], hammers: 0,
+                      building: null, sol: 0 });
+    G.eventQueue = []; buildColony();
+    w1.tooNear = /too near/i.test(q());
+    G.colonies.pop(); MAP.tiles[ti] = sv;
+    // @CANNOTATTACK: a Wagon Train (attack 0) refused before the roll.
+    const ti2 = 3 * MAP.w + 2, sv2 = MAP.tiles[ti2];
+    MAP.tiles[ti2] = 3;                       // the target square must be land
+    G.natives.push({ x: 2, y: 3, tribe: 0 });
+    const wagon = mkUnit('Wagon Train', 2, 2);
+    G.units.push(wagon); G.sel = G.units.indexOf(wagon); wagon.movesLeft = 2;
+    G.eventQueue = []; moveSel(0, 1);
+    w1.cannotAttack = /cannot attack/.test(q());
+    G.natives.pop(); MAP.tiles[ti2] = sv2;
+    G.units.splice(G.units.indexOf(wagon), 1);
+    G.units.splice(G.units.indexOf(settler), 1);
+    G.villages = gv; G.natives = gn;
+    // @DISBANDSHIP: a laden ship at sea will not disband.
+    const boat = mkUnit('Caravel', 0, 0, ['Colonists']);
+    G.units.push(boat); G.sel = G.units.indexOf(boat);
+    G.eventQueue = []; disbandUnit();
+    w1.disbandShip = /disband a ship at sea/.test(q()) && G.units.includes(boat);
+    G.units.splice(G.units.indexOf(boat), 1);
+    // @KEEPSTOCKADE blocks abandoning a stockaded colony.
+    const ab = { name: 'A', x: 9, y: 9, nation: G.nation,
+                 colonists: [{ type: 'Colonists', job: null, cell: null }],
+                 stock: DATA.cargo.map(() => 0), hammers: 0, building: null,
+                 sol: 0, buildings: STARTING_BUILDINGS.concat(['Stockade']) };
+    G.colonies.push(ab); G.colony = G.colonies.indexOf(ab);
+    G.eventQueue = []; abandonColony();
+    w1.keepStockade = /stockade, fort, or fortress/.test(q()) &&
+                      G.colonies.includes(ab);
+    // @SPOIL + @CARGOREADY on the boycotted-overflow path.
+    ab.stock[2] = 120; G.boycotts = [2];
+    G.eventQueue = []; autoExport(ab);
+    w1.spoil = /exceeded its warehouse capacity/.test(q()) &&
+               /thrown away/.test(q()) && ab.stock[2] === 50;
+    w1.cargoReady = /new cargo of/i.test(q());
+    G.boycotts = []; G.colonies.pop();
+    // @EVASIVE: a gunless ship that survives the roll escapes.
+    const rnd = Math.random; Math.random = () => 0.9999;
+    const priv = mkUnit('Privateer', 0, 0), prey = mkUnit('Caravel', 0, 1);
+    G.eventQueue = []; navalAttack(priv, prey);
+    Math.random = rnd;
+    w1.evasive = /evades/.test(q());
+    // The trade-route editor now carries the bundled bodies.
+    w1.tradeBodies = !!(DATA.events.TRADESTART && DATA.events.TRADETYPE &&
+                        DATA.events.TRADEDELETE && DATA.events.TRADESELECT &&
+                        DATA.dialogs.TRADENAME);
+    // Rumour asks + fountain picker + remaining keys are bundled.
+    w1.bundled = !!(DATA.events.LOSTCITY0 && DATA.events.LOSTCITY4 &&
+                    DATA.events.TIMECHANGE && DATA.events.CONTINENTAL &&
+                    DATA.events.WAREHOUSEFULL && DATA.events.FOOD1 &&
+                    DATA.events.FOOD2 && DATA.events.STARVE2 &&
+                    DATA.events.EFFICIENT && DATA.events.INEFFICIENT &&
+                    DATA.dialogs.LANDFALL2 && DATA.events.SEACOLONY &&
+                    DATA.events.ONLYPIO && DATA.events.NOPLOW &&
+                    DATA.events.NOROAD && DATA.events.LANDFIRST);
+    out.wire1 = w1;
   }
 
   // ---- treasure transport and fog of war ----
@@ -2728,7 +2848,7 @@ def main():
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("construction gates on the prereq tier, supersede, and Adam Smith factories",
          all(r["buildGating"].values()), r["buildGating"]),
-        ("colony posts real popups: starvation, construction complete, tools stall (once)",
+        ("colony posts real popups: depletion then starvation, construction complete, tools stall (once)",
          all(r["colonyPopups"].values()), r["colonyPopups"]),
         ("no braves or villages on water", r["nothingOnWater"], r["nothingOnWater"]),
         ("each report has its own REPORT<N>.PIK background",
@@ -2989,6 +3109,9 @@ def main():
          all(r["haggle"].values()), r["haggle"]),
         ("meeting: MYR greeting, the @PEACE* four-row hub, silent treaty acceptance",
          all(r["diplo"]["meeting"].values()), r["diplo"]["meeting"]),
+        ("wire-only sweep: prices, teacher guards, graduation rungs, siting, "
+         "movement guards, spoilage, evasion, trade bodies",
+         all(r["wire1"].values()), r["wire1"]),
     ]
     bad = 0
     for name, ok, got in checks:
