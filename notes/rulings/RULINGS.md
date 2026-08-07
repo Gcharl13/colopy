@@ -8290,3 +8290,52 @@ pixel read of the live Curacao frames:
   and the amount<=0 path independent of assignment.
 
 Suite: 227/227.
+
+## 2026-08-07m — the two HIGH invented-flow rebuilds: village haggle + European meeting
+
+**Village trade (func_049600; audit L49-51/65-66/83).** The flat sell/gift/buy
+list with port-authored labels is replaced by the engine's popup session, in
+the manual's order: sell-or-gift first (@TRADEWHICH picker when >1 cargo --
+its engine trigger is unestablished, flagged), then the village offers its
+own three goods (@BUYWHICH's 4-row popup -> @BUY0/@BUY1). @TRADE0 carries the
+gift row; @TRADE1 (round 2+) drops it. Byte-cited pieces: the §19.5 price
+formulas (unchanged), the haggle BUDGET = random(1..rounds)+qty/4 with rounds
+= min(3,(demand-want+4)/10), the "same good twice" @BADCARGO gate
+(settlement +0x08 last_bought, muskets excepted), @BADHAGGLE0/1 = the
+sell-side per-good latch and 2/3 = the buy-side latch (the texts' own
+first/repeat split), @TRADENOCARGO/@TRADENOWANT refusals, @NOTENOUGH with the
+treasury, and the chief speaking IND<tribe>A<band> throughout. TBD stand-ins,
+flagged in code: the per-counter budget spend (flat 10), the counter amounts
+(+50% sell / -25% buy) and the per-round movement (halfway); @TRADE0's
+unbraced %STRING0 modifier has no decoded source and is passed empty.
+villageBuy's invented -2 tension credit is removed (the cited -4 @0x5C41E is
+the sell side's); the three invented notices are gone.
+
+**European meeting (func_057F4E; audit L10-11 + the trigger rows).** The
+invented parley SCREEN is deleted -- the meeting is a chain of popups over
+the map, always framed as power B speaking, with MYR<B>.SS on every width-220
+conversation ([0x1F60] = B) and the MSS advisors keeping the width-190
+announcements. Wired: the greeting key build (HELLOFIRST/AHOY on first
+contact by unit type, MEEK/MANLY after, HELLOUSA once independent,
+@0x0588CD-0x058939) with the @GREATKINGS/@GREATDEEDS fills; the AI-initiated
+direction (a rival unit beside the player opens the same chain, gated on the
+byte-cited eligibility + the 16-turn cooldown); the AI topics (@TRIBUTE with
+accept-on-row-2, the AI-proposed @WORTHY) behind the grace period
+10*(10-diff) and the action gate 200*diff+100; the @PEACE*/@OLDPEACE*
+standing-peace hub with its four fixed rows -> treaty (silent -- @SIGNTREATY
+belongs to the AI-AI ticker), the withdraw branch (@NOTHINGWITHDRAW /
+@MAYBEWITHDRAW at the byte-cited price 25*(diff+2)*forces min 100 x2-at-war
+-50/unit Franklin/2 / @NOTWITHDRAW), the threat branch (@GIFTS/@THREATS/
+@PROVOKE), and the alliance branch (@MILITARY's runtime target rows ->
+@NOCONTACT/@ALREADYSMITE/@SMITEEUROPE/@SMITEINDIANS -> pay -> @MERCENARY,
+short purse -> @UNFORTUNATE). A minimal AI-AI ticker signs peace treaties
+with the @SIGNTREATY announcement (turn>=40, every 3rd turn, attitude+action
+gates); its war path's grievance drivers are unread and omitted. FLAGGED
+READINGS (no byte cite): the MEEK/MANLY tone predicate (attitude>=8 reused),
+PEACE-vs-OLDPEACE = standing treaty, topic priority, the withdraw/threat
+sub-branch selection, and the smite price (demandValue(1000) stand-in).
+@WORTHY's %STRING0 takes @GREATLEADER (the @GREATKINGS line overflows 320px,
+which the engine never shows). layoutDialog gains the engine's screen clamps
+(@0x06D563/71).
+
+Suite: 229/229 (haggle chain + meeting chain regressions).

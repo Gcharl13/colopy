@@ -815,7 +815,12 @@ function layoutDialog(d) {
   const textH = d.body.length * 6;
   const rows = d.opts ? d.opts.length * 8 : 11;   // entry field: label + box
   const h = 6 + textH + 3 + rows + 3;
-  return { x: Math.round(160 - w / 2), y: Math.round(100 - h / 2), w, h, textH };
+  // The engine's screen clamps: right past 320 shifts left, bottom past 200
+  // shifts up (@0x06D563/@0x06D571); a negative origin floors at 0.
+  let x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  if (x + w > 320) x = 320 - w;
+  if (y + h > 200) y = 200 - h;
+  return { x: Math.max(0, x), y: Math.max(0, y), w, h, textH };
 }
 // The two ink sets: the boot/title setter (@0x0734BC) uses the immediates
 // 0xFE base / 0xFC gold hilite; the IN-GAME setter (@0x073474) reads the
@@ -4202,9 +4207,10 @@ function villageOffer(v, good, qty) {
 // 100-load zeroes it -- and muskets or horses ARM the tribe: +1 lore at 25
 // units, +2 at 50, with horses also adding a quarter of the load to the herd.
 // A -4 tension credit rides along.
-function villageSell(v, good, qty) {
+function villageSell(v, good, qty, price) {
   const t = G.tribes[v.tribe];
-  const paid = villageOffer(v, good, qty);
+  // The haggle loop passes the negotiated price; a bare call takes the quote.
+  const paid = price !== undefined ? price : villageOffer(v, good, qty);
   G.gold += paid;
   v.stock = v.stock || DATA.cargo.map(() => 0);
   v.stock[good] += qty;
@@ -4244,13 +4250,14 @@ function villageSurplus(v) {
           .filter(r => r.qty >= 25 && RAW_GOODS.includes(r.good))
           .slice(0, 3);
 }
-function villageBuy(v, good, qty) {
-  const price = villageAsk(v, good, qty);
+function villageBuy(v, good, qty, price) {
+  if (price === undefined) price = villageAsk(v, good, qty);
   if (price > G.gold) return 0;
   G.gold -= price;
   v.stock = v.stock || DATA.cargo.map(() => 0);
   v.stock[good] = Math.max(0, (v.stock[good] || 0) - qty);
-  adjustTension(v.tribe, -2);
+  // (No tension credit here: the byte-cited -4 trade credit @0x5C41E is the
+  // SELL side's; the -2 this used to apply was the port's invention.)
   return price;
 }
 
@@ -5029,7 +5036,7 @@ function fillTemplate(line, subs) {
 // @CASHTREASURE/@LOOT*/@NOLOOT join it. LOOTCAPTURE stays military.
 const SPEAKER_KING = /^(KING|TAXOPTIONS|TEAPARTY|UPKEEP|CASHTREASURE|LOOT(?!CAPTURE)|NOLOOT|MERCENARIES|REFIT)/;
 const SPEAKER_MILITARY = /^(DEMOTE|COLONISTCAPTURE|WAGONCAPTURE|CARGOCAPTURE|LOOTCAPTURE|ARTILLERY|SHIPDAMAGE|SHIPSUNK|VETERAN|VALOR|WELLSEASONED|SHIPCOMBAT|EVASIVE|FORTFIRE|MOBILIZE|WARN)/;
-const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS)/;
+const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS|BUY0|BUY1|BUYWHICH|TRADE0|TRADE1|TRADEWHICH|BADHAGGLE|BADCARGO|TRADENOCARGO|TRADENOWANT)/;
 // MSS2 merchant: price/trade wrapper func_034DD4 sets 2 @0x034E98 and the
 // live @PRICEDOWN/@PRICERISE frames wear it; @SUCCESSION is cited to MSS2
 // directly. @UNREST's index is unread -- MSS2 is the port's reading (the
@@ -5090,17 +5097,20 @@ function notice(s) {
 }
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
-function askEvent(key, subs, onDone, optsKey) {
+function askEvent(key, subs, onDone, optsKey, speaker) {
   const t = DATA.events[key];
   if (!t) { if (onDone) onDone(-1); return; }
   // Most event popups carry their own rows in a second paragraph; the King's
-  // tax demand instead pairs its pretext body with the shared @TAXOPTIONS rows.
-  const rowsFrom = optsKey && DATA.events[optsKey] ? DATA.events[optsKey].body : t.tail;
+  // tax demand instead pairs its pretext body with the shared @TAXOPTIONS
+  // rows, and the runtime-built menus (@MILITARY's target list, @TRADEWHICH's
+  // cargo picker) pass their rows as an ARRAY.
+  const rowsFrom = Array.isArray(optsKey) ? optsKey
+    : optsKey && DATA.events[optsKey] ? DATA.events[optsKey].body : t.tail;
   const rows = rowsFrom.map(l => fillTemplate(l, subs || {}));
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
-    speaker: eventSpeaker(key),
+    speaker: speaker !== undefined ? speaker : eventSpeaker(key),
     // Same one-based @default as openDialog above.
     sel: t.default && /^\d+$/.test(t.default)
       ? Math.max(0, Math.min(rows.length - 1, +t.default - 1)) : 0,
@@ -5160,7 +5170,7 @@ function villageActions() {
   return rows.map(r => ({ ...r, label: actionLabel(r.id) }));
 }
 function villageRowCount() {
-  return G.villageMode === 'trade' ? villageRows().length : villageActions().length;
+  return villageActions().length;
 }
 function actionLabel(id) {
   const v = G.village;
@@ -5174,7 +5184,7 @@ function actionLabel(id) {
 function runVillageAction(id) {
   const v = G.village, u = G.villageVisitor;
   switch (id) {
-    case 0: case 1: G.villageMode = 'trade'; G.villageRow = 0; return;
+    case 0: case 1: openVillageTrade(v, u); return;
     case 2: G.screen = 'map'; G.village = null; establishMission(v, u); advance(); return;
     case 3: G.screen = 'map'; G.village = null; denounceHeresy(v, u); advance(); return;
     case 4: G.screen = 'map'; G.village = null; liveAmong(v, u); advance(); return;
@@ -5186,27 +5196,157 @@ function runVillageAction(id) {
   }
 }
 
-// The village screen: the chief's greeting, what he is "especially interested
-// in" (the top of the sorted demand list), and one row per good in the
-// visitor's hold with the offer beside it.
-function villageRows() {
-  const v = G.village, u = G.villageVisitor;
-  const rows = [];
-  const hold = (u && u.hold) || [];
-  for (const h of hold)
-    rows.push({ kind: 'sell', good: h.good, qty: h.qty,
-                label: `Sell ${h.qty} ${DATA.cargo[h.good].name}`,
-                note: `${villageOffer(v, h.good, h.qty)}$` });
-  for (const h of hold)
-    rows.push({ kind: 'gift', good: h.good, qty: h.qty,
-                label: `Give ${h.qty} ${DATA.cargo[h.good].name} as a gift`, note: '' });
-  // What the village offers in return.
-  for (const r of villageSurplus(v))
-    rows.push({ kind: 'buy', good: r.good, qty: r.qty,
-                label: `Buy ${r.qty} ${DATA.cargo[r.good].name}`,
-                note: `${villageAsk(v, r.good, r.qty)}$` });
-  rows.push({ kind: 'leave', label: 'Take our leave', note: '' });
-  return rows;
+// ---- the village trade haggle (func_049600) -------------------------------
+// The loop's first 186 bytes are disassembled; its tail (0x0496BA..0x04A37A,
+// the round arithmetic) is NOT -- so structure and prices are cited and the
+// three loop numbers are flagged stand-ins. Session order per the manual:
+// sell-or-gift first, then the village offers its own goods to buy
+// (@TRADE* -> @BUYWHICH -> @BUY*). Prices are §19.5's byte-cited formulas
+// (villageOffer / villageAsk); the haggle BUDGET is §19.5's
+// "random(1..rounds) + qty/4", rounds = min(3, (demand-want+4)/10), and the
+// village walks away when it is spent. TBD stand-ins, flagged: each counter
+// spends a flat 10 budget, the player's counter is quote+50% (sell) /
+// quote-25% (buy), and the village moves halfway toward it per round.
+// Latches: @BADHAGGLE0/1 lock the sell side PER GOOD, @BADHAGGLE2/3 lock the
+// buy side; selling something of value clears the buy lock (the texts' own
+// "until you bring us something of value").
+function tradeSpeaker(v) { return `IND${v.tribe % 8}A${Math.min(3, villageBand(v))}`; }
+function openVillageTrade(v, u) {
+  const cargo = ((u && u.hold) || []).filter(h => h.qty > 0);
+  if (!cargo.length) { showEvent('TRADENOCARGO', {}, tradeSpeaker(v)); return; }
+  tradeSellPick(v, u);
+}
+function tradeSellPick(v, u) {
+  const cargo = ((u && u.hold) || []).filter(h => h.qty > 0);
+  if (!cargo.length) { tradeBuyPhase(v, u); return; }
+  if (cargo.length === 1) { tradeSellOffer(v, u, cargo[0]); return; }
+  // @TRADEWHICH heads a picker built from the hold, like @PICKACARGO; its
+  // engine trigger is unestablished (audit L83), so >1 cargo is the binding.
+  askEvent('TRADEWHICH', {}, (k) => {
+    if (k >= 0 && k < cargo.length) tradeSellOffer(v, u, cargo[k]);
+    else tradeBuyPhase(v, u);
+  }, cargo.map(h => `${h.qty} ${DATA.cargo[h.good].name}.`).concat(['Never mind.']),
+     tradeSpeaker(v));
+}
+function tradeSellOffer(v, u, h) {
+  const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
+  v.haggleSell = v.haggleSell || {};
+  if (v.haggleSell[good]) {
+    showEvent('BADHAGGLE1', { STRING0: name }, tradeSpeaker(v));
+    tradeBuyPhase(v, u); return;
+  }
+  const demand = villageDemand(v)[good] || 0;
+  // "A village never buys the same good twice in a row -- muskets excepted"
+  // (settlement +0x08 last_bought); the steering trio is the sorted demand
+  // top-3 (§10.4's reading of @BADCARGO's list, not byte-traced).
+  if (v.lastBought === good && good !== 15) {
+    const wantList = villageDemand(v).map((d, i) => [d, i])
+      .filter(x => x[1] !== good).sort((a, b) => b[0] - a[0])
+      .slice(0, 3).map(x => DATA.cargo[x[1]].name);
+    showEvent('BADCARGO', { STRING0: name, STRING1: wantList[0] || '',
+                            STRING2: wantList[1] || '', STRING3: wantList[2] || '' },
+              tradeSpeaker(v));
+    tradeBuyPhase(v, u); return;
+  }
+  if (demand <= 1) {
+    showEvent('TRADENOWANT', { NUMBER0: qty, STRING0: name }, tradeSpeaker(v));
+    tradeBuyPhase(v, u); return;
+  }
+  const want = Math.min(8, Math.floor(demand / 4));   // the port's want stand-in
+  const rounds = Math.max(1, Math.min(3, Math.floor((demand - want + 4) / 10)));
+  tradeSellRound(v, u, h, {
+    offer: villageOffer(v, good, qty), round: 0,
+    budget: 1 + Math.floor(Math.random() * rounds) + (qty >> 2),
+  });
+}
+function tradeSellRound(v, u, h, st) {
+  const good = h.good, qty = h.qty, name = DATA.cargo[good].name;
+  const counter = st.offer + Math.max(1, st.offer >> 1);        // TBD stand-in
+  // @TRADE0 rows: accept / fairer price / gift / never mind; @TRADE1 drops
+  // the gift row. %STRING0 (the "some %STRING0 {goods}" modifier) has no
+  // decoded source -- passed empty, flagged.
+  askEvent(st.round === 0 ? 'TRADE0' : 'TRADE1',
+           { STRING0: '', STRING1: name, NUMBER0: st.offer, NUMBER1: counter },
+           (k) => {
+    const giftRow = st.round === 0 ? 2 : -1;
+    if (k === 0) {
+      villageSell(v, good, qty, st.offer);
+      holdAdd(u, good, -qty);
+      v.lastBought = good;
+      v.haggleBuy = false;
+      tradeBuyPhase(v, u); return;
+    }
+    if (k === 1) {
+      st.budget -= 10;                                          // TBD spend
+      if (st.budget <= 0) {
+        v.haggleSell[good] = true;
+        showEvent('BADHAGGLE0', { STRING1: name }, tradeSpeaker(v));
+        tradeBuyPhase(v, u); return;
+      }
+      st.offer += Math.max(1, (counter - st.offer) >> 1);       // TBD raise
+      st.round += 1;
+      tradeSellRound(v, u, h, st); return;
+    }
+    if (k === giftRow) {
+      villageGift(v, good, qty);
+      holdAdd(u, good, -qty);
+      v.haggleBuy = false;
+      tradeBuyPhase(v, u); return;
+    }
+    tradeBuyPhase(v, u);                                        // never mind
+  }, undefined, tradeSpeaker(v));
+}
+function tradeBuyPhase(v, u) {
+  if (v.haggleBuy) { showEvent('BADHAGGLE3', {}, tradeSpeaker(v)); return; }
+  const offers = villageSurplus(v);
+  if (!offers.length) return;
+  const names = offers.map(r => DATA.cargo[r.good].name);
+  askEvent('BUYWHICH',
+           { STRING0: names[0] || '', STRING1: names[1] || '', STRING2: names[2] || '' },
+           (k) => { if (k >= 0 && k < offers.length) tradeBuyOffer(v, u, offers[k]); },
+           undefined, tradeSpeaker(v));
+}
+function tradeBuyOffer(v, u, r) {
+  // The load is clamped to the hold the way the transfer executor clamps.
+  const cap = Number((unit(u.type) || {}).cargo) || 0;
+  const slot = (u.hold || []).find(x => x.good === r.good);
+  const used = (u.cargo || []).length + (u.hold || []).length;
+  const space = Math.max(0, cap - used) * 100 + (slot ? Math.max(0, 100 - slot.qty) : 0);
+  const qty = Math.min(r.qty, space);
+  if (qty <= 0) return;
+  const demand = villageDemand(v)[r.good] || 0;
+  const want = Math.min(8, Math.floor(demand / 4));
+  const rounds = Math.max(1, Math.min(3, Math.floor((demand - want + 4) / 10)));
+  tradeBuyRound(v, u, r.good, qty, {
+    quote: villageAsk(v, r.good, qty), round: 0,
+    budget: 1 + Math.floor(Math.random() * rounds) + (qty >> 2),
+  });
+}
+function tradeBuyRound(v, u, good, qty, st) {
+  const counter = Math.max(1, Math.floor(st.quote * 3 / 4));    // TBD stand-in
+  askEvent(st.round === 0 ? 'BUY0' : 'BUY1',
+           { STRING0: DATA.cargo[good].name, STRING1: u.type, NUMBER0: st.quote,
+             NUMBER1: counter, NUMBER2: qty, NUMBER3: G.gold },
+           (k) => {
+    if (k === 0) {
+      if (st.quote > G.gold) { showEvent('NOTENOUGH', { NUMBER0: G.gold }, tradeSpeaker(v)); return; }
+      villageBuy(v, good, qty, st.quote);
+      u.hold = u.hold || [];
+      holdAdd(u, good, qty);
+      return;
+    }
+    if (k === 1) {
+      st.budget -= 10;                                          // TBD spend
+      if (st.budget <= 0) {
+        v.haggleBuy = true;
+        showEvent('BADHAGGLE2', {}, tradeSpeaker(v));
+        return;
+      }
+      st.quote -= Math.max(1, (st.quote - counter) >> 1);       // TBD drop
+      st.round += 1;
+      tradeBuyRound(v, u, good, qty, st); return;
+    }
+  }, undefined, tradeSpeaker(v));
 }
 // The village interaction is a §3 POPUP over the map, not a screen of its own
 // (spec/ui/context_dialogs.md §6: the enabled rows are sized by §2 and run by
@@ -5224,14 +5364,6 @@ function villageBand(v) {
 }
 function villageBody() {
   const v = G.village, t = G.tribes[v.tribe];
-  if (G.villageMode === 'trade') {
-    const d = villageDemand(v);
-    const top = d.map((n, i) => [n, i]).sort((a, b) => b[0] - a[0])[0];
-    const lines = [`"The ${t.name} welcome your trade."`];
-    if (top && top[0] > 0)
-      lines.push(`"We are especially interested in {${DATA.cargo[top[1]].name}}."`);
-    return lines;
-  }
   const e = DATA.events[VILLAGE_GREETING[villageBand(v)]];
   const lines = (e ? e.body : ['']).map(l => l
     .replace('%STRING0', DATA.levelname[v.level])
@@ -5244,7 +5376,7 @@ function villageBody() {
   return lines;
 }
 function villageBox() {
-  const rows = G.villageMode === 'trade' ? villageRows() : villageActions();
+  const rows = villageActions();
   const body = villageBody();
   let cw = 190;                                   // @width=190 on the @VILLAGE* keys
   for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
@@ -5280,30 +5412,10 @@ function drawVillage(ctx) {
   });
 }
 function villageCommit() {
-  if (G.villageMode !== 'trade') {
-    const a = villageActions()[G.villageRow];
-    if (a) runVillageAction(a.id);
-    return;
-  }
-  const r = villageRows()[G.villageRow];
-  if (!r || r.kind === 'leave') { G.screen = 'map'; G.village = null; advance(); return; }
-  const v = G.village, u = G.villageVisitor;
-  if (r.kind === 'sell') {
-    const paid = villageSell(v, r.good, r.qty);
-    holdAdd(u, r.good, -r.qty);
-    notice(`Sold ${r.qty} ${DATA.cargo[r.good].name} for ${paid}$`);
-  } else if (r.kind === 'buy') {
-    const cost = villageBuy(v, r.good, r.qty);
-    if (!cost) { showEvent('NOTENOUGH', { NUMBER0: G.gold }); return; }
-    u.hold = u.hold || [];
-    holdAdd(u, r.good, r.qty);
-    notice(`Bought ${r.qty} ${DATA.cargo[r.good].name} for ${cost}$`);
-  } else {
-    villageGift(v, r.good, r.qty);
-    holdAdd(u, r.good, -r.qty);
-    notice(`The ${G.tribes[v.tribe].singular} accept your gift.`);
-  }
-  G.villageRow = 0;
+  // Trade rows no longer live in this menu: rows 0/1 open the haggle popup
+  // chain (openVillageTrade) and everything runs through askEvent from there.
+  const a = villageActions()[G.villageRow];
+  if (a) runVillageAction(a.id);
 }
 
 // ------------------------------------------------------------ combat
@@ -5849,7 +5961,17 @@ function rivalTurn() {
       // state, order 5); at war they take the attack mission. A soldier
       // standing in one of his power's colonies stays as its garrison unless
       // another already holds it -- the planner's garrison-first shape.
-      if (!war) continue;
+      if (!war) {
+        // The AI-INITIATED meeting (func_046FFA @0x0481CB -> func_059B90):
+        // a rival unit beside the player's people opens the same dispatcher,
+        // B speaking first. parleyEligible carries the byte-cited gates and
+        // the 16-turn cooldown keeps it from nagging.
+        if (parleyEligible(r) && G.screen === 'map' && !G.dialog &&
+            (G.units.some(p => Math.abs(p.x - u.x) <= 1 && Math.abs(p.y - u.y) <= 1) ||
+             G.colonies.some(c => Math.abs(c.x - u.x) <= 1 && Math.abs(c.y - u.y) <= 1)))
+          runMeeting(r, u);
+        continue;
+      }
       const inOwnColony = r.colonies.some(c => c.x === u.x && c.y === u.y);
       const stacked = r.units.some(v => v !== u && !v.ship &&
                                         v.x === u.x && v.y === u.y);
@@ -6323,13 +6445,15 @@ function declareWarOn(a, b) {
   showEvent('DECLAREWAR', { STRING0: DATA.nations[a].adjective,
                             STRING1: DATA.nations[b].adjective });
 }
-function signTreaty(a, b) {
+function signTreaty(a, b, silent) {
   setWar(a, b, REL.WAR, false);
   setWar(b, a, REL.WAR, false);
   setTreaty(a, b, REL.TREATY, true);
   G.parleyLock[b] = G.turn + PARLEY_LOCKOUT;
-  showEvent('SIGNTREATY', { STRING0: DATA.nations[a].adjective,
-                            STRING1: DATA.nations[b].adjective });
+  // @SIGNTREATY is the AI-AI ticker's announcement (audit row 16): the
+  // player's own acceptance in the meeting flow passes silent.
+  if (!silent) showEvent('SIGNTREATY', { STRING0: DATA.nations[a].adjective,
+                                         STRING1: DATA.nations[b].adjective });
 }
 // Target eligibility for a parley, byte-verified @0x57B1A: the turn must be at
 // least 0x28 (40) and at least one side's attitude byte must be >= 8. The port
@@ -6346,92 +6470,198 @@ function parleyEligible(r) {
 function demandValue(base) {
   return Math.floor(base * 10 * (G.difficulty + 8) / 100) + 500 * (G.difficulty + 1);
 }
-// The parley itself. Meeting a rival you are not at war with opens the option
-// tree rather than an attack.
-function openParley(r) {
-  G.parley = r;
-  G.parleyRow = 0;
-  G.screen = 'parley';
+// ---- the European meeting (func_057F4E, spec/ui/diplomacy_popups.md) ------
+// The meeting is a CHAIN OF POPUPS over the map -- the engine has no parley
+// screen -- and it is always framed as power B speaking to the player: every
+// option row is the player's ANSWER. Conversations (width 220) speak through
+// channel [0x1F60] = B -> MYR<B>.SS; announcements (width 190) stay on the
+// MSS advisor channel. Byte-cited pieces kept: the eligibility gates
+// (turn >= 0x28, attitude >= 8 @0x57B1A, 16-turn cooldown @0x58075), the
+// action gate random(1000) < 200*diff+100 (@0x58315), the grace period
+// 10*(10-diff) turns (@0x58374), demandValue's scaler (@0x583A0/@0x5842B),
+// the withdraw price 25*(diff+2)*forces min 100 x2-at-war -50/unit
+// Franklin/2, and the greeting key build (@0x0588CD-0x058939).
+// FLAGGED READINGS (no byte cite exists): the MEEK/MANLY tone predicate
+// (attitude >= 8 reused), PEACE-vs-OLDPEACE = standing treaty, the
+// per-meeting topic priority, the withdraw/threat sub-branch selection, and
+// the smite price (demandValue(1000) stand-in).
+const meetingTone = (r) => (r.attitude === undefined ? 8 : r.attitude) >= 8;
+function meetingSubs(r) {
+  return {
+    STRING0: `${DATA.difficulty[G.difficulty]} ${G.leader || DATA.nations[G.nation].leader}`,
+    STRING1: DATA.regionname[r.nation],
+    STRING2: DATA.diplotext.GREATKINGS[r.nation],
+    STRING3: DATA.diplotext.GREATDEEDS[r.nation],
+  };
 }
-function parleyRows() {
-  const r = G.parley;
-  const rows = [];
-  if (!atWar(G.nation, r.nation) && !haveTreaty(G.nation, r.nation))
-    rows.push({ id: 'treaty', label: 'Propose a demarcation treaty' });
-  if (haveTreaty(G.nation, r.nation))
-    rows.push({ id: 'cancel', label: 'Renounce our treaty' });
-  if (!atWar(G.nation, r.nation)) rows.push({ id: 'war', label: 'Declare war' });
-  else rows.push({ id: 'peace', label: 'Sue for peace' });
-  rows.push({ id: 'demand', label: `Demand tribute (${demandValue(500)}$)` });
-  rows.push({ id: 'leave', label: 'Take our leave' });
-  return rows;
+function runMeeting(r, unitIn) {
+  const myr = `MYR${r.nation}`;
+  // key = "HELLO" + (not yet greeted ? (ship ? AHOY : FIRST) : tone) with the
+  // independent USA override (@0x0588CD-0x058923).
+  const key = (G.flags & WOI_DECLARED) ? 'HELLOUSA'
+    : !r.greeted ? (unitIn && unitIn.ship ? 'HELLOAHOY' : 'HELLOFIRST')
+    : meetingTone(r) ? 'HELLOMEEK' : 'HELLOMANLY';
+  r.greeted = true;
+  G.parleyLock[r.nation] = G.turn + PARLEY_LOCKOUT;   // stamp @0x58075
+  showEvent(key, meetingSubs(r), myr);
+  meetingTopic(r);
 }
-function parleyCommit() {
-  const r = G.parley, row = parleyRows()[G.parleyRow];
-  const close = () => { G.screen = 'map'; G.parley = null; advance(); };
-  if (!row || row.id === 'leave') { close(); return; }
-  const adj = DATA.nations[r.nation].adjective;
-  if (row.id === 'treaty') {
-    close();
-    askEvent('WORTHY', { STRING0: DATA.nations[r.nation].country,
-                         STRING1: DATA.nations[G.nation].adjective, STRING2: adj },
-      (choice) => { if (choice === 0) signTreaty(G.nation, r.nation); });
+function meetingTopic(r) {
+  const myr = `MYR${r.nation}`;
+  const gate = () => Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100;
+  const inGrace = G.turn < 10 * (10 - G.difficulty);
+  // B's gold extortion (@TRIBUTE -- and note ACCEPT IS ROW 2 in the text).
+  if (!inGrace && !atWar(G.nation, r.nation) && gate()) {
+    const want = demandValue(500);
+    askEvent('TRIBUTE', { STRING0: DATA.diplotext.GREATLEADER[r.nation],
+                          STRING1: DATA.nations[G.nation].adjective,
+                          STRING2: DATA.regionname[r.nation], NUMBER0: want }, (k) => {
+      if (k === 1) {
+        if (G.gold < want) { showEvent('NOTENOUGH', { NUMBER0: G.gold }, myr); }
+        else { G.gold -= want; r.gold = (r.gold || 0) + want; }
+        meetingPeaceHub(r);
+      } else if (gate()) {
+        // The refusal-escalation ladder's exact rule is TBD; the action gate
+        // decides whether the provocation turns to war.
+        showEvent('PROVOKE', {}, myr);
+        declareWarOn(r.nation, G.nation);
+      } else meetingPeaceHub(r);
+    }, undefined, myr);
     return;
   }
-  if (row.id === 'war') { close(); declareWarOn(G.nation, r.nation); return; }
-  if (row.id === 'cancel') {
-    close();
-    setTreaty(G.nation, r.nation, REL.TREATY, false);
-    showEvent('CANCELPEACE', { STRING0: DATA.nations[G.nation].adjective, STRING1: adj });
+  // B proposes the demarcation treaty (@WORTHY is AI-proposed).
+  if (!haveTreaty(G.nation, r.nation) && !atWar(G.nation, r.nation) && gate()) {
+    // "by order of %STRING0" takes the short @GREATLEADER row ("Our King") --
+    // the long @GREATKINGS line overflows the 320px screen, which the engine
+    // never does on this popup.
+    askEvent('WORTHY', { STRING0: DATA.diplotext.GREATLEADER[r.nation],
+                         STRING1: DATA.nations[G.nation].adjective,
+                         STRING2: DATA.nations[r.nation].adjective }, (k) => {
+      if (k === 0) acceptTreaty(r);
+      else meetingPeaceHub(r);
+    }, undefined, myr);
     return;
   }
-  if (row.id === 'peace') {
-    close();
-    // The AI acts on the byte-cited probability gate random_int(1000) <
-    // 200*difficulty + 100.
-    if (Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
-      setWar(G.nation, r.nation, REL.WAR, false);
-      setWar(r.nation, G.nation, REL.WAR, false);
-      showEvent('WITHDRAW', {});
-    } else showEvent('THREATS', {});
-    return;
-  }
-  // Demand tribute: the AI pays only what it can afford (the final gate is an
-  // affordability compare against its gold).
-  close();
+  meetingPeaceHub(r);
+}
+// The standing-peace hub: 4 fixed rows -- peace / withdraw-demand / threat /
+// alliance -- from @PEACE*/@OLDPEACE* by tone and standing treaty.
+function meetingPeaceHub(r) {
+  const myr = `MYR${r.nation}`;
+  const key = haveTreaty(G.nation, r.nation)
+    ? (meetingTone(r) ? 'OLDPEACEMEEK' : 'OLDPEACEMANLY')
+    : (meetingTone(r) ? 'PEACEMEEK' : 'PEACEMANLY');
+  askEvent(key, { STRING0: DATA.nations[G.nation].adjective,
+                  STRING1: DATA.nations[r.nation].adjective,
+                  STRING2: DATA.difficulty[G.difficulty],
+                  STRING3: G.leader || DATA.nations[G.nation].leader }, (k) => {
+    if (k === 0) acceptTreaty(r);
+    else if (k === 1) meetingWithdraw(r);
+    else if (k === 2) meetingThreat(r);
+    else if (k === 3) meetingAlliance(r);
+  }, undefined, myr);
+}
+function acceptTreaty(r) {
+  // Treaty both ways + respect := 1 + the cooldown; @SIGNTREATY itself
+  // belongs to the AI-AI ticker (audit row 16), so the player's acceptance
+  // announces nothing beyond the row he picked.
+  signTreaty(G.nation, r.nation, true);
+  r.respect = 1;
+}
+function rivalForcesNearby(r) {
+  return r.units.filter(u => !u.ship && G.colonies.some(c =>
+    Math.abs(c.x - u.x) <= 1 && Math.abs(c.y - u.y) <= 1));
+}
+function meetingWithdraw(r) {
+  const myr = `MYR${r.nation}`, adj = DATA.nations[r.nation].adjective;
+  const forces = rivalForcesNearby(r);
+  if (!forces.length) { showEvent('NOTHINGWITHDRAW', {}, myr); return; }
+  // price = 25*(diff+2)*forces, min 100, x2 at war, -50 per unit, Franklin /2.
+  let price = Math.max(100, 25 * (G.difficulty + 2) * forces.length - 50 * forces.length);
+  if (atWar(G.nation, r.nation)) price *= 2;
+  if (G.fathersOwned.includes('Benjamin Franklin')) price >>= 1;
+  // WHICH of WITHDRAW/NOTWITHDRAW/MAYBEWITHDRAW fires is decoded only for
+  // the no-forces case; the action gate picks paywall vs refusal here.
+  if (Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
+    askEvent('MAYBEWITHDRAW', { STRING0: adj, NUMBER0: price }, (k) => {
+      if (k === 0) {
+        if (G.gold < price) { showEvent('NOTENOUGH', { NUMBER0: G.gold }, myr); return; }
+        G.gold -= price;
+        r.units = r.units.filter(u => !forces.includes(u));
+        showEvent('WITHDRAW', {}, myr);
+      } else if (k === 1) showEvent('THREATS', {}, myr);
+    }, undefined, myr);
+  } else showEvent('NOTWITHDRAW', { STRING0: adj }, myr);
+}
+function meetingThreat(r) {
+  const myr = `MYR${r.nation}`;
+  // @GIFTS / @THREATS / @PROVOKE selection is TBD; the port keys it on the
+  // action gate and B's purse (the affordability compare @0x58E1F).
   const want = demandValue(500);
-  if ((r.gold || 0) >= want && Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100) {
-    // @GIVECASH carries the player's two responses ("Very well, you shall be
-    // spared." / "Alas, it is God's will.") -- the cash moves only on the
-    // sparing row; what refusing sets in the relation matrix is unread.
-    askEvent('GIVECASH', { NUMBER0: want }, (choice) => {
-      if (choice !== 0) return;
-      r.gold -= want;
-      G.gold += want;
-    });
-  } else showEvent('THREATS', {});
+  const gate = () => Math.floor(Math.random() * 1000) < 200 * G.difficulty + 100;
+  if ((r.gold || 0) >= want && gate()) {
+    r.gold -= want; G.gold += want;
+    showEvent('GIFTS', { NUMBER0: want }, myr);
+  } else if (gate()) {
+    showEvent('PROVOKE', {}, myr);
+    declareWarOn(r.nation, G.nation);
+  } else showEvent('THREATS', {}, myr);
 }
-function drawParley(ctx) {
-  drawMap(ctx);
-  const r = G.parley, rows = parleyRows();
-  const body = [`The ${DATA.nations[r.nation].adjective} envoy attends you.`,
-                atWar(G.nation, r.nation) ? 'We are at {war}.'
-                : haveTreaty(G.nation, r.nation) ? 'We are bound by {treaty}.'
-                : 'We are at {peace}.'];
-  let cw = 190;
-  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
-  for (const row of rows) cw = Math.max(cw, FONT.tiny.width(row.label) + 20);
-  const w = cw + 6, textH = body.length * 6;
-  const h = 6 + textH + 3 + rows.length * 8 + 3;
-  const x = Math.round(160 - w / 2), y = Math.max(10, Math.round(100 - h / 2));
-  plaque(ctx, x, y, w, h, 'WOODTILE');
-  body.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, 0xFE, 0xFC));
-  const seed = y + 6 + textH + 3;
-  rows.forEach((row, k) => {
-    const ry = seed + k * 8, sel = k === G.parleyRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, 8); }
-    FONT.tiny.draw(ctx, row.label, x + 9, ry + 1, lut(sel ? 0xFC : 0xFE));
+function meetingAlliance(r) {
+  const myr = `MYR${r.nation}`;
+  // @MILITARY's rows are built at runtime (lea 0x19FA @0x05976D): one per
+  // rival power + tribe.
+  const targets = [];
+  for (const o of G.rivals) if (o !== r) targets.push({ kind: 'power', o });
+  G.tribes.forEach((t, ti) => {
+    if (G.villages.some(v => v.tribe === ti)) targets.push({ kind: 'tribe', ti });
   });
+  const rows = targets.map(t => t.kind === 'power'
+    ? `The ${DATA.nations[t.o.nation].adjective}.` : `The ${G.tribes[t.ti].name}.`)
+    .concat(['Never mind.']);
+  askEvent('MILITARY', {}, (k) => {
+    if (k < 0 || k >= targets.length) return;
+    const t = targets[k];
+    const name = t.kind === 'power' ? DATA.nations[t.o.nation].adjective : G.tribes[t.ti].name;
+    if (t.kind === 'power' && !t.o.met) { showEvent('NOCONTACT', { STRING0: name }, myr); return; }
+    if (t.kind === 'power' && atWar(r.nation, t.o.nation)) {
+      showEvent('ALREADYSMITE', { STRING0: name }, myr); return;
+    }
+    // The smite price formula is unread; the demand scaler is the stand-in.
+    const price = demandValue(1000);
+    askEvent(t.kind === 'power' ? 'SMITEEUROPE' : 'SMITEINDIANS',
+             { STRING0: name, NUMBER0: price }, (kk) => {
+      if (kk !== 0) return;
+      if (G.gold < price) { showEvent('UNFORTUNATE', {}, myr); return; }
+      G.gold -= price;
+      if (t.kind === 'power') declareWarOn(r.nation, t.o.nation);
+      else G.tribes[t.ti].warWith = r.nation;
+      showEvent('MERCENARY', { STRING0: DATA.nations[r.nation].adjective, STRING1: name }, myr);
+    }, undefined, myr);
+  }, rows, myr);
+}
+// The AI-AI diplomacy ticker (func_057DC0): every 3rd turn per met pair,
+// turn >= 40, attitude gate, the action gate -- peace signings announce
+// @SIGNTREATY. (The AI-AI war path's grievance drivers are unread; omitted.)
+function aiDiplomacyTick() {
+  if (G.turn < 0x28 || G.turn % 3) return;
+  const met = G.rivals.filter(r => r.met);
+  for (let i = 0; i < met.length; i++)
+    for (let j = i + 1; j < met.length; j++) {
+      const a = met[i], b = met[j];
+      if ((a.attitude || 8) < 8 && (b.attitude || 8) < 8) continue;
+      if (Math.floor(Math.random() * 1000) >= 200 * G.difficulty + 100) continue;
+      if (atWar(a.nation, b.nation)) {
+        setWar(a.nation, b.nation, REL.WAR, false);
+        setWar(b.nation, a.nation, REL.WAR, false);
+        showEvent('SIGNTREATY', { STRING0: DATA.nations[a.nation].adjective,
+                                  STRING1: DATA.nations[b.nation].adjective });
+      } else if (!haveTreaty(a.nation, b.nation)) {
+        setTreaty(a.nation, b.nation, REL.TREATY, true);
+        showEvent('SIGNTREATY', { STRING0: DATA.nations[a.nation].adjective,
+                                  STRING1: DATA.nations[b.nation].adjective });
+      }
+    }
 }
 
 // ------------------------------------------------- treasure transport
@@ -8338,6 +8568,7 @@ function endTurn() {
   toryUprising();
   shoreBombardment();
   spanishSuccession();
+  aiDiplomacyTick();
   offerMercenaries();
   checkIntervention();
   driftMarket();
@@ -8519,7 +8750,7 @@ function moveSel(dx, dy) {
       return;
     }
     u.movesLeft = 0;
-    openParley(rival);
+    runMeeting(rival, u);
     return;
   }
   const vil = G.villages.find(v => v.x === nx && v.y === ny);
@@ -9610,25 +9841,12 @@ function onKey(e) {
       if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.trade = null; }
       break;
     }
-    case 'parley': {
-      const n = parleyRows().length;
-      if (k === 'ArrowUp') G.parleyRow = (G.parleyRow + n - 1) % n;
-      if (k === 'ArrowDown') G.parleyRow = (G.parleyRow + 1) % n;
-      if (k === 'Enter' || k === ' ') parleyCommit();
-      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.parley = null; advance(); }
-      break;
-    }
     case 'village': {
       const n = villageRowCount();
       if (k === 'ArrowUp') G.villageRow = (G.villageRow + n - 1) % n;
       if (k === 'ArrowDown') G.villageRow = (G.villageRow + 1) % n;
       if (k === 'Enter' || k === ' ') villageCommit();
-      // Esc backs out of the trade list to the action menu, and out of the
-      // action menu to the map.
-      if (k === 'Escape' || k === 'x') {
-        if (G.villageMode === 'trade') { G.villageMode = 'actions'; G.villageRow = 0; }
-        else { G.screen = 'map'; G.village = null; advance(); }
-      }
+      if (k === 'Escape' || k === 'x') { G.screen = 'map'; G.village = null; advance(); }
       break;
     }
     case 'pedia': {
@@ -9818,8 +10036,8 @@ function frameBody() {
      name: drawName, briefing: drawBriefing, cards: drawCards,
      king: drawKing, map: drawMap, woodcut: drawWoodcut,
      colony: drawColony, europe: drawEurope, pedia: drawPedia,
-     report: drawReport, village: drawVillage, parley: drawParley,
-     trade: drawTrade, options: drawOptions }[G.screen])(ctx);
+     report: drawReport, village: drawVillage,
+     trade: drawTrade, options: drawOptions }[G.screen] || drawMap)(ctx);
   // The Combat Analysis panel and the event popups sit over whatever screen is
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);

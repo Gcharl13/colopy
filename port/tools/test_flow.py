@@ -1028,15 +1028,29 @@ SCRIPT = """() => {
     // The demand value carries the difficulty surcharge.
     out.diplo.demandScales = demandValue(500) ===
       Math.floor(500 * 10 * (G.difficulty + 8) / 100) + 500 * (G.difficulty + 1);
-    // The parley menu offers a treaty at peace and peace at war.
+    // The meeting is a popup CHAIN: the greeting queues with the MYR portrait
+    // and the standing-peace hub opens with the @PEACE* four rows; accepting
+    // peace is silent (@SIGNTREATY belongs to the AI-AI ticker).
     setTreaty(G.nation, r.nation, 0x40, false);
-    openParley(r);
-    const peaceRows = parleyRows().map(x => x.id);
-    declareWarOn(G.nation, r.nation);
-    const warRows = parleyRows().map(x => x.id);
-    out.diplo.menuAdapts = peaceRows.includes('treaty') && peaceRows.includes('war') &&
-                           warRows.includes('peace') && !warRows.includes('war');
-    G.screen = 'map'; G.parley = null;
+    setWar(G.nation, r.nation, 0x02, false); setWar(r.nation, G.nation, 0x02, false);
+    G.eventQueue = []; G.dialog = null; r.greeted = false; r.attitude = 10;
+    G.parleyLock[r.nation] = 0; G.gold = 100000;
+    runMeeting(r, { ship: false });
+    const greeted = G.eventQueue.length === 1 &&
+                    G.eventQueue[0].speaker === `MYR${r.nation}`;
+    // Whatever AI topic fired first (tribute / treaty proposal), answer its
+    // LAST row until the four-row hub shows.
+    let hops = 0;
+    while (G.dialog && G.dialog.opts.length !== 4 && hops++ < 4)
+      closeDialog(G.dialog.opts.length - 1);
+    const hub = !!G.dialog && G.dialog.opts.length === 4 &&
+                G.dialog.opts[3].includes('alliance');
+    G.eventQueue = [];
+    if (G.dialog) closeDialog(0);                       // "Go in peace"
+    out.diplo.meeting = { greeted, hub,
+      treaty: haveTreaty(G.nation, r.nation),
+      silentAccept: !G.eventQueue.some(e => e.lines.join(' ').includes('signed a peace')) };
+    G.screen = 'map'; G.dialog = null;
     // Foreign colonies cannot be attacked during the revolution.
     G.flags |= 1;
     const rc = r.colonies[0];
@@ -2428,6 +2442,39 @@ SCRIPT = """() => {
     out.woodcuts = r;
   }
 
+  // ---- the village haggle chain (@TRADE0 -> @BUYWHICH / @TRADENOCARGO) ----
+  {
+    beginGame();
+    const v = G.villages[0];
+    const dlist = villageDemand(v);
+    let good = dlist.findIndex(x => x > 1); if (good < 0) good = 4;
+    const u = mkUnit('Wagon Train', v.x, v.y);
+    u.hold = [{ good, qty: 100 }];
+    G.units.push(u);
+    G.village = v; G.villageVisitor = u; G.eventTribe = v.tribe;
+    G.dialog = null; G.eventQueue = []; v.lastBought = undefined;
+    v.haggleSell = {}; v.haggleBuy = false;
+    openVillageTrade(v, u);
+    const r = {};
+    r.sellAsk = !!G.dialog && G.dialog.body.join(' ').includes('to trade with us') &&
+                G.dialog.opts.length === 4 &&
+                String(G.dialog.speaker).startsWith('IND');
+    const g0 = G.gold;
+    closeDialog(0);                                    // "We gratefully accept"
+    r.sold = G.gold > g0 && holdQty(u, good) === 0 && v.lastBought === good;
+    if (G.dialog && G.dialog.body.join(' ').includes('available to trade')) {
+      r.buyWhich = G.dialog.opts.length === 4;         // 3 goods + decline
+      closeDialog(G.dialog.opts.length - 1);
+    } else r.buyWhich = !G.dialog;                     // no surplus: no picker
+    // Empty-handed sessions refuse with @TRADENOCARGO.
+    u.hold = []; G.eventQueue = []; G.dialog = null;
+    openVillageTrade(v, u);
+    r.noCargo = G.eventQueue.length === 1 &&
+                G.eventQueue[0].lines.join(' ').includes('nothing with you to trade');
+    out.haggle = r;
+    G.village = null; G.screen = 'map'; G.dialog = null; G.eventQueue = [];
+  }
+
   // ---- the 1653 save's F5 columns match the live frame ----
   {
     importSav(b64bytes(DATA.sav1653));
@@ -2938,6 +2985,10 @@ def main():
          r["sav1653F5"]),
         ("woodcuts: tribe plate + @INDIANWELCOME, village plate once, cargo plate to Europe",
          all(r["woodcuts"].values()), r["woodcuts"]),
+        ("haggle: @TRADE0 asks with the chief, accept sells, @BUYWHICH follows, empty hold refuses",
+         all(r["haggle"].values()), r["haggle"]),
+        ("meeting: MYR greeting, the @PEACE* four-row hub, silent treaty acceptance",
+         all(r["diplo"]["meeting"].values()), r["diplo"]["meeting"]),
     ]
     bad = 0
     for name, ok, got in checks:

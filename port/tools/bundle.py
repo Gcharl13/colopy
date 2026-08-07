@@ -257,6 +257,26 @@ def build_data():
               "@BURNED", "@CAPTURED", "@CLEARCUT", "@USEDUPTOOLS",
               "@NOTENOUGH", "@CANCELPEACE", "@INDIANWARFARE", "@MERCS",
               "@UNREST", "@MERCENARIES",
+              # The village haggle loop (func_049600).
+              "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
+              "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",
+              "@BADCARGO", "@BUYWHICH", "@TRADEWHICH",
+              "@TRADENOCARGO", "@TRADENOWANT",
+              # The European meeting flow (func_057F4E) -- greetings, the
+              # standing-peace hub and its branches, demands and guards.
+              "@HELLOFIRST", "@HELLOAHOY", "@HELLOMEEK", "@HELLOMANLY",
+              "@HELLOUSA",
+              "@PEACEMEEK", "@PEACEMANLY", "@OLDPEACEMEEK", "@OLDPEACEMANLY",
+              "@PEACEUSA",
+              "@NOTWITHDRAW", "@NOTHINGWITHDRAW", "@MAYBEWITHDRAW",
+              "@GIFTS", "@PROVOKE",
+              "@MILITARY", "@NOCONTACT", "@ALREADYSMITE", "@SMITEINDIANS",
+              "@SMITEEUROPE", "@UNFORTUNATE", "@MERCENARY",
+              "@TRIBUTEUSA", "@WANTSTUFF", "@WANTSTUFFUSA", "@RID", "@RIDUSA",
+              "@WARMEEK", "@WARMANLY",
+              "@APOSTATES", "@APOSTATESUSA", "@HEATHEN", "@HEATHENUSA",
+              "@PIRACY", "@PIRACYUSA", "@SIEGES", "@SIEGESUSA",
+              "@HAVETREATY", "@SNEAK", "@TRADEATWAR", "@TRADEMERCANTILISM",
               "@RAIDSTORES", "@RAIDWREAK", "@RAIDGOLD", "@RAIDBURN", "@RAIDSHIP",
               "@RAIDNOTHING", "@INDIANSCONVERT", "@DEADCONVERTS",
               "@VILLAGEHAPPY", "@VILLAGEMEDIUM", "@VILLAGESAVAGE",
@@ -340,6 +360,12 @@ def build_data():
         "ctitle": labels["@CTITLE"].split("\n"),
         "cmessage": labels["@CMESSAGE"].split("\n"),
     }
+    # The diplomacy support lists (func_057A3A's %STRING fills): one row per
+    # power in @GREATKINGS/@GREATDEEDS/@GREATLEADER(2)/@FRIEND, and
+    # @MEEKNESS's request/demand pair.
+    D["diplotext"] = {k.lstrip("@"): game[k].split("\n")
+                      for k in ("@MEEKNESS", "@GREATKINGS", "@GREATDEEDS",
+                                "@GREATLEADER", "@GREATLEADER2", "@FRIEND")}
 
     # The shipped 1653 Dutch save, bundled so LOAD GAME can restore it without
     # a file picker. Raw bytes; the importer walks the byte-verified 43-block
