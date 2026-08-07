@@ -3362,8 +3362,13 @@ function drawColonyTiles(ctx, c) {
       }
       const wx = c.x + dx, wy = c.y + dy;
       // Flag bit 6, the blocked-cell mark: a 24x24 outline in pure red 0x0C
-      // (@0x026584). [0x8DF0] is runtime state; "another settlement holds the
-      // tile" is the port's reading of when the bit is set, flagged.
+      // (frame draw 0x181F:0xCE @0x026584). Gate READ 2026-08-07z13: the
+      // engine tests bit 0x40 of the per-cell STATUS array at DGROUP -0x7210,
+      // indexed cell*5+row (`test al,0x40` @0x2655C) -- a runtime worked/blocked
+      // flag, set when the surrounding cell cannot be worked. "Another
+      // settlement holds the tile" is the port's reading of when that bit is
+      // set (the two commonest causes); still a flagged approximation of the
+      // full runtime state.
       if (G.villages.some(q => q.x === wx && q.y === wy) ||
           G.colonies.some(q => q !== c && q.x === wx && q.y === wy) ||
           G.rivals.some(rv => rv.colonies.some(q => q.x === wx && q.y === wy)))
@@ -12020,11 +12025,21 @@ function frame() {
   requestAnimationFrame(frame);
 }
 let _frameErr = null;
+let _popupHead = null, _popupAge = 0;
 function frameBody() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
   flushMapMsg();
+  // Popup 120-tick auto-dismiss (func_004A80 @0x4ADD: the modal message loop
+  // reads the clock and returns once 0x78 = 120 ticks pass, ~2 s at the
+  // engine's 60Hz). A body-only popup (no option rows -- those become
+  // G.dialog) dismisses itself after 120 frames, exactly as any key/click
+  // would; the head resets the counter as each popup surfaces.
+  if (G.eventQueue.length) {
+    if (_popupHead !== G.eventQueue[0]) { _popupHead = G.eventQueue[0]; _popupAge = 0; }
+    else if (++_popupAge >= 120) { G.eventQueue.shift(); _popupHead = null; _popupAge = 0; }
+  } else { _popupHead = null; _popupAge = 0; }
   // A colonist armed on the down-edge lifts once the hold deadline passes, even
   // if the pointer is being held perfectly still -- so poll it here as well as
   // on move, the way the engine's per-frame dispatcher does.

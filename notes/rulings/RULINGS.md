@@ -9141,3 +9141,19 @@ Ledger: DONE 405, BLOCKED 10, N/A 31. Suite 234/234 twice.
   hides behind func_02883E's jump table (the key + %STRING0 are read).
 
 Ledger: DONE 411, BLOCKED 1, MISSING 0, N/A 34. Suite 234/234.
+
+## 2026-08-07z13 — Phase 4 batch 6: popup auto-dismiss + the blocked-cell gate
+
+- **Popup 120-tick auto-dismiss** (func_004A80 @0x4ADD: `add cx,0x78` = 120
+  ticks against the clock read, ~2 s at 60 Hz). Implemented in the frame
+  loop: a body-only event popup dismisses itself after 120 frames, resetting
+  the counter as each new head surfaces -- exactly as any key/click would.
+  (ask-dialogs are G.dialog, not eventQueue, and keep waiting for input.)
+- **The blocked-cell frame gate READ** (func_026x @0x2655C): the red 24x24
+  outline (0x181F:0xCE @0x26584) draws when bit 0x40 of the per-cell STATUS
+  array at DGROUP -0x7210 (indexed cell*5+row) is set -- a runtime
+  worked/blocked flag. The port keeps its "another settlement holds the
+  tile" reading as a flagged approximation of that runtime state; the byte
+  gate is now cited.
+
+Suite 234/234; render-diff 15/15.
