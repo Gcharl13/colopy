@@ -31,21 +31,24 @@ Where the port's work is tracked, in the order to consult them:
 
 | Document | Role |
 |---|---|
-| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status (DONE / bundled-unwired / missing), regenerated mechanically by `python3 port/tools/message_status.py`. Current: **283 done + 26 via-DATA**, 32 bundled-unwired, 111 missing, 23 N/A, 24 support lists. |
+| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status, regenerated mechanically by `python3 port/tools/message_status.py`. Current: **389 done + 29 via-DATA, 0 missing, 0 unwired**; 33 BLOCKED (each annotated with its named Phase-4 capture/disasm blocker), 24 N/A, 24 support lists. |
 | **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
 | **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |
 | **`docs/UI_AUDIT_TRACKER.md`** | Per-screen byte-verification coverage (the standing UI mandate in CLAUDE.md). |
-| `port/tools/test_flow.py` | The behavioural gate: **232/232**. |
+| `port/tools/test_flow.py` | The behavioural gate: **233/233**. |
 
-Done since the plan (2026-08-07 n-s): Phase 0 (render-diff oracle, ledger
-upgrade, audit reconciliation), Phase 1 (the wire-only sweep: market prices,
-schooling, siting/movement guards, colony notices, trade-route bodies),
-Phase 2 (input-outage latches, VANISH, colony-built units, rush-buy,
-back-tax, REFIT, CUSTOM, PISS bands, friendly natives, retirement clock,
-@HOWMUCH numeric entry), and the Phase 3 tutorial system. Remaining: Hall
-of Fame, King audience + war cycle, WoI completion, meeting sub-branches,
-news bulletin bus, depletion plane, native land-claim (Phase 3); then the
-Phase 4 byte-closure list and the Phase 5 final audit.
+Done since the plan (2026-08-07 n-x): Phase 0 (render-diff oracle, ledger
+upgrade, audit reconciliation), Phase 1 (the wire-only sweep), Phase 2
+(input-outage latches, VANISH, colony-built units, rush-buy, back-tax,
+REFIT, CUSTOM, PISS bands, friendly natives, retirement clock, @HOWMUCH
+numeric entry), Phase 3 (tutorial system, news bulletin bus, native
+land-claim, WoI completion, Crown cluster, privateer/treaty, meeting
+sub-branches), and the pre-capture completion sweep (every remaining
+wirable key + the Hall of Fame — ruling 2026-08-07x). **Everything wirable
+without new evidence is wired: MISSING 0.** Remaining: the Phase 4
+DOSBox-capture/disasm batch (the 33 BLOCKED keys, HoF column x, K-threshold,
+func_057F4E / func_049600-tail / func_04B308 / func_05BE84 / func_073474 /
+func_0734F8 / func_020F50 windows) and the Phase 5 final audit.
 
 ---
 
@@ -57,7 +60,7 @@ Three layers, in the order `METHODOLOGY.md` defines them.
 |---|---|
 | **Evidence** (disassembly, asset decode) | 1,241 VICEROY functions inventoried; **156 named**, 1,094 not. All 13 container formats decoded. |
 | **Specification** (`spec/`, 64 sheets) | The mature layer. **17 open TBD lines across 10 sheets**, each named with its blocker. Every game-system formula is byte-closed. |
-| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **229/229 tests**, ~10k lines, 3.5 MB single-file bundle. Drag-and-drop, byte-decoded popup framework, all live woodcut triggers, popup speakers incl. MYR meeting portraits, the village haggle loop, the European meeting chain, native + rival AI (reduced/R-tier), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: see the Build tracker above. |
+| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **233/233 tests**, ~11k lines, 3.6 MB single-file bundle. Drag-and-drop, byte-decoded popup framework, all live woodcut triggers, popup speakers incl. MYR meeting portraits, the village haggle loop, the European meeting chain, native + rival AI (reduced/R-tier), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: see the Build tracker above. |
 
 The honest one-line summary: **the spec is close to done, the port is the
 working proof of it, and the raw per-line annotation of the binary is not and
