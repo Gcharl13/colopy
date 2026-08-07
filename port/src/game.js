@@ -587,6 +587,7 @@ const G = {
   euroMenu: null,         // open Europe sub-menu: recruit / purchase / train
   euroMenuRow: 0,
   euroShip: 0,            // selected ship in port
+  euroDockSel: 0,         // selected dock unit (wears the green cell)
   euroMsg: '',
   dockUnits: [],          // recruits/trainees waiting on the Europe dock
   artilleryBought: 0,
@@ -680,7 +681,8 @@ function beginGame() {
   G.sel = 0;
   G.landHo = false; G.newLand = ''; G.zoom = 0; G.openMenu = -1;
   G.colonies = []; G.europe = []; G.builtColony = false;
-  G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroMsg = '';
+  G.kingsFund = 0; G.euroMenu = null; G.euroShip = 0; G.euroDockSel = 0;
+  G.euroMsg = '';
   G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
@@ -3992,6 +3994,36 @@ function activeShip() { return shipsInPort()[G.euroShip] || null; }
 // how the Europe hit-test ended up carrying a different rect from the art.
 const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
 const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
+
+// Profession -> badge frame (PORT png index) for the Europe dock. Goods icons
+// are engine `good+0x17` = png `0x16+good` (the market-bar mapping); crosses
+// and bells are the F2/F3 gauge fills (png 56 / 62, byte-cited in
+// SPRITE_CATALOG). @JOB rows with no icon of their own (Teachers, the
+// non-experts, the five roled professions that already draw as their unit)
+// are absent and draw unbadged. Port-authored UI -- see drawEurope.
+const PROFESSION_BADGE = {
+  'Expert Farmers': 22, 'Expert Fishermen': 22,
+  'Master Sugar Planters': 23, 'Master Tobacco Planters': 24,
+  'Master Cotton Planters': 25, 'Expert Fur Trappers': 26,
+  'Expert Lumberjacks': 27, 'Master Carpenters': 27,
+  'Expert Ore Miners': 28, 'Expert Silver Miners': 29,
+  'Master Distiller': 31, 'Master Distillers': 31,
+  'Master Tobacconists': 32, 'Master Weavers': 33,
+  'Master Fur Traders': 34, 'Master Blacksmiths': 36,
+  'Master Gunsmiths': 37,
+  'Firebrand Preachers': 56, 'Elder Statesmen': 62,
+};
+// Half-scale sprite blit (nearest-neighbour) for the badge overlay.
+function sheetHalf(ctx, sheet, idx, x, y) {
+  const sh = DATA.sheets[sheet];
+  const f = sh && sh.frames[idx];
+  if (!f) return;
+  const atlas = cycAtlas(sheet, cyclePhase());
+  if (!atlas) return;
+  ctx.drawImage(atlas, f.x, f.y, f.w, f.h,
+                Math.round(x), Math.round(y),
+                Math.max(1, f.w >> 1), Math.max(1, f.h >> 1));
+}
 function drawEurope(ctx) {
   // TUTORIAL17: the first European Status visit (binding flagged).
   tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
@@ -4018,18 +4050,15 @@ function drawEurope(ctx) {
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
   //
-  // A crossing draws as the same 18x18 hollow green cell the piers use, the
-  // ship's ICON inside at +(3,1), with the engine's sail-progress bar under it
-  // -- func_031366's bar is `0x64 >> state` px wide (@0x0313A4), state = turns
-  // still to sail (3..1), so the bar grows as the ship closes in. The band
-  // y=146/137/132 by state is byte-read (func_031298 @0x031298); the port
-  // keeps the entries stacked inside its own panel columns instead, flagged.
+  // A crossing draws as the ship's ICON alone. The engine's sail-progress bar
+  // (func_031366, `0x64 >> state` px @0x0313A4) belongs to the per-state BAND
+  // layout (y=146/137/132, func_031298 @0x031298) the port does not use; drawn
+  // inside the port's stacked panel columns it read as unexplained clutter, so
+  // it is dropped with the band layout (user call, 2026-08-07). Same for the
+  // hollow cell: the engine's green cell is the SELECTION cursor, not a frame
+  // every entry wears, so crossings draw bare.
   const crossingCell = (e, x, y) => {
-    hollowRect(ctx, x, y, 18, 18, 0x0A);
     sheetFrame(ctx, 'ICONS', e.icon, x + 3, y + 1);
-    const s = Math.max(1, Math.min(3, e.turns || 1));
-    ctx.fillStyle = lut(0x0A);
-    ctx.fillRect(x, y + 19, Math.min(48, 0x64 >> s), 2);
   };
   FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
   G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
@@ -4049,14 +4078,16 @@ function drawEurope(ctx) {
   if (ship) FONT.tiny.draw(ctx, ship.type, 186, 120, lut(HUD_INK));
 
   // Dock units and ships in port, REBUILT 2026-08-06 from the live frame
-  // (docs/screens/live_2026-08-05/30_europe.png). Both are drawn the same way:
-  // an 18x18 hollow rect in GREEN 0x0A with the unit's own sprite inside.
-  // Measured there:
+  // (docs/screens/live_2026-08-05/30_europe.png). Measured there:
   //   dock slot 0   box (232,137)-(249,154), ICONS frame 102 at (235,138)
   //   ship slot 0   box (145,145)-(162,162), ICONS frame   5 at (149,146)
-  // so the sprite sits at box + (3, 1), the extra pixel on the ship being its
-  // own 13px width against the unit's 8. The port had been drawing a nation
-  // plate for dock units and a fixed crate sprite for ships, and no box at all.
+  // so a sprite sits at box + (3, 1). RE-READ 2026-08-07 (user report): the
+  // hollow green cell is the SELECTION cursor around the ACTIVE entry, not a
+  // frame every entry wears -- the port had boxed everything, which is wrong.
+  // CONFIRMED against docs/screens/10_europe_screen.png: three units stand on
+  // the pier in distinct type sprites and only the FIRST (selected) one wears
+  // the green cell; the docked Caravel wears its own. So: the selected ship
+  // and the selected dock unit each wear one cell; everything else draws bare.
   //
   // The frame has ONE ship and ONE dock unit, so the SLOT PITCH is unmeasured;
   // the port keeps its previous 14 (units) and 12 (ships) rather than inventing
@@ -4065,17 +4096,25 @@ function drawEurope(ctx) {
     const u = unit(entryType(e)) || unit('Colonists');
     const x = EURO_DOCK.x + k * EURO_DOCK.pitch;
     sheetFrame(ctx, 'ICONS', u.icon, x + 3, EURO_DOCK.y + 1);
-    hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
+    // Profession badge: ICONS has no expert FIGURES (131 frames, all
+    // accounted -- units/goods/HUD), so a waiting specialist is told apart by
+    // his trade's own icon, half-scale at his feet: the engine's own idiom
+    // for "mark a slot with a good" (the boycott marker redraws `good+0x17`
+    // over the dock slot, @0x031A73..0x031AB4). The badge itself is
+    // port-authored UI, flagged (the DOS dock shows the bare type figure).
+    const badge = PROFESSION_BADGE[entryName(e)];
+    if (badge !== undefined)
+      sheetHalf(ctx, 'ICONS', badge, x + 10, EURO_DOCK.y + 11);
+    if (k === G.euroDockSel)
+      hollowRect(ctx, x, EURO_DOCK.y, 18, 18, 0x0A);
   });
   shipsInPort().forEach((e, k) => {
     if (k >= 6) return;
     const x = EURO_SHIP.x + k * EURO_SHIP.pitch;
     sheetFrame(ctx, 'ICONS', e.icon, x + 3, EURO_SHIP.y + 1);
-    // Every harbour ship wears the green cell; the SELECTED one flips to
-    // yellow -- the same 0x0A/0x0E runtime pair the market cell uses
-    // ([0x9E12]-driven; the one-ship captures cannot split the two rules,
-    // so the pairing is the port's reading).
-    hollowRect(ctx, x, EURO_SHIP.y, 18, 18, k === G.euroShip ? 0x0E : 0x0A);
+    // Only the SELECTED ship wears the green cell (the live frame's boxed
+    // ship was the active one; [0x9E12]-driven).
+    if (k === G.euroShip) hollowRect(ctx, x, EURO_SHIP.y, 18, 18, 0x0A);
   });
 
   // The active ship's CARGO ROW -- six slots at x = 147 + 12k, y = 165. That

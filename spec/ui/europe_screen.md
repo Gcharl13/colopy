@@ -57,11 +57,17 @@ is this section + the reference PNG.
 | Exit | white "Exit" `(306,179)` + red "E" `(308,187)` | measured from capture (**A**); matches spec `x=306,y=179` |
 
 ### 0.2 NOT rendered (honest gaps — need a matched RAM snapshot, which does NOT exist for Europe)
-- The **dynamic harbor contents**: the Caravel (Loading) and the colonists in their green
-  selection boxes on the piers, and the pier **crates**. These are live game state (ships in port,
-  units, cargo). Unlike the colony screen, **no matched RAM snapshot was captured for this Europe
-  screenshot**, so their positions/sprites cannot be byte-verified — they are intentionally omitted
-  rather than guessed.
+- The **dynamic harbor contents**: the Caravel (Loading), the colonists on the piers, and the
+  pier **crates**. These are live game state (ships in port, units, cargo). Unlike the colony
+  screen, **no matched RAM snapshot was captured for this Europe screenshot**, so their
+  positions/sprites cannot be byte-verified — they are intentionally omitted rather than guessed.
+  **Green-cell reading (corrected 2026-08-07, user report + re-read of this capture):** the
+  18×18 hollow green cell is the **selection cursor**, not a frame every entry wears —
+  `10_europe_screen.png` shows THREE pier units in distinct `@UNIT`-type sprites with only the
+  first (selected) one boxed, plus the docked Caravel in its own cell. One cell on the selected
+  ship, one on the selected dock unit, everything else bare. The port had boxed every entry (and
+  drawn func_031366's sail-progress bar inside its stacked panel columns, where it read as
+  noise); both corrected — see `notes/rulings/RULINGS.md` 2026-08-07y.
 - Market **prices** and the **title** string are the *displayed* values of this specific capture
   (read from the screenshot), not a decoded snapshot.
 

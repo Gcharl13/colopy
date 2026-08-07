@@ -8733,3 +8733,43 @@ Suite: 233/233 (new completion-sweep + Hall of Fame block; the claims
 test pins bystander tribes to the quiet band; the purchase tests answer
 @REALLYBUY). Ledger: DONE 390, DONE-VIA-DATA 29, BLOCKED 33 (annotated),
 MISSING 0, N/A 24.
+
+## 2026-08-07y — Europe dock: the green cell is the SELECTION cursor; profession badges
+
+User report (screenshot): every dock unit, harbour ship and crossing wore
+an 18×18 hollow green cell, an unexplained green bar sat under the
+Expected-Soon caravel, and all six pier figures drew as the generic
+colonist.
+
+**Re-read of the evidence** (`docs/screens/10_europe_screen.png`, the
+2026-06-25 live DOS capture): THREE units stand on the pier in distinct
+`@UNIT`-type sprites and only the FIRST (selected) one wears the green
+cell; the docked Caravel wears its own. So the cell is the **selection
+cursor** around the active ship and the selected dock unit — not a frame
+every entry wears. The port's 2026-08-06 reading ("every entry boxed,
+selected flips yellow") over-generalised a one-ship/one-unit frame.
+Corrected: one green (0x0A) cell on `G.euroShip`, one on `G.euroDockSel`
+(default 0, matching the capture), everything else bare.
+
+**The green bar** was func_031366's sail-progress bar (`0x64 >> state` px
+@0x0313A4), byte-real but belonging to the per-state BAND layout
+(y=146/137/132, func_031298) the port does not use; inside the port's
+stacked panel columns it read as noise. Dropped together with the band
+layout (user call). Crossings now draw as the bare ship icon.
+
+**Profession sprites.** ICONS.SS holds no expert FIGURES (131 frames, all
+accounted — units/goods/HUD), so a specialist's own figure cannot be
+drawn from original assets. The five roled professions already land on
+their `@UNIT` sprite via PROFESSION_UNIT (Veteran Soldiers→Soldiers,
+Hardy Pioneers→Pioneers, Seasoned Scouts→Scouts, Veteran
+Dragoons→Dragoons, Jesuit Missionaries→Missionaries). Everyone else now
+wears a **half-scale trade-icon badge** at his feet (PROFESSION_BADGE:
+goods png `0x16+good`, the market-bar mapping; Firebrand Preachers→the
+crosses gauge fill png 56, Elder Statesmen→the bell png 62). The badge
+idiom is the engine's own slot-marking device (the boycott marker redraws
+`good+0x17` over the dock slot, @0x031A73..0x031AB4), but the badge
+itself is **port-authored UI, flagged** — the DOS dock shows the bare
+type figure.
+
+Spec updated: `spec/ui/europe_screen.md` §0.2. Suite 233/233; render-diff
+14/14 (the europe pair at 11410/12000).
