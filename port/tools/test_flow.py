@@ -1272,6 +1272,50 @@ SCRIPT = """() => {
     w2.refit = hurt.damaged === false;
     G.units.splice(G.units.indexOf(hurt), 1); G.colonies.pop();
     out.wire2 = w2;
+
+    // ---- Phase 2 batch 2: PISS bands, forest objection, trade refusals,
+    // endgame clock ----
+    const w3 = {};
+    // A band crossing announces @PISS4 with the tribe speaker.
+    G.tribes[0].tension = 15;
+    G.eventQueue = []; adjustTension(0, 60, 4);
+    w3.pissBand = /tribe is now .*restless|tribe is now .*angry|tribe is now .*hostile/i.test(q()) ||
+                  /unprovoked attack/i.test(q());
+    // @MADATWAGONS shuts village trade on the hostile band.
+    const vv = G.villages.find(v => v.tribe === 0);
+    G.tribes[0].tension = TENSION_HOSTILE;
+    if (vv) {
+      G.eventQueue = [];
+      openVillageTrade(vv, { hold: [{ good: 2, qty: 10 }] });
+      w3.madAtWagons = /do not wish to trade/i.test(q());
+    } else w3.madAtWagons = true;
+    G.tribes[0].tension = 0;
+    // @LEARNMAD refuses an angry tribe's teaching.
+    if (vv) {
+      G.tribes[0].tension = TENSION_HOSTILE;
+      G.eventQueue = [];
+      liveAmong(vv, { profession: null });
+      w3.learnMad = /infuriate us/i.test(q());
+      G.tribes[0].tension = 0;
+    } else w3.learnMad = true;
+    // The retirement clock: 1800 with no revolution retires with @RETIRING,
+    // the @EXPLOITS card and the @SCORED lock.
+    G.year = 1799; G.season = 1; G.flags = 0; G.scored = false; G.retired = false;
+    G.eventQueue = []; G.dialog = null;
+    endTurn();
+    w3.retire1800 = /steps down/i.test(q()) && /COLONIZATION RATING/i.test(q()) &&
+                    G.retired === true &&
+                    !!(G.dialog && /Scoring for this game/i.test(G.dialog.body.join(' ')));
+    closeDialog(1);                                  // keep playing anyway
+    w3.scoredLock = G.scored === true && G.screen !== 'title';
+    // Bundled keys for the batch.
+    w3.bundled = !!(DATA.events.INDIANBEGFOOD && DATA.events.INDIANGIVEFOOD &&
+                    DATA.events.INDIANGIVESTUFF && DATA.events.INDIANCOMMENT &&
+                    DATA.events.INDIANCOME && DATA.events.INDIANFOREST &&
+                    DATA.events.INDIANFOREST2 && DATA.events.PISS0 &&
+                    DATA.events.SOONRETIRING0 && DATA.events.RETIRING2 &&
+                    DATA.attitudinal && DATA.scorenames && DATA.scorenames.length);
+    out.wire3 = w3;
   }
 
   // ---- treasure transport and fog of war ----
@@ -3203,6 +3247,9 @@ def main():
         ("small mechanics: outage latch, VANISH, colony-built units + caps, "
          "rush-buy, back-tax, REFIT",
          all(r["wire2"].values()), r["wire2"]),
+        ("natives + endgame: PISS bands, trade refusals, LEARNMAD, the "
+         "1800 retirement and SCORED lock",
+         all(r["wire3"].values()), r["wire3"]),
     ]
     bad = 0
     for name, ok, got in checks:

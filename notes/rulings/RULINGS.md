@@ -8486,3 +8486,43 @@ Suite: 232 checks (new "small mechanics" block).
 tools stock and the treasury -- fixed by carrying the three columns
 through; caught by the new suite block. Suite 231/231. Ledger: DONE 239,
 BUNDLED-UNWIRED 34, MISSING 163.)
+
+## 2026-08-07q — Phase 2 batch 2: PISS tension bands, forest objection, friendly natives, trade refusals, retirement clock
+
+- **@PISS0-5.** adjustTension announces an UPWARD band crossing (the F9
+  thresholds 20/40/75/100 shared via tensionBandIdx): STRING3 = the
+  @ATTITUDE band word, STRING2 = an @ATTITUDINAL modifier by depth into the
+  band (both lowercased); the engine's announce trigger and modifier pick
+  are unread, flagged. Cause codes at the sites that know them: 1 roads
+  (roadObjection refusal), 2 forest (clearObjection refusal + the completed
+  cut), 4 attack (both act-of-war sites); 3 missionaries / 5 population
+  have no natural port site yet and stay on the generic 0.
+- **@INDIANFOREST / @INDIANFOREST2.** clearObjection = roadObjection's
+  3-row clone (stop / pay / "Timmmmmmmbeeeeerrrrrrrrrrrr!") on ORDER_CLEAR
+  of a forested tile near a village; FOREST2 = the completed-cut
+  encroachment notice with its tension cost. Gates cloned from
+  roadObjection's flagged model.
+- **Friendly natives (5 keys).** nativeDemands grows a Content-band branch
+  (same flagged rare-roll model as the hostile claims): @INDIANGIVEFOOD
+  (low-food colony gift), @INDIANGIVESTUFF (raw-goods gift),
+  @INDIANBEGFOOD (rows: refuse (+5) / share half (-8)), @INDIANCOMMENT and
+  @INDIANCOME flavour notices. ALL amounts flagged -- the engine's triggers
+  and purses are untraced (the manual names the events, not the numbers).
+- **@MADATSHIPS / @MADATWAGONS / @LEARNMAD.** Village-trade refusals:
+  hostile band shuts trade entirely (@MADATWAGONS), restless band distrusts
+  SHIPS (@MADATSHIPS, "approach us in wagons"); @LEARNMAD refuses teaching
+  on the hostile band. Bands = the F9 thresholds, flagged.
+- **Retirement clock + endgame.** At endTurn's tail: 1800 auto-retirement
+  (@RETIRING) unless the WoI is on; 1850 war-weary surrender (@RETIRING2)
+  unless it is WON; @SOONRETIRING0/1 warnings at 1790/1840 (lead times
+  flagged -- the manual gives the deadlines, not the warnings' timing).
+  endGameSequence: the @EXPLOITS rating card (NUMBER0 = scoreParts total)
+  + one @SCORE joke name (row pick flagged random), the F10 page, then the
+  @SCORED lock -- row 1 "Keep playing anyway." continues with scoring
+  closed, row 0 ends to the title. Voluntary GAME-menu Retire runs the
+  same sequence. @SCORE exported as DATA.scorenames, @ATTITUDINAL as
+  DATA.attitudinal.
+
+Suite: 232/232 (new "natives + endgame" block).
+
+(2026-08-07q ledger: DONE 254 (+15), BUNDLED-UNWIRED 37, MISSING 145.)

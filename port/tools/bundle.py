@@ -159,6 +159,14 @@ def build_data():
     D["actions"] = [r["name"] for r in rows("@ACTIONS")]
     D["missionpre"] = [r["name"] for r in rows("@MISSION")]
     D["attitude"] = [r["name"] for r in rows("@ATTITUDE")]
+    # @ATTITUDINAL: the "Extremely/Very/Rather/Somewhat/Slightly" modifiers
+    # the @PISS* announcements compose with the band word.
+    D["attitudinal"] = [r["name"] for r in rows("@ATTITUDINAL")]
+    # GAME.TXT @SCORE: the endgame joke-name lines ("%STRING0 Fever" ...),
+    # one drawn on the @EXPLOITS rating card.
+    D["scorenames"] = [l for l in
+                       json.load(open(ROOT / "data_extracted/text/GAME.full.json"))
+                       ["sections"]["@SCORE"]["body"].split("\n") if l.strip()]
     D["levelname"] = [r["settlement_singular"] for r in rows("@LEVELS")]
     D["regionname"] = [r["name"] for r in rows("@COLONYNAME")]
 
@@ -284,6 +292,14 @@ def build_data():
               "@BUYME0", "@BUYME1", "@REFIT",
               "@NOMOREWAGONS", "@NOMOREWAREHOUSE", "@ALREADYHAVE",
               "@KISSUP", "@KISSSORRY", "@VANISH", "@CUSTOM",
+              # Native tension-band announcements + the friendly half.
+              "@PISS0", "@PISS1", "@PISS2", "@PISS3", "@PISS4", "@PISS5",
+              "@INDIANBEGFOOD", "@INDIANGIVEFOOD", "@INDIANGIVESTUFF",
+              "@INDIANCOMMENT", "@INDIANCOME",
+              "@INDIANFOREST", "@INDIANFOREST2",
+              # The retirement clock + endgame sequence.
+              "@SOONRETIRING0", "@SOONRETIRING1", "@RETIRING", "@RETIRING2",
+              "@EXPLOITS", "@SCORED",
               # The village haggle loop (func_049600).
               "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
               "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",

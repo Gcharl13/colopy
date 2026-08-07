@@ -2062,6 +2062,16 @@ function advanceImprovements() {
       if (c && lumber > 0) {
         c.stock[GOOD.LUMBER] += lumber;
         showEvent('CLEARCUT', { STRING0: c.name, NUMBER0: lumber });
+        // @INDIANFOREST2: the completed cut near a settlement is the
+        // colony-encroachment notice (no rows), with its tension cost.
+        const nearV = G.villages.find(v =>
+          Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+        if (nearV) {
+          G.eventTribe = nearV.tribe;
+          showEvent('INDIANFOREST2',
+                    { STRING0: (G.tribes[nearV.tribe] || {}).name, STRING1: c.name });
+          adjustTension(nearV.tribe, 5, 2);
+        }
       } else G.msg = 'Pioneers clear the forest.';
     } else {
       IMPROVE[i] |= PLOW_BIT;
@@ -4414,13 +4424,36 @@ function drawSettlement(ctx, px, py, level, nation, tribeColour, mission) {
 // docs/UI_AUDIT_TRACKER.md, not a byte-verified rule. The two thresholds
 // themselves (75/100 and 128) are byte-verified and are used as such.
 const ALARM_RAID = 0x80;
-function adjustTension(tribe, delta) {
+// The F9 band thresholds as an index, shared with the @PISS* announcements.
+function tensionBandIdx(n) {
+  return n >= TENSION_WAR ? 4 : n >= TENSION_HOSTILE ? 3
+       : n >= 40 ? 2 : n >= 20 ? 1 : 0;
+}
+// @PISS0-5: "the {tribe} tribe is now %STRING2 {%STRING3}" -- STRING3 is the
+// @ATTITUDE band word, STRING2 an @ATTITUDINAL modifier. The engine's
+// modifier pick and its announce trigger are unread: the port announces on
+// an UPWARD band crossing, modifier by depth into the band, flagged. The
+// cause code (1 roads, 2 forest, 3 missionaries, 4 attack, 5 population)
+// is passed by the caller that knows it; 0 is the generic body.
+function adjustTension(tribe, delta, cause) {
   const t = G.tribes[tribe];
   if (!t) return;
   // France, and Pocahontas, halve anger.
   if (delta > 0 && (G.nation === 1 || G.fathersOwned.includes('Pocahontas')))
     delta = Math.floor(delta / 2);
+  const before = tensionBandIdx(t.tension);
   t.tension = Math.max(0, Math.min(TENSION_WAR, t.tension + delta));
+  const after = tensionBandIdx(t.tension);
+  if (after > before && DATA.attitudinal) {
+    const spans = [[0, 20], [20, 40], [40, 75], [75, 100], [100, 101]];
+    const [lo, hi] = spans[after];
+    const depth = Math.min(4, Math.floor((t.tension - lo) * 5 / (hi - lo)));
+    G.eventTribe = tribe;
+    showEvent(`PISS${cause || 0}`, {
+      STRING0: DATA.nations[G.nation].adjective, STRING1: t.name,
+      STRING2: DATA.attitudinal[4 - depth].toLowerCase(),
+      STRING3: (DATA.attitude[after] || '').toLowerCase() });
+  }
   for (const v of G.villages)
     if (v.tribe === tribe) v.alarm = Math.max(0, Math.min(255, (v.alarm || 0) + delta));
 }
@@ -4714,6 +4747,45 @@ function nativeDemands() {
   for (const t of G.tribes) {
     if (!t || t.dead) continue;
     G.eventTribe = G.tribes.indexOf(t);
+    // The FRIENDLY half (Content band): gifts, begging and the two flavour
+    // notices. Triggers and amounts are NOT traced -- same flagged model as
+    // the hostile claims below (rare roll, a colony near their country).
+    if ((t.tension || 0) < 20) {
+      if (Math.floor(Math.random() * 24) !== 0) continue;
+      const ti2 = G.tribes.indexOf(t);
+      const nearC = G.colonies.find(cc => G.villages.some(v =>
+        v.tribe === ti2 && Math.abs(v.x - cc.x) <= 3 && Math.abs(v.y - cc.y) <= 3));
+      if (!nearC) continue;
+      const roll = Math.floor(Math.random() * 5);
+      if (roll === 0 && nearC.stock[GOOD.FOOD] < 100) {
+        // @INDIANGIVEFOOD -- the plentiful-harvest gift (amount flagged).
+        const gift = 20 + Math.floor(Math.random() * 30);
+        nearC.stock[GOOD.FOOD] += gift;
+        showEvent('INDIANGIVEFOOD', { STRING0: t.name, NUMBER0: gift });
+      } else if (roll === 1) {
+        // @INDIANGIVESTUFF -- a raw-goods gift (good + amount flagged).
+        const g = RAW_GOODS[Math.floor(Math.random() * RAW_GOODS.length)];
+        const gift = 10 + Math.floor(Math.random() * 20);
+        nearC.stock[g] += gift;
+        showEvent('INDIANGIVESTUFF', { STRING0: t.name, STRING1: nearC.name,
+                                       NUMBER0: gift, STRING2: DATA.cargo[g].name });
+      } else if (roll === 2 && nearC.stock[GOOD.FOOD] >= 40) {
+        // @INDIANBEGFOOD -- rows: refuse / share half (the offered split is
+        // the port's reading of NUMBER0-of-NUMBER1).
+        const have = nearC.stock[GOOD.FOOD], offer = Math.floor(have / 2);
+        askEvent('INDIANBEGFOOD', { STRING0: t.name, STRING1: nearC.name,
+                                    NUMBER0: offer, NUMBER1: have }, (choice) => {
+          if (choice === 1) { nearC.stock[GOOD.FOOD] -= offer; adjustTension(ti2, -8); }
+          else adjustTension(ti2, 5);
+        });
+      } else if (roll === 3) {
+        showEvent('INDIANCOMMENT', { STRING0: t.name,
+                                     STRING1: DATA.nations[G.nation].adjective });
+      } else {
+        showEvent('INDIANCOME', { STRING0: t.name });
+      }
+      continue;
+    }
     if ((t.tension || 0) < TENSION_HOSTILE) continue;
     if (Math.floor(Math.random() * 24) !== 0) continue;   // rare, per tribe, per turn
     const ti = G.tribes.indexOf(t);
@@ -4755,6 +4827,28 @@ function nativeDemands() {
     return;
   }
 }
+// The forest objection (@INDIANFOREST), same 3-row shape as @INDIANROAD:
+// stop / pay / cut anyway. Cloned gates (village within 2, tension >= 40,
+// Peter Minuit zeroes the buy-off) -- the engine's own gates are unread,
+// flagged like roadObjection's.
+function clearObjection(u) {
+  const near = G.villages.find(v => Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+  if (!near) return false;
+  G.eventTribe = near.tribe;
+  const t = G.tribes[near.tribe];
+  if (!t || (t.tension || 0) < 40) return false;
+  const pay = G.fathersOwned.includes('Peter Minuit') ? 0 : demandValue(100);
+  askEvent('INDIANFOREST', { STRING0: t.name, NUMBER1: pay }, (choice) => {
+    if (choice === 0) { u.orders = 0; u.work = 0; return; }
+    if (choice === 1) {
+      if (G.gold >= pay) { G.gold -= pay; adjustTension(near.tribe, -5); }
+      else { u.orders = 0; u.work = 0; G.msg = 'We cannot afford the compensation.'; }
+      return;
+    }
+    adjustTension(near.tribe, 10, 2);   // @PISS2: destroying the forest
+  });
+  return true;
+}
 // A road cut through their land draws an objection with a buy-off. Peter Minuit
 // zeroes the payment.
 function roadObjection(u) {
@@ -4772,7 +4866,7 @@ function roadObjection(u) {
       else { u.orders = 0; u.work = 0; G.msg = 'We cannot afford the compensation.'; }
       return;
     }
-    adjustTension(near.tribe, 10);
+    adjustTension(near.tribe, 10, 1);    // @PISS1: roadbuilding
   });
   return true;
 }
@@ -5116,6 +5210,9 @@ function liveAmong(v, u) {
   const t = G.tribes[v.tribe];
   const job = villageSkill(v);
   const S = { STRING0: t.name, STRING1: DATA.jobs[job] };
+  // @LEARNMAD: an angry tribe refuses to teach at all ("your ill manners
+  // infuriate us"). Band = the F9 hostile threshold, flagged.
+  if (((t && t.tension) || 0) >= TENSION_HOSTILE) { showEvent('LEARNMAD', S); return; }
   if (u.profession === 'Petty Criminals') { showEvent('LEARNCRIMINAL', S); return; }
   // @TEACHCONVERT: "Indian converts already know the Indian ways." -- the
   // convert refusal is its own key (training.md §Native learning), not the
@@ -5300,7 +5397,7 @@ function attackVillage(v, u) {
   askEvent('WHACKINDIANS', { STRING0: G.tribes[v.tribe].name }, (choice) => {
     if (choice !== 0) return;
     const t = G.tribes[v.tribe];
-    adjustTension(v.tribe, 100);                    // an attack is an act of war
+    adjustTension(v.tribe, 100, 4);                 // an attack is an act of war (@PISS4)
     // The village defends with a brave's strength on its own tile, plus the
     // settlement's own standing -- the port uses the settlement level as the
     // fortification the engine's colony bonus would supply.
@@ -5353,7 +5450,7 @@ function fillTemplate(line, subs) {
 // @CASHTREASURE/@LOOT*/@NOLOOT join it. LOOTCAPTURE stays military.
 const SPEAKER_KING = /^(KING|TAXOPTIONS|TEAPARTY|UPKEEP|CASHTREASURE|LOOT(?!CAPTURE)|NOLOOT|MERCENARIES|REFIT)/;
 const SPEAKER_MILITARY = /^(DEMOTE|COLONISTCAPTURE|WAGONCAPTURE|CARGOCAPTURE|LOOTCAPTURE|ARTILLERY|SHIPDAMAGE|SHIPSUNK|VETERAN|VALOR|WELLSEASONED|SHIPCOMBAT|EVASIVE|FORTFIRE|MOBILIZE|WARN)/;
-const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS|BUY0|BUY1|BUYWHICH|TRADE0|TRADE1|TRADEWHICH|BADHAGGLE|BADCARGO|TRADENOCARGO|TRADENOWANT)/;
+const SPEAKER_NATIVE = /^(RAID|INDIAN|CHIEF|LEARN|EXTORT|VILLAGE|MISSION|HERESY|BURIAL|WHACK|EXTINCT|MADAT|DEADCONVERTS|PISS|BUY0|BUY1|BUYWHICH|TRADE0|TRADE1|TRADEWHICH|BADHAGGLE|BADCARGO|TRADENOCARGO|TRADENOWANT)/;
 // MSS2 merchant: price/trade wrapper func_034DD4 sets 2 @0x034E98 and the
 // live @PRICEDOWN/@PRICERISE frames wear it; @SUCCESSION is cited to MSS2
 // directly. @UNREST's index is unread -- MSS2 is the port's reading (the
@@ -5529,6 +5626,19 @@ function runVillageAction(id) {
 // "until you bring us something of value").
 function tradeSpeaker(v) { return `IND${v.tribe % 8}A${Math.min(3, villageBand(v))}`; }
 function openVillageTrade(v, u) {
+  // The anger refusals: @MADATWAGONS shuts trade entirely on the hostile
+  // band; @MADATSHIPS distrusts SHIPS on the restless band ("approach us in
+  // wagons ... we might trade"). The engine's bands are unread -- these are
+  // the F9 thresholds, flagged.
+  const t = G.tribes[v.tribe] || {};
+  if ((t.tension || 0) >= TENSION_HOSTILE) {
+    showEvent('MADATWAGONS', { STRING0: t.name }, tradeSpeaker(v));
+    return;
+  }
+  if ((t.tension || 0) >= 40 && u && u.ship) {
+    showEvent('MADATSHIPS', { STRING0: t.name }, tradeSpeaker(v));
+    return;
+  }
   const cargo = ((u && u.hold) || []).filter(h => h.qty > 0);
   if (!cargo.length) { showEvent('TRADENOCARGO', {}, tradeSpeaker(v)); return; }
   tradeSellPick(v, u);
@@ -6743,13 +6853,34 @@ function exitToDos() {
   });
 }
 
+// The endgame sequence: the @EXPLOITS rating card with an @SCORE joke name,
+// the F10 score page, then the @SCORED lock ("That's all." ends the game,
+// "Keep playing anyway." continues with scoring closed). Which @SCORE row
+// the engine picks is runtime-driven and unread -- a random row is the
+// flagged stand-in.
+function endGameSequence() {
+  if (G.scored) return;
+  G.retired = true;
+  const s = scoreParts();
+  const name = G.leader || DATA.nations[G.nation].leader;
+  showEvent('EXPLOITS', { NUMBER0: s.total,
+                          STRING0: DATA.nations[G.nation].country });
+  const rows = DATA.scorenames || [];
+  if (rows.length)
+    notice(rows[Math.floor(Math.random() * rows.length)]
+             .replace(/%STRING0/g, name));
+  G.report = 'F10';
+  G.screen = 'report';
+  askEvent('SCORED', {}, (choice) => {
+    G.scored = true;
+    if (choice === 0) { G.screen = 'title'; G.menuRow = 0; }
+  });
+}
 // GAME "Retire": @RETIRE carries `@default=2`, so "No" is highlighted.
 function retire() {
   askEvent('RETIRE', {}, (choice) => {
     if (choice !== 0) return;
-    G.report = 'F10';
-    G.screen = 'report';
-    G.retired = true;
+    endGameSequence();
   });
 }
 
@@ -8954,6 +9085,22 @@ function endTurn() {
   checkIntervention();
   driftMarket();
   advanceCrossings();
+  // The retirement clock (the manual's 1800/1850 endgame dates): 1800
+  // auto-retirement unless a War of Independence is on, 1850 war-weary
+  // surrender unless it is WON. The 1790/1840 warning lead times are the
+  // port's flagged reading -- the engine's lead is unread.
+  if (!G.retired) {
+    const S = { STRING0: DATA.difficulty[G.difficulty],
+                STRING1: G.leader || DATA.nations[G.nation].leader,
+                STRING2: DATA.nations[G.nation].homeport };
+    if (!(G.flags & WOI_DECLARED)) {
+      if (G.year >= 1790 && !G.soonWarned) { G.soonWarned = true; showEvent('SOONRETIRING0', S); }
+      if (G.year >= 1800) { showEvent('RETIRING', S); endGameSequence(); }
+    } else if (!(G.flags & WOI_WON)) {
+      if (G.year >= 1840 && !G.soonWarned2) { G.soonWarned2 = true; showEvent('SOONRETIRING1', S); }
+      if (G.year >= 1850) { showEvent('RETIRING2', S); endGameSequence(); }
+    }
+  }
   G.msg = '';
   if (G.units[G.sel]) centerOn(G.units[G.sel].x, G.units[G.sel].y);
 }
@@ -9074,7 +9221,7 @@ function moveSel(dx, dy) {
     const tired = u.movesLeft < u.moves;
     const strike = () => {
       resolveAttack(u, foe);
-      if (foe.tribe !== undefined) adjustTension(foe.tribe, 100);   // an act of war
+      if (foe.tribe !== undefined) adjustTension(foe.tribe, 100, 4);   // an act of war (@PISS4)
       u.fatigue = 0;
       advance();
     };
@@ -9219,8 +9366,10 @@ function improveOrder(n) {
   u.work = 0;
   u.movesLeft = 0;
   G.msg = `${DATA.orders[n].name}: ${workThreshold(u, n === ORDER_ROAD)} turns.`;
-  // A road cut near a settlement draws the tribe's objection, with its buy-off.
+  // A road cut near a settlement draws the tribe's objection, with its
+  // buy-off -- and clearing their forest draws @INDIANFOREST the same way.
   if (n === ORDER_ROAD) roadObjection(u);
+  if (n === ORDER_CLEAR && isForested(tileTerrain(at(u.x, u.y)))) clearObjection(u);
   advance();
 }
 // ORDERS "Return to Europe" (E) sends the selected ship home; VIEW "European
