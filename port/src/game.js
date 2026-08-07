@@ -2776,8 +2776,9 @@ function drawColony(ctx) {
   for (let ty = 0; ty < 5; ty++)
     for (let tx = 0; tx < 5; tx++) {
       const wx = c.x - 2 + tx, wy = c.y - 2 + ty;
+      // drawTile composites the improvements itself -- calling
+      // drawImprovements again here double-blitted roads and ploughs.
       drawTile(sg, wx, wy, tx * 16, ty * 16);
-      drawImprovements(sg, wx, wy, tx * 16, ty * 16);
       // The scene is the same composited map the main view shows, so the
       // settlements land on their tiles too -- above all, THE COLONY ITSELF on
       // the centre tile, which the panel used to leave as bare terrain.
@@ -2787,11 +2788,29 @@ function drawColony(ctx) {
       if (ov) drawSettlement(sg, tx * 16, ty * 16, ov.level, -1,
                              (G.tribes[ov.tribe] || {}).color || 8, ov.mission);
     }
+  // The x1.5 upscale is func_00531C's 2->3 duplication, whose phases the
+  // live frame pins: COLUMNS pair at dst%3==0 (src = floor(2d/3)) and ROWS
+  // at dst%3==1 (src = floor((2r+1)/3)) -- a plain drawImage stretch had the
+  // row phase off by one. The 4x4 positional ramp dither func_005296 that
+  // the engine passes every written pixel through is NOT reproduced yet
+  // (ramps 0x10..0x87; flagged TBD) -- the capture shows only ~25% exact
+  // pixel pairing where the undithered stretch gives ~75%.
+  const up = document.createElement('canvas');
+  up.width = 120; up.height = 120;
+  const ug = up.getContext('2d');
+  const sd = sg.getImageData(0, 0, 80, 80).data;
+  const od = ug.createImageData(120, 120);
+  for (let r = 0; r < 120; r++) {
+    const sy = Math.floor((2 * r + 1) / 3);
+    for (let d = 0; d < 120; d++) {
+      const si = (sy * 80 + Math.floor(2 * d / 3)) * 4, oi = (r * 120 + d) * 4;
+      od.data[oi] = sd[si]; od.data[oi + 1] = sd[si + 1];
+      od.data[oi + 2] = sd[si + 2]; od.data[oi + 3] = 255;
+    }
+  }
+  ug.putImageData(od, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(224, 32, 72, 72); ctx.clip();
-  ctx.drawImage(scene, 0, 0, 80, 80, 200, 8, 120, 120);
-  ctx.restore();
+  ctx.drawImage(up, 24, 24, 72, 72, 224, 32, 72, 72);
   hollowRect(ctx, 223, 31, 74, 74, 0);
   drawColonyTiles(ctx, c);
 
@@ -2865,16 +2884,40 @@ function drawColonyTiles(ctx, c) {
           proportionalStrip(ctx, 22 + centre.good, centre.amount, 0, x, y + 13, 24);
         continue;
       }
+      const wx = c.x + dx, wy = c.y + dy;
+      // Flag bit 6, the blocked-cell mark: a 24x24 outline in pure red 0x0C
+      // (@0x026584). [0x8DF0] is runtime state; "another settlement holds the
+      // tile" is the port's reading of when the bit is set, flagged.
+      if (G.villages.some(q => q.x === wx && q.y === wy) ||
+          G.colonies.some(q => q !== c && q.x === wx && q.y === wy) ||
+          G.rivals.some(rv => rv.colonies.some(q => q.x === wx && q.y === wy)))
+        hollowRect(ctx, x, y, 24, 24, 0x0C);
       const p = c.colonists.find(q => q.cell && q.cell[0] === dx && q.cell[1] === dy);
       const good = p ? JOB_GOOD[jobIndex(p.job)] : undefined;
       const amount = p ? fieldYield(c, p) : 0;
       if (good !== undefined && good >= 0) {
-        if (amount > 0) proportionalStrip(ctx, 22 + good, amount, 0, x, y, 24);
+        // A worked WATER tile swaps the good icon for EXE 0x3A = bundle 57
+        // (the fish, @0x0266D2 when the tile-class query 0xC0E reads 8) --
+        // live Curacao's north sea cell draws frame 57, not the food sprite.
+        const gf = tileWater(at(wx, wy)) ? GAUGE_ALT : 22 + good;
+        if (amount > 0) proportionalStrip(ctx, gf, amount, 0, x, y, 24);
         else {
-          const [fw] = frameSize('ICONS', 22 + good);
-          sheetFrame(ctx, 'ICONS', 22 + good, x + ((16 - fw) >> 1), y + 1);
+          const [fw] = frameSize('ICONS', gf);
+          sheetFrame(ctx, 'ICONS', gf, x + ((16 - fw) >> 1), y + 1);
           sheetFrame(ctx, 'ICONS', 64, x, y);        // EXE 0x41, the "none" mark
         }
+      }
+      // Map units STANDING on the surrounding tile -- the post-upscale scene
+      // pass func_026374 @0x02646A-92: PHYS0 frame 0x5A + unit-type row at
+      // (cell*24+252, cell*24+60) = (x+4, y+4). Live Curacao carries PHYS0
+      // 99 and 101 at exactly those anchors.
+      const stander = G.natives.find(q => q.x === wx && q.y === wy) ||
+                      G.units.find(q => q.x === wx && q.y === wy) ||
+                      G.refUnits.find(q => q.x === wx && q.y === wy);
+      if (stander) {
+        const ti = DATA.units.findIndex(r => r.name === stander.type);
+        if (ti >= 0 && DATA.sheets.PHYS0.frames[0x5A + ti])
+          sheetFrame(ctx, 'PHYS0', 0x5A + ti, x + 4, y + 4);
       }
       // The WORKER is the last thing the cell draws, through `0x181F:0x24A`
       // fed by the colony enumerator `0x181F:0xA74` (@0x026763-0x02677C) -- NOT

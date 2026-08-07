@@ -8263,3 +8263,30 @@ of 10 live call sites and only 3 plates in the asset bundle.
   [0x540A] block index is unread, TBD).
 
 Suite: 227/227.
+
+## 2026-08-07l — batch 4 (part 2): colony surrounding-tiles panel to the byte-read cell model
+
+Against spec/ui/colony_screen.md §3.2/§3.8 (func_0264A8 / func_026374) and a
+pixel read of the live Curacao frames:
+* The x1.5 upscale now uses func_00531C's own duplication phases (columns
+  pair at dst%3==0, rows at dst%3==1 -- the drawImage stretch had the row
+  phase off by one). The 4x4 positional ramp dither func_005296 remains
+  unimplemented, flagged TBD (capture shows ~25% exact pairing vs the
+  port's ~75%).
+* Worked WATER tiles draw EXE 0x3A = bundle frame 57 (the fish) instead of
+  the food sprite (@0x0266D2's tile-class-8 substitution) -- live Curacao's
+  north sea cell is the anchor.
+* Map units STANDING on surrounding tiles now draw: PHYS0 frame 0x5A +
+  @UNIT row at (cell*24+252, cell*24+60) = cell+(4,4) (func_026374
+  @0x02646A-92; PHYS0 99/101 in the live frame at exactly those anchors).
+* Flag bit 6's red 24x24 blocked-cell outline (colour 0x0C @0x026584) draws
+  when another settlement holds the tile -- the bit itself is runtime state,
+  so that condition is the port's reading, flagged.
+* Roads/ploughs were double-blitted into the scene (drawTile already
+  composites improvements); fixed.
+* Left open with the blockers named: the ICONS 0x6D marker path
+  ([0x8D9E] semantics unread), the white [0x330]/[0x332] cursor box, the
+  scene marker's pop number/name (gated on [0x890], live value unresolved),
+  and the amount<=0 path independent of assignment.
+
+Suite: 227/227.
