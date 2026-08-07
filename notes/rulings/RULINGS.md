@@ -8856,3 +8856,24 @@ icons beside colony rows), f9_indian.png (single page; Extinct tribes keep
 their row; right column = @LEVELS words; centre = tribute tally).
 
 Suite 233/233; render-diff 15/15.
+
+## 2026-08-07z3 — Phase 4 capture 4: the Bound For panel is ship + manifest
+
+Opened the 1653 game's Europe screen live (VIEW menu -> European Status;
+`docs/screens/live_2026-08-07/europe_1653_boundfor.png`). The outbound
+Galleon in "Bound For New Netherlands" does NOT draw as a lone icon: the
+panel renders the SHIP + ITS PASSENGER MANIFEST -- each passenger stands
+on a ~13x15 black-outlined plate filled with the NATION COLOUR (palette
+13 = the Dutch colour; this vindicates the port's old "nation plate"
+idea, in the crossing panel rather than the dock) and is drawn as his
+PROFESSION FIGURE (template-matched 1.0: Expert Farmer 81, Master
+Distiller 90, Master Gunsmith 96). Ship anchor (75,146) = the state-3
+band of func_031298's y=146/137/132. Passenger pitch ~17-18 (one
+capture; 17 in the port). Also confirms 2026-08-07y: no hollow cells, no
+progress bar under the manifest row; and the title band prints Gold:
+21147 IN FULL (no K-abbreviation on the Europe title).
+
+Port: crossingCell rebuilt (ship + manifest, slot->band y as a flagged
+approximation of the per-state layout). Spec: europe_screen.md §0.2.
+Suite 233/233 (one run tripped the documented Fortress-raid flake, clean
+on re-run); render-diff 15/15.

@@ -68,6 +68,14 @@ is this section + the reference PNG.
   ship, one on the selected dock unit, everything else bare. The port had boxed every entry (and
   drawn func_031366's sail-progress bar inside its stacked panel columns, where it read as
   noise); both corrected — see `notes/rulings/RULINGS.md` 2026-08-07y.
+  **Crossing rendering (capture-pinned 2026-08-07,
+  `docs/screens/live_2026-08-07/europe_1653_boundfor.png`):** an outbound crossing draws as
+  the SHIP + ITS MANIFEST — the ship sprite (Galleon png 7, anchor measured (75,146) = the
+  state-3 band of func_031298's y=146/137/132), then each passenger standing on a ~13×15
+  black-outlined plate filled with the NATION COLOUR (palette 13, the Dutch colour in that
+  frame), drawn as his PROFESSION FIGURE (template-matched 1.0: Expert Farmer 81, Master
+  Distiller 90, Master Gunsmith 96), passenger pitch ~17-18 (single capture; port uses 17).
+  No hollow cell and no progress bar on the manifest row.
 - Market **prices** and the **title** string are the *displayed* values of this specific capture
   (read from the screenshot), not a decoded snapshot.
 

@@ -4152,19 +4152,36 @@ function drawEurope(ctx) {
   // Panels. "Expected Soon" lists crossings inbound to Europe, "Bound For" the
   // ones outbound, "Loading" the ship at the dock and its hold.
   //
-  // A crossing draws as the ship's ICON alone. The engine's sail-progress bar
-  // (func_031366, `0x64 >> state` px @0x0313A4) belongs to the per-state BAND
-  // layout (y=146/137/132, func_031298 @0x031298) the port does not use; drawn
-  // inside the port's stacked panel columns it read as unexplained clutter, so
-  // it is dropped with the band layout (user call, 2026-08-07). Same for the
-  // hollow cell: the engine's green cell is the SELECTION cursor, not a frame
-  // every entry wears, so crossings draw bare.
-  const crossingCell = (e, x, y) => {
-    sheetFrame(ctx, 'ICONS', e.icon, x + 3, y + 1);
+  // A crossing renders as the SHIP + ITS MANIFEST, CAPTURE-PINNED 2026-08-07
+  // (docs/screens/live_2026-08-07/europe_1653_boundfor.png -- the 1653 Dutch
+  // game's outbound Galleon): the ship sprite at the band's left, then each
+  // PASSENGER standing on a black-outlined plate filled with the NATION
+  // COLOUR (palette 13 = the Dutch colour in that frame), drawn as his
+  // PROFESSION FIGURE (matched 1.0: Expert Farmer 81 / Master Distiller 90 /
+  // Master Gunsmith 96), at pitch ~17-18 (one capture; 17 here). Ship anchor
+  // measured (75,146) = the engine's state-3 band; the per-state bands
+  // y=146/137/132 (func_031298) index by SLOT here, a flagged approximation
+  // of the state layout. No hollow cell, no progress bar (the green cell is
+  // the selection cursor; the bar belongs to the band layout proper).
+  const CROSS_BANDS = [146, 137, 132];
+  const crossingCell = (e, x, k) => {
+    const y = CROSS_BANDS[Math.min(k, 2)];
+    sheetFrame(ctx, 'ICONS', e.icon, x + 3, y);
+    (e.passengers || []).slice(0, 3).forEach((p, i) => {
+      const px = x + 20 + i * 17;
+      ctx.fillStyle = ink(0);
+      ctx.fillRect(px - 2, y + 1, 13, 15);
+      ctx.fillStyle = lut(DATA.nations[G.nation].color);
+      ctx.fillRect(px - 1, y + 2, 11, 13);
+      const fig = typeof p === 'string' ? professionIconByName(p) : null;
+      const u = unit(entryType(p)) || unit('Colonists');
+      sheetFrame(ctx, 'ICONS', fig !== null && fig !== undefined ? fig : u.icon,
+                 px, y);
+    });
   };
   FONT.tiny.draw(ctx, 'Expected Soon', 16, 120, lut(HUD_INK));
   G.europe.filter(e => e.state === 'toEurope').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 16 + k * 24, 128));
+    crossingCell(e, 13, k));
   // While a ship is being dragged, the Bound For panel lights up as the drop
   // target (engine region 2, rect @0x32094; the highlight itself is port UI).
   if (G.drag && G.drag.kind === 'ship' &&
@@ -4173,7 +4190,7 @@ function drawEurope(ctx) {
   FONT.tiny.draw(ctx, 'Bound For', 87, 120, lut(HUD_INK));
   FONT.tiny.draw(ctx, DATA.regionname[G.nation], 87, 127, lut(HUD_INK));
   G.europe.filter(e => e.state === 'toNewWorld').slice(0, 2).forEach((e, k) =>
-    crossingCell(e, 87 + k * 24, 135));
+    crossingCell(e, 72, k));
 
   const ship = activeShip();
   FONT.tiny.draw(ctx, ship ? 'Loading:' : 'No Ships In Port', 150, 120, lut(HUD_INK));
