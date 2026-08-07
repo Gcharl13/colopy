@@ -50,7 +50,9 @@ BLOCKED = {
     'BURNED3': 'ditto', 'CAPTURED2': 'ditto', 'CAPTURED3': 'ditto',
     'CANTMOBILIZE': 'muskets gate absent from the byte-read mobilize (disasm)',
     'KINGMOBILIZE': 'REF-side mobilize announcement site unread (disasm)',
-    'CARGOREADY0': 'per-good capacity model func_008D00 unread (disasm)',
+    'CARGOREADY0': 'func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, '
+                   'colony-wide (per-good refuted); remaining blocker = the disposal '
+                   'gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)',
     'EUROPEWIN': 'needs AI-vs-AI battles (omitted with the AI-AI war drivers)',
     'EUROPELOSE': 'ditto',
     'FULL': 'no colony size cap model; threshold unread',

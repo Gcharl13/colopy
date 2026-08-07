@@ -756,6 +756,12 @@ function centerOn(tx, ty) {
 // from [0x830..], which is the NAMES @COLORS row -- and its last three fields
 // are border0/border1/border2 = 134/128/138, a mid, a lighter and a darker
 // wood brown. That is exactly a ring-plus-bevel triplet, so they map in order.
+// CLOSED 2026-08-07: func_073474 walked in full + the [0x830..0x839] bytes
+// read from the EXE image (file 0x1D9A0+0x830): normal [0x1F4A]<-[0x830]=68,
+// hilite [0x1F4E]<-[0x831]=149, [0x1F4C]<-8, [0x1F50]<-128, [0x1F52]<-47,
+// selection band [0x1F40/42]<-[0x835]=138, ring [0x1F44]<-134,
+// bevel light/dark [0x1F46]/[0x1F48]<-128/138. The 68/149 in-game ink
+// reading is byte-verified; the flag is removed.
 // Selection band: the boot setter ties [0x1F40]/[0x1F42] to 0x37, which
 // resolves through OPENMENU's palette to (56,32,24) -- confirmed against the
 // selected row in docs/screens/01_mainmenu_BEGINMENU.png. The in-game setter
@@ -2589,8 +2595,11 @@ function autoExport(c) {
     // threshold, variant 1 while a larger warehouse could still be built.
     // The engine's trigger site and its per-good latch are unread; announcing
     // here, latched until the stock falls back, is the port's reading.
-    // (@CARGOREADY0, the below-capacity variant, needs the per-good capacity
-    // model func_008D00 -- unwired until that is byte-read.)
+    // (@CARGOREADY0, the plain variant: func_008D00 is now READ -- colony
+    // capacity = (warehouse level + 1) * 100, COLONY-WIDE, per-good refuted;
+    // its callers are the colony-screen drawers. Whether that capacity gates
+    // the 100-cut disposal hides behind the thunk 0x191F:0x9C0, still
+    // unread, so CARGOREADY0 stays unwired rather than guessed.)
     c.cargoReady = c.cargoReady || {};
     if (!c.cargoReady[i]) {
       c.cargoReady[i] = true;

@@ -8962,3 +8962,24 @@ Only 16/17/18 remain side-set (no emitter exists in the EXE). The port's
 trigger SITES stay flagged approximations; the guard BITS are closed.
 
 Suite 233/233.
+
+## 2026-08-07z7 — two more windows: func_073474 (inks CONFIRMED) and func_008D00 (capacity)
+
+**func_073474 CLOSED.** Walked in full + the [0x830..0x839] source bytes
+read from the EXE image (DGROUP file base 0x1D9A0): in-game inks are
+normal [0x1F4A]=68, hilite [0x1F4E]=149, [0x1F4C]=8, [0x1F50]=128,
+[0x1F52]=47, selection band [0x1F40/42]=138, ring 134, bevel 128/138.
+The port's 68/149 reading is byte-verified; flag removed. The sibling
+boot setter (@0x734BC) carries the known 0xFE/0xFC/0x2E/0xFD/0x37
+immediates.
+
+**func_008D00 READ.** Colony storage capacity = (warehouse-level byte
+ColonyRecord+0x95 + 1) x 100 -- ONE number for the whole colony; the
+"per-good capacity" hypothesis is refuted. Its callers (0xA3E1, 0xAB95)
+are colony-screen drawers. The 100-cut overflow disposal keeps its
+byte-cited literal threshold (cmp 0x64 @0x2D6F7) but is gated per-good
+by the un-read far thunk 0x191F:0x9C0 -- whether capacity gates the cut
+is the ONE remaining question, so @CARGOREADY0 stays BLOCKED with that
+narrowed blocker instead of being wired on a guess.
+
+Suite 233/233.
