@@ -59,7 +59,8 @@ NA = {
 exported = set(re.findall(r'"@([A-Z0-9]+)"', bnd))
 quoted = set(re.findall(r"['\"]([A-Z][A-Z0-9]{2,})['\"]", src))
 dyn = set(re.findall(r"`([A-Z][A-Z0-9]*)\$\{[^}]*\}`", src))
-DYN_FAMILIES = ('MISSION', 'LOSTCITY', 'BURIAL', 'HERESY', 'VILLAGE')
+DYN_FAMILIES = ('MISSION', 'LOSTCITY', 'BURIAL', 'HERESY', 'VILLAGE',
+                'TUTORIAL', 'PISS')
 
 
 def wired(key):

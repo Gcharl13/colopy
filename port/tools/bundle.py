@@ -303,7 +303,11 @@ def build_data():
               "@EXPLOITS", "@SCORED",
               # The tutorial lessons (spec/systems/tutorial.md -- bitmask
               # [0x5386/7], per-step idempotent emit sites).
-              *[f"@TUTORIAL{i}" for i in range(1, 20)],
+              "@TUTORIAL1", "@TUTORIAL2", "@TUTORIAL3", "@TUTORIAL4",
+              "@TUTORIAL5", "@TUTORIAL6", "@TUTORIAL7", "@TUTORIAL8",
+              "@TUTORIAL9", "@TUTORIAL10", "@TUTORIAL11", "@TUTORIAL12",
+              "@TUTORIAL13", "@TUTORIAL14", "@TUTORIAL15", "@TUTORIAL16",
+              "@TUTORIAL17", "@TUTORIAL18", "@TUTORIAL19",
               # The village haggle loop (func_049600).
               "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
               "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",
