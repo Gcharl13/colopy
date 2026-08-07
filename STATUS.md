@@ -31,19 +31,21 @@ Where the port's work is tracked, in the order to consult them:
 
 | Document | Role |
 |---|---|
-| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status (DONE / bundled-unwired / missing), regenerated mechanically by `python3 port/tools/message_status.py`. Current: 176 done, 64 bundled-unwired, 235 missing, 24 support lists. |
+| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status (DONE / bundled-unwired / missing), regenerated mechanically by `python3 port/tools/message_status.py`. Current: **283 done + 26 via-DATA**, 32 bundled-unwired, 111 missing, 23 N/A, 24 support lists. |
 | **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
 | **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |
 | **`docs/UI_AUDIT_TRACKER.md`** | Per-screen byte-verification coverage (the standing UI mandate in CLAUDE.md). |
-| `port/tools/test_flow.py` | The behavioural gate: **229/229**. |
+| `port/tools/test_flow.py` | The behavioural gate: **232/232**. |
 
-Open work, in rough priority: wire the 64 bundled-unwired keys (meeting
-sub-branches PIRACY/SIEGES/WANTSTUFF/HAVETREATY/GIVECASH/CANCELPEACE, the
-colony notice family FOOD/STARVE2/SPOIL/WAREHOUSEFULL, KINGRECRUIT's real
-TRAIN site); PRICEDOWN/PRICEUP + SOMEBOYCOTT market notices; @BUYME rush-buy;
-BUILD1-10 completion variants; @UNITOPTIONS/@SHIPOPTIONS map orders menus;
-Hall of Fame (main menu row 4); tutorial family; sound; the colony-panel
-ramp dither and popup 120-tick timeout (both flagged TBD in rulings).
+Done since the plan (2026-08-07 n-s): Phase 0 (render-diff oracle, ledger
+upgrade, audit reconciliation), Phase 1 (the wire-only sweep: market prices,
+schooling, siting/movement guards, colony notices, trade-route bodies),
+Phase 2 (input-outage latches, VANISH, colony-built units, rush-buy,
+back-tax, REFIT, CUSTOM, PISS bands, friendly natives, retirement clock,
+@HOWMUCH numeric entry), and the Phase 3 tutorial system. Remaining: Hall
+of Fame, King audience + war cycle, WoI completion, meeting sub-branches,
+news bulletin bus, depletion plane, native land-claim (Phase 3); then the
+Phase 4 byte-closure list and the Phase 5 final audit.
 
 ---
 
