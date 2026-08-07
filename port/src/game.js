@@ -17,6 +17,22 @@ const W = 320, H = 200;               // Mode 13h logical screen
 let PAL = DATA.palette;
 const isPlaceholder = (c) => c[0] > 240 && c[1] < 110 && c[2] > 240;
 const _merged = new Map();
+// The default EGA 16-colour row. A sheet palette whose low 16 equals this
+// table did not AUTHOR those entries -- the extractor stamped the stub -- and
+// the running game resolves them through the master VICEROY.PAL instead.
+// Proven against the live map capture (07_map_opening_turn.png): the English
+// nation plate is master red (255,0,0), 111 px exact, and the EGA stub red
+// (255,85,85) appears NOWHERE in the frame. This is what had the Dutch plates
+// drawing EGA magenta instead of VICEROY.PAL's orange 13 = (255,113,0).
+const EGA_STUB = [
+  [0, 0, 0], [0, 0, 170], [0, 170, 0], [0, 170, 170],
+  [170, 0, 0], [170, 0, 170], [170, 85, 0], [170, 170, 170],
+  [85, 85, 85], [85, 85, 255], [85, 255, 85], [85, 255, 255],
+  [255, 85, 85], [255, 85, 255], [255, 255, 85], [255, 255, 255],
+];
+const isEgaStubRow = (pal) =>
+  EGA_STUB.every((c, i) => pal[i] && pal[i][0] === c[0] &&
+                            pal[i][1] === c[1] && pal[i][2] === c[2]);
 const usePalette = (bg) => {
   if (_merged.has(bg)) { PAL = _merged.get(bg); return; }
   const base = DATA.palettes[bg] || DATA.palette;
@@ -25,6 +41,9 @@ const usePalette = (bg) => {
   // magenta placeholder (WOODPANL and the LEVN cards leave 0xFC-0xFE unset)
   // from the picker palette, which carries the documented UI ink triplet.
   const out = base.map((c, i) => isPlaceholder(c) ? uiPal[i] : c);
+  // Unauthored EGA low-16 row -> the master palette's own entries.
+  if (isEgaStubRow(base))
+    for (let i = 0; i < 16; i++) out[i] = DATA.palette[i];
   _merged.set(bg, out);
   PAL = out;
 };
@@ -2405,8 +2424,13 @@ function advanceCrossings() {
     if (e.state === 'port') continue;
     if (--e.turns > 0) continue;
     // Docking in Europe brings up the harbour, the way arriving does in game.
+    // The units aboard DISEMBARK TO THE DOCK (@TUTORIAL15's "fence" model on
+    // the Europe side): that is where the @ARMOPTIONS dock-unit menu lives,
+    // and boarding/sailing takes them back aboard.
     if (e.state === 'toEurope') {
       e.state = 'port';
+      for (const p of (e.passengers || [])) G.dockUnits.push(p);
+      e.passengers = [];
       G.euroShip = shipsInPort().indexOf(e);
       G.euroMsg = `${e.type} arrives in ${DATA.nations[G.nation].homeport}.`;
       G.screen = 'europe';
@@ -2867,15 +2891,48 @@ function groundSpeckle(ctx, x, y, w, h, base) {
   }
 }
 
-// ---- colony popups: construction (C) and the jobs menu (Enter) ----
-// Both use the §3 dialog framework, same as the Europe menus.
+// ---- colony popups: construction (C), the jobs menu, the occupation menu --
+// All use the §3 dialog framework, same as the Europe menus.
+//
+// The OCCUPATION menu is the engine's field-colonist picker: clicking a
+// colonist working an outdoor square lists every outdoor @JOB with THAT
+// SQUARE's yield, and committing a row re-occupies him there. The row set is
+// runtime-built from NAMES @JOB against the tile's yield table -- there is no
+// static GAME.TXT list to cite; the yields themselves are the byte-closed
+// terrain tables. Rows that yield nothing on this square still show (at 0),
+// which is how the original teaches what a square cannot do.
+const OUTDOOR_JOB_ROWS = [0, 1, 2, 3, 4, 5, 6, 7, 8];   // Farmer..Fisherman
+function occupationRows(c, p) {
+  const rows = OUTDOOR_JOB_ROWS.map(j => {
+    const name = DATA.jobs[j];
+    const probe = { ...p, job: name };
+    const n = fieldYield(c, probe);
+    const g = JOB_GOOD[j];
+    return { label: name, note: `${n} ${g >= 0 ? DATA.cargo[g].name : ''}`,
+             job: name, yield: n };
+  });
+  rows.push({ label: 'Return to the fence', note: '', job: null });
+  return rows;
+}
 function colonyPopupRows() {
   const c = G.colonies[G.colony];
-  if (G.colonyPopup === 'build')
-    return buildOptions(c).map(b => ({
-      label: b.name,
-      note: b.tools_x10 ? `${b.cost}h ${b.tools_x10 * 10}t` : `${b.cost}h`,
-    }));
+  if (G.colonyPopup === 'build') {
+    // The engine's construction picker: LABELS @CTITLE row 4 titles it, the
+    // first row is @MISC 32 "Nothing", and each entry carries the @MISC 13/14
+    // "(Cost: ... )" pair with the hammer/tool numbers.
+    const nothing = (DATA.text.misc || [])[32] || 'Nothing';
+    return [{ label: nothing, note: '', stop: true }].concat(
+      buildOptions(c).map(b => ({
+        label: b.name,
+        note: `${(DATA.text.misc || [])[13] || '(Cost:'} ${b.cost} Hammers` +
+              (b.tools_x10 ? `, ${b.tools_x10 * 10} Tools` : '') +
+              `${(DATA.text.misc || [])[14] || ')'}`,
+      })));
+  }
+  if (G.colonyPopup === 'occupation') {
+    const p = c.colonists[G.colonistSel];
+    return p && p.cell ? occupationRows(c, p) : [];
+  }
   // Jobs: the colony's buildings are the workplaces, plus a way back to the
   // plaza. Working a FIELD is done by clicking a cell in the scene panel.
   // Only buildings that actually employ a colonist are offered, and each one
@@ -2889,6 +2946,12 @@ function colonyPopupRows() {
       return { label: b, note: `${job} - ${made}` };
     }));
 }
+// The @MORETHANTHREE rule: "We cannot put more than three colonists in any
+// one building" (GAME.TXT, verbatim).
+function buildingCrew(c, name) {
+  const job = jobForBuilding(name);
+  return c.colonists.filter(p => !p.cell && p.job === job).length;
+}
 function colonyPopupBox() {
   const rows = colonyPopupRows();
   let cw = 0x50;
@@ -2899,9 +2962,12 @@ function colonyPopupBox() {
 function drawColonyPopup(ctx) {
   const c = G.colonies[G.colony], b = colonyPopupBox();
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
+  // Titles are the engine's own: LABELS @CTITLE 4 "Select An Item To Build",
+  // @CTITLE 8 "Select a Profession for" + the colonist's name.
+  const who = c.colonists[G.colonistSel];
   const title = G.colonyPopup === 'build'
-    ? `Construction  (${c.hammers} hammers, ${c.stock[GOOD.TOOLS]} tools)`
-    : 'Assign this colonist';
+    ? `${(DATA.text.ctitle || [])[4] || 'Select An Item To Build'}  (${c.hammers} Hammers, ${c.stock[GOOD.TOOLS]} Tools)`
+    : `${(DATA.text.ctitle || [])[8] || 'Select a Profession for'} ${who ? (who.profession || who.type) : ''}`;
   FONT.tiny.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
   const seed = b.y + 6 + 6 + 3;
   b.rows.forEach((r, k) => {
@@ -2917,12 +2983,31 @@ function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
   if (!r) { G.colonyPopup = null; return; }
   if (G.colonyPopup === 'build') {
-    c.building = r.label;
-    G.msg = `${c.name} begins the ${r.label}.`;
+    if (r.stop) {
+      c.building = null;
+      G.msg = `${c.name} builds nothing.`;
+    } else {
+      c.building = r.label;
+      G.msg = `${c.name} begins the ${r.label}.`;
+    }
+  } else if (G.colonyPopup === 'occupation') {
+    const p = c.colonists[G.colonistSel];
+    if (p) {
+      if (r.job === null) { p.cell = null; p.job = null; }
+      else p.job = r.job;
+      G.msg = r.job ? `${p.type}: ${r.job}` : `${p.type} returns to the fence.`;
+    }
   } else {
     const p = c.colonists[G.colonistSel];
     if (p) {
-      p.job = G.colonyPopupRow === 0 ? null : jobForBuilding(r.label);
+      const job = G.colonyPopupRow === 0 ? null : jobForBuilding(r.label);
+      // @MORETHANTHREE: at most three colonists in any one building.
+      if (job && buildingCrew(c, r.label) >= 3 && p.job !== job) {
+        showEvent('MORETHANTHREE', {});
+        G.colonyPopup = null;
+        return;
+      }
+      p.job = job;
       p.cell = null;                        // a building job means leaving the fields
       G.msg = p.job ? `${p.type}: ${p.job}` : `${p.type}: no job`;
     }
@@ -7649,13 +7734,17 @@ function importSav(bytes) {
       G.units.push(u);
     }
   }
-  // Ships parked at the off-map sentinel dock in Europe with their riders.
+  // Ships parked at the off-map sentinel dock in Europe; their riders
+  // disembark to the dock, the way an arriving crossing unloads.
   for (let i = G.units.length - 1; i >= 0; i--) {
     const u = G.units[i];
     if (u.x < MAP.w && u.y < MAP.h) continue;
     G.units.splice(i, 1);
-    if (u.ship) G.europe.push({ type: u.type, icon: u.icon, hold: u.hold || [],
-                                passengers: u.cargo || [], state: 'port' });
+    if (u.ship) {
+      for (const p of (u.cargo || [])) G.dockUnits.push(p);
+      G.europe.push({ type: u.type, icon: u.icon, hold: u.hold || [],
+                      passengers: [], state: 'port' });
+    }
   }
   G.euroShip = 0;
   G.sel = Math.max(0, G.units.findIndex(u => !u.ship));
@@ -8439,7 +8528,22 @@ function colonyPlotAt(c, mx, my) {
     const name = DATA.buildings[id] && DATA.buildings[id].name;
     if (name && c.buildings.includes(name) && workplaceFor(name)) return name;
   }
-  return null;
+  // Between the sprites: take the nearest employing building within 20px of
+  // its plot origin, so a drop "at" a building does not fall through a gap in
+  // its sprite's bounding box. Port tolerance -- the engine resolves region-2
+  // drops through its own per-building zones, which are hover-label rects.
+  let best = null, bestD = 21 * 21;
+  PLOTS.forEach(([px, py], i) => {
+    const id = present[i];
+    if (id < 0) return;
+    const name = DATA.buildings[id] && DATA.buildings[id].name;
+    if (!name || !c.buildings.includes(name) || !workplaceFor(name)) return;
+    const [fw, fh] = frameSize('BUILDING', buildingFrame(c, id));
+    const dx = mx - (px + (fw >> 1)), dy = my - (py + 8 + (fh >> 1));
+    const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; best = name; }
+  });
+  return best;
 }
 // Europe: the selected ship's six holds, sub-rect (147,165,72,12) with the hold
 // index (mx - 0x93) / 12 -- func_033716 @0x03371A and func_0335FA @0x033610.
@@ -8693,6 +8797,11 @@ function colonyDrop(d, target, mx, my) {
       // than a silent plaza return.
       const b = colonyPlotAt(c, mx, my);
       if (!b) return;
+      // @MORETHANTHREE: at most three colonists in any one building.
+      if (buildingCrew(c, b) >= 3 && p.job !== jobForBuilding(b)) {
+        showEvent('MORETHANTHREE', {});
+        return;
+      }
       p.cell = null;
       p.job = jobForBuilding(b);
       G.msg = `${p.type}: ${p.job}`;
@@ -8885,12 +8994,19 @@ function onClick(mx, my) {
         const cx = Math.floor((mx - 224) / 24) - 1, cy = Math.floor((my - 32) / 24) - 1;
         if (cx === 0 && cy === 0) return;                 // the centre works itself
         const on = c.colonists.find(p => p.cell && p.cell[0] === cx && p.cell[1] === cy);
-        // UNCITED (port's own choice): evicting whoever already holds the cell.
-        // The manual only describes clicking an EMPTY location, and the colony
-        // region-id -> action switch is overlay-resident and undecoded
-        // (spec/ui/input.md:526-529), so nothing here is byte-verified.
-        if (on) { on.cell = null; on.job = null; G.msg = `${on.type} returns to the plaza.`; }
-        else {
+        // A click on a WORKING colonist selects him; a second click opens his
+        // OCCUPATION menu -- every outdoor job with this square's yields --
+        // the same select-then-menu rhythm as the plaza row. Taking him off
+        // the field is a drag (to the fence) or the menu's bottom row, not a
+        // bare click: the old click-evicts behaviour threw workers off their
+        // squares when the player was trying to inspect them.
+        if (on) {
+          const i = c.colonists.indexOf(on);
+          if (G.colonistSel === i) { G.colonyPopup = 'occupation'; G.colonyPopupRow = 0; }
+          else G.colonistSel = i;
+          return;
+        }
+        {
           // Move the SELECTED colonist. This used to grab the first colonist
           // with no cell, which broke the interaction two ways: a different
           // colonist than the one you picked would walk out to the field, and

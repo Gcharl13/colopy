@@ -328,7 +328,8 @@ SCRIPT = """() => {
     // until the target is paid for.
     G.colonyPopup = 'build';
     const opts = colonyPopupRows();
-    out.buildGated = opts.every(r => {
+    // Row 0 is the engine's @MISC 32 "Nothing"; the rest are gated buildings.
+    out.buildGated = opts[0].label === 'Nothing' && opts.slice(1).every(r => {
       const b = DATA.buildings.find(d => d.name === r.label);
       return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
     });
@@ -2210,7 +2211,7 @@ SCRIPT = """() => {
                  j.stock[0] === 65 && j.stock[1] === 191 && j.sol === 12,
       market: G.market.join() === '1,7,5,5,6,2,6,14,8,8,16,15,10,2,2,10',
       fathers: G.fathersOwned.length === 7,
-      europe: G.europe.length === 1 && (G.europe[0].passengers || []).length === 3,
+      europe: G.europe.length === 1 && G.dockUnits.length === 3,
       onMapClean: G.units.every(u => u.x < MAP.w && u.y < MAP.h),
       fog: (() => { let n = 0; for (let i = 0; i < SEEN.length; i++)
                     if (SEEN[i] & SEEN_BIT()) n++;
@@ -2692,7 +2693,7 @@ def main():
          r["sav"]["market"], r["sav"]),
         ("seven Founding Fathers restore from the FF bitmask",
          r["sav"]["fathers"], r["sav"]),
-        ("off-map units dock in Europe with their passengers; the map holds none",
+        ("off-map units disembark to the Europe dock; the map holds none",
          r["sav"]["europe"] and r["sav"]["onMapClean"], r["sav"]),
         ("the fog plane drops into SEEN (same 1<<(power+4) bit convention)",
          r["sav"]["fog"], r["sav"]),

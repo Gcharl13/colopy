@@ -295,7 +295,7 @@ def build_data():
               "@INDIANROAD", "@REBELMAJORITY", "@REBELUNANIMOUS",
               "@TORYMINORITY", "@TORYMAJORITY", "@TORYUPRISING",
               "@KINGRECRUIT", "@UPKEEP", "@ABANDON", "@RENAMECOLONY",
-              "@TOONEAR", "@NOPORT",
+              "@TOONEAR", "@NOPORT", "@MORETHANTHREE", "@SAILAWAY",
               # The Europe harbour context menus (dock units and ships)
               "@EUROPEARM", "@EUROPESHIPCLICK", "@ARMOPTIONS", "@EUROPESHIPOPTIONS",
               # Naval combat, scouts, the Spanish Succession
@@ -322,6 +322,11 @@ def build_data():
         "beginmenu": game["@BEGINMENU"].split("\n"),
         "leadername": game["@LEADERNAME"],
         "misc": labels["@MISC"].split("\n"),
+        # LABELS @CTITLE: the colony screen's own dialog titles -- row 4
+        # "Select An Item To Build", row 8 "Select a Profession for", plus the
+        # BUY/CHANGE captions and "(No Production)"/"(More)"/"Turns)".
+        "ctitle": labels["@CTITLE"].split("\n"),
+        "cmessage": labels["@CMESSAGE"].split("\n"),
     }
 
     # The shipped 1653 Dutch save, bundled so LOAD GAME can restore it without
