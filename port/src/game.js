@@ -471,6 +471,16 @@ const G = {
   // The engine blinks the active unit's selection ring; ~2 Hz at 60 fps.
   blink: true,
   tick: 0,
+  // Milliseconds since load, refreshed once per frame. The hold-to-drag
+  // deadline is measured against it rather than against G.tick so it does not
+  // drift with the frame rate.
+  wallClock: 0,
+  // The live drag payload -- the engine's [0x8D54] (colony) / [0x9E3A] (Europe)
+  // "what am I carrying" word plus its detail fields. null = carrying nothing.
+  // `dragArm` is the pressed-but-not-yet-lifted colonist, waiting out the hold
+  // deadline; see the drag-and-drop section for the full byte trail.
+  drag: null,
+  dragArm: null,
   // VGA colour cycling. cycle_init seeds every band's timestamp with the clock
   // as the map screen is entered, so the run starts at phase 0; cyclePhase is
   // an override that pins it (null = free-running off the wall clock).
@@ -7337,6 +7347,418 @@ function openPedia(cat) {
 // ---------------------------------------------------------------- input
 function hit(mx, my, r) { return mx >= r.x && my >= r.y && mx < r.x + r.w && my < r.y + r.h; }
 
+// ============================================================ drag and drop
+// The port had NO drag model at all: the canvas carried a `click` listener and
+// nothing else, so every interaction the DOS game does by dragging had either
+// been approximated by a click or was simply missing.
+//
+// The engine's model, from the mouse module func_00D106 @0x0D106-0x0D1C9, which
+// publishes five separate booleans per poll -- a DOM `click` collapses all of
+// them into one event and throws the motion away:
+//   [0x7EC]  down-edge         @0xD194   pressed since the last poll
+//   [0x7F2]  press latch       @0xD19C
+//   [0x7F4]  release edge      @0xD140
+//   [0x7F6]  any button down   @0xD1BB
+//   [0x7F0]  moved             @0xD188
+//   [0x7E8]/[0x7EA]  cursor x/y
+// There is NO pixel drag threshold: @0xD16F compares the poll-start snapshot
+// [0x7F8]/[0x7FA] against the current position, so ONE pixel counts as moved.
+// Left vs right is [0x7E4] = !(buttons & 1) (spec/ui/input.md §2, resolved
+// 2026-06-25 at @0xD1A2-0xD1AE).
+//
+// On top of those the engine keeps a "what am I carrying" word -- [0x8D54] in
+// the colony screen, [0x9E3A] in Europe -- which normally holds the region id
+// under the cursor and is OVERWRITTEN with a payload mode while a drag is live.
+// The payload detail sits beside it: source kind [0xA88C]/[0x9E22], good
+// [0xA88D]/[0x9E24], amount [0xA88E]/[0x9E26], source hold [0xA88F]/[0x9E1E].
+// G.drag below is that word plus those fields.
+const PTR = {
+  down: false, right: false, x: 0, y: 0, downX: 0, downY: 0, moved: false,
+  // Set after a real drag so the synthetic DOM `click` that follows `pointerup`
+  // does not also fire. UNCITED -- the click-after-release ordering is a DOM
+  // artefact with no DOS analogue. A press and release with no payload is NOT
+  // suppressed: in the engine the click paths and the drag paths live in the
+  // same handlers, and a colonist press that never reaches the hold deadline
+  // falls through to the click branch (@0x29CBD).
+  suppressClick: false,
+};
+
+// How long the button must be held over a colonist before the drag arms.
+// func_02C5D4 @0x2C87A sets the deadline to `timer + 8` and @0x2C887 raises the
+// armed flag; the consumers are @0x29C9F-0x29CB7, @0x29FE5-0x29FFC and
+// @0x2A28A-0x2A2AE. The TICK RATE of that timer (`lcall 0xC0C:6`) is UNRESOLVED,
+// so 8 ticks cannot be converted to milliseconds -- this wall-clock number is
+// the port's own and is UNCITED. TBD, blocker: disassemble the 0xC0C:6 entry.
+const DRAG_HOLD_MS = 120;
+
+// Region tables, byte-exact and IN THE ENGINE'S OWN TEST ORDER -- the order is
+// load-bearing, not cosmetic: id 5 is tested before id 8, so any y >= 179
+// resolves to the warehouse strip whatever else overlaps it.
+// func_0299A0 @0x0299A0-0x029ABE, one block per push site.
+const COLONY_REGIONS = [
+  { r: { x: 200, y: 8, w: 120, h: 120 }, id: 1 },    // @0x299A9  tile panel
+  { r: { x: 305, y: 179, w: 15, h: 21 }, id: 9 },    // @0x299C8  exit / gold
+  { r: { x: 0, y: 130, w: 120, h: 48 }, id: 0 },     // @0x299E8  plaza row
+  { r: { x: 0, y: 8, w: 199, h: 120 }, id: 2 },      // @0x29A08  building field
+  { r: { x: 303, y: 132, w: 17, h: 45 }, id: 3 },    // @0x29A28  view buttons
+  { r: { x: 0, y: 179, w: 305, h: 21 }, id: 5 },     // @0x29A48  warehouse strip
+  { r: { x: 211, y: 130, w: 91, h: 48 }, id: 4 },    // @0x29A66  right panel
+  { r: { x: 121, y: 130, w: 84, h: 48 }, id: 8 },    // @0x29A84  units in port
+  { r: { x: 0, y: 0, w: 320, h: 7 }, id: 0xA },      // @0x29AA0  title strip
+];
+// func_03200A @0x03200A-0x0320EC.
+const EUROPE_REGIONS = [
+  { r: { x: 305, y: 179, w: 15, h: 21 }, id: 0xB },  // @0x3200E  exit
+  { r: { x: 281, y: 89, w: 37, h: 32 }, id: 5 },     // @0x32034  menu buttons
+  { r: { x: 0, y: 179, w: 305, h: 21 }, id: 0 },     // @0x32054  market strip
+  { r: { x: 143, y: 118, w: 81, h: 60 }, id: 1 },    // @0x32074  ships + holds
+  { r: { x: 72, y: 118, w: 70, h: 51 }, id: 2 },     // @0x32094  bound-for list
+  { r: { x: 1, y: 118, w: 70, h: 51 }, id: 3 },      // @0x320B2  expected list
+  { r: { x: 224, y: 120, w: 96, h: 59 }, id: 4 },    // @0x320CE  dock list
+];
+// The rect test itself is verb 0x181F:0x3CA = func_004B16 @0x04B16, literally
+// x <= cursorX <= x+w-1 && y <= cursorY <= y+h-1 -- the same half-open box hit()
+// already implements.
+function regionAt(table, mx, my, none) {
+  for (const e of table) if (hit(mx, my, e.r)) return e.id;
+  return none;
+}
+const colonyRegionAt = (mx, my) => regionAt(COLONY_REGIONS, mx, my, 0x14);
+const europeRegionAt = (mx, my) => regionAt(EUROPE_REGIONS, mx, my, 0xF);
+
+// Which payload mode may be dropped on which region -- literal tables read off
+// the engine, colony func_02BB8A @0x2BBBD-0x2BBF9 and Europe func_0353DE
+// @0x35416-0x35464. A refused drop does NOT snap back quietly: the engine
+// overwrites the mode with the no-region id (`mov [0x8D54],0x14` @0x2A4BA, the
+// Europe twin @0x32555/@0x32718), i.e. the payload is dropped on the floor.
+const DROP_OK = {
+  colony: { 6: [0, 1, 2], 7: [5, 8] },
+  europe: { 0xA: [0, 1], 8: [1, 2, 3], 9: [2, 3] },
+};
+function dropAllowed(screen, mode, target) {
+  const t = DROP_OK[screen] && DROP_OK[screen][mode];
+  return !!t && t.includes(target);
+}
+
+// The scene panel's 3x3, in cell coordinates relative to the colony centre.
+// Cells are 24px at x = 200 + 24*col, y = 8 + 24*row for col/row 1..3, so the
+// visible window is (224,32,72,72) and the centre works itself.
+function colonyCellAt(mx, my) {
+  if (!hit(mx, my, { x: 224, y: 32, w: 72, h: 72 })) return null;
+  const cx = Math.floor((mx - 224) / 24) - 1, cy = Math.floor((my - 32) / 24) - 1;
+  if (cx === 0 && cy === 0) return null;
+  return [cx, cy];
+}
+// Which plaza-row colonist is under the cursor, or -1. Same solved pack the
+// painter uses, so the sprites are hit-tested where they actually sit.
+function plazaColonistAt(c, mx, my) {
+  for (const e of plazaRow(c)) {
+    if (e.colonist < 0) continue;
+    if (mx < e.x || mx >= e.x + e.w) continue;
+    if (my < PLAZA_ROW_Y || my >= PLAZA_ROW_Y + e.h) continue;
+    return e.colonist;
+  }
+  return -1;
+}
+// Which BUILDING plot is under the cursor in the building field (region 2), or
+// null. The plots are the same PLOTS table the painter walks; each sprite is
+// blitted at (px, py+8), so the box is measured from there. Only a building
+// that actually employs a colonist is a drop target.
+function colonyPlotAt(c, mx, my) {
+  const present = colonyPlacement(c);
+  // Walk backwards: later plots are painted last, so they are on top.
+  for (let i = PLOTS.length - 1; i >= 0; i--) {
+    const id = present[i];
+    if (id < 0) continue;
+    const [px, py] = PLOTS[i];
+    const [fw, fh] = frameSize('BUILDING', buildingFrame(c, id));
+    if (!hit(mx, my, { x: px, y: py + 8, w: fw, h: fh })) continue;
+    const name = DATA.buildings[id] && DATA.buildings[id].name;
+    if (name && c.buildings.includes(name) && workplaceFor(name)) return name;
+  }
+  return null;
+}
+// Europe: the selected ship's six holds, sub-rect (147,165,72,12) with the hold
+// index (mx - 0x93) / 12 -- func_033716 @0x03371A and func_0335FA @0x033610.
+function euroHoldAt(mx, my) {
+  if (!hit(mx, my, { x: 147, y: 165, w: 72, h: 12 })) return -1;
+  return Math.min(5, Math.floor((mx - 147) / 12));
+}
+// Europe: the market strip cell, clamp(mx,0,0x131)/0x13 rejected at >= 16
+// (func_033A52 @0x33AB6-0x33AD3). The colony warehouse strip uses the same
+// math (@0x2BA24-0x2BA3E).
+function goodCellAt(mx) {
+  const i = Math.floor(Math.min(Math.max(mx, 0), 0x131) / 0x13);
+  return i >= 0 && i < 16 ? i : -1;
+}
+
+function dragGhostFrame(kind, good, amount, icon) {
+  // Goods: ICONS 0x17 + good for a full load, 0x27 + good for a part load --
+  // func_029BBE @0x29BD0/@0x29BD6/@0x29BD9, Europe twin func_0320EE
+  // @0x32100/@0x32106/@0x32109.
+  if (kind === 'good') return (amount >= 100 ? 0x17 : 0x27) + good;
+  // The unit ghost frame is TBD. The colony path calls lcall 0x181F:0xA74, and
+  // the thunk record at file 0x1B064 resolves to file 0x0091CC, which is
+  // documented as reading unit fields +0x20/+0x40 (worked-tile slot, profession)
+  // rather than as a sprite lookup. Using the port's own u.icon is UNCITED.
+  return icon;
+}
+
+function beginDrag(d) {
+  G.drag = d;
+  G.dragArm = null;
+}
+function cancelDrag() { G.drag = null; G.dragArm = null; }
+
+function onPointerDown(mx, my, right, shift) {
+  // A right press cancels a live drag and is otherwise inert here.
+  if (right) { if (G.drag) cancelDrag(); return; }
+  if (G.combat || G.eventQueue.length || G.dialog) return;
+  if (G.screen === 'colony') return colonyPointerDown(mx, my, shift);
+  if (G.screen === 'europe') return europePointerDown(mx, my, shift);
+}
+
+function colonyPointerDown(mx, my, shift) {
+  const c = G.colonies[G.colony];
+  if (!c || G.colonyPopup) return;
+  const region = colonyRegionAt(mx, my);
+  // A colonist is HELD before it lifts: press, wait, then drag. Arm it now and
+  // let onPointerMove/frame promote it once the deadline passes -- a quick
+  // press and release stays a click, which is what selects him.
+  if (region === 0) {
+    const i = plazaColonistAt(c, mx, my);
+    if (i >= 0) G.dragArm = { at: G.wallClock, kind: 'unit', colonist: i, from: 'plaza' };
+    return;
+  }
+  if (region === 1) {
+    const cell = colonyCellAt(mx, my);
+    if (!cell) return;
+    const i = c.colonists.findIndex(p => p.cell && p.cell[0] === cell[0] && p.cell[1] === cell[1]);
+    if (i >= 0) G.dragArm = { at: G.wallClock, kind: 'unit', colonist: i, from: 'field' };
+    return;
+  }
+  // Goods off the warehouse strip start on the DOWN EDGE, with no hold -- and
+  // note the engine re-probes the held button every poll rather than latching
+  // the edge (func_02B9DC @0x2BA46 `cmp [0x7F6],0` plus @0x2BAAC `cmp [0x7E4],0`,
+  // with no [0x7EC] test anywhere in that path). Starting it strictly here is
+  // the port's simplification of that, and is flagged.
+  //
+  // It has nowhere to LAND, though: the engine's mode-7 targets are {5, 8}, and
+  // region 8 is the colony's ships-in-port dock -- a panel the port does not
+  // draw at all (drawColonyPanel paints only Buildings/Garrison/Production).
+  // So the drag is armed for the ghost and the message, and the drop is a
+  // no-op until that panel exists. Flagged in docs/UI_AUDIT_TRACKER.md.
+  if (region === 5) {
+    const g = goodCellAt(mx);
+    if (g < 0 || !c.stock[g]) return;
+    // Amount is min(stock, 100) -- @0x2BB10 `cmp ax,0x64`. Shift takes a part
+    // load: func_004A22 @0x04A22 reads BDA 0040:0017 & 3 and passes it as the
+    // last argument to every transfer routine.
+    const amount = shift ? Math.min(c.stock[g], 10) : Math.min(c.stock[g], 100);
+    beginDrag({ screen: 'colony', mode: 7, kind: 'good', good: g, amount,
+                srcKind: 1, srcRegion: region,
+                frame: dragGhostFrame('good', g, amount) });
+  }
+}
+
+function europePointerDown(mx, my, shift) {
+  if (G.euroMenu) return;
+  const region = europeRegionAt(mx, my);
+  const ship = activeShip();
+  // Goods drags are mode 0xA, whose targets are {0, 1} -- the market strip and
+  // the ships. That single mode covers both directions: hold -> market sells,
+  // market -> ship buys.
+  if (region === 0) {
+    const g = goodCellAt(mx);
+    if (g < 0) return;
+    const amount = shift ? 10 : 100;      // @0x33BB8 `mov word [0x9E26],0x64`
+    beginDrag({ screen: 'europe', mode: 0xA, kind: 'good', good: g, amount,
+                srcKind: 1, srcRegion: region,
+                frame: dragGhostFrame('good', g, amount) });
+    return;
+  }
+  if (region === 1) {
+    const h = euroHoldAt(mx, my);
+    if (h >= 0 && ship) {
+      const slot = ship.hold[h];
+      if (!slot) return;
+      beginDrag({ screen: 'europe', mode: 0xA, kind: 'good', good: slot.good,
+                  amount: slot.qty, srcKind: 0, srcHold: h, srcRegion: region,
+                  frame: dragGhostFrame('good', slot.good, slot.qty) });
+    }
+    return;
+  }
+  // A unit waiting on the dock, dragged onto a ship to board it. The engine's
+  // own unit drags are modes 8 and 9 out of regions 1/2/3; the port draws its
+  // dock list inside region 4 instead, on geometry that is itself UNCITED
+  // (EURO_DOCK), so this binding is the port's own and is marked as such.
+  if (region === 4) {
+    for (let k = 0; k < Math.min(G.dockUnits.length, 6); k++) {
+      if (!hit(mx, my, { x: EURO_DOCK.x + k * EURO_DOCK.pitch, y: EURO_DOCK.y, w: 18, h: 18 }))
+        continue;
+      const u = unit(G.dockUnits[k]) || unit('Colonists');
+      beginDrag({ screen: 'europe', mode: 8, kind: 'unit', dockSlot: k,
+                  srcRegion: region, frame: dragGhostFrame('unit', 0, 0, u.icon) });
+      return;
+    }
+  }
+}
+
+function onPointerMove(mx, my) {
+  // Promote an armed colonist once the hold deadline passes. Deliberately NOT
+  // conditional on having moved: in the engine the timer alone lifts him, so
+  // the ghost appears under a stationary held button and you can see you are
+  // carrying him. A press that releases without ever moving is turned back into
+  // a click in onPointerUp instead.
+  if (G.dragArm && PTR.down && G.wallClock - G.dragArm.at >= DRAG_HOLD_MS) {
+    const c = G.colonies[G.colony];
+    const p = c && c.colonists[G.dragArm.colonist];
+    if (p) {
+      const u = unit(p.type) || unit('Colonists');
+      beginDrag({ screen: 'colony', mode: 6, kind: 'unit', colonist: G.dragArm.colonist,
+                  from: G.dragArm.from, srcRegion: G.dragArm.from === 'plaza' ? 0 : 1,
+                  frame: dragGhostFrame('unit', 0, 0, u.icon) });
+    } else G.dragArm = null;
+  }
+  // An open pulldown tracks the cursor while the button is held: the engine
+  // re-hit-tests only when the moved flag is set (@0x6E5B1) and walks the row
+  // rects (@0x6E5BB-0x6E667).
+  if (G.screen === 'map' && G.openMenu >= 0 && PTR.down) {
+    const row = menuRowAt(mx, my);
+    if (row >= 0) G.menuSel = row;
+  }
+  // The pre-game pickers are drag-live too: the cell under the cursor is
+  // committed to the selection word on every poll while the button is down
+  // (difficulty func_070580 @0x70677/@0x7071E, nation func_070A1A
+  // @0x70B1C/@0x70BE1), and the RELEASE in the exit zone is what leaves.
+  if (PTR.down && G.screen === 'difficulty')
+    for (let n = 0; n < 5; n++) if (hit(mx, my, DIFF_CELL(n))) { G.difficulty = n; break; }
+  if (PTR.down && G.screen === 'nation')
+    for (let i = 0; i < 4; i++) if (hit(mx, my, NAT_CELL(i))) { G.nation = i; break; }
+}
+
+function onPointerUp(mx, my, right) {
+  G.dragArm = null;
+  if (right) return;
+  // A pulldown commits on the RELEASE edge (@0x6EC70) and stays open only while
+  // the button is held (@0x6ECCF).
+  if (G.screen === 'map' && G.openMenu >= 0 && PTR.moved) {
+    const row = menuRowAt(mx, my);
+    if (row >= 0) { G.menuSel = row; runMenuRow(); }
+    else G.openMenu = -1;
+    return;
+  }
+  const d = G.drag;
+  if (!d) return;
+  G.drag = null;
+  // A press that never moved is a CLICK, not a zero-length drag: let it fall
+  // through to onClick rather than "dropping" the payload where it started.
+  // (The engine has no equivalent because it has no synthetic click event --
+  // this is the port reconciling the two input models. UNCITED.)
+  if (!PTR.moved) return;
+  PTR.suppressClick = true;
+  const target = d.screen === 'colony' ? colonyRegionAt(mx, my) : europeRegionAt(mx, my);
+  if (!dropAllowed(d.screen, d.mode, target)) return;   // refused: payload dropped
+  if (d.screen === 'colony') colonyDrop(d, target, mx, my);
+  else europeDrop(d, target, mx, my);
+}
+
+function colonyDrop(d, target, mx, my) {
+  const c = G.colonies[G.colony];
+  if (!c) return;
+  if (d.kind === 'unit') {
+    const p = c.colonists[d.colonist];
+    if (!p) return;
+    G.colonistSel = d.colonist;
+    if (target === 1) {
+      const cell = colonyCellAt(mx, my);
+      if (!cell) return;
+      // Evicting whoever holds the target cell is UNCITED -- the manual only
+      // describes dropping on an empty location.
+      const on = c.colonists.find(q => q !== p && q.cell &&
+                                       q.cell[0] === cell[0] && q.cell[1] === cell[1]);
+      if (on) { on.cell = null; on.job = null; }
+      p.cell = cell;
+      p.job = bestFieldJob(c, p);
+      G.msg = `${p.type}: ${p.job}`;
+      return;
+    }
+    if (target === 0) {
+      p.cell = null; p.job = null;
+      G.msg = `${p.type} returns to the plaza.`;
+      return;
+    }
+    if (target === 2) {
+      // Dropped on the building field: if it landed on a building that employs
+      // anyone, that is the new job. A drop on bare ground is a no-op rather
+      // than a silent plaza return.
+      const b = colonyPlotAt(c, mx, my);
+      if (!b) return;
+      p.cell = null;
+      p.job = jobForBuilding(b);
+      G.msg = `${p.type}: ${p.job}`;
+    }
+    return;
+  }
+  // Goods. Both allowed targets are unreachable in the port today: region 5 is
+  // the strip the drag came from, and region 8 is the ships-in-port dock the
+  // port does not draw. Left as an explicit no-op so the gap is visible rather
+  // than looking like a bug when the dock lands.
+}
+
+function europeDrop(d, target, mx, my) {
+  const ship = activeShip();
+  if (d.kind === 'good') {
+    if (target === 0 && d.srcKind === 0) { sellFromShip(d.good); return; }
+    if (target === 1 && d.srcKind === 1) {
+      if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+      if (isBoycotted(d.good)) {
+        G.euroMsg = `${DATA.cargo[d.good].name} is under boycott.`;
+        return;
+      }
+      buyToShip(d.good, d.amount);
+      return;
+    }
+    // Market -> market, or hold -> hold: nothing moves.
+    return;
+  }
+  if (d.kind === 'unit' && target === 1) {
+    // Board the selected ship. Six passengers is the cap the sailing code uses.
+    if (!ship) { G.euroMsg = 'No ships in port.'; return; }
+    ship.passengers = ship.passengers || [];
+    if (ship.passengers.length >= 6) { G.euroMsg = 'That ship is full.'; return; }
+    const name = G.dockUnits[d.dockSlot];
+    if (name === undefined) return;
+    G.dockUnits.splice(d.dockSlot, 1);
+    ship.passengers.push(name);
+    G.euroMsg = `${name} boards the ${ship.type}.`;
+    void mx; void my;
+  }
+}
+
+// The engine does not draw a second sprite for the payload -- it SWAPS THE
+// CURSOR SPRITE (the mouse module's 16x16 software cursor, blit @0xCE98), so
+// there is exactly one image following the pointer. Same here.
+//
+// The hotspot is TBD: the module's hotspot globals [0x590]/[0x592] are written
+// by set_hotspot @0xCB59 masking & 0xF, but the value the drag-begin paths push
+// was not located, so this draws at the pointer with no offset rather than
+// inventing one. Blocker: disassemble func_00DB80 @0x00DB80.
+function drawDragGhost(ctx) {
+  if (!G.drag || G.drag.frame === undefined) return;
+  sheetFrame(ctx, 'ICONS', G.drag.frame, PTR.x, PTR.y);
+}
+
+// Which pulldown row the cursor is over, or -1. Reads the same pulldownBox()
+// the painter uses, and the same `b.y + 2 + k*8` row pitch it draws with.
+function menuRowAt(mx, my) {
+  if (G.openMenu < 0) return -1;
+  const b = pulldownBox(G.openMenu);
+  if (!hit(mx, my, b)) return -1;
+  const row = Math.floor((my - (b.y + 2)) / 8);
+  return row >= 0 && row < DATA.menus[G.openMenu].rows.length ? row : -1;
+}
+
 function onClick(mx, my) {
   if (G.combat) { G.combat = null; return; }
   if (G.eventQueue.length) { G.eventQueue.shift(); return; }
@@ -7797,6 +8219,11 @@ function resize() {
 function frame() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
+  G.wallClock = performance.now();
+  // A colonist armed on the down-edge lifts once the hold deadline passes, even
+  // if the pointer is being held perfectly still -- so poll it here as well as
+  // on move, the way the engine's per-frame dispatcher does.
+  if (G.dragArm && PTR.down) onPointerMove(PTR.x, PTR.y);
   ctx.clearRect(0, 0, W, H);
   ({ title: drawTitle, difficulty: drawDifficulty, nation: drawNation,
      name: drawName, briefing: drawBriefing, cards: drawCards,
@@ -7808,6 +8235,7 @@ function frame() {
   // up when they fire; the panel is read first and dismissed first.
   if (G.combat) drawCombat(ctx);
   drawEvent(ctx);
+  drawDragGhost(ctx);
   const cv = document.getElementById('screen');
   const c2 = cv.getContext('2d');
   c2.imageSmoothingEnabled = false;
@@ -7839,7 +8267,39 @@ async function main() {
     const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
     return [Math.floor(cx / scale), Math.floor(cy / scale)];
   };
-  cv.addEventListener('click', (ev) => { const [x, y] = toLogical(ev); onClick(x, y); });
+  // The pointer trio sits ALONGSIDE the click path, not in place of it: every
+  // click binding in onClick still works, and a drag is what the click event
+  // cannot express. See the drag-and-drop section for the engine model.
+  cv.addEventListener('pointerdown', (ev) => {
+    const [x, y] = toLogical(ev);
+    PTR.down = true; PTR.right = ev.button === 2;
+    PTR.x = PTR.downX = x; PTR.y = PTR.downY = y;
+    PTR.moved = false;
+    try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* not all inputs */ }
+    onPointerDown(x, y, PTR.right, ev.shiftKey);
+  });
+  cv.addEventListener('pointermove', (ev) => {
+    const [x, y] = toLogical(ev);
+    if (x === PTR.x && y === PTR.y) return;
+    // One pixel counts as moved -- @0xD16F compares the poll-start snapshot
+    // against the current position with no threshold at all.
+    PTR.x = x; PTR.y = y;
+    if (PTR.down) PTR.moved = true;
+    onPointerMove(x, y);
+  });
+  cv.addEventListener('pointerup', (ev) => {
+    const [x, y] = toLogical(ev);
+    PTR.x = x; PTR.y = y;
+    onPointerUp(x, y, PTR.right);
+    PTR.down = false; PTR.right = false;
+  });
+  cv.addEventListener('pointercancel', () => { PTR.down = false; cancelDrag(); });
+  // A right press cancels a drag, so the browser menu must not eat it.
+  cv.addEventListener('contextmenu', (ev) => ev.preventDefault());
+  cv.addEventListener('click', (ev) => {
+    if (PTR.suppressClick) { PTR.suppressClick = false; return; }
+    const [x, y] = toLogical(ev); onClick(x, y);
+  });
   cv.addEventListener('touchstart', (ev) => {
     const [x, y] = toLogical(ev); onClick(x, y); ev.preventDefault();
   }, { passive: false });

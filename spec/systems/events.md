@@ -182,7 +182,7 @@ dialog state set per-invocation in `[0x1f9e]/[0x1fa0]/[0x1fa2]` and rendered by
    `0xA0`-vs-`0xB0` question is dissolved). The rumor-presence predicate is **`func_006188`**
    (`@0x6188`), called per tile entry (`@0x30822`). It does **not** read a stored "lost-city"
    value — it **computes** presence from a **coordinate hash against a global map seed
-   `[0x190]`**: `((x>>2)·0x13 + (y>>2)·0x11 + seed + 8) & 0x1F − (y&3)·4 == (x&3)`
+   `[0x190]`**: `((y>>2)·0x13 + (x>>2)·0x11 + seed + 8) & 0x1F − (x&3)·4 == (y&3)`
    (`@0x61C7..0x61F8`), gated by:
    - terrain ≠ ocean/sea-lane/arctic (`0x18`/`0x19`/`0x1A`, `@0x61A6..0x61B3`), and
    - the tile's **feature high-nibble must be `0xF` ("none")** — read via `0x5DF0`→`0x5D9C`

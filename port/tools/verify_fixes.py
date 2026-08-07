@@ -129,6 +129,58 @@ CHECKS = r"""
 """
 
 
+# --- drag-and-drop: driven with REAL pointer events, not synthetic calls -----
+# Each case sets the game up, drags logical (x0,y0) -> (x1,y1) through
+# page.mouse, and reads the resulting state back.
+
+SETUP_COLONY = r"""
+(() => {
+  beginGame(); G.screen = 'map';
+  const u = G.units.find(x => !x.ship) || G.units[0];
+  const c = {
+    name: 'Dragtown', x: u.x, y: u.y, nation: G.nation,
+    colonists: [
+      { type: 'Colonists', job: null, cell: null },
+      { type: 'Colonists', job: null, cell: null },
+    ],
+    stock: DATA.cargo.map(() => 50), buildings: ['Carpenter\'s Shop'],
+    hammers: 0, building: null, sol: 0,
+  };
+  G.colonies = [c]; G.colony = 0; G.colonistSel = 0;
+  G.screen = 'colony'; G.colonyView = 0;
+  return { plaza: plazaRow(c).filter(e => e.colonist >= 0).map(e => ({ x: e.x, w: e.w, i: e.colonist })) };
+})()
+"""
+
+SETUP_EUROPE = r"""
+(() => {
+  beginGame(); G.screen = 'map';
+  G.gold = 10000; G.boycotts = [];
+  G.europe = [{ type: 'Caravel', icon: 5, hold: [{ good: 2, qty: 100 }], state: 'port' }];
+  G.euroShip = 0; G.dockUnits = ['Expert Farmer'];
+  G.screen = 'europe'; G.euroMsg = '';
+  return { hold: G.europe[0].hold.map(h => ({ ...h })), gold: G.gold };
+})()
+"""
+
+
+def drag(page, geom, x0, y0, x1, y1, hold_ms=200):
+    """Press at logical (x0,y0), hold, move to (x1,y1), release."""
+    s, left, top = geom["scale"], geom["left"], geom["top"]
+    px = lambda x, y: (left + (x + 0.5) * s, top + (y + 0.5) * s)
+    ax, ay = px(x0, y0)
+    bx, by = px(x1, y1)
+    page.mouse.move(ax, ay)
+    page.mouse.down()
+    page.wait_for_timeout(hold_ms)
+    # Several small steps, the way a hand moves -- one jump can be coalesced.
+    for k in range(1, 6):
+        page.mouse.move(ax + (bx - ax) * k / 5, ay + (by - ay) * k / 5)
+        page.wait_for_timeout(20)
+    page.mouse.up()
+    page.wait_for_timeout(60)
+
+
 def main() -> int:
     errors = []
     with sync_playwright() as p:
@@ -146,16 +198,170 @@ def main() -> int:
         # The canvas must not be clipped off the left edge by the debug column.
         geom = page.evaluate("""(() => {
           const r = document.getElementById('screen').getBoundingClientRect();
-          return { left: r.left, right: r.right, w: r.width,
+          return { left: r.left, top: r.top, right: r.right, w: r.width, scale: scale,
                    panel: document.getElementById('debug').getBoundingClientRect().left,
                    open: debugOpen };
         })()""")
+
+        drags = {}
+
+        # 1. Colony: drag the plaza colonist onto the field cell left of centre.
+        plaza = page.evaluate(SETUP_COLONY)["plaza"]
+        src = plaza[0]
+        drag(page, geom, src["x"] + src["w"] // 2, 148, 224 + 12, 32 + 12 + 24)
+        drags["plazaToField"] = page.evaluate(
+            "({cell: G.colonies[0].colonists[0].cell, job: G.colonies[0].colonists[0].job,"
+            " drag: G.drag, msg: G.msg})")
+
+        # 2. Colony: drag that worker back to the plaza.
+        drag(page, geom, 224 + 12, 32 + 12 + 24, 40, 150)
+        drags["fieldToPlaza"] = page.evaluate(
+            "({cell: G.colonies[0].colonists[0].cell, job: G.colonies[0].colonists[0].job})")
+
+        # 3. Colony: drag a colonist onto a building in the building field.
+        plot = page.evaluate(r"""(() => {
+          const c = G.colonies[0], present = colonyPlacement(c);
+          for (let i = PLOTS.length - 1; i >= 0; i--) {
+            const id = present[i];
+            if (id < 0) continue;
+            const nm = DATA.buildings[id] && DATA.buildings[id].name;
+            if (!nm || !c.buildings.includes(nm) || !workplaceFor(nm)) continue;
+            const [px, py] = PLOTS[i];
+            const [fw, fh] = frameSize('BUILDING', buildingFrame(c, id));
+            return { x: px + (fw >> 1), y: py + 8 + (fh >> 1), name: nm };
+          }
+          return null;
+        })()""")
+        if plot:
+            p2 = page.evaluate(
+                "plazaRow(G.colonies[0]).filter(e=>e.colonist>=0).map(e=>({x:e.x,w:e.w}))")
+            drag(page, geom, p2[0]["x"] + p2[0]["w"] // 2, 148, plot["x"], plot["y"])
+            drags["plazaToBuilding"] = page.evaluate(
+                "({job: G.colonies[0].colonists[0].job, cell: G.colonies[0].colonists[0].cell})")
+            drags["plazaToBuilding"]["want"] = page.evaluate(
+                f"jobForBuilding({json.dumps(plot['name'])})")
+
+        # 4. Europe: drag a market good onto the ship = BUY.
+        before = page.evaluate(SETUP_EUROPE)
+        drag(page, geom, 19 * 4 + 9, 189, 147 + 6, 170, hold_ms=40)
+        drags["marketToHold"] = page.evaluate(
+            "({hold: G.europe[0].hold.map(h=>({...h})), gold: G.gold, msg: G.euroMsg})")
+        drags["marketToHold"]["goldBefore"] = before["gold"]
+
+        # 5. Europe: drag a full hold onto the market strip = SELL.
+        page.evaluate(SETUP_EUROPE)
+        drag(page, geom, 147 + 6, 170, 19 * 2 + 9, 189, hold_ms=40)
+        drags["holdToMarket"] = page.evaluate(
+            "({hold: G.europe[0].hold.map(h=>({...h})), gold: G.gold, msg: G.euroMsg})")
+
+        # 6. Europe: drag a dock unit onto the ship = board.
+        page.evaluate(SETUP_EUROPE)
+        drag(page, geom, 232 + 9, 137 + 9, 145 + 9, 145 + 9, hold_ms=40)
+        drags["dockToShip"] = page.evaluate(
+            "({dock: G.dockUnits.slice(), pax: G.europe[0].passengers || [], msg: G.euroMsg})")
+
+        # 7. A press-and-release with no motion must stay a CLICK, not a drop.
+        page.evaluate(SETUP_COLONY)
+        s, left, top = geom["scale"], geom["left"], geom["top"]
+        page.mouse.move(left + 40 * s, top + 150 * s)
+        page.mouse.down()
+        page.wait_for_timeout(260)          # past the hold deadline
+        page.mouse.up()
+        page.wait_for_timeout(80)
+        drags["holdNoMove"] = page.evaluate(
+            "({sel: G.colonistSel, cell: G.colonies[0].colonists[0].cell,"
+            " job: G.colonies[0].colonists[0].job, drag: G.drag})")
+
+        # 8. The ghost must actually render while a drag is live.
+        page.evaluate(SETUP_COLONY)
+        p3 = page.evaluate(
+            "plazaRow(G.colonies[0]).filter(e=>e.colonist>=0).map(e=>({x:e.x,w:e.w}))")
+        page.mouse.move(left + (p3[0]["x"] + p3[0]["w"] // 2) * s, top + 148 * s)
+        page.mouse.down()
+        page.wait_for_timeout(220)
+        page.mouse.move(left + 150 * s, top + 60 * s)
+        page.wait_for_timeout(120)
+        drags["ghost"] = page.evaluate(r"""(() => {
+          if (!G.drag) return { live: false };
+          const p = document.createElement('canvas'); p.width = W; p.height = H;
+          const pc = p.getContext('2d');
+          drawDragGhost(pc);
+          const d = pc.getImageData(0, 0, W, H).data;
+          let n = 0;
+          for (let i = 3; i < d.length; i += 4) if (d[i]) n++;
+          return { live: true, frame: G.drag.frame, pixels: n, at: [PTR.x, PTR.y] };
+        })()""")
+        page.mouse.up()
+
+        # 9. Map pulldowns track the cursor while held and commit on release.
+        page.evaluate("beginGame(); G.screen='map'; openMenu(0); G.menuSel=0;")
+        rowbox = page.evaluate(
+            "(() => { const b = pulldownBox(0); return { x: b.x + 4, y0: b.y + 2 }; })()")
+        page.mouse.move(left + rowbox["x"] * s, top + (rowbox["y0"] + 4) * s)
+        page.mouse.down()
+        page.mouse.move(left + rowbox["x"] * s, top + (rowbox["y0"] + 8 * 2 + 4) * s)
+        page.wait_for_timeout(60)
+        drags["menuHover"] = page.evaluate("G.menuSel")
+        page.mouse.up()
+        page.wait_for_timeout(60)
+
+        # 10. The nation picker is drag-live.
+        page.evaluate("G.screen='nation'; G.nation=0;")
+        cell = page.evaluate("(() => { const r = NAT_CELL(3); return { x: r.x + 20, y: r.y + 20 }; })()")
+        page.mouse.move(left + 10 * s, top + 10 * s)
+        page.mouse.down()
+        page.mouse.move(left + cell["x"] * s, top + cell["y"] * s)
+        page.wait_for_timeout(60)
+        drags["nationDrag"] = page.evaluate("G.nation")
+        page.mouse.up()
+
         browser.close()
 
     print(json.dumps(res, indent=2))
     print("canvas geometry:", json.dumps(geom))
+    print("drag results:", json.dumps(drags, indent=2))
 
     fails = []
+    d = drags
+    if d["plazaToField"]["cell"] != [-1, 0]:
+        fails.append(f"drag plaza->field did not place the colonist: {d['plazaToField']}")
+    if not d["plazaToField"]["job"]:
+        fails.append("drag plaza->field left the colonist jobless")
+    if d["plazaToField"]["drag"] is not None:
+        fails.append("the drag payload was not cleared on drop")
+    if d["fieldToPlaza"]["cell"] is not None:
+        fails.append(f"drag field->plaza did not free the cell: {d['fieldToPlaza']}")
+    if "plazaToBuilding" in d:
+        b = d["plazaToBuilding"]
+        if b["job"] != b["want"]:
+            fails.append(f"drag plaza->building gave job {b['job']!r}, want {b['want']!r}")
+        if b["cell"] is not None:
+            fails.append("a building job must clear the field cell")
+    mh = d["marketToHold"]
+    if not any(h["good"] == 4 and h["qty"] >= 100 for h in mh["hold"]):
+        fails.append(f"drag market->hold did not buy: {mh}")
+    if mh["gold"] >= mh["goldBefore"]:
+        fails.append(f"drag market->hold cost nothing: {mh['gold']} vs {mh['goldBefore']}")
+    hm = d["holdToMarket"]
+    if any(h["good"] == 2 and h["qty"] for h in hm["hold"]):
+        fails.append(f"drag hold->market did not sell: {hm}")
+    ds = d["dockToShip"]
+    if ds["dock"] or "Expert Farmer" not in ds["pax"]:
+        fails.append(f"drag dock->ship did not board the unit: {ds}")
+    hn = d["holdNoMove"]
+    if hn["cell"] is not None or hn["job"] is not None:
+        fails.append(f"a press-and-release with no motion acted as a drop: {hn}")
+    if hn["drag"] is not None:
+        fails.append("a stationary press left a drag payload behind")
+    gh = d["ghost"]
+    if not gh.get("live"):
+        fails.append("no drag payload while the button was held over a colonist")
+    elif gh.get("pixels", 0) <= 0:
+        fails.append(f"the drag ghost drew nothing: {gh}")
+    if d["menuHover"] != 2:
+        fails.append(f"pulldown did not track the cursor while held: menuSel={d['menuHover']}")
+    if d["nationDrag"] != 3:
+        fails.append(f"nation picker not drag-live: nation={d['nationDrag']}")
     if res["rumourTiles"] <= 0:
         fails.append(f"no rumour tiles on the map ({res['rumourTiles']})")
     if not res["rumourSeedNonZero"]:

@@ -7524,3 +7524,192 @@ Unmeasured, and left at the port's previous values: the **slot pitch** for both
 ships and dock units (the frame has one of each). Also unresolved: the live ship
 carries a **red nation flag** the port does not draw, and the two dark hold cells
 match no ICONS frame better than 0.62 — they are drawn as a plain dark cell.
+
+## 2026-08-07 — four port defects, and what the bytes said about each
+
+Four things the user reported as broken in the HTML port. All four are settled
+here rather than in the thread; two of them correct claims that survive in the
+spec and the tracker.
+
+### 1. The Lost City Rumour marker: wrong branch, and the wrong sprite
+
+Two independent faults, either of which alone hides the marker completely.
+
+**The draw sat on the wrong branch.** `drawTile` splits into a land path that
+`return`s and a water path that falls through to the function tail — and the
+rumour blit was on that tail. Since `rumourAt` rejects Ocean and Sea Lane, the
+call could never fire on any tile in the game. The engine's order is
+`detail (0x5A+v) -> rumour (0x68) -> roads (0x51+d)`, byte-read off O513 at
+`@0x683F7`, `@0x68405..@0x68414` and `@0x68417`; the port now matches it on the
+land path.
+
+Land-only is behaviourally exact but is **not** a branch the engine has, and the
+distinction matters for anyone reading O513: `@0x683C9` gates on `[0x184]` /
+`[0x18E]`, **not** on the water flag `[bp-4]`, so a *coastal* water tile does
+reach the call at `0x68405`. It returns 0 there because `func_006188`'s own class
+gate `@0x61A6`/`@0x61AB` rejects 0x19/0x1A. (`tools/hillsrivers_render.py`'s
+`if not water:` is that renderer's structural simplification, not a citation.)
+
+**The sprite was identified by eye and was wrong.** The port used ICONS 17, a
+gold sunburst, with the comment admitting no catalogue entry named it —
+`notes/SPRITE_CATALOG.md:497` says ICONS indices 16+ are uncatalogued, so there
+was nothing behind it. The real marker is **PHYS0 engine 0x68 / disk 0x67**:
+`mov ax,0x68` `@0x68411` followed by `call 0x67dc8` `@0x68414`, the same emit
+primitive the detail band uses at `@0x683FA`. The byte pattern `b8 68 00` occurs
+**exactly once** in the 494910-byte VICEROY.EXE, so the frame number is not
+ambiguous. Disk frame 103 dumps as a 16×16 concentric brown-and-tan stone ring.
+
+### 2. The rumour hash had X and Y transposed
+
+`func_006188 @0x61C7-0x61F6` is
+
+    (((y>>2)*0x13 + (x>>2)*0x11 + word[0x190] + 8) & 0x1F) - ((x&3)<<2) == (y&3)
+
+The axis assignment is anchored **at the call site**, not inferred from the
+arithmetic: the call pushes `[0xa5a2]` then `[0xa5a0]`, and the only write to
+`[0xa5a0]` is the inner loop variable `@0x68803`, bounded `@0x6880D-0x68812`
+against `word[0x853a] - 1` = the map **width**. So `[0xa5a0]` is the column,
+`arg1 = [bp+6]` is X, `arg2 = [bp+8]` is Y.
+
+This is not cosmetic. Measured over `AMER2` (58×72), the two orientations select
+33–44 tiles each and agree on **0–3** of them.
+
+`docs/manual_src/part2.md` §6.10 is **correct**. `spec/systems/events.md`,
+`docs/manual_src/part5.md:285` and `docs/UI_AUDIT_TRACKER.md:424` are
+**transposed** and are corrected with this entry.
+
+Also: the seed is `random_int(1, 0x7FFF)`, not `(0, 0x7FFF)` — `func_064A10
+@0x64A16` is `push 0x7fff; push 1`, push order confirmed against the known
+`random_int(1,9)` at `@0x614F6` (`push 9; push 1`). A **zero** salt disables both
+the detail band and rumours outright (gates `@0x60A9` and `@0x6191`), so the
+lower bound is load-bearing.
+
+Still not reproduced: the third gate, `func_005DF0 >= 0` (`@0x61BC`/`@0x61C5`).
+The port carries no owner/feature plane — the `.MP` loader discards it — and the
+plane's own identity is unresolved, `spec/systems/events.md:187-192` calling it
+the tile feature nibble and `tools/hillsrivers_render.py:195` the continent-plane
+owner nibble. Consequence: rumours appear on some tiles DOS suppresses. **TBD.**
+
+### 3. The colony pennant is baked into the marker sprite
+
+The port drew the nation pennant at the tile's right edge and left a **blue flag
+already present in the marker art** standing beside it — so France looked right
+by coincidence and every other power flew two flags.
+
+Settled from the sprite pixels, which sit above the disassembly in the trust
+order. Sliding ICONS frame **119** (the blue 6×5 pennant, `#34499e`/`#4159a6`)
+over colony frames **0, 1, 2 and 3** finds **exactly one** offset at which all 15
+of its opaque pixels match the marker: **frame-local (5, 0)**, on all four levels,
+with no second candidate anywhere in the search window.
+
+The bytes reach the same point independently: `func_004314 @0x0043FB` puts X+6 in
+`[bp-0x0a]` and `@0x004404-0x004409` + `@0x00441A` put Y+4 in `[bp-0x0c]` on the
+`si == 0x64` 100%-scale branch; the blit verb `0x0C56:0x0004` = file `0x00E964`
+converts anchor to top-left with `x -= w>>1` `@0x00EA38` and `y -= h, y += 1`
+`@0x00EA45`. For a 6×5 pennant that is `(X+6-3, Y+4-4)` = **(X+3, Y)** — the same
+pixel the sprite correlation names.
+
+So the engine's pennant blit **overwrites** the baked flag, and exactly one flag
+is ever visible. Frames 118/119/120/121 are red/blue/yellow/orange =
+England/France/Spain/Netherlands, so `PENNANT_BASE + nation` was already right;
+only the placement was wrong.
+
+**Not** the answer: per-nation marker frames, or a palette recolour. ICONS 0–3
+encode **level**, not nation — `func_004314 @0x004455` `add cx,0x77` applies to
+the pennant alone.
+
+The marker itself lands at **(X−2, Y)**: `@0x0043D2` sets D=0x10,
+`@0x0043D5-0x0043E5` anchors at (X + D/2, Y + D − 1), through the same
+anchor→top-left conversion, for a 21×16 frame. That the engine's X equals the
+port's tile origin is **not** independently established (`func_067182` unread),
+but the pennant fix does not depend on it: (5,0) is a marker-relative delta.
+
+Two related things the same dump settles: native marker frames **10–13 carry no
+baked pennant** at any offset, so the port's tribe-colour patch is invented art
+with no engine equivalent (nothing in the village painter draws an ownership
+patch at all); and the mission cross's **shape** is byte-read from the village
+painter — backing `(XB, py+5, 5, 6)` `@0x0041D7`, vertical `(XB+2, py+6, 1, 4)`
+`@0x004203`, horizontal `(XB+1, py+7, 3, 1)` `@0x004222` — while its **X origin
+XB is TBD**, the engine's base being `px+6` (`@0x00407D` is `mov ax,[bp-0x64];
+add ax,6` — the `add` is easy to drop, and doing so puts every x out by ≥4) on
+the path that skips the alarm-mark loop and `px+8+2*marks` through it.
+
+### 4. Drag and drop was never implemented
+
+The canvas carried a `click` listener and nothing else — no `mousedown`,
+`mousemove`, `mouseup` or `pointer*` anywhere in `port/src/game.js`. So every
+interaction the DOS game performs by dragging was either approximated by a click
+or simply absent.
+
+The engine's input model, `func_00D106 @0x0D106-0x0D1C9`, publishes five separate
+booleans per poll that a DOM `click` collapses into one event: down-edge
+`[0x7EC]` `@0xD194`, press latch `[0x7F2]` `@0xD19C`, release edge `[0x7F4]`
+`@0xD140`, any-down `[0x7F6]` `@0xD1BB`, moved `[0x7F0]` `@0xD188`, plus the
+cursor at `[0x7E8]`/`[0x7EA]`. **There is no pixel drag threshold** — `@0xD16F`
+compares the poll-start snapshot `[0x7F8]`/`[0x7FA]` against the current
+position, so one pixel counts as moved.
+
+On top of those sits a "what am I carrying" word — `[0x8D54]` colony, `[0x9E3A]`
+Europe — which normally holds the region id under the cursor and is overwritten
+with a payload mode while a drag is live, with the detail beside it: source kind
+`[0xA88C]`/`[0x9E22]`, good `[0xA88D]`/`[0x9E24]`, amount `[0xA88E]`/`[0x9E26]`,
+source hold `[0xA88F]`/`[0x9E1E]`.
+
+Region tables, byte-exact and **in the engine's own test order** (the order is
+load-bearing: colony id 5 is tested before id 8, so any y ≥ 179 resolves to the
+warehouse strip whatever overlaps it) — colony `func_0299A0 @0x0299A0-0x029ABE`,
+Europe `func_03200A @0x03200A-0x0320EC`. The rect test itself is verb
+`0x181F:0x3CA` = `func_004B16 @0x04B16`, a plain half-open box.
+
+Drop legality is two literal tables: colony `func_02BB8A @0x2BBBD-0x2BBF9` gives
+mode 6 → {0,1,2} and mode 7 → {5,8}; Europe `func_0353DE @0x35416-0x35464` gives
+mode 0xA → {0,1}, mode 8 → {1,2,3}, mode 9 → {2,3}. A refused drop does **not**
+snap back — the engine overwrites the mode with the no-region id (`mov
+[0x8D54],0x14` `@0x2A4BA`, Europe twin `@0x32555`/`@0x32718`), i.e. the payload is
+dropped on the floor.
+
+Timing, which is **not** uniform across sources and was recorded wrong once
+already: a **colonist is hold-to-drag**, deadline `timer + 8` (`func_02C5D4
+@0x2C87A`, armed `@0x2C887`, consumed `@0x29C9F-0x29CB7`, `@0x29FE5-0x29FFC`,
+`@0x2A28A-0x2A2AE`); **cargo-hold goods** start on the down-edge (`func_02AEDA
+@0x2AF5A cmp [0x7EC],0`); **warehouse goods** start on the button being *held*,
+re-probed every poll, with no `[0x7EC]` test anywhere in that path (`func_02B9DC
+@0x2BA46` + `@0x2BAAC`). The port starts the warehouse drag on the down-edge and
+flags the simplification.
+
+**Unresolved, and left as TBD rather than invented:**
+- The **tick rate** of `lcall 0xC0C:6`, so the 8-tick hold deadline cannot be
+  converted to milliseconds. The port's wall-clock value is its own. *Blocker:
+  disassemble the `0xC0C:6` timer entry.*
+- The **drag-cursor hotspot**. The module's hotspot globals `[0x590]`/`[0x592]`
+  are written by `set_hotspot @0xCB59` masking `& 0xF`, but the value the
+  drag-begin paths push was not located, so the ghost draws at the pointer with
+  no offset. *Blocker: `func_00DB80 @0x00DB80`.*
+- The **unit ghost frame**. The colony path calls `lcall 0x181F:0xA74`, whose
+  thunk record at file `0x1B064` resolves to file `0x0091CC` — documented as
+  reading unit fields +0x20/+0x40, not as a sprite lookup. (An earlier reading of
+  this as `func_042138` does not survive the thunk table.) The port uses its own
+  `u.icon`.
+- **Colony goods have nowhere to land.** Mode 7's targets are {5, 8}, and region
+  8 is the colony's ships-in-port dock — a panel the port does not draw at all.
+  The drag arms and the drop is a no-op until that panel exists.
+
+**No drag is added to the map view.** A whole-image scan finds **no reference to
+`[0x7E4..0x7FA]` anywhere in 0x63000–0x68000**, and the cursor-sprite setter
+`lcall 0x191F:0x8F8` has exactly five call sites (0x29B9D, 0x29BDE, 0x3210E,
+0x321DF, 0x32227), none in map code. The manual's click-and-hold direction-arrow
+scroll (`docs/GAME_MANUAL.md:422-423`) is manual-tier with **no located byte
+site** and must not be invented. (Care with the phrasing: references to those
+globals do exist elsewhere in the 0x6xxxx range, at 0x6107E and
+0x6B51F/0x6B543 — the claim is about the map range specifically.)
+
+### Two corrections to `spec/ui/input.md`
+
+- §2's claim that no shift-state read exists in the resident image is **wrong**:
+  `func_004A22 @0x04A22` reads BDA `0040:0017 & 3` and passes it as the last
+  argument to every transfer routine (`@0x2AF3E`, `@0x2BA0B`, `@0x2AE2C`,
+  `@0x33AA0`, `@0x3367E`, `@0x334D1`, `@0x33516`) — that is the partial-amount
+  modifier. The claim is true only of INT 16h AH=02h.
+- `input.md:571` is wrong twice: Europe region 0xB's x-origin is **305**
+  (`0x131`), not 306, *and* the cited block `@0x032034` is the id-5 block; the
+  correct citation is `@0x3200E-0x3201A`. The colony twin `@0x299C8` gives 305 too.

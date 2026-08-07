@@ -43,8 +43,12 @@ SHOTS = [
      "buildColony();closeDialog('Curacao');"
      "const c=G.colonies[0];"
      "for(let i=0;i<8;i++)c.colonists.push({type:'Colonists',job:null,cell:null});"
-     "for(const d of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]){"
+     # A field click moves the SELECTED colonist, so walk the selection along
+     # with the cells -- otherwise the same man is dragged around all eight.
+     "for(const [k,d] of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]"
+     "  .entries()){G.colonistSel=k+1;"
      "  onClick(224+12+24*(d[0]+1),32+12+24*(d[1]+1));}"
+     "G.colonistSel=0;"
      "c.stock=c.stock.map((v,i)=>[16,3,0,0,3,6,8,3,4,0,0,6,0,0,6,0][i]);"
      "c.sol=6;G.screen='colony';})()"),
     ("europe", "beginGame();G.screen='map';G.europe=[{type:'Caravel',icon:5,cargo:[],state:'port'}];G.screen='europe'"),
@@ -71,6 +75,27 @@ SHOTS = [
      "beginGame();G.screen='map';"
      "(()=>{const s=G.units[0];for(let i=0;i<12;i++){s.movesLeft=99;moveSel(-1,0);}"
      "centerOn(s.x+3,s.y);})()"),
+    # The two map markers that were broken, side by side on one land patch:
+    # a colony of each power (so the pennant can be checked against the flag
+    # baked into the marker sprite) and every Lost City Rumour in range.
+    ("map_markers",
+     "beginGame();G.screen='map';"
+     "(()=>{"
+     "  let land=null;"
+     "  for(let y=2;y<MAP.h-2&&!land;y++)for(let x=2;x<MAP.w-2&&!land;x++){"
+     "    let n=0;"
+     "    for(let dy=0;dy<6;dy++)for(let dx=0;dx<10;dx++)"
+     "      if(!tileWater(at(x+dx,y+dy)))n++;"
+     "    if(n>=54)land=[x,y];}"
+     "  const [lx,ly]=land;"
+     "  centerOn(lx+5,ly+3);"
+     "  for(let dy=-2;dy<VIEW_ROWS()+2;dy++)for(let dx=-2;dx<VIEW_COLS()+2;dx++)"
+     "    reveal(G.view.x+dx,G.view.y+dy,0);"
+     "  G.colonies=[0,1,2,3].map((n,k)=>({name:['Boston','Quebec','Havana','Nieuw'][n],"
+     "    x:lx+1+k*2,y:ly+3,nation:n,colonists:[],stock:DATA.cargo.map(()=>0),"
+     "    buildings:n>1?['Stockade']:[],hammers:0,building:null,sol:0}));"
+     "  G.dialog=null;G.eventQueue=[];G.units=[];G.natives=[];G.villages=[];"
+     "})()"),
     ("treasure",
      "beginGame();G.screen='map';G.tax=15;"
      "G.colonies=[{name:'Boston',x:G.units[0].x,y:G.units[0].y,nation:0,colonists:[],"

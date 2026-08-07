@@ -209,11 +209,14 @@ SCRIPT = """() => {
     // A new colony makes no hammers: it has the shop but nobody in it.
     out.hammersBeforeCarpenter = colonyHammers(c);
 
-    // Click a scene cell to put an idle colonist on that field.
+    // Click a scene cell to put the SELECTED colonist on that field. (It used
+    // to place whichever colonist happened to have no cell yet, which is the
+    // bug fixed alongside drag-and-drop -- so the selection has to be set.)
+    G.colonistSel = 0;
     onClick(224 + 12, 32 + 12);                     // cell (-1,-1)
     const worker = c.colonists.find(p => p.cell);
-    // The colonist takes the cell's BEST outdoor job, not always Farmer.
-    out.fieldWork = !!worker && OUTDOOR_JOB_NAMES.includes(worker.job) &&
+    // The colonist takes the cell's BEST field job, not always Farmer.
+    out.fieldWork = !!worker && FIELD_JOB_NAMES.includes(worker.job) &&
                     worker.cell[0] === -1 && worker.cell[1] === -1 &&
                     fieldYield(c, worker) > 0;
     worker.job = 'Farmer';                          // pin it for the food check
