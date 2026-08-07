@@ -31,24 +31,26 @@ Where the port's work is tracked, in the order to consult them:
 
 | Document | Role |
 |---|---|
-| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status, regenerated mechanically by `python3 port/tools/message_status.py`. Current: **389 done + 29 via-DATA, 0 missing, 0 unwired**; 33 BLOCKED (each annotated with its named Phase-4 capture/disasm blocker), 24 N/A, 24 support lists. |
+| **`docs/MESSAGE_STATUS.md`** | Every GAME.TXT message key's status, regenerated mechanically by `python3 port/tools/message_status.py`. Current (Phase 4 complete): **411 done + 29 via-DATA, 0 missing, 0 unwired**; **1 BLOCKED** (FULL's join-colony crowding threshold, behind func_02883E's jump table), 34 N/A, 24 support lists. |
 | **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
 | **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |
 | **`docs/UI_AUDIT_TRACKER.md`** | Per-screen byte-verification coverage (the standing UI mandate in CLAUDE.md). |
-| `port/tools/test_flow.py` | The behavioural gate: **233/233**. |
+| `port/tools/test_flow.py` | The behavioural gate: **234/234**. |
 
-Done since the plan (2026-08-07 n-x): Phase 0 (render-diff oracle, ledger
-upgrade, audit reconciliation), Phase 1 (the wire-only sweep), Phase 2
-(input-outage latches, VANISH, colony-built units, rush-buy, back-tax,
-REFIT, CUSTOM, PISS bands, friendly natives, retirement clock, @HOWMUCH
-numeric entry), Phase 3 (tutorial system, news bulletin bus, native
-land-claim, WoI completion, Crown cluster, privateer/treaty, meeting
-sub-branches), and the pre-capture completion sweep (every remaining
-wirable key + the Hall of Fame — ruling 2026-08-07x). **Everything wirable
-without new evidence is wired: MISSING 0.** Remaining: the Phase 4
-DOSBox-capture/disasm batch (the 33 BLOCKED keys, HoF column x, K-threshold,
-func_057F4E / func_049600-tail / func_04B308 / func_05BE84 / func_073474 /
-func_0734F8 / func_020F50 windows) and the Phase 5 final audit.
+Done since the plan (2026-08-07 n-z14): Phases 0–3 and the pre-capture
+sweep, then **Phase 4 COMPLETE** — the DOSBox capture batch (Hall of Fame
+from crafted HALLFAME.DAT, K-threshold=10000, F4/F5/F6/F9 references, the
+ICONS profession figures, Europe slot pitches 17/18 + nation sack + the
+Bound-For manifest) and the disassembly windows (func_0734F8's 43-block
+order → tutorial/woodcut/REF import; func_020F50 → all tutorial guard
+bits; func_073474 inks; func_008D00 capacity; func_05CA7E → the seven
+aftermath bulletins; func_04A7CA Speak-with-Chief; the func_049600 tail →
+@TRADE0 quality; func_05BE84 raid payloads; func_056C3E treaty effect;
+func_059B90/03FDDE/04E2D6 shipping; func_034AE0 the tax petition;
+func_057F4E the MEEK/MANLY strength predicate; the 0x191F:0x9C0 disposal
+gate). **MISSING 0, BLOCKED 1.** Every remaining flag is a documented
+byte-read ceiling, not an unread window. Next: Phase 5 final audit
+(full render-diff + end-to-end playtest + tag).
 
 ---
 
