@@ -1314,6 +1314,22 @@ SCRIPT = """() => {
     closeDialog(1);                                  // keep playing anyway
     w3.scoredLock = G.scored === true && G.screen !== 'title';
     // Bundled keys for the batch.
+    // The tutorial: TUTORIAL1 fires with the fresh fleet, lessons are
+    // idempotent, and difficulty >= 2 suppresses them.
+    w3.tutorial = (() => {
+      const dOrig = G.difficulty;
+      G.difficulty = 0;                        // a fresh Discoverer game
+      beginGame();
+      const first = G.eventQueue.some(e => /high seas/i.test(e.lines.join(' ')));
+      const n0 = G.eventQueue.length;
+      tutOnce(1, {});
+      const once = G.eventQueue.length === n0;
+      G.difficulty = 2; G.tutSide = {}; G.eventQueue = [];
+      tutOnce(9);
+      const gated = G.eventQueue.length === 0;
+      G.difficulty = dOrig;                    // do not leak the Discoverer gate
+      return first && once && gated && !!DATA.events.TUTORIAL19;
+    })();
     w3.bundled = !!(DATA.events.INDIANBEGFOOD && DATA.events.INDIANGIVEFOOD &&
                     DATA.events.INDIANGIVESTUFF && DATA.events.INDIANCOMMENT &&
                     DATA.events.INDIANCOME && DATA.events.INDIANFOREST &&
@@ -2670,6 +2686,10 @@ SCRIPT = """() => {
   // ---- woodcut triggers: first contact, first village, first cargo ----
   {
     beginGame();
+    // Drain the fresh-game TUTORIAL1 lesson: this block tests the woodcut
+    // chain, and the queued lesson would otherwise sit ahead of the
+    // @INDIANWELCOME dialog.
+    G.eventQueue = [];
     const r = {};
     r.sheets = ['WDCUT03', 'WDCUT04', 'WDCUT05', 'WDCUT07', 'WDCUT08',
                 'WDCUT09', 'WDCUT11', 'WDCUT13'].every(s => !!DATA.sheets[s]);

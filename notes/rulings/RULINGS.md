@@ -8544,3 +8544,30 @@ Suite: 232/232 (new "natives + endgame" block).
   claim was a DATA-channel false negative, now annotated DONE-VIA-DATA.
 
 Suite: 232/232 (the sell check now walks the @HOWMUCH5 entry).
+
+## 2026-08-07s — Phase 3, tutorial system: the [0x5386/7] lesson mask + all 19 bindings
+
+**spec/systems/tutorial.md (BYTE_VERIFIED core).** tutOnce(n): idempotent
+per-step lessons over a 16-bit mask seeded 0x0E at new-game init (@0x755EB).
+Byte-attributed bits carried exactly: TUTORIAL1=0x0010 (func_020F50
+@0x20FFB), TUTORIAL4=0x0080/TUTORIAL12=0x8000 (func_02C5D4 @0x2C74A/
+@0x2C7BC), TUTORIAL5=0x0100 (func_033F6A @0x3651F), TUTORIAL6=0x0200
+(func_02D658 @0x2EA4C), TUTORIAL7=0x0400 (func_02883E @0x28D41). The other
+13 steps' bits live in the undisassembled func_020F50 window
+(0x20FF0..0x215D0, Phase 4) -- tracked in a side set; the seed's three
+pre-marked bits are therefore unbound in the port. The difficulty gate is
+the sibling TUT keys' [0x53A6]<2. All FLAGGED as readings.
+
+Bindings (byte-attributed sites in caps, the rest the port's flagged event
+match): T1 fresh fleet at sea (beginGame); T2 land-naming prompt; T13 first
+landfall; T3 founder on land (terrain fill); T4 FIRST COLONY SCREEN; T5
+DOCK RECRUIT READY; T6 SELLABLE CARGO >= 50; T7 COLONY POP >= 3; T8
+unskilled Colonist at a village; T9/T10 pioneer on road/plow ground; T11
+first sail for Europe; T12 ship docking at a colony (T15 when it carries
+passengers); T14 first Soldiers move; T16 first food deficit; T17 first
+Europe screen; T18 the Europe purchase ask; T19 first convert. Imported
+saves mark every lesson shown (the real mask read is the Phase 4 importer
+item).
+
+Suite: 232/232 (tutorial idempotence + Discoverer gate in the wire3 block;
+the woodcut block drains the fresh-game lesson it now begins with).

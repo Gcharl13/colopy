@@ -698,6 +698,11 @@ function beginGame() {
   G.routes = []; G.trade = null;
   G.mercSeen = false; G.interventionWatch = false; G.succession = false;
   G.retired = false; G.options = null;
+  // Tutorial mask seed 0x0E (@0x755EB); TUTORIAL1 fires with the fleet on
+  // the high seas -- the game's very first event.
+  G.tutMask = 0x0E; G.tutSide = {}; G.scored = false;
+  G.soonWarned = false; G.soonWarned2 = false; G.timeChanged = false;
+  tutOnce(1, { STRING0: G.units[0].type });
   seedREF();
   SEEN.fill(0);
   revealAll();
@@ -2700,6 +2705,16 @@ function colonyTurn(c) {
   const herd = c.stock[GOOD.HORSES];
   if (herd >= (c.buildings.includes('Stable') ? 25 : 50))
     c.stock[GOOD.HORSES] = herd + Math.max(1, Math.floor(herd / 10));
+  // Tutorial bindings: TUTORIAL6 (func_02D658 @0x2EA4C) when a sellable
+  // cargo has built up; 7 (func_02883E @0x28D41) when the colony can use a
+  // stockade; 16 on the first food deficit. Thresholds flagged.
+  const sellable = c.stock.map((n, i) => [n, i])
+    .filter(s => s[1] !== GOOD.FOOD && s[0] >= 50).sort((a, b) => b[0] - a[0])[0];
+  if (sellable)
+    tutOnce(6, { NUMBER0: sellable[0], STRING0: DATA.cargo[sellable[1]].name,
+                 STRING1: c.name, STRING2: DATA.nations[G.nation].homeport });
+  if (c.colonists.length >= 3) tutOnce(7, { STRING0: c.name });
+  if (r.netFood < 0) tutOnce(16);
   c.crossesTurn = r.tally[CROSSES];
   // Printing Press adds 50% to the colony's bells and a Newspaper doubles them
   // (per-colony building bits 0x13 / 0x14, founding_fathers.md §3).
@@ -2830,6 +2845,7 @@ function rushBuy() {
 // turns, which is what the sail-state 1/2/3 bands in §26.9 count down.
 const SAIL_TURNS = 3;
 function sailForEurope(ship) {
+  tutOnce(11, { STRING0: ship.type, STRING1: DATA.nations[G.nation].homeport });
   G.europe.push({ type: ship.type, icon: ship.icon, hold: ship.hold || [],
                   passengers: ship.cargo || [], state: 'toEurope', turns: SAIL_TURNS,
                   lane: { x: ship.x, y: ship.y } });
@@ -3044,6 +3060,10 @@ const VIEW_BTN = { x: 303, y: 132, w: 15, h: 13, pitch: 15 };
 const VIEW_BUILDINGS = 0, VIEW_UNITS = 1, VIEW_PRODUCTION = 2;
 
 function drawColony(ctx) {
+  // TUTORIAL4 (func_02C5D4 @0x2C74A): the first Colony Screen visit.
+  // Production fills are representative names, flagged.
+  tutOnce(4, { STRING0: DATA.cargo[GOOD.FOOD].name,
+               STRING1: DATA.cargo[GOOD.LUMBER].name });
   const c = G.colonies[G.colony];
   if (!c) { G.screen = 'map'; return; }
   usePalette('WOODTILE');
@@ -3869,6 +3889,9 @@ function activeShip() { return shipsInPort()[G.euroShip] || null; }
 const EURO_DOCK = { x: 232, y: 137, pitch: 14 };
 const EURO_SHIP = { x: 145, y: 145, pitch: 12 };
 function drawEurope(ctx) {
+  // TUTORIAL17: the first European Status visit (binding flagged).
+  tutOnce(17, { STRING0: DATA.nations[G.nation].homeport,
+                STRING1: DATA.nations[G.nation].country });
   usePalette('EUROPE');
   ctx.drawImage(IMG.EUROPE, 0, 0);
   const [tw2] = frameSize('WOODTILE', 0);
@@ -4740,6 +4763,7 @@ function attemptConversions() {
     u.faith = CONVERT_FAITH;
     G.units.push(u);
     showEvent('INDIANSCONVERT', { STRING0: c.name });
+    tutOnce(19);
   }
 }
 // "Converts who do not join colonies within eight turns of their conversion are
@@ -5581,6 +5605,10 @@ function drawEvent(ctx) {
 // Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
 // context_dialogs.md §6 -- func_04B308 is that table's only consumer).
 function enterVillage(v, visitor) {
+  // TUTORIAL8: an unskilled COLONIST at a village can learn (flagged --
+  // scouts and other unit kinds cannot, per the live-among rules).
+  if (visitor && visitor.type === 'Colonists' && !visitor.profession)
+    tutOnce(8, { STRING0: visitor.type });
   G.village = v;
   G.eventTribe = v.tribe;                          // the popup speaker channel
   G.villageVisitor = visitor;
@@ -6881,6 +6909,34 @@ function exitToDos() {
     G.menuRow = 0;
     G.msg = '';
   });
+}
+
+// ------------------------------------------------------------- tutorial
+// spec/systems/tutorial.md (BYTE_VERIFIED): state is a 16-bit shown-bitmask
+// [0x5386]/[0x5387], seeded 0x0E at new-game init (@0x755EB); each step owns
+// one bit and fires ONCE at its own event site. Byte-attributed bits:
+// TUTORIAL1=0x0010 (func_020F50 @0x20FFB), TUTORIAL4=0x0080 / TUTORIAL12=
+// 0x8000 (func_02C5D4 @0x2C74A/@0x2C7BC), TUTORIAL5=0x0100 (func_033F6A
+// @0x3651F), TUTORIAL6=0x0200 (func_02D658 @0x2EA4C), TUTORIAL7=0x0400
+// (func_02883E @0x28D41). The OTHER steps' bits live in the undisassembled
+// func_020F50 window (0x20FF0..0x215D0, Phase 4) -- the port tracks those in
+// its own side set, and the seed's three pre-marked bits (1..3) are
+// therefore unbound here: both flagged. The difficulty gate is the sibling
+// TUT keys' [0x53A6]<2 (Discoverer/Explorer), flagged for TUTORIALn itself.
+const TUT_BIT = { 1: 0x0010, 4: 0x0080, 5: 0x0100, 6: 0x0200, 7: 0x0400,
+                  12: 0x8000 };
+function tutOnce(n, subs) {
+  if (G.difficulty >= 2) return;
+  const bit = TUT_BIT[n];
+  if (bit) {
+    if (G.tutMask & bit) return;
+    G.tutMask |= bit;
+  } else {
+    G.tutSide = G.tutSide || {};
+    if (G.tutSide[n]) return;
+    G.tutSide[n] = true;
+  }
+  showEvent(`TUTORIAL${n}`, subs || {});
 }
 
 // The endgame sequence: the @EXPLOITS rating card with an @SCORE joke name,
@@ -8592,6 +8648,9 @@ function checkImmigration() {
   // refills from the generator.
   const slot = Math.floor(Math.random() * 3);
   G.dockUnits.push(G.dock[slot].name);
+  // TUTORIAL5 (func_033F6A @0x3651F): recruits are waiting on the docks.
+  tutOnce(5, { STRING0: DATA.nations[G.nation].homeport,
+               STRING1: G.dockUnits[G.dockUnits.length - 1] });
   G.dock[slot] = rollImmigrant();
   showEvent('UNREST', { STRING0: DATA.nations[G.nation].homeport,
                         STRING1: G.dock[0] && (G.dock[0].name || G.dock[0]) || 'Colonists' });
@@ -8654,6 +8713,11 @@ function importSav(bytes) {
   beginGame();
   G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
   G.landHo = true; G.builtColony = true; G.metAnyone = true;
+  // An imported game is no fresh tutorial: mark every lesson shown. (The
+  // real [0x5386/7] mask lives in the SAV's globals block -- reading it is
+  // the Phase 4 importer item.)
+  G.tutMask = 0xFFFF;
+  G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
   // A restored mid-game has seen its first-time plates: mark the whole
   // shown-bitmask and every tribe as contacted. (The engine's own [0x540A]
   // word is in the save but its block index is unread -- TBD.)
@@ -9151,6 +9215,23 @@ function step(u, nx, ny) {
   u.movesLeft = (cost > u.movesLeft) ? 0 : u.movesLeft - cost;
   u.x = nx; u.y = ny;
   reveal(nx, ny, sightRadius(u));
+  // Tutorial bindings (flagged; the byte sites are the dispatcher
+  // func_020F50 / func_02C5D4): a ship docking at a colony teaches loading
+  // (12) -- or colonist delivery (15) when it carries passengers; a pioneer
+  // on workable ground teaches plow/clear (10) or roads (9); soldiers
+  // teach defence (14).
+  const tc = colonyAt(nx, ny);
+  if (u.ship && tc) {
+    if ((u.cargo || []).length) tutOnce(15, { STRING0: tc.name });
+    else tutOnce(12, { STRING0: tc.name });
+  }
+  if (!u.ship && canImprove(u)) {
+    if (isForested(tileTerrain(at(nx, ny))) || !hasPlow(nx, ny)) tutOnce(10);
+    else if (!hasRoad(nx, ny)) tutOnce(9);
+  }
+  if (u.type === 'Soldiers') tutOnce(14);
+  if (!u.ship && !NOT_COLONISTS.includes(u.type) && !tileWater(at(nx, ny)))
+    tutOnce(3, { STRING0: terrainName(at(nx, ny)) });
   G.msg = '';
   if (nx - G.view.x < 3 || nx - G.view.x > VIEW_COLS() - 4 ||
       ny - G.view.y < 3 || ny - G.view.y > VIEW_ROWS() - 4) centerOn(nx, ny);
@@ -9177,6 +9258,8 @@ function skipUnit() {
 // "Land Ho! What shall we call this new land, Your Excellency?" -- the naming
 // prompt that follows the discovery woodcut (GAME.TXT @LANDHO, @default=America).
 function askLandName() {
+  // TUTORIAL2: uncharted land found -- make landfall (binding flagged).
+  tutOnce(2);
   openDialog('LANDHO', (name) => {
     G.newLand = (name || '').trim() || DATA.dialogs.LANDHO.default;
     G.msg = `${G.newLand}!`;
@@ -9205,6 +9288,9 @@ function landfall(ship, nx, ny) {
       G.landHo = true;
       woodcutOnce(1);
     }
+    // TUTORIAL13: the pioneers have stepped ashore (binding flagged --
+    // exact func_020F50 site pending the Phase 4 disasm).
+    tutOnce(13);
   });
 }
 
@@ -10079,6 +10165,7 @@ function europeDrop(d, target, mx, my) {
                     (slot ? Math.max(0, 100 - slot.qty) : 0);
       const most = Math.min(space, Math.floor(G.gold / askPrice(d.good)), 100);
       if (most <= 0) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
+      tutOnce(18, { STRING0: DATA.cargo[d.good].name, NUMBER0: askPrice(d.good) });
       askAmount('HOWMUCH4', { STRING0: DATA.cargo[d.good].name,
                               STRING1: ship.type, NUMBER1: askPrice(d.good) },
                 most, (qty) => { if (qty) buyToShip(d.good, qty); });

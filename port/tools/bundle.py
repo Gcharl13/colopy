@@ -301,6 +301,9 @@ def build_data():
               # The retirement clock + endgame sequence.
               "@SOONRETIRING0", "@SOONRETIRING1", "@RETIRING", "@RETIRING2",
               "@EXPLOITS", "@SCORED",
+              # The tutorial lessons (spec/systems/tutorial.md -- bitmask
+              # [0x5386/7], per-step idempotent emit sites).
+              *[f"@TUTORIAL{i}" for i in range(1, 20)],
               # The village haggle loop (func_049600).
               "@BUY0", "@BUY1", "@TRADE0", "@TRADE1",
               "@BADHAGGLE0", "@BADHAGGLE1", "@BADHAGGLE2", "@BADHAGGLE3",
