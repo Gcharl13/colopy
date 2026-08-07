@@ -1401,6 +1401,49 @@ SCRIPT = """() => {
     out.wire4 = w4;
   }
 
+  // ---- Phase 4 batch 1: the func_05CA7E aftermath bulletins ----
+  {
+    beginGame(); G.screen = 'map';
+    const w5 = {};
+    // All seven newly wired keys are bundled with real bodies.
+    w5.bundled = ['BURNED2', 'BURNED3', 'CAPTURED2', 'CAPTURED3', 'EUROPEWIN',
+                  'EUROPELOSE', 'INDIANWINCOLONY']
+      .every(k => DATA.events[k] && DATA.events[k].body.length);
+    // The declared split at the player-capture site: post-declaration
+    // captures announce CAPTURED3 (no plunder line).
+    const q = () => G.eventQueue.map(e => (e.lines || []).join(' ')).join(' | ');
+    const rv = G.rivals[0];
+    rv.met = true;
+    rv.colonies.push({ x: 5, y: 5, nation: rv.nation, name: 'Testville',
+                       level: 0, pop: 1 });
+    G.declared = true;
+    const cap3 = DATA.events.CAPTURED3.body.join(' ').includes('march into');
+    w5.captured3Body = cap3;
+    G.declared = false;
+    // The massacre branch: an undefended 2-colonist colony loses one to a
+    // burn-outcome raid and INDIANWINCOLONY fires.
+    G.colonies.push({ name: 'Mass', x: 8, y: 8, nation: G.nation,
+                      colonists: [{ type: 'Colonists' }, { type: 'Colonists' }],
+                      stock: DATA.cargo.map(() => 0),
+                      buildings: STARTING_BUILDINGS.slice(),
+                      hammers: 0, building: null, sol: 0 });
+    const mc = G.colonies[G.colonies.length - 1];
+    const v0 = G.villages[0];
+    G.eventQueue.length = 0;
+    const rollOrig = raidOutcome;
+    // Pin the raid ladder to the burn outcome (case 4).
+    window.raidOutcome = () => 4;
+    let fired = false;
+    for (let i = 0; i < 6 && !fired; i++) {
+      G.eventQueue.length = 0;
+      nativeRaid(v0, mc);
+      fired = /massacre/i.test(q()) || mc.colonists.length === 1;
+    }
+    window.raidOutcome = rollOrig;
+    w5.massacre = fired && mc.colonists.length === 1;
+    out.wire5 = w5;
+  }
+
   // ---- treasure transport and fog of war ----
   {
     beginGame(); G.screen = 'map';
@@ -3343,6 +3386,9 @@ def main():
         ("completion sweep bundled + SUREDISBAND asks + Hall of Fame sorts "
          "and opens from menu row 4",
          all(r["wire4"].values()), r["wire4"]),
+        ("aftermath bulletins: seven keys bundled, CAPTURED3 body, the "
+         "massacre branch fires",
+         all(r["wire5"].values()), r["wire5"]),
     ]
     bad = 0
     for name, ok, got in checks:

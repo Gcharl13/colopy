@@ -46,15 +46,11 @@ PARAPHRASED = {}
 # These stay out deliberately (never guessed) until the Phase 4 capture or
 # disasm window resolves them.
 BLOCKED = {
-    'BURNED2': 'caller attribution vs INDIANBURNCOLONY2 unread (disasm)',
-    'BURNED3': 'ditto', 'CAPTURED2': 'ditto', 'CAPTURED3': 'ditto',
     'CANTMOBILIZE': 'muskets gate absent from the byte-read mobilize (disasm)',
     'KINGMOBILIZE': 'REF-side mobilize announcement site unread (disasm)',
     'CARGOREADY0': 'func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, '
                    'colony-wide (per-good refuted); remaining blocker = the disposal '
                    'gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)',
-    'EUROPEWIN': 'needs AI-vs-AI battles (omitted with the AI-AI war drivers)',
-    'EUROPELOSE': 'ditto',
     'FULL': 'no colony size cap model; threshold unread',
     'KINGBLESS': 'player-initiated audience entry point not byte-mapped',
     'KINGFUND': 'ditto', 'KINGLAUGH': 'ditto', 'KINGLOWER': 'ditto',
@@ -68,7 +64,6 @@ BLOCKED = {
     'TOOMANYCOLONIES': 'engine cap value unread (disasm)',
     'TOOMANYUNITS': 'ditto',
     'TOONEARBUILD': 'port founds instantly; no pending-build state',
-    'INDIANWINCOLONY': 'player-visible massacre variant: attribution unread',
     'HOWMUCH3': 'no carrier-to-carrier transfer site in the port',
     'APOSTATESUSA': 'reachable only via the USA suffix at runtime',
     'HEATHENUSA': 'ditto', 'RIDUSA': 'ditto', 'SIEGESUSA': 'ditto',

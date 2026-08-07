@@ -307,6 +307,10 @@ def build_data():
               # The news-bulletin bus (native-vs-rival raids + territory).
               "@INDIANWINCOLONY2", "@INDIANBURNCOLONY2", "@INDIANLOSE",
               "@VIOLATE",
+              # func_05CA7E aftermath bulletins (RULINGS 2026-08-07z8): the
+              # human/third-party variant splits are byte-read.
+              "@BURNED2", "@BURNED3", "@CAPTURED2", "@CAPTURED3",
+              "@EUROPEWIN", "@EUROPELOSE", "@INDIANWINCOLONY",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               # War of Independence completion: sentiment, losses, siege,

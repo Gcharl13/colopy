@@ -10,7 +10,7 @@ certify trigger/format fidelity - flagged readings live in
 notes/rulings/RULINGS.md and the popup audit.  The completion
 roadmap is docs/COMPLETION_PLAN.md.
 
-## DONE (389)
+## DONE (396)
 
 - ABANDON
 - ABANDON2
@@ -32,6 +32,8 @@ roadmap is docs/COMPLETION_PLAN.md.
 - BURIAL2
 - BURIAL3
 - BURNED
+- BURNED2
+- BURNED3
 - BUY0
 - BUY1
 - BUYME0
@@ -41,6 +43,8 @@ roadmap is docs/COMPLETION_PLAN.md.
 - CANESUGAR
 - CANNOTATTACK
 - CAPTURED
+- CAPTURED2
+- CAPTURED3
 - CARGOCAPTURE
 - CARGOLOAD
 - CARGOREADY1
@@ -73,8 +77,10 @@ roadmap is docs/COMPLETION_PLAN.md.
 - DISBANDSHIP
 - DONTKNOWSHIPS
 - EFFICIENT
+- EUROPELOSE
 - EUROPENOTAVAIL
 - EUROPENOTLEAVE
+- EUROPEWIN
 - EVASIVE
 - EXTINCT
 - EXTORTLAUGH
@@ -143,6 +149,7 @@ roadmap is docs/COMPLETION_PLAN.md.
 - INDIANWIN0
 - INDIANWIN1
 - INDIANWIN2
+- INDIANWINCOLONY
 - INDIANWINCOLONY2
 - INEFFICIENT
 - INTERVENE
@@ -440,21 +447,14 @@ roadmap is docs/COMPLETION_PLAN.md.
 ## BUNDLED-UNWIRED (0)
 
 
-## BLOCKED (named blocker) (33)
+## BLOCKED (named blocker) (26)
 
 - APOSTATESUSA - reachable only via the USA suffix at runtime
-- BURNED2 - caller attribution vs INDIANBURNCOLONY2 unread (disasm)
-- BURNED3 - ditto
 - CANTMOBILIZE - muskets gate absent from the byte-read mobilize (disasm)
-- CAPTURED2 - ditto
-- CAPTURED3 - ditto
 - CARGOREADY0 - func_008D00 READ 2026-08-07: capacity = (warehouse level+1)*100, colony-wide (per-good refuted); remaining blocker = the disposal gate thunk 0x191F:0x9C0 (does capacity gate the 100-cut?)
-- EUROPELOSE - ditto
-- EUROPEWIN - needs AI-vs-AI battles (omitted with the AI-AI war drivers)
 - FULL - no colony size cap model; threshold unread
 - HEATHENUSA - ditto
 - HOWMUCH3 - no carrier-to-carrier transfer site in the port
-- INDIANWINCOLONY - player-visible massacre variant: attribution unread
 - KINGBLESS - player-initiated audience entry point not byte-mapped
 - KINGFUND - ditto
 - KINGLAUGH - ditto

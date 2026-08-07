@@ -8983,3 +8983,43 @@ is the ONE remaining question, so @CARGOREADY0 stays BLOCKED with that
 narrowed blocker instead of being wired on a guess.
 
 Suite 233/233.
+
+## 2026-08-07z8 — Phase 4 batch 1: func_05CA7E read, seven aftermath bulletins wired
+
+Walked the combat-aftermath bulletin regions of func_05CA7E (locals
+mapped: loser power [bp-0x86], winner power [bp-0x76], settlement
+involvement [bp-0x6e]/[bp-0xd8], destruction [bp-0xa]). Byte-read
+variant splits:
+
+- **BURNED family** (@0x5DABF..0x5DB15, fires on settlement destruction):
+  winner human -> @BURNED (0x1C28, the King-demands-explanation card the
+  port already fires when the player razes); loser human -> @BURNED2
+  (0x1C2F); neither -> @BURNED3 (0x1C37, the spies-report bulletin).
+  Subs: slot0 = loser power name, slot1 = winner power name (0xA1A).
+- **CAPTURED family** (@0x5DEAD..0x5DEED): human involved ->
+  [0x5382]&1 (the DECLARED flag) picks @CAPTURED3 (0x1C48, no plunder
+  line) over @CAPTURED (0x1C52); third-party -> @CAPTURED2 (0x1C5B).
+  Also byte-read: the capture toggles war-matrix bit 2 (@0x5DE91) and
+  transfers gold; the loser-human path calls the colony-lost handler
+  0x608.
+- **INDIANWINCOLONY pair** (@0x5E01F/0x5E026): winner human ->
+  @INDIANWINCOLONY (+50 credit via 0x48E), else @INDIANWINCOLONY2. The
+  aftermath decrements settlement size while size>1 (dec [bx+4]
+  @0x5D67A) -- the massacre outcome, distinct from the burn pair
+  (@0x5DFE4/0x5DFEE, -50 tension [bp-0xa4]=0xFFCE).
+- **EUROPEWIN/EUROPELOSE** (@0x5D9F1/0x5DA20): settlement-less
+  unit-vs-unit battles; %STRING4 verb = @MISC 73 "defeat" / 74 "defeats"
+  chosen by the subject's grammatical number ([bp-0x8c]<7 @0x5D9F8).
+
+Port wiring: the player-capture site and the rival-takes-player-colony
+path now split @CAPTURED/@CAPTURED3 on G.declared, rivals CAPTURE
+(transfer + plunder, flagged amount) with @BURNED2 as the >=6-colonies
+raze fallback (the burn-vs-capture selector itself is unread, flagged);
+nativeRaid's burn outcome gains the @INDIANWINCOLONY massacre branch
+(undefended multi-colonist colony loses one colonist); newsTick gains a
+rival-vs-rival war segment (start/stop and battle rates flagged -- the
+war DRIVERS stay omitted per 2026-08-07m) emitting
+@EUROPEWIN/@EUROPELOSE with the byte-read verb rule and
+@CAPTURED2/@BURNED3 for third-party colony falls. G.rivalWars persists.
+
+Ledger: DONE 396 (+7), BLOCKED 26, MISSING 0. Suite 234/234 (new wire5).

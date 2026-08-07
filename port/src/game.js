@@ -5323,6 +5323,20 @@ function nativeRaid(v, c) {
           c.vanished = true;
           break;
         }
+        // @INDIANWINCOLONY (byte-attributed @0x5E01F, func_05CA7E: the
+        // human-visible massacre; INDIANWINCOLONY2 is its !human bulletin
+        // twin @0x5E026). The aftermath window decrements settlement size
+        // while size > 1 (dec [bx+4] @0x5D67A) -- mirrored: an undefended
+        // multi-colonist colony loses one colonist to the massacre; the
+        // trigger placement inside the raid ladder is the port's, flagged.
+        if (!burnable.length && c.colonists.length > 1 &&
+            !G.units.some(du => !du.ship && du.x === c.x && du.y === c.y)) {
+          const dead = c.colonists.pop();
+          showEvent('INDIANWINCOLONY',
+                    { STRING0: S.STRING0, STRING1: S.STRING3,
+                      STRING2: dead.profession || dead.type, STRING3: c.name });
+          break;
+        }
         if (!burnable.length) { showEvent('RAIDWREAK', S); break; }
         const b = burnable[Math.floor(Math.random() * burnable.length)];
         c.buildings.splice(c.buildings.indexOf(b), 1);
@@ -6827,11 +6841,12 @@ function checkContact() {
 // native-vs-rival raiding the engine genuinely has (manual: natives raid
 // every European power) with FLAGGED parameters -- the 1/24 rate, the
 // outcome split and the war-band-within-4 sourcing are the port's own.
-// AI-vs-AI European battles stay omitted with the AI-AI war drivers
-// (RULINGS 2026-08-07m), so @EUROPEWIN/@EUROPELOSE and the @INDIANWIN0-2
-// unit ambushes stay unwired; @LOOTFOREIGN (rival treasure fleets) has no
-// port model. @BURNED2/3-vs-INDIANBURNCOLONY2 caller attribution is
-// unread -- the native-specific key is used.
+// The rival-vs-rival segment below simulates the engine's AI wars with
+// byte-read bulletin conditions (func_05CA7E, RULINGS 2026-08-07z8):
+// @EUROPEWIN/@EUROPELOSE for settlement-less battles, @CAPTURED2/@BURNED3
+// for third-party colony falls. The war START drivers stay omitted
+// (2026-08-07m) -- the tick rates are flagged. @LOOTFOREIGN (rival
+// treasure fleets) still has no port model.
 function newsTick() {
   for (const r of G.rivals) {
     if (!r.met) continue;
@@ -6914,6 +6929,60 @@ function newsTick() {
       showEvent('INDIANLOSE', S);
     }
   }
+  // Rival-vs-rival wars. The engine genuinely fights AI wars and bulletins
+  // them through func_05CA7E; the port SIMULATES the war tick (the grievance
+  // drivers that start engine wars stay omitted -- RULINGS 2026-08-07m --
+  // so the start/stop and battle rates here are flagged). The BULLETIN
+  // conditions and wording are byte-read: a unit-vs-unit battle with no
+  // settlement emits @EUROPEWIN/@EUROPELOSE with the @MISC 73/74
+  // "defeat"/"defeats" verb chosen by the subject's plurality
+  // ([bp-0x8c]<7 test @0x5D9F8); a third-party colony fall emits
+  // @CAPTURED2 (capture, @0x5DEEA) or @BURNED3 (razing, @0x5DB12).
+  for (let i = 0; i < G.rivals.length; i++) {
+    for (let j = i + 1; j < G.rivals.length; j++) {
+      const a = G.rivals[i], b = G.rivals[j];
+      if (!a.met || !b.met) continue;
+      const k = `rr${a.nation}:${b.nation}`;
+      G.rivalWars = G.rivalWars || {};
+      if (!G.rivalWars[k]) {
+        if (Math.floor(Math.random() * 80) === 0) G.rivalWars[k] = true;
+        continue;
+      }
+      if (Math.floor(Math.random() * 80) === 0) { delete G.rivalWars[k]; continue; }
+      const roll = Math.random();
+      if (roll < 1 / 12) {
+        // A battle bulletin: winner/loser drawn between the pair.
+        const win = Math.random() < 0.5 ? a : b;
+        const lose = win === a ? b : a;
+        const types = ['Soldiers', 'Dragoons', 'Artillery', 'Caravel', 'Frigate'];
+        const ut = types[Math.floor(Math.random() * types.length)];
+        const near = (lose.colonies[0] || win.colonies[0] || {}).name ||
+                     DATA.regionname[G.nation];
+        const plural = (unit(ut) || {}).icon <= 6 || /s$/.test(ut);
+        const S = { STRING0: DATA.nations[win.nation].country,
+                    STRING1: DATA.nations[lose.nation].adjective,
+                    STRING2: ut, STRING3: near,
+                    STRING4: DATA.text.misc[plural ? 73 : 74] || 'defeat' };
+        showEvent(Math.random() < 0.5 ? 'EUROPEWIN' : 'EUROPELOSE', S);
+      } else if (roll < 1 / 12 + 1 / 40 && b.colonies.length) {
+        // A colony falls between them: capture (CAPTURED2) or razing
+        // (BURNED3), the same split the aftermath window draws.
+        const victim = Math.random() < 0.5 && a.colonies.length ? a : b;
+        const winner = victim === a ? b : a;
+        const vc = victim.colonies[Math.floor(Math.random() * victim.colonies.length)];
+        victim.colonies.splice(victim.colonies.indexOf(vc), 1);
+        if (Math.random() < 0.5 && winner.colonies.length < 6) {
+          winner.colonies.push({ ...vc, nation: winner.nation });
+          showEvent('CAPTURED2', { STRING0: DATA.nations[winner.nation].country,
+                                   STRING2: vc.name });
+        } else {
+          showEvent('BURNED3', { STRING0: DATA.nations[winner.nation].country,
+                                 STRING1: DATA.nations[victim.nation].adjective,
+                                 STRING3: vc.name });
+        }
+      }
+    }
+  }
 }
 function rivalTurn() {
   for (const r of G.rivals) {
@@ -6973,9 +7042,27 @@ function rivalTurn() {
         // is not modelled).
         const inside = G.units.find(p => p.x === target.x && p.y === target.y && !p.ship);
         if (inside) { resolveAttack(u, inside); continue; }
+        // The engine's aftermath (func_05CA7E) CAPTURES the settlement --
+        // transfer + plunder + the @CAPTURED family split @0x5DED1 (declared
+        // -> CAPTURED3; the winner-human @BURNED variant is the player's own
+        // razing, not this). A rival already holding six colonies razes
+        // instead (@BURNED2, the byte-attributed loser-human burn @0x5DB0B)
+        // -- the burn-vs-capture selector itself is unread, flagged.
         G.colonies.splice(G.colonies.indexOf(target), 1);
-        showEvent('BURNED', { STRING0: DATA.nations[r.nation].adjective,
-                              STRING1: target.name });
+        if (r.colonies.length < 6) {
+          const plunder = Math.min(G.gold, 50 * Math.max(1, target.colonists.length));
+          G.gold -= plunder;
+          r.colonies.push({ x: target.x, y: target.y, nation: r.nation,
+                            name: target.name, level: 0,
+                            pop: Math.max(1, target.colonists.length) });
+          showEvent(G.declared ? 'CAPTURED3' : 'CAPTURED',
+                    { STRING0: DATA.nations[r.nation].adjective,
+                      STRING2: target.name, NUMBER0: plunder });
+        } else {
+          showEvent('BURNED2', { STRING0: DATA.nations[G.nation].country,
+                                 STRING1: DATA.nations[r.nation].country,
+                                 STRING3: target.name });
+        }
         continue;
       }
       const step = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
@@ -10268,8 +10355,12 @@ function moveSel(dx, dy) {
                     buildings: STARTING_BUILDINGS.slice(),
                     hammers: 0, building: null, sol: 0 };
         G.colonies.push(c);
-        showEvent('CAPTURED', { STRING0: DATA.nations[G.nation].adjective,
-                                STRING2: rc.name, NUMBER0: loot });
+        // Byte-read split (func_05CA7E @0x5DED1): a human-involved capture
+        // announces @CAPTURED before the declaration and @CAPTURED3 (no
+        // plunder line) once [0x5382]&1 -- the declared flag -- is set.
+        showEvent(G.declared ? 'CAPTURED3' : 'CAPTURED',
+                  { STRING0: DATA.nations[G.nation].adjective,
+                    STRING2: rc.name, NUMBER0: loot });
         u.movesLeft = 0; advance(); return;
       }
       if (isColony && u.ship) {
@@ -12232,6 +12323,7 @@ dbgAddTab('Raw', () => {
     'royalFund', 'boycotts', 'declared', 'declaredYear', 'flags', 'lostWar',
     'upkeepUnpaid', 'mercSeen', 'interventionWatch', 'artilleryBought', 'ref',
     'refUnits', 'market', 'accum', 'colony', 'rivals', 'warMatrix', 'treatyMatrix',
+    'rivalWars',
     'parley', 'tribes', 'villages', 'natives', 'europe', 'dock', 'dockUnits',
     'euroShip', 'routes', 'marketSel', 'menuRow', 'briefPage', 'card', 'woodcut',
     'landHo', 'colonyView', 'colonyPopup', 'colonyPopupRow', 'colonistSel',
