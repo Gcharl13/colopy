@@ -210,8 +210,11 @@ def main():
                "WOODFRAM", "WDCUT01", "WDCUT02", "WDCUT03", "WDCUT04",
                "WDCUT05", "WDCUT07", "WDCUT08", "WDCUT09", "WDCUT10",
                "WDCUT11", "WDCUT13", "BUILDING",
-               # Advisor portraits: speaker channel [0x1F5E] 0..5.
-               "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5"] + \
+               # Advisor portraits: speaker channel [0x1F5E] 0..5; MYR0..3 are
+               # the missionary/conversation channel [0x1F60] (the European
+               # meeting-flow portraits).
+               "MSS0", "MSS1", "MSS2", "MSS3", "MSS4", "MSS5",
+               "MYR0", "MYR1", "MYR2", "MYR3"] + \
               [f"IND{t}A{a}" for t in range(8) for a in range(4)]
     want_ff = ["FONTINTR", "FONTKING", "FONT-NP", "FONTTINY", "FONTSMAL"]
 
