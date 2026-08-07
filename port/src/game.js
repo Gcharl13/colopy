@@ -9507,16 +9507,23 @@ function importSav(bytes) {
   beginGame();
   G.year = year; G.season = season; G.turn = turn; G.difficulty = diff;
   G.landHo = true; G.builtColony = true; G.metAnyone = true;
-  // An imported game is no fresh tutorial: mark every lesson shown. (The
-  // real [0x5386/7] mask lives in the SAV's globals block -- reading it is
-  // the Phase 4 importer item.)
-  G.tutMask = 0xFFFF;
+  // The globals block (0x5380, 0x8E bytes -- the serializer's block 3,
+  // func_0734F8 @0x073562, full 43-block order read 2026-08-07) carries the
+  // engine's own once-flags at fixed offsets; restore them verbatim:
+  //   g+0x06 = [0x5386] the shared flags word -- upper bits are the tutorial
+  //            step-shown guards (the low three are the sound switches, which
+  //            the port ignores; the two readings of 0x5386 coexist).
+  //   g+0x8A = [0x540A] the woodcut shown-bitmask, same 1<<plate convention.
+  G.tutMask = u16(g + 0x06);
+  // The 13 side-set steps' bit positions await the func_020F50 read; a
+  // restored game keeps them marked shown so none re-fire mid-game.
   G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
-  // A restored mid-game has seen its first-time plates: mark the whole
-  // shown-bitmask and every tribe as contacted. (The engine's own [0x540A]
-  // word is in the save but its block index is unread -- TBD.)
-  G.wcSeen = 0x3FFF;
+  G.wcSeen = u16(g + 0x8A);
   G.tribes.forEach(t => { t.met = true; });
+  // REF strength: [0x53DA/DC/DE/E0] = Regulars / Cavalry / Man-O-War /
+  // Artillery (COLONIZATION_TECHNICAL_REFERENCE.md 1117) = g+0x5A..0x60.
+  G.ref = { Regulars: u16(g + 0x5A), Cavalry: u16(g + 0x5C),
+            'Man-O-War': u16(g + 0x5E), Artillery: u16(g + 0x60) };
 
   // Map planes: terrain verbatim; improvements masked to the road/plow bits
   // the port models; fog verbatim -- SEEN already uses the engine's own

@@ -163,6 +163,36 @@ asserts the 1653 game's figures field by field.
   slot, keeps the top 5, and writes back `@0x3AE04..0x3AE43`. (Corrects
   `docs/DATA_MODEL.md`'s "1362 bytes" — that is the *function* size, not the file
   size.) The per-word score fields' meanings are **RESOLVED (see §6.5)**: the writer `func_03ADA6` treats exactly ONE word as the ranking score — the signed `int16` at record `+0x26` (`MOV ax,[bx+0x26]; CMP [bp+si-0xda],ax; JL` insertion-sort @0x3AECD..0x3AEDC, where stack base `[bp-0x100]`+0x26 = `[bp+si-0xda]`); every other field is display metadata. **Field roles CAPTURE-PINNED 2026-08-07** (two crafted-DAT rounds rendered live, `docs/screens/live_2026-08-07/hof_*.png` — this corrects the earlier static reading "+0x22 nation / +0x24 year"): name string @`+0x00`; **nation index @`+0x18`** (doubles as the empty sentinel, init 0xffff, `CMP[bp+si-0xe8],0;JL` empty-test — a valid nation 0..3 passes, 0xffff fails); **declared-independence flag @`+0x1a`** (draws the "Free " prefix and the "General, Continental Army" career); **independence-won flag @`+0x1c`** ("President, <@INDEPENDENT[nation]>", wins over the General line); **year @`+0x1e`** ("to A.D. <year>"); `+0x20` undisplayed; **difficulty @`+0x22`** (Discoverer…Viceroy title word); **score points @`+0x24`** ("Score: N"); **`+0x26` = the Colonization Rating %** ("--- Colonization Rating: N% ---") and the sole ranking key (func_03ADA6 @0x3AED0); `+0x28` undisplayed. (The old "nation @+0x22 SHL 1 → power-name table @0x3B16E" walk mis-identified the field: the render proves +0x22 selects the Discoverer…Viceroy title word, so the @0x3B16E string table is the difficulty-title list by inference from the capture — the disasm window has not been re-read.)
+- **The complete 43-block sequence — READ 2026-08-07** (parsed mechanically from the
+  annotated `save_serializer` disasm; the fixed tail sums to exactly the 727 bytes the
+  port's importer skips, cross-checking both). Each row is one `fwrite(ptr, size, 1, f)`;
+  variable blocks scale by the count words in the globals block:
+
+  | # | DGROUP | size | # | DGROUP | size | # | DGROUP | size |
+  |---|--------|------|---|--------|------|---|--------|------|
+  | 0 | `[0x81A]` copy | 2 | 15 | 0x9410 | 4 | 30 | 0x918C | 0x40 |
+  | 1 | 0x853A | 4 (map w/h) | 16 | 0x9180 | 4 | 31 | 0x9572 | 0x40 |
+  | 2 | 0x5380 | 0x8E (globals) | 17 | 0x9414 | 4 | 32 | 0x944E | 8 |
+  | 3 | 0x540E | 0xD0 | 18 | 0x9418 | 4 | 33 | 0x336 | 1 |
+  | 4 | 0x948E | 0x18 | 19 | 0x941C | 8 | 34 | 0x9184 | 8 |
+  | 5 | 0x5D46 | ncol·0xCA | 20 | 0x9424 | 4 | 35 | 0x9622 | 8 |
+  | 6 | 0x3144 | nunit·0x1C | 21 | 0x9428 | 4 | 36 | 0x962A | 8 |
+  | 7 | 0x8808 | 0x4F0 (powers) | 22 | 0x942C | 4 | 37 | 0x91CC | 0x80 |
+  | 8 | 0x54EC | nvill·0x12 | 23 | 0x924C | 0x4C | 38 | 0x8540 | 2 |
+  | 9 | 0x5AD6 | 0x270 (tribes) | 24 | 0x947E | 0x10 | 39 | 0x853E | 2 |
+  | 10 | 0x9566 | 0xC | 25 | 0x95F2 | 0x10 | 40 | 0x184 | 2 |
+  | 11 | 0x8CFC | 4 | 26 | 0x94A6 | 0x40 | 41 | 0x17C | 2 |
+  | 12 | 0x9298 | 4 | 27 | 0x94E6 | 0x40 | 42 | 0x17E | 2 |
+  | 13 | 0x9408 | 4 | 28 | 0x95B2 | 0x40 | | (map planes follow) | |
+  | 14 | 0x940C | 4 | 29 | 0x9526 | 0x40 | | | |
+
+  Because block 2 is the raw globals dump, the engine's once-flags sit at fixed offsets
+  inside it: **`g+0x06` = `[0x5386]`** (the SHARED flags word — low three bits the sound
+  switches, upper bits the tutorial step-shown guards; the "sound mirror" and "tutorial
+  mask" readings coexist, which also re-reads the `0x0E` new-game seed as sound-defaults-ON,
+  not "three steps pre-shown"), **`g+0x5A..0x60` = `[0x53DA/DC/DE/E0]`** REF
+  Regulars/Cavalry/Man-O-War/Artillery, **`g+0x8A` = `[0x540A]`** the woodcut shown-bitmask.
+  The port's importer restores all three verbatim (2026-08-07).
 - Any compression on the save: **RESOLVED — none.** The loader `func_073BB0` is a 1:1
   mirror of the writer: it makes exactly **43× raw `fread`** (`0xD1D:0x528`), one per DGROUP
   block, with no decompression/transform pass (the only other stream calls are a single

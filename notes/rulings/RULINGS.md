@@ -8906,3 +8906,30 @@ europe_port_2ships.png, europe_reallybuy_confirm.png).
 Port: EURO_DOCK/EURO_SHIP pitches corrected, drawSack added at all three
 sites. Suite 233/233; shots 47/47; render-diff 15/15 (europe pair
 improved 11336 -> 11215). Spec: europe_screen.md §0.2.
+
+## 2026-08-07z5 — the save serializer's 43-block order read; tutorial/woodcut/REF import closed
+
+Parsed func_0734F8's complete fwrite sequence from the annotated disasm
+(spec/systems/save.md now carries the full 43-row table). The fixed tail
+sums to EXACTLY the 727 bytes the importer skips -- the two readings
+cross-check. Because block 2 is the raw globals dump (0x5380, 0x8E), the
+three outstanding import TBDs are fixed offsets inside a block the
+importer already locates:
+
+- g+0x06 = [0x5386]: the SHARED flags word. The "sound mirror"
+  (tech-ref) and "tutorial mask" (tutorial.md) readings COEXIST -- low
+  three bits are the sound switches, upper bits the tutorial guards.
+  This also re-reads the new-game seed `mov [0x5386],0x0E @0x755EB` as
+  sound-defaults-ON, not "three tutorial steps pre-shown" (the port's
+  tutMask seed keeps 0x0E; bits 1-3 guard nothing in the port).
+- g+0x5A..0x60 = [0x53DA/DC/DE/E0] REF Regulars/Cavalry/Man-O-War/
+  Artillery (order per the F2 draw + tech-ref 1117).
+- g+0x8A = [0x540A] the woodcut shown-bitmask (same 1<<plate model).
+
+importSav now restores all three verbatim (the all-shown/formula
+stand-ins are gone; the 13 side-set tutorial steps stay marked shown on
+import until func_020F50 attributes their bits). Validated against
+COLONY00.SAV: tutMask 0xFF9E (sound bits set, consistent with the
+shared-word reading), REF 19/7/3/4, woodcut mask 0x177F, year 1653.
+
+Suite 233/233; shots 47/47; render-diff 15/15.
