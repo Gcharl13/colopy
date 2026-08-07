@@ -8571,3 +8571,30 @@ item).
 
 Suite: 232/232 (tutorial idempotence + Discoverer gate in the wire3 block;
 the woodcut block drains the fresh-game lesson it now begins with).
+
+## 2026-08-07t — Phase 3: news-bulletin ticker + the native land claim
+
+- **newsTick() (4 keys).** The third-party bulletin bus, scoped to what the
+  engine's behaviour supports in the port's reduced AI: native-vs-rival
+  raiding (manual: natives raid every European power) as a rare simulated
+  skirmish -- war-band village within 4 of a rival colony, outcomes
+  @INDIANBURNCOLONY2 (colony razed) / @INDIANWINCOLONY2 (colonists lost) /
+  @INDIANLOSE (repelled) -- and @VIOLATE for a rival unit loitering beside
+  our colonies at peace. The 1/24 rates, the outcome split, the radius and
+  the STRING4 verb ("defeat") are ALL the port's flagged parameters.
+  DELIBERATELY UNWIRED, each with its reason: @EUROPEWIN/@EUROPELOSE +
+  @INDIANWIN0-2 (need AI-vs-AI battles -- omitted with the AI-AI war
+  drivers, RULINGS 2026-08-07m), @LOOTFOREIGN (no rival treasure-fleet
+  model), @BURNED2/3 + @CAPTURED2/3 (caller attribution vs the
+  native-specific keys unread).
+- **Native land claim (4 keys).** Founding a colony inside a tribe's
+  country (village within 2, the objection radius) now runs the claim
+  chain ahead of the founding confirms: hostile-ish bands ask @INDIANLAND
+  (leave / pay demandValue(100), zeroed by Peter Minuit, acknowledged by
+  @INDIANBRIBE / "OUR land now" at +15 tension via @PISS5); a Content-band
+  tribe instead bows -- @INDIANTREATY (Yes floors their tension) or plain
+  @INDIANBOW, split 50/50. The band split, the price and the bow odds are
+  flagged readings.
+
+Suite: 233 checks (landClaim in the wire3 block; the basic-founding walk
+clears claim-radius villages first).

@@ -66,9 +66,13 @@ SCRIPT = """() => {
   skipUnit();
   out.skipHeldPosition = (pio.x === held[0] && pio.y === held[1]);
 
-  // Build Colony on the tile the party is standing on.
+  // Build Colony on the tile the party is standing on. Clear any village
+  // inside the land-claim radius so the @INDIANLAND chain stays out of this
+  // basic-founding walk (it has its own check).
   G.sel = G.units.findIndex(u => !u.ship);
   const founder = G.units[G.sel];
+  G.villages = G.villages.filter(v =>
+    Math.abs(v.x - founder.x) > 2 || Math.abs(v.y - founder.y) > 2);
   buildColony();
   // The founding-validation confirms (@NOPORT / @TUTNOSPACES / @TUTNOLUMBER,
   // func_022542) may precede the name dialog; row 2 proceeds through each.
@@ -1335,7 +1339,30 @@ SCRIPT = """() => {
                     DATA.events.INDIANCOME && DATA.events.INDIANFOREST &&
                     DATA.events.INDIANFOREST2 && DATA.events.PISS0 &&
                     DATA.events.SOONRETIRING0 && DATA.events.RETIRING2 &&
+                    DATA.events.INDIANLAND && DATA.events.INDIANTREATY &&
+                    DATA.events.INDIANBOW && DATA.events.INDIANBRIBE &&
+                    DATA.events.VIOLATE && DATA.events.INDIANWINCOLONY2 &&
+                    DATA.events.INDIANBURNCOLONY2 && DATA.events.INDIANLOSE &&
                     DATA.attitudinal && DATA.scorenames && DATA.scorenames.length);
+    // The land claim: founding beside a hostile-band village asks
+    // @INDIANLAND; "OUR land now" costs tension (@PISS5).
+    w3.landClaim = (() => {
+      const vv2 = G.villages[0];
+      if (!vv2) return true;
+      G.tribes[vv2.tribe].tension = 45;
+      const settler2 = mkUnit('Colonists', vv2.x + 1, vv2.y);
+      G.units.push(settler2); G.sel = G.units.indexOf(settler2);
+      const ti3 = vv2.y * MAP.w + (vv2.x + 1), sv3 = MAP.tiles[ti3];
+      MAP.tiles[ti3] = 3;
+      const cs = G.colonies.length;
+      G.dialog = null; buildColony();
+      const asked = !!(G.dialog && /trespassing/i.test(G.dialog.body.join(' ')));
+      closeDialog(0);                                // we leave
+      const left = G.colonies.length === cs;
+      G.units.splice(G.units.indexOf(settler2), 1);
+      MAP.tiles[ti3] = sv3; G.tribes[vv2.tribe].tension = 0;
+      return asked && left;
+    })();
     out.wire3 = w3;
   }
 

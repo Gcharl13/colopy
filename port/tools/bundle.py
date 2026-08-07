@@ -299,6 +299,11 @@ def build_data():
               "@INDIANCOMMENT", "@INDIANCOME",
               "@INDIANFOREST", "@INDIANFOREST2",
               # The retirement clock + endgame sequence.
+              # The news-bulletin bus (native-vs-rival raids + territory).
+              "@INDIANWINCOLONY2", "@INDIANBURNCOLONY2", "@INDIANLOSE",
+              "@VIOLATE",
+              # The native land claim on founding.
+              "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               "@SOONRETIRING0", "@SOONRETIRING1", "@RETIRING", "@RETIRING2",
               "@EXPLOITS", "@SCORED",
               # The tutorial lessons (spec/systems/tutorial.md -- bitmask

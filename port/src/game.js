@@ -1883,7 +1883,50 @@ function buildColony() {
       if (choice === 1) askScans(k + 1, then);   // row 2 = proceed
     });
   };
-  askScans(0, () => nameAndFound());
+  const startScans = () => askScans(0, () => nameAndFound());
+  // The native land claim: founding inside a tribe's country (a village
+  // within 2 -- the objection radius, flagged) draws @INDIANLAND (leave /
+  // pay -- @INDIANBRIBE acknowledges, Peter Minuit zeroes it / take it,
+  // with the population-pressure tension cost). A Content-band tribe
+  // instead BOWS: @INDIANTREATY offers the land with a peace treaty (Yes
+  // floors their tension), or plain @INDIANBOW. The band split and the
+  // price (demandValue(100)) are the port's flagged readings.
+  const claimV = G.villages.find(v =>
+    Math.abs(v.x - u.x) <= 2 && Math.abs(v.y - u.y) <= 2);
+  const claimT = claimV && G.tribes[claimV.tribe];
+  if (claimT) {
+    G.eventTribe = claimV.tribe;
+    if ((claimT.tension || 0) < 20) {
+      if (Math.random() < 0.5) {
+        askEvent('INDIANTREATY', { STRING0: claimT.name,
+                                   STRING1: DATA.nations[G.nation].adjective },
+                 (choice) => {
+          if (choice === 0) claimT.tension = 0;
+          startScans();
+        });
+      } else {
+        showEvent('INDIANBOW', { STRING0: claimT.name,
+                                 STRING1: DATA.nations[G.nation].adjective });
+        startScans();
+      }
+      return;
+    }
+    const pay = G.fathersOwned.includes('Peter Minuit') ? 0 : demandValue(100);
+    askEvent('INDIANLAND', { STRING0: claimT.name, NUMBER1: pay }, (choice) => {
+      if (choice === 0) return;                       // we leave
+      if (choice === 1) {
+        if (G.gold < pay) { showEvent('NOTENOUGH', { NUMBER0: G.gold }); return; }
+        G.gold -= pay;
+        showEvent('INDIANBRIBE', {});
+        startScans();
+        return;
+      }
+      adjustTension(claimV.tribe, 15, 5);             // "OUR land now" (@PISS5)
+      startScans();
+    });
+    return;
+  }
+  startScans();
   function nameAndFound() {
   openDialog('COLONY', (name) => {
     const nm = (name || '').trim() || suggested;
@@ -6430,6 +6473,53 @@ function checkContact() {
 // straight-line war march stands in for the goto executor's path scoring
 // (func_04E2D6 step 5, unported); both stand-ins are flagged here rather
 // than papered over with invented cadences.
+// ------------------------------------------------------- news bulletins
+// The third-party outcome bus (COMPLETION_PLAN Phase 3). The engine
+// resolves AI battles and bulletins what the player learns of; the port's
+// reduced AI fights only the player, so this ticker SIMULATES the
+// native-vs-rival raiding the engine genuinely has (manual: natives raid
+// every European power) with FLAGGED parameters -- the 1/24 rate, the
+// outcome split and the war-band-within-4 sourcing are the port's own.
+// AI-vs-AI European battles stay omitted with the AI-AI war drivers
+// (RULINGS 2026-08-07m), so @EUROPEWIN/@EUROPELOSE and the @INDIANWIN0-2
+// unit ambushes stay unwired; @LOOTFOREIGN (rival treasure fleets) has no
+// port model. @BURNED2/3-vs-INDIANBURNCOLONY2 caller attribution is
+// unread -- the native-specific key is used.
+function newsTick() {
+  for (const r of G.rivals) {
+    if (!r.met) continue;
+    // @VIOLATE: a rival unit loitering beside one of our colonies at peace.
+    if (!atWar(G.nation, r.nation) && Math.floor(Math.random() * 24) === 0) {
+      const tres = r.units.find(u => G.colonies.some(c =>
+        Math.abs(c.x - u.x) <= 1 && Math.abs(c.y - u.y) <= 1));
+      const nearC = tres && G.colonies.find(c =>
+        Math.abs(c.x - tres.x) <= 1 && Math.abs(c.y - tres.y) <= 1);
+      if (nearC)
+        showEvent('VIOLATE', { STRING0: DATA.nations[r.nation].adjective,
+                               STRING1: DATA.nations[G.nation].adjective,
+                               STRING2: nearC.name });
+    }
+    if (!r.colonies.length || Math.floor(Math.random() * 24) !== 0) continue;
+    const rc = r.colonies[Math.floor(Math.random() * r.colonies.length)];
+    const v = G.villages.find(w => (w.alarm || 0) >= ALARM_RAID &&
+      Math.abs(w.x - rc.x) <= 4 && Math.abs(w.y - rc.y) <= 4);
+    if (!v) continue;
+    const t = G.tribes[v.tribe];
+    if (!t) continue;
+    const S = { STRING0: t.name, STRING1: DATA.nations[r.nation].adjective,
+                STRING2: 'Soldiers', STRING3: rc.name, STRING4: 'defeat' };
+    const roll = Math.random();
+    if (roll < 0.2 && (rc.pop || 1) <= 1) {
+      r.colonies.splice(r.colonies.indexOf(rc), 1);
+      showEvent('INDIANBURNCOLONY2', S);
+    } else if (roll < 0.5) {
+      rc.pop = Math.max(1, (rc.pop || 1) - 1);
+      showEvent('INDIANWINCOLONY2', S);
+    } else {
+      showEvent('INDIANLOSE', S);
+    }
+  }
+}
 function rivalTurn() {
   for (const r of G.rivals) {
     const war = atWar(G.nation, r.nation);
@@ -9167,6 +9257,7 @@ function endTurn() {
   // every-village-every-turn raid loop is gone with its RAID_GATE_K stub.
   nativeMoveAI();
   rivalTurn();
+  newsTick();
   kingTaxDemand();
   advanceTradeRoutes();
   advanceGoTo();
