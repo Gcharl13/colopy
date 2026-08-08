@@ -374,6 +374,15 @@ Click a title to open its dropdown; `Alt`+underlined-letter opens it from the ke
 2026-05-31). Per-title click-x origins are **R** (C-recon only) — blocker: bar-title draw is
 overlay-resident (`MENUS_VICEROY_DECODE.md` §7.2, open item 1).
 
+**Gesture model (B):** the pulldown is a HELD interaction — it lives only while the button
+is down (`func_06E3D0` @0x6ECCF), re-hit-tests the rows on each poll where the moved flag
+is set (@0x6E5B1, rects @0x6E5BB–0x6E667), and **commits the highlighted row on the RELEASE
+edge** (@0x6EC70). So the native gesture is press-on-title → drag to the row → release.
+(Port note 2026-08-08: the HTML port drives all three edges — press opens, held move tracks
+rows and slides across bar titles, release commits — and additionally keeps the menu open
+after a no-move release on the title so a plain click leaves a browsable pulldown; that
+click-click mode is the port's own web convenience, not engine behaviour.)
+
 | Key / region | Action | Tier | Citation |
 |---|---|---|---|
 | Click `~GAME` / Alt-G | open Game pulldown | B (title) / R (x) | `MENU @GAME` `~GAME`; `func_06E3D0` @0x06E3D0 |

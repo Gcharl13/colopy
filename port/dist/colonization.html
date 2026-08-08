@@ -814,6 +814,13 @@ function beginGame() {
   G.dockUnits = []; G.artilleryBought = 0; G.crosses = 0;
   G.fathersOwned = []; G.bells = 0; G.bellsPerTurn = 0;
   G.fatherInProgress = null; G.declared = false; G.boycotts = [];
+  // The endgame flag word must clear with the rest: WOI_DECLARED leaking
+  // through a New Game left woiLocked() refusing colonies in the fresh game.
+  G.flags = 0; G.declaredYear = 0; G.upkeepUnpaid = false;
+  G.rivalWars = {}; G.goTo = null; G.report = null;
+  // No modal survives into a fresh game: a dialog left open by the previous
+  // session would otherwise be "answered" by the first click of the new one.
+  G.dialog = null; G.colonyPopup = null; G.dragArm = null; G.drag = null;
   G.eventQueue = []; G.raidSeen = false; G.villageMode = 'actions';
   G.wcSeen = 0; G.wcAfter = null;    // woodcut shown-bitmask ([0x540A])
   G.eventTribe = -1;                 // popup tribe-speaker channel ([0x1F5C])
@@ -1851,6 +1858,15 @@ function drawPulldown(ctx) {
     }
   });
 }
+// Which menu-bar title sits under x, or -1 (the same 2px-padded spans the
+// click path always used).
+function barTitleAt(mx) {
+  for (let i = 0; i < BAR_TITLES.length; i++) {
+    const [t, x] = BAR_TITLES[i];
+    if (mx >= x - 2 && mx < x + FONT.tiny.width(t) + 2) return i;
+  }
+  return -1;
+}
 function openMenu(mi) { G.openMenu = mi; G.menuSel = 0; }
 function runMenuRow() {
   const m = DATA.menus[G.openMenu];
@@ -2176,14 +2192,27 @@ function beginGoTo() {
   const u = G.units[G.sel];
   if (!u) return;
   // @TRAVELPLACE (land) / @SAILPORT (ships): "Select a colony/port to
-  // travel to" -- the destination picker; Escape leaves click-to-target.
+  // travel to" -- the shared destination picker func_060026 (spec/ui/
+  // trade_routes.md par.3): rows = eligible own colonies, then the EUROPE ROW
+  // FOR SHIPS ONLY (label = the per-nation port name [0x838C]); picking
+  // Europe sets sail (func_022CDC). Escape leaves click-to-target. The
+  // picker's 10-row paging and current-location exclusion are not modelled.
   const dests = u.ship ? coastalColonies() : G.colonies;
-  if (dests.length) {
+  const rows = dests.map(c => c.name);
+  if (u.ship) rows.push(DATA.nations[G.nation].homeport);
+  if (rows.length) {
     askEvent(u.ship ? 'SAILPORT' : 'TRAVELPLACE', {}, (k) => {
       if (k >= 0 && k < dests.length) { setGoTo(u, dests[k].x, dests[k].y); return; }
+      if (u.ship && k === dests.length) {
+        if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
+        sailForEurope(u);
+        G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
+        G.screen = 'europe';
+        return;
+      }
       G.goTo = u;
       G.msg = 'Click the tile to travel to.';
-    }, dests.map(c => c.name));
+    }, rows);
     return;
   }
   G.goTo = u;
@@ -4181,7 +4210,10 @@ const SACK_ROWS = [
 ];
 function drawSack(ctx, x, y) {
   const c = DATA.nations[G.nation].color;
-  const cols = { K: ink(0), N: lut(c), b: lut(c - 8) };
+  // ink(), not lut(): lut() is the 3-level FONT palette array, which is not a
+  // canvas fillStyle -- feeding it one left every N/b pixel painted with the
+  // previous style (black), turning the sack into a black box.
+  const cols = { K: ink(0), N: ink(c), b: ink(c - 8) };
   SACK_ROWS.forEach((row, dy) => {
     for (let dx = 0; dx < row.length; dx++) {
       if (row[dx] === '.') continue;
@@ -11203,6 +11235,25 @@ function onPointerDown(mx, my, right, shift) {
   if (G.combat || G.eventQueue.length || G.dialog) return;
   if (G.screen === 'colony') return colonyPointerDown(mx, my, shift);
   if (G.screen === 'europe') return europePointerDown(mx, my, shift);
+  if (G.screen === 'map') {
+    // A pulldown OPENS ON THE PRESS EDGE, like the engine's (the pulldown is
+    // entered from the poll's held-button branch and lives only while held,
+    // @0x6ECCF) -- the port used to open it only from the synthetic click
+    // event, which made the native press-drag-release gesture a dead press
+    // followed by a stray map click.
+    if (G.openMenu >= 0) {
+      const row = menuRowAt(mx, my);
+      if (row >= 0) { G.menuSel = row; return; }
+      const t = barTitleAt(mx);
+      if (my < 8 && t >= 0) { openMenu(t); return; }
+      G.openMenu = -1;
+      return;
+    }
+    if (my < 8) {
+      const t = barTitleAt(mx);
+      if (t >= 0) openMenu(t);
+    }
+  }
 }
 
 function colonyPointerDown(mx, my, shift) {
@@ -11326,7 +11377,14 @@ function onPointerMove(mx, my) {
   // the ghost appears under a stationary held button and you can see you are
   // carrying him. A press that releases without ever moving is turned back into
   // a click in onPointerUp instead.
-  if (G.dragArm && PTR.down && G.wallClock - G.dragArm.at >= DRAG_HOLD_MS) {
+  // ... OR as soon as the press travels beyond click jitter: the engine's
+  // timer-only lift made a quick flick (press-drag-release inside 131 ms)
+  // drop the man silently, which read as "assignment is broken". Distance
+  // promotion is the port reconciling its event-driven input with the
+  // engine's poll loop (where a flick that fast cannot exist). UNCITED.
+  if (G.dragArm && PTR.down &&
+      (G.wallClock - G.dragArm.at >= DRAG_HOLD_MS ||
+       Math.abs(mx - PTR.downX) > 3 || Math.abs(my - PTR.downY) > 3)) {
     const c = G.colonies[G.colony];
     const p = c && c.colonists[G.dragArm.colonist];
     if (p) {
@@ -11342,6 +11400,12 @@ function onPointerMove(mx, my) {
   if (G.screen === 'map' && G.openMenu >= 0 && PTR.down) {
     const row = menuRowAt(mx, my);
     if (row >= 0) G.menuSel = row;
+    // Sliding along the bar while held walks the open pulldown across the
+    // titles, as the engine's held-poll re-hit-tests the bar every pass.
+    else if (my < 8) {
+      const t = barTitleAt(mx);
+      if (t >= 0 && t !== G.openMenu) openMenu(t);
+    }
   }
   // The pre-game pickers are drag-live too: the cell under the cursor is
   // committed to the selection word on every poll while the button is down
@@ -11357,11 +11421,19 @@ function onPointerUp(mx, my, right) {
   G.dragArm = null;
   if (right) return;
   // A pulldown commits on the RELEASE edge (@0x6EC70) and stays open only while
-  // the button is held (@0x6ECCF).
-  if (G.screen === 'map' && G.openMenu >= 0 && PTR.moved) {
+  // the button is held (@0x6ECCF). The menu gesture owns the whole press, so
+  // the browser's synthetic click that follows is suppressed -- without that,
+  // the click either re-closed the menu the press had just opened or leaked
+  // through to whatever the row's command put on screen.
+  if (G.screen === 'map' && G.openMenu >= 0) {
+    PTR.suppressClick = true;
     const row = menuRowAt(mx, my);
-    if (row >= 0) { G.menuSel = row; runMenuRow(); }
-    else G.openMenu = -1;
+    if (row >= 0) { G.menuSel = row; runMenuRow(); return; }
+    // Released on the bar: the menu stays open, so a plain CLICK on the title
+    // leaves a browsable pulldown (the port's click-click mode; the engine has
+    // only the held gesture).
+    if (my < 8 && barTitleAt(mx) >= 0) return;
+    G.openMenu = -1;
     return;
   }
   const d = G.drag;

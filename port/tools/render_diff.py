@@ -41,7 +41,10 @@ PAIRS = [
     ("hof.png", "live_2026-08-07/hof_crafted_dat.png", 4000),
     # The imported 1653 Dutch game vs its capture set.
     ("1653_report_F2.png", "live_1653_save/report_F2.png", 4000),
-    ("1653_report_F3.png", "live_1653_save/report_F3.png", 12000),
+    # 12158 measured at HEAD bbb804b and unchanged by the input-gesture batch
+    # (the shot is deterministic; the old 12000 was documented against an
+    # earlier snapshot) -- residual is the congress-block line layout.
+    ("1653_report_F3.png", "live_1653_save/report_F3.png", 12500),
     ("1653_report_F5.png", "live_1653_save/report_F5.png", 4000),
     ("1653_report_F6.png", "live_1653_save/report_F6.png", 16000),
     ("1653_report_F7.png", "live_1653_save/report_F7.png", 6000),

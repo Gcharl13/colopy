@@ -1,4 +1,4 @@
-# GAME.TXT message keys - implementation status (generated 2026-08-07)
+# GAME.TXT message keys - implementation status (generated 2026-08-08)
 
 Regenerate with `python3 port/tools/message_status.py`.  DONE = text
 bundled AND a live call site exists; DONE-VIA-DATA = consumed through

@@ -651,8 +651,15 @@ SCRIPT = """() => {
     // after both were built. Nothing on the map keyboard may claim that.
     beginGame(); G.screen = 'map'; G.sel = 0;
     const tap = (c) => onKey({ key: c, preventDefault() {}, altKey: false, shiftKey: false });
+    // A ship's picker now always offers the Europe crossing, so even with no
+    // colonies 'g' opens the @SAILPORT dialog (homeport last); Escape falls
+    // back to click-to-target.
     tap('g');
-    out.keyGoTo = G.goTo === G.units[0] && !/not in this build/.test(G.msg || '');
+    const gRows = (G.dialog && G.dialog.opts) || [];
+    out.keyGoTo = gRows[gRows.length - 1] === DATA.nations[G.nation].homeport &&
+                  !/not in this build/.test(G.msg || '');
+    dialogKey('Escape');
+    out.keyGoTo = out.keyGoTo && G.goTo === G.units[0];
     G.goTo = null;
     // With no routes yet, 't' correctly raises @TRADENONE rather than opening an
     // empty screen -- either way it must not be the old stub message.
@@ -1444,6 +1451,86 @@ SCRIPT = """() => {
     window.raidOutcome = rollOrig;
     w5.massacre = fired && mc.colonists.length === 1;
     out.wire5 = w5;
+  }
+
+  // ---- the input-gesture fix batch (Go To Europe row, press-edge menus,
+  // ---- flick drags, nation-sack ink) ----
+  {
+    beginGame(); G.screen = 'map';
+    const w6 = {};
+    // 1. A ship's Go To picker lists every coastal colony then the homeport,
+    //    and the homeport row sails for Europe.
+    G.colonies.push({ name: 'Porto', x: G.units[0].x - 2, y: G.units[0].y,
+                      nation: G.nation, colonists: [{ type: 'Colonists' }],
+                      stock: DATA.cargo.map(() => 0),
+                      buildings: STARTING_BUILDINGS.slice(),
+                      hammers: 0, building: null, sol: 0 });
+    G.sel = 0; G.dialog = null;
+    beginGoTo();
+    const rows = (G.dialog && G.dialog.opts) || [];
+    w6.goToRows = rows.length >= 2 &&
+                  rows[rows.length - 1] === DATA.nations[G.nation].homeport;
+    closeDialog(rows.length - 1);
+    w6.goToSails = G.screen === 'europe' &&
+                   G.europe.some(e => e.state === 'toEurope');
+    G.screen = 'map'; G.europe.length = 0;
+    // 2. The pulldown opens on the press edge and commits on release.
+    // (The ship is IN G.europe now, not G.units -- anchor on the colony.)
+    G.units.push(mkUnit('Colonists', G.colonies[0].x - 4, G.colonies[0].y));
+    const lu = G.units[G.units.length - 1];
+    MAP.tiles[lu.y * MAP.w + lu.x] = 2;
+    G.tribes.forEach(t => t.tension = 0);
+    G.sel = G.units.length - 1; G.dialog = null; G.eventQueue.length = 0;
+    PTR.down = true; PTR.moved = false; PTR.downX = 85; PTR.downY = 4;
+    onPointerDown(85, 4, false, false);
+    w6.menuOpensOnPress = G.openMenu === 2;
+    PTR.moved = true;
+    onPointerMove(95, 53);                       // row 5 = Build Colony
+    w6.menuTracksHeld = G.menuSel === 5;
+    onPointerUp(95, 53, false);
+    PTR.down = false; PTR.suppressClick = false;
+    w6.menuCommitsOnRelease = !!G.dialog;
+    for (let i = 0; i < 5 && G.dialog && G.dialog.entry === undefined; i++) closeDialog(1);
+    if (G.dialog && G.dialog.entry !== undefined) closeDialog(G.dialog.entry);
+    G.eventQueue.length = 0;
+    w6.menuFounded = G.colonies.length === 2;
+    // 3. A fast flick (no 131ms hold) still lifts and lands the colonist.
+    G.colony = G.colonies.length - 1; G.screen = 'colony';
+    const cc = G.colonies[G.colony];
+    if (!cc.buildings.includes("Blacksmith's House"))
+      cc.buildings.push("Blacksmith's House");
+    cc.colonists.forEach(p => { p.cell = null; p.job = null; });
+    const pe = plazaRow(cc).filter(q2 => q2.colonist >= 0)[0];
+    const sx = pe.x + (pe.w >> 1), sy = PLAZA_ROW_Y + (pe.h >> 1);
+    const present = colonyPlacement(cc);
+    let dst = null;
+    PLOTS.forEach((pl, i) => {
+      const id = present[i];
+      if (id >= 0 && (DATA.buildings[id] || {}).name === "Blacksmith's House") {
+        const [fw, fh] = frameSize('BUILDING', buildingFrame(cc, id));
+        dst = [pl[0] + (fw >> 1), pl[1] + 8 + (fh >> 1)];
+      }
+    });
+    PTR.down = true; PTR.moved = false; PTR.downX = sx; PTR.downY = sy;
+    onPointerDown(sx, sy, false, false);
+    PTR.moved = true;
+    onPointerMove(sx + 8, sy - 8);               // beyond jitter, inside 131ms
+    w6.flickLifts = !!G.drag;
+    onPointerUp(dst[0], dst[1], false);
+    PTR.down = false; PTR.suppressClick = false;
+    w6.flickAssigns = cc.colonists[pe.colonist].job === 'Blacksmith';
+    // 4. The nation sack paints the nation colour, not fillStyle-fallback
+    //    black (the lut()-as-fillStyle regression).
+    const oc = document.createElement('canvas');
+    oc.width = 16; oc.height = 16;
+    const octx = oc.getContext('2d');
+    usePalette('EUROPE');
+    drawSack(octx, 0, 0);
+    const px = octx.getImageData(3, 3, 1, 1).data;
+    const nc = PAL[DATA.nations[G.nation].color];
+    w6.sackInk = px[0] === nc[0] && px[1] === nc[1] && px[2] === nc[2];
+    G.screen = 'map';
+    out.wire6 = w6;
   }
 
   // ---- treasure transport and fog of war ----
@@ -3398,6 +3485,9 @@ def main():
         ("aftermath bulletins: seven keys bundled, CAPTURED3 body, the "
          "massacre branch fires",
          all(r["wire5"].values()), r["wire5"]),
+        ("input gestures: Go To lists colonies + Europe, pulldown opens on "
+         "press and commits on release, flick drags land, sack ink",
+         all(r["wire6"].values()), r["wire6"]),
     ]
     bad = 0
     for name, ok, got in checks:

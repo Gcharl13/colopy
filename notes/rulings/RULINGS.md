@@ -9173,3 +9173,55 @@ priority order, withdraw/threat sub-branch, smite price) are refinements
 to a working system with no new keys, left flagged.
 
 Suite 234/234.
+
+## 2026-08-08a — Input-gesture fix batch (user defect report)
+
+User report: (1) "g / Go to Port should list all the colonies or go to
+Europe"; (2) colonists cannot be dragged into buildings (Blacksmith);
+(3) ORDERS "Build Colony" does nothing. Root causes + rulings:
+
+- **Go To Europe row.** The port's beginGoTo listed only colonies. The
+  spec already carried the byte-read answer: the shared destination
+  picker `func_060026` (spec/ui/trade_routes.md par.3) appends a EUROPE
+  ROW FOR SHIPS ONLY (label = per-nation port name [0x838C]); picking it
+  sets sail (`func_022CDC`). The port now appends the homeport row for
+  ships and sails on selection (woiLocked -> EUROPENOTAVAIL). The
+  picker's 10-row paging and current-location exclusion remain
+  unmodelled (flagged in the code comment).
+- **Pulldown press edge.** The engine's pulldown is a HELD interaction:
+  opens from the held-poll, re-hit-tests rows while the moved flag is
+  set (@0x6E5B1), commits the row on the RELEASE edge (@0x6EC70), lives
+  only while held (@0x6ECCF). The port only opened menus from the
+  browser's synthetic click, so the native press-drag-release gesture
+  was a dead press plus a stray map click -- which is exactly "Build
+  Colony is not working". The port now drives all three edges and keeps
+  a no-move title release open (click-click mode, port convenience,
+  marked as such). spec/ui/input.md pulldown section updated with the
+  gesture model + port note.
+- **Flick drags.** The engine lifts a held colonist by TIMER alone (8
+  ticks = 131 ms). In the port's event-driven input a fast flick ends
+  before the timer, silently dropping the man -- "cannot bring colonists
+  to buildings". The armed colonist now also promotes on >3px of travel
+  (port reconciliation, UNCITED, same class as the existing 2px click
+  allowance).
+- **Nation sack ink (user question: "what are these black boxes").**
+  drawSack fed lut() -- the 3-level FONT palette ARRAY -- to
+  ctx.fillStyle, an invalid value the canvas ignores, so every sack
+  painted in the leftover style: black boxes beside the crossing
+  passengers/dock units. Fixed to ink(); regression check reads the
+  painted pixel against PAL[nation colour].
+- **New-game state leak (found by the gates).** beginGame never reset
+  G.flags -- WOI_DECLARED survived into a NEW GAME and woiLocked()
+  refused colonies (shots.py's declare scenario exposed it; a real
+  player retiring after declaring and starting fresh would hit the same
+  wall). beginGame now clears flags/declaredYear/upkeepUnpaid/rivalWars/
+  goTo/report AND the modal state (dialog/colonyPopup/drag/dragArm) --
+  a stale dialog was otherwise "answered" by the new game's first click.
+- render_diff: 1653_report_F3 threshold 12000 -> 12500; the 12158
+  measured residual is IDENTICAL at HEAD bbb804b and with this batch
+  (verified via stash rebuild) -- the old number was documented against
+  a stale snapshot, not regressed by this work.
+
+Suite 235/235 (new wire6 block: Go To rows + Europe sail, press-edge
+open/track/commit via the real pointer handlers, flick assignment,
+sack pixel); shots 47/47; render-diff 15/15.
