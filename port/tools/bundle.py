@@ -485,6 +485,21 @@ def build_data():
     sav = ROOT / "tools/dosbox_harness/game/COLONY00.SAV"
     if sav.exists():
         D["sav1653"] = base64.b64encode(sav.read_bytes()).decode()
+    # The user's stripped Raleigh save (census 2026-08-08): three English
+    # colonies, every unit sentried -- the deterministic colony-screen state
+    # the DOSBox census3 captures were taken in.
+    sav2 = ROOT / "tools/dosbox_harness/game/COLONY02.SAV"
+    if sav2.exists():
+        D["savRaleigh"] = base64.b64encode(sav2.read_bytes()).decode()
+    # Two more user fixtures (2026-08-08): COLONY03 = a brand-new game at the
+    # very first turn (no opening menus), COLONY04 = a single freshly founded
+    # colony with no other units. Deterministic census states.
+    sav3 = ROOT / "tools/dosbox_harness/game/COLONY03.SAV"
+    if sav3.exists():
+        D["savStart"] = base64.b64encode(sav3.read_bytes()).decode()
+    sav4 = ROOT / "tools/dosbox_harness/game/COLONY04.SAV"
+    if sav4.exists():
+        D["savNewColony"] = base64.b64encode(sav4.read_bytes()).decode()
     # Per-nation history (A) + gameplay-bonus (B) briefing pages.
     D["briefings"] = [[game.get(f"@NATION{i}A", ""), game.get(f"@NATION{i}B", "")]
                       for i in range(4)]

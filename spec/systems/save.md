@@ -30,8 +30,24 @@ slots plus two autosave slots (`docs/GAME_MANUAL.md`). **R** (slot count from ma
   - **NATION / PowerRecord**: tax_rate, recruit slots, founding_fathers bitfield,
     liberty-bell accumulators, boycott bitmap, royal_money, gold, crosses,
     market arrays. Several offsets **B**; the PowerRecord fields below are byte-verified in `docs/DATA_MODEL.md` — `crosses_per_turn` @`+0x10`, `artillery_bought_count` @`+0x1e` (read×100 `IMUL ax,[bx+0x1e],0x64` @0x035124/0x03527B, `INC [bx+0x1e]` @0x035282, zeroed `MOV [bx+0x1e],0` @0x03662F — byte-confirmed), `royal_money` (s32) @`+0x22`, gold @`+0x2A`, market arrays @`+0x4C`/`+0x5C`/`+0x7C`/`+0xBC`/`+0xFC`. **B.**
-  - **ColonyRecord**: stride `0xCA` (BYTE_VERIFIED, `docs/DATA_MODEL.md`); building
-    bitmask `+0x60..+0x65`. **B**
+  - **ColonyRecord**: stride `0xCA` (BYTE_VERIFIED, `docs/DATA_MODEL.md`). The
+    building field is **NOT at `+0x60`** (that is the per-colonist job-duration
+    nibble array) — it is the **48-bit TIER-PACKED struct at `+0x84..+0x89`**,
+    LSB-first bit groups per building chain, each group's low bit number equal
+    to the chain's first `@BUILDING` index: fortification(3@0) armory(3@3)
+    docks(3@6) town_hall(3@9) school(3@12) warehouse(1@15) unused(1@16)
+    stables(1@17) custom_house(1@18) printing(2@19) weaver(3@21) tobacco(3@24)
+    rum(3@27) capitol(2@30) fur(3@32) carpenter(2@35) church(2@37)
+    blacksmith(3@39); a tier value t marks the chain's first t entries built.
+    Layout per `smcol_sav_struct.json`; **EMPIRICALLY pinned 2026-08-08**: the
+    COLONY02 census save's Jamestown bytes `00 02 20 09 89 00` decode
+    bit-exactly to the build list the engine's own picker offers
+    (`census3_build_picker`). Also: `custom_house_flags` u16 `@+0x8A` (bit i =
+    good i exported), `hammers` u16 `@+0x92`, `building_in_production` byte
+    `@+0x94` (0xFF = none; Jamestown 0x06 = Docks = the picker's highlighted
+    row), `warehouse_level` byte `@+0x95`, `depletion_counter` `@+0x97`,
+    `hammers_purchased` u16 `@+0x98`, stock u16[16] `@+0x9A`,
+    rebel dividend/divisor s32 `@+0xC2`/`+0xC6`. **B** (capture-pinned).
 - The **on-disk field order, header, and compression** are **RESOLVED (2026-06-20, §3)**:
   header `"COLONIZE"`+`0x1A`; body = **43 raw DGROUP blocks**, **no compression**, **no
   reordering** (each block is a verbatim memory dump, so within a block runtime offset =

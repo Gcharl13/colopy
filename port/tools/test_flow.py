@@ -374,17 +374,24 @@ SCRIPT = """() => {
     const opts = colonyPopupRows();
     // Row 0 is the engine's @CTITLE 5 "(No Production)"; the rest gated builds
     // in the byte-read "(N Hammers) (M Tools)" format.
+    // census3_build_picker: labels are the names in CAPITALS; each row keeps
+    // its mixed-case identity in r.name.
     out.buildGated = opts[0].label === '(No Production)' &&
       /^\(\d+ Hammers\)( \(\d+ Tools\))?$/.test(opts[1].note) &&
       opts.slice(1).every(r => {
-        const b = DATA.buildings.find(d => d.name === r.label);
+        if (r.label !== r.name.toUpperCase()) return false;
+        const b = DATA.buildings.find(d => d.name === r.name);
         // Colony-built UNITS (Wagon Train etc.) carry no min_colony gate.
-        if (!b) return BUILDABLE_UNITS.includes(r.label);
-        return !c.buildings.includes(r.label) && b.min_colony <= c.colonists.length;
+        if (!b) return BUILDABLE_UNITS.includes(r.name);
+        return !c.buildings.includes(r.name) && b.min_colony <= c.colonists.length;
       });
-    G.colonyPopupRow = opts.findIndex(r => r.label === 'Docks');
+    G.colonyPopupRow = opts.findIndex(r => r.name === 'Docks');
     colonyPopupCommit();
     out.buildTarget = c.building;
+    // census3_build_picker: reopening the picker highlights the CURRENT target.
+    openBuildPicker();
+    out.buildPreset = colonyPopupRows()[G.colonyPopupRow].name === 'Docks';
+    G.colonyPopup = null;
     const cost = DATA.buildings.find(b => b.name === 'Docks').cost;
     // Keep the carpenter supplied with lumber and the colony fed: a colony that
     // cannot feed itself loses a colonist, and the carpenter is the one at risk.
@@ -3454,6 +3461,8 @@ def main():
         ("over 100 units the stock is cut to 50 and the excess sold",
          all(r["autoExport"].values()), r["autoExport"]),
         ("construction offers only unbuilt, ungated rows", r["buildGated"], r["buildGated"]),
+        ("the build picker reopens on the current target's row",
+         r["buildPreset"], r["buildPreset"]),
         ("construction banks hammers and completes the building",
          r["buildTarget"] == "Docks" and all(r["built"].values()), r["built"]),
         ("construction gates on the prereq tier, supersede, and Adam Smith factories",

@@ -67,6 +67,33 @@ census2_f6 + census2_colony_screen/2 (the F6 report's MULTIPLE PAGES —
 Military Garrisons with garrison icons, Sons of Liberty — the port's F6 is
 one page: OPEN divergence).
 
+## Session 3 (2026-08-08, the user's COLONY02 Raleigh save — Jamestown)
+
+Paired:
+
+| state | capture | found & fixed |
+|---|---|---|
+| Colony screen | census3_colony.png | SAV building decode was WRONG (flat bitmask @+0x60 = actually the job-duration nibbles) → the 48-bit TIER-PACKED field @+0x84, pinned bit-exactly by this capture; construction target/hammers now imported (+0x94/+0x92); tutorial gate is DISCOVERER-ONLY (Explorer save opens the colony with no tutorial card) |
+| Build picker | census3_build_picker.png | SMALL font; bare title; CAPS labels + right-aligned green cost notes; opens ON the current target (no `*`); bright-gold (F1 for Help); WAGON TRAIN = (40 Hammers) off the ×32 scale; duplicate unit rows removed |
+
+Reference-only: census3_colony_view0/1/2 (right-panel views; view2 = the
+Docks construction caption + BUY/CHANGE), census3_buy_prompt,
+census3_drag_mid, census3_after_drop (the Town Hall HOVER LABEL — implemented:
+white FONTTINY on a snug black plate, centred, top+11, flagged),
+census3_map/found/loadpick.
+
+Also this session (from the same captures + the user's live report): turn-
+processing popups centre on y≈130 (immediate ones on 100) — implemented via
+the endTurn latch; the func_004A80 "120-tick auto-dismiss" is OVERTURNED —
+popups wait for a key/click, one at a time.
+
+Open (session 3): the production strip under the plaza (engine draws plain
+icon runs — no digits, no red-X overlays) · the surround panel's tile-yield
+rendering · BUY/CHANGE buttons + construction caption in view 2 ·
+the buy prompt pairing. New fixtures banked: COLONY03.SAV (fresh game,
+first turn), COLONY04.SAV (one new colony, no other units) — embedded as
+DATA.savStart / DATA.savNewColony.
+
 ## Not yet captured (next sessions)
 
 Colony popups (build picker / jobs / occupation — the colony screen itself

@@ -169,6 +169,31 @@ the **count-derivation formula is RESOLVED 2026-06-27** — it is **NOT** in ove
    (`@0x02EC26`). The display (SoL% + member count + tory text-colour) is at page_02 `@0x0273DC` (§8 item 4).
    This baseline is recognizable + RAM-cross-checked, not finished.
 
+### 0.7 Construction picker + building hover label — census3 captures (2026-08-08)
+Ground truth = `docs/screens/census/census3_build_picker.png` /
+`census3_after_drop.png` (the COLONY02 Jamestown state, DOSBox native dump).
+- **Picker** (`@CTITLE 4` "Select An Item To Build"): SMALL font throughout
+  (17 rows + title + footer only fit at the 6/8 pitches). Title is the bare
+  string — no hammers/tools tally — in the base green. Head row `@CTITLE 5`
+  "(No Production)". Every row: NAME IN CAPITALS left, cost note
+  "(N Hammers)" or "(N Hammers) (M Tools)" right-aligned, both in base green;
+  the highlighted row (bar + gold) is the **current construction target** —
+  the picker OPENS on it (Jamestown opened highlighting DOCKS = its
+  `building_in_production` 0x06). No `*` marker. Footer "(F1 for Help)"
+  bottom-right in BRIGHT gold (0xFC — sampled (199,162,32), unlike the Europe
+  menus' dim 0x5D). Colony-built units follow the buildings (WAGON TRAIN
+  listed, **(40 Hammers)** — off the ×32 scale the ships/Artillery obey;
+  capture value verbatim).
+- **Hover label**: the building under the cursor wears its name — FONTTINY
+  white (index 15) on a snug black plate (1px above/below the 5px glyphs),
+  centred on the building sprite, plate top ≈ sprite top + 11 ("Town Hall",
+  plate y26..32 over the hall at y≈15). Engine zone rects unread — the
+  anchor is a one-capture fit, FLAGGED.
+- **Open divergences** (port vs `census3_colony`): the production strip under
+  the plaza (engine: plain icon runs — 8 corn, cross, bells — no digits, no
+  red-X overlays) and the tile-yield rendering in the surround panel. Next
+  sub-batch.
+
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with
 the colony's surrounding tiles and colonists-on-tiles, table-positioned buildings, a colonist plaza

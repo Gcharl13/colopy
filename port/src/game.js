@@ -861,7 +861,12 @@ function layoutDialog(d) {
   const h = 6 + textH + 3 + rows + 3;
   // The engine's screen clamps: right past 320 shifts left, bottom past 200
   // shifts up (@0x06D563/@0x06D571); a negative origin floors at 0.
-  let x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  // TURN-PROCESSING popups sit LOWER: the census turn-event frames all
+  // centre on y~130 (census_turnevent_0/1/2/3/5, census_cargoready), while
+  // menu dialogs and immediate responses centre on 100 (census2_pick_music,
+  // census2_find_colony, census_noentry). The engine's positioning code is
+  // unread -- the 130 centre is the capture-measured anchor. FLAGGED.
+  let x = Math.round(160 - w / 2), y = Math.round((d.low ? 130 : 100) - h / 2);
   if (x + w > 320) x = 320 - w;
   if (y + h > 200) y = 200 - h;
   return { x: Math.max(0, x), y: Math.max(0, y), w, h, textH };
@@ -2912,8 +2917,11 @@ const BUILDABLE_UNITS = ['Wagon Train', 'Artillery', 'Caravel', 'Merchantman',
                          'Galleon', 'Privateer', 'Frigate'];
 function unitBuildRow(name) {
   const u = unit(name);
-  return u && { name, cost: u.cost * UNIT_HAMMER_SCALE, tools_x10: u.tools,
-                isUnit: true };
+  // census3_build_picker: the engine prices WAGON TRAIN at (40 Hammers) --
+  // the x32 scale (which the ships and Artillery obey) would give 32, so the
+  // wagon is priced off-scale. Capture value used verbatim.
+  const cost = name === 'Wagon Train' ? 40 : u.cost * UNIT_HAMMER_SCALE;
+  return u && { name, cost, tools_x10: u.tools, isUnit: true };
 }
 function unitBuildRows(c) {
   return BUILDABLE_UNITS.filter(n => {
@@ -3457,6 +3465,29 @@ function drawColony(ctx) {
                  px + (fw >> 1) + 5 - 9 * k, py + 8 + fh - 13);
     });
   });
+  // HOVER LABEL (census3_after_drop): the building under the cursor wears its
+  // name -- the tiny font in WHITE (index 15) on a snug black plate (1px above
+  // and below the 5px glyphs, 2px sides), centred on the sprite. The capture's
+  // "Town Hall" plate sits 11px below the sprite top; the engine's own zone
+  // rects are unread, so centre-x + top+11 is a one-capture anchor. FLAGGED.
+  if (!G.colonyPopup && !G.dialog && !G.drag && PTR.x < 200 && PTR.y >= 8 && PTR.y < 128) {
+    for (let i = PLOTS.length - 1; i >= 0; i--) {
+      const id = present[i];
+      if (id < 0) continue;
+      const [px, py] = PLOTS[i];
+      const [fw, fh] = frameSize('BUILDING', buildingFrame(c, id));
+      if (!hit(PTR.x, PTR.y, { x: px, y: py + 8, w: fw, h: fh })) continue;
+      const name = DATA.buildings[id] && DATA.buildings[id].name;
+      if (!name) break;
+      const tw = FONT.tiny.width(name);
+      const lx = Math.max(1, Math.min(199 - tw, px + (fw >> 1) - (tw >> 1)));
+      const ly = Math.max(9, py + 8 + 11);
+      ctx.fillStyle = ink(0);
+      ctx.fillRect(lx - 2, ly - 1, tw + 4, 7);
+      FONT.tiny.draw(ctx, name, lx, ly, lut(15));
+      break;
+    }
+  }
 
   // Title strip (0,0,320,7): name, season, year, gold -- green FONTTINY.
   const title = `${c.name}, ${DATA.seasons[G.season]}, ${G.year}, Gold: ${G.gold}$`;
@@ -3803,16 +3834,17 @@ function colonyPopupRows() {
     // TWO parenthesised groups "(N Hammers) (M Tools)" -- no "Cost:", no
     // comma, the tools group present only when the building needs tools.
     const none = (DATA.text.ctitle || [])[5] || '(No Production)';
-    return [{ label: none, note: '', stop: true }].concat(
-      buildOptions(c).map(b => ({
-        label: b.name,
-        note: `(${b.cost} Hammers)` +
-              (b.tools_x10 ? ` (${b.tools_x10 * 10} Tools)` : ''),
-      })));
-    // NOTE: the real list also offers BUILDABLE UNITS (Artillery, Wagon Train,
-    // and ships with a Drydock/Shipyard) below the buildings; their per-colony
-    // hammer/tool costs are not in a byte-verified table here, so they are
-    // omitted rather than invented. Flagged (open item).
+    // census3_build_picker: labels in CAPITALS, the buildable UNITS follow
+    // the buildings (the frame lists WAGON TRAIN), costs as
+    // "(N Hammers) (M Tools)", and the CURRENT TARGET row is the one the
+    // picker opens highlighted on.
+    const row = (b) => ({
+      label: b.name.toUpperCase(), name: b.name,
+      note: `(${b.cost} Hammers)` +
+            (b.tools_x10 ? ` (${b.tools_x10 * 10} Tools)` : ''),
+    });
+    // buildOptions already appends the colony-built units (Wagon Train etc.).
+    return [{ label: none, note: '', stop: true }].concat(buildOptions(c).map(row));
   }
   if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];
@@ -3837,32 +3869,62 @@ function buildingCrew(c, name) {
   const job = jobForBuilding(name);
   return c.colonists.filter(p => !p.cell && p.job === job).length;
 }
+// census3_build_picker: the construction picker renders in the SMALL font
+// (17 rows + title + footer fit the frame only at the small pitches), the
+// jobs/occupation popups stay at the framework font (no capture says
+// otherwise yet).
+function colonyPopupSmall() { return G.colonyPopup === 'build'; }
 function colonyPopupBox() {
   const rows = colonyPopupRows();
+  const small = colonyPopupSmall(), mf = dFont(small);
   let cw = 0x50;
-  for (const r of rows) cw = Math.max(cw, DFONT().width(r.label) + DFONT().width(r.note) + 20);
-  const w = cw + 6, h = 6 + DTEXT + 3 + rows.length * DROW + 3;
+  for (const r of rows) cw = Math.max(cw, mf.width(r.label) + mf.width(r.note) + 20);
+  // The build picker reserves a bottom line for "(F1 for Help)" like the
+  // Europe shop menus do (census3_build_picker).
+  const foot = small ? 10 : 0;
+  const w = cw + 6, h = 6 + dText(small) + 3 + rows.length * dRow(small) + 3 + foot;
   return { x: Math.round(160 - w / 2), y: Math.max(2, Math.round(100 - h / 2)), w, h, rows };
 }
 function drawColonyPopup(ctx) {
   const c = G.colonies[G.colony], b = colonyPopupBox();
+  const small = colonyPopupSmall(), mf = dFont(small), rp = dRow(small);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
   // Titles are the engine's own: LABELS @CTITLE 4 "Select An Item To Build",
   // @CTITLE 8 "Select a Profession for" + the colonist's name.
+  // census3_build_picker: the title is the bare @CTITLE 4 string (no
+  // hammers/tools tally) in the base green, like every framework body line.
   const who = c.colonists[G.colonistSel];
   const title = G.colonyPopup === 'build'
-    ? `${(DATA.text.ctitle || [])[4] || 'Select An Item To Build'}  (${c.hammers} Hammers, ${c.stock[GOOD.TOOLS]} Tools)`
+    ? (DATA.text.ctitle || [])[4] || 'Select An Item To Build'
     : `${(DATA.text.ctitle || [])[8] || 'Select a Profession for'} ${who ? (who.profession || who.type) : ''}`;
-  DFONT().draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
-  const seed = b.y + 6 + DTEXT + 3;
+  mf.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFE));
+  const seed = b.y + 6 + dText(small) + 3;
   b.rows.forEach((r, k) => {
-    const y = seed + k * DROW, sel = k === G.colonyPopupRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, DROW - 2); }
-    const on = G.colonyPopup === 'build' && r.label === c.building;
-    DFONT().draw(ctx, (on ? '* ' : '') + r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
-    if (r.note) DFONT().draw(ctx, r.note, b.x + b.w - 8 - DFONT().width(r.note), y + 1,
-                             lut(sel ? 0xFC : 0x5D));
+    const y = seed + k * rp, sel = k === G.colonyPopupRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, rp - 2); }
+    // The current target is shown by OPENING ON its row, not by a marker
+    // (census3_build_picker: DOCKS is simply the highlighted row). Notes are
+    // the same base green as the labels, gold when highlighted.
+    mf.draw(ctx, r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
+    if (r.note) mf.draw(ctx, r.note, b.x + b.w - 8 - mf.width(r.note), y + 1,
+                        lut(sel ? 0xFC : 0xFE));
   });
+  if (small) {
+    // Bright-gold footer -- census3_build_picker samples (199,162,32) = 0xFC,
+    // unlike the Europe menus' dim 0x5D.
+    const f1 = '(F1 for Help)';
+    mf.draw(ctx, f1, b.x + b.w - 8 - mf.width(f1), b.y + b.h - 11, lut(0xFC));
+  }
+}
+// census3_build_picker: the picker OPENS ON the current construction target's
+// row (DOCKS highlighted while Docks was under way); with no target it opens
+// on "(No Production)".
+function openBuildPicker() {
+  const c = G.colonies[G.colony];
+  G.colonyPopup = 'build';
+  const rows = colonyPopupRows();
+  const k = rows.findIndex(r => r.stop ? !c.building : r.name === c.building);
+  G.colonyPopupRow = Math.max(0, k);
 }
 function colonyPopupCommit() {
   const c = G.colonies[G.colony], rows = colonyPopupRows(), r = rows[G.colonyPopupRow];
@@ -3870,7 +3932,7 @@ function colonyPopupCommit() {
   if (G.colonyPopup === 'build') {
     // The construction panel itself shows the new target; the engine raises no
     // message here.
-    c.building = r.stop ? null : r.label;
+    c.building = r.stop ? null : (r.name || r.label);
   } else if (G.colonyPopup === 'occupation') {
     const p = c.colonists[G.colonistSel];
     if (p) {
@@ -6180,13 +6242,16 @@ function drawSpeakerSheet(ctx, sheet) {
   else if (/^KING/.test(sheet)) sheetFrame(ctx, sheet, 0, 160 - (pw >> 1), 6);
   else sheetFrame(ctx, sheet, 0, 120 - (pw >> 1), 8);
 }
+// Set while endTurn runs: popups born in turn processing anchor on the lower
+// centre (y=130) the census turn-event frames measure (see layoutDialog).
+const TURN_LOW = { on: false };
 function showEvent(key, subs, speaker) {
   const t = DATA.events[key];
   if (!t) return;
   // The GAME.TXT key rides along for the test suite and debugging -- the
   // renderer never reads it.
   G.eventQueue.push({ key, lines: t.body.map(l => fillTemplate(l, subs || {})),
-                      width: t.width, small: !!t.small,
+                      width: t.width, small: !!t.small, low: TURN_LOW.on,
                       speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
 }
 // Ad-hoc notice popup: port phrasing, NOT a GAME.TXT event -- used where the
@@ -6233,7 +6298,7 @@ function askEvent(key, subs, onDone, optsKey, speaker) {
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
-    small: !!t.small,
+    small: !!t.small, low: TURN_LOW.on,
     speaker: speaker !== undefined ? speaker : eventSpeaker(key),
     // Same one-based @default as openDialog above.
     sel: t.default && /^\d+$/.test(t.default)
@@ -6245,14 +6310,18 @@ function drawEvent(ctx) {
   if (!e) return;
   // Body-only box: the option block ("+3 + rows*8 + 3") exists only when
   // there ARE rows (dialog_framework.md §3), and there is no OK / Cancel /
-  // Continue anywhere in the EXE -- dismissal is any key/click or the modal
-  // loop's 120-tick timeout (func_004A80 @0x4ADD), which blits nothing.
+  // Continue anywhere in the EXE -- dismissal is any key/click, each popup
+  // waiting its turn (the old func_004A80 "120-tick timeout" reading is
+  // overturned -- see frameBody).
   const f = dFont(e.small), tp = dText(e.small);
   let cw = e.width;
   for (const l of e.lines)
     cw = Math.max(cw, f.width(l.replace(/[{}]/g, '')) + 10);
   const w = cw + 6, h = 6 + e.lines.length * tp + 3;
-  const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
+  // Turn-processing popups centre on y=130 (census_turnevent_0: box top 119
+  // for the two-line bulletin), everything else on 100 -- same capture
+  // anchors as layoutDialog. FLAGGED (positioning code unread).
+  const x = Math.round(160 - w / 2), y = Math.round((e.low ? 130 : 100) - h / 2);
   const ik = dialogInks();
   drawSpeakerSheet(ctx, e.speaker);
   plaque(ctx, x, y, w, h, 'WOODTILE');
@@ -7924,7 +7993,11 @@ const TUT_BIT = { 1: 0x0010, 3: 0x0040, 4: 0x0080, 5: 0x0100, 6: 0x0200,
 const TUT_FLAG = { 13: 0x01, 14: 0x02, 15: 0x08, 19: 0x80 };   // [0x5380]
 const TUT_PHASE = { 2: 0x80 };                                 // [0x5382]
 function tutOnce(n, subs) {
-  if (G.difficulty >= 2) return;
+  // Tutorials are DISCOVERER-ONLY: the COLONY02 census save (Explorer,
+  // tutMask 0x0E = no step bits) opens its colony screen with NO tutorial
+  // card under DOSBox, while COLONY04 (Discoverer) accumulates step bits
+  // (0x41DE). The earlier "<2" reading was flagged; live evidence 2026-08-08.
+  if (G.difficulty >= 1) return;
   if (TUT_BIT[n]) {
     if (G.tutMask & TUT_BIT[n]) return;
     G.tutMask |= TUT_BIT[n];
@@ -10164,9 +10237,33 @@ function importSav(bytes) {
     const b = colBase + i * 0xCA;
     const owner = d[b + 0x1A] & 3, pop = d[b + 0x1F];
     const name = str(b + 2, 24);
+    // Buildings are the 48-bit TIER-PACKED field at +0x84 -- NOT a flat
+    // per-index bitmask, and NOT at +0x60 (that is the colonists' job-duration
+    // nibble array). Bit groups LSB-first per chain, and each group's low bit
+    // NUMBER equals its chain's first @BUILDING index, so the table below is
+    // [base/bit, width, chain length]:
+    //   fortification(3@0) armory(3@3) docks(3@6) townhall(3@9) school(3@12)
+    //   warehouse(1@15) unused(1@16) stables(1@17) customhouse(1@18)
+    //   printing(2@19) weaver(3@21) tobacco(3@24) rum(3@27) capitol(2@30)
+    //   fur(3@32) carpenter(2@35) church(2@37) blacksmith(3@39).
+    // Layout = smcol_sav_struct.json (SAVE_FORMAT_CROSSREF); pinned
+    // EMPIRICALLY by census3_build_picker: the engine's own Jamestown build
+    // list decodes bit-exactly from these bytes (RULINGS 2026-08-08h). A
+    // tier t marks the chain's first t entries built.
+    const bAt = (i) => (d[b + 0x84 + (i >> 3)] >> (i & 7)) & 1;
+    const tier = (lo, w) => { let v = 0; for (let j = 0; j < w; j++) v |= bAt(lo + j) << j; return v; };
+    const FAMS = [[0, 3, 3], [3, 3, 3], [6, 3, 3], [9, 3, 3], [12, 3, 3],
+                  [15, 1, 1], [17, 1, 1], [18, 1, 1], [19, 2, 2], [21, 3, 3],
+                  [24, 3, 3], [27, 3, 3], [30, 2, 2], [32, 3, 3], [35, 2, 2],
+                  [37, 2, 2], [39, 3, 3]];
     const buildings = [];
-    for (let k = 0; k < (DATA.buildings || []).length; k++)
-      if (d[b + 0x60 + (k >> 3)] & (1 << (k & 7))) buildings.push(DATA.buildings[k].name);
+    for (const [lo, wdt, len] of FAMS) {
+      const t = Math.min(tier(lo, wdt), len);
+      for (let j = 0; j < t; j++) buildings.push(DATA.buildings[lo + j].name);
+    }
+    // warehouse_level (+0x95): 2 = the Expansion standing on the Warehouse.
+    if (d[b + 0x95] >= 2 && !buildings.includes('Warehouse Expansion'))
+      buildings.push('Warehouse Expansion');
     if (owner !== nation) {
       const r = rivalOf(owner);
       if (r) r.colonies.push({
@@ -10193,10 +10290,21 @@ function importSav(bytes) {
     for (const p of colonists)
       if (!p.cell && p.job && FIELD_JOB_NAMES.includes(p.job)) p.job = null;
     const dividend = i32(b + 0xC2), divisor = i32(b + 0xC6);
+    // Construction state: banked hammers u16 @+0x92, the target's @BUILDING
+    // index @+0x94 (0xFF = none; Jamestown's 0x06 = Docks matches the
+    // census3 picker's highlighted row). An index past the 42 buildings
+    // would be a colony-built unit target -- unobserved, left null.
+    const bip = d[b + 0x94];
     const c = { name, x: d[b], y: d[b + 1], nation, colonists,
-                stock: [], buildings, hammers: 0, building: null,
+                stock: [], buildings, hammers: u16(b + 0x92),
+                building: (DATA.buildings[bip] || {}).name || null,
                 sol: divisor > 0 ? Math.max(0, Math.min(100,
                      Math.round(100 * dividend / divisor))) : 0 };
+    // custom_house_flags @+0x8A: bit i = good i EXPORTED (smcol hint; the
+    // port stores the inverse "off" map). Dormant until a Custom House stands.
+    const chf = u16(b + 0x8A);
+    c.customOff = {};
+    for (let k = 0; k < 16; k++) if (!(chf & (1 << k))) c.customOff[k] = true;
     for (let k = 0; k < 16; k++) c.stock.push(u16(b + 0x9A + k * 2));
     G.colonies.push(c);
   }
@@ -10511,6 +10619,12 @@ function drawPedia(ctx) {
 
 // ---------------------------------------------------------------- turn
 function endTurn() {
+  // Everything the turn pipeline posts anchors on the lower popup centre
+  // (TURN_LOW -> showEvent/askEvent 'low'), per the census turn-event frames.
+  TURN_LOW.on = true;
+  try { endTurnBody(); } finally { TURN_LOW.on = false; }
+}
+function endTurnBody() {
   G.turn += 1;
   // Year cadence (§20.1): 1 turn = 1 year before 1600; from 1600 seasons toggle
   // and the year steps every second turn.
@@ -11902,9 +12016,10 @@ function onClick(mx, my) {
     }
     case 'colony': {
       if (G.colonyPopup) {
-        const b = colonyPopupBox(), seed = b.y + 6 + DTEXT + 3;
+        const sm = colonyPopupSmall(), rp = dRow(sm);
+        const b = colonyPopupBox(), seed = b.y + 6 + dText(sm) + 3;
         for (let k = 0; k < b.rows.length; k++)
-          if (hit(mx, my, { x: b.x + 3, y: seed + k * DROW, w: b.w - 6, h: DROW })) {
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * rp, w: b.w - 6, h: rp })) {
             G.colonyPopupRow = k; colonyPopupCommit(); return;
           }
         // A click outside the rows dismisses the popup and FALLS THROUGH to
@@ -12262,7 +12377,7 @@ function onKey(e) {
       // §26.8 keys: 1/2/3 select the right-panel view, C opens the construction
       // menu, Enter the jobs menu for the selected colonist, ESC/x exits.
       if (k >= '1' && k <= '3') G.colonyView = +k - 1;
-      if (k === 'c' || k === 'C') { G.colonyPopup = 'build'; G.colonyPopupRow = 0; }
+      if (k === 'c' || k === 'C') openBuildPicker();
       // B = rush-buy the construction target (@BUYME0/1); E = the Custom
       // House export picker (@CUSTOM); L = clear the selected colonist's
       // specialty (@LOBOTOMIZE).
@@ -12455,21 +12570,16 @@ function guarded(fn) {
   };
 }
 let _frameErr = null;
-let _popupHead = null, _popupAge = 0;
 function frameBody() {
   G.blink = (G.tick % 32) < 20;
   G.tick += 1;
   G.wallClock = performance.now();
   flushMapMsg();
-  // Popup 120-tick auto-dismiss (func_004A80 @0x4ADD: the modal message loop
-  // reads the clock and returns once 0x78 = 120 ticks pass, ~2 s at the
-  // engine's 60Hz). A body-only popup (no option rows -- those become
-  // G.dialog) dismisses itself after 120 frames, exactly as any key/click
-  // would; the head resets the counter as each popup surfaces.
-  if (G.eventQueue.length) {
-    if (_popupHead !== G.eventQueue[0]) { _popupHead = G.eventQueue[0]; _popupAge = 0; }
-    else if (++_popupAge >= 120) { G.eventQueue.shift(); _popupHead = null; _popupAge = 0; }
-  } else { _popupHead = null; _popupAge = 0; }
+  // NO auto-dismiss: the prior "120-tick timeout" reading of func_004A80's
+  // 0x78 is OVERTURNED by live evidence -- the census DOSBox popups sit on
+  // screen through multi-second capture waits (census_turnevent_*), and 0x78
+  // = 120 is the turn-popup TOP row the same frames measure. Every popup
+  // waits for a key/click, one at a time (user-confirmed 2026-08-08).
   // A colonist armed on the down-edge lifts once the hold deadline passes, even
   // if the pointer is being held perfectly still -- so poll it here as well as
   // on move, the way the engine's per-frame dispatcher does.

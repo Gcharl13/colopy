@@ -9458,3 +9458,58 @@ differently every launch -- the field can never pair tightly.
 
 Suite 237/237 (wire7 + pioneerSheds/dragoonSheds/figures); render-diff
 26/26.
+
+## 2026-08-08h — Session-3 census (the user's COLONY02 save): SAV building
+## tier-field, build picker format, popup anchors, NO auto-dismiss
+
+Evidence = docs/screens/census/census3_*.png (DOSBox native dumps of the
+user's stripped Raleigh save) + the save's own bytes + the user's live
+report ("popups show up at once; they need to show one at a time").
+
+1. **ColonyRecord buildings = the 48-bit TIER-PACKED field @+0x84** (LSB-
+   first groups; each group's low bit number = the chain's first @BUILDING
+   index). The old flat-bitmask read @+0x60 was WRONG — +0x60 is the
+   per-colonist job-duration nibble array. Pinned EMPIRICALLY: predicting
+   the bytes from the engine's own Jamestown build list (census3_build_
+   picker) gives 00 02 20 09 89 00 — exactly the record's +0x84..89.
+   Also imported now: hammers u16 @+0x92, building_in_production @+0x94
+   (Jamestown 0x06 = Docks = the picker's highlighted row),
+   warehouse_level @+0x95, custom_house_flags u16 @+0x8A. Layout per
+   smcol_sav_struct.json (SAVE_FORMAT_CROSSREF), spec/systems/save.md
+   updated.
+2. **Build picker** (census3_build_picker): SMALL font; bare @CTITLE-4
+   title in base green; CAPS labels; right-aligned "(N Hammers) (M Tools)"
+   notes in base green; the picker OPENS ON the current target's row (no
+   '*' marker); "(F1 for Help)" bottom-right in BRIGHT gold 0xFC
+   (sampled (199,162,32)); WAGON TRAIN priced (40 Hammers) — off the x32
+   unit scale, capture value used verbatim; the duplicate unit rows
+   (buildOptions already appends them) removed.
+3. **Building hover label** (census3_after_drop): white FONTTINY (ink 15)
+   on a snug black plate (1px above/below the 5px glyphs), centred on the
+   building sprite, plate top = sprite top + 11. One-capture anchor,
+   FLAGGED.
+4. **Tutorial gate is DISCOVERER-ONLY**: COLONY02 (Explorer, tutMask 0x0E
+   = no step bits) opens Jamestown with NO tutorial card under DOSBox;
+   COLONY04 (Discoverer) accumulates step bits (0x41DE). The flagged
+   "< 2" gate corrected to < 1.
+5. **Turn-processing popups anchor LOWER**: every census turn-event frame
+   centres on y~130 (turnevent_0 box top 119; the asks ~92..169); menu
+   dialogs / immediate popups centre on 100 per the byte-cited formula.
+   Implemented as an endTurn latch (TURN_LOW -> low flag on
+   showEvent/askEvent). Mechanism of the +30 base UNREAD — FLAGGED.
+6. **The func_004A80 "120-tick auto-dismiss" is OVERTURNED** (running
+   game > disasm reading, per the trust order): the census popups sit
+   through multi-second harness waits, and the user confirms the original
+   shows each message one at a time awaiting a key/click. The port's
+   auto-dismiss is removed; 0x78's real role is TBD (the 2-line turn
+   bulletin's box top is y=119-120).
+7. New fixtures banked: COLONY03.SAV (fresh game, first turn) /
+   COLONY04.SAV (one new colony, no other units) -> DATA.savStart /
+   DATA.savNewColony.
+
+Open (session 3): the plaza production strip (engine: plain icon runs, no
+digits/red-X), the surround panel tile-yield rendering, BUY/CHANGE in
+view 2, buy-prompt pairing.
+
+Suite 238/238; render-diff 28/28 (census3_colony 25000 / build_picker
+27000 thresholds span the per-session plot-RNG band).

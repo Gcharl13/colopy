@@ -251,6 +251,18 @@ SHOTS += [
     ("census2_pick_music", SAV1653 + SEL_FRIGATE + "G.tune=0x27;pickMusic()"),
 ]
 
+# Session-3 pairs: the user's stripped Raleigh save (COLONY02.SAV) posed on
+# the Jamestown colony screen -- the DOSBox frames census3_colony /
+# census3_build_picker were captured there. The building FIELD only pairs
+# loosely (per-session RNG placement), the picker popup is deterministic.
+SAVRALEIGH = "G.screen='map';importSav(b64bytes(DATA.savRaleigh));G.eventQueue=[];"
+JAMESTOWN = ("(()=>{const c=G.colonies.find(x=>x.name==='Jamestown');"
+             "G.colony=G.colonies.indexOf(c);G.screen='colony';})();")
+SHOTS += [
+    ("census3_colony", SAVRALEIGH + JAMESTOWN),
+    ("census3_build_picker", SAVRALEIGH + JAMESTOWN + "openBuildPicker()"),
+]
+
 
 def main():
     OUT.mkdir(exist_ok=True)

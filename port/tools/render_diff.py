@@ -80,6 +80,13 @@ PAIRS = [
     # seeded per-session (G.plotSeedBase), so the residual varies. 30000 spans
     # the observed band.
     ("1653_colony.png", "live_1653_save/colony_curacao.png", 30000),
+    # Session 3 (the user's Raleigh save, Jamestown): building-field layout is
+    # per-session RNG (plotSeedBase) so both pairs carry that band; the colony
+    # frame also still diverges on the production-strip / tile-yield formats
+    # (open items, TRACKER session 3). Measured 20.5k/36.3k at HEAD on this
+    # metric; the picker keeps the RNG field visible at the dialog's sides.
+    ("census3_colony.png", "census/census3_colony.png", 30000),
+    ("census3_build_picker.png", "census/census3_build_picker.png", 45000),
 ]
 
 
