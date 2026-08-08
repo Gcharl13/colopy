@@ -7787,24 +7787,33 @@ function optionsCommit() {
 }
 function drawOptions(ctx) {
   drawMap(ctx);
+  // Census-corrected 2026-08-08 (census2_game_options / _colreport_options /
+  // _sound_options): the options dialogs draw in the POPUP font at the
+  // framework pitches, and each row wears a ROUND radio mark -- a ring with
+  // an orange centre dot when the option is on -- not a square checkbox.
+  // Ring/dot inks read off the frame (ring = base ink, dot = the 0x0E
+  // accent), flagged.
   const o = G.options;
   let cw = 190;
-  for (const r of o.rows) cw = Math.max(cw, FONT.tiny.width(r) + 24);
-  const w = cw + 6, h = 6 + 6 + 3 + o.rows.length * 8 + 3;
+  for (const r of o.rows) cw = Math.max(cw, DFONT().width(r) + 28);
+  const w = cw + 6, h = 6 + DTEXT + 3 + o.rows.length * DROW + 3;
   const x = Math.round(160 - w / 2), y = Math.max(10, Math.round(100 - h / 2));
   plaque(ctx, x, y, w, h, 'WOODTILE');
-  FONT.tiny.draw(ctx, o.title, x + 5, y + 6, lut(0xFC));
-  const seed = y + 6 + 6 + 3;
+  DFONT().draw(ctx, o.title, x + 5, y + 6, lut(0xFC));
+  const seed = y + 6 + DTEXT + 3;
   o.rows.forEach((label, k) => {
-    const ry = seed + k * 8, sel = k === o.row;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, 8); }
-    // The checkbox itself: a 5x5 well with a tick when the option is on.
-    hollowRect(ctx, x + 6, ry + 1, 6, 6, 0xFE);
+    const ry = seed + k * DROW, sel = k === o.row;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(x + 3, ry, w - 6, DROW - 2); }
+    // The radio mark: a ring, dotted orange when the option is on.
+    const mx2 = x + 10, my2 = ry + 4;
+    ctx.fillStyle = ink(0xFE);
+    ctx.fillRect(mx2 - 2, my2 - 3, 4, 1); ctx.fillRect(mx2 - 2, my2 + 2, 4, 1);
+    ctx.fillRect(mx2 - 3, my2 - 2, 1, 4); ctx.fillRect(mx2 + 2, my2 - 2, 1, 4);
     if (optionChecked(o.which, k)) {
       ctx.fillStyle = ink(0x0E);
-      ctx.fillRect(x + 8, ry + 3, 2, 2);
+      ctx.fillRect(mx2 - 1, my2 - 1, 2, 2);
     }
-    spanText(ctx, label, x + 16, ry + 1, sel ? 0xFC : 0xFE, 0x0E);
+    spanText(ctx, label, x + 18, ry + 1, sel ? 0xFC : 0xFE, 0x0E, DFONT());
   });
 }
 // GAME "Pick Music" -- func_023344 @0x023344 drives the main picker and all
@@ -11055,11 +11064,25 @@ function disbandUnit() {
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
   });
 }
+// VIEW "Find Colony" is the @FINDCITY ENTRY dialog -- "Where the heck
+// is . . . / Colony:" (census2_find_colony.png), not a cycler: type a name,
+// Enter centres on the match, a miss posts @NOCITY ('"%STRING0" not
+// found.', census2_find_colony_after.png). The engine's matcher is unread;
+// case-blind prefix is the port's reading, flagged.
 function findColony() {
-  if (!G.colonies.length) { G.msg = 'No colonies yet.'; return; }
-  G.colonyFind = ((G.colonyFind || 0) + 1) % G.colonies.length;
-  const c = G.colonies[G.colonyFind];
-  centerOn(c.x, c.y);
+  const t = DATA.dialogs.FINDCITY;
+  if (!t) { G.msg = 'No colonies yet.'; return; }
+  G.dialog = {
+    body: t.body, tail: t.tail, width: t.width, small: !!t.small,
+    entry: '', opts: null,
+    onDone: (v) => {
+      if (v === -1 || v === undefined) return;
+      const q = String(v).trim().toLowerCase();
+      const c = q && G.colonies.find(x => x.name.toLowerCase().startsWith(q));
+      if (c) centerOn(c.x, c.y);
+      else showEvent('NOCITY', { STRING0: String(v).trim() });
+    },
+  };
 }
 // §26.7 zoom: spans 0xF<<z by 0xC<<z tiles at 0x10>>z pixels.
 function setZoom(z) {

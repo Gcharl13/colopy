@@ -245,6 +245,10 @@ SHOTS += [
     ("census_goto_ship", SAV1653 + SEL_FRIGATE + "beginGoTo()"),
     ("census_euro_recruit", SAV1653 + "G.screen='europe';openEuroMenu(0)"),
     ("census_euro_train", SAV1653 + "G.screen='europe';openEuroMenu(2)"),
+    # Session-2 pairs: the deterministic dialogs.
+    ("census2_game_options", SAV1653 + SEL_FRIGATE + "G.gameOptions=0xFFFF;openOptions('game')"),
+    ("census2_find_colony", SAV1653 + SEL_FRIGATE + "findColony()"),
+    ("census2_pick_music", SAV1653 + SEL_FRIGATE + "G.tune=0x27;pickMusic()"),
 ]
 
 

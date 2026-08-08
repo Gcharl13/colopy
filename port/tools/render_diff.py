@@ -61,6 +61,12 @@ PAIRS = [
     ("census_goto_ship.png", "census/census_goto_ship.png", 32000),
     ("census_euro_recruit.png", "census/census_euro_recruit.png", 32000),
     ("census_euro_train.png", "census/census_euro_train.png", 40000),
+    # Session 2: the deterministic dialogs (same 1653 state). Residuals:
+    # the viewport/cursor floor plus the engine's option-state and current-
+    # tune highlights.
+    ("census2_game_options.png", "census/census2_game_options.png", 12000),
+    ("census2_find_colony.png", "census/census2_find_colony.png", 16000),
+    ("census2_pick_music.png", "census/census2_pick_music.png", 7000),
     ("1653_report_F5.png", "live_1653_save/report_F5.png", 4000),
     ("1653_report_F6.png", "live_1653_save/report_F6.png", 16000),
     ("1653_report_F7.png", "live_1653_save/report_F7.png", 6000),
@@ -70,7 +76,10 @@ PAIRS = [
     # Colony residual (25.9k, 2026-08-07): the unimplemented func_005296
     # dither, RNG building placement, and worker-cell details. Documented in
     # RULINGS 2026-08-07l; shrink as those close.
-    ("1653_colony.png", "live_1653_save/colony_curacao.png", 27000),
+    # 25.3k-27.9k observed across runs: the colony-screen building layout is
+    # seeded per-session (G.plotSeedBase), so the residual varies. 30000 spans
+    # the observed band.
+    ("1653_colony.png", "live_1653_save/colony_curacao.png", 30000),
 ]
 
 

@@ -67,7 +67,7 @@ def build_data():
     for key in ("@LANDHO", "@LANDFALL", "@LANDFALL2", "@COLONY", "@RECRUIT",
                 "@PURCHASE", "@RENAMECOLONY", "@SAILAWAY", "@SAILHOME",
                 "@TRADENAME", "@HOWMUCH1", "@HOWMUCH2", "@HOWMUCH3",
-                "@HOWMUCH4", "@HOWMUCH5"):
+                "@HOWMUCH4", "@HOWMUCH5", "@FINDCITY"):
         sec = full[key]
         para = sec["body"].split("\n\n")
         D["dialogs"][key.lstrip("@")] = {
@@ -322,6 +322,8 @@ def build_data():
               # gate, the post-declaration REF-growth notice.
               "@KINGLOWER", "@KINGRAISE", "@KINGNOTHING",
               "@KINGMOBILIZE", "@CANTMOBILIZE", "@CARGOREADY0",
+              # Find Colony's miss notice (census2_find_colony_after).
+              "@NOCITY",
               # The native land claim on founding.
               "@INDIANLAND", "@INDIANBOW", "@INDIANTREATY", "@INDIANBRIBE",
               # War of Independence completion: sentiment, losses, siege,

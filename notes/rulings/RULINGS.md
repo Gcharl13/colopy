@@ -9397,3 +9397,32 @@ dock candidates + runtime advisor anchors, documented at the pair list).
 Reference-only captures and the not-yet-captured list are in the tracker.
 
 Suite 237/237; render-diff 23/23; shots 55 scenarios.
+
+## 2026-08-08f — Screen census, session 2: the dialog family (oracle 23 -> 26 pairs)
+
+Same 1653 state, the deterministic dialogs. New captures: the four GAME-
+menu dialogs (Game/Colony-Report/Sound Options, Pick Music), Find Colony
+(+ its miss notice), and three F6 Colony Adviser pages.
+
+Corrections:
+- **Options dialogs**: the engine draws ROUND radio marks (a ring with an
+  orange centre dot when on) in the POPUP font at the framework pitches;
+  the port drew square checkboxes in the small font. Rebuilt
+  (census2_game_options; the same renderer serves colony-report and
+  sound). Mark inks read off the frame, flagged.
+- **Find Colony is the @FINDCITY entry dialog** -- "Where the heck
+  is . . . / Colony:" with a typed name, not the port's cycle-through-
+  colonies; a miss posts @NOCITY ('"%STRING0" not found.'). Rebuilt with
+  a case-blind prefix match (the engine's matcher is unread, flagged);
+  @FINDCITY/@NOCITY joined the bundle.
+- Pick Music PAIRED and matches (the small font + the current-tune
+  highlight land on the capture).
+- The F6 Colony Adviser has MULTIPLE PAGES (Military Garrisons with
+  per-colony garrison icons -> Sons of Liberty with flags and bell
+  counts); clicking pages through. The port's F6 is one page -- OPEN
+  divergence in the tracker.
+- 1653_colony's threshold widened 27000 -> 30000: the per-session
+  plotSeedBase makes its residual a 25.3k-27.9k band, and the old margin
+  flapped.
+
+Suite 237/237; render-diff 26/26.

@@ -51,9 +51,26 @@ Capture session 1 (2026-08-08, the 1653 Dutch save at load + one turn):
 - Turn-status caption on the top bar during turn processing ("Dutch Galleon
   Inbound From Amsterdam") — not implemented.
 
+## Session 2 (2026-08-08, same save)
+
+Paired:
+
+| state | capture | found & fixed |
+|---|---|---|
+| Game Options | census2_game_options.png | ROUND radio marks (ring + orange dot), popup font at framework pitches — was square checkboxes in the small font |
+| Find Colony | census2_find_colony.png | it is the @FINDCITY TEXT-ENTRY dialog ("Where the heck is . . ."), not a colony cycler; a miss posts @NOCITY |
+| Pick Music | census2_pick_music.png | (matched — the small font + current-tune highlight) |
+
+Reference-only: census2_colreport_options / census2_sound_options (same
+renderer as Game Options), census2_find_colony_after ('"" not found.'),
+census2_f6 + census2_colony_screen/2 (the F6 report's MULTIPLE PAGES —
+Military Garrisons with garrison icons, Sons of Liberty — the port's F6 is
+one page: OPEN divergence).
+
 ## Not yet captured (next sessions)
 
-Colony popups (build picker / jobs / occupation) · village menu + chief ·
-King tax demand + tea party · woodcuts · combat panel · options dialogs ·
-Colonizopedia pages · trade-route editor · Find Colony · Zoom levels ·
-declaration + war screens · Hall of Fame (crafted-DAT pair exists).
+Colony popups (build picker / jobs / occupation — the colony screen itself
+needs a repeatable route in; garrison stacks eat clicks) · village menu +
+chief · King tax demand + tea party · woodcuts · combat panel ·
+Colonizopedia pages + pulldown · trade-route editor dialogs · Zoom levels ·
+declaration + war screens.
