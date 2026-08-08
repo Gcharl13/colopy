@@ -563,6 +563,25 @@ def main():
             for e in errs:
                 print("     %s" % e)
 
+    # DGROUP MUST BE WRITABLE.  createInitializedBlock defaults to read-only,
+    # and a read-only block is a promise to the decompiler that the bytes
+    # never change - so it constant-folds every read.  BSS is zero-filled,
+    # which means `if (g_some_flag)` folds to false and the ENTIRE guarded
+    # body is deleted from the decompilation.  Symptom: a 274-byte function
+    # decompiles to three lines plus "Read-only address is written" warnings.
+    if dg is not None:
+        try:
+            blk = mem.getBlock(dg)
+            blk.setRead(True)
+            blk.setWrite(True)
+            blk.setExecute(False)
+            print("DGROUP permissions set to rw-")
+        except Exception as e:
+            print("!! could not make DGROUP writable (%s)" % e)
+            print("!! the decompiler will constant-fold reads from it and")
+            print("!! delete guarded code.  Fix by hand: Window > Memory Map,")
+            print("!! tick the W column on the DGROUP row.")
+
     # Copy the initialised half in, so DS:0x0000..0x50C4 reads real data.
     init_len = LOAD_IMAGE_END - DGROUP_FILE
     if dg is not None:

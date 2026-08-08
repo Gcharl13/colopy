@@ -1,7 +1,7 @@
 # VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
 # Regenerate: python3 tools/ghidra/export_ghidra_symbols.py
 #
-# BUILD 7da1a1bbc0fc
+# BUILD efc1725ab182
 # If a traceback from this file does not match the line numbers you expect,
 # check that stamp against the one the repo prints — you are probably running
 # an older copy that is still sitting in ghidra_scripts/.
@@ -13994,7 +13994,7 @@ def A(file_off):
     return toAddr(file_off + DELTA)
 
 
-BUILD = "7da1a1bbc0fc"
+BUILD = "efc1725ab182"
 
 
 def main():
@@ -14094,6 +14094,25 @@ def main():
             print("!! will have no addresses.  Attempts:")
             for e in errs:
                 print("     %s" % e)
+
+    # DGROUP MUST BE WRITABLE.  createInitializedBlock defaults to read-only,
+    # and a read-only block is a promise to the decompiler that the bytes
+    # never change - so it constant-folds every read.  BSS is zero-filled,
+    # which means `if (g_some_flag)` folds to false and the ENTIRE guarded
+    # body is deleted from the decompilation.  Symptom: a 274-byte function
+    # decompiles to three lines plus "Read-only address is written" warnings.
+    if dg is not None:
+        try:
+            blk = mem.getBlock(dg)
+            blk.setRead(True)
+            blk.setWrite(True)
+            blk.setExecute(False)
+            print("DGROUP permissions set to rw-")
+        except Exception as e:
+            print("!! could not make DGROUP writable (%s)" % e)
+            print("!! the decompiler will constant-fold reads from it and")
+            print("!! delete guarded code.  Fix by hand: Window > Memory Map,")
+            print("!! tick the W column on the DGROUP row.")
 
     # Copy the initialised half in, so DS:0x0000..0x50C4 reads real data.
     init_len = LOAD_IMAGE_END - DGROUP_FILE

@@ -101,9 +101,11 @@ right) → **+** → add your `ghidra_scripts` folder.
 **8.** `Window > Console - Scripting`, scroll to the bottom. *You should see*:
 
 ```
+viceroy_ghidra_symbols  BUILD <12 hex>      <- must match the generator's
 functions created  : ...
 functions named    : 1250
 DGROUP block created at 8000:0000 (0x80000), 64 KB
+DGROUP permissions set to rw-
 DGROUP initialised half copied: 20677 bytes from file 0x1D9A0
 DS set to 0x8000 over N block(s) - globals should now decompile by name
 ================================================================
@@ -235,6 +237,31 @@ This also forced a layout change (2026-08-08): DGROUP used to be labelled in
 two places — initialised globals at their file addresses, BSS globals in the
 synthetic block — and **no single DS value could reach both**. It is now one
 window with the file bytes copied in.
+
+### 2.2 Why DGROUP must be WRITABLE
+
+`createInitializedBlock` makes a **read-only** block by default, and a
+read-only block is a promise to the decompiler that those bytes never change.
+It takes that promise seriously: it constant-folds every read. BSS is
+zero-filled, so `if (g_some_flag)` folds to *false* and the whole guarded
+body is **deleted from the decompilation**.
+
+The symptom is unmistakable — a 274-byte function collapses to a few lines
+alongside `WARNING: Read-only address (ram,0x000xxxxx) is written`:
+
+```c
+undefined2 __cdecl16far colony_econ_02CFD0(...)
+{
+  _OPT_MODE_1F5E = 0xffff;
+  UNK_8000_0337 = 0;
+                    /* WARNING: Read-only address (ram,0x00081f5e) is written */
+  return 0;
+}
+```
+
+The script now sets `rw-` on the block and prints `DGROUP permissions set to
+rw-`. To check or fix by hand: `Window > Memory Map`, tick the **W** column on
+the `DGROUP` row.
 
 > **If you ran an earlier version of this script**, delete the old block
 > first: `Window > Memory Map`, select `DGROUP`, click the red **X**. The old
