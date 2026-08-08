@@ -128,21 +128,30 @@ Success looks like a quiet dialog and five new entries under
 unrecognised tokens mean it fell back mid-file — check the messages, because
 a partial parse silently gives you partial structs.
 
-### 3.2 Apply
+### 3.2 Apply the types
 
-Two ways, and for this binary the **second** is the one that pays:
+The engine reaches a record in **two different ways**, and they need two
+different fixes. Recognising which one you are looking at is most of the
+skill here.
 
-**Retype a pointer.** In the decompiler, right-click the variable →
-`Retype Variable` (Ctrl-L) → `ColonyRecord *`. Good for locals that clearly
-hold a record pointer.
+```
+PATTERN A — through the current-record pointer
+    mov  bx, [0x8542]        ; g_current_colony_ptr
+    mov  al, [bx+0x1f]       ; -> population
+  fix: retype the POINTER  (§3.2.2)
 
-**Apply arrays at the table bases — do this one.** The engine keeps its
-records in fixed DGROUP tables and indexes them by `slot * stride`, so typing
-the *table* propagates everywhere at once. In the Listing, go to the table
-address, then `Data > Choose Data Type` (hotkey `T`) and enter e.g.
-`ColonyRecord[18]`:
+PATTERN B — table base + slot*stride, base folded into the displacement
+    imul bx, [bp+6], 0xca    ; slot * sizeof(ColonyRecord)
+    mov  al, [bx+0x5d65]     ; 0x5D46 + 0x1F  -> population
+  fix: apply the ARRAY at the table base  (§3.2.1)
+```
 
-| Table | DGROUP | in the script's DGROUP block | Count comes from |
+#### 3.2.1 Apply record arrays at the table bases
+
+In the Listing, `G` (Go To) → the address, then `T`
+(`Data > Choose Data Type`) → type e.g. `ColonyRecord[16]`.
+
+| Table | DGROUP | **Go To this** | Runtime count held in |
 |---|---|---|---|
 | `ColonyRecord[]` | `0x5D46` | `0x205D46` | `g_colony_count` `[0x539E]` |
 | `UnitRecord[]` | `0x3144` | `0x203144` | `g_unit_count` `[0x539C]` |
@@ -150,14 +159,68 @@ address, then `Data > Choose Data Type` (hotkey `T`) and enter e.g.
 | `NativeSettlement[]` | `0x54EC` | `0x2054EC` | `g_settlement_count` `[0x539A]` |
 | `AIPersonality[4]` | `0x540E` | `0x20540E` | fixed 4 |
 
-(These tables live in BSS, past the end of the file image, which is why the
-script creates the synthetic `DGROUP` block at `0x200000` — the second column
-is where to apply them.)
+These tables are BSS — past the end of the file image — which is why the
+script creates the synthetic `DGROUP` block at `0x200000`; the third column
+is `0x200000 + the DGROUP offset`, and that is where you apply the type.
 
-Then retype the current-record pointers so the decompiler links the two:
-`g_current_colony_ptr` `[0x8542]` → `ColonyRecord *`,
-`g_current_power_ptr` `[0x84FC]` → `PowerRecord *`,
-`g_active_settlement_ptr` `[0x8D4A]` → `NativeSettlement *`.
+**On the element count:** it is a display convenience, not a correctness
+requirement. The counts are runtime values (zero in a static dump), and the
+decompiler resolves `base + i*stride` from the *element type*, not the array
+length. Pick something generous — `[16]` for colonies, `[64]` for units — or
+apply a single `ColonyRecord` if you only want the field names. The block is
+64 KB, so nothing here overflows it.
+
+If Ghidra refuses with a conflict, the region already has data defined:
+select the range and `C` (Clear Code Bytes), then re-apply.
+
+#### 3.2.2 Retype the record pointers
+
+Best done **in the decompiler window, on the local**, rather than on the
+global. Open a function that loads the pointer, click the variable that
+receives it, `Ctrl-L` (`Retype Variable`), enter `ColonyRecord *`. The
+decompiler immediately rewrites every `*(byte *)(pcVar1 + 0x1f)` in that
+function as `colony->population`.
+
+The four current-record globals:
+
+| Global | DGROUP | Go To | Type as |
+|---|---|---|---|
+| `g_current_colony_ptr` | `0x8542` | `0x208542` | `ColonyRecord *` |
+| `g_current_power_ptr` | `0x84FC` | `0x2084FC` | `PowerRecord *` |
+| `g_active_settlement_ptr` | `0x8D4A` | `0x208D4A` | `NativeSettlement *` |
+| `g_active_tribe_data_ptr` | `0x8D4E` | `0x208D4E` | (TribeData, not yet mapped) |
+
+**16-bit pointer caveat.** These hold 2-byte *near* offsets into DGROUP. If
+your program's compiler spec makes a `ColonyRecord *` 4 bytes (far), typing
+the global that way will consume two bytes too many and mislabel whatever
+follows. Check the size Ghidra reports; if it is 4, leave the global as `u16`
+and do the retyping on decompiler locals instead — that is where the
+readability win is anyway, and Ghidra handles the local's pointer semantics
+correctly regardless.
+
+#### 3.2.3 Two worked examples to check it took
+
+Both are functions transcribed in
+`viceroy_source/src/colony/page03_colony_turn.c`, so you can compare against
+a known-good reading.
+
+**`0x02CFD0` — Pattern A.** It opens with `mov bx,[0x8542]` then reads
+`[bx]` and `[bx+1]`. After retyping the local to `ColonyRecord *` the
+decompiler should show `colony->map_x` / `colony->map_y` where it previously
+had raw offsets.
+
+**`0x02EB1C` — Pattern B.** Forty-two bytes, and the clearest test in the
+binary: `imul bx,[bp+6],0xca` then `mov al,[bx+0x5d65]` and a store to
+`[bx+p+0x5e00]`. With `ColonyRecord[]` applied at `0x205D46` those two
+displacements resolve as `+0x1F` (`population`) and `+0xBA`
+(`population_on_map`) — i.e. the function is "record what power *p* sees of
+colony *ci*'s population and fortification". If your decompiler now says
+something equivalent, the types are landing correctly.
+
+Note that Ghidra will not always fold Pattern B into clean `[]` syntax,
+because the assembler pre-added the field offset into the displacement
+(`0x5D65` *is* `0x5D46 + 0x1F`). Seeing the arithmetic resolve to the right
+field offsets is the win; perfectly idiomatic C is not always reachable.
 
 ### 3.3 The one real trap: `long` is 4 bytes here, 8 on your desktop
 
