@@ -58,6 +58,87 @@ GHIDRA_INJECTED = {
 }
 
 
+WIDTH = {"u8": 1, "s8": 1, "char": 1, "u16": 2, "s16": 2, "u32": 4, "s32": 4}
+
+# Legacy per-field global names whose OFFSET agrees with the struct but whose
+# NAME disagrees.  Recorded, not silently resolved — see notes/TRUTH_HIERARCHY.
+KNOWN_NAME_CONFLICTS = {
+    0x5DE0: ("MARKET_PRICE_5DE0", "ColonyRecord.stock",
+             "a colony record holds warehouse stock, not market prices; the "
+             "legacy name is unsourced. Offsets agree, so the layout is not "
+             "in doubt — only the label."),
+}
+
+
+def verify_field_aliases(globs, tables):
+    """Cross-check the struct layouts against the standalone global symbols.
+
+    Many DGROUP globals were named field-by-field long before these structs
+    existed (UNIT_Y at 0x3145, COL_OWNER_5D60, ...).  Each such name that
+    falls inside a record table is an INDEPENDENT witness to that record's
+    base and stride: if a legacy address does not land exactly on a field
+    boundary of element 0, one of the two is wrong.
+
+    Also refuses silently-broken geometry: overlapping fields, fields running
+    past the stride, arrays colliding, arrays leaving the 64 KB window.
+    """
+    problems = []
+    for t in tables:
+        occupied = {}
+        for f in t["fields"]:
+            w = WIDTH[f["t"]] * (f["c"] or 1)
+            if f["o"] + w > t["stride"]:
+                problems.append("%s.%s runs to +0x%X, past stride 0x%X"
+                                % (t["name"], f["nm"], f["o"] + w, t["stride"]))
+            for b in range(f["o"], f["o"] + w):
+                if b in occupied:
+                    problems.append("%s: %s overlaps %s at +0x%X"
+                                    % (t["name"], occupied[b], f["nm"], b))
+                occupied[b] = f["nm"]
+        t["_starts"] = {f["o"] for f in t["fields"]}
+
+    spans = sorted((t["ds"], t["ds"] + t["n"] * t["stride"], t["name"])
+                   for t in tables)
+    for (s1, e1, n1), (s2, e2, n2) in zip(spans, spans[1:]):
+        if e1 > s2:
+            problems.append("array %s [0x%X,0x%X) overlaps %s [0x%X,0x%X)"
+                            % (n1, s1, e1, n2, s2, e2))
+    for s, e, n in spans:
+        if e > 0x10000:
+            problems.append("array %s ends 0x%X, past the 64 KB DGROUP window"
+                            % (n, e))
+
+    agree = conflict = stray = 0
+    for t in tables:
+        lo, hi = t["ds"], t["ds"] + t["n"] * t["stride"]
+        for g in globs:
+            if not (lo < g["ds"] < hi):
+                continue
+            off = (g["ds"] - lo) % t["stride"]
+            if off in t["_starts"]:
+                if g["ds"] in KNOWN_NAME_CONFLICTS:
+                    conflict += 1
+                else:
+                    agree += 1
+            else:
+                stray += 1
+                problems.append(
+                    "legacy global %s (DS:0x%04X) sits at %s+0x%X, which is "
+                    "not a field boundary — base/stride or the symbol is wrong"
+                    % (g["n"], g["ds"], t["name"], off))
+    for t in tables:
+        del t["_starts"]
+
+    print("field-alias cross-check: %d legacy globals land exactly on struct "
+          "field offsets" % agree)
+    for addr, (old, new, why) in sorted(KNOWN_NAME_CONFLICTS.items()):
+        print("  NAME CONFLICT DS:0x%04X  %s vs %s" % (addr, old, new))
+        print("    %s" % why)
+    if problems:
+        raise SystemExit("REFUSING TO WRITE: record geometry is inconsistent\n"
+                         + "\n".join("    " + p for p in problems))
+
+
 def check_free_names(body):
     """Refuse to write a script that reads a name nothing defines.
 
@@ -174,8 +255,11 @@ def main():
                "count": ("g_colony_count" if n == "ColonyRecord" else
                          "g_unit_count" if n == "UnitRecord" else
                          "g_settlement_count" if n == "NativeSettlement" else
-                         "fixed 4")}
-              for n, base, stride, _s, _f in RECORDS]
+                         "fixed 4"),
+               "n": DISPLAY_COUNTS[n],
+               "fields": [{"o": o, "t": t, "nm": nm, "c": c}
+                          for o, t, nm, c in fields]}
+              for n, base, stride, _s, fields in RECORDS]
 
     data = {"funcs": funcs, "pages": pages, "globals": globs,
             "records": syms["record_windows"], "tables": tables}
@@ -191,6 +275,7 @@ def main():
 
     print("record layouts:")
     verify_records()
+    verify_field_aliases(globs, tables)
     OUT_H.write_text(build_header(syms))
 
     b = sum(1 for f in funcs if f["t"] == "B")
@@ -218,6 +303,19 @@ def main():
 # cited below; unknown spans are emitted as padding, never invented.
 #
 # (offset, ctype, name, count)   count None = scalar
+# How many elements to lay down when the script applies each table as an
+# array.  The real counts are runtime values (zero in a static dump), and the
+# decompiler resolves base + i*stride from the ELEMENT type, not the length —
+# so these are display convenience, chosen generous.  The block is 64 KB;
+# nothing here overflows it.
+DISPLAY_COUNTS = {
+    "ColonyRecord": 16,
+    "UnitRecord": 64,
+    "PowerRecord": 4,          # fixed: four European powers
+    "NativeSettlement": 32,
+    "AIPersonality": 4,        # fixed: one per power
+}
+
 RECORDS = [
     ("ColonyRecord", 0x5D46, 0xCA,
      "spec/systems/save.md (SAV cross-decode, 2026-08-08) + DATA_MODEL.md", [
@@ -464,6 +562,109 @@ def A(file_off):
 
 BUILD = "@@STAMP@@"
 
+# Set False to stop the script defining/applying the record types (phase 4).
+# Naming and DGROUP setup still run.
+APPLY_TYPES = True
+
+# Fixed-width Ghidra builtins.  Deliberately NOT IntegerDataType/LongDataType,
+# whose sizes come from the language's data organisation — the whole point is
+# that these widths are byte-verified and must not float.
+_TYPES = {
+    "u8":   ("ByteDataType", 1),
+    "s8":   ("SignedByteDataType", 1),
+    "char": ("CharDataType", 1),
+    "u16":  ("WordDataType", 2),
+    "s16":  ("SignedWordDataType", 2),
+    "u32":  ("DWordDataType", 4),
+    "s32":  ("SignedDWordDataType", 4),
+}
+
+
+def _dt(kind):
+    """Instantiate a fixed-width builtin by name, plus its byte width."""
+    import ghidra.program.model.data as D
+    cls, width = _TYPES[kind]
+    return getattr(D, cls)(), width
+
+
+def build_structs():
+    """Define the five record layouts directly in the Data Type Manager.
+
+    Replaces `File > Parse C Source` on viceroy_types.h.  Each struct is
+    created at its byte-verified stride and fields are dropped in at their
+    offsets, so unmapped spans stay `undefined1` — honest gaps, never
+    invented names, and no alignment rule can shift anything.
+    """
+    from ghidra.program.model.data import (StructureDataType, ArrayDataType,
+                                           CategoryPath)
+    dtm = currentProgram.getDataTypeManager()
+    path = CategoryPath("/viceroy")
+    out = {}
+    for t in DATA["tables"]:
+        try:
+            s = StructureDataType(path, t["name"], t["stride"])
+            for f in t["fields"]:
+                dt, w = _dt(f["t"])
+                if f["c"]:
+                    dt = ArrayDataType(dt, f["c"], w)
+                s.replaceAtOffset(f["o"], dt, dt.getLength(), f["nm"], None)
+            out[t["name"]] = dtm.addDataType(s, None)
+        except Exception as e:
+            print("!! could not define %s (%s)" % (t["name"], e))
+    if out:
+        print("record types defined: %s" % ", ".join(sorted(out)))
+        print("   (Data Type Manager > <program> > viceroy - no C parse needed)")
+    return out
+
+
+def apply_tables(structs, dg):
+    """Lay each record table down as an array at its DGROUP base."""
+    from ghidra.program.model.data import ArrayDataType
+    done = 0
+    for t in DATA["tables"]:
+        dt = structs.get(t["name"])
+        if dt is None:
+            continue
+        try:
+            addr = dg.add(t["ds"])
+            span = t["n"] * t["stride"]
+            clearListing(addr, addr.add(span - 1))
+            createData(addr, ArrayDataType(dt, t["n"], dt.getLength()))
+            print("   %-18s %s  [%d x 0x%X]"
+                  % (t["name"] + "[]", addr, t["n"], t["stride"]))
+            done += 1
+        except Exception as e:
+            print("!! could not apply %s at DS:0x%04X (%s)"
+                  % (t["name"], t["ds"], e))
+    print("record tables applied: %d/%d" % (done, len(DATA["tables"])))
+
+
+def retype_pointers(structs, dg):
+    """Type the current-record globals as 2-byte NEAR pointers.
+
+    Size is forced to 2 rather than left to the language's default: these
+    hold near offsets into DGROUP, and a 4-byte far pointer would swallow two
+    bytes of whatever follows and mislabel it.
+    """
+    from ghidra.program.model.data import PointerDataType
+    PTRS = [("g_current_colony_ptr", 0x8542, "ColonyRecord"),
+            ("g_current_power_ptr", 0x84FC, "PowerRecord"),
+            ("g_active_settlement_ptr", 0x8D4A, "NativeSettlement")]
+    done = 0
+    for nm, ds, tyname in PTRS:
+        dt = structs.get(tyname)
+        if dt is None:
+            continue
+        try:
+            addr = dg.add(ds)
+            clearListing(addr, addr.add(1))
+            createData(addr, PointerDataType(dt, 2))
+            print("   %-24s %s  as %s * (near, 2 bytes)" % (nm, addr, tyname))
+            done += 1
+        except Exception as e:
+            print("!! could not retype %s at DS:0x%04X (%s)" % (nm, ds, e))
+    print("record pointers typed: %d/%d" % (done, len(PTRS)))
+
 
 def main():
     # First line out, before anything can fail: which copy of this file is
@@ -643,6 +844,21 @@ def main():
             print("!! right-click > Registers > Set Register Values, DS = 0x%04X"
                   % (dg.getOffset() >> 4))
 
+    # ---- record types: define, apply, retype ------------------------------
+    # Everything that used to be manual after the script ran:
+    #   File > Parse C Source   -> build_structs()   (no C parser involved)
+    #   G + T at each table base -> apply_tables()
+    #   Ctrl-L on each pointer   -> retype_pointers()
+    # Building the structs in code rather than parsing viceroy_types.h also
+    # sidesteps the C parser's data organisation: widths are stated outright
+    # instead of depending on what `long` means for the loaded language.
+    structs = {}
+    if APPLY_TYPES and dg is not None:
+        structs = build_structs()
+        if structs:
+            apply_tables(structs, dg)
+            retype_pointers(structs, dg)
+
     # ---- overlay page bookmarks ------------------------------------------
     pages = 0
     for p in DATA["pages"]:
@@ -666,39 +882,39 @@ def main():
     print("globals in-file    : %d" % gi)
     print("globals in DGROUP  : %d" % gb)
     print("overlay bookmarks  : %d" % pages)
-    # ---- the addresses you actually need, in THIS program's own format ----
-    # Do not compute these by hand: a 16-bit real-mode program uses segmented
-    # addresses (segment:offset), so a flat hex number will not resolve in
-    # Go To.  Copy the right-hand column verbatim.
+    # ---- where to look, in THIS program's own address format --------------
+    # A 16-bit real-mode program shows segmented addresses (segment:offset),
+    # so never compute these by hand — copy the right-hand column.
     print("")
     print("=" * 64)
-    print("APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)")
+    print("WHERE THINGS ARE")
     print("=" * 64)
     if dg is None:
-        print("  unavailable - the DGROUP block was not created (see above)")
+        print("  DGROUP was not created - see the errors above")
     else:
         for t in DATA["tables"]:
             try:
-                a = dg.add(t["ds"])
+                print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
+                      % (t["name"] + "[]", t["ds"], dg.add(t["ds"]),
+                         t["count"], t["stride"]))
             except Exception as e:
                 print("  %-18s DS:0x%04X  -> ERROR %s" % (t["name"], t["ds"], e))
-                continue
-            print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
-                  % (t["name"] + "[]", t["ds"], a, t["count"], t["stride"]))
-        print("")
-        print("RECORD POINTERS to retype:")
-        for nm, ds, ty in (("g_current_colony_ptr", 0x8542, "ColonyRecord *"),
-                           ("g_current_power_ptr", 0x84FC, "PowerRecord *"),
-                           ("g_active_settlement_ptr", 0x8D4A,
-                            "NativeSettlement *")):
+        for nm, ds in (("g_current_colony_ptr", 0x8542),
+                       ("g_current_power_ptr", 0x84FC),
+                       ("g_active_settlement_ptr", 0x8D4A)):
             try:
-                print("  %-24s DS:0x%04X  ->  %s   as %s"
-                      % (nm, ds, dg.add(ds), ty))
+                print("  %-24s DS:0x%04X  ->  %s" % (nm, ds, dg.add(ds)))
             except Exception:
                 pass
     print("")
-    print("Next: File > Parse C Source > tools/ghidra/viceroy_types.h")
-    print("(clean profile: our header only, empty options, 16-bit program)")
+    if APPLY_TYPES:
+        print("Nothing further to do by hand.  Check it took: G -> 53b14,")
+        print("the decompiler should read g_current_colony_ptr->colony_flags.")
+        print("(If the old text persists: right-click > Decompiler > Refresh.)")
+    else:
+        print("APPLY_TYPES is False - the record types were not defined or")
+        print("applied.  Set it True at the top of this script, or do it by")
+        print("hand per tools/ghidra/README.md section 3.2.")
 
 
 main()

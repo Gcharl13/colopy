@@ -1,7 +1,7 @@
 # VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
 # Regenerate: python3 tools/ghidra/export_ghidra_symbols.py
 #
-# BUILD efc1725ab182
+# BUILD 0b379b8d30e2
 # If a traceback from this file does not match the line numbers you expect,
 # check that stamp against the one the repo prints — you are probably running
 # an older copy that is still sitting in ghidra_scripts/.
@@ -13955,31 +13955,508 @@ DATA = json.loads(r"""{
 "name": "ColonyRecord",
 "ds": 23878,
 "stride": 202,
-"count": "g_colony_count"
+"count": "g_colony_count",
+"n": 16,
+"fields": [
+{
+"o": 0,
+"t": "u8",
+"nm": "map_x",
+"c": null
+},
+{
+"o": 1,
+"t": "u8",
+"nm": "map_y",
+"c": null
+},
+{
+"o": 2,
+"t": "char",
+"nm": "name",
+"c": 24
+},
+{
+"o": 26,
+"t": "u8",
+"nm": "owner_power",
+"c": null
+},
+{
+"o": 28,
+"t": "u8",
+"nm": "colony_flags",
+"c": null
+},
+{
+"o": 31,
+"t": "u8",
+"nm": "population",
+"c": null
+},
+{
+"o": 32,
+"t": "u8",
+"nm": "occupation",
+"c": 32
+},
+{
+"o": 64,
+"t": "u8",
+"nm": "profession",
+"c": 32
+},
+{
+"o": 96,
+"t": "u8",
+"nm": "work_duration",
+"c": 16
+},
+{
+"o": 112,
+"t": "s8",
+"nm": "tiles",
+"c": 8
+},
+{
+"o": 132,
+"t": "u8",
+"nm": "buildings",
+"c": 6
+},
+{
+"o": 138,
+"t": "u16",
+"nm": "custom_house_flags",
+"c": null
+},
+{
+"o": 146,
+"t": "u16",
+"nm": "hammers",
+"c": null
+},
+{
+"o": 148,
+"t": "u8",
+"nm": "building_in_production",
+"c": null
+},
+{
+"o": 149,
+"t": "u8",
+"nm": "warehouse_level",
+"c": null
+},
+{
+"o": 151,
+"t": "u8",
+"nm": "depletion_counter",
+"c": null
+},
+{
+"o": 152,
+"t": "u16",
+"nm": "hammers_purchased",
+"c": null
+},
+{
+"o": 154,
+"t": "u16",
+"nm": "stock",
+"c": 16
+},
+{
+"o": 186,
+"t": "u8",
+"nm": "population_on_map",
+"c": 4
+},
+{
+"o": 190,
+"t": "u8",
+"nm": "fortification_on_map",
+"c": 4
+},
+{
+"o": 194,
+"t": "s32",
+"nm": "rebel_dividend",
+"c": null
+},
+{
+"o": 198,
+"t": "s32",
+"nm": "rebel_divisor",
+"c": null
+}
+]
 },
 {
 "name": "UnitRecord",
 "ds": 12612,
 "stride": 28,
-"count": "g_unit_count"
+"count": "g_unit_count",
+"n": 64,
+"fields": [
+{
+"o": 0,
+"t": "u8",
+"nm": "map_x",
+"c": null
+},
+{
+"o": 1,
+"t": "u8",
+"nm": "map_y",
+"c": null
+},
+{
+"o": 2,
+"t": "u8",
+"nm": "type",
+"c": null
+},
+{
+"o": 3,
+"t": "u8",
+"nm": "owner_flags",
+"c": null
+},
+{
+"o": 4,
+"t": "u8",
+"nm": "flags",
+"c": null
+},
+{
+"o": 6,
+"t": "u8",
+"nm": "moves_remaining",
+"c": null
+},
+{
+"o": 7,
+"t": "u8",
+"nm": "profession",
+"c": null
+},
+{
+"o": 8,
+"t": "u8",
+"nm": "orders",
+"c": null
+},
+{
+"o": 9,
+"t": "u8",
+"nm": "goto_x",
+"c": null
+},
+{
+"o": 10,
+"t": "u8",
+"nm": "goto_y",
+"c": null
+},
+{
+"o": 12,
+"t": "u8",
+"nm": "cargo_slot_count",
+"c": null
+},
+{
+"o": 13,
+"t": "u8",
+"nm": "cargo_kind_packed",
+"c": 3
+},
+{
+"o": 16,
+"t": "u8",
+"nm": "cargo_qty",
+"c": 4
+},
+{
+"o": 21,
+"t": "u8",
+"nm": "class_profession",
+"c": null
+},
+{
+"o": 22,
+"t": "u8",
+"nm": "turn_counter",
+"c": null
+},
+{
+"o": 23,
+"t": "u8",
+"nm": "vet_type",
+"c": null
+},
+{
+"o": 24,
+"t": "u16",
+"nm": "chain_prev",
+"c": null
+},
+{
+"o": 26,
+"t": "u16",
+"nm": "chain_next",
+"c": null
+}
+]
 },
 {
 "name": "PowerRecord",
 "ds": 34824,
 "stride": 316,
-"count": "fixed 4"
+"count": "fixed 4",
+"n": 4,
+"fields": [
+{
+"o": 1,
+"t": "u8",
+"nm": "tax_rate",
+"c": null
+},
+{
+"o": 2,
+"t": "u8",
+"nm": "dock_pool",
+"c": 3
+},
+{
+"o": 7,
+"t": "s32",
+"nm": "founding_fathers_bitmap",
+"c": null
+},
+{
+"o": 12,
+"t": "u16",
+"nm": "liberty_bells",
+"c": null
+},
+{
+"o": 14,
+"t": "u16",
+"nm": "bell_pool",
+"c": null
+},
+{
+"o": 16,
+"t": "u16",
+"nm": "crosses_per_turn",
+"c": null
+},
+{
+"o": 18,
+"t": "u16",
+"nm": "ff_pending_slot",
+"c": null
+},
+{
+"o": 20,
+"t": "u16",
+"nm": "founding_fathers_count",
+"c": null
+},
+{
+"o": 30,
+"t": "u16",
+"nm": "artillery_bought_count",
+"c": null
+},
+{
+"o": 32,
+"t": "u16",
+"nm": "boycott_mask",
+"c": null
+},
+{
+"o": 34,
+"t": "s32",
+"nm": "royal_money",
+"c": null
+},
+{
+"o": 42,
+"t": "s32",
+"nm": "gold",
+"c": null
+},
+{
+"o": 46,
+"t": "u16",
+"nm": "crosses_accum",
+"c": null
+},
+{
+"o": 48,
+"t": "u16",
+"nm": "cross_threshold",
+"c": null
+},
+{
+"o": 50,
+"t": "u8",
+"nm": "home_x",
+"c": null
+},
+{
+"o": 51,
+"t": "u8",
+"nm": "home_y",
+"c": null
+},
+{
+"o": 52,
+"t": "u8",
+"nm": "war_matrix",
+"c": 12
+},
+{
+"o": 64,
+"t": "u8",
+"nm": "treaty_relation",
+"c": 4
+},
+{
+"o": 68,
+"t": "u8",
+"nm": "ref_dragoons",
+"c": null
+},
+{
+"o": 69,
+"t": "u8",
+"nm": "ref_regulars",
+"c": null
+},
+{
+"o": 70,
+"t": "u8",
+"nm": "ref_artillery",
+"c": null
+},
+{
+"o": 76,
+"t": "u8",
+"nm": "market_price",
+"c": 16
+},
+{
+"o": 92,
+"t": "u16",
+"nm": "market_pool",
+"c": 16
+},
+{
+"o": 124,
+"t": "s32",
+"nm": "market_traded_value",
+"c": 16
+},
+{
+"o": 188,
+"t": "s32",
+"nm": "market_traded_tons",
+"c": 16
+},
+{
+"o": 252,
+"t": "s32",
+"nm": "market_base_value",
+"c": 16
+}
+]
 },
 {
 "name": "NativeSettlement",
 "ds": 21740,
 "stride": 18,
-"count": "g_settlement_count"
+"count": "g_settlement_count",
+"n": 32,
+"fields": [
+{
+"o": 0,
+"t": "u8",
+"nm": "map_x",
+"c": null
+},
+{
+"o": 1,
+"t": "u8",
+"nm": "map_y",
+"c": null
+},
+{
+"o": 2,
+"t": "u8",
+"nm": "tribe",
+"c": null
+},
+{
+"o": 3,
+"t": "u8",
+"nm": "flags",
+"c": null
+},
+{
+"o": 4,
+"t": "u8",
+"nm": "population",
+"c": null
+},
+{
+"o": 5,
+"t": "u8",
+"nm": "mission",
+"c": null
+},
+{
+"o": 6,
+"t": "u8",
+"nm": "growth_counter",
+"c": null
+},
+{
+"o": 10,
+"t": "u16",
+"nm": "alarm_by_power",
+"c": 4
+}
+]
 },
 {
 "name": "AIPersonality",
 "ds": 21518,
 "stride": 52,
-"count": "fixed 4"
+"count": "fixed 4",
+"n": 4,
+"fields": [
+{
+"o": 48,
+"t": "u8",
+"nm": "field_30",
+"c": null
+},
+{
+"o": 49,
+"t": "u8",
+"nm": "controller_flag",
+"c": null
+},
+{
+"o": 50,
+"t": "u8",
+"nm": "named_colony_count",
+"c": null
+}
+]
 }
 ]
 }""")
@@ -13994,7 +14471,110 @@ def A(file_off):
     return toAddr(file_off + DELTA)
 
 
-BUILD = "efc1725ab182"
+BUILD = "0b379b8d30e2"
+
+# Set False to stop the script defining/applying the record types (phase 4).
+# Naming and DGROUP setup still run.
+APPLY_TYPES = True
+
+# Fixed-width Ghidra builtins.  Deliberately NOT IntegerDataType/LongDataType,
+# whose sizes come from the language's data organisation — the whole point is
+# that these widths are byte-verified and must not float.
+_TYPES = {
+    "u8":   ("ByteDataType", 1),
+    "s8":   ("SignedByteDataType", 1),
+    "char": ("CharDataType", 1),
+    "u16":  ("WordDataType", 2),
+    "s16":  ("SignedWordDataType", 2),
+    "u32":  ("DWordDataType", 4),
+    "s32":  ("SignedDWordDataType", 4),
+}
+
+
+def _dt(kind):
+    """Instantiate a fixed-width builtin by name, plus its byte width."""
+    import ghidra.program.model.data as D
+    cls, width = _TYPES[kind]
+    return getattr(D, cls)(), width
+
+
+def build_structs():
+    """Define the five record layouts directly in the Data Type Manager.
+
+    Replaces `File > Parse C Source` on viceroy_types.h.  Each struct is
+    created at its byte-verified stride and fields are dropped in at their
+    offsets, so unmapped spans stay `undefined1` — honest gaps, never
+    invented names, and no alignment rule can shift anything.
+    """
+    from ghidra.program.model.data import (StructureDataType, ArrayDataType,
+                                           CategoryPath)
+    dtm = currentProgram.getDataTypeManager()
+    path = CategoryPath("/viceroy")
+    out = {}
+    for t in DATA["tables"]:
+        try:
+            s = StructureDataType(path, t["name"], t["stride"])
+            for f in t["fields"]:
+                dt, w = _dt(f["t"])
+                if f["c"]:
+                    dt = ArrayDataType(dt, f["c"], w)
+                s.replaceAtOffset(f["o"], dt, dt.getLength(), f["nm"], None)
+            out[t["name"]] = dtm.addDataType(s, None)
+        except Exception as e:
+            print("!! could not define %s (%s)" % (t["name"], e))
+    if out:
+        print("record types defined: %s" % ", ".join(sorted(out)))
+        print("   (Data Type Manager > <program> > viceroy - no C parse needed)")
+    return out
+
+
+def apply_tables(structs, dg):
+    """Lay each record table down as an array at its DGROUP base."""
+    from ghidra.program.model.data import ArrayDataType
+    done = 0
+    for t in DATA["tables"]:
+        dt = structs.get(t["name"])
+        if dt is None:
+            continue
+        try:
+            addr = dg.add(t["ds"])
+            span = t["n"] * t["stride"]
+            clearListing(addr, addr.add(span - 1))
+            createData(addr, ArrayDataType(dt, t["n"], dt.getLength()))
+            print("   %-18s %s  [%d x 0x%X]"
+                  % (t["name"] + "[]", addr, t["n"], t["stride"]))
+            done += 1
+        except Exception as e:
+            print("!! could not apply %s at DS:0x%04X (%s)"
+                  % (t["name"], t["ds"], e))
+    print("record tables applied: %d/%d" % (done, len(DATA["tables"])))
+
+
+def retype_pointers(structs, dg):
+    """Type the current-record globals as 2-byte NEAR pointers.
+
+    Size is forced to 2 rather than left to the language's default: these
+    hold near offsets into DGROUP, and a 4-byte far pointer would swallow two
+    bytes of whatever follows and mislabel it.
+    """
+    from ghidra.program.model.data import PointerDataType
+    PTRS = [("g_current_colony_ptr", 0x8542, "ColonyRecord"),
+            ("g_current_power_ptr", 0x84FC, "PowerRecord"),
+            ("g_active_settlement_ptr", 0x8D4A, "NativeSettlement")]
+    done = 0
+    for nm, ds, tyname in PTRS:
+        dt = structs.get(tyname)
+        if dt is None:
+            continue
+        try:
+            addr = dg.add(ds)
+            clearListing(addr, addr.add(1))
+            createData(addr, PointerDataType(dt, 2))
+            print("   %-24s %s  as %s * (near, 2 bytes)" % (nm, addr, tyname))
+            done += 1
+        except Exception as e:
+            print("!! could not retype %s at DS:0x%04X (%s)" % (nm, ds, e))
+    print("record pointers typed: %d/%d" % (done, len(PTRS)))
 
 
 def main():
@@ -14175,6 +14755,21 @@ def main():
             print("!! right-click > Registers > Set Register Values, DS = 0x%04X"
                   % (dg.getOffset() >> 4))
 
+    # ---- record types: define, apply, retype ------------------------------
+    # Everything that used to be manual after the script ran:
+    #   File > Parse C Source   -> build_structs()   (no C parser involved)
+    #   G + T at each table base -> apply_tables()
+    #   Ctrl-L on each pointer   -> retype_pointers()
+    # Building the structs in code rather than parsing viceroy_types.h also
+    # sidesteps the C parser's data organisation: widths are stated outright
+    # instead of depending on what `long` means for the loaded language.
+    structs = {}
+    if APPLY_TYPES and dg is not None:
+        structs = build_structs()
+        if structs:
+            apply_tables(structs, dg)
+            retype_pointers(structs, dg)
+
     # ---- overlay page bookmarks ------------------------------------------
     pages = 0
     for p in DATA["pages"]:
@@ -14198,39 +14793,39 @@ def main():
     print("globals in-file    : %d" % gi)
     print("globals in DGROUP  : %d" % gb)
     print("overlay bookmarks  : %d" % pages)
-    # ---- the addresses you actually need, in THIS program's own format ----
-    # Do not compute these by hand: a 16-bit real-mode program uses segmented
-    # addresses (segment:offset), so a flat hex number will not resolve in
-    # Go To.  Copy the right-hand column verbatim.
+    # ---- where to look, in THIS program's own address format --------------
+    # A 16-bit real-mode program shows segmented addresses (segment:offset),
+    # so never compute these by hand — copy the right-hand column.
     print("")
     print("=" * 64)
-    print("APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)")
+    print("WHERE THINGS ARE")
     print("=" * 64)
     if dg is None:
-        print("  unavailable - the DGROUP block was not created (see above)")
+        print("  DGROUP was not created - see the errors above")
     else:
         for t in DATA["tables"]:
             try:
-                a = dg.add(t["ds"])
+                print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
+                      % (t["name"] + "[]", t["ds"], dg.add(t["ds"]),
+                         t["count"], t["stride"]))
             except Exception as e:
                 print("  %-18s DS:0x%04X  -> ERROR %s" % (t["name"], t["ds"], e))
-                continue
-            print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
-                  % (t["name"] + "[]", t["ds"], a, t["count"], t["stride"]))
-        print("")
-        print("RECORD POINTERS to retype:")
-        for nm, ds, ty in (("g_current_colony_ptr", 0x8542, "ColonyRecord *"),
-                           ("g_current_power_ptr", 0x84FC, "PowerRecord *"),
-                           ("g_active_settlement_ptr", 0x8D4A,
-                            "NativeSettlement *")):
+        for nm, ds in (("g_current_colony_ptr", 0x8542),
+                       ("g_current_power_ptr", 0x84FC),
+                       ("g_active_settlement_ptr", 0x8D4A)):
             try:
-                print("  %-24s DS:0x%04X  ->  %s   as %s"
-                      % (nm, ds, dg.add(ds), ty))
+                print("  %-24s DS:0x%04X  ->  %s" % (nm, ds, dg.add(ds)))
             except Exception:
                 pass
     print("")
-    print("Next: File > Parse C Source > tools/ghidra/viceroy_types.h")
-    print("(clean profile: our header only, empty options, 16-bit program)")
+    if APPLY_TYPES:
+        print("Nothing further to do by hand.  Check it took: G -> 53b14,")
+        print("the decompiler should read g_current_colony_ptr->colony_flags.")
+        print("(If the old text persists: right-click > Decompiler > Refresh.)")
+    else:
+        print("APPLY_TYPES is False - the record types were not defined or")
+        print("applied.  Set it True at the top of this script, or do it by")
+        print("hand per tools/ghidra/README.md section 3.2.")
 
 
 main()

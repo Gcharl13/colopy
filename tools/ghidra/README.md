@@ -80,17 +80,13 @@ progress bar at the bottom right to finish — a few minutes.
 
 ### Part 3 — types and symbols
 
-**6.** `File > Parse C Source`. In the dialog:
+**6.** *(nothing to do — the script defines the record types itself.)*
 
-- Clear the source-file list, click **+**, add `viceroy_types.h`
-- Clear the parse options box entirely (it defaults to Linux/GCC flags that
-  do not apply)
-- **Parse to Program**
-
-*You should see* five new entries under
-`Data Type Manager > <program> > viceroy_types.h`: `ColonyRecord`,
-`UnitRecord`, `PowerRecord`, `NativeSettlement`, `AIPersonality`. Detail and
-troubleshooting in §3.1.
+`File > Parse C Source` on `viceroy_types.h` is **no longer required**. The
+script builds the five structs directly in the Data Type Manager, which also
+sidesteps the C parser's data organisation (`long` is 4 bytes in the 16-bit
+program and 8 on your desktop — §3.3). The header stays in the repo as
+documentation and for other tools. §3.1 covers the manual route if you want it.
 
 **7.** `Window > Script Manager` → **Refresh** (the two-arrows icon) → find
 `viceroy_ghidra_symbols.py` → select it → click the green **▶**.
@@ -108,11 +104,13 @@ DGROUP block created at 8000:0000 (0x80000), 64 KB
 DGROUP permissions set to rw-
 DGROUP initialised half copied: 20677 bytes from file 0x1D9A0
 DS set to 0x8000 over N block(s) - globals should now decompile by name
-================================================================
-APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)
-================================================================
-  ColonyRecord[]     DS:0x5D46  ->  8000:5d46     [16, stride 0xCA]
-  ...
+record types defined: AIPersonality, ColonyRecord, NativeSettlement, ...
+   ColonyRecord[]     8000:5d46  [16 x 0xCA]
+   ...
+record tables applied: 5/5
+   g_current_colony_ptr     8000:8542  as ColonyRecord * (near, 2 bytes)
+   ...
+record pointers typed: 3/3
 ```
 
 **Any line starting `!!` is a real failure — read it, do not continue.** The
@@ -139,18 +137,28 @@ If you get the second form, right-click in the Decompiler →
 **Decompiler > Refresh** first. Still a bare `0x8542` after that means step 8's
 `DS set to` line did not appear — go back and read the console.
 
-**10.** Retype the pointer: click the variable holding `g_current_colony_ptr`,
-press **Ctrl-L**, type `ColonyRecord *`, Enter. Offsets become field names
-(`->colony_flags`). See §3.2.2, including the caveat about 2-byte near
-pointers.
+**10.** Check the arrays landed: **G** → `2eb1c`. The disassembly is
+`imul bx,[bp+6],0xca` / `mov al,[bx+0x5d65]`, and `0x5d65` should now show as
+`ColonyRecord[?].population` (`0x5D46 + 0x1F`). Full worked example in §3.2.3.
 
-**11.** Apply an array: **G** → `8000:5d46` → **T** → `ColonyRecord[16]`.
-Then check it at `0x2EB1C`, where `imul bx,[bp+6],0xca` / `mov al,[bx+0x5d65]`
-should resolve `0x5d65` as `ColonyRecord[?].population` (`0x5D46 + 0x1F`).
-Full worked example in §3.2.3.
+That is the whole procedure. Everything that used to be manual after the
+script — parsing the header, `G`+`T` at five table bases, `Ctrl-L` on three
+pointers — the script now does. §3 remains as the explanation of *what* it
+did and how to redo any part by hand.
 
-Steps 10 and 11 are optional polish. Step 9 is the one that has to work —
-everything else in §3 builds on it.
+### What the script does NOT decide for you
+
+- **Element counts are display choices**, not facts: the real counts are
+  runtime values (zero in a static dump). `ColonyRecord[16]`, `UnitRecord[64]`
+  etc. are generous placeholders. The decompiler resolves `base + i*stride`
+  from the *element type*, so the length does not affect correctness.
+- **Unmapped bytes stay `undefined1`.** ColonyRecord is 89% mapped,
+  AIPersonality 5%. Gaps are gaps — the script never invents a field name to
+  fill one.
+- **110 candidate function names are comments only.** They come from partial
+  fingerprint matches against MAPEDIT and are labelled
+  `CANDIDATE (unconfirmed...)` in the plate comment, never applied as names.
+  See §3 on name tiers before trusting one.
 
 ---
 

@@ -9639,3 +9639,48 @@ popup.obj on the popup-engine page, etc.), generator deterministic.
 
 Evidence tiers are explicit; inferred game-module names end in `*` (the real
 .obj names are unrecoverable without symbols).
+
+## 2026-08-08n — Ghidra record types: build in code, and a name conflict logged
+
+**Decision.** `tools/ghidra/export_ghidra_symbols.py` now emits a script that
+defines the five record structs *programmatically* in Ghidra's Data Type
+Manager rather than relying on `File > Parse C Source` over
+`tools/ghidra/viceroy_types.h`. It also applies each table as an array at its
+DGROUP base and types the three current-record pointers as 2-byte NEAR
+pointers. `viceroy_types.h` remains committed as documentation.
+
+**Why.** The C parser resolves widths through the loaded language's data
+organisation, which is exactly the axis that already burned us once (`long` is
+4 bytes in the 16-bit program, 8 on an LP64 desktop). Stating widths outright
+via Ghidra's fixed-size builtins (`ByteDataType`/`WordDataType`/
+`SignedDWordDataType`, never `IntegerDataType`/`LongDataType`) removes the
+dependency. It also collapses the manual post-run procedure to nothing.
+
+**New cross-check — `verify_field_aliases()`.** 140 DGROUP globals were named
+field-by-field long before these structs existed. Every such name falling
+inside a record table is an independent witness to that table's base and
+stride. Result: **17 of 18 land exactly on a field boundary of element 0** —
+`UNIT_Y`@0x3145 = `UnitRecord[0].map_y` (+0x01), `UNIT_TYPE`@0x3146 = `.type`
+(+0x02), `U_ORDERS_314C` = `.orders` (+0x08), `COL_OWNER_5D60` =
+`ColonyRecord[0].owner_power` (+0x1A), `COL_FLAG_TABLE_5D62` = `.colony_flags`
+(+0x1C), `g_war_matrix_base`@0x883C = `PowerRecord[0]`+0x34,
+`AI_CTRL_543F` = `AIPersonality[0]`+0x31. The generator now refuses to write
+if any legacy global lands off a field boundary, if fields overlap or overrun
+the stride, or if two arrays collide.
+
+**Conflict recorded, NOT resolved.** DS:0x5DE0 is `MARKET_PRICE_5DE0` in the
+legacy symbol table and `ColonyRecord.stock[16]` (+0x9A) in the record layout.
+The *offsets* agree, so the layout is not in question — only the label. A
+colony record plausibly holds warehouse stock rather than market prices, and
+market price state is per-power, not per-colony; but the legacy name is
+unsourced and the struct field comes from the SAV cross-decode, so neither is
+byte-verified *as a name*. Logged in `KNOWN_NAME_CONFLICTS` and printed on
+every generation. **TBD** until a write site at DS:0x5DE0+n*0xCA is read.
+
+**Also.** The generated script prints a content-addressed `BUILD <12 hex>`
+stamp as its first console line, and the generator prints the same string —
+two debugging rounds were lost to a stale copy in `ghidra_scripts/`.
+`check_free_names()` now parses the emitted script and refuses to write it if
+it reads any name that is not a builtin, not bound in the script, and not one
+of Ghidra's injected globals; `SCRIPT_TEMPLATE` is a string, so that class of
+bug is invisible to local testing and only surfaces inside Ghidra.
