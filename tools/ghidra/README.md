@@ -305,14 +305,35 @@ correctly regardless.
 
 #### 3.2.3 Two worked examples to check it took
 
-Both are functions transcribed in
-`viceroy_source/src/colony/page03_colony_turn.c`, so you can compare against
-a known-good reading.
+Both are verified against `code/VICEROY/disasm_overlay_reseg/` — the exact
+instruction bytes are quoted, so if your decompiler disagrees the types have
+not landed.
 
-**`0x02CFD0` — Pattern A.** It opens with `mov bx,[0x8542]` then reads
-`[bx]` and `[bx+1]`. After retyping the local to `ColonyRecord *` the
-decompiler should show `colony->map_x` / `colony->map_y` where it previously
-had raw offsets.
+> **Correction (2026-08-08):** an earlier revision of this file named
+> `0x02CFD0` as the Pattern A example. That is wrong — `func_02CFD0` is a
+> **dialog routine** (page 0x03; open/add-widget/run-modal/close through the
+> `0x181F`/`0x191F` thunks) and never touches `[0x8542]`. The real Pattern A
+> sites were found by grepping the disassembly for `word ptr [0x8542]`.
+
+**`0x053B14` — Pattern A, the smallest one in the binary (18 bytes).**
+Page 0x0E. Its whole body is:
+
+```
+053B17  8b1e4285   mov bx, word ptr [0x8542]     ; g_current_colony_ptr
+053B1B  80671c7f   and byte ptr [bx + 0x1c], 0x7f ; clear bit 7 of colony_flags
+053B1F  8a4606     mov al, byte ptr [bp + 6]
+053B22  041f       add al, 0x1f
+```
+
+Retype the local that receives `[0x8542]` as `ColonyRecord *` and the
+decompiler should turn `*(byte *)(x + 0x1c) & 0x7f` into
+`colony->colony_flags & 0x7f`. One field, no ambiguity.
+
+**`0x053820` — Pattern A, the map_x/map_y version.** Page 0x0E, 531 bytes.
+Opens `mov bx,[0x8542]` / `mov al,[bx]` / `mov cl,[bx+1]` — i.e.
+`colony->map_x`, `colony->map_y` — then passes them to `0x181F:0x722`
+(`region_of`). Bigger, but it shows several fields resolving at once
+(`[bx+0x1a]` becomes `owner_power`).
 
 **`0x02EB1C` — Pattern B.** Forty-two bytes, and the clearest test in the
 binary: `imul bx,[bp+6],0xca` then `mov al,[bx+0x5d65]` and a store to
