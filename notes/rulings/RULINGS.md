@@ -9608,3 +9608,34 @@ saved numbers toggle is on. The port's proportionalStrip now passes
 G.colonyNumbers through gauge() -- the census3 scene cells render as pure
 icon runs, closing the "digit plates over the surround panel" divergence.
 Suite 238/238; render-diff 30/30.
+
+## 2026-08-08m — VICEROY.EXE source-module reconstruction
+
+The user asked for the one thing the technical reference never had: the list
+of source modules VICEROY was built from. VICEROY shipped without CodeView
+symbols (MAPEDIT did not), so its module structure is reconstructed, not read.
+
+Deliverables:
+- `tools/extract_codeview.py` — REPRODUCIBLE MAPEDIT NB02 extractor (the
+  2026-07-30 parse behind mapedit_symbols.json was never committed). Corrects
+  the NB02 model: the "second signature" at 0x23784 is the 8-byte EXE-tail
+  TRAILER (NB02 + lfaBack), not a second symbol table; base = 0x1BE09. Emits
+  211 modules + 1071 publics, and now the per-module CODE EXTENTS (sstModule
+  seg/off/cbCode) the old parse dropped.
+- `tools/rtlink/make_module_map.py` → `data_extracted/viceroy_modules.json`:
+  every one of the 1250 functions assigned to a module. 89 tier-B (real 1994
+  names via the MAPEDIT fingerprint match), 754 tier-A (same-module runs +
+  page-level mechanic identity from event_emitters + the UI attribution
+  prose), 27 overlay-metadata (page-header/reloc data mis-split as functions),
+  260 resident functions honestly unattributed.
+- `docs/VICEROY_MODULES.md`: how the EXE is built (resident image + 31 RTLink
+  overlay pages + thunk segments + DGROUP), the two-layer engine/game split,
+  the game-module table (one mechanic per overlay page, each pinned by the
+  GAME.TXT keys it emits), and the named engine modules.
+
+Verified: all 31 overlay pages covered, every overlay function has a module,
+named anchors land in role-matching modules (menu.obj on the menu-bar page,
+popup.obj on the popup-engine page, etc.), generator deterministic.
+
+Evidence tiers are explicit; inferred game-module names end in `*` (the real
+.obj names are unrecoverable without symbols).

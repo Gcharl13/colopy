@@ -1,6 +1,1697 @@
 {
  "source": "MAPEDIT.EXE CodeView NB02 publics at file 0x1BE09",
  "note": "file_offset = seg*16 + off + 0x1600 (header size)",
+ "generator": "tools/extract_codeview.py",
+ "modules": [
+  {
+   "iMod": 1,
+   "name": "mapedit.obj",
+   "seg": 0,
+   "off": 0,
+   "size": 10620,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 2,
+   "name": "env_1.obj",
+   "seg": 663,
+   "off": 12,
+   "size": 322,
+   "file_offset": "0x003F7C"
+  },
+  {
+   "iMod": 3,
+   "name": "map.obj",
+   "seg": 683,
+   "off": 14,
+   "size": 1528,
+   "file_offset": "0x0040BE"
+  },
+  {
+   "iMod": 4,
+   "name": "tile.obj",
+   "seg": 779,
+   "off": 6,
+   "size": 660,
+   "file_offset": "0x0046B6"
+  },
+  {
+   "iMod": 5,
+   "name": "strings.obj",
+   "seg": 820,
+   "off": 10,
+   "size": 148,
+   "file_offset": "0x00494A"
+  },
+  {
+   "iMod": 6,
+   "name": "popup.obj",
+   "seg": 829,
+   "off": 14,
+   "size": 14746,
+   "file_offset": "0x0049DE"
+  },
+  {
+   "iMod": 7,
+   "name": "menu.obj",
+   "seg": 1751,
+   "off": 8,
+   "size": 5800,
+   "file_offset": "0x008378"
+  },
+  {
+   "iMod": 8,
+   "name": "text.obj",
+   "seg": 2114,
+   "off": 0,
+   "size": 574,
+   "file_offset": "0x009A20"
+  },
+  {
+   "iMod": 9,
+   "name": "stuff.obj",
+   "seg": 2149,
+   "off": 14,
+   "size": 342,
+   "file_offset": "0x009C5E"
+  },
+  {
+   "iMod": 10,
+   "name": "map_2.obj",
+   "seg": 2171,
+   "off": 4,
+   "size": 630,
+   "file_offset": "0x009DB4"
+  },
+  {
+   "iMod": 11,
+   "name": "map_5.obj",
+   "seg": 2210,
+   "off": 10,
+   "size": 166,
+   "file_offset": "0x00A02A"
+  },
+  {
+   "iMod": 12,
+   "name": "write.obj",
+   "seg": 2221,
+   "off": 0,
+   "size": 1220,
+   "file_offset": "0x00A0D0"
+  },
+  {
+   "iMod": 13,
+   "name": "vicemisc.obj",
+   "seg": 2297,
+   "off": 4,
+   "size": 3042,
+   "file_offset": "0x00A594"
+  },
+  {
+   "iMod": 14,
+   "name": "terrain.obj",
+   "seg": 2487,
+   "off": 6,
+   "size": 204,
+   "file_offset": "0x00B176"
+  },
+  {
+   "iMod": 15,
+   "name": "compass.obj",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 16,
+   "name": "map_6.obj",
+   "seg": 2500,
+   "off": 2,
+   "size": 856,
+   "file_offset": "0x00B242"
+  },
+  {
+   "iMod": 17,
+   "name": "map_9.obj",
+   "seg": 2553,
+   "off": 10,
+   "size": 1244,
+   "file_offset": "0x00B59A"
+  },
+  {
+   "iMod": 18,
+   "name": "map_a.obj",
+   "seg": 2631,
+   "off": 6,
+   "size": 4334,
+   "file_offset": "0x00BA76"
+  },
+  {
+   "iMod": 19,
+   "name": "me_mini.obj",
+   "seg": 2902,
+   "off": 4,
+   "size": 1228,
+   "file_offset": "0x00CB64"
+  },
+  {
+   "iMod": 20,
+   "name": "hspot_1.c",
+   "seg": 2979,
+   "off": 0,
+   "size": 114,
+   "file_offset": "0x00D030"
+  },
+  {
+   "iMod": 21,
+   "name": "HSPOT_7.C",
+   "seg": 2986,
+   "off": 2,
+   "size": 82,
+   "file_offset": "0x00D0A2"
+  },
+  {
+   "iMod": 22,
+   "name": "KEYS_1.C",
+   "seg": 2991,
+   "off": 4,
+   "size": 58,
+   "file_offset": "0x00D0F4"
+  },
+  {
+   "iMod": 23,
+   "name": "keys_3.c",
+   "seg": 2994,
+   "off": 14,
+   "size": 274,
+   "file_offset": "0x00D12E"
+  },
+  {
+   "iMod": 24,
+   "name": "FILEIO_5.C",
+   "seg": 3012,
+   "off": 0,
+   "size": 96,
+   "file_offset": "0x00D240"
+  },
+  {
+   "iMod": 25,
+   "name": "fileio_8.c",
+   "seg": 3018,
+   "off": 0,
+   "size": 520,
+   "file_offset": "0x00D2A0"
+  },
+  {
+   "iMod": 26,
+   "name": "fileio_9.c",
+   "seg": 3050,
+   "off": 8,
+   "size": 264,
+   "file_offset": "0x00D4A8"
+  },
+  {
+   "iMod": 27,
+   "name": "fileio_c.ASM",
+   "seg": 3067,
+   "off": 0,
+   "size": 157,
+   "file_offset": "0x00D5B0"
+  },
+  {
+   "iMod": 28,
+   "name": "FILEIO_I.C",
+   "seg": 3076,
+   "off": 14,
+   "size": 198,
+   "file_offset": "0x00D64E"
+  },
+  {
+   "iMod": 29,
+   "name": "FILEIO_M.C",
+   "seg": 3089,
+   "off": 4,
+   "size": 142,
+   "file_offset": "0x00D714"
+  },
+  {
+   "iMod": 30,
+   "name": "FILEIO_U.C",
+   "seg": 3098,
+   "off": 2,
+   "size": 110,
+   "file_offset": "0x00D7A2"
+  },
+  {
+   "iMod": 31,
+   "name": "mouse_2.c",
+   "seg": 3105,
+   "off": 0,
+   "size": 316,
+   "file_offset": "0x00D810"
+  },
+  {
+   "iMod": 32,
+   "name": "mouse_4.c",
+   "seg": 3124,
+   "off": 12,
+   "size": 126,
+   "file_offset": "0x00D94C"
+  },
+  {
+   "iMod": 33,
+   "name": "SCREEN_B.C",
+   "seg": 3132,
+   "off": 10,
+   "size": 32,
+   "file_offset": "0x00D9CA"
+  },
+  {
+   "iMod": 34,
+   "name": "buffer_1.c",
+   "seg": 3134,
+   "off": 10,
+   "size": 124,
+   "file_offset": "0x00D9EA"
+  },
+  {
+   "iMod": 35,
+   "name": "BUFFER_2.C",
+   "seg": 3142,
+   "off": 6,
+   "size": 56,
+   "file_offset": "0x00DA66"
+  },
+  {
+   "iMod": 36,
+   "name": "BUFFER_3.C",
+   "seg": 3145,
+   "off": 14,
+   "size": 34,
+   "file_offset": "0x00DA9E"
+  },
+  {
+   "iMod": 37,
+   "name": "buffer_4.c",
+   "seg": 3148,
+   "off": 0,
+   "size": 244,
+   "file_offset": "0x00DAC0"
+  },
+  {
+   "iMod": 38,
+   "name": "BUFFER_5.C",
+   "seg": 3163,
+   "off": 4,
+   "size": 188,
+   "file_offset": "0x00DBB4"
+  },
+  {
+   "iMod": 39,
+   "name": "buffer_6.c",
+   "seg": 3175,
+   "off": 0,
+   "size": 244,
+   "file_offset": "0x00DC70"
+  },
+  {
+   "iMod": 40,
+   "name": "buffer_7.c",
+   "seg": 3190,
+   "off": 4,
+   "size": 28,
+   "file_offset": "0x00DD64"
+  },
+  {
+   "iMod": 41,
+   "name": "buffer_8.c",
+   "seg": 3192,
+   "off": 0,
+   "size": 22,
+   "file_offset": "0x00DD80"
+  },
+  {
+   "iMod": 42,
+   "name": "buffer_9.c",
+   "seg": 3193,
+   "off": 6,
+   "size": 106,
+   "file_offset": "0x00DD96"
+  },
+  {
+   "iMod": 43,
+   "name": "buffer_a.c",
+   "seg": 3200,
+   "off": 0,
+   "size": 108,
+   "file_offset": "0x00DE00"
+  },
+  {
+   "iMod": 44,
+   "name": "buffer_b.c",
+   "seg": 3206,
+   "off": 12,
+   "size": 164,
+   "file_offset": "0x00DE6C"
+  },
+  {
+   "iMod": 45,
+   "name": "buffer_i.c",
+   "seg": 3217,
+   "off": 0,
+   "size": 206,
+   "file_offset": "0x00DF10"
+  },
+  {
+   "iMod": 46,
+   "name": "buffer_t.c",
+   "seg": 3229,
+   "off": 14,
+   "size": 434,
+   "file_offset": "0x00DFDE"
+  },
+  {
+   "iMod": 47,
+   "name": "buffer_z.c",
+   "seg": 3257,
+   "off": 0,
+   "size": 260,
+   "file_offset": "0x00E190"
+  },
+  {
+   "iMod": 48,
+   "name": "mem_2.c",
+   "seg": 3273,
+   "off": 4,
+   "size": 1018,
+   "file_offset": "0x00E294"
+  },
+  {
+   "iMod": 49,
+   "name": "mem_4.c",
+   "seg": 3336,
+   "off": 14,
+   "size": 158,
+   "file_offset": "0x00E68E"
+  },
+  {
+   "iMod": 50,
+   "name": "btype_5.c",
+   "seg": 3346,
+   "off": 12,
+   "size": 90,
+   "file_offset": "0x00E72C"
+  },
+  {
+   "iMod": 51,
+   "name": "TIMER_1.C",
+   "seg": 3352,
+   "off": 6,
+   "size": 66,
+   "file_offset": "0x00E786"
+  },
+  {
+   "iMod": 52,
+   "name": "timer_3.ASM",
+   "seg": 3356,
+   "off": 8,
+   "size": 626,
+   "file_offset": "0x00E7C8"
+  },
+  {
+   "iMod": 53,
+   "name": "font_1.c",
+   "seg": 3395,
+   "off": 10,
+   "size": 254,
+   "file_offset": "0x00EA3A"
+  },
+  {
+   "iMod": 54,
+   "name": "font_2.c",
+   "seg": 3411,
+   "off": 8,
+   "size": 366,
+   "file_offset": "0x00EB38"
+  },
+  {
+   "iMod": 55,
+   "name": "FONT_3.C",
+   "seg": 3434,
+   "off": 6,
+   "size": 28,
+   "file_offset": "0x00ECA6"
+  },
+  {
+   "iMod": 56,
+   "name": "font_4.c",
+   "seg": 3436,
+   "off": 2,
+   "size": 72,
+   "file_offset": "0x00ECC2"
+  },
+  {
+   "iMod": 57,
+   "name": "mcga_7.c",
+   "seg": 3440,
+   "off": 10,
+   "size": 84,
+   "file_offset": "0x00ED0A"
+  },
+  {
+   "iMod": 58,
+   "name": "mcga_c.c",
+   "seg": 3445,
+   "off": 14,
+   "size": 402,
+   "file_offset": "0x00ED5E"
+  },
+  {
+   "iMod": 59,
+   "name": "sprite_1.c",
+   "seg": 3471,
+   "off": 0,
+   "size": 506,
+   "file_offset": "0x00EEF0"
+  },
+  {
+   "iMod": 60,
+   "name": "sprite_2.c",
+   "seg": 3502,
+   "off": 10,
+   "size": 718,
+   "file_offset": "0x00F0EA"
+  },
+  {
+   "iMod": 61,
+   "name": "sprite_e.c",
+   "seg": 3547,
+   "off": 8,
+   "size": 2404,
+   "file_offset": "0x00F3B8"
+  },
+  {
+   "iMod": 62,
+   "name": "sprite_l.c",
+   "seg": 3697,
+   "off": 12,
+   "size": 526,
+   "file_offset": "0x00FD1C"
+  },
+  {
+   "iMod": 63,
+   "name": "sprite_m.c",
+   "seg": 3730,
+   "off": 10,
+   "size": 736,
+   "file_offset": "0x00FF2A"
+  },
+  {
+   "iMod": 64,
+   "name": "pal_8.c",
+   "seg": 3776,
+   "off": 10,
+   "size": 78,
+   "file_offset": "0x01020A"
+  },
+  {
+   "iMod": 65,
+   "name": "matte_0.c",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 66,
+   "name": "video_1.ASM",
+   "seg": 3781,
+   "off": 8,
+   "size": 175,
+   "file_offset": "0x010258"
+  },
+  {
+   "iMod": 67,
+   "name": "error_1.c",
+   "seg": 3792,
+   "off": 8,
+   "size": 1126,
+   "file_offset": "0x010308"
+  },
+  {
+   "iMod": 68,
+   "name": "pack_9.c",
+   "seg": 3862,
+   "off": 14,
+   "size": 60,
+   "file_offset": "0x01076E"
+  },
+  {
+   "iMod": 69,
+   "name": "cycle_1.c",
+   "seg": 3866,
+   "off": 10,
+   "size": 448,
+   "file_offset": "0x0107AA"
+  },
+  {
+   "iMod": 70,
+   "name": "xms_1.c",
+   "seg": 3894,
+   "off": 10,
+   "size": 130,
+   "file_offset": "0x01096A"
+  },
+  {
+   "iMod": 71,
+   "name": "himem_6.c",
+   "seg": 3902,
+   "off": 12,
+   "size": 100,
+   "file_offset": "0x0109EC"
+  },
+  {
+   "iMod": 72,
+   "name": "heap_1.c",
+   "seg": 3909,
+   "off": 0,
+   "size": 512,
+   "file_offset": "0x010A50"
+  },
+  {
+   "iMod": 73,
+   "name": "mouse_1.ASM",
+   "seg": 3941,
+   "off": 0,
+   "size": 2460,
+   "file_offset": "0x010C50"
+  },
+  {
+   "iMod": 74,
+   "name": "keys_4.ASM",
+   "seg": 4094,
+   "off": 12,
+   "size": 528,
+   "file_offset": "0x0115EC"
+  },
+  {
+   "iMod": 75,
+   "name": "FILEIO_1.C",
+   "seg": 4127,
+   "off": 12,
+   "size": 96,
+   "file_offset": "0x0117FC"
+  },
+  {
+   "iMod": 76,
+   "name": "buffer_r.c",
+   "seg": 4133,
+   "off": 12,
+   "size": 382,
+   "file_offset": "0x01185C"
+  },
+  {
+   "iMod": 77,
+   "name": "buffer_s.c",
+   "seg": 4157,
+   "off": 10,
+   "size": 280,
+   "file_offset": "0x0119DA"
+  },
+  {
+   "iMod": 78,
+   "name": "MEM_1.C",
+   "seg": 4175,
+   "off": 2,
+   "size": 24,
+   "file_offset": "0x011AF2"
+  },
+  {
+   "iMod": 79,
+   "name": "btype_3.c",
+   "seg": 4176,
+   "off": 10,
+   "size": 100,
+   "file_offset": "0x011B0A"
+  },
+  {
+   "iMod": 80,
+   "name": "btype_4.c",
+   "seg": 4182,
+   "off": 14,
+   "size": 72,
+   "file_offset": "0x011B6E"
+  },
+  {
+   "iMod": 81,
+   "name": "TIMER_2.C",
+   "seg": 4187,
+   "off": 6,
+   "size": 20,
+   "file_offset": "0x011BB6"
+  },
+  {
+   "iMod": 82,
+   "name": "mcga_8.c",
+   "seg": 4188,
+   "off": 10,
+   "size": 80,
+   "file_offset": "0x011BCA"
+  },
+  {
+   "iMod": 83,
+   "name": "mcga_b.c",
+   "seg": 4193,
+   "off": 10,
+   "size": 124,
+   "file_offset": "0x011C1A"
+  },
+  {
+   "iMod": 84,
+   "name": "SPRITE_H.C",
+   "seg": 4201,
+   "off": 6,
+   "size": 184,
+   "file_offset": "0x011C96"
+  },
+  {
+   "iMod": 85,
+   "name": "pal_1.c",
+   "seg": 4212,
+   "off": 14,
+   "size": 2548,
+   "file_offset": "0x011D4E"
+  },
+  {
+   "iMod": 86,
+   "name": "video_2.ASM",
+   "seg": 4372,
+   "off": 2,
+   "size": 18,
+   "file_offset": "0x012742"
+  },
+  {
+   "iMod": 87,
+   "name": "sound_1.ASM",
+   "seg": 4373,
+   "off": 4,
+   "size": 283,
+   "file_offset": "0x012754"
+  },
+  {
+   "iMod": 88,
+   "name": "sound_2.ASM",
+   "seg": 4391,
+   "off": 0,
+   "size": 101,
+   "file_offset": "0x012870"
+  },
+  {
+   "iMod": 89,
+   "name": "ems_1.c",
+   "seg": 4397,
+   "off": 6,
+   "size": 390,
+   "file_offset": "0x0128D6"
+  },
+  {
+   "iMod": 90,
+   "name": "ems_2.c",
+   "seg": 4421,
+   "off": 12,
+   "size": 554,
+   "file_offset": "0x012A5C"
+  },
+  {
+   "iMod": 91,
+   "name": "pfabcomp.ASM",
+   "seg": 4456,
+   "off": 6,
+   "size": 1002,
+   "file_offset": "0x012C86"
+  },
+  {
+   "iMod": 92,
+   "name": "pfabexp0.ASM",
+   "seg": 4519,
+   "off": 0,
+   "size": 586,
+   "file_offset": "0x013070"
+  },
+  {
+   "iMod": 93,
+   "name": "pfabexp1.ASM",
+   "seg": 4519,
+   "off": 586,
+   "size": 520,
+   "file_offset": "0x0132BA"
+  },
+  {
+   "iMod": 94,
+   "name": "pfabexp2.ASM",
+   "seg": 4519,
+   "off": 1106,
+   "size": 357,
+   "file_offset": "0x0134C2"
+  },
+  {
+   "iMod": 95,
+   "name": "pack_5.c",
+   "seg": 4610,
+   "off": 8,
+   "size": 376,
+   "file_offset": "0x013628"
+  },
+  {
+   "iMod": 96,
+   "name": "loader_1.c",
+   "seg": 4634,
+   "off": 0,
+   "size": 994,
+   "file_offset": "0x0137A0"
+  },
+  {
+   "iMod": 97,
+   "name": "loader_2.c",
+   "seg": 4696,
+   "off": 2,
+   "size": 558,
+   "file_offset": "0x013B82"
+  },
+  {
+   "iMod": 98,
+   "name": "ECHO_1.C",
+   "seg": 4731,
+   "off": 0,
+   "size": 60,
+   "file_offset": "0x013DB0"
+  },
+  {
+   "iMod": 99,
+   "name": "XMS_2.C",
+   "seg": 4734,
+   "off": 12,
+   "size": 44,
+   "file_offset": "0x013DEC"
+  },
+  {
+   "iMod": 100,
+   "name": "XMS_3.C",
+   "seg": 4737,
+   "off": 8,
+   "size": 120,
+   "file_offset": "0x013E18"
+  },
+  {
+   "iMod": 101,
+   "name": "XMS_4.C",
+   "seg": 4745,
+   "off": 0,
+   "size": 36,
+   "file_offset": "0x013E90"
+  },
+  {
+   "iMod": 102,
+   "name": "xms_6.c",
+   "seg": 4747,
+   "off": 4,
+   "size": 82,
+   "file_offset": "0x013EB4"
+  },
+  {
+   "iMod": 103,
+   "name": "HIMEM_1.C",
+   "seg": 4752,
+   "off": 6,
+   "size": 36,
+   "file_offset": "0x013F06"
+  },
+  {
+   "iMod": 104,
+   "name": "HIMEM_2.C",
+   "seg": 4754,
+   "off": 10,
+   "size": 84,
+   "file_offset": "0x013F2A"
+  },
+  {
+   "iMod": 105,
+   "name": "himem_5.c",
+   "seg": 4759,
+   "off": 14,
+   "size": 290,
+   "file_offset": "0x013F7E"
+  },
+  {
+   "iMod": 106,
+   "name": "stack_1.ASM",
+   "seg": 4778,
+   "off": 0,
+   "size": 59,
+   "file_offset": "0x0140A0"
+  },
+  {
+   "iMod": 107,
+   "name": "mcga_d.c",
+   "seg": 4781,
+   "off": 12,
+   "size": 36,
+   "file_offset": "0x0140DC"
+  },
+  {
+   "iMod": 108,
+   "name": "pal_4.c",
+   "seg": 4784,
+   "off": 0,
+   "size": 382,
+   "file_offset": "0x014100"
+  },
+  {
+   "iMod": 109,
+   "name": "SORT_1.C",
+   "seg": 4807,
+   "off": 14,
+   "size": 394,
+   "file_offset": "0x01427E"
+  },
+  {
+   "iMod": 110,
+   "name": "sort_3.c",
+   "seg": 4832,
+   "off": 8,
+   "size": 192,
+   "file_offset": "0x014408"
+  },
+  {
+   "iMod": 111,
+   "name": "EMS_4.C",
+   "seg": 4844,
+   "off": 8,
+   "size": 238,
+   "file_offset": "0x0144C8"
+  },
+  {
+   "iMod": 112,
+   "name": "EMS_5.C",
+   "seg": 4859,
+   "off": 6,
+   "size": 116,
+   "file_offset": "0x0145B6"
+  },
+  {
+   "iMod": 113,
+   "name": "ems_7.c",
+   "seg": 4866,
+   "off": 10,
+   "size": 112,
+   "file_offset": "0x01462A"
+  },
+  {
+   "iMod": 114,
+   "name": "pack_6.c",
+   "seg": 4873,
+   "off": 10,
+   "size": 848,
+   "file_offset": "0x01469A"
+  },
+  {
+   "iMod": 115,
+   "name": "magic_e.c",
+   "seg": 4926,
+   "off": 10,
+   "size": 74,
+   "file_offset": "0x0149EA"
+  },
+  {
+   "iMod": 116,
+   "name": "XMS_7.C",
+   "seg": 4931,
+   "off": 4,
+   "size": 38,
+   "file_offset": "0x014A34"
+  },
+  {
+   "iMod": 117,
+   "name": "himem_4.c",
+   "seg": 4933,
+   "off": 10,
+   "size": 292,
+   "file_offset": "0x014A5A"
+  },
+  {
+   "iMod": 118,
+   "name": "MEM_3.C",
+   "seg": 4951,
+   "off": 14,
+   "size": 24,
+   "file_offset": "0x014B7E"
+  },
+  {
+   "iMod": 119,
+   "name": "PACK_1.C",
+   "seg": 4953,
+   "off": 6,
+   "size": 116,
+   "file_offset": "0x014B96"
+  },
+  {
+   "iMod": 120,
+   "name": "PACK_2.C",
+   "seg": 4960,
+   "off": 10,
+   "size": 110,
+   "file_offset": "0x014C0A"
+  },
+  {
+   "iMod": 121,
+   "name": "PACK_3.C",
+   "seg": 4967,
+   "off": 8,
+   "size": 122,
+   "file_offset": "0x014C78"
+  },
+  {
+   "iMod": 122,
+   "name": "PACK_4.C",
+   "seg": 4975,
+   "off": 2,
+   "size": 146,
+   "file_offset": "0x014CF2"
+  },
+  {
+   "iMod": 123,
+   "name": "PACK_D.C",
+   "seg": 4984,
+   "off": 4,
+   "size": 266,
+   "file_offset": "0x014D84"
+  },
+  {
+   "iMod": 124,
+   "name": "dos\\crt0.asm",
+   "seg": 5000,
+   "off": 30,
+   "size": 247,
+   "file_offset": "0x014E9E"
+  },
+  {
+   "iMod": 125,
+   "name": "dos\\crt0dat.asm",
+   "seg": 5000,
+   "off": 278,
+   "size": 392,
+   "file_offset": "0x014F96"
+  },
+  {
+   "iMod": 126,
+   "name": "chkstk.asm",
+   "seg": 5000,
+   "off": 670,
+   "size": 36,
+   "file_offset": "0x01511E"
+  },
+  {
+   "iMod": 127,
+   "name": "fclose.c",
+   "seg": 5000,
+   "off": 706,
+   "size": 186,
+   "file_offset": "0x015142"
+  },
+  {
+   "iMod": 128,
+   "name": "fopen.c",
+   "seg": 5000,
+   "off": 892,
+   "size": 66,
+   "file_offset": "0x0151FC"
+  },
+  {
+   "iMod": 129,
+   "name": "fread.asm",
+   "seg": 5000,
+   "off": 958,
+   "size": 227,
+   "file_offset": "0x01523E"
+  },
+  {
+   "iMod": 130,
+   "name": "fwrite.asm",
+   "seg": 5000,
+   "off": 1186,
+   "size": 261,
+   "file_offset": "0x015322"
+  },
+  {
+   "iMod": 131,
+   "name": "printf.c",
+   "seg": 5000,
+   "off": 1448,
+   "size": 62,
+   "file_offset": "0x015428"
+  },
+  {
+   "iMod": 132,
+   "name": "strcat.asm",
+   "seg": 5000,
+   "off": 1510,
+   "size": 63,
+   "file_offset": "0x015466"
+  },
+  {
+   "iMod": 133,
+   "name": "strcpy.asm",
+   "seg": 5000,
+   "off": 1574,
+   "size": 50,
+   "file_offset": "0x0154A6"
+  },
+  {
+   "iMod": 134,
+   "name": "strcmp.asm",
+   "seg": 5000,
+   "off": 1624,
+   "size": 43,
+   "file_offset": "0x0154D8"
+  },
+  {
+   "iMod": 135,
+   "name": "strlen.asm",
+   "seg": 5000,
+   "off": 1668,
+   "size": 27,
+   "file_offset": "0x015504"
+  },
+  {
+   "iMod": 136,
+   "name": "strncat.asm",
+   "seg": 5000,
+   "off": 1696,
+   "size": 53,
+   "file_offset": "0x015520"
+  },
+  {
+   "iMod": 137,
+   "name": "strncpy.asm",
+   "seg": 5000,
+   "off": 1750,
+   "size": 40,
+   "file_offset": "0x015556"
+  },
+  {
+   "iMod": 138,
+   "name": "strncmp.asm",
+   "seg": 5000,
+   "off": 1790,
+   "size": 58,
+   "file_offset": "0x01557E"
+  },
+  {
+   "iMod": 139,
+   "name": "atoi.asm",
+   "seg": 5000,
+   "off": 1848,
+   "size": 3,
+   "file_offset": "0x0155B8"
+  },
+  {
+   "iMod": 140,
+   "name": "itoa.asm",
+   "seg": 5000,
+   "off": 1852,
+   "size": 27,
+   "file_offset": "0x0155BC"
+  },
+  {
+   "iMod": 141,
+   "name": "ltoa.asm",
+   "seg": 5000,
+   "off": 1880,
+   "size": 10,
+   "file_offset": "0x0155D8"
+  },
+  {
+   "iMod": 142,
+   "name": "ctype.asm",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 143,
+   "name": "dos\\diffhlp.asm",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 144,
+   "name": "fgetpos.c",
+   "seg": 5000,
+   "off": 1890,
+   "size": 40,
+   "file_offset": "0x0155E2"
+  },
+  {
+   "iMod": 145,
+   "name": "fgets.asm",
+   "seg": 5000,
+   "off": 1930,
+   "size": 115,
+   "file_offset": "0x01560A"
+  },
+  {
+   "iMod": 146,
+   "name": "fseek.c",
+   "seg": 5000,
+   "off": 2046,
+   "size": 128,
+   "file_offset": "0x01567E"
+  },
+  {
+   "iMod": 147,
+   "name": "fsetpos.c",
+   "seg": 5000,
+   "off": 2174,
+   "size": 26,
+   "file_offset": "0x0156FE"
+  },
+  {
+   "iMod": 148,
+   "name": "rewind.c",
+   "seg": 5000,
+   "off": 2200,
+   "size": 68,
+   "file_offset": "0x015718"
+  },
+  {
+   "iMod": 149,
+   "name": "setbuf.c",
+   "seg": 5000,
+   "off": 2268,
+   "size": 44,
+   "file_offset": "0x01575C"
+  },
+  {
+   "iMod": 150,
+   "name": "sprintf.c",
+   "seg": 5000,
+   "off": 2312,
+   "size": 90,
+   "file_offset": "0x015788"
+  },
+  {
+   "iMod": 151,
+   "name": "flength.c",
+   "seg": 5000,
+   "off": 2402,
+   "size": 134,
+   "file_offset": "0x0157E2"
+  },
+  {
+   "iMod": 152,
+   "name": "strchr.asm",
+   "seg": 5000,
+   "off": 2536,
+   "size": 42,
+   "file_offset": "0x015868"
+  },
+  {
+   "iMod": 153,
+   "name": "strnicmp.asm",
+   "seg": 5000,
+   "off": 2578,
+   "size": 87,
+   "file_offset": "0x015892"
+  },
+  {
+   "iMod": 154,
+   "name": "strlwr.asm",
+   "seg": 5000,
+   "off": 2666,
+   "size": 30,
+   "file_offset": "0x0158EA"
+  },
+  {
+   "iMod": 155,
+   "name": "strupr.asm",
+   "seg": 5000,
+   "off": 2696,
+   "size": 30,
+   "file_offset": "0x015908"
+  },
+  {
+   "iMod": 156,
+   "name": "dos\\unlink.asm",
+   "seg": 5000,
+   "off": 2726,
+   "size": 13,
+   "file_offset": "0x015926"
+  },
+  {
+   "iMod": 157,
+   "name": "dos\\d_find.asm",
+   "seg": 5000,
+   "off": 2740,
+   "size": 62,
+   "file_offset": "0x015934"
+  },
+  {
+   "iMod": 158,
+   "name": "dos\\d_rdwr.asm",
+   "seg": 5000,
+   "off": 2802,
+   "size": 47,
+   "file_offset": "0x015972"
+  },
+  {
+   "iMod": 159,
+   "name": "ldiv.asm",
+   "seg": 5000,
+   "off": 2850,
+   "size": 154,
+   "file_offset": "0x0159A2"
+  },
+  {
+   "iMod": 160,
+   "name": "lmul.asm",
+   "seg": 5000,
+   "off": 3004,
+   "size": 50,
+   "file_offset": "0x015A3C"
+  },
+  {
+   "iMod": 161,
+   "name": "hmemcmp.asm",
+   "seg": 5000,
+   "off": 3054,
+   "size": 91,
+   "file_offset": "0x015A6E"
+  },
+  {
+   "iMod": 162,
+   "name": "hmemcpy.asm",
+   "seg": 5000,
+   "off": 3146,
+   "size": 94,
+   "file_offset": "0x015ACA"
+  },
+  {
+   "iMod": 163,
+   "name": "strchr.asm",
+   "seg": 5000,
+   "off": 3240,
+   "size": 45,
+   "file_offset": "0x015B28"
+  },
+  {
+   "iMod": 164,
+   "name": "stricmp.asm",
+   "seg": 5000,
+   "off": 3286,
+   "size": 69,
+   "file_offset": "0x015B56"
+  },
+  {
+   "iMod": 165,
+   "name": "strncmp.asm",
+   "seg": 5000,
+   "off": 3356,
+   "size": 59,
+   "file_offset": "0x015B9C"
+  },
+  {
+   "iMod": 166,
+   "name": "strncpy.asm",
+   "seg": 5000,
+   "off": 3416,
+   "size": 42,
+   "file_offset": "0x015BD8"
+  },
+  {
+   "iMod": 167,
+   "name": "strrchr.asm",
+   "seg": 5000,
+   "off": 3458,
+   "size": 46,
+   "file_offset": "0x015C02"
+  },
+  {
+   "iMod": 168,
+   "name": "strupr.asm",
+   "seg": 5000,
+   "off": 3504,
+   "size": 36,
+   "file_offset": "0x015C30"
+  },
+  {
+   "iMod": 169,
+   "name": "strlen.asm",
+   "seg": 5000,
+   "off": 3540,
+   "size": 23,
+   "file_offset": "0x015C54"
+  },
+  {
+   "iMod": 170,
+   "name": "strcpy.asm",
+   "seg": 5000,
+   "off": 3564,
+   "size": 54,
+   "file_offset": "0x015C6C"
+  },
+  {
+   "iMod": 171,
+   "name": "strcat.asm",
+   "seg": 5000,
+   "off": 3618,
+   "size": 70,
+   "file_offset": "0x015CA2"
+  },
+  {
+   "iMod": 172,
+   "name": "hmemset.asm",
+   "seg": 5000,
+   "off": 3688,
+   "size": 72,
+   "file_offset": "0x015CE8"
+  },
+  {
+   "iMod": 173,
+   "name": "hmemcpy.asm",
+   "seg": 5000,
+   "off": 3760,
+   "size": 202,
+   "file_offset": "0x015D30"
+  },
+  {
+   "iMod": 174,
+   "name": "dos\\crt0msg.asm",
+   "seg": 5000,
+   "off": 3962,
+   "size": 34,
+   "file_offset": "0x015DFA"
+  },
+  {
+   "iMod": 175,
+   "name": "crt0fp.asm",
+   "seg": 5000,
+   "off": 3996,
+   "size": 6,
+   "file_offset": "0x015E1C"
+  },
+  {
+   "iMod": 176,
+   "name": "chksum.asm",
+   "seg": 5000,
+   "off": 4002,
+   "size": 36,
+   "file_offset": "0x015E22"
+  },
+  {
+   "iMod": 177,
+   "name": "dos\\stdargv.asm",
+   "seg": 5000,
+   "off": 4038,
+   "size": 402,
+   "file_offset": "0x015E46"
+  },
+  {
+   "iMod": 178,
+   "name": "dos\\stdenvp.asm",
+   "seg": 5000,
+   "off": 4440,
+   "size": 125,
+   "file_offset": "0x015FD8"
+  },
+  {
+   "iMod": 179,
+   "name": "dos\\nmsghdr.asm",
+   "seg": 5000,
+   "off": 4566,
+   "size": 97,
+   "file_offset": "0x016056"
+  },
+  {
+   "iMod": 180,
+   "name": "dos\\dosret.asm",
+   "seg": 5000,
+   "off": 4664,
+   "size": 85,
+   "file_offset": "0x0160B8"
+  },
+  {
+   "iMod": 181,
+   "name": "_file.c",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 182,
+   "name": "_filbuf.asm",
+   "seg": 5000,
+   "off": 4750,
+   "size": 149,
+   "file_offset": "0x01610E"
+  },
+  {
+   "iMod": 183,
+   "name": "_flsbuf.asm",
+   "seg": 5000,
+   "off": 4900,
+   "size": 227,
+   "file_offset": "0x0161A4"
+  },
+  {
+   "iMod": 184,
+   "name": "_freebuf.asm",
+   "seg": 5000,
+   "off": 5128,
+   "size": 44,
+   "file_offset": "0x016288"
+  },
+  {
+   "iMod": 185,
+   "name": "_open.c",
+   "seg": 5000,
+   "off": 5172,
+   "size": 232,
+   "file_offset": "0x0162B4"
+  },
+  {
+   "iMod": 186,
+   "name": "_sftbuf.asm",
+   "seg": 5000,
+   "off": 5404,
+   "size": 178,
+   "file_offset": "0x01639C"
+  },
+  {
+   "iMod": 187,
+   "name": "fflush.c",
+   "seg": 5000,
+   "off": 5582,
+   "size": 200,
+   "file_offset": "0x01644E"
+  },
+  {
+   "iMod": 188,
+   "name": "output.asm",
+   "seg": 5000,
+   "off": 5782,
+   "size": 1255,
+   "file_offset": "0x016516"
+  },
+  {
+   "iMod": 189,
+   "name": "stream.c",
+   "seg": 5000,
+   "off": 7038,
+   "size": 52,
+   "file_offset": "0x0169FE"
+  },
+  {
+   "iMod": 190,
+   "name": "dos\\close.asm",
+   "seg": 5000,
+   "off": 7090,
+   "size": 32,
+   "file_offset": "0x016A32"
+  },
+  {
+   "iMod": 191,
+   "name": "dos\\lseek.asm",
+   "seg": 5000,
+   "off": 7122,
+   "size": 122,
+   "file_offset": "0x016A52"
+  },
+  {
+   "iMod": 192,
+   "name": "dos\\read.asm",
+   "seg": 5000,
+   "off": 7244,
+   "size": 233,
+   "file_offset": "0x016ACC"
+  },
+  {
+   "iMod": 193,
+   "name": "write.asm",
+   "seg": 5000,
+   "off": 7478,
+   "size": 320,
+   "file_offset": "0x016BB6"
+  },
+  {
+   "iMod": 194,
+   "name": "atox.asm",
+   "seg": 5000,
+   "off": 7798,
+   "size": 84,
+   "file_offset": "0x016CF6"
+  },
+  {
+   "iMod": 195,
+   "name": "dos\\hdiff.asm",
+   "seg": 5000,
+   "off": 7882,
+   "size": 43,
+   "file_offset": "0x016D4A"
+  },
+  {
+   "iMod": 196,
+   "name": "ftell.c",
+   "seg": 5000,
+   "off": 7926,
+   "size": 374,
+   "file_offset": "0x016D76"
+  },
+  {
+   "iMod": 197,
+   "name": "setvbuf.c",
+   "seg": 5000,
+   "off": 8300,
+   "size": 192,
+   "file_offset": "0x016EEC"
+  },
+  {
+   "iMod": 198,
+   "name": "memcpy.asm",
+   "seg": 5000,
+   "off": 8492,
+   "size": 44,
+   "file_offset": "0x016FAC"
+  },
+  {
+   "iMod": 199,
+   "name": "xtoa.asm",
+   "seg": 5000,
+   "off": 8536,
+   "size": 95,
+   "file_offset": "0x016FD8"
+  },
+  {
+   "iMod": 200,
+   "name": "dos\\stdalloc.asm",
+   "seg": 5000,
+   "off": 8632,
+   "size": 37,
+   "file_offset": "0x017038"
+  },
+  {
+   "iMod": 201,
+   "name": "_cflush.asm",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 202,
+   "name": "_getbuf.asm",
+   "seg": 5000,
+   "off": 8670,
+   "size": 67,
+   "file_offset": "0x01705E"
+  },
+  {
+   "iMod": 203,
+   "name": "dos\\open.asm",
+   "seg": 5000,
+   "off": 8738,
+   "size": 444,
+   "file_offset": "0x0170A2"
+  },
+  {
+   "iMod": 204,
+   "name": "stackava.asm",
+   "seg": 5000,
+   "off": 9182,
+   "size": 20,
+   "file_offset": "0x01725E"
+  },
+  {
+   "iMod": 205,
+   "name": "malloc.asm",
+   "seg": 5000,
+   "off": 9202,
+   "size": 5,
+   "file_offset": "0x017272"
+  },
+  {
+   "iMod": 206,
+   "name": "free.asm",
+   "seg": 5000,
+   "off": 9208,
+   "size": 5,
+   "file_offset": "0x017278"
+  },
+  {
+   "iMod": 207,
+   "name": "cmiscdat.asm",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 208,
+   "name": "txtmode.asm",
+   "seg": 0,
+   "off": 0,
+   "size": 0,
+   "file_offset": "0x001600"
+  },
+  {
+   "iMod": 209,
+   "name": "nmalloc.asm",
+   "seg": 5000,
+   "off": 9214,
+   "size": 73,
+   "file_offset": "0x01727E"
+  },
+  {
+   "iMod": 210,
+   "name": "growseg.asm",
+   "seg": 5000,
+   "off": 9288,
+   "size": 253,
+   "file_offset": "0x0172C8"
+  },
+  {
+   "iMod": 211,
+   "name": "searchsg.asm",
+   "seg": 5000,
+   "off": 9542,
+   "size": 124,
+   "file_offset": "0x0173C6"
+  }
+ ],
  "symbols": [
   {
    "name": "_any_action_this_turn",
@@ -6426,238 +8117,238 @@
    "seg": 5607,
    "off": 17776,
    "file_offset": "0x01B9E0",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "___qczrinit",
    "seg": 5607,
    "off": 18580,
    "file_offset": "0x01BD04",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "_errno",
    "seg": 5607,
    "off": 17768,
    "file_offset": "0x01B9D8",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__exit",
    "seg": 5000,
    "off": 482,
    "file_offset": "0x015062",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__child",
    "seg": 5607,
    "off": 17814,
    "file_offset": "0x01BA06",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__nfile",
    "seg": 5607,
    "off": 17781,
    "file_offset": "0x01B9E5",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__cinit",
    "seg": 5000,
    "off": 278,
    "file_offset": "0x014F96",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "___argc",
    "seg": 5607,
    "off": 17803,
    "file_offset": "0x01B9FB",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__cexit",
    "seg": 5000,
    "off": 490,
    "file_offset": "0x01506A",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__intno",
    "seg": 5607,
    "off": 17817,
    "file_offset": "0x01BA09",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__dosvermajor",
    "seg": 5607,
    "off": 17776,
    "file_offset": "0x01B9E0",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__oserr",
    "seg": 5607,
    "off": 17779,
    "file_offset": "0x01B9E3",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "___argv",
    "seg": 5607,
    "off": 17805,
    "file_offset": "0x01B9FD",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__dosverminor",
    "seg": 5607,
    "off": 17777,
    "file_offset": "0x01B9E1",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "_environ",
    "seg": 5607,
    "off": 17807,
    "file_offset": "0x01B9FF",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__osfile",
    "seg": 5607,
    "off": 17783,
    "file_offset": "0x01B9E7",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__osmode",
    "seg": 5607,
    "off": 17778,
    "file_offset": "0x01B9E2",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__pspadr",
    "seg": 5607,
    "off": 17772,
    "file_offset": "0x01B9DC",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__fpinit",
    "seg": 5607,
    "off": 18598,
    "file_offset": "0x01BD16",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__ovlvec",
    "seg": 5607,
    "off": 17818,
    "file_offset": "0x01BA0A",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__pgmptr",
    "seg": 5607,
    "off": 17809,
    "file_offset": "0x01BA01",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__c_exit",
    "seg": 5000,
    "off": 500,
    "file_offset": "0x015074",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__acfinfo",
    "seg": 5607,
    "off": 17740,
    "file_offset": "0x01B9BC",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__ovlflag",
    "seg": 5607,
    "off": 17816,
    "file_offset": "0x01BA08",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__aintdiv",
    "seg": 5607,
    "off": 17754,
    "file_offset": "0x01B9CA",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__osmajor",
    "seg": 5607,
    "off": 17776,
    "file_offset": "0x01B9E0",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__osminor",
    "seg": 5607,
    "off": 17777,
    "file_offset": "0x01B9E1",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__umaskval",
    "seg": 5607,
    "off": 17770,
    "file_offset": "0x01B9DA",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__ctermsub",
    "seg": 5000,
    "off": 606,
    "file_offset": "0x0150DE",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__doserrno",
    "seg": 5607,
    "off": 17779,
    "file_offset": "0x01B9E3",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__EmDataSeg",
    "seg": 5605,
    "off": 0,
    "file_offset": "0x017450",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__fac",
    "seg": 5607,
    "off": 17758,
    "file_offset": "0x01B9CE",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "_exit",
    "seg": 5000,
    "off": 475,
    "file_offset": "0x01505B",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "__psp",
    "seg": 5607,
    "off": 17774,
    "file_offset": "0x01B9DE",
-   "module": 125
+   "module": "dos\\crt0dat.asm"
   },
   {
    "name": "STKHQQ",
