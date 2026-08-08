@@ -189,10 +189,34 @@ Ground truth = `docs/screens/census/census3_build_picker.png` /
   centred on the building sprite, plate top ≈ sprite top + 11 ("Town Hall",
   plate y26..32 over the hall at y≈15). Engine zone rects unread — the
   anchor is a one-capture fit, FLAGGED.
-- **Open divergences** (port vs `census3_colony`): the production strip under
-  the plaza (engine: plain icon runs — 8 corn, cross, bells — no digits, no
-  red-X overlays) and the tile-yield rendering in the surround panel. Next
-  sub-batch.
+- **The plaza production strip is now READ END TO END** (enqueue
+  `@0x027330..0x0273C7`, flush badge gate `@0x0032E8..0x003309`):
+  - With P = gross food `[0x8DC8]`, E = eaten `[0x8E0A]`, C = centre yield
+    `[0xA895]`, D = deficit `[0x8E32]`: surplus posts TWO bit-14 corn cells
+    (count E, sub E−min(C,E)) + (count P−E, sub (P−E)−max(0,C−E)); deficit
+    posts (count P, sub P−C, bit14) + (count D, bit15 = the red-X run). Then
+    crosses `[0x8DEA]` frame 0x39 and bells `[0x8DEC]` frame 0x3F when
+    nonzero; flush at x=2 y=0xA3 span=0x76 gap=4 (`@0x0273CC`).
+  - **Count badges are GATED**: drawn only when `[0x70]` ≠ 0 — the colony
+    sites load it from the SAVED toggle byte **`[0x336]`** (save block 34) —
+    or when a cell compresses to step 1 with count > 1. The 1653 save
+    carries the toggle ON (its Curacao frame badges everything); the
+    census3 save OFF (Jamestown badges nothing). Both frames fit.
+  - `[0xA895]` is stale-zero on a freshly loaded game until the first turn
+    tick, so a just-loaded engine draws no alternate-sprite run.
+- **Centre yield** (`func_00A222`, now read to the end): band (Arctic 0 /
+  Desert 1 / forested + Hills/Mountains 2 / other land 3) + difficulty
+  (+2/+1) + plowed (+1, mask 0x40 `@0xA2C1`) + prime-resource types 1/2/9
+  (+2, `@0xA314`) + the SoL latch flags (+1 each, ColonyRecord +0x1C bits
+  2/1). The census3 frame (centre = 4 corn in the view panel, strip = 9)
+  fits only with the CITY TILE'S BAND RESOLVED AS CLEARED land (the engine
+  auto-clears forest at founding) — FLAGGED, helper 0x3e4:0x3a unread.
+- **Field food** carries the same easy-difficulty bonus (+2/+1): the strip's
+  9 only sums with the Explorer farmers at NAMES+1 (Rain 1→2, Tropical
+  2→3). Capture-fitted, field-yield helper unread — FLAGGED.
+- **Open divergences** (port vs `census3_colony`): the surround panel's
+  tile-yield rendering; BUY/CHANGE buttons + construction caption (view 2);
+  the buy-prompt pairing.
 
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with

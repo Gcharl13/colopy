@@ -9513,3 +9513,36 @@ view 2, buy-prompt pairing.
 
 Suite 238/238; render-diff 28/28 (census3_colony 25000 / build_picker
 27000 thresholds span the per-session plot-RNG band).
+
+## 2026-08-08i — The plaza production strip read end-to-end; the numbers
+## toggle [0x336]; centre/field food calibration to the census3 frame
+
+1. **Strip enqueue read** (@0x027330-0x0273C7): two bit-14 corn cells
+   (eaten split at the centre yield, then the surplus) or, in deficit,
+   produced + a bit-15 red-X run of [0x8E32]; crosses [0x8DEA] / bells
+   [0x8DEC] only when nonzero; flush x=2 y=0xA3 span=0x76 gap=4. The
+   port's old "always digits + always X the eaten" rendering replaced.
+2. **Badges are gated** (@0x0032E8-0x003309): only when [0x70] != 0 --
+   loaded at all four colony sites from the SAVED byte [0x336] (block 34;
+   1653 save = 1, census3 saves = 0, exactly the badge difference between
+   the two live frames) -- or when a cell compresses to step 1 with
+   count > 1. G.colonyNumbers imports the byte; other screens keep their
+   own [0x70] behaviour (F-reports force it on, @0x037E5C).
+3. **The base cross**: "Each colony automatically produces one cross per
+   turn" (GAME_MANUAL 1534; churchless Jamestown's [0x8DEA]=1). Seeded
+   into colonyProduce's tally so the strip and immigration agree.
+4. **Worker-slot order corrected**: the SAV tiles array is N,E,S,W,NW,NE,
+   SE,SW (smcol) -- the port's row-major guess had every imported field
+   worker on the wrong cell.
+5. **Centre yield completed** (func_00A222 tail @0xA2AC-0xA33F): +1
+   plowed, +2 prime resource (types 1/2/9; port TBD), +1 per SoL latch
+   bit. Band ladder confirmed. The census3 frame fits only with the city
+   tile's band as CLEARED land (engine auto-clears at founding) --
+   flagged. Field FOOD carries the same +2/+1 difficulty term
+   (capture-fitted, helper unread) -- flagged.
+6. The engine's [0xA895] centre-yield global is STALE-ZERO on a freshly
+   loaded game (no alt-sprite run in the census3 strip until a turn
+   ticks); the port computes it live -- documented divergence inside the
+   pair threshold.
+
+Suite 238/238; render-diff 28/28.

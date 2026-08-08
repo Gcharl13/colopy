@@ -314,7 +314,7 @@ function countRowLayout(cells, x0, span, gap0) {
   return out;
 }
 
-function drawCountRow(ctx, cells, x0, y, span, gap0) {
+function drawCountRow(ctx, cells, x0, y, span, gap0, numbers) {
   for (const e of countRowLayout(cells, x0, span, gap0)) {
     const always = (e.cell.flags & 0x8000) !== 0, alt = (e.cell.flags & 0x4000) !== 0;
     let markX = null, x = e.x;
@@ -327,6 +327,15 @@ function drawCountRow(ctx, cells, x0, y, span, gap0) {
       if (i === e.filled) markX = x;
       x += e.step;
     }
+    // BADGES ARE GATED (@0x0032E8-0x003309): drawn only when [0x70] is set --
+    // the colony strips load it from the SAVED toggle byte [0x336] (all four
+    // sites `mov al,[0x336]` @0x0264AD/@0x026DDD/@0x02731E/@0x0275D3; block
+    // 34 of the save) -- OR when this cell compressed to step 1 with count>1
+    // (`cmp [bp-0x1e],1 / cmp [bx+0x2cce],1` @0x0032EE-0x003300). The 1653
+    // save carries the toggle ON (its Curacao frame badges everything), the
+    // census3 save OFF (Jamestown badges nothing). Callers whose screens
+    // force [0x70]=1 (@0x037E5C/@0x037F3E) pass numbers=true.
+    if (!(numbers !== false || (e.step === 1 && e.cell.count > 1))) continue;
     // Bit 14 also rewrites the badges: the leading one shows the WHOLE count
     // and the trailing one is suppressed (`add [bp-0x1a],ax / mov [bp-6],0`
     // @0x00331E-0x003321). That is why the live food row reads "16" over a run
@@ -544,6 +553,7 @@ const G = {
   woodcut: 1,             // @WOODCUT index on the woodcut screen
   colonies: [],           // founded colonies
   colony: 0,              // active colony on the colony screen
+  colonyNumbers: false,   // [0x336] -- the saved colony-strip badge toggle
   europe: [],             // ships in port / on the high seas
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
@@ -2539,6 +2549,14 @@ function fieldYield(c, p) {
   if (g === GOOD.SILVER &&
       (IMPROVE[(c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0])] & 0x80)) y = 1;
   y += improvementBonus(c.x + p.cell[0], c.y + p.cell[1], g);
+  // The easy-difficulty FOOD bonus reaches the worked fields too: the census3
+  // Jamestown strip only sums to the engine's 9 with the farmers at
+  // NAMES+1 on Explorer (Rain 1->2, Tropical 2->3). Mirrors the centre's
+  // +2/+1 term; the engine's field-yield helper is unread -- capture-fitted,
+  // FLAGGED.
+  if (g === GOOD.FOOD) {
+    if (G.difficulty === 0) y += 2; else if (G.difficulty === 1) y += 1;
+  }
   y += toryPenalty(c);
   // The expert match: the "era" goods Food and Horses take a flat +2, every
   // other good DOUBLES (@0x9DAD..0x9DD2).
@@ -2602,16 +2620,36 @@ function indoorYield(c, p) {
 // raw->finished chains.
 function colonyProduce(c) {
   const out = DATA.cargo.map(() => 0);
-  const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 0, [TEACHING]: 0 };
-  // The CENTRE TILE produces with no worker. The engine derives its food from a
-  // terrain BAND CLASS 0..3 whose mapping is not in the evidence here, so the
-  // farmer column of the terrain's own row stands in for it; the modifiers that
-  // ARE cited are applied (+2 at difficulty 0, +1 at difficulty 1, +1 river).
+  // "Each colony automatically produces one cross per turn" (GAME_MANUAL.md
+  // 1534) -- the engine's churchless Jamestown enqueues [0x8DEA]=1 on the
+  // plaza strip (census3_colony). The base cross lives in the tally so the
+  // strip and the immigration sum read the same number.
+  const tally = { [HAMMERS]: 0, [BELLS]: 0, [CROSSES]: 1, [TEACHING]: 0 };
+  // The CENTRE TILE produces with no worker. compute_colony_center_yields
+  // (func_00A222) is now READ END TO END (@0x00A247..0x00A33F): base = a
+  // terrain BAND -- Arctic 0; Desert/Scrub/Boreal 1; forested 8..23 and
+  // Hills/Mountains 2; every other land 3 -- then +2 at difficulty 0 / +1 at
+  // difficulty 1 (@0xA29C/@0xA2A8), +1 if the tile is PLOWED (mask-plane
+  // 0x40, @0xA2C1), +2 for prime-resource types 1/2/9 (@0xA314..0xA326; the
+  // port has no prime-resource model -- TBD), +1 per SoL latch flag
+  // (ColonyRecord +0x1C bits 2/1, "received at 50%/100%", @0xA32F/@0xA339).
+  // The census3 Jamestown frame (view-panel 4 corn on the centre + a 9-corn
+  // strip over a FORESTED byte) fits only if the city tile's band resolves as
+  // CLEARED land -- the engine auto-clears forest at founding, so a colony
+  // centre is band 3 in real play. The fold is FLAGGED (helper 0x3e4:0x3a's
+  // body unread).
   const cv = at(c.x, c.y);
-  let centre = tileYield(cv, JOB_FARMER);
+  let ct = tileTerrain(cv);
+  if (ct >= 8 && ct <= 23) ct = ct >= 16 ? ct - 16 : ct - 8;   // city = cleared
+  // The @0xA247 band ladder on the (folded) id: Arctic 0; Desert 1 (the
+  // ladder's 17/9 forest ids cannot survive the fold); Hills/Mountains 2;
+  // everything else 3.
+  const band = ct === 24 ? 0 : ct === 1 ? 1 : (ct === 27 || ct === 28) ? 2 : 3;
+  let centre = band;
   if (G.difficulty === 0) centre += 2; else if (G.difficulty === 1) centre += 1;
-  if (tileRiver(cv)) centre += 1;
   centre += improvementBonus(c.x, c.y, GOOD.FOOD);
+  if (c.sol >= 50) centre += 1;
+  if (c.sol >= 100) centre += 1;
   out[GOOD.FOOD] += centre;
   const indoor = [];
   for (const p of c.colonists) {
@@ -3748,20 +3786,31 @@ function drawColonyPlaza(ctx, c) {
   }
 
   // --- the food / crosses / bells row ---
+  // The enqueue site is now FULLY read (@0x027330-0x0273C7): with
+  // P = gross food [0x8DC8], E = eaten [0x8E0A], C = centre-tile yield
+  // [0xA895], D = deficit [0x8E32]:
+  //   surplus/break-even (D==0): TWO corn cells, both bit14 --
+  //     (count E,   sub E - min(C,E))          the EATEN run
+  //     (count P-E, sub (P-E) - max(0,C-E))    the SURPLUS run
+  //   deficit (D>0):
+  //     (count P,   sub P-C, bit14)            everything produced
+  //     (count D,   sub 0,   bit15)            the shortfall, red-X'd
+  // then crosses [0x8DEA] frame 0x39 and bells [0x8DEC] frame 0x3F, each
+  // only when nonzero; flush at x=2 y=0xA3 span=0x76 gap=4 (@0x0273CC).
+  // (The engine's [0xA895] is stale-zero on a freshly loaded game until the
+  // first turn tick; the port computes it live.)
   const r = colonyProduce(c);
-  const food = r.gross[GOOD.FOOD];
-  // The engine's food cell is (count = produced, sub = produced - [0xA895])
-  // with bit 14 (@0x027378-0x027388), so the first [0xA895] icons draw as the
-  // alternate sprite. On the live frame that alternate run is exactly 4 long --
-  // and the scene panel's centre cell in the SAME frame reads 4, the food the
-  // centre tile makes with nobody on it. So [0xA895] is read as the centre-tile
-  // yield here; it is the only reading the frame supports, and it is one frame.
-  drawCountRow(ctx, [
-    { frame: 22 + GOOD.FOOD, count: food, sub: Math.max(0, food - r.centre), flags: 0x4000 },
-    { frame: 22 + GOOD.FOOD, count: Math.max(0, r.eaten - food), sub: 0, flags: 0x8000 },
+  const P = r.gross[GOOD.FOOD], E = r.eaten, C = r.centre;
+  const CORN = 22 + GOOD.FOOD;
+  const foodCells = E > P
+    ? [{ frame: CORN, count: P, sub: Math.max(0, P - C), flags: 0x4000 },
+       { frame: CORN, count: E - P, sub: 0, flags: 0x8000 }]
+    : [{ frame: CORN, count: E, sub: E - Math.min(C, E), flags: 0x4000 },
+       { frame: CORN, count: P - E, sub: Math.max(0, (P - E) - Math.max(0, C - E)), flags: 0x4000 }];
+  drawCountRow(ctx, foodCells.concat([
     { frame: 56, count: r.tally[CROSSES], sub: 0, flags: 0 },   // EXE 0x39
     { frame: 62, count: r.tally[BELLS], sub: 0, flags: 0 },     // EXE 0x3F
-  ], PLAZA_FOOD_X, PLAZA_FOOD_Y, PLAZA_FOOD_SPAN, 4);
+  ]), PLAZA_FOOD_X, PLAZA_FOOD_Y, PLAZA_FOOD_SPAN, 4, !!G.colonyNumbers);
 
   // --- the SoL band ---
   // `0x181F:0xC86` gives the SoL percentage (@0x0273DC); the Tory figure is
@@ -10045,12 +10094,14 @@ function immigrationThreshold() {
   if (G.nation === 0) accum = Math.floor(accum * 2 / 3);      // England
   return accum;
 }
-// Crosses now come from the production pass -- a Preacher in a Church makes
-// them, exactly like any other indoor job -- plus the flat one per colony the
-// engine grants regardless. The per-building cross rate is still not in the
-// evidence, so the flat 1 stays a flagged placeholder.
+// Crosses come from the production pass -- a Preacher in a Church makes them
+// like any other indoor job, and the flat one-per-colony (GAME_MANUAL.md
+// 1534) is seeded INTO the tally by colonyProduce, so the plaza strip's cross
+// run and this immigration sum read the same number ([0x8DEA]=1 on the
+// churchless census3 frame).
 function crossesPerTurn() {
-  return G.colonies.reduce((n, c) => n + 1 + (c.crossesTurn || 0), 0);
+  return G.colonies.reduce(
+    (n, c) => n + (c.crossesTurn === undefined ? 1 : c.crossesTurn), 0);
 }
 function checkImmigration() {
   G.crosses += crossesPerTurn();
@@ -10156,6 +10207,11 @@ function importSav(bytes) {
   // shown on import so none re-fire mid-game.
   G.tutSide = Object.fromEntries(Array.from({ length: 19 }, (_, i) => [i + 1, true]));
   G.wcSeen = u16(g + 0x8A);
+  // Block 34 = the single byte [0x336], the colony-strip NUMBERS toggle
+  // (the badge gate, see drawCountRow): it sits 564 bytes past the tribe
+  // table (blocks 11-33). The 1653 save carries 1, the census3 save 0 --
+  // exactly the badge difference between their two live colony frames.
+  G.colonyNumbers = !!d[tribeBase + 0x270 + 564];
   G.tribes.forEach(t => { t.met = true; });
   // REF strength: [0x53DA/DC/DE/E0] = Regulars / Cavalry / Man-O-War /
   // Artillery (COLONIZATION_TECHNICAL_REFERENCE.md 1117) = g+0x5A..0x60.
@@ -10232,7 +10288,11 @@ function importSav(bytes) {
                     colonies: [], nextColony: 0, units: [] });
   }
   const rivalOf = (n) => G.rivals.find(r => r.nation === n);
-  const CELL_OF_WORKER = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+  // Worker-slot order is N,E,S,W,NW,NE,SE,SW (smcol tile_N..tile_SW; the
+  // prior row-major guess put every worker on the wrong cell -- census3:
+  // Jamestown's slots 4/6/7 are NW/SE/SW, and only with this order does the
+  // colony's food come out at the engine's 9 = centre + two worked farms).
+  const CELL_OF_WORKER = [[0, -1], [1, 0], [0, 1], [-1, 0], [-1, -1], [1, -1], [1, 1], [-1, 1]];
   for (let i = 0; i < ncol; i++) {
     const b = colBase + i * 0xCA;
     const owner = d[b + 0x1A] & 3, pop = d[b + 0x1F];
@@ -13045,7 +13105,7 @@ dbgAddTab('Raw', () => {
     'parley', 'tribes', 'villages', 'natives', 'europe', 'dock', 'dockUnits',
     'euroShip', 'routes', 'marketSel', 'menuRow', 'briefPage', 'card', 'woodcut',
     'landHo', 'colonyView', 'colonyPopup', 'colonyPopupRow', 'colonistSel',
-    'colonyShipSel',
+    'colonyShipSel', 'colonyNumbers',
     'pediaCat', 'pediaSel', 'pediaMode', 'euroRow', 'euroMenu', 'euroMenuRow',
     'euroMsg', 'openMenu', 'menuSel', 'showHidden', 'f6View', 'options',
     'metAnyone', 'attitude', 'parleyLock', 'parleyRow', 'trade', 'village',
