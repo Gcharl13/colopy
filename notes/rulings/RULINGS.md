@@ -9599,3 +9599,12 @@ Suite 238/238; render-diff 28/28.
 
 Pairs: census3_colony_view2 (21.5k/32000) + census3_buy_prompt
 (27.6k/40000). Suite 238/238; render-diff 30/30.
+
+## 2026-08-08l — Tile-panel yield strips join the [0x336] gate
+
+The tile panel is the FIRST of the four `mov al,[0x336]` sites
+(func_0264A8 @0x0264AD): its per-cell yield strips badge only when the
+saved numbers toggle is on. The port's proportionalStrip now passes
+G.colonyNumbers through gauge() -- the census3 scene cells render as pure
+icon runs, closing the "digit plates over the surround panel" divergence.
+Suite 238/238; render-diff 30/30.

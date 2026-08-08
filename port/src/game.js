@@ -259,7 +259,10 @@ function stripPitch(w, count, span) {
 // (@0x00301B-0x00302C) and the consumed count at the first marked icon in red
 // (@0x003032-0x003043).
 function proportionalStrip(ctx, frame, count, sub, x, y, span) {
-  gauge(ctx, frame, count, sub, count, x, y, span, 0, 0);
+  // The tile panel is the first of the four `mov al,[0x336]` sites
+  // (func_0264A8 @0x0264AD): its yield strips badge only when the SAVED
+  // numbers toggle is on -- the census3 scene cells are pure icon runs.
+  gauge(ctx, frame, count, sub, count, x, y, span, 0, 0, G.colonyNumbers ? 1 : 0);
 }
 
 // `func_0033F2 @0x0033F2` (enqueue) + `func_003104 @0x003104` (flush) -- a row of
