@@ -14035,25 +14035,29 @@ def main():
         commented += 1
 
     # ---- DGROUP -----------------------------------------------------------
-    gi = gb = 0
-    for g in DATA["globals"]:
-        if g["init"]:
-            try:
-                addr = A(g["f"])
-                if mem.getBlock(addr) is not None:
-                    createLabel(addr, g["n"], True)
-                    gi += 1
-                    continue
-            except Exception:
-                pass
-        gb += 1
-
-    # BSS half: give it a block of its own so the names exist somewhere.
+    # ONE contiguous 64 KB window, not two halves.  DGROUP's initialised part
+    # lives in the file at 0x1D9A0 and runs to the end of the load image
+    # (0x22A65 = DS:0x50C5); everything above that is BSS, past the end of the
+    # file.  In a raw-binary import the bytes immediately after 0x22A65 are
+    # already occupied by overlay data, so BSS cannot simply be appended -
+    # hence a synthetic block, with the initialised bytes COPIED into it so
+    # that one DS value covers the whole segment.
+    #
+    # Why this matters: real mode writes `mov bx,[0x8542]`, meaning DS:0x8542.
+    # Unless Ghidra knows DS, that displacement stays a bare constant and every
+    # global in the program decompiles as a naked number.  Labelling the two
+    # halves at two different addresses (the previous behaviour) could never
+    # fix that, because no single DS value reached both.
     dg = None
     existing = mem.getBlock("DGROUP")
     if existing is not None:
         dg = existing.getStart()
         print("DGROUP block already present at %s" % dg)
+        if not existing.isInitialized():
+            print("!! ...but it is UNINITIALISED - left over from an older run")
+            print("!! of this script.  Delete it and re-run, or the initialised")
+            print("!! half of DGROUP will read as zeros:")
+            print("!!   Window > Memory Map, select DGROUP, click the red X.")
     else:
         errs = []
         for cand in DGROUP_FALLBACKS:
@@ -14062,9 +14066,10 @@ def main():
                 if base is None:
                     errs.append("0x%X: toAddr returned None" % cand)
                     continue
-                mem.createUninitializedBlock("DGROUP", base, 0x10000, False)
+                mem.createInitializedBlock("DGROUP", base, 0x10000,
+                                           0, monitor, False)
                 dg = base
-                print("DGROUP block created at %s (0x%X)" % (dg, cand))
+                print("DGROUP block created at %s (0x%X), 64 KB" % (dg, cand))
                 break
             except Exception as e:
                 errs.append("0x%X: %s" % (cand, e))
@@ -14074,13 +14079,66 @@ def main():
             for e in errs:
                 print("     %s" % e)
 
+    # Copy the initialised half in, so DS:0x0000..0x50C4 reads real data.
+    init_len = LOAD_IMAGE_END - DGROUP_FILE
+    if dg is not None:
+        try:
+            src = getBytes(A(DGROUP_FILE), init_len)
+            mem.setBytes(dg, src)
+            print("DGROUP initialised half copied: %d bytes from file 0x%X"
+                  % (init_len, DGROUP_FILE))
+        except Exception as e:
+            print("!! could not copy the initialised half (%s) - DS:0x0000..0x%X"
+                  % (e, init_len - 1))
+            print("!! will read as zeros.  BSS globals are unaffected.")
+
+    # Every global goes in the one window, initialised or not.
+    gi = gb = 0
     if dg is not None:
         for g in DATA["globals"]:
-            if not g["init"]:
-                try:
-                    createLabel(dg.add(g["ds"]), g["n"], True)
-                except Exception:
-                    pass
+            try:
+                createLabel(dg.add(g["ds"]), g["n"], True)
+                if g["init"]:
+                    gi += 1
+                else:
+                    gb += 1
+            except Exception:
+                pass
+
+    # ---- teach Ghidra what DS holds --------------------------------------
+    # With the block at a paragraph-aligned address, DS = block>>4 makes every
+    # `[0xNNNN]` displacement in the program resolve to DGROUP:0xNNNN - which
+    # is where the labels now are.  Without this the decompiler shows
+    # `*(int *)0x8542` instead of `g_current_colony_ptr`.
+    if dg is not None:
+        try:
+            from java.math import BigInteger
+            ds_reg = currentProgram.getRegister("DS")
+            if ds_reg is None:
+                print("!! no DS register in this language - is the program"
+                      " really x86:LE:16:Real Mode?")
+            else:
+                ds_val = BigInteger.valueOf(dg.getOffset() >> 4)
+                ctx = currentProgram.getProgramContext()
+                spans = 0
+                for blk in mem.getBlocks():
+                    if blk.getName() == "DGROUP":
+                        continue
+                    try:
+                        ctx.setValue(ds_reg, blk.getStart(), blk.getEnd(),
+                                     ds_val)
+                        spans += 1
+                    except Exception:
+                        pass
+                print("DS set to 0x%04X over %d block(s) - globals should now"
+                      " decompile by name" % (dg.getOffset() >> 4, spans))
+                print("   (if they do not, re-run Analysis > Auto Analyze, or"
+                      " right-click a function > Decompiler > Refresh)")
+        except Exception as e:
+            print("!! could not set DS (%s); set it by hand: select all in the"
+                  " Listing," % e)
+            print("!! right-click > Registers > Set Register Values, DS = 0x%04X"
+                  % (dg.getOffset() >> 4))
 
     # ---- overlay page bookmarks ------------------------------------------
     pages = 0

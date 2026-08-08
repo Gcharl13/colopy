@@ -64,11 +64,44 @@ Script Manager → `viceroy_ghidra_symbols.py`. It will:
 - **plate-comment each one** with its module, overlay page, byte size, file
   offset, and the GAME.TXT message keys it emits (that last line is often the
   fastest way to recognise what a function does);
-- **label ~140 DGROUP globals** — the 64 that are initialised data get
-  labelled in place; the BSS half gets a synthetic `DGROUP` block (at
-  `0x80000`, see §3.2.1) so the names exist somewhere;
+- **build one contiguous 64 KB `DGROUP` block** at `0x80000`, copy the
+  initialised half in from the file image (0x1D9A0, 0x50C5 bytes), and
+  **label all ~140 globals** inside it;
+- **set the `DS` register to `0x8000`** across every other block — see §2.1,
+  this is the step that makes globals decompile by name;
 - **bookmark the 31 overlay page boundaries** (Bookmarks window, type
   `RTLink`).
+
+### 2.1 Why `DS` has to be set — the thing that blocks everything else
+
+Real mode has no flat addressing. The instruction is
+
+```
+053B17  8b1e4285   mov bx, word ptr [0x8542]
+```
+
+and `0x8542` is an offset *from whatever DS holds*, which the bytes do not
+record. With DS unknown, Ghidra cannot turn that displacement into a
+reference, so the decompiler emits a naked constant:
+
+```c
+*(byte *)(*(int *)0x8542 + 0x1c) = *(byte *)(*(int *)0x8542 + 0x1c) & 0x7f;
+```
+
+There is no variable to retype here and no label in sight — and this is how
+**every** global in the program looks until DS is set. Once the script points
+DS at the DGROUP block, the same line resolves against
+`g_current_colony_ptr`, and the §3.2 type work becomes possible.
+
+This also forced a layout change (2026-08-08): DGROUP used to be labelled in
+two places — initialised globals at their file addresses, BSS globals in the
+synthetic block — and **no single DS value could reach both**. It is now one
+window with the file bytes copied in.
+
+> **If you ran an earlier version of this script**, delete the old block
+> first: `Window > Memory Map`, select `DGROUP`, click the red **X**. The old
+> one is uninitialised, and the script will reuse it and warn rather than
+> silently give you a DGROUP whose initialised half reads as zeros.
 
 ## 3. Parse the record types — in detail
 
@@ -277,11 +310,19 @@ select the range and `C` (Clear Code Bytes), then re-apply.
 
 #### 3.2.2 Retype the record pointers
 
+**This only works after DS is set (§2.1).** Until then the pointer load is a
+bare constant with no variable attached to it, and there is nothing to
+retype — that is the symptom, not a mistake on your part.
+
 Best done **in the decompiler window, on the local**, rather than on the
 global. Open a function that loads the pointer, click the variable that
 receives it, `Ctrl-L` (`Retype Variable`), enter `ColonyRecord *`. The
 decompiler immediately rewrites every `*(byte *)(pcVar1 + 0x1f)` in that
 function as `colony->population`.
+
+If the load still decompiles inline (`*(int *)0x8542` with no local), press
+`Ctrl-L` on the **global** at `8000:8542` instead and read the pointer-size
+caveat below.
 
 The four current-record globals:
 
