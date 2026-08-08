@@ -80,17 +80,48 @@ decompiler view.
 
 `File > Parse C Source…` opens the **Parse C Source** dialog.
 
-1. **Source files** — remove anything pre-populated (the default profile
-   lists Windows headers you do not want), then `+` and add
-   `tools/ghidra/viceroy_types.h`. It is self-contained: no `#include`, no
-   macros, no compiler builtins, so nothing else is needed.
-2. **Parse Options** — leave empty. (The default profile carries `-D` flags
-   for Windows SDK headers; harmless here, but an empty list is cleaner.)
-3. **Program Architecture** — leave it on the current program, i.e. the
-   16-bit VICEROY program. **This matters** (see 3.3).
-4. Click **Parse to Program**. "Parse to File" writes a reusable `.gdt`
-   archive instead — fine if you want to share the types between projects,
-   but Parse to Program is the direct route.
+**Start with the Parse Configuration dropdown at the top — do not just add
+our header to whatever profile is loaded.** That dropdown selects a saved
+*profile*: a bundle of source files plus parse options. Ghidra ships prefabs
+(`clib`, the `VisualStudio*` ones, …) and one of them is normally preselected,
+carrying dozens of system headers and a long list of `-D` defines. Adding
+`viceroy_types.h` to that and hitting parse gives you three problems at once:
+
+- a slow parse that pulls in the whole CRT/Win32 header set;
+- a wall of errors, because those headers reference paths that exist on the
+  machine the profile was authored for, not necessarily yours;
+- **type pollution** — thousands of unrelated Windows/CRT types land in the
+  program's Data Type Manager alongside the five you wanted.
+
+So build a clean profile instead:
+
+1. **Clear** the configuration (the dialog has Clear / Save / Save As /
+   Delete buttons next to the dropdown) so the source list and options are
+   empty.
+2. **Source files** — `+`, add `tools/ghidra/viceroy_types.h`, nothing else.
+   It is deliberately self-contained: no `#include`, no macros, no compiler
+   builtins, so it needs no companions.
+3. **Parse Options** — leave **empty**. No `-I` (nothing to include) and no
+   `-D` (no conditionals in the header). An empty list here is correct, not
+   lazy.
+4. **Program Architecture** — the current 16-bit VICEROY program. **This is
+   the setting that decides whether the structs come out right** (see 3.3),
+   and it matters most for *Parse to File*, where there is no current program
+   to inherit from.
+5. **Save As** a profile named e.g. `viceroy`. You will re-parse every time
+   the header is regenerated (each new field identified), and this makes that
+   two clicks.
+6. **Parse to Program**. ("Parse to File…" writes a reusable `.gdt` archive
+   instead — useful to share the types across projects, but Parse to Program
+   is the direct route, and re-parsing later updates the types in place:
+   anything you already applied picks up the new fields because the type name
+   is unchanged.)
+
+Saved profiles live as `.prf` files in the `parserprofiles` folder of your
+Ghidra user-settings directory (alongside `tools`, `preferences`, …); the
+exact path is version-stamped. *Their internal format is not documented
+here — I have not verified it, so create profiles through the dialog rather
+than by hand-writing a file.*
 
 Success looks like a quiet dialog and five new entries under
 `Data Type Manager > <your program> > /viceroy_types.h`. Warnings about
