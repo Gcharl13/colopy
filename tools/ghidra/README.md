@@ -65,8 +65,8 @@ Script Manager → `viceroy_ghidra_symbols.py`. It will:
   offset, and the GAME.TXT message keys it emits (that last line is often the
   fastest way to recognise what a function does);
 - **label ~140 DGROUP globals** — the 64 that are initialised data get
-  labelled in place; the BSS half gets a synthetic `DGROUP` block at
-  `0x200000` so the names exist somewhere;
+  labelled in place; the BSS half gets a synthetic `DGROUP` block (at
+  `0x80000`, see §3.2.1) so the names exist somewhere;
 - **bookmark the 31 overlay page boundaries** (Bookmarks window, type
   `RTLink`).
 
