@@ -44,6 +44,66 @@ def sanitize(name):
     return n
 
 
+# Names Ghidra injects into a script's namespace at run time.  Anything the
+# generated script reads that is not here, not a builtin, and not bound in the
+# script itself is a generation bug.
+GHIDRA_INJECTED = {
+    "currentProgram", "currentAddress", "currentLocation", "currentSelection",
+    "currentHighlight", "state", "monitor", "toAddr", "getBytes", "setBytes",
+    "createLabel", "createFunction", "createBookmark", "setPlateComment",
+    "getFunctionAt", "getFunctionContaining", "getInstructionAt", "getDataAt",
+    "createData", "clearListing", "askYesNo", "popup", "println", "printerr",
+    "getScriptArgs",
+}
+
+
+def check_free_names(body):
+    """Refuse to write a script that reads a name nothing defines.
+
+    SCRIPT_TEMPLATE is a *string*, so a constant living only in this
+    generator's namespace is invisible to every local test and then dies as a
+    NameError inside Ghidra — after the run has already half-applied itself.
+    That is exactly how LOAD_IMAGE_END shipped broken on 2026-08-08.
+    """
+    import ast
+    import builtins
+
+    tree = ast.parse(body)
+    bound = set(dir(builtins)) | GHIDRA_INJECTED
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            bound.add(node.name)
+            args = getattr(node, "args", None)
+            if args is not None:
+                bound.update(a.arg for a in
+                             args.posonlyargs + args.args + args.kwonlyargs)
+                for extra in (args.vararg, args.kwarg):
+                    if extra is not None:
+                        bound.add(extra.arg)
+        elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            bound.add(node.id)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            bound.update((a.asname or a.name).split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ExceptHandler) and node.name:
+            bound.add(node.name)
+        elif isinstance(node, ast.comprehension):
+            bound.update(n.id for n in ast.walk(node.target)
+                         if isinstance(n, ast.Name))
+
+    free = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+            free.setdefault(node.id, node.lineno)
+
+    missing = sorted((n, ln) for n, ln in free.items() if n not in bound)
+    if missing:
+        raise SystemExit(
+            "REFUSING TO WRITE %s\n"
+            "the generated script reads name(s) nothing defines:\n%s\n"
+            "Define them inside SCRIPT_TEMPLATE, not just in this generator."
+            % (OUT_PY, "\n".join("    %s   (line %d)" % m for m in missing)))
+
+
 def main():
     mods = json.loads((ROOT / "data_extracted/viceroy_modules.json").read_text())
     syms = json.loads((ROOT / "tools/viceroy_symbols.json").read_text())
@@ -120,6 +180,7 @@ def main():
             "records": syms["record_windows"], "tables": tables}
 
     body = SCRIPT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
+    check_free_names(body)
     OUT_PY.write_text(body)
 
     print("record layouts:")
@@ -377,6 +438,7 @@ DATA = json.loads(r"""@@DATA@@""")
 
 HEADER = 0x2400
 DGROUP_FILE = 0x1D9A0
+LOAD_IMAGE_END = 0x22A65        # end of the MZ load image; DGROUP is BSS above
 DELTA = -HEADER if MZ_LOAD else 0
 
 

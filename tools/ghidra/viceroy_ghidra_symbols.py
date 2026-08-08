@@ -13981,6 +13981,7 @@ DATA = json.loads(r"""{
 
 HEADER = 0x2400
 DGROUP_FILE = 0x1D9A0
+LOAD_IMAGE_END = 0x22A65        # end of the MZ load image; DGROUP is BSS above
 DELTA = -HEADER if MZ_LOAD else 0
 
 
