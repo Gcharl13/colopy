@@ -14,6 +14,144 @@ python3 tools/ghidra/export_ghidra_symbols.py
 | `viceroy_ghidra_symbols.py` | self-contained Ghidra script — drop in `ghidra_scripts/`, run from the Script Manager |
 | `viceroy_types.h` | the five record layouts — `File > Parse C Source` |
 
+---
+
+## 0. The whole procedure, in order
+
+Start from nothing. Every step is checkable — if a step's "you should see"
+does not appear, stop there rather than continuing, because everything after
+it depends on it.
+
+Sections 1–3 below are the reference detail for these steps; you only need
+them if a step misbehaves.
+
+### Part 1 — on the machine with the repo
+
+**1.** Get the current scripts and the binary:
+
+```
+cd <repo>
+git pull
+python3 bin/reconstitute.py           # writes raw/COLONIZE/VICEROY.EXE
+python3 tools/ghidra/export_ghidra_symbols.py
+```
+
+*You should see* `-> tools/ghidra/viceroy_ghidra_symbols.py` and
+`-> tools/ghidra/viceroy_types.h`, and `raw/COLONIZE/VICEROY.EXE` should be
+**494,910 bytes** (`0x78D3E`) and `reconstitute.py` should print `sha256 OK`
+for it. Ignore `VICEROY_flat.exe` — the address model in this repo is offsets
+into `VICEROY.EXE`.
+
+**2.** Copy three files to the Ghidra machine:
+
+| From | To |
+|---|---|
+| `raw/COLONIZE/VICEROY.EXE` | anywhere |
+| `tools/ghidra/viceroy_ghidra_symbols.py` | `%USERPROFILE%\ghidra_scripts\` |
+| `tools/ghidra/viceroy_types.h` | anywhere |
+
+Overwrite any older copies. If you renamed the script previously, delete the
+old name so you cannot run a stale one by accident.
+
+### Part 2 — import (do this in a NEW project, not the old one)
+
+**3.** `File > New Project` → non-shared → name it whatever.
+
+Starting clean is the point of "start over": a database that has been through
+earlier runs of this script carries a half-built `DGROUP` block and stale
+labels, and diagnosing that costs more than a fresh import.
+
+**4.** `File > Import File` → pick `VICEROY.EXE`. In the import dialog:
+
+- **Format:** `Raw Binary` — *not* the auto-detected MS-DOS Executable
+- **Language:** click `...` → filter `real mode` → **`x86:LE:16:Real Mode`**, any compiler
+- **Options… > Base Address:** `0`
+
+*Why:* an MS-DOS Executable import maps only the load image
+(`0x2400..0x22A65`) and drops all 31 overlay pages — colony, Europe, combat
+and boot screens included. Raw binary at base 0 also makes **Ghidra address ==
+file offset**, which is what every citation in this repo uses. Detail in §1.
+
+**5.** Double-click the imported file to open it in the CodeBrowser. When it
+offers to analyze, click **Yes** and accept the defaults. Wait for the
+progress bar at the bottom right to finish — a few minutes.
+
+*You should see* a Listing full of `FUN_xxxxxxxx` names.
+
+### Part 3 — types and symbols
+
+**6.** `File > Parse C Source`. In the dialog:
+
+- Clear the source-file list, click **+**, add `viceroy_types.h`
+- Clear the parse options box entirely (it defaults to Linux/GCC flags that
+  do not apply)
+- **Parse to Program**
+
+*You should see* five new entries under
+`Data Type Manager > <program> > viceroy_types.h`: `ColonyRecord`,
+`UnitRecord`, `PowerRecord`, `NativeSettlement`, `AIPersonality`. Detail and
+troubleshooting in §3.1.
+
+**7.** `Window > Script Manager` → **Refresh** (the two-arrows icon) → find
+`viceroy_ghidra_symbols.py` → select it → click the green **▶**.
+
+If it is not listed: **Manage Script Directories** (bulleted-list icon, top
+right) → **+** → add your `ghidra_scripts` folder.
+
+**8.** `Window > Console - Scripting`, scroll to the bottom. *You should see*:
+
+```
+functions created  : ...
+functions named    : 1250
+DGROUP block created at 8000:0000 (0x80000), 64 KB
+DGROUP initialised half copied: 20677 bytes from file 0x1D9A0
+DS set to 0x8000 over N block(s) - globals should now decompile by name
+================================================================
+APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)
+================================================================
+  ColonyRecord[]     DS:0x5D46  ->  8000:5d46     [16, stride 0xCA]
+  ...
+```
+
+**Any line starting `!!` is a real failure — read it, do not continue.** The
+script reports rather than swallowing errors, so the message says what to do.
+
+### Part 4 — check it worked
+
+**9.** Click in the Listing, press **G**, type `53b14`, Enter. This is the
+smallest function in the binary that uses the current-colony pointer:
+
+```
+053B17  8b1e4285   mov bx, word ptr [0x8542]
+053B1B  80671c7f   and byte ptr [bx + 0x1c], 0x7f
+```
+
+The Decompiler should now name the global:
+
+```c
+*(byte *)(g_current_colony_ptr + 0x1c) &= 0x7f;      /* what you want */
+*(byte *)(*(int *)0x8542 + 0x1c) &= 0x7f;            /* DS did not take */
+```
+
+If you get the second form, right-click in the Decompiler →
+**Decompiler > Refresh** first. Still a bare `0x8542` after that means step 8's
+`DS set to` line did not appear — go back and read the console.
+
+**10.** Retype the pointer: click the variable holding `g_current_colony_ptr`,
+press **Ctrl-L**, type `ColonyRecord *`, Enter. Offsets become field names
+(`->colony_flags`). See §3.2.2, including the caveat about 2-byte near
+pointers.
+
+**11.** Apply an array: **G** → `8000:5d46` → **T** → `ColonyRecord[16]`.
+Then check it at `0x2EB1C`, where `imul bx,[bp+6],0xca` / `mov al,[bx+0x5d65]`
+should resolve `0x5d65` as `ColonyRecord[?].population` (`0x5D46 + 0x1F`).
+Full worked example in §3.2.3.
+
+Steps 10 and 11 are optional polish. Step 9 is the one that has to work —
+everything else in §3 builds on it.
+
+---
+
 ## 1. Load the binary the RIGHT way
 
 **Import as `Raw Binary`, language `x86:LE:16:Real Mode`, base address `0`.**
