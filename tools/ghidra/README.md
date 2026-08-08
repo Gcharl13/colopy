@@ -31,7 +31,32 @@ the addressing every artifact in this repo uses.
 script; it will then apply `addr = file_offset - 0x2400` and silently skip
 everything outside the mapped image.)
 
-## 2. Run the script
+## 2. Run the script — either Python provider works
+
+The script is written for **both** of Ghidra's Python runtimes; you do not
+need to pick one:
+
+| Runtime | Notes |
+|---|---|
+| **PyGhidra** (CPython 3) | bundled and the default since Ghidra 11.3 — nothing to install |
+| **Jython 2.7** | the older provider, an installable extension; still fine |
+
+It only uses stdlib `json` plus the injected flat API (`toAddr`,
+`createFunction`, `setPlateComment`, `createLabel`, `createBookmark`), and
+the one Java type it needs — `SourceType` — is imported explicitly:
+
+```python
+from ghidra.program.model.symbol import SourceType
+```
+
+That explicit import matters. A bare `ghidra.program.model.symbol.SourceType`
+reference resolves under *neither* provider (it is a `NameError` in CPython
+and in Jython alike); if it is also wrapped in a bare `except: pass`, every
+rename fails silently and you are left wondering why the auto-analysed
+functions kept their `FUN_` names. The script now reports rename failures and
+unmapped-address skips in its output instead of swallowing them.
+
+No f-strings, no Python-3-only syntax — verified mechanically.
 
 Script Manager → `viceroy_ghidra_symbols.py`. It will:
 

@@ -182,12 +182,27 @@ SCRIPT_TEMPLATE = r'''# VICEROY.EXE symbol import for Ghidra  (GENERATED — do 
 #   pages are visible.  A normal MZ import maps only the load image (a
 #   quarter of the code) — if you did that, set MZ_LOAD = True below.
 #
+# RUNTIME: works under BOTH Ghidra Python providers.
+#   * PyGhidra (CPython 3, bundled and default since Ghidra 11.3)
+#   * Jython 2.7 (the older provider, an installable extension)
+# Only stdlib `json` plus the injected flat API are used, and the one Java
+# type it needs is imported explicitly (a bare `ghidra.program...` reference
+# resolves under neither provider).  No f-strings, no print_function needed.
+#
 # @category Colonization
 
 MZ_LOAD = False          # True if imported as MS-DOS Executable rather than raw
 DGROUP_BLOCK_ADDR = 0x200000   # synthetic home for the BSS half of DGROUP
 
 import json
+
+try:
+    from ghidra.program.model.symbol import SourceType
+    SRC = SourceType.IMPORTED
+except Exception as _e:      # pragma: no cover - provider without the class
+    SRC = None
+    print("WARNING: could not import SourceType (%s); renames will be skipped"
+          % _e)
 
 DATA = json.loads(r"""@@DATA@@""")
 
@@ -205,26 +220,31 @@ def main():
     st = currentProgram.getSymbolTable()
     mem = currentProgram.getMemory()
 
-    named = renamed = commented = 0
+    named = renamed = commented = failed = skipped = 0
     for f in DATA["funcs"]:
         try:
             addr = A(f["a"])
         except Exception:
+            skipped += 1
             continue
         if mem.getBlock(addr) is None:
-            continue                      # not mapped (MZ load, overlay page)
+            skipped += 1                  # not mapped (MZ load, overlay page)
+            continue
 
         fn = fm.getFunctionAt(addr)
         if fn is None:
             fn = createFunction(addr, f["n"])
             if fn is not None:
                 named += 1
-        if fn is not None:
+        if fn is not None and SRC is not None:
             try:
-                fn.setName(f["n"], ghidra.program.model.symbol.SourceType.IMPORTED)
+                fn.setName(f["n"], SRC)
                 renamed += 1
-            except Exception:
-                pass
+            except Exception as e:
+                failed += 1
+                if failed <= 5:           # report a few, don't spam
+                    print("  rename failed at 0x%06X (%s): %s"
+                          % (f["a"], f["n"], e))
 
         tier = {"B": "REAL NAME (MAPEDIT CodeView match)",
                 "R": "role name (analysis)",
@@ -280,6 +300,11 @@ def main():
 
     print("functions created  : %d" % named)
     print("functions named    : %d" % renamed)
+    if failed:
+        print("renames FAILED     : %d  (see messages above)" % failed)
+    if skipped:
+        print("skipped (unmapped) : %d  <- set MZ_LOAD/re-import if unexpected"
+              % skipped)
     print("plate comments     : %d" % commented)
     print("globals in-file    : %d" % gi)
     print("globals in DGROUP  : %d" % gb)
