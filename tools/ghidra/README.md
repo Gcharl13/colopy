@@ -70,10 +70,95 @@ Script Manager → `viceroy_ghidra_symbols.py`. It will:
 - **bookmark the 31 overlay page boundaries** (Bookmarks window, type
   `RTLink`).
 
-Then `File > Parse C Source` → `viceroy_types.h` and retype the record
-pointers — e.g. `g_current_colony_ptr` → `ColonyRecord *`. That single step
-turns most of the colony code from `byte ptr [bx+0x1f]` into
-`colony->population`.
+## 3. Parse the record types — in detail
+
+This is the step that pays for itself: it turns `byte ptr [bx+0x1f]` into
+`colony->population` and `[bx+0x2a]` into `power->gold` across the whole
+decompiler view.
+
+### 3.1 Parse
+
+`File > Parse C Source…` opens the **Parse C Source** dialog.
+
+1. **Source files** — remove anything pre-populated (the default profile
+   lists Windows headers you do not want), then `+` and add
+   `tools/ghidra/viceroy_types.h`. It is self-contained: no `#include`, no
+   macros, no compiler builtins, so nothing else is needed.
+2. **Parse Options** — leave empty. (The default profile carries `-D` flags
+   for Windows SDK headers; harmless here, but an empty list is cleaner.)
+3. **Program Architecture** — leave it on the current program, i.e. the
+   16-bit VICEROY program. **This matters** (see 3.3).
+4. Click **Parse to Program**. "Parse to File" writes a reusable `.gdt`
+   archive instead — fine if you want to share the types between projects,
+   but Parse to Program is the direct route.
+
+Success looks like a quiet dialog and five new entries under
+`Data Type Manager > <your program> > /viceroy_types.h`. Warnings about
+unrecognised tokens mean it fell back mid-file — check the messages, because
+a partial parse silently gives you partial structs.
+
+### 3.2 Apply
+
+Two ways, and for this binary the **second** is the one that pays:
+
+**Retype a pointer.** In the decompiler, right-click the variable →
+`Retype Variable` (Ctrl-L) → `ColonyRecord *`. Good for locals that clearly
+hold a record pointer.
+
+**Apply arrays at the table bases — do this one.** The engine keeps its
+records in fixed DGROUP tables and indexes them by `slot * stride`, so typing
+the *table* propagates everywhere at once. In the Listing, go to the table
+address, then `Data > Choose Data Type` (hotkey `T`) and enter e.g.
+`ColonyRecord[18]`:
+
+| Table | DGROUP | in the script's DGROUP block | Count comes from |
+|---|---|---|---|
+| `ColonyRecord[]` | `0x5D46` | `0x205D46` | `g_colony_count` `[0x539E]` |
+| `UnitRecord[]` | `0x3144` | `0x203144` | `g_unit_count` `[0x539C]` |
+| `PowerRecord[4]` | `0x8808` | `0x208808` | fixed 4 |
+| `NativeSettlement[]` | `0x54EC` | `0x2054EC` | `g_settlement_count` `[0x539A]` |
+| `AIPersonality[4]` | `0x540E` | `0x20540E` | fixed 4 |
+
+(These tables live in BSS, past the end of the file image, which is why the
+script creates the synthetic `DGROUP` block at `0x200000` — the second column
+is where to apply them.)
+
+Then retype the current-record pointers so the decompiler links the two:
+`g_current_colony_ptr` `[0x8542]` → `ColonyRecord *`,
+`g_current_power_ptr` `[0x84FC]` → `PowerRecord *`,
+`g_active_settlement_ptr` `[0x8D4A]` → `NativeSettlement *`.
+
+### 3.3 The one real trap: `long` is 4 bytes here, 8 on your desktop
+
+`s32` is `typedef signed long`. Under Ghidra's **16-bit x86** compiler spec —
+and in the 1994 build — `long` is 4 bytes. Under an LP64 spec it is 8, which
+would silently shift every field after the first `s32` and quietly corrupt
+the layout. `ColonyRecord` would come out 210 bytes instead of 202 and
+`rebel_divisor` would land at `+0xCA` instead of `+0xC6`.
+
+So: **parse against the 16-bit program**, and sanity-check one struct
+afterwards — `ColonyRecord` must be **0xCA (202)** bytes in the Data Type
+Manager. If it is 210, the architecture was wrong. (This is also why the
+generator verifies the layout arithmetically in Python rather than by
+compiling the header on the host: a host `sizeof()` check reports false
+failures for exactly this reason.)
+
+### 3.4 What is actually mapped
+
+The structs are honest about coverage — unmapped spans are `_pad_XX`, never
+invented field names:
+
+| Record | Stride | Named |
+|---|---|---|
+| `ColonyRecord` | 0xCA | 89% |
+| `UnitRecord` | 0x1C | 89% |
+| `PowerRecord` | 0x13C | 93% |
+| `NativeSettlement` | 0x12 | 83% |
+| `AIPersonality` | 0x34 | 5% |
+
+If you identify what a `_pad` span holds, that is a real finding — add it to
+`RECORDS` in `export_ghidra_symbols.py`, regenerate, and it flows into the
+header, the module map and the port's save decode together.
 
 ## 3. What the name tiers mean — read this before trusting a name
 
