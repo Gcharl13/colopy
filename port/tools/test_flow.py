@@ -1582,6 +1582,28 @@ SCRIPT = """() => {
     guarded(() => { throw new Error('guard-probe'); })();
     w7.guardCatches = _frameErr === 'guard-probe' && G.drag === null;
     _frameErr = null;
+    // A unit standing down into a colony sheds its outfit to the stores and
+    // becomes the man underneath (user report: a Pioneer joining the
+    // Blacksmith's House stayed "Pioneers", tools lost).
+    {
+      const jc = { name: 'JoinTest', x: 1, y: 1, nation: G.nation,
+                   colonists: [], stock: DATA.cargo.map(() => 0),
+                   buildings: STARTING_BUILDINGS.slice(),
+                   hammers: 0, building: null, sol: 0 };
+      const pio = { type: 'Pioneers', profession: null, tools: 60 };
+      const asCol = unitToColonist(pio, jc);
+      w7.pioneerSheds = asCol.type === 'Colonists' && asCol.profession === null &&
+                        jc.stock[GOOD.TOOLS] === 60;
+      const drg = { type: 'Dragoons', profession: 'Veteran Dragoons' };
+      const asCol2 = unitToColonist(drg, jc);
+      w7.dragoonSheds = asCol2.type === 'Colonists' &&
+                        asCol2.profession === 'Veteran Dragoons' &&
+                        jc.stock[GOOD.MUSKETS] === 50 && jc.stock[GOOD.HORSES] === 50;
+      // The figure rule: experts wear their profession's figure, plain men
+      // the free-colonist 100.
+      w7.figures = colonistFigure({ type: 'Colonists', profession: 'Master Carpenters' }) === 94 &&
+                   colonistFigure({ type: 'Colonists', profession: null }) === 100;
+    }
     // The load fixup re-establishes invariants a stale save may lack.
     saveGame();
     const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -1690,13 +1712,14 @@ SCRIPT = """() => {
     // Staged positioning: docking AT the colony tile (harbour navigation is
     // not what this asserts), then the real unload dialog chain.
     back.x = c.x; back.y = c.y; G.sel = G.units.indexOf(back);
+    const musk0 = c.stock[GOOD.MUSKETS] || 0;   // the founding Soldiers shed 50
     unloadCargo();
     for (let i = 0; i < 3 && G.dialog; i++) {
       if (G.dialog.numeric) { dialogKey('Enter'); break; }
       const anyway = (G.dialog.opts || []).findIndex(o => /anyway/i.test(o));
       closeDialog(anyway >= 0 ? anyway : 0);   // spoilage warn -> unload anyway
     }
-    pt.unloaded = (c.stock[GOOD.MUSKETS] || 0) === 100;
+    pt.unloaded = (c.stock[GOOD.MUSKETS] || 0) === musk0 + 100;
 
     // Declaration. Staged: the liberty climb (c.sol, a hundreds-of-turns
     // grind) and a guaranteed coastal halo tile for the King's landing.

@@ -9426,3 +9426,35 @@ Corrections:
   flapped.
 
 Suite 237/237; render-diff 26/26.
+
+## 2026-08-08g — Colony pass 1 (user report): the stand-down rule + colonist figures
+
+User: a Pioneer moved into the Blacksmith's House "loses his tools to the
+stockpile but stays a Pioneer".
+
+- **The stand-down rule implemented** (unitToColonist): a unit joining or
+  founding a colony sheds its outfit into the stores -- the Pioneer's
+  remaining u.tools, the Soldier's EQUIP_MUSKETS, the Dragoon's muskets +
+  horses, the Scout's horses (the same quantities the Europe arming rows
+  trade) -- and the colonist entry becomes 'Colonists' carrying only his
+  PROFESSION. Both entry paths (Join Colony and founding) route through
+  it; the loadGame fixup retroactively stands down outfit-typed colonists
+  in stale saves, returning the gear.
+- **Colonist FIGURES unified** (colonistFigure): the live Curacao frame
+  draws PROFESSION FIGURES in the plaza row and on the worked cells (the
+  measured field worker was frame 100 -- the free colonist's own figure,
+  which had coincidentally matched the Colonists unit icon). The plaza
+  row, the field cells, the building-worker layer and the colonist drag
+  ghost now all draw professionIconByName(profession), else the Indian
+  Convert figure, else 100. A standing-down expert keeps his profession's
+  figure wherever he works.
+- Playtest updated: the founding Soldiers now correctly seed the colony
+  with 50 muskets, so the musket-unload check measures the delta.
+
+The colony pair's remaining residual is dominated by the building-field
+layout: the plot shuffle is seeded per SESSION ([0x8D80] BIOS clock, per
+the placement ruling), so even the engine lays the same save out
+differently every launch -- the field can never pair tightly.
+
+Suite 237/237 (wire7 + pioneerSheds/dragoonSheds/figures); render-diff
+26/26.

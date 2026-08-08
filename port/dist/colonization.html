@@ -2101,6 +2101,24 @@ function drawSidebar(ctx) {
 // can be performed only by colonists." The engine's predicate site is unread;
 // excluding the three non-person unit kinds is the port's reading, flagged.
 const NOT_COLONISTS = ['Wagon Train', 'Artillery', 'Treasure'];
+// A unit that walks into a colony STANDS DOWN to the man underneath: his
+// outfit goes into the stores -- the Pioneer's remaining tools, the Soldier's
+// muskets, the Dragoon's muskets and horses, the Scout's horses (the same
+// EQUIP_* quantities the Europe arming rows trade) -- and the colonist entry
+// keeps only his PROFESSION. User report 2026-08-08: a Pioneer joining the
+// Blacksmith's House stayed "Pioneers" forever, tools lost.
+function unitToColonist(u, c) {
+  if (u.tools) c.stock[GOOD.TOOLS] += u.tools;
+  if (u.type === 'Soldiers') c.stock[GOOD.MUSKETS] += EQUIP_MUSKETS;
+  if (u.type === 'Dragoons') {
+    c.stock[GOOD.MUSKETS] += EQUIP_MUSKETS;
+    c.stock[GOOD.HORSES] += EQUIP_HORSES;
+  }
+  if (u.type === 'Scouts') c.stock[GOOD.HORSES] += EQUIP_HORSES;
+  const outfit = ['Pioneers', 'Soldiers', 'Dragoons', 'Scouts', 'Missionaries'];
+  return { type: outfit.includes(u.type) ? 'Colonists' : u.type,
+           profession: u.profession || null, job: null, cell: null };
+}
 function buildColony() {
   const u = G.units[G.sel];
   if (!u) return;
@@ -2128,8 +2146,7 @@ function buildColony() {
   // Convert from the eight-turn loss-of-faith timer (§19.7).
   const here = colonyAt(u.x, u.y);
   if (here) {
-    here.colonists.push({ type: u.type, profession: u.profession || null,
-                          job: null, cell: null });
+    here.colonists.push(unitToColonist(u, here));
     G.units.splice(G.sel, 1);
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
     G.msg = `${u.profession || u.type} joins ${here.name}.`;
@@ -2213,20 +2230,24 @@ function buildColony() {
   function nameAndFound() {
   openDialog('COLONY', (name) => {
     const nm = (name || '').trim() || suggested;
-    G.colonies.push({
+    const nc = {
       name: nm, x: u.x, y: u.y, nation: G.nation,
       // A new colony starts with its founder in the plaza and an empty
       // warehouse; the fixed starting buildings are the three no-cost rows.
       // Colonists carry a job and, if they work a field, the cell they work
       // (signed -2..+2 from the colony centre). The founder starts in the
       // plaza with no job -- which is why a new colony makes no hammers.
-      colonists: [{ type: u.type, job: null, cell: null }],
+      colonists: [],
       stock: DATA.cargo.map(() => 0),
       buildings: STARTING_BUILDINGS.slice(),
       hammers: 0,          // construction points banked
       building: null,      // @BUILDING row being constructed
       sol: 0,
-    });
+    };
+    // The founder stands down like any joiner: a founding Pioneer's tools
+    // seed the new warehouse.
+    nc.colonists.push(unitToColonist(u, nc));
+    G.colonies.push(nc);
     // The founder joins the colony, so it leaves the map.
     G.units.splice(G.sel, 1);
     G.sel = Math.min(G.sel, Math.max(0, G.units.length - 1));
@@ -3560,11 +3581,7 @@ function drawColony(ctx) {
         sheetFrame(ctx, 'ICONS', icon, px + 6 * j, py + 9);
     }
     crew.forEach((p, k) => {
-      const fig = (p.profession && professionIconByName(p.profession));
-      const fallback = professionIcon(jobIndex(job));
-      sheetFrame(ctx, 'ICONS',
-                 fig !== null && fig !== undefined ? fig
-                   : (fallback !== null && fallback !== undefined ? fallback : 81),
+      sheetFrame(ctx, 'ICONS', colonistFigure(p),
                  px + (fw >> 1) + 5 - 9 * k, py + 8 + fh - 13);
     });
   });
@@ -3743,8 +3760,7 @@ function drawColonyTiles(ctx, c) {
       // inset of its own; with one clean cell to measure, the offset is used as
       // measured and the mechanism is left open.
       if (p) {
-        const u = unit(p.type) || unit('Colonists');
-        if (u) sheetFrame(ctx, 'ICONS', u.icon, x + 14, y + 6);
+        sheetFrame(ctx, 'ICONS', colonistFigure(p), x + 14, y + 6);
       }
       if (p && p === sel) hollowRect(ctx, x, y, 24, 24, 0x0A);
     }
@@ -3801,7 +3817,7 @@ const SOL_FLAG = 123, SOL_CROWN = 124, SOL_CROWN_RIGHT = 117;
 // The solved row, shared by the painter and the click test so a click always
 // lands on the sprite it looks like it landed on.
 function plazaRow(c) {
-  const people = c.colonists.map(p => (unit(p.type) || unit('Colonists')).icon);
+  const people = c.colonists.map(p => colonistFigure(p));
   const garrison = G.units.filter(u => u.x === c.x && u.y === c.y).map(u => u.icon);
   const icons = people.concat(garrison);
   if (!icons.length) return [];
@@ -9541,6 +9557,20 @@ function professionIcon(job) {
 }
 const professionIconByName = (name) =>
   professionIcon((DATA.jobexpert || []).indexOf(name));
+// A colonist's FIGURE everywhere the colony screen draws him: his
+// profession's figure, else the plain free-colonist 100 (the F4 class
+// figure). The live Curacao frame draws FIGURES in the plaza row and on
+// the worked cells (the field worker matched frame 100 at score 0 -- the
+// free colonist's own figure), not the map unit icons.
+function colonistFigure(p) {
+  const byProf = p.profession ? professionIconByName(p.profession) : null;
+  if (byProf !== null && byProf !== undefined) return byProf;
+  if (p.type === 'Indian Convert') {
+    const f = professionIconByName('Indian Converts');
+    if (f !== null && f !== undefined) return f;
+  }
+  return 100;
+}
 
 // The capture also fixes the ROW ORDER: 8 field jobs / 9 indoor trades /
 // 9 class rows with Free Colonists LAST -- Expert Teachers and Veteran
@@ -10447,6 +10477,15 @@ function loadGame() {
       while (c.stock.length < DATA.cargo.length) c.stock.push(0);
       if (!Array.isArray(c.buildings)) c.buildings = [];
       if (!Array.isArray(c.colonists)) c.colonists = [];
+      // Saves from before the stand-down rule hold colonists still wearing
+      // their outfits: shed the gear into the stores and keep the man.
+      c.colonists.forEach((p, i) => {
+        if (!['Pioneers', 'Soldiers', 'Dragoons', 'Scouts', 'Missionaries'].includes(p.type)) return;
+        const conv = unitToColonist(
+          { type: p.type, profession: p.profession,
+            tools: p.type === 'Pioneers' ? EQUIP_TOOLS : 0 }, c);
+        c.colonists[i] = { ...conv, job: p.job || null, cell: p.cell || null };
+      });
     }
     for (const u of [...G.units, ...G.europe])
       if (u && u.hold && !Array.isArray(u.hold)) u.hold = [];
@@ -11661,10 +11700,9 @@ function onPointerMove(mx, my) {
     const c = G.colonies[G.colony];
     const p = c && c.colonists[G.dragArm.colonist];
     if (p) {
-      const u = unit(p.type) || unit('Colonists');
       beginDrag({ screen: 'colony', mode: 6, kind: 'unit', colonist: G.dragArm.colonist,
                   from: G.dragArm.from, srcRegion: G.dragArm.from === 'plaza' ? 0 : 1,
-                  frame: dragGhostFrame('unit', 0, 0, u.icon) });
+                  frame: dragGhostFrame('unit', 0, 0, colonistFigure(p)) });
     } else G.dragArm = null;
   }
   // An open pulldown tracks the cursor while the button is held: the engine
