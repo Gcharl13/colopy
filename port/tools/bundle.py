@@ -77,6 +77,7 @@ def build_data():
             # No @default at all means a plain entry field with no prefill --
             # do NOT substitute "0", which would read as an option index.
             "default": sec["directives"].get("default"),
+            "small": sec["directives"].get("smallfont") == "true",
         }
 
     # Woodcut captions: the single @WOODCUT section, one caption per line, index
@@ -457,6 +458,7 @@ def build_data():
             "tail": para[1].split("\n") if len(para) > 1 else [],
             "width": int(sec["directives"].get("width", 0x50)),
             "default": sec["directives"].get("default"),
+            "small": sec["directives"].get("smallfont") == "true",
         }
     D["text"] = {
         "beginmenu": game["@BEGINMENU"].split("\n"),

@@ -132,8 +132,10 @@ SCRIPT = """() => {
   // Recruit: the dock has three candidates priced from @CLASS.
   openEuroMenu(0);
   const rows = euroMenuRows();
-  out.recruitRows = rows.length === 3 && rows.every(r => r.cost >= 300 && r.cost <= 2000);
-  G.gold = 5000; G.euroMenuRow = 0;
+  // Census: a "(None)" head row leads, then the three priced candidates.
+  out.recruitRows = rows.length === 4 && rows[0].none &&
+    rows.slice(1).every(r => r.cost >= 300 && r.cost <= 2000);
+  G.gold = 5000; G.euroMenuRow = 1;
   const dock0 = G.dockUnits.length, g2 = G.gold;
   euroMenuCommit();
   out.recruited = { paid: g2 - G.gold > 0, onDock: G.dockUnits.length === dock0 + 1,
@@ -162,9 +164,9 @@ SCRIPT = """() => {
   openEuroMenu(2);
   const tr = euroMenuRows();
   out.train = {
-    count: tr.length,
-    sorted: tr.every((r, i) => i === 0 || tr[i - 1].cost <= r.cost),
-    cheapest: tr[0] && tr[0].cost,
+    count: tr.length === 18 && tr[0].none,     // @MISC "None" head + 17 rows
+    sorted: tr.slice(1).every((r, i, a) => i === 0 || a[i - 1].cost <= r.cost),
+    cheapest: tr[1] && tr[1].cost,
     dearest: tr[tr.length - 1] && tr[tr.length - 1].cost,
   };
   G.euroMenu = null;
@@ -656,7 +658,8 @@ SCRIPT = """() => {
     // back to click-to-target.
     tap('g');
     const gRows = (G.dialog && G.dialog.opts) || [];
-    out.keyGoTo = gRows[gRows.length - 1] === DATA.nations[G.nation].homeport &&
+    out.keyGoTo = gRows[0] ===
+        `${DATA.nations[G.nation].homeport} (${DATA.nations[G.nation].country})` &&
                   !/not in this build/.test(G.msg || '');
     dialogKey('Escape');
     out.keyGoTo = out.keyGoTo && G.goTo === G.units[0];
@@ -1185,7 +1188,9 @@ SCRIPT = """() => {
     G.eventQueue = []; autoExport(ab);
     w1.spoil = /exceeded its warehouse capacity/.test(q()) &&
                /thrown away/.test(q()) && ab.stock[2] === 50;
-    w1.cargoReady = /new cargo of/i.test(q());
+    w1.cargoReady = !!G.dialog && /new cargo of/i.test(G.dialog.body.join(' ')) &&
+                    /Zoom to colony/.test((G.dialog.opts || []).join(' '));
+    G.dialog = null;
     G.boycotts = []; G.colonies.pop();
     // @EVASIVE: a gunless ship that survives the roll escapes.
     const rnd = Math.random; Math.random = () => 0.9999;
@@ -1468,9 +1473,9 @@ SCRIPT = """() => {
     G.sel = 0; G.dialog = null;
     beginGoTo();
     const rows = (G.dialog && G.dialog.opts) || [];
-    w6.goToRows = rows.length >= 2 &&
-                  rows[rows.length - 1] === DATA.nations[G.nation].homeport;
-    closeDialog(rows.length - 1);
+    w6.goToRows = rows.length >= 2 && rows[0] ===
+        `${DATA.nations[G.nation].homeport} (${DATA.nations[G.nation].country})`;
+    closeDialog(0);
     w6.goToSails = G.screen === 'europe' &&
                    G.europe.some(e => e.state === 'toEurope');
     G.screen = 'map'; G.europe.length = 0;
@@ -1668,8 +1673,7 @@ SCRIPT = """() => {
     // them home for the war chest.
     G.sel = G.units.findIndex(u => u.ship);
     beginGoTo();
-    const gRows = (G.dialog && G.dialog.opts) || [];
-    closeDialog(gRows.length - 1);
+    closeDialog(0);                            // the Europe row leads the list
     pt.sailed = G.europe.some(e => e.state === 'toEurope');
     for (let t = 0; t < 5 && !G.europe.some(e => e.state === 'port'); t++) endTurn();
     G.eventQueue.length = 0; G.dialog = null;
@@ -2209,7 +2213,7 @@ SCRIPT = """() => {
         const spKing = G.eventQueue[0] && G.eventQueue[0].speaker;
         G.eventQueue = [];
         out.speakers = {
-          ind: spInd === `IND${v.tribe % 8}A0`, mil: spMil === 'MSS5',
+          ind: spInd === `IND${v.tribe % 8}A0`, mil: spMil === 'MSS0',
           king: spKing === 'KING1',
           sheets: !!(DATA.sheets.KING1 && DATA.sheets.MSS5 &&
                      DATA.sheets[`IND${v.tribe % 8}A0`]),
@@ -2516,7 +2520,7 @@ SCRIPT = """() => {
   // GAME "Pick Music" (func_023344). The picker is the 15-row @PICKMUSIC menu;
   // rows 1-12 set a tune id directly, 13/14/15 open a class sub-picker.
   G.screen = 'map'; openMenu(0);
-  G.menuSel = DATA.menus[0].rows.findIndex(r => r.label === 'Pick Music');
+  G.menuSel = menuVisibleRows(0).findIndex(r => !r.sep && r.label === 'Pick Music');
   runMenuRow();
   out.musicOpens = !!G.dialog && G.dialog.opts.length === 15;
   // Preselect: [0x96] -> row, via the 28-entry table at file 0x0233E4. A folk
@@ -3091,9 +3095,9 @@ SCRIPT = """() => {
       trade: eventSpeaker('PRICEDOWN') === 'MSS2',
       site: eventSpeaker('TOONEAR') === 'MSS3',
       treasure: eventSpeaker('CASHTREASURE') === 'KING1',
-      colony: eventSpeaker('BUILT') === 'MSS0',
+      colony: eventSpeaker('BUILT') === 'MSS5',
       diplo: eventSpeaker('SIGNTREATY') === 'MSS1',
-      lootCaptureStaysMilitary: eventSpeaker('LOOTCAPTURE') === 'MSS5',
+      lootCaptureStaysMilitary: eventSpeaker('LOOTCAPTURE') === 'MSS0',
     };
     // F5 trade counters: selling logs net units + net value after tax;
     // buying logs both negative. (The importer check against the 1653 frame's
@@ -3352,8 +3356,8 @@ def main():
         ("a purchased ship joins the fleet in port", r["shipJoinsFleet"],
          r["shipJoinsFleet"]),
         ("sailing boards everyone waiting on the dock", r["boarded"], r["boarded"]),
-        ("train offers all 17 @JOB rows, price-sorted",
-         r["train"]["count"] == 17 and r["train"]["sorted"]
+        ("train offers None + all 17 @JOB rows, price-sorted",
+         r["train"]["count"] and r["train"]["sorted"]
          and r["train"]["cheapest"] == 600 and r["train"]["dearest"] == 2000, r["train"]),
         ("dock candidates are unit types with a price band",
          r["dockShape"] and r["dockFromLadder"],

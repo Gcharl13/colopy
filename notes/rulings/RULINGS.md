@@ -9346,3 +9346,54 @@ for the BOOT menus).
 Suite 237/237 (wire7 + dialogFont/dialogPitch checks); shots 47/47;
 render-diff 15/15 (no paired capture contains a popup frame; the
 landfall side-by-side is the visual proof).
+
+## 2026-08-08e — Screen census, session 1: the oracle grows from 15 to 23 pairs
+
+The user asked how the port is tested against the original; the honest
+answer was "only where a reference frame exists, and there were 15."
+The census program fixes that: every UI state gets a DOSBox reference
+capture, a port scenario posed in the SAME state (the 1653 save), and a
+render_diff pair. docs/screens/census/TRACKER.md is the coverage ledger:
+PAIRED / captured-reference-only / open divergences / not yet captured.
+
+Session 1 captured 34 frames and they overturned SIX port behaviours:
+
+1. **Pulldown menus are grouped, gated and contextual.** Green rule
+   separators between row groups; rows a unit's CLASS can never use are
+   HIDDEN (a frigate gets no Build Colony/Join/Pillage/Go-to-Place at
+   all); rows inapplicable right now are DIMMED (Load Cargo away from a
+   colony, Return to Europe off the sea lane); Clear Forest / Plow
+   Fields fold into ONE row that follows the tile; ONE Fortify; DECLARE
+   INDEPENDENCE in capitals. Rebuilt: menuVisibleRows()/ordersMenuRows()
+   drive draw, hit-test, keyboard nav and commit off one row model;
+   dimmed rows are skipped (the engine's node[0]&1 rule). The gating is
+   CAPTURE-DERIVED (frigate + wagon frames), flagged.
+2. **The Go To picker leads with Europe** -- "Amsterdam (Netherlands)"
+   FIRST, label "<homeport> (<country>)"; rows page in tens with
+   "(More)"; a land unit's list filters to its own land mass, no Europe
+   row. Rebuilt with paging; the port's REGION filter keeps Vlissingen
+   where the engine drops it -- OPEN divergence in the tracker.
+3. **MSS0 and MSS5 were swapped**: the combat bulletin wears the MSS0
+   naval officer, the colony-supply popups the MSS5 bonneted advisor.
+4. **Colony-supply messages are ASKS with the @MISC rows** "Continue
+   turn." / "Zoom to colony." (34/35); row 1 zooms. Implemented
+   (askZoom) for CARGOREADY1/2 + NEEDTOOLS/0; extras beyond the first
+   dialog fall back to plain popups (port reconciliation, flagged).
+5. **@SMALLFONT is real**: the TRAIN list renders small beside the intr
+   recruit ask -- the directive switches fonts, overturning the
+   "no-switch" reading. Its sections (@BEGINMENU, @KINGRECRUIT, @CUSTOM,
+   @PICKMUSIC, @PICK*, @TUTORIAL16-18) now carry a `small` flag through
+   the bundle and the whole dialog framework draws 6/8-pitch small where
+   set -- exactly the boot menu's byte-read 6-cell math, so the two
+   readings cohere.
+6. **RECRUIT/TRAIN furniture**: "(None)"/"None" head rows, no per-row
+   price on RECRUIT, "(Cost: N)" from @MISC 13/14 on TRAIN, and the
+   "(F1 for Help)" footer inside the box's bottom-right on the three
+   shop menus.
+
+Eight census pairs joined render_diff as LOOSE gates (residual floor =
+the engine's slightly different viewport centring + cursor arrow + RNG
+dock candidates + runtime advisor anchors, documented at the pair list).
+Reference-only captures and the not-yet-captured list are in the tracker.
+
+Suite 237/237; render-diff 23/23; shots 55 scenarios.

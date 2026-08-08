@@ -230,6 +230,23 @@ SHOTS.append(("1653_colony",
               "(()=>{const c=G.colonies.find(x=>x.name==='Curacao');"
               "G.colony=G.colonies.indexOf(c);G.screen='colony';})()"))
 
+# The census pairs (docs/screens/census/, 2026-08-08): the same 1653 load
+# state the DOSBox frames were captured in -- the frigate at (44,28) active,
+# the map centred on it -- with the same UI opened over it.
+SEL_FRIGATE = ("(()=>{let i=G.units.findIndex(u=>u.x===44&&u.y===29);"
+               "if(i<0)i=G.units.findIndex(u=>/Frigate/.test(u.type));"
+               "if(i>=0)G.sel=i;const u=G.units[G.sel];centerOn(u.x,u.y);})();")
+SHOTS += [
+    ("census_menu_game", SAV1653 + SEL_FRIGATE + "openMenu(0)"),
+    ("census_menu_view", SAV1653 + SEL_FRIGATE + "openMenu(1)"),
+    ("census_menu_orders", SAV1653 + SEL_FRIGATE + "openMenu(2)"),
+    ("census_menu_reports", SAV1653 + SEL_FRIGATE + "openMenu(3)"),
+    ("census_menu_trade", SAV1653 + SEL_FRIGATE + "openMenu(4)"),
+    ("census_goto_ship", SAV1653 + SEL_FRIGATE + "beginGoTo()"),
+    ("census_euro_recruit", SAV1653 + "G.screen='europe';openEuroMenu(0)"),
+    ("census_euro_train", SAV1653 + "G.screen='europe';openEuroMenu(2)"),
+]
+
 
 def main():
     OUT.mkdir(exist_ok=True)

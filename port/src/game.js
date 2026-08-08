@@ -841,15 +841,23 @@ function hollowRect(ctx, x, y, w, h, colorIdx) {
 // par.5) -- the frame measures body 122->132 and rows 146->158.
 const DFONT = () => FONT.intr || FONT.tiny;
 const DTEXT = 10, DROW = 12;
+// @SMALLFONT sections (census 2026-08-08: the Royal University list renders
+// in the SMALL font while the recruit ask beside it is intr -- the directive
+// genuinely switches; the boot menu's byte-read 6-cell math is that font's).
+// small => the 6-cell font with its 5+1 / 5+3 pitches.
+const dFont = (small) => small ? FONT.tiny : DFONT();
+const dText = (small) => small ? 6 : DTEXT;
+const dRow = (small) => small ? 8 : DROW;
 function layoutDialog(d) {
   // Every measured line carries the +10 body margin (`add ax,0x0A`
   // @0x06CCE3); @width is a FLOOR under that, and 190 in practice.
   let cw = d.width;
   for (const l of d.body.concat(d.tail))
-    cw = Math.max(cw, DFONT().width(l.replace(/[{}]/g, '')) + 10);
+    cw = Math.max(cw, dFont(d.small).width(l.replace(/[{}]/g, '')) + 10);
   const w = cw + 6;
-  const textH = d.body.length * DTEXT;
-  const rows = d.opts ? d.opts.length * DROW : 17;  // entry field: label + box
+  const textH = d.body.length * dText(d.small);
+  const rows = d.opts ? d.opts.length * dRow(d.small)
+                      : (d.small ? 11 : 17);        // entry field: label + box
   const h = 6 + textH + 3 + rows + 3;
   // The engine's screen clamps: right past 320 shifts left, bottom past 200
   // shifts up (@0x06D563/@0x06D571); a negative origin floors at 0.
@@ -884,26 +892,27 @@ function drawDialog(ctx) {
   const ik = dialogInks();
   if (d.speaker) drawSpeakerSheet(ctx, d.speaker);
   plaque(ctx, b.x, b.y, b.w, b.h, G.screen === 'title' ? 'OPENTILE' : 'WOODTILE');
-  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * DTEXT,
-                                    ik.base, ik.hi, DFONT()));
+  const f = dFont(d.small), tp = dText(d.small), rp = dRow(d.small);
+  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * tp,
+                                    ik.base, ik.hi, f));
   const seed = b.y + 6 + b.textH + 3;
   if (d.opts) {
     d.opts.forEach((o, k) => {
-      const oy = seed + k * DROW;
+      const oy = seed + k * rp;
       // Selection is the +0x40 band ONLY -- the hilite ink is gated on the
       // {brace} flag (func_06C346 @0x06C365), never on the row being
       // selected, so every row's text runs through the same span painter.
-      if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, DROW - 2); }
-      spanText(ctx, o, b.x + 9, oy + 1, ik.base, ik.hi, DFONT());
+      if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, rp - 2); }
+      spanText(ctx, o, b.x + 9, oy + 1, ik.base, ik.hi, f);
     });
   } else {
     // Entry popup (@LANDHO): the tail line is the field label, the box follows.
     const label = d.tail[0] || '';
-    spanText(ctx, label, b.x + 5, seed + 2, ik.base, ik.hi, DFONT());
-    const fx = b.x + 5 + DFONT().width(label.replace(/[{}]/g, '')) + 4;
-    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 15, ik.base);
+    spanText(ctx, label, b.x + 5, seed + 2, ik.base, ik.hi, f);
+    const fx = b.x + 5 + f.width(label.replace(/[{}]/g, '')) + 4;
+    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, d.small ? 11 : 15, ik.base);
     const caret = (Math.floor(G.tick / 24) % 2) ? '_' : '';
-    DFONT().draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
+    f.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
   }
 }
 // Capture-pinned dialog speakers: the landfall ask wears the MSS3 scout
@@ -921,6 +930,7 @@ function openDialog(key, onDone, prefill) {
   G.dialog = {
     body: t.body, tail: t.tail, width: t.width, onDone,
     speaker: DIALOG_SPEAKER[key] || null,
+    small: !!t.small,
     opts: numeric ? t.tail : null,
     // @default names the highlighted row ONE-BASED: @ABANDON's `@default=2`
     // over two rows is "Never! That would be folly." -- the engine highlights
@@ -972,9 +982,9 @@ function dialogKey(k) {
 function dialogClick(mx, my) {
   const d = G.dialog, b = layoutDialog(d);
   if (!d.opts) { closeDialog(d.entry); return; }
-  const seed = b.y + 6 + b.textH + 3;
+  const seed = b.y + 6 + b.textH + 3, rp = dRow(d.small);
   for (let k = 0; k < d.opts.length; k++) {
-    if (hit(mx, my, { x: b.x + 4, y: seed + k * DROW, w: b.w - 8, h: DROW })) { closeDialog(k); return; }
+    if (hit(mx, my, { x: b.x + 4, y: seed + k * rp, w: b.w - 8, h: rp })) { closeDialog(k); return; }
   }
 }
 
@@ -1719,34 +1729,116 @@ function drawMenuBar(ctx) {
     FONT.tiny.draw(ctx, t, x, 1, lut(HUD_INK));
   });
 }
-// The pulldown itself: rows from MENU.TXT, the "~" accelerator letter picked
-// out in gold, greyed rows dimmed. Width fits the longest label.
-function pulldownBox(mi) {
+// The pulldowns, REBUILT against the census captures (docs/screens/census/
+// census_menu_*.png, 2026-08-08): the engine draws each menu in GROUPS
+// separated by a thin green rule, HIDES rows the selected unit's class can
+// never use (a frigate gets no Build Colony row at all), DIMS rows merely
+// inapplicable right now (Load Cargo away from a colony), and folds Clear
+// Forest / Plow Fields into ONE row whose label follows the active unit's
+// tile. Only one of MENU.TXT's two Fortify rows is shown. The grouping and
+// gating below are CAPTURE-DERIVED (frigate + wagon frames); the engine's own
+// gating tables are unread -- FLAGGED.
+const MENU_SEP_H = 7;
+const MENU_GROUP_LABELS = {
+  GAME: [['Game Options', 'Colony Report Options'], ['Sound Options', 'Pick Music'],
+         ['Save Game', 'Load Game'], ['Declare Independence'], ['Retire', 'Exit to DOS']],
+  VIEW: [['Move Pieces', 'View Pieces', 'European Status'], ['Find Colony'],
+         ['Zoom In', 'Zoom Out'], ['Zoom Level'], ['Show Hidden Terrain', 'Center View']],
+  REPORTS: [['F1'], ['F2', 'F3', 'F4', 'F5'], ['F6', 'F7', 'F8', 'F9'], ['F10']],
+};
+// The sea-lane gate on Return to Europe: the census frigate mid-Ocean shows
+// the row DIMMED, so the menu enables it only on the sea-lane column
+// (terrain 26). Capture-derived; the engine's own test is unread. FLAGGED.
+const onSeaLane = (u) => (at(u.x, u.y) & 0x1F) === 26;
+function ordersMenuRows() {
+  const u = G.units[G.sel];
+  if (!u) return DATA.menus[2].rows.map(r => ({ label: r.label, cmd: r.label, dim: true }));
+  const ship = !!u.ship;
+  const atOwn = !!colonyAt(u.x, u.y);
+  const carrier = (Number((unit(u.type) || {}).cargo) || 0) > 0;
+  const pioneer = /Pioneer/.test(u.type || '');
+  const founder = !ship && !NOT_COLONISTS.includes(u.type);
+  const forest = !ship && isForested(tileTerrain(at(u.x, u.y)));
+  const hold = (u.hold || []).length > 0 || (u.cargo || []).length > 0;
+  const out = [];
+  const push = (label, dim, cmd) => out.push({ label, cmd: cmd || label, dim: !!dim });
+  const sep = () => out.push({ sep: true });
+  push('Activate unit'); push('Wait for next unit'); push('Fortify'); push('Sentry');
+  sep();
+  if (founder) { push('Build Colony'); push('Join Colony (B)'); }
+  if (forest) push('Clear Forest (P)', !pioneer);
+  else push('Plow Fields  (P)', ship || !pioneer);
+  push('Build Road', ship || !pioneer);
+  push('Load Cargo', !(carrier && atOwn));
+  push('Unload Cargo', !(carrier && atOwn && hold));
+  sep();
+  push(ship ? 'Go to Port' : 'Go to Place');
+  push('Begin Trade Route');
+  if (ship) push('Return to Europe', !onSeaLane(u));
+  if (founder) push('Pillage');
+  sep();
+  push('No Orders (space bar)');
+  sep();
+  push('Dump Cargo Overboard', !hold);
+  push('Disband Unit (shift-D)');
+  return out;
+}
+function menuVisibleRows(mi) {
   const m = DATA.menus[mi];
+  const title = (BAR_TITLES[mi] || [])[0];
+  if (title === 'ORDERS') return ordersMenuRows();
+  const flat = (r) => ({ label: r.label, cmd: r.label,
+                         dim: r.disabled || !COMMANDS[r.label], accel: r.accel });
+  const spec = MENU_GROUP_LABELS[title];
+  if (!spec) return m.rows.map(flat);
+  const used = new Set();
+  const out = [];
+  spec.forEach((prefixes) => {
+    const rows = m.rows.filter(r => !used.has(r) &&
+                                    prefixes.some(p => r.label.startsWith(p)));
+    if (!rows.length) return;
+    if (out.length) out.push({ sep: true });
+    rows.forEach(r => { used.add(r); out.push(flat(r)); });
+  });
+  m.rows.forEach(r => { if (!used.has(r)) out.push(flat(r)); });
+  return out;
+}
+function pulldownBox(mi) {
+  const rows = menuVisibleRows(mi);
   let w = 0;
-  for (const r of m.rows) w = Math.max(w, FONT.tiny.width(r.label));
+  for (const r of rows) if (!r.sep) w = Math.max(w, FONT.tiny.width(r.label));
   w += 16;
   const x = Math.min(BAR_TITLES[mi][1] - 2, W - w - 2);
-  return { x, y: 8, w, h: m.rows.length * 8 + 4 };
+  const h = rows.reduce((n, r) => n + (r.sep ? MENU_SEP_H : 8), 0) + 4;
+  return { x, y: 8, w, h, rows };
 }
 function drawPulldown(ctx) {
   const m = DATA.menus[G.openMenu], b = pulldownBox(G.openMenu);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  m.rows.forEach((r, k) => {
-    const y = b.y + 2 + k * 8;
+  let y = b.y + 2;
+  b.rows.forEach((r, k) => {
+    if (r.sep) {
+      ctx.fillStyle = ink(HUD_INK);
+      ctx.fillRect(b.x + 2, y + 3, b.w - 4, 1);
+      y += MENU_SEP_H;
+      return;
+    }
     const sel = k === G.menuSel;
     if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 2, y, b.w - 4, 8); }
-    const dim = r.disabled || !COMMANDS[r.label];
+    const dim = r.dim;
     const base = dim ? 0x2F : (sel ? 0xFC : 0xFE);
-    // Draw the accelerator letter in gold where the row is live.
-    const ai = r.accel ? r.label.toUpperCase().indexOf(r.accel) : -1;
+    // DECLARE INDEPENDENCE draws in capitals (census GAME frame).
+    const label = /^Declare Independence/.test(r.label) ? r.label.toUpperCase() : r.label;
+    const src = m.rows.find(q => q.label === r.label);
+    const ai = src && src.accel ? label.toUpperCase().indexOf(src.accel) : -1;
     let x = b.x + 6;
-    if (ai < 0 || dim) FONT.tiny.draw(ctx, r.label, x, y + 1, lut(base));
+    if (ai < 0 || dim) FONT.tiny.draw(ctx, label, x, y + 1, lut(base));
     else {
-      x = FONT.tiny.draw(ctx, r.label.slice(0, ai), x, y + 1, lut(base));
-      x = FONT.tiny.draw(ctx, r.label[ai], x, y + 1, lut(0x0E));
-      FONT.tiny.draw(ctx, r.label.slice(ai + 1), x, y + 1, lut(base));
+      x = FONT.tiny.draw(ctx, label.slice(0, ai), x, y + 1, lut(base));
+      x = FONT.tiny.draw(ctx, label[ai], x, y + 1, lut(0x0E));
+      FONT.tiny.draw(ctx, label.slice(ai + 1), x, y + 1, lut(base));
     }
+    y += 8;
   });
 }
 // Which menu-bar title sits under x, or -1 (the same 2px-padded spans the
@@ -1758,15 +1850,21 @@ function barTitleAt(mx) {
   }
   return -1;
 }
-function openMenu(mi) { G.openMenu = mi; G.menuSel = 0; }
+function openMenu(mi) {
+  G.openMenu = mi;
+  const rows = menuVisibleRows(mi);
+  G.menuSel = rows.findIndex(r => !r.sep);
+}
 function runMenuRow() {
-  const m = DATA.menus[G.openMenu];
-  const r = m && m.rows[G.menuSel];
+  const rows = G.openMenu >= 0 ? menuVisibleRows(G.openMenu) : [];
+  const r = rows[G.menuSel];
   G.openMenu = -1;
-  if (!r) return;
+  // Disabled rows are skipped, the engine's own rule (`node[0] & 1` skip
+  // @0x06E64E) -- a release or Enter on a dimmed row does nothing.
+  if (!r || r.sep || r.dim) return;
   // Every MENU.TXT row across the six pulldowns is bound (test_flow asserts
   // it), so the guard is only here to keep an edited MENU.TXT from throwing.
-  const fn = COMMANDS[r.label];
+  const fn = COMMANDS[r.cmd];
   if (fn) fn();
   else G.msg = `${r.label}: no handler for this MENU.TXT row.`;
 }
@@ -2082,32 +2180,48 @@ function pillage() {
 function beginGoTo() {
   const u = G.units[G.sel];
   if (!u) return;
-  // @TRAVELPLACE (land) / @SAILPORT (ships): "Select a colony/port to
-  // travel to" -- the shared destination picker func_060026 (spec/ui/
-  // trade_routes.md par.3): rows = eligible own colonies, then the EUROPE ROW
-  // FOR SHIPS ONLY (label = the per-nation port name [0x838C]); picking
-  // Europe sets sail (func_022CDC). Escape leaves click-to-target. The
-  // picker's 10-row paging and current-location exclusion are not modelled.
-  const dests = u.ship ? coastalColonies() : G.colonies;
-  const rows = dests.map(c => c.name);
-  if (u.ship) rows.push(DATA.nations[G.nation].homeport);
-  if (rows.length) {
-    askEvent(u.ship ? 'SAILPORT' : 'TRAVELPLACE', {}, (k) => {
-      if (k >= 0 && k < dests.length) { setGoTo(u, dests[k].x, dests[k].y); return; }
-      if (u.ship && k === dests.length) {
-        if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
-        sailForEurope(u);
-        G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
-        G.screen = 'europe';
-        return;
-      }
-      G.goTo = u;
-      G.msg = 'Click the tile to travel to.';
-    }, rows);
-    return;
+  beginGoToPage(u, 0);
+}
+// @TRAVELPLACE (land) / @SAILPORT (ships): the shared destination picker
+// func_060026 (spec/ui/trade_routes.md par.3), CENSUS-CORRECTED 2026-08-08
+// against census_goto_ship / census_goto_land:
+//   * a ship's list opens with the EUROPE ROW FIRST, labelled
+//     "<homeport> (<country>)" -- "Amsterdam (Netherlands)" in the frame;
+//   * rows page in tens with a "(More)" tail row;
+//   * a LAND unit's list carries only colonies on ITS OWN LAND MASS (the
+//     frame omits every island colony; func_05FEF4's region match, which the
+//     port reads off its REGION plane) and no Europe row.
+// Escape leaves click-to-target. Picking Europe sets sail (func_022CDC).
+function beginGoToPage(u, page) {
+  const entries = [];
+  if (u.ship) {
+    entries.push({ europe: true,
+      label: `${DATA.nations[G.nation].homeport} (${DATA.nations[G.nation].country})` });
+    coastalColonies().forEach(c => entries.push({ c, label: c.name }));
+  } else {
+    const home = REGION[u.y * MAP.w + u.x];
+    G.colonies.filter(c => REGION[c.y * MAP.w + c.x] === home)
+      .forEach(c => entries.push({ c, label: c.name }));
   }
-  G.goTo = u;
-  G.msg = 'Click the tile to travel to.';
+  if (!entries.length) { G.goTo = u; G.msg = 'Click the tile to travel to.'; return; }
+  const PAGE = 10;
+  const slice = entries.slice(page * PAGE, (page + 1) * PAGE);
+  const rows = slice.map(e => e.label);
+  const more = entries.length > (page + 1) * PAGE;
+  if (more) rows.push('(More)');            // @MISC's own pager word, verbatim
+  askEvent(u.ship ? 'SAILPORT' : 'TRAVELPLACE', {}, (k) => {
+    if (k < 0 || k >= rows.length) { G.goTo = u; G.msg = 'Click the tile to travel to.'; return; }
+    if (more && k === rows.length - 1) { beginGoToPage(u, page + 1); return; }
+    const e = slice[k];
+    if (e.europe) {
+      if (woiLocked()) { showEvent('EUROPENOTAVAIL'); return; }
+      sailForEurope(u);
+      G.euroMsg = `${u.type} sails for ${DATA.nations[G.nation].homeport}.`;
+      G.screen = 'europe';
+      return;
+    }
+    setGoTo(u, e.c.x, e.c.y);
+  }, rows);
 }
 function setGoTo(u, x, y) {
   u.goal = [x, y];
@@ -2673,8 +2787,8 @@ function autoExport(c) {
     // here, latched until the stock falls back, is the port's reading.
     if (!c.cargoReady[i]) {
       c.cargoReady[i] = true;
-      showEvent(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
-                { STRING0: c.name, STRING1: DATA.cargo[i].name, NUMBER0: 100 });
+      askZoom(warehouseLevel(c) < 2 ? 'CARGOREADY1' : 'CARGOREADY2',
+              { STRING0: c.name, STRING1: DATA.cargo[i].name, NUMBER0: 100 }, c);
     }
     const excess = c.stock[i] - 50;
     c.stock[i] = 50;
@@ -2958,8 +3072,8 @@ function advanceConstruction(c, hammers) {
     if (!c.toolWarned) {
       c.toolWarned = true;
       const have = c.stock[GOOD.TOOLS];
-      showEvent(have > 0 ? 'NEEDTOOLS' : 'NEEDTOOLS0',
-                { STRING0: c.name, STRING1: b.name, NUMBER0: needTools, NUMBER1: have });
+      askZoom(have > 0 ? 'NEEDTOOLS' : 'NEEDTOOLS0',
+              { STRING0: c.name, STRING1: b.name, NUMBER0: needTools, NUMBER1: have }, c);
     }
     return;
   }
@@ -4380,13 +4494,18 @@ function euroShipRows() {
 // The three sub-menus. Each is a plaque list: rows of "<label> <price>" with
 // the affordable ones lit and the rest dimmed.
 function euroMenuRows() {
+  // Census 2026-08-08 (census_euro_recruit / census_euro_train): the RECRUIT
+  // list opens with a "(None)" row and shows NO per-row price (the passage
+  // price is in the body); TRAIN opens with @MISC's "None" and prints each
+  // price as "(Cost: N)" -- @MISC 13/14 are the "(Cost:" and ")" fragments.
   if (G.euroMenu === 'recruit')
-    return G.dock.map(c => ({ label: c.name, cost: DATA.classes[c.band].cost }));
-  // TRAIN lists every @JOB row with a real europe_value -- all 17 of them -- in
-  // price order, cheapest first.
+    return [{ label: '(None)', none: true }].concat(
+      G.dock.map(c => ({ label: c.name, cost: DATA.classes[c.band].cost,
+                         hideCost: true })));
   if (G.euroMenu === 'train')
-    return DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }))
-                        .sort((a, b) => a.cost - b.cost);
+    return [{ label: (DATA.text.misc || [])[3] || 'None', none: true }].concat(
+      DATA.jobtrain.map(j => ({ label: j.expert, cost: j.cost }))
+                   .sort((a, b) => a.cost - b.cost));
   if (G.euroMenu === 'dockunit') return dockUnitRows();
   if (G.euroMenu === 'ship') return euroShipRows();
   return PURCHASE_CATALOG.map(r => ({ label: r.unit, cost: purchasePrice(r) }));
@@ -4433,13 +4552,16 @@ function euroMenuBox() {
     body = body.map(l => l.replace('%NUMBER0', String(price)));
   }
   let cw = key ? DATA.dialogs[key].width : 0x50;
-  for (const l of body) cw = Math.max(cw, DFONT().width(l));
+  const mf = dFont(G.euroMenu === 'train');
+  for (const l of body) cw = Math.max(cw, mf.width(l));
   for (const r of rows)
-    cw = Math.max(cw, DFONT().width(r.label) +
-                      (r.cost === undefined ? 0 : DFONT().width(`${r.cost}$`)) + 20);
+    cw = Math.max(cw, mf.width(r.label) +
+                      (r.cost === undefined ? 0 : mf.width(`(Cost: ${r.cost})`)) + 20);
+  const small = G.euroMenu === 'train';       // @KINGRECRUIT is @SMALLFONT
   const w = cw + 6;
-  const textH = body.length * DTEXT;
-  const h = 6 + textH + 3 + rows.length * DROW + 3;
+  const textH = body.length * dText(small);
+  const foot = ['recruit', 'purchase', 'train'].includes(G.euroMenu) ? 10 : 0;
+  const h = 6 + textH + 3 + rows.length * dRow(small) + 3 + foot;
   // Keep the whole thing on screen: where the adviser speaks he needs headroom
   // above the box, less the 4px he is dropped by. TRAIN has no portrait, so it
   // just centres.
@@ -4451,25 +4573,34 @@ function euroMenuBox() {
 function drawEuroMenu(ctx) {
   const b = euroMenuBox();
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * DTEXT,
-                                    0xFE, 0xFC, DFONT()));
+  const small = G.euroMenu === 'train';
+  const mf = dFont(small), rp = dRow(small);
+  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * dText(small),
+                                    0xFE, 0xFC, mf));
   const seed = b.y + 6 + b.textH + 3;
   b.rows.forEach((r, k) => {
-    const y = seed + k * DROW;
+    const y = seed + k * rp;
     const sel = k === G.euroMenuRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, DROW - 2); }
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, rp - 2); }
     // Unaffordable rows are DIMMED, not blacked out -- they still have to be
     // readable so you can see what you are saving up for. Action rows (the
     // harbour context menus) carry their price inside the label and dim on
     // their own `dim` flag instead.
-    const afford = r.cost === undefined ? !r.dim : r.cost <= G.gold;
+    const afford = r.cost === undefined || r.none ? !r.dim : r.cost <= G.gold;
     const inkIdx = !afford ? 0x5D : (sel ? 0xFC : 0xFE);
-    DFONT().draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
-    if (r.cost !== undefined) {
-      const c = `${r.cost}$`;
-      DFONT().draw(ctx, c, b.x + b.w - 8 - DFONT().width(c), y + 1, lut(inkIdx));
+    mf.draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
+    if (r.cost !== undefined && !r.hideCost) {
+      // "(Cost: N)" -- @MISC 13/14, the census TRAIN frame's own format.
+      const c = `${(DATA.text.misc || [])[13] || '(Cost:'} ${r.cost}${(DATA.text.misc || [])[14] || ')'}`;
+      mf.draw(ctx, c, b.x + b.w - 8 - mf.width(c), y + 1, lut(inkIdx));
     }
   });
+  // "(F1 for Help)" sits inside the box's bottom-right corner on the three
+  // shop menus (census_euro_recruit / census_euro_train).
+  if (['recruit', 'purchase', 'train'].includes(G.euroMenu)) {
+    const f1 = '(F1 for Help)';
+    mf.draw(ctx, f1, b.x + b.w - 8 - mf.width(f1), b.y + b.h - 11, lut(0x5D));
+  }
   // The adviser is drawn LAST so he sits on top of the box, centred on it,
   // dropped 4px so he overlaps the frame rather than floating clear of it.
   const [pw, ph] = frameSize(ADVISER_ECONOMIC, 0);
@@ -4623,13 +4754,16 @@ function euroMenuCommit() {
   const rows = euroMenuRows();
   const r = rows[G.euroMenuRow];
   if (!r) return;
+  // The "(None)" / "None" head row just closes the menu (census frames).
+  if (r.none) { G.euroMenu = null; return; }
   if (G.euroMenu === 'dockunit' || G.euroMenu === 'ship') { euroContextCommit(r); return; }
   if (r.cost > G.gold) { G.euroMsg = 'We cannot afford that, Your Excellency.'; return; }
   G.gold -= r.cost;
   if (G.euroMenu === 'recruit') {
     // Recruits and trainees wait ON THE DOCK until a ship carries them over.
+    // (Row 0 is the "(None)" head, so the dock slot is the row LESS ONE.)
     G.dockUnits.push(r.label);
-    G.dock[G.euroMenuRow] = rollImmigrant();
+    G.dock[G.euroMenuRow - 1] = rollImmigrant();
     G.euroMsg = `${r.label} recruited.`;
   } else if (G.euroMenu === 'train') {
     G.dockUnits.push(r.label);
@@ -5997,14 +6131,19 @@ const SPEAKER_DIPLO = /^(FOREIGNNOTAVAIL|DECLAREWAR|SIGNTREATY|WITHDRAW|THREATS|
 // the port's reading of "colony-event popup".
 const SPEAKER_COLONY = /^(BUILT|NEWCOLONIST|CLEARCUT|USEDUPTOOLS|FOODLOW|FOOD\d|STARVE|SPOIL|NEEDTOOLS|WAREHOUSEFULL|CARGOREADY)/;
 function eventSpeaker(key) {
-  if (SPEAKER_MILITARY.test(key)) return 'MSS5';
+  // MSS0 and MSS5 were SWAPPED until the 2026-08-08 census run: the live
+  // combat bulletin ("French defeat Dutch Colonists near Roanoke!") wears the
+  // MSS0 naval officer and the colony-supply popups (tools shortages, cargo
+  // ready, the rush-buy prompt) wear the MSS5 bonneted advisor
+  // (census_combat_bulletin / census_turnevent_* / 81_colony_build_prompt).
+  if (SPEAKER_MILITARY.test(key)) return 'MSS0';
   if (SPEAKER_KING.test(key)) return 'KING1';
   if (SPEAKER_NATIVE.test(key))
     return G.eventTribe >= 0 ? `IND${G.eventTribe % 8}A0` : null;
   if (SPEAKER_TRADE.test(key)) return 'MSS2';
   if (SPEAKER_SITE.test(key)) return 'MSS3';
   if (SPEAKER_DIPLO.test(key)) return 'MSS1';
-  if (SPEAKER_COLONY.test(key)) return 'MSS0';
+  if (SPEAKER_COLONY.test(key)) return 'MSS5';
   return null;
 }
 // The speaker sits at the screen's bottom-right UNDER the plaque -- the same
@@ -6031,7 +6170,7 @@ function showEvent(key, subs, speaker) {
   // The GAME.TXT key rides along for the test suite and debugging -- the
   // renderer never reads it.
   G.eventQueue.push({ key, lines: t.body.map(l => fillTemplate(l, subs || {})),
-                      width: t.width,
+                      width: t.width, small: !!t.small,
                       speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
 }
 // Ad-hoc notice popup: port phrasing, NOT a GAME.TXT event -- used where the
@@ -6048,6 +6187,21 @@ function notice(s) {
   if (tail && !tail.speaker && tail.lines.join('\n') === lines.join('\n')) return;
   G.eventQueue.push({ lines, width: 190, speaker: null });
 }
+// The colony-supply announcements (tools shortages, cargo-ready, the
+// warehouse warnings) carry the engine's two @MISC action rows "Continue
+// turn." / "Zoom to colony." (census_turnevent_2/3/5 + census_cargoready);
+// row 1 opens the colony the message is about. The engine shows each modally
+// in turn; the port's queue holds one dialog at a time, so any beyond the
+// first fall back to plain popups this turn (port reconciliation, flagged).
+function askZoom(key, subs, c) {
+  if (G.dialog) { showEvent(key, subs); return; }
+  const misc = DATA.text.misc || [];
+  askEvent(key, subs, (k) => {
+    if (k !== 1) return;
+    const i = G.colonies.indexOf(c);
+    if (i >= 0) { G.colony = i; G.screen = 'colony'; }
+  }, [misc[34] || 'Continue turn.', misc[35] || 'Zoom to colony.']);
+}
 // A GAME.TXT event that carries a second paragraph carries OPTION ROWS, so it
 // runs through the ordinary dialog framework instead of the notice queue.
 function askEvent(key, subs, onDone, optsKey, speaker) {
@@ -6063,6 +6217,7 @@ function askEvent(key, subs, onDone, optsKey, speaker) {
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
+    small: !!t.small,
     speaker: speaker !== undefined ? speaker : eventSpeaker(key),
     // Same one-based @default as openDialog above.
     sel: t.default && /^\d+$/.test(t.default)
@@ -6076,16 +6231,17 @@ function drawEvent(ctx) {
   // there ARE rows (dialog_framework.md §3), and there is no OK / Cancel /
   // Continue anywhere in the EXE -- dismissal is any key/click or the modal
   // loop's 120-tick timeout (func_004A80 @0x4ADD), which blits nothing.
+  const f = dFont(e.small), tp = dText(e.small);
   let cw = e.width;
   for (const l of e.lines)
-    cw = Math.max(cw, DFONT().width(l.replace(/[{}]/g, '')) + 10);
-  const w = cw + 6, h = 6 + e.lines.length * DTEXT + 3;
+    cw = Math.max(cw, f.width(l.replace(/[{}]/g, '')) + 10);
+  const w = cw + 6, h = 6 + e.lines.length * tp + 3;
   const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
   const ik = dialogInks();
   drawSpeakerSheet(ctx, e.speaker);
   plaque(ctx, x, y, w, h, 'WOODTILE');
-  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * DTEXT,
-                                     ik.base, ik.hi, DFONT()));
+  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * tp,
+                                     ik.base, ik.hi, f));
 }
 
 // Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
@@ -11783,8 +11939,9 @@ function onClick(mx, my) {
       if (G.euroMenu) {
         const b = euroMenuBox();
         const seed = b.y + 6 + b.textH + 3;
+        const erp = dRow(G.euroMenu === 'train');
         for (let k = 0; k < b.rows.length; k++) {
-          if (hit(mx, my, { x: b.x + 3, y: seed + k * DROW, w: b.w - 6, h: DROW })) {
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * erp, w: b.w - 6, h: erp })) {
             G.euroMenuRow = k; euroMenuCommit(); return;
           }
         }
@@ -12091,11 +12248,19 @@ function onKey(e) {
       break;
     }
     case 'map': {
-      // An open pulldown owns the keyboard.
+      // An open pulldown owns the keyboard. Navigation walks the VISIBLE
+      // rows, stepping over the group separators and never resting on one.
       if (G.openMenu >= 0) {
-        const rows = DATA.menus[G.openMenu].rows;
-        if (k === 'ArrowUp') G.menuSel = (G.menuSel + rows.length - 1) % rows.length;
-        else if (k === 'ArrowDown') G.menuSel = (G.menuSel + 1) % rows.length;
+        const rows = menuVisibleRows(G.openMenu);
+        const step = (dir) => {
+          let i = G.menuSel;
+          for (let n = 0; n < rows.length; n++) {
+            i = (i + dir + rows.length) % rows.length;
+            if (!rows[i].sep) { G.menuSel = i; return; }
+          }
+        };
+        if (k === 'ArrowUp') step(-1);
+        else if (k === 'ArrowDown') step(1);
         else if (k === 'ArrowLeft') openMenu((G.openMenu + DATA.menus.length - 1) % DATA.menus.length);
         else if (k === 'ArrowRight') openMenu((G.openMenu + 1) % DATA.menus.length);
         else if (k === 'Enter' || k === ' ') runMenuRow();
@@ -12103,7 +12268,8 @@ function onKey(e) {
         else if (k.length === 1) {
           // Accelerator: the "~" letter parsed from the MENU.TXT row.
           const K = k.toUpperCase();
-          const i = rows.findIndex(r => r.accel === K);
+          const src = DATA.menus[G.openMenu].rows.find(r => r.accel === K);
+          const i = src ? rows.findIndex(r => !r.sep && r.label === src.label) : -1;
           if (i >= 0) { G.menuSel = i; runMenuRow(); }
         }
         break;

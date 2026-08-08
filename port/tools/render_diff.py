@@ -45,6 +45,22 @@ PAIRS = [
     # (the shot is deterministic; the old 12000 was documented against an
     # earlier snapshot) -- residual is the congress-block line layout.
     ("1653_report_F3.png", "live_1653_save/report_F3.png", 12500),
+    # The census pairs (docs/screens/census/, 2026-08-08): the same 1653 load
+    # state with the same UI opened. These are LOOSE gates: the residual floor
+    # (~10-18k px) is the map behind the box -- the engine auto-centres its
+    # viewport slightly differently, draws the X cursor arrow, and its unit
+    # blink phase differs. On top of that, goto/euro_recruit carry the
+    # engine's own RNG (dock candidates) and the runtime advisor anchor.
+    # They exist to catch GROSS breakage: wrong font, missing rows, missing
+    # separators, wrong grouping.
+    ("census_menu_game.png", "census/census_menu_game.png", 20000),
+    ("census_menu_view.png", "census/census_menu_view.png", 21000),
+    ("census_menu_orders.png", "census/census_menu_orders.png", 22000),
+    ("census_menu_reports.png", "census/census_menu_reports.png", 21000),
+    ("census_menu_trade.png", "census/census_menu_trade.png", 13000),
+    ("census_goto_ship.png", "census/census_goto_ship.png", 32000),
+    ("census_euro_recruit.png", "census/census_euro_recruit.png", 32000),
+    ("census_euro_train.png", "census/census_euro_train.png", 40000),
     ("1653_report_F5.png", "live_1653_save/report_F5.png", 4000),
     ("1653_report_F6.png", "live_1653_save/report_F6.png", 16000),
     ("1653_report_F7.png", "live_1653_save/report_F7.png", 6000),
