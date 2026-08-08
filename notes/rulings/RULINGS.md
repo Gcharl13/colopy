@@ -9546,3 +9546,31 @@ Suite 238/238; render-diff 28/28 (census3_colony 25000 / build_picker
    pair threshold.
 
 Suite 238/238; render-diff 28/28.
+
+## 2026-08-08j — The red X understood: it is the SHORTFALL mark of the
+## production display (user prompt + GAME_MANUAL "Production View")
+
+The manual names the rule (Production View): "Shortfalls that occur in
+the production cycle are shown by 'X'ed out' commodities" -- and a
+shortfall a converter covers FROM STORAGE loses its X (the stockpile
+just drains). For FOOD the X'ed corn is the granary drain itself: the
+Curacao frame X's its eaten-beyond-produced 2 while holding 5 food in
+store, so hunger is never "made good" silently -- it is always shown.
+So: X = what fails to materialize this turn (unmet converter demand,
+food eaten out of the granary); never a decoration on ordinary
+consumption.
+
+Applied:
+- The production panel (func_0275CE) now honours the same saved [0x336]
+  numbers gate as the plaza strip (`mov al,[0x336]` @0x0275D3); the
+  census3 4-sugar row renders badge-free, pixel-identical to the engine.
+- Clicking the Production view toggles the numbers ([0x336] flip
+  @0x02B99E/@0x02BF7C; the manual's "click anywhere in the multi-
+  function view"), wired to G.colonyNumbers.
+- The easy-difficulty field bonus is scoped to the PLOW GROUP (goods
+  <= 3): Jamestown's plowed-swamp sugar = 2+1(plow)+1(diff) = 4 matches
+  the engine panel, while the Discoverer-level Curacao panel keeps its
+  bare-column furs/ore/silver (road group exempt). Capture-fitted,
+  flagged.
+
+Suite 238/238; render-diff 28/28.

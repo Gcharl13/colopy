@@ -2549,12 +2549,15 @@ function fieldYield(c, p) {
   if (g === GOOD.SILVER &&
       (IMPROVE[(c.y + p.cell[1]) * MAP.w + (c.x + p.cell[0])] & 0x80)) y = 1;
   y += improvementBonus(c.x + p.cell[0], c.y + p.cell[1], g);
-  // The easy-difficulty FOOD bonus reaches the worked fields too: the census3
-  // Jamestown strip only sums to the engine's 9 with the farmers at
-  // NAMES+1 on Explorer (Rain 1->2, Tropical 2->3). Mirrors the centre's
-  // +2/+1 term; the engine's field-yield helper is unread -- capture-fitted,
-  // FLAGGED.
-  if (g === GOOD.FOOD) {
+  // The easy-difficulty bonus reaches the worked fields too, on the PLOW
+  // GROUP (good index <= 3 -- food and the three planter crops): the census3
+  // Jamestown strip only sums to the engine's 9 with the Explorer farmers at
+  // NAMES+1 (Rain 1->2, Tropical 2->3), and its production panel shows the
+  // plowed-swamp sugar at 4 = 2+1(plow)+1(diff). The ROAD group is exempt:
+  // the live Curacao panel (Discoverer) matches the bare columns for
+  // furs/ore/silver. Mirrors the centre's +2/+1 term; the field-yield
+  // helper is unread -- capture-fitted, FLAGGED.
+  if (g <= 3) {
     if (G.difficulty === 0) y += 2; else if (G.difficulty === 1) y += 1;
   }
   y += toryPenalty(c);
@@ -4156,10 +4159,14 @@ const PROD_X0 = 213, PROD_SPAN = 89, PROD_Y0 = 134, PROD_PITCH = 14;
 const PROD_GOOD_ICON = 22, PROD_HAMMER_ICON = 54;
 
 function drawProductionStrips(ctx, c) {
+  // func_0275CE loads the badge gate from the same saved [0x336] byte as the
+  // plaza strip (`mov al,[0x336]` @0x0275D3) -- numbers only when the toggle
+  // is on (census3: the engine's 4-sugar row carries no badge).
   const rows = productionRows(colonyProduce(c));
-  drawCountRow(ctx, rows[0], PROD_X0, PROD_Y0, PROD_SPAN, 2);
-  drawCountRow(ctx, rows[1], PROD_X0, PROD_Y0 + PROD_PITCH, PROD_SPAN, 2);
-  drawCountRow(ctx, rows[2], PROD_X0, PROD_Y0 + 2 * PROD_PITCH, PROD_SPAN, 4);
+  const nums = !!G.colonyNumbers;
+  drawCountRow(ctx, rows[0], PROD_X0, PROD_Y0, PROD_SPAN, 2, nums);
+  drawCountRow(ctx, rows[1], PROD_X0, PROD_Y0 + PROD_PITCH, PROD_SPAN, 2, nums);
+  drawCountRow(ctx, rows[2], PROD_X0, PROD_Y0 + 2 * PROD_PITCH, PROD_SPAN, 4, nums);
 }
 
 // The three rows' cells, split out from the painter so the byte-read rules can
@@ -12161,6 +12168,15 @@ function onClick(mx, my) {
       for (let k = 0; k < 3; k++) {
         if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
                           w: VIEW_BTN.w, h: VIEW_BTN.h })) { G.colonyView = k; return; }
+      }
+      // "To see a numeric representation, click anywhere in the multi-
+      // function view after you have clicked the Production button"
+      // (GAME_MANUAL.md, Production View) -- the engine's toggle flips the
+      // SAVED [0x336] byte (@0x02B99E / @0x02BF7C), which also drives the
+      // plaza-strip badges.
+      if (G.colonyView === VIEW_PRODUCTION &&
+          hit(mx, my, { x: 207, y: 130, w: 95, h: 48 })) {
+        G.colonyNumbers = !G.colonyNumbers; return;
       }
       // x=305, not 306: func_0299A0 @0x299C8 pushes 0x15,0x0F,0xB3,0x131 =
       // h=21,w=15,y=179,x=0x131=305 for colony region 9. (spec/ui/input.md:522
