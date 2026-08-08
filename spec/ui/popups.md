@@ -101,7 +101,13 @@ literal `@x`/`@y` when the GAME.TXT section carries them; `@width` is a **floor*
 ### 2.4 Body & speaker render (the `0x181F:NNN` primitives) — **B**
 
 Body text renders through the resident draw-verb library (`UI_PRIMITIVES.md`),
-**font = FONTTINY** (`[0x89E]/[0x8A0]`, the engine default):
+**font = the latched `[0x89E]/[0x8A0]` descriptor, which at popup time is
+FONTINTR** — capture-proven 2026-08-08: the live landfall popup's letterforms
+(`60_landfall_dialog.png`) match the FONTINTR sheet exactly (~8px glyphs, h=9),
+and the font-relative layout math of `dialog_framework.md` lands pixel-exact on
+the frame with intr (text pitch 9+1=10 at rows 122→132, option pitch 9+3=12 at
+146→158). The earlier "FONTTINY, the engine default" gloss confused the HUD's
+direct-draw font with the dialog latch — RULINGS 2026-08-08d:
 
 | `0x181F:` | resident func | role (byte-verified) |
 |-----------|---------------|----------------------|
@@ -467,9 +473,10 @@ exact two-call combine is **INFERRED** (`POPUP_TEMPLATE_AUDIT.md` "Multi-section
   frame (`0x181F:0x510` @0x0263D6) + NAMEPLAT.SS title strip. **A** (asset roles).
 - **Speaker sheets:** `KING1.SS`, `IND0A0..IND7A0.SS`, `MSS0..MSS5.SS`,
   `MYR0..MYR3.SS` — built by NAME (not index) by `func_06BE92`/`BF12`/`BF3C`. **B.**
-- **Body font:** FONTTINY (`[0x89E]/[0x8A0]`, engine default). `SMALLFONT` does
-  **not** load FONTSMAL (handler @0x6F207 only copies the latched FONTTINY
-  descriptor — RULING). **B.**
+- **Body font:** **FONTINTR** via the `[0x89E]/[0x8A0]` latch (capture-proven,
+  see §2.4 and RULINGS 2026-08-08d; the earlier FONTTINY gloss is overturned).
+  `SMALLFONT` does **not** load FONTSMAL (handler @0x6F207 only copies the
+  latched descriptor — RULING). **B.**
 - **Message keys:** `data_extracted/text/GAME_sections.json` — every `@KEY` in §3–§18
   grep-confirmed present (2026-06-23). `@KINGTAX`, `@TAXOPTIONS`, `@RAIDWREAK`,
   `@LOSTCITY1`, `@KINGNEWWAR`, `@FRIEND`, `@SMITEINDIANS`, `@WANTSTUFF`, `@VICEROY`,

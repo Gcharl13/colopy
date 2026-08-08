@@ -95,7 +95,12 @@ byte-complete set.)*
   `@0x06D07E..0x06D085`, `@0x06D205..0x06D20C`) — FONTTINY bordered ⇒ 5+1 = 6/line — and draws
   at the pen y exactly (`func_06CFBC` passes dx through). If the text list `+0x58` is non-empty,
   finalize bumps the option seed: `+0x26 += border(3) + text_h` (`@0x06D440..0x06D449`).
-  Option-row text is drawn at `row_y+1` (`func_06D9CC @0x06DB8C..0x06DB8F`). Boot menu
+  Option-row text is drawn at `row_y+1` (`func_06D9CC @0x06DB8C..0x06DB8F`).
+  **Which font the latch holds depends on the screen** (2026-08-08 correction):
+  the boot menus latch the 6-cell font the worked examples below use, but the
+  IN-GAME popup latch is **FONTINTR** (h=9) — capture-proven against
+  `60_landfall_dialog.png`, where these same formulas land pixel-exact as
+  text pitch 9+1=**10** and row pitch 9+3=**12** (RULINGS 2026-08-08d). Boot menu
   (`@y=91`, 1 title line): title top = 91+6 = **97**; first option top = 91+6+3+6+1 = **107**. ✓
 - **Centering:** if requested X == −1 (`@0x06D51B`): `X = 160 − W/2` (`sar @0x06D522; sub 0xA0
   @0x06D528; neg; store +0x10 @0x06D52D`). If Y == −1 (`@0x06D534`): `Y = 100 − H/2`

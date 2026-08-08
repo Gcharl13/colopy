@@ -9315,3 +9315,34 @@ sprites / not presenting together.
 
 Suite 237/237 (new wire7: worker layer draws, speaker pins, guard
 catches, stale-save fixup); shots 47/47; render-diff 15/15.
+
+## 2026-08-08d — The popup font is FONTINTR (user report; FONTTINY gloss overturned)
+
+User: "the font for the popups is not right." Confirmed against
+60_landfall_dialog.png: the live popup's letterforms are ~8px tall and
+match the FONTINTR sheet EXACTLY (contact print of every bundled .FF
+against the frame); the port drew all popup text in FONTTINY (~5px).
+The prior spec statement "body font = FONTTINY, the engine default"
+conflated the HUD's direct-draw font with the dialog framework's
+[0x89E]/[0x8A0] latch -- at popup time the latch holds FONTINTR.
+Decisive cross-check: dialog_framework.md's BYTE-READ font-relative
+layout math lands pixel-exact on the capture with intr (h=9): text-line
+pitch = glyph_h+1 = 10 (`call 0x1266; inc ax` @0x06D012; measured body
+rows 122->132), option-row pitch = glyph_h+border(3) = 12 (measured rows
+146->158). Trust order: running game > the old inference.
+
+Port change: the whole popup framework -- drawDialog/layoutDialog/
+dialogClick, drawEvent, notice's wrap, the village menu, the colony
+build/jobs/occupation popups, the Europe harbour menus -- now draws in
+DFONT() = FONT.intr with DTEXT=10 / DROW=12, hit-tests updated in step
+so paint and click agree (the engine's own invariant: the row loop and
+painter share func_06CD66). The entry-field block grew 11->15 to fit the
+taller glyphs (port geometry, flagged as before). The pulldown MENU BAR
+stays FONTTINY -- 10_menu_reports.png shows the small font there.
+spec/ui/popups.md par.2.4/par.20 corrected; dialog_framework.md gains the
+which-font-the-latch-holds note (its worked 6-cell examples remain true
+for the BOOT menus).
+
+Suite 237/237 (wire7 + dialogFont/dialogPitch checks); shots 47/47;
+render-diff 15/15 (no paired capture contains a popup frame; the
+landfall side-by-side is the visual proof).

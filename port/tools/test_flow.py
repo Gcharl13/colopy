@@ -1590,6 +1590,14 @@ SCRIPT = """() => {
                    lc.stock.length === DATA.cargo.length &&
                    Array.isArray(G.dockUnits);
     G.eventQueue.length = 0;
+    // The dialog framework runs on FONTINTR with the byte-read font-relative
+    // pitches (text glyph_h+1 = 10, rows glyph_h+border = 12) -- the layout
+    // of a 2-line, 2-row dialog is exactly 6 + 20 + 3 + 24 + 3 = 56 tall.
+    w7.dialogFont = DFONT() === FONT.intr;
+    const lay = layoutDialog({ width: 190, body: ['a', 'b'], tail: [],
+                               opts: ['x', 'y'] });
+    w7.dialogPitch = lay.h === 6 + 2 * 10 + 3 + 2 * 12 + 3 &&
+                     lay.textH === 20;
     out.wire7 = w7;
   }
 

@@ -959,15 +959,25 @@ function hollowRect(ctx, x, y, w, h, colorIdx) {
 // their text at row_y+1, pitch 8, and the selected row wears the +0x40 band
 // colour 0x37. Checked against the worked boot-menu example in that spec:
 // @y=91, one title line -> title top 97, first option top 107, box_h 58.
+// The dialog framework's FONT is FONTINTR, capture-proven: the live landfall
+// popup's letterforms (60_landfall_dialog.png) match the intr sheet exactly
+// and are ~8px tall -- the prior "body font = FONTTINY" reading held only for
+// the HUD's direct draws, not the popup framework (RULINGS 2026-08-08d). The
+// byte-read layout math is FONT-RELATIVE and lands pixel-exact on the capture
+// with intr (h=9): text-line pitch = glyph_h+1 = 10 (`call 0x1266; inc ax`
+// @0x06D012), option-row pitch = glyph_h+border(3) = 12 (dialog_framework.md
+// par.5) -- the frame measures body 122->132 and rows 146->158.
+const DFONT = () => FONT.intr || FONT.tiny;
+const DTEXT = 10, DROW = 12;
 function layoutDialog(d) {
   // Every measured line carries the +10 body margin (`add ax,0x0A`
   // @0x06CCE3); @width is a FLOOR under that, and 190 in practice.
   let cw = d.width;
   for (const l of d.body.concat(d.tail))
-    cw = Math.max(cw, FONT.tiny.width(l.replace(/[{}]/g, '')) + 10);
+    cw = Math.max(cw, DFONT().width(l.replace(/[{}]/g, '')) + 10);
   const w = cw + 6;
-  const textH = d.body.length * 6;
-  const rows = d.opts ? d.opts.length * 8 : 11;   // entry field: label + box
+  const textH = d.body.length * DTEXT;
+  const rows = d.opts ? d.opts.length * DROW : 17;  // entry field: label + box
   const h = 6 + textH + 3 + rows + 3;
   // The engine's screen clamps: right past 320 shifts left, bottom past 200
   // shifts up (@0x06D563/@0x06D571); a negative origin floors at 0.
@@ -986,11 +996,12 @@ function dialogInks() {
   return G.screen === 'title' ? { base: 0xFE, hi: 0xFC } : { base: 68, hi: 149 };
 }
 // '{...}' spans switch to the hilite ink (struct +0x74 ink record, func_06C388).
-function spanText(ctx, line, x, y, base, hi) {
+function spanText(ctx, line, x, y, base, hi, font) {
+  const f = font || FONT.tiny;
   for (const part of line.split(/(\{[^}]*\})/)) {
     if (!part) continue;
-    x = FONT.tiny.draw(ctx, part.replace(/[{}]/g, ''),
-                       x, y, lut(part.startsWith('{') ? hi : base));
+    x = f.draw(ctx, part.replace(/[{}]/g, ''),
+               x, y, lut(part.startsWith('{') ? hi : base));
   }
   return x;
 }
@@ -1001,25 +1012,26 @@ function drawDialog(ctx) {
   const ik = dialogInks();
   if (d.speaker) drawSpeakerSheet(ctx, d.speaker);
   plaque(ctx, b.x, b.y, b.w, b.h, G.screen === 'title' ? 'OPENTILE' : 'WOODTILE');
-  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, ik.base, ik.hi));
+  d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * DTEXT,
+                                    ik.base, ik.hi, DFONT()));
   const seed = b.y + 6 + b.textH + 3;
   if (d.opts) {
     d.opts.forEach((o, k) => {
-      const oy = seed + k * 8;
+      const oy = seed + k * DROW;
       // Selection is the +0x40 band ONLY -- the hilite ink is gated on the
       // {brace} flag (func_06C346 @0x06C365), never on the row being
       // selected, so every row's text runs through the same span painter.
-      if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, 7); }
-      spanText(ctx, o, b.x + 9, oy + 1, ik.base, ik.hi);
+      if (k === d.sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 4, oy, b.w - 8, DROW - 2); }
+      spanText(ctx, o, b.x + 9, oy + 1, ik.base, ik.hi, DFONT());
     });
   } else {
     // Entry popup (@LANDHO): the tail line is the field label, the box follows.
     const label = d.tail[0] || '';
-    spanText(ctx, label, b.x + 5, seed + 2, ik.base, ik.hi);
-    const fx = b.x + 5 + FONT.tiny.width(label.replace(/[{}]/g, '')) + 4;
-    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 11, ik.base);
+    spanText(ctx, label, b.x + 5, seed + 2, ik.base, ik.hi, DFONT());
+    const fx = b.x + 5 + DFONT().width(label.replace(/[{}]/g, '')) + 4;
+    hollowRect(ctx, fx, seed, b.x + b.w - 5 - fx, 15, ik.base);
     const caret = (Math.floor(G.tick / 24) % 2) ? '_' : '';
-    FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
+    DFONT().draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
   }
 }
 // Capture-pinned dialog speakers: the landfall ask wears the MSS3 scout
@@ -1090,7 +1102,7 @@ function dialogClick(mx, my) {
   if (!d.opts) { closeDialog(d.entry); return; }
   const seed = b.y + 6 + b.textH + 3;
   for (let k = 0; k < d.opts.length; k++) {
-    if (hit(mx, my, { x: b.x + 4, y: seed + k * 8, w: b.w - 8, h: 8 })) { closeDialog(k); return; }
+    if (hit(mx, my, { x: b.x + 4, y: seed + k * DROW, w: b.w - 8, h: DROW })) { closeDialog(k); return; }
   }
 }
 
@@ -3826,8 +3838,8 @@ function buildingCrew(c, name) {
 function colonyPopupBox() {
   const rows = colonyPopupRows();
   let cw = 0x50;
-  for (const r of rows) cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(r.note) + 20);
-  const w = cw + 6, h = 6 + 6 + 3 + rows.length * 8 + 3;
+  for (const r of rows) cw = Math.max(cw, DFONT().width(r.label) + DFONT().width(r.note) + 20);
+  const w = cw + 6, h = 6 + DTEXT + 3 + rows.length * DROW + 3;
   return { x: Math.round(160 - w / 2), y: Math.max(2, Math.round(100 - h / 2)), w, h, rows };
 }
 function drawColonyPopup(ctx) {
@@ -3839,15 +3851,15 @@ function drawColonyPopup(ctx) {
   const title = G.colonyPopup === 'build'
     ? `${(DATA.text.ctitle || [])[4] || 'Select An Item To Build'}  (${c.hammers} Hammers, ${c.stock[GOOD.TOOLS]} Tools)`
     : `${(DATA.text.ctitle || [])[8] || 'Select a Profession for'} ${who ? (who.profession || who.type) : ''}`;
-  FONT.tiny.draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
-  const seed = b.y + 6 + 6 + 3;
+  DFONT().draw(ctx, title, b.x + 5, b.y + 6, lut(0xFC));
+  const seed = b.y + 6 + DTEXT + 3;
   b.rows.forEach((r, k) => {
-    const y = seed + k * 8, sel = k === G.colonyPopupRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    const y = seed + k * DROW, sel = k === G.colonyPopupRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, DROW - 2); }
     const on = G.colonyPopup === 'build' && r.label === c.building;
-    FONT.tiny.draw(ctx, (on ? '* ' : '') + r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
-    if (r.note) FONT.tiny.draw(ctx, r.note, b.x + b.w - 8 - FONT.tiny.width(r.note), y + 1,
-                               lut(sel ? 0xFC : 0x5D));
+    DFONT().draw(ctx, (on ? '* ' : '') + r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
+    if (r.note) DFONT().draw(ctx, r.note, b.x + b.w - 8 - DFONT().width(r.note), y + 1,
+                             lut(sel ? 0xFC : 0x5D));
   });
 }
 function colonyPopupCommit() {
@@ -4549,13 +4561,13 @@ function euroMenuBox() {
     body = body.map(l => l.replace('%NUMBER0', String(price)));
   }
   let cw = key ? DATA.dialogs[key].width : 0x50;
-  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const l of body) cw = Math.max(cw, DFONT().width(l));
   for (const r of rows)
-    cw = Math.max(cw, FONT.tiny.width(r.label) +
-                      (r.cost === undefined ? 0 : FONT.tiny.width(`${r.cost}$`)) + 20);
+    cw = Math.max(cw, DFONT().width(r.label) +
+                      (r.cost === undefined ? 0 : DFONT().width(`${r.cost}$`)) + 20);
   const w = cw + 6;
-  const textH = body.length * 6;
-  const h = 6 + textH + 3 + rows.length * 8 + 3;
+  const textH = body.length * DTEXT;
+  const h = 6 + textH + 3 + rows.length * DROW + 3;
   // Keep the whole thing on screen: where the adviser speaks he needs headroom
   // above the box, less the 4px he is dropped by. TRAIN has no portrait, so it
   // just centres.
@@ -4567,22 +4579,23 @@ function euroMenuBox() {
 function drawEuroMenu(ctx) {
   const b = euroMenuBox();
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * DTEXT,
+                                    0xFE, 0xFC, DFONT()));
   const seed = b.y + 6 + b.textH + 3;
   b.rows.forEach((r, k) => {
-    const y = seed + k * 8;
+    const y = seed + k * DROW;
     const sel = k === G.euroMenuRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, DROW - 2); }
     // Unaffordable rows are DIMMED, not blacked out -- they still have to be
     // readable so you can see what you are saving up for. Action rows (the
     // harbour context menus) carry their price inside the label and dim on
     // their own `dim` flag instead.
     const afford = r.cost === undefined ? !r.dim : r.cost <= G.gold;
     const inkIdx = !afford ? 0x5D : (sel ? 0xFC : 0xFE);
-    FONT.tiny.draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
+    DFONT().draw(ctx, r.label, b.x + 9, y + 1, lut(inkIdx));
     if (r.cost !== undefined) {
       const c = `${r.cost}$`;
-      FONT.tiny.draw(ctx, c, b.x + b.w - 8 - FONT.tiny.width(c), y + 1, lut(inkIdx));
+      DFONT().draw(ctx, c, b.x + b.w - 8 - DFONT().width(c), y + 1, lut(inkIdx));
     }
   });
   // The adviser is drawn LAST so he sits on top of the box, centred on it,
@@ -6158,7 +6171,7 @@ function notice(s) {
   // exists only because port-authored strings arrive as one line. It breaks
   // at the 190px @width every gameplay popup carries (histogram 190:336),
   // less the +10 line margin, so the box comes out the canonical 196 wide.
-  const lines = wrapText(FONT.tiny, s, 180);
+  const lines = wrapText(DFONT(), s, 180);
   const tail = G.eventQueue[G.eventQueue.length - 1];
   if (tail && !tail.speaker && tail.lines.join('\n') === lines.join('\n')) return;
   G.eventQueue.push({ lines, width: 190, speaker: null });
@@ -6193,13 +6206,14 @@ function drawEvent(ctx) {
   // loop's 120-tick timeout (func_004A80 @0x4ADD), which blits nothing.
   let cw = e.width;
   for (const l of e.lines)
-    cw = Math.max(cw, FONT.tiny.width(l.replace(/[{}]/g, '')) + 10);
-  const w = cw + 6, h = 6 + e.lines.length * 6 + 3;
+    cw = Math.max(cw, DFONT().width(l.replace(/[{}]/g, '')) + 10);
+  const w = cw + 6, h = 6 + e.lines.length * DTEXT + 3;
   const x = Math.round(160 - w / 2), y = Math.round(100 - h / 2);
   const ik = dialogInks();
   drawSpeakerSheet(ctx, e.speaker);
   plaque(ctx, x, y, w, h, 'WOODTILE');
-  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * 6, ik.base, ik.hi));
+  e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * DTEXT,
+                                     ik.base, ik.hi, DFONT()));
 }
 
 // Walking into a village opens the ten-row @ACTIONS menu (spec/ui/
@@ -6505,11 +6519,11 @@ function villageBox() {
   const rows = villageActions();
   const body = villageBody();
   let cw = 190;                                   // @width=190 on the @VILLAGE* keys
-  for (const l of body) cw = Math.max(cw, FONT.tiny.width(l));
+  for (const l of body) cw = Math.max(cw, DFONT().width(l));
   for (const r of rows)
-    cw = Math.max(cw, FONT.tiny.width(r.label) + FONT.tiny.width(r.note || '') + 20);
-  const w = cw + 6, textH = body.length * 6;
-  const h = 6 + textH + 3 + rows.length * 8 + 3;
+    cw = Math.max(cw, DFONT().width(r.label) + DFONT().width(r.note || '') + 20);
+  const w = cw + 6, textH = body.length * DTEXT;
+  const h = 6 + textH + 3 + rows.length * DROW + 3;
   // Box placement is the byte-cited builder math: centred, X = 160 - W/2. The
   // chief stands behind it at the bottom-right (his own position is untraced,
   // §2.7.1), so the box overlaps him rather than being squeezed beside him.
@@ -6527,14 +6541,15 @@ function drawVillage(ctx) {
   const [pw, ph] = frameSize(sheet, 0);
   if (pw) sheetFrame(ctx, sheet, 0, W - pw, H - ph);
   plaque(ctx, b.x, b.y, b.w, b.h, 'WOODTILE');
-  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * 6, 0xFE, 0xFC));
+  b.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * DTEXT,
+                                    0xFE, 0xFC, DFONT()));
   const seed = b.y + 6 + b.textH + 3;
   b.rows.forEach((r, k) => {
-    const y = seed + k * 8, sel = k === G.villageRow;
-    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, 8); }
-    FONT.tiny.draw(ctx, r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
-    if (r.note) FONT.tiny.draw(ctx, r.note, b.x + b.w - 9 - FONT.tiny.width(r.note),
-                               y + 1, lut(sel ? 0xFC : 0x0E));
+    const y = seed + k * DROW, sel = k === G.villageRow;
+    if (sel) { ctx.fillStyle = ink(SELECT_GAME); ctx.fillRect(b.x + 3, y, b.w - 6, DROW - 2); }
+    DFONT().draw(ctx, r.label, b.x + 9, y + 1, lut(sel ? 0xFC : 0xFE));
+    if (r.note) DFONT().draw(ctx, r.note, b.x + b.w - 9 - DFONT().width(r.note),
+                             y + 1, lut(sel ? 0xFC : 0x0E));
   });
 }
 function villageCommit() {
@@ -11782,7 +11797,7 @@ function onClick(mx, my) {
     case 'village': {
       const b = villageBox(), seed = b.y + 6 + b.textH + 3;
       for (let r = 0; r < b.rows.length; r++)
-        if (hit(mx, my, { x: b.x + 3, y: seed + r * 8, w: b.w - 6, h: 8 })) {
+        if (hit(mx, my, { x: b.x + 3, y: seed + r * DROW, w: b.w - 6, h: DROW })) {
           G.villageRow = r; villageCommit(); return;
         }
       break;
@@ -11798,9 +11813,9 @@ function onClick(mx, my) {
     }
     case 'colony': {
       if (G.colonyPopup) {
-        const b = colonyPopupBox(), seed = b.y + 6 + 6 + 3;
+        const b = colonyPopupBox(), seed = b.y + 6 + DTEXT + 3;
         for (let k = 0; k < b.rows.length; k++)
-          if (hit(mx, my, { x: b.x + 3, y: seed + k * 8, w: b.w - 6, h: 8 })) {
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * DROW, w: b.w - 6, h: DROW })) {
             G.colonyPopupRow = k; colonyPopupCommit(); return;
           }
         // A click outside the rows dismisses the popup and FALLS THROUGH to
@@ -11897,7 +11912,7 @@ function onClick(mx, my) {
         const b = euroMenuBox();
         const seed = b.y + 6 + b.textH + 3;
         for (let k = 0; k < b.rows.length; k++) {
-          if (hit(mx, my, { x: b.x + 3, y: seed + k * 8, w: b.w - 6, h: 8 })) {
+          if (hit(mx, my, { x: b.x + 3, y: seed + k * DROW, w: b.w - 6, h: DROW })) {
             G.euroMenuRow = k; euroMenuCommit(); return;
           }
         }
