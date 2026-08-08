@@ -22,6 +22,7 @@ only ~a quarter of the code.  The script therefore targets a RAW BINARY load
 (16-bit x86, base 0), where Ghidra address == file offset and all 31 overlay
 pages are present.  A delta constant covers the MZ-load case.
 """
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -180,6 +181,11 @@ def main():
             "records": syms["record_windows"], "tables": tables}
 
     body = SCRIPT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
+    # Content-addressed build stamp, printed as the script's first line at run
+    # time.  Sole purpose: make "am I running the file I just generated?"
+    # answerable in one glance instead of by comparing tracebacks.
+    stamp = hashlib.sha256(body.encode()).hexdigest()[:12]
+    body = body.replace("@@STAMP@@", stamp)
     check_free_names(body)
     OUT_PY.write_text(body)
 
@@ -198,6 +204,11 @@ def main():
     print("pages     : %d" % len(pages))
     print("->", OUT_PY)
     print("->", OUT_H)
+    print("")
+    print("BUILD %s" % stamp)
+    print("The script prints this as its FIRST line in Ghidra's console.")
+    print("If the two do not match, Ghidra is running an older copy that is")
+    print("still sitting in ghidra_scripts/ - replace it and re-run.")
 
 
 # Curated record layouts with REAL field widths.  Deriving these from
@@ -391,6 +402,11 @@ def build_header(syms):
 SCRIPT_TEMPLATE = r'''# VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
 # Regenerate: python3 tools/ghidra/export_ghidra_symbols.py
 #
+# BUILD @@STAMP@@
+# If a traceback from this file does not match the line numbers you expect,
+# check that stamp against the one the repo prints — you are probably running
+# an older copy that is still sitting in ghidra_scripts/.
+#
 # WHAT IT DOES
 #   * names every one of the 1,250 known functions (89 carry their real 1994
 #     CodeView names, recovered from MAPEDIT.EXE by instruction fingerprint)
@@ -446,7 +462,17 @@ def A(file_off):
     return toAddr(file_off + DELTA)
 
 
+BUILD = "@@STAMP@@"
+
+
 def main():
+    # First line out, before anything can fail: which copy of this file is
+    # actually running.  Ghidra runs whatever is in ghidra_scripts/, which is
+    # not necessarily the file you just regenerated.
+    print("=" * 64)
+    print("viceroy_ghidra_symbols  BUILD %s" % BUILD)
+    print("=" * 64)
+
     fm = currentProgram.getFunctionManager()
     st = currentProgram.getSymbolTable()
     mem = currentProgram.getMemory()

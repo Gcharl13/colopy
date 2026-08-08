@@ -1,6 +1,11 @@
 # VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
 # Regenerate: python3 tools/ghidra/export_ghidra_symbols.py
 #
+# BUILD 7da1a1bbc0fc
+# If a traceback from this file does not match the line numbers you expect,
+# check that stamp against the one the repo prints — you are probably running
+# an older copy that is still sitting in ghidra_scripts/.
+#
 # WHAT IT DOES
 #   * names every one of the 1,250 known functions (89 carry their real 1994
 #     CodeView names, recovered from MAPEDIT.EXE by instruction fingerprint)
@@ -13989,7 +13994,17 @@ def A(file_off):
     return toAddr(file_off + DELTA)
 
 
+BUILD = "7da1a1bbc0fc"
+
+
 def main():
+    # First line out, before anything can fail: which copy of this file is
+    # actually running.  Ghidra runs whatever is in ghidra_scripts/, which is
+    # not necessarily the file you just regenerated.
+    print("=" * 64)
+    print("viceroy_ghidra_symbols  BUILD %s" % BUILD)
+    print("=" * 64)
+
     fm = currentProgram.getFunctionManager()
     st = currentProgram.getSymbolTable()
     mem = currentProgram.getMemory()
