@@ -9684,3 +9684,46 @@ two debugging rounds were lost to a stale copy in `ghidra_scripts/`.
 it reads any name that is not a builtin, not bound in the script, and not one
 of Ghidra's injected globals; `SCRIPT_TEMPLATE` is a string, so that class of
 bug is invisible to local testing and only surfaces inside Ghidra.
+
+## 2026-08-08o — Thunk call targets and function arity, both from bytes
+
+**Cross-page call resolution.** Every inter-module call in VICEROY is
+`lcall <thunkseg>:<off>` into a stub in the load-image thunk table
+(0x1A5F0..0x1D5E6); the stub calls the RTLink runtime, which pages the overlay
+in and jumps on. Statically the callee is anonymous. Two byte-verified paths
+recover it, and `tools/ghidra/export_ghidra_symbols.py` now applies both:
+
+- **type B (362 stubs)** — the LJMP carries `seg:off` outright, and those
+  segments are load-image relative: `target = 0x2400 + seg*16 + off`, the same
+  formula the load image uses everywhere. **322 resolve.**
+- **type A (658 stubs)** — the LJMP segment is 0, patched by the loader. The
+  4 trailer bytes carry it: `trailer_word_1` is the overlay **page id**
+  (observed range 1..31, exactly the 31 pages) and the LJMP offset is an IP
+  within that page: `target = page.code_offset + ljmp_off`. **451 resolve.**
+
+**773/1020 total.** Acceptance is that the computed address lands *exactly* on
+a known function start — a real test, since an off-by-one in either formula
+would scatter results across mid-function addresses rather than hitting
+boundaries. The 247 misses get nothing rather than a guess.
+
+**Function arity from caller stack cleanup.** 16-bit cdecl puts stack cleanup
+on the caller, so `add sp, N` following a call proves N/2 words of arguments.
+Both call forms are read (far via the thunk resolution above, near as
+`page_base + IP`). **357 functions** get an arity, accepted only when every
+observed call site agrees; 0 targets showed disagreeing callers.
+
+*Validation:* the seven thunk signatures transcribed by hand from the raw
+disassembly in `viceroy_source/src/native/page0B_native_raid.c` — `region_of`,
+`tile_at_query`, `manhattan`, `village_select`, `tribe_name_handle`,
+`msg_set_int`, `alarm_bump` — **7/7 agree** with the derived counts. That is an
+independent check: the transcript predates this extractor and was written by
+reading the callee, while the extractor only reads callers.
+
+**Explicit limits.**
+- Argument **types** are NOT evidenced. Every parameter is applied as a plain
+  2-byte word named `param_N`. The stack slot is real; the meaning is not.
+- Absence of `add sp` is **not** zero arguments. Compilers defer and coalesce
+  cleanup, so silence is unknown and the function keeps whatever arity Ghidra
+  inferred.
+- 248 near-call targets with cleanup evidence are not known function starts
+  (undetected functions or mid-function entries) and were dropped.

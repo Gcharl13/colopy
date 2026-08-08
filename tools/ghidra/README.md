@@ -111,6 +111,9 @@ record tables applied: 5/5
    g_current_colony_ptr     8000:8542  as ColonyRecord * (near, 2 bytes)
    ...
 record pointers typed: 3/3
+thunk stubs labelled : 773
+call sites annotated : NNNN  (EOL comment names the real callee)
+signatures applied   : 357  (arg counts from caller stack cleanup)
 ```
 
 **Any line starting `!!` is a real failure — read it, do not continue.** The
@@ -145,6 +148,43 @@ That is the whole procedure. Everything that used to be manual after the
 script — parsing the header, `G`+`T` at five table bases, `Ctrl-L` on three
 pointers — the script now does. §3 remains as the explanation of *what* it
 did and how to redo any part by hand.
+
+### Two things worth knowing about, once it runs
+
+**Cross-page calls now name their callee.** Every inter-module call in
+VICEROY goes `lcall <thunkseg>:<off>` into a stub in the load-image thunk
+table, which calls the RTLink runtime, which pages the overlay in and jumps
+on. Statically that chain is opaque — the callee is an anonymous `FUN_`.
+The script decodes the far-call operand from the instruction bytes and puts
+the answer in an EOL comment:
+
+```
+9a 22 07 1f 18    CALLF 0x181f:0x722    ; -> region_of  (file 0x05E90, via type-B thunk)
+```
+
+773 of the 1020 thunks resolve. Two byte-verified paths: type-B stubs carry
+`seg:off` in the LJMP directly (`target = 0x2400 + seg*16 + off`); type-A
+stubs have the segment patched at load time, and their 4 trailer bytes carry
+the overlay **page id** (`target = page.code_offset + ljmp_off`). A
+resolution is accepted only when it lands **exactly on a known function
+start** — an off-by-one in either formula would scatter results across
+mid-function addresses instead of hitting boundaries. The 247 that miss get
+no comment rather than a guess.
+
+**Function arity comes from the callers.** 16-bit cdecl makes the caller
+clean the stack, so `add sp, N` after a call proves the callee took N/2 words
+— evidence in the instruction stream, not an inference from the prologue, and
+corroborated across every call site. 357 functions get a signature this way;
+counts are accepted only when **all** observed callers agree.
+
+Two honest limits. Argument *types* are not evidenced, so every parameter is
+laid down as a plain 2-byte word named `param_N` — the stack slot is real,
+the meaning is not. And absence of `add sp` is **not** read as zero arguments:
+compilers defer and coalesce cleanup, so silence is unknown.
+
+Validated against the seven thunk signatures transcribed by hand in
+`viceroy_source/src/native/page0B_native_raid.c` — 7/7 agree
+(`region_of(x,y)`=2, `village_select(idx)`=1, `alarm_bump(amt,power,tribe)`=3, …).
 
 ### What the script does NOT decide for you
 

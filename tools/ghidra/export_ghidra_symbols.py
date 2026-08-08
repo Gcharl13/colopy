@@ -52,10 +52,160 @@ GHIDRA_INJECTED = {
     "currentProgram", "currentAddress", "currentLocation", "currentSelection",
     "currentHighlight", "state", "monitor", "toAddr", "getBytes", "setBytes",
     "createLabel", "createFunction", "createBookmark", "setPlateComment",
+    "setEOLComment", "setPreComment", "setPostComment",
     "getFunctionAt", "getFunctionContaining", "getInstructionAt", "getDataAt",
     "createData", "clearListing", "askYesNo", "popup", "println", "printerr",
     "getScriptArgs",
 }
+
+
+_ASM_LINE = re.compile(
+    r"^\s+([0-9A-F]{6})\s+([0-9A-F]{4}):\s+\S+\s+(.*?)\s*$")
+_LCALL = re.compile(r"^lcall\s+0x([0-9a-f]+),\s*0x([0-9a-f]+)$")
+_NCALL = re.compile(r"^call\s+0x([0-9a-f]+)$")
+_ADDSP = re.compile(r"^add sp, (?:0x)?([0-9a-fA-F]+)$")
+
+
+def derive_arg_counts(names_by_offset, thunk_target_by_stub):
+    """Recover argument counts from the CALLERS, byte-verified.
+
+    16-bit cdecl makes the caller clean the stack, so a call followed by
+    `add sp, N` says the callee took N/2 words of arguments.  That is evidence
+    in the instruction stream, not an inference from the callee's prologue —
+    and it is corroborated many times over, because most functions are called
+    from several sites that must all agree.
+
+    Two call forms are read:
+      far  `lcall seg:off`  -> an RTLink thunk stub; the real callee comes
+                               from the same resolution used for the thunk
+                               annotations
+      near `call 0xIP`      -> an IP inside the current overlay page, so the
+                               callee is page_base + IP
+
+    ACCEPTED only when every observed call site agrees.  A target whose
+    callers disagree is dropped, not averaged — disagreement means either a
+    varargs callee or a mis-parsed site, and neither justifies a number.
+    ABSENCE of `add sp` is NOT read as "zero arguments": compilers defer and
+    coalesce stack cleanup, so silence is unknown, not zero.
+
+    Validated against the seven thunk signatures transcribed by hand in
+    viceroy_source/src/native/page0B_native_raid.c — 7/7 agree.
+    """
+    import collections
+    d = ROOT / "code/VICEROY/disasm_overlay_reseg"
+    if not d.is_dir():
+        print("arg counts: skipped (no resegmented disasm)")
+        return {}
+
+    votes = collections.defaultdict(collections.Counter)
+    for path in sorted(d.glob("page_*.asm")):
+        rows = []
+        for line in path.read_text(errors="ignore").splitlines():
+            m = _ASM_LINE.match(line)
+            if m:
+                rows.append((int(m.group(1), 16), int(m.group(2), 16),
+                             m.group(3)))
+        if not rows:
+            continue
+        page_base = rows[0][0] - rows[0][1]
+        for i, (file_off, _ip, text) in enumerate(rows):
+            m = _LCALL.match(text)
+            if m:
+                stub = HEADER + int(m.group(1), 16) * 16 + int(m.group(2), 16)
+                target = thunk_target_by_stub.get(stub)
+            else:
+                m = _NCALL.match(text)
+                target = page_base + int(m.group(1), 16) if m else None
+            if target is None:
+                continue
+            for j in range(i + 1, min(i + 3, len(rows))):
+                a = _ADDSP.match(rows[j][2])
+                if a:
+                    votes[target][int(a.group(1), 16) // 2] += 1
+                    break
+
+    out, split, unknown = {}, 0, 0
+    for target, counter in votes.items():
+        if target not in names_by_offset:
+            unknown += 1
+            continue
+        if len(counter) != 1:
+            split += 1
+            continue
+        n = next(iter(counter))
+        if 0 < n <= 16:
+            out[target] = {"n": n, "sites": counter[n]}
+
+    print("arg counts: %d functions given a signature from caller stack "
+          "cleanup" % len(out))
+    print("   dropped: %d with disagreeing callers, %d not a known function"
+          % (split, unknown))
+    return out
+
+
+def resolve_thunks(names_by_offset):
+    """Resolve RTLink thunk stubs to the functions they actually reach.
+
+    Every cross-page call in VICEROY goes `lcall <thunkseg>:<off>` into a stub
+    in the load-image thunk table (file 0x1A5F0..0x1D5E6); the stub calls the
+    RTLink runtime, which pages the overlay in and jumps on.  In a static
+    listing that whole chain is opaque, so each inter-module call decompiles
+    as an anonymous FUN_ with no hint of what it does.
+
+    Two byte-verified paths to the target, per tools/rtlink and
+    code/VICEROY/overlay_thunks.md:
+
+      type B (362): the LJMP already carries seg:off.  Those segments are
+        load-image relative, so target file = 0x2400 + seg*16 + off — the
+        same formula the load image uses everywhere else.
+
+      type A (658): the LJMP segment is 0, patched by the loader at run time.
+        The 4 trailer bytes carry it: trailer_word_1 is the overlay PAGE id
+        (observed range 1..31, exactly the 31 pages), and the LJMP offset is
+        an IP within that page's code, so target file = page.code_offset +
+        ljmp_off.
+
+    ACCEPTANCE: a resolution counts only if it lands EXACTLY on a known
+    function start.  That is a real test, not a formatting check — an
+    off-by-one in either formula would scatter the results across mid-function
+    addresses instead of hitting boundaries.  Anything that misses is dropped
+    rather than guessed at, so an unresolved call site simply gets no comment.
+    """
+    thunk_file = ROOT / "code/VICEROY/overlay_thunks.json"
+    pages_file = ROOT / "code/VICEROY/overlay_pages.json"
+    if not (thunk_file.exists() and pages_file.exists()):
+        print("thunk resolution: skipped (overlay_thunks/overlay_pages absent)")
+        return []
+
+    entries = json.loads(thunk_file.read_text())["thunks"]
+    pages = json.loads(pages_file.read_text())["pages"]
+    code_off = {int(k, 16): int(v["code_offset"], 16) for k, v in pages.items()}
+
+    out, stats = [], {"B": 0, "A": 0, "miss_B": 0, "miss_A": 0, "unpatched": 0}
+    for t in entries:
+        stub = t["thunk_offset"]
+        seg, off = t["ljmp_seg"], t["ljmp_off"]
+        if seg:
+            target, how = HEADER + seg * 16 + off, "B"
+        else:
+            page = t.get("trailer_word_1")
+            if page is None or page not in code_off:
+                stats["unpatched"] += 1
+                continue
+            target, how = code_off[page] + off, "A"
+        nm = names_by_offset.get(target)
+        if nm is None:
+            stats["miss_" + how] += 1
+            continue
+        stats[how] += 1
+        out.append({"a": stub, "t": target, "n": nm, "h": how})
+
+    print("thunk resolution: %d/%d call targets recovered "
+          "(%d type-B direct, %d type-A via page trailer)"
+          % (len(out), len(entries), stats["B"], stats["A"]))
+    print("   unresolved: %d off a function start, %d with no page id"
+          % (stats["miss_B"] + stats["miss_A"], stats["unpatched"]))
+    return out
 
 
 WIDTH = {"u8": 1, "s8": 1, "char": 1, "u16": 2, "s16": 2, "u32": 4, "s32": 4}
@@ -241,6 +391,19 @@ def main():
     pages = [{"id": "%02X" % s["page_id"], "a": s["code_offset"],
               "z": s["code_size"]} for s in rtl["segments"]]
 
+    # --- RTLink thunks: resolve cross-page calls to their real targets ----
+    names_by_offset = {f["a"]: f["n"] for f in funcs}
+    thunks = resolve_thunks(names_by_offset)
+
+    # --- argument counts, from caller-side stack cleanup ------------------
+    nargs = derive_arg_counts(names_by_offset,
+                              {t["a"]: t["t"] for t in thunks})
+    for f in funcs:
+        got = nargs.get(f["a"])
+        if got:
+            f["na"] = got["n"]
+            f["nas"] = got["sites"]
+
     # --- DGROUP globals ---------------------------------------------------
     globs = []
     for k, v in syms["globals"].items():
@@ -262,7 +425,8 @@ def main():
               for n, base, stride, _s, fields in RECORDS]
 
     data = {"funcs": funcs, "pages": pages, "globals": globs,
-            "records": syms["record_windows"], "tables": tables}
+            "records": syms["record_windows"], "tables": tables,
+            "thunks": thunks}
 
     body = SCRIPT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
     # Content-addressed build stamp, printed as the script's first line at run
@@ -566,6 +730,16 @@ BUILD = "@@STAMP@@"
 # Naming and DGROUP setup still run.
 APPLY_TYPES = True
 
+# Set False to skip the RTLink thunk pass (phase 5).  It walks every
+# instruction in the program looking for far calls, which takes a moment on a
+# 495 KB image.
+ANNOTATE_THUNKS = True
+
+# Set False to leave function signatures alone (phase 6).  Argument COUNTS are
+# byte-verified; argument types are not, so every parameter is laid down as a
+# plain 2-byte word.
+APPLY_SIGNATURES = True
+
 # Fixed-width Ghidra builtins.  Deliberately NOT IntegerDataType/LongDataType,
 # whose sizes come from the language's data organisation — the whole point is
 # that these widths are byte-verified and must not float.
@@ -585,6 +759,101 @@ def _dt(kind):
     import ghidra.program.model.data as D
     cls, width = _TYPES[kind]
     return getattr(D, cls)(), width
+
+
+def apply_signatures():
+    """Give each function the argument count its callers prove it takes.
+
+    The count is byte evidence (cdecl `add sp, N` after the call, agreed by
+    every observed site); the argument TYPES are not — each is laid down as a
+    plain 2-byte word, which is what the stack slot actually is.  Naming them
+    param_1..param_n rather than guessing meanings keeps the honest part and
+    discards nothing: the decompiler stops inventing its own arity, which is
+    the thing that made call sites unreadable.
+    """
+    from ghidra.program.model.data import WordDataType
+    from ghidra.program.model.listing import ParameterImpl, Function
+    from ghidra.program.model.symbol import SourceType as _S
+
+    fm = currentProgram.getFunctionManager()
+    applied = missing = 0
+    for f in DATA["funcs"]:
+        n = f.get("na")
+        if not n:
+            continue
+        try:
+            fn = fm.getFunctionAt(A(f["a"]))
+            if fn is None:
+                missing += 1
+                continue
+            params = [ParameterImpl("param_%d" % (i + 1), WordDataType(),
+                                    currentProgram)
+                      for i in range(n)]
+            fn.replaceParameters(
+                params, Function.FunctionUpdateType.DYNAMIC_STORAGE_FORMAL_PARAMS,
+                True, _S.USER_DEFINED)
+            applied += 1
+        except Exception:
+            missing += 1
+    print("signatures applied   : %d  (arg counts from caller stack cleanup)"
+          % applied)
+    if missing:
+        print("signatures skipped   : %d  (no function at that address)"
+              % missing)
+
+
+def annotate_thunk_calls():
+    """Name the thunk stubs and label every call site with its real target.
+
+    A cross-page call is `9A off16 seg16` (far CALL) into the thunk table.
+    Ghidra resolves that seg:off with its own segment arithmetic, which is
+    0x2400 out from the file offsets this database uses, so it lands nowhere
+    useful and the callee shows as an anonymous FUN_.  Rather than fight the
+    address model, decode the operand straight from the instruction bytes and
+    state the answer in an EOL comment.
+
+    Reading the bytes (not the operand objects) keeps this independent of how
+    the loaded language chooses to render a far call.
+    """
+    by_stub = {}
+    for e in DATA["thunks"]:
+        by_stub[e["a"]] = e
+    if not by_stub:
+        return 0
+
+    labelled = 0
+    for e in DATA["thunks"]:
+        try:
+            createLabel(A(e["a"]), "thunk_" + e["n"], False)
+            labelled += 1
+        except Exception:
+            pass
+
+    sites = 0
+    for ins in currentProgram.getListing().getInstructions(True):
+        try:
+            b = ins.getBytes()
+            if len(b) < 5 or (b[0] & 0xFF) != 0x9A:
+                continue
+            off = (b[1] & 0xFF) | ((b[2] & 0xFF) << 8)
+            seg = (b[3] & 0xFF) | ((b[4] & 0xFF) << 8)
+        except Exception:
+            continue
+        e = by_stub.get(HEADER + seg * 16 + off)
+        if e is None:
+            continue
+        try:
+            setEOLComment(ins.getAddress(),
+                          "-> %s   (file 0x%05X, via type-%s thunk)"
+                          % (e["n"], e["t"], e["h"]))
+            sites += 1
+        except Exception:
+            pass
+
+    print("thunk stubs labelled : %d" % labelled)
+    print("call sites annotated : %d  (EOL comment names the real callee)"
+          % sites)
+    return sites
 
 
 def build_structs():
@@ -716,6 +985,9 @@ def main():
                          "- verify before adopting): %s" % f["lead"])
         if f["k"]:
             lines.append("emits  : %s" % ", ".join(sorted(f["k"])))
+        if f.get("na"):
+            lines.append("args   : %d word(s), agreed by %d call site(s) "
+                         "(cdecl caller cleanup)" % (f["na"], f["nas"]))
         setPlateComment(addr, "\n".join(lines))
         commented += 1
 
@@ -858,6 +1130,20 @@ def main():
         if structs:
             apply_tables(structs, dg)
             retype_pointers(structs, dg)
+
+    # ---- RTLink thunks ----------------------------------------------------
+    if ANNOTATE_THUNKS:
+        try:
+            annotate_thunk_calls()
+        except Exception as e:
+            print("!! thunk annotation failed (%s) - everything else stands" % e)
+
+    # ---- function signatures ----------------------------------------------
+    if APPLY_SIGNATURES:
+        try:
+            apply_signatures()
+        except Exception as e:
+            print("!! signature pass failed (%s) - everything else stands" % e)
 
     # ---- overlay page bookmarks ------------------------------------------
     pages = 0
