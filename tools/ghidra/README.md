@@ -130,6 +130,68 @@ a partial parse silently gives you partial structs.
 
 ### 3.2 Apply the types
 
+#### 3.2.0 Step by step, first time through
+
+Purely mechanical. Do these in order; do not skip the console check in step A6.
+
+**A. Re-run the script (once — earlier runs are broken, see §3.2.1).**
+
+1. In a terminal: `cd /home/user/colopy && git pull`
+2. In Ghidra, open VICEROY.EXE in the CodeBrowser (the window with the
+   Listing on the left and the Decompiler on the right).
+3. `Window > Script Manager`.
+4. If `viceroy_ghidra_symbols.py` is not in the list: click the
+   **Manage Script Directories** button (top-right of the Script Manager
+   toolbar, the bulleted-list icon), press **+**, add
+   `/home/user/colopy/tools/ghidra`, then **OK**. Use the filter box at the
+   bottom of the Script Manager to find the script.
+5. Select the script and click the green **▶ Run** button.
+6. `Window > Console - Scripting`, scroll to the bottom. You must see one of:
+   - `DGROUP block created at 8000:0000 (0x80000)`
+   - `DGROUP block already present at 8000:0000`
+
+   If instead you see `!! COULD NOT CREATE THE DGROUP BLOCK`, stop — nothing
+   below will work, and the console lists what it tried.
+7. Below that is the `APPLY RECORD ARRAYS HERE` table. Leave the console open;
+   you will copy addresses out of it.
+
+**B. Apply one array (start with ColonyRecord only).**
+
+1. Click inside the **Listing** window so it has keyboard focus.
+2. Press **G** (Go To). Type `8000:5d46`. Enter.
+3. You land on a line of undefined bytes labelled `g_colony_table`.
+4. Press **T** (`Data > Choose Data Type`).
+5. Type `ColonyRecord[16]` in the box. Enter.
+6. The Listing now shows an array; click the **▸** in the left margin to
+   expand it and you should see `map_x`, `map_y`, `owner`, … by name.
+
+   If Ghidra refuses with a conflict: select the range, press **C**
+   (Clear Code Bytes), then redo steps 4–5.
+
+Repeat for the other four rows of the table in §3.2.1 once this one works.
+
+**C. Retype a pointer (the bigger readability win).**
+
+1. Click in the Listing, press **G**, type `2cfd0`, Enter.
+2. The Decompiler pane on the right shows the function. If it shows nothing,
+   press **F** (Create Function) first.
+3. In the decompiled C, find the line that reads the global — it looks like
+   `uVar1 = g_current_colony_ptr;` or
+   `puVar1 = (undefined *)DAT_80008542;`
+4. Click the variable name on the **left** of the `=`.
+5. Press **Ctrl-L** (`Retype Variable`; or right-click > Retype Variable).
+   Type `ColonyRecord *`. Enter.
+6. Every `*(byte *)(puVar1 + 0x1f)` in that function turns into
+   `puVar1->population`.
+7. Optional: with the variable still selected, press **L** (Rename Variable)
+   and type `colony`.
+
+Cross-check what you get against
+`viceroy_source/src/colony/page03_colony_turn.c` — same function, transcribed
+by hand.
+
+---
+
 The engine reaches a record in **two different ways**, and they need two
 different fixes. Recognising which one you are looking at is most of the
 skill here.
@@ -254,7 +316,7 @@ had raw offsets.
 
 **`0x02EB1C` — Pattern B.** Forty-two bytes, and the clearest test in the
 binary: `imul bx,[bp+6],0xca` then `mov al,[bx+0x5d65]` and a store to
-`[bx+p+0x5e00]`. With `ColonyRecord[]` applied at `0x205D46` those two
+`[bx+p+0x5e00]`. With `ColonyRecord[]` applied at `8000:5d46` those two
 displacements resolve as `+0x1F` (`population`) and `+0xBA`
 (`population_on_map`) — i.e. the function is "record what power *p* sees of
 colony *ci*'s population and fortification". If your decompiler now says
