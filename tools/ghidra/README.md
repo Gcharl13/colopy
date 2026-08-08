@@ -6,13 +6,59 @@ names instead of `FUN_0002d658` / `DAT_00008542`.
 Regenerate both artifacts any time (they stay in sync with the repo's JSON):
 
 ```
-python3 tools/ghidra/export_ghidra_symbols.py
+python3 tools/ghidra/make_ghidra_scripts.py
 ```
 
-| File | What it is |
-|---|---|
-| `viceroy_ghidra_symbols.py` | self-contained Ghidra script — drop in `ghidra_scripts/`, run from the Script Manager |
-| `viceroy_types.h` | the five record layouts — `File > Parse C Source` |
+### Which file runs where
+
+Two of these run **in Ghidra**; two run **on the repo machine**. Running a
+repo-side script inside Ghidra fails on the first repo path it touches (the
+generator now says so outright instead of throwing a `FileNotFoundError`).
+
+| File | Runs | What it is |
+|---|---|---|
+| `viceroy_ghidra_symbols.py` | **in Ghidra** | IMPORT — names, types, thunks, signatures |
+| `viceroy_ghidra_export.py` | **in Ghidra** | EXPORT — sends your renames back to the repo |
+| `make_ghidra_scripts.py` | repo | generator — writes the two above |
+| `merge_ghidra_export.py` | repo | folds an export into `data_extracted/ghidra_user_symbols.json` |
+| `viceroy_types.h` | — | reference copy of the record layouts |
+
+### The round trip
+
+Work you do in Ghidra used to live only in that database. Now:
+
+```
+   repo  --- make_ghidra_scripts.py --->  viceroy_ghidra_symbols.py
+                                                    |
+                                              (run in Ghidra)
+                                                    |
+                                          you rename things
+                                                    |
+                                          viceroy_ghidra_export.py
+                                                    |
+                                          viceroy_ghidra_export.json
+                                                    |
+   repo  <-- merge_ghidra_export.py <---------------+
+```
+
+`merge_ghidra_export.py` writes `data_extracted/ghidra_user_symbols.json`,
+which the generator reads on its next run — so your names come back in every
+future import, and survive losing the database.
+
+**Tiering.** Names from that file are applied as tier **U** and say so in the
+plate comment. They are kept in a separate file, never merged into the
+evidence files: per `notes/TRUTH_HIERARCHY.md` a name's provenance is part of
+the name, and a human judgement — however good — is not a byte citation. A
+tier-U name never overrides a confirmed 1994 CodeView name.
+
+**Stale exports are refused, not applied.** Each export records what the name
+*was*. If the repo's own generated name has since changed, the merge reports
+`STALE` and skips that entry rather than silently reverting newer evidence.
+
+**Not captured:** struct edits, parameter renames, data-type changes. Those
+live in the Data Type Manager, not the symbol table — a real layout correction
+belongs in the `RECORDS` table in `make_ghidra_scripts.py`, where it is
+byte-cited.
 
 ---
 
@@ -33,7 +79,7 @@ them if a step misbehaves.
 cd <repo>
 git pull
 python3 bin/reconstitute.py           # writes raw/COLONIZE/VICEROY.EXE
-python3 tools/ghidra/export_ghidra_symbols.py
+python3 tools/ghidra/make_ghidra_scripts.py
 ```
 
 *You should see* `-> tools/ghidra/viceroy_ghidra_symbols.py` and
@@ -631,7 +677,7 @@ invented field names:
 | `AIPersonality` | 0x34 | 5% |
 
 If you identify what a `_pad` span holds, that is a real finding — add it to
-`RECORDS` in `export_ghidra_symbols.py`, regenerate, and it flows into the
+`RECORDS` in `make_ghidra_scripts.py`, regenerate, and it flows into the
 header, the module map and the port's save decode together.
 
 ## 3. What the name tiers mean — read this before trusting a name

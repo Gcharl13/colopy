@@ -9642,7 +9642,7 @@ Evidence tiers are explicit; inferred game-module names end in `*` (the real
 
 ## 2026-08-08n — Ghidra record types: build in code, and a name conflict logged
 
-**Decision.** `tools/ghidra/export_ghidra_symbols.py` now emits a script that
+**Decision.** `tools/ghidra/make_ghidra_scripts.py` now emits a script that
 defines the five record structs *programmatically* in Ghidra's Data Type
 Manager rather than relying on `File > Parse C Source` over
 `tools/ghidra/viceroy_types.h`. It also applies each table as an array at its
@@ -9691,7 +9691,7 @@ bug is invisible to local testing and only surfaces inside Ghidra.
 `lcall <thunkseg>:<off>` into a stub in the load-image thunk table
 (0x1A5F0..0x1D5E6); the stub calls the RTLink runtime, which pages the overlay
 in and jumps on. Statically the callee is anonymous. Two byte-verified paths
-recover it, and `tools/ghidra/export_ghidra_symbols.py` now applies both:
+recover it, and `tools/ghidra/make_ghidra_scripts.py` now applies both:
 
 - **type B (362 stubs)** — the LJMP carries `seg:off` outright, and those
   segments are load-image relative: `target = 0x2400 + seg*16 + off`, the same
@@ -9727,3 +9727,44 @@ reading the callee, while the extractor only reads callers.
   inferred.
 - 248 near-call targets with cleanup evidence are not known function starts
   (undetected functions or mid-function entries) and were dropped.
+
+## 2026-08-08p — Ghidra round trip, and a new symbol tier `U`
+
+**Problem.** The Ghidra pipeline was one-way. Every rename, retype or note
+made in Ghidra lived only in that database: lose it, restart it, or want the
+name in the port, and the work was gone.
+
+**Decision.** Two new artifacts close the loop:
+
+- `tools/ghidra/viceroy_ghidra_export.py` (generated, runs *in* Ghidra) —
+  diffs the live program against the exact baseline the import script applied
+  (it carries the same payload and the same BUILD stamp) and writes only the
+  differences: function renames, DGROUP global renames, and comments the user
+  wrote. Generated plate comments are recognised by their `module :` line and
+  generated EOL comments by their `-> ` prefix, so the script's own output is
+  never exported back.
+- `tools/ghidra/merge_ghidra_export.py` (runs on the repo machine) — folds an
+  export into `data_extracted/ghidra_user_symbols.json`, which
+  `make_ghidra_scripts.py` reads on its next run.
+
+**New tier `U`.** Names from that store are applied as tier **U** and labelled
+in the plate comment as "written by hand in Ghidra (human judgement, not a
+byte citation)". They are deliberately kept in their own file rather than
+merged into `tools/viceroy_symbols.json` or the module map: per
+`notes/TRUTH_HIERARCHY.md` provenance is part of a name, and merging would
+launder a judgement into an evidence-tier fact. A tier-U name overrides a
+module-derived placeholder or a role name, but **never** a tier-B confirmed
+1994 CodeView name.
+
+**Stale-export guard.** Every exported entry records what the name *was*. If
+the repo's generated name has changed since the export (new evidence landed),
+the merge prints `STALE` and skips it rather than reverting the newer name.
+Verified on a synthetic export: correct entries merge and reappear as tier U
+in the regenerated script; entries with a mismatched `was` are refused.
+
+**Also — naming.** `tools/ghidra/export_ghidra_symbols.py` is renamed
+`make_ghidra_scripts.py`. The old name read as "the script that exports from
+Ghidra" and was in fact the repo-side generator; it got copied into
+`ghidra_scripts/` and run there, dying on a repo path. It now refuses to run
+under Ghidra (`if "currentProgram" in dir()`) with a message naming the two
+scripts that *do* belong there.

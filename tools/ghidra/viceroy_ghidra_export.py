@@ -1,53 +1,38 @@
-# VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
+# VICEROY.EXE symbol EXPORT from Ghidra  (GENERATED - do not hand-edit)
 # Regenerate: python3 tools/ghidra/make_ghidra_scripts.py
 #
 # BUILD 7f67ba89ea92
-# If a traceback from this file does not match the line numbers you expect,
-# check that stamp against the one the repo prints — you are probably running
-# an older copy that is still sitting in ghidra_scripts/.
 #
-# WHAT IT DOES
-#   * names every one of the 1,250 known functions (89 carry their real 1994
-#     CodeView names, recovered from MAPEDIT.EXE by instruction fingerprint)
-#   * plate-comments each function with its module, overlay page, size and the
-#     GAME.TXT message keys it emits
-#   * creates a DGROUP memory block and labels ~150 named globals in it
-#   * bookmarks the 31 RTLink overlay page boundaries
+# Run this in Ghidra AFTER you have renamed things, to send your work back to
+# the repo.  It compares the live program against the baseline the import
+# script applied and writes only the DIFFERENCES, so re-running it is cheap
+# and the output stays small.
 #
-# HOW TO LOAD THE BINARY (important — see tools/ghidra/README.md)
-#   Import VICEROY.EXE as **Raw Binary**, language x86:LE:16:Real Mode,
-#   base address 0.  Then Ghidra address == file offset and all 31 overlay
-#   pages are visible.  A normal MZ import maps only the load image (a
-#   quarter of the code) — if you did that, set MZ_LOAD = True below.
+# It writes a JSON file and prints the path.  Copy that file to the repo
+# machine and run:
+#     python3 tools/ghidra/merge_ghidra_export.py <the-file>
 #
-# RUNTIME: works under BOTH Ghidra Python providers.
-#   * PyGhidra (CPython 3, bundled and default since Ghidra 11.3)
-#   * Jython 2.7 (the older provider, an installable extension)
-# Only stdlib `json` plus the injected flat API are used, and the one Java
-# type it needs is imported explicitly (a bare `ghidra.program...` reference
-# resolves under neither provider).  No f-strings, no print_function needed.
+# WHAT IT CAPTURES
+#   * function renames (yours vs the imported name, and any FUN_ you named)
+#   * DGROUP global renames
+#   * plate comments you wrote (the generated ones carry a "module :" line and
+#     are skipped)
+#   * EOL comments you wrote (the generated thunk notes start "-> " and are
+#     skipped)
 #
-# @category Colonization
-
-MZ_LOAD = False          # True if imported as MS-DOS Executable rather than raw
-
-# Synthetic home for the BSS half of DGROUP.  MUST be a valid address in the
-# program's address space: x86 real mode tops out near 1 MB, so a "safely
-# high" value like 0x200000 is NOT addressable and block creation fails.
-# The file itself is ~495 KB (0x78D3E), so 0x80000 sits just past it and
-# inside the 1 MB real-mode range.  Fallbacks are tried automatically.
-DGROUP_BLOCK_ADDR = 0x80000
-DGROUP_FALLBACKS = (0x80000, 0x90000, 0xF0000, 0x200000)
+# WHAT IT DOES NOT CAPTURE
+#   Struct edits, parameter renames, and data-type changes.  Those live in the
+#   Data Type Manager rather than the symbol table; the repo's record layouts
+#   are byte-verified in make_ghidra_scripts.py's RECORDS table, which is
+#   where a real layout correction belongs.
 
 import json
+import os
 
-try:
-    from ghidra.program.model.symbol import SourceType
-    SRC = SourceType.IMPORTED
-except Exception as _e:      # pragma: no cover - provider without the class
-    SRC = None
-    print("WARNING: could not import SourceType (%s); renames will be skipped"
-          % _e)
+MZ_LOAD = False
+BUILD = "7f67ba89ea92"
+HEADER = 0x2400
+DELTA = -HEADER if MZ_LOAD else 0
 
 DATA = json.loads(r"""{
 "funcs": [
@@ -19815,496 +19800,120 @@ DATA = json.loads(r"""{
 ]
 }""")
 
-HEADER = 0x2400
-DGROUP_FILE = 0x1D9A0
-LOAD_IMAGE_END = 0x22A65        # end of the MZ load image; DGROUP is BSS above
-DELTA = -HEADER if MZ_LOAD else 0
-
-
-def A(file_off):
-    return toAddr(file_off + DELTA)
-
-
-BUILD = "7f67ba89ea92"
-
-# Set False to stop the script defining/applying the record types (phase 4).
-# Naming and DGROUP setup still run.
-APPLY_TYPES = True
-
-# Set False to skip the RTLink thunk pass (phase 5).  It walks every
-# instruction in the program looking for far calls, which takes a moment on a
-# 495 KB image.
-ANNOTATE_THUNKS = True
-
-# Set False to leave function signatures alone (phase 6).  Argument COUNTS are
-# byte-verified; argument types are not, so every parameter is laid down as a
-# plain 2-byte word.
-APPLY_SIGNATURES = True
-
-# Fixed-width Ghidra builtins.  Deliberately NOT IntegerDataType/LongDataType,
-# whose sizes come from the language's data organisation — the whole point is
-# that these widths are byte-verified and must not float.
-_TYPES = {
-    "u8":   ("ByteDataType", 1),
-    "s8":   ("SignedByteDataType", 1),
-    "char": ("CharDataType", 1),
-    "u16":  ("WordDataType", 2),
-    "s16":  ("SignedWordDataType", 2),
-    "u32":  ("DWordDataType", 4),
-    "s32":  ("SignedDWordDataType", 4),
-}
-
-
-def _dt(kind):
-    """Instantiate a fixed-width builtin by name, plus its byte width."""
-    import ghidra.program.model.data as D
-    cls, width = _TYPES[kind]
-    return getattr(D, cls)(), width
-
-
-def apply_signatures():
-    """Give each function the argument count its callers prove it takes.
-
-    The count is byte evidence (cdecl `add sp, N` after the call, agreed by
-    every observed site); the argument TYPES are not — each is laid down as a
-    plain 2-byte word, which is what the stack slot actually is.  Naming them
-    param_1..param_n rather than guessing meanings keeps the honest part and
-    discards nothing: the decompiler stops inventing its own arity, which is
-    the thing that made call sites unreadable.
-    """
-    from ghidra.program.model.data import WordDataType
-    from ghidra.program.model.listing import ParameterImpl, Function
-    from ghidra.program.model.symbol import SourceType as _S
-
-    fm = currentProgram.getFunctionManager()
-    applied = missing = 0
-    for f in DATA["funcs"]:
-        n = f.get("na")
-        if not n:
-            continue
-        try:
-            fn = fm.getFunctionAt(A(f["a"]))
-            if fn is None:
-                missing += 1
-                continue
-            params = [ParameterImpl("param_%d" % (i + 1), WordDataType(),
-                                    currentProgram)
-                      for i in range(n)]
-            fn.replaceParameters(
-                params, Function.FunctionUpdateType.DYNAMIC_STORAGE_FORMAL_PARAMS,
-                True, _S.USER_DEFINED)
-            applied += 1
-        except Exception:
-            missing += 1
-    print("signatures applied   : %d  (arg counts from caller stack cleanup)"
-          % applied)
-    if missing:
-        print("signatures skipped   : %d  (no function at that address)"
-              % missing)
-
-
-def annotate_thunk_calls():
-    """Name the thunk stubs and label every call site with its real target.
-
-    A cross-page call is `9A off16 seg16` (far CALL) into the thunk table.
-    Ghidra resolves that seg:off with its own segment arithmetic, which is
-    0x2400 out from the file offsets this database uses, so it lands nowhere
-    useful and the callee shows as an anonymous FUN_.  Rather than fight the
-    address model, decode the operand straight from the instruction bytes and
-    state the answer in an EOL comment.
-
-    Reading the bytes (not the operand objects) keeps this independent of how
-    the loaded language chooses to render a far call.
-    """
-    by_stub = {}
-    for e in DATA["thunks"]:
-        by_stub[e["a"]] = e
-    if not by_stub:
-        return 0
-
-    labelled = 0
-    for e in DATA["thunks"]:
-        try:
-            createLabel(A(e["a"]), "thunk_" + e["n"], False)
-            labelled += 1
-        except Exception:
-            pass
-
-    sites = 0
-    for ins in currentProgram.getListing().getInstructions(True):
-        try:
-            b = ins.getBytes()
-            if len(b) < 5 or (b[0] & 0xFF) != 0x9A:
-                continue
-            off = (b[1] & 0xFF) | ((b[2] & 0xFF) << 8)
-            seg = (b[3] & 0xFF) | ((b[4] & 0xFF) << 8)
-        except Exception:
-            continue
-        e = by_stub.get(HEADER + seg * 16 + off)
-        if e is None:
-            continue
-        try:
-            setEOLComment(ins.getAddress(),
-                          "-> %s   (file 0x%05X, via type-%s thunk)"
-                          % (e["n"], e["t"], e["h"]))
-            sites += 1
-        except Exception:
-            pass
-
-    print("thunk stubs labelled : %d" % labelled)
-    print("call sites annotated : %d  (EOL comment names the real callee)"
-          % sites)
-    return sites
-
-
-def build_structs():
-    """Define the five record layouts directly in the Data Type Manager.
-
-    Replaces `File > Parse C Source` on viceroy_types.h.  Each struct is
-    created at its byte-verified stride and fields are dropped in at their
-    offsets, so unmapped spans stay `undefined1` — honest gaps, never
-    invented names, and no alignment rule can shift anything.
-    """
-    from ghidra.program.model.data import (StructureDataType, ArrayDataType,
-                                           CategoryPath)
-    dtm = currentProgram.getDataTypeManager()
-    path = CategoryPath("/viceroy")
-    out = {}
-    for t in DATA["tables"]:
-        try:
-            s = StructureDataType(path, t["name"], t["stride"])
-            for f in t["fields"]:
-                dt, w = _dt(f["t"])
-                if f["c"]:
-                    dt = ArrayDataType(dt, f["c"], w)
-                s.replaceAtOffset(f["o"], dt, dt.getLength(), f["nm"], None)
-            out[t["name"]] = dtm.addDataType(s, None)
-        except Exception as e:
-            print("!! could not define %s (%s)" % (t["name"], e))
-    if out:
-        print("record types defined: %s" % ", ".join(sorted(out)))
-        print("   (Data Type Manager > <program> > viceroy - no C parse needed)")
-    return out
-
-
-def apply_tables(structs, dg):
-    """Lay each record table down as an array at its DGROUP base."""
-    from ghidra.program.model.data import ArrayDataType
-    done = 0
-    for t in DATA["tables"]:
-        dt = structs.get(t["name"])
-        if dt is None:
-            continue
-        try:
-            addr = dg.add(t["ds"])
-            span = t["n"] * t["stride"]
-            clearListing(addr, addr.add(span - 1))
-            createData(addr, ArrayDataType(dt, t["n"], dt.getLength()))
-            print("   %-18s %s  [%d x 0x%X]"
-                  % (t["name"] + "[]", addr, t["n"], t["stride"]))
-            done += 1
-        except Exception as e:
-            print("!! could not apply %s at DS:0x%04X (%s)"
-                  % (t["name"], t["ds"], e))
-    print("record tables applied: %d/%d" % (done, len(DATA["tables"])))
-
-
-def retype_pointers(structs, dg):
-    """Type the current-record globals as 2-byte NEAR pointers.
-
-    Size is forced to 2 rather than left to the language's default: these
-    hold near offsets into DGROUP, and a 4-byte far pointer would swallow two
-    bytes of whatever follows and mislabel it.
-    """
-    from ghidra.program.model.data import PointerDataType
-    PTRS = [("g_current_colony_ptr", 0x8542, "ColonyRecord"),
-            ("g_current_power_ptr", 0x84FC, "PowerRecord"),
-            ("g_active_settlement_ptr", 0x8D4A, "NativeSettlement")]
-    done = 0
-    for nm, ds, tyname in PTRS:
-        dt = structs.get(tyname)
-        if dt is None:
-            continue
-        try:
-            addr = dg.add(ds)
-            clearListing(addr, addr.add(1))
-            createData(addr, PointerDataType(dt, 2))
-            print("   %-24s %s  as %s * (near, 2 bytes)" % (nm, addr, tyname))
-            done += 1
-        except Exception as e:
-            print("!! could not retype %s at DS:0x%04X (%s)" % (nm, ds, e))
-    print("record pointers typed: %d/%d" % (done, len(PTRS)))
-
 
 def main():
-    # First line out, before anything can fail: which copy of this file is
-    # actually running.  Ghidra runs whatever is in ghidra_scripts/, which is
-    # not necessarily the file you just regenerated.
     print("=" * 64)
-    print("viceroy_ghidra_symbols  BUILD %s" % BUILD)
+    print("viceroy_ghidra_export  BUILD %s" % BUILD)
     print("=" * 64)
 
-    fm = currentProgram.getFunctionManager()
-    st = currentProgram.getSymbolTable()
+    listing = currentProgram.getListing()
     mem = currentProgram.getMemory()
-
-    named = renamed = commented = failed = skipped = 0
+    base = {}
     for f in DATA["funcs"]:
+        base[f["a"]] = f["n"]
+    gbase = {}
+    for g in DATA["globals"]:
+        gbase[g["ds"]] = g["n"]
+    thunk_names = set()
+    for t in DATA["thunks"]:
+        thunk_names.add("thunk_" + t["n"])
+
+    out = {"build": BUILD, "functions": [], "globals": [],
+           "plate_comments": [], "eol_comments": []}
+
+    # ---- function names ---------------------------------------------------
+    for fn in currentProgram.getFunctionManager().getFunctions(True):
         try:
-            addr = A(f["a"])
+            off = fn.getEntryPoint().getOffset() - DELTA
+            cur = fn.getName()
         except Exception:
-            skipped += 1
             continue
-        if mem.getBlock(addr) is None:
-            skipped += 1                  # not mapped (MZ load, overlay page)
-            continue
+        was = base.get(off)
+        if was is None:
+            # A function the repo does not know about.  Only interesting if
+            # you named it - Ghidra's own FUN_ placeholders carry no
+            # information the repo does not already have from its own
+            # boundary analysis.
+            if not cur.startswith("FUN_"):
+                out["functions"].append({"a": off, "was": None, "now": cur,
+                                         "new_function": True})
+        elif cur != was:
+            out["functions"].append({"a": off, "was": was, "now": cur})
 
-        fn = fm.getFunctionAt(addr)
-        if fn is None:
-            fn = createFunction(addr, f["n"])
-            if fn is not None:
-                named += 1
-        if fn is not None and SRC is not None:
+    # ---- DGROUP global names ----------------------------------------------
+    dgb = mem.getBlock("DGROUP")
+    if dgb is not None:
+        st = currentProgram.getSymbolTable()
+        start = dgb.getStart().getOffset()
+        for sym in st.getSymbolIterator(True):
             try:
-                fn.setName(f["n"], SRC)
-                renamed += 1
-            except Exception as e:
-                failed += 1
-                if failed <= 5:           # report a few, don't spam
-                    print("  rename failed at 0x%06X (%s): %s"
-                          % (f["a"], f["n"], e))
-
-        tier = {"B": "REAL NAME (MAPEDIT CodeView match)",
-                "R": "role name (analysis)",
-                "M": "module-derived placeholder"}[f["t"]]
-        lines = ["%s   [%s]" % (f["n"], tier),
-                 "module : %s" % (f["m"] or "?"),
-                 "page   : %s" % (f["p"] or "resident"),
-                 "size   : %d bytes   file 0x%06X" % (f["s"], f["a"])]
-        if f.get("lead"):
-            lines.append("CANDIDATE (unconfirmed, partial fingerprint match "
-                         "- verify before adopting): %s" % f["lead"])
-        if f["k"]:
-            lines.append("emits  : %s" % ", ".join(sorted(f["k"])))
-        if f["t"] == "U":
-            lines.append("NAME  : written by hand in Ghidra (tier U - human")
-            lines.append("        judgement, not a byte citation)")
-        if f.get("na"):
-            lines.append("args   : %d word(s), agreed by %d call site(s) "
-                         "(cdecl caller cleanup)" % (f["na"], f["nas"]))
-        setPlateComment(addr, "\n".join(lines))
-        commented += 1
-
-    # ---- DGROUP -----------------------------------------------------------
-    # ONE contiguous 64 KB window, not two halves.  DGROUP's initialised part
-    # lives in the file at 0x1D9A0 and runs to the end of the load image
-    # (0x22A65 = DS:0x50C5); everything above that is BSS, past the end of the
-    # file.  In a raw-binary import the bytes immediately after 0x22A65 are
-    # already occupied by overlay data, so BSS cannot simply be appended -
-    # hence a synthetic block, with the initialised bytes COPIED into it so
-    # that one DS value covers the whole segment.
-    #
-    # Why this matters: real mode writes `mov bx,[0x8542]`, meaning DS:0x8542.
-    # Unless Ghidra knows DS, that displacement stays a bare constant and every
-    # global in the program decompiles as a naked number.  Labelling the two
-    # halves at two different addresses (the previous behaviour) could never
-    # fix that, because no single DS value reached both.
-    dg = None
-    existing = mem.getBlock("DGROUP")
-    if existing is not None:
-        dg = existing.getStart()
-        print("DGROUP block already present at %s" % dg)
-        if not existing.isInitialized():
-            print("!! ...but it is UNINITIALISED - left over from an older run")
-            print("!! of this script.  Delete it and re-run, or the initialised")
-            print("!! half of DGROUP will read as zeros:")
-            print("!!   Window > Memory Map, select DGROUP, click the red X.")
-    else:
-        errs = []
-        for cand in DGROUP_FALLBACKS:
-            try:
-                base = toAddr(cand)
-                if base is None:
-                    errs.append("0x%X: toAddr returned None" % cand)
+                a = sym.getAddress()
+                if not dgb.contains(a):
                     continue
-                mem.createInitializedBlock("DGROUP", base, 0x10000,
-                                           0, monitor, False)
-                dg = base
-                print("DGROUP block created at %s (0x%X), 64 KB" % (dg, cand))
-                break
-            except Exception as e:
-                errs.append("0x%X: %s" % (cand, e))
-        if dg is None:
-            print("!! COULD NOT CREATE THE DGROUP BLOCK - the record tables")
-            print("!! will have no addresses.  Attempts:")
-            for e in errs:
-                print("     %s" % e)
-
-    # DGROUP MUST BE WRITABLE.  createInitializedBlock defaults to read-only,
-    # and a read-only block is a promise to the decompiler that the bytes
-    # never change - so it constant-folds every read.  BSS is zero-filled,
-    # which means `if (g_some_flag)` folds to false and the ENTIRE guarded
-    # body is deleted from the decompilation.  Symptom: a 274-byte function
-    # decompiles to three lines plus "Read-only address is written" warnings.
-    if dg is not None:
-        try:
-            blk = mem.getBlock(dg)
-            blk.setRead(True)
-            blk.setWrite(True)
-            blk.setExecute(False)
-            print("DGROUP permissions set to rw-")
-        except Exception as e:
-            print("!! could not make DGROUP writable (%s)" % e)
-            print("!! the decompiler will constant-fold reads from it and")
-            print("!! delete guarded code.  Fix by hand: Window > Memory Map,")
-            print("!! tick the W column on the DGROUP row.")
-
-    # Copy the initialised half in, so DS:0x0000..0x50C4 reads real data.
-    init_len = LOAD_IMAGE_END - DGROUP_FILE
-    if dg is not None:
-        try:
-            src = getBytes(A(DGROUP_FILE), init_len)
-            mem.setBytes(dg, src)
-            print("DGROUP initialised half copied: %d bytes from file 0x%X"
-                  % (init_len, DGROUP_FILE))
-        except Exception as e:
-            print("!! could not copy the initialised half (%s) - DS:0x0000..0x%X"
-                  % (e, init_len - 1))
-            print("!! will read as zeros.  BSS globals are unaffected.")
-
-    # Every global goes in the one window, initialised or not.
-    gi = gb = 0
-    if dg is not None:
-        for g in DATA["globals"]:
-            try:
-                createLabel(dg.add(g["ds"]), g["n"], True)
-                if g["init"]:
-                    gi += 1
-                else:
-                    gb += 1
+                ds = a.getOffset() - start
+                cur = sym.getName()
             except Exception:
-                pass
+                continue
+            was = gbase.get(ds)
+            if was is None:
+                if not (cur.startswith("DAT_") or cur.startswith("UNK_")
+                        or cur.startswith("LAB_")):
+                    out["globals"].append({"ds": ds, "was": None, "now": cur,
+                                           "new_global": True})
+            elif cur != was:
+                out["globals"].append({"ds": ds, "was": was, "now": cur})
 
-    # ---- teach Ghidra what DS holds --------------------------------------
-    # With the block at a paragraph-aligned address, DS = block>>4 makes every
-    # `[0xNNNN]` displacement in the program resolve to DGROUP:0xNNNN - which
-    # is where the labels now are.  Without this the decompiler shows
-    # `*(int *)0x8542` instead of `g_current_colony_ptr`.
-    if dg is not None:
+    # ---- comments ---------------------------------------------------------
+    # Generated plate comments always contain a "module :" line; generated EOL
+    # comments always start "-> ".  Anything else at those addresses is yours.
+    for blk in mem.getBlocks():
+        if blk.getName() == "DGROUP":
+            continue
         try:
-            from java.math import BigInteger
-            ds_reg = currentProgram.getRegister("DS")
-            if ds_reg is None:
-                print("!! no DS register in this language - is the program"
-                      " really x86:LE:16:Real Mode?")
-            else:
-                ds_val = BigInteger.valueOf(dg.getOffset() >> 4)
-                ctx = currentProgram.getProgramContext()
-                spans = 0
-                for blk in mem.getBlocks():
-                    if blk.getName() == "DGROUP":
-                        continue
-                    try:
-                        ctx.setValue(ds_reg, blk.getStart(), blk.getEnd(),
-                                     ds_val)
-                        spans += 1
-                    except Exception:
-                        pass
-                print("DS set to 0x%04X over %d block(s) - globals should now"
-                      " decompile by name" % (dg.getOffset() >> 4, spans))
-                print("   (if they do not, re-run Analysis > Auto Analyze, or"
-                      " right-click a function > Decompiler > Refresh)")
-        except Exception as e:
-            print("!! could not set DS (%s); set it by hand: select all in the"
-                  " Listing," % e)
-            print("!! right-click > Registers > Set Register Values, DS = 0x%04X"
-                  % (dg.getOffset() >> 4))
-
-    # ---- record types: define, apply, retype ------------------------------
-    # Everything that used to be manual after the script ran:
-    #   File > Parse C Source   -> build_structs()   (no C parser involved)
-    #   G + T at each table base -> apply_tables()
-    #   Ctrl-L on each pointer   -> retype_pointers()
-    # Building the structs in code rather than parsing viceroy_types.h also
-    # sidesteps the C parser's data organisation: widths are stated outright
-    # instead of depending on what `long` means for the loaded language.
-    structs = {}
-    if APPLY_TYPES and dg is not None:
-        structs = build_structs()
-        if structs:
-            apply_tables(structs, dg)
-            retype_pointers(structs, dg)
-
-    # ---- RTLink thunks ----------------------------------------------------
-    if ANNOTATE_THUNKS:
-        try:
-            annotate_thunk_calls()
-        except Exception as e:
-            print("!! thunk annotation failed (%s) - everything else stands" % e)
-
-    # ---- function signatures ----------------------------------------------
-    if APPLY_SIGNATURES:
-        try:
-            apply_signatures()
-        except Exception as e:
-            print("!! signature pass failed (%s) - everything else stands" % e)
-
-    # ---- overlay page bookmarks ------------------------------------------
-    pages = 0
-    for p in DATA["pages"]:
-        try:
-            addr = A(p["a"])
-            if mem.getBlock(addr) is not None:
-                createBookmark(addr, "RTLink",
-                               "overlay page 0x%s  (%d bytes)" % (p["id"], p["z"]))
-                pages += 1
+            it = listing.getCommentAddressIterator(blk.getAddressRange(), True)
         except Exception:
-            pass
-
-    print("functions created  : %d" % named)
-    print("functions named    : %d" % renamed)
-    if failed:
-        print("renames FAILED     : %d  (see messages above)" % failed)
-    if skipped:
-        print("skipped (unmapped) : %d  <- set MZ_LOAD/re-import if unexpected"
-              % skipped)
-    print("plate comments     : %d" % commented)
-    print("globals in-file    : %d" % gi)
-    print("globals in DGROUP  : %d" % gb)
-    print("overlay bookmarks  : %d" % pages)
-    # ---- where to look, in THIS program's own address format --------------
-    # A 16-bit real-mode program shows segmented addresses (segment:offset),
-    # so never compute these by hand — copy the right-hand column.
-    print("")
-    print("=" * 64)
-    print("WHERE THINGS ARE")
-    print("=" * 64)
-    if dg is None:
-        print("  DGROUP was not created - see the errors above")
-    else:
-        for t in DATA["tables"]:
+            continue
+        for a in it:
             try:
-                print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
-                      % (t["name"] + "[]", t["ds"], dg.add(t["ds"]),
-                         t["count"], t["stride"]))
-            except Exception as e:
-                print("  %-18s DS:0x%04X  -> ERROR %s" % (t["name"], t["ds"], e))
-        for nm, ds in (("g_current_colony_ptr", 0x8542),
-                       ("g_current_power_ptr", 0x84FC),
-                       ("g_active_settlement_ptr", 0x8D4A)):
-            try:
-                print("  %-24s DS:0x%04X  ->  %s" % (nm, ds, dg.add(ds)))
+                plate = listing.getComment(3, a)     # PLATE_COMMENT
+                eol = listing.getComment(0, a)       # EOL_COMMENT
             except Exception:
-                pass
+                continue
+            if plate and "module :" not in plate:
+                out["plate_comments"].append(
+                    {"a": a.getOffset() - DELTA, "text": plate})
+            if eol and not eol.startswith("-> "):
+                out["eol_comments"].append(
+                    {"a": a.getOffset() - DELTA, "text": eol})
+
+    # ---- write ------------------------------------------------------------
+    name = "viceroy_ghidra_export.json"
+    for d in (os.path.expanduser("~"), os.getcwd()):
+        try:
+            path = os.path.join(d, name)
+            fh = open(path, "w")
+            fh.write(json.dumps(out, indent=1, sort_keys=True))
+            fh.close()
+            break
+        except Exception:
+            path = None
+    print("function renames  : %d" % len(out["functions"]))
+    print("global renames    : %d" % len(out["globals"]))
+    print("your plate comments: %d" % len(out["plate_comments"]))
+    print("your EOL comments : %d" % len(out["eol_comments"]))
     print("")
-    if APPLY_TYPES:
-        print("Nothing further to do by hand.  Check it took: G -> 53b14,")
-        print("the decompiler should read g_current_colony_ptr->colony_flags.")
-        print("(If the old text persists: right-click > Decompiler > Refresh.)")
+    if path:
+        print("WROTE  %s" % path)
+        print("")
+        print("Copy it to the repo machine, then run:")
+        print("    python3 tools/ghidra/merge_ghidra_export.py <that file>")
     else:
-        print("APPLY_TYPES is False - the record types were not defined or")
-        print("applied.  Set it True at the top of this script, or do it by")
-        print("hand per tools/ghidra/README.md section 3.2.")
+        print("!! could not write the export file anywhere - check permissions")
+    if not any(out[k] for k in ("functions", "globals", "plate_comments",
+                                "eol_comments")):
+        print("")
+        print("(Nothing differs from the imported baseline yet - rename some")
+        print(" things in Ghidra first, then run this again.)")
 
 
 main()

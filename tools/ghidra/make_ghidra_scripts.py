@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Emit a self-contained Ghidra import script for VICEROY.EXE.
+"""GENERATOR — run this on the REPO machine, never inside Ghidra.
+
+Emits the self-contained Ghidra scripts for VICEROY.EXE.
 
 Everything this project knows about VICEROY's symbols — 1,250 function
 boundaries, the 89 real 1994 CodeView names carried over from MAPEDIT, the
@@ -7,9 +9,15 @@ boundaries, the 89 real 1994 CodeView names carried over from MAPEDIT, the
 record layouts — packaged so Ghidra stops showing FUN_0002d658 / DAT_00008542
 and starts showing colony_turn_end_status / g_current_colony_ptr.
 
-Outputs (both committed, regenerate any time):
-  tools/ghidra/viceroy_ghidra_symbols.py   drop into ghidra_scripts, run it
-  tools/ghidra/viceroy_types.h             File > Parse C Source
+Outputs (all committed, regenerate any time):
+  tools/ghidra/viceroy_ghidra_symbols.py   IMPORT  — run this one in Ghidra
+  tools/ghidra/viceroy_ghidra_export.py    EXPORT  — run in Ghidra to send
+                                                     your edits back to the repo
+  tools/ghidra/viceroy_types.h             reference copy of the layouts
+
+This file reads the repo's JSON and WRITES those; it needs the repo tree and
+plain CPython.  Copying it into ghidra_scripts/ and running it there fails on
+the first repo path it touches.
 
 Address model (verified against the bytes, see tools/ghidra/README.md):
   MZ header      = 0x2400 (576 paragraphs)
@@ -27,13 +35,57 @@ import json
 import re
 from pathlib import Path
 
+if "currentProgram" in dir():          # pragma: no cover - Ghidra only
+    raise SystemExit(
+        "\n" + "=" * 68 +
+        "\nWRONG SCRIPT. This is the GENERATOR; it runs on the repo machine."
+        "\n" + "=" * 68 +
+        "\nIt reads the repo's JSON and writes the Ghidra scripts. Inside"
+        "\nGhidra there is no repo, so it dies on the first path it touches."
+        "\n"
+        "\nRun in Ghidra instead:"
+        "\n    viceroy_ghidra_symbols.py   - import names, types, thunks"
+        "\n    viceroy_ghidra_export.py    - send your edits back to the repo"
+        "\n"
+        "\nBoth are produced by running THIS file on the repo machine:"
+        "\n    python3 tools/ghidra/make_ghidra_scripts.py"
+        "\n" + "=" * 68)
+
 ROOT = Path(__file__).resolve().parents[2]
 OUT_PY = ROOT / "tools/ghidra/viceroy_ghidra_symbols.py"
+OUT_EXPORT = ROOT / "tools/ghidra/viceroy_ghidra_export.py"
 OUT_H = ROOT / "tools/ghidra/viceroy_types.h"
 
 HEADER = 0x2400
 DGROUP_FILE = 0x1D9A0
 LOAD_IMAGE_END = 0x22A65
+
+
+def load_user_syms():
+    """Names authored by hand in Ghidra, round-tripped back into the repo.
+
+    Written by tools/ghidra/merge_ghidra_export.py.  Kept in its own file and
+    its own tier (`U`) rather than merged into the evidence files, so a human
+    judgement can never be mistaken later for a byte citation.
+    """
+    p = ROOT / "data_extracted/ghidra_user_symbols.json"
+    if not p.exists():
+        return {"functions": {}, "globals": {},
+                "plate_comments": {}, "eol_comments": {}}
+    d = json.loads(p.read_text())
+    for k in ("functions", "globals", "plate_comments", "eol_comments"):
+        d.setdefault(k, {})
+    n = sum(len(d[k]) for k in
+            ("functions", "globals", "plate_comments", "eol_comments"))
+    if n:
+        print("user symbols from Ghidra: %d functions, %d globals, "
+              "%d plate, %d EOL"
+              % (len(d["functions"]), len(d["globals"]),
+                 len(d["plate_comments"]), len(d["eol_comments"])))
+    return d
+
+
+USER_SYMS = load_user_syms()
 
 
 def sanitize(name):
@@ -381,6 +433,14 @@ def main():
             base = sanitize(module).strip("_") or "unattributed"
             nm = "%s_%06X" % (base, off)
             tier = "M"                       # module-derived placeholder
+        # A name you wrote in Ghidra and exported wins over the generated
+        # placeholder — but NEVER over a confirmed 1994 CodeView name, and it
+        # is tiered `U` so the plate comment says where it came from.  See
+        # tools/ghidra/merge_ghidra_export.py on why this is a separate tier.
+        user = USER_SYMS["functions"].get("0x%06X" % off)
+        if user and tier != "B":
+            nm, tier = sanitize(user), "U"
+
         funcs.append({
             "a": off, "n": nm, "t": tier, "m": module, "p": page,
             "s": r.get("size") or 0, "lead": lead,
@@ -408,6 +468,7 @@ def main():
     globs = []
     for k, v in syms["globals"].items():
         ds = int(k, 16)
+        v = USER_SYMS["globals"].get("0x%04X" % ds, v)
         globs.append({"ds": ds, "n": sanitize(v),
                       "f": DGROUP_FILE + ds,
                       "init": (DGROUP_FILE + ds) < LOAD_IMAGE_END})
@@ -437,6 +498,13 @@ def main():
     check_free_names(body)
     OUT_PY.write_text(body)
 
+    # The export script shares the same payload and stamp: it has to know the
+    # exact baseline the import laid down, or "what changed" is meaningless.
+    exp = (EXPORT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
+                          .replace("@@STAMP@@", stamp))
+    check_free_names(exp)
+    OUT_EXPORT.write_text(exp)
+
     print("record layouts:")
     verify_records()
     verify_field_aliases(globs, tables)
@@ -451,7 +519,8 @@ def main():
     print("globals   : %d  (%d initialised/in-file)"
           % (len(globs), sum(1 for g in globs if g["init"])))
     print("pages     : %d" % len(pages))
-    print("->", OUT_PY)
+    print("->", OUT_PY, "  (run this one in Ghidra)")
+    print("->", OUT_EXPORT, "  (run in Ghidra to send edits back)")
     print("->", OUT_H)
     print("")
     print("BUILD %s" % stamp)
@@ -610,7 +679,7 @@ def build_header(syms):
     """
     out = [
         "/* VICEROY.EXE record layouts — generated by",
-        " * tools/ghidra/export_ghidra_symbols.py.  DO NOT hand-edit.",
+        " * tools/ghidra/make_ghidra_scripts.py.  DO NOT hand-edit.",
         " *",
         " * Ghidra:  File > Parse C Source  (see tools/ghidra/README.md).",
         " * Every struct is padded to its byte-verified stride and contains",
@@ -662,7 +731,7 @@ def build_header(syms):
 
 
 SCRIPT_TEMPLATE = r'''# VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
-# Regenerate: python3 tools/ghidra/export_ghidra_symbols.py
+# Regenerate: python3 tools/ghidra/make_ghidra_scripts.py
 #
 # BUILD @@STAMP@@
 # If a traceback from this file does not match the line numbers you expect,
@@ -985,6 +1054,9 @@ def main():
                          "- verify before adopting): %s" % f["lead"])
         if f["k"]:
             lines.append("emits  : %s" % ", ".join(sorted(f["k"])))
+        if f["t"] == "U":
+            lines.append("NAME  : written by hand in Ghidra (tier U - human")
+            lines.append("        judgement, not a byte citation)")
         if f.get("na"):
             lines.append("args   : %d word(s), agreed by %d call site(s) "
                          "(cdecl caller cleanup)" % (f["na"], f["nas"]))
@@ -1205,6 +1277,164 @@ def main():
 
 main()
 '''
+
+EXPORT_TEMPLATE = r'''# VICEROY.EXE symbol EXPORT from Ghidra  (GENERATED - do not hand-edit)
+# Regenerate: python3 tools/ghidra/make_ghidra_scripts.py
+#
+# BUILD @@STAMP@@
+#
+# Run this in Ghidra AFTER you have renamed things, to send your work back to
+# the repo.  It compares the live program against the baseline the import
+# script applied and writes only the DIFFERENCES, so re-running it is cheap
+# and the output stays small.
+#
+# It writes a JSON file and prints the path.  Copy that file to the repo
+# machine and run:
+#     python3 tools/ghidra/merge_ghidra_export.py <the-file>
+#
+# WHAT IT CAPTURES
+#   * function renames (yours vs the imported name, and any FUN_ you named)
+#   * DGROUP global renames
+#   * plate comments you wrote (the generated ones carry a "module :" line and
+#     are skipped)
+#   * EOL comments you wrote (the generated thunk notes start "-> " and are
+#     skipped)
+#
+# WHAT IT DOES NOT CAPTURE
+#   Struct edits, parameter renames, and data-type changes.  Those live in the
+#   Data Type Manager rather than the symbol table; the repo's record layouts
+#   are byte-verified in make_ghidra_scripts.py's RECORDS table, which is
+#   where a real layout correction belongs.
+
+import json
+import os
+
+MZ_LOAD = False
+BUILD = "@@STAMP@@"
+HEADER = 0x2400
+DELTA = -HEADER if MZ_LOAD else 0
+
+DATA = json.loads(r"""@@DATA@@""")
+
+
+def main():
+    print("=" * 64)
+    print("viceroy_ghidra_export  BUILD %s" % BUILD)
+    print("=" * 64)
+
+    listing = currentProgram.getListing()
+    mem = currentProgram.getMemory()
+    base = {}
+    for f in DATA["funcs"]:
+        base[f["a"]] = f["n"]
+    gbase = {}
+    for g in DATA["globals"]:
+        gbase[g["ds"]] = g["n"]
+    thunk_names = set()
+    for t in DATA["thunks"]:
+        thunk_names.add("thunk_" + t["n"])
+
+    out = {"build": BUILD, "functions": [], "globals": [],
+           "plate_comments": [], "eol_comments": []}
+
+    # ---- function names ---------------------------------------------------
+    for fn in currentProgram.getFunctionManager().getFunctions(True):
+        try:
+            off = fn.getEntryPoint().getOffset() - DELTA
+            cur = fn.getName()
+        except Exception:
+            continue
+        was = base.get(off)
+        if was is None:
+            # A function the repo does not know about.  Only interesting if
+            # you named it - Ghidra's own FUN_ placeholders carry no
+            # information the repo does not already have from its own
+            # boundary analysis.
+            if not cur.startswith("FUN_"):
+                out["functions"].append({"a": off, "was": None, "now": cur,
+                                         "new_function": True})
+        elif cur != was:
+            out["functions"].append({"a": off, "was": was, "now": cur})
+
+    # ---- DGROUP global names ----------------------------------------------
+    dgb = mem.getBlock("DGROUP")
+    if dgb is not None:
+        st = currentProgram.getSymbolTable()
+        start = dgb.getStart().getOffset()
+        for sym in st.getSymbolIterator(True):
+            try:
+                a = sym.getAddress()
+                if not dgb.contains(a):
+                    continue
+                ds = a.getOffset() - start
+                cur = sym.getName()
+            except Exception:
+                continue
+            was = gbase.get(ds)
+            if was is None:
+                if not (cur.startswith("DAT_") or cur.startswith("UNK_")
+                        or cur.startswith("LAB_")):
+                    out["globals"].append({"ds": ds, "was": None, "now": cur,
+                                           "new_global": True})
+            elif cur != was:
+                out["globals"].append({"ds": ds, "was": was, "now": cur})
+
+    # ---- comments ---------------------------------------------------------
+    # Generated plate comments always contain a "module :" line; generated EOL
+    # comments always start "-> ".  Anything else at those addresses is yours.
+    for blk in mem.getBlocks():
+        if blk.getName() == "DGROUP":
+            continue
+        try:
+            it = listing.getCommentAddressIterator(blk.getAddressRange(), True)
+        except Exception:
+            continue
+        for a in it:
+            try:
+                plate = listing.getComment(3, a)     # PLATE_COMMENT
+                eol = listing.getComment(0, a)       # EOL_COMMENT
+            except Exception:
+                continue
+            if plate and "module :" not in plate:
+                out["plate_comments"].append(
+                    {"a": a.getOffset() - DELTA, "text": plate})
+            if eol and not eol.startswith("-> "):
+                out["eol_comments"].append(
+                    {"a": a.getOffset() - DELTA, "text": eol})
+
+    # ---- write ------------------------------------------------------------
+    name = "viceroy_ghidra_export.json"
+    for d in (os.path.expanduser("~"), os.getcwd()):
+        try:
+            path = os.path.join(d, name)
+            fh = open(path, "w")
+            fh.write(json.dumps(out, indent=1, sort_keys=True))
+            fh.close()
+            break
+        except Exception:
+            path = None
+    print("function renames  : %d" % len(out["functions"]))
+    print("global renames    : %d" % len(out["globals"]))
+    print("your plate comments: %d" % len(out["plate_comments"]))
+    print("your EOL comments : %d" % len(out["eol_comments"]))
+    print("")
+    if path:
+        print("WROTE  %s" % path)
+        print("")
+        print("Copy it to the repo machine, then run:")
+        print("    python3 tools/ghidra/merge_ghidra_export.py <that file>")
+    else:
+        print("!! could not write the export file anywhere - check permissions")
+    if not any(out[k] for k in ("functions", "globals", "plate_comments",
+                                "eol_comments")):
+        print("")
+        print("(Nothing differs from the imported baseline yet - rename some")
+        print(" things in Ghidra first, then run this again.)")
+
+
+main()
+'''
+
 
 if __name__ == "__main__":
     main()
