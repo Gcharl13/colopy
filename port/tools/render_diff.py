@@ -87,6 +87,11 @@ PAIRS = [
     # metric; the picker keeps the RNG field visible at the dialog's sides.
     ("census3_colony.png", "census/census3_colony.png", 30000),
     ("census3_build_picker.png", "census/census3_build_picker.png", 45000),
+    # The Build view (BUY/CHANGE + construction caption) and the BUY prompt
+    # (advisor on the box, 26$/hammer quote). Both carry the plot-RNG band
+    # plus the open scene-panel yield-overlay divergence.
+    ("census3_colony_view2.png", "census/census3_colony_view2.png", 32000),
+    ("census3_buy_prompt.png", "census/census3_buy_prompt.png", 40000),
 ]
 
 

@@ -1278,6 +1278,20 @@ SCRIPT = """() => {
     closeDialog(1);
     w2.rushBuilt = uc.buildings.includes('Stockade');
     w2.rushPaid = G.gold < 99999;
+    // census3_buy_prompt: the quote is 26$/hammer exact (Docks 52 -> 1352$).
+    uc.buildings = uc.buildings.filter(b => b !== 'Stockade');
+    uc.building = 'Stockade'; uc.hammers = 0; uc.stock[14] = 999;
+    G.eventQueue = []; G.dialog = null; G.gold = 99999; rushBuy();
+    const stockCost = DATA.buildings.find(b => b.name === 'Stockade').cost;
+    w2.rushRate = !!(G.dialog && G.dialog.body.join(' ').includes(String(26 * stockCost)));
+    closeDialog(0);
+    // A dialog WITH an adviser figure centres on y=130, one without on 100
+    // (census3_buy_prompt vs census2_find_colony).
+    const dlgLo = layoutDialog({ body: ['x'], tail: ['a'], width: 100, opts: ['a'], small: false, speaker: 'MSS5' });
+    const dlgHi = layoutDialog({ body: ['x'], tail: ['a'], width: 100, opts: ['a'], small: false, speaker: null });
+    w2.speakerLow = (dlgLo.y - dlgHi.y) === 30;
+    // The Build view's two buttons drive the same flows as the keys.
+    w2.buildBtns = !!(BUILD_BTN.buy.w && BUILD_BTN.change.w) && G.colonyView !== undefined;
     G.colonies.pop();
     // Back-tax: selling a boycotted good asks @KISSUP (price x 500); paying
     // clears the boycott and feeds the King's fund.

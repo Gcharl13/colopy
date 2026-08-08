@@ -261,6 +261,8 @@ JAMESTOWN = ("(()=>{const c=G.colonies.find(x=>x.name==='Jamestown');"
 SHOTS += [
     ("census3_colony", SAVRALEIGH + JAMESTOWN),
     ("census3_build_picker", SAVRALEIGH + JAMESTOWN + "openBuildPicker()"),
+    ("census3_colony_view2", SAVRALEIGH + JAMESTOWN + "G.colonyView=2"),
+    ("census3_buy_prompt", SAVRALEIGH + JAMESTOWN + "G.colonyView=2;rushBuy()"),
 ]
 
 

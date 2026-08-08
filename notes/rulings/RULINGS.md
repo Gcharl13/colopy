@@ -9574,3 +9574,28 @@ Applied:
   flagged.
 
 Suite 238/238; render-diff 28/28.
+
+## 2026-08-08k — Build view + BUY prompt paired; the popup anchor is
+## SPEAKER-based; 26$/hammer; the coin glyph
+
+1. **Multi-function view remapped** to the manual's order (Production /
+   Units / Build, default Production -- census3_colony's own frame). The
+   Build view (census3_colony_view2): target name centred y=132 in the
+   panel ink, BUY (x219,y140) and CHANGE (x273,y140) in white FONTTINY on
+   bordered plates (chrome approximated, flagged); BUY -> @BUYME flow,
+   CHANGE -> the picker. "Units Present" = LABELS @CMISC row 1 (bundled).
+2. **The vertical popup anchor is SPEAKER-based, not turn-based**: the
+   census3 BUY prompt is CLICK-opened yet centres on y=130 with the
+   colony advisor standing ON the box (centred, ~4px overlap), while
+   every figureless dialog centres on 100. The 2026-08-08h TURN_LOW latch
+   is replaced by the speaker rule; popups.md amendment rewritten.
+3. **BUYME wears MSS5** (the bonneted colony advisor -- it was missing
+   from the family regex, so the port drew no figure at all).
+4. **Rush-buy 26$/hammer EXACT** (1352 = 52 x 26, zero banked, tax 0,
+   Explorer). The older 1552$ frame still does not fit -- second term
+   open, flagged. Port rate corrected 30 -> 26.
+5. **The '$' coin glyph is KEPT in popup bodies** (fillTemplate no longer
+   eats it): "1352$." renders with the fonts' coin, as the capture shows.
+
+Pairs: census3_colony_view2 (21.5k/32000) + census3_buy_prompt
+(27.6k/40000). Suite 238/238; render-diff 30/30.

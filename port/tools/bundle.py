@@ -470,6 +470,9 @@ def build_data():
         # "Select An Item To Build", row 8 "Select a Profession for", plus the
         # BUY/CHANGE captions and "(No Production)"/"(More)"/"Turns)".
         "ctitle": labels["@CTITLE"].split("\n"),
+        # LABELS @CMISC: the multi-function view captions -- "Harvest /
+        # Resources", "Units Present", "Make".
+        "cmisc": labels["@CMISC"].split("\n"),
         "cmessage": labels["@CMESSAGE"].split("\n"),
     }
     # The diplomacy support lists (func_057A3A's %STRING fills): one row per

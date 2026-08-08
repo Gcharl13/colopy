@@ -214,9 +214,23 @@ Ground truth = `docs/screens/census/census3_build_picker.png` /
 - **Field food** carries the same easy-difficulty bonus (+2/+1): the strip's
   9 only sums with the Explorer farmers at NAMES+1 (Rain 1→2, Tropical
   2→3). Capture-fitted, field-yield helper unread — FLAGGED.
+- **The multi-function view** (census3_colony_view0/1/2 + the manual's
+  "Multi-Function View"): three buttons top→bottom = Production (the
+  default; the §3.6-read icon strips) / Units ("Units Present", LABELS
+  @CMISC row 1, centred dim-blue at y=132) / Build (the construction
+  target's name centred at y=132, BUY text x219 y140 and CHANGE x273 y140
+  in white FONTTINY on bordered plates — chrome approximated, flagged).
+  BUY runs the @BUYME flow, CHANGE opens the picker; clicking the
+  Production view toggles the saved [0x336] numbers byte.
+- **The BUY prompt** (census3_buy_prompt): "Cost to complete Docks:
+  1352$" = 52 hammers × 26$ EXACT (zero banked, tax 0, Explorer; the
+  older 1552$ frame still unexplained — second term open, flagged); the
+  '$' renders as the fonts' coin glyph and is KEPT in popup bodies; the
+  colony advisor (MSS5) stands ON the box — centred, ~4px overlap — and
+  the box centres on y=130 like every figure-bearing popup.
 - **Open divergences** (port vs `census3_colony`): the surround panel's
-  tile-yield rendering; BUY/CHANGE buttons + construction caption (view 2);
-  the buy-prompt pairing.
+  tile-yield/worked-tile overlay (the engine shows per-tile yield icons +
+  no stack badges; the port draws map-style stacks).
 
 ## 1. Purpose
 The colony management screen (Plymouth/New Amsterdam in the session snaps): a live terrain scene with

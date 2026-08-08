@@ -557,7 +557,7 @@ const G = {
   europe: [],             // ships in port / on the high seas
   market: [],             // per-good bid price
   euroRow: 0,             // recruit-menu row
-  colonyView: 2,          // right-panel mode: buildings / units / production
+  colonyView: 0,          // right-panel mode: production / units / build
   colonyPopup: null,      // 'build' | 'jobs'
   colonyPopupRow: 0,
   colonistSel: 0,
@@ -871,12 +871,15 @@ function layoutDialog(d) {
   const h = 6 + textH + 3 + rows + 3;
   // The engine's screen clamps: right past 320 shifts left, bottom past 200
   // shifts up (@0x06D563/@0x06D571); a negative origin floors at 0.
-  // TURN-PROCESSING popups sit LOWER: the census turn-event frames all
-  // centre on y~130 (census_turnevent_0/1/2/3/5, census_cargoready), while
-  // menu dialogs and immediate responses centre on 100 (census2_pick_music,
-  // census2_find_colony, census_noentry). The engine's positioning code is
-  // unread -- the 130 centre is the capture-measured anchor. FLAGGED.
-  let x = Math.round(160 - w / 2), y = Math.round((d.low ? 130 : 100) - h / 2);
+  // A popup WITH AN ADVISER FIGURE centres LOWER (y=130): every census
+  // frame with a figure sits there (turnevent_0/1/2/3/5, cargoready, the
+  // census3 BUY prompt -- click-opened, so the old turn-processing theory
+  // is out), and every figureless one centres on 100 (pick_music,
+  // find_colony, noentry). The drop gives the figure headroom; the
+  // positioning code is unread, the 130 centre is capture-measured.
+  // KING*/IND* sheets are unmeasured and keep the 100 centre -- TBD.
+  const low = d.speaker && /^(MSS|MYR)/.test(d.speaker);
+  let x = Math.round(160 - w / 2), y = Math.round((low ? 130 : 100) - h / 2);
   if (x + w > 320) x = 320 - w;
   if (y + h > 200) y = 200 - h;
   return { x: Math.max(0, x), y: Math.max(0, y), w, h, textH };
@@ -905,7 +908,7 @@ function drawDialog(ctx) {
   if (!d) return;
   const b = layoutDialog(d);
   const ik = dialogInks();
-  if (d.speaker) drawSpeakerSheet(ctx, d.speaker);
+  if (d.speaker) drawSpeakerSheet(ctx, d.speaker, b);
   plaque(ctx, b.x, b.y, b.w, b.h, G.screen === 'title' ? 'OPENTILE' : 'WOODTILE');
   const f = dFont(d.small), tp = dText(d.small), rp = dRow(d.small);
   d.body.forEach((l, i) => spanText(ctx, l, b.x + 5, b.y + 6 + i * tp,
@@ -3171,12 +3174,14 @@ function advanceConstruction(c, hammers) {
   showEvent('BUILT', { STRING0: c.name, STRING1: b.name });
 }
 
-// The rush-buy (@BUYME0 info / @BUYME1 confirm, width 160, live frame
-// 81_colony_build_prompt: "Cost to complete Docks: 1552$. Treasury: 1000$."):
-// pay gold to finish the construction target now. The engine's AMOUNT
-// formula is unread -- the flagged stand-in prices remaining hammers at 30$
-// and remaining tools at the market ask (the capture's 1552$ vs this
-// formula's 1560$ for a fresh Docks is the open calibration, Phase 4).
+// The rush-buy (@BUYME0 info / @BUYME1 confirm, width 160): pay gold to
+// finish the construction target now. The engine's AMOUNT formula is
+// unread; the stand-in prices remaining hammers at 26$ -- the census3 BUY
+// prompt is EXACT at that rate ("Cost to complete Docks: 1352$" = 52 x 26,
+// zero banked, tax 0, Explorer) -- and remaining tools at the market ask.
+// The older 81_colony_build_prompt frame ("1552$", game state unknown)
+// does not fit 26/hammer flat, so a second term (tax? difficulty?) is
+// still open. FLAGGED.
 // @CUSTOM "Which cargos shall our {Custom House} export?" -- the per-good
 // export toggle. The engine's picker format (runtime rows) is unread; the
 // port re-opens the single-pick popup per toggle, '*' marking exported
@@ -3200,7 +3205,7 @@ function rushBuy() {
   if (!b) return;
   const remH = Math.max(0, b.cost - c.hammers);
   const remT = Math.max(0, b.tools_x10 * 10 - c.stock[GOOD.TOOLS]);
-  const cost = 30 * remH + askPrice(GOOD.TOOLS) * remT;
+  const cost = 26 * remH + askPrice(GOOD.TOOLS) * remT;
   const S = { STRING0: b.name, NUMBER0: cost, NUMBER1: G.gold };
   if (cost > G.gold) { showEvent('BUYME0', S); return; }
   askEvent('BUYME1', S, (choice) => {
@@ -3429,7 +3434,10 @@ const STOCK_INK = 0x31, SOL_INK = 0x10, PANEL_INK = 0x33;
 // bar, cargo+caption, and cargo+caption+hammer strip. Which button selects
 // which mode is inferred from the icons, not cited.
 const VIEW_BTN = { x: 303, y: 132, w: 15, h: 13, pitch: 15 };
-const VIEW_BUILDINGS = 0, VIEW_UNITS = 1, VIEW_PRODUCTION = 2;
+// The multi-function view's three buttons, top to bottom (GAME_MANUAL.md
+// "Multi-Function View"): Production / Units / Build. The engine opens the
+// colony screen on Production (census3_colony's default frame).
+const VIEW_PRODUCTION = 0, VIEW_UNITS = 1, VIEW_BUILD = 2;
 
 function drawColony(ctx) {
   // TUTORIAL4 (func_02C5D4 @0x2C74A): the first Colony Screen visit.
@@ -4108,24 +4116,41 @@ function drawColonyDock(ctx, c) {
   }
 }
 
+// The BUY / CHANGE buttons of the Build view: white FONTTINY text at y=140
+// (BUY x219, CHANGE x273 -- census3_colony_view2 pixel positions) inside a
+// bordered plate. The plate metrics (2px pad, 1px border) are drawn to the
+// capture's look; the engine's own button chrome is unread, flagged.
+const BUILD_BTN = {
+  buy: { x: 216, y: 137, w: 18, h: 11 },
+  change: { x: 270, y: 137, w: 29, h: 11 },
+};
+function drawPanelButton(ctx, b, label) {
+  ctx.fillStyle = ink(1);
+  ctx.fillRect(b.x, b.y, b.w, b.h);
+  hollowRect(ctx, b.x, b.y, b.w, b.h, 0x0F);
+  FONT.tiny.center(ctx, label, b.x + (b.w >> 1), b.y + 3, lut(15));
+}
 // Right panel (207,130,95,48) plus the three view buttons beside it.
 function drawColonyPanel(ctx, c) {
-  const px = 209, py = 132;
-  if (G.colonyView === VIEW_BUILDINGS) {
-    FONT.tiny.draw(ctx, 'Buildings', px, py, lut(PANEL_INK));
-    c.buildings.slice(0, 5).forEach((b, i) =>
-      FONT.tiny.draw(ctx, b, px, py + 8 + i * 7, lut(SOL_INK)));
-    if (c.buildings.length > 5)
-      FONT.tiny.draw(ctx, `+${c.buildings.length - 5} more`, px, py + 8 + 5 * 7, lut(PANEL_INK));
-  } else if (G.colonyView === VIEW_UNITS) {
-    FONT.tiny.draw(ctx, 'Garrison', px, py, lut(PANEL_INK));
+  const cmisc = DATA.text.cmisc || [];
+  if (G.colonyView === VIEW_UNITS) {
+    // "Units Present" -- LABELS @CMISC row 1, centred dim-blue at y=132
+    // (census3_colony_view1; same ink as "No Ships In Port").
+    FONT.tiny.center(ctx, cmisc[1] || 'Units Present', 254, 132, lut(PANEL_INK));
     const inside = G.units.filter(u => u.x === c.x && u.y === c.y);
-    if (!inside.length) FONT.tiny.draw(ctx, 'None', px, py + 9, lut(SOL_INK));
     inside.slice(0, 6).forEach((u, i) => {
       const [fw, fh] = frameSize('ICONS', u.icon);
-      sheetFrame(ctx, 'ICONS', u.icon, px + i * 15, py + 22 - fh);
-      nationPlate(ctx, px + i * 15, py + 10, ownerColour(u), u.orders);
+      sheetFrame(ctx, 'ICONS', u.icon, 209 + i * 15, 162 - fh);
+      nationPlate(ctx, 209 + i * 15, 150, ownerColour(u), u.orders);
     });
+  } else if (G.colonyView === VIEW_BUILD) {
+    // The Build view (census3_colony_view2): the construction target's name
+    // centred at y=132 in the panel ink ("Docks"; @MISC 32 "Nothing" when
+    // idle), BUY left / CHANGE right.
+    FONT.tiny.center(ctx, c.building || (DATA.text.misc || [])[32] || 'Nothing',
+                     254, 132, lut(PANEL_INK));
+    drawPanelButton(ctx, BUILD_BTN.buy, (DATA.text.ctitle || [])[2] || 'BUY');
+    drawPanelButton(ctx, BUILD_BTN.change, (DATA.text.ctitle || [])[3] || 'CHANGE');
   } else {
     drawProductionStrips(ctx, c);
   }
@@ -6224,8 +6249,10 @@ function attackVillage(v, u) {
 // one turn, so they queue.
 function fillTemplate(line, subs) {
   // %COUNTRY is the engine's own-nation substitution (@UNREST uses it).
+  // A '$' after the placeholder is KEPT: it is the gold-coin glyph the
+  // fonts carry ("1352$." renders with the coin, census3_buy_prompt).
   return line.replace(/%COUNTRY/g, DATA.nations[G.nation].country)
-             .replace(/%(STRING|NUMBER)(\d)\$?/g, (m, kind, n) => {
+             .replace(/%(STRING|NUMBER)(\d)/g, (m, kind, n) => {
     const v = subs[`${kind}${n}`];
     return v === undefined ? '' : String(v);
   });
@@ -6263,7 +6290,9 @@ const SPEAKER_DIPLO = /^(FOREIGNNOTAVAIL|DECLAREWAR|SIGNTREATY|WITHDRAW|THREATS|
 // MSS0: the colony-event wrapper func_032FE2 sets 0 @0x03300D; which keys
 // route through it is unread, so the colony production/food family here is
 // the port's reading of "colony-event popup".
-const SPEAKER_COLONY = /^(BUILT|NEWCOLONIST|CLEARCUT|USEDUPTOOLS|FOODLOW|FOOD\d|STARVE|SPOIL|NEEDTOOLS|WAREHOUSEFULL|CARGOREADY)/;
+// BUYME added 2026-08-08: the census3 BUY prompt wears the bonneted colony
+// advisor (census3_buy_prompt).
+const SPEAKER_COLONY = /^(BUILT|NEWCOLONIST|CLEARCUT|USEDUPTOOLS|FOODLOW|FOOD\d|STARVE|SPOIL|NEEDTOOLS|WAREHOUSEFULL|CARGOREADY|BUYME)/;
 function eventSpeaker(key) {
   // MSS0 and MSS5 were SWAPPED until the 2026-08-08 census run: the live
   // combat bulletin ("French defeat Dutch Colonists near Roanoke!") wears the
@@ -6283,31 +6312,34 @@ function eventSpeaker(key) {
 // The speaker sits at the screen's bottom-right UNDER the plaque -- the same
 // placement the village screen already uses for its chief portrait; the
 // engine's own landing pixel is runtime cel state (§2.7.1), not a literal.
-function drawSpeakerSheet(ctx, sheet) {
+function drawSpeakerSheet(ctx, sheet, box) {
   if (!sheet) return;
   const [pw, ph] = frameSize(sheet, 0);
   if (!pw) return;
   // The engine's landing pixel is runtime cel state -- no static coordinate
   // exists in the EXE (spec/ui/popups.md par.2.7.1). The port anchors each
   // family where the live captures put the figure: the MSS/MYR advisors
-  // top-anchored left of centre with the popup over their legs
-  // (60_landfall / 77 / 78_europe_setsail), the tribe figures full-height at
-  // the right edge (61_arawak_first_contact), the King centred. FLAGGED as a
-  // capture-anchored approximation.
+  // STANDING ON THE BOX when its rect is known -- centred on it, hands
+  // resting 4px behind its top edge (census3_buy_prompt: the bonneted
+  // advisor spans y~40..104 over the box at 104) -- else top-anchored left
+  // of centre (60_landfall); the tribe figures full-height at the right
+  // edge (61_arawak_first_contact), the King centred. FLAGGED as a
+  // capture-anchored approximation (per-frame cel variance remains).
   if (/^IND/.test(sheet)) sheetFrame(ctx, sheet, 0, W - pw - 20, H - ph - 8);
   else if (/^KING/.test(sheet)) sheetFrame(ctx, sheet, 0, 160 - (pw >> 1), 6);
+  else if (box) sheetFrame(ctx, sheet, 0,
+                           box.x + (box.w >> 1) - (pw >> 1),
+                           Math.max(0, box.y - ph + 4));
   else sheetFrame(ctx, sheet, 0, 120 - (pw >> 1), 8);
 }
-// Set while endTurn runs: popups born in turn processing anchor on the lower
-// centre (y=130) the census turn-event frames measure (see layoutDialog).
-const TURN_LOW = { on: false };
 function showEvent(key, subs, speaker) {
   const t = DATA.events[key];
   if (!t) return;
   // The GAME.TXT key rides along for the test suite and debugging -- the
-  // renderer never reads it.
+  // renderer never reads it. (The vertical anchor is derived from the
+  // speaker at draw time -- see drawEvent/layoutDialog.)
   G.eventQueue.push({ key, lines: t.body.map(l => fillTemplate(l, subs || {})),
-                      width: t.width, small: !!t.small, low: TURN_LOW.on,
+                      width: t.width, small: !!t.small,
                       speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
 }
 // Ad-hoc notice popup: port phrasing, NOT a GAME.TXT event -- used where the
@@ -6354,7 +6386,7 @@ function askEvent(key, subs, onDone, optsKey, speaker) {
   G.dialog = {
     body: t.body.map(l => fillTemplate(l, subs || {})),
     tail: rows, width: t.width, onDone, opts: rows,
-    small: !!t.small, low: TURN_LOW.on,
+    small: !!t.small,
     speaker: speaker !== undefined ? speaker : eventSpeaker(key),
     // Same one-based @default as openDialog above.
     sel: t.default && /^\d+$/.test(t.default)
@@ -6374,12 +6406,13 @@ function drawEvent(ctx) {
   for (const l of e.lines)
     cw = Math.max(cw, f.width(l.replace(/[{}]/g, '')) + 10);
   const w = cw + 6, h = 6 + e.lines.length * tp + 3;
-  // Turn-processing popups centre on y=130 (census_turnevent_0: box top 119
-  // for the two-line bulletin), everything else on 100 -- same capture
-  // anchors as layoutDialog. FLAGGED (positioning code unread).
-  const x = Math.round(160 - w / 2), y = Math.round((e.low ? 130 : 100) - h / 2);
+  // A popup with an adviser figure centres on y=130 (census_turnevent_0:
+  // box top 119 for the two-line bulletin), figureless ones on 100 -- the
+  // same speaker rule as layoutDialog. FLAGGED (positioning code unread).
+  const low = e.speaker && /^(MSS|MYR)/.test(e.speaker);
+  const x = Math.round(160 - w / 2), y = Math.round((low ? 130 : 100) - h / 2);
   const ik = dialogInks();
-  drawSpeakerSheet(ctx, e.speaker);
+  drawSpeakerSheet(ctx, e.speaker, { x, y, w, h });
   plaque(ctx, x, y, w, h, 'WOODTILE');
   e.lines.forEach((l, i) => spanText(ctx, l, x + 5, y + 6 + i * tp,
                                      ik.base, ik.hi, f));
@@ -10686,12 +10719,6 @@ function drawPedia(ctx) {
 
 // ---------------------------------------------------------------- turn
 function endTurn() {
-  // Everything the turn pipeline posts anchors on the lower popup centre
-  // (TURN_LOW -> showEvent/askEvent 'low'), per the census turn-event frames.
-  TURN_LOW.on = true;
-  try { endTurnBody(); } finally { TURN_LOW.on = false; }
-}
-function endTurnBody() {
   G.turn += 1;
   // Year cadence (§20.1): 1 turn = 1 year before 1600; from 1600 seasons toggle
   // and the year steps every second turn.
@@ -12168,6 +12195,12 @@ function onClick(mx, my) {
       for (let k = 0; k < 3; k++) {
         if (hit(mx, my, { x: VIEW_BTN.x, y: VIEW_BTN.y + k * VIEW_BTN.pitch,
                           w: VIEW_BTN.w, h: VIEW_BTN.h })) { G.colonyView = k; return; }
+      }
+      // Build view: BUY rushes the target (@BUYME0/1), CHANGE opens the
+      // construction picker (census3_colony_view2's two buttons).
+      if (G.colonyView === VIEW_BUILD) {
+        if (hit(mx, my, BUILD_BTN.buy)) { rushBuy(); return; }
+        if (hit(mx, my, BUILD_BTN.change)) { openBuildPicker(); return; }
       }
       // "To see a numeric representation, click anywhere in the multi-
       // function view after you have clicked the Production button"

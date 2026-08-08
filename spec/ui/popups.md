@@ -91,21 +91,23 @@ literal `@x`/`@y` when the GAME.TXT section carries them; `@width` is a **floor*
 `26 8b 47 16 d1 f8 2d 64 00 f7 d8` (Y-center), 0x06D363 `d1 e0 26 03 47 46`
 (rows·2 + border), 0x1F989 `57 49 44 54 48 00` ("WIDTH").
 
-> **AMENDED 2026-08-08 (capture evidence): the TURN-PROCESSING anchor is
-> LOWER.** Every census turn-event frame centres its box on **y≈130**, not
-> 100 — `census_turnevent_0` (2-line bulletin, box top 119), `_1/_2/_5`
-> (asks, box ≈92..169), `_3` (≈82..179), `census_cargoready` (≈102..159) —
-> while menu dialogs and immediate responses centre on 100 as the formula
-> says (`census2_pick_music` 30..169, `census2_find_colony` 80..116,
-> `census_noentry` 73..126). The 100-relative formula above is byte-true
-> against its window struct; the turn pipeline evidently supplies a lower
-> base. The +30 mechanism is UNREAD — the 130 centre is capture-measured,
-> FLAGGED. Separately, the `func_004A80` "~120-tick timeout" reading is
+> **AMENDED 2026-08-08 (capture evidence): a popup WITH AN ADVISER FIGURE
+> centres LOWER, on y≈130.** Every census frame carrying a figure sits
+> there — `census_turnevent_0` (naval officer, box top 119), `_1/_2/_5`
+> (asks ≈92..169), `_3` (≈82..179), `census_cargoready` (≈102..159), and
+> the CLICK-OPENED `census3_buy_prompt` (colony advisor, box 104..158),
+> which rules out the earlier "turn-processing supplies a lower base"
+> reading — while every figureless popup centres on 100 as the formula
+> says (`census2_pick_music`, `census2_find_colony`, `census_noentry`).
+> The drop gives the figure headroom; the figure itself stands ON the box
+> (centred, hands ~4px behind its top edge in the buy-prompt frame; the
+> per-frame cel variance stays flagged). The positioning code is UNREAD —
+> the 130 centre is capture-measured, FLAGGED; KING*/IND* boxes are
+> unmeasured. Separately, the `func_004A80` "~120-tick timeout" reading is
 > **OVERTURNED**: the same captures hold popups on screen through
-> multi-second harness waits, and each message waits for a key/click, one at
-> a time (user-confirmed against the running game). 0x78=120 in that loop is
-> NOT a popup lifetime; the 2-line turn bulletin's box TOP is y=119—120,
-> which that constant more plausibly feeds. TBD what 0x78 actually is.
+> multi-second harness waits, and each message waits for a key/click, one
+> at a time (user-confirmed against the running game). 0x78=120 in that
+> loop is NOT a popup lifetime — TBD what it actually is.
 
 > **Note on the older `func_067DC8` "popup-from-cursor" path.** `POPUP_TEMPLATE_AUDIT.md`
 > documents a separate 65-byte rect-setter `func_067DC8` @0x067DC8 that derives a
