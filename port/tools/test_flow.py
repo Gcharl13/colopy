@@ -1533,6 +1533,66 @@ SCRIPT = """() => {
     out.wire6 = w6;
   }
 
+  // ---- the colony worker layer, dialog speakers, crash guards ----
+  {
+    const w7 = {};
+    beginGame(); G.screen = 'map';
+    const sh = G.units[0];
+    G.colonies.push({ name: 'Porto', x: sh.x, y: sh.y, nation: G.nation,
+                      colonists: [{ type: 'Colonists', job: 'Blacksmith',
+                                    cell: null, profession: null }],
+                      stock: DATA.cargo.map(() => 0),
+                      buildings: STARTING_BUILDINGS.concat(["Blacksmith's House"]),
+                      hammers: 0, building: null, sol: 0 });
+    G.colony = G.colonies.length - 1;
+    // A manned building draws its worker + production; the same colony with
+    // the man idle draws neither -- the two frames must differ inside the
+    // building field (0,8,199,120).
+    const shot = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 320; cv.height = 200;
+      const g = cv.getContext('2d');
+      drawColony(g);
+      return g.getImageData(0, 8, 199, 120).data;
+    };
+    G.screen = 'colony';
+    const manned = shot();
+    G.colonies[G.colony].colonists[0].job = null;
+    const idle = shot();
+    G.colonies[G.colony].colonists[0].job = 'Blacksmith';
+    let diff = 0;
+    for (let i = 0; i < manned.length; i += 4)
+      if (manned[i] !== idle[i] || manned[i + 1] !== idle[i + 1]) diff++;
+    w7.workerLayer = diff > 50;
+    G.screen = 'map'; G.eventQueue.length = 0;
+    // Capture-pinned dialog speakers.
+    openDialog('LANDFALL', () => {});
+    w7.landfallSpeaker = G.dialog.speaker === 'MSS3';
+    G.dialog = null;
+    openDialog('SAILAWAY', () => {});
+    w7.sailSpeaker = G.dialog.speaker === 'MSS0';
+    G.dialog = null;
+    // The input guard reports and clears the transient drag state.
+    G.drag = { screen: 'colony' };
+    guarded(() => { throw new Error('guard-probe'); })();
+    w7.guardCatches = _frameErr === 'guard-probe' && G.drag === null;
+    _frameErr = null;
+    // The load fixup re-establishes invariants a stale save may lack.
+    saveGame();
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
+    delete raw.G.colonies[raw.G.colonies.length - 1].stock;
+    raw.G.dockUnits = null;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(raw));
+    G.eventQueue.length = 0;
+    loadGame();
+    const lc = G.colonies[G.colonies.length - 1];
+    w7.loadFixup = Array.isArray(lc.stock) &&
+                   lc.stock.length === DATA.cargo.length &&
+                   Array.isArray(G.dockUnits);
+    G.eventQueue.length = 0;
+    out.wire7 = w7;
+  }
+
   // ---- Phase 5: the scripted end-to-end playtest ----
   // One full game driven through the PUBLIC flows: fresh Discoverer game ->
   // tutorial -> landfall -> founding -> colony work -> the Europe trade run
@@ -3645,6 +3705,9 @@ def main():
         ("end-to-end playtest: tutorial, founding, work, the Europe muskets "
          "run, declaration, the won war, the Hall of Fame, the lost war",
          all(r["playtest"].values()), r["playtest"]),
+        ("colony worker layer draws, dialog speakers pinned, input guard "
+         "catches, stale-save fixup",
+         all(r["wire7"].values()), r["wire7"]),
     ]
     bad = 0
     for name, ok, got in checks:

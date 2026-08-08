@@ -179,6 +179,20 @@ dispatcher `func_06E3D0` @0x06E3D0 fires whichever channels are `≥ 0`:
 | missionary | `[0x1F60]` | `func_06BF3C` @0x06BF3C | `0..3` → `MYR0..MYR3.SS` |
 | (blitter) | — | `func_06BF66` @0x06BF66 | makes a cel from the loaded sheet handle + blits it; **no box-relative x/y math** (see §2.7.1) |
 
+**Sheet identities (frame 0, asset-visual + capture, A/B):** MSS0 = blue naval
+officer with epaulettes — **worn by the @SAILAWAY ask** (capture
+`78_europe_setsail_portrait.png`); MSS1 = tricorn colonial with musket (the
+`push 1` @FOREIGNNOTAVAIL advisor); MSS2 = gold-doublet merchant, purple cap
+(the price/trade wrapper's 2); MSS3 = coonskin scout shading his eyes with a
+long rifle — **worn by the landfall asks** (captures `60_landfall_dialog.png` /
+`77_landfall_portrait.png`; also the `push 3` siting warnings); MSS4 = black-hat
+priest (the Jesuit channel 4); MSS5 = woman in a white bonnet; KING1 = the
+red-coated King with hound; MYR0 = red-robed judge wig, MYR1 = blue-coated
+grey wig. Placement on screen stays runtime cel state (§2.7.1) — the captures
+show the MSS figures top-anchored left of centre with the popup over their
+legs, and the IND tribe figures full-height at the right edge
+(`61_arawak_first_contact.png`).
+
 ### 2.7.1 Speaker/special-sprite POSITION math — **RESOLVED (B): no box-relative formula**
 
 The four channel functions take **only the popup-descriptor far-pointer** (`[bp+4]/[bp+6]`,

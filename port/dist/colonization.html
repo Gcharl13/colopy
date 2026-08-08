@@ -1022,6 +1022,12 @@ function drawDialog(ctx) {
     FONT.tiny.draw(ctx, d.entry + caret, fx + 3, seed + 3, lut(ik.hi));
   }
 }
+// Capture-pinned dialog speakers: the landfall ask wears the MSS3 scout
+// (60_landfall_dialog / 77_landfall_portrait) and the set-sail ask the MSS0
+// naval officer (78_europe_setsail_portrait). No other DATA.dialogs key has a
+// captured portrait, so none is invented.
+const DIALOG_SPEAKER = { LANDHO: 'MSS3', LANDFALL: 'MSS3', LANDFALL2: 'MSS3',
+                         SAILAWAY: 'MSS0', SAILHOME: 'MSS0' };
 function openDialog(key, onDone, prefill) {
   const t = DATA.dialogs[key];
   // A numeric @default names the highlighted option row; a text @default
@@ -1030,6 +1036,7 @@ function openDialog(key, onDone, prefill) {
   const numeric = typeof t.default === 'string' && /^\d+$/.test(t.default);
   G.dialog = {
     body: t.body, tail: t.tail, width: t.width, onDone,
+    speaker: DIALOG_SPEAKER[key] || null,
     opts: numeric ? t.tail : null,
     // @default names the highlighted row ONE-BASED: @ABANDON's `@default=2`
     // over two rows is "Never! That would be folly." -- the engine highlights
@@ -3392,6 +3399,48 @@ function drawColony(ctx) {
       return;
     }
     sheetFrame(ctx, 'BUILDING', buildingFrame(c, id), px, py + 8);
+  });
+  // The WORKER + PRODUCTION layer, on top of the plots (spec/ui/
+  // colony_screen.md par.0.4, capture-anchored to the live Jamestown frame):
+  // a manned building shows its workers standing in the doorway and its
+  // per-turn output as a row of commodity icons under the roof.
+  //   * production icons at (px + 6j, py + 9) -- the capture's three hammers
+  //     at x offsets 0/6/12, y = blit+1, icon = ICONS 54 (PROD_HAMMER_ICON)
+  //     for hammers, 0x16+good for goods, 62 bells / 56 crosses.
+  //   * the first figure at (px + fw/2 + 5, py + 8 + fh - 13): both axes
+  //     solve the capture's (42,111) against the shop's 44x22 frame --
+  //     bottom-anchored, the feet standing 4px proud of the sprite base.
+  //   * extra workers step 9px left (figure width 8 + 1) -- the capture
+  //     holds ONE worker, so the multi-worker pitch and the figure-choice
+  //     rule (his specialty figure, else his job's own, else 81) are the
+  //     port's reading. FLAGGED.
+  PLOTS.forEach(([px, py], i) => {
+    const id = present[i];
+    if (id < 0) return;
+    const name = DATA.buildings[id] && DATA.buildings[id].name;
+    if (!name || !c.buildings.includes(name)) return;
+    const job = jobForBuilding(name);
+    if (!job) return;
+    const crew = c.colonists.filter(p => !p.cell && p.job === job).slice(0, 3);
+    if (!crew.length) return;
+    const [fw, fh] = frameSize('BUILDING', buildingFrame(c, id));
+    const g = JOB_GOOD[jobIndex(job)];
+    const icon = g >= 0 ? 0x16 + g
+               : g === HAMMERS ? PROD_HAMMER_ICON
+               : g === BELLS ? 62 : g === CROSSES ? 56 : null;
+    if (icon !== null) {
+      const made = crew.reduce((n, p) => n + indoorYield(c, p), 0);
+      for (let j = 0; j < Math.min(made, 8); j++)
+        sheetFrame(ctx, 'ICONS', icon, px + 6 * j, py + 9);
+    }
+    crew.forEach((p, k) => {
+      const fig = (p.profession && professionIconByName(p.profession));
+      const fallback = professionIcon(jobIndex(job));
+      sheetFrame(ctx, 'ICONS',
+                 fig !== null && fig !== undefined ? fig
+                   : (fallback !== null && fallback !== undefined ? fallback : 81),
+                 px + (fw >> 1) + 5 - 9 * k, py + 8 + fh - 13);
+    });
   });
 
   // Title strip (0,0,320,7): name, season, year, gold -- green FONTTINY.
@@ -6079,7 +6128,17 @@ function eventSpeaker(key) {
 function drawSpeakerSheet(ctx, sheet) {
   if (!sheet) return;
   const [pw, ph] = frameSize(sheet, 0);
-  if (pw) sheetFrame(ctx, sheet, 0, W - pw, H - ph);
+  if (!pw) return;
+  // The engine's landing pixel is runtime cel state -- no static coordinate
+  // exists in the EXE (spec/ui/popups.md par.2.7.1). The port anchors each
+  // family where the live captures put the figure: the MSS/MYR advisors
+  // top-anchored left of centre with the popup over their legs
+  // (60_landfall / 77 / 78_europe_setsail), the tribe figures full-height at
+  // the right edge (61_arawak_first_contact), the King centred. FLAGGED as a
+  // capture-anchored approximation.
+  if (/^IND/.test(sheet)) sheetFrame(ctx, sheet, 0, W - pw - 20, H - ph - 8);
+  else if (/^KING/.test(sheet)) sheetFrame(ctx, sheet, 0, 160 - (pw >> 1), 6);
+  else sheetFrame(ctx, sheet, 0, 120 - (pw >> 1), 8);
 }
 function showEvent(key, subs, speaker) {
   const t = DATA.events[key];
@@ -10195,6 +10254,24 @@ function loadGame() {
     G.rumoursDone = new Set(s.rumours || []);
     if (!G.tradeTons) { G.tradeTons = DATA.cargo.map(() => 0); G.tradeGold = DATA.cargo.map(() => 0); }
     G.openMenu = -1; G.dialog = null; G.colonyPopup = null; G.euroMenu = null;
+    // Saves are version-2 across MANY builds, so a stale one may predate
+    // fields the live code relies on. Re-establish the invariants instead of
+    // letting the first draw/interaction throw on them.
+    G.drag = null; G.dragArm = null; G.goTo = null; G.combat = null;
+    for (const k of ['units', 'colonies', 'europe', 'dockUnits', 'natives',
+                     'villages', 'tribes', 'rivals', 'refUnits', 'routes',
+                     'boycotts', 'eventQueue', 'fathersOwned'])
+      if (!Array.isArray(G[k])) G[k] = [];
+    for (const c of G.colonies) {
+      if (!Array.isArray(c.stock)) c.stock = DATA.cargo.map(() => 0);
+      while (c.stock.length < DATA.cargo.length) c.stock.push(0);
+      if (!Array.isArray(c.buildings)) c.buildings = [];
+      if (!Array.isArray(c.colonists)) c.colonists = [];
+    }
+    for (const u of [...G.units, ...G.europe])
+      if (u && u.hold && !Array.isArray(u.hold)) u.hold = [];
+    if (!G.ref || typeof G.ref !== 'object') G.ref = {};
+    if (!(G.rumoursDone instanceof Set)) G.rumoursDone = new Set();
     notice('Game loaded.');
     return true;
   } catch (e) { notice('Could not load.'); return false; }
@@ -12236,8 +12313,32 @@ function frame() {
   // exactly that). Log it once per distinct message and keep drawing.
   try { frameBody(); } catch (e) {
     if (e && e.message !== _frameErr) { _frameErr = e.message; console.error(e); }
+    // A frameBody throw usually happens BEFORE the offscreen canvas reaches
+    // the visible one, so the screen would freeze on the last good frame with
+    // the error invisible in the console. Paint the message straight onto the
+    // VISIBLE canvas so a player sees what broke instead of a dead game.
+    try {
+      const cv = document.getElementById('screen');
+      const c2 = cv.getContext('2d');
+      c2.fillStyle = 'rgba(120,0,0,0.92)';
+      c2.fillRect(0, 0, cv.width, 34);
+      c2.fillStyle = '#fff';
+      c2.font = '12px monospace';
+      c2.fillText('PORT ERROR (please report): ' + String(_frameErr).slice(0, 110), 6, 14);
+      c2.fillText('The game keeps running underneath - press Escape, or reload.', 6, 28);
+    } catch (e2) { /* the reporter must never throw */ }
   }
   requestAnimationFrame(frame);
+}
+// Input errors must not strand the input state (a stuck drag, a held button):
+// report like a frame error, then reset the transient pointer state.
+function guarded(fn) {
+  return function (...args) {
+    try { return fn.apply(this, args); } catch (e) {
+      if (e && e.message !== _frameErr) { _frameErr = e.message; console.error(e); }
+      G.drag = null; G.dragArm = null;
+    }
+  };
 }
 let _frameErr = null;
 let _popupHead = null, _popupAge = 0;
@@ -12296,7 +12397,7 @@ async function main() {
   ctx.imageSmoothingEnabled = false;
   resize();
   window.addEventListener('resize', resize);
-  window.addEventListener('keydown', onKey);
+  window.addEventListener('keydown', guarded(onKey));
   const cv = document.getElementById('screen');
   const toLogical = (ev) => {
     const r = cv.getBoundingClientRect();
@@ -12307,15 +12408,15 @@ async function main() {
   // The pointer trio sits ALONGSIDE the click path, not in place of it: every
   // click binding in onClick still works, and a drag is what the click event
   // cannot express. See the drag-and-drop section for the engine model.
-  cv.addEventListener('pointerdown', (ev) => {
+  cv.addEventListener('pointerdown', guarded((ev) => {
     const [x, y] = toLogical(ev);
     PTR.down = true; PTR.right = ev.button === 2;
     PTR.x = PTR.downX = x; PTR.y = PTR.downY = y;
     PTR.moved = false;
     try { cv.setPointerCapture(ev.pointerId); } catch (_) { /* not all inputs */ }
     onPointerDown(x, y, PTR.right, ev.shiftKey);
-  });
-  cv.addEventListener('pointermove', (ev) => {
+  }));
+  cv.addEventListener('pointermove', guarded((ev) => {
     const [x, y] = toLogical(ev);
     if (x === PTR.x && y === PTR.y) return;
     // One pixel counts as moved -- @0xD16F compares the poll-start snapshot
@@ -12323,20 +12424,20 @@ async function main() {
     PTR.x = x; PTR.y = y;
     if (PTR.down) PTR.moved = true;
     onPointerMove(x, y);
-  });
-  cv.addEventListener('pointerup', (ev) => {
+  }));
+  cv.addEventListener('pointerup', guarded((ev) => {
     const [x, y] = toLogical(ev);
     PTR.x = x; PTR.y = y;
     onPointerUp(x, y, PTR.right);
     PTR.down = false; PTR.right = false;
-  });
+  }));
   cv.addEventListener('pointercancel', () => { PTR.down = false; cancelDrag(); });
   // A right press cancels a drag, so the browser menu must not eat it.
   cv.addEventListener('contextmenu', (ev) => ev.preventDefault());
-  cv.addEventListener('click', (ev) => {
+  cv.addEventListener('click', guarded((ev) => {
     if (PTR.suppressClick) { PTR.suppressClick = false; return; }
     const [x, y] = toLogical(ev); onClick(x, y);
-  });
+  }));
   cv.addEventListener('touchstart', (ev) => {
     const [x, y] = toLogical(ev); onClick(x, y); ev.preventDefault();
   }, { passive: false });

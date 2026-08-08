@@ -9261,3 +9261,57 @@ COMPLETION_PLAN Phase 5, all four items:
    tag `port-v1.0`, artifact republished.
 
 Suite 236/236 twice; shots 47/47; render-diff 15/15; ledger quoted above.
+
+## 2026-08-08c — User defect batch 2: colony worker layer, dialog speakers, crash armor
+
+User report: ship-loading "crashes everything"; colonists in buildings and
+their production invisible on the colony screen; popups missing advisor
+sprites / not presenting together.
+
+- **Colony worker + production layer BUILT** (the visible gap): each manned
+  building now draws its workers' profession figures standing in the plot
+  and its per-turn output as a row of commodity icons under the roof --
+  spec/ui/colony_screen.md par.0.4's capture-anchored geometry (production
+  icons at plot+(6j,9), the figure bottom-anchored at
+  (px+fw/2+5, py+8+fh-13), both axes solving the live Jamestown frame's
+  measured (42,111) against the shop's 44x22 sprite). Production count =
+  the sum of the crew's indoorYield, the same number the turn banks. The
+  multi-worker 9px pitch and the figure-choice rule (specialty figure,
+  else the job's own, else 81) are the port's reading -- FLAGGED (the
+  capture holds one worker). The 1653_colony render-diff IMPROVED
+  (26301 -> 25599) because the live capture has the workers too.
+- **Dialog speakers capture-pinned**: openDialog never carried a speaker,
+  so the landfall and set-sail asks drew bare. The speaker-sheet contact
+  print identifies MSS3 = the coonskin scout (the landfall figure in
+  60/77) and MSS0 = the blue naval officer (the @SAILAWAY figure in 78);
+  DIALOG_SPEAKER pins exactly those five keys (LANDHO/LANDFALL/LANDFALL2
+  -> MSS3, SAILAWAY/SAILHOME -> MSS0). No other dialog key has a captured
+  portrait; none is invented. Sheet identities added to
+  spec/ui/popups.md par.2.7.
+- **Speaker placement re-anchored to the captures**: the engine's landing
+  pixel is runtime cel state (par.2.7.1, no static coordinate), and the
+  port had parked every figure bottom-right. Captures place the MSS/MYR
+  advisors top-anchored left of centre (popup over the legs), the IND
+  tribe figures full-height at the right edge, the King centred -- the
+  port now does the same. FLAGGED approximation.
+- **The reported loading crash did NOT reproduce** after direct flows
+  (colony drag->HOWMUCH1 typed-digits, Load Cargo picker, Europe
+  market->ship), 600+ monkey actions over the colony/Europe/1653-save
+  load surfaces, and loaded-hold renders of every screen -- all clean.
+  Two hardening measures ship instead: (1) a frameBody throw now paints a
+  RED ERROR BANNER on the visible canvas (before, the loop's catch kept
+  running but the screen froze on the last good frame with the error
+  visible only in the console -- indistinguishable from a crash); input
+  handlers get the same guard plus a drag-state reset. (2) loadGame
+  re-establishes state invariants a stale v2 save may lack (arrays,
+  16-slot stocks, holds; transient drag/goTo/combat cleared) -- localStorage
+  saves cross build generations and are the one surface the probes cannot
+  reproduce. If the crash recurs, the banner names the site.
+- Popup queue semantics reviewed against the report "popups don't all
+  come at once": presentation is serial-modal with any-key/click advance
+  and the byte-cited 120-tick auto-dismiss (func_004A80) -- this matches
+  the engine; queue mechanics verified sound (only beginGame clears). No
+  change; the bare-popup fix above is the visible-wrongness candidate.
+
+Suite 237/237 (new wire7: worker layer draws, speaker pins, guard
+catches, stale-save fixup); shots 47/47; render-diff 15/15.
