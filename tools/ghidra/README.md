@@ -151,17 +151,37 @@ PATTERN B — table base + slot*stride, base folded into the displacement
 In the Listing, `G` (Go To) → the address, then `T`
 (`Data > Choose Data Type`) → type e.g. `ColonyRecord[16]`.
 
-| Table | DGROUP | **Go To this** | Runtime count held in |
-|---|---|---|---|
-| `ColonyRecord[]` | `0x5D46` | `0x205D46` | `g_colony_count` `[0x539E]` |
-| `UnitRecord[]` | `0x3144` | `0x203144` | `g_unit_count` `[0x539C]` |
-| `PowerRecord[4]` | `0x8808` | `0x208808` | fixed 4 |
-| `NativeSettlement[]` | `0x54EC` | `0x2054EC` | `g_settlement_count` `[0x539A]` |
-| `AIPersonality[4]` | `0x540E` | `0x20540E` | fixed 4 |
+**Do not compute the addresses by hand — read them off the script's output.**
+When it runs it prints exactly this, in the program's own address format:
 
-These tables are BSS — past the end of the file image — which is why the
-script creates the synthetic `DGROUP` block at `0x200000`; the third column
-is `0x200000 + the DGROUP offset`, and that is where you apply the type.
+```
+DGROUP block created at 00080000 (0x80000)
+================================================================
+APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)
+================================================================
+  ColonyRecord[]     DS:0x5D46  ->  00085D46     [g_colony_count, stride 0xCA]
+  UnitRecord[]       DS:0x3144  ->  00083144     [g_unit_count, stride 0x1C]
+  PowerRecord[]      DS:0x8808  ->  00088808     [fixed 4, stride 0x13C]
+  ...
+```
+
+Copy the right-hand column verbatim into Go To. Two reasons not to derive it
+yourself:
+
+- a 16-bit real-mode program uses **segmented** addresses (`segment:offset`),
+  so a flat hex number may not resolve in Go To at all — the script prints
+  whatever form your program actually uses;
+- the DGROUP block's base is chosen at run time (see below), so the offsets
+  depend on where it landed.
+
+These tables are BSS — past the end of the file image — so the script creates
+a synthetic `DGROUP` block for them. It is placed at **`0x80000`**: just past
+the ~495 KB file and inside the 1 MB real-mode range. (An earlier version
+used `0x200000`, which is *outside* x86 real-mode address space entirely, so
+block creation failed and none of these addresses existed. If your run
+predates that fix, re-run the script.) If the block cannot be created the
+script now says so loudly and lists what it tried, rather than failing
+quietly.
 
 **On the element count:** it is a display convenience, not a correctness
 requirement. The counts are runtime values (zero in a static dump), and the
@@ -183,12 +203,15 @@ function as `colony->population`.
 
 The four current-record globals:
 
-| Global | DGROUP | Go To | Type as |
-|---|---|---|---|
-| `g_current_colony_ptr` | `0x8542` | `0x208542` | `ColonyRecord *` |
-| `g_current_power_ptr` | `0x84FC` | `0x2084FC` | `PowerRecord *` |
-| `g_active_settlement_ptr` | `0x8D4A` | `0x208D4A` | `NativeSettlement *` |
-| `g_active_tribe_data_ptr` | `0x8D4E` | `0x208D4E` | (TribeData, not yet mapped) |
+| Global | DGROUP | Type as |
+|---|---|---|
+| `g_current_colony_ptr` | `0x8542` | `ColonyRecord *` |
+| `g_current_power_ptr` | `0x84FC` | `PowerRecord *` |
+| `g_active_settlement_ptr` | `0x8D4A` | `NativeSettlement *` |
+| `g_active_tribe_data_ptr` | `0x8D4E` | (TribeData, not yet mapped) |
+
+The script prints the resolved address for the first three under
+`RECORD POINTERS to retype:` — again, copy rather than compute.
 
 **16-bit pointer caveat.** These hold 2-byte *near* offsets into DGROUP. If
 your program's compiler spec makes a `ColonyRecord *` 4 bytes (far), typing

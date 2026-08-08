@@ -109,8 +109,15 @@ def main():
     globs.sort(key=lambda g: g["ds"])
 
     # ---------------------------------------------------------------- emit
+    tables = [{"name": n, "ds": base, "stride": stride,
+               "count": ("g_colony_count" if n == "ColonyRecord" else
+                         "g_unit_count" if n == "UnitRecord" else
+                         "g_settlement_count" if n == "NativeSettlement" else
+                         "fixed 4")}
+              for n, base, stride, _s, _f in RECORDS]
+
     data = {"funcs": funcs, "pages": pages, "globals": globs,
-            "records": syms["record_windows"]}
+            "records": syms["record_windows"], "tables": tables}
 
     body = SCRIPT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
     OUT_PY.write_text(body)
@@ -347,7 +354,14 @@ SCRIPT_TEMPLATE = r'''# VICEROY.EXE symbol import for Ghidra  (GENERATED — do 
 # @category Colonization
 
 MZ_LOAD = False          # True if imported as MS-DOS Executable rather than raw
-DGROUP_BLOCK_ADDR = 0x200000   # synthetic home for the BSS half of DGROUP
+
+# Synthetic home for the BSS half of DGROUP.  MUST be a valid address in the
+# program's address space: x86 real mode tops out near 1 MB, so a "safely
+# high" value like 0x200000 is NOT addressable and block creation fails.
+# The file itself is ~495 KB (0x78D3E), so 0x80000 sits just past it and
+# inside the 1 MB real-mode range.  Fallbacks are tried automatically.
+DGROUP_BLOCK_ADDR = 0x80000
+DGROUP_FALLBACKS = (0x80000, 0x90000, 0xF0000, 0x200000)
 
 import json
 
@@ -430,16 +444,39 @@ def main():
                 pass
         gb += 1
 
-    # BSS half: give it a block of its own so the names exist somewhere
-    try:
-        base = toAddr(DGROUP_BLOCK_ADDR)
-        if mem.getBlock(base) is None:
-            mem.createUninitializedBlock("DGROUP", base, 0x10000, False)
+    # BSS half: give it a block of its own so the names exist somewhere.
+    dg = None
+    existing = mem.getBlock("DGROUP")
+    if existing is not None:
+        dg = existing.getStart()
+        print("DGROUP block already present at %s" % dg)
+    else:
+        errs = []
+        for cand in DGROUP_FALLBACKS:
+            try:
+                base = toAddr(cand)
+                if base is None:
+                    errs.append("0x%X: toAddr returned None" % cand)
+                    continue
+                mem.createUninitializedBlock("DGROUP", base, 0x10000, False)
+                dg = base
+                print("DGROUP block created at %s (0x%X)" % (dg, cand))
+                break
+            except Exception as e:
+                errs.append("0x%X: %s" % (cand, e))
+        if dg is None:
+            print("!! COULD NOT CREATE THE DGROUP BLOCK - the record tables")
+            print("!! will have no addresses.  Attempts:")
+            for e in errs:
+                print("     %s" % e)
+
+    if dg is not None:
         for g in DATA["globals"]:
             if not g["init"]:
-                createLabel(toAddr(DGROUP_BLOCK_ADDR + g["ds"]), g["n"], True)
-    except Exception as e:
-        print("DGROUP block skipped: %s" % e)
+                try:
+                    createLabel(dg.add(g["ds"]), g["n"], True)
+                except Exception:
+                    pass
 
     # ---- overlay page bookmarks ------------------------------------------
     pages = 0
@@ -464,9 +501,39 @@ def main():
     print("globals in-file    : %d" % gi)
     print("globals in DGROUP  : %d" % gb)
     print("overlay bookmarks  : %d" % pages)
+    # ---- the addresses you actually need, in THIS program's own format ----
+    # Do not compute these by hand: a 16-bit real-mode program uses segmented
+    # addresses (segment:offset), so a flat hex number will not resolve in
+    # Go To.  Copy the right-hand column verbatim.
+    print("")
+    print("=" * 64)
+    print("APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)")
+    print("=" * 64)
+    if dg is None:
+        print("  unavailable - the DGROUP block was not created (see above)")
+    else:
+        for t in DATA["tables"]:
+            try:
+                a = dg.add(t["ds"])
+            except Exception as e:
+                print("  %-18s DS:0x%04X  -> ERROR %s" % (t["name"], t["ds"], e))
+                continue
+            print("  %-18s DS:0x%04X  ->  %s     [%s, stride 0x%X]"
+                  % (t["name"] + "[]", t["ds"], a, t["count"], t["stride"]))
+        print("")
+        print("RECORD POINTERS to retype:")
+        for nm, ds, ty in (("g_current_colony_ptr", 0x8542, "ColonyRecord *"),
+                           ("g_current_power_ptr", 0x84FC, "PowerRecord *"),
+                           ("g_active_settlement_ptr", 0x8D4A,
+                            "NativeSettlement *")):
+            try:
+                print("  %-24s DS:0x%04X  ->  %s   as %s"
+                      % (nm, ds, dg.add(ds), ty))
+            except Exception:
+                pass
     print("")
     print("Next: File > Parse C Source > tools/ghidra/viceroy_types.h")
-    print("then retype the record pointers (g_current_colony_ptr -> ColonyRecord*).")
+    print("(clean profile: our header only, empty options, 16-bit program)")
 
 
 main()
