@@ -6084,7 +6084,9 @@ function drawSpeakerSheet(ctx, sheet) {
 function showEvent(key, subs, speaker) {
   const t = DATA.events[key];
   if (!t) return;
-  G.eventQueue.push({ lines: t.body.map(l => fillTemplate(l, subs || {})),
+  // The GAME.TXT key rides along for the test suite and debugging -- the
+  // renderer never reads it.
+  G.eventQueue.push({ key, lines: t.body.map(l => fillTemplate(l, subs || {})),
                       width: t.width,
                       speaker: speaker !== undefined ? speaker : eventSpeaker(key) });
 }

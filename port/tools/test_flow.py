@@ -1533,6 +1533,160 @@ SCRIPT = """() => {
     out.wire6 = w6;
   }
 
+  // ---- Phase 5: the scripted end-to-end playtest ----
+  // One full game driven through the PUBLIC flows: fresh Discoverer game ->
+  // tutorial -> landfall -> founding -> colony work -> the Europe trade run
+  // (Go To picker's Europe row, market purchase, the crossing both ways,
+  // unload) -> declaration -> the war -> retirement -> Hall of Fame; then
+  // the losing war. The slow middles are STAGED and marked: the liberty-bell
+  // climb (hundreds of turns) and the war's combat attrition (covered by the
+  // combat blocks) are set rather than ground out.
+  {
+    const pt = {};
+    try { localStorage.removeItem('colonization.hof'); } catch (e) {}
+    // A fresh Discoverer game queues the tutorial's first card at once.
+    const diffWas = G.difficulty;
+    G.difficulty = 0;
+    beginGame(); G.screen = 'map';
+    pt.tutorialFires = G.eventQueue.some(e => e.key && /^TUTORIAL/.test(e.key));
+    G.eventQueue.length = 0;
+
+    // Landfall and founding, by the same route the landfall block drives --
+    // with the Discoverer game's tutorial cards drained between steps (they
+    // queue alongside the asks, and onClick answers the QUEUE first).
+    const sh = G.units[0];
+    for (let i = 0; i < 25 && !G.dialog; i++) { sh.movesLeft = 9; moveSel(-1, 0); }
+    G.eventQueue.length = 0;
+    closeDialog(1);
+    G.eventQueue.length = 0;
+    if (G.screen === 'woodcut') onClick(-1, -1);
+    if (G.dialog && G.dialog.entry !== undefined) dialogKey('Enter');
+    G.sel = G.units.findIndex(u => !u.ship);
+    const pio = G.units[G.sel];
+    G.natives = G.natives.filter(n => Math.abs(n.x - pio.x) > 2 || Math.abs(n.y - pio.y) > 2);
+    G.villages = G.villages.filter(v => Math.abs(v.x - pio.x) > 2 || Math.abs(v.y - pio.y) > 2);
+    MAP.tiles[pio.y * MAP.w + pio.x] = 2;      // staged: pin the site to Plains
+    G.tribes.forEach(t => t.tension = 0);      // staged: calm the land-claim
+    buildColony();
+    for (let i = 0; i < 4 && G.dialog && G.dialog.entry === undefined; i++) closeDialog(1);
+    if (G.dialog) closeDialog('Freetown');
+    G.eventQueue.length = 0;
+    pt.founded = G.colonies.length === 1 && G.colonies[0].name === 'Freetown';
+    const c = G.colonies[0];
+
+    // Colony work: the founder onto a LAND field through the scene panel's
+    // own click flow, a second man into the Town Hall through the jobs popup.
+    G.colony = 0; G.screen = 'colony';
+    c.colonists.push({ type: 'Colonists', profession: null, job: null, cell: null });
+    G.colonistSel = 0;
+    let cell = null;
+    for (const [cx, cy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]])
+      if (!tileWater(at(c.x + cx, c.y + cy))) { cell = [cx, cy]; break; }
+    if (cell) onClick(224 + (cell[0] + 1) * 24 + 12, 32 + (cell[1] + 1) * 24 + 12);
+    pt.fieldAssigned = !!(c.colonists[0].cell && c.colonists[0].job);
+    G.colonistSel = 1; G.colonyPopup = 'jobs';
+    const jr = colonyPopupRows().findIndex(r => r.label === 'Town Hall');
+    G.colonyPopupRow = jr; colonyPopupCommit();
+    pt.hallAssigned = jr > 0 && c.colonists[1].job === jobForBuilding('Town Hall');
+    // A few working turns actually produce.
+    G.screen = 'map';
+    const bells0 = G.bellsTotal || 0;
+    for (let t = 0; t < 3; t++) { c.stock[GOOD.FOOD] = 100; endTurn(); }
+    G.eventQueue.length = 0; G.dialog = null;
+    pt.produced = (G.bellsTotal || 0) > bells0;
+
+    // The Europe run: Go To's Europe row sails the ship, the crossing takes
+    // its three turns, the market sells us 100 muskets, and the ship carries
+    // them home for the war chest.
+    G.sel = G.units.findIndex(u => u.ship);
+    beginGoTo();
+    const gRows = (G.dialog && G.dialog.opts) || [];
+    closeDialog(gRows.length - 1);
+    pt.sailed = G.europe.some(e => e.state === 'toEurope');
+    for (let t = 0; t < 5 && !G.europe.some(e => e.state === 'port'); t++) endTurn();
+    G.eventQueue.length = 0; G.dialog = null;
+    const docked = G.europe.find(e => e.state === 'port');
+    pt.docked = !!docked;
+    const gold0 = G.gold;
+    buyToShip(GOOD.MUSKETS, 100);
+    pt.bought = holdQty(docked, GOOD.MUSKETS) === 100 && G.gold < gold0;
+    confirmSailAway(docked); closeDialog(0);
+    for (let t = 0; t < 5 && !G.units.some(u => u.ship); t++) endTurn();
+    G.eventQueue.length = 0; G.dialog = null;
+    const back = G.units.find(u => u.ship);
+    pt.returned = !!back && holdQty(back, GOOD.MUSKETS) === 100;
+    // Staged positioning: docking AT the colony tile (harbour navigation is
+    // not what this asserts), then the real unload dialog chain.
+    back.x = c.x; back.y = c.y; G.sel = G.units.indexOf(back);
+    unloadCargo();
+    for (let i = 0; i < 3 && G.dialog; i++) {
+      if (G.dialog.numeric) { dialogKey('Enter'); break; }
+      const anyway = (G.dialog.opts || []).findIndex(o => /anyway/i.test(o));
+      closeDialog(anyway >= 0 ? anyway : 0);   // spoilage warn -> unload anyway
+    }
+    pt.unloaded = (c.stock[GOOD.MUSKETS] || 0) === 100;
+
+    // Declaration. Staged: the liberty climb (c.sol, a hundreds-of-turns
+    // grind) and a guaranteed coastal halo tile for the King's landing.
+    c.sol = 80;
+    G.units.push(mkUnit('Soldiers', c.x, c.y));
+    if (!coastalColonies().length) MAP.tiles[(c.y + 1) * MAP.w + c.x + 1] = 25;
+    G.eventQueue.length = 0;
+    declareIndependence();
+    closeDialog(1);                            // @DECLARE row 1 = declare
+    pt.declared = !!(G.flags & WOI_DECLARED);
+    pt.mobilized = G.units.some(u => u.type === 'Cont. Army');
+    pt.refLands = G.refUnits.filter(u => !u.ship).length > 0;
+    G.eventQueue.length = 0;
+
+    // The war, won. Staged: the Crown's attrition (combat has its own
+    // blocks) -- the reserve empties and the landed wave falls; the per-turn
+    // resolver must then declare the rebel victory on its own.
+    REF_TYPES.forEach(t => G.ref[t] = 0);
+    G.refUnits.length = 0;
+    G.royalFund = 0;                           // Parliament's kitty, spent too
+    endTurn();
+    pt.won = !!(G.flags & WOI_WON) &&
+             G.eventQueue.some(e => e.key === 'KINGLOSE' || e.key === 'WINNING');
+    G.eventQueue.length = 0; G.dialog = null;
+
+    // Retirement seals it in the Hall of Fame.
+    retire(); closeDialog(0);                  // @RETIRE row 0 = retire
+    pt.scoredScreen = G.screen === 'report' && G.report === 'F10';
+    if (G.dialog) closeDialog(1);              // @SCORED "keep playing"
+    const rec = hofLoad()[0];
+    pt.hof = !!rec && rec.independent === true && rec.declared === true &&
+             rec.nation === G.nation;
+    G.eventQueue.length = 0; G.dialog = null; G.scored = false;
+
+    // The war, lost: undefended colonies, the King razes the last one, and
+    // the defeat sequence writes its own (dependent) record.
+    beginGame(); G.screen = 'map';
+    G.colonies.push({ name: 'Doomed', x: 30, y: 30, nation: G.nation,
+                      colonists: [{ type: 'Colonists', job: null, cell: null }],
+                      stock: DATA.cargo.map(() => 0),
+                      buildings: STARTING_BUILDINGS.slice(),
+                      hammers: 0, building: null, sol: 60 });
+    MAP.tiles[30 * MAP.w + 31] = 25;           // a beach for the Man-O-War
+    G.units.length = 0;                        // no defenders anywhere
+    G.flags |= WOI_DECLARED; G.declared = true; G.declaredYear = G.year;
+    const rr = mkUnit('Regulars', 30, 30);
+    rr.nation = -2; G.refUnits.push(rr);
+    REF_TYPES.forEach(t => G.ref[t] = 0);
+    for (let t = 0; t < 4 && G.colonies.length; t++) { runWar(); }
+    pt.lostWar = G.lostWar && G.colonies.length === 0 &&
+                 G.eventQueue.some(e => e.key === 'KINGWIN');
+    const rec2 = hofLoad().find(r => r.independent === false);
+    pt.lossRecorded = !!rec2;
+    G.eventQueue.length = 0; G.dialog = null; G.scored = false;
+    try { localStorage.removeItem('colonization.hof'); } catch (e) {}
+    // Leave the world as the next block expects it: the pre-playtest
+    // difficulty and a clean game.
+    G.difficulty = diffWas;
+    beginGame(); G.screen = 'map';
+    out.playtest = pt;
+  }
+
   // ---- treasure transport and fog of war ----
   {
     beginGame(); G.screen = 'map';
@@ -3488,6 +3642,9 @@ def main():
         ("input gestures: Go To lists colonies + Europe, pulldown opens on "
          "press and commits on release, flick drags land, sack ink",
          all(r["wire6"].values()), r["wire6"]),
+        ("end-to-end playtest: tutorial, founding, work, the Europe muskets "
+         "run, declaration, the won war, the Hall of Fame, the lost war",
+         all(r["playtest"].values()), r["playtest"]),
     ]
     bad = 0
     for name, ok, got in checks:

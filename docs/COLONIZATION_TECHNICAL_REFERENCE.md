@@ -5738,6 +5738,57 @@ field workers to their tiles). Off-map unit coordinates are the "in Europe /
 high seas" state. The rebuild's LOAD GAME restores a shipped save from this
 walk, checked field-for-field against the 1653 Dutch game.
 
+### 30.10 The Phase-4/5 closures (2026-08-07/08)
+
+The final capture-and-disassembly sweep closed the last unread windows;
+each item is byte-cited in `notes/rulings/RULINGS.md` (2026-08-07n–z14,
+2026-08-08a/b):
+
+- **Hall of Fame** — HALLFAME.DAT field semantics pinned by crafted-DAT
+  differential captures: +0x18 nation (0xFFFF = empty sentinel), +0x1A
+  declared, +0x1C independence-won, +0x1E year, +0x22 difficulty, +0x24
+  score points, +0x26 the Colonization Rating % (the descending-insertion
+  ranking key, `func_03ADA6` @0x3AECD). The screen is three text lines per
+  record, not a column table.
+- **The F5 "(K)" threshold** is exactly 10 000 gold, floor-truncated.
+- **The ICONS profession figures** — `@JOB` rows 0..17 = frames 81+i, the
+  class tail 58/59/60/61/66/100/106/107 — dress the F4 Labor report, the
+  Europe dock and the crossing manifests; each crossing passenger and
+  waiting dock unit carries the 7×9 nation-colour SACK (black-outlined,
+  folds = colour−8).
+- **Europe slot geometry** — dock cells x = 232+17k, ships x = 145+18k
+  (sprite at cell+3/+4); the hollow green cell is the SELECTION cursor,
+  not a per-entry frame.
+- **The save serializer** `func_0734F8` — the 43-block DGROUP order, from
+  which the rebuild's import restores the tutorial mask (g+6), the once/
+  phase flags (g+0/g+2), the REF counters (g+0x5A..0x60) and the woodcut
+  bitmask (g+0x8A).
+- **The tutorial dispatcher** `func_020F50` — every guard bit mapped:
+  steps 1,3–12 = bits 4–15 of [0x5386/7], the [0x5380] flag set
+  {13:0x01, 14:0x02, 15:0x08, 19:0x80}, the [0x5382] phase bit {2:0x80}.
+- **The aftermath news bus** `func_05CA7E` — the BURNED/CAPTURED/
+  EUROPEWIN families' attribution splits, CAPTURED vs CAPTURED3 on the
+  declared flag [0x5382]&1, the @MISC 73/74 verb by unit-type<7 plurality.
+- **Raids and shipping** — RAIDGOLD = random(50, min(gold,32767)) with the
+  −16 tension credit, RAIDSTORES −4, RAIDWREAK's building-tier decrement;
+  SHIPLAKE/SHIPRUN/SHIPSLOW; the Chief's beads ladder
+  random(1,6)·3d(10−difficulty)·4·(level+1).
+- **The Crown** — the tax-petition ladder `func_034AE0` (Europe key K),
+  the KINGBUY/KINGMOBILIZE growth split on the declaration, the
+  MEEK/MANLY tone = the per-power strength compare [0x941C+p·2].
+- **Popups** — the 120-tick (~2 s) auto-dismiss (`func_004A80` 0x78); the
+  disposal gate (goods 0/5/8/14/15 never disposed, Ore smithy-protected).
+- **Input** (2026-08-08) — the pulldown's held gesture (open on press,
+  re-hit-test rows while moved @0x6E5B1, commit on release @0x6EC70); the
+  Go-To destination picker `func_060026` appends the Europe row for ships
+  (label = the port name [0x838C], `func_022CDC` sets sail).
+
+With these, the message ledger reads **0 missing / 0 unwired**, one
+BLOCKED evidence ceiling (@FULL's crowding threshold behind
+`func_02883E`'s jump table), and the rebuild's suite closes at 236 checks
+including a scripted end-to-end playtest from the tutorial card to both
+Hall-of-Fame outcomes. Release tag: `port-v1.0`.
+
 ## A. Appendix — data structures
 
 This appendix collects every record layout established for the shipped

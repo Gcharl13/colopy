@@ -9225,3 +9225,39 @@ Europe"; (2) colonists cannot be dragged into buildings (Blacksmith);
 Suite 235/235 (new wire6 block: Go To rows + Europe sail, press-edge
 open/track/commit via the real pointer handlers, flick assignment,
 sack pixel); shots 47/47; render-diff 15/15.
+
+## 2026-08-08b — Phase 5 COMPLETE: final audit and release (port-v1.0)
+
+COMPLETION_PLAN Phase 5, all four items:
+
+1. **Ledger re-verified**: DONE 411 + 29 via-DATA, PARAPHRASED 0,
+   BUNDLED-UNWIRED 0, MISSING 0, BLOCKED 1 (@FULL's crowding threshold,
+   behind func_02883E's jump table -- the one documented evidence
+   ceiling), N/A 34 (each with an emitter-scan orphan verdict), SUPPORT
+   24.
+2. **Full render pass**: shots.py 47 scenarios, render_diff.py 15/15
+   pairs green.
+3. **The end-to-end playtest is in the suite** (test_flow "playtest"
+   block): a fresh DISCOVERER game driven through the public flows --
+   the tutorial card fires at once (the done-check), landfall, founding
+   ("Freetown"), a field assignment through the scene panel's click flow
+   and a Town Hall assignment through the jobs popup, three producing
+   turns, the Europe muskets run (the Go To picker's Europe row, the
+   three-turn crossing out, buyToShip at the market, @SAILAWAY home, the
+   @CARGOUNLOAD/@HOWMUCH2 dialog chain), the declaration (@DECLARE row 1,
+   mobilization to Cont. Army through the 50-muskets gate, the King's
+   landing), the won war (the staged exhaustion of the reserve, with
+   runWar's own landed==0 && afloat==0 detection firing KINGLOSE/
+   WINNING), retirement (@RETIRE -> @EXPLOITS -> F10 -> @SCORED) sealing
+   the INDEPENDENT Hall-of-Fame record, then the lost war (undefended
+   colony razed -> LOSING2/KINGWIN -> the dependent record). The slow
+   middles are STAGED AND MARKED: the liberty-bell climb and the war's
+   combat attrition (combat has its own blocks).
+   Two support changes: showEvent now carries the GAME.TXT key on the
+   queue entry (suite/debug metadata; the renderer never reads it), and
+   the playtest restores difficulty + a clean game for the blocks after
+   it.
+4. **STATUS.md** Phase-5 state, technical-reference §30.10 addendum,
+   tag `port-v1.0`, artifact republished.
+
+Suite 236/236 twice; shots 47/47; render-diff 15/15; ledger quoted above.

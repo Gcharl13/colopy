@@ -35,7 +35,7 @@ Where the port's work is tracked, in the order to consult them:
 | **`docs/POPUP_AUDIT_2026-08-08.md`** | The 200-row audited gap ledger with severities and evidence notes. Rows resolved by rulings i-m are superseded by RULINGS.md; unresolved HIGH/MEDIUM rows are the work queue. |
 | **`notes/rulings/RULINGS.md`** | Per-batch decisions: what was byte-solved, what was implemented, which stand-ins are flagged TBD. The 2026-08-07 series (a-m) is the port-era log. |
 | **`docs/UI_AUDIT_TRACKER.md`** | Per-screen byte-verification coverage (the standing UI mandate in CLAUDE.md). |
-| `port/tools/test_flow.py` | The behavioural gate: **234/234**. |
+| `port/tools/test_flow.py` | The behavioural gate: **236/236**, including the Phase-5 end-to-end playtest. |
 
 Done since the plan (2026-08-07 n-z14): Phases 0–3 and the pre-capture
 sweep, then **Phase 4 COMPLETE** — the DOSBox capture batch (Hall of Fame
@@ -49,8 +49,22 @@ aftermath bulletins; func_04A7CA Speak-with-Chief; the func_049600 tail →
 func_059B90/03FDDE/04E2D6 shipping; func_034AE0 the tax petition;
 func_057F4E the MEEK/MANLY strength predicate; the 0x191F:0x9C0 disposal
 gate). **MISSING 0, BLOCKED 1.** Every remaining flag is a documented
-byte-read ceiling, not an unread window. Next: Phase 5 final audit
-(full render-diff + end-to-end playtest + tag).
+byte-read ceiling, not an unread window.
+
+**Phase 5 COMPLETE (2026-08-08, tag `port-v1.0`)** — the final audit:
+ledger re-verified (411 done + 29 via-DATA, 0 missing/unwired, 1 BLOCKED
+ceiling, 34 N/A); the full `shots.py` (47 scenarios) + `render_diff.py`
+(15/15 pairs) pass; and the scripted END-TO-END PLAYTEST is in the suite —
+a fresh Discoverer game driven through the public flows: tutorial card →
+landfall → founding → field + Town Hall assignment → three producing
+turns → the Europe muskets run (Go To's Europe row, the three-turn
+crossing both ways, the market purchase, the unload dialogs) →
+declaration (mobilization + the King's landing) → the won war → retire →
+Hall of Fame (independent record) → the lost war (KINGWIN + dependent
+record). Staged middles (the bell climb, combat attrition) are marked in
+the block. The user-defect batch that preceded it (RULINGS 2026-08-08a)
+fixed the Go To Europe row, the press-edge pulldown gesture, flick
+drags, the nation-sack ink, and the new-game state leak.
 
 ---
 
@@ -62,7 +76,7 @@ Three layers, in the order `METHODOLOGY.md` defines them.
 |---|---|
 | **Evidence** (disassembly, asset decode) | 1,241 VICEROY functions inventoried; **156 named**, 1,094 not. All 13 container formats decoded. |
 | **Specification** (`spec/`, 64 sheets) | The mature layer. **17 open TBD lines across 10 sheets**, each named with its blocker. Every game-system formula is byte-closed. |
-| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **233/233 tests**, ~11k lines, 3.6 MB single-file bundle. Drag-and-drop, byte-decoded popup framework, all live woodcut triggers, popup speakers incl. MYR meeting portraits, the village haggle loop, the European meeting chain, native + rival AI (reduced/R-tier), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: see the Build tracker above. |
+| **Implementation** (`port/`, HTML) | Playable start-to-endgame, **236/236 tests** (incl. the end-to-end playtest), ~12k lines, 3.6 MB single-file bundle. Drag-and-drop, byte-decoded popup framework, all live woodcut triggers, popup speakers incl. MYR meeting portraits, the village haggle loop, the European meeting chain, native + rival AI (reduced/R-tier), LOAD GAME incl. the shipped COLONY##.SAV format. Main gaps: see the Build tracker above. |
 
 The honest one-line summary: **the spec is close to done, the port is the
 working proof of it, and the raw per-line annotation of the binary is not and
