@@ -151,28 +151,48 @@ PATTERN B — table base + slot*stride, base folded into the displacement
 In the Listing, `G` (Go To) → the address, then `T`
 (`Data > Choose Data Type`) → type e.g. `ColonyRecord[16]`.
 
-**Do not compute the addresses by hand — read them off the script's output.**
-When it runs it prints exactly this, in the program's own address format:
+**Addresses in this program are SEGMENTED** (`segment:offset`) — confirmed on
+a real import: Go To `2cfd0` lands on a line displayed as `2000:cfd0`
+(0x2000×16 + 0xCFD0 = file 0x2CFD0). Go To accepts the flat hex and
+normalises it, so you can type either form.
+
+Because the DGROUP block is placed at `0x80000`, which is segment-aligned,
+the mapping is one-to-one with no arithmetic:
+
+> **Ghidra `8000:XXXX` == DGROUP offset `0xXXXX`.**
+
+Every DGROUP address in this repo's docs is therefore reachable by typing
+`8000:` in front of it:
+
+| Apply this type | at Go To |
+|---|---|
+| `ColonyRecord[16]` | `8000:5d46` |
+| `UnitRecord[64]` | `8000:3144` |
+| `PowerRecord[4]` | `8000:8808` |
+| `NativeSettlement[32]` | `8000:54ec` |
+| `AIPersonality[4]` | `8000:540e` |
+
+and the record pointers to retype live at `8000:8542`
+(`g_current_colony_ptr`), `8000:84fc` (`g_current_power_ptr`),
+`8000:8d4a` (`g_active_settlement_ptr`).
+
+The script also prints all of this at the end of its run, in whatever form
+your program actually uses:
 
 ```
-DGROUP block created at 00080000 (0x80000)
+DGROUP block created at 8000:0000 (0x80000)
 ================================================================
 APPLY RECORD ARRAYS HERE  (Listing: G to go, then T to set type)
 ================================================================
-  ColonyRecord[]     DS:0x5D46  ->  00085D46     [g_colony_count, stride 0xCA]
-  UnitRecord[]       DS:0x3144  ->  00083144     [g_unit_count, stride 0x1C]
-  PowerRecord[]      DS:0x8808  ->  00088808     [fixed 4, stride 0x13C]
+  ColonyRecord[]     DS:0x5D46  ->  8000:5d46     [g_colony_count, stride 0xCA]
+  UnitRecord[]       DS:0x3144  ->  8000:3144     [g_unit_count, stride 0x1C]
+  PowerRecord[]      DS:0x8808  ->  8000:8808     [fixed 4, stride 0x13C]
   ...
 ```
 
-Copy the right-hand column verbatim into Go To. Two reasons not to derive it
-yourself:
-
-- a 16-bit real-mode program uses **segmented** addresses (`segment:offset`),
-  so a flat hex number may not resolve in Go To at all — the script prints
-  whatever form your program actually uses;
-- the DGROUP block's base is chosen at run time (see below), so the offsets
-  depend on where it landed.
+Copy the right-hand column verbatim — it is authoritative if the block ever
+lands somewhere other than `0x80000` (the script falls back if that address
+is unavailable).
 
 These tables are BSS — past the end of the file image — so the script creates
 a synthetic `DGROUP` block for them. It is placed at **`0x80000`**: just past
