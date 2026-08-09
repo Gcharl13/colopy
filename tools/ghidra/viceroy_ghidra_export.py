@@ -1,7 +1,7 @@
 # VICEROY.EXE symbol EXPORT from Ghidra  (GENERATED - do not hand-edit)
 # Regenerate: python3 tools/ghidra/make_ghidra_scripts.py
 #
-# BUILD 7f67ba89ea92
+# BUILD 3f935e0987ce
 #
 # Run this in Ghidra AFTER you have renamed things, to send your work back to
 # the repo.  It compares the live program against the baseline the import
@@ -30,7 +30,7 @@ import json
 import os
 
 MZ_LOAD = False
-BUILD = "7f67ba89ea92"
+BUILD = "3f935e0987ce"
 HEADER = 0x2400
 DELTA = -HEADER if MZ_LOAD else 0
 
@@ -19800,6 +19800,37 @@ DATA = json.loads(r"""{
 ]
 }""")
 
+# Prefixes Ghidra generates by itself.  `thunk_` is the big one: Ghidra's
+# analyser recognises jump-only stubs and names them thunk_<target> — so after
+# the import script renames a target, Ghidra invents thunk_<our name> and it
+# looks hand-written unless you check where it came from.
+AUTO_PREFIXES = ("FUN_", "SUB_", "LAB_", "DAT_", "UNK_", "EXT_", "thunk_",
+                 "caseD_", "switchD_", "jumpTable", "s_", "u_", "PTR_",
+                 "ARRAY_", "SUBR_")
+
+
+def is_auto(name):
+    for p in AUTO_PREFIXES:
+        if name.startswith(p):
+            return True
+    return False
+
+
+def user_typed(sym):
+    """True only if a human named this.
+
+    Ghidra records provenance on every symbol.  DEFAULT is a placeholder,
+    ANALYSIS is the analyser's own work, IMPORTED is what the import script
+    applied — only USER_DEFINED means somebody typed it.  Checking that is far
+    more reliable than pattern-matching names, which is how 198 auto-generated
+    thunk_/caseD_ symbols got into the first export.
+    """
+    try:
+        from ghidra.program.model.symbol import SourceType
+        return sym.getSource() == SourceType.USER_DEFINED
+    except Exception:
+        return not is_auto(sym.getName())
+
 
 def main():
     print("=" * 64)
@@ -19814,31 +19845,42 @@ def main():
     gbase = {}
     for g in DATA["globals"]:
         gbase[g["ds"]] = g["n"]
-    thunk_names = set()
+    # Addresses this script's own thunk pass labelled.  Ghidra frequently
+    # turns those into thunk functions and re-derives a name for them; that is
+    # our output coming back, not yours.
+    ours = set()
     for t in DATA["thunks"]:
-        thunk_names.add("thunk_" + t["n"])
+        ours.add(t["a"])
 
     out = {"build": BUILD, "functions": [], "globals": [],
            "plate_comments": [], "eol_comments": []}
+    dropped = {"auto": 0, "ours": 0}
 
     # ---- function names ---------------------------------------------------
     for fn in currentProgram.getFunctionManager().getFunctions(True):
         try:
             off = fn.getEntryPoint().getOffset() - DELTA
             cur = fn.getName()
+            sym = fn.getSymbol()
         except Exception:
             continue
         was = base.get(off)
         if was is None:
-            # A function the repo does not know about.  Only interesting if
-            # you named it - Ghidra's own FUN_ placeholders carry no
-            # information the repo does not already have from its own
-            # boundary analysis.
-            if not cur.startswith("FUN_"):
+            # A function the repo does not know about.  Worth exporting only
+            # if a human named it: Ghidra's own placeholders and analyser
+            # names carry nothing the repo lacks.
+            if off in ours:
+                dropped["ours"] += 1
+            elif is_auto(cur) or (sym is not None and not user_typed(sym)):
+                dropped["auto"] += 1
+            else:
                 out["functions"].append({"a": off, "was": None, "now": cur,
                                          "new_function": True})
         elif cur != was:
-            out["functions"].append({"a": off, "was": was, "now": cur})
+            if is_auto(cur):
+                dropped["auto"] += 1
+            else:
+                out["functions"].append({"a": off, "was": was, "now": cur})
 
     # ---- DGROUP global names ----------------------------------------------
     dgb = mem.getBlock("DGROUP")
@@ -19855,11 +19897,14 @@ def main():
             except Exception:
                 continue
             was = gbase.get(ds)
-            if was is None:
-                if not (cur.startswith("DAT_") or cur.startswith("UNK_")
-                        or cur.startswith("LAB_")):
+            if is_auto(cur):
+                dropped["auto"] += 1
+            elif was is None:
+                if user_typed(sym):
                     out["globals"].append({"ds": ds, "was": None, "now": cur,
                                            "new_global": True})
+                else:
+                    dropped["auto"] += 1
             elif cur != was:
                 out["globals"].append({"ds": ds, "was": was, "now": cur})
 
@@ -19901,6 +19946,8 @@ def main():
     print("global renames    : %d" % len(out["globals"]))
     print("your plate comments: %d" % len(out["plate_comments"]))
     print("your EOL comments : %d" % len(out["eol_comments"]))
+    print("skipped, Ghidra's own naming : %d" % dropped["auto"])
+    print("skipped, this script's thunk labels : %d" % dropped["ours"])
     print("")
     if path:
         print("WROTE  %s" % path)

@@ -560,19 +560,26 @@ def main():
             "records": syms["record_windows"], "tables": tables,
             "thunks": thunks}
 
-    body = SCRIPT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
-    # Content-addressed build stamp, printed as the script's first line at run
-    # time.  Sole purpose: make "am I running the file I just generated?"
+    payload = json.dumps(data, indent=0)
+    body = SCRIPT_TEMPLATE.replace("@@DATA@@", payload)
+    exp = EXPORT_TEMPLATE.replace("@@DATA@@", payload)
+
+    # Content-addressed build stamp, printed as each script's first line at
+    # run time.  Sole purpose: make "am I running the file I just generated?"
     # answerable in one glance instead of by comparing tracebacks.
-    stamp = hashlib.sha256(body.encode()).hexdigest()[:12]
+    #
+    # It covers BOTH scripts.  Stamping only the import body meant a fix to
+    # the export script left the stamp unchanged, so the one check the user
+    # has would have said "current" about a stale file.
+    stamp = hashlib.sha256((body + exp).encode()).hexdigest()[:12]
     body = body.replace("@@STAMP@@", stamp)
+    exp = exp.replace("@@STAMP@@", stamp)
+
     check_free_names(body)
     OUT_PY.write_text(body)
 
-    # The export script shares the same payload and stamp: it has to know the
-    # exact baseline the import laid down, or "what changed" is meaningless.
-    exp = (EXPORT_TEMPLATE.replace("@@DATA@@", json.dumps(data, indent=0))
-                          .replace("@@STAMP@@", stamp))
+    # The export script shares the payload: it has to know the exact baseline
+    # the import laid down, or "what changed" is meaningless.
     check_free_names(exp)
     OUT_EXPORT.write_text(exp)
 
@@ -1387,6 +1394,37 @@ DELTA = -HEADER if MZ_LOAD else 0
 
 DATA = json.loads(r"""@@DATA@@""")
 
+# Prefixes Ghidra generates by itself.  `thunk_` is the big one: Ghidra's
+# analyser recognises jump-only stubs and names them thunk_<target> — so after
+# the import script renames a target, Ghidra invents thunk_<our name> and it
+# looks hand-written unless you check where it came from.
+AUTO_PREFIXES = ("FUN_", "SUB_", "LAB_", "DAT_", "UNK_", "EXT_", "thunk_",
+                 "caseD_", "switchD_", "jumpTable", "s_", "u_", "PTR_",
+                 "ARRAY_", "SUBR_")
+
+
+def is_auto(name):
+    for p in AUTO_PREFIXES:
+        if name.startswith(p):
+            return True
+    return False
+
+
+def user_typed(sym):
+    """True only if a human named this.
+
+    Ghidra records provenance on every symbol.  DEFAULT is a placeholder,
+    ANALYSIS is the analyser's own work, IMPORTED is what the import script
+    applied — only USER_DEFINED means somebody typed it.  Checking that is far
+    more reliable than pattern-matching names, which is how 198 auto-generated
+    thunk_/caseD_ symbols got into the first export.
+    """
+    try:
+        from ghidra.program.model.symbol import SourceType
+        return sym.getSource() == SourceType.USER_DEFINED
+    except Exception:
+        return not is_auto(sym.getName())
+
 
 def main():
     print("=" * 64)
@@ -1401,31 +1439,42 @@ def main():
     gbase = {}
     for g in DATA["globals"]:
         gbase[g["ds"]] = g["n"]
-    thunk_names = set()
+    # Addresses this script's own thunk pass labelled.  Ghidra frequently
+    # turns those into thunk functions and re-derives a name for them; that is
+    # our output coming back, not yours.
+    ours = set()
     for t in DATA["thunks"]:
-        thunk_names.add("thunk_" + t["n"])
+        ours.add(t["a"])
 
     out = {"build": BUILD, "functions": [], "globals": [],
            "plate_comments": [], "eol_comments": []}
+    dropped = {"auto": 0, "ours": 0}
 
     # ---- function names ---------------------------------------------------
     for fn in currentProgram.getFunctionManager().getFunctions(True):
         try:
             off = fn.getEntryPoint().getOffset() - DELTA
             cur = fn.getName()
+            sym = fn.getSymbol()
         except Exception:
             continue
         was = base.get(off)
         if was is None:
-            # A function the repo does not know about.  Only interesting if
-            # you named it - Ghidra's own FUN_ placeholders carry no
-            # information the repo does not already have from its own
-            # boundary analysis.
-            if not cur.startswith("FUN_"):
+            # A function the repo does not know about.  Worth exporting only
+            # if a human named it: Ghidra's own placeholders and analyser
+            # names carry nothing the repo lacks.
+            if off in ours:
+                dropped["ours"] += 1
+            elif is_auto(cur) or (sym is not None and not user_typed(sym)):
+                dropped["auto"] += 1
+            else:
                 out["functions"].append({"a": off, "was": None, "now": cur,
                                          "new_function": True})
         elif cur != was:
-            out["functions"].append({"a": off, "was": was, "now": cur})
+            if is_auto(cur):
+                dropped["auto"] += 1
+            else:
+                out["functions"].append({"a": off, "was": was, "now": cur})
 
     # ---- DGROUP global names ----------------------------------------------
     dgb = mem.getBlock("DGROUP")
@@ -1442,11 +1491,14 @@ def main():
             except Exception:
                 continue
             was = gbase.get(ds)
-            if was is None:
-                if not (cur.startswith("DAT_") or cur.startswith("UNK_")
-                        or cur.startswith("LAB_")):
+            if is_auto(cur):
+                dropped["auto"] += 1
+            elif was is None:
+                if user_typed(sym):
                     out["globals"].append({"ds": ds, "was": None, "now": cur,
                                            "new_global": True})
+                else:
+                    dropped["auto"] += 1
             elif cur != was:
                 out["globals"].append({"ds": ds, "was": was, "now": cur})
 
@@ -1488,6 +1540,8 @@ def main():
     print("global renames    : %d" % len(out["globals"]))
     print("your plate comments: %d" % len(out["plate_comments"]))
     print("your EOL comments : %d" % len(out["eol_comments"]))
+    print("skipped, Ghidra's own naming : %d" % dropped["auto"])
+    print("skipped, this script's thunk labels : %d" % dropped["ours"])
     print("")
     if path:
         print("WROTE  %s" % path)

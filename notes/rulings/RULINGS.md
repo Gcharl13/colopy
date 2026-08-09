@@ -9768,3 +9768,27 @@ Ghidra" and was in fact the repo-side generator; it got copied into
 `ghidra_scripts/` and run there, dying on a repo path. It now refuses to run
 under Ghidra (`if "currentProgram" in dir()`) with a message naming the two
 scripts that *do* belong there.
+
+### 2026-08-08p amendment — the export filter was wrong on first contact
+
+The first real export returned **198 entries, none of them user-authored**:
+147 `thunk_FUN_*`, 43 `thunk_*`, 6 `caseD_*`, 2 `thunk_EXT_*`, plus zero
+globals and zero comments. Cause: the filter excluded only names starting
+`FUN_`.
+
+Two things were missed. Ghidra's analyser recognises jump-only stubs and names
+them `thunk_<target>` — so once the import script renames a target, Ghidra
+invents `thunk_<our own name>` (`thunk__write_centered`,
+`thunk_colony_econ_02EB1C`), which reads as hand-written. And the import
+script's *own* thunk labels came back as functions.
+
+Fixed by asking Ghidra for provenance instead of guessing from names: a symbol
+is exported only when `symbol.getSource() == SourceType.USER_DEFINED`
+(DEFAULT = placeholder, ANALYSIS = the analyser, IMPORTED = what the import
+script applied). Belt and braces: a prefix list for the auto-generated forms,
+and the set of thunk-stub addresses the import script labelled. Replaying the
+198-entry export through the new filter drops all 198.
+
+Also corrected: the BUILD stamp hashed only the import body, so a fix to the
+export script left the stamp unchanged — the single version check the user has
+would have called a stale export script current. It now covers both bodies.

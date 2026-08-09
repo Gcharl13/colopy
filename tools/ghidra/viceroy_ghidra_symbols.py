@@ -1,7 +1,7 @@
 # VICEROY.EXE symbol import for Ghidra  (GENERATED — do not hand-edit)
 # Regenerate: python3 tools/ghidra/make_ghidra_scripts.py
 #
-# BUILD 7f67ba89ea92
+# BUILD 3f935e0987ce
 # If a traceback from this file does not match the line numbers you expect,
 # check that stamp against the one the repo prints — you are probably running
 # an older copy that is still sitting in ghidra_scripts/.
@@ -19825,7 +19825,7 @@ def A(file_off):
     return toAddr(file_off + DELTA)
 
 
-BUILD = "7f67ba89ea92"
+BUILD = "3f935e0987ce"
 
 # Set False to stop the script defining/applying the record types (phase 4).
 # Naming and DGROUP setup still run.
