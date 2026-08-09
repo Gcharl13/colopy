@@ -9,6 +9,34 @@ Regenerate both artifacts any time (they stay in sync with the repo's JSON):
 python3 tools/ghidra/make_ghidra_scripts.py
 ```
 
+### If you are NOT cloning the repo
+
+You need **two files**, and nothing else:
+
+| Download from `tools/ghidra/` | To |
+|---|---|
+| `viceroy_ghidra_symbols.py` | your `ghidra_scripts/` folder |
+| `viceroy_ghidra_export.py` | your `ghidra_scripts/` folder |
+
+They are generated and committed on every change, and they are
+self-contained: the module map, symbols, thunk table, page directory,
+argument counts and record layouts are all baked into the payload. You do
+**not** need `viceroy_types.h` (the script defines the types itself), the
+generator, or any of the JSON/`.asm` inputs.
+
+Use GitHub's **Download raw file** button. Do not copy-paste from the file
+view — these are ~14,000 lines and the viewer truncates.
+
+Verify you got the intended build: **line 4** of each file reads
+`# BUILD <12 hex>`, and that same string is the first line the script prints
+in Ghidra's console.
+
+**Round trip without the repo.** `merge_ghidra_export.py` runs repo-side, so
+instead: run `viceroy_ghidra_export.py` in Ghidra, send the
+`viceroy_ghidra_export.json` it writes to whoever has the repo, and
+re-download the two scripts once it has been merged. Your names come back as
+tier U in the next import.
+
 ### Working from one folder
 
 The generator reads inputs from four places in the repo. If you would rather
