@@ -42,14 +42,50 @@ EMPTY = {"_doc": "Names and comments authored by hand in Ghidra and exported "
          "plate_comments": {}, "eol_comments": {}}
 
 
+# Names that are almost certainly a slip rather than an intent.  A merge is
+# lossy in one direction — a tier-U name shadows the generated one on every
+# future import — so a throwaway rename must not silently bury a name that was
+# derived from bytes.
+RESERVED = {
+    # C / C++ keywords a decompiler window invites you to type by accident
+    "this", "auto", "break", "case", "char", "const", "continue", "default",
+    "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
+    "int", "long", "register", "return", "short", "signed", "sizeof", "static",
+    "struct", "switch", "typedef", "union", "unsigned", "void", "volatile",
+    "while", "class", "new", "delete", "template", "namespace", "operator",
+    # placeholders that mean "I have not decided yet"
+    "temp", "tmp", "test", "foo", "bar", "x", "y", "a", "b", "f", "g", "fn",
+    "func", "function", "unknown", "todo", "tbd", "asdf", "aaa", "xxx",
+}
+
+AUTO_PREFIXES = ("FUN_", "SUB_", "LAB_", "DAT_", "UNK_", "EXT_", "thunk_",
+                 "caseD_", "switchD_")
+
+
+def suspect(name):
+    """Reason this name should not be adopted, or None."""
+    low = name.lower()
+    if low in RESERVED:
+        return "reserved word or placeholder"
+    if len(name) < 3:
+        return "too short to mean anything"
+    for p in AUTO_PREFIXES:
+        if name.startswith(p):
+            return "looks machine-generated (%s)" % p
+    return None
+
+
 def load(path):
     return json.loads(path.read_text()) if path.exists() else dict(EMPTY)
 
 
 def main(argv):
-    if len(argv) != 2:
-        raise SystemExit(__doc__)
-    incoming = json.loads(Path(argv[1]).read_text())
+    args = [a for a in argv[1:] if not a.startswith("--")]
+    force = "--force" in argv[1:]
+    if len(args) != 1:
+        raise SystemExit(__doc__ + "\n  --force   adopt names this would "
+                         "otherwise refuse as slips\n")
+    incoming = json.loads(Path(args[0]).read_text())
     store = load(STORE)
     for k in EMPTY:
         store.setdefault(k, EMPTY[k] if isinstance(EMPTY[k], dict) else EMPTY[k])
@@ -65,10 +101,15 @@ def main(argv):
             data = json.loads(m.group(1))
             current = {f["a"]: f["n"] for f in data["funcs"]}
 
-    added = updated = skipped = stale = 0
+    added = updated = skipped = stale = refused = 0
     for e in incoming.get("functions", []):
         key = "0x%06X" % e["a"]
         was, now = e.get("was"), e["now"]
+        why = suspect(now)
+        if why and not force:
+            print("REFUSED %s: %r -> %r  (%s)" % (key, was, now, why))
+            refused += 1
+            continue
         if was is not None and current and current.get(e["a"]) not in (was, now):
             print("STALE  %s: exported over %r but the repo now generates %r"
                   % (key, was, current.get(e["a"])))
@@ -86,6 +127,12 @@ def main(argv):
 
     for e in incoming.get("globals", []):
         key = "0x%04X" % e["ds"]
+        why = suspect(e["now"])
+        if why and not force:
+            print("REFUSED DS:%s: %r -> %r  (%s)"
+                  % (key, e.get("was"), e["now"], why))
+            refused += 1
+            continue
         if store["globals"].get(key) == e["now"]:
             skipped += 1
             continue
@@ -102,8 +149,11 @@ def main(argv):
             store[field][key] = e["text"]
             added += 1
 
-    STORE.parent.mkdir(parents=True, exist_ok=True)
-    STORE.write_text(json.dumps(store, indent=1, sort_keys=True) + "\n")
+    if added or updated:
+        STORE.parent.mkdir(parents=True, exist_ok=True)
+        STORE.write_text(json.dumps(store, indent=1, sort_keys=True) + "\n")
+    else:
+        print("nothing adopted - %s left untouched" % STORE.name)
 
     print("")
     print("added   : %d" % added)
@@ -112,6 +162,9 @@ def main(argv):
     if stale:
         print("STALE   : %d  <- re-import, redo those renames, re-export"
               % stale)
+    if refused:
+        print("REFUSED : %d  <- looked like slips; --force to adopt anyway"
+              % refused)
     print("-> %s" % STORE)
     print("")
     print("totals now: %d functions, %d globals, %d plate, %d EOL"
