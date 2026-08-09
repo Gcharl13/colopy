@@ -9,6 +9,51 @@ Regenerate both artifacts any time (they stay in sync with the repo's JSON):
 python3 tools/ghidra/make_ghidra_scripts.py
 ```
 
+### Working from one folder
+
+The generator reads inputs from four places in the repo. If you would rather
+keep everything in a single directory, it will assemble one:
+
+```
+python3 tools/ghidra/make_ghidra_scripts.py --bundle ~/viceroy-ghidra
+```
+
+That copies itself, `merge_ghidra_export.py`, this README and every input into
+one flat directory (~6.3 MB). From then on:
+
+```
+python3 ~/viceroy-ghidra/make_ghidra_scripts.py
+```
+
+works with no repo present, and writes the Ghidra scripts into that same
+directory. Verified byte-identical to the in-repo build.
+
+Inputs resolve flat-beside-the-script first, then the canonical repo path, so
+the same file works either way. To see what it wants and where it found each
+one:
+
+```
+python3 tools/ghidra/make_ghidra_scripts.py --list
+```
+
+The bundle is a **snapshot**. Re-run `--bundle` after a `git pull` if the
+repo's evidence files have changed — nothing keeps a copy in sync.
+
+**The files it needs** (all found automatically in the repo):
+
+| File | From | Carries |
+|---|---|---|
+| `viceroy_modules.json` | `data_extracted/` | 1,250 functions → module, page, size |
+| `viceroy_symbols.json` | `tools/` | ~140 DGROUP globals, record windows |
+| `event_emitters.json` | `tools/rtlink/` | 292 GAME.TXT keys → emitting function |
+| `viceroy_rtlink_map.json` | `tools/rtlink/` | the 31 overlay page extents |
+| `overlay_thunks.json` | `code/VICEROY/` | 1,020 thunk stubs |
+| `overlay_pages.json` | `code/VICEROY/` | page directory (code offsets) |
+| `disasm_overlay_reseg/` | `code/VICEROY/` | 31 `page_XX.asm` — arg counts |
+| `ghidra_user_symbols.json` | `data_extracted/` | *optional* — your Ghidra renames |
+
+Only the last is optional; it does not exist until you run the merge script.
+
 ### Which file runs where
 
 Two of these run **in Ghidra**; two run **on the repo machine**. Running a

@@ -51,10 +51,81 @@ if "currentProgram" in dir():          # pragma: no cover - Ghidra only
         "\n    python3 tools/ghidra/make_ghidra_scripts.py"
         "\n" + "=" * 68)
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT_PY = ROOT / "tools/ghidra/viceroy_ghidra_symbols.py"
-OUT_EXPORT = ROOT / "tools/ghidra/viceroy_ghidra_export.py"
-OUT_H = ROOT / "tools/ghidra/viceroy_types.h"
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parents[1]
+
+# Outputs always land next to THIS file, so a bundled copy is self-contained.
+OUT_PY = HERE / "viceroy_ghidra_symbols.py"
+OUT_EXPORT = HERE / "viceroy_ghidra_export.py"
+OUT_H = HERE / "viceroy_types.h"
+
+# Every repo file this generator reads.  `--bundle DIR` copies exactly this
+# list, so the two never drift apart.
+INPUTS = [
+    "data_extracted/viceroy_modules.json",
+    "tools/viceroy_symbols.json",
+    "tools/rtlink/event_emitters.json",
+    "tools/rtlink/viceroy_rtlink_map.json",
+    "code/VICEROY/overlay_thunks.json",
+    "code/VICEROY/overlay_pages.json",
+]
+INPUT_DIRS = [
+    "code/VICEROY/disasm_overlay_reseg",     # 31 page_XX.asm
+]
+OPTIONAL_INPUTS = [
+    "data_extracted/ghidra_user_symbols.json",   # created by the merge script
+]
+
+
+def find_input(rel):
+    """Locate an input whether we are in the repo or in a flat bundle.
+
+    Search order: flat beside this script, then the same relative path beside
+    it, then the canonical repo path.  That lets you drop every input into one
+    folder with the generator and run it there, without maintaining a second
+    copy of the path list.
+    """
+    name = rel.rsplit("/", 1)[-1]
+    for cand in (HERE / name, HERE / rel, ROOT / rel):
+        if cand.exists():
+            return cand
+    return ROOT / rel          # report the canonical path in the error
+
+
+def bundle(dest):
+    """Copy the generator and every input it needs into one directory."""
+    import shutil
+    dest = Path(dest).resolve()
+    dest.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for rel in INPUTS + OPTIONAL_INPUTS:
+        src = find_input(rel)
+        if not src.exists():
+            if rel in OPTIONAL_INPUTS:
+                continue
+            raise SystemExit("missing required input: %s" % src)
+        shutil.copy2(src, dest / src.name)
+        n += 1
+    for rel in INPUT_DIRS:
+        src = find_input(rel)
+        if not src.is_dir():
+            raise SystemExit("missing required input directory: %s" % src)
+        out = dest / src.name
+        if out.exists():
+            shutil.rmtree(out)
+        shutil.copytree(src, out)
+        n += len(list(out.iterdir()))
+    for extra in (Path(__file__).resolve(), HERE / "merge_ghidra_export.py",
+                  HERE / "README.md"):
+        if extra.exists():
+            shutil.copy2(extra, dest / extra.name)
+            n += 1
+    print("bundled %d files into %s" % (n, dest))
+    print("")
+    print("That directory is now self-contained.  Run:")
+    print("    python3 %s/make_ghidra_scripts.py" % dest)
+    print("and the two Ghidra scripts appear in the same directory.")
+    raise SystemExit(0)
 
 HEADER = 0x2400
 DGROUP_FILE = 0x1D9A0
@@ -68,7 +139,7 @@ def load_user_syms():
     its own tier (`U`) rather than merged into the evidence files, so a human
     judgement can never be mistaken later for a byte citation.
     """
-    p = ROOT / "data_extracted/ghidra_user_symbols.json"
+    p = find_input("data_extracted/ghidra_user_symbols.json")
     if not p.exists():
         return {"functions": {}, "globals": {},
                 "plate_comments": {}, "eol_comments": {}}
@@ -144,7 +215,7 @@ def derive_arg_counts(names_by_offset, thunk_target_by_stub):
     viceroy_source/src/native/page0B_native_raid.c — 7/7 agree.
     """
     import collections
-    d = ROOT / "code/VICEROY/disasm_overlay_reseg"
+    d = find_input("code/VICEROY/disasm_overlay_reseg")
     if not d.is_dir():
         print("arg counts: skipped (no resegmented disasm)")
         return {}
@@ -223,8 +294,8 @@ def resolve_thunks(names_by_offset):
     addresses instead of hitting boundaries.  Anything that misses is dropped
     rather than guessed at, so an unresolved call site simply gets no comment.
     """
-    thunk_file = ROOT / "code/VICEROY/overlay_thunks.json"
-    pages_file = ROOT / "code/VICEROY/overlay_pages.json"
+    thunk_file = find_input("code/VICEROY/overlay_thunks.json")
+    pages_file = find_input("code/VICEROY/overlay_pages.json")
     if not (thunk_file.exists() and pages_file.exists()):
         print("thunk resolution: skipped (overlay_thunks/overlay_pages absent)")
         return []
@@ -389,12 +460,12 @@ def check_free_names(body):
 
 
 def main():
-    mods = json.loads((ROOT / "data_extracted/viceroy_modules.json").read_text())
-    syms = json.loads((ROOT / "tools/viceroy_symbols.json").read_text())
+    mods = json.loads(find_input("data_extracted/viceroy_modules.json").read_text())
+    syms = json.loads(find_input("tools/viceroy_symbols.json").read_text())
     emitters = json.loads(
-        (ROOT / "tools/rtlink/event_emitters.json").read_text())
+        find_input("tools/rtlink/event_emitters.json").read_text())
     rtl = json.loads(
-        (ROOT / "tools/rtlink/viceroy_rtlink_map.json").read_text())
+        find_input("tools/rtlink/viceroy_rtlink_map.json").read_text())
 
     # --- GAME.TXT keys per emitting function ------------------------------
     keys_by_func = {}
@@ -1436,5 +1507,43 @@ main()
 '''
 
 
+USAGE = """usage:
+  python3 make_ghidra_scripts.py               generate the Ghidra scripts
+  python3 make_ghidra_scripts.py --list        list every file it reads
+  python3 make_ghidra_scripts.py --bundle DIR  copy itself + every input into
+                                               DIR, so DIR is self-contained
+"""
+
+
+def list_inputs():
+    print("Inputs this generator reads (found = resolved on this machine):")
+    for rel in INPUTS:
+        p = find_input(rel)
+        print("  [%s] %-45s %s" % ("found" if p.exists() else "  -  ", rel, p))
+    for rel in INPUT_DIRS:
+        p = find_input(rel)
+        n = len(list(p.glob("*.asm"))) if p.is_dir() else 0
+        print("  [%s] %-45s %s  (%d .asm)"
+              % ("found" if p.is_dir() else "  -  ", rel, p, n))
+    print("\nOptional (absent is fine):")
+    for rel in OPTIONAL_INPUTS:
+        p = find_input(rel)
+        print("  [%s] %-45s %s" % ("found" if p.exists() else "absent", rel, p))
+    print("\nOutputs (always written next to this script):")
+    for p in (OUT_PY, OUT_EXPORT, OUT_H):
+        print("      %s" % p)
+    raise SystemExit(0)
+
+
 if __name__ == "__main__":
+    import sys
+    argv = sys.argv[1:]
+    if argv[:1] == ["--list"]:
+        list_inputs()
+    elif argv[:1] == ["--bundle"]:
+        if len(argv) != 2:
+            raise SystemExit(USAGE)
+        bundle(argv[1])
+    elif argv:
+        raise SystemExit(USAGE)
     main()
