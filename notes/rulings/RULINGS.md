@@ -9792,3 +9792,31 @@ and the set of thunk-stub addresses the import script labelled. Replaying the
 Also corrected: the BUILD stamp hashed only the import body, so a fix to the
 export script left the stamp unchanged — the single version check the user has
 would have called a stale export script current. It now covers both bodies.
+
+### 2026-08-08n addendum — the 0x5DE0 name conflict resolves against MARKET_PRICE
+
+The conflict recorded above (DS:0x5DE0 = legacy `MARKET_PRICE_5DE0` vs
+`ColonyRecord[0].stock[0]`) is now resolved by evidence that already existed
+elsewhere in the tree:
+
+- Market prices are **byte-verified in PowerRecord `+0x4C price_level[16]`**
+  (base 0x8808): ask `func_030566 @0x30583`, bid `func_030590 @0x3059C`,
+  recompute `@0x306F3` — see `spec/systems/colony.md` §PowerRecord and
+  `spec/systems/boycotts.md`. Prices are per-POWER state and never lived in a
+  colony record.
+- The ColonyRecord base 0x5D46 / stride 0xCA is multiply witnessed (the
+  `func_02EB1C` displacements plus 17 field aliases), so 0x5DE0 falling at
+  element 0's `+0x9A stock[0]` is not in doubt.
+
+Verdict: `MARKET_PRICE_5DE0` is a **mislabel** — 0x5DE0 is colony 0's Food
+stock. The legacy name stays in `tools/viceroy_symbols.json` as the
+historical label, the conflict entry in `make_ghidra_scripts.py` now states
+the resolution, and nothing in `port/`, `spec/`, or the technical reference
+ever used the wrong name (checked 2026-08-08: zero citations).
+
+Port impact of the whole Ghidra pass, for the record: **none required** — the
+17/18 field-alias corroboration independently confirms the ColonyRecord/
+UnitRecord/PowerRecord layouts `importSav` decodes, and `func_02CFD0`'s
+decompile (writes DGROUP `[0x337]` on a modal result) matches the panel-mode
+model already in `port/src/game.js` — identifications and confidence, not
+behavior changes.

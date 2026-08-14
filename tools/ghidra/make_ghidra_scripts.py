@@ -337,9 +337,11 @@ WIDTH = {"u8": 1, "s8": 1, "char": 1, "u16": 2, "s16": 2, "u32": 4, "s32": 4}
 # NAME disagrees.  Recorded, not silently resolved — see notes/TRUTH_HIERARCHY.
 KNOWN_NAME_CONFLICTS = {
     0x5DE0: ("MARKET_PRICE_5DE0", "ColonyRecord.stock",
-             "a colony record holds warehouse stock, not market prices; the "
-             "legacy name is unsourced. Offsets agree, so the layout is not "
-             "in doubt — only the label."),
+             "RESOLVED against the legacy name (ruling 2026-08-08n addendum): "
+             "market prices are byte-verified in PowerRecord +0x4C "
+             "price_level[16] (func_030566/030590), so 0x5DE0 is colony 0's "
+             "stock[0], and MARKET_PRICE_5DE0 is a mislabel kept only as the "
+             "historical alias."),
 }
 
 
