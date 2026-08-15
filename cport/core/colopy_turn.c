@@ -672,6 +672,15 @@ void unit_remove(int ui) {
             if (CR.runits_order[rn][k] > ui) CR.runits_order[rn][k]--;
         }
 }
+/* The scripted-answer policy (see colopy_sim.h): choice = seq++ % 2,
+ * with an A<choice> marker in the event stream so the parity diff pins
+ * every decision. */
+int ask_choice(void) {
+    int c = (int)(CR.ask_seq++ % 2u);
+    ev_emit(c ? "A1" : "A0", 0, 0, 0, 0);
+    return c;
+}
+
 void natives_push(int ui) {
     if (CR.n_natives < COLOPY_MAX_UNITS)
         CR.natives_order[CR.n_natives++] = (uint8_t)ui;

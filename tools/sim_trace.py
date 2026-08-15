@@ -110,7 +110,22 @@ TURNS = """([save, n, agitate]) => {
   const evs = [];
   const _show = showEvent, _ask = askEvent;
   showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
-  askEvent = (k, subs, cb, opts) => { evs.push(k); G.dialog = null; };
+  // PHASE 5: asks get ANSWERED under a deterministic policy both engines
+  // compute identically (choice = askSeq++ % 2), so every decision path
+  // (tax demands, tea parties, treaties, tribute, buy-offs) executes and
+  // lands in the parity diff.  OFF until the C ask sites carry their
+  // ported callback bodies (task #88 slice 1) — flip with the C flag.
+  const ANSWER_ASKS = false;
+  let _askSeq = 0;
+  askEvent = (k, subs, cb, opts) => {
+    evs.push(k);
+    if (ANSWER_ASKS) {
+      const choice = _askSeq++ % 2;
+      evs.push('A' + choice);
+      if (cb) cb(choice);
+    }
+    G.dialog = null;
+  };
   // A woodcut flips G.screen and would silently gate the parley check
   // (rivalTurn requires screen === 'map') for the rest of a headless run;
   // in real play the player dismisses it at once.  Model the dismissal.

@@ -136,6 +136,11 @@ void units_order_drop(int ui);   /* JS G.units.splice (record kept) */
 void runits_push(int rn, int ui);      /* JS r.units.push */
 void runits_drop(int rn, int ui);      /* JS r.units.splice (record kept) */
 
+/* Phase 5: every askEvent site calls this ONCE (the trace increments its
+ * counter on every ask, answered or not), emits an "A<choice>" marker
+ * event, and applies the ported callback body under the same choice. */
+int ask_choice(void);
+
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
 typedef struct {
@@ -235,6 +240,11 @@ typedef struct {
     uint8_t king_wed;            /* KINGWIFE one-shot */
     uint8_t succession;          /* spanishSuccession latch */
     uint8_t retired, soon_warned;
+    uint8_t scored;              /* G.scored (the SCORED answer latch) */
+    uint8_t king_frigate;        /* G.kingFrigate (KINGFRIGATE answer) */
+    uint32_t ask_seq;            /* the scripted-answer counter — the trace
+                                  * answers every ask with askSeq++ % 2 and
+                                  * RUNS the callback; ask_choice() mirrors */
     uint8_t screen_map;          /* G.screen === 'map' (parley gate); the
                                   * retirement report leaves the map, a
                                   * woodcut dismissal returns to it */
