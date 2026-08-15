@@ -320,6 +320,65 @@ int resolve_attack(int att_ui, int def_ui) {
     return removed;
 }
 
+/* navalAttack (game.js:6895): the raw guns/hull roll.  Only Privateers,
+ * Frigates and Men-O-War may START a ship attack (@SHIPCOMBAT); a
+ * gunless defender that survives the roll EVADES (flagged stand-in like
+ * the JS); a damaged loser's hold is seized — @PICKACARGO asks when a
+ * player winner has a choice.  Returns 0 only on the refusal. */
+static int ship_attacker_type(int type) {
+    const char *n = dat_units[type].name;
+    return strcmp(n, "Privateer") == 0 || strcmp(n, "Frigate") == 0 ||
+           strcmp(n, "Man-O-War") == 0;
+}
+int naval_attack(int att_ui, int def_ui) {
+    rresolve();
+    if (!ship_attacker_type(CS.units[att_ui].type)) {
+        ev_emit("SHIPCOMBAT", 0, 0, 0, 0);
+        return 0;
+    }
+    const dat_units_t *ta = &dat_units[CS.units[att_ui].type];
+    const dat_units_t *td = &dat_units[CS.units[def_ui].type];
+    int A = ta->attack ? ta->attack : ta->combat;
+    int D = td->hull ? td->hull : td->combat;
+    int win = 1 + R(A + D) <= A;
+    if (!win && !ship_attacker_type(CS.units[def_ui].type)) {
+        ev_emit("EVASIVE", 0, 0, td->name, ta->name);
+        CS.units[att_ui].moves_remaining = 0;
+        CR.unit_moves_undef[att_ui] = 0;
+        return 1;
+    }
+    int loser = win ? def_ui : att_ui, winner = win ? att_ui : def_ui;
+    /* a hold going down is seized (pre-battle damaged = this hit sinks) */
+    hold_slot spoils[EURO_HOLD_MAX];
+    int ns = 0;
+    for (int i = 0; i < CR.unit_n_hold[loser]; i++)
+        if (CR.unit_hold[loser][i].qty > 0)
+            spoils[ns++] = CR.unit_hold[loser][i];
+    if (ns && CR.unit_damaged[loser]) {
+        int winner_is_player =
+            (CS.units[winner].owner_flags & 0x0F) == cs_nation();
+        int pick = 0;
+        if (ns > 1 && winner_is_player) {
+            ev_emit("PICKACARGO", 0, 0, 0, 0);
+            int k = ask_choice();
+            pick = (k >= 0 && k < ns) ? k : 0;
+        }
+        ev_emit("CARGOCAPTURE", spoils[pick].qty, 0,
+                dat_cargo[spoils[pick].good].name,
+                dat_units[CS.units[winner].type].name);
+        hold_add(CR.unit_hold[winner], &CR.unit_n_hold[winner],
+                 spoils[pick].good, spoils[pick].qty);
+    }
+    int rem = apply_defeat(loser, winner);
+    if (rem >= 0 && rem < att_ui) att_ui--;
+    else if (rem == att_ui) att_ui = -1;     /* the attacker sank */
+    if (att_ui >= 0) {
+        CS.units[att_ui].moves_remaining = 0;    /* att.movesLeft = 0 */
+        CR.unit_moves_undef[att_ui] = 0;
+    }
+    return 1;
+}
+
 /* Immediate colony splice (rival capture, game.js:7578) — the vanish
  * filter's memmove pair, without the flag round trip. */
 void colony_remove(int ci) {

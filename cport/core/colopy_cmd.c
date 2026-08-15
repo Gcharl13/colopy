@@ -270,8 +270,68 @@ void cmd_move(int ui, int dx, int dy) {
     if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H) return;
     uint8_t v = map_at(nx, ny);
     int ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
-    if (ship) return;                       /* ship moves: slice 3 */
-    if (tile_water(v)) return;              /* land units stay ashore */
+    int me = (int)cs_nation();
+    if (ship && !tile_water(v)) {
+        /* a ship ordered onto land (game.js:10926): with land units
+         * aboard the landing square must be clear of enemies
+         * (@LANDFIRST); the landfall offer itself is an openDialog the
+         * headless trace stubs inert, so nothing else happens. */
+        if (CR.unit_n_pass[ui] > 0) {
+            int hostile = 0;
+            for (int k = 0; k < CR.n_natives && !hostile; k++) {
+                int q = CR.natives_order[k];
+                if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) hostile = 1;
+            }
+            for (int rn = 0; rn < 4 && !hostile; rn++) {
+                if (rn == me || !CR.rivals[rn].met ||
+                    !rel_at_war(me, rn)) continue;
+                for (int k = 0; k < CR.n_runits[rn] && !hostile; k++) {
+                    int q = CR.runits_order[rn][k];
+                    if (CR.runit_x[q] == nx && CR.runit_y[q] == ny)
+                        hostile = 1;
+                }
+                for (int k = 0; k < CR.rivals[rn].n_col && !hostile; k++)
+                    if (CR.rivals[rn].col[k].x == nx &&
+                        CR.rivals[rn].col[k].y == ny) hostile = 1;
+            }
+            if (hostile) { ev_emit("LANDFIRST", 0, 0, 0, 0); return; }
+        }
+        return;
+    }
+    if (!ship && tile_water(v)) return;     /* land units stay ashore */
+    if (ship) {
+        /* @SHIPLAKE is INERT in the reference: its REGION plane labels
+         * LAND components only, so every water tile compares 0 == 0
+         * (game.js:482-503 vs 10950).  The interception zone
+         * (func_059B90, game.js:10961): one check per move order. */
+        int menace = -1, owner = -1;
+        for (int rn = 0; rn < 4 && menace < 0; rn++) {
+            if (rn == me || !CR.rivals[rn].met || !rel_at_war(me, rn))
+                continue;
+            for (int k = 0; k < CR.n_runits[rn] && menace < 0; k++) {
+                int q = CR.runits_order[rn][k];
+                if (dat_units[CS.units[q].type].hull <= 0) continue;
+                if (dat_units[CS.units[q].type].attack <= 0) continue;
+                int ax = CR.runit_x[q] - nx, ay = CR.runit_y[q] - ny;
+                if (ax < 0) ax = -ax;
+                if (ay < 0) ay = -ay;
+                if (ax <= 1 && ay <= 1) { menace = q; owner = rn; }
+            }
+        }
+        (void)owner;
+        if (menace >= 0 && !CR.unit_slip[ui]) {
+            CR.unit_slip[ui] = 1;
+            if (rng_next() <= 16383) {
+                ev_emit("SHIPRUN", 0, 0, dat_units[u->type].name, 0);
+            } else {
+                u->moves_remaining = (uint8_t)(u->moves_remaining > 3
+                                                   ? u->moves_remaining - 3
+                                                   : 0);
+                CR.unit_moves_undef[ui] = 0;
+                ev_emit("SHIPSLOW", 0, 0, dat_units[u->type].name, 0);
+            }
+        }
+    }
     /* an occupied tile — a native/squatter (attack §14, with the §14.3
      * tired-troops @HALF ask), a rival (parley/war/trade/scout), a
      * village, a rumour square: each an EXPLICIT no-op pending slices
@@ -281,15 +341,62 @@ void cmd_move(int ui, int dx, int dy) {
         int q = CR.natives_order[k];
         if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) return;
     }
-    for (int rn = 0; rn < 4; rn++) {
-        if (rn == (int)cs_nation()) continue;
-        for (int k = 0; k < CR.n_runits[rn]; k++) {
-            int q = CR.runits_order[rn][k];
-            if (CR.runit_x[q] == nx && CR.runit_y[q] == ny) return;
+    /* a rival power's unit or colony (game.js:11023): at peace a SHIP
+     * knocks (parley / privateer strike / treaty break); at war ship vs
+     * ship is navalAttack.  The LAND-side rival branches (resolveAttack,
+     * colony capture, trade, scout) stay with slice 5 — the scripted
+     * harness filters land moves off rival tiles. */
+    {
+        int rival = -1, ruP = -1, is_col = 0;
+        for (int rn = 0; rn < 4 && rival < 0; rn++) {
+            if (rn == me || !CR.rivals[rn].met) continue;
+            for (int k = 0; k < CR.n_runits[rn] && ruP < 0; k++) {
+                int q = CR.runits_order[rn][k];
+                if (CR.runit_x[q] == nx && CR.runit_y[q] == ny) ruP = q;
+            }
+            for (int k = 0; k < CR.rivals[rn].n_col; k++)
+                if (CR.rivals[rn].col[k].x == nx &&
+                    CR.rivals[rn].col[k].y == ny) is_col = 1;
+            if (ruP >= 0 || is_col) rival = rn;
         }
-        for (int k = 0; k < CR.rivals[rn].n_col; k++)
-            if (CR.rivals[rn].col[k].x == nx && CR.rivals[rn].col[k].y == ny)
+        if (rival >= 0) {
+            if (!ship) return;               /* land rival moves: slice 5 */
+            int ruP_ship = ruP >= 0 &&
+                           dat_units[CS.units[ruP].type].hull > 0;
+            /* the Privateer's HIDDEN attribution (war_matrix 0x80
+             * @0x3F0A1): strike rival shipping at peace */
+            if (!rel_at_war(me, rival) &&
+                strcmp(dat_units[u->type].name, "Privateer") == 0 &&
+                ruP >= 0 && ruP_ship) {
+                rel_set_privateer(me, rival);
+                naval_attack(ui, ruP);
                 return;
+            }
+            /* @HAVETREATY: attacking a treaty partner asks first */
+            if (!rel_at_war(me, rival) && rel_have_treaty(me, rival) &&
+                ruP >= 0 && ruP_ship) {      /* same element: both ships */
+                ev_emit("HAVETREATY", 0, 0,
+                        dat_nations[rival].adjective, 0);
+                if (ask_choice() == 1) {
+                    ev_emit("CANCELPEACE", 0, 0,
+                            dat_nations[me].adjective,
+                            dat_nations[rival].adjective);
+                    rel_declare_war(me, rival);
+                }
+                return;
+            }
+            if (rel_at_war(me, rival)) {
+                if (ruP >= 0 && ruP_ship) { naval_attack(ui, ruP); return; }
+                return;                      /* other war arms: slice 5 */
+            }
+            /* peace: the parley (water tiles carry no colony, so the
+             * trade/scout arms cannot arise here) */
+            if (!rel_parley_eligible(rival)) return;   /* msg only */
+            u->moves_remaining = 0;
+            CR.unit_moves_undef[ui] = 0;
+            run_meeting(rival, 1);
+            return;
+        }
     }
     for (int vi = 0; vi < CS.n_villages; vi++)
         if (CS.villages[vi].map_x == nx && CS.villages[vi].map_y == ny) {
@@ -304,9 +411,12 @@ void cmd_move(int ui, int dx, int dy) {
     /* a rumour square triggers the exploration event; one outcome
      * destroys the unit before it ever arrives (game.js:11162) */
     if (rumour_at(nx, ny) && !enter_rumour(ui, nx, ny)) return;
+    /* the right-edge sea lane asks @SAILHOME via openDialog — stubbed
+     * inert headless, and the ship does NOT step (game.js:11153) */
+    if (ship && tile_terrain(v) == TERR_SEALANE) return;
     /* step (game.js:10833): one step is always affordable; the budget
      * floors at zero.  reveal/tutorial/centring are presentation. */
-    int cost = move_cost(0, u->map_x, u->map_y, nx, ny);
+    int cost = move_cost(ship, u->map_x, u->map_y, nx, ny);
     u->moves_remaining = (uint8_t)(cost > u->moves_remaining
                                        ? 0 : u->moves_remaining - cost);
     u->map_x = (uint8_t)nx;

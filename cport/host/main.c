@@ -161,8 +161,20 @@ static void script_commands(int t) {
             /* slice 3: an idle ship sails home now and then; the splice
              * shifts the list and the loop steps past the slot, exactly
              * like the JS iteration. */
-            if (u->orders == 0 && (t + k) % 17 == 0 && t > 0)
+            if (u->orders == 0 && (t + k) % 17 == 0 && t > 0) {
                 cmd_sail_for_europe(ui);
+                continue;
+            }
+            /* slice 4c: a water step (interception, naval attack,
+             * parley; the sea lane's dialog is inert so skip its tiles) */
+            int sx = u->map_x + DIRS8[(t + k) % 8][0];
+            int sy = u->map_y + DIRS8[(t + k) % 8][1];
+            if (!CR.unit_moves_undef[ui] && u->moves_remaining > 0 &&
+                sx >= 0 && sy >= 0 && sx < COLOPY_MAP_W &&
+                sy < COLOPY_MAP_H && tile_water(map_at(sx, sy)) &&
+                tile_terrain(map_at(sx, sy)) != TERR_SEALANE)
+                cmd_move(ui, DIRS8[(t + k) % 8][0],
+                         DIRS8[(t + k) % 8][1]);
             continue;
         }
         int a = (t * 7 + k * 3) % 10;
@@ -204,9 +216,7 @@ static void script_commands(int t) {
                     if (CR.cur_village >= 0) {
                         uint8_t ids[10];
                         int nr = village_action_rows(ids);
-                        int id = nr ? ids[(t + k) % nr] : 9;
-                        if (id == 0 || id == 1) id = 9;  /* trade: 4c */
-                        run_village_action(id);
+                        run_village_action(nr ? ids[(t + k) % nr] : 9);
                     }
                 }
                 break;

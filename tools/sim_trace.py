@@ -143,6 +143,10 @@ TURNS = """([save, n, agitate, script]) => {
   // rumour entry: slices 3-5) are never reached.  advance() is stubbed:
   // the commands' auto-advance would re-enter endTurn mid-script.
   advance = () => {};
+  // openDialog (landfall / SAILHOME / LANDHO) parks a modal nobody answers
+  // headless; the latch would ALSO flip askZoom onto its dialog-open branch
+  // and desync the ask counter — stub it inert (slice 4c).
+  openDialog = () => {};
   const DIRS8 = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
   const tileFree = (nx, ny) => {
     if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) return false;
@@ -161,7 +165,15 @@ TURNS = """([save, n, agitate, script]) => {
       if (u.ship) {
         // slice 3: an idle ship sails home now and then; the splice
         // shifts the list and the loop steps past the slot (mirrored).
-        if (u.orders === 0 && (t + k) % 17 === 0 && t > 0) sailForEurope(u);
+        if (u.orders === 0 && (t + k) % 17 === 0 && t > 0) { sailForEurope(u); continue; }
+        // slice 4c: a water step (interception, naval attack, parley;
+        // the sea lane's SAILHOME dialog is inert so skip its tiles)
+        const [dx, dy] = DIRS8[(t + k) % 8];
+        const nx = u.x + dx, ny = u.y + dy;
+        if (u.movesLeft > 0 && nx >= 0 && ny >= 0 && nx < MAP.w && ny < MAP.h &&
+            tileWater(at(nx, ny)) && tileTerrain(at(nx, ny)) !== TERR.SEALANE) {
+          G.sel = k; moveSel(dx, dy);
+        }
         continue;
       }
       const a = (t * 7 + k * 3) % 10;
@@ -187,9 +199,7 @@ TURNS = """([save, n, agitate, script]) => {
             G.sel = k; moveSel(dx, dy);
             if (G.village) {
               const rows2 = villageActions();
-              let id = rows2[(t + k) % rows2.length].id;
-              if (id === 0 || id === 1) id = 9;          // trade: 4c
-              runVillageAction(id);
+              runVillageAction(rows2[(t + k) % rows2.length].id);
             }
           }
           break;

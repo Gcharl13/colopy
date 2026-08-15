@@ -169,6 +169,15 @@ int  village_action_rows(uint8_t *ids_out);   /* villageActions (6466): the
 void run_village_action(int id);              /* runVillageAction (6494) —
                                                * ids 0/1 (trade) are slice-4c
                                                * no-ops, script remaps to 9 */
+
+/* ---- ship movement + naval combat (slice 4c) --------------------------- */
+void run_meeting(int rn, int via_ship);       /* runMeeting (game.js:8254) */
+int  naval_attack(int att_ui, int def_ui);    /* navalAttack (game.js:6895) */
+int  rel_at_war(int a, int b);
+int  rel_have_treaty(int a, int b);
+int  rel_parley_eligible(int rn);
+void rel_declare_war(int a, int b);
+void rel_set_privateer(int a, int b);
 int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
 int  father_by_name(const char *name);
@@ -373,6 +382,9 @@ typedef struct {
     uint8_t rumour_floor;        /* anti-streak floor, 1..3 (G.rumourFloor) */
     uint8_t found_fountain, found_cibola;
     uint16_t unit_treasure[COLOPY_MAX_UNITS]; /* JS u.treasure (value/100) */
+    uint8_t unit_slip[COLOPY_MAX_UNITS]; /* u.slipChecked: one interception
+                                          * check per move order, reset by
+                                          * the endTurn refresh */
     uint8_t unit_rival_born[COLOPY_MAX_UNITS];
     /* "u.moves is undefined": seeded = rival_born, but CLEARED by
      * becomeType (game.js:7061 assigns u.moves) — a demoted rival object

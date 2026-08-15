@@ -422,6 +422,36 @@ static void attack_village(int vi, int ui) {
     remove_village(vi);
 }
 
+/* openVillageTrade (game.js:6524) — the anger refusals and the empty-
+ * wagon turn-away.  The sell/buy HAGGLE beyond them needs a cargo-laden
+ * visitor, which no scripted path can produce yet (wagons load cargo
+ * through the colony Load picker — a later slice); if a laden visitor
+ * ever reaches this, the parity diff will flag the gap loudly. */
+static void open_village_trade(int vi, int ui) {
+    int tr = vtribe(vi);
+    UnitRecord *u = &CS.units[ui];
+    int wagon = strcmp(dat_units[u->type].name, "Wagon Train") == 0;
+    int laden = 0;
+    for (int i = 0; i < CR.unit_n_hold[ui]; i++)
+        if (CR.unit_hold[ui][i].qty > 0) laden = 1;
+    if (CR.tension[tr] >= TENSION_HOSTILE) {
+        if (wagon && laden) {
+            ev_emit("CONFISCATE", 0, 0, dat_tribes[tr].name, 0);
+            CR.unit_n_hold[ui] = 0;          /* u.hold = [] */
+            return;
+        }
+        ev_emit("MADATWAGONS", 0, 0, dat_tribes[tr].name, 0);
+        return;
+    }
+    /* (@MADATSHIPS is the restless-band SHIP refusal — ships cannot
+     * open a village through moveSel, so it stays unreachable) */
+    if (CR.tension[tr] >= 40 && wagon)
+        ev_emit("GRUDGEWAGONS", 0, 0, dat_tribes[tr].name, 0);
+    if (!laden) { ev_emit("TRADENOCARGO", 0, 0, 0, 0); return; }
+    /* the haggle proper: tradeSellPick .. tradeBuyRound — unreachable
+     * until a load-cargo command exists; deliberately unported. */
+}
+
 /* runVillageAction (game.js:6494).  Every non-trade row leaves the
  * village screen for the map. */
 void run_village_action(int id) {
@@ -430,7 +460,7 @@ void run_village_action(int id) {
     CR.screen_map = 1;
     if (vi < 0 || ui < 0) return;
     switch (id) {
-    case 0: case 1: return;          /* the trade haggle: slice 4c */
+    case 0: case 1: open_village_trade(vi, ui); return;
     case 2: establish_mission(vi, ui); return;
     case 3: denounce_heresy(vi, ui); return;
     case 4: live_among(vi, ui); return;

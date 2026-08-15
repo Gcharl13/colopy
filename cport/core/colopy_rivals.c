@@ -156,12 +156,33 @@ static void meeting_peace_hub(int rn) {
 static void meeting_topic(int rn) {
     int me = cs_nation();
     int in_grace = cs_turn() < 10 * (10 - cs_difficulty());
-    /* @PIRACY — needs the privateer hidden-attribution bit (unset while
-     * the importer leaves the war matrix empty) */
+    /* @PIRACY — B's accusation once the Privateer hidden-attribution
+     * bit is set against him (game.js:8275; reachable since the ship
+     * command layer can strike at peace).  Row 1 withdraws: every player
+     * Privateer sails for Europe (in G.units order — the crossing-list
+     * order is part of the parity contract); either row then falls to
+     * the peace hub. */
     if ((CR.war_matrix[me][rn] & REL_PRIVATEER) && !at_war(me, rn)) {
         CR.war_matrix[me][rn] &= (uint8_t)~REL_PRIVATEER;
         ev_emit("PIRACY", 0, 0, dat_nations[me].adjective,
-                dat_regionname[rn]);       /* ask stub */
+                dat_regionname[rn]);
+        int k = ask_choice();
+        if (k == 1) {
+            int priv = -1;
+            for (int i = 0; i < DAT_UNITS_COUNT; i++)
+                if (strcmp(dat_units[i].name, "Privateer") == 0) priv = i;
+            int uis[64], nu = 0;
+            for (int q = 0; q < CR.n_units_order && nu < 64; q++) {
+                int ui = CR.units_order[q];
+                if (CS.units[ui].type == priv) uis[nu++] = ui;
+            }
+            for (int q = 0; q < nu; q++) {
+                cmd_sail_for_europe(uis[q]);
+                for (int w = q + 1; w < nu; w++)   /* records compacted */
+                    if (uis[w] > uis[q]) uis[w]--;
+            }
+        }
+        meeting_peace_hub(rn);
         return;
     }
     /* @SIEGES — player attack-capable land units beside B's colonies */
@@ -287,16 +308,26 @@ static void meeting_topic(int rn) {
     meeting_peace_hub(rn);
 }
 
-/* runMeeting (game.js:8254).  unitIn is always a LAND unit here (only the
- * land-garrison branch parleys), so the ungreeted key is HELLOFIRST. */
-static void run_meeting(int rn) {
+/* runMeeting (game.js:8254).  The AI-initiated parley has no player unit
+ * (HELLOFIRST when ungreeted); a player SHIP knocking is HELLOAHOY. */
+void run_meeting(int rn, int via_ship) {
     rival_rt *r = &CR.rivals[rn];
-    const char *key = !r->greeted ? "HELLOFIRST"
+    const char *key = !r->greeted ? (via_ship ? "HELLOAHOY" : "HELLOFIRST")
         : meeting_tone(rn) ? "HELLOMEEK" : "HELLOMANLY";
     r->greeted = 1;
     CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
     ev_emit(key, 0, 0, dat_regionname[rn], 0);
     meeting_topic(rn);
+}
+
+/* Relation accessors for the command layer (colopy_cmd.c) — the REL
+ * bit constants stay private to this unit. */
+int rel_at_war(int a, int b) { return at_war(a, b); }
+int rel_have_treaty(int a, int b) { return have_treaty(a, b); }
+int rel_parley_eligible(int rn) { return parley_eligible(rn); }
+void rel_declare_war(int a, int b) { declare_war_on(a, b); }
+void rel_set_privateer(int a, int b) {
+    CR.war_matrix[a][b] |= REL_PRIVATEER;   /* setWar(.., PRIVATEER, true) */
 }
 
 /* checkContact (game.js:7317): every imported rival is already met
@@ -390,7 +421,7 @@ void rival_turn(void) {
                     if (dy < 0) dy = -dy;
                     if (dx <= 1 && dy <= 1) near = 1;
                 }
-                if (near) run_meeting(rn);
+                if (near) run_meeting(rn, 0);
                 continue;
             }
             /* WAR branch (game.js:7553): garrison-first, then the attack

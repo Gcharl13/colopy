@@ -261,7 +261,7 @@ Status column is maintained by hand as porting proceeds:
 | `actionLabel` | 6481 | 8 |  | todo |
 | `runVillageAction` | 6490 | 28 |  | ported (run_village_action; trade rows = slice 4c) |
 | `tradeSpeaker` | 6519 | 0 |  | todo |
-| `openVillageTrade` | 6520 | 28 |  | todo |
+| `openVillageTrade` | 6520 | 28 |  | partial (anger refusals + empty-wagon; the haggle needs load-cargo) |
 | `tradeSellPick` | 6549 | 11 |  | todo |
 | `tradeSellOffer` | 6561 | 31 |  | todo |
 | `tradeSellRound` | 6593 | 50 |  | todo |
@@ -278,7 +278,7 @@ Status column is maintained by hand as porting proceeds:
 | `MISC` | 6805 | 0 |  | todo |
 | `combatAnalysis` | 6806 | 77 |  | ported |
 | `combatStrength` | 6884 | 6 |  | ported |
-| `navalAttack` | 6891 | 38 |  | todo |
+| `navalAttack` | 6891 | 38 |  | ported (naval_attack: SHIPCOMBAT gate, EVASIVE, CARGOCAPTURE/PICKACARGO) |
 | `shoreBombardment` | 6930 | 27 |  | ported |
 | `scoutColony` | 6958 | 32 |  | todo |
 | `powerStrength` | 6991 | 2 |  | ported |
@@ -337,8 +337,8 @@ Status column is maintained by hand as porting proceeds:
 | `powerMetric` | 8233 | 7 |  | ported |
 | `meetingTone` | 8241 | 0 |  | ported |
 | `meetingSubs` | 8242 | 7 |  | todo |
-| `runMeeting` | 8250 | 11 |  | ported |
-| `meetingTopic` | 8262 | 117 |  | ported (asks answered) |
+| `runMeeting` | 8250 | 11 |  | ported (run_meeting incl. HELLOAHOY) |
+| `meetingTopic` | 8262 | 117 |  | ported (PIRACY callback live: privateer recall + hub) |
 | `meetingPeaceHub` | 8380 | 17 |  | ported (rows 2-3 unreachable under ask policy) |
 | `acceptTreaty` | 8398 | 6 |  | ported |
 | `rivalForcesNearby` | 8405 | 3 |  | ported (inside meeting_withdraw) |

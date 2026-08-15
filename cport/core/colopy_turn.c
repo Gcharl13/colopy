@@ -629,6 +629,8 @@ void turn_step_prefix(void) {
             CS.units[i].moves_remaining =
                 (uint8_t)(dat_units[CS.units[i].type].movement * 3);
         }
+    for (int i = 0; i < CS.n_units; i++)
+        if (unit_on_map_player(i)) CR.unit_slip[i] = 0;  /* u.slipChecked */
     /* payUpkeep */
     {
         int32_t due = total_upkeep();
@@ -688,6 +690,7 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_n_hold[i] = 0;
     CR.unit_n_pass[i] = 0;
     CR.unit_treasure[i] = 0;
+    CR.unit_slip[i] = 0;
     return i;
 }
 void unit_remove(int ui) {
@@ -709,6 +712,7 @@ void unit_remove(int ui) {
     memmove(&CR.unit_moves_undef[ui], &CR.unit_moves_undef[ui + 1], n);
     memmove(&CR.unit_treasure[ui], &CR.unit_treasure[ui + 1],
             n * sizeof(uint16_t));
+    memmove(&CR.unit_slip[ui], &CR.unit_slip[ui + 1], n);
     memmove(&CR.unit_hold[ui], &CR.unit_hold[ui + 1],
             n * sizeof(CR.unit_hold[0]));
     memmove(&CR.unit_n_hold[ui], &CR.unit_n_hold[ui + 1], n);
