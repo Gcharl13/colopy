@@ -3,10 +3,6 @@
  * data_extracted/ (byte-verified). Regenerate after any data fix. */
 #ifndef COLOPY_DATA_H
 #define COLOPY_DATA_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <stdint.h>
 #include <stddef.h>
 
@@ -181,7 +177,4 @@ extern const int32_t dat_starts[4][2];
 #define DAT_MAP_H 72
 extern const uint8_t dat_map_tiles[4176];
 
-#ifdef __cplusplus
-}
-#endif
 #endif

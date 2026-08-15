@@ -2,10 +2,6 @@
  * never reads these; the render layer (cport/render) does. */
 #ifndef COLOPY_UI_H
 #define COLOPY_UI_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <stdint.h>
 #include <stddef.h>
 
@@ -25,7 +21,4 @@ typedef struct {
 } dat_menu_rows_t;
 extern const dat_menu_rows_t dat_menu_rows[62];
 
-#ifdef __cplusplus
-}
-#endif
 #endif

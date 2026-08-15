@@ -4,10 +4,6 @@
  * content served from microSD. */
 #ifndef COLOPY_TEXT_H
 #define COLOPY_TEXT_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include <stdint.h>
 #include <stddef.h>
 
@@ -3085,7 +3081,4 @@ extern const char *const dat_diplotext_greatleader2[4];
 #define DAT_DIPLOTEXT_FRIEND_COUNT 4
 extern const char *const dat_diplotext_friend[4];
 
-#ifdef __cplusplus
-}
-#endif
 #endif
