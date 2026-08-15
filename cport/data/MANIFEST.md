@@ -42,7 +42,7 @@ with it. Nothing is dropped silently.
 | `independent` | emitted |
 | `tribes` | emitted |
 | `tribesites` | emitted |
-| `menus` | EXCLUDED: interface: pulldown layout/accelerators (menu ACTIONS are core commands, defined in colopy_core.h) |
+| `menus` | emitted -> colopy_ui.c (interface layout; render-layer only) |
 | `events` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `text` | emitted -> colopy_text.c (display text; SD-able on Teensy) |
 | `diplotext` | emitted -> colopy_text.c (display text; SD-able on Teensy) |

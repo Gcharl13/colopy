@@ -18,6 +18,7 @@
 
 #include "../core/colopy_sim.h"
 #include "../data/colopy_data.h"
+#include "../data/colopy_ui.h"
 #include "colopy_render.h"
 
 #define TILE 16
@@ -686,4 +687,145 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         }
     draw_menu_bar();
     draw_sidebar(&vw);
+}
+
+/* ---- cluster C: the pulldown layer (game.js:1738-1862) ---------------- */
+/* FRAME_GAME plaque rings (game.js:794); the bevel paint ORDER is
+ * load-bearing (top after left, bottom last — game.js:801). */
+static void plaque_game(int x, int y, int w, int h) {
+    hollow_rect(x, y, w, h, 0);
+    hollow_rect(x + 1, y + 1, w - 2, h - 2, 134);
+    rd_fill(x + 2, y + 2, 1, h - 4, 138);            /* left, dark */
+    rd_fill(x + w - 3, y + 2, 1, h - 4, 128);        /* right, light */
+    rd_fill(x + 2, y + 2, w - 4, 1, 128);            /* top, light */
+    rd_fill(x + 2, y + h - 3, w - 4, 1, 138);        /* bottom, dark */
+    /* interior: WOODTILE tiled, grid anchored at ix-3/iy-3 under the
+     * clip (func_00E350 @0x00E371-A2) */
+    int ix = x + 3, iy = y + 3, iw = w - 6, ih = h - 6;
+    rd_frame wt;
+    if (!rd_sheet_frame(&RD.woodtile, 0, &wt)) return;
+    for (int yy = iy - 3; yy < iy + ih; yy += wt.h)
+        for (int xx = ix - 3; xx < ix + iw; xx += wt.w)
+            for (int r = 0; r < wt.h; r++) {
+                int dy = yy + r;
+                if (dy < iy || dy >= iy + ih || dy >= RD_H) continue;
+                for (int c = 0; c < wt.w; c++) {
+                    int dx = xx + c;
+                    if (dx < ix || dx >= ix + iw || dx >= RD_W) continue;
+                    uint8_t v = wt.pix[r * wt.w + c];
+                    if (v != RD_TRANSPARENT) RD.fb[dy * RD_W + dx] = v;
+                }
+            }
+}
+
+/* menuVisibleRows (game.js:1811): GAME/VIEW/REPORTS group by label
+ * prefix with separators; ORDERS is context-built (cluster C part 2 —
+ * this window ships the four static menus, ORDERS rows FLAGGED). */
+#define MENU_SEP_H 7
+typedef struct { const char *label; const char *accel; uint8_t dim, sep; } mrow;
+static int menu_rows(int mi, mrow *out) {
+    static const char *GROUPS_GAME[][2] = {
+        { "Game Options", "Colony Report Options" }, { "Sound Options", "Pick Music" },
+        { "Save Game", "Load Game" }, { "Declare Independence", 0 },
+        { "Retire", "Exit to DOS" } };
+    static const char *GROUPS_VIEW[][3] = {
+        { "Move Pieces", "View Pieces", "European Status" }, { "Find Colony", 0, 0 },
+        { "Zoom In", "Zoom Out", 0 }, { "Zoom Level", 0, 0 },
+        { "Show Hidden Terrain", "Center View", 0 } };
+    static const char *GROUPS_REP[][4] = {
+        { "F1", 0, 0, 0 }, { "F2", "F3", "F4", "F5" },
+        { "F6", "F7", "F8", "F9" }, { "F10", 0, 0, 0 } };
+    const dat_menus_t *m = &dat_menus[mi];
+    int n = 0;
+    int ngroups = 0, gw = 0;
+    const char *const *groups = 0;
+    if (strcmp(m->title, "GAME") == 0) { groups = &GROUPS_GAME[0][0]; ngroups = 5; gw = 2; }
+    else if (strcmp(m->title, "VIEW") == 0) { groups = &GROUPS_VIEW[0][0]; ngroups = 5; gw = 3; }
+    else if (strcmp(m->title, "REPORTS") == 0) { groups = &GROUPS_REP[0][0]; ngroups = 4; gw = 4; }
+    uint8_t used[64] = { 0 };
+    if (groups) {
+        for (int g = 0; g < ngroups; g++) {
+            int any = 0;
+            for (int k = 0; k < m->row_count; k++) {
+                if (used[k]) continue;
+                const dat_menu_rows_t *r = &dat_menu_rows[m->row_start + k];
+                int hit = 0;
+                for (int p = 0; p < gw && groups[g * gw + p]; p++)
+                    if (strncmp(r->label, groups[g * gw + p],
+                                strlen(groups[g * gw + p])) == 0) hit = 1;
+                if (!hit) continue;
+                if (!any && n) out[n++] = (mrow){ 0, 0, 0, 1 };
+                any = 1;
+                used[k] = 1;
+                out[n++] = (mrow){ r->label, r->accel, r->disabled, 0 };
+            }
+        }
+    }
+    for (int k = 0; k < m->row_count; k++) {
+        if (used[k]) continue;
+        const dat_menu_rows_t *r = &dat_menu_rows[m->row_start + k];
+        out[n++] = (mrow){ r->label, r->accel, r->disabled, 0 };
+    }
+    return n;
+}
+
+/* drawPulldown (game.js:1836) — the four static menus */
+void rm_draw_pulldown(int mi, int menu_sel) {
+    static const int BAR_X[6] = { 17, 49, 81, 119, 161, 259 };
+    if (mi < 0 || mi >= DAT_MENUS_COUNT) return;
+    if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
+    mrow rows[64];
+    int n = menu_rows(mi, rows);
+    int w = 0, h = 4;
+    for (int k = 0; k < n; k++) {
+        if (rows[k].sep) { h += MENU_SEP_H; continue; }
+        int lw = rd_text_width(&TINY, rows[k].label);
+        if (lw > w) w = lw;
+        h += 8;
+    }
+    w += 16;
+    int x = BAR_X[mi] - 2;
+    if (x > RD_W - w - 2) x = RD_W - w - 2;
+    int y = 8;
+    /* selected-title highlight on the bar (drawMenuBar, game.js:1746) */
+    rd_fill(BAR_X[mi] - 2, 0, rd_text_width(&TINY, dat_menus[mi].title) + 4,
+            7, 0x37);
+    rd_text(&TINY, dat_menus[mi].title, BAR_X[mi], 1, lut_of(HUD_INK));
+    plaque_game(x, y, w, h);
+    int py = y + 2;
+    for (int k = 0; k < n; k++) {
+        if (rows[k].sep) {
+            rd_fill(x + 2, py + 3, w - 4, 1, HUD_INK);
+            py += MENU_SEP_H;
+            continue;
+        }
+        int sel = k == menu_sel;
+        if (sel) rd_fill(x + 2, py, w - 4, 8, 138);   /* SELECT_GAME */
+        int base = rows[k].dim ? 0x2F : (sel ? 0xFC : 0xFE);
+        /* DECLARE INDEPENDENCE capitalises (census GAME frame) */
+        char label[64];
+        snprintf(label, sizeof(label), "%s", rows[k].label);
+        if (strncmp(label, "Declare Independence", 20) == 0)
+            for (char *p = label; *p; p++)
+                if (*p >= 'a' && *p <= 'z') *p -= 32;
+        int tx = x + 6;
+        int ai = -1;
+        if (rows[k].accel && rows[k].accel[0] && !rows[k].dim)
+            for (int c = 0; label[c]; c++) {
+                char u = label[c] >= 'a' && label[c] <= 'z' ? label[c] - 32
+                                                            : label[c];
+                if (u == rows[k].accel[0]) { ai = c; break; }
+            }
+        if (ai < 0) {
+            rd_text(&TINY, label, tx, py + 1, lut_of((uint8_t)base));
+        } else {
+            char pre[64], mid[2] = { label[ai], 0 };
+            memcpy(pre, label, (size_t)ai);
+            pre[ai] = 0;
+            tx = rd_text(&TINY, pre, tx, py + 1, lut_of((uint8_t)base));
+            tx = rd_text(&TINY, mid, tx, py + 1, lut_of(0x0E));
+            rd_text(&TINY, label + ai + 1, tx, py + 1, lut_of((uint8_t)base));
+        }
+        py += 8;
+    }
 }
