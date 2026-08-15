@@ -159,7 +159,7 @@ Status column is maintained by hand as porting proceeds:
 | `buildOptions` | 2938 | 26 |  | todo |
 | `unitBuildRow` | 2965 | 7 |  | todo |
 | `unitBuildRows` | 2973 | 21 |  | todo |
-| `colonyBesieged` | 2995 | 8 |  | todo |
+| `colonyBesieged` | 2995 | 8 |  | ported |
 | `colonyTurn` | 3004 | 109 |  | ported |
 | `advanceConstruction` | 3114 | 77 |  | ported |
 | `customHouseMenu` | 3192 | 11 |  | todo |
@@ -320,9 +320,9 @@ Status column is maintained by hand as porting proceeds:
 | `pickMusic` | 8039 | 15 |  | todo |
 | `exitToDos` | 8055 | 31 |  | todo |
 | `tutOnce` | 8087 | 27 |  | todo |
-| `endGameSequence` | 8115 | 29 |  | todo |
+| `endGameSequence` | 8115 | 29 |  | ported |
 | `woiLocked` | 8145 | 3 |  | todo |
-| `retire` | 8149 | 18 |  | todo |
+| `retire` | 8149 | 18 |  | ported |
 | `relKey` | 8168 | 0 |  | todo |
 | `relWar` | 8169 | 0 |  | todo |
 | `relTreaty` | 8170 | 0 |  | todo |
@@ -385,7 +385,7 @@ Status column is maintained by hand as porting proceeds:
 | `solAnnounce` | 9277 | 24 |  | ported |
 | `toryUprising` | 9302 | 20 |  | todo |
 | `checkIntervention` | 9323 | 45 |  | todo |
-| `scoreParts` | 9369 | 155 |  | todo |
+| `scoreParts` | 9369 | 155 |  | ported |
 | `professionIcon` | 9590 | 4 |  | todo |
 | `professionIconByName` | 9595 | 6 |  | todo |
 | `colonistFigure` | 9602 | 20 |  | todo |

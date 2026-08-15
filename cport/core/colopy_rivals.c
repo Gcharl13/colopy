@@ -24,6 +24,7 @@
 
 #include "colopy_sim.h"
 #include "../data/colopy_data.h"
+#include "../data/colopy_text.h"   /* count MACROS only — no text symbols */
 
 #define REL_WAR       0x02
 #define REL_PRIVATEER 0x80
@@ -189,13 +190,13 @@ void rival_turn(void) {
         if (rn == (int)cs_nation()) continue;
         rival_rt *r = &CR.rivals[rn];
         int war = at_war(cs_nation(), rn);
-        /* JS iterates r.units = ships (record order) then land units
-         * (record order) — the importer's two-pass build. */
-        for (int pass = 0; pass < 2; pass++)
-        for (int ui = 0; ui < CS.n_units; ui++) {
-            if (!is_rival_unit(ui, rn)) continue;
+        /* r.units order (the CR list): ships-then-land at import, plus
+         * succession appends.  JS iterates a slice() snapshot; the only
+         * mid-loop removal is the current attacker itself, handled at
+         * the resolve sites below. */
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int ui = CR.runits_order[rn][k];
             int ship = dat_units[CS.units[ui].type].hull > 0;
-            if ((pass == 0) != (ship != 0)) continue;
             int16_t *px = &CR.runit_x[ui], *py = &CR.runit_y[ui];
             if (ship) {
                 /* westward settler: coast ahead (W, N, S; off-map reads
@@ -243,7 +244,9 @@ void rival_turn(void) {
             /* land units: garrison at peace; the parley when beside the
              * player's people (screen is 'map', no dialog — headless) */
             if (!war) {
-                if (!parley_eligible(rn)) continue;
+                /* G.screen === 'map' gate (game.js:7547): the retirement
+                 * report parks the screen elsewhere */
+                if (!CR.screen_map || !parley_eligible(rn)) continue;
                 int near = 0;
                 for (int pu = 0; pu < CS.n_units && !near; pu++) {
                     if (!unit_on_map_player(pu)) continue;
@@ -290,9 +293,9 @@ void rival_turn(void) {
                 }
                 if (target < 0) continue;
                 int foe = -1;
-                for (int pu = 0; pu < CS.n_units && foe < 0; pu++) {
-                    if (!unit_on_map_player(pu) ||
-                        dat_units[CS.units[pu].type].hull > 0) continue;
+                for (int k = 0; k < CR.n_units_order && foe < 0; k++) {
+                    int pu = CR.units_order[k];      /* G.units order */
+                    if (dat_units[CS.units[pu].type].hull > 0) continue;
                     int ddx = CS.units[pu].map_x - *px;
                     int ddy = CS.units[pu].map_y - *py;
                     if (ddx < 0) ddx = -ddx;
@@ -300,8 +303,13 @@ void rival_turn(void) {
                     if (ddx <= 1 && ddy <= 1) foe = pu;
                 }
                 if (foe >= 0) {
-                    int rem = resolve_attack(ui, foe);
-                    if (rem >= 0 && rem <= ui) ui--;
+                    /* the only unit this fight can remove from THIS list
+                     * is the attacker itself (death OR capture) — the JS
+                     * slice() snapshot just walks on; the live list slid,
+                     * so step back one slot */
+                    uint16_t nb = CR.n_runits[rn];
+                    resolve_attack(ui, foe);
+                    if (CR.n_runits[rn] < nb) k--;
                     continue;
                 }
                 const ColonyRecord *tc = &CS.colonies[target];
@@ -310,14 +318,16 @@ void rival_turn(void) {
                 if (ady < 0) ady = -ady;
                 if ((adx > ady ? adx : ady) <= 1) {
                     int inside = -1;
-                    for (int pu = 0; pu < CS.n_units && inside < 0; pu++)
-                        if (unit_on_map_player(pu) &&
-                            dat_units[CS.units[pu].type].hull <= 0 &&
+                    for (int k = 0; k < CR.n_units_order && inside < 0; k++) {
+                        int pu = CR.units_order[k];
+                        if (dat_units[CS.units[pu].type].hull <= 0 &&
                             CS.units[pu].map_x == tc->map_x &&
                             CS.units[pu].map_y == tc->map_y) inside = pu;
+                    }
                     if (inside >= 0) {
-                        int rem = resolve_attack(ui, inside);
-                        if (rem >= 0 && rem <= ui) ui--;
+                        uint16_t nb = CR.n_runits[rn];
+                        resolve_attack(ui, inside);
+                        if (CR.n_runits[rn] < nb) k--;
                         continue;
                     }
                     /* the empty colony falls: capture (plunder + transfer)
@@ -433,41 +443,36 @@ static void news_tick(void) {
         /* @VIOLATE: a rival unit loitering beside our colony at peace */
         if (!at_war(me, rn) && R(24) == 0) {
             int tres = -1;
-            for (int pass = 0; pass < 2 && tres < 0; pass++)
-                for (int ui = 0; ui < CS.n_units && tres < 0; ui++) {
-                    if (!is_rival_unit(ui, rn)) continue;
-                    int ship = dat_units[CS.units[ui].type].hull > 0;
-                    if ((pass == 0) != (ship != 0)) continue;
-                    for (int ci = 0; ci < CS.n_colonies; ci++) {
-                        if ((CS.colonies[ci].owner_power & 3) != me) continue;
-                        int dx = CS.colonies[ci].map_x - CR.runit_x[ui];
-                        int dy = CS.colonies[ci].map_y - CR.runit_y[ui];
-                        if (dx < 0) dx = -dx;
-                        if (dy < 0) dy = -dy;
-                        if (dx <= 1 && dy <= 1) { tres = ui; break; }
-                    }
+            for (int k = 0; k < CR.n_runits[rn] && tres < 0; k++) {
+                int ui = CR.runits_order[rn][k];       /* r.units order */
+                for (int ci = 0; ci < CS.n_colonies; ci++) {
+                    if ((CS.colonies[ci].owner_power & 3) != me) continue;
+                    int dx = CS.colonies[ci].map_x - CR.runit_x[ui];
+                    int dy = CS.colonies[ci].map_y - CR.runit_y[ui];
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) { tres = ui; break; }
                 }
+            }
             if (tres >= 0)
                 ev_emit("VIOLATE", 0, 0, dat_nations[rn].adjective, 0);
         }
         /* @SNEAK: undeclared hostilities — war lands as it fires */
         if (!at_war(me, rn) && R(60) == 0) {
             int agg = -1, prey = -1;
-            for (int pass = 0; pass < 2 && agg < 0; pass++)
-                for (int ui = 0; ui < CS.n_units && agg < 0; ui++) {
-                    if (!is_rival_unit(ui, rn) ||
-                        dat_units[CS.units[ui].type].hull > 0) continue;
-                    if (pass == 0) continue;     /* land units are pass 1 */
-                    for (int pu = 0; pu < CS.n_units; pu++) {
-                        if (!unit_on_map_player(pu) ||
-                            dat_units[CS.units[pu].type].hull > 0) continue;
-                        int dx = CS.units[pu].map_x - CR.runit_x[ui];
-                        int dy = CS.units[pu].map_y - CR.runit_y[ui];
-                        if (dx < 0) dx = -dx;
-                        if (dy < 0) dy = -dy;
-                        if (dx <= 1 && dy <= 1) { agg = ui; prey = pu; break; }
-                    }
+            for (int rk = 0; rk < CR.n_runits[rn] && agg < 0; rk++) {
+                int ui = CR.runits_order[rn][rk];    /* r.units order */
+                if (dat_units[CS.units[ui].type].hull > 0) continue;
+                for (int k = 0; k < CR.n_units_order; k++) {
+                    int pu = CR.units_order[k];      /* G.units order */
+                    if (dat_units[CS.units[pu].type].hull > 0) continue;
+                    int dx = CS.units[pu].map_x - CR.runit_x[ui];
+                    int dy = CS.units[pu].map_y - CR.runit_y[ui];
+                    if (dx < 0) dx = -dx;
+                    if (dy < 0) dy = -dy;
+                    if (dx <= 1 && dy <= 1) { agg = ui; prey = pu; break; }
                 }
+            }
             if (agg >= 0 && prey >= 0) {
                 ev_emit("SNEAK", 0, 0, dat_nations[rn].adjective, 0);
                 CR.war_matrix[rn][me] |= REL_WAR;
@@ -692,16 +697,15 @@ static void shore_bombardment(void) {
         for (int rn = 0; rn < 4; rn++) {
             if (rn == me || !at_war(me, rn)) continue;
             int ship = -1;
-            for (int pass = 0; pass < 1 && ship < 0; pass++)
-                for (int ui = 0; ui < CS.n_units && ship < 0; ui++) {
-                    if (!is_rival_unit(ui, rn) ||
-                        dat_units[CS.units[ui].type].hull <= 0) continue;
-                    int dx = CR.runit_x[ui] - CS.colonies[ci].map_x;
-                    int dy = CR.runit_y[ui] - CS.colonies[ci].map_y;
-                    if (dx < 0) dx = -dx;
-                    if (dy < 0) dy = -dy;
-                    if (dx <= 1 && dy <= 1) ship = ui;
-                }
+            for (int k = 0; k < CR.n_runits[rn] && ship < 0; k++) {
+                int ui = CR.runits_order[rn][k];     /* r.units order */
+                if (dat_units[CS.units[ui].type].hull <= 0) continue;
+                int dx = CR.runit_x[ui] - CS.colonies[ci].map_x;
+                int dy = CR.runit_y[ui] - CS.colonies[ci].map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) ship = ui;
+            }
             if (ship < 0) continue;
             ev_emit("FORTFIRE", 0, 0, CS.colonies[ci].name,
                     dat_units[CS.units[ship].type].name);
@@ -748,10 +752,15 @@ static void spanish_succession(void) {
         if (wr->n_col < (int)(sizeof(wr->col) / sizeof(wr->col[0])))
             wr->col[wr->n_col++] = cr_->col[k];
     cr_->n_col = 0;
-    for (int ui = 0; ui < CS.n_units; ui++)
-        if (is_rival_unit(ui, ceding))
-            CS.units[ui].owner_flags = (uint8_t)
-                ((CS.units[ui].owner_flags & 0xF0) | (winner & 0x0F));
+    /* units transfer in the ceding LIST order, APPENDED to the winner's
+     * list (game.js:7015 winner.units.push) */
+    for (int k = 0; k < CR.n_runits[ceding]; k++) {
+        int ui = CR.runits_order[ceding][k];
+        CS.units[ui].owner_flags = (uint8_t)
+            ((CS.units[ui].owner_flags & 0xF0) | (winner & 0x0F));
+        runits_push(winner, ui);
+    }
+    CR.n_runits[ceding] = 0;
 }
 
 /* aiDiplomacyTick (game.js:8484): AI-AI peace/treaty signings. */
@@ -780,9 +789,21 @@ static void ai_diplomacy_tick(void) {
         }
 }
 
-/* The retirement clock (endTurn:10800).  endGameSequence is the score/
- * Hall-of-Fame UI — its stand-in here is the retired latch, FLAGGED; no
- * fixture reaches 1790 inside the parity horizon. */
+/* endGameSequence (game.js:8119): the HoF write is browser-side (n.a.);
+ * what the sim sees is the retired latch, the @EXPLOITS card, ONE draw
+ * for the @SCORE joke-name pick, the @SCORED ask (stubbed), and the
+ * screen leaving the map — which closes the parley gate.  scoreParts is
+ * draw-free.  DAT_SCORENAMES_COUNT is a scalar macro from the text
+ * header; the strings themselves stay in the droppable text unit. */
+static void end_game_sequence(void) {
+    CR.retired = 1;
+    ev_emit("EXPLOITS", 0, 0, 0, 0);
+    (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
+    CR.screen_map = 0;                   /* G.screen = 'report' */
+    ev_emit("SCORED", 0, 0, 0, 0);       /* ask stub */
+}
+
+/* The retirement clock (endTurn:10800). */
 static void retirement_check(void) {
     if (CR.retired) return;
     int ncol = 0;
@@ -790,7 +811,7 @@ static void retirement_check(void) {
         if ((CS.colonies[ci].owner_power & 3) == cs_nation()) ncol++;
     if (cs_year() >= 1600 && !ncol && cs_turn() > 30) {
         ev_emit("LOSENOCOLONIES", 0, 0, 0, 0);
-        CR.retired = 1;
+        end_game_sequence();
         return;
     }
     if (cs_year() >= 1790 && !CR.soon_warned) {
@@ -799,7 +820,7 @@ static void retirement_check(void) {
     }
     if (cs_year() >= 1800) {
         ev_emit("RETIRING", 0, 0, 0, 0);
-        CR.retired = 1;
+        end_game_sequence();
     }
 }
 

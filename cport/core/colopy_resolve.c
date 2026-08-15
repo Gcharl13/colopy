@@ -154,7 +154,9 @@ static int apply_defeat(int loser, int winner) {
         if (cap && loser_nation < 4) {
             int vet_lost = prof_is(loser, JX_VET_SOLDIERS);
             int was_rival = is_rival_side(loser);
+            int old_owner = CS.units[loser].owner_flags & 0x0F;
             int wn = CS.units[winner].owner_flags & 0x0F;
+            if (was_rival) runits_drop(old_owner, loser);   /* removeUnit */
             /* transfer: owner nibble; sync positions across the ownership
              * change (records are authoritative for player units, the CR
              * mirrors for rival units) */
@@ -169,10 +171,13 @@ static int apply_defeat(int loser, int winner) {
                 (uint8_t)((CS.units[loser].owner_flags & 0xF0) | (wn & 0x0F));
             if (vet_lost) CS.units[loser].profession = 0;
             CS.units[loser].orders = 0;
+            units_order_drop(loser);         /* removeUnit: leaves G.units */
             if (wn != (int)cs_nation()) {
                 /* the JS else-arm parks it in G.natives (see colopy_sim.h) */
                 CR.unit_in_natives[loser] = 1;
                 natives_push(loser);
+            } else {
+                units_push(loser);           /* G.units.push at the END */
             }
             ev_emit(vet_lost && cap[0] == 'C' ? "COLONISTCAPTURE2" : cap,
                     0, 0, t->name, 0);

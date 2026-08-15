@@ -255,18 +255,12 @@ static void dump_turns(const char *save, int n, int agitate) {
                 printf("%s[%d,%d]", k ? "," : "", r->col[k].x, r->col[k].y);
             printf("],\"units\":[");
             int fu = 1;
-            for (int pass = 0; pass < 2; pass++)
-                for (int ui = 0; ui < CS.n_units; ui++) {
-                    const UnitRecord *u = &CS.units[ui];
-                    if ((u->owner_flags & 0x0F) != rn ||
-                        u->type >= DAT_UNITS_COUNT ||
-                        CR.unit_in_natives[ui]) continue;
-                    int ship = dat_units[u->type].hull > 0;
-                    if ((pass == 0) != (ship != 0)) continue;
-                    printf("%s[%d,%d]", fu ? "" : ",", CR.runit_x[ui],
-                           CR.runit_y[ui]);
-                    fu = 0;
-                }
+            for (int k = 0; k < CR.n_runits[rn]; k++) {
+                int ui = CR.runits_order[rn][k];     /* r.units order */
+                printf("%s[%d,%d,%d]", fu ? "" : ",", CR.runit_x[ui],
+                       CR.runit_y[ui], CS.units[ui].type);
+                fu = 0;
+            }
             printf("],\"greeted\":%u,\"lock\":%u}", r->greeted,
                    CR.parley_lock[rn]);
         }
@@ -293,6 +287,28 @@ int main(int argc, char **argv) {
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         dump_turns(argv[2], atoi(argv[3]),
                    argc > 4 && strcmp(argv[4], "agitate") == 0);
+        return 0;
+    }
+    /* --saveout SAVE N FILE: run N full turns, write the .SAV image —
+     * the Phase-3 cross-load acceptance (the JS port must import it). */
+    if (argc > 4 && strcmp(argv[1], "--saveout") == 0) {
+        if (strcmp(argv[2], "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
+        else if (strcmp(argv[2], "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
+        else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+        colopy_init(1653);
+        for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
+        for (int t = 0; t < atoi(argv[3]); t++) {
+            turn_step_prefix();
+            turn_step2();
+            turn_step3();
+            turn_step5();
+        }
+        static uint8_t out[80000];
+        size_t n = colopy_save_sav(out, sizeof(out));
+        FILE *f = fopen(argv[4], "wb");
+        if (!f || fwrite(out, 1, n, f) != n) { printf("WRITE FAIL\n"); return 1; }
+        fclose(f);
+        printf("wrote %u bytes, digest %08X\n", (unsigned)n, colopy_digest());
         return 0;
     }
     if (argc > 1 && strcmp(argv[1], "--movecost") == 0) { dump_movecost(); return 0; }

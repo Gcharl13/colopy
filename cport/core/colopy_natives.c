@@ -333,12 +333,16 @@ static void attempt_conversions(void) {
 static void age_converts(void) {
     nresolve();
     int lost = 0;
-    for (int ui = CS.n_units - 1; ui >= 0; ui--) {
+    /* JS iterates G.UNITS backwards (game.js:5397) — a convert CAPTURED
+     * by a rival left that list and never ages again; walk the order
+     * list, not the record pool */
+    for (int k = CR.n_units_order - 1; k >= 0; k--) {
+        int ui = CR.units_order[k];
         if (CS.units[ui].profession != JOB_CONVERT || !CR.unit_faith[ui])
             continue;
         CR.unit_faith[ui]--;
         if (CR.unit_faith[ui] > 0) continue;
-        unit_remove(ui);
+        unit_remove(ui);            /* drops list slot k, re-bases */
         lost++;
     }
     if (lost) ev_emit("DEADCONVERTS", 0, 0, 0, 0);
@@ -485,11 +489,12 @@ static void native_raid(int vi, int ci) {
     }
     case 4: {                                        /* @RAIDBURN/@RAIDSHIP */
         int ship = -1;
-        for (int ui = 0; ui < CS.n_units && ship < 0; ui++)
-            if (unit_on_map_player(ui) &&
-                dat_units[CS.units[ui].type].hull > 0 &&
+        for (int k = 0; k < CR.n_units_order && ship < 0; k++) {
+            int ui = CR.units_order[k];      /* G.units order */
+            if (dat_units[CS.units[ui].type].hull > 0 &&
                 CS.units[ui].map_x == c->map_x &&
                 CS.units[ui].map_y == c->map_y) ship = ui;
+        }
         if (ship >= 0) {
             CR.unit_damaged[ship] = 1;
             ev_emit("RAIDSHIP", 0, 0, c->name,
@@ -541,6 +546,7 @@ static void native_raid(int vi, int ci) {
         wc |= 1u << 13;
         CS.globals[0x8A] = (uint8_t)wc;
         CS.globals[0x8B] = (uint8_t)(wc >> 8);
+        CR.screen_map = 1;   /* the trace dismisses the woodcut to the map */
     }
 }
 

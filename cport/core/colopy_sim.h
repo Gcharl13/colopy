@@ -131,6 +131,10 @@ void ev_emit(const char *key, int32_t p0, int32_t p1,
 int  unit_append(int type, int owner, int x, int y);  /* record idx or -1 */
 void unit_remove(int ui);        /* compact records + parallel CR arrays */
 void natives_push(int ui);       /* JS G.natives.push (order matters) */
+void units_push(int ui);         /* JS G.units.push */
+void units_order_drop(int ui);   /* JS G.units.splice (record kept) */
+void runits_push(int rn, int ui);      /* JS r.units.push */
+void runits_drop(int rn, int ui);      /* JS r.units.splice (record kept) */
 
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
@@ -212,11 +216,28 @@ typedef struct {
      * spawnBrave/capture APPEND, exactly like the JS pushes. */
     uint8_t natives_order[COLOPY_MAX_UNITS];
     uint16_t n_natives;
+    /* G.units INSERTION ORDER (record indexes): the importer builds it
+     * ships-then-land (each record-ascending), and every later join —
+     * converts, the King's veterans, a rival unit CAPTURED by the player
+     * (applyDefeat game.js:7109 pushes it at the END) — appends.  The
+     * first-adjacent-foe scans walk this order, so it is part of the
+     * parity contract exactly like natives_order. */
+    uint8_t units_order[COLOPY_MAX_UNITS];
+    uint16_t n_units_order;
+    /* r.units INSERTION ORDER per rival nation: seeded ships-then-land
+     * from the records; spanishSuccession APPENDS the ceded power's
+     * units to the winner's list (game.js:7015) — record order cannot
+     * express that. */
+    uint8_t runits_order[4][COLOPY_MAX_UNITS];
+    uint16_t n_runits[4];
     int8_t  king_war_rival;      /* G.kingWar, -1 = none */
     uint8_t king_war_turns;
     uint8_t king_wed;            /* KINGWIFE one-shot */
     uint8_t succession;          /* spanishSuccession latch */
     uint8_t retired, soon_warned;
+    uint8_t screen_map;          /* G.screen === 'map' (parley gate); the
+                                  * retirement report leaves the map, a
+                                  * woodcut dismissal returns to it */
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;

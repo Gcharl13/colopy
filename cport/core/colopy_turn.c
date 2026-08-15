@@ -11,9 +11,8 @@
  *   - tutorial bindings (tutOnce): not ported yet; TUTORIAL* keys are
  *     filtered from the event comparison and the tut/once masks are not
  *     projected.  TODO with the tutorial subsystem.
- *   - colonyBesieged: returns 0 — needs the REF/rival war state (later
- *     pipeline steps).  The fixtures are siege-free; a diff will scream
- *     here if that ever stops holding.
+ *   - colonyBesieged: rival wars counted (game.js:2995); the REF-unit
+ *     term joins with the WoI slice.
  *   - unit BUILD targets: the importer nulls them (bip >= 42), so the
  *     completion path handles buildings only.  TBD with the unit pipeline.
  */
@@ -89,6 +88,7 @@ void cr_reset_from_load(void) {
     memset(&CR, 0, sizeof(CR));
     CR.father_in_progress = -1;
     CR.king_war_rival = -1;
+    CR.screen_map = 1;               /* importSav ends on the map screen */
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         CR.col[i].sol_band = 0xFF;
@@ -115,6 +115,20 @@ void cr_reset_from_load(void) {
         CR.native_home[i] = (int8_t)best;
         natives_push(i);          /* the importer's G.natives.push order */
     }
+    /* G.units / r.units order: the importer's two passes — ships then
+     * land, each record-ascending (game.js:10422) */
+    for (int pass = 0; pass < 2; pass++)
+        for (int i = 0; i < CS.n_units; i++) {
+            if (CS.units[i].type >= DAT_UNITS_COUNT) continue;
+            int ship = dat_units[CS.units[i].type].hull > 0;
+            if ((pass == 0) != (ship != 0)) continue;
+            int own = CS.units[i].owner_flags & 0x0F;
+            if (own == (int)cs_nation()) {
+                if (unit_on_map_player(i)) units_push(i);
+            } else if (own < 4) {
+                runits_push(own, i);
+            }
+        }
     /* rivals (importer game.js:10330-10336, 10374-10380): met, attitude 8,
      * gold from the power record, colonies from the rival-owned records in
      * record order; every unit's position mirrored signed. */
@@ -407,8 +421,36 @@ void colony_turn(int ci) {
     colony_rt *r = &CR.col[ci];
     colony_output o;
     colony_produce(ci, &o);
-    /* colonyBesieged: prefix stub (see header) */
-    r->sieged = 0;
+    /* colonyBesieged (game.js:2995): at-war rival land units within 1 of
+     * the colony outnumbering the player's attack-capable land units
+     * there.  (REF units join the count with the WoI slice.) */
+    {
+        int me = cs_nation(), enemies = 0, friends = 0;
+        for (int ui = 0; ui < CS.n_units; ui++) {
+            const UnitRecord *u = &CS.units[ui];
+            if (u->type >= DAT_UNITS_COUNT ||
+                dat_units[u->type].hull > 0) continue;
+            int own = u->owner_flags & 0x0F;
+            if (own < 4 && own != me && !CR.unit_in_natives[ui]) {
+                if (!((CR.war_matrix[me][own] | CR.war_matrix[own][me]) & 0x02))
+                    continue;
+                int dx = CR.runit_x[ui] - c->map_x;
+                int dy = CR.runit_y[ui] - c->map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) enemies++;
+            } else if (own == me && unit_on_map_player(ui) &&
+                       dat_units[u->type].attack > 0) {
+                int dx = u->map_x - c->map_x, dy = u->map_y - c->map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) friends++;
+            }
+        }
+        if (enemies > friends) {
+            if (!r->sieged) { r->sieged = 1; ev_emit("SIEGE", 0, 0, 0, 0); }
+        } else r->sieged = 0;
+    }
     for (int raw = 0; raw < N_GOODS; raw++) {
         const char *key = OUTAGE_KEY_OF(raw);
         if (!((o.outages >> raw) & 1)) { if (key) r->outage_latch &= (uint16_t)~(1 << raw); continue; }
@@ -573,6 +615,7 @@ int unit_append(int type, int owner, int x, int y) {
     u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
     CR.runit_x[i] = (int16_t)x;
     CR.runit_y[i] = (int16_t)y;
+    if ((owner & 0x0F) == cs_nation()) units_push(i);   /* G.units.push */
     CR.unit_work[i] = 0;
     CR.unit_offered[i] = 0;
     CR.unit_faith[i] = 0;
@@ -595,8 +638,8 @@ void unit_remove(int ui) {
     memmove(&CR.runit_x[ui], &CR.runit_x[ui + 1], n * sizeof(int16_t));
     memmove(&CR.runit_y[ui], &CR.runit_y[ui + 1], n * sizeof(int16_t));
     CS.n_units--;
-    /* keep the G.natives order list aligned: drop the removed member,
-     * re-base every index past it */
+    /* keep the G.natives / G.units order lists aligned: drop the removed
+     * member, re-base every index past it */
     for (int k = 0; k < CR.n_natives; k++) {
         if (CR.natives_order[k] == ui) {
             memmove(&CR.natives_order[k], &CR.natives_order[k + 1],
@@ -607,10 +650,57 @@ void unit_remove(int ui) {
         }
         if (CR.natives_order[k] > ui) CR.natives_order[k]--;
     }
+    for (int k = 0; k < CR.n_units_order; k++) {
+        if (CR.units_order[k] == ui) {
+            memmove(&CR.units_order[k], &CR.units_order[k + 1],
+                    (size_t)(CR.n_units_order - k - 1));
+            CR.n_units_order--;
+            k--;
+            continue;
+        }
+        if (CR.units_order[k] > ui) CR.units_order[k]--;
+    }
+    for (int rn = 0; rn < 4; rn++)
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            if (CR.runits_order[rn][k] == ui) {
+                memmove(&CR.runits_order[rn][k], &CR.runits_order[rn][k + 1],
+                        (size_t)(CR.n_runits[rn] - k - 1));
+                CR.n_runits[rn]--;
+                k--;
+                continue;
+            }
+            if (CR.runits_order[rn][k] > ui) CR.runits_order[rn][k]--;
+        }
 }
 void natives_push(int ui) {
     if (CR.n_natives < COLOPY_MAX_UNITS)
         CR.natives_order[CR.n_natives++] = (uint8_t)ui;
+}
+void units_push(int ui) {
+    if (CR.n_units_order < COLOPY_MAX_UNITS)
+        CR.units_order[CR.n_units_order++] = (uint8_t)ui;
+}
+void units_order_drop(int ui) {
+    for (int k = 0; k < CR.n_units_order; k++)
+        if (CR.units_order[k] == ui) {
+            memmove(&CR.units_order[k], &CR.units_order[k + 1],
+                    (size_t)(CR.n_units_order - k - 1));
+            CR.n_units_order--;
+            return;
+        }
+}
+void runits_push(int rn, int ui) {
+    if (CR.n_runits[rn] < COLOPY_MAX_UNITS)
+        CR.runits_order[rn][CR.n_runits[rn]++] = (uint8_t)ui;
+}
+void runits_drop(int rn, int ui) {
+    for (int k = 0; k < CR.n_runits[rn]; k++)
+        if (CR.runits_order[rn][k] == ui) {
+            memmove(&CR.runits_order[rn][k], &CR.runits_order[rn][k + 1],
+                    (size_t)(CR.n_runits[rn] - k - 1));
+            CR.n_runits[rn]--;
+            return;
+        }
 }
 
 /* ======================================================================
@@ -910,9 +1000,9 @@ static void check_treasure(void) {
     for (int ui = 0; ui < CS.n_units; ui++)
         if (unit_on_map_player(ui) && CS.units[ui].type == ty_galleon)
             galleon = 1;
-    for (int ui = 0; ui < CS.n_units; ui++) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];          /* G.units order */
         UnitRecord *u = &CS.units[ui];
-        if (!unit_on_map_player(ui)) continue;
         if (u->type != ty_treasure || CR.unit_offered[ui]) continue;
         int on_colony = 0;
         for (int ci = 0; ci < CS.n_colonies; ci++)
