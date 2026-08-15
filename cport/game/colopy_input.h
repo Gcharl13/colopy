@@ -23,6 +23,7 @@ typedef struct {
     int8_t  view_mode;               /* G.viewMode */
     int8_t  colony, colony_view;
     int8_t  market_sel, euro_row, euro_ship, euro_dock_sel;
+    int8_t  show_hidden;             /* G.showHidden */
 } colopy_ui;
 
 extern colopy_ui UI;

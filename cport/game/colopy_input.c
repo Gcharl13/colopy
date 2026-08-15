@@ -95,6 +95,65 @@ static void open_menu(int mi) {
         if (!rows[i].sep) { UI.menu_sel = (int8_t)i; break; }
 }
 
+/* runMenuRow (game.js:1880): the menu closes FIRST, then the row's
+ * command runs; dim rows and separators are inert.  Slice 2 binds the
+ * rows whose commands exist in the C — the rest are explicit no-ops
+ * (the shared script only exercises bound rows). */
+static void run_menu_row(void) {
+    if (UI.open_menu < 0) return;
+    rm_mrow rows[64];
+    int n = rm_menu_rows(UI.open_menu, sel_unit(), rows);
+    const rm_mrow *r = (UI.menu_sel >= 0 && UI.menu_sel < n)
+                           ? &rows[UI.menu_sel] : 0;
+    UI.open_menu = -1;
+    if (!r || r->sep || r->dim || !r->label) return;
+    const char *l = r->label;
+    int ui = sel_unit();
+    if (strcmp(l, "Activate unit") == 0) {
+        if (ui >= 0) cmd_activate(ui);
+    } else if (strcmp(l, "Wait for next unit") == 0) {
+        next_unit();
+    } else if (strcmp(l, "Fortify") == 0) {
+        if (ui >= 0) { cmd_set_order(ui, 5); advance(); }
+    } else if (strcmp(l, "Sentry") == 0) {
+        if (ui >= 0) { cmd_set_order(ui, 1); advance(); }
+    } else if (strcmp(l, "No Orders (space bar)") == 0) {
+        if (ui >= 0) { cmd_skip(ui); advance(); }
+    } else if (strcmp(l, "Move Pieces") == 0) {
+        UI.view_mode = 0;
+    } else if (strcmp(l, "View Pieces") == 0) {
+        UI.view_mode = 1;
+    } else if (strcmp(l, "European Status") == 0) {
+        if ((CR.woi_flags & WOI_DECLARED) && !(CR.woi_flags & WOI_WON))
+            ev_emit("EUROPENOTAVAIL", 0, 0, 0, 0);
+        else
+            UI.screen = SCR_EUROPE;
+    } else if (strcmp(l, "Center View") == 0) {
+        if (ui >= 0) center_on(CS.units[ui].map_x, CS.units[ui].map_y);
+    } else if (strcmp(l, "Show Hidden Terrain") == 0) {
+        UI.show_hidden = (int8_t)!UI.show_hidden;
+    } else if (l[0] == 'F' && l[1] >= '1' && l[1] <= '9') {
+        /* the REPORTS ladder rows: "F<N> <Adviser>" */
+        int fn = l[1] - '0';
+        int off = 2;
+        if (l[2] >= '0' && l[2] <= '9') { fn = fn * 10 + l[2] - '0'; off = 3; }
+        if (l[off] == ' ') {
+            if (fn == 1) return;             /* pedia: a later slice */
+            if (fn == 8 && (CR.woi_flags & WOI_DECLARED) &&
+                !(CR.woi_flags & WOI_WON)) {
+                ev_emit("FOREIGNNOTAVAIL", 0, 0, 0, 0);
+                return;
+            }
+            if (fn >= 2 && fn <= 10) {
+                snprintf(UI.report, sizeof(UI.report), "F%d", fn);
+                UI.screen = SCR_REPORT;
+            }
+        }
+    }
+    /* every other MENU.TXT row: unbound in this slice (dialog flows,
+     * zoom, trade routes, pedia) — the script does not send them */
+}
+
 static int key_is(const char *k, const char *want) {
     return strcmp(k, want) == 0;
 }
@@ -199,7 +258,30 @@ void in_key(const char *k, int alt, int shift) {
                 open_menu((UI.open_menu + 1) % DAT_MENUS_COUNT);
             else if (key_is(k, "Escape"))
                 UI.open_menu = -1;
-            /* Enter (runMenuRow) + accelerators: slice 2 */
+            else if (key_is(k, "Enter") || key_is(k, " "))
+                run_menu_row();
+            else if (strlen(k) == 1) {
+                /* accelerator: the first MASTER row with that letter,
+                 * then the visible row of the same label (game.js:12560) */
+                char K = (char)(k[0] >= 'a' && k[0] <= 'z' ? k[0] - 32
+                                                           : k[0]);
+                const dat_menus_t *m = &dat_menus[UI.open_menu];
+                const char *lbl = 0;
+                for (int q = 0; q < m->row_count && !lbl; q++) {
+                    const dat_menu_rows_t *mr =
+                        &dat_menu_rows[m->row_start + q];
+                    if (mr->accel[0] == K && !mr->accel[1]) lbl = mr->label;
+                }
+                if (lbl) {
+                    for (int i = 0; i < n; i++)
+                        if (!rows[i].sep && rows[i].label &&
+                            strcmp(rows[i].label, lbl) == 0) {
+                            UI.menu_sel = (int8_t)i;
+                            run_menu_row();
+                            break;
+                        }
+                }
+            }
             break;
         }
         if (alt && strlen(k) == 1) {
@@ -281,6 +363,41 @@ void in_key(const char *k, int alt, int shift) {
         } else if (key_is(k, "m") || key_is(k, "M")) {
             UI.view_mode = 0;
         }
+        break;
+    }
+    case SCR_COLONY:
+        /* §26.8 slice-2 keys: 1/2/3 select the right-panel view,
+         * ESC/x exits (the popup/menu keys follow with the pointer
+         * slice) */
+        if (k[0] >= '1' && k[0] <= '3' && !k[1])
+            UI.colony_view = (int8_t)(k[0] - '1');
+        if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
+        break;
+    case SCR_EUROPE: {
+        /* §26.9 slice-2 keys: arrows walk the market cursor, L/=/+ buy
+         * to the active ship, ESC/x/E exit.  The sell key runs the
+         * @HOWMUCH5 amount dialog (inert under the shared harness
+         * conventions) and the r/p/t sub-menus follow later. */
+        if (key_is(k, "ArrowLeft"))
+            UI.market_sel = (int8_t)((UI.market_sel + 15) % 16);
+        if (key_is(k, "ArrowRight"))
+            UI.market_sel = (int8_t)((UI.market_sel + 1) % 16);
+        if (key_is(k, "l") || key_is(k, "L") || key_is(k, "=") ||
+            key_is(k, "+")) {
+            int qty = key_is(k, "+") ? 10 : 100;
+            if (UI.market_sel >= 0) {
+                int port = -1, ord = -1;
+                for (int q = 0; q < CR.n_europe; q++) {
+                    if (CR.europe[q].state != 0) continue;
+                    if (++ord == UI.euro_ship) { port = q; break; }
+                }
+                if (port >= 0)
+                    euro_buy_to_ship(port, UI.market_sel, qty);
+            }
+        }
+        if (key_is(k, "Escape") || key_is(k, "x") || key_is(k, "e") ||
+            key_is(k, "E"))
+            UI.screen = SCR_MAP;
         break;
     }
     default:

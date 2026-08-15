@@ -312,10 +312,12 @@ static void in_project(void) {
                  ? CR.units_order[UI.sel] : -1;
     printf("{\"s\":%d,\"mr\":%d,\"d\":%d,\"n\":%d,\"ldr\":\"%s\","
            "\"bp\":%d,\"rep\":\"%s\",\"sel\":%d,\"vx\":%d,"
-           "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,",
+           "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,"
+           "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,",
            UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
            UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
-           UI.open_menu, UI.menu_sel, UI.view_mode);
+           UI.open_menu, UI.menu_sel, UI.view_mode,
+           UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden);
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,

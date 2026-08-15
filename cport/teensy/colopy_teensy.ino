@@ -1,4 +1,5 @@
-/* Colopy on Teensy 4.1 — the Phase-4 serial digest shell.
+/* Colopy on Teensy 4.1 — the serial digest shell + the Phase-8 game
+ * loop.
  *
  * Drives the SAME parity-verified core the host harness runs (zero JS
  * diffs over 300 full endTurn() turns x 3 fixtures): load a .SAV from
@@ -11,9 +12,21 @@
  *   d           print the current digest
  *   i           overview: year/season/turn, counts, tax
  *   s <file>    write the current state to SD as a .SAV
+ *   v           (ILI9341) draw the map view once
+ *   g           (ILI9341) enter the game loop on the loaded save —
+ *               keys drive the oracle-verified in_key layer and every
+ *               event redraws the current screen
+ *   k <name>    inject one key by its JS name (bench path, no USB
+ *               keyboard needed: "k Space", "k ArrowUp", "k F5", or a
+ *               single character; "k !<c>" sends <c> with Alt held)
+ *
+ * With -DCOLOPY_USBHOST a USB keyboard on the Teensy 4.1 host port
+ * feeds the same in_key layer directly (USBHost_t36).
  *
  * The core never does I/O (buffer-only API); this shell owns the SD
- * card and the serial port.  Build with PlatformIO (see README.md).
+ * card, the serial port, the panel and the keyboard.  Build with
+ * PlatformIO (see README.md).  The panel/keyboard paths are UNTESTED
+ * ON HARDWARE — the board checklist in README.md gates that flag.
  */
 #include <SD.h>
 
@@ -23,6 +36,8 @@ extern "C" {
 #include "colopy_sim.h"
 #ifdef COLOPY_ILI9341
 #include "colopy_render.h"
+#include "colopy_input.h"
+#include "colopy_data.h"
 #endif
 }
 
@@ -94,6 +109,117 @@ static void cmd_view(void) {                 /* 'v': render the map view */
     Serial.printf("map view (%d,%d): draw %lu us, flush %lu us\n",
                   vx, vy, t1 - t0, micros() - t1);
 }
+/* ---- Phase 8: the game loop --------------------------------------
+ * UI.screen drives the Phase-7 renderer; the pending game event (the
+ * JS G.eventQueue head) overlays as a popup and swallows the next key
+ * (the modal rule, game.js:12403).  Every consumed key redraws. */
+static int game_mode = 0;
+static colopy_event pending_ev;
+static int have_pending = 0;
+
+static int ui_colony_cs_index(void) {
+    int ord = -1;
+    for (int k = 0; k < CS.n_colonies; k++) {
+        if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+        if (++ord == UI.colony) return k;
+    }
+    return -1;
+}
+
+static void draw_screen(void) {
+    switch (UI.screen) {
+    case SCR_TITLE: rm_draw_title(UI.menu_row); break;
+    case SCR_DIFFICULTY: rm_draw_difficulty(UI.difficulty); break;
+    case SCR_NATION: rm_draw_nation(UI.nation); break;
+    case SCR_NAME: rm_draw_name(UI.leader); break;
+    case SCR_REPORT: rm_draw_report(UI.report); break;
+    case SCR_COLONY: {
+        int ci = ui_colony_cs_index();
+        if (ci >= 0)
+            rm_draw_colony(ci, 1653u, -1, 0, UI.colony_view,
+                           cs_colony_numbers());
+        break;
+    }
+    case SCR_EUROPE:
+        rm_draw_europe(UI.euro_ship, UI.euro_dock_sel, UI.euro_row,
+                       UI.market_sel);
+        break;
+    default:                                 /* map + everything else */
+        rm_draw_map(UI.view_x, UI.view_y, UI.sel, UI.show_hidden);
+        if (UI.open_menu >= 0)
+            rm_draw_pulldown(UI.open_menu, UI.menu_sel, UI.sel);
+        break;
+    }
+    if (!have_pending && colopy_next_event(&pending_ev))
+        have_pending = 1;
+    if (have_pending && rm_event_exists(pending_ev.key)) {
+        rm_subs subs = { { pending_ev.s[0], pending_ev.s[1], 0, 0 },
+                         { pending_ev.p[0], pending_ev.p[1], 0, 0 },
+                         { 1, 1, 0, 0 } };
+        rm_draw_event(pending_ev.key, &subs, 0);
+    }
+    flush_fb();
+}
+
+static void game_key(const char *name, int alt, int shift) {
+    if (have_pending) {                      /* the modal swallow */
+        have_pending = 0;
+        draw_screen();
+        return;
+    }
+    in_key(name, alt, shift);
+    draw_screen();
+}
+
+/* "k <name>" — the serial bench path for the game loop */
+static void cmd_key(const char *arg) {
+    if (!game_mode) { Serial.println("not in game mode (g)"); return; }
+    int alt = 0;
+    if (arg[0] == '!' && arg[1]) { alt = 1; arg++; }
+    if (strcmp(arg, "Space") == 0) game_key(" ", alt, 0);
+    else game_key(arg, alt, 0);
+}
+
+#ifdef COLOPY_USBHOST
+/* USB keyboard -> the same in_key names the JS dispatcher uses.
+ * HID usage ids per the USB HUT; printable keys via getKey(). */
+#include <USBHost_t36.h>
+static USBHost usbh;
+static USBHub hub1(usbh);
+static KeyboardController usbkb(usbh);
+static void usb_key_press(int unicode) {
+    if (!game_mode) return;
+    int oem = usbkb.getOemKey();
+    int mods = usbkb.getModifiers();
+    int alt = (mods & 0x44) != 0;
+    int shift = (mods & 0x22) != 0;
+    const char *name = 0;
+    char one[2] = { 0, 0 };
+    switch (oem) {
+    case 0x28: name = "Enter"; break;
+    case 0x29: name = "Escape"; break;
+    case 0x2A: name = "Backspace"; break;
+    case 0x2B: name = "Tab"; break;
+    case 0x2C: name = " "; break;
+    case 0x4F: name = "ArrowRight"; break;
+    case 0x50: name = "ArrowLeft"; break;
+    case 0x51: name = "ArrowDown"; break;
+    case 0x52: name = "ArrowUp"; break;
+    default:
+        if (oem >= 0x3A && oem <= 0x45) {    /* F1..F12 */
+            static char fbuf[4];
+            snprintf(fbuf, sizeof(fbuf), "F%d", oem - 0x39);
+            name = fbuf;
+        } else if (unicode >= 32 && unicode < 127) {
+            one[0] = (char)unicode;
+            name = one;
+        }
+        break;
+    }
+    if (name) game_key(name, alt, shift);
+}
+#endif /* COLOPY_USBHOST */
+
 #endif /* COLOPY_ILI9341 */
 
 /* One .SAV image is ~22-28 KB; 80 KB covers every fixture with room. */
@@ -147,11 +273,19 @@ void setup() {
     tft.begin();
     tft.setRotation(1);                     /* 320x240 landscape */
     tft.fillScreen(ILI9341_BLACK);
-    Serial.println("ILI9341 up (v = draw map view)");
+    Serial.println("ILI9341 up (v = map view, g = game loop)");
+#ifdef COLOPY_USBHOST
+    usbh.begin();
+    usbkb.attachPress(usb_key_press);
+    Serial.println("USB host keyboard attached");
+#endif
 #endif
 }
 
 void loop() {
+#if defined(COLOPY_ILI9341) && defined(COLOPY_USBHOST)
+    usbh.Task();
+#endif
     static char line[64];
     static size_t len = 0;
     while (Serial.available()) {
@@ -174,6 +308,50 @@ void loop() {
         case 'i': cmd_info(); break;
 #ifdef COLOPY_ILI9341
         case 'v': cmd_view(); break;
+        case 'g':
+            if (!pak_ready) { cmd_view(); }  /* loads the pak + first draw */
+            if (!pak_ready) break;
+            game_mode = 1;
+            ui_init();
+            UI.screen = SCR_MAP;
+            UI.nation = (int8_t)cs_nation();
+            UI.difficulty = (int8_t)cs_difficulty();
+            {   /* the importer's landing view/sel (game.js:10490) */
+                UI.sel = 0;
+                for (int q = 0; q < CR.n_units_order; q++) {
+                    int u2 = CR.units_order[q];
+                    if (dat_units[CS.units[u2].type].hull <= 0) {
+                        UI.sel = q;
+                        break;
+                    }
+                }
+                int cx = -1, cy = -1;
+                if (CR.n_units_order) {
+                    int u2 = CR.units_order[UI.sel];
+                    cx = CS.units[u2].map_x;
+                    cy = CS.units[u2].map_y;
+                } else
+                    for (int q = 0; q < CS.n_colonies; q++)
+                        if ((CS.colonies[q].owner_power & 3) ==
+                            cs_nation()) {
+                            cx = CS.colonies[q].map_x;
+                            cy = CS.colonies[q].map_y;
+                            break;
+                        }
+                if (cx >= 0) {
+                    int tx = cx - 7, ty = cy - 6;
+                    if (tx > COLOPY_MAP_W - 15) tx = COLOPY_MAP_W - 15;
+                    if (ty > COLOPY_MAP_H - 12) ty = COLOPY_MAP_H - 12;
+                    if (tx < 0) tx = 0;
+                    if (ty < 0) ty = 0;
+                    UI.view_x = tx;
+                    UI.view_y = ty;
+                }
+            }
+            draw_screen();
+            Serial.println("game loop on (keys via USB keyboard or k <name>)");
+            break;
+        case 'k': cmd_key(arg); break;
 #endif
         case 't': {
             int n = atoi(arg);
@@ -188,7 +366,12 @@ void loop() {
             Serial.printf("(%lu us/turn)\n", (micros() - t0) / (unsigned long)n);
             break;
         }
-        default: Serial.println("commands: l <f> / t [n] / d / i / s <f>");
+        default:
+            Serial.println("commands: l <f> / t [n] / d / i / s <f>"
+#ifdef COLOPY_ILI9341
+                           " / v / g / k <key>"
+#endif
+                           );
         }
     }
 }

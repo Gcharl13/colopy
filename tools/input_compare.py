@@ -79,6 +79,33 @@ def map_script():
         K("Space")
     K("a")
     K("c")
+    # slice 2: menu Enter + accelerators
+    K("v", 1)                        # Alt+V opens VIEW
+    K("C")                           # accel: Center View (runs + closes)
+    K("v", 1)
+    K("H")                           # Show Hidden toggle on
+    K("v", 1)
+    K("H")                           # ...and off
+    K("o", 1)                        # Alt+O opens ORDERS
+    K("A")                           # accel: Activate unit
+    K("o", 1)
+    K("F")                           # accel: Fortify (advances)
+    K("r", 1)                        # Alt+R opens REPORTS
+    K("ArrowDown")                   # F1 -> F2
+    K("Enter")                       # F2 Religious Adviser
+    K("Escape")                      # report -> map
+    # the Europe screen via VIEW / European Status
+    K("v", 1)
+    K("E")                           # -> europe
+    K("ArrowRight")
+    K("ArrowRight")
+    K("ArrowLeft")
+    K("l")                           # buy 100 of the market cursor good
+    K("+")                           # buy 10 more
+    K("Escape")                      # -> map
+    # colony-view keys: live if an askZoom opened a colony, no-ops on map
+    K("2")
+    K("Escape")
     return ev
 
 

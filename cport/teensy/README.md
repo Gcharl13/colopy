@@ -38,6 +38,37 @@ To verify against the host: `cport/host/smoke --saveout sav1653 100 f.sav`
 runs the same 100 turns from the same seed; the digests and the written
 save must agree byte-for-byte with the shell's.
 
+With the display+input build (`-DCOLOPY_ILI9341`, optionally
+`-DCOLOPY_USBHOST`) two more commands come in:
+
+    v                   draw the map view once (loads COLOPY.PAK)
+    g                   game loop: the oracle-verified input layer
+                        drives the Phase-7 renderers; keys arrive from
+                        a USB keyboard on the host port, or over serial
+                        as `k <name>` ("k Space", "k ArrowUp", "k F5",
+                        "k !g" = Alt+G) for bench runs without one
+
+The game loop draws the screen the UI state names (map + pulldowns,
+reports, colony, Europe, boot screens) and overlays the pending game
+event as a popup that swallows the next key — the same modal rule the
+JS runs.  Both the panel flush and the keyboard bridge are UNTESTED ON
+HARDWARE; the checklist below gates that flag.
+
+## Board checklist (hardware bring-up — clears the UNTESTED flags)
+
+1. Teensy 4.1 with the 8 MB PSRAM soldered (EXTMEM holds the ~3 MB pak).
+2. ILI9341 on SPI0: CS pin 10, DC pin 9 (override with
+   `-DCOLOPY_TFT_CS/-DCOLOPY_TFT_DC`), MOSI 11, MISO 12, SCK 13.
+3. microSD with `COLOPY.PAK` (tools/gen_sd_pack.py) + a `.SAV`.
+4. PlatformIO: uncomment the display+input units and defines in
+   `platformio.ini`, install `ILI9341_t3n`.
+5. Serial: `l COLONY00.SAV`, then `v` — the map view must draw; check
+   the reported draw/flush timings.
+6. `g`, then `k Space` / `k Tab` — the unit cycle must step and redraw;
+   a USB keyboard on the host port must do the same directly.
+7. Run `t 100` afterwards and diff the digests against the host run —
+   the display path must not perturb the sim.
+
 ## Memory fit (measured, host x86-64 `-O2`; Thumb-2 is typically smaller)
 
 | piece                         | size      | Teensy 4.1 home        |

@@ -155,7 +155,8 @@ INPUT = """([save, events]) => {
       mr: G.menuRow, d: G.difficulty, n: G.nation, ldr: G.leader,
       bp: G.briefPage || 0, rep: G.report || '', sel: G.sel,
       vx: G.view.x, vy: G.view.y, om: G.openMenu, ms: G.menuSel,
-      vm: G.viewMode ? 1 : 0,
+      vm: G.viewMode ? 1 : 0, col: G.colony, cv: G.colonyView,
+      mks: G.marketSel, sh: G.showHidden ? 1 : 0,
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };
