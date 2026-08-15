@@ -50,3 +50,6 @@ tools/dosbox_harness/shots/
 tools/dosbox_harness/cap/
 tools/dosbox_harness/dosbox.conf
 tools/dosbox_harness/dosbox.log
+
+# Phase 6: the microSD asset pack is regenerable (tools/gen_sd_pack.py)
+cport/pak/

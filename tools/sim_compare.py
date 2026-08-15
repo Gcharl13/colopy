@@ -156,7 +156,82 @@ def compare_turns(save, n, extra=()):
     return bad
 
 
+def compare_pak():
+    """COLOPY.PAK census (smoke --pak) vs the JS DATA census
+    (port/assets/manifest.json — the source of DATA.sheets/fonts/cycle).
+    PHYS0C is the JS renderer's derived re-key of PHYS0 and has no pak
+    entry; the C renderer re-derives it (tools/gen_sd_pack.py)."""
+    pak = ROOT / "cport/pak/COLOPY.PAK"
+    if not pak.exists():
+        subprocess.run([sys.executable, ROOT / "tools/gen_sd_pack.py"],
+                       check=True)
+    subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+    cen = json.loads(subprocess.run(
+        ["./smoke", "--pak", str(pak)], cwd=ROOT / "cport/host",
+        capture_output=True, text=True, check=True).stdout)
+    man = json.load(open(ROOT / "port/assets/manifest.json"))
+    ent = {e["name"]: e for e in cen["entries"]}
+    bad = 0 if cen["ok"] else 1
+
+    for nm, meta in sorted(man["sheets"].items()):
+        if nm == "PHYS0C":
+            continue
+        e = ent.get(nm + ".SS")
+        if e is None:
+            print("MISSING sheet:", nm); bad += 1; continue
+        mf = meta["frames"]
+        if e["frames"] != len(mf):
+            print("%s: frames C %d JS %d" % (nm, e["frames"], len(mf)))
+            bad += 1
+            continue
+        for i, f in enumerate(mf):
+            if (e["fw"][i], e["fh"][i]) != (f["w"], f["h"]):
+                print("%s frame %d: C %dx%d JS %dx%d"
+                      % (nm, i, e["fw"][i], e["fh"][i], f["w"], f["h"]))
+                bad += 1
+        if e["pal"] != (1 if "pal" in meta else 0):
+            print("%s: palette flag C %d JS %d"
+                  % (nm, e["pal"], 1 if "pal" in meta else 0))
+            bad += 1
+    for nm, meta in sorted(man["backgrounds"].items()):
+        e = ent.get(nm + ".PIK")
+        if e is None:
+            print("MISSING background:", nm); bad += 1; continue
+        if (e["w"], e["h"]) != (meta["w"], meta["h"]):
+            print("%s.PIK: C %dx%d JS %dx%d"
+                  % (nm, e["w"], e["h"], meta["w"], meta["h"]))
+            bad += 1
+    for nm, meta in sorted(man["fonts"].items()):
+        e = ent.get(nm + ".FF")
+        if e is None:
+            print("MISSING font:", nm); bad += 1; continue
+        if e["h"] != meta["h"]:
+            print("%s.FF: cell height C %d JS %d" % (nm, e["h"], meta["h"]))
+            bad += 1
+        for ch, wd in meta["widths"].items():
+            if e["widths"].get(str(ch)) != wd:
+                print("%s.FF width(%s): C %s JS %s"
+                      % (nm, ch, e["widths"].get(str(ch)), wd))
+                bad += 1
+    cy = man["cycle"]
+    e = ent.get("CYCLE")
+    if e is None or e.get("cycle") != [cy["start"], cy["len"], cy["delay"]]:
+        print("CYCLE: C %s JS %s" % (e and e.get("cycle"),
+                                     [cy["start"], cy["len"], cy["delay"]]))
+        bad += 1
+    for req in ("VICEROY.PAL", "TEXT"):
+        if req not in ent:
+            print("MISSING:", req); bad += 1
+    if "TEXT" in ent and ent["TEXT"].get("text", 0) < 1000:
+        print("TEXT: suspiciously few pairs:", ent["TEXT"].get("text"))
+        bad += 1
+    print("pak census: %d entries, %d disagreement(s)" % (cen["count"], bad))
+    sys.exit(1 if bad else 0)
+
+
 def main():
+    if sys.argv[1:2] == ["pak"]:
+        compare_pak()
     if sys.argv[1:2] == ["turns"]:
         extra = [f for f in ("agitate", "script") if f in sys.argv[2:]]
         bad = 0

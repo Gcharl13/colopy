@@ -492,6 +492,11 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
 }
 
 int main(int argc, char **argv) {
+    /* --pak FILE: validate COLOPY.PAK and dump its census (Phase 6) */
+    if (argc > 2 && strcmp(argv[1], "--pak") == 0) {
+        extern int pak_check_main(const char *path);
+        return pak_check_main(argv[2]);
+    }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         int agitate = 0, script = 0;
         for (int i = 4; i < argc; i++) {
