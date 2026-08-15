@@ -174,6 +174,8 @@ void cmd_set_order(int ui, int n);            /* setOrder (game.js:11181) */
 void cmd_improve(int ui, int n);              /* improveOrder (game.js:11191) */
 void cmd_goto(int ui, int gx, int gy);        /* Go To: orders 3 + goal */
 void cmd_activate(int ui);                    /* activateUnit (game.js:11228) */
+int  cmd_build_colony(int ui);                /* buildColony (game.js:11258):
+                                               * joined player ordinal or -1 */
 int  enter_rumour(int ui, int x, int y);      /* enterRumour (game.js:8740);
                                                * 0 = the unit is gone, no step */
 

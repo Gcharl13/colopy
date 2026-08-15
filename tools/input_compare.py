@@ -99,6 +99,25 @@ def map_script():
         K("Escape")
     K("F4")
     K("F6")                          # F-key inside a report also exits
+    # slice 8: map mechanics — improvement orders, build/join colony
+    # (guards + ask chains; the name dialog is inert), ship cargo
+    # (@CARGOLOAD/@CARGOUNLOAD picks + @HOWMUCH modals), dump, disband
+    # (@SUREDISBAND: row 0 = yes on the even ask), sail for Europe
+    K("p")                           # Clear/Plow order (advances)
+    K("r")                           # Build Road order (advances)
+    K("b")                           # Build/Join Colony
+    K("Escape")                      # colony exit if the join opened one
+    K("l")                           # Load (ship at a colony; else msg)
+    K("7")                           # modal digit / diagonal move
+    K("Enter")                       # commit load / village-safe no-op
+    K("Escape")                      # village-safe balance
+    K("u")                           # Unload pick + @HOWMUCH2
+    K("Enter")                       # full amount / no-op
+    K("Escape")
+    K("o")                           # dump a hold slot overboard
+    K("D", 0, 1)                     # Shift+D: disband (ask)
+    K("e")                           # sail for Europe -> europe screen
+    K("Escape")                      # -> map
     # pulldown navigation (no Enter in slice 1)
     K("g", 1)                        # Alt+G opens GAME
     K("ArrowDown")

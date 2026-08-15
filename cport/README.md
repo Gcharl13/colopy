@@ -24,9 +24,13 @@ budget + serial digest ✓ → 5 interactive core ✓ → 6 SD asset pack ✓ �
 7 ILI9341 renderer ✓ (all screens 0 structural) → 8 input loop ✓ (boot +
 map/menu/colony/Europe key vocabulary AND the pointer layer, village
 keys, the construction picker, the jobs popup, the Europe r/p/t
-sub-menus + King's petition, the land parley arm — all 0-event-diff
-across five scenarios; open follow-ups: the @HOWMUCH amount-dialog
-modal, the Europe ship/dockunit context menus, the pedia/options
-vocabularies, the menu rows bound to dialog flows, the drag layer, the
-rival land WAR arms + Wagon/Scout colony arms, and the on-hardware
-bring-up per teensy/README.md).
+sub-menus + King's petition, the land parley arm, the @HOWMUCH amount
+modals (Europe sell + ship load/unload), and the map mechanics keys
+(build/join colony with the land-claim + site-scan chains, improvement
+orders, cargo load/unload/dump, disband, sail for Europe) — all
+0-event-diff across five scenarios; the ILI9341 panel path is VERIFIED
+ON HARDWARE.  Open follow-ups: the Europe ship/dockunit context menus,
+the colony rush-buy/custom-house keys, the pedia/options vocabularies,
+the menu rows bound to dialog flows, the drag layer, the rival land WAR
+arms + Wagon/Scout colony arms, and the USB-keyboard bring-up check per
+teensy/README.md).

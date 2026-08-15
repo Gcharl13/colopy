@@ -226,6 +226,140 @@ static void work_objection(int ui, int road) {
     adjust_tension(tribe, 10, road ? 1 : 2);   /* @PISS1 / @PISS2 */
 }
 
+/* buildColony (game.js:11258): the B key.  The name dialog at the end
+ * is an openDialog — inert under the shared conventions — so a
+ * headless FOUNDING stops at it: only the guards, the native land
+ * claim (with its tension/gold effects) and the site-scan ask chain
+ * run.  JOINING a colony on the same tile completes: unitToColonist
+ * (game.js:2005 — the outfit stands down into the stores) + the record
+ * splice.  Returns the joined colony's PLAYER ordinal, -1 otherwise. */
+static int colony_rec_at(int x, int y) {        /* player colonies only */
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == (int)cs_nation() &&
+            CS.colonies[i].map_x == x && CS.colonies[i].map_y == y)
+            return i;
+    return -1;
+}
+int cmd_build_colony(int ui) {
+    UnitRecord *u = &CS.units[ui];
+    int x = u->map_x, y = u->map_y;
+    uint8_t v = map_at(x, y);
+    const char *tn = dat_units[u->type].name;
+    if (dat_units[u->type].hull > 0 || tile_water(v)) {
+        ev_emit("SEACOLONY", 0, 0, 0, 0);
+        return -1;
+    }
+    if (strcmp(tn, "Wagon Train") == 0 || strcmp(tn, "Artillery") == 0 ||
+        strcmp(tn, "Treasure") == 0) {           /* NOT_COLONISTS */
+        ev_emit("ONLYCOL", 0, 0, 0, 0);
+        return -1;
+    }
+    int here = colony_rec_at(x, y);
+    if ((CR.woi_flags & WOI_DECLARED) && !(CR.woi_flags & WOI_WON) &&
+        here < 0) {
+        ev_emit("NOCOLONIESEITHER", 0, 0, 0, 0);
+        return -1;
+    }
+    if (tile_mountains(v)) { ev_emit("TOOMOUNTAIN", 0, 0, 0, 0); return -1; }
+    if (here < 0)
+        for (int i = 0; i < CS.n_colonies; i++) {
+            if ((CS.colonies[i].owner_power & 3) != (int)cs_nation())
+                continue;
+            int dx = CS.colonies[i].map_x - x, dy = CS.colonies[i].map_y - y;
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if ((dx > dy ? dx : dy) <= 1) {      /* chebyshev, flagged */
+                ev_emit("TOONEAR", 0, 0, CS.colonies[i].name, 0);
+                return -1;
+            }
+        }
+    if (here >= 0) {                             /* Join Colony (B) */
+        ColonyRecord *c = &CS.colonies[here];
+        if (u->tools) c->stock[TOOLS] = (uint16_t)(c->stock[TOOLS] + u->tools);
+        if (strcmp(tn, "Soldiers") == 0)
+            c->stock[MUSKETS] = (uint16_t)(c->stock[MUSKETS] + 50);
+        else if (strcmp(tn, "Dragoons") == 0) {
+            c->stock[MUSKETS] = (uint16_t)(c->stock[MUSKETS] + 50);
+            c->stock[HORSES] = (uint16_t)(c->stock[HORSES] + 50);
+        } else if (strcmp(tn, "Scouts") == 0)
+            c->stock[HORSES] = (uint16_t)(c->stock[HORSES] + 50);
+        uint8_t prof = u->profession;
+        colonist_add(c);
+        if (c->population > 0)
+            c->profession[c->population - 1] = prof;
+        unit_remove(ui);
+        int ord = -1;
+        for (int i = 0; i <= here; i++)
+            if ((CS.colonies[i].owner_power & 3) == (int)cs_nation()) ord++;
+        return ord;
+    }
+    /* the founding path: the native land claim, then the site scans */
+    int claim = -1;
+    for (int i = 0; i < CS.n_villages; i++) {
+        int dx = CS.villages[i].map_x - x, dy = CS.villages[i].map_y - y;
+        if (dx < 0) dx = -dx;
+        if (dy < 0) dy = -dy;
+        if (dx <= 2 && dy <= 2) { claim = i; break; }
+    }
+    int tribe = claim >= 0 ? (CS.villages[claim].owner_tribe & 0x0F) - 4 : -1;
+    if (tribe >= 0 && tribe < 8) {
+        if (CR.tension[tribe] < 20) {
+            if (rng_next() <= 16383) {           /* Math.random() < 0.5 */
+                ev_emit("INDIANTREATY", 0, 0, dat_tribes[tribe].name,
+                        dat_nations[cs_nation()].adjective);
+                if (ask_choice() == 0) CR.tension[tribe] = 0;
+            } else {
+                ev_emit("INDIANBOW", 0, 0, dat_tribes[tribe].name,
+                        dat_nations[cs_nation()].adjective);
+            }
+        } else {
+            int32_t pay = father_owned(father_by_name("Peter Minuit"))
+                              ? 0 : demand_value(100);
+            ev_emit("INDIANLAND", 0, pay, dat_tribes[tribe].name, 0);
+            int c = ask_choice();
+            if (c == 0) return -1;               /* we leave */
+            if (c == 1) {
+                PowerRecord *p = &CS.powers[cs_nation()];
+                if (p->gold < pay) {
+                    ev_emit("NOTENOUGH", p->gold, 0, 0, 0);
+                    return -1;
+                }
+                p->gold -= pay;
+                ev_emit("INDIANBRIBE", 0, 0, 0, 0);
+            } else {
+                adjust_tension(tribe, 15, 5);    /* @PISS5 */
+            }
+        }
+    }
+    /* the site scans (func_022542): NOPORT, then the two tutorial scans
+     * below difficulty 2; row 2 ("proceed") continues the chain */
+    int water = 0, productive = 0, forested = 0;
+    for (int dy = -1; dy <= 1; dy++)
+        for (int dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            int nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
+                continue;
+            uint8_t nv = map_at(nx, ny);
+            if (tile_water(nv)) { water++; continue; }
+            int t = tile_terrain(nv);
+            if (t >= 8 && t <= 23) forested++;   /* isForested (fold) */
+            if (!tile_mountains(nv) && t != 24) productive++;
+        }
+    const char *scans[3];
+    int ns = 0;
+    if (!water) scans[ns++] = "NOPORT";
+    if (cs_difficulty() < 2 && productive < 4) scans[ns++] = "TUTNOSPACES";
+    if (cs_difficulty() < 2 && !forested) scans[ns++] = "TUTNOLUMBER";
+    for (int i = 0; i < ns; i++) {
+        ev_emit(scans[i], 0, 0, 0, 0);
+        if (ask_choice() != 1) return -1;        /* row 2 proceeds */
+    }
+    /* nameAndFound: openDialog('COLONY') — inert headless, the founding
+     * itself is the Teensy/live front end's flow (FLAGGED open) */
+    return -1;
+}
+
 /* improveOrder (game.js:11191).  Orders 8 = Clear/Plow, 9 = Build Road
  * (dispatcher @0x051D56); refusals @ONLYPIO/@NOROAD/@NOPLOW. */
 static int is_forested_id(int t) { return t >= 8 && t <= 23; }

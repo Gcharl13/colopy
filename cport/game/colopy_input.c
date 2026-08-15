@@ -184,8 +184,20 @@ static void dialog_done(int cancel) {
     int kind = UI.dlg;
     UI.dlg = 0;
     UI.dlg_entry[0] = 0;
-    if (kind == 1 && qty > 0)        /* HOWMUCH5 finish (game.js:4795) */
+    if (!qty) return;                /* every finish() gates on qty */
+    if (kind == 1) {                 /* HOWMUCH5 finish (game.js:4795) */
         euro_sell_from_ship(UI.dlg_port, UI.dlg_good, qty);
+    } else if (kind == 2) {          /* HOWMUCH1: load (game.js:11247) */
+        ColonyRecord *c = &CS.colonies[UI.dlg_port];
+        c->stock[UI.dlg_good] = (uint16_t)(c->stock[UI.dlg_good] - qty);
+        hold_add(CR.unit_hold[UI.dlg_unit], &CR.unit_n_hold[UI.dlg_unit],
+                 UI.dlg_good, qty);
+    } else if (kind == 3) {          /* HOWMUCH2: unload (game.js:11268) */
+        ColonyRecord *c = &CS.colonies[UI.dlg_port];
+        hold_add(CR.unit_hold[UI.dlg_unit], &CR.unit_n_hold[UI.dlg_unit],
+                 UI.dlg_good, -qty);
+        c->stock[UI.dlg_good] = (uint16_t)(c->stock[UI.dlg_good] + qty);
+    }
 }
 static void dialog_key(const char *k) {
     if (key_is(k, "Enter")) { dialog_done(0); return; }
@@ -200,6 +212,15 @@ static void dialog_key(const char *k) {
         if (n < 23) { UI.dlg_entry[n] = k[0]; UI.dlg_entry[n + 1] = 0; }
     }
 }
+/* the player colony record standing on a tile (colonyAt, game.js) */
+static int colony_rec_at_xy(int x, int y) {
+    for (int i = 0; i < CS.n_colonies; i++)
+        if ((CS.colonies[i].owner_power & 3) == (int)cs_nation() &&
+            CS.colonies[i].map_x == x && CS.colonies[i].map_y == y)
+            return i;
+    return -1;
+}
+
 /* sellFromShip(G.marketSel) with no qty (game.js:4783): no port ship or
  * nothing aboard = euroMsg only; a boycotted good runs the @KISSUP
  * back-tax ask at once; else the @HOWMUCH5 modal opens with max = the
@@ -447,7 +468,6 @@ static void commit_menu(void) {
 }
 
 void in_key(const char *k, int alt, int shift) {
-    (void)shift;
     /* an open @HOWMUCH dialog owns the keyboard (onKey, game.js:12403:
      * the G.dialog check runs before every screen case) */
     if (UI.dlg) { dialog_key(k); return; }
@@ -657,6 +677,121 @@ void in_key(const char *k, int alt, int shift) {
             UI.view_mode = 1;
         } else if (key_is(k, "m") || key_is(k, "M")) {
             UI.view_mode = 0;
+        } else if (key_is(k, "b") || key_is(k, "B")) {
+            /* buildColony (game.js:11258): join completes, a founding
+             * runs its guards + ask chains and stops at the inert name
+             * dialog */
+            if (ui >= 0) {
+                int ord = cmd_build_colony(ui);
+                if (UI.sel >= CR.n_units_order)
+                    UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
+                if (ord >= 0) {
+                    UI.colony = (int8_t)ord;
+                    UI.screen = SCR_COLONY;
+                }
+            }
+        } else if (key_is(k, "e") || key_is(k, "E")) {
+            /* returnToEurope (game.js:12365) */
+            if ((CR.woi_flags & WOI_DECLARED) && !(CR.woi_flags & WOI_WON)) {
+                ev_emit("EUROPENOTAVAIL", 0, 0, 0, 0);
+            } else {
+                if (ui >= 0 && dat_units[CS.units[ui].type].hull > 0) {
+                    cmd_sail_for_europe(ui);
+                    if (UI.sel >= CR.n_units_order)
+                        UI.sel = CR.n_units_order ? CR.n_units_order - 1 : 0;
+                }
+                UI.screen = SCR_EUROPE;
+            }
+        } else if (key_is(k, "l") || key_is(k, "L")) {
+            /* loadCargo (game.js:11236): @CARGOLOAD picks the good (the
+             * seq-policy ask), @HOWMUCH1 the amount (a live modal) */
+            if (ui >= 0 && dat_units[CS.units[ui].type].hull > 0) {
+                int ci = colony_rec_at_xy(CS.units[ui].map_x,
+                                          CS.units[ui].map_y);
+                if (ci >= 0) {
+                    int goods[16], n = 0;
+                    for (int g = 0; g < 16; g++)
+                        if (CS.colonies[ci].stock[g] > 0) goods[n++] = g;
+                    if (n) {
+                        ev_emit("CARGOLOAD", 0, 0, CS.colonies[ci].name, 0);
+                        int kk = ask_choice();
+                        if (kk >= 0 && kk < n) {
+                            int q = CS.colonies[ci].stock[goods[kk]];
+                            UI.dlg = 2;
+                            UI.dlg_entry[0] = 0;
+                            UI.dlg_max = q < 100 ? q : 100;
+                            UI.dlg_good = (int8_t)goods[kk];
+                            UI.dlg_port = (int16_t)ci;
+                            UI.dlg_unit = (int16_t)ui;
+                        }
+                    }
+                }
+            }
+        } else if (key_is(k, "u") || key_is(k, "U")) {
+            /* unloadCargo (game.js:11258 area): @CARGOUNLOAD picks the
+             * slot, @HOWMUCH2 the amount */
+            if (ui >= 0 && dat_units[CS.units[ui].type].hull > 0) {
+                int ci = colony_rec_at_xy(CS.units[ui].map_x,
+                                          CS.units[ui].map_y);
+                if (ci >= 0) {
+                    int slots[EURO_HOLD_MAX], n = 0;
+                    for (int s2 = 0; s2 < CR.unit_n_hold[ui]; s2++)
+                        if (CR.unit_hold[ui][s2].qty > 0) slots[n++] = s2;
+                    if (n) {
+                        ev_emit("CARGOUNLOAD", 0, 0, CS.colonies[ci].name, 0);
+                        int kk = ask_choice();
+                        if (kk >= 0 && kk < n) {
+                            const hold_slot *h = &CR.unit_hold[ui][slots[kk]];
+                            UI.dlg = 3;
+                            UI.dlg_entry[0] = 0;
+                            UI.dlg_max = h->qty;
+                            UI.dlg_good = (int8_t)h->good;
+                            UI.dlg_port = (int16_t)ci;
+                            UI.dlg_unit = (int16_t)ui;
+                        }
+                    }
+                }
+            }
+        } else if (key_is(k, "o") || key_is(k, "O")) {
+            /* dumpCargo (game.js:11280): @OVERBOARD picks the slot to
+             * splice away whole */
+            if (ui >= 0 && CR.unit_n_hold[ui] > 0) {
+                int slots[EURO_HOLD_MAX], n = 0;
+                for (int s2 = 0; s2 < CR.unit_n_hold[ui]; s2++)
+                    if (CR.unit_hold[ui][s2].qty > 0) slots[n++] = s2;
+                if (n) {
+                    ev_emit("OVERBOARD", 0, 0, 0, 0);
+                    int kk = ask_choice();
+                    if (kk >= 0 && kk < n) {
+                        int at = slots[kk];
+                        memmove(&CR.unit_hold[ui][at],
+                                &CR.unit_hold[ui][at + 1],
+                                (size_t)(CR.unit_n_hold[ui] - at - 1) *
+                                    sizeof(hold_slot));
+                        CR.unit_n_hold[ui]--;
+                    }
+                }
+            }
+        } else if (shift && key_is(k, "D")) {
+            /* disbandUnit (game.js:11293): @DISBANDSHIP blocks a loaded
+             * ship at sea; @SUREDISBAND row 0 removes the unit */
+            if (ui >= 0) {
+                int ship2 = dat_units[CS.units[ui].type].hull > 0;
+                if (ship2 && CR.unit_n_pass[ui] > 0 &&
+                    colony_rec_at_xy(CS.units[ui].map_x,
+                                     CS.units[ui].map_y) < 0) {
+                    ev_emit("DISBANDSHIP", 0, 0, 0, 0);
+                } else {
+                    ev_emit("SUREDISBAND", 0, 0,
+                            dat_units[CS.units[ui].type].name, 0);
+                    if (ask_choice() == 0) {
+                        unit_remove(ui);
+                        if (UI.sel >= CR.n_units_order)
+                            UI.sel = CR.n_units_order ? CR.n_units_order - 1
+                                                      : 0;
+                    }
+                }
+            }
         }
         break;
     }
