@@ -153,8 +153,7 @@ TURNS = """([save, n, agitate, script]) => {
       if (r.colonies.some(q => q.x === nx && q.y === ny)) return false;
     }
     if (G.villages.some(v => v.x === nx && v.y === ny)) return false;
-    if (rumourAt(nx, ny)) return false;
-    return true;
+    return true;   // rumour squares are ENTERED (slice 4a: enterRumour)
   };
   const scriptTurn = (t) => {
     for (let k = 0; k < G.units.length; k++) {

@@ -126,6 +126,7 @@ void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
 void colonist_remove_last(int ci);
+void colonist_add(ColonyRecord *c);   /* the record-slot push */
 void ev_emit(const char *key, int32_t p0, int32_t p1,
              const char *s0, const char *s1);
 
@@ -156,6 +157,8 @@ void cmd_set_order(int ui, int n);            /* setOrder (game.js:11181) */
 void cmd_improve(int ui, int n);              /* improveOrder (game.js:11191) */
 void cmd_goto(int ui, int gx, int gy);        /* Go To: orders 3 + goal */
 void cmd_activate(int ui);                    /* activateUnit (game.js:11228) */
+int  enter_rumour(int ui, int x, int y);      /* enterRumour (game.js:8740);
+                                               * 0 = the unit is gone, no step */
 int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
 int  father_by_name(const char *name);
@@ -336,6 +339,11 @@ typedef struct {
     uint8_t   unit_n_hold[COLOPY_MAX_UNITS];
     immigrant unit_pass[COLOPY_MAX_UNITS][EURO_PASS_MAX];
     uint8_t   unit_n_pass[COLOPY_MAX_UNITS];
+    /* Slice 4a — Lost City Rumours (enterRumour game.js:8740). */
+    uint8_t rumours_done[(COLOPY_MAP_W * COLOPY_MAP_H + 7) / 8];
+    uint8_t rumour_floor;        /* anti-streak floor, 1..3 (G.rumourFloor) */
+    uint8_t found_fountain, found_cibola;
+    uint16_t unit_treasure[COLOPY_MAX_UNITS]; /* JS u.treasure (value/100) */
     uint8_t unit_rival_born[COLOPY_MAX_UNITS];
     /* "u.moves is undefined": seeded = rival_born, but CLEARED by
      * becomeType (game.js:7061 assigns u.moves) — a demoted rival object

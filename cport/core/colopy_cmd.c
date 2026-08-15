@@ -30,7 +30,133 @@ int rumour_at(int x, int y) {
     int t = tile_terrain(map_at(x, y));
     if (t >= 0x18) return 0;
     int h = (((y >> 2) * 0x13 + (x >> 2) * 0x11 + CR.map_seed + 8) & 0x1F);
-    return h - (x & 3) * 4 == (y & 3);
+    if (h - (x & 3) * 4 != (y & 3)) return 0;
+    int bit = y * COLOPY_MAP_W + x;      /* rumoursDone consumed-set */
+    return !((CR.rumours_done[bit >> 3] >> (bit & 7)) & 1);
+}
+
+/* enterRumour (game.js:8740) — the Lost City Rumour tree.  d/dsum are
+ * the JS 1+floor(random*n) rolls; the anti-streak floor climbs 1 per
+ * rumour and caps at 3; quality = d(100) + scout*10 against 10/25.
+ * Returns 0 when the ENTERING unit is gone (the vanish outcome, or the
+ * @SCREWED desecration) — the caller must not step it. */
+static int d_roll(int n) { return 1 + (int)((rng_next() * (uint32_t)n) >> 15); }
+static int dsum_roll(int k, int n) {
+    int t = 0;
+    for (int i = 0; i < k; i++) t += d_roll(n);
+    return t;
+}
+static int scout_level(int ui) {          /* scoutLevel (game.js:8726) */
+    int s = 0;
+    if (strcmp(dat_units[CS.units[ui].type].name, "Scouts") == 0) s++;
+    uint8_t p = CS.units[ui].profession;
+    if (p >= 1 && p < DAT_JOBEXPERT_COUNT &&
+        strcmp(dat_jobexpert[p], "Seasoned Scouts") == 0) s++;
+    if (father_owned(father_by_name("Hernando de Soto"))) s++;
+    return s;
+}
+static int type_row(const char *name) {
+    for (int i = 0; i < DAT_UNITS_COUNT; i++)
+        if (strcmp(dat_units[i].name, name) == 0) return i;
+    return -1;
+}
+int enter_rumour(int ui, int x, int y) {
+    int bit = y * COLOPY_MAP_W + x;
+    CR.rumours_done[bit >> 3] |= (uint8_t)(1u << (bit & 7));
+    int s = scout_level(ui);
+    int n = d_roll(9);
+    if (n < CR.rumour_floor) n = CR.rumour_floor;
+    if (CR.rumour_floor < 3) CR.rumour_floor++;
+    int quality = d_roll(100) + s * 10;
+    if (n == 1 && (CR.found_fountain || quality < 10))
+        n = quality < 10 ? 5 : 6;
+    if (n == 2 && (CR.found_cibola || quality < 25)) n = 4;
+    int tribe = (int)((rng_next() * 8u) >> 15);   /* G.tribes draw */
+    PowerRecord *pw = &CS.powers[cs_nation()];
+    switch (n) {
+    case 1: {                        /* Fountain of Youth: 8 picked arrivals */
+        CR.found_fountain = 1;
+        CR.screen_map = 1;           /* woodcut 8 + the trace's dismissal */
+        ev_emit("LOSTCITY1", 0, 0, 0, 0);
+        for (int k = 0; k < 8; k++) {
+            immigrant cands[3];
+            for (int c = 0; c < 3; c++) roll_immigrant(&cands[c]);
+            ev_emit("LOSTCITY0", 0, 0, 0, 0);
+            int c = ask_choice();
+            if (c < 0 || c > 2) c = 0;
+            if (CR.n_dock_units <
+                (int)(sizeof(CR.dock_units) / sizeof(CR.dock_units[0])))
+                CR.dock_units[CR.n_dock_units++] = cands[c];
+        }
+        break;
+    }
+    case 2: {                        /* Cibola: a Treasure unit */
+        CR.found_cibola = 1;
+        int value = 10 * (s + 2) + d_roll(20);
+        int t = unit_append(type_row("Treasure"), (int)cs_nation(), x, y);
+        if (t >= 0) CR.unit_treasure[t] = (uint16_t)value;
+        ev_emit("LOSTCITY2", value * 100, 0, 0, 0);
+        break;
+    }
+    case 3: {                        /* ruins */
+        int gold = 10 * dsum_roll(3, 8) * (s + 2) / 2;
+        pw->gold += gold;
+        ev_emit("LOSTCITY3", gold, 0, 0, 0);
+        break;
+    }
+    case 4: {                        /* burial mounds: ask FIRST */
+        ev_emit("LOSTCITY4", 0, 0, 0, 0);
+        if (ask_choice() != 0) break;         /* stayed clear */
+        int roll = d_roll(3);
+        if (roll == 1) ev_emit("BURIAL1", 0, 0, 0, 0);
+        else if (roll == 2) {
+            int gold = 10 * dsum_roll(3, 8);
+            pw->gold += gold;
+            ev_emit("BURIAL2", gold, 0, 0, 0);
+        } else {
+            int value = 2 * (d_roll(8) + 2 * (s + 5));
+            int t = unit_append(type_row("Treasure"), (int)cs_nation(), x, y);
+            if (t >= 0) CR.unit_treasure[t] = (uint16_t)value;
+            ev_emit("BURIAL3", value * 100, 0, 0, 0);
+        }
+        /* @SCREWED: a HOSTILE tribe's grounds — the unit is lost and the
+         * tribe goes to the war footing (func_045DF2 @0x61B84). */
+        if (CR.tension[tribe] >= 75) {
+            ev_emit("SCREWED", 0, 0, dat_tribes[tribe].name, 0);
+            unit_remove(ui);
+            adjust_tension(tribe, 100, 4);
+            return 0;                /* JS steps a DEAD object: no C step */
+        }
+        break;
+    }
+    case 5:                          /* the expedition vanishes */
+        unit_remove(ui);
+        ev_emit("LOSTCITY5", 0, 0, 0, 0);
+        return 0;
+    case 6:
+        ev_emit("LOSTCITY6", 0, 0, 0, 0);
+        break;
+    case 7: {                        /* a friendly tribe's gift */
+        int gold = 2 * dsum_roll(4, 10);
+        pw->gold += gold;
+        ev_emit("LOSTCITY7", gold, 0, 0, 0);
+        break;
+    }
+    case 8:                          /* trespass on holy ground */
+        adjust_tension(tribe, 20, 0);
+        ev_emit("LOSTCITY8", 0, 0, dat_tribes[tribe].name, 0);
+        break;
+    default: {                       /* survivors swear allegiance */
+        int first = -1;
+        for (int ci = 0; ci < CS.n_colonies && first < 0; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation()) first = ci;
+        if (first >= 0) colonist_add(&CS.colonies[first]);
+        else unit_append(type_row("Colonists"), (int)cs_nation(), x, y);
+        ev_emit("LOSTCITY9", 0, 0, 0, 0);
+        break;
+    }
+    }
+    return 1;
 }
 
 /* skipUnit (game.js:10872): give up the rest of the turn's moves. */
@@ -167,7 +293,9 @@ void cmd_move(int ui, int dx, int dy) {
     }
     for (int vi = 0; vi < CS.n_villages; vi++)
         if (CS.villages[vi].map_x == nx && CS.villages[vi].map_y == ny) return;
-    if (rumour_at(nx, ny)) return;
+    /* a rumour square triggers the exploration event; one outcome
+     * destroys the unit before it ever arrives (game.js:11162) */
+    if (rumour_at(nx, ny) && !enter_rumour(ui, nx, ny)) return;
     /* step (game.js:10833): one step is always affordable; the budget
      * floors at zero.  reveal/tutorial/centring are presentation. */
     int cost = move_cost(0, u->map_x, u->map_y, nx, ny);

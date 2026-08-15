@@ -346,11 +346,11 @@ Status column is maintained by hand as porting proceeds:
 | `meetingThreat` | 8430 | 13 |  | todo |
 | `meetingAlliance` | 8444 | 35 |  | todo |
 | `aiDiplomacyTick` | 8480 | 30 |  | ported |
-| `kingsCut` | 8511 | 3 |  | ported (inside KINGGALLEON site) |
-| `treasureValue` | 8515 | 0 |  | todo |
-| `hasGalleon` | 8516 | 3 |  | todo |
+| `kingsCut` | 8511 | 3 |  | ported (inline in check_treasure) |
+| `treasureValue` | 8515 | 0 |  | ported (CR.unit_treasure * 100) |
+| `hasGalleon` | 8516 | 3 |  | ported (units + europe scan) |
 | `cashTreasureInFull` | 8520 | 7 |  | todo |
-| `offerGalleon` | 8528 | 21 |  | ported (gross=0 FLAGGED: import never sets u.treasure) |
+| `offerGalleon` | 8528 | 21 |  | ported (in check_treasure: gross/cut wired to unit_treasure) |
 | `checkTreasure` | 8550 | 16 |  | ported |
 | `SEEN` | 8567 | 0 |  | todo |
 | `SEEN_BIT` | 8568 | 0 |  | todo |
@@ -364,11 +364,11 @@ Status column is maintained by hand as porting proceeds:
 | `kingSalutation` | 8642 | 0 |  | todo |
 | `kingTaxDemand` | 8643 | 31 |  | ported |
 | `teaParty` | 8675 | 32 |  | ported (inline at tax-demand site) |
-| `rumourAt` | 8708 | 13 |  | ported (rumour_at; consumed-set with slice-4 entry) |
-| `scoutLevel` | 8722 | 6 |  | todo |
-| `d` | 8729 | 0 |  | todo |
-| `dsum` | 8730 | 5 |  | todo |
-| `enterRumour` | 8736 | 115 |  | todo |
+| `rumourAt` | 8708 | 13 |  | ported (rumour_at + rumoursDone bitset) |
+| `scoutLevel` | 8722 | 6 |  | ported (scout_level) |
+| `d` | 8729 | 0 |  | ported (d_roll) |
+| `dsum` | 8730 | 5 |  | ported (dsum_roll) |
+| `enterRumour` | 8736 | 115 |  | ported (enter_rumour — full outcome tree, LOSTCITY0 picks, SCREWED) |
 | `nationalSoL` | 8852 | 12 |  | ported |
 | `seedREF` | 8865 | 13 |  | todo |
 | `refEra` | 8879 | 14 |  | todo |

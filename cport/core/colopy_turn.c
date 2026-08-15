@@ -181,6 +181,7 @@ void cr_reset_from_load(void) {
         CR.unit_no_moves[i] = CR.unit_rival_born[i];
     }
     CR.map_seed = 1653;
+    CR.rumour_floor = 1;             /* G defaults (game.js:588) */
     /* importer game.js:10285-10288: the artillery price-escalation
      * counter (+0x1E) AND the boycott word (+0x20) are read from the
      * PowerRecord — G.boycotts starts [] but is FILLED from the record's
@@ -207,7 +208,7 @@ void units_session_seed(void) {
 }
 
 /* ---- record mutators --------------------------------------------------- */
-static void colonist_add(ColonyRecord *c) {
+void colonist_add(ColonyRecord *c) {
     if (c->population >= 32) return;             /* record slot cap */
     c->occupation[c->population] = 0xFF;         /* no job (like JS null) */
     c->profession[c->population] = 0;
@@ -677,6 +678,7 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_moves_undef[i] = 0;
     CR.unit_n_hold[i] = 0;
     CR.unit_n_pass[i] = 0;
+    CR.unit_treasure[i] = 0;
     return i;
 }
 void unit_remove(int ui) {
@@ -696,6 +698,8 @@ void unit_remove(int ui) {
     memmove(&CR.unit_rival_born[ui], &CR.unit_rival_born[ui + 1], n);
     memmove(&CR.unit_no_moves[ui], &CR.unit_no_moves[ui + 1], n);
     memmove(&CR.unit_moves_undef[ui], &CR.unit_moves_undef[ui + 1], n);
+    memmove(&CR.unit_treasure[ui], &CR.unit_treasure[ui + 1],
+            n * sizeof(uint16_t));
     memmove(&CR.unit_hold[ui], &CR.unit_hold[ui + 1],
             n * sizeof(CR.unit_hold[0]));
     memmove(&CR.unit_n_hold[ui], &CR.unit_n_hold[ui + 1], n);
@@ -1091,6 +1095,9 @@ static void check_treasure(void) {
     for (int ui = 0; ui < CS.n_units; ui++)
         if (unit_on_map_player(ui) && CS.units[ui].type == ty_galleon)
             galleon = 1;
+    /* hasGalleon (game.js:8520) counts the Europe fleet too */
+    for (int k = 0; k < CR.n_europe; k++)
+        if (CR.europe[k].type == ty_galleon) galleon = 1;
     for (int k = 0; k < CR.n_units_order; k++) {
         int ui = CR.units_order[k];          /* G.units order */
         UnitRecord *u = &CS.units[ui];
@@ -1102,14 +1109,27 @@ static void check_treasure(void) {
                 (CS.colonies[ci].owner_power & 3) == cs_nation()) on_colony = 1;
         if (!on_colony) continue;
         CR.unit_offered[ui] = 1;
-        ev_emit(galleon ? "KINGGALLEON3" : "KINGGALLEON2", 0, 0, 0, 0);
-        /* offerGalleon (game.js:8577): row 0 accepts the Crown's share.
-         * gross = (u.treasure||0)*100 — u.treasure is only set by the
-         * unported LCR/conquest paths, so imported treasures cash at 0
-         * (JS-mirror; FLAGGED until those paths land). */
+        /* offerGalleon (game.js:8532): gross = (u.treasure||0)*100 —
+         * u.treasure comes from the LCR/burial finds (slice 4); imported
+         * treasures carry 0 (the importer never reads the class byte).
+         * kingsCut (8515): Cortes -> the tax rate, else
+         * max(5*difficulty+50, 2*tax) capped 90. */
+        int32_t gross = (int32_t)CR.unit_treasure[ui] * 100;
+        int32_t cut = father_owned(father_by_name("Hernan Cortes"))
+            ? CS.powers[cs_nation()].tax_rate
+            : (5 * cs_difficulty() + 50 >
+                   2 * CS.powers[cs_nation()].tax_rate
+                   ? 5 * cs_difficulty() + 50
+                   : 2 * CS.powers[cs_nation()].tax_rate);
+        if (cut > 90) cut = 90;
+        ev_emit(galleon ? "KINGGALLEON3" : "KINGGALLEON2", cut, 0, 0, 0);
         if (ask_choice() == 0) {
+            int32_t take = gross * cut / 100;
+            PowerRecord *p = &CS.powers[cs_nation()];
+            p->gold += gross - take;
+            p->kings_fund += take;
             unit_remove(ui);
-            ev_emit("LOOTCASH", 0, 0, 0, 0);
+            ev_emit("LOOTCASH", gross, cut, 0, 0);
         }
         return;
     }

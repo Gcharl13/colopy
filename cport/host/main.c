@@ -149,8 +149,7 @@ static int script_tile_free(int nx, int ny) {
     for (int v = 0; v < CS.n_villages; v++)
         if (CS.villages[v].map_x == nx && CS.villages[v].map_y == ny)
             return 0;
-    if (rumour_at(nx, ny)) return 0;
-    return 1;
+    return 1;   /* rumour squares are ENTERED (slice 4a: enter_rumour) */
 }
 
 static void script_commands(int t) {
