@@ -8,16 +8,22 @@
  *
  * Display + USB-keyboard build (the game): needs the ILI9341_t3n
  * library (github.com/KurtE/ILI9341_t3n -> Sketch > Include Library >
- * Add .ZIP Library), a Teensy 4.1 WITH the PSRAM soldered (the pak
- * buffer is EXTMEM), and USBHost_t36 + SD + SPI (all ship with
- * Teensyduino).  For the serial-only digest shell, comment BOTH
- * defines out -- no display library or PSRAM needed.
+ * Add .ZIP Library) and USBHost_t36 + SD + SPI (all ship with
+ * Teensyduino).  For the serial-only digest shell, comment the first
+ * two defines out -- no display library needed.
+ *
+ * COLOPY_PAK_FLASH compiles the ~3.1 MB asset pak INTO the 8 MB
+ * program flash (colopy_pak_blob.c beside this sketch, emitted by the
+ * generator) -- NO PSRAM chip needed, and the SD card only carries the
+ * .SAV.  Comment it out to load COLOPY.PAK from SD into EXTMEM
+ * instead, which requires the 8 MB PSRAM soldered.
  *
  * TFT pins default to CS 10 / DC 9 (MOSI 11 / MISO 12 / SCK 13 =
  * SPI0); if rewired, define COLOPY_TFT_CS / COLOPY_TFT_DC here before
  * the include block. */
 #define COLOPY_ILI9341 1
 #define COLOPY_USBHOST 1
+#define COLOPY_PAK_FLASH 1
 
 /* Colopy on Teensy 4.1 — the serial digest shell + the Phase-8 game
  * loop.
@@ -80,7 +86,22 @@ extern "C" {
 #define COLOPY_TFT_DC 9
 #endif
 static ILI9341_t3n tft(COLOPY_TFT_CS, COLOPY_TFT_DC);
+/* Two ways to hold the ~3.1 MB pak:
+ *   -DCOLOPY_PAK_FLASH  the pak is COMPILED IN as a const blob
+ *                       (tools/gen_arduino_sketch.py emits
+ *                       colopy_pak_blob.c from cport/pak/COLOPY.PAK) —
+ *                       served straight from the 8 MB program flash,
+ *                       read-only and alignment-safe (the pak parser
+ *                       composes u16s from bytes).  No PSRAM, no
+ *                       COLOPY.PAK on SD.
+ *   (default)           loaded from SD into EXTMEM — needs the 8 MB
+ *                       PSRAM soldered. */
+#ifdef COLOPY_PAK_FLASH
+extern const uint8_t colopy_pak_blob[];
+extern const uint32_t colopy_pak_blob_len;
+#else
 EXTMEM static uint8_t pakbuf[3500000];      /* COLOPY.PAK, from SD */
+#endif
 static uint16_t lut565[256];
 static int pak_ready = 0;
 
@@ -102,6 +123,12 @@ static void flush_fb(void) {
 }
 static void cmd_view(void) {                 /* 'v': render the map view */
     if (!pak_ready) {
+#ifdef COLOPY_PAK_FLASH
+        if (!rd_init(colopy_pak_blob, colopy_pak_blob_len)) {
+            Serial.println("bad flash pak");
+            return;
+        }
+#else
         File f = SD.open("COLOPY.PAK", FILE_READ);
         if (!f) { Serial.println("no COLOPY.PAK on SD"); return; }
         size_t n = f.read(pakbuf, sizeof(pakbuf));
@@ -110,6 +137,7 @@ static void cmd_view(void) {                 /* 'v': render the map view */
             Serial.println("bad pak");
             return;
         }
+#endif
         pak_ready = 1;
     }
     /* centre on the first player unit (centerView semantics) */

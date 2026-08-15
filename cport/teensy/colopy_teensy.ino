@@ -59,7 +59,22 @@ extern "C" {
 #define COLOPY_TFT_DC 9
 #endif
 static ILI9341_t3n tft(COLOPY_TFT_CS, COLOPY_TFT_DC);
+/* Two ways to hold the ~3.1 MB pak:
+ *   -DCOLOPY_PAK_FLASH  the pak is COMPILED IN as a const blob
+ *                       (tools/gen_arduino_sketch.py emits
+ *                       colopy_pak_blob.c from cport/pak/COLOPY.PAK) —
+ *                       served straight from the 8 MB program flash,
+ *                       read-only and alignment-safe (the pak parser
+ *                       composes u16s from bytes).  No PSRAM, no
+ *                       COLOPY.PAK on SD.
+ *   (default)           loaded from SD into EXTMEM — needs the 8 MB
+ *                       PSRAM soldered. */
+#ifdef COLOPY_PAK_FLASH
+extern const uint8_t colopy_pak_blob[];
+extern const uint32_t colopy_pak_blob_len;
+#else
 EXTMEM static uint8_t pakbuf[3500000];      /* COLOPY.PAK, from SD */
+#endif
 static uint16_t lut565[256];
 static int pak_ready = 0;
 
@@ -81,6 +96,12 @@ static void flush_fb(void) {
 }
 static void cmd_view(void) {                 /* 'v': render the map view */
     if (!pak_ready) {
+#ifdef COLOPY_PAK_FLASH
+        if (!rd_init(colopy_pak_blob, colopy_pak_blob_len)) {
+            Serial.println("bad flash pak");
+            return;
+        }
+#else
         File f = SD.open("COLOPY.PAK", FILE_READ);
         if (!f) { Serial.println("no COLOPY.PAK on SD"); return; }
         size_t n = f.read(pakbuf, sizeof(pakbuf));
@@ -89,6 +110,7 @@ static void cmd_view(void) {                 /* 'v': render the map view */
             Serial.println("bad pak");
             return;
         }
+#endif
         pak_ready = 1;
     }
     /* centre on the first player unit (centerView semantics) */

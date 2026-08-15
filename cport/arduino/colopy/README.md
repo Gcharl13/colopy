@@ -13,22 +13,19 @@ the banner at the top of `colopy.ino`.
 2. Display build only: install the `ILI9341_t3n` library — download the
    ZIP from <https://github.com/KurtE/ILI9341_t3n> and use
    Sketch > Include Library > Add .ZIP Library.  (`SD`, `SPI`,
-   `USBHost_t36` ship with Teensyduino.)
+   `USBHost_t36` ship with Teensyduino.)  No PSRAM chip is needed: the
+   default `COLOPY_PAK_FLASH` config compiles the asset pak into the
+   8 MB program flash (`colopy_pak_blob.c`, emitted by the generator —
+   NOT in git, so run the generator locally once after pulling).
 3. Open `colopy.ino`.  Tools menu: Board **Teensy 4.1**, USB Type
    **Serial** (the USB keyboard goes on the separate HOST port header),
    CPU Speed 600 MHz, Optimize "Faster".
 4. microSD (FAT32, files in the card ROOT — the sketch opens them by
-   bare name): both files are generated, git-ignored output — build
-   them from the repo root with
-
-       pip install pillow               # once (gen_sd_pack's asset census)
-       python3 bin/reconstitute.py      # -> raw/COLONIZE/*.SAV
-       python3 tools/gen_sd_pack.py     # -> cport/pak/COLOPY.PAK
-                                        #    (auto-builds port/assets/
-                                        #    manifest.json on first run)
-
-   then copy `cport/pak/COLOPY.PAK` and `raw/COLONIZE/COLONY00.SAV`
-   onto the card.
+   bare name): with the default `COLOPY_PAK_FLASH` config the card only
+   needs a save file — copy `raw/COLONIZE/COLONY00.SAV` onto it
+   (`python3 bin/reconstitute.py` materializes it).  Only the
+   SD-pak/PSRAM variant (COLOPY_PAK_FLASH commented out) also needs
+   `cport/pak/COLOPY.PAK` on the card.
 5. Flash, open Serial Monitor at 115200 baud:
 
        l COLONY00.SAV      load

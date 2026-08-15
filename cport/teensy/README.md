@@ -60,7 +60,10 @@ HARDWARE; the checklist below gates that flag.
 
 ## Board checklist (hardware bring-up — clears the UNTESTED flags)
 
-1. Teensy 4.1 with the 8 MB PSRAM soldered (EXTMEM holds the ~3 MB pak).
+1. Teensy 4.1.  PSRAM is only needed for the SD-pak variant (EXTMEM
+   holds the ~3 MB pak); the Arduino sketch's default COLOPY_PAK_FLASH
+   config compiles the pak into program flash instead — no PSRAM, no
+   COLOPY.PAK on the card.
 2. ILI9341 on SPI0: CS pin 10, DC pin 9 (override with
    `-DCOLOPY_TFT_CS/-DCOLOPY_TFT_DC`), MOSI 11, MISO 12, SCK 13.
 3. microSD with `COLOPY.PAK` (tools/gen_sd_pack.py) + a `.SAV`.

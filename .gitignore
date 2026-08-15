@@ -53,3 +53,4 @@ tools/dosbox_harness/dosbox.log
 
 # Phase 6: the microSD asset pack is regenerable (tools/gen_sd_pack.py)
 cport/pak/
+cport/arduino/colopy/colopy_pak_blob.c
