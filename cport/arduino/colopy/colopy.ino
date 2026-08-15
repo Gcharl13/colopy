@@ -1,3 +1,24 @@
+/* ==== Arduino IDE build config (generated: tools/gen_arduino_sketch.py)
+ *
+ * The IDE passes no -D flags, so the switches PlatformIO's
+ * platformio.ini would set live HERE.  Everything below this banner is
+ * the verbatim cport/teensy/colopy_teensy.ino; the .c/.h files beside
+ * it are flattened copies of cport/{core,data,render,game} -- regenerate
+ * with the tool after pulling engine changes, do not edit them here.
+ *
+ * Display + USB-keyboard build (the game): needs the ILI9341_t3n
+ * library (github.com/KurtE/ILI9341_t3n -> Sketch > Include Library >
+ * Add .ZIP Library), a Teensy 4.1 WITH the PSRAM soldered (the pak
+ * buffer is EXTMEM), and USBHost_t36 + SD + SPI (all ship with
+ * Teensyduino).  For the serial-only digest shell, comment BOTH
+ * defines out -- no display library or PSRAM needed.
+ *
+ * TFT pins default to CS 10 / DC 9 (MOSI 11 / MISO 12 / SCK 13 =
+ * SPI0); if rewired, define COLOPY_TFT_CS / COLOPY_TFT_DC here before
+ * the include block. */
+#define COLOPY_ILI9341 1
+#define COLOPY_USBHOST 1
+
 /* Colopy on Teensy 4.1 — the serial digest shell + the Phase-8 game
  * loop.
  *

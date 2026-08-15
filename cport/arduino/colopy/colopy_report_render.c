@@ -1,0 +1,652 @@
+/* C-port Phase 7 cluster F — the F2..F10 advisor reports.
+ *
+ * A transcription of the census-verified JS painters (port/src/game.js
+ * drawReport:9529 and the per-report bodies), citations carried over:
+ *   frame       REPORT<N>.PIK plate (F9 -> REPORT1, F10 -> WOODPANL —
+ *               the capture-matched assignment, game.js:9404), title
+ *               centred y=5 ink 0x90, subtitle y=12 ink 0x91, OK box
+ *               (286,184,30,14) rule 0x77 caption 0x92
+ *   gauge       0x181F:0x236 via func_002EE4 + func_002D74 (flags bit 0
+ *               = the Bresenham leftover spread; REBUILT 2026-08-06)
+ *   F2          crosses gauge @0x037990-0x0379B4 (x=0xA y=0x19 span
+ *               0x12C sprite EXE 0x39)
+ *   F3          bells gauge @0x037BCE-0x037BF5 (sprite EXE 0x3F; the
+ *               known live-frame discrepancy recorded in the JS),
+ *               rebel/tory strip, REF quartet, FF grid cols {4,82,160,
+ *               238}
+ *   F4          the occupation matrix: cols {2,107,212}, row0 26 pitch
+ *               18, icon 81+job (capture-pinned RULINGS 2026-08-07z2)
+ *   F5          ruled price table (live 74_report_F5_economic.png):
+ *               headers @MISC 58/59/203/204, rules y=33+8i, values
+ *               right-aligned at {92,145,200,251}, K-abbrev at 10000
+ *   F6          colony rows: marker+name+pop+cargo sprites+garrison
+ *   F7          the naval grid (live 75_report_F7_naval.png)
+ *   F8          per-power blocks pitch 45 (live 70_report_F8.png)
+ *   F9          per-tribe blocks pitch 21 (live report_F9.png), name in
+ *               the tribe's own colour, portrait ICONS 116 (modal)
+ *   F10         the score breakdown (live 73_report_F10.png)
+ * F1 is the Colonizopedia TERRAIN page (hard rule 7), not a report. */
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "colopy_sim.h"
+#include "colopy_data.h"
+#include "colopy_text.h"
+#include "colopy_render.h"
+
+#define REPORT_TITLE_INK 0x90
+#define REPORT_SUB_INK   0x91
+#define REPORT_NAME_INK  0x92
+#define REPORT_VALUE_INK 0x61
+#define REPORT_RULE_INK  0x77
+#define REPORT_GREEN_INK 0x0A
+#define GAUGE_MARK 55
+
+static rd_font R_TINY;
+static void rresolve(void) {
+    if (!R_TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &R_TINY);
+}
+static const uint8_t *rlut(uint8_t i) {
+    static uint8_t l[4];
+    l[0] = 0xFF; l[1] = i; l[2] = (uint8_t)(i - 1); l[3] = 0;
+    return l;
+}
+static int rround(int num2) {           /* Math.round(num2/2) */
+    int v = num2 + 1;
+    return v >= 0 ? v / 2 : -((-v + 1) / 2);
+}
+static void r_center(const char *s, int cx, int y, const uint8_t ink[4]) {
+    int w = rd_text_width(&R_TINY, s);
+    rd_text(&R_TINY, s, rround(2 * cx - (w - 1)), y, ink);
+}
+static void r_right(const char *s, int rx, int y, const uint8_t ink[4]) {
+    rd_text(&R_TINY, s, rx - rd_text_width(&R_TINY, s), y, ink);
+}
+static int r_fh(void) { return R_TINY.cell_h + 2; }
+
+static int unit_row_r(const char *name) {
+    for (int i = 0; i < DAT_UNITS_COUNT; i++)
+        if (strcmp(dat_units[i].name, name) == 0) return i;
+    return -1;
+}
+static int unit_icon_r(const char *name) {
+    int r = unit_row_r(name);
+    return r >= 0 ? (int)dat_units[r].icon - 1 : 0;
+}
+
+/* ---- the report gauge (func_002EE4 + func_002D74, game.js:9673) ---- */
+static void r_gauge(int frame, int drawn, int sub, int slots, int x, int y,
+                    int span, int flags, int centre_arg, int numbers) {
+    if (drawn <= 0 || slots <= 0) return;
+    rd_frame f;
+    rd_sheet_frame(&RD.icons, frame, &f);
+    int w = (flags & 2) ? f.w + 2 : f.w;
+    int pitch = slots <= 1 ? 1 : (span - w) / (slots - 1);
+    if (pitch > w + 1) pitch = w + 1;
+    if (pitch < 1) pitch = 1;
+    int run = (slots - 1) * pitch, shift = 0;
+    while ((run >> shift) > span - w && shift < 16) shift++;
+    int total_run = (run >> shift) + w;
+    int base = (centre_arg - 1 > total_run) ? centre_arg : span;
+    int leftover = base - total_run;
+    int x0 = centre_arg ? (leftover >> 1) : 0;
+    int n = drawn >> shift, filled = (drawn - sub) >> shift;
+    int b = slots >> shift;
+    int cx = x + x0, acc = 0, mark_x = -1;
+    for (int i = 0; i < n; i++) {
+        rd_blit(&RD.icons, frame, cx, y + 1);
+        if (i == filled) mark_x = cx;
+        if (i >= filled) rd_blit(&RD.icons, GAUGE_MARK, cx, y + 1);
+        cx += pitch;
+        if (flags & 1) {
+            acc += leftover;
+            while (b > 0 && acc >= b) { acc -= b; cx += 1; }
+        }
+    }
+    if (!numbers && !(pitch == 1 && drawn > 1)) return;
+    rm_count_badge(drawn - sub, x + x0 + 2, y, 0x0F);
+    if (mark_x >= 0) rm_count_badge(sub, mark_x + 2, y, 0x0C);
+}
+
+/* player-colony iteration in JS G.colonies order */
+static int next_player_col(int from) {
+    for (int ci = from + 1; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation()) return ci;
+    return -1;
+}
+
+/* ---- F2 Religious ---- */
+static void draw_f2(void) {
+    r_gauge(0x39 - 1, CR.crosses, 0, immigration_threshold(),
+            0x0A, 0x19, 0x12C, 1, 0, 0);
+}
+
+/* ---- F3 Continental Congress ---- */
+static const int16_t F3_FF_COLS[4] = { 4, 82, 160, 238 };
+static void draw_f3(void) {
+    int fh = r_fh();
+    char buf[128];
+    int y = 24;
+    if (CR.father_in_progress >= 0)
+        snprintf(buf, sizeof(buf), "%s: (%s)", dat_text_misc[112],
+                 dat_fathers[CR.father_in_progress].name);
+    else
+        snprintf(buf, sizeof(buf), "%s:", dat_text_misc[112]);
+    rd_text(&R_TINY, buf, 4, y, rlut(REPORT_NAME_INK));
+    y += fh;
+    r_gauge(0x3F - 1, CS.powers[cs_nation()].bells, 0, father_cost_now(),
+            4, y, 0x12C, 1, 0, 0);
+    y += 12;
+    /* rebel = mean SoL across the player's colonies, Math.round */
+    int total = 0, ncol = 0;
+    for (int ci = next_player_col(-1); ci >= 0; ci = next_player_col(ci)) {
+        total += rt_sol(ci);
+        ncol++;
+    }
+    int rebel = ncol ? rround(2 * total / ncol) : 0;
+    /* JS: Math.round(sum/n) — sum/n first, then round: redo faithfully */
+    if (ncol) {
+        /* Math.round(total/ncol) = floor(total/ncol + 0.5) for
+         * non-negative operands */
+        rebel = (2 * total + ncol) / (2 * ncol);
+    }
+    snprintf(buf, sizeof(buf), "%s %s: %d%%  %s %s: %d%%",
+             dat_text_misc[69], dat_text_misc[71], rebel,
+             dat_text_misc[70], dat_text_misc[71], 100 - rebel);
+    rd_text(&R_TINY, buf, 4, y, rlut(REPORT_NAME_INK));
+    y += fh;
+    {
+        rm_crow_cell cells[2] = {
+            { 0x7B, rebel, 0, 0 }, { 0x7C, 100 - rebel, 0, 0 }
+        };
+        rm_draw_count_row(cells, 2, 4, y, 0x12C, 2, 1);
+    }
+    y += 12;
+    snprintf(buf, sizeof(buf), "%s %s:", dat_nations[cs_nation()].adjective,
+             dat_text_misc[85]);
+    rd_text(&R_TINY, buf, 4, y, rlut(REPORT_NAME_INK));
+    y += fh;
+    {
+        rm_crow_cell cells[4] = {
+            { unit_icon_r("Regulars"), cs_ref(0), 0, 0 },
+            { unit_icon_r("Cavalry"), cs_ref(1), 0, 0 },
+            { unit_icon_r("Artillery"), cs_ref(3), 0, 0 },
+            { unit_icon_r("Man-O-War"), cs_ref(2), 0, 0 },
+        };
+        rm_draw_count_row(cells, 4, 4, y, 0x12C, 2, 1);
+    }
+    y += 14;
+    snprintf(buf, sizeof(buf), "%s:", dat_text_misc[89]);
+    rd_text(&R_TINY, buf, 4, y, rlut(REPORT_NAME_INK));
+    y += fh;
+    int k = 0;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++) {
+        if (!father_owned(i)) continue;
+        rd_text(&R_TINY, dat_fathers[i].name, F3_FF_COLS[k % 4],
+                y + (k / 4) * fh, rlut(REPORT_VALUE_INK));
+        k++;
+    }
+}
+
+/* ---- F4 Labor: the occupation matrix ---- */
+static const int16_t F4_COLS[3] = { 2, 107, 212 };
+static const int8_t F4_ORDER[3][9] = {
+    { 0, 1, 2, 3, 4, 5, 6, 7, -1 },
+    { 8, 9, 10, 11, 12, 13, 14, 15, 16 },
+    { 17, 20, 21, 22, 24, 25, 26, 27, 19 },
+};
+#define F4_ROW0 26
+#define F4_PITCH 18
+/* countProfession (game.js:10120): colonists + field units carrying the
+ * matching specialty (the job-name compare is string-vs-index in the JS
+ * and never true, so only the profession byte counts) */
+static int count_profession(int job) {
+    int n = 0;
+    for (int ci = next_player_col(-1); ci >= 0; ci = next_player_col(ci)) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        for (int k = 0; k < c->population && k < 32; k++)
+            if (job >= 1 && c->profession[k] == job) n++;
+    }
+    for (int q = 0; q < CR.n_units_order; q++) {
+        int ui = CR.units_order[q];
+        if (job >= 1 && CS.units[ui].profession == job) n++;
+    }
+    return n;
+}
+static void draw_f4(void) {
+    for (int c = 0; c < 3; c++) {
+        int base = F4_COLS[c];
+        for (int row = 0; row < 9; row++) {
+            int job = F4_ORDER[c][row];
+            if (job < 0) continue;
+            const char *name = dat_jobexpert[job];
+            int y = F4_ROW0 + row * F4_PITCH;
+            rd_blit(&RD.icons, rm_profession_icon(job), base + 2, y - 2);
+            rd_text(&R_TINY, name, base + 12, y, rlut(REPORT_NAME_INK));
+            char nb[12];
+            snprintf(nb, sizeof(nb), "%d", count_profession(job));
+            r_center(nb, base + 39, y + 8, rlut(REPORT_VALUE_INK));
+        }
+    }
+}
+
+/* ---- F5 Economic: the ruled price table ---- */
+#define F5_RULE0 33
+#define F5_PITCH 8
+static const int16_t F5_HEAD_X[4] = { 76, 131, 170, 220 };
+static const int16_t F5_VAL_X[4] = { 92, 145, 200, 251 };
+static const int16_t F5_HEAD_MISC[4] = { 58, 59, 203, 204 };
+static void f5_gold_str(int32_t v, char *out, size_t cap) {
+    int32_t a = v < 0 ? -v : v;
+    if (a >= 10000) snprintf(out, cap, "%dK", (int)(v / 1000));
+    else snprintf(out, cap, "%d", (int)v);
+}
+static void draw_f5(void) {
+    for (int c = 0; c < 4; c++)
+        rd_text(&R_TINY, dat_text_misc[F5_HEAD_MISC[c]], F5_HEAD_X[c], 25,
+                rlut(REPORT_NAME_INK));
+    for (int i = 0; i <= DAT_CARGO_COUNT; i++)
+        rd_fill(2, F5_RULE0 + i * F5_PITCH, 311, 1, REPORT_RULE_INK);
+    const PowerRecord *p = &CS.powers[cs_nation()];
+    for (int i = 0; i < DAT_CARGO_COUNT; i++) {
+        int y = F5_RULE0 + 2 + i * F5_PITCH;
+        rd_text(&R_TINY, dat_cargo[i].name, 2, y, rlut(REPORT_NAME_INK));
+        char buf[24], g[16];
+        snprintf(buf, sizeof(buf), "%d", (int)p->trade_tons[i]);
+        r_right(buf, F5_VAL_X[0], y, rlut(REPORT_GREEN_INK));
+        f5_gold_str(p->trade_gold[i], g, sizeof(g));
+        snprintf(buf, sizeof(buf), "%s$", g);
+        r_right(buf, F5_VAL_X[1], y, rlut(REPORT_GREEN_INK));
+        snprintf(buf, sizeof(buf), "%d$", market_bid(i));
+        r_right(buf, F5_VAL_X[2], y, rlut(REPORT_VALUE_INK));
+        snprintf(buf, sizeof(buf), "%d$", market_ask(i));
+        r_right(buf, F5_VAL_X[3], y, rlut(REPORT_VALUE_INK));
+    }
+}
+
+/* ---- F6 Colony ---- */
+static void draw_f6(void) {
+    int i = 0;
+    for (int ci = next_player_col(-1); ci >= 0 && i < 9;
+         ci = next_player_col(ci), i++) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        int y = 32 + i * 17;
+        rm_draw_settlement(2, y - 2, rm_colony_level_ci(ci),
+                           c->owner_power & 3, 0, 0xFF);
+        char nm[25];
+        memcpy(nm, c->name, 24);
+        nm[24] = 0;
+        rd_text(&R_TINY, nm, 25, y + 7, rlut(REPORT_NAME_INK));
+        char nb[12];
+        snprintf(nb, sizeof(nb), "%d", c->population);
+        rd_text(&R_TINY, nb, 122, y + 7, rlut(REPORT_VALUE_INK));
+        int cx = 162;
+        for (int g = 0; g < 16; g++)
+            if (c->stock[g] > 0 && cx < 238) {
+                rd_blit(&RD.icons, 0x16 + g, cx, y);
+                cx += 10;
+            }
+        int gar = 0;
+        for (int q = 0; q < CR.n_units_order; q++) {
+            int ui = CR.units_order[q];
+            if (dat_units[CS.units[ui].type].hull > 0) continue;
+            if (CS.units[ui].map_x == c->map_x &&
+                CS.units[ui].map_y == c->map_y) gar++;
+        }
+        snprintf(nb, sizeof(nb), "%d", gar);
+        rd_text(&R_TINY, nb, 250, y + 7, rlut(REPORT_VALUE_INK));
+    }
+}
+
+/* ---- F7 Naval: the grid ---- */
+#define F7_ROW0 42
+#define F7_PITCH 20
+#define F7_PER_PAGE 7
+#define F7_GRID_TOP 25
+#define F7_GRID_BOT 180
+#define F7_RULE0 40
+#define F7_CARGO_X 88
+#define F7_CARGO_PITCH 12
+#define F7_CARGO_ICON 22
+static const int16_t F7_COLX[5] = { 2, 82, 162, 242, 314 };
+static const int16_t F7_CENTRE[4] = { 42, 122, 202, 280 };
+static void draw_f7(void) {
+    for (int y = F7_RULE0; y <= F7_GRID_BOT; y += F7_PITCH)
+        rd_fill(F7_COLX[0], y, F7_COLX[4] - F7_COLX[0] + 1, 1,
+                REPORT_RULE_INK);
+    for (int c = 1; c < 4; c++)
+        rd_fill(F7_COLX[c], F7_GRID_TOP, 1, F7_GRID_BOT - F7_GRID_TOP + 1,
+                REPORT_RULE_INK);
+    static const int16_t HEAD[4] = { 61, 62, 63, 64 };
+    for (int c = 0; c < 4; c++)
+        r_center(dat_text_misc[HEAD[c]], F7_CENTRE[c], 27,
+                 rlut(REPORT_NAME_INK));
+    int row = 0;
+    /* map ships (G.units order = CR.units_order), then every crossing */
+    for (int q = 0; q < CR.n_units_order && row < F7_PER_PAGE; q++) {
+        int ui = CR.units_order[q];
+        const UnitRecord *u = &CS.units[ui];
+        if (dat_units[u->type].hull <= 0) continue;
+        int y = F7_ROW0 + row * F7_PITCH;
+        rm_nation_plate(2, y, (int)dat_nations[cs_nation()].color, u->orders);
+        int ic = (int)dat_units[u->type].icon - 1;
+        rd_frame f;
+        rd_sheet_frame(&RD.icons, ic, &f);
+        rd_blit(&RD.icons, ic, 2 + 16 - f.w, y);
+        rd_text(&R_TINY, dat_units[u->type].name, 26, y + 6,
+                rlut(REPORT_VALUE_INK));
+        /* JS reads u.cargo — the PASSENGER list; a non-numeric entry
+         * falls back to icon 22 (the faithful oddity) */
+        int cx = F7_CARGO_X;
+        for (int k = 0; k < CR.unit_n_pass[ui]; k++) {
+            rd_blit(&RD.icons, F7_CARGO_ICON, cx, y + 3);
+            cx += F7_CARGO_PITCH;
+        }
+        char loc[24];
+        snprintf(loc, sizeof(loc), "(%d, %d)", u->map_x, u->map_y);
+        r_center(loc, F7_CENTRE[2], y + 6, rlut(REPORT_VALUE_INK));
+        row++;
+    }
+    for (int q = 0; q < CR.n_europe && row < F7_PER_PAGE; q++) {
+        const euro_crossing *e = &CR.europe[q];
+        int y = F7_ROW0 + row * F7_PITCH;
+        rm_nation_plate(2, y, (int)dat_nations[cs_nation()].color, 0);
+        int ic = (int)dat_units[e->type].icon - 1;
+        rd_frame f;
+        rd_sheet_frame(&RD.icons, ic, &f);
+        rd_blit(&RD.icons, ic, 2 + 16 - f.w, y);
+        rd_text(&R_TINY, dat_units[e->type].name, 26, y + 6,
+                rlut(REPORT_VALUE_INK));
+        r_center(dat_nations[cs_nation()].homeport, F7_CENTRE[2], y + 6,
+                 rlut(REPORT_VALUE_INK));
+        if (e->state != 0)
+            r_center(dat_text_misc[10], F7_CENTRE[3], y + 6,
+                     rlut(REPORT_VALUE_INK));
+        row++;
+    }
+}
+
+/* ---- F8 Foreign Affairs: per-power blocks ---- */
+#define F8_BLOCK 45
+#define F8_RULE0 10
+#define F8_HEAD0 16
+#define F8_ROW0 27
+#define F8_TORY_X 80
+static void draw_f8(void) {
+    for (int i = 0; i < 4; i++) {
+        int ry = F8_RULE0 + i * F8_BLOCK;
+        rd_fill(0, ry, 320, 1, 0);
+        char buf[80];
+        /* G.leader is '' in the pinned import — every power shows its
+         * @NATIONS leader */
+        snprintf(buf, sizeof(buf), "%s's %s:", dat_nations[i].leader,
+                 dat_nations[i].adjective);
+        rd_text(&R_TINY, buf, 2, F8_HEAD0 + i * F8_BLOCK,
+                rlut(REPORT_NAME_INK));
+        int y = F8_ROW0 + i * F8_BLOCK;
+        int rebels, tories;
+        if (i == (int)cs_nation()) {
+            rebels = tories = 0;
+            for (int ci = next_player_col(-1); ci >= 0;
+                 ci = next_player_col(ci)) {
+                if (rt_sol(ci) >= 50) rebels++;
+                else tories++;
+            }
+        } else {
+            rebels = CR.rivals[i].n_col;
+            tories = 0;
+            for (int k = 0; k < CR.n_runits[i]; k++) tories++;
+        }
+        snprintf(buf, sizeof(buf), "%s: %d", dat_text_misc[86], rebels);
+        rd_text(&R_TINY, buf, 2, y, rlut(REPORT_VALUE_INK));
+        snprintf(buf, sizeof(buf), "%s: %d", dat_text_misc[87], tories);
+        rd_text(&R_TINY, buf, F8_TORY_X, y, rlut(REPORT_VALUE_INK));
+    }
+}
+
+/* ---- F9 Indian: per-tribe blocks ---- */
+#define F9_ICON_X 10
+#define F9_NAME_X 30
+#define F9_COUNT_X 40
+#define F9_LEVEL_RX 311
+#define F9_MUSKET_X 152
+#define F9_HORSE_X 209
+#define F9_ICON_Y 25
+#define F9_ROW0 28
+#define F9_PITCH 21
+#define F9_PER_PAGE 7
+#define F9_PORTRAIT 116
+/* NAMES @LEVELS singular/plural (the JS TRIBE_LEVELS table) */
+static const struct { const char *name, *one, *many; } R_LEVELS[4] = {
+    { "Semi-Nomadic", "Camp", "Camps" },
+    { "Agrarian", "Village", "Villages" },
+    { "Advanced", "City", "Cities" },
+    { "Civilized", "City", "Cities" },
+};
+static void draw_f9(void) {
+    const uint8_t black[4] = { 0xFF, 0, 0, 0 };
+    int row = 0;
+    for (int ti = 0; ti < 8 && row < F9_PER_PAGE; ti++) {
+        int listed = 0, n = 0;
+        for (int v = 0; v < CS.n_villages; v++) {
+            if (CS.villages[v].owner_tribe - 4 != ti) continue;
+            n++;
+            if (rm_is_seen(CS.villages[v].map_x, CS.villages[v].map_y))
+                listed = 1;
+        }
+        if (!listed) continue;
+        int y = F9_ROW0 + row * F9_PITCH;
+        int lv = tribe_level(ti);
+        if (lv < 0) lv = 0;
+        if (lv > 3) lv = 3;
+        rd_blit(&RD.icons, F9_PORTRAIT, F9_ICON_X,
+                F9_ICON_Y + row * F9_PITCH);
+        const uint8_t *tk = rlut((uint8_t)dat_tribes[ti].color);
+        char buf[64];
+        if (!n) {
+            snprintf(buf, sizeof(buf), "%s: %s", dat_tribes[ti].name,
+                     dat_text_misc[130]);
+            rd_text(&R_TINY, buf, F9_NAME_X, y, tk);
+            row++;
+            continue;
+        }
+        snprintf(buf, sizeof(buf), "%s:", dat_tribes[ti].name);
+        rd_text(&R_TINY, buf, F9_NAME_X, y, tk);
+        r_right(R_LEVELS[lv].name, F9_LEVEL_RX, y, tk);
+        snprintf(buf, sizeof(buf), "%d %s", n,
+                 n == 1 ? R_LEVELS[lv].one : R_LEVELS[lv].many);
+        rd_text(&R_TINY, buf, F9_COUNT_X, y + 8, black);
+        /* v.stock is a RUNTIME map the pinned import leaves empty, so
+         * the musket/horse cells never draw here (JS tribeStock over
+         * G.villages[].stock — no record field feeds it at load) */
+        row++;
+    }
+}
+
+/* ---- F10 Colonization Score ---- */
+#define F10_X 16
+#define F10_ROW0 24
+#define F10_PITCH 28
+#define F10_GREEN 68
+typedef struct {
+    int population, fathers, sentiment, razed, gold, liberty, revolution;
+    int base, mult, total;
+} score_parts_t;
+static void score_parts(score_parts_t *s) {
+    /* SCORE_PLAIN = Indentured Servants / Petty Criminals / Indian
+     * Converts (@JOBEXPERT rows 25/26/27); Free Colonists = row 19 */
+    int population = 0;
+    for (int ci = next_player_col(-1); ci >= 0; ci = next_player_col(ci)) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        for (int k = 0; k < c->population && k < 32; k++) {
+            int prof = c->profession[k];
+            /* SAV_PROFESSION: a byte outside 1..27 is null -> the +2
+             * plain-colonist score (game.js:10207/10096) */
+            if (prof >= 25 && prof <= 27) population += 1;
+            else if (prof == 0 || prof >= 28 || prof == 19) population += 2;
+            else population += 4;
+        }
+    }
+    int owned = 0;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (father_owned(i)) owned++;
+    s->population = population;
+    s->fathers = owned * 5;
+    s->sentiment = national_sol();
+    s->razed = -(int)CR.razed * (1 + cs_difficulty());
+    int g = CS.powers[cs_nation()].gold / 100;
+    s->gold = g < 100 ? g : 100;
+    s->liberty = (int)(CR.bells_total / 1000);
+    s->revolution = ((CR.woi_flags & WOI_WON) && CR.declared_year)
+                        ? (1780 - CR.declared_year) * 2 : 0;
+    s->base = s->population + s->fathers + s->sentiment + s->razed +
+              s->gold + s->liberty + s->revolution;
+    s->mult = cs_difficulty() + 4 + (cs_difficulty() >= 3 ? 1 : 0) +
+              (cs_difficulty() >= 4 ? 1 : 0);
+    /* Math.floor(mult*base/100) >> 1 — floor semantics for negatives */
+    int mb = s->mult * s->base;
+    int fl = mb >= 0 ? mb / 100 : -((-mb + 99) / 100);
+    s->total = fl >> 1;
+}
+static void draw_f10(void) {
+    score_parts_t s;
+    score_parts(&s);
+    const dat_nations_t *nat = &dat_nations[cs_nation()];
+    char buf[128];
+    /* G.leader is '' in the pinned import — the JS prints the double
+     * space the empty string leaves */
+    snprintf(buf, sizeof(buf), "%s  of the %s: %s %u",
+             dat_difficulty[cs_difficulty()], nat->adjective,
+             dat_seasons[cs_season()], cs_year());
+    r_center(buf, 160, 13, rlut(REPORT_TITLE_INK));
+    static const struct { int misc, sprite; } ROWS[2] = {
+        { 115, 0x66 }, { 196, 0x3F }
+    };
+    int vals[2] = { 0, 0 };
+    vals[0] = s.population;
+    vals[1] = s.fathers;
+    for (int i = 0; i < 2; i++) {
+        int y = F10_ROW0 + i * F10_PITCH;
+        snprintf(buf, sizeof(buf), "%s %s: +%d", nat->adjective,
+                 dat_text_misc[ROWS[i].misc], vals[i]);
+        rd_text(&R_TINY, buf, F10_X, y, rlut(F10_GREEN));
+        rm_crow_cell cell = { ROWS[i].sprite,
+                              vals[i] < 12 ? vals[i] : 12, 0, 0 };
+        rm_draw_count_row(&cell, 1, F10_X, y + 8, 0x12C, 2, 1);
+    }
+    snprintf(buf, sizeof(buf), "%s: (%d$ x%d)", dat_text_misc[59],
+             CS.powers[cs_nation()].gold, s.mult);
+    rd_text(&R_TINY, buf, F10_X, 150, rlut(F10_GREEN));
+    snprintf(buf, sizeof(buf), "%s: %d", dat_text_misc[121], s.total);
+    rd_text(&R_TINY, buf, F10_X, 162, rlut(F10_GREEN));
+}
+
+/* ---- the shared frame (drawReport, game.js:9529) ---- */
+static const struct {
+    const char *fk, *pik;
+    int title_misc, sub_misc;           /* -1 = none */
+    void (*draw)(void);
+} R_TAB[] = {
+    { "F2", "REPORT2.PIK", 30, -1, draw_f2 },
+    { "F3", "REPORT3.PIK", 37, -1, draw_f3 },
+    { "F4", "REPORT4.PIK", 49, 56, draw_f4 },
+    { "F5", "REPORT5.PIK", 50, 206, draw_f5 },
+    { "F6", "REPORT6.PIK", 51, 208, draw_f6 },   /* f6View default 2 */
+    { "F7", "REPORT7.PIK", 52, -1, draw_f7 },
+    { "F8", "REPORT8.PIK", 93, -1, draw_f8 },
+    { "F9", "REPORT1.PIK", 29, -1, draw_f9 },
+    { "F10", "WOODPANL.PIK", 114, -1, draw_f10 },
+};
+
+void rm_draw_report(const char *fkey) {
+    rresolve();
+    for (unsigned i = 0; i < sizeof(R_TAB) / sizeof(R_TAB[0]); i++) {
+        if (strcmp(R_TAB[i].fk, fkey) != 0) continue;
+        rd_use_palette(R_TAB[i].pik);
+        rd_pik(R_TAB[i].pik);
+        char title[64];
+        const char *t = dat_text_misc[R_TAB[i].title_misc];
+        size_t n = 0;
+        for (; t[n] && n + 1 < sizeof(title); n++)
+            title[n] = (char)toupper((unsigned char)t[n]);
+        title[n] = 0;
+        r_center(title, 160, 5, rlut(REPORT_TITLE_INK));
+        if (R_TAB[i].sub_misc >= 0)
+            r_center(dat_text_misc[R_TAB[i].sub_misc], 160, 12,
+                     rlut(REPORT_SUB_INK));
+        R_TAB[i].draw();
+        /* okButton (game.js:9562): hollow 0x77 box + @MISC 46 caption */
+        rm_hollow_rect(286, 184, 30, 14, REPORT_RULE_INK);
+        r_center(dat_text_misc[46], 286 + 15, 188, rlut(REPORT_NAME_INK));
+        return;
+    }
+}
+
+/* debug probe (env-guarded like COLOPY_COLONY_PROBE) */
+void rm_report_probe(void);
+void rm_report_probe(void) {
+    int total = 0, ncol = 0;
+    for (int ci = next_player_col(-1); ci >= 0; ci = next_player_col(ci)) {
+        fprintf(stderr, "sol[%d]=%d\n", ncol, rt_sol(ci));
+        total += rt_sol(ci);
+        ncol++;
+    }
+    fprintf(stderr, "rebel=%d bells=%d cost=%d ref=%d,%d,%d,%d\n",
+            ncol ? (2 * total + ncol) / (2 * ncol) : 0,
+            (int)CS.powers[cs_nation()].bells, father_cost_now(),
+            cs_ref(0), cs_ref(1), cs_ref(2), cs_ref(3));
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (father_owned(i)) fprintf(stderr, "father %s\n", dat_fathers[i].name);
+}
+
+void rm_score_probe(void);
+void rm_score_probe(void) {
+    score_parts_t s;
+    score_parts(&s);
+    fprintf(stderr, "pop=%d fathers=%d sent=%d razed=%d gold=%d lib=%d rev=%d base=%d mult=%d total=%d\n",
+            s.population, s.fathers, s.sentiment, s.razed, s.gold,
+            s.liberty, s.revolution, s.base, s.mult, s.total);
+}
+
+/* ---- the woodcut plates (drawWoodcut, game.js:1180; §26.14) ----
+ * Black clear, WOODFRAM + WDCUT<n> placed by their own sheet-header
+ * anchors (hx-(w>>1), hy-h+1), the NAMEPLAT caption strip at y=162 and
+ * the @WOODCUT caption at y=165 in FONT-NP with the sheet-palette inks
+ * 0x5C/0x5D/0x5E (the woodcut sheets' own dark browns). */
+static rd_font W_NP;
+static void blit_anchored(const char *sheet, int idx) {
+    rd_entry e;
+    if (!rd_pak_find(&RD.pak, sheet, &e)) return;
+    rd_frame f;
+    if (!rd_sheet_frame(&e, idx, &f)) return;
+    rd_blit(&e, idx, f.x - (f.w >> 1), f.y - f.h + 1);
+}
+void rm_draw_woodcut(int n) {
+    if (!W_NP.payload) rd_font_open(&RD.pak, "FONT-NP.FF", &W_NP);
+    rd_use_palette("WOODFRAM.SS");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    blit_anchored("WOODFRAM.SS", 0);
+    char nm[16];
+    snprintf(nm, sizeof(nm), "WDCUT%02d.SS", n);
+    blit_anchored(nm, 0);
+    const char *caption = (n >= 0 && n < 17) ? dat_woodcuts[n] : "";
+    const uint8_t np[4] = { 0xFF, 0x5C, 0x5D, 0x5E };
+    int cap_w = rd_text_width(&W_NP, caption);
+    rd_entry pl;
+    if (rd_pak_find(&RD.pak, "NAMEPLAT.SS", &pl)) {
+        rd_frame l, m;
+        rd_sheet_frame(&pl, 0, &l);
+        rd_sheet_frame(&pl, 1, &m);
+        int a = cap_w + 8 - 2 * l.w;
+        int tiles = a > 0 ? (a + m.w - 1) / m.w : 0;   /* Math.ceil */
+        if (tiles < 1) tiles = 1;
+        int sx = rround(2 * 160 - (2 * l.w + tiles * m.w));
+        rd_blit(&pl, 0, sx, 162);
+        sx += l.w;
+        for (int i = 0; i < tiles; i++, sx += m.w) rd_blit(&pl, 1, sx, 162);
+        rd_blit(&pl, 2, sx, 162);
+    }
+    int w = rd_text_width(&W_NP, caption);
+    rd_text(&W_NP, caption, rround(2 * 160 - (w - 1)), 165, np);
+}

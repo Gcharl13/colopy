@@ -15,9 +15,13 @@ cross-build must run on your machine:
 - **PlatformIO** (recommended): `pio run` in this directory — the
   `platformio.ini` pulls in `cport/core/*.c` + `cport/data/colopy_data.c`
   alongside the sketch.
-- **Arduino IDE**: copy (or symlink) `cport/core/*.{c,h}` and
-  `cport/data/colopy_data.{c,h}` into the sketch folder first; the IDE
-  only compiles sources inside it.
+- **Arduino IDE**: run `python3 tools/gen_arduino_sketch.py` (from the
+  repo root), then open `cport/arduino/colopy/colopy.ino` — a generated,
+  self-contained sketch folder (flattened copies of core/data/render/
+  game with the includes rewritten; the display/USB-keyboard defines
+  live in the banner at the top of the .ino since the IDE passes no -D
+  flags).  Steps, board settings and the SD prep are in that folder's
+  README.md.  Regenerate after pulling engine changes.
 
 `cport/data/colopy_text.c` (~220 KB of display strings) is deliberately
 NOT part of the build — the core never references it (the generator
