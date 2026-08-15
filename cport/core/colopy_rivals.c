@@ -78,13 +78,76 @@ static int gate(void) {                    /* action gate @0x58315 */
     return (int)((rng_next() * 1000u) >> 15) < 200 * cs_difficulty() + 100;
 }
 
-/* meetingPeaceHub (game.js:8384) — the 4-row hub, ask-stubbed. */
+/* demandValue (game.js:8214, byte-cited scaler @0x583A0/@0x5842B) */
+static int32_t demand_value(int base) {
+    return base * 10 * (cs_difficulty() + 8) / 100 +
+           500 * (cs_difficulty() + 1);
+}
+/* declareWarOn / signTreaty / acceptTreaty (game.js:8186-8202/8409) */
+static void declare_war_on(int a, int b) {
+    CR.war_matrix[a][b] |= REL_WAR;
+    CR.treaty_matrix[a][b] &= (uint8_t)~REL_TREATY;
+    CR.treaty_matrix[b][a] &= (uint8_t)~REL_TREATY;
+    ev_emit("DECLAREWAR", 0, 0, dat_nations[a].adjective,
+            dat_nations[b].adjective);
+}
+static void accept_treaty(int rn) {
+    int me = cs_nation();
+    CR.war_matrix[me][rn] &= (uint8_t)~REL_WAR;
+    CR.war_matrix[rn][me] &= (uint8_t)~REL_WAR;
+    CR.treaty_matrix[me][rn] |= REL_TREATY;
+    CR.treaty_matrix[rn][me] |= REL_TREATY;
+    CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
+    /* silent: @SIGNTREATY belongs to the AI-AI ticker */
+}
+/* meetingWithdraw (game.js:8414): buy the loiterers off, or be refused. */
+static void meeting_withdraw(int rn) {
+    int me = cs_nation();
+    int forces[64], nf = 0;
+    for (int k = 0; k < CR.n_runits[rn] && nf < 64; k++) {
+        int ui = CR.runits_order[rn][k];
+        if (dat_units[CS.units[ui].type].hull > 0) continue;
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            if ((CS.colonies[ci].owner_power & 3) != me) continue;
+            int dx = CS.colonies[ci].map_x - CR.runit_x[ui];
+            int dy = CS.colonies[ci].map_y - CR.runit_y[ui];
+            if (dx < 0) dx = -dx;
+            if (dy < 0) dy = -dy;
+            if (dx <= 1 && dy <= 1) { forces[nf++] = ui; break; }
+        }
+    }
+    if (!nf) { ev_emit("NOTHINGWITHDRAW", 0, 0, 0, 0); return; }
+    int32_t price = 25 * (cs_difficulty() + 2) * nf - 50 * nf;
+    if (price < 100) price = 100;
+    if (at_war(me, rn)) price *= 2;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (strcmp(dat_fathers[i].name, "Benjamin Franklin") == 0 &&
+            ((CS.powers[me].founding_fathers >> i) & 1)) price >>= 1;
+    if (gate()) {
+        ev_emit("MAYBEWITHDRAW", price, 0, dat_nations[rn].adjective, 0);
+        int c = ask_choice();
+        if (c == 0) {
+            PowerRecord *p = &CS.powers[me];
+            if (p->gold < price) { ev_emit("NOTENOUGH", p->gold, 0, 0, 0); return; }
+            p->gold -= price;
+            for (int k = nf - 1; k >= 0; k--)    /* descending: safe shifts */
+                unit_remove(forces[k]);
+            ev_emit("WITHDRAW", 0, 0, 0, 0);
+        } else if (c == 1) ev_emit("THREATS", 0, 0, 0, 0);
+    } else ev_emit("NOTWITHDRAW", 0, 0, dat_nations[rn].adjective, 0);
+}
+/* meetingPeaceHub (game.js:8384): the answered rows under the %2 policy
+ * are 0 = accept the treaty, 1 = demand a withdrawal (rows 2/3 — threat
+ * and alliance — are unreachable under the scripted answers). */
 static void meeting_peace_hub(int rn) {
     const char *key = have_treaty(cs_nation(), rn)
         ? (meeting_tone(rn) ? "OLDPEACEMEEK" : "OLDPEACEMANLY")
         : (meeting_tone(rn) ? "PEACEMEEK" : "PEACEMANLY");
     ev_emit(key, 0, 0, dat_nations[cs_nation()].adjective,
             dat_nations[rn].adjective);
+    int c = ask_choice();
+    if (c == 0) accept_treaty(rn);
+    else if (c == 1) meeting_withdraw(rn);
 }
 
 /* meetingTopic (game.js:8266) — the topic cascade.  Draw accounting is the
@@ -119,7 +182,43 @@ static void meeting_topic(int rn) {
         }
         if (besiegers && gate()) {
             ev_emit("SIEGES", 0, 0, dat_nations[me].adjective,
-                    dat_nations[rn].adjective);   /* ask stub */
+                    dat_nations[rn].adjective);
+            /* game.js:8302: row 1 recalls the besiegers to the nearest own
+             * colony (the engine sends them "to Europe"; nearest-colony is
+             * the JS's flagged stand-in), then the hub either way */
+            if (ask_choice() == 1) {
+                for (int ui = 0; ui < CS.n_units; ui++) {
+                    if (!unit_on_map_player(ui)) continue;
+                    UnitRecord *u = &CS.units[ui];
+                    if (dat_units[u->type].hull > 0 ||
+                        dat_units[u->type].attack <= 0) continue;
+                    int near_rc = 0;
+                    const rival_rt *r = &CR.rivals[rn];
+                    for (int k = 0; k < r->n_col && !near_rc; k++) {
+                        int dx = r->col[k].x - u->map_x;
+                        int dy = r->col[k].y - u->map_y;
+                        if (dx < 0) dx = -dx;
+                        if (dy < 0) dy = -dy;
+                        if (dx <= 1 && dy <= 1) near_rc = 1;
+                    }
+                    if (!near_rc) continue;
+                    int best = -1, bd = 0;
+                    for (int ci = 0; ci < CS.n_colonies; ci++) {
+                        if ((CS.colonies[ci].owner_power & 3) != me) continue;
+                        int dx = CS.colonies[ci].map_x - u->map_x;
+                        int dy = CS.colonies[ci].map_y - u->map_y;
+                        int d = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+                        if (best < 0 || d < bd) { best = ci; bd = d; }
+                    }
+                    if (best >= 0) {
+                        u->map_x = CS.colonies[best].map_x;
+                        u->map_y = CS.colonies[best].map_y;
+                        CR.runit_x[ui] = u->map_x;
+                        CR.runit_y[ui] = u->map_y;
+                    }
+                }
+            }
+            meeting_peace_hub(rn);
             return;
         }
     }
@@ -132,6 +231,13 @@ static void meeting_topic(int rn) {
                 have_treaty(me, x) && at_war(rn, x)) third = x;
         if (third >= 0 && gate()) {
             ev_emit("APOSTATES", 0, 0, dat_nations[third].adjective, 0);
+            /* game.js:8326: row 1 breaks the treaty and joins B's war */
+            if (ask_choice() == 1) {
+                CR.treaty_matrix[me][third] &= (uint8_t)~REL_TREATY;
+                CR.treaty_matrix[third][me] &= (uint8_t)~REL_TREATY;
+                declare_war_on(me, third);
+            }
+            meeting_peace_hub(rn);
             return;
         }
     }
@@ -144,19 +250,38 @@ static void meeting_topic(int rn) {
         if (heathen >= 0 && !at_war(me, rn) && gate() &&
             (int)rng_next() <= 11141) {    /* Math.random() < 0.34 */
             ev_emit("HEATHEN", 0, 0, dat_tribes[heathen].name, 0);
+            /* game.js:8340: row 1 turns on the tribe (@PISS4 cause) */
+            if (ask_choice() == 1) adjust_tension(heathen, 100, 4);
+            meeting_peace_hub(rn);
             return;
         }
     }
     /* @TRIBUTE — B's gold extortion, after the grace period */
     if (!in_grace && !at_war(me, rn) && gate()) {
-        ev_emit("TRIBUTE", 0, 0, dat_nations[me].adjective,
-                dat_regionname[rn]);       /* ask stub */
+        int32_t want = demand_value(500);
+        ev_emit("TRIBUTE", want, 0, dat_nations[me].adjective,
+                dat_regionname[rn]);
+        /* game.js:8350: row 1 pays (NOTENOUGH if broke); a refusal that
+         * passes the action gate escalates to war (@WARMEEK/@WARMANLY) */
+        if (ask_choice() == 1) {
+            PowerRecord *p = &CS.powers[me];
+            if (p->gold < want) ev_emit("NOTENOUGH", p->gold, 0, 0, 0);
+            else { p->gold -= want; CR.rivals[rn].gold += want; }
+            meeting_peace_hub(rn);
+        } else if (gate()) {
+            ev_emit(meeting_tone(rn) ? "WARMEEK" : "WARMANLY", 0, 0,
+                    dat_regionname[rn], 0);
+            declare_war_on(rn, me);
+        } else meeting_peace_hub(rn);
         return;
     }
     /* @WORTHY — the AI-proposed demarcation treaty */
     if (!have_treaty(me, rn) && !at_war(me, rn) && gate()) {
         ev_emit("WORTHY", 0, 0, dat_nations[me].adjective,
-                dat_nations[rn].adjective);   /* ask stub */
+                dat_nations[rn].adjective);
+        /* game.js:8375: row 0 accepts, anything else falls to the hub */
+        if (ask_choice() == 0) accept_treaty(rn);
+        else meeting_peace_hub(rn);
         return;
     }
     meeting_peace_hub(rn);
@@ -504,7 +629,13 @@ static void news_tick(void) {
             }
             if (scared >= 0 && R(6) == 0) {
                 r->col[scared].spared = 1;
-                ev_emit("GIVECASH", 0, 0, 0, 0);     /* ask stub */
+                int32_t purse = 100 + 50 *
+                    (r->col[scared].pop ? r->col[scared].pop : 1);
+                ev_emit("GIVECASH", purse, 0, 0, 0);
+                if (ask_choice() == 0) {             /* game.js:7435 */
+                    CS.powers[me].gold += purse;
+                    r->gold = r->gold > purse ? r->gold - purse : 0;
+                }
             }
         }
         /* native-vs-rival raiding (simulated; rates flagged in JS) */
@@ -635,10 +766,9 @@ static void king_war_cycle(void) {
     if (roll == 0) {
         p->tax_rate = (uint8_t)(p->tax_rate >= 1 ? p->tax_rate - 1 : 0);
         ev_emit("KINGMERCY", 1, p->tax_rate, 0, 0);
-    } else if (roll == 1) {
+    } else if (roll == 1 && !CR.king_frigate) {
         /* @KINGFRIGATE needs a fleet: an on-map ship or one in Europe
-         * (off-map).  G.kingFrigate is only set in the callback — never
-         * headless — so the offer can repeat, like the JS. */
+         * (off-map). */
         int fleet = 0;
         for (int ui = 0; ui < CS.n_units && !fleet; ui++) {
             const UnitRecord *u = &CS.units[ui];
@@ -647,7 +777,13 @@ static void king_war_cycle(void) {
                 dat_units[u->type].hull <= 0) continue;
             fleet = 1;                   /* on map or parked in Europe */
         }
-        if (fleet) ev_emit("KINGFRIGATE", 0, 0, 0, 0);   /* ask stub */
+        if (fleet) {
+            ev_emit("KINGFRIGATE", 0, 0, 0, 0);
+            /* game.js:9000: row 0 accepts — the latch stops repeats; the
+             * frigate parks in Europe (list-only there; the latch is the
+             * only later read of it, so no CR ship model is needed) */
+            if (ask_choice() == 0) CR.king_frigate = 1;
+        }
     }
 }
 
@@ -666,7 +802,20 @@ static void king_tax_demand(void) {
     int candidate = (((cs_difficulty() & 0xFE) << 1) + 4) *
                     ((int)cs_turn() / 400 + 1);
     if (p->tax_rate <= candidate && 1 + R(cs_difficulty() + 1) == 1) return;
-    /* raise clamp (unused headless) and the Party-good scan (subs only) */
+    int raise = 75 - p->tax_rate < candidate ? 75 - p->tax_rate : candidate;
+    if (raise < 1) raise = 1;
+    /* the Party good: the good your colonies hold most of (game.js:8658,
+     * strict-greater scan from 0 — lowest index on ties) */
+    int good = 0;
+    {
+        long tot[16] = { 0 };
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            if ((CS.colonies[ci].owner_power & 3) != me) continue;
+            for (int g = 0; g < 16; g++) tot[g] += CS.colonies[ci].stock[g];
+        }
+        for (int g = 1; g < 16; g++)
+            if (tot[g] > tot[good]) good = g;
+    }
     int sev = 1 + R(1000) + (2 * national_sol() - p->tax_rate) * 5 +
               (int)(p->gold / 100) + (int)cs_turn() / 30;
     const char *key;
@@ -676,7 +825,28 @@ static void king_tax_demand(void) {
     } else if (sev < 0x3B6) key = "KINGWAR";
     else if (sev < 0x44C) key = "KINGNAVACT";
     else key = "KINGSTAMPACT";
-    ev_emit(key, 0, 0, 0, 0);                    /* ask stub */
+    ev_emit(key, raise, p->tax_rate + raise, dat_cargo[good].name, 0);
+    /* @TAXOPTIONS (game.js:8667): row 0 kisses the ring, row 1 holds the
+     * Party — teaParty (8676): the good is dumped at the first colony
+     * holding it, the tax is NOT raised, and the good is boycotted
+     * (RUNTIME G.boycotts) */
+    if (ask_choice() == 1) {
+        int ci = -1;
+        for (int k = 0; k < CS.n_colonies && ci < 0; k++)
+            if ((CS.colonies[k].owner_power & 3) == me &&
+                CS.colonies[k].stock[good] > 0) ci = k;
+        if (ci < 0)
+            for (int k = 0; k < CS.n_colonies && ci < 0; k++)
+                if ((CS.colonies[k].owner_power & 3) == me) ci = k;
+        int32_t tons = ci >= 0 ? CS.colonies[ci].stock[good] : 0;
+        if (ci >= 0) CS.colonies[ci].stock[good] = 0;
+        CR.boycotts |= (uint16_t)(1 << good);
+        ev_emit("TEAPARTY", tons, 0, dat_cargo[good].name,
+                ci >= 0 ? CS.colonies[ci].name : 0);
+    } else {
+        int t = p->tax_rate + raise;
+        p->tax_rate = (uint8_t)(t > 75 ? 75 : t);
+    }
 }
 
 /* shoreBombardment (game.js:6934): fort guns fire on a hostile ship
@@ -800,7 +970,11 @@ static void end_game_sequence(void) {
     ev_emit("EXPLOITS", 0, 0, 0, 0);
     (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
     CR.screen_map = 0;                   /* G.screen = 'report' */
-    ev_emit("SCORED", 0, 0, 0, 0);       /* ask stub */
+    ev_emit("SCORED", 0, 0, 0, 0);
+    ask_choice();                        /* game.js:8141: sets G.scored;
+                                          * the retired latch already
+                                          * gates re-entry here */
+    CR.scored = 1;
 }
 
 /* The retirement clock (endTurn:10800). */

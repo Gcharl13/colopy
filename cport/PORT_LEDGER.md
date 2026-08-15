@@ -189,7 +189,7 @@ Status column is maintained by hand as porting proceeds:
 | `askPrice` | 4312 | 0 |  | ported |
 | `stepPrice` | 4313 | 20 |  | todo |
 | `driftMarket` | 4334 | 8 |  | ported |
-| `isBoycotted` | 4343 | 0 |  | todo |
+| `isBoycotted` | 4343 | 0 |  | ported (runtime CR.boycotts mirror) |
 | `sellGoods` | 4344 | 18 |  | ported |
 | `buyGoods` | 4363 | 16 |  | ported |
 | `EURO_ROWS` | 4380 | 11 |  | todo |
@@ -253,7 +253,7 @@ Status column is maintained by hand as porting proceeds:
 | `eventSpeaker` | 6299 | 18 |  | todo |
 | `showEvent` | 6338 | 13 |  | todo |
 | `notice` | 6352 | 15 |  | todo |
-| `askZoom` | 6368 | 10 |  | todo |
+| `askZoom` | 6368 | 10 |  | ported (colony-zoom = screen_map latch) |
 | `askEvent` | 6379 | 19 |  | todo |
 | `enterVillage` | 6426 | 35 |  | todo |
 | `villageActions` | 6462 | 15 |  | todo |
@@ -330,27 +330,27 @@ Status column is maintained by hand as porting proceeds:
 | `setTreaty` | 8176 | 3 |  | todo |
 | `atWar` | 8180 | 0 |  | todo |
 | `haveTreaty` | 8181 | 0 |  | todo |
-| `declareWarOn` | 8182 | 5 |  | todo |
-| `signTreaty` | 8188 | 13 |  | todo |
+| `declareWarOn` | 8182 | 5 |  | ported |
+| `signTreaty` | 8188 | 13 |  | ported (inside accept_treaty) |
 | `parleyEligible` | 8202 | 7 |  | ported |
-| `demandValue` | 8210 | 22 |  | todo |
+| `demandValue` | 8210 | 22 |  | ported |
 | `powerMetric` | 8233 | 7 |  | ported |
 | `meetingTone` | 8241 | 0 |  | ported |
 | `meetingSubs` | 8242 | 7 |  | todo |
-| `runMeeting` | 8250 | 11 |  | partial (ask-stub topics) |
-| `meetingTopic` | 8262 | 117 |  | partial (ask-stub topics) |
-| `meetingPeaceHub` | 8380 | 17 |  | partial (ask-stub topics) |
-| `acceptTreaty` | 8398 | 6 |  | todo |
-| `rivalForcesNearby` | 8405 | 3 |  | todo |
-| `meetingWithdraw` | 8409 | 20 |  | todo |
+| `runMeeting` | 8250 | 11 |  | ported |
+| `meetingTopic` | 8262 | 117 |  | ported (asks answered) |
+| `meetingPeaceHub` | 8380 | 17 |  | ported (rows 2-3 unreachable under ask policy) |
+| `acceptTreaty` | 8398 | 6 |  | ported |
+| `rivalForcesNearby` | 8405 | 3 |  | ported (inside meeting_withdraw) |
+| `meetingWithdraw` | 8409 | 20 |  | ported |
 | `meetingThreat` | 8430 | 13 |  | todo |
 | `meetingAlliance` | 8444 | 35 |  | todo |
 | `aiDiplomacyTick` | 8480 | 30 |  | ported |
-| `kingsCut` | 8511 | 3 |  | todo |
+| `kingsCut` | 8511 | 3 |  | ported (inside KINGGALLEON site) |
 | `treasureValue` | 8515 | 0 |  | todo |
 | `hasGalleon` | 8516 | 3 |  | todo |
 | `cashTreasureInFull` | 8520 | 7 |  | todo |
-| `offerGalleon` | 8528 | 21 |  | todo |
+| `offerGalleon` | 8528 | 21 |  | ported (gross=0 FLAGGED: import never sets u.treasure) |
 | `checkTreasure` | 8550 | 16 |  | ported |
 | `SEEN` | 8567 | 0 |  | todo |
 | `SEEN_BIT` | 8568 | 0 |  | todo |
@@ -363,7 +363,7 @@ Status column is maintained by hand as porting proceeds:
 | `taxPretext` | 8623 | 18 |  | ported |
 | `kingSalutation` | 8642 | 0 |  | todo |
 | `kingTaxDemand` | 8643 | 31 |  | ported |
-| `teaParty` | 8675 | 32 |  | todo |
+| `teaParty` | 8675 | 32 |  | ported (inline at tax-demand site) |
 | `rumourAt` | 8708 | 13 |  | todo |
 | `scoutLevel` | 8722 | 6 |  | todo |
 | `d` | 8729 | 0 |  | todo |

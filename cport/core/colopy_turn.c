@@ -272,6 +272,9 @@ static void advance_construction(int ci, int hammers) {
             r->tool_warned = 1;
             ev_emit(c->stock[TOOLS] > 0 ? "NEEDTOOLS" : "NEEDTOOLS0",
                     need_tools, c->stock[TOOLS], c->name, b->name);
+            /* askZoom (game.js:6372 via 3155): choice 1 zooms to the
+             * colony — G.screen leaves 'map', closing the parley gate. */
+            if (ask_choice() == 1) CR.screen_map = 0;
         }
         return;
     }
@@ -381,6 +384,8 @@ static void auto_export(int ci) {
             r->cargo_ready |= (uint16_t)(1 << i);
             ev_emit(c->warehouse_level < 2 ? "CARGOREADY1" : "CARGOREADY2",
                     100, 0, c->name, dat_cargo[i].name);
+            /* askZoom (game.js:6372 via 2863): same colony-zoom ask. */
+            if (ask_choice() == 1) CR.screen_map = 0;
         }
         int excess = c->stock[i] - 50;
         c->stock[i] = 50;
@@ -904,7 +909,14 @@ static void check_immigration(void) {
     CR.crosses -= accum;
     resolve();
     if (father_owned(father_by_name("William Brewster"))) {
+        /* @RECRUITCHOOSE (game.js:10164): the answered slot recruits and
+         * refills; no @UNREST on this branch */
         ev_emit("RECRUITCHOOSE", 0, 0, dat_nations[cs_nation()].homeport, 0);
+        int slot2 = ask_choice();
+        if (slot2 < 0 || slot2 > 2) slot2 = 0;
+        if (CR.n_dock_units < sizeof(CR.dock_units) / sizeof(CR.dock_units[0]))
+            CR.dock_units[CR.n_dock_units++] = CR.dock[slot2];
+        roll_immigrant(&CR.dock[slot2]);
         return;
     }
     int slot = (int)((rng_next() * 3u) >> 15);
@@ -927,7 +939,7 @@ static void update_congress(void) {
     CR.bells_total += bpt;
     if (CR.father_in_progress < 0) {
         int era = cs_year() < 1600 ? 0 : cs_year() < 1700 ? 1 : 2;
-        int first = -1;
+        int cand[5], nc = 0;
         for (int cat = 0; cat < 5; cat++) {
             int pool[32], np = 0, total = 0;
             for (int i = 0; i < DAT_FATHERS_COUNT; i++)
@@ -944,13 +956,18 @@ static void update_congress(void) {
                 budget -= dat_fathers[pool[k]].weights[era];
                 if (budget <= 0) { pick = pool[k]; break; }
             }
-            if (first < 0) first = pick;
+            cand[nc++] = pick;
         }
-        if (first < 0) return;
-        /* the pick dialog cannot be cancelled; the trace's stubbed answer
-         * keeps the first candidate, exactly like the JS trace */
-        CR.father_in_progress = (int16_t)first;
+        if (!nc) return;
+        /* @WHICHFREEDOM (game.js:7666): default = the first candidate,
+         * the answered choice re-picks within the candidate rows */
+        CR.father_in_progress = (int16_t)cand[0];
         ev_emit("WHICHFREEDOM", 0, 0, 0, 0);
+        {
+            int c = ask_choice();
+            if (c >= 0 && c < nc)
+                CR.father_in_progress = (int16_t)cand[c];
+        }
     }
     /* fatherCost (game.js:7669); G.declared TBD (fixtures 0) */
     {
@@ -972,7 +989,7 @@ static void update_congress(void) {
             dat_nations[cs_nation()].adjective);
     /* applyFatherEffect (game.js:7683) -- the wired three */
     if (strcmp(dat_fathers[f].name, "Jakob Fugger") == 0)
-        p->boycott = 0;
+        CR.boycotts = 0;                 /* G.boycotts = [] (runtime) */
     if (strcmp(dat_fathers[f].name, "Jean de Brebeuf") == 0)
         for (int v = 0; v < CS.n_villages; v++)
             if (CS.villages[v].mission != 0xFF &&
@@ -1021,6 +1038,14 @@ static void check_treasure(void) {
         if (!on_colony) continue;
         CR.unit_offered[ui] = 1;
         ev_emit(galleon ? "KINGGALLEON3" : "KINGGALLEON2", 0, 0, 0, 0);
+        /* offerGalleon (game.js:8577): row 0 accepts the Crown's share.
+         * gross = (u.treasure||0)*100 — u.treasure is only set by the
+         * unported LCR/conquest paths, so imported treasures cash at 0
+         * (JS-mirror; FLAGGED until those paths land). */
+        if (ask_choice() == 0) {
+            unit_remove(ui);
+            ev_emit("LOOTCASH", 0, 0, 0, 0);
+        }
         return;
     }
 }

@@ -236,8 +236,14 @@ static void native_demands(void) {
                 ev_emit("INDIANGIVESTUFF", gift, 0, dat_tribes[ti].name,
                         c->name);
             } else if (roll == 2 && c->stock[FOOD] >= 40) {
-                /* @INDIANBEGFOOD — ask stub, no state change */
-                ev_emit("INDIANBEGFOOD", 0, 0, dat_tribes[ti].name, c->name);
+                /* @INDIANBEGFOOD (game.js:5453): row 1 shares half */
+                int offer = c->stock[FOOD] / 2;
+                ev_emit("INDIANBEGFOOD", offer, 0, dat_tribes[ti].name,
+                        c->name);
+                if (ask_choice() == 1) {
+                    c->stock[FOOD] = (uint16_t)(c->stock[FOOD] - offer);
+                    adjust_tension(ti, -8, 0);
+                } else adjust_tension(ti, 5, 0);
             } else if (roll == 3) {
                 ev_emit("INDIANCOMMENT", 0, 0, dat_tribes[ti].name, 0);
             } else {
@@ -255,8 +261,15 @@ static void native_demands(void) {
                 int qty;
                 int top = top_stock(&CS.colonies[wc], 10, &qty);
                 if (top >= 0) {
-                    ev_emit("WANTSTUFF", qty, 0, dat_tribes[ti].name,
-                            dat_cargo[top].name);    /* ask stub */
+                    int take = 15 + 5 * cs_difficulty();
+                    if (take > qty) take = qty;
+                    ev_emit("WANTSTUFF", take, 0, dat_tribes[ti].name,
+                            dat_cargo[top].name);
+                    if (ask_choice() == 1) {         /* game.js:5482 */
+                        CS.colonies[wc].stock[top] =
+                            (uint16_t)(CS.colonies[wc].stock[top] - take);
+                        adjust_tension(ti, -10, 0);
+                    } else adjust_tension(ti, 15, 5);
                     return;
                 }
             }
@@ -287,11 +300,27 @@ static void native_demands(void) {
             int ci = nth_player_colony(R(player_colony_count()));
             int qty;
             int top = ci >= 0 ? top_stock(&CS.colonies[ci], 20, &qty) : -1;
-            if (top >= 0)
-                ev_emit("INDIANCITY", qty, 0, dat_tribes[ti].name,
+            if (top >= 0) {
+                int take = 20 + 10 * cs_difficulty();
+                if (take > qty) take = qty;
+                ev_emit("INDIANCITY", take, 0, dat_tribes[ti].name,
                         dat_cargo[top].name);
-            else
-                ev_emit("INDIANGOLD", 0, 0, dat_tribes[ti].name, 0);
+                if (ask_choice() == 1) {             /* game.js:5531 */
+                    CS.colonies[ci].stock[top] =
+                        (uint16_t)(CS.colonies[ci].stock[top] - take);
+                    adjust_tension(ti, -10, 0);
+                } else adjust_tension(ti, 15, 0);
+            } else {
+                /* demandValue(200) (game.js:8214): the byte-cited scaler */
+                int32_t want = 200 * 10 * (cs_difficulty() + 8) / 100 +
+                               500 * (cs_difficulty() + 1);
+                ev_emit("INDIANGOLD", want, 0, dat_tribes[ti].name, 0);
+                PowerRecord *p = &CS.powers[cs_nation()];
+                if (ask_choice() == 1 && p->gold >= want) {
+                    p->gold -= want;
+                    adjust_tension(ti, -10, 0);
+                } else adjust_tension(ti, 15, 0);
+            }
             return;
         }
     }

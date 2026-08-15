@@ -36,8 +36,11 @@ int market_bid(int i) {
 int market_ask(int i) {                        /* askPrice, game.js:4312 */
     return market_bid(i) + dat_cargo[i].burden + 1;
 }
-int market_boycotted(int i) {                  /* @0x030B47 */
-    return (me()->boycott >> i) & 1;
+/* isBoycotted (game.js:4347): the RUNTIME G.boycotts list — the importer
+ * resets it to [] (10287); the record's +0x20 word is the ENGINE's store
+ * (@0x030B47) but the JS never reads it back, so parity follows CR. */
+int market_boycotted(int i) {
+    return (CR.boycotts >> i) & 1;
 }
 
 /* stepPrice (game.js:4313): walk the accumulator across its thresholds. */

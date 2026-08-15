@@ -242,6 +242,9 @@ typedef struct {
     uint8_t retired, soon_warned;
     uint8_t scored;              /* G.scored (the SCORED answer latch) */
     uint8_t king_frigate;        /* G.kingFrigate (KINGFRIGATE answer) */
+    uint16_t boycotts;           /* G.boycotts — RUNTIME, [] at import
+                                  * (game.js:10287); the record's +0x20
+                                  * word is NOT what the JS reads */
     uint32_t ask_seq;            /* the scripted-answer counter — the trace
                                   * answers every ask with askSeq++ % 2 and
                                   * RUNS the callback; ask_choice() mirrors */

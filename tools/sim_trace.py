@@ -115,7 +115,7 @@ TURNS = """([save, n, agitate]) => {
   // (tax demands, tea parties, treaties, tribute, buy-offs) executes and
   // lands in the parity diff.  OFF until the C ask sites carry their
   // ported callback bodies (task #88 slice 1) — flip with the C flag.
-  const ANSWER_ASKS = false;
+  const ANSWER_ASKS = true;
   let _askSeq = 0;
   askEvent = (k, subs, cb, opts) => {
     evs.push(k);
