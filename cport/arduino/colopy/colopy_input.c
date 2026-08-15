@@ -339,6 +339,55 @@ static void open_build_picker(void) {
     UI.colony_popup = 2;
     UI.colony_popup_row = (int8_t)(at < 0 ? 0 : at);
 }
+/* rushBuy (game.js:3208): the B key on the colony screen — 26 gold per
+ * missing hammer plus the market ASK per missing tool; @BUYME0 refuses
+ * past the purse, @BUYME1 row 2 ("Complete it.") banks the shortfall
+ * and runs the construction step at once.  A unit target prices via
+ * unitBuildRow (game.js:2965: cost x32, the Wagon Train off-scale at
+ * 40, tools_x10 = the @UNIT tools column). */
+static void rush_buy(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0) return;
+    ColonyRecord *c = &CS.colonies[cci];
+    int bip = c->building_in_production;
+    int32_t cost_h, tools10;
+    const char *nm;
+    if (bip < DAT_BUILDINGS_COUNT) {
+        int first = bld_first_row(bip);      /* JS find() = first row */
+        cost_h = dat_buildings[first].cost;
+        tools10 = dat_buildings[first].tools_x10;
+        nm = dat_buildings[first].name;
+    } else if (bip >= 0xC0 && bip < 0xC7) {
+        nm = BUILD_UNITS[bip - 0xC0];
+        int ur = -1;
+        for (int i = 0; i < DAT_UNITS_COUNT; i++)
+            if (strcmp(dat_units[i].name, nm) == 0) { ur = i; break; }
+        if (ur < 0) return;
+        cost_h = strcmp(nm, "Wagon Train") == 0 ? 40
+                                                : dat_units[ur].cost * 32;
+        tools10 = dat_units[ur].tools;
+    } else {
+        return;                              /* no target */
+    }
+    int32_t rem_h = cost_h - c->hammers;
+    if (rem_h < 0) rem_h = 0;
+    int32_t rem_t = tools10 * 10 - c->stock[TOOLS];
+    if (rem_t < 0) rem_t = 0;
+    int32_t cost = 26 * rem_h + market_ask(TOOLS) * rem_t;
+    PowerRecord *p = &CS.powers[cs_nation()];
+    if (cost > p->gold) {
+        ev_emit("BUYME0", cost, p->gold, nm, 0);
+        return;
+    }
+    ev_emit("BUYME1", cost, p->gold, nm, 0);
+    if (ask_choice() != 1) return;
+    p->gold -= cost;
+    if (c->hammers < cost_h) c->hammers = (uint16_t)cost_h;
+    if (c->stock[TOOLS] < tools10 * 10)
+        c->stock[TOOLS] = (uint16_t)(tools10 * 10);
+    colony_advance_construction(cci, 0);
+}
+
 /* colonyPopupRows jobs arm (game.js:3925): the "No job (plaza)" row,
  * then the runtime buildings that employ anyone, list order.
  * names[0] = NULL marks the plaza row. */
@@ -825,6 +874,23 @@ void in_key(const char *k, int alt, int shift) {
         if (k[0] >= '1' && k[0] <= '3' && !k[1])
             UI.colony_view = (int8_t)(k[0] - '1');
         if (key_is(k, "c") || key_is(k, "C")) open_build_picker();
+        if (key_is(k, "b") || key_is(k, "B")) rush_buy();
+        if (key_is(k, "l") || key_is(k, "L")) {
+            /* @LOBOTOMIZE (game.js:12503): clear the selected
+             * colonist's specialty on row 0 */
+            int cci = player_colony_rec(UI.colony);
+            if (cci >= 0) {
+                ColonyRecord *c = &CS.colonies[cci];
+                int k2 = UI.colonist_sel;
+                if (k2 >= 0 && k2 < c->population &&
+                    c->profession[k2] >= 1 &&
+                    c->profession[k2] < DAT_JOBEXPERT_COUNT) {
+                    ev_emit("LOBOTOMIZE", 0, 0,
+                            dat_jobexpert[c->profession[k2]], 0);
+                    if (ask_choice() == 0) c->profession[k2] = 0;
+                }
+            }
+        }
         if (key_is(k, "Enter")) {
             UI.colony_popup = 1;             /* 'jobs' */
             UI.colony_popup_row = 0;

@@ -121,6 +121,7 @@ void cr_reset_from_load(void);   /* seed runtime from the loaded records */
 void units_session_seed(void);   /* importer's runtime unit setup (moves,
                                   * orders) — session entry, NOT load */
 void colony_turn(int ci);
+void colony_advance_construction(int ci, int hammers); /* rushBuy tail */
 void step_rng(const char *name); /* COLOPY_STEP_RNG=1 parity probe (stderr) */
 void turn_step_prefix(void);     /* the ported endTurn prefix */
 void turn_step2(void);           /* refit/improvements/immigration/congress/treasure */

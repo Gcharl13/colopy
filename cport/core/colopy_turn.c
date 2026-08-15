@@ -357,6 +357,11 @@ static void advance_construction(int ci, int hammers) {
     ev_emit("BUILT", 0, 0, c->name, b->name);
 }
 
+/* exported for the input layer's rushBuy mirror (game.js:3208) */
+void colony_advance_construction(int ci, int hammers) {
+    advance_construction(ci, hammers);
+}
+
 /* ---- schooling (runSchool, spec/systems/training.md) ------------------- */
 static int profession_class(uint8_t prof) {
     if (prof < 1 || prof >= DAT_JOBEXPERT_COUNT) return 4;

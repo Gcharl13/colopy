@@ -141,6 +141,8 @@ def map_script():
     K("Enter")                       # commit: colonist 0 takes the row's job
     K("Enter")                       # reopen
     K("Escape")                      # close without committing
+    K("l")                           # @LOBOTOMIZE (colony) / load (map)
+    K("b")                           # rush-buy ask (colony) / build (map)
     K("c")
     # slice 2: menu Enter + accelerators
     K("v", 1)                        # Alt+V opens VIEW
