@@ -8,42 +8,42 @@
    "terrain": "Prairie",
    "coastal": false,
    "river": true,
-   "best_pop": 13,
-   "gold_per_turn": 346.5,
+   "best_pop": 14,
+   "gold_per_turn": 1199.5,
    "marginal": {
-    "3": 44.0,
+    "3": 208.0,
     "4": 0.0,
-    "5": 44.0,
-    "6": 42.0,
-    "7": 0.0,
-    "8": 0.0,
-    "9": 44.0,
-    "10": 33.5,
-    "11": 10.5,
-    "12": 39.0,
-    "13": 28.0,
-    "14": -28.0
+    "5": 66.0,
+    "6": 66.0,
+    "7": 200.0,
+    "8": 66.0,
+    "9": 0.0,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 60.5,
+    "14": 189.0
    },
    "v_of_n": {
-    "2": 61.5,
-    "3": 105.5,
-    "4": 105.5,
-    "5": 149.5,
-    "6": 191.5,
-    "7": 191.5,
-    "8": 191.5,
-    "9": 235.5,
-    "10": 269.0,
-    "11": 279.5,
-    "12": 318.5,
-    "13": 346.5,
-    "14": 318.5
+    "2": 83.5,
+    "3": 291.5,
+    "4": 291.5,
+    "5": 357.5,
+    "6": 423.5,
+    "7": 623.5,
+    "8": 689.5,
+    "9": 689.5,
+    "10": 889.5,
+    "11": 950.0,
+    "12": 950.0,
+    "13": 1010.5,
+    "14": 1199.5
    },
    "plan": {
     "statesmen": 2,
     "converters": {
-     "Sugar": 2,
-     "Cotton": 2
+     "Sugar": 3,
+     "Cotton": 1
     },
     "gunsmiths": 0,
     "tiles": [
@@ -54,7 +54,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -62,9 +62,9 @@
        16,
        28
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Sugar": 12
       }
      },
      {
@@ -72,9 +72,9 @@
        16,
        29
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -84,7 +84,7 @@
       ],
       "job": "Cotton planter (Prairie,plow)",
       "out": {
-       "Cotton": 8
+       "Cotton": 12
       }
      },
      {
@@ -92,9 +92,19 @@
        17,
        29
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       18,
+       27
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      },
      {
@@ -104,7 +114,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -114,7 +124,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Food": 11
       }
      }
     ]
@@ -128,276 +138,36 @@
    "terrain": "Prairie",
    "coastal": false,
    "river": true,
-   "best_pop": 13,
-   "gold_per_turn": 341.0,
+   "best_pop": 14,
+   "gold_per_turn": 1194.0,
    "marginal": {
-    "3": 44.0,
+    "3": 208.0,
     "4": 0.0,
-    "5": 42.0,
-    "6": 44.0,
-    "7": 0.0,
-    "8": 0.0,
-    "9": 44.0,
-    "10": 28.0,
-    "11": 11.0,
-    "12": 39.0,
-    "13": 27.5,
-    "14": -27.5
+    "5": 66.0,
+    "6": 66.0,
+    "7": 200.0,
+    "8": 60.5,
+    "9": 0.0,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 60.5,
+    "14": 189.0
    },
    "v_of_n": {
-    "2": 61.5,
-    "3": 105.5,
-    "4": 105.5,
-    "5": 147.5,
-    "6": 191.5,
-    "7": 191.5,
-    "8": 191.5,
-    "9": 235.5,
-    "10": 263.5,
-    "11": 274.5,
-    "12": 313.5,
-    "13": 341.0,
-    "14": 313.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 2,
-     "Cotton": 2
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       16,
-       26
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       16,
-       27
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       16,
-       28
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       17,
-       26
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       17,
-       28
-      ],
-      "job": "Cotton planter (Prairie,plow)",
-      "out": {
-       "Cotton": 8
-      }
-     },
-     {
-      "xy": [
-       18,
-       26
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       18,
-       27
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    42,
-    52
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": true,
-   "best_pop": 13,
-   "gold_per_turn": 333.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 35.0,
-    "7": 4.0,
-    "8": 0.0,
-    "9": 35.0,
-    "10": 5.0,
-    "11": 39.0,
-    "12": 35.0,
-    "13": 28.0,
-    "14": -24.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 187.0,
-    "7": 191.0,
-    "8": 191.0,
-    "9": 226.0,
-    "10": 231.0,
-    "11": 270.0,
-    "12": 305.0,
-    "13": 333.0,
-    "14": 309.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 2,
-     "Cotton": 2
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       41,
-       51
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       41,
-       52
-      ],
-      "job": "Cotton planter (Prairie,plow)",
-      "out": {
-       "Cotton": 8
-      }
-     },
-     {
-      "xy": [
-       41,
-       53
-      ],
-      "job": "Cotton planter (Prairie,plow)",
-      "out": {
-       "Cotton": 8
-      }
-     },
-     {
-      "xy": [
-       42,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       42,
-       53
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       43,
-       51
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       43,
-       52
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    32,
-    36
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": true,
-   "best_pop": 13,
-   "gold_per_turn": 331.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 35.0,
-    "7": 4.0,
-    "8": 0.0,
-    "9": 35.0,
-    "10": 5.0,
-    "11": 39.0,
-    "12": 33.5,
-    "13": 28.0,
-    "14": -22.5
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 187.0,
-    "7": 191.0,
-    "8": 191.0,
-    "9": 226.0,
-    "10": 231.0,
-    "11": 270.0,
-    "12": 303.5,
-    "13": 331.5,
-    "14": 309.0
+    "2": 83.5,
+    "3": 291.5,
+    "4": 291.5,
+    "5": 357.5,
+    "6": 423.5,
+    "7": 623.5,
+    "8": 684.0,
+    "9": 684.0,
+    "10": 884.0,
+    "11": 944.5,
+    "12": 944.5,
+    "13": 1005.0,
+    "14": 1194.0
    },
    "plan": {
     "statesmen": 2,
@@ -409,72 +179,211 @@
     "tiles": [
      {
       "xy": [
-       31,
-       35
+       16,
+       26
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
       "xy": [
-       31,
-       36
+       16,
+       27
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       16,
+       28
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Food": 11
       }
      },
      {
       "xy": [
-       31,
-       37
+       17,
+       26
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       17,
+       28
       ],
       "job": "Cotton planter (Prairie,plow)",
       "out": {
-       "Cotton": 8
+       "Cotton": 12
       }
      },
      {
       "xy": [
-       32,
-       35
+       18,
+       26
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Food": 11
       }
      },
      {
       "xy": [
-       33,
-       35
+       18,
+       27
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
       "xy": [
-       33,
-       36
+       18,
+       28
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    19,
+    29
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 13,
+   "gold_per_turn": 999.5,
+   "marginal": {
+    "3": 0.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 66.0,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 66.0,
+    "10": 200.0,
+    "11": 66.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 418.0,
+    "7": 618.0,
+    "8": 618.0,
+    "9": 684.0,
+    "10": 884.0,
+    "11": 950.0,
+    "12": 950.0,
+    "13": 999.5,
+    "14": 950.0
+   },
+   "plan": {
+    "statesmen": 2,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       18,
+       28
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      },
      {
       "xy": [
-       33,
-       37
+       18,
+       29
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       18,
+       30
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       19,
+       28
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       19,
+       30
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       20,
+       28
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       20,
+       29
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       20,
+       30
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      }
     ]
@@ -489,35 +398,35 @@
    "coastal": false,
    "river": true,
    "best_pop": 13,
-   "gold_per_turn": 329.5,
+   "gold_per_turn": 994.0,
    "marginal": {
     "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 34.0,
-    "7": 5.0,
-    "8": 0.0,
-    "9": 33.5,
-    "10": 5.5,
-    "11": 39.0,
-    "12": 33.0,
-    "13": 27.5,
-    "14": -22.0
+    "4": 66.0,
+    "5": 200.0,
+    "6": 66.0,
+    "7": 200.0,
+    "8": 55.0,
+    "9": 5.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 55.0,
+    "14": -55.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 186.0,
-    "7": 191.0,
-    "8": 191.0,
-    "9": 224.5,
-    "10": 230.0,
-    "11": 269.0,
-    "12": 302.0,
-    "13": 329.5,
-    "14": 307.5
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 418.0,
+    "7": 618.0,
+    "8": 673.0,
+    "9": 678.5,
+    "10": 739.0,
+    "11": 939.0,
+    "12": 939.0,
+    "13": 994.0,
+    "14": 939.0
    },
    "plan": {
     "statesmen": 2,
@@ -533,7 +442,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Food": 11
       }
      },
      {
@@ -543,7 +452,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -551,9 +460,9 @@
        19,
        30
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 7
+       "Sugar": 12
       }
      },
      {
@@ -563,7 +472,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -571,9 +480,9 @@
        20,
        30
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -583,7 +492,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -593,7 +502,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -601,267 +510,9 @@
        21,
        30
       ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    19,
-    29
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 313.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 0.0,
-    "7": 44.0,
-    "8": 0.0,
-    "9": 34.0,
-    "10": 10.0,
-    "11": 39.0,
-    "12": 28.5,
-    "13": 5.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 152.0,
-    "7": 196.0,
-    "8": 196.0,
-    "9": 230.0,
-    "10": 240.0,
-    "11": 279.0,
-    "12": 307.5,
-    "13": 313.0,
-    "14": 313.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       18,
-       28
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       18,
-       29
-      ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       18,
-       30
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       19,
-       28
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 7
-      }
-     },
-     {
-      "xy": [
-       19,
-       30
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       20,
-       28
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       20,
-       29
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       20,
-       30
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    33,
-    36
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 313.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 0.0,
-    "7": 44.0,
-    "8": 0.0,
-    "9": 28.5,
-    "10": 10.5,
-    "11": 39.0,
-    "12": 28.0,
-    "13": 11.0,
-    "14": -5.5
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 152.0,
-    "7": 196.0,
-    "8": 196.0,
-    "9": 224.5,
-    "10": 235.0,
-    "11": 274.0,
-    "12": 302.0,
-    "13": 313.0,
-    "14": 307.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       32,
-       35
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       32,
-       36
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       32,
-       37
-      ],
-      "job": "Farmer (Swamp,clear+plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       33,
-       35
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       33,
-       37
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       34,
-       35
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       34,
-       36
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       34,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 12
       }
      }
     ]
@@ -876,35 +527,35 @@
    "coastal": false,
    "river": false,
    "best_pop": 13,
-   "gold_per_turn": 307.5,
+   "gold_per_turn": 988.5,
    "marginal": {
     "3": 0.0,
-    "4": 44.0,
-    "5": 44.0,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 66.0,
+    "7": 200.0,
     "8": 0.0,
-    "9": 28.0,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 152.0,
-    "6": 152.0,
-    "7": 191.0,
-    "8": 191.0,
-    "9": 219.0,
-    "10": 230.0,
-    "11": 269.0,
-    "12": 296.5,
-    "13": 307.5,
-    "14": 307.5
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 418.0,
+    "7": 618.0,
+    "8": 618.0,
+    "9": 678.5,
+    "10": 739.0,
+    "11": 939.0,
+    "12": 939.0,
+    "13": 988.5,
+    "14": 939.0
    },
    "plan": {
     "statesmen": 2,
@@ -918,9 +569,9 @@
        42,
        51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -930,7 +581,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 12
       }
      },
      {
@@ -938,9 +589,9 @@
        42,
        53
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -948,9 +599,9 @@
        43,
        51
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -958,9 +609,9 @@
        43,
        53
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -970,7 +621,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -978,9 +629,9 @@
        44,
        52
       ],
-      "job": "Farmer (Tropical,plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 5
+       "Sugar": 11
       }
      },
      {
@@ -988,525 +639,9 @@
        44,
        53
       ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    8,
-    2
-   ],
-   "terrain": "Boreal",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 306.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 42.0,
-    "5": 42.0,
-    "6": 0.0,
-    "7": 40.0,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 42.0,
-    "11": 35.0,
-    "12": 5.0,
-    "13": 35.0,
-    "14": -10.0
-   },
-   "v_of_n": {
-    "2": 65.0,
-    "3": 65.0,
-    "4": 107.0,
-    "5": 149.0,
-    "6": 149.0,
-    "7": 189.0,
-    "8": 189.0,
-    "9": 189.0,
-    "10": 231.0,
-    "11": 266.0,
-    "12": 271.0,
-    "13": 306.0,
-    "14": 296.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Furs": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       7,
-       1
-      ],
-      "job": "Farmer (Tundra,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       7,
-       2
-      ],
-      "job": "Trapper (Boreal,road)",
-      "out": {
-       "Furs": 8
-      }
-     },
-     {
-      "xy": [
-       7,
-       3
-      ],
-      "job": "Trapper (Boreal,road)",
-      "out": {
-       "Furs": 8
-      }
-     },
-     {
-      "xy": [
-       8,
-       1
-      ],
-      "job": "Trapper (Boreal,road)",
-      "out": {
-       "Furs": 8
-      }
-     },
-     {
-      "xy": [
-       8,
-       3
-      ],
-      "job": "Farmer (Tundra,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       9,
-       1
-      ],
-      "job": "Farmer (Tundra,clear+plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       9,
-       2
-      ],
-      "job": "Farmer (Tundra,clear+plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       9,
-       3
-      ],
-      "job": "Trapper (Boreal,road)",
-      "out": {
-       "Furs": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    42,
-    38
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 302.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 27.5,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 147.0,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 213.5,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 291.0,
-    "13": 302.0,
-    "14": 302.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       41,
-       37
-      ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       41,
-       38
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       41,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       42,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       42,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       43,
-       37
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       43,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       43,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    41,
-    38
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 302.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 27.5,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 147.0,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 213.5,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 291.0,
-    "13": 302.0,
-    "14": 302.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       40,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       40,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       40,
-       39
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       41,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       41,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       42,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       42,
-       38
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       42,
-       39
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    39,
-    36
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 302.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 27.5,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 147.0,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 213.5,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 291.0,
-    "13": 302.0,
-    "14": 302.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       38,
-       35
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       38,
-       36
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       38,
-       37
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       39,
-       35
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       39,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       40,
-       35
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       40,
-       36
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       40,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -1521,35 +656,35 @@
    "coastal": false,
    "river": true,
    "best_pop": 13,
-   "gold_per_turn": 302.0,
+   "gold_per_turn": 988.5,
    "marginal": {
     "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 33.5,
-    "7": 5.5,
-    "8": 0.0,
-    "9": 33.0,
-    "10": 5.5,
-    "11": 39.0,
-    "12": 33.0,
-    "13": 5.5,
-    "14": 0.0
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 55.0,
+    "9": 5.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 55.0,
+    "14": -55.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 180.5,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 219.0,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 296.5,
-    "13": 302.0,
-    "14": 302.0
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 667.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 988.5,
+    "14": 933.5
    },
    "plan": {
     "statesmen": 2,
@@ -1563,9 +698,9 @@
        18,
        27
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -1575,7 +710,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -1585,7 +720,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 12
       }
      },
      {
@@ -1595,7 +730,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -1605,7 +740,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -1613,29 +748,545 @@
        20,
        27
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
       "xy": [
        20,
        28
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       20,
+       29
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    42,
+    38
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 13,
+   "gold_per_turn": 983.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 612.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 983.0,
+    "14": 933.5
+   },
+   "plan": {
+    "statesmen": 2,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       41,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       41,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       41,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    41,
+    38
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 13,
+   "gold_per_turn": 983.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 612.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 983.0,
+    "14": 933.5
+   },
+   "plan": {
+    "statesmen": 2,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       40,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       41,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       41,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    39,
+    36
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 13,
+   "gold_per_turn": 983.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 612.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 983.0,
+    "14": 933.5
+   },
+   "plan": {
+    "statesmen": 2,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       38,
+       35
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       38,
+       36
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       38,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       39,
+       35
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       39,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       35
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       36
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    33,
+    36
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 13,
+   "gold_per_turn": 983.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 66.0,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 66.0,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 38.5,
+    "14": -38.5
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 418.0,
+    "7": 618.0,
+    "8": 618.0,
+    "9": 684.0,
+    "10": 884.0,
+    "11": 944.5,
+    "12": 944.5,
+    "13": 983.0,
+    "14": 944.5
+   },
+   "plan": {
+    "statesmen": 2,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       32,
+       35
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       32,
+       36
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       32,
+       37
+      ],
+      "job": "Sugar planter (Swamp,clear+plow)",
+      "out": {
+       "Sugar": 9
+      }
+     },
+     {
+      "xy": [
+       33,
+       35
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       33,
+       37
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 11
       }
      },
      {
       "xy": [
-       20,
-       29
+       34,
+       35
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       34,
+       36
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       34,
+       37
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 11
       }
      }
     ]
@@ -1650,35 +1301,35 @@
    "coastal": false,
    "river": false,
    "best_pop": 13,
-   "gold_per_turn": 302.0,
+   "gold_per_turn": 983.0,
    "marginal": {
     "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 27.5,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 49.5,
+    "14": -49.5
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 147.0,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 213.5,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 291.0,
-    "13": 302.0,
-    "14": 302.0
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 612.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 983.0,
+    "14": 933.5
    },
    "plan": {
     "statesmen": 2,
@@ -1692,9 +1343,9 @@
        18,
        26
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -1702,9 +1353,9 @@
        18,
        27
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -1712,9 +1363,9 @@
        18,
        28
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -1722,9 +1373,9 @@
        19,
        26
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -1732,9 +1383,9 @@
        19,
        28
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -1744,7 +1395,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -1754,7 +1405,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -1762,1944 +1413,9 @@
        20,
        28
       ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    34,
-    37
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 302.0,
-   "marginal": {
-    "3": 0.0,
-    "4": 44.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 27.5,
-    "10": 11.0,
-    "11": 39.0,
-    "12": 27.5,
-    "13": 11.0,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 108.0,
-    "5": 147.0,
-    "6": 147.0,
-    "7": 186.0,
-    "8": 186.0,
-    "9": 213.5,
-    "10": 224.5,
-    "11": 263.5,
-    "12": 291.0,
-    "13": 302.0,
-    "14": 302.0
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       33,
-       36
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       33,
-       37
-      ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       33,
-       38
-      ],
-      "job": "Farmer (Swamp,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       34,
-       36
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       34,
-       38
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       35,
-       36
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       35,
-       37
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       35,
-       38
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    52,
-    46
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       51,
-       45
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       47
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       45
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       47
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       53,
-       45
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       53,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       53,
-       47
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    52,
-    45
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       51,
-       44
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       45
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       46
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       44
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       46
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       53,
-       44
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       53,
-       45
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       53,
-       46
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    51,
-    47
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       50,
-       46
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       47
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       48
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       46
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       47
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       48
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    51,
-    45
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       50,
-       44
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       45
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       46
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       44
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       46
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       44
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       45
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       52,
-       46
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    50,
-    49
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       49,
-       48
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       49,
-       49
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       48
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       49
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       51,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    50,
-    48
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       49,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       49
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       47
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       49
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       49
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    50,
-    47
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       49,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       48
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       46
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    49,
-    49
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       48,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       48,
-       49
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       48,
-       50
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       49,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       49
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    49,
-    47
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       48,
-       46
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       48,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       48,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       49,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       49,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       46
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       47
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    45,
-    49
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       44,
-       48
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       49
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       45,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       46,
-       48
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       46,
-       49
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       46,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    35,
-    38
-   ],
-   "terrain": "Savannah",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 298.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 39.0,
-    "6": 0.0,
-    "7": 38.5,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 39.0,
-    "11": 38.5,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 66.0,
-    "3": 66.0,
-    "4": 105.0,
-    "5": 144.0,
-    "6": 144.0,
-    "7": 182.5,
-    "8": 182.5,
-    "9": 182.5,
-    "10": 221.5,
-    "11": 260.0,
-    "12": 260.0,
-    "13": 298.5,
-    "14": 298.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       34,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       34,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       34,
-       39
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       35,
-       37
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       35,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       36,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       36,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       36,
-       39
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    44,
-    52
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 296.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       43,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       43,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       43,
-       53
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       44,
-       51
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       53
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       45,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       53
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    44,
-    51
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 296.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       43,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       43,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       43,
-       52
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       44,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       45,
-       51
-      ],
-      "job": "Farmer (Tropical,plow)",
-      "out": {
-       "Food": 5
-      }
-     },
-     {
-      "xy": [
-       45,
-       52
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    44,
-    50
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
-    "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 296.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       43,
-       49
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       43,
-       50
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       43,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       44,
-       49
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       51
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       49
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       45,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       51
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -3714,164 +1430,35 @@
    "coastal": false,
    "river": true,
    "best_pop": 13,
-   "gold_per_turn": 296.5,
+   "gold_per_turn": 983.0,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 33.5,
-    "7": 5.5,
-    "8": 0.0,
-    "9": 33.0,
-    "10": 5.5,
-    "11": 39.0,
-    "12": 33.0,
-    "13": 5.5,
-    "14": 0.0
-   },
-   "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 175.0,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 213.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 291.0,
-    "13": 296.5,
-    "14": 296.5
-   },
-   "plan": {
-    "statesmen": 2,
-    "converters": {
-     "Sugar": 3
-    },
-    "gunsmiths": 0,
-    "tiles": [
-     {
-      "xy": [
-       40,
-       36
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       40,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       40,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       41,
-       36
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       41,
-       38
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       42,
-       36
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       42,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
-      }
-     },
-     {
-      "xy": [
-       42,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     }
-    ]
-   }
-  },
-  {
-   "xy": [
-    40,
-    37
-   ],
-   "terrain": "Tropical",
-   "coastal": false,
-   "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
-   "marginal": {
-    "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
-    "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 55.0,
+    "9": 5.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
+    "13": 55.0,
+    "14": -55.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 296.5
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 662.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 983.0,
+    "14": 928.0
    },
    "plan": {
     "statesmen": 2,
@@ -3882,42 +1469,22 @@
     "tiles": [
      {
       "xy": [
-       39,
+       40,
        36
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       39,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       39,
-       38
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
       "xy": [
        40,
-       36
+       37
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -3925,9 +1492,9 @@
        40,
        38
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -3937,17 +1504,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       41,
-       37
-      ],
-      "job": "Sugar planter (Savannah,clear+plow)",
-      "out": {
-       "Sugar": 8
+       "Sugar": 11
       }
      },
      {
@@ -3957,7 +1514,37 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       42,
+       36
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      }
     ]
@@ -3966,41 +1553,41 @@
   {
    "xy": [
     34,
-    38
+    37
    ],
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
    "best_pop": 13,
-   "gold_per_turn": 296.5,
+   "gold_per_turn": 977.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 66.0,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
-    "14": 0.0
+    "13": 44.0,
+    "14": -44.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 296.5
+    "2": 86.0,
+    "3": 86.0,
+    "4": 152.0,
+    "5": 352.0,
+    "6": 412.5,
+    "7": 612.5,
+    "8": 612.5,
+    "9": 673.0,
+    "10": 733.5,
+    "11": 933.5,
+    "12": 933.5,
+    "13": 977.5,
+    "14": 933.5
    },
    "plan": {
     "statesmen": 2,
@@ -4012,11 +1599,21 @@
      {
       "xy": [
        33,
+       36
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       33,
        37
       ],
-      "job": "Sugar planter (Savannah,plow)",
+      "job": "Farmer (Savannah,plow)",
       "out": {
-       "Sugar": 8
+       "Food": 11
       }
      },
      {
@@ -4024,39 +1621,39 @@
        33,
        38
       ],
-      "job": "Farmer (Swamp,clear+plow)",
+      "job": "Sugar planter (Swamp,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       33,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 10
       }
      },
      {
       "xy": [
        34,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       34,
-       39
+       36
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       34,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       36
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
       }
      },
      {
@@ -4066,7 +1663,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4076,17 +1673,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       35,
-       39
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -4101,35 +1688,35 @@
    "coastal": false,
    "river": true,
    "best_pop": 13,
-   "gold_per_turn": 296.5,
+   "gold_per_turn": 972.0,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 33.5,
-    "7": 5.5,
-    "8": 0.0,
-    "9": 33.0,
-    "10": 5.5,
-    "11": 39.0,
-    "12": 33.0,
-    "13": 5.5,
-    "14": 0.0
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 55.0,
+    "9": 5.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 44.0,
+    "14": -44.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 175.0,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 213.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 291.0,
-    "13": 296.5,
-    "14": 296.5
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 662.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 972.0,
+    "14": 928.0
    },
    "plan": {
     "statesmen": 2,
@@ -4143,29 +1730,1923 @@
        42,
        50
       ],
+      "job": "Sugar planter (Swamp,clear+plow)",
+      "out": {
+       "Sugar": 9
+      }
+     },
+     {
+      "xy": [
+       42,
+       51
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       42,
+       52
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       52
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       44,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       44,
+       51
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       44,
+       52
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    52,
+    46
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       51,
+       45
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       51,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       45
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       47
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       53,
+       45
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       53,
+       46
+      ],
+      "job": "Farmer (Tropical,plow)",
+      "out": {
+       "Food": 9
+      }
+     },
+     {
+      "xy": [
+       53,
+       47
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    52,
+    45
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       51,
+       44
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       45
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       51,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       44
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       53,
+       45
+      ],
+      "job": "Farmer (Tropical,plow)",
+      "out": {
+       "Food": 9
+      }
+     },
+     {
+      "xy": [
+       53,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    51,
+    47
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       50,
+       46
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       50,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       47
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       48
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    51,
+    45
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       50,
+       44
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       45
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       50,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       44
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       44
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       52,
+       46
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    50,
+    49
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       49,
+       49
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       50
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       50,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       50
+      ],
+      "job": "Farmer (Tropical,plow)",
+      "out": {
+       "Food": 9
+      }
+     },
+     {
+      "xy": [
+       51,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       49
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    50,
+    48
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       49,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       49
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       47
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       50,
+       49
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       49
+      ],
+      "job": "Farmer (Tropical,plow)",
+      "out": {
+       "Food": 9
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    50,
+    47
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       49,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       47
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       49,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       48
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       51,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    49,
+    49
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       48,
+       48
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       48,
+       49
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       48,
+       50
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       49
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    49,
+    47
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       48,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       48,
+       47
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       48,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       46
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       48
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    45,
+    49
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       44,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       44,
+       50
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       45,
+       48
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       46,
+       48
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       46,
+       49
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       46,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    35,
+    38
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       34,
+       37
+      ],
+      "job": "Farmer (Tropical,plow)",
+      "out": {
+       "Food": 9
+      }
+     },
+     {
+      "xy": [
+       34,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       34,
+       39
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       36,
+       38
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       36,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    50,
+    46
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       49,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       49,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       50,
+       45
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       50,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       45
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       51,
+       46
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       51,
+       47
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    37,
+    38
+   ],
+   "terrain": "Savannah",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 930.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 200.0,
+    "5": 60.5,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 200.0,
+    "11": 60.5,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 88.0,
+    "3": 88.0,
+    "4": 288.0,
+    "5": 348.5,
+    "6": 409.0,
+    "7": 609.0,
+    "8": 609.0,
+    "9": 669.5,
+    "10": 869.5,
+    "11": 930.0,
+    "12": 930.0,
+    "13": 930.0,
+    "14": 930.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       36,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       36,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       37,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       37,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       38,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       38,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       38,
+       39
+      ],
       "job": "Farmer (Swamp,clear+plow)",
       "out": {
-       "Food": 5
+       "Food": 9
       }
-     },
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    44,
+    52
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
      {
       "xy": [
-       42,
+       43,
        51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 12
       }
      },
      {
       "xy": [
-       42,
+       43,
        52
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       53
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       44,
+       51
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       44,
+       53
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       51
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       52
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    44,
+    51
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       43,
+       50
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       43,
+       51
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       44,
+       50
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       44,
+       52
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       50
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       45,
+       51
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       52
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    44,
+    50
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       43,
+       49
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      },
      {
@@ -4173,29 +3654,29 @@
        43,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Farmer (Tropical,plow)",
       "out": {
-       "Food": 6
+       "Food": 9
       }
      },
      {
       "xy": [
        43,
-       52
+       51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 12
       }
      },
      {
       "xy": [
        44,
-       50
+       49
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4205,17 +3686,265 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
       "xy": [
-       44,
-       52
+       45,
+       49
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       45,
+       50
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    40,
+    37
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       39,
+       36
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       39,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       40,
+       36
+      ],
+      "job": "Farmer (Savannah,plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       40,
+       38
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       41,
+       36
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       41,
+       37
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       41,
+       38
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    34,
+    38
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       33,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 12
+      }
+     },
+     {
+      "xy": [
+       33,
+       38
+      ],
+      "job": "Farmer (Swamp,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       34,
+       37
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       34,
+       39
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       37
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       38
+      ],
+      "job": "Sugar planter (Savannah,plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       35,
+       39
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      }
     ]
@@ -4229,39 +3958,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
-    "14": -5.5
+    "13": 0.0,
+    "14": 0.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 291.0
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4274,7 +4003,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 12
       }
      },
      {
@@ -4282,9 +4011,9 @@
        42,
        38
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4294,7 +4023,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4304,7 +4033,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4314,17 +4043,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       44,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4334,7 +4053,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4344,7 +4063,7 @@
       ],
       "job": "Farmer (Rain,plow)",
       "out": {
-       "Food": 4
+       "Food": 8
       }
      }
     ]
@@ -4358,39 +4077,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 296.5,
+   "best_pop": 11,
+   "gold_per_turn": 928.0,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
-    "14": -5.5
+    "13": 0.0,
+    "14": 0.0
    },
    "v_of_n": {
-    "2": 64.0,
-    "3": 64.0,
-    "4": 103.0,
-    "5": 141.5,
-    "6": 141.5,
-    "7": 180.5,
-    "8": 180.5,
-    "9": 180.5,
-    "10": 219.0,
-    "11": 258.0,
-    "12": 258.0,
-    "13": 296.5,
-    "14": 291.0
+    "2": 86.0,
+    "3": 86.0,
+    "4": 146.5,
+    "5": 346.5,
+    "6": 407.0,
+    "7": 607.0,
+    "8": 607.0,
+    "9": 667.5,
+    "10": 728.0,
+    "11": 928.0,
+    "12": 928.0,
+    "13": 928.0,
+    "14": 928.0
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4401,9 +4120,9 @@
        39,
        37
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -4411,19 +4130,9 @@
        39,
        38
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       39,
-       39
-      ],
-      "job": "Farmer (Swamp,clear+plow)",
-      "out": {
-       "Food": 5
+       "Sugar": 11
       }
      },
      {
@@ -4433,7 +4142,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4441,9 +4150,9 @@
        40,
        39
       ],
-      "job": "Farmer (Tropical,plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 5
+       "Sugar": 11
       }
      },
      {
@@ -4453,7 +4162,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 8
+       "Sugar": 12
       }
      },
      {
@@ -4463,7 +4172,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4473,7 +4182,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -4487,39 +4196,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4530,9 +4239,9 @@
        54,
        43
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4542,7 +4251,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4552,7 +4261,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4560,19 +4269,9 @@
        55,
        43
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       55,
-       45
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4582,7 +4281,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4592,7 +4291,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4600,9 +4299,9 @@
        56,
        45
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -4616,39 +4315,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4661,7 +4360,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4671,7 +4370,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4681,7 +4380,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4689,19 +4388,9 @@
        54,
        44
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       54,
-       46
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4709,9 +4398,9 @@
        55,
        44
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -4721,7 +4410,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4729,9 +4418,9 @@
        55,
        46
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -4745,39 +4434,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4790,7 +4479,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4798,9 +4487,9 @@
        52,
        47
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4810,7 +4499,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4820,17 +4509,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       53,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4840,7 +4519,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4850,7 +4529,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4860,7 +4539,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -4874,39 +4553,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -4919,7 +4598,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4929,7 +4608,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4939,17 +4618,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       53,
-       45
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4959,7 +4628,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -4967,9 +4636,9 @@
        54,
        45
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -4979,7 +4648,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -4989,7 +4658,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -5003,39 +4672,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5048,17 +4717,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       45
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5068,7 +4727,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5076,9 +4735,9 @@
        53,
        44
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5088,7 +4747,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5098,7 +4757,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5108,7 +4767,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5118,7 +4777,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -5132,39 +4791,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5177,7 +4836,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5187,7 +4846,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5197,7 +4856,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5205,19 +4864,9 @@
        52,
        49
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       51
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5225,9 +4874,9 @@
        53,
        49
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -5237,7 +4886,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5245,9 +4894,9 @@
        53,
        51
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -5261,39 +4910,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5304,9 +4953,9 @@
        51,
        48
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5316,7 +4965,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5326,7 +4975,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5334,19 +4983,9 @@
        52,
        48
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       52,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5356,7 +4995,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5366,7 +5005,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5374,9 +5013,9 @@
        53,
        50
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -5390,39 +5029,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5435,17 +5074,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5455,7 +5084,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5465,7 +5094,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5473,9 +5102,9 @@
        52,
        49
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5485,7 +5114,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5495,7 +5124,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5505,7 +5134,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -5519,39 +5148,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5564,17 +5193,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       47
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5584,7 +5203,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5592,9 +5211,9 @@
        52,
        46
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5604,7 +5223,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5614,7 +5233,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5624,7 +5243,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5634,7 +5253,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -5648,39 +5267,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5693,7 +5312,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5703,7 +5322,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5713,7 +5332,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5721,19 +5340,9 @@
        51,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       51,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5741,9 +5350,9 @@
        52,
        50
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -5753,7 +5362,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5761,9 +5370,9 @@
        52,
        52
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -5777,39 +5386,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5822,17 +5431,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       50
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5842,7 +5441,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5852,7 +5451,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5860,9 +5459,9 @@
        51,
        51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5872,7 +5471,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5882,7 +5481,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5892,7 +5491,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -5906,39 +5505,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -5951,7 +5550,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5961,7 +5560,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -5971,17 +5570,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       51,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -5991,7 +5580,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -5999,9 +5588,9 @@
        52,
        48
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6011,7 +5600,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6021,7 +5610,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -6035,39 +5624,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6080,7 +5669,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6090,17 +5679,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       49
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6108,9 +5687,9 @@
        51,
        47
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6120,7 +5699,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6130,7 +5709,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6140,7 +5719,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6150,7 +5729,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -6164,39 +5743,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6207,19 +5786,9 @@
        50,
        45
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       46
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6229,7 +5798,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6237,9 +5806,9 @@
        51,
        45
       ],
-      "job": "Sugar planter (Savannah,plow)",
+      "job": "Farmer (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      },
      {
@@ -6249,7 +5818,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6259,7 +5828,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6269,7 +5838,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6277,9 +5846,9 @@
        52,
        47
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -6293,39 +5862,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6336,9 +5905,9 @@
        49,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6348,7 +5917,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6358,7 +5927,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6366,19 +5935,9 @@
        50,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       50,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6388,7 +5947,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6398,7 +5957,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6406,9 +5965,9 @@
        51,
        52
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -6422,39 +5981,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6465,9 +6024,9 @@
        49,
        49
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6477,7 +6036,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6487,17 +6046,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       50,
-       49
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6507,7 +6056,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6517,7 +6066,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6527,7 +6076,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6537,7 +6086,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -6551,39 +6100,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6592,21 +6141,11 @@
      {
       "xy": [
        48,
-       49
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       48,
        50
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6616,7 +6155,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6626,7 +6165,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6636,7 +6175,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6646,7 +6185,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6656,7 +6195,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6666,7 +6205,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -6680,39 +6219,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6725,7 +6264,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6735,17 +6274,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       48,
-       49
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6755,7 +6284,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6765,7 +6294,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6775,7 +6304,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6785,7 +6314,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6793,9 +6322,9 @@
        50,
        49
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      }
     ]
@@ -6809,39 +6338,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6852,9 +6381,9 @@
        45,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6864,7 +6393,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -6874,7 +6403,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6882,19 +6411,9 @@
        46,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       46,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6904,7 +6423,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6914,7 +6433,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -6922,9 +6441,9 @@
        47,
        52
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -6938,39 +6457,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -6981,9 +6500,9 @@
        44,
        51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -6993,7 +6512,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7003,7 +6522,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7011,19 +6530,9 @@
        45,
        51
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       53
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7033,7 +6542,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7043,7 +6552,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7051,9 +6560,9 @@
        46,
        53
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -7067,39 +6576,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -7110,9 +6619,9 @@
        44,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7122,7 +6631,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7132,7 +6641,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7140,19 +6649,9 @@
        45,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       45,
-       52
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7162,7 +6661,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7172,7 +6671,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7180,9 +6679,9 @@
        46,
        52
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Food": 10
       }
      }
     ]
@@ -7196,39 +6695,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -7239,9 +6738,9 @@
        44,
        49
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7251,7 +6750,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7261,17 +6760,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       45,
-       49
-      ],
-      "job": "Farmer (Savannah,plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7281,7 +6770,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7291,7 +6780,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7299,9 +6788,9 @@
        46,
        50
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7309,9 +6798,9 @@
        46,
        51
       ],
-      "job": "Sugar planter (Savannah,clear+plow)",
+      "job": "Farmer (Tropical,plow)",
       "out": {
-       "Sugar": 7
+       "Food": 9
       }
      }
     ]
@@ -7325,39 +6814,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -7366,21 +6855,11 @@
      {
       "xy": [
        43,
-       48
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
-      }
-     },
-     {
-      "xy": [
-       43,
        49
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7390,7 +6869,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7400,7 +6879,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7410,7 +6889,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7420,7 +6899,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7428,9 +6907,9 @@
        45,
        49
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7440,7 +6919,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -7454,39 +6933,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -7495,21 +6974,11 @@
      {
       "xy": [
        38,
-       36
-      ],
-      "job": "Sugar planter (Savannah,plow)",
-      "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       38,
        37
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7519,7 +6988,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7527,9 +6996,9 @@
        39,
        36
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7539,7 +7008,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7549,7 +7018,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7557,9 +7026,9 @@
        40,
        37
       ],
-      "job": "Farmer (Savannah,clear+plow)",
+      "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7569,7 +7038,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      }
     ]
@@ -7583,39 +7052,39 @@
    "terrain": "Tropical",
    "coastal": false,
    "river": false,
-   "best_pop": 13,
-   "gold_per_turn": 291.0,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
    "marginal": {
     "3": 0.0,
-    "4": 39.0,
-    "5": 38.5,
-    "6": 0.0,
-    "7": 39.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
     "8": 0.0,
-    "9": 0.0,
-    "10": 38.5,
-    "11": 39.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
     "12": 0.0,
-    "13": 38.5,
+    "13": 0.0,
     "14": 0.0
    },
    "v_of_n": {
-    "2": 58.5,
-    "3": 58.5,
-    "4": 97.5,
-    "5": 136.0,
-    "6": 136.0,
-    "7": 175.0,
-    "8": 175.0,
-    "9": 175.0,
-    "10": 213.5,
-    "11": 252.5,
-    "12": 252.5,
-    "13": 291.0,
-    "14": 291.0
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
    },
    "plan": {
-    "statesmen": 2,
+    "statesmen": 1,
     "converters": {
      "Sugar": 3
     },
@@ -7626,9 +7095,9 @@
        35,
        37
       ],
-      "job": "Farmer (Savannah,plow)",
+      "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7638,7 +7107,7 @@
       ],
       "job": "Sugar planter (Savannah,plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7648,17 +7117,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
-      }
-     },
-     {
-      "xy": [
-       36,
-       37
-      ],
-      "job": "Farmer (Savannah,clear+plow)",
-      "out": {
-       "Food": 6
+       "Sugar": 11
       }
      },
      {
@@ -7668,7 +7127,7 @@
       ],
       "job": "Farmer (Savannah,clear+plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7678,7 +7137,7 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
       }
      },
      {
@@ -7688,7 +7147,7 @@
       ],
       "job": "Farmer (Savannah,plow)",
       "out": {
-       "Food": 6
+       "Food": 10
       }
      },
      {
@@ -7698,7 +7157,126 @@
       ],
       "job": "Sugar planter (Savannah,clear+plow)",
       "out": {
-       "Sugar": 7
+       "Sugar": 11
+      }
+     }
+    ]
+   }
+  },
+  {
+   "xy": [
+    54,
+    44
+   ],
+   "terrain": "Tropical",
+   "coastal": false,
+   "river": false,
+   "best_pop": 11,
+   "gold_per_turn": 922.5,
+   "marginal": {
+    "3": 0.0,
+    "4": 60.5,
+    "5": 200.0,
+    "6": 60.5,
+    "7": 200.0,
+    "8": 0.0,
+    "9": 60.5,
+    "10": 60.5,
+    "11": 200.0,
+    "12": 0.0,
+    "13": 0.0,
+    "14": 0.0
+   },
+   "v_of_n": {
+    "2": 80.5,
+    "3": 80.5,
+    "4": 141.0,
+    "5": 341.0,
+    "6": 401.5,
+    "7": 601.5,
+    "8": 601.5,
+    "9": 662.0,
+    "10": 722.5,
+    "11": 922.5,
+    "12": 922.5,
+    "13": 922.5,
+    "14": 922.5
+   },
+   "plan": {
+    "statesmen": 1,
+    "converters": {
+     "Sugar": 3
+    },
+    "gunsmiths": 0,
+    "tiles": [
+     {
+      "xy": [
+       53,
+       44
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       53,
+       45
+      ],
+      "job": "Farmer (Savannah,clear+plow)",
+      "out": {
+       "Food": 10
+      }
+     },
+     {
+      "xy": [
+       54,
+       43
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       54,
+       45
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       55,
+       43
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       55,
+       44
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
+      }
+     },
+     {
+      "xy": [
+       55,
+       45
+      ],
+      "job": "Sugar planter (Savannah,clear+plow)",
+      "out": {
+       "Sugar": 11
       }
      }
     ]
@@ -7708,11 +7286,11 @@
  "packing": {
   "16": {
    "colonies": 8,
-   "gold_per_turn": 521.0,
+   "gold_per_turn": 696.0,
    "sites": {
-    "8,2": 2,
     "19,29": 2,
     "35,38": 2,
+    "39,36": 2,
     "42,38": 2,
     "43,52": 2,
     "45,49": 2,
@@ -7721,12 +7299,10 @@
    }
   },
   "24": {
-   "colonies": 11,
-   "gold_per_turn": 751.5,
+   "colonies": 9,
+   "gold_per_turn": 1308.5,
    "sites": {
-    "8,2": 2,
-    "19,29": 4,
-    "32,36": 2,
+    "19,29": 8,
     "35,38": 2,
     "39,36": 2,
     "42,38": 2,
@@ -7738,16 +7314,14 @@
    }
   },
   "32": {
-   "colonies": 11,
-   "gold_per_turn": 951.0,
+   "colonies": 9,
+   "gold_per_turn": 1956.0,
    "sites": {
-    "8,2": 2,
-    "19,29": 12,
-    "32,36": 2,
+    "19,29": 13,
     "35,38": 2,
     "39,36": 2,
     "42,38": 2,
-    "43,52": 2,
+    "43,52": 5,
     "45,49": 2,
     "50,49": 2,
     "52,46": 2,
@@ -7755,16 +7329,14 @@
    }
   },
   "48": {
-   "colonies": 11,
-   "gold_per_turn": 1244.0,
+   "colonies": 9,
+   "gold_per_turn": 3240.0,
    "sites": {
-    "8,2": 2,
-    "19,29": 14,
-    "32,36": 2,
+    "19,29": 13,
     "35,38": 2,
     "39,36": 2,
-    "42,38": 4,
-    "43,52": 14,
+    "42,38": 10,
+    "43,52": 13,
     "45,49": 2,
     "50,49": 2,
     "52,46": 2,
@@ -7772,20 +7344,18 @@
    }
   },
   "64": {
-   "colonies": 11,
-   "gold_per_turn": 1560.0,
+   "colonies": 9,
+   "gold_per_turn": 4447.0,
    "sites": {
-    "8,2": 2,
-    "19,29": 14,
-    "32,36": 2,
+    "19,29": 13,
     "35,38": 2,
-    "39,36": 8,
-    "42,38": 14,
-    "43,52": 14,
+    "39,36": 13,
+    "42,38": 13,
+    "43,52": 13,
     "45,49": 2,
     "50,49": 2,
     "52,46": 2,
-    "55,44": 2
+    "55,44": 4
    }
   }
  }

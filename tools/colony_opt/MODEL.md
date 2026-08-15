@@ -45,9 +45,27 @@ Colony laws:
 - bells base +1 `@0xA4DB`; Newspaper x2 else Printing Press x1.5
   `@0xA587..0xA5AC`; FF op 0xF +50% `@0xA4DF`.
 - chains 1:1 (`func_008E84`), factory tier consumes 2/3 `@0x8EB1`.
-- building worker rates 3 free / 6 expert, <=3 per shop, Lumber Mill x2 —
-  **(R)** (constants sighted at `0xA0E5/0xA12C` in `func_009FFC`, tier
-  semantics not fully traced).
+- **building worker rates — BYTE-DECODED (rev 2, 2026-08-15)**, `func_009FFC`
+  full trace (was SKELETON):
+  ```
+  rate = base + sol      base: 3 free/expert, 2 servant, 1 criminal/convert @0xA0D7..A0F8
+                         sol : +1 rebel-majority latch (+0x1C bit 4),
+                               +1 rebel-unanimous latch (bit 2)             @0xA098..A0AC
+  shop tier   (chain count > 1): rate += base                               @0xA1A4
+  factory tier(chain count > 2): rate += rate/2                             @0xA1B2
+  expert match: rate *= 2   (applied LAST)                                  @0xA127/@0xA12C
+  ```
+  Jump table CS:0x1F44 (base 0x82B0): jobs 9..15 -> generic converter
+  @0xA188 (output good = job index); job 13 Carpenter -> Hammers @0xA100
+  (expert flat 6 + sol, **Lumber Mill x2 = building 0x24 @0xA11C — now B**);
+  job 16 Preacher -> Crosses @0xA132 (Cathedral 0x26 x2 @0xA14F, FF op 0x15
+  +50% @0xA15F); job 17 Statesman -> Bells @0xA1C8 (expert x2 only).
+  => expert in factory at 100% SoL: **24 out / 16 in** (18/12 below rebel
+  majority); Elder Statesman **10 bells**; Master Carpenter + Mill **16
+  hammers**. Only "<=3 workers per shop" and the carpenter 1:1 lumber debit
+  remain **(R)**.
+- tile-side SoL latches: +1/+1 added @0x9D88/@0x9D92 BEFORE the expert step;
+  for food/era columns added AGAIN after the expert +2 (@0x9DC3..0x9DCC).
 - auto-sale of surplus each turn `@0x2D6F7..0x2D785`; warehouse cap
   `(level+1)*100` (`func_008D00`) non-binding in steady state.
 
@@ -64,17 +82,21 @@ Empire layer: `max sum v_sigma(n_sigma)` s.t. `sum n <= C`, rings disjoint
 (Chebyshev >= 3) — near-concave v => greedy exchange, implemented in
 `optimize.py::pack`.
 
-## Headline results (results.json)
+## Headline results (results.json, rev 2 rates)
 
-- Best site: **(17,28) prairie+river**, pop* = 13, **346.5 gold/turn**
-  (3 farmers, 3 sugar planters on cleared Tropical->Savannah, 1 cotton planter,
-  2 distillers, 2 weavers, 2 statesmen; food 26 = 2*13 exactly).
-- Top sites cluster on clearable Tropical forest belts (sugar->rum) and one
-  Boreal furs->coats site at (8,2).
+- Best site: **(17,28) prairie+river**, pop* = 14, **1,199.5 gold/turn**
+  (5 sugar planters on cleared Tropical->Savannah, 1 cotton planter, 2 farmers,
+  3 Master Distillers = 72 rum, 1 weaver = 24 cloth, 2 statesmen = 42 bells;
+  food 28 = 2*14 exactly). Pop 15+ is MILP-infeasible self-sufficiently —
+  the 8-tile ring cannot feed more AND supply the shops; imports required.
+- One maximal factory (72 out / 48 in) needs ~6 expert planters behind it, so
+  a colony hosts ~1.5 factories; multi-chain capitals must import raw.
 - Colonist budget -> colony count: 16 -> 8 colonies (land-grab: free center
-  tiles), 24+ -> 11 colonies, then deepen toward pop ~13 each.
+  tiles), 24+ -> 9 colonies, then deepen toward pop ~13-14 each.
 - Pre-100%-SoL, the tory term is superlinear in colony size (P tiles each lose
   floor(P*...)), so K small colonies dominate one large one until bells catch up.
+- 100% SoL compounding: the +2 latch bonus lands BEFORE tier/expert multipliers,
+  so unanimity is worth +6/expert in a factory, not +2.
 
 ## Run
 

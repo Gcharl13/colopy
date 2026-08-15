@@ -93,10 +93,16 @@ def neighbors8(x, y):
             if 0 <= nx < W and 0 <= ny < H: yield nx, ny
 
 # ------------------------------------------------------- per-tile work options
+# SOL_ADJ: rebel-majority + rebel-unanimous latch bonuses (+1 each at 100% SoL),
+# applied in compute_terrain_yield @0x9D88/@0x9D92 BEFORE the expert step; for
+# era goods (food cols) it is added AGAIN after the expert +2 (@0x9DC3..0x9DCC);
+# for other goods the expert SHL doubles (base+SOL_ADJ) (@0x9DD2).
+SOL_ADJ = 2
+
 def tile_options(x, y, expert=True):
     """All (label, {good: qty}) ways one colonist can work tile (x,y).
     Improvements (clear/plow/road) treated as attainable (pioneer cost is
-    transient); expert = matching expert colonist."""
+    transient); expert = matching expert colonist; 100% SoL assumed."""
     t = fold(terr_raw(x, y))
     riv = river(x, y)
     opts = []
@@ -105,8 +111,8 @@ def tile_options(x, y, expert=True):
         base = YIELD[t][8]
         if base > 0:
             nudge = -2 if wn >= 8 else (-1 if wn >= 6 else 1)  # @0x9C3E gloss
-            yv = base + nudge
-            if expert: yv += 2                                  # era col 8: +2
+            yv = base + nudge + SOL_ADJ
+            if expert: yv += 2 + SOL_ADJ                        # era col 8 @0x9DBF/@0x9DC3
             if yv > 0: opts.append(("Fisherman", {0: yv}))
         return opts
     if t == 24: return opts                                     # Arctic: all 0
@@ -116,9 +122,9 @@ def tile_options(x, y, expert=True):
         for col in range(8):
             base = YIELD[tv][col]
             if base <= 0: continue
-            yv = base
+            yv = base + SOL_ADJ                                 # @0x9DA7
             if expert:
-                yv = yv + 2 if col == 0 else yv * 2             # @0x9DBF/@0x9DD2
+                yv = yv + 2 + SOL_ADJ if col == 0 else yv * 2   # @0x9DBF+@0x9DC3 / @0x9DD2
             # improvement bonus, NOT expert-doubled (block @0x9EC6..0x9F4C
             # runs after the expert step)
             bonus = 2 if (col == 5 or riv) else 1
@@ -154,7 +160,15 @@ def center_yield(x, y, difficulty=2, latches=True):
     return out
 
 # ------------------------------------------------------------- per-site MILP
-BASE_RATE = 6      # expert building worker (3 free / 6 expert; func_009FFC)
+# Building-worker rates: BYTE-DECODED from func_009FFC (2026-08-15 trace):
+#   rate = (base3 + SOL_ADJ) [+base3 if shop tier] [+50% if factory tier] [x2 expert]
+# Expert @ factory tier, 100% SoL: OUT_CONV = ((3+2)+3)*1.5 -> 12, x2 = 24/worker.
+# Raw input = output*2/3 at factory tier (func_008E84 @0x8EB1) -> 16/worker.
+OUT_CONV  = 24     # finished units per expert converter (factory, 100% SoL)
+IN_CONV   = 16     # raw consumed per expert converter (factory, 100% SoL)
+RATE_STAT = 10     # Elder Statesman bells: (3+2)*2  (@0xA1C8 handler)
+RATE_CARP = 16     # Master Carpenter hammers: (6+2)*2 w/ Lumber Mill (@0xA100/@0xA12C)
+IN_CARP   = 16     # lumber per carpenter (1:1, R - band write untraced)
 BELL_MULT = 2.0    # Newspaper owned (@0xA594); 1.5 = Printing Press only
 MAXPERSHOP = 3     # workers per building (manual trust R)
 
@@ -186,22 +200,22 @@ def solve_site(x, y, n, expert=True, w_hammers=0.0, sol100=True):
     prob += prod[0] >= 2 * n                                    # eaten=2*pop @0xA5F2
     if sol100:
         # SoL% = 50*bells/pop >= 100  <=>  bells >= 2*pop
-        prob += BELL_MULT * (1 + BASE_RATE * stat) >= 2 * n
+        prob += BELL_MULT * (1 + RATE_STAT * stat) >= 2 * n
     sold = {}
-    hammers = BASE_RATE * carp * 2                              # Lumber Mill x2 (R)
+    hammers = RATE_CARP * carp
     consumed = {g: 0 for g in range(8)}
-    for f, g in CHAINS.items(): consumed[g] = BASE_RATE * conv[f]
-    consumed[5] = BASE_RATE * carp
-    tools_net = BASE_RATE * conv[TOOLS] - BASE_RATE * gunsm
+    for f, g in CHAINS.items(): consumed[g] = IN_CONV * conv[f]
+    consumed[5] = IN_CARP * carp
+    tools_net = OUT_CONV * conv[TOOLS] - IN_CONV * gunsm
     prob += tools_net >= 0
     for g in (1,2,3,4,6,7,5):
         s = prod[g] - consumed[g]
         prob += s >= 0
         sold[g] = s
     obj = pulp.lpSum(PRICE[g] * sold[g] for g in (1,2,3,4,6,7,5))
-    obj += pulp.lpSum(PRICE[{RUM:9,CIGARS:10,CLOTH:11,COATS:12}[f]] * BASE_RATE * conv[f]
+    obj += pulp.lpSum(PRICE[{RUM:9,CIGARS:10,CLOTH:11,COATS:12}[f]] * OUT_CONV * conv[f]
                       for f in (RUM,CIGARS,CLOTH,COATS))
-    obj += PRICE[TOOLS] * tools_net + PRICE[MUSKETS] * BASE_RATE * gunsm
+    obj += PRICE[TOOLS] * tools_net + PRICE[MUSKETS] * OUT_CONV * gunsm
     obj += w_hammers * hammers
     prob += obj
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
@@ -239,7 +253,7 @@ def main():
     cands.sort(reverse=True)
     print(f"{len(cands)} candidate land sites; solving MILPs for top 60 ...")
     TOP = 60
-    NRANGE = range(2, 15)
+    NRANGE = range(2, 19)
     results = {}
     for ub, x, y in cands[:TOP]:
         vlist = {}
