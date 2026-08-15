@@ -1,0 +1,2504 @@
+<title>Colony Calculus</title>
+<style>
+  :root{
+    --paper:#FAF8F1; --card:#F2EFE4; --panel:#EDE9DB;
+    --ink:#242820; --ink2:#5D6150; --ink3:#8B8F7C;
+    --rule:#DBD7C5; --accent:#1D6A50; --amber:#9A6519;
+    --chip:#E7E3D2; --mono-bg:#EFECDE;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#181B15; --card:#20241C; --panel:#252921;
+      --ink:#E8E6D8; --ink2:#A9AC98; --ink3:#7C806C;
+      --rule:#343829; --accent:#54B48D; --amber:#D79A45;
+      --chip:#2C3026; --mono-bg:#232720;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#181B15; --card:#20241C; --panel:#252921;
+    --ink:#E8E6D8; --ink2:#A9AC98; --ink3:#7C806C;
+    --rule:#343829; --accent:#54B48D; --amber:#D79A45;
+    --chip:#2C3026; --mono-bg:#232720;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    line-height:1.55; margin:0; padding:0 1.25rem 5rem;
+    font-size:1.02rem;
+  }
+  .wrap{max-width:46rem; margin:0 auto;}
+  .wide{max-width:58rem; margin:2rem auto;}
+  code,.mono{font-family:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace;}
+  header{padding:3.2rem 0 1rem; border-bottom:2px solid var(--ink); margin-bottom:2rem;}
+  .eyebrow{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.72rem;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin:0 0 .9rem;}
+  h1{font-size:2.6rem; line-height:1.05; margin:0 0 .8rem; font-weight:600; text-wrap:balance;}
+  .dek{font-size:1.08rem; color:var(--ink2); margin:0 0 1.4rem; max-width:40rem;}
+  h2{font-size:1.45rem; margin:2.8rem 0 .6rem; font-weight:600; text-wrap:balance;}
+  h2 .no{color:var(--accent); font-family:ui-monospace,Menlo,monospace; font-size:1.05rem; margin-right:.55rem;}
+  h3{font-size:1.05rem; margin:1.8rem 0 .4rem;}
+  p{margin:.65rem 0;}
+  .cite{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.72em;
+    background:var(--chip); color:var(--ink2); border-radius:4px; padding:.1em .38em;
+    white-space:nowrap;}
+  .formula{background:var(--mono-bg); border-left:3px solid var(--accent);
+    border-radius:0 6px 6px 0; padding:.9rem 1.1rem; margin:1rem 0;
+    font-family:ui-monospace,"Cascadia Code",Menlo,Consolas,monospace;
+    font-size:.84rem; line-height:1.7; overflow-x:auto; white-space:pre;}
+  .formula b{color:var(--accent); font-weight:600;}
+  .formula .cm{color:var(--ink3);}
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));
+    gap:.8rem; margin:1.6rem 0;}
+  .tile{background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:.9rem 1rem;}
+  .tile .k{font-family:ui-monospace,Menlo,monospace; font-size:.68rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink3); margin-bottom:.35rem;}
+  .tile .v{font-size:1.3rem; font-weight:600; font-variant-numeric:tabular-nums;}
+  .tile .v small{font-size:.8rem; font-weight:400; color:var(--ink2);}
+  table{border-collapse:collapse; font-size:.85rem; width:100%; font-variant-numeric:tabular-nums;}
+  th{text-align:left; font-family:ui-monospace,Menlo,monospace; font-size:.68rem;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink3);
+    border-bottom:1px solid var(--ink2); padding:.35rem .6rem .35rem 0; font-weight:600;}
+  td{border-bottom:1px solid var(--rule); padding:.34rem .6rem .34rem 0; vertical-align:top;}
+  td.n,th.n{text-align:right;}
+  .tblwrap{overflow-x:auto; margin:1rem 0;}
+  .card{background:var(--card); border:1px solid var(--rule); border-radius:10px;
+    padding:1.2rem 1.4rem; margin:1.4rem 0;}
+  .caption{font-size:.8rem; color:var(--ink2); margin:.5rem 0 0;}
+  .legend{display:flex; flex-wrap:wrap; gap:.4rem .9rem; font-size:.78rem; color:var(--ink2);
+    margin:.7rem 0 0; align-items:center;}
+  .sw{display:inline-block; width:.85em; height:.85em; border-radius:2px; margin-right:.35em;
+    vertical-align:-.08em;}
+  .mapgrid{display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start;}
+  .note{border-left:3px solid var(--amber); padding:.2rem 0 .2rem 1rem; color:var(--ink2);
+    margin:1.2rem 0; font-size:.95rem;}
+  footer{margin-top:4rem; padding-top:1rem; border-top:1px solid var(--rule);
+    font-size:.8rem; color:var(--ink3);}
+  a{color:var(--accent);}
+  /* ---- map (committed single-look panel; explicit colors) ---- */
+  .mappanel{background:#E9E2CE; border:1px solid var(--rule); border-radius:10px; padding:1rem; overflow-x:auto;}
+  svg.map{display:block; margin:0 auto; max-width:100%; height:auto;}
+  .ocean{fill:#8FB3C8;} .sealane{fill:#A6C6D7;} .arctic{fill:#EFEFE6;}
+  .tundra{fill:#D9D3BE;} .desert{fill:#E2CC99;} .plains{fill:#C4B77B;}
+  .prairie{fill:#CCC084;} .grass{fill:#A3B673;} .savanna{fill:#B7AB60;}
+  .marsh{fill:#93A385;} .swamp{fill:#7F997A;}
+  .bforest{fill:#6E8A6B;} .sforest{fill:#99A16C;} .mforest{fill:#5F8261;}
+  .cforest{fill:#567A5E;} .tforest{fill:#4E7D5C;} .wforest{fill:#5F7E6B;} .rforest{fill:#47725A;}
+  .riv{stroke:#4E7FAE; stroke-width:1.4; paint-order:stroke;}
+  .site .dot{fill:#823C22; stroke:#F6F1DF; stroke-width:1.2;}
+  .site .rank{fill:#F6F1DF; font:600 6.5px ui-monospace,Menlo,monospace; text-anchor:middle;}
+  .site .ringbox{fill:none; stroke:#823C22; stroke-width:.8; opacity:.55;}
+  /* network grid */
+  .netmap .gridl line{stroke:rgba(40,30,10,.10); stroke-width:.6;}
+  .road{fill:none; stroke:#7A4A26; stroke-width:3; stroke-linecap:round;
+    stroke-linejoin:round; stroke-dasharray:7 3.5;}
+  .ringbox2{fill:none; stroke:#823C22; stroke-width:1; opacity:.4;}
+  .dot.hubdot{fill:#5A2D18;}
+  .searoute{fill:none; stroke:#3E6E96; stroke-width:2.5; stroke-dasharray:2 5; stroke-linecap:round;}
+  /* configurator */
+  .cfg-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr)); gap:1.4rem;}
+  .cfg-col h3{margin:.9rem 0 .45rem; font-size:.95rem;}
+  .cfg-col h3:first-child{margin-top:0;}
+  .cfg-hint{font-size:.72rem; color:var(--ink3); font-weight:400;}
+  .cfg-row{display:flex; align-items:center; gap:.5rem; margin:.3rem 0; font-size:.85rem; flex-wrap:wrap;}
+  .cfg-row > label:first-child{min-width:6.5rem; color:var(--ink2);}
+  select,input[type=number]{background:var(--paper); color:var(--ink); border:1px solid var(--rule);
+    border-radius:5px; padding:.22rem .35rem; font:inherit; font-size:.83rem;}
+  input[type=checkbox]{accent-color:var(--accent);}
+  .cfg-btn{background:var(--chip); color:var(--ink); border:1px solid var(--rule); border-radius:6px;
+    padding:.3rem .6rem; font:inherit; font-size:.78rem; cursor:pointer; margin:.15rem .2rem .15rem 0;}
+  .cfg-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .cfg-btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .tile-row,.ind-row{display:flex; align-items:center; gap:.4rem; margin:.25rem 0; font-size:.82rem; flex-wrap:wrap;}
+  .tile-row select{max-width:15rem;}
+  .tile-row .del{background:none; border:none; color:var(--ink3); cursor:pointer; font-size:1rem; padding:0 .2rem;}
+  .tile-row .del:hover{color:var(--amber);}
+  .ind-row label{min-width:7.5rem; color:var(--ink2);}
+  .cfg-imp{display:grid; grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr)); gap:.3rem .8rem; font-size:.8rem;}
+  .cfg-imp label{display:flex; align-items:center; gap:.35rem; color:var(--ink2);}
+  .cfg-imp input{width:4em;}
+  .chip{display:inline-block; border-radius:999px; padding:.18rem .65rem; font-size:.78rem;
+    font-family:ui-monospace,Menlo,monospace; margin:0 .3rem .3rem 0; border:1px solid var(--rule);}
+  .chip.ok{background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); border-color:var(--accent);}
+  .chip.bad{background:color-mix(in srgb, #B0432E 16%, transparent); color:#B0432E; border-color:#B0432E;}
+  .chip.mid{background:color-mix(in srgb, var(--amber) 16%, transparent); color:var(--amber); border-color:var(--amber);}
+  #cfg-warn{font-size:.8rem; color:var(--amber); margin-top:.5rem;}
+  #cfg-out td,#cfg-out th{padding:.24rem .5rem .24rem 0; font-size:.82rem;}
+  .elabel rect{fill:#F6F1DF; opacity:.94; stroke:#823C22; stroke-width:.6;}
+  .elabel text{font:600 8.5px ui-monospace,Menlo,monospace; text-anchor:middle; fill:#5A2D18;}
+  /* ---- chart ---- */
+  .viz{position:relative;}
+  .viz svg{display:block; width:100%; height:auto;}
+  .gridline{stroke:var(--rule); stroke-width:1;}
+  .axis{stroke:var(--ink3); stroke-width:1;}
+  .axlab{fill:var(--ink2); font:0.62rem ui-monospace,Menlo,monospace;}
+  .serieslab{font:600 .68rem ui-monospace,Menlo,monospace;}
+  .tooltip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper);
+    font:.72rem ui-monospace,Menlo,monospace; padding:.3rem .5rem; border-radius:5px;
+    opacity:0; transition:opacity .12s; white-space:nowrap;}
+  @media (prefers-reduced-motion: reduce){ .tooltip{transition:none;} }
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">colopy &middot; separate exercise &middot; AMER2.MP &middot; 1994-08 / 2026-08</p>
+  <h1>Colony Calculus</h1>
+  <p class="dek">Colony design in Colonization is a well-posed mathematics problem in
+  <em>physical flows</em> — units of sugar, rum, muskets, bells and food per turn. Every
+  coefficient below is taken from the reconstructed engine — the terrain tables the game
+  ships in <span class="mono">NAMES.TXT</span> and the arithmetic byte-traced in
+  <span class="mono">VICEROY.EXE</span>. From those rates this page derives a set of
+  <b>colony configurations</b>, each maximizing one flow, then composes them into a
+  supply network and instantiates them on the real <span class="mono">AMER2.MP</span>
+  tile data. No market prices appear anywhere: production only.</p>
+</header>
+
+<div class="tiles">
+  <div class="tile"><div class="k">food upkeep</div>
+    <div class="v">2 &times; pop <small>per turn</small></div>
+    <div class="caption"><span class="cite">@0xA5F2</span> shl of population byte</div></div>
+  <div class="tile"><div class="k">sons of liberty, steady state</div>
+    <div class="v">SoL% = 50&middot;bells/P</div>
+    <div class="caption">derived from the EMA at <span class="cite">@0x2DA1C..0x2DAD8</span></div></div>
+  <div class="tile"><div class="k">factory crew, full stack</div>
+    <div class="v">72 out / 48 in <small>per turn</small></div>
+    <div class="caption">3 experts &middot; factory tier &middot; 100% SoL (&sect;2)</div></div>
+</div>
+
+<p>Two ground rules for reading this. First, <em>trust labels</em>: values marked with a
+byte offset like <span class="cite">@0x9DD2</span> are read out of the executable;
+values marked <b>(R)</b> come from the manual or the classic understanding of the game
+and are used only where the trace is incomplete. Second, prime resources
+(Beaver, Prime Sugar&hellip;) turn out <em>not</em> to be stored in the map file — the two
+trailer layers of <span class="mono">AMER2.MP</span> decode as region ids, so placement is
+runtime logic that is still <b>TBD</b>. The model therefore scores sites without resources;
+the byte-verified bonus table in &sect;1 tells you exactly how much a found resource adds.</p>
+
+<h2><span class="no">1</span>The tile production function</h2>
+
+<p>One colonist working one tile produces one good. The engine
+(<span class="mono">compute_terrain_yield</span>, file <span class="cite">0x9B9C..0x9FFB</span>)
+computes the amount as a short pipeline. Writing <b>&tau;</b> for the tile's terrain id,
+<b>p</b> for the profession column, <b>e</b>&nbsp;&isin;&nbsp;{0,1} for &ldquo;the worker is the
+matching expert,&rdquo; and <b>I</b> for the improvement state (cleared / plowed / road):</p>
+
+<div class="formula">y(&tau;,p,I,e) = <b>gate</b>( (( T[&tau;][p] + nudge + tory ) <b>&#8853;</b> expert) + R(r,p)&middot;(1+e) + improv(I,p) )
+<span class="cm">
+  T[&tau;][p]   base table, NAMES.TXT $TERRAIN, loaded at DGROUP:0x2F7B      @0x9C1E
+  ids 16..23 fold to 8..15 via (id&amp;7)|8                                  @0x6225
+  nudge     water column only: +1, or &minus;1 / &minus;2 with 6 / 8 water neighbours  @0x9C3E
+  tory      &minus;&lfloor; P&middot;(1&minus;SoL)/(10&minus;difficulty) &rfloor;, PLUS +1 at rebel majority     @0x9D49..0x9D98
+            and +1 at 100% (added again after the expert +2 on food cols)     @0x9D88/@0x9DC3
+  &#8853; expert   food columns (farmer, fisherman): +2   all others: &times;2        @0x9DBF / @0x9DD2
+  R(r,p)    resource bonus table (below); doubled for the expert          @0x9AAA / @0x9E0A
+  improv    plow &rarr; crop columns, road &rarr; ore/fur/timber columns;
+            bonus 1, or 2 on the lumber column or a river tile            @0x9EC6..0x9F4C
+  gate      manufactured goods need their building; clamp &ge; 0             @0x9F4F..0x9F83
+</span></div>
+
+<p>The base table — the game's own numbers, verbatim. Rows are terrain, columns are the
+nine outdoor professions:</p>
+
+<div class="tblwrap"><table>
+<tr><th>terrain (id)</th><th class="n">food</th><th class="n">sugar</th><th class="n">tobac.</th><th class="n">cotton</th><th class="n">furs</th><th class="n">lumber</th><th class="n">ore</th><th class="n">silver</th><th class="n">fish</th></tr>
+<tr><td>Tundra (0)</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Desert (1)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Plains (2)</td><td class="n">4</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Prairie (3)</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">3</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Grassland (4)</td><td class="n">2</td><td class="n">&middot;</td><td class="n">3</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Savannah (5)</td><td class="n">3</td><td class="n">3</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Marsh (6)</td><td class="n">2</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Swamp (7)</td><td class="n">2</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Boreal (8)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">3</td><td class="n">2</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Scrub (9)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">2</td><td class="n">1</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Mixed (10)</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">3</td><td class="n">3</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Broadleaf (11)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">2</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Conifer (12)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">1</td><td class="n">&middot;</td><td class="n">2</td><td class="n">3</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Tropical (13)</td><td class="n">2</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">2</td><td class="n">2</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Wetland (14)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">1</td><td class="n">&middot;</td><td class="n">2</td><td class="n">2</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Rain (15)</td><td class="n">1</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">1</td><td class="n">2</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Arctic (24)</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+<tr><td>Ocean (25)</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">3</td></tr>
+<tr><td>Sea Lane (26)</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">3</td></tr>
+<tr><td>Mountains (27)</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">4</td><td class="n">1</td><td class="n">&middot;</td></tr>
+<tr><td>Hills (28)</td><td class="n">1</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">&middot;</td><td class="n">4</td><td class="n">&middot;</td><td class="n">&middot;</td></tr>
+</table></div>
+
+<p>Clearing a forest (id&nbsp;&minus;8, <span class="cite">@0x040896</span>) swaps a tile from
+the lower block to its base row: a Tropical forest (2 sugar with plow&hellip;) becomes
+Savannah (3 base sugar). Plowing sets tile bit <span class="mono">0x40</span>, a road sets
+<span class="mono">0x08</span> <span class="cite">@0x04089F/@0x040AEC</span>; each action costs
+a pioneer 20 tools <span class="cite">@0x4060F</span>.</p>
+
+<p>The resource bonus switch, decoded instruction-by-instruction from
+<span class="mono">func_009AAA</span> — to my knowledge the first full listing of it in this
+project:</p>
+
+<div class="tblwrap"><table>
+<tr><th>resource</th><th>applies to</th><th>effect</th><th>evidence</th></tr>
+<tr><td>Oasis</td><td>farmer</td><td class="n">+2 (+4 expert)</td><td><span class="cite">@0x9AC4</span></td></tr>
+<tr><td>Wheat</td><td>farmer</td><td class="n">+2 (+4)</td><td><span class="cite">@0x9AD4</span></td></tr>
+<tr><td>Game</td><td>farmer / trapper</td><td class="n">+2 (+4) each</td><td><span class="cite">@0x9AB3/@0x9AE4</span></td></tr>
+<tr><td>Beaver</td><td>trapper</td><td class="n">+3 (+6)</td><td><span class="cite">@0x9AF4</span></td></tr>
+<tr><td>Prime Sugar / Tobacco / Cotton</td><td>matching planter</td><td class="n">base &times;2</td><td><span class="cite">@0x9B04..0x9B36</span> (&minus;1 marker &rarr; SHL <span class="cite">@0x9DFE</span>)</td></tr>
+<tr><td>Prime Timber</td><td>lumberjack</td><td class="n">+2 (+4)</td><td><span class="cite">@0x9B37</span></td></tr>
+<tr><td>Minerals</td><td>ore / silver</td><td class="n">+3 (+6) / +1 (+2)</td><td><span class="cite">@0x9B47/@0x9B67</span></td></tr>
+<tr><td>Ore Deposit</td><td>ore</td><td class="n">+2 (+4)</td><td><span class="cite">@0x9B57</span></td></tr>
+<tr><td>Silver Deposit</td><td>silver</td><td class="n">+2 (+4)</td><td><span class="cite">@0x9B76</span></td></tr>
+<tr><td>Fishery</td><td>fisherman</td><td class="n">+3 (+6)</td><td><span class="cite">@0x9B86</span></td></tr>
+</table></div>
+
+<p>The colony's own tile works itself, free. Its food output is a terrain
+<em>class</em>, not the farmer column: 3 for open fertile ground, 2 for forest and rough,
+1 for desert types, +1 for a river, +2 at the two lowest difficulties, +1&nbsp;+1 when the
+rebel-majority and rebel-unanimous latches are set
+<span class="cite">@0xA247..0xA342</span> — plus the best non-food commodity the terrain
+offers, scanned with lumber excluded <span class="cite">@0xA343..0xA3D4</span>.</p>
+
+<h2><span class="no">2</span>Colony balance laws</h2>
+
+<p><b>Food.</b> Each turn the colony eats exactly <span class="mono">2&middot;P</span>
+<span class="cite">@0xA5F2</span>. Sustained operation therefore needs
+<span class="mono">F(x) &ge; 2P</span>; anything above that accumulates toward the next
+colonist.</p>
+
+<p><b>Liberty bells.</b> Sons-of-Liberty membership is a ratio of two exponentially
+decayed accumulators, updated every turn <span class="cite">@0x2DA1C..0x2DAD8</span>:</p>
+
+<div class="formula">B &larr; B &minus; B/64 + 2P       <span class="cm">divisor: decay 1/64, inflow 2 per colonist</span>
+A &larr; A &minus; A/64 + b        <span class="cm">dividend: decay 1/64, inflow b = bells made this turn</span>
+SoL = A/B
+<span class="cm">fixed points:  B* = 128&middot;P    A* = 64&middot;b    &rArr;</span>
+<b>SoL% = 50 &middot; b / P</b>        <span class="cm">&rArr; 100% needs bells &ge; 2 per colonist per turn</span></div>
+
+<p><b>Building workers</b> — the per-colonist producer <span class="mono">func_009FFC</span>,
+previously a SKELETON in the function inventory, decodes fully (traced 2026-08-15,
+rev&nbsp;2 of this page):</p>
+
+<div class="formula">rate = base + sol            <span class="cm">base: 3 free/expert &middot; 2 servant &middot; 1 criminal/convert   @0xA0D7..A0F8</span>
+                             <span class="cm">sol: +1 rebel-majority latch, +1 rebel-unanimous latch   @0xA098..A0AC</span>
+if shop tier:    rate += base            <span class="cm">chain count &gt; 1   @0xA1A4</span>
+if factory tier: rate += rate/2          <span class="cm">chain count &gt; 2   @0xA1B2</span>
+if expert:       rate &times;= 2               <span class="cm">doubling comes LAST   @0xA127/@0xA12C</span>
+raw input = output &times; 2/3 at factory tier, else 1:1        <span class="cm">func_008E84 @0x8EB1</span></div>
+
+<p>So one expert in a factory at 100% SoL produces <b>24 finished from 16 raw</b>
+(18 from 12 below rebel majority), and a full three-expert factory moves
+<b>72 out / 48 in</b> per turn. The special producers use the same skeleton:
+an Elder Statesman makes (3+2)&times;2 = <b>10 bells</b>; a Master Carpenter makes
+(6+2)&times;2 = <b>16 hammers</b> with a Lumber Mill (the mill &times;2 is building id
+<span class="mono">0x24</span> tested at <span class="cite">@0xA11C</span> — now
+byte-verified, no longer folklore); a Firebrand Preacher under a Cathedral makes 16
+crosses. Colony bell total is then <span class="mono">1 + 10s</span>
+(base +1 <span class="cite">@0xA4DB</span>) &times; Newspaper 2 or Printing Press 1.5
+<span class="cite">@0xA587..0xA5AC</span>, Founding-Father op&nbsp;0xF +50%
+<span class="cite">@0xA4DF</span>. The tory production penalty in &sect;1 scales with
+<em>population</em> — a big colony below 100% SoL taxes <em>every worked tile</em>, which
+is the mathematical reason under-belled sprawl is expensive.</p>
+
+<p><b>Manufacturing chains</b> (<span class="mono">func_008E84</span>): Sugar&rarr;Rum,
+Tobacco&rarr;Cigars, Cotton&rarr;Cloth, Furs&rarr;Coats, Ore&rarr;Tools, and Tools&rarr;Muskets
+via the Arsenal chain. Output is capped by the workers' rate above; when raw runs short,
+output backscales to 1.5&times;raw at factory tier <span class="cite">@0x8EF3..0x8EFA</span>.
+Surplus goods auto-sell in Europe each turn <span class="cite">@0x2D6F7..0x2D785</span>,
+so steady-state value is a flow, not a stockpile (warehouse cap
+<span class="mono">(level+1)&middot;100</span>, <span class="cite">func_008D00</span>,
+never binds a balanced colony).</p>
+
+<h2><span class="no">3</span>The configurations</h2>
+
+<p>A configuration is a colony template that maximizes <em>one flow</em>, found by
+solving, per template, the integer program</p>
+
+<div class="formula"><b>maximize</b>     flow[target]                    <span class="cm">a single physical flow — no prices</span>
+<b>subject to</b>   &Sigma;&#8342; x[j,k] &le; 1                <span class="cm">one worker per ring tile</span>
+             &Sigma; x + s + c + &Sigma; m = P        <span class="cm">headcount</span>
+             F(x) + F&#8320; &ge; 2P + imports      <span class="cm">food law (&sect;2); importer roles relax this</span>
+             2&middot;(1 + 10s) &ge; 2P             <span class="cm">own bells &ge; 2P — SoL is per-colony, never imported</span>
+             out[g] = 24&middot;m[g],  in[g] = 16&middot;m[g]   <span class="cm">factory crews (&sect;2); &le;3 workers per shop <b>(R)</b></span></div>
+
+<p>Standing assumptions: matching experts, 100% SoL, improvements complete, Newspaper
+in every colony (its <span class="mono">min_colony</span> is 4). Nominal tile rates from
+&sect;1 at these settings: planter 11/tile (12 on river), farmer 10&ndash;11, ore miner
+9&ndash;10, lumberjack 12. The catalog, in flows per turn:</p>
+
+<div class="tblwrap"><table>
+<tr><th>configuration</th><th>maximizes</th><th class="n">pop</th><th>composition</th><th>imports</th><th>exports</th></tr>
+<tr><td><b>Planter outpost</b></td><td>one raw good</td><td class="n">9</td><td>6 planters &middot; 2 farmers &middot; 1 statesman</td><td>—</td><td><b>66 raw</b> (54 ore variant) + 7 food</td></tr>
+<tr><td><b>Granary</b></td><td>food</td><td class="n">9</td><td>8 farmers &middot; 1 statesman</td><td>—</td><td><b>+76 food</b></td></tr>
+<tr><td><b>Factory capital</b></td><td>finished sellables</td><td class="n">14</td><td>3&times;4 masters (Rum&middot;Cigar&middot;Cloth&middot;Coats) &middot; 2 statesmen</td><td>192 raw + 28 food</td><td><b>72 rum &middot; 72 cigars &middot; 72 cloth &middot; 72 coats</b></td></tr>
+<tr><td><b>Armory town</b></td><td>muskets</td><td class="n">8</td><td>3 blacksmiths &middot; 3 gunsmiths &middot; 2 statesmen</td><td>48 ore + 16 food</td><td><b>72 muskets</b> + 24 tools</td></tr>
+<tr><td><b>Horse ranch</b></td><td>horses</td><td class="n">9</td><td>granary + Stable + Warehouse Exp., herd held ~299</td><td>—</td><td><b>+24 horses</b> + 52 food</td></tr>
+<tr><td><b>Hammer phase</b></td><td>hammers (local!)</td><td class="n">10</td><td>4 lumberjacks &middot; 3 carpenters &middot; 2 farmers &middot; 1 statesman</td><td>—</td><td><b>48 hammers</b> — hammers never travel; this is a phase every colony passes through, not a network node</td></tr>
+<tr><td><b>Statehouse</b></td><td>bells (national)</td><td class="n">4</td><td>3 Elder Statesmen &middot; 1 farmer</td><td>—</td><td><b>62 bells</b> to the Congress pool (92 with the +50% FF)</td></tr>
+<tr><td><b>Mission</b></td><td>crosses (national)</td><td class="n">5</td><td>3 Firebrands &middot; 1 statesman &middot; 1 farmer &middot; Cathedral</td><td>—</td><td><b>48 crosses</b> (72 with the +50% FF) &rarr; immigration</td></tr>
+</table></div>
+
+<p>Three structural facts shape the catalog. <b>Bells are local:</b> the SoL divisor
+inflow is <span class="mono">2&middot;pop</span> <em>of that colony</em>
+<span class="cite">@0x2DA64</span>, so every configuration carries its own statesman —
+there is no exporting liberty. <b>Hammers are local:</b> they accrue to the colony's
+own build bank <span class="cite">@0x2E50F</span>; the hammer phase is temporal, not
+spatial. <b>Horses are stock-driven:</b> growth is
+<span class="mono">2&middot;&lceil;herd/25&rceil;</span> with a Stable, capped by half the
+food surplus and warehouse room <span class="cite">@0xA5B0..0xA63F</span>, so a ranch's
+output depends on the herd it <em>keeps</em>, not on workers.</p>
+
+<h2><span class="no">4</span>The network</h2>
+
+<p>Configurations compose by conservation: at every colony,
+<span class="mono">production + inflow = consumption + outflow</span>, with vehicle
+capacity on each edge. Wiring one of each supplier to the two importer configurations
+gives the standard cluster — every number is a physical flow per turn:</p>
+
+<div class="tblwrap"><table>
+<tr><th>node</th><th class="n">pop</th><th class="n">consumes /turn</th><th class="n">produces /turn</th></tr>
+<tr><td>Sugar outpost</td><td class="n">9</td><td class="n">—</td><td class="n">66 sugar, +7 food</td></tr>
+<tr><td>Tobacco outpost</td><td class="n">9</td><td class="n">—</td><td class="n">66 tobacco, +7 food</td></tr>
+<tr><td>Cotton outpost</td><td class="n">9</td><td class="n">—</td><td class="n">66 cotton, +7 food</td></tr>
+<tr><td>Furs outpost</td><td class="n">9</td><td class="n">—</td><td class="n">66 furs, +7 food</td></tr>
+<tr><td>Ore outpost</td><td class="n">9</td><td class="n">—</td><td class="n">54 ore, +7 food</td></tr>
+<tr><td>Horse ranch</td><td class="n">9</td><td class="n">(24 food &rarr; herd)</td><td class="n">24 horses, +52 food</td></tr>
+<tr><td>Factory capital</td><td class="n">14</td><td class="n">4&times;48 raw, 28 food</td><td class="n">72 rum, 72 cigars, 72 cloth, 72 coats</td></tr>
+<tr><td>Armory town</td><td class="n">8</td><td class="n">48 ore, 16 food</td><td class="n">72 muskets, 24 tools</td></tr>
+<tr><td><b>cluster total</b></td><td class="n"><b>76</b></td><td class="n">&nbsp;</td><td class="n"><b>288 finished + 72 muskets + 24 tools + 24 horses</b>, surplus 4&times;18 raw + 6 ore + 43 food</td></tr>
+</table></div>
+
+<p>The food books balance internally: suppliers throw off +87, importers draw 44 —
+no dedicated granary needed until the herd count or immigration grows. Per colonist,
+the cluster yields <b>&asymp;3.8 finished sellable units per turn</b> plus the war flow.</p>
+
+<p><b>Revolution arithmetic.</b> Equipping a unit costs 50 muskets; mounting it costs
+50 horses <b>(R)</b>. One cluster arms <b>1.4 regiments/turn</b> but mounts only
+<b>0.48/turn</b> — the Stable's stock-growth law makes <em>horses, not muskets, the
+military bottleneck</em>. Each additional ranch (+24/turn) closes the gap; three ranches
+match the armory's musket flow for dragoon production.</p>
+
+<p><b>Movement arithmetic.</b> Terrain movement costs are game data (NAMES
+<span class="mono">$TERRAIN</span> column: open land 1&nbsp;MP, forest/marsh 2&ndash;3);
+a wagon train has 2&nbsp;MP and a road cuts any tile to &#8531;&nbsp;MP <b>(R)</b> — so a
+roaded wagon covers <b>6 tiles/turn</b> (diagonals count the same on the 8-way grid),
+against 1&ndash;2 tiles/turn cross-country. Roads triple-to-sextuple every edge's
+throughput, which is why the network below is drawn along its road spine.</p>
+
+<p><b>The wagon budget is the binding constraint.</b> Three rules govern the fleet
+(player-confirmed; not yet byte-traced): you may keep at most
+<b>colonies&nbsp;&minus;&nbsp;1 wagon trains</b>, each carries <b>2 holds of a single good,
+100 units each</b>, and its round-trip throughput is
+<span class="mono">200 &divide; (2&middot;one-way turns)</span> — 100/turn on a 1-turn leg,
+50/turn on a 2-turn leg. Three design consequences follow. <em>Ship the need, not the
+harvest:</em> a factory eats 48/turn, so a spoke sends 48 and banks its 18-unit surplus
+locally — hauling the full 66 would double the fleet for nothing. <em>Put the hub on the
+coast:</em> ships are outside the wagon cap, so the export leg must never spend wagons —
+a pure-importer hub works zero land tiles, which also lets it legally sit adjacent to a
+spoke's ring without stealing tiles. <em>Every new colony funds its own logistics:</em>
++1 colony = +1 wagon, so expansion and transport capacity grow in lock-step.</p>
+</div>
+
+<div class="wide">
+<div class="card">
+<h3 style="margin-top:.2rem;">The northern cluster on the grid — 6 colonies, 5 wagons (= the cap, exactly)</h3>
+<div class="mapgrid">
+<div class="mappanel" style="flex:1 1 22rem;">
+<svg class="map netmap" viewBox="0 0 408 576" role="img" aria-label="Northern cluster road network on the AMER2 grid">
+<rect x="0" y="0" width="24" height="24" class="ocean"/>
+<rect x="24" y="0" width="24" height="24" class="prairie"/>
+<rect x="48" y="0" width="24" height="24" class="prairie"/>
+<rect x="72" y="0" width="24" height="24" class="prairie"/>
+<rect x="96" y="0" width="24" height="24" class="prairie"/>
+<rect x="120" y="0" width="24" height="24" class="prairie"/>
+<rect x="144" y="0" width="24" height="24" class="prairie"/>
+<rect x="168" y="0" width="24" height="24" class="prairie"/>
+<rect x="192" y="0" width="24" height="24" class="prairie"/>
+<rect x="216" y="0" width="24" height="24" class="prairie"/>
+<rect x="240" y="0" width="24" height="24" class="prairie"/>
+<rect x="264" y="0" width="24" height="24" class="prairie"/>
+<rect x="288" y="0" width="24" height="24" class="prairie"/>
+<rect x="312" y="0" width="24" height="24" class="prairie"/>
+<rect x="336" y="0" width="24" height="24" class="prairie"/>
+<rect x="360" y="0" width="24" height="24" class="prairie"/>
+<rect x="384" y="0" width="24" height="24" class="prairie"/>
+<rect x="0" y="24" width="24" height="24" class="ocean"/>
+<rect x="24" y="24" width="24" height="24" class="bforest riv"/>
+<rect x="48" y="24" width="24" height="24" class="bforest"/>
+<rect x="72" y="24" width="24" height="24" class="bforest"/>
+<rect x="96" y="24" width="24" height="24" class="bforest"/>
+<rect x="120" y="24" width="24" height="24" class="bforest riv"/>
+<rect x="144" y="24" width="24" height="24" class="bforest riv"/>
+<rect x="168" y="24" width="24" height="24" class="bforest"/>
+<rect x="192" y="24" width="24" height="24" class="ocean"/>
+<rect x="216" y="24" width="24" height="24" class="tundra"/>
+<rect x="240" y="24" width="24" height="24" class="bforest"/>
+<rect x="264" y="24" width="24" height="24" class="tundra"/>
+<rect x="288" y="24" width="24" height="24" class="bforest"/>
+<rect x="312" y="24" width="24" height="24" class="tundra"/>
+<rect x="336" y="24" width="24" height="24" class="tundra"/>
+<rect x="360" y="24" width="24" height="24" class="tundra"/>
+<rect x="384" y="24" width="24" height="24" class="tundra"/>
+<rect x="0" y="48" width="24" height="24" class="ocean"/>
+<rect x="24" y="48" width="24" height="24" class="bforest"/>
+<rect x="48" y="48" width="24" height="24" class="bforest riv"/>
+<rect x="72" y="48" width="24" height="24" class="bforest"/>
+<rect x="96" y="48" width="24" height="24" class="bforest riv"/>
+<rect x="120" y="48" width="24" height="24" class="bforest riv"/>
+<rect x="144" y="48" width="24" height="24" class="bforest"/>
+<rect x="168" y="48" width="24" height="24" class="bforest"/>
+<rect x="192" y="48" width="24" height="24" class="ocean"/>
+<rect x="216" y="48" width="24" height="24" class="ocean"/>
+<rect x="240" y="48" width="24" height="24" class="ocean"/>
+<rect x="264" y="48" width="24" height="24" class="bforest"/>
+<rect x="288" y="48" width="24" height="24" class="bforest"/>
+<rect x="312" y="48" width="24" height="24" class="bforest"/>
+<rect x="336" y="48" width="24" height="24" class="bforest"/>
+<rect x="360" y="48" width="24" height="24" class="bforest"/>
+<rect x="384" y="48" width="24" height="24" class="bforest"/>
+<rect x="0" y="72" width="24" height="24" class="ocean"/>
+<rect x="24" y="72" width="24" height="24" class="ocean"/>
+<rect x="48" y="72" width="24" height="24" class="grass riv"/>
+<rect x="72" y="72" width="24" height="24" class="cforest"/>
+<rect x="96" y="72" width="24" height="24" class="grass riv"/>
+<rect x="120" y="72" width="24" height="24" class="bforest riv"/>
+<rect x="144" y="72" width="24" height="24" class="bforest riv"/>
+<rect x="168" y="72" width="24" height="24" class="bforest"/>
+<rect x="192" y="72" width="24" height="24" class="bforest"/>
+<rect x="216" y="72" width="24" height="24" class="bforest"/>
+<rect x="240" y="72" width="24" height="24" class="bforest"/>
+<rect x="264" y="72" width="24" height="24" class="bforest"/>
+<rect x="288" y="72" width="24" height="24" class="bforest"/>
+<rect x="312" y="72" width="24" height="24" class="bforest"/>
+<rect x="336" y="72" width="24" height="24" class="bforest"/>
+<rect x="360" y="72" width="24" height="24" class="bforest"/>
+<rect x="384" y="72" width="24" height="24" class="bforest"/>
+<rect x="0" y="96" width="24" height="24" class="ocean"/>
+<rect x="24" y="96" width="24" height="24" class="ocean"/>
+<rect x="48" y="96" width="24" height="24" class="ocean"/>
+<rect x="72" y="96" width="24" height="24" class="grass riv"/>
+<rect x="96" y="96" width="24" height="24" class="prairie riv"/>
+<rect x="120" y="96" width="24" height="24" class="bforest"/>
+<rect x="144" y="96" width="24" height="24" class="bforest"/>
+<rect x="168" y="96" width="24" height="24" class="bforest riv"/>
+<rect x="192" y="96" width="24" height="24" class="bforest"/>
+<rect x="216" y="96" width="24" height="24" class="bforest"/>
+<rect x="240" y="96" width="24" height="24" class="bforest"/>
+<rect x="264" y="96" width="24" height="24" class="bforest"/>
+<rect x="288" y="96" width="24" height="24" class="bforest"/>
+<rect x="312" y="96" width="24" height="24" class="bforest"/>
+<rect x="336" y="96" width="24" height="24" class="bforest"/>
+<rect x="360" y="96" width="24" height="24" class="bforest"/>
+<rect x="384" y="96" width="24" height="24" class="bforest"/>
+<rect x="0" y="120" width="24" height="24" class="ocean"/>
+<rect x="24" y="120" width="24" height="24" class="ocean"/>
+<rect x="48" y="120" width="24" height="24" class="ocean"/>
+<rect x="72" y="120" width="24" height="24" class="grass riv"/>
+<rect x="96" y="120" width="24" height="24" class="grass riv"/>
+<rect x="120" y="120" width="24" height="24" class="prairie riv"/>
+<rect x="144" y="120" width="24" height="24" class="bforest"/>
+<rect x="168" y="120" width="24" height="24" class="bforest"/>
+<rect x="192" y="120" width="24" height="24" class="bforest"/>
+<rect x="216" y="120" width="24" height="24" class="bforest"/>
+<rect x="240" y="120" width="24" height="24" class="ocean"/>
+<rect x="264" y="120" width="24" height="24" class="bforest"/>
+<rect x="288" y="120" width="24" height="24" class="bforest"/>
+<rect x="312" y="120" width="24" height="24" class="bforest"/>
+<rect x="336" y="120" width="24" height="24" class="bforest"/>
+<rect x="360" y="120" width="24" height="24" class="bforest"/>
+<rect x="384" y="120" width="24" height="24" class="bforest"/>
+<rect x="0" y="144" width="24" height="24" class="ocean"/>
+<rect x="24" y="144" width="24" height="24" class="ocean"/>
+<rect x="48" y="144" width="24" height="24" class="ocean"/>
+<rect x="72" y="144" width="24" height="24" class="grass riv"/>
+<rect x="96" y="144" width="24" height="24" class="cforest"/>
+<rect x="120" y="144" width="24" height="24" class="cforest"/>
+<rect x="144" y="144" width="24" height="24" class="grass riv"/>
+<rect x="168" y="144" width="24" height="24" class="bforest"/>
+<rect x="192" y="144" width="24" height="24" class="bforest riv"/>
+<rect x="216" y="144" width="24" height="24" class="bforest"/>
+<rect x="240" y="144" width="24" height="24" class="ocean"/>
+<rect x="264" y="144" width="24" height="24" class="bforest"/>
+<rect x="288" y="144" width="24" height="24" class="bforest"/>
+<rect x="312" y="144" width="24" height="24" class="bforest"/>
+<rect x="336" y="144" width="24" height="24" class="bforest"/>
+<rect x="360" y="144" width="24" height="24" class="bforest"/>
+<rect x="384" y="144" width="24" height="24" class="bforest"/>
+<rect x="0" y="168" width="24" height="24" class="ocean"/>
+<rect x="24" y="168" width="24" height="24" class="ocean"/>
+<rect x="48" y="168" width="24" height="24" class="ocean"/>
+<rect x="72" y="168" width="24" height="24" class="cforest"/>
+<rect x="96" y="168" width="24" height="24" class="grass riv"/>
+<rect x="120" y="168" width="24" height="24" class="cforest"/>
+<rect x="144" y="168" width="24" height="24" class="grass riv"/>
+<rect x="168" y="168" width="24" height="24" class="prairie riv"/>
+<rect x="192" y="168" width="24" height="24" class="bforest"/>
+<rect x="216" y="168" width="24" height="24" class="bforest"/>
+<rect x="240" y="168" width="24" height="24" class="bforest"/>
+<rect x="264" y="168" width="24" height="24" class="bforest"/>
+<rect x="288" y="168" width="24" height="24" class="bforest"/>
+<rect x="312" y="168" width="24" height="24" class="bforest"/>
+<rect x="336" y="168" width="24" height="24" class="bforest"/>
+<rect x="360" y="168" width="24" height="24" class="bforest"/>
+<rect x="384" y="168" width="24" height="24" class="bforest"/>
+<rect x="0" y="192" width="24" height="24" class="ocean"/>
+<rect x="24" y="192" width="24" height="24" class="ocean"/>
+<rect x="48" y="192" width="24" height="24" class="cforest"/>
+<rect x="72" y="192" width="24" height="24" class="grass riv"/>
+<rect x="96" y="192" width="24" height="24" class="cforest"/>
+<rect x="120" y="192" width="24" height="24" class="cforest"/>
+<rect x="144" y="192" width="24" height="24" class="grass riv"/>
+<rect x="168" y="192" width="24" height="24" class="prairie riv"/>
+<rect x="192" y="192" width="24" height="24" class="mforest"/>
+<rect x="216" y="192" width="24" height="24" class="bforest"/>
+<rect x="240" y="192" width="24" height="24" class="bforest"/>
+<rect x="264" y="192" width="24" height="24" class="bforest"/>
+<rect x="288" y="192" width="24" height="24" class="bforest"/>
+<rect x="312" y="192" width="24" height="24" class="ocean"/>
+<rect x="336" y="192" width="24" height="24" class="mforest"/>
+<rect x="360" y="192" width="24" height="24" class="mforest"/>
+<rect x="384" y="192" width="24" height="24" class="bforest"/>
+<rect x="0" y="216" width="24" height="24" class="ocean"/>
+<rect x="24" y="216" width="24" height="24" class="ocean"/>
+<rect x="48" y="216" width="24" height="24" class="ocean"/>
+<rect x="72" y="216" width="24" height="24" class="grass riv"/>
+<rect x="96" y="216" width="24" height="24" class="grass riv"/>
+<rect x="120" y="216" width="24" height="24" class="cforest"/>
+<rect x="144" y="216" width="24" height="24" class="grass riv"/>
+<rect x="168" y="216" width="24" height="24" class="prairie riv"/>
+<rect x="192" y="216" width="24" height="24" class="mforest"/>
+<rect x="216" y="216" width="24" height="24" class="plains"/>
+<rect x="240" y="216" width="24" height="24" class="mforest"/>
+<rect x="264" y="216" width="24" height="24" class="plains"/>
+<rect x="288" y="216" width="24" height="24" class="mforest"/>
+<rect x="312" y="216" width="24" height="24" class="ocean"/>
+<rect x="336" y="216" width="24" height="24" class="ocean"/>
+<rect x="360" y="216" width="24" height="24" class="mforest"/>
+<rect x="384" y="216" width="24" height="24" class="mforest"/>
+<rect x="0" y="240" width="24" height="24" class="ocean"/>
+<rect x="24" y="240" width="24" height="24" class="ocean"/>
+<rect x="48" y="240" width="24" height="24" class="ocean"/>
+<rect x="72" y="240" width="24" height="24" class="ocean"/>
+<rect x="96" y="240" width="24" height="24" class="grass riv"/>
+<rect x="120" y="240" width="24" height="24" class="grass riv"/>
+<rect x="144" y="240" width="24" height="24" class="cforest"/>
+<rect x="168" y="240" width="24" height="24" class="grass riv"/>
+<rect x="192" y="240" width="24" height="24" class="prairie riv"/>
+<rect x="216" y="240" width="24" height="24" class="plains"/>
+<rect x="240" y="240" width="24" height="24" class="plains riv"/>
+<rect x="264" y="240" width="24" height="24" class="plains"/>
+<rect x="288" y="240" width="24" height="24" class="mforest"/>
+<rect x="312" y="240" width="24" height="24" class="mforest"/>
+<rect x="336" y="240" width="24" height="24" class="mforest"/>
+<rect x="360" y="240" width="24" height="24" class="mforest"/>
+<rect x="384" y="240" width="24" height="24" class="mforest"/>
+<rect x="0" y="264" width="24" height="24" class="ocean"/>
+<rect x="24" y="264" width="24" height="24" class="ocean"/>
+<rect x="48" y="264" width="24" height="24" class="grass riv"/>
+<rect x="72" y="264" width="24" height="24" class="ocean"/>
+<rect x="96" y="264" width="24" height="24" class="ocean"/>
+<rect x="120" y="264" width="24" height="24" class="grass riv"/>
+<rect x="144" y="264" width="24" height="24" class="cforest"/>
+<rect x="168" y="264" width="24" height="24" class="cforest"/>
+<rect x="192" y="264" width="24" height="24" class="prairie riv"/>
+<rect x="216" y="264" width="24" height="24" class="plains riv"/>
+<rect x="240" y="264" width="24" height="24" class="plains"/>
+<rect x="264" y="264" width="24" height="24" class="plains"/>
+<rect x="288" y="264" width="24" height="24" class="plains"/>
+<rect x="312" y="264" width="24" height="24" class="plains"/>
+<rect x="336" y="264" width="24" height="24" class="mforest"/>
+<rect x="360" y="264" width="24" height="24" class="mforest"/>
+<rect x="384" y="264" width="24" height="24" class="mforest"/>
+<rect x="0" y="288" width="24" height="24" class="ocean"/>
+<rect x="24" y="288" width="24" height="24" class="ocean"/>
+<rect x="48" y="288" width="24" height="24" class="ocean"/>
+<rect x="72" y="288" width="24" height="24" class="ocean"/>
+<rect x="96" y="288" width="24" height="24" class="ocean"/>
+<rect x="120" y="288" width="24" height="24" class="cforest"/>
+<rect x="144" y="288" width="24" height="24" class="cforest"/>
+<rect x="168" y="288" width="24" height="24" class="grass riv"/>
+<rect x="192" y="288" width="24" height="24" class="prairie riv"/>
+<rect x="216" y="288" width="24" height="24" class="plains"/>
+<rect x="240" y="288" width="24" height="24" class="plains"/>
+<rect x="264" y="288" width="24" height="24" class="plains"/>
+<rect x="288" y="288" width="24" height="24" class="plains"/>
+<rect x="312" y="288" width="24" height="24" class="plains"/>
+<rect x="336" y="288" width="24" height="24" class="plains"/>
+<rect x="360" y="288" width="24" height="24" class="mforest"/>
+<rect x="384" y="288" width="24" height="24" class="mforest"/>
+<rect x="0" y="312" width="24" height="24" class="ocean"/>
+<rect x="24" y="312" width="24" height="24" class="ocean"/>
+<rect x="48" y="312" width="24" height="24" class="cforest"/>
+<rect x="72" y="312" width="24" height="24" class="ocean"/>
+<rect x="96" y="312" width="24" height="24" class="cforest"/>
+<rect x="120" y="312" width="24" height="24" class="grass riv"/>
+<rect x="144" y="312" width="24" height="24" class="grass riv"/>
+<rect x="168" y="312" width="24" height="24" class="prairie riv"/>
+<rect x="192" y="312" width="24" height="24" class="prairie riv"/>
+<rect x="216" y="312" width="24" height="24" class="prairie"/>
+<rect x="240" y="312" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="312" width="24" height="24" class="plains"/>
+<rect x="288" y="312" width="24" height="24" class="plains"/>
+<rect x="312" y="312" width="24" height="24" class="plains"/>
+<rect x="336" y="312" width="24" height="24" class="mforest"/>
+<rect x="360" y="312" width="24" height="24" class="plains"/>
+<rect x="384" y="312" width="24" height="24" class="plains"/>
+<rect x="0" y="336" width="24" height="24" class="ocean"/>
+<rect x="24" y="336" width="24" height="24" class="ocean"/>
+<rect x="48" y="336" width="24" height="24" class="cforest"/>
+<rect x="72" y="336" width="24" height="24" class="cforest"/>
+<rect x="96" y="336" width="24" height="24" class="grass riv"/>
+<rect x="120" y="336" width="24" height="24" class="desert"/>
+<rect x="144" y="336" width="24" height="24" class="ocean"/>
+<rect x="168" y="336" width="24" height="24" class="desert riv"/>
+<rect x="192" y="336" width="24" height="24" class="sforest"/>
+<rect x="216" y="336" width="24" height="24" class="prairie riv"/>
+<rect x="240" y="336" width="24" height="24" class="prairie"/>
+<rect x="264" y="336" width="24" height="24" class="prairie"/>
+<rect x="288" y="336" width="24" height="24" class="prairie"/>
+<rect x="312" y="336" width="24" height="24" class="prairie"/>
+<rect x="336" y="336" width="24" height="24" class="plains"/>
+<rect x="360" y="336" width="24" height="24" class="plains"/>
+<rect x="384" y="336" width="24" height="24" class="plains"/>
+<rect x="0" y="360" width="24" height="24" class="ocean"/>
+<rect x="24" y="360" width="24" height="24" class="ocean"/>
+<rect x="48" y="360" width="24" height="24" class="cforest"/>
+<rect x="72" y="360" width="24" height="24" class="mforest"/>
+<rect x="96" y="360" width="24" height="24" class="grass riv"/>
+<rect x="120" y="360" width="24" height="24" class="desert riv"/>
+<rect x="144" y="360" width="24" height="24" class="sforest"/>
+<rect x="168" y="360" width="24" height="24" class="prairie"/>
+<rect x="192" y="360" width="24" height="24" class="desert riv"/>
+<rect x="216" y="360" width="24" height="24" class="prairie riv"/>
+<rect x="240" y="360" width="24" height="24" class="prairie"/>
+<rect x="264" y="360" width="24" height="24" class="prairie"/>
+<rect x="288" y="360" width="24" height="24" class="prairie"/>
+<rect x="312" y="360" width="24" height="24" class="prairie"/>
+<rect x="336" y="360" width="24" height="24" class="prairie"/>
+<rect x="360" y="360" width="24" height="24" class="plains"/>
+<rect x="384" y="360" width="24" height="24" class="prairie"/>
+<rect x="0" y="384" width="24" height="24" class="ocean"/>
+<rect x="24" y="384" width="24" height="24" class="ocean"/>
+<rect x="48" y="384" width="24" height="24" class="ocean"/>
+<rect x="72" y="384" width="24" height="24" class="prairie"/>
+<rect x="96" y="384" width="24" height="24" class="cforest"/>
+<rect x="120" y="384" width="24" height="24" class="desert riv"/>
+<rect x="144" y="384" width="24" height="24" class="desert"/>
+<rect x="168" y="384" width="24" height="24" class="desert"/>
+<rect x="192" y="384" width="24" height="24" class="sforest"/>
+<rect x="216" y="384" width="24" height="24" class="desert riv"/>
+<rect x="240" y="384" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="384" width="24" height="24" class="prairie riv"/>
+<rect x="288" y="384" width="24" height="24" class="mforest"/>
+<rect x="312" y="384" width="24" height="24" class="prairie"/>
+<rect x="336" y="384" width="24" height="24" class="prairie"/>
+<rect x="360" y="384" width="24" height="24" class="mforest"/>
+<rect x="384" y="384" width="24" height="24" class="plains"/>
+<rect x="0" y="408" width="24" height="24" class="ocean"/>
+<rect x="24" y="408" width="24" height="24" class="ocean"/>
+<rect x="48" y="408" width="24" height="24" class="ocean"/>
+<rect x="72" y="408" width="24" height="24" class="grass"/>
+<rect x="96" y="408" width="24" height="24" class="prairie"/>
+<rect x="120" y="408" width="24" height="24" class="desert riv"/>
+<rect x="144" y="408" width="24" height="24" class="sforest"/>
+<rect x="168" y="408" width="24" height="24" class="desert"/>
+<rect x="192" y="408" width="24" height="24" class="desert riv"/>
+<rect x="216" y="408" width="24" height="24" class="desert riv"/>
+<rect x="240" y="408" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="408" width="24" height="24" class="prairie"/>
+<rect x="288" y="408" width="24" height="24" class="prairie"/>
+<rect x="312" y="408" width="24" height="24" class="prairie"/>
+<rect x="336" y="408" width="24" height="24" class="prairie"/>
+<rect x="360" y="408" width="24" height="24" class="prairie"/>
+<rect x="384" y="408" width="24" height="24" class="prairie"/>
+<rect x="0" y="432" width="24" height="24" class="ocean"/>
+<rect x="24" y="432" width="24" height="24" class="ocean"/>
+<rect x="48" y="432" width="24" height="24" class="ocean"/>
+<rect x="72" y="432" width="24" height="24" class="savanna"/>
+<rect x="96" y="432" width="24" height="24" class="tforest"/>
+<rect x="120" y="432" width="24" height="24" class="desert"/>
+<rect x="144" y="432" width="24" height="24" class="desert riv"/>
+<rect x="168" y="432" width="24" height="24" class="desert"/>
+<rect x="192" y="432" width="24" height="24" class="sforest"/>
+<rect x="216" y="432" width="24" height="24" class="desert"/>
+<rect x="240" y="432" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="432" width="24" height="24" class="sforest"/>
+<rect x="288" y="432" width="24" height="24" class="prairie"/>
+<rect x="312" y="432" width="24" height="24" class="prairie"/>
+<rect x="336" y="432" width="24" height="24" class="mforest"/>
+<rect x="360" y="432" width="24" height="24" class="prairie"/>
+<rect x="384" y="432" width="24" height="24" class="prairie"/>
+<rect x="0" y="456" width="24" height="24" class="ocean"/>
+<rect x="24" y="456" width="24" height="24" class="ocean"/>
+<rect x="48" y="456" width="24" height="24" class="ocean"/>
+<rect x="72" y="456" width="24" height="24" class="ocean"/>
+<rect x="96" y="456" width="24" height="24" class="ocean"/>
+<rect x="120" y="456" width="24" height="24" class="sforest"/>
+<rect x="144" y="456" width="24" height="24" class="desert"/>
+<rect x="168" y="456" width="24" height="24" class="sforest"/>
+<rect x="192" y="456" width="24" height="24" class="desert riv"/>
+<rect x="216" y="456" width="24" height="24" class="sforest"/>
+<rect x="240" y="456" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="456" width="24" height="24" class="desert"/>
+<rect x="288" y="456" width="24" height="24" class="sforest"/>
+<rect x="312" y="456" width="24" height="24" class="prairie"/>
+<rect x="336" y="456" width="24" height="24" class="prairie"/>
+<rect x="360" y="456" width="24" height="24" class="prairie"/>
+<rect x="384" y="456" width="24" height="24" class="cforest"/>
+<rect x="0" y="480" width="24" height="24" class="ocean"/>
+<rect x="24" y="480" width="24" height="24" class="ocean"/>
+<rect x="48" y="480" width="24" height="24" class="ocean"/>
+<rect x="72" y="480" width="24" height="24" class="ocean"/>
+<rect x="96" y="480" width="24" height="24" class="sforest"/>
+<rect x="120" y="480" width="24" height="24" class="desert"/>
+<rect x="144" y="480" width="24" height="24" class="ocean"/>
+<rect x="168" y="480" width="24" height="24" class="sforest"/>
+<rect x="192" y="480" width="24" height="24" class="desert"/>
+<rect x="216" y="480" width="24" height="24" class="desert"/>
+<rect x="240" y="480" width="24" height="24" class="sforest"/>
+<rect x="264" y="480" width="24" height="24" class="sforest"/>
+<rect x="288" y="480" width="24" height="24" class="desert riv"/>
+<rect x="312" y="480" width="24" height="24" class="sforest"/>
+<rect x="336" y="480" width="24" height="24" class="sforest"/>
+<rect x="360" y="480" width="24" height="24" class="grass"/>
+<rect x="384" y="480" width="24" height="24" class="grass"/>
+<rect x="0" y="504" width="24" height="24" class="ocean"/>
+<rect x="24" y="504" width="24" height="24" class="ocean"/>
+<rect x="48" y="504" width="24" height="24" class="ocean"/>
+<rect x="72" y="504" width="24" height="24" class="ocean"/>
+<rect x="96" y="504" width="24" height="24" class="sforest"/>
+<rect x="120" y="504" width="24" height="24" class="desert riv"/>
+<rect x="144" y="504" width="24" height="24" class="ocean"/>
+<rect x="168" y="504" width="24" height="24" class="ocean"/>
+<rect x="192" y="504" width="24" height="24" class="desert riv"/>
+<rect x="216" y="504" width="24" height="24" class="sforest"/>
+<rect x="240" y="504" width="24" height="24" class="desert riv"/>
+<rect x="264" y="504" width="24" height="24" class="desert riv"/>
+<rect x="288" y="504" width="24" height="24" class="sforest"/>
+<rect x="312" y="504" width="24" height="24" class="desert riv"/>
+<rect x="336" y="504" width="24" height="24" class="sforest"/>
+<rect x="360" y="504" width="24" height="24" class="sforest"/>
+<rect x="384" y="504" width="24" height="24" class="savanna"/>
+<rect x="0" y="528" width="24" height="24" class="ocean"/>
+<rect x="24" y="528" width="24" height="24" class="ocean"/>
+<rect x="48" y="528" width="24" height="24" class="ocean"/>
+<rect x="72" y="528" width="24" height="24" class="ocean"/>
+<rect x="96" y="528" width="24" height="24" class="ocean"/>
+<rect x="120" y="528" width="24" height="24" class="desert"/>
+<rect x="144" y="528" width="24" height="24" class="sforest"/>
+<rect x="168" y="528" width="24" height="24" class="ocean"/>
+<rect x="192" y="528" width="24" height="24" class="ocean"/>
+<rect x="216" y="528" width="24" height="24" class="sforest"/>
+<rect x="240" y="528" width="24" height="24" class="prairie riv"/>
+<rect x="264" y="528" width="24" height="24" class="desert riv"/>
+<rect x="288" y="528" width="24" height="24" class="desert riv"/>
+<rect x="312" y="528" width="24" height="24" class="desert riv"/>
+<rect x="336" y="528" width="24" height="24" class="desert"/>
+<rect x="360" y="528" width="24" height="24" class="sforest"/>
+<rect x="384" y="528" width="24" height="24" class="savanna"/>
+<rect x="0" y="552" width="24" height="24" class="ocean"/>
+<rect x="24" y="552" width="24" height="24" class="ocean"/>
+<rect x="48" y="552" width="24" height="24" class="ocean"/>
+<rect x="72" y="552" width="24" height="24" class="ocean"/>
+<rect x="96" y="552" width="24" height="24" class="ocean"/>
+<rect x="120" y="552" width="24" height="24" class="ocean"/>
+<rect x="144" y="552" width="24" height="24" class="desert riv"/>
+<rect x="168" y="552" width="24" height="24" class="desert"/>
+<rect x="192" y="552" width="24" height="24" class="ocean"/>
+<rect x="216" y="552" width="24" height="24" class="sforest riv"/>
+<rect x="240" y="552" width="24" height="24" class="sforest"/>
+<rect x="264" y="552" width="24" height="24" class="tforest riv"/>
+<rect x="288" y="552" width="24" height="24" class="prairie riv"/>
+<rect x="312" y="552" width="24" height="24" class="prairie riv"/>
+<rect x="336" y="552" width="24" height="24" class="sforest"/>
+<rect x="360" y="552" width="24" height="24" class="sforest"/>
+<rect x="384" y="552" width="24" height="24" class="prairie"/>
+<g class="gridl">
+<line x1="0" y1="0" x2="0" y2="576"/>
+<line x1="24" y1="0" x2="24" y2="576"/>
+<line x1="48" y1="0" x2="48" y2="576"/>
+<line x1="72" y1="0" x2="72" y2="576"/>
+<line x1="96" y1="0" x2="96" y2="576"/>
+<line x1="120" y1="0" x2="120" y2="576"/>
+<line x1="144" y1="0" x2="144" y2="576"/>
+<line x1="168" y1="0" x2="168" y2="576"/>
+<line x1="192" y1="0" x2="192" y2="576"/>
+<line x1="216" y1="0" x2="216" y2="576"/>
+<line x1="240" y1="0" x2="240" y2="576"/>
+<line x1="264" y1="0" x2="264" y2="576"/>
+<line x1="288" y1="0" x2="288" y2="576"/>
+<line x1="312" y1="0" x2="312" y2="576"/>
+<line x1="336" y1="0" x2="336" y2="576"/>
+<line x1="360" y1="0" x2="360" y2="576"/>
+<line x1="384" y1="0" x2="384" y2="576"/>
+<line x1="408" y1="0" x2="408" y2="576"/>
+<line x1="0" y1="0" x2="408" y2="0"/>
+<line x1="0" y1="24" x2="408" y2="24"/>
+<line x1="0" y1="48" x2="408" y2="48"/>
+<line x1="0" y1="72" x2="408" y2="72"/>
+<line x1="0" y1="96" x2="408" y2="96"/>
+<line x1="0" y1="120" x2="408" y2="120"/>
+<line x1="0" y1="144" x2="408" y2="144"/>
+<line x1="0" y1="168" x2="408" y2="168"/>
+<line x1="0" y1="192" x2="408" y2="192"/>
+<line x1="0" y1="216" x2="408" y2="216"/>
+<line x1="0" y1="240" x2="408" y2="240"/>
+<line x1="0" y1="264" x2="408" y2="264"/>
+<line x1="0" y1="288" x2="408" y2="288"/>
+<line x1="0" y1="312" x2="408" y2="312"/>
+<line x1="0" y1="336" x2="408" y2="336"/>
+<line x1="0" y1="360" x2="408" y2="360"/>
+<line x1="0" y1="384" x2="408" y2="384"/>
+<line x1="0" y1="408" x2="408" y2="408"/>
+<line x1="0" y1="432" x2="408" y2="432"/>
+<line x1="0" y1="456" x2="408" y2="456"/>
+<line x1="0" y1="480" x2="408" y2="480"/>
+<line x1="0" y1="504" x2="408" y2="504"/>
+<line x1="0" y1="528" x2="408" y2="528"/>
+<line x1="0" y1="552" x2="408" y2="552"/>
+<line x1="0" y1="576" x2="408" y2="576"/>
+</g>
+<polyline class="road" points="132.0,252.0 108.0,228.0 84.0,204.0 84.0,180.0 84.0,156.0 84.0,132.0 84.0,108.0 108.0,84.0 132.0,60.0"/>
+<polyline class="road" points="132.0,252.0 108.0,228.0 132.0,204.0"/>
+<polyline class="road" points="132.0,252.0 156.0,228.0 180.0,204.0 204.0,204.0 228.0,228.0 252.0,252.0"/>
+<polyline class="road" points="132.0,252.0 132.0,276.0 156.0,300.0 180.0,324.0 204.0,348.0"/>
+<polyline class="road" points="132.0,252.0 132.0,276.0 132.0,300.0 108.0,324.0 132.0,348.0 156.0,372.0 180.0,396.0 204.0,420.0 228.0,444.0 252.0,468.0 276.0,492.0 300.0,516.0"/>
+<polyline class="searoute" points="108.0,252.0 12.0,228.0"/>
+<rect x="96" y="216" width="72" height="72" class="ringbox2"/>
+<rect x="96" y="24" width="72" height="72" class="ringbox2"/>
+<rect x="96" y="168" width="72" height="72" class="ringbox2"/>
+<rect x="216" y="216" width="72" height="72" class="ringbox2"/>
+<rect x="168" y="312" width="72" height="72" class="ringbox2"/>
+<rect x="264" y="480" width="72" height="72" class="ringbox2"/>
+<g class="site"><circle cx="132.0" cy="252.0" r="9" class="dot hubdot"/><text x="132.0" y="255.4" class="rank" style="font-size:9px">H</text></g>
+<g class="site"><circle cx="132.0" cy="60.0" r="7.5" class="dot"/><text x="132.0" y="63.4" class="rank" style="font-size:9px">F</text></g>
+<g class="site"><circle cx="132.0" cy="204.0" r="7.5" class="dot"/><text x="132.0" y="207.4" class="rank" style="font-size:9px">T</text></g>
+<g class="site"><circle cx="252.0" cy="252.0" r="7.5" class="dot"/><text x="252.0" y="255.4" class="rank" style="font-size:9px">R</text></g>
+<g class="site"><circle cx="204.0" cy="348.0" r="7.5" class="dot"/><text x="204.0" y="351.4" class="rank" style="font-size:9px">C</text></g>
+<g class="site"><circle cx="300.0" cy="516.0" r="7.5" class="dot"/><text x="300.0" y="519.4" class="rank" style="font-size:9px">O</text></g>
+<g class="elabel"><rect x="54.0" y="137.0" width="60" height="13" rx="3"/><text x="84.0" y="147.0">8 rd &middot; 2 turns</text></g>
+<g class="elabel"><rect x="78.0" y="209.0" width="60" height="13" rx="3"/><text x="108.0" y="219.0">2 rd &middot; 1 turn</text></g>
+<g class="elabel"><rect x="174.0" y="185.0" width="60" height="13" rx="3"/><text x="204.0" y="195.0">5 rd &middot; 1 turn</text></g>
+<g class="elabel"><rect x="126.0" y="281.0" width="60" height="13" rx="3"/><text x="156.0" y="291.0">4 rd &middot; 1 turn</text></g>
+<g class="elabel"><rect x="150.0" y="377.0" width="60" height="13" rx="3"/><text x="180.0" y="387.0">11 rd &middot; 2 turns</text></g>
+</svg>
+</div>
+<div style="flex:1 1 18rem; min-width:16rem;">
+<div class="tblwrap"><table>
+<tr><th>edge</th><th class="n">road tiles</th><th class="n">one-way</th><th>wagon load (2 holds)</th><th class="n">capacity /turn</th></tr>
+<tr><td>H &ndash; T tobacco</td><td class="n">2</td><td class="n">1 turn</td><td>48 tobacco &middot; food</td><td class="n">100</td></tr>
+<tr><td>H &ndash; C cotton</td><td class="n">4</td><td class="n">1</td><td>48 cotton &middot; food</td><td class="n">100</td></tr>
+<tr><td>H &ndash; R ranch</td><td class="n">5</td><td class="n">1</td><td>24 horses &middot; 52 food</td><td class="n">100</td></tr>
+<tr><td>H &ndash; F furs</td><td class="n">8</td><td class="n">2</td><td>48 furs &middot; food</td><td class="n">50</td></tr>
+<tr><td>H &ndash; O ore</td><td class="n">11</td><td class="n">2</td><td>48 ore &middot; food</td><td class="n">50</td></tr>
+<tr><td colspan="4"><b>fleet: 5 wagons — one per edge; 6 colonies allow exactly 5</b></td><td class="n">&#10003;</td></tr>
+</table></div>
+<p class="caption">Coastal hub <b>H</b> at (7,10), grassland on the west coast:
+cigar + cloth + coat factories, armory, 3 statesmen, a couple of fishermen — importing
+144 raw + 48 ore and exporting 216 finished <em>by sea</em>, outside the wagon cap
+(a galleon lifts 600 <b>(R)</b>; an &asymp;8&ndash;10-turn Europe round trip means
+3&ndash;4 on station). The 2-turn Furs and Ore legs are the tight ones: one wagon moves
+exactly 50/turn there, against a 48/turn factory appetite — a 2-unit margin. The
+spokes' 18-unit/good surpluses stay banked at the outposts until the next colony
+founding adds a wagon to lift them. Hub sits 2 tiles from the tobacco ring — legal and
+free of conflict, because an all-indoor hub works no land tiles.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="wrap">
+<p><b>Food from the sea — measured, not assumed.</b> The engine's numbers at 100% SoL,
+expert worker: a <em>coastal</em> ocean tile fishes <b>10</b> (base 3 + adjacency +1
+<span class="cite">@0x9C3E</span> + latches + era bonus); a plowed Plains farm grows
+<b>11&ndash;12</b>. Deep ocean — 6/8 water neighbours — drops to 8/7. So tile-for-tile
+the sea is slightly <em>weaker</em> than the best land&hellip; with three offsets that
+still make coastal food the right buy: an ocean tile needs <b>no pioneer work</b> (a
+plow is 20 tools + turns), it has <b>zero opportunity cost</b> (water grows no cotton —
+every fish is a land tile freed for cash crops), and a <b>Fishery resource is the best
+food tile in the game</b> at 16 (+3 doubled for the expert, <span class="cite">@0x9B86</span>).
+A site's food ceiling is therefore driven by its land/sea split: mixed-coast rings
+farm the land and fish the water, and the harbor town doubles as the cluster's
+second granary.</p>
+</div>
+
+<div class="wrap">
+<h2><span class="no">5</span>Where the configurations live on AMER2</h2>
+
+<div class="note">Cheat-menu aside: the game's own &ldquo;colony site&rdquo; advisor overlay
+ranks tiles with an internal heuristic that is still untraced (TBD in the function
+inventory). The placement below is the exact answer for each configuration — best
+achievable 6-tile export ring per good, computed from the decoded map bytes.</div>
+</div>
+
+<div class="wide">
+<div class="card">
+<div class="mapgrid">
+<div class="mappanel" style="flex:1 1 22rem;">
+<svg class="map" viewBox="0 0 464 576" role="img" aria-label="AMER2 map with the twelve highest-value colony sites marked">
+<rect x="0" y="0" width="8" height="8" class="grass"/>
+<rect x="8" y="0" width="8" height="8" class="tundra"/>
+<rect x="16" y="0" width="8" height="8" class="ocean"/>
+<rect x="24" y="0" width="144" height="8" class="prairie"/>
+<rect x="168" y="0" width="32" height="8" class="ocean"/>
+<rect x="200" y="0" width="16" height="8" class="prairie"/>
+<rect x="216" y="0" width="16" height="8" class="ocean"/>
+<rect x="232" y="0" width="8" height="8" class="prairie"/>
+<rect x="240" y="0" width="224" height="8" class="ocean"/>
+<rect x="0" y="8" width="24" height="8" class="ocean"/>
+<rect x="24" y="8" width="8" height="8" class="bforest riv"/>
+<rect x="32" y="8" width="24" height="8" class="bforest"/>
+<rect x="56" y="8" width="16" height="8" class="bforest riv"/>
+<rect x="72" y="8" width="8" height="8" class="bforest"/>
+<rect x="80" y="8" width="8" height="8" class="ocean"/>
+<rect x="88" y="8" width="8" height="8" class="tundra"/>
+<rect x="96" y="8" width="8" height="8" class="bforest"/>
+<rect x="104" y="8" width="8" height="8" class="tundra"/>
+<rect x="112" y="8" width="8" height="8" class="bforest"/>
+<rect x="120" y="8" width="48" height="8" class="tundra"/>
+<rect x="168" y="8" width="16" height="8" class="ocean"/>
+<rect x="184" y="8" width="8" height="8" class="tundra"/>
+<rect x="192" y="8" width="80" height="8" class="ocean"/>
+<rect x="272" y="8" width="192" height="8" class="sealane"/>
+<rect x="0" y="16" width="8" height="8" class="sealane"/>
+<rect x="8" y="16" width="16" height="8" class="ocean"/>
+<rect x="24" y="16" width="8" height="8" class="bforest"/>
+<rect x="32" y="16" width="8" height="8" class="bforest riv"/>
+<rect x="40" y="16" width="8" height="8" class="bforest"/>
+<rect x="48" y="16" width="16" height="8" class="bforest riv"/>
+<rect x="64" y="16" width="16" height="8" class="bforest"/>
+<rect x="80" y="16" width="24" height="8" class="ocean"/>
+<rect x="104" y="16" width="48" height="8" class="bforest"/>
+<rect x="152" y="16" width="8" height="8" class="tundra"/>
+<rect x="160" y="16" width="48" height="8" class="ocean"/>
+<rect x="208" y="16" width="24" height="8" class="tundra"/>
+<rect x="232" y="16" width="24" height="8" class="ocean"/>
+<rect x="256" y="16" width="8" height="8" class="tundra"/>
+<rect x="264" y="16" width="64" height="8" class="ocean"/>
+<rect x="328" y="16" width="136" height="8" class="sealane"/>
+<rect x="0" y="24" width="8" height="8" class="sealane"/>
+<rect x="8" y="24" width="24" height="8" class="ocean"/>
+<rect x="32" y="24" width="8" height="8" class="grass riv"/>
+<rect x="40" y="24" width="8" height="8" class="cforest"/>
+<rect x="48" y="24" width="8" height="8" class="grass riv"/>
+<rect x="56" y="24" width="16" height="8" class="bforest riv"/>
+<rect x="72" y="24" width="80" height="8" class="bforest"/>
+<rect x="152" y="24" width="8" height="8" class="tundra"/>
+<rect x="160" y="24" width="40" height="8" class="ocean"/>
+<rect x="200" y="24" width="8" height="8" class="tundra"/>
+<rect x="208" y="24" width="8" height="8" class="bforest"/>
+<rect x="216" y="24" width="16" height="8" class="tundra"/>
+<rect x="232" y="24" width="8" height="8" class="ocean"/>
+<rect x="240" y="24" width="8" height="8" class="tundra"/>
+<rect x="248" y="24" width="16" height="8" class="bforest"/>
+<rect x="264" y="24" width="8" height="8" class="tundra"/>
+<rect x="272" y="24" width="64" height="8" class="ocean"/>
+<rect x="336" y="24" width="128" height="8" class="sealane"/>
+<rect x="0" y="32" width="8" height="8" class="sealane"/>
+<rect x="8" y="32" width="32" height="8" class="ocean"/>
+<rect x="40" y="32" width="8" height="8" class="grass riv"/>
+<rect x="48" y="32" width="8" height="8" class="prairie riv"/>
+<rect x="56" y="32" width="16" height="8" class="bforest"/>
+<rect x="72" y="32" width="8" height="8" class="bforest riv"/>
+<rect x="80" y="32" width="80" height="8" class="bforest"/>
+<rect x="160" y="32" width="48" height="8" class="ocean"/>
+<rect x="208" y="32" width="8" height="8" class="tundra"/>
+<rect x="216" y="32" width="72" height="8" class="bforest"/>
+<rect x="288" y="32" width="16" height="8" class="ocean"/>
+<rect x="304" y="32" width="8" height="8" class="mforest"/>
+<rect x="312" y="32" width="32" height="8" class="ocean"/>
+<rect x="344" y="32" width="120" height="8" class="sealane"/>
+<rect x="0" y="40" width="8" height="8" class="sealane"/>
+<rect x="8" y="40" width="32" height="8" class="ocean"/>
+<rect x="40" y="40" width="16" height="8" class="grass riv"/>
+<rect x="56" y="40" width="8" height="8" class="prairie riv"/>
+<rect x="64" y="40" width="32" height="8" class="bforest"/>
+<rect x="96" y="40" width="8" height="8" class="ocean"/>
+<rect x="104" y="40" width="64" height="8" class="bforest"/>
+<rect x="168" y="40" width="32" height="8" class="ocean"/>
+<rect x="200" y="40" width="80" height="8" class="bforest"/>
+<rect x="280" y="40" width="16" height="8" class="ocean"/>
+<rect x="296" y="40" width="16" height="8" class="mforest"/>
+<rect x="312" y="40" width="32" height="8" class="ocean"/>
+<rect x="344" y="40" width="120" height="8" class="sealane"/>
+<rect x="0" y="48" width="8" height="8" class="sealane"/>
+<rect x="8" y="48" width="32" height="8" class="ocean"/>
+<rect x="40" y="48" width="8" height="8" class="grass riv"/>
+<rect x="48" y="48" width="16" height="8" class="cforest"/>
+<rect x="64" y="48" width="8" height="8" class="grass riv"/>
+<rect x="72" y="48" width="8" height="8" class="bforest"/>
+<rect x="80" y="48" width="8" height="8" class="bforest riv"/>
+<rect x="88" y="48" width="8" height="8" class="bforest"/>
+<rect x="96" y="48" width="8" height="8" class="ocean"/>
+<rect x="104" y="48" width="64" height="8" class="bforest"/>
+<rect x="168" y="48" width="8" height="8" class="tundra"/>
+<rect x="176" y="48" width="8" height="8" class="bforest"/>
+<rect x="184" y="48" width="8" height="8" class="tundra"/>
+<rect x="192" y="48" width="16" height="8" class="ocean"/>
+<rect x="208" y="48" width="64" height="8" class="bforest"/>
+<rect x="272" y="48" width="16" height="8" class="ocean"/>
+<rect x="288" y="48" width="32" height="8" class="mforest"/>
+<rect x="320" y="48" width="24" height="8" class="ocean"/>
+<rect x="344" y="48" width="120" height="8" class="sealane"/>
+<rect x="0" y="56" width="8" height="8" class="sealane"/>
+<rect x="8" y="56" width="32" height="8" class="ocean"/>
+<rect x="40" y="56" width="8" height="8" class="cforest"/>
+<rect x="48" y="56" width="8" height="8" class="grass riv"/>
+<rect x="56" y="56" width="8" height="8" class="cforest"/>
+<rect x="64" y="56" width="8" height="8" class="grass riv"/>
+<rect x="72" y="56" width="8" height="8" class="prairie riv"/>
+<rect x="80" y="56" width="120" height="8" class="bforest"/>
+<rect x="200" y="56" width="8" height="8" class="ocean"/>
+<rect x="208" y="56" width="56" height="8" class="bforest"/>
+<rect x="264" y="56" width="16" height="8" class="ocean"/>
+<rect x="280" y="56" width="8" height="8" class="mforest"/>
+<rect x="288" y="56" width="56" height="8" class="ocean"/>
+<rect x="344" y="56" width="120" height="8" class="sealane"/>
+<rect x="0" y="64" width="8" height="8" class="sealane"/>
+<rect x="8" y="64" width="24" height="8" class="ocean"/>
+<rect x="32" y="64" width="8" height="8" class="cforest"/>
+<rect x="40" y="64" width="8" height="8" class="grass riv"/>
+<rect x="48" y="64" width="16" height="8" class="cforest"/>
+<rect x="64" y="64" width="8" height="8" class="grass riv"/>
+<rect x="72" y="64" width="8" height="8" class="prairie riv"/>
+<rect x="80" y="64" width="8" height="8" class="mforest"/>
+<rect x="88" y="64" width="32" height="8" class="bforest"/>
+<rect x="120" y="64" width="8" height="8" class="ocean"/>
+<rect x="128" y="64" width="16" height="8" class="mforest"/>
+<rect x="144" y="64" width="112" height="8" class="bforest"/>
+<rect x="256" y="64" width="40" height="8" class="ocean"/>
+<rect x="296" y="64" width="8" height="8" class="bforest"/>
+<rect x="304" y="64" width="40" height="8" class="ocean"/>
+<rect x="344" y="64" width="120" height="8" class="sealane"/>
+<rect x="0" y="72" width="8" height="8" class="sealane"/>
+<rect x="8" y="72" width="32" height="8" class="ocean"/>
+<rect x="40" y="72" width="16" height="8" class="grass riv"/>
+<rect x="56" y="72" width="8" height="8" class="cforest"/>
+<rect x="64" y="72" width="8" height="8" class="grass riv"/>
+<rect x="72" y="72" width="8" height="8" class="prairie riv"/>
+<rect x="80" y="72" width="8" height="8" class="mforest"/>
+<rect x="88" y="72" width="8" height="8" class="plains"/>
+<rect x="96" y="72" width="8" height="8" class="mforest"/>
+<rect x="104" y="72" width="8" height="8" class="plains"/>
+<rect x="112" y="72" width="8" height="8" class="mforest"/>
+<rect x="120" y="72" width="16" height="8" class="ocean"/>
+<rect x="136" y="72" width="16" height="8" class="mforest"/>
+<rect x="152" y="72" width="80" height="8" class="bforest"/>
+<rect x="232" y="72" width="8" height="8" class="mforest"/>
+<rect x="240" y="72" width="8" height="8" class="bforest"/>
+<rect x="248" y="72" width="8" height="8" class="mforest"/>
+<rect x="256" y="72" width="16" height="8" class="ocean"/>
+<rect x="272" y="72" width="8" height="8" class="bforest"/>
+<rect x="280" y="72" width="8" height="8" class="ocean"/>
+<rect x="288" y="72" width="8" height="8" class="mforest"/>
+<rect x="296" y="72" width="40" height="8" class="ocean"/>
+<rect x="336" y="72" width="128" height="8" class="sealane"/>
+<rect x="0" y="80" width="8" height="8" class="sealane"/>
+<rect x="8" y="80" width="40" height="8" class="ocean"/>
+<rect x="48" y="80" width="16" height="8" class="grass riv"/>
+<rect x="64" y="80" width="8" height="8" class="cforest"/>
+<rect x="72" y="80" width="8" height="8" class="grass riv"/>
+<rect x="80" y="80" width="8" height="8" class="prairie riv"/>
+<rect x="88" y="80" width="8" height="8" class="plains"/>
+<rect x="96" y="80" width="8" height="8" class="plains riv"/>
+<rect x="104" y="80" width="8" height="8" class="plains"/>
+<rect x="112" y="80" width="64" height="8" class="mforest"/>
+<rect x="176" y="80" width="8" height="8" class="bforest"/>
+<rect x="184" y="80" width="32" height="8" class="mforest"/>
+<rect x="216" y="80" width="8" height="8" class="bforest"/>
+<rect x="224" y="80" width="64" height="8" class="mforest"/>
+<rect x="288" y="80" width="8" height="8" class="bforest"/>
+<rect x="296" y="80" width="32" height="8" class="ocean"/>
+<rect x="328" y="80" width="136" height="8" class="sealane"/>
+<rect x="0" y="88" width="8" height="8" class="sealane"/>
+<rect x="8" y="88" width="24" height="8" class="ocean"/>
+<rect x="32" y="88" width="8" height="8" class="grass riv"/>
+<rect x="40" y="88" width="16" height="8" class="ocean"/>
+<rect x="56" y="88" width="8" height="8" class="grass riv"/>
+<rect x="64" y="88" width="16" height="8" class="cforest"/>
+<rect x="80" y="88" width="8" height="8" class="prairie riv"/>
+<rect x="88" y="88" width="8" height="8" class="plains riv"/>
+<rect x="96" y="88" width="32" height="8" class="plains"/>
+<rect x="128" y="88" width="40" height="8" class="mforest"/>
+<rect x="168" y="88" width="16" height="8" class="ocean"/>
+<rect x="184" y="88" width="8" height="8" class="mforest"/>
+<rect x="192" y="88" width="8" height="8" class="bforest"/>
+<rect x="200" y="88" width="56" height="8" class="mforest"/>
+<rect x="256" y="88" width="8" height="8" class="bforest"/>
+<rect x="264" y="88" width="24" height="8" class="mforest"/>
+<rect x="288" y="88" width="32" height="8" class="ocean"/>
+<rect x="320" y="88" width="144" height="8" class="sealane"/>
+<rect x="0" y="96" width="8" height="8" class="sealane"/>
+<rect x="8" y="96" width="48" height="8" class="ocean"/>
+<rect x="56" y="96" width="16" height="8" class="cforest"/>
+<rect x="72" y="96" width="8" height="8" class="grass riv"/>
+<rect x="80" y="96" width="8" height="8" class="prairie riv"/>
+<rect x="88" y="96" width="48" height="8" class="plains"/>
+<rect x="136" y="96" width="16" height="8" class="mforest"/>
+<rect x="152" y="96" width="48" height="8" class="ocean"/>
+<rect x="200" y="96" width="8" height="8" class="mforest"/>
+<rect x="208" y="96" width="8" height="8" class="ocean"/>
+<rect x="216" y="96" width="32" height="8" class="mforest"/>
+<rect x="248" y="96" width="8" height="8" class="mforest riv"/>
+<rect x="256" y="96" width="24" height="8" class="mforest"/>
+<rect x="280" y="96" width="32" height="8" class="ocean"/>
+<rect x="312" y="96" width="152" height="8" class="sealane"/>
+<rect x="0" y="104" width="8" height="8" class="sealane"/>
+<rect x="8" y="104" width="24" height="8" class="ocean"/>
+<rect x="32" y="104" width="8" height="8" class="cforest"/>
+<rect x="40" y="104" width="8" height="8" class="ocean"/>
+<rect x="48" y="104" width="8" height="8" class="cforest"/>
+<rect x="56" y="104" width="16" height="8" class="grass riv"/>
+<rect x="72" y="104" width="16" height="8" class="prairie riv"/>
+<rect x="88" y="104" width="8" height="8" class="prairie"/>
+<rect x="96" y="104" width="8" height="8" class="prairie riv"/>
+<rect x="104" y="104" width="24" height="8" class="plains"/>
+<rect x="128" y="104" width="8" height="8" class="mforest"/>
+<rect x="136" y="104" width="24" height="8" class="plains"/>
+<rect x="160" y="104" width="8" height="8" class="mforest"/>
+<rect x="168" y="104" width="8" height="8" class="ocean"/>
+<rect x="176" y="104" width="16" height="8" class="mforest"/>
+<rect x="192" y="104" width="16" height="8" class="ocean"/>
+<rect x="208" y="104" width="16" height="8" class="mforest"/>
+<rect x="224" y="104" width="8" height="8" class="ocean"/>
+<rect x="232" y="104" width="8" height="8" class="prairie"/>
+<rect x="240" y="104" width="16" height="8" class="mforest"/>
+<rect x="256" y="104" width="8" height="8" class="mforest riv"/>
+<rect x="264" y="104" width="16" height="8" class="mforest"/>
+<rect x="280" y="104" width="32" height="8" class="ocean"/>
+<rect x="312" y="104" width="152" height="8" class="sealane"/>
+<rect x="0" y="112" width="8" height="8" class="sealane"/>
+<rect x="8" y="112" width="24" height="8" class="ocean"/>
+<rect x="32" y="112" width="16" height="8" class="cforest"/>
+<rect x="48" y="112" width="8" height="8" class="grass riv"/>
+<rect x="56" y="112" width="8" height="8" class="desert"/>
+<rect x="64" y="112" width="8" height="8" class="ocean"/>
+<rect x="72" y="112" width="8" height="8" class="desert riv"/>
+<rect x="80" y="112" width="8" height="8" class="sforest"/>
+<rect x="88" y="112" width="8" height="8" class="prairie riv"/>
+<rect x="96" y="112" width="32" height="8" class="prairie"/>
+<rect x="128" y="112" width="24" height="8" class="plains"/>
+<rect x="152" y="112" width="8" height="8" class="mforest"/>
+<rect x="160" y="112" width="8" height="8" class="prairie"/>
+<rect x="168" y="112" width="16" height="8" class="mforest"/>
+<rect x="184" y="112" width="8" height="8" class="ocean"/>
+<rect x="192" y="112" width="8" height="8" class="mforest"/>
+<rect x="200" y="112" width="8" height="8" class="ocean"/>
+<rect x="208" y="112" width="16" height="8" class="mforest"/>
+<rect x="224" y="112" width="8" height="8" class="ocean"/>
+<rect x="232" y="112" width="40" height="8" class="mforest"/>
+<rect x="272" y="112" width="40" height="8" class="ocean"/>
+<rect x="312" y="112" width="152" height="8" class="sealane"/>
+<rect x="0" y="120" width="8" height="8" class="sealane"/>
+<rect x="8" y="120" width="24" height="8" class="ocean"/>
+<rect x="32" y="120" width="8" height="8" class="cforest"/>
+<rect x="40" y="120" width="8" height="8" class="mforest"/>
+<rect x="48" y="120" width="8" height="8" class="grass riv"/>
+<rect x="56" y="120" width="8" height="8" class="desert riv"/>
+<rect x="64" y="120" width="8" height="8" class="sforest"/>
+<rect x="72" y="120" width="8" height="8" class="prairie"/>
+<rect x="80" y="120" width="8" height="8" class="desert riv"/>
+<rect x="88" y="120" width="8" height="8" class="prairie riv"/>
+<rect x="96" y="120" width="40" height="8" class="prairie"/>
+<rect x="136" y="120" width="8" height="8" class="plains"/>
+<rect x="144" y="120" width="8" height="8" class="prairie"/>
+<rect x="152" y="120" width="8" height="8" class="plains"/>
+<rect x="160" y="120" width="8" height="8" class="mforest"/>
+<rect x="168" y="120" width="8" height="8" class="prairie"/>
+<rect x="176" y="120" width="8" height="8" class="plains"/>
+<rect x="184" y="120" width="8" height="8" class="ocean"/>
+<rect x="192" y="120" width="16" height="8" class="mforest"/>
+<rect x="208" y="120" width="16" height="8" class="ocean"/>
+<rect x="224" y="120" width="56" height="8" class="mforest"/>
+<rect x="280" y="120" width="24" height="8" class="ocean"/>
+<rect x="304" y="120" width="160" height="8" class="sealane"/>
+<rect x="0" y="128" width="8" height="8" class="sealane"/>
+<rect x="8" y="128" width="32" height="8" class="ocean"/>
+<rect x="40" y="128" width="8" height="8" class="prairie"/>
+<rect x="48" y="128" width="8" height="8" class="cforest"/>
+<rect x="56" y="128" width="8" height="8" class="desert riv"/>
+<rect x="64" y="128" width="16" height="8" class="desert"/>
+<rect x="80" y="128" width="8" height="8" class="sforest"/>
+<rect x="88" y="128" width="8" height="8" class="desert riv"/>
+<rect x="96" y="128" width="16" height="8" class="prairie riv"/>
+<rect x="112" y="128" width="8" height="8" class="mforest"/>
+<rect x="120" y="128" width="16" height="8" class="prairie"/>
+<rect x="136" y="128" width="8" height="8" class="mforest"/>
+<rect x="144" y="128" width="16" height="8" class="plains"/>
+<rect x="160" y="128" width="16" height="8" class="prairie"/>
+<rect x="176" y="128" width="48" height="8" class="mforest"/>
+<rect x="224" y="128" width="16" height="8" class="mforest riv"/>
+<rect x="240" y="128" width="16" height="8" class="mforest"/>
+<rect x="256" y="128" width="48" height="8" class="ocean"/>
+<rect x="304" y="128" width="160" height="8" class="sealane"/>
+<rect x="0" y="136" width="8" height="8" class="sealane"/>
+<rect x="8" y="136" width="32" height="8" class="ocean"/>
+<rect x="40" y="136" width="8" height="8" class="grass"/>
+<rect x="48" y="136" width="8" height="8" class="prairie"/>
+<rect x="56" y="136" width="8" height="8" class="desert riv"/>
+<rect x="64" y="136" width="8" height="8" class="sforest"/>
+<rect x="72" y="136" width="8" height="8" class="desert"/>
+<rect x="80" y="136" width="16" height="8" class="desert riv"/>
+<rect x="96" y="136" width="8" height="8" class="prairie riv"/>
+<rect x="104" y="136" width="56" height="8" class="prairie"/>
+<rect x="160" y="136" width="8" height="8" class="mforest"/>
+<rect x="168" y="136" width="8" height="8" class="plains"/>
+<rect x="176" y="136" width="16" height="8" class="prairie"/>
+<rect x="192" y="136" width="24" height="8" class="mforest"/>
+<rect x="216" y="136" width="16" height="8" class="mforest riv"/>
+<rect x="232" y="136" width="24" height="8" class="mforest"/>
+<rect x="256" y="136" width="48" height="8" class="ocean"/>
+<rect x="304" y="136" width="160" height="8" class="sealane"/>
+<rect x="0" y="144" width="8" height="8" class="sealane"/>
+<rect x="8" y="144" width="32" height="8" class="ocean"/>
+<rect x="40" y="144" width="8" height="8" class="savanna"/>
+<rect x="48" y="144" width="8" height="8" class="tforest"/>
+<rect x="56" y="144" width="8" height="8" class="desert"/>
+<rect x="64" y="144" width="8" height="8" class="desert riv"/>
+<rect x="72" y="144" width="8" height="8" class="desert"/>
+<rect x="80" y="144" width="8" height="8" class="sforest"/>
+<rect x="88" y="144" width="8" height="8" class="desert"/>
+<rect x="96" y="144" width="8" height="8" class="prairie riv"/>
+<rect x="104" y="144" width="8" height="8" class="sforest"/>
+<rect x="112" y="144" width="16" height="8" class="prairie"/>
+<rect x="128" y="144" width="8" height="8" class="mforest"/>
+<rect x="136" y="144" width="16" height="8" class="prairie"/>
+<rect x="152" y="144" width="8" height="8" class="grass"/>
+<rect x="160" y="144" width="8" height="8" class="prairie"/>
+<rect x="168" y="144" width="8" height="8" class="mforest"/>
+<rect x="176" y="144" width="8" height="8" class="prairie"/>
+<rect x="184" y="144" width="32" height="8" class="mforest"/>
+<rect x="216" y="144" width="8" height="8" class="mforest riv"/>
+<rect x="224" y="144" width="24" height="8" class="cforest"/>
+<rect x="248" y="144" width="48" height="8" class="ocean"/>
+<rect x="296" y="144" width="168" height="8" class="sealane"/>
+<rect x="0" y="152" width="8" height="8" class="sealane"/>
+<rect x="8" y="152" width="48" height="8" class="ocean"/>
+<rect x="56" y="152" width="8" height="8" class="sforest"/>
+<rect x="64" y="152" width="8" height="8" class="desert"/>
+<rect x="72" y="152" width="8" height="8" class="sforest"/>
+<rect x="80" y="152" width="8" height="8" class="desert riv"/>
+<rect x="88" y="152" width="8" height="8" class="sforest"/>
+<rect x="96" y="152" width="8" height="8" class="prairie riv"/>
+<rect x="104" y="152" width="8" height="8" class="desert"/>
+<rect x="112" y="152" width="8" height="8" class="sforest"/>
+<rect x="120" y="152" width="24" height="8" class="prairie"/>
+<rect x="144" y="152" width="8" height="8" class="cforest"/>
+<rect x="152" y="152" width="8" height="8" class="prairie"/>
+<rect x="160" y="152" width="24" height="8" class="grass"/>
+<rect x="184" y="152" width="24" height="8" class="mforest"/>
+<rect x="208" y="152" width="16" height="8" class="cforest riv"/>
+<rect x="224" y="152" width="16" height="8" class="cforest"/>
+<rect x="240" y="152" width="56" height="8" class="ocean"/>
+<rect x="296" y="152" width="168" height="8" class="sealane"/>
+<rect x="0" y="160" width="8" height="8" class="sealane"/>
+<rect x="8" y="160" width="40" height="8" class="ocean"/>
+<rect x="48" y="160" width="8" height="8" class="sforest"/>
+<rect x="56" y="160" width="8" height="8" class="desert"/>
+<rect x="64" y="160" width="8" height="8" class="ocean"/>
+<rect x="72" y="160" width="8" height="8" class="sforest"/>
+<rect x="80" y="160" width="16" height="8" class="desert"/>
+<rect x="96" y="160" width="16" height="8" class="sforest"/>
+<rect x="112" y="160" width="8" height="8" class="desert riv"/>
+<rect x="120" y="160" width="16" height="8" class="sforest"/>
+<rect x="136" y="160" width="16" height="8" class="grass"/>
+<rect x="152" y="160" width="8" height="8" class="cforest"/>
+<rect x="160" y="160" width="8" height="8" class="mforest"/>
+<rect x="168" y="160" width="16" height="8" class="cforest"/>
+<rect x="184" y="160" width="16" height="8" class="mforest"/>
+<rect x="200" y="160" width="8" height="8" class="cforest"/>
+<rect x="208" y="160" width="8" height="8" class="cforest riv"/>
+<rect x="216" y="160" width="16" height="8" class="cforest"/>
+<rect x="232" y="160" width="8" height="8" class="wforest"/>
+<rect x="240" y="160" width="48" height="8" class="ocean"/>
+<rect x="288" y="160" width="176" height="8" class="sealane"/>
+<rect x="0" y="168" width="8" height="8" class="sealane"/>
+<rect x="8" y="168" width="40" height="8" class="ocean"/>
+<rect x="48" y="168" width="8" height="8" class="sforest"/>
+<rect x="56" y="168" width="8" height="8" class="desert riv"/>
+<rect x="64" y="168" width="16" height="8" class="ocean"/>
+<rect x="80" y="168" width="8" height="8" class="desert riv"/>
+<rect x="88" y="168" width="8" height="8" class="sforest"/>
+<rect x="96" y="168" width="16" height="8" class="desert riv"/>
+<rect x="112" y="168" width="8" height="8" class="sforest"/>
+<rect x="120" y="168" width="8" height="8" class="desert riv"/>
+<rect x="128" y="168" width="16" height="8" class="sforest"/>
+<rect x="144" y="168" width="8" height="8" class="savanna"/>
+<rect x="152" y="168" width="16" height="8" class="cforest"/>
+<rect x="168" y="168" width="8" height="8" class="mforest"/>
+<rect x="176" y="168" width="8" height="8" class="cforest"/>
+<rect x="184" y="168" width="24" height="8" class="mforest"/>
+<rect x="208" y="168" width="32" height="8" class="cforest"/>
+<rect x="240" y="168" width="8" height="8" class="wforest"/>
+<rect x="248" y="168" width="48" height="8" class="ocean"/>
+<rect x="296" y="168" width="168" height="8" class="sealane"/>
+<rect x="0" y="176" width="8" height="8" class="sealane"/>
+<rect x="8" y="176" width="48" height="8" class="ocean"/>
+<rect x="56" y="176" width="8" height="8" class="desert"/>
+<rect x="64" y="176" width="8" height="8" class="sforest"/>
+<rect x="72" y="176" width="16" height="8" class="ocean"/>
+<rect x="88" y="176" width="8" height="8" class="sforest"/>
+<rect x="96" y="176" width="8" height="8" class="prairie riv"/>
+<rect x="104" y="176" width="24" height="8" class="desert riv"/>
+<rect x="128" y="176" width="8" height="8" class="desert"/>
+<rect x="136" y="176" width="8" height="8" class="sforest"/>
+<rect x="144" y="176" width="8" height="8" class="savanna"/>
+<rect x="152" y="176" width="8" height="8" class="grass"/>
+<rect x="160" y="176" width="32" height="8" class="cforest"/>
+<rect x="192" y="176" width="8" height="8" class="mforest"/>
+<rect x="200" y="176" width="8" height="8" class="ocean"/>
+<rect x="208" y="176" width="8" height="8" class="wforest"/>
+<rect x="216" y="176" width="8" height="8" class="cforest"/>
+<rect x="224" y="176" width="8" height="8" class="wforest"/>
+<rect x="232" y="176" width="8" height="8" class="cforest"/>
+<rect x="240" y="176" width="8" height="8" class="tforest"/>
+<rect x="248" y="176" width="64" height="8" class="ocean"/>
+<rect x="312" y="176" width="152" height="8" class="sealane"/>
+<rect x="0" y="184" width="8" height="8" class="sealane"/>
+<rect x="8" y="184" width="56" height="8" class="ocean"/>
+<rect x="64" y="184" width="8" height="8" class="desert riv"/>
+<rect x="72" y="184" width="8" height="8" class="desert"/>
+<rect x="80" y="184" width="8" height="8" class="ocean"/>
+<rect x="88" y="184" width="8" height="8" class="sforest riv"/>
+<rect x="96" y="184" width="8" height="8" class="sforest"/>
+<rect x="104" y="184" width="8" height="8" class="tforest riv"/>
+<rect x="112" y="184" width="16" height="8" class="prairie riv"/>
+<rect x="128" y="184" width="16" height="8" class="sforest"/>
+<rect x="144" y="184" width="8" height="8" class="prairie"/>
+<rect x="152" y="184" width="24" height="8" class="savanna"/>
+<rect x="176" y="184" width="8" height="8" class="cforest"/>
+<rect x="184" y="184" width="48" height="8" class="ocean"/>
+<rect x="232" y="184" width="24" height="8" class="cforest"/>
+<rect x="256" y="184" width="72" height="8" class="ocean"/>
+<rect x="328" y="184" width="136" height="8" class="sealane"/>
+<rect x="0" y="192" width="8" height="8" class="sealane"/>
+<rect x="8" y="192" width="64" height="8" class="ocean"/>
+<rect x="72" y="192" width="8" height="8" class="desert"/>
+<rect x="80" y="192" width="16" height="8" class="ocean"/>
+<rect x="96" y="192" width="8" height="8" class="tforest"/>
+<rect x="104" y="192" width="8" height="8" class="sforest"/>
+<rect x="112" y="192" width="8" height="8" class="tforest"/>
+<rect x="120" y="192" width="8" height="8" class="tforest riv"/>
+<rect x="128" y="192" width="8" height="8" class="prairie riv"/>
+<rect x="136" y="192" width="8" height="8" class="desert"/>
+<rect x="144" y="192" width="8" height="8" class="prairie"/>
+<rect x="152" y="192" width="8" height="8" class="mforest"/>
+<rect x="160" y="192" width="8" height="8" class="savanna"/>
+<rect x="168" y="192" width="8" height="8" class="tforest"/>
+<rect x="176" y="192" width="64" height="8" class="ocean"/>
+<rect x="240" y="192" width="8" height="8" class="wforest"/>
+<rect x="248" y="192" width="8" height="8" class="tforest"/>
+<rect x="256" y="192" width="16" height="8" class="ocean"/>
+<rect x="272" y="192" width="16" height="8" class="tforest"/>
+<rect x="288" y="192" width="48" height="8" class="ocean"/>
+<rect x="336" y="192" width="128" height="8" class="sealane"/>
+<rect x="0" y="200" width="8" height="8" class="sealane"/>
+<rect x="8" y="200" width="64" height="8" class="ocean"/>
+<rect x="72" y="200" width="8" height="8" class="desert riv"/>
+<rect x="80" y="200" width="8" height="8" class="sforest"/>
+<rect x="88" y="200" width="24" height="8" class="ocean"/>
+<rect x="112" y="200" width="16" height="8" class="tforest"/>
+<rect x="128" y="200" width="8" height="8" class="prairie riv"/>
+<rect x="136" y="200" width="8" height="8" class="tforest riv"/>
+<rect x="144" y="200" width="16" height="8" class="sforest"/>
+<rect x="160" y="200" width="8" height="8" class="tforest"/>
+<rect x="168" y="200" width="72" height="8" class="ocean"/>
+<rect x="240" y="200" width="16" height="8" class="wforest"/>
+<rect x="256" y="200" width="16" height="8" class="ocean"/>
+<rect x="272" y="200" width="8" height="8" class="tforest"/>
+<rect x="280" y="200" width="72" height="8" class="ocean"/>
+<rect x="352" y="200" width="112" height="8" class="sealane"/>
+<rect x="0" y="208" width="8" height="8" class="sealane"/>
+<rect x="8" y="208" width="80" height="8" class="ocean"/>
+<rect x="88" y="208" width="8" height="8" class="desert riv"/>
+<rect x="96" y="208" width="24" height="8" class="ocean"/>
+<rect x="120" y="208" width="24" height="8" class="tforest"/>
+<rect x="144" y="208" width="8" height="8" class="tforest riv"/>
+<rect x="152" y="208" width="16" height="8" class="tforest"/>
+<rect x="168" y="208" width="200" height="8" class="ocean"/>
+<rect x="368" y="208" width="96" height="8" class="sealane"/>
+<rect x="0" y="216" width="8" height="8" class="sealane"/>
+<rect x="8" y="216" width="112" height="8" class="ocean"/>
+<rect x="120" y="216" width="16" height="8" class="tforest"/>
+<rect x="136" y="216" width="8" height="8" class="prairie riv"/>
+<rect x="144" y="216" width="24" height="8" class="tforest"/>
+<rect x="168" y="216" width="88" height="8" class="ocean"/>
+<rect x="256" y="216" width="16" height="8" class="tforest"/>
+<rect x="272" y="216" width="8" height="8" class="tforest riv"/>
+<rect x="280" y="216" width="8" height="8" class="tforest"/>
+<rect x="288" y="216" width="96" height="8" class="ocean"/>
+<rect x="384" y="216" width="80" height="8" class="sealane"/>
+<rect x="0" y="224" width="8" height="8" class="sealane"/>
+<rect x="8" y="224" width="120" height="8" class="ocean"/>
+<rect x="128" y="224" width="8" height="8" class="tforest riv"/>
+<rect x="136" y="224" width="8" height="8" class="prairie riv"/>
+<rect x="144" y="224" width="8" height="8" class="tforest"/>
+<rect x="152" y="224" width="8" height="8" class="tforest riv"/>
+<rect x="160" y="224" width="8" height="8" class="savanna"/>
+<rect x="168" y="224" width="8" height="8" class="tforest"/>
+<rect x="176" y="224" width="32" height="8" class="ocean"/>
+<rect x="208" y="224" width="8" height="8" class="tforest"/>
+<rect x="216" y="224" width="24" height="8" class="ocean"/>
+<rect x="240" y="224" width="16" height="8" class="tforest"/>
+<rect x="256" y="224" width="8" height="8" class="savanna"/>
+<rect x="264" y="224" width="8" height="8" class="ocean"/>
+<rect x="272" y="224" width="24" height="8" class="tforest"/>
+<rect x="296" y="224" width="16" height="8" class="ocean"/>
+<rect x="312" y="224" width="8" height="8" class="tforest riv"/>
+<rect x="320" y="224" width="8" height="8" class="tforest"/>
+<rect x="328" y="224" width="8" height="8" class="rforest"/>
+<rect x="336" y="224" width="56" height="8" class="ocean"/>
+<rect x="392" y="224" width="72" height="8" class="sealane"/>
+<rect x="0" y="232" width="8" height="8" class="sealane"/>
+<rect x="8" y="232" width="120" height="8" class="ocean"/>
+<rect x="128" y="232" width="8" height="8" class="tforest riv"/>
+<rect x="136" y="232" width="8" height="8" class="tforest"/>
+<rect x="144" y="232" width="8" height="8" class="tforest riv"/>
+<rect x="152" y="232" width="8" height="8" class="tforest"/>
+<rect x="160" y="232" width="8" height="8" class="tforest riv"/>
+<rect x="168" y="232" width="16" height="8" class="tforest"/>
+<rect x="184" y="232" width="8" height="8" class="ocean"/>
+<rect x="192" y="232" width="32" height="8" class="tforest"/>
+<rect x="224" y="232" width="80" height="8" class="ocean"/>
+<rect x="304" y="232" width="16" height="8" class="tforest"/>
+<rect x="320" y="232" width="8" height="8" class="tforest riv"/>
+<rect x="328" y="232" width="24" height="8" class="ocean"/>
+<rect x="352" y="232" width="8" height="8" class="tforest"/>
+<rect x="360" y="232" width="8" height="8" class="savanna"/>
+<rect x="368" y="232" width="8" height="8" class="ocean"/>
+<rect x="376" y="232" width="8" height="8" class="tforest"/>
+<rect x="384" y="232" width="24" height="8" class="ocean"/>
+<rect x="408" y="232" width="56" height="8" class="sealane"/>
+<rect x="0" y="240" width="8" height="8" class="sealane"/>
+<rect x="8" y="240" width="136" height="8" class="ocean"/>
+<rect x="144" y="240" width="16" height="8" class="tforest riv"/>
+<rect x="160" y="240" width="8" height="8" class="tforest"/>
+<rect x="168" y="240" width="8" height="8" class="tforest riv"/>
+<rect x="176" y="240" width="16" height="8" class="tforest"/>
+<rect x="192" y="240" width="8" height="8" class="rforest"/>
+<rect x="200" y="240" width="8" height="8" class="tforest riv"/>
+<rect x="208" y="240" width="8" height="8" class="rforest"/>
+<rect x="216" y="240" width="64" height="8" class="ocean"/>
+<rect x="280" y="240" width="16" height="8" class="tforest"/>
+<rect x="296" y="240" width="80" height="8" class="ocean"/>
+<rect x="376" y="240" width="16" height="8" class="tforest"/>
+<rect x="392" y="240" width="24" height="8" class="ocean"/>
+<rect x="416" y="240" width="48" height="8" class="sealane"/>
+<rect x="0" y="248" width="8" height="8" class="sealane"/>
+<rect x="8" y="248" width="160" height="8" class="ocean"/>
+<rect x="168" y="248" width="24" height="8" class="tforest riv"/>
+<rect x="192" y="248" width="24" height="8" class="rforest"/>
+<rect x="216" y="248" width="200" height="8" class="ocean"/>
+<rect x="416" y="248" width="48" height="8" class="sealane"/>
+<rect x="0" y="256" width="8" height="8" class="sealane"/>
+<rect x="8" y="256" width="184" height="8" class="ocean"/>
+<rect x="192" y="256" width="8" height="8" class="rforest"/>
+<rect x="200" y="256" width="8" height="8" class="rforest riv"/>
+<rect x="208" y="256" width="24" height="8" class="rforest"/>
+<rect x="232" y="256" width="144" height="8" class="ocean"/>
+<rect x="376" y="256" width="16" height="8" class="tforest"/>
+<rect x="392" y="256" width="24" height="8" class="ocean"/>
+<rect x="416" y="256" width="48" height="8" class="sealane"/>
+<rect x="0" y="264" width="8" height="8" class="sealane"/>
+<rect x="8" y="264" width="16" height="8" class="ocean"/>
+<rect x="24" y="264" width="8" height="8" class="sealane"/>
+<rect x="32" y="264" width="168" height="8" class="ocean"/>
+<rect x="200" y="264" width="16" height="8" class="rforest"/>
+<rect x="216" y="264" width="8" height="8" class="rforest riv"/>
+<rect x="224" y="264" width="8" height="8" class="rforest"/>
+<rect x="232" y="264" width="48" height="8" class="ocean"/>
+<rect x="280" y="264" width="8" height="8" class="tforest"/>
+<rect x="288" y="264" width="128" height="8" class="ocean"/>
+<rect x="416" y="264" width="48" height="8" class="sealane"/>
+<rect x="0" y="272" width="8" height="8" class="sealane"/>
+<rect x="8" y="272" width="16" height="8" class="ocean"/>
+<rect x="24" y="272" width="8" height="8" class="sealane"/>
+<rect x="32" y="272" width="184" height="8" class="ocean"/>
+<rect x="216" y="272" width="16" height="8" class="rforest"/>
+<rect x="232" y="272" width="32" height="8" class="ocean"/>
+<rect x="264" y="272" width="24" height="8" class="tforest"/>
+<rect x="288" y="272" width="8" height="8" class="ocean"/>
+<rect x="296" y="272" width="8" height="8" class="tforest"/>
+<rect x="304" y="272" width="8" height="8" class="tforest riv"/>
+<rect x="312" y="272" width="8" height="8" class="tforest"/>
+<rect x="320" y="272" width="64" height="8" class="ocean"/>
+<rect x="384" y="272" width="8" height="8" class="tforest"/>
+<rect x="392" y="272" width="32" height="8" class="ocean"/>
+<rect x="424" y="272" width="40" height="8" class="sealane"/>
+<rect x="0" y="280" width="8" height="8" class="sealane"/>
+<rect x="8" y="280" width="16" height="8" class="ocean"/>
+<rect x="24" y="280" width="8" height="8" class="sealane"/>
+<rect x="32" y="280" width="184" height="8" class="ocean"/>
+<rect x="216" y="280" width="8" height="8" class="rforest"/>
+<rect x="224" y="280" width="8" height="8" class="rforest riv"/>
+<rect x="232" y="280" width="8" height="8" class="rforest"/>
+<rect x="240" y="280" width="8" height="8" class="ocean"/>
+<rect x="248" y="280" width="8" height="8" class="tforest"/>
+<rect x="256" y="280" width="8" height="8" class="tforest riv"/>
+<rect x="264" y="280" width="8" height="8" class="tforest"/>
+<rect x="272" y="280" width="8" height="8" class="tforest riv"/>
+<rect x="280" y="280" width="16" height="8" class="ocean"/>
+<rect x="296" y="280" width="16" height="8" class="tforest riv"/>
+<rect x="312" y="280" width="8" height="8" class="savanna"/>
+<rect x="320" y="280" width="8" height="8" class="tforest riv"/>
+<rect x="328" y="280" width="48" height="8" class="ocean"/>
+<rect x="376" y="280" width="8" height="8" class="tforest"/>
+<rect x="384" y="280" width="8" height="8" class="savanna"/>
+<rect x="392" y="280" width="40" height="8" class="ocean"/>
+<rect x="432" y="280" width="32" height="8" class="sealane"/>
+<rect x="0" y="288" width="8" height="8" class="sealane"/>
+<rect x="8" y="288" width="16" height="8" class="ocean"/>
+<rect x="24" y="288" width="8" height="8" class="sealane"/>
+<rect x="32" y="288" width="192" height="8" class="ocean"/>
+<rect x="224" y="288" width="8" height="8" class="rforest"/>
+<rect x="232" y="288" width="8" height="8" class="rforest riv"/>
+<rect x="240" y="288" width="8" height="8" class="rforest"/>
+<rect x="248" y="288" width="16" height="8" class="tforest riv"/>
+<rect x="264" y="288" width="8" height="8" class="tforest"/>
+<rect x="272" y="288" width="8" height="8" class="savanna"/>
+<rect x="280" y="288" width="8" height="8" class="tforest riv"/>
+<rect x="288" y="288" width="16" height="8" class="ocean"/>
+<rect x="304" y="288" width="8" height="8" class="savanna"/>
+<rect x="312" y="288" width="8" height="8" class="tforest"/>
+<rect x="320" y="288" width="8" height="8" class="savanna"/>
+<rect x="328" y="288" width="16" height="8" class="tforest"/>
+<rect x="344" y="288" width="16" height="8" class="ocean"/>
+<rect x="360" y="288" width="8" height="8" class="tforest"/>
+<rect x="368" y="288" width="64" height="8" class="ocean"/>
+<rect x="432" y="288" width="32" height="8" class="sealane"/>
+<rect x="0" y="296" width="8" height="8" class="sealane"/>
+<rect x="8" y="296" width="16" height="8" class="ocean"/>
+<rect x="24" y="296" width="8" height="8" class="sealane"/>
+<rect x="32" y="296" width="200" height="8" class="ocean"/>
+<rect x="232" y="296" width="16" height="8" class="rforest"/>
+<rect x="248" y="296" width="8" height="8" class="prairie riv"/>
+<rect x="256" y="296" width="8" height="8" class="rforest"/>
+<rect x="264" y="296" width="8" height="8" class="savanna riv"/>
+<rect x="272" y="296" width="8" height="8" class="tforest"/>
+<rect x="280" y="296" width="8" height="8" class="savanna"/>
+<rect x="288" y="296" width="16" height="8" class="tforest"/>
+<rect x="304" y="296" width="8" height="8" class="savanna"/>
+<rect x="312" y="296" width="16" height="8" class="tforest"/>
+<rect x="328" y="296" width="16" height="8" class="tforest riv"/>
+<rect x="344" y="296" width="8" height="8" class="savanna"/>
+<rect x="352" y="296" width="8" height="8" class="tforest"/>
+<rect x="360" y="296" width="8" height="8" class="savanna"/>
+<rect x="368" y="296" width="8" height="8" class="rforest"/>
+<rect x="376" y="296" width="56" height="8" class="ocean"/>
+<rect x="432" y="296" width="32" height="8" class="sealane"/>
+<rect x="0" y="304" width="8" height="8" class="sealane"/>
+<rect x="8" y="304" width="16" height="8" class="ocean"/>
+<rect x="24" y="304" width="8" height="8" class="sealane"/>
+<rect x="32" y="304" width="208" height="8" class="ocean"/>
+<rect x="240" y="304" width="8" height="8" class="rforest"/>
+<rect x="248" y="304" width="8" height="8" class="prairie riv"/>
+<rect x="256" y="304" width="16" height="8" class="rforest riv"/>
+<rect x="272" y="304" width="8" height="8" class="tforest"/>
+<rect x="280" y="304" width="8" height="8" class="savanna"/>
+<rect x="288" y="304" width="8" height="8" class="tforest"/>
+<rect x="296" y="304" width="8" height="8" class="savanna"/>
+<rect x="304" y="304" width="48" height="8" class="tforest"/>
+<rect x="352" y="304" width="8" height="8" class="savanna"/>
+<rect x="360" y="304" width="8" height="8" class="tforest"/>
+<rect x="368" y="304" width="8" height="8" class="rforest"/>
+<rect x="376" y="304" width="8" height="8" class="wforest"/>
+<rect x="384" y="304" width="56" height="8" class="ocean"/>
+<rect x="440" y="304" width="24" height="8" class="sealane"/>
+<rect x="0" y="312" width="8" height="8" class="sealane"/>
+<rect x="8" y="312" width="16" height="8" class="ocean"/>
+<rect x="24" y="312" width="8" height="8" class="sealane"/>
+<rect x="32" y="312" width="208" height="8" class="ocean"/>
+<rect x="240" y="312" width="8" height="8" class="rforest"/>
+<rect x="248" y="312" width="8" height="8" class="rforest riv"/>
+<rect x="256" y="312" width="8" height="8" class="rforest"/>
+<rect x="264" y="312" width="8" height="8" class="tforest"/>
+<rect x="272" y="312" width="8" height="8" class="savanna"/>
+<rect x="280" y="312" width="24" height="8" class="tforest"/>
+<rect x="304" y="312" width="16" height="8" class="rforest"/>
+<rect x="320" y="312" width="32" height="8" class="tforest"/>
+<rect x="352" y="312" width="24" height="8" class="rforest"/>
+<rect x="376" y="312" width="8" height="8" class="swamp"/>
+<rect x="384" y="312" width="64" height="8" class="ocean"/>
+<rect x="448" y="312" width="16" height="8" class="sealane"/>
+<rect x="0" y="320" width="8" height="8" class="sealane"/>
+<rect x="8" y="320" width="16" height="8" class="ocean"/>
+<rect x="24" y="320" width="8" height="8" class="sealane"/>
+<rect x="32" y="320" width="200" height="8" class="ocean"/>
+<rect x="232" y="320" width="8" height="8" class="rforest"/>
+<rect x="240" y="320" width="16" height="8" class="rforest riv"/>
+<rect x="256" y="320" width="8" height="8" class="rforest"/>
+<rect x="264" y="320" width="8" height="8" class="rforest riv"/>
+<rect x="272" y="320" width="72" height="8" class="rforest"/>
+<rect x="344" y="320" width="8" height="8" class="savanna"/>
+<rect x="352" y="320" width="8" height="8" class="rforest"/>
+<rect x="360" y="320" width="8" height="8" class="savanna"/>
+<rect x="368" y="320" width="8" height="8" class="rforest"/>
+<rect x="376" y="320" width="16" height="8" class="swamp"/>
+<rect x="392" y="320" width="8" height="8" class="tforest"/>
+<rect x="400" y="320" width="56" height="8" class="ocean"/>
+<rect x="456" y="320" width="8" height="8" class="sealane"/>
+<rect x="0" y="328" width="8" height="8" class="sealane"/>
+<rect x="8" y="328" width="16" height="8" class="ocean"/>
+<rect x="24" y="328" width="8" height="8" class="sealane"/>
+<rect x="32" y="328" width="192" height="8" class="ocean"/>
+<rect x="224" y="328" width="8" height="8" class="tforest riv"/>
+<rect x="232" y="328" width="8" height="8" class="prairie riv"/>
+<rect x="240" y="328" width="8" height="8" class="tforest riv"/>
+<rect x="248" y="328" width="80" height="8" class="rforest"/>
+<rect x="328" y="328" width="8" height="8" class="swamp"/>
+<rect x="336" y="328" width="24" height="8" class="rforest"/>
+<rect x="360" y="328" width="8" height="8" class="swamp"/>
+<rect x="368" y="328" width="64" height="8" class="rforest"/>
+<rect x="432" y="328" width="32" height="8" class="ocean"/>
+<rect x="0" y="336" width="8" height="8" class="sealane"/>
+<rect x="8" y="336" width="16" height="8" class="ocean"/>
+<rect x="24" y="336" width="8" height="8" class="sealane"/>
+<rect x="32" y="336" width="152" height="8" class="ocean"/>
+<rect x="184" y="336" width="8" height="8" class="tforest"/>
+<rect x="192" y="336" width="32" height="8" class="ocean"/>
+<rect x="224" y="336" width="8" height="8" class="tforest"/>
+<rect x="232" y="336" width="16" height="8" class="tforest riv"/>
+<rect x="248" y="336" width="192" height="8" class="rforest"/>
+<rect x="440" y="336" width="24" height="8" class="ocean"/>
+<rect x="0" y="344" width="8" height="8" class="sealane"/>
+<rect x="8" y="344" width="16" height="8" class="ocean"/>
+<rect x="24" y="344" width="8" height="8" class="sealane"/>
+<rect x="32" y="344" width="160" height="8" class="ocean"/>
+<rect x="192" y="344" width="8" height="8" class="tforest"/>
+<rect x="200" y="344" width="32" height="8" class="ocean"/>
+<rect x="232" y="344" width="8" height="8" class="tforest"/>
+<rect x="240" y="344" width="8" height="8" class="tforest riv"/>
+<rect x="248" y="344" width="184" height="8" class="rforest"/>
+<rect x="432" y="344" width="24" height="8" class="tforest"/>
+<rect x="456" y="344" width="8" height="8" class="ocean"/>
+<rect x="0" y="352" width="8" height="8" class="sealane"/>
+<rect x="8" y="352" width="16" height="8" class="ocean"/>
+<rect x="24" y="352" width="8" height="8" class="sealane"/>
+<rect x="32" y="352" width="192" height="8" class="ocean"/>
+<rect x="224" y="352" width="8" height="8" class="tforest"/>
+<rect x="232" y="352" width="8" height="8" class="sforest riv"/>
+<rect x="240" y="352" width="8" height="8" class="tforest riv"/>
+<rect x="248" y="352" width="16" height="8" class="rforest"/>
+<rect x="264" y="352" width="8" height="8" class="rforest riv"/>
+<rect x="272" y="352" width="128" height="8" class="rforest"/>
+<rect x="400" y="352" width="16" height="8" class="savanna"/>
+<rect x="416" y="352" width="40" height="8" class="tforest"/>
+<rect x="456" y="352" width="8" height="8" class="ocean"/>
+<rect x="0" y="360" width="8" height="8" class="sealane"/>
+<rect x="8" y="360" width="16" height="8" class="ocean"/>
+<rect x="24" y="360" width="8" height="8" class="sealane"/>
+<rect x="32" y="360" width="200" height="8" class="ocean"/>
+<rect x="232" y="360" width="8" height="8" class="sforest"/>
+<rect x="240" y="360" width="8" height="8" class="sforest riv"/>
+<rect x="248" y="360" width="16" height="8" class="rforest riv"/>
+<rect x="264" y="360" width="16" height="8" class="rforest"/>
+<rect x="280" y="360" width="8" height="8" class="rforest riv"/>
+<rect x="288" y="360" width="112" height="8" class="rforest"/>
+<rect x="400" y="360" width="24" height="8" class="savanna"/>
+<rect x="424" y="360" width="32" height="8" class="tforest"/>
+<rect x="456" y="360" width="8" height="8" class="ocean"/>
+<rect x="0" y="368" width="8" height="8" class="sealane"/>
+<rect x="8" y="368" width="16" height="8" class="ocean"/>
+<rect x="24" y="368" width="8" height="8" class="sealane"/>
+<rect x="32" y="368" width="208" height="8" class="ocean"/>
+<rect x="240" y="368" width="8" height="8" class="sforest"/>
+<rect x="248" y="368" width="8" height="8" class="sforest riv"/>
+<rect x="256" y="368" width="24" height="8" class="rforest riv"/>
+<rect x="280" y="368" width="16" height="8" class="rforest"/>
+<rect x="296" y="368" width="8" height="8" class="rforest riv"/>
+<rect x="304" y="368" width="80" height="8" class="rforest"/>
+<rect x="384" y="368" width="8" height="8" class="savanna"/>
+<rect x="392" y="368" width="8" height="8" class="tforest"/>
+<rect x="400" y="368" width="8" height="8" class="savanna"/>
+<rect x="408" y="368" width="8" height="8" class="tforest"/>
+<rect x="416" y="368" width="8" height="8" class="savanna"/>
+<rect x="424" y="368" width="16" height="8" class="tforest"/>
+<rect x="440" y="368" width="8" height="8" class="savanna"/>
+<rect x="448" y="368" width="16" height="8" class="ocean"/>
+<rect x="0" y="376" width="8" height="8" class="sealane"/>
+<rect x="8" y="376" width="16" height="8" class="ocean"/>
+<rect x="24" y="376" width="8" height="8" class="sealane"/>
+<rect x="32" y="376" width="216" height="8" class="ocean"/>
+<rect x="248" y="376" width="8" height="8" class="sforest"/>
+<rect x="256" y="376" width="8" height="8" class="sforest riv"/>
+<rect x="264" y="376" width="8" height="8" class="prairie riv"/>
+<rect x="272" y="376" width="24" height="8" class="rforest riv"/>
+<rect x="296" y="376" width="24" height="8" class="rforest"/>
+<rect x="320" y="376" width="8" height="8" class="rforest riv"/>
+<rect x="328" y="376" width="48" height="8" class="rforest"/>
+<rect x="376" y="376" width="40" height="8" class="savanna"/>
+<rect x="416" y="376" width="24" height="8" class="tforest"/>
+<rect x="440" y="376" width="24" height="8" class="ocean"/>
+<rect x="0" y="384" width="8" height="8" class="sealane"/>
+<rect x="8" y="384" width="16" height="8" class="ocean"/>
+<rect x="24" y="384" width="8" height="8" class="sealane"/>
+<rect x="32" y="384" width="216" height="8" class="ocean"/>
+<rect x="248" y="384" width="8" height="8" class="sforest"/>
+<rect x="256" y="384" width="16" height="8" class="sforest riv"/>
+<rect x="272" y="384" width="48" height="8" class="rforest riv"/>
+<rect x="320" y="384" width="8" height="8" class="rforest"/>
+<rect x="328" y="384" width="8" height="8" class="rforest riv"/>
+<rect x="336" y="384" width="8" height="8" class="rforest"/>
+<rect x="344" y="384" width="8" height="8" class="tforest"/>
+<rect x="352" y="384" width="8" height="8" class="savanna"/>
+<rect x="360" y="384" width="8" height="8" class="tforest"/>
+<rect x="368" y="384" width="8" height="8" class="savanna"/>
+<rect x="376" y="384" width="8" height="8" class="marsh"/>
+<rect x="384" y="384" width="8" height="8" class="savanna"/>
+<rect x="392" y="384" width="8" height="8" class="tforest"/>
+<rect x="400" y="384" width="8" height="8" class="savanna"/>
+<rect x="408" y="384" width="24" height="8" class="tforest"/>
+<rect x="432" y="384" width="8" height="8" class="savanna"/>
+<rect x="440" y="384" width="24" height="8" class="ocean"/>
+<rect x="0" y="392" width="8" height="8" class="sealane"/>
+<rect x="8" y="392" width="16" height="8" class="ocean"/>
+<rect x="24" y="392" width="8" height="8" class="sealane"/>
+<rect x="32" y="392" width="224" height="8" class="ocean"/>
+<rect x="256" y="392" width="16" height="8" class="sforest"/>
+<rect x="272" y="392" width="24" height="8" class="sforest riv"/>
+<rect x="296" y="392" width="16" height="8" class="prairie riv"/>
+<rect x="312" y="392" width="16" height="8" class="rforest riv"/>
+<rect x="328" y="392" width="16" height="8" class="rforest"/>
+<rect x="344" y="392" width="16" height="8" class="tforest"/>
+<rect x="360" y="392" width="8" height="8" class="savanna"/>
+<rect x="368" y="392" width="8" height="8" class="tforest"/>
+<rect x="376" y="392" width="8" height="8" class="marsh"/>
+<rect x="384" y="392" width="8" height="8" class="tforest"/>
+<rect x="392" y="392" width="16" height="8" class="savanna"/>
+<rect x="408" y="392" width="24" height="8" class="tforest"/>
+<rect x="432" y="392" width="24" height="8" class="ocean"/>
+<rect x="456" y="392" width="8" height="8" class="sealane"/>
+<rect x="0" y="400" width="8" height="8" class="sealane"/>
+<rect x="8" y="400" width="16" height="8" class="ocean"/>
+<rect x="24" y="400" width="8" height="8" class="sealane"/>
+<rect x="32" y="400" width="240" height="8" class="ocean"/>
+<rect x="272" y="400" width="16" height="8" class="sforest"/>
+<rect x="288" y="400" width="8" height="8" class="sforest riv"/>
+<rect x="296" y="400" width="8" height="8" class="mforest"/>
+<rect x="304" y="400" width="8" height="8" class="plains"/>
+<rect x="312" y="400" width="8" height="8" class="prairie riv"/>
+<rect x="320" y="400" width="16" height="8" class="rforest riv"/>
+<rect x="336" y="400" width="8" height="8" class="rforest"/>
+<rect x="344" y="400" width="40" height="8" class="tforest"/>
+<rect x="384" y="400" width="8" height="8" class="savanna"/>
+<rect x="392" y="400" width="40" height="8" class="tforest"/>
+<rect x="432" y="400" width="24" height="8" class="ocean"/>
+<rect x="456" y="400" width="8" height="8" class="sealane"/>
+<rect x="0" y="408" width="8" height="8" class="sealane"/>
+<rect x="8" y="408" width="16" height="8" class="ocean"/>
+<rect x="24" y="408" width="8" height="8" class="sealane"/>
+<rect x="32" y="408" width="248" height="8" class="ocean"/>
+<rect x="280" y="408" width="8" height="8" class="sforest"/>
+<rect x="288" y="408" width="8" height="8" class="sforest riv"/>
+<rect x="296" y="408" width="8" height="8" class="plains"/>
+<rect x="304" y="408" width="8" height="8" class="ocean"/>
+<rect x="312" y="408" width="8" height="8" class="mforest"/>
+<rect x="320" y="408" width="8" height="8" class="prairie riv"/>
+<rect x="328" y="408" width="8" height="8" class="tforest riv"/>
+<rect x="336" y="408" width="8" height="8" class="tforest"/>
+<rect x="344" y="408" width="8" height="8" class="tforest riv"/>
+<rect x="352" y="408" width="72" height="8" class="tforest"/>
+<rect x="424" y="408" width="8" height="8" class="savanna"/>
+<rect x="432" y="408" width="24" height="8" class="ocean"/>
+<rect x="456" y="408" width="8" height="8" class="sealane"/>
+<rect x="0" y="416" width="8" height="8" class="sealane"/>
+<rect x="8" y="416" width="16" height="8" class="ocean"/>
+<rect x="24" y="416" width="8" height="8" class="sealane"/>
+<rect x="32" y="416" width="256" height="8" class="ocean"/>
+<rect x="288" y="416" width="8" height="8" class="prairie riv"/>
+<rect x="296" y="416" width="8" height="8" class="plains riv"/>
+<rect x="304" y="416" width="8" height="8" class="mforest"/>
+<rect x="312" y="416" width="8" height="8" class="plains"/>
+<rect x="320" y="416" width="8" height="8" class="mforest"/>
+<rect x="328" y="416" width="8" height="8" class="prairie riv"/>
+<rect x="336" y="416" width="8" height="8" class="tforest riv"/>
+<rect x="344" y="416" width="40" height="8" class="tforest"/>
+<rect x="384" y="416" width="8" height="8" class="grass"/>
+<rect x="392" y="416" width="24" height="8" class="tforest"/>
+<rect x="416" y="416" width="8" height="8" class="savanna"/>
+<rect x="424" y="416" width="24" height="8" class="ocean"/>
+<rect x="448" y="416" width="16" height="8" class="sealane"/>
+<rect x="0" y="424" width="8" height="8" class="sealane"/>
+<rect x="8" y="424" width="16" height="8" class="ocean"/>
+<rect x="24" y="424" width="8" height="8" class="sealane"/>
+<rect x="32" y="424" width="256" height="8" class="ocean"/>
+<rect x="288" y="424" width="16" height="8" class="sforest"/>
+<rect x="304" y="424" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="424" width="8" height="8" class="prairie"/>
+<rect x="320" y="424" width="8" height="8" class="plains"/>
+<rect x="328" y="424" width="8" height="8" class="prairie riv"/>
+<rect x="336" y="424" width="8" height="8" class="tforest riv"/>
+<rect x="344" y="424" width="32" height="8" class="tforest"/>
+<rect x="376" y="424" width="8" height="8" class="grass"/>
+<rect x="384" y="424" width="8" height="8" class="tforest"/>
+<rect x="392" y="424" width="8" height="8" class="savanna"/>
+<rect x="400" y="424" width="48" height="8" class="ocean"/>
+<rect x="448" y="424" width="16" height="8" class="sealane"/>
+<rect x="0" y="432" width="8" height="8" class="sealane"/>
+<rect x="8" y="432" width="16" height="8" class="ocean"/>
+<rect x="24" y="432" width="8" height="8" class="sealane"/>
+<rect x="32" y="432" width="256" height="8" class="ocean"/>
+<rect x="288" y="432" width="8" height="8" class="sforest riv"/>
+<rect x="296" y="432" width="8" height="8" class="sforest"/>
+<rect x="304" y="432" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="432" width="8" height="8" class="plains"/>
+<rect x="320" y="432" width="8" height="8" class="mforest"/>
+<rect x="328" y="432" width="8" height="8" class="prairie riv"/>
+<rect x="336" y="432" width="8" height="8" class="grass riv"/>
+<rect x="344" y="432" width="16" height="8" class="grass"/>
+<rect x="360" y="432" width="24" height="8" class="cforest"/>
+<rect x="384" y="432" width="8" height="8" class="tforest"/>
+<rect x="392" y="432" width="56" height="8" class="ocean"/>
+<rect x="448" y="432" width="16" height="8" class="sealane"/>
+<rect x="0" y="440" width="8" height="8" class="sealane"/>
+<rect x="8" y="440" width="16" height="8" class="ocean"/>
+<rect x="24" y="440" width="8" height="8" class="sealane"/>
+<rect x="32" y="440" width="264" height="8" class="ocean"/>
+<rect x="296" y="440" width="8" height="8" class="mforest"/>
+<rect x="304" y="440" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="440" width="8" height="8" class="mforest"/>
+<rect x="320" y="440" width="8" height="8" class="prairie"/>
+<rect x="328" y="440" width="8" height="8" class="prairie riv"/>
+<rect x="336" y="440" width="8" height="8" class="sforest riv"/>
+<rect x="344" y="440" width="8" height="8" class="prairie"/>
+<rect x="352" y="440" width="24" height="8" class="cforest"/>
+<rect x="376" y="440" width="16" height="8" class="tforest"/>
+<rect x="392" y="440" width="48" height="8" class="ocean"/>
+<rect x="440" y="440" width="24" height="8" class="sealane"/>
+<rect x="0" y="448" width="8" height="8" class="sealane"/>
+<rect x="8" y="448" width="16" height="8" class="ocean"/>
+<rect x="24" y="448" width="8" height="8" class="sealane"/>
+<rect x="32" y="448" width="256" height="8" class="ocean"/>
+<rect x="288" y="448" width="8" height="8" class="cforest riv"/>
+<rect x="296" y="448" width="8" height="8" class="cforest"/>
+<rect x="304" y="448" width="8" height="8" class="mforest"/>
+<rect x="312" y="448" width="8" height="8" class="prairie"/>
+<rect x="320" y="448" width="8" height="8" class="prairie riv"/>
+<rect x="328" y="448" width="8" height="8" class="sforest riv"/>
+<rect x="336" y="448" width="8" height="8" class="sforest"/>
+<rect x="344" y="448" width="8" height="8" class="cforest"/>
+<rect x="352" y="448" width="8" height="8" class="grass"/>
+<rect x="360" y="448" width="16" height="8" class="cforest"/>
+<rect x="376" y="448" width="8" height="8" class="tforest"/>
+<rect x="384" y="448" width="8" height="8" class="savanna"/>
+<rect x="392" y="448" width="32" height="8" class="ocean"/>
+<rect x="424" y="448" width="40" height="8" class="sealane"/>
+<rect x="0" y="456" width="8" height="8" class="sealane"/>
+<rect x="8" y="456" width="16" height="8" class="ocean"/>
+<rect x="24" y="456" width="8" height="8" class="sealane"/>
+<rect x="32" y="456" width="256" height="8" class="ocean"/>
+<rect x="288" y="456" width="8" height="8" class="cforest"/>
+<rect x="296" y="456" width="8" height="8" class="mforest riv"/>
+<rect x="304" y="456" width="16" height="8" class="prairie riv"/>
+<rect x="320" y="456" width="8" height="8" class="sforest riv"/>
+<rect x="328" y="456" width="8" height="8" class="sforest"/>
+<rect x="336" y="456" width="8" height="8" class="grass"/>
+<rect x="344" y="456" width="8" height="8" class="prairie"/>
+<rect x="352" y="456" width="16" height="8" class="cforest"/>
+<rect x="368" y="456" width="8" height="8" class="tforest"/>
+<rect x="376" y="456" width="8" height="8" class="savanna"/>
+<rect x="384" y="456" width="32" height="8" class="ocean"/>
+<rect x="416" y="456" width="48" height="8" class="sealane"/>
+<rect x="0" y="464" width="8" height="8" class="sealane"/>
+<rect x="8" y="464" width="16" height="8" class="ocean"/>
+<rect x="24" y="464" width="8" height="8" class="sealane"/>
+<rect x="32" y="464" width="264" height="8" class="ocean"/>
+<rect x="296" y="464" width="8" height="8" class="mforest"/>
+<rect x="304" y="464" width="8" height="8" class="grass riv"/>
+<rect x="312" y="464" width="8" height="8" class="sforest riv"/>
+<rect x="320" y="464" width="8" height="8" class="sforest"/>
+<rect x="328" y="464" width="8" height="8" class="sforest riv"/>
+<rect x="336" y="464" width="16" height="8" class="prairie"/>
+<rect x="352" y="464" width="8" height="8" class="ocean"/>
+<rect x="360" y="464" width="8" height="8" class="grass"/>
+<rect x="368" y="464" width="8" height="8" class="tforest"/>
+<rect x="376" y="464" width="40" height="8" class="ocean"/>
+<rect x="416" y="464" width="48" height="8" class="sealane"/>
+<rect x="0" y="472" width="8" height="8" class="sealane"/>
+<rect x="8" y="472" width="16" height="8" class="ocean"/>
+<rect x="24" y="472" width="8" height="8" class="sealane"/>
+<rect x="32" y="472" width="264" height="8" class="ocean"/>
+<rect x="296" y="472" width="8" height="8" class="cforest"/>
+<rect x="304" y="472" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="472" width="8" height="8" class="sforest riv"/>
+<rect x="320" y="472" width="8" height="8" class="sforest"/>
+<rect x="328" y="472" width="8" height="8" class="prairie"/>
+<rect x="336" y="472" width="8" height="8" class="mforest"/>
+<rect x="344" y="472" width="16" height="8" class="prairie"/>
+<rect x="360" y="472" width="48" height="8" class="ocean"/>
+<rect x="408" y="472" width="56" height="8" class="sealane"/>
+<rect x="0" y="480" width="8" height="8" class="sealane"/>
+<rect x="8" y="480" width="16" height="8" class="ocean"/>
+<rect x="24" y="480" width="8" height="8" class="sealane"/>
+<rect x="32" y="480" width="264" height="8" class="ocean"/>
+<rect x="296" y="480" width="8" height="8" class="mforest"/>
+<rect x="304" y="480" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="480" width="8" height="8" class="sforest"/>
+<rect x="320" y="480" width="8" height="8" class="sforest riv"/>
+<rect x="328" y="480" width="8" height="8" class="mforest"/>
+<rect x="336" y="480" width="16" height="8" class="prairie"/>
+<rect x="352" y="480" width="8" height="8" class="mforest"/>
+<rect x="360" y="480" width="40" height="8" class="ocean"/>
+<rect x="400" y="480" width="64" height="8" class="sealane"/>
+<rect x="0" y="488" width="8" height="8" class="sealane"/>
+<rect x="8" y="488" width="16" height="8" class="ocean"/>
+<rect x="24" y="488" width="8" height="8" class="sealane"/>
+<rect x="32" y="488" width="216" height="8" class="ocean"/>
+<rect x="248" y="488" width="8" height="8" class="sealane"/>
+<rect x="256" y="488" width="32" height="8" class="ocean"/>
+<rect x="288" y="488" width="8" height="8" class="bforest"/>
+<rect x="296" y="488" width="16" height="8" class="prairie riv"/>
+<rect x="312" y="488" width="16" height="8" class="sforest"/>
+<rect x="328" y="488" width="8" height="8" class="ocean"/>
+<rect x="336" y="488" width="8" height="8" class="mforest"/>
+<rect x="344" y="488" width="48" height="8" class="ocean"/>
+<rect x="392" y="488" width="72" height="8" class="sealane"/>
+<rect x="0" y="496" width="8" height="8" class="sealane"/>
+<rect x="8" y="496" width="16" height="8" class="ocean"/>
+<rect x="24" y="496" width="8" height="8" class="sealane"/>
+<rect x="32" y="496" width="216" height="8" class="ocean"/>
+<rect x="248" y="496" width="8" height="8" class="sealane"/>
+<rect x="256" y="496" width="40" height="8" class="ocean"/>
+<rect x="296" y="496" width="8" height="8" class="bforest"/>
+<rect x="304" y="496" width="8" height="8" class="prairie riv"/>
+<rect x="312" y="496" width="8" height="8" class="sforest riv"/>
+<rect x="320" y="496" width="8" height="8" class="sforest"/>
+<rect x="328" y="496" width="8" height="8" class="prairie"/>
+<rect x="336" y="496" width="48" height="8" class="ocean"/>
+<rect x="384" y="496" width="80" height="8" class="sealane"/>
+<rect x="0" y="504" width="8" height="8" class="sealane"/>
+<rect x="8" y="504" width="16" height="8" class="ocean"/>
+<rect x="24" y="504" width="8" height="8" class="sealane"/>
+<rect x="32" y="504" width="216" height="8" class="ocean"/>
+<rect x="248" y="504" width="8" height="8" class="sealane"/>
+<rect x="256" y="504" width="32" height="8" class="ocean"/>
+<rect x="288" y="504" width="8" height="8" class="bforest riv"/>
+<rect x="296" y="504" width="8" height="8" class="ocean"/>
+<rect x="304" y="504" width="8" height="8" class="bforest riv"/>
+<rect x="312" y="504" width="8" height="8" class="plains"/>
+<rect x="320" y="504" width="8" height="8" class="sforest"/>
+<rect x="328" y="504" width="48" height="8" class="ocean"/>
+<rect x="376" y="504" width="88" height="8" class="sealane"/>
+<rect x="0" y="512" width="8" height="8" class="sealane"/>
+<rect x="8" y="512" width="16" height="8" class="ocean"/>
+<rect x="24" y="512" width="8" height="8" class="sealane"/>
+<rect x="32" y="512" width="224" height="8" class="ocean"/>
+<rect x="256" y="512" width="8" height="8" class="sealane"/>
+<rect x="264" y="512" width="32" height="8" class="ocean"/>
+<rect x="296" y="512" width="8" height="8" class="bforest"/>
+<rect x="304" y="512" width="16" height="8" class="sforest riv"/>
+<rect x="320" y="512" width="8" height="8" class="sforest"/>
+<rect x="328" y="512" width="40" height="8" class="ocean"/>
+<rect x="368" y="512" width="96" height="8" class="sealane"/>
+<rect x="0" y="520" width="8" height="8" class="sealane"/>
+<rect x="8" y="520" width="16" height="8" class="ocean"/>
+<rect x="24" y="520" width="8" height="8" class="sealane"/>
+<rect x="32" y="520" width="224" height="8" class="ocean"/>
+<rect x="256" y="520" width="8" height="8" class="sealane"/>
+<rect x="264" y="520" width="40" height="8" class="ocean"/>
+<rect x="304" y="520" width="8" height="8" class="bforest riv"/>
+<rect x="312" y="520" width="8" height="8" class="plains"/>
+<rect x="320" y="520" width="16" height="8" class="sforest"/>
+<rect x="336" y="520" width="32" height="8" class="ocean"/>
+<rect x="368" y="520" width="96" height="8" class="sealane"/>
+<rect x="0" y="528" width="8" height="8" class="sealane"/>
+<rect x="8" y="528" width="16" height="8" class="ocean"/>
+<rect x="24" y="528" width="8" height="8" class="sealane"/>
+<rect x="32" y="528" width="232" height="8" class="ocean"/>
+<rect x="264" y="528" width="8" height="8" class="sealane"/>
+<rect x="272" y="528" width="24" height="8" class="ocean"/>
+<rect x="296" y="528" width="8" height="8" class="bforest"/>
+<rect x="304" y="528" width="8" height="8" class="bforest riv"/>
+<rect x="312" y="528" width="8" height="8" class="sforest riv"/>
+<rect x="320" y="528" width="8" height="8" class="sforest"/>
+<rect x="328" y="528" width="48" height="8" class="ocean"/>
+<rect x="376" y="528" width="88" height="8" class="sealane"/>
+<rect x="0" y="536" width="8" height="8" class="sealane"/>
+<rect x="8" y="536" width="16" height="8" class="ocean"/>
+<rect x="24" y="536" width="8" height="8" class="sealane"/>
+<rect x="32" y="536" width="232" height="8" class="ocean"/>
+<rect x="264" y="536" width="8" height="8" class="sealane"/>
+<rect x="272" y="536" width="32" height="8" class="ocean"/>
+<rect x="304" y="536" width="8" height="8" class="bforest"/>
+<rect x="312" y="536" width="8" height="8" class="bforest riv"/>
+<rect x="320" y="536" width="8" height="8" class="sforest"/>
+<rect x="328" y="536" width="56" height="8" class="ocean"/>
+<rect x="384" y="536" width="80" height="8" class="sealane"/>
+<rect x="0" y="544" width="8" height="8" class="sealane"/>
+<rect x="8" y="544" width="16" height="8" class="ocean"/>
+<rect x="24" y="544" width="8" height="8" class="sealane"/>
+<rect x="32" y="544" width="240" height="8" class="ocean"/>
+<rect x="272" y="544" width="8" height="8" class="sealane"/>
+<rect x="280" y="544" width="32" height="8" class="ocean"/>
+<rect x="312" y="544" width="8" height="8" class="bforest riv"/>
+<rect x="320" y="544" width="8" height="8" class="bforest"/>
+<rect x="328" y="544" width="32" height="8" class="ocean"/>
+<rect x="360" y="544" width="8" height="8" class="tundra"/>
+<rect x="368" y="544" width="16" height="8" class="ocean"/>
+<rect x="384" y="544" width="80" height="8" class="sealane"/>
+<rect x="0" y="552" width="8" height="8" class="sealane"/>
+<rect x="8" y="552" width="16" height="8" class="ocean"/>
+<rect x="24" y="552" width="8" height="8" class="sealane"/>
+<rect x="32" y="552" width="248" height="8" class="ocean"/>
+<rect x="280" y="552" width="8" height="8" class="sealane"/>
+<rect x="288" y="552" width="40" height="8" class="ocean"/>
+<rect x="328" y="552" width="8" height="8" class="tundra riv"/>
+<rect x="336" y="552" width="40" height="8" class="ocean"/>
+<rect x="376" y="552" width="88" height="8" class="sealane"/>
+<rect x="0" y="560" width="8" height="8" class="sealane"/>
+<rect x="8" y="560" width="16" height="8" class="ocean"/>
+<rect x="24" y="560" width="8" height="8" class="sealane"/>
+<rect x="32" y="560" width="256" height="8" class="ocean"/>
+<rect x="288" y="560" width="16" height="8" class="sealane"/>
+<rect x="304" y="560" width="40" height="8" class="ocean"/>
+<rect x="344" y="560" width="120" height="8" class="sealane"/>
+<rect x="0" y="568" width="8" height="8" class="sealane"/>
+<rect x="8" y="568" width="456" height="8" class="ocean"/>
+<g class="site"><rect x="144" y="224" width="24" height="24" class="ringbox"/><circle cx="156.0" cy="236.0" r="5.4" class="dot"/><text x="156.0" y="238.6" class="rank">S</text></g>
+<g class="site"><rect x="168" y="232" width="24" height="24" class="ringbox"/><circle cx="180.0" cy="244.0" r="5.4" class="dot"/><text x="180.0" y="246.6" class="rank">S</text></g>
+<g class="site"><rect x="256" y="280" width="24" height="24" class="ringbox"/><circle cx="268.0" cy="292.0" r="5.4" class="dot"/><text x="268.0" y="294.6" class="rank">S</text></g>
+<g class="site"><rect x="48" y="56" width="24" height="24" class="ringbox"/><circle cx="60.0" cy="68.0" r="5.4" class="dot"/><text x="60.0" y="70.6" class="rank">T</text></g>
+<g class="site"><rect x="56" y="80" width="24" height="24" class="ringbox"/><circle cx="68.0" cy="92.0" r="5.4" class="dot"/><text x="68.0" y="94.6" class="rank">T</text></g>
+<g class="site"><rect x="208" y="152" width="24" height="24" class="ringbox"/><circle cx="220.0" cy="164.0" r="5.4" class="dot"/><text x="220.0" y="166.6" class="rank">T</text></g>
+<g class="site"><rect x="72" y="104" width="24" height="24" class="ringbox"/><circle cx="84.0" cy="116.0" r="5.4" class="dot"/><text x="84.0" y="118.6" class="rank">C</text></g>
+<g class="site"><rect x="96" y="128" width="24" height="24" class="ringbox"/><circle cx="108.0" cy="140.0" r="5.4" class="dot"/><text x="108.0" y="142.6" class="rank">C</text></g>
+<g class="site"><rect x="304" y="424" width="24" height="24" class="ringbox"/><circle cx="316.0" cy="436.0" r="5.4" class="dot"/><text x="316.0" y="438.6" class="rank">C</text></g>
+<g class="site"><rect x="48" y="8" width="24" height="24" class="ringbox"/><circle cx="60.0" cy="20.0" r="5.4" class="dot"/><text x="60.0" y="22.6" class="rank">F</text></g>
+<g class="site"><rect x="64" y="32" width="24" height="24" class="ringbox"/><circle cx="76.0" cy="44.0" r="5.4" class="dot"/><text x="76.0" y="46.6" class="rank">F</text></g>
+<g class="site"><rect x="248" y="88" width="24" height="24" class="ringbox"/><circle cx="260.0" cy="100.0" r="5.4" class="dot"/><text x="260.0" y="102.6" class="rank">F</text></g>
+<g class="site"><rect x="104" y="160" width="24" height="24" class="ringbox"/><circle cx="116.0" cy="172.0" r="5.4" class="dot"/><text x="116.0" y="174.6" class="rank">O</text></g>
+<g class="site"><rect x="256" y="368" width="24" height="24" class="ringbox"/><circle cx="268.0" cy="380.0" r="5.4" class="dot"/><text x="268.0" y="382.6" class="rank">O</text></g>
+<g class="site"><rect x="280" y="376" width="24" height="24" class="ringbox"/><circle cx="292.0" cy="388.0" r="5.4" class="dot"/><text x="292.0" y="390.6" class="rank">O</text></g>
+<g class="site"><rect x="88" y="72" width="24" height="24" class="ringbox"/><circle cx="100.0" cy="84.0" r="5.4" class="dot"/><text x="100.0" y="86.6" class="rank">G</text></g>
+<g class="site"><rect x="112" y="80" width="24" height="24" class="ringbox"/><circle cx="124.0" cy="92.0" r="5.4" class="dot"/><text x="124.0" y="94.6" class="rank">G</text></g>
+<g class="site"><rect x="232" y="80" width="24" height="24" class="ringbox"/><circle cx="244.0" cy="92.0" r="5.4" class="dot"/><text x="244.0" y="94.6" class="rank">G</text></g>
+</svg>
+</div>
+<div style="flex:1 1 16rem; min-width:15rem;">
+<h3 style="margin-top:.2rem;">Best outpost sites per good</h3>
+<div class="tblwrap"><table>
+<tr><th>config</th><th>top sites (6-tile ring export /turn)</th></tr>
+<tr><td><b>S</b>ugar</td><td class="mono">(19,29)&nbsp;71 &middot; (22,30)&nbsp;70 &middot; (33,36)&nbsp;70</td></tr>
+<tr><td><b>T</b>obacco</td><td class="mono">(7,8)&nbsp;71 &middot; (8,11)&nbsp;70 &middot; (27,20)&nbsp;69</td></tr>
+<tr><td><b>C</b>otton</td><td class="mono">(10,14)&nbsp;70 &middot; (13,17)&nbsp;70 &middot; (39,54)&nbsp;69</td></tr>
+<tr><td><b>F</b>urs</td><td class="mono">(7,2)&nbsp;71 &middot; (9,5)&nbsp;68 &middot; (32,12)&nbsp;68</td></tr>
+<tr><td><b>O</b>re</td><td class="mono">(14,21)&nbsp;60 &middot; (33,47)&nbsp;60 &middot; (36,48)&nbsp;60</td></tr>
+<tr><td><b>G</b>ranary</td><td class="mono">(12,10)&nbsp;+77 &middot; (15,11)&nbsp;+75 &middot; (30,11)&nbsp;+75</td></tr>
+</table></div>
+<p class="caption">The geography specializes on its own: sugar in the tropical belt,
+tobacco on the NE grasslands, cotton on the central prairies, furs in the boreal north,
+ore in the two desert/tundra pockets — the factory capital and armory site anywhere
+central to their suppliers (river preferred for freight and the +1 center food).</p>
+<div class="legend">
+  <span><span class="sw" style="background:#8FB3C8"></span>ocean</span>
+  <span><span class="sw" style="background:#A6C6D7"></span>sea lane</span>
+  <span><span class="sw" style="background:#CCC084"></span>open land</span>
+  <span><span class="sw" style="background:#4E7D5C"></span>forest</span>
+  <span><span class="sw" style="background:#E2CC99"></span>desert</span>
+  <span><span class="sw" style="background:#D9D3BE"></span>tundra</span>
+  <span><span class="sw" style="background:#4E7FAE"></span>river</span>
+  <span><span class="sw" style="background:#823C22;border-radius:50%"></span>config site + ring</span>
+</div>
+<p class="caption">Terrain decoded from <span class="mono">AMER2.MP</span> bytes
+(58&times;72; id &amp; 0x1F, river bit 0x20). No mountain/hill ids occur in the base layer,
+and the trailer layers are region ids — both facts worth knowing before trusting any
+site list that assumes otherwise.</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="wrap">
+<h2><span class="no">6</span>Colony configurator</h2>
+
+<p>Set up a single colony below — which buildings are already built, who works where,
+what the wagons bring in — and the page runs the decoded engine on it live: the SoL
+steady state is solved as a fixed point (bells &rarr; SoL &rarr; latch bonuses &rarr;
+rates &rarr; bells), tory penalties and building tiers apply per the &sect;1&ndash;2
+formulas, and raw-starved factories backscale at 1.5&times;input exactly as
+<span class="mono">func_008E84</span> does.</p>
+</div>
+
+<div class="wide">
+<div class="card" id="cfg-root">
+<div class="cfg-grid">
+
+<div class="cfg-col">
+<h3>Settings</h3>
+<div class="cfg-row"><label>Difficulty</label>
+<select id="cfg-diff">
+<option value="0">Discoverer</option><option value="1">Explorer</option>
+<option value="2" selected>Conquistador</option><option value="3">Governor</option>
+<option value="4">Viceroy</option></select></div>
+<div class="cfg-row"><label>Center tile</label><select id="cfg-center"></select></div>
+<div class="cfg-row"><label><input type="checkbox" id="cfg-centerriv"> river on center</label></div>
+<div class="cfg-row"><label><input type="checkbox" id="cfg-ffbell"> +50% bell Founding Father</label></div>
+<div class="cfg-row"><label><input type="checkbox" id="cfg-ffcross"> +50% cross Founding Father</label></div>
+<div class="cfg-row"><label>Horse herd</label><input type="number" id="cfg-herd" value="0" min="0" max="300" step="25" style="width:5em"></div>
+
+<h3>Buildings built</h3>
+<div class="cfg-row"><label>Bells</label>
+<select id="cfg-bellb"><option value="0">Town Hall only</option>
+<option value="1">+ Printing Press (&times;1.5)</option>
+<option value="2" selected>+ Newspaper (&times;2)</option></select></div>
+<div id="cfg-chains"></div>
+<div class="cfg-row"><label><input type="checkbox" id="cfg-mill"> Lumber Mill (carpenters &times;2)</label></div>
+<div class="cfg-row"><label>Crosses</label>
+<select id="cfg-church"><option value="0">none</option><option value="1">Church</option>
+<option value="2">Cathedral (&times;2/worker)</option></select></div>
+<div class="cfg-row"><label><input type="checkbox" id="cfg-stable"> Stable (breed /25)</label></div>
+<div class="cfg-row"><label>Warehouse</label>
+<select id="cfg-wh"><option value="0">none (cap 100)</option><option value="1" selected>Warehouse (200)</option>
+<option value="2">+ Expansion (300)</option></select></div>
+</div>
+
+<div class="cfg-col">
+<h3>Ring tiles <span class="cfg-hint">(max 8 worked)</span></h3>
+<div id="cfg-tiles"></div>
+<button id="cfg-addtile" class="cfg-btn">+ add worker on a tile</button>
+<h3>Building workers <span class="cfg-hint">(max 3 per building)</span></h3>
+<div id="cfg-indoor"></div>
+<h3>Imports per turn <span class="cfg-hint">(wagons/ships inbound)</span></h3>
+<div id="cfg-imports" class="cfg-imp"></div>
+<div class="cfg-row" style="margin-top:.6rem">
+<button class="cfg-btn" data-preset="rum">Preset: rum town</button>
+<button class="cfg-btn" data-preset="outpost">Preset: outpost</button>
+<button class="cfg-btn" data-preset="hub">Preset: factory hub</button></div>
+</div>
+
+<div class="cfg-col">
+<h3>Result</h3>
+<div id="cfg-status"></div>
+<div class="tblwrap"><table id="cfg-out"></table></div>
+<div id="cfg-warn"></div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="wrap">
+<h2><span class="no">7</span>Build-out order</h2>
+
+<p>Two dynamics govern the path to the steady state above. <b>Below 100% SoL the tory
+term punishes size:</b> the per-tile penalty
+&minus;&lfloor;P(1&minus;SoL)/(10&minus;d)&rfloor; is superlinear in colony population (P tiles
+each lose &lfloor;P&middot;&hellip;&rfloor;), while a pop&nbsp;&le;7 outpost floors it to zero
+entirely — so found the spokes small and early, and concentrate statesmen where
+population concentrates. <b>Hammers front-load:</b> a two-carpenter yard (32
+hammers/turn at 100% SoL) raises a shop (52&ndash;64 hammers) in two turns and a factory
+(160&ndash;240 + tools) in five to eight; every colony passes through the hammer phase
+before settling into its configuration, consuming its own forest ring as it clears it —
+the clearing lumber itself banks into the colony <span class="cite">@0x04084D</span>.</p>
+
+<h2><span class="no">8</span>Assumption ledger</h2>
+
+<div class="tblwrap"><table>
+<tr><th>assumption</th><th>status</th></tr>
+<tr><td>Terrain yields, fold rule, expert rule, improvement bonuses, food law, bell multipliers, factory 2/3-input rule, resource switch, center-tile classes, <b>building worker-rate formula incl. tier and SoL bonuses, Lumber Mill &times;2</b> (rev&nbsp;2: <span class="mono">func_009FFC</span> decoded)</td><td>byte-verified (offsets inline)</td></tr>
+<tr><td>3 workers per shop; carpenter lumber debit 1:1</td><td>(R) manual/classic; band write site untraced</td></tr>
+<tr><td>Wagon cap = colonies &minus; 1; wagon = 2 holds &times; 100; wagon 2&nbsp;MP; road &#8531;&nbsp;MP; galleon 6 holds</td><td>(R) player/manual rules; movement + cap not yet byte-traced</td></tr>
+<tr><td>Prime resources: positions</td><td>TBD — runtime placement, not in .MP; bonus table known</td></tr>
+<tr><td>SoL held at 100%; experts everywhere; improvements complete (transient pioneer cost); Newspaper in every colony; wagon capacity 2&times;100</td><td>scenario choices, all relaxable in the script</td></tr>
+</table></div>
+
+<footer>
+Model + solver: <span class="mono">tools/colony_opt/optimize.py</span> (branch
+<span class="mono">claude/colony-layout-optimization-8hd353</span>). Sources:
+<span class="mono">data_extracted/tables/names_tables.json</span>,
+<span class="mono">data_extracted/map/AMER2_tiles.json</span>,
+<span class="mono">viceroy_source/src/colony/turn_update.c</span>,
+<span class="mono">spec/systems/colony.md</span>, <span class="mono">terrain_improvement.md</span>.
+Separate exercise — nothing here amends the spec.
+Rev&nbsp;3 (2026-08-15): reframed to physical production flows — configuration catalog,
+network balance, per-good site placement; market prices removed. Rev&nbsp;2 decoded the
+<span class="mono">func_009FFC</span> worker rates (tier + SoL formula) underlying all rates here.
+</footer>
+</div>
+
+
+<script>
+(function(){
+  // Terrain x profession base yields, verbatim NAMES $TERRAIN (injected at build).
+  var T = {"Tundra": [2, 0, 0, 0, 0, 0, 2, 0, 0], "Desert": [1, 0, 0, 1, 0, 0, 2, 0, 0], "Plains": [4, 0, 0, 2, 0, 0, 1, 0, 0], "Prairie": [2, 0, 0, 3, 0, 0, 0, 0, 0], "Grassland": [2, 0, 3, 0, 0, 0, 0, 0, 0], "Savannah": [3, 3, 0, 0, 0, 0, 0, 0, 0], "Marsh": [2, 0, 2, 0, 0, 0, 2, 0, 0], "Swamp": [2, 2, 0, 0, 0, 0, 2, 0, 0], "Boreal": [1, 0, 0, 0, 3, 2, 1, 0, 0], "Scrub": [1, 0, 0, 1, 2, 1, 1, 0, 0], "Mixed": [2, 0, 0, 1, 3, 3, 0, 0, 0], "Broadleaf": [1, 0, 0, 1, 2, 2, 0, 0, 0], "Conifer": [1, 0, 1, 0, 2, 3, 0, 0, 0], "Tropical": [2, 1, 0, 0, 2, 2, 0, 0, 0], "Wetland": [1, 0, 1, 0, 2, 2, 1, 0, 0], "Rain": [1, 1, 0, 0, 1, 2, 1, 0, 0], "Arctic": [0, 0, 0, 0, 0, 0, 0, 0, 0], "Ocean": [0, 0, 0, 0, 0, 0, 0, 0, 3], "Sea Lane": [0, 0, 0, 0, 0, 0, 0, 0, 3], "Mountains": [0, 0, 0, 0, 0, 0, 4, 1, 0], "Hills": [1, 0, 0, 0, 0, 0, 4, 0, 0]};
+  var PROF = ["Farmer","Sugar planter","Tobacco planter","Cotton planter","Trapper","Lumberjack","Ore miner","Silver miner","Fisherman"];
+  var GOOD = ["Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore","Silver"];
+  var COLGOOD = [0,1,2,3,4,5,6,7,0];
+  var LAND = ["Plains","Prairie","Grassland","Savannah","Tundra","Desert","Marsh","Swamp",
+              "Boreal","Scrub","Mixed","Broadleaf","Conifer","Tropical","Wetland","Rain",
+              "Mountains","Hills"];
+  // flat worked-tile options
+  var OPTS=[];
+  LAND.forEach(function(t){
+    for(var c=0;c<8;c++){
+      if((T[t]||[])[c]>0) OPTS.push({t:t,c:c,base:T[t][c],water:false,
+        label:PROF[c]+" — "+t+(c<=3?" (plowed)":" (road)")+", base "+T[t][c]});
+    }
+  });
+  OPTS.push({t:"Ocean",c:8,base:T["Ocean"][8],water:true,nudge:1,label:"Fisherman — coastal Ocean, base 3+1"});
+  OPTS.push({t:"Ocean",c:8,base:T["Ocean"][8],water:true,nudge:-1,label:"Fisherman — deep Ocean (6+ water), base 3−1"});
+  var CHAINS=[
+    {key:"rum",    name:"Rum",     raw:1, tiers:["none","Distiller's House","Rum Distillery","Rum Factory"]},
+    {key:"cigars", name:"Cigars",  raw:2, tiers:["none","Tobacconist's House","Tobacconist's Shop","Cigar Factory"]},
+    {key:"cloth",  name:"Cloth",   raw:3, tiers:["none","Weaver's House","Weaver's Shop","Textile Mill"]},
+    {key:"coats",  name:"Coats",   raw:4, tiers:["none","Fur Trader's House","Fur Trading Post","Fur Factory"]},
+    {key:"tools",  name:"Tools",   raw:6, tiers:["none","Blacksmith's House","Blacksmith's Shop","Iron Works"]},
+    {key:"muskets",name:"Muskets", raw:-1,tiers:["none","Armory","Magazine","Arsenal"]}];
+  var INDOOR=[
+    {key:"rum",n:"Distillers"},{key:"cigars",n:"Tobacconists"},{key:"cloth",n:"Weavers"},
+    {key:"coats",n:"Fur traders"},{key:"tools",n:"Blacksmiths"},{key:"muskets",n:"Gunsmiths"},
+    {key:"carpenter",n:"Carpenters"},{key:"statesman",n:"Statesmen"},{key:"preacher",n:"Preachers"}];
+  var IMPORTS=["Food","Sugar","Tobacco","Cotton","Furs","Lumber","Ore","Tools"];
+
+  var S={tiles:[],indoor:{},chains:{rum:0,cigars:0,cloth:0,coats:0,tools:0,muskets:0},imp:{}};
+  INDOOR.forEach(function(j){S.indoor[j.key]={n:0,expert:true};});
+  IMPORTS.forEach(function(g){S.imp[g]=0;});
+
+  function el(id){return document.getElementById(id);}
+  // build static controls
+  var centerSel=el("cfg-center");
+  LAND.forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;centerSel.appendChild(o);});
+  centerSel.value="Prairie";
+  var chDiv=el("cfg-chains");
+  CHAINS.forEach(function(ch){
+    var row=document.createElement("div");row.className="cfg-row";
+    var lab=document.createElement("label");lab.textContent=ch.name;row.appendChild(lab);
+    var sel=document.createElement("select");sel.dataset.chain=ch.key;
+    ch.tiers.forEach(function(t,i){var o=document.createElement("option");o.value=i;o.textContent=i? t+(i===3?" (factory)":""):"none";sel.appendChild(o);});
+    sel.addEventListener("change",function(){S.chains[ch.key]=+sel.value;render();});
+    row.appendChild(sel);chDiv.appendChild(row);ch.sel=sel;
+  });
+  var indDiv=el("cfg-indoor");
+  INDOOR.forEach(function(j){
+    var row=document.createElement("div");row.className="ind-row";
+    var lab=document.createElement("label");lab.textContent=j.n;row.appendChild(lab);
+    var num=document.createElement("input");num.type="number";num.min=0;num.max=3;num.value=0;num.style.width="3.5em";
+    num.addEventListener("input",function(){S.indoor[j.key].n=Math.max(0,Math.min(3,+num.value||0));render();});
+    row.appendChild(num);
+    var cb=document.createElement("input");cb.type="checkbox";cb.checked=true;cb.id="exp-"+j.key;
+    cb.addEventListener("change",function(){S.indoor[j.key].expert=cb.checked;render();});
+    var cl=document.createElement("label");cl.htmlFor=cb.id;cl.textContent="expert";cl.style.minWidth="0";
+    row.appendChild(cb);row.appendChild(cl);
+    indDiv.appendChild(row);j.num=num;j.cb=cb;
+  });
+  var impDiv=el("cfg-imports");
+  IMPORTS.forEach(function(g){
+    var lab=document.createElement("label");lab.textContent=g;
+    var num=document.createElement("input");num.type="number";num.min=0;num.value=0;
+    num.addEventListener("input",function(){S.imp[g]=Math.max(0,+num.value||0);render();});
+    lab.appendChild(num);impDiv.appendChild(lab);S.imp["_el"+g]=num;
+  });
+  function tileRow(tile){
+    var row=document.createElement("div");row.className="tile-row";
+    var sel=document.createElement("select");
+    OPTS.forEach(function(o,i){var op=document.createElement("option");op.value=i;op.textContent=o.label;sel.appendChild(op);});
+    sel.value=tile.opt;
+    sel.addEventListener("change",function(){tile.opt=+sel.value;render();});
+    row.appendChild(sel);
+    function cb(prop,txt){
+      var c=document.createElement("input");c.type="checkbox";c.checked=tile[prop];
+      c.addEventListener("change",function(){tile[prop]=c.checked;render();});
+      var l=document.createElement("label");l.appendChild(c);l.appendChild(document.createTextNode(" "+txt));
+      row.appendChild(l);
+    }
+    cb("expert","expert");cb("river","river");
+    var del=document.createElement("button");del.className="del";del.textContent="×";del.title="remove";
+    del.addEventListener("click",function(){S.tiles.splice(S.tiles.indexOf(tile),1);render();});
+    row.appendChild(del);
+    return row;
+  }
+  el("cfg-addtile").addEventListener("click",function(){
+    if(S.tiles.length<8){S.tiles.push({opt:0,expert:true,river:false});render();}
+  });
+  ["cfg-diff","cfg-centerriv","cfg-ffbell","cfg-ffcross","cfg-herd","cfg-bellb","cfg-mill","cfg-church","cfg-stable","cfg-wh","cfg-center"]
+    .forEach(function(id){el(id).addEventListener("change",render);el(id).addEventListener("input",render);});
+
+  function optIndex(prof,terr){for(var i=0;i<OPTS.length;i++)if(OPTS[i].c===prof&&OPTS[i].t===terr)return i;return 0;}
+  var PRESETS={
+    rum:function(){
+      S.tiles=[];for(var i=0;i<5;i++)S.tiles.push({opt:optIndex(1,"Savannah"),expert:true,river:false});
+      S.tiles.push({opt:optIndex(3,"Prairie"),expert:true,river:true});
+      S.tiles.push({opt:optIndex(0,"Savannah"),expert:true,river:true});
+      S.tiles.push({opt:optIndex(0,"Savannah"),expert:true,river:true});
+      INDOOR.forEach(function(j){S.indoor[j.key].n=0;});
+      S.indoor.rum.n=3;S.indoor.cloth.n=1;S.indoor.statesman.n=2;
+      S.chains={rum:3,cigars:0,cloth:3,coats:0,tools:0,muskets:0};
+      el("cfg-center").value="Prairie";el("cfg-centerriv").checked=true;el("cfg-bellb").value="2";
+      IMPORTS.forEach(function(g){S.imp[g]=0;});
+    },
+    outpost:function(){
+      S.tiles=[];for(var i=0;i<6;i++)S.tiles.push({opt:optIndex(1,"Savannah"),expert:true,river:false});
+      S.tiles.push({opt:optIndex(0,"Savannah"),expert:true,river:false});
+      S.tiles.push({opt:optIndex(0,"Savannah"),expert:true,river:false});
+      INDOOR.forEach(function(j){S.indoor[j.key].n=0;});
+      S.indoor.statesman.n=1;
+      S.chains={rum:0,cigars:0,cloth:0,coats:0,tools:0,muskets:0};
+      el("cfg-center").value="Savannah";el("cfg-centerriv").checked=false;el("cfg-bellb").value="2";
+      IMPORTS.forEach(function(g){S.imp[g]=0;});
+    },
+    hub:function(){
+      S.tiles=[{opt:OPTS.length-2,expert:true,river:false},{opt:OPTS.length-2,expert:true,river:false}];
+      INDOOR.forEach(function(j){S.indoor[j.key].n=0;});
+      S.indoor.cigars.n=3;S.indoor.cloth.n=3;S.indoor.coats.n=3;S.indoor.muskets.n=3;S.indoor.statesman.n=3;
+      S.chains={rum:0,cigars:3,cloth:3,coats:3,tools:0,muskets:3};
+      el("cfg-center").value="Grassland";el("cfg-centerriv").checked=false;el("cfg-bellb").value="2";
+      IMPORTS.forEach(function(g){S.imp[g]=0;});
+      S.imp.Tobacco=48;S.imp.Cotton=48;S.imp.Furs=48;S.imp.Tools=48;S.imp.Food=30;
+    }};
+  Array.prototype.forEach.call(document.querySelectorAll("[data-preset]"),function(b){
+    b.addEventListener("click",function(){PRESETS[b.dataset.preset]();render();});
+  });
+
+  function centerFood(terr,diff,riv,latches){
+    var cls;
+    if(terr==="Desert"||terr==="Scrub") cls=1;
+    else if(["Boreal","Mixed","Broadleaf","Conifer","Tropical","Wetland","Rain","Mountains","Hills"].indexOf(terr)>=0) cls=2;
+    else cls=3;
+    var f=cls+(diff===0?2:diff===1?1:0)+(riv?1:0)+latches;
+    return f;
+  }
+  function centerSecondary(terr,diff,latches){
+    var best=-1,by=0;
+    for(var c=1;c<8;c++){if(c===5)continue;var v=(T[terr]||[])[c]||0;if(v>by){by=v;best=c;}}
+    if(best<0||by<=0)return null;
+    var y=by+(diff===0?1:0)+latches;
+    return {good:COLGOOD[best],qty:y};
+  }
+  function tileYield(tile,adj){
+    var o=OPTS[tile.opt];
+    var y=o.base;
+    if(o.water){ y+=o.nudge; }
+    y+=adj;
+    if(tile.expert){
+      if(o.c===0||o.c===8){ y+=2; if(adj>0)y+=adj; }
+      else y*=2;
+    }
+    if(!o.water){
+      var bonus=(o.c===5||tile.river)?2:1;
+      y+=bonus;
+    }
+    return Math.max(0,y);
+  }
+  function workerRate(base,adj,tier,expert){
+    var r=base+adj;
+    if(tier>=2)r+=base;
+    if(tier>=3)r+=r>>1;
+    if(expert)r*=2;
+    return Math.max(0,r);
+  }
+  function compute(){
+    var diff=+el("cfg-diff").value;
+    var pop=S.tiles.length; INDOOR.forEach(function(j){pop+=S.indoor[j.key].n;});
+    var bellB=+el("cfg-bellb").value, ffB=el("cfg-ffbell").checked;
+    var sol=100, hist={};
+    var res=null;
+    for(var it=0;it<40;it++){
+      var l1=sol>=50?1:0, l2=sol>=100?1:0, latches=l1+l2;
+      var div=10-diff;
+      var tory=Math.round(pop*(100-sol)/100);
+      var adj=latches-Math.floor(tory/div);
+      var sRate=workerRate(3,adj,1,S.indoor.statesman.expert);
+      var bells=1+S.indoor.statesman.n*sRate;
+      if(ffB)bells+=bells>>1;
+      if(bellB===2)bells*=2; else if(bellB===1)bells+=bells>>1;
+      var solNext=pop>0?Math.min(100,Math.floor(50*bells/pop)):100;
+      res={sol:sol,adj:adj,latches:latches,bells:bells,tory:tory};
+      if(solNext===sol)break;
+      if(hist[solNext]){ sol=Math.min(sol,solNext); res.sol=sol; break; }
+      hist[sol]=1; sol=solNext;
+    }
+    var adj=res.adj;
+    // production
+    var prod=[0,0,0,0,0,0,0,0];
+    S.tiles.forEach(function(t){var o=OPTS[t.opt];prod[COLGOOD[o.c]]+=tileYield(t,adj);});
+    var cf=centerFood(el("cfg-center").value,diff,el("cfg-centerriv").checked,res.latches);
+    prod[0]+=cf;
+    var sec=centerSecondary(el("cfg-center").value,diff,res.latches);
+    if(sec)prod[sec.good]+=sec.qty;
+    var avail={};GOOD.forEach(function(g,i){avail[g]=prod[i]+(S.imp[g]||0);});
+    avail.Tools=(S.imp.Tools||0);
+    var out={},cons={},warn=[];
+    // chains in engine order: tools first, then the sellables, muskets last (R)
+    function runChain(key,rawName,outName){
+      var tier=S.chains[key], w=S.indoor[key];
+      if(w.n===0){out[outName]=(out[outName]||0);return;}
+      if(tier===0){warn.push(outName+": workers assigned but no building — output 0");return;}
+      var cap=0;for(var i=0;i<w.n;i++)cap+=workerRate(3,adj,tier,w.expert);
+      var need=tier===3?Math.floor(cap*2/3):cap;
+      var have=avail[rawName]||0;
+      var o2,c2;
+      if(have>=need){o2=cap;c2=need;}
+      else {c2=have;o2=tier===3?Math.floor(have*3/2):have;
+            warn.push(outName+": raw-starved — "+have+" "+rawName.toLowerCase()+" in, wanted "+need);}
+      avail[rawName]=have-c2;
+      out[outName]=(out[outName]||0)+o2;cons[rawName]=(cons[rawName]||0)+c2;
+      if(outName==="Tools")avail.Tools+=o2;
+    }
+    runChain("tools","Ore","Tools");
+    runChain("rum","Sugar","Rum");runChain("cigars","Tobacco","Cigars");
+    runChain("cloth","Cotton","Cloth");runChain("coats","Furs","Coats");
+    runChain("muskets","Tools","Muskets");
+    // hammers
+    var cw=S.indoor.carpenter;
+    if(cw.n>0){
+      var rate=(cw.expert?6:3)+adj; if(el("cfg-mill").checked)rate*=2;
+      var cap2=Math.max(0,rate)*cw.n, have2=avail.Lumber||0;
+      var o3=Math.min(cap2,have2);
+      if(o3<cap2)warn.push("Hammers: lumber-starved — "+have2+" in, wanted "+cap2+" (1:1 (R))");
+      avail.Lumber=have2-o3;out.Hammers=o3;cons.Lumber=(cons.Lumber||0)+o3;
+    }
+    // crosses
+    var pw=S.indoor.preacher, church=+el("cfg-church").value;
+    var crosses=1+(church>=1?1:0)+(church>=2?1:0);
+    if(pw.n>0){
+      var pr=(pw.expert?6:3)+adj; if(church===2)pr*=2;
+      var pc=Math.max(0,pr)*pw.n; if(el("cfg-ffcross").checked)pc+=pc>>1;
+      crosses+=pc;
+    }
+    out.Crosses=crosses; out.Bells=res.bells;
+    // food + horses
+    var eaten=2*pop; cons.Food=(cons.Food||0)+eaten;
+    var foodNet=(avail.Food||0)-eaten;
+    var herd=+el("cfg-herd").value||0, horses=0;
+    if(el("cfg-stable").checked||herd>0){
+      var divh=el("cfg-stable").checked?25:50;
+      var cap3=(+el("cfg-wh").value+1)*100;
+      if(herd>=2&&foodNet>0){
+        horses=Math.min(2*Math.ceil(herd/divh),Math.ceil(foodNet/2),Math.max(0,cap3-herd));
+        foodNet-=horses;
+      }
+    }
+    out.Horses=horses;
+    return {pop:pop,sol:res.sol,adj:adj,bells:res.bells,prod:prod,out:out,cons:cons,
+            foodNet:foodNet,warn:warn,avail:avail,center:cf,sec:sec};
+  }
+  function render(){
+    var td=el("cfg-tiles");td.innerHTML="";
+    S.tiles.forEach(function(t){td.appendChild(tileRow(t));});
+    INDOOR.forEach(function(j){j.num.value=S.indoor[j.key].n;j.cb.checked=S.indoor[j.key].expert;});
+    CHAINS.forEach(function(ch){ch.sel.value=S.chains[ch.key];});
+    IMPORTS.forEach(function(g){S.imp["_el"+g].value=S.imp[g];});
+    var r=compute();
+    var st=el("cfg-status");
+    function chip(txt,cls){return '<span class="chip '+cls+'">'+txt+"</span>";}
+    st.innerHTML=chip("pop "+r.pop+(r.pop>32?" &gt;32!":""),r.pop>32?"bad":"ok")
+      +chip("SoL "+r.sol+"%",r.sol>=100?"ok":r.sol>=50?"mid":"bad")
+      +chip("bells "+r.bells+" / need "+2*r.pop,r.bells>=2*r.pop?"ok":"bad")
+      +chip("food "+(r.foodNet>=0?"+":"")+r.foodNet,r.foodNet>=0?"ok":"bad")
+      +chip("worker adj "+(r.adj>=0?"+":"")+r.adj,r.adj>=0?"ok":"bad");
+    var rows='<tr><th>good</th><th class="n">made</th><th class="n">used</th><th class="n">net /turn</th></tr>';
+    GOOD.forEach(function(g,i){
+      var made=r.prod[i], imp=S.imp[g]||0, used=r.cons[g]||0;
+      var net=made+imp-used;
+      if(made||imp||used)rows+="<tr><td>"+g+(imp?" (+"+imp+" imp)":"")+"</td><td class='n'>"+made+"</td><td class='n'>"+used+"</td><td class='n'><b>"+(net>=0?"+":"")+net+"</b></td></tr>";
+    });
+    ["Rum","Cigars","Cloth","Coats","Tools","Muskets","Hammers","Crosses","Bells","Horses"].forEach(function(g){
+      var v=r.out[g]||0;
+      if(v)rows+="<tr><td><b>"+g+"</b></td><td class='n'>"+v+"</td><td class='n'>"+(g==="Bells"?2*r.pop:"—")+"</td><td class='n'><b>+"+(g==="Bells"?v-2*r.pop:v)+"</b></td></tr>";
+    });
+    el("cfg-out").innerHTML=rows;
+    el("cfg-warn").innerHTML=r.warn.length?("&#9888; "+r.warn.join("<br>&#9888; ")):"";
+  }
+  PRESETS.rum();
+  render();
+})();
+</script>
