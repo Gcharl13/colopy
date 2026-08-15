@@ -115,6 +115,10 @@ void rm_draw_count_row(const rm_crow_cell *cells, int ncells, int x0, int y,
 void rm_count_badge(int value, int x, int y, uint8_t colour);
 void rm_draw_report(const char *fkey);        /* colopy_report_render.c */
 void rm_draw_woodcut(int n);                  /* colopy_report_render.c */
+void rm_draw_title(int menu_row);             /* colopy_boot_render.c */
+void rm_draw_difficulty(int diff);
+void rm_draw_nation(int nation);
+void rm_draw_name(const char *leader);
 void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
                     int market_sel);          /* colopy_europe_render.c */
 int  rm_owner_colour_ui(int ui);

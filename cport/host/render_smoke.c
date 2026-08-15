@@ -272,6 +272,35 @@ int render_woodcut_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --renderboot KIND PAK OUT.ppm ARG: a boot screen (no sav). */
+int render_boot_main(const char *kind, const char *pak_path,
+                     const char *out_path, int arg) {
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    if (strcmp(kind, "title") == 0) rm_draw_title(arg);
+    else if (strcmp(kind, "difficulty") == 0) rm_draw_difficulty(arg);
+    else if (strcmp(kind, "nation") == 0) rm_draw_nation(arg);
+    else rm_draw_name(arg ? "Willem" : "");
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 1;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    printf("render boot %s %d -> %s\n", kind, arg, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER]: an event popup
  * (MODE 0) or ask dialog (MODE 1) over the map screen, with the PINNED
  * substitution set the JS RENDEREVENT block mirrors. */

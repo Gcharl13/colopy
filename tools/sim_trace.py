@@ -127,6 +127,23 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 }"""
 
 
+RENDERBOOT = """([kind, arg]) => {
+  Date.now = () => 0;                 // pin the name caret off
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  if (kind === 'title') { G.menuRow = arg; G.screen = 'title'; }
+  else if (kind === 'difficulty') { G.difficulty = arg; G.screen = 'difficulty'; }
+  else if (kind === 'nation') { G.nation = arg; G.screen = 'nation'; }
+  else { G.leader = arg ? 'Willem' : ''; G.screen = 'name'; }
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  if (kind === 'title') drawTitle(ctx);
+  else if (kind === 'difficulty') drawDifficulty(ctx);
+  else if (kind === 'nation') drawNation(ctx);
+  else drawName(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDERWOODCUT = """([save, n]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -490,7 +507,8 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
                     "rendermap", "renderevent", "rendercolony",
-                    "rendereurope", "renderreport", "renderwoodcut"):
+                    "rendereurope", "renderreport", "renderwoodcut",
+                    "renderboot"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -507,6 +525,11 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "renderboot":
+            out = page.evaluate(RENDERBOOT, [sys.argv[2], int(sys.argv[3])])
+            browser.close()
+            print(out)
+            return
         elif mode == "renderwoodcut":
             out = page.evaluate(RENDERWOODCUT, [sys.argv[2], int(sys.argv[3])])
             browser.close()
