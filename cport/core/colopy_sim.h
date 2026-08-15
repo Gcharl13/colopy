@@ -350,6 +350,9 @@ typedef struct {
     uint32_t ask_seq;            /* the scripted-answer counter — the trace
                                   * answers every ask with askSeq++ % 2 and
                                   * RUNS the callback; ask_choice() mirrors */
+    int16_t zoom_colony;         /* askZoom answer-1 target: the PLAYER
+                                  * colony ordinal to open, -1 none (the
+                                  * input layer consumes it) */
     uint8_t screen_map;          /* G.screen === 'map' (parley gate); the
                                   * retirement report leaves the map, a
                                   * woodcut dismissal returns to it */

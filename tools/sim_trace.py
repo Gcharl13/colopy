@@ -127,6 +127,49 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 }"""
 
 
+INPUT = """([save, events]) => {
+  const SCR = { title: 0, difficulty: 1, nation: 2, name: 3, briefing: 4,
+                hof: 5, map: 6, report: 7, colony: 8, europe: 9, woodcut: 10 };
+  if (save) {
+    importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
+                              savnewcolony: 'savNewColony' }[save]]));
+    G.mapSeed = 1653;
+  } else {
+    G.screen = 'title'; G.menuRow = 0; G.difficulty = 0; G.nation = 0;
+    G.leader = '';
+  }
+  // the shared trace conventions (TURNS block): asks answered by the
+  // seq%2 policy, popups record-only (no modal queue), dialogs inert,
+  // woodcuts dismissed at once
+  let _askSeq = 0;
+  askEvent = (k, subs, cb) => { const c = _askSeq++ % 2; if (cb) cb(c); };
+  showEvent = () => {};
+  openDialog = () => {};
+  const _wc = woodcutOnce;
+  woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
+  G.eventQueue = []; G.dialog = null; G.combat = null;
+  const out = [];
+  const proj = () => {
+    const u = G.units[G.sel];
+    return { s: SCR[G.screen] !== undefined ? SCR[G.screen] : -1,
+      mr: G.menuRow, d: G.difficulty, n: G.nation, ldr: G.leader,
+      bp: G.briefPage || 0, rep: G.report || '', sel: G.sel,
+      vx: G.view.x, vy: G.view.y, om: G.openMenu, ms: G.menuSel,
+      vm: G.viewMode ? 1 : 0,
+      u: u ? [u.x, u.y, u.orders,
+              typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
+      gold: G.gold, year: G.year };
+  };
+  for (const [key, alt, shift] of events) {
+    G.eventQueue = [];             // record-only popups: never modal
+    onKey({ key: key === 'Space' ? ' ' : key, altKey: !!alt,
+            shiftKey: !!shift, preventDefault: () => {} });
+    out.push(proj());
+  }
+  return JSON.stringify(out);
+}"""
+
+
 RENDERBOOT = """([kind, arg]) => {
   Date.now = () => 0;                 // pin the name caret off
   G.dialog = null; G.popups = []; G.eventQueue = [];
@@ -508,7 +551,7 @@ def main():
     if mode not in ("produce", "market", "movecost", "combat", "turns",
                     "rendermap", "renderevent", "rendercolony",
                     "rendereurope", "renderreport", "renderwoodcut",
-                    "renderboot"):
+                    "renderboot", "input"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -525,6 +568,14 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "input":
+            import json as _json
+            events = _json.load(open(sys.argv[3]))
+            save = sys.argv[2] if sys.argv[2] != "boot" else ""
+            out = page.evaluate(INPUT, [save, events])
+            browser.close()
+            print(out)
+            return
         elif mode == "renderboot":
             out = page.evaluate(RENDERBOOT, [sys.argv[2], int(sys.argv[3])])
             browser.close()

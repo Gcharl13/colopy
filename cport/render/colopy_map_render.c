@@ -771,7 +771,6 @@ void rm_plaque(int x, int y, int w, int h) {
  * unit (ordersMenuRows, game.js:1780 — the gating is CAPTURE-DERIVED
  * from the census frigate/wagon frames, flagged like the JS). */
 #define MENU_SEP_H 7
-typedef struct { const char *label; const char *accel; uint8_t dim, sep; } mrow;
 
 /* accel comes from the ORDERS master rows by label match (drawPulldown
  * game.js:1854 `m.rows.find(q => q.label === r.label)`) */
@@ -785,10 +784,10 @@ static const char *orders_accel(const char *label) {
     }
     return "";
 }
-static int orders_rows(int sel, mrow *out) {
+static int orders_rows(int sel, rm_mrow *out) {
     int n = 0;
-#define PUSH(l, d) out[n++] = (mrow){ (l), orders_accel(l), (d) ? 1 : 0, 0 }
-#define SEP() out[n++] = (mrow){ 0, 0, 0, 1 }
+#define PUSH(l, d) out[n++] = (rm_mrow){ (l), orders_accel(l), (d) ? 1 : 0, 0 }
+#define SEP() out[n++] = (rm_mrow){ 0, 0, 0, 1 }
     if (sel < 0 || sel >= CR.n_units_order) {
         /* no unit: every master row, dimmed (game.js:1782) */
         for (int mi = 0; mi < DAT_MENUS_COUNT; mi++) {
@@ -796,7 +795,7 @@ static int orders_rows(int sel, mrow *out) {
             for (int k = 0; k < dat_menus[mi].row_count; k++) {
                 const dat_menu_rows_t *r =
                     &dat_menu_rows[dat_menus[mi].row_start + k];
-                out[n++] = (mrow){ r->label, r->accel, 1, 0 };
+                out[n++] = (rm_mrow){ r->label, r->accel, 1, 0 };
             }
         }
         return n;
@@ -840,7 +839,8 @@ static int orders_rows(int sel, mrow *out) {
     return n;
 }
 
-static int menu_rows(int mi, int sel, mrow *out) {
+int rm_menu_rows(int mi, int sel, rm_mrow *out);
+int rm_menu_rows(int mi, int sel, rm_mrow *out) {
     if (strcmp(dat_menus[mi].title, "ORDERS") == 0)
         return orders_rows(sel, out);
     static const char *GROUPS_GAME[][2] = {
@@ -873,17 +873,17 @@ static int menu_rows(int mi, int sel, mrow *out) {
                     if (strncmp(r->label, groups[g * gw + p],
                                 strlen(groups[g * gw + p])) == 0) hit = 1;
                 if (!hit) continue;
-                if (!any && n) out[n++] = (mrow){ 0, 0, 0, 1 };
+                if (!any && n) out[n++] = (rm_mrow){ 0, 0, 0, 1 };
                 any = 1;
                 used[k] = 1;
-                out[n++] = (mrow){ r->label, r->accel, r->disabled, 0 };
+                out[n++] = (rm_mrow){ r->label, r->accel, r->disabled, 0 };
             }
         }
     }
     for (int k = 0; k < m->row_count; k++) {
         if (used[k]) continue;
         const dat_menu_rows_t *r = &dat_menu_rows[m->row_start + k];
-        out[n++] = (mrow){ r->label, r->accel, r->disabled, 0 };
+        out[n++] = (rm_mrow){ r->label, r->accel, r->disabled, 0 };
     }
     return n;
 }
@@ -893,8 +893,8 @@ void rm_draw_pulldown(int mi, int menu_sel, int sel) {
     static const int BAR_X[6] = { 17, 49, 81, 119, 161, 259 };
     if (mi < 0 || mi >= DAT_MENUS_COUNT) return;
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
-    mrow rows[64];
-    int n = menu_rows(mi, sel, rows);
+    rm_mrow rows[64];
+    int n = rm_menu_rows(mi, sel, rows);
     int w = 0, h = 4;
     for (int k = 0; k < n; k++) {
         if (rows[k].sep) { h += MENU_SEP_H; continue; }

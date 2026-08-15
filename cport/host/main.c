@@ -546,6 +546,11 @@ int main(int argc, char **argv) {
         { extern void rm_score_probe(void); rm_score_probe(); }
         return 0;
     }
+    /* --input [SAVE]: keyboard-event oracle (events on stdin) */
+    if (argc > 1 && strcmp(argv[1], "--input") == 0) {
+        extern int input_main(const char *save);
+        return input_main(argc > 2 ? argv[2] : 0);
+    }
     /* --renderboot KIND PAK OUT.ppm ARG */
     if (argc > 5 && strcmp(argv[1], "--renderboot") == 0) {
         extern int render_boot_main(const char *kind, const char *pak,

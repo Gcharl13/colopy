@@ -301,6 +301,88 @@ int render_boot_main(const char *kind, const char *pak_path,
     return 0;
 }
 
+/* --input [SAVE]: the Phase-8 keyboard oracle.  Events on stdin, one
+ * per line: "K <key> <alt> <shift>".  With a SAVE the session starts on
+ * the map over the loaded fixture (the JS import path); without, at the
+ * title screen.  A projection JSON prints after every event. */
+#include "../game/colopy_input.h"
+#include "../data/colopy_data.h"
+static void in_project(void) {
+    int su = (UI.sel >= 0 && UI.sel < CR.n_units_order)
+                 ? CR.units_order[UI.sel] : -1;
+    printf("{\"s\":%d,\"mr\":%d,\"d\":%d,\"n\":%d,\"ldr\":\"%s\","
+           "\"bp\":%d,\"rep\":\"%s\",\"sel\":%d,\"vx\":%d,"
+           "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,",
+           UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
+           UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
+           UI.open_menu, UI.menu_sel, UI.view_mode);
+    if (su >= 0)
+        printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
+               CS.units[su].map_y, CS.units[su].orders,
+               CR.unit_moves_undef[su] ? -1 : CS.units[su].moves_remaining);
+    else
+        printf("\"u\":null,");
+    printf("\"gold\":%d,\"year\":%u}\n",
+           CS.powers[cs_nation()].gold, cs_year());
+}
+int input_main(const char *save) {
+    ui_init();
+    if (save) {
+        if (strcmp(save, "sav1653") == 0)
+            colopy_load_sav(sav1653, sizeof(sav1653));
+        else if (strcmp(save, "savraleigh") == 0)
+            colopy_load_sav(savraleigh, sizeof(savraleigh));
+        else
+            colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+        colopy_init(1653);
+        units_session_seed();
+        UI.screen = SCR_MAP;
+        UI.nation = (int8_t)cs_nation();
+        UI.difficulty = (int8_t)cs_difficulty();
+        /* the importer's landing view/sel (game.js:10490): first LAND
+         * unit selected, view centred on it */
+        UI.sel = 0;
+        for (int q = 0; q < CR.n_units_order; q++) {
+            int ui = CR.units_order[q];
+            if (dat_units[CS.units[ui].type].hull <= 0) { UI.sel = q; break; }
+        }
+        int cx = -1, cy = -1;
+        if (CR.n_units_order) {
+            int ui = CR.units_order[UI.sel];
+            cx = CS.units[ui].map_x;
+            cy = CS.units[ui].map_y;
+        } else {
+            /* no unit: the importer centres on the first player colony
+             * (game.js:10492) */
+            for (int q = 0; q < CS.n_colonies; q++)
+                if ((CS.colonies[q].owner_power & 3) == cs_nation()) {
+                    cx = CS.colonies[q].map_x;
+                    cy = CS.colonies[q].map_y;
+                    break;
+                }
+        }
+        if (cx >= 0) {
+            int tx = cx - 7, ty = cy - 6;
+            if (tx > COLOPY_MAP_W - 15) tx = COLOPY_MAP_W - 15;
+            if (ty > COLOPY_MAP_H - 12) ty = COLOPY_MAP_H - 12;
+            if (tx < 0) tx = 0;
+            if (ty < 0) ty = 0;
+            UI.view_x = tx;
+            UI.view_y = ty;
+        }
+    }
+    char line[128];
+    while (fgets(line, sizeof(line), stdin)) {
+        char key[64];
+        int alt = 0, shift = 0;
+        if (sscanf(line, "K %63s %d %d", key, &alt, &shift) < 1) continue;
+        if (strcmp(key, "Space") == 0) strcpy(key, " ");
+        in_key(key, alt, shift);
+        in_project();
+    }
+    return 0;
+}
+
 /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER]: an event popup
  * (MODE 0) or ask dialog (MODE 1) over the map screen, with the PINNED
  * substitution set the JS RENDEREVENT block mirrors. */

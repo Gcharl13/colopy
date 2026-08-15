@@ -86,6 +86,7 @@ int rt_sol(int ci) { return CR.col[ci].sol; }
 
 void cr_reset_from_load(void) {
     memset(&CR, 0, sizeof(CR));
+    CR.zoom_colony = -1;
     CR.father_in_progress = -1;
     CR.king_war_rival = -1;
     CR.screen_map = 1;               /* importSav ends on the map screen */
@@ -329,7 +330,14 @@ static void advance_construction(int ci, int hammers) {
                     need_tools, c->stock[TOOLS], c->name, b->name);
             /* askZoom (game.js:6372 via 3155): choice 1 zooms to the
              * colony — G.screen leaves 'map', closing the parley gate. */
-            if (ask_choice() == 1) CR.screen_map = 0;
+            if (ask_choice() == 1) {
+                CR.screen_map = 0;
+                int ord = -1;
+                for (int q = 0; q <= ci; q++)
+                    if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                        ord++;
+                CR.zoom_colony = (int16_t)ord;
+            }
         }
         return;
     }
@@ -440,7 +448,14 @@ static void auto_export(int ci) {
             ev_emit(c->warehouse_level < 2 ? "CARGOREADY1" : "CARGOREADY2",
                     100, 0, c->name, dat_cargo[i].name);
             /* askZoom (game.js:6372 via 2863): same colony-zoom ask. */
-            if (ask_choice() == 1) CR.screen_map = 0;
+            if (ask_choice() == 1) {
+                CR.screen_map = 0;
+                int ord = -1;
+                for (int q = 0; q <= ci; q++)
+                    if ((CS.colonies[q].owner_power & 3) == cs_nation())
+                        ord++;
+                CR.zoom_colony = (int16_t)ord;
+            }
         }
         int excess = c->stock[i] - 50;
         c->stock[i] = 50;
