@@ -98,6 +98,14 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink);
 /* drawPulldown (game.js:1836) over an open bar title; the ORDERS menu
  * builds its rows from the selected unit's context (game.js:1780). */
 void rm_draw_pulldown(int menu_idx, int menu_sel, int sel);
+/* one composited scene tile + its settlement (colony panel, game.js:3565) */
+void rm_scene_tile(int mx, int my, int px, int py);
+/* drawColony (game.js:3449): the full colony screen over CS/CR state */
+/* shared unit chrome (colopy_map_render.c) */
+void rm_nation_plate(int x, int y, int colour, int orders);
+int  rm_owner_colour_ui(int ui);
+void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
+                    int ship_sel, int view, int numbers);
 /* shared chrome primitives (plaque game.js:795, FRAME_GAME rings) */
 void rm_plaque(int x, int y, int w, int h);
 void rm_hollow_rect(int x, int y, int w, int h, uint8_t c);

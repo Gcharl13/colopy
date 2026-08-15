@@ -344,7 +344,10 @@ static void draw_settlement(int px, int py, int level, int nation,
 
 /* nationPlate (game.js:1721): 8x9 black box, 6x7 colour fill, the
  * @ORDERS status letter centred in flat black. */
-static void nation_plate(int x, int y, int colour, int orders) {
+void rm_nation_plate(int x, int y, int colour, int orders);
+void rm_nation_plate(int x, int y, int colour, int orders) {
+    /* callable from any screen (colony Units view) — resolve the font */
+    if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
     rd_fill(x, y, 8, 9, 0);
     rd_fill(x + 1, y + 1, 6, 7, (uint8_t)colour);
     const char *key = dat_orders[orders >= 0 && orders < DAT_ORDERS_COUNT
@@ -358,7 +361,8 @@ static void nation_plate(int x, int y, int colour, int orders) {
  * off-by-one recorded in spec/ui/colony_screen.md §3.7) */
 static int unit_icon(int ui) { return (int)dat_units[CS.units[ui].type].icon - 1; }
 
-static int owner_colour_ui(int ui) {
+int rm_owner_colour_ui(int ui);
+int rm_owner_colour_ui(int ui) {
     int own = CS.units[ui].owner_flags & 0x0F;
     if (CR.unit_is_ref[ui] || own == 0x0F) return KING_COLOUR;
     if (own < 4) return (int)dat_nations[own].color;
@@ -372,7 +376,7 @@ static void draw_unit_rm(const rm_view *vw, int ui, int px, int py) {
     if (vw->sel >= 0 && vw->sel < CR.n_units_order &&
         CR.units_order[vw->sel] == ui && !vw->blink)
         return;
-    nation_plate(px, py, owner_colour_ui(ui), CS.units[ui].orders);
+    rm_nation_plate(px, py, rm_owner_colour_ui(ui), CS.units[ui].orders);
     rd_frame f;
     int ic = unit_icon(ui);
     if (rd_sheet_frame(&RD.icons, ic, &f))
@@ -487,7 +491,7 @@ static void draw_sidebar(const rm_view *vw) {
         if (rd_sheet_frame(&RD.icons, ic, &f))
             /* Math.round(244 + (24-fw)/2): half rounds UP (game.js:1959) */
             rd_blit(&RD.icons, ic, 244 + (25 - f.w) / 2, 72 + (21 - f.h) / 2);
-        nation_plate(244, 72, owner_colour_ui(ui), u->orders);
+        rm_nation_plate(244, 72, rm_owner_colour_ui(ui), u->orders);
         int whole = u->moves_remaining / 3, frac = u->moves_remaining % 3;
         if (frac)
             snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
@@ -520,7 +524,7 @@ static void draw_sidebar(const rm_view *vw) {
             if (ty2 >= 0 && rd_sheet_frame(&RD.icons,
                                            (int)dat_units[ty2].icon - 1, &f))
                 rd_blit(&RD.icons, (int)dat_units[ty2].icon - 1, 244, cy - 4);
-            nation_plate(244, cy - 4, (int)dat_nations[cs_nation()].color, 1);
+            rm_nation_plate(244, cy - 4, (int)dat_nations[cs_nation()].color, 1);
             rd_text(&TINY, immigrant_name(&CR.unit_pass[ui][k]), 268, cy,
                     lut_of(HUD_INK));
             rd_text(&TINY, "Sentry", 268, cy + 8, lut_of(HUD_INK));
@@ -554,6 +558,37 @@ static void rm_use_map_palette(void) {
     }
     if (memcmp(wp, EGA, 48) == 0)
         memcpy(RD.pal, master, 48);
+}
+
+/* the colony scene panel composites tiles through the SAME drawTile
+ * chain (game.js:3565) — exported for colopy_colony_render.c */
+void rm_scene_tile(int mx, int my, int px, int py) {
+    rm_view vw = { 0, 0, -1, 0, 0 };
+    rm_draw_tile(&vw, mx, my, px, py);
+    /* settlements land on their tiles too (game.js:3568) */
+    for (int q = 0; q < CS.n_colonies; q++) {
+        const ColonyRecord *oc = &CS.colonies[q];
+        if (oc->map_x != mx || oc->map_y != my) continue;
+        if ((oc->owner_power & 3) == cs_nation())
+            draw_settlement(px, py, colony_level_ci(q), oc->owner_power & 3,
+                            0, 0xFF);
+    }
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int k = 0; k < CR.rivals[rn].n_col; k++) {
+            const rival_colony *rc = &CR.rivals[rn].col[k];
+            if (rc->x == mx && rc->y == my)
+                draw_settlement(px, py, rc->level, rn, 0, 0xFF);
+        }
+    }
+    for (int v = 0; v < CS.n_villages; v++) {
+        const NativeSettlement *vs = &CS.villages[v];
+        if (vs->map_x != mx || vs->map_y != my) continue;
+        int ti = vs->owner_tribe - 4;
+        draw_settlement(px, py, tribe_level(ti), -1,
+                        ti >= 0 && ti < 8 ? (int)dat_tribes[ti].color : 8,
+                        vs->mission);
+    }
 }
 
 /* drawMap (game.js:1555) — zoom 0; pulldown/dialog are cluster C */
@@ -627,7 +662,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
         if (!is_seen_rm(&vw, ux, uy)) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        nation_plate(px, py, owner_colour_ui(ui), CS.units[ui].orders);
+        rm_nation_plate(px, py, rm_owner_colour_ui(ui), CS.units[ui].orders);
         rd_frame f;
         int ic = unit_icon(ui);
         if (rd_sheet_frame(&RD.icons, ic, &f))
@@ -653,7 +688,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
                 continue;
             if (!is_seen_rm(&vw, ux, uy)) continue;
             int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-            nation_plate(px, py, (int)dat_nations[rn].color,
+            rm_nation_plate(px, py, (int)dat_nations[rn].color,
                          CS.units[ui].orders);
             rd_frame f;
             int ic = unit_icon(ui);
@@ -668,7 +703,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         int tx = ux - view_x, ty = uy - view_y;
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        nation_plate(px, py, KING_COLOUR, CS.units[ui].orders);
+        rm_nation_plate(px, py, KING_COLOUR, CS.units[ui].orders);
         rd_frame f;
         int ic = unit_icon(ui);
         if (rd_sheet_frame(&RD.icons, ic, &f))

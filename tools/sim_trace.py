@@ -102,6 +102,31 @@ RENDERMAP = """([save, vx, vy, sel, menu, msel]) => {
 }"""
 
 
+RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
+  G.mapSeed = 1653;
+  G.plotSeedBase = 1653;          // the C harness pins the same base
+  for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
+  G.cyclePhase = 0; G.blink = true; G.drag = null;
+  PTR.x = -100; PTR.y = -100;     // hover label off
+  G.tutorialSeen = G.tutorialSeen || new Set();
+  G.tutorialSeen.add(4);          // TUTORIAL4 latch: no popup
+  G.colony = ci;
+  G.colonistSel = csel;
+  G.colonyShipSel = shipSel;
+  G.colonyView = view;
+  G.colonyNumbers = !!numbers;
+  G.screen = 'colony';
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawColony(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDEREVENT = """([save, key, mode, sel, speaker]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -409,7 +434,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
-                    "rendermap", "renderevent"):
+                    "rendermap", "renderevent", "rendercolony"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -426,6 +451,15 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "rendercolony":
+            out = page.evaluate(RENDERCOLONY, [sys.argv[2], int(sys.argv[3]),
+                                               int(sys.argv[4]) if len(sys.argv) > 4 else -1,
+                                               int(sys.argv[5]) if len(sys.argv) > 5 else 0,
+                                               int(sys.argv[6]) if len(sys.argv) > 6 else 0,
+                                               int(sys.argv[7]) if len(sys.argv) > 7 else 1])
+            browser.close()
+            print(out)
+            return
         elif mode == "renderevent":
             out = page.evaluate(RENDEREVENT, [sys.argv[2], sys.argv[3],
                                               int(sys.argv[4]),

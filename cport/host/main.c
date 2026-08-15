@@ -512,6 +512,17 @@ int main(int argc, char **argv) {
                                argc > 8 ? atoi(argv[8]) : -1,
                                argc > 9 ? atoi(argv[9]) : 0);
     }
+    /* --rendercolony SAVE PAK OUT.ppm CI [CSEL SHIPSEL VIEW NUM] */
+    if (argc > 5 && strcmp(argv[1], "--rendercolony") == 0) {
+        extern int render_colony_main(const char *save, const char *pak,
+                                      const char *out, int ci, int csel,
+                                      int ship_sel, int view, int numbers);
+        return render_colony_main(argv[2], argv[3], argv[4], atoi(argv[5]),
+                                  argc > 6 ? atoi(argv[6]) : -1,
+                                  argc > 7 ? atoi(argv[7]) : 0,
+                                  argc > 8 ? atoi(argv[8]) : 0,
+                                  argc > 9 ? atoi(argv[9]) : 1);
+    }
     /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER] */
     if (argc > 7 && strcmp(argv[1], "--renderevent") == 0) {
         extern int render_event_main(const char *save, const char *pak,

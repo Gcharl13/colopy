@@ -213,7 +213,7 @@ static int is_expert(uint8_t prof, int job) {
 /* improvementBonus (game.js:2535, byte-verified @0x9EC6..0x9F23): ROAD adds
  * for goods > 3, PLOW for goods <= 3; the bonus is 2 for lumber or a
  * river tile, else 1. */
-static int improvement_bonus(int x, int y, int g) {
+int improvement_bonus(int x, int y, int g) {
     uint8_t imp = map_improve(x, y);
     if (!imp) return 0;
     int bonus = (g == LUMBER || tile_river(map_at(x, y))) ? 2 : 1;
@@ -227,7 +227,7 @@ static int improvement_bonus(int x, int y, int g) {
  * will need when the SoL update lands in the turn step.) */
 
 /* fieldYield (game.js:2544) for colonist k standing on worker slot cell. */
-static int field_yield(const ColonyRecord *c, int sol, int job,
+int field_yield(const ColonyRecord *c, int sol, int job,
                        uint8_t prof, int dx, int dy) {
     int g = job_good(job);
     if (g == J_NONE || g < 0) return 0;
@@ -254,7 +254,7 @@ static int field_yield(const ColonyRecord *c, int sol, int job,
 /* indoorRate (game.js:2508): 3 base, 6 with the second link; the INDOOR_BASE
  * itself is the port's reading (no rate column exists in @BUILDING), the
  * factory-tier 2/3 raw cost IS byte-verified (@0x8EB1). */
-static int indoor_yield(int ci, int sol, int job, uint8_t prof) {
+int indoor_yield(int ci, int sol, int job, uint8_t prof) {
     const ColonyRecord *c = &CS.colonies[ci];
     int rate = chain_count_i(ci, job) >= 2 ? 6 : 3;
     int y = rate + tory_penalty(c, sol);

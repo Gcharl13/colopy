@@ -73,6 +73,12 @@ void colony_bld_seed(int ci);        /* rebuild list from the record */
 void colony_bld_append(int ci, int idx);
 void colony_bld_remove_name(int ci, const char *name); /* splice(indexOf) */
 int  chain_count_i(int ci, int job); /* chainCount over the runtime list */
+/* per-colonist yields + the road/plow bonus (colopy_colony.c) — exported
+ * for the Phase-7 colony-screen renderer */
+int  improvement_bonus(int x, int y, int g);
+int  field_yield(const ColonyRecord *c, int sol, int job,
+                 uint8_t prof, int dx, int dy);
+int  indoor_yield(int ci, int sol, int job, uint8_t prof);
 
 /* ---- movement (colopy_move.c) ------------------------------------------ */
 int move_cost(int is_ship, int fx, int fy, int tx, int ty);   /* in thirds */
