@@ -77,7 +77,51 @@ static void dump_market(void) {
     market_buy(8, 20);    dump_market_state("buy_horses_20");
 }
 
+/* --movecost / --combat: read one case per stdin line, print one result
+ * per line. The case lists are OWNED by tools/sim_compare.py, which feeds
+ * the identical lists to the headless JS port. */
+static void dump_movecost(void) {
+    colopy_load_sav(sav1653, sizeof(sav1653));
+    int ship, fx, fy, tx, ty;
+    while (scanf("%d %d %d %d %d", &ship, &fx, &fy, &tx, &ty) == 5)
+        printf("%d\n", move_cost(ship, fx, fy, tx, ty));
+}
+static void dump_combat(void) {
+    colopy_load_sav(sav1653, sizeof(sav1653));
+    int type, x, y, def, orders, fatigue, damaged, holds, veteran;
+    while (scanf("%d %d %d %d %d %d %d %d %d", &type, &x, &y, &def, &orders,
+                 &fatigue, &damaged, &holds, &veteran) == 9) {
+        combat_params p;
+        memset(&p, 0, sizeof(p));
+        p.type = (uint8_t)type;
+        p.terrain = map_at(x, y);
+        for (int i = 0; i < CS.n_colonies; i++)
+            if (CS.colonies[i].map_x == x && CS.colonies[i].map_y == y)
+                p.on_colony = 1;
+        p.orders = (uint8_t)orders;
+        p.is_defender = (uint8_t)def;
+        p.damaged = (uint8_t)damaged;
+        p.veteran = (uint8_t)veteran;
+        p.fatigue = (uint8_t)fatigue;
+        p.holds = (uint8_t)holds;
+        p.artillery = strcmp(dat_units[type].name, "Artillery") == 0;
+        p.difficulty = (int8_t)cs_difficulty();
+        /* Drake/Spain/WOI clauses off in the sweep: the 1653 Dutch game has
+         * G.nation=3 and the sweep spawns no REF units; Drake is checked
+         * against the record so both sides agree either way. */
+        if (strcmp(dat_units[type].name, "Privateer") == 0) {
+            for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+                if (strcmp(dat_fathers[i].name, "Francis Drake") == 0)
+                    p.privateer_drake =
+                        (CS.powers[cs_nation()].founding_fathers >> i) & 1;
+        }
+        printf("%d\n", combat_total(&p));
+    }
+}
+
 int main(int argc, char **argv) {
+    if (argc > 1 && strcmp(argv[1], "--movecost") == 0) { dump_movecost(); return 0; }
+    if (argc > 1 && strcmp(argv[1], "--combat") == 0) { dump_combat(); return 0; }
     if (argc > 1 && strcmp(argv[1], "--produce") == 0) {
         dump_produce();
         return 0;

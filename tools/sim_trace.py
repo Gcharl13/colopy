@@ -60,10 +60,30 @@ MARKET = """() => {
 }"""
 
 
+MOVECOST = """(cases) => {
+  importSav(b64bytes(DATA.sav1653));
+  return cases.map(([ship, fx, fy, tx, ty]) =>
+    moveCost({ ship: !!ship }, fx, fy, tx, ty));
+}"""
+
+COMBAT = """(cases) => {
+  importSav(b64bytes(DATA.sav1653));
+  G.dialog = null; G.popups = [];
+  return cases.map(([t, x, y, def, orders, fatigue, damaged, holds, vet]) => {
+    const u = mkUnit(DATA.units[t].name, x, y);
+    u.orders = orders; u.fatigue = fatigue; u.damaged = !!damaged;
+    if (holds) u.hold = new Array(holds).fill({ good: 0, qty: 1 });
+    if (vet) u.veteran = true;
+    return combatStrength(u, !!def);
+  });
+}"""
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
-    if mode not in ("produce", "market"):
+    if mode not in ("produce", "market", "movecost", "combat"):
         raise SystemExit("unknown mode: " + mode)
+    cases = json.load(open(sys.argv[2])) if len(sys.argv) > 2 else None
     with sync_playwright() as pw:
         browser = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium")
         page = browser.new_page()
@@ -71,7 +91,14 @@ def main():
         page.wait_for_function("typeof importSav === 'function'")
         # let the boot settle (assets decode on load)
         page.wait_for_timeout(500)
-        data = page.evaluate(PRODUCE if mode == "produce" else MARKET)
+        if mode == "produce":
+            data = page.evaluate(PRODUCE)
+        elif mode == "market":
+            data = page.evaluate(MARKET)
+        elif mode == "movecost":
+            data = page.evaluate(MOVECOST, cases)
+        else:
+            data = page.evaluate(COMBAT, cases)
         browser.close()
     json.dump(data, sys.stdout, indent=1, sort_keys=True)
     print()

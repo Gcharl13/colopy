@@ -72,9 +72,68 @@ def compare_market():
     sys.exit(1 if bad else 0)
 
 
+import random
+import tempfile
+
+
+def sweep_cases(mode):
+    rnd = random.Random(1653)          # fixed seed: both sides see one list
+    if mode == "movecost":
+        DIRS = [(0, -1), (1, 0), (0, 1), (-1, 0), (-1, -1), (1, -1), (1, 1), (-1, 1)]
+        cases = []
+        for _ in range(400):
+            x, y = rnd.randrange(1, 57), rnd.randrange(1, 71)
+            dx, dy = rnd.choice(DIRS)
+            cases.append([rnd.random() < 0.2, x, y, x + dx, y + dy])
+        return [[int(c[0])] + c[1:] for c in cases]
+    # combat: types x tiles x flag combinations
+    TYPES = [0, 1, 4, 11, 13, 16, 17]   # Colonists Soldiers Dragoons Artillery
+                                        # Caravel Privateer Frigate
+    coords = [(rnd.randrange(1, 57), rnd.randrange(1, 71)) for _ in range(10)]
+    cases = []
+    for ty in TYPES:
+        for (x, y) in coords:
+            for de in (0, 1):
+                for orders in (0, 5):
+                    for fat in (0, 1, 2):
+                        dam = rnd.random() < 0.3
+                        holds = rnd.choice([0, 0, 3]) if ty >= 13 else 0
+                        vet = 1 if (ty in (1, 4) and rnd.random() < 0.5) else 0
+                        cases.append([ty, x, y, de, orders, fat, int(dam),
+                                      holds, vet])
+    return cases
+
+
+def compare_sweep(mode):
+    cases = sweep_cases(mode)
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump(cases, f)
+        path = f.name
+    js = json.loads(subprocess.run(
+        [sys.executable, ROOT / "tools/sim_trace.py", mode, path],
+        capture_output=True, text=True, check=True).stdout)
+    subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+    feed = "\n".join(" ".join(str(v) for v in c) for c in cases)
+    cc = [int(x) for x in subprocess.run(
+        ["./smoke", "--" + mode], cwd=ROOT / "cport/host", input=feed,
+        capture_output=True, text=True, check=True).stdout.split()]
+    bad = 0
+    for i, (a, b) in enumerate(zip(js, cc)):
+        if a != b:
+            print("case %d %s: JS %s != C %s" % (i, cases[i], a, b))
+            bad += 1
+            if bad > 15:
+                print("...")
+                break
+    print("%d cases compared, %d disagreement(s)" % (len(cases), bad))
+    sys.exit(1 if bad else 0)
+
+
 def main():
     if sys.argv[1:2] == ["market"]:
         compare_market()
+    if sys.argv[1:2] in (["movecost"], ["combat"]):
+        compare_sweep(sys.argv[1])
     js, cc = run_js(), run_c()
     bad = 0
     for key in sorted(set(js) | set(cc)):

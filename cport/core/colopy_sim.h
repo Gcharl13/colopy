@@ -54,6 +54,24 @@ int  colony_sol(const ColonyRecord *c);         /* % from +0xC2/+0xC6 */
 uint64_t colony_buildings(const ColonyRecord *c); /* bit per @BUILDING id */
 int  colony_has(const ColonyRecord *c, const char *building_name);
 
+/* ---- movement (colopy_move.c) ------------------------------------------ */
+int move_cost(int is_ship, int fx, int fy, int tx, int ty);   /* in thirds */
+int terrain_move(uint8_t v);
+int terrain_defence(uint8_t v);
+
+/* ---- combat (colopy_combat.c): the §14.1-14.3 modifier chain ----------- */
+typedef struct {
+    uint8_t type;            /* @UNIT row */
+    uint8_t terrain;         /* the tile byte the unit stands on */
+    uint8_t on_colony;
+    uint8_t orders;          /* 5/6 = Fortify/Fortified */
+    uint8_t is_defender;
+    uint8_t damaged, veteran, fatigue, holds, artillery;
+    uint8_t privateer_drake, spain_attacker, woi_ref_bombard;
+    int8_t  difficulty;
+} combat_params;
+int combat_total(const combat_params *p);
+
 /* ---- the Europe market (colopy_market.c) ------------------------------ */
 int     market_bid(int good);
 int     market_ask(int good);
