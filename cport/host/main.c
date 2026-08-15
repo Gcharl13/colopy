@@ -7,6 +7,7 @@
 
 #include "../core/colopy_core.h"
 #include "../core/colopy_state.h"
+#include "../core/colopy_sim.h"
 #include "../data/colopy_data.h"
 #include "fixtures.h"
 
@@ -15,7 +16,42 @@ static int fail = 0;
     if (!(cond)) { fail++; printf("FAIL: " __VA_ARGS__); printf("\n"); } \
 } while (0)
 
-int main(void) {
+/* --produce: dump colonyProduce for every PLAYER colony of every fixture,
+ * one JSON line each — diffed against the JS port's numbers by
+ * tools/sim_compare.py (the logic-side render_diff). */
+static void dump_produce(void) {
+    struct { const char *name; const uint8_t *buf; size_t len; } savs[] = {
+        {"savstart", savstart, sizeof(savstart)},
+        {"sav1653", sav1653, sizeof(sav1653)},
+        {"savraleigh", savraleigh, sizeof(savraleigh)},
+        {"savnewcolony", savnewcolony, sizeof(savnewcolony)},
+    };
+    for (unsigned i = 0; i < sizeof(savs) / sizeof(savs[0]); i++) {
+        if (colopy_load_sav(savs[i].buf, savs[i].len) != COLOPY_OK) continue;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            const ColonyRecord *c = colopy_colony(k);
+            if ((c->owner_power & 3) != cs_nation()) continue;
+            colony_output r;
+            colony_produce(c, &r);
+            printf("{\"save\":\"%s\",\"name\":\"%.24s\",\"pop\":%u,"
+                   "\"sol\":%d,\"centre\":%d,\"eaten\":%d,"
+                   "\"hammers\":%d,\"bells\":%d,\"crosses\":%d,"
+                   "\"teaching\":%d,\"out\":[",
+                   savs[i].name, c->name, c->population, colony_sol(c),
+                   r.centre, r.eaten, r.hammers, r.bells, r.crosses,
+                   r.teaching);
+            for (int g = 0; g < N_GOODS; g++)
+                printf("%s%d", g ? "," : "", r.out[g]);
+            printf("]}\n");
+        }
+    }
+}
+
+int main(int argc, char **argv) {
+    if (argc > 1 && strcmp(argv[1], "--produce") == 0) {
+        dump_produce();
+        return 0;
+    }
     /* record strides are compile-time asserted; spot-check the data. */
     CHECK(DAT_MAP_W * DAT_MAP_H == (int)sizeof(dat_map_tiles) /
           (int)sizeof(dat_map_tiles[0]) * 1, "map size");
@@ -63,6 +99,29 @@ int main(void) {
                "villages %2u  tax %2u%%  digest %08X\n",
                savs[i].name, ov.year, ov.season, ov.turn, ov.n_units,
                ov.n_colonies, ov.n_settlements, ov.tax_rate, colopy_digest());
+    }
+
+    /* Phase 2 slice 1: colony production. The full oracle is
+     * tools/sim_compare.py (17 colonies, JS vs C, exact); this in-harness
+     * check pins one value so `make test` alone catches a regression:
+     * savnewcolony's pop-1 Jamestown = centre-only food 5 (JS-verified). */
+    colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    {
+        int found = 0;
+        for (int i = 0; i < CS.n_colonies; i++) {
+            const ColonyRecord *c = colopy_colony(i);
+            if (strncmp(c->name, "Jamestown", 9) != 0) continue;
+            if (c->owner_power != cs_nation()) continue;
+            found = 1;
+            colony_output r;
+            colony_produce(c, &r);
+            printf("  Jamestown pop %u  food %d (centre %d) hammers %d "
+                   "bells %d crosses %d\n", c->population, r.out[FOOD],
+                   r.centre, r.hammers, r.bells, r.crosses);
+            CHECK(r.out[FOOD] == 5 && r.centre == 5,
+                  "Jamestown food/centre: %d/%d != 5/5", r.out[FOOD], r.centre);
+        }
+        CHECK(found, "Jamestown present in savnewcolony");
     }
 
     printf("state footprint: %u bytes\n", (unsigned)sizeof(colopy_state));
