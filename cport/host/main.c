@@ -497,6 +497,11 @@ int main(int argc, char **argv) {
         extern int pak_check_main(const char *path);
         return pak_check_main(argv[2]);
     }
+    /* --render PAK OUT.ppm: Phase-7 render-core selftest scene */
+    if (argc > 3 && strcmp(argv[1], "--render") == 0) {
+        extern int render_smoke_main(const char *pak, const char *out);
+        return render_smoke_main(argv[2], argv[3]);
+    }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         int agitate = 0, script = 0;
         for (int i = 4; i < argc; i++) {
