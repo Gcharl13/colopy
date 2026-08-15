@@ -127,6 +127,21 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 }"""
 
 
+RENDERWOODCUT = """([save, n]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1653;
+  G.woodcut = n;
+  G.screen = 'woodcut';
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawWoodcut(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDERREPORT = """([save, fk]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -475,7 +490,7 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
                     "rendermap", "renderevent", "rendercolony",
-                    "rendereurope", "renderreport"):
+                    "rendereurope", "renderreport", "renderwoodcut"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -492,6 +507,11 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "renderwoodcut":
+            out = page.evaluate(RENDERWOODCUT, [sys.argv[2], int(sys.argv[3])])
+            browser.close()
+            print(out)
+            return
         elif mode == "renderreport":
             out = page.evaluate(RENDERREPORT, [sys.argv[2], sys.argv[3]])
             browser.close()

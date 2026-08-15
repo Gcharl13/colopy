@@ -608,3 +608,45 @@ void rm_score_probe(void) {
             s.population, s.fathers, s.sentiment, s.razed, s.gold,
             s.liberty, s.revolution, s.base, s.mult, s.total);
 }
+
+/* ---- the woodcut plates (drawWoodcut, game.js:1180; §26.14) ----
+ * Black clear, WOODFRAM + WDCUT<n> placed by their own sheet-header
+ * anchors (hx-(w>>1), hy-h+1), the NAMEPLAT caption strip at y=162 and
+ * the @WOODCUT caption at y=165 in FONT-NP with the sheet-palette inks
+ * 0x5C/0x5D/0x5E (the woodcut sheets' own dark browns). */
+static rd_font W_NP;
+static void blit_anchored(const char *sheet, int idx) {
+    rd_entry e;
+    if (!rd_pak_find(&RD.pak, sheet, &e)) return;
+    rd_frame f;
+    if (!rd_sheet_frame(&e, idx, &f)) return;
+    rd_blit(&e, idx, f.x - (f.w >> 1), f.y - f.h + 1);
+}
+void rm_draw_woodcut(int n) {
+    if (!W_NP.payload) rd_font_open(&RD.pak, "FONT-NP.FF", &W_NP);
+    rd_use_palette("WOODFRAM.SS");
+    rd_fill(0, 0, RD_W, RD_GAME_H, 0);
+    blit_anchored("WOODFRAM.SS", 0);
+    char nm[16];
+    snprintf(nm, sizeof(nm), "WDCUT%02d.SS", n);
+    blit_anchored(nm, 0);
+    const char *caption = (n >= 0 && n < 17) ? dat_woodcuts[n] : "";
+    const uint8_t np[4] = { 0xFF, 0x5C, 0x5D, 0x5E };
+    int cap_w = rd_text_width(&W_NP, caption);
+    rd_entry pl;
+    if (rd_pak_find(&RD.pak, "NAMEPLAT.SS", &pl)) {
+        rd_frame l, m;
+        rd_sheet_frame(&pl, 0, &l);
+        rd_sheet_frame(&pl, 1, &m);
+        int a = cap_w + 8 - 2 * l.w;
+        int tiles = a > 0 ? (a + m.w - 1) / m.w : 0;   /* Math.ceil */
+        if (tiles < 1) tiles = 1;
+        int sx = rround(2 * 160 - (2 * l.w + tiles * m.w));
+        rd_blit(&pl, 0, sx, 162);
+        sx += l.w;
+        for (int i = 0; i < tiles; i++, sx += m.w) rd_blit(&pl, 1, sx, 162);
+        rd_blit(&pl, 2, sx, 162);
+    }
+    int w = rd_text_width(&W_NP, caption);
+    rd_text(&W_NP, caption, rround(2 * 160 - (w - 1)), 165, np);
+}

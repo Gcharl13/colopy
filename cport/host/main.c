@@ -546,6 +546,12 @@ int main(int argc, char **argv) {
         { extern void rm_score_probe(void); rm_score_probe(); }
         return 0;
     }
+    /* --renderwoodcut SAVE PAK OUT.ppm N */
+    if (argc > 5 && strcmp(argv[1], "--renderwoodcut") == 0) {
+        extern int render_woodcut_main(const char *save, const char *pak,
+                                       const char *out, int n);
+        return render_woodcut_main(argv[2], argv[3], argv[4], atoi(argv[5]));
+    }
     /* --renderreport SAVE PAK OUT.ppm FK */
     if (argc > 5 && strcmp(argv[1], "--renderreport") == 0) {
         extern int render_report_main(const char *save, const char *pak,

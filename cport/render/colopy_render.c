@@ -92,19 +92,42 @@ int rd_init(const uint8_t *pak_buf, uint32_t pak_len) {
 
 void rd_use_palette(const char *entry_name) {
     rd_entry pal;
+    uint8_t master[768];
     if (rd_pak_find(&RD.pak, "VICEROY.PAL", &pal) && pal.len == 768)
         memcpy(RD.pal, pal.payload, 768);
+    memcpy(master, RD.pal, 768);
     if (!entry_name) return;
     rd_entry e;
     if (!rd_pak_find(&RD.pak, entry_name, &e)) return;
     size_t nl = strlen(entry_name);
+    const uint8_t *src = 0;
     if (nl > 3 && strcmp(entry_name + nl - 3, ".SS") == 0) {
-        const uint8_t *p = rd_sheet_pal(&e);
-        if (p) memcpy(RD.pal, p, 768);
+        src = rd_sheet_pal(&e);
     } else if (nl > 4 && strcmp(entry_name + nl - 4, ".PIK") == 0) {
         uint32_t npx = (uint32_t)e.w * e.h;
-        if (e.len == npx + 768) memcpy(RD.pal, e.payload + npx, 768);
+        if (e.len == npx + 768) src = e.payload + npx;
     }
+    if (!src) return;
+    memcpy(RD.pal, src, 768);
+    /* the JS usePalette merge (game.js:36): a magenta-placeholder entry
+     * is patched from OPENMENU.PIK's palette, and an unauthored EGA-stub
+     * low-16 row falls back to the master's own entries */
+    rd_entry om;
+    const uint8_t *op = 0;
+    if (rd_pak_find(&RD.pak, "OPENMENU.PIK", &om) &&
+        om.len == (uint32_t)om.w * om.h + 768)
+        op = om.payload + (uint32_t)om.w * om.h;
+    if (op)
+        for (int i = 0; i < 256; i++) {
+            const uint8_t *c = RD.pal + i * 3;
+            if (c[0] > 240 && c[1] < 110 && c[2] > 240)
+                memcpy(RD.pal + i * 3, op + i * 3, 3);
+        }
+    static const uint8_t EGA[48] = {
+        0,0,0, 0,0,170, 0,170,0, 0,170,170, 170,0,0, 170,0,170,
+        170,85,0, 170,170,170, 85,85,85, 85,85,255, 85,255,85,
+        85,255,255, 255,85,85, 255,85,255, 255,255,85, 255,255,255 };
+    if (memcmp(src, EGA, 48) == 0) memcpy(RD.pal, master, 48);
 }
 
 void rd_fill(int x, int y, int w, int h, uint8_t colour) {
