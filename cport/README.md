@@ -22,6 +22,11 @@ Phases and acceptance tests (see the repo tasks): 0 inventory/API/data ✓
 → 1 SAV roundtrip ✓ → 2 subsystems ✓ → 3 turn-parity oracle ✓ → 4 Teensy
 budget + serial digest ✓ → 5 interactive core ✓ → 6 SD asset pack ✓ →
 7 ILI9341 renderer ✓ (all screens 0 structural) → 8 input loop ✓ (boot +
-map/menu/colony/Europe key vocabulary, 0-event-diff; the pointer layer,
-the remaining screen vocabularies and the on-hardware bring-up are the
-open follow-ups).
+map/menu/colony/Europe key vocabulary AND the pointer layer, village
+keys, the construction picker, the jobs popup, the Europe r/p/t
+sub-menus + King's petition, the land parley arm — all 0-event-diff
+across five scenarios; open follow-ups: the @HOWMUCH amount-dialog
+modal, the Europe ship/dockunit context menus, the pedia/options
+vocabularies, the menu rows bound to dialog flows, the drag layer, the
+rival land WAR arms + Wagon/Scout colony arms, and the on-hardware
+bring-up per teensy/README.md).
