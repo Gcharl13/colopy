@@ -112,6 +112,16 @@ def map_script():
     for _ in range(30):
         K("Space")
     K("a")
+    # the jobs popup (Enter opens it when an askZoom left us on the
+    # colony screen; on the map Enter no-ops and the arrows move the
+    # selected unit — mirrored either way)
+    K("Enter")
+    K("ArrowDown")
+    K("ArrowDown")
+    K("ArrowUp")
+    K("Enter")                       # commit: colonist 0 takes the row's job
+    K("Enter")                       # reopen
+    K("Escape")                      # close without committing
     K("c")
     # slice 2: menu Enter + accelerators
     K("v", 1)                        # Alt+V opens VIEW

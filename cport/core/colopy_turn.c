@@ -370,6 +370,11 @@ static int school_level(int ci) {
     if (has_bld(ci, bld_by_name("Schoolhouse"))) return 1;
     return 0;
 }
+/* exported for the input layer's teacherGuard mirror (game.js:3050) */
+int colony_school_level(int ci) { return school_level(ci); }
+int colony_profession_class(int prof) {
+    return profession_class((uint8_t)prof);
+}
 static int tier_rank(uint8_t prof) {             /* -1 unless a student tier */
     for (int t = 0; t < 3; t++)
         if (TIER_ROW[t] >= 0 && prof >= 1 && prof < DAT_JOBEXPERT_COUNT &&

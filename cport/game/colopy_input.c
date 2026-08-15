@@ -256,6 +256,92 @@ static void open_build_picker(void) {
     UI.colony_popup = 2;
     UI.colony_popup_row = (int8_t)(at < 0 ? 0 : at);
 }
+/* colonyPopupRows jobs arm (game.js:3925): the "No job (plaza)" row,
+ * then the runtime buildings that employ anyone, list order.
+ * names[0] = NULL marks the plaza row. */
+static int jobs_rows(int cci, const char **names) {
+    int n = 0;
+    names[n++] = NULL;
+    const colony_rt *r = &CR.col[cci];
+    for (int k = 0; k < r->n_bld && n < BUILD_MAX_ROWS; k++) {
+        const char *nm = dat_buildings[r->bld[k]].name;
+        if (workplace_job_for_name(nm) >= 0) names[n++] = nm;
+    }
+    return n;
+}
+/* teacherGuard (game.js:3050): @NOTEACHER for the professionless, the
+ * NEEDCOLLEGE/NEEDUNIVERSITY tier gates, the faculty cap (level = seats) */
+static int teacher_guard(int cci, int k) {
+    int lvl = colony_school_level(cci);
+    if (!lvl) return 0;
+    const ColonyRecord *c = &CS.colonies[cci];
+    uint8_t prof = c->profession[k];
+    int has_prof = prof >= 1 && prof < DAT_JOBEXPERT_COUNT;
+    int cls = colony_profession_class(prof);
+    if (!has_prof || cls >= 4) { ev_emit("NOTEACHER", 0, 0, 0, 0); return 1; }
+    if (cls > lvl) {
+        ev_emit(cls == 2 ? "NEEDCOLLEGE" : "NEEDUNIVERSITY", 0, 0,
+                dat_jobexpert[prof], 0);
+        return 1;
+    }
+    int teacher = workplace_job_for_name("Schoolhouse"), faculty = 0;
+    for (int q = 0; q < c->population && q < 32; q++)
+        if (q != k && c->occupation[q] == teacher) faculty++;
+    if (faculty >= lvl) {
+        ev_emit(lvl == 1 ? "SCHOOL1" : lvl == 2 ? "COLLEGE2" : "UNIV3",
+                0, 0, 0, 0);
+        return 1;
+    }
+    return 0;
+}
+/* the +0x70 worker slot pointing at colonist k, cleared = p.cell = null */
+static void cell_clear(ColonyRecord *c, int k) {
+    for (int j = 0; j < 8; j++)
+        if ((uint8_t)c->tiles[j] == (uint8_t)k) c->tiles[j] = -1;
+}
+/* colonyPopupCommit (game.js:3996), the jobs arm: the row's building
+ * names the job; @MORETHANTHREE caps a building at three cell-less
+ * workers, the teacher guard vets the faculty; the plaza row clears
+ * both job and cell.  A field-job byte never equals a workplace job
+ * id, so the raw occupation compare matches the JS p.job semantics
+ * (the importer's cell-less field-job nulling included). */
+static void jobs_popup_commit(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci >= 0) {
+        ColonyRecord *c = &CS.colonies[cci];
+        const char *names[BUILD_MAX_ROWS];
+        int n = jobs_rows(cci, names);
+        int row = UI.colony_popup_row, k = UI.colonist_sel;
+        if (row >= 0 && row < n && k >= 0 && k < c->population && k < 32) {
+            if (row == 0) {
+                cell_clear(c, k);
+                c->occupation[k] = 0xFF;             /* job null (JS) */
+            } else {
+                int job = workplace_job_for_name(names[row]);
+                int crew = 0;
+                for (int q = 0; q < c->population && q < 32; q++) {
+                    int qc = -1;
+                    for (int j = 0; j < 8; j++)
+                        if ((uint8_t)c->tiles[j] == (uint8_t)q) qc = j;
+                    if (qc < 0 && c->occupation[q] == job) crew++;
+                }
+                if (crew >= 3 && c->occupation[k] != job) {
+                    ev_emit("MORETHANTHREE", 0, 0, 0, 0);
+                    UI.colony_popup = 0;
+                    return;
+                }
+                if (job == workplace_job_for_name("Schoolhouse") &&
+                    c->occupation[k] != job && teacher_guard(cci, k)) {
+                    UI.colony_popup = 0;
+                    return;
+                }
+                c->occupation[k] = (uint8_t)job;
+                cell_clear(c, k);                    /* p.cell = null */
+            }
+        }
+    }
+    UI.colony_popup = 0;
+}
 /* colonyPopupCommit (game.js:3996), the 'build' arm: the row becomes
  * the construction target and the popup closes */
 static void build_picker_commit(void) {
@@ -512,21 +598,23 @@ void in_key(const char *k, int alt, int shift) {
     case SCR_COLONY:
         /* an open popup owns the keyboard (onKey colony case,
          * game.js:12485): arrows walk the rows, Enter/space commits,
-         * ESC closes, everything else is swallowed. The build picker
-         * is fully modelled; the jobs/occupation row counts + commits
-         * (colonist mutation) are a later slice (#92) — the scripts
-         * only open/close those. */
+         * ESC closes, everything else is swallowed. Build and jobs are
+         * fully modelled; the occupation popup (a colonist-click flow,
+         * mouse-only) is a later slice (#92). */
         if (UI.colony_popup) {
-            if (UI.colony_popup == 2) {      /* 'build' */
-                int cci = player_colony_rec(UI.colony);
-                const char *names[BUILD_MAX_ROWS];
-                int n = cci >= 0 ? build_rows(cci, names) : 1;
-                if (key_is(k, "ArrowUp"))
-                    UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
-                if (key_is(k, "ArrowDown"))
-                    UI.colony_popup_row = (int8_t)((UI.colony_popup_row + 1) % n);
-                if (key_is(k, "Enter") || key_is(k, " "))
-                    build_picker_commit();
+            int cci = player_colony_rec(UI.colony);
+            const char *names[BUILD_MAX_ROWS];
+            int n = 1;
+            if (cci >= 0)
+                n = UI.colony_popup == 2 ? build_rows(cci, names)
+                                         : jobs_rows(cci, names);
+            if (key_is(k, "ArrowUp"))
+                UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
+            if (key_is(k, "ArrowDown"))
+                UI.colony_popup_row = (int8_t)((UI.colony_popup_row + 1) % n);
+            if (key_is(k, "Enter") || key_is(k, " ")) {
+                if (UI.colony_popup == 2) build_picker_commit();
+                else jobs_popup_commit();
             }
             if (key_is(k, "Escape")) UI.colony_popup = 0;
             break;

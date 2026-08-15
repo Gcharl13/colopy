@@ -180,6 +180,22 @@ int chain_count_i(int ci, int job) {
     return 0;
 }
 
+/* workplaceFor/jobForBuilding (game.js:2464): the workplace whose chain
+ * CONTAINS the building — tier rows share display names, so the match
+ * is by NAME like the JS chain.includes().  Returns the job's dat_jobs
+ * id, -1 when the building employs nobody. */
+int workplace_job_for_name(const char *building_name) {
+    wp_resolve();
+    for (unsigned i = 0; i < N_WP; i++) {
+        if (WP[i].first_id < 0) continue;
+        for (int j = 0; j < WP[i].len; j++)
+            if (strcmp(dat_buildings[WP[i].first_id + j].name,
+                       building_name) == 0)
+                return WP[i].job_id;
+    }
+    return -1;
+}
+
 /* SoL % from the record's EMA pair (importer: game.js:10395-10405). */
 int colony_sol(const ColonyRecord *c) {
     if (c->rebel_divisor <= 0) return 0;

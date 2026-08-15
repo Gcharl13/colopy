@@ -171,6 +171,7 @@ INPUT = """([save, events]) => {
       cn: G.colonyNumbers ? 1 : 0, vr: G.villageRow,
       cp: G.colonyPopup === 'build' ? 2 : G.colonyPopup === 'occupation' ? 3
           : G.colonyPopup ? 1 : 0, cpr: G.colonyPopupRow || 0,
+      cs: G.colonistSel || 0,
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };

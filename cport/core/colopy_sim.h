@@ -68,6 +68,9 @@ int  colony_has(const ColonyRecord *c, const char *building_name);
  * the engine's own raid write (dec tier @0x5C42A) differs from the JS
  * flat-list model the port mirrors; FLAGGED. */
 int  colony_has_name(int ci, const char *name);   /* JS includes(name) */
+int  workplace_job_for_name(const char *building_name); /* jobForBuilding */
+int  colony_school_level(int ci);     /* schoolLevel (game.js:3042) */
+int  colony_profession_class(int prof); /* professionClass: tier, 4 = none */
 int  bld_first_row(int idx);         /* JS bldIndex/DATA.buildings.find */
 void colony_bld_seed(int ci);        /* rebuild list from the record */
 void colony_bld_append(int ci, int idx);

@@ -406,9 +406,38 @@ void cmd_move(int ui, int dx, int dy) {
             if (ruP >= 0 || is_col) rival = rn;
         }
         if (rival >= 0) {
-            if (!ship) return;               /* land rival moves: slice 5 */
             int ruP_ship = ruP >= 0 &&
                            dat_units[CS.units[ruP].type].hull > 0;
+            if (!ship) {
+                /* the LAND arms (game.js:11040-11146): at peace the
+                 * treaty ask guards land-vs-land, then a Wagon Train's
+                 * colony trade / a Scout's colony dialog (slice 5 —
+                 * unreached by the scripts so far), then the parley
+                 * (any land unit, colony or unit square, spends the
+                 * move: game.js:11141).  The WAR arms (@CANNOTATTACK,
+                 * resolveAttack, colony capture) stay with slice 5. */
+                if (rel_at_war(me, rival)) return;   /* war arms: slice 5 */
+                if (rel_have_treaty(me, rival) && ruP >= 0 && !ruP_ship) {
+                    ev_emit("HAVETREATY", 0, 0,
+                            dat_nations[rival].adjective, 0);
+                    if (ask_choice() == 1) {
+                        ev_emit("CANCELPEACE", 0, 0,
+                                dat_nations[me].adjective,
+                                dat_nations[rival].adjective);
+                        rel_declare_war(me, rival);
+                    }
+                    return;
+                }
+                if (is_col &&
+                    (strcmp(dat_units[u->type].name, "Wagon Train") == 0 ||
+                     strcmp(dat_units[u->type].name, "Scouts") == 0))
+                    return;                  /* trade/scout arms: slice 5 */
+                if (!rel_parley_eligible(rival)) return;   /* msg only */
+                u->moves_remaining = 0;
+                CR.unit_moves_undef[ui] = 0;
+                run_meeting(rival, 1);
+                return;
+            }
             /* the Privateer's HIDDEN attribution (war_matrix 0x80
              * @0x3F0A1): strike rival shipping at peace */
             if (!rel_at_war(me, rival) &&

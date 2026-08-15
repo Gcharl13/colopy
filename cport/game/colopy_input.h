@@ -29,6 +29,7 @@ typedef struct {
     int8_t  village_row;             /* G.villageRow */
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
+    int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */
     int8_t  colony_popup_row;
 } colopy_ui;
 
