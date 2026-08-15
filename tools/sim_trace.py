@@ -79,6 +79,28 @@ COMBAT = """(cases) => {
 }"""
 
 
+RENDERMAP = """([save, vx, vy, sel]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1653;               // the C load pins CR.map_seed the same way
+  // the C harness calls units_session_seed(): moves full, orders 0
+  for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
+  G.cyclePhase = 0;               // static frame: no colour cycling
+  G.blink = true;    // the on half: the active unit is DRAWN
+  G.sel = sel;
+  G.zoom = 0;
+  G.openMenu = -1;
+  G.view = { x: vx, y: vy };
+  G.screen = 'map';
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawMap(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 # The prefix-turn trace: EXACTLY the pipeline colopy_turn.c implements —
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
@@ -356,7 +378,8 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
 
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
-    if mode not in ("produce", "market", "movecost", "combat", "turns"):
+    if mode not in ("produce", "market", "movecost", "combat", "turns",
+                    "rendermap"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -373,6 +396,13 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "rendermap":
+            out = page.evaluate(RENDERMAP, [sys.argv[2], int(sys.argv[3]),
+                                            int(sys.argv[4]),
+                                            int(sys.argv[5]) if len(sys.argv) > 5 else 0])
+            browser.close()
+            print(out)
+            return
         elif mode == "turns":
             data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
                                          "agitate" in sys.argv[4:],

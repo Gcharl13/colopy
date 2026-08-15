@@ -1,0 +1,689 @@
+/* C-port Phase 7 cluster B — the map screen.
+ *
+ * A transcription of the JS port's census-verified map painter
+ * (port/src/game.js drawMap:1555, drawTile:1422, edgeBlend:1328,
+ * drawSettlement:5008, nationPlate:1721, drawUnit:1727,
+ * drawMenuBar:1738, drawSidebar:1914) over the C records — the same
+ * O514 -> O513 -> O512 chain of §6.3-6.11 with the byte citations kept
+ * at each site.  Zoom levels 1/2 are UNPORTED (flagged): the ILI9341
+ * target renders the native 16px tiles only.
+ *
+ * Palette model (flagged): the JS resolves sprites through pre-baked
+ * atlas palettes and fills/text through the usePalette merge; the C fb
+ * is single-palette, so rm_use_map_palette() applies the SAME merge
+ * (EGA-stub low-16 -> master, magenta placeholders -> OPENMENU) and
+ * the compare tool accepts the known sprite-side grey deltas. */
+#include <stdio.h>
+#include <string.h>
+
+#include "../core/colopy_sim.h"
+#include "../data/colopy_data.h"
+#include "colopy_render.h"
+
+#define TILE 16
+#define VIEW_COLS 15
+#define VIEW_ROWS 12
+#define VP_X 0
+#define VP_Y 8
+#define HUD_INK 68
+#define KING_COLOUR 128               /* the Crown's plate (game.js:1715) */
+
+/* PHYS0 disk-frame bands (engine frame - 1; game.js:383 PHYS) */
+enum {
+    PH_RIVER_MAJOR = 0x00, PH_RIVER_MINOR = 0x10, PH_MOUNTAIN = 0x20,
+    PH_HILL = 0x30, PH_FOREST = 0x40, PH_ROAD = 0x50, PH_DETAIL = 0x59,
+    PH_RUMOUR = 0x67,                 /* engine 0x68, b8 68 00 @0x68411 */
+    PH_STENCIL = 0x68, PH_QUAD = 0x6C, PH_MOUTH_MAJOR = 0x8C,
+    PH_MOUTH_MINOR = 0x90, PH_FOG = 0x94, PH_COAST = 0x96
+};
+
+/* render-side view state (the JS G.view / G.sel / G.blink) */
+typedef struct {
+    int view_x, view_y;
+    int sel;                          /* units_order index, -1 none */
+    int blink;                        /* 1 = active unit hidden this frame */
+    int show_hidden;
+} rm_view;
+
+static rd_font TINY;
+
+/* tile classes come from the sim's exported tile_* helpers */
+#define t_hills(v)     tile_hills((uint8_t)(v))
+#define t_mountains(v) tile_mountains((uint8_t)(v))
+#define t_river(v)     tile_river((uint8_t)(v))
+
+/* TERRAIN.SS frame = ground id folded per func_006204 / hard rule 3 */
+static int ground_frame(int tid) {
+    tid &= 0x1F;
+    if (tid >= 16 && tid <= 23) tid = (tid & 7) | 8;
+    if (tid <= 7) return tid;
+    if (tid <= 15) return tid == 9 ? 8 : (tid & 7);
+    return tid == 24 ? 9 : tid == 25 ? 10 : 11;
+}
+static int is_forested_id(int tid) {
+    int t = tid & 0x1F;
+    if (t >= 16 && t <= 23) t = (t & 7) | 8;
+    return t >= 8 && t <= 15;
+}
+/* §6.4: forest run = band 8..0x17 minus Scrub ((id&7)==1) */
+static int forest_connects(int v) {
+    int t = v & 0x1F;
+    return t >= 8 && t <= 0x17 && (t & 7) != 1;
+}
+static int is_scrub(int v) {
+    int t = v & 0x1F;
+    return t >= 8 && t <= 0x17 && (t & 7) == 1;
+}
+static int river_connects(int v) { return (v & 0x40) != 0; }
+
+/* §6.4-6.6 — 4-cardinal mask, weights N=8 S=4 W=2 E=1 (game.js:408) */
+static int mask4(int mx, int my, int (*connects)(int)) {
+    return (connects(map_at(mx, my - 1)) ? 8 : 0)
+         | (connects(map_at(mx, my + 1)) ? 4 : 0)
+         | (connects(map_at(mx - 1, my)) ? 2 : 0)
+         | (connects(map_at(mx + 1, my)) ? 1 : 0);
+}
+
+/* §6.9 detail band: DTAB = the 29-entry word array at DS:0x192 */
+static const int8_t DTAB[29] = { 6, 1, 2, 3, 4, 5, 6, 6,
+                                 9, 1, 8, 9, 10, 10, 6, 6,
+                                 9, 1, 8, 9, 10, 10, 6, 6,
+                                 -1, 7, -1, 12, 13 };
+static int detail_class(int v) {
+    if (t_mountains(v)) return 27;
+    if (t_hills(v)) return 28;
+    return v & 0x1F;
+}
+/* the salt is word [0x190] = CR.map_seed (RULINGS.md 2026-08-07) */
+static int detail_frame(int mx, int my, int v) {
+    if (!CR.map_seed) return -1;             /* gate @0x60A9 */
+    int forest = (forest_connects(v) || is_scrub(v)) ? 1 : 0;
+    int q = (mx & 3) * 4 + (my & 3);
+    int h = ((my >> 2) * 3 + (mx >> 2) + (CR.map_seed & 0xF) - forest) & 0xF;
+    if (h != q && (h ^ 0xA) != q) return -1;
+    int d = DTAB[detail_class(v)];
+    return d < 0 ? -1 : PH_DETAIL + d;
+}
+
+/* sticky visibility: CS.fog plane, bit 1<<(power+4) (game.js:8571) */
+static int is_seen_rm(const rm_view *vw, int x, int y) {
+    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 1;
+    if (vw->show_hidden) return 1;
+    return (CS.fog[y * COLOPY_MAP_W + x] & (1 << (cs_nation() + 4))) != 0;
+}
+
+#define imp_at(x, y) map_improve((x), (y))
+/* colonyAt (JS: the PLAYER's colony list only) */
+static int player_col_at(int x, int y) {
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+            CS.colonies[ci].map_x == x && CS.colonies[ci].map_y == y)
+            return ci;
+    return -1;
+}
+
+/* PHYS0C blit: the coast bands key out BOTH 0xFD and 0
+ * (port/tools/build_assets.py zero_transparent) */
+static void blit_key0(const rd_entry *sheet, int idx, int x, int y) {
+    rd_frame f;
+    if (!rd_sheet_frame(sheet, idx, &f)) return;
+    for (int r = 0; r < f.h; r++) {
+        int dy = y + r;
+        if (dy < 0 || dy >= RD_H) continue;
+        for (int c = 0; c < f.w; c++) {
+            int dx = x + c;
+            if (dx < 0 || dx >= RD_W) continue;
+            uint8_t v = f.pix[r * f.w + c];
+            if (v != RD_TRANSPARENT && v != 0) RD.fb[dy * RD_W + dx] = v;
+        }
+    }
+}
+
+/* O512 stencil blit (game.js:1309): the neighbour's GROUND masked by
+ * PHYS0 stencil frame 0x68+dir — pixels where both are opaque. */
+static void stencil_blit(int dir, int ground_idx, int px, int py) {
+    rd_frame g, s;
+    if (!rd_sheet_frame(&RD.terrain, ground_idx, &g)) return;
+    if (!rd_sheet_frame(&RD.phys0, PH_STENCIL + dir, &s)) return;
+    for (int r = 0; r < TILE; r++) {
+        int dy = py + r;
+        if (dy < 0 || dy >= RD_H) continue;
+        for (int c = 0; c < TILE; c++) {
+            int dx = px + c;
+            if (dx < 0 || dx >= RD_W) continue;
+            if (r >= s.h || c >= s.w || r >= g.h || c >= g.w) continue;
+            if (s.pix[r * s.w + c] == RD_TRANSPARENT) continue;
+            uint8_t v = g.pix[r * g.w + c];
+            if (v != RD_TRANSPARENT) RD.fb[dy * RD_W + dx] = v;
+        }
+    }
+}
+
+/* O512 (§6.11; game.js:1328) */
+static const int8_t O512_DIRS[4][2] = { {0,-1}, {1,0}, {0,1}, {-1,0} };
+static const int8_t O512_RING[4][2] = { {-1,0}, {0,1}, {1,0}, {0,-1} };
+static void edge_blend(const rm_view *vw, int mx, int my, int px, int py,
+                       int hidden) {
+    int v = map_at(mx, my);
+    int centre_water = tile_water(v);
+    if (centre_water && !hidden) return;
+    int cls = ground_frame(v);
+    for (int d = 0; d < 4; d++) {
+        int nx = mx + O512_DIRS[d][0], ny = my + O512_DIRS[d][1];
+        if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
+            continue;
+        int nv = map_at(nx, ny);
+        if (tile_water(nv) && !centre_water) {   /* land-side beach dither */
+            int found = -1;
+            for (int k = 0; k < 4; k++) {
+                int w = map_at(nx + O512_RING[k][0], ny + O512_RING[k][1]);
+                if (!tile_water(w)) { found = w; break; }
+            }
+            if (found < 0) continue;             /* still water: no edge */
+            nv = found;
+        }
+        if (!is_seen_rm(vw, nx, ny)) continue;
+        int ncls = ground_frame(nv);
+        if (ncls == cls && !hidden) continue;    /* same class, no fog @0x68153 */
+        stencil_blit(d, ncls, px, py);
+    }
+}
+
+/* §6.7 — 8-direction land bitmap N,NE,E,SE,S,SW,W,NW (game.js:1379) */
+static const int8_t DIR8[8][2] = { {0,-1}, {1,-1}, {1,0}, {1,1},
+                                   {0,1}, {-1,1}, {-1,0}, {-1,-1} };
+static int land_bits(int mx, int my) {
+    int b = 0;
+    for (int d = 0; d < 8; d++)
+        if (!tile_water(map_at(mx + DIR8[d][0], my + DIR8[d][1]))) b |= 1 << d;
+    return b;
+}
+static int coast_pattern(int b) {
+    if ((b & 0xDD) == 0xC1) return 0;
+    if ((b & 0x77) == 0x07) return 1;
+    if ((b & 0x77) == 0x70) return 2;
+    if ((b & 0xDD) == 0x1C) return 3;
+    return -1;
+}
+/* per-quadrant code (RULINGS.md 2026-08-04: |1 = COUNTER-clockwise) */
+static const int8_t Q_OWN[4] = { 0, 2, 4, 6 }, Q_NEXT[4] = { 6, 0, 2, 4 },
+                    Q_DIAG[4] = { 7, 1, 3, 5 };
+static const int8_t Q_OFF[4][2] = { {0,0}, {8,0}, {8,8}, {0,8} };
+static const int8_t HALO_DIRS[4][2] = { {0,-1}, {1,0}, {0,1}, {-1,0} };
+static int halo_ground(int mx, int my) {
+    int g = -1;
+    for (int d = 0; d < 4; d++) {
+        int n = map_at(mx + HALO_DIRS[d][0], my + HALO_DIRS[d][1]);
+        if (!tile_water(n)) g = ground_frame(n & 0x1F);
+    }
+    return g;
+}
+
+static void draw_improvements(int mx, int my, int px, int py) {
+    if (imp_at(mx, my) & ROAD_BIT) {
+        rd_blit(&RD.phys0, PH_ROAD, px, py);
+        for (int d = 0; d < 8; d++) {
+            int nx = mx + DIR8[d][0], ny = my + DIR8[d][1];
+            if ((imp_at(nx, ny) & ROAD_BIT) || player_col_at(nx, ny) >= 0)
+                rd_blit(&RD.phys0, PH_ROAD + 1 + d, px, py);
+        }
+    }
+    if (imp_at(mx, my) & PLOW_BIT)      /* furrow dots — port-invented, flagged */
+        for (int k = 0; k < 4; k++)
+            rd_fill(px + 3 + k * 3, py + 12, 2, 1, 0x55);
+}
+
+/* drawTile (game.js:1422) — the O514 -> O513 -> O512 chain */
+static void rm_draw_tile(const rm_view *vw, int mx, int my, int px, int py) {
+    if (!is_seen_rm(vw, mx, my)) {
+        rd_blit(&RD.phys0, PH_FOG, px, py);
+        edge_blend(vw, mx, my, px, py, 1);
+        return;
+    }
+    int v = map_at(mx, my);
+    int water = tile_water(v);
+    int ocean = ground_frame(v & 0x1F);
+    rd_entry physc = RD.phys0;               /* PHYS0C = PHYS0 keyed on 0 too */
+
+    if (!water) {
+        rd_blit(&RD.terrain, ocean, px, py);
+        edge_blend(vw, mx, my, px, py, 0);   /* under the overlays @0x68315 */
+        if (forest_connects(v))
+            rd_blit(&RD.phys0, PH_FOREST + mask4(mx, my, forest_connects),
+                    px, py);
+        if (t_mountains(v) || t_hills(v)) {
+            int own = v & 0xA0;
+            int base = t_mountains(v) ? PH_MOUNTAIN : PH_HILL;
+            int m = ((map_at(mx, my - 1) & 0xA0) == own ? 8 : 0)
+                  | ((map_at(mx, my + 1) & 0xA0) == own ? 4 : 0)
+                  | ((map_at(mx - 1, my) & 0xA0) == own ? 2 : 0)
+                  | ((map_at(mx + 1, my) & 0xA0) == own ? 1 : 0);
+            rd_blit(&RD.phys0, base + m, px, py);
+        }
+        int r = t_river(v);
+        if (r) {
+            int m = mask4(mx, my, river_connects);
+            if (!m) m = 0xF;                 /* isolated river forced 0xF */
+            rd_blit(&RD.phys0,
+                    (r == 2 ? PH_RIVER_MAJOR : PH_RIVER_MINOR) + m, px, py);
+        }
+        int df = detail_frame(mx, my, v);
+        if (df >= 0) rd_blit(&RD.phys0, df, px, py);
+        if (rumour_at(mx, my)) rd_blit(&RD.phys0, PH_RUMOUR, px, py);
+        draw_improvements(mx, my, px, py);
+        return;
+    }
+    /* water tile — §6.7 shore + clean edges + quadrant fallback */
+    int bits = land_bits(mx, my);
+    if (!bits) {
+        rd_blit(&RD.terrain, ocean, px, py);
+    } else {
+        int land = halo_ground(mx, my);
+        int pat = coast_pattern(bits);
+        if (pat >= 0) {
+            rd_blit(&RD.terrain, land >= 0 ? land : ocean, px, py);
+            blit_key0(&physc, PH_COAST + pat, px, py);
+        } else {
+            rd_blit(&RD.terrain, ocean, px, py);
+            for (int q = 0; q < 4; q++) {
+                int code = ((bits >> Q_OWN[q]) & 1) * 4
+                         | ((bits >> Q_NEXT[q]) & 1)
+                         | ((bits >> Q_DIAG[q]) & 1) * 2;
+                blit_key0(&physc, PH_QUAD + code * 4 + q,
+                          px + Q_OFF[q][0], py + Q_OFF[q][1]);
+            }
+        }
+    }
+    /* §6.6 river mouths */
+    if (v & 0xC0) {
+        int base = (v & 0x80) ? PH_MOUTH_MAJOR : PH_MOUTH_MINOR;
+        for (int d = 0; d < 4; d++) {
+            int n = map_at(mx + HALO_DIRS[d][0], my + HALO_DIRS[d][1]);
+            if ((n & 0x40) && !tile_water(n))
+                rd_blit(&RD.phys0, base + d, px, py);
+        }
+    }
+    int df = detail_frame(mx, my, v);
+    if (df >= 0) rd_blit(&RD.phys0, df, px, py);
+    draw_improvements(mx, my, px, py);
+}
+
+/* ---- markers ---- */
+static const uint8_t COLONY_FRAME[4] = { 3, 0, 1, 2 };
+#define NATIVE_FRAME_BASE 10
+#define PENNANT_BASE 118
+
+static void tiny_center(const char *s, int cx, int y, const uint8_t ink[4]);
+
+/* drawSettlement (game.js:5008): marker (px-2,py); pennant ON the
+ * flagpole at (px+3,py) — func_004314 @0x0043FB/@0x004404; mission
+ * cross geometry func_0041AD-func_00423C. */
+static void draw_settlement(int px, int py, int level, int nation,
+                            int tribe_colour, int mission) {
+    int lv = level < 0 ? 0 : level > 3 ? 3 : level;
+    int frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
+    rd_blit(&RD.icons, frame, px - 2, py);
+    if (nation >= 0) {
+        rd_blit(&RD.icons, PENNANT_BASE + nation, px + 3, py);
+    } else {
+        /* UNCITED port-invented ownership patch (game.js:5049) */
+        rd_fill(px + TILE - 8, py, 8, 7, 0);
+        rd_fill(px + TILE - 7, py + 1, 6, 5, (uint8_t)tribe_colour);
+    }
+    if (mission != 0xFF && mission >= 0) {   /* §19.7 mission cross */
+        int xb = px + 6;
+        int power = mission & 0x0F;
+        int base = power < 4 ? (int)dat_nations[power].color : 0x0F;
+        int col = (mission & 0x10) ? base : base - 8;   /* @0x41C6-0x41D4 */
+        rd_fill(xb, py + 5, 5, 6, 0);
+        rd_fill(xb + 2, py + 6, 1, 4, (uint8_t)col);
+        rd_fill(xb + 1, py + 7, 3, 1, (uint8_t)col);
+    }
+}
+
+/* nationPlate (game.js:1721): 8x9 black box, 6x7 colour fill, the
+ * @ORDERS status letter centred in flat black. */
+static void nation_plate(int x, int y, int colour, int orders) {
+    rd_fill(x, y, 8, 9, 0);
+    rd_fill(x + 1, y + 1, 6, 7, (uint8_t)colour);
+    const char *key = dat_orders[orders >= 0 && orders < DAT_ORDERS_COUNT
+                                 ? orders : 0].key;
+    const uint8_t black[4] = { 0xFF, 0, 0, 0 };
+    tiny_center(key, x + 4, y + 2, black);
+}
+
+/* the JS unit table maps the @UNIT icon column to the bundle's ICONS
+ * numbering with -1 (game.js:619 `icon: r.icon - 1` — the EXE-vs-atlas
+ * off-by-one recorded in spec/ui/colony_screen.md §3.7) */
+static int unit_icon(int ui) { return (int)dat_units[CS.units[ui].type].icon - 1; }
+
+static int owner_colour_ui(int ui) {
+    int own = CS.units[ui].owner_flags & 0x0F;
+    if (CR.unit_is_ref[ui] || own == 0x0F) return KING_COLOUR;
+    if (own < 4) return (int)dat_nations[own].color;
+    if (own >= 4 && own < 12) return (int)dat_tribes[own - 4].color;
+    return 8;
+}
+
+static void draw_unit_rm(const rm_view *vw, int ui, int px, int py) {
+    /* the active unit blinks: DRAWN while G.blink is truthy, hidden on
+     * the off half (game.js:1729 `if (sel === u && !G.blink) return`) */
+    if (vw->sel >= 0 && vw->sel < CR.n_units_order &&
+        CR.units_order[vw->sel] == ui && !vw->blink)
+        return;
+    nation_plate(px, py, owner_colour_ui(ui), CS.units[ui].orders);
+    rd_frame f;
+    int ic = unit_icon(ui);
+    if (rd_sheet_frame(&RD.icons, ic, &f))
+        rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+}
+
+/* ---- text helpers (FONT.tiny) ---- */
+static void tiny_center(const char *s, int cx, int y, const uint8_t ink[4]) {
+    /* centring is on the INK width = advance - 1 (game.js:127) */
+    int w = rd_text_width(&TINY, s);
+    int x = cx - (w - 1) / 2;                 /* JS Math.round((2cx-w+1)/2) */
+    if (2 * cx - (w - 1) < 0 && (2 * cx - (w - 1)) % 2) x--;  /* round() */
+    rd_text(&TINY, s, x, y, ink);
+}
+static void tiny_center_shadow(const char *s, int cx, int y,
+                               const uint8_t ink[4], uint8_t shadow) {
+    const uint8_t sh[4] = { 0xFF, shadow, shadow, shadow };
+    int w = rd_text_width(&TINY, s);
+    int x = cx - (w - 1) / 2;
+    static const int8_t OFF[3][2] = { {1,0}, {0,1}, {1,1} };
+    for (int k = 0; k < 3; k++)
+        rd_text(&TINY, s, x + OFF[k][0], y + OFF[k][1], sh);
+    rd_text(&TINY, s, x, y, ink);
+}
+static const uint8_t *lut_of(uint8_t i) {
+    static uint8_t l[4];
+    l[0] = 0xFF; l[1] = i; l[2] = (uint8_t)(i - 1); l[3] = 0;
+    return l;
+}
+
+static void hollow_rect(int x, int y, int w, int h, uint8_t c) {
+    rd_fill(x, y, w, 1, c);
+    rd_fill(x, y + h - 1, w, 1, c);
+    rd_fill(x, y, 1, h, c);
+    rd_fill(x + w - 1, y, 1, h, c);
+}
+
+/* drawMenuBar (game.js:1738) — no pulldown (flagged: cluster C) */
+static void draw_menu_bar(void) {
+    static const struct { const char *t; int x; } BAR[6] = {
+        { "GAME", 17 }, { "VIEW", 49 }, { "ORDERS", 81 }, { "REPORTS", 119 },
+        { "TRADE", 161 }, { "COLONIZOPEDIA", 259 }
+    };
+    rd_fill(0, 7, RD_W, 1, 0);
+    rd_fill(240, 8, 1, RD_GAME_H - 8, 0);
+    for (int i = 0; i < 6; i++)
+        rd_text(&TINY, BAR[i].t, BAR[i].x, 1, lut_of(HUD_INK));
+}
+
+/* colonyLevel (game.js:5002) over the runtime building list */
+static int colony_level_ci(int ci) {
+    if (colony_has_name(ci, "Fortress")) return 3;
+    if (colony_has_name(ci, "Fort")) return 2;
+    if (colony_has_name(ci, "Stockade")) return 1;
+    return 0;
+}
+
+/* drawSidebar (game.js:1914): minimap + HUD text + unit panel */
+static void draw_sidebar(const rm_view *vw) {
+    const int mmx = 252, mmy = 9, mmw = 56, mmh = 39;
+    rd_fill(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 0);
+    hollow_rect(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 6);
+    int sx = vw->view_x - 20, sy = vw->view_y - 13;
+    if (sx > COLOPY_MAP_W - mmw) sx = COLOPY_MAP_W - mmw;
+    if (sy > COLOPY_MAP_H - mmh) sy = COLOPY_MAP_H - mmh;
+    if (sx < 0) sx = 0;
+    if (sy < 0) sy = 0;
+    for (int y = 0; y < mmh; y++)
+        for (int x = 0; x < mmw; x++) {
+            if (!is_seen_rm(vw, sx + x, sy + y)) continue;
+            int v = map_at(sx + x, sy + y), t = v & 0x1F;
+            int c = 0x38;
+            if (t == TERR_SEALANE) c = 0x36;
+            else if (t == 24) c = 0x0F;
+            else if (t != TERR_OCEAN)
+                c = t_mountains(v) ? 0x6B : (is_forested_id(t) ? 0x47 : 0x43);
+            rd_fill(mmx + x, mmy + y, 1, 1, (uint8_t)c);
+        }
+    for (int vi = 0; vi < CS.n_villages; vi++) {
+        int dx = CS.villages[vi].map_x - sx, dy = CS.villages[vi].map_y - sy;
+        if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+        if (!is_seen_rm(vw, CS.villages[vi].map_x, CS.villages[vi].map_y))
+            continue;
+        int ti = CS.villages[vi].owner_tribe - 4;
+        rd_fill(mmx + dx, mmy + dy, 1, 1,
+                (uint8_t)(ti >= 0 && ti < 8 ? dat_tribes[ti].color : 8));
+    }
+    /* owner dots: the JS draws G.colonies — the PLAYER's list only */
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
+        int dx = CS.colonies[ci].map_x - sx, dy = CS.colonies[ci].map_y - sy;
+        if (dx < 0 || dy < 0 || dx >= mmw || dy >= mmh) continue;
+        rd_fill(mmx + dx, mmy + dy, 1, 1,
+                (uint8_t)dat_nations[CS.colonies[ci].owner_power & 3].color);
+    }
+    hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
+                VIEW_COLS, VIEW_ROWS, 0x0F);
+
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s %u", dat_seasons[cs_season()], cs_year());
+    rd_text(&TINY, buf, 244, 51, lut_of(HUD_INK));
+    snprintf(buf, sizeof(buf), "Gold: %d", CS.powers[cs_nation()].gold);
+    rd_text(&TINY, buf, 244, 59, lut_of(HUD_INK));
+    snprintf(buf, sizeof(buf), "Tax: %u%%", CS.powers[cs_nation()].tax_rate);
+    rd_text(&TINY, buf, 290, 59, lut_of(HUD_INK));
+
+    if (vw->sel >= 0 && vw->sel < CR.n_units_order) {
+        int ui = CR.units_order[vw->sel];
+        const UnitRecord *u = &CS.units[ui];
+        rd_frame f;
+        int ic = unit_icon(ui);
+        if (rd_sheet_frame(&RD.icons, ic, &f))
+            /* Math.round(244 + (24-fw)/2): half rounds UP (game.js:1959) */
+            rd_blit(&RD.icons, ic, 244 + (25 - f.w) / 2, 72 + (21 - f.h) / 2);
+        nation_plate(244, 72, owner_colour_ui(ui), u->orders);
+        int whole = u->moves_remaining / 3, frac = u->moves_remaining % 3;
+        if (frac)
+            snprintf(buf, sizeof(buf), "Moves: %d %d/3", whole, frac);
+        else
+            snprintf(buf, sizeof(buf), "Moves: %d", whole);
+        rd_text(&TINY, buf, 270, 74, lut_of(HUD_INK));
+        snprintf(buf, sizeof(buf), "Locat: (%u, %u)", u->map_x, u->map_y);
+        rd_text(&TINY, buf, 270, 84, lut_of(HUD_INK));
+        snprintf(buf, sizeof(buf), "%s %s", dat_nations[cs_nation()].abbrev,
+                 dat_units[u->type].name);
+        rd_text(&TINY, buf, 244, 96, lut_of(HUD_INK));
+        rd_text(&TINY, dat_orders[u->orders < DAT_ORDERS_COUNT ? u->orders : 0]
+                           .name, 244, 104, lut_of(HUD_INK));
+        /* terrainName (game.js:461) */
+        int v = map_at(u->map_x, u->map_y), t = v & 0x1F;
+        const char *tn;
+        if (t_mountains(v)) tn = "Mountains";
+        else if (t_hills(v)) tn = "Hills";
+        else if (t <= 7) tn = dat_terrain_unforested[t];
+        else if (t <= 23)
+            tn = dat_terrain_forested[(((t >= 16) ? (t & 7) | 8 : t) - 8) & 7];
+        else tn = dat_terrain_other[t - 24];   /* Arctic/Ocean/Sea Lane */
+        snprintf(buf, sizeof(buf), "(%s)", tn);
+        rd_text(&TINY, buf, 244, 112, lut_of(HUD_INK));
+        /* carried units (JS u.cargo) — CR.unit_pass, flagged: labels
+         * shortened to the entry name */
+        int cy = 128;
+        for (int k = 0; k < CR.unit_n_pass[ui]; k++) {
+            int ty2 = entry_unit_type(&CR.unit_pass[ui][k]);
+            if (ty2 >= 0 && rd_sheet_frame(&RD.icons,
+                                           (int)dat_units[ty2].icon - 1, &f))
+                rd_blit(&RD.icons, (int)dat_units[ty2].icon - 1, 244, cy - 4);
+            nation_plate(244, cy - 4, (int)dat_nations[cs_nation()].color, 1);
+            rd_text(&TINY, immigrant_name(&CR.unit_pass[ui][k]), 268, cy,
+                    lut_of(HUD_INK));
+            rd_text(&TINY, "Sentry", 268, cy + 8, lut_of(HUD_INK));
+            cy += 20;
+        }
+    }
+}
+
+/* the JS usePalette merge (game.js:36): base palette, magenta
+ * placeholders patched from OPENMENU, EGA-stub low-16 from the master */
+static void rm_use_map_palette(void) {
+    rd_use_palette(0);                       /* master into RD.pal */
+    uint8_t master[768];
+    memcpy(master, RD.pal, 768);
+    rd_entry wt, om;
+    const uint8_t *wp = 0, *op = 0;
+    if (rd_pak_find(&RD.pak, "WOODTILE.SS", &wt)) wp = rd_sheet_pal(&wt);
+    if (rd_pak_find(&RD.pak, "OPENMENU.PIK", &om) &&
+        om.len == (uint32_t)om.w * om.h + 768)
+        op = om.payload + (uint32_t)om.w * om.h;
+    if (!wp) return;
+    memcpy(RD.pal, wp, 768);
+    static const uint8_t EGA[48] = {
+        0,0,0, 0,0,170, 0,170,0, 0,170,170, 170,0,0, 170,0,170,
+        170,85,0, 170,170,170, 85,85,85, 85,85,255, 85,255,85,
+        85,255,255, 255,85,85, 255,85,255, 255,255,85, 255,255,255 };
+    for (int i = 0; i < 256; i++) {
+        const uint8_t *c = RD.pal + i * 3;
+        if (c[0] > 240 && c[1] < 110 && c[2] > 240 && op)
+            memcpy(RD.pal + i * 3, op + i * 3, 3);
+    }
+    if (memcmp(wp, EGA, 48) == 0)
+        memcpy(RD.pal, master, 48);
+}
+
+/* drawMap (game.js:1555) — zoom 0; pulldown/dialog are cluster C */
+void rm_draw_map(int view_x, int view_y, int sel, int blink) {
+    rm_view vw = { view_x, view_y, sel, blink, 0 };
+    if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
+    rm_use_map_palette();
+
+    rd_frame wt;
+    rd_sheet_frame(&RD.woodtile, 0, &wt);
+    for (int y = 0; y < RD_GAME_H; y += wt.h)
+        for (int x = 0; x < RD_W; x += wt.w)
+            rd_blit(&RD.woodtile, 0, x, y);
+    rd_fill(VP_X, VP_Y, 240, 192, 0);
+    for (int ty = 0; ty < VIEW_ROWS; ty++)
+        for (int tx = 0; tx < VIEW_COLS; tx++)
+            rm_draw_tile(&vw, view_x + tx, view_y + ty,
+                         VP_X + tx * TILE, VP_Y + ty * TILE);
+    /* colonies (player list = record order, owner == nation) */
+    for (int ci = 0; ci < CS.n_colonies; ci++) {
+        const ColonyRecord *c = &CS.colonies[ci];
+        if ((c->owner_power & 3) != cs_nation()) continue;
+        int tx = c->map_x - view_x, ty = c->map_y - view_y;
+        if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
+        int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
+        draw_settlement(px, py, colony_level_ci(ci), c->owner_power & 3,
+                        0, 0xFF);
+        char nm[25];
+        memcpy(nm, c->name, 24);
+        nm[24] = 0;
+        tiny_center_shadow(nm, px + TILE / 2, py + TILE, lut_of(0x0F), 0);
+    }
+    /* native settlements */
+    for (int vi = 0; vi < CS.n_villages; vi++) {
+        const NativeSettlement *v = &CS.villages[vi];
+        int tx = v->map_x - view_x, ty = v->map_y - view_y;
+        if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
+        if (!is_seen_rm(&vw, v->map_x, v->map_y)) continue;
+        int ti = v->owner_tribe - 4;
+        int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
+        draw_settlement(px, py, tribe_level(ti), -1,
+                        ti >= 0 && ti < 8 ? (int)dat_tribes[ti].color : 8,
+                        v->mission);
+        /* §19.6 war-stance marks: count = raid-target score / 4 + 1
+         * (0x181F:0x316 = func_0460F8; RULINGS 2026-08-07e) */
+        int score, best = raid_target_score(vi, &score);
+        if (best >= 0 && score >= 0) {
+            int alarm = CR.alarm[vi];
+            int tension = ti >= 0 && ti < 8 ? CR.tension[ti] : 0;
+            int level = tension >= 75 ? 3
+                      : (alarm >> 5) < 3 ? (alarm >> 5) : 3;
+            static const uint8_t MC[4] = { 0x0A, 0x0B, 0x0E, 0x0C };
+            int colour = MC[level];
+            int xb = px + 6;
+            for (int s = score; s >= 0; s -= 4) {
+                int c2 = s <= 2 ? colour - 8 : colour;   /* dim @0x412F */
+                rd_fill(xb, py + 4, 3, 7, 0);
+                rd_fill(xb + 1, py + 5, 1, 4, (uint8_t)c2);
+                rd_fill(xb + 1, py + 9, 1, 1, (uint8_t)c2);
+                xb += 2;
+            }
+        }
+        if (v->flags & 0x04)                 /* capital sparkle @0x4051 */
+            rd_blit(&RD.icons, 17, px, py);
+    }
+    /* braves + natives-parked units (G.natives order) */
+    for (int k = 0; k < CR.n_natives; k++) {
+        int ui = CR.natives_order[k];
+        int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
+        int tx = ux - view_x, ty = uy - view_y;
+        if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
+        if (!is_seen_rm(&vw, ux, uy)) continue;
+        int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
+        nation_plate(px, py, owner_colour_ui(ui), CS.units[ui].orders);
+        rd_frame f;
+        int ic = unit_icon(ui);
+        if (rd_sheet_frame(&RD.icons, ic, &f))
+            rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+    }
+    /* rivals: colonies then units, per power */
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int k = 0; k < CR.rivals[rn].n_col; k++) {
+            const rival_colony *rc = &CR.rivals[rn].col[k];
+            int tx = rc->x - view_x, ty = rc->y - view_y;
+            if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS)
+                continue;
+            if (!is_seen_rm(&vw, rc->x, rc->y)) continue;
+            draw_settlement(VP_X + tx * TILE, VP_Y + ty * TILE,
+                            rc->level, rn, 0, 0xFF);
+        }
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int ui = CR.runits_order[rn][k];
+            int ux = CR.runit_x[ui], uy = CR.runit_y[ui];
+            int tx = ux - view_x, ty = uy - view_y;
+            if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS)
+                continue;
+            if (!is_seen_rm(&vw, ux, uy)) continue;
+            int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
+            nation_plate(px, py, (int)dat_nations[rn].color,
+                         CS.units[ui].orders);
+            rd_frame f;
+            int ic = unit_icon(ui);
+            if (rd_sheet_frame(&RD.icons, ic, &f))
+                rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+        }
+    }
+    /* the King's REF */
+    for (int k = 0; k < CR.n_refs; k++) {
+        int ui = CR.refs_order[k];
+        int ux = CS.units[ui].map_x, uy = CS.units[ui].map_y;
+        int tx = ux - view_x, ty = uy - view_y;
+        if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
+        int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
+        nation_plate(px, py, KING_COLOUR, CS.units[ui].orders);
+        rd_frame f;
+        int ic = unit_icon(ui);
+        if (rd_sheet_frame(&RD.icons, ic, &f))
+            rd_blit(&RD.icons, ic, px + TILE - f.w, py + TILE - f.h);
+    }
+    /* player units, selected last (stack top) */
+    for (int pass = 0; pass < 2; pass++)
+        for (int k = 0; k < CR.n_units_order; k++) {
+            if ((pass == 1) != (k == sel)) continue;
+            int ui = CR.units_order[k];
+            int tx = CS.units[ui].map_x - view_x;
+            int ty = CS.units[ui].map_y - view_y;
+            if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS)
+                continue;
+            draw_unit_rm(&vw, ui, VP_X + tx * TILE, VP_Y + ty * TILE);
+        }
+    draw_menu_bar();
+    draw_sidebar(&vw);
+}

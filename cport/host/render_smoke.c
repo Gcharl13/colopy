@@ -8,6 +8,9 @@
 #include <string.h>
 
 #include "../render/colopy_render.h"
+#include "../core/colopy_core.h"
+#include "../core/colopy_sim.h"
+#include "fixtures.h"
 
 static uint8_t *slurp(const char *path, long *out_len) {
     FILE *f = fopen(path, "rb");
@@ -71,6 +74,49 @@ int render_smoke_main(const char *pak_path, const char *out_path) {
         fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
     fclose(o);
     printf("render selftest -> %s\n", out_path);
+    free(pak);
+    return 0;
+}
+
+/* --rendermap SAVE PAK OUT.ppm VX VY [SEL]: the Phase-7 map screen over
+ * a loaded fixture.  Writes the fb as P6 plus OUT.ppm.idx (the raw 8-bit
+ * index plane) so the compare tool can resolve palette-model deltas. */
+int render_map_main(const char *save, const char *pak_path,
+                    const char *out_path, int vx, int vy, int sel) {
+    if (strcmp(save, "sav1653") == 0)
+        colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0)
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else if (strcmp(save, "savstart") == 0)
+        colopy_load_sav(savstart, sizeof(savstart));
+    else
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);
+    units_session_seed();      /* moves full + orders 0 — both harnesses pin
+                                * the same session state (sim_trace RENDERMAP
+                                * mirrors this) */
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) {
+        fprintf(stderr, "render: bad pak\n");
+        return 1;
+    }
+    rm_draw_map(vx, vy, sel, 1);
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 1;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    printf("render map %s -> %s\n", save, out_path);
     free(pak);
     return 0;
 }

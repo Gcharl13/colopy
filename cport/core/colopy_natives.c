@@ -386,7 +386,7 @@ static const int8_t RING_DX[20] = { 0, 1, 0, -1, -1, 1, 1, -1, 0, 2, 0, -2,
 static const int8_t RING_DY[20] = { -1, 0, 1, 0, -1, -1, 1, 1, -2, 0, 2, 0,
                                     -2, -2, 2, 2, -1, 1, -1, 1 };
 static const int8_t FORT_W[5][2] = { {1, 2}, {3, 4}, {1, 1}, {3, 2}, {2, 1} };
-static int raid_target_score(int vi, int *score_out) {
+int raid_target_score(int vi, int *score_out) {
     nresolve();
     const NativeSettlement *v = &CS.villages[vi];
     int area[4] = { 0, 0, 0, 0 };

@@ -91,4 +91,9 @@ int  rd_text(const rd_font *f, const char *s, int x, int y,
              const uint8_t ink[4]);
 int  rd_text_width(const rd_font *f, const char *s);
 
+/* ---- screens (cluster B+) ---- */
+/* drawMap (game.js:1555) at zoom 0 over the loaded sim state.  sel is a
+ * units_order index (-1 = none); blink hides the active unit's frame. */
+void rm_draw_map(int view_x, int view_y, int sel, int blink);
+
 #endif /* COLOPY_RENDER_H */

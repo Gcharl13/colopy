@@ -154,6 +154,7 @@ int ask_choice(void);
  * slices 3-5 — the shared script filter keeps both engines off them. */
 int  unit_full_moves(int ui);         /* @UNIT movement * 3 (thirds) */
 int  rumour_at(int x, int y);         /* rumourAt (game.js:8712) */
+int  raid_target_score(int vi, int *score_out); /* func_0460F8 */
 void cmd_move(int ui, int dx, int dy);        /* moveSel (game.js:10919) */
 void cmd_skip(int ui);                        /* skipUnit (game.js:10872) */
 void cmd_set_order(int ui, int n);            /* setOrder (game.js:11181) */
