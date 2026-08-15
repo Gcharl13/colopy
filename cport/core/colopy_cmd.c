@@ -292,7 +292,15 @@ void cmd_move(int ui, int dx, int dy) {
                 return;
     }
     for (int vi = 0; vi < CS.n_villages; vi++)
-        if (CS.villages[vi].map_x == nx && CS.villages[vi].map_y == ny) return;
+        if (CS.villages[vi].map_x == nx && CS.villages[vi].map_y == ny) {
+            /* enterVillage (game.js:11146): the move is spent and the
+             * @ACTIONS menu opens (CR.cur_village); the action itself
+             * comes from the caller (the script / future UI). */
+            u->moves_remaining = 0;
+            CR.unit_moves_undef[ui] = 0;
+            village_enter(vi, ui);
+            return;
+        }
     /* a rumour square triggers the exploration event; one outcome
      * destroys the unit before it ever arrives (game.js:11162) */
     if (rumour_at(nx, ny) && !enter_rumour(ui, nx, ny)) return;

@@ -169,10 +169,30 @@ TURNS = """([save, n, agitate, script]) => {
         if (a === 0) { G.sel = k; activateUnit(); }
         continue;
       }
-      if (a < 6) {
+      if (a < 5) {
         const [dx, dy] = DIRS8[(t + k) % 8];
         if (u.movesLeft > 0 && tileFree(u.x + dx, u.y + dy)) {
           G.sel = k; moveSel(dx, dy);
+        }
+      } else if (a === 5) {
+        // visit an adjacent village (slice 4b) — skip tiles a native or
+        // rival also occupies (those are moveSel's foe branches)
+        for (const [dx, dy] of DIRS8) {
+          const nx = u.x + dx, ny = u.y + dy;
+          if (!G.villages.some(v2 => v2.x === nx && v2.y === ny)) continue;
+          const occupied =
+            G.natives.some(q => q.x === nx && q.y === ny) ||
+            G.rivals.some(r => r.units.some(q => q.x === nx && q.y === ny));
+          if (!occupied && u.movesLeft > 0) {
+            G.sel = k; moveSel(dx, dy);
+            if (G.village) {
+              const rows2 = villageActions();
+              let id = rows2[(t + k) % rows2.length].id;
+              if (id === 0 || id === 1) id = 9;          // trade: 4c
+              runVillageAction(id);
+            }
+          }
+          break;
         }
       } else if (a === 6) { G.sel = k; setOrder(5); }        // Fortify
       else if (a === 7) { G.sel = k; improveOrder(t % 2 ? 9 : 8); }

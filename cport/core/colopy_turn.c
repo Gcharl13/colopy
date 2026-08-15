@@ -182,6 +182,15 @@ void cr_reset_from_load(void) {
     }
     CR.map_seed = 1653;
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */
+    /* slice 4b: the open-village cursor, tribe war targets, and the
+     * chief-seen seed (importer game.js:10315 reads flags bit 0x08) */
+    CR.cur_village = -1;
+    CR.cur_visitor = -1;
+    memset(CR.tribe_war_with, 0xFF, sizeof(CR.tribe_war_with));  /* -1 */
+    /* the importer marks every tribe met (game.js:10262) */
+    memset(CR.tribe_met, 1, sizeof(CR.tribe_met));
+    for (int i = 0; i < CS.n_villages; i++)
+        if (CS.villages[i].flags & 0x08) CR.village_flags[i] |= 8;
     /* importer game.js:10285-10288: the artillery price-escalation
      * counter (+0x1E) AND the boycott word (+0x20) are read from the
      * PowerRecord — G.boycotts starts [] but is FILLED from the record's

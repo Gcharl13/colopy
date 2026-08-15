@@ -170,11 +170,47 @@ static void script_commands(int t) {
             if (a == 0) cmd_activate(ui);
             continue;
         }
-        if (a < 6) {
+        if (a < 5) {
             const int *d = DIRS8[(t + k) % 8];
             if (!CR.unit_moves_undef[ui] && u->moves_remaining > 0 &&
                 script_tile_free(u->map_x + d[0], u->map_y + d[1]))
                 cmd_move(ui, d[0], d[1]);
+        } else if (a == 5) {
+            /* visit an adjacent village (slice 4b) — skip tiles a native
+             * or rival also occupies (those are moveSel's foe branches) */
+            for (int di = 0; di < 8; di++) {
+                int nx = u->map_x + DIRS8[di][0];
+                int ny = u->map_y + DIRS8[di][1];
+                int vil = 0;
+                for (int v = 0; v < CS.n_villages; v++)
+                    if (CS.villages[v].map_x == nx &&
+                        CS.villages[v].map_y == ny) vil = 1;
+                if (!vil) continue;
+                int occupied = 0;
+                for (int q = 0; q < CR.n_natives && !occupied; q++) {
+                    int nu = CR.natives_order[q];
+                    if (unit_pos_x(nu) == nx && unit_pos_y(nu) == ny)
+                        occupied = 1;
+                }
+                for (int rn = 0; rn < 4 && !occupied; rn++)
+                    for (int q = 0; q < CR.n_runits[rn] && !occupied; q++) {
+                        int ru = CR.runits_order[rn][q];
+                        if (CR.runit_x[ru] == nx && CR.runit_y[ru] == ny)
+                            occupied = 1;
+                    }
+                if (!occupied && !CR.unit_moves_undef[ui] &&
+                    u->moves_remaining > 0) {
+                    cmd_move(ui, DIRS8[di][0], DIRS8[di][1]);
+                    if (CR.cur_village >= 0) {
+                        uint8_t ids[10];
+                        int nr = village_action_rows(ids);
+                        int id = nr ? ids[(t + k) % nr] : 9;
+                        if (id == 0 || id == 1) id = 9;  /* trade: 4c */
+                        run_village_action(id);
+                    }
+                }
+                break;
+            }
         } else if (a == 6) {
             cmd_set_order(ui, 5);         /* Fortify */
         } else if (a == 7) {

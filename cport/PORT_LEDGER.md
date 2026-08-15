@@ -93,7 +93,7 @@ Status column is maintained by hand as porting proceeds:
 | `briefLines` | 1100 | 5 |  | todo |
 | `cardText` | 1132 | 14 |  | todo |
 | `woodcutOnce` | 1205 | 10 |  | todo |
-| `firstTribeContact` | 1216 | 31 |  | todo |
+| `firstTribeContact` | 1216 | 31 |  | ported (met latch; woodcut after-cb headless-inert) |
 | `wrapText` | 1273 | 35 |  | todo |
 | `edgeBlend` | 1328 | 50 |  | todo |
 | `landBits` | 1379 | 7 |  | todo |
@@ -212,16 +212,16 @@ Status column is maintained by hand as porting proceeds:
 | `tensionBandIdx` | 5089 | 9 |  | ported |
 | `adjustTension` | 5099 | 42 |  | ported |
 | `seedNatives` | 5142 | 42 |  | todo |
-| `villageDemand` | 5185 | 22 |  | todo |
+| `villageDemand` | 5185 | 22 |  | ported (village_demand, cached) |
 | `villageOffer` | 5208 | 19 |  | todo |
 | `villageSell` | 5228 | 24 |  | todo |
 | `villageAsk` | 5253 | 11 |  | todo |
-| `villageSurplus` | 5265 | 5 |  | todo |
+| `villageSurplus` | 5265 | 5 |  | ported (village_surplus_good) |
 | `villageBuy` | 5271 | 12 |  | todo |
 | `villageGift` | 5284 | 19 |  | todo |
-| `missionBand` | 5304 | 9 |  | todo |
-| `establishMission` | 5314 | 23 |  | todo |
-| `denounceHeresy` | 5338 | 24 |  | todo |
+| `missionBand` | 5304 | 9 |  | ported (inline) |
+| `establishMission` | 5314 | 23 |  | ported |
+| `denounceHeresy` | 5338 | 24 |  | ported |
 | `conversionThreshold` | 5363 | 5 |  | ported |
 | `attemptConversions` | 5369 | 21 |  | ported |
 | `ageConverts` | 5391 | 26 |  | ported |
@@ -238,28 +238,28 @@ Status column is maintained by hand as porting proceeds:
 | `missionStrength` | 5917 | 7 |  | ported |
 | `nativeTick` | 5925 | 21 |  | ported |
 | `spawnBrave` | 5947 | 23 |  | ported |
-| `villageSkill` | 5971 | 2 |  | todo |
-| `liveAmong` | 5974 | 47 |  | todo |
-| `speakToChief` | 6022 | 51 |  | todo |
-| `incitePrice` | 6074 | 6 |  | todo |
-| `inciteIndians` | 6081 | 14 |  | todo |
-| `inciteAgainst` | 6096 | 27 |  | todo |
-| `militaryScore` | 6124 | 4 |  | todo |
-| `demandTribute` | 6129 | 43 |  | todo |
-| `razeGold` | 6173 | 5 |  | todo |
-| `removeVillage` | 6179 | 14 |  | todo |
-| `attackVillage` | 6194 | 58 |  | todo |
+| `villageSkill` | 5971 | 2 |  | ported (inline) |
+| `liveAmong` | 5974 | 47 |  | ported |
+| `speakToChief` | 6022 | 51 |  | ported |
+| `incitePrice` | 6074 | 6 |  | ported (inline) |
+| `inciteIndians` | 6081 | 14 |  | ported |
+| `inciteAgainst` | 6096 | 27 |  | ported (inline) |
+| `militaryScore` | 6124 | 4 |  | ported |
+| `demandTribute` | 6129 | 43 |  | ported |
+| `razeGold` | 6173 | 5 |  | ported (inline in attack_village) |
+| `removeVillage` | 6179 | 14 |  | ported (remove_village) |
+| `attackVillage` | 6194 | 58 |  | ported (attack_village) |
 | `fillTemplate` | 6253 | 45 |  | todo |
 | `eventSpeaker` | 6299 | 18 |  | todo |
 | `showEvent` | 6338 | 13 |  | todo |
 | `notice` | 6352 | 15 |  | todo |
 | `askZoom` | 6368 | 10 |  | ported (colony-zoom = screen_map latch) |
 | `askEvent` | 6379 | 19 |  | todo |
-| `enterVillage` | 6426 | 35 |  | todo |
-| `villageActions` | 6462 | 15 |  | todo |
-| `villageRowCount` | 6478 | 2 |  | todo |
+| `enterVillage` | 6426 | 35 |  | ported (village_enter; INDIANWELCOME after-cb never fires headless) |
+| `villageActions` | 6462 | 15 |  | ported (village_action_rows) |
+| `villageRowCount` | 6478 | 2 |  | ported (row count) |
 | `actionLabel` | 6481 | 8 |  | todo |
-| `runVillageAction` | 6490 | 28 |  | todo |
+| `runVillageAction` | 6490 | 28 |  | ported (run_village_action; trade rows = slice 4c) |
 | `tradeSpeaker` | 6519 | 0 |  | todo |
 | `openVillageTrade` | 6520 | 28 |  | todo |
 | `tradeSellPick` | 6549 | 11 |  | todo |

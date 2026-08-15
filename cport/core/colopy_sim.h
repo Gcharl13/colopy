@@ -119,6 +119,8 @@ int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
  * applyDefeat (7066) and tryPromote (7185).  Both sides are unit-record
  * indexes; rival positions read/write the CR mirrors. */
 int  resolve_attack(int att_ui, int def_ui); /* removed record idx, -1 none */
+int  analysis_total(int ui, int is_defender); /* combatAnalysis(u,d).total */
+int  tribe_level(int tribe);      /* TribeData +0x02 (the @TRIBES level) */
 int  unit_pos_x(int ui);         /* record, or the rival mirror */
 int  unit_pos_y(int ui);
 void colony_remove(int ci);      /* immediate splice (rival capture path) */
@@ -159,6 +161,14 @@ void cmd_goto(int ui, int gx, int gy);        /* Go To: orders 3 + goal */
 void cmd_activate(int ui);                    /* activateUnit (game.js:11228) */
 int  enter_rumour(int ui, int x, int y);      /* enterRumour (game.js:8740);
                                                * 0 = the unit is gone, no step */
+
+/* ---- the village layer (colopy_village.c) — Phase 5 slice 4b ----------- */
+void village_enter(int vi, int ui);           /* enterVillage (game.js:6430) */
+int  village_action_rows(uint8_t *ids_out);   /* villageActions (6466): the
+                                               * open village's row ids */
+void run_village_action(int id);              /* runVillageAction (6494) —
+                                               * ids 0/1 (trade) are slice-4c
+                                               * no-ops, script remaps to 9 */
 int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
 int  father_by_name(const char *name);
@@ -339,6 +349,25 @@ typedef struct {
     uint8_t   unit_n_hold[COLOPY_MAX_UNITS];
     immigrant unit_pass[COLOPY_MAX_UNITS][EURO_PASS_MAX];
     uint8_t   unit_n_pass[COLOPY_MAX_UNITS];
+    /* Slice 4b — the village layer (enterVillage game.js:6430 + the
+     * @ACTIONS handlers).  Per-village runtime flags (v.greeted/taught/
+     * tributePaid are runtime; chiefSeen SEEDS from the record's flags
+     * bit 0x08 and is runtime after), the demand cache (villageDemand
+     * caches on first call — the CACHING is part of the parity contract
+     * because clears can change the map after it), per-tribe runtime
+     * (t.met/treaty/shunned/dead/warWith/musketsKnown/horsesKnown/herd —
+     * beginGame objects carry none of these), and the open-village
+     * cursor (G.village/G.villageVisitor). */
+    uint8_t village_flags[COLOPY_MAX_SETTLEMENTS];  /* 1 greeted 2 taught
+                                                     * 4 tributePaid
+                                                     * 8 chiefSeen */
+    int16_t village_demand[COLOPY_MAX_SETTLEMENTS][16];
+    uint8_t village_demand_set[COLOPY_MAX_SETTLEMENTS];
+    uint8_t tribe_met[8], tribe_treaty[8], tribe_shunned[8], tribe_dead[8];
+    int8_t  tribe_war_with[8];       /* rival nation, -1 none */
+    int16_t tribe_muskets_known[8], tribe_horses_known[8], tribe_herd[8];
+    int8_t  cur_village;             /* G.village index, -1 closed */
+    int16_t cur_visitor;             /* G.villageVisitor record idx */
     /* Slice 4a — Lost City Rumours (enterRumour game.js:8740). */
     uint8_t rumours_done[(COLOPY_MAP_W * COLOPY_MAP_H + 7) / 8];
     uint8_t rumour_floor;        /* anti-streak floor, 1..3 (G.rumourFloor) */

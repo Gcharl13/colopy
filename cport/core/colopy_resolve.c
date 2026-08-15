@@ -83,7 +83,7 @@ static int unit_by_type(const char *name) {
 static int R(int n) { return (int)((rng_next() * (uint32_t)n) >> 15); }
 
 /* combatAnalysis(u, isDefender).total for a live unit (see header). */
-static int analysis_total(int ui, int is_defender) {
+int analysis_total(int ui, int is_defender) {
     rresolve();
     const UnitRecord *u = &CS.units[ui];
     combat_params p;

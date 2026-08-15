@@ -74,7 +74,7 @@ static int ff_owned(int idx) {
 }
 
 /* ---- shared predicates ------------------------------------------------- */
-static int tribe_level(int tribe) {
+int tribe_level(int tribe) {
     return (tribe >= 0 && tribe < 8) ? CS.tribes[tribe * 0x4E + 2] : 0;
 }
 static int is_brave(int ui) {                /* G.natives membership */
