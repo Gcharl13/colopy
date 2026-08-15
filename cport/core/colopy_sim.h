@@ -54,6 +54,16 @@ int  colony_sol(const ColonyRecord *c);         /* % from +0xC2/+0xC6 */
 uint64_t colony_buildings(const ColonyRecord *c); /* bit per @BUILDING id */
 int  colony_has(const ColonyRecord *c, const char *building_name);
 
+/* ---- the Europe market (colopy_market.c) ------------------------------ */
+int     market_bid(int good);
+int     market_ask(int good);
+int     market_boycotted(int good);
+void    market_drift(void);
+int32_t market_sell(int good, int32_t qty);
+int32_t market_buy(int good, int32_t qty);
+int32_t market_accum(int good);
+void    market_reset_accum(void);   /* call at load: JS-importer semantics */
+
 /* Runtime flags that live beside the save image (not in it). */
 typedef struct {
     uint8_t upkeep_unpaid;      /* @UPKEEP half-rate latch */

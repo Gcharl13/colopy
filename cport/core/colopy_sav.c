@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "colopy_core.h"
+#include "colopy_sim.h"
 #include "colopy_state.h"
 
 colopy_state CS;
@@ -85,6 +86,7 @@ colopy_status colopy_load_sav(const uint8_t *buf, size_t len) {
     CS.n_colonies = ncol;
     CS.n_units = nunit;
     CS.n_villages = nvill;
+    market_reset_accum();
     return g_last = COLOPY_OK;
 }
 

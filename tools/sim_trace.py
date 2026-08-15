@@ -39,9 +39,30 @@ PRODUCE = """() => {
 }"""
 
 
+MARKET = """() => {
+  importSav(b64bytes(DATA.sav1653));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  const snap = (step) => ({ step, gold: G.gold, fund: G.kingsFund,
+    market: G.market.slice(), accum: G.accum.slice(),
+    tons: G.tradeTons.slice(), tgold: G.tradeGold.slice() });
+  const out = [snap('load')];
+  sellGoods(9, 100);  out.push(snap('sell_rum_100'));
+  sellGoods(2, 50);   out.push(snap('sell_tobacco_50'));
+  buyGoods(14, 30);   out.push(snap('buy_tools_30'));
+  driftMarket();      out.push(snap('drift_1'));
+  sellGoods(7, 200);  out.push(snap('sell_silver_200'));
+  buyGoods(15, 10);   out.push(snap('buy_muskets_10'));
+  for (let i = 0; i < 5; i++) driftMarket();
+  out.push(snap('drift_5'));
+  sellGoods(0, 500);  out.push(snap('sell_food_500'));
+  buyGoods(8, 20);    out.push(snap('buy_horses_20'));
+  return out;
+}"""
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
-    if mode != "produce":
+    if mode not in ("produce", "market"):
         raise SystemExit("unknown mode: " + mode)
     with sync_playwright() as pw:
         browser = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium")
@@ -50,7 +71,7 @@ def main():
         page.wait_for_function("typeof importSav === 'function'")
         # let the boot settle (assets decode on load)
         page.wait_for_timeout(500)
-        data = page.evaluate(PRODUCE)
+        data = page.evaluate(PRODUCE if mode == "produce" else MARKET)
         browser.close()
     json.dump(data, sys.stdout, indent=1, sort_keys=True)
     print()

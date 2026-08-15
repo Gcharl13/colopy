@@ -47,9 +47,43 @@ static void dump_produce(void) {
     }
 }
 
+/* --market: the scripted trade sequence tools/sim_trace.py mirrors in JS.
+ * One JSON state line after load and after every step. */
+static void dump_market_state(const char *step) {
+    const PowerRecord *p = colopy_power(cs_nation());
+    printf("{\"step\":\"%s\",\"gold\":%d,\"fund\":%d,\"market\":[", step,
+           p->gold, p->kings_fund);
+    for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", market_bid(i));
+    printf("],\"accum\":[");
+    for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", market_accum(i));
+    printf("],\"tons\":[");
+    for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", p->trade_tons[i]);
+    printf("],\"tgold\":[");
+    for (int i = 0; i < N_GOODS; i++) printf("%s%d", i ? "," : "", p->trade_gold[i]);
+    printf("]}\n");
+}
+static void dump_market(void) {
+    colopy_load_sav(sav1653, sizeof(sav1653));
+    dump_market_state("load");
+    market_sell(9, 100);  dump_market_state("sell_rum_100");
+    market_sell(2, 50);   dump_market_state("sell_tobacco_50");
+    market_buy(14, 30);   dump_market_state("buy_tools_30");
+    market_drift();       dump_market_state("drift_1");
+    market_sell(7, 200);  dump_market_state("sell_silver_200");
+    market_buy(15, 10);   dump_market_state("buy_muskets_10");
+    for (int i = 0; i < 5; i++) market_drift();
+    dump_market_state("drift_5");
+    market_sell(0, 500);  dump_market_state("sell_food_500");
+    market_buy(8, 20);    dump_market_state("buy_horses_20");
+}
+
 int main(int argc, char **argv) {
     if (argc > 1 && strcmp(argv[1], "--produce") == 0) {
         dump_produce();
+        return 0;
+    }
+    if (argc > 1 && strcmp(argv[1], "--market") == 0) {
+        dump_market();
         return 0;
     }
     /* record strides are compile-time asserted; spot-check the data. */

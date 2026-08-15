@@ -42,7 +42,39 @@ def run_c():
     return flat
 
 
+M_FIELDS = ["gold", "fund", "market", "accum", "tons", "tgold"]
+
+
+def run_js_market():
+    out = subprocess.run([sys.executable, ROOT / "tools/sim_trace.py",
+                          "market"], capture_output=True, text=True,
+                         check=True).stdout
+    return {r["step"]: r for r in json.loads(out)}
+
+
+def run_c_market():
+    subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+    out = subprocess.run(["./smoke", "--market"], cwd=ROOT / "cport/host",
+                         capture_output=True, text=True, check=True).stdout
+    return {json.loads(l)["step"]: json.loads(l) for l in out.splitlines()}
+
+
+def compare_market():
+    js, cc = run_js_market(), run_c_market()
+    bad = 0
+    for step in js:
+        for f in M_FIELDS:
+            if js[step][f] != cc.get(step, {}).get(f):
+                print("%s .%s:\n  JS %s\n  C  %s"
+                      % (step, f, js[step][f], cc.get(step, {}).get(f)))
+                bad += 1
+    print("%d steps compared, %d disagreement(s)" % (len(js), bad))
+    sys.exit(1 if bad else 0)
+
+
 def main():
+    if sys.argv[1:2] == ["market"]:
+        compare_market()
     js, cc = run_js(), run_c()
     bad = 0
     for key in sorted(set(js) | set(cc)):
