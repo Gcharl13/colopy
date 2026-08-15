@@ -1,0 +1,55 @@
+{
+ "hub": [
+  7,
+  10
+ ],
+ "colonies": 6,
+ "wagon_cap": 5,
+ "edges": {
+  "F": {
+   "site": [
+    7,
+    2
+   ],
+   "road_tiles": 8,
+   "one_way_turns": 2,
+   "wagon_capacity_per_turn": 50
+  },
+  "T": {
+   "site": [
+    7,
+    8
+   ],
+   "road_tiles": 2,
+   "one_way_turns": 1,
+   "wagon_capacity_per_turn": 100
+  },
+  "R": {
+   "site": [
+    12,
+    10
+   ],
+   "road_tiles": 5,
+   "one_way_turns": 1,
+   "wagon_capacity_per_turn": 100
+  },
+  "C": {
+   "site": [
+    10,
+    14
+   ],
+   "road_tiles": 4,
+   "one_way_turns": 1,
+   "wagon_capacity_per_turn": 100
+  },
+  "O": {
+   "site": [
+    14,
+    21
+   ],
+   "road_tiles": 11,
+   "one_way_turns": 2,
+   "wagon_capacity_per_turn": 50
+  }
+ }
+}
