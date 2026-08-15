@@ -95,8 +95,8 @@ int  rd_text_width(const rd_font *f, const char *s);
 /* drawMap (game.js:1555) at zoom 0 over the loaded sim state.  sel is a
  * units_order index (-1 = none); blink hides the active unit's frame. */
 void rm_draw_map(int view_x, int view_y, int sel, int blink);
-/* drawPulldown (game.js:1836): the four static menus over an open bar
- * title.  ORDERS context rows are FLAGGED (next cluster-C part). */
-void rm_draw_pulldown(int menu_idx, int menu_sel);
+/* drawPulldown (game.js:1836) over an open bar title; the ORDERS menu
+ * builds its rows from the selected unit's context (game.js:1780). */
+void rm_draw_pulldown(int menu_idx, int menu_sel, int sel);
 
 #endif /* COLOPY_RENDER_H */

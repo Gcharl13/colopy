@@ -502,12 +502,15 @@ int main(int argc, char **argv) {
         extern int render_smoke_main(const char *pak, const char *out);
         return render_smoke_main(argv[2], argv[3]);
     }
-    /* --rendermap SAVE PAK OUT.ppm VX VY [SEL]: the map screen */
+    /* --rendermap SAVE PAK OUT.ppm VX VY [SEL [MENU MSEL]] */
     if (argc > 6 && strcmp(argv[1], "--rendermap") == 0) {
         extern int render_map_main(const char *save, const char *pak,
-                                   const char *out, int vx, int vy, int sel);
+                                   const char *out, int vx, int vy, int sel,
+                                   int menu, int msel);
         return render_map_main(argv[2], argv[3], argv[4], atoi(argv[5]),
-                               atoi(argv[6]), argc > 7 ? atoi(argv[7]) : 0);
+                               atoi(argv[6]), argc > 7 ? atoi(argv[7]) : 0,
+                               argc > 8 ? atoi(argv[8]) : -1,
+                               argc > 9 ? atoi(argv[9]) : 0);
     }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         int agitate = 0, script = 0;

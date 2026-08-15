@@ -719,11 +719,82 @@ static void plaque_game(int x, int y, int w, int h) {
 }
 
 /* menuVisibleRows (game.js:1811): GAME/VIEW/REPORTS group by label
- * prefix with separators; ORDERS is context-built (cluster C part 2 —
- * this window ships the four static menus, ORDERS rows FLAGGED). */
+ * prefix with separators; ORDERS is context-built from the selected
+ * unit (ordersMenuRows, game.js:1780 — the gating is CAPTURE-DERIVED
+ * from the census frigate/wagon frames, flagged like the JS). */
 #define MENU_SEP_H 7
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } mrow;
-static int menu_rows(int mi, mrow *out) {
+
+/* accel comes from the ORDERS master rows by label match (drawPulldown
+ * game.js:1854 `m.rows.find(q => q.label === r.label)`) */
+static const char *orders_accel(const char *label) {
+    for (int mi = 0; mi < DAT_MENUS_COUNT; mi++) {
+        if (strcmp(dat_menus[mi].title, "ORDERS") != 0) continue;
+        for (int k = 0; k < dat_menus[mi].row_count; k++) {
+            const dat_menu_rows_t *r = &dat_menu_rows[dat_menus[mi].row_start + k];
+            if (strcmp(r->label, label) == 0) return r->accel;
+        }
+    }
+    return "";
+}
+static int orders_rows(int sel, mrow *out) {
+    int n = 0;
+#define PUSH(l, d) out[n++] = (mrow){ (l), orders_accel(l), (d) ? 1 : 0, 0 }
+#define SEP() out[n++] = (mrow){ 0, 0, 0, 1 }
+    if (sel < 0 || sel >= CR.n_units_order) {
+        /* no unit: every master row, dimmed (game.js:1782) */
+        for (int mi = 0; mi < DAT_MENUS_COUNT; mi++) {
+            if (strcmp(dat_menus[mi].title, "ORDERS") != 0) continue;
+            for (int k = 0; k < dat_menus[mi].row_count; k++) {
+                const dat_menu_rows_t *r =
+                    &dat_menu_rows[dat_menus[mi].row_start + k];
+                out[n++] = (mrow){ r->label, r->accel, 1, 0 };
+            }
+        }
+        return n;
+    }
+    int ui = CR.units_order[sel];
+    const UnitRecord *u = &CS.units[ui];
+    const dat_units_t *t = &dat_units[u->type];
+    int ship = t->hull > 0;
+    int at_own = player_col_at(u->map_x, u->map_y) >= 0;
+    int carrier = t->cargo > 0;
+    int pioneer = strstr(t->name, "Pioneer") != 0;
+    /* NOT_COLONISTS (game.js:1977): the three non-person kinds */
+    int founder = !ship && strcmp(t->name, "Wagon Train") != 0 &&
+                  strcmp(t->name, "Artillery") != 0 &&
+                  strcmp(t->name, "Treasure") != 0;
+    int v = map_at(u->map_x, u->map_y);
+    int forest = !ship && is_forested_id(v & 0x1F);
+    int hold = CR.unit_n_hold[ui] > 0 || CR.unit_n_pass[ui] > 0;
+    int sea_lane = (v & 0x1F) == TERR_SEALANE;   /* the Return gate */
+    PUSH("Activate unit", 0); PUSH("Wait for next unit", 0);
+    PUSH("Fortify", 0); PUSH("Sentry", 0);
+    SEP();
+    if (founder) { PUSH("Build Colony", 0); PUSH("Join Colony (B)", 0); }
+    if (forest) PUSH("Clear Forest (P)", !pioneer);
+    else PUSH("Plow Fields  (P)", ship || !pioneer);
+    PUSH("Build Road", ship || !pioneer);
+    PUSH("Load Cargo", !(carrier && at_own));
+    PUSH("Unload Cargo", !(carrier && at_own && hold));
+    SEP();
+    PUSH(ship ? "Go to Port" : "Go to Place", 0);
+    PUSH("Begin Trade Route", 0);
+    if (ship) PUSH("Return to Europe", !sea_lane);
+    if (founder) PUSH("Pillage", 0);
+    SEP();
+    PUSH("No Orders (space bar)", 0);
+    SEP();
+    PUSH("Dump Cargo Overboard", !hold);
+    PUSH("Disband Unit (shift-D)", 0);
+#undef PUSH
+#undef SEP
+    return n;
+}
+
+static int menu_rows(int mi, int sel, mrow *out) {
+    if (strcmp(dat_menus[mi].title, "ORDERS") == 0)
+        return orders_rows(sel, out);
     static const char *GROUPS_GAME[][2] = {
         { "Game Options", "Colony Report Options" }, { "Sound Options", "Pick Music" },
         { "Save Game", "Load Game" }, { "Declare Independence", 0 },
@@ -770,12 +841,12 @@ static int menu_rows(int mi, mrow *out) {
 }
 
 /* drawPulldown (game.js:1836) — the four static menus */
-void rm_draw_pulldown(int mi, int menu_sel) {
+void rm_draw_pulldown(int mi, int menu_sel, int sel) {
     static const int BAR_X[6] = { 17, 49, 81, 119, 161, 259 };
     if (mi < 0 || mi >= DAT_MENUS_COUNT) return;
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
     mrow rows[64];
-    int n = menu_rows(mi, rows);
+    int n = menu_rows(mi, sel, rows);
     int w = 0, h = 4;
     for (int k = 0; k < n; k++) {
         if (rows[k].sep) { h += MENU_SEP_H; continue; }

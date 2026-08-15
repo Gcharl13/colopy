@@ -82,7 +82,8 @@ int render_smoke_main(const char *pak_path, const char *out_path) {
  * a loaded fixture.  Writes the fb as P6 plus OUT.ppm.idx (the raw 8-bit
  * index plane) so the compare tool can resolve palette-model deltas. */
 int render_map_main(const char *save, const char *pak_path,
-                    const char *out_path, int vx, int vy, int sel) {
+                    const char *out_path, int vx, int vy, int sel,
+                    int menu, int msel) {
     if (strcmp(save, "sav1653") == 0)
         colopy_load_sav(sav1653, sizeof(sav1653));
     else if (strcmp(save, "savraleigh") == 0)
@@ -102,6 +103,7 @@ int render_map_main(const char *save, const char *pak_path,
         return 1;
     }
     rm_draw_map(vx, vy, sel, 1);
+    if (menu >= 0) rm_draw_pulldown(menu, msel, sel);
     FILE *o = fopen(out_path, "wb");
     if (!o) return 1;
     fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);

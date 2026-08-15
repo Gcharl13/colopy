@@ -79,7 +79,7 @@ COMBAT = """(cases) => {
 }"""
 
 
-RENDERMAP = """([save, vx, vy, sel]) => {
+RENDERMAP = """([save, vx, vy, sel, menu, msel]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
@@ -91,7 +91,8 @@ RENDERMAP = """([save, vx, vy, sel]) => {
   G.blink = true;    // the on half: the active unit is DRAWN
   G.sel = sel;
   G.zoom = 0;
-  G.openMenu = -1;
+  G.openMenu = menu === undefined || menu === null ? -1 : menu;
+  G.menuSel = msel || 0;
   G.view = { x: vx, y: vy };
   G.screen = 'map';
   const cv = document.querySelector('canvas');
@@ -399,7 +400,9 @@ def main():
         elif mode == "rendermap":
             out = page.evaluate(RENDERMAP, [sys.argv[2], int(sys.argv[3]),
                                             int(sys.argv[4]),
-                                            int(sys.argv[5]) if len(sys.argv) > 5 else 0])
+                                            int(sys.argv[5]) if len(sys.argv) > 5 else 0,
+                                            int(sys.argv[6]) if len(sys.argv) > 6 else -1,
+                                            int(sys.argv[7]) if len(sys.argv) > 7 else 0])
             browser.close()
             print(out)
             return
