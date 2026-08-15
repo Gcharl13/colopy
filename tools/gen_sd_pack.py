@@ -253,6 +253,10 @@ def main():
         " * Teensy build (C-port Phase 6). */",
         "#ifndef COLOPY_PAK_H",
         "#define COLOPY_PAK_H",
+        "",
+        "#ifdef __cplusplus",
+        'extern "C" {',
+        "#endif",
         "#include <stdint.h>",
         "",
         '#define COLOPY_PAK_MAGIC   "CPAK"',
@@ -287,7 +291,8 @@ def main():
     ]
     for i in range(0, count, 4):
         hdr.append("    " + " ".join('"%s",' % n for n in names[i:i + 4]))
-    hdr += ["};", "", "#endif /* COLOPY_PAK_H */", ""]
+    hdr += ["};", "", "#ifdef __cplusplus", "}", "#endif",
+           "#endif /* COLOPY_PAK_H */", ""]
     HDR_OUT.write_text("\n".join(hdr))
 
     total = toc_size + len(body)
