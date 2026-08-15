@@ -337,9 +337,55 @@ void cmd_move(int ui, int dx, int dy) {
      * village, a rumour square: each an EXPLICIT no-op pending slices
      * 3-5; the scripted harness filters these targets on both sides, so
      * a no-op here is parity-safe and no unexercised port ships. */
-    for (int k = 0; k < CR.n_natives; k++) {
-        int q = CR.natives_order[k];
-        if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) return;
+    {
+        /* a native brave or a King's unit on the target square is an
+         * attack (§14; game.js:10984): @CANNOTATTACK gates a zero-
+         * rating land attacker, tired troops get the §14.3 @HALF ask
+         * BEFORE the roll, natives take the act-of-war tension hit
+         * (@PISS4), and the JS ends every arm in advance(). */
+        int foe = -1, foe_tribe = -1;
+        for (int k = 0; k < CR.n_natives && foe < 0; k++) {
+            int q = CR.natives_order[k];
+            if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) {
+                foe = q;
+                foe_tribe = (CS.units[q].owner_flags & 0x0F) - 4;
+            }
+        }
+        for (int k = 0; k < (int)CR.n_refs && foe < 0; k++) {
+            int q = CR.refs_order[k];
+            if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) foe = q;
+        }
+        if (foe >= 0) {
+            if (!ship && dat_units[u->type].attack <= 0) {
+                ev_emit("CANNOTATTACK", 0, 0, 0, 0);
+                return;
+            }
+            int full = unit_full_moves(ui);
+            int tired = u->moves_remaining < full;
+            if (tired && !ship) {
+                CR.unit_fatigue[ui] =
+                    (uint8_t)(u->moves_remaining * 3 <= full ? 2 : 1);
+                ev_emit("HALF", CR.unit_fatigue[ui] == 2 ? 1 : 2, 0, 0, 0);
+                if (ask_choice() != 0) {   /* row 1: let them rest */
+                    CR.unit_fatigue[ui] = 0;
+                    u->moves_remaining = 0;
+                    CR.unit_moves_undef[ui] = 0;
+                    CR.ui_advance = 1;
+                    return;
+                }
+            } else
+                CR.unit_fatigue[ui] = 0;
+            int removed = resolve_attack(ui, foe);
+            if (foe_tribe >= 0 && foe_tribe < 8)
+                adjust_tension(foe_tribe, 100, 4);
+            /* strike()'s u.fatigue = 0 — on the surviving record only
+             * (the JS writes a dead object, which is inert) */
+            int at = ui;
+            if (removed >= 0 && removed < at) at--;
+            if (removed != ui) CR.unit_fatigue[at] = 0;
+            CR.ui_advance = 1;
+            return;
+        }
     }
     /* a rival power's unit or colony (game.js:11023): at peace a SHIP
      * knocks (parley / privateer strike / treaty break); at war ship vs

@@ -889,9 +889,11 @@ int rm_menu_rows(int mi, int sel, rm_mrow *out) {
 }
 
 /* drawPulldown (game.js:1836) — the four static menus */
-void rm_draw_pulldown(int mi, int menu_sel, int sel) {
-    static const int BAR_X[6] = { 17, 49, 81, 119, 161, 259 };
-    if (mi < 0 || mi >= DAT_MENUS_COUNT) return;
+static const int BAR_X[6] = { 17, 49, 81, 119, 161, 259 };
+
+/* pulldownBox (game.js:1827) — shared with the pointer layer */
+void rm_pulldown_box(int mi, int sel, int *bx, int *by, int *bw, int *bh);
+void rm_pulldown_box(int mi, int sel, int *bx, int *by, int *bw, int *bh) {
     if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
     rm_mrow rows[64];
     int n = rm_menu_rows(mi, sel, rows);
@@ -905,7 +907,31 @@ void rm_draw_pulldown(int mi, int menu_sel, int sel) {
     w += 16;
     int x = BAR_X[mi] - 2;
     if (x > RD_W - w - 2) x = RD_W - w - 2;
-    int y = 8;
+    *bx = x;
+    *by = 8;
+    *bw = w;
+    *bh = h;
+}
+
+/* the menubar title under mx (onClick, game.js:12303): mx in
+ * [x-2, x+width(title)+2) — the menu index, or -1 */
+int rm_menubar_hit(int mx);
+int rm_menubar_hit(int mx) {
+    if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
+    for (int i = 0; i < DAT_MENUS_COUNT; i++) {
+        int w = rd_text_width(&TINY, dat_menus[i].title);
+        if (mx >= BAR_X[i] - 2 && mx < BAR_X[i] + w + 2) return i;
+    }
+    return -1;
+}
+
+void rm_draw_pulldown(int mi, int menu_sel, int sel) {
+    if (mi < 0 || mi >= DAT_MENUS_COUNT) return;
+    if (!TINY.payload) rd_font_open(&RD.pak, "FONTTINY.FF", &TINY);
+    rm_mrow rows[64];
+    int n = rm_menu_rows(mi, sel, rows);
+    int x, y, w, h;
+    rm_pulldown_box(mi, sel, &x, &y, &w, &h);
     /* selected-title highlight on the bar (drawMenuBar, game.js:1746) */
     rd_fill(BAR_X[mi] - 2, 0, rd_text_width(&TINY, dat_menus[mi].title) + 4,
             7, 0x37);

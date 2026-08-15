@@ -21,14 +21,16 @@ typedef struct {
     int     sel;                     /* units_order ordinal (G.sel) */
     int8_t  open_menu, menu_sel;     /* pulldown state */
     int8_t  view_mode;               /* G.viewMode */
-    int8_t  colony, colony_view;
+    int8_t  colony, colony_view, colony_ship_sel;
     int8_t  market_sel, euro_row, euro_ship, euro_dock_sel;
     int8_t  show_hidden;             /* G.showHidden */
+    int8_t  colony_numbers;          /* G.colonyNumbers ([0x336]) */
 } colopy_ui;
 
 extern colopy_ui UI;
 
 void ui_init(void);
 void in_key(const char *key, int alt, int shift);
+void in_click(int mx, int my, int right);
 
 #endif /* COLOPY_INPUT_H */

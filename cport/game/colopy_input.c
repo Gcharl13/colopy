@@ -10,6 +10,7 @@
  * rollover, orders, F-key reports, pulldown navigation); the pointer
  * layer and the remaining screen vocabularies follow in later slices. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../core/colopy_sim.h"
@@ -88,7 +89,7 @@ static void advance(void) {
 /* openMenu (game.js:1874): first non-separator row selected */
 static void open_menu(int mi) {
     rm_mrow rows[64];
-    int n = rm_menu_rows(mi, sel_unit(), rows);
+    int n = rm_menu_rows(mi, UI.sel, rows);
     UI.open_menu = (int8_t)mi;
     UI.menu_sel = 0;
     for (int i = 0; i < n; i++)
@@ -102,10 +103,14 @@ static void open_menu(int mi) {
 static void run_menu_row(void) {
     if (UI.open_menu < 0) return;
     rm_mrow rows[64];
-    int n = rm_menu_rows(UI.open_menu, sel_unit(), rows);
+    int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
     const rm_mrow *r = (UI.menu_sel >= 0 && UI.menu_sel < n)
                            ? &rows[UI.menu_sel] : 0;
     UI.open_menu = -1;
+    if (getenv("COLOPY_INPUT_DBG"))
+        fprintf(stderr, "runrow sel=%d n=%d ms=%d label=%s dim=%d sep=%d\n",
+                UI.sel, n, UI.menu_sel, r && r->label ? r->label : "(null)",
+                r ? r->dim : -1, r ? r->sep : -1);
     if (!r || r->sep || r->dim || !r->label) return;
     const char *l = r->label;
     int ui = sel_unit();
@@ -243,7 +248,7 @@ void in_key(const char *k, int alt, int shift) {
         /* an open pulldown owns the keyboard (game.js:12545) */
         if (UI.open_menu >= 0) {
             rm_mrow rows[64];
-            int n = rm_menu_rows(UI.open_menu, sel_unit(), rows);
+            int n = rm_menu_rows(UI.open_menu, UI.sel, rows);
             if (key_is(k, "ArrowUp") || key_is(k, "ArrowDown")) {
                 int dir = key_is(k, "ArrowUp") ? -1 : 1;
                 int i = UI.menu_sel;
@@ -326,7 +331,13 @@ void in_key(const char *k, int alt, int shift) {
                 int ox = CS.units[ui].map_x, oy = CS.units[ui].map_y;
                 int had = !CR.unit_moves_undef[ui] &&
                           CS.units[ui].moves_remaining > 0;
+                CR.ui_advance = 0;
                 cmd_move(ui, DIR[i].dx, DIR[i].dy);
+                if (CR.ui_advance) {   /* a combat arm ended in advance() */
+                    CR.ui_advance = 0;
+                    advance();
+                    return;
+                }
                 /* step's own tail (game.js:10850): recentre when the
                  * unit strays near the view edge, then advance when the
                  * budget is spent */
@@ -398,6 +409,187 @@ void in_key(const char *k, int alt, int shift) {
         if (key_is(k, "Escape") || key_is(k, "x") || key_is(k, "e") ||
             key_is(k, "E"))
             UI.screen = SCR_MAP;
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+/* ---- the pointer layer (onClick, game.js:12048) — slice 3 ----------
+ * The boot screens, the report exit, the map screen (menubar, pulldown
+ * rows, viewport: colony-open / stack-cycle / centre), the colony
+ * screen's buttons/dock/exit, and the Europe screen's ship boxes,
+ * market bar and exit.  The drag layer, the popup/scene/plaza colonist
+ * moves and the context menus stay with later slices — the shared
+ * script does not click those regions. */
+static int hit(int mx, int my, int x, int y, int w, int h) {
+    return mx >= x && mx < x + w && my >= y && my < y + h;
+}
+
+void in_click(int mx, int my, int right) {
+    (void)right;
+    switch (UI.screen) {
+    case SCR_TITLE:
+        for (int k = 0; k < 5; k++)
+            if (hit(mx, my, 77 + 4, 106 + 8 * k, 158, 7)) {
+                UI.menu_row = (int8_t)k;
+                commit_menu();
+                return;
+            }
+        break;
+    case SCR_DIFFICULTY:
+        for (int n = 0; n < 5; n++) {
+            int i = n + 1;
+            if (hit(mx, my, (i % 3) * 105 + 23, (i / 3) * 96 + 7, 68, 90)) {
+                UI.difficulty = (int8_t)n;
+                return;
+            }
+        }
+        if (my < 103 && mx < 128) UI.screen = SCR_NATION;
+        break;
+    case SCR_NATION:
+        for (int i = 0; i < 4; i++)
+            if (hit(mx, my, (i % 2) * 99 + 112, (i / 2) * 91 + 13, 88, 82)) {
+                UI.nation = (int8_t)i;
+                return;
+            }
+        if (mx < 112) {
+            snprintf(UI.leader, sizeof(UI.leader), "%s",
+                     dat_nations[UI.nation].leader);
+            UI.screen = SCR_NAME;
+        }
+        break;
+    case SCR_NAME:
+        UI.brief_page = 0;
+        UI.screen = SCR_BRIEFING;
+        break;
+    case SCR_BRIEFING:
+        if (UI.brief_page == 0) UI.brief_page = 1;
+        /* page 1 -> the king audience (newGame chain): a later slice */
+        break;
+    case SCR_REPORT:
+        UI.screen = SCR_MAP;
+        break;
+    case SCR_COLONY: {
+        /* order per the JS: dock ships, view buttons, build buttons
+         * (unbound), the production numbers toggle, the exit box */
+        const ColonyRecord *c = 0;
+        int cci = -1, ord = -1;
+        for (int k = 0; k < CS.n_colonies; k++) {
+            if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+            if (++ord == UI.colony) { cci = k; break; }
+        }
+        if (cci >= 0) c = &CS.colonies[cci];
+        if (c) {
+            int nships = 0;
+            for (int q = 0; q < CR.n_units_order; q++) {
+                int u2 = CR.units_order[q];
+                if (dat_units[CS.units[u2].type].hull > 0 &&
+                    CS.units[u2].map_x == c->map_x &&
+                    CS.units[u2].map_y == c->map_y) nships++;
+            }
+            for (int k = 0; k < (nships < 4 ? nships : 4); k++)
+                if (hit(mx, my, 130 + 18 * k, 147, 16, 16)) {
+                    UI.colony_ship_sel = (int8_t)k;
+                    return;
+                }
+        }
+        for (int k = 0; k < 3; k++)
+            if (hit(mx, my, 303, 132 + 15 * k, 15, 13)) {
+                UI.colony_view = (int8_t)k;
+                return;
+            }
+        if (UI.colony_view == 0 && hit(mx, my, 207, 130, 95, 48)) {
+            UI.colony_numbers = (int8_t)!UI.colony_numbers;
+            return;
+        }
+        if (hit(mx, my, 305, 179, 15, 21)) UI.screen = SCR_MAP;
+        break;
+    }
+    case SCR_EUROPE: {
+        if (hit(mx, my, 305, 179, 15, 21)) {
+            UI.screen = SCR_MAP;
+            return;
+        }
+        /* the recruit/purchase/train buttons open the euro sub-menus —
+         * a later slice; the script does not click (281, 89+11k) */
+        int nport = 0, ports[24];
+        for (int q = 0; q < CR.n_europe; q++)
+            if (CR.europe[q].state == 0) ports[nport++] = q;
+        for (int k = 0; k < (nport < 6 ? nport : 6); k++)
+            if (hit(mx, my, 145 + 18 * k, 145, 18, 18)) {
+                /* a re-click on the selected ship opens its context
+                 * menu (later slice); a different ship just selects */
+                if (UI.euro_ship != k) UI.euro_ship = (int8_t)k;
+                return;
+            }
+        if (my >= 179) {
+            int i = mx / 19;
+            if (i >= 0 && i < 16) {
+                UI.market_sel = (int8_t)i;
+                /* sellFromShip with no qty (game.js:12291): the
+                 * boycott branch runs the @KISSUP ask; otherwise the
+                 * @HOWMUCH5 amount dialog (inert under the harness
+                 * conventions) — euro_sell_from_ship(qty=0) mirrors
+                 * both */
+                if (UI.euro_ship >= 0 && UI.euro_ship < nport)
+                    euro_sell_from_ship(ports[UI.euro_ship], i, 0);
+            }
+        }
+        break;
+    }
+    case SCR_MAP: {
+        if (UI.open_menu >= 0) {
+            int bx, by, bw, bh;
+            rm_pulldown_box(UI.open_menu, UI.sel, &bx, &by, &bw, &bh);
+            if (hit(mx, my, bx, by, bw, bh)) {
+                /* the click row math clamps against the MASTER row
+                 * count, not the visible one (game.js:12296 quirk) */
+                int i = (my - by - 2) / 8;
+                int max = dat_menus[UI.open_menu].row_count - 1;
+                if (i < 0) i = 0;
+                if (i > max) i = max;
+                UI.menu_sel = (int8_t)i;
+                run_menu_row();
+            } else
+                UI.open_menu = -1;
+            return;
+        }
+        if (my < 8) {
+            int mi = rm_menubar_hit(mx);
+            if (mi >= 0) open_menu(mi);
+            return;
+        }
+        if (hit(mx, my, 0, 8, 240, 192)) {
+            int tx = UI.view_x + (mx - 0) / 16;
+            int ty = UI.view_y + (my - 8) / 16;
+            /* a pending Go To takes this click — a later slice */
+            int ci = -1, ord = -1;
+            for (int k = 0; k < CS.n_colonies; k++) {
+                if ((CS.colonies[k].owner_power & 3) != cs_nation())
+                    continue;
+                ord++;
+                if (CS.colonies[k].map_x == tx &&
+                    CS.colonies[k].map_y == ty) { ci = ord; break; }
+            }
+            int on[64], non = 0;
+            for (int q = 0; q < CR.n_units_order && non < 64; q++) {
+                int u2 = CR.units_order[q];
+                if (CS.units[u2].map_x == tx && CS.units[u2].map_y == ty)
+                    on[non++] = q;
+            }
+            if (ci >= 0 && !non) {
+                UI.colony = (int8_t)ci;
+                UI.screen = SCR_COLONY;
+            } else if (non) {
+                int at = -1;
+                for (int k = 0; k < non; k++)
+                    if (on[k] == UI.sel) at = k;
+                UI.sel = on[(at + 1) % non];
+            } else
+                center_on(tx, ty);
+        }
         break;
     }
     default:

@@ -313,11 +313,13 @@ static void in_project(void) {
     printf("{\"s\":%d,\"mr\":%d,\"d\":%d,\"n\":%d,\"ldr\":\"%s\","
            "\"bp\":%d,\"rep\":\"%s\",\"sel\":%d,\"vx\":%d,"
            "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,"
-           "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,",
+           "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,"
+           "\"cn\":%d,",
            UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
            UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
            UI.open_menu, UI.menu_sel, UI.view_mode,
-           UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden);
+           UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden,
+           UI.colony_numbers);
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,
@@ -329,6 +331,12 @@ static void in_project(void) {
 }
 int input_main(const char *save) {
     ui_init();
+    /* the pulldown/menubar hit-tests need the pak fonts */
+    {
+        long plen;
+        uint8_t *pak = slurp("../pak/COLOPY.PAK", &plen);
+        if (pak) rd_init(pak, (uint32_t)plen);
+    }
     if (save) {
         if (strcmp(save, "sav1653") == 0)
             colopy_load_sav(sav1653, sizeof(sav1653));
@@ -341,6 +349,7 @@ int input_main(const char *save) {
         UI.screen = SCR_MAP;
         UI.nation = (int8_t)cs_nation();
         UI.difficulty = (int8_t)cs_difficulty();
+        UI.colony_numbers = (int8_t)(cs_colony_numbers() ? 1 : 0);
         /* the importer's landing view/sel (game.js:10490): first LAND
          * unit selected, view centred on it */
         UI.sel = 0;
@@ -376,7 +385,12 @@ int input_main(const char *save) {
     char line[128];
     while (fgets(line, sizeof(line), stdin)) {
         char key[64];
-        int alt = 0, shift = 0;
+        int alt = 0, shift = 0, cx, cy;
+        if (sscanf(line, "C %d %d", &cx, &cy) == 2) {
+            in_click(cx, cy, 0);
+            in_project();
+            continue;
+        }
         if (sscanf(line, "K %63s %d %d", key, &alt, &shift) < 1) continue;
         if (strcmp(key, "Space") == 0) strcpy(key, " ");
         in_key(key, alt, shift);

@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def boot_script():
     ev = []
     K = lambda k, a=0, s=0: ev.append([k, a, s])
+    C = lambda x, y: ev.append(["CLICK", x, y])
     # title row walk + into the setup chain
     for _ in range(7):
         K("ArrowDown")
@@ -46,19 +47,48 @@ def boot_script():
     return ev
 
 
+def boot_click_script():
+    ev = []
+    C = lambda x, y: ev.append(["CLICK", x, y])
+    K = lambda k, a=0, s=0: ev.append([k, a, s])
+    C(100, 110)                     # title row 0 -> difficulty
+    C(150, 30)                      # difficulty cell 0 (idx 1: 128,7)
+    C(25, 120)                      # cell 2 (idx 3: 23,103)
+    C(60, 50)                       # commit zone (my<103, mx<128) -> nation
+    C(150, 30)                      # nation cell 0 (112,13)
+    C(260, 120)                     # nation cell 3 (211,104)
+    C(50, 100)                      # commit zone (mx<112) -> name
+    K("W")
+    C(10, 10)                       # name click -> briefing
+    C(10, 10)                       # briefing page 0 -> 1
+    return ev
+
+
 def map_script():
     ev = []
     K = lambda k, a=0, s=0: ev.append([k, a, s])
+    # real unit movement first: empty land, water no-ops, ships,
+    # villages, rumours and the newly ported native/REF attack arm all
+    # resolve identically; the directions are empirically pinned to
+    # avoid the still-unported rival-land arm
+    for k in ("ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp",
+              "ArrowRight", "ArrowDown"):
+        K(k)
     # viewMode panning
     K("v")
     for k in ("ArrowRight", "ArrowRight", "ArrowDown", "ArrowLeft",
               "ArrowUp", "ArrowUp"):
         K(k)
     K("m")
-    # unit cycle: centre view, next, skip, orders — several turns' worth
+    # unit cycle: centre view, next, skip, orders — several turns' worth,
+    # with movement bursts so DIFFERENT units step (village entries,
+    # rumour squares and the attack arm all get live chances)
     K("c")
     for i in range(40):
         K(["Tab", "Space", "f", "s", "w", "Space"][i % 6])
+        if i % 5 == 2:
+            K(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp",
+               "9", "1", "7", "3"][i % 8])
     # report ladder in and out
     for fk in ("F2", "F3", "F5", "F10"):
         K(fk)
@@ -106,12 +136,37 @@ def map_script():
     # colony-view keys: live if an askZoom opened a colony, no-ops on map
     K("2")
     K("Escape")
+    # slice 3: the pointer layer
+    C = lambda x, y: ev.append(["CLICK", x, y])
+    C(50, 3)                        # menubar: open VIEW
+    C(52, 13)                       # pulldown row 0 (Move Pieces)
+    C(83, 3)                        # menubar: open ORDERS
+    C(300, 100)                     # outside the box: closes it
+    C(120, 104)                     # viewport centre: colony/cycle/centre
+    C(120, 104)                     # again (cycles or re-centres)
+    C(30, 40)                       # another viewport tile
+    C(121, 3)                       # menubar: open REPORTS
+    K("Escape")
+    # colony pointer coverage (live after an askZoom, no-ops on map:
+    # x>240 misses the viewport and my<8 fails the menubar test)
+    C(310, 150)                     # view button 1
+    C(310, 135)                     # view button 0
+    C(250, 150)                     # production numbers toggle
+    C(310, 185)                     # exit box -> map
+    # Europe pointer coverage via the VIEW menu
+    K("v", 1)
+    K("E")                          # -> europe
+    C(164, 150)                     # ship box 1 (selects if present)
+    C(100, 190)                     # market bar: select + sell mirror
+    C(310, 185)                     # exit box -> map
     return ev
 
 
 def main():
     scen = sys.argv[1] if len(sys.argv) > 1 else "boot"
-    events = boot_script() if scen == "boot" else map_script()
+    events = (boot_script() if scen == "boot"
+              else boot_click_script() if scen == "bootclick"
+              else map_script())
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
         json.dump(events, f)
         path = f.name
@@ -122,8 +177,11 @@ def main():
 
     subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host",
                    check=True)
-    feed = "\n".join("K %s %d %d" % (e[0], e[1], e[2]) for e in events)
-    args = ["./smoke", "--input"] + ([] if scen == "boot" else [scen])
+    feed = "\n".join(("C %d %d" % (e[1], e[2])) if e[0] == "CLICK"
+                     else ("K %s %d %d" % (e[0], e[1], e[2]))
+                     for e in events)
+    args = ["./smoke", "--input"] + ([] if scen in ("boot", "bootclick")
+                                     else [scen])
     cc = [json.loads(l) for l in subprocess.run(
         args, cwd=ROOT / "cport/host", input=feed, capture_output=True,
         text=True, check=True).stdout.splitlines()]
@@ -131,7 +189,7 @@ def main():
     bad = 0
     for i, (j, c) in enumerate(zip(js, cc)):
         for f in j:
-            if f in ("gold", "year") and scen == "boot":
+            if f in ("gold", "year") and scen in ("boot", "bootclick"):
                 continue            # boot runs no sim
             if j[f] != c.get(f):
                 print("event %d %s .%s: JS %s != C %s"

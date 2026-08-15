@@ -122,6 +122,8 @@ void rm_draw_name(const char *leader);
 /* pulldown row model (colopy_map_render.c) — shared with the input layer */
 typedef struct { const char *label; const char *accel; uint8_t dim, sep; } rm_mrow;
 int  rm_menu_rows(int mi, int sel, rm_mrow *out);
+void rm_pulldown_box(int mi, int sel, int *bx, int *by, int *bw, int *bh);
+int  rm_menubar_hit(int mx);
 void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
                     int market_sel);          /* colopy_europe_render.c */
 int  rm_owner_colour_ui(int ui);

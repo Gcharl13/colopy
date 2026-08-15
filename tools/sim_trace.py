@@ -134,6 +134,16 @@ INPUT = """([save, events]) => {
     importSav(b64bytes(DATA[{ sav1653: 'sav1653', savraleigh: 'savRaleigh',
                               savnewcolony: 'savNewColony' }[save]]));
     G.mapSeed = 1653;
+    // the SHARED seeded stream (the TURNS trace's LCG) — colopy_init(1653)
+    // on the C side; without it the first Math.random consumer (rumour
+    // entry, combat rolls) diverges
+    let _s = 1653 >>> 0;
+    Math.random = () => {
+      const lo = (_s & 0xFFFF) * 214013;
+      const hi = ((_s >>> 16) * 214013) & 0xFFFF;
+      _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+      return ((_s >>> 16) & 0x7FFF) / 32768;
+    };
   } else {
     G.screen = 'title'; G.menuRow = 0; G.difficulty = 0; G.nation = 0;
     G.leader = '';
@@ -157,14 +167,16 @@ INPUT = """([save, events]) => {
       vx: G.view.x, vy: G.view.y, om: G.openMenu, ms: G.menuSel,
       vm: G.viewMode ? 1 : 0, col: G.colony, cv: G.colonyView,
       mks: G.marketSel, sh: G.showHidden ? 1 : 0,
+      cn: G.colonyNumbers ? 1 : 0,
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };
   };
   for (const [key, alt, shift] of events) {
     G.eventQueue = [];             // record-only popups: never modal
-    onKey({ key: key === 'Space' ? ' ' : key, altKey: !!alt,
-            shiftKey: !!shift, preventDefault: () => {} });
+    if (key === 'CLICK') onClick(alt, shift);
+    else onKey({ key: key === 'Space' ? ' ' : key, altKey: !!alt,
+                 shiftKey: !!shift, preventDefault: () => {} });
     out.push(proj());
   }
   return JSON.stringify(out);
@@ -572,7 +584,7 @@ def main():
         elif mode == "input":
             import json as _json
             events = _json.load(open(sys.argv[3]))
-            save = sys.argv[2] if sys.argv[2] != "boot" else ""
+            save = sys.argv[2] if sys.argv[2] not in ("boot", "bootclick") else ""
             out = page.evaluate(INPUT, [save, events])
             browser.close()
             print(out)

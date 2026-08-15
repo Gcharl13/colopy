@@ -99,6 +99,9 @@ int analysis_total(int ui, int is_defender) {
     p.orders = is_rival_side(ui) ? 0 : CS.units[ui].orders;
     p.is_defender = (uint8_t)is_defender;
     p.damaged = CR.unit_damaged[ui];
+    /* §14.3 fatigue: the tired-troops charge set by the move handler
+     * (JS u.fatigue; rival objects never carry one) */
+    p.fatigue = is_rival_side(ui) ? 0 : CR.unit_fatigue[ui];
     /* veteran = the profession title OR the u.veteran object flag
      * (game.js:6821 — REF landings, mercenaries, the intervention) */
     p.veteran = CR.unit_veteran[ui] ||

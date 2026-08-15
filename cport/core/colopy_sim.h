@@ -299,6 +299,7 @@ typedef struct {
     uint8_t unit_offered[COLOPY_MAX_UNITS]; /* treasure offer latch */
     uint8_t unit_faith[COLOPY_MAX_UNITS];   /* convert countdown, 0 = none */
     uint8_t unit_damaged[COLOPY_MAX_UNITS]; /* JS u.damaged (raids/refit) */
+    uint8_t unit_fatigue[COLOPY_MAX_UNITS]; /* JS u.fatigue (§14.3 tired) */
     uint8_t native_heading[COLOPY_MAX_UNITS]; /* 0..7, 0xFF = unset */
     int8_t  native_home[COLOPY_MAX_UNITS];  /* home-village index, -1 none */
     uint8_t raid_seen;           /* woodcut-13 latch (JS G.raidSeen) */
@@ -350,6 +351,9 @@ typedef struct {
     uint32_t ask_seq;            /* the scripted-answer counter — the trace
                                   * answers every ask with askSeq++ % 2 and
                                   * RUNS the callback; ask_choice() mirrors */
+    uint8_t ui_advance;          /* a cmd branch that ends in the JS
+                                  * advance() ran — the input layer
+                                  * consumes it */
     int16_t zoom_colony;         /* askZoom answer-1 target: the PLAYER
                                   * colony ordinal to open, -1 none (the
                                   * input layer consumes it) */
