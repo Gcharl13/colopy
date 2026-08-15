@@ -159,7 +159,12 @@ TURNS = """([save, n, agitate, script]) => {
   const scriptTurn = (t) => {
     for (let k = 0; k < G.units.length; k++) {
       const u = G.units[k];
-      if (u.ship) continue;                    // ship commands: slice 3
+      if (u.ship) {
+        // slice 3: an idle ship sails home now and then; the splice
+        // shifts the list and the loop steps past the slot (mirrored).
+        if (u.orders === 0 && (t + k) % 17 === 0 && t > 0) sailForEurope(u);
+        continue;
+      }
       const a = (t * 7 + k * 3) % 10;
       if (u.orders !== 0) {                    // busy: occasionally wake it
         if (a === 0) { G.sel = k; activateUnit(); }
@@ -178,6 +183,33 @@ TURNS = """([save, n, agitate, script]) => {
         }
       } else { G.sel = k; skipUnit(); }
     }
+    // --- the Europe phase (slice 3), fixed order.  portIdx tracks the
+    // LIVE shipsInPort index (activeShip's coordinate); seen is the
+    // stable action selector.
+    let portIdx = 0, seen = 0;
+    for (let i = 0; i < G.europe.length; i++) {
+      const e = G.europe[i];
+      if (e.state !== 'port') continue;
+      const a = (t * 3 + seen) % 5;
+      seen++;
+      G.euroShip = portIdx;
+      if (a === 0) {
+        for (const h of (e.hold || []).slice()) sellFromShip(h.good, h.qty);
+      } else if (a === 1) {
+        buyToShip((t + portIdx) % 16, 50);
+      } else if (a === 2) {
+        sailForNewWorld(e);
+      }
+      if (e.state === 'port') portIdx++;
+    }
+    if (t % 4 === 1 && G.dockUnits.length) {
+      G.euroDockSel = 0;
+      const rows = dockUnitRows().filter(r => r.act === 'arm');
+      if (rows.length) euroContextCommit(rows[(t >> 2) % rows.length]);
+    }
+    if (t % 5 === 2) { G.euroMenu = 'recruit'; G.euroMenuRow = 1; euroMenuCommit(); }
+    if (t % 7 === 3) { G.euroMenu = 'purchase';
+                       G.euroMenuRow = Math.floor(t / 7) % 6; euroMenuCommit(); }
   };
   const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
   G.dock = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
@@ -219,6 +251,13 @@ TURNS = """([save, n, agitate, script]) => {
       punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
         u.movesLeft, u.tools | 0,
         u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
+      holds: G.units.map(u => (u.hold || []).map(h => [h.good, h.qty])),
+      europe: G.europe.map(e => [
+        DATA.units.findIndex(x => x.name === e.type),
+        e.state === 'port' ? 0 : e.state === 'toEurope' ? 1 : 2,
+        e.state === 'port' ? 0 : (e.turns | 0),
+        (e.hold || []).map(h => [h.good, h.qty]),
+        (e.passengers || []).length]),
       units: G.units.length,
       converts: G.units.filter(u => u.profession === 'Indian Converts')
         .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),

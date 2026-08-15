@@ -181,6 +181,17 @@ void cr_reset_from_load(void) {
         CR.unit_no_moves[i] = CR.unit_rival_born[i];
     }
     CR.map_seed = 1653;
+    /* importer game.js:10285-10288: the artillery price-escalation
+     * counter (+0x1E) AND the boycott word (+0x20) are read from the
+     * PowerRecord — G.boycotts starts [] but is FILLED from the record's
+     * bits on the next line (the earlier "runtime-only" reading stopped
+     * one line short; corrected with slice 3). */
+    CR.artillery_bought =
+        (uint8_t)CS.powers[cs_nation()].artillery_bought;
+    CR.boycotts = CS.powers[cs_nation()].boycott;
+    /* slice 3: the Europe harbour + the ship hold/passenger mirrors
+     * (importer game.js:10477 — CR-only writes, load stays byte-pure) */
+    europe_seed_from_load();
 }
 
 /* The importer's RUNTIME unit setup (mkUnit game.js:660 + the import
@@ -664,6 +675,8 @@ int unit_append(int type, int owner, int x, int y) {
         (uint8_t)((owner & 0x0F) < 4 && (owner & 0x0F) != (int)cs_nation());
     CR.unit_no_moves[i] = CR.unit_rival_born[i];
     CR.unit_moves_undef[i] = 0;
+    CR.unit_n_hold[i] = 0;
+    CR.unit_n_pass[i] = 0;
     return i;
 }
 void unit_remove(int ui) {
@@ -683,6 +696,12 @@ void unit_remove(int ui) {
     memmove(&CR.unit_rival_born[ui], &CR.unit_rival_born[ui + 1], n);
     memmove(&CR.unit_no_moves[ui], &CR.unit_no_moves[ui + 1], n);
     memmove(&CR.unit_moves_undef[ui], &CR.unit_moves_undef[ui + 1], n);
+    memmove(&CR.unit_hold[ui], &CR.unit_hold[ui + 1],
+            n * sizeof(CR.unit_hold[0]));
+    memmove(&CR.unit_n_hold[ui], &CR.unit_n_hold[ui + 1], n);
+    memmove(&CR.unit_pass[ui], &CR.unit_pass[ui + 1],
+            n * sizeof(CR.unit_pass[0]));
+    memmove(&CR.unit_n_pass[ui], &CR.unit_n_pass[ui + 1], n);
     CS.n_units--;
     /* keep the G.natives / G.units order lists aligned: drop the removed
      * member, re-base every index past it */
@@ -925,6 +944,8 @@ void roll_immigrant(immigrant *out) {
 const char *immigrant_name(const immigrant *m) {
     if (m->kind == 1) return dat_jobtrain[m->idx].expert;
     if (m->kind == 0) return dat_classes[m->idx].name;
+    if (m->kind == 3) return dat_units[m->idx].name;    /* a @UNIT type */
+    if (m->kind == 4) return dat_jobexpert[m->idx];     /* a profession */
     return "Free Colonists";
 }
 

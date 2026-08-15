@@ -164,11 +164,11 @@ Status column is maintained by hand as porting proceeds:
 | `advanceConstruction` | 3114 | 77 |  | ported |
 | `customHouseMenu` | 3192 | 11 |  | todo |
 | `rushBuy` | 3204 | 22 |  | todo |
-| `sailForEurope` | 3227 | 11 |  | todo |
-| `sailForNewWorld` | 3239 | 14 |  | todo |
+| `sailForEurope` | 3227 | 11 |  | ported (cmd_sail_for_europe) |
+| `sailForNewWorld` | 3239 | 14 |  | ported (euro_sail_new_world) |
 | `advanceCrossings` | 3254 | 40 |  | ported |
-| `holdQty` | 3295 | 0 |  | todo |
-| `holdAdd` | 3296 | 26 |  | todo |
+| `holdQty` | 3295 | 0 |  | ported (hold_qty) |
+| `holdAdd` | 3296 | 26 |  | ported (hold_add) |
 | `PLOT_CATEGORY` | 3323 | 22 |  | todo |
 | `ColonyRng` | 3346 | 22 |  | todo |
 | `buildingFrame` | 3369 | 12 |  | todo |
@@ -183,7 +183,7 @@ Status column is maintained by hand as porting proceeds:
 | `colonyShips` | 4063 | 2 |  | todo |
 | `colonyShip` | 4066 | 5 |  | todo |
 | `productionRows` | 4202 | 75 |  | todo |
-| `bandFor` | 4278 | 6 |  | todo |
+| `bandFor` | 4278 | 6 |  | ported (band_for) |
 | `rollImmigrant` | 4285 | 18 |  | ported |
 | `seedMarket` | 4304 | 7 |  | todo |
 | `askPrice` | 4312 | 0 |  | ported |
@@ -193,21 +193,21 @@ Status column is maintained by hand as porting proceeds:
 | `sellGoods` | 4344 | 18 |  | ported |
 | `buyGoods` | 4363 | 16 |  | ported |
 | `EURO_ROWS` | 4380 | 11 |  | todo |
-| `purchasePrice` | 4392 | 1 |  | todo |
-| `shipsInPort` | 4394 | 0 |  | todo |
-| `entryName` | 4590 | 0 |  | todo |
-| `entryType` | 4591 | 26 |  | todo |
-| `dockUnitRows` | 4618 | 28 |  | todo |
+| `purchasePrice` | 4392 | 1 |  | ported (inline in euro_purchase) |
+| `shipsInPort` | 4394 | 0 |  | ported (state filter, script portIdx) |
+| `entryName` | 4590 | 0 |  | ported (immigrant_name) |
+| `entryType` | 4591 | 26 |  | ported (entry_unit_type) |
+| `dockUnitRows` | 4618 | 28 |  | partial (the 'arm' subset = euro_arm_rows) |
 | `euroShipRows` | 4647 | 10 |  | todo |
 | `euroMenuRows` | 4658 | 23 |  | todo |
 | `TRAIN_CAPTION` | 4682 | 6 |  | todo |
 | `hasAdviser` | 4689 | 0 |  | todo |
 | `euroMenuBox` | 4690 | 44 |  | todo |
 | `openEuroMenu` | 4774 | 7 |  | todo |
-| `sellFromShip` | 4782 | 37 |  | todo |
-| `buyToShip` | 4820 | 20 |  | todo |
-| `euroContextCommit` | 4841 | 73 |  | todo |
-| `euroMenuCommit` | 4915 | 82 |  | todo |
+| `sellFromShip` | 4782 | 37 |  | ported (explicit-qty path + KISSUP; HOWMUCH5 amount ask = UI, slice 4+) |
+| `buyToShip` | 4820 | 20 |  | ported (euro_buy_to_ship) |
+| `euroContextCommit` | 4841 | 73 |  | partial (the 'arm' rows; board/front/bless = UI state) |
+| `euroMenuCommit` | 4915 | 82 |  | partial (recruit + purchase; train pending) |
 | `colonyLevel` | 4998 | 5 |  | ported |
 | `tensionBandIdx` | 5089 | 9 |  | ported |
 | `adjustTension` | 5099 | 42 |  | ported |

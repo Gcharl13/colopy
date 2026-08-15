@@ -160,6 +160,20 @@ int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
 int  father_by_name(const char *name);
 
+/* ---- the Europe layer (colopy_europe.c) — Phase 5 slice 3 -------------- */
+void europe_seed_from_load(void);     /* importer 10477: off-map ships dock */
+void advance_crossings(void);         /* advanceCrossings (game.js:3258) */
+void cmd_sail_for_europe(int ui);     /* sailForEurope (game.js:3231) */
+void euro_sail_new_world(int ei);     /* sailForNewWorld (game.js:3243) */
+void euro_sell_from_ship(int ei, int good, int32_t qty); /* sellFromShip */
+void euro_buy_to_ship(int ei, int good, int32_t qty);    /* buyToShip */
+void euro_recruit(int slot);          /* euroMenuCommit 'recruit' row */
+void euro_purchase(int row);          /* euroMenuCommit PURCHASE + REALLYBUY */
+void euro_arm_dock(int k, int verb_row); /* euroContextCommit 'arm' */
+int  euro_arm_rows(int k, uint8_t *verbs_out); /* dockUnitRows arm subset */
+/* entry_unit_type / hold_add are declared below the immigrant and
+ * hold_slot typedefs. */
+
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
 typedef struct {
@@ -176,10 +190,34 @@ typedef struct {
     uint8_t  n_bld;
 } colony_rt;
 
-/* An immigrant on the Europe dock: kind 0 = @CLASS row, kind 1 = a
- * jobtrain expert (game.js rollImmigrant), kind 2 = the "Free Colonists"
- * literal. */
-typedef struct { uint8_t kind, idx; } immigrant;
+/* A dock/passenger ENTRY (game.js:4590): a plain name — kind 0 = @CLASS
+ * row, kind 1 = a jobtrain expert (rollImmigrant), kind 2 = the "Free
+ * Colonists" literal, kind 3 = a @UNIT type name, kind 4 = a @JOBEXPERT
+ * profession name — until Europe ARMS it, after which it carries a type
+ * override ({ name, type }, type_ov = @UNIT row + 1).  no_board is the
+ * @ARMOPTIONS "Don't get on next ship" flag. */
+typedef struct { uint8_t kind, idx, type_ov, no_board; } immigrant;
+
+/* A hold slot (JS { good, qty }); holds are LISTS with holdAdd merge
+ * semantics (game.js:3300), not per-good arrays. */
+typedef struct { uint8_t good; int16_t qty; } hold_slot;
+#define EURO_HOLD_MAX 8
+#define EURO_PASS_MAX 8
+
+/* A crossing / port ship (JS G.europe member, game.js:3231-3298). */
+typedef struct {
+    uint8_t type;                /* @UNIT row */
+    uint8_t state;               /* 0 port / 1 toEurope / 2 toNewWorld */
+    uint8_t turns, damaged;
+    int16_t lane_x, lane_y;      /* the sea-lane square it left from */
+    hold_slot hold[EURO_HOLD_MAX];
+    uint8_t n_hold;
+    immigrant pass[EURO_PASS_MAX];
+    uint8_t n_pass;
+} euro_crossing;
+
+int  entry_unit_type(const immigrant *e);      /* entryType (game.js:4595) */
+void hold_add(hold_slot *hold, uint8_t *n, int good, int qty); /* holdAdd */
 
 /* A rival power's colony (JS r.colonies member): a runtime OBJECT, not a
  * record — the importer builds these from the rival-owned ColonyRecords
@@ -287,6 +325,17 @@ typedef struct {
      * provenance (permanent); unit_moves_undef mirrors "movesLeft is
      * currently undefined/NaN" (set by the refresh, cleared when a
      * command writes a number). */
+    /* Slice 3 — the Europe layer.  Crossings (JS G.europe), the ship
+     * hold/passenger mirrors (JS u.hold / u.cargo — the record's cargo
+     * bytes cannot express them and stay import-only), and the
+     * purchase-escalation counter. */
+    euro_crossing europe[24];
+    uint8_t n_europe;
+    uint8_t artillery_bought;    /* G.artilleryBought (+100$ per) */
+    hold_slot unit_hold[COLOPY_MAX_UNITS][EURO_HOLD_MAX];
+    uint8_t   unit_n_hold[COLOPY_MAX_UNITS];
+    immigrant unit_pass[COLOPY_MAX_UNITS][EURO_PASS_MAX];
+    uint8_t   unit_n_pass[COLOPY_MAX_UNITS];
     uint8_t unit_rival_born[COLOPY_MAX_UNITS];
     /* "u.moves is undefined": seeded = rival_born, but CLEARED by
      * becomeType (game.js:7061 assigns u.moves) — a demoted rival object

@@ -767,22 +767,31 @@ static void king_war_cycle(void) {
         p->tax_rate = (uint8_t)(p->tax_rate >= 1 ? p->tax_rate - 1 : 0);
         ev_emit("KINGMERCY", 1, p->tax_rate, 0, 0);
     } else if (roll == 1 && !CR.king_frigate) {
-        /* @KINGFRIGATE needs a fleet: an on-map ship or one in Europe
-         * (off-map). */
-        int fleet = 0;
-        for (int ui = 0; ui < CS.n_units && !fleet; ui++) {
-            const UnitRecord *u = &CS.units[ui];
-            if ((u->owner_flags & 0x0F) != me ||
-                u->type >= DAT_UNITS_COUNT ||
-                dat_units[u->type].hull <= 0) continue;
-            fleet = 1;                   /* on map or parked in Europe */
+        /* @KINGFRIGATE needs a fleet: a G.units ship or a crossing/port
+         * ship (game.js:8996 — G.units.some(ship) || G.europe.length) */
+        int fleet = CR.n_europe > 0;
+        for (int k = 0; k < CR.n_units_order && !fleet; k++) {
+            int ui = CR.units_order[k];
+            if (CS.units[ui].type < DAT_UNITS_COUNT &&
+                dat_units[CS.units[ui].type].hull > 0) fleet = 1;
         }
         if (fleet) {
             ev_emit("KINGFRIGATE", 0, 0, 0, 0);
-            /* game.js:9000: row 0 accepts — the latch stops repeats; the
-             * frigate parks in Europe (list-only there; the latch is the
-             * only later read of it, so no CR ship model is needed) */
-            if (ask_choice() == 0) CR.king_frigate = 1;
+            /* game.js:9000: row 0 accepts — the latch stops repeats and
+             * the gift Frigate parks in the home harbour, empty */
+            if (ask_choice() == 0) {
+                CR.king_frigate = 1;
+                if (CR.n_europe <
+                    (int)(sizeof(CR.europe) / sizeof(CR.europe[0]))) {
+                    euro_crossing *e = &CR.europe[CR.n_europe++];
+                    memset(e, 0, sizeof(*e));
+                    for (int ti = 0; ti < DAT_UNITS_COUNT; ti++)
+                        if (strcmp(dat_units[ti].name, "Frigate") == 0)
+                            e->type = (uint8_t)ti;
+                    e->state = 0;                 /* port */
+                    e->lane_x = e->lane_y = -1;   /* no lane */
+                }
+            }
         }
     }
 }
@@ -1054,7 +1063,7 @@ static void advance_goto(void) {
  *     importer starts every unit at orders 0; routes: slice 3+);
  *   runWar/toryUprising/offerMercenaries/checkIntervention — WoI-gated
  *     (G.flags stays 0: the declaration is an ask the stub never answers);
- *   advanceCrossings — every imported Europe ship is state 'port'. */
+ */
 void turn_step5(void) {
     rival_turn();
     news_tick();
@@ -1068,6 +1077,6 @@ void turn_step5(void) {
     ai_diplomacy_tick();
     /* offerMercenaries(); checkIntervention(); — WoI-gated */
     market_drift();
-    /* advanceCrossings(); — no-op (above) */
+    advance_crossings();
     retirement_check();
 }

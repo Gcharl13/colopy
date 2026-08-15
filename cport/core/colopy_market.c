@@ -36,9 +36,10 @@ int market_bid(int i) {
 int market_ask(int i) {                        /* askPrice, game.js:4312 */
     return market_bid(i) + dat_cargo[i].burden + 1;
 }
-/* isBoycotted (game.js:4347): the RUNTIME G.boycotts list — the importer
- * resets it to [] (10287); the record's +0x20 word is the ENGINE's store
- * (@0x030B47) but the JS never reads it back, so parity follows CR. */
+/* isBoycotted (game.js:4347): the RUNTIME G.boycotts list, SEEDED from
+ * the record's +0x20 word at import (10286-10288) and owned by the
+ * runtime thereafter (tea parties set bits, @KISSUP clears them); the
+ * record word is not rewritten. */
 int market_boycotted(int i) {
     return (CR.boycotts >> i) & 1;
 }

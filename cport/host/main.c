@@ -158,7 +158,14 @@ static void script_commands(int t) {
         int ui = CR.units_order[k];
         UnitRecord *u = &CS.units[ui];
         int ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
-        if (ship) continue;               /* ship commands: slice 3 */
+        if (ship) {
+            /* slice 3: an idle ship sails home now and then; the splice
+             * shifts the list and the loop steps past the slot, exactly
+             * like the JS iteration. */
+            if (u->orders == 0 && (t + k) % 17 == 0 && t > 0)
+                cmd_sail_for_europe(ui);
+            continue;
+        }
         int a = (t * 7 + k * 3) % 10;
         if (u->orders != 0) {             /* busy: occasionally wake it */
             if (a == 0) cmd_activate(ui);
@@ -183,6 +190,37 @@ static void script_commands(int t) {
         } else {
             cmd_skip(ui);
         }
+    }
+    /* --- the Europe phase (slice 3), fixed order.  portIdx tracks the
+     * LIVE shipsInPort index (activeShip's coordinate); seen is the
+     * stable action selector. */
+    {
+        int port_idx = 0, seen = 0;
+        for (int i = 0; i < CR.n_europe; i++) {
+            euro_crossing *e = &CR.europe[i];
+            if (e->state != 0) continue;
+            int a = (t * 3 + seen) % 5;
+            seen++;
+            if (a == 0) {
+                hold_slot snap[EURO_HOLD_MAX];
+                int ns = e->n_hold;
+                memcpy(snap, e->hold, sizeof(snap));
+                for (int h = 0; h < ns; h++)
+                    euro_sell_from_ship(i, snap[h].good, snap[h].qty);
+            } else if (a == 1) {
+                euro_buy_to_ship(i, (t + port_idx) % 16, 50);
+            } else if (a == 2) {
+                euro_sail_new_world(i);
+            }
+            if (e->state == 0) port_idx++;
+        }
+        if (t % 4 == 1 && CR.n_dock_units) {
+            uint8_t verbs[6];
+            int n = euro_arm_rows(0, verbs);
+            if (n) euro_arm_dock(0, verbs[(t >> 2) % n]);
+        }
+        if (t % 5 == 2) euro_recruit(0);
+        if (t % 7 == 3) euro_purchase((t / 7) % 6);
     }
 }
 
@@ -310,6 +348,25 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
                    CS.units[ui].profession >= 1 &&
                    CS.units[ui].profession < DAT_JOBEXPERT_COUNT
                        ? CS.units[ui].profession : -1);
+        }
+        printf("],\"holds\":[");
+        for (int k = 0; k < CR.n_units_order; k++) {
+            int ui = CR.units_order[k];
+            printf("%s[", k ? "," : "");
+            for (int h = 0; h < CR.unit_n_hold[ui]; h++)
+                printf("%s[%u,%d]", h ? "," : "", CR.unit_hold[ui][h].good,
+                       CR.unit_hold[ui][h].qty);
+            printf("]");
+        }
+        printf("],\"europe\":[");
+        for (int k = 0; k < CR.n_europe; k++) {
+            const euro_crossing *e = &CR.europe[k];
+            printf("%s[%u,%u,%u,[", k ? "," : "", e->type, e->state,
+                   e->state == 0 ? 0 : e->turns);
+            for (int h = 0; h < e->n_hold; h++)
+                printf("%s[%u,%d]", h ? "," : "", e->hold[h].good,
+                       e->hold[h].qty);
+            printf("],%u]", e->n_pass);
         }
         {
             int nu = 0;
