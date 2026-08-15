@@ -486,7 +486,7 @@ static void draw_sidebar(const rm_view *vw) {
     char buf[64];
     snprintf(buf, sizeof(buf), "%s %u", dat_seasons[cs_season()], cs_year());
     rd_text(&TINY, buf, 244, 51, lut_of(HUD_INK));
-    snprintf(buf, sizeof(buf), "Gold: %d", CS.powers[cs_nation()].gold);
+    snprintf(buf, sizeof(buf), "Gold: %ld", (long)CS.powers[cs_nation()].gold);
     rd_text(&TINY, buf, 244, 59, lut_of(HUD_INK));
     snprintf(buf, sizeof(buf), "Tax: %u%%", CS.powers[cs_nation()].tax_rate);
     rd_text(&TINY, buf, 290, 59, lut_of(HUD_INK));

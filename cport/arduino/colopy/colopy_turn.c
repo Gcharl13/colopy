@@ -1253,7 +1253,7 @@ static void refit_ships(void) {
 void step_rng(const char *name) {
     static int on = -1;
     if (on < 0) on = getenv("COLOPY_STEP_RNG") != 0;
-    if (on) fprintf(stderr, "STEP %s %u\n", name, CS.rng);
+    if (on) fprintf(stderr, "STEP %s %lu\n", name, (unsigned long)CS.rng);
 }
 
 void turn_step2(void) {

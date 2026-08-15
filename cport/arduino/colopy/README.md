@@ -21,8 +21,11 @@ the banner at the top of `colopy.ino`.
    bare name): both files are generated, git-ignored output — build
    them from the repo root with
 
+       pip install pillow               # once (gen_sd_pack's asset census)
        python3 bin/reconstitute.py      # -> raw/COLONIZE/*.SAV
        python3 tools/gen_sd_pack.py     # -> cport/pak/COLOPY.PAK
+                                        #    (auto-builds port/assets/
+                                        #    manifest.json on first run)
 
    then copy `cport/pak/COLOPY.PAK` and `raw/COLONIZE/COLONY00.SAV`
    onto the card.

@@ -69,7 +69,7 @@ static void fill_template(const char *line, const rm_subs *subs,
                     while (*c && o + 1 < cap) out[o++] = *c++;
                 } else if (is_n && subs->num_set[k]) {
                     char nb[16];
-                    snprintf(nb, sizeof(nb), "%d", subs->num[k]);
+                    snprintf(nb, sizeof(nb), "%ld", (long)subs->num[k]);
                     for (const char *c = nb; *c && o + 1 < cap;)
                         out[o++] = *c++;
                 }

@@ -244,7 +244,9 @@ static void usb_key_press(int unicode) {
 #endif /* COLOPY_ILI9341 */
 
 /* One .SAV image is ~22-28 KB; 80 KB covers every fixture with room. */
-static uint8_t savbuf[80000];
+/* RAM2/OCRAM — RAM1 must keep room for the ITCM code copy (see the
+ * rd_state RD placement note in colopy_render.c) */
+DMAMEM static uint8_t savbuf[80000];
 
 static void run_turn(void) {
     turn_step_prefix();

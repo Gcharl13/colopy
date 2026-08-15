@@ -535,8 +535,8 @@ static void draw_f10(void) {
                               vals[i] < 12 ? vals[i] : 12, 0, 0 };
         rm_draw_count_row(&cell, 1, F10_X, y + 8, 0x12C, 2, 1);
     }
-    snprintf(buf, sizeof(buf), "%s: (%d$ x%d)", dat_text_misc[59],
-             CS.powers[cs_nation()].gold, s.mult);
+    snprintf(buf, sizeof(buf), "%s: (%ld$ x%d)", dat_text_misc[59],
+             (long)CS.powers[cs_nation()].gold, s.mult);
     rd_text(&R_TINY, buf, F10_X, 150, rlut(F10_GREEN));
     snprintf(buf, sizeof(buf), "%s: %d", dat_text_misc[121], s.total);
     rd_text(&R_TINY, buf, F10_X, 162, rlut(F10_GREEN));

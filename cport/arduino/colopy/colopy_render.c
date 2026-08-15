@@ -19,6 +19,15 @@
 #include "colopy_render.h"
 #include "colopy_pak.h"
 
+/* The framebuffer struct is the render layer's largest RAM object
+ * (~78 KB).  On the Teensy 4.1 every unmarked static lands in RAM1
+ * (DTCM), which also holds the ITCM copy of ALL code — the full engine
+ * plus libraries overflows the 512 KB bank.  RAM2/OCRAM (.dmabuffers)
+ * holds it instead; that section is NOT zeroed at boot, which is fine
+ * because rd_init memsets the whole struct before any use. */
+#if defined(__IMXRT1062__)
+__attribute__((section(".dmabuffers"), aligned(32)))
+#endif
 rd_state RD;
 
 static uint32_t rd32(const uint8_t *p) {

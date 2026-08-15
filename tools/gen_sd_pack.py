@@ -165,6 +165,18 @@ def main():
 
     if not COLONIZE.is_dir():
         sys.exit("raw/COLONIZE missing — run bin/reconstitute.py first")
+    if not MANIFEST.exists():
+        # the sheet/font/cycle census is build_assets.py output (also
+        # git-ignored) — build it here so a fresh checkout needs no
+        # extra step.  It needs Pillow (pip install pillow).
+        print("port/assets/manifest.json missing — running "
+              "port/tools/build_assets.py ...")
+        import subprocess
+        r = subprocess.run([sys.executable,
+                            str(ROOT / "port" / "tools" / "build_assets.py")])
+        if r.returncode != 0 or not MANIFEST.exists():
+            sys.exit("build_assets.py failed — it needs Pillow "
+                     "(pip install pillow); fix that and re-run")
     man = json.load(open(MANIFEST))
 
     entries = []                          # (name, payload, w, h, frames)

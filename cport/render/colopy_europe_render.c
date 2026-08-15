@@ -121,10 +121,10 @@ void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
     }
     const dat_nations_t *n = &dat_nations[cs_nation()];
     char band[128];
-    snprintf(band, sizeof(band), "%s, %s. %s, %u.  Tax:%d%%  Gold: %d$",
+    snprintf(band, sizeof(band), "%s, %s. %s, %u.  Tax:%d%%  Gold: %ld$",
              n->homeport, n->country, dat_seasons[cs_season()], cs_year(),
              (int)CS.powers[cs_nation()].tax_rate,
-             CS.powers[cs_nation()].gold);
+             (long)CS.powers[cs_nation()].gold);
     e_center(band, 160, 1, elut(HUD_INK));
 
     /* market bar */

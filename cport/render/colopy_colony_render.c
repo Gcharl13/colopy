@@ -481,9 +481,9 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
     char title[80], nm[25];
     memcpy(nm, c->name, 24);
     nm[24] = 0;
-    snprintf(title, sizeof(title), "%s, %s, %u, Gold: %d$", nm,
+    snprintf(title, sizeof(title), "%s, %s, %u, Gold: %ld$", nm,
              dat_seasons[cs_season()], cs_year(),
-             CS.powers[cs_nation()].gold);
+             (long)CS.powers[cs_nation()].gold);
     c_center(title, 160, 1, clut(HUD_INK));
 
     /* 5x5 scene composited in a corner buffer, then 2->3 upscaled */
