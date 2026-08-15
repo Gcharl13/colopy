@@ -83,11 +83,15 @@ COMBAT = """(cases) => {
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
 # uses, seed 1653, so both sides draw the same stream.
-TURNS = """([save, n, agitate]) => {
+TURNS = """([save, n, agitate, script]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
   G.dialog = null; G.popups = []; G.eventQueue = [];
+  // beginGame ROLLS the rumour/detail salt [0x190] with the NATIVE RNG
+  // (game.js:742, before the LCG below replaces it) — pin it so
+  // rumourAt agrees across runs and with the C (cr_reset_from_load).
+  G.mapSeed = 1653;
   let _s = 1653 >>> 0;
   Math.random = () => {
     const lo = (_s & 0xFFFF) * 214013;
@@ -131,6 +135,50 @@ TURNS = """([save, n, agitate]) => {
   // in real play the player dismisses it at once.  Model the dismissal.
   const _wc = woodcutOnce;
   woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
+  // PHASE 5 slice 2: scripted player commands, run before each endTurn.
+  // A deterministic, RNG-free policy both engines compute identically
+  // (mirrored verbatim in cport/host/main.c script_commands); every move
+  // target passes ONE shared legality filter — empty legal land only —
+  // so branches the C has not ported yet (ships, rival tiles, villages,
+  // rumour entry: slices 3-5) are never reached.  advance() is stubbed:
+  // the commands' auto-advance would re-enter endTurn mid-script.
+  advance = () => {};
+  const DIRS8 = [[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+  const tileFree = (nx, ny) => {
+    if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) return false;
+    if (tileWater(at(nx, ny))) return false;
+    if (G.natives.some(q => q.x === nx && q.y === ny)) return false;
+    for (const r of G.rivals) {
+      if (r.units.some(q => q.x === nx && q.y === ny)) return false;
+      if (r.colonies.some(q => q.x === nx && q.y === ny)) return false;
+    }
+    if (G.villages.some(v => v.x === nx && v.y === ny)) return false;
+    if (rumourAt(nx, ny)) return false;
+    return true;
+  };
+  const scriptTurn = (t) => {
+    for (let k = 0; k < G.units.length; k++) {
+      const u = G.units[k];
+      if (u.ship) continue;                    // ship commands: slice 3
+      const a = (t * 7 + k * 3) % 10;
+      if (u.orders !== 0) {                    // busy: occasionally wake it
+        if (a === 0) { G.sel = k; activateUnit(); }
+        continue;
+      }
+      if (a < 6) {
+        const [dx, dy] = DIRS8[(t + k) % 8];
+        if (u.movesLeft > 0 && tileFree(u.x + dx, u.y + dy)) {
+          G.sel = k; moveSel(dx, dy);
+        }
+      } else if (a === 6) { G.sel = k; setOrder(5); }        // Fortify
+      else if (a === 7) { G.sel = k; improveOrder(t % 2 ? 9 : 8); }
+      else if (a === 8) {
+        if (G.colonies.length) {
+          u.orders = 3; u.goal = [G.colonies[0].x, G.colonies[0].y];
+        }
+      } else { G.sel = k; skipUnit(); }
+    }
+  };
   const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
   G.dock = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
   const fnv = () => {
@@ -144,6 +192,7 @@ TURNS = """([save, n, agitate]) => {
   const fatherIdx = (n) => DATA.fathers.findIndex(f => f.name === n);
   const out = [];
   for (let t = 0; t < n; t++) {
+    if (script) scriptTurn(t);
     // PHASE-3 CLOSE: the REAL engine step, not a hand-built prefix.
     endTurn();
     // --- projection ---
@@ -167,6 +216,9 @@ TURNS = """([save, n, agitate]) => {
         v.braveOwed ? 1 : 0]),
       natives: G.natives.map(q => [q.x, q.y,
         q.heading === undefined ? -1 : q.heading]),
+      punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
+        u.movesLeft, u.tools | 0,
+        u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
       units: G.units.length,
       converts: G.units.filter(u => u.profession === 'Indian Converts')
         .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
@@ -204,8 +256,8 @@ def main():
             data = page.evaluate(MOVECOST, cases)
         elif mode == "turns":
             data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
-                                         len(sys.argv) > 4 and
-                                         sys.argv[4] == "agitate"])
+                                         "agitate" in sys.argv[4:],
+                                         "script" in sys.argv[4:]])
         else:
             data = page.evaluate(COMBAT, cases)
         browser.close()

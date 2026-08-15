@@ -120,16 +120,83 @@ static void dump_combat(void) {
     }
 }
 
+/* Slice-2 scripted commands: a deterministic, RNG-free policy BOTH
+ * engines compute identically (mirrored verbatim in sim_trace.py's TURNS
+ * block).  Every move target passes ONE shared legality filter — empty
+ * legal land only — so the ports' not-yet-shared branches (ships, rival
+ * tiles, villages, rumour entry: slices 3-5) are never reached. */
+static const int DIRS8[8][2] = { { 1, 0 },  { 1, 1 },   { 0, 1 },
+                                 { -1, 1 }, { -1, 0 },  { -1, -1 },
+                                 { 0, -1 }, { 1, -1 } };
+
+static int script_tile_free(int nx, int ny) {
+    if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H) return 0;
+    if (tile_water(map_at(nx, ny))) return 0;
+    for (int k = 0; k < CR.n_natives; k++) {
+        int q = CR.natives_order[k];
+        if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) return 0;
+    }
+    for (int rn = 0; rn < 4; rn++) {
+        if (rn == (int)cs_nation()) continue;
+        for (int k = 0; k < CR.n_runits[rn]; k++) {
+            int q = CR.runits_order[rn][k];
+            if (CR.runit_x[q] == nx && CR.runit_y[q] == ny) return 0;
+        }
+        for (int k = 0; k < CR.rivals[rn].n_col; k++)
+            if (CR.rivals[rn].col[k].x == nx &&
+                CR.rivals[rn].col[k].y == ny) return 0;
+    }
+    for (int v = 0; v < CS.n_villages; v++)
+        if (CS.villages[v].map_x == nx && CS.villages[v].map_y == ny)
+            return 0;
+    if (rumour_at(nx, ny)) return 0;
+    return 1;
+}
+
+static void script_commands(int t) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];
+        UnitRecord *u = &CS.units[ui];
+        int ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
+        if (ship) continue;               /* ship commands: slice 3 */
+        int a = (t * 7 + k * 3) % 10;
+        if (u->orders != 0) {             /* busy: occasionally wake it */
+            if (a == 0) cmd_activate(ui);
+            continue;
+        }
+        if (a < 6) {
+            const int *d = DIRS8[(t + k) % 8];
+            if (!CR.unit_moves_undef[ui] && u->moves_remaining > 0 &&
+                script_tile_free(u->map_x + d[0], u->map_y + d[1]))
+                cmd_move(ui, d[0], d[1]);
+        } else if (a == 6) {
+            cmd_set_order(ui, 5);         /* Fortify */
+        } else if (a == 7) {
+            cmd_improve(ui, (t % 2) ? 9 : 8);
+        } else if (a == 8) {
+            for (int ci = 0; ci < CS.n_colonies; ci++)
+                if ((CS.colonies[ci].owner_power & 3) == cs_nation()) {
+                    cmd_goto(ui, CS.colonies[ci].map_x,
+                             CS.colonies[ci].map_y);
+                    break;
+                }
+        } else {
+            cmd_skip(ui);
+        }
+    }
+}
+
 /* --turns SAVE N: run N prefix turns, one projection JSON line per turn.
  * The projection is the parity diff unit (plan section B); the JS trace
  * emits the identical shape. Events drain per turn; TUTORIAL*-keyed
  * differences are the compare script's to filter. */
-static void dump_turns(const char *save, int n, int agitate) {
+static void dump_turns(const char *save, int n, int agitate, int script) {
     if (strcmp(save, "savstart") == 0) colopy_load_sav(savstart, sizeof(savstart));
     else if (strcmp(save, "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
     else if (strcmp(save, "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
     else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     colopy_init(1653);                       /* the shared trace seed */
+    units_session_seed();
     if (agitate) {
         /* the trace's adversarial seeding — mirrors sim_trace.py TURNS */
         for (int v = 0; v < CS.n_villages; v++) {
@@ -144,6 +211,7 @@ static void dump_turns(const char *save, int n, int agitate) {
         if (strcmp(dat_jobexpert[i], "Indian Converts") == 0) job_convert = i;
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     for (int t = 0; t < n; t++) {
+        if (script) script_commands(t);
         turn_step_prefix();
         turn_step2();
         turn_step3();
@@ -226,7 +294,23 @@ static void dump_turns(const char *save, int n, int agitate) {
                                                  : CR.native_heading[ui]);
             first = 0;
         }
-        /* the JS G.units census + the convert countdowns */
+        /* the JS G.units census + per-unit command state (slice 2) —
+         * [x, y, orders, work, movesLeft] in G.units insertion order */
+        printf("],\"punits\":[");
+        for (int k = 0; k < CR.n_units_order; k++) {
+            int ui = CR.units_order[k];
+            printf("%s[%u,%u,%u,%u,", k ? "," : "", CS.units[ui].map_x,
+                   CS.units[ui].map_y, CS.units[ui].orders,
+                   CR.unit_work[ui]);
+            /* a rival-born member's movesLeft is UNDEFINED after its
+             * first refresh (no u.moves on the JS object) — JSON null */
+            if (CR.unit_moves_undef[ui]) printf("null");
+            else printf("%u", CS.units[ui].moves_remaining);
+            printf(",%u,%d]", CS.units[ui].tools,
+                   CS.units[ui].profession >= 1 &&
+                   CS.units[ui].profession < DAT_JOBEXPERT_COUNT
+                       ? CS.units[ui].profession : -1);
+        }
         {
             int nu = 0;
             for (int ui = 0; ui < CS.n_units; ui++)
@@ -285,8 +369,12 @@ static void dump_turns(const char *save, int n, int agitate) {
 
 int main(int argc, char **argv) {
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
-        dump_turns(argv[2], atoi(argv[3]),
-                   argc > 4 && strcmp(argv[4], "agitate") == 0);
+        int agitate = 0, script = 0;
+        for (int i = 4; i < argc; i++) {
+            if (strcmp(argv[i], "agitate") == 0) agitate = 1;
+            if (strcmp(argv[i], "script") == 0) script = 1;
+        }
+        dump_turns(argv[2], atoi(argv[3]), agitate, script);
         return 0;
     }
     /* --saveout SAVE N FILE: run N full turns, write the .SAV image —
@@ -296,6 +384,7 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[2], "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
         else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
         colopy_init(1653);
+        units_session_seed();
         for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
         for (int t = 0; t < atoi(argv[3]); t++) {
             turn_step_prefix();

@@ -79,7 +79,7 @@ static int gate(void) {                    /* action gate @0x58315 */
 }
 
 /* demandValue (game.js:8214, byte-cited scaler @0x583A0/@0x5842B) */
-static int32_t demand_value(int base) {
+int32_t demand_value(int base) {
     return base * 10 * (cs_difficulty() + 8) / 100 +
            500 * (cs_difficulty() + 1);
 }
@@ -998,10 +998,60 @@ static void retirement_check(void) {
     }
 }
 
+/* advanceGoTo (game.js:2274): one step a turn toward the goal, trying
+ * the diagonal then each axis; a blocked turn cancels the order.  The
+ * element test bars a land unit from water unless a (player) colony
+ * sits there, and a ship from land outright; natives block. */
+static void advance_goto(void) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];
+        UnitRecord *u = &CS.units[ui];
+        if (u->orders != 3 || CR.goal_x[ui] < 0) continue;
+        int gx = CR.goal_x[ui], gy = CR.goal_y[ui];
+        if (u->map_x == gx && u->map_y == gy) {
+            u->orders = 0;
+            CR.goal_x[ui] = CR.goal_y[ui] = -1;
+            continue;
+        }
+        int dx = gx > u->map_x ? 1 : gx < u->map_x ? -1 : 0;
+        int dy = gy > u->map_y ? 1 : gy < u->map_y ? -1 : 0;
+        int is_ship = u->type < DAT_UNITS_COUNT && dat_units[u->type].hull > 0;
+        int tries[3][2] = { { dx, dy }, { dx, 0 }, { 0, dy } };
+        int moved = 0;
+        for (int ti = 0; ti < 3 && !moved; ti++) {
+            int mx = tries[ti][0], my = tries[ti][1];
+            if (!mx && !my) continue;
+            int nx = u->map_x + mx, ny = u->map_y + my;
+            if (nx < 0 || ny < 0 || nx >= COLOPY_MAP_W || ny >= COLOPY_MAP_H)
+                continue;
+            int water = tile_water(map_at(nx, ny));
+            int own_col = 0;
+            for (int ci = 0; ci < CS.n_colonies; ci++)
+                if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+                    CS.colonies[ci].map_x == nx && CS.colonies[ci].map_y == ny)
+                    own_col = 1;
+            if ((is_ship != water) && !(own_col && !is_ship)) continue;
+            int blocked = 0;
+            for (int q = 0; q < CR.n_natives && !blocked; q++) {
+                int n = CR.natives_order[q];
+                if (unit_pos_x(n) == nx && unit_pos_y(n) == ny) blocked = 1;
+            }
+            if (blocked) continue;
+            u->map_x = (uint8_t)nx;
+            u->map_y = (uint8_t)ny;
+            moved = 1;
+        }
+        if (!moved) {
+            u->orders = 0;
+            CR.goal_x[ui] = CR.goal_y[ui] = -1;
+        }
+    }
+}
+
 /* The full endTurn tail, in engine order (endTurn:10781-10821).  Steps
  * that are structural no-ops headless are named in place:
- *   advanceTradeRoutes/advanceGoTo — no unit carries runtime trade/goto
- *     orders (the importer starts every unit at orders 0);
+ *   advanceTradeRoutes — no unit carries runtime trade orders (the
+ *     importer starts every unit at orders 0; routes: slice 3+);
  *   runWar/toryUprising/offerMercenaries/checkIntervention — WoI-gated
  *     (G.flags stays 0: the declaration is an ask the stub never answers);
  *   advanceCrossings — every imported Europe ship is state 'port'. */
@@ -1010,7 +1060,8 @@ void turn_step5(void) {
     news_tick();
     king_war_cycle();
     king_tax_demand();
-    /* advanceTradeRoutes(); advanceGoTo(); — no-ops (above) */
+    /* advanceTradeRoutes(); — no-op (above) */
+    advance_goto();
     /* runWar(); toryUprising(); — WoI-gated */
     shore_bombardment();
     spanish_succession();

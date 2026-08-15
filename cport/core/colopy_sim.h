@@ -105,6 +105,8 @@ void    market_reset_accum(void);   /* call at load: JS-importer semantics */
 
 /* ---- the turn pipeline (colopy_turn.c, colopy_natives.c) --------------- */
 void cr_reset_from_load(void);   /* seed runtime from the loaded records */
+void units_session_seed(void);   /* importer's runtime unit setup (moves,
+                                  * orders) — session entry, NOT load */
 void colony_turn(int ci);
 void turn_step_prefix(void);     /* the ported endTurn prefix */
 void turn_step2(void);           /* refit/improvements/immigration/congress/treasure */
@@ -140,6 +142,23 @@ void runits_drop(int rn, int ui);      /* JS r.units.splice (record kept) */
  * counter on every ask, answered or not), emits an "A<choice>" marker
  * event, and applies the ported callback body under the same choice. */
 int ask_choice(void);
+
+/* ---- player commands (colopy_cmd.c) — Phase 5 slice 2 ------------------ */
+/* Each mirrors the game.js UI command over the selected unit; ui indexes
+ * CS.units.  Branches a scripted trace cannot reach (ship moves, rival
+ * tiles, villages, sea lane, rumour entry) are explicit no-ops pending
+ * slices 3-5 — the shared script filter keeps both engines off them. */
+int  unit_full_moves(int ui);         /* @UNIT movement * 3 (thirds) */
+int  rumour_at(int x, int y);         /* rumourAt (game.js:8712) */
+void cmd_move(int ui, int dx, int dy);        /* moveSel (game.js:10919) */
+void cmd_skip(int ui);                        /* skipUnit (game.js:10872) */
+void cmd_set_order(int ui, int n);            /* setOrder (game.js:11181) */
+void cmd_improve(int ui, int n);              /* improveOrder (game.js:11191) */
+void cmd_goto(int ui, int gx, int gy);        /* Go To: orders 3 + goal */
+void cmd_activate(int ui);                    /* activateUnit (game.js:11228) */
+int32_t demand_value(int base);       /* demandValue (game.js:8210) */
+int  father_owned(int idx);           /* G.fathersOwned.includes */
+int  father_by_name(const char *name);
 
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
@@ -251,6 +270,34 @@ typedef struct {
     uint8_t screen_map;          /* G.screen === 'map' (parley gate); the
                                   * retirement report leaves the map, a
                                   * woodcut dismissal returns to it */
+    /* Slice 2 — the player-command layer.  u.movesLeft lives in the
+     * RECORD's moves_remaining byte, in THIRDS (the @UNIT loader
+     * multiplies the column by 3, unit.md §3 / game.js:660); seeded full
+     * at load (mkUnit — the JS importer ignores the save's byte) and
+     * refreshed at the top of endTurn (game.js:10740).
+     * Go To executor state (JS u.orders === 3 + u.goal; advanceGoTo
+     * game.js:2274).  -1 = no goal. */
+    int16_t goal_x[COLOPY_MAX_UNITS], goal_y[COLOPY_MAX_UNITS];
+    /* JS OBJECT PROVENANCE: a unit born on a rival's side (importer
+     * game.js:10443 or a rivalTurn spawn) is a bare {type,icon,x,y,
+     * nation,orders,ship} object — NO moves, NO tools, NO profession.
+     * Captured into G.units it keeps that shape, so its first endTurn
+     * refresh sets movesLeft = u.moves = UNDEFINED and it never passes
+     * a movesLeft > 0 test again.  unit_rival_born records the
+     * provenance (permanent); unit_moves_undef mirrors "movesLeft is
+     * currently undefined/NaN" (set by the refresh, cleared when a
+     * command writes a number). */
+    uint8_t unit_rival_born[COLOPY_MAX_UNITS];
+    /* "u.moves is undefined": seeded = rival_born, but CLEARED by
+     * becomeType (game.js:7061 assigns u.moves) — a demoted rival object
+     * gains a real budget and refreshes normally thereafter. */
+    uint8_t unit_no_moves[COLOPY_MAX_UNITS];
+    uint8_t unit_moves_undef[COLOPY_MAX_UNITS];
+    /* The rumour salt word [0x190] (JS G.mapSeed).  beginGame ROLLS it
+     * (game.js:742) with the native RNG, so the trace PINS it (1653) after
+     * import on both sides — the sim never reads it except through
+     * rumour_at.  0 disables rumours (@0x6191). */
+    uint16_t map_seed;
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;

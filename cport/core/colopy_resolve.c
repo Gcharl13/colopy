@@ -91,7 +91,12 @@ static int analysis_total(int ui, int is_defender) {
     p.type = u->type;
     p.terrain = map_at(unit_pos_x(ui), unit_pos_y(ui));
     p.on_colony = player_colony_at(unit_pos_x(ui), unit_pos_y(ui)) >= 0;
-    p.orders = 0;                 /* runtime orders — see header */
+    /* runtime orders: the importer starts every unit at 0, but the
+     * slice-2 command layer can Fortify a player unit (orders 5/6 → the
+     * +4 defence bonus).  Rival unit OBJECTS always carry orders 0
+     * (importer game.js:10444) — their record byte is not what the JS
+     * reads. */
+    p.orders = is_rival_side(ui) ? 0 : CS.units[ui].orders;
     p.is_defender = (uint8_t)is_defender;
     p.damaged = CR.unit_damaged[ui];
     p.veteran = !is_rival_side(ui) &&
@@ -112,8 +117,13 @@ static void become_type(int ui, const char *name) {
     if (t < 0) return;
     UnitRecord *u = &CS.units[ui];
     u->type = (uint8_t)t;
+    /* becomeType ASSIGNS u.moves (game.js:7061) — a bare rival object
+     * gains a real budget here; its movesLeft stays NaN (undef) until
+     * the next refresh if it was undefined going in. */
+    CR.unit_no_moves[ui] = 0;
     int mv = dat_units[t].movement * 3;
-    if (u->moves_remaining > mv) u->moves_remaining = (uint8_t)mv;
+    if (!CR.unit_moves_undef[ui] && u->moves_remaining > mv)
+        u->moves_remaining = (uint8_t)mv;
 }
 
 /* applyDefeat (game.js:7066).  Returns the removed record index, or -1 —
@@ -152,8 +162,18 @@ static int apply_defeat(int loser, int winner) {
         else if (strcmp(t->name, "Wagon Train") == 0) cap = "WAGONCAPTURE";
         int loser_nation = CS.units[loser].owner_flags & 0x0F;
         if (cap && loser_nation < 4) {
-            int vet_lost = prof_is(loser, JX_VET_SOLDIERS);
             int was_rival = is_rival_side(loser);
+            /* veteranLost reads the JS OBJECT's profession.  A loser
+             * coming straight off a rival's r.units list is the BARE
+             * importer object (game.js:10443) — no profession, no tools;
+             * its record bytes are stale import data, not object state.
+             * Once a rival-born unit has crossed to the player's side
+             * its bytes are zeroed below and thereafter maintained as
+             * the object mirror (tryPromote can even make it a Veteran),
+             * so on any LATER capture the record speaks for the object. */
+            int rival_born = CR.unit_rival_born[loser];
+            int bare = was_rival && !CR.unit_in_natives[loser] && rival_born;
+            int vet_lost = !bare && prof_is(loser, JX_VET_SOLDIERS);
             int old_owner = CS.units[loser].owner_flags & 0x0F;
             int wn = CS.units[winner].owner_flags & 0x0F;
             if (was_rival) runits_drop(old_owner, loser);   /* removeUnit */
@@ -167,11 +187,29 @@ static int apply_defeat(int loser, int winner) {
                 CR.runit_x[loser] = CS.units[loser].map_x;
                 CR.runit_y[loser] = CS.units[loser].map_y;
             }
+            if (bare) {
+                /* first crossing off the rival side: shed the record's
+                 * stale import bytes — the JS object had neither */
+                CS.units[loser].tools = 0;
+                CS.units[loser].profession = 0;
+            }
             CS.units[loser].owner_flags =
                 (uint8_t)((CS.units[loser].owner_flags & 0xF0) | (wn & 0x0F));
             if (vet_lost) CS.units[loser].profession = 0;
             CS.units[loser].orders = 0;
             units_order_drop(loser);         /* removeUnit: leaves G.units */
+            /* removeUnit also splices G.natives (game.js:7049) — a loser
+             * that had been parked there leaves before re-joining a side */
+            if (CR.unit_in_natives[loser]) {
+                CR.unit_in_natives[loser] = 0;
+                for (int k = 0; k < CR.n_natives; k++)
+                    if (CR.natives_order[k] == loser) {
+                        memmove(&CR.natives_order[k], &CR.natives_order[k + 1],
+                                (size_t)(CR.n_natives - k - 1));
+                        CR.n_natives--;
+                        break;
+                    }
+            }
             if (wn != (int)cs_nation()) {
                 /* the JS else-arm parks it in G.natives (see colopy_sim.h) */
                 CR.unit_in_natives[loser] = 1;
@@ -272,8 +310,13 @@ int resolve_attack(int att_ui, int def_ui) {
         }
         if (!blocked) unit_pos_set(att_ui, dx, dy);
     }
-    if (att_ui >= 0 && !is_rival_side(att_ui))
+    /* att.movesLeft = 0 (game.js:7242) — written on ANY attacker object,
+     * rival included: a captured attacker enters G.units showing the
+     * NUMBER 0 until its first refresh makes it undefined. */
+    if (att_ui >= 0) {
         CS.units[att_ui].moves_remaining = 0;
+        CR.unit_moves_undef[att_ui] = 0;
+    }
     return removed;
 }
 

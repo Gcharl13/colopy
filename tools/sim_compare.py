@@ -129,8 +129,8 @@ def compare_sweep(mode):
     sys.exit(1 if bad else 0)
 
 
-def compare_turns(save, n, agitate=False):
-    extra = ["agitate"] if agitate else []
+def compare_turns(save, n, extra=()):
+    extra = list(extra)
     js = json.loads(subprocess.run(
         [sys.executable, ROOT / "tools/sim_trace.py", "turns", save, str(n)]
         + extra, capture_output=True, text=True, check=True).stdout)
@@ -158,11 +158,11 @@ def compare_turns(save, n, agitate=False):
 
 def main():
     if sys.argv[1:2] == ["turns"]:
-        agitate = "agitate" in sys.argv[2:]
+        extra = [f for f in ("agitate", "script") if f in sys.argv[2:]]
         bad = 0
         for save in ("savnewcolony", "savraleigh", "sav1653"):
             bad += compare_turns(save, int(sys.argv[2]) if len(sys.argv) > 2
-                                 and sys.argv[2].isdigit() else 20, agitate)
+                                 and sys.argv[2].isdigit() else 20, extra)
         sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["market"]:
         compare_market()

@@ -123,7 +123,7 @@ Status column is maintained by hand as porting proceeds:
 | `improveWork` | 2322 | 0 |  | todo |
 | `terrainMove` | 2323 | 0 |  | todo |
 | `isHardy` | 2324 | 0 |  | todo |
-| `canImprove` | 2325 | 1 |  | todo |
+| `canImprove` | 2325 | 1 |  | ported (inline in cmd_improve) |
 | `workThreshold` | 2327 | 6 |  | ported |
 | `advanceImprovements` | 2334 | 61 |  | ported |
 | `spendTools` | 2396 | 18 |  | ported |
@@ -226,8 +226,8 @@ Status column is maintained by hand as porting proceeds:
 | `attemptConversions` | 5369 | 21 |  | ported |
 | `ageConverts` | 5391 | 26 |  | ported |
 | `nativeDemands` | 5418 | 126 |  | ported |
-| `clearObjection` | 5545 | 19 |  | todo |
-| `roadObjection` | 5565 | 33 |  | todo |
+| `clearObjection` | 5545 | 19 |  | ported (work_objection) |
+| `roadObjection` | 5565 | 33 |  | ported (work_objection) |
 | `surpriseRaidCheck` | 5599 | 6 |  | ported |
 | `raidOutcome` | 5606 | 35 |  | ported |
 | `raidTargetScore` | 5642 | 55 |  | ported |
@@ -364,7 +364,7 @@ Status column is maintained by hand as porting proceeds:
 | `kingSalutation` | 8642 | 0 |  | todo |
 | `kingTaxDemand` | 8643 | 31 |  | ported |
 | `teaParty` | 8675 | 32 |  | ported (inline at tax-demand site) |
-| `rumourAt` | 8708 | 13 |  | todo |
+| `rumourAt` | 8708 | 13 |  | ported (rumour_at; consumed-set with slice-4 entry) |
 | `scoutLevel` | 8722 | 6 |  | todo |
 | `d` | 8729 | 0 |  | todo |
 | `dsum` | 8730 | 5 |  | todo |
@@ -414,18 +414,18 @@ Status column is maintained by hand as porting proceeds:
 | `pediaStats` | 10656 | 10 |  | todo |
 | `endTurn` | 10724 | 98 |  | ported (full chain; WoI steps gated) |
 | `moveCost` | 10823 | 5 |  | ported |
-| `step` | 10829 | 32 |  | todo |
+| `step` | 10829 | 32 |  | ported (inside cmd_move) |
 | `advance` | 10862 | 5 |  | todo |
-| `skipUnit` | 10868 | 9 |  | todo |
+| `skipUnit` | 10868 | 9 |  | ported (cmd_skip) |
 | `askLandName` | 10878 | 12 |  | todo |
 | `landfall` | 10891 | 23 |  | todo |
-| `moveSel` | 10915 | 248 |  | todo |
+| `moveSel` | 10915 | 248 |  | partial (cmd_move: land pure-step; attacks/ships/rival/village slices 3-5) |
 | `nextUnit` | 11164 | 12 |  | todo |
-| `setOrder` | 11177 | 9 |  | todo |
-| `improveOrder` | 11187 | 26 |  | todo |
+| `setOrder` | 11177 | 9 |  | ported (cmd_set_order) |
+| `improveOrder` | 11187 | 26 |  | ported (cmd_improve) |
 | `returnToEurope` | 11214 | 8 |  | todo |
 | `centreView` | 11223 | 0 |  | todo |
-| `activateUnit` | 11224 | 5 |  | todo |
+| `activateUnit` | 11224 | 5 |  | ported (cmd_activate) |
 | `loadCargo` | 11230 | 21 |  | todo |
 | `unloadCargo` | 11252 | 34 |  | todo |
 | `dumpCargo` | 11287 | 11 |  | todo |

@@ -72,7 +72,7 @@ static void resolve(void) {
 
 static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); }
 
-static int father_owned(int idx) {
+int father_owned(int idx) {
     return idx >= 0 && ((CS.powers[cs_nation()].founding_fathers >> idx) & 1);
 }
 /* JS c.buildings.includes(name) — the runtime list, membership by NAME. */
@@ -167,6 +167,32 @@ void cr_reset_from_load(void) {
     /* villages: alarm toward the player (importer reads the u16's low byte) */
     for (int i = 0; i < CS.n_villages; i++)
         CR.alarm[i] = (uint8_t)(CS.villages[i].alarm[cs_nation()] & 0xFF);
+    /* slice 2: no Go To goals; the rumour salt PINNED to the trace's 1653
+     * (the engine's [0x190] is rolled at game start with the native RNG;
+     * the parity harness pins it on both sides so rumour_at agrees).
+     * The RECORD-side session seeding (full movement budgets, orders
+     * zeroed — the JS importer copies neither) lives in
+     * units_session_seed(): load itself must stay byte-pure so the
+     * .SAV roundtrip contract holds. */
+    for (int i = 0; i < CS.n_units; i++) {
+        CR.goal_x[i] = CR.goal_y[i] = -1;
+        int own = CS.units[i].owner_flags & 0x0F;
+        CR.unit_rival_born[i] = (uint8_t)(own < 4 && own != (int)cs_nation());
+        CR.unit_no_moves[i] = CR.unit_rival_born[i];
+    }
+    CR.map_seed = 1653;
+}
+
+/* The importer's RUNTIME unit setup (mkUnit game.js:660 + the import
+ * loop 10459: movesLeft = movement*3, orders = 0 — the save's own bytes
+ * for both fields are DISCARDED).  Called by the session entry points
+ * (host --turns/--saveout, the Teensy shell) after colopy_load_sav, NOT
+ * by the loader: the Phase-1 contract keeps load→save byte-identical. */
+void units_session_seed(void) {
+    for (int i = 0; i < CS.n_units; i++) {
+        CS.units[i].moves_remaining = (uint8_t)unit_full_moves(i);
+        CS.units[i].orders = 0;
+    }
 }
 
 /* ---- record mutators --------------------------------------------------- */
@@ -572,11 +598,16 @@ void turn_step_prefix(void) {
         wr16(CS.globals + 0x0C, (uint16_t)((cs_season() + 1) % 2));
         if (cs_season() == 0) wr16(CS.globals + 0x0A, (uint16_t)(cs_year() + 1));
     }
-    /* refresh the PLAYER's MAP units (JS G.units membership) */
+    /* refresh the PLAYER's MAP units (JS G.units membership).  A
+     * rival-born member has NO u.moves (see unit_rival_born) — the JS
+     * assignment makes its movesLeft UNDEFINED, not full. */
     for (int i = 0; i < CS.n_units; i++)
-        if (unit_on_map_player(i))
+        if (unit_on_map_player(i)) {
+            if (CR.unit_no_moves[i]) { CR.unit_moves_undef[i] = 1; continue; }
+            CR.unit_moves_undef[i] = 0;
             CS.units[i].moves_remaining =
                 (uint8_t)(dat_units[CS.units[i].type].movement * 3);
+        }
     /* payUpkeep */
     {
         int32_t due = total_upkeep();
@@ -628,6 +659,11 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_in_natives[i] = 0;
     CR.native_heading[i] = 0xFF;
     CR.native_home[i] = -1;
+    CR.goal_x[i] = CR.goal_y[i] = -1;
+    CR.unit_rival_born[i] =
+        (uint8_t)((owner & 0x0F) < 4 && (owner & 0x0F) != (int)cs_nation());
+    CR.unit_no_moves[i] = CR.unit_rival_born[i];
+    CR.unit_moves_undef[i] = 0;
     return i;
 }
 void unit_remove(int ui) {
@@ -642,6 +678,11 @@ void unit_remove(int ui) {
     memmove(&CR.unit_in_natives[ui], &CR.unit_in_natives[ui + 1], n);
     memmove(&CR.runit_x[ui], &CR.runit_x[ui + 1], n * sizeof(int16_t));
     memmove(&CR.runit_y[ui], &CR.runit_y[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.goal_x[ui], &CR.goal_x[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.goal_y[ui], &CR.goal_y[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.unit_rival_born[ui], &CR.unit_rival_born[ui + 1], n);
+    memmove(&CR.unit_no_moves[ui], &CR.unit_no_moves[ui + 1], n);
+    memmove(&CR.unit_moves_undef[ui], &CR.unit_moves_undef[ui + 1], n);
     CS.n_units--;
     /* keep the G.natives / G.units order lists aligned: drop the removed
      * member, re-base every index past it */
@@ -739,7 +780,7 @@ int unit_on_map_player(int ui) {
 /* adjustTension (game.js:5103): France and Pocahontas halve anger; band
  * crossings announce INDIANWAR/INDIANPEACE at the War edge, PISS<cause>
  * elsewhere; every village of the tribe takes the delta on its alarm. */
-static int father_by_name(const char *n) {
+int father_by_name(const char *n) {
     for (int i = 0; i < DAT_FATHERS_COUNT; i++)
         if (strcmp(dat_fathers[i].name, n) == 0) return i;
     return -1;
@@ -790,12 +831,15 @@ static void spend_tools(int ui) {
     ev_emit("USEDUPTOOLS", 0, 0, 0, 0);
 }
 
-/* advanceImprovements (game.js:10858). Orders 8 = clear/plow, 9 = road. */
+/* advanceImprovements (game.js:10858). Orders 8 = clear/plow, 9 = road.
+ * Iterates G.units INSERTION order (the JS `G.units.slice()`), not
+ * record order — the nearest-colony lumber grant and the event stream
+ * depend on it once the command layer sets orders. */
 static int is_forested_id(int t) { return t >= 8 && t <= 23; }
 static void advance_improvements(void) {
-    for (int ui = 0; ui < CS.n_units; ui++) {
+    for (int k = 0; k < CR.n_units_order; k++) {
+        int ui = CR.units_order[k];
         UnitRecord *u = &CS.units[ui];
-        if (!unit_on_map_player(ui)) continue;
         if (u->orders != 8 && u->orders != 9) continue;
         int road = u->orders == 9;
         int mi = u->map_y * COLOPY_MAP_W + u->map_x;
