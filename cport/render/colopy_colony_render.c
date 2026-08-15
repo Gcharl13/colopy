@@ -183,7 +183,7 @@ static int building_frame(int ci, int id) {
 /* colonistFigure (game.js:9606): profession figure, else 100 */
 static const int8_t PROF_FIG_HI[10] = { 99, 100, 58, 59, 60, 104,
                                         61, 106, 107, 66 };
-static int profession_icon(int job) {
+int rm_profession_icon(int job) {
     if (job < 0) return -1;
     if (job <= 17) return 81 + job;
     if (job >= 18 && job <= 27) return PROF_FIG_HI[job - 18];
@@ -193,7 +193,7 @@ static int colonist_figure(uint8_t prof) {
     /* the sav byte indexes @JOBEXPERT directly (SAV_PROFESSION,
      * game.js:10207: v>=1 -> jobexpert[v]); 0 = no specialty -> 100 */
     if (prof >= 1 && prof <= 27) {
-        int f = profession_icon(prof);
+        int f = rm_profession_icon(prof);
         if (f >= 0) return f;
     }
     return 100;

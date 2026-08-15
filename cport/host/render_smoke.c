@@ -168,6 +168,42 @@ int render_colony_main(const char *save, const char *pak_path,
     return 0;
 }
 
+/* --rendereurope SAVE PAK OUT.ppm [SHIP DOCKSEL ROW MARKETSEL]:
+ * the Europe screen over the fixture's own harbour state. */
+int render_europe_main(const char *save, const char *pak_path,
+                       const char *out_path, int euro_ship, int dock_sel,
+                       int euro_row, int market_sel) {
+    if (strcmp(save, "sav1653") == 0)
+        colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0)
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);
+    units_session_seed();
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_europe(euro_ship, dock_sel, euro_row, market_sel);
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 1;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    printf("render europe %s -> %s\n", save, out_path);
+    free(pak);
+    return 0;
+}
+
 /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER]: an event popup
  * (MODE 0) or ask dialog (MODE 1) over the map screen, with the PINNED
  * substitution set the JS RENDEREVENT block mirrors. */

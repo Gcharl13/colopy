@@ -86,16 +86,63 @@ static int immigrant_band(const immigrant *m) {
     return 2;
 }
 
-/* importer game.js:10477: ships parked at the off-map sentinel dock in
- * Europe — pushed in REVERSE G.units order (ships-then-land, each
- * record-ascending, iterated from the end).  Their riders disembark to
- * the dock in JS; the parity trace clears G.dockUnits after import, so
- * the C seeds none.  Holds read the record's cargo bytes exactly like
- * the JS import (first two quantity bytes mapped, further slots 100).
- * Water-stranded LAND units (10451) board the ship sharing their square
- * as passengers. */
+/* importer game.js:10440-10489, two passes:
+ *   pass A (sav order): a player LAND unit standing off-map or on water
+ *   becomes an entry ({name: prof, type} when it has a specialty, else
+ *   the plain type name) and boards the FIRST ship imported BEFORE it
+ *   (G.units.find) sharing its square; with no such ship it waits on
+ *   the dock if off-map, or is dropped (the JS continue).
+ *   pass B (reverse order, 10479): off-map ships leave G.units — each
+ *   pushes a 'port' crossing and DISEMBARKS its riders to the dock.
+ * So G.dockUnits = [unshipped off-map walkers, sav order] then [riders,
+ * ships reversed, each manifest in boarding order] — the render oracle
+ * sees exactly this layout (the TURNS parity trace clears the dock
+ * after import on both sides).  Holds read the record's cargo bytes
+ * exactly like the JS import (first two quantity bytes mapped, further
+ * slots 100). */
 void europe_seed_from_load(void) {
     CR.n_europe = 0;
+    CR.n_dock_units = 0;
+    /* per-ship rider buffers (JS ship.cargo), filled by pass A */
+    static uint8_t rid_n[COLOPY_MAX_UNITS];
+    static immigrant rid[COLOPY_MAX_UNITS][EURO_PASS_MAX];
+    memset(rid_n, 0, sizeof(rid_n));
+    for (int i = 0; i < CS.n_units; i++) {
+        const UnitRecord *w = &CS.units[i];
+        if ((w->owner_flags & 0x0F) != cs_nation()) continue;
+        if (w->type >= DAT_UNITS_COUNT || dat_units[w->type].hull > 0)
+            continue;
+        int off = w->map_x >= COLOPY_MAP_W || w->map_y >= COLOPY_MAP_H;
+        int water = !off && tile_water(map_at(w->map_x, w->map_y));
+        if (!off && !water) continue;
+        immigrant e;
+        memset(&e, 0, sizeof(e));
+        int prof = w->profession;
+        if (prof >= 1 && prof < DAT_JOBEXPERT_COUNT) {
+            e.kind = 4;                   /* { name: prof, type } */
+            e.idx = (uint8_t)prof;
+            e.type_ov = (uint8_t)(w->type + 1);
+        } else {
+            e.kind = 3;                   /* plain type-name string */
+            e.idx = w->type;
+        }
+        int si = -1;
+        for (int j = 0; j < i; j++) {     /* ships imported BEFORE it */
+            const UnitRecord *u = &CS.units[j];
+            if ((u->owner_flags & 0x0F) != cs_nation()) continue;
+            if (u->type >= DAT_UNITS_COUNT || dat_units[u->type].hull <= 0)
+                continue;
+            if (u->map_x == w->map_x && u->map_y == w->map_y) { si = j; break; }
+        }
+        if (si >= 0) {
+            if (rid_n[si] < EURO_PASS_MAX) rid[si][rid_n[si]++] = e;
+        } else if (off) {
+            if (CR.n_dock_units < (int)(sizeof(CR.dock_units) /
+                                        sizeof(CR.dock_units[0])))
+                CR.dock_units[CR.n_dock_units++] = e;
+        }
+        /* on-water with no ship: the JS drops the unit (10451 continue) */
+    }
     for (int i = CS.n_units - 1; i >= 0; i--) {
         const UnitRecord *u = &CS.units[i];
         if ((u->owner_flags & 0x0F) != cs_nation()) continue;
@@ -117,8 +164,13 @@ void europe_seed_from_load(void) {
                 int qty = k < 2 ? u->cargo_amount[k] : 100;
                 if (qty) hold_add(e->hold, &e->n_hold, good, qty);
             }
+            /* riders disembark to the dock (10484) */
+            for (int r = 0; r < rid_n[i]; r++)
+                if (CR.n_dock_units < (int)(sizeof(CR.dock_units) /
+                                            sizeof(CR.dock_units[0])))
+                    CR.dock_units[CR.n_dock_units++] = rid[i][r];
         } else {
-            /* on-map ship: seed its live hold mirror the same way */
+            /* on-map ship: seed its live hold + passenger mirrors */
             int n = u->cargo_slot_count < 6 ? u->cargo_slot_count : 6;
             for (int k = 0; k < n; k++) {
                 int good = (u->cargo_kind_packed[k >> 1] >>
@@ -127,29 +179,10 @@ void europe_seed_from_load(void) {
                 if (qty) hold_add(CR.unit_hold[i], &CR.unit_n_hold[i],
                                   good, qty);
             }
-            /* riders: player LAND units on this water square (10454) */
-            if (tile_water(map_at(u->map_x, u->map_y))) {
-                for (int j = 0; j < CS.n_units; j++) {
-                    const UnitRecord *w = &CS.units[j];
-                    if ((w->owner_flags & 0x0F) != cs_nation()) continue;
-                    if (w->type >= DAT_UNITS_COUNT ||
-                        dat_units[w->type].hull > 0) continue;
-                    if (w->map_x != u->map_x || w->map_y != u->map_y)
-                        continue;
-                    if (CR.unit_n_pass[i] >= EURO_PASS_MAX) continue;
-                    immigrant *p = &CR.unit_pass[i][CR.unit_n_pass[i]++];
-                    memset(p, 0, sizeof(*p));
-                    int prof = w->profession;
-                    if (prof >= 1 && prof < DAT_JOBEXPERT_COUNT) {
-                        p->kind = 4;              /* { name: prof, type } */
-                        p->idx = (uint8_t)prof;
-                        p->type_ov = (uint8_t)(w->type + 1);
-                    } else {
-                        p->kind = 3;              /* plain type-name string */
-                        p->idx = w->type;
-                    }
-                }
-            }
+            CR.unit_n_pass[i] = 0;
+            for (int r = 0; r < rid_n[i]; r++)
+                if (CR.unit_n_pass[i] < EURO_PASS_MAX)
+                    CR.unit_pass[i][CR.unit_n_pass[i]++] = rid[i][r];
         }
     }
 }

@@ -286,6 +286,7 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
     else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     colopy_init(1653);                       /* the shared trace seed */
     units_session_seed();
+    CR.n_dock_units = 0;   /* the trace clears G.dockUnits after import */
     if (agitate) {
         /* the trace's adversarial seeding — mirrors sim_trace.py TURNS */
         for (int v = 0; v < CS.n_villages; v++) {
@@ -523,6 +524,18 @@ int main(int argc, char **argv) {
                                   argc > 8 ? atoi(argv[8]) : 0,
                                   argc > 9 ? atoi(argv[9]) : 1);
     }
+    /* --rendereurope SAVE PAK OUT.ppm [SHIP DOCKSEL ROW MARKETSEL] */
+    if (argc > 4 && strcmp(argv[1], "--rendereurope") == 0) {
+        extern int render_europe_main(const char *save, const char *pak,
+                                      const char *out, int euro_ship,
+                                      int dock_sel, int euro_row,
+                                      int market_sel);
+        return render_europe_main(argv[2], argv[3], argv[4],
+                                  argc > 5 ? atoi(argv[5]) : 0,
+                                  argc > 6 ? atoi(argv[6]) : 0,
+                                  argc > 7 ? atoi(argv[7]) : 0,
+                                  argc > 8 ? atoi(argv[8]) : -1);
+    }
     /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER] */
     if (argc > 7 && strcmp(argv[1], "--renderevent") == 0) {
         extern int render_event_main(const char *save, const char *pak,
@@ -549,6 +562,7 @@ int main(int argc, char **argv) {
         else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
         colopy_init(1653);
         units_session_seed();
+        CR.n_dock_units = 0;   /* mirror of the trace preamble */
         for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
         for (int t = 0; t < atoi(argv[3]); t++) {
             turn_step_prefix();

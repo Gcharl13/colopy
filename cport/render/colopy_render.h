@@ -103,6 +103,9 @@ void rm_scene_tile(int mx, int my, int px, int py);
 /* drawColony (game.js:3449): the full colony screen over CS/CR state */
 /* shared unit chrome (colopy_map_render.c) */
 void rm_nation_plate(int x, int y, int colour, int orders);
+int  rm_profession_icon(int jobexpert_row);   /* colopy_colony_render.c */
+void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
+                    int market_sel);          /* colopy_europe_render.c */
 int  rm_owner_colour_ui(int ui);
 void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                     int ship_sel, int view, int numbers);
