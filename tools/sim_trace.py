@@ -127,6 +127,24 @@ RENDERCOLONY = """([save, ci, csel, shipSel, view, numbers]) => {
 }"""
 
 
+RENDERREPORT = """([save, fk]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = []; G.colonyPopup = null;
+  G.mapSeed = 1653;
+  for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
+  G.cyclePhase = 0; G.blink = true; G.drag = null;
+  PTR.x = -100; PTR.y = -100;
+  G.report = fk;
+  G.screen = 'report';
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  drawReport(ctx);
+  return cv.toDataURL('image/png');
+}"""
+
+
 RENDEREUROPE = """([save, euroShip, dockSel, euroRow, marketSel]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
@@ -457,7 +475,7 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
                     "rendermap", "renderevent", "rendercolony",
-                    "rendereurope"):
+                    "rendereurope", "renderreport"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -474,6 +492,11 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "renderreport":
+            out = page.evaluate(RENDERREPORT, [sys.argv[2], sys.argv[3]])
+            browser.close()
+            print(out)
+            return
         elif mode == "rendereurope":
             out = page.evaluate(RENDEREUROPE, [sys.argv[2],
                                                int(sys.argv[3]) if len(sys.argv) > 3 else 0,

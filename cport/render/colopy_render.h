@@ -104,6 +104,16 @@ void rm_scene_tile(int mx, int my, int px, int py);
 /* shared unit chrome (colopy_map_render.c) */
 void rm_nation_plate(int x, int y, int colour, int orders);
 int  rm_profession_icon(int jobexpert_row);   /* colopy_colony_render.c */
+void rm_draw_settlement(int px, int py, int level, int nation,
+                        int tribe_colour, int mission);
+int  rm_colony_level_ci(int ci);
+int  rm_is_seen(int x, int y);
+/* the func_0033F2/003104 count-row machinery (colopy_colony_render.c) */
+typedef struct { int frame, count, sub, flags; } rm_crow_cell;
+void rm_draw_count_row(const rm_crow_cell *cells, int ncells, int x0, int y,
+                       int span, int gap0, int numbers);
+void rm_count_badge(int value, int x, int y, uint8_t colour);
+void rm_draw_report(const char *fkey);        /* colopy_report_render.c */
 void rm_draw_europe(int euro_ship, int dock_sel, int euro_row,
                     int market_sel);          /* colopy_europe_render.c */
 int  rm_owner_colour_ui(int ui);

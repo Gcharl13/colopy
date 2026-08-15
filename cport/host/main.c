@@ -536,6 +536,22 @@ int main(int argc, char **argv) {
                                   argc > 7 ? atoi(argv[7]) : 0,
                                   argc > 8 ? atoi(argv[8]) : -1);
     }
+    if (argc > 2 && strcmp(argv[1], "--reportprobe") == 0) {
+        extern void rm_report_probe(void);
+        if (strcmp(argv[2], "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
+        else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+        colopy_init(1653);
+        units_session_seed();
+        rm_report_probe();
+        { extern void rm_score_probe(void); rm_score_probe(); }
+        return 0;
+    }
+    /* --renderreport SAVE PAK OUT.ppm FK */
+    if (argc > 5 && strcmp(argv[1], "--renderreport") == 0) {
+        extern int render_report_main(const char *save, const char *pak,
+                                      const char *out, const char *fk);
+        return render_report_main(argv[2], argv[3], argv[4], argv[5]);
+    }
     /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER] */
     if (argc > 7 && strcmp(argv[1], "--renderevent") == 0) {
         extern int render_event_main(const char *save, const char *pak,

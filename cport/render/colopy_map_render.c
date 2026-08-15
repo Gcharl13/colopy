@@ -107,6 +107,11 @@ static int detail_frame(int mx, int my, int v) {
 }
 
 /* sticky visibility: CS.fog plane, bit 1<<(power+4) (game.js:8571) */
+int rm_is_seen(int x, int y);
+int rm_is_seen(int x, int y) {
+    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 0;
+    return (CS.fog[y * COLOPY_MAP_W + x] & (1 << (cs_nation() + 4))) != 0;
+}
 static int is_seen_rm(const rm_view *vw, int x, int y) {
     if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 1;
     if (vw->show_hidden) return 1;
@@ -319,8 +324,10 @@ static void tiny_center(const char *s, int cx, int y, const uint8_t ink[4]);
 /* drawSettlement (game.js:5008): marker (px-2,py); pennant ON the
  * flagpole at (px+3,py) — func_004314 @0x0043FB/@0x004404; mission
  * cross geometry func_0041AD-func_00423C. */
-static void draw_settlement(int px, int py, int level, int nation,
-                            int tribe_colour, int mission) {
+void rm_draw_settlement(int px, int py, int level, int nation,
+                        int tribe_colour, int mission);
+void rm_draw_settlement(int px, int py, int level, int nation,
+                        int tribe_colour, int mission) {
     int lv = level < 0 ? 0 : level > 3 ? 3 : level;
     int frame = nation >= 0 ? COLONY_FRAME[lv] : NATIVE_FRAME_BASE + lv;
     rd_blit(&RD.icons, frame, px - 2, py);
@@ -427,7 +434,8 @@ static void draw_menu_bar(void) {
 }
 
 /* colonyLevel (game.js:5002) over the runtime building list */
-static int colony_level_ci(int ci) {
+int rm_colony_level_ci(int ci);
+int rm_colony_level_ci(int ci) {
     if (colony_has_name(ci, "Fortress")) return 3;
     if (colony_has_name(ci, "Fort")) return 2;
     if (colony_has_name(ci, "Stockade")) return 1;
@@ -570,7 +578,7 @@ void rm_scene_tile(int mx, int my, int px, int py) {
         const ColonyRecord *oc = &CS.colonies[q];
         if (oc->map_x != mx || oc->map_y != my) continue;
         if ((oc->owner_power & 3) == cs_nation())
-            draw_settlement(px, py, colony_level_ci(q), oc->owner_power & 3,
+            rm_draw_settlement(px, py, rm_colony_level_ci(q), oc->owner_power & 3,
                             0, 0xFF);
     }
     for (int rn = 0; rn < 4; rn++) {
@@ -578,14 +586,14 @@ void rm_scene_tile(int mx, int my, int px, int py) {
         for (int k = 0; k < CR.rivals[rn].n_col; k++) {
             const rival_colony *rc = &CR.rivals[rn].col[k];
             if (rc->x == mx && rc->y == my)
-                draw_settlement(px, py, rc->level, rn, 0, 0xFF);
+                rm_draw_settlement(px, py, rc->level, rn, 0, 0xFF);
         }
     }
     for (int v = 0; v < CS.n_villages; v++) {
         const NativeSettlement *vs = &CS.villages[v];
         if (vs->map_x != mx || vs->map_y != my) continue;
         int ti = vs->owner_tribe - 4;
-        draw_settlement(px, py, tribe_level(ti), -1,
+        rm_draw_settlement(px, py, tribe_level(ti), -1,
                         ti >= 0 && ti < 8 ? (int)dat_tribes[ti].color : 8,
                         vs->mission);
     }
@@ -614,7 +622,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         int tx = c->map_x - view_x, ty = c->map_y - view_y;
         if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS) continue;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        draw_settlement(px, py, colony_level_ci(ci), c->owner_power & 3,
+        rm_draw_settlement(px, py, rm_colony_level_ci(ci), c->owner_power & 3,
                         0, 0xFF);
         char nm[25];
         memcpy(nm, c->name, 24);
@@ -629,7 +637,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
         if (!is_seen_rm(&vw, v->map_x, v->map_y)) continue;
         int ti = v->owner_tribe - 4;
         int px = VP_X + tx * TILE, py = VP_Y + ty * TILE;
-        draw_settlement(px, py, tribe_level(ti), -1,
+        rm_draw_settlement(px, py, tribe_level(ti), -1,
                         ti >= 0 && ti < 8 ? (int)dat_tribes[ti].color : 8,
                         v->mission);
         /* §19.6 war-stance marks: count = raid-target score / 4 + 1
@@ -677,7 +685,7 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
             if (tx < 0 || ty < 0 || tx >= VIEW_COLS || ty >= VIEW_ROWS)
                 continue;
             if (!is_seen_rm(&vw, rc->x, rc->y)) continue;
-            draw_settlement(VP_X + tx * TILE, VP_Y + ty * TILE,
+            rm_draw_settlement(VP_X + tx * TILE, VP_Y + ty * TILE,
                             rc->level, rn, 0, 0xFF);
         }
         for (int k = 0; k < CR.n_runits[rn]; k++) {

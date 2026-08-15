@@ -68,9 +68,10 @@ static void c_right(const char *s, int rx, int y, const uint8_t ink[4]) {
     rd_text(&C_TINY, s, rx - rd_text_width(&C_TINY, s), y, ink);
 }
 
-/* countBadge (func_002E4E @0x002E4E) */
-static void count_badge(int value, int x, int y, uint8_t colour) {
+/* countBadge (func_002E4E @0x002E4E) — callable from any screen */
+void rm_count_badge(int value, int x, int y, uint8_t colour) {
     if (value <= 0) return;
+    cresolve();
     char s[12];
     snprintf(s, sizeof(s), "%d", value);
     rd_fill(x, y + 2, rd_text_width(&C_TINY, s) + 1, 7, 0);
@@ -233,15 +234,14 @@ static int job_for_building_name(const char *name) {
 }
 
 /* ---- the count-row machinery (func_0033F2/003104) ---- */
-typedef struct { int frame, count, sub, flags; } crow_cell;
 typedef struct {
-    const crow_cell *cell;
+    const rm_crow_cell *cell;
     int x, step, total, filled, w;
 } crow_ent;
 
-static int count_row_layout(const crow_cell *cells, int ncells, int x0,
+static int count_row_layout(const rm_crow_cell *cells, int ncells, int x0,
                             int span, int gap0, crow_ent *out) {
-    crow_cell const *row[16];
+    rm_crow_cell const *row[16];
     int n = 0;
     for (int i = 0; i < ncells; i++)
         if (cells[i].count > 0 || cells[i].sub > 0) row[n++] = &cells[i];
@@ -283,8 +283,8 @@ static int count_row_layout(const crow_cell *cells, int ncells, int x0,
     return no;
 }
 
-static void draw_count_row(const crow_cell *cells, int ncells, int x0, int y,
-                           int span, int gap0, int numbers) {
+void rm_draw_count_row(const rm_crow_cell *cells, int ncells, int x0, int y,
+                       int span, int gap0, int numbers) {
     crow_ent es[16];
     int n = count_row_layout(cells, ncells, x0, span, gap0, es);
     for (int e = 0; e < n; e++) {
@@ -304,11 +304,11 @@ static void draw_count_row(const crow_cell *cells, int ncells, int x0, int y,
         }
         if (!(numbers || (es[e].step == 1 && es[e].cell->count > 1)))
             continue;
-        count_badge(alt ? es[e].cell->count
+        rm_count_badge(alt ? es[e].cell->count
                         : es[e].cell->count - es[e].cell->sub,
                     es[e].x + 2, y, always ? 0x0C : 0x0F);
         if (mark_x >= 0 && !alt)
-            count_badge(es[e].cell->sub, mark_x + 2, y, 0x0C);
+            rm_count_badge(es[e].cell->sub, mark_x + 2, y, 0x0C);
     }
 }
 
@@ -331,8 +331,8 @@ static void gauge_strip(int frame, int drawn, int sub, int slots, int x,
         cx += pitch;
     }
     if (!numbers && !(pitch == 1 && drawn > 1)) return;
-    count_badge(drawn - sub, x + 2, y, 0x0F);
-    if (mark_x >= 0) count_badge(sub, mark_x + 2, y, 0x0C);
+    rm_count_badge(drawn - sub, x + 2, y, 0x0F);
+    if (mark_x >= 0) rm_count_badge(sub, mark_x + 2, y, 0x0C);
 }
 
 /* centreYield (game.js:3735) */
@@ -628,22 +628,22 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
         }
         /* the food / crosses / bells row (@0x027330-0x0273C7) */
         int P = r.gross[FOOD], E = r.eaten, C = r.centre;
-        crow_cell cells[4];
+        rm_crow_cell cells[4];
         int nc = 0;
         if (E > P) {
             int s1 = P - C;
-            cells[nc++] = (crow_cell){ 22 + FOOD, P, s1 > 0 ? s1 : 0, 0x4000 };
-            cells[nc++] = (crow_cell){ 22 + FOOD, E - P, 0, 0x8000 };
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, P, s1 > 0 ? s1 : 0, 0x4000 };
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, E - P, 0, 0x8000 };
         } else {
             int mCE = C < E ? C : E;
             int hi = (P - E) - (C - E > 0 ? C - E : 0);
-            cells[nc++] = (crow_cell){ 22 + FOOD, E, E - mCE, 0x4000 };
-            cells[nc++] = (crow_cell){ 22 + FOOD, P - E, hi > 0 ? hi : 0,
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, E, E - mCE, 0x4000 };
+            cells[nc++] = (rm_crow_cell){ 22 + FOOD, P - E, hi > 0 ? hi : 0,
                                        0x4000 };
         }
-        cells[nc++] = (crow_cell){ 56, r.crosses, 0, 0 };
-        cells[nc++] = (crow_cell){ 62, r.bells, 0, 0 };
-        draw_count_row(cells, nc, 2, 163, 118, 4, numbers);
+        cells[nc++] = (rm_crow_cell){ 56, r.crosses, 0, 0 };
+        cells[nc++] = (rm_crow_cell){ 62, r.bells, 0, 0 };
+        rm_draw_count_row(cells, nc, 2, 163, 118, 4, numbers);
         /* the SoL band (@0x0273DC-0x027551) */
         int pop = c->population;
         int sol_pct = sol, tory_pct = 100 - sol_pct;
@@ -698,11 +698,11 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
     }
     /* right panel: the production strips (view 0 — func_0275CE) */
     if (view == 0) {
-        crow_cell row0[8], row1[8], row2[4];
+        rm_crow_cell row0[8], row1[8], row2[4];
         int n0 = 0, n1 = 0, n2 = 0;
         for (int i = 1; i <= 7; i++) {
             if (i == 5 || r.gross[i] == 0) continue;
-            row0[n0++] = (crow_cell){ 22 + i, r.gross[i] + r.consumed[i],
+            row0[n0++] = (rm_crow_cell){ 22 + i, r.gross[i] + r.consumed[i],
                                       r.consumed[i], 0 };
         }
         static const int8_t RAW_FOR[16] = { -1, -1, -1, -1, -1, -1, -1, -1,
@@ -716,16 +716,16 @@ void rm_draw_colony(int ci, uint32_t plot_seed_base, int colonist_sel,
                 fed = r.consumed[src] < r.gross[src] ? r.consumed[src]
                                                      : r.gross[src];
             int cnt = r.gross[i] > fed ? r.gross[i] : fed;
-            row1[n1++] = (crow_cell){ 22 + i, cnt, fed, 0 };
+            row1[n1++] = (rm_crow_cell){ 22 + i, cnt, fed, 0 };
         }
         /* row 2 (@0x0276AF): lumber PRODUCED plain, lumber CONSUMED as its
          * own 0x8000-marked run, then hammers */
-        row2[n2++] = (crow_cell){ 22 + LUMBER, r.gross[LUMBER], 0, 0 };
-        row2[n2++] = (crow_cell){ 22 + LUMBER, r.consumed[LUMBER], 0, 0x8000 };
-        row2[n2++] = (crow_cell){ PROD_HAMMER_ICON, r.hammers, 0, 0 };
-        draw_count_row(row0, n0, 213, 134, 89, 2, numbers);
-        draw_count_row(row1, n1, 213, 148, 89, 2, numbers);
-        draw_count_row(row2, n2, 213, 162, 89, 4, numbers);
+        row2[n2++] = (rm_crow_cell){ 22 + LUMBER, r.gross[LUMBER], 0, 0 };
+        row2[n2++] = (rm_crow_cell){ 22 + LUMBER, r.consumed[LUMBER], 0, 0x8000 };
+        row2[n2++] = (rm_crow_cell){ PROD_HAMMER_ICON, r.hammers, 0, 0 };
+        rm_draw_count_row(row0, n0, 213, 134, 89, 2, numbers);
+        rm_draw_count_row(row1, n1, 213, 148, 89, 2, numbers);
+        rm_draw_count_row(row2, n2, 213, 162, 89, 4, numbers);
     }
     /* view buttons */
     for (int k = 0; k < 3; k++) {

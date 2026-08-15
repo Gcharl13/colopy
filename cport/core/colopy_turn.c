@@ -1000,13 +1000,9 @@ const char *immigrant_name(const immigrant *m) {
 /* checkImmigration (game.js:10153). The Brewster branch mirrors the trace's
  * stubbed askEvent (key emitted, callback never run) -- flagged; real play
  * wiring lands with the command loop. */
-static void check_immigration(void) {
-    int per = 0;
-    for (int ci = 0; ci < CS.n_colonies; ci++)
-        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
-            per += CR.col[ci].crosses_turn;
-    CR.crosses += per;
-    /* immigrationThreshold (game.js:10135) */
+
+/* immigrationThreshold (game.js:10135) — exported for the F2 report. */
+int immigration_threshold(void) {
     int accum = 0;
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
@@ -1018,6 +1014,16 @@ static void check_immigration(void) {
     if (accum > 4000) accum = 4000;
     accum = accum * (8 - cs_difficulty()) / 8;
     if (cs_nation() == 0) accum = accum * 2 / 3;
+    return accum;
+}
+
+static void check_immigration(void) {
+    int per = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            per += CR.col[ci].crosses_turn;
+    CR.crosses += per;
+    int accum = immigration_threshold();
     if (CR.crosses < accum) return;
     CR.crosses -= accum;
     resolve();
@@ -1038,6 +1044,21 @@ static void check_immigration(void) {
     roll_immigrant(&CR.dock[slot]);
     ev_emit("UNREST", 0, 0, dat_nations[cs_nation()].homeport,
             immigrant_name(&CR.dock[0]));
+}
+
+
+/* fatherCost (game.js:7620) — exported for the F3 report. */
+int father_cost_now(void) {
+    int owned = 0;
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (father_owned(i)) owned++;
+    int base = (cs_difficulty() + 3) * 16;
+    int gates[4] = { 1600, 1650, 1700, 1750 };
+    for (int g = 0; g < 4; g++)
+        if (cs_year() >= gates[g]) base += base >> 1;
+    int cost = (owned + 1) * base + 1;
+    if (owned == 0) cost >>= 1;
+    return cost;
 }
 
 /* updateCongress (game.js:7656) + fatherCandidates/fatherCost/effects. */
@@ -1084,15 +1105,7 @@ static void update_congress(void) {
     }
     /* fatherCost (game.js:7620) */
     {
-        int owned = 0;
-        for (int i = 0; i < DAT_FATHERS_COUNT; i++)
-            if (father_owned(i)) owned++;
-        int base = (cs_difficulty() + 3) * 16;
-        int gates[4] = { 1600, 1650, 1700, 1750 };
-        for (int g = 0; g < 4; g++)
-            if (cs_year() >= gates[g]) base += base >> 1;
-        int cost = (owned + 1) * base + 1;
-        if (owned == 0) cost >>= 1;
+        int cost = father_cost_now();
         /* after the Declaration: cost = d*1500 + 2000 (game.js:7626) */
         if (CR.woi_flags & WOI_DECLARED)
             cost = cs_difficulty() * 1500 + 2000;

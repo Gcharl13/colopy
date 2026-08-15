@@ -201,6 +201,8 @@ void rel_declare_war(int a, int b);
 void rel_set_privateer(int a, int b);
 int32_t demand_value(int base);       /* demandValue (game.js:8210) */
 int  father_owned(int idx);           /* G.fathersOwned.includes */
+int  immigration_threshold(void);     /* game.js:10135 (F2 report) */
+int  father_cost_now(void);           /* fatherCost (F3 report) */
 int  father_by_name(const char *name);
 
 /* ---- the Europe layer (colopy_europe.c) — Phase 5 slice 3 -------------- */
