@@ -61,6 +61,7 @@ int  colony_has(const ColonyRecord *c, const char *building_name);
 int move_cost(int is_ship, int fx, int fy, int tx, int ty);   /* in thirds */
 int terrain_move(uint8_t v);
 int terrain_defence(uint8_t v);
+int improve_work(uint8_t v);        /* pioneer work threshold column */
 
 /* ---- combat (colopy_combat.c): the §14.1-14.3 modifier chain ----------- */
 typedef struct {
@@ -88,7 +89,9 @@ void    market_reset_accum(void);   /* call at load: JS-importer semantics */
 /* ---- the turn pipeline (colopy_turn.c) --------------------------------- */
 void cr_reset_from_load(void);   /* seed runtime from the loaded records */
 void colony_turn(int ci);
-void turn_step_prefix(void);     /* header+upkeep+colony loop (prefix 1) */
+void turn_step_prefix(void);     /* the ported endTurn prefix */
+void turn_step2(void);           /* improvements/immigration/congress/treasure */
+int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
 
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
@@ -104,11 +107,29 @@ typedef struct {
     uint8_t  taught[32];         /* schoolhouse per-student counters */
 } colony_rt;
 
+/* An immigrant on the Europe dock: kind 0 = @CLASS row, kind 1 = a
+ * jobtrain expert (game.js rollImmigrant), kind 2 = the "Free Colonists"
+ * literal. */
+typedef struct { uint8_t kind, idx; } immigrant;
+
 typedef struct {
     uint8_t upkeep_unpaid;       /* @UPKEEP half-rate latch */
     uint8_t time_changed;        /* @TIMECHANGE one-shot */
+    int32_t crosses;             /* immigration accumulator (JS G.crosses) */
+    int32_t bells_total;         /* whole-game bells (JS G.bellsTotal) */
+    int16_t father_in_progress;  /* dat_fathers index, -1 = none */
+    immigrant dock[3];           /* the three Europe dock candidates */
+    immigrant dock_units[64];    /* recruits waiting on the dock */
+    uint8_t n_dock_units;
+    uint8_t tension[8];          /* per-tribe anger toward the player, 0..100 */
+    uint8_t alarm[COLOPY_MAX_SETTLEMENTS];  /* per-village (JS v.alarm) */
+    uint8_t unit_work[COLOPY_MAX_UNITS];    /* pioneer work counters */
+    uint8_t unit_offered[COLOPY_MAX_UNITS]; /* treasure offer latch */
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;
+
+void roll_immigrant(immigrant *out);
+const char *immigrant_name(const immigrant *m);
 
 #endif /* COLOPY_SIM_H */

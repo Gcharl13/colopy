@@ -90,13 +90,22 @@ static int has_bld(int ci, int idx) {
 int rt_sol(int ci) { return CR.col[ci].sol; }
 
 void cr_reset_from_load(void) {
-    memset(CR.col, 0, sizeof(CR.col));
-    CR.upkeep_unpaid = 0;
-    CR.time_changed = 0;
+    memset(&CR, 0, sizeof(CR));
+    CR.father_in_progress = -1;
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         CR.col[i].sol_band = 0xFF;
     }
+    /* tribes: tension toward the player from the 0x4E-stride TribeData
+     * (+0x46 + nation*2, clamp 0..100 -- importer game.js:10301) */
+    for (int i = 0; i < 8; i++) {
+        int off = i * 0x4E + 0x46 + cs_nation() * 2;
+        int v = CS.tribes[off] | (CS.tribes[off + 1] << 8);
+        CR.tension[i] = (uint8_t)(v > 100 ? 100 : v);
+    }
+    /* villages: alarm toward the player (importer reads the u16's low byte) */
+    for (int i = 0; i < CS.n_villages; i++)
+        CR.alarm[i] = (uint8_t)(CS.villages[i].alarm[cs_nation()] & 0xFF);
 }
 
 /* ---- record mutators --------------------------------------------------- */
@@ -469,12 +478,11 @@ void turn_step_prefix(void) {
         wr16(CS.globals + 0x0C, (uint16_t)((cs_season() + 1) % 2));
         if (cs_season() == 0) wr16(CS.globals + 0x0A, (uint16_t)(cs_year() + 1));
     }
-    /* refresh the PLAYER's units (JS G.units holds only those) */
-    for (int i = 0; i < CS.n_units; i++) {
-        UnitRecord *u = &CS.units[i];
-        if ((u->owner_flags & 0x0F) != cs_nation()) continue;
-        u->moves_remaining = (uint8_t)(dat_units[u->type].movement * 3);
-    }
+    /* refresh the PLAYER's MAP units (JS G.units membership) */
+    for (int i = 0; i < CS.n_units; i++)
+        if (unit_on_map_player(i))
+            CS.units[i].moves_remaining =
+                (uint8_t)(dat_units[CS.units[i].type].movement * 3);
     /* payUpkeep */
     {
         int32_t due = total_upkeep();
@@ -496,4 +504,324 @@ void turn_step_prefix(void) {
                 (size_t)(CS.n_colonies - ci - 1) * sizeof(colony_rt));
         CS.n_colonies--;
     }
+}
+
+/* ======================================================================
+ * Pipeline step 2: advanceImprovements + checkImmigration + updateCongress
+ * + checkTreasure (game.js:10858/10153/7656/8558), in endTurn order.
+ * ====================================================================== */
+
+/* Is this record one of the JS port's MAP units (G.units membership)?
+ * The importer (game.js:10417-10484) excludes: other owners, landless
+ * walkers on water/off-map (cargo or dock), and off-map ships (parked in
+ * Europe).  Everything counting "your units" counts THESE. */
+int unit_on_map_player(int ui) {
+    const UnitRecord *u = &CS.units[ui];
+    if ((u->owner_flags & 0x0F) != cs_nation()) return 0;
+    int ship = dat_units[u->type].hull > 0;
+    int off = u->map_x >= COLOPY_MAP_W || u->map_y >= COLOPY_MAP_H;
+    if (!ship && (off || tile_water(map_at(u->map_x, u->map_y)))) return 0;
+    if (off) return 0;
+    return 1;
+}
+
+/* adjustTension (game.js:5103): France and Pocahontas halve anger; band
+ * crossings announce INDIANWAR/INDIANPEACE at the War edge, PISS<cause>
+ * elsewhere; every village of the tribe takes the delta on its alarm. */
+static int father_by_name(const char *n) {
+    for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+        if (strcmp(dat_fathers[i].name, n) == 0) return i;
+    return -1;
+}
+static int tension_band(int n) {
+    return n >= 100 ? 4 : n >= 75 ? 3 : n >= 40 ? 2 : n >= 20 ? 1 : 0;
+}
+static void adjust_tension(int tribe, int delta, int cause) {
+    if (tribe < 0 || tribe >= 8) return;
+    if (delta > 0 && (cs_nation() == 1 ||
+                      father_owned(father_by_name("Pocahontas"))))
+        delta /= 2;
+    int before = tension_band(CR.tension[tribe]);
+    int t = CR.tension[tribe] + delta;
+    if (t < 0) t = 0;
+    if (t > 100) t = 100;
+    CR.tension[tribe] = (uint8_t)t;
+    int after = tension_band(t);
+    if (after == 4 && before < 4)
+        ev_emit("INDIANWAR", 0, 0, dat_tribes[tribe].name, 0);
+    else if (before == 4 && after < 4)
+        ev_emit("INDIANPEACE", 0, 0, dat_tribes[tribe].name,
+                dat_nations[cs_nation()].adjective);
+    else if (after > before) {
+        char key[8] = "PISS0";
+        key[4] = (char)('0' + cause);
+        ev_emit(key, 0, 0, dat_nations[cs_nation()].adjective,
+                dat_tribes[tribe].name);
+    }
+    for (int i = 0; i < CS.n_villages; i++)
+        if (CS.villages[i].owner_tribe == tribe + 4) {
+            int a = CR.alarm[i] + delta;
+            if (a < 0) a = 0;
+            if (a > 255) a = 255;
+            CR.alarm[i] = (uint8_t)a;
+        }
+}
+
+/* spendTools (game.js:2396): -20 per finished job; below 20 the pioneer
+ * puts the kit down and reverts to Colonists. */
+static void spend_tools(int ui) {
+    UnitRecord *u = &CS.units[ui];
+    int t = u->tools - 20;
+    if (t >= 20) { u->tools = (uint8_t)t; return; }
+    u->tools = 0;
+    for (int i = 0; i < DAT_UNITS_COUNT; i++)
+        if (strcmp(dat_units[i].name, "Colonists") == 0) u->type = (uint8_t)i;
+    ev_emit("USEDUPTOOLS", 0, 0, 0, 0);
+}
+
+/* advanceImprovements (game.js:10858). Orders 8 = clear/plow, 9 = road. */
+static int is_forested_id(int t) { return t >= 8 && t <= 23; }
+static void advance_improvements(void) {
+    for (int ui = 0; ui < CS.n_units; ui++) {
+        UnitRecord *u = &CS.units[ui];
+        if (!unit_on_map_player(ui)) continue;
+        if (u->orders != 8 && u->orders != 9) continue;
+        int road = u->orders == 9;
+        int mi = u->map_y * COLOPY_MAP_W + u->map_x;
+        if (road && (map_improve(u->map_x, u->map_y) & ROAD_BIT)) {
+            u->orders = 0;
+            CR.unit_work[ui] = 0;
+            continue;
+        }
+        CR.unit_work[ui]++;
+        /* workThreshold (game.js:2327): column + 2 off-road, Hardy halves */
+        int thr = improve_work(map_at(u->map_x, u->map_y)) + (road ? 0 : 2);
+        if (u->profession >= 1 && u->profession < DAT_JOBEXPERT_COUNT &&
+            strcmp(dat_jobexpert[u->profession], "Hardy Pioneers") == 0)
+            thr >>= 1;
+        if (thr < 1) thr = 1;
+        if (CR.unit_work[ui] < thr) continue;
+        CR.unit_work[ui] = 0;
+        u->orders = 0;
+        if (road) {
+            CS.improve[mi] |= ROAD_BIT;
+        } else if (is_forested_id(tile_terrain(map_at(u->map_x, u->map_y)))) {
+            /* clear: lumber grant from the LUMBERJACK column x10 (flagged in
+             * game.js -- the spec's +0x2F80 column conflicts), then fold the
+             * id and drop 8 (CLAUDE.md hard rule 3: fold 16..23 first). */
+            int lumber = tile_yield(map_at(u->map_x, u->map_y), 5) * 10;
+            int t = tile_terrain(CS.terrain[mi]);
+            if (t >= 16 && t <= 23) t = (t & 7) | 8;
+            CS.terrain[mi] = (uint8_t)((CS.terrain[mi] & ~0x1F) | (t - 8));
+            int best = -1, bd = 0;
+            for (int ci = 0; ci < CS.n_colonies; ci++) {
+                const ColonyRecord *c = &CS.colonies[ci];
+                if ((c->owner_power & 3) != cs_nation()) continue;
+                int d = (c->map_x > u->map_x ? c->map_x - u->map_x : u->map_x - c->map_x) +
+                        (c->map_y > u->map_y ? c->map_y - u->map_y : u->map_y - c->map_y);
+                if (best < 0 || d < bd) { best = ci; bd = d; }
+            }
+            if (best >= 0 && lumber > 0) {
+                ColonyRecord *c = &CS.colonies[best];
+                c->stock[LUMBER] = (uint16_t)(c->stock[LUMBER] + lumber);
+                ev_emit("CLEARCUT", lumber, 0, c->name, 0);
+                int woods = 0;
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                        if (is_forested_id(tile_terrain(
+                                map_at(u->map_x + dx, u->map_y + dy)))) woods++;
+                if (!woods) ev_emit("DEFOREST", 0, 0, c->name, 0);
+                for (int v = 0; v < CS.n_villages; v++) {
+                    int ax = CS.villages[v].map_x - u->map_x;
+                    int ay = CS.villages[v].map_y - u->map_y;
+                    if (ax < 0) ax = -ax;
+                    if (ay < 0) ay = -ay;
+                    if (ax <= 2 && ay <= 2) {
+                        int tr = CS.villages[v].owner_tribe - 4;
+                        ev_emit("INDIANFOREST2", 0, 0,
+                                tr >= 0 && tr < 8 ? dat_tribes[tr].name : 0,
+                                c->name);
+                        adjust_tension(tr, 5, 2);
+                        break;
+                    }
+                }
+            }
+        } else {
+            CS.improve[mi] |= PLOW_BIT;
+        }
+        spend_tools(ui);
+    }
+}
+
+/* rollImmigrant (game.js:4284): every 4th turn a trainable expert;
+ * otherwise the criminal/servant/free ladder off two rolls. */
+void roll_immigrant(immigrant *out) {
+    int thr = (cs_difficulty() + 3) >> 1;
+    if ((cs_turn() & 3) == 0 && cs_turn() > 0) {
+        out->kind = 1;
+        out->idx = (uint8_t)((rng_next() * (uint32_t)DAT_JOBTRAIN_COUNT) >> 15);
+        return;
+    }
+    if ((int)((rng_next() * 15u) >> 15) + 1 <= thr) { out->kind = 0; out->idx = 0; return; }
+    if ((int)((rng_next() * 10u) >> 15) + 1 <= thr) { out->kind = 0; out->idx = 1; return; }
+    out->kind = 2;
+    out->idx = 0;
+}
+const char *immigrant_name(const immigrant *m) {
+    if (m->kind == 1) return dat_jobtrain[m->idx].expert;
+    if (m->kind == 0) return dat_classes[m->idx].name;
+    return "Free Colonists";
+}
+
+/* checkImmigration (game.js:10153). The Brewster branch mirrors the trace's
+ * stubbed askEvent (key emitted, callback never run) -- flagged; real play
+ * wiring lands with the command loop. */
+static void check_immigration(void) {
+    int per = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            per += CR.col[ci].crosses_turn;
+    CR.crosses += per;
+    /* immigrationThreshold (game.js:10135) */
+    int accum = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            accum += CS.colonies[ci].population;
+    for (int ui = 0; ui < CS.n_units; ui++)
+        if (unit_on_map_player(ui)) accum++;
+    if (accum < 4000) accum *= 2;
+    accum += 8;
+    if (accum > 4000) accum = 4000;
+    accum = accum * (8 - cs_difficulty()) / 8;
+    if (cs_nation() == 0) accum = accum * 2 / 3;
+    if (CR.crosses < accum) return;
+    CR.crosses -= accum;
+    resolve();
+    if (father_owned(father_by_name("William Brewster"))) {
+        ev_emit("RECRUITCHOOSE", 0, 0, dat_nations[cs_nation()].homeport, 0);
+        return;
+    }
+    int slot = (int)((rng_next() * 3u) >> 15);
+    if (CR.n_dock_units < sizeof(CR.dock_units) / sizeof(CR.dock_units[0]))
+        CR.dock_units[CR.n_dock_units++] = CR.dock[slot];
+    roll_immigrant(&CR.dock[slot]);
+    ev_emit("UNREST", 0, 0, dat_nations[cs_nation()].homeport,
+            immigrant_name(&CR.dock[0]));
+}
+
+/* updateCongress (game.js:7656) + fatherCandidates/fatherCost/effects. */
+static void update_congress(void) {
+    int bpt = 0;
+    for (int ci = 0; ci < CS.n_colonies; ci++)
+        if ((CS.colonies[ci].owner_power & 3) == cs_nation())
+            bpt += CR.col[ci].bells_turn;
+    if (!bpt) return;
+    PowerRecord *p = &CS.powers[cs_nation()];
+    p->bells = (uint16_t)(p->bells + bpt);
+    CR.bells_total += bpt;
+    if (CR.father_in_progress < 0) {
+        int era = cs_year() < 1600 ? 0 : cs_year() < 1700 ? 1 : 2;
+        int first = -1;
+        for (int cat = 0; cat < 5; cat++) {
+            int pool[32], np = 0, total = 0;
+            for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+                if (dat_fathers[i].category == cat &&
+                    dat_fathers[i].weights[era] > 0 &&
+                    !father_owned(i)) {
+                    pool[np++] = i;
+                    total += dat_fathers[i].weights[era];
+                }
+            if (!np) continue;
+            int budget = 1 + (int)((rng_next() * (uint32_t)total) >> 15);
+            int pick = pool[np - 1];
+            for (int k = 0; k < np; k++) {
+                budget -= dat_fathers[pool[k]].weights[era];
+                if (budget <= 0) { pick = pool[k]; break; }
+            }
+            if (first < 0) first = pick;
+        }
+        if (first < 0) return;
+        /* the pick dialog cannot be cancelled; the trace's stubbed answer
+         * keeps the first candidate, exactly like the JS trace */
+        CR.father_in_progress = (int16_t)first;
+        ev_emit("WHICHFREEDOM", 0, 0, 0, 0);
+    }
+    /* fatherCost (game.js:7669); G.declared TBD (fixtures 0) */
+    {
+        int owned = 0;
+        for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+            if (father_owned(i)) owned++;
+        int base = (cs_difficulty() + 3) * 16;
+        int gates[4] = { 1600, 1650, 1700, 1750 };
+        for (int g = 0; g < 4; g++)
+            if (cs_year() >= gates[g]) base += base >> 1;
+        int cost = (owned + 1) * base + 1;
+        if (owned == 0) cost >>= 1;
+        if (p->bells < cost) return;
+        p->bells = (uint16_t)(p->bells - cost);
+    }
+    int f = CR.father_in_progress;
+    p->founding_fathers |= 1u << f;
+    ev_emit("FREEDOM", 0, 0, dat_fathers[f].name,
+            dat_nations[cs_nation()].adjective);
+    /* applyFatherEffect (game.js:7683) -- the wired three */
+    if (strcmp(dat_fathers[f].name, "Jakob Fugger") == 0)
+        p->boycott = 0;
+    if (strcmp(dat_fathers[f].name, "Jean de Brebeuf") == 0)
+        for (int v = 0; v < CS.n_villages; v++)
+            if (CS.villages[v].mission != 0xFF &&
+                (CS.villages[v].mission & 0x0F) == cs_nation())
+                CS.villages[v].mission |= 0x10;
+    if (strcmp(dat_fathers[f].name, "Bartolome de las Casas") == 0) {
+        int conv = expert_row("Indian Converts");
+        if (conv >= 0) {
+            for (int ui = 0; ui < CS.n_units; ui++)
+                if ((CS.units[ui].owner_flags & 0x0F) == cs_nation() &&
+                    CS.units[ui].profession == conv)
+                    CS.units[ui].profession = (uint8_t)TIER_ROW[2];
+            for (int ci = 0; ci < CS.n_colonies; ci++) {
+                ColonyRecord *c = &CS.colonies[ci];
+                if ((c->owner_power & 3) != cs_nation()) continue;
+                for (int k = 0; k < c->population; k++)
+                    if (c->profession[k] == conv)
+                        c->profession[k] = (uint8_t)TIER_ROW[2];
+            }
+        }
+    }
+    CR.father_in_progress = -1;
+}
+
+/* checkTreasure (game.js:8558): one offer per turn; the ask is stubbed in
+ * the trace, so only the latch + key are visible (flagged). */
+static void check_treasure(void) {
+    resolve();
+    int galleon = 0, ty_treasure = -1, ty_galleon = -1;
+    for (int i = 0; i < DAT_UNITS_COUNT; i++) {
+        if (strcmp(dat_units[i].name, "Treasure") == 0) ty_treasure = i;
+        if (strcmp(dat_units[i].name, "Galleon") == 0) ty_galleon = i;
+    }
+    for (int ui = 0; ui < CS.n_units; ui++)
+        if (unit_on_map_player(ui) && CS.units[ui].type == ty_galleon)
+            galleon = 1;
+    for (int ui = 0; ui < CS.n_units; ui++) {
+        UnitRecord *u = &CS.units[ui];
+        if (!unit_on_map_player(ui)) continue;
+        if (u->type != ty_treasure || CR.unit_offered[ui]) continue;
+        int on_colony = 0;
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if (CS.colonies[ci].map_x == u->map_x &&
+                CS.colonies[ci].map_y == u->map_y &&
+                (CS.colonies[ci].owner_power & 3) == cs_nation()) on_colony = 1;
+        if (!on_colony) continue;
+        CR.unit_offered[ui] = 1;
+        ev_emit(galleon ? "KINGGALLEON3" : "KINGGALLEON2", 0, 0, 0, 0);
+        return;
+    }
+}
+
+void turn_step2(void) {
+    advance_improvements();
+    check_immigration();
+    update_congress();
+    check_treasure();
 }

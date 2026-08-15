@@ -130,8 +130,10 @@ static void dump_turns(const char *save, int n) {
     else if (strcmp(save, "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
     else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     colopy_init(1653);                       /* the shared trace seed */
+    for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     for (int t = 0; t < n; t++) {
         turn_step_prefix();
+        turn_step2();
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
@@ -181,7 +183,33 @@ static void dump_turns(const char *save, int n) {
             }
             printf("]}");
         }
-        printf("],\"events\":[");
+        printf("],\"crosses\":%d,\"bellsTotal\":%d,\"bells\":%u,"
+               "\"fip\":%d,\"fathers\":[",
+               CR.crosses, CR.bells_total, p->bells, CR.father_in_progress);
+        first = 1;
+        for (int i = 0; i < DAT_FATHERS_COUNT; i++)
+            if ((p->founding_fathers >> i) & 1) {
+                printf("%s%d", first ? "" : ",", i);
+                first = 0;
+            }
+        printf("],\"dock\":[");
+        for (int d = 0; d < 3; d++)
+            printf("%s\"%s\"", d ? "," : "", immigrant_name(&CR.dock[d]));
+        printf("],\"dockUnits\":[");
+        for (int d = 0; d < CR.n_dock_units; d++)
+            printf("%s\"%s\"", d ? "," : "", immigrant_name(&CR.dock_units[d]));
+        printf("],\"tension\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%u", d ? "," : "", CR.tension[d]);
+        {
+            uint32_t h = 2166136261u;
+            for (int i = 0; i < COLOPY_PLANE; i++) {
+                h ^= CS.terrain[i]; h *= 16777619u;
+                h ^= (uint8_t)(CS.improve[i] & 0xC8); h *= 16777619u;
+            }
+            printf("],\"maphash\":%u", h);
+        }
+        printf(",\"events\":[");
         colopy_event e;
         first = 1;
         while (colopy_next_event(&e)) {

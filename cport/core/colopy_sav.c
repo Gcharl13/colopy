@@ -14,6 +14,8 @@
  */
 #include <string.h>
 
+#include "../data/colopy_data.h"
+
 #include "colopy_core.h"
 #include "colopy_sim.h"
 #include "colopy_state.h"

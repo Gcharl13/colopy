@@ -95,11 +95,22 @@ TURNS = """([save, n]) => {
     _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
     return ((_s >>> 16) & 0x7FFF) / 32768;
   };
+  G.crosses = 0; G.bellsTotal = 0; G.dockUnits = []; G.fatherInProgress = null;
   const evs = [];
   const _show = showEvent, _ask = askEvent;
   showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
   askEvent = (k, subs, cb, opts) => { evs.push(k); G.dialog = null; };
   const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
+  G.dock = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
+  const fnv = () => {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < MAP.w * MAP.h; i++) {
+      h = ((h ^ MAP.tiles[i]) >>> 0); h = Math.imul(h, 16777619) >>> 0;
+      h = ((h ^ (IMPROVE[i] & 0xC8)) >>> 0); h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h;
+  };
+  const fatherIdx = (n) => DATA.fathers.findIndex(f => f.name === n);
   const out = [];
   for (let t = 0; t < n; t++) {
     // --- the prefix, mirroring endTurn's opening exactly ---
@@ -115,6 +126,10 @@ TURNS = """([save, n]) => {
     for (const c of G.colonies) colonyTurn(c);
     if (G.colonies.some(c => c.vanished))
       G.colonies = G.colonies.filter(c => !c.vanished);
+    advanceImprovements();
+    checkImmigration();
+    updateCongress();
+    checkTreasure();
     // --- projection ---
     out.push({ turn: G.turn, year: G.year, season: G.season,
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
@@ -124,6 +139,13 @@ TURNS = """([save, n]) => {
         bip: c.building ? bldIndex(c.building) : -1,
         stock: c.stock.slice(),
         bld: [...new Set(c.buildings.map(bldIndex))].sort((a, b) => a - b) })),
+      crosses: G.crosses, bellsTotal: G.bellsTotal, bells: G.bells,
+      fip: G.fatherInProgress ? fatherIdx(G.fatherInProgress) : -1,
+      fathers: G.fathersOwned.map(fatherIdx).sort((a, b) => a - b),
+      dock: G.dock.map(d => d.name),
+      dockUnits: G.dockUnits.map(d => d.name || d),
+      tension: G.tribes.map(t => t.tension),
+      maphash: fnv(),
       events: evs.splice(0) });
   }
   return out;

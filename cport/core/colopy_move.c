@@ -29,6 +29,12 @@ int terrain_defence(uint8_t v) {
                        dat_defensive_other, DAT_DEFENSIVE_OTHER_COUNT);
 }
 
+/* the pioneer work threshold column (+0x2F78 byte, game.js improveWork) */
+int improve_work(uint8_t v) {
+    return terrain_col(v, dat_improvework_unforested, dat_improvework_forested,
+                       dat_improvework_other, DAT_IMPROVEWORK_OTHER_COUNT);
+}
+
 static int has_road(int x, int y) { return (map_improve(x, y) & ROAD_BIT) != 0; }
 
 /* moveCost (game.js:10823), in thirds. */
