@@ -60,11 +60,14 @@ CONFIG = """\
  * instead, which requires the 8 MB PSRAM soldered.
  *
  * TFT pins default to CS 10 / DC 9 (MOSI 11 / MISO 12 / SCK 13 =
- * SPI0); if rewired, define COLOPY_TFT_CS / COLOPY_TFT_DC here before
- * the include block. */
+ * SPI0); COLOPY_TFT_RST is the module's hardware-reset line (without
+ * it an ILI9341 sits on a WHITE screen ignoring commands — use 255 if
+ * your module has no RST pin).  COLOPY_TFT_SPIHZ can drop the SPI
+ * clock (e.g. 10000000) for long jumper wires. */
 #define COLOPY_ILI9341 1
 #define COLOPY_USBHOST 1
 #define COLOPY_PAK_FLASH 1
+#define COLOPY_TFT_RST 0
 
 """
 

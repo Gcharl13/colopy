@@ -58,7 +58,18 @@ extern "C" {
 #ifndef COLOPY_TFT_DC
 #define COLOPY_TFT_DC 9
 #endif
-static ILI9341_t3n tft(COLOPY_TFT_CS, COLOPY_TFT_DC);
+/* the module's hardware-reset line: without it the panel powers up
+ * uninitialized and shows a white screen while ignoring every command.
+ * 255 = not wired (the library then relies on the software reset). */
+#ifndef COLOPY_TFT_RST
+#define COLOPY_TFT_RST 255
+#endif
+/* SPI clock: 30 MHz is the library default; drop it (e.g. 10000000)
+ * for long jumper wires or a misbehaving panel. */
+#ifndef COLOPY_TFT_SPIHZ
+#define COLOPY_TFT_SPIHZ 30000000
+#endif
+static ILI9341_t3n tft(COLOPY_TFT_CS, COLOPY_TFT_DC, COLOPY_TFT_RST);
 /* Two ways to hold the ~3.1 MB pak:
  *   -DCOLOPY_PAK_FLASH  the pak is COMPILED IN as a const blob
  *                       (tools/gen_arduino_sketch.py emits
@@ -301,7 +312,7 @@ void setup() {
     if (!SD.begin(BUILTIN_SDCARD)) Serial.println("SD init FAILED");
     else Serial.println("colopy shell ready (l/t/d/i/s)");
 #ifdef COLOPY_ILI9341
-    tft.begin();
+    tft.begin(COLOPY_TFT_SPIHZ);
     tft.setRotation(1);                     /* 320x240 landscape */
     tft.fillScreen(ILI9341_BLACK);
     Serial.println("ILI9341 up (v = map view, g = game loop)");
