@@ -136,6 +136,10 @@ static int script_tile_free(int nx, int ny) {
         int q = CR.natives_order[k];
         if (unit_pos_x(q) == nx && unit_pos_y(q) == ny) return 0;
     }
+    for (int k = 0; k < CR.n_refs; k++) {
+        int q = CR.refs_order[k];
+        if (CS.units[q].map_x == nx && CS.units[q].map_y == ny) return 0;
+    }
     for (int rn = 0; rn < 4; rn++) {
         if (rn == (int)cs_nation()) continue;
         for (int k = 0; k < CR.n_runits[rn]; k++) {
@@ -161,7 +165,8 @@ static void script_commands(int t) {
             /* slice 3: an idle ship sails home now and then; the splice
              * shifts the list and the loop steps past the slot, exactly
              * like the JS iteration. */
-            if (u->orders == 0 && (t + k) % 17 == 0 && t > 0) {
+            if (u->orders == 0 && (t + k) % 17 == 0 && t > 0 &&
+                !woi_locked()) {
                 cmd_sail_for_europe(ui);
                 continue;
             }
@@ -265,6 +270,7 @@ static void script_commands(int t) {
             if (n) euro_arm_dock(0, verbs[(t >> 2) % n]);
         }
         if (t % 5 == 2) euro_recruit(0);
+        if (t % 9 == 4) declare_independence();
         if (t % 7 == 3) euro_purchase((t / 7) % 6);
     }
 }
@@ -288,6 +294,12 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
                 CS.villages[v].mission = cs_nation();
         }
         for (int t = 0; t < 8; t++) CR.tension[t] = 80;
+        /* slice 5: prime the SoL EMA so the DECLARE gate can open */
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation()) {
+                CR.col[ci].rebelA = 20000;
+                CR.col[ci].rebelB = 20000;
+            }
     }
     int job_convert = -1;
     for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
@@ -295,16 +307,18 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     for (int t = 0; t < n; t++) {
         if (script) script_commands(t);
+        step_rng("turn-start");
         turn_step_prefix();
+        step_rng("prefix");
         turn_step2();
         turn_step3();
         turn_step5();
         const PowerRecord *p = colopy_power(cs_nation());
-        printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
+        printf("{\"turn\":%u,\"year\":%u,\"season\":%u,\"rng\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
                "\"colonies\":[",
-               cs_turn(), cs_year(), cs_season(), p->gold, p->kings_fund,
-               p->tax_rate, CR.upkeep_unpaid);
+               cs_turn(), cs_year(), cs_season(), CS.rng, p->gold,
+               p->kings_fund, p->tax_rate, CR.upkeep_unpaid);
         int first = 1;
         for (int ci = 0; ci < CS.n_colonies; ci++) {
             const ColonyRecord *c = &CS.colonies[ci];
@@ -393,6 +407,14 @@ static void dump_turns(const char *save, int n, int agitate, int script) {
                    CS.units[ui].profession >= 1 &&
                    CS.units[ui].profession < DAT_JOBEXPERT_COUNT
                        ? CS.units[ui].profession : -1);
+        }
+        printf("],\"woi\":[%u,%u,%d,%d,%d,%d,%d],\"refs\":[",
+               CR.woi_flags, CR.razed, CR.royal_fund, CR.ref_pool[0],
+               CR.ref_pool[1], CR.ref_pool[2], CR.ref_pool[3]);
+        for (int k = 0; k < CR.n_refs; k++) {
+            int ui = CR.refs_order[k];
+            printf("%s[%u,%u,%u]", k ? "," : "", CS.units[ui].map_x,
+                   CS.units[ui].map_y, CS.units[ui].type);
         }
         printf("],\"holds\":[");
         for (int k = 0; k < CR.n_units_order; k++) {

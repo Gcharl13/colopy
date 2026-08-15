@@ -80,7 +80,9 @@ int tribe_level(int tribe) {
 static int is_brave(int ui) {                /* G.natives membership */
     const UnitRecord *u = &CS.units[ui];
     if (CR.unit_in_natives[ui]) return 1;    /* the rival-capture quirk */
-    return (u->owner_flags & 0x0F) >= 4 && u->type < DAT_UNITS_COUNT &&
+    return (u->owner_flags & 0x0F) >= 4 &&
+           (u->owner_flags & 0x0F) != 0x0F &&   /* 0x0F = the King's REF */
+           u->type < DAT_UNITS_COUNT &&
            dat_units[u->type].hull <= 0;
 }
 static int player_colony_count(void) {
@@ -286,10 +288,11 @@ static void native_demands(void) {
                 return;
             }
         }
-        /* @RID: ordered out of the region outright */
+        /* @RID: ordered out of the region outright (@RIDUSA once the
+         * independence flag is up — game.js:5503) */
         if (tension >= TENSION_WAR && rand_lt(8191)) {   /* < 0.25 */
-            ev_emit("RID", 0, 0, dat_tribes[ti].name,
-                    dat_regionname[cs_nation()]);
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "RIDUSA" : "RID",
+                    0, 0, dat_tribes[ti].name, dat_regionname[cs_nation()]);
             return;
         }
         /* @INDIANWAGONS: unreachable — no Wagon Train ever has a hold
@@ -718,10 +721,10 @@ static void native_move_ai(void) {
 
 /* ---- pipeline step 3 --------------------------------------------------- */
 void turn_step3(void) {
-    native_tick();
-    native_demands();
-    attempt_conversions();
-    age_converts();
-    native_move_ai();
+    native_tick();               step_rng("nativeTick");
+    native_demands();            step_rng("nativeDemands");
+    attempt_conversions();       step_rng("attemptConversions");
+    age_converts();              step_rng("ageConverts");
+    native_move_ai();            step_rng("nativeMoveAI");
     colony_vanish_filter();      /* raid-razed colonies leave (js:10777) */
 }

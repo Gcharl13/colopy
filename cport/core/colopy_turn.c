@@ -182,6 +182,14 @@ void cr_reset_from_load(void) {
     }
     CR.map_seed = 1653;
     CR.rumour_floor = 1;             /* G defaults (game.js:588) */
+    /* REF strength is READ from the save's global block (importer
+     * game.js:10265: [0x53DA/DC/DE/E0] = globals +0x5A..0x60, Regulars /
+     * Cavalry / Man-O-War / Artillery — the beginGame seedREF values are
+     * overwritten by the import) + the national sentiment band, unset */
+    for (int i = 0; i < 4; i++)
+        CR.ref_pool[i] = (int16_t)(CS.globals[0x5A + 2 * i] |
+                                   (CS.globals[0x5B + 2 * i] << 8));
+    CR.nat_band = 0xFF;
     /* slice 4b: the open-village cursor, tribe war targets, and the
      * chief-seen seed (importer game.js:10315 reads flags bit 0x08) */
     CR.cur_village = -1;
@@ -438,9 +446,10 @@ static void auto_export(int ci) {
         c->stock[i] = 50;
         int custom = has_bld(ci, BLD_CUSTOM);
         int custom_off = custom && !((c->custom_house_flags >> i) & 1);
-        /* G.declared TBD (fixtures 0) — the declared-and-no-customs waste
-         * branch is unreachable until the WoI step lands */
-        if (market_boycotted(i) || custom_off) {
+        /* once independence is declared the excess is WASTED unless a
+         * Custom House trades on ([0x5382]&1 @0x2D728; game.js:2871) */
+        if (market_boycotted(i) ||
+            ((CR.woi_flags & WOI_DECLARED) && !custom) || custom_off) {
             n_spoiled++;
             if (n_spoiled == 1) { spoiled_good = i; spoiled_qty = excess; }
             continue;
@@ -473,9 +482,9 @@ void colony_turn(int ci) {
     colony_rt *r = &CR.col[ci];
     colony_output o;
     colony_produce(ci, &o);
-    /* colonyBesieged (game.js:2995): at-war rival land units within 1 of
-     * the colony outnumbering the player's attack-capable land units
-     * there.  (REF units join the count with the WoI slice.) */
+    /* colonyBesieged (game.js:2995): REF + at-war rival land units within
+     * 1 of the colony outnumbering the player's attack-capable land units
+     * there. */
     {
         int me = cs_nation(), enemies = 0, friends = 0;
         for (int ui = 0; ui < CS.n_units; ui++) {
@@ -483,7 +492,12 @@ void colony_turn(int ci) {
             if (u->type >= DAT_UNITS_COUNT ||
                 dat_units[u->type].hull > 0) continue;
             int own = u->owner_flags & 0x0F;
-            if (own < 4 && own != me && !CR.unit_in_natives[ui]) {
+            if (CR.unit_is_ref[ui]) {
+                int dx = u->map_x - c->map_x, dy = u->map_y - c->map_y;
+                if (dx < 0) dx = -dx;
+                if (dy < 0) dy = -dy;
+                if (dx <= 1 && dy <= 1) enemies++;
+            } else if (own < 4 && own != me && !CR.unit_in_natives[ui]) {
                 if (!((CR.war_matrix[me][own] | CR.war_matrix[own][me]) & 0x02))
                     continue;
                 int dx = CR.runit_x[ui] - c->map_x;
@@ -691,6 +705,8 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_n_pass[i] = 0;
     CR.unit_treasure[i] = 0;
     CR.unit_slip[i] = 0;
+    CR.unit_is_ref[i] = 0;
+    CR.unit_veteran[i] = 0;
     return i;
 }
 void unit_remove(int ui) {
@@ -713,6 +729,8 @@ void unit_remove(int ui) {
     memmove(&CR.unit_treasure[ui], &CR.unit_treasure[ui + 1],
             n * sizeof(uint16_t));
     memmove(&CR.unit_slip[ui], &CR.unit_slip[ui + 1], n);
+    memmove(&CR.unit_is_ref[ui], &CR.unit_is_ref[ui + 1], n);
+    memmove(&CR.unit_veteran[ui], &CR.unit_veteran[ui + 1], n);
     memmove(&CR.unit_hold[ui], &CR.unit_hold[ui + 1],
             n * sizeof(CR.unit_hold[0]));
     memmove(&CR.unit_n_hold[ui], &CR.unit_n_hold[ui + 1], n);
@@ -753,6 +771,16 @@ void unit_remove(int ui) {
             }
             if (CR.runits_order[rn][k] > ui) CR.runits_order[rn][k]--;
         }
+    for (int k = 0; k < CR.n_refs; k++) {
+        if (CR.refs_order[k] == ui) {
+            memmove(&CR.refs_order[k], &CR.refs_order[k + 1],
+                    (size_t)(CR.n_refs - k - 1));
+            CR.n_refs--;
+            k--;
+            continue;
+        }
+        if (CR.refs_order[k] > ui) CR.refs_order[k]--;
+    }
 }
 /* The scripted-answer policy (see colopy_sim.h): choice = seq++ % 2,
  * with an A<choice> marker in the event stream so the parity diff pins
@@ -947,6 +975,9 @@ static void advance_improvements(void) {
 /* rollImmigrant (game.js:4284): every 4th turn a trainable expert;
  * otherwise the criminal/servant/free ladder off two rolls. */
 void roll_immigrant(immigrant *out) {
+    /* fresh JS object: no noBoard / type override — callers hand in stack
+     * locals (the Fountain's cands[3]), so every field must be written */
+    memset(out, 0, sizeof(*out));
     int thr = (cs_difficulty() + 3) >> 1;
     if ((cs_turn() & 3) == 0 && cs_turn() > 0) {
         out->kind = 1;
@@ -1051,7 +1082,7 @@ static void update_congress(void) {
                 CR.father_in_progress = (int16_t)cand[c];
         }
     }
-    /* fatherCost (game.js:7669); G.declared TBD (fixtures 0) */
+    /* fatherCost (game.js:7620) */
     {
         int owned = 0;
         for (int i = 0; i < DAT_FATHERS_COUNT; i++)
@@ -1062,6 +1093,9 @@ static void update_congress(void) {
             if (cs_year() >= gates[g]) base += base >> 1;
         int cost = (owned + 1) * base + 1;
         if (owned == 0) cost >>= 1;
+        /* after the Declaration: cost = d*1500 + 2000 (game.js:7626) */
+        if (CR.woi_flags & WOI_DECLARED)
+            cost = cs_difficulty() * 1500 + 2000;
         if (p->bells < cost) return;
         p->bells = (uint16_t)(p->bells - cost);
     }
@@ -1122,6 +1156,15 @@ static void check_treasure(void) {
                 (CS.colonies[ci].owner_power & 3) == cs_nation()) on_colony = 1;
         if (!on_colony) continue;
         CR.unit_offered[ui] = 1;
+        /* with independence declared there is no Crown to take a share:
+         * cashTreasureInFull (game.js:8524/8536) — full value, no ask */
+        if (CR.woi_flags & WOI_DECLARED) {
+            int32_t gross_full = (int32_t)CR.unit_treasure[ui] * 100;
+            CS.powers[cs_nation()].gold += gross_full;
+            unit_remove(ui);
+            ev_emit("CASHTREASURE", gross_full, 0, 0, 0);
+            return;
+        }
         /* offerGalleon (game.js:8532): gross = (u.treasure||0)*100 —
          * u.treasure comes from the LCR/burial finds (slice 4); imported
          * treasures carry 0 (the importer never reads the class byte).
@@ -1171,10 +1214,19 @@ static void refit_ships(void) {
     }
 }
 
+/* per-step RNG probe (COLOPY_STEP_RNG=1): parity-debug only, stderr */
+#include <stdio.h>
+#include <stdlib.h>
+void step_rng(const char *name) {
+    static int on = -1;
+    if (on < 0) on = getenv("COLOPY_STEP_RNG") != 0;
+    if (on) fprintf(stderr, "STEP %s %u\n", name, CS.rng);
+}
+
 void turn_step2(void) {
-    refit_ships();
-    advance_improvements();
-    check_immigration();
-    update_congress();
-    check_treasure();
+    refit_ships();               step_rng("refit");
+    advance_improvements();      step_rng("advanceImprovements");
+    check_immigration();         step_rng("checkImmigration");
+    update_congress();           step_rng("updateCongress");
+    check_treasure();            step_rng("checkTreasure");
 }

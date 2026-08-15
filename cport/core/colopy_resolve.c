@@ -99,13 +99,19 @@ int analysis_total(int ui, int is_defender) {
     p.orders = is_rival_side(ui) ? 0 : CS.units[ui].orders;
     p.is_defender = (uint8_t)is_defender;
     p.damaged = CR.unit_damaged[ui];
-    p.veteran = !is_rival_side(ui) &&
-                (prof_is(ui, JX_VET_SOLDIERS) || prof_is(ui, JX_VET_DRAGOONS));
+    /* veteran = the profession title OR the u.veteran object flag
+     * (game.js:6821 — REF landings, mercenaries, the intervention) */
+    p.veteran = CR.unit_veteran[ui] ||
+                (!is_rival_side(ui) &&
+                 (prof_is(ui, JX_VET_SOLDIERS) || prof_is(ui, JX_VET_DRAGOONS)));
     p.artillery = strcmp(dat_units[u->type].name, "Artillery") == 0;
     p.privateer_drake = strcmp(dat_units[u->type].name, "Privateer") == 0 &&
                         ff(FF_DRAKE);
     p.spain_attacker = cs_nation() == 2 && !is_rival_side(ui) &&
                        (u->owner_flags & 0x0F) == cs_nation() && !is_defender;
+    /* §14.3 step 5 (game.js:6875): the King's forces fight at +50%
+     * while the declared war is on. */
+    p.woi_ref_bombard = (CR.woi_flags & WOI_DECLARED) && CR.unit_is_ref[ui];
     p.difficulty = (int8_t)cs_difficulty();
     return combat_total(&p);
 }
@@ -131,6 +137,14 @@ static void become_type(int ui, const char *name) {
  * object references and needs no such care). */
 static int apply_defeat(int loser, int winner) {
     rresolve();
+    /* @HOWTOWIN: the one-shot strategy card after the player's first
+     * victory over the King's forces (game.js:7067). */
+    if (CR.unit_is_ref[loser] &&
+        (CS.units[winner].owner_flags & 0x0F) == cs_nation() &&
+        !CR.unit_is_ref[winner] && !CR.how_to_won) {
+        CR.how_to_won = 1;
+        ev_emit("HOWTOWIN", 0, 0, 0, 0);
+    }
     const dat_units_t *t = &dat_units[CS.units[loser].type];
     /* SHIPS: damaged first, sunk only if already damaged */
     if (t->hull > 0) {
@@ -197,6 +211,21 @@ static int apply_defeat(int loser, int winner) {
                 (uint8_t)((CS.units[loser].owner_flags & 0xF0) | (wn & 0x0F));
             if (vet_lost) CS.units[loser].profession = 0;
             CS.units[loser].orders = 0;
+            /* winner.nation === -2: the Crown's own captures go to
+             * G.refUnits with @SEIZURELAND/@SEIZURESEA, and the capture
+             * key does NOT fire (game.js:7110-7116). */
+            if (CR.unit_is_ref[winner]) {
+                units_order_drop(loser);
+                refs_push(loser);
+                /* loser.nation = winner.nation = -2 (game.js:7104): the
+                 * seized unit IS a REF unit now — it marches, draws the
+                 * declared-war bombard bonus, and its own captures seize */
+                CR.unit_is_ref[loser] = 1;
+                ev_emit(dat_units[CS.units[loser].type].hull > 0
+                            ? "SEIZURESEA" : "SEIZURELAND",
+                        0, 0, t->name, 0);
+                return -1;
+            }
             units_order_drop(loser);         /* removeUnit: leaves G.units */
             /* removeUnit also splices G.natives (game.js:7049) — a loser
              * that had been parked there leaves before re-joining a side */
@@ -276,7 +305,16 @@ static void try_promote(int winner, int w_strength, int total) {
         ev_emit(next == JX_VET_SOLDIERS ? "VETERAN" : "VALOR", 0, 0, ty, 0);
         return;
     }
-    /* @CONTINENTAL: type-advance, WoI only — flags are 0 here */
+    /* @CONTINENTAL: at the ceiling the TYPE advances, war only
+     * (game.js:7209 — Soldiers -> Cont. Army, Dragoons -> Cont. Cav.) */
+    if (CR.woi_flags & WOI_DECLARED) {
+        const char *to = strcmp(ty, "Soldiers") == 0 ? "Cont. Army"
+                       : strcmp(ty, "Dragoons") == 0 ? "Cont. Cav." : 0;
+        if (to) {
+            become_type(winner, to);
+            ev_emit("CONTINENTAL", 0, 0, ty, 0);
+        }
+    }
 }
 
 int resolve_attack(int att_ui, int def_ui) {

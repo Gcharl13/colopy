@@ -83,7 +83,7 @@ COMBAT = """(cases) => {
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
 # uses, seed 1653, so both sides draw the same stream.
-TURNS = """([save, n, agitate, script]) => {
+TURNS = """([save, n, agitate, script, STEPRNG]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
@@ -97,8 +97,10 @@ TURNS = """([save, n, agitate, script]) => {
     const lo = (_s & 0xFFFF) * 214013;
     const hi = ((_s >>> 16) * 214013) & 0xFFFF;
     _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+    G.rngState = _s;   // projected as "rng" — pins stream sync in the diff
     return ((_s >>> 16) & 0x7FFF) / 32768;
   };
+  G.rngState = _s;
   G.crosses = 0; G.bellsTotal = 0; G.dockUnits = []; G.fatherInProgress = null;
   // Optional adversarial seeding (draw-free, mirrored in C): war-footing
   // alarm + own missions on even tribes + hostile tension, so the raid
@@ -110,6 +112,9 @@ TURNS = """([save, n, agitate, script]) => {
       if (v.tribe % 2 === 0) v.mission = { power: G.nation, expert: false };
     }
     for (const t of G.tribes) t.tension = 80;
+    // slice 5: prime the SoL EMA so the Sons of Liberty carry the country
+    // and the DECLARE gate can open — the war chain gets parity coverage.
+    for (const c of G.colonies) { c.rebelA = 20000; c.rebelB = 20000; }
   }
   const evs = [];
   const _show = showEvent, _ask = askEvent;
@@ -152,6 +157,7 @@ TURNS = """([save, n, agitate, script]) => {
     if (nx < 0 || ny < 0 || nx >= MAP.w || ny >= MAP.h) return false;
     if (tileWater(at(nx, ny))) return false;
     if (G.natives.some(q => q.x === nx && q.y === ny)) return false;
+    if (G.refUnits.some(q => q.x === nx && q.y === ny)) return false;
     for (const r of G.rivals) {
       if (r.units.some(q => q.x === nx && q.y === ny)) return false;
       if (r.colonies.some(q => q.x === nx && q.y === ny)) return false;
@@ -165,7 +171,9 @@ TURNS = """([save, n, agitate, script]) => {
       if (u.ship) {
         // slice 3: an idle ship sails home now and then; the splice
         // shifts the list and the loop steps past the slot (mirrored).
-        if (u.orders === 0 && (t + k) % 17 === 0 && t > 0) { sailForEurope(u); continue; }
+        if (u.orders === 0 && (t + k) % 17 === 0 && t > 0 && !woiLocked()) {
+          sailForEurope(u); continue;
+        }
         // slice 4c: a water step (interception, naval attack, parley;
         // the sea lane's SAILHOME dialog is inert so skip its tiles)
         const [dx, dy] = DIRS8[(t + k) % 8];
@@ -237,6 +245,7 @@ TURNS = """([save, n, agitate, script]) => {
       if (rows.length) euroContextCommit(rows[(t >> 2) % rows.length]);
     }
     if (t % 5 === 2) { G.euroMenu = 'recruit'; G.euroMenuRow = 1; euroMenuCommit(); }
+    if (t % 9 === 4) declareIndependence();   // slice 5: gates + the DECLARE ask
     if (t % 7 === 3) { G.euroMenu = 'purchase';
                        G.euroMenuRow = Math.floor(t / 7) % 6; euroMenuCommit(); }
   };
@@ -251,13 +260,50 @@ TURNS = """([save, n, agitate, script]) => {
     return h;
   };
   const fatherIdx = (n) => DATA.fathers.findIndex(f => f.name === n);
+  // Per-step RNG probe (STEPRNG flag): wrap each endTurn step to log
+  // [name, rngState] — the C mirror is COLOPY_STEP_RNG=1 (step_rng()).
+  if (STEPRNG) {
+    G._steps = [];
+    const wrap = (name, fn) => (...a) => {
+      const r = fn(...a);
+      G._steps.push([name, G.rngState >>> 0]);
+      return r;
+    };
+    payUpkeep = wrap('payUpkeep', payUpkeep);
+    advanceImprovements = wrap('advanceImprovements', advanceImprovements);
+    checkImmigration = wrap('checkImmigration', checkImmigration);
+    updateCongress = wrap('updateCongress', updateCongress);
+    checkTreasure = wrap('checkTreasure', checkTreasure);
+    nativeTick = wrap('nativeTick', nativeTick);
+    nativeDemands = wrap('nativeDemands', nativeDemands);
+    attemptConversions = wrap('attemptConversions', attemptConversions);
+    ageConverts = wrap('ageConverts', ageConverts);
+    nativeMoveAI = wrap('nativeMoveAI', nativeMoveAI);
+    rivalTurn = wrap('rivalTurn', rivalTurn);
+    newsTick = wrap('newsTick', newsTick);
+    kingWarCycle = wrap('kingWarCycle', kingWarCycle);
+    kingTaxDemand = wrap('kingTaxDemand', kingTaxDemand);
+    advanceGoTo = wrap('advanceGoTo', advanceGoTo);
+    runWar = wrap('runWar', runWar);
+    toryUprising = wrap('toryUprising', toryUprising);
+    shoreBombardment = wrap('shoreBombardment', shoreBombardment);
+    spanishSuccession = wrap('spanishSuccession', spanishSuccession);
+    aiDiplomacyTick = wrap('aiDiplomacyTick', aiDiplomacyTick);
+    offerMercenaries = wrap('offerMercenaries', offerMercenaries);
+    checkIntervention = wrap('checkIntervention', checkIntervention);
+    driftMarket = wrap('driftMarket', driftMarket);
+    advanceCrossings = wrap('advanceCrossings', advanceCrossings);
+  }
   const out = [];
   for (let t = 0; t < n; t++) {
+    if (STEPRNG) { G._steps = []; G._steps.push(['turn-start', G.rngState >>> 0]); }
     if (script) scriptTurn(t);
     // PHASE-3 CLOSE: the REAL engine step, not a hand-built prefix.
     endTurn();
     // --- projection ---
     out.push({ turn: G.turn, year: G.year, season: G.season,
+      rng: G.rngState >>> 0,
+      ...(STEPRNG ? { steps: G._steps.slice() } : {}),
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
       unpaid: G.upkeepUnpaid ? 1 : 0,
       colonies: G.colonies.map(c => ({ name: c.name,
@@ -280,6 +326,11 @@ TURNS = """([save, n, agitate, script]) => {
       punits: G.units.map(u => [u.x, u.y, u.orders | 0, u.work | 0,
         u.movesLeft, u.tools | 0,
         u.profession ? DATA.jobexpert.indexOf(u.profession) : -1]),
+      woi: [G.flags | 0, G.razed | 0, G.royalFund | 0,
+        G.ref['Regulars'] | 0, G.ref['Cavalry'] | 0,
+        G.ref['Man-O-War'] | 0, G.ref['Artillery'] | 0],
+      refs: G.refUnits.map(u => [u.x, u.y,
+        DATA.units.findIndex(x => x.name === u.type)]),
       holds: G.units.map(u => (u.hold || []).map(h => [h.good, h.qty])),
       europe: G.europe.map(e => [
         DATA.units.findIndex(x => x.name === e.type),
@@ -325,7 +376,8 @@ def main():
         elif mode == "turns":
             data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
                                          "agitate" in sys.argv[4:],
-                                         "script" in sys.argv[4:]])
+                                         "script" in sys.argv[4:],
+                                         "steprng" in sys.argv[4:]])
         else:
             data = page.evaluate(COMBAT, cases)
         browser.close()

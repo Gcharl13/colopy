@@ -108,6 +108,7 @@ void cr_reset_from_load(void);   /* seed runtime from the loaded records */
 void units_session_seed(void);   /* importer's runtime unit setup (moves,
                                   * orders) — session entry, NOT load */
 void colony_turn(int ci);
+void step_rng(const char *name); /* COLOPY_STEP_RNG=1 parity probe (stderr) */
 void turn_step_prefix(void);     /* the ported endTurn prefix */
 void turn_step2(void);           /* refit/improvements/immigration/congress/treasure */
 void turn_step3(void);           /* the native pass (§19.11) + vanish filter */
@@ -174,6 +175,19 @@ void run_village_action(int id);              /* runVillageAction (6494) —
 void run_meeting(int rn, int via_ship);       /* runMeeting (game.js:8254) */
 int  naval_attack(int att_ui, int def_ui);    /* navalAttack (game.js:6895) */
 int  rel_at_war(int a, int b);
+/* ---- the War of Independence (colopy_woi.c) — Phase 5 slice 5 ---------- */
+#define WOI_DECLARED 1
+#define WOI_INTERVENTION 2
+#define WOI_WON 8
+int  national_sol(void);              /* nationalSoL (game.js:8856) */
+int  woi_locked(void);                /* woiLocked (game.js:8145) */
+void declare_independence(void);      /* declareIndependence (game.js:9007) */
+void run_war(void);                   /* runWar (game.js:9127) */
+void tory_uprising(void);             /* toryUprising (game.js:9306) */
+void offer_mercenaries(void);         /* offerMercenaries (game.js:9235) */
+void check_intervention(void);        /* checkIntervention (game.js:9327) */
+void refs_push(int ui);               /* G.refUnits.push */
+void end_game_sequence(void);         /* endGameSequence (game.js:8119) */
 int  rel_have_treaty(int a, int b);
 int  rel_parley_eligible(int rn);
 void rel_declare_war(int a, int b);
@@ -385,6 +399,22 @@ typedef struct {
     uint8_t unit_slip[COLOPY_MAX_UNITS]; /* u.slipChecked: one interception
                                           * check per move order, reset by
                                           * the endTurn refresh */
+    /* Slice 5 — the War of Independence (§18.3; game.js:8865-9356).
+     * The King's expeditionary units are records with the 0x0F owner
+     * sentinel + unit_is_ref (JS G.refUnits, mkUnit-born, veteran). */
+    uint8_t woi_flags;               /* 1 declared / 2 intervention / 8 won */
+    uint16_t declared_year;
+    int16_t ref_pool[4];             /* Regulars/Cavalry/Man-O-War/Artillery */
+    int32_t royal_fund;
+    uint8_t razed;
+    uint8_t nat_band;                /* national SoL band, 0xFF unset */
+    uint8_t warned_ports, warned_pop, lost_war, ambush_hinted;
+    uint8_t merc_seen, intervention_watch;
+    uint8_t how_to_won;              /* @HOWTOWIN one-shot (G.howToWon) */
+    uint8_t unit_is_ref[COLOPY_MAX_UNITS];
+    uint8_t unit_veteran[COLOPY_MAX_UNITS];  /* JS u.veteran object flag */
+    uint8_t refs_order[COLOPY_MAX_UNITS];    /* G.refUnits order */
+    uint16_t n_refs;
     uint8_t unit_rival_born[COLOPY_MAX_UNITS];
     /* "u.moves is undefined": seeded = rival_born, but CLEARED by
      * becomeType (game.js:7061 assigns u.moves) — a demoted rival object

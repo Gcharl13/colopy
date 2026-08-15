@@ -321,7 +321,7 @@ Status column is maintained by hand as porting proceeds:
 | `exitToDos` | 8055 | 31 |  | todo |
 | `tutOnce` | 8087 | 27 |  | todo |
 | `endGameSequence` | 8115 | 29 |  | ported |
-| `woiLocked` | 8145 | 3 |  | todo |
+| `woiLocked` | 8145 | 3 |  | ported |
 | `retire` | 8149 | 18 |  | ported |
 | `relKey` | 8168 | 0 |  | todo |
 | `relWar` | 8169 | 0 |  | todo |
@@ -349,7 +349,7 @@ Status column is maintained by hand as porting proceeds:
 | `kingsCut` | 8511 | 3 |  | ported (inline in check_treasure) |
 | `treasureValue` | 8515 | 0 |  | ported (CR.unit_treasure * 100) |
 | `hasGalleon` | 8516 | 3 |  | ported (units + europe scan) |
-| `cashTreasureInFull` | 8520 | 7 |  | todo |
+| `cashTreasureInFull` | 8520 | 7 |  | ported (check_treasure declared branch) |
 | `offerGalleon` | 8528 | 21 |  | ported (in check_treasure: gross/cut wired to unit_treasure) |
 | `checkTreasure` | 8550 | 16 |  | ported |
 | `SEEN` | 8567 | 0 |  | todo |
@@ -370,21 +370,21 @@ Status column is maintained by hand as porting proceeds:
 | `dsum` | 8730 | 5 |  | ported (dsum_roll) |
 | `enterRumour` | 8736 | 115 |  | ported (enter_rumour — full outcome tree, LOSTCITY0 picks, SCREWED) |
 | `nationalSoL` | 8852 | 12 |  | ported |
-| `seedREF` | 8865 | 13 |  | todo |
-| `refEra` | 8879 | 14 |  | todo |
+| `seedREF` | 8865 | 13 |  | ported (load reads globals +0x5A..0x60 — the importer overwrite, not the formula) |
+| `refEra` | 8879 | 14 |  | ported (in grow_ref) |
 | `petitionLowerTaxes` | 8894 | 18 |  | todo |
-| `growREF` | 8913 | 38 |  | todo |
+| `growREF` | 8913 | 38 |  | ported |
 | `kingWarCycle` | 8952 | 52 |  | ported |
-| `declareIndependence` | 9005 | 38 |  | todo |
-| `mobilizeContinentals` | 9044 | 37 |  | todo |
+| `declareIndependence` | 9005 | 38 |  | ported |
+| `mobilizeContinentals` | 9044 | 37 |  | ported |
 | `coastalColonies` | 9082 | 3 |  | todo |
-| `refWave` | 9086 | 36 |  | todo |
-| `runWar` | 9123 | 102 |  | todo |
+| `refWave` | 9086 | 36 |  | ported |
+| `runWar` | 9123 | 102 |  | ported |
 | `mercPrice` | 9226 | 4 |  | todo |
-| `offerMercenaries` | 9231 | 45 |  | todo |
+| `offerMercenaries` | 9231 | 45 |  | ported |
 | `solAnnounce` | 9277 | 24 |  | ported |
-| `toryUprising` | 9302 | 20 |  | todo |
-| `checkIntervention` | 9323 | 45 |  | todo |
+| `toryUprising` | 9302 | 20 |  | ported |
+| `checkIntervention` | 9323 | 45 |  | ported |
 | `scoreParts` | 9369 | 155 |  | ported |
 | `professionIcon` | 9590 | 4 |  | todo |
 | `professionIconByName` | 9595 | 6 |  | todo |

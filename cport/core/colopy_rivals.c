@@ -140,7 +140,8 @@ static void meeting_withdraw(int rn) {
  * are 0 = accept the treaty, 1 = demand a withdrawal (rows 2/3 — threat
  * and alliance — are unreachable under the scripted answers). */
 static void meeting_peace_hub(int rn) {
-    const char *key = have_treaty(cs_nation(), rn)
+    const char *key = (CR.woi_flags & WOI_DECLARED) ? "PEACEUSA"
+        : have_treaty(cs_nation(), rn)
         ? (meeting_tone(rn) ? "OLDPEACEMEEK" : "OLDPEACEMANLY")
         : (meeting_tone(rn) ? "PEACEMEEK" : "PEACEMANLY");
     ev_emit(key, 0, 0, dat_nations[cs_nation()].adjective,
@@ -164,8 +165,8 @@ static void meeting_topic(int rn) {
      * the peace hub. */
     if ((CR.war_matrix[me][rn] & REL_PRIVATEER) && !at_war(me, rn)) {
         CR.war_matrix[me][rn] &= (uint8_t)~REL_PRIVATEER;
-        ev_emit("PIRACY", 0, 0, dat_nations[me].adjective,
-                dat_regionname[rn]);
+        ev_emit((CR.woi_flags & WOI_DECLARED) ? "PIRACYUSA" : "PIRACY",
+                0, 0, dat_nations[me].adjective, dat_regionname[rn]);
         int k = ask_choice();
         if (k == 1) {
             int priv = -1;
@@ -202,7 +203,7 @@ static void meeting_topic(int rn) {
             }
         }
         if (besiegers && gate()) {
-            ev_emit("SIEGES", 0, 0, dat_nations[me].adjective,
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "SIEGESUSA" : "SIEGES", 0, 0, dat_nations[me].adjective,
                     dat_nations[rn].adjective);
             /* game.js:8302: row 1 recalls the besiegers to the nearest own
              * colony (the engine sends them "to Europe"; nearest-colony is
@@ -251,7 +252,7 @@ static void meeting_topic(int rn) {
             if (x != me && x != rn && CR.rivals[x].met &&
                 have_treaty(me, x) && at_war(rn, x)) third = x;
         if (third >= 0 && gate()) {
-            ev_emit("APOSTATES", 0, 0, dat_nations[third].adjective, 0);
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "APOSTATESUSA" : "APOSTATES", 0, 0, dat_nations[third].adjective, 0);
             /* game.js:8326: row 1 breaks the treaty and joins B's war */
             if (ask_choice() == 1) {
                 CR.treaty_matrix[me][third] &= (uint8_t)~REL_TREATY;
@@ -270,7 +271,7 @@ static void meeting_topic(int rn) {
             if (CR.tension[t] >= 40) heathen = t;
         if (heathen >= 0 && !at_war(me, rn) && gate() &&
             (int)rng_next() <= 11141) {    /* Math.random() < 0.34 */
-            ev_emit("HEATHEN", 0, 0, dat_tribes[heathen].name, 0);
+            ev_emit((CR.woi_flags & WOI_DECLARED) ? "HEATHENUSA" : "HEATHEN", 0, 0, dat_tribes[heathen].name, 0);
             /* game.js:8340: row 1 turns on the tribe (@PISS4 cause) */
             if (ask_choice() == 1) adjust_tension(heathen, 100, 4);
             meeting_peace_hub(rn);
@@ -280,7 +281,7 @@ static void meeting_topic(int rn) {
     /* @TRIBUTE — B's gold extortion, after the grace period */
     if (!in_grace && !at_war(me, rn) && gate()) {
         int32_t want = demand_value(500);
-        ev_emit("TRIBUTE", want, 0, dat_nations[me].adjective,
+        ev_emit((CR.woi_flags & WOI_DECLARED) ? "TRIBUTEUSA" : "TRIBUTE", want, 0, dat_nations[me].adjective,
                 dat_regionname[rn]);
         /* game.js:8350: row 1 pays (NOTENOUGH if broke); a refusal that
          * passes the action gate escalates to war (@WARMEEK/@WARMANLY) */
@@ -312,7 +313,8 @@ static void meeting_topic(int rn) {
  * (HELLOFIRST when ungreeted); a player SHIP knocking is HELLOAHOY. */
 void run_meeting(int rn, int via_ship) {
     rival_rt *r = &CR.rivals[rn];
-    const char *key = !r->greeted ? (via_ship ? "HELLOAHOY" : "HELLOFIRST")
+    const char *key = (CR.woi_flags & WOI_DECLARED) ? "HELLOUSA"
+        : !r->greeted ? (via_ship ? "HELLOAHOY" : "HELLOFIRST")
         : meeting_tone(rn) ? "HELLOMEEK" : "HELLOMANLY";
     r->greeted = 1;
     CR.parley_lock[rn] = (uint16_t)(cs_turn() + PARLEY_LOCKOUT);
@@ -550,7 +552,7 @@ void rival_turn(void) {
  * ==================================================================== */
 
 /* nationalSoL (game.js:8856): pop-weighted colony SoL + Simon Bolivar. */
-static int national_sol(void) {
+int national_sol(void) {
     int pop = 0;
     long acc = 0;
     for (int ci = 0; ci < CS.n_colonies; ci++) {
@@ -581,7 +583,8 @@ static void news_tick(void) {
         if (!r->met) continue;
         /* the independence race (PowerRecord +0x02 unmodeled — a flagged
          * random walk stands in) */
-        if (cs_year() >= 1650 && !r->independent) {
+        if (cs_year() >= 1650 && !r->independent &&
+            !(CR.woi_flags & WOI_DECLARED)) {
             int v = r->rebel_pct + ((int)rng_next() <= 19660 ? 1 : -1);
             if (v < 0) v = 0;
             r->rebel_pct = (uint8_t)v;
@@ -748,7 +751,7 @@ static void news_tick(void) {
 /* kingWarCycle (game.js:8956): the Crown's European war — grant + veteran
  * soldiers on entry, tax relief on exit, mercy/frigate rolls between. */
 static void king_war_cycle(void) {
-    if (CR.retired) return;                      /* (and never once WoI) */
+    if ((CR.woi_flags & WOI_DECLARED) || CR.retired) return;
     int me = cs_nation();
     PowerRecord *p = &CS.powers[me];
     if (CR.king_war_rival < 0) {
@@ -831,6 +834,7 @@ static void king_war_cycle(void) {
  * pretext severity @0x361CC — the ask is stubbed, so the tax never moves
  * headless (row 0 is the callback's). */
 static void king_tax_demand(void) {
+    if (CR.woi_flags & WOI_DECLARED) return;   /* no King to obey (8648) */
     int me = cs_nation();
     PowerRecord *p = &CS.powers[me];
     if (cs_turn() < 30 || p->tax_rate > 85) return;
@@ -935,7 +939,10 @@ static int power_strength(int rn) {
     return s;
 }
 static void spanish_succession(void) {
-    if (CR.succession) return;                   /* (and never once WoI) */
+    if (CR.succession) return;
+    /* never once independence is declared (game.js:7000) — the gate sits
+     * BEFORE the R(600) draw, so it also keeps the streams aligned */
+    if (CR.woi_flags & WOI_DECLARED) return;
     if (national_sol() >= 75) return;
     int me = cs_nation();
     int list[3], nl = 0;
@@ -1005,7 +1012,7 @@ static void ai_diplomacy_tick(void) {
  * screen leaving the map — which closes the parley gate.  scoreParts is
  * draw-free.  DAT_SCORENAMES_COUNT is a scalar macro from the text
  * header; the strings themselves stay in the droppable text unit. */
-static void end_game_sequence(void) {
+void end_game_sequence(void) {
     CR.retired = 1;
     ev_emit("EXPLOITS", 0, 0, 0, 0);
     (void)R(DAT_SCORENAMES_COUNT);       /* the joke-name notice pick */
@@ -1020,21 +1027,37 @@ static void end_game_sequence(void) {
 /* The retirement clock (endTurn:10800). */
 static void retirement_check(void) {
     if (CR.retired) return;
-    int ncol = 0;
-    for (int ci = 0; ci < CS.n_colonies; ci++)
-        if ((CS.colonies[ci].owner_power & 3) == cs_nation()) ncol++;
-    if (cs_year() >= 1600 && !ncol && cs_turn() > 30) {
-        ev_emit("LOSENOCOLONIES", 0, 0, 0, 0);
-        end_game_sequence();
-        return;
-    }
-    if (cs_year() >= 1790 && !CR.soon_warned) {
-        CR.soon_warned = 1;
-        ev_emit("SOONRETIRING0", 0, 0, 0, 0);
-    }
-    if (cs_year() >= 1800) {
-        ev_emit("RETIRING", 0, 0, 0, 0);
-        end_game_sequence();
+    if (!(CR.woi_flags & WOI_DECLARED)) {
+        int ncol = 0;
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation()) ncol++;
+        if (cs_year() >= 1600 && !ncol && cs_turn() > 30) {
+            ev_emit("LOSENOCOLONIES", 0, 0, 0, 0);
+            end_game_sequence();
+            return;
+        }
+        if (cs_year() >= 1790 && !CR.soon_warned) {
+            CR.soon_warned = 1;
+            ev_emit("SOONRETIRING0", 0, 0, 0, 0);
+        }
+        if (cs_year() >= 1800) {
+            ev_emit("RETIRING", 0, 0, 0, 0);
+            end_game_sequence();
+        }
+    } else if (!(CR.woi_flags & WOI_WON)) {
+        /* the war-weary clock (endTurn:10815): G.soonWarned2 shares the
+         * CR field with the pre-war warning — both fire once and the
+         * branches are exclusive by WOI_DECLARED, so one latch serves
+         * only if the declaration cannot happen after 1790; it can, so
+         * the second warning gets its own bit (the high bit). */
+        if (cs_year() >= 1840 && !(CR.soon_warned & 0x80)) {
+            CR.soon_warned |= 0x80;
+            ev_emit("SOONRETIRING1", 0, 0, 0, 0);
+        }
+        if (cs_year() >= 1850) {
+            ev_emit("RETIRING2", 0, 0, 0, 0);
+            end_game_sequence();
+        }
     }
 }
 
@@ -1096,18 +1119,20 @@ static void advance_goto(void) {
  *     (G.flags stays 0: the declaration is an ask the stub never answers);
  */
 void turn_step5(void) {
-    rival_turn();
-    news_tick();
-    king_war_cycle();
-    king_tax_demand();
+    rival_turn();          step_rng("rivalTurn");
+    news_tick();           step_rng("newsTick");
+    king_war_cycle();      step_rng("kingWarCycle");
+    king_tax_demand();     step_rng("kingTaxDemand");
     /* advanceTradeRoutes(); — no-op (above) */
-    advance_goto();
-    /* runWar(); toryUprising(); — WoI-gated */
-    shore_bombardment();
-    spanish_succession();
-    ai_diplomacy_tick();
-    /* offerMercenaries(); checkIntervention(); — WoI-gated */
-    market_drift();
-    advance_crossings();
-    retirement_check();
+    advance_goto();        step_rng("advanceGoTo");
+    run_war();             step_rng("runWar");
+    tory_uprising();       step_rng("toryUprising");
+    shore_bombardment();   step_rng("shoreBombardment");
+    spanish_succession();  step_rng("spanishSuccession");
+    ai_diplomacy_tick();   step_rng("aiDiplomacyTick");
+    offer_mercenaries();   step_rng("offerMercenaries");
+    check_intervention();  step_rng("checkIntervention");
+    market_drift();        step_rng("driftMarket");
+    advance_crossings();   step_rng("advanceCrossings");
+    retirement_check();    step_rng("retirement");
 }
