@@ -129,13 +129,14 @@ def compare_sweep(mode):
     sys.exit(1 if bad else 0)
 
 
-def compare_turns(save, n):
+def compare_turns(save, n, agitate=False):
+    extra = ["agitate"] if agitate else []
     js = json.loads(subprocess.run(
-        [sys.executable, ROOT / "tools/sim_trace.py", "turns", save, str(n)],
-        capture_output=True, text=True, check=True).stdout)
+        [sys.executable, ROOT / "tools/sim_trace.py", "turns", save, str(n)]
+        + extra, capture_output=True, text=True, check=True).stdout)
     subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
     cc = [json.loads(l) for l in subprocess.run(
-        ["./smoke", "--turns", save, str(n)], cwd=ROOT / "cport/host",
+        ["./smoke", "--turns", save, str(n)] + extra, cwd=ROOT / "cport/host",
         capture_output=True, text=True, check=True).stdout.splitlines()]
     tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
     bad = 0
@@ -157,9 +158,11 @@ def compare_turns(save, n):
 
 def main():
     if sys.argv[1:2] == ["turns"]:
+        agitate = "agitate" in sys.argv[2:]
         bad = 0
         for save in ("savnewcolony", "savraleigh", "sav1653"):
-            bad += compare_turns(save, int(sys.argv[2]) if len(sys.argv) > 2 else 20)
+            bad += compare_turns(save, int(sys.argv[2]) if len(sys.argv) > 2
+                                 and sys.argv[2].isdigit() else 20, agitate)
         sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["market"]:
         compare_market()

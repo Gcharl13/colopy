@@ -22,9 +22,6 @@
 #include "colopy_sim.h"
 #include "../data/colopy_data.h"
 
-void ev_emit(const char *key, int32_t p0, int32_t p1,
-             const char *s0, const char *s1);
-
 #define FOOD_FOR_COLONIST 200
 #define REBEL_DIVISOR_SEED 200
 
@@ -79,10 +76,9 @@ static void wr16(uint8_t *p, uint16_t v) { p[0] = (uint8_t)v; p[1] = (uint8_t)(v
 static int father_owned(int idx) {
     return idx >= 0 && ((CS.powers[cs_nation()].founding_fathers >> idx) & 1);
 }
+/* JS c.buildings.includes(name) — the runtime list, membership by NAME. */
 static int has_bld(int ci, int idx) {
-    if (idx < 0) return 0;
-    if (colony_buildings(&CS.colonies[ci]) & (1ull << idx)) return 1;
-    return 0;
+    return idx >= 0 && colony_has_name(ci, dat_buildings[idx].name);
 }
 
 /* runtime sol (JS c.sol): seeded from the record ratio at load, then owned
@@ -95,6 +91,27 @@ void cr_reset_from_load(void) {
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         CR.col[i].sol_band = 0xFF;
+        colony_bld_seed(i);
+    }
+    /* natives: every non-ship record owned >= 4 is a brave (importer
+     * game.js:10431); home = the tribe's nearest village by Manhattan
+     * distance, first on tie (the stable-sort [0]). */
+    memset(CR.native_heading, 0xFF, sizeof(CR.native_heading));
+    memset(CR.native_home, 0xFF, sizeof(CR.native_home));   /* -1 */
+    for (int i = 0; i < CS.n_units; i++) {
+        const UnitRecord *u = &CS.units[i];
+        int own = u->owner_flags & 0x0F;
+        if (own < 4 || u->type >= DAT_UNITS_COUNT ||
+            dat_units[u->type].hull > 0) continue;
+        int best = -1, bd = 0;
+        for (int v = 0; v < CS.n_villages; v++) {
+            if (CS.villages[v].owner_tribe != own) continue;  /* tribe+4 */
+            int dx = CS.villages[v].map_x - u->map_x;
+            int dy = CS.villages[v].map_y - u->map_y;
+            int d = (dx < 0 ? -dx : dx) + (dy < 0 ? -dy : dy);
+            if (best < 0 || d < bd) { best = v; bd = d; }
+        }
+        CR.native_home[i] = (int8_t)best;
     }
     /* tribes: tension toward the player from the 0x4E-stride TribeData
      * (+0x46 + nation*2, clamp 0..100 -- importer game.js:10301) */
@@ -115,7 +132,7 @@ static void colonist_add(ColonyRecord *c) {
     c->profession[c->population] = 0;
     c->population++;
 }
-static void colonist_remove_last(int ci) {
+void colonist_remove_last(int ci) {
     ColonyRecord *c = &CS.colonies[ci];
     if (!c->population) return;
     c->population--;
@@ -136,6 +153,7 @@ static const uint8_t FAMS[][3] = {
 };
 static void building_add(int ci, int idx) {
     ColonyRecord *c = &CS.colonies[ci];
+    colony_bld_append(ci, idx);      /* JS c.buildings.push(name) */
     if (idx == bld_by_name("Warehouse Expansion")) { c->warehouse_level = 2; return; }
     for (unsigned f = 0; f < sizeof(FAMS) / sizeof(FAMS[0]); f++) {
         int lo = FAMS[f][0], w = FAMS[f][1], len = FAMS[f][2];
@@ -455,16 +473,15 @@ void colony_turn(int ci) {
 }
 
 /* ---- the prefix turn step ---------------------------------------------- */
+/* colonyUpkeep (game.js:2487): reduce over the LIST entries, each priced by
+ * DATA.buildings.find(name) — the first row with that name. */
 static int32_t total_upkeep(void) {
     int32_t due = 0;
     for (int ci = 0; ci < CS.n_colonies; ci++) {
         if ((CS.colonies[ci].owner_power & 3) != cs_nation()) continue;
-        for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
-            if (has_bld(ci, b)) due += dat_buildings[b].upkeep;
-        if (CS.colonies[ci].warehouse_level >= 2) {
-            int e = bld_by_name("Warehouse Expansion");
-            if (e >= 0) due += dat_buildings[e].upkeep;
-        }
+        const colony_rt *r = &CR.col[ci];
+        for (int k = 0; k < r->n_bld; k++)
+            due += dat_buildings[bld_first_row(r->bld[k])].upkeep;
     }
     return due;
 }
@@ -495,7 +512,12 @@ void turn_step_prefix(void) {
     for (int ci = 0; ci < CS.n_colonies; ci++)
         if ((CS.colonies[ci].owner_power & 3) == cs_nation())
             colony_turn(ci);
-    /* deferred @VANISH removals */
+    colony_vanish_filter();
+}
+
+/* deferred @VANISH removals (game.js:10745 and again at 10777 after the
+ * native pass — raid-razed colonies leave the same way) */
+void colony_vanish_filter(void) {
     for (int ci = CS.n_colonies - 1; ci >= 0; ci--) {
         if (!CR.col[ci].vanished) continue;
         memmove(&CS.colonies[ci], &CS.colonies[ci + 1],
@@ -504,6 +526,39 @@ void turn_step_prefix(void) {
                 (size_t)(CS.n_colonies - ci - 1) * sizeof(colony_rt));
         CS.n_colonies--;
     }
+}
+
+/* Unit-pool mutators for the native pass. The JS lists are G.units /
+ * G.natives; the C pool is the record array plus the parallel CR arrays,
+ * so append/remove keep every per-unit runtime column aligned. */
+int unit_append(int type, int owner, int x, int y) {
+    if (CS.n_units >= COLOPY_MAX_UNITS) return -1;  /* capacity, not engine */
+    int i = CS.n_units++;
+    UnitRecord *u = &CS.units[i];
+    memset(u, 0, sizeof(*u));
+    u->map_x = (uint8_t)x;
+    u->map_y = (uint8_t)y;
+    u->type = (uint8_t)type;
+    u->owner_flags = (uint8_t)(owner & 0x0F);
+    u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
+    CR.unit_work[i] = 0;
+    CR.unit_offered[i] = 0;
+    CR.unit_faith[i] = 0;
+    CR.unit_damaged[i] = 0;
+    CR.native_heading[i] = 0xFF;
+    CR.native_home[i] = -1;
+    return i;
+}
+void unit_remove(int ui) {
+    size_t n = (size_t)(CS.n_units - ui - 1);
+    memmove(&CS.units[ui], &CS.units[ui + 1], n * sizeof(UnitRecord));
+    memmove(&CR.unit_work[ui], &CR.unit_work[ui + 1], n);
+    memmove(&CR.unit_offered[ui], &CR.unit_offered[ui + 1], n);
+    memmove(&CR.unit_faith[ui], &CR.unit_faith[ui + 1], n);
+    memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);
+    memmove(&CR.native_heading[ui], &CR.native_heading[ui + 1], n);
+    memmove(&CR.native_home[ui], &CR.native_home[ui + 1], n);
+    CS.n_units--;
 }
 
 /* ======================================================================
@@ -533,10 +588,10 @@ static int father_by_name(const char *n) {
         if (strcmp(dat_fathers[i].name, n) == 0) return i;
     return -1;
 }
-static int tension_band(int n) {
+int tension_band(int n) {
     return n >= 100 ? 4 : n >= 75 ? 3 : n >= 40 ? 2 : n >= 20 ? 1 : 0;
 }
-static void adjust_tension(int tribe, int delta, int cause) {
+void adjust_tension(int tribe, int delta, int cause) {
     if (tribe < 0 || tribe >= 8) return;
     if (delta > 0 && (cs_nation() == 1 ||
                       father_owned(father_by_name("Pocahontas"))))
@@ -819,7 +874,31 @@ static void check_treasure(void) {
     }
 }
 
+/* @REFIT (game.js:10754): a damaged ship spending the turn in a port with a
+ * Drydock/Shipyard is fixed — the one-turn timer is the JS port's flagged
+ * stand-in (the engine's repair timer is unread). */
+static void refit_ships(void) {
+    for (int ui = 0; ui < CS.n_units; ui++) {
+        if (!unit_on_map_player(ui)) continue;
+        if (dat_units[CS.units[ui].type].hull <= 0 || !CR.unit_damaged[ui])
+            continue;
+        int home = -1;
+        for (int ci = 0; ci < CS.n_colonies; ci++)
+            if ((CS.colonies[ci].owner_power & 3) == cs_nation() &&
+                CS.colonies[ci].map_x == CS.units[ui].map_x &&
+                CS.colonies[ci].map_y == CS.units[ui].map_y) { home = ci; break; }
+        if (home < 0) continue;
+        if (colony_has_name(home, "Drydock") ||
+            colony_has_name(home, "Shipyard")) {
+            CR.unit_damaged[ui] = 0;
+            ev_emit("REFIT", 0, 0, dat_units[CS.units[ui].type].name,
+                    CS.colonies[home].name);
+        }
+    }
+}
+
 void turn_step2(void) {
+    refit_ships();
     advance_improvements();
     check_immigration();
     update_congress();

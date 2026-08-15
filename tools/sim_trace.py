@@ -83,7 +83,7 @@ COMBAT = """(cases) => {
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
 # uses, seed 1653, so both sides draw the same stream.
-TURNS = """([save, n]) => {
+TURNS = """([save, n, agitate]) => {
   const KEY = { savstart: 'savStart', sav1653: 'sav1653',
                 savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
   importSav(b64bytes(DATA[KEY[save]]));
@@ -96,6 +96,17 @@ TURNS = """([save, n]) => {
     return ((_s >>> 16) & 0x7FFF) / 32768;
   };
   G.crosses = 0; G.bellsTotal = 0; G.dockUnits = []; G.fatherInProgress = null;
+  // Optional adversarial seeding (draw-free, mirrored in C): war-footing
+  // alarm + own missions on even tribes + hostile tension, so the raid
+  // ladder / conversion / mission-tick paths all get parity coverage even
+  // where the fixtures are peaceful.
+  if (agitate) {
+    for (const v of G.villages) {
+      v.alarm = 0x90;
+      if (v.tribe % 2 === 0) v.mission = { power: G.nation, expert: false };
+    }
+    for (const t of G.tribes) t.tension = 80;
+  }
   const evs = [];
   const _show = showEvent, _ask = askEvent;
   showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
@@ -126,10 +137,26 @@ TURNS = """([save, n]) => {
     for (const c of G.colonies) colonyTurn(c);
     if (G.colonies.some(c => c.vanished))
       G.colonies = G.colonies.filter(c => !c.vanished);
+    // @REFIT (endTurn:10754)
+    for (const u of G.units) {
+      const home = u.ship && u.damaged && colonyAt(u.x, u.y);
+      if (home && ['Drydock', 'Shipyard'].some(b => home.buildings.includes(b))) {
+        u.damaged = false;
+        showEvent('REFIT', { STRING0: u.type, STRING1: home.name });
+      }
+    }
     advanceImprovements();
     checkImmigration();
     updateCongress();
     checkTreasure();
+    // the native pass (endTurn:10767-10780, §19.11 order)
+    nativeTick();
+    nativeDemands();
+    attemptConversions();
+    ageConverts();
+    nativeMoveAI();
+    if (G.colonies.some(c => c.vanished))
+      G.colonies = G.colonies.filter(c => !c.vanished);
     // --- projection ---
     out.push({ turn: G.turn, year: G.year, season: G.season,
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
@@ -145,6 +172,15 @@ TURNS = """([save, n]) => {
       dock: G.dock.map(d => d.name),
       dockUnits: G.dockUnits.map(d => d.name || d),
       tension: G.tribes.map(t => t.tension),
+      frac: G.tribes.map(t => t.frac || 0),
+      villages: G.villages.map(v => [v.pop, v.growth || 0, v.alarm || 0,
+        v.mission ? (v.mission.power | (v.mission.expert ? 16 : 0)) : -1,
+        v.braveOwed ? 1 : 0]),
+      natives: G.natives.map(q => [q.x, q.y,
+        q.heading === undefined ? -1 : q.heading]),
+      units: G.units.length,
+      converts: G.units.filter(u => u.profession === 'Indian Converts')
+        .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
       maphash: fnv(),
       events: evs.splice(0) });
   }
@@ -172,7 +208,9 @@ def main():
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
         elif mode == "turns":
-            data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3])])
+            data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3]),
+                                         len(sys.argv) > 4 and
+                                         sys.argv[4] == "agitate"])
         else:
             data = page.evaluate(COMBAT, cases)
         browser.close()

@@ -10,7 +10,7 @@
 #include "colopy_core.h"
 #include "colopy_sim.h"
 
-#define EVQ_CAP 32
+#define EVQ_CAP 64
 
 static colopy_event evq[EVQ_CAP];
 static int evq_head, evq_len;

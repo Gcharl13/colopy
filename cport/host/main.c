@@ -124,16 +124,29 @@ static void dump_combat(void) {
  * The projection is the parity diff unit (plan section B); the JS trace
  * emits the identical shape. Events drain per turn; TUTORIAL*-keyed
  * differences are the compare script's to filter. */
-static void dump_turns(const char *save, int n) {
+static void dump_turns(const char *save, int n, int agitate) {
     if (strcmp(save, "savstart") == 0) colopy_load_sav(savstart, sizeof(savstart));
     else if (strcmp(save, "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
     else if (strcmp(save, "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
     else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
     colopy_init(1653);                       /* the shared trace seed */
+    if (agitate) {
+        /* the trace's adversarial seeding — mirrors sim_trace.py TURNS */
+        for (int v = 0; v < CS.n_villages; v++) {
+            CR.alarm[v] = 0x90;
+            if (((CS.villages[v].owner_tribe - 4) % 2) == 0)
+                CS.villages[v].mission = cs_nation();
+        }
+        for (int t = 0; t < 8; t++) CR.tension[t] = 80;
+    }
+    int job_convert = -1;
+    for (int i = 0; i < DAT_JOBEXPERT_COUNT; i++)
+        if (strcmp(dat_jobexpert[i], "Indian Converts") == 0) job_convert = i;
     for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
     for (int t = 0; t < n; t++) {
         turn_step_prefix();
         turn_step2();
+        turn_step3();
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
@@ -154,26 +167,14 @@ static void dump_turns(const char *save, int n) {
             for (int g = 0; g < N_GOODS; g++)
                 printf("%s%u", g ? "," : "", c->stock[g]);
             printf("],\"bld\":[");
-            /* Mirror the JS projection exactly: names collapse to their
-             * FIRST @BUILDING row (upgrade tiers reuse display names --
-             * rows 9..11 are all "Town Hall"), then dedup + sort. */
+            /* Mirror the JS projection exactly: the RUNTIME building list,
+             * names collapsed to their FIRST @BUILDING row (upgrade tiers
+             * reuse display names -- rows 9..11 are all "Town Hall"), then
+             * dedup + sort. */
             {
-                uint64_t mask = colony_buildings(c);
-                int wexp = -1;
-                for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
-                    if (strcmp(dat_buildings[b].name, "Warehouse Expansion") == 0)
-                        wexp = b;
-                if (c->warehouse_level >= 2 && wexp >= 0)
-                    mask |= 1ull << wexp;
                 uint64_t first = 0;
-                for (int b = 0; b < DAT_BUILDINGS_COUNT; b++) {
-                    if (!((mask >> b) & 1)) continue;
-                    int fi = b;
-                    for (int a = 0; a < b; a++)
-                        if (strcmp(dat_buildings[a].name,
-                                   dat_buildings[b].name) == 0) { fi = a; break; }
-                    first |= 1ull << fi;
-                }
+                for (int k = 0; k < CR.col[ci].n_bld; k++)
+                    first |= 1ull << bld_first_row(CR.col[ci].bld[k]);
                 int fb = 1;
                 for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
                     if ((first >> b) & 1) {
@@ -201,6 +202,46 @@ static void dump_turns(const char *save, int n) {
         printf("],\"tension\":[");
         for (int d = 0; d < 8; d++)
             printf("%s%u", d ? "," : "", CR.tension[d]);
+        printf("],\"frac\":[");
+        for (int d = 0; d < 8; d++)
+            printf("%s%u", d ? "," : "", CR.tribe_frac[d]);
+        /* villages [pop, growth, alarm, mission|-1, braveOwed] */
+        printf("],\"villages\":[");
+        for (int v = 0; v < CS.n_villages; v++) {
+            const NativeSettlement *vs = &CS.villages[v];
+            printf("%s[%u,%u,%u,%d,%u]", v ? "," : "", vs->population,
+                   vs->growth, CR.alarm[v],
+                   vs->mission == 0xFF ? -1 : (vs->mission & 0x1F),
+                   CR.brave_owed[v]);
+        }
+        /* natives (braves) [x, y, heading|-1] in G.natives order */
+        printf("],\"natives\":[");
+        first = 1;
+        for (int ui = 0; ui < CS.n_units; ui++) {
+            const UnitRecord *u = &CS.units[ui];
+            if ((u->owner_flags & 0x0F) < 4 || u->type >= DAT_UNITS_COUNT ||
+                dat_units[u->type].hull > 0) continue;
+            printf("%s[%u,%u,%d]", first ? "" : ",", u->map_x, u->map_y,
+                   CR.native_heading[ui] == 0xFF ? -1
+                                                 : CR.native_heading[ui]);
+            first = 0;
+        }
+        /* the JS G.units census + the convert countdowns */
+        {
+            int nu = 0;
+            for (int ui = 0; ui < CS.n_units; ui++)
+                if (unit_on_map_player(ui)) nu++;
+            printf("],\"units\":%d,\"converts\":[", nu);
+        }
+        first = 1;
+        for (int ui = 0; ui < CS.n_units; ui++) {
+            const UnitRecord *u = &CS.units[ui];
+            if (!unit_on_map_player(ui) || u->profession != job_convert)
+                continue;
+            printf("%s[%u,%u,%d]", first ? "" : ",", u->map_x, u->map_y,
+                   CR.unit_faith[ui] ? CR.unit_faith[ui] : -1);
+            first = 0;
+        }
         {
             uint32_t h = 2166136261u;
             for (int i = 0; i < COLOPY_PLANE; i++) {
@@ -222,7 +263,8 @@ static void dump_turns(const char *save, int n) {
 
 int main(int argc, char **argv) {
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
-        dump_turns(argv[2], atoi(argv[3]));
+        dump_turns(argv[2], atoi(argv[3]),
+                   argc > 4 && strcmp(argv[4], "agitate") == 0);
         return 0;
     }
     if (argc > 1 && strcmp(argv[1], "--movecost") == 0) { dump_movecost(); return 0; }

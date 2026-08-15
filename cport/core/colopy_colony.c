@@ -84,6 +84,56 @@ int colony_has(const ColonyRecord *c, const char *building_name) {
     return 0;
 }
 
+/* ---- the RUNTIME building list (JS c.buildings) ------------------------
+ * Seeded in the importer's push order (game.js:10366-10373: FAMS families
+ * ascending, then Warehouse Expansion), then owned by construction and the
+ * raid removals — the record field cannot express a torn-out middle link,
+ * so every sim-side query below reads THIS list, by NAME, exactly like the
+ * JS includes()/find() calls it mirrors. */
+void colony_bld_seed(int ci) {
+    colony_rt *r = &CR.col[ci];
+    const ColonyRecord *c = &CS.colonies[ci];
+    uint64_t built = colony_buildings(c);
+    r->n_bld = 0;
+    for (int b = 0; b < DAT_BUILDINGS_COUNT && b < 48; b++)
+        if ((built >> b) & 1) r->bld[r->n_bld++] = (uint8_t)b;
+    if (c->warehouse_level >= 2) {
+        int e = building_index("Warehouse Expansion");
+        if (e >= 0 && !colony_has_name(ci, "Warehouse Expansion"))
+            r->bld[r->n_bld++] = (uint8_t)e;
+    }
+}
+int colony_has_name(int ci, const char *name) {
+    const colony_rt *r = &CR.col[ci];
+    for (int k = 0; k < r->n_bld; k++)
+        if (strcmp(dat_buildings[r->bld[k]].name, name) == 0) return 1;
+    return 0;
+}
+/* JS bldIndex / DATA.buildings.find(name): upgrade tiers reuse display
+ * names (rows 9..11 are all "Town Hall"), and every JS name lookup lands
+ * on the FIRST row. */
+int bld_first_row(int idx) {
+    for (int a = 0; a < idx; a++)
+        if (strcmp(dat_buildings[a].name, dat_buildings[idx].name) == 0)
+            return a;
+    return idx;
+}
+void colony_bld_append(int ci, int idx) {
+    colony_rt *r = &CR.col[ci];
+    if (idx >= 0 && r->n_bld < sizeof(r->bld)) r->bld[r->n_bld++] = (uint8_t)idx;
+}
+/* splice(indexOf(name)) — remove the FIRST occurrence of the name
+ * (game.js:5735). */
+void colony_bld_remove_name(int ci, const char *name) {
+    colony_rt *r = &CR.col[ci];
+    for (int k = 0; k < r->n_bld; k++) {
+        if (strcmp(dat_buildings[r->bld[k]].name, name) != 0) continue;
+        memmove(&r->bld[k], &r->bld[k + 1], (size_t)(r->n_bld - k - 1));
+        r->n_bld--;
+        return;
+    }
+}
+
 /* The workplaces (game.js:2451): a job id and its building chain, first
  * link's @BUILDING index + chain length (chain rows are consecutive in
  * @BUILDING — that is what makes the tier-packing work). Job ids resolved
@@ -113,15 +163,16 @@ static void wp_resolve(void) {
     }
 }
 
-/* chainCount (game.js:2478): links of the job's chain the colony owns. */
-static int chain_count(const ColonyRecord *c, int job) {
+/* chainCount (game.js:2478): links of the job's chain the colony owns —
+ * name membership over the RUNTIME list, like the JS includes(). */
+int chain_count_i(int ci, int job) {
     wp_resolve();
-    uint64_t built = colony_buildings(c);
     for (unsigned i = 0; i < N_WP; i++) {
         if (WP[i].job_id != job) continue;
         int n = 0;
         for (int j = 0; j < WP[i].len; j++)
-            if (built & (1ull << (WP[i].first_id + j))) n++;
+            if (colony_has_name(ci, dat_buildings[WP[i].first_id + j].name))
+                n++;
         /* the Expansion counts for the warehouse family only — not part of
          * any workplace chain, so nothing to add here */
         return n;
@@ -203,8 +254,9 @@ static int field_yield(const ColonyRecord *c, int sol, int job,
 /* indoorRate (game.js:2508): 3 base, 6 with the second link; the INDOOR_BASE
  * itself is the port's reading (no rate column exists in @BUILDING), the
  * factory-tier 2/3 raw cost IS byte-verified (@0x8EB1). */
-static int indoor_yield(const ColonyRecord *c, int sol, int job, uint8_t prof) {
-    int rate = chain_count(c, job) >= 2 ? 6 : 3;
+static int indoor_yield(int ci, int sol, int job, uint8_t prof) {
+    const ColonyRecord *c = &CS.colonies[ci];
+    int rate = chain_count_i(ci, job) >= 2 ? 6 : 3;
     int y = rate + tory_penalty(c, sol);
     if (is_expert(prof, job)) y *= 2;
     if (CR.upkeep_unpaid) y /= 2;
@@ -272,10 +324,10 @@ void colony_produce(int ci, colony_output *r) {
         int job = c->occupation[k];
         int g = job_good(job);
         if (g == J_NONE) continue;
-        int want = indoor_yield(c, sol, job, c->profession[k]);
+        int want = indoor_yield(ci, sol, job, c->profession[k]);
         int raw = raw_for(g);
         if (raw >= 0) {
-            int factory = chain_count(c, job) > 2;
+            int factory = chain_count_i(ci, job) > 2;
             int avail = c->stock[raw] + r->out[raw] - r->consumed[raw];
             int potential = want;
             while (want > 0) {
