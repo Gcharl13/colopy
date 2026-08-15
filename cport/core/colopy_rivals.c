@@ -830,6 +830,30 @@ static void king_war_cycle(void) {
     }
 }
 
+/* petitionLowerTaxes (game.js:8898): the Europe screen's 'k' key.  A
+ * rock-bottom rate backfires (@KINGRAISE); a rate above the era cap MAY
+ * drop (@KINGLOWER — the roll is behind the cap test, JS && order);
+ * else @KINGNOTHING. */
+void king_petition(void) {
+    PowerRecord *p = &CS.powers[cs_nation()];
+    int d = cs_difficulty();
+    if (p->tax_rate <= 1) {
+        int delta = 2 * (1 + R(d > 1 ? d : 1));
+        p->tax_rate = (uint8_t)(p->tax_rate + delta);
+        ev_emit("KINGRAISE", delta, p->tax_rate, 0, 0);
+        return;
+    }
+    int cap = ((d & ~1) * 2 + 4) * ((int)cs_turn() / 400 + 1);
+    if (p->tax_rate > cap + 5 && 1 + R(d + 1) == 1) {
+        int delta = 1 + R(5 - d > 1 ? 5 - d : 1);
+        if (delta > p->tax_rate) delta = p->tax_rate;
+        p->tax_rate = (uint8_t)(p->tax_rate - delta);
+        ev_emit("KINGLOWER", delta, p->tax_rate, 0, 0);
+        return;
+    }
+    ev_emit("KINGNOTHING", 0, 0, 0, 0);
+}
+
 /* kingTaxDemand (game.js:8647): cadence func_036138, raise func_034AE0,
  * pretext severity @0x361CC — the ask is stubbed, so the tax never moves
  * headless (row 0 is the callback's). */

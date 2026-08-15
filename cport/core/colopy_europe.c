@@ -342,6 +342,59 @@ void euro_recruit(int slot) {
     roll_immigrant(&CR.dock[slot]);
 }
 
+/* the recruit row's passage price (euroMenuRows, game.js:4665) —
+ * exported so the input layer can mirror euroMenuCommit's generic
+ * gold gate (menu stays open when it fails) */
+int32_t euro_recruit_cost(int slot) {
+    if (slot < 0 || slot > 2) return 0;
+    return dat_classes[immigrant_band(&CR.dock[slot])].cost;
+}
+
+/* the TRAIN menu order (euroMenuRows, game.js:4670): the jobtrain rows
+ * sorted by cost — Array.sort is stable, so ties keep table order
+ * (insertion sort mirrors that) */
+static void euro_train_order(int order[DAT_JOBTRAIN_COUNT]) {
+    for (int i = 0; i < DAT_JOBTRAIN_COUNT; i++) {
+        int j = i;
+        while (j > 0 &&
+               dat_jobtrain[order[j - 1]].cost > dat_jobtrain[i].cost) {
+            order[j] = order[j - 1];
+            j--;
+        }
+        order[j] = i;
+    }
+}
+int32_t euro_train_cost(int sorted_row) {
+    if (sorted_row < 0 || sorted_row >= DAT_JOBTRAIN_COUNT) return 0;
+    int order[DAT_JOBTRAIN_COUNT];
+    euro_train_order(order);
+    return dat_jobtrain[order[sorted_row]].cost;
+}
+/* euroMenuCommit 'train' (game.js:4933): pay the Royal University, the
+ * trainee waits on the dock; @PURCHASETAX is the port's FLAGGED 1-in-3
+ * stand-in for the unread trigger rate (the roll is consumed before
+ * the tax cap test, like the JS && order). */
+void euro_train(int sorted_row) {
+    if (sorted_row < 0 || sorted_row >= DAT_JOBTRAIN_COUNT) return;
+    int order[DAT_JOBTRAIN_COUNT];
+    euro_train_order(order);
+    int j = order[sorted_row];
+    PowerRecord *p = &CS.powers[cs_nation()];
+    if (dat_jobtrain[j].cost > p->gold) return;
+    p->gold -= dat_jobtrain[j].cost;
+    if (CR.n_dock_units <
+        (int)(sizeof(CR.dock_units) / sizeof(CR.dock_units[0]))) {
+        immigrant *m = &CR.dock_units[CR.n_dock_units++];
+        memset(m, 0, sizeof(*m));
+        m->kind = 1;                         /* a jobtrain expert */
+        m->idx = (uint8_t)j;
+    }
+    if ((int)((rng_next() * 3u) >> 15) == 0 && p->tax_rate < 75) {
+        p->tax_rate++;
+        ev_emit("PURCHASETAX", 1, p->tax_rate, 0, 0);
+    }
+}
+
 /* PURCHASE_CATALOG (game.js:4388) + euroMenuCommit (4919): the cost gate
  * and the DEBIT come BEFORE the @REALLYBUY ask — a declined purchase
  * still spends the gold (the JS flow verbatim). */
@@ -351,10 +404,14 @@ PURCHASE[6] = {
     { "Merchantman", 2000, 0 }, { "Galleon", 3000, 0 },
     { "Privateer", 2000, 0 },  { "Frigate", 5000, 0 },
 };
+int32_t euro_purchase_price(int row) {
+    if (row < 0 || row >= 6) return 0;
+    return PURCHASE[row].price +
+           (PURCHASE[row].escalates ? CR.artillery_bought * 100 : 0);
+}
 void euro_purchase(int row) {
     if (row < 0 || row >= 6) return;
-    int32_t price = PURCHASE[row].price +
-                    (PURCHASE[row].escalates ? CR.artillery_bought * 100 : 0);
+    int32_t price = euro_purchase_price(row);
     PowerRecord *p = &CS.powers[cs_nation()];
     if (price > p->gold) return;
     p->gold -= price;

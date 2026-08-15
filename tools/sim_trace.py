@@ -145,6 +145,10 @@ INPUT = """([save, events]) => {
       _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
       return ((_s >>> 16) & 0x7FFF) / 32768;
     };
+    // the TURNS-trace dock convention: the importer rolled the three
+    // candidates on the NATIVE Math.random (before the LCG install), so
+    // both harnesses re-roll them from the shared stream
+    G.dock = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
   } else {
     G.screen = 'title'; G.menuRow = 0; G.difficulty = 0; G.nation = 0;
     G.leader = '';
@@ -172,6 +176,9 @@ INPUT = """([save, events]) => {
       cp: G.colonyPopup === 'build' ? 2 : G.colonyPopup === 'occupation' ? 3
           : G.colonyPopup ? 1 : 0, cpr: G.colonyPopupRow || 0,
       cs: G.colonistSel || 0,
+      em: G.euroMenu ? ({ recruit: 1, purchase: 2, train: 3, ship: 4,
+                          dockunit: 5 })[G.euroMenu] || 0 : 0,
+      emr: G.euroMenuRow || 0,
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };

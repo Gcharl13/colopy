@@ -314,13 +314,15 @@ static void in_project(void) {
            "\"bp\":%d,\"rep\":\"%s\",\"sel\":%d,\"vx\":%d,"
            "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,"
            "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,"
-           "\"cn\":%d,\"vr\":%d,\"cp\":%d,\"cpr\":%d,\"cs\":%d,",
+           "\"cn\":%d,\"vr\":%d,\"cp\":%d,\"cpr\":%d,\"cs\":%d,"
+           "\"em\":%d,\"emr\":%d,",
            UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
            UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
            UI.open_menu, UI.menu_sel, UI.view_mode,
            UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden,
            UI.colony_numbers, UI.village_row,
-           UI.colony_popup, UI.colony_popup_row, UI.colonist_sel);
+           UI.colony_popup, UI.colony_popup_row, UI.colonist_sel,
+           UI.euro_menu, UI.euro_menu_row);
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,
@@ -347,6 +349,9 @@ int input_main(const char *save) {
             colopy_load_sav(savnewcolony, sizeof(savnewcolony));
         colopy_init(1653);
         units_session_seed();
+        /* the TURNS-trace dock convention (sim_trace.py:465): three
+         * candidates rolled from the shared stream */
+        for (int d = 0; d < 3; d++) roll_immigrant(&CR.dock[d]);
         UI.screen = SCR_MAP;
         UI.nation = (int8_t)cs_nation();
         UI.difficulty = (int8_t)cs_difficulty();

@@ -146,6 +146,21 @@ def map_script():
     K("ArrowLeft")
     K("l")                           # buy 100 of the market cursor good
     K("+")                           # buy 10 more
+    # the r/p/t sub-menus (openEuroMenu): recruit slot 0, train the
+    # second-cheapest expert, open+close purchase, petition the King
+    K("r")
+    K("ArrowDown")
+    K("Enter")                       # recruit dock candidate 0
+    K("t")
+    K("ArrowDown")
+    K("ArrowDown")
+    K("Enter")                       # train (gold gate may keep it open)
+    K("Escape")                      # close it if the gate held
+    K("p")
+    K("ArrowDown")
+    K("Escape")                      # purchase menu: browse + close
+    K("k")                           # petition the King
+    K("s")                           # @SAILAWAY openDialog: inert
     K("Escape")                      # -> map
     # colony-view keys: live if an askZoom opened a colony, no-ops on map
     K("2")

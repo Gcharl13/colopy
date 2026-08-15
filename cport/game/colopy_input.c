@@ -666,10 +666,46 @@ void in_key(const char *k, int alt, int shift) {
         break;
     }
     case SCR_EUROPE: {
-        /* §26.9 slice-2 keys: arrows walk the market cursor, L/=/+ buy
-         * to the active ship, ESC/x/E exit.  The sell key runs the
-         * @HOWMUCH5 amount dialog (inert under the shared harness
-         * conventions) and the r/p/t sub-menus follow later. */
+        /* an open sub-menu owns the keyboard (onKey europe case,
+         * game.js:12519): arrows walk the rows, Enter/space commits
+         * (euroMenuCommit — the generic gold gate keeps the menu open
+         * on failure), ESC closes */
+        if (UI.euro_menu) {
+            int n = UI.euro_menu == 1 ? 4        /* (None) + 3 candidates */
+                  : UI.euro_menu == 2 ? 6        /* PURCHASE_CATALOG */
+                  : 1 + DAT_JOBTRAIN_COUNT;      /* None + sorted experts */
+            if (key_is(k, "ArrowUp"))
+                UI.euro_menu_row = (int8_t)((UI.euro_menu_row + n - 1) % n);
+            if (key_is(k, "ArrowDown"))
+                UI.euro_menu_row = (int8_t)((UI.euro_menu_row + 1) % n);
+            if (key_is(k, "Enter") || key_is(k, " ")) {
+                int row = UI.euro_menu_row;
+                if ((UI.euro_menu == 1 || UI.euro_menu == 3) && row == 0) {
+                    UI.euro_menu = 0;            /* the "(None)" head */
+                } else {
+                    int32_t gold = CS.powers[cs_nation()].gold;
+                    int32_t cost =
+                        UI.euro_menu == 1 ? euro_recruit_cost(row - 1)
+                      : UI.euro_menu == 2 ? euro_purchase_price(row)
+                                          : euro_train_cost(row - 1);
+                    if (cost <= gold) {          /* fail = euroMsg only */
+                        if (UI.euro_menu == 1) euro_recruit(row - 1);
+                        else if (UI.euro_menu == 2) euro_purchase(row);
+                        else euro_train(row - 1);
+                        UI.euro_menu = 0;
+                    }
+                }
+            }
+            if (key_is(k, "Escape")) UI.euro_menu = 0;
+            break;
+        }
+        /* §26.9 keys: arrows walk the market cursor, L/=/+ buy to the
+         * active ship, R/1 P/2 T/3 open the recruit/purchase/train
+         * menus (openEuroMenu, game.js:4778), K petitions the King,
+         * S asks @SAILAWAY (openDialog — inert under the shared
+         * conventions, so unbound), ESC/x/E exit.  The sell key runs
+         * the @HOWMUCH5 amount dialog — its numeric-entry modal is a
+         * later slice. */
         if (key_is(k, "ArrowLeft"))
             UI.market_sel = (int8_t)((UI.market_sel + 15) % 16);
         if (key_is(k, "ArrowRight"))
@@ -687,6 +723,16 @@ void in_key(const char *k, int alt, int shift) {
                     euro_buy_to_ship(port, UI.market_sel, qty);
             }
         }
+        if (key_is(k, "r") || key_is(k, "R") || key_is(k, "1")) {
+            UI.euro_menu = 1; UI.euro_row = 0; UI.euro_menu_row = 0;
+        }
+        if (key_is(k, "p") || key_is(k, "P") || key_is(k, "2")) {
+            UI.euro_menu = 2; UI.euro_row = 1; UI.euro_menu_row = 0;
+        }
+        if (key_is(k, "t") || key_is(k, "T") || key_is(k, "3")) {
+            UI.euro_menu = 3; UI.euro_row = 2; UI.euro_menu_row = 0;
+        }
+        if (key_is(k, "k") || key_is(k, "K")) king_petition();
         if (key_is(k, "Escape") || key_is(k, "x") || key_is(k, "e") ||
             key_is(k, "E"))
             UI.screen = SCR_MAP;

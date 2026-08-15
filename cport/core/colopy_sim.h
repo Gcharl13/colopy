@@ -217,6 +217,11 @@ void euro_sell_from_ship(int ei, int good, int32_t qty); /* sellFromShip */
 void euro_buy_to_ship(int ei, int good, int32_t qty);    /* buyToShip */
 void euro_recruit(int slot);          /* euroMenuCommit 'recruit' row */
 void euro_purchase(int row);          /* euroMenuCommit PURCHASE + REALLYBUY */
+void euro_train(int sorted_row);      /* euroMenuCommit 'train' row */
+int32_t euro_recruit_cost(int slot);  /* the row's passage price */
+int32_t euro_purchase_price(int row); /* purchasePrice incl. escalation */
+int32_t euro_train_cost(int sorted_row);
+void king_petition(void);             /* petitionLowerTaxes (game.js:8898) */
 void euro_arm_dock(int k, int verb_row); /* euroContextCommit 'arm' */
 int  euro_arm_rows(int k, uint8_t *verbs_out); /* dockUnitRows arm subset */
 /* entry_unit_type / hold_add are declared below the immigrant and
