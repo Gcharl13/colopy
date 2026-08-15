@@ -372,7 +372,7 @@ static int raid_target_score(int vi, int *score_out) {
             for (int ui = 0; ui < CS.n_units; ui++) {
                 const UnitRecord *u = &CS.units[ui];
                 if ((u->owner_flags & 0x0F) != nn) continue;
-                if (u->map_x != x || u->map_y != y) continue;
+                if (CR.runit_x[ui] != x || CR.runit_y[ui] != y) continue;
                 if (u->type >= DAT_UNITS_COUNT ||
                     dat_units[u->type].hull > 0) continue;
                 int a = dat_units[u->type].attack;
@@ -551,7 +551,7 @@ static int tile_occupied(int self, int x, int y) {
         if (unit_on_map_player(ui) && u->map_x == x && u->map_y == y) return 1;
         int own = u->owner_flags & 0x0F;
         if (own < 4 && own != cs_nation() && u->type < DAT_UNITS_COUNT &&
-            u->map_x == x && u->map_y == y)
+            CR.runit_x[ui] == x && CR.runit_y[ui] == y)
             return 1;
     }
     for (int v = 0; v < CS.n_villages; v++)

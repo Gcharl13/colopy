@@ -109,6 +109,7 @@ void colony_turn(int ci);
 void turn_step_prefix(void);     /* the ported endTurn prefix */
 void turn_step2(void);           /* refit/improvements/immigration/congress/treasure */
 void turn_step3(void);           /* the native pass (§19.11) + vanish filter */
+void rival_turn(void);           /* rivalTurn (game.js:7514) + checkContact */
 int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
 void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
@@ -142,6 +143,22 @@ typedef struct {
  * literal. */
 typedef struct { uint8_t kind, idx; } immigrant;
 
+/* A rival power's colony (JS r.colonies member): a runtime OBJECT, not a
+ * record — the importer builds these from the rival-owned ColonyRecords
+ * (game.js:10374-10380) and rivalTurn founds new ones with no record at
+ * all.  Coordinates are SIGNED like the JS numbers: the sailer's y-drift
+ * can step off the map edge (off-map reads Ocean, game.js:469), and the
+ * port mirrors that arithmetic rather than wrapping it. */
+typedef struct { int16_t x, y; uint8_t level, pop; } rival_colony;
+typedef struct {
+    uint8_t met, greeted;
+    uint8_t next_colony;         /* colony-name rotation counter */
+    uint8_t n_col;
+    rival_colony col[32];
+    int32_t gold;                /* seeded from the power record +0x2A */
+    uint8_t attitude;            /* importer seeds 8 (game.js:10333) */
+} rival_rt;
+
 typedef struct {
     uint8_t upkeep_unpaid;       /* @UPKEEP half-rate latch */
     uint8_t time_changed;        /* @TIMECHANGE one-shot */
@@ -162,6 +179,15 @@ typedef struct {
     uint8_t native_heading[COLOPY_MAX_UNITS]; /* 0..7, 0xFF = unset */
     int8_t  native_home[COLOPY_MAX_UNITS];  /* home-village index, -1 none */
     uint8_t raid_seen;           /* woodcut-13 latch (JS G.raidSeen) */
+    /* Rival unit positions live HERE, signed, after load (JS r.units[].x/y
+     * go negative off the west edge; the record byte cannot).  Every
+     * rival-position read goes through these; the record coords are stale
+     * once rivalTurn has moved a unit — FLAGGED like the building list. */
+    int16_t runit_x[COLOPY_MAX_UNITS], runit_y[COLOPY_MAX_UNITS];
+    rival_rt rivals[4];          /* indexed by NATION; player's entry unused */
+    uint16_t parley_lock[4];     /* G.parleyLock, per rival nation */
+    uint8_t war_matrix[4][4];    /* REL bits, G.warMatrix — empty at load */
+    uint8_t treaty_matrix[4][4]; /* REL bits, G.treatyMatrix */
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;

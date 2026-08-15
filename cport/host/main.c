@@ -147,6 +147,7 @@ static void dump_turns(const char *save, int n, int agitate) {
         turn_step_prefix();
         turn_step2();
         turn_step3();
+        rival_turn();
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
@@ -241,6 +242,33 @@ static void dump_turns(const char *save, int n, int agitate) {
             printf("%s[%u,%u,%d]", first ? "" : ",", u->map_x, u->map_y,
                    CR.unit_faith[ui] ? CR.unit_faith[ui] : -1);
             first = 0;
+        }
+        /* rivals in nation order (the JS G.rivals build order); units in
+         * the r.units order = ships then land, each record-ascending */
+        printf("],\"rivals\":[");
+        first = 1;
+        for (int rn = 0; rn < 4; rn++) {
+            if (rn == (int)cs_nation()) continue;
+            const rival_rt *r = &CR.rivals[rn];
+            printf("%s{\"n\":%d,\"cols\":[", first ? "" : ",", rn);
+            first = 0;
+            for (int k = 0; k < r->n_col; k++)
+                printf("%s[%d,%d]", k ? "," : "", r->col[k].x, r->col[k].y);
+            printf("],\"units\":[");
+            int fu = 1;
+            for (int pass = 0; pass < 2; pass++)
+                for (int ui = 0; ui < CS.n_units; ui++) {
+                    const UnitRecord *u = &CS.units[ui];
+                    if ((u->owner_flags & 0x0F) != rn ||
+                        u->type >= DAT_UNITS_COUNT) continue;
+                    int ship = dat_units[u->type].hull > 0;
+                    if ((pass == 0) != (ship != 0)) continue;
+                    printf("%s[%d,%d]", fu ? "" : ",", CR.runit_x[ui],
+                           CR.runit_y[ui]);
+                    fu = 0;
+                }
+            printf("],\"greeted\":%u,\"lock\":%u}", r->greeted,
+                   CR.parley_lock[rn]);
         }
         {
             uint32_t h = 2166136261u;

@@ -291,9 +291,9 @@ Status column is maintained by hand as porting proceeds:
 | `resolveAttack` | 7215 | 34 |  | todo |
 | `combatBox` | 7250 | 5 |  | todo |
 | `seedRivals` | 7297 | 15 |  | todo |
-| `checkContact` | 7313 | 48 |  | todo |
+| `checkContact` | 7313 | 48 |  | ported |
 | `newsTick` | 7362 | 147 |  | todo |
-| `rivalTurn` | 7510 | 105 |  | todo |
+| `rivalTurn` | 7510 | 105 |  | ported |
 | `fatherCost` | 7616 | 8 |  | ported |
 | `currentEra` | 7625 | 3 |  | todo |
 | `bellsPerTurn` | 7629 | 5 |  | todo |
@@ -332,14 +332,14 @@ Status column is maintained by hand as porting proceeds:
 | `haveTreaty` | 8181 | 0 |  | todo |
 | `declareWarOn` | 8182 | 5 |  | todo |
 | `signTreaty` | 8188 | 13 |  | todo |
-| `parleyEligible` | 8202 | 7 |  | todo |
+| `parleyEligible` | 8202 | 7 |  | ported |
 | `demandValue` | 8210 | 22 |  | todo |
-| `powerMetric` | 8233 | 7 |  | todo |
-| `meetingTone` | 8241 | 0 |  | todo |
+| `powerMetric` | 8233 | 7 |  | ported |
+| `meetingTone` | 8241 | 0 |  | ported |
 | `meetingSubs` | 8242 | 7 |  | todo |
-| `runMeeting` | 8250 | 11 |  | todo |
-| `meetingTopic` | 8262 | 117 |  | todo |
-| `meetingPeaceHub` | 8380 | 17 |  | todo |
+| `runMeeting` | 8250 | 11 |  | partial (ask-stub topics) |
+| `meetingTopic` | 8262 | 117 |  | partial (ask-stub topics) |
+| `meetingPeaceHub` | 8380 | 17 |  | partial (ask-stub topics) |
 | `acceptTreaty` | 8398 | 6 |  | todo |
 | `rivalForcesNearby` | 8405 | 3 |  | todo |
 | `meetingWithdraw` | 8409 | 20 |  | todo |

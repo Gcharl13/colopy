@@ -113,6 +113,34 @@ void cr_reset_from_load(void) {
         }
         CR.native_home[i] = (int8_t)best;
     }
+    /* rivals (importer game.js:10330-10336, 10374-10380): met, attitude 8,
+     * gold from the power record, colonies from the rival-owned records in
+     * record order; every unit's position mirrored signed. */
+    for (int i = 0; i < CS.n_units; i++) {
+        CR.runit_x[i] = CS.units[i].map_x;
+        CR.runit_y[i] = CS.units[i].map_y;
+    }
+    for (int n = 0; n < 4; n++) {
+        if (n == (int)cs_nation()) continue;
+        rival_rt *r = &CR.rivals[n];
+        r->met = 1;
+        r->attitude = 8;
+        r->gold = CS.powers[n].gold;
+    }
+    for (int i = 0; i < CS.n_colonies; i++) {
+        int own = CS.colonies[i].owner_power & 3;
+        if (own == (int)cs_nation()) continue;
+        rival_rt *r = &CR.rivals[own];
+        if (r->n_col >= (int)(sizeof(r->col) / sizeof(r->col[0]))) continue;
+        int lvl = colony_has_name(i, "Fortress") ? 3
+                : colony_has_name(i, "Fort") ? 2
+                : colony_has_name(i, "Stockade") ? 1 : 0;
+        r->col[r->n_col].x = CS.colonies[i].map_x;
+        r->col[r->n_col].y = CS.colonies[i].map_y;
+        r->col[r->n_col].level = (uint8_t)lvl;
+        r->col[r->n_col].pop = CS.colonies[i].population;
+        r->n_col++;
+    }
     /* tribes: tension toward the player from the 0x4E-stride TribeData
      * (+0x46 + nation*2, clamp 0..100 -- importer game.js:10301) */
     for (int i = 0; i < 8; i++) {
@@ -541,6 +569,8 @@ int unit_append(int type, int owner, int x, int y) {
     u->type = (uint8_t)type;
     u->owner_flags = (uint8_t)(owner & 0x0F);
     u->moves_remaining = (uint8_t)(dat_units[type].movement * 3);
+    CR.runit_x[i] = (int16_t)x;
+    CR.runit_y[i] = (int16_t)y;
     CR.unit_work[i] = 0;
     CR.unit_offered[i] = 0;
     CR.unit_faith[i] = 0;
@@ -558,6 +588,8 @@ void unit_remove(int ui) {
     memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);
     memmove(&CR.native_heading[ui], &CR.native_heading[ui + 1], n);
     memmove(&CR.native_home[ui], &CR.native_home[ui + 1], n);
+    memmove(&CR.runit_x[ui], &CR.runit_x[ui + 1], n * sizeof(int16_t));
+    memmove(&CR.runit_y[ui], &CR.runit_y[ui + 1], n * sizeof(int16_t));
     CS.n_units--;
 }
 

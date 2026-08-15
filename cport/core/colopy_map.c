@@ -17,8 +17,12 @@ int32_t rng_range(int32_t lo, int32_t hi) {
     return lo + (int32_t)((rng_next() * (uint32_t)(hi - lo + 1)) >> 15);
 }
 
+/* game.js:469 `at`: OFF-MAP READS AS OCEAN (25) — an off-map sentinel ship
+ * sails "water" back toward the map edge, and no land query ever sees
+ * ground beyond the border. */
 uint8_t map_at(int x, int y) {
-    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H) return 0;
+    if (x < 0 || y < 0 || x >= COLOPY_MAP_W || y >= COLOPY_MAP_H)
+        return TERR_OCEAN;
     return CS.terrain[y * COLOPY_MAP_W + x];
 }
 /* The JS importer masks the improvement plane to road|plow (0x48) on load;

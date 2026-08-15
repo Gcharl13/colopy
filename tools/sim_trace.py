@@ -111,6 +111,11 @@ TURNS = """([save, n, agitate]) => {
   const _show = showEvent, _ask = askEvent;
   showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
   askEvent = (k, subs, cb, opts) => { evs.push(k); G.dialog = null; };
+  // A woodcut flips G.screen and would silently gate the parley check
+  // (rivalTurn requires screen === 'map') for the rest of a headless run;
+  // in real play the player dismisses it at once.  Model the dismissal.
+  const _wc = woodcutOnce;
+  woodcutOnce = (n, after) => { const r = _wc(n, after); G.screen = 'map'; return r; };
   const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
   G.dock = [rollImmigrant(), rollImmigrant(), rollImmigrant()];
   const fnv = () => {
@@ -157,6 +162,7 @@ TURNS = """([save, n, agitate]) => {
     nativeMoveAI();
     if (G.colonies.some(c => c.vanished))
       G.colonies = G.colonies.filter(c => !c.vanished);
+    rivalTurn();
     // --- projection ---
     out.push({ turn: G.turn, year: G.year, season: G.season,
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
@@ -181,6 +187,11 @@ TURNS = """([save, n, agitate]) => {
       units: G.units.length,
       converts: G.units.filter(u => u.profession === 'Indian Converts')
         .map(u => [u.x, u.y, u.faith === undefined ? -1 : u.faith]),
+      rivals: G.rivals.map(r => ({ n: r.nation,
+        cols: r.colonies.map(c => [c.x, c.y]),
+        units: r.units.map(u => [u.x, u.y]),
+        greeted: r.greeted ? 1 : 0,
+        lock: G.parleyLock[r.nation] || 0 })),
       maphash: fnv(),
       events: evs.splice(0) });
   }
