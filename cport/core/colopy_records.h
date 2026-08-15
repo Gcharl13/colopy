@@ -56,54 +56,77 @@ typedef struct COLOPY_PACKED {
     int32_t  rebel_divisor;         /* +0xC6 */
 } ColonyRecord;
 
-/* UnitRecord — stride 0x1C. docs/DATA_MODEL.md + tools/viceroy_symbols.json. */
+/* UnitRecord — stride 0x1C. Field-alias-confirmed offsets (UNIT_Y +0x01,
+ * UNIT_TYPE +0x02, U_ORDERS +0x08, UNIT_CARGO +0x0C, U_TURN +0x16,
+ * UNIT_CHAIN_* +0x18/+0x1A) plus the SAV-validated reads of the JS importer
+ * (tools +0x15, profession/class +0x17 — game.js:10448/10456). Cargo
+ * quantity bytes past +0x11 are NOT yet mapped (the importer treats further
+ * slots as full holds) — kept as _pad, not guessed. */
 typedef struct COLOPY_PACKED {
     uint8_t  map_x;                 /* +0x00 */
     uint8_t  map_y;                 /* +0x01 */
     uint8_t  type;                  /* +0x02 */
-    uint8_t  owner_flags;           /* +0x03  low nibble = nation */
+    uint8_t  owner_flags;           /* +0x03  low nibble = nation (>=4 tribe) */
     uint8_t  flags;                 /* +0x04 */
     uint8_t  _pad_05[1];
     uint8_t  moves_remaining;       /* +0x06  in thirds */
-    uint8_t  profession;            /* +0x07 */
+    uint8_t  _pad_07[1];
     uint8_t  orders;                /* +0x08 */
     uint8_t  goto_x;                /* +0x09 */
     uint8_t  goto_y;                /* +0x0A */
     uint8_t  _pad_0B[1];
     uint8_t  cargo_slot_count;      /* +0x0C */
-    uint8_t  cargo_kind_packed[3];  /* +0x0D */
-    uint8_t  cargo_amount[6];       /* +0x10 */
+    uint8_t  cargo_kind_packed[3];  /* +0x0D  nibble per slot */
+    uint8_t  cargo_amount[2];       /* +0x10  slots 0..1 (rest unmapped) */
+    uint8_t  _pad_12[3];
+    uint8_t  tools;                 /* +0x15 */
     uint8_t  turns_worked;          /* +0x16 */
-    uint8_t  _pad_17[1];
+    uint8_t  profession;            /* +0x17  @JOB row (SAV_PROFESSION) */
     uint16_t chain_prev;            /* +0x18 */
     uint16_t chain_next;            /* +0x1A */
 } UnitRecord;
 
-/* NativeSettlement — stride 0x12. */
+/* NativeSettlement — stride 0x12, per the SAV-validated JS importer
+ * (game.js:10309-10321): flags +0x03 (0x04 capital, 0x08 chief-seen),
+ * population +0x04, mission byte +0x05 (0xFF none; &0x0F power; 0x10
+ * expert), growth +0x06, per-POWER alarm words +0x0A. (This supersedes the
+ * older curated Ghidra-table guesses of population@+0x06 / mission@+0x0E,
+ * which fall inside the alarm words.) owner_tribe is alias-confirmed
+ * (NSET_OWN @0x54EE = +0x02); stored value = tribe + 4. */
 typedef struct COLOPY_PACKED {
     uint8_t  map_x;                 /* +0x00 */
     uint8_t  map_y;                 /* +0x01 */
-    uint8_t  owner_tribe;           /* +0x02 */
-    uint8_t  _pad_03[3];
-    uint8_t  population;            /* +0x06 */
+    uint8_t  owner_tribe;           /* +0x02  tribe id + 4 */
+    uint8_t  flags;                 /* +0x03 */
+    uint8_t  population;            /* +0x04 */
+    uint8_t  mission;               /* +0x05 */
+    uint8_t  growth;                /* +0x06 */
     uint8_t  _pad_07[3];
-    uint8_t  alarm[4];              /* +0x0A  per-power */
-    uint8_t  mission_power;         /* +0x0E */
-    uint8_t  _pad_0F[2];
-    uint8_t  taught;                /* +0x11 */
+    uint16_t alarm[4];              /* +0x0A  per power */
 } NativeSettlement;
 
-/* PowerRecord — stride 0x13C. spec/systems/colony.md §PowerRecord (price
- * ladder byte-verified: ask func_030566, bid func_030590). */
+/* PowerRecord — stride 0x13C. Offsets = the SAV-validated JS importer reads
+ * (game.js:10276-10296) + spec/systems/colony.md §PowerRecord (price ladder
+ * byte-verified: ask func_030566, bid func_030590; traffic +0x5C). */
 typedef struct COLOPY_PACKED {
-    uint8_t  _pad_00[0x20];
-    uint8_t  boycott[4];            /* +0x20  per-good bitmask (32 bits used as 16) */
-    uint8_t  _pad_24[6];
-    uint32_t gold;                  /* +0x2A */
+    uint8_t  _pad_00[1];
+    uint8_t  tax_rate;              /* +0x01 */
+    uint8_t  _pad_02[5];
+    uint32_t founding_fathers;      /* +0x07  bit i = fathers[i] owned */
+    uint8_t  _pad_0B[1];
+    uint16_t bells;                 /* +0x0C */
+    uint8_t  _pad_0E[0x10];
+    uint16_t artillery_bought;      /* +0x1E  price-escalation counter */
+    uint16_t boycott;               /* +0x20  bit per good */
+    int32_t  kings_fund;            /* +0x22 */
+    uint8_t  _pad_26[4];
+    int32_t  gold;                  /* +0x2A */
     uint8_t  _pad_2E[0x1E];
-    uint8_t  price_level[16];       /* +0x4C  per-good market price index */
+    uint8_t  price_level[16];       /* +0x4C  live bid prices */
     uint16_t traffic[16];           /* +0x5C  per-good traffic accumulator */
-    uint8_t  _pad_7C[0x13C - 0x7C];
+    int32_t  trade_gold[16];        /* +0x7C  F5 net trade value */
+    int32_t  trade_tons[16];        /* +0xBC  F5 net trade units */
+    uint8_t  _pad_FC[0x13C - 0xFC];
 } PowerRecord;
 
 /* AIPersonality — stride 0x34; only +0x31 controller is mapped (0 = human). */

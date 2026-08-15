@@ -1,7 +1,7 @@
 # Host build of the colopy core. `make && make test`.
 CC      ?= gcc
 CFLAGS  ?= -std=c11 -O2 -Wall -Wextra -Werror -I../core -I../data
-OBJ      = ../data/colopy_data.o main.o
+OBJ      = ../data/colopy_data.o ../core/colopy_sav.o main.o
 smoke: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ)
 %.o: %.c

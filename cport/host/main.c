@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "../core/colopy_core.h"
+#include "../core/colopy_state.h"
 #include "../data/colopy_data.h"
 #include "fixtures.h"
 
@@ -33,7 +34,39 @@ int main(void) {
     CHECK(memcmp(savstart, "COLONIZE", 8) == 0, "savStart magic");
     CHECK(memcmp(sav1653, "COLONIZE", 8) == 0, "sav1653 magic");
 
-    printf(fail ? "%d CHECKS FAILED\n" : "phase-0 smoke: all checks pass\n",
+    /* Phase 1 acceptance: .SAV load -> save -> byte-exact on every fixture.
+     * Proves the record strides, block sizes, and count handling all agree
+     * with the real engine's serializer output. */
+    struct { const char *name; const uint8_t *buf; size_t len; } savs[] = {
+        {"savstart", savstart, sizeof(savstart)},
+        {"sav1653", sav1653, sizeof(sav1653)},
+        {"savraleigh", savraleigh, sizeof(savraleigh)},
+        {"savnewcolony", savnewcolony, sizeof(savnewcolony)},
+    };
+    static uint8_t out[80000];
+    for (unsigned i = 0; i < sizeof(savs) / sizeof(savs[0]); i++) {
+        colopy_status st = colopy_load_sav(savs[i].buf, savs[i].len);
+        CHECK(st == COLOPY_OK, "%s load (status %d)", savs[i].name, st);
+        if (st != COLOPY_OK) continue;
+        size_t n = colopy_save_sav(out, sizeof(out));
+        CHECK(n == savs[i].len, "%s size: wrote %u of %u", savs[i].name,
+              (unsigned)n, (unsigned)savs[i].len);
+        if (n == savs[i].len) {
+            int diff = -1;
+            for (size_t k = 0; k < n; k++)
+                if (out[k] != savs[i].buf[k]) { diff = (int)k; break; }
+            CHECK(diff < 0, "%s roundtrip differs at byte 0x%X",
+                  savs[i].name, diff);
+        }
+        colopy_overview ov; colopy_get_overview(&ov);
+        printf("  %-13s year %d s%d turn %3u  units %3u colonies %2u "
+               "villages %2u  tax %2u%%  digest %08X\n",
+               savs[i].name, ov.year, ov.season, ov.turn, ov.n_units,
+               ov.n_colonies, ov.n_settlements, ov.tax_rate, colopy_digest());
+    }
+
+    printf("state footprint: %u bytes\n", (unsigned)sizeof(colopy_state));
+    printf(fail ? "%d CHECKS FAILED\n" : "cport smoke: all checks pass\n",
            fail);
     return fail != 0;
 }
