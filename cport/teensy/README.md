@@ -55,8 +55,10 @@ With the display+input build (`-DCOLOPY_ILI9341`, optionally
 The game loop draws the screen the UI state names (map + pulldowns,
 reports, colony, Europe, boot screens) and overlays the pending game
 event as a popup that swallows the next key — the same modal rule the
-JS runs.  Both the panel flush and the keyboard bridge are UNTESTED ON
-HARDWARE; the checklist below gates that flag.
+JS runs.  The PANEL PATH IS VERIFIED ON HARDWARE (user bring-up
+2026-08-15: ILI9341 with RST on pin 0, flash-embedded pak — the map
+view draws); the USB keyboard bridge is still untested — checklist
+item 6 clears it.
 
 ## Board checklist (hardware bring-up — clears the UNTESTED flags)
 

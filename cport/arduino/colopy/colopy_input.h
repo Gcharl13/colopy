@@ -39,6 +39,12 @@ typedef struct {
     int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
                                       *                2 build */
     int8_t  colonist_sel;            /* G.colonistSel (game.js:566) */
+    int8_t  dlg;                     /* G.dialog: 0 none, 1 = @HOWMUCH5
+                                      * (the numeric sell-amount modal) */
+    char    dlg_entry[24];           /* d.entry (digits, cap 23) */
+    int32_t dlg_max;                 /* the 0..N bound (max = have) */
+    int8_t  dlg_good;                /* HOWMUCH5: the good being sold */
+    int16_t dlg_port;                /* HOWMUCH5: CR.europe port index */
     int8_t  colony_popup_row;
 } colopy_ui;
 

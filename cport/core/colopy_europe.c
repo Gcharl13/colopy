@@ -342,6 +342,13 @@ void euro_recruit(int slot) {
     roll_immigrant(&CR.dock[slot]);
 }
 
+/* a port ship's hold quantity of one good (holdQty, game.js:3306) —
+ * exported for the input layer's @HOWMUCH5 amount bound */
+int32_t euro_hold_qty(int ei, int good) {
+    if (ei < 0 || ei >= CR.n_europe) return 0;
+    return hold_qty(CR.europe[ei].hold, CR.europe[ei].n_hold, good);
+}
+
 /* the recruit row's passage price (euroMenuRows, game.js:4665) —
  * exported so the input layer can mirror euroMenuCommit's generic
  * gold gate (menu stays open when it fails) */

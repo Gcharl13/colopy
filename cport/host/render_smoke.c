@@ -315,14 +315,14 @@ static void in_project(void) {
            "\"vy\":%d,\"om\":%d,\"ms\":%d,\"vm\":%d,"
            "\"col\":%d,\"cv\":%d,\"mks\":%d,\"sh\":%d,"
            "\"cn\":%d,\"vr\":%d,\"cp\":%d,\"cpr\":%d,\"cs\":%d,"
-           "\"em\":%d,\"emr\":%d,",
+           "\"em\":%d,\"emr\":%d,\"dg\":%d,\"dge\":\"%s\",",
            UI.screen, UI.menu_row, UI.difficulty, UI.nation, UI.leader,
            UI.brief_page, UI.report, UI.sel, UI.view_x, UI.view_y,
            UI.open_menu, UI.menu_sel, UI.view_mode,
            UI.colony, UI.colony_view, UI.market_sel, UI.show_hidden,
            UI.colony_numbers, UI.village_row,
            UI.colony_popup, UI.colony_popup_row, UI.colonist_sel,
-           UI.euro_menu, UI.euro_menu_row);
+           UI.euro_menu, UI.euro_menu_row, UI.dlg, UI.dlg_entry);
     if (su >= 0)
         printf("\"u\":[%d,%d,%d,%d],", CS.units[su].map_x,
                CS.units[su].map_y, CS.units[su].orders,

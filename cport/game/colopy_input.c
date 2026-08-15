@@ -163,6 +163,68 @@ static int key_is(const char *k, const char *want) {
     return strcmp(k, want) == 0;
 }
 
+/* ---- the numeric-entry dialog (askAmount, game.js:969) ----------------
+ * The shared conventions stub openDialog but NOT askAmount, so the
+ * @HOWMUCH amount dialogs are LIVE modals on both sides: dialogKey
+ * (game.js:12403) captures every key while one is open — digits append
+ * (cap 23), Backspace trims, Enter commits the entry (an EMPTY entry
+ * takes the FULL amount, the port's flagged convenience reading),
+ * Escape cancels a numeric dialog to 0.  A click commits like Enter
+ * (dialogClick's non-opts arm, game.js:12410). */
+static void dialog_done(int cancel) {
+    int32_t qty;
+    if (cancel) {
+        qty = 0;                             /* closeDialog(-1) -> 0 */
+    } else if (!UI.dlg_entry[0]) {
+        qty = UI.dlg_max;
+    } else {
+        long v = strtol(UI.dlg_entry, 0, 10);
+        qty = v < 0 ? 0 : v > UI.dlg_max ? UI.dlg_max : (int32_t)v;
+    }
+    int kind = UI.dlg;
+    UI.dlg = 0;
+    UI.dlg_entry[0] = 0;
+    if (kind == 1 && qty > 0)        /* HOWMUCH5 finish (game.js:4795) */
+        euro_sell_from_ship(UI.dlg_port, UI.dlg_good, qty);
+}
+static void dialog_key(const char *k) {
+    if (key_is(k, "Enter")) { dialog_done(0); return; }
+    if (key_is(k, "Escape")) { dialog_done(1); return; }
+    if (key_is(k, "Backspace")) {
+        size_t n = strlen(UI.dlg_entry);
+        if (n) UI.dlg_entry[n - 1] = 0;
+        return;
+    }
+    if (k[0] && !k[1] && k[0] >= '0' && k[0] <= '9') {
+        size_t n = strlen(UI.dlg_entry);
+        if (n < 23) { UI.dlg_entry[n] = k[0]; UI.dlg_entry[n + 1] = 0; }
+    }
+}
+/* sellFromShip(G.marketSel) with no qty (game.js:4783): no port ship or
+ * nothing aboard = euroMsg only; a boycotted good runs the @KISSUP
+ * back-tax ask at once; else the @HOWMUCH5 modal opens with max = the
+ * hold quantity */
+static void euro_sell_interactive(void) {
+    if (UI.market_sel < 0) return;
+    int port = -1, ord = -1;
+    for (int q = 0; q < CR.n_europe; q++) {
+        if (CR.europe[q].state != 0) continue;
+        if (++ord == UI.euro_ship) { port = q; break; }
+    }
+    if (port < 0) return;
+    if (market_boycotted(UI.market_sel)) {
+        euro_sell_from_ship(port, UI.market_sel, 0);   /* KISSUP arm */
+        return;
+    }
+    int32_t have = euro_hold_qty(port, UI.market_sel);
+    if (!have) return;
+    UI.dlg = 1;
+    UI.dlg_entry[0] = 0;
+    UI.dlg_max = have;
+    UI.dlg_good = (int8_t)UI.market_sel;
+    UI.dlg_port = (int16_t)port;
+}
+
 /* the CS record of the ordinal-TH player colony (JS G.colonies[ord]) */
 static int player_colony_rec(int ord) {
     int o = -1;
@@ -386,6 +448,9 @@ static void commit_menu(void) {
 
 void in_key(const char *k, int alt, int shift) {
     (void)shift;
+    /* an open @HOWMUCH dialog owns the keyboard (onKey, game.js:12403:
+     * the G.dialog check runs before every screen case) */
+    if (UI.dlg) { dialog_key(k); return; }
     /* the name-entry screen owns every key (game.js:12404) */
     if (UI.screen == SCR_NAME) {
         size_t len = strlen(UI.leader);
@@ -732,6 +797,9 @@ void in_key(const char *k, int alt, int shift) {
         if (key_is(k, "t") || key_is(k, "T") || key_is(k, "3")) {
             UI.euro_menu = 3; UI.euro_row = 2; UI.euro_menu_row = 0;
         }
+        if (key_is(k, "u") || key_is(k, "U") || key_is(k, "-") ||
+            key_is(k, "_"))
+            euro_sell_interactive();
         if (key_is(k, "k") || key_is(k, "K")) king_petition();
         if (key_is(k, "Escape") || key_is(k, "x") || key_is(k, "e") ||
             key_is(k, "E"))
@@ -756,6 +824,9 @@ static int hit(int mx, int my, int x, int y, int w, int h) {
 
 void in_click(int mx, int my, int right) {
     (void)right;
+    /* a click on an open numeric dialog commits its entry
+     * (dialogClick's non-opts arm, game.js:12410) */
+    if (UI.dlg) { dialog_done(0); return; }
     switch (UI.screen) {
     case SCR_TITLE:
         for (int k = 0; k < 5; k++)
@@ -841,9 +912,9 @@ void in_click(int mx, int my, int right) {
         }
         /* the recruit/purchase/train buttons open the euro sub-menus —
          * a later slice; the script does not click (281, 89+11k) */
-        int nport = 0, ports[24];
+        int nport = 0;
         for (int q = 0; q < CR.n_europe; q++)
-            if (CR.europe[q].state == 0) ports[nport++] = q;
+            if (CR.europe[q].state == 0) nport++;
         for (int k = 0; k < (nport < 6 ? nport : 6); k++)
             if (hit(mx, my, 145 + 18 * k, 145, 18, 18)) {
                 /* a re-click on the selected ship opens its context
@@ -856,12 +927,9 @@ void in_click(int mx, int my, int right) {
             if (i >= 0 && i < 16) {
                 UI.market_sel = (int8_t)i;
                 /* sellFromShip with no qty (game.js:12291): the
-                 * boycott branch runs the @KISSUP ask; otherwise the
-                 * @HOWMUCH5 amount dialog (inert under the harness
-                 * conventions) — euro_sell_from_ship(qty=0) mirrors
-                 * both */
-                if (UI.euro_ship >= 0 && UI.euro_ship < nport)
-                    euro_sell_from_ship(ports[UI.euro_ship], i, 0);
+                 * @KISSUP ask for a boycott, else the @HOWMUCH5
+                 * amount modal — now LIVE on both sides */
+                euro_sell_interactive();
             }
         }
         break;

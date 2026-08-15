@@ -146,6 +146,16 @@ def map_script():
     K("ArrowLeft")
     K("l")                           # buy 100 of the market cursor good
     K("+")                           # buy 10 more
+    # the @HOWMUCH5 sell-amount modal (goods are aboard from the buys)
+    K("u")
+    K("2")
+    K("2")                           # entry "22"
+    K("Backspace")                   # -> "2"
+    K("Enter")                       # sell 2
+    K("u")
+    K("Escape")                      # cancel = 0
+    K("u")
+    K("Enter")                       # empty entry = the FULL amount
     # the r/p/t sub-menus (openEuroMenu): recruit slot 0, train the
     # second-cheapest expert, open+close purchase, petition the King
     K("r")

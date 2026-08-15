@@ -191,6 +191,15 @@ static void draw_screen(void) {
                          { 1, 1, 0, 0 } };
         rm_draw_event(pending_ev.key, &subs, 0);
     }
+    /* an open numeric dialog (@HOWMUCH5): the framework body with the
+     * live entry as STRING0's tail — a functional stand-in for the JS
+     * entry-line caret (drawDialog, game.js:909); FLAGGED cosmetic */
+    if (UI.dlg) {
+        rm_subs subs = { { dat_cargo[UI.dlg_good].name, UI.dlg_entry, 0, 0 },
+                         { UI.dlg_max, 0, 0, 0 },
+                         { 1, 0, 0, 0 } };
+        rm_draw_event("HOWMUCH5", &subs, 0);
+    }
     flush_fb();
 }
 

@@ -225,6 +225,7 @@ void euro_train(int sorted_row);      /* euroMenuCommit 'train' row */
 int32_t euro_recruit_cost(int slot);  /* the row's passage price */
 int32_t euro_purchase_price(int row); /* purchasePrice incl. escalation */
 int32_t euro_train_cost(int sorted_row);
+int32_t euro_hold_qty(int ei, int good); /* holdQty over a port ship */
 void king_petition(void);             /* petitionLowerTaxes (game.js:8898) */
 void euro_arm_dock(int k, int verb_row); /* euroContextCommit 'arm' */
 int  euro_arm_rows(int k, uint8_t *verbs_out); /* dockUnitRows arm subset */

@@ -179,6 +179,8 @@ INPUT = """([save, events]) => {
       em: G.euroMenu ? ({ recruit: 1, purchase: 2, train: 3, ship: 4,
                           dockunit: 5 })[G.euroMenu] || 0 : 0,
       emr: G.euroMenuRow || 0,
+      dg: G.dialog ? (G.dialog.opts ? 2 : 1) : 0,
+      dge: G.dialog ? (G.dialog.entry || '') : '',
       u: u ? [u.x, u.y, u.orders,
               typeof u.movesLeft === 'number' ? u.movesLeft : -1] : null,
       gold: G.gold, year: G.year };
