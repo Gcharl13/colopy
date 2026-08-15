@@ -82,9 +82,15 @@ the banner at the top of `colopy.ino`.
 3. Open `colopy.ino`.  Tools menu: Board **Teensy 4.1**, USB Type
    **Serial** (the USB keyboard goes on the separate HOST port header),
    CPU Speed 600 MHz, Optimize "Faster".
-4. microSD: copy `cport/pak/COLOPY.PAK` and a `.SAV`
-   (`raw/COLONIZE/COLONY00.SAV`; run `python3 bin/reconstitute.py`
-   first if `raw/` is empty) to the card root.
+4. microSD (FAT32, files in the card ROOT — the sketch opens them by
+   bare name): both files are generated, git-ignored output — build
+   them from the repo root with
+
+       python3 bin/reconstitute.py      # -> raw/COLONIZE/*.SAV
+       python3 tools/gen_sd_pack.py     # -> cport/pak/COLOPY.PAK
+
+   then copy `cport/pak/COLOPY.PAK` and `raw/COLONIZE/COLONY00.SAV`
+   onto the card.
 5. Flash, open Serial Monitor at 115200 baud:
 
        l COLONY00.SAV      load
