@@ -147,7 +147,7 @@ static void dump_turns(const char *save, int n, int agitate) {
         turn_step_prefix();
         turn_step2();
         turn_step3();
-        rival_turn();
+        turn_step5();
         const PowerRecord *p = colopy_power(cs_nation());
         printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
                "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
@@ -218,11 +218,10 @@ static void dump_turns(const char *save, int n, int agitate) {
         /* natives (braves) [x, y, heading|-1] in G.natives order */
         printf("],\"natives\":[");
         first = 1;
-        for (int ui = 0; ui < CS.n_units; ui++) {
-            const UnitRecord *u = &CS.units[ui];
-            if ((u->owner_flags & 0x0F) < 4 || u->type >= DAT_UNITS_COUNT ||
-                dat_units[u->type].hull > 0) continue;
-            printf("%s[%u,%u,%d]", first ? "" : ",", u->map_x, u->map_y,
+        for (int k = 0; k < CR.n_natives; k++) {
+            int ui = CR.natives_order[k];
+            printf("%s[%u,%u,%d]", first ? "" : ",", CS.units[ui].map_x,
+                   CS.units[ui].map_y,
                    CR.native_heading[ui] == 0xFF ? -1
                                                  : CR.native_heading[ui]);
             first = 0;
@@ -260,7 +259,8 @@ static void dump_turns(const char *save, int n, int agitate) {
                 for (int ui = 0; ui < CS.n_units; ui++) {
                     const UnitRecord *u = &CS.units[ui];
                     if ((u->owner_flags & 0x0F) != rn ||
-                        u->type >= DAT_UNITS_COUNT) continue;
+                        u->type >= DAT_UNITS_COUNT ||
+                        CR.unit_in_natives[ui]) continue;
                     int ship = dat_units[u->type].hull > 0;
                     if ((pass == 0) != (ship != 0)) continue;
                     printf("%s[%d,%d]", fu ? "" : ",", CR.runit_x[ui],

@@ -79,6 +79,7 @@ static int tribe_level(int tribe) {
 }
 static int is_brave(int ui) {                /* G.natives membership */
     const UnitRecord *u = &CS.units[ui];
+    if (CR.unit_in_natives[ui]) return 1;    /* the rival-capture quirk */
     return (u->owner_flags & 0x0F) >= 4 && u->type < DAT_UNITS_COUNT &&
            dat_units[u->type].hull <= 0;
 }
@@ -175,7 +176,10 @@ static void spawn_brave(int vi) {
                 CS.units[ui].map_y == y) taken = 1;
         if (taken) continue;
         int ui = unit_append(TY_BRAVES, 4 + (v->owner_tribe - 4), x, y);
-        if (ui >= 0) CR.native_home[ui] = (int8_t)vi;
+        if (ui >= 0) {
+            CR.native_home[ui] = (int8_t)vi;
+            natives_push(ui);
+        }
         return;
     }
 }
@@ -604,8 +608,9 @@ static void heading_score(int ui, int home_vi) {
 
 /* ---- the mover (nativeMoveAI, game.js:5861) ---------------------------- */
 static void native_move_ai(void) {
-    for (int ui = 0; ui < CS.n_units; ui++) {
-        if (!is_brave(ui)) continue;
+    /* iterate in G.natives LIST order — the RNG draw order contract */
+    for (int k = 0; k < CR.n_natives; k++) {
+        int ui = CR.natives_order[k];
         int vi = CR.native_home[ui];
         if (vi < 0 || vi >= CS.n_villages) continue;
         UnitRecord *u = &CS.units[ui];

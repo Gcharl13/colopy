@@ -88,6 +88,7 @@ int rt_sol(int ci) { return CR.col[ci].sol; }
 void cr_reset_from_load(void) {
     memset(&CR, 0, sizeof(CR));
     CR.father_in_progress = -1;
+    CR.king_war_rival = -1;
     for (int i = 0; i < CS.n_colonies; i++) {
         CR.col[i].sol = (uint8_t)colony_sol(&CS.colonies[i]);
         CR.col[i].sol_band = 0xFF;
@@ -112,6 +113,7 @@ void cr_reset_from_load(void) {
             if (best < 0 || d < bd) { best = v; bd = d; }
         }
         CR.native_home[i] = (int8_t)best;
+        natives_push(i);          /* the importer's G.natives.push order */
     }
     /* rivals (importer game.js:10330-10336, 10374-10380): met, attitude 8,
      * gold from the power record, colonies from the rival-owned records in
@@ -575,6 +577,7 @@ int unit_append(int type, int owner, int x, int y) {
     CR.unit_offered[i] = 0;
     CR.unit_faith[i] = 0;
     CR.unit_damaged[i] = 0;
+    CR.unit_in_natives[i] = 0;
     CR.native_heading[i] = 0xFF;
     CR.native_home[i] = -1;
     return i;
@@ -588,9 +591,26 @@ void unit_remove(int ui) {
     memmove(&CR.unit_damaged[ui], &CR.unit_damaged[ui + 1], n);
     memmove(&CR.native_heading[ui], &CR.native_heading[ui + 1], n);
     memmove(&CR.native_home[ui], &CR.native_home[ui + 1], n);
+    memmove(&CR.unit_in_natives[ui], &CR.unit_in_natives[ui + 1], n);
     memmove(&CR.runit_x[ui], &CR.runit_x[ui + 1], n * sizeof(int16_t));
     memmove(&CR.runit_y[ui], &CR.runit_y[ui + 1], n * sizeof(int16_t));
     CS.n_units--;
+    /* keep the G.natives order list aligned: drop the removed member,
+     * re-base every index past it */
+    for (int k = 0; k < CR.n_natives; k++) {
+        if (CR.natives_order[k] == ui) {
+            memmove(&CR.natives_order[k], &CR.natives_order[k + 1],
+                    (size_t)(CR.n_natives - k - 1));
+            CR.n_natives--;
+            k--;
+            continue;
+        }
+        if (CR.natives_order[k] > ui) CR.natives_order[k]--;
+    }
+}
+void natives_push(int ui) {
+    if (CR.n_natives < COLOPY_MAX_UNITS)
+        CR.natives_order[CR.n_natives++] = (uint8_t)ui;
 }
 
 /* ======================================================================

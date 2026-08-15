@@ -110,7 +110,16 @@ void turn_step_prefix(void);     /* the ported endTurn prefix */
 void turn_step2(void);           /* refit/improvements/immigration/congress/treasure */
 void turn_step3(void);           /* the native pass (§19.11) + vanish filter */
 void rival_turn(void);           /* rivalTurn (game.js:7514) + checkContact */
+void turn_step5(void);           /* rivalTurn .. retirement — the endTurn tail */
 int  unit_on_map_player(int ui);  /* JS G.units membership predicate */
+
+/* Combat resolution (colopy_resolve.c): resolveAttack (game.js:7219) with
+ * applyDefeat (7066) and tryPromote (7185).  Both sides are unit-record
+ * indexes; rival positions read/write the CR mirrors. */
+int  resolve_attack(int att_ui, int def_ui); /* removed record idx, -1 none */
+int  unit_pos_x(int ui);         /* record, or the rival mirror */
+int  unit_pos_y(int ui);
+void colony_remove(int ci);      /* immediate splice (rival capture path) */
 void colony_vanish_filter(void);  /* the deferred @VANISH compaction */
 void adjust_tension(int tribe, int delta, int cause);  /* game.js:5103 */
 int  tension_band(int n);         /* tensionBandIdx (game.js:5093) */
@@ -121,6 +130,7 @@ void ev_emit(const char *key, int32_t p0, int32_t p1,
 /* Unit-pool mutators shared by the native pass (converts, braves). */
 int  unit_append(int type, int owner, int x, int y);  /* record idx or -1 */
 void unit_remove(int ui);        /* compact records + parallel CR arrays */
+void natives_push(int ui);       /* JS G.natives.push (order matters) */
 
 /* Runtime state that lives beside the save image (JS object-model fields
  * with no record home). One entry per colony, parallel to CS.colonies. */
@@ -149,14 +159,16 @@ typedef struct { uint8_t kind, idx; } immigrant;
  * all.  Coordinates are SIGNED like the JS numbers: the sailer's y-drift
  * can step off the map edge (off-map reads Ocean, game.js:469), and the
  * port mirrors that arithmetic rather than wrapping it. */
-typedef struct { int16_t x, y; uint8_t level, pop; } rival_colony;
+typedef struct { int16_t x, y; uint8_t level, pop, spared; } rival_colony;
 typedef struct {
     uint8_t met, greeted;
     uint8_t next_colony;         /* colony-name rotation counter */
     uint8_t n_col;
-    rival_colony col[32];
+    rival_colony col[48];
     int32_t gold;                /* seeded from the power record +0x2A */
     uint8_t attitude;            /* importer seeds 8 (game.js:10333) */
+    uint8_t rebel_pct;           /* newsTick independence walk (flagged) */
+    uint8_t might_warned, less_noted, independent;
 } rival_rt;
 
 typedef struct {
@@ -188,6 +200,23 @@ typedef struct {
     uint16_t parley_lock[4];     /* G.parleyLock, per rival nation */
     uint8_t war_matrix[4][4];    /* REL bits, G.warMatrix — empty at load */
     uint8_t treaty_matrix[4][4]; /* REL bits, G.treatyMatrix */
+    uint8_t rival_wars[4][4];    /* the rival-vs-rival news-war flags */
+    /* JS G.natives membership beyond braves: a rival-captured unit is
+     * PUSHED TO G.NATIVES (applyDefeat game.js:7111 — its else-arm), so it
+     * leaves r.units/G.units yet still occupies its tile.  The flag keeps
+     * the C lists honest to that quirk. */
+    uint8_t unit_in_natives[COLOPY_MAX_UNITS];
+    /* G.natives INSERTION ORDER (record indexes): the brave mover draws
+     * RNG per member in list order, so the order is part of the parity
+     * contract — imported braves first (record order), then every
+     * spawnBrave/capture APPEND, exactly like the JS pushes. */
+    uint8_t natives_order[COLOPY_MAX_UNITS];
+    uint16_t n_natives;
+    int8_t  king_war_rival;      /* G.kingWar, -1 = none */
+    uint8_t king_war_turns;
+    uint8_t king_wed;            /* KINGWIFE one-shot */
+    uint8_t succession;          /* spanishSuccession latch */
+    uint8_t retired, soon_warned;
     colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;

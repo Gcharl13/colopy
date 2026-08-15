@@ -129,40 +129,8 @@ TURNS = """([save, n, agitate]) => {
   const fatherIdx = (n) => DATA.fathers.findIndex(f => f.name === n);
   const out = [];
   for (let t = 0; t < n; t++) {
-    // --- the prefix, mirroring endTurn's opening exactly ---
-    G.turn += 1;
-    if (G.year < 1600) G.year += 1;
-    else {
-      if (!G.timeChanged) { G.timeChanged = true; showEvent('TIMECHANGE'); }
-      G.season = (G.season + 1) % 2;
-      if (G.season === 0) G.year += 1;
-    }
-    for (const u of G.units) u.movesLeft = u.moves;
-    payUpkeep();
-    for (const c of G.colonies) colonyTurn(c);
-    if (G.colonies.some(c => c.vanished))
-      G.colonies = G.colonies.filter(c => !c.vanished);
-    // @REFIT (endTurn:10754)
-    for (const u of G.units) {
-      const home = u.ship && u.damaged && colonyAt(u.x, u.y);
-      if (home && ['Drydock', 'Shipyard'].some(b => home.buildings.includes(b))) {
-        u.damaged = false;
-        showEvent('REFIT', { STRING0: u.type, STRING1: home.name });
-      }
-    }
-    advanceImprovements();
-    checkImmigration();
-    updateCongress();
-    checkTreasure();
-    // the native pass (endTurn:10767-10780, §19.11 order)
-    nativeTick();
-    nativeDemands();
-    attemptConversions();
-    ageConverts();
-    nativeMoveAI();
-    if (G.colonies.some(c => c.vanished))
-      G.colonies = G.colonies.filter(c => !c.vanished);
-    rivalTurn();
+    // PHASE-3 CLOSE: the REAL engine step, not a hand-built prefix.
+    endTurn();
     // --- projection ---
     out.push({ turn: G.turn, year: G.year, season: G.season,
       gold: G.gold, fund: G.kingsFund, tax: G.tax,
