@@ -32,6 +32,29 @@ if sumfile.exists():
             h, n = line.split(None, 1)
             sums[n.strip()] = h.strip()
 
+# col.zip (repo root — the AUDIT.md §3.6 policy exception, kept per user
+# decision) carries the FULL original file set: the asset files
+# (.SS/.PIK/.FF/.SAV/CYCLE.DAT/...) that the .b64 records here do not
+# cover, and that tools/gen_sd_pack.py + port/tools/build_assets.py
+# read.  Extract it first; the .b64 loop below then overwrites its
+# members with the SHA-verified bytes.
+colzip = repo / "col.zip"
+if colzip.exists():
+    import zipfile
+    n_ext = 0
+    with zipfile.ZipFile(colzip) as z:
+        for m in z.namelist():
+            base = pathlib.PurePosixPath(m).name
+            if (m.startswith("__MACOSX/") or m.endswith("/") or
+                    not base or base.startswith("._")):
+                continue                  # macOS resource-fork junk
+            (out / base).write_bytes(z.read(m))
+            n_ext += 1
+    print(f"extracted col.zip: {n_ext} files -> {out}")
+else:
+    print("NOTE: col.zip not found — only the .b64 records will be "
+          "materialized (the .SS/.PIK/.FF assets will be missing)")
+
 rc = 0
 for b64 in sorted(here.glob("*.b64")):
     name = b64.stem                       # e.g. "VICEROY.EXE"
