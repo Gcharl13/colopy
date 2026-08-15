@@ -119,6 +119,18 @@ extern const char *const dat_dialogs_findcity_tail[1];
 extern const int32_t dat_dialogs_findcity_width;
 extern const char *const dat_dialogs_findcity_default;
 extern const uint8_t dat_dialogs_findcity_small;
+typedef struct {
+  const char *key;
+  const char *const *body;
+  int32_t n_body;
+  const char *const *tail;
+  int32_t n_tail;
+  int32_t width;
+  const char *dflt;
+  uint8_t small;
+} dat_dialogs_entry_t;
+#define DAT_DIALOGS_INDEX_COUNT 16
+extern const dat_dialogs_entry_t dat_dialogs_index[16];
 #define DAT_WOODCUTS_COUNT 17
 extern const char *const dat_woodcuts[17];
 #define DAT_SCORENAMES_COUNT 24
@@ -3033,6 +3045,18 @@ extern const char *const dat_events_dos_tail[2];
 extern const int32_t dat_events_dos_width;
 extern const char dat_events_dos_default[];
 extern const uint8_t dat_events_dos_small;
+typedef struct {
+  const char *key;
+  const char *const *body;
+  int32_t n_body;
+  const char *const *tail;
+  int32_t n_tail;
+  int32_t width;
+  const char *dflt;
+  uint8_t small;
+} dat_events_entry_t;
+#define DAT_EVENTS_INDEX_COUNT 415
+extern const dat_events_entry_t dat_events_index[415];
 #define DAT_TEXT_BEGINMENU_COUNT 6
 extern const char *const dat_text_beginmenu[6];
 extern const char dat_text_leadername[];

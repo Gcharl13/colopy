@@ -102,6 +102,35 @@ RENDERMAP = """([save, vx, vy, sel, menu, msel]) => {
 }"""
 
 
+RENDEREVENT = """([save, key, mode, sel, speaker]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  G.mapSeed = 1653;
+  for (const u of G.units) { u.movesLeft = u.moves; u.orders = 0; }
+  G.cyclePhase = 0; G.blink = true; G.sel = 0; G.zoom = 0;
+  G.openMenu = -1; G.view = { x: 20, y: 30 }; G.screen = 'map';
+  const subs = { STRING0: 'Jamestown', STRING1: 'Dutch',
+                 STRING2: 'Amsterdam', STRING3: 'Plymouth',
+                 NUMBER0: 42, NUMBER1: 7, NUMBER2: 1350, NUMBER3: 3 };
+  const cv = document.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  const spk = speaker || null;
+  if (!DATA.events[key]) return 'NOKEY';
+  if (mode === 1) {
+    askEvent(key, subs, null, undefined, spk);
+    if (G.dialog) G.dialog.sel = sel;
+    drawMap(ctx);                       // drawDialog runs at its tail
+  } else {
+    showEvent(key, subs, spk);
+    drawMap(ctx);
+    drawEvent(ctx);                     // the queue head over the map
+  }
+  return cv.toDataURL('image/png');
+}"""
+
+
 # The prefix-turn trace: EXACTLY the pipeline colopy_turn.c implements —
 # header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
 # filter. Math.random is replaced AFTER import with the same MSC LCG the C
@@ -380,7 +409,7 @@ TURNS = """([save, n, agitate, script, STEPRNG]) => {
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
     if mode not in ("produce", "market", "movecost", "combat", "turns",
-                    "rendermap"):
+                    "rendermap", "renderevent"):
         raise SystemExit("unknown mode: " + mode)
     cases = (json.load(open(sys.argv[2]))
              if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
@@ -397,6 +426,14 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "renderevent":
+            out = page.evaluate(RENDEREVENT, [sys.argv[2], sys.argv[3],
+                                              int(sys.argv[4]),
+                                              int(sys.argv[5]) if len(sys.argv) > 5 else 0,
+                                              sys.argv[6] if len(sys.argv) > 6 else None])
+            browser.close()
+            print(out)
+            return
         elif mode == "rendermap":
             out = page.evaluate(RENDERMAP, [sys.argv[2], int(sys.argv[3]),
                                             int(sys.argv[4]),

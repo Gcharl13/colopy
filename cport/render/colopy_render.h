@@ -98,5 +98,20 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink);
 /* drawPulldown (game.js:1836) over an open bar title; the ORDERS menu
  * builds its rows from the selected unit's context (game.js:1780). */
 void rm_draw_pulldown(int menu_idx, int menu_sel, int sel);
+/* shared chrome primitives (plaque game.js:795, FRAME_GAME rings) */
+void rm_plaque(int x, int y, int w, int h);
+void rm_hollow_rect(int x, int y, int w, int h, uint8_t c);
+/* the dialog framework (drawEvent game.js:6403 / drawDialog 909):
+ * subs = up to 4 STRING + 4 NUMBER substitutions (NULL/unused = empty) */
+typedef struct {
+    const char *str[4];
+    int32_t num[4];
+    uint8_t num_set[4];
+} rm_subs;
+int  rm_event_exists(const char *key);
+void rm_draw_event(const char *key, const rm_subs *subs,
+                   const char *speaker);
+void rm_draw_dialog_event(const char *key, const rm_subs *subs,
+                          const char *speaker, int sel);
 
 #endif /* COLOPY_RENDER_H */

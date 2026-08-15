@@ -267,6 +267,37 @@ def main():
             continue
         if k in TEXT_MEMBERS:
             tx.emit(k, D[k])
+            # events/dialogs also get a runtime-keyed index table so the
+            # render layer (Phase 7 dialog framework) can look a key up at
+            # runtime — the per-key symbols alone are link-time only.
+            if k in ("events", "dialogs") and isinstance(D[k], dict):
+                keys = sorted(D[k])
+                ty = "dat_%s_entry_t" % k
+                tx.h.append("typedef struct {\n  const char *key;\n"
+                            "  const char *const *body;\n  int32_t n_body;\n"
+                            "  const char *const *tail;\n  int32_t n_tail;\n"
+                            "  int32_t width;\n  const char *dflt;\n"
+                            "  uint8_t small;\n} %s;" % ty)
+                tx.h.append("#define DAT_%s_INDEX_COUNT %d"
+                            % (k.upper(), len(keys)))
+                tx.h.append("extern const %s dat_%s_index[%d];"
+                            % (ty, k, len(keys)))
+                rows_ = []
+                for key in keys:
+                    e = D[k][key]
+                    sym = "dat_%s_%s" % (k, cid(key))
+                    body = e.get("body") or []
+                    tail = e.get("tail") or []
+                    d = e.get("default")
+                    rows_.append("  {%s, %s, %d, %s, %d, %d, %s, %d}" % (
+                        cstr(key),
+                        sym + "_body" if body else "NULL", len(body),
+                        sym + "_tail" if tail else "NULL", len(tail),
+                        int(e.get("width") or 0),
+                        cstr(str(d)) if d is not None else "NULL",
+                        1 if e.get("small") else 0))
+                tx.c.append("const %s dat_%s_index[%d] = {\n%s\n};"
+                            % (ty, k, len(keys), ",\n".join(rows_)))
             manifest.append((k, "emitted -> colopy_text.c (display text; "
                                 "SD-able on Teensy)"))
             continue

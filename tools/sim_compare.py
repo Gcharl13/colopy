@@ -189,9 +189,8 @@ def compare_pak():
                 print("%s frame %d: C %dx%d JS %dx%d"
                       % (nm, i, e["fw"][i], e["fh"][i], f["w"], f["h"]))
                 bad += 1
-        if e["pal"] != (1 if "pal" in meta else 0):
-            print("%s: palette flag C %d JS %d"
-                  % (nm, e["pal"], 1 if "pal" in meta else 0))
+        if e["pal"] != 1:      # every sheet packs its embedded palette
+            print("%s: palette missing from pak" % nm)
             bad += 1
     for nm, meta in sorted(man["backgrounds"].items()):
         e = ent.get(nm + ".PIK")

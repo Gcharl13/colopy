@@ -173,7 +173,11 @@ def main():
     sheet_names = sorted(k for k in man["sheets"] if k != "PHYS0C")
     for nm in sheet_names:
         assert nm != "BDARK", "BDARK.SS is an orphan — never load (rule 5)"
-        want_pal = "pal" in man["sheets"][nm]
+        # every sheet carries its embedded palette (768 B each): the
+        # speaker-figure ramps (MSS/MYR/IND/KING) live at indices >= 128
+        # and are streamed into the upper DAC when a portrait shows —
+        # the single-DAC model the dialog renderer implements.
+        want_pal = True
         payload, nfr, w, h = build_sheet(COLONIZE / f"{nm}.SS", want_pal)
         mf = man["sheets"][nm]["frames"]
         if len(mf) != nfr:

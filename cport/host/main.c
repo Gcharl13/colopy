@@ -512,6 +512,15 @@ int main(int argc, char **argv) {
                                argc > 8 ? atoi(argv[8]) : -1,
                                argc > 9 ? atoi(argv[9]) : 0);
     }
+    /* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER] */
+    if (argc > 7 && strcmp(argv[1], "--renderevent") == 0) {
+        extern int render_event_main(const char *save, const char *pak,
+                                     const char *out, const char *key,
+                                     int mode, int sel, const char *spk);
+        return render_event_main(argv[2], argv[3], argv[4], argv[5],
+                                 atoi(argv[6]), atoi(argv[7]),
+                                 argc > 8 ? argv[8] : 0);
+    }
     if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
         int agitate = 0, script = 0;
         for (int i = 4; i < argc; i++) {

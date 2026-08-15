@@ -122,3 +122,49 @@ int render_map_main(const char *save, const char *pak_path,
     free(pak);
     return 0;
 }
+
+/* --renderevent SAVE PAK OUT.ppm KEY MODE SEL [SPEAKER]: an event popup
+ * (MODE 0) or ask dialog (MODE 1) over the map screen, with the PINNED
+ * substitution set the JS RENDEREVENT block mirrors. */
+int render_event_main(const char *save, const char *pak_path,
+                      const char *out_path, const char *key, int mode,
+                      int sel, const char *speaker) {
+    if (strcmp(save, "sav1653") == 0)
+        colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0)
+        colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else
+        colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);
+    units_session_seed();
+    long len;
+    uint8_t *pak = slurp(pak_path, &len);
+    if (!pak || !rd_init(pak, (uint32_t)len)) return 1;
+    rm_draw_map(20, 30, 0, 1);
+    extern int rm_event_exists(const char *key);
+    if (!rm_event_exists(key)) {
+        fprintf(stderr, "render: unknown event key %s\n", key);
+        return 2;
+    }
+    rm_subs subs = { { "Jamestown", "Dutch", "Amsterdam", "Plymouth" },
+                     { 42, 7, 1350, 3 }, { 1, 1, 1, 1 } };
+    if (mode == 1) rm_draw_dialog_event(key, &subs, speaker, sel);
+    else rm_draw_event(key, &subs, speaker);
+    FILE *o = fopen(out_path, "wb");
+    if (!o) return 1;
+    fprintf(o, "P6\n%d %d\n255\n", RD_W, RD_H);
+    for (int i = 0; i < RD_W * RD_H; i++)
+        fwrite(RD.pal + RD.fb[i] * 3, 1, 3, o);
+    fclose(o);
+    char idx_path[512];
+    snprintf(idx_path, sizeof(idx_path), "%s.idx", out_path);
+    o = fopen(idx_path, "wb");
+    if (o) {
+        fwrite(RD.fb, 1, RD_W * RD_H, o);
+        fwrite(RD.pal, 1, 768, o);
+        fclose(o);
+    }
+    printf("render event %s %s -> %s\n", save, key, out_path);
+    free(pak);
+    return 0;
+}

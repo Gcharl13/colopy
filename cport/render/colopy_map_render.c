@@ -403,7 +403,7 @@ static const uint8_t *lut_of(uint8_t i) {
     return l;
 }
 
-static void hollow_rect(int x, int y, int w, int h, uint8_t c) {
+void rm_hollow_rect(int x, int y, int w, int h, uint8_t c) {
     rd_fill(x, y, w, 1, c);
     rd_fill(x, y + h - 1, w, 1, c);
     rd_fill(x, y, 1, h, c);
@@ -434,7 +434,7 @@ static int colony_level_ci(int ci) {
 static void draw_sidebar(const rm_view *vw) {
     const int mmx = 252, mmy = 9, mmw = 56, mmh = 39;
     rd_fill(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 0);
-    hollow_rect(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 6);
+    rm_hollow_rect(mmx - 1, mmy - 1, mmw + 2, mmh + 2, 6);
     int sx = vw->view_x - 20, sy = vw->view_y - 13;
     if (sx > COLOPY_MAP_W - mmw) sx = COLOPY_MAP_W - mmw;
     if (sy > COLOPY_MAP_H - mmh) sy = COLOPY_MAP_H - mmh;
@@ -468,7 +468,7 @@ static void draw_sidebar(const rm_view *vw) {
         rd_fill(mmx + dx, mmy + dy, 1, 1,
                 (uint8_t)dat_nations[CS.colonies[ci].owner_power & 3].color);
     }
-    hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
+    rm_hollow_rect(mmx + (vw->view_x - sx), mmy + (vw->view_y - sy),
                 VIEW_COLS, VIEW_ROWS, 0x0F);
 
     char buf[64];
@@ -692,9 +692,9 @@ void rm_draw_map(int view_x, int view_y, int sel, int blink) {
 /* ---- cluster C: the pulldown layer (game.js:1738-1862) ---------------- */
 /* FRAME_GAME plaque rings (game.js:794); the bevel paint ORDER is
  * load-bearing (top after left, bottom last — game.js:801). */
-static void plaque_game(int x, int y, int w, int h) {
-    hollow_rect(x, y, w, h, 0);
-    hollow_rect(x + 1, y + 1, w - 2, h - 2, 134);
+void rm_plaque(int x, int y, int w, int h) {
+    rm_hollow_rect(x, y, w, h, 0);
+    rm_hollow_rect(x + 1, y + 1, w - 2, h - 2, 134);
     rd_fill(x + 2, y + 2, 1, h - 4, 138);            /* left, dark */
     rd_fill(x + w - 3, y + 2, 1, h - 4, 128);        /* right, light */
     rd_fill(x + 2, y + 2, w - 4, 1, 128);            /* top, light */
@@ -708,10 +708,15 @@ static void plaque_game(int x, int y, int w, int h) {
         for (int xx = ix - 3; xx < ix + iw; xx += wt.w)
             for (int r = 0; r < wt.h; r++) {
                 int dy = yy + r;
-                if (dy < iy || dy >= iy + ih || dy >= RD_H) continue;
+                if (dy < 0 || dy < iy || dy >= iy + ih || dy >= RD_H)
+                    continue;
                 for (int c = 0; c < wt.w; c++) {
                     int dx = xx + c;
-                    if (dx < ix || dx >= ix + iw || dx >= RD_W) continue;
+                    /* clip to the SCREEN as well as the interior rect: a
+                     * wider-than-screen popup has ix < 0, and a negative
+                     * dx would wrap fb[dy*W+dx] into the previous row */
+                    if (dx < 0 || dx < ix || dx >= ix + iw || dx >= RD_W)
+                        continue;
                     uint8_t v = wt.pix[r * wt.w + c];
                     if (v != RD_TRANSPARENT) RD.fb[dy * RD_W + dx] = v;
                 }
@@ -862,7 +867,7 @@ void rm_draw_pulldown(int mi, int menu_sel, int sel) {
     rd_fill(BAR_X[mi] - 2, 0, rd_text_width(&TINY, dat_menus[mi].title) + 4,
             7, 0x37);
     rd_text(&TINY, dat_menus[mi].title, BAR_X[mi], 1, lut_of(HUD_INK));
-    plaque_game(x, y, w, h);
+    rm_plaque(x, y, w, h);
     int py = y + 2;
     for (int k = 0; k < n; k++) {
         if (rows[k].sep) {
