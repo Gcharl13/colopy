@@ -82,6 +82,20 @@ Empire layer: `max sum v_sigma(n_sigma)` s.t. `sum n <= C`, rings disjoint
 (Chebyshev >= 3) — near-concave v => greedy exchange, implemented in
 `optimize.py::pack`.
 
+## Rev 3 — resource-flow framing (2026-08-15, user directive)
+
+Market prices removed from the analysis (they drift with sales volume; the
+user wants physical production). The unit of account is now flows/turn.
+`configs.py` defines the configuration catalog (docstring there) and scores
+every AMER2 site per configuration; the standard cluster (5 outposts + ranch +
+factory capital + armory town, pop 76) nets per turn: **72 each of
+rum/cigars/cloth/coats + 72 muskets + 24 tools + 24 horses**, food
+self-balancing (+43). Horses, not muskets, are the military bottleneck
+(stock-growth law); bells and hammers are per-colony and non-importable.
+Best outpost sites: Sugar (19,29)=71, Tobacco (7,8)=71, Cotton (10,14)=70,
+Furs (7,2)=71, Ore (14,21)=60, Granary (12,10)=+77.
+The gold-objective solver below (rev 2) is retained as a legacy mode.
+
 ## Headline results (results.json, rev 2 rates)
 
 - Best site: **(17,28) prairie+river**, pop* = 14, **1,199.5 gold/turn**
