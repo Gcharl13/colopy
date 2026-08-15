@@ -7,19 +7,30 @@ the `colopy_core.h` API, so the sim stays platform-free and host-testable.
 | Store | Size | What lives there |
 |---|---|---|
 | ITCM/DTCM (512 KB) | fast RAM | code hot paths + stack (toolchain-managed) |
-| OCRAM (512 KB) | RAM | `colopy_state` ≈ **40 KB** (the .SAV image + pools), SD I/O buffer (~30 KB, one save), event ring |
+| OCRAM (512 KB) | RAM | `colopy_state` ≈ **40 KB** (the .SAV image + pools), SD I/O buffer (80 KB, one save), event ring |
 | Program flash (8 MB) | flash | core code + **`colopy_data.c` ≈ 36 KB** — the sim's numeric tables (yields, cargo, units, buildings, jobs, map, tribes) |
 | Program flash *or* microSD | — | **`colopy_text.c` ≈ 280 KB** — event/pedia/dialog bodies. Display text only; the sim never reads it (enforced by the generator, which refuses to emit if a `cport/core/*.c` references a text symbol). Link it into flash for simplicity, or drop the object and serve the same content from SD when the interface phase wants the flash back |
 | microSD | GB | **.SAV files** (read/write — the only writable store), and in the interface phase: sprite sheets, fonts, PIK backgrounds, palettes, music — the multi-MB asset load that never belonged in flash |
 
-## Numbers
+## Numbers (re-measured at Phase-3 close — full endTurn chain in)
 
 - `colopy_state`: 39,788 bytes static (printed by the host smoke) — fits
   OCRAM 12× over. No malloc anywhere in `core/`.
-- Sim tables: 35,904-byte object, `const` → flash, zero RAM cost.
-- Display text: 285,864-byte object. Fits flash trivially today (8 MB);
-  the split exists so the choice stays open, not because it is needed yet.
-- A .SAV is 22–28 KB → one ~30 KB buffer covers load and save.
+- `colopy_runtime` (CR — the JS object-model state beside the records:
+  per-colony runtime, tribe/village meters, rival lists, the G.units /
+  G.natives / r.units order lists): 11,892 bytes static.
+- Core code: ~67 KB of x86-64 `-O2` `.text` across the 11 units
+  (sav/map/colony/market/events/move/combat/turn/natives/rivals/resolve);
+  Thumb-2 typically comes out smaller.
+- Sim tables (`colopy_data`): ~20 KB text+data, `const` → flash.
+- Display text: ~223 KB source / ~180 KB strings. Fits flash trivially
+  today (8 MB); the split exists so the choice stays open.
+- A .SAV is 22–28 KB → the shell's 80 KB `savbuf` covers load and save
+  with headroom.
+
+The board-side harness is `cport/teensy/` (PlatformIO): SD `.SAV` in,
+full turns, `colopy_digest()` per turn on the serial wire — matched
+against the host's `--saveout`/`--turns` run from the same seed.
 
 ## What changes in the interface phase
 
