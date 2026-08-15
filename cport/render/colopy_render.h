@@ -104,6 +104,7 @@ void rm_scene_tile(int mx, int my, int px, int py);
 /* shared unit chrome (colopy_map_render.c) */
 void rm_nation_plate(int x, int y, int colour, int orders);
 int  rm_profession_icon(int jobexpert_row);   /* colopy_colony_render.c */
+int  rm_building_group(int id);               /* BUILDING_GROUP[id], -1 OOB */
 void rm_draw_settlement(int px, int py, int level, int nation,
                         int tribe_colour, int mission);
 int  rm_colony_level_ci(int ci);

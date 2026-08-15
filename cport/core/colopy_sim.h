@@ -406,6 +406,12 @@ typedef struct {
     int8_t  tribe_war_with[8];       /* rival nation, -1 none */
     int16_t tribe_muskets_known[8], tribe_horses_known[8], tribe_herd[8];
     int8_t  cur_village;             /* G.village index, -1 closed */
+    uint8_t village_screen;          /* enterVillage outcome: 1 = the
+                                      * village screen stays open (no
+                                      * fresh woodcut fired) */
+    uint16_t wc_seen;                /* G.wcSeen runtime mask (init 0 —
+                                      * the importer does NOT restore
+                                      * [0x540A], game.js:710) */
     int16_t cur_visitor;             /* G.villageVisitor record idx */
     /* Slice 4a — Lost City Rumours (enterRumour game.js:8740). */
     uint8_t rumours_done[(COLOPY_MAP_W * COLOPY_MAP_H + 7) / 8];

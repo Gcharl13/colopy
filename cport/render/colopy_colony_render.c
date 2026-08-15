@@ -119,6 +119,11 @@ static const int8_t BUILDING_GROUP[42] = {
     0,0,0, 1,1,1, 2,2,2, 3,3,3, 4,4,4, 5,5,5, 6, 7,7, 8,8,8, 9,9,9,
     10,10,10, 3,3, 11,11,11, 12,12, 13,13, 14,14,14,
 };
+/* the same plot table drives the JS buildingChain (game.js:2907) prereq/
+ * supersede gates — exported for the input layer's construction picker */
+int rm_building_group(int id) {
+    return (id >= 0 && id < 42) ? BUILDING_GROUP[id] : -1;
+}
 
 typedef struct { uint32_t s; } crng;
 static int crng_next(crng *r) {

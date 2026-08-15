@@ -97,10 +97,27 @@ void village_enter(int vi, int ui) {
     }
     CR.cur_village = (int8_t)vi;
     CR.cur_visitor = (int16_t)ui;
-    /* firstTribeContact (game.js:1216): headless the plate is dismissed
-     * at once and the after-callback (INDIANWELCOME) never runs — only
-     * the met latch survives.  Either path lands back on the map. */
-    if (!CR.tribe_met[tr]) CR.tribe_met[tr] = 1;
+    /* the screen outcome (enterVillage tail, game.js:6459) under the
+     * SHARED trace conventions: the woodcutOnce stub (sim_trace.py
+     * TURNS/INPUT blocks) dismisses to the map after EVERY call —
+     * fired or not — so a village entry always lands back on the map
+     * with G.village still set, and the after-callback (@INDIANWELCOME)
+     * never runs.  Only the latches survive: first tribe contact takes
+     * the per-tribe plate bit (Inca 5 / Aztec 4 / else 3, @0x56D95);
+     * a met tribe's entry latches the once-per-game ENTERING INDIAN
+     * VILLAGE bit 7 (the plate path skips it — the stub's forced 'map'
+     * fails enterVillage's screen check).  The REAL game's staying
+     * village screen (woodcutOnce(7) already latched) is the Teensy
+     * loop's concern; under the harness CR.village_screen never
+     * latches. */
+    if (!CR.tribe_met[tr]) {
+        CR.tribe_met[tr] = 1;
+        int wc = tr == 0 ? 5 : tr == 1 ? 4 : 3;
+        CR.wc_seen |= (uint16_t)(1u << wc);
+    } else {
+        CR.wc_seen |= 1u << 7;
+    }
+    CR.village_screen = 0;
     CR.screen_map = 1;
 }
 

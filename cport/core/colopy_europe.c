@@ -89,9 +89,13 @@ static int immigrant_band(const immigrant *m) {
 /* importer game.js:10440-10489, two passes:
  *   pass A (sav order): a player LAND unit standing off-map or on water
  *   becomes an entry ({name: prof, type} when it has a specialty, else
- *   the plain type name) and boards the FIRST ship imported BEFORE it
- *   (G.units.find) sharing its square; with no such ship it waits on
- *   the dock if off-map, or is dropped (the JS continue).
+ *   the plain type name) and boards the FIRST ship sharing its square —
+ *   the importer runs "ships first, riders second" (game.js:10430:
+ *   `pass === 0 !== isShip`), so G.units.find sees EVERY player ship,
+ *   record-ascending, whatever its record index relative to the walker
+ *   (the j < i reading was wrong — caught by the turns script oracle,
+ *   sav1653 turn 8+); with no such ship it waits on the dock if
+ *   off-map, or is dropped (the JS continue).
  *   pass B (reverse order, 10479): off-map ships leave G.units — each
  *   pushes a 'port' crossing and DISEMBARKS its riders to the dock.
  * So G.dockUnits = [unshipped off-map walkers, sav order] then [riders,
@@ -127,7 +131,7 @@ void europe_seed_from_load(void) {
             e.idx = w->type;
         }
         int si = -1;
-        for (int j = 0; j < i; j++) {     /* ships imported BEFORE it */
+        for (int j = 0; j < CS.n_units; j++) {  /* all ships, sav order */
             const UnitRecord *u = &CS.units[j];
             if ((u->owner_flags & 0x0F) != cs_nation()) continue;
             if (u->type >= DAT_UNITS_COUNT || dat_units[u->type].hull <= 0)

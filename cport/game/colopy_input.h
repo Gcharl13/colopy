@@ -7,7 +7,8 @@
 
 enum {
     SCR_TITLE = 0, SCR_DIFFICULTY, SCR_NATION, SCR_NAME, SCR_BRIEFING,
-    SCR_HOF, SCR_MAP, SCR_REPORT, SCR_COLONY, SCR_EUROPE, SCR_WOODCUT
+    SCR_HOF, SCR_MAP, SCR_REPORT, SCR_COLONY, SCR_EUROPE, SCR_WOODCUT,
+    SCR_VILLAGE
 };
 
 typedef struct {
@@ -25,6 +26,10 @@ typedef struct {
     int8_t  market_sel, euro_row, euro_ship, euro_dock_sel;
     int8_t  show_hidden;             /* G.showHidden */
     int8_t  colony_numbers;          /* G.colonyNumbers ([0x336]) */
+    int8_t  village_row;             /* G.villageRow */
+    int8_t  colony_popup;            /* G.colonyPopup: 0 none, 1 jobs,
+                                      *                2 build */
+    int8_t  colony_popup_row;
 } colopy_ui;
 
 extern colopy_ui UI;

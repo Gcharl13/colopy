@@ -162,6 +162,124 @@ static void run_menu_row(void) {
 static int key_is(const char *k, const char *want) {
     return strcmp(k, want) == 0;
 }
+
+/* the CS record of the ordinal-TH player colony (JS G.colonies[ord]) */
+static int player_colony_rec(int ord) {
+    int o = -1;
+    for (int k = 0; k < CS.n_colonies; k++) {
+        if ((CS.colonies[k].owner_power & 3) != cs_nation()) continue;
+        if (++o == ord) return k;
+    }
+    return -1;
+}
+
+/* ---- the construction picker (openBuildPicker, game.js:3989) ----------
+ * Row NAMES in colonyPopupRows 'build' order (game.js:3914): the
+ * "(No Production)" stop row, then buildOptions (game.js:2938) — every
+ * @BUILDING row not already built (by NAME over the runtime list) whose
+ * min_colony gate the population meets, whose chain predecessor stands
+ * with no higher tier up (buildingChain, game.js:2907: the
+ * BUILDING_GROUP plot table's consecutive-name-deduped sequences, the
+ * Stable independent), the Custom House behind Peter Stuyvesant and the
+ * factory tier behind Adam Smith — then the colony-built units
+ * (unitBuildRows, game.js:2973: a Wagon Train always, Artillery once an
+ * Armory-chain building stands, ships behind the Shipyard).
+ * names[0] = NULL marks the stop row; returns the row count. */
+#define BUILD_MAX_ROWS 64
+static const char *BUILD_UNITS[7] = { "Wagon Train", "Artillery", "Caravel",
+    "Merchantman", "Galleon", "Privateer", "Frigate" };
+static int build_rows(int cci, const char **names) {
+    static const char *FACTORY[6] = { "Textile Mill", "Cigar Factory",
+        "Rum Factory", "Fur Factory", "Iron Works", "Arsenal" };
+    const ColonyRecord *c = &CS.colonies[cci];
+    int n = 0;
+    names[n++] = NULL;
+    for (int i = 0; i < DAT_BUILDINGS_COUNT && n < BUILD_MAX_ROWS - 8; i++) {
+        const char *nm = dat_buildings[i].name;
+        if (colony_has_name(cci, nm)) continue;
+        if (dat_buildings[i].min_colony > c->population) continue;
+        if (strcmp(nm, "Stable") != 0) {
+            const char *seq[16];
+            int ns = 0, at = -1, sup = 0, g = rm_building_group(i);
+            for (int j = 0; j < DAT_BUILDINGS_COUNT; j++) {
+                if (rm_building_group(j) != g ||
+                    strcmp(dat_buildings[j].name, "Stable") == 0) continue;
+                if (ns && strcmp(seq[ns - 1], dat_buildings[j].name) == 0)
+                    continue;
+                if (ns < 16) seq[ns++] = dat_buildings[j].name;
+            }
+            for (int q = 0; q < ns; q++)
+                if (strcmp(seq[q], nm) == 0) { at = q; break; }
+            if (at > 0 && !colony_has_name(cci, seq[at - 1])) continue;
+            for (int q = at + 1; q < ns; q++)
+                if (colony_has_name(cci, seq[q])) sup = 1;
+            if (sup) continue;
+        }
+        if (strcmp(nm, "Custom House") == 0 &&
+            !father_owned(father_by_name("Peter Stuyvesant"))) continue;
+        int fac = 0;
+        for (int f = 0; f < 6; f++)
+            if (strcmp(nm, FACTORY[f]) == 0) fac = 1;
+        if (fac && !father_owned(father_by_name("Adam Smith"))) continue;
+        names[n++] = nm;
+    }
+    for (int u = 0; u < 7 && n < BUILD_MAX_ROWS; u++) {
+        if (u == 1 && !(colony_has_name(cci, "Armory") ||
+                        colony_has_name(cci, "Magazine") ||
+                        colony_has_name(cci, "Arsenal"))) continue;
+        if (u >= 2 && !colony_has_name(cci, "Shipyard")) continue;
+        names[n++] = BUILD_UNITS[u];
+    }
+    return n;
+}
+/* the JS c.building NAME for the record's target byte. Units cannot be
+ * expressed in the record's @BUILDING index, so a unit target committed
+ * from the picker is held as 0xC0+u (input-layer encoding, outside the
+ * sav's 0..41/0xFF vocabulary — a save-out with a unit under way would
+ * need a real mirror; FLAGGED with the turn step's unit-build TBD). */
+static const char *build_target_name(const ColonyRecord *c) {
+    int bip = c->building_in_production;
+    if (bip >= 0xC0 && bip < 0xC7) return BUILD_UNITS[bip - 0xC0];
+    return bip < DAT_BUILDINGS_COUNT ? dat_buildings[bip].name : NULL;
+}
+/* openBuildPicker (game.js:3989): the picker opens ON the current
+ * target's row, "(No Production)" when none */
+static void open_build_picker(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci < 0) return;
+    const char *names[BUILD_MAX_ROWS];
+    int n = build_rows(cci, names);
+    const char *cur = build_target_name(&CS.colonies[cci]);
+    int at = -1;
+    for (int i = 0; i < n && at < 0; i++)
+        if (names[i] ? (cur && strcmp(names[i], cur) == 0) : !cur) at = i;
+    UI.colony_popup = 2;
+    UI.colony_popup_row = (int8_t)(at < 0 ? 0 : at);
+}
+/* colonyPopupCommit (game.js:3996), the 'build' arm: the row becomes
+ * the construction target and the popup closes */
+static void build_picker_commit(void) {
+    int cci = player_colony_rec(UI.colony);
+    if (cci >= 0) {
+        const char *names[BUILD_MAX_ROWS];
+        int n = build_rows(cci, names);
+        if (UI.colony_popup_row >= 0 && UI.colony_popup_row < n) {
+            ColonyRecord *c = &CS.colonies[cci];
+            const char *nm = names[UI.colony_popup_row];
+            if (!nm) c->building_in_production = 0xFF;
+            else {
+                int id = -1;
+                for (int i = 0; i < DAT_BUILDINGS_COUNT && id < 0; i++)
+                    if (strcmp(dat_buildings[i].name, nm) == 0) id = i;
+                if (id < 0)
+                    for (int u = 0; u < 7; u++)
+                        if (strcmp(BUILD_UNITS[u], nm) == 0) id = 0xC0 + u;
+                if (id >= 0) c->building_in_production = (uint8_t)id;
+            }
+        }
+    }
+    UI.colony_popup = 0;
+}
 static int is_fkey(const char *k, int *out) {
     if (k[0] != 'F' || k[1] < '0' || k[1] > '9') return 0;
     int v = k[1] - '0';
@@ -332,10 +450,25 @@ void in_key(const char *k, int alt, int shift) {
                 int had = !CR.unit_moves_undef[ui] &&
                           CS.units[ui].moves_remaining > 0;
                 CR.ui_advance = 0;
+                int vil_before = CR.cur_village;
                 cmd_move(ui, DIR[i].dx, DIR[i].dy);
                 if (CR.ui_advance) {   /* a combat arm ended in advance() */
                     CR.ui_advance = 0;
                     advance();
+                    return;
+                }
+                /* a village entry that fired no fresh woodcut leaves
+                 * the village screen open (enterVillage, game.js:6459).
+                 * Under the SHARED trace conventions the woodcutOnce
+                 * stub dismisses to the map unconditionally, so
+                 * CR.village_screen never latches there — this branch
+                 * (and the SCR_VILLAGE vocabulary) is the real game's
+                 * path, live once the Teensy loop runs real woodcut
+                 * modals. */
+                if (CR.cur_village >= 0 && CR.cur_village != vil_before &&
+                    CR.village_screen) {
+                    UI.village_row = 0;
+                    UI.screen = SCR_VILLAGE;
                     return;
                 }
                 /* step's own tail (game.js:10850): recentre when the
@@ -377,13 +510,73 @@ void in_key(const char *k, int alt, int shift) {
         break;
     }
     case SCR_COLONY:
-        /* §26.8 slice-2 keys: 1/2/3 select the right-panel view,
-         * ESC/x exits (the popup/menu keys follow with the pointer
-         * slice) */
+        /* an open popup owns the keyboard (onKey colony case,
+         * game.js:12485): arrows walk the rows, Enter/space commits,
+         * ESC closes, everything else is swallowed. The build picker
+         * is fully modelled; the jobs/occupation row counts + commits
+         * (colonist mutation) are a later slice (#92) — the scripts
+         * only open/close those. */
+        if (UI.colony_popup) {
+            if (UI.colony_popup == 2) {      /* 'build' */
+                int cci = player_colony_rec(UI.colony);
+                const char *names[BUILD_MAX_ROWS];
+                int n = cci >= 0 ? build_rows(cci, names) : 1;
+                if (key_is(k, "ArrowUp"))
+                    UI.colony_popup_row = (int8_t)((UI.colony_popup_row + n - 1) % n);
+                if (key_is(k, "ArrowDown"))
+                    UI.colony_popup_row = (int8_t)((UI.colony_popup_row + 1) % n);
+                if (key_is(k, "Enter") || key_is(k, " "))
+                    build_picker_commit();
+            }
+            if (key_is(k, "Escape")) UI.colony_popup = 0;
+            break;
+        }
+        /* §26.8 keys: 1/2/3 select the right-panel view, C opens the
+         * construction picker, Enter the jobs popup for the selected
+         * colonist, ESC/x exits */
         if (k[0] >= '1' && k[0] <= '3' && !k[1])
             UI.colony_view = (int8_t)(k[0] - '1');
+        if (key_is(k, "c") || key_is(k, "C")) open_build_picker();
+        if (key_is(k, "Enter")) {
+            UI.colony_popup = 1;             /* 'jobs' */
+            UI.colony_popup_row = 0;
+        }
         if (key_is(k, "Escape") || key_is(k, "x")) UI.screen = SCR_MAP;
         break;
+    case SCR_VILLAGE: {
+        /* the @ACTIONS menu keys (onKey village case, game.js:12460):
+         * arrows walk the rows, Enter/space commits, ESC/x leaves and
+         * advances */
+        uint8_t ids[12];
+        int n = village_action_rows(ids);
+        if (n > 0 && (key_is(k, "ArrowUp") || key_is(k, "ArrowDown"))) {
+            int dir = key_is(k, "ArrowUp") ? -1 : 1;
+            UI.village_row = (int8_t)((UI.village_row + dir + n) % n);
+        }
+        if ((key_is(k, "Enter") || key_is(k, " ")) && UI.village_row < n) {
+            int id = ids[UI.village_row];
+            int vi = CR.cur_village, vu = CR.cur_visitor;
+            run_village_action(id);
+            if (id == 0 || id == 1) {
+                /* the trade rows keep the screen (runVillageAction,
+                 * game.js:6497) — restore the open-village state the
+                 * sim call clears */
+                CR.cur_village = (int8_t)vi;
+                CR.cur_visitor = (int16_t)vu;
+            } else if (id == 8) {
+                UI.screen = SCR_MAP;         /* attack: no advance */
+            } else {
+                UI.screen = SCR_MAP;
+                advance();
+            }
+        }
+        if (key_is(k, "Escape") || key_is(k, "x")) {
+            UI.screen = SCR_MAP;
+            CR.cur_village = -1;             /* G.village = null */
+            advance();
+        }
+        break;
+    }
     case SCR_EUROPE: {
         /* §26.9 slice-2 keys: arrows walk the market cursor, L/=/+ buy
          * to the active ship, ESC/x/E exit.  The sell key runs the

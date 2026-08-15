@@ -89,6 +89,10 @@ def map_script():
         if i % 5 == 2:
             K(["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp",
                "9", "1", "7", "3"][i % 8])
+            # if that step entered a village: Enter commits the trade
+            # row (asks inert), Escape leaves it; on the map both no-op
+            K("Enter")
+            K("Escape")
     # report ladder in and out
     for fk in ("F2", "F3", "F5", "F10"):
         K(fk)
