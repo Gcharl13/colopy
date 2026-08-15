@@ -46,8 +46,11 @@ typedef struct {
     uint16_t outages;           /* bit per raw good that starved a converter */
 } colony_output;
 
-/* colonyProduce (game.js:2630) over the RECORD form. */
-void colony_produce(const ColonyRecord *c, colony_output *r);
+/* colonyProduce (game.js:2630) over the RECORD form; ci indexes CS.colonies
+ * (production reads the RUNTIME SoL, which the importer seeds from the
+ * record and update_sol then owns — the JS c.sol life cycle). */
+void colony_produce(int ci, colony_output *r);
+int  rt_sol(int ci);
 
 /* Record-side helpers shared with later subsystems. */
 int  colony_sol(const ColonyRecord *c);         /* % from +0xC2/+0xC6 */
@@ -82,9 +85,29 @@ int32_t market_buy(int good, int32_t qty);
 int32_t market_accum(int good);
 void    market_reset_accum(void);   /* call at load: JS-importer semantics */
 
-/* Runtime flags that live beside the save image (not in it). */
+/* ---- the turn pipeline (colopy_turn.c) --------------------------------- */
+void cr_reset_from_load(void);   /* seed runtime from the loaded records */
+void colony_turn(int ci);
+void turn_step_prefix(void);     /* header+upkeep+colony loop (prefix 1) */
+
+/* Runtime state that lives beside the save image (JS object-model fields
+ * with no record home). One entry per colony, parallel to CS.colonies. */
 typedef struct {
-    uint8_t upkeep_unpaid;      /* @UPKEEP half-rate latch */
+    uint8_t  sol;                /* runtime SoL % (JS c.sol) */
+    uint8_t  sol_band;           /* 0xFF = unset */
+    uint8_t  latch;              /* 0x04 majority / 0x02 unanimous */
+    int32_t  rebelA, rebelB;     /* EMA pair; 0 = unseeded */
+    uint8_t  food_depleted, food_warned, ineff, sieged;
+    uint8_t  tool_warned, cap_warned, vanished;
+    uint16_t cargo_ready, outage_latch;
+    int32_t  crosses_turn, bells_turn;
+    uint8_t  taught[32];         /* schoolhouse per-student counters */
+} colony_rt;
+
+typedef struct {
+    uint8_t upkeep_unpaid;       /* @UPKEEP half-rate latch */
+    uint8_t time_changed;        /* @TIMECHANGE one-shot */
+    colony_rt col[COLOPY_MAX_COLONIES];
 } colopy_runtime;
 extern colopy_runtime CR;
 

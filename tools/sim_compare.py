@@ -129,7 +129,38 @@ def compare_sweep(mode):
     sys.exit(1 if bad else 0)
 
 
+def compare_turns(save, n):
+    js = json.loads(subprocess.run(
+        [sys.executable, ROOT / "tools/sim_trace.py", "turns", save, str(n)],
+        capture_output=True, text=True, check=True).stdout)
+    subprocess.run(["make", "-s", "smoke"], cwd=ROOT / "cport/host", check=True)
+    cc = [json.loads(l) for l in subprocess.run(
+        ["./smoke", "--turns", save, str(n)], cwd=ROOT / "cport/host",
+        capture_output=True, text=True, check=True).stdout.splitlines()]
+    tut = lambda evs: [e for e in evs if not e.startswith("TUTORIAL")]
+    bad = 0
+    for i, (j, c) in enumerate(zip(js, cc)):
+        j["events"] = tut(j["events"])
+        c["events"] = tut(c["events"])
+        if j == c:
+            continue
+        for f in j:
+            if j[f] != c.get(f):
+                print("turn %d .%s:\n  JS %s\n  C  %s" % (i + 1, f, j[f], c.get(f)))
+                bad += 1
+        if bad > 12:
+            print("...")
+            break
+    print("%s: %d turns compared, %d field disagreement(s)" % (save, len(cc), bad))
+    return bad
+
+
 def main():
+    if sys.argv[1:2] == ["turns"]:
+        bad = 0
+        for save in ("savnewcolony", "savraleigh", "sav1653"):
+            bad += compare_turns(save, int(sys.argv[2]) if len(sys.argv) > 2 else 20)
+        sys.exit(1 if bad else 0)
     if sys.argv[1:2] == ["market"]:
         compare_market()
     if sys.argv[1:2] in (["movecost"], ["combat"]):

@@ -79,11 +79,63 @@ COMBAT = """(cases) => {
 }"""
 
 
+# The prefix-turn trace: EXACTLY the pipeline colopy_turn.c implements —
+# header cadence, player-unit refresh, payUpkeep, colonyTurn loop, vanish
+# filter. Math.random is replaced AFTER import with the same MSC LCG the C
+# uses, seed 1653, so both sides draw the same stream.
+TURNS = """([save, n]) => {
+  const KEY = { savstart: 'savStart', sav1653: 'sav1653',
+                savraleigh: 'savRaleigh', savnewcolony: 'savNewColony' };
+  importSav(b64bytes(DATA[KEY[save]]));
+  G.dialog = null; G.popups = []; G.eventQueue = [];
+  let _s = 1653 >>> 0;
+  Math.random = () => {
+    const lo = (_s & 0xFFFF) * 214013;
+    const hi = ((_s >>> 16) * 214013) & 0xFFFF;
+    _s = ((((lo >>> 16) + hi) & 0xFFFF) * 0x10000 + (lo & 0xFFFF) + 2531011) >>> 0;
+    return ((_s >>> 16) & 0x7FFF) / 32768;
+  };
+  const evs = [];
+  const _show = showEvent, _ask = askEvent;
+  showEvent = (k, subs) => { evs.push(k); return _show(k, subs); };
+  askEvent = (k, subs, cb, opts) => { evs.push(k); G.dialog = null; };
+  const bldIndex = (n) => DATA.buildings.findIndex(b => b.name === n);
+  const out = [];
+  for (let t = 0; t < n; t++) {
+    // --- the prefix, mirroring endTurn's opening exactly ---
+    G.turn += 1;
+    if (G.year < 1600) G.year += 1;
+    else {
+      if (!G.timeChanged) { G.timeChanged = true; showEvent('TIMECHANGE'); }
+      G.season = (G.season + 1) % 2;
+      if (G.season === 0) G.year += 1;
+    }
+    for (const u of G.units) u.movesLeft = u.moves;
+    payUpkeep();
+    for (const c of G.colonies) colonyTurn(c);
+    if (G.colonies.some(c => c.vanished))
+      G.colonies = G.colonies.filter(c => !c.vanished);
+    // --- projection ---
+    out.push({ turn: G.turn, year: G.year, season: G.season,
+      gold: G.gold, fund: G.kingsFund, tax: G.tax,
+      unpaid: G.upkeepUnpaid ? 1 : 0,
+      colonies: G.colonies.map(c => ({ name: c.name,
+        pop: c.colonists.length, sol: c.sol, hammers: c.hammers,
+        bip: c.building ? bldIndex(c.building) : -1,
+        stock: c.stock.slice(),
+        bld: [...new Set(c.buildings.map(bldIndex))].sort((a, b) => a - b) })),
+      events: evs.splice(0) });
+  }
+  return out;
+}"""
+
+
 def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "produce"
-    if mode not in ("produce", "market", "movecost", "combat"):
+    if mode not in ("produce", "market", "movecost", "combat", "turns"):
         raise SystemExit("unknown mode: " + mode)
-    cases = json.load(open(sys.argv[2])) if len(sys.argv) > 2 else None
+    cases = (json.load(open(sys.argv[2]))
+             if len(sys.argv) > 2 and mode in ("movecost", "combat") else None)
     with sync_playwright() as pw:
         browser = pw.chromium.launch(executable_path="/opt/pw-browsers/chromium")
         page = browser.new_page()
@@ -97,6 +149,8 @@ def main():
             data = page.evaluate(MARKET)
         elif mode == "movecost":
             data = page.evaluate(MOVECOST, cases)
+        elif mode == "turns":
+            data = page.evaluate(TURNS, [sys.argv[2], int(sys.argv[3])])
         else:
             data = page.evaluate(COMBAT, cases)
         browser.close()

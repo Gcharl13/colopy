@@ -87,6 +87,7 @@ colopy_status colopy_load_sav(const uint8_t *buf, size_t len) {
     CS.n_units = nunit;
     CS.n_villages = nvill;
     market_reset_accum();
+    cr_reset_from_load();
     return g_last = COLOPY_OK;
 }
 

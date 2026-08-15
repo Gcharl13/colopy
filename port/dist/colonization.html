@@ -3191,7 +3191,11 @@ function colonyTurn(c) {
   // func_00A3E1 @0xA5BB/@0xA5C0/@0xA5CD.
   const herd = c.stock[GOOD.HORSES];
   if (herd >= (c.buildings.includes('Stable') ? 25 : 50))
-    c.stock[GOOD.HORSES] = herd + Math.max(1, Math.floor(herd / 10));
+    // The record's stock field is a byte-verified u16 (ColonyRecord +0x9A),
+    // so the engine's own store wraps at 16 bits -- surfaced by the C-port
+    // parity harness when an untended herd compounds past 65,535. Whether
+    // the engine also CAPS herd growth earlier is unread: flagged.
+    c.stock[GOOD.HORSES] = (herd + Math.max(1, Math.floor(herd / 10))) & 0xFFFF;
   // Tutorial bindings: TUTORIAL6 (func_02D658 @0x2EA4C) when a sellable
   // cargo has built up; 7 (func_02883E @0x28D41) when the colony can use a
   // stockade; 16 on the first food deficit. Thresholds flagged.

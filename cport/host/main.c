@@ -3,6 +3,7 @@
  * table contents match known byte-verified oracles. Grows into the parity
  * driver in Phase 3. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../core/colopy_core.h"
@@ -32,7 +33,7 @@ static void dump_produce(void) {
             const ColonyRecord *c = colopy_colony(k);
             if ((c->owner_power & 3) != cs_nation()) continue;
             colony_output r;
-            colony_produce(c, &r);
+            colony_produce(k, &r);
             printf("{\"save\":\"%s\",\"name\":\"%.24s\",\"pop\":%u,"
                    "\"sol\":%d,\"centre\":%d,\"eaten\":%d,"
                    "\"hammers\":%d,\"bells\":%d,\"crosses\":%d,"
@@ -119,7 +120,83 @@ static void dump_combat(void) {
     }
 }
 
+/* --turns SAVE N: run N prefix turns, one projection JSON line per turn.
+ * The projection is the parity diff unit (plan section B); the JS trace
+ * emits the identical shape. Events drain per turn; TUTORIAL*-keyed
+ * differences are the compare script's to filter. */
+static void dump_turns(const char *save, int n) {
+    if (strcmp(save, "savstart") == 0) colopy_load_sav(savstart, sizeof(savstart));
+    else if (strcmp(save, "sav1653") == 0) colopy_load_sav(sav1653, sizeof(sav1653));
+    else if (strcmp(save, "savraleigh") == 0) colopy_load_sav(savraleigh, sizeof(savraleigh));
+    else colopy_load_sav(savnewcolony, sizeof(savnewcolony));
+    colopy_init(1653);                       /* the shared trace seed */
+    for (int t = 0; t < n; t++) {
+        turn_step_prefix();
+        const PowerRecord *p = colopy_power(cs_nation());
+        printf("{\"turn\":%u,\"year\":%u,\"season\":%u,"
+               "\"gold\":%d,\"fund\":%d,\"tax\":%u,\"unpaid\":%u,"
+               "\"colonies\":[",
+               cs_turn(), cs_year(), cs_season(), p->gold, p->kings_fund,
+               p->tax_rate, CR.upkeep_unpaid);
+        int first = 1;
+        for (int ci = 0; ci < CS.n_colonies; ci++) {
+            const ColonyRecord *c = &CS.colonies[ci];
+            if ((c->owner_power & 3) != cs_nation()) continue;
+            printf("%s{\"name\":\"%.24s\",\"pop\":%u,\"sol\":%u,"
+                   "\"hammers\":%u,\"bip\":%d,\"stock\":[",
+                   first ? "" : ",", c->name, c->population, CR.col[ci].sol,
+                   c->hammers,
+                   c->building_in_production < DAT_BUILDINGS_COUNT ?
+                       c->building_in_production : -1);
+            first = 0;
+            for (int g = 0; g < N_GOODS; g++)
+                printf("%s%u", g ? "," : "", c->stock[g]);
+            printf("],\"bld\":[");
+            /* Mirror the JS projection exactly: names collapse to their
+             * FIRST @BUILDING row (upgrade tiers reuse display names --
+             * rows 9..11 are all "Town Hall"), then dedup + sort. */
+            {
+                uint64_t mask = colony_buildings(c);
+                int wexp = -1;
+                for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
+                    if (strcmp(dat_buildings[b].name, "Warehouse Expansion") == 0)
+                        wexp = b;
+                if (c->warehouse_level >= 2 && wexp >= 0)
+                    mask |= 1ull << wexp;
+                uint64_t first = 0;
+                for (int b = 0; b < DAT_BUILDINGS_COUNT; b++) {
+                    if (!((mask >> b) & 1)) continue;
+                    int fi = b;
+                    for (int a = 0; a < b; a++)
+                        if (strcmp(dat_buildings[a].name,
+                                   dat_buildings[b].name) == 0) { fi = a; break; }
+                    first |= 1ull << fi;
+                }
+                int fb = 1;
+                for (int b = 0; b < DAT_BUILDINGS_COUNT; b++)
+                    if ((first >> b) & 1) {
+                        printf("%s%d", fb ? "" : ",", b);
+                        fb = 0;
+                    }
+            }
+            printf("]}");
+        }
+        printf("],\"events\":[");
+        colopy_event e;
+        first = 1;
+        while (colopy_next_event(&e)) {
+            printf("%s\"%s\"", first ? "" : ",", e.key);
+            first = 0;
+        }
+        printf("]}\n");
+    }
+}
+
 int main(int argc, char **argv) {
+    if (argc > 3 && strcmp(argv[1], "--turns") == 0) {
+        dump_turns(argv[2], atoi(argv[3]));
+        return 0;
+    }
     if (argc > 1 && strcmp(argv[1], "--movecost") == 0) { dump_movecost(); return 0; }
     if (argc > 1 && strcmp(argv[1], "--combat") == 0) { dump_combat(); return 0; }
     if (argc > 1 && strcmp(argv[1], "--produce") == 0) {
@@ -192,7 +269,7 @@ int main(int argc, char **argv) {
             if (c->owner_power != cs_nation()) continue;
             found = 1;
             colony_output r;
-            colony_produce(c, &r);
+            colony_produce(i, &r);
             printf("  Jamestown pop %u  food %d (centre %d) hammers %d "
                    "bells %d crosses %d\n", c->population, r.out[FOOD],
                    r.centre, r.hammers, r.bells, r.crosses);

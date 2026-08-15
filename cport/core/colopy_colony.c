@@ -139,10 +139,10 @@ int colony_sol(const ColonyRecord *c) {
 }
 
 /* toryPenalty (game.js:2516, byte-verified @0x9D14..0x9D98): every
- * (10 - difficulty) Tories costs 1; the 50%/100% latches give one back. */
-static int tory_penalty(const ColonyRecord *c) {
+ * (10 - difficulty) Tories costs 1; the 50%/100% latches give one back.
+ * Reads the RUNTIME sol (JS c.sol), passed down from colony_produce. */
+static int tory_penalty(const ColonyRecord *c, int sol) {
     int pop = c->population;
-    int sol = colony_sol(c);
     int tories = (pop * (100 - sol) + 50) / 100;
     int d = -(tories / (10 - cs_difficulty()));
     if (sol >= 50) d += 1;
@@ -176,8 +176,8 @@ static int improvement_bonus(int x, int y, int g) {
  * will need when the SoL update lands in the turn step.) */
 
 /* fieldYield (game.js:2544) for colonist k standing on worker slot cell. */
-static int field_yield(const ColonyRecord *c, int job, uint8_t prof,
-                       int dx, int dy) {
+static int field_yield(const ColonyRecord *c, int sol, int job,
+                       uint8_t prof, int dx, int dy) {
     int g = job_good(job);
     if (g == J_NONE || g < 0) return 0;
     int x = c->map_x + dx, y = c->map_y + dy;
@@ -193,7 +193,7 @@ static int field_yield(const ColonyRecord *c, int job, uint8_t prof,
         if (cs_difficulty() == 0) yld += 2;
         else if (cs_difficulty() == 1) yld += 1;
     }
-    yld += tory_penalty(c);
+    yld += tory_penalty(c, sol);
     if (is_expert(prof, job)) {
         if (g == FOOD || g == HORSES) yld += 2; else yld *= 2;
     }
@@ -203,9 +203,9 @@ static int field_yield(const ColonyRecord *c, int job, uint8_t prof,
 /* indoorRate (game.js:2508): 3 base, 6 with the second link; the INDOOR_BASE
  * itself is the port's reading (no rate column exists in @BUILDING), the
  * factory-tier 2/3 raw cost IS byte-verified (@0x8EB1). */
-static int indoor_yield(const ColonyRecord *c, int job, uint8_t prof) {
+static int indoor_yield(const ColonyRecord *c, int sol, int job, uint8_t prof) {
     int rate = chain_count(c, job) >= 2 ? 6 : 3;
-    int y = rate + tory_penalty(c);
+    int y = rate + tory_penalty(c, sol);
     if (is_expert(prof, job)) y *= 2;
     if (CR.upkeep_unpaid) y /= 2;
     return y > 0 ? y : 0;
@@ -214,7 +214,9 @@ static int indoor_yield(const ColonyRecord *c, int job, uint8_t prof) {
 /* The nine field jobs are @JOB rows 0..8 (game.js:2596 FIELD_JOBS). */
 static int is_field_job(int job) { return job >= 0 && job <= 8; }
 
-void colony_produce(const ColonyRecord *c, colony_output *r) {
+void colony_produce(int ci, colony_output *r) {
+    const ColonyRecord *c = &CS.colonies[ci];
+    int sol = rt_sol(ci);
     memset(r, 0, sizeof(*r));
     r->crosses = 1;   /* the churchless base cross, census3 [0x8DEA]=1 */
 
@@ -230,7 +232,6 @@ void colony_produce(const ColonyRecord *c, colony_output *r) {
     if (cs_difficulty() == 0) centre += 2;
     else if (cs_difficulty() == 1) centre += 1;
     centre += improvement_bonus(c->map_x, c->map_y, FOOD);
-    int sol = colony_sol(c);
     if (sol >= 50) centre += 1;
     if (sol >= 100) centre += 1;
     r->centre = centre;
@@ -252,7 +253,7 @@ void colony_produce(const ColonyRecord *c, colony_output *r) {
         if (cell_of[k] >= 0) {
             int g = job_good(job);
             if (g >= 0)
-                r->out[g] += field_yield(c, job, c->profession[k],
+                r->out[g] += field_yield(c, sol, job, c->profession[k],
                                          CELL_DX[cell_of[k]], CELL_DY[cell_of[k]]);
         } else if (is_field_job(job)) {
             /* a field job with no field rests in the plaza (importer rule,
@@ -271,7 +272,7 @@ void colony_produce(const ColonyRecord *c, colony_output *r) {
         int job = c->occupation[k];
         int g = job_good(job);
         if (g == J_NONE) continue;
-        int want = indoor_yield(c, job, c->profession[k]);
+        int want = indoor_yield(c, sol, job, c->profession[k]);
         int raw = raw_for(g);
         if (raw >= 0) {
             int factory = chain_count(c, job) > 2;
